@@ -1,0 +1,25 @@
+{
+  "name": "mmapp",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/mariomojicastyle/b2b-hub.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/mariomojicastyle/mmapp/issues"
+  },
+  "homepage": "https://github.com/mariomojicastyle/mmapp#readme",
+  "dependencies": {
+    "sharp": "^0.34.5",
+    "ssh2": "^1.17.0"
+  }
+}
