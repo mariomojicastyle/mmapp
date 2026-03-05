@@ -25,15 +25,15 @@ const App = () => {
     name: '',
     company: '',
     email: '',
-    Phone: '',
+    phone: '',
     status: 'new'
   });
 
   // Mock data for initial WOW factor
   const mockLeads = [
-    { id: 1, name: 'Mario Mojica', email: 'mario@example.com', company: 'MMA Corp', status: 'new', Phone: '+57 300...' },
-    { id: 2, name: 'DeepMind Tech', email: 'contact@deepmind.com', company: 'Google', status: 'pending', Phone: '+1 650...' },
-    { id: 3, name: 'Hetzner Cloud', email: 'support@hetzner.com', company: 'Hetzner', status: 'new', Phone: '+49 9831...' },
+    { id: 1, name: 'Mario Mojica', email: 'mario@example.com', company: 'MMA Corp', status: 'new', phone: '+57 300...' },
+    { id: 2, name: 'DeepMind Tech', email: 'contact@deepmind.com', company: 'Google', status: 'pending', phone: '+1 650...' },
+    { id: 3, name: 'Hetzner Cloud', email: 'support@hetzner.com', company: 'Hetzner', status: 'new', phone: '+49 9831...' },
   ];
 
   const fetchLeads = async () => {
@@ -70,7 +70,7 @@ const App = () => {
         const demoLead = { ...newLead, id: Date.now(), created_at: new Date().toISOString() };
         setLeads([demoLead, ...leads]);
         setIsModalOpen(false);
-        setNewLead({ name: '', company: '', email: '', Phone: '', status: 'new' });
+        setNewLead({ name: '', company: '', email: '', phone: '', status: 'new' });
         return;
       }
 
@@ -83,7 +83,7 @@ const App = () => {
 
       setLeads([data[0], ...leads]);
       setIsModalOpen(false);
-      setNewLead({ name: '', company: '', email: '', Phone: '', status: 'new' });
+      setNewLead({ name: '', company: '', email: '', phone: '', status: 'new' });
     } catch (err) {
       alert('Error al crear el lead: ' + err.message);
     }
@@ -173,7 +173,7 @@ const App = () => {
                     <Mail size={14} style={{ color: 'var(--primary)' }} /> {lead.email}
                   </div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.875rem' }}>
-                    <Phone size={14} style={{ color: 'var(--primary)' }} /> {lead.Phone}
+                    <Phone size={14} style={{ color: 'var(--primary)' }} /> {lead.phone}
                   </div>
                 </div>
               </motion.div>
@@ -231,8 +231,8 @@ const App = () => {
                   <input
                     type="text"
                     className="glass-input"
-                    value={newLead.Phone}
-                    onChange={e => setNewLead({ ...newLead, Phone: e.target.value })}
+                    value={newLead.phone}
+                    onChange={e => setNewLead({ ...newLead, phone: e.target.value })}
                   />
                 </div>
                 <div style={{ display: 'flex', gap: '1rem', marginTop: '1rem' }}>
