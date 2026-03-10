@@ -28,3 +28,5 @@ Thumbs.db
 .agent/skills/*/scripts/__pycache__/
 .agent/skills/*/.skill-lock.json
 
+
+mario-mojica-landing-page

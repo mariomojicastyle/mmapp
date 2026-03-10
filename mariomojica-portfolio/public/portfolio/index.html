@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="es"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Mario Mojica | Refined Hybrid Portfolio</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script>
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        primary: "#0088AA",
+                        "brand-teal": "#0088AA",
+                        "off-white": "#FDFCF8",
+                    },
+                    fontFamily: {
+                        sans: ["Inter", "sans-serif"],
+                    },
+                },
+            },
+        };
+    </script>
+<style type="text/tailwindcss">
+        @layer base {
+            body { @apply antialiased; }
+        }
+        .portfolio-grid {
+            display: grid;
+            grid-template-columns: repeat(1, 1fr);
+            gap: 0;
+        }
+        @media (min-width: 768px) {
+            .portfolio-grid {
+                grid-template-columns: repeat(3, 1fr);
+            }
+        }
+        .header-overlay {
+            background: linear-gradient(to bottom, rgba(0,0,0,0.2) 0%, rgba(0,0,0,0) 100%);
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-white text-gray-900 font-sans">
+<header class="absolute top-0 left-0 w-full z-50 text-white header-overlay">
+<div class="container mx-auto px-4 h-20 flex items-center justify-between">
+<nav class="hidden md:flex gap-6 text-sm font-medium uppercase tracking-tight">
+<a class="hover:opacity-70 transition-opacity" href="#portfolio">Portafolio</a>
+<a class="hover:opacity-70 transition-opacity" href="#about">Sobre mí</a>
+<a class="hover:opacity-70 transition-opacity" href="#contact">Contacto</a>
+</nav>
+<button class="md:hidden flex items-center">
+<span class="material-symbols-outlined">menu</span>
+</button>
+<div class="absolute left-1/2 -translate-x-1/2">
+<a class="text-xl font-black uppercase tracking-tighter" href="#">Mario Mojica</a>
+</div>
+<div class="flex items-center gap-4">
+<div class="flex items-center gap-1 text-xs font-bold mr-2">
+<span class="opacity-100">ES</span>
+<span class="opacity-40">/</span>
+<a class="opacity-40 hover:opacity-100 transition-opacity" href="#">EN</a>
+</div>
+<div class="hidden sm:flex items-center gap-3">
+<a class="hover:opacity-70" href="#"><span class="material-symbols-outlined !text-[20px]">share</span></a>
+<a class="hover:opacity-70" href="#"><span class="material-symbols-outlined !text-[20px]">mail</span></a>
+</div>
+</div>
+</div>
+</header>
+<section class="relative min-h-[50vh] flex items-center justify-center bg-brand-teal text-white px-6 pt-20">
+<div class="absolute inset-0 opacity-10 pointer-events-none bg-[url('https://www.transparenttextures.com/patterns/cubes.png')]"></div>
+<div class="relative z-10 max-w-4xl text-center space-y-8">
+<h1 class="text-3xl md:text-5xl lg:text-6xl font-extrabold leading-tight tracking-tight">
+                ¡Hola! Soy Mario Mojica. Diseñador Industrial y Desarrollador de Producto.
+            </h1>
+<div class="flex flex-col items-center gap-2 pt-4">
+<p class="text-sm md:text-base font-medium opacity-90 uppercase tracking-widest">Desplázate para ver mi trabajo</p>
+<span class="material-symbols-outlined animate-bounce">expand_more</span>
+</div>
+</div>
+</section>
+<section class="portfolio-grid overflow-hidden" id="portfolio">
+<div class="relative group aspect-square md:aspect-video lg:aspect-square overflow-hidden bg-gray-200">
+<img alt="Línea de Mobiliario RTA" class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" src="https://lh3.googleusercontent.com/aida-public/AB6AXuACyTKIws-423hYl40pt8TEB5h5iRLSY6-Q0hD0B-JaNcKzs2lLgz2HZ6cju-d0GuWsZ7XuqTyg07c0VyvYsZ-FfCgekaA-8eTMokmVXqCyzt27c0ApJF1x6PY0Oj1X-fqZBfxAOOlf_QbeMT30pKrhn2w8Dx_Wb5WqyP67oYdX6mYB9d10XSGQjgbQavHa9s_LoC6-Ww_GtYMxPSDWQg-buDeFPVVZDgEueiZlx4SZnhp6PTNc43hO6npd0Ojhg7R92sMTrMEEDeg"/>
+<div class="absolute inset-0 bg-black/70 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center text-center p-8">
+<h3 class="text-white text-xl md:text-2xl font-bold uppercase tracking-wide">Línea de Mobiliario RTA</h3>
+</div>
+</div>
+<div class="relative group aspect-square md:aspect-video lg:aspect-square overflow-hidden bg-gray-300">
+<img alt="Manual de Armado AR" class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDAMXFhDRRLCvOU3qexXLyjEc5WuK078hS3AvPSGUWKxwrhLA3f-pjS1k_mPIgpgbaZBu5M9n98wHgmU4MHj8aXkYdonU-0rNFCF_MDnn4fIPn5g5e0w1JnJekdX0wU2ZPaMICTxznvEUky4MjnvTxOb8JUf_bFlwrZ59b60UkmHlNch7F_v2_JUq5vOdnbmTegecy6QGXzzNLBfKRW3wLMJQFomZwxR0tJkZanRXUarvqp73YpHpFWY_OHrfy74dmGS9bshRihhF4"/>
+<div class="absolute inset-0 bg-black/70 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center text-center p-8">
+<h3 class="text-white text-xl md:text-2xl font-bold uppercase tracking-wide">Experiencia de Usuario AR</h3>
+</div>
+</div>
+<div class="relative group aspect-square md:aspect-video lg:aspect-square overflow-hidden bg-gray-400">
+<img alt="Optimización CNC" class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAKdmhepECZ48ZLhwuiVB9fiYGWBARh2SkcoITTuE7U4ozhKOJPPn159u4RrL4M3FRAwW8OQ4yyLQWvzv5dhD1z-WEH918TaiQRMgTDL-qElC0ADBycudMcTj1uOXyxyTV0Vkr3fzIpBIrI753EjOZUtwT43sqVxV8kfl7QXoaEIYY7QuewJnD55D2azPAMnUMKNBfn_SPj7G4TVTD5MSMJX0VW5rd-MTLxFH-bjv3dVNItZu4KF7dONZIBZXX3hLGLQUksrkLR2GU"/>
+<div class="absolute inset-0 bg-black/70 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center text-center p-8">
+<h3 class="text-white text-xl md:text-2xl font-bold uppercase tracking-wide">Optimización CNC</h3>
+</div>
+</div>
+<div class="relative group aspect-square md:aspect-video lg:aspect-square overflow-hidden bg-gray-200">
+<img alt="Modelado Paramétrico" class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBjCJiVrOVqSuEqW29q7UxeBDTeNEJPbN0AYXEI5aLvcyJLCP_CBIOIxobvBWQdCaCewB3wwdMohlSMc_-AhWBsvqAs6t8vBdApCUXuAvFDRSrU7ixMwNGtsMEekiLgp0c1VAKz3Bb3lPZtqvZj54gKyZEIkOQUr5Wf3NUStZ4Xlt03Q1lRJa3AxujWVdYVClVon6Pmh-YhuQONCERn8QMAtlij23dg_XIjCo_VsecvLCljdSvmfzKjBgCoa3ccddbvOxn8bnVY4uA"/>
+<div class="absolute inset-0 bg-black/70 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center text-center p-8">
+<h3 class="text-white text-xl md:text-2xl font-bold uppercase tracking-wide">Rhino &amp; Grasshopper</h3>
+</div>
+</div>
+<div class="relative group aspect-square md:aspect-video lg:aspect-square overflow-hidden bg-gray-300">
+<img alt="Visualización 3D" class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDYfTmk9de54GD5sF4c_WFR8ZczkXrNOS5jSdMK3j2sl8J63gjTiEhiNFZjQUrj0XtXtsVqFB18D9Mkrx87sSI81EibdOfco6_tjVylTTrmYcy3rLTBCOr_tK0W-z2J1Uq16r2pODB6rqKTAy7Phh-kn9pXHUuEMGIHDCPmTeWgj-1NkZ1d_7j4cBE8dlKB2dYGmhv1YwOh4omOYzreCqNL7PviMNzL3kFnKHAE5jTTC6sE35vvvkGY8vemXDE47WjUkAxN8tqsbQk"/>
+<div class="absolute inset-0 bg-black/70 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center text-center p-8">
+<h3 class="text-white text-xl md:text-2xl font-bold uppercase tracking-wide">Visualización 3D</h3>
+</div>
+</div>
+<div class="relative group aspect-square md:aspect-video lg:aspect-square overflow-hidden bg-gray-400">
+<img alt="Desarrollo Web Three.js" class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" src="https://lh3.googleusercontent.com/aida-public/AB6AXuACyTKIws-423hYl40pt8TEB5h5iRLSY6-Q0hD0B-JaNcKzs2lLgz2HZ6cju-d0GuWsZ7XuqTyg07c0VyvYsZ-FfCgekaA-8eTMokmVXqCyzt27c0ApJF1x6PY0Oj1X-fqZBfxAOOlf_QbeMT30pKrhn2w8Dx_Wb5WqyP67oYdX6mYB9d10XSGQjgbQavHa9s_LoC6-Ww_GtYMxPSDWQg-buDeFPVVZDgEueiZlx4SZnhp6PTNc43hO6npd0Ojhg7R92sMTrMEEDeg"/>
+<div class="absolute inset-0 bg-black/70 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center text-center p-8">
+<h3 class="text-white text-xl md:text-2xl font-bold uppercase tracking-wide">Desarrollo Three.js</h3>
+</div>
+</div>
+</section>
+<section class="py-10 bg-white border-b border-gray-100">
+<div class="container mx-auto px-6">
+<div class="flex flex-wrap justify-center items-center gap-6 md:gap-12 text-gray-400 text-[10px] md:text-xs font-bold uppercase tracking-[0.2em]">
+<span>Rhino 3D</span>
+<span>Grasshopper</span>
+<span>SolidWorks</span>
+<span>Blender</span>
+<span>React</span>
+<span>Three.js</span>
+</div>
+</div>
+</section>
+<section class="py-24 px-6 bg-off-white" id="about">
+<div class="container mx-auto max-w-6xl">
+<div class="grid grid-cols-1 md:grid-cols-2 gap-12 md:gap-20 items-center">
+<div class="relative">
+<img alt="Mario Mojica Profile" class="w-full aspect-[4/5] object-cover rounded shadow-sm" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDYfTmk9de54GD5sF4c_WFR8ZczkXrNOS5jSdMK3j2sl8J63gjTiEhiNFZjQUrj0XtXtsVqFB18D9Mkrx87sSI81EibdOfco6_tjVylTTrmYcy3rLTBCOr_tK0W-z2J1Uq16r2pODB6rqKTAy7Phh-kn9pXHUuEMGIHDCPmTeWgj-1NkZ1d_7j4cBE8dlKB2dYGmhv1YwOh4omOYzreCqNL7PviMNzL3kFnKHAE5jTTC6sE35vvvkGY8vemXDE47WjUkAxN8tqsbQk"/>
+<div class="absolute -bottom-4 -right-4 w-24 h-24 bg-brand-teal -z-10 opacity-20"></div>
+</div>
+<div class="space-y-6">
+<h2 class="text-3xl md:text-4xl lg:text-5xl font-extrabold leading-tight text-gray-900">
+                        Transformando ideas en productos fabricables
+                    </h2>
+<div class="space-y-4 text-gray-600 leading-relaxed text-lg">
+<p>
+                            Con más de 15 años de trayectoria en el sector industrial, mi enfoque fusiona la precisión de la ingeniería con la sensibilidad del diseño contemporáneo.
+                        </p>
+<p>
+                            Me especializo en el desarrollo de mobiliario RTA, optimización de flujos CNC y la integración de tecnologías 3D para la web, permitiendo que el diseño digital sea funcional, escalable y comercialmente viable.
+                        </p>
+</div>
+</div>
+</div>
+</div>
+</section>
+<main id="contact">
+<section class="py-32 px-6 text-center">
+<div class="container mx-auto max-w-2xl">
+<h2 class="text-3xl md:text-5xl font-black mb-10 tracking-tight text-gray-900">¿Tienes un proyecto en mente?</h2>
+<a class="inline-block bg-brand-teal text-white py-5 px-14 font-bold text-lg uppercase tracking-widest hover:bg-opacity-90 transition-all shadow-xl shadow-teal-900/10" href="mailto:hola@mariomojica.com">
+                    Contáctame
+                </a>
+</div>
+</section>
+<footer class="bg-white py-12 px-6 border-t border-gray-100">
+<div class="container mx-auto flex flex-col items-center gap-6">
+<div class="flex gap-8 text-gray-900">
+<a class="hover:text-brand-teal transition-colors" href="#"><span class="material-symbols-outlined">description</span></a>
+<a class="hover:text-brand-teal transition-colors" href="#"><span class="material-symbols-outlined">link</span></a>
+<a class="hover:text-brand-teal transition-colors" href="#"><span class="material-symbols-outlined">alternate_email</span></a>
+</div>
+<p class="text-[10px] md:text-xs font-medium text-gray-400 uppercase tracking-widest">
+                    © Mario Mojica - Portafolio
+                </p>
+</div>
+</footer>
+</main>
+
+</body></html>
