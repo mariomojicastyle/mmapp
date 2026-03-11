@@ -26,7 +26,7 @@ export const projects = [
             "Encargado de todo el ciclo: desde el diseño y desarrollo web hasta la producción manual en talleres de metalmecánica.",
             "Participé en la Red Latinoamericana de Diseño en Corferias, entendiendo la complejidad financiera y operativa de un negocio propio."
         ],
-        mainImage: "/portfolio/2008_2009_Demario/Linea_Bubble_Sala_35.webp",
+        mainImage: "/portfolio/2008_2009_Demario/Linea_Verona_Recepcion_Verona_260.webp",
         images: [
             "/portfolio/2008_2009_Demario/Linea_Bubble_Cajonera_8.webp",
             "/portfolio/2008_2009_Demario/Linea_Bubble_Sala_35.webp",
@@ -51,7 +51,7 @@ export const projects = [
             "Validación de propuestas estéticas frente a un público masivo y profesional del sector diseño.",
             "Consolidación de la red de contactos en el ecosistema de diseño latinoamericano."
         ],
-        mainImage: "/portfolio/2009_Participacion_Corferias_Red_de_diseño_latinoamericano/Feria_01.webp",
+        mainImage: "/portfolio/2009_Participacion_Corferias_Red_de_diseño_latinoamericano/Feria_02.webp",
         images: [
             "/portfolio/2009_Participacion_Corferias_Red_de_diseño_latinoamericano/Feria_01.webp",
             "/portfolio/2009_Participacion_Corferias_Red_de_diseño_latinoamericano/Feria_02.webp"
@@ -66,7 +66,7 @@ export const projects = [
             "Perfeccionamiento de habilidades de iluminación, texturizado y composición digital.",
             "Transición hacia una mentalidad de 'Producto Digital', entendiendo el poder de la visualización para la venta de ideas."
         ],
-        mainImage: "/portfolio/2010_2011_Renderizador/Chalet_Dapa_Sala_y_Cocina.webp",
+        mainImage: "/portfolio/2010_2011_Renderizador/Promedico_Remodelacion_Fachada.webp",
         images: [
             "/portfolio/2010_2011_Renderizador/Antigua_Contemporanea_Interiorismo.webp",
             "/portfolio/2010_2011_Renderizador/Centro_Comercial_Megacentro_Calimio.webp",
@@ -137,7 +137,7 @@ export const projects = [
             "Desarrollo de la Silla Guadua como validación de diseño paramétrico, manufactura avanzada y estética contemporánea.",
             "Creación de una plataforma web propia como vitrina de experiencias digitales y herramientas de innovación."
         ],
-        mainImage: "/portfolio/2026_Mario_Mojica/Silla_Guadua/Silla_Guadua_01.webp",
+        mainImage: "/portfolio/2026_Mario_Mojica/Silla_Grasshopper/Silla_3D_Print_08.webp",
         images: [
             "/portfolio/2026_Mario_Mojica/Silla_Grasshopper/Silla_3D_Print_01.webp",
             "/portfolio/2026_Mario_Mojica/Silla_Grasshopper/Silla_3D_Print_02.webp",

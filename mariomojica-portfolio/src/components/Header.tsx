@@ -17,8 +17,8 @@ export default function Header() {
     return (
         <header
             className={`fixed top-0 left-0 w-full z-50 transition-all duration-500 ease-in-out ${isScrolled
-                    ? "bg-white shadow-xl py-3 text-gray-900"
-                    : "bg-transparent py-6 text-white"
+                ? "bg-white shadow-xl py-3 text-gray-900"
+                : "bg-transparent py-6 text-white"
                 }`}
         >
             <div className="container mx-auto px-6 flex items-center justify-between relative">
@@ -32,11 +32,15 @@ export default function Header() {
                 {/* Brand / Logo */}
                 <div className="absolute left-1/2 -translate-x-1/2">
                     <Link
-                        className={`text-xl md:text-2xl font-black uppercase tracking-tighter transition-all duration-500 ${isScrolled ? "text-[#0088AA]" : "text-white"
-                            }`}
+                        className="transition-all duration-500 block"
                         href="/"
                     >
-                        Mario Mojica
+                        <img
+                            src="/Logo_Header.svg"
+                            alt="Mario Mojica Logo"
+                            className={`h-7 md:h-9 w-auto transition-all duration-500 ${isScrolled ? "brightness-100" : "brightness-0 invert"
+                                }`}
+                        />
                     </Link>
                 </div>
 
