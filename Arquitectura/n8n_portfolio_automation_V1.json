@@ -1,0 +1,74 @@
+{
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "portfolio-leads",
+        "options": {}
+      },
+      "id": "1",
+      "name": "Webhook: Formulario",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [
+        250,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "applicationId": "144",
+        "tableId": "600",
+        "dataMode": "defineBelow",
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "Nombre",
+              "fieldValue": "={{ $json.body.nombre }}"
+            },
+            {
+              "fieldId": "Apellido",
+              "fieldValue": "={{ $json.body.apellido }}"
+            },
+            {
+              "fieldId": "Email",
+              "fieldValue": "={{ $json.body.correo }}"
+            },
+            {
+              "fieldId": "Interes",
+              "fieldValue": "={{ $json.body.interes }}"
+            }
+          ]
+        }
+      },
+      "id": "2",
+      "name": "Baserow: Guardar Lead",
+      "type": "n8n-nodes-base.baserow",
+      "typeVersion": 1,
+      "position": [
+        500,
+        300
+      ],
+      "credentials": {
+        "baserowApi": {
+          "id": "n8n-portfolio-token",
+          "name": "Baserow Portfolio"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Webhook: Formulario": {
+      "main": [
+        [
+          {
+            "node": "Baserow: Guardar Lead",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  }
+}

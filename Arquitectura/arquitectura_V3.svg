@@ -1,0 +1,76 @@
+<svg viewBox="0 0 900 650" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background -->
+  <rect width="900" height="650" fill="#0f172a" rx="15"/>
+  
+  <!-- Title -->
+  <text x="450" y="40" font-family="Inter, sans-serif" font-size="26" font-weight="bold" fill="#f8fafc" text-anchor="middle">Arquitectura B2B &amp; Portfolio Personal - V3</text>
+  <text x="450" y="65" font-family="Inter, sans-serif" font-size="14" fill="#64748b" text-anchor="middle">(Full Stack Autohospedado en VPS)</text>
+  
+  <!-- Git / GitHub Section -->
+  <g transform="translate(350, 100)">
+    <rect width="200" height="100" fill="#1e293b" stroke="#f43f5e" stroke-width="2" rx="10"/>
+    <text x="100" y="30" font-family="Inter, sans-serif" font-size="16" font-weight="600" fill="#f8fafc" text-anchor="middle">GitHub (Repositorrio)</text>
+    <rect x="20" y="45" width="160" height="40" fill="#0f172a" rx="5"/>
+    <text x="100" y="70" font-family="Inter, sans-serif" font-size="12" fill="#94a3b8" text-anchor="middle">mmapp (Main Repo)</text>
+  </g>
+
+  <!-- Frontend Section -->
+  <g transform="translate(50, 250)">
+    <rect width="250" height="220" fill="#1e293b" stroke="#06b6d4" stroke-width="2" rx="10"/>
+    <text x="125" y="30" font-family="Inter, sans-serif" font-size="16" font-weight="600" fill="#f8fafc" text-anchor="middle">Frontend (Netlify)</text>
+    <rect x="15" y="50" width="220" height="150" fill="#0f172a" rx="5"/>
+    <text x="125" y="80" font-family="Inter, sans-serif" font-size="13" font-weight="bold" fill="#f8fafc" text-anchor="middle">mariomojica.com</text>
+    <text x="125" y="105" font-family="Inter, sans-serif" font-size="12" fill="#94a3b8" text-anchor="middle">Next.js (App Router)</text>
+    <text x="125" y="130" font-family="Inter, sans-serif" font-size="11" fill="#c084fc" text-anchor="middle">Captura: "Descripción de la idea"</text>
+    <text x="125" y="160" font-family="Inter, sans-serif" font-size="11" fill="#22c55e" text-anchor="middle">Webhook: /portfolio-leads</text>
+  </g>
+  
+  <!-- VPS Section (Hetzner) -->
+  <g transform="translate(450, 220)">
+    <rect width="400" height="350" fill="#1e293b" stroke="#eab308" stroke-width="2" rx="15"/>
+    <text x="200" y="30" font-family="Inter, sans-serif" font-size="18" font-weight="600" fill="#f8fafc" text-anchor="middle">Hetzner VPS (Ubuntu + Docker)</text>
+    
+    <!-- Proxy -->
+    <g transform="translate(25, 50)">
+      <rect width="350" height="60" fill="#0f172a" rx="10" stroke="#6366f1" stroke-width="1"/>
+      <text x="175" y="35" font-family="Inter, sans-serif" font-size="14" font-weight="bold" fill="#f8fafc" text-anchor="middle">Nginx Proxy Manager (SSL)</text>
+    </g>
+
+    <!-- n8n -->
+    <g transform="translate(25, 130)">
+      <rect width="160" height="180" fill="#0f172a" rx="10" stroke="#f43f5e" stroke-width="1"/>
+      <text x="80" y="30" font-family="Inter, sans-serif" font-size="14" font-weight="bold" fill="#f8fafc" text-anchor="middle">n8n</text>
+      <text x="80" y="55" font-family="Inter, sans-serif" font-size="11" fill="#94a3b8" text-anchor="middle">Workflow: Captación</text>
+      <text x="80" y="80" font-family="Inter, sans-serif" font-size="10" fill="#22c55e" text-anchor="middle">Mapeo: field_9455</text>
+      <text x="80" y="105" font-family="Inter, sans-serif" font-size="10" fill="#94a3b8" text-anchor="middle">Notification: Gmail</text>
+    </g>
+
+    <!-- Baserow -->
+    <g transform="translate(215, 130)">
+      <rect width="160" height="180" fill="#0f172a" rx="10" stroke="#22c55e" stroke-width="1"/>
+      <text x="80" y="30" font-family="Inter, sans-serif" font-size="14" font-weight="bold" fill="#f8fafc" text-anchor="middle">Baserow</text>
+      <text x="80" y="55" font-family="Inter, sans-serif" font-size="11" fill="#94a3b8" text-anchor="middle">DB: Portafolio</text>
+      <path d="M 30 70 L 130 70" stroke="#334155" stroke-width="1"/>
+      <text x="80" y="95" font-family="Inter, sans-serif" font-size="10" fill="#94a3b8" text-anchor="middle">Tabla: Leads</text>
+      <text x="80" y="120" font-family="Inter, sans-serif" font-size="9" fill="#22c55e" text-anchor="middle">+ Descripción de la idea</text>
+    </g>
+  </g>
+  
+  <!-- Connections -->
+  <!-- GitHub to Netlify -->
+  <path d="M 350 150 Q 175 150 175 250" stroke="#f43f5e" stroke-width="2" fill="none" stroke-dasharray="5,5" marker-end="url(#arrowhead)"/>
+  
+  <!-- Frontend to VPS (Webhook) -->
+  <path d="M 300 360 L 450 300" stroke="#06b6d4" stroke-width="2" fill="none" marker-end="url(#arrowhead)"/>
+  <text x="370" y="320" font-family="Inter, sans-serif" font-size="11" fill="#06b6d4" text-anchor="middle" transform="rotate(-20, 370, 320)">POST JSON</text>
+
+  <!-- n8n to Baserow -->
+  <path d="M 610 400 L 665 400" stroke="#f43f5e" stroke-width="2" fill="none" marker-end="url(#arrowhead)"/>
+  <text x="637" y="390" font-family="Inter, sans-serif" font-size="10" fill="#f8fafc" text-anchor="middle">Save Row</text>
+
+  <defs>
+    <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="0" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#f8fafc" />
+    </marker>
+  </defs>
+</svg>

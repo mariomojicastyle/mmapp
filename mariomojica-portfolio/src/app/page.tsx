@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { projects } from "./portfolio/data";
 import Header from "@/components/Header";
+import ContactForm from "@/components/ContactForm";
 
 export default function Home() {
   return (
@@ -123,17 +124,7 @@ export default function Home() {
         </div>
       </section>
 
-      <section className="py-32 px-6 text-center" id="contact">
-        <div className="container mx-auto max-w-2xl">
-          <h2 className="text-3xl md:text-5xl font-black mb-10 tracking-tight text-gray-900 uppercase italic">¿Tienes un proyecto en mente?</h2>
-          <Link
-            className="inline-block bg-[#0088AA] text-white py-5 px-14 font-bold text-lg uppercase tracking-widest hover:bg-opacity-90 transition-all shadow-xl shadow-teal-900/10"
-            href="mailto:hola@mariomojica.com"
-          >
-            Contáctame
-          </Link>
-        </div>
-      </section>
+      <ContactForm />
 
       <footer className="bg-white py-12 px-6 border-t border-gray-100">
         <div className="container mx-auto flex flex-col items-center gap-6">
