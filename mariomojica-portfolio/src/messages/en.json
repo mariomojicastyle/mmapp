@@ -12,56 +12,6 @@
       "this_year": "This year",
       "years_ago": "{count} years ago"
     },
-    "Projects": {
-      "alec": {
-        "title": "Alec - Luxury Furniture",
-        "description": [
-          "As Design Manager in a small but innovative furniture factory, I developed luxury lines using high-perceived-value materials.",
-          "I learned to work with 19mm glass, cast aluminum, stainless steel, and metalwork, merging technical aesthetics with premium finishes.",
-          "This stage marked the beginning of my professional career, facing the challenge of leading design within an artisanal-industrial production structure."
-        ]
-      },
-      "demario": {
-        "title": "Demario - Entrepreneurship and Design",
-        "description": [
-          "My first foray as an entrepreneur, creating high-end office furniture lines (Bubble, Prisma, Royal, and Verona).",
-          "Responsible for the entire cycle: from design and web development to manual production in metalworking workshops.",
-          "Participated in the Latin American Design Network at Corferias, understanding the financial and operational complexity of owning a business."
-        ]
-      },
-      "corferias": {
-        "title": "Corferias Participation - Design Network",
-        "description": [
-          "Exhibition of original designs in one of the most important venues in Colombia.",
-          "Validation of aesthetic proposals before a massive and professional audience in the design sector.",
-          "Consolidation of a contact network within the Latin American design ecosystem."
-        ]
-      },
-      "renderizador": {
-        "title": "3D Architectural Visualization",
-        "description": [
-          "Specialized in high-fidelity rendering using 3ds Max for architectural projects.",
-          "Perfected skills in lighting, texturing, and digital composition.",
-          "Transitioned towards a 'Digital Product' mindset, understanding the power of visualization for selling ideas."
-        ]
-      },
-      "maderkit": {
-        "title": "Maderkit - Design Manager and Digital Product Lead",
-        "description": [
-          "Leadership in designing mass-market RTA furniture for Homecenter, Jamar, and Alkosto, with over 3 million units sold.",
-          "Creator of the patented 'Space' extensible furniture system and leader of the digital transformation toward Manufacturing 4.0.",
-          "Evolved from Head of Design to Head of Digital Products, implementing Augmented Reality and Artificial Intelligence in industrial processes."
-        ]
-      },
-      "mario-mojica": {
-        "title": "Mario Mojica - Digital Transformation",
-        "description": [
-          "Founded my own brand focused on accompanying companies in the adoption of AI, BIM methodologies, and marketing automation.",
-          "Development of the Guadua Chair as a validation of parametric design, advanced manufacturing, and contemporary aesthetics.",
-          "Creation of own web platform as a showcase for digital experiences and innovation tools."
-        ]
-      }
-    },
     "Hero": {
       "title": "I am Mario Mojica: Industrial Designer specialized in automating the complete manufacturing and marketing cycle.",
       "scroll": "Scroll to view my work"
@@ -109,45 +59,95 @@
     },
     "Footer": {
       "copy": "© Mario Mojica - Portfolio"
+    }
+  },
+  "Projects": {
+    "alec": {
+      "title": "Alec - Luxury Furniture",
+      "description": [
+        "As Design Manager in a small but innovative furniture factory, I developed luxury lines using high-perceived-value materials.",
+        "I learned to work with 19mm glass, cast aluminum, stainless steel, and metalwork, merging technical aesthetics with premium finishes.",
+        "This stage marked the beginning of my professional career, facing the challenge of leading design within an artisanal-industrial production structure."
+      ]
     },
-    "Roles": [
-      "Business Owner",
-      "Marketing Director",
-      "Digital Director",
-      "Merchandising Director",
-      "VP/Director of Marketing",
-      "VP/Director of E-commerce",
-      "VP/Creative Brand Director",
-      "VP/Director of Visualization",
-      "Marketing Manager",
-      "Creative/Brand Manager",
-      "E-commerce Manager",
-      "Merchandising Manager",
-      "Project Manager",
-      "Category/Product Manager",
-      "Visualization Specialist/3D Artist",
-      "Other",
-      "Chief Technology Officer",
-      "Chief Executive Officer",
-      "Chief Experience Officer",
-      "Customer Success Director",
-      "Chief Financial Officer"
-    ],
-    "Interests": [
-      "Automations",
-      "Manufacturing Consulting",
-      "Core Product Design",
-      "BIM Product Design",
-      "Online Customizable Product",
-      "Product Renders for Online Sales",
-      "AI Product Video",
-      "Augmented Reality",
-      "3D Interactive Assembly Manual",
-      "Manufacturing Blueprints",
-      "CNC or STL Files for Manufacturing",
-      "GLB Files for Applications",
-      "Web Development",
-      "Marketing Automations"
-    ]
-  }
+    "demario": {
+      "title": "Demario - Entrepreneurship and Design",
+      "description": [
+        "My first foray as an entrepreneur, creating high-end office furniture lines (Bubble, Prisma, Royal, and Verona).",
+        "Responsible for the entire cycle: from design and web development to manual production in metalworking workshops.",
+        "Participated in the Latin American Design Network at Corferias, understanding the financial and operational complexity of owning a business."
+      ]
+    },
+    "corferias": {
+      "title": "Corferias Participation - Design Network",
+      "description": [
+        "Exhibition of original designs in one of the most important venues in Colombia.",
+        "Validation of aesthetic proposals before a massive and professional audience in the design sector.",
+        "Consolidation of a contact network within the Latin American design ecosystem."
+      ]
+    },
+    "renderizador": {
+      "title": "3D Architectural Visualization",
+      "description": [
+        "Specialized in high-fidelity rendering using 3ds Max for architectural projects.",
+        "Perfected skills in lighting, texturing, and digital composition.",
+        "Transitioned towards a 'Digital Product' mindset, understanding the power of visualization for selling ideas."
+      ]
+    },
+    "maderkit": {
+      "title": "Maderkit - Design Manager and Digital Product Lead",
+      "description": [
+        "Leadership in designing mass-market RTA furniture for Homecenter, Jamar, and Alkosto, with over 3 million units sold.",
+        "Creator of the patented 'Space' extensible furniture system and leader of the digital transformation toward Manufacturing 4.0.",
+        "Evolved from Head of Design to Head of Digital Products, implementing Augmented Reality and Artificial Intelligence in industrial processes."
+      ]
+    },
+    "mario-mojica": {
+      "title": "Mario Mojica - Digital Transformation",
+      "description": [
+        "Founded my own brand focused on accompanying companies in the adoption of AI, BIM methodologies, and marketing automation.",
+        "Development of the Guadua Chair as a validation of parametric design, advanced manufacturing, and contemporary aesthetics.",
+        "Creation of own web platform as a showcase for digital experiences and innovation tools."
+      ]
+    }
+  },
+  "Roles": [
+    "Business Owner",
+    "Marketing Director",
+    "Digital Director",
+    "Merchandising Director",
+    "VP/Director of Marketing",
+    "VP/Director of E-commerce",
+    "VP/Creative Brand Director",
+    "VP/Director of Visualization",
+    "Marketing Manager",
+    "Creative/Brand Manager",
+    "E-commerce Manager",
+    "Merchandising Manager",
+    "Project Manager",
+    "Category/Product Manager",
+    "Visualization Specialist/3D Artist",
+    "Other",
+    "Chief Technology Officer",
+    "Chief Executive Officer",
+    "Chief Experience Officer",
+    "Customer Success Director",
+    "Chief Financial Officer"
+  ],
+  "Interests": [
+    "Automations",
+    "Manufacturing Consulting",
+    "Core Product Design",
+    "BIM Product Design",
+    "Online Customizable Product",
+    "Product Renders for Online Sales",
+    "AI Product Video",
+    "Augmented Reality",
+    "3D Interactive Assembly Manual",
+    "Manufacturing Blueprints",
+    "CNC or STL Files for Manufacturing",
+    "GLB Files for Applications",
+    "Web Development",
+    "Marketing Automations"
+  ]
 }

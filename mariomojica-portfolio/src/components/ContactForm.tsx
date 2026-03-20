@@ -8,8 +8,9 @@ type FormStatus = "idle" | "loading" | "success" | "error";
 export default function ContactForm() {
     const t = useTranslations("Index");
     const tForm = useTranslations("Index.Form");
-    const roles = t.raw("Roles");
-    const interests = t.raw("Interests");
+    const tRoot = useTranslations();
+    const roles = tRoot.raw("Roles");
+    const interests = tRoot.raw("Interests");
     
     const [status, setStatus] = useState<FormStatus>("idle");
     const [formData, setFormData] = useState({

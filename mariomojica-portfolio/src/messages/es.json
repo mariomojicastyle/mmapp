@@ -12,56 +12,6 @@
       "this_year": "Este año",
       "years_ago": "Hace {count} años"
     },
-    "Projects": {
-      "alec": {
-        "title": "Alec - Mobiliario de Lujo",
-        "description": [
-          "Como jefe de diseño en una pequeña pero innovadora fábrica de muebles, desarrollé líneas de lujo con materiales de alto valor percibido.",
-          "Aprendí a trabajar con vidrio de 19mm, aluminio fundido, acero inoxidable y carpintería metálica, fusionando estética técnica con acabados premium.",
-          "Esta etapa marcó el inicio de mi trayectoria profesional, enfrentando el reto de liderar el diseño en una estructura de producción artesanal-industrial."
-        ]
-      },
-      "demario": {
-        "title": "Demario - Emprendimiento y Diseño",
-        "description": [
-          "Mi primera incursión como emprendedor, creando líneas de muebles para oficina de alta gama (Bubble, Prisma, Royal y Verona).",
-          "Encargado de todo el ciclo: desde el diseño y desarrollo web hasta la producción manual en talleres de metalmecánica.",
-          "Participé en la Red Latinoamericana de Diseño en Corferias, entendiendo la complejidad financiera y operativa de un negocio propio."
-        ]
-      },
-      "corferias": {
-        "title": "Participación Corferias - Red de Diseño",
-        "description": [
-          "Exposición de diseños originales en uno de los escenarios más importantes de Colombia.",
-          "Validación de propuestas estéticas frente a un público masivo y profesional del sector diseño.",
-          "Consolidación de la red de contactos en el ecosistema de diseño latinoamericano."
-        ]
-      },
-      "renderizador": {
-        "title": "Visualización Arquitectónica 3D",
-        "description": [
-          "Especialización en renderizado de alta fidelidad utilizando 3ds Max para proyectos arquitectónicos.",
-          "Perfeccionamiento de habilidades de iluminación, texturizado y composición digital.",
-          "Transición hacia una mentalidad de 'Producto Digital', entendiendo el poder de la visualización para la venta de ideas."
-        ]
-      },
-      "maderkit": {
-        "title": "Maderkit - Jefe de Diseño y Producto Digital",
-        "description": [
-          "Liderazgo en el diseño de mobiliario RTA de venta masiva en Homecenter, Jamar y Alkosto, con más de 3 millones de unidades vendidas.",
-          "Creador del sistema de muebles extensibles 'Space' (patentado) y líder de la transformación digital hacia Manufactura 4.0.",
-          "Evolución de Jefe de Diseño a Jefe de Productos Digitales, implementando Realidad Aumentada e Inteligencia Artificial en procesos industriales."
-        ]
-      },
-      "mario-mojica": {
-        "title": "Mario Mojica - Transformación Digital",
-        "description": [
-          "Fundación de mi propia marca enfocada en acompañar a empresas en la adopción de IA, metodologías BIM y automatización de marketing.",
-          "Desarrollo de la Silla Guadua como validación de diseño paramétrico, manufactura avanzada y estética contemporánea.",
-          "Creación de una plataforma web propia como vitrina de experiencias digitales y herramientas de innovación."
-        ]
-      }
-    },
     "Hero": {
       "title": "Soy Mario Mojica: Diseñador Industrial experto en automatizar el ciclo completo de manufactura y mercadeo.",
       "scroll": "Desplázate para ver mi trabajo"
@@ -109,45 +59,95 @@
     },
     "Footer": {
       "copy": "© Mario Mojica - Portafolio"
+    }
+  },
+  "Projects": {
+    "alec": {
+      "title": "Alec - Mobiliario de Lujo",
+      "description": [
+        "Como jefe de diseño en una pequeña pero innovadora fábrica de muebles, desarrollé líneas de lujo con materiales de alto valor percibido.",
+        "Aprendí a trabajar con vidrio de 19mm, aluminio fundido, acero inoxidable y carpintería metálica, fusionando estética técnica con acabados premium.",
+        "Esta etapa marcó el inicio de mi trayectoria profesional, enfrentando el reto de liderar el diseño en una estructura de producción artesanal-industrial."
+      ]
     },
-    "Roles": [
-      "Propietario de negocio",
-      "Director de marketing",
-      "Director digital",
-      "Director de Comercialización",
-      "Vicepresidente/Director de Marketing",
-      "Vicepresidente/Director de Comercio Electrónico",
-      "VP / Director de Marca – Creativo",
-      "VP / Director de Visualización",
-      "Gerente de marketing",
-      "Gerente de marca/creativo",
-      "Gerente de comercio electrónico",
-      "Gerente de comercialización",
-      "Gerente de proyecto",
-      "Gerente de categoría/producto",
-      "Especialista en visualización/Artista 3D",
-      "Otro",
-      "Director de Tecnología",
-      "Director Ejecutivo",
-      "Director de Experiencia",
-      "Director de Atención al Cliente",
-      "Director de Finanzas"
-    ],
-    "Interests": [
-      "Automatizaciones",
-      "Asesoría en manufactura",
-      "Diseño de producto básico",
-      "Diseño de producto BIM",
-      "Producto personalizable en línea",
-      "Renders de producto para venta online",
-      "Video de producto con IA",
-      "Realidad Aumentada",
-      "Manual de armado interactivo en 3D",
-      "Planos de fabricación",
-      "Archivos CNC o STL para fabricación",
-      "Archivos GLB para aplicaciones",
-      "Desarrollo web",
-      "Automatizaciones para mercadeo"
-    ]
-  }
+    "demario": {
+      "title": "Demario - Emprendimiento y Diseño",
+      "description": [
+        "Mi primera incursión como emprendedor, creando líneas de muebles para oficina de alta gama (Bubble, Prisma, Royal y Verona).",
+        "Encargado de todo el ciclo: desde el diseño y desarrollo web hasta la producción manual en talleres de metalmecánica.",
+        "Participé en la Red Latinoamericana de Diseño en Corferias, entendiendo la complejidad financiera y operativa de un negocio propio."
+      ]
+    },
+    "corferias": {
+      "title": "Participación Corferias - Red de Diseño",
+      "description": [
+        "Exposición de diseños originales en uno de los escenarios más importantes de Colombia.",
+        "Validación de propuestas estéticas frente a un público masivo y profesional del sector diseño.",
+        "Consolidación de la red de contactos en el ecosistema de diseño latinoamericano."
+      ]
+    },
+    "renderizador": {
+      "title": "Visualización Arquitectónica 3D",
+      "description": [
+        "Especialización en renderizado de alta fidelidad utilizando 3ds Max para proyectos arquitectónicos.",
+        "Perfeccionamiento de habilidades de iluminación, texturizado y composición digital.",
+        "Transición hacia una mentalidad de 'Producto Digital', entendiendo el poder de la visualización para la venta de ideas."
+      ]
+    },
+    "maderkit": {
+      "title": "Maderkit - Jefe de Diseño y Producto Digital",
+      "description": [
+        "Liderazgo en el diseño de mobiliario RTA de venta masiva en Homecenter, Jamar y Alkosto, con más de 3 millones de unidades vendidas.",
+        "Creador del sistema de muebles extensibles 'Space' (patentado) y líder de la transformación digital hacia Manufactura 4.0.",
+        "Evolución de Jefe de Diseño a Jefe de Productos Digitales, implementando Realidad Aumentada e Inteligencia Artificial en procesos industriales."
+      ]
+    },
+    "mario-mojica": {
+      "title": "Mario Mojica - Transformación Digital",
+      "description": [
+        "Fundación de mi propia marca enfocada en acompañar a empresas en la adopción de IA, metodologías BIM y automatización de marketing.",
+        "Desarrollo de la Silla Guadua como validación de diseño paramétrico, manufactura avanzada y estética contemporánea.",
+        "Creación de una plataforma web propia como vitrina de experiencias digitales y herramientas de innovación."
+      ]
+    }
+  },
+  "Roles": [
+    "Propietario de negocio",
+    "Director de marketing",
+    "Director digital",
+    "Director de Comercialización",
+    "Vicepresidente/Director de Marketing",
+    "Vicepresidente/Director de Comercio Electrónico",
+    "VP / Director de Marca – Creativo",
+    "VP / Director de Visualización",
+    "Gerente de marketing",
+    "Gerente de marca/creativo",
+    "Gerente de comercio electrónico",
+    "Gerente de comercialización",
+    "Gerente de proyecto",
+    "Gerente de categoría/producto",
+    "Especialista en visualización/Artista 3D",
+    "Otro",
+    "Director de Tecnología",
+    "Director Ejecutivo",
+    "Director de Experiencia",
+    "Director de Atención al Cliente",
+    "Director de Finanzas"
+  ],
+  "Interests": [
+    "Automatizaciones",
+    "Asesoría en manufactura",
+    "Diseño de producto básico",
+    "Diseño de producto BIM",
+    "Producto personalizable en línea",
+    "Renders de producto para venta online",
+    "Video de producto con IA",
+    "Realidad Aumentada",
+    "Manual de armado interactivo en 3D",
+    "Planos de fabricación",
+    "Archivos CNC o STL para fabricación",
+    "Archivos GLB para aplicaciones",
+    "Desarrollo web",
+    "Automatizaciones para mercadeo"
+  ]
 }

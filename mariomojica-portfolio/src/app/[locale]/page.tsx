@@ -11,6 +11,7 @@ export default async function Home({
 }) {
   const { locale } = await params;
   const t = await getTranslations("Index");
+  const tRoot = await getTranslations();
 
   return (
     <div className="bg-white text-gray-900 font-sans">
@@ -55,7 +56,7 @@ export default async function Home({
               </span>
               <span className="text-[#0088AA] text-[10px] font-bold uppercase tracking-[0.3em] mb-4">{project.period}</span>
               <h3 className="text-white text-xl md:text-2xl font-black uppercase tracking-tighter leading-tight italic">
-                {t(`Projects.${project.slug}.title`)}
+                {tRoot(`Projects.${project.slug}.title`)}
               </h3>
               <div className="mt-6 w-12 h-[2px] bg-[#0088AA]"></div>
               <span className="mt-6 text-white/50 text-[10px] font-bold uppercase tracking-widest">{t("Portfolio.view")}</span>
