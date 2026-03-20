@@ -76,8 +76,7 @@ export const projects = [
             "/portfolio/2010_2011_Renderizador/Promedico_Gerencia.webp",
             "/portfolio/2010_2011_Renderizador/Promedico_Remodelacion_Fachada.webp",
             "/portfolio/2010_2011_Renderizador/Promedico_gimnasio.webp",
-            "/portfolio/2010_2011_Renderizador/Promedico_sala_de_espera.webp",
-            "/portfolio/2010_2011_Renderizador/Tecnoquimicas_proyeccion_nuevos_bloques.webp"
+            "/portfolio/2010_2011_Renderizador/Promedico_sala_de_espera.webp"
         ]
     },
     {
