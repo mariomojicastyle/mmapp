@@ -28,7 +28,6 @@ export const projects = [
         ],
         mainImage: "/portfolio/2008_2009_Demario/Linea_Verona_Recepcion_Verona_260.webp",
         images: [
-            "/portfolio/2008_2009_Demario/Linea_Bubble_Cajonera_8.webp",
             "/portfolio/2008_2009_Demario/Linea_Bubble_Sala_35.webp",
             "/portfolio/2008_2009_Demario/Linea_Prisma_Escritorio_Sencillo_150.webp",
             "/portfolio/2008_2009_Demario/Linea_Prisma_Estacion_de_Trabajo_300.webp",
