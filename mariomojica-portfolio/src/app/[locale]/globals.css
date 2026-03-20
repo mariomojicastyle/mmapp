@@ -1,0 +1,56 @@
+@import "tailwindcss";
+
+:root {
+  --brand-teal: #0088AA;
+  --off-white: #FDFCF8;
+  --background: #ffffff;
+  --foreground: #111827;
+}
+
+@theme inline {
+  --color-brand-teal: var(--brand-teal);
+  --color-off-white: var(--off-white);
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+}
+
+body {
+  @apply antialiased;
+  background: var(--background);
+  color: var(--foreground);
+}
+
+.portfolio-grid {
+  display: grid;
+  grid-template-columns: repeat(1, 1fr);
+  gap: 0;
+}
+
+@media (min-width: 768px) {
+  .portfolio-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+.header-overlay {
+  background: linear-gradient(to bottom, rgba(0, 0, 0, 0.2) 0%, rgba(0, 0, 0, 0) 100%);
+}
+
+@keyframes marquee {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
+}
+
+.animate-marquee {
+  display: flex;
+  width: max-content;
+  animation: marquee 50s linear infinite;
+}
+
+.pause-on-hover:hover .animate-marquee {
+  animation-play-state: paused;
+}

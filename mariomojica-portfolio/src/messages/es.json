@@ -1,0 +1,96 @@
+{
+  "Header": {
+    "portfolio": "Portafolio",
+    "about": "Sobre mí",
+    "contact": "Contacto"
+  },
+  "Index": {
+    "Hero": {
+      "title": "Soy Mario Mojica: Diseñador Industrial experto en automatizar el ciclo completo de manufactura y mercadeo.",
+      "scroll": "Desplázate para ver mi trabajo"
+    },
+    "Stack": {
+      "title": "Stack experto:"
+    },
+    "About": {
+      "title": "DISEÑO GENERATIVO Y AUTOMATIZACIÓN MAXIMIZANDO LA RENTABILIDAD EN LA INDUSTRIA DEL MUEBLE",
+      "p1": "Soy Mario Mojica, Diseñador Industrial experto en la automatización de procesos con diseño generativo para la industria del mueble. Mi trayectoria no se mide solo en años, sino en más de 3 millones de productos que hoy habitan hogares en toda Latinoamérica. Desde el 2020, he consolidado mi perfil como estratega tecnológico, dedicándome a resolver la ineficiencia empresarial mediante la fusión de la maestría en manufactura con la aceleración de la IA.",
+      "p2": "Mi enfoque no es solo estético; es sistémico. Utilizo un ecosistema de vanguardia —integrando Rhino 3D, Grasshopper y n8n— para transformar la forma en la que se conciben los productos. Mi objetivo es lograr una rentabilidad superior, creando flujos de trabajo optimizados y listos para la Manufactura 4.0. No solo diseño objetos; diseño los sistemas inteligentes que los hacen posibles.",
+      "p3": "Especializado en convertir departamentos de diseño lentos en unidades de alto rendimiento, mi metodología integra flujos CNC, visualización avanzada en Blender/Three.js y automatizaciones para mercadeo. He logrado reducir los ciclos de desarrollo y respuesta técnica en hasta un 80%, eliminando cuellos de botella tradicionales.",
+      "p4": "Las áreas de diseño convencionales suelen ser costosas y poco ágiles; mi misión es cambiar esa realidad. Sumo 15 años de experiencia en manufactura masiva a un stack tecnológico de IA para entregar renders, planos y manuales de armado con una precisión quirúrgica. Acompaño a las empresas a dar el salto definitivo hacia la transformación digital, implementando procesos que aseguran su competitividad en el mercado global.",
+      "images": {
+        "pieces": "Despiece y Estructura Técnica",
+        "parametric": "Diseño Paramétrico Grasshopper",
+        "automation": "Automatización con n8n",
+        "cnc": "Manufactura CNC"
+      }
+    },
+    "Contact": {
+      "title": "¿Tienes un proyecto en mente?",
+      "subtitle": "Completa este formulario para recibir una asesoría personalizada sobre cómo la IA y las automatizaciones pueden escalar tu negocio.",
+      "success_h2": "¡Mensaje recibido!",
+      "success_p": "Gracias por tu interés, Mario. He recibido tus datos y te contactaré en breve por WhatsApp para agendar nuestra demostración.",
+      "success_btn": "Enviar otro mensaje",
+      "error_p": "Lo siento, hubo un problema al enviar tus datos. Por favor, intenta de nuevo o contáctame directamente."
+    },
+    "Form": {
+      "name": "Nombre",
+      "lastname": "Apellido",
+      "email": "Correo electrónico comercial",
+      "company": "Nombre de empresa",
+      "country": "País / Región",
+      "country_placeholder": "Por favor seleccione/escriba",
+      "phone": "Teléfono directo",
+      "role_label": "¿Qué describe mejor tu rol?",
+      "role_select": "Por favor seleccione",
+      "interest_label": "Para una demostración más personalizada, cuéntame qué te interesa",
+      "interest_select": "Seleccione una opción",
+      "description_label": "Descripción de la idea",
+      "description_placeholder": "Cuéntame brevemente sobre tu proyecto o idea...",
+      "submit": "Reserva mi demostración",
+      "loading": "Procesando..."
+    },
+    "Footer": {
+      "copy": "© Mario Mojica - Portafolio"
+    },
+    "Roles": [
+      "Propietario de negocio",
+      "Director de marketing",
+      "Director digital",
+      "Director de Comercialización",
+      "Vicepresidente/Director de Marketing",
+      "Vicepresidente/Director de Comercio Electrónico",
+      "VP / Director de Marca – Creativo",
+      "VP / Director de Visualización",
+      "Gerente de marketing",
+      "Gerente de marca/creativo",
+      "Gerente de comercio electrónico",
+      "Gerente de comercialización",
+      "Gerente de proyecto",
+      "Gerente de categoría/producto",
+      "Especialista en visualización/Artista 3D",
+      "Otro",
+      "Director de Tecnología",
+      "Director Ejecutivo",
+      "Director de Experiencia",
+      "Director de Atención al Cliente",
+      "Director de Finanzas"
+    ],
+    "Interests": [
+      "Automatizaciones",
+      "Asesoría en manufactura",
+      "Diseño de producto básico",
+      "Diseño de producto BIM",
+      "Producto personalizable en línea",
+      "Renders de producto para venta online",
+      "Video de producto con IA",
+      "Realidad Aumentada",
+      "Manual de armado interactivo en 3D",
+      "Planos de fabricación",
+      "Archivos CNC o STL para fabricación",
+      "Archivos GLB para aplicaciones",
+      "Desarrollo web",
+      "Automatizaciones para mercadeo"
+    ]
+  }
+}

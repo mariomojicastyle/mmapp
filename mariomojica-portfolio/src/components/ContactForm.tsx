@@ -1,51 +1,16 @@
 "use client";
 
 import React, { useState } from "react";
-
-const roles = [
-    "Propietario de negocio",
-    "Director de marketing",
-    "Director digital",
-    "Director de Comercialización",
-    "Vicepresidente/Director de Marketing",
-    "Vicepresidente/Director de Comercio Electrónico",
-    "VP / Director de Marca – Creativo",
-    "VP / Director de Visualización",
-    "Gerente de marketing",
-    "Gerente de marca/creativo",
-    "Gerente de comercio electrónico",
-    "Gerente de comercialización",
-    "Gerente de proyecto",
-    "Gerente de categoría/producto",
-    "Especialista en visualización/Artista 3D",
-    "Otro",
-    "Director de Tecnología",
-    "Director Ejecutivo",
-    "Director de Experiencia",
-    "Director de Atención al Cliente",
-    "Director de Finanzas",
-];
-
-const interests = [
-    "Automatizaciones",
-    "Asesoría en manufactura",
-    "Diseño de producto básico",
-    "Diseño de producto BIM",
-    "Producto personalizable en línea",
-    "Renders de producto para venta online",
-    "Video de producto con IA",
-    "Realidad Aumentada",
-    "Manual de armado interactivo en 3D",
-    "Planos de fabricación",
-    "Archivos CNC o STL para fabricación",
-    "Archivos GLB para aplicaciones",
-    "Desarrollo web",
-    "Automatizaciones para mercadeo",
-];
+import { useTranslations } from "next-intl";
 
 type FormStatus = "idle" | "loading" | "success" | "error";
 
 export default function ContactForm() {
+    const t = useTranslations("Index");
+    const tForm = useTranslations("Index.Form");
+    const roles = t.raw("Roles");
+    const interests = t.raw("Interests");
+    
     const [status, setStatus] = useState<FormStatus>("idle");
     const [formData, setFormData] = useState({
         nombre: "",
@@ -121,16 +86,16 @@ export default function ContactForm() {
                             </svg>
                         </div>
                         <h2 className="text-3xl md:text-4xl font-black mb-4 tracking-tight text-gray-900 uppercase italic">
-                            ¡Mensaje recibido!
+                            {t("Contact.success_h2")}
                         </h2>
                         <p className="text-gray-600 text-lg mb-8">
-                            Gracias por tu interés, Mario. He recibido tus datos y te contactaré en breve por WhatsApp para agendar nuestra demostración.
+                            {t("Contact.success_p")}
                         </p>
                         <button 
                             onClick={() => setStatus("idle")}
                             className="text-[#0088AA] font-black uppercase tracking-widest text-sm hover:underline"
                         >
-                            Enviar otro mensaje
+                            {t("Contact.success_btn")}
                         </button>
                     </div>
                 </div>
@@ -142,17 +107,17 @@ export default function ContactForm() {
         <section className="py-24 px-6 bg-white" id="contact">
             <div className="container mx-auto max-w-3xl">
                 <h2 className="text-3xl md:text-5xl font-black mb-6 tracking-tight text-gray-900 uppercase italic text-center">
-                    ¿Tienes un proyecto en mente?
+                    {t("Contact.title")}
                 </h2>
                 <p className="text-center text-gray-500 mb-12 max-w-xl mx-auto">
-                    Completa este formulario para recibir una asesoría personalizada sobre cómo la IA y las automatizaciones pueden escalar tu negocio.
+                    {t("Contact.subtitle")}
                 </p>
 
                 <form onSubmit={handleSubmit} className="space-y-6">
                     {status === "error" && (
                         <div className="bg-red-50 border-l-4 border-red-500 p-4 mb-6">
                             <p className="text-red-700 text-sm">
-                                Lo siento, hubo un problema al enviar tus datos. Por favor, intenta de nuevo o contáctame directamente.
+                                {t("Contact.error_p")}
                             </p>
                         </div>
                     )}
@@ -160,7 +125,7 @@ export default function ContactForm() {
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div className="space-y-2">
                             <label htmlFor="nombre" className="block text-xs font-black uppercase tracking-widest text-[#0088AA]">
-                                Nombre *
+                                {tForm("name")} *
                             </label>
                             <input
                                 required
@@ -175,7 +140,7 @@ export default function ContactForm() {
                         </div>
                         <div className="space-y-2">
                             <label htmlFor="apellido" className="block text-xs font-black uppercase tracking-widest text-[#0088AA]">
-                                Apellido *
+                                {tForm("lastname")} *
                             </label>
                             <input
                                 required
@@ -192,7 +157,7 @@ export default function ContactForm() {
 
                     <div className="space-y-2">
                         <label htmlFor="correo" className="block text-xs font-black uppercase tracking-widest text-[#0088AA]">
-                            Correo electrónico comercial *
+                            {tForm("email")} *
                         </label>
                         <input
                             required
@@ -208,7 +173,7 @@ export default function ContactForm() {
 
                     <div className="space-y-2">
                         <label htmlFor="empresa" className="block text-xs font-black uppercase tracking-widest text-[#0088AA]">
-                            Nombre de empresa *
+                            {tForm("company")} *
                         </label>
                         <input
                             required
@@ -225,7 +190,7 @@ export default function ContactForm() {
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div className="space-y-2">
                             <label htmlFor="pais" className="block text-xs font-black uppercase tracking-widest text-[#0088AA]">
-                                País / Región *
+                                {tForm("country")} *
                             </label>
                             <input
                                 required
@@ -235,13 +200,13 @@ export default function ContactForm() {
                                 disabled={status === "loading"}
                                 value={formData.pais}
                                 onChange={handleChange}
-                                placeholder="Por favor seleccione/escriba"
+                                placeholder={tForm("country_placeholder")}
                                 className="w-full bg-[#FDFCF8] border-[0.5px] border-gray-200 p-4 text-gray-900 focus:outline-none focus:border-[#0088AA] transition-colors disabled:opacity-50"
                             />
                         </div>
                         <div className="space-y-2">
                             <label htmlFor="telefono" className="block text-xs font-black uppercase tracking-widest text-[#0088AA]">
-                                Teléfono directo *
+                                {tForm("phone")} *
                             </label>
                             <input
                                 required
@@ -258,7 +223,7 @@ export default function ContactForm() {
 
                     <div className="space-y-2">
                         <label htmlFor="rol" className="block text-xs font-black uppercase tracking-widest text-[#0088AA]">
-                            ¿Qué describe mejor tu rol? *
+                            {tForm("role_label")} *
                         </label>
                         <select
                             required
@@ -269,8 +234,8 @@ export default function ContactForm() {
                             onChange={handleChange}
                             className="w-full bg-[#FDFCF8] border-[0.5px] border-gray-200 p-4 text-gray-900 focus:outline-none focus:border-[#0088AA] transition-colors appearance-none disabled:opacity-50"
                         >
-                            <option value="" disabled>Por favor seleccione</option>
-                            {roles.map((role) => (
+                            <option value="" disabled>{tForm("role_select")}</option>
+                            {roles.map((role: string) => (
                                 <option key={role} value={role}>{role}</option>
                             ))}
                         </select>
@@ -278,7 +243,7 @@ export default function ContactForm() {
 
                     <div className="space-y-2">
                         <label htmlFor="interes" className="block text-xs font-black uppercase tracking-widest text-[#0088AA]">
-                            Para una demostración más personalizada, cuéntame qué te interesa *
+                            {tForm("interest_label")} *
                         </label>
                         <select
                             required
@@ -289,8 +254,8 @@ export default function ContactForm() {
                             onChange={handleChange}
                             className="w-full bg-[#FDFCF8] border-[0.5px] border-gray-200 p-4 text-gray-900 focus:outline-none focus:border-[#0088AA] transition-colors appearance-none disabled:opacity-50"
                         >
-                            <option value="" disabled>Seleccione una opción</option>
-                            {interests.map((interest) => (
+                            <option value="" disabled>{tForm("interest_select")}</option>
+                            {interests.map((interest: string) => (
                                 <option key={interest} value={interest}>{interest}</option>
                             ))}
                         </select>
@@ -298,7 +263,7 @@ export default function ContactForm() {
 
                     <div className="space-y-2">
                         <label htmlFor="descripcion" className="block text-xs font-black uppercase tracking-widest text-[#0088AA]">
-                            Descripción de la idea *
+                            {tForm("description_label")} *
                         </label>
                         <textarea
                             required
@@ -308,7 +273,7 @@ export default function ContactForm() {
                             value={formData.descripcion}
                             onChange={handleChange}
                             rows={4}
-                            placeholder="Cuéntame brevemente sobre tu proyecto o idea..."
+                            placeholder={tForm("description_placeholder")}
                             className="w-full bg-[#FDFCF8] border-[0.5px] border-gray-200 p-4 text-gray-900 focus:outline-none focus:border-[#0088AA] transition-colors disabled:opacity-50 resize-none"
                         />
                     </div>
@@ -319,7 +284,7 @@ export default function ContactForm() {
                             disabled={status === "loading"}
                             className="inline-block bg-[#0088AA] text-white py-4 px-14 font-black text-lg uppercase tracking-widest hover:bg-opacity-90 transition-all shadow-xl shadow-teal-900/10 rounded-full cursor-pointer disabled:bg-gray-400 disabled:cursor-not-allowed"
                         >
-                            {status === "loading" ? "Procesando..." : "Reserva mi demostración"}
+                            {status === "loading" ? tForm("loading") : tForm("submit")}
                         </button>
                     </div>
                 </form>

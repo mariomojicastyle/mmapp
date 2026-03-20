@@ -1,0 +1,96 @@
+{
+  "Header": {
+    "portfolio": "Portfolio",
+    "about": "About me",
+    "contact": "Contact"
+  },
+  "Index": {
+    "Hero": {
+      "title": "I am Mario Mojica: Industrial Designer specialized in automating the complete manufacturing and marketing cycle.",
+      "scroll": "Scroll to view my work"
+    },
+    "Stack": {
+      "title": "Expert Stack:"
+    },
+    "About": {
+      "title": "GENERATIVE DESIGN AND AUTOMATION MAXIMIZING PROFITABILITY IN THE FURNITURE INDUSTRY",
+      "p1": "I am Mario Mojica, an Industrial Designer expert in process automation using generative design for the furniture industry. My career is not just measured in years, but in more than 3 million products that currently inhabit homes across Latin America. Since 2020, I have consolidated my profile as a technological strategist, dedicated to solving business inefficiency by fusing manufacturing mastery with AI acceleration.",
+      "p2": "My focus is not just aesthetic; it's systemic. I use a cutting-edge ecosystem —integrating Rhino 3D, Grasshopper, and n8n— to transform the way products are conceived. My goal is to achieve superior profitability, creating optimized workflows ready for Manufacturing 4.0. I don't just design objects; I design the intelligent systems that make them possible.",
+      "p3": "Specialized in turning slow design departments into high-performance units, my methodology integrates CNC workflows, advanced visualization in Blender/Three.js, and marketing automation. I have managed to reduce development and technical response cycles by up to 80%, eliminating traditional bottlenecks.",
+      "p4": "Conventional design areas are often costly and non-agile; my mission is to change that reality. I bring 15 years of experience in mass manufacturing to an AI technology stack to deliver renders, blueprints, and assembly manuals with surgical precision. I accompany companies in making the definitive leap towards digital transformation, implementing processes that ensure their competitiveness in the global market.",
+      "images": {
+        "pieces": "Technical Breakdown and Structure",
+        "parametric": "Grasshopper Parametric Design",
+        "automation": "Automation with n8n",
+        "cnc": "CNC Manufacturing"
+      }
+    },
+    "Contact": {
+      "title": "Have a project in mind?",
+      "subtitle": "Complete this form to receive personalized advice on how AI and automation can scale your business.",
+      "success_h2": "Message received!",
+      "success_p": "Thanks for your interest, Mario. I have received your details and will contact you shortly via WhatsApp to schedule our demo.",
+      "success_btn": "Send another message",
+      "error_p": "I'm sorry, there was a problem sending your data. Please try again or contact me directly."
+    },
+    "Form": {
+      "name": "First Name",
+      "lastname": "Last Name",
+      "email": "Business Email",
+      "company": "Company Name",
+      "country": "Country / Region",
+      "country_placeholder": "Please select/type",
+      "phone": "Direct Phone",
+      "role_label": "What best describes your role?",
+      "role_select": "Please select",
+      "interest_label": "For a more personalized demo, tell me what interests you",
+      "interest_select": "Select an option",
+      "description_label": "Idea Description",
+      "description_placeholder": "Briefly tell me about your project or idea...",
+      "submit": "Reserve my demo",
+      "loading": "Processing..."
+    },
+    "Footer": {
+      "copy": "© Mario Mojica - Portfolio"
+    },
+    "Roles": [
+      "Business Owner",
+      "Marketing Director",
+      "Digital Director",
+      "Merchandising Director",
+      "VP/Director of Marketing",
+      "VP/Director of E-commerce",
+      "VP/Creative Brand Director",
+      "VP/Director of Visualization",
+      "Marketing Manager",
+      "Creative/Brand Manager",
+      "E-commerce Manager",
+      "Merchandising Manager",
+      "Project Manager",
+      "Category/Product Manager",
+      "Visualization Specialist/3D Artist",
+      "Other",
+      "Chief Technology Officer",
+      "Chief Executive Officer",
+      "Chief Experience Officer",
+      "Customer Success Director",
+      "Chief Financial Officer"
+    ],
+    "Interests": [
+      "Automations",
+      "Manufacturing Consulting",
+      "Core Product Design",
+      "BIM Product Design",
+      "Online Customizable Product",
+      "Product Renders for Online Sales",
+      "AI Product Video",
+      "Augmented Reality",
+      "3D Interactive Assembly Manual",
+      "Manufacturing Blueprints",
+      "CNC or STL Files for Manufacturing",
+      "GLB Files for Applications",
+      "Web Development",
+      "Marketing Automations"
+    ]
+  }
+}
