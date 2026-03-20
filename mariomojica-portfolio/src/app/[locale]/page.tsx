@@ -1,4 +1,4 @@
-import Link from "next/link";
+import { Link } from "@/i18n/navigation";
 import { projects } from "./portfolio/data";
 import Header from "@/components/Header";
 import ContactForm from "@/components/ContactForm";
@@ -48,17 +48,17 @@ export default async function Home({
             <div className="absolute inset-0 bg-black/80 opacity-0 group-hover:opacity-100 transition-opacity duration-500 flex flex-col items-center justify-center text-center p-8 scale-95 group-hover:scale-100 transform transition-transform">
               <span className="text-white text-lg font-black uppercase italic mb-2">
                 {project.slug === "maderkit"
-                  ? "Durante 15 años"
+                  ? t("Portfolio.duration_15")
                   : 2026 - parseInt(project.period.split(" ")[0]) === 0
-                    ? "Este año"
-                    : `Hace ${2026 - parseInt(project.period.split(" ")[0])} años`}
+                    ? t("Portfolio.this_year")
+                    : t("Portfolio.years_ago", { count: 2026 - parseInt(project.period.split(" ")[0]) })}
               </span>
               <span className="text-[#0088AA] text-[10px] font-bold uppercase tracking-[0.3em] mb-4">{project.period}</span>
               <h3 className="text-white text-xl md:text-2xl font-black uppercase tracking-tighter leading-tight italic">
-                {project.title}
+                {t(`Projects.${project.slug}.title`)}
               </h3>
               <div className="mt-6 w-12 h-[2px] bg-[#0088AA]"></div>
-              <span className="mt-6 text-white/50 text-[10px] font-bold uppercase tracking-widest">Ver Proyecto</span>
+              <span className="mt-6 text-white/50 text-[10px] font-bold uppercase tracking-widest">{t("Portfolio.view")}</span>
             </div>
           </Link>
         ))}

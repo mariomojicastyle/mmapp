@@ -1,11 +1,18 @@
 import { projects } from "../data";
 import { notFound } from "next/navigation";
-import Link from "next/link";
+import { Link } from "@/i18n/navigation";
 import Header from "@/components/Header";
+import { getTranslations } from "next-intl/server";
 
-export default async function ProjectPage({ params }: { params: Promise<{ slug: string }> }) {
+export default async function ProjectPage({
+    params,
+}: {
+    params: Promise<{ locale: string; slug: string }>;
+}) {
     const { slug } = await params;
     const project = projects.find((p) => p.slug === slug);
+    const t = await getTranslations("Index.Portfolio");
+    const tProject = await getTranslations(`Projects.${slug}`);
 
     if (!project) {
         notFound();
@@ -28,7 +35,7 @@ export default async function ProjectPage({ params }: { params: Promise<{ slug: 
                             <span className="text-sm font-bold text-[#0088AA] uppercase tracking-[0.3em]">{project.period}</span>
                         </div>
                         <h1 className="text-4xl md:text-6xl lg:text-7xl font-black leading-tight mb-2 uppercase italic tracking-tighter">
-                            {project.title}
+                            {tProject("title")}
                         </h1>
                     </div>
                 </section>
@@ -36,7 +43,7 @@ export default async function ProjectPage({ params }: { params: Promise<{ slug: 
                 <section className="py-20 bg-white">
                     <div className="container mx-auto px-6 max-w-4xl">
                         <div className="space-y-8 text-lg md:text-xl text-gray-600 leading-relaxed">
-                            {project.description.map((p, i) => (
+                            {(tProject.raw("description") as string[]).map((p, i) => (
                                 <p key={i}>{p}</p>
                             ))}
                         </div>
@@ -65,7 +72,7 @@ export default async function ProjectPage({ params }: { params: Promise<{ slug: 
                         href="/#portfolio"
                     >
                         <span className="material-symbols-outlined">arrow_back</span>
-                        Volver al Portafolio
+                        {t("back")}
                     </Link>
                     <div className="flex flex-col items-center gap-6">
                         <div className="flex gap-10 text-gray-400">
