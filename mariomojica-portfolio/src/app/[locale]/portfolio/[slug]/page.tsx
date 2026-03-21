@@ -52,15 +52,36 @@ export default async function ProjectPage({
 
                 <section className="pb-32 flex flex-col items-center px-6">
                     <div className="w-full max-w-6xl space-y-12 md:space-y-20">
-                        {project.images.map((img, i) => (
-                            <div key={i} className="overflow-hidden rounded-sm shadow-lg">
-                                <img
-                                    alt={`${project.title} detail ${i + 1}`}
-                                    className="w-full h-auto object-cover"
-                                    src={img}
-                                />
-                            </div>
-                        ))}
+                        {project.images.map((item, i) => {
+                            const src = typeof item === 'string' ? item : item.src;
+                            const filename = src.split('/').pop()?.split('.')[0] || '';
+                            
+                            // Try to get translation
+                            const translationKey = `imageTitles.${filename}`;
+                            const translatedTitle = tProject(translationKey);
+                            
+                            // Check if translation is valid (not the key itself and doesn't look like a raw key path)
+                            const isRawKey = translatedTitle === translationKey || translatedTitle.includes('.');
+                            
+                            const title = isRawKey 
+                                ? filename.replace(/[_-]/g, ' ') 
+                                : translatedTitle;
+                            
+                            return (
+                                <div key={i} className="space-y-4">
+                                    <div className="overflow-hidden rounded-sm shadow-lg">
+                                        <img
+                                            alt={title}
+                                            className="w-full h-auto object-cover"
+                                            src={src}
+                                        />
+                                    </div>
+                                    <h4 className="text-xs md:text-sm font-black uppercase tracking-[0.2em] text-[#0088AA] text-center">
+                                        {title}
+                                    </h4>
+                                </div>
+                            );
+                        })}
                     </div>
                 </section>
             </main>

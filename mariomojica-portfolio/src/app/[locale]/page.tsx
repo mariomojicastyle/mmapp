@@ -1,6 +1,7 @@
 import { Link } from "@/i18n/navigation";
 import { projects } from "./portfolio/data";
 import Header from "@/components/Header";
+import ProjectCard from "@/components/ProjectCard";
 import ContactForm from "@/components/ContactForm";
 import { getTranslations } from "next-intl/server";
 
@@ -17,9 +18,25 @@ export default async function Home({
     <div className="bg-white text-gray-900 font-sans">
       <Header />
 
-      <section className="relative min-h-[60vh] flex items-center justify-center bg-[#0088AA] text-white px-6 pt-20">
-        <div className="absolute inset-0 opacity-10 pointer-events-none bg-[url('https://www.transparenttextures.com/patterns/cubes.png')]"></div>
-        <div className="relative z-10 max-w-4xl text-center space-y-8">
+      <section className="relative min-h-[60vh] flex items-center justify-center bg-[#0088AA] text-white px-6 pt-20 overflow-hidden">
+        {/* Video Background */}
+        <video 
+          autoPlay 
+          loop 
+          muted 
+          playsInline 
+          className="absolute inset-0 w-full h-full object-cover z-0"
+        >
+          <source src="/videos/Animacion_Banner.mp4" type="video/mp4" />
+        </video>
+
+        {/* Brand Overlay */}
+        <div className="absolute inset-0 bg-[#0088AA]/80 z-10"></div>
+
+        {/* Texture Overlay (Optional, keeping it subtle) */}
+        <div className="absolute inset-0 opacity-5 pointer-events-none bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] z-20"></div>
+
+        <div className="relative z-30 max-w-4xl text-center space-y-8">
           <h1 className="text-2xl md:text-4xl lg:text-5xl font-black leading-tight tracking-tight uppercase italic">
             {t("Hero.title")}
           </h1>
@@ -36,32 +53,17 @@ export default async function Home({
 
       <section className="portfolio-grid overflow-hidden border-t border-gray-100" id="portfolio">
         {projects.map((project) => (
-          <Link
-            key={project.slug}
-            href={`/portfolio/${project.slug}`}
-            className="relative group aspect-square overflow-hidden bg-gray-100 border-[0.5px] border-gray-200"
-          >
-            <img
-              alt={project.title}
-              className="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-110 grayscale group-hover:grayscale-0"
-              src={project.mainImage}
-            />
-            <div className="absolute inset-0 bg-black/80 opacity-0 group-hover:opacity-100 transition-opacity duration-500 flex flex-col items-center justify-center text-center p-8 scale-95 group-hover:scale-100 transform transition-transform">
-              <span className="text-white text-lg font-black uppercase italic mb-2">
-                {project.slug === "maderkit"
-                  ? t("Portfolio.duration_15")
-                  : 2026 - parseInt(project.period.split(" ")[0]) === 0
-                    ? t("Portfolio.this_year")
-                    : t("Portfolio.years_ago", { count: 2026 - parseInt(project.period.split(" ")[0]) })}
-              </span>
-              <span className="text-[#0088AA] text-[10px] font-bold uppercase tracking-[0.3em] mb-4">{project.period}</span>
-              <h3 className="text-white text-xl md:text-2xl font-black uppercase tracking-tighter leading-tight italic">
-                {tRoot(`Projects.${project.slug}.title`)}
-              </h3>
-              <div className="mt-6 w-12 h-[2px] bg-[#0088AA]"></div>
-              <span className="mt-6 text-white/50 text-[10px] font-bold uppercase tracking-widest">{t("Portfolio.view")}</span>
-            </div>
-          </Link>
+          <ProjectCard 
+            key={project.slug} 
+            project={project} 
+            translations={{
+              duration_15: t("Portfolio.duration_15"),
+              this_year: t("Portfolio.this_year"),
+              years_ago: t("Portfolio.years_ago", { count: 2026 - parseInt(project.period.split(" ")[0]) }),
+              view: t("Portfolio.view"),
+              title: tRoot(`Projects.${project.slug}.title`),
+            }} 
+          />
         ))}
       </section>
 
@@ -96,18 +98,56 @@ export default async function Home({
 
       <section className="py-24 px-6 bg-[#FDFCF8]" id="about">
         <div className="container mx-auto max-w-6xl">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-12 md:gap-20 items-start">
+          {/* Mobile Version: Interleaved Text and Images */}
+          <div className="md:hidden space-y-8 flex flex-col">
+            <h2 className="text-3xl font-black leading-tight text-gray-900 uppercase italic">
+              {t("About.title")}
+            </h2>
+            
+            <div className="space-y-6 text-gray-600 leading-relaxed text-base text-justify">
+              <p>{t("About.p1")}</p>
+              <img 
+                src="/portfolio/Sobre_mi/03_Grasshopper_chair.webp" 
+                alt={t("About.images.parametric")}
+                className="w-full h-auto object-cover rounded shadow-sm"
+              />
+              
+              <p>{t("About.p2")}</p>
+              <img 
+                src="/portfolio/Sobre_mi/02_Despiece.webp" 
+                alt={t("About.images.pieces")}
+                className="w-full h-auto object-cover rounded shadow-sm"
+              />
+              
+              <p>{t("About.p3")}</p>
+              <img 
+                src="/portfolio/Sobre_mi/04_N8N.webp" 
+                alt={t("About.images.automation")}
+                className="w-full h-auto object-cover rounded shadow-sm"
+              />
+              
+              <p>{t("About.p4")}</p>
+              <img 
+                src="/portfolio/Sobre_mi/05_CNC.webp" 
+                alt={t("About.images.cnc")}
+                className="w-full h-auto object-cover rounded shadow-sm"
+              />
+            </div>
+          </div>
+
+          {/* Desktop Version: Two Column Layout */}
+          <div className="hidden md:grid grid-cols-2 gap-12 md:gap-20 items-start">
             <div className="relative space-y-4">
               <div className="grid grid-cols-1 gap-4">
-                <img
-                  alt={t("About.images.pieces")}
-                  className="w-full h-auto object-cover rounded shadow-sm transition-all duration-700 hover:scale-[1.02]"
-                  src="/portfolio/Sobre_mi/02_Despiece.webp"
-                />
                 <img
                   alt={t("About.images.parametric")}
                   className="w-full h-auto object-cover rounded shadow-sm transition-all duration-700 hover:scale-[1.02]"
                   src="/portfolio/Sobre_mi/03_Grasshopper_chair.webp"
+                />
+                <img
+                  alt={t("About.images.pieces")}
+                  className="w-full h-auto object-cover rounded shadow-sm transition-all duration-700 hover:scale-[1.02]"
+                  src="/portfolio/Sobre_mi/02_Despiece.webp"
                 />
                 <img
                   alt={t("About.images.automation")}

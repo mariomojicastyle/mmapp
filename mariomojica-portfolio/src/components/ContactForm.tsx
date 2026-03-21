@@ -201,7 +201,6 @@ export default function ContactForm() {
                                 disabled={status === "loading"}
                                 value={formData.pais}
                                 onChange={handleChange}
-                                placeholder={tForm("country_placeholder")}
                                 className="w-full bg-[#FDFCF8] border-[0.5px] border-gray-200 p-4 text-gray-900 focus:outline-none focus:border-[#0088AA] transition-colors disabled:opacity-50"
                             />
                         </div>

@@ -2,7 +2,7 @@
   "Header": {
     "portfolio": "Portafolio",
     "about": "Sobre mí",
-    "contact": "Contacto"
+    "contact": "SOLICITAR DEMOSTRACIÓN"
   },
   "Index": {
     "Portfolio": {
@@ -46,7 +46,7 @@
       "email": "Correo electrónico comercial",
       "company": "Nombre de empresa",
       "country": "País / Región",
-      "country_placeholder": "Por favor seleccione/escriba",
+      "country_placeholder": "",
       "phone": "Teléfono directo",
       "role_label": "¿Qué describe mejor tu rol?",
       "role_select": "Por favor seleccione",
@@ -68,7 +68,14 @@
         "Como jefe de diseño en una pequeña pero innovadora fábrica de muebles, desarrollé líneas de lujo con materiales de alto valor percibido.",
         "Aprendí a trabajar con vidrio de 19mm, aluminio fundido, acero inoxidable y carpintería metálica, fusionando estética técnica con acabados premium.",
         "Esta etapa marcó el inicio de mi trayectoria profesional, enfrentando el reto de liderar el diseño en una estructura de producción artesanal-industrial."
-      ]
+      ],
+      "imageTitles": {
+        "Escritorio_en_L_Elite_150": "ESCRITORIO EN L ELITE 150",
+        "Escritorio_en_L_Elite_madera_180": "ESCRITORIO EN L ELITE MADERA 180",
+        "Escritorio_en_U_Elite_250": "ESCRITORIO EN U ELITE 250",
+        "Mesa_de_juntas_Elite_200": "MESA DE JUNTAS ELITE 200",
+        "Mesa_de_juntas_ovalada_Elite_200": "MESA DE JUNTAS OVALADA ELITE 200"
+      }
     },
     "demario": {
       "title": "Demario - Emprendimiento y Diseño",
@@ -76,7 +83,20 @@
         "Mi primera incursión como emprendedor, creando líneas de muebles para oficina de alta gama (Bubble, Prisma, Royal y Verona).",
         "Encargado de todo el ciclo: desde el diseño y desarrollo web hasta la producción manual en talleres de metalmecánica.",
         "Participé en la Red Latinoamericana de Diseño en Corferias, entendiendo la complejidad financiera y operativa de un negocio propio."
-      ]
+      ],
+      "imageTitles": {
+        "Linea_Bubble_Sala_35": "LÍNEA BUBBLE SALA 35",
+        "Linea_Prisma_Escritorio_Sencillo_150": "LÍNEA PRISMA ESCRITORIO SENCILLO 150",
+        "Linea_Prisma_Estacion_de_Trabajo_300": "LÍNEA PRISMA ESTACIÓN DE TRABAJO 300",
+        "Linea_Royal_x3": "LÍNEA ROYAL X3",
+        "Linea_Royal_x4": "LÍNEA ROYAL X4",
+        "Linea_Verona_Estacion_Cowork_3": "LÍNEA VERONA ESTACIÓN COWORK",
+        "Linea_Verona_Mesa_120": "LÍNEA VERONA MESA 120",
+        "Linea_Verona_Mesa_de_juntas_160": "LÍNEA VERONA MESA DE JUNTAS 160",
+        "Linea_Verona_Mesa_de_juntas_200": "LÍNEA VERONA MESA DE JUNTAS 200",
+        "Linea_Verona_Recepcion_Verona_180": "LÍNEA VERONA RECEPCIÓN 180",
+        "Linea_Verona_Recepcion_Verona_260": "LÍNEA VERONA RECEPCIÓN 260"
+      }
     },
     "corferias": {
       "title": "Participación Corferias - Red de Diseño",
@@ -84,7 +104,11 @@
         "Exposición de diseños originales en uno de los escenarios más importantes de Colombia.",
         "Validación de propuestas estéticas frente a un público masivo y profesional del sector diseño.",
         "Consolidación de la red de contactos en el ecosistema de diseño latinoamericano."
-      ]
+      ],
+      "imageTitles": {
+        "Feria_01": "PROTOTIPO MESA VERONA 120",
+        "Feria_02": "PARTICIPACIÓN STAND EN CORFERIAS"
+      }
     },
     "renderizador": {
       "title": "Visualización Arquitectónica 3D",
@@ -92,7 +116,19 @@
         "Especialización en renderizado de alta fidelidad utilizando 3ds Max para proyectos arquitectónicos.",
         "Perfeccionamiento de habilidades de iluminación, texturizado y composición digital.",
         "Transición hacia una mentalidad de 'Producto Digital', entendiendo el poder de la visualización para la venta de ideas."
-      ]
+      ],
+      "imageTitles": {
+        "Antigua_Contemporanea_Interiorismo": "ANTIGUA CONTEMPORÁNEA INTERIORISMO",
+        "Centro_Comercial_Megacentro_Calimio": "CENTRO COMERCIAL MEGACENTRO CALIMIO",
+        "Chalet_Dapa_Habitacion": "CHALET DAPA HABITACIÓN",
+        "Chalet_Dapa_Mesaninie": "CHALET DAPA MEZZANINE",
+        "Chalet_Dapa_Sala_y_Cocina": "CHALET DAPA SALA Y COCINA",
+        "Promedico": "PROMEDICO",
+        "Promedico_Gerencia": "PROMEDICO GERENCIA",
+        "Promedico_Remodelacion_Fachada": "PROMEDICO REMODELACIÓN FACHADA",
+        "Promedico_gimnasio": "PROMEDICO GIMNASIO",
+        "Promedico_sala_de_espera": "PROMEDICO SALA DE ESPERA"
+      }
     },
     "maderkit": {
       "title": "Maderkit - Jefe de Diseño y Producto Digital",
@@ -100,7 +136,43 @@
         "Liderazgo en el diseño de mobiliario RTA de venta masiva en Homecenter, Jamar y Alkosto, con más de 3 millones de unidades vendidas.",
         "Creador del sistema de muebles extensibles 'Space' (patentado) y líder de la transformación digital hacia Manufactura 4.0.",
         "Evolución de Jefe de Diseño a Jefe de Productos Digitales, implementando Realidad Aumentada e Inteligencia Artificial en procesos industriales."
-      ]
+      ],
+      "imageTitles": {
+        "Armario_Atlas": "ARMARIO ATLAS",
+        "Armario_Bari": "ARMARIO BARI",
+        "Armario_Burdeos": "ARMARIO BURDEOS",
+        "Armario_Burdeos_": "ARMARIO BURDEOS",
+        "Armario_Busdeos_230": "ARMARIO BURDEOS 230",
+        "Armario_Florencia": "ARMARIO FLORENCIA",
+        "Armario_Murano": "ARMARIO MURANO",
+        "Armario_Porto": "ARMARIO PORTO",
+        "Armario_Porto_": "ARMARIO PORTO",
+        "Armario_Porto_r": "ARMARIO PORTO",
+        "Armario_Porto_r_": "ARMARIO PORTO",
+        "Armario_Sorrento": "ARMARIO SORRENTO",
+        "Armario_Turin": "ARMARIO TURIN",
+        "Armario_Turin_": "ARMARIO TURIN",
+        "Escritorio_Gamer_dia": "ESCRITORIO GAMER DÍA",
+        "Escritorio_Gamer_noche": "ESCRITORIO GAMER NOCHE",
+        "Cama_Abatible_Alcala": "CAMA ABATIBLE ALCALÁ",
+        "Cama_Abatible_Alcala_": "CAMA ABATIBLE ALCALÁ",
+        "Camarote_multifuncional": "CAMAROTE MULTIFUNCIONAL",
+        "Camarote_multifuncional_": "CAMAROTE MULTIFUNCIONAL",
+        "Cuna_Magica_01": "CUNA MÁGICA CONFIGURACIÓN RECIÉN NACIDO",
+        "Cuna_Magica_02": "CUNA MÁGICA CONFIGURACIÓN HASTA LOS 2 AÑOS",
+        "Cuna_Magica_03": "CUNA MÁGICA CONFIGURACIÓN HASTA LOS 2 AÑOS GIRADA",
+        "Cuna_Magica_04": "CUNA MÁGICA CONFIGURACIÓN INFANTE A ADOLESCENTE NIÑO",
+        "Cuna_Magica_05": "CUNA MÁGICA CONFIGURACIÓN INFANTE",
+        "Cuna_Magica_06": "CUNA MÁGICA CONFIGURACIÓN ADOLESCENTE NIÑA",
+        "M01170MF-DUBL_2_Cama_Nido_Multifuncional": "CAMA NIDO MULTIFUNCIONAL CERRADA",
+        "M01170MF-DUBL_3_Cama_Nido_Multifuncional": "CAMA NIDO MULTIFUNCIONAL ABIERTA",
+        "3_Coleccion Space": "COLECCIÓN SPACE",
+        "3_Coleccion Space_": "COLECCIÓN SPACE",
+        "Biblioteca-Escritorio-Extensible-Space": "BIBLIOTECA ESCRITORIO EXTENSIBLE SPACE",
+        "Escritorio_Multi_Dimensional_1": "ESCRITORIO MULTIDIMENSIONAL COMPACTO",
+        "Escritorio_Multi_Dimensional_2": "ESCRITORIO MULTIDIMENSIONAL EN L",
+        "Escritorio_Multi_Dimensional_3": "ESCRITORIO MULTIDIMENSIONAL RECTO EXTENDIDO"
+      }
     },
     "mario-mojica": {
       "title": "Mario Mojica - Transformación Digital",
@@ -108,7 +180,20 @@
         "Fundación de mi propia marca enfocada en acompañar a empresas en la adopción de IA, metodologías BIM y automatización de marketing.",
         "Desarrollo de la Silla Guadua como validación de diseño paramétrico, manufactura avanzada y estética contemporánea.",
         "Creación de una plataforma web propia como vitrina de experiencias digitales y herramientas de innovación."
-      ]
+      ],
+      "imageTitles": {
+        "Silla_3D_Print_01": "SILLA 3D PRINT",
+        "Silla_3D_Print_02": "SILLA 3D PRINT - ALGORITMO RESOLUCIÓN DE LA MALLA POLIGONAL",
+        "Silla_3D_Print_03": "SILLA 3D PRINT - ALGORITMO SELECTOR DE TEXTURA",
+        "Silla_3D_Print_04": "SILLA 3D PRINT - ALGORITMO PERSONALIZACIÓN DE LA FORMA",
+        "Silla_3D_Print_05": "SILLA 3D PRINT - IMPRESIÓN EN GRAN FORMATO",
+        "Silla_3D_Print_06": "SILLA 3D PRINT - DETALLE BOQUILLA 6MM",
+        "Silla_3D_Print_08": "SILLA 3D PRINT - VARIACIÓN DE COLORES",
+        "Silla_3D_Print_09": "SILLA 3D PRINT - INFINITAS POSIBILIDADES",
+        "Silla_Guadua_01": "SILLA GUADUA - PARAMETRIZADA EN GRASSHOPPER",
+        "Silla_Guadua_03": "SILLA GUADUA - DETALLE ESTRUCTURA EN ALUMINIO FUNDIDO",
+        "Silla_Guadua_04": "SILLA GUADUA"
+      }
     }
   },
   "Roles": [

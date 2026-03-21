@@ -11,7 +11,7 @@ export const projects = [
         mainImage: "/portfolio/2006_2008_Alec/Mesa_de_juntas_Elite_200.webp",
         images: [
             "/portfolio/2006_2008_Alec/Escritorio_en_L_Elite_150.webp",
-            "/portfolio/2006_2008_Alec/Escritorio_en_L_Elite_marera_180.webp",
+            "/portfolio/2006_2008_Alec/Escritorio_en_L_Elite_madera_180.webp",
             "/portfolio/2006_2008_Alec/Escritorio_en_U_Elite_250.webp",
             "/portfolio/2006_2008_Alec/Mesa_de_juntas_Elite_200.webp",
             "/portfolio/2006_2008_Alec/Mesa_de_juntas_ovalada_Elite_200.webp"
@@ -52,8 +52,8 @@ export const projects = [
         ],
         mainImage: "/portfolio/2009_Participacion_Corferias_Red_de_diseño_latinoamericano/Feria_02.webp",
         images: [
-            "/portfolio/2009_Participacion_Corferias_Red_de_diseño_latinoamericano/Feria_01.webp",
-            "/portfolio/2009_Participacion_Corferias_Red_de_diseño_latinoamericano/Feria_02.webp"
+            { src: "/portfolio/2009_Participacion_Corferias_Red_de_diseño_latinoamericano/Feria_01.webp", title: "PROTOTIPO MESA VERONA 120" },
+            { src: "/portfolio/2009_Participacion_Corferias_Red_de_diseño_latinoamericano/Feria_02.webp", title: "PARTICIPACIÓN STAND EN CORFERIAS" }
         ]
     },
     {
@@ -111,8 +111,8 @@ export const projects = [
             "/portfolio/2011_2025_Maderkit/Multifuncionales/Cuna_Magica_01.webp",
             "/portfolio/2011_2025_Maderkit/Multifuncionales/Cuna_Magica_02.webp",
             "/portfolio/2011_2025_Maderkit/Multifuncionales/Cuna_Magica_03.webp",
-            "/portfolio/2011_2025_Maderkit/Multifuncionales/Cuna_Magica_04.webp",
             "/portfolio/2011_2025_Maderkit/Multifuncionales/Cuna_Magica_05.webp",
+            "/portfolio/2011_2025_Maderkit/Multifuncionales/Cuna_Magica_04.webp",
             "/portfolio/2011_2025_Maderkit/Multifuncionales/Cuna_Magica_06.webp",
             "/portfolio/2011_2025_Maderkit/Multifuncionales/M01170MF-DUBL_2_Cama_Nido_Multifuncional.webp",
             "/portfolio/2011_2025_Maderkit/Multifuncionales/M01170MF-DUBL_3_Cama_Nido_Multifuncional.webp",
@@ -143,16 +143,11 @@ export const projects = [
             "/portfolio/2026_Mario_Mojica/Silla_Grasshopper/Silla_3D_Print_04.webp",
             "/portfolio/2026_Mario_Mojica/Silla_Grasshopper/Silla_3D_Print_05.webp",
             "/portfolio/2026_Mario_Mojica/Silla_Grasshopper/Silla_3D_Print_06.webp",
-            "/portfolio/2026_Mario_Mojica/Silla_Grasshopper/Silla_3D_Print_07.webp",
             "/portfolio/2026_Mario_Mojica/Silla_Grasshopper/Silla_3D_Print_08.webp",
             "/portfolio/2026_Mario_Mojica/Silla_Grasshopper/Silla_3D_Print_09.webp",
-            "/portfolio/2026_Mario_Mojica/Silla_Grasshopper/Silla_3D_Print_10.webp",
             "/portfolio/2026_Mario_Mojica/Silla_Guadua/Silla_Guadua_01.webp",
-            "/portfolio/2026_Mario_Mojica/Silla_Guadua/Silla_Guadua_02.webp",
             "/portfolio/2026_Mario_Mojica/Silla_Guadua/Silla_Guadua_03.webp",
-            "/portfolio/2026_Mario_Mojica/Silla_Guadua/Silla_Guadua_04.webp",
-            "/portfolio/2026_Mario_Mojica/Silla_Guadua/Silla_Guadua_05.webp",
-            "/portfolio/2026_Mario_Mojica/Silla_Guadua/Silla_Guadua_06.webp"
+            "/portfolio/2026_Mario_Mojica/Silla_Guadua/Silla_Guadua_04.webp"
         ]
     }
 ];

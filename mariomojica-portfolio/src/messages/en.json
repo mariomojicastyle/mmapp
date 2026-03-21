@@ -2,7 +2,7 @@
   "Header": {
     "portfolio": "Portfolio",
     "about": "About me",
-    "contact": "Contact"
+    "contact": "REQUEST DEMO"
   },
   "Index": {
     "Portfolio": {
@@ -46,7 +46,7 @@
       "email": "Business Email",
       "company": "Company Name",
       "country": "Country / Region",
-      "country_placeholder": "Please select/type",
+      "country_placeholder": "",
       "phone": "Direct Phone",
       "role_label": "What best describes your role?",
       "role_select": "Please select",
@@ -68,7 +68,14 @@
         "As Design Manager in a small but innovative furniture factory, I developed luxury lines using high-perceived-value materials.",
         "I learned to work with 19mm glass, cast aluminum, stainless steel, and metalwork, merging technical aesthetics with premium finishes.",
         "This stage marked the beginning of my professional career, facing the challenge of leading design within an artisanal-industrial production structure."
-      ]
+      ],
+      "imageTitles": {
+        "Escritorio_en_L_Elite_150": "ELITE L-SHAPED DESK 150",
+        "Escritorio_en_L_Elite_madera_180": "ELITE WOOD L-SHAPED DESK 180",
+        "Escritorio_en_U_Elite_250": "ELITE U-SHAPED DESK 250",
+        "Mesa_de_juntas_Elite_200": "ELITE MEETING TABLE 200",
+        "Mesa_de_juntas_ovalada_Elite_200": "ELITE OVAL MEETING TABLE 200"
+      }
     },
     "demario": {
       "title": "Demario - Entrepreneurship and Design",
@@ -76,7 +83,20 @@
         "My first foray as an entrepreneur, creating high-end office furniture lines (Bubble, Prisma, Royal, and Verona).",
         "Responsible for the entire cycle: from design and web development to manual production in metalworking workshops.",
         "Participated in the Latin American Design Network at Corferias, understanding the financial and operational complexity of owning a business."
-      ]
+      ],
+      "imageTitles": {
+        "Linea_Bubble_Sala_35": "BUBBLE LINE LOUNGE 35",
+        "Linea_Prisma_Escritorio_Sencillo_150": "PRISMA LINE SINGLE DESK 150",
+        "Linea_Prisma_Estacion_de_Trabajo_300": "PRISMA LINE WORKSTATION 300",
+        "Linea_Royal_x3": "ROYAL LINE X3",
+        "Linea_Royal_x4": "ROYAL LINE X4",
+        "Linea_Verona_Estacion_Cowork_3": "VERONA LINE COWORK STATION",
+        "Linea_Verona_Mesa_120": "VERONA LINE TABLE 120",
+        "Linea_Verona_Mesa_de_juntas_160": "VERONA LINE MEETING TABLE 160",
+        "Linea_Verona_Mesa_de_juntas_200": "VERONA LINE MEETING TABLE 200",
+        "Linea_Verona_Recepcion_Verona_180": "VERONA LINE RECEPTION 180",
+        "Linea_Verona_Recepcion_Verona_260": "VERONA LINE RECEPTION 260"
+      }
     },
     "corferias": {
       "title": "Corferias Participation - Design Network",
@@ -84,7 +104,11 @@
         "Exhibition of original designs in one of the most important venues in Colombia.",
         "Validation of aesthetic proposals before a massive and professional audience in the design sector.",
         "Consolidation of a contact network within the Latin American design ecosystem."
-      ]
+      ],
+      "imageTitles": {
+        "Feria_01": "VERONA 120 TABLE PROTOTYPE",
+        "Feria_02": "CORFERIAS STAND PARTICIPATION"
+      }
     },
     "renderizador": {
       "title": "3D Architectural Visualization",
@@ -92,7 +116,19 @@
         "Specialized in high-fidelity rendering using 3ds Max for architectural projects.",
         "Perfected skills in lighting, texturing, and digital composition.",
         "Transitioned towards a 'Digital Product' mindset, understanding the power of visualization for selling ideas."
-      ]
+      ],
+      "imageTitles": {
+        "Antigua_Contemporanea_Interiorismo": "ANTIGUA CONTEMPORÁNEA INTERIOR DESIGN",
+        "Centro_Comercial_Megacentro_Calimio": "MEGACENTRO CALIMIO SHOPPING CENTER",
+        "Chalet_Dapa_Habitacion": "DAPA CHALET BEDROOM",
+        "Chalet_Dapa_Mesaninie": "DAPA CHALET MEZZANINE",
+        "Chalet_Dapa_Sala_y_Cocina": "DAPA CHALET LIVING & KITCHEN",
+        "Promedico": "PROMEDICO",
+        "Promedico_Gerencia": "PROMEDICO MANAGEMENT",
+        "Promedico_Remodelacion_Fachada": "PROMEDICO FACADE RENOVATION",
+        "Promedico_gimnasio": "PROMEDICO GYM",
+        "Promedico_sala_de_espera": "PROMEDICO WAITING ROOM"
+      }
     },
     "maderkit": {
       "title": "Maderkit - Design Manager and Digital Product Lead",
@@ -100,7 +136,43 @@
         "Leadership in designing mass-market RTA furniture for Homecenter, Jamar, and Alkosto, with over 3 million units sold.",
         "Creator of the patented 'Space' extensible furniture system and leader of the digital transformation toward Manufacturing 4.0.",
         "Evolved from Head of Design to Head of Digital Products, implementing Augmented Reality and Artificial Intelligence in industrial processes."
-      ]
+      ],
+      "imageTitles": {
+        "Armario_Atlas": "ATLAS WARDROBE",
+        "Armario_Bari": "BARI WARDROBE",
+        "Armario_Burdeos": "BURDEOS WARDROBE",
+        "Armario_Burdeos_": "BURDEOS WARDROBE",
+        "Armario_Busdeos_230": "BURDEOS 230 WARDROBE",
+        "Armario_Florencia": "FLORENCIA WARDROBE",
+        "Armario_Murano": "MURANO WARDROBE",
+        "Armario_Porto": "PORTO WARDROBE",
+        "Armario_Porto_": "PORTO WARDROBE",
+        "Armario_Porto_r": "PORTO WARDROBE",
+        "Armario_Porto_r_": "PORTO WARDROBE",
+        "Armario_Sorrento": "SORRENTO WARDROBE",
+        "Armario_Turin": "TURIN WARDROBE",
+        "Armario_Turin_": "TURIN WARDROBE",
+        "Escritorio_Gamer_dia": "GAMER DESK (DAY)",
+        "Escritorio_Gamer_noche": "GAMER DESK (NIGHT)",
+        "Cama_Abatible_Alcala": "ALCALÁ WALL BED",
+        "Cama_Abatible_Alcala_": "ALCALÁ WALL BED",
+        "Camarote_multifuncional": "MULTIFUNCTIONAL BUNK BED",
+        "Camarote_multifuncional_": "MULTIFUNCTIONAL BUNK BED",
+        "Cuna_Magica_01": "CUNA MÁGICA NEWBORN CONFIGURATION",
+        "Cuna_Magica_02": "CUNA MÁGICA UP TO 2 YEARS CONFIGURATION",
+        "Cuna_Magica_03": "CUNA MÁGICA ROTATED UP TO 2 YEARS CONFIGURATION",
+        "Cuna_Magica_04": "CUNA MÁGICA CHILD TO ADOLESCENT (BOY) CONFIGURATION",
+        "Cuna_Magica_05": "CUNA MÁGICA CHILD CONFIGURATION",
+        "Cuna_Magica_06": "CUNA MÁGICA ADOLESCENT (GIRL) CONFIGURATION",
+        "M01170MF-DUBL_2_Cama_Nido_Multifuncional": "CLOSED MULTIFUNCTIONAL TRUNDLE BED",
+        "M01170MF-DUBL_3_Cama_Nido_Multifuncional": "OPEN MULTIFUNCTIONAL TRUNDLE BED",
+        "3_Coleccion Space": "SPACE COLLECTION",
+        "3_Coleccion Space_": "SPACE COLLECTION",
+        "Biblioteca-Escritorio-Extensible-Space": "SPACE EXTENDIBLE LIBRARY DESK",
+        "Escritorio_Multi_Dimensional_1": "COMPACT MULTIDIMENSIONAL DESK",
+        "Escritorio_Multi_Dimensional_2": "L-SHAPED MULTIDIMENSIONAL DESK",
+        "Escritorio_Multi_Dimensional_3": "EXTENDED STRAIGHT MULTIDIMENSIONAL DESK"
+      }
     },
     "mario-mojica": {
       "title": "Mario Mojica - Digital Transformation",
@@ -108,7 +180,20 @@
         "Founded my own brand focused on accompanying companies in the adoption of AI, BIM methodologies, and marketing automation.",
         "Development of the Guadua Chair as a validation of parametric design, advanced manufacturing, and contemporary aesthetics.",
         "Creation of own web platform as a showcase for digital experiences and innovation tools."
-      ]
+      ],
+      "imageTitles": {
+        "Silla_3D_Print_01": "3D PRINTED CHAIR",
+        "Silla_3D_Print_02": "3D PRINTED CHAIR - POLYGON MESH RESOLUTION ALGORITHM",
+        "Silla_3D_Print_03": "3D PRINTED CHAIR - TEXTURE SELECTOR ALGORITHM",
+        "Silla_3D_Print_04": "3D PRINTED CHAIR - SHAPE CUSTOMIZATION ALGORITHM",
+        "Silla_3D_Print_05": "3D PRINTED CHAIR - LARGE SCALE PRINTING",
+        "Silla_3D_Print_06": "3D PRINTED CHAIR - 6MM NOZZLE DETAIL",
+        "Silla_3D_Print_08": "3D PRINTED CHAIR - COLOR VARIATIONS",
+        "Silla_3D_Print_09": "3D PRINTED CHAIR - INFINITE POSSIBILITIES",
+        "Silla_Guadua_01": "GUADUA CHAIR - PARAMETRIZED IN GRASSHOPPER",
+        "Silla_Guadua_03": "GUADUA CHAIR - CAST ALUMINUM STRUCTURE DETAIL",
+        "Silla_Guadua_04": "GUADUA CHAIR"
+      }
     }
   },
   "Roles": [
