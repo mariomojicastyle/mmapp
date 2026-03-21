@@ -35,26 +35,28 @@ export default function ContactForm() {
         setStatus("loading");
 
         try {
-            const webhookUrl = process.env.NEXT_PUBLIC_N8N_WEBHOOK_URL;
+            // Usar variable de entorno o URL de respaldo si no está configurada en la nube
+            const webhookUrl = process.env.NEXT_PUBLIC_N8N_WEBHOOK_URL || "https://n8n.mariomojica.com/webhook/leads-v3";
             
-            if (!webhookUrl) {
-                throw new Error("Webhook URL not configured");
-            }
+            console.log("Iniciando envío a:", webhookUrl);
 
             const response = await fetch(webhookUrl, {
                 method: "POST",
+                mode: "cors", // Asegurar CORS para comunicación entre dominios
                 headers: {
                     "Content-Type": "application/json",
                 },
                 body: JSON.stringify({
                     ...formData,
                     fecha: new Date().toISOString(),
-                    origen: "Portafolio Web"
+                    origen: "Portafolio Web (Producción Mobile)"
                 }),
             });
 
             if (!response.ok) {
-                throw new Error("Failed to submit");
+                const errorData = await response.text();
+                console.error("Respuesta de error de n8n:", errorData);
+                throw new Error(`Error en el servidor: ${response.status}`);
             }
 
             setStatus("success");
