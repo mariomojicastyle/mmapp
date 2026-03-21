@@ -278,11 +278,11 @@ export default function ContactForm() {
                         />
                     </div>
 
-                    <div className="pt-8 text-center">
+                    <div className="pt-8 text-center relative z-20">
                         <button
                             type="submit"
                             disabled={status === "loading"}
-                            className="inline-block bg-[#0088AA] text-white py-4 px-14 font-black text-lg uppercase tracking-widest hover:bg-opacity-90 transition-all shadow-xl shadow-teal-900/10 rounded-full cursor-pointer disabled:bg-gray-400 disabled:cursor-not-allowed"
+                            className="inline-block bg-[#0088AA] text-white py-4 px-14 font-black text-lg uppercase tracking-widest hover:bg-opacity-90 active:scale-95 transition-all shadow-xl shadow-teal-900/10 rounded-full cursor-pointer disabled:bg-gray-400 disabled:cursor-not-allowed relative z-30"
                         >
                             {status === "loading" ? tForm("loading") : tForm("submit")}
                         </button>

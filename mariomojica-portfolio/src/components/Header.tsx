@@ -31,13 +31,26 @@ export default function Header() {
                     }`}
             >
                 <div className="container mx-auto px-6 flex items-center justify-between relative h-10">
-                    {/* Navigation - Hidden on mobile */}
-                    <nav className="hidden lg:flex gap-8 text-[11px] font-black uppercase tracking-[0.2em]">
-                        <Link className="hover:opacity-60 transition-all" href="/#portfolio">{t("portfolio")}</Link>
-                        <Link className="hover:opacity-60 transition-all" href="/#about">{t("about")}</Link>
-                        <Link className="hover:opacity-60 transition-all" href="/#contact">{t("contact")}</Link>
-                    </nav>
+                    {/* Left side: Hamburger on Mobile, Nav on Desktop */}
+                    <div className="flex items-center">
+                        <button 
+                            onClick={() => setIsMenuOpen(!isMenuOpen)}
+                            className="lg:hidden flex items-center hover:opacity-60 transition-all z-[70]"
+                        >
+                            <span className={`material-symbols-outlined !text-3xl ${isScrolled || isMenuOpen ? "text-gray-900" : "text-white"}`}>
+                                {isMenuOpen ? 'close' : 'menu'}
+                            </span>
+                        </button>
 
+                        {/* Navigation - Hidden on mobile */}
+                        <nav className="hidden lg:flex gap-8 text-[11px] font-black uppercase tracking-[0.2em]">
+                            <Link className="hover:opacity-60 transition-all" href="/#portfolio">{t("portfolio")}</Link>
+                            <Link className="hover:opacity-60 transition-all" href="/#about">{t("about")}</Link>
+                            <Link className="hover:opacity-60 transition-all" href="/#contact">{t("contact")}</Link>
+                        </nav>
+                    </div>
+
+                    {/* Brand / Logo - Centered */}
                     <div className="absolute left-1/2 -translate-x-1/2">
                         <Link
                             className="transition-all duration-500 block"
@@ -53,35 +66,23 @@ export default function Header() {
                         </Link>
                     </div>
 
-                    {/* Right side stuff */}
-                    <div className="flex items-center gap-6">
-                        <div className="flex items-center gap-1 text-[10px] font-bold">
-                            <Link 
-                                href={pathname} 
-                                locale="es" 
-                                className={`transition-opacity ${locale === 'es' ? (isScrolled || isMenuOpen ? "text-gray-900" : "text-white") : "opacity-40 hover:opacity-100"}`}
-                            >
-                                ES
-                            </Link>
-                            <span className="opacity-20">/</span>
-                            <Link 
-                                href={pathname} 
-                                locale="en" 
-                                className={`transition-opacity ${locale === 'en' ? (isScrolled || isMenuOpen ? "text-gray-900" : "text-white") : "opacity-40 hover:opacity-100"}`}
-                            >
-                                EN
-                            </Link>
-                        </div>
-
-                        {/* Hamburger Button - Only visible on mobile */}
-                        <button 
-                            onClick={() => setIsMenuOpen(!isMenuOpen)}
-                            className="lg:hidden flex items-center hover:opacity-60 transition-all z-[70]"
+                    {/* Right side: Language Selector */}
+                    <div className="flex items-center gap-1 text-[10px] font-bold">
+                        <Link 
+                            href={pathname} 
+                            locale="es" 
+                            className={`transition-opacity ${locale === 'es' ? (isScrolled || isMenuOpen ? "text-gray-900" : "text-white") : "opacity-40 hover:opacity-100"}`}
                         >
-                            <span className={`material-symbols-outlined !text-3xl ${isScrolled || isMenuOpen ? "text-gray-900" : "text-white"}`}>
-                                {isMenuOpen ? 'close' : 'menu'}
-                            </span>
-                        </button>
+                            ES
+                        </Link>
+                        <span className="opacity-20">/</span>
+                        <Link 
+                            href={pathname} 
+                            locale="en" 
+                            className={`transition-opacity ${locale === 'en' ? (isScrolled || isMenuOpen ? "text-gray-900" : "text-white") : "opacity-40 hover:opacity-100"}`}
+                        >
+                            EN
+                        </Link>
                     </div>
                 </div>
             </header>
