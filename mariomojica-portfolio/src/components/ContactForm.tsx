@@ -13,6 +13,7 @@ export default function ContactForm() {
     const interests = tRoot.raw("Interests");
     
     const [status, setStatus] = useState<FormStatus>("idle");
+    const [submittedName, setSubmittedName] = useState("");
     const [formData, setFormData] = useState({
         nombre: "",
         apellido: "",
@@ -59,6 +60,7 @@ export default function ContactForm() {
                 throw new Error(`Error en el servidor: ${response.status}`);
             }
 
+            setSubmittedName(formData.nombre);
             setStatus("success");
             // Reset form on success
             setFormData({
@@ -92,7 +94,7 @@ export default function ContactForm() {
                             {t("Contact.success_h2")}
                         </h2>
                         <p className="text-gray-600 text-lg mb-8">
-                            {t("Contact.success_p")}
+                            {t("Contact.success_p", { name: submittedName })}
                         </p>
                         <button 
                             onClick={() => setStatus("idle")}

@@ -36,7 +36,7 @@
       "title": "¿Tienes un proyecto en mente?",
       "subtitle": "Completa este formulario para recibir una asesoría personalizada sobre cómo la IA y las automatizaciones pueden escalar tu negocio.",
       "success_h2": "¡Mensaje recibido!",
-      "success_p": "Gracias por tu interés, Mario. He recibido tus datos y te contactaré en breve por WhatsApp para agendar nuestra demostración.",
+      "success_p": "Gracias por tu interés, {name}. He recibido tus datos y te contactaré en breve por WhatsApp para agendar nuestra demostración.",
       "success_btn": "Enviar otro mensaje",
       "error_p": "Lo siento, hubo un problema al enviar tus datos. Por favor, intenta de nuevo o contáctame directamente."
     },

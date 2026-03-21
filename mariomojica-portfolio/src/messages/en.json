@@ -36,7 +36,7 @@
       "title": "Have a project in mind?",
       "subtitle": "Complete this form to receive personalized advice on how AI and automation can scale your business.",
       "success_h2": "Message received!",
-      "success_p": "Thanks for your interest, Mario. I have received your details and will contact you shortly via WhatsApp to schedule our demo.",
+      "success_p": "Thanks for your interest, {name}. I have received your details and will contact you shortly via WhatsApp to schedule our demo.",
       "success_btn": "Send another message",
       "error_p": "I'm sorry, there was a problem sending your data. Please try again or contact me directly."
     },
