@@ -7,10 +7,12 @@ Conectar la landing page (`mariomojica.com`) a un sistema completo de captura y 
 1. **Frontend:** Next.js (mariomojica.com) -> Envía datos por POST.
 2. **Automatización:** n8n (`n8n_app` en VPS) -> Recibe Webhook, envía email de notificación y registra datos.
 3. **Database:** Baserow (`baserow_app` en VPS) -> Almacena la data del prospecto.
+4. **AI Layer (Antigravity):** Integración bi-direccional vía MCP (Model Context Protocol) para gestión autónoma de n8n.
 
 ## 🔗 Enlaces de Servicio
 * **Baserow:** [https://baserow.mariomojica.com/database/144/table/600/2509](https://baserow.mariomojica.com/database/144/table/600/2509)
 * **n8n:** [https://n8n.mariomojica.com/workflow/YzQv4LZDAzUGcgGR](https://n8n.mariomojica.com/workflow/YzQv4LZDAzUGcgGR)
+* **LinkedIn Engine:** [https://n8n.mariomojica.com/workflow/ytXCgHgrXf7kM5YD](https://n8n.mariomojica.com/workflow/ytXCgHgrXf7kM5YD)
 
 
 ## 📌 Progreso Actual
@@ -18,32 +20,46 @@ Conectar la landing page (`mariomojica.com`) a un sistema completo de captura y 
 * [x] Tabla de leads en Baserow optimizada y funcional.
 * [x] Flujo de n8n estabilizado en VPS (Modo Activo / Background).
 * [x] **[OPTIMIZADO]** WhatsApp Cloud API: Notificaciones inmediatas con todos los datos.
-    * *Nota:* Token permanente configurado y número verificado en Meta Business Suite.
+* [x] **[NUEVO] n8n-MCP Integration:** Capacidad de la IA para crear/editar flujos de n8n en el VPS.
+* [x] **[NUEVO] n8n-Skills Library:** Biblioteca de +7 habilidades expertas para automatización robusta.
 * [x] Identidad Profesional: Correo `direccion@mariomojica.com` configurado y testeado.
-* [x] Instalación de `next-intl` y configuración de rutas.
-* [x] Creación de diccionario maestro `es.json` y esclavo `en.json`.
-* [x] Adaptación de componentes `Header` y `ContactForm` para bilingüismo.
-* [x] Corrección de navegación interna (Deep Linking) para portafolio bilingüe.
-* [x] Configuración de Middleware para redirección automática por idioma.
-* [x] Creación de Script de Sincronización i18n Master Sync.
+* [x] Instalación de `next-intl` y configuración de rutas (ES/EN).
+* [x] **[NUEVO] LinkedIn Content Engine:** Workflow de 12 nodos desplegado en n8n (ID: `ytXCgHgrXf7kM5YD`).
+* [x] **[NUEVO] SEO Completo:** Meta tags dinámicos (ES/EN), Open Graph, Twitter Cards, JSON-LD (Person + WebSite), sitemap, canonical + hreflang.
+* [x] **[NUEVO] GEO Preparación:** robots.txt actualizado para bots de IA (ChatGPT, GPTBot, Perplexity, Claude, Gemini, Copilot).
+* [x] **[NUEVO] Google Analytics 4:** Seguimiento de tráfico (`G-Z020RXK7EL`) implementado en todas las páginas.
+* [x] **[NUEVO] Antigravity Advanced Skills:** Expansión a 31 habilidades (incluyendo Seguridad, Docker, TDD y Debugging).
+* [ ] **[EN PROGRESO] LinkedIn Engine — Credenciales:** Configurar API Keys de OpenRouter, Fal AI y LinkedIn OAuth.
+* [ ] **[PENDIENTE] GEO — Fase 2:** FAQPage Schema, blog técnico, registro en Bing/Brave.
 
 ## Próximos pasos
-* [x] Traducir contenido detallado de los proyectos en el portafolio (actualmente en código).
-* [x] Optimizar imágenes .webp para carga ultra-rápida en ambas versiones.
-* [x] **[NUEVO]** Implementación de Banner de Video Hero con overlay dinámico.
-* [x] **[NUEVO]** Header Inteligente con comportamiento responsivo (Hamburger a la izquierda en móvil).
-* [x] **[NUEVO]** Formulario de contacto personalizado por nombre de usuario.
+* [ ] **LinkedIn Engine:** Crear cuentas en OpenRouter y Fal AI, obtener API Keys.
+* [ ] **LinkedIn Engine:** Configurar app OAuth en LinkedIn Developer Portal.
+* [ ] **LinkedIn Engine:** Asignar credenciales en n8n y hacer test completo.
+* [ ] **LinkedIn Engine:** Activar workflow para publicación automática (Mar/Mié/Jue 6AM COL).
+* [ ] **🧠 GEO Semana 1:** Agregar FAQPage Schema (diseño paramétrico, Manufactura 4.0, productos).
+* [ ] **🧠 GEO Semana 1:** Deploy SEO/GEO a producción + Solicitar indexación en Google Search Console.
+* [ ] **🧠 GEO Semana 2:** Crear sección de blog con 3 artículos técnicos ricos en estadísticas.
+* [ ] **🧠 GEO Semana 2:** Registrar sitio en Bing Webmaster Tools y Brave Search.
+* [ ] **🧠 GEO Semana 3:** Publicar whitepaper PDF público (caso de estudio de diseño paramétrico).
+* [ ] **🧠 GEO Mes 2+:** Publicar 1 artículo cada 2 semanas (contenido fresco = 3.2x citas en ChatGPT).
+* [ ] Implementar auditoría de leads vía IA (Análisis de sentimiento/Interés).
+* [ ] Optimizar imágenes .webp para carga ultra-rápida.
+* [ ] Configurar analíticas avanzadas en Netlify.
 
-## 🛠️ Última Actividad (21 Marzo 2026)
-* **Hito Final:** Lanzamiento del Portafolio Premium Bilingüe con Video Banner.
-* **UI/UX:** Reorganización del Header para dispositivos móviles (evitando colisión con logo).
-* **Interactividad:** Botón de contacto con feedback táctil y lógica de envío robusta (webhook fallback).
-* **Personalización:** Mensaje de éxito dinámico con el nombre del lead capturado.
+## 🛠️ Última Actividad (24 Marzo 2026)
+* **SEO Overhaul:** Reemplazo completo de metadata estática por `generateMetadata()` dinámica con título/descripción por idioma.
+* **Open Graph + Twitter Cards:** Preview enriquecido para LinkedIn, WhatsApp, Facebook y X.
+* **JSON-LD Schema.org:** Datos estructurados `Person` (expertise, ocupación, skills) + `WebSite`.
+* **Sitemap dinámico:** 14 URLs generadas (homepage + 6 proyectos × 2 idiomas) con hreflang.
+* **robots.ts para IA:** Acceso explícito para ChatGPT-User, GPTBot, PerplexityBot, ClaudeBot, Google-Extended y Bingbot.
+* **Estrategia GEO documentada:** Plan completo basado en investigación Princeton/KDD 2024 (9 métodos de optimización para IA).
+* **Pendiente GEO:** FAQPage Schema, blog técnico, registro Bing/Brave, whitepaper PDF.
 
 ## 🏆 Estatus Final
-* **Arquitectura:** Estable y robusta. 🛡️
+* **Arquitectura:** Estable, robusta y potenciada por IA. 🤖🛡️
 * **Tiempos de respuesta:** < 3 segundos. ⚡
-* **Escalabilidad:** Preparado para recibir cientos de prospectos mensuales. 🚀
+* **Escalabilidad:** Lista para automatización compleja de procesos B2B. 🚀
 
 ## ✅ Mantenimiento Futuro
 * Revisar ocasionalmente el panel de Meta para verificar que el número emisor esté "Healthy".

@@ -9,8 +9,8 @@ services:
       N8N_PROTOCOL: 'https'
       VUE_APP_URL_BASE: 'https://n8n.mariomojica.com/' # Usando HTTPS
       N8N_HOST: 'n8n.mariomojica.com' # Si aplica
-      N8N_ENCRYPTION_KEY: 'dQ1BaVIoERmzJt3dXMAKld3O7kfB/QCGlmc8EYr3'
-      N8N_BASIC_AUTH_ACTIVE: 'true'
+      N8N_ENCRYPTION_KEY: '${N8N_ENCRYPTION_KEY}'
+      N8N_BASIC_AUTH_ACTIVE: '${N8N_BASIC_AUTH_ACTIVE}'
       N8N_SECURE_COOKIE: 'false'
     volumes:
       - /opt/n8n/data:/home/node/.n8n
@@ -30,8 +30,7 @@ services:
       DB_MYSQL_HOST: "db_npm"
       DB_MYSQL_PORT: 3306
       DB_MYSQL_USER: "npm_user"
-      # CRÍTICO 3: PEGA AQUÍ EL RESULTADO DE la CLAVE 3 (Contraseña MySQL)
-      DB_MYSQL_PASSWORD: 'F5GqcxxtB9ef8TkMLnoK6Lo8PQgRLvtxAIgHBx6Q'
+      DB_MYSQL_PASSWORD: '${DB_MYSQL_PASSWORD}'
       DB_MYSQL_NAME: "npm_db"
     volumes:
       - ./npm/data:/data
@@ -47,12 +46,10 @@ services:
     container_name: npm_database
     restart: unless-stopped
     environment:
-      # CRÍTICO 4: PEGA AQUÍ EL RESULTADO DE la CLAVE 3 (Contraseña MySQL)
-      MYSQL_ROOT_PASSWORD: 'GqcxxtB9eF5f8TkMLnoK6Lo8PQgRLvtxAIgHBx6Q'
+      MYSQL_ROOT_PASSWORD: '${MYSQL_ROOT_PASSWORD}'
       MYSQL_DATABASE: "npm_db"
       MYSQL_USER: "npm_user"
-      # CRÍTICO 5: PEGA AQUÍ EL RESULTADO DE la CLAVE 3 (Contraseña MySQL)
-      MYSQL_PASSWORD: 'F5GqcxxtB9ef8TkMLnoK6Lo8PQgRLvtxAIgHBx6Q'
+      MYSQL_PASSWORD: '${MYSQL_PASSWORD}'
     volumes:
       - ./npm/mysql:/var/lib/mysql
 

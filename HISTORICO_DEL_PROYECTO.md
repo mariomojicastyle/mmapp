@@ -41,6 +41,19 @@ Este archivo es un registro vivo de la evolución tecnológica del ecosistema Ma
     * **Robustez de Red:** Configuración de un "Webhook Fallback URL" para asegurar que los leads se envíen incluso si hay fallas en las variables de entorno de la nube.
 * **Sincronización Total:** Integración de todas las traducciones de proyectos (ES/EN) con el motor Master Sync.
 
+### 🔹 23 de Marzo: IA en el Corazón de la Automatización
+* **Empoderamiento del Agente:** Instalación del servidor **n8n-MCP** (Model Context Protocol). Ahora el Agente IA tiene permisos para leer, crear y editar flujos de trabajo directamente en el VPS.
+* **Fix MCP Crítico:** Resolución del error `invalid character 'â'` en la inicialización del servidor MCP. Causa raíz: caracteres no-ASCII (emojis/logs) contaminando el flujo JSON-RPC. Solución: uso de `stdio-wrapper.js` para silenciar toda salida no-protocolo.
+* **Biblioteca de Inteligencia:** Incorporación de **7 Habilidades Expertas** (`n8n-skills`) que permiten a la IA validar sintaxis de expresiones, configurar nodos complejos y aplicar patrones de diseño industriales en n8n automáticamente.
+* **LinkedIn Content Engine 🚀:** Diseño de estrategia completa de visibilidad profesional:
+    * **Estrategia:** 5 pilares de contenido (Diseño Industrial, IA+Automatización, Portafolio, Tendencias, Tutoriales) con pesos ponderados.
+    * **Calendario:** Publicación Mar/Mié/Jue a las 6:00 AM COL (horarios óptimos de LinkedIn).
+    * **Workflow (12 nodos):** Schedule Trigger → Selector de Pilar → OpenRouter AI (texto) → Fal AI (imagen) → WhatsApp Preview → Aprobación Humana → LinkedIn Publish → Registro en Baserow.
+    * **Pendiente:** Configuración de credenciales API (OpenRouter, Fal AI, LinkedIn OAuth).
+* **Capa de Control:** Creación de `AGENTS.md` para estandarizar la forma en que la IA debe operar los flujos de automatización bilingües.
+* **Seguridad:** Configuración de credenciales seguras vía JWT para la API de n8n.
+* **Arquitectura V5:** Actualización de la documentación técnica para reflejar la nueva capa de control autónomo.
+
 ---
 
 ## 🏗️ Evolución de la Stack
