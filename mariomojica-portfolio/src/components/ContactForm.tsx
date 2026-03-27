@@ -38,19 +38,22 @@ export default function ContactForm() {
         try {
             // Usar variable de entorno o URL de respaldo si no está configurada en la nube
             const webhookUrl = process.env.NEXT_PUBLIC_N8N_WEBHOOK_URL || "https://n8n.mariomojica.com/webhook/leads-v3";
+            const webhookToken = process.env.NEXT_PUBLIC_WEBHOOK_TOKEN || "mm_lead_secure_v1_83f982d1";
             
-            console.log("Iniciando envío a:", webhookUrl);
+            console.log("Iniciando envío seguro a:", webhookUrl);
+            if (!process.env.NEXT_PUBLIC_WEBHOOK_TOKEN) console.warn("Aviso: No se ha configurado un Token de Seguridad en el entorno, usando valor por defecto.");
 
             const response = await fetch(webhookUrl, {
                 method: "POST",
-                mode: "cors", // Asegurar CORS para comunicación entre dominios
+                mode: "cors", 
                 headers: {
                     "Content-Type": "application/json",
+                    "X-N8N-Token": webhookToken, // Encabezado de seguridad para autenticar en n8n
                 },
                 body: JSON.stringify({
                     ...formData,
                     fecha: new Date().toISOString(),
-                    origen: "Portafolio Web (Producción Mobile)"
+                    origen: "Portafolio Web (Con Autenticación)"
                 }),
             });
 
