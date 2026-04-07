@@ -64,6 +64,7 @@
   "Projects": {
     "alec": {
       "title": "Alec - Luxury Furniture",
+      "videoUrl": "",
       "description": [
         "As Design Manager in a small but innovative furniture factory, I developed luxury lines using high-perceived-value materials.",
         "I learned to work with 19mm glass, cast aluminum, stainless steel, and metalwork, merging technical aesthetics with premium finishes.",
@@ -79,6 +80,7 @@
     },
     "demario": {
       "title": "Demario - Entrepreneurship and Design",
+      "videoUrl": "",
       "description": [
         "My first foray as an entrepreneur, creating high-end office furniture lines (Bubble, Prisma, Royal, and Verona).",
         "Responsible for the entire cycle: from design and web development to manual production in metalworking workshops.",
@@ -100,6 +102,7 @@
     },
     "corferias": {
       "title": "Corferias Participation - Design Network",
+      "videoUrl": "",
       "description": [
         "Exhibition of original designs in one of the most important venues in Colombia.",
         "Validation of aesthetic proposals before a massive and professional audience in the design sector.",
@@ -112,6 +115,7 @@
     },
     "renderizador": {
       "title": "3D Architectural Visualization",
+      "videoUrl": "",
       "description": [
         "Specialized in high-fidelity rendering using 3ds Max for architectural projects.",
         "Perfected skills in lighting, texturing, and digital composition.",
@@ -132,6 +136,7 @@
     },
     "maderkit": {
       "title": "Maderkit - Design Manager and Digital Product Lead",
+      "videoUrl": "https://www.youtube.com/embed/W9lXlCEMzag",
       "description": [
         "Leadership in designing mass-market RTA furniture for Homecenter, Jamar, and Alkosto, with over 3 million units sold.",
         "Creator of the patented 'Space' extensible furniture system and leader of the digital transformation toward Manufacturing 4.0.",
@@ -176,6 +181,10 @@
     },
     "mario-mojica": {
       "title": "Mario Mojica - Digital Transformation",
+      "videoUrl": "https://www.youtube.com/embed/tm8ZyqC6CIM",
+      "imageVideos": {
+        "Silla_Guadua_01": "https://www.youtube.com/embed/Ov355vHkmh8"
+      },
       "description": [
         "Founded my own brand focused on accompanying companies in the adoption of AI, BIM methodologies, and marketing automation.",
         "Development of the Guadua Chair as a validation of parametric design, advanced manufacturing, and contemporary aesthetics.",

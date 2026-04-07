@@ -52,6 +52,19 @@ export default async function ProjectPage({
 
                 <section className="pb-32 flex flex-col items-center px-6">
                     <div className="w-full max-w-6xl space-y-12 md:space-y-20">
+                        {tProject("videoUrl") && tProject("videoUrl") !== "videoUrl" && (
+                            <div className="w-full aspect-video bg-gray-100 rounded-sm shadow-lg overflow-hidden">
+                                <iframe 
+                                    className="w-full h-full"
+                                    src={tProject("videoUrl")} 
+                                    title="YouTube video player" 
+                                    frameBorder="0" 
+                                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" 
+                                    referrerPolicy="strict-origin-when-cross-origin" 
+                                    allowFullScreen>
+                                </iframe>
+                            </div>
+                        )}
                         {project.images.map((item, i) => {
                             const src = typeof item === 'string' ? item : item.src;
                             const filename = src.split('/').pop()?.split('.')[0] || '';
@@ -66,9 +79,31 @@ export default async function ProjectPage({
                             const title = isRawKey 
                                 ? filename.replace(/[_-]/g, ' ') 
                                 : translatedTitle;
+
+                            // Check for image-specific video
+                            let imageVideoUrl = "";
+                            try {
+                                const imageVideos = tProject.raw("imageVideos");
+                                if (imageVideos && imageVideos[filename]) {
+                                    imageVideoUrl = imageVideos[filename];
+                                }
+                            } catch (e) {}
                             
                             return (
                                 <div key={i} className="space-y-4">
+                                    {imageVideoUrl && (
+                                        <div className="w-full aspect-video bg-gray-100 rounded-sm shadow-lg overflow-hidden mb-8">
+                                            <iframe 
+                                                className="w-full h-full"
+                                                src={imageVideoUrl} 
+                                                title={`Video for ${title}`}
+                                                frameBorder="0" 
+                                                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" 
+                                                referrerPolicy="strict-origin-when-cross-origin" 
+                                                allowFullScreen>
+                                            </iframe>
+                                        </div>
+                                    )}
                                     <div className="overflow-hidden rounded-sm shadow-lg">
                                         <img
                                             alt={title}

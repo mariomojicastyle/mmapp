@@ -64,6 +64,7 @@
   "Projects": {
     "alec": {
       "title": "Alec - Mobiliario de Lujo",
+      "videoUrl": "",
       "description": [
         "Como jefe de diseño en una pequeña pero innovadora fábrica de muebles, desarrollé líneas de lujo con materiales de alto valor percibido.",
         "Aprendí a trabajar con vidrio de 19mm, aluminio fundido, acero inoxidable y carpintería metálica, fusionando estética técnica con acabados premium.",
@@ -79,6 +80,7 @@
     },
     "demario": {
       "title": "Demario - Emprendimiento y Diseño",
+      "videoUrl": "",
       "description": [
         "Mi primera incursión como emprendedor, creando líneas de muebles para oficina de alta gama (Bubble, Prisma, Royal y Verona).",
         "Encargado de todo el ciclo: desde el diseño y desarrollo web hasta la producción manual en talleres de metalmecánica.",
@@ -100,6 +102,7 @@
     },
     "corferias": {
       "title": "Participación Corferias - Red de Diseño",
+      "videoUrl": "",
       "description": [
         "Exposición de diseños originales en uno de los escenarios más importantes de Colombia.",
         "Validación de propuestas estéticas frente a un público masivo y profesional del sector diseño.",
@@ -112,6 +115,7 @@
     },
     "renderizador": {
       "title": "Visualización Arquitectónica 3D",
+      "videoUrl": "",
       "description": [
         "Especialización en renderizado de alta fidelidad utilizando 3ds Max para proyectos arquitectónicos.",
         "Perfeccionamiento de habilidades de iluminación, texturizado y composición digital.",
@@ -132,6 +136,7 @@
     },
     "maderkit": {
       "title": "Maderkit - Jefe de Diseño y Producto Digital",
+      "videoUrl": "https://www.youtube.com/embed/4TPIe6k_vIg",
       "description": [
         "Liderazgo en el diseño de mobiliario RTA de venta masiva en Homecenter, Jamar y Alkosto, con más de 3 millones de unidades vendidas.",
         "Creador del sistema de muebles extensibles 'Space' (patentado) y líder de la transformación digital hacia Manufactura 4.0.",
@@ -176,6 +181,10 @@
     },
     "mario-mojica": {
       "title": "Mario Mojica - Transformación Digital",
+      "videoUrl": "https://www.youtube.com/embed/XxFmLyRZNh8",
+      "imageVideos": {
+        "Silla_Guadua_01": "https://www.youtube.com/embed/Ov355vHkmh8"
+      },
       "description": [
         "Fundación de mi propia marca enfocada en acompañar a empresas en la adopción de IA, metodologías BIM y automatización de marketing.",
         "Desarrollo de la Silla Guadua como validación de diseño paramétrico, manufactura avanzada y estética contemporánea.",
