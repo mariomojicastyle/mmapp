@@ -54,6 +54,14 @@ Este archivo es un registro vivo de la evolución tecnológica del ecosistema Ma
 * **Seguridad:** Configuración de credenciales seguras vía JWT para la API de n8n.
 * **Arquitectura V5:** Actualización de la documentación técnica para reflejar la nueva capa de control autónomo.
 
+### 🔹 9 de Abril: Gestión de Crisis Supabase 🛡️
+* **Alerta de Pausa:** El proyecto de Supabase (`mariomojica_Proyecto`) notificó una pausa por inactividad a pesar de tener un workflow diario en n8n.
+* **Diagnóstico:** El workflow original realizaba un `GET` sobre una tabla vacía, lo cual era insuficiente para el motor de tracking de Supabase.
+* **Solución Crítica:**
+    1. Creación de una tabla `public.heartbeat` dedicada.
+    2. Refactor del workflow en n8n para sustituir el `GET` pasivo por un `PATCH` (escritura) activo diario.
+    3. Validación exitosa: Se forzó actividad escrita para garantizar el mantenimiento del plan gratuito.
+
 ---
 
 ## 🏗️ Evolución de la Stack
@@ -85,6 +93,11 @@ Para evitar la edición de doble contenido y errores humanos en la traducción, 
     ```
 3.  **Verificación IA:** El script enviará los cambios al motor de IA para traducir manteniendo el tono premium y técnico del portafolio.
 4.  **Sincronización:** `en.json` se actualizará automáticamente con las nuevas traducciones preservando las claves y la estructura.
+
+### 🧪 10 de Abril, 2026: Despliegue Exitoso de Gemma 4 Total
+*   **PC (OMEN 17):** Se instaló con éxito `gemma4:31b` vía Ollama. El modelo demostró alta capacidad de razonamiento técnico, diseñando un plan de arquitectura senior para automatización en LinkedIn.
+*   **Móvil (Tecno Camon 40 Pro):** Se logró la carga estable de `gemma-4-E2B-it-Q3_K_S` en PocketPal AI tras corregir errores de descarga corrupta y configurar `n_gpu_layers: 0`. Tasa de respuesta estable ~5 tokens/sec.
+*   **Próxima Fase:** Implementación de la arquitectura diseñada por Gemma 4 31B (Fase 1: Infraestructura y Base de Datos en Supabase).
 
 ### 3. Ventaja de esta Metodología
 *   **Consistencia:** El orden de los proyectos y las variables de diseño siempre se mantienen iguales entre idiomas.
