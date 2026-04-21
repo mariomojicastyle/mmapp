@@ -112,3 +112,16 @@ Para evitar la edición de doble contenido y errores humanos en la traducción, 
 
 ---
 *Este documento debe ser actualizado por Antigravity después de cada hito relevante.*
+
+---
+
+### 🔹 21 de Abril, 2026: Despliegue de Infraestructura Rhino.Compute
+* **Misión Crítica:** Despliegue de Rhino.Compute Headless en el servidor cliente (`138.68.148.67`).
+* **Actualización a Ubuntu 24.04 (Noble):** Se realizó un `do-release-upgrade` completo en el servidor de Fadi Salen para sacarlo de una versión EOL (23.10) y garantizar compatibilidad con los paquetes oficiales de McNeel.
+* **Dockerización de Producción:**
+    * Instalación de Docker y Docker Compose en la nueva base Noble.
+    * Construcción de la imagen oficial de **Rhino.Compute** utilizando **.NET 9**.
+* **Preparación de Lógica:** Carga de definiciones (.gh) y scripts de automatización en `/opt/rhino-compute/`.
+* **Seguridad:** Configuración de acceso mediante llaves SSH y preparación de variables de entorno protegidas.
+* **Estado Final:** Infraestructura **100% operativa** y lista para activar ("Turn-key") a la espera del Core-Hour Billing Token por parte del cliente.
+
