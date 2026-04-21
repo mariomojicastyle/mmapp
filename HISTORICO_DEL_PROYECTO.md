@@ -94,10 +94,16 @@ Para evitar la edición de doble contenido y errores humanos en la traducción, 
 3.  **Verificación IA:** El script enviará los cambios al motor de IA para traducir manteniendo el tono premium y técnico del portafolio.
 4.  **Sincronización:** `en.json` se actualizará automáticamente con las nuevas traducciones preservando las claves y la estructura.
 
-### 🧪 10 de Abril, 2026: Despliegue Exitoso de Gemma 4 Total
-*   **PC (OMEN 17):** Se instaló con éxito `gemma4:31b` vía Ollama. El modelo demostró alta capacidad de razonamiento técnico, diseñando un plan de arquitectura senior para automatización en LinkedIn.
-*   **Móvil (Tecno Camon 40 Pro):** Se logró la carga estable de `gemma-4-E2B-it-Q3_K_S` en PocketPal AI tras corregir errores de descarga corrupta y configurar `n_gpu_layers: 0`. Tasa de respuesta estable ~5 tokens/sec.
-*   **Próxima Fase:** Implementación de la arquitectura diseñada por Gemma 4 31B (Fase 1: Infraestructura y Base de Datos en Supabase).
+### 🏗️ 10 de Abril, 2026: Inicio Fase "Plataforma"
+*   **Creación de Rama:** Se creó la rama `inicio-plataforma` para aislar el desarrollo del negocio del portafolio.
+*   **Estructura:** Se creó la carpeta raíz `/Plataforma` dentro del proyecto actual. El objetivo es desarrollar aquí el "núcleo" del negocio que eventualmente vivirá en la raíz de `mariomojica.com`.
+*   **Aislamiento:** El portafolio actual se mantiene intacto y funcional mientras se construye la nueva infraestructura en paralelo.
+
+### 🎨 14-15 de Abril, 2026: El Maestro de Stitch y "The Digital Obsidian"
+*   **Finalización de Dashboard:** Se completaron las 6 pantallas core del dashboard en alta fidelidad: Proyectos, Equipo, Integraciones, Uso, Facturación y Configuración.
+*   **Diseño de Vanguardia:** Implementación del sistema **"The Digital Obsidian"**, un enfoque de diseño B2B que utiliza gradientes sutiles y capas de profundidad tonal en lugar de bordes tradicionales, inspirado en la estética de herramientas pro como Supabase.
+*   **Estandarización:** Se unificó el Sidebar y Navbar en todas las pantallas. Se creó una **Design System Reference Card** en Stitch para mapear todos los tokens de color (Obsidian Teal #71d3f7 como color primario) y tipografía (Inter).
+*   **Hito de Preparación:** Se estableció el diseño de Stitch como la "Base de Verdad" absoluta antes de iniciar la codificación local en `mario-mojica-plataforma`.
 
 ### 3. Ventaja de esta Metodología
 *   **Consistencia:** El orden de los proyectos y las variables de diseño siempre se mantienen iguales entre idiomas.

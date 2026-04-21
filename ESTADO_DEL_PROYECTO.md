@@ -42,40 +42,38 @@ Se ha realizado una limpieza total del esquema `public` para eliminar tablas de 
 * [x] **[NUEVO] GEO Preparación:** robots.txt actualizado para bots de IA (ChatGPT, GPTBot, Perplexity, Claude, Gemini, Copilot).
 * [x] **[NUEVO] Google Analytics 4:** Seguimiento de tráfico (`G-Z020RXK7EL`) implementado en todas las páginas.
 * [x] **[NUEVO] Antigravity Advanced Skills:** Expansión a 31 habilidades (incluyendo Seguridad, Docker, TDD y Debugging).
+* [x] **[HITO] Finalización de Diseño en Stitch:** Dashboard de la Plataforma finalizado con sistema "The Digital Obsidian" (6 pantallas core + Design System Card).
 * [ ] **[EN PROGRESO] LinkedIn Engine — Credenciales:** Configurar API Keys de OpenRouter, Fal AI y LinkedIn OAuth.
 * [ ] **[PENDIENTE] GEO — Fase 2:** FAQPage Schema, blog técnico, registro en Bing/Brave.
 
 ## Próximos pasos
-* [ ] **LinkedIn Engine:** Crear cuentas en OpenRouter y Fal AI, obtener API Keys.
-* [ ] **LinkedIn Engine:** Configurar app OAuth en LinkedIn Developer Portal.
-* [ ] **LinkedIn Engine:** Asignar credenciales en n8n y hacer test completo.
-* [ ] **LinkedIn Engine:** Activar workflow para publicación automática (Mar/Mié/Jue 6AM COL).
-* [ ] **🧠 GEO Semana 1:** Agregar FAQPage Schema (diseño paramétrico, Manufactura 4.0, productos).
-* [ ] **🧠 GEO Semana 1:** Deploy SEO/GEO a producción + Solicitar indexación en Google Search Console.
-* [ ] **🧠 GEO Semana 2:** Crear sección de blog con 3 artículos técnicos ricos en estadísticas.
-* [ ] **🧠 GEO Semana 2:** Registrar sitio en Bing Webmaster Tools y Brave Search.
-* [ ] **🧠 GEO Semana 3:** Publicar whitepaper PDF público (caso de estudio de diseño paramétrico).
-* [ ] **🧠 GEO Mes 2+:** Publicar 1 artículo cada 2 semanas (contenido fresco = 3.2x citas en ChatGPT).
-* [ ] Implementar auditoría de leads vía IA (Análisis de sentimiento/Interés).
-* [ ] Optimizar imágenes .webp para carga ultra-rápida.
-* [ ] Configurar analíticas avanzadas en Netlify.
+* [ ] **LinkedIn Engine:** Configurar API Keys de OpenRouter, Fal AI y LinkedIn OAuth y testear workflow.
+* [ ] **🧠 GEO Semana 1-2:** FAQPage Schema, blog técnico, registro en Bing/Brave y solicitud de indexación.
+* [ ] **🚀 Implementación Plataforma (Next.js):** 
+    * [ ] Inicializar proyecto Next.js en `mario-mojica-plataforma` con la estructura base.
+    * [ ] Configurar el sistema de diseño "The Digital Obsidian" en `globals.css` (variables de color, tipografía Inter, gradientes).
+    * [ ] Construir componentes base de UI (Sidebar estandarizado, Navbar, Split-tone cards).
+    * [ ] Implementar pantalla de Login (Supabase + Google Auth).
+    * [ ] Desarrollar Dashboard Dashboard inicial con rutas protegidas replicando el diseño de Stitch.
+* Monitorear logs de n8n en el VPS ante picos de tráfico.
 
-## 🛠️ Última Actividad (24 Marzo 2026)
-* **SEO Overhaul:** Reemplazo completo de metadata estática por `generateMetadata()` dinámica con título/descripción por idioma.
-* **Open Graph + Twitter Cards:** Preview enriquecido para LinkedIn, WhatsApp, Facebook y X.
-* **JSON-LD Schema.org:** Datos estructurados `Person` (expertise, ocupación, skills) + `WebSite`.
-* **Sitemap dinámico:** 14 URLs generadas (homepage + 6 proyectos × 2 idiomas) con hreflang.
-* **robots.ts para IA:** Acceso explícito para ChatGPT-User, GPTBot, PerplexityBot, ClaudeBot, Google-Extended y Bingbot.
-* **Estrategia GEO documentada:** Plan completo basado en investigación Princeton/KDD 2024 (9 métodos de optimización para IA).
-* **Pendiente GEO:** FAQPage Schema, blog técnico, registro Bing/Brave, whitepaper PDF.
+## 🛠️ Última Actividad (15 Abril 2026)
+* **Finalización de Diseño en Stitch:** Se completó el diseño de alta fidelidad para el Dashboard de la Plataforma.
+    * **Sistema de Diseño:** "The Digital Obsidian" (Dark Mode, Inter, Obsidian Teal #71d3f7).
+    * **Arquitectura de Capas:** Definida por profundidad tonal (sin líneas), replicando el rigor técnico de Supabase.
+    * **Pantallas Listas:** Proyectos, Equipo, Integraciones, Uso, Facturación y Configuración.
+    * **Activo Maestro:** Se creó la "Design System Reference Card" en Stitch como guía para la implementación CSS.
+* **Preparación para Desarrollo:** El foco cambia del diseño en Stitch a la implementación técnica en Next.js dentro de `mario-mojica-plataforma`.
 
-## 🏆 Estatus Final
-* **Arquitectura:** Estable, robusta y potenciada por IA. 🤖🛡️
-* **Tiempos de respuesta:** < 3 segundos. ⚡
-* **Escalabilidad:** Lista para automatización compleja de procesos B2B. 🚀
+## 📑 Estado Actual
+- **Foco:** Validación y preparación del diseño avanzado de la plataforma de negocio en Stitch.
+- **Contexto:** Se ha localizado el diseño maestro en Stitch ("Mario Mojica Full Desktop Replica"). No existe implementación local previa.
+- **Rama activa:** `inicio-plataforma`.
 
-## ✅ Mantenimiento Futuro
-* Revisar ocasionalmente el panel de Meta para verificar que el número emisor esté "Healthy".
+## 🎯 Tareas Inmediatas
+1. [ ] Configurar el entorno de desarrollo en `mario-mojica-plataforma`.
+2. [ ] Traducir los tokens de diseño de Stitch a variables CSS en `globals.css` (The Digital Obsidian).
+3. [ ] Implementar el Layout base (Sidebar + Navbar) que se repite en todas las pantallas.
 * Monitorear logs de n8n en el VPS ante picos de tráfico.
 
 ## 📍 Próximos Pasos: Internacionalización (i18n) Pro
