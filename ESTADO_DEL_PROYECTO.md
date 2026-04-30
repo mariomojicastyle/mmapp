@@ -1,32 +1,44 @@
-# 🧠 Estado del Proyecto: mariomojica.com
+# 🧠 Estado Actual del Proyecto (Memoria Activa)
 
-## 🎯 Objetivo Principal
-Conectar la landing page (`mariomojica.com`) a un sistema completo de captura y gestión de leads usanto tecnologías Open Source autohospedadas (n8n + Baserow).
+Este archivo es la "Memoria RAM" para Antigravity. Contiene el contexto de lo que estamos trabajando justo ahora, los objetivos pendientes y los bloqueos.
 
-## 🚀 Arquitectura
-1. **Frontend:** Next.js (mariomojica.com) -> Envía datos por POST.
-2. **Automatización:** n8n (`n8n_app` en VPS) -> Recibe Webhook, envía email de notificación y registra datos.
-3. **Database:** Baserow (`baserow_app` en VPS) -> Almacena la data del prospecto.
+---
 
-## 🔗 Enlaces de Servicio
-* **Baserow:** [https://baserow.mariomojica.com/database/144/table/600/2509](https://baserow.mariomojica.com/database/144/table/600/2509)
-* **n8n:** [https://n8n.mariomojica.com/workflow/VI01Zr7o8sDxoNwT/](https://n8n.mariomojica.com/workflow/VI01Zr7o8sDxoNwT/)
+## 🏗️ 1. Plataforma B2B (Foco Actual)
+**Estado:** Integración Supabase avanzada.
+
+### 🎯 Objetivos de la Fase
+- [x] Migrar equipo a Supabase dinámico.
+- [x] Corregir errores de hidratación y referencias en Solicitudes.
+- [x] Sistema de Notificaciones Realtime (UI + DB + n8n).
+- [x] Mejora en Invitación de Miembros (Asignación manual de contraseñas).
+- [ ] **PRÓXIMO:** Módulo de Proyectos (Vincular solicitudes a proyectos reales).
 
 
-## 📌 Progreso Actual
-* [x] Formularios de Frontend diseñados y conectados (Vite -> N8N).
-* [x] Tabla de leads en Baserow optimizada (Tipos de datos corregidos).
-* [x] Flujo de N8N funcional, saneado e integrado directamente.
-* [x] Acceso SSH y control absoluto de contenedores Docker (`n8n_app`, `baserow_app`).
-* [x] Mapeo de campos verificado mediante IDs técnicos de Baserow (`field_9455` para descripción).
-* [x] Autohospedaje estabilizado (Baserow + n8n + Proxy).
+### 🚧 Bloqueos / Notas Técnicas
+- **Hydration:** Se añadió el check de `mounted` en `SolicitudesPage` para evitar desajustes entre SSR y Client.
+- **Service Role:** La clave secreta en `.env.local` es necesaria para invitar miembros sin que el admin pierda su sesión.
 
-## 🚧 Detalles Técnicos y Debugging (La Minucia)
-* **[INTERÉS] Validación de Select:** Baserow rechazaba filas porque el campo "Interés" era un "Single Select" y no permitía valores nuevos. Se convirtió a **Texto de una sola línea**.
-* **[MAPEADO] Ruta .body:** N8N busca los datos usando la ruta absoluta `$('Webhook: Formulario').item.json.body.nombre` para mayor robustez ante cambios en el flujo.
-* **[FIELD ID] Descripción:** Se integró el campo "Descripción de la idea" (ID 9455) como Texto Largo, permitiendo capturar detalles cualitativos.
-* **[STATUS] Published:** El flujo de n8n ha sido publicado y está en modo "Active", eliminando la necesidad de archivos JSON temporales.
+---
 
-1. **[ESTADO]** Las pruebas de humo han sido exitosas. La data fluye desde `localhost:3000` hasta el VPS y de ahí a Baserow y Gmail.
-2. **[PRÓXIMO]** Monitoreo de los primeros leads reales y posible expansión de campos.
+## 🌐 2. Portfolio y Leads
+**Estado:** Estable y en producción.
 
+### 🎯 Objetivos de la Fase
+- [x] Conexión n8n + Baserow.
+- [x] Notificaciones de leads activas.
+- [ ] **PENDIENTE:** Monitoreo de tráfico y leads reales.
+- [ ] **PENDIENTE:** Optimización SEO avanzada (ver Skill seo-audit).
+
+### 🚧 Notas Técnicas
+- **Baserow IDs:** Recordar que el campo descripción usa el ID `field_9455`.
+
+---
+
+## 🔗 Enlaces de Control
+- **n8n:** [https://n8n.mariomojica.com/](https://n8n.mariomojica.com/)
+- **Baserow:** [Leads Table](https://baserow.mariomojica.com/database/144/table/600/2509)
+- **Supabase Console:** [Cloud Project](https://supabase.com/dashboard/)
+
+---
+*Última actualización de contexto: 30 de Abril, 2026*

@@ -1,0 +1,164 @@
+@import "tailwindcss";
+
+@custom-variant dark (&:is(.dark *));
+
+:root {
+  /* ═══════════════════════════════════════════
+     MARIO MOJICA PLATFORM — LIGHT MODE
+     Basado en mariomojica.com
+     ═══════════════════════════════════════════ */
+
+  /* Brand */
+  --brand-green: #375a0a;
+  --brand-teal: #008096;
+
+  /* Surfaces */
+  --surface: #f2f2f2;
+  --surface-container-low: #ffffff;
+  --surface-container: #f8f8f8;
+  --surface-container-high: #efefef;
+  --surface-container-highest: #e6e6e6;
+  --surface-container-lowest: #ffffff;
+
+  /* Brand Colors */
+  --primary: #008096;
+  --primary-container: #006678;
+  --primary-foreground: #ffffff;
+  --secondary: #375a0a;
+  --secondary-container: #c4e6a0;
+  --tertiary: #e6a040;
+  --tertiary-container: #fff0d4;
+
+  /* Text */
+  --on-background: #1a1a1a;
+  --on-surface: #1a1a1a;
+  --on-surface-variant: #666666;
+  --outline: #999999;
+  --outline-variant: #e0e0e0;
+
+  /* Sidebar */
+  --sidebar-bg: #ffffff;
+  --sidebar-active-bg: rgba(0, 128, 150, 0.08);
+  --sidebar-active-text: #008096;
+  --sidebar-text: #666666;
+  --sidebar-header: #999999;
+  --sidebar-divider: rgba(0, 0, 0, 0.08);
+
+  /* Semantic */
+  --error: #ba1a1a;
+  --error-container: #ffdad6;
+  --success: #2e7d32;
+  --success-container: #c8e6c9;
+
+  /* Misc */
+  --radius: 0.5rem;
+  --ring: rgba(0, 128, 150, 0.3);
+}
+
+.dark {
+  /* ═══════════════════════════════════════════
+     MARIO MOJICA PLATFORM — DARK MODE
+     Basado en Stitch "Obsidian Teal"
+     ═══════════════════════════════════════════ */
+
+  /* Surfaces */
+  --surface: #111319;
+  --surface-container-low: #191b22;
+  --surface-container: #1e1f26;
+  --surface-container-high: #282a30;
+  --surface-container-highest: #33343b;
+  --surface-container-lowest: #0c0e14;
+
+  /* Brand Colors */
+  --primary: #71d3f7;
+  --primary-container: #2f9cbf;
+  --primary-foreground: #003544;
+  --secondary: #87d1ee;
+  --secondary-container: #00647e;
+  --tertiary: #ffb871;
+  --tertiary-container: #c88132;
+
+  /* Text */
+  --on-background: #e2e2eb;
+  --on-surface: #e2e2eb;
+  --on-surface-variant: #bec8ce;
+  --outline: #889298;
+  --outline-variant: #3e484d;
+
+  /* Sidebar */
+  --sidebar-bg: #191b22;
+  --sidebar-active-bg: rgba(113, 211, 247, 0.08);
+  --sidebar-active-text: #71d3f7;
+  --sidebar-text: #bec8ce;
+  --sidebar-header: #889298;
+  --sidebar-divider: rgba(62, 72, 77, 0.3);
+
+  /* Semantic */
+  --error: #ffb4ab;
+  --error-container: #93000a;
+  --success: #81c784;
+  --success-container: #1b5e20;
+
+  /* Misc */
+  --ring: rgba(113, 211, 247, 0.3);
+}
+
+/* ═══════════════════════════════════════════
+   THEME INLINE — Maps CSS vars to Tailwind
+   ═══════════════════════════════════════════ */
+@theme inline {
+  --font-sans: "Prompt", system-ui, -apple-system, sans-serif;
+  --font-mono: "Geist Mono", monospace;
+
+  --color-surface: var(--surface);
+  --color-surface-container-low: var(--surface-container-low);
+  --color-surface-container: var(--surface-container);
+  --color-surface-container-high: var(--surface-container-high);
+
+  --color-primary: var(--primary);
+  --color-primary-container: var(--primary-container);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-tertiary: var(--tertiary);
+
+  --color-on-background: var(--on-background);
+  --color-on-surface: var(--on-surface);
+  --color-on-surface-variant: var(--on-surface-variant);
+  --color-outline: var(--outline);
+  --color-outline-variant: var(--outline-variant);
+
+  --color-error: var(--error);
+  --color-success: var(--success);
+
+  --color-sidebar-bg: var(--sidebar-bg);
+  --color-sidebar-active-bg: var(--sidebar-active-bg);
+  --color-sidebar-active-text: var(--sidebar-active-text);
+  --color-sidebar-text: var(--sidebar-text);
+  --color-sidebar-header: var(--sidebar-header);
+
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+}
+
+@layer base {
+  * {
+    @apply border-outline-variant;
+  }
+  body {
+    @apply bg-surface text-on-background font-sans antialiased;
+  }
+}
+
+/* Scrollbar styling for dark mode */
+.dark ::-webkit-scrollbar {
+  width: 6px;
+}
+.dark ::-webkit-scrollbar-track {
+  background: var(--surface-container-low);
+}
+.dark ::-webkit-scrollbar-thumb {
+  background: var(--outline-variant);
+  border-radius: 3px;
+}
