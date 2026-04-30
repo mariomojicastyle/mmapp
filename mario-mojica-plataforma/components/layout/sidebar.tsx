@@ -24,23 +24,12 @@ export function Sidebar() {
       onMouseEnter={() => setExpanded(true)}
       onMouseLeave={() => setExpanded(false)}
       className={cn(
-        "fixed left-0 top-0 z-40 flex h-screen flex-col bg-sidebar-bg border-r border-outline-variant/30 transition-all duration-200 ease-out",
+        "fixed left-0 top-16 z-40 flex h-[calc(100vh-64px)] flex-col bg-sidebar-bg border-r border-outline-variant/30 transition-all duration-200 ease-out",
         expanded ? EXPANDED_W : COLLAPSED_W
       )}
     >
-      {/* Brand */}
-      <div className="flex h-14 items-center justify-center px-2.5 shrink-0">
-        <Link href="/solicitudes" className="flex items-center gap-2.5 overflow-hidden">
-          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary">
-            <span className="text-sm font-bold text-primary-foreground">MM</span>
-          </div>
-          <span className={cn(
-            "text-sm font-semibold text-on-surface whitespace-nowrap transition-opacity duration-200",
-            expanded ? "opacity-100" : "opacity-0"
-          )}>
-            Mario Mojica
-          </span>
-        </Link>
+      {/* Brand space - empty to keep height consistency or just remove */}
+      <div className="flex h-4 items-center px-3 shrink-0">
       </div>
 
       {/* Navigation */}

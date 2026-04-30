@@ -8,6 +8,7 @@ export interface User {
   name: string
   avatar?: string
   company?: string
+  credits?: number
 }
 
 export const PERMISSIONS = {

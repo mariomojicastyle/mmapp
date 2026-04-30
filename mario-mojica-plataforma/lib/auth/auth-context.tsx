@@ -36,7 +36,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       role,
       name,
       avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${name}`,
-      company: profileData?.company || supabaseUser.user_metadata?.company
+      company: profileData?.company || supabaseUser.user_metadata?.company,
+      credits: profileData?.credits || 0
     }
   }, [])
 

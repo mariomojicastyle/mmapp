@@ -55,11 +55,8 @@ export default function LoginPage() {
           className="mx-auto w-full max-w-md"
         >
           {/* Logo */}
-          <div className="mb-10 flex items-center gap-2">
-            <div className="h-8 w-8 rounded-lg bg-primary flex items-center justify-center">
-              <span className="text-primary-foreground font-bold text-xl">M</span>
-            </div>
-            <span className="text-xl font-semibold tracking-tight text-on-surface">Mario Mojica</span>
+          <div className="mb-10 flex items-center justify-center lg:justify-start">
+            <img src="/Logo_vertical_color_en.svg" alt="Mario Mojica" className="h-10" />
           </div>
 
           <h1 className="mb-2 text-3xl font-bold tracking-tight text-on-surface">Welcome back</h1>

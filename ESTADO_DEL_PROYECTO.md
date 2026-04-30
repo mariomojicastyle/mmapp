@@ -5,18 +5,20 @@ Este archivo es la "Memoria RAM" para Antigravity. Contiene el contexto de lo qu
 ---
 
 ## 🏗️ 1. Plataforma B2B (Foco Actual)
-**Estado:** Integración Supabase avanzada.
+**Estado:** Integración Supabase avanzada e Identidad Visual estandarizada.
 
 ### 🎯 Objetivos de la Fase
 - [x] Migrar equipo a Supabase dinámico.
 - [x] Corregir errores de hidratación y referencias en Solicitudes.
 - [x] Sistema de Notificaciones Realtime (UI + DB + n8n).
-- [x] Mejora en Invitación de Miembros (Asignación manual de contraseñas).
+- [x] Estandarización de Identidad Visual (Logo corregido en Login, Sidebar y TopNav).
+- [x] Rediseño de Navegación Superior (TopNav con Créditos, Feedback y Búsqueda).
 - [ ] **PRÓXIMO:** Módulo de Proyectos (Vincular solicitudes a proyectos reales).
 
 ### 🚧 Bloqueos / Notas Técnicas
+- **Identidad Visual:** Se utiliza el logo `Logo_vertical_color_en.svg` (corregido) como estándar global.
+- **TopNav:** Implementa créditos dinámicos desde el perfil de Supabase (fallback a 1,250).
 - **Hydration:** Se añadió el check de `mounted` en `SolicitudesPage` para evitar desajustes entre SSR y Client.
-- **Service Role:** La clave secreta en `.env.local` es necesaria para invitar miembros sin que el admin pierda su sesión.
 
 ---
 
@@ -31,10 +33,6 @@ Este archivo es la "Memoria RAM" para Antigravity. Contiene el contexto de lo qu
 - [x] **[NUEVO] n8n-MCP Integration:** Capacidad de la IA para crear/editar flujos de n8n.
 - [ ] **PENDIENTE:** Monitoreo de tráfico y leads reales.
 - [ ] **PENDIENTE:** Optimización SEO avanzada (ver Skill seo-audit) y GEO (Generative Engine Optimization).
-
-### 🚧 Notas Técnicas
-- **Baserow IDs:** Recordar que el campo descripción usa el ID `field_9455`.
-- **Arquitectura:** Next.js -> Webhook n8n -> Supabase / Baserow -> Notificación.
 
 ---
 
