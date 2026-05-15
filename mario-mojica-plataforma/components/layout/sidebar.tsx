@@ -72,7 +72,7 @@ export function Sidebar() {
                           "flex items-center rounded-lg px-3 py-2 text-sm font-medium transition-colors",
                           expanded ? "gap-3" : "justify-center",
                           isActive
-                            ? "bg-sidebar-active-bg text-sidebar-active-text"
+                            ? "bg-sidebar-active-bg text-sidebar-active-text ring-1 ring-inset ring-sidebar-active-text"
                             : "text-sidebar-text hover:bg-sidebar-active-bg/50 hover:text-on-surface"
                         )}
                       >
