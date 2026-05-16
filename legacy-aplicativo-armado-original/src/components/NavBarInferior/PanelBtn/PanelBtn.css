@@ -1,0 +1,93 @@
+.panel-btn {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    border: none;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background-color: white;
+    color: #f28f1d;
+    font-size: 2rem;
+    cursor: pointer;
+    position: relative;
+}
+
+.panel-btn>svg {
+    height: 35px;
+    width: 35px;
+}
+
+.panel-btn>img {
+    height: 120px;
+    width: 250px;
+    position: absolute;
+    left: -60px;
+    top: -100px;
+    transition: opacity 2s ease;
+    opacity: 0;
+    animation: animateB 3s infinite;
+    animation-timing-function: linear;
+    display: none;
+}
+
+@media (max-width: 1600px) {
+
+    .panel-btn>img {
+        height: 120px;
+        width: 250px;
+    }
+}
+
+@media (max-width: 800px) {
+    .panel-btn>img {
+        height: 80px;
+        width: 200px;
+        left: -50px;
+        top: -65px;
+    }
+}
+
+@media (max-width: 787px) {
+
+    .panel-btn {
+        width: 40px;
+        height: 40px;
+    }
+
+    .panel-btn>svg {
+        width: 70%;
+        height: 70%;
+    }
+}
+
+@media (max-width: 425px) {
+
+    .panel-btn>img {
+        height: 80px;
+        width: 200px;
+        left: -50px;
+        top: -65px;
+    }
+}
+
+@media (max-width: 320px) {
+
+    .panel-btn {
+        width: 35px;
+        height: 35px;
+    }
+
+    .panel-btn>svg {
+        width: 70%;
+        height: 70%;
+        font-size: 2rem;
+    }
+
+    .panel-btn>img {
+        height: 60px;
+        width: 180px;
+        left: -50px;
+        top: -50px;
+    }
+}

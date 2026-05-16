@@ -1,0 +1,155 @@
+.contenedor1 {
+    position: fixed;
+    display: flex;
+    width: 100%;
+    height: 10vh;
+    top:0px;
+    align-items: center;
+    justify-content: center;
+    z-index: 0;
+    gap: 20px;
+
+  }
+  .contenedor1-1{
+    height: 100%;
+    width: 35%;
+    display:flex;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 15px;
+  }
+  
+  form {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+  }
+  
+  [type="checkbox"] {
+    height: 25px;
+    width: 25px;
+  
+  }
+  
+  .Escenarios {
+    display: flex;
+    gap: 15px;
+  }
+  
+  
+  #color1 {
+    border-radius: 50%;
+    cursor: pointer;
+    background: #00ffffff;
+    background-size: cover;
+  }
+  
+  #color2 {
+    border-radius: 50%;
+    cursor: pointer;
+    background: #f7e785ff;
+    background-size: cover;
+  }
+  
+  .seleccionado {
+    opacity: 0.5;
+    background-color: black;
+  }
+  
+
+  .button {
+    display: flex;
+    height: 60px;
+    width: 60px;
+    font-size: 1.2rem;
+    line-height: 50px;
+    border-radius: 50%;
+    background-color: white;
+    text-align: center;
+    border: none;
+    cursor: pointer;
+    align-items: center;
+    justify-content: center;
+    color: #f28f1d;
+    /* padding-right: 10px; */
+    box-shadow: 0 3px 5px -1px rgba(0, 0, 0, 0.2),
+      0 6px 10px 0 rgba(0, 0, 0, 0.14), 0 1px 18px 0 rgba(0, 0, 0, 0.12);
+  }
+  
+  .button>svg {
+    /* font-size: 20rem; */
+    height: 45px;
+    width: 45px;
+    color: #f28f1d;
+  }
+  #info>svg {
+  
+    height: 4.5rem;
+    width: 4.5rem;
+    font-size: 4.5rem;
+    color: #f28f1d;
+  } 
+  
+  /* Boton de ayuda */
+  #help>svg {
+    
+    height: 4.5rem;
+    width: 4.5rem;
+    font-size: 4.5rem;
+    color: #f28f1d;
+  }
+  
+
+  @media (max-width: 787px) {
+
+    .contenedor1-1{
+      height: 100%;
+      width: 90%;
+    }
+
+    .SesionArriba {
+      background-color: transparent;
+    }
+  
+    .button {
+      height: 40px;
+      width: 40px;
+    }
+    .button svg {
+      height: 30px;
+      width: 30px;
+    }
+    .help>svg {
+      height: 30px;
+      width: 30px;
+    }
+
+
+  }
+  @media (max-width: 320px) {
+    .contenedor {
+      background-color: transparent;
+      height: 10vh;
+      bottom: 30px;
+      gap: 20px;
+    }
+  
+    .SesionArriba {
+      background-color: transparent;
+    }
+  
+    .button {
+      height: 35px;
+      width: 35px;
+    }
+    .button svg {
+      height: 25px;
+      width: 25px;
+    }
+    .help>span{
+      height: 25px;
+      width: 25px;
+    }
+    
+  }

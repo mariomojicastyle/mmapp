@@ -1,0 +1,269 @@
+.panel {
+    position: fixed;
+    z-index: 3;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    width: 100%;
+    height: 100vh;
+    background-color: white;
+    overflow-y: auto;
+    transition: transform 0.3s ease;
+  
+    transform: translate(0, -100%);
+  }
+  
+  .panel.is-active {
+    transform: translate(0, 0);
+  }
+  .menu {
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    align-items: center;
+    text-align: center;
+    overflow: auto;
+  }
+  
+  .menu div {
+    padding: 1rem;
+    width: inherit;
+    display: flex;
+    font-size: 1.3rem;
+    text-decoration: none;
+    color: black;
+    transition: all 03s ease;
+    position: relative;
+  }
+  
+  .menu div:hover {
+    font-weight: bold;
+    color: black;
+    background: gray;
+  }
+  
+  .option{
+  
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    cursor: pointer;
+  
+  }
+  .option .imagen {
+
+    background-size: 100% 100%;
+    background-repeat: no-repeat;
+    width: 8rem;
+    height: 8rem;
+    border-radius: 10%;
+    padding: 0;
+    background-color: #828282;
+    box-shadow: 0 3px 5px -1px rgba(0, 0, 0, 0.2),
+      0 6px 10px 0 rgba(0, 0, 0, 0.14), 0 1px 18px 0 rgba(0, 0, 0, 0.12);
+  
+  }
+    
+  .option .imagen:hover {
+    background-size: 100% 100%;
+    background-repeat: no-repeat;
+    width: 8rem;
+    height: 8rem;
+    border-radius: 10%;
+    padding: 0;
+    box-shadow: 0 3px 5px -1px rgba(0, 0, 0, 0.2),
+      0 6px 10px 0 rgba(0, 0, 0, 0.14), 0 1px 18px 0 rgba(0, 0, 0, 0.12);
+  
+  }
+  .cantidad{
+    height: 2rem;
+    width: 100%;
+  }
+  .imagen img {
+    width: 100%;
+  }
+  #cantidades{
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  
+  #cantidades .imagen {
+    background-size: 100% 100%;
+    background-repeat: no-repeat;
+    position: relative;
+    width: 8rem;
+    height: 8rem;
+    border-radius: 10%;
+    padding: 0;
+    box-shadow: 0 3px 5px -1px rgba(0, 0, 0, 0.2),
+      0 6px 10px 0 rgba(0, 0, 0, 0.14), 0 1px 18px 0 rgba(0, 0, 0, 0.12);
+  }
+  .option4{
+    margin-top: 30px;
+  }
+  .option4 .imagen {
+
+    background-size: 100% 100%;
+    background-repeat: no-repeat;
+    height: 5rem;
+    padding: 0;
+  }
+  
+
+  .menu > .option > img {
+    height: 110px;
+    width: 300px;
+    position: absolute;
+    bottom: -20px;
+    transition: opacity 2s ease;
+    opacity: 0;
+    animation: animate2 3s infinite;
+    animation-timing-function: linear;
+    pointer-events: none;
+  }
+  #cantidades > .imagen > img {
+    height: 55px;
+    width: 55px;
+    position: absolute;
+    rotate:calc(-110deg);
+    right: -50px;
+    top: 0px;
+    transition: opacity 2s ease;
+    opacity: 0;
+    animation: animateH 3s infinite;
+    animation-timing-function: linear;
+    pointer-events: none;
+  
+  }
+
+  /* Diferentes animaciones utilizadas para las nubes de ayudas */
+@keyframes animateB{
+  0%{
+    top: -100px;
+  }
+  25%{
+    top: -120px;
+  }
+  50%{
+    top: -100px;
+  }
+  75%{
+    top: -120px;
+  }
+  100%{
+    top: -100px;
+  }
+}
+@keyframes animate2{
+  0%{
+    bottom: -20px;
+  }
+  25%{
+    bottom: -12px;
+  }
+  50%{
+    bottom: -20px;
+  }
+  75%{
+    bottom: -12px;
+  }
+  100%{
+    bottom: -20px;
+  }
+}
+@keyframes animateH{
+  0%{
+    right: -50px;
+    top: 0px;
+  }
+  25%{
+    right: -25px;
+    top: 20px;
+  }
+  50%{
+    right: -50px;
+    top: 0px;
+  }
+  75%{
+    right: -25px;
+    top: 20px;
+  }
+  100%{
+    right: -50px;
+    top: 0px;
+  }
+}
+@media (max-width: 1600px) {
+  
+}
+@media (max-width: 800px) {
+  
+  @keyframes animateB{
+    0%{
+      top: -65px;
+    }
+    25%{
+      top: -85px;
+    }
+    50%{
+      top: -65px;
+    }
+    75%{
+      top: -85px;
+    }
+    100%{
+      top: -65px;
+    }
+  }
+}
+
+  @media (max-width: 787px) {
+    .option4 .imagen {
+      background-size: 100% 70%;  
+    }
+    
+  }
+  @media (max-width: 425px) {
+
+    @keyframes animateB{
+      0%{
+        top: -65px;
+      }
+      25%{
+        top: -85px;
+      }
+      50%{
+        top: -65px;
+      }
+      75%{
+        top: -85px;
+      }
+      100%{
+        top: -65px;
+      }
+    }
+  }
+  @media (max-width: 320px) {
+  
+    @keyframes animateB{
+      0%{
+        top: -50px;
+      }
+      25%{
+        top: -65px;
+      }
+      50%{
+        top: -50px;
+      }
+      75%{
+        top: -65px;
+      }
+      100%{
+        top: -50px;
+      }
+    }
+  }

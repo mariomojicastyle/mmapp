@@ -1,0 +1,74 @@
+.panel2 {
+  position: fixed;
+  z-index: 3;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background-color: white;
+  transition: transform 0.3s ease;
+  overflow-y: auto;
+  overflow-x: hidden;
+
+  transform: translate(-100%, 0);
+}
+
+.panel2.is-active {
+  transform: translate(0, 0);
+}
+
+.option2 {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+}
+.option2 .imagen {
+  background-size: 100% 100%;
+  background-repeat: no-repeat;
+  height: 10rem;
+  padding: 0;
+}
+/* Menu con las imagenes de los tips de ayuda, para el armado del mueble */
+.menu2 {
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  align-items: center;
+  text-align: center;
+  overflow: auto;
+  padding-top: 1rem;
+  gap: 10px;
+  /* height: 100%; */
+}
+
+.menu2 div {
+  padding: 1rem;
+  width: inherit;
+  display: flex;
+  font-size: 1.3rem;
+  text-decoration: none;
+  color: black;
+  transition: all 03s ease;
+}
+
+@media (max-width: 787px) {
+  .panel2 > .Himg {
+    width: 90%;
+    height: 30%;
+  }
+}
+
+@media (max-width: 320px) {
+  
+  .panel2>.Himg {
+    width: 90%;
+    height: 30%;
+  }
+
+}

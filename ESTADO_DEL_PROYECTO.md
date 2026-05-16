@@ -36,10 +36,23 @@ Este archivo es la "Memoria RAM" para Antigravity. Contiene el contexto de lo qu
 
 ---
 
+## 🛠️ 3. Aplicativo de Armado (Legacy Restore)
+**Estado:** Migración local completada y funcional.
+
+### 🎯 Objetivos de la Fase
+- [x] Eliminar dependencias de `3dymedios.com`.
+- [x] Localizar modelos GLB, Matcaps y HDRI.
+- [x] Fix de errores de compilación (Fuentes y Rutas).
+- [x] Descarga de activos multimedia (Audio y Tips).
+- [ ] **PRÓXIMO:** Integrar UI moderna ("Obsidian Teal") sobre la lógica funcional recuperada.
+
+---
+
 ## 🔗 Enlaces de Control
 - **Baserow:** [Leads Table](https://baserow.mariomojica.com/database/144/table/600/2509)
 - **n8n Principal:** [https://n8n.mariomojica.com/](https://n8n.mariomojica.com/)
 - **Supabase Console:** [Cloud Project](https://supabase.com/dashboard/)
+- **Local App:** [http://localhost:3000](http://localhost:3000)
 
 ---
-*Última actualización de contexto: 30 de Abril, 2026*
+*Última actualización de contexto: 15 de Mayo, 2026 (19:22 PM)*

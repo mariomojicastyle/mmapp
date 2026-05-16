@@ -1,0 +1,762 @@
+.contenedor {
+    position: fixed;
+    width: 100%;
+    height: 15vh;
+    bottom: 15px;
+    display: flex;
+    background: transparent;
+    flex-direction: column;
+    gap: 10px;
+
+}
+
+.SesionArriba {
+    position: relative;
+    width: 100%;
+    height: 50%;
+    background-color: transparent;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+
+}
+
+.SesionAbajo {
+    display: flex;
+    position: relative;
+    width: 100%;
+    height: 50%;
+    background-color: transparent;
+    justify-content: center;
+    align-items: center;
+}
+
+
+.button>svg {
+    /* font-size: 20rem; */
+    height: 45px;
+    width: 45px;
+    color: #f28f1d;
+}
+
+
+
+/* Barra de retroalimentación de nombre del herraje */
+#TextOption {
+    width: 80%;
+    height: 80%;
+    margin-bottom: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 1.8rem;
+}
+
+#Reset>svg {
+    font-size: 4rem;
+}
+
+
+.slider {
+    width: auto;
+    text-align: center;
+}
+
+.card2 {
+    scroll-snap-type: x mandatory;
+    scroll-behavior: smooth;
+    -webkit-overflow-scrolling: touch;
+    justify-content: space-between;
+    align-items: center;
+}
+
+/* sesion de abajo, que nombra el herraje o pieza seleccionada */
+.FondoPieza {
+    display: flex;
+    height: 70px;
+    width: 30%;
+    background: #ffffff;
+    justify-content: center;
+    align-items: center;
+    border-radius: 100px / 100px;
+    box-shadow: 0 3px 5px -1px rgba(0, 0, 0, 0.2),
+        0 6px 10px 0 rgba(0, 0, 0, 0.14), 0 1px 18px 0 rgba(0, 0, 0, 0.12);
+    color: #f28f1d;
+
+}
+
+/* etiqueta donde aparece el nombre */
+.Pieza {
+    display: flex;
+    height: 100%;
+    width: 100%;
+    font-size: 3rem;
+    line-height: 50px;
+    margin: 10px;
+    background-color: transparent;
+    text-align: center;
+    border: none;
+    cursor: pointer;
+    align-items: center;
+    justify-content: center;
+    color: #f28f1d;
+}
+
+
+/* Diferentes animaciones utilizadas para las nubes de ayudas */
+@keyframes animateB{
+    0%{
+      top: -100px;
+    }
+    25%{
+      top: -120px;
+    }
+    50%{
+      top: -100px;
+    }
+    75%{
+      top: -120px;
+    }
+    100%{
+      top: -100px;
+    }
+  }
+  @keyframes animate2{
+    0%{
+      bottom: -20px;
+    }
+    25%{
+      bottom: -12px;
+    }
+    50%{
+      bottom: -20px;
+    }
+    75%{
+      bottom: -12px;
+    }
+    100%{
+      bottom: -20px;
+    }
+  }
+  @keyframes animateH{
+    0%{
+      right: -50px;
+      top: 0px;
+    }
+    25%{
+      right: -25px;
+      top: 20px;
+    }
+    50%{
+      right: -50px;
+      top: 0px;
+    }
+    75%{
+      right: -25px;
+      top: 20px;
+    }
+    100%{
+      right: -50px;
+      top: 0px;
+    }
+  }
+  
+  /* Boton flecha izquierda */
+  #left {
+    display: flex;
+    height: 60px;
+    width: 60px;
+    font-size: 3em;
+    line-height: 50px;
+    border-radius: 50%;
+    background-color: white;
+    text-align: center;
+    border: none;
+    cursor: pointer;
+    align-items: center;
+    justify-content: center;
+    color: #f28f1d;
+    box-shadow: 0 3px 5px -1px rgba(0, 0, 0, 0.2),
+      0 6px 10px 0 rgba(0, 0, 0, 0.14), 0 1px 18px 0 rgba(0, 0, 0, 0.12);
+  }
+  
+  /* Boton flecha derecha */
+  #right {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 60px;
+    width: 60px;
+    line-height: 50px;
+    border-radius: 50%;
+    background-color: white;
+    color: white;
+    text-align: center;
+    border: none;
+    cursor: pointer;
+    color: #f28f1d;
+    box-shadow: 0 3px 5px -1px rgba(0, 0, 0, 0.2),
+      0 6px 10px 0 rgba(0, 0, 0, 0.14), 0 1px 18px 0 rgba(0, 0, 0, 0.12);
+  }
+  
+  /* Etiqueta que guarda el paso en que se esta ubicado */
+  #text {
+    overflow: hidden;
+    color: transparent;
+    height: 0px;
+  }
+  
+  /* Indicador de en que paso se encuentra el usuario */
+  .percent {
+    transform: rotate(-90deg);
+    position: relative;
+    width: 72px;
+    height: 72px;
+    border-radius: 50%;
+    background: #fff;
+    box-shadow: 0 3px 5px -1px rgba(0, 0, 0, 0.2),
+      0 6px 10px 0 rgba(0, 0, 0, 0.14), 0 1px 18px 0 rgba(0, 0, 0, 0.12);
+  }
+  
+  .percent .number {
+    transform: rotate(90deg);
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    border-radius: 50%;
+  }
+  
+  .percent .number h2 {
+    color: #777;
+    font-weight: 700;
+    font-size: 40px;
+    transition: 0.5s;
+    margin-bottom: 0;
+  }
+  
+  .text {
+    position: relative;
+    color: #777;
+    margin-top: 20px;
+    font-weight: 700;
+    font-size: 18px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    transition: 0.5s;
+  }
+  
+  .card2:hover .text {
+    color: #fff;
+  }
+  
+  .percent .circule {
+    position: relative;
+    width: 95px;
+    height: 95px;
+    z-index: 998;
+  }
+  
+  svg circle {
+    width: 40px;
+    height: 40px;
+    fill: none;
+    stroke: #c0c0c0;
+    stroke-width: 10;
+    stroke-linecap: round;
+    /* stroke-dasharray: 200;
+    stroke-dashoffset: 200; */
+    transform: translate(5px, 5px);
+    /* cx:"12"; */
+  }
+  
+  /* Borde de retroalimentacion, cuanto progeso se tiene del paso a paso */
+  svg circle:nth-child(2) {
+    stroke-dasharray: 201;
+    stroke-dashoffset: 201;
+    stroke: #f28f1d;
+  }
+  
+  .card2:nth-child(1) svg circle:nth-child(2) {
+    stroke-dashoffset: calc(201 - (201 * var(--porcent)) / 100);
+    stroke: #f28f1d;
+  }
+  
+  .circule2{
+    display: none;
+  }
+  #numpaso{
+    transform: translate(1px,-1.9px);
+  }
+
+  @media (min-width: 1600px) and (max-height: 700px) {
+    .contenedor{
+      height: 20vh;
+    }
+
+  }
+  @media (max-width: 1600px) {
+  
+    .FondoPieza {
+      height: 65px;
+      width: 35%;  
+    }
+  }
+  @media (max-width: 1600px) and (max-height: 700px) {
+    .contenedor{
+      height: 22vh;
+    }
+  } 
+  @media (max-width: 1280px){
+    .FondoPieza {
+      height: 58px;
+      width: 40%;  
+    }
+  }
+  @media (max-width: 1280px) and (max-height: 700px) {
+    .contenedor{
+      height: 22vh;
+    }
+  }
+  @media(max-width: 1080px) and (orientation: landscape){
+    #landscape {
+        display: flex;
+        position: fixed;
+        top: 0;
+        bottom: 0px;
+        right: 0px;
+        left: 0px;
+        background: white;
+        z-index: 990000;
+        width: 100%;
+        height: 100vh;
+        font-size: 120%;
+        align-items: center;
+        justify-content: center;
+        /* gap: 10px; */
+        
+        
+    }
+    #landscape div{
+      width: 200px;
+      height: 200px;
+      background-size: cover;
+      background-size: 100% 100%;
+      background-repeat: no-repeat;
+      /* background-color: #f28f1d; */
+      margin: 5px;
+    }
+    .FondoPieza {
+      height: 60px;
+      width: 70%;  
+    }
+    
+  }
+  @media (max-width: 800px) {
+    
+    @keyframes animateB{
+      0%{
+        top: -65px;
+      }
+      25%{
+        top: -85px;
+      }
+      50%{
+        top: -65px;
+      }
+      75%{
+        top: -85px;
+      }
+      100%{
+        top: -65px;
+      }
+    }
+    .FondoPieza {
+      height: 58px;
+      width: 70%;  
+    }
+    
+  }
+
+  @media (max-width: 787px) {
+    .contenedor {
+      background-color: transparent;
+      height: 12vh;
+      bottom: 30px;
+      gap: 15px;
+    }
+    
+    .button {
+      height: 40px;
+      width: 40px;
+    }
+    .button svg {
+      height: 30px;
+      width: 30px;
+    }
+    .help>svg {
+      height: 30px;
+      width: 30px;
+    }
+    .percent {
+      transform: rotate(-90deg);
+      position: relative;
+      width: 40px;
+      height: 40px;
+    }
+  
+    .contenedor1-1{
+      height: 100%;
+      width: 90%;
+    }
+  
+    .SesionAbajo {
+      background-color: transparent;
+      /* z-index: 995; */
+  
+    }
+    .audio {
+      width: 40px;
+      height: 40px;
+    }
+    .audio > svg {
+      width: 70%;
+      height: 70%;
+    }
+  
+    .FondoPieza {
+      width: 80%;
+      height: 50px;
+    }
+  
+    .Pieza {
+      font-size: 2rem;
+      margin: 10px;
+      border-radius: 10%;
+    }
+  
+    #left {
+      display: flex;
+      height: 40px;
+      width: 40px;
+      font-size: 3em;
+      line-height: 0px;
+      border-radius: 50%;
+      padding-right: 0px;
+    }
+  
+    #right {
+      display: flex;
+      height: 40px;
+      width: 40px;
+      font-size: 3em;
+      line-height: 0px;
+      border-radius: 50%;
+      padding-left: 0px;
+    }
+    #TextOption {
+      width: 90%;
+    }
+    .AR {
+      display: flex;
+      position: fixed;
+      width: 40px;
+      height: 40px;
+      bottom: 120px;
+      right: 10px;
+      box-shadow: 0 3px 5px -1px rgba(0, 0, 0, 0.2),
+                  0 6px 10px 0 rgba(0, 0, 0, 0.14), 0 1px 18px 0 rgba(0, 0, 0, 0.12);
+      bottom: 190px;
+    }
+    .material-symbols-outlined {
+      font-variation-settings:
+      'FILL' 0,
+      'wght' 900,
+      'GRAD' 0,
+      'opsz' 48
+    }
+    .circule{
+      display: none;
+    }
+    .slider{
+      /* width: 40px; */
+      /* height: 40px; */
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .card2{
+      width: 100%;
+      height: 100%;
+    }
+   
+    .percent .circule2 {
+      position: relative;
+      width: 50px;
+      height: 50px;
+      z-index: 1;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      
+      transform: translate(-2px, -2px);
+    }
+    .circule2 circle{
+      width: 45px;
+      height: 45px;
+      fill: none;
+      stroke: #c0c0c0;
+      stroke-width: 5;
+      stroke-linecap: round;
+      transform: translate(3px, 3px);
+    }
+    .circule2 circle:nth-child(2) {
+      stroke-dasharray: 122;
+      stroke-dashoffset: 122;
+      stroke: #f28f1d;
+    }
+    
+    .card2:nth-child(1) .circule2 circle:nth-child(2) {
+      stroke-dashoffset: calc(122 - (122 * var(--porcent)) / 100);
+      stroke: #f28f1d;
+    }
+    #numpaso{
+      font-size: 28px;
+      transform: translate(1px,-1.9px);
+    }
+    
+    
+  }
+  @media (max-width: 425px) {
+
+    @keyframes animateB{
+      0%{
+        top: -65px;
+      }
+      25%{
+        top: -85px;
+      }
+      50%{
+        top: -65px;
+      }
+      75%{
+        top: -85px;
+      }
+      100%{
+        top: -65px;
+      }
+    }
+    #TextOption{
+      width: 80%;
+      font-size: 20px;
+  
+    }
+    .AR{
+      bottom: 190px;
+    }
+     
+  }
+  @media (max-width: 375px) {
+
+    
+    #TextOption{
+      width: 80%;
+      font-size: 20px;
+    }
+    .AR{
+      bottom: 190px;
+    }
+    .FondoPieza{
+      width: 90%;
+      height: 40px;
+    }
+  
+  }
+  @media (max-width: 320px) {
+    .contenedor {
+      background-color: transparent;
+      height: 10vh;
+      bottom: 30px;
+      gap: 20px;
+    }
+  
+  
+    .button {
+      height: 35px;
+      width: 35px;
+    }
+    .button svg {
+      height: 25px;
+      width: 25px;
+    }
+    .help>span{
+      height: 25px;
+      width: 25px;
+    }
+    .percent {
+      transform: rotate(-90deg);
+      position: relative;
+      width: 40px;
+      height: 40px;
+    }
+  
+    .SesionAbajo {
+      background-color: transparent;
+      /* z-index: 995; */
+  
+    }
+    .audio {
+      width: 35px;
+      height: 35px;
+    }
+    .audio > svg {
+      width: 70%;
+      height: 70%;
+    }
+  
+    .FondoPieza {
+      width: 95%;
+      height: 35px;
+    }
+  
+    .Pieza {
+      font-size: 0.2rem;
+      margin: 10px;
+      border-radius: 10%;
+    }
+    #TextOption{
+      font-size: 1.2rem;
+    }
+    #left {
+      display: flex;
+      height: 35px;
+      width: 35px;
+      font-size: 3em;
+      line-height: 0px;
+      border-radius: 50%;
+      padding-right: 0px;
+    }
+  
+    #right {
+      display: flex;
+      height: 35px;
+      width: 35px;
+      font-size: 3em;
+      line-height: 0px;
+      border-radius: 50%;
+      padding-left: 0px;
+    }
+  
+    #color1{
+      height: 35px;
+      width: 35px;
+    }
+  
+    #color2{
+      height: 35px;
+      width: 35px;
+    }
+  
+    #color3{
+      height: 35px;
+      width: 35px;
+    }
+  
+  
+    .AR {
+      display: flex;
+      position: fixed;
+      width: 35px;
+      height: 35px;
+      bottom: 190px;
+      right: 5px;
+      box-shadow: 0 3px 5px -1px rgba(0, 0, 0, 0.2),
+                  0 6px 10px 0 rgba(0, 0, 0, 0.14), 0 1px 18px 0 rgba(0, 0, 0, 0.12);
+      
+    }
+    .material-symbols-outlined {
+      font-variation-settings:
+      'FILL' 0,
+      'wght' 900,
+      'GRAD' 0,
+      'opsz' 48
+    }
+    .circule{
+      display: none;
+    }
+    .slider{
+      /* width: 40px; */
+      /* height: 40px; */
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .card2{
+      width: 100%;
+      height: 100%;
+    }
+   
+    .percent .circule2 {
+      position: relative;
+      width: 50px;
+      height: 50px;
+      z-index: 1;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      
+      transform: translate(-2px, -2px);
+    }
+    .circule2 circle{
+      width: 45px;
+      height: 45px;
+      fill: none;
+      stroke: #c0c0c0;
+      stroke-width: 5;
+      stroke-linecap: round;
+      transform: translate(3px, 3px);
+    }
+    .circule2 circle:nth-child(2) {
+      stroke-dasharray: 122;
+      stroke-dashoffset: 122;
+      stroke: #f28f1d;
+    }
+    
+    .card2:nth-child(1) .circule2 circle:nth-child(2) {
+      stroke-dashoffset: calc(122 - (122 * var(--porcent)) / 100);
+      stroke: #f28f1d;
+    }
+    #numpaso{
+      font-size: 28px;
+      transform: translate(1px,-1.9px);
+    }
+    #TextOption{
+      width: 80%;
+    }
+    
+    
+    
+    @keyframes animateB{
+      0%{
+        top: -50px;
+      }
+      25%{
+        top: -65px;
+      }
+      50%{
+        top: -50px;
+      }
+      75%{
+        top: -65px;
+      }
+      100%{
+        top: -50px;
+      }
+    }
+  }
+  
