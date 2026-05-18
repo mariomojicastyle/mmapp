@@ -31,7 +31,7 @@ export default function AudioPlayer() {
 
   //Si se activa el panel de ayudas, se cambia el audio especial, y las ayudas se van activando a medida que el audio suena.
   useEffect(() => {
-    if(PanelAyudas){
+    if (PanelAyudas) {
       audioRef.current.load();
       audioRef.current.src = `/Recursos/Sonidos/01_Ayuda.mp3`;
       setTimeout(() => {
@@ -43,12 +43,12 @@ export default function AudioPlayer() {
         // console.log(ct);
         if (Math.round(ct) == 2) {
           ActivarAyuda1();
-        } 
+        }
         // quitar Tooltip de los colores
         // else if (Math.round(ct) == 10) {
         //   ActivarAyuda2();          
         // } 
-        
+
         else if (Math.round(ct) == 10) {
           ActivarAyuda3();
         } else if (Math.round(ct) == 22) {
@@ -57,21 +57,21 @@ export default function AudioPlayer() {
           ActivarAyuda5();
         } else if (Math.round(ct) == 38) {
           ActivarAyuda6();
-        } else if(audioRef.current.ended) {
+        } else if (audioRef.current.ended) {
           PanelAyudasFalse();
           ActivarParpadeo();
         }
       };
 
-    }else{
-       //local
-       audioRef.current.src=`/${id}/sounds/${pasoActual}.mp3`;
+    } else {
+      //local
+      audioRef.current.src = `/${id}/sounds/${pasoActual}.mp3`;
       //producion
       // audioRef.current.src=`https://3dymedios.com/Prueba/AP/${Cliente}/${id}/sounds/${pasoActual}.mp3`;
       audioRef.current.load();
       // AudioEndedTrue();
     }
-  }, [PanelAyudas,pasoActual]);
+  }, [PanelAyudas, pasoActual]);
 
 
   //Se activa el audio, al dar clip en el boton iniciar
@@ -94,7 +94,7 @@ export default function AudioPlayer() {
             audioRef.current.load();
             audioRef.current
               .play()
-              .then((_) => {})
+              .then((_) => { })
               .catch((error) => {
                 console.log(error);
               });
@@ -142,8 +142,8 @@ export default function AudioPlayer() {
       <audio
         id="audio"
         ref={audioRef}
-       // src={`./${id}/sounds/${pasoActual}.mp3`}
-         src={`/${id}/sounds/${pasoActual}.mp3`}
+        // src={`./${id}/sounds/${pasoActual}.mp3`}
+        src={`/${id}/sounds/${pasoActual}.mp3`}
       ></audio>
     </>
   );

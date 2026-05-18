@@ -1,12 +1,36 @@
 "use client"
 
-import { usePathname } from "next/navigation"
-import { Search, MessageSquare, HelpCircle, User as UserIcon } from "lucide-react"
+import { useState, useRef, useEffect } from "react"
+import { usePathname, useRouter } from "next/navigation"
+import Link from "next/link"
+import { useTheme } from "next-themes"
+import { Search, MessageSquare, HelpCircle, User as UserIcon, Settings, FileText, Check } from "lucide-react"
 import { useAuth } from "@/lib/auth/auth-context"
+import { createClient } from "@/lib/supabase/client"
 
 export function TopNav() {
   const { user } = useAuth()
   const pathname = usePathname()
+  const router = useRouter()
+  const { theme, setTheme } = useTheme()
+  const [isUserMenuOpen, setIsUserMenuOpen] = useState(false)
+  const userMenuRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (userMenuRef.current && !userMenuRef.current.contains(event.target as Node)) {
+        setIsUserMenuOpen(false)
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside)
+    return () => document.removeEventListener("mousedown", handleClickOutside)
+  }, [])
+
+  const handleLogout = async () => {
+    const supabase = createClient()
+    await supabase.auth.signOut()
+    router.push("/login")
+  }
 
   return (
     <header className="sticky top-0 z-50 flex h-16 w-full items-center justify-between border-b border-outline-variant bg-surface/80 backdrop-blur-xl">
@@ -33,7 +57,7 @@ export function TopNav() {
         {/* Separador */}
         <div className="mx-2 h-4 w-px bg-outline-variant/50"></div>
 
-        {/* 2. Nombre del usuario (Opcional si ya está en breadcrumbs, pero el usuario lo pidió) */}
+        {/* 2. Nombre del usuario */}
         <div className="flex items-center gap-2 text-on-surface-variant hover:text-on-surface transition-colors cursor-default">
           <div className="flex h-7 w-7 items-center justify-center rounded-full bg-surface-container-highest">
             <UserIcon className="h-3.5 w-3.5" />
@@ -86,10 +110,94 @@ export function TopNav() {
           Cargar Créditos
         </button>
 
-        {/* 9. Perfil / Logout */}
-        <button className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary/10 ring-1 ring-primary/20 text-xs font-black text-primary transition-all hover:ring-2 hover:ring-primary/50">
-          {user?.name ? user.name.substring(0, 2).toUpperCase() : "MM"}
-        </button>
+        {/* 9. Perfil / Menú de Usuario */}
+        <div className="relative" ref={userMenuRef}>
+          <button 
+            onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
+            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary/10 ring-1 ring-primary/20 text-xs font-black text-primary transition-all hover:ring-2 hover:ring-primary/50"
+          >
+            {user?.name ? user.name.substring(0, 2).toUpperCase() : "MM"}
+          </button>
+
+          {isUserMenuOpen && (
+            <div className="absolute right-0 top-full mt-2 w-64 rounded-xl border border-outline-variant bg-surface-container-low shadow-xl shadow-black/10 py-1.5 backdrop-blur-md">
+              
+              {/* User Info */}
+              <div className="px-3 py-2.5">
+                <p className="text-sm font-semibold text-on-surface truncate">{user?.name || 'Mario Mojica'}</p>
+                <p className="text-xs text-on-surface-variant truncate">{user?.email || 'mariomojica.style@gmail.com'}</p>
+              </div>
+
+              <div className="h-px w-full bg-outline-variant/50 my-1" />
+
+              {/* Preferences */}
+              <div className="px-1.5 py-1 space-y-0.5">
+                <Link 
+                  href="/configuracion" 
+                  onClick={() => setIsUserMenuOpen(false)} 
+                  className="flex w-full items-center gap-2.5 px-2.5 py-2 text-sm font-medium text-on-surface hover:bg-surface-container-highest rounded-lg transition-colors"
+                >
+                  <Settings className="h-4 w-4 text-on-surface-variant" />
+                  Configuración
+                </Link>
+                <Link 
+                  href="#" 
+                  onClick={() => setIsUserMenuOpen(false)} 
+                  className="flex w-full items-center gap-2.5 px-2.5 py-2 text-sm font-medium text-on-surface hover:bg-surface-container-highest rounded-lg transition-colors"
+                >
+                  <FileText className="h-4 w-4 text-on-surface-variant" />
+                  Changelog
+                </Link>
+              </div>
+
+              <div className="h-px w-full bg-outline-variant/50 my-1" />
+
+              {/* Theme Selection */}
+              <div className="px-1.5 py-1">
+                <p className="px-2.5 py-1 text-xs font-semibold text-on-surface-variant">Theme</p>
+                <div className="space-y-0.5 mt-1">
+                  <button 
+                    onClick={() => {
+                      setTheme('dark')
+                      setIsUserMenuOpen(false)
+                    }}
+                    className="flex w-full items-center gap-2.5 px-2.5 py-2 text-sm font-medium text-on-surface hover:bg-surface-container-highest rounded-lg transition-colors"
+                  >
+                    <div className="flex h-4 w-4 items-center justify-center">
+                      {theme === 'dark' && <Check className="h-3.5 w-3.5" />}
+                    </div>
+                    Dark
+                  </button>
+                  <button 
+                    onClick={() => {
+                      setTheme('light')
+                      setIsUserMenuOpen(false)
+                    }}
+                    className="flex w-full items-center gap-2.5 px-2.5 py-2 text-sm font-medium text-on-surface hover:bg-surface-container-highest rounded-lg transition-colors"
+                  >
+                    <div className="flex h-4 w-4 items-center justify-center">
+                      {theme === 'light' && <Check className="h-3.5 w-3.5" />}
+                    </div>
+                    Light
+                  </button>
+                </div>
+              </div>
+
+              <div className="h-px w-full bg-outline-variant/50 my-1" />
+
+              {/* Logout */}
+              <div className="px-1.5 py-1">
+                <button 
+                  onClick={handleLogout}
+                  className="flex w-full items-center px-2.5 py-2 text-sm font-medium text-red-400 hover:bg-red-500/10 hover:text-red-500 rounded-lg transition-colors"
+                >
+                  Log out
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+
       </div>
     </header>
   )
