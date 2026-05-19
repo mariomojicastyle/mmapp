@@ -37,14 +37,15 @@ Este archivo es la "Memoria RAM" para Antigravity. Contiene el contexto de lo qu
 ---
 
 ## 🛠️ 3. Aplicativo de Armado (Legacy Restore)
-**Estado:** Migración local completada y funcional.
+**Estado:** Migración local y refinamientos de física, herrajes y red 100% completados en la versión v5.
 
 ### 🎯 Objetivos de la Fase
-- [x] Eliminar dependencias de `3dymedios.com`.
-- [x] Localizar modelos GLB, Matcaps y HDRI.
-- [x] Fix de errores de compilación (Fuentes y Rutas).
-- [x] Descarga de activos multimedia (Audio y Tips).
-- [ ] **PRÓXIMO:** Integrar UI moderna ("Obsidian Teal") sobre la lógica funcional recuperada.
+- [x] Eliminar dependencias de `3dymedios.com` (localización total de GLB, Matcaps, HDRI, audio y tips).
+- [x] Corregir desfase de 1 metro en coordenadas de Three.js entre el modelo y el terreno.
+- [x] Desconexión de red definitiva (Logo, encuestas y ayudas).
+- [x] Corregir duplicidad de herrajes en el DOM en cambios de paso/producto.
+- [x] Solucionar escala de imágenes de tooltips afectadas por Tailwind Preflight.
+- [ ] **PRÓXIMO (Fase v6):** Integrar UI moderna ("Obsidian Teal") y realizar el despliegue del Aplicativo de Armado unificado.
 
 ---
 
@@ -55,4 +56,4 @@ Este archivo es la "Memoria RAM" para Antigravity. Contiene el contexto de lo qu
 - **Local App:** [http://localhost:3000](http://localhost:3000)
 
 ---
-*Última actualización de contexto: 15 de Mayo, 2026 (19:22 PM)*
+*Última actualización de contexto: 19 de Mayo, 2026 (16:05 PM)*
