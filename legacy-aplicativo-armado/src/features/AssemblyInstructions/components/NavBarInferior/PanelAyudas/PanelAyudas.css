@@ -16,20 +16,9 @@
   }
 }
 
-/* Contenedor del bar superior para posicionar ayuda1 */
-.contenedor1-1 {
+/* Asegura posicionamiento del botón de información para la burbuja ayuda1 */
+#info {
   position: relative;
-  --offset-bubble-help: 93px;
-}
-@media (max-width: 787px) {
-  .contenedor1-1 {
-    --offset-bubble-help: 78px;
-  }
-}
-@media (max-width: 320px) {
-  .contenedor1-1 {
-    --offset-bubble-help: 65px;
-  }
 }
 
 /* Burbuja base */
@@ -127,23 +116,23 @@
 
 /* Flecha apuntando hacia arriba (para ayuda1) */
 .ayuda-bubble-arrow.arrow-up {
-  top: -11px;
+  top: -6px;
   left: 50%;
-  transform: translateX(-50%) rotate(45deg) scale(0.6, 1.8);
+  transform: translateX(-50%) rotate(45deg);
 }
 
 /* Flecha apuntando hacia abajo (para ayuda4 y ayuda5) */
 .ayuda-bubble-arrow.arrow-down {
-  bottom: -11px;
+  bottom: -6px;
   left: 50%;
-  transform: translateX(-50%) rotate(225deg) scale(0.6, 1.8);
+  transform: translateX(-50%) rotate(225deg);
 }
 
 /* Flecha apuntando hacia la derecha (para ayuda6 en el botón AR) */
 .ayuda-bubble-arrow.arrow-right {
   top: 50%;
-  right: -11px;
-  transform: translateY(-50%) rotate(135deg) scale(1.8, 0.6);
+  right: -6px;
+  transform: translateY(-50%) rotate(135deg);
 }
 
 /* ==========================================================================
@@ -152,8 +141,8 @@
 
 /* Ayuda 1: Guía y Herramientas (NavBar Superior) */
 .ayuda-bubble.ayuda1 {
-  top: 75px;
-  left: var(--offset-bubble-help);
+  top: calc(100% + 11px);
+  left: 50%;
   transform: translateX(-50%) scale(0.95);
 }
 .ayuda-bubble.ayuda1.is-active {
@@ -179,20 +168,20 @@
   background: rgba(10, 20, 24, 0.94);
   border-left: 1px solid var(--primary, #00f2fe);
   border-top: 1px solid var(--primary, #00f2fe);
-  bottom: -11px;
+  bottom: -6px;
   z-index: -1;
 }
 .ayuda3-arrow.arrow-left {
   left: calc(50% - var(--offset-btn-step));
-  transform: translateX(-50%) rotate(225deg) scale(0.6, 1.8);
+  transform: translateX(-50%) rotate(225deg);
 }
 .ayuda3-arrow.arrow-center {
   left: 50%;
-  transform: translateX(-50%) rotate(225deg) scale(0.6, 1.8);
+  transform: translateX(-50%) rotate(225deg);
 }
 .ayuda3-arrow.arrow-right {
   left: calc(50% + var(--offset-btn-step));
-  transform: translateX(-50%) rotate(225deg) scale(0.6, 1.8);
+  transform: translateX(-50%) rotate(225deg);
 }
 
 /* Ayuda 4: Buscador de Piezas / Herrajes */

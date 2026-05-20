@@ -59,21 +59,20 @@ export default function NavBarSuperior({ id, data }) {
           </div>
 
           {/* <!-- Boton de información --> */}
-
           <div id="info" className="button" onClick={showPanelTips}>
             <IconInfo />
-          </div>
-
-          {/* Burbuja de ayuda 1: Guía y Herramientas */}
-          <div className={`ayuda-bubble ayuda1 ${PanelAyudas && ayuda1 ? "is-active" : ""}`}>
-            <div className="ayuda-bubble-arrow arrow-up"></div>
-            <div className="ayuda-bubble-title">Guía y Herramientas</div>
-            <ul className="ayuda-bubble-list">
-              <li className="ayuda-bubble-item">Garantía del mueble</li>
-              <li className="ayuda-bubble-item">Marca y soporte</li>
-              <li className="ayuda-bubble-item">Herramientas requeridas</li>
-              <li className="ayuda-bubble-item">Indicaciones de armado</li>
-            </ul>
+            
+            {/* Burbuja de ayuda 1: Guía y Herramientas */}
+            <div className={`ayuda-bubble ayuda1 ${PanelAyudas && ayuda1 ? "is-active" : ""}`} onClick={(e) => e.stopPropagation()}>
+              <div className="ayuda-bubble-arrow arrow-up"></div>
+              <div className="ayuda-bubble-title">Guía y Herramientas</div>
+              <ul className="ayuda-bubble-list">
+                <li className="ayuda-bubble-item">Garantía del mueble</li>
+                <li className="ayuda-bubble-item">Marca y soporte</li>
+                <li className="ayuda-bubble-item">Herramientas requeridas</li>
+                <li className="ayuda-bubble-item">Indicaciones de armado</li>
+              </ul>
+            </div>
           </div>
 
           {/* <!-- Opciones de cambio de color de vizualización del mueble--> */}
