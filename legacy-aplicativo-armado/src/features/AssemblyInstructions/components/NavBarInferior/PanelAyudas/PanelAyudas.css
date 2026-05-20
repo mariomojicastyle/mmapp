@@ -19,16 +19,16 @@
 /* Contenedor del bar superior para posicionar ayuda1 */
 .contenedor1-1 {
   position: relative;
-  --offset-bubble-help: 67px;
+  --offset-bubble-help: 93px;
 }
 @media (max-width: 787px) {
   .contenedor1-1 {
-    --offset-bubble-help: 56px;
+    --offset-bubble-help: 78px;
   }
 }
 @media (max-width: 320px) {
   .contenedor1-1 {
-    --offset-bubble-help: 46px;
+    --offset-bubble-help: 65px;
   }
 }
 
@@ -127,23 +127,23 @@
 
 /* Flecha apuntando hacia arriba (para ayuda1) */
 .ayuda-bubble-arrow.arrow-up {
-  top: -6px;
+  top: -11px;
   left: 50%;
-  transform: translateX(-50%) rotate(45deg);
+  transform: translateX(-50%) rotate(45deg) scale(0.6, 1.8);
 }
 
 /* Flecha apuntando hacia abajo (para ayuda4 y ayuda5) */
 .ayuda-bubble-arrow.arrow-down {
-  bottom: -6px;
+  bottom: -11px;
   left: 50%;
-  transform: translateX(-50%) rotate(225deg);
+  transform: translateX(-50%) rotate(225deg) scale(0.6, 1.8);
 }
 
 /* Flecha apuntando hacia la derecha (para ayuda6 en el botón AR) */
 .ayuda-bubble-arrow.arrow-right {
   top: 50%;
-  right: -6px;
-  transform: translateY(-50%) rotate(135deg);
+  right: -11px;
+  transform: translateY(-50%) rotate(135deg) scale(1.8, 0.6);
 }
 
 /* ==========================================================================
@@ -179,20 +179,20 @@
   background: rgba(10, 20, 24, 0.94);
   border-left: 1px solid var(--primary, #00f2fe);
   border-top: 1px solid var(--primary, #00f2fe);
-  bottom: -6px;
+  bottom: -11px;
   z-index: -1;
 }
 .ayuda3-arrow.arrow-left {
   left: calc(50% - var(--offset-btn-step));
-  transform: translateX(-50%) rotate(225deg);
+  transform: translateX(-50%) rotate(225deg) scale(0.6, 1.8);
 }
 .ayuda3-arrow.arrow-center {
   left: 50%;
-  transform: translateX(-50%) rotate(225deg);
+  transform: translateX(-50%) rotate(225deg) scale(0.6, 1.8);
 }
 .ayuda3-arrow.arrow-right {
   left: calc(50% + var(--offset-btn-step));
-  transform: translateX(-50%) rotate(225deg);
+  transform: translateX(-50%) rotate(225deg) scale(0.6, 1.8);
 }
 
 /* Ayuda 4: Buscador de Piezas / Herrajes */

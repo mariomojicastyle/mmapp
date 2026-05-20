@@ -308,3 +308,25 @@ svg circle:nth-child(2) {
     width: 18px;
   }
 }
+
+/* Premium Obsidian Teal Blinking Animation */
+@keyframes premium-glow-blink {
+  0%, 100% {
+    border-color: var(--border-light);
+    color: var(--text-secondary);
+    box-shadow: var(--glass-shadow);
+    background: var(--surface);
+    transform: scale(1);
+  }
+  50% {
+    border-color: var(--primary);
+    color: var(--primary);
+    box-shadow: 0 0 25px var(--primary-glow);
+    background: var(--surface-active);
+    transform: scale(1.08);
+  }
+}
+
+.is-blinking {
+  animation: premium-glow-blink 1.2s infinite ease-in-out !important;
+}

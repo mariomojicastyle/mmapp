@@ -45,26 +45,39 @@ export default function AudioPlayer() {
       const handleTimeUpdateAyudas = () => {
         if (!audioRef.current) return;
         let ct = audioRef.current.currentTime;
-        // console.log(ct);
-        if (Math.round(ct) == 2) {
-          ActivarAyuda1();
-        } 
-        // quitar Tooltip de los colores
-        // else if (Math.round(ct) == 10) {
-        //   ActivarAyuda2();          
-        // } 
-        
-        else if (Math.round(ct) == 10) {
-          ActivarAyuda3();
-        } else if (Math.round(ct) == 22) {
-          ActivarAyuda4();
-        } else if (Math.round(ct) == 35) {
-          ActivarAyuda5();
-        } else if (Math.round(ct) == 38) {
-          ActivarAyuda6();
-        } else if(audioRef.current.ended) {
-          PanelAyudasFalse();
-          ActivarParpadeo();
+        const state = useEnviroment.getState();
+
+        if (ct >= 2 && ct < 10) {
+          if (!state.ayuda1) {
+            state.ResetAyudas();
+            state.ActivarAyuda1();
+          }
+        } else if (ct >= 10 && ct < 22) {
+          if (!state.ayuda3) {
+            state.ResetAyudas();
+            state.ActivarAyuda3();
+          }
+        } else if (ct >= 22 && ct < 35) {
+          if (!state.ayuda4) {
+            state.ResetAyudas();
+            state.ActivarAyuda4();
+          }
+        } else if (ct >= 35 && ct < 38) {
+          if (!state.ayuda5) {
+            state.ResetAyudas();
+            state.ActivarAyuda5();
+          }
+        } else if (ct >= 38) {
+          if (!state.ayuda6) {
+            state.ResetAyudas();
+            state.ActivarAyuda6();
+          }
+        }
+
+        if (audioRef.current.ended) {
+          state.PanelAyudasFalse();
+          state.ActivarParpadeo();
+          state.ResetAyudas();
         }
       };
 

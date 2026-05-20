@@ -86,39 +86,22 @@ export default function NavBarInferior({ id, data }) {
     PlayingAudio();
   };
 
-  //Funcion parpadeo de flecha
-  useEffect(()=>{
-    if(Parpadeo && refRight.current){
-      setTimeout(() => {
-        refRight.current.style.background = "#fff";
-        refRight.current.style.color = "#f28f1d";
-      }, 0);
-      setTimeout(() => {
-        refRight.current.style.background = "#f28f1d";
-        refRight.current.style.color = "#fff";
-      }, 500);
-      setTimeout(() => {
-        refRight.current.style.background = "#fff";
-        refRight.current.style.color = "#f28f1d";
-      }, 1000);
-      setTimeout(() => {
-        refRight.current.style.background = "#f28f1d";
-        refRight.current.style.color = "#fff";
-      }, 1500);
-      setTimeout(() => {
-        refRight.current.style.background = "#fff";
-        refRight.current.style.color = "#f28f1d";
-      }, 2000);
-      setTimeout(() => {
-        refRight.current.style.background = "#f28f1d";
-        refRight.current.style.color = "#fff";
-      }, 2500);
-      setTimeout(() => {
-        refRight.current.style.background = "#fff";
-        refRight.current.style.color = "#f28f1d";
-      }, 3000);
+  //Funcion parpadeo de flecha (Animación Premium Obsidian Teal al finalizar el tutorial)
+  useEffect(() => {
+    if (Parpadeo && refRight.current) {
+      const el = refRight.current;
+      el.classList.add("is-blinking");
+      
+      const timer = setTimeout(() => {
+        el.classList.remove("is-blinking");
+      }, 6000); // Titila durante 6 segundos y luego vuelve a su estado normal
+      
+      return () => {
+        clearTimeout(timer);
+        el.classList.remove("is-blinking");
+      };
     }
-  },[Parpadeo])
+  }, [Parpadeo]);
 
   const PlayButton = () => {
     //Se verifica los estados de la animación para cambiar el icono del boton
