@@ -1,0 +1,60 @@
+.cerrar {
+  height: 50px;
+  width: 50px;
+  top: 0px;
+  right: 0px;
+  position: fixed;
+  z-index: 1000;
+  margin: 10px;
+  display: none;
+  color: white;
+  background: #f28f1d;
+  transition: transform 0.3s ease;
+}
+
+.active { 
+  display: flex;
+}
+
+
+@media (max-width: 787px) {
+  .cerrar {
+    top: 14px;
+    right: 28px;
+  }
+
+  .button {
+    height: 40px;
+    width: 40px;
+  }
+  .button svg {
+    height: 30px;
+    width: 30px;
+  }
+}
+@media (max-width: 425px) {
+  .cerrar {
+    top: 15px;
+    right: 11px;
+  }
+}
+@media (max-width: 375px) {
+  .cerrar {
+    top: 10px;
+    right: 9px;
+  }
+}
+@media (max-width: 320px) {
+  .cerrar {
+    top: -5px;
+    right: 6px;
+  }
+  .button {
+    height: 35px;
+    width: 35px;
+  }
+  .button svg {
+    height: 25px;
+    width: 25px;
+  }
+}

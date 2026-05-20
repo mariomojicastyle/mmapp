@@ -1,0 +1,143 @@
+/* panel de pantalla inicial */
+.loader {
+    position: fixed;
+    z-index: 999;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: black;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    color: white;
+    font-size: 20vw;
+    font-family: sans-serif;
+  }
+
+.PanelInicial {
+    position: fixed;
+    z-index: 999;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    width: 100%;
+    height: 100vh;
+    background-color: white;
+    overflow-y: auto;
+    transition: transform 0.3s ease;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+    gap: 20px;
+
+    transform: translate(0, 0);
+}
+
+.PanelInicial>.optionI {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    text-align: center;
+    font-size: 1.5rem;
+
+}
+
+.PanelInicial.is-active {
+    transform: translate(0, 100%);
+}
+
+.optionI>p {
+    width: 50%;
+}
+#inicio{
+    cursor: pointer;
+    display: none;
+    border-radius: 10%;
+}
+.optionI>.imagen {
+
+    background-size: 100% 100%;
+    background-repeat: no-repeat;
+    height: 10rem;
+    width: 20rem;
+    padding: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 2rem;
+    font-weight: bold;
+}
+
+/* Barra de progreso  */
+
+.progress {
+    width: 200px;
+    height: 20px;
+    background: #ccccccff;
+    border: 2px solid white;
+    border-radius: 20px;
+    box-shadow: 0 3px 5px -1px rgba(0, 0, 0, 0.2),
+      0 6px 10px 0 rgba(0, 0, 0, 0.14), 0 1px 18px 0 rgba(0, 0, 0, 0.12);
+  }
+
+@media (max-width: 800px) {
+    .optionI>p {
+        width: 70%;
+    }
+}
+
+@media (max-width: 787px) {
+    .optionI>p {
+        width: 90%;
+    }
+    #inicio{
+        height: 6rem;
+      }
+}
+
+@media (max-width: 375px) {
+    .PanelInicial {
+        gap: 10px;
+    }
+
+    .PanelInicial>.optionI {
+        font-size: 1.2rem;
+    }
+
+    .optionI>p {
+        width: 90%;
+        font-size: 1.3rem;
+    }
+
+    .optionI>p {
+        width: 90%;
+        font-size: 1.2rem;
+    }
+
+    .optionI>.imagen {
+        height: 7rem;
+        /* width: 7rem; */
+    }
+}
+
+@media (max-width: 320px) {
+    .PanelInicial {
+        gap: 5px;
+    }
+
+    .PanelInicial>.optionI {
+        font-size: 1.2rem;
+    }
+    .optionI >p{
+        width: 90%;
+        font-size: 1.2rem;
+      }
+      .optionI > .imagen{
+        height: 7rem;
+        /* width: 7rem; */
+      }
+}
