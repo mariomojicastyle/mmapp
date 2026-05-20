@@ -52,17 +52,17 @@ export default function AudioPlayer() {
             state.ResetAyudas();
             state.ActivarAyuda1();
           }
-        } else if (ct >= 10 && ct < 22) {
+        } else if (ct >= 10 && ct < 24) {
           if (!state.ayuda3) {
             state.ResetAyudas();
             state.ActivarAyuda3();
           }
-        } else if (ct >= 22 && ct < 35) {
+        } else if (ct >= 24 && ct < 33) {
           if (!state.ayuda4) {
             state.ResetAyudas();
             state.ActivarAyuda4();
           }
-        } else if (ct >= 35 && ct < 38) {
+        } else if (ct >= 33 && ct < 35) {
           if (!state.ayuda5) {
             state.ResetAyudas();
             state.ActivarAyuda5();
