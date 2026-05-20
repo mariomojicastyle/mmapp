@@ -34,7 +34,7 @@ export default function NavBarInferior({ id, data }) {
   const resetAction = useEnviroment((state) => state.resetAction);
   const Parpadeo = useEnviroment((state) => state.Parpadeo);
 
-  const PanelAyudas = useEnviroment((state) => state.PanelAyudas);
+  const isPanelAyudasActive = useEnviroment((state) => state.PanelAyudas);
   const ayuda3 = useEnviroment((state) => state.ayuda3);
   const ayuda4 = useEnviroment((state) => state.ayuda4);
   const ayuda5 = useEnviroment((state) => state.ayuda5);
@@ -190,7 +190,7 @@ export default function NavBarInferior({ id, data }) {
           </div>
 
           {/* Burbuja de ayuda 3: Navegación de Armado */}
-          <div className={`ayuda-bubble ayuda3 ${PanelAyudas && ayuda3 ? "is-active" : ""}`}>
+          <div className={`ayuda-bubble ayuda3 ${isPanelAyudasActive && ayuda3 ? "is-active" : ""}`}>
             <div className="ayuda3-arrow arrow-left"></div>
             <div className="ayuda3-arrow arrow-center"></div>
             <div className="ayuda3-arrow arrow-right"></div>
@@ -201,7 +201,7 @@ export default function NavBarInferior({ id, data }) {
           </div>
 
           {/* Burbuja de ayuda 4: Buscador de Piezas */}
-          <div className={`ayuda-bubble ayuda4 ${PanelAyudas && ayuda4 ? "is-active" : ""}`}>
+          <div className={`ayuda-bubble ayuda4 ${isPanelAyudasActive && ayuda4 ? "is-active" : ""}`}>
             <div className="ayuda-bubble-arrow arrow-down"></div>
             <div className="ayuda-bubble-title">Buscador de Piezas</div>
             <div className="ayuda-bubble-text">
@@ -210,7 +210,7 @@ export default function NavBarInferior({ id, data }) {
           </div>
 
           {/* Burbuja de ayuda 5: Reproducir / Pausar */}
-          <div className={`ayuda-bubble ayuda5 ${PanelAyudas && ayuda5 ? "is-active" : ""}`}>
+          <div className={`ayuda-bubble ayuda5 ${isPanelAyudasActive && ayuda5 ? "is-active" : ""}`}>
             <div className="ayuda-bubble-arrow arrow-down"></div>
             <div className="ayuda-bubble-title">Reproducir / Pausar</div>
             <div className="ayuda-bubble-text">
