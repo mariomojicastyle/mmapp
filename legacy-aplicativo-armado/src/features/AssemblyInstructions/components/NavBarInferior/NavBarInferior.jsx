@@ -13,7 +13,6 @@ import { IconLeft, IconRight, IconReset, IconPlay, IconPause } from "../Icons.js
 
 
 export default function NavBarInferior({ id, data }) {
-  const refText = useRef(null);
   const refLeft = useRef(null);
   const refRight = useRef(null);
 
@@ -21,7 +20,6 @@ export default function NavBarInferior({ id, data }) {
   const PasoActual = useEnviroment((state) => state.pasoActual);
   const phaseAudio = useEnviroment((state) => state.phaseAudio);
   const toogle = useEnviroment((state) => state.show);
-  const PiezaHerraje = useEnviroment((state) => state.PiezaHerraje);
 
   const CambiarModelo = useEnviroment((state) => state.CambiarModelo);
   const PositiveShow = useEnviroment((state) => state.PositiveShow);
@@ -35,6 +33,11 @@ export default function NavBarInferior({ id, data }) {
 
   const resetAction = useEnviroment((state) => state.resetAction);
   const Parpadeo = useEnviroment((state) => state.Parpadeo);
+
+  const PanelAyudas = useEnviroment((state) => state.PanelAyudas);
+  const ayuda3 = useEnviroment((state) => state.ayuda3);
+  const ayuda4 = useEnviroment((state) => state.ayuda4);
+  const ayuda5 = useEnviroment((state) => state.ayuda5);
 
   var pasostotal = pasos.length;
 
@@ -155,19 +158,19 @@ export default function NavBarInferior({ id, data }) {
           <div className="slider">
             {/* <!-- contenedor del indicador circular --> */}
             <div className="card2">
+              {/* <!-- borde indicativo en computadores --> */}
+              <svg className="circule" viewBox="0 0 72 72">
+                <circle id="borde" cx="36" cy="36" r="32"></circle>
+                <circle id="borde2" cx="36" cy="36" r="32"></circle>
+              </svg>
+
+              {/* <!-- borde indicativo en dispositivos moviles --> */}
+              <svg className="circule2" viewBox="0 0 46 46">
+                <circle id="borde_787" cx="23" cy="23" r="20"></circle>
+                <circle id="borde787" cx="23" cy="23" r="20"></circle>
+              </svg>
+
               <div className="percent">
-                {/* <!-- borde indicativo en computadores --> */}
-                <svg className="circule">
-                  <circle id="borde" cx="32" cy="32" r="32"></circle>
-                  <circle id="borde2" cx="32" cy="32" r="32"></circle>
-                </svg>
-
-                {/* <!-- borde indicativo en dispositivos moviles --> */}
-                <svg className="circule2">
-                  <circle id="borde_787" cx="20" cy="20" r="20"></circle>
-                  <circle id="borde787" cx="20" cy="20" r="20"></circle>
-                </svg>
-
                 {/* <!-- Contenedor del numero indicativo de paso --> */}
                 <div className="number">
                   <h2 id="numpaso">
@@ -185,18 +188,41 @@ export default function NavBarInferior({ id, data }) {
           <div id="btnPause" className="button" onClick={PlayButton}>
             {renderPausePlayIcon()}
           </div>
-        </div>
 
-        <div className="SesionAbajo">
-          <div className="FondoPieza">
+          {/* Burbuja de ayuda 3: Navegación de Armado */}
+          <div className={`ayuda-bubble ayuda3 ${PanelAyudas && ayuda3 ? "is-active" : ""}`}>
+            <div className="ayuda3-arrow arrow-left"></div>
+            <div className="ayuda3-arrow arrow-center"></div>
+            <div className="ayuda3-arrow arrow-right"></div>
+            <div className="ayuda-bubble-title">Navegación de Armado</div>
+            <div className="ayuda-bubble-text">
+              Avanza o retrocede entre los pasos del manual interactivo para ver el proceso en orden.
+            </div>
+          </div>
 
-            <Suspense>
-              {toogle ? <AudioPlayer /> : null}
-            </Suspense>
-            {/* <!-- Etiqueta de texto donde se muestra los diferentes nombres de las piezas y herrajes --> */}
-            <h1 ref={refText} id="TextOption">{PiezaHerraje}</h1>
+          {/* Burbuja de ayuda 4: Buscador de Piezas */}
+          <div className={`ayuda-bubble ayuda4 ${PanelAyudas && ayuda4 ? "is-active" : ""}`}>
+            <div className="ayuda-bubble-arrow arrow-down"></div>
+            <div className="ayuda-bubble-title">Buscador de Piezas</div>
+            <div className="ayuda-bubble-text">
+              Consulta la lista detallada de piezas y herrajes requeridos para el paso de ensamble actual.
+            </div>
+          </div>
+
+          {/* Burbuja de ayuda 5: Reproducir / Pausar */}
+          <div className={`ayuda-bubble ayuda5 ${PanelAyudas && ayuda5 ? "is-active" : ""}`}>
+            <div className="ayuda-bubble-arrow arrow-down"></div>
+            <div className="ayuda-bubble-title">Reproducir / Pausar</div>
+            <div className="ayuda-bubble-text">
+              Controla la locución por voz y la reproducción del audio explicativo paso a paso.
+            </div>
           </div>
         </div>
+
+        {/* El AudioPlayer invisible se mantiene funcional renderizado aquí de forma segura */}
+        <Suspense>
+          {toogle ? <AudioPlayer /> : null}
+        </Suspense>
 
         {/* TODOS LOS PANELES SE UBICAN EN ESTA SESION, PARA NO POSEER PROBLEMAS CON EL Z-INDEX */}
 

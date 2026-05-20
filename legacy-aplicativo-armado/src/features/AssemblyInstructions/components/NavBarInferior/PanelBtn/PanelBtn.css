@@ -1,16 +1,27 @@
 .panel-btn {
-    width: 60px;
-    height: 60px;
+    width: 52px;
+    height: 52px;
     border-radius: 50%;
-    border: none;
+    border: 1px solid var(--border-light);
     display: flex;
     justify-content: center;
     align-items: center;
-    background-color: white;
-    color: #f28f1d;
-    font-size: 2rem;
+    background-color: var(--surface);
+    backdrop-filter: var(--glass-blur);
+    -webkit-backdrop-filter: var(--glass-blur);
+    color: var(--text-secondary);
+    box-shadow: var(--glass-shadow);
     cursor: pointer;
     position: relative;
+    transition: var(--transition-smooth);
+}
+
+.panel-btn:hover {
+    transform: scale(1.08);
+    border-color: var(--primary);
+    color: var(--primary);
+    box-shadow: 0 0 25px var(--primary-glow);
+    background-color: var(--surface-active);
 }
 
 .panel-btn>svg {
@@ -53,13 +64,13 @@
 @media (max-width: 787px) {
 
     .panel-btn {
-        width: 40px;
-        height: 40px;
+        width: 44px;
+        height: 44px;
     }
 
     .panel-btn>svg {
-        width: 70%;
-        height: 70%;
+        width: 65%;
+        height: 65%;
     }
 }
 
@@ -76,14 +87,13 @@
 @media (max-width: 320px) {
 
     .panel-btn {
-        width: 35px;
-        height: 35px;
+        width: 38px;
+        height: 38px;
     }
 
     .panel-btn>svg {
-        width: 70%;
-        height: 70%;
-        font-size: 2rem;
+        width: 65%;
+        height: 65%;
     }
 
     .panel-btn>img {

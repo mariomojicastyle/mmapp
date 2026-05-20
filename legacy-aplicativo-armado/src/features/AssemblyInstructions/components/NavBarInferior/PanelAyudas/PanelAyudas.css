@@ -1,433 +1,227 @@
-.panel4 {
-  position: fixed;
-  z-index: 10;
-  top: 0;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  width: 100%;
-  height: 100%;
-  overflow-y: auto;
-  transition: transform 0.3s ease;
-  transform: translate(0, -100%);
-  display: flex;
-  align-items: center;
-  justify-content: center;
+/* ==========================================================================
+   Burbujas de Ayuda Premium Glassmorphism (Obsidian Teal)
+   ========================================================================== */
+
+/* Variables de offsets por defecto en escritorio */
+.SesionArriba {
+  --offset-btn-step: 72px;
+  --offset-btn-side: 140px;
 }
-.panel4.is-active {
-  transform: translate(0, 0);
-  pointer-events: auto;
+
+/* Offsets responsivos para pantallas móviles */
+@media (max-width: 787px) {
+  .SesionArriba {
+    --offset-btn-step: 60px;
+    --offset-btn-side: 120px;
+  }
 }
-.panel4-1 {
+
+/* Contenedor del bar superior para posicionar ayuda1 */
+.contenedor1-1 {
   position: relative;
-  width: 800px;
-  height: 100%;
-  overflow-y: auto;
-  transition: transform 0.3s ease;
-}
-.ayuda1 {
-  position: absolute;
-  width: 485px;
-  height: 270px;
-  background-size: 100% 100%;
-  left: -69px;
-  top: 50px;
-  transition: opacity 1s;
-  opacity: 0;
-}
-/* .ayuda2 {
-  position: absolute;
-  width: 440px;
-  height: 118px;
-  background-size: 100% 100%;
-  left: 150px;
-  top: 60px;
-  transition: opacity 2s;
-  opacity: 0;
-} */
-.ayuda3 {
-  position: absolute;
-  width: 350px;
-  height: 310px;
-  background-size: 100% 100%;
-  right: 220px;
-  bottom: 85px;
-  transition: opacity 2s;
-  opacity: 0;
-}
-
-.ayuda4 {
-  position: absolute;
-  width: 170px;
-  height: 170px;
-  background-size: 100% 100%;
-  left: 160px;
-  bottom: 110px;
-  transition: opacity 2s;
-  opacity: 0;
-}
-
-.ayuda5 {
-  position: absolute;
-  width: 170px;
-  height: 120px;
-  background-size: 100% 100%;
-  right: 160px;
-  bottom: 140px;
-  transition: opacity 2s;
-  opacity: 0;
-}
-
-.ayuda6 {
-  display: none;
-  position: absolute;
-  width: 420px;
-  height: 200px;
-  background-size: 100% 100%;
-  right: 50px;
-  bottom: 300px;
-  transition: opacity 2s;
-  opacity: 0;
-}
-
-
-@media (max-width: 1600px) {
-  .panel4-1 {
-    width: 800px;
-    height: 100%;
-  }
-  .ayuda1 {
-    left: 23px;
-    top: 60px;
-  }
-  /* .ayuda2 {
-    left: 205px;
-    top: 65px;
-  } */
-  .ayuda3 {
-    right: 220px;
-    bottom: 85px;
-  }
-
-  .ayuda4 {
-    left: 160px;
-    bottom: 115px;
-  }
-
-  .ayuda5 {
-    right: 160px;
-    bottom: 140px;
-  }
-  .ayuda6 {
-    right: 50px;
-    bottom: 300px;
-  }
-}
-@media (max-width: 1600px) and (max-height: 700px) {
-  .ayuda1 {
-    /* left: 148px; */
-    top: 35px;
-  }
-  /* .ayuda2 {
-    
-    top: 40px;
-  } */
-  .ayuda3 {
-    /* right: 275px; */
-    bottom: 90px;
-    /* width: 350px;
-    height: 290px; */
-  }
-
-} 
-@media (max-width: 1280px) {
-  .panel4-1 {
-    width: 900px;
-    height: 100%;
-  }
-  .ayuda1 {
-    left: 148px;
-    top: 50px;
-  }
-  /* .ayuda2 {
-    left: 280px;
-    top: 50px;
-  } */
-  .ayuda3 {
-    right: 270px;
-    bottom: 65px;
-  }
-
-  .ayuda4 {
-    left: 200px;
-    bottom: 100px;
-  }
-  .ayuda5 {
-    right: 200px;
-    bottom: 125px;
-  }
-  .ayuda6 {
-    right: 50px;
-    bottom: 300px;
-  }
-}
-@media (max-width: 1280px) and (max-height: 700px) {
-  .ayuda1 {
-    left: 148px;
-    top: 35px;
-  }
-  /* .ayuda2 {
-    left: 300px;
-    top: 40px;
-  } */
-  .ayuda3 {
-    /* right: 275px; */
-    bottom: 100px;
-    width: 350px;
-    height: 290px;
-  }
-  .ayuda4 {
-    left: 200px;
-    bottom: 125px;
-  }
-  .ayuda5 {
-    right: 200px;
-    bottom: 145px;
-  }
-
-}
-@media (max-width: 800px) {
-  .panel4-1 {
-    width: 100%;
-    height: 100%;
-  }
-  .ayuda1 {
-    left: 170px;
-    top: 65px;
-  }
-  /* .ayuda2 {
-    left: 295px;
-    top: 66px;
-  } */
-  .ayuda3 {
-    right: 220px;
-    bottom: 90px;
-  }
-  .ayuda4 {
-    left: 162px;
-    bottom: 110px;
-  }
-
-  .ayuda5 {
-    right: 160px;
-    bottom: 135px;
-  }
-  .ayuda6 {
-    right: 50px;
-    bottom: 300px;
-  }
+  --offset-bubble-help: 67px;
 }
 @media (max-width: 787px) {
-  .panel4-1 {
-    width: 100%;
-    height: 100%;
-  }
-  .ayuda1 {
-    width: 280px;
-    height: 220px;
-    left: 20px;
-    top: 50px;
-  }
-
-  /* .ayuda2 {
-    width: 365px;
-    height: 100px;
-    left: 65px;
-    top: 55px;
-  } */
-  .ayuda3 {
-    width: 270px;
-    height: 220px;
-    right: 250px;
-    bottom: 70px;
-  }
-
-  .ayuda4 {
-    width: 130px;
-    height: 110px;
-    left: 205px;
-    bottom: 105px;
-  }
-
-  .ayuda5 {
-    width: 140px;
-    height: 140px;
-    right: 200px;
-    bottom: 90px;
-  }
-  .ayuda6 {
-    display: flex;
-    width: 300px;
-    height: 100px;
-    right: 5px;
-    bottom: 220px;
-  }
-}
-@media (max-width: 787px) and (max-height: 700px) {
-  
-  .ayuda3 {
-    right: 190px;
-    bottom: 70px;
-  }
-
-  .ayuda4 {
-    width: 130px;
-    height: 110px;
-    left: 150px;
-    bottom: 100px;
-  }
-
-  .ayuda5 {
-    width: 140px;
-    height: 140px;
-    right: 140px;
-    bottom: 80px;
-  }
-  
-}
-@media (max-width: 425px) {
-  .panel4-1 {
-    position: relative;
-    width: 100%;
-    height: 100%;
-  }
-
-  .ayuda1 {
-    width: 280px;
-    height: 200px;
-    left: -8px;
-    top: 28px;
-  }
-  /* .ayuda2 {
-    width: 240px;
-    height: 100px;
-    left: 105px;
-    top: 45px;
-  } */
-  .ayuda3 {
-    width: 270px;
-    height: 220px;
-    right: 70px;
-    bottom: 80px;
-  }
-  .ayuda4 {
-    width: 150px;
-    height: 80px;
-    left: 25px;
-    bottom: 118px;
-  }
-  .ayuda5 {
-    width: 135px;
-    height: 135px;
-    right: 25px;
-    bottom: 90px;
-  }
-  .ayuda6 {
-    display: flex;
-    width: 300px;
-    height: 100px;
-    right: 5px;
-    bottom: 220px;
-  }
-}
-@media (max-width: 375px) {
-  .panel4-1{
-    position: relative;
-    width: 100%;
-    height: 100%;
-  }
-  .ayuda1{
-    width: 280px; 
-    height: 205px;
-    left: -10px;
-    top: 40px;
-  }
-  /* .ayuda2{
-    width: 255px; 
-    height: 100px;
-    left: 100px;
-    top: 40px;
-  } */
-  .ayuda3{
-    width: 270px; 
-    height: 220px;
-    right: 44px;
-    bottom: 60px;
-  }
-  
-  .ayuda4{
-    width: 140px; 
-    height: 80px;
-    left: 5px;
-    bottom: 100px;
-  }
-  
-  .ayuda5{
-    width: 130px; 
-    height: 100px;
-    right: 10px;
-    bottom: 90px;
-  }
-  .ayuda6{
-    display: flex;
-    width: 300px; 
-    height: 100px;
-    right: 5px;
-    bottom: 220px;
+  .contenedor1-1 {
+    --offset-bubble-help: 56px;
   }
 }
 @media (max-width: 320px) {
-  .panel4-1{
-    width: 100%;
-    height: 100%;
-  }  
-  .ayuda1{
-    width: 260px; 
-    height: 180px;
-    left: -10px;
-    top: 20px;
+  .contenedor1-1 {
+    --offset-bubble-help: 46px;
   }
-  /* .ayuda2{
-    width: 220px; 
-    height: 90px;
-    left: 90px;
-    top: 20px;
-  } */
-  .ayuda3{
-    width: 240px; 
-    height: 200px;
-    right: 40px;
-    bottom: 40px;
-  }
+}
+
+/* Burbuja base */
+.ayuda-bubble {
+  position: absolute;
+  background: rgba(10, 20, 24, 0.94); /* Obsidian base surface */
+  backdrop-filter: var(--glass-blur, blur(12px));
+  -webkit-backdrop-filter: var(--glass-blur, blur(12px));
+  border: 1px solid var(--primary, #00f2fe);
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5), 0 0 20px rgba(0, 242, 254, 0.15);
+  border-radius: 12px;
+  padding: 14px 18px;
+  color: var(--text-primary, #ffffff);
+  font-family: var(--font-sans, "Play-Regular", sans-serif);
+  z-index: 9999;
+  pointer-events: auto;
+  min-width: 260px;
+  max-width: 320px;
   
-  .ayuda4{
-    width: 130px; 
-    height: 70px;
-    left: -5px;
-    bottom: 80px;
-  }
-  
-  .ayuda5{
-    width: 100px; 
-    height: 80px;
-    right: 10px;
-    bottom: 70px;
-  }
-  .ayuda6{
-    display: flex;
-    width: 240px; 
-    height: 90px;
-    right: 5px;
-    bottom: 210px;
-  }
+  /* Micro-animación de entrada */
+  opacity: 0;
+  visibility: hidden;
+  transform: translate(0, 0) scale(0.95);
+  transition: opacity 0.4s cubic-bezier(0.16, 1, 0.3, 1), 
+              transform 0.4s cubic-bezier(0.16, 1, 0.3, 1),
+              visibility 0.4s;
+}
+
+/* Estado activo */
+.ayuda-bubble.is-active {
+  opacity: 1;
+  visibility: visible;
+  transform: translate(0, 0) scale(1);
+}
+
+.ayuda-bubble-title {
+  color: var(--primary, #00f2fe);
+  font-weight: 700;
+  font-size: 0.95rem;
+  margin-bottom: 6px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.ayuda-bubble-text {
+  color: var(--text-secondary, #b3c5cc);
+  font-size: 0.85rem;
+  line-height: 1.45;
+  font-weight: 500;
+}
+
+.ayuda-bubble-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.ayuda-bubble-item {
+  color: var(--text-secondary, #b3c5cc);
+  font-size: 0.82rem;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.ayuda-bubble-item::before {
+  content: "";
+  display: inline-block;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--primary, #00f2fe);
+  box-shadow: 0 0 6px var(--primary, #00f2fe);
+}
+
+/* ==========================================================================
+   Sistema de Flechas de Diálogo
+   ========================================================================== */
+.ayuda-bubble-arrow {
+  position: absolute;
+  width: 10px;
+  height: 10px;
+  background: rgba(10, 20, 24, 0.94);
+  border-left: 1px solid var(--primary, #00f2fe);
+  border-top: 1px solid var(--primary, #00f2fe);
+  z-index: -1;
+}
+
+/* Flecha apuntando hacia arriba (para ayuda1) */
+.ayuda-bubble-arrow.arrow-up {
+  top: -6px;
+  left: 50%;
+  transform: translateX(-50%) rotate(45deg);
+}
+
+/* Flecha apuntando hacia abajo (para ayuda4 y ayuda5) */
+.ayuda-bubble-arrow.arrow-down {
+  bottom: -6px;
+  left: 50%;
+  transform: translateX(-50%) rotate(225deg);
+}
+
+/* Flecha apuntando hacia la derecha (para ayuda6 en el botón AR) */
+.ayuda-bubble-arrow.arrow-right {
+  top: 50%;
+  right: -6px;
+  transform: translateY(-50%) rotate(135deg);
+}
+
+/* ==========================================================================
+   Posicionamiento Específico por Burbuja
+   ========================================================================== */
+
+/* Ayuda 1: Guía y Herramientas (NavBar Superior) */
+.ayuda-bubble.ayuda1 {
+  top: 75px;
+  left: var(--offset-bubble-help);
+  transform: translateX(-50%) scale(0.95);
+}
+.ayuda-bubble.ayuda1.is-active {
+  transform: translateX(-50%) scale(1);
+}
+
+/* Ayuda 3: Navegación de Armado (NavBar Inferior) */
+.ayuda-bubble.ayuda3 {
+  bottom: 90px;
+  left: 50%;
+  transform: translateX(-50%) scale(0.95);
+  min-width: 280px;
+}
+.ayuda-bubble.ayuda3.is-active {
+  transform: translateX(-50%) scale(1);
+}
+
+/* Tres flechas de ayuda3 apuntando a los 3 botones de navegación */
+.ayuda3-arrow {
+  position: absolute;
+  width: 10px;
+  height: 10px;
+  background: rgba(10, 20, 24, 0.94);
+  border-left: 1px solid var(--primary, #00f2fe);
+  border-top: 1px solid var(--primary, #00f2fe);
+  bottom: -6px;
+  z-index: -1;
+}
+.ayuda3-arrow.arrow-left {
+  left: calc(50% - var(--offset-btn-step));
+  transform: translateX(-50%) rotate(225deg);
+}
+.ayuda3-arrow.arrow-center {
+  left: 50%;
+  transform: translateX(-50%) rotate(225deg);
+}
+.ayuda3-arrow.arrow-right {
+  left: calc(50% + var(--offset-btn-step));
+  transform: translateX(-50%) rotate(225deg);
+}
+
+/* Ayuda 4: Buscador de Piezas / Herrajes */
+.ayuda-bubble.ayuda4 {
+  bottom: 90px;
+  left: calc(50% - var(--offset-btn-side));
+  transform: translateX(-50%) scale(0.95);
+}
+.ayuda-bubble.ayuda4.is-active {
+  transform: translateX(-50%) scale(1);
+}
+
+/* Ayuda 5: Play / Pausa */
+.ayuda-bubble.ayuda5 {
+  bottom: 90px;
+  left: calc(50% + var(--offset-btn-side));
+  transform: translateX(-50%) scale(0.95);
+}
+.ayuda-bubble.ayuda5.is-active {
+  transform: translateX(-50%) scale(1);
+}
+
+/* Ayuda 6: Realidad Aumentada (Boton AR) */
+.ayuda-bubble.ayuda6 {
+  bottom: -15px;
+  right: 55px; /* Separado del botón AR flotante */
+  transform: scale(0.95);
+  min-width: 250px;
+}
+.ayuda-bubble.ayuda6.is-active {
+  transform: scale(1);
 }

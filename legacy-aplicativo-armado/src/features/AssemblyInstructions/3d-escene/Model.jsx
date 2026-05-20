@@ -36,15 +36,19 @@ export default function Model(props) {
   const originalMaterials = useRef(new Map());
 
 
-  // Cargar la textura del Matcap al inicio para que esté disponible antes de que el usuario interactúe
-const matcapTexture = useRef(null);
+  // Cargar la textura del Matcap y crear el material único al inicio para evitar re-compilaciones en GPU
+  const matcapTexture = useRef(null);
+  const highlightMaterialRef = useRef(null);
 
-useEffect(() => {
-  const loader = new THREE.TextureLoader();
-  loader.load("/Matcaps/3.png", (texture) => {
-    matcapTexture.current = texture;
-  });
-}, []);
+  useEffect(() => {
+    const loader = new THREE.TextureLoader();
+    loader.load("/Matcaps/3.png", (texture) => {
+      matcapTexture.current = texture;
+      highlightMaterialRef.current = new THREE.MeshMatcapMaterial({
+        matcap: texture,
+      });
+    });
+  }, []);
 
 
   // Posiciones y configuraciones de cámara por defecto
@@ -231,29 +235,19 @@ useEffect(() => {
   function onPointerEnter(event) {
     event.stopPropagation();
 
-    // Guarda el material original si no ha sido guardado antes, ademas se asegura que la textura del matcap cargue con anticipación
-    if (matcapTexture.current){ 
+    // Guarda el material original si no ha sido guardado antes, utilizando el material cacheado
+    if (highlightMaterialRef.current) { 
       if (!originalMaterials.current.has(event.object)) {
         originalMaterials.current.set(event.object, event.object.material);
       }    
 
-      // Carga y aplica el material de resaltado
-      let highlightMaterial = new THREE.MeshMatcapMaterial({
-        matcap: matcapTexture.current,
-      });
-
-      if (!highlightMaterial || !highlightMaterial.isMaterial) {
-        console.error("Error: highlight material is undefined or invalid");
-        return;
-      }
-
-      event.object.material = highlightMaterial;
+      event.object.material = highlightMaterialRef.current;
       document.body.style.cursor = "pointer";
 
       const name = event.object.name.split("-");
       PiezaHerraje(name);
     } else {
-      console.log("matcap sin cargarse")
+      console.log("Material de resaltado sin cargarse");
     }
   }
 
@@ -269,21 +263,19 @@ useEffect(() => {
     }
 
     document.body.style.cursor = "default";
+
+    // Limpiar el estado de la pieza seleccionada para ocultar el tooltip
+    PiezaHerraje([""]);
   }
 
   function Temporizador(child) {
-    textMaterial2 =textureLoader.load("/Matcaps/3.png");
-
     if (!originalMaterials.current.has(child)) {
       originalMaterials.current.set(child, child.material);
     }
 
-    const highlightMaterial = new THREE.MeshMatcapMaterial({
-      matcap: textureLoader.load("/Matcaps/3.png"),
-    });
-
-    if (!highlightMaterial || !highlightMaterial.isMaterial) {
-      console.error("Highlight material is invalid or undefined");
+    const highlightMat = highlightMaterialRef.current;
+    if (!highlightMat) {
+      console.warn("Highlight material is not loaded yet");
       return;
     }
 
@@ -293,7 +285,7 @@ useEffect(() => {
 
     for (let i = 0; i <= 10; i++) {
       window.setTimeout(() => {
-        toggleMaterial(i % 2 === 0 ? highlightMaterial : originalMaterials.current.get(child));
+        toggleMaterial(i % 2 === 0 ? highlightMat : originalMaterials.current.get(child));
       }, i * 500);
     }
 

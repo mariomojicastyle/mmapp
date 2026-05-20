@@ -18,7 +18,7 @@ export default function PanelInicial() {
   const fillerStyles = {
     height: '100%',
     width: `${progress}%`,
-    backgroundColor:"#f28f1d",
+    backgroundColor: "var(--primary)",
     transition: 'width 1s ease-in-out',
     borderRadius: 'inherit',
     textAlign: 'right'

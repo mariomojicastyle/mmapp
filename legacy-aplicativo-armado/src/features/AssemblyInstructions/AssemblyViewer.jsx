@@ -17,6 +17,35 @@ export default function AssemblyViewer({ productData, steps, id }) {
   const ChargerAlturas = useEnviroment((state) => state.ChargerAlturas);
   const ChargerCameraPositions = useEnviroment((state) => state.ChargerCameraPositions);
   const pasoActual = useEnviroment((state) => state.pasoActual);
+  const PiezaHerraje = useEnviroment((state) => state.PiezaHerraje);
+
+  // Ref para el tooltip flotante y coordenadas del mouse
+  const tooltipRef = useRef(null);
+  const mouseCoordsRef = useRef({ x: 0, y: 0 });
+
+  // Escuchar el movimiento del mouse de manera global y actualizar directamente el DOM
+  useEffect(() => {
+    const handleMouseMove = (event) => {
+      mouseCoordsRef.current = { x: event.clientX, y: event.clientY };
+      if (tooltipRef.current) {
+        tooltipRef.current.style.left = `${event.clientX + 18}px`;
+        tooltipRef.current.style.top = `${event.clientY + 12}px`;
+      }
+    };
+
+    window.addEventListener("mousemove", handleMouseMove);
+    return () => {
+      window.removeEventListener("mousemove", handleMouseMove);
+    };
+  }, []);
+
+  // Posicionar inmediatamente el tooltip cuando aparezca (se monte en el DOM)
+  useEffect(() => {
+    if (PiezaHerraje && tooltipRef.current) {
+      tooltipRef.current.style.left = `${mouseCoordsRef.current.x + 18}px`;
+      tooltipRef.current.style.top = `${mouseCoordsRef.current.y + 12}px`;
+    }
+  }, [PiezaHerraje]);
 
   const refTitle = useRef();
 
@@ -93,6 +122,22 @@ export default function AssemblyViewer({ productData, steps, id }) {
 
       {/* Componente que muestra los renders, al cambio de orientacion del app */}
       <Landscape />
+
+      {/* Tooltip flotante premium que sigue al puntero */}
+      {PiezaHerraje && (
+        <div 
+          ref={tooltipRef}
+          className="pointer-tooltip"
+          style={{ 
+            position: "fixed",
+            pointerEvents: "none",
+            left: "-1000px",
+            top: "-1000px"
+          }}
+        >
+          {PiezaHerraje}
+        </div>
+      )}
 
     </div>
   );

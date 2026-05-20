@@ -7,6 +7,9 @@ export default function RealiadaAumentada({ id }) {
   const Cliente = useEnviroment((state) => state.Cliente);
   const refAr = useRef(null);
   
+  const PanelAyudas = useEnviroment((state) => state.PanelAyudas);
+  const ayuda6 = useEnviroment((state) => state.ayuda6);
+  
   //Apenas inicia el aplicativo, se agrega la ruta del paso 00.
   useEffect(()=>{
     refAr.current.src=`/${id}/models/P00.glb`;
@@ -41,6 +44,15 @@ export default function RealiadaAumentada({ id }) {
         </button>
 
       </model-viewer>
+
+      {/* Burbuja de ayuda 6: Realidad Aumentada */}
+      <div className={`ayuda-bubble ayuda6 ${PanelAyudas && ayuda6 ? "is-active" : ""}`}>
+        <div className="ayuda-bubble-arrow arrow-right"></div>
+        <div className="ayuda-bubble-title">Realidad Aumentada</div>
+        <div className="ayuda-bubble-text">
+          ¡Escanea el espacio y proyecta el mueble 3D interactivo en escala real dentro de tu habitación!
+        </div>
+      </div>
     </div>
   </>
 }

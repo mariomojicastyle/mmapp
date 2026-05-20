@@ -15,6 +15,8 @@ export default function NavBarSuperior({ id, data }) {
   const btnCerrarTrue = useEnviroment((state) => state.btnCerrarTrue);
 
   const PanelAyudasTrue = useEnviroment((state) => state.PanelAyudasTrue);
+  const PanelAyudas = useEnviroment((state) => state.PanelAyudas);
+  const ayuda1 = useEnviroment((state) => state.ayuda1);
 
 
   const refOp1 = useRef(null);
@@ -60,6 +62,18 @@ export default function NavBarSuperior({ id, data }) {
 
           <div id="info" className="button" onClick={showPanelTips}>
             <IconInfo />
+          </div>
+
+          {/* Burbuja de ayuda 1: Guía y Herramientas */}
+          <div className={`ayuda-bubble ayuda1 ${PanelAyudas && ayuda1 ? "is-active" : ""}`}>
+            <div className="ayuda-bubble-arrow arrow-up"></div>
+            <div className="ayuda-bubble-title">Guía y Herramientas</div>
+            <ul className="ayuda-bubble-list">
+              <li className="ayuda-bubble-item">Garantía del mueble</li>
+              <li className="ayuda-bubble-item">Marca y soporte</li>
+              <li className="ayuda-bubble-item">Herramientas requeridas</li>
+              <li className="ayuda-bubble-item">Indicaciones de armado</li>
+            </ul>
           </div>
 
           {/* <!-- Opciones de cambio de color de vizualización del mueble--> */}

@@ -1,155 +1,128 @@
 .contenedor1 {
-    position: fixed;
-    display: flex;
-    width: 100%;
-    height: 10vh;
-    top:0px;
-    align-items: center;
-    justify-content: center;
-    z-index: 0;
-    gap: 20px;
+  position: fixed;
+  display: flex;
+  width: 100%;
+  height: 10vh;
+  top: 0px;
+  align-items: center;
+  justify-content: center;
+  z-index: 10;
+  pointer-events: none;
+}
 
+.contenedor1-1 {
+  height: 100%;
+  width: 35%;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 15px;
+  pointer-events: auto;
+}
+
+form {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-direction: column;
+}
+
+.Escenarios {
+  display: flex;
+  gap: 15px;
+}
+
+.button {
+  display: flex;
+  height: 52px;
+  width: 52px;
+  border-radius: 50%;
+  background: var(--surface);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--border-light);
+  cursor: pointer;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-secondary);
+  box-shadow: var(--glass-shadow);
+  transition: var(--transition-smooth);
+}
+
+.button:hover {
+  transform: scale(1.08);
+  border-color: var(--primary);
+  color: var(--primary);
+  box-shadow: 0 0 25px var(--primary-glow);
+  background: var(--surface-active);
+}
+
+.button>svg {
+  height: 28px;
+  width: 28px;
+  color: currentColor;
+  transition: var(--transition-smooth);
+}
+
+#info>svg, #help>svg {
+  height: 28px;
+  width: 28px;
+  color: currentColor;
+  transition: var(--transition-smooth);
+}
+
+.seleccionado {
+  background: var(--primary) !important;
+  color: var(--bg-primary) !important;
+  border-color: var(--primary) !important;
+  box-shadow: 0 0 20px var(--primary-glow) !important;
+  opacity: 1 !important;
+}
+
+/* Responsive adjustments */
+@media (max-width: 1600px) {
+  .contenedor1-1 {
+    width: 45%;
   }
-  .contenedor1-1{
-    height: 100%;
-    width: 35%;
-    display:flex;
-    align-items: center;
+}
+
+@media (max-width: 1280px) {
+  .contenedor1-1 {
+    width: 55%;
+  }
+}
+
+@media (max-width: 787px) {
+  .contenedor1-1 {
+    width: 90%;
     justify-content: flex-start;
-    gap: 15px;
+    gap: 12px;
   }
-  
-  form {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    flex-direction: column;
-  }
-  
-  [type="checkbox"] {
-    height: 25px;
-    width: 25px;
-  
-  }
-  
-  .Escenarios {
-    display: flex;
-    gap: 15px;
-  }
-  
-  
-  #color1 {
-    border-radius: 50%;
-    cursor: pointer;
-    background: #00ffffff;
-    background-size: cover;
-  }
-  
-  #color2 {
-    border-radius: 50%;
-    cursor: pointer;
-    background: #f7e785ff;
-    background-size: cover;
-  }
-  
-  .seleccionado {
-    opacity: 0.5;
-    background-color: black;
-  }
-  
 
   .button {
-    display: flex;
-    height: 60px;
-    width: 60px;
-    font-size: 1.2rem;
-    line-height: 50px;
-    border-radius: 50%;
-    background-color: white;
-    text-align: center;
-    border: none;
-    cursor: pointer;
-    align-items: center;
-    justify-content: center;
-    color: #f28f1d;
-    /* padding-right: 10px; */
-    box-shadow: 0 3px 5px -1px rgba(0, 0, 0, 0.2),
-      0 6px 10px 0 rgba(0, 0, 0, 0.14), 0 1px 18px 0 rgba(0, 0, 0, 0.12);
+    height: 44px;
+    width: 44px;
   }
-  
-  .button>svg {
-    /* font-size: 20rem; */
-    height: 45px;
-    width: 45px;
-    color: #f28f1d;
+
+  .button>svg, #info>svg, #help>svg {
+    height: 22px;
+    width: 22px;
   }
-  #info>svg {
-  
-    height: 4.5rem;
-    width: 4.5rem;
-    font-size: 4.5rem;
-    color: #f28f1d;
-  } 
-  
-  /* Boton de ayuda */
-  #help>svg {
-    
-    height: 4.5rem;
-    width: 4.5rem;
-    font-size: 4.5rem;
-    color: #f28f1d;
+}
+
+@media (max-width: 320px) {
+  .contenedor1-1 {
+    width: 95%;
+    gap: 8px;
   }
-  
 
-  @media (max-width: 787px) {
-
-    .contenedor1-1{
-      height: 100%;
-      width: 90%;
-    }
-
-    .SesionArriba {
-      background-color: transparent;
-    }
-  
-    .button {
-      height: 40px;
-      width: 40px;
-    }
-    .button svg {
-      height: 30px;
-      width: 30px;
-    }
-    .help>svg {
-      height: 30px;
-      width: 30px;
-    }
-
-
+  .button {
+    height: 38px;
+    width: 38px;
   }
-  @media (max-width: 320px) {
-    .contenedor {
-      background-color: transparent;
-      height: 10vh;
-      bottom: 30px;
-      gap: 20px;
-    }
-  
-    .SesionArriba {
-      background-color: transparent;
-    }
-  
-    .button {
-      height: 35px;
-      width: 35px;
-    }
-    .button svg {
-      height: 25px;
-      width: 25px;
-    }
-    .help>span{
-      height: 25px;
-      width: 25px;
-    }
-    
+
+  .button>svg, #info>svg, #help>svg {
+    height: 18px;
+    width: 18px;
   }
+}
