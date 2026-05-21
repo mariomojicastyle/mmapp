@@ -77,7 +77,7 @@
 
 .option3 > div {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   justify-content: center;
   flex-direction: column;
   gap: 8px;
@@ -108,7 +108,7 @@
   font-size: 1.1rem;
   color: #111319; /* Texto oscuro para perfecto contraste */
   margin: 0;
-  text-align: left;
+  text-align: center;
 }
 
 /* Número de cantidad total (Teal oscuro/Cian o negro para perfecto contraste) */
