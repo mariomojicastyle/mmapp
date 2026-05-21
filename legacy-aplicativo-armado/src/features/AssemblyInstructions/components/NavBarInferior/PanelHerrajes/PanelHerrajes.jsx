@@ -150,7 +150,6 @@ export default function PanelHerrajes() {
                   backgroundImage: `url(${herraje.imageUrl})`
                 }}
               ></div>
-              {herraje.cantidad && <p className="cantidad">{herraje.cantidad}</p>}
 
 
             </div>
