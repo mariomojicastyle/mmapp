@@ -58,15 +58,15 @@ form {
 }
 
 .button>svg {
-  height: 28px;
-  width: 28px;
+  height: 39px;
+  width: 39px;
   color: currentColor;
   transition: var(--transition-smooth);
 }
 
 #info>svg, #help>svg {
-  height: 28px;
-  width: 28px;
+  height: 39px;
+  width: 39px;
   color: currentColor;
   transition: var(--transition-smooth);
 }
@@ -105,8 +105,8 @@ form {
   }
 
   .button>svg, #info>svg, #help>svg {
-    height: 22px;
-    width: 22px;
+    height: 31px;
+    width: 31px;
   }
 }
 
@@ -122,7 +122,7 @@ form {
   }
 
   .button>svg, #info>svg, #help>svg {
-    height: 18px;
-    width: 18px;
+    height: 25px;
+    width: 25px;
   }
 }
