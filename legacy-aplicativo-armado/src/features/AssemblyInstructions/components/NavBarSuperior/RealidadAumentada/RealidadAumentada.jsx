@@ -11,6 +11,7 @@ export default function RealiadaAumentada({ id }) {
   const PanelShow = useEnviroment((state) => state.PanelShow);
   const PanelCantidadesState = useEnviroment((state) => state.PanelCantidades);
   const ayuda6 = useEnviroment((state) => state.ayuda6);
+  const panelTips = useEnviroment((state) => state.panelTips);
 
   // Estado para controlar la visualización de la burbuja del código QR en PC
   const [showQR, setShowQR] = useState(false);
@@ -28,7 +29,7 @@ export default function RealiadaAumentada({ id }) {
     }
   }, [pasoActual, Cliente, id]);
 
-  const isPanelOpen = PanelShow || PanelCantidadesState || PanelAyudas;
+  const isPanelOpen = PanelShow || PanelCantidadesState || PanelAyudas || panelTips;
 
   return (
     <>

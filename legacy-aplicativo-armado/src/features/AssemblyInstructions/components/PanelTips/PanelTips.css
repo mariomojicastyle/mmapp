@@ -106,29 +106,66 @@
   filter: drop-shadow(0 4px 10px var(--primary-glow));
 }
 
-/* Guarantee link button */
-.option2 a {
-  color: #007fb0; /* Azul cian distinguido sobre el fondo blanco */
-  text-decoration: none;
-  font-weight: 700;
-  letter-spacing: 0.03em;
-  text-transform: uppercase;
-  transition: var(--transition-smooth, all 0.3s cubic-bezier(0.4, 0, 0.2, 1));
-  display: inline-block;
-  padding: 0.75rem 1.5rem;
-  border: 1px solid rgba(113, 211, 247, 0.5);
-  border-radius: 12px;
-  background: rgba(113, 211, 247, 0.1);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+/* Botón flotante premium de garantía, idéntico al de cantidades totales */
+.garantia-container {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  padding: 0 !important;
+  margin-top: 20px;
   width: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding-bottom: 3rem;
+}
+
+.garantia-container:hover {
+  transform: none !important;
+  box-shadow: none !important;
+  background: transparent !important;
+  border: none !important;
+}
+
+.garantia-btn {
+  background: rgba(17, 19, 25, 0.8) !important;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(113, 211, 247, 0.3) !important;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.25), 0 0 15px rgba(113, 211, 247, 0.05);
+  border-radius: 30px !important;
+  padding: 14px 28px !important;
+  display: flex !important;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  cursor: pointer;
+  transition: var(--transition-smooth, all 0.3s cubic-bezier(0.4, 0, 0.2, 1));
+  text-decoration: none !important;
   box-sizing: border-box;
 }
 
-.option2 a:hover {
-  background: #007fb0;
-  color: #ffffff;
-  box-shadow: 0 6px 20px rgba(113, 211, 247, 0.3);
-  transform: scale(1.02);
+.garantia-btn:hover {
+  transform: scale(1.04) translateY(-2px) !important;
+  border-color: var(--primary, #71D3F7) !important;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.35), 0 0 25px rgba(113, 211, 247, 0.25);
+  background: rgba(17, 19, 25, 0.95) !important;
+}
+
+.garantia-icon {
+  color: var(--primary, #71D3F7);
+  font-size: 24px;
+}
+
+.garantia-text {
+  color: #E2E2EB !important;
+  font-family: var(--font-sans, "Inter", sans-serif);
+  font-weight: 700;
+  font-size: 0.95rem;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
 }
 
 /* Adjustments for responsive viewports */

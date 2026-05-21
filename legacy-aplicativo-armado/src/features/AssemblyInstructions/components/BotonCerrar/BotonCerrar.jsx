@@ -1,6 +1,5 @@
-import React from "react";
+import React, { useEffect } from "react";
 import "./BotonCerrar.css";
-import { useState, useRef, useEffect } from "react";
 import useEnviroment from "../../hooks/useEnviroment.js";
 
 
@@ -16,6 +15,7 @@ export default function Cerrar(props) {
   const PanelAyudas = useEnviroment((state) => state.PanelAyudas);
   const AyudasActivadas = useEnviroment((state) => state.AyudasActivadas);
   const PanelCantidadesState = useEnviroment((state) => state.PanelCantidades);
+  const panelTips = useEnviroment((state) => state.panelTips);
 
 
   //Si es clickeado el boton, cierra todo panel que este activo.
@@ -30,9 +30,22 @@ export default function Cerrar(props) {
     }
   }
 
+  // Escuchar la tecla física ESC para cerrar cualquier panel abierto
+  useEffect(() => {
+    const handleKeyDown = (event) => {
+      if (event.key === "Escape" || event.key === "Esc") {
+        cerrarPaneles();
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [PanelAyudas, panelTips, PanelShow, PanelCantidadesState]);
+
   return (
     <>
-      <div className={`cerrar button ${btnCerrar ? 'active':''} ${(PanelShow || PanelCantidadesState || PanelAyudas) ? 'panel-herrajes-open' : ''}`} onClick={cerrarPaneles}>
+      <div className={`cerrar button ${btnCerrar ? 'active':''} ${(PanelShow || PanelCantidadesState || PanelAyudas || panelTips) ? 'panel-herrajes-open' : ''}`} onClick={cerrarPaneles}>
         <span className="material-symbols-outlined">close</span> 
       </div>
     </>

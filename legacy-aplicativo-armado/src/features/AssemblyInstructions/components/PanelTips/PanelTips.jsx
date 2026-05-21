@@ -124,12 +124,15 @@ export default function PanelTips({ id, data }) {
           ></div>
         </div>
 
-        <div className="option2 10">
+        <div className="option2 garantia-container">
           <a
             href={Tips.GarantiaDelProducto}
             target={"_blank"}
+            className="garantia-btn"
+            rel="noopener noreferrer"
           >
-            Garantia del Producto
+            <span className="material-symbols-outlined garantia-icon">verified_user</span>
+            <span className="garantia-text">Garantía del Producto</span>
           </a>
         </div>
       </aside>
