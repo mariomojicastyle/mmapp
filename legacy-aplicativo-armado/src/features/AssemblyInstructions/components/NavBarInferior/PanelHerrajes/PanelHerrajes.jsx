@@ -162,18 +162,7 @@ export default function PanelHerrajes() {
             <span className="material-symbols-outlined option-cantidades-icon">inventory</span>
             <span className="option-cantidades-text">Cantidades Totales de Herrajes</span>
             
-            {/* Mano animada autolocalizada si no hay herrajes específicos en el paso */}
-            {herrajes.length === 0 && StartApp && (
-              <img
-                src="/assets/ayudas/hand_tool.svg"
-                alt=""
-                className="hand-tool-animation"
-                style={{
-                  opacity: showLocalizarTooltip ? 1 : 0,
-                  pointerEvents: "none"
-                }}
-              />
-            )}
+
           </button>
         </div>
       </aside>
