@@ -230,8 +230,15 @@ Los estilos, colores y tiempos de transición de las flechas azules se configura
     - **Pausa Automática de la Locución al Abrir Cortinas**: Se inyectó lógica reactiva en `AudioPlayer.jsx` para pausar inmediatamente cualquier audio explicativo o de fondo (`PausedAudio()`) en el momento en que se activa alguna cortina lateral o panel (`PanelShow`, `PanelCantidades` o `panelTips`), evitando el solapamiento acústico.
     - **Fichas Estáticas e Informativas de Tips**: Se inyectó el manejador `onClick={(e) => e.stopPropagation()}` a cada una de las tarjetas informativas `.option2` de `PanelTips.jsx`. Esto anula el cierre accidental del panel al hacer clic en las fichas del tutorial, convirtiéndolas en elementos estáticos e informativos (con efectos de hover físicos intactos) y permitiendo cerrar la cortina únicamente mediante el botón "X", el teclado (ESC) o haciendo clic fuera de las tarjetas.
 
+* **[2026-05-21] AppArmado_v8.4 — Exclusión Mutua de Cortinas y Reordenamiento del Tooltip Superior (ayuda1):**
+    - **Exclusión Mutua de Cortinas en Zustand**: Refactorizadas centralizadamente las funciones de apertura en `useEnviroment.js` (`PanelTipsTrue`, `PositivePanel`, `PanelCantidadesTrue` y `PanelAyudasTrue`). Ahora, al abrir cualquier cortina, se limpian preventivamente de forma explícita los flags de todas las demás cortinas activas (ej: al abrir los tips se desactiva de inmediato el tutorial y viceversa), eliminando de raíz el bug de traslapes de páneles laterales reportado por el usuario.
+    - **Reordenamiento y Renombrado del Tooltip Superior (`ayuda1`)**: Se modificaron las etiquetas HTML `<li>` dentro de la burbuja `.ayuda1` en `NavBarSuperior.jsx` para reflejar la secuencia exacta e instructiva solicitada:
+      1. *Marca del producto* (en reemplazo de "Marca y soporte").
+      2. *Herramientas requeridas* (en reemplazo de "Herramientas requeridas").
+      3. *Indicaciones especiales* (en reemplazo de "Indicaciones de armado").
+      4. *Garantía del mueble* (en reemplazo de "Garantía del mueble").
+    - **Validación de Compilación**: Ejecutada con éxito la compilación para producción (`npm run build`), obteniendo un bundle optimizado de Vite en 3.62 segundos con 0 errores y 0 warnings.
+
 ---
 
-*Última consolidación: 21 de Mayo, 2026 (10:40 AM)*
-
-
+*Última consolidación: 21 de Mayo, 2026 (10:50 AM)*

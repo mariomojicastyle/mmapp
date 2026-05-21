@@ -67,10 +67,10 @@ export default function NavBarSuperior({ id, data }) {
               <div className="ayuda-bubble-arrow arrow-up"></div>
               <div className="ayuda-bubble-title">Guía y Herramientas</div>
               <ul className="ayuda-bubble-list">
-                <li className="ayuda-bubble-item">Garantía del mueble</li>
-                <li className="ayuda-bubble-item">Marca y soporte</li>
+                <li className="ayuda-bubble-item">Marca del producto</li>
                 <li className="ayuda-bubble-item">Herramientas requeridas</li>
-                <li className="ayuda-bubble-item">Indicaciones de armado</li>
+                <li className="ayuda-bubble-item">Indicaciones especiales</li>
+                <li className="ayuda-bubble-item">Garantía del mueble</li>
               </ul>
             </div>
           </div>

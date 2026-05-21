@@ -108,7 +108,16 @@ export default create(
       color2: () => {set(() => {return { color: "#ffffff" };});},
       // color inicial -> gris : #dcdcdc
 
-      PanelTipsTrue: () => {set(() => {return { panelTips: true };});},
+      PanelTipsTrue: () => {
+        set(() => {
+          return {
+            panelTips: true,
+            PanelShow: false,
+            PanelCantidades: false,
+            PanelAyudas: false
+          };
+        });
+      },
       PanelTipsFalse: () => {set(() => {return { panelTips: false };});},
       
       NamePieza: (name) => {set((state) => {return { PiezaHerraje: name[0] };});},
@@ -149,10 +158,20 @@ export default create(
 
 
       NegativePanel: () => set((state) => ({ PanelShow: false })),
-      PositivePanel: () => set((state) => ({ PanelShow: true })),
+      PositivePanel: () => set((state) => ({
+        PanelShow: true,
+        panelTips: false,
+        PanelCantidades: false,
+        PanelAyudas: false
+      })),
 
 
-      PanelCantidadesTrue: () => set((state) => ({ PanelCantidades: true })),
+      PanelCantidadesTrue: () => set((state) => ({
+        PanelCantidades: true,
+        panelTips: false,
+        PanelShow: false,
+        PanelAyudas: false
+      })),
       PanelCantidadesFalse: () => set((state) => ({ PanelCantidades: false })),
 
 
@@ -185,7 +204,12 @@ export default create(
 
       ChargerCameraPositions: (cameraPositions) => set((state) => ({ cameraPositions: cameraPositions })),
 
-      PanelAyudasTrue: () => set((state) => ({ PanelAyudas: true })),
+      PanelAyudasTrue: () => set((state) => ({
+        PanelAyudas: true,
+        panelTips: false,
+        PanelShow: false,
+        PanelCantidades: false
+      })),
       PanelAyudasFalse: () => set((state) => ({ PanelAyudas: false, btnCerrar: false })),
 
 
