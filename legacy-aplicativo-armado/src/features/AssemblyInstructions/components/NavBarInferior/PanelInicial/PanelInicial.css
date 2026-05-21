@@ -110,7 +110,7 @@
   display: flex;
   justify-content: center;
   align-items: center;
-  filter: brightness(0) invert(1) drop-shadow(0 4px 10px var(--primary-glow));
+  filter: brightness(0) invert(1) drop-shadow(0 0 15px rgba(113, 211, 247, 0.8)) drop-shadow(0 0 40px rgba(113, 211, 247, 0.4));
 }
 
 /* Progress bar container */
