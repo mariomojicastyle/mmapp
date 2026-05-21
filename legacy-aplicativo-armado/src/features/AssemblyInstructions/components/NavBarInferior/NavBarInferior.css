@@ -174,7 +174,7 @@
   color: var(--text-primary);
   font-family: var(--font-sans);
   font-weight: 700;
-  font-size: 24px;
+  font-size: 34px; /* Aumentado 40% (24px * 1.4 = 33.6px) */
   margin: 0;
   transition: var(--transition-smooth);
 }
@@ -251,7 +251,7 @@ svg circle:nth-child(2) {
   }
 
   .percent .number h2 {
-    font-size: 16px;
+    font-size: 22px; /* Aumentado 40% (16px * 1.4 = 22.4px) */
   }
 
   .circule2 {
@@ -287,7 +287,7 @@ svg circle:nth-child(2) {
   }
 
   #numpaso {
-    font-size: 16px;
+    font-size: 22px; /* Aumentado 40% (16px * 1.4 = 22.4px) */
     transform: translate(1px, -1px);
   }
 }

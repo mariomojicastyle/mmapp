@@ -34,7 +34,7 @@ export default create(
 
       show: true,//Variable que modifica en cada paso, el panel de herrajes, y cambia el modelo 3D
 
-      phaseAudio: "start",//Fases del audio
+      phaseAudio: "playing",//Fases del audio
 
       resetAction: false,//Variable que se activa cuando es posible resetear la animación
 

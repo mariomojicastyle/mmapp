@@ -48,7 +48,7 @@ export default function PanelBtn() {
         type="button"
         onClick={ClickPanelBtn}
       >
-        <IconSearch style={{ width: "16px", height: "16px" }} />
+        <IconSearch />
         
         {/* Burbuja de ayuda premium nativa Glassmorphic Obsidian Teal */}
         <div className={`ayuda-herrajes-tooltip ${showTooltip ? "is-active" : ""}`}>

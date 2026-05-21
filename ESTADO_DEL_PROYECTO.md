@@ -50,6 +50,7 @@ Este archivo es la "Memoria RAM" para Antigravity. Contiene el contexto de lo qu
 - [x] Cápsula Premium de Garantía Obsidian Teal interactiva y fichas de tips informativas estáticas.
 - [x] Exclusión mutua de cortinas (cierre preventivo de paneles abiertos al abrir uno nuevo) en el store de Zustand para evitar traslapes.
 - [x] Reordenamiento y renombrado del tooltip superior de "Guía y Herramientas" según requerimientos del usuario.
+- [x] Ajustes de navegación inferior V8.5: Icono de pausa al arranque y aumento de tamaño proporcional (40%) para número de paso e icono lupa en UI responsiva.
 
 ---
 
