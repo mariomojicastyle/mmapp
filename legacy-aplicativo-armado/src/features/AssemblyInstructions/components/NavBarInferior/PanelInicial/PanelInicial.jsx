@@ -1,7 +1,6 @@
 import './PanelInicial.css';
 import { Html, useProgress, useGLTF } from '@react-three/drei'
-import { useRef } from 'react';
-import { useEffect } from 'react';
+import { useRef, useState, useEffect } from 'react';
 import useEnviroment from '../../../hooks/useEnviroment';
 
 
@@ -13,6 +12,38 @@ export default function PanelInicial() {
   
   const StartAppTrue = useEnviroment((state) => state.StartAppTrue);
   const icono = useEnviroment((state) => state.icono);
+
+  const [displayProgress, setDisplayProgress] = useState(0);
+
+  useEffect(() => {
+    let animationFrameId;
+    let startTimestamp = null;
+    const duration = 1000; 
+    
+    const startValue = displayProgress;
+    const endValue = Math.round(progress);
+
+    if (startValue === endValue) return;
+
+    const step = (timestamp) => {
+      if (!startTimestamp) startTimestamp = timestamp;
+      const t = Math.min((timestamp - startTimestamp) / duration, 1);
+      const ease = t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t;
+      const currentVal = Math.round(startValue + (endValue - startValue) * ease);
+      
+      setDisplayProgress(currentVal);
+      
+      if (t < 1) {
+        animationFrameId = window.requestAnimationFrame(step);
+      }
+    };
+    
+    animationFrameId = window.requestAnimationFrame(step);
+    
+    return () => {
+      window.cancelAnimationFrame(animationFrameId);
+    };
+  }, [progress]);
 
 
   const fillerStyles = {
@@ -69,7 +100,7 @@ export default function PanelInicial() {
       <div className="progress">
         {/* Barra de progreso */}
       <div style={fillerStyles} className="progressBar" ref={progressBar}>
-        <span style={labelStyles}>{`${progress}%`}</span>
+        <span style={labelStyles}>{`${displayProgress}%`}</span>
       </div>
     </div>
     </aside>
