@@ -18,7 +18,6 @@ export default function PanelHerrajes() {
   const StartApp = useEnviroment((state) => state.StartApp);
 
   const [herrajes, setHerrajes] = useState([]);
-  const [showLocalizarTooltip, setShowLocalizarTooltip] = useState(false);
 
   // Se realiza un recorrido por el modelo para extraer los nombres de las piezas y herrajes de manera declarativa.
   useEffect(() => {
@@ -109,12 +108,10 @@ export default function PanelHerrajes() {
     setHerrajes(tempHerrajes);
   }, [model, PasoActual]);
 
-  // Al abrir el panel, si CloudOneTime es true, activamos el tooltip local y apagamos el flag de Zustand inmediatamente.
   // Evitamos mostrar la ayuda en el paso inicial 00 (paso de bienvenida)
   useEffect(() => {
     const pasoInt = parseInt(PasoActual, 10);
     if (PanelShow && CloudOneTime && pasoInt > 0) {
-      setShowLocalizarTooltip(true);
       CloudOneTimeFalse();
 
       // Si el paso no tiene herrajes particulares y no se ha mostrado la guía de cantidades, registramos el flag
@@ -123,18 +120,6 @@ export default function PanelHerrajes() {
       }
     }
   }, [PanelShow, CloudOneTime, PasoActual, herrajes.length, HandExiste, CloudOneTimeFalse, HandExisteTrue]);
-
-  // Manejador independiente para el temporizador de apagado de la burbuja local
-  // Esto evita que actualizaciones de estado en Zustand de CloudOneTime cancelen prematuramente el timeout
-  useEffect(() => {
-    if (showLocalizarTooltip) {
-      const timer = setTimeout(() => {
-        setShowLocalizarTooltip(false);
-      }, 5000);
-
-      return () => clearTimeout(timer);
-    }
-  }, [showLocalizarTooltip]);
 
   const ShowPanelCantidades = () => {
     PanelCantidadesTrue();
@@ -167,13 +152,7 @@ export default function PanelHerrajes() {
               ></div>
               {herraje.cantidad && <p className="cantidad">{herraje.cantidad}</p>}
 
-              {/* Burbuja de ayuda premium nativa Glassmorphic Obsidian Teal */}
-              {index === 0 && StartApp && (
-                <div className={`ayuda-localizar-tooltip ${showLocalizarTooltip ? "is-active" : ""}`}>
-                  <div className="ayuda-localizar-arrow"></div>
-                  <span className="ayuda-localizar-text">Toca algún herraje para localizarlo en el 3D</span>
-                </div>
-              )}
+
             </div>
           ))}
         </nav>
