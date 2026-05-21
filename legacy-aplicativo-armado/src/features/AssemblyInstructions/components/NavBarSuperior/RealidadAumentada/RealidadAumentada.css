@@ -1,13 +1,20 @@
-/* Contenedor de Realidad Aumentada - Posicionado fixed un poco por encima y a unos 100px a la derecha de la barra inferior */
+/* Contenedor de Realidad Aumentada - Posicionado fixed alineado verticalmente con el botón de cerrar 'X' */
 .AR {
   position: fixed;
   bottom: 120px;
-  left: calc(50% + 280px); /* Posicionado de forma estable a unos 100px a la derecha del último botón (Play/Pausa) */
-  transform: translateX(-50%);
+  right: 15px;
   z-index: 50;
   display: flex;
   align-items: center;
   justify-content: center;
+  transition: var(--transition-smooth, all 0.3s ease); /* Transición suave al desplazarse lateralmente */
+}
+
+@media (min-width: 788px) {
+  .AR.panel-herrajes-open {
+    right: auto;
+    left: calc(50% + 340px);
+  }
 }
 
 /* En PC, model-viewer no debe renderizarse ni ocupar espacio físico en absoluto */

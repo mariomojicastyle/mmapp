@@ -63,6 +63,8 @@
   text-transform: uppercase;
   display: flex;
   align-items: center;
+  justify-content: center;
+  text-align: center;
   gap: 6px;
 }
 
@@ -71,6 +73,7 @@
   font-size: 0.85rem;
   line-height: 1.45;
   font-weight: 500;
+  text-align: center;
 }
 
 .ayuda-bubble-list {
@@ -108,10 +111,11 @@
   position: absolute;
   width: 10px;
   height: 10px;
-  background: rgba(10, 20, 24, 0.94);
+  background: var(--primary, #00f2fe);
   border-left: 1px solid var(--primary, #00f2fe);
   border-top: 1px solid var(--primary, #00f2fe);
   z-index: -1;
+  box-shadow: 0 0 10px rgba(0, 242, 254, 0.8);
 }
 
 /* Flecha apuntando hacia arriba (para ayuda1) */
@@ -166,10 +170,18 @@
   width: 10px;
   height: 10px;
   background: rgba(10, 20, 24, 0.94);
-  border-left: 1px solid var(--primary, #00f2fe);
-  border-top: 1px solid var(--primary, #00f2fe);
+  border-left: 1px solid rgba(0, 242, 254, 0.35);
+  border-top: 1px solid rgba(0, 242, 254, 0.35);
   bottom: -6px;
   z-index: -1;
+  transition: background 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+              border-color 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+              box-shadow 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.ayuda3-arrow.is-active {
+  background: var(--primary, #00f2fe) !important;
+  border-color: var(--primary, #00f2fe) !important;
+  box-shadow: 0 0 12px rgba(0, 242, 254, 0.9) !important;
 }
 .ayuda3-arrow.arrow-left {
   left: calc(50% - var(--offset-btn-step));

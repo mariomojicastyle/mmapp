@@ -36,6 +36,9 @@ export default function NavBarInferior({ id, data }) {
 
   const isPanelAyudasActive = useEnviroment((state) => state.PanelAyudas);
   const ayuda3 = useEnviroment((state) => state.ayuda3);
+  const ayuda3ArrowLeft = useEnviroment((state) => state.ayuda3ArrowLeft);
+  const ayuda3ArrowCenter = useEnviroment((state) => state.ayuda3ArrowCenter);
+  const ayuda3ArrowRight = useEnviroment((state) => state.ayuda3ArrowRight);
   const ayuda4 = useEnviroment((state) => state.ayuda4);
   const ayuda5 = useEnviroment((state) => state.ayuda5);
 
@@ -43,13 +46,13 @@ export default function NavBarInferior({ id, data }) {
 
   var pasostotal = pasos.length;
 
-  // Lógica para activar el efecto de ondas expansivas al finalizar el tutorial de ayudas
+  // Lógica para activar el efecto de ondas implosivas convergentes al finalizar el tutorial de ayudas
   useEffect(() => {
     if (Parpadeo) {
       setRippleActive(true);
       const rippleTimer = setTimeout(() => {
         setRippleActive(false);
-      }, 1500); // 1.5 segundos cubre la animación (1s) más los delays de las ondas
+      }, 3500); // 3.5 segundos cubre el viaje de 3s (10 ondas con delays hasta 1.8s + 1.2s de viaje) más el desvanecimiento final
       return () => clearTimeout(rippleTimer);
     }
   }, [Parpadeo]);
@@ -177,13 +180,25 @@ export default function NavBarInferior({ id, data }) {
             </div>
           </div>
 
-          <button ref={refRight} id="right" onClick={RightButtton}>
+          <button 
+            ref={refRight} 
+            id="right" 
+            onClick={RightButtton}
+            className={rippleActive ? "ripple-impact-active" : ""}
+          >
             <IconRight style={{ width: "60%" }} />
             {rippleActive && (
               <>
                 <span className="ripple-wave wave-1"></span>
                 <span className="ripple-wave wave-2"></span>
                 <span className="ripple-wave wave-3"></span>
+                <span className="ripple-wave wave-4"></span>
+                <span className="ripple-wave wave-5"></span>
+                <span className="ripple-wave wave-6"></span>
+                <span className="ripple-wave wave-7"></span>
+                <span className="ripple-wave wave-8"></span>
+                <span className="ripple-wave wave-9"></span>
+                <span className="ripple-wave wave-10"></span>
               </>
             )}
           </button>
@@ -194,9 +209,9 @@ export default function NavBarInferior({ id, data }) {
 
           {/* Burbuja de ayuda 3: Navegación de Armado */}
           <div className={`ayuda-bubble ayuda3 ${isPanelAyudasActive && ayuda3 ? "is-active" : ""}`}>
-            <div className="ayuda3-arrow arrow-left"></div>
-            <div className="ayuda3-arrow arrow-center"></div>
-            <div className="ayuda3-arrow arrow-right"></div>
+            <div className={`ayuda3-arrow arrow-left ${ayuda3ArrowLeft ? 'is-active' : ''}`}></div>
+            <div className={`ayuda3-arrow arrow-center ${ayuda3ArrowCenter ? 'is-active' : ''}`}></div>
+            <div className={`ayuda3-arrow arrow-right ${ayuda3ArrowRight ? 'is-active' : ''}`}></div>
             <div className="ayuda-bubble-title">Navegación de Armado</div>
             <div className="ayuda-bubble-text">
               Avanza o retrocede entre los pasos del manual interactivo para ver el proceso en orden.

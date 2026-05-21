@@ -332,11 +332,15 @@ svg circle:nth-child(2) {
 }
 
 /* ==========================================================================
-   Efecto de Ondas Expansivas (Ripple Waves) al finalizar el tutorial
+   Efecto de Ondas Implosivas Convergentes (Ripple Waves) al finalizar el tutorial
    ========================================================================== */
 #right {
   position: relative;
-  overflow: visible !important; /* Permitir que las ondas se expandan fuera del botón */
+  overflow: visible !important; /* Permitir que las ondas se extiendan libremente */
+}
+
+.ripple-impact-active {
+  animation: ripple-button-glow 3.2s ease-in-out forwards !important;
 }
 
 .ripple-wave {
@@ -346,39 +350,182 @@ svg circle:nth-child(2) {
   width: 100%;
   height: 100%;
   border-radius: 50%;
-  border: 3px solid var(--primary, #00f2fe);
-  box-shadow: 0 0 15px var(--primary-glow, rgba(0, 242, 254, 0.45));
+  border: 0.24px solid rgba(255, 255, 255, 0.85); /* 60% más delgado que 0.6px */
+  box-shadow: 0 0 4px rgba(255, 255, 255, 0.15); /* Brillo concéntrico súper sutil */
   pointer-events: none;
-  transform: scale(1);
+  transform: scale(60);
   opacity: 0;
   z-index: 99999;
-  animation: ripple-expand 1s cubic-bezier(0.1, 0.8, 0.3, 1) forwards;
+  animation: ripple-implode 1.2s cubic-bezier(0.25, 1, 0.5, 1) forwards; /* Curva natural de convergencia */
 }
 
-.ripple-wave.wave-1 {
-  animation-delay: 0s;
-}
+/* Retrasos progresivos para 10 ondas implosivas en un lapso de 3 segundos */
+.ripple-wave.wave-1 { animation-delay: 0s; }
+.ripple-wave.wave-2 { animation-delay: 0.2s; }
+.ripple-wave.wave-3 { animation-delay: 0.4s; }
+.ripple-wave.wave-4 { animation-delay: 0.6s; }
+.ripple-wave.wave-5 { animation-delay: 0.8s; }
+.ripple-wave.wave-6 { animation-delay: 1.0s; }
+.ripple-wave.wave-7 { animation-delay: 1.2s; }
+.ripple-wave.wave-8 { animation-delay: 1.4s; }
+.ripple-wave.wave-9 { animation-delay: 1.6s; }
+.ripple-wave.wave-10 { animation-delay: 1.8s; }
 
-.ripple-wave.wave-2 {
-  animation-delay: 0.15s;
-}
-
-.ripple-wave.wave-3 {
-  animation-delay: 0.3s;
-}
-
-@keyframes ripple-expand {
+@keyframes ripple-implode {
   0% {
-    transform: scale(1);
-    opacity: 0.9;
-    border-width: 4px;
+    transform: scale(60);
+    opacity: 0;
+    border-width: 0.24px;
   }
   15% {
+    opacity: 0.7; /* Se hace visible velozmente al aproximarse */
+  }
+  85% {
     opacity: 0.8;
   }
   100% {
-    transform: scale(80);
-    opacity: 0;
-    border-width: 0.5px;
+    transform: scale(1);
+    opacity: 0; /* Se extingue limpiamente al golpear la circunferencia del botón */
+    border-width: 0.05px;
+  }
+}
+
+/* Animación de titileo y destello sincronizada al milisegundo con la llegada de cada una de las 10 ondas */
+@keyframes ripple-button-glow {
+  0%, 34.3% {
+    transform: scale(1);
+    box-shadow: var(--glass-shadow);
+    border-color: var(--border-light);
+    background: var(--surface);
+  }
+  /* Llegada de Onda 1 (1.2s) */
+  37.5% {
+    transform: scale(1.12);
+    box-shadow: 0 0 15px rgba(113, 211, 247, 0.85), inset 0 0 8px rgba(113, 211, 247, 0.4);
+    border-color: var(--primary);
+    background: rgba(113, 211, 247, 0.2);
+  }
+  40.6% {
+    transform: scale(1);
+    box-shadow: var(--glass-shadow);
+    border-color: var(--border-light);
+    background: var(--surface);
+  }
+  /* Llegada de Onda 2 (1.4s) */
+  43.75% {
+    transform: scale(1.12);
+    box-shadow: 0 0 15px rgba(113, 211, 247, 0.85), inset 0 0 8px rgba(113, 211, 247, 0.4);
+    border-color: var(--primary);
+    background: rgba(113, 211, 247, 0.2);
+  }
+  46.8% {
+    transform: scale(1);
+    box-shadow: var(--glass-shadow);
+    border-color: var(--border-light);
+    background: var(--surface);
+  }
+  /* Llegada de Onda 3 (1.6s) */
+  50.0% {
+    transform: scale(1.12);
+    box-shadow: 0 0 15px rgba(113, 211, 247, 0.85), inset 0 0 8px rgba(113, 211, 247, 0.4);
+    border-color: var(--primary);
+    background: rgba(113, 211, 247, 0.2);
+  }
+  53.1% {
+    transform: scale(1);
+    box-shadow: var(--glass-shadow);
+    border-color: var(--border-light);
+    background: var(--surface);
+  }
+  /* Llegada de Onda 4 (1.8s) */
+  56.25% {
+    transform: scale(1.12);
+    box-shadow: 0 0 15px rgba(113, 211, 247, 0.85), inset 0 0 8px rgba(113, 211, 247, 0.4);
+    border-color: var(--primary);
+    background: rgba(113, 211, 247, 0.2);
+  }
+  59.3% {
+    transform: scale(1);
+    box-shadow: var(--glass-shadow);
+    border-color: var(--border-light);
+    background: var(--surface);
+  }
+  /* Llegada de Onda 5 (2.0s) */
+  62.5% {
+    transform: scale(1.12);
+    box-shadow: 0 0 15px rgba(113, 211, 247, 0.85), inset 0 0 8px rgba(113, 211, 247, 0.4);
+    border-color: var(--primary);
+    background: rgba(113, 211, 247, 0.2);
+  }
+  65.6% {
+    transform: scale(1);
+    box-shadow: var(--glass-shadow);
+    border-color: var(--border-light);
+    background: var(--surface);
+  }
+  /* Llegada de Onda 6 (2.2s) */
+  68.75% {
+    transform: scale(1.12);
+    box-shadow: 0 0 15px rgba(113, 211, 247, 0.85), inset 0 0 8px rgba(113, 211, 247, 0.4);
+    border-color: var(--primary);
+    background: rgba(113, 211, 247, 0.2);
+  }
+  71.8% {
+    transform: scale(1);
+    box-shadow: var(--glass-shadow);
+    border-color: var(--border-light);
+    background: var(--surface);
+  }
+  /* Llegada de Onda 7 (2.4s) */
+  75.0% {
+    transform: scale(1.12);
+    box-shadow: 0 0 15px rgba(113, 211, 247, 0.85), inset 0 0 8px rgba(113, 211, 247, 0.4);
+    border-color: var(--primary);
+    background: rgba(113, 211, 247, 0.2);
+  }
+  78.1% {
+    transform: scale(1);
+    box-shadow: var(--glass-shadow);
+    border-color: var(--border-light);
+    background: var(--surface);
+  }
+  /* Llegada de Onda 8 (2.6s) */
+  81.25% {
+    transform: scale(1.12);
+    box-shadow: 0 0 15px rgba(113, 211, 247, 0.85), inset 0 0 8px rgba(113, 211, 247, 0.4);
+    border-color: var(--primary);
+    background: rgba(113, 211, 247, 0.2);
+  }
+  84.3% {
+    transform: scale(1);
+    box-shadow: var(--glass-shadow);
+    border-color: var(--border-light);
+    background: var(--surface);
+  }
+  /* Llegada de Onda 9 (2.8s) */
+  87.5% {
+    transform: scale(1.12);
+    box-shadow: 0 0 15px rgba(113, 211, 247, 0.85), inset 0 0 8px rgba(113, 211, 247, 0.4);
+    border-color: var(--primary);
+    background: rgba(113, 211, 247, 0.2);
+  }
+  90.6% {
+    transform: scale(1);
+    box-shadow: var(--glass-shadow);
+    border-color: var(--border-light);
+    background: var(--surface);
+  }
+  /* Llegada de Onda 10 (3.0s) */
+  93.75% {
+    transform: scale(1.12);
+    box-shadow: 0 0 15px rgba(113, 211, 247, 0.85), inset 0 0 8px rgba(113, 211, 247, 0.4);
+    border-color: var(--primary);
+    background: rgba(113, 211, 247, 0.2);
+  }
+  96.8%, 100% {
+    transform: scale(1);
+    box-shadow: var(--glass-shadow);
+    border-color: var(--border-light);
+    background: var(--surface);
   }
 }

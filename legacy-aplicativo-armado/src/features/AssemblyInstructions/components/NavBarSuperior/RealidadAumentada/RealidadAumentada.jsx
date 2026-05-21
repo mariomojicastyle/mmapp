@@ -8,6 +8,8 @@ export default function RealiadaAumentada({ id }) {
   const refAr = useRef(null);
   
   const PanelAyudas = useEnviroment((state) => state.PanelAyudas);
+  const PanelShow = useEnviroment((state) => state.PanelShow);
+  const PanelCantidadesState = useEnviroment((state) => state.PanelCantidades);
   const ayuda6 = useEnviroment((state) => state.ayuda6);
 
   // Estado para controlar la visualización de la burbuja del código QR en PC
@@ -26,9 +28,11 @@ export default function RealiadaAumentada({ id }) {
     }
   }, [pasoActual, Cliente, id]);
 
+  const isPanelOpen = PanelShow || PanelCantidadesState || PanelAyudas;
+
   return (
     <>
-      <div className="AR">
+      <div className={`AR ${isPanelOpen ? "panel-herrajes-open" : ""}`}>
         {/* 
           Etiqueta de model viewer. En dispositivos móviles que soportan AR, model-viewer
           renderiza el botón con slot="ar-button". En PC este botón no se renderiza.

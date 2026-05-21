@@ -21,6 +21,9 @@ export default function AudioPlayer() {
   //  quitar tooltip de colores de visualización 
   // const ActivarAyuda2 = useEnviroment((state) => state.ActivarAyuda2);
   const ActivarAyuda3 = useEnviroment((state) => state.ActivarAyuda3);
+  const SetAyuda3ArrowLeft = useEnviroment((state) => state.SetAyuda3ArrowLeft);
+  const SetAyuda3ArrowCenter = useEnviroment((state) => state.SetAyuda3ArrowCenter);
+  const SetAyuda3ArrowRight = useEnviroment((state) => state.SetAyuda3ArrowRight);
   const ActivarAyuda4 = useEnviroment((state) => state.ActivarAyuda4);
   const ActivarAyuda5 = useEnviroment((state) => state.ActivarAyuda5);
   const ActivarAyuda6 = useEnviroment((state) => state.ActivarAyuda6);
@@ -56,6 +59,26 @@ export default function AudioPlayer() {
           if (!state.ayuda3) {
             state.ResetAyudas();
             state.ActivarAyuda3();
+          }
+          // Control secuencial e intuitivo de las flechas de ayuda3 (Centro -> Derecha -> Izquierda)
+          if (ct >= 10 && ct < 15) {
+            if (!state.ayuda3ArrowCenter || state.ayuda3ArrowRight || state.ayuda3ArrowLeft) {
+              state.SetAyuda3ArrowCenter(true);
+              state.SetAyuda3ArrowRight(false);
+              state.SetAyuda3ArrowLeft(false);
+            }
+          } else if (ct >= 15 && ct < 20) {
+            if (state.ayuda3ArrowCenter || !state.ayuda3ArrowRight || state.ayuda3ArrowLeft) {
+              state.SetAyuda3ArrowCenter(false);
+              state.SetAyuda3ArrowRight(true);
+              state.SetAyuda3ArrowLeft(false);
+            }
+          } else if (ct >= 20 && ct < 24) {
+            if (state.ayuda3ArrowCenter || state.ayuda3ArrowRight || !state.ayuda3ArrowLeft) {
+              state.SetAyuda3ArrowCenter(false);
+              state.SetAyuda3ArrowRight(false);
+              state.SetAyuda3ArrowLeft(true);
+            }
           }
         } else if (ct >= 24 && ct < 33) {
           if (!state.ayuda4) {
