@@ -213,7 +213,7 @@ svg circle:nth-child(2) {
 }
 
 #numpaso {
-  transform: translate(1px, -1px);
+  transform: none;
 }
 
 /* Responsive adjustments */
@@ -288,7 +288,7 @@ svg circle:nth-child(2) {
 
   #numpaso {
     font-size: 22px; /* Aumentado 40% (16px * 1.4 = 22.4px) */
-    transform: translate(1px, -1px);
+    transform: none;
   }
 }
 

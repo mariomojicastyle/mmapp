@@ -70,6 +70,9 @@ export function IconReset(props) {
       width="100%"
       height="100%"
       fill="currentColor"
+      stroke="currentColor"
+      strokeWidth="0.8"
+      style={{ transform: 'scale(0.8)' }}
       {...props}
     >
       <path fillRule="evenodd" d="M8 3a5 5 0 1 1-4.546 2.914.5.5 0 0 0-.908-.417A6 6 0 1 0 8 2v1z" />
@@ -116,6 +119,8 @@ export function IconSearch(props) {
       width="100%"
       height="100%"
       fill="currentColor"
+      stroke="currentColor"
+      strokeWidth="0.8"
       {...props}
     >
       <path d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001c.03.04.062.078.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1.007 1.007 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0z" />
