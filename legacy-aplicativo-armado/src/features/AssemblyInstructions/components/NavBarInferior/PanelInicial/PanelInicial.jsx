@@ -1,7 +1,9 @@
 import './PanelInicial.css';
 import { Html, useProgress, useGLTF } from '@react-three/drei'
-import { useRef, useState, useEffect } from 'react';
+import { useRef, useState, useEffect, lazy, Suspense } from 'react';
 import useEnviroment from '../../../hooks/useEnviroment';
+
+const Spline = lazy(() => import('@splinetool/react-spline'));
 
 
 export default function PanelInicial() {
@@ -82,27 +84,37 @@ export default function PanelInicial() {
 
   return <>
     <aside className="PanelInicial" ref={useCharger}>
-      <div className="optionI" >
-        <div className="imagen" style={{backgroundImage:`${icono}`}}></div>
+      {/* Fondo 3D interactivo — R4X Bot */}
+      <div className="spline-bg">
+        <Suspense fallback={null}>
+          <Spline scene="https://prod.spline.design/r4xbot-pS1luNxTefqsyDlc4ZbCw1Fj/scene.splinecode" />
+        </Suspense>
       </div>
-      <div className="optionI">
-        Sube el volumen para escuchar las instrucciones
+
+      {/* Contenido de portada encima del 3D */}
+      <div className="PanelInicial-content">
+        <div className="optionI" >
+          <div className="imagen" style={{backgroundImage:`${icono}`}}></div>
+        </div>
+        <div className="optionI">
+          Sube el volumen para escuchar las instrucciones
+        </div>
+        <div className="optionI">
+          <p>
+            Algunos dispositivos no cumplen con los requerimientos mínimos de esta tecnología. Si experimenta algún
+            problema luego de iniciar, la solución es intentar con otro móvil o desde un PC.
+          </p>
+        </div>
+        <div className="optionI" id="inicio" onClick={Start}>
+          <div className="imagen">Iniciar</div>
+        </div>
+        <div className="progress">
+          {/* Barra de progreso */}
+          <div style={fillerStyles} className="progressBar" ref={progressBar}>
+            <span style={labelStyles}>{`${displayProgress}%`}</span>
+          </div>
+        </div>
       </div>
-      <div className="optionI">
-        <p>
-          Algunos dispositivos no cumplen con los requerimientos mínimos de esta tecnología. Si experimenta algún
-          problema luego de iniciar, la solución es intentar con otro móvil o desde un PC.
-        </p>
-      </div>
-      <div className="optionI" id="inicio" onClick={Start}>
-        <div className="imagen">Iniciar</div>
-      </div>
-      <div className="progress">
-        {/* Barra de progreso */}
-      <div style={fillerStyles} className="progressBar" ref={progressBar}>
-        <span style={labelStyles}>{`${displayProgress}%`}</span>
-      </div>
-    </div>
     </aside>
 
   </>
