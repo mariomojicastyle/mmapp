@@ -6,18 +6,19 @@
   left: 0;
   right: 0;
   width: 100%;
-  height: 100%;
+  height: 100vh;
   display: flex;
   justify-content: flex-start;
   align-items: center;
-  background-color: var(--surface-container);
+  background-color: rgba(20, 22, 28, 0.15); /* Vidrio ultraligero: 50% más transparente */
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
-  border-right: 1px solid var(--border-light);
-  transition: var(--transition-smooth);
+  border-right: 1px solid var(--border-light, rgba(226, 226, 235, 0.1));
+  transition: var(--transition-smooth, transform 0.4s cubic-bezier(0.16, 1, 0.3, 1));
   overflow-y: auto;
   overflow-x: hidden;
   transform: translate(-100%, 0);
+  pointer-events: none;
 }
 
 .panel2.is-active {
@@ -43,27 +44,29 @@
   align-items: center;
   justify-content: center;
   flex-direction: column;
-  background: rgba(30, 31, 38, 0.6);
-  border: 1px solid var(--border-light);
+  background: #ffffff; /* Caja blanca para unificar con el fondo de las fotos */
+  border: 1px solid rgba(113, 211, 247, 0.35);
   border-radius: 16px;
-  padding: 1.5rem;
+  padding: 2rem 1.5rem;
   width: 90%;
   max-width: 480px;
-  font-family: var(--font-sans);
+  font-family: var(--font-sans, "Inter", sans-serif);
   font-weight: 600;
   font-size: 1.15rem;
-  color: var(--text-primary);
-  box-shadow: var(--glass-shadow);
-  transition: var(--transition-smooth);
-  backdrop-filter: var(--glass-blur);
-  -webkit-backdrop-filter: var(--glass-blur);
+  color: #111319; /* Texto oscuro para perfecto contraste con el fondo blanco */
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+  transition: var(--transition-smooth, all 0.3s cubic-bezier(0.4, 0, 0.2, 1));
   pointer-events: auto;
+  box-sizing: border-box;
 }
 
 .option2:hover {
+  font-weight: 700;
+  color: #007fb0; /* Color azul cian oscuro distinguido para hover sobre fondo blanco */
+  background: #ffffff !important;
+  border-color: #007fb0;
+  box-shadow: 0 12px 30px rgba(113, 211, 247, 0.25);
   transform: translateY(-4px);
-  border-color: var(--primary);
-  box-shadow: 0 12px 30px rgba(113, 211, 247, 0.15);
 }
 
 .option2 .imagen {
@@ -81,18 +84,20 @@
 
 /* Specific styling for the logo top pill */
 #logo {
-  background: transparent;
-  border: none;
-  box-shadow: none;
-  backdrop-filter: none;
-  -webkit-backdrop-filter: none;
-  padding: 0;
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  padding: 0 !important;
   margin-bottom: 10px;
 }
 
 #logo:hover {
-  transform: none;
-  box-shadow: none;
+  transform: none !important;
+  box-shadow: none !important;
+  background: transparent !important;
+  border: none !important;
 }
 
 #logo .imagen {
@@ -103,26 +108,26 @@
 
 /* Guarantee link button */
 .option2 a {
-  color: var(--primary);
+  color: #007fb0; /* Azul cian distinguido sobre el fondo blanco */
   text-decoration: none;
   font-weight: 700;
   letter-spacing: 0.03em;
   text-transform: uppercase;
-  transition: var(--transition-smooth);
+  transition: var(--transition-smooth, all 0.3s cubic-bezier(0.4, 0, 0.2, 1));
   display: inline-block;
   padding: 0.75rem 1.5rem;
-  border: 1px solid var(--border-light);
+  border: 1px solid rgba(113, 211, 247, 0.5);
   border-radius: 12px;
-  background: rgba(113, 211, 247, 0.05);
-  box-shadow: var(--glass-shadow);
+  background: rgba(113, 211, 247, 0.1);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
   width: 100%;
   box-sizing: border-box;
 }
 
 .option2 a:hover {
-  background: var(--primary);
-  color: var(--bg-primary);
-  box-shadow: 0 0 20px var(--primary-glow);
+  background: #007fb0;
+  color: #ffffff;
+  box-shadow: 0 6px 20px rgba(113, 211, 247, 0.3);
   transform: scale(1.02);
 }
 

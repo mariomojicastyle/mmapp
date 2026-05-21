@@ -216,8 +216,15 @@ Los estilos, colores y tiempos de transición de las flechas azules se configura
         - Si se activa algún panel lateral o la cortina del tutorial, la clase `.panel-herrajes-open` se inyecta de forma dinámica, desplazando el botón AR de forma suave (`transition: all 0.3s ease`) hacia `left: calc(50% + 340px)`, garantizando una alineación vertical perfecta y simétrica con el botón de cerrar "X".
     - **Resultado**: La experiencia en PC ahora goza de una simetría adaptativa impecable; el botón AR está al extremo derecho por defecto y solo se desplaza hacia la izquierda para unirse a la vertical del botón "X" cuando este entra en pantalla por la apertura de un panel.
 
+* **[2026-05-21] AppArmado_v8.2 — Rediseño Estético Glassmorphic y Fichas de Tips de Alto Contraste (PanelTips):**
+    - **Fondo Glassmorphic de Cortina (`.panel2`)**: Fondo esmerilado translúcido Obsidian Teal (`rgba(20, 22, 28, 0.15)` con `backdrop-filter: blur(16px)` y transición de Bezier premium cubic).
+    - **Tarjetas de Tips de Alto Contraste (`.option2`)**: Rediseño completo a base blanca `#ffffff` y tipografía gris oscuro `#111319` con bordes cian sutiles, permitiendo una visibilidad e iluminación del 100% de los bocetos de línea negra de las herramientas (martillo, tuerca, destornillador, minifix) que antes se perdían sobre fondos oscuros.
+    - **Aislamiento de Logotipo (`#logo`)**: Estilo transparente e inmune a las tarjetas blancas y efectos hover.
+    - **Botón de Garantía Premium (`.option2 a`)**: Adaptado con alta fidelidad para el contraste sobre tarjetas blancas.
+    - **Resultado**: Coherencia absoluta en la estética visual de todos los paneles interactivos del manual 3D y solución definitiva al problema de contraste.
+
 ---
 
-*Última consolidación: 21 de Mayo, 2026 (10:15 AM)*
+*Última consolidación: 21 de Mayo, 2026 (10:20 AM)*
 
 
