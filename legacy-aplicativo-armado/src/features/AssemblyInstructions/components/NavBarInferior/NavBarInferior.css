@@ -49,8 +49,8 @@
 }
 
 .button>svg {
-  height: 28px;
-  width: 28px;
+  height: 39px;
+  width: 39px;
   color: currentColor;
 }
 
@@ -236,8 +236,8 @@ svg circle:nth-child(2) {
   }
 
   .button>svg {
-    height: 22px;
-    width: 22px;
+    height: 31px;
+    width: 31px;
   }
 
   .card2 {
@@ -304,8 +304,8 @@ svg circle:nth-child(2) {
   }
 
   .button svg {
-    height: 18px;
-    width: 18px;
+    height: 25px;
+    width: 25px;
   }
 }
 
