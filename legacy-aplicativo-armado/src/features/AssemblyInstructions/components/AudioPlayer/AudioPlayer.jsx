@@ -76,16 +76,27 @@ export default function AudioPlayer() {
 
         if (audioRef.current.ended) {
           state.PanelAyudasFalse();
+          state.btnCerrarFalse();
           state.ActivarParpadeo();
           state.ResetAyudas();
         }
       };
 
+      const handleEndedAyudas = () => {
+        const state = useEnviroment.getState();
+        state.PanelAyudasFalse();
+        state.btnCerrarFalse();
+        state.ActivarParpadeo();
+        state.ResetAyudas();
+      };
+
       audioRef.current.addEventListener("timeupdate", handleTimeUpdateAyudas);
+      audioRef.current.addEventListener("ended", handleEndedAyudas);
 
       return () => {
         if (audioRef.current) {
           audioRef.current.removeEventListener("timeupdate", handleTimeUpdateAyudas);
+          audioRef.current.removeEventListener("ended", handleEndedAyudas);
         }
       };
 

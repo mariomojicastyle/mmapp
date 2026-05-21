@@ -18,7 +18,7 @@ export default function PanelHerrajes() {
   const StartApp = useEnviroment((state) => state.StartApp);
 
   const [herrajes, setHerrajes] = useState([]);
-  const [tutorialOpacity, setTutorialOpacity] = useState(0);
+  const [showLocalizarTooltip, setShowLocalizarTooltip] = useState(false);
 
   // Se realiza un recorrido por el modelo para extraer los nombres de las piezas y herrajes de manera declarativa.
   useEffect(() => {
@@ -109,25 +109,32 @@ export default function PanelHerrajes() {
     setHerrajes(tempHerrajes);
   }, [model, PasoActual]);
 
-  // Manejador del ciclo de vida del tutorial visual (nubes y manos guía)
+  // Al abrir el panel, si CloudOneTime es true, activamos el tooltip local y apagamos el flag de Zustand inmediatamente.
+  // Evitamos mostrar la ayuda en el paso inicial 00 (paso de bienvenida)
   useEffect(() => {
-    if (PanelShow && CloudOneTime) {
-      setTutorialOpacity(1);
-
-      const timer = setTimeout(() => {
-        setTutorialOpacity(0);
-      }, 5000);
-
+    const pasoInt = parseInt(PasoActual, 10);
+    if (PanelShow && CloudOneTime && pasoInt > 0) {
+      setShowLocalizarTooltip(true);
       CloudOneTimeFalse();
 
       // Si el paso no tiene herrajes particulares y no se ha mostrado la guía de cantidades, registramos el flag
       if (herrajes.length === 0 && !HandExiste) {
         HandExisteTrue();
       }
+    }
+  }, [PanelShow, CloudOneTime, PasoActual, herrajes.length, HandExiste, CloudOneTimeFalse, HandExisteTrue]);
+
+  // Manejador independiente para el temporizador de apagado de la burbuja local
+  // Esto evita que actualizaciones de estado en Zustand de CloudOneTime cancelen prematuramente el timeout
+  useEffect(() => {
+    if (showLocalizarTooltip) {
+      const timer = setTimeout(() => {
+        setShowLocalizarTooltip(false);
+      }, 5000);
 
       return () => clearTimeout(timer);
     }
-  }, [PanelShow, CloudOneTime, herrajes, HandExiste, CloudOneTimeFalse, HandExisteTrue]);
+  }, [showLocalizarTooltip]);
 
   const ShowPanelCantidades = () => {
     PanelCantidadesTrue();
@@ -144,6 +151,7 @@ export default function PanelHerrajes() {
     <>
       <aside className={`panel ${PanelShow ? "is-active" : ""}`}>
         <nav className="menu">
+          <h2 className="menu-title">Toca algún herraje para localizarlo en el 3D</h2>
           {herrajes.map((herraje, index) => (
             <div
               key={herraje.value}
@@ -159,42 +167,36 @@ export default function PanelHerrajes() {
               ></div>
               {herraje.cantidad && <p className="cantidad">{herraje.cantidad}</p>}
 
-              {/* Imagen autolocalizada en el primer item de ayuda si corresponde */}
+              {/* Burbuja de ayuda premium nativa Glassmorphic Obsidian Teal */}
               {index === 0 && StartApp && (
-                <img
-                  src="/assets/ayudas/07_Localizar_Herrajes.svg"
-                  alt=""
-                  style={{
-                    opacity: tutorialOpacity,
-                    pointerEvents: "none"
-                  }}
-                />
+                <div className={`ayuda-localizar-tooltip ${showLocalizarTooltip ? "is-active" : ""}`}>
+                  <div className="ayuda-localizar-arrow"></div>
+                  <span className="ayuda-localizar-text">Toca algún herraje para localizarlo en el 3D</span>
+                </div>
               )}
             </div>
           ))}
         </nav>
 
-        {/* Botón flotante para ver cantidades totales de herrajes */}
-        <div id="cantidades" className="option4">
-          <div
-            className="imagen"
-            style={{
-              backgroundImage: "url(/assets/tips/Cantidades_Totales_de_Herrajes.svg)"
-            }}
-            onClick={ShowPanelCantidades}
-          >
+        {/* Botón flotante premium para ver cantidades totales de herrajes */}
+        <div className="option-cantidades-container">
+          <button className="option-cantidades-btn" onClick={ShowPanelCantidades}>
+            <span className="material-symbols-outlined option-cantidades-icon">inventory</span>
+            <span className="option-cantidades-text">Cantidades Totales de Herrajes</span>
+            
             {/* Mano animada autolocalizada si no hay herrajes específicos en el paso */}
             {herrajes.length === 0 && StartApp && (
               <img
                 src="/assets/ayudas/hand_tool.svg"
                 alt=""
+                className="hand-tool-animation"
                 style={{
-                  opacity: tutorialOpacity,
+                  opacity: showLocalizarTooltip ? 1 : 0,
                   pointerEvents: "none"
                 }}
               />
             )}
-          </div>
+          </button>
         </div>
       </aside>
     </>

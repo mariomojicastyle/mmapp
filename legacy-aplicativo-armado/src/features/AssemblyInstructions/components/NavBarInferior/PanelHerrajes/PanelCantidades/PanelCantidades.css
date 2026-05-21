@@ -7,13 +7,14 @@
   right: 0;
   width: 100%;
   height: 100vh;
-  background-color: var(--surface-container);
+  background-color: rgba(20, 22, 28, 0.15); /* Vidrio ultraligero: 50% más transparente */
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
-  border-top: 1px solid var(--border-light);
+  border-left: 1px solid var(--border-light, rgba(226, 226, 235, 0.1));
   overflow-y: auto;
-  transition: var(--transition-smooth);
-  transform: translate(0, 100%);
+  transition: var(--transition-smooth, transform 0.4s cubic-bezier(0.16, 1, 0.3, 1));
+  transform: translate(100%, 0); /* Desplazamiento de derecha a izquierda idéntico al panel de herrajes */
+  pointer-events: none;
 }
 
 .panel3.is-active {
@@ -21,22 +22,19 @@
   pointer-events: auto;
 }
 
-.option4 {
-  margin-top: 40px;
-  width: 100%;
-  display: flex;
-  justify-content: center;
-}
-
-.option4 .imagen {
-  background-size: contain;
-  background-position: center;
-  background-repeat: no-repeat;
-  height: 6rem;
-  width: 90%;
+/* Título de cantidades idéntico al panel de herrajes */
+.panel3 .menu-title {
+  color: #ffffff;
+  font-family: var(--font-sans, "Inter", sans-serif);
+  font-weight: 700;
+  font-size: 1.65rem;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  margin: 40px auto 10px auto;
+  text-align: center;
   max-width: 480px;
-  padding: 0;
-  filter: drop-shadow(0 4px 8px var(--primary-glow));
+  width: 90%;
+  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.4);
 }
 
 .menu3 {
@@ -49,31 +47,32 @@
   padding: 2rem 1.5rem 5rem 1.5rem;
   gap: 20px;
   width: 100%;
+  box-sizing: border-box;
 }
 
+/* Ficha de cada herraje: Blanca, idéntica al lenguaje visual de las tarjetas del menú anterior */
 .option3 {
   display: flex;
   flex-direction: row !important;
   align-items: center;
   justify-content: space-between;
-  background: rgba(30, 31, 38, 0.6);
-  border: 1px solid var(--border-light);
+  background: #ffffff; /* Base blanca */
+  border: 1px solid rgba(113, 211, 247, 0.35); /* Borde cian sutil */
   border-radius: 16px;
   padding: 1.25rem 2rem;
   width: 90%;
   max-width: 480px;
-  box-shadow: var(--glass-shadow);
-  backdrop-filter: var(--glass-blur);
-  -webkit-backdrop-filter: var(--glass-blur);
-  transition: var(--transition-smooth);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08); /* Sombra elegante */
+  transition: var(--transition-smooth, all 0.3s cubic-bezier(0.4, 0, 0.2, 1));
   box-sizing: border-box;
+  cursor: pointer;
 }
 
 .option3:hover {
   transform: translateY(-4px);
-  border-color: var(--primary);
-  box-shadow: 0 12px 30px rgba(113, 211, 247, 0.15);
-  background: rgba(40, 42, 48, 0.8);
+  border-color: #007fb0;
+  box-shadow: 0 12px 30px rgba(113, 211, 247, 0.25);
+  background: #ffffff !important;
 }
 
 .option3 > div {
@@ -92,44 +91,45 @@
   height: 6.5rem;
   border-radius: 12px;
   padding: 0;
-  background-color: rgba(30, 31, 38, 0.4);
-  border: 1px solid var(--border-light);
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
-  transition: var(--transition-smooth);
+  background-color: transparent; /* Fondo transparente idéntico al panel de herrajes */
+  border: none;
+  box-shadow: none;
+  transition: var(--transition-smooth, all 0.3s cubic-bezier(0.4, 0, 0.2, 1));
 }
 
 .option3 .imagen:hover {
-  border-color: var(--primary);
-  box-shadow: 0 0 15px var(--primary-glow);
+  transform: scale(1.03);
 }
 
-/* Label styling inside list */
+/* Nombre del herraje dentro de la tarjeta */
 .option3 p.cantidad:first-child {
-  font-family: var(--font-sans);
+  font-family: var(--font-sans, "Inter", sans-serif);
   font-weight: 600;
   font-size: 1.1rem;
-  color: var(--text-secondary);
+  color: #111319; /* Texto oscuro para perfecto contraste */
   margin: 0;
   text-align: left;
 }
 
-/* Quantity value styling (big teal number) */
+/* Número de cantidad total (Teal oscuro/Cian o negro para perfecto contraste) */
 .option3 p.cantidad:last-child {
-  font-family: var(--font-sans);
+  font-family: var(--font-sans, "Inter", sans-serif);
   font-weight: 800;
   font-size: 2.2rem;
-  color: var(--primary);
-  text-shadow: 0 0 12px var(--primary-glow);
+  color: #111319; /* Tipografía oscura para contraste */
   margin: 0;
 }
 
 @media (max-width: 787px) {
-  .option4 .imagen {
-    height: 4.5rem;
+  .panel3 .menu-title {
+    font-size: 1.4rem; /* 50% de tamaño aumentado en móvil */
+    margin-top: 30px;
+    margin-bottom: 5px;
   }
   
   .option3 {
     padding: 1rem 1.5rem;
+    width: 95%;
   }
   
   .option3 .imagen {
@@ -144,4 +144,4 @@
   .option3 p.cantidad:last-child {
     font-size: 1.75rem;
   }
-}
+}

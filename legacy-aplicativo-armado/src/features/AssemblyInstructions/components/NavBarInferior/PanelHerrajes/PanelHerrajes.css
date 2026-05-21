@@ -7,13 +7,14 @@
   right: 0;
   width: 100%;
   height: 100vh;
-  background-color: var(--surface-container);
+  background-color: rgba(20, 22, 28, 0.15); /* Vidrio ultraligero: 50% más transparente que 0.35 */
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
-  border-bottom: 1px solid var(--border-light);
+  border-left: 1px solid var(--border-light, rgba(226, 226, 235, 0.1));
   overflow-y: auto;
-  transition: var(--transition-smooth);
-  transform: translate(0, -100%);
+  transition: var(--transition-smooth, transform 0.4s cubic-bezier(0.16, 1, 0.3, 1));
+  transform: translate(100%, 0); /* Desplazamiento de derecha a izquierda */
+  pointer-events: none;
 }
 
 .panel.is-active {
@@ -31,42 +32,53 @@
   padding: 3rem 1.5rem 5rem 1.5rem;
   gap: 20px;
   width: 100%;
-}
-
-.menu div {
-  padding: 1.5rem;
-  width: 90%;
-  max-width: 480px;
-  display: flex;
-  font-size: 1.15rem;
-  text-decoration: none;
-  color: var(--text-primary);
-  background: rgba(30, 31, 38, 0.6);
-  border: 1px solid var(--border-light);
-  border-radius: 16px;
-  box-shadow: var(--glass-shadow);
-  backdrop-filter: var(--glass-blur);
-  -webkit-backdrop-filter: var(--glass-blur);
-  transition: var(--transition-smooth);
-  position: relative;
   box-sizing: border-box;
 }
 
-.menu div:hover {
-  font-weight: 600;
-  color: var(--text-primary);
-  background: rgba(40, 42, 48, 0.8) !important;
-  border-color: var(--primary);
-  box-shadow: 0 12px 30px rgba(113, 211, 247, 0.15);
-  transform: translateY(-4px);
+.menu-title {
+  color: #ffffff;
+  font-family: var(--font-sans, "Inter", sans-serif);
+  font-weight: 700;
+  font-size: 1.65rem;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  margin: 0 auto 10px auto;
+  max-width: 480px;
+  width: 90%;
+  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.4);
 }
 
-.option {
+/* Tarjeta individual de herraje: Blanca, elegante y responsiva */
+.menu .option {
+  padding: 2rem 1.5rem;
+  width: 90%;
+  max-width: 480px;
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
-  flex-direction: column;
+  font-family: var(--font-sans, "Inter", sans-serif);
+  font-size: 1.15rem;
+  font-weight: 600;
+  text-decoration: none;
+  color: #111319; /* Texto oscuro para perfecto contraste con el fondo blanco */
+  background: #ffffff; /* Caja blanca para unificar con el fondo de las fotos */
+  border: 1px solid rgba(113, 211, 247, 0.35);
+  border-radius: 16px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+  transition: var(--transition-smooth, all 0.3s cubic-bezier(0.4, 0, 0.2, 1));
+  position: relative;
+  box-sizing: border-box;
   cursor: pointer;
+}
+
+.menu .option:hover {
+  font-weight: 700;
+  color: #007fb0; /* Color azul cian oscuro distinguido para hover sobre fondo blanco */
+  background: #ffffff !important;
+  border-color: #007fb0;
+  box-shadow: 0 12px 30px rgba(113, 211, 247, 0.25);
+  transform: translateY(-4px);
 }
 
 .option .imagen {
@@ -77,226 +89,183 @@
   height: 8rem;
   border-radius: 12px;
   padding: 0;
-  background-color: rgba(30, 31, 38, 0.4);
-  border: 1px solid var(--border-light);
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
-  transition: var(--transition-smooth);
+  background-color: transparent; /* Fondo transparente para unificar con el fondo blanco de la foto */
+  border: none;
+  box-shadow: none;
+  transition: var(--transition-smooth, all 0.3s cubic-bezier(0.4, 0, 0.2, 1));
+  margin: 1rem 0;
 }
 
 .option .imagen:hover {
-  border-color: var(--primary);
-  box-shadow: 0 0 15px var(--primary-glow);
+  transform: scale(1.03);
 }
 
 .cantidad {
   height: auto;
   width: 100%;
-  margin: 0.75rem 0 0 0;
-  font-family: var(--font-sans);
+  margin: 0.5rem 0 0 0;
+  font-family: var(--font-sans, "Inter", sans-serif);
   font-weight: 700;
-  font-size: 1.2rem;
-  color: var(--text-primary);
+  font-size: 1.25rem;
+  color: #111319; /* Tipografía oscura para contraste */
 }
 
-.imagen img {
-  width: 100%;
+/* Burbuja de ayuda premium nativa Glassmorphic Obsidian Teal */
+.ayuda-localizar-tooltip {
+  position: absolute;
+  bottom: -45px; /* Se desplaza un poco hacia abajo del primer herraje */
+  left: 50%;
+  transform: translateX(-50%) scale(0.9);
+  background: rgba(17, 19, 25, 0.96); /* Obsidian Teal */
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid var(--primary, #71D3F7);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5), 0 0 15px rgba(113, 211, 247, 0.15);
+  border-radius: 30px;
+  padding: 8px 18px;
+  white-space: nowrap;
+  z-index: 1000;
+  pointer-events: none;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.4s cubic-bezier(0.16, 1, 0.3, 1), 
+              transform 0.4s cubic-bezier(0.16, 1, 0.3, 1),
+              visibility 0.4s;
 }
 
-#cantidades {
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+.ayuda-localizar-tooltip.is-active {
+  opacity: 1;
+  visibility: visible;
+  transform: translateX(-50%) scale(1);
 }
 
-#cantidades .imagen {
-  background-size: contain;
-  background-position: center;
-  background-repeat: no-repeat;
-  position: relative;
-  width: 8rem;
-  height: 8rem;
-  border-radius: 12px;
-  padding: 0;
-  background-color: rgba(30, 31, 38, 0.4);
-  border: 1px solid var(--border-light);
-  box-shadow: var(--glass-shadow);
-  transition: var(--transition-smooth);
+.ayuda-localizar-text {
+  color: var(--primary, #71D3F7);
+  font-family: var(--font-sans, "Inter", sans-serif);
+  font-weight: 700;
+  font-size: 0.8rem;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
 }
 
-#cantidades .imagen:hover {
-  border-color: var(--primary);
-  box-shadow: 0 0 20px var(--primary-glow);
+.ayuda-localizar-arrow {
+  position: absolute;
+  width: 8px;
+  height: 8px;
+  background: rgba(17, 19, 25, 0.96);
+  border-left: 1px solid var(--primary, #71D3F7);
+  border-top: 1px solid var(--primary, #71D3F7);
+  top: -5px;
+  left: 50%;
+  transform: translateX(-50%) rotate(45deg);
+  z-index: -1;
 }
 
-.option4 {
+/* Botón flotante premium de cantidades totales de herrajes */
+.option-cantidades-container {
   margin-top: 40px;
   width: 100%;
   display: flex;
   justify-content: center;
+  align-items: center;
+  padding-bottom: 3rem;
 }
 
-.option4 .imagen {
-  background-size: contain;
-  background-position: center;
-  background-repeat: no-repeat;
-  height: 6rem;
-  width: 90%;
-  max-width: 480px;
-  padding: 0;
-  filter: drop-shadow(0 4px 8px var(--primary-glow));
+.option-cantidades-btn {
+  background: rgba(17, 19, 25, 0.8);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(113, 211, 247, 0.3);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.25), 0 0 15px rgba(113, 211, 247, 0.05);
+  border-radius: 30px;
+  padding: 14px 28px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  cursor: pointer;
+  transition: var(--transition-smooth, all 0.3s cubic-bezier(0.4, 0, 0.2, 1));
+  position: relative;
 }
 
-.menu > .option > img {
-  height: 110px;
-  width: 300px;
-  position: absolute;
-  bottom: -20px;
-  transition: opacity 2s ease;
-  opacity: 0;
-  animation: animate2 3s infinite;
-  animation-timing-function: linear;
-  pointer-events: none;
+.option-cantidades-btn:hover {
+  transform: scale(1.04) translateY(-2px);
+  border-color: var(--primary, #71D3F7);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.35), 0 0 25px rgba(113, 211, 247, 0.25);
+  background: rgba(17, 19, 25, 0.95);
 }
 
-#cantidades > .imagen > img {
-  height: 55px;
-  width: 55px;
+.option-cantidades-icon {
+  color: var(--primary, #71D3F7);
+  font-size: 24px;
+}
+
+.option-cantidades-text {
+  color: #E2E2EB;
+  font-family: var(--font-sans, "Inter", sans-serif);
+  font-weight: 700;
+  font-size: 0.95rem;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.option-cantidades-btn .hand-tool-animation {
+  height: 45px;
+  width: 45px;
   position: absolute;
   rotate: calc(-110deg);
-  right: -50px;
-  top: 0px;
-  transition: opacity 2s ease;
-  opacity: 0;
+  right: -35px;
+  top: -10px;
   animation: animateH 3s infinite;
   animation-timing-function: linear;
   pointer-events: none;
+  transition: opacity 0.4s ease;
 }
 
-/* Diferentes animaciones utilizadas para las nubes de ayudas */
-@keyframes animateB{
-  0%{
-    top: -100px;
-  }
-  25%{
-    top: -120px;
-  }
-  50%{
-    top: -100px;
-  }
-  75%{
-    top: -120px;
-  }
-  100%{
-    top: -100px;
-  }
-}
-@keyframes animate2{
-  0%{
-    bottom: -20px;
-  }
-  25%{
-    bottom: -12px;
-  }
-  50%{
-    bottom: -20px;
-  }
-  75%{
-    bottom: -12px;
-  }
-  100%{
-    bottom: -20px;
-  }
-}
-@keyframes animateH{
-  0%{
+/* Animaciones */
+@keyframes animateH {
+  0% {
     right: -50px;
     top: 0px;
   }
-  25%{
+  25% {
     right: -25px;
     top: 20px;
   }
-  50%{
+  50% {
     right: -50px;
     top: 0px;
   }
-  75%{
+  75% {
     right: -25px;
     top: 20px;
   }
-  100%{
+  100% {
     right: -50px;
     top: 0px;
   }
 }
-@media (max-width: 1600px) {
-  
-}
-@media (max-width: 800px) {
-  
-  @keyframes animateB{
-    0%{
-      top: -65px;
-    }
-    25%{
-      top: -85px;
-    }
-    50%{
-      top: -65px;
-    }
-    75%{
-      top: -85px;
-    }
-    100%{
-      top: -65px;
-    }
-  }
-}
 
-  @media (max-width: 787px) {
-    .option4 .imagen {
-      background-size: 100% 70%;  
-    }
-    
+@media (max-width: 787px) {
+  .menu-title {
+    font-size: 1.4rem;
+    margin-bottom: 5px;
   }
-  @media (max-width: 425px) {
 
-    @keyframes animateB{
-      0%{
-        top: -65px;
-      }
-      25%{
-        top: -85px;
-      }
-      50%{
-        top: -65px;
-      }
-      75%{
-        top: -85px;
-      }
-      100%{
-        top: -65px;
-      }
-    }
+  .menu .option {
+    padding: 1.5rem 1rem;
+    width: 95%;
   }
-  @media (max-width: 320px) {
-  
-    @keyframes animateB{
-      0%{
-        top: -50px;
-      }
-      25%{
-        top: -65px;
-      }
-      50%{
-        top: -50px;
-      }
-      75%{
-        top: -65px;
-      }
-      100%{
-        top: -50px;
-      }
-    }
+
+  .option .imagen {
+    width: 6rem;
+    height: 6rem;
   }
+
+  .option-cantidades-btn {
+    padding: 12px 20px;
+  }
+
+  .option-cantidades-text {
+    font-size: 0.85rem;
+  }
+}

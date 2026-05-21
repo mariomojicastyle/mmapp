@@ -88,3 +88,27 @@ html, body {
   transition: opacity 0.15s ease, transform 0.15s ease;
   white-space: nowrap;
 }
+
+/* Cortina de ayudas deslizante de derecha a izquierda (Glassmorphism Obsidian Teal) */
+.cortina-ayudas {
+  position: fixed;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  width: 100%;
+  height: 100vh;
+  background-color: rgba(20, 22, 28, 0.15); /* Vidrio ultraligero: 50% más transparente */
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  z-index: 5; /* Por encima de la escena Canvas 3D (z-0) pero por debajo de la UI (z-10) */
+  transition: var(--transition-smooth, transform 0.4s cubic-bezier(0.16, 1, 0.3, 1));
+  transform: translate(100%, 0); /* Oculta a la derecha por defecto */
+  pointer-events: none; /* Inactiva por defecto */
+}
+
+.cortina-ayudas.is-active {
+  transform: translate(0, 0); /* Centrada cubriendo el Canvas */
+  pointer-events: auto; /* Bloquea la interacción con el 3D, pero toda la UI (z-10) sigue interactiva */
+}
+

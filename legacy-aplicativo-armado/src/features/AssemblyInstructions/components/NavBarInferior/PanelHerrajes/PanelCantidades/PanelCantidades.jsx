@@ -59,15 +59,8 @@ export default function PanelCantidades() {
   return (
     <>
       <aside className={`panel3 ${PanelCantidadesState ? "is-active" : ""}`}>
-        {/* Opción que funciona como título */}
-        <div className="option4">
-          <div
-            className="imagen"
-            style={{
-              backgroundImage: "url(/assets/tips/Cantidades_Totales_de_Herrajes.svg)"
-            }}
-          ></div>
-        </div>
+        {/* Título en texto real con el mismo estilo */}
+        <h2 className="menu-title">Cantidades Totales de Herrajes</h2>
 
         {/* Listado declarativo de indicaciones de herrajes con imagen, nombre y cantidad total */}
         <nav className="menu3">
@@ -82,7 +75,7 @@ export default function PanelCantidades() {
                   }}
                 ></div>
               </div>
-              <p className="cantidad">{item.cantidad}</p>
+              <p className="cantidad">{item.cantidad ? item.cantidad.replace(/Cantidad\((\d+)\)/i, "$1").replace(/[()]/g, "").trim() : ""}</p>
             </div>
           ))}
         </nav>

@@ -18,6 +18,7 @@ export default function AssemblyViewer({ productData, steps, id }) {
   const ChargerCameraPositions = useEnviroment((state) => state.ChargerCameraPositions);
   const pasoActual = useEnviroment((state) => state.pasoActual);
   const PiezaHerraje = useEnviroment((state) => state.PiezaHerraje);
+  const PanelAyudas = useEnviroment((state) => state.PanelAyudas);
 
   // Ref para el tooltip flotante y coordenadas del mouse
   const tooltipRef = useRef(null);
@@ -106,6 +107,9 @@ export default function AssemblyViewer({ productData, steps, id }) {
           <Experience id={id} modelUrl={modelUrl} />
         </Canvas>
       </div>
+
+      {/* Cortina translúcida de ayudas (Glassmorphism de derecha a izquierda) */}
+      <div className={`cortina-ayudas ${PanelAyudas ? "is-active" : ""}`} />
 
       {/* UI Overlay Container */}
       <div className="absolute inset-0 z-10 pointer-events-none flex flex-col justify-between py-6">

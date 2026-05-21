@@ -183,7 +183,7 @@ export default create(
       ChargerCameraPositions: (cameraPositions) => set((state) => ({ cameraPositions: cameraPositions })),
 
       PanelAyudasTrue: () => set((state) => ({ PanelAyudas: true })),
-      PanelAyudasFalse: () => set((state) => ({ PanelAyudas: false })),
+      PanelAyudasFalse: () => set((state) => ({ PanelAyudas: false, btnCerrar: false })),
 
 
       ActivarAyuda1: () => set((state) => ({ ayuda1: true })),

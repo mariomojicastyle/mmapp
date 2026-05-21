@@ -1,44 +1,248 @@
+/* Contenedor de Realidad Aumentada - Posicionado fixed un poco por encima y a unos 100px a la derecha de la barra inferior */
 .AR {
-    width: auto;
-    height: auto;
-    background: white;
-    display: none;
-    border-radius: 50%;
+  position: fixed;
+  bottom: 120px;
+  left: calc(50% + 280px); /* Posicionado de forma estable a unos 100px a la derecha del último botón (Play/Pausa) */
+  transform: translateX(-50%);
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* En PC, model-viewer no debe renderizarse ni ocupar espacio físico en absoluto */
+.AR model-viewer {
+  display: none !important;
+}
+
+/* Botón flotante de AR para PC (Obsidian Teal Glassmorphic - Idéntico a los de la barra inferior) */
+.ar-btn-pc {
+  display: flex !important;
+  height: 52px !important;
+  width: 52px !important;
+  min-width: 52px !important;
+  min-height: 52px !important;
+  max-width: 52px !important;
+  max-height: 52px !important;
+  aspect-ratio: 1 / 1 !important;
+  flex-shrink: 0 !important; /* Prevenir deformaciones flexbox */
+  border-radius: 50% !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  box-sizing: border-box !important;
+  align-self: center !important;
+  background: var(--surface, rgba(13, 24, 29, 0.7)) !important;
+  backdrop-filter: var(--glass-blur, blur(12px)) !important;
+  -webkit-backdrop-filter: var(--glass-blur, blur(12px)) !important;
+  border: 1px solid var(--border-light, rgba(113, 211, 247, 0.15)) !important;
+  cursor: pointer !important;
+  align-items: center !important;
+  justify-content: center !important;
+  color: var(--text-secondary, #b3c5cc) !important; /* Gris claro por defecto, idéntico a otros botones */
+  box-shadow: var(--glass-shadow, 0 8px 32px rgba(0, 0, 0, 0.3)) !important;
+  transition: var(--transition-smooth, all 0.3s ease) !important;
+  pointer-events: auto !important;
+}
+
+.ar-btn-pc:hover {
+  transform: scale(1.08) !important;
+  border-color: var(--primary, #00f2fe) !important;
+  color: var(--primary, #00f2fe) !important; /* Cyan digital al pasar el cursor */
+  box-shadow: 0 0 25px var(--primary-glow, rgba(0, 242, 254, 0.45)) !important;
+  background: var(--surface-active, rgba(13, 24, 29, 0.85)) !important;
+}
+
+.ar-btn-pc.active {
+  background: var(--surface-active, rgba(13, 24, 29, 0.85)) !important;
+  border-color: var(--primary, #00f2fe) !important;
+  color: var(--primary, #00f2fe) !important; /* Cyan digital al estar activo */
+  box-shadow: 0 0 25px var(--primary-glow, rgba(0, 242, 254, 0.45)) !important;
+}
+
+.ar-btn-pc .material-symbols-outlined {
+  font-size: 28px !important;
+  color: inherit !important; /* Asegurar que herede el color gris/teal del botón */
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+/* ==========================================================================
+   Burbuja de Código QR Premium (Glassmorphic Obsidian Teal)
+   ========================================================================== */
+.qr-bubble {
+  position: absolute;
+  bottom: 0px; /* Alineado exactamente con la línea/cuadrante inferior del botón circular */
+  right: 68px; /* Posicionado a la izquierda del botón de PC */
+  background: rgba(10, 20, 24, 0.97);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid var(--primary, #00f2fe);
+  box-shadow: 0 15px 50px rgba(0, 0, 0, 0.6), 0 0 30px rgba(0, 242, 254, 0.2);
+  border-radius: 16px;
+  padding: 18px;
+  color: var(--text-primary, #ffffff);
+  font-family: var(--font-sans, "Play-Regular", sans-serif);
+  z-index: 10000;
+  pointer-events: auto;
+  width: 270px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  
+  /* Micro-animación de entrada */
+  opacity: 0;
+  visibility: hidden;
+  transform: scale(0.95) translateX(10px);
+  transition: opacity 0.35s cubic-bezier(0.16, 1, 0.3, 1),
+              transform 0.35s cubic-bezier(0.16, 1, 0.3, 1),
+              visibility 0.35s;
+}
+
+.qr-bubble.is-active {
+  opacity: 1;
+  visibility: visible;
+  transform: scale(1) translateX(0);
+}
+
+/* Flecha de la burbuja de QR apuntando al botón de PC */
+.qr-bubble-arrow {
+  position: absolute;
+  width: 10px;
+  height: 10px;
+  background: rgba(10, 20, 24, 0.97);
+  border-right: 1px solid var(--primary, #00f2fe);
+  border-top: 1px solid var(--primary, #00f2fe);
+  bottom: 21px; /* Alineada milimétricamente con el cuadrante izquierdo (centro vertical) del botón circular */
+  right: -6px;
+  transform: rotate(45deg);
+  z-index: -1;
+}
+
+/* Cruz de cerrar */
+.qr-bubble-close {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  background: transparent;
+  border: none;
+  color: var(--text-secondary, #b3c5cc);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: var(--transition-smooth, all 0.3s ease);
+}
+
+.qr-bubble-close:hover {
+  color: var(--primary, #00f2fe);
+  transform: scale(1.15);
+}
+
+.qr-bubble-close .material-symbols-outlined {
+  font-size: 18px;
+}
+
+.qr-bubble-title {
+  color: var(--primary, #00f2fe);
+  font-weight: 700;
+  font-size: 0.95rem;
+  margin-bottom: 8px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+}
+
+.qr-bubble-title .material-symbols-outlined {
+  font-size: 20px;
+}
+
+.qr-bubble-text {
+  color: var(--text-secondary, #b3c5cc);
+  font-size: 0.82rem;
+  line-height: 1.45;
+  font-weight: 500;
+  margin-bottom: 14px;
+  text-align: left;
+  padding-right: 10px;
+}
+
+/* Contenedor del código QR físico */
+.qr-code-container {
+  background: #ffffff;
+  padding: 10px;
+  border-radius: 12px;
+  border: 1.5px solid var(--primary-glow, rgba(0, 242, 254, 0.3));
+  box-shadow: 0 0 15px rgba(0, 242, 254, 0.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 160px;
+  height: 160px;
+  transition: var(--transition-smooth, all 0.3s ease);
+}
+
+.qr-code-container:hover {
+  border-color: var(--primary, #00f2fe);
+  box-shadow: 0 0 20px rgba(0, 242, 254, 0.3);
+}
+
+.qr-code-img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+/* ==========================================================================
+   Ajustes Responsivos para Dispositivos Móviles
+   ========================================================================== */
+@media (max-width: 787px) {
+  /* En móviles, ocultamos el botón de PC y el popover del QR */
+  .ar-btn-pc, .qr-bubble {
+    display: none !important;
   }
-  model-viewer {
-    background-color: transparent;
-    overflow-x: hidden;
-    --poster-color: transparent;
+  
+  /* Mostramos el botón nativo de model-viewer en móviles */
+  model-viewer [slot="ar-button"] {
+    display: flex !important;
+  }
+  
+  /* En móviles, model-viewer recupera su tamaño y comportamiento normales */
+  .AR model-viewer {
+    display: block !important;
+    position: static !important;
+    width: 100% !important;
+    height: 100% !important;
+    pointer-events: auto !important;
+    visibility: visible !important;
+  }
+  
+  /* En móviles, el contenedor .AR adopta el estilo del botón flotante nativo de model-viewer */
+  .AR {
     display: flex;
-    width: 100%;
-    height: 100%;
-    align-items: flex-end;
-    justify-content: space-between;
+    position: fixed;
+    width: 40px;
+    height: 40px;
+    bottom: 190px;
+    right: 10px;
+    left: auto !important; /* Anular la posición left de PC */
+    transform: none !important; /* Anular el transform de PC */
+    z-index: 50;
+    box-shadow: 0 3px 5px -1px rgba(0, 0, 0, 0.2),
+                0 6px 10px 0 rgba(0, 0, 0, 0.14), 0 1px 18px 0 rgba(0, 0, 0, 0.12);
+    border-radius: 50%;
+    background: #ffffff;
   }
-  @media (max-width: 787px) {
-    .AR {
-        display: flex;
-        position: fixed;
-        width: 40px;
-        height: 40px;
-        bottom: 120px;
-        right: 10px;
-        z-index: 50;
-        box-shadow: 0 3px 5px -1px rgba(0, 0, 0, 0.2),
-                    0 6px 10px 0 rgba(0, 0, 0, 0.14), 0 1px 18px 0 rgba(0, 0, 0, 0.12);
-        bottom: 190px;
-      }
+}
+
+@media (max-width: 320px) {
+  .AR {
+    width: 35px;
+    height: 35px;
+    bottom: 130px;
+    right: 5px;
   }
-  @media (max-width: 320px) {
-    .AR {
-        display: flex;
-        position: fixed;
-        width: 35px;
-        height: 35px;
-        bottom: 130px;
-        right: 5px;
-        box-shadow: 0 3px 5px -1px rgba(0, 0, 0, 0.2),
-                    0 6px 10px 0 rgba(0, 0, 0, 0.14), 0 1px 18px 0 rgba(0, 0, 0, 0.12);
-        
-      }
-  }
+}

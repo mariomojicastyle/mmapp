@@ -206,11 +206,33 @@
 
 /* Ayuda 6: Realidad Aumentada (Boton AR) */
 .ayuda-bubble.ayuda6 {
-  bottom: -15px;
-  right: 55px; /* Separado del botón AR flotante */
+  bottom: 0px;
+  top: auto;
+  right: 68px; /* Separado del botón AR flotante, tocando milimétricamente */
   transform: scale(0.95);
+  transform-origin: right bottom;
   min-width: 250px;
 }
 .ayuda-bubble.ayuda6.is-active {
   transform: scale(1);
+}
+
+/* Sobrescribir la flecha para que apunte exactamente al cuadrante izquierdo (centro vertical) del botón AR */
+.ayuda-bubble.ayuda6 .ayuda-bubble-arrow.arrow-right {
+  top: auto;
+  bottom: 21px; /* Posicionada para que su centro esté a 26px de la base (centro del botón de 52px en PC) */
+  transform: rotate(135deg);
+}
+
+/* Ajuste específico para dispositivos móviles (donde el botón AR mide 40px y tiene centro a 20px de la base) */
+@media (max-width: 787px) {
+  .ayuda-bubble.ayuda6 {
+    bottom: 0px;
+    right: 56px; /* Ajustado a la izquierda del botón de 40px en móvil */
+    transform-origin: right bottom;
+  }
+  
+  .ayuda-bubble.ayuda6 .ayuda-bubble-arrow.arrow-right {
+    bottom: 15px; /* Posicionada para que su centro esté a 20px de la base (centro del botón móvil de 40px) */
+  }
 }

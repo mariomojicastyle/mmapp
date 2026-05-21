@@ -38,6 +38,16 @@
   display: flex !important;
 }
 
+/* En escritorio, cuando el panel de herrajes está abierto, reposicionamos el botón de cerrar a 100px a la derecha de la caja del herraje */
+@media (min-width: 788px) {
+  .cerrar.active.panel-herrajes-open {
+    position: fixed; /* Posicionamiento fijo relativo al viewport para alineación perfecta con la tarjeta blanca */
+    top: 3rem;
+    left: calc(50% + 340px);
+    right: auto;
+  }
+}
+
 @media (max-width: 787px) {
   .cerrar {
     top: 15px;

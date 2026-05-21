@@ -1,4 +1,4 @@
-import { useRef, useEffect } from "react";
+import { useState, useEffect } from "react";
 import useEnviroment from "../../../hooks/useEnviroment";
 import { IconSearch } from "../../Icons.jsx";
 import "./PanelBtn.css";
@@ -6,50 +6,36 @@ import "./PanelBtn.css";
 export default function PanelBtn() {
 
   const PositivePanel = useEnviroment((state) => state.PositivePanel);
-  const PanelTrue = useEnviroment((state) => state.PanelTrue);
   const btnCerrarTrue = useEnviroment((state) => state.btnCerrarTrue);
   const AudioEnded = useEnviroment((state) => state.AudioEnded);
   const pasoActual = useEnviroment((state) => state.pasoActual);
-  const pasos = useEnviroment((state) => state.pasos);
 
-  // const EncuestaMitad = useEnviroment((state) => state.EncuestaMitad);
-  // const EncuestaMitadTrue = useEnviroment((state) => state.EncuestaMitadTrue);
+  const [showTooltip, setShowTooltip] = useState(false);
 
-  // const EncuestaFinal = useEnviroment((state) => state.EncuestaFinal);
-  // const EncuestaFinalTrue = useEnviroment((state) => state.EncuestaFinalTrue);
-  // const EncuestaCompletada = useEnviroment((state) => state.EncuestaCompletada);
-
-  const useTooltipHand = useRef(null)
-  var contador = 0;
-  //Cada vez que un audio explicativo de un paso finaliza, se activa la burbuja de "Herrajes necesarios"
+  // Al cambiar de paso, apagamos el tooltip inmediatamente para evitar cualquier residuo visual
   useEffect(() => {
-    if (AudioEnded) {
-      useTooltipHand.current.style.display = "flex";
+    setShowTooltip(false);
+  }, [pasoActual]);
 
-      setTimeout(() => {
-        useTooltipHand.current.style.opacity = 1;
-        //Se realiza la condición correspondiente para aparecer la encuesta, en caso de que el paso actual sea la mitad de todos los pasos. 
-        // if (pasoActual == Math.floor(pasos.length / 2) && EncuestaMitad == false && EncuestaCompletada==false) {
-        //   useTooltipHand.current.style.opacity = 0;
-        //   EncuestaMitadTrue();
+  // Cada vez que finaliza la locución de un paso (cambio de AudioEnded de false a true), activamos el tooltip
+  useEffect(() => {
+    const pasoInt = parseInt(pasoActual, 10);
+    if (AudioEnded && pasoInt > 0) {
+      setShowTooltip(true);
 
-        // } else if (pasoActual == (pasos.length-1) && EncuestaFinal == false && EncuestaCompletada==false) {
-        //   useTooltipHand.current.style.opacity = 0;
-        //   EncuestaFinalTrue();
-        // }
-      }, 1000);
+      const hideTimeout = setTimeout(() => {
+        setShowTooltip(false);
+      }, 3000); // Se muestra por 3 segundos
 
-      setTimeout(() => {
-        useTooltipHand.current.style.opacity = 0; 
-      }, 3000);
-
-      setTimeout(() => {
-        useTooltipHand.current.style.display = "none";
-      }, 4000);
+      return () => {
+        clearTimeout(hideTimeout);
+      };
+    } else {
+      setShowTooltip(false);
     }
   }, [AudioEnded]);
 
-  //Al dar click se activa el panel de herrajes
+  // Al dar click se activa el panel de herrajes
   const ClickPanelBtn = () => {
     PositivePanel();
     btnCerrarTrue();
@@ -63,11 +49,12 @@ export default function PanelBtn() {
         onClick={ClickPanelBtn}
       >
         <IconSearch style={{ width: "16px", height: "16px" }} />
-        {/* <!-- La siguiente imagen es la burbuja de ayuda con el texto "Herrajes Necesarios", su display esta desactivado por defecto, y se activa cada vez que el audio correspondiente al paso termina --> */}
-        <img ref={useTooltipHand}
-          src={"/assets/ayudas/04_Busqueda_Posterior.svg"}
-          alt=""
-        />
+        
+        {/* Burbuja de ayuda premium nativa Glassmorphic Obsidian Teal */}
+        <div className={`ayuda-herrajes-tooltip ${showTooltip ? "is-active" : ""}`}>
+          <div className="ayuda-herrajes-arrow"></div>
+          <span className="ayuda-herrajes-text">Herrajes Necesarios</span>
+        </div>
       </button>
     </>
   );
