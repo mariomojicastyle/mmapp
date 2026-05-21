@@ -57,10 +57,10 @@ export default function PanelTips({ id, data }) {
         className={`panel2 menu2 is-${panelTips ? "active" : ""}`}
         onClick={PanelTipsFalse}
       >
-        <div className="option2 1" id="logo">
+        <div className="option2 1" id="logo" onClick={(e) => e.stopPropagation()}>
           <div className="imagen" style={{ backgroundImage: `${icono}` }}></div>
         </div>
-        <div className="option2 2">
+        <div className="option2 2" onClick={(e) => e.stopPropagation()}>
           2 Herramientas Necesarias
           <div
             className="imagen"
@@ -68,7 +68,7 @@ export default function PanelTips({ id, data }) {
           ></div>
         </div>
 
-        <div className="option2 3">
+        <div className="option2 3" onClick={(e) => e.stopPropagation()}>
           3 Herramientas Necesarias
           <div
             className="imagen"
@@ -76,7 +76,7 @@ export default function PanelTips({ id, data }) {
           ></div>
         </div>
 
-        <div className="option2 4">
+        <div className="option2 4" onClick={(e) => e.stopPropagation()}>
           Sistema de Anclaje
           <div
             className="imagen"
@@ -84,7 +84,7 @@ export default function PanelTips({ id, data }) {
           ></div>
         </div>
 
-        <div className="option2 5">
+        <div className="option2 5" onClick={(e) => e.stopPropagation()}>
           Pulsador para Abrir
           <div
             className="imagen"
@@ -92,7 +92,7 @@ export default function PanelTips({ id, data }) {
           ></div>
         </div>
 
-        <div className="option2 6">
+        <div className="option2 6" onClick={(e) => e.stopPropagation()}>
           Ensamble Minifix
           <div
             className="imagen"
@@ -100,7 +100,7 @@ export default function PanelTips({ id, data }) {
           ></div>
         </div>
 
-        <div className="option2 7">
+        <div className="option2 7" onClick={(e) => e.stopPropagation()}>
           Ensamble Tuerca Plástica
           <div
             className="imagen"
@@ -108,7 +108,7 @@ export default function PanelTips({ id, data }) {
           ></div>
         </div>
 
-        <div className="option2 8">
+        <div className="option2 8" onClick={(e) => e.stopPropagation()}>
           Ajuste de Bisagras
           <div
             className="imagen"
@@ -116,7 +116,7 @@ export default function PanelTips({ id, data }) {
           ></div>
         </div>
 
-        <div className="option2 9">
+        <div className="option2 9" onClick={(e) => e.stopPropagation()}>
           Oculta Tornillos
           <div
             className="imagen"
@@ -124,7 +124,7 @@ export default function PanelTips({ id, data }) {
           ></div>
         </div>
 
-        <div className="option2 garantia-container">
+        <div className="option2 garantia-container" onClick={(e) => e.stopPropagation()}>
           <a
             href={Tips.GarantiaDelProducto}
             target={"_blank"}

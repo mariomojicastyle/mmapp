@@ -31,7 +31,18 @@ export default function AudioPlayer() {
   const ActivarParpadeo = useEnviroment((state) => state.ActivarParpadeo);
 
   const Cliente = useEnviroment((state) => state.Cliente);
+  const PanelShow = useEnviroment((state) => state.PanelShow);
+  const PanelCantidades = useEnviroment((state) => state.PanelCantidades);
+  const panelTips = useEnviroment((state) => state.panelTips);
+  const PausedAudio = useEnviroment((state) => state.PausedAudio);
   const audioRef = useRef(null);
+
+  // Pausar automáticamente el audio de fondo cuando se abre cualquier cortina
+  useEffect(() => {
+    if (PanelShow || PanelCantidades || panelTips) {
+      PausedAudio();
+    }
+  }, [PanelShow, PanelCantidades, panelTips, PausedAudio]);
 
   //Si se activa el panel de ayudas, se cambia el audio especial, y las ayudas se van activando a medida que el audio suena.
   useEffect(() => {

@@ -227,9 +227,11 @@ Los estilos, colores y tiempos de transición de las flechas azules se configura
     - **Alineación Dinámica Sincronizada del Panel de Tips**: Se integró el estado de Zustand `panelTips` en la variable condicional `isPanelOpen` de `RealidadAumentada.jsx` y `BotonCerrar.jsx`. Ahora, al abrir la cortina de tips de armado, tanto la "X" de cerrar como el botón de Realidad Aumentada se desplazan de forma reactiva y con transiciones CSS fluidas a la vertical de control `left: calc(50% + 340px)`.
     - **Cierre Global Instantáneo mediante Tecla ESC**: Se implementó un event listener global para el teclado físico en `BotonCerrar.jsx`. Al pulsar la tecla **ESC** (Escape), se invoca centralizadamente la acción `cerrarPaneles()`, cerrando instantáneamente cualquier cortina abierta (herrajes, cantidades, tutorial de ayudas o tips de armado) y devolviendo la interfaz a su estado limpio.
     - **Cápsula Premium para "Garantía del Producto"**: Se reemplazó la antigua tarjeta blanca rígida `.option2 10` por una cápsula flotante Obsidian Teal (`.garantia-btn`) independiente. Cuenta con fondo de vidrio esmerilado oscuro, borde cian, icono de verificación (`verified_user`) y efectos hover interactivos de alta gama idénticos a los del botón de "Cantidades Totales de Herrajes", conservando la clase de control `.option2` para preservar la lógica condicional de visualización por producto.
+    - **Pausa Automática de la Locución al Abrir Cortinas**: Se inyectó lógica reactiva en `AudioPlayer.jsx` para pausar inmediatamente cualquier audio explicativo o de fondo (`PausedAudio()`) en el momento en que se activa alguna cortina lateral o panel (`PanelShow`, `PanelCantidades` o `panelTips`), evitando el solapamiento acústico.
+    - **Fichas Estáticas e Informativas de Tips**: Se inyectó el manejador `onClick={(e) => e.stopPropagation()}` a cada una de las tarjetas informativas `.option2` de `PanelTips.jsx`. Esto anula el cierre accidental del panel al hacer clic en las fichas del tutorial, convirtiéndolas en elementos estáticos e informativos (con efectos de hover físicos intactos) y permitiendo cerrar la cortina únicamente mediante el botón "X", el teclado (ESC) o haciendo clic fuera de las tarjetas.
 
 ---
 
-*Última consolidación: 21 de Mayo, 2026 (10:30 AM)*
+*Última consolidación: 21 de Mayo, 2026 (10:40 AM)*
 
 
