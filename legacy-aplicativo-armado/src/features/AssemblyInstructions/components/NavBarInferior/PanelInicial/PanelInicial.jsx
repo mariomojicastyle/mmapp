@@ -1,9 +1,7 @@
 import './PanelInicial.css';
 import { Html, useProgress, useGLTF } from '@react-three/drei'
-import { useRef, useState, useEffect, lazy, Suspense } from 'react';
+import { useRef, useState, useEffect } from 'react';
 import useEnviroment from '../../../hooks/useEnviroment';
-
-const Spline = lazy(() => import('@splinetool/react-spline'));
 
 
 export default function PanelInicial() {
@@ -84,11 +82,15 @@ export default function PanelInicial() {
 
   return <>
     <aside className="PanelInicial" ref={useCharger}>
-      {/* Fondo 3D interactivo — R4X Bot */}
+      {/* Fondo 3D interactivo — R4X Bot via iframe (contexto WebGL aislado) */}
       <div className="spline-bg">
-        <Suspense fallback={null}>
-          <Spline scene="https://prod.spline.design/r4xbot-pS1luNxTefqsyDlc4ZbCw1Fj/scene.splinecode" />
-        </Suspense>
+        <iframe
+          src="https://my.spline.design/r4xbot-pS1luNxTefqsyDlc4ZbCw1Fj/"
+          frameBorder="0"
+          title="R4X Bot 3D"
+          loading="lazy"
+          allowFullScreen
+        />
       </div>
 
       {/* Contenido de portada encima del 3D */}
