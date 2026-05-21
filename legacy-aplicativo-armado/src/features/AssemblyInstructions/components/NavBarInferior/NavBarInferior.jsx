@@ -39,7 +39,20 @@ export default function NavBarInferior({ id, data }) {
   const ayuda4 = useEnviroment((state) => state.ayuda4);
   const ayuda5 = useEnviroment((state) => state.ayuda5);
 
+  const [rippleActive, setRippleActive] = useState(false);
+
   var pasostotal = pasos.length;
+
+  // Lógica para activar el efecto de ondas expansivas al finalizar el tutorial de ayudas
+  useEffect(() => {
+    if (Parpadeo) {
+      setRippleActive(true);
+      const rippleTimer = setTimeout(() => {
+        setRippleActive(false);
+      }, 1500); // 1.5 segundos cubre la animación (1s) más los delays de las ondas
+      return () => clearTimeout(rippleTimer);
+    }
+  }, [Parpadeo]);
 
   // Actualizar círculo de progreso cuando cambia el paso
   useEffect(() => {
@@ -166,6 +179,13 @@ export default function NavBarInferior({ id, data }) {
 
           <button ref={refRight} id="right" onClick={RightButtton}>
             <IconRight style={{ width: "60%" }} />
+            {rippleActive && (
+              <>
+                <span className="ripple-wave wave-1"></span>
+                <span className="ripple-wave wave-2"></span>
+                <span className="ripple-wave wave-3"></span>
+              </>
+            )}
           </button>
 
           <div id="btnPause" className="button" onClick={PlayButton}>
