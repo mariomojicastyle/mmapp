@@ -52,10 +52,9 @@
 
 /* Ficha de cada herraje: Blanca, idéntica al lenguaje visual de las tarjetas del menú anterior */
 .option3 {
-  display: flex;
-  flex-direction: row !important;
+  display: grid !important;
+  grid-template-columns: 1fr auto 1fr;
   align-items: center;
-  justify-content: space-between;
   background: #ffffff; /* Base blanca */
   border: 1px solid rgba(113, 211, 247, 0.35); /* Borde cian sutil */
   border-radius: 16px;
@@ -76,6 +75,7 @@
 }
 
 .option3 > div {
+  grid-column: 2;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -113,6 +113,8 @@
 
 /* Número de cantidad total (Teal oscuro/Cian o negro para perfecto contraste) */
 .option3 p.cantidad:last-child {
+  grid-column: 3;
+  justify-self: end;
   font-family: var(--font-sans, "Inter", sans-serif);
   font-weight: 800;
   font-size: 2.2rem;
