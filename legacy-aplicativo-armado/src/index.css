@@ -11,9 +11,9 @@
   --surface-opaque: #1e1f26;
   --surface-container: rgba(30, 31, 38, 0.75);
   --surface-active: rgba(40, 42, 48, 0.85);
-  --primary: #71D3F7;
-  --primary-glow: rgba(113, 211, 247, 0.25);
-  --border-light: rgba(113, 211, 247, 0.15);
+  --primary: #0088AA;
+  --primary-glow: rgba(0, 136, 170, 0.25);
+  --border-light: rgba(0, 136, 170, 0.15);
   --text-primary: #E2E2EB;
   --text-secondary: #BEC8CE;
   --text-white: #FFFFFF;
