@@ -49,10 +49,13 @@ export default function PanelInicial() {
   const fillerStyles = {
     height: '100%',
     width: `${progress}%`,
-    backgroundColor: "var(--primary)",
+    backgroundColor: "var(--primary-glow)",
     transition: 'width 1s ease-in-out',
     borderRadius: 'inherit',
-    textAlign: 'right'
+    textAlign: 'right',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'flex-end'
   }
 
   const labelStyles = {
