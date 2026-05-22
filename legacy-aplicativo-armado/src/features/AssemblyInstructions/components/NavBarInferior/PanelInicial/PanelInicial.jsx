@@ -73,6 +73,17 @@ export default function PanelInicial() {
           inicioBtn.style.display = "flex";
         }
       }, 500);
+
+      // Oculta la barra de progreso 2 segundos después
+      window.setTimeout(() => {
+        const progContainer = document.querySelector(".progress");
+        if (progContainer) {
+          progContainer.style.opacity = "0";
+          window.setTimeout(() => {
+            if (progContainer) progContainer.style.display = "none";
+          }, 500);
+        }
+      }, 2000);
     }
   }, [progress]);
   
