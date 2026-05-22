@@ -441,4 +441,12 @@ Los estilos, colores y tiempos de transición de las flechas azules se configura
 
 ---
 
-*Última consolidación: 21 de Mayo, 2026 (10:45 AM)*
+* **[2026-05-22] AppArmado_V10 — Integración de Escena 3D Spline (Gama) en Pantalla de Carga:**
+    - **Reemplazo de Elementos Estáticos por Iframe 3D**: Se eliminó el logotipo plano de imagen estática y los textos introductorios del panel HTML para darle el 100% de protagonismo a la escena del personaje Gama (R4X Bot). Se insertó un `<iframe className="spline-bg">` configurado sin bordes, inyectando directamente la exportación interactiva de la nube de Spline. Se inyectó control de caché dinámico (ej. `?v=7`) en la URL del iframe para forzar la actualización de cambios de Spline en el visor web.
+    - **Reubicación de Interfaz Superpuesta (Top Content)**: Se rediseñó el HTML/CSS para que la barra de carga y el botón "Iniciar" floten sobre la escena 3D como elementos HUD. Se reubicaron en la mitad superior de la pantalla, liberando el área inferior y central para evitar tapar el modelo interactivo de Gama.
+    - **Homologación Visual y Mimetización de la Barra de Carga**: Se configuró el fondo del contenedor de progreso `.progress` como transparente con bordes Teal brillantes (`var(--primary)`). El relleno de carga activo utiliza una barra translúcida lumínica (`var(--primary-glow)`), con el texto de porcentaje alineado y formateado en color cian sólido, logrando que el diseño coincida milimétricamente con el botón "Iniciar".
+    - **Transición Cinemática (Auto-Hide)**: Se implementó lógica dinámica en React dentro de `PanelInicial.jsx`. Al alcanzar el 100%, la barra espera exactamente 2 segundos antes de iniciar una transición suave (fade-out) y desaparecer completamente (`display: none`), dejando la escena impecable para interactuar libremente con Gama.
+
+---
+
+*Última consolidación: 22 de Mayo, 2026*

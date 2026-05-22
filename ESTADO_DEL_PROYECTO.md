@@ -37,9 +37,10 @@ Este archivo es la "Memoria RAM" para Antigravity. Contiene el contexto de lo qu
 ---
 
 ## 🛠️ 3. Aplicativo de Armado (Legacy Restore)
-**Estado:** Migración local, refinamientos 3D, red offline y rediseño Obsidian Teal Glassmorphic Premium con exclusión de cortinas completado al 100% en la versión v8.4.
+**Estado:** Integración inmersiva de Gama (R4X Bot) completada al 100% en la portada de carga (App_Armado_V10). Rediseño Obsidian Teal Premium finalizado.
 
 ### 🎯 Objetivos de la Fase
+- [x] App_Armado_V10: Integración inmersiva 3D de "Gama" en la pantalla de carga inicial mediante Spline (interactividad de ratón, diseño transparente y barra de progreso auto-ocultable).
 - [x] Eliminar dependencias de `3dymedios.com` (localización total de GLB, Matcaps, HDRI, audio y tips).
 - [x] Corregir desfase de 1 metro en coordenadas de Three.js entre el modelo y el terreno.
 - [x] Desconexión de red definitiva (Logo, encuestas y ayudas).
