@@ -37,7 +37,7 @@ Este archivo es la "Memoria RAM" para Antigravity. Contiene el contexto de lo qu
 ---
 
 ## 🛠️ 3. Aplicativo de Armado (Legacy Restore)
-**Estado:** Migración local, refinamientos 3D, rediseño Obsidian Teal Glassmorphic Premium e integración de Escena interactiva Spline (R4X Bot) completado al 100% en la versión V9.
+**Estado:** Migración local, refinamientos 3D, red offline y rediseño Obsidian Teal Glassmorphic Premium con exclusión de cortinas completado al 100% en la versión v8.4.
 
 ### 🎯 Objetivos de la Fase
 - [x] Eliminar dependencias de `3dymedios.com` (localización total de GLB, Matcaps, HDRI, audio y tips).
@@ -51,7 +51,6 @@ Este archivo es la "Memoria RAM" para Antigravity. Contiene el contexto de lo qu
 - [x] Exclusión mutua de cortinas (cierre preventivo de paneles abiertos al abrir uno nuevo) en el store de Zustand para evitar traslapes.
 - [x] Reordenamiento y renombrado del tooltip superior de "Guía y Herramientas" según requerimientos del usuario.
 - [x] Ajustes de navegación inferior V8.5: Icono de pausa al arranque y aumento de tamaño proporcional (40%) para número de paso e icono lupa en UI responsiva.
-- [x] **[NUEVO] Integración Spline 3D (V9):** Robot R4X interactivo anidado vía iframe nativo en la pantalla de carga para evitar choques de contextos WebGL con R3F. Layout de UI reorganizado a los bordes para visibilidad clara.
 
 ---
 

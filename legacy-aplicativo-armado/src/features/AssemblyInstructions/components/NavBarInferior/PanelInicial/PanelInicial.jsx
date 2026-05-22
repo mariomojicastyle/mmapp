@@ -82,27 +82,44 @@ export default function PanelInicial() {
 
   return <>
     <aside className="PanelInicial" ref={useCharger}>
-      <div className="optionI" >
-        <div className="imagen" style={{backgroundImage:`${icono}`}}></div>
+      {/* Background Spline Scene */}
+      <iframe 
+        src="https://my.spline.design/r4xbot-pS1luNxTefqsyDlc4ZbCw1Fj/" 
+        frameBorder="0" 
+        width="100%" 
+        height="100%" 
+        className="spline-bg"
+        title="Spline 3D Scene"
+      ></iframe>
+
+      {/* Top Content (Logo) */}
+      <div className="content-top">
+        <div className="optionI" >
+          <div className="imagen" style={{backgroundImage:`${icono}`}}></div>
+        </div>
       </div>
-      <div className="optionI">
-        Sube el volumen para escuchar las instrucciones
+
+      {/* Bottom Content (Text, Progress, Button) */}
+      <div className="content-bottom">
+        <div className="optionI">
+          Sube el volumen para escuchar las instrucciones
+        </div>
+        <div className="optionI">
+          <p>
+            Algunos dispositivos no cumplen con los requerimientos mínimos de esta tecnología. Si experimenta algún
+            problema luego de iniciar, la solución es intentar con otro móvil o desde un PC.
+          </p>
+        </div>
+        <div className="progress">
+          {/* Barra de progreso */}
+          <div style={fillerStyles} className="progressBar" ref={progressBar}>
+            <span style={labelStyles}>{`${displayProgress}%`}</span>
+          </div>
+        </div>
+        <div className="optionI" id="inicio" onClick={Start}>
+          <div className="imagen">Iniciar</div>
+        </div>
       </div>
-      <div className="optionI">
-        <p>
-          Algunos dispositivos no cumplen con los requerimientos mínimos de esta tecnología. Si experimenta algún
-          problema luego de iniciar, la solución es intentar con otro móvil o desde un PC.
-        </p>
-      </div>
-      <div className="optionI" id="inicio" onClick={Start}>
-        <div className="imagen">Iniciar</div>
-      </div>
-      <div className="progress">
-        {/* Barra de progreso */}
-      <div style={fillerStyles} className="progressBar" ref={progressBar}>
-        <span style={labelStyles}>{`${displayProgress}%`}</span>
-      </div>
-    </div>
     </aside>
 
   </>
