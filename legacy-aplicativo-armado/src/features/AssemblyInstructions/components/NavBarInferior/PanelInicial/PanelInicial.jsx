@@ -82,50 +82,27 @@ export default function PanelInicial() {
 
   return <>
     <aside className="PanelInicial" ref={useCharger}>
-      {/* Fondo 3D interactivo — R4X Bot via iframe (contexto WebGL aislado) */}
-      <div className="spline-bg">
-        <iframe
-          src="https://my.spline.design/r4xbot-pS1luNxTefqsyDlc4ZbCw1Fj/"
-          frameBorder="0"
-          title="R4X Bot 3D"
-          loading="lazy"
-          allowFullScreen
-        />
+      <div className="optionI" >
+        <div className="imagen" style={{backgroundImage:`${icono}`}}></div>
       </div>
-
-      {/* Contenido de portada encima del 3D */}
-      <div className="PanelInicial-content">
-        
-        <div className="content-top">
-          <div className="optionI">
-            <div className="imagen" style={{backgroundImage:`${icono}`}}></div>
-          </div>
-        </div>
-
-        <div className="content-bottom">
-          <div className="optionI">
-            Sube el volumen para escuchar las instrucciones
-          </div>
-          <div className="optionI">
-            <p>
-              Algunos dispositivos no cumplen con los requerimientos mínimos de esta tecnología. Si experimenta algún
-              problema luego de iniciar, la solución es intentar con otro móvil o desde un PC.
-            </p>
-          </div>
-          
-          <div className="progress">
-            {/* Barra de progreso */}
-            <div style={fillerStyles} className="progressBar" ref={progressBar}>
-              <span style={labelStyles}>{`${displayProgress}%`}</span>
-            </div>
-          </div>
-          
-          <div className="optionI" id="inicio" onClick={Start}>
-            <div className="imagen">Iniciar</div>
-          </div>
-        </div>
-        
+      <div className="optionI">
+        Sube el volumen para escuchar las instrucciones
       </div>
+      <div className="optionI">
+        <p>
+          Algunos dispositivos no cumplen con los requerimientos mínimos de esta tecnología. Si experimenta algún
+          problema luego de iniciar, la solución es intentar con otro móvil o desde un PC.
+        </p>
+      </div>
+      <div className="optionI" id="inicio" onClick={Start}>
+        <div className="imagen">Iniciar</div>
+      </div>
+      <div className="progress">
+        {/* Barra de progreso */}
+      <div style={fillerStyles} className="progressBar" ref={progressBar}>
+        <span style={labelStyles}>{`${displayProgress}%`}</span>
+      </div>
+    </div>
     </aside>
 
   </>

@@ -25,7 +25,7 @@
   width: 100%;
   height: 100vh;
   background-color: var(--bg-primary);
-  overflow: hidden;
+  overflow-y: auto;
   transition: var(--transition-smooth);
   display: flex;
   justify-content: center;
@@ -35,42 +35,6 @@
   font-family: var(--font-sans);
   color: var(--text-primary);
   transform: translate(0, 0);
-}
-
-/* Capa 3D — ocupa todo el panel, detrás del contenido */
-.spline-bg {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  z-index: 0;
-  pointer-events: auto; /* permite interactuar con el robot */
-}
-
-.spline-bg iframe {
-  width: 100%;
-  height: 100%;
-  border: none;
-  display: block;
-}
-
-/* Capa de contenido — encima del 3D, con pointer-events bloqueados en el fondo */
-.PanelInicial-content {
-  position: relative;
-  z-index: 1;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 24px;
-  width: 100%;
-  pointer-events: none; /* el fondo 3D sigue siendo interactivo */
-}
-
-/* Re-habilitar pointer-events en elementos clickeables */
-.PanelInicial-content #inicio,
-.PanelInicial-content .progress {
-  pointer-events: auto;
 }
 
 .PanelInicial > .optionI {
