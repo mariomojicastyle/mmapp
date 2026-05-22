@@ -139,7 +139,7 @@
 /* Progress bar container */
 .progress {
   position: fixed;
-  top: calc(55% - 20px);
+  top: calc(55% - 40px);
   left: 50%;
   transform: translate(-50%, -50%);
   z-index: 20;
