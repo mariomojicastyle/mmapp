@@ -148,6 +148,22 @@ This reverts commit abc123def456.
 Reason: Caused performance regression in production.
 ```
 
+## The /super-commit Command
+
+When the user types `/super-commit [descripción]`, you MUST execute the following automated Git Flow in the terminal, guaranteeing a safe, professional, and clean integration. (Currently, Netlify auto-deployment is PAUSED, so do not push to `main` until further notice):
+
+1. **Stash & Commit**: Analyze changes, write a Sentry-compliant commit message.
+2. **Validation (Lint & Build Check) - NIVEL 1 DE BLINDAJE**:
+   - Before touching `main`, execute `npm run lint` inside the project folder (`mario-mojica-plataforma` or corresponding root).
+   - If linting passes, execute `npm run build` to verify the project compiles without fatal errors.
+   - **CRITICAL**: If either command fails, ABORT the `/super-commit` immediately, report the exact error to the user, and DO NOT proceed to the next steps.
+3. **Merge to Main**: 
+   - `git checkout main`
+   - `git pull origin main`
+   - `git merge <current-branch> -m "Merge branch '<current-branch>' into main"`
+4. **Push to Origin**: `git push origin main` *(DISABLED FOR NOW: The user has requested to temporarily suspend deployment to Netlify, so skip this push step or ask for confirmation first).*
+5. **Cleanup & New Branch**: Return the user to a clean working state. If they asked for a new feature branch, create it (`git checkout -b <new-branch>`). Otherwise, return to the original branch.
+
 ## Principles
 
 - Each commit should be a single, stable change

@@ -97,14 +97,16 @@ export default function PanelInicial() {
   return <>
     <aside className="PanelInicial" ref={useCharger}>
       {/* Background Spline Scene */}
-      <iframe 
-        src="https://my.spline.design/r4xbot-pS1luNxTefqsyDlc4ZbCw1Fj/?v=7" 
-        frameBorder="0" 
-        width="100%" 
-        height="100%" 
-        className="spline-bg"
-        title="Spline 3D Scene"
-      ></iframe>
+      <div className="spline-wrapper">
+        <iframe 
+          src="https://my.spline.design/r4xbot-pS1luNxTefqsyDlc4ZbCw1Fj/?v=7" 
+          frameBorder="0" 
+          width="100%" 
+          height="100%" 
+          className="spline-bg"
+          title="Spline 3D Scene"
+        ></iframe>
+      </div>
 
       {/* Top Content (Progress Bar & Button) */}
       <div className="content-top">

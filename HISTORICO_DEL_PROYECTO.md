@@ -449,4 +449,12 @@ Los estilos, colores y tiempos de transición de las flechas azules se configura
 
 ---
 
-*Última consolidación: 22 de Mayo, 2026*
+* **[2026-05-23] Plataforma B2B — Usuarios_v2 (Gestión Avanzada y Sincronización Realtime):**
+    - **Gestión Avanzada de Usuarios y Roles**: Implementación completa del ecosistema jerárquico (SuperAdmin, Coequipero, Admin Cliente, Diseñador, Lector) con validación cruzada y UI condicional en la plataforma B2B.
+    - **Sincronización en Tiempo Real de Notificaciones**: Refactorización del hook `useNotifications` para integrarse con `Supabase Realtime` bajo la condición de eventos `*` (INSERT y UPDATE). Esto permite que el punto rojo de notificaciones no leídas desaparezca o se active instantáneamente en el Sidebar cuando el usuario lee una notificación en la página principal, sin requerir recargas de página.
+    - **Seguridad y Expulsión Instantánea**: Desarrollo de un guardián de rutas global (`layout.tsx`) apoyado por una suscripción `Realtime` en el contexto de autenticación (`auth-context.tsx`). Si un administrador elimina un perfil de usuario activo, la plataforma intercepta el evento de eliminación de la base de datos y expulsa al usuario inmediatamente, cerrando su sesión JWT y forzando la redirección instantánea a `/login`.
+    - **Ajustes de UI en Sidebar**: Corrección de problemas de salto visual (layout shift) en el menú lateral. Al transicionar entre el estado expandido y comprimido, se aislaron los elementos ocultos (`w-0`, `overflow-hidden`) de forma estructurada para garantizar que la alineación vertical y horizontal de los iconos sea completamente estática, replicando la estabilidad y fluidez visual de plataformas como Supabase.
+
+---
+
+*Última consolidación: 23 de Mayo, 2026*
