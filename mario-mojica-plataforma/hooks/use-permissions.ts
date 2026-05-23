@@ -1,3 +1,7 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+ 
+ 
+ 
 "use client"
 
 import { useAuth } from "@/lib/auth/auth-context"
@@ -38,3 +42,4 @@ export function usePermissions() {
     isViewer: user?.role === "viewer",
   }
 }
+

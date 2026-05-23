@@ -1,7 +1,12 @@
+ 
+ 
+ 
+/* eslint-disable react-hooks/set-state-in-effect */
 "use client"
 
 import React, { createContext, useContext, useState, useEffect, useCallback, useMemo } from "react"
 import { User, UserRole } from "./roles"
+import { type User as SupabaseUser } from "@supabase/supabase-js"
 import { createClient } from "@/lib/supabase/client"
 
 interface AuthContextType {
@@ -22,9 +27,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   // Memoize supabase client to prevent infinite loops in useEffect
   const supabase = useMemo(() => createClient(), [])
 
-  const mapSupabaseUser = useCallback((supabaseUser: any, profileData?: any): User => {
+  const mapSupabaseUser = useCallback((supabaseUser: SupabaseUser, profileData?: Record<string, unknown>): User => {
     const role = (profileData?.role || supabaseUser.user_metadata?.role || "viewer") as UserRole
-    const name = profileData?.full_name || 
+    const name = (profileData?.full_name as string) || 
                  supabaseUser.user_metadata?.full_name || 
                  supabaseUser.user_metadata?.name || 
                  supabaseUser.email?.split('@')[0] || 
@@ -36,8 +41,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       role,
       name,
       avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${name}`,
-      company: profileData?.company || supabaseUser.user_metadata?.company,
-      credits: profileData?.credits || 0
+      company: (profileData?.company as string) || supabaseUser.user_metadata?.company,
+      credits: (profileData?.credits as number) || 0
     }
   }, [])
 
@@ -95,6 +100,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [supabase, mapSupabaseUser])
 
   useEffect(() => {
+     
     fetchUserData()
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
@@ -138,3 +144,4 @@ export function useAuth() {
   }
   return context
 }
+

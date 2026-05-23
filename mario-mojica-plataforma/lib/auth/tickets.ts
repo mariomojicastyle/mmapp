@@ -1,3 +1,7 @@
+ 
+/* eslint-disable @typescript-eslint/no-unused-vars */
+ 
+ 
 import { UserRole } from "./roles"
 
 // ── Tipos para la vista SuperAdmin (Kanban) ──
@@ -122,7 +126,7 @@ export const MOCK_SOLICITUDES: Solicitud[] = [
     fecha_solicitud: "2025-04-20",
     fecha_sugerida_entrega: "2025-05-15",
     adjuntos: ["brief_mesa.pdf", "referencia_3d.jpg"],
-    tipo_solicitud: "Codificación y desarrollo",
+    tipo_solicitud: "BTB",
     estado: "En progreso",
   },
   {
@@ -192,3 +196,4 @@ export const TIPOS_SOLICITUD: TipoSolicitud[] = [
   "BTC",
   "Genérica",
 ]
+

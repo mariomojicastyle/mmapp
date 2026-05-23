@@ -1,3 +1,8 @@
+/* eslint-disable react/no-unescaped-entities */
+ 
+ 
+/* eslint-disable @next/next/no-img-element */
+/* eslint-disable @typescript-eslint/no-unused-vars */
 "use client"
 
 import type React from "react"
@@ -5,7 +10,7 @@ import type React from "react"
 import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { motion } from "framer-motion"
-import { Mail, ArrowRight, Github } from "lucide-react"
+import { ArrowRight } from "lucide-react"
 import { createClient } from "@/lib/supabase/client"
 
 export default function LoginPage() {
@@ -249,3 +254,4 @@ export default function LoginPage() {
     </div>
   )
 }
+

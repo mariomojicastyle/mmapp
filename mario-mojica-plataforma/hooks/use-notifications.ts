@@ -29,7 +29,7 @@ export function useNotifications() {
       const { data, error } = await supabase
         .from("notificaciones")
         .select("*")
-        .eq("user_id", user.id)
+        .eq("user_id", user!.id)
         .order("created_at", { ascending: false })
         .limit(20)
 
@@ -40,14 +40,14 @@ export function useNotifications() {
 
       // 2. Suscripción Realtime
       channel = supabase
-        .channel(`notifications:${user.id}:${Math.random().toString(36).substring(7)}`)
+        .channel(`notifications:${user!.id}:${Math.random().toString(36).substring(7)}`)
         .on(
           "postgres_changes",
           {
             event: "*",
             schema: "public",
             table: "notificaciones",
-            filter: `user_id=eq.${user.id}`
+            filter: `user_id=eq.${user!.id}`
           },
           (payload) => {
             if (payload.eventType === "INSERT") {
@@ -103,3 +103,6 @@ export function useNotifications() {
 
   return { notifications, unreadCount, markAsRead }
 }
+
+
+

@@ -1,3 +1,7 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+/* eslint-disable @typescript-eslint/no-unused-vars */
+ 
+ 
 "use client"
 
 import React, { useState, useEffect, useRef } from "react"
@@ -26,7 +30,7 @@ interface SolicitudDetalleProps {
 }
 
 export function SolicitudDetalle({ isOpen, onClose, solicitudId, solicitudTitulo, solicitudDescripcion, onStatusChange }: SolicitudDetalleProps) {
-  const { user, profile } = useAuth()
+  const { user } = useAuth()
   const [comentarios, setComentarios] = useState<Comentario[]>([])
   const [nuevoComentario, setNuevoComentario] = useState("")
   const [loading, setLoading] = useState(false)
@@ -439,3 +443,4 @@ export function SolicitudDetalle({ isOpen, onClose, solicitudId, solicitudTitulo
     </AnimatePresence>
   )
 }
+

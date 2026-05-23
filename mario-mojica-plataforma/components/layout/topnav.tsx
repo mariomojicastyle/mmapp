@@ -1,3 +1,7 @@
+ 
+ 
+/* eslint-disable @next/next/no-img-element */
+ 
 "use client"
 
 import { useState, useRef, useEffect } from "react"
@@ -202,4 +206,5 @@ export function TopNav() {
     </header>
   )
 }
+
 

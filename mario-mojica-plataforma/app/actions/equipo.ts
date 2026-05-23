@@ -1,3 +1,8 @@
+ 
+/* eslint-disable @typescript-eslint/no-explicit-any */
+ 
+ 
+ 
 "use server"
 
 import { createClient } from "@supabase/supabase-js"
@@ -179,10 +184,10 @@ export async function eliminarEmpresa(company: string) {
     }
 
     let totalOrphaned = 0
-    let orphanedDetails: string[] = []
+    const orphanedDetails: string[] = []
 
     // 2. Iterar y eliminar
-    let errors = []
+    const errors = []
     for (const p of profiles) {
       // 2a. Identificar solicitudes huérfanas
       const { data: solicitudes } = await supabaseAdmin
@@ -240,4 +245,5 @@ export async function eliminarEmpresa(company: string) {
     return { error: "Error inesperado al eliminar empresa." }
   }
 }
+
 

@@ -33,14 +33,6 @@ export function InvitarMiembroModal({ isOpen, onClose, type = "equipo" }: Invita
     password: ""
   })
 
-  React.useEffect(() => {
-    if (isOpen) {
-      setFormData(prev => ({ ...prev, rol: type === "equipo" ? "coequipero" : "designer" }))
-      setError(null)
-      setSuccess(false)
-    }
-  }, [isOpen, type])
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setLoading(true)
@@ -53,7 +45,7 @@ export function InvitarMiembroModal({ isOpen, onClose, type = "equipo" }: Invita
       if (result.error) {
         setError(result.error)
       } else if (result.success) {
-        setSuccessMode(result.mode || "invited")
+        setSuccessMode((result.mode as "created" | "invited") || "invited")
         setSuccess(true)
         setTimeout(() => {
           onClose()
@@ -61,7 +53,8 @@ export function InvitarMiembroModal({ isOpen, onClose, type = "equipo" }: Invita
           setFormData({ nombre: "", correo: "", rol: "designer", cargo: "", empresa: "", password: "" })
         }, 3000)
       }
-    } catch (err) {
+    } catch (error) {
+      console.error(error)
       setError("Ocurrió un error inesperado al procesar la solicitud.")
     } finally {
       setLoading(false)

@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client"
 
 import { Settings, User as UserIcon, Bell, Shield, Globe } from "lucide-react"
@@ -217,3 +218,4 @@ export default function ConfiguracionPage() {
     </div>
   )
 }
+

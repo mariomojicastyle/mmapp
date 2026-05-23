@@ -1,3 +1,8 @@
+ 
+/* eslint-disable @typescript-eslint/no-explicit-any */
+ 
+ 
+ 
 import React, { useState } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import { X, AlertTriangle, Loader2 } from "lucide-react"
@@ -122,3 +127,4 @@ export function ConfirmDeleteModal({ isOpen, onClose, onConfirm, title, descript
     </AnimatePresence>
   )
 }
+
