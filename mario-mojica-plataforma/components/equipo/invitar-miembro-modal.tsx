@@ -4,26 +4,42 @@ import React, { useState } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import { X, Mail, User, Briefcase, Shield, Loader2, CheckCircle2, Key, Eye, EyeOff } from "lucide-react"
 import { invitarMiembro } from "@/app/actions/equipo"
+import { usePermissions } from "@/hooks/use-permissions"
 
 interface InvitarMiembroModalProps {
   isOpen: boolean
   onClose: () => void
+  type?: "equipo" | "cliente"
 }
 
-export function InvitarMiembroModal({ isOpen, onClose }: InvitarMiembroModalProps) {
+export function InvitarMiembroModal({ isOpen, onClose, type = "equipo" }: InvitarMiembroModalProps) {
   const [loading, setLoading] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
   const [successMode, setSuccessMode] = useState<"invited" | "created">("invited")
+  const [success, setSuccess] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  
+  const { isSuperAdmin, isCoequipero } = usePermissions()
+  const isInternalTeam = isSuperAdmin || isCoequipero
+  const modalTitle = type === "equipo" ? "Invitar Colaborador" : (isInternalTeam ? "Invitar Cliente" : "Invitar Colaborador")
+  const modalDesc = type === "equipo" ? "colaborador" : (isInternalTeam ? "cliente" : "colaborador")
 
   const [formData, setFormData] = useState({
     nombre: "",
     correo: "",
-    rol: "designer",
+    rol: type === "equipo" ? "coequipero" : "designer",
     cargo: "",
     empresa: "",
     password: ""
   })
+
+  React.useEffect(() => {
+    if (isOpen) {
+      setFormData(prev => ({ ...prev, rol: type === "equipo" ? "coequipero" : "designer" }))
+      setError(null)
+      setSuccess(false)
+    }
+  }, [isOpen, type])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -74,7 +90,9 @@ export function InvitarMiembroModal({ isOpen, onClose }: InvitarMiembroModalProp
           >
             {/* Header */}
             <div className="flex items-center justify-between border-b border-outline-variant px-6 py-4">
-              <h2 className="text-lg font-bold text-on-surface">Invitar Miembro</h2>
+              <h2 className="text-lg font-bold text-on-surface">
+                {modalTitle}
+              </h2>
               <button
                 onClick={onClose}
                 disabled={loading}
@@ -105,7 +123,7 @@ export function InvitarMiembroModal({ isOpen, onClose }: InvitarMiembroModalProp
               ) : (
                 <form onSubmit={handleSubmit} className="flex flex-col gap-5">
                   <p className="text-sm text-on-surface-variant">
-                    Ingresa los datos del nuevo miembro de tu equipo. Recibirá un correo electrónico con acceso inmediato.
+                    Ingresa los datos del nuevo {modalDesc}. Recibirá un correo electrónico con acceso inmediato.
                   </p>
 
                   {error && (
@@ -163,10 +181,18 @@ export function InvitarMiembroModal({ isOpen, onClose }: InvitarMiembroModalProp
                         onChange={(e) => setFormData({ ...formData, rol: e.target.value })}
                         className="w-full appearance-none rounded-xl border border-outline-variant bg-surface-container-low py-2.5 pl-10 pr-4 text-sm text-on-surface outline-none transition-all focus:border-primary focus:ring-1 focus:ring-primary"
                       >
-                        <option value="designer">Diseñador / Arquitecto (Ve y comenta tareas asignadas)</option>
-                        <option value="admin">Administrador Cliente (Gestor del lado del cliente)</option>
-                        <option value="superadmin">SuperAdmin (Acceso total a gestión)</option>
-                        <option value="viewer">Lector (Solo visualización)</option>
+                        {type === "equipo" ? (
+                          <>
+                            <option value="superadmin">SuperAdmin (Acceso total)</option>
+                            <option value="coequipero">Coequipero (Equipo interno / Atiende solicitudes)</option>
+                          </>
+                        ) : (
+                          <>
+                            <option value="admin">Administrador Cliente (Gestor del lado del cliente)</option>
+                            <option value="designer">Diseñador (Colaborador del cliente)</option>
+                            <option value="viewer">Visualizador (Solo lectura)</option>
+                          </>
+                        )}
                       </select>
                     </div>
                   </div>

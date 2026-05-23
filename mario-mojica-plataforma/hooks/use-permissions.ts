@@ -32,6 +32,7 @@ export function usePermissions() {
     hasPermission,
     canViewSection,
     isSuperAdmin: user?.role === "superadmin",
+    isCoequipero: user?.role === "coequipero",
     isAdmin: user?.role === "admin",
     isDesigner: user?.role === "designer",
     isViewer: user?.role === "viewer",

@@ -125,7 +125,7 @@ export function SolicitudDetalle({ isOpen, onClose, solicitudId, solicitudTitulo
     setSending(true)
     const supabase = createClient()
     const numericId = parseInt(solicitudId, 10)
-    const isTeam = user.role === "superadmin" || user.role === "designer"
+    const isTeam = user.role === "superadmin" || user.role === "coequipero"
     const suffix = isTeam ? " (Team MM)" : (user.company ? ` (${user.company})` : "")
     const userName = `${user.name}${suffix}`
 
@@ -273,7 +273,7 @@ export function SolicitudDetalle({ isOpen, onClose, solicitudId, solicitudTitulo
 
                   {/* Actions based on role and status */}
                   <div className="flex flex-col gap-2 items-end">
-                    {(user?.role === "superadmin" || user?.role === "designer") ? (
+                    {(user?.role === "superadmin" || user?.role === "coequipero") ? (
                       // TEAM VIEW
                       solicitudData.estado_entrega === "pendiente" ? (
                         <div className="flex flex-col gap-2">

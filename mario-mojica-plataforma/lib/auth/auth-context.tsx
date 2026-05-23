@@ -58,13 +58,35 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         .eq("id", session.user.id)
         .single()
 
-      if (profileError && profileError.code !== 'PGRST116') {
+      if (profileError) {
+        if (profileError.code === 'PGRST116') {
+          // El perfil fue eliminado (ej. por un SuperAdmin). Forzar cierre de sesión.
+          await supabase.auth.signOut()
+          setUser(null)
+          setOriginalRole(null)
+          setLoading(false)
+          window.location.href = '/login'
+          return
+        }
         console.error("Error fetching profile:", profileError)
       }
 
       const mappedUser = mapSupabaseUser(session.user, profile)
       setUser(mappedUser)
       setOriginalRole(mappedUser.role)
+      
+      // Suscribirse a eliminaciones del perfil en tiempo real para expulsión instantánea
+      supabase.channel(`kickout_${session.user.id}`)
+        .on(
+          'postgres_changes',
+          { event: 'DELETE', schema: 'public', table: 'profiles', filter: `id=eq.${session.user.id}` },
+          async () => {
+            await supabase.auth.signOut()
+            window.location.href = '/login'
+          }
+        )
+        .subscribe()
+        
     } catch (err) {
       console.error("Auth initialization error:", err)
     } finally {

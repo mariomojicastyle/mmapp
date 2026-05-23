@@ -10,13 +10,15 @@ import { cn } from "@/lib/utils"
 import { usePermissions } from "@/hooks/use-permissions"
 import { useAuth } from "@/lib/auth/auth-context"
 import { UserRole } from "@/lib/auth/roles"
+import { useNotifications } from "@/hooks/use-notifications"
 
-const COLLAPSED_W = "w-[52px]"
+const COLLAPSED_W = "w-[50px]"
 const EXPANDED_W = "w-56"
 
 export function Sidebar() {
   const pathname = usePathname()
   const { canViewSection } = usePermissions()
+  const { unreadCount } = useNotifications()
   const [expanded, setExpanded] = useState(false)
 
   return (
@@ -51,10 +53,10 @@ export function Sidebar() {
                 <div className="mx-1 my-2 border-t" style={{ borderColor: "var(--sidebar-divider)" }} />
               )}
 
-              {/* Section header — only visible when expanded */}
+              {/* Section header — always takes up space to prevent vertical shifting, but text hides when collapsed */}
               <p className={cn(
-                "mb-1 px-2 pt-2 text-[0.6rem] font-medium uppercase tracking-[0.08em] text-sidebar-header whitespace-nowrap transition-opacity duration-200",
-                expanded ? "opacity-100" : "opacity-0 h-0 overflow-hidden mb-0 pt-0"
+                "mb-1 px-2 pt-2 text-[0.6rem] font-medium uppercase tracking-[0.08em] text-sidebar-header whitespace-nowrap transition-opacity duration-200 overflow-hidden h-[24px]",
+                expanded ? "opacity-100" : "opacity-0"
               )}>
                 {section.label}
               </p>
@@ -69,19 +71,26 @@ export function Sidebar() {
                       <Link
                         href={item.href}
                         className={cn(
-                          "flex items-center rounded-lg px-3 py-2 text-sm font-medium transition-colors",
-                          expanded ? "gap-3" : "justify-center",
+                          "flex items-center rounded-lg p-2 text-sm font-medium transition-colors gap-3 overflow-hidden",
                           isActive
                             ? "bg-sidebar-active-bg text-sidebar-active-text ring-1 ring-inset ring-sidebar-active-text"
                             : "text-sidebar-text hover:bg-sidebar-active-bg/50 hover:text-on-surface"
                         )}
                       >
-                        <Icon className="h-[18px] w-[18px] shrink-0" />
+                        <div className="relative">
+                          <Icon className="h-[18px] w-[18px] shrink-0" />
+                          {item.name === "Notificaciones" && unreadCount > 0 && !expanded && (
+                            <div className="absolute -right-0.5 -top-0.5 h-2 w-2 rounded-full bg-error border-2 border-sidebar-bg" />
+                          )}
+                        </div>
                         <span className={cn(
-                          "whitespace-nowrap transition-opacity duration-200",
-                          expanded ? "opacity-100" : "opacity-0 w-0 overflow-hidden"
+                          "whitespace-nowrap transition-all duration-200 flex items-center justify-between",
+                          expanded ? "opacity-100 flex-1" : "opacity-0 w-0 overflow-hidden"
                         )}>
                           {item.name}
+                          {item.name === "Notificaciones" && unreadCount > 0 && (
+                            <div className="h-2 w-2 rounded-full bg-error" />
+                          )}
                         </span>
                       </Link>
 
@@ -118,6 +127,7 @@ function RoleSelector({ expanded }: { expanded: boolean }) {
 
   const roles: { id: UserRole; label: string }[] = [
     { id: "superadmin", label: "SuperAdmin" },
+    { id: "coequipero", label: "Coequipero" },
     { id: "admin", label: "Admin Cliente" },
     { id: "designer", label: "Diseñador" },
     { id: "viewer", label: "Lector" },
@@ -134,8 +144,7 @@ function RoleSelector({ expanded }: { expanded: boolean }) {
       <button
         onClick={() => setIsOpen(!isOpen)}
         className={cn(
-          "flex w-full items-center rounded-lg px-3 py-2 text-sm font-medium text-sidebar-text transition-colors hover:bg-sidebar-active-bg/50 hover:text-on-surface cursor-pointer",
-          expanded ? "gap-3" : "justify-center"
+          "flex w-full items-center rounded-lg p-2 text-sm font-medium text-sidebar-text transition-colors hover:bg-sidebar-active-bg/50 hover:text-on-surface cursor-pointer gap-3",
         )}
       >
         <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded bg-primary/20 text-[10px] font-bold text-primary">

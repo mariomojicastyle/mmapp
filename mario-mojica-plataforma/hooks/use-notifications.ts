@@ -29,6 +29,7 @@ export function useNotifications() {
       const { data, error } = await supabase
         .from("notificaciones")
         .select("*")
+        .eq("user_id", user.id)
         .order("created_at", { ascending: false })
         .limit(20)
 
@@ -39,24 +40,36 @@ export function useNotifications() {
 
       // 2. Suscripción Realtime
       channel = supabase
-        .channel(`notifications:${user.id}`)
+        .channel(`notifications:${user.id}:${Math.random().toString(36).substring(7)}`)
         .on(
           "postgres_changes",
           {
-            event: "INSERT",
+            event: "*",
             schema: "public",
             table: "notificaciones",
             filter: `user_id=eq.${user.id}`
           },
           (payload) => {
-            const nueva = payload.new as Notification
-            setNotifications(prev => [nueva, ...prev])
-            setUnreadCount(prev => prev + 1)
-            
-            if (typeof window !== 'undefined' && 'Notification' in window && window.Notification.permission === "granted") {
-              new window.Notification("Mario Mojica Platform", {
-                body: nueva.mensaje,
-                icon: "/favicon.ico"
+            if (payload.eventType === "INSERT") {
+              const nueva = payload.new as Notification
+              setNotifications(prev => {
+                const next = [nueva, ...prev]
+                setUnreadCount(next.filter(n => !n.leido_at).length)
+                return next
+              })
+              
+              if (typeof window !== 'undefined' && 'Notification' in window && window.Notification.permission === "granted") {
+                new window.Notification("Mario Mojica Platform", {
+                  body: nueva.mensaje,
+                  icon: "/favicon.ico"
+                })
+              }
+            } else if (payload.eventType === "UPDATE") {
+              const actualizada = payload.new as Notification
+              setNotifications(prev => {
+                const next = prev.map(n => n.id === actualizada.id ? actualizada : n)
+                setUnreadCount(next.filter(n => !n.leido_at).length)
+                return next
               })
             }
           }

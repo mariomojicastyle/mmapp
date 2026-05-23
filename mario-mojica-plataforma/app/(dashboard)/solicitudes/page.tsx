@@ -13,7 +13,7 @@ import { createClient } from "@/lib/supabase/client"
 import { useSearchParams, useRouter } from "next/navigation"
 
 export default function SolicitudesPage() {
-  const { isSuperAdmin, isDesigner } = usePermissions()
+  const { isSuperAdmin, isCoequipero } = usePermissions()
   const [mounted, setMounted] = useState(false)
   const searchParams = useSearchParams()
   const sParam = searchParams.get("s")
@@ -25,7 +25,7 @@ export default function SolicitudesPage() {
   if (!mounted) return <div className="flex items-center justify-center p-12 text-on-surface-variant">Cargando...</div>
 
   // Miembros del equipo (SuperAdmin y Diseñadores) ven la vista de gestión
-  const isTeam = isSuperAdmin || isDesigner
+  const isTeam = isSuperAdmin || isCoequipero
 
   return isTeam ? <SuperAdminView initialId={sParam} /> : <ClientView initialId={sParam} />
 }
@@ -39,7 +39,7 @@ function useTeamMembers() {
   useEffect(() => {
     async function fetchTeam() {
       const supabase = createClient()
-      const { data } = await supabase.from("profiles").select("id, full_name, email, job_title, role, company").in("role", ["superadmin", "designer"])
+      const { data } = await supabase.from("profiles").select("id, full_name, email, job_title, role, company").in("role", ["superadmin", "coequipero"])
       if (data) {
         const colors = [
           "bg-blue-500/20 text-blue-500",

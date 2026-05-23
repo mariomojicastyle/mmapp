@@ -40,8 +40,10 @@ export default function NotificacionesPage() {
                 animate={{ opacity: 1, y: 0 }}
                 onClick={() => {
                   if (!n.leido_at) markAsRead(n.id)
-                  const formattedId = String(n.solicitud_id).padStart(5, "0")
-                  router.push(`/solicitudes?s=${formattedId}`)
+                  if (n.tipo !== "sistema") {
+                    const formattedId = String(n.solicitud_id).padStart(5, "0")
+                    router.push(`/solicitudes?s=${formattedId}`)
+                  }
                 }}
                 className={cn(
                   "group relative flex items-start gap-4 rounded-2xl border p-4 transition-all cursor-pointer",
@@ -52,16 +54,25 @@ export default function NotificacionesPage() {
               >
                 <div className={cn(
                   "flex h-10 w-10 shrink-0 items-center justify-center rounded-full",
-                  n.leido_at ? "bg-surface-container-highest text-on-surface-variant" : "bg-primary/10 text-primary"
+                  n.leido_at ? "bg-surface-container-highest text-on-surface-variant" : "bg-primary/10 text-primary",
+                  n.tipo === "sistema" && !n.leido_at ? "bg-error/10 text-error" : ""
                 )}>
-                  {n.tipo === "comentario" ? <MessageSquare className="h-5 w-5" /> : <Bell className="h-5 w-5" />}
+                  {n.tipo === "comentario" ? <MessageSquare className="h-5 w-5" /> : 
+                   n.tipo === "sistema" ? <AlertCircle className="h-5 w-5" /> : 
+                   <Bell className="h-5 w-5" />}
                 </div>
 
                 <div className="flex flex-1 flex-col gap-1">
                   <div className="flex items-center justify-between">
-                    <span className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">
-                      Solicitud #{String(n.solicitud_id).padStart(5, "0")}
-                    </span>
+                    {n.tipo === "sistema" ? (
+                      <span className="text-xs font-bold text-error uppercase tracking-wider">
+                        Alerta del Sistema
+                      </span>
+                    ) : (
+                      <span className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">
+                        Solicitud #{String(n.solicitud_id).padStart(5, "0")}
+                      </span>
+                    )}
                     <div className="flex items-center gap-2 text-[10px] text-on-surface-variant">
                       <Clock className="h-3 w-3" />
                       {new Date(n.created_at).toLocaleString()}

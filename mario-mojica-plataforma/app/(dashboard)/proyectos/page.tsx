@@ -20,7 +20,7 @@ function getStatusColor(status: string) {
 
 export default function ProyectosPage() {
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 p-6 h-full">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>

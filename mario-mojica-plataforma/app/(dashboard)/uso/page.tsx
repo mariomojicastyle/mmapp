@@ -16,7 +16,7 @@ const usageHistory = [
 
 export default function UsoPage() {
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 p-6 h-full">
       <div>
         <h1 className="text-2xl font-semibold text-on-surface">Uso</h1>
         <p className="mt-1 text-sm text-on-surface-variant">
