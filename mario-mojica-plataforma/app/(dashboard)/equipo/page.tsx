@@ -1,21 +1,12 @@
 "use client"
 
-import React, { useState, useEffect } from "react"
-import { Users, Plus, Mail, MoreHorizontal, Loader2 } from "lucide-react"
+import React, { useState, useEffect, useRef } from "react"
+import { Users, Plus, Mail, MoreHorizontal, Loader2, ChevronDown, ChevronRight, Building2, Trash2, AlertCircle } from "lucide-react"
+import { motion, AnimatePresence } from "framer-motion"
 import { InvitarMiembroModal } from "@/components/equipo/invitar-miembro-modal"
 import { createClient } from "@/lib/supabase/client"
-
-interface Profile {
-  id: string
-  full_name: string
-  email: string
-  role: string
-  job_title: string
-}
-
 import { usePermissions } from "@/hooks/use-permissions"
-import { ChevronDown, ChevronRight, Building2, Trash2 } from "lucide-react"
-import { eliminarMiembro, eliminarEmpresa } from "@/app/actions/equipo"
+import { eliminarMiembro, eliminarEmpresa, cambiarRol } from "@/app/actions/equipo"
 import { ConfirmDeleteModal } from "@/components/equipo/confirm-delete-modal"
 
 interface Profile {
@@ -25,6 +16,64 @@ interface Profile {
   role: string
   job_title: string
   company?: string
+}
+
+const ROLE_LABELS: Record<string, string> = {
+  admin: "Administrador",
+  designer: "Diseñador",
+  viewer: "Visualizador"
+}
+
+function RoleDropdown({ currentRole, onRoleChange }: { currentRole: string, onRoleChange: (role: string) => void }) {
+  const [isOpen, setIsOpen] = useState(false)
+  const dropdownRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setIsOpen(false)
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside)
+    return () => document.removeEventListener("mousedown", handleClickOutside)
+  }, [])
+
+  return (
+    <div className="relative" ref={dropdownRef}>
+      <button 
+        onClick={() => setIsOpen(!isOpen)}
+        className="flex items-center justify-between gap-2 bg-transparent text-sm text-on-surface font-medium cursor-pointer hover:bg-surface-container-highest rounded-lg border border-outline-variant px-3 py-1.5 transition-colors w-[150px]"
+      >
+        <span className="capitalize">{ROLE_LABELS[currentRole] || currentRole}</span>
+        <ChevronDown className={`h-4 w-4 text-on-surface-variant transition-transform ${isOpen ? 'rotate-180' : ''}`} />
+      </button>
+
+      <AnimatePresence>
+        {isOpen && (
+          <motion.div 
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            transition={{ duration: 0.15 }}
+            className="absolute left-0 top-full mt-1 w-40 rounded-xl border border-outline-variant bg-surface-container-high shadow-xl overflow-hidden z-20"
+          >
+            {Object.entries(ROLE_LABELS).map(([value, label]) => (
+              <button
+                key={value}
+                onClick={() => {
+                  onRoleChange(value)
+                  setIsOpen(false)
+                }}
+                className={`w-full text-left px-4 py-2.5 text-sm transition-colors hover:bg-primary/10 ${currentRole === value ? 'text-primary font-semibold bg-primary/5' : 'text-on-surface'}`}
+              >
+                {label}
+              </button>
+            ))}
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  )
 }
 
 export default function EquipoPage() {
@@ -37,9 +86,22 @@ export default function EquipoPage() {
   // Modal de eliminación
   const [deleteTarget, setDeleteTarget] = useState<{ type: "member" | "company", id: string, name: string } | null>(null)
   
-  const { isSuperAdmin, isCoequipero, isAdmin } = usePermissions()
+  const { isSuperAdmin, isCoequipero, isAdmin, role } = usePermissions()
+
+  if (role === "viewer") {
+    return (
+      <div className="flex h-full min-h-[400px] flex-col items-center justify-center p-12 text-center">
+        <AlertCircle className="mb-4 h-12 w-12 text-error/50" />
+        <h2 className="mb-2 text-xl font-bold text-on-surface">Acceso Denegado</h2>
+        <p className="max-w-md text-sm text-on-surface-variant">
+          Tu rol actual no tiene permisos para ver el equipo.
+        </p>
+      </div>
+    )
+  }
+
   const isInternalTeam = isSuperAdmin || isCoequipero
-  const canManage = isSuperAdmin || isCoequipero || isAdmin
+  const canManage = isSuperAdmin || isAdmin
   const canDelete = isSuperAdmin
 
   const fetchTeam = async () => {
@@ -95,48 +157,73 @@ export default function EquipoPage() {
 
   const sortedCompanies = Object.keys(groupedClients).sort()
 
-  const renderMemberRow = (member: Profile, isNested: boolean = false, isLast: boolean = false) => (
-    <div key={member.id} className="relative flex items-center justify-between px-5 py-4 transition-colors hover:bg-surface-container-high/50 group">
-      {isNested && (
-        <div className="absolute left-0 top-0 h-full w-12 pointer-events-none">
-          {/* Vertical line from top to middle */}
-          <div className="absolute left-[38px] top-0 h-1/2 border-l-2 border-outline-variant/30" />
-          {/* Horizontal line */}
-          <div className="absolute left-[38px] top-1/2 w-6 border-t-2 border-outline-variant/30" />
-          {/* Vertical line from middle to bottom if not last */}
-          {!isLast && (
-            <div className="absolute left-[38px] top-1/2 h-1/2 border-l-2 border-outline-variant/30" />
+  const handleRoleChange = async (id: string, newRole: string) => {
+    const res = await cambiarRol(id, newRole)
+    if (res.success) {
+      await fetchTeam()
+    } else {
+      console.error(res.error)
+    }
+  }
+
+  const renderMemberRow = (member: Profile, isNested: boolean = false, isLast: boolean = false, hasChildren: boolean = false) => {
+    const isClientMember = ["admin", "designer", "viewer"].includes(member.role)
+
+    return (
+      <div key={member.id} className="relative flex items-center justify-between px-5 py-4 transition-colors hover:bg-surface-container-high/50 group">
+        {isNested && (
+          <div className="absolute left-0 top-0 h-full w-12 pointer-events-none">
+            <div className="absolute left-[38px] top-0 h-1/2 border-l-2 border-outline-variant/30" />
+            <div className="absolute left-[38px] top-1/2 w-6 border-t-2 border-outline-variant/30" />
+            {!isLast && (
+              <div className="absolute left-[38px] top-1/2 h-1/2 border-l-2 border-outline-variant/30" />
+            )}
+          </div>
+        )}
+        {!isNested && hasChildren && (
+          <div className="absolute left-0 top-1/2 h-1/2 w-12 pointer-events-none">
+            <div className="absolute left-[38px] top-0 h-full border-l-2 border-outline-variant/30" />
+          </div>
+        )}
+        <div className={`flex items-center gap-4 ${isNested ? "ml-12" : ""} flex-1 min-w-[250px]`}>
+          <div className="relative">
+            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/15 text-sm font-semibold text-primary">
+              {member.full_name?.charAt(0).toUpperCase() || "?"}
+            </div>
+            <span className="absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full border-2 border-surface-container bg-success" />
+          </div>
+          <div>
+            <p className="text-sm font-medium text-on-surface">{member.full_name}</p>
+            <p className="text-xs text-on-surface-variant capitalize">{member.job_title || member.role}</p>
+          </div>
+        </div>
+        
+        {/* Columna ROL */}
+        <div className="flex-1 min-w-[150px] text-left">
+          {canManage && isClientMember ? (
+            <RoleDropdown currentRole={member.role} onRoleChange={(newRole) => handleRoleChange(member.id, newRole)} />
+          ) : (
+            <span className="text-sm text-on-surface-variant capitalize">{ROLE_LABELS[member.role] || member.role}</span>
           )}
         </div>
-      )}
-      <div className={`flex items-center gap-4 ${isNested ? "ml-12" : ""}`}>
-        <div className="relative">
-          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/15 text-sm font-semibold text-primary">
-            {member.full_name?.charAt(0).toUpperCase() || "?"}
-          </div>
-          <span className="absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full border-2 border-surface-container bg-success" />
-        </div>
-        <div>
-          <p className="text-sm font-medium text-on-surface">{member.full_name}</p>
-          <p className="text-xs text-on-surface-variant capitalize">{member.job_title || member.role}</p>
-        </div>
-      </div>
-      <div className="flex items-center gap-4">
-        <span className="text-xs text-on-surface-variant">{member.email}</span>
-        {canDelete && (
-          <button 
-            onClick={() => setDeleteTarget({ type: "member", id: member.id, name: member.full_name })}
-            className="flex h-8 w-8 items-center justify-center rounded-lg text-on-surface-variant hover:bg-error/10 hover:text-error opacity-0 transition-opacity group-hover:opacity-100"
-          >
-            <Trash2 className="h-4 w-4" />
+
+        <div className="flex items-center gap-4 flex-1 justify-end min-w-[200px]">
+          <span className="text-xs text-on-surface-variant">{member.email}</span>
+          {canDelete && (
+            <button 
+              onClick={() => setDeleteTarget({ type: "member", id: member.id, name: member.full_name })}
+              className="flex h-8 w-8 items-center justify-center rounded-lg text-on-surface-variant hover:bg-error/10 hover:text-error opacity-0 transition-opacity group-hover:opacity-100"
+            >
+              <Trash2 className="h-4 w-4" />
+            </button>
+          )}
+          <button className="flex h-8 w-8 items-center justify-center rounded-lg text-on-surface-variant hover:bg-surface-container-high opacity-0 transition-opacity group-hover:opacity-100">
+            <MoreHorizontal className="h-4 w-4" />
           </button>
-        )}
-        <button className="flex h-8 w-8 items-center justify-center rounded-lg text-on-surface-variant hover:bg-surface-container-high opacity-0 transition-opacity group-hover:opacity-100">
-          <MoreHorizontal className="h-4 w-4" />
-        </button>
+        </div>
       </div>
-    </div>
-  )
+    )
+  }
 
   const renderInternalSection = () => (
     <div className="space-y-6">
@@ -168,8 +255,10 @@ export default function EquipoPage() {
       </div>
 
       <div className="rounded-xl bg-surface-container">
-        <div className="border-b border-outline-variant/20 px-5 py-3">
-          <h3 className="text-sm font-semibold text-on-surface">Miembros del equipo</h3>
+        <div className="border-b border-outline-variant/20 px-5 py-3 flex items-center">
+          <h3 className="flex-1 min-w-[250px] text-sm font-semibold text-on-surface">Miembros del equipo</h3>
+          <h3 className="flex-1 min-w-[150px] text-sm font-semibold text-on-surface">Rol</h3>
+          <div className="flex-1 min-w-[200px]"></div>
         </div>
         <div className="divide-y divide-outline-variant/20">
           {loading ? (
@@ -229,7 +318,7 @@ export default function EquipoPage() {
           ))}
         </div>
 
-        <div className="rounded-xl bg-surface-container overflow-hidden">
+        <div className="rounded-xl bg-surface-container">
           {loading ? (
             <div className="flex justify-center p-8 text-on-surface-variant"><Loader2 className="h-6 w-6 animate-spin" /></div>
           ) : sortedCompanies.length === 0 ? (
@@ -268,10 +357,27 @@ export default function EquipoPage() {
                     
                     {isExpanded && (
                       <div className="flex flex-col border-t border-outline-variant/20 bg-surface-container-low/50">
-                        <div className="px-5 py-2">
-                          <h4 className="text-xs font-semibold text-on-surface-variant uppercase tracking-wider ml-12">Miembros de la empresa</h4>
+                        <div className="flex items-center px-5 py-3">
+                          <h4 className="flex-1 min-w-[250px] text-xs font-semibold text-on-surface-variant uppercase tracking-wider">Miembros de la empresa</h4>
+                          <h4 className="flex-1 min-w-[150px] text-xs font-semibold text-on-surface-variant uppercase tracking-wider">Rol</h4>
+                          <div className="flex-1 min-w-[200px]"></div>
                         </div>
-                        {members.map((member, idx) => renderMemberRow(member, true, idx === members.length - 1))}
+                        {(() => {
+                           const admins = members.filter(m => m.role === "admin")
+                           const others = members.filter(m => m.role !== "admin")
+                           
+                           if (admins.length === 0) {
+                             return members.map((member, idx) => renderMemberRow(member, false, idx === members.length - 1, false))
+                           }
+                           
+                           const hasOthers = others.length > 0
+                           return (
+                             <>
+                               {admins.map((admin, idx) => renderMemberRow(admin, false, !hasOthers && idx === admins.length - 1, hasOthers))}
+                               {others.map((member, idx) => renderMemberRow(member, true, idx === others.length - 1, false))}
+                             </>
+                           )
+                        })()}
                       </div>
                     )}
                   </div>

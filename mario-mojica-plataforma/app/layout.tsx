@@ -3,6 +3,7 @@ import type { Metadata } from "next"
 import { Prompt, Geist_Mono } from "next/font/google"
 import { ThemeProvider } from "@/components/theme-provider"
 import { AuthProvider } from "@/lib/auth/auth-context"
+import { NotificationProvider } from "@/hooks/use-notifications"
 import "./globals.css"
 
 const prompt = Prompt({
@@ -42,7 +43,9 @@ export default function RootLayout({
           disableTransitionOnChange
         >
           <AuthProvider>
-            {children}
+            <NotificationProvider>
+              {children}
+            </NotificationProvider>
           </AuthProvider>
         </ThemeProvider>
       </body>

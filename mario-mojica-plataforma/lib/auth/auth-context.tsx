@@ -42,6 +42,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       name,
       avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${name}`,
       company: (profileData?.company as string) || supabaseUser.user_metadata?.company,
+      job_title: (profileData?.job_title as string) || supabaseUser.user_metadata?.job_title,
       credits: (profileData?.credits as number) || 0
     }
   }, [])
@@ -81,16 +82,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setOriginalRole(mappedUser.role)
       
       // Suscribirse a eliminaciones del perfil en tiempo real para expulsión instantánea
-      supabase.channel(`kickout_${session.user.id}`)
-        .on(
-          'postgres_changes',
-          { event: 'DELETE', schema: 'public', table: 'profiles', filter: `id=eq.${session.user.id}` },
-          async () => {
-            await supabase.auth.signOut()
-            window.location.href = '/login'
-          }
-        )
-        .subscribe()
+      const channelName = `kickout_${session.user.id}`
+      const existingChannels = supabase.getChannels()
+      const isSubscribed = existingChannels.some(c => c.topic === `realtime:${channelName}`)
+      
+      if (!isSubscribed) {
+        supabase.channel(channelName)
+          .on(
+            'postgres_changes',
+            { event: 'DELETE', schema: 'public', table: 'profiles', filter: `id=eq.${session.user.id}` },
+            async () => {
+              await supabase.auth.signOut()
+              window.location.href = '/login'
+            }
+          )
+          .subscribe()
+      }
         
     } catch (err) {
       console.error("Auth initialization error:", err)

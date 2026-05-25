@@ -16,9 +16,19 @@ interface NuevaSolicitudModalProps {
   isOpen: boolean
   onClose: () => void
   nextId: string
+  isEditing?: boolean
+  initialData?: {
+    id: string
+    titulo: string
+    descripcion: string
+    fecha_sugerida_entrega?: string
+    tipo_solicitud?: TipoSolicitud
+    adjuntos?: string[]
+    assigned_to_id?: string
+  }
 }
 
-export function NuevaSolicitudModal({ isOpen, onClose, nextId }: NuevaSolicitudModalProps) {
+export function NuevaSolicitudModal({ isOpen, onClose, nextId, isEditing = false, initialData }: NuevaSolicitudModalProps) {
   const [titulo, setTitulo] = useState("")
   const [descripcion, setDescripcion] = useState("")
   const [fechaEntrega, setFechaEntrega] = useState("")
@@ -28,7 +38,32 @@ export function NuevaSolicitudModal({ isOpen, onClose, nextId }: NuevaSolicitudM
   const [error, setError] = useState("")
   const [isDragActive, setIsDragActive] = useState(false)
   const [fileError, setFileError] = useState("")
+  const [existingFiles, setExistingFiles] = useState<string[]>([])
   const fileRef = useRef<HTMLInputElement>(null)
+
+  // Populate data when editing
+  React.useEffect(() => {
+    if (isOpen && isEditing && initialData) {
+      setTitulo(initialData.titulo)
+      setDescripcion(initialData.descripcion)
+      if (initialData.fecha_sugerida_entrega) {
+        // Formato para input type="date" es YYYY-MM-DD
+        const dateObj = new Date(initialData.fecha_sugerida_entrega)
+        if (!isNaN(dateObj.getTime())) {
+          setFechaEntrega(dateObj.toISOString().split('T')[0])
+        }
+      }
+      if (initialData.tipo_solicitud) setTipo(initialData.tipo_solicitud)
+      if (initialData.adjuntos) setExistingFiles(initialData.adjuntos)
+    } else if (isOpen && !isEditing) {
+      setTitulo("")
+      setDescripcion("")
+      setFechaEntrega("")
+      setTipo("")
+      setFiles([])
+      setExistingFiles([])
+    }
+  }, [isOpen, isEditing, initialData])
 
   const ALLOWED_EXTENSIONS = ['jpg', 'jpeg', 'png', 'xlsx', 'pdf', 'dwg', 'doc', 'docx', 'txt', 'dxf', '3dm', 'glb', 'fbx', 'stp']
   const MAX_FILE_SIZE = 15 * 1024 * 1024 // 15MB
@@ -123,17 +158,54 @@ export function NuevaSolicitudModal({ isOpen, onClose, nextId }: NuevaSolicitudM
         }
       }
 
-      const { error: insertError } = await supabase.from("solicitudes").insert({
-        titulo,
-        descripcion,
-        fecha_sugerida_entrega: fechaEntrega || null,
-        tipo_solicitud: tipo,
-        estado: "Nueva",
-        client_id: user.id,
-        adjuntos: adjuntosUrls
-      })
+      // Keep existing files if editing
+      const finalAdjuntos = isEditing ? [...existingFiles, ...adjuntosUrls] : adjuntosUrls
 
-      if (insertError) throw insertError
+      if (isEditing && initialData) {
+        const { error: updateError } = await supabase.from("solicitudes").update({
+          titulo,
+          descripcion,
+          fecha_sugerida_entrega: fechaEntrega || null,
+          tipo_solicitud: tipo,
+          adjuntos: finalAdjuntos,
+          estado_entrega: "pendiente"
+        }).eq("id", initialData.id)
+
+        if (updateError) throw updateError
+
+        // Calcular qué ha cambiado
+        const modifications: string[] = []
+        if (titulo !== initialData.titulo) modifications.push("título")
+        if (descripcion !== initialData.descripcion) modifications.push("descripción")
+        if (tipo !== initialData.tipo_solicitud) modifications.push("tipo de solicitud")
+        
+        const initialDateStr = initialData.fecha_sugerida_entrega ? new Date(initialData.fecha_sugerida_entrega).toISOString().split('T')[0] : ""
+        const currentFechaStr = fechaEntrega || ""
+        if (currentFechaStr !== initialDateStr) modifications.push("fecha sugerida")
+        
+        if (JSON.stringify(finalAdjuntos) !== JSON.stringify(initialData.adjuntos || [])) modifications.push("archivos adjuntos")
+
+        // Usamos el server action para evadir RLS
+        const { notifySolicitudModification } = await import("@/app/actions/solicitudes")
+        await notifySolicitudModification(
+          initialData.id,
+          modifications,
+          user.id,
+          initialData.assigned_to_id
+        )
+      } else {
+        const { error: insertError } = await supabase.from("solicitudes").insert({
+          titulo,
+          descripcion,
+          fecha_sugerida_entrega: fechaEntrega || null,
+          tipo_solicitud: tipo,
+          estado: "Nueva",
+          client_id: user.id,
+          adjuntos: finalAdjuntos
+        })
+
+        if (insertError) throw insertError
+      }
 
       onClose()
       window.location.reload() // Refresca para ver los cambios
@@ -163,8 +235,8 @@ export function NuevaSolicitudModal({ isOpen, onClose, nextId }: NuevaSolicitudM
             {/* Header */}
             <div className="flex items-center justify-between border-b border-outline-variant px-6 py-4">
               <div>
-                <h2 className="text-lg font-bold text-on-surface">Nueva Solicitud</h2>
-                <p className="text-xs text-on-surface-variant">ID asignado: <span className="font-mono font-bold text-primary">{nextId}</span></p>
+                <h2 className="text-lg font-bold text-on-surface">{isEditing ? "Editar Solicitud" : "Nueva Solicitud"}</h2>
+                <p className="text-xs text-on-surface-variant">ID asignado: <span className="font-mono font-bold text-primary">{isEditing && initialData ? String(initialData.id).padStart(5, "0") : nextId}</span></p>
               </div>
               <button onClick={onClose} className="rounded-lg p-2 text-on-surface-variant transition hover:bg-surface-container-high">
                 <X className="h-5 w-5" />
@@ -237,16 +309,35 @@ export function NuevaSolicitudModal({ isOpen, onClose, nextId }: NuevaSolicitudM
                 {fileError && <p className="text-[10px] text-red-500 font-medium px-1">{fileError}</p>}
                 <input ref={fileRef} type="file" multiple accept=".jpg,.jpeg,.png,.xlsx,.pdf,.dwg,.doc,.docx,.txt,.dxf,.3dm,.glb,.fbx,.stp" className="hidden" onChange={handleFiles} />
 
+                {existingFiles.length > 0 && (
+                  <div className="mt-2 flex flex-col gap-1.5">
+                    <span className="text-[10px] font-bold text-on-surface-variant uppercase tracking-wider">Archivos actuales:</span>
+                    <div className="flex flex-wrap gap-2">
+                      {existingFiles.map((path, i) => (
+                        <span key={i} className="flex items-center gap-1.5 rounded-lg bg-surface-container-high px-2.5 py-1 text-xs text-on-surface">
+                          {path.split('/').pop()}
+                          <button type="button" onClick={() => setExistingFiles(prev => prev.filter((_, idx) => idx !== i))} className="text-on-surface-variant hover:text-red-400">
+                            <X className="h-3 w-3" />
+                          </button>
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
                 {files.length > 0 && (
-                  <div className="mt-2 flex flex-wrap gap-2">
-                    {files.map((f, i) => (
-                      <span key={i} className="flex items-center gap-1.5 rounded-lg bg-surface-container-high px-2.5 py-1 text-xs text-on-surface">
-                        {f.name}
-                        <button type="button" onClick={() => removeFile(i)} className="text-on-surface-variant hover:text-red-400">
-                          <X className="h-3 w-3" />
-                        </button>
-                      </span>
-                    ))}
+                  <div className="mt-2 flex flex-col gap-1.5">
+                    <span className="text-[10px] font-bold text-on-surface-variant uppercase tracking-wider">Archivos nuevos:</span>
+                    <div className="flex flex-wrap gap-2">
+                      {files.map((f, i) => (
+                        <span key={i} className="flex items-center gap-1.5 rounded-lg bg-surface-container-high px-2.5 py-1 text-xs text-on-surface">
+                          {f.name}
+                          <button type="button" onClick={() => removeFile(i)} className="text-on-surface-variant hover:text-red-400">
+                            <X className="h-3 w-3" />
+                          </button>
+                        </span>
+                      ))}
+                    </div>
                   </div>
                 )}
               </div>
@@ -264,7 +355,7 @@ export function NuevaSolicitudModal({ isOpen, onClose, nextId }: NuevaSolicitudM
                 </button>
                 <button type="submit" disabled={isSubmitting}
                   className="flex items-center gap-2 rounded-xl bg-primary px-6 py-2.5 text-sm font-semibold text-primary-foreground shadow-lg shadow-primary/20 transition hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 disabled:hover:scale-100">
-                  {isSubmitting ? "Enviando..." : "Enviar solicitud"}
+                  {isSubmitting ? "Guardando..." : (isEditing ? "Guardar cambios" : "Enviar solicitud")}
                 </button>
               </div>
             </form>

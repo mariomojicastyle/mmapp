@@ -246,4 +246,38 @@ export async function eliminarEmpresa(company: string) {
   }
 }
 
+export async function cambiarRol(userId: string, newRole: string) {
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY
+
+  if (!supabaseUrl || !serviceRoleKey) {
+    return { error: "No se ha configurado SUPABASE_SERVICE_ROLE_KEY." }
+  }
+
+  const supabaseAdmin = createClient(supabaseUrl, serviceRoleKey)
+
+  try {
+    const { error: profileError } = await supabaseAdmin
+      .from("profiles")
+      .update({ role: newRole })
+      .eq("id", userId)
+
+    if (profileError) {
+      return { error: `No se pudo actualizar el rol: ${profileError.message}` }
+    }
+
+    const { data: { user } } = await supabaseAdmin.auth.admin.getUserById(userId)
+    
+    if (user) {
+      await supabaseAdmin.auth.admin.updateUserById(userId, {
+        user_metadata: { ...user.user_metadata, role: newRole }
+      })
+    }
+
+    return { success: true }
+  } catch (error: any) {
+    return { error: "Error inesperado al cambiar el rol." }
+  }
+}
+
 

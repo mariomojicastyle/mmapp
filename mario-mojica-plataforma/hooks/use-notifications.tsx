@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import React, { createContext, useContext, useState, useEffect } from "react"
 import { createClient } from "@/lib/supabase/client"
 import { useAuth } from "@/lib/auth/auth-context"
 
@@ -13,7 +13,19 @@ export interface Notification {
   created_at: string
 }
 
-export function useNotifications() {
+interface NotificationContextType {
+  notifications: Notification[]
+  unreadCount: number
+  markAsRead: (id: string) => Promise<void>
+}
+
+const NotificationContext = createContext<NotificationContextType>({
+  notifications: [],
+  unreadCount: 0,
+  markAsRead: async () => {},
+})
+
+export function NotificationProvider({ children }: { children: React.ReactNode }) {
   const { user } = useAuth()
   const [notifications, setNotifications] = useState<Notification[]>([])
   const [unreadCount, setUnreadCount] = useState(0)
@@ -84,25 +96,37 @@ export function useNotifications() {
         supabase.removeChannel(channel)
       }
     }
-  }, [user?.id]) // Solo re-suscribir si el ID cambia
+  }, [user?.id])
 
   const markAsRead = async (id: string) => {
-    const supabase = createClient()
-    const { error } = await supabase
-      .from("notificaciones")
-      .update({ leido_at: new Date().toISOString() })
-      .eq("id", id)
+    // Optimistic UI update
+    setNotifications(prev => 
+      prev.map(n => n.id === id ? { ...n, leido_at: new Date().toISOString() } : n)
+    )
+    setUnreadCount(prev => Math.max(0, prev - 1))
 
-    if (!error) {
-      setNotifications(prev => 
-        prev.map(n => n.id === id ? { ...n, leido_at: new Date().toISOString() } : n)
-      )
-      setUnreadCount(prev => Math.max(0, prev - 1))
+    try {
+      const { markNotificationAsRead } = await import("@/app/actions/solicitudes")
+      const res = await markNotificationAsRead(id)
+      if (res?.error) {
+        console.error("Error al marcar como leída:", res.error)
+        setNotifications(prev => 
+          prev.map(n => n.id === id ? { ...n, leido_at: null } : n)
+        )
+        setUnreadCount(prev => prev + 1)
+      }
+    } catch (err) {
+      console.error(err)
     }
   }
 
-  return { notifications, unreadCount, markAsRead }
+  return (
+    <NotificationContext.Provider value={{ notifications, unreadCount, markAsRead }}>
+      {children}
+    </NotificationContext.Provider>
+  )
 }
 
-
-
+export function useNotifications() {
+  return useContext(NotificationContext)
+}

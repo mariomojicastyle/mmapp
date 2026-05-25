@@ -6,11 +6,13 @@ import { motion, AnimatePresence } from "framer-motion"
 import { useNotifications } from "@/hooks/use-notifications"
 import { cn } from "@/lib/utils"
 import { useRouter } from "next/navigation"
+import { SolicitudDetalle } from "@/components/solicitudes/solicitud-detalle"
 
 export default function NotificacionesPage() {
   const { notifications, markAsRead } = useNotifications()
   const router = useRouter()
   const [mounted, setMounted] = useState(false)
+  const [selectedSolicitud, setSelectedSolicitud] = useState<{ id: string } | null>(null)
 
   useEffect(() => {
     setMounted(true)
@@ -38,11 +40,13 @@ export default function NotificacionesPage() {
                 key={n.id}
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
-                onClick={() => {
-                  if (!n.leido_at) markAsRead(n.id)
+                onClick={async () => {
+                  if (!n.leido_at) {
+                    await markAsRead(n.id)
+                  }
                   if (n.tipo !== "sistema") {
                     const formattedId = String(n.solicitud_id).padStart(5, "0")
-                    router.push(`/solicitudes?s=${formattedId}`)
+                    setSelectedSolicitud({ id: formattedId })
                   }
                 }}
                 className={cn(
@@ -96,6 +100,16 @@ export default function NotificacionesPage() {
           </div>
         )}
       </div>
+
+      {selectedSolicitud && (
+        <SolicitudDetalle
+          isOpen={!!selectedSolicitud}
+          onClose={() => setSelectedSolicitud(null)}
+          solicitudId={selectedSolicitud.id}
+          solicitudTitulo="Cargando solicitud..."
+          solicitudDescripcion=""
+        />
+      )}
     </div>
   )
 }

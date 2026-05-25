@@ -5,7 +5,7 @@
 import { UserRole } from "./roles"
 
 // ── Tipos para la vista SuperAdmin (Kanban) ──
-export type TicketStatus = "backlog" | "todo" | "in_progress" | "waiting_client" | "review" | "done"
+export type TicketStatus = "backlog" | "todo" | "in_progress" | "waiting_client" | "review" | "done" | "deleted"
 export type TicketPriority = "low" | "medium" | "high" | "urgent"
 
 export interface Ticket {
@@ -34,6 +34,7 @@ export type SolicitudEstado =
   | "Esperando cliente" 
   | "En revisión" 
   | "Resuelta"
+  | "Eliminada"
 
 export type TipoSolicitud = 
   | "BTB"
@@ -53,6 +54,8 @@ export interface Solicitud {
   assigned_to_id?: string
   estado_entrega?: 'pendiente' | 'propuesta_equipo' | 'confirmada'
   fecha_equipo?: string
+  client_id?: string
+  client_name?: string
 }
 
 // ── Mock data: Vista SuperAdmin ──

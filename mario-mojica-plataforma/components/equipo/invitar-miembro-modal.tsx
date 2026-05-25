@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState } from "react"
+import React, { useState, useEffect } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import { X, Mail, User, Briefcase, Shield, Loader2, CheckCircle2, Key, Eye, EyeOff } from "lucide-react"
 import { invitarMiembro } from "@/app/actions/equipo"
@@ -19,7 +19,7 @@ export function InvitarMiembroModal({ isOpen, onClose, type = "equipo" }: Invita
   const [success, setSuccess] = useState(false)
   const [error, setError] = useState<string | null>(null)
   
-  const { isSuperAdmin, isCoequipero } = usePermissions()
+  const { isSuperAdmin, isCoequipero, user } = usePermissions()
   const isInternalTeam = isSuperAdmin || isCoequipero
   const modalTitle = type === "equipo" ? "Invitar Colaborador" : (isInternalTeam ? "Invitar Cliente" : "Invitar Colaborador")
   const modalDesc = type === "equipo" ? "colaborador" : (isInternalTeam ? "cliente" : "colaborador")
@@ -29,9 +29,24 @@ export function InvitarMiembroModal({ isOpen, onClose, type = "equipo" }: Invita
     correo: "",
     rol: type === "equipo" ? "coequipero" : "designer",
     cargo: "",
-    empresa: "",
+    empresa: (!isInternalTeam && user?.company) ? user.company : "",
     password: ""
   })
+
+  useEffect(() => {
+    if (isOpen) {
+      setFormData({
+        nombre: "",
+        correo: "",
+        rol: type === "equipo" ? "coequipero" : "designer",
+        cargo: "",
+        empresa: (!isInternalTeam && user?.company) ? user.company : "",
+        password: ""
+      })
+      setError(null)
+      setSuccess(false)
+    }
+  }, [isOpen, type])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -114,7 +129,7 @@ export function InvitarMiembroModal({ isOpen, onClose, type = "equipo" }: Invita
                   </p>
                 </div>
               ) : (
-                <form onSubmit={handleSubmit} className="flex flex-col gap-5">
+                <form onSubmit={handleSubmit} className="flex flex-col gap-5" autoComplete="off">
                   <p className="text-sm text-on-surface-variant">
                     Ingresa los datos del nuevo {modalDesc}. Recibirá un correo electrónico con acceso inmediato.
                   </p>
@@ -129,7 +144,7 @@ export function InvitarMiembroModal({ isOpen, onClose, type = "equipo" }: Invita
                   {/* Nombre Completo */}
                   <div className="flex flex-col gap-2">
                     <label className="text-xs font-bold uppercase tracking-wider text-on-surface-variant">
-                      Nombre Completo
+                      Usuario
                     </label>
                     <div className="relative">
                       <User className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-on-surface-variant" />
@@ -139,6 +154,7 @@ export function InvitarMiembroModal({ isOpen, onClose, type = "equipo" }: Invita
                         value={formData.nombre}
                         onChange={(e) => setFormData({ ...formData, nombre: e.target.value })}
                         placeholder="Ej. Carlos Ruiz"
+                        autoComplete="off"
                         className="w-full rounded-xl border border-outline-variant bg-surface-container-low py-2.5 pl-10 pr-4 text-sm text-on-surface outline-none transition-all focus:border-primary focus:ring-1 focus:ring-primary"
                       />
                     </div>
@@ -157,6 +173,7 @@ export function InvitarMiembroModal({ isOpen, onClose, type = "equipo" }: Invita
                         value={formData.correo}
                         onChange={(e) => setFormData({ ...formData, correo: e.target.value })}
                         placeholder="carlos@mariomojica.com"
+                        autoComplete="off"
                         className="w-full rounded-xl border border-outline-variant bg-surface-container-low py-2.5 pl-10 pr-4 text-sm text-on-surface outline-none transition-all focus:border-primary focus:ring-1 focus:ring-primary"
                       />
                     </div>
@@ -203,26 +220,35 @@ export function InvitarMiembroModal({ isOpen, onClose, type = "equipo" }: Invita
                         value={formData.cargo}
                         onChange={(e) => setFormData({ ...formData, cargo: e.target.value })}
                         placeholder="Ej. Desarrollador 3D"
+                        autoComplete="off"
                         className="w-full rounded-xl border border-outline-variant bg-surface-container-low py-2.5 pl-10 pr-4 text-sm text-on-surface outline-none transition-all focus:border-primary focus:ring-1 focus:ring-primary"
                       />
                     </div>
                   </div>
                   {/* Empresa */}
-                  <div className="flex flex-col gap-2">
-                    <label className="text-xs font-bold uppercase tracking-wider text-on-surface-variant">
-                      Empresa
-                    </label>
-                    <div className="relative">
-                      <Briefcase className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-on-surface-variant" />
-                      <input
-                        type="text"
-                        value={formData.empresa}
-                        onChange={(e) => setFormData({ ...formData, empresa: e.target.value })}
-                        placeholder="Ej. Jamar, MM Team, etc."
-                        className="w-full rounded-xl border border-outline-variant bg-surface-container-low py-2.5 pl-10 pr-4 text-sm text-on-surface outline-none transition-all focus:border-primary focus:ring-1 focus:ring-primary"
-                      />
+                  {isInternalTeam && (
+                    <div className="flex flex-col gap-2">
+                      <label className="text-xs font-bold uppercase tracking-wider text-on-surface-variant">
+                        Empresa
+                      </label>
+                      <div className="relative">
+                        <Briefcase className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-on-surface-variant" />
+                        <input
+                          type="text"
+                          name="empresa_fake_name_to_avoid_autofill"
+                          value={formData.empresa}
+                          onChange={(e) => setFormData({ ...formData, empresa: e.target.value })}
+                          placeholder="Ej. Jamar, MM Team, etc."
+                          autoComplete="new-password"
+                          className="w-full rounded-xl border border-outline-variant bg-surface-container-low py-2.5 pl-10 pr-4 text-sm text-on-surface outline-none transition-all focus:border-primary focus:ring-1 focus:ring-primary"
+                        />
+                      </div>
                     </div>
-                  </div>
+                  )}
+
+                  {/* Anti-autofill trap for Chrome */}
+                  <input type="text" name="chrome_fake_user" style={{ display: 'none' }} tabIndex={-1} autoComplete="off" />
+                  <input type="password" name="chrome_fake_pass" style={{ display: 'none' }} tabIndex={-1} autoComplete="off" />
 
                   {/* Contraseña (Opcional) */}
                   <div className="flex flex-col gap-2">
@@ -239,6 +265,7 @@ export function InvitarMiembroModal({ isOpen, onClose, type = "equipo" }: Invita
                         value={formData.password}
                         onChange={(e) => setFormData({ ...formData, password: e.target.value })}
                         placeholder="Contraseña temporal"
+                        autoComplete="new-password"
                         className="w-full rounded-xl border border-outline-variant bg-surface-container-low py-2.5 pl-10 pr-12 text-sm text-on-surface outline-none transition-all focus:border-primary focus:ring-1 focus:ring-primary"
                       />
                       <button

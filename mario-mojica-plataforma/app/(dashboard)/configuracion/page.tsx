@@ -3,11 +3,13 @@
 
 import { Settings, User as UserIcon, Bell, Shield, Globe } from "lucide-react"
 import { useAuth } from "@/lib/auth/auth-context"
+import { usePermissions } from "@/hooks/use-permissions"
 import { useState, useEffect } from "react"
 import { createClient } from "@/lib/supabase/client"
 
 export default function ConfiguracionPage() {
   const { user, refreshUser } = useAuth()
+  const { isSuperAdmin } = usePermissions()
   const supabase = createClient()
   
   const [loading, setLoading] = useState(false)
@@ -15,7 +17,8 @@ export default function ConfiguracionPage() {
     nombre: "",
     apellido: "",
     email: "",
-    empresa: ""
+    empresa: "",
+    cargo: ""
   })
   const [message, setMessage] = useState({ text: "", type: "" })
 
@@ -29,7 +32,8 @@ export default function ConfiguracionPage() {
         nombre,
         apellido,
         email: user.email || "",
-        empresa: user.company || ""
+        empresa: user.company || "",
+        cargo: user.job_title || ""
       })
     }
   }, [user])
@@ -53,7 +57,8 @@ export default function ConfiguracionPage() {
         .upsert({ 
           id: user.id,
           full_name: fullName,
-          company: formData.empresa
+          company: formData.empresa,
+          job_title: formData.cargo
         })
 
       if (error) throw error
@@ -61,7 +66,8 @@ export default function ConfiguracionPage() {
       const { error: authError } = await supabase.auth.updateUser({
         data: { 
           full_name: fullName,
-          company: formData.empresa
+          company: formData.empresa,
+          job_title: formData.cargo
         }
       })
 
@@ -184,15 +190,27 @@ export default function ConfiguracionPage() {
                     />
                     <p className="px-1 text-[10px] text-on-surface-variant">El email está vinculado a tu cuenta y no puede cambiarse.</p>
                   </div>
-                  <div className="space-y-2 md:col-span-2">
+                  <div className="space-y-2">
                     <label className="text-xs font-bold uppercase tracking-wider text-on-surface-variant/70 px-1">Empresa</label>
                     <input
                       type="text"
                       name="empresa"
                       value={formData.empresa}
+                      disabled={true}
+                      className="h-12 w-full rounded-xl bg-surface-container px-4 text-sm text-on-surface-variant outline-none ring-1 ring-outline-variant/20 disabled:opacity-60 cursor-not-allowed"
+                      title="La empresa no se puede modificar desde aquí"
+                    />
+                    <p className="px-1 text-[10px] text-on-surface-variant">La empresa está vinculada a la cuenta y no puede cambiarse.</p>
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-xs font-bold uppercase tracking-wider text-on-surface-variant/70 px-1">Cargo</label>
+                    <input
+                      type="text"
+                      name="cargo"
+                      value={formData.cargo}
                       onChange={handleChange}
                       disabled={loading}
-                      placeholder="Ej. Jamar"
+                      placeholder="Ej. Gerente de Ventas"
                       className="h-12 w-full rounded-xl bg-surface-container px-4 text-sm text-on-surface outline-none ring-1 ring-outline-variant/30 transition-all focus:ring-2 focus:ring-primary disabled:opacity-50"
                     />
                   </div>

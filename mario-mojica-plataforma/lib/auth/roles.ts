@@ -8,14 +8,15 @@ export interface User {
   name: string
   avatar?: string
   company?: string
+  job_title?: string
   credits?: number
 }
 
 export const PERMISSIONS = {
   SOLICITUDES: {
     VIEW_ALL: ["superadmin"],
-    VIEW_OWN: ["coequipero", "admin", "designer", "viewer"],
-    CREATE: ["superadmin", "admin"],
+    VIEW_OWN: ["coequipero", "admin", "designer"],
+    CREATE: ["superadmin", "admin", "designer"],
     EDIT: ["superadmin", "coequipero", "admin", "designer"],
     COMMENT: ["superadmin", "coequipero", "admin", "designer"],
     DELETE: ["superadmin"],
@@ -29,7 +30,7 @@ export const PERMISSIONS = {
     MANAGE: ["superadmin", "admin"],
   },
   EQUIPO: {
-    VIEW: ["superadmin", "coequipero", "admin"],
+    VIEW: ["superadmin", "coequipero", "admin", "designer"],
     MANAGE: ["superadmin", "admin"],
   },
   FACTURACION: {
