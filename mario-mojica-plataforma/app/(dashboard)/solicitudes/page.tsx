@@ -927,11 +927,9 @@ function ClientView({ initialId, fromPath }: { initialId: string | null, fromPat
 
   // Stats
   const total = solicitudesToDisplay.length
-  const nuevas = solicitudesToDisplay.filter(s => s.estado === "Nueva" || s.estado === "Sin asignar" || s.estado === "backlog" as any).length
-  const enCurso = solicitudesToDisplay.filter(s => s.estado === "Asignada" || s.estado === "Acordada y aprobada" || s.estado === "En progreso" || s.estado === "Esperando cliente" || s.estado === "En revisión").length
-  const resueltas = solicitudesToDisplay.filter(s => s.estado === "Resuelta" || s.estado === "Completado" as any).length
-
-  const nextId = String(solicitudes.length + 1).padStart(5, "0")
+  const nuevas = solicitudesToDisplay.filter(s => (s.estado as string) === "Nueva" || (s.estado as string) === "Sin asignar" || (s.estado as string) === "backlog").length
+  const enCurso = solicitudesToDisplay.filter(s => (s.estado as string) === "Asignada" || (s.estado as string) === "Acordada y aprobada" || (s.estado as string) === "En progreso" || (s.estado as string) === "Esperando cliente" || (s.estado as string) === "En revisión").length
+  const resueltas = solicitudesToDisplay.filter(s => (s.estado as string) === "Resuelta" || (s.estado as string) === "Completado").length
 
   return (
     <div className="flex flex-col gap-6 p-6">

@@ -88,6 +88,20 @@ export default function EquipoPage() {
   
   const { isSuperAdmin, isCoequipero, isAdmin, role } = usePermissions()
 
+  const fetchTeam = async () => {
+    setLoading(true)
+    const supabase = createClient()
+    const { data, error } = await supabase.from("profiles").select("*").order("created_at", { ascending: true })
+    if (!error && data) {
+      setTeamMembers(data)
+    }
+    setLoading(false)
+  }
+
+  useEffect(() => {
+    fetchTeam()
+  }, [isModalOpen])
+
   if (role === "viewer") {
     return (
       <div className="flex h-full min-h-[400px] flex-col items-center justify-center p-12 text-center">
@@ -104,19 +118,9 @@ export default function EquipoPage() {
   const canManage = isSuperAdmin || isAdmin
   const canDelete = isSuperAdmin
 
-  const fetchTeam = async () => {
-    setLoading(true)
-    const supabase = createClient()
-    const { data, error } = await supabase.from("profiles").select("*").order("created_at", { ascending: true })
-    if (!error && data) {
-      setTeamMembers(data)
-    }
-    setLoading(false)
-  }
 
-  useEffect(() => {
-    fetchTeam()
-  }, [isModalOpen])
+
+
 
   const openModal = (type: "equipo" | "cliente") => {
     setModalType(type)

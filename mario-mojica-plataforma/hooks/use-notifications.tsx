@@ -34,11 +34,11 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
     if (!user?.id) return
 
     const supabase = createClient()
-    let channel: any
+    let channel: ReturnType<typeof supabase.channel> | null = null
 
     async function setupNotifications() {
       // 1. Fetch inicial
-      const { data, error } = await supabase
+      const { data } = await supabase
         .from("notificaciones")
         .select("*")
         .eq("user_id", user!.id)
@@ -96,7 +96,7 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
         supabase.removeChannel(channel)
       }
     }
-  }, [user?.id])
+  }, [user])
 
   const markAsRead = async (id: string) => {
     // Optimistic UI update

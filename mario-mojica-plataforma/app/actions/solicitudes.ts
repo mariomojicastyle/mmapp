@@ -42,9 +42,9 @@ export async function getCompanySolicitudes(companyName: string) {
     if (solicitudesError) throw solicitudesError
 
     return { data: solicitudesData }
-  } catch (err: any) {
+  } catch (err: unknown) {
     console.error("Error en getCompanySolicitudes:", err)
-    return { error: err.message || "Error al obtener solicitudes" }
+    return { error: err instanceof Error ? err.message : "Error al obtener solicitudes" }
   }
 }
 
@@ -87,9 +87,9 @@ export async function notifySolicitudModification(
        if (error) throw error
     }
     return { success: true }
-  } catch (err: any) {
+  } catch (err: unknown) {
     console.error("Error en notifySolicitudModification:", err)
-    return { error: err.message }
+    return { error: err instanceof Error ? err.message : "Error desconocido" }
   }
 }
 
@@ -137,9 +137,9 @@ export async function softDeleteSolicitud(
        if (error) console.error("Error al insertar notificaciones de eliminación:", error)
     }
     return { success: true }
-  } catch (err: any) {
+  } catch (err: unknown) {
     console.error("Error en softDeleteSolicitud:", err)
-    return { error: err.message }
+    return { error: err instanceof Error ? err.message : "Error desconocido" }
   }
 }
 
@@ -168,9 +168,9 @@ export async function notifyDateProposal(
 
     if (error) throw error
     return { success: true }
-  } catch (err: any) {
+  } catch (err: unknown) {
     console.error("Error en notifyDateProposal:", err)
-    return { error: err.message }
+    return { error: err instanceof Error ? err.message : "Error desconocido" }
   }
 }
 
@@ -194,8 +194,8 @@ export async function markNotificationAsRead(notificationId: string | number) {
     if (error) throw error
 
     return { success: true }
-  } catch (err: any) {
+  } catch (err: unknown) {
     console.error("Error en markNotificationAsRead:", err)
-    return { error: err.message }
+    return { error: err instanceof Error ? err.message : "Error desconocido" }
   }
 }
