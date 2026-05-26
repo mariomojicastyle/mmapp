@@ -134,6 +134,11 @@ Un **"Manual Vacío"** es un cascarón o aplicación base centralizada (desplega
   - Agregamos la columna `color_texto_botones` en Supabase y el selector de color de contraste (Texto/Iconos) en la plataforma Next.js, logrando que tanto los iconos como el número del paso central se pinten con el color de contraste elegido por el cliente.
   - Corregimos el helper `getStorageUrl` en `AssemblyPage.jsx` para que anteponga automáticamente el prefijo de subcarpeta del código de manual (`[id]/`), solucionando de raíz el error 404 que impedía la carga del Logotipo de la empresa y del Favicon personalizado de la pestaña del navegador.
 
+- [x] **Paso 5: Personalización de 4 Texturas PBR Completas (Piso y Escenario/Paredes)** (Completado)
+  - Incorporamos 8 columnas en Supabase (`pbr_floor_diff`, `pbr_floor_normal`, `pbr_floor_roughness`, `pbr_floor_height`, `pbr_wall_diff`, `pbr_wall_normal`, `pbr_wall_roughness`, `pbr_wall_height`).
+  - Diseñamos la sección "Texturas del Escenario (PBR)" en `detalle-proyecto-modal.tsx` con soporte para cargar, borrar y guardar las 4 texturas para piso y escenario.
+  - Actualizamos `AssemblyPage.jsx` para recuperar las URLs y `Experience.jsx` / `Floor.jsx` para renderizar materiales físicos PBR con `bumpMap` de altura y optimización anti-parpadeo entre pasos.
+
 ---
 
 ## 🌐 5. Portfolio y Leads (mariomojica.com)

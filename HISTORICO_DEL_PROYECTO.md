@@ -482,6 +482,21 @@ Los estilos, colores y tiempos de transición de las flechas azules se configura
           - Inyectada dinámicamente la variable CSS `--btn-text-color` desde `AssemblyPage.jsx` y aplicada en `NavBarInferior.css` para los iconos de todos los botones (`.button`, `#left`, `#right`, `#btnPause`) y el número de paso central. Esto unifica estéticamente todos los elementos de control y permite al cliente asegurar un contraste visual premium 100% personalizable.
         - **Resolución de Paths de Supabase para Logo y Favicon (Corrección 404)**: Corregimos una discrepancia crítica en el helper `getStorageUrl` de `AssemblyPage.jsx`. Al subir los archivos de logotipo (`logo.svg`) y favicon (`favicon.ico`) desde la plataforma, se almacenan físicamente bajo la subcarpeta `${codigoManual}/` en el Storage, pero en la base de datos de configuraciones se guardaba únicamente el nombre del archivo. Modificamos el helper para que anteponga automáticamente el prefijo de subcarpeta del código de manual (`[id]/`), solucionando de raíz el error 404 y cargando de inmediato y con total fidelidad la identidad corporativa y el icono de la pestaña del navegador.
 
+* **[2026-05-26] AppArmado_v11 / Integracion_Manu_Dina_v3 — Personalización de 4 Texturas PBR Completas, Corrección de Alturas e Inmunidad a Flicker:**
+    - **Base de Datos y Supabase**:
+        - Agregadas las 8 nuevas columnas PBR en la tabla `public.configuraciones_manual` mediante migraciones DDL: `pbr_floor_diff`, `pbr_floor_normal`, `pbr_floor_roughness`, `pbr_floor_height`, `pbr_wall_diff`, `pbr_wall_normal`, `pbr_wall_roughness`, `pbr_wall_height`.
+    - **Plataforma CMS (Administración)**:
+        - Rediseño e implementación en `detalle-proyecto-modal.tsx` con una sección Obsidian Teal Glassmorphic para subir, visualizar y borrar las 4 texturas PBR para piso y escenario en Supabase Storage (`insumos_manuales`).
+        - Resolución de la advertencia de contexto elevado (`no-use-before-define`) reubicando las declaraciones de estado en el modal.
+    - **Visor 3D y React Three Fiber (`Experience.jsx` y `Floor.jsx`)**:
+        - Inyección dinámica en `Experience.jsx` de texturas PBR para las paredes con escala `repeat.set(4, 2)` mediante un material estándar físico que responde a la luz utilizando mapas de difusión (`map`), normales (`normalMap`), rugosidad (`roughnessMap`) y relieve visual (`bumpMap` con escala `0.02`).
+        - Inyección en `Floor.jsx` de texturas PBR completas para el piso con `bumpMap` de altura (escala `0.03`) y deshabilitando el mapa de oclusión ambiental (`aoMap`) estático local para evitar interferencias visuales.
+    - **Resolución de Flicker y Desviación de Altura**:
+        - Solución definitiva al parpadeo (flicker) del Skybox en la transición de pasos removiendo `PasoActual` y `alturas` de las dependencias del `useEffect` de instanciación del Mesh.
+        - Corrección de la pérdida de posición vertical al inicio, invocando imperativamente la función `repositionSkybox(skyBox)` durante la creación del Mesh para estabilizar la altura del escenario.
+    - **Mapeo de URLs**:
+        - Actualización del mapeo dinámico en `AssemblyPage.jsx` para resolver correctamente los 8 enlaces de Storage de Supabase en `dynamicProductData`.
+
 ---
 
 *Última consolidación: 26 de Mayo, 2026*

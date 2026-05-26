@@ -152,17 +152,20 @@ Reason: Caused performance regression in production.
 
 When the user types `/super-commit [descripción]`, you MUST execute the following automated Git Flow in the terminal, guaranteeing a safe, professional, and clean integration. (Currently, Netlify auto-deployment is PAUSED, so do not push to `main` until further notice):
 
-1. **Stash & Commit**: Analyze changes, write a Sentry-compliant commit message.
-2. **Validation (Lint & Build Check) - NIVEL 1 DE BLINDAJE**:
+1. **Documentación de Control (CRÍTICO - PRIMERA ACCIÓN)**: 
+   - Antes de ejecutar cualquier comando de Git, debes revisar y actualizar de forma obligatoria los archivos `ESTADO_DEL_PROYECTO.md` y `HISTORICO_DEL_PROYECTO.md` en español.
+   - Refleja con máxima precisión y detalle técnico todos los cambios, logros y arquitecturas implementadas en el hito correspondiente al sprint.
+2. **Stash & Commit**: Analyze changes, write a Sentry-compliant commit message.
+3. **Validation (Lint & Build Check) - NIVEL 1 DE BLINDAJE**:
    - Before touching `main`, execute `npm run lint` inside the project folder (`mario-mojica-plataforma` or corresponding root).
    - If linting passes, execute `npm run build` to verify the project compiles without fatal errors.
    - **CRITICAL**: If either command fails, ABORT the `/super-commit` immediately, report the exact error to the user, and DO NOT proceed to the next steps.
-3. **Merge to Main**: 
+4. **Merge to Main**: 
    - `git checkout main`
    - `git pull origin main`
    - `git merge <current-branch> -m "Merge branch '<current-branch>' into main"`
-4. **Push to Origin**: `git push origin main` *(DISABLED FOR NOW: The user has requested to temporarily suspend deployment to Netlify, so skip this push step or ask for confirmation first).*
-5. **Cleanup & New Branch**: Return the user to a clean working state. **CRÍTICO:** El argumento que el usuario pasa (ej. `Usuarios_v2` en `/super-commit - Usuarios_v2`) debe usarse para **CREAR UNA NUEVA RAMA** después del merge. Debes ejecutar obligatoriamente `git checkout -b <argumento>` (ej. `git checkout -b Usuarios_v2`) para dejar al usuario listo en su nueva rama. No lo devuelvas a la rama anterior.
+5. **Push to Origin**: `git push origin main` *(DISABLED FOR NOW: The user has requested to temporarily suspend deployment to Netlify, so skip this push step or ask for confirmation first).*
+6. **Cleanup & New Branch**: Return the user to a clean working state. **CRÍTICO:** El argumento que el usuario pasa (ej. `Usuarios_v2` en `/super-commit - Usuarios_v2`) debe usarse para **CREAR UNA NUEVA RAMA** después del merge. Debes ejecutar obligatoriamente `git checkout -b <argumento>` (ej. `git checkout -b Usuarios_v2`) para dejar al usuario listo en su nueva rama. No lo devuelvas a la rama anterior.
 
 ## Principles
 
