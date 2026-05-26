@@ -20,12 +20,6 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "Mario Mojica Platform",
   description: "Plataforma de gestión de proyectos, productos y servicios de Mario Mojica.",
-  icons: {
-    icon: [
-      { url: "/icon-light-32x32.png", media: "(prefers-color-scheme: light)" },
-      { url: "/icon-dark-32x32.png", media: "(prefers-color-scheme: dark)" },
-    ],
-  },
 }
 
 export default function RootLayout({

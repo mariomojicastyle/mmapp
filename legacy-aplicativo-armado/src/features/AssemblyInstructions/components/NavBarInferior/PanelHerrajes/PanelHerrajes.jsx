@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import useEnviroment from "../../../hooks/useEnviroment";
 import "./PanelHerrajes.css";
 
-export default function PanelHerrajes() {
+export default function PanelHerrajes({ id, data }) {
   const model = useEnviroment((state) => state.model);
   const PanelShow = useEnviroment((state) => state.PanelShow);
   const NegativePanel = useEnviroment((state) => state.NegativePanel);
@@ -18,6 +18,22 @@ export default function PanelHerrajes() {
   const StartApp = useEnviroment((state) => state.StartApp);
 
   const [herrajes, setHerrajes] = useState([]);
+
+  // Resuelve dinámicamente la imagen de un herraje del CMS si existe en Supabase, o cae al fallback local
+  const getHerrajeImageUrl = (keyName) => {
+    if (data?.isDynamicCMS && Array.isArray(data?.fotosHerrajesList)) {
+      const keyLower = keyName.toLowerCase();
+      const matchedFile = data.fotosHerrajesList.find(file => {
+        const baseName = file.substring(0, file.lastIndexOf('.')) || file;
+        return baseName.toLowerCase() === keyLower;
+      });
+
+      if (matchedFile) {
+        return `/${id}/herrajes/${matchedFile}`;
+      }
+    }
+    return `/assets/herrajes/${keyName}.jpg`;
+  };
 
   // Se realiza un recorrido por el modelo para extraer los nombres de las piezas y herrajes de manera declarativa.
   useEffect(() => {
@@ -65,7 +81,7 @@ export default function PanelHerrajes() {
             displayName: keyName,
             value: name,
             cantidad: cantidad,
-            imageUrl: `/assets/herrajes/${keyName}.jpg`
+            imageUrl: getHerrajeImageUrl(keyName)
           });
         }
       } else {
@@ -88,7 +104,7 @@ export default function PanelHerrajes() {
               tempHerrajes.push({
                 displayName: keyName,
                 value: name,
-                imageUrl: `/assets/herrajes/${keyName}.jpg`
+                imageUrl: getHerrajeImageUrl(keyName)
               });
             }
           }
@@ -98,7 +114,7 @@ export default function PanelHerrajes() {
             tempHerrajes.push({
               displayName: name,
               value: name,
-              imageUrl: `/assets/herrajes/${name}.jpg`
+              imageUrl: getHerrajeImageUrl(name)
             });
           }
         }
@@ -106,7 +122,7 @@ export default function PanelHerrajes() {
     });
 
     setHerrajes(tempHerrajes);
-  }, [model, PasoActual]);
+  }, [model, PasoActual, data, id]);
 
   // Evitamos mostrar la ayuda en el paso inicial 00 (paso de bienvenida)
   useEffect(() => {

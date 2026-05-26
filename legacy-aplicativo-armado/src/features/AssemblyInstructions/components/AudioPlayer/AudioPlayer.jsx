@@ -50,8 +50,10 @@ export default function AudioPlayer() {
 
     if(PanelAyudas){
       ResetAyudas();
-      audioRef.current.load();
-      audioRef.current.src = `/assets/sounds/01_Ayuda.mp3`;
+      audioRef.current.src = (id && id !== "manual-vacio" && id !== "M01536") 
+        ? `/${id}/sounds/01_Ayuda.mp3` 
+        : `/assets/sounds/01_Ayuda.mp3`;
+      audioRef.current.load(); // Llamar a load() después de setear el src
       setTimeout(() => {
         if (audioRef.current) audioRef.current.play().catch(e => console.log("Audio play failed", e));
       }, 500);

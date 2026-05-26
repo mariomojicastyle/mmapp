@@ -36,17 +36,33 @@ export default function PanelTips({ id, data }) {
     });
   }, [id, data]);
 
+  // Buscador inteligente de ensambles cargados dinámicamente
+  const findEnsamble = (keyword) => {
+    if (!data.isDynamicCMS || !data.ensamblesList) return null;
+    const found = data.ensamblesList.find(name => 
+      name.toLowerCase().includes(keyword.toLowerCase())
+    );
+    return found ? `/${id}/ensambles/${found}` : null;
+  };
+
   //Arreglo con los diferentes tips disponibles.
   const Tips = {
-    DosHerramientasNecesarias: '/assets/tips/Martillo_Destornillador.svg',
+    DosHerramientasNecesarias: data.isDynamicCMS && data.imagenHerramientas 
+      ? `/${id}/${data.imagenHerramientas}` 
+      : '/assets/tips/Martillo_Destornillador.svg',
+    
     TresHerramientasNecesarias: '/assets/tips/Martillo_Destornillador_Allen.svg',
-    SistemaDeAnclaje: '/assets/tips/Sistema_Anclaje.svg',
-    PulsadorParaAbrir: '/assets/tips/Pulsador_Para_Abrir.svg',
-    EnsambleMinifix: '/assets/tips/Ensamble_Minifix.svg',
-    EnsambleTuercaPlástica: '/assets/tips/Ensamble_Tuerca_Plastica.svg',
-    AjusteDeBisagras: '/assets/tips/Ajuste_Bisagras.svg',
-    OcultaTornillos: '/assets/tips/Oculta_Tornillos.svg',
-    GarantiaDelProducto: "/assets/tips/Certificado_de_Garantia_v12.pdf",
+    
+    SistemaDeAnclaje: findEnsamble("anclaje") || '/assets/tips/Sistema_Anclaje.svg',
+    PulsadorParaAbrir: findEnsamble("pulsador") || '/assets/tips/Pulsador_Para_Abrir.svg',
+    EnsambleMinifix: findEnsamble("minifix") || '/assets/tips/Ensamble_Minifix.svg',
+    EnsambleTuercaPlástica: findEnsamble("tuerca") || '/assets/tips/Ensamble_Tuerca_Plastica.svg',
+    AjusteDeBisagras: findEnsamble("bisagra") || '/assets/tips/Ajuste_Bisagras.svg',
+    OcultaTornillos: findEnsamble("oculta") || '/assets/tips/Oculta_Tornillos.svg',
+    
+    GarantiaDelProducto: data.isDynamicCMS && data.garantiaDoc 
+      ? `/${id}/${data.garantiaDoc}` 
+      : "/assets/tips/Certificado_de_Garantia_v12.pdf",
   };
 
   if (!data || !data.tips) return null;

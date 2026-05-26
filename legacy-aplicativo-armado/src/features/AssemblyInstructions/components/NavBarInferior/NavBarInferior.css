@@ -34,7 +34,7 @@
   cursor: pointer;
   align-items: center;
   justify-content: center;
-  color: var(--text-secondary);
+  color: var(--btn-text-color);
   box-shadow: var(--glass-shadow);
   transition: var(--transition-smooth);
   pointer-events: auto;
@@ -103,7 +103,7 @@
   cursor: pointer;
   align-items: center;
   justify-content: center;
-  color: var(--text-secondary);
+  color: var(--btn-text-color);
   box-shadow: var(--glass-shadow);
   transition: var(--transition-smooth);
   pointer-events: auto;
@@ -130,7 +130,7 @@
   cursor: pointer;
   align-items: center;
   justify-content: center;
-  color: var(--text-secondary);
+  color: var(--btn-text-color);
   box-shadow: var(--glass-shadow);
   transition: var(--transition-smooth);
   pointer-events: auto;
@@ -150,7 +150,7 @@
   width: 60px;
   height: 60px;
   border-radius: 50%;
-  background: var(--surface-container);
+  background: var(--primary);
   backdrop-filter: var(--glass-blur);
   -webkit-backdrop-filter: var(--glass-blur);
   border: 1px solid var(--border-light);
@@ -171,7 +171,7 @@
 }
 
 .percent .number h2 {
-  color: var(--text-primary);
+  color: var(--btn-text-color);
   font-family: var(--font-sans);
   font-weight: 700;
   font-size: 34px; /* Aumentado 40% (24px * 1.4 = 33.6px) */

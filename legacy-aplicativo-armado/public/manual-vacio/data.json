@@ -1,0 +1,43 @@
+{
+    "url": "/manual-vacio",
+    "name": "Manual Vacío (En Desarrollo)",
+    "pasos": [
+        "00"
+    ],
+    "alturas": [
+        {
+            "paso": "00",
+            "skyBox": 0.894,
+            "plane": -0.606,
+            "target": [
+                0.12,
+                -0.219,
+                0.085
+            ]
+        }
+    ],
+    "cameraPositions": [
+        {
+            "pasos": "00",
+            "override": true,
+            "position": {
+                "x": -3.177,
+                "y": 2,
+                "z": 5
+            }
+        }
+    ],
+    "tips": {
+        "Logo": true,
+        "2 Herramientas Necesarias": false,
+        "3 Herramientas Necesarias": false,
+        "Sistema de Anclaje": false,
+        "Pulsador para Abrir": false,
+        "Ensamble Minifix": false,
+        "Ensamble Tuerca Plástica": false,
+        "Ajuste de Bisagras": false,
+        "Oculta Tornillos": false,
+        "Garantia del Producto": false
+    },
+    "logo": "url('/assets/Logo_mm.svg')"
+}

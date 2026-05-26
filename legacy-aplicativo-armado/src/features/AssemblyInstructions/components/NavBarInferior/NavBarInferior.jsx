@@ -245,10 +245,10 @@ export default function NavBarInferior({ id, data }) {
         {/* TODOS LOS PANELES SE UBICAN EN ESTA SESION, PARA NO POSEER PROBLEMAS CON EL Z-INDEX */}
 
         {/* <!-- Panel principal de herrajes, este panel es de las principales funcionalidades, se llena por medio de javascript con aquellos herrajes, los cuales seran utilizados en su correspondiente paso de animación, ademas de contener una opcion por defecto, la cual activa el panel de los herrajes con cantidades totales, por medio de las opciones de este panel se puede seleccionar por ejemplos todos los tornillos que se encuentra en dicho paso.  --> */}
-        {toogle ? <PanelHerrajes /> : null}
+        {toogle ? <PanelHerrajes id={id} data={data} /> : null}
         <BotonCerrar />
         <PanelTips id={id} data={data} />
-        <PanelCantidades />
+        <PanelCantidades id={id} data={data} />
         <PanelAyudas/>
 
 

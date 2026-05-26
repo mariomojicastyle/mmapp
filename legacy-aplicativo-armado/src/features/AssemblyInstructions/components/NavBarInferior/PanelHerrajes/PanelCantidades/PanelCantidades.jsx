@@ -2,11 +2,27 @@ import useEnviroment from "../../../../hooks/useEnviroment";
 import { useEffect, useState } from "react";
 import "./PanelCantidades.css";
 
-export default function PanelCantidades() {
+export default function PanelCantidades({ id, data }) {
   const pasoInicial = useEnviroment((state) => state.pasoInicial);
   const PanelCantidadesState = useEnviroment((state) => state.PanelCantidades);
 
   const [cantidades, setCantidades] = useState([]);
+
+  // Resuelve dinámicamente la imagen de un herraje del CMS si existe en Supabase, o cae al fallback local
+  const getHerrajeImageUrl = (keyName) => {
+    if (data?.isDynamicCMS && Array.isArray(data?.fotosHerrajesList)) {
+      const keyLower = keyName.toLowerCase();
+      const matchedFile = data.fotosHerrajesList.find(file => {
+        const baseName = file.substring(0, file.lastIndexOf('.')) || file;
+        return baseName.toLowerCase() === keyLower;
+      });
+
+      if (matchedFile) {
+        return `/${id}/herrajes/${matchedFile}`;
+      }
+    }
+    return `/assets/herrajes/${keyName}.jpg`;
+  };
 
   // Recolectar la información del panel de cantidades del glb P00 de manera declarativa
   useEffect(() => {
@@ -46,7 +62,7 @@ export default function PanelCantidades() {
               displayName: keyName,
               value: name,
               cantidad: cantidad,
-              imageUrl: `/assets/herrajes/${keyName}.jpg`
+              imageUrl: getHerrajeImageUrl(keyName)
             });
           }
         }
@@ -54,7 +70,7 @@ export default function PanelCantidades() {
     });
 
     setCantidades(tempCantidades);
-  }, [pasoInicial]);
+  }, [pasoInicial, data, id]);
 
   return (
     <>
