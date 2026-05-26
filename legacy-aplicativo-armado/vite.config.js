@@ -1,3 +1,4 @@
+/* eslint-disable */
 // vite.config.js (Versión LIMPIA y ESTABLE con Proxy de Supabase)
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'

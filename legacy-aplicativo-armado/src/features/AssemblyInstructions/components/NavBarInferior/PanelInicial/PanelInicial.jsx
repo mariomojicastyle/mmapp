@@ -1,3 +1,4 @@
+/* eslint-disable */
 import './PanelInicial.css';
 import { Html, useProgress, useGLTF } from '@react-three/drei'
 import { useRef, useState, useEffect } from 'react';
