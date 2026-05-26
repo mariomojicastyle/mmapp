@@ -62,9 +62,9 @@
 
 .option2:hover {
   font-weight: 700;
-  color: #007fb0; /* Color azul cian oscuro distinguido para hover sobre fondo blanco */
+  color: var(--primary); /* Color dinámico del color principal para el texto */
   background: #ffffff !important;
-  border-color: #007fb0;
+  border-color: var(--primary); /* Borde dinámico del color principal */
   box-shadow: 0 12px 30px rgba(113, 211, 247, 0.25);
   transform: translateY(-4px);
 }

@@ -36,10 +36,10 @@
 }
 
 .menu-title {
-  color: var(--btn-text-color, #ffffff);
-  font-family: var(--font-sans, "Inter", sans-serif);
+  color: var(--font-title-color, var(--btn-text-color, #ffffff));
+  font-family: var(--font-title, var(--font-sans, "Inter", sans-serif));
   font-weight: 700;
-  font-size: 1.65rem;
+  font-size: var(--font-title-size, 1.65rem);
   letter-spacing: 0.05em;
   text-transform: uppercase;
   margin: 0 auto 10px auto;
@@ -58,10 +58,10 @@
   align-items: center;
   justify-content: center;
   font-family: var(--font-sans, "Inter", sans-serif);
-  font-size: 1.15rem;
+  font-size: var(--font-body-size, 1.15rem);
   font-weight: 600;
   text-decoration: none;
-  color: #111319; /* Texto oscuro para perfecto contraste con el fondo blanco */
+  color: var(--font-body-color, #111319); /* Texto oscuro/claro dinámico */
   background: #ffffff; /* Caja blanca para unificar con el fondo de las fotos */
   border: 1px solid var(--border-light, rgba(113, 211, 247, 0.35));
   border-radius: 16px;

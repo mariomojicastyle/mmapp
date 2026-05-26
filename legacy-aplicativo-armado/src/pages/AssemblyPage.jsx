@@ -50,6 +50,38 @@ const AssemblyPage = () => {
           document.documentElement.style.setProperty('--surface-container', primario);
           document.documentElement.style.setProperty('--btn-text-color', colorTextoBtn);
 
+          // Cargar e Inyectar fuentes y tamaños dinámicos
+          const fTitle = configData.font_title || "Inter";
+          const fTitleSize = configData.font_title_size || "1.5rem";
+          const fTitleColor = configData.font_title_color || "#FFFFFF";
+          const fBody = configData.font_body || "Inter";
+          const fBodySize = configData.font_body_size || "0.9rem";
+          const fBodyColor = configData.font_body_color || "#BEC8CE";
+
+          // Cargar Google Font dinámicamente si no es la por defecto
+          const loadGoogleFont = (fontName) => {
+            if (!fontName || fontName === "Inter") return;
+            const linkId = `gfont-${fontName.toLowerCase()}`;
+            if (!document.getElementById(linkId)) {
+              const link = document.createElement('link');
+              link.id = linkId;
+              link.rel = 'stylesheet';
+              link.href = `https://fonts.googleapis.com/css2?family=${fontName.replace(/ /g, '+')}:wght@400;500;600;700;800&display=swap`;
+              document.head.appendChild(link);
+            }
+          };
+
+          loadGoogleFont(fTitle);
+          loadGoogleFont(fBody);
+
+          document.documentElement.style.setProperty('--font-title', `'${fTitle}', sans-serif`);
+          document.documentElement.style.setProperty('--font-title-size', fTitleSize);
+          document.documentElement.style.setProperty('--font-title-color', fTitleColor);
+          
+          document.documentElement.style.setProperty('--font-sans', `'${fBody}', sans-serif`);
+          document.documentElement.style.setProperty('--font-body-size', fBodySize);
+          document.documentElement.style.setProperty('--font-body-color', fBodyColor);
+
           const dynamicProductData = {
             url: `/${id}`,
             name: configData.proyectos?.nombre || `Manual ${id}`,
@@ -65,6 +97,16 @@ const AssemblyPage = () => {
             garantiaDoc: configData.garantia_texto,
             ensamblesList: configData.imagenes_ensambles || [],
             fotosHerrajesList: configData.fotos_herrajes || [],
+
+            // Texturas PBR del Escenario y Piso
+            pbrFloorDiff: configData.pbr_floor_diff ? getStorageUrl(configData.pbr_floor_diff) : "",
+            pbrFloorNormal: configData.pbr_floor_normal ? getStorageUrl(configData.pbr_floor_normal) : "",
+            pbrFloorRoughness: configData.pbr_floor_roughness ? getStorageUrl(configData.pbr_floor_roughness) : "",
+            pbrFloorHeight: configData.pbr_floor_height ? getStorageUrl(configData.pbr_floor_height) : "",
+            pbrWallDiff: configData.pbr_wall_diff ? getStorageUrl(configData.pbr_wall_diff) : "",
+            pbrWallNormal: configData.pbr_wall_normal ? getStorageUrl(configData.pbr_wall_normal) : "",
+            pbrWallRoughness: configData.pbr_wall_roughness ? getStorageUrl(configData.pbr_wall_roughness) : "",
+            pbrWallHeight: configData.pbr_wall_height ? getStorageUrl(configData.pbr_wall_height) : "",
 
             // Alturas y posiciones por defecto
             alturas: (configData.glb_pasos || []).map(g => ({

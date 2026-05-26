@@ -49,6 +49,37 @@ export function DetalleProyectoModal({ isOpen, onClose, proyecto, onUpdate }: De
   const [colorTextoBotones, setColorTextoBotones] = useState("#ffffff")
   const [logoUrl, setLogoUrl] = useState("")
   const [faviconUrl, setFaviconUrl] = useState("")
+  
+  // Opciones de personalización de Tipografía avanzadas
+  const [fontTitle, setFontTitle] = useState("Inter")
+  const [fontTitleSize, setFontTitleSize] = useState("1.5rem")
+  const [fontTitleColor, setFontTitleColor] = useState("#FFFFFF")
+  
+  const [fontBody, setFontBody] = useState("Inter")
+  const [fontBodySize, setFontBodySize] = useState("0.9rem")
+  const [fontBodyColor, setFontBodyColor] = useState("#BEC8CE")
+
+  // Estados para texturas PBR (Piso y Paredes/Escenario)
+  const [pbrFloorDiff, setPbrFloorDiff] = useState("")
+  const [pbrFloorNormal, setPbrFloorNormal] = useState("")
+  const [pbrFloorRoughness, setPbrFloorRoughness] = useState("")
+  const [pbrFloorHeight, setPbrFloorHeight] = useState("")
+  const [pbrWallDiff, setPbrWallDiff] = useState("")
+  const [pbrWallNormal, setPbrWallNormal] = useState("")
+  const [pbrWallRoughness, setPbrWallRoughness] = useState("")
+  const [pbrWallHeight, setPbrWallHeight] = useState("")
+
+  // Insumos State
+  const [glbSteps, setGlbSteps] = useState<{ step: string; fileName: string; progress: number }[]>([])
+  const [audioEsSteps, setAudioEsSteps] = useState<{ step: string; fileName: string }[]>([])
+  const [audioEnSteps, setAudioEnSteps] = useState<{ step: string; fileName: string }[]>([])
+  
+  const [audioAyuda, setAudioAyuda] = useState<string>("")
+  const [imgHerramientas, setImgHerramientas] = useState<string>("")
+  const [ensambles, setEnsambles] = useState<string[]>([])
+  const [garantiaDoc, setGarantiaDoc] = useState<string>("")
+  const [herrajesFotos, setHerrajesFotos] = useState<string[]>([])
+  const [renders, setRenders] = useState<string[]>([])
 
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [uploadTarget, setUploadTarget] = useState<{ type: string; step?: string } | null>(null)
@@ -77,6 +108,25 @@ export function DetalleProyectoModal({ isOpen, onClose, proyecto, onUpdate }: De
               setColorTextoBotones(data.color_texto_botones || "#ffffff")
               setLogoUrl(data.logo_url || "")
               setFaviconUrl(data.favicon_url || "")
+              
+              // Cargar valores tipográficos (o dejar fallbacks)
+              setFontTitle(data.font_title || "Inter")
+              setFontTitleSize(data.font_title_size || "1.5rem")
+              setFontTitleColor(data.font_title_color || "#FFFFFF")
+              setFontBody(data.font_body || "Inter")
+              setFontBodySize(data.font_body_size || "0.9rem")
+              setFontBodyColor(data.font_body_color || "#BEC8CE")
+
+              // Cargar texturas PBR
+              setPbrFloorDiff(data.pbr_floor_diff || "")
+              setPbrFloorNormal(data.pbr_floor_normal || "")
+              setPbrFloorRoughness(data.pbr_floor_roughness || "")
+              setPbrFloorHeight(data.pbr_floor_height || "")
+              setPbrWallDiff(data.pbr_wall_diff || "")
+              setPbrWallNormal(data.pbr_wall_normal || "")
+              setPbrWallRoughness(data.pbr_wall_roughness || "")
+              setPbrWallHeight(data.pbr_wall_height || "")
+
               setGlbSteps((data.glb_pasos as any) || [])
               setAudioEsSteps((data.audio_es_pasos as any) || [])
               setAudioEnSteps((data.audio_en_pasos as any) || [])
@@ -92,17 +142,7 @@ export function DetalleProyectoModal({ isOpen, onClose, proyecto, onUpdate }: De
     }
   }, [proyecto])
 
-  // Insumos State
-  const [glbSteps, setGlbSteps] = useState<{ step: string; fileName: string; progress: number }[]>([])
-  const [audioEsSteps, setAudioEsSteps] = useState<{ step: string; fileName: string }[]>([])
-  const [audioEnSteps, setAudioEnSteps] = useState<{ step: string; fileName: string }[]>([])
-  
-  const [audioAyuda, setAudioAyuda] = useState<string>("")
-  const [imgHerramientas, setImgHerramientas] = useState<string>("")
-  const [ensambles, setEnsambles] = useState<string[]>([])
-  const [garantiaDoc, setGarantiaDoc] = useState<string>("")
-  const [herrajesFotos, setHerrajesFotos] = useState<string[]>([])
-  const [renders, setRenders] = useState<string[]>([])
+
 
   // Accordion toggle states
   const [openSection, setOpenSection] = useState<string | null>("glb")
@@ -219,6 +259,30 @@ export function DetalleProyectoModal({ isOpen, onClose, proyecto, onUpdate }: De
       } else if (type === 'favicon') {
         path = `${codigoManual}/favicon.${fileExt}`
         updatedStateCallback = () => setFaviconUrl(`favicon.${fileExt}`)
+      } else if (type === 'pbr_floor_diff') {
+        path = `${codigoManual}/textures/floor_diff.${fileExt}`
+        updatedStateCallback = () => setPbrFloorDiff(`textures/floor_diff.${fileExt}`)
+      } else if (type === 'pbr_floor_normal') {
+        path = `${codigoManual}/textures/floor_normal.${fileExt}`
+        updatedStateCallback = () => setPbrFloorNormal(`textures/floor_normal.${fileExt}`)
+      } else if (type === 'pbr_floor_roughness') {
+        path = `${codigoManual}/textures/floor_roughness.${fileExt}`
+        updatedStateCallback = () => setPbrFloorRoughness(`textures/floor_roughness.${fileExt}`)
+      } else if (type === 'pbr_floor_height') {
+        path = `${codigoManual}/textures/floor_height.${fileExt}`
+        updatedStateCallback = () => setPbrFloorHeight(`textures/floor_height.${fileExt}`)
+      } else if (type === 'pbr_wall_diff') {
+        path = `${codigoManual}/textures/wall_diff.${fileExt}`
+        updatedStateCallback = () => setPbrWallDiff(`textures/wall_diff.${fileExt}`)
+      } else if (type === 'pbr_wall_normal') {
+        path = `${codigoManual}/textures/wall_normal.${fileExt}`
+        updatedStateCallback = () => setPbrWallNormal(`textures/wall_normal.${fileExt}`)
+      } else if (type === 'pbr_wall_roughness') {
+        path = `${codigoManual}/textures/wall_roughness.${fileExt}`
+        updatedStateCallback = () => setPbrWallRoughness(`textures/wall_roughness.${fileExt}`)
+      } else if (type === 'pbr_wall_height') {
+        path = `${codigoManual}/textures/wall_height.${fileExt}`
+        updatedStateCallback = () => setPbrWallHeight(`textures/wall_height.${fileExt}`)
       }
 
       const { error: uploadError } = await supabase.storage
@@ -273,6 +337,38 @@ export function DetalleProyectoModal({ isOpen, onClose, proyecto, onUpdate }: De
         const fileName = renders[stepOrIndex]
         path = `${codigoManual}/renders/${fileName}`
         updatedStateCallback = () => setRenders(prev => prev.filter((_, idx) => idx !== stepOrIndex))
+      } else if (type === 'pbr_floor_diff') {
+        const ext = pbrFloorDiff.split('.').pop() || "png"
+        path = `${codigoManual}/textures/floor_diff.${ext}`
+        updatedStateCallback = () => setPbrFloorDiff("")
+      } else if (type === 'pbr_floor_normal') {
+        const ext = pbrFloorNormal.split('.').pop() || "png"
+        path = `${codigoManual}/textures/floor_normal.${ext}`
+        updatedStateCallback = () => setPbrFloorNormal("")
+      } else if (type === 'pbr_floor_roughness') {
+        const ext = pbrFloorRoughness.split('.').pop() || "png"
+        path = `${codigoManual}/textures/floor_roughness.${ext}`
+        updatedStateCallback = () => setPbrFloorRoughness("")
+      } else if (type === 'pbr_floor_height') {
+        const ext = pbrFloorHeight.split('.').pop() || "png"
+        path = `${codigoManual}/textures/floor_height.${ext}`
+        updatedStateCallback = () => setPbrFloorHeight("")
+      } else if (type === 'pbr_wall_diff') {
+        const ext = pbrWallDiff.split('.').pop() || "png"
+        path = `${codigoManual}/textures/wall_diff.${ext}`
+        updatedStateCallback = () => setPbrWallDiff("")
+      } else if (type === 'pbr_wall_normal') {
+        const ext = pbrWallNormal.split('.').pop() || "png"
+        path = `${codigoManual}/textures/wall_normal.${ext}`
+        updatedStateCallback = () => setPbrWallNormal("")
+      } else if (type === 'pbr_wall_roughness') {
+        const ext = pbrWallRoughness.split('.').pop() || "png"
+        path = `${codigoManual}/textures/wall_roughness.${ext}`
+        updatedStateCallback = () => setPbrWallRoughness("")
+      } else if (type === 'pbr_wall_height') {
+        const ext = pbrWallHeight.split('.').pop() || "png"
+        path = `${codigoManual}/textures/wall_height.${ext}`
+        updatedStateCallback = () => setPbrWallHeight("")
       }
 
       if (path) {
@@ -325,6 +421,25 @@ export function DetalleProyectoModal({ isOpen, onClose, proyecto, onUpdate }: De
           color_texto_botones: colorTextoBotones,
           logo_url: logoUrl,
           favicon_url: faviconUrl,
+          
+          // Guardar campos de tipografía en BD
+          font_title: fontTitle,
+          font_title_size: fontTitleSize,
+          font_title_color: fontTitleColor,
+          font_body: fontBody,
+          font_body_size: fontBodySize,
+          font_body_color: fontBodyColor,
+
+          // Guardar campos de texturas PBR
+          pbr_floor_diff: pbrFloorDiff,
+          pbr_floor_normal: pbrFloorNormal,
+          pbr_floor_roughness: pbrFloorRoughness,
+          pbr_floor_height: pbrFloorHeight,
+          pbr_wall_diff: pbrWallDiff,
+          pbr_wall_normal: pbrWallNormal,
+          pbr_wall_roughness: pbrWallRoughness,
+          pbr_wall_height: pbrWallHeight,
+
           glb_pasos: glbSteps,
           audio_es_pasos: audioEsSteps,
           audio_en_pasos: audioEnSteps,
@@ -638,6 +753,121 @@ export function DetalleProyectoModal({ isOpen, onClose, proyecto, onUpdate }: De
                       </label>
                     </div>
 
+                    {/* Tipografías y Textos Personalizados */}
+                    <div className="border-t border-outline-variant/10 pt-4 space-y-4">
+                      <div className="text-xs font-bold text-on-surface-variant/80 uppercase tracking-wider">
+                        ✒️ Tipografías y Tamaños de Fuente
+                      </div>
+                      
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 bg-surface-container-low/40 p-4 rounded-xl border border-outline-variant/5">
+                        {/* Configuración de Títulos */}
+                        <div className="space-y-3">
+                          <div className="text-[11px] font-bold text-primary uppercase tracking-wider border-b border-outline-variant/5 pb-1">Títulos del Manual</div>
+                          
+                          <div className="grid grid-cols-2 gap-2">
+                            <label className="flex flex-col gap-1">
+                              <span className="text-[10px] font-semibold text-on-surface-variant">Fuente</span>
+                              <select
+                                value={fontTitle}
+                                onChange={e => setFontTitle(e.target.value)}
+                                className="rounded-lg border border-outline-variant bg-surface-container px-2 py-1.5 text-xs text-on-surface outline-none focus:border-primary"
+                              >
+                                <option value="Inter">Inter (Sans)</option>
+                                <option value="Play">Play (Moderna)</option>
+                                <option value="Outfit">Outfit (Geométrica)</option>
+                                <option value="Montserrat">Montserrat</option>
+                                <option value="Roboto">Roboto</option>
+                                <option value="Ubuntu">Ubuntu</option>
+                                <option value="Poppins">Poppins</option>
+                              </select>
+                            </label>
+
+                            <label className="flex flex-col gap-1">
+                              <span className="text-[10px] font-semibold text-on-surface-variant">Tamaño (CSS)</span>
+                              <input
+                                type="text"
+                                value={fontTitleSize}
+                                onChange={e => setFontTitleSize(e.target.value)}
+                                placeholder="Ej: 1.5rem o 24px"
+                                className="rounded-lg border border-outline-variant bg-surface-container px-3 py-1.5 text-xs text-on-surface outline-none focus:border-primary"
+                              />
+                            </label>
+                          </div>
+
+                          <label className="flex flex-col gap-1">
+                            <span className="text-[10px] font-semibold text-on-surface-variant">Color de los Títulos</span>
+                            <div className="flex gap-2">
+                              <input
+                                type="color"
+                                value={fontTitleColor}
+                                onChange={e => setFontTitleColor(e.target.value)}
+                                className="h-8 w-10 rounded-lg border border-outline-variant bg-transparent cursor-pointer"
+                              />
+                              <input
+                                type="text"
+                                value={fontTitleColor}
+                                onChange={e => setFontTitleColor(e.target.value)}
+                                className="flex-1 rounded-lg border border-outline-variant bg-surface-container px-3 py-1.5 text-xs text-on-surface outline-none focus:border-primary"
+                              />
+                            </div>
+                          </label>
+                        </div>
+
+                        {/* Configuración de Textos Generales */}
+                        <div className="space-y-3">
+                          <div className="text-[11px] font-bold text-teal-400 uppercase tracking-wider border-b border-outline-variant/5 pb-1">Texto General / Descripciones</div>
+                          
+                          <div className="grid grid-cols-2 gap-2">
+                            <label className="flex flex-col gap-1">
+                              <span className="text-[10px] font-semibold text-on-surface-variant">Fuente</span>
+                              <select
+                                value={fontBody}
+                                onChange={e => setFontBody(e.target.value)}
+                                className="rounded-lg border border-outline-variant bg-surface-container px-2 py-1.5 text-xs text-on-surface outline-none focus:border-primary"
+                              >
+                                <option value="Inter">Inter (Sans)</option>
+                                <option value="Play">Play (Moderna)</option>
+                                <option value="Outfit">Outfit (Geométrica)</option>
+                                <option value="Montserrat">Montserrat</option>
+                                <option value="Roboto">Roboto</option>
+                                <option value="Ubuntu">Ubuntu</option>
+                                <option value="Poppins">Poppins</option>
+                              </select>
+                            </label>
+
+                            <label className="flex flex-col gap-1">
+                              <span className="text-[10px] font-semibold text-on-surface-variant">Tamaño (CSS)</span>
+                              <input
+                                type="text"
+                                value={fontBodySize}
+                                onChange={e => setFontBodySize(e.target.value)}
+                                placeholder="Ej: 0.9rem o 14px"
+                                className="rounded-lg border border-outline-variant bg-surface-container px-3 py-1.5 text-xs text-on-surface outline-none focus:border-primary"
+                              />
+                            </label>
+                          </div>
+
+                          <label className="flex flex-col gap-1">
+                            <span className="text-[10px] font-semibold text-on-surface-variant">Color de Texto General</span>
+                            <div className="flex gap-2">
+                              <input
+                                type="color"
+                                value={fontBodyColor}
+                                onChange={e => setFontBodyColor(e.target.value)}
+                                className="h-8 w-10 rounded-lg border border-outline-variant bg-transparent cursor-pointer"
+                              />
+                              <input
+                                type="text"
+                                value={fontBodyColor}
+                                onChange={e => setFontBodyColor(e.target.value)}
+                                className="flex-1 rounded-lg border border-outline-variant bg-surface-container px-3 py-1.5 text-xs text-on-surface outline-none focus:border-primary"
+                              />
+                            </div>
+                          </label>
+                        </div>
+                      </div>
+                    </div>
+
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       {/* Logo URL / Upload */}
                       <label className="flex flex-col gap-1.5">
@@ -680,6 +910,266 @@ export function DetalleProyectoModal({ isOpen, onClose, proyecto, onUpdate }: De
                           </button>
                         </div>
                       </label>
+                    </div>
+
+                    {/* Sección de Texturas PBR del Escenario */}
+                    <div className="border-t border-outline-variant/10 pt-4 space-y-4">
+                      <div className="text-xs font-bold text-on-surface-variant/80 uppercase tracking-wider flex items-center gap-1.5">
+                        <Box className="h-4 w-4 text-primary" />
+                        🧱 Texturas del Escenario (PBR)
+                      </div>
+                      
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 bg-surface-container-low/40 p-4 rounded-xl border border-outline-variant/5">
+                        {/* Texturas del Piso */}
+                        <div className="space-y-3">
+                          <div className="text-[11px] font-bold text-primary uppercase tracking-wider border-b border-outline-variant/5 pb-1">Texturas del Piso (PBR)</div>
+                          
+                          {/* Piso: Difusión */}
+                          <div className="flex flex-col gap-1">
+                            <span className="text-[10px] font-semibold text-on-surface-variant">Mapa de Difusión / Color</span>
+                            <div className="flex gap-2">
+                              <input
+                                type="text"
+                                value={pbrFloorDiff}
+                                readOnly
+                                placeholder="Piso por defecto"
+                                className="flex-1 rounded-lg border border-outline-variant bg-surface-container px-3 py-1.5 text-[11px] text-on-surface outline-none truncate"
+                              />
+                              <button
+                                type="button"
+                                onClick={() => triggerUpload("pbr_floor_diff")}
+                                className="rounded-lg bg-primary/10 border border-primary/20 px-2.5 py-1.5 text-[10px] font-semibold text-primary transition hover:bg-primary/20 shrink-0"
+                              >
+                                Cargar
+                              </button>
+                              {pbrFloorDiff && (
+                                <button
+                                  type="button"
+                                  onClick={() => handleRealDelete("pbr_floor_diff", null)}
+                                  className="text-on-surface-variant hover:text-red-400 p-1.5 shrink-0"
+                                >
+                                  <Trash2 className="h-3.5 w-3.5" />
+                                </button>
+                              )}
+                            </div>
+                          </div>
+
+                          {/* Piso: Normal */}
+                          <div className="flex flex-col gap-1">
+                            <span className="text-[10px] font-semibold text-on-surface-variant">Mapa de Normales (Normal Map)</span>
+                            <div className="flex gap-2">
+                              <input
+                                type="text"
+                                value={pbrFloorNormal}
+                                readOnly
+                                placeholder="Normal por defecto"
+                                className="flex-1 rounded-lg border border-outline-variant bg-surface-container px-3 py-1.5 text-[11px] text-on-surface outline-none truncate"
+                              />
+                              <button
+                                type="button"
+                                onClick={() => triggerUpload("pbr_floor_normal")}
+                                className="rounded-lg bg-primary/10 border border-primary/20 px-2.5 py-1.5 text-[10px] font-semibold text-primary transition hover:bg-primary/20 shrink-0"
+                              >
+                                Cargar
+                              </button>
+                              {pbrFloorNormal && (
+                                <button
+                                  type="button"
+                                  onClick={() => handleRealDelete("pbr_floor_normal", null)}
+                                  className="text-on-surface-variant hover:text-red-400 p-1.5 shrink-0"
+                                >
+                                  <Trash2 className="h-3.5 w-3.5" />
+                                </button>
+                              )}
+                            </div>
+                          </div>
+
+                          {/* Piso: Roughness */}
+                          <div className="flex flex-col gap-1">
+                            <span className="text-[10px] font-semibold text-on-surface-variant">Mapa de Rugosidad (Roughness Map)</span>
+                            <div className="flex gap-2">
+                              <input
+                                type="text"
+                                value={pbrFloorRoughness}
+                                readOnly
+                                placeholder="Rugosidad por defecto"
+                                className="flex-1 rounded-lg border border-outline-variant bg-surface-container px-3 py-1.5 text-[11px] text-on-surface outline-none truncate"
+                              />
+                              <button
+                                type="button"
+                                onClick={() => triggerUpload("pbr_floor_roughness")}
+                                className="rounded-lg bg-primary/10 border border-primary/20 px-2.5 py-1.5 text-[10px] font-semibold text-primary transition hover:bg-primary/20 shrink-0"
+                              >
+                                Cargar
+                              </button>
+                              {pbrFloorRoughness && (
+                                <button
+                                  type="button"
+                                  onClick={() => handleRealDelete("pbr_floor_roughness", null)}
+                                  className="text-on-surface-variant hover:text-red-400 p-1.5 shrink-0"
+                                >
+                                  <Trash2 className="h-3.5 w-3.5" />
+                                </button>
+                              )}
+                            </div>
+                          </div>
+
+                          {/* Piso: Height */}
+                          <div className="flex flex-col gap-1">
+                            <span className="text-[10px] font-semibold text-on-surface-variant">Mapa de Altura / Relieve (Height Map)</span>
+                            <div className="flex gap-2">
+                              <input
+                                type="text"
+                                value={pbrFloorHeight}
+                                readOnly
+                                placeholder="Altura por defecto"
+                                className="flex-1 rounded-lg border border-outline-variant bg-surface-container px-3 py-1.5 text-[11px] text-on-surface outline-none truncate"
+                              />
+                              <button
+                                type="button"
+                                onClick={() => triggerUpload("pbr_floor_height")}
+                                className="rounded-lg bg-primary/10 border border-primary/20 px-2.5 py-1.5 text-[10px] font-semibold text-primary transition hover:bg-primary/20 shrink-0"
+                              >
+                                Cargar
+                              </button>
+                              {pbrFloorHeight && (
+                                <button
+                                  type="button"
+                                  onClick={() => handleRealDelete("pbr_floor_height", null)}
+                                  className="text-on-surface-variant hover:text-red-400 p-1.5 shrink-0"
+                                >
+                                  <Trash2 className="h-3.5 w-3.5" />
+                                </button>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Texturas de la Pared */}
+                        <div className="space-y-3">
+                          <div className="text-[11px] font-bold text-teal-400 uppercase tracking-wider border-b border-outline-variant/5 pb-1">Texturas de las Paredes (PBR)</div>
+                          
+                          {/* Pared: Difusión */}
+                          <div className="flex flex-col gap-1">
+                            <span className="text-[10px] font-semibold text-on-surface-variant">Mapa de Difusión / Color</span>
+                            <div className="flex gap-2">
+                              <input
+                                type="text"
+                                value={pbrWallDiff}
+                                readOnly
+                                placeholder="Paredes por defecto"
+                                className="flex-1 rounded-lg border border-outline-variant bg-surface-container px-3 py-1.5 text-[11px] text-on-surface outline-none truncate"
+                              />
+                              <button
+                                type="button"
+                                onClick={() => triggerUpload("pbr_wall_diff")}
+                                className="rounded-lg bg-primary/10 border border-primary/20 px-2.5 py-1.5 text-[10px] font-semibold text-primary transition hover:bg-primary/20 shrink-0"
+                              >
+                                Cargar
+                              </button>
+                              {pbrWallDiff && (
+                                <button
+                                  type="button"
+                                  onClick={() => handleRealDelete("pbr_wall_diff", null)}
+                                  className="text-on-surface-variant hover:text-red-400 p-1.5 shrink-0"
+                                >
+                                  <Trash2 className="h-3.5 w-3.5" />
+                                </button>
+                              )}
+                            </div>
+                          </div>
+
+                          {/* Pared: Normal */}
+                          <div className="flex flex-col gap-1">
+                            <span className="text-[10px] font-semibold text-on-surface-variant">Mapa de Normales (Normal Map)</span>
+                            <div className="flex gap-2">
+                              <input
+                                type="text"
+                                value={pbrWallNormal}
+                                readOnly
+                                placeholder="Normal por defecto"
+                                className="flex-1 rounded-lg border border-outline-variant bg-surface-container px-3 py-1.5 text-[11px] text-on-surface outline-none truncate"
+                              />
+                              <button
+                                type="button"
+                                onClick={() => triggerUpload("pbr_wall_normal")}
+                                className="rounded-lg bg-primary/10 border border-primary/20 px-2.5 py-1.5 text-[10px] font-semibold text-primary transition hover:bg-primary/20 shrink-0"
+                              >
+                                Cargar
+                              </button>
+                              {pbrWallNormal && (
+                                <button
+                                  type="button"
+                                  onClick={() => handleRealDelete("pbr_wall_normal", null)}
+                                  className="text-on-surface-variant hover:text-red-400 p-1.5 shrink-0"
+                                >
+                                  <Trash2 className="h-3.5 w-3.5" />
+                                </button>
+                              )}
+                            </div>
+                          </div>
+
+                          {/* Pared: Roughness */}
+                          <div className="flex flex-col gap-1">
+                            <span className="text-[10px] font-semibold text-on-surface-variant">Mapa de Rugosidad (Roughness Map)</span>
+                            <div className="flex gap-2">
+                              <input
+                                type="text"
+                                value={pbrWallRoughness}
+                                readOnly
+                                placeholder="Rugosidad por defecto"
+                                className="flex-1 rounded-lg border border-outline-variant bg-surface-container px-3 py-1.5 text-[11px] text-on-surface outline-none truncate"
+                              />
+                              <button
+                                type="button"
+                                onClick={() => triggerUpload("pbr_wall_roughness")}
+                                className="rounded-lg bg-primary/10 border border-primary/20 px-2.5 py-1.5 text-[10px] font-semibold text-primary transition hover:bg-primary/20 shrink-0"
+                              >
+                                Cargar
+                              </button>
+                              {pbrWallRoughness && (
+                                <button
+                                  type="button"
+                                  onClick={() => handleRealDelete("pbr_wall_roughness", null)}
+                                  className="text-on-surface-variant hover:text-red-400 p-1.5 shrink-0"
+                                >
+                                  <Trash2 className="h-3.5 w-3.5" />
+                                </button>
+                              )}
+                            </div>
+                          </div>
+
+                          {/* Pared: Height */}
+                          <div className="flex flex-col gap-1">
+                            <span className="text-[10px] font-semibold text-on-surface-variant">Mapa de Altura / Relieve (Height Map)</span>
+                            <div className="flex gap-2">
+                              <input
+                                type="text"
+                                value={pbrWallHeight}
+                                readOnly
+                                placeholder="Altura por defecto"
+                                className="flex-1 rounded-lg border border-outline-variant bg-surface-container px-3 py-1.5 text-[11px] text-on-surface outline-none truncate"
+                              />
+                              <button
+                                type="button"
+                                onClick={() => triggerUpload("pbr_wall_height")}
+                                className="rounded-lg bg-primary/10 border border-primary/20 px-2.5 py-1.5 text-[10px] font-semibold text-primary transition hover:bg-primary/20 shrink-0"
+                              >
+                                Cargar
+                              </button>
+                              {pbrWallHeight && (
+                                <button
+                                  type="button"
+                                  onClick={() => handleRealDelete("pbr_wall_height", null)}
+                                  className="text-on-surface-variant hover:text-red-400 p-1.5 shrink-0"
+                                >
+                                  <Trash2 className="h-3.5 w-3.5" />
+                                </button>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
                     </div>
                   </div>
 

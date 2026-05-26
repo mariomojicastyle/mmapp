@@ -19,6 +19,13 @@
   --text-white: #FFFFFF;
   --btn-text-color: #FFFFFF;
   --font-sans: 'Inter', sans-serif;
+
+  /* Custom advanced typography settings */
+  --font-title: 'Inter', sans-serif;
+  --font-title-size: 1.5rem;
+  --font-title-color: #FFFFFF;
+  --font-body-size: 0.9rem;
+  --font-body-color: #BEC8CE;
   
   /* Glassmorphic values */
   --glass-blur: blur(12px);
@@ -36,7 +43,8 @@ html, body {
   width: 100%;
   background-color: var(--bg-primary);
   font-family: var(--font-sans);
-  color: var(--text-primary);
+  font-size: var(--font-body-size);
+  color: var(--font-body-color);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
@@ -53,6 +61,16 @@ html, body {
 ::-webkit-scrollbar {
   width: 6px;
   height: 6px;
+}
+
+/* Excepción Indestructible para Textos de Archivos SVG */
+svg text, 
+svg tspan,
+.imagen svg text,
+.imagen svg tspan,
+div[style*=".svg"] text,
+div[style*=".svg"] tspan {
+  font-family: var(--font-sans) !important;
 }
 
 ::-webkit-scrollbar-track {
@@ -78,7 +96,7 @@ html, body {
   -webkit-backdrop-filter: var(--glass-blur);
   border: 1px solid var(--primary);
   box-shadow: 0 4px 20px var(--primary-glow), var(--glass-shadow);
-  color: var(--text-primary);
+  color: var(--btn-text-color);
   padding: 8px 16px;
   border-radius: 8px;
   font-family: var(--font-sans);

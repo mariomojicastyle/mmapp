@@ -24,10 +24,10 @@
 
 /* Título de cantidades idéntico al panel de herrajes */
 .panel3 .menu-title {
-  color: var(--btn-text-color, #ffffff);
-  font-family: var(--font-sans, "Inter", sans-serif);
+  color: var(--font-title-color, var(--btn-text-color, #ffffff));
+  font-family: var(--font-title, var(--font-sans, "Inter", sans-serif));
   font-weight: 700;
-  font-size: 1.65rem;
+  font-size: var(--font-title-size, 1.65rem);
   letter-spacing: 0.05em;
   text-transform: uppercase;
   margin: 40px auto 10px auto;

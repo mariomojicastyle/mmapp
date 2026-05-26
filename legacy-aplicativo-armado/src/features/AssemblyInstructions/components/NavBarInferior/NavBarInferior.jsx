@@ -42,6 +42,8 @@ export default function NavBarInferior({ id, data }) {
   const ayuda4 = useEnviroment((state) => state.ayuda4);
   const ayuda5 = useEnviroment((state) => state.ayuda5);
 
+  const DesactivarParpadeo = useEnviroment((state) => state.DesactivarParpadeo);
+
   const [rippleActive, setRippleActive] = useState(false);
 
   var pasostotal = pasos.length;
@@ -52,10 +54,13 @@ export default function NavBarInferior({ id, data }) {
       setRippleActive(true);
       const rippleTimer = setTimeout(() => {
         setRippleActive(false);
+        DesactivarParpadeo(); // Desactivar después de que el efecto termine
       }, 3500); // 3.5 segundos cubre el viaje de 3s (10 ondas con delays hasta 1.8s + 1.2s de viaje) más el desvanecimiento final
-      return () => clearTimeout(rippleTimer);
+      return () => {
+        clearTimeout(rippleTimer);
+      };
     }
-  }, [Parpadeo]);
+  }, [Parpadeo, DesactivarParpadeo]);
 
   // Actualizar círculo de progreso cuando cambia el paso
   useEffect(() => {
@@ -78,6 +83,7 @@ export default function NavBarInferior({ id, data }) {
     var idx = pasos.indexOf(PasoActual);
     var newPaso = idx === 0 ? pasos[pasos.length - 1] : pasos[idx - 1];
     
+    DesactivarParpadeo(); // Apagar parpadeo y ondas al cambiar de paso manualmente
     CambiarModelo(newPaso);
     NegativeShow();
 
@@ -93,6 +99,7 @@ export default function NavBarInferior({ id, data }) {
     var idx = pasos.indexOf(PasoActual);
     var newPaso = idx === pasos.length - 1 ? pasos[0] : pasos[idx + 1];
 
+    DesactivarParpadeo(); // Apagar parpadeo y ondas al cambiar de paso manualmente
     CambiarModelo(newPaso);
     NegativeShow();
 

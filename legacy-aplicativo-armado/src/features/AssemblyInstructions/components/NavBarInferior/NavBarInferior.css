@@ -63,9 +63,9 @@
   justify-content: center;
   align-items: center;
   font-family: var(--font-sans);
-  font-size: 1.15rem;
+  font-size: var(--font-body-size, 1.15rem);
   font-weight: 600;
-  color: var(--text-white);
+  color: var(--font-body-color, var(--text-white));
   letter-spacing: 0.02em;
   text-transform: uppercase;
 }

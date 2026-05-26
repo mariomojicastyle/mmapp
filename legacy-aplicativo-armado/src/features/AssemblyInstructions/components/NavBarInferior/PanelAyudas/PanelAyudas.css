@@ -24,15 +24,16 @@
 /* Burbuja base */
 .ayuda-bubble {
   position: absolute;
-  background: rgba(10, 20, 24, 0.94); /* Obsidian base surface */
+  background: color-mix(in srgb, var(--primary) 20%, transparent); /* 80% de transparencia (20% de opacidad) del color principal, idéntico al botón de INICIO */
   backdrop-filter: var(--glass-blur, blur(12px));
   -webkit-backdrop-filter: var(--glass-blur, blur(12px));
   border: 1px solid var(--primary, #00f2fe);
   box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5), 0 0 20px rgba(0, 242, 254, 0.15);
   border-radius: 12px;
   padding: 14px 18px;
-  color: var(--text-primary, #ffffff);
+  color: var(--font-body-color, var(--text-primary, #ffffff));
   font-family: var(--font-sans, "Play-Regular", sans-serif);
+  font-size: var(--font-body-size, 0.9rem);
   z-index: 9999;
   pointer-events: auto;
   min-width: 260px;
@@ -55,9 +56,10 @@
 }
 
 .ayuda-bubble-title {
-  color: var(--primary, #00f2fe);
+  color: var(--font-title-color, var(--primary, #00f2fe));
+  font-family: var(--font-title, var(--font-sans, "Play-Regular", sans-serif));
   font-weight: 700;
-  font-size: 0.95rem;
+  font-size: var(--font-title-size, 0.95rem);
   margin-bottom: 6px;
   letter-spacing: 0.04em;
   text-transform: uppercase;
@@ -69,8 +71,8 @@
 }
 
 .ayuda-bubble-text {
-  color: var(--text-secondary, #b3c5cc);
-  font-size: 0.85rem;
+  color: var(--font-body-color, var(--text-secondary, #b3c5cc));
+  font-size: var(--font-body-size, 0.85rem);
   line-height: 1.45;
   font-weight: 500;
   text-align: center;
@@ -86,8 +88,8 @@
 }
 
 .ayuda-bubble-item {
-  color: var(--text-secondary, #b3c5cc);
-  font-size: 0.82rem;
+  color: var(--font-body-color, var(--text-secondary, #b3c5cc));
+  font-size: var(--font-body-size, 0.82rem);
   font-weight: 500;
   display: flex;
   align-items: center;
@@ -111,7 +113,7 @@
   position: absolute;
   width: 10px;
   height: 10px;
-  background: var(--primary, #00f2fe);
+  background: var(--primary, #00f2fe); /* Color intenso sin transparencia para máximo destaque */
   border-left: 1px solid var(--primary, #00f2fe);
   border-top: 1px solid var(--primary, #00f2fe);
   z-index: -1;
@@ -169,7 +171,7 @@
   position: absolute;
   width: 10px;
   height: 10px;
-  background: rgba(10, 20, 24, 0.94);
+  background: color-mix(in srgb, var(--primary) 20%, transparent); /* Color con 80% transparencia */
   border-left: 1px solid rgba(0, 242, 254, 0.35);
   border-top: 1px solid rgba(0, 242, 254, 0.35);
   bottom: -6px;

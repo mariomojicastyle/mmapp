@@ -104,7 +104,7 @@ export default function AssemblyViewer({ productData, steps, id }) {
           }}
           camera={{position: [0, 1, 2],  fov: 60}} 
         >
-          <Experience id={id} modelUrl={modelUrl} />
+          <Experience id={id} modelUrl={modelUrl} productData={productData} />
         </Canvas>
       </div>
 

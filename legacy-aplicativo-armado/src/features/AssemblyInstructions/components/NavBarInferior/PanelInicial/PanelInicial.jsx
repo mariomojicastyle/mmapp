@@ -50,7 +50,7 @@ export default function PanelInicial() {
   const fillerStyles = {
     height: '100%',
     width: `${progress}%`,
-    backgroundColor: "var(--primary-glow)",
+    backgroundColor: "color-mix(in srgb, var(--primary) 20%, transparent)",
     transition: 'width 1s ease-in-out',
     borderRadius: 'inherit',
     textAlign: 'right',

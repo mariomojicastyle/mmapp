@@ -1,5 +1,5 @@
 import { useThree, useLoader, useFrame } from "@react-three/fiber";
-import { OrbitControls, Html, useProgress, useGLTF, useHelper, Environment } from "@react-three/drei";
+import { OrbitControls, Html, useProgress, useGLTF, useHelper, Environment, useTexture } from "@react-three/drei";
 import { useRef, useEffect, Suspense, useState } from "react";
 import useEnviroment from "../hooks/useEnviroment.js";
 import * as THREE from 'three';
@@ -50,7 +50,7 @@ function getTexturesFromAtlasFile(atlasImgUrl, tilesNum) {
   return textures;
 }
 
-export default function Experience({ id, modelUrl }) {
+export default function Experience({ id, modelUrl, productData }) {
   const { scene, gl, camera } = useThree();
   const useOrbitControls = useRef();
   const [cameraTarget, setCameraTarget] = useState([0, 0.8, 0]);
@@ -92,6 +92,37 @@ export default function Experience({ id, modelUrl }) {
   // Cargar la imagen panorámica en formato stripe y dividirla en 6 partes
   const textures = getTexturesFromAtlasFile("/hdri2/salon_01.webp", 6);
 
+  // Cargar texturas de pared PBR si están configuradas
+  const hasWallTextures = !!(productData?.pbrWallDiff || productData?.pbrWallNormal || productData?.pbrWallRoughness || productData?.pbrWallHeight);
+
+  const wallTextureConfig = {
+    map: productData?.pbrWallDiff || "/textures/floor/floor-diff.webp",
+    normalMap: productData?.pbrWallNormal || "/textures/floor/floor-normal.webp",
+    roughnessMap: productData?.pbrWallRoughness || "/textures/floor/floor-roughness.webp",
+  };
+
+  if (productData?.pbrWallHeight) {
+    wallTextureConfig.bumpMap = productData.pbrWallHeight;
+  }
+
+  const wallTextureMaps = useTexture(wallTextureConfig);
+
+  // Configurar las texturas de pared si están presentes
+  useEffect(() => {
+    if (hasWallTextures && wallTextureMaps) {
+      Object.values(wallTextureMaps).forEach((texture) => {
+        if (texture) {
+          texture.wrapS = THREE.RepeatWrapping;
+          texture.wrapT = THREE.RepeatWrapping;
+          texture.repeat.set(4, 2); // Repetición agradable en las paredes del escenario
+        }
+      });
+      if (wallTextureMaps.map) {
+        wallTextureMaps.map.colorSpace = THREE.SRGBColorSpace;
+      }
+    }
+  }, [hasWallTextures, wallTextureMaps]);
+
   // Cargar el modelo GLB inicial (paso 00)
   const initialModelUrl = `/${id}/models/P00.glb`;
   const { scene: gltfScene } = useGLTF(initialModelUrl);
@@ -105,14 +136,71 @@ export default function Experience({ id, modelUrl }) {
   // Ref para persistir el skybox entre re-renders
   const skyBoxRef = useRef(null);
 
-  // Crear el skybox UNA VEZ
+  // Función unificada para alinear la altura del escenario con el suelo (floorY)
+  const repositionSkybox = (skyBoxMesh) => {
+    if (!skyBoxMesh) return;
+    if (alturas && alturas.length > 0) {
+      const altData = alturas.find(a => a.paso === PasoActual);
+      if (altData && altData.plane !== undefined) {
+        const floorY = altData.plane - 0.017; // Ajuste idéntico al del Floor para coincidencia exacta
+        const skyBoxY = floorY + 2.25 - 0.001; // Desplazamiento de 1mm hacia abajo para mitigar Z-fighting
+        skyBoxMesh.position.set(0, skyBoxY, 0);
+      } else {
+        skyBoxMesh.position.set(0, 1.626, 0); // Fallback alineado con la media de plane
+      }
+    } else {
+      skyBoxMesh.position.set(0, 1.626, 0);
+    }
+  };
+
+  // Crear el skybox / escenario PBR o básico
   useEffect(() => {
-    const materials = textures.map((texture) => {
-      texture.colorSpace = THREE.SRGBColorSpace;
-      return new THREE.MeshBasicMaterial({ map: texture });
-    });
+    let materials;
+    if (hasWallTextures) {
+      // Crear material PBR para las paredes del escenario
+      const wallMaterial = new THREE.MeshStandardMaterial({
+        map: wallTextureMaps.map,
+        normalMap: wallTextureMaps.normalMap,
+        roughnessMap: wallTextureMaps.roughnessMap,
+        bumpMap: wallTextureMaps.bumpMap || null,
+        bumpScale: 0.02,
+        roughness: 0.8,
+        metalness: 0.1,
+      });
+
+      // Material gris claro neutro para el techo del escenario
+      const ceilingMaterial = new THREE.MeshStandardMaterial({
+        color: new THREE.Color("#d0d0d0"),
+        roughness: 0.9,
+      });
+
+      // Material oscuro para la base (escondida bajo el piso)
+      const hiddenFloorMaterial = new THREE.MeshBasicMaterial({
+        color: new THREE.Color("#111111"),
+      });
+
+      // 6 caras: 0=Derecha, 1=Izquierda, 2=Techo, 3=Piso, 4=Frente, 5=Atrás
+      materials = [
+        wallMaterial,        // Derecha
+        wallMaterial,        // Izquierda
+        ceilingMaterial,     // Techo
+        hiddenFloorMaterial, // Piso
+        wallMaterial,        // Frente
+        wallMaterial,        // Atrás
+      ];
+    } else {
+      materials = textures.map((texture) => {
+        texture.colorSpace = THREE.SRGBColorSpace;
+        return new THREE.MeshBasicMaterial({ map: texture });
+      });
+    }
+
     const skyBox = new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1), materials);
     skyBox.geometry.scale(12, 4.5, -12); // Escala 4.5 de altura para apoyar la base en floorY y evitar el estiramiento vertical exagerado de la puerta
+    
+    // Posicionar inmediatamente en su creación
+    repositionSkybox(skyBox);
+
     skyBoxRef.current = skyBox;
     scene.add(skyBox);
 
@@ -122,27 +210,12 @@ export default function Experience({ id, modelUrl }) {
       materials.forEach(m => m.dispose());
       skyBoxRef.current = null;
     };
-  }, []);
+  }, [hasWallTextures, wallTextureMaps, textures, scene]);
 
   // Actualizar posición del skybox al cambiar de paso
-  // Alinea el plano visual de la proyección panorámica con el suelo físico de la escena (floorY).
-  // La foto original tiene la cámara a 1.5 unidades por encima del suelo. Al ampliar la escala
-  // del skybox de (8, 2.4, -8) a (12, 3.6, -12) en un factor de 1.5x, la distancia visual desde el
-  // centro hasta el suelo se escala de igual forma: 1.5 * 1.5 = 2.25 unidades.
-  // Restamos 1 milímetro (0.001 unidades) para evitar el Z-fighting (titileo de texturas coplanares) con el Floor.
   useEffect(() => {
-    if (!skyBoxRef.current) return;
-    if (alturas && alturas.length > 0) {
-      const altData = alturas.find(a => a.paso === PasoActual);
-      if (altData && altData.plane !== undefined) {
-        const floorY = altData.plane - 0.017; // Ajuste idéntico al del Floor para coincidencia exacta
-        const skyBoxY = floorY + 2.25 - 0.001; // Desplazamiento de 1mm hacia abajo para mitigar Z-fighting
-        skyBoxRef.current.position.set(0, skyBoxY, 0);
-      } else {
-        skyBoxRef.current.position.set(0, 1.626, 0); // Fallback alineado con la media de plane (-0.606 - 0.017 + 2.25 - 0.001)
-      }
-    }
-  }, [PasoActual, alturas]);
+    repositionSkybox(skyBoxRef.current);
+  }, [PasoActual, alturas, skyBoxRef.current]);
 
   return (
     <>
@@ -164,7 +237,7 @@ export default function Experience({ id, modelUrl }) {
 
       <Suspense fallback={<Loader />}>
         {toogle && <Model id={id} modelUrl={modelUrl} orbitControlsRef={useOrbitControls} />}
-        <Floor />
+        <Floor productData={productData} />
       </Suspense>
     </>
   );

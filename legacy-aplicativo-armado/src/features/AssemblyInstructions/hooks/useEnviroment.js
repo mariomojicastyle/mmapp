@@ -225,6 +225,7 @@ export default create(
       ActivarAyuda5: () => set((state) => ({ ayuda5: true })),
       ActivarAyuda6: () => set((state) => ({ ayuda6: true })),
       ActivarParpadeo: () => set((state) => ({ Parpadeo: true })),
+      DesactivarParpadeo: () => set((state) => ({ Parpadeo: false })),
       AyudasActivadas: () => set((state) => ({ ayuda1: true, ayuda3: true, ayuda4: true, ayuda5: true, ayuda6: true })),
       ResetAyudas: () => set((state) => ({
         ayuda1: false,
