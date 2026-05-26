@@ -6,11 +6,12 @@
 
 import React, { useState, useEffect, useRef } from "react"
 import { motion, AnimatePresence } from "framer-motion"
-import { X, Send, Paperclip, Download, User, Clock, Loader2, MessageSquare, CheckCircle, Calendar, RefreshCw } from "lucide-react"
+import { X, Send, Paperclip, Download, User, Clock, Loader2, MessageSquare, CheckCircle, Calendar, RefreshCw, Plus } from "lucide-react"
 import { createClient } from "@/lib/supabase/client"
 import { useAuth } from "@/lib/auth/auth-context"
 import { cn } from "@/lib/utils"
 import { notifyDateProposal } from "@/app/actions/solicitudes"
+import { usePermissions } from "@/hooks/use-permissions"
 
 interface Comentario {
   id: number
@@ -31,8 +32,50 @@ interface SolicitudDetalleProps {
   onStatusChange?: (estado_entrega: string, fecha_equipo?: string, estado_general?: string) => void
 }
 
+function AssigneeSelector({ currentAssigneeId, teamMembers = [], onAssign, disabled }: { currentAssigneeId?: string, teamMembers: any[], onAssign: (id: string, name: string) => void, disabled?: boolean }) {
+  const [isOpen, setIsOpen] = useState(false)
+  const assignee = teamMembers?.find(m => m.id === currentAssigneeId)
+
+  return (
+    <div className="relative">
+      <button disabled={disabled} onClick={() => !disabled && setIsOpen(!isOpen)} className={cn("flex items-center gap-2 rounded-full hover:ring-2 hover:ring-primary/50 transition-all focus:outline-none", disabled && "cursor-default hover:ring-0 opacity-100")}>
+        {assignee ? (
+          <div className={cn("flex h-6 w-6 items-center justify-center rounded-full text-[10px] font-bold", assignee.color)} title={assignee.name}>
+            {assignee.initials}
+          </div>
+        ) : (
+          <div className="flex h-6 w-6 items-center justify-center rounded-full border border-dashed border-outline-variant text-on-surface-variant text-[10px] hover:border-primary hover:text-primary transition-colors" title="Asignar">
+            <Plus className="h-3 w-3" />
+          </div>
+        )}
+      </button>
+      
+      <AnimatePresence>
+        {isOpen && (
+          <>
+            <div className="fixed inset-0 z-40" onClick={() => setIsOpen(false)} />
+            <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} className="absolute z-50 right-0 top-full mt-2 w-48 rounded-xl border border-outline-variant bg-surface-container-high p-2 shadow-xl">
+              <div className="mb-2 px-2 text-[10px] font-bold uppercase text-on-surface-variant">Asignar a</div>
+              <div className="flex flex-col gap-1 max-h-[200px] overflow-y-auto">
+                <button onClick={() => { onAssign("", ""); setIsOpen(false) }} className="flex items-center px-2 py-1.5 text-xs text-on-surface hover:bg-surface-container-highest rounded-md">Sin asignar</button>
+                {teamMembers.map(m => (
+                  <button key={m.id} onClick={() => { onAssign(m.id, m.name); setIsOpen(false) }} className="flex items-center gap-2 px-2 py-1.5 text-xs text-on-surface hover:bg-surface-container-highest rounded-md text-left">
+                    <div className={cn("flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[8px] font-bold", m.color)}>{m.initials}</div>
+                    <div className="flex flex-col"><span className="font-medium truncate">{m.name}</span><span className="text-[9px] text-on-surface-variant">{m.company || m.role}</span></div>
+                  </button>
+                ))}
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
+    </div>
+  )
+}
+
 export function SolicitudDetalle({ isOpen, onClose, solicitudId, solicitudTitulo, solicitudDescripcion, viewMode, onStatusChange }: SolicitudDetalleProps) {
   const { user } = useAuth()
+  const { isSuperAdmin } = usePermissions()
   const [comentarios, setComentarios] = useState<Comentario[]>([])
   const [nuevoComentario, setNuevoComentario] = useState("")
   const [loading, setLoading] = useState(false)
@@ -40,6 +83,7 @@ export function SolicitudDetalle({ isOpen, onClose, solicitudId, solicitudTitulo
   const [solicitudData, setSolicitudData] = useState<any>(null)
   const [isUpdatingDate, setIsUpdatingDate] = useState(false)
   const [tempDate, setTempDate] = useState("")
+  const [teamMembers, setTeamMembers] = useState<{ id: string, name: string, initials: string, role: string, color: string }[]>([])
   const scrollRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -91,6 +135,27 @@ export function SolicitudDetalle({ isOpen, onClose, solicitudId, solicitudTitulo
       } else if (data) {
         setComentarios(data)
       }
+      
+      // Fetch team members if superadmin
+      const { data: userData } = await supabase.auth.getUser()
+      if (userData.user) {
+        const { data: profile } = await supabase.from("profiles").select("role").eq("id", userData.user.id).single()
+        if (profile?.role === "superadmin" || profile?.role === "coequipero") {
+          const { data: teamData } = await supabase.from("profiles").select("id, full_name, email, job_title, role, company").in("role", ["superadmin", "coequipero"])
+          if (teamData) {
+            const colors = ["bg-blue-500/20 text-blue-500", "bg-emerald-500/20 text-emerald-500", "bg-amber-500/20 text-amber-500", "bg-purple-500/20 text-purple-500", "bg-pink-500/20 text-pink-500"]
+            setTeamMembers(teamData.map((d, i) => ({
+              id: d.id,
+              name: d.full_name || d.email,
+              initials: (d.full_name || d.email).substring(0, 2).toUpperCase(),
+              role: d.job_title || d.role,
+              company: d.company,
+              color: colors[i % colors.length]
+            })))
+          }
+        }
+      }
+      
       setLoading(false)
     }
 
@@ -312,21 +377,14 @@ export function SolicitudDetalle({ isOpen, onClose, solicitudId, solicitudTitulo
     setSolicitudData((prev: any) => prev ? { ...prev, estado_entrega: "confirmada", fecha_sugerida_entrega: solicitudData.fecha_equipo, estado: "Acordada y aprobada" } : null)
     if (onStatusChange) onStatusChange("confirmada", solicitudData.fecha_equipo, "Acordada y aprobada")
     
-    // 2. Notifications
-    const { data: superadmins } = await supabase.from("profiles").select("id").eq("role", "superadmin")
-    const recipients = new Set<string>()
-    if (solicitudData.assigned_to_id) recipients.add(solicitudData.assigned_to_id)
-    if (superadmins) superadmins.forEach(s => recipients.add(s.id))
-    
-    const notifications = Array.from(recipients).map(id => ({
-        user_id: id,
-        tipo: "sistema",
-        solicitud_id: parseInt(solicitudId, 10),
-        mensaje: `El cliente ha ACEPTADO la fecha propuesta para la solicitud #${String(solicitudId).padStart(5, "0")}`
-    }))
-    if (notifications.length > 0) {
-      const { error: notifErr } = await supabase.from("notificaciones").insert(notifications)
-      if (notifErr) console.error("Error sending notifs:", notifErr)
+    // 2. Notify via server action (bypasses RLS)
+    try {
+      const { notifyDateAccepted } = await import("@/app/actions/solicitudes")
+      const userRes = await supabase.auth.getUser()
+      const clientId = userRes.data.user?.id || ""
+      await notifyDateAccepted(solicitudId, clientId, solicitudData.assigned_to_id)
+    } catch (err) {
+      console.error("Error sending accept notification:", err)
     }
   }
 
@@ -334,9 +392,11 @@ export function SolicitudDetalle({ isOpen, onClose, solicitudId, solicitudTitulo
     if (!solicitudId) return
     setIsUpdatingDate(true)
     const supabase = createClient()
+    
+    // 1. Update ticket
     const { error } = await supabase.from("solicitudes").update({ 
       estado_entrega: "pendiente",
-      estado: "En revisión"
+      estado: "Nueva"
     }).eq("id", parseInt(solicitudId, 10))
 
     if (error) {
@@ -347,23 +407,52 @@ export function SolicitudDetalle({ isOpen, onClose, solicitudId, solicitudTitulo
     }
 
     setIsUpdatingDate(false)
-    setSolicitudData((prev: any) => prev ? { ...prev, estado_entrega: "pendiente", estado: "En revisión" } : null)
-    if (onStatusChange) onStatusChange("pendiente", undefined, "En revisión")
+    setSolicitudData((prev: any) => prev ? { ...prev, estado_entrega: "pendiente", estado: "Nueva" } : null)
+    if (onStatusChange) onStatusChange("pendiente", undefined, "Nueva")
     
-    const { data: superadmins } = await supabase.from("profiles").select("id").eq("role", "superadmin")
-    const recipients = new Set<string>()
-    if (solicitudData.assigned_to_id) recipients.add(solicitudData.assigned_to_id)
-    if (superadmins) superadmins.forEach(s => recipients.add(s.id))
+    // 2. Notify via server action (bypasses RLS)
+    try {
+      const { notifyDateRejected } = await import("@/app/actions/solicitudes")
+      const userRes = await supabase.auth.getUser()
+      const clientId = userRes.data.user?.id || ""
+      await notifyDateRejected(solicitudId, clientId, solicitudData?.assigned_to_id)
+    } catch (err) {
+      console.error("Error sending reject notification:", err)
+    }
+  }
+
+  const handleAssignTicket = async (assigneeId: string, assigneeName: string) => {
+    if (!solicitudId) return
     
-    const notifications = Array.from(recipients).map(id => ({
-        user_id: id,
-        tipo: "sistema",
-        solicitud_id: parseInt(solicitudId, 10),
-        mensaje: `El cliente ha RECHAZADO la fecha propuesta para la solicitud #${String(solicitudId).padStart(5, "0")}`
-    }))
-    if (notifications.length > 0) {
-      const { error: notifErr } = await supabase.from("notificaciones").insert(notifications)
-      if (notifErr) console.error("Error sending notifs:", notifErr)
+    setSolicitudData((prev: any) => prev ? { 
+      ...prev, 
+      assigned_to: assigneeName || null,
+      assigned_to_id: assigneeId || null,
+      estado: assigneeId ? "Asignada" : prev.estado
+    } : null)
+    
+    try {
+      const supabase = createClient()
+      const updateData: any = { 
+        assigned_to_id: assigneeId || null,
+        assigned_to: assigneeName || null,
+        updated_at: new Date().toISOString()
+      }
+      
+      if (assigneeId) {
+        updateData.estado = "Asignada"
+      }
+      
+      const { error } = await supabase.from("solicitudes").update(updateData).eq("id", parseInt(solicitudId, 10))
+      
+      if (error) {
+        console.error("Error updating assignment:", error)
+      } else if (assigneeId) {
+        const { notifyAssignment } = await import("@/app/actions/solicitudes")
+        await notifyAssignment(solicitudId, assigneeId)
+      }
+    } catch (err) {
+      console.error("Error:", err)
     }
   }
 
@@ -441,38 +530,25 @@ export function SolicitudDetalle({ isOpen, onClose, solicitudId, solicitudTitulo
                           <span className="text-sm font-medium leading-tight">Propuesta por el equipo</span>
                         </div>
                         <div className="flex items-center gap-2 justify-start">
-                          <input 
-                            type="date" 
-                            value={tempDate || (solicitudData.fecha_equipo ? solicitudData.fecha_equipo.split('T')[0] : "")} 
-                            onChange={(e) => setTempDate(e.target.value)}
-                            className="rounded-lg border border-outline-variant bg-surface-container-low px-3 py-1.5 text-xs text-on-surface outline-none focus:border-primary"
-                          />
-                          {tempDate === (solicitudData.fecha_equipo ? solicitudData.fecha_equipo.split('T')[0] : "") ? (
-                            <div className="flex items-center gap-2">
-                              <button
-                                onClick={handleAcceptDate}
-                                disabled={isUpdatingDate}
-                                className="flex items-center gap-1.5 rounded-lg bg-emerald-500 text-white px-3 py-1.5 text-xs font-bold transition hover:bg-emerald-600 disabled:opacity-50"
-                              >
-                                <CheckCircle className="h-3.5 w-3.5" /> Aceptar
-                              </button>
-                              <button
-                                onClick={handleRejectDate}
-                                disabled={isUpdatingDate}
-                                className="flex items-center gap-1.5 rounded-lg bg-rose-500 text-white px-3 py-1.5 text-xs font-bold transition hover:bg-rose-600 disabled:opacity-50"
-                              >
-                                <X className="h-3.5 w-3.5" /> Rechazar
-                              </button>
-                            </div>
-                          ) : (
+                          <span className="rounded-lg border border-outline-variant bg-surface-container-low px-3 py-1.5 text-xs text-on-surface font-medium">
+                            {solicitudData.fecha_equipo ? new Date(solicitudData.fecha_equipo.split('T')[0] + 'T12:00:00').toLocaleDateString("es-ES", { day: "2-digit", month: "2-digit", year: "numeric" }) : "—"}
+                          </span>
+                          <div className="flex items-center gap-2">
                             <button
-                              onClick={handleUpdateClientDate}
-                              disabled={!tempDate || isUpdatingDate || tempDate === solicitudData.fecha_sugerida_entrega}
-                              className="rounded-lg bg-surface-container-high px-3 py-1.5 text-xs font-bold text-on-surface transition hover:bg-surface-container-highest disabled:opacity-50"
+                              onClick={handleAcceptDate}
+                              disabled={isUpdatingDate}
+                              className="flex items-center gap-1.5 rounded-lg bg-emerald-500 text-white px-3 py-1.5 text-xs font-bold transition hover:bg-emerald-600 disabled:opacity-50"
                             >
-                              Proponer Otra
+                              <CheckCircle className="h-3.5 w-3.5" /> Aceptar
                             </button>
-                          )}
+                            <button
+                              onClick={handleRejectDate}
+                              disabled={isUpdatingDate}
+                              className="flex items-center gap-1.5 rounded-lg bg-rose-500 text-white px-3 py-1.5 text-xs font-bold transition hover:bg-rose-600 disabled:opacity-50"
+                            >
+                              <X className="h-3.5 w-3.5" /> Rechazar
+                            </button>
+                          </div>
                         </div>
                       </div>
                     </div>
@@ -517,12 +593,43 @@ export function SolicitudDetalle({ isOpen, onClose, solicitudId, solicitudTitulo
                       ) : null
                     )}
                   </div>
-
-                  <div className="flex items-start justify-between">
-                    <div>
-                      <h3 className="text-sm font-bold text-on-surface flex items-center gap-2">
-                        <Calendar className="h-4 w-4" /> Fecha de Entrega
-                      </h3>
+                  {!isClientView && isSuperAdmin && (solicitudData.estado === "Nueva" || solicitudData.estado === "Sin asignar" || solicitudData.estado === "Asignada") ? (
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <h3 className="text-sm font-bold text-on-surface flex items-center gap-2">
+                          <User className="h-4 w-4" /> Asignar Coequipero
+                        </h3>
+                        <p className={cn(
+                          "mt-1 text-xs font-medium",
+                          solicitudData.assigned_to_id ? "font-bold text-on-surface" : "text-on-surface-variant"
+                        )}>
+                          {solicitudData.assigned_to_id ? "Cohequipero asignado" : "Selecciona el responsable para esta solicitud"}
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <AssigneeSelector 
+                          currentAssigneeId={solicitudData.assigned_to_id} 
+                          teamMembers={teamMembers} 
+                          onAssign={handleAssignTicket} 
+                        />
+                        {solicitudData.assigned_to_id ? (
+                          <div className="flex flex-col bg-surface-container-high px-3 py-1.5 rounded-md border border-outline-variant/30 w-36">
+                            <span className="text-xs font-bold text-on-surface truncate">
+                              {teamMembers.find(m => m.id === solicitudData.assigned_to_id)?.name || "Coequipero"}
+                            </span>
+                            <span className="text-[10px] font-medium text-on-surface-variant">Team MM</span>
+                          </div>
+                        ) : (
+                          <div className="w-36" />
+                        )}
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="flex items-start justify-between">
+                      <div>
+                        <h3 className="text-sm font-bold text-on-surface flex items-center gap-2">
+                          <Calendar className="h-4 w-4" /> Fecha de Entrega
+                        </h3>
                       <div className="mt-2 flex items-center gap-2">
                         {/* Semaforo Dot */}
                         <div className={cn(
@@ -546,7 +653,16 @@ export function SolicitudDetalle({ isOpen, onClose, solicitudId, solicitudTitulo
                       {!isClientView ? (
                         // TEAM VIEW ACTIONS ONLY
                         solicitudData.estado === "Eliminada" ? (
-                          null
+                          <div className="flex flex-col gap-2 items-end">
+                            <div className="flex items-center gap-2">
+                              <span className="text-xs text-on-surface-variant font-medium">Reasignar a:</span>
+                              <AssigneeSelector 
+                                currentAssigneeId={solicitudData.assigned_to_id} 
+                                teamMembers={teamMembers} 
+                                onAssign={handleAssignTicket} 
+                              />
+                            </div>
+                          </div>
                         ) : solicitudData.estado_entrega !== "confirmada" ? (
                           <div className="flex flex-col gap-2 items-end">
                             <button
@@ -615,6 +731,7 @@ export function SolicitudDetalle({ isOpen, onClose, solicitudId, solicitudTitulo
                       )}
                     </div>
                   </div>
+                  )}
                 </div>
               </div>
               );

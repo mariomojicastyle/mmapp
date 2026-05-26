@@ -168,7 +168,8 @@ export function NuevaSolicitudModal({ isOpen, onClose, nextId, isEditing = false
           fecha_sugerida_entrega: fechaEntrega || null,
           tipo_solicitud: tipo,
           adjuntos: finalAdjuntos,
-          estado_entrega: "pendiente"
+          estado_entrega: "pendiente",
+          estado: "En revisión"
         }).eq("id", initialData.id)
 
         if (updateError) throw updateError
@@ -194,7 +195,7 @@ export function NuevaSolicitudModal({ isOpen, onClose, nextId, isEditing = false
           initialData.assigned_to_id
         )
       } else {
-        const { error: insertError } = await supabase.from("solicitudes").insert({
+        const { data: newSols, error: insertError } = await supabase.from("solicitudes").insert({
           titulo,
           descripcion,
           fecha_sugerida_entrega: fechaEntrega || null,
@@ -202,9 +203,16 @@ export function NuevaSolicitudModal({ isOpen, onClose, nextId, isEditing = false
           estado: "Nueva",
           client_id: user.id,
           adjuntos: finalAdjuntos
-        })
+        }).select("id").single()
 
         if (insertError) throw insertError
+
+        if (newSols?.id) {
+          const { notifyNewSolicitud } = await import("@/app/actions/solicitudes")
+          const clientName = user.user_metadata?.full_name || user.user_metadata?.name || user.email?.split('@')[0] || "desconocido"
+          const clientCompany = user.user_metadata?.company || ""
+          await notifyNewSolicitud(newSols.id, clientName, clientCompany)
+        }
       }
 
       onClose()

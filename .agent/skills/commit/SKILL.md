@@ -162,7 +162,7 @@ When the user types `/super-commit [descripción]`, you MUST execute the followi
    - `git pull origin main`
    - `git merge <current-branch> -m "Merge branch '<current-branch>' into main"`
 4. **Push to Origin**: `git push origin main` *(DISABLED FOR NOW: The user has requested to temporarily suspend deployment to Netlify, so skip this push step or ask for confirmation first).*
-5. **Cleanup & New Branch**: Return the user to a clean working state. If they asked for a new feature branch, create it (`git checkout -b <new-branch>`). Otherwise, return to the original branch.
+5. **Cleanup & New Branch**: Return the user to a clean working state. **CRÍTICO:** El argumento que el usuario pasa (ej. `Usuarios_v2` en `/super-commit - Usuarios_v2`) debe usarse para **CREAR UNA NUEVA RAMA** después del merge. Debes ejecutar obligatoriamente `git checkout -b <argumento>` (ej. `git checkout -b Usuarios_v2`) para dejar al usuario listo en su nueva rama. No lo devuelvas a la rama anterior.
 
 ## Principles
 

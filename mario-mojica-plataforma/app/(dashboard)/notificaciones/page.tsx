@@ -44,7 +44,7 @@ export default function NotificacionesPage() {
                   if (!n.leido_at) {
                     await markAsRead(n.id)
                   }
-                  if (n.tipo !== "sistema") {
+                  if (n.solicitud_id) {
                     const formattedId = String(n.solicitud_id).padStart(5, "0")
                     setSelectedSolicitud({ id: formattedId })
                   }
@@ -59,18 +59,22 @@ export default function NotificacionesPage() {
                 <div className={cn(
                   "flex h-10 w-10 shrink-0 items-center justify-center rounded-full",
                   n.leido_at ? "bg-surface-container-highest text-on-surface-variant" : "bg-primary/10 text-primary",
-                  n.tipo === "sistema" && !n.leido_at ? "bg-error/10 text-error" : ""
+                  (n.tipo === "sistema" || n.tipo === "eliminacion_solicitud") && !n.leido_at ? "bg-rose-500/10 text-rose-500" : ""
                 )}>
                   {n.tipo === "comentario" ? <MessageSquare className="h-5 w-5" /> : 
-                   n.tipo === "sistema" ? <AlertCircle className="h-5 w-5" /> : 
+                   (n.tipo === "sistema" || n.tipo === "eliminacion_solicitud") ? <AlertCircle className="h-5 w-5" /> : 
                    <Bell className="h-5 w-5" />}
                 </div>
 
                 <div className="flex flex-1 flex-col gap-1">
                   <div className="flex items-center justify-between">
                     {n.tipo === "sistema" ? (
-                      <span className="text-xs font-bold text-error uppercase tracking-wider">
-                        Alerta del Sistema
+                      <span className="text-xs font-bold text-rose-500 uppercase tracking-wider">
+                        Alerta — Solicitud #{String(n.solicitud_id).padStart(5, "0")}
+                      </span>
+                    ) : n.tipo === "eliminacion_solicitud" ? (
+                      <span className="text-xs font-bold text-rose-500 uppercase tracking-wider">
+                        Solicitud #{String(n.solicitud_id).padStart(5, "0")} CANCELADA
                       </span>
                     ) : (
                       <span className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">
@@ -84,7 +88,8 @@ export default function NotificacionesPage() {
                   </div>
                   <p className={cn(
                     "text-sm leading-relaxed",
-                    n.leido_at ? "text-on-surface-variant" : "text-on-surface font-medium"
+                    n.leido_at ? "text-on-surface-variant" : "text-on-surface font-medium",
+                    n.tipo === "eliminacion_solicitud" && !n.leido_at && "text-rose-500"
                   )}>
                     {n.mensaje}
                   </p>

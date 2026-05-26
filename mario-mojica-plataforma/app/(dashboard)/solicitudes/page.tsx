@@ -5,7 +5,7 @@
 "use client"
 
 import React, { useState, useEffect } from "react"
-import { Plus, Search, Filter, ChevronRight, Clock, MoreVertical, AlertCircle, LayoutGrid, List, Paperclip, Download, Loader2, Edit2, Trash2, RotateCcw } from "lucide-react"
+import { Plus, Search, Filter, ChevronRight, Clock, MoreVertical, AlertCircle, LayoutGrid, List, Paperclip, Download, Loader2, Edit2, Trash2, RotateCcw, X } from "lucide-react"
 import { motion, AnimatePresence } from "framer-motion"
 import { cn } from "@/lib/utils"
 import { usePermissions } from "@/hooks/use-permissions"
@@ -103,7 +103,7 @@ function useTeamMembers() {
 //  VISTA SUPERADMIN / TEAM (Kanban con drag & drop)
 // ═══════════════════════════════════════════
 function SuperAdminView({ initialId, fromPath }: { initialId: string | null, fromPath: string | null }) {
-  const [view, setView] = useState<"kanban" | "list">("kanban")
+  const [view, setView] = useState<"kanban" | "list">("list")
   const [searchQuery, setSearchQuery] = useState("")
   const [tickets, setTickets] = useState<Ticket[]>([])
   const [loading, setLoading] = useState(true)
@@ -311,6 +311,10 @@ function SuperAdminView({ initialId, fromPath }: { initialId: string | null, fro
       
       if (error) {
         console.error("Error updating assignment:", error)
+      } else if (assigneeId) {
+        // Send notification to the assignee
+        const { notifyAssignment } = await import("@/app/actions/solicitudes")
+        await notifyAssignment(ticketId, assigneeId)
       }
     } catch (err) {
       console.error("Error:", err)
@@ -352,8 +356,8 @@ function SuperAdminView({ initialId, fromPath }: { initialId: string | null, fro
         </div>
         <div className="flex items-center gap-3">
           <div className="flex items-center rounded-xl bg-surface-container-high p-1">
-            <button onClick={() => setView("kanban")} className={cn("flex h-8 w-8 items-center justify-center rounded-lg transition-all", view === "kanban" ? "bg-primary text-primary-foreground shadow-sm" : "text-on-surface-variant hover:text-on-surface")}><LayoutGrid className="h-4 w-4" /></button>
             <button onClick={() => setView("list")} className={cn("flex h-8 w-8 items-center justify-center rounded-lg transition-all", view === "list" ? "bg-primary text-primary-foreground shadow-sm" : "text-on-surface-variant hover:text-on-surface")}><List className="h-4 w-4" /></button>
+            <button onClick={() => setView("kanban")} className={cn("flex h-8 w-8 items-center justify-center rounded-lg transition-all", view === "kanban" ? "bg-primary text-primary-foreground shadow-sm" : "text-on-surface-variant hover:text-on-surface")}><LayoutGrid className="h-4 w-4" /></button>
           </div>
         </div>
       </div>
@@ -604,7 +608,7 @@ function SuperAdminListView({
   onRestoreTicket?: (id: string) => void,
   onHardDeleteTicket?: (id: string) => void
 }) {
-  const statusLabels: Record<string, string> = { backlog: "Sin asignar", todo: "Asignada", in_progress: "Acordada y Aprobada", waiting_client: "En progreso", review: "Revisión", done: "Completado", deleted: "Eliminada" }
+  const statusLabels: Record<string, string> = { backlog: "Sin asignar", todo: "Asignada", in_progress: "Acordada y Aprobada", waiting_client: "En progreso", review: "Revisión", done: "Completado", deleted: "Cancelada" }
   return (
     <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="rounded-2xl border border-outline-variant bg-surface-container-lowest overflow-hidden">
       <div className="overflow-x-auto min-h-[350px]">
@@ -625,7 +629,7 @@ function SuperAdminListView({
           </thead>
           <tbody className="divide-y divide-outline-variant/30">
             {tickets.map(t => (
-              <tr key={t.id} onClick={() => onSelectTicket(t)} className={cn("group transition-colors cursor-pointer", t.status === 'deleted' ? "bg-surface-container-highest/30 opacity-60 grayscale hover:opacity-100 hover:grayscale-0" : "hover:bg-surface-container-low/50")}>
+              <tr key={t.id} onClick={() => onSelectTicket(t)} className={cn("group transition-colors cursor-pointer", t.status === 'deleted' ? "bg-surface-container-highest/30 opacity-75 hover:opacity-100" : "hover:bg-surface-container-low/50")}>
                 <td className="px-5 py-4">
                   <span className="text-[10px] font-bold text-on-surface-variant uppercase tracking-tight">{t.id}</span>
                 </td>
@@ -679,7 +683,13 @@ function SuperAdminListView({
                 </td>
                 <td className="px-5 py-4">
                   <div className="flex items-center gap-2 whitespace-nowrap">
-                    <div className={cn("h-2 w-2 rounded-full", t.status === "done" ? "bg-emerald-500" : t.status === "in_progress" ? "bg-amber-500" : "bg-slate-400")} />
+                    {t.status === "deleted" ? (
+                      <div className="flex h-3.5 w-3.5 items-center justify-center rounded-full bg-rose-500 text-white">
+                        <X className="h-2.5 w-2.5" strokeWidth={3} />
+                      </div>
+                    ) : (
+                      <div className={cn("h-2 w-2 rounded-full", t.status === "done" ? "bg-emerald-500" : t.status === "in_progress" ? "bg-amber-500" : "bg-slate-400")} />
+                    )}
                     <span className="text-xs font-semibold text-on-surface">{statusLabels[t.status]}</span>
                   </div>
                 </td>
@@ -836,7 +846,6 @@ function ClientView({ initialId, fromPath }: { initialId: string | null, fromPat
 
         if (queryData) {
           const mapped: Solicitud[] = queryData
-            .filter(d => d.estado !== "Eliminada")
             .map(d => ({
               id: String(d.id).padStart(5, "0"),
               titulo: d.titulo || "",
@@ -902,7 +911,7 @@ function ClientView({ initialId, fromPath }: { initialId: string | null, fromPat
     "Esperando cliente": "En progreso",
     "En revisión": "Revisión",
     "Resuelta": "Completado",
-    "Eliminada": "Eliminada"
+    "Eliminada": "Cancelada"
   }
 
   const estadoColors: Record<string, { dot: string; text: string }> = {
@@ -914,7 +923,7 @@ function ClientView({ initialId, fromPath }: { initialId: string | null, fromPat
     "Esperando cliente": { dot: "bg-orange-400", text: "text-orange-400" },
     "En revisión": { dot: "bg-purple-500", text: "text-purple-400" },
     "Resuelta": { dot: "bg-emerald-500", text: "text-emerald-400" },
-    "Eliminada": { dot: "bg-slate-500", text: "text-slate-400" }
+    "Eliminada": { dot: "bg-rose-500", text: "text-rose-500" }
   }
 
   const misSolicitudes = solicitudes.filter(s => s.client_id === user?.id)
@@ -1109,7 +1118,13 @@ function ClientView({ initialId, fromPath }: { initialId: string | null, fromPat
                   </td>
                   <td className="px-5 py-4">
                     <div className="flex items-center gap-2 whitespace-nowrap">
-                      <div className={cn("h-2 w-2 rounded-full", estadoColors[s.estado]?.dot || "bg-slate-500")} />
+                      {s.estado === "Eliminada" ? (
+                        <div className="flex h-3.5 w-3.5 items-center justify-center rounded-full bg-rose-500 text-white">
+                          <X className="h-2.5 w-2.5" strokeWidth={3} />
+                        </div>
+                      ) : (
+                        <div className={cn("h-2 w-2 rounded-full", estadoColors[s.estado]?.dot || "bg-slate-500")} />
+                      )}
                       <span className={cn("text-xs font-semibold", estadoColors[s.estado]?.text || "text-slate-400")}>{clientEstadoLabel[s.estado] || s.estado}</span>
                     </div>
                   </td>
