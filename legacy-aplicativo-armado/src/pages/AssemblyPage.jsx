@@ -31,7 +31,9 @@ const AssemblyPage = () => {
             if (!path) return "";
             if (path.startsWith("http")) return path;
             const projectUrl = import.meta.env.VITE_SUPABASE_URL;
-            return `${projectUrl}/storage/v1/object/public/insumos_manuales/${path}`;
+            // Asegurar que el path incluya el id del manual como prefijo de subcarpeta
+            const fullPath = path.startsWith(id + "/") ? path : `${id}/${path}`;
+            return `${projectUrl}/storage/v1/object/public/insumos_manuales/${fullPath}`;
           };
 
           const steps = (configData.glb_pasos || []).map(g => g.step);
