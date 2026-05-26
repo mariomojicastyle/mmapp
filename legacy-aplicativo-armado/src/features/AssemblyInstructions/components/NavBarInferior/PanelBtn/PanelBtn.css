@@ -21,7 +21,7 @@
     border-color: var(--primary);
     color: var(--primary);
     box-shadow: 0 0 25px var(--primary-glow);
-    background-color: var(--surface-active);
+    background-color: var(--secondary);
 }
 
 .panel-btn>svg {
