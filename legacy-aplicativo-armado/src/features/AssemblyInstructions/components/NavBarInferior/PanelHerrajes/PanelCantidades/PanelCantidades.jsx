@@ -32,49 +32,67 @@ export default function PanelCantidades({ id, data }) {
         return;
       }
 
-      const tempCantidades = [];
+      const counts = {}; // Cuenta de ocurrencias físicas
+      const explicitQuantities = {}; // Cantidades explícitas (ej: Cantidad(4))
       const nombresUnicos = new Set();
+      const tempCantidades = [];
 
       pasoInicial.traverse((child) => {
         try {
           if (!child.name) return;
           const name = child.name;
 
+          // Exclusiones estándar de mallas y elementos comunes del viewport 3D
           if (
             name.includes("Scene") ||
             name.includes("Capa") ||
             name.includes("Camera") ||
             name.includes("Texto") ||
             name.includes("Pieza") ||
-            name.includes("Collection")
+            name.includes("Collection") ||
+            name.includes("Plane") ||
+            name.includes("Text")
           ) {
             return;
           }
 
+          // Resolver keyName (nombre base del herraje)
+          let keyName = name;
           if (name.includes("-")) {
             const characters = name.split("-");
-            const keyName = characters[0];
-            
-            // Buscar la palabra "Cantidad" usando una expresión de coincidencia flexible en el nombre completo
-            const matchCantidad = name.match(/Cantidad\((\d+)\)/i);
-            const cantidad = matchCantidad ? matchCantidad[0] : "";
-
-            // Solo se muestran elementos que tienen una cantidad especificada
-            if (cantidad !== "") {
-              if (!nombresUnicos.has(keyName)) {
-                nombresUnicos.add(keyName);
-                tempCantidades.push({
-                  displayName: keyName,
-                  value: name,
-                  cantidad: cantidad,
-                  imageUrl: getHerrajeImageUrl(keyName)
-                });
-              }
-            }
+            keyName = characters[0];
           }
+
+          // Ignorar si el keyName es vacío, genérico o pertenece a una pieza del mueble
+          if (!keyName || keyName.trim() === "" || keyName.includes("Puerta") || keyName.includes("Cajon")) return;
+
+          // Incrementar ocurrencias físicas
+          counts[keyName] = (counts[keyName] || 0) + 1;
+
+          // Buscar si el nombre del nodo contiene explícitamente el patrón Cantidad(X)
+          const matchCantidad = name.match(/Cantidad\((\d+)\)/i);
+          if (matchCantidad) {
+            explicitQuantities[keyName] = matchCantidad[1];
+          }
+
+          nombresUnicos.add(keyName);
         } catch (childErr) {
           console.error("Error procesando nodo de herraje:", childErr);
         }
+      });
+
+      // Construir la lista de cantidades consolidadas de forma reactiva
+      nombresUnicos.forEach((keyName) => {
+        const cantidadFinal = explicitQuantities[keyName] !== undefined 
+          ? explicitQuantities[keyName] 
+          : String(counts[keyName]);
+
+        tempCantidades.push({
+          displayName: keyName,
+          value: keyName,
+          cantidad: cantidadFinal,
+          imageUrl: getHerrajeImageUrl(keyName)
+        });
       });
 
       setCantidades(tempCantidades);
