@@ -12,7 +12,7 @@
   cursor: pointer;
   align-items: center;
   justify-content: center;
-  color: var(--text-secondary);
+  color: var(--btn-text-color);
   box-shadow: var(--glass-shadow);
   transition: var(--transition-smooth);
   z-index: 1000;

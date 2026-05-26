@@ -26,50 +26,61 @@ export default function PanelCantidades({ id, data }) {
 
   // Recolectar la información del panel de cantidades del glb P00 de manera declarativa
   useEffect(() => {
-    if (!pasoInicial || Object.keys(pasoInicial).length === 0 || !pasoInicial.traverse) {
-      setCantidades([]);
-      return;
-    }
-
-    const tempCantidades = [];
-    const nombresUnicos = new Set();
-
-    pasoInicial.traverse((child) => {
-      if (!child.name) return;
-      const name = child.name;
-
-      if (
-        name.includes("Scene") ||
-        name.includes("Capa") ||
-        name.includes("Camera") ||
-        name.includes("Texto") ||
-        name.includes("Pieza") ||
-        name.includes("Collection")
-      ) {
+    try {
+      if (!pasoInicial || Object.keys(pasoInicial).length === 0 || !pasoInicial.traverse) {
+        setCantidades([]);
         return;
       }
 
-      if (name.includes("-")) {
-        const characters = name.split("-");
-        const keyName = characters[0];
-        const cantidad = characters[2] || "";
+      const tempCantidades = [];
+      const nombresUnicos = new Set();
 
-        // Solo se muestran elementos que tienen una cantidad especificada
-        if (cantidad !== "") {
-          if (!nombresUnicos.has(keyName)) {
-            nombresUnicos.add(keyName);
-            tempCantidades.push({
-              displayName: keyName,
-              value: name,
-              cantidad: cantidad,
-              imageUrl: getHerrajeImageUrl(keyName)
-            });
+      pasoInicial.traverse((child) => {
+        try {
+          if (!child.name) return;
+          const name = child.name;
+
+          if (
+            name.includes("Scene") ||
+            name.includes("Capa") ||
+            name.includes("Camera") ||
+            name.includes("Texto") ||
+            name.includes("Pieza") ||
+            name.includes("Collection")
+          ) {
+            return;
           }
-        }
-      }
-    });
 
-    setCantidades(tempCantidades);
+          if (name.includes("-")) {
+            const characters = name.split("-");
+            const keyName = characters[0];
+            
+            // Buscar la palabra "Cantidad" usando una expresión de coincidencia flexible en el nombre completo
+            const matchCantidad = name.match(/Cantidad\((\d+)\)/i);
+            const cantidad = matchCantidad ? matchCantidad[0] : "";
+
+            // Solo se muestran elementos que tienen una cantidad especificada
+            if (cantidad !== "") {
+              if (!nombresUnicos.has(keyName)) {
+                nombresUnicos.add(keyName);
+                tempCantidades.push({
+                  displayName: keyName,
+                  value: name,
+                  cantidad: cantidad,
+                  imageUrl: getHerrajeImageUrl(keyName)
+                });
+              }
+            }
+          }
+        } catch (childErr) {
+          console.error("Error procesando nodo de herraje:", childErr);
+        }
+      });
+
+      setCantidades(tempCantidades);
+    } catch (err) {
+      console.error("Error crítico recopilando cantidades:", err);
+    }
   }, [pasoInicial, data, id]);
 
   return (

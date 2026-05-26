@@ -45,7 +45,7 @@
   cursor: pointer !important;
   align-items: center !important;
   justify-content: center !important;
-  color: var(--text-secondary, #b3c5cc) !important; /* Gris claro por defecto, idéntico a otros botones */
+  color: var(--btn-text-color, #ffffff) !important; /* Adaptado dinámicamente con color de contraste */
   box-shadow: var(--glass-shadow, 0 8px 32px rgba(0, 0, 0, 0.3)) !important;
   transition: var(--transition-smooth, all 0.3s ease) !important;
   pointer-events: auto !important;
