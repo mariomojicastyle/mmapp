@@ -132,6 +132,7 @@ Un **"Manual Vacío"** es un cascarón o aplicación base centralizada (desplega
   - Mapeamos e integramos dinámicamente las imágenes reales de los herrajes subidos por el cliente (con soporte para extensiones `.webp`, `.png`, `.jpg` y redimensionamiento contain de alta calidad).
   - Pintamos dinámicamente el botón central del paso actual en Obsidian Teal con el **Color Primario** seleccionado por el cliente.
   - Agregamos la columna `color_texto_botones` en Supabase y el selector de color de contraste (Texto/Iconos) en la plataforma Next.js, logrando que tanto los iconos como el número del paso central se pinten con el color de contraste elegido por el cliente.
+  - Corregimos el helper `getStorageUrl` en `AssemblyPage.jsx` para que anteponga automáticamente el prefijo de subcarpeta del código de manual (`[id]/`), solucionando de raíz el error 404 que impedía la carga del Logotipo de la empresa y del Favicon personalizado de la pestaña del navegador.
 
 ---
 
