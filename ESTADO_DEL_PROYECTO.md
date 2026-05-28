@@ -159,10 +159,11 @@ Un **"Manual Vacío"** es un cascarón o aplicación base centralizada (desplega
 ---
 
 ## 🛠️ 6. Aplicativo de Armado (Legacy Restore)
-**Estado:** Integración inmersiva de Gama (R4X Bot) completada al 100% en la portada de carga (App_Armado_V10). Rediseño Obsidian Teal Premium finalizado.
+**Estado:** Integración inmersiva de Gama (R4X Bot) completada al 100% en la portada de carga (App_Armado_V11). Rediseño Obsidian Teal Premium finalizado con tooltips y SVGs nativos.
 
 ### 🎯 Objetivos de la Fase
 - [x] App_Armado_V10: Integración inmersiva 3D de "Gama" en la pantalla de carga inicial.
+- [x] App_Armado_V11: Optimización de iconos SVG nativos (Shadows) para herencia de color perfecta y adición de tooltips nativos en toda la interfaz de navegación.
 - [x] Eliminar dependencias de `3dymedios.com` (localización total de GLB, Matcaps, HDRI, etc.).
 - [x] Exclusión mutua de cortinas en Zustand para evitar traslapes.
 

@@ -19,6 +19,7 @@ export default function AssemblyViewer({ productData, steps, id }) {
   const pasoActual = useEnviroment((state) => state.pasoActual);
   const PiezaHerraje = useEnviroment((state) => state.PiezaHerraje);
   const PanelAyudas = useEnviroment((state) => state.PanelAyudas);
+  const sombras = useEnviroment((state) => state.sombras);
 
   // Ref para el tooltip flotante y coordenadas del mouse
   const tooltipRef = useRef(null);
@@ -96,6 +97,7 @@ export default function AssemblyViewer({ productData, steps, id }) {
       {/* The Canvas fills the parent */}
       <div className="absolute inset-0 z-0">
         <Canvas
+          shadows={sombras}
           gl={{
             antialias: true,
             toneMapping: THREE.ACESFilmicToneMapping,

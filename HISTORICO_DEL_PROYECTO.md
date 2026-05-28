@@ -519,8 +519,14 @@ Los estilos, colores y tiempos de transición de las flechas azules se configura
     - **Estandarización de las Nubes de Ayuda (Paneles y Tooltips):** Corregimos el estilo visual de todas las burbujas informativas (nubes) de la interfaz, incluyendo las de "Guía y Herramientas" y los tooltips de "Herrajes Necesarios" (`PanelBtn.css` y `PanelHerrajes.css`). Se aplicaron los lineamientos premium (bordes redondeados a 20px, fuentes Inter, sombras envolventes y espaciado), pero respetando la personalización del cliente: el fondo ahora es dinámico (`color-mix(in srgb, var(--primary) 20%, transparent)`), y la flecha directriz presenta un color primario sólido y vibrante, eliminando el gris oscuro estático anterior que no respetaba la configuración de Supabase. El tooltip flotante del cursor fue revertido a su estado original según solicitud.
     - **Generación Nativa y Offline de Códigos QR para AR:** Instalamos la librería `react-qr-code` para generar el código QR de Realidad Aumentada de forma 100% local en el navegador del cliente. Eliminamos la dependencia de la API externa gratuita (`api.qrserver.com`) en `RealidadAumentada.jsx`, lo que cierra el ciclo de configuración de forma automática y profesional: ahora el QR se dibuja en milisegundos, es aprueba de caídas de servidores de terceros y se adapta dinámicamente a la URL donde sea que se incruste el manual en la web del cliente.
 
----
+------
+
+* **[2026-05-28] AppArmado_v11 — Optimización de Iconos SVG Nativos y Tooltips Integrados:**
+    - **Refactorización de `IconShadows` a SVG Nativo**: Se resolvió el bug visual donde el icono del sol (sombras) se renderizaba como un círculo sólido magenta. Se eliminó la dependencia de la fuente `material-symbols-outlined` y las etiquetas `div`/`span` que rompían la herencia de color de CSS, reescribiendo el componente directamente con paths SVG (`light_mode` y `routine`). Esto garantiza una herencia de color perfecta (`currentColor`), permitiendo que el componente adopte dinámicamente los colores primarios configurables.
+    - **Tooltips Nativos de Navegación**: Implementación del atributo `title` en todos los botones estratégicos de la interfaz para mejorar la accesibilidad y usabilidad (UX):
+      - `NavBarSuperior`: Botones de Ayuda ("Tutorial de Interfaz") e Información ("Información General").
+      - `NavBarInferior`: Controles de flujo "Retroceder un paso", "Ir al siguiente paso" y el botón central de reproducción actualizado a "Pausar, Activar o Reiniciar".
+      - `PanelBtn`: Botón de lupa actualizado a "identificar Herrajes".
+    - **Resultado**: Una interfaz mucho más intuitiva, libre de bugs visuales de herencia en los iconos, y preparada para personalizaciones de temas de color de alto contraste (Obsidian Teal o Light Theme).
 
 *Última consolidación: 28 de Mayo, 2026*
-
-

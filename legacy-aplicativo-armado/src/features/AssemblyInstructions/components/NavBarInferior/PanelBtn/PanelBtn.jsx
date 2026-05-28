@@ -46,6 +46,7 @@ export default function PanelBtn() {
       <button
         className="panel-btn button"
         type="button"
+        title="identificar Herrajes"
         onClick={ClickPanelBtn}
       >
         <IconSearch />

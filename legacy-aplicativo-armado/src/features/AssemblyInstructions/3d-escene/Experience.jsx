@@ -127,6 +127,7 @@ export default function Experience({ id, modelUrl, productData }) {
   const PasoActual = useEnviroment((state) => state.pasoActual);
   const cameraPositions = useEnviroment((state) => state.cameraPositions);
   const alturas = useEnviroment((state) => state.alturas);
+  const sombras = useEnviroment((state) => state.sombras);
 
   useFrame(() => {
     const pos = camera.position;
@@ -325,9 +326,9 @@ export default function Experience({ id, modelUrl, productData }) {
   return (
     <>
       <Environment preset="city" blur={0.8} />
-      <ambientLight intensity={0.5} />
-      <directionalLight position={[10, 10, 5]} intensity={2} castShadow />
-      <spotLight position={[-5, 5, -5]} intensity={1} />
+      <ambientLight intensity={sombras ? 0.3 : 0.5} />
+      <directionalLight position={[10, 10, 5]} intensity={2} castShadow={sombras} />
+      <spotLight position={[-5, 5, -5]} intensity={sombras ? 0.6 : 1} />
 
       <OrbitControls
         makeDefault

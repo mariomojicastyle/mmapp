@@ -156,7 +156,7 @@ export default function NavBarInferior({ id, data }) {
         <div className="SesionArriba">
           <PanelBtn />
 
-          <button ref={refLeft} id="left" onClick={leftButtton}>
+          <button ref={refLeft} id="left" title="Retroceder un paso" onClick={leftButtton}>
             <IconLeft style={{ width: "60%" }} />
           </button>
 
@@ -190,6 +190,7 @@ export default function NavBarInferior({ id, data }) {
           <button 
             ref={refRight} 
             id="right" 
+            title="Ir al siguiente paso"
             onClick={RightButtton}
             className={rippleActive ? "ripple-impact-active" : ""}
           >
@@ -210,7 +211,7 @@ export default function NavBarInferior({ id, data }) {
             )}
           </button>
 
-          <div id="btnPause" className="button" onClick={PlayButton}>
+          <div id="btnPause" title="Pausar, Activar o Reiniciar" className="button" onClick={PlayButton}>
             {renderPausePlayIcon()}
           </div>
 

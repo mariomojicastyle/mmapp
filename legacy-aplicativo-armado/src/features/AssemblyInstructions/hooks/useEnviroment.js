@@ -247,6 +247,8 @@ export default create(
       
       ActualizarCliente: (cliente) => set((state) => ({ Cliente: cliente })),
 
+      sombras: false,
+      toggleSombras: () => set((state) => ({ sombras: !state.sombras })),
     };
   })
 );

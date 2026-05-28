@@ -128,3 +128,35 @@ export function IconSearch(props) {
   );
 }
 
+export function IconShadows({ sombras, ...props }) {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      viewBox="0 0 16 16"
+      width="100%"
+      height="100%"
+      fill="currentColor"
+      {...props}
+    >
+      {/* Anillo exterior común para igualar el estilo de IconHelp e IconInfo */}
+      <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z" />
+      
+      {/* Grupo de transformación para reducir la escala del icono interno un 40% centrado en (8,8) */}
+      <g transform="translate(3.2, 3.2) scale(0.6)">
+        {sombras ? (
+          /* Estado 1: Contraste (contrast) - Alta Calidad (Sombras ON) */
+          <g>
+            {/* Círculo de contraste exterior interior */}
+            <path d="M8 3.5a4.5 4.5 0 1 1 0 9 4.5 4.5 0 0 1 0-9zm0-1a5.5 5.5 0 1 0 0 11 5.5 5.5 0 0 0 0-11z" />
+            {/* Mitad izquierda rellena para simular el diseño de contraste */}
+            <path d="M8 3.5a4.5 4.5 0 0 0 0 9V3.5z" />
+          </g>
+        ) : (
+          /* Estado 2: Sol (light_mode) - Modo Rendimiento (Sombras OFF) */
+          <path d="M8 11a3 3 0 1 1 0-6 3 3 0 0 1 0 6zm0 1a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM8 0a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-1 0v-2A.5.5 0 0 1 8 0zm0 13a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-1 0v-2A.5.5 0 0 1 8 13zm8-5a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1 0-1h2a.5.5 0 0 1 .5.5zM3 8a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1 0-1h2A.5.5 0 0 1 3 8zm10.657-5.657a.5.5 0 0 1 0 .707l-1.414 1.415a.5.5 0 1 1-.707-.708l1.414-1.414a.5.5 0 0 1 .707 0zm-9.193 9.193a.5.5 0 0 1 0 .707L3.05 13.657a.5.5 0 0 1-.707-.707l1.414-1.414a.5.5 0 0 1 .707 0zm9.193 2.121a.5.5 0 0 1-.707 0l-1.414-1.414a.5.5 0 0 1 .707-.707l1.414 1.414a.5.5 0 0 1 0 .707zM4.464 4.465a.5.5 0 0 1-.707 0L2.343 3.05a.5.5 0 1 1 .707-.707l1.414 1.414a.5.5 0 0 1 0 .708z" />
+        )}
+      </g>
+    </svg>
+  );
+}
+

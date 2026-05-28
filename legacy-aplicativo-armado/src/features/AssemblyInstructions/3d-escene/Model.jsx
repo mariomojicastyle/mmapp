@@ -72,16 +72,19 @@ export default function Model(props) {
     `/${props.id}/models/P${pasoActual}.glb`
   );
 
-  // Asignar sombras a los objetos
-  // scene.castShadow = true;
-  // scene.children.forEach((child) => {
-  //   child.castShadow = true;
-  //   if (child.children) {
-  //     child.children.forEach((grandChild) => {
-  //       grandChild.castShadow = true;
-  //     });
-  //   }
-  // });
+  const sombras = useEnviroment((state) => state.sombras);
+
+  // Asignar sombras a los objetos dinámicamente
+  useEffect(() => {
+    if (scene) {
+      scene.traverse((node) => {
+        if (node.isMesh) {
+          node.castShadow = sombras;
+          node.receiveShadow = sombras;
+        }
+      });
+    }
+  }, [scene, sombras]);
 
 
 

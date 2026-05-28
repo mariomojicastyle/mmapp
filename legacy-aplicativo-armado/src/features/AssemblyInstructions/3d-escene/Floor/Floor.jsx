@@ -1,4 +1,4 @@
-import { useTexture } from "@react-three/drei";
+import { useTexture, ContactShadows } from "@react-three/drei";
 import * as THREE from "three";
 import { DoubleSide, RepeatWrapping } from "three";
 import useEnviroment from "../../hooks/useEnviroment";
@@ -6,6 +6,7 @@ import useEnviroment from "../../hooks/useEnviroment";
 export default function Floor({ productData }) {
   const pasoActual = useEnviroment((state) => state.pasoActual);
   const alturas = useEnviroment((state) => state.alturas);
+  const sombras = useEnviroment((state) => state.sombras);
 
   const pasoIndex = parseInt(pasoActual, 10) || 0;
   
@@ -43,10 +44,24 @@ export default function Floor({ productData }) {
   if (floorTexture.map) floorTexture.map.colorSpace = THREE.SRGBColorSpace;
 
   return (
-    <mesh position-y={floorY} rotation-x={-Math.PI / 2} receiveShadow>
-      <planeGeometry args={[12, 12]} />
-      <meshStandardMaterial {...floorTexture} bumpScale={0.03} />
-    </mesh>
+    <>
+      <mesh position-y={floorY} rotation-x={-Math.PI / 2} receiveShadow>
+        <planeGeometry args={[12, 12]} />
+        <meshStandardMaterial {...floorTexture} bumpScale={0.03} />
+      </mesh>
+      
+      {sombras && (
+        <ContactShadows
+          position={[0, floorY + 0.005, 0]}
+          opacity={0.8}
+          scale={10}
+          blur={2.5}
+          far={4}
+          resolution={512}
+          color="#000000"
+        />
+      )}
+    </>
   );
 }
 

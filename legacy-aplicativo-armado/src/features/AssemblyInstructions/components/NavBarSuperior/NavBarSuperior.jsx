@@ -5,7 +5,7 @@ import { useRef, useState } from "react";
 import useEnviroment from "../../hooks/useEnviroment.js";
 import { useEffect } from "react";
 import RealiadaAumentada from "./RealidadAumentada/RealidadAumentada.jsx";
-import { IconHelp, IconInfo } from "../Icons.jsx";
+import { IconHelp, IconInfo, IconShadows } from "../Icons.jsx";
 // import from "@google/model-viewer"; 
 
 export default function NavBarSuperior({ id, data }) {
@@ -18,6 +18,8 @@ export default function NavBarSuperior({ id, data }) {
   const PanelAyudasTrue = useEnviroment((state) => state.PanelAyudasTrue);
   const PanelAyudas = useEnviroment((state) => state.PanelAyudas);
   const ayuda1 = useEnviroment((state) => state.ayuda1);
+  const sombras = useEnviroment((state) => state.sombras);
+  const toggleSombras = useEnviroment((state) => state.toggleSombras);
 
 
   const refOp1 = useRef(null);
@@ -55,12 +57,12 @@ export default function NavBarSuperior({ id, data }) {
       <div className="contenedor1">
         <div className="contenedor1-1">
           {/* <!-- Boton de ayuda --> */}
-          <div className="button" id="help" onClick={showPanelAyudas}>
+          <div className="button" id="help" title="Tutorial de Interfaz" onClick={showPanelAyudas}>
             <IconHelp />
           </div>
 
           {/* <!-- Boton de información --> */}
-          <div id="info" className="button" onClick={showPanelTips}>
+          <div id="info" title="Informacion General" className="button" onClick={showPanelTips}>
             <IconInfo />
             
             {/* Burbuja de ayuda 1: Guía y Herramientas */}
@@ -74,6 +76,16 @@ export default function NavBarSuperior({ id, data }) {
                 <li className="ayuda-bubble-item">Garantía del mueble</li>
               </ul>
             </div>
+          </div>
+
+          {/* <!-- Boton de Sombras --> */}
+          <div 
+            className="button"
+            id="shadows" 
+            onClick={toggleSombras} 
+            title={sombras ? "Calidad Visual: Alta (Sombras)" : "Calidad Visual: Rendimiento"}
+          >
+            <IconShadows sombras={sombras} />
           </div>
 
           {/* <!-- Opciones de cambio de color de vizualización del mueble--> */}
