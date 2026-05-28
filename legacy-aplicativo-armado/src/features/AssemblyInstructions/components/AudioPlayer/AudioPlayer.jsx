@@ -147,51 +147,44 @@ export default function AudioPlayer() {
   }, [PanelAyudas, pasoActual, id]);
 
 
-  //Se activa el audio, al dar clip en el boton iniciar
+  // Se activa el audio al hacer clic en el botón iniciar
   useEffect(() => {
-    if (StartApp == true) {
-      if (audioRef.current.play() !== undefined) {
-        audioRef.current.play();
+    if (StartApp === true && audioRef.current) {
+      const playPromise = audioRef.current.play();
+      if (playPromise !== undefined) {
+        playPromise.catch(error => {
+          console.log("Audio play safely handled on start:", error.message);
+        });
       }
     }
   }, [StartApp]);
 
-
-  //Control del audio dependiendo de la fse en que se encuentre.
+  // Control del audio dependiendo de la fase en que se encuentre.
   useEffect(() => {
     if (!audioRef.current) return;
     
-    // audioRef.current.volumen = 0.3;
-    if (StartApp == true) {
-      if (phaseAudio == "start") {
-        if (audioRef.current.play() !== undefined) {
-          if (ReadyToPlay == true) {
-            audioRef.current.load();
-            audioRef.current
-              .play()
-              .then((_) => {})
-              .catch((error) => {
-                console.log(error);
-              });
+    if (StartApp === true) {
+      if (phaseAudio === "start") {
+        if (ReadyToPlay === true) {
+          audioRef.current.load();
+          const playPromise = audioRef.current.play();
+          if (playPromise !== undefined) {
+            playPromise.then((_) => {}).catch((error) => {
+              console.log("Audio play safely handled on phase start:", error.message);
+            });
           }
         }
-      } else if (phaseAudio == "playing") {
+      } else if (phaseAudio === "playing") {
         AudioEndedFalse();
-        if (audioRef.current.play() !== undefined) {
-
-          audioRef.current
-            .play()
-            .then((_) => {
-              // Automatic playback started!
-              // Show playing UI.
-            })
+        const playPromise = audioRef.current.play();
+        if (playPromise !== undefined) {
+          playPromise
+            .then((_) => {})
             .catch((error) => {
-              console.log(error);
-              // Auto-play was prevented
-              // Show paused UI.
+              console.log("Audio play safely handled on phase playing:", error.message);
             });
         }
-      } else if (phaseAudio == "paused") {
+      } else if (phaseAudio === "paused") {
         audioRef.current.pause();
       }
     }

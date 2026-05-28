@@ -108,18 +108,32 @@ const AssemblyPage = () => {
             pbrWallRoughness: configData.pbr_wall_roughness ? getStorageUrl(configData.pbr_wall_roughness) : "",
             pbrWallHeight: configData.pbr_wall_height ? getStorageUrl(configData.pbr_wall_height) : "",
 
-            // Alturas y posiciones por defecto
+            // Alturas y posiciones dinámicas (leídas desde el JSON del CMS en Supabase) o por defecto
             alturas: (configData.glb_pasos || []).map(g => ({
               paso: g.step,
-              skyBox: 0.894,
-              plane: -0.606,
-              target: [0.12, -0.219, 0.085]
+              skyBox: g.skyBox !== undefined ? g.skyBox : 0.894,
+              plane: g.plane !== undefined ? g.plane : -0.606,
+              target: g.cameraTarget ? [g.cameraTarget[0], g.cameraTarget[1], g.cameraTarget[2]] : [0.12, -0.219, 0.085]
             })),
-            cameraPositions: (configData.glb_pasos || []).map(g => ({
-              pasos: g.step,
-              override: true,
-              position: { x: -3.177, y: 2, z: 5 }
-            })),
+            cameraPositions: (configData.glb_pasos || []).map(g => {
+              let pos = { x: -3.177, y: 2, z: 5 };
+              if (g.cameraPosition) {
+                if (Array.isArray(g.cameraPosition)) {
+                  pos = { x: g.cameraPosition[0], y: g.cameraPosition[1], z: g.cameraPosition[2] };
+                } else if (typeof g.cameraPosition === 'object') {
+                  pos = { 
+                    x: g.cameraPosition.x !== undefined ? g.cameraPosition.x : -3.177, 
+                    y: g.cameraPosition.y !== undefined ? g.cameraPosition.y : 2, 
+                    z: g.cameraPosition.z !== undefined ? g.cameraPosition.z : 5 
+                  };
+                }
+              }
+              return {
+                pasos: g.step,
+                override: true,
+                position: pos
+              };
+            }),
             
             // Configuración de los tips interactivos
             tips: {

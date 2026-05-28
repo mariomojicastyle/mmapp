@@ -196,16 +196,16 @@ svg circle {
   transform: none;
 }
 
-/* Borde de progreso de acento Cyan */
+/* Borde de progreso de acento Cyan con transparencia */
 svg circle:nth-child(2) {
   stroke-dasharray: 201;
   stroke-dashoffset: 201;
-  stroke: var(--primary);
+  stroke: color-mix(in srgb, var(--primary) 35%, transparent);
 }
 
 .card2:nth-child(1) svg circle:nth-child(2) {
   stroke-dashoffset: calc(201 - (201 * var(--porcent)) / 100);
-  stroke: var(--primary);
+  stroke: color-mix(in srgb, var(--primary) 35%, transparent);
 }
 
 .circule2 {
@@ -278,12 +278,12 @@ svg circle:nth-child(2) {
   .circule2 circle:nth-child(2) {
     stroke-dasharray: 122;
     stroke-dashoffset: 122;
-    stroke: var(--primary);
+    stroke: color-mix(in srgb, var(--primary) 35%, transparent);
   }
 
   .card2:nth-child(1) .circule2 circle:nth-child(2) {
     stroke-dashoffset: calc(122 - (122 * var(--porcent)) / 100);
-    stroke: var(--primary);
+    stroke: color-mix(in srgb, var(--primary) 35%, transparent);
   }
 
   #numpaso {

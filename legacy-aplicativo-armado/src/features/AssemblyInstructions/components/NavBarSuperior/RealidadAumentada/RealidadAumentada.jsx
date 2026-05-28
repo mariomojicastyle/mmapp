@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import useEnviroment from "../../../hooks/useEnviroment";
+import QRCode from "react-qr-code";
 import "./RealidadAumentada.css";
 
 export default function RealiadaAumentada({ id }) {
@@ -98,10 +99,13 @@ export default function RealiadaAumentada({ id }) {
           </div>
           
           <div className="qr-code-container">
-            <img 
-              src={`https://api.qrserver.com/v1/create-qr-code/?size=180x180&color=0b1418&bgcolor=ffffff&data=${encodeURIComponent(window.location.href)}`} 
-              alt="Código QR de Realidad Aumentada" 
-              className="qr-code-img"
+            <QRCode 
+              value={window.location.href}
+              size={180}
+              fgColor="#0b1418"
+              bgColor="#ffffff"
+              level="M"
+              style={{ height: "auto", maxWidth: "100%", width: "100%" }}
             />
           </div>
         </div>

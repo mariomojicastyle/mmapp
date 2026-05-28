@@ -35,12 +35,12 @@
     bottom: calc(100% + 15px); /* Queda arriba del botón de lupa */
     left: 50%;
     transform: translateX(-50%) scale(0.9);
-    background: rgba(10, 20, 24, 0.96); /* Obsidian Teal */
+    background: color-mix(in srgb, var(--primary) 20%, transparent);
     backdrop-filter: blur(12px);
     -webkit-backdrop-filter: blur(12px);
     border: 1px solid var(--primary, #00f2fe);
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5), 0 0 15px rgba(0, 242, 254, 0.15);
-    border-radius: 30px; /* Formato redondeado premium estilo píldora */
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5), 0 0 15px var(--primary-glow, rgba(0, 242, 254, 0.15));
+    border-radius: 20px;
     padding: 8px 18px;
     white-space: nowrap;
     z-index: 1000;
@@ -59,8 +59,8 @@
 }
 
 .ayuda-herrajes-text {
-    color: var(--primary, #00f2fe);
-    font-family: var(--font-sans, "Play-Regular", sans-serif);
+    color: var(--font-title-color, var(--primary, #00f2fe));
+    font-family: var(--font-sans, "Inter", sans-serif);
     font-weight: 700;
     font-size: 0.85rem;
     letter-spacing: 0.04em;
@@ -71,13 +71,14 @@
     position: absolute;
     width: 8px;
     height: 8px;
-    background: rgba(10, 20, 24, 0.96);
+    background: var(--primary, #00f2fe);
     border-left: 1px solid var(--primary, #00f2fe);
     border-top: 1px solid var(--primary, #00f2fe);
     bottom: -5px;
     left: 50%;
     transform: translateX(-50%) rotate(225deg);
     z-index: -1;
+    box-shadow: 0 0 10px var(--primary-glow, rgba(0, 242, 254, 0.8));
 }
 
 @media (max-width: 787px) {

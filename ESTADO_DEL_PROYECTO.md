@@ -139,6 +139,10 @@ Un **"Manual Vacío"** es un cascarón o aplicación base centralizada (desplega
   - Diseñamos la sección "Texturas del Escenario (PBR)" en `detalle-proyecto-modal.tsx` con soporte para cargar, borrar y guardar las 4 texturas para piso y escenario.
   - Actualizamos `AssemblyPage.jsx` para recuperar las URLs y `Experience.jsx` / `Floor.jsx` para renderizar materiales físicos PBR con `bumpMap` de altura y optimización anti-parpadeo entre pasos.
 
+- [x] **Paso 6: Estandarización Visual de Tooltips y Generación Nativa de QR** (Completado)
+  - Unificamos el estilo de todas las "nubes" de ayuda (`PanelAyudas`, `PanelBtn`, `PanelHerrajes`) con bordes de 20px, fuentes Inter, y el fondo utilizando el `color-mix` dinámico con `var(--primary)`.
+  - Reemplazamos la API externa de códigos QR por `react-qr-code`, logrando generación 100% nativa, offline y a prueba de fallos directamente en el frontend.
+
 ---
 
 ## 🌐 5. Portfolio y Leads (mariomojica.com)
@@ -171,4 +175,4 @@ Un **"Manual Vacío"** es un cascarón o aplicación base centralizada (desplega
 - **Local App:** [http://localhost:3000](http://localhost:3000)
 
 ---
-*Última actualización de contexto: 26 de Mayo, 2026*
+*Última actualización de contexto: 28 de Mayo, 2026*

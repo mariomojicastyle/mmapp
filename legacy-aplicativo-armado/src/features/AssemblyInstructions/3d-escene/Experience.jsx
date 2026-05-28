@@ -1,6 +1,6 @@
 import { useThree, useLoader, useFrame } from "@react-three/fiber";
 import { OrbitControls, Html, useProgress, useGLTF, useHelper, Environment, useTexture } from "@react-three/drei";
-import { useRef, useEffect, Suspense, useState } from "react";
+import React, { useRef, useEffect, Suspense, useState, useMemo } from "react";
 import useEnviroment from "../hooks/useEnviroment.js";
 import * as THREE from 'three';
 import Model from "./Model.jsx";
@@ -10,15 +10,79 @@ import Floor from "./Floor/Floor.jsx";
 function Loader() {
   const { progress } = useProgress();
   const CheckReadyToPlay = useEnviroment((state) => state.CheckReadyToPlay);
+  const [displayProgress, setDisplayProgress] = useState(0);
 
   useEffect(() => {
     CheckReadyToPlay(progress);
   }, [progress, CheckReadyToPlay]);
 
+  // Animación idéntica a la pantalla inicial para llenado y conteo numérico fluido
+  useEffect(() => {
+    let animationFrameId;
+    let startTimestamp = null;
+    const duration = 600; // Animación de llenado suave de 600ms
+    
+    const startValue = displayProgress;
+    const endValue = Math.round(progress);
+
+    if (startValue === endValue) return;
+
+    const step = (timestamp) => {
+      if (!startTimestamp) startTimestamp = timestamp;
+      const t = Math.min((timestamp - startTimestamp) / duration, 1);
+      const ease = t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t;
+      const currentVal = Math.round(startValue + (endValue - startValue) * ease);
+      
+      setDisplayProgress(currentVal);
+      
+      if (t < 1) {
+        animationFrameId = window.requestAnimationFrame(step);
+      }
+    };
+    
+    animationFrameId = window.requestAnimationFrame(step);
+    
+    return () => {
+      window.cancelAnimationFrame(animationFrameId);
+    };
+  }, [progress]);
+
+  const fillerStyles = {
+    height: '100%',
+    width: `${displayProgress}%`,
+    backgroundColor: "color-mix(in srgb, var(--primary) 20%, transparent)",
+    transition: 'width 0.1s linear', // Transición lineal ultrarápida para acoplarse al animationframe
+    borderRadius: 'inherit',
+    boxShadow: '0 0 10px var(--primary-glow)'
+  };
+
+  const textContainerStyles = {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    width: '100%',
+    height: '100%',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    pointerEvents: 'none'
+  };
+
+  const labelStyles = {
+    color: '#ffff00', // Amarillo exacto de la captura
+    fontWeight: 'bold',
+    fontSize: '0.85rem',
+    fontFamily: 'var(--font-sans)',
+    textShadow: '0 1px 2px rgba(0,0,0,0.8)'
+  };
+
   return (
     <Html center>
-      <div style={{ color: 'black', fontSize: '18px', fontWeight: 'bold' }}>
-        {progress.toFixed(0)} %
+      <div className="progress-model-loader" style={{ position: 'relative' }}>
+        <div style={fillerStyles} className="progressBar"></div>
+        <div style={textContainerStyles}>
+          <span style={labelStyles}>{`${displayProgress}%`}</span>
+        </div>
       </div>
     </Html>
   );
@@ -32,6 +96,7 @@ function getTexturesFromAtlasFile(atlasImgUrl, tilesNum) {
   }
 
   new THREE.ImageLoader().load(atlasImgUrl, (image) => {
+    console.log("Cargando atlas 3D:", atlasImgUrl, "dimensiones reales detectadas:", image.width, "x", image.height);
     let canvas, context;
     const tileWidth = image.height;
 
@@ -54,6 +119,7 @@ export default function Experience({ id, modelUrl, productData }) {
   const { scene, gl, camera } = useThree();
   const useOrbitControls = useRef();
   const [cameraTarget, setCameraTarget] = useState([0, 0.8, 0]);
+  const lastLoggedPos = useRef(""); // Guardar última posición impresa para evitar inundar la consola
 
   const toogle = useEnviroment((state) => state.show);
   const CargarPasoInicial = useEnviroment((state) => state.CargarPasoInicial);
@@ -63,12 +129,22 @@ export default function Experience({ id, modelUrl, productData }) {
   const alturas = useEnviroment((state) => state.alturas);
 
   useFrame(() => {
+    const pos = camera.position;
+    const target = useOrbitControls.current ? useOrbitControls.current.target : { x: 0, y: 0, z: 0 };
+
     window.cameraDebug = {
-      position: [camera.position.x, camera.position.y, camera.position.z],
-      target: useOrbitControls.current ? [useOrbitControls.current.target.x, useOrbitControls.current.target.y, useOrbitControls.current.target.z] : null,
+      position: [pos.x, pos.y, pos.z],
+      target: [target.x, target.y, target.z],
       fov: camera.fov,
       zoom: camera.zoom
     };
+
+    // Imprimir en la consola solo cuando la posición o el target cambien significativamente al arrastrar/rotar
+    const currentKey = `POS: [${pos.x.toFixed(2)}, ${pos.y.toFixed(2)}, ${pos.z.toFixed(2)}] | TARGET: [${target.x.toFixed(2)}, ${target.y.toFixed(2)}, ${target.z.toFixed(2)}]`;
+    if (lastLoggedPos.current !== currentKey) {
+      lastLoggedPos.current = currentKey;
+      console.log(`🎥 CÁMARA -> posición: [${pos.x.toFixed(4)}, ${pos.y.toFixed(4)}, ${pos.z.toFixed(4)}] | target: [${target.x.toFixed(4)}, ${target.y.toFixed(4)}, ${target.z.toFixed(4)}]`);
+    }
   });
 
   //Se actualiza si es Maderkit o Practimac
@@ -90,38 +166,67 @@ export default function Experience({ id, modelUrl, productData }) {
   }, [PasoActual, alturas]);
 
   // Cargar la imagen panorámica en formato stripe y dividirla en 6 partes
-  const textures = getTexturesFromAtlasFile("/hdri2/salon_01.webp", 6);
+  // Determinar si hay texturas PBR activas en las paredes (modo avanzado)
+  // Se activa solo si además de la imagen difusa, se proporcionan mapas PBR complementarios (normales o rugosidad).
+  // Si solo se proporciona pbrWallDiff, se asume que es la tira panorámica 360 (modo práctico de una sola imagen).
+  const hasWallTextures = useMemo(() => {
+    return !!(
+      productData?.pbrWallDiff && 
+      (productData?.pbrWallNormal || productData?.pbrWallRoughness || productData?.pbrWallHeight)
+    );
+  }, [productData?.pbrWallDiff, productData?.pbrWallNormal, productData?.pbrWallRoughness, productData?.pbrWallHeight]);
 
-  // Cargar texturas de pared PBR si están configuradas
-  const hasWallTextures = !!(productData?.pbrWallDiff || productData?.pbrWallNormal || productData?.pbrWallRoughness || productData?.pbrWallHeight);
+  // URL del atlas panorámico para el Skybox
+  const atlasUrl = useMemo(() => {
+    return (!hasWallTextures && productData?.pbrWallDiff) 
+      ? productData.pbrWallDiff 
+      : "/hdri2/salon_01.webp";
+  }, [hasWallTextures, productData?.pbrWallDiff]);
 
-  const wallTextureConfig = {
-    map: productData?.pbrWallDiff || "/textures/floor/floor-diff.webp",
-    normalMap: productData?.pbrWallNormal || "/textures/floor/floor-normal.webp",
-    roughnessMap: productData?.pbrWallRoughness || "/textures/floor/floor-roughness.webp",
-  };
+  const [cacheBuster] = useState(() => Date.now());
+  
+  // Cargar la imagen panorámica en formato stripe y dividirla en 6 partes con cache buster
+  const textures = useMemo(() => {
+    return getTexturesFromAtlasFile(`${atlasUrl}?v=${cacheBuster}`, 6);
+  }, [atlasUrl, cacheBuster]);
 
-  if (productData?.pbrWallHeight) {
-    wallTextureConfig.bumpMap = productData.pbrWallHeight;
-  }
+  const wallTextureConfig = useMemo(() => {
+    const config = {
+      map: productData?.pbrWallDiff || "/textures/floor/floor-diff.webp",
+      normalMap: productData?.pbrWallNormal || "/textures/floor/floor-normal.webp",
+      roughnessMap: productData?.pbrWallRoughness || "/textures/floor/floor-roughness.webp",
+    };
+    if (productData?.pbrWallHeight) {
+      config.bumpMap = productData.pbrWallHeight;
+    }
+    return config;
+  }, [productData?.pbrWallDiff, productData?.pbrWallNormal, productData?.pbrWallRoughness, productData?.pbrWallHeight]);
 
   const wallTextureMaps = useTexture(wallTextureConfig);
 
+  // Crear una referencia estable para wallTextureMaps para evitar re-ejecuciones por objetos contenedores efímeros
+  const stableWallTextureMaps = useMemo(() => wallTextureMaps, [
+    wallTextureMaps?.map,
+    wallTextureMaps?.normalMap,
+    wallTextureMaps?.roughnessMap,
+    wallTextureMaps?.bumpMap
+  ]);
+
   // Configurar las texturas de pared si están presentes
   useEffect(() => {
-    if (hasWallTextures && wallTextureMaps) {
-      Object.values(wallTextureMaps).forEach((texture) => {
+    if (hasWallTextures && stableWallTextureMaps) {
+      Object.values(stableWallTextureMaps).forEach((texture) => {
         if (texture) {
           texture.wrapS = THREE.RepeatWrapping;
           texture.wrapT = THREE.RepeatWrapping;
           texture.repeat.set(4, 2); // Repetición agradable en las paredes del escenario
         }
       });
-      if (wallTextureMaps.map) {
-        wallTextureMaps.map.colorSpace = THREE.SRGBColorSpace;
+      if (stableWallTextureMaps.map) {
+        stableWallTextureMaps.map.colorSpace = THREE.SRGBColorSpace;
       }
     }
-  }, [hasWallTextures, wallTextureMaps]);
+  }, [hasWallTextures, stableWallTextureMaps]);
 
   // Cargar el modelo GLB inicial (paso 00)
   const initialModelUrl = `/${id}/models/P00.glb`;
@@ -143,7 +248,7 @@ export default function Experience({ id, modelUrl, productData }) {
       const altData = alturas.find(a => a.paso === PasoActual);
       if (altData && altData.plane !== undefined) {
         const floorY = altData.plane - 0.017; // Ajuste idéntico al del Floor para coincidencia exacta
-        const skyBoxY = floorY + 2.25 - 0.001; // Desplazamiento de 1mm hacia abajo para mitigar Z-fighting
+        const skyBoxY = floorY + 2.25 - 0.001; // Desplazamiento original de alineación del piso
         skyBoxMesh.position.set(0, skyBoxY, 0);
       } else {
         skyBoxMesh.position.set(0, 1.626, 0); // Fallback alineado con la media de plane
@@ -159,10 +264,10 @@ export default function Experience({ id, modelUrl, productData }) {
     if (hasWallTextures) {
       // Crear material PBR para las paredes del escenario
       const wallMaterial = new THREE.MeshStandardMaterial({
-        map: wallTextureMaps.map,
-        normalMap: wallTextureMaps.normalMap,
-        roughnessMap: wallTextureMaps.roughnessMap,
-        bumpMap: wallTextureMaps.bumpMap || null,
+        map: stableWallTextureMaps.map,
+        normalMap: stableWallTextureMaps.normalMap,
+        roughnessMap: stableWallTextureMaps.roughnessMap,
+        bumpMap: stableWallTextureMaps.bumpMap || null,
         bumpScale: 0.02,
         roughness: 0.8,
         metalness: 0.1,
@@ -196,7 +301,7 @@ export default function Experience({ id, modelUrl, productData }) {
     }
 
     const skyBox = new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1), materials);
-    skyBox.geometry.scale(12, 4.5, -12); // Escala 4.5 de altura para apoyar la base en floorY y evitar el estiramiento vertical exagerado de la puerta
+    skyBox.geometry.scale(12, 4.5, -12); // Escala original de producción de 12x4.5x-12
     
     // Posicionar inmediatamente en su creación
     repositionSkybox(skyBox);
@@ -210,7 +315,7 @@ export default function Experience({ id, modelUrl, productData }) {
       materials.forEach(m => m.dispose());
       skyBoxRef.current = null;
     };
-  }, [hasWallTextures, wallTextureMaps, textures, scene]);
+  }, [hasWallTextures, stableWallTextureMaps, textures, scene]);
 
   // Actualizar posición del skybox al cambiar de paso
   useEffect(() => {
@@ -235,9 +340,12 @@ export default function Experience({ id, modelUrl, productData }) {
         maxPolarAngle={Math.PI / 2 - 0.05}
       />
 
+      <Suspense fallback={null}>
+        <Floor productData={productData} />
+      </Suspense>
+
       <Suspense fallback={<Loader />}>
         {toogle && <Model id={id} modelUrl={modelUrl} orbitControlsRef={useOrbitControls} />}
-        <Floor productData={productData} />
       </Suspense>
     </>
   );
