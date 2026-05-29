@@ -47,6 +47,7 @@ export function DetalleProyectoModal({ isOpen, onClose, proyecto, onUpdate }: De
   const [colorPrimario, setColorPrimario] = useState("#0D9488")
   const [colorSecundario, setColorSecundario] = useState("#111827")
   const [colorTextoBotones, setColorTextoBotones] = useState("#ffffff")
+  const [opacidadManual, setOpacidadManual] = useState(100)
   const [logoUrl, setLogoUrl] = useState("")
   const [faviconUrl, setFaviconUrl] = useState("")
   
@@ -106,6 +107,7 @@ export function DetalleProyectoModal({ isOpen, onClose, proyecto, onUpdate }: De
               setColorPrimario(data.color_primario || "#0D9488")
               setColorSecundario(data.color_secundario || "#111827")
               setColorTextoBotones(data.color_texto_botones || "#ffffff")
+              setOpacidadManual(data.opacidad_manual !== undefined && data.opacidad_manual !== null ? data.opacidad_manual : 100)
               setLogoUrl(data.logo_url || "")
               setFaviconUrl(data.favicon_url || "")
               
@@ -419,6 +421,7 @@ export function DetalleProyectoModal({ isOpen, onClose, proyecto, onUpdate }: De
           color_primario: colorPrimario,
           color_secundario: colorSecundario,
           color_texto_botones: colorTextoBotones,
+          opacidad_manual: opacidadManual,
           logo_url: logoUrl,
           favicon_url: faviconUrl,
           
@@ -751,6 +754,33 @@ export function DetalleProyectoModal({ isOpen, onClose, proyecto, onUpdate }: De
                           />
                         </div>
                       </label>
+                    </div>
+
+                    {/* Control de Opacidad / Modo Cristal */}
+                    <div className="border-t border-outline-variant/10 pt-4 flex flex-col gap-3">
+                      <div className="flex items-center justify-between">
+                        <span className="text-[11px] font-bold text-on-surface-variant/90 uppercase tracking-wider flex items-center gap-1.5">
+                          ✨ Opacidad del Manual (Modo Cristal)
+                        </span>
+                        <span className="text-[11px] font-bold text-primary px-2.5 py-0.5 rounded-full bg-primary/10 border border-primary/20">
+                          {opacidadManual === 100 ? "Sólido (100%)" : `Cristal (${opacidadManual}%)`}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-4 bg-surface-container-low/40 p-4 rounded-xl border border-outline-variant/5">
+                        <span className="text-[11px] font-medium text-on-surface-variant/70 shrink-0">Translúcido (10%)</span>
+                        <input
+                          type="range"
+                          min="10"
+                          max="100"
+                          value={opacidadManual}
+                          onChange={e => setOpacidadManual(Number(e.target.value))}
+                          className="flex-1 h-1.5 bg-surface-container-high border border-outline-variant/10 rounded-lg appearance-none cursor-pointer accent-primary focus:outline-none"
+                        />
+                        <span className="text-[11px] font-medium text-on-surface-variant/70 shrink-0">Sólido (100%)</span>
+                      </div>
+                      <p className="text-[10px] text-on-surface-variant/60 leading-relaxed">
+                        Regula la transparencia de las barras y paneles flotantes sobre el espacio 3D. Valores inferiores al 100% activan automáticamente un elegante efecto esmerilado translúcido (*Glassmorphism*).
+                      </p>
                     </div>
 
                     {/* Tipografías y Textos Personalizados */}

@@ -529,4 +529,10 @@ Los estilos, colores y tiempos de transición de las flechas azules se configura
       - `PanelBtn`: Botón de lupa actualizado a "identificar Herrajes".
     - **Resultado**: Una interfaz mucho más intuitiva, libre de bugs visuales de herencia en los iconos, y preparada para personalizaciones de temas de color de alto contraste (Obsidian Teal o Light Theme).
 
-*Última consolidación: 28 de Mayo, 2026*
+* **[2026-05-29] Modo Cristal Regulable en Plataforma y Manual (AppArmado_v13 / Integracion_Plataforma_v5):**
+    - **Base de Datos (Supabase):** Añadimos la columna `opacidad_manual` (entero de 10 a 100) en la tabla `configuraciones_manual` de manera completamente retrocompatible (valor por defecto 100).
+    - **Slider de Opacidad Premium (Next.js):** Diseñamos e implementamos un control Slider (`type="range"`) estilizado en Obsidian Teal en el panel de Branding del modal de detalles del proyecto, con un indicador dinámico de estado en tiempo real (mostrando badge de "Sólido (100%)" o "Cristal (X%)").
+    - **Inyección de Transparencia CSS (`color-mix`):** Actualizamos `AssemblyPage.jsx` para leer la opacidad y, si es inferior a 100%, inyectar la transparencia a las variables `--surface`, `--surface-opaque`, `--surface-container` y `--surface-active` usando la función nativa CSS `color-mix(in srgb, Color Porcentaje%, transparent)`.
+    - **Unificación Estética del Círculo Central:** Modificamos `NavBarInferior.css` para que el círculo indicador central de pasos (`.percent`) utilice `var(--surface)` en lugar de `var(--primary)`, permitiéndole heredar de forma impecable y coherente la transparencia del modo cristal seleccionada.
+
+*Última consolidación: 29 de Mayo, 2026*

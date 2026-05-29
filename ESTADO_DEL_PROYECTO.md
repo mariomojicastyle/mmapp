@@ -143,6 +143,12 @@ Un **"Manual Vacío"** es un cascarón o aplicación base centralizada (desplega
   - Unificamos el estilo de todas las "nubes" de ayuda (`PanelAyudas`, `PanelBtn`, `PanelHerrajes`) con bordes de 20px, fuentes Inter, y el fondo utilizando el `color-mix` dinámico con `var(--primary)`.
   - Reemplazamos la API externa de códigos QR por `react-qr-code`, logrando generación 100% nativa, offline y a prueba de fallos directamente en el frontend.
 
+- [x] **Paso 7: Modo Cristal (Glassmorphism) con Opacidad Regulable** (Completado)
+  - Incorporamos la columna `opacidad_manual` en la tabla `configuraciones_manual` de Supabase para almacenar la opacidad del manual (rango 10-100%).
+  - Diseñamos un Slider premium e interactivo en Obsidian Teal dentro del panel de Branding de Next.js, con un indicador dinámico de estado.
+  - Sincronizamos e inyectamos la transparencia cromática en el manual de armado React mediante la función nativa CSS `color-mix(in srgb, Color Porcentaje%, transparent)` aplicada a `--surface` y afines.
+  - Aseguramos la consistencia unificada del diseño aplicando la opacidad y el efecto esmerilado al círculo central indicador de pasos de la botonera.
+
 ---
 
 ## 🌐 5. Portfolio y Leads (mariomojica.com)

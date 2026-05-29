@@ -150,7 +150,7 @@
   width: 60px;
   height: 60px;
   border-radius: 50%;
-  background: var(--primary);
+  background: var(--surface);
   backdrop-filter: var(--glass-blur);
   -webkit-backdrop-filter: var(--glass-blur);
   border: 1px solid var(--border-light);

@@ -43,12 +43,33 @@ const AssemblyPage = () => {
           const primario = configData.color_primario || "#0D9488";
           const secundario = configData.color_secundario || "#111827";
           const colorTextoBtn = configData.color_texto_botones || "#ffffff";
+          const opacidad = configData.opacidad_manual !== undefined && configData.opacidad_manual !== null ? configData.opacidad_manual : 100;
+
           document.documentElement.style.setProperty('--primary', primario);
           document.documentElement.style.setProperty('--secondary', secundario);
-          document.documentElement.style.setProperty('--surface', primario);
-          document.documentElement.style.setProperty('--surface-opaque', primario);
-          document.documentElement.style.setProperty('--surface-container', primario);
           document.documentElement.style.setProperty('--btn-text-color', colorTextoBtn);
+
+          if (opacidad < 100) {
+            // Aplicar opacidad dinámica usando color-mix
+            document.documentElement.style.setProperty('--surface', `color-mix(in srgb, ${primario} ${opacidad}%, transparent)`);
+            document.documentElement.style.setProperty('--surface-opaque', `color-mix(in srgb, ${secundario} ${opacidad}%, transparent)`);
+            document.documentElement.style.setProperty('--surface-container', `color-mix(in srgb, ${primario} ${opacidad}%, transparent)`);
+            
+            // El estado activo/hover será ligeramente más opaco para dar retroalimentación visual (ej: +15%)
+            const opacidadActiva = Math.min(100, opacidad + 15);
+            document.documentElement.style.setProperty('--surface-active', `color-mix(in srgb, ${primario} ${opacidadActiva}%, transparent)`);
+            
+            // Clase de indicador para otros componentes de CSS
+            document.documentElement.classList.add('glass-mode');
+          } else {
+            // Sólido tradicional
+            document.documentElement.style.setProperty('--surface', primario);
+            document.documentElement.style.setProperty('--surface-opaque', primario);
+            document.documentElement.style.setProperty('--surface-container', primario);
+            document.documentElement.style.setProperty('--surface-active', `color-mix(in srgb, ${primario} 90%, black)`);
+            
+            document.documentElement.classList.remove('glass-mode');
+          }
 
           // Cargar e Inyectar fuentes y tamaños dinámicos
           const fTitle = configData.font_title || "Inter";
