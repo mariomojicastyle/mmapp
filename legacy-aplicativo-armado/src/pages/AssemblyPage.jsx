@@ -129,12 +129,13 @@ const AssemblyPage = () => {
             pbrWallRoughness: configData.pbr_wall_roughness ? getStorageUrl(configData.pbr_wall_roughness) : "",
             pbrWallHeight: configData.pbr_wall_height ? getStorageUrl(configData.pbr_wall_height) : "",
 
-            // Alturas y posiciones dinámicas (leídas desde el JSON del CMS en Supabase) o por defecto
+            // Alturas y posiciones dinámicas (leídas desde el JSON del CMS en Supabase)
+            // Si no hay plane explícito, se deja undefined para que el auto-grounding (Box3) lo compute
             alturas: (configData.glb_pasos || []).map(g => ({
               paso: g.step,
-              skyBox: g.skyBox !== undefined ? g.skyBox : 0.894,
-              plane: g.plane !== undefined ? g.plane : -0.606,
-              target: g.cameraTarget ? [g.cameraTarget[0], g.cameraTarget[1], g.cameraTarget[2]] : [0.12, -0.219, 0.085]
+              skyBox: g.skyBox !== undefined ? g.skyBox : undefined,
+              plane: g.plane !== undefined ? g.plane : undefined,
+              target: g.cameraTarget ? [g.cameraTarget[0], g.cameraTarget[1], g.cameraTarget[2]] : undefined
             })),
             cameraPositions: (configData.glb_pasos || []).map(g => {
               let pos = { x: -3.177, y: 2, z: 5 };

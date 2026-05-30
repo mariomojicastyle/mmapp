@@ -20,6 +20,8 @@ export default create(
 
       alturas:[], //Posicion de  skybox y planeGeometry
 
+      computedModelMinY: null, // Punto Y más bajo del bounding box del GLB actual (auto-calculado)
+
       cameraPositions: [], //la posicion de la camara
 
       pasoActual: "00",//Se incializa en 00
@@ -202,6 +204,8 @@ export default create(
       ChargerPositionFloor: (pasos) =>set((state) => ({ PositionFloor: pasos })),
 
       ChargerAlturas: (alturas) => set((state) => ({ alturas: alturas })),
+
+      SetComputedModelMinY: (minY) => set(() => ({ computedModelMinY: minY })),
 
       ChargerCameraPositions: (cameraPositions) => set((state) => ({ cameraPositions: cameraPositions })),
 

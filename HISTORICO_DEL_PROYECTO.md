@@ -535,4 +535,16 @@ Los estilos, colores y tiempos de transición de las flechas azules se configura
     - **Inyección de Transparencia CSS (`color-mix`):** Actualizamos `AssemblyPage.jsx` para leer la opacidad y, si es inferior a 100%, inyectar la transparencia a las variables `--surface`, `--surface-opaque`, `--surface-container` y `--surface-active` usando la función nativa CSS `color-mix(in srgb, Color Porcentaje%, transparent)`.
     - **Unificación Estética del Círculo Central:** Modificamos `NavBarInferior.css` para que el círculo indicador central de pasos (`.percent`) utilice `var(--surface)` en lugar de `var(--primary)`, permitiéndole heredar de forma impecable y coherente la transparencia del modo cristal seleccionada.
 
-*Última consolidación: 29 de Mayo, 2026*
+* **[2026-05-30] Pestaña Despiece y Calculador de Costos 3D Integrado (Integracion_Plataforma_v6):**
+    - **Base de Datos (Supabase):** Añadimos de manera segura la columna `despiece` (de tipo `jsonb`) a la tabla `configuraciones_manual` para almacenar los costos e insumos procesados.
+    - **Extracción de Insumos GLB Silenciosa en Cliente:** Diseñamos un flujo de descarga nativa mediante `.download(path)` de Supabase que evita en un 100% problemas de CORS y autorización de red, procesando el binario localmente como un `Blob` temporal.
+    - **Soporte para Compresión Draco 3D:** Integramos dinámicamente `DRACOLoader` de Three.js configurado con el CDN oficial del decodificador Draco de Google, logrando descomprimir en vivo geometrías 3D Draco en milisegundos en el navegador.
+    - **Extractor de Tooltips e Identificación:** Portamos con precisión milimétrica la función `obtenerNombreLimpioTooltip` de `Model.jsx` para que las piezas del listado coincidan 1:1 con el visor interactivo.
+    - **Reglas Especiales de Clasificación de Insumos:**
+        - **Maderas / Estructura:** Si el componente empieza por `"Tapaluz"`, se clasifica obligatoriamente como madera, evadiendo colisiones generales.
+        - **Herrajes / Accesorios:** Si el componente empieza por `"Caja"` o `"Puntilla"`, se clasifica deterministamente como herraje. El resto de herrajes se identifican por palabras clave genéricas (`tornillo`, `perno`, `tarugo`, etc.).
+    - **Interfaz Glassmorphic & Panel de Control de Costos:**
+        - Creamos una pestaña **Despiece** con un panel resumen de KPIs (Total Insumos, Maderas Únicas, Herrajes Únicos) y Costo Total del Mueble actualizado en vivo al cambiar inputs de Costo Unitario.
+        - Añadimos botones rápidos para escanear en vivo y guardar de forma express el despiece sin interferir con otros insumos.
+
+*Última consolidación: 30 de Mayo, 2026*

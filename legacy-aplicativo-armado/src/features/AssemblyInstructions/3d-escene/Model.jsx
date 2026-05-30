@@ -5,6 +5,52 @@ import { useThree, useFrame } from "@react-three/fiber";
 import useEnviroment from "../hooks/useEnviroment.js";
 import Floor from "./Floor/Floor.jsx";
 
+function obtenerNombreLimpioTooltip(rawName) {
+  if (!rawName) return "";
+  
+  // 1. Obtener la primera sección (antes de cualquier "-") y limpiar espacios
+  let name = rawName.split("-")[0].trim();
+  
+  // 2. Curación definitiva de sufijos de Blender (ej. "PARAL_6A001" -> "PARAL_6A", "TORNILLO_0004705050" -> "TORNILLO_0004705")
+  // El exportador quita el punto de los duplicados de Blender (.001, .050, etc.) convirtiéndolos en 001, 050 al final
+  name = name.replace(/[._]?0\d\d$/i, "");
+  name = name.replace(/_$/, "");
+  
+  // 3. Regla inteligente del guion bajo (no corta palabras, solo números/códigos redundantes)
+  // ej: "CAJA_0002715_13" -> "CAJA_0002715" (conserva 'CAJA' y '0002715', corta el segundo código '13')
+  // ej: "Frente_de_cajon_1" -> "Frente_de_cajon_1" (no corta 'de' ni 'cajon' porque son texto puro)
+  const parts2 = name.split("_");
+  const resultParts = [];
+  let codeCount = 0;
+  
+  for (let i = 0; i < parts2.length; i++) {
+    const part = parts2[i];
+    // Una parte es texto puro si no contiene ningún dígito numérico
+    const isPureText = !/\d/.test(part);
+    
+    if (isPureText) {
+      resultParts.push(part);
+    } else {
+      if (codeCount === 0) {
+        resultParts.push(part);
+        codeCount++;
+      } else {
+        // Ya tenemos guardado un código/número, descartamos los números subsiguientes (ej. _13, _17)
+        break;
+      }
+    }
+  }
+  name = resultParts.join("_");
+  
+  // 4. Regla específica para PERNO_ con espacio
+  if (name.toUpperCase().startsWith("PERNO_") && name.includes(" ")) {
+    name = name.split(" ")[0];
+  }
+  
+  return name;
+}
+
+
 export default function Model(props) {
   // Obtiene los estados y funciones del contexto de uso
   const pasoActual = useEnviroment((state) => state.pasoActual);
@@ -24,6 +70,7 @@ export default function Model(props) {
   const StartApp = useEnviroment((state) => state.StartApp);
   const Cliente = useEnviroment((state) => state.Cliente);
   const PiezaHerraje = useEnviroment((state) => state.NamePieza);
+  const SetComputedModelMinY = useEnviroment((state) => state.SetComputedModelMinY);
 
   const CameraPosition = useEnviroment ((state) => state.cameraPositions)
   const alturas = useEnviroment((state) => state.alturas);
@@ -103,6 +150,31 @@ export default function Model(props) {
   // Configuración inicial del modelo GLB, de la animación y de la cámara
   useEffect(() => {
     ChargeModel(scene); // Carga el modelo en la escena
+
+    // Auto-grounding: Calcular el punto más bajo del modelo (min.y) usando Box3
+    // Esto permite al Floor.jsx y Experience.jsx posicionar el piso y skybox correctamente
+    // sin depender de valores manuales hardcodeados
+    if (scene) {
+      scene.updateWorldMatrix(true, true);
+      const box = new THREE.Box3();
+      let hasMesh = false;
+      scene.traverse((node) => {
+        if (node.isMesh) {
+          if (node.geometry) {
+            if (!node.geometry.boundingBox) {
+              node.geometry.computeBoundingBox();
+            }
+            const meshBox = node.geometry.boundingBox.clone();
+            meshBox.applyMatrix4(node.matrixWorld);
+            box.union(meshBox);
+            hasMesh = true;
+          }
+        }
+      });
+      if (hasMesh && !box.isEmpty()) {
+        SetComputedModelMinY(box.min.y);
+      }
+    }
 
     if (StartApp === true && action) {
       action.reset(); // Reinicia siempre la animación al cambiar de modelo
@@ -204,20 +276,17 @@ export default function Model(props) {
       onPointerFalse(); // Desactiva el puntero para evitar interferencias
 
       scene.traverse((child) => {
-        let characters = "";
-        if (child.name.includes("-")) {
-          characters = child.name.split("-");
-        }
+        const cleanChildName = obtenerNombreLimpioTooltip(child.name);
 
         if (
-          toolTip.includes(characters[0]) &&
-          child.name.includes(characters[0])
+          toolTip.includes(cleanChildName) &&
+          child.name.includes(cleanChildName)
         ) {
           const name = toolTip.split("-");
           PiezaHerraje(name);
           Temporizador(child);
         } else if (toolTip === child.name) {
-          PiezaHerraje(characters[0]);
+          PiezaHerraje([cleanChildName]);
           textMaterial2 = textureLoader.load("/Matcaps/3.png");
           if (!textMaterial2 || !textMaterial2.isMaterial) {
             console.error("Error: textMaterial2 is undefined or invalid");
@@ -247,8 +316,8 @@ export default function Model(props) {
       event.object.material = highlightMaterialRef.current;
       document.body.style.cursor = "pointer";
 
-      const name = event.object.name.split("-");
-      PiezaHerraje(name);
+      const name = obtenerNombreLimpioTooltip(event.object.name);
+      PiezaHerraje([name]);
     } else {
       console.log("Material de resaltado sin cargarse");
     }

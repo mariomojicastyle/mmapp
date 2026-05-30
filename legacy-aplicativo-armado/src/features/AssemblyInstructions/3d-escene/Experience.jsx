@@ -128,6 +128,7 @@ export default function Experience({ id, modelUrl, productData }) {
   const cameraPositions = useEnviroment((state) => state.cameraPositions);
   const alturas = useEnviroment((state) => state.alturas);
   const sombras = useEnviroment((state) => state.sombras);
+  const computedModelMinY = useEnviroment((state) => state.computedModelMinY);
 
   useFrame(() => {
     const pos = camera.position;
@@ -245,17 +246,27 @@ export default function Experience({ id, modelUrl, productData }) {
   // Función unificada para alinear la altura del escenario con el suelo (floorY)
   const repositionSkybox = (skyBoxMesh) => {
     if (!skyBoxMesh) return;
+    let planeValue = null;
+    
+    // Prioridad 1: plane manual del paso actual en alturas
     if (alturas && alturas.length > 0) {
       const altData = alturas.find(a => a.paso === PasoActual);
       if (altData && altData.plane !== undefined) {
-        const floorY = altData.plane - 0.017; // Ajuste idéntico al del Floor para coincidencia exacta
-        const skyBoxY = floorY + 2.25 - 0.001; // Desplazamiento original de alineación del piso
-        skyBoxMesh.position.set(0, skyBoxY, 0);
-      } else {
-        skyBoxMesh.position.set(0, 1.626, 0); // Fallback alineado con la media de plane
+        planeValue = altData.plane;
       }
+    }
+    
+    // Prioridad 2: computedModelMinY (auto-grounding)
+    if (planeValue === null && computedModelMinY !== null) {
+      planeValue = computedModelMinY;
+    }
+    
+    if (planeValue !== null) {
+      const floorY = planeValue - 0.001; // Ajuste idéntico al del Floor para coincidencia exacta
+      const skyBoxY = floorY + 2.25 - 0.001; // Desplazamiento original de alineación del piso
+      skyBoxMesh.position.set(0, skyBoxY, 0);
     } else {
-      skyBoxMesh.position.set(0, 1.626, 0);
+      skyBoxMesh.position.set(0, 1.626, 0); // Fallback alineado con la media de plane
     }
   };
 
@@ -318,10 +329,10 @@ export default function Experience({ id, modelUrl, productData }) {
     };
   }, [hasWallTextures, stableWallTextureMaps, textures, scene]);
 
-  // Actualizar posición del skybox al cambiar de paso
+  // Actualizar posición del skybox al cambiar de paso o cuando se computa el minY del modelo
   useEffect(() => {
     repositionSkybox(skyBoxRef.current);
-  }, [PasoActual, alturas, skyBoxRef.current]);
+  }, [PasoActual, alturas, computedModelMinY, skyBoxRef.current]);
 
   return (
     <>

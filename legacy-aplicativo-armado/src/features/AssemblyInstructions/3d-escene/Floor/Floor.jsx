@@ -7,12 +7,18 @@ export default function Floor({ productData }) {
   const pasoActual = useEnviroment((state) => state.pasoActual);
   const alturas = useEnviroment((state) => state.alturas);
   const sombras = useEnviroment((state) => state.sombras);
+  const computedModelMinY = useEnviroment((state) => state.computedModelMinY);
 
   const pasoIndex = parseInt(pasoActual, 10) || 0;
   
   // Buscar la altura del piso (plane) para el paso actual en data.json
   const alturaPaso = alturas?.find(a => a.paso === pasoActual);
-  const floorY = (alturaPaso && alturaPaso.plane !== undefined ? alturaPaso.plane : 0) - 0.017; // Ajuste de 17mm para evitar que las piezas atraviesen el piso
+  
+  // Prioridad: 1) plane manual del paso actual, 2) computedModelMinY (auto-grounding), 3) fallback 0
+  const planeValue = (alturaPaso && alturaPaso.plane !== undefined) 
+    ? alturaPaso.plane 
+    : (computedModelMinY !== null ? computedModelMinY : 0);
+  const floorY = planeValue - 0.001; // Ajuste fino de 1mm para evitar z-fighting manteniendo el mueble perfectamente apoyado
 
   const hasFloorTextures = !!(productData?.pbrFloorDiff || productData?.pbrFloorNormal || productData?.pbrFloorRoughness || productData?.pbrFloorHeight);
 

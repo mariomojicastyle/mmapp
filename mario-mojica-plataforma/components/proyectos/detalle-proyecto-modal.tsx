@@ -1,11 +1,19 @@
 "use client"
+/* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unused-vars, react-hooks/exhaustive-deps */
 
 import React, { useState, useEffect, useRef } from "react"
-import { X, Download, Paperclip, Image, FileText, Music, Cpu, Layers, Plus, Trash2, Loader2, Eye, ExternalLink, ChevronDown, ChevronUp, UploadCloud, CheckCircle2, AlertCircle, FileSpreadsheet, Box } from "lucide-react"
+import { X, Download, Paperclip, Image, FileText, Music, Cpu, Layers, Plus, Trash2, Loader2, Eye, ExternalLink, ChevronDown, ChevronUp, UploadCloud, CheckCircle2, AlertCircle, FileSpreadsheet, Box, Boxes, Coins, Hammer, Wrench, Sparkles } from "lucide-react"
 import { motion, AnimatePresence } from "framer-motion"
 import { cn } from "@/lib/utils"
 import { usePermissions } from "@/hooks/use-permissions"
 import { createClient } from "@/lib/supabase/client"
+
+export interface ItemDespiece {
+  nombre: string
+  esHerraje: boolean
+  cantidad: number
+  costoUnitario?: number
+}
 
 interface DetalleProyectoModalProps {
   isOpen: boolean
@@ -37,7 +45,7 @@ interface DetalleProyectoModalProps {
 
 export function DetalleProyectoModal({ isOpen, onClose, proyecto, onUpdate }: DetalleProyectoModalProps) {
   const { isSuperAdmin, isCoequipero } = usePermissions()
-  const [activeTab, setActiveTab] = useState<"solicitud" | "insumos">("solicitud")
+  const [activeTab, setActiveTab] = useState<"solicitud" | "insumos" | "despiece">("solicitud")
   const [error, setError] = useState("")
   const [successMsg, setSuccessMsg] = useState("")
   const [isSaving, setIsSaving] = useState(false)
@@ -81,6 +89,10 @@ export function DetalleProyectoModal({ isOpen, onClose, proyecto, onUpdate }: De
   const [garantiaDoc, setGarantiaDoc] = useState<string>("")
   const [herrajesFotos, setHerrajesFotos] = useState<string[]>([])
   const [renders, setRenders] = useState<string[]>([])
+
+  // Despiece State
+  const [despiece, setDespiece] = useState<ItemDespiece[]>([])
+  const [isScanning, setIsScanning] = useState(false)
 
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [uploadTarget, setUploadTarget] = useState<{ type: string; step?: string } | null>(null)
@@ -138,6 +150,7 @@ export function DetalleProyectoModal({ isOpen, onClose, proyecto, onUpdate }: De
               setGarantiaDoc(data.garantia_texto || "")
               setHerrajesFotos((data.fotos_herrajes as any) || [])
               setRenders((data.renders_fotorealistas as any) || [])
+              setDespiece((data.despiece as any) || [])
             }
           })
       }
@@ -208,7 +221,28 @@ export function DetalleProyectoModal({ isOpen, onClose, proyecto, onUpdate }: De
       const { type, step } = uploadTarget
 
       if (type === 'glb') {
-        const stepStr = step || String(glbSteps.length).padStart(2, "0")
+        let stepStr = step
+        if (!stepStr) {
+          // Intentar extraer el número de paso del nombre del archivo (ej: P01.glb -> 01, P1.glb -> 01)
+          const match = file.name.match(/P(\d+)/i)
+          if (match) {
+            stepStr = match[1].padStart(2, "0")
+          } else {
+            const numMatch = file.name.match(/(\d+)/)
+            if (numMatch) {
+              stepStr = numMatch[1].padStart(2, "0")
+            } else {
+              // Si no tiene número, encontrar el primer número de paso disponible que no colisione
+              let nextStep = 0
+              let tempStepStr = String(nextStep).padStart(2, "0")
+              while (glbSteps.some(s => s.step === tempStepStr)) {
+                nextStep++
+                tempStepStr = String(nextStep).padStart(2, "0")
+              }
+              stepStr = tempStepStr
+            }
+          }
+        }
         path = `${codigoManual}/models/P${stepStr}.glb`
         updatedStateCallback = () => {
           setGlbSteps(prev => {
@@ -390,6 +424,181 @@ export function DetalleProyectoModal({ isOpen, onClose, proyecto, onUpdate }: De
     handleRealDelete(type, stepOrIndex)
   }
 
+  // --- LÓGICA DE DESPIECE AUTOMATIZADO ---
+  
+  const obtenerNombreLimpioTooltip = (rawName: string): string => {
+    if (!rawName) return ""
+    
+    // 1. Obtener la primera sección (antes de cualquier "-") y limpiar espacios
+    let name = rawName.split("-")[0].trim()
+    
+    // 2. Curación definitiva de sufijos de Blender (ej. "PARAL_6A001" -> "PARAL_6A")
+    name = name.replace(/[._]?0\d\d$/i, "")
+    name = name.replace(/_$/, "")
+    
+    // 3. Regla inteligente del guion bajo (no corta palabras, solo números/códigos redundantes)
+    const parts2 = name.split("_")
+    const resultParts = []
+    let codeCount = 0
+    
+    for (let i = 0; i < parts2.length; i++) {
+      const part = parts2[i]
+      const isPureText = !/\d/.test(part)
+      
+      if (isPureText) {
+        resultParts.push(part)
+      } else {
+        if (codeCount === 0) {
+          resultParts.push(part)
+          codeCount++
+        } else {
+          break
+        }
+      }
+    }
+    name = resultParts.join("_")
+    
+    // 4. Regla específica para PERNO_ con espacio
+    if (name.toUpperCase().startsWith("PERNO_") && name.includes(" ")) {
+      name = name.split(" ")[0]
+    }
+    
+    return name
+  }
+
+  const escanearModeloGLB = async () => {
+    if (!codigoManual) {
+      setError("Por favor define el Código de Carpeta / Manual primero.")
+      return
+    }
+    
+    setIsScanning(true)
+    setError("")
+    setSuccessMsg("")
+    
+    try {
+      const supabase = createClient()
+      const path = `${codigoManual}/models/P00.glb`
+      
+      // Descargamos el archivo como un Blob directamente usando el SDK de Supabase.
+      // Esto gestiona automáticamente la sesión del usuario, tokens y previene problemas de CORS.
+      const { data: fileBlob, error: downloadError } = await supabase.storage
+        .from("insumos_manuales")
+        .download(path)
+        
+      if (downloadError || !fileBlob) {
+        console.error("Error de descarga Supabase:", downloadError)
+        throw new Error(downloadError?.message || "No se pudo descargar el archivo GLB desde Storage.")
+      }
+      
+      // Creamos una URL local temporal segura para el Blob
+      const blobUrl = URL.createObjectURL(fileBlob)
+      
+      // Cargamos THREE, GLTFLoader y DRACOLoader dinámicamente para soportar SSR en Next.js
+      const THREE = await import("three")
+      const { GLTFLoader } = await import("three/examples/jsm/loaders/GLTFLoader.js")
+      const { DRACOLoader } = await import("three/examples/jsm/loaders/DRACOLoader.js")
+      
+      const loader = new GLTFLoader()
+      
+      // Configurar soporte para compresión Draco
+      const dracoLoader = new DRACOLoader()
+      dracoLoader.setDecoderPath("https://www.gstatic.com/draco/versioned/decoders/1.5.7/")
+      loader.setDRACOLoader(dracoLoader)
+      
+      loader.load(
+        blobUrl,
+        (gltf) => {
+          const conteo: { [nombre: string]: { cantidad: number; esHerraje: boolean } } = {}
+          
+          gltf.scene.traverse((child: any) => {
+            if (child.isMesh) {
+              const rawName = child.name || ""
+              const nombreLimpio = obtenerNombreLimpioTooltip(rawName)
+              if (!nombreLimpio) return
+              
+              // Clasificación inteligente de Herrajes vs Piezas
+              let esHerraje = false
+              const nombreLower = nombreLimpio.toLowerCase()
+              
+              if (nombreLower.startsWith("tapaluz")) {
+                // Exclusión especial: Empieza con "Tapaluz", es pieza de madera
+                esHerraje = false
+              } else if (nombreLower.startsWith("caja") || nombreLower.startsWith("puntilla")) {
+                // Inclusión especial: Empieza con "Caja" o "Puntilla", es herraje
+                esHerraje = true
+              } else {
+                // Palabras clave genéricas
+                esHerraje = /tornillo|perno|tarugo|bisagra|deslizador|corredera|soporte|clavo|tapa|minifix|cama|perfil|regula|patin|pivote|tuerca|arandela|jaladera|tirador|pija|angulo|union|mensula|mariposa/i.test(nombreLimpio)
+              }
+              
+              if (conteo[nombreLimpio]) {
+                conteo[nombreLimpio].cantidad += 1
+              } else {
+                conteo[nombreLimpio] = {
+                  cantidad: 1,
+                  esHerraje
+                }
+              }
+            }
+          })
+          
+          // Liberar la URL de objeto temporal para evitar fugas de memoria
+          URL.revokeObjectURL(blobUrl)
+          
+          // Crear lista preservando costos unitarios previos
+          const nuevoDespiece: ItemDespiece[] = Object.entries(conteo).map(([nombre, info]) => {
+            const itemExistente = despiece.find(d => d.nombre === nombre)
+            return {
+              nombre,
+              esHerraje: info.esHerraje,
+              cantidad: info.cantidad,
+              costoUnitario: itemExistente?.costoUnitario || 0
+            }
+          }).sort((a, b) => a.nombre.localeCompare(b.nombre))
+          
+          setDespiece(nuevoDespiece)
+          setIsScanning(false)
+          setSuccessMsg("¡Modelo P00.glb escaneado y despiece generado con éxito!")
+        },
+        undefined,
+        (err) => {
+          console.error("Error al procesar P00.glb con GLTFLoader:", err)
+          URL.revokeObjectURL(blobUrl)
+          setError("El archivo P00.glb tiene un formato o estructura inválida para ser procesado.")
+          setIsScanning(false)
+        }
+      )
+    } catch (err: any) {
+      console.error("Error de análisis:", err)
+      setError(err.message || "Error al iniciar el análisis del modelo 3D.")
+      setIsScanning(false)
+    }
+  }
+
+  const handleSaveDespiece = async (items: ItemDespiece[]) => {
+    setIsSaving(true)
+    setError("")
+    setSuccessMsg("")
+    try {
+      const supabase = createClient()
+      const { error: configError } = await supabase
+        .from("configuraciones_manual")
+        .upsert({
+          proyecto_id: proyecto.id,
+          despiece: items
+        }, { onConflict: "proyecto_id" })
+
+      if (configError) throw configError
+      setSuccessMsg("¡Despiece y costos guardados exitosamente!")
+      if (onUpdate) onUpdate()
+    } catch (err: any) {
+      setError(err.message || "Error al guardar el despiece.")
+    } finally {
+      setIsSaving(false)
+    }
+  }
+
   const handleSaveInsumos = async () => {
     if (!codigoManual) {
       setError("Por favor define el Código de Carpeta / Manual.")
@@ -451,7 +660,8 @@ export function DetalleProyectoModal({ isOpen, onClose, proyecto, onUpdate }: De
           imagenes_ensambles: ensambles,
           garantia_texto: garantiaDoc,
           fotos_herrajes: herrajesFotos,
-          renders_fotorealistas: renders
+          renders_fotorealistas: renders,
+          despiece: despiece
         }, { onConflict: "proyecto_id" })
 
       if (configError) throw configError
@@ -536,6 +746,21 @@ export function DetalleProyectoModal({ isOpen, onClose, proyecto, onUpdate }: De
                 >
                   <Layers className="h-4 w-4" />
                   Cargar Insumos CMS (Manual Vacío)
+                </button>
+              )}
+
+              {isTeam && (
+                <button
+                  onClick={() => setActiveTab("despiece")}
+                  className={cn(
+                    "py-3.5 px-4 text-sm font-semibold border-b-2 transition-all flex items-center gap-2",
+                    activeTab === "despiece" 
+                      ? "border-primary text-primary" 
+                      : "border-transparent text-on-surface-variant/70 hover:text-on-surface"
+                  )}
+                >
+                  <Boxes className="h-4 w-4" />
+                  Despiece
                 </button>
               )}
             </div>
@@ -1522,6 +1747,227 @@ export function DetalleProyectoModal({ isOpen, onClose, proyecto, onUpdate }: De
                     </div>
 
                   </div>
+                </div>
+              )}
+
+              {activeTab === "despiece" && isTeam && (
+                <div className="space-y-6">
+                  {/* Banner superior con KPIs y Costo Total */}
+                  <div className="rounded-2xl bg-surface-container-low border border-outline-variant/15 p-5 space-y-4 shadow-sm relative overflow-hidden">
+                    {/* Fondo decorativo abstracto */}
+                    <div className="absolute right-0 top-0 w-32 h-32 bg-primary/5 rounded-full filter blur-3xl pointer-events-none" />
+                    
+                    <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-outline-variant/10 pb-4">
+                      <div>
+                        <span className="text-[10px] font-bold text-on-surface-variant uppercase tracking-wider">Costo Estimado de Fabricación</span>
+                        <div className="text-3xl font-extrabold text-primary flex items-center gap-1.5 mt-0.5">
+                          <Coins className="h-7 w-7 text-primary" />
+                          <span>
+                            ${despiece.reduce((acc, curr) => acc + ((curr.costoUnitario || 0) * curr.cantidad), 0).toLocaleString("es-CO", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                          </span>
+                        </div>
+                      </div>
+
+                      <div className="flex flex-wrap gap-2.5">
+                        <button
+                          type="button"
+                          onClick={escanearModeloGLB}
+                          disabled={isScanning}
+                          className="flex items-center gap-2 rounded-xl bg-primary/10 border border-primary/20 px-4 py-2.5 text-xs font-semibold text-primary transition-all hover:bg-primary/20 active:scale-[0.98] disabled:opacity-50"
+                        >
+                          {isScanning ? (
+                            <>
+                              <Loader2 className="h-4 w-4 animate-spin text-primary" />
+                              Analizando P00.glb...
+                            </>
+                          ) : (
+                            <>
+                              <Sparkles className="h-4 w-4 text-primary animate-pulse" />
+                              Escanear P00.glb
+                            </>
+                          )}
+                        </button>
+                        
+                        {despiece.length > 0 && (
+                          <button
+                            type="button"
+                            onClick={() => handleSaveDespiece(despiece)}
+                            disabled={isSaving}
+                            className="flex items-center gap-2 rounded-xl bg-teal-500/10 border border-teal-500/20 px-4 py-2.5 text-xs font-semibold text-teal-400 transition-all hover:bg-teal-500/20 active:scale-[0.98] disabled:opacity-50"
+                          >
+                            {isSaving ? (
+                              <>
+                                <Loader2 className="h-4 w-4 animate-spin text-teal-400" />
+                                Guardando...
+                              </>
+                            ) : (
+                              <>
+                                <CheckCircle2 className="h-4 w-4 text-teal-400" />
+                                Guardar Despiece
+                              </>
+                            )}
+                          </button>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Fichas de KPI rápidas */}
+                    <div className="grid grid-cols-3 gap-3">
+                      <div className="p-3 rounded-xl bg-surface-container/40 border border-outline-variant/5 flex flex-col">
+                        <span className="text-[9px] font-bold text-on-surface-variant/70 uppercase tracking-wider">Total Insumos</span>
+                        <span className="text-lg font-bold text-on-surface mt-1">
+                          {despiece.reduce((acc, curr) => acc + curr.cantidad, 0)} <span className="text-xs font-normal text-on-surface-variant/60">piezas</span>
+                        </span>
+                      </div>
+                      
+                      <div className="p-3 rounded-xl bg-surface-container/40 border border-outline-variant/5 flex flex-col">
+                        <span className="text-[9px] font-bold text-on-surface-variant/70 uppercase tracking-wider">Maderas / Piezas</span>
+                        <span className="text-lg font-bold text-primary mt-1">
+                          {despiece.filter(d => !d.esHerraje).length} <span className="text-xs font-normal text-on-surface-variant/60">tipos</span>
+                        </span>
+                      </div>
+
+                      <div className="p-3 rounded-xl bg-surface-container/40 border border-outline-variant/5 flex flex-col">
+                        <span className="text-[9px] font-bold text-on-surface-variant/70 uppercase tracking-wider">Herrajes / Metales</span>
+                        <span className="text-lg font-bold text-teal-400 mt-1">
+                          {despiece.filter(d => d.esHerraje).length} <span className="text-xs font-normal text-on-surface-variant/60">tipos</span>
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Listado de componentes */}
+                  {despiece.length === 0 ? (
+                    <div className="flex flex-col items-center justify-center p-12 text-center rounded-2xl bg-surface-container-low border border-outline-variant/10 space-y-4">
+                      <div className="flex h-16 w-16 items-center justify-center rounded-full bg-primary/10">
+                        <Boxes className="h-8 w-8 text-primary" />
+                      </div>
+                      <div className="max-w-md">
+                        <h4 className="text-sm font-bold text-on-surface">No se ha generado el despiece</h4>
+                        <p className="text-xs text-on-surface-variant/70 mt-1.5 leading-relaxed">
+                          Escanea el archivo <span className="font-semibold text-primary">P00.glb</span> (el mueble completo) para identificar de forma automatizada las piezas de madera, herrajes y sus cantidades físicas exactas.
+                        </p>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={escanearModeloGLB}
+                        disabled={isScanning}
+                        className="flex items-center gap-1.5 rounded-xl bg-primary px-5 py-2.5 text-xs font-semibold text-primary-foreground shadow-lg shadow-primary/15 transition hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50"
+                      >
+                        {isScanning ? (
+                          <>
+                            <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                            Analizando Modelo 3D...
+                          </>
+                        ) : (
+                          <>
+                            <Sparkles className="h-3.5 w-3.5" />
+                            Escanear P00.glb Ahora
+                          </>
+                        )}
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="space-y-6">
+                      {/* Sección de Maderas */}
+                      <div className="space-y-3">
+                        <h4 className="text-xs font-bold text-on-surface-variant uppercase tracking-wider flex items-center gap-1.5">
+                          <Hammer className="h-4 w-4 text-primary" />
+                          Piezas de Madera / Estructura ({despiece.filter(d => !d.esHerraje).length})
+                        </h4>
+                        
+                        <div className="rounded-xl border border-outline-variant/10 overflow-hidden divide-y divide-outline-variant/10 bg-surface-container-low shadow-sm">
+                          <div className="grid grid-cols-12 px-4 py-2.5 bg-surface-container/60 border-b border-outline-variant/10 text-[10px] font-bold text-on-surface-variant/80 uppercase tracking-wider">
+                            <span className="col-span-5 sm:col-span-6">Componente</span>
+                            <span className="col-span-2 text-center">Cant.</span>
+                            <span className="col-span-3">Costo Unit.</span>
+                            <span className="col-span-2 text-right">Total</span>
+                          </div>
+
+                          {despiece.filter(d => !d.esHerraje).map((item, idx) => {
+                            const totalCosto = (item.costoUnitario || 0) * item.cantidad;
+                            return (
+                              <div key={idx} className="grid grid-cols-12 px-4 py-3 items-center text-xs hover:bg-surface-container-high/40 transition-colors group">
+                                <div className="col-span-5 sm:col-span-6 flex items-center gap-2.5 overflow-hidden">
+                                  <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-primary/10 border border-primary/20 text-primary">
+                                    <Hammer className="h-3.5 w-3.5" />
+                                  </div>
+                                  <span className="font-semibold text-on-surface truncate" title={item.nombre}>{item.nombre}</span>
+                                </div>
+                                <span className="col-span-2 text-center font-mono font-bold text-on-surface bg-surface-container/60 py-1 px-2 rounded-lg max-w-[40px] mx-auto">{item.cantidad}</span>
+                                <div className="col-span-3 flex items-center relative max-w-[120px]">
+                                  <span className="absolute left-2.5 text-on-surface-variant/50">$</span>
+                                  <input
+                                    type="number"
+                                    min="0"
+                                    value={item.costoUnitario || ""}
+                                    onChange={(e) => {
+                                      const val = parseFloat(e.target.value) || 0;
+                                      setDespiece(prev => prev.map(d => d.nombre === item.nombre ? { ...d, costoUnitario: val } : d));
+                                    }}
+                                    className="w-full pl-6 pr-2 py-1.5 bg-surface-container border border-outline-variant/20 rounded-lg outline-none focus:border-primary focus:ring-1 focus:ring-primary font-mono text-[11px] text-on-surface"
+                                    placeholder="0"
+                                  />
+                                </div>
+                                <span className="col-span-2 text-right font-mono font-bold text-on-surface-variant/90">
+                                  ${totalCosto.toLocaleString("es-CO", { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
+                                </span>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+
+                      {/* Sección de Herrajes */}
+                      <div className="space-y-3">
+                        <h4 className="text-xs font-bold text-on-surface-variant uppercase tracking-wider flex items-center gap-1.5">
+                          <Wrench className="h-4 w-4 text-teal-400" />
+                          Herrajes / Fijaciones / Accesorios ({despiece.filter(d => d.esHerraje).length})
+                        </h4>
+                        
+                        <div className="rounded-xl border border-outline-variant/10 overflow-hidden divide-y divide-outline-variant/10 bg-surface-container-low shadow-sm">
+                          <div className="grid grid-cols-12 px-4 py-2.5 bg-surface-container/60 border-b border-outline-variant/10 text-[10px] font-bold text-on-surface-variant/80 uppercase tracking-wider">
+                            <span className="col-span-5 sm:col-span-6">Componente</span>
+                            <span className="col-span-2 text-center">Cant.</span>
+                            <span className="col-span-3">Costo Unit.</span>
+                            <span className="col-span-2 text-right">Total</span>
+                          </div>
+
+                          {despiece.filter(d => d.esHerraje).map((item, idx) => {
+                            const totalCosto = (item.costoUnitario || 0) * item.cantidad;
+                            return (
+                              <div key={idx} className="grid grid-cols-12 px-4 py-3 items-center text-xs hover:bg-surface-container-high/40 transition-colors group">
+                                <div className="col-span-5 sm:col-span-6 flex items-center gap-2.5 overflow-hidden">
+                                  <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-teal-500/10 border border-teal-500/20 text-teal-400">
+                                    <Wrench className="h-3.5 w-3.5" />
+                                  </div>
+                                  <span className="font-semibold text-on-surface truncate" title={item.nombre}>{item.nombre}</span>
+                                </div>
+                                <span className="col-span-2 text-center font-mono font-bold text-on-surface bg-surface-container/60 py-1 px-2 rounded-lg max-w-[40px] mx-auto">{item.cantidad}</span>
+                                <div className="col-span-3 flex items-center relative max-w-[120px]">
+                                  <span className="absolute left-2.5 text-on-surface-variant/50">$</span>
+                                  <input
+                                    type="number"
+                                    min="0"
+                                    value={item.costoUnitario || ""}
+                                    onChange={(e) => {
+                                      const val = parseFloat(e.target.value) || 0;
+                                      setDespiece(prev => prev.map(d => d.nombre === item.nombre ? { ...d, costoUnitario: val } : d));
+                                    }}
+                                    className="w-full pl-6 pr-2 py-1.5 bg-surface-container border border-outline-variant/20 rounded-lg outline-none focus:border-primary focus:ring-1 focus:ring-primary font-mono text-[11px] text-on-surface"
+                                    placeholder="0"
+                                  />
+                                </div>
+                                <span className="col-span-2 text-right font-mono font-bold text-on-surface-variant/90">
+                                  ${totalCosto.toLocaleString("es-CO", { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
+                                </span>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
 
