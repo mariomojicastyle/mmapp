@@ -326,7 +326,28 @@ def unir_grupo(objetos, nombre_final, log):
         act_obj.name = nombre_final
         if act_obj.data:
             act_obj.data.name = nombre_final
-        log.append(f"    ✅ Unido → '{nombre_final}'")
+            
+        # Validar topología: Remover dobles y chequear si es un sólido cerrado
+        try:
+            bpy.ops.object.mode_set(mode='EDIT')
+            bpy.ops.mesh.select_all(action='SELECT')
+            bpy.ops.mesh.remove_doubles(threshold=0.002)
+            bpy.ops.object.mode_set(mode='OBJECT')
+            
+            import bmesh
+            bm = bmesh.new()
+            bm.from_mesh(act_obj.data)
+            bordes_desnudos = [e for e in bm.edges if e.is_boundary]
+            tiene_huecos = len(bordes_desnudos) > 0
+            bm.free()
+            
+            if tiene_huecos:
+                log.append(f"    ⚠️ PELIGRO: '{nombre_final}' unido pero ABIERTO (paralelepípedo sin caras / bordes desnudos)")
+            else:
+                log.append(f"    ✅ Unido y CERRADO 📦 → '{nombre_final}'")
+        except Exception as topo_e:
+            log.append(f"    ✅ Unido → '{nombre_final}' (Topología no verificable: {topo_e})")
+            
         return True
     except Exception as e:
         log.append(f"    ❌ Error: {e}")

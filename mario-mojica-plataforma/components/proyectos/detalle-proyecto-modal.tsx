@@ -11,8 +11,89 @@ import { createClient } from "@/lib/supabase/client"
 export interface ItemDespiece {
   nombre: string
   esHerraje: boolean
+  esFondo?: boolean
   cantidad: number
   costoUnitario?: number
+  costoM2?: number
+  largo?: number
+  ancho?: number
+  espesor?: number
+  piezaNumero?: string
+  piezaNumeroStart?: number
+  piezaNumeroRange?: boolean
+}
+
+export function normalizarYAsignarPiezas(items: ItemDespiece[]): ItemDespiece[] {
+  const tieneNumeracionGLB = items.some(d => !d.esHerraje && d.piezaNumeroStart !== undefined)
+
+  const maderas = items.filter(d => !d.esHerraje && !d.esFondo)
+  const fondos = items.filter(d => !d.esHerraje && d.esFondo)
+  const herrajes = items.filter(d => d.esHerraje)
+
+  if (tieneNumeracionGLB) {
+    maderas.sort((a, b) => (a.piezaNumeroStart || 0) - (b.piezaNumeroStart || 0))
+    fondos.sort((a, b) => (a.piezaNumeroStart || 0) - (b.piezaNumeroStart || 0))
+    return [...maderas, ...fondos, ...herrajes]
+  }
+
+  maderas.sort((a, b) => {
+    const nameComp = a.nombre.localeCompare(b.nombre)
+    if (nameComp !== 0) return nameComp
+    const largoComp = (b.largo || 0) - (a.largo || 0)
+    if (largoComp !== 0) return largoComp
+    const anchoComp = (b.ancho || 0) - (a.ancho || 0)
+    if (anchoComp !== 0) return anchoComp
+    return (b.espesor || 0) - (a.espesor || 0)
+  })
+
+  fondos.sort((a, b) => {
+    const nameComp = a.nombre.localeCompare(b.nombre)
+    if (nameComp !== 0) return nameComp
+    const largoComp = (b.largo || 0) - (a.largo || 0)
+    if (largoComp !== 0) return largoComp
+    const anchoComp = (b.ancho || 0) - (a.ancho || 0)
+    if (anchoComp !== 0) return anchoComp
+    return (b.espesor || 0) - (a.espesor || 0)
+  })
+
+  let piezaCounter = 1
+
+  const formatearRange = (start: number, qty: number): string => {
+    if (qty === 1) {
+      return `Pieza ${String(start).padStart(2, "0")}`
+    }
+    const end = start + qty - 1
+    if (qty === 2) {
+      return `Pieza ${String(start).padStart(2, "0")} y Pieza ${String(end).padStart(2, "0")}`
+    }
+    return `Pieza ${String(start).padStart(2, "0")} a Pieza ${String(end).padStart(2, "0")}`
+  }
+
+  const maderasConCodigo = maderas.map(item => {
+    const startNum = piezaCounter
+    piezaCounter += item.cantidad
+    const codigo = formatearRange(startNum, item.cantidad)
+    return { 
+      ...item, 
+      piezaNumero: codigo, 
+      piezaNumeroStart: startNum, 
+      piezaNumeroRange: item.cantidad > 1 
+    }
+  })
+
+  const fondosConCodigo = fondos.map(item => {
+    const startNum = piezaCounter
+    piezaCounter += item.cantidad
+    const codigo = formatearRange(startNum, item.cantidad)
+    return { 
+      ...item, 
+      piezaNumero: codigo, 
+      piezaNumeroStart: startNum, 
+      piezaNumeroRange: item.cantidad > 1 
+    }
+  })
+
+  return [...maderasConCodigo, ...fondosConCodigo, ...herrajes]
 }
 
 interface DetalleProyectoModalProps {
@@ -150,7 +231,7 @@ export function DetalleProyectoModal({ isOpen, onClose, proyecto, onUpdate }: De
               setGarantiaDoc(data.garantia_texto || "")
               setHerrajesFotos((data.fotos_herrajes as any) || [])
               setRenders((data.renders_fotorealistas as any) || [])
-              setDespiece((data.despiece as any) || [])
+              setDespiece(normalizarYAsignarPiezas((data.despiece as any) || []))
             }
           })
       }
@@ -432,11 +513,7 @@ export function DetalleProyectoModal({ isOpen, onClose, proyecto, onUpdate }: De
     // 1. Obtener la primera sección (antes de cualquier "-") y limpiar espacios
     let name = rawName.split("-")[0].trim()
     
-    // 2. Curación definitiva de sufijos de Blender (ej. "PARAL_6A001" -> "PARAL_6A")
-    name = name.replace(/[._]?0\d\d$/i, "")
-    name = name.replace(/_$/, "")
-    
-    // 3. Regla inteligente del guion bajo (no corta palabras, solo números/códigos redundantes)
+    // 2. Regla inteligente del guion bajo (no corta palabras, solo números/códigos redundantes)
     const parts2 = name.split("_")
     const resultParts = []
     let codeCount = 0
@@ -449,6 +526,15 @@ export function DetalleProyectoModal({ isOpen, onClose, proyecto, onUpdate }: De
         resultParts.push(part)
       } else {
         if (codeCount === 0) {
+          // Filtro para detectar números de instancia (ej. _1, _2 ... _99, _1001, _2001)
+          if (/^\d+$/.test(part)) {
+            const num = parseInt(part, 10)
+            const isInstance = num < 100 || (part.length === 4 && part.substring(1, 3) === "00")
+            if (isInstance) {
+              // Es una instancia generada por Rhino/Blender, la omitimos para forzar la agrupación
+              continue
+            }
+          }
           resultParts.push(part)
           codeCount++
         } else {
@@ -457,6 +543,21 @@ export function DetalleProyectoModal({ isOpen, onClose, proyecto, onUpdate }: De
       }
     }
     name = resultParts.join("_")
+
+    // 3. Curación definitiva de sufijos de Blender (ej. "PARAL_6A001" -> "PARAL_6A")
+    // Se ejecuta al final para atrapar el 001 incluso si antes tenía un _1 (ej. Paral_5A001_1 -> Paral_5A001 -> Paral_5A)
+    name = name.replace(/[._]?0\d\d$/i, "")
+    name = name.replace(/_$/, "")
+    
+    // 4. Limpieza de sufijos comunes de materiales (ej. Cubierta_balance -> Cubierta)
+    const sufijosMat = ["_BALANCE", "_TAPA", "_CANTO", "_LAMINADO", " BALANCE", " TAPA", " CANTO", " LAMINADO"]
+    let upperName = name.toUpperCase()
+    for (const suf of sufijosMat) {
+      if (upperName.endsWith(suf)) {
+        name = name.substring(0, name.length - suf.length)
+        upperName = name.toUpperCase()
+      }
+    }
     
     // 4. Regla específica para PERNO_ con espacio
     if (name.toUpperCase().startsWith("PERNO_") && name.includes(" ")) {
@@ -480,16 +581,23 @@ export function DetalleProyectoModal({ isOpen, onClose, proyecto, onUpdate }: De
       const supabase = createClient()
       const path = `${codigoManual}/models/P00.glb`
       
-      // Descargamos el archivo como un Blob directamente usando el SDK de Supabase.
-      // Esto gestiona automáticamente la sesión del usuario, tokens y previene problemas de CORS.
-      const { data: fileBlob, error: downloadError } = await supabase.storage
+      // Usamos una URL firmada de corta duración y le agregamos un timestamp.
+      // Esto previene que el navegador o el CDN sigan usando una versión en caché (ej. si subiste un GLB nuevo)
+      // y nos permite validar en tiempo real si el archivo existe o fue borrado.
+      const { data: signedData, error: signError } = await supabase.storage
         .from("insumos_manuales")
-        .download(path)
+        .createSignedUrl(path, 60)
         
-      if (downloadError || !fileBlob) {
-        console.error("Error de descarga Supabase:", downloadError)
-        throw new Error(downloadError?.message || "No se pudo descargar el archivo GLB desde Storage.")
+      if (signError || !signedData) {
+        throw new Error("El archivo P00.glb no existe en el repositorio.")
       }
+      
+      const response = await fetch(`${signedData.signedUrl}&t=${Date.now()}`, { cache: "no-store" })
+      if (!response.ok) {
+        throw new Error(`El archivo P00.glb ya no existe o fue borrado (Código ${response.status}).`)
+      }
+      
+      const fileBlob = await response.blob()
       
       // Creamos una URL local temporal segura para el Blob
       const blobUrl = URL.createObjectURL(fileBlob)
@@ -509,13 +617,88 @@ export function DetalleProyectoModal({ isOpen, onClose, proyecto, onUpdate }: De
       loader.load(
         blobUrl,
         (gltf) => {
-          const conteo: { [nombre: string]: { cantidad: number; esHerraje: boolean } } = {}
+          const conteo: { 
+            [key: string]: { 
+              cantidad: number; 
+              esHerraje: boolean;
+              esFondo: boolean;
+              nombreLimpio: string;
+              largo?: number;
+              ancho?: number;
+              espesor?: number;
+              piezasDetectadas?: number[];
+            } 
+          } = {}
+          const instanciasContadas = new Set<string>()
+          
+          // Detectar escala global del modelo (metros vs milímetros)
+          const sceneBBox = new THREE.Box3().setFromObject(gltf.scene)
+          const sceneSize = new THREE.Vector3()
+          sceneBBox.getSize(sceneSize)
+          const maxSceneDim = Math.max(sceneSize.x, sceneSize.y, sceneSize.z)
+          // Si el mueble entero mide menos de 20 unidades, asumimos que fue exportado en metros
+          const mult = maxSceneDim > 0 && maxSceneDim < 20 ? 1000 : 1
           
           gltf.scene.traverse((child: any) => {
             if (child.isMesh) {
               const rawName = child.name || ""
-              const nombreLimpio = obtenerNombreLimpioTooltip(rawName)
+              
+              // 1. Obtener el nombre original y limpio del componente
+              // Si la geometría tiene nombre (Blender Mesh Data), lo usamos como el nombre limpio original
+              let nombreLimpio = ""
+              if (child.geometry && child.geometry.name) {
+                nombreLimpio = obtenerNombreLimpioTooltip(child.geometry.name)
+              } else if (rawName.includes("_")) {
+                // Fallback para formato combinado anterior "Pieza XX_Nombre"
+                const parts = rawName.split("_")
+                nombreLimpio = obtenerNombreLimpioTooltip(parts.slice(1).join("_"))
+              } else {
+                nombreLimpio = obtenerNombreLimpioTooltip(rawName)
+              }
               if (!nombreLimpio) return
+              
+              // 2. Detectar si el propio mesh es la pegatina "Pieza XX" (formato no redundante)
+              let piezaBaseNum: number | undefined = undefined
+              let esCodificado = false
+              
+              if (rawName.toUpperCase().startsWith("PIEZA")) {
+                const match = rawName.split("_")[0].match(/Pieza\s+(\d+)/i)
+                if (match) {
+                  piezaBaseNum = parseInt(match[1], 10)
+                  esCodificado = true
+                }
+              }
+              
+              // 3. Detectar si tiene un padre Empty de pegatina "Pieza XX" (para retrocompatibilidad)
+              let parentName = ""
+              if (child.parent && child.parent.type !== 'Scene') {
+                parentName = child.parent.name || ""
+              }
+              
+              if (!esCodificado && parentName.toUpperCase().startsWith("PIEZA")) {
+                const match = parentName.match(/Pieza\s+(\d+)/i)
+                if (match) {
+                  piezaBaseNum = parseInt(match[1], 10)
+                }
+              }
+              
+              // 3. Evitar doble conteo por multi-materiales (ej. frente y balance)
+              let instanceId = child.uuid
+              if (child.parent && child.parent.type !== 'Scene') {
+                if (parentName.toUpperCase().startsWith("PIEZA")) {
+                  instanceId = child.parent.uuid
+                } else {
+                  const nombreLimpioPadre = obtenerNombreLimpioTooltip(parentName)
+                  if (!rawName || nombreLimpio === nombreLimpioPadre) {
+                    instanceId = child.parent.uuid
+                  }
+                }
+              }
+              
+              if (instanciasContadas.has(instanceId)) {
+                return // Ya contamos esta pieza (otra cara/malla del mismo objeto)
+              }
+              instanciasContadas.add(instanceId)
               
               // Clasificación inteligente de Herrajes vs Piezas
               let esHerraje = false
@@ -532,12 +715,78 @@ export function DetalleProyectoModal({ isOpen, onClose, proyecto, onUpdate }: De
                 esHerraje = /tornillo|perno|tarugo|bisagra|deslizador|corredera|soporte|clavo|tapa|minifix|cama|perfil|regula|patin|pivote|tuerca|arandela|jaladera|tirador|pija|angulo|union|mensula|mariposa/i.test(nombreLimpio)
               }
               
-              if (conteo[nombreLimpio]) {
-                conteo[nombreLimpio].cantidad += 1
+              let esFondo = false;
+              let finalName = nombreLimpio
+              
+              // Extraer dimensiones físicas de las piezas de madera para diferenciarlas por tamaño
+              let l, w, t;
+              if (!esHerraje && child.geometry) {
+                // Paso 1: Intentar con el mesh individual
+                const worldBox = new THREE.Box3().setFromObject(child)
+                const worldSize = new THREE.Vector3()
+                worldBox.getSize(worldSize)
+                
+                let dimX = worldSize.x
+                let dimY = worldSize.y
+                let dimZ = worldSize.z
+                const minDim = Math.min(dimX, dimY, dimZ)
+                
+                // Paso 2: Si alguna dimensión es ~0 (plano perfecto), usar el padre
+                if (minDim < 0.0001 && child.parent && child.parent.type !== 'Scene') {
+                  const parentBox = new THREE.Box3().setFromObject(child.parent)
+                  const parentSize = new THREE.Vector3()
+                  parentBox.getSize(parentSize)
+                  dimX = parentSize.x
+                  dimY = parentSize.y
+                  dimZ = parentSize.z
+                  console.log(`[DESPIECE-PARENT] "${nombreLimpio}" | mesh plano detectado, usando padre "${child.parent.name}" | parentSize=[${dimX.toFixed(5)}, ${dimY.toFixed(5)}, ${dimZ.toFixed(5)}]`)
+                }
+                
+                const dims = [Math.abs(dimX), Math.abs(dimY), Math.abs(dimZ)].sort((a, b) => b - a)
+                
+                l = Math.round(dims[0] * mult)
+                w = Math.round(dims[1] * mult)
+                t = Math.round(dims[2] * mult)
+                
+                const rawT = dims[2] * mult;
+                
+                // Log diagnóstico para fondos y piezas delgadas
+                if (nombreLimpio.toLowerCase().includes("fondo") || rawT < 5) {
+                  console.log(`[DESPIECE] "${nombreLimpio}" | rawName="${rawName}" | dims_mm=[${l}, ${w}, ${t}] | rawT=${rawT.toFixed(3)}mm | esFondo=${rawT >= 2.5 && rawT <= 3.5}`)
+                }
+                
+                // Ignorar mallas verdaderamente 2D (< 2.5mm) incluso después de consultar al padre
+                if (rawT < 2.5 && !esHerraje) return;
+                
+                // Identificar láminas/fondos (espesor entre 2.5mm y 3.5mm real)
+                if (rawT >= 2.5 && rawT <= 3.5 && !esHerraje) {
+                  esFondo = true
+                  t = Math.round(rawT * 10) / 10 // 1 decimal para fondos (ej. 2.7mm)
+                }
+                
+                if (l > 0) {
+                  finalName = `${nombreLimpio}_${l}x${w}x${t}`
+                }
+              }
+              
+              if (conteo[finalName]) {
+                conteo[finalName].cantidad += 1
+                if (piezaBaseNum !== undefined) {
+                  if (!conteo[finalName].piezasDetectadas) {
+                    conteo[finalName].piezasDetectadas = []
+                  }
+                  conteo[finalName].piezasDetectadas!.push(piezaBaseNum)
+                }
               } else {
-                conteo[nombreLimpio] = {
+                conteo[finalName] = {
                   cantidad: 1,
-                  esHerraje
+                  esHerraje,
+                  esFondo,
+                  nombreLimpio,
+                  largo: l,
+                  ancho: w,
+                  espesor: t,
+                  piezasDetectadas: piezaBaseNum !== undefined ? [piezaBaseNum] : []
                 }
               }
             }
@@ -546,18 +795,101 @@ export function DetalleProyectoModal({ isOpen, onClose, proyecto, onUpdate }: De
           // Liberar la URL de objeto temporal para evitar fugas de memoria
           URL.revokeObjectURL(blobUrl)
           
-          // Crear lista preservando costos unitarios previos
-          const nuevoDespiece: ItemDespiece[] = Object.entries(conteo).map(([nombre, info]) => {
-            const itemExistente = despiece.find(d => d.nombre === nombre)
-            return {
-              nombre,
-              esHerraje: info.esHerraje,
-              cantidad: info.cantidad,
-              costoUnitario: itemExistente?.costoUnitario || 0
-            }
-          }).sort((a, b) => a.nombre.localeCompare(b.nombre))
+          // Post-procesamiento: Unificar herrajes con códigos extendidos
+          const herrajeKeys = Object.keys(conteo).filter(k => conteo[k].esHerraje)
+          herrajeKeys.sort((a, b) => a.length - b.length)
           
-          setDespiece(nuevoDespiece)
+          for (let i = 0; i < herrajeKeys.length; i++) {
+            const shorter = herrajeKeys[i]
+            if (!conteo[shorter]) continue
+            for (let j = i + 1; j < herrajeKeys.length; j++) {
+              const longer = herrajeKeys[j]
+              if (!conteo[longer]) continue
+              if (longer.startsWith(shorter)) {
+                conteo[shorter].cantidad += conteo[longer].cantidad
+                delete conteo[longer]
+              }
+            }
+          }
+          
+          // Post-procesamiento: Consolidar correderas multi-parte
+          const corredKeys = Object.keys(conteo).filter(k => 
+            conteo[k].esHerraje && k.toLowerCase().startsWith("corredera")
+          )
+          if (corredKeys.length > 0) {
+            const totalPartes = corredKeys.reduce((sum, k) => sum + conteo[k].cantidad, 0)
+            const frentesCajon = Object.values(conteo)
+              .filter(v => !v.esHerraje && v.nombreLimpio.toLowerCase().includes("frente") && v.nombreLimpio.toLowerCase().includes("cajon"))
+              .reduce((sum, v) => sum + v.cantidad, 0)
+            
+            const canonical = corredKeys.find(k => /corredera[_\s]\d/i.test(k)) || corredKeys[0]
+            const cantidadReal = frentesCajon > 0 ? Math.round(totalPartes / frentesCajon) : totalPartes
+            
+            for (const k of corredKeys) {
+              if (k !== canonical) delete conteo[k]
+            }
+            conteo[canonical].cantidad = cantidadReal
+            console.log(`[DESPIECE] Correderas: ${totalPartes} partes / ${frentesCajon} frentes = ${cantidadReal} correderas`)
+          }
+          
+          const nuevoDespiece: ItemDespiece[] = Object.values(conteo).map((info) => {
+            const itemExistente = despiece.find(d => 
+              d.nombre === info.nombreLimpio && 
+              d.largo === info.largo && 
+              d.ancho === info.ancho
+            )
+            
+            let piezaNumero: string | undefined = undefined
+            let piezaNumeroStart: number | undefined = undefined
+            let piezaNumeroRange: boolean | undefined = undefined
+            
+            if (info.piezasDetectadas && info.piezasDetectadas.length > 0) {
+              info.piezasDetectadas.sort((a, b) => a - b)
+              const uniqueNums = Array.from(new Set(info.piezasDetectadas))
+              
+              if (uniqueNums.length === 1) {
+                // Pegatina única compartida (ej: [5, 5, 5, 5])
+                const baseNum = uniqueNums[0]
+                piezaNumeroStart = baseNum
+                piezaNumeroRange = false
+                piezaNumero = `Pieza ${String(baseNum).padStart(2, "0")}`
+              } else if (uniqueNums.length > 1) {
+                // Rango secuencial (ej: [1, 2])
+                const startNum = uniqueNums[0]
+                piezaNumeroStart = startNum
+                piezaNumeroRange = true
+                
+                const endNum = uniqueNums[uniqueNums.length - 1]
+                if (uniqueNums.length === 2) {
+                  piezaNumero = `Pieza ${String(startNum).padStart(2, "0")} y Pieza ${String(endNum).padStart(2, "0")}`
+                } else {
+                  piezaNumero = `Pieza ${String(startNum).padStart(2, "0")} a Pieza ${String(endNum).padStart(2, "0")}`
+                }
+              }
+            }
+            
+            return {
+              nombre: info.nombreLimpio,
+              esHerraje: info.esHerraje,
+              esFondo: info.esFondo,
+              cantidad: info.cantidad,
+              costoUnitario: itemExistente?.costoUnitario || 0,
+              costoM2: itemExistente?.costoM2 || 0,
+              largo: info.largo,
+              ancho: info.ancho,
+              espesor: info.espesor,
+              piezaNumero,
+              piezaNumeroStart,
+              piezaNumeroRange
+            }
+          }).sort((a, b) => {
+            if (a.piezaNumeroStart !== undefined && b.piezaNumeroStart !== undefined) {
+              return a.piezaNumeroStart - b.piezaNumeroStart
+            }
+            return a.nombre.localeCompare(b.nombre)
+          })
+          
+          setDespiece(normalizarYAsignarPiezas(nuevoDespiece))
           setIsScanning(false)
           setSuccessMsg("¡Modelo P00.glb escaneado y despiece generado con éxito!")
         },
@@ -574,6 +906,12 @@ export function DetalleProyectoModal({ isOpen, onClose, proyecto, onUpdate }: De
       setError(err.message || "Error al iniciar el análisis del modelo 3D.")
       setIsScanning(false)
     }
+  }
+
+  const handleLimpiarDespiece = () => {
+    setDespiece([])
+    setSuccessMsg("El escaneo del despiece ha sido borrado del visor.")
+    setError("")
   }
 
   const handleSaveDespiece = async (items: ItemDespiece[]) => {
@@ -694,7 +1032,7 @@ export function DetalleProyectoModal({ isOpen, onClose, proyecto, onUpdate }: De
             initial={{ opacity: 0, scale: 0.95, y: 20 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: 20 }}
-            className="fixed inset-x-4 top-[5%] z-50 mx-auto max-w-3xl overflow-y-auto max-h-[90vh] rounded-2xl border border-outline-variant bg-surface-container p-0 shadow-2xl flex flex-col"
+            className="fixed inset-x-4 top-[5%] z-50 mx-auto max-w-5xl overflow-y-auto max-h-[90vh] rounded-2xl border border-outline-variant bg-surface-container p-0 shadow-2xl flex flex-col"
           >
             {/* Header */}
             <div className="flex items-center justify-between border-b border-outline-variant px-6 py-5">
@@ -1791,6 +2129,17 @@ export function DetalleProyectoModal({ isOpen, onClose, proyecto, onUpdate }: De
                         {despiece.length > 0 && (
                           <button
                             type="button"
+                            onClick={handleLimpiarDespiece}
+                            className="flex items-center gap-2 rounded-xl bg-red-500/10 border border-red-500/20 px-4 py-2.5 text-xs font-semibold text-red-400 transition-all hover:bg-red-500/20 active:scale-[0.98]"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                            Borrar Escaneo
+                          </button>
+                        )}
+                        
+                        {despiece.length > 0 && (
+                          <button
+                            type="button"
                             onClick={() => handleSaveDespiece(despiece)}
                             disabled={isSaving}
                             className="flex items-center gap-2 rounded-xl bg-teal-500/10 border border-teal-500/20 px-4 py-2.5 text-xs font-semibold text-teal-400 transition-all hover:bg-teal-500/20 active:scale-[0.98] disabled:opacity-50"
@@ -1823,7 +2172,14 @@ export function DetalleProyectoModal({ isOpen, onClose, proyecto, onUpdate }: De
                       <div className="p-3 rounded-xl bg-surface-container/40 border border-outline-variant/5 flex flex-col">
                         <span className="text-[9px] font-bold text-on-surface-variant/70 uppercase tracking-wider">Maderas / Piezas</span>
                         <span className="text-lg font-bold text-primary mt-1">
-                          {despiece.filter(d => !d.esHerraje).length} <span className="text-xs font-normal text-on-surface-variant/60">tipos</span>
+                          {despiece.filter(d => !d.esHerraje && !d.esFondo).length} <span className="text-xs font-normal text-on-surface-variant/60">tipos</span>
+                        </span>
+                      </div>
+
+                      <div className="p-3 rounded-xl bg-surface-container/40 border border-outline-variant/5 flex flex-col">
+                        <span className="text-[9px] font-bold text-on-surface-variant/70 uppercase tracking-wider">Láminas / Fondos</span>
+                        <span className="text-lg font-bold text-amber-500 mt-1">
+                          {despiece.filter(d => d.esFondo).length} <span className="text-xs font-normal text-on-surface-variant/60">tipos</span>
                         </span>
                       </div>
 
@@ -1873,29 +2229,68 @@ export function DetalleProyectoModal({ isOpen, onClose, proyecto, onUpdate }: De
                       <div className="space-y-3">
                         <h4 className="text-xs font-bold text-on-surface-variant uppercase tracking-wider flex items-center gap-1.5">
                           <Hammer className="h-4 w-4 text-primary" />
-                          Piezas de Madera / Estructura ({despiece.filter(d => !d.esHerraje).length})
+                          Piezas de Madera / Estructura ({despiece.filter(d => !d.esHerraje && !d.esFondo).length})
                         </h4>
                         
                         <div className="rounded-xl border border-outline-variant/10 overflow-hidden divide-y divide-outline-variant/10 bg-surface-container-low shadow-sm">
-                          <div className="grid grid-cols-12 px-4 py-2.5 bg-surface-container/60 border-b border-outline-variant/10 text-[10px] font-bold text-on-surface-variant/80 uppercase tracking-wider">
-                            <span className="col-span-5 sm:col-span-6">Componente</span>
-                            <span className="col-span-2 text-center">Cant.</span>
-                            <span className="col-span-3">Costo Unit.</span>
+                          <div className="grid px-4 py-2.5 bg-surface-container/60 border-b border-outline-variant/10 text-[10px] font-bold text-on-surface-variant/80 uppercase tracking-wider" style={{ gridTemplateColumns: "repeat(14, minmax(0, 1fr))" }}>
+                            <span className="col-span-3">Pieza</span>
+                            <span className="col-span-2">Componente</span>
+                            <span className="col-span-2 text-center">LxAxE (mm)</span>
+                            <span className="col-span-1 text-center">Cant.</span>
+                            <span className="col-span-2 text-center">Costo / m²</span>
+                            <span className="col-span-2 text-center">Costo Unit.</span>
                             <span className="col-span-2 text-right">Total</span>
                           </div>
 
-                          {despiece.filter(d => !d.esHerraje).map((item, idx) => {
+                          {despiece.filter(d => !d.esHerraje && !d.esFondo).map((item, idx) => {
                             const totalCosto = (item.costoUnitario || 0) * item.cantidad;
                             return (
-                              <div key={idx} className="grid grid-cols-12 px-4 py-3 items-center text-xs hover:bg-surface-container-high/40 transition-colors group">
-                                <div className="col-span-5 sm:col-span-6 flex items-center gap-2.5 overflow-hidden">
-                                  <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-primary/10 border border-primary/20 text-primary">
-                                    <Hammer className="h-3.5 w-3.5" />
+                              <div key={idx} className="grid px-4 py-3 items-center text-xs hover:bg-surface-container-high/40 transition-colors group" style={{ gridTemplateColumns: "repeat(14, minmax(0, 1fr))" }}>
+                                <div className="col-span-3 flex items-center">
+                                  <span className="font-mono font-bold text-[10px] text-primary bg-primary/10 px-1.5 py-0.5 rounded border border-primary/20 select-none truncate inline-block w-fit" title={item.piezaNumero}>
+                                    {item.piezaNumero || "—"}
+                                  </span>
+                                </div>
+
+                                <div className="col-span-2 flex items-center gap-2 overflow-hidden">
+                                  <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded bg-primary/10 border border-primary/20 text-primary">
+                                    <Hammer className="h-3 w-3" />
                                   </div>
                                   <span className="font-semibold text-on-surface truncate" title={item.nombre}>{item.nombre}</span>
                                 </div>
-                                <span className="col-span-2 text-center font-mono font-bold text-on-surface bg-surface-container/60 py-1 px-2 rounded-lg max-w-[40px] mx-auto">{item.cantidad}</span>
-                                <div className="col-span-3 flex items-center relative max-w-[120px]">
+                                
+                                <span className="col-span-2 text-center font-mono text-[11px] text-on-surface-variant/80">
+                                  {item.largo}x{item.ancho}x{item.espesor}
+                                </span>
+
+                                <span className="col-span-1 text-center font-mono font-bold text-on-surface bg-surface-container/60 py-1 px-1 rounded-lg max-w-[40px] mx-auto">
+                                  {item.cantidad}
+                                </span>
+                                
+                                <div className="col-span-2 flex items-center relative max-w-[90px] mx-auto">
+                                  <span className="absolute left-2.5 text-on-surface-variant/50">$</span>
+                                  <input
+                                    type="number"
+                                    min="0"
+                                    value={item.costoM2 || ""}
+                                    onChange={(e) => {
+                                      const val = parseFloat(e.target.value) || 0;
+                                      const areaM2 = ((item.largo || 0) * (item.ancho || 0)) / 1000000;
+                                      const nuevoUnitario = Math.round(areaM2 * val);
+                                      
+                                      setDespiece(prev => prev.map(d => 
+                                        (d.nombre === item.nombre && d.largo === item.largo && d.ancho === item.ancho) 
+                                        ? { ...d, costoM2: val, costoUnitario: nuevoUnitario } 
+                                        : d
+                                      ));
+                                    }}
+                                    className="w-full pl-6 pr-2 py-1.5 bg-surface-container border border-outline-variant/20 rounded-lg outline-none focus:border-primary focus:ring-1 focus:ring-primary font-mono text-[11px] text-on-surface"
+                                    placeholder="0"
+                                  />
+                                </div>
+                                
+                                <div className="col-span-2 flex items-center relative max-w-[90px] mx-auto">
                                   <span className="absolute left-2.5 text-on-surface-variant/50">$</span>
                                   <input
                                     type="number"
@@ -1903,12 +2298,17 @@ export function DetalleProyectoModal({ isOpen, onClose, proyecto, onUpdate }: De
                                     value={item.costoUnitario || ""}
                                     onChange={(e) => {
                                       const val = parseFloat(e.target.value) || 0;
-                                      setDespiece(prev => prev.map(d => d.nombre === item.nombre ? { ...d, costoUnitario: val } : d));
+                                      setDespiece(prev => prev.map(d => 
+                                        (d.nombre === item.nombre && d.largo === item.largo && d.ancho === item.ancho) 
+                                        ? { ...d, costoUnitario: val, costoM2: 0 } 
+                                        : d
+                                      ));
                                     }}
                                     className="w-full pl-6 pr-2 py-1.5 bg-surface-container border border-outline-variant/20 rounded-lg outline-none focus:border-primary focus:ring-1 focus:ring-primary font-mono text-[11px] text-on-surface"
                                     placeholder="0"
                                   />
                                 </div>
+                                
                                 <span className="col-span-2 text-right font-mono font-bold text-on-surface-variant/90">
                                   ${totalCosto.toLocaleString("es-CO", { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
                                 </span>
@@ -1917,6 +2317,102 @@ export function DetalleProyectoModal({ isOpen, onClose, proyecto, onUpdate }: De
                           })}
                         </div>
                       </div>
+
+                      {/* Sección de Fondos / Láminas */}
+                      {despiece.filter(d => d.esFondo).length > 0 && (
+                        <div className="space-y-3">
+                          <h4 className="text-xs font-bold text-on-surface-variant uppercase tracking-wider flex items-center gap-1.5">
+                            <Layers className="h-4 w-4 text-amber-500" />
+                            Láminas / Fondos (2.5mm - 3mm) ({despiece.filter(d => d.esFondo).length})
+                          </h4>
+                          
+                          <div className="rounded-xl border border-outline-variant/10 overflow-hidden divide-y divide-outline-variant/10 bg-surface-container-low shadow-sm">
+                            <div className="grid px-4 py-2.5 bg-surface-container/60 border-b border-outline-variant/10 text-[10px] font-bold text-on-surface-variant/80 uppercase tracking-wider" style={{ gridTemplateColumns: "repeat(14, minmax(0, 1fr))" }}>
+                              <span className="col-span-3">Pieza</span>
+                              <span className="col-span-2">Componente</span>
+                              <span className="col-span-2 text-center">LxAxE (mm)</span>
+                              <span className="col-span-1 text-center">Cant.</span>
+                              <span className="col-span-2 text-center">Costo / m²</span>
+                              <span className="col-span-2 text-center">Costo Unit.</span>
+                              <span className="col-span-2 text-right">Total</span>
+                            </div>
+
+                            {despiece.filter(d => d.esFondo).map((item, idx) => {
+                              const totalCosto = (item.costoUnitario || 0) * item.cantidad;
+                              return (
+                                <div key={idx} className="grid px-4 py-3 items-center text-xs hover:bg-surface-container-high/40 transition-colors group" style={{ gridTemplateColumns: "repeat(14, minmax(0, 1fr))" }}>
+                                  <div className="col-span-3 flex items-center">
+                                    <span className="font-mono font-bold text-[10px] text-amber-500 bg-amber-500/10 px-1.5 py-0.5 rounded border border-amber-500/20 select-none truncate inline-block w-fit" title={item.piezaNumero}>
+                                      {item.piezaNumero || "—"}
+                                    </span>
+                                  </div>
+
+                                  <div className="col-span-2 flex items-center gap-2 overflow-hidden">
+                                    <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded bg-amber-500/10 border border-amber-500/20 text-amber-500">
+                                      <Layers className="h-3 w-3" />
+                                    </div>
+                                    <span className="font-semibold text-on-surface truncate" title={item.nombre}>{item.nombre}</span>
+                                  </div>
+                                  
+                                  <span className="col-span-2 text-center font-mono text-[11px] text-on-surface-variant/80">
+                                    {item.largo}x{item.ancho}x{item.espesor}
+                                  </span>
+
+                                  <span className="col-span-1 text-center font-mono font-bold text-on-surface bg-surface-container/60 py-1 px-1 rounded-lg max-w-[40px] mx-auto">
+                                    {item.cantidad}
+                                  </span>
+                                  
+                                  <div className="col-span-2 flex items-center relative max-w-[90px] mx-auto">
+                                    <span className="absolute left-2.5 text-on-surface-variant/50">$</span>
+                                    <input
+                                      type="number"
+                                      min="0"
+                                      value={item.costoM2 || ""}
+                                      onChange={(e) => {
+                                        const val = parseFloat(e.target.value) || 0;
+                                        const areaM2 = ((item.largo || 0) * (item.ancho || 0)) / 1000000;
+                                        const nuevoUnitario = Math.round(areaM2 * val);
+                                        
+                                        setDespiece(prev => prev.map(d => 
+                                          (d.nombre === item.nombre && d.largo === item.largo && d.ancho === item.ancho) 
+                                          ? { ...d, costoM2: val, costoUnitario: nuevoUnitario } 
+                                          : d
+                                        ));
+                                      }}
+                                      className="w-full pl-6 pr-2 py-1.5 bg-surface-container border border-outline-variant/20 rounded-lg outline-none focus:border-primary focus:ring-1 focus:ring-primary font-mono text-[11px] text-on-surface"
+                                      placeholder="0"
+                                    />
+                                  </div>
+                                  
+                                  <div className="col-span-2 flex items-center relative max-w-[90px] mx-auto">
+                                    <span className="absolute left-2.5 text-on-surface-variant/50">$</span>
+                                    <input
+                                      type="number"
+                                      min="0"
+                                      value={item.costoUnitario || ""}
+                                      onChange={(e) => {
+                                        const val = parseFloat(e.target.value) || 0;
+                                        setDespiece(prev => prev.map(d => 
+                                          (d.nombre === item.nombre && d.largo === item.largo && d.ancho === item.ancho) 
+                                          ? { ...d, costoUnitario: val, costoM2: 0 } 
+                                          : d
+                                        ));
+                                      }}
+                                      className="w-full pl-6 pr-2 py-1.5 bg-surface-container border border-outline-variant/20 rounded-lg outline-none focus:border-primary focus:ring-1 focus:ring-primary font-mono text-[11px] text-on-surface"
+                                      placeholder="0"
+                                    />
+                                  </div>
+                                  
+                                  <span className="col-span-2 text-right font-mono font-bold text-on-surface-variant/90">
+                                    ${totalCosto.toLocaleString("es-CO", { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
+                                  </span>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      )}
+
 
                       {/* Sección de Herrajes */}
                       <div className="space-y-3">

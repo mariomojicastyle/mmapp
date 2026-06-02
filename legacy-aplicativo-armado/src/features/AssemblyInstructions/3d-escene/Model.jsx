@@ -25,24 +25,41 @@ function obtenerNombreLimpioTooltip(rawName) {
   
   for (let i = 0; i < parts2.length; i++) {
     const part = parts2[i];
-    // Una parte es texto puro si no contiene ningún dígito numérico
     const isPureText = !/\d/.test(part);
     
     if (isPureText) {
       resultParts.push(part);
     } else {
       if (codeCount === 0) {
+        // Filtro para detectar números de instancia (ej. _1, _2 ... _99, _1001, _2001)
+        if (/^\d+$/.test(part)) {
+          const num = parseInt(part, 10);
+          const isInstance = num < 100 || (part.length === 4 && part.substring(1, 3) === "00");
+          if (isInstance) {
+            // Es una instancia generada por Rhino/Blender, la omitimos
+            continue;
+          }
+        }
         resultParts.push(part);
         codeCount++;
       } else {
-        // Ya tenemos guardado un código/número, descartamos los números subsiguientes (ej. _13, _17)
         break;
       }
     }
   }
   name = resultParts.join("_");
   
-  // 4. Regla específica para PERNO_ con espacio
+  // 4. Limpieza de sufijos comunes de materiales (ej. Cubierta_balance -> Cubierta)
+  const sufijosMat = ["_BALANCE", "_TAPA", "_CANTO", "_LAMINADO", " BALANCE", " TAPA", " CANTO", " LAMINADO"];
+  let upperName = name.toUpperCase();
+  for (const suf of sufijosMat) {
+    if (upperName.endsWith(suf)) {
+      name = name.substring(0, name.length - suf.length);
+      upperName = name.toUpperCase();
+    }
+  }
+
+  // 5. Regla específica para PERNO_ con espacio
   if (name.toUpperCase().startsWith("PERNO_") && name.includes(" ")) {
     name = name.split(" ")[0];
   }
@@ -316,8 +333,110 @@ export default function Model(props) {
       event.object.material = highlightMaterialRef.current;
       document.body.style.cursor = "pointer";
 
+      // 1. Detectar si el nombre del mesh es directamente la pegatina "Pieza XX" (formato no redundante o combinado)
+      const rawName = event.object.name || "";
+      if (rawName.toUpperCase().startsWith("PIEZA")) {
+        const cleanSticker = rawName.split("_")[0].split(".")[0].trim(); // Ej: "Pieza 07.001" -> "Pieza 07"
+        PiezaHerraje([cleanSticker]);
+        return;
+      }
+
+      // 2. Detectar si el padre es un Empty de pegatina "Pieza XX" del GLB (para retrocompatibilidad)
+      const parentName = event.object.parent ? event.object.parent.name || "" : "";
+      if (parentName.toUpperCase().startsWith("PIEZA")) {
+        const cleanSticker = parentName.split(".")[0].trim();
+        PiezaHerraje([cleanSticker]);
+        return;
+      }
+
       const name = obtenerNombreLimpioTooltip(event.object.name);
-      PiezaHerraje([name]);
+      
+      // 1. Obtener dimensiones físicas del mesh actual
+      const worldBox = new THREE.Box3().setFromObject(event.object);
+      const worldSize = new THREE.Vector3();
+      worldBox.getSize(worldSize);
+      
+      let dimX = worldSize.x;
+      let dimY = worldSize.y;
+      let dimZ = worldSize.z;
+      const minDim = Math.min(dimX, dimY, dimZ);
+      
+      if (minDim < 0.0001 && event.object.parent && event.object.parent.type !== 'Scene') {
+        const parentBox = new THREE.Box3().setFromObject(event.object.parent);
+        const parentSize = new THREE.Vector3();
+        parentBox.getSize(parentSize);
+        dimX = parentSize.x;
+        dimY = parentSize.y;
+        dimZ = parentSize.z;
+      }
+      
+      const dims = [Math.abs(dimX), Math.abs(dimY), Math.abs(dimZ)].sort((a, b) => b - a);
+      
+      // 2. Autodetectar escala (metros vs milímetros)
+      const scaleMult = dims[0] > 20 ? 1 : 1000;
+      const l = Math.round(dims[0] * scaleMult);
+      const w = Math.round(dims[1] * scaleMult);
+      
+      // Buscar la pieza en el despiece para obtener el número de sticker ("Pieza XX")
+      let displayName = name;
+      if (props.productData?.despiece) {
+        // Encontrar por nombre y dimensiones físicas (tolerancia de 2mm por redondeos)
+        const itemEncontrado = props.productData.despiece.find(
+          (d) => 
+            d.nombre && 
+            obtenerNombreLimpioTooltip(d.nombre).toLowerCase() === name.toLowerCase() &&
+            Math.abs((d.largo || 0) - l) <= 2 &&
+            Math.abs((d.ancho || 0) - w) <= 2
+        );
+        
+        if (itemEncontrado) {
+          let numSticker = itemEncontrado.piezaNumeroStart;
+          if (itemEncontrado.piezaNumeroRange && itemEncontrado.piezaNumeroStart !== undefined) {
+            // Encontrar todos los meshes en la escena actual con este mismo nombre limpio y dimensiones similares
+            const hermanos = [];
+            scene.traverse((child) => {
+              if (child.isMesh && obtenerNombreLimpioTooltip(child.name).toLowerCase() === name.toLowerCase()) {
+                const hBox = new THREE.Box3().setFromObject(child);
+                const hSize = new THREE.Vector3();
+                hBox.getSize(hSize);
+                
+                let hX = hSize.x;
+                let hY = hSize.y;
+                let hZ = hSize.z;
+                const hMin = Math.min(hX, hY, hZ);
+                
+                if (hMin < 0.0001 && child.parent && child.parent.type !== 'Scene') {
+                  const pBox = new THREE.Box3().setFromObject(child.parent);
+                  const pSize = new THREE.Vector3();
+                  pBox.getSize(pSize);
+                  hX = pSize.x;
+                  hY = pSize.y;
+                  hZ = pSize.z;
+                }
+                
+                const hDims = [Math.abs(hX), Math.abs(hY), Math.abs(hZ)].sort((a, b) => b - a);
+                const hl = Math.round(hDims[0] * scaleMult);
+                const hw = Math.round(hDims[1] * scaleMult);
+                
+                if (Math.abs(hl - l) <= 2 && Math.abs(hw - w) <= 2) {
+                  hermanos.push(child);
+                }
+              }
+            });
+            // Encontrar el índice de nuestro mesh en la lista de hermanos
+            const idx = hermanos.indexOf(event.object);
+            if (idx !== -1 && idx < itemEncontrado.cantidad) {
+              numSticker = itemEncontrado.piezaNumeroStart + idx;
+            }
+          }
+          
+          if (numSticker !== undefined) {
+            displayName = `Pieza ${String(numSticker).padStart(2, "0")}`;
+          }
+        }
+      }
+
+      PiezaHerraje([displayName]);
     } else {
       console.log("Material de resaltado sin cargarse");
     }

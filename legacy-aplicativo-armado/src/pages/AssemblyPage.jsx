@@ -3,6 +3,81 @@ import { useParams } from 'react-router-dom';
 import AssemblyViewer from '../features/AssemblyInstructions/AssemblyViewer';
 import { supabase } from '../lib/supabase';
 
+function normalizarYAsignarPiezas(items) {
+  if (!items || !Array.isArray(items)) return [];
+
+  const tieneNumeracionGLB = items.some(d => !d.esHerraje && d.piezaNumeroStart !== undefined);
+
+  const maderas = items.filter(d => !d.esHerraje && !d.esFondo);
+  const fondos = items.filter(d => !d.esHerraje && d.esFondo);
+  const herrajes = items.filter(d => d.esHerraje);
+
+  if (tieneNumeracionGLB) {
+    maderas.sort((a, b) => (a.piezaNumeroStart || 0) - (b.piezaNumeroStart || 0));
+    fondos.sort((a, b) => (a.piezaNumeroStart || 0) - (b.piezaNumeroStart || 0));
+    return [...maderas, ...fondos, ...herrajes];
+  }
+
+  maderas.sort((a, b) => {
+    const nameComp = (a.nombre || "").localeCompare(b.nombre || "");
+    if (nameComp !== 0) return nameComp;
+    const largoComp = (b.largo || 0) - (a.largo || 0);
+    if (largoComp !== 0) return largoComp;
+    const anchoComp = (b.ancho || 0) - (a.ancho || 0);
+    if (anchoComp !== 0) return anchoComp;
+    return (b.espesor || 0) - (a.espesor || 0);
+  });
+
+  fondos.sort((a, b) => {
+    const nameComp = (a.nombre || "").localeCompare(b.nombre || "");
+    if (nameComp !== 0) return nameComp;
+    const largoComp = (b.largo || 0) - (a.largo || 0);
+    if (largoComp !== 0) return largoComp;
+    const anchoComp = (b.ancho || 0) - (a.ancho || 0);
+    if (anchoComp !== 0) return anchoComp;
+    return (b.espesor || 0) - (a.espesor || 0);
+  });
+
+  let piezaCounter = 1;
+
+  const formatearRange = (start, qty) => {
+    if (qty === 1) {
+      return `Pieza ${String(start).padStart(2, "0")}`;
+    }
+    const end = start + qty - 1;
+    if (qty === 2) {
+      return `Pieza ${String(start).padStart(2, "0")} y Pieza ${String(end).padStart(2, "0")}`;
+    }
+    return `Pieza ${String(start).padStart(2, "0")} a Pieza ${String(end).padStart(2, "0")}`;
+  };
+
+  const maderasConCodigo = maderas.map(item => {
+    const startNum = piezaCounter;
+    piezaCounter += item.cantidad || 1;
+    const codigo = formatearRange(startNum, item.cantidad || 1);
+    return { 
+      ...item, 
+      piezaNumero: codigo, 
+      piezaNumeroStart: startNum, 
+      piezaNumeroRange: (item.cantidad || 1) > 1 
+    };
+  });
+
+  const fondosConCodigo = fondos.map(item => {
+    const startNum = piezaCounter;
+    piezaCounter += item.cantidad || 1;
+    const codigo = formatearRange(startNum, item.cantidad || 1);
+    return { 
+      ...item, 
+      piezaNumero: codigo, 
+      piezaNumeroStart: startNum, 
+      piezaNumeroRange: (item.cantidad || 1) > 1 
+    };
+  });
+
+  return [...maderasConCodigo, ...fondosConCodigo, ...herrajes];
+}
+
 const AssemblyPage = () => {
   const { id } = useParams();
   const [productData, setProductData] = useState(null);
@@ -110,6 +185,7 @@ const AssemblyPage = () => {
             isDynamicCMS: true,
             colorPrimario: primario,
             colorSecundario: secundario,
+            despiece: normalizarYAsignarPiezas(configData.despiece || []),
             logo: configData.logo_url ? `url('${getStorageUrl(configData.logo_url)}')` : "url('/assets/Logo_mm.svg')",
             favicon: configData.favicon_url ? getStorageUrl(configData.favicon_url) : "/favicon.png",
             

@@ -357,7 +357,7 @@ export default function Experience({ id, modelUrl, productData }) {
       </Suspense>
 
       <Suspense fallback={<Loader />}>
-        {toogle && <Model id={id} modelUrl={modelUrl} orbitControlsRef={useOrbitControls} />}
+        {toogle && <Model id={id} modelUrl={modelUrl} orbitControlsRef={useOrbitControls} productData={productData} />}
       </Suspense>
     </>
   );

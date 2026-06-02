@@ -183,4 +183,20 @@ Un **"Manual Vacío"** es un cascarón o aplicación base centralizada (desplega
 - **Local App:** [http://localhost:3000](http://localhost:3000)
 
 ---
-*Última actualización de contexto: 28 de Mayo, 2026*
+*Última actualización de contexto: 02 de Junio, 2026*
+
+---
+
+## 🤖 7. Automatización Blender (Cohesión de Mallas Grasshopper)
+**Estado:** V30 Estable y en Producción.
+
+### 🎯 Objetivos de la Fase
+- [x] Desarrollar un script en Python para Blender que consolide mallas exportadas de Grasshopper.
+- [x] Reconstrucción de Herrajes: Detectar y agrupar componentes fragmentados.
+- [x] Cohesión de Láminas: Unir capas de tableros basándose en centros espaciales y geometría (paralelepípedo).
+- [x] Absorción Inteligente de Parches 2D: Detectar geometrías sin grosor (tapitas de ranura) y fusionarlas a su pieza principal mediante análisis de Bounding Boxes.
+- [x] Resolución de Geometría Invisible: Reparar fallos de visibilidad en parches 2D forzando geometría doble cara real, evitando el backface culling.
+- [x] Orígenes Geométricos: Ajustar el origen de cada malla consolidada al centro geométrico del Bounding Box.
+
+### 🚧 Notas Técnicas
+- **Resolución Bounding Box Volumétrico:** En V30 se resolvió un bug de unión aleatoria obligando al algoritmo a validar colisiones (`bbox_contains`) siempre contra la malla de mayor grosor (MDP) en lugar de capas 2D (Cara), eliminando falsos negativos causados por el orden de extracción de `set()` en Python.

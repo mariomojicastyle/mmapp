@@ -548,3 +548,17 @@ Los estilos, colores y tiempos de transición de las flechas azules se configura
         - Añadimos botones rápidos para escanear en vivo y guardar de forma express el despiece sin interferir con otros insumos.
 
 *Última consolidación: 30 de Mayo, 2026*
+
+---
+
+## 🗓️ Junio 2026
+
+### 🔹 Semana 1: Estabilización de Ecosistema Rhino/Blender
+* **[2026-06-02] Automatización Python-Blender (script_cohesion_v30):**
+    - **Reconstrucción Espacial Post-Grasshopper**: Se desarrolló desde cero un algoritmo complejo en Python (`script_cohesion_v30.py`) para Blender que reconstruye y unifica mallas fragmentadas exportadas por Rhino/Grasshopper.
+    - **Algoritmo Multi-Fase**:
+      1. Agrupación por proximidad para Herrajes (tornillos, bisagras).
+      2. Unión de láminas de madera (Cara, MDP) usando validación estricta de centros y comprobación de deformación de volumen (`forman_paralelepipedo`).
+      3. Absorción de parches 2D y recortes huérfanos utilizando lógicas combinadas de `bbox_overlap` (para coincidencias explícitas de nombre) y `bbox_contains` dinámico, evaluando siempre contra la capa más volumétrica del grupo objetivo para evitar falsos negativos en caras planas.
+    - **Solución de Normales Invisibles**: Se resolvió un bug crítico donde el recálculo estándar de normales de Blender invertía y ocultaba planos de grosor cero (parches de ranura). Se implementó la función `hacer_doble_cara` que duplica y voltea físicamente los polígonos de piezas de 0 grosor, garantizando visibilidad absoluta bidireccional independientemente del motor de render.
+    - **Resultado**: Exportaciones crudas de Grasshopper ahora se transforman instantáneamente en una jerarquía Outliner limpia, de objetos sólidos e independientes, con orígenes (centroides) perfectos y una geometría impecable lista para motores web.
