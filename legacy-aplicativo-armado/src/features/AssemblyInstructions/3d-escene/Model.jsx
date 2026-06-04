@@ -336,16 +336,26 @@ export default function Model(props) {
       // 1. Detectar si el nombre del mesh es directamente la pegatina "Pieza XX" (formato no redundante o combinado)
       const rawName = event.object.name || "";
       if (rawName.toUpperCase().startsWith("PIEZA")) {
-        const cleanSticker = rawName.split("_")[0].split(".")[0].trim(); // Ej: "Pieza 07.001" -> "Pieza 07"
-        PiezaHerraje([cleanSticker]);
+        let clean = rawName.replace(/[._]?0\d\d$/i, "");
+        const match = clean.match(/Pieza[_\s]*\d+/i);
+        if (match) {
+          PiezaHerraje([match[0].trim()]);
+        } else {
+          PiezaHerraje([clean.split(".")[0].trim()]);
+        }
         return;
       }
 
       // 2. Detectar si el padre es un Empty de pegatina "Pieza XX" del GLB (para retrocompatibilidad)
       const parentName = event.object.parent ? event.object.parent.name || "" : "";
       if (parentName.toUpperCase().startsWith("PIEZA")) {
-        const cleanSticker = parentName.split(".")[0].trim();
-        PiezaHerraje([cleanSticker]);
+        let clean = parentName.replace(/[._]?0\d\d$/i, "");
+        const match = clean.match(/Pieza[_\s]*\d+/i);
+        if (match) {
+          PiezaHerraje([match[0].trim()]);
+        } else {
+          PiezaHerraje([clean.split(".")[0].trim()]);
+        }
         return;
       }
 

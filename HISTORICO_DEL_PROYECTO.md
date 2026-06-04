@@ -562,3 +562,14 @@ Los estilos, colores y tiempos de transición de las flechas azules se configura
       3. Absorción de parches 2D y recortes huérfanos utilizando lógicas combinadas de `bbox_overlap` (para coincidencias explícitas de nombre) y `bbox_contains` dinámico, evaluando siempre contra la capa más volumétrica del grupo objetivo para evitar falsos negativos en caras planas.
     - **Solución de Normales Invisibles**: Se resolvió un bug crítico donde el recálculo estándar de normales de Blender invertía y ocultaba planos de grosor cero (parches de ranura). Se implementó la función `hacer_doble_cara` que duplica y voltea físicamente los polígonos de piezas de 0 grosor, garantizando visibilidad absoluta bidireccional independientemente del motor de render.
     - **Resultado**: Exportaciones crudas de Grasshopper ahora se transforman instantáneamente en una jerarquía Outliner limpia, de objetos sólidos e independientes, con orígenes (centroides) perfectos y una geometría impecable lista para motores web.
+
+* **[2026-06-03] Refactorización de Despiece y Alineación Estructural de Costos (Manual_Blender_v2 / Integracion_Plataforma_v7):**
+    - **Visualización Desglosada**: Se actualizó el listado del modal para desglosar y apilar individualmente badges (`Pieza 01`, `Pieza 02`) en lugar de usar rangos de texto como "Pieza 01 a Pieza 02".
+    - **Precisión del Escáner GLB**:
+        - Se priorizó el nombre de los nodos padres del GLB (`child.parent.name`) omitiendo explícitamente el nodo contenedor `"Scene"`.
+        - Se ajustó la expresión regular del escáner (`/Pieza[_\s]*(\d+)/i`) con soporte para limpiar sufijos duplicados, resolviendo de raíz el fallo de detección en nombres con guiones bajos o sin espacios.
+    - **Alineación de Grilla (Herrajes)**: Se adaptó la sección de herrajes al formato de grid de 14 columnas de maderas/fondos para garantizar simetría visual en las columnas de Cantidad, Costo Unitario y Costo Total.
+    - **Caja de Gran Total e Hitos por Sección**:
+        - Se introdujeron filas de subtotal por sección (Maderas, Láminas y Herrajes).
+        - Se añadió una tarjeta de resumen consolidada de "Gran Total" en la base de la pestaña para visualizar la suma de todas las secciones en pesos colombianos.
+

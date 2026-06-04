@@ -15,12 +15,18 @@ Este archivo es la "Memoria RAM" para Antigravity. Contiene el contexto de lo qu
 - [x] Rediseño de Navegación Superior (TopNav con Créditos, Feedback y Búsqueda).
 - [x] Rediseño de flujos de asignación de Solicitudes (Sliders, Roles SuperAdmin vs Coequipero, Vistas independientes).
 - [x] Módulo de Proyectos & CMS de Armado (Vincular solicitudes a proyectos reales, modal "Nuevo Proyecto" restringido por rol).
-- [x] **[NUEVO] Pestaña Despiece y Calculador de Costos 3D:** Conexión nativa e imperativa a `three/GLTFLoader` y `DRACOLoader` (vía CDN de Google Draco) en el cliente para escanear `P00.glb` usando el formateador exacto del tooltip del visor 3D, clasificando piezas (maderas) y herrajes e ingresando costos unitarios en el CMS.
+- [x] **Pestaña Despiece y Calculador de Costos 3D (Refactorización V2)**:
+  - Desglose de piezas individuales mediante badges apilados en lugar de cadenas de rangos.
+  - Corrección de regex en escáner GLB para leer números de pegatinas desde nombres de padres con guiones o sin espacios.
+  - Omitir el nodo raíz "Scene" para evitar nombres erróneos de piezas.
+  - Filas de costo total por sección (Madera, Fondos, Herrajes) y alineación de herrajes a 14 columnas.
+  - Bloque resumen de Gran Total al final de la pestaña.
 
 ### 🚧 Bloqueos / Notas Técnicas
 - **Identidad Visual:** Se utiliza el logo `Logo_vertical_color_en.svg` (corregido) como estándar global.
 - **TopNav:** Implementa créditos dinámicos desde el perfil de Supabase (fallback a 1,250).
 - **Control de Acceso:** Solo `superadmin` y `coequipero` tienen permisos para crear proyectos.
+- **Detección de Nombres**: Se prioriza `child.parent.name` si no contiene la palabra "PIEZA" ni es "Scene", manteniendo la cohesión con los tooltips.
 
 ---
 

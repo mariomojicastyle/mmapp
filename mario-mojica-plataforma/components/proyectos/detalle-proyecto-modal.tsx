@@ -21,6 +21,7 @@ export interface ItemDespiece {
   piezaNumero?: string
   piezaNumeroStart?: number
   piezaNumeroRange?: boolean
+  piezasLista?: string[]
 }
 
 export function normalizarYAsignarPiezas(items: ItemDespiece[]): ItemDespiece[] {
@@ -30,10 +31,29 @@ export function normalizarYAsignarPiezas(items: ItemDespiece[]): ItemDespiece[] 
   const fondos = items.filter(d => !d.esHerraje && d.esFondo)
   const herrajes = items.filter(d => d.esHerraje)
 
+  const asegurarPiezasLista = (item: ItemDespiece, start: number) => {
+    if (item.piezasLista && item.piezasLista.length > 0) return item.piezasLista
+    const list: string[] = []
+    for (let i = 0; i < item.cantidad; i++) {
+      list.push(`Pieza ${String(start + i).padStart(2, "0")}`)
+    }
+    return list
+  }
+
   if (tieneNumeracionGLB) {
     maderas.sort((a, b) => (a.piezaNumeroStart || 0) - (b.piezaNumeroStart || 0))
     fondos.sort((a, b) => (a.piezaNumeroStart || 0) - (b.piezaNumeroStart || 0))
-    return [...maderas, ...fondos, ...herrajes]
+    
+    const maderasMapeadas = maderas.map(item => ({
+      ...item,
+      piezasLista: asegurarPiezasLista(item, item.piezaNumeroStart || 1)
+    }))
+    const fondosMapeados = fondos.map(item => ({
+      ...item,
+      piezasLista: asegurarPiezasLista(item, item.piezaNumeroStart || 1)
+    }))
+    
+    return [...maderasMapeadas, ...fondosMapeados, ...herrajes]
   }
 
   maderas.sort((a, b) => {
@@ -77,7 +97,8 @@ export function normalizarYAsignarPiezas(items: ItemDespiece[]): ItemDespiece[] 
       ...item, 
       piezaNumero: codigo, 
       piezaNumeroStart: startNum, 
-      piezaNumeroRange: item.cantidad > 1 
+      piezaNumeroRange: item.cantidad > 1,
+      piezasLista: asegurarPiezasLista(item, startNum)
     }
   })
 
@@ -89,7 +110,8 @@ export function normalizarYAsignarPiezas(items: ItemDespiece[]): ItemDespiece[] 
       ...item, 
       piezaNumero: codigo, 
       piezaNumeroStart: startNum, 
-      piezaNumeroRange: item.cantidad > 1 
+      piezaNumeroRange: item.cantidad > 1,
+      piezasLista: asegurarPiezasLista(item, startNum)
     }
   })
 
@@ -512,6 +534,7 @@ export function DetalleProyectoModal({ isOpen, onClose, proyecto, onUpdate }: De
     
     // 1. Obtener la primera sección (antes de cualquier "-") y limpiar espacios
     let name = rawName.split("-")[0].trim()
+      name = name.split(".")[0]
     
     // 2. Regla inteligente del guion bajo (no corta palabras, solo números/códigos redundantes)
     const parts2 = name.split("_")
@@ -644,14 +667,25 @@ export function DetalleProyectoModal({ isOpen, onClose, proyecto, onUpdate }: De
               const rawName = child.name || ""
               
               // 1. Obtener el nombre original y limpio del componente
-              // Si la geometría tiene nombre (Blender Mesh Data), lo usamos como el nombre limpio original
+              // Si tiene un padre en el GLB que no es la escena ni una pegatina, usamos el nombre de ese padre.
               let nombreLimpio = ""
-              if (child.geometry && child.geometry.name) {
+              let parentName = ""
+              if (child.parent && child.parent.type !== 'Scene' && child.parent.name) {
+                parentName = child.parent.name
+              }
+
+              if (parentName && !parentName.toUpperCase().startsWith("PIEZA") && parentName.toLowerCase() !== "scene") {
+                nombreLimpio = obtenerNombreLimpioTooltip(parentName)
+              } else if (child.geometry && child.geometry.name) {
                 nombreLimpio = obtenerNombreLimpioTooltip(child.geometry.name)
               } else if (rawName.includes("_")) {
-                // Fallback para formato combinado anterior "Pieza XX_Nombre"
                 const parts = rawName.split("_")
-                nombreLimpio = obtenerNombreLimpioTooltip(parts.slice(1).join("_"))
+                // Fallback para formato combinado "Pieza XX_Nombre". Solo cortar si empieza con "Pieza"
+                if (parts[0].toLowerCase().startsWith("pieza")) {
+                  nombreLimpio = obtenerNombreLimpioTooltip(parts.slice(1).join("_"))
+                } else {
+                  nombreLimpio = obtenerNombreLimpioTooltip(rawName)
+                }
               } else {
                 nombreLimpio = obtenerNombreLimpioTooltip(rawName)
               }
@@ -662,7 +696,9 @@ export function DetalleProyectoModal({ isOpen, onClose, proyecto, onUpdate }: De
               let esCodificado = false
               
               if (rawName.toUpperCase().startsWith("PIEZA")) {
-                const match = rawName.split("_")[0].match(/Pieza\s+(\d+)/i)
+                // Limpiar primero los sufijos duplicados (ej. .001, .003, 001, 003)
+                const cleanNameForNum = rawName.replace(/[._]?0\d\d$/i, "");
+                const match = cleanNameForNum.match(/Pieza[_\s]*(\d+)/i)
                 if (match) {
                   piezaBaseNum = parseInt(match[1], 10)
                   esCodificado = true
@@ -670,13 +706,14 @@ export function DetalleProyectoModal({ isOpen, onClose, proyecto, onUpdate }: De
               }
               
               // 3. Detectar si tiene un padre Empty de pegatina "Pieza XX" (para retrocompatibilidad)
-              let parentName = ""
+              parentName = ""
               if (child.parent && child.parent.type !== 'Scene') {
                 parentName = child.parent.name || ""
               }
               
               if (!esCodificado && parentName.toUpperCase().startsWith("PIEZA")) {
-                const match = parentName.match(/Pieza\s+(\d+)/i)
+                const cleanParentName = parentName.replace(/[._]?0\d\d$/i, "");
+                const match = cleanParentName.match(/Pieza[_\s]*(\d+)/i)
                 if (match) {
                   piezaBaseNum = parseInt(match[1], 10)
                 }
@@ -704,11 +741,14 @@ export function DetalleProyectoModal({ isOpen, onClose, proyecto, onUpdate }: De
               let esHerraje = false
               const nombreLower = nombreLimpio.toLowerCase()
               
-              if (nombreLower.startsWith("tapaluz")) {
-                // Exclusión especial: Empieza con "Tapaluz", es pieza de madera
+              if (nombreLower.startsWith("tapaluz") || nombreLower.includes("fondo") || nombreLower.includes("posterior")) {
+                // Exclusión especial: "Tapaluz", "fondo" o "posterior" nunca son herrajes
                 esHerraje = false
               } else if (nombreLower.startsWith("caja") || nombreLower.startsWith("puntilla")) {
                 // Inclusión especial: Empieza con "Caja" o "Puntilla", es herraje
+                esHerraje = true
+              } else if (/^\d+$/.test(nombreLimpio)) {
+                // Inclusión especial: Si el nombre es puramente numérico (SKU), es un herraje
                 esHerraje = true
               } else {
                 // Palabras clave genéricas
@@ -842,10 +882,13 @@ export function DetalleProyectoModal({ isOpen, onClose, proyecto, onUpdate }: De
             let piezaNumero: string | undefined = undefined
             let piezaNumeroStart: number | undefined = undefined
             let piezaNumeroRange: boolean | undefined = undefined
+            let piezasLista: string[] | undefined = undefined
             
             if (info.piezasDetectadas && info.piezasDetectadas.length > 0) {
               info.piezasDetectadas.sort((a, b) => a - b)
               const uniqueNums = Array.from(new Set(info.piezasDetectadas))
+              
+              piezasLista = uniqueNums.map(num => `Pieza ${String(num).padStart(2, "0")}`)
               
               if (uniqueNums.length === 1) {
                 // Pegatina única compartida (ej: [5, 5, 5, 5])
@@ -880,7 +923,8 @@ export function DetalleProyectoModal({ isOpen, onClose, proyecto, onUpdate }: De
               espesor: info.espesor,
               piezaNumero,
               piezaNumeroStart,
-              piezaNumeroRange
+              piezaNumeroRange,
+              piezasLista
             }
           }).sort((a, b) => {
             if (a.piezaNumeroStart !== undefined && b.piezaNumeroStart !== undefined) {
@@ -908,10 +952,25 @@ export function DetalleProyectoModal({ isOpen, onClose, proyecto, onUpdate }: De
     }
   }
 
-  const handleLimpiarDespiece = () => {
-    setDespiece([])
-    setSuccessMsg("El escaneo del despiece ha sido borrado del visor.")
-    setError("")
+  const handleLimpiarDespiece = async () => {
+    setIsSaving(true)
+    try {
+      const supabase = createClient()
+      const { error: configError } = await supabase
+        .from("configuraciones_manual")
+        .update({ despiece: null })
+        .eq("proyecto_id", proyecto.id)
+
+      // Ignore error if row doesn't exist
+      
+      setDespiece([])
+      setSuccessMsg("El escaneo ha sido borrado del visor y de la base de datos.")
+      setError("")
+    } catch (err: any) {
+      setError(err.message || "Error al borrar el despiece en Supabase.")
+    } finally {
+      setIsSaving(false)
+    }
   }
 
   const handleSaveDespiece = async (items: ItemDespiece[]) => {
@@ -2235,7 +2294,7 @@ export function DetalleProyectoModal({ isOpen, onClose, proyecto, onUpdate }: De
                         <div className="rounded-xl border border-outline-variant/10 overflow-hidden divide-y divide-outline-variant/10 bg-surface-container-low shadow-sm">
                           <div className="grid px-4 py-2.5 bg-surface-container/60 border-b border-outline-variant/10 text-[10px] font-bold text-on-surface-variant/80 uppercase tracking-wider" style={{ gridTemplateColumns: "repeat(14, minmax(0, 1fr))" }}>
                             <span className="col-span-3">Pieza</span>
-                            <span className="col-span-2">Componente</span>
+                            <span className="col-span-2">Descripción</span>
                             <span className="col-span-2 text-center">LxAxE (mm)</span>
                             <span className="col-span-1 text-center">Cant.</span>
                             <span className="col-span-2 text-center">Costo / m²</span>
@@ -2247,10 +2306,18 @@ export function DetalleProyectoModal({ isOpen, onClose, proyecto, onUpdate }: De
                             const totalCosto = (item.costoUnitario || 0) * item.cantidad;
                             return (
                               <div key={idx} className="grid px-4 py-3 items-center text-xs hover:bg-surface-container-high/40 transition-colors group" style={{ gridTemplateColumns: "repeat(14, minmax(0, 1fr))" }}>
-                                <div className="col-span-3 flex items-center">
-                                  <span className="font-mono font-bold text-[10px] text-primary bg-primary/10 px-1.5 py-0.5 rounded border border-primary/20 select-none truncate inline-block w-fit" title={item.piezaNumero}>
-                                    {item.piezaNumero || "—"}
-                                  </span>
+                                <div className="col-span-3 flex flex-col gap-1 py-1">
+                                  {item.piezasLista && item.piezasLista.length > 0 ? (
+                                    item.piezasLista.map((pz, pzIdx) => (
+                                      <span key={pzIdx} className="font-mono font-bold text-[10px] text-primary bg-primary/10 px-1.5 py-0.5 rounded border border-primary/20 select-none truncate inline-block w-fit">
+                                        {pz}
+                                      </span>
+                                    ))
+                                  ) : (
+                                    <span className="font-mono font-bold text-[10px] text-primary bg-primary/10 px-1.5 py-0.5 rounded border border-primary/20 select-none truncate inline-block w-fit">
+                                      {item.piezaNumero || "—"}
+                                    </span>
+                                  )}
                                 </div>
 
                                 <div className="col-span-2 flex items-center gap-2 overflow-hidden">
@@ -2315,6 +2382,21 @@ export function DetalleProyectoModal({ isOpen, onClose, proyecto, onUpdate }: De
                               </div>
                             );
                           })}
+                          
+                          {/* Fila de Total de Madera */}
+                          <div className="grid px-4 py-3 items-center text-xs bg-surface-container/30 border-t border-outline-variant/10 font-bold" style={{ gridTemplateColumns: "repeat(14, minmax(0, 1fr))" }}>
+                            <span className="col-span-3 text-on-surface-variant/70">TOTAL MADERA</span>
+                            <span className="col-span-2"></span>
+                            <span className="col-span-2"></span>
+                            <span className="col-span-1 text-center font-mono bg-surface-container/80 py-1 px-1 rounded-lg max-w-[40px] mx-auto">
+                              {despiece.filter(d => !d.esHerraje && !d.esFondo).reduce((acc, curr) => acc + curr.cantidad, 0)}
+                            </span>
+                            <span className="col-span-2"></span>
+                            <span className="col-span-2"></span>
+                            <span className="col-span-2 text-right font-mono text-primary text-sm">
+                              ${despiece.filter(d => !d.esHerraje && !d.esFondo).reduce((acc, curr) => acc + ((curr.costoUnitario || 0) * curr.cantidad), 0).toLocaleString("es-CO", { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
+                            </span>
+                          </div>
                         </div>
                       </div>
 
@@ -2329,7 +2411,7 @@ export function DetalleProyectoModal({ isOpen, onClose, proyecto, onUpdate }: De
                           <div className="rounded-xl border border-outline-variant/10 overflow-hidden divide-y divide-outline-variant/10 bg-surface-container-low shadow-sm">
                             <div className="grid px-4 py-2.5 bg-surface-container/60 border-b border-outline-variant/10 text-[10px] font-bold text-on-surface-variant/80 uppercase tracking-wider" style={{ gridTemplateColumns: "repeat(14, minmax(0, 1fr))" }}>
                               <span className="col-span-3">Pieza</span>
-                              <span className="col-span-2">Componente</span>
+                              <span className="col-span-2">Descripción</span>
                               <span className="col-span-2 text-center">LxAxE (mm)</span>
                               <span className="col-span-1 text-center">Cant.</span>
                               <span className="col-span-2 text-center">Costo / m²</span>
@@ -2341,10 +2423,18 @@ export function DetalleProyectoModal({ isOpen, onClose, proyecto, onUpdate }: De
                               const totalCosto = (item.costoUnitario || 0) * item.cantidad;
                               return (
                                 <div key={idx} className="grid px-4 py-3 items-center text-xs hover:bg-surface-container-high/40 transition-colors group" style={{ gridTemplateColumns: "repeat(14, minmax(0, 1fr))" }}>
-                                  <div className="col-span-3 flex items-center">
-                                    <span className="font-mono font-bold text-[10px] text-amber-500 bg-amber-500/10 px-1.5 py-0.5 rounded border border-amber-500/20 select-none truncate inline-block w-fit" title={item.piezaNumero}>
-                                      {item.piezaNumero || "—"}
-                                    </span>
+                                  <div className="col-span-3 flex flex-col gap-1 py-1">
+                                    {item.piezasLista && item.piezasLista.length > 0 ? (
+                                      item.piezasLista.map((pz, pzIdx) => (
+                                        <span key={pzIdx} className="font-mono font-bold text-[10px] text-amber-500 bg-amber-500/10 px-1.5 py-0.5 rounded border border-amber-500/20 select-none truncate inline-block w-fit">
+                                          {pz}
+                                        </span>
+                                      ))
+                                    ) : (
+                                      <span className="font-mono font-bold text-[10px] text-amber-500 bg-amber-500/10 px-1.5 py-0.5 rounded border border-amber-500/20 select-none truncate inline-block w-fit">
+                                        {item.piezaNumero || "—"}
+                                      </span>
+                                    )}
                                   </div>
 
                                   <div className="col-span-2 flex items-center gap-2 overflow-hidden">
@@ -2409,6 +2499,21 @@ export function DetalleProyectoModal({ isOpen, onClose, proyecto, onUpdate }: De
                                 </div>
                               );
                             })}
+                            
+                            {/* Fila de Total de Láminas */}
+                            <div className="grid px-4 py-3 items-center text-xs bg-surface-container/30 border-t border-outline-variant/10 font-bold" style={{ gridTemplateColumns: "repeat(14, minmax(0, 1fr))" }}>
+                              <span className="col-span-3 text-on-surface-variant/70">TOTAL LÁMINAS</span>
+                              <span className="col-span-2"></span>
+                              <span className="col-span-2"></span>
+                              <span className="col-span-1 text-center font-mono bg-surface-container/80 py-1 px-1 rounded-lg max-w-[40px] mx-auto">
+                                {despiece.filter(d => d.esFondo).reduce((acc, curr) => acc + curr.cantidad, 0)}
+                              </span>
+                              <span className="col-span-2"></span>
+                              <span className="col-span-2"></span>
+                              <span className="col-span-2 text-right font-mono text-amber-500 text-sm">
+                                ${despiece.filter(d => d.esFondo).reduce((acc, curr) => acc + ((curr.costoUnitario || 0) * curr.cantidad), 0).toLocaleString("es-CO", { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
+                              </span>
+                            </div>
                           </div>
                         </div>
                       )}
@@ -2422,25 +2527,29 @@ export function DetalleProyectoModal({ isOpen, onClose, proyecto, onUpdate }: De
                         </h4>
                         
                         <div className="rounded-xl border border-outline-variant/10 overflow-hidden divide-y divide-outline-variant/10 bg-surface-container-low shadow-sm">
-                          <div className="grid grid-cols-12 px-4 py-2.5 bg-surface-container/60 border-b border-outline-variant/10 text-[10px] font-bold text-on-surface-variant/80 uppercase tracking-wider">
-                            <span className="col-span-5 sm:col-span-6">Componente</span>
-                            <span className="col-span-2 text-center">Cant.</span>
-                            <span className="col-span-3">Costo Unit.</span>
+                          <div className="grid px-4 py-2.5 bg-surface-container/60 border-b border-outline-variant/10 text-[10px] font-bold text-on-surface-variant/80 uppercase tracking-wider" style={{ gridTemplateColumns: "repeat(14, minmax(0, 1fr))" }}>
+                            <span className="col-span-3"></span>
+                            <span className="col-span-4">Descripción</span>
+                            <span className="col-span-1 text-center">Cant.</span>
+                            <span className="col-span-2"></span>
+                            <span className="col-span-2 text-center">Costo Unit.</span>
                             <span className="col-span-2 text-right">Total</span>
                           </div>
 
                           {despiece.filter(d => d.esHerraje).map((item, idx) => {
                             const totalCosto = (item.costoUnitario || 0) * item.cantidad;
                             return (
-                              <div key={idx} className="grid grid-cols-12 px-4 py-3 items-center text-xs hover:bg-surface-container-high/40 transition-colors group">
-                                <div className="col-span-5 sm:col-span-6 flex items-center gap-2.5 overflow-hidden">
+                              <div key={idx} className="grid px-4 py-3 items-center text-xs hover:bg-surface-container-high/40 transition-colors group" style={{ gridTemplateColumns: "repeat(14, minmax(0, 1fr))" }}>
+                                <div className="col-span-3"></div>
+                                <div className="col-span-4 flex items-center gap-2.5 overflow-hidden">
                                   <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-teal-500/10 border border-teal-500/20 text-teal-400">
                                     <Wrench className="h-3.5 w-3.5" />
                                   </div>
                                   <span className="font-semibold text-on-surface truncate" title={item.nombre}>{item.nombre}</span>
                                 </div>
-                                <span className="col-span-2 text-center font-mono font-bold text-on-surface bg-surface-container/60 py-1 px-2 rounded-lg max-w-[40px] mx-auto">{item.cantidad}</span>
-                                <div className="col-span-3 flex items-center relative max-w-[120px]">
+                                <span className="col-span-1 text-center font-mono font-bold text-on-surface bg-surface-container/60 py-1 px-1 rounded-lg max-w-[40px] mx-auto">{item.cantidad}</span>
+                                <div className="col-span-2"></div>
+                                <div className="col-span-2 flex items-center relative max-w-[90px] mx-auto">
                                   <span className="absolute left-2.5 text-on-surface-variant/50">$</span>
                                   <input
                                     type="number"
@@ -2460,6 +2569,51 @@ export function DetalleProyectoModal({ isOpen, onClose, proyecto, onUpdate }: De
                               </div>
                             );
                           })}
+                          
+                          {/* Fila de Total de Herrajes */}
+                          <div className="grid px-4 py-3 items-center text-xs bg-surface-container/30 border-t border-outline-variant/10 font-bold" style={{ gridTemplateColumns: "repeat(14, minmax(0, 1fr))" }}>
+                            <span className="col-span-3 text-on-surface-variant/70">TOTAL HERRAJES</span>
+                            <span className="col-span-4"></span>
+                            <span className="col-span-1 text-center font-mono bg-surface-container/80 py-1 px-1 rounded-lg max-w-[40px] mx-auto">
+                              {despiece.filter(d => d.esHerraje).reduce((acc, curr) => acc + curr.cantidad, 0)}
+                            </span>
+                            <span className="col-span-2"></span>
+                            <span className="col-span-2"></span>
+                            <span className="col-span-2 text-right font-mono text-teal-400 text-sm">
+                              ${despiece.filter(d => d.esHerraje).reduce((acc, curr) => acc + ((curr.costoUnitario || 0) * curr.cantidad), 0).toLocaleString("es-CO", { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                      
+                      {/* Gran Total */}
+                      <div className="flex justify-end pt-4">
+                        <div className="rounded-xl border border-outline-variant/20 bg-surface-container/60 p-4 min-w-[300px] shadow-sm flex flex-col gap-1.5">
+                          <div className="flex justify-between items-center text-xs text-on-surface-variant/80 font-bold uppercase tracking-wider">
+                            <span>Total Maderas:</span>
+                            <span className="font-mono text-primary">
+                              ${despiece.filter(d => !d.esHerraje && !d.esFondo).reduce((acc, curr) => acc + ((curr.costoUnitario || 0) * curr.cantidad), 0).toLocaleString("es-CO", { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
+                            </span>
+                          </div>
+                          <div className="flex justify-between items-center text-xs text-on-surface-variant/80 font-bold uppercase tracking-wider">
+                            <span>Total Láminas:</span>
+                            <span className="font-mono text-amber-500">
+                              ${despiece.filter(d => d.esFondo).reduce((acc, curr) => acc + ((curr.costoUnitario || 0) * curr.cantidad), 0).toLocaleString("es-CO", { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
+                            </span>
+                          </div>
+                          <div className="flex justify-between items-center text-xs text-on-surface-variant/80 font-bold uppercase tracking-wider">
+                            <span>Total Herrajes:</span>
+                            <span className="font-mono text-teal-400">
+                              ${despiece.filter(d => d.esHerraje).reduce((acc, curr) => acc + ((curr.costoUnitario || 0) * curr.cantidad), 0).toLocaleString("es-CO", { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
+                            </span>
+                          </div>
+                          <div className="border-t border-outline-variant/20 my-1"></div>
+                          <div className="flex justify-between items-center font-bold text-xs text-on-surface uppercase tracking-wider">
+                            <span className="text-sm">Gran Total:</span>
+                            <span className="font-mono text-teal-400 text-base bg-teal-500/10 px-2 py-0.5 rounded border border-teal-500/20">
+                              ${despiece.reduce((acc, curr) => acc + ((curr.costoUnitario || 0) * curr.cantidad), 0).toLocaleString("es-CO", { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
+                            </span>
+                          </div>
                         </div>
                       </div>
                     </div>
