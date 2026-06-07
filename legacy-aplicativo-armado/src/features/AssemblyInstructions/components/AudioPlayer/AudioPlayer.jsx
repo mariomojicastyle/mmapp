@@ -169,7 +169,7 @@ export default function AudioPlayer() {
         }
       };
 
-    }else{
+    } else {
       // Carga local de audio por paso
       if (id) {
         audioRef.current.src = getAudioSrc(id, pasoActual, idioma);
@@ -178,57 +178,24 @@ export default function AudioPlayer() {
 
         if (StartApp === true && phaseAudio === "playing") {
           AudioEndedFalse();
+          const delay = pasoActual === "00" ? 2000 : 100;
           setTimeout(() => {
-            if (audioRef.current && phaseAudio === "playing") {
+            if (audioRef.current && phaseAudio === "playing" && StartApp === true) {
               audioRef.current.play().catch(e => console.log("Audio play failed on step change:", e));
             }
-          }, 100);
+          }, delay);
         }
       }
     }
   }, [PanelAyudas, pasoActual, id, idioma, phaseAudio, StartApp]);
 
 
-  // Se activa el audio al hacer clic en el botón iniciar
-  useEffect(() => {
-    if (StartApp === true && audioRef.current) {
-      const delay = pasoActual === "00" ? 2000 : 0;
-      const timer = setTimeout(() => {
-        if (audioRef.current && StartApp === true) {
-          const playPromise = audioRef.current.play();
-          if (playPromise !== undefined) {
-            playPromise.catch(error => {
-              console.log("Audio play safely handled on start:", error.message);
-            });
-          }
-        }
-      }, delay);
-      return () => clearTimeout(timer);
-    }
-  }, [StartApp, pasoActual]);
-
-  // Control del audio dependiendo de la fase en que se encuentre.
+  // Control del audio dependiendo de la fase en que se encuentre (Play / Pausa global)
   useEffect(() => {
     if (!audioRef.current) return;
     
-    let timer;
     if (StartApp === true) {
-      if (phaseAudio === "start") {
-        if (ReadyToPlay === true) {
-          audioRef.current.load();
-          const delay = pasoActual === "00" ? 2000 : 0;
-          timer = setTimeout(() => {
-            if (audioRef.current && phaseAudio === "start") {
-              const playPromise = audioRef.current.play();
-              if (playPromise !== undefined) {
-                playPromise.then((_) => {}).catch((error) => {
-                  console.log("Audio play safely handled on phase start:", error.message);
-                });
-              }
-            }
-          }, delay);
-        }
-      } else if (phaseAudio === "playing") {
+      if (phaseAudio === "playing") {
         AudioEndedFalse();
         const playPromise = audioRef.current.play();
         if (playPromise !== undefined) {
@@ -243,11 +210,9 @@ export default function AudioPlayer() {
       }
     }
 
-    //Funcion que permite conocer la duración del audio
+    // Funcion que permite conocer la duración del audio
     const handleTimeUpdateGeneral = () => {
       if (!audioRef.current) return;
-      // let ct = audioRef.current.currentTime;
-      // console.log(ct);
       if (audioRef.current.ended) {
         AudioEndedTrue();
       }
@@ -262,14 +227,13 @@ export default function AudioPlayer() {
     audioRef.current.addEventListener("ended", handleEndedGeneral);
 
     return () => {
-      if (timer) clearTimeout(timer);
       if (audioRef.current) {
         audioRef.current.removeEventListener("timeupdate", handleTimeUpdateGeneral);
         audioRef.current.removeEventListener("ended", handleEndedGeneral);
       }
     };
 
-  }, [phaseAudio, StartApp, ReadyToPlay, pasoActual]);
+  }, [phaseAudio, StartApp]);
 
   // Sincronizar velocidad de reproducción (playbackRate) en caliente y tras cargas
   useEffect(() => {
