@@ -255,10 +255,8 @@ export default create(
       toggleSombras: () => set((state) => ({ sombras: !state.sombras })),
       idioma: "es", // 'es' | 'es-ES' | 'en'
       cambiarIdioma: (nuevoIdioma) => {
-        const idiomasValidos = ["es", "es-ES", "en"];
-        if (idiomasValidos.includes(nuevoIdioma)) {
-          set(() => ({ idioma: nuevoIdioma }));
-        }
+        // Forzado estrictamente a 'es' (español latino) para simplificación y pruebas de audio
+        set(() => ({ idioma: "es" }));
       },
       playbackRate: 1.0,
       setPlaybackRate: (rate) => set(() => ({ playbackRate: rate })),

@@ -179,6 +179,7 @@ Un **"Manual Vacío"** es un cascarón o aplicación base centralizada (desplega
 - [x] App_Armado_V11: Optimización de iconos SVG nativos (Shadows) para herencia de color perfecta y adición de tooltips nativos en toda la interfaz de navegación.
 - [x] Eliminar dependencias de `3dymedios.com` (localización total de GLB, Matcaps, HDRI, etc.).
 - [x] Exclusión mutua de cortinas en Zustand para evitar traslapes.
+- [x] Manual_Audios_v1: Sincronización y corrección de rutas de audio en español latino a la raíz de Supabase Storage (`sounds/[paso].mp3`) y restauración del ciclo de montaje de `AudioPlayer` para evadir bloqueos de Autoplay.
 
 ---
 

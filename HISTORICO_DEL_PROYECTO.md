@@ -573,3 +573,10 @@ Los estilos, colores y tiempos de transición de las flechas azules se configura
         - Se introdujeron filas de subtotal por sección (Maderas, Láminas y Herrajes).
         - Se añadió una tarjeta de resumen consolidada de "Gran Total" en la base de la pestaña para visualizar la suma de todas las secciones en pesos colombianos.
 
+* **[2026-06-07] AppArmado_v14 / Manual_Audios_v1 — Sincronización de Audios del CMS y Corrección de Autoplay**:
+    - **Corrección de Rutas en Español Latino**: Se diagnosticó que los audios generados por la síntesis del habla (TTS) del CMS se guardan directamente en la raíz de la carpeta de sonidos de Supabase como `sounds/{paso}.mp3`, mientras que el reproductor de la app buscaba erróneamente en `/sounds/es/{paso}_es.mp3` (que contenía audios legados antiguos e incompletos). Se corrigió el helper `getAudioSrc` para apuntar a la raíz: `/${id}/sounds/${paso}.mp3`.
+    - **Existencia de Audios en Supabase**: Se verificó mediante un script de peticiones HTTP directas la existencia de todos los audios de armado (`00.mp3` a `08.mp3`) en el storage de Supabase, validando que el archivo `00.mp3` contiene el saludo de bienvenida real.
+    - **Ciclo de Montaje y Evasión del Bloqueo por Autoplay**: Se restauró la renderización condicional del reproductor en `NavBarInferior.jsx` (`{toogle ? <AudioPlayer /> : null}`). Esto desmonta y vuelve a montar el componente durante 200ms al cambiar de paso, forzando la creación de un nuevo elemento de audio en el DOM inmediatamente después de la acción de click, lo cual desbloquea el permiso del navegador para Autoplay y evita retardos.
+    - **Simplificación de Idiomas**: Se removieron los botones de cambio de idioma en `NavBarSuperior.jsx` (código original respaldado en `idiomas_respaldo.md`) y se fijó el estado `idioma` a `"es"` en el store Zustand para concentrar las pruebas y la validación en el idioma español latino.
+
+

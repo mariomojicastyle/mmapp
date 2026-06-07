@@ -79,8 +79,8 @@ export default function NavBarSuperior({ id, data }) {
     <>
       <div className="contenedor1">
         <div className="contenedor1-1">
-          {/* Selector de Idioma (ES-Lat / ES-EU / EN) */}
-          <div className="lang-selector-group" title="Seleccionar idioma">
+          {/* Selector de Idioma (ES-Lat / ES-EU / EN) - Desactivado temporalmente para pruebas de audio latino */}
+          {/* <div className="lang-selector-group" title="Seleccionar idioma">
             {idiomaOptions.map((opt) => (
               <button
                 key={opt.value}
@@ -93,7 +93,7 @@ export default function NavBarSuperior({ id, data }) {
                 {opt.sublabel && <span className="lang-btn-sub">{opt.sublabel}</span>}
               </button>
             ))}
-          </div>
+          </div> */}
 
           {/* <!-- Boton de ayuda --> */}
           <div className="button" id="help" title="Tutorial de Interfaz" onClick={showPanelAyudas}>
