@@ -50,8 +50,10 @@ export default defineConfig({
               ? `${supabaseUrl}/storage/v1/object/public/insumos_manuales/${manualId}/${category}/${rest}`
               : `${supabaseUrl}/storage/v1/object/public/insumos_manuales/${manualId}/${rest}`
             
+            const isSoundsCategory = category === 'sounds';
+
             const serveLocalFile = () => {
-              if (fs.existsSync(localPath)) {
+              if (!isSoundsCategory && fs.existsSync(localPath)) {
                 // Dejar que Vite sirva el archivo localmente
                 next()
                 return true

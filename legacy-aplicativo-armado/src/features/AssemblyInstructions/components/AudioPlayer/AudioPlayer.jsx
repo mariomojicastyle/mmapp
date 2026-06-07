@@ -192,29 +192,41 @@ export default function AudioPlayer() {
   // Se activa el audio al hacer clic en el botón iniciar
   useEffect(() => {
     if (StartApp === true && audioRef.current) {
-      const playPromise = audioRef.current.play();
-      if (playPromise !== undefined) {
-        playPromise.catch(error => {
-          console.log("Audio play safely handled on start:", error.message);
-        });
-      }
+      const delay = pasoActual === "00" ? 2000 : 0;
+      const timer = setTimeout(() => {
+        if (audioRef.current && StartApp === true) {
+          const playPromise = audioRef.current.play();
+          if (playPromise !== undefined) {
+            playPromise.catch(error => {
+              console.log("Audio play safely handled on start:", error.message);
+            });
+          }
+        }
+      }, delay);
+      return () => clearTimeout(timer);
     }
-  }, [StartApp]);
+  }, [StartApp, pasoActual]);
 
   // Control del audio dependiendo de la fase en que se encuentre.
   useEffect(() => {
     if (!audioRef.current) return;
     
+    let timer;
     if (StartApp === true) {
       if (phaseAudio === "start") {
         if (ReadyToPlay === true) {
           audioRef.current.load();
-          const playPromise = audioRef.current.play();
-          if (playPromise !== undefined) {
-            playPromise.then((_) => {}).catch((error) => {
-              console.log("Audio play safely handled on phase start:", error.message);
-            });
-          }
+          const delay = pasoActual === "00" ? 2000 : 0;
+          timer = setTimeout(() => {
+            if (audioRef.current && phaseAudio === "start") {
+              const playPromise = audioRef.current.play();
+              if (playPromise !== undefined) {
+                playPromise.then((_) => {}).catch((error) => {
+                  console.log("Audio play safely handled on phase start:", error.message);
+                });
+              }
+            }
+          }, delay);
         }
       } else if (phaseAudio === "playing") {
         AudioEndedFalse();
@@ -250,13 +262,14 @@ export default function AudioPlayer() {
     audioRef.current.addEventListener("ended", handleEndedGeneral);
 
     return () => {
+      if (timer) clearTimeout(timer);
       if (audioRef.current) {
         audioRef.current.removeEventListener("timeupdate", handleTimeUpdateGeneral);
         audioRef.current.removeEventListener("ended", handleEndedGeneral);
       }
     };
 
-  }, [phaseAudio, StartApp, ReadyToPlay]);
+  }, [phaseAudio, StartApp, ReadyToPlay, pasoActual]);
 
   // Sincronizar velocidad de reproducción (playbackRate) en caliente y tras cargas
   useEffect(() => {
