@@ -10,7 +10,7 @@ const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
 
 // Leer VITE_SUPABASE_URL desde .env de forma manual y robusta
-let supabaseUrl = 'https://ikdorsjntqnnxrpgvwrl.supabase.co'
+let supabaseUrl = 'https://dezaisaunoumhqpssols.supabase.co'
 try {
   const envContent = fs.readFileSync(path.join(__dirname, '.env'), 'utf-8')
   const match = envContent.match(/VITE_SUPABASE_URL=["']?([^"'\s]+)/)
