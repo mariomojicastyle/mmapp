@@ -176,7 +176,7 @@ export default function AudioPlayer() {
         audioRef.current.load();
         AudioEndedTrue();
 
-        if (phaseAudio === "playing") {
+        if (StartApp === true && phaseAudio === "playing") {
           AudioEndedFalse();
           setTimeout(() => {
             if (audioRef.current && phaseAudio === "playing") {
@@ -186,7 +186,7 @@ export default function AudioPlayer() {
         }
       }
     }
-  }, [PanelAyudas, pasoActual, id, idioma, phaseAudio]);
+  }, [PanelAyudas, pasoActual, id, idioma, phaseAudio, StartApp]);
 
 
   // Se activa el audio al hacer clic en el botón iniciar
