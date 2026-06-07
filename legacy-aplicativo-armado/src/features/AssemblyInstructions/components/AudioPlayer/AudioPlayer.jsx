@@ -172,22 +172,33 @@ export default function AudioPlayer() {
     } else {
       // Carga local de audio por paso
       if (id) {
-        audioRef.current.src = getAudioSrc(id, pasoActual, idioma);
-        audioRef.current.load();
-        AudioEndedTrue();
+        // Evitar cargar y competir en red antes de que el 3D y la app estén listos
+        if (StartApp !== true || ReadyToPlay !== true) {
+          audioRef.current.src = "";
+          return;
+        }
 
-        if (StartApp === true && phaseAudio === "playing") {
+        const targetSrc = getAudioSrc(id, pasoActual, idioma);
+        // Solo actualizar src y recargar si la ruta cambia, previniendo recargas infinitas
+        if (audioRef.current.src !== window.location.origin + targetSrc && audioRef.current.getAttribute("src") !== targetSrc) {
+          audioRef.current.src = targetSrc;
+          audioRef.current.load();
+          AudioEndedTrue();
+        }
+
+        if (phaseAudio === "playing") {
           AudioEndedFalse();
           const delay = pasoActual === "00" ? 2000 : 100;
-          setTimeout(() => {
-            if (audioRef.current && phaseAudio === "playing" && StartApp === true) {
+          const timer = setTimeout(() => {
+            if (audioRef.current && phaseAudio === "playing" && StartApp === true && ReadyToPlay === true) {
               audioRef.current.play().catch(e => console.log("Audio play failed on step change:", e));
             }
           }, delay);
+          return () => clearTimeout(timer);
         }
       }
     }
-  }, [PanelAyudas, pasoActual, id, idioma, phaseAudio, StartApp]);
+  }, [PanelAyudas, pasoActual, id, idioma, phaseAudio, StartApp, ReadyToPlay]);
 
 
   // Control del audio dependiendo de la fase en que se encuentre (Play / Pausa global)
