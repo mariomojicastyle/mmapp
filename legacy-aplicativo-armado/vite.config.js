@@ -41,23 +41,32 @@ export default defineConfig({
             const category = match ? match[2] : ''
             const rest = match ? match[3] : matchRootFile[2]
             
-            // Si el archivo NO existe localmente en public/
             const localPath = category 
               ? path.join(__dirname, 'public', manualId, category, rest)
               : path.join(__dirname, 'public', manualId, rest)
-              
-            if (!fs.existsSync(localPath)) {
-              // Proxy real del archivo desde Supabase Storage (intento directo con la ruta original)
-              const directSupabaseUrl = category 
-                ? `${supabaseUrl}/storage/v1/object/public/insumos_manuales/${manualId}/${category}/${rest}`
-                : `${supabaseUrl}/storage/v1/object/public/insumos_manuales/${manualId}/${rest}`
-              
-              const fetchFromSupabase = (urlToFetch, isFallbackAttempt = false) => {
-                fetch(urlToFetch)
-                  .then(async (response) => {
-                    // Si falla el primer intento (404) y es un audio de paso/ayuda en la raíz de sounds
-                    if (!response.ok) {
-                      if (!isFallbackAttempt && category === 'sounds') {
+
+            // Intentar primero Supabase Storage (fuente de verdad dinámica)
+            const directSupabaseUrl = category 
+              ? `${supabaseUrl}/storage/v1/object/public/insumos_manuales/${manualId}/${category}/${rest}`
+              : `${supabaseUrl}/storage/v1/object/public/insumos_manuales/${manualId}/${rest}`
+            
+            const serveLocalFile = () => {
+              if (fs.existsSync(localPath)) {
+                // Dejar que Vite sirva el archivo localmente
+                next()
+                return true
+              }
+              return false
+            }
+
+            const fetchFromSupabase = (urlToFetch, isFallbackAttempt = false) => {
+              fetch(urlToFetch)
+                .then(async (response) => {
+                  if (!response.ok) {
+                    // Si el archivo no existe en Supabase y es el primer intento
+                    if (!isFallbackAttempt) {
+                      // 1. Intentar el fallback de audios legados en Supabase
+                      if (category === 'sounds') {
                         let fallbackRest = null
                         if (rest.match(/^\d+\.mp3$/)) {
                           const step = rest.split('.')[0]
@@ -72,32 +81,42 @@ export default defineConfig({
                           return
                         }
                       }
-                      res.statusCode = response.status
-                      res.end(`Recurso no encontrado en Storage: ${response.statusText}`)
-                      return
+                      
+                      // 2. Si no es un audio legado o falló el fallback legado de Supabase, intentar servir el archivo local
+                      if (serveLocalFile()) {
+                        return
+                      }
                     }
                     
-                    // Propagar headers correctos
-                    const contentType = response.headers.get('content-type')
-                    if (contentType) res.setHeader('Content-Type', contentType)
-                    
-                    const contentLength = response.headers.get('content-length')
-                    if (contentLength) res.setHeader('Content-Length', contentLength)
-                    
-                    // Enviar buffer binario del archivo
-                    const arrayBuffer = await response.arrayBuffer()
-                    res.end(Buffer.from(arrayBuffer))
-                  })
-                  .catch((err) => {
-                    console.error('Error en proxy de assets:', err)
-                    res.statusCode = 500
-                    res.end('Error en proxy de assets')
-                  })
-              }
-              
-              fetchFromSupabase(directSupabaseUrl)
-              return
+                    res.statusCode = response.status
+                    res.end(`Recurso no encontrado en Storage ni Local: ${response.statusText}`)
+                    return
+                  }
+                  
+                  // Propagar headers correctos
+                  const contentType = response.headers.get('content-type')
+                  if (contentType) res.setHeader('Content-Type', contentType)
+                  
+                  const contentLength = response.headers.get('content-length')
+                  if (contentLength) res.setHeader('Content-Length', contentLength)
+                  
+                  // Enviar buffer binario del archivo
+                  const arrayBuffer = await response.arrayBuffer()
+                  res.end(Buffer.from(arrayBuffer))
+                })
+                .catch((err) => {
+                  console.error('Error en proxy de assets:', err)
+                  // Intentar servir el archivo local en caso de error de conexión con Supabase
+                  if (serveLocalFile()) {
+                    return
+                  }
+                  res.statusCode = 500
+                  res.end('Error en proxy de assets')
+                })
             }
+            
+            fetchFromSupabase(directSupabaseUrl)
+            return
           }
           next()
         })

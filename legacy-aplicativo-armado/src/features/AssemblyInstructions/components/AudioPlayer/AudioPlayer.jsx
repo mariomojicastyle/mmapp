@@ -175,9 +175,18 @@ export default function AudioPlayer() {
         audioRef.current.src = getAudioSrc(id, pasoActual, idioma);
         audioRef.current.load();
         AudioEndedTrue();
+
+        if (phaseAudio === "playing") {
+          AudioEndedFalse();
+          setTimeout(() => {
+            if (audioRef.current && phaseAudio === "playing") {
+              audioRef.current.play().catch(e => console.log("Audio play failed on step change:", e));
+            }
+          }, 100);
+        }
       }
     }
-  }, [PanelAyudas, pasoActual, id, idioma]);
+  }, [PanelAyudas, pasoActual, id, idioma, phaseAudio]);
 
 
   // Se activa el audio al hacer clic en el botón iniciar
