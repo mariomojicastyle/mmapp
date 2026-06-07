@@ -81,170 +81,150 @@ export default function AudioPlayer() {
 
   //Si se activa el panel de ayudas, se cambia el audio especial, y las ayudas se van activando a medida que el audio suena.
   useEffect(() => {
-    if (!audioRef.current) return;
+    const audio = audioRef.current;
+    if (!audio) return;
 
-    if(PanelAyudas){
-      ResetAyudas();
-      audioRef.current.src = getAyudaSrc(id, idioma);
-      audioRef.current.load(); // Llamar a load() después de setear el src
-      setTimeout(() => {
-        if (audioRef.current) audioRef.current.play().catch(e => console.log("Audio play failed", e));
-      }, 500);
-
-      const handleTimeUpdateAyudas = () => {
-        if (!audioRef.current) return;
-        let ct = audioRef.current.currentTime;
-        const state = useEnviroment.getState();
-
-        if (ct >= 2 && ct < 10) {
-          if (!state.ayuda1) {
-            state.ResetAyudas();
-            state.ActivarAyuda1();
-          }
-        } else if (ct >= 10 && ct < 24) {
-          if (!state.ayuda3) {
-            state.ResetAyudas();
-            state.ActivarAyuda3();
-          }
-          // Control secuencial e intuitivo de las flechas de ayuda3 (Centro -> Derecha -> Izquierda)
-          if (ct >= 10 && ct < 15) {
-            if (!state.ayuda3ArrowCenter || state.ayuda3ArrowRight || state.ayuda3ArrowLeft) {
-              state.SetAyuda3ArrowCenter(true);
-              state.SetAyuda3ArrowRight(false);
-              state.SetAyuda3ArrowLeft(false);
-            }
-          } else if (ct >= 15 && ct < 20) {
-            if (state.ayuda3ArrowCenter || !state.ayuda3ArrowRight || state.ayuda3ArrowLeft) {
-              state.SetAyuda3ArrowCenter(false);
-              state.SetAyuda3ArrowRight(true);
-              state.SetAyuda3ArrowLeft(false);
-            }
-          } else if (ct >= 20 && ct < 24) {
-            if (state.ayuda3ArrowCenter || state.ayuda3ArrowRight || !state.ayuda3ArrowLeft) {
-              state.SetAyuda3ArrowCenter(false);
-              state.SetAyuda3ArrowRight(false);
-              state.SetAyuda3ArrowLeft(true);
-            }
-          }
-        } else if (ct >= 24 && ct < 33) {
-          if (!state.ayuda4) {
-            state.ResetAyudas();
-            state.ActivarAyuda4();
-          }
-        } else if (ct >= 33 && ct < 35) {
-          if (!state.ayuda5) {
-            state.ResetAyudas();
-            state.ActivarAyuda5();
-          }
-        } else if (ct >= 38) {
-          if (!state.ayuda6) {
-            state.ResetAyudas();
-            state.ActivarAyuda6();
-          }
+    const handleTimeUpdateAyudas = () => {
+      const state = useEnviroment.getState();
+      if (!state.PanelAyudas) {
+        if (audio.ended) {
+          state.AudioEndedTrue();
         }
+        return;
+      }
 
-        if (audioRef.current.ended) {
-          state.PanelAyudasFalse();
-          state.btnCerrarFalse();
-          state.ActivarParpadeo();
+      let ct = audio.currentTime;
+      if (ct >= 2 && ct < 10) {
+        if (!state.ayuda1) {
           state.ResetAyudas();
+          state.ActivarAyuda1();
         }
-      };
+      } else if (ct >= 10 && ct < 24) {
+        if (!state.ayuda3) {
+          state.ResetAyudas();
+          state.ActivarAyuda3();
+        }
+        // Control secuencial e intuitivo de las flechas de ayuda3 (Centro -> Derecha -> Izquierda)
+        if (ct >= 10 && ct < 15) {
+          if (!state.ayuda3ArrowCenter || state.ayuda3ArrowRight || state.ayuda3ArrowLeft) {
+            state.SetAyuda3ArrowCenter(true);
+            state.SetAyuda3ArrowRight(false);
+            state.SetAyuda3ArrowLeft(false);
+          }
+        } else if (ct >= 15 && ct < 20) {
+          if (state.ayuda3ArrowCenter || !state.ayuda3ArrowRight || state.ayuda3ArrowLeft) {
+            state.SetAyuda3ArrowCenter(false);
+            state.SetAyuda3ArrowRight(true);
+            state.SetAyuda3ArrowLeft(false);
+          }
+        } else if (ct >= 20 && ct < 24) {
+          if (state.ayuda3ArrowCenter || state.ayuda3ArrowRight || !state.ayuda3ArrowLeft) {
+            state.SetAyuda3ArrowCenter(false);
+            state.SetAyuda3ArrowRight(false);
+            state.SetAyuda3ArrowLeft(true);
+          }
+        }
+      } else if (ct >= 24 && ct < 33) {
+        if (!state.ayuda4) {
+          state.ResetAyudas();
+          state.ActivarAyuda4();
+        }
+      } else if (ct >= 33 && ct < 35) {
+        if (!state.ayuda5) {
+          state.ResetAyudas();
+          state.ActivarAyuda5();
+        }
+      } else if (ct >= 38) {
+        if (!state.ayuda6) {
+          state.ResetAyudas();
+          state.ActivarAyuda6();
+        }
+      }
 
-      const handleEndedAyudas = () => {
-        const state = useEnviroment.getState();
+      if (audio.ended) {
         state.PanelAyudasFalse();
         state.btnCerrarFalse();
         state.ActivarParpadeo();
         state.ResetAyudas();
-      };
-
-      audioRef.current.addEventListener("timeupdate", handleTimeUpdateAyudas);
-      audioRef.current.addEventListener("ended", handleEndedAyudas);
-
-      return () => {
-        if (audioRef.current) {
-          audioRef.current.removeEventListener("timeupdate", handleTimeUpdateAyudas);
-          audioRef.current.removeEventListener("ended", handleEndedAyudas);
-        }
-      };
-
-    } else {
-      // Carga local de audio por paso
-      if (id) {
-        // Evitar cargar y competir en red antes de que el 3D y la app estén listos
-        if (StartApp !== true || ReadyToPlay !== true) {
-          audioRef.current.src = "";
-          return;
-        }
-
-        const targetSrc = getAudioSrc(id, pasoActual, idioma);
-        // Solo actualizar src y recargar si la ruta cambia, previniendo recargas infinitas
-        if (audioRef.current.src !== window.location.origin + targetSrc && audioRef.current.getAttribute("src") !== targetSrc) {
-          audioRef.current.src = targetSrc;
-          audioRef.current.load();
-          AudioEndedTrue();
-        }
-
-        if (phaseAudio === "playing") {
-          AudioEndedFalse();
-          const delay = pasoActual === "00" ? 2000 : 100;
-          const timer = setTimeout(() => {
-            if (audioRef.current && phaseAudio === "playing" && StartApp === true && ReadyToPlay === true) {
-              audioRef.current.play().catch(e => console.log("Audio play failed on step change:", e));
-            }
-          }, delay);
-          return () => clearTimeout(timer);
-        }
-      }
-    }
-  }, [PanelAyudas, pasoActual, id, idioma, phaseAudio, StartApp, ReadyToPlay]);
-
-
-  // Control del audio dependiendo de la fase en que se encuentre (Play / Pausa global)
-  useEffect(() => {
-    if (!audioRef.current) return;
-    
-    if (StartApp === true) {
-      if (phaseAudio === "playing") {
-        AudioEndedFalse();
-        const playPromise = audioRef.current.play();
-        if (playPromise !== undefined) {
-          playPromise
-            .then((_) => {})
-            .catch((error) => {
-              console.log("Audio play safely handled on phase playing:", error.message);
-            });
-        }
-      } else if (phaseAudio === "paused") {
-        audioRef.current.pause();
-      }
-    }
-
-    // Funcion que permite conocer la duración del audio
-    const handleTimeUpdateGeneral = () => {
-      if (!audioRef.current) return;
-      if (audioRef.current.ended) {
-        AudioEndedTrue();
       }
     };
 
-    const handleEndedGeneral = () => {
-      ResetAudio();
-      ActionTrue();
+    const handleEndedAyudas = () => {
+      const state = useEnviroment.getState();
+      if (state.PanelAyudas) {
+        state.PanelAyudasFalse();
+        state.btnCerrarFalse();
+        state.ActivarParpadeo();
+        state.ResetAyudas();
+      } else {
+        state.ResetAudio();
+        state.ActionTrue();
+      }
     };
 
-    audioRef.current.addEventListener("timeupdate", handleTimeUpdateGeneral);
-    audioRef.current.addEventListener("ended", handleEndedGeneral);
+    audio.addEventListener("timeupdate", handleTimeUpdateAyudas);
+    audio.addEventListener("ended", handleEndedAyudas);
 
     return () => {
-      if (audioRef.current) {
-        audioRef.current.removeEventListener("timeupdate", handleTimeUpdateGeneral);
-        audioRef.current.removeEventListener("ended", handleEndedGeneral);
-      }
+      audio.removeEventListener("timeupdate", handleTimeUpdateAyudas);
+      audio.removeEventListener("ended", handleEndedAyudas);
     };
+  }, []);
 
-  }, [phaseAudio, StartApp]);
+  // Efecto principal unificado de control de audio (Carga y Reproducción)
+  useEffect(() => {
+    const audio = audioRef.current;
+    if (!audio) return;
+
+    // 1. Silencio absoluto si la app no ha iniciado o no está lista
+    if (StartApp !== true || ReadyToPlay !== true) {
+      audio.pause();
+      audio.currentTime = 0;
+      if (audio.src !== "") {
+        audio.src = "";
+      }
+      return;
+    }
+
+    // 2. Determinar la ruta correcta del audio
+    let targetSrc = "";
+    if (PanelAyudas) {
+      targetSrc = getAyudaSrc(id, idioma);
+    } else if (id) {
+      targetSrc = getAudioSrc(id, pasoActual, idioma);
+    }
+
+    const absoluteTargetSrc = targetSrc ? new URL(targetSrc, window.location.origin).href : "";
+
+    // 3. Carga imperativa si cambia de ruta
+    if (audio.src !== absoluteTargetSrc) {
+      audio.pause();
+      audio.currentTime = 0;
+      audio.src = absoluteTargetSrc;
+      audio.load();
+      AudioEndedTrue();
+    }
+
+    // 4. Lógica de reproducción
+    const shouldPlay = phaseAudio === "playing" || PanelAyudas === true;
+
+    if (shouldPlay) {
+      AudioEndedFalse();
+      const timer = setTimeout(() => {
+        const state = useEnviroment.getState();
+        const currentShouldPlay = state.phaseAudio === "playing" || state.PanelAyudas === true;
+        if (audioRef.current && currentShouldPlay && state.StartApp === true && state.ReadyToPlay === true) {
+          audioRef.current.play().catch(e => {
+            console.log("Audio play safely caught:", e.message);
+          });
+        }
+      }, 50);
+
+      return () => clearTimeout(timer);
+    } else if (phaseAudio === "paused") {
+      audio.pause();
+    }
+  }, [id, pasoActual, idioma, PanelAyudas, StartApp, ReadyToPlay, phaseAudio, AudioEndedTrue, AudioEndedFalse]);
 
   // Sincronizar velocidad de reproducción (playbackRate) en caliente y tras cargas
   useEffect(() => {
@@ -258,7 +238,6 @@ export default function AudioPlayer() {
       <audio
         id="audio"
         ref={audioRef}
-        src={getAudioSrc(id, pasoActual, idioma)}
       ></audio>
     </>
   );
