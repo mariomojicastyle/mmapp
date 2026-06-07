@@ -329,6 +329,7 @@ export function DetalleProyectoModal({ isOpen, onClose, proyecto, onUpdate }: De
   }
 
   const handleGenerateAll = async () => {
+    if (!proyecto) { setError("No se ha seleccionado un proyecto."); return }
     if (!codigoManual) { setError("Define el código de carpeta primero."); return }
     setGeneratingAll(true)
     setError("")
@@ -367,10 +368,10 @@ export function DetalleProyectoModal({ isOpen, onClose, proyecto, onUpdate }: De
     if (ttsSaludo.texto_en) tasks.push({ stepId: "00", text: ttsSaludo.texto_en, lang: "en" })
     // Ayuda
     if (ttsAyuda.texto_es) {
-      tasks.push({ stepId: "ayuda", text: ttsAyuda.texto_es, lang: "es" })
-      tasks.push({ stepId: "ayuda", text: ttsAyuda.texto_es, lang: "es-ES" })
+      tasks.push({ stepId: "01_Ayuda", text: ttsAyuda.texto_es, lang: "es" })
+      tasks.push({ stepId: "01_Ayuda", text: ttsAyuda.texto_es, lang: "es-ES" })
     }
-    if (ttsAyuda.texto_en) tasks.push({ stepId: "ayuda", text: ttsAyuda.texto_en, lang: "en" })
+    if (ttsAyuda.texto_en) tasks.push({ stepId: "01_Ayuda", text: ttsAyuda.texto_en, lang: "en" })
     // Pasos
     for (const p of ttsPasos) {
       if (p.texto_es) {
@@ -2432,29 +2433,29 @@ export function DetalleProyectoModal({ isOpen, onClose, proyecto, onUpdate }: De
                                   <button
                                     type="button"
                                     onClick={() => {
-                                      if (playingAudio === "ayuda_es") {
+                                      if (playingAudio === "01_Ayuda_es") {
                                         handleStopAudio()
                                       } else {
-                                        handleGenerateAudio("ayuda", ttsAyuda.texto_es, "es", false)
+                                        handleGenerateAudio("01_Ayuda", ttsAyuda.texto_es, "es", false)
                                       }
                                     }}
                                     className={cn(
                                       "flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-[10px] font-medium transition",
-                                      playingAudio === "ayuda_es"
+                                      playingAudio === "01_Ayuda_es"
                                         ? "bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/20"
                                         : "bg-surface-container text-on-surface-variant hover:text-primary hover:bg-surface-container-high"
                                     )}
                                   >
-                                    {playingAudio === "ayuda_es" ? <Square className="h-3 w-3 animate-pulse" /> : <Volume2 className="h-3 w-3" />}
-                                    {playingAudio === "ayuda_es" ? "Detener ES" : "Escuchar ES"}
+                                    {playingAudio === "01_Ayuda_es" ? <Square className="h-3 w-3 animate-pulse" /> : <Volume2 className="h-3 w-3" />}
+                                    {playingAudio === "01_Ayuda_es" ? "Detener ES" : "Escuchar ES"}
                                   </button>
                                   <button
                                     type="button"
                                     disabled={generatingAudio !== null}
-                                    onClick={() => handleGenerateAudio("ayuda", ttsAyuda.texto_es, "es", true)}
+                                    onClick={() => handleGenerateAudio("01_Ayuda", ttsAyuda.texto_es, "es", true)}
                                     className="flex items-center gap-1.5 rounded-lg bg-primary/10 hover:bg-primary/15 px-2.5 py-1 text-[10px] text-primary font-bold transition"
                                   >
-                                    {generatingAudio === "ayuda_es" ? <Loader2 className="h-3 w-3 animate-spin" /> : <Mic className="h-3 w-3" />}
+                                    {generatingAudio === "01_Ayuda_es" ? <Loader2 className="h-3 w-3 animate-spin" /> : <Mic className="h-3 w-3" />}
                                     Generar y Subir ES
                                   </button>
                                 </div>
@@ -2466,10 +2467,10 @@ export function DetalleProyectoModal({ isOpen, onClose, proyecto, onUpdate }: De
                                   <button
                                     type="button"
                                     disabled={translatingText !== null}
-                                    onClick={() => handleTranslateText(ttsAyuda.texto_es, "ayuda", (val) => setTtsAyuda(prev => ({ ...prev, texto_en: val })))}
+                                    onClick={() => handleTranslateText(ttsAyuda.texto_es, "01_Ayuda", (val) => setTtsAyuda(prev => ({ ...prev, texto_en: val })))}
                                     className="flex items-center gap-1 text-[9px] font-bold text-primary hover:underline"
                                   >
-                                    {translatingText === "ayuda" ? (
+                                    {translatingText === "01_Ayuda" ? (
                                       <Loader2 className="h-2.5 w-2.5 animate-spin" />
                                     ) : (
                                       <Sparkles className="h-2.5 w-2.5" />
@@ -2483,34 +2484,34 @@ export function DetalleProyectoModal({ isOpen, onClose, proyecto, onUpdate }: De
                                   placeholder="Write user instructions for the help tutorial panel..."
                                   rows={3}
                                   className="rounded-lg border border-outline-variant bg-surface-container px-3 py-2 text-xs text-on-surface outline-none focus:border-primary transition resize-y min-h-[60px]"
-                                />
+                                  />
                                 <div className="flex gap-2 mt-1">
                                   <button
                                     type="button"
                                     onClick={() => {
-                                      if (playingAudio === "ayuda_en") {
+                                      if (playingAudio === "01_Ayuda_en") {
                                         handleStopAudio()
                                       } else {
-                                        handleGenerateAudio("ayuda", ttsAyuda.texto_en, "en", false)
+                                        handleGenerateAudio("01_Ayuda", ttsAyuda.texto_en, "en", false)
                                       }
                                     }}
                                     className={cn(
                                       "flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-[10px] font-medium transition",
-                                      playingAudio === "ayuda_en"
+                                      playingAudio === "01_Ayuda_en"
                                         ? "bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/20"
                                         : "bg-surface-container text-on-surface-variant hover:text-primary hover:bg-surface-container-high"
                                     )}
                                   >
-                                    {playingAudio === "ayuda_en" ? <Square className="h-3 w-3 animate-pulse" /> : <Volume2 className="h-3 w-3" />}
-                                    {playingAudio === "ayuda_en" ? "Detener EN" : "Escuchar EN"}
+                                    {playingAudio === "01_Ayuda_en" ? <Square className="h-3 w-3 animate-pulse" /> : <Volume2 className="h-3 w-3" />}
+                                    {playingAudio === "01_Ayuda_en" ? "Detener EN" : "Escuchar EN"}
                                   </button>
                                   <button
                                     type="button"
                                     disabled={generatingAudio !== null}
-                                    onClick={() => handleGenerateAudio("ayuda", ttsAyuda.texto_en, "en", true)}
+                                    onClick={() => handleGenerateAudio("01_Ayuda", ttsAyuda.texto_en, "en", true)}
                                     className="flex items-center gap-1.5 rounded-lg bg-primary/10 hover:bg-primary/15 px-2.5 py-1 text-[10px] text-primary font-bold transition"
                                   >
-                                    {generatingAudio === "ayuda_en" ? <Loader2 className="h-3 w-3 animate-spin" /> : <Mic className="h-3 w-3" />}
+                                    {generatingAudio === "01_Ayuda_en" ? <Loader2 className="h-3 w-3 animate-spin" /> : <Mic className="h-3 w-3" />}
                                     Generar y Subir EN
                                   </button>
                                 </div>

@@ -47,42 +47,55 @@ export default defineConfig({
               : path.join(__dirname, 'public', manualId, rest)
               
             if (!fs.existsSync(localPath)) {
-              // Si es un audio de paso solicitado como: manualId/sounds/00.mp3
-              let resolvedRest = rest
-              if (category === 'sounds' && rest.match(/^\d+\.mp3$/)) {
-                const step = rest.split('.')[0]
-                resolvedRest = `es/${step}_es.mp3`
+              // Proxy real del archivo desde Supabase Storage (intento directo con la ruta original)
+              const directSupabaseUrl = category 
+                ? `${supabaseUrl}/storage/v1/object/public/insumos_manuales/${manualId}/${category}/${rest}`
+                : `${supabaseUrl}/storage/v1/object/public/insumos_manuales/${manualId}/${rest}`
+              
+              const fetchFromSupabase = (urlToFetch, isFallbackAttempt = false) => {
+                fetch(urlToFetch)
+                  .then(async (response) => {
+                    // Si falla el primer intento (404) y es un audio de paso/ayuda en la raíz de sounds
+                    if (!response.ok) {
+                      if (!isFallbackAttempt && category === 'sounds') {
+                        let fallbackRest = null
+                        if (rest.match(/^\d+\.mp3$/)) {
+                          const step = rest.split('.')[0]
+                          fallbackRest = `es/${step}_es.mp3`
+                        } else if (rest === '01_Ayuda.mp3') {
+                          fallbackRest = `es/01_Ayuda_es.mp3`
+                        }
+                        
+                        if (fallbackRest) {
+                          const fallbackUrl = `${supabaseUrl}/storage/v1/object/public/insumos_manuales/${manualId}/sounds/${fallbackRest}`
+                          fetchFromSupabase(fallbackUrl, true)
+                          return
+                        }
+                      }
+                      res.statusCode = response.status
+                      res.end(`Recurso no encontrado en Storage: ${response.statusText}`)
+                      return
+                    }
+                    
+                    // Propagar headers correctos
+                    const contentType = response.headers.get('content-type')
+                    if (contentType) res.setHeader('Content-Type', contentType)
+                    
+                    const contentLength = response.headers.get('content-length')
+                    if (contentLength) res.setHeader('Content-Length', contentLength)
+                    
+                    // Enviar buffer binario del archivo
+                    const arrayBuffer = await response.arrayBuffer()
+                    res.end(Buffer.from(arrayBuffer))
+                  })
+                  .catch((err) => {
+                    console.error('Error en proxy de assets:', err)
+                    res.statusCode = 500
+                    res.end('Error en proxy de assets')
+                  })
               }
               
-              // Proxy real del archivo desde Supabase Storage
-              const supabaseStorageUrl = category 
-                ? `${supabaseUrl}/storage/v1/object/public/insumos_manuales/${manualId}/${category}/${resolvedRest}`
-                : `${supabaseUrl}/storage/v1/object/public/insumos_manuales/${manualId}/${resolvedRest}`
-              
-              fetch(supabaseStorageUrl)
-                .then(async (response) => {
-                  if (!response.ok) {
-                    res.statusCode = response.status
-                    res.end(`Recurso no encontrado en Storage: ${response.statusText}`)
-                    return
-                  }
-                  
-                  // Propagar headers correctos
-                  const contentType = response.headers.get('content-type')
-                  if (contentType) res.setHeader('Content-Type', contentType)
-                  
-                  const contentLength = response.headers.get('content-length')
-                  if (contentLength) res.setHeader('Content-Length', contentLength)
-                  
-                  // Enviar buffer binario del archivo
-                  const arrayBuffer = await response.arrayBuffer()
-                  res.end(Buffer.from(arrayBuffer))
-                })
-                .catch((err) => {
-                  console.error('Error en proxy de assets:', err)
-                  res.statusCode = 500
-                  res.end('Error en proxy de assets')
-                })
+              fetchFromSupabase(directSupabaseUrl)
               return
             }
           }

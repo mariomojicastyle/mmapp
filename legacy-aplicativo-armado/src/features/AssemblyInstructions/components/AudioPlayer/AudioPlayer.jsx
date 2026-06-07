@@ -19,6 +19,21 @@ function getAudioSrc(id, paso, idioma) {
   }
 }
 
+function getAyudaSrc(id, idioma) {
+  if (!id || id === "manual-vacio" || id === "M01536") {
+    return `/assets/sounds/01_Ayuda.mp3`;
+  }
+  switch (idioma) {
+    case "en":
+      return `/${id}/sounds/en/01_Ayuda_en.mp3`;
+    case "es-ES":
+      return `/${id}/sounds/es-ES/01_Ayuda_es-ES.mp3`;
+    case "es":
+    default:
+      return `/${id}/sounds/01_Ayuda.mp3`;
+  }
+}
+
 export default function AudioPlayer() {
   const id = useEnviroment((state) => state.id);
   const pasoActual = useEnviroment((state) => state.pasoActual);
@@ -70,9 +85,7 @@ export default function AudioPlayer() {
 
     if(PanelAyudas){
       ResetAyudas();
-      audioRef.current.src = (id && id !== "manual-vacio" && id !== "M01536") 
-        ? `/${id}/sounds/01_Ayuda.mp3` 
-        : `/assets/sounds/01_Ayuda.mp3`;
+      audioRef.current.src = getAyudaSrc(id, idioma);
       audioRef.current.load(); // Llamar a load() después de setear el src
       setTimeout(() => {
         if (audioRef.current) audioRef.current.play().catch(e => console.log("Audio play failed", e));
