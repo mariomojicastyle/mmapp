@@ -1,9 +1,29 @@
 import { useRef, useState, useEffect } from "react";
 import useEnviroment from "../../hooks/useEnviroment.js";
 
+/**
+ * Genera la ruta de audio según el idioma seleccionado.
+ * - 'es'    → /{id}/sounds/{paso}.mp3
+ * - 'es-ES' → /{id}/sounds/es-ES/{paso}_es-ES.mp3
+ * - 'en'    → /{id}/sounds/en/{paso}_en.mp3
+ */
+function getAudioSrc(id, paso, idioma) {
+  switch (idioma) {
+    case "en":
+      return `/${id}/sounds/en/${paso}_en.mp3`;
+    case "es-ES":
+      return `/${id}/sounds/es-ES/${paso}_es-ES.mp3`;
+    case "es":
+    default:
+      return `/${id}/sounds/${paso}.mp3`;
+  }
+}
+
 export default function AudioPlayer() {
   const id = useEnviroment((state) => state.id);
   const pasoActual = useEnviroment((state) => state.pasoActual);
+  const idioma = useEnviroment((state) => state.idioma);
+  const playbackRate = useEnviroment((state) => state.playbackRate);
 
   const ResetAudio = useEnviroment((state) => state.ResetAudio);
   const phaseAudio = useEnviroment((state) => state.phaseAudio);
@@ -139,12 +159,12 @@ export default function AudioPlayer() {
     }else{
       // Carga local de audio por paso
       if (id) {
-        audioRef.current.src = `/${id}/sounds/${pasoActual}.mp3`;
+        audioRef.current.src = getAudioSrc(id, pasoActual, idioma);
         audioRef.current.load();
         AudioEndedTrue();
       }
     }
-  }, [PanelAyudas, pasoActual, id]);
+  }, [PanelAyudas, pasoActual, id, idioma]);
 
 
   // Se activa el audio al hacer clic en el botón iniciar
@@ -216,12 +236,19 @@ export default function AudioPlayer() {
 
   }, [phaseAudio, StartApp, ReadyToPlay]);
 
+  // Sincronizar velocidad de reproducción (playbackRate) en caliente y tras cargas
+  useEffect(() => {
+    if (audioRef.current) {
+      audioRef.current.playbackRate = playbackRate;
+    }
+  }, [playbackRate, pasoActual, PanelAyudas, idioma]);
+
   return (
     <>
       <audio
         id="audio"
         ref={audioRef}
-        src={`/${id}/sounds/${pasoActual}.mp3`}
+        src={getAudioSrc(id, pasoActual, idioma)}
       ></audio>
     </>
   );

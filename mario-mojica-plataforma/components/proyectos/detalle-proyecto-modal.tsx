@@ -2,7 +2,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unused-vars, react-hooks/exhaustive-deps */
 
 import React, { useState, useEffect, useRef } from "react"
-import { X, Download, Paperclip, Image, FileText, Music, Cpu, Layers, Plus, Trash2, Loader2, Eye, ExternalLink, ChevronDown, ChevronUp, UploadCloud, CheckCircle2, AlertCircle, FileSpreadsheet, Box, Boxes, Coins, Hammer, Wrench, Sparkles } from "lucide-react"
+import { X, Download, Paperclip, Image, FileText, Music, Cpu, Layers, Plus, Trash2, Loader2, Eye, ExternalLink, ChevronDown, ChevronUp, UploadCloud, CheckCircle2, AlertCircle, FileSpreadsheet, Box, Boxes, Coins, Hammer, Wrench, Sparkles, Volume2, Play, Square, Mic } from "lucide-react"
 import { motion, AnimatePresence } from "framer-motion"
 import { cn } from "@/lib/utils"
 import { usePermissions } from "@/hooks/use-permissions"
@@ -193,6 +193,269 @@ export function DetalleProyectoModal({ isOpen, onClose, proyecto, onUpdate }: De
   const [herrajesFotos, setHerrajesFotos] = useState<string[]>([])
   const [renders, setRenders] = useState<string[]>([])
 
+  // TTS Config State
+  const [ttsVoices, setTtsVoices] = useState({
+    es_latam: "es-CO-GonzaloNeural",
+    es_europe: "es-ES-AlvaroNeural",
+    en: "en-US-GuyNeural"
+  })
+  const [ttsSaludo, setTtsSaludo] = useState({ texto_es: "", texto_en: "" })
+  const [ttsAyuda, setTtsAyuda] = useState({ texto_es: "", texto_en: "" })
+  const [ttsCantidadPasos, setTtsCantidadPasos] = useState(8)
+  const [ttsPasos, setTtsPasos] = useState<{ paso: string; texto_es: string; texto_en: string }[]>([])
+  const [generatingAudio, setGeneratingAudio] = useState<string | null>(null)
+  const [playingAudio, setPlayingAudio] = useState<string | null>(null)
+  const audioRef = useRef<HTMLAudioElement | null>(null)
+  const [generatingAll, setGeneratingAll] = useState(false)
+  const [generationProgress, setGenerationProgress] = useState({ current: 0, total: 0 })
+  const [translatingText, setTranslatingText] = useState<string | null>(null)
+
+  const TTS_VOICES_ES_LATAM = [
+    { value: "es-CO-GonzaloNeural", label: "🇨🇴 Gonzalo (Colombia, Hombre)" },
+    { value: "es-CO-SalomeNeural", label: "🇨🇴 Salomé (Colombia, Mujer)" },
+    { value: "es-MX-JorgeNeural", label: "🇲🇽 Jorge (México, Hombre)" },
+    { value: "es-MX-DaliaNeural", label: "🇲🇽 Dalia (México, Mujer)" },
+    { value: "es-CL-LorenzoNeural", label: "🇨🇱 Lorenzo (Chile, Hombre)" },
+    { value: "es-CL-CatalinaNeural", label: "🇨🇱 Catalina (Chile, Mujer)" },
+    { value: "es-PE-AlexNeural", label: "🇵🇪 Alex (Perú, Hombre)" },
+    { value: "es-PE-CamilaNeural", label: "🇵🇪 Camila (Perú, Mujer)" },
+    { value: "es-VE-SebastianNeural", label: "🇻🇪 Sebastián (Venezuela, Hombre)" },
+    { value: "es-VE-PaolaNeural", label: "🇻🇪 Paola (Venezuela, Mujer)" },
+    { value: "es-US-AlonsoNeural", label: "🇺🇸 Alonso (EE.UU. Hispano, Hombre)" },
+    { value: "es-US-PalomaNeural", label: "🇺🇸 Paloma (EE.UU. Hispano, Mujer)" },
+  ]
+  const TTS_VOICES_ES_EU = [
+    { value: "es-ES-AlvaroNeural", label: "🇪🇸 Álvaro (España, Hombre)" },
+    { value: "es-ES-ElviraNeural", label: "🇪🇸 Elvira (España, Mujer)" },
+    { value: "es-ES-XimenaNeural", label: "🇪🇸 Ximena (España, Mujer)" },
+  ]
+  const TTS_VOICES_EN = [
+    { value: "en-US-GuyNeural", label: "🇺🇸 Guy (EE.UU., Hombre)" },
+    { value: "en-US-AriaNeural", label: "🇺🇸 Aria (EE.UU., Mujer)" },
+    { value: "en-US-JennyNeural", label: "🇺🇸 Jenny (EE.UU., Mujer)" },
+    { value: "en-US-ChristopherNeural", label: "🇺🇸 Christopher (EE.UU., Hombre)" },
+    { value: "en-GB-RyanNeural", label: "🇬🇧 Ryan (Reino Unido, Hombre)" },
+    { value: "en-GB-SoniaNeural", label: "🇬🇧 Sonia (Reino Unido, Mujer)" },
+  ]
+
+  // Sincronizar campos de pasos cuando cambia ttsCantidadPasos
+  useEffect(() => {
+    setTtsPasos(prev => {
+      const newPasos = []
+      for (let i = 1; i <= ttsCantidadPasos; i++) {
+        const stepStr = String(i).padStart(2, "0")
+        const existing = prev.find(p => p.paso === stepStr)
+        newPasos.push(existing || { paso: stepStr, texto_es: "", texto_en: "" })
+      }
+      return newPasos
+    })
+  }, [ttsCantidadPasos])
+
+  const handlePreviewVoice = async (voice: string) => {
+    const sampleText = voice.startsWith("en") 
+      ? "Hello! This is a voice preview for your interactive assembly manual."
+      : "¡Hola! Esta es una muestra de voz para tu manual interactivo de armado."
+    
+    setGeneratingAudio(`preview_${voice}`)
+    try {
+      const res = await fetch("/api/tts", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text: sampleText, voice })
+      })
+      if (!res.ok) throw new Error(await res.text())
+      const blob = await res.blob()
+      const url = URL.createObjectURL(blob)
+      if (audioRef.current) { audioRef.current.pause() }
+      const audio = new Audio(url)
+      audioRef.current = audio
+      setPlayingAudio(`preview_${voice}`)
+      audio.onended = () => { setPlayingAudio(null); URL.revokeObjectURL(url) }
+      await audio.play()
+    } catch (err: any) {
+      setError(err.message || "Error al previsualizar la voz.")
+    } finally {
+      setGeneratingAudio(null)
+    }
+  }
+
+  const handleGenerateAudio = async (stepId: string, text: string, lang: "es" | "es-ES" | "en", uploadToStorage = false) => {
+    if (!text.trim()) {
+      setError("El texto no puede estar vacío.")
+      return
+    }
+    const voice = lang === "es" ? ttsVoices.es_latam : lang === "es-ES" ? ttsVoices.es_europe : ttsVoices.en
+    const audioKey = `${stepId}_${lang}`
+    setGeneratingAudio(audioKey)
+    setError("")
+    try {
+      if (uploadToStorage && codigoManual) {
+        const storagePath = lang === "es"
+          ? `sounds/${stepId}.mp3`
+          : `sounds/${lang}/${stepId}_${lang}.mp3`
+        const res = await fetch("/api/tts", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ text, voice, codigoManual, storagePath })
+        })
+        if (!res.ok) { const err = await res.json(); throw new Error(err.error) }
+        setSuccessMsg(`Audio ${audioKey} generado y subido a Storage ✓`)
+      } else {
+        const res = await fetch("/api/tts", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ text, voice })
+        })
+        if (!res.ok) throw new Error(await res.text())
+        const blob = await res.blob()
+        const url = URL.createObjectURL(blob)
+        if (audioRef.current) { audioRef.current.pause() }
+        const audio = new Audio(url)
+        audioRef.current = audio
+        setPlayingAudio(audioKey)
+        audio.onended = () => { setPlayingAudio(null); URL.revokeObjectURL(url) }
+        await audio.play()
+      }
+    } catch (err: any) {
+      setError(err.message || "Error al generar el audio.")
+    } finally {
+      setGeneratingAudio(null)
+    }
+  }
+
+  const handleStopAudio = () => {
+    if (audioRef.current) { audioRef.current.pause(); audioRef.current.currentTime = 0 }
+    setPlayingAudio(null)
+  }
+
+  const handleGenerateAll = async () => {
+    if (!codigoManual) { setError("Define el código de carpeta primero."); return }
+    setGeneratingAll(true)
+    setError("")
+    setSuccessMsg("")
+
+    console.log("Generando en lote con voces:", ttsVoices)
+
+    // Guardar la configuración de voces en la base de datos para que persista
+    try {
+      const supabase = createClient()
+      const { error: configError } = await supabase
+        .from("configuraciones_manual")
+        .upsert({
+          proyecto_id: proyecto.id,
+          tts_config: {
+            voices: ttsVoices,
+            saludo: ttsSaludo,
+            ayuda: ttsAyuda,
+            cantidadPasos: ttsCantidadPasos,
+            pasos: ttsPasos
+          }
+        }, { onConflict: "proyecto_id" })
+      if (configError) throw configError
+      console.log("Configuración de voces guardada en la base de datos.")
+    } catch (dbErr: any) {
+      console.error("Error al guardar configuración de voces en Supabase:", dbErr)
+    }
+
+    // Construir la lista de tareas: saludo, ayuda, y cada paso, en 3 idiomas
+    const tasks: { stepId: string; text: string; lang: "es" | "es-ES" | "en" }[] = []
+    // Saludo
+    if (ttsSaludo.texto_es) {
+      tasks.push({ stepId: "00", text: ttsSaludo.texto_es, lang: "es" })
+      tasks.push({ stepId: "00", text: ttsSaludo.texto_es, lang: "es-ES" })
+    }
+    if (ttsSaludo.texto_en) tasks.push({ stepId: "00", text: ttsSaludo.texto_en, lang: "en" })
+    // Ayuda
+    if (ttsAyuda.texto_es) {
+      tasks.push({ stepId: "ayuda", text: ttsAyuda.texto_es, lang: "es" })
+      tasks.push({ stepId: "ayuda", text: ttsAyuda.texto_es, lang: "es-ES" })
+    }
+    if (ttsAyuda.texto_en) tasks.push({ stepId: "ayuda", text: ttsAyuda.texto_en, lang: "en" })
+    // Pasos
+    for (const p of ttsPasos) {
+      if (p.texto_es) {
+        tasks.push({ stepId: p.paso, text: p.texto_es, lang: "es" })
+        tasks.push({ stepId: p.paso, text: p.texto_es, lang: "es-ES" })
+      }
+      if (p.texto_en) tasks.push({ stepId: p.paso, text: p.texto_en, lang: "en" })
+    }
+
+    if (tasks.length === 0) { setError("No hay textos para generar."); setGeneratingAll(false); return }
+    setGenerationProgress({ current: 0, total: tasks.length })
+
+    let successCount = 0
+    for (let i = 0; i < tasks.length; i++) {
+      const t = tasks[i]
+      const voice = t.lang === "es" ? ttsVoices.es_latam : t.lang === "es-ES" ? ttsVoices.es_europe : ttsVoices.en
+      console.log(`Generando tarea ${i+1}/${tasks.length}: paso=${t.stepId}, lang=${t.lang}, voice=${voice}`)
+      const storagePath = t.lang === "es"
+        ? `sounds/${t.stepId}.mp3`
+        : `sounds/${t.lang}/${t.stepId}_${t.lang}.mp3`
+      try {
+        const res = await fetch("/api/tts", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ text: t.text, voice, codigoManual, storagePath })
+        })
+        if (!res.ok) { const err = await res.json(); console.error(`Error generando ${storagePath}:`, err.error) }
+        else { successCount++ }
+      } catch (err) { console.error(`Error generando ${storagePath}:`, err) }
+      setGenerationProgress({ current: i + 1, total: tasks.length })
+    }
+    setGeneratingAll(false)
+    setSuccessMsg(`¡${successCount}/${tasks.length} audios generados y subidos a Storage exitosamente!`)
+  }
+
+  const handleTranslateText = async (sourceText: string, targetKey: string, setter: (val: string) => void) => {
+    if (!sourceText.trim()) {
+      setError("No hay texto en español para traducir.")
+      return
+    }
+    setTranslatingText(targetKey)
+    setError("")
+    setSuccessMsg("")
+    try {
+      const res = await fetch("/api/translate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text: sourceText })
+      })
+      if (!res.ok) throw new Error(await res.text())
+      const data = await res.json()
+      setter(data.translation)
+      setSuccessMsg("Traducción completada ✓")
+    } catch (err: any) {
+      setError(err.message || "Error al traducir el texto.")
+    } finally {
+      setTranslatingText(null)
+    }
+  }
+
+  const handleTranslateStep = async (stepId: string, sourceText: string) => {
+    if (!sourceText.trim()) {
+      setError("No hay texto en español para traducir.")
+      return
+    }
+    setTranslatingText(stepId)
+    setError("")
+    setSuccessMsg("")
+    try {
+      const res = await fetch("/api/translate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text: sourceText })
+      })
+      if (!res.ok) throw new Error(await res.text())
+      const data = await res.json()
+      setTtsPasos(prev => prev.map(item => item.paso === stepId ? { ...item, texto_en: data.translation } : item))
+      setSuccessMsg(`Traducción del Paso ${stepId} completada ✓`)
+    } catch (err: any) {
+      setError(err.message || "Error al traducir el texto.")
+    } finally {
+      setTranslatingText(null)
+    }
+  }
+
   // Despiece State
   const [despiece, setDespiece] = useState<ItemDespiece[]>([])
   const [isScanning, setIsScanning] = useState(false)
@@ -254,11 +517,19 @@ export function DetalleProyectoModal({ isOpen, onClose, proyecto, onUpdate }: De
               setHerrajesFotos((data.fotos_herrajes as any) || [])
               setRenders((data.renders_fotorealistas as any) || [])
               setDespiece(normalizarYAsignarPiezas((data.despiece as any) || []))
+
+              // Cargar TTS Config
+              const tts = (data.tts_config as any) || {}
+              if (tts.voices) setTtsVoices(prev => ({ ...prev, ...tts.voices }))
+              if (tts.saludo) setTtsSaludo(tts.saludo)
+              if (tts.ayuda) setTtsAyuda(tts.ayuda)
+              if (tts.cantidadPasos) setTtsCantidadPasos(tts.cantidadPasos)
+              if (tts.pasos) setTtsPasos(tts.pasos)
             }
           })
       }
     }
-  }, [proyecto])
+  }, [proyecto?.id, isOpen])
 
 
 
@@ -1057,8 +1328,14 @@ export function DetalleProyectoModal({ isOpen, onClose, proyecto, onUpdate }: De
           imagenes_ensambles: ensambles,
           garantia_texto: garantiaDoc,
           fotos_herrajes: herrajesFotos,
-          renders_fotorealistas: renders,
-          despiece: despiece
+          despiece: despiece,
+          tts_config: {
+            voices: ttsVoices,
+            saludo: ttsSaludo,
+            ayuda: ttsAyuda,
+            cantidadPasos: ttsCantidadPasos,
+            pasos: ttsPasos
+          }
         }, { onConflict: "proyecto_id" })
 
       if (configError) throw configError
@@ -1889,7 +2166,7 @@ export function DetalleProyectoModal({ isOpen, onClose, proyecto, onUpdate }: De
                       )}
                     </div>
 
-                    {/* 2. Audios en Español e Inglés */}
+                    {/* 2. Generador de Audios TTS (Text-to-Speech) */}
                     <div className="flex flex-col">
                       <button
                         type="button"
@@ -1897,77 +2174,531 @@ export function DetalleProyectoModal({ isOpen, onClose, proyecto, onUpdate }: De
                         className="flex items-center justify-between p-4 font-bold text-sm text-on-surface bg-surface-container-low hover:bg-surface-container transition-colors"
                       >
                         <span className="flex items-center gap-2">
-                          <Music className="h-4.5 w-4.5 text-teal-400" />
-                          2. Audio de los Pasos (Español / Inglés)
+                          <Mic className="h-4.5 w-4.5 text-teal-400" />
+                          2. Generador de Audios TTS (Text-to-Speech)
                         </span>
                         {openSection === "audios" ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
                       </button>
                       
                       {openSection === "audios" && (
-                        <div className="p-4 bg-surface-container-lowest/50 border-t border-outline-variant/10 space-y-4">
-                          {glbSteps.map((g) => {
-                            const audioEs = audioEsSteps.find(a => a.step === g.step)
-                            const audioEn = audioEnSteps.find(a => a.step === g.step)
-                            return (
-                              <div key={g.step} className="p-3.5 rounded-xl border border-outline-variant/10 bg-surface-container/60 flex flex-col gap-2.5 sm:flex-row sm:items-center sm:justify-between text-xs">
-                                <span className="font-bold text-on-surface">Paso {g.step}</span>
-                                
-                                <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 flex-1 sm:ml-6">
-                                  {/* Español */}
-                                  <div className="flex items-center justify-between bg-surface-container border border-outline-variant/10 px-3 py-1.5 rounded-lg">
-                                    <span className="text-[10px] text-on-surface-variant/80">ES: {audioEs ? audioEs.fileName : "Pendiente"}</span>
-                                    <div className="flex items-center gap-2">
-                                      <button type="button" onClick={() => handleSimulateUpload("audio_es", g.step)} className="text-primary hover:underline text-[10px]">Cargar</button>
-                                      {audioEs && (
-                                        <button type="button" onClick={() => handleDeleteItem("audio_es", g.step)} className="text-on-surface-variant hover:text-red-400"><Trash2 className="h-3 w-3" /></button>
-                                      )}
+                        <div className="p-5 bg-surface-container-lowest/50 border-t border-outline-variant/10 space-y-6 text-xs">
+                          
+                          {/* ─── CONFIGURACIÓN DE VOCES ─────────────────────────────── */}
+                          <div className="p-4 rounded-xl border border-outline-variant/10 bg-surface-container/30 space-y-3">
+                            <span className="text-[10px] font-bold text-primary uppercase tracking-wider block">🎙️ Configuración de Voces por Idioma / Región</span>
+                            
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                              {/* Español Latam */}
+                              <div className="flex flex-col gap-2">
+                                <label className="font-semibold text-on-surface-variant">Español Latinoamérica</label>
+                                <select
+                                  value={ttsVoices.es_latam}
+                                  onChange={(e) => setTtsVoices(prev => ({ ...prev, es_latam: e.target.value }))}
+                                  className="rounded-lg border border-outline-variant bg-surface-container px-3 py-2 text-xs text-on-surface outline-none focus:border-primary transition"
+                                >
+                                  {TTS_VOICES_ES_LATAM.map(v => (
+                                    <option key={v.value} value={v.value}>{v.label}</option>
+                                  ))}
+                                </select>
+                                <button
+                                  type="button"
+                                  disabled={generatingAudio !== null && generatingAudio !== `preview_${ttsVoices.es_latam}`}
+                                  onClick={() => {
+                                    if (playingAudio === `preview_${ttsVoices.es_latam}`) {
+                                      handleStopAudio()
+                                    } else {
+                                      handlePreviewVoice(ttsVoices.es_latam)
+                                    }
+                                  }}
+                                  className={cn(
+                                    "flex items-center justify-center gap-1.5 rounded-lg border py-1 px-3 text-[10px] font-medium transition",
+                                    playingAudio === `preview_${ttsVoices.es_latam}`
+                                      ? "bg-red-500/10 hover:bg-red-500/20 text-red-400 border-red-500/20 hover:border-red-500/30"
+                                      : "border-outline-variant bg-surface-container text-on-surface-variant hover:text-primary hover:border-primary/50"
+                                  )}
+                                >
+                                  {generatingAudio === `preview_${ttsVoices.es_latam}` ? (
+                                    <Loader2 className="h-3 w-3 animate-spin text-primary" />
+                                  ) : playingAudio === `preview_${ttsVoices.es_latam}` ? (
+                                    <Square className="h-3 w-3 text-red-400 animate-pulse" />
+                                  ) : (
+                                    <Volume2 className="h-3 w-3" />
+                                  )}
+                                  {playingAudio === `preview_${ttsVoices.es_latam}` ? "Detener muestra" : "Escuchar muestra"}
+                                </button>
+                              </div>
+
+                              {/* Español Europa */}
+                              <div className="flex flex-col gap-2">
+                                <label className="font-semibold text-on-surface-variant">Español Europa</label>
+                                <select
+                                  value={ttsVoices.es_europe}
+                                  onChange={(e) => setTtsVoices(prev => ({ ...prev, es_europe: e.target.value }))}
+                                  className="rounded-lg border border-outline-variant bg-surface-container px-3 py-2 text-xs text-on-surface outline-none focus:border-primary transition"
+                                >
+                                  {TTS_VOICES_ES_EU.map(v => (
+                                    <option key={v.value} value={v.value}>{v.label}</option>
+                                  ))}
+                                </select>
+                                <button
+                                  type="button"
+                                  disabled={generatingAudio !== null && generatingAudio !== `preview_${ttsVoices.es_europe}`}
+                                  onClick={() => {
+                                    if (playingAudio === `preview_${ttsVoices.es_europe}`) {
+                                      handleStopAudio()
+                                    } else {
+                                      handlePreviewVoice(ttsVoices.es_europe)
+                                    }
+                                  }}
+                                  className={cn(
+                                    "flex items-center justify-center gap-1.5 rounded-lg border py-1 px-3 text-[10px] font-medium transition",
+                                    playingAudio === `preview_${ttsVoices.es_europe}`
+                                      ? "bg-red-500/10 hover:bg-red-500/20 text-red-400 border-red-500/20 hover:border-red-500/30"
+                                      : "border-outline-variant bg-surface-container text-on-surface-variant hover:text-primary hover:border-primary/50"
+                                  )}
+                                >
+                                  {generatingAudio === `preview_${ttsVoices.es_europe}` ? (
+                                    <Loader2 className="h-3 w-3 animate-spin text-primary" />
+                                  ) : playingAudio === `preview_${ttsVoices.es_europe}` ? (
+                                    <Square className="h-3 w-3 text-red-400 animate-pulse" />
+                                  ) : (
+                                    <Volume2 className="h-3 w-3" />
+                                  )}
+                                  {playingAudio === `preview_${ttsVoices.es_europe}` ? "Detener muestra" : "Escuchar muestra"}
+                                </button>
+                              </div>
+
+                              {/* Inglés */}
+                              <div className="flex flex-col gap-2">
+                                <label className="font-semibold text-on-surface-variant">Inglés (EE.UU. / UK)</label>
+                                <select
+                                  value={ttsVoices.en}
+                                  onChange={(e) => setTtsVoices(prev => ({ ...prev, en: e.target.value }))}
+                                  className="rounded-lg border border-outline-variant bg-surface-container px-3 py-2 text-xs text-on-surface outline-none focus:border-primary transition"
+                                >
+                                  {TTS_VOICES_EN.map(v => (
+                                    <option key={v.value} value={v.value}>{v.label}</option>
+                                  ))}
+                                </select>
+                                <button
+                                  type="button"
+                                  disabled={generatingAudio !== null && generatingAudio !== `preview_${ttsVoices.en}`}
+                                  onClick={() => {
+                                    if (playingAudio === `preview_${ttsVoices.en}`) {
+                                      handleStopAudio()
+                                    } else {
+                                      handlePreviewVoice(ttsVoices.en)
+                                    }
+                                  }}
+                                  className={cn(
+                                    "flex items-center justify-center gap-1.5 rounded-lg border py-1 px-3 text-[10px] font-medium transition",
+                                    playingAudio === `preview_${ttsVoices.en}`
+                                      ? "bg-red-500/10 hover:bg-red-500/20 text-red-400 border-red-500/20 hover:border-red-500/30"
+                                      : "border-outline-variant bg-surface-container text-on-surface-variant hover:text-primary hover:border-primary/50"
+                                  )}
+                                >
+                                  {generatingAudio === `preview_${ttsVoices.en}` ? (
+                                    <Loader2 className="h-3 w-3 animate-spin text-primary" />
+                                  ) : playingAudio === `preview_${ttsVoices.en}` ? (
+                                    <Square className="h-3 w-3 text-red-400 animate-pulse" />
+                                  ) : (
+                                    <Volume2 className="h-3 w-3" />
+                                  )}
+                                  {playingAudio === `preview_${ttsVoices.en}` ? "Detener muestra" : "Escuchar muestra"}
+                                </button>
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* ─── SALUDO DE BIENVENIDA (P00) ─────────────────────────── */}
+                          <div className="p-4 rounded-xl border border-outline-variant/10 bg-surface-container/30 space-y-4">
+                            <span className="text-[10px] font-bold text-primary uppercase tracking-wider block">👋 Saludo de Bienvenida (P00 del Manual)</span>
+                            
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                              <div className="flex flex-col gap-1.5">
+                                <span className="font-bold text-on-surface-variant/80">Texto en Español</span>
+                                <textarea
+                                  value={ttsSaludo.texto_es}
+                                  onChange={(e) => setTtsSaludo(prev => ({ ...prev, texto_es: e.target.value }))}
+                                  placeholder="Escribe el saludo o bienvenida que se escuchará al abrir el manual..."
+                                  rows={3}
+                                  className="rounded-lg border border-outline-variant bg-surface-container px-3 py-2 text-xs text-on-surface outline-none focus:border-primary transition resize-y min-h-[60px]"
+                                />
+                                <div className="flex gap-2 mt-1">
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      if (playingAudio === "00_es") {
+                                        handleStopAudio()
+                                      } else {
+                                        handleGenerateAudio("00", ttsSaludo.texto_es, "es", false)
+                                      }
+                                    }}
+                                    className={cn(
+                                      "flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-[10px] font-medium transition",
+                                      playingAudio === "00_es"
+                                        ? "bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/20"
+                                        : "bg-surface-container text-on-surface-variant hover:text-primary hover:bg-surface-container-high"
+                                    )}
+                                  >
+                                    {playingAudio === "00_es" ? <Square className="h-3 w-3 animate-pulse" /> : <Volume2 className="h-3 w-3" />}
+                                    {playingAudio === "00_es" ? "Detener ES" : "Escuchar ES"}
+                                  </button>
+                                  <button
+                                    type="button"
+                                    disabled={generatingAudio !== null}
+                                    onClick={() => handleGenerateAudio("00", ttsSaludo.texto_es, "es", true)}
+                                    className="flex items-center gap-1.5 rounded-lg bg-primary/10 hover:bg-primary/15 px-2.5 py-1 text-[10px] text-primary font-bold transition"
+                                  >
+                                    {generatingAudio === "00_es" ? <Loader2 className="h-3 w-3 animate-spin" /> : <Mic className="h-3 w-3" />}
+                                    Generar y Subir ES
+                                  </button>
+                                </div>
+                              </div>
+
+                              <div className="flex flex-col gap-1.5">
+                                <div className="flex items-center justify-between">
+                                  <span className="font-bold text-on-surface-variant/80">Texto en Inglés</span>
+                                  <button
+                                    type="button"
+                                    disabled={translatingText !== null}
+                                    onClick={() => handleTranslateText(ttsSaludo.texto_es, "00", (val) => setTtsSaludo(prev => ({ ...prev, texto_en: val })))}
+                                    className="flex items-center gap-1 text-[9px] font-bold text-primary hover:underline"
+                                  >
+                                    {translatingText === "00" ? (
+                                      <Loader2 className="h-2.5 w-2.5 animate-spin" />
+                                    ) : (
+                                      <Sparkles className="h-2.5 w-2.5" />
+                                    )}
+                                    Traducir automáticamente
+                                  </button>
+                                </div>
+                                <textarea
+                                  value={ttsSaludo.texto_en}
+                                  onChange={(e) => setTtsSaludo(prev => ({ ...prev, texto_en: e.target.value }))}
+                                  placeholder="Write the welcome speech that will play upon opening the manual..."
+                                  rows={3}
+                                  className="rounded-lg border border-outline-variant bg-surface-container px-3 py-2 text-xs text-on-surface outline-none focus:border-primary transition resize-y min-h-[60px]"
+                                />
+                                <div className="flex gap-2 mt-1">
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      if (playingAudio === "00_en") {
+                                        handleStopAudio()
+                                      } else {
+                                        handleGenerateAudio("00", ttsSaludo.texto_en, "en", false)
+                                      }
+                                    }}
+                                    className={cn(
+                                      "flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-[10px] font-medium transition",
+                                      playingAudio === "00_en"
+                                        ? "bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/20"
+                                        : "bg-surface-container text-on-surface-variant hover:text-primary hover:bg-surface-container-high"
+                                    )}
+                                  >
+                                    {playingAudio === "00_en" ? <Square className="h-3 w-3 animate-pulse" /> : <Volume2 className="h-3 w-3" />}
+                                    {playingAudio === "00_en" ? "Detener EN" : "Escuchar EN"}
+                                  </button>
+                                  <button
+                                    type="button"
+                                    disabled={generatingAudio !== null}
+                                    onClick={() => handleGenerateAudio("00", ttsSaludo.texto_en, "en", true)}
+                                    className="flex items-center gap-1.5 rounded-lg bg-primary/10 hover:bg-primary/15 px-2.5 py-1 text-[10px] text-primary font-bold transition"
+                                  >
+                                    {generatingAudio === "00_en" ? <Loader2 className="h-3 w-3 animate-spin" /> : <Mic className="h-3 w-3" />}
+                                    Generar y Subir EN
+                                  </button>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* ─── AYUDA DEL TUTORIAL ─────────────────────────────────── */}
+                          <div className="p-4 rounded-xl border border-outline-variant/10 bg-surface-container/30 space-y-4">
+                            <span className="text-[10px] font-bold text-primary uppercase tracking-wider block">❓ Instrucciones de Ayuda (Tutorial Global)</span>
+                            
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                              <div className="flex flex-col gap-1.5">
+                                <span className="font-bold text-on-surface-variant/80">Texto en Español</span>
+                                <textarea
+                                  value={ttsAyuda.texto_es}
+                                  onChange={(e) => setTtsAyuda(prev => ({ ...prev, texto_es: e.target.value }))}
+                                  placeholder="Escribe las instrucciones de uso para el panel de ayuda..."
+                                  rows={3}
+                                  className="rounded-lg border border-outline-variant bg-surface-container px-3 py-2 text-xs text-on-surface outline-none focus:border-primary transition resize-y min-h-[60px]"
+                                />
+                                <div className="flex gap-2 mt-1">
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      if (playingAudio === "ayuda_es") {
+                                        handleStopAudio()
+                                      } else {
+                                        handleGenerateAudio("ayuda", ttsAyuda.texto_es, "es", false)
+                                      }
+                                    }}
+                                    className={cn(
+                                      "flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-[10px] font-medium transition",
+                                      playingAudio === "ayuda_es"
+                                        ? "bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/20"
+                                        : "bg-surface-container text-on-surface-variant hover:text-primary hover:bg-surface-container-high"
+                                    )}
+                                  >
+                                    {playingAudio === "ayuda_es" ? <Square className="h-3 w-3 animate-pulse" /> : <Volume2 className="h-3 w-3" />}
+                                    {playingAudio === "ayuda_es" ? "Detener ES" : "Escuchar ES"}
+                                  </button>
+                                  <button
+                                    type="button"
+                                    disabled={generatingAudio !== null}
+                                    onClick={() => handleGenerateAudio("ayuda", ttsAyuda.texto_es, "es", true)}
+                                    className="flex items-center gap-1.5 rounded-lg bg-primary/10 hover:bg-primary/15 px-2.5 py-1 text-[10px] text-primary font-bold transition"
+                                  >
+                                    {generatingAudio === "ayuda_es" ? <Loader2 className="h-3 w-3 animate-spin" /> : <Mic className="h-3 w-3" />}
+                                    Generar y Subir ES
+                                  </button>
+                                </div>
+                              </div>
+
+                              <div className="flex flex-col gap-1.5">
+                                <div className="flex items-center justify-between">
+                                  <span className="font-bold text-on-surface-variant/80">Texto en Inglés</span>
+                                  <button
+                                    type="button"
+                                    disabled={translatingText !== null}
+                                    onClick={() => handleTranslateText(ttsAyuda.texto_es, "ayuda", (val) => setTtsAyuda(prev => ({ ...prev, texto_en: val })))}
+                                    className="flex items-center gap-1 text-[9px] font-bold text-primary hover:underline"
+                                  >
+                                    {translatingText === "ayuda" ? (
+                                      <Loader2 className="h-2.5 w-2.5 animate-spin" />
+                                    ) : (
+                                      <Sparkles className="h-2.5 w-2.5" />
+                                    )}
+                                    Traducir automáticamente
+                                  </button>
+                                </div>
+                                <textarea
+                                  value={ttsAyuda.texto_en}
+                                  onChange={(e) => setTtsAyuda(prev => ({ ...prev, texto_en: e.target.value }))}
+                                  placeholder="Write user instructions for the help tutorial panel..."
+                                  rows={3}
+                                  className="rounded-lg border border-outline-variant bg-surface-container px-3 py-2 text-xs text-on-surface outline-none focus:border-primary transition resize-y min-h-[60px]"
+                                />
+                                <div className="flex gap-2 mt-1">
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      if (playingAudio === "ayuda_en") {
+                                        handleStopAudio()
+                                      } else {
+                                        handleGenerateAudio("ayuda", ttsAyuda.texto_en, "en", false)
+                                      }
+                                    }}
+                                    className={cn(
+                                      "flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-[10px] font-medium transition",
+                                      playingAudio === "ayuda_en"
+                                        ? "bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/20"
+                                        : "bg-surface-container text-on-surface-variant hover:text-primary hover:bg-surface-container-high"
+                                    )}
+                                  >
+                                    {playingAudio === "ayuda_en" ? <Square className="h-3 w-3 animate-pulse" /> : <Volume2 className="h-3 w-3" />}
+                                    {playingAudio === "ayuda_en" ? "Detener EN" : "Escuchar EN"}
+                                  </button>
+                                  <button
+                                    type="button"
+                                    disabled={generatingAudio !== null}
+                                    onClick={() => handleGenerateAudio("ayuda", ttsAyuda.texto_en, "en", true)}
+                                    className="flex items-center gap-1.5 rounded-lg bg-primary/10 hover:bg-primary/15 px-2.5 py-1 text-[10px] text-primary font-bold transition"
+                                  >
+                                    {generatingAudio === "ayuda_en" ? <Loader2 className="h-3 w-3 animate-spin" /> : <Mic className="h-3 w-3" />}
+                                    Generar y Subir EN
+                                  </button>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* ─── CANTIDAD DE PASOS ──────────────────────────────────── */}
+                          <div className="flex items-center gap-4 bg-surface-container/20 p-3 rounded-lg border border-outline-variant/5">
+                            <span className="font-bold text-on-surface">Cantidad de Pasos de Armado:</span>
+                            <div className="flex items-center gap-2">
+                              <button
+                                type="button"
+                                onClick={() => setTtsCantidadPasos(p => Math.max(1, p - 1))}
+                                className="flex h-7 w-7 items-center justify-center rounded bg-surface-container hover:bg-surface-container-high border border-outline-variant text-on-surface font-bold text-sm"
+                              >
+                                -
+                              </button>
+                              <span className="w-8 text-center text-sm font-bold text-on-surface">{ttsCantidadPasos}</span>
+                              <button
+                                type="button"
+                                onClick={() => setTtsCantidadPasos(p => p + 1)}
+                                className="flex h-7 w-7 items-center justify-center rounded bg-surface-container hover:bg-surface-container-high border border-outline-variant text-on-surface font-bold text-sm"
+                              >
+                                +
+                              </button>
+                            </div>
+                          </div>
+
+                          {/* ─── LISTADO DE PASOS (P01...) ─────────────────────────── */}
+                          <div className="space-y-3 max-h-[400px] overflow-y-auto pr-1">
+                            {ttsPasos.map((p, idx) => (
+                              <div key={p.paso} className="p-3.5 rounded-xl border border-outline-variant/10 bg-surface-container/40 space-y-3">
+                                <div className="flex items-center justify-between border-b border-outline-variant/5 pb-2">
+                                  <span className="font-bold text-primary text-xs">Paso {p.paso}</span>
+                                </div>
+
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                  <div className="flex flex-col gap-1">
+                                    <span className="text-[10px] font-bold text-on-surface-variant/70 uppercase">Español (Latam y Europa)</span>
+                                    <textarea
+                                      value={p.texto_es}
+                                      onChange={(e) => {
+                                        const val = e.target.value
+                                        setTtsPasos(prev => prev.map(item => item.paso === p.paso ? { ...item, texto_es: val } : item))
+                                      }}
+                                      placeholder="Describe lo que se debe hacer en este paso..."
+                                      rows={2}
+                                      className="rounded-lg border border-outline-variant bg-surface-container px-2 py-1.5 text-xs text-on-surface outline-none focus:border-primary transition resize-y min-h-[45px]"
+                                    />
+                                    <div className="flex gap-2 mt-1">
+                                      <button
+                                        type="button"
+                                        onClick={() => {
+                                          if (playingAudio === `${p.paso}_es`) {
+                                            handleStopAudio()
+                                          } else {
+                                            handleGenerateAudio(p.paso, p.texto_es, "es", false)
+                                          }
+                                        }}
+                                        className={cn(
+                                          "flex items-center gap-1.5 rounded-lg px-2 py-1 text-[9px] font-medium transition",
+                                          playingAudio === `${p.paso}_es`
+                                            ? "bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/20"
+                                            : "bg-surface-container text-on-surface-variant hover:text-primary hover:bg-surface-container-high"
+                                        )}
+                                      >
+                                        {playingAudio === `${p.paso}_es` ? <Square className="h-2.5 w-2.5 animate-pulse" /> : <Volume2 className="h-2.5 w-2.5" />}
+                                        {playingAudio === `${p.paso}_es` ? "Detener ES" : "Escuchar ES"}
+                                      </button>
+                                      <button
+                                        type="button"
+                                        disabled={generatingAudio !== null}
+                                        onClick={() => handleGenerateAudio(p.paso, p.texto_es, "es", true)}
+                                        className="flex items-center gap-1.5 rounded-lg bg-primary/10 hover:bg-primary/15 px-2 py-1 text-[9px] text-primary font-bold transition"
+                                      >
+                                        {generatingAudio === `${p.paso}_es` ? <Loader2 className="h-2.5 w-2.5 animate-spin" /> : <Mic className="h-2.5 w-2.5" />}
+                                        Generar ES
+                                      </button>
                                     </div>
                                   </div>
 
-                                  {/* Inglés */}
-                                  <div className="flex items-center justify-between bg-surface-container border border-outline-variant/10 px-3 py-1.5 rounded-lg">
-                                    <span className="text-[10px] text-on-surface-variant/80">EN: {audioEn ? audioEn.fileName : "Pendiente"}</span>
-                                    <div className="flex items-center gap-2">
-                                      <button type="button" onClick={() => handleSimulateUpload("audio_en", g.step)} className="text-primary hover:underline text-[10px]">Cargar</button>
-                                      {audioEn && (
-                                        <button type="button" onClick={() => handleDeleteItem("audio_en", g.step)} className="text-on-surface-variant hover:text-red-400"><Trash2 className="h-3 w-3" /></button>
-                                      )}
+                                  <div className="flex flex-col gap-1">
+                                    <div className="flex items-center justify-between">
+                                      <span className="text-[10px] font-bold text-on-surface-variant/70 uppercase">Inglés</span>
+                                      <button
+                                        type="button"
+                                        disabled={translatingText !== null}
+                                        onClick={() => handleTranslateStep(p.paso, p.texto_es)}
+                                        className="flex items-center gap-1 text-[9px] font-bold text-primary hover:underline"
+                                      >
+                                        {translatingText === p.paso ? (
+                                          <Loader2 className="h-2.5 w-2.5 animate-spin" />
+                                        ) : (
+                                          <Sparkles className="h-2.5 w-2.5" />
+                                        )}
+                                        Traducir automáticamente
+                                      </button>
+                                    </div>
+                                    <textarea
+                                      value={p.texto_en}
+                                      onChange={(e) => {
+                                        const val = e.target.value
+                                        setTtsPasos(prev => prev.map(item => item.paso === p.paso ? { ...item, texto_en: val } : item))
+                                      }}
+                                      placeholder="Describe what needs to be done in this step..."
+                                      rows={2}
+                                      className="rounded-lg border border-outline-variant bg-surface-container px-2 py-1.5 text-xs text-on-surface outline-none focus:border-primary transition resize-y min-h-[45px]"
+                                    />
+                                    <div className="flex gap-2 mt-1">
+                                      <button
+                                        type="button"
+                                        onClick={() => {
+                                          if (playingAudio === `${p.paso}_en`) {
+                                            handleStopAudio()
+                                          } else {
+                                            handleGenerateAudio(p.paso, p.texto_en, "en", false)
+                                          }
+                                        }}
+                                        className={cn(
+                                          "flex items-center gap-1.5 rounded-lg px-2 py-1 text-[9px] font-medium transition",
+                                          playingAudio === `${p.paso}_en`
+                                            ? "bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/20"
+                                            : "bg-surface-container text-on-surface-variant hover:text-primary hover:bg-surface-container-high"
+                                        )}
+                                      >
+                                        {playingAudio === `${p.paso}_en` ? <Square className="h-2.5 w-2.5 animate-pulse" /> : <Volume2 className="h-2.5 w-2.5" />}
+                                        {playingAudio === `${p.paso}_en` ? "Detener EN" : "Escuchar EN"}
+                                      </button>
+                                      <button
+                                        type="button"
+                                        disabled={generatingAudio !== null}
+                                        onClick={() => handleGenerateAudio(p.paso, p.texto_en, "en", true)}
+                                        className="flex items-center gap-1.5 rounded-lg bg-primary/10 hover:bg-primary/15 px-2 py-1 text-[9px] text-primary font-bold transition"
+                                      >
+                                        {generatingAudio === `${p.paso}_en` ? <Loader2 className="h-2.5 w-2.5 animate-spin" /> : <Mic className="h-2.5 w-2.5" />}
+                                        Generar EN
+                                      </button>
                                     </div>
                                   </div>
                                 </div>
                               </div>
-                            )
-                          })}
-                        </div>
-                      )}
-                    </div>
-
-                    {/* 3. Audio de Ayuda */}
-                    <div className="flex flex-col">
-                      <button
-                        type="button"
-                        onClick={() => toggleSection("ayuda")}
-                        className="flex items-center justify-between p-4 font-bold text-sm text-on-surface bg-surface-container-low hover:bg-surface-container transition-colors"
-                      >
-                        <span className="flex items-center gap-2">
-                          <Music className="h-4.5 w-4.5 text-pink-400" />
-                          3. Audio de Ayuda del Tutorial (Global)
-                        </span>
-                        {openSection === "ayuda" ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
-                      </button>
-                      
-                      {openSection === "ayuda" && (
-                        <div className="p-4 bg-surface-container-lowest/50 border-t border-outline-variant/10 text-xs">
-                          <div className="flex items-center justify-between p-3.5 rounded-lg bg-surface-container border border-outline-variant/10">
-                            <span className="font-semibold text-on-surface truncate">{audioAyuda || "Sin audio cargado"}</span>
-                            <button
-                              type="button"
-                              onClick={() => handleSimulateUpload("audio_ayuda")}
-                              className="text-primary hover:underline font-bold"
-                            >
-                              Subir Audio
-                            </button>
+                            ))}
                           </div>
+
+                          {/* ─── BOTÓN GENERAR TODOS Y BARRA DE PROGRESO ─────────────── */}
+                          <div className="p-4 rounded-xl border border-primary/20 bg-primary/5 flex flex-col gap-3">
+                            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                              <div>
+                                <span className="font-bold text-on-surface text-sm block">Generar todo en lote</span>
+                                <span className="text-[10px] text-on-surface-variant block">Genera y sube a Supabase Storage todos los textos configurados en Español Latam, Español Europa e Inglés en un solo proceso.</span>
+                              </div>
+                              <button
+                                type="button"
+                                disabled={generatingAll}
+                                onClick={handleGenerateAll}
+                                className="flex items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-teal-500 to-primary hover:from-teal-600 hover:to-primary-dark px-4 py-2 text-xs font-bold text-black shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed transition duration-300 whitespace-nowrap animate-pulse"
+                              >
+                                {generatingAll ? (
+                                  <>
+                                    <Loader2 className="h-4 w-4 animate-spin text-black" />
+                                    Generando...
+                                  </>
+                                ) : (
+                                  <>
+                                    <Sparkles className="h-4 w-4 text-black" />
+                                    Generar TODOS los Audios
+                                  </>
+                                )}
+                              </button>
+                            </div>
+
+                            {generatingAll && (
+                              <div className="space-y-1.5">
+                                <div className="flex justify-between text-[10px] font-semibold text-on-surface-variant">
+                                  <span>Progreso: {generationProgress.current} / {generationProgress.total} audios</span>
+                                  <span>{Math.round((generationProgress.current / generationProgress.total) * 100)}%</span>
+                                </div>
+                                <div className="h-2 w-full bg-surface-container rounded-full overflow-hidden border border-outline-variant/10">
+                                  <div
+                                    className="h-full bg-primary transition-all duration-300 rounded-full"
+                                    style={{ width: `${(generationProgress.current / generationProgress.total) * 100}%` }}
+                                  />
+                                </div>
+                              </div>
+                            )}
+                          </div>
+
                         </div>
                       )}
                     </div>

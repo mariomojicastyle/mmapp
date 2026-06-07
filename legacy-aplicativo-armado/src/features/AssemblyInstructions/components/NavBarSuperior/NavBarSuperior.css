@@ -126,3 +126,189 @@ form {
     width: 25px;
   }
 }
+
+/* ─── Language Selector ─────────────────────────────────────── */
+.lang-selector-group {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  background: var(--surface, rgba(15, 25, 35, 0.7));
+  backdrop-filter: var(--glass-blur, blur(12px));
+  -webkit-backdrop-filter: var(--glass-blur, blur(12px));
+  border: 1px solid var(--border-light, rgba(255, 255, 255, 0.08));
+  border-radius: 26px;
+  padding: 3px;
+  box-shadow: var(--glass-shadow, 0 4px 24px rgba(0, 0, 0, 0.25));
+  transition: var(--transition-smooth, all 0.3s ease);
+}
+
+.lang-selector-group:hover {
+  border-color: var(--primary, #2dd4bf);
+  box-shadow: 0 0 20px var(--primary-glow, rgba(45, 212, 191, 0.15));
+}
+
+.lang-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  border: 1.5px solid transparent;
+  border-radius: 22px;
+  background: transparent;
+  color: var(--text-secondary, rgba(255, 255, 255, 0.55));
+  font-family: var(--font-title, 'Inter', sans-serif);
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  padding: 6px 10px;
+  min-width: 42px;
+  line-height: 1;
+  gap: 1px;
+}
+
+.lang-btn-label {
+  font-size: 0.72rem;
+  letter-spacing: 0.04em;
+}
+
+.lang-btn-sub {
+  font-size: 0.52rem;
+  font-weight: 500;
+  opacity: 0.7;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.lang-btn:hover {
+  color: var(--primary, #2dd4bf);
+  background: rgba(45, 212, 191, 0.08);
+  border-color: rgba(45, 212, 191, 0.2);
+  transform: scale(1.05);
+}
+
+.lang-btn--active {
+  background: var(--primary, #2dd4bf);
+  color: var(--bg-primary, #0a0f14);
+  border-color: var(--primary, #2dd4bf);
+  box-shadow: 0 0 14px var(--primary-glow, rgba(45, 212, 191, 0.35)),
+              inset 0 1px 0 rgba(255, 255, 255, 0.15);
+}
+
+.lang-btn--active .lang-btn-sub {
+  opacity: 0.9;
+}
+
+.lang-btn--active:hover {
+  color: var(--bg-primary, #0a0f14);
+  transform: scale(1.05);
+  box-shadow: 0 0 22px var(--primary-glow, rgba(45, 212, 191, 0.5)),
+              inset 0 1px 0 rgba(255, 255, 255, 0.2);
+}
+
+/* Responsive: Language Selector */
+@media (max-width: 787px) {
+  .lang-btn {
+    padding: 5px 8px;
+    min-width: 36px;
+  }
+
+  .lang-btn-label {
+    font-size: 0.65rem;
+  }
+
+  .lang-btn-sub {
+    font-size: 0.48rem;
+  }
+}
+
+@media (max-width: 320px) {
+  .lang-btn {
+    padding: 4px 6px;
+    min-width: 30px;
+  }
+
+  .lang-btn-label {
+    font-size: 0.58rem;
+  }
+
+  .lang-btn-sub {
+    font-size: 0.42rem;
+  }
+}
+
+/* ─── Contenedor y Menú de Velocidad ──────────────────────────────── */
+.speed-controller-container {
+  position: relative;
+  pointer-events: auto;
+}
+
+.speed-btn-text {
+  color: currentColor;
+}
+
+.speed-menu {
+  position: absolute;
+  top: 60px; /* Separado del botón superior, flotando hacia abajo */
+  right: 0px;
+  display: flex;
+  flex-direction: column;
+  background: var(--surface, rgba(15, 25, 35, 0.75));
+  backdrop-filter: var(--glass-blur, blur(12px));
+  -webkit-backdrop-filter: var(--glass-blur, blur(12px));
+  border: 1px solid var(--border-light, rgba(255, 255, 255, 0.08));
+  border-radius: 12px;
+  padding: 6px;
+  min-width: 120px;
+  box-shadow: var(--glass-shadow, 0 10px 30px rgba(0, 0, 0, 0.3));
+  z-index: 100;
+  gap: 4px;
+  animation: fadeInDown 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.speed-menu-item {
+  background: transparent;
+  border: none;
+  border-radius: 8px;
+  color: var(--text-secondary, rgba(255, 255, 255, 0.6));
+  font-family: var(--font-title, 'Inter', sans-serif);
+  font-weight: 600;
+  font-size: 0.78rem;
+  padding: 8px 12px;
+  cursor: pointer;
+  text-align: left;
+  transition: all 0.2s ease;
+}
+
+.speed-menu-item:hover {
+  color: var(--primary, #2dd4bf);
+  background: var(--surface-active, rgba(45, 212, 191, 0.08));
+}
+
+.speed-menu-item--active {
+  background: var(--primary, #2dd4bf) !important;
+  color: var(--bg-primary, #0a0f14) !important;
+}
+
+@keyframes fadeInDown {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Responsivo para el botón y menú en móviles */
+@media (max-width: 787px) {
+  .speed-menu {
+    top: 50px;
+    min-width: 100px;
+  }
+  
+  .speed-menu-item {
+    padding: 6px 10px;
+    font-size: 0.72rem;
+  }
+}

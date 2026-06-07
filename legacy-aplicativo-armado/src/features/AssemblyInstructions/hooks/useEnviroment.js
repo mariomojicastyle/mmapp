@@ -253,6 +253,15 @@ export default create(
 
       sombras: false,
       toggleSombras: () => set((state) => ({ sombras: !state.sombras })),
+      idioma: "es", // 'es' | 'es-ES' | 'en'
+      cambiarIdioma: (nuevoIdioma) => {
+        const idiomasValidos = ["es", "es-ES", "en"];
+        if (idiomasValidos.includes(nuevoIdioma)) {
+          set(() => ({ idioma: nuevoIdioma }));
+        }
+      },
+      playbackRate: 1.0,
+      setPlaybackRate: (rate) => set(() => ({ playbackRate: rate })),
     };
   })
 );
