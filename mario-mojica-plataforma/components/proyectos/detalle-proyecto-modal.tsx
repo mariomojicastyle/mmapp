@@ -2,7 +2,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unused-vars, react-hooks/exhaustive-deps */
 
 import React, { useState, useEffect, useRef } from "react"
-import { X, Download, Paperclip, Image, FileText, Music, Cpu, Layers, Plus, Trash2, Loader2, Eye, ExternalLink, ChevronDown, ChevronUp, UploadCloud, CheckCircle2, AlertCircle, FileSpreadsheet, Box, Boxes, Coins, Hammer, Wrench, Sparkles, Volume2, Play, Square, Mic } from "lucide-react"
+import { X, Download, Paperclip, Image, FileText, Music, Cpu, Layers, Plus, Trash2, Loader2, Eye, ExternalLink, ChevronDown, ChevronUp, UploadCloud, CheckCircle2, AlertCircle, FileSpreadsheet, Box, Boxes, Coins, Hammer, Wrench, Sparkles, Volume2, Play, Square, Mic, Library, Camera } from "lucide-react"
 import { motion, AnimatePresence } from "framer-motion"
 import { cn } from "@/lib/utils"
 import { usePermissions } from "@/hooks/use-permissions"
@@ -182,7 +182,7 @@ export function DetalleProyectoModal({ isOpen, onClose, proyecto, onUpdate }: De
   const [pbrWallHeight, setPbrWallHeight] = useState("")
 
   // Insumos State
-  const [glbSteps, setGlbSteps] = useState<{ step: string; fileName: string; progress: number }[]>([])
+  const [glbSteps, setGlbSteps] = useState<{ step: string; fileName: string; progress: number; cameraPosition?: number[]; cameraTarget?: number[] }[]>([])
   const [audioEsSteps, setAudioEsSteps] = useState<{ step: string; fileName: string }[]>([])
   const [audioEnSteps, setAudioEnSteps] = useState<{ step: string; fileName: string }[]>([])
   
@@ -192,6 +192,9 @@ export function DetalleProyectoModal({ isOpen, onClose, proyecto, onUpdate }: De
   const [garantiaDoc, setGarantiaDoc] = useState<string>("")
   const [herrajesFotos, setHerrajesFotos] = useState<string[]>([])
   const [renders, setRenders] = useState<string[]>([])
+
+  const [sharedHerrajesLibrary, setSharedHerrajesLibrary] = useState<string[]>([])
+  const [showSharedLibrary, setShowSharedLibrary] = useState(false)
 
   // TTS Config State
   const [ttsVoices, setTtsVoices] = useState({
@@ -209,6 +212,13 @@ export function DetalleProyectoModal({ isOpen, onClose, proyecto, onUpdate }: De
   const [generatingAll, setGeneratingAll] = useState(false)
   const [generationProgress, setGenerationProgress] = useState({ current: 0, total: 0 })
   const [translatingText, setTranslatingText] = useState<string | null>(null)
+  const [cameraOverlayActive, setCameraOverlayActive] = useState(false)
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      setCameraOverlayActive(localStorage.getItem('cameraOverlay') === 'on')
+    }
+  }, [])
 
   const TTS_VOICES_ES_LATAM = [
     { value: "es-CO-GonzaloNeural", label: "🇨🇴 Gonzalo (Colombia, Hombre)" },
@@ -574,6 +584,20 @@ export function DetalleProyectoModal({ isOpen, onClose, proyecto, onUpdate }: De
     }
   }
 
+  const loadSharedHerrajesLibrary = async () => {
+    try {
+      const supabase = createClient()
+      const { data, error } = await supabase.storage
+        .from("insumos_manuales")
+        .list("_herrajes_compartidos", { limit: 500 })
+      if (error) throw error
+      setSharedHerrajesLibrary((data || []).map(f => f.name).filter(n => !n.startsWith('.')))
+      setShowSharedLibrary(prev => !prev)
+    } catch (err: any) {
+      setError("Error cargando biblioteca de herrajes: " + err.message)
+    }
+  }
+
   const handleSimulateUpload = (type: string, data?: any) => {
     triggerUpload(type, data)
   }
@@ -621,8 +645,15 @@ export function DetalleProyectoModal({ isOpen, onClose, proyecto, onUpdate }: De
         path = `${codigoManual}/models/P${stepStr}.glb`
         updatedStateCallback = () => {
           setGlbSteps(prev => {
+            const existing = prev.find(s => s.step === stepStr)
             const filtered = prev.filter(s => s.step !== stepStr)
-            return [...filtered, { step: stepStr, fileName: `P${stepStr}.glb`, progress: 100 }].sort((a,b) => a.step.localeCompare(b.step))
+            return [...filtered, { 
+              step: stepStr, 
+              fileName: `P${stepStr}.glb`, 
+              progress: 100,
+              cameraPosition: existing?.cameraPosition,
+              cameraTarget: existing?.cameraTarget
+            }].sort((a,b) => a.step.localeCompare(b.step))
           })
         }
       } else if (type === 'audio_es') {
@@ -2131,25 +2162,115 @@ export function DetalleProyectoModal({ isOpen, onClose, proyecto, onUpdate }: De
                       
                       {openSection === "glb" && (
                         <div className="p-4 bg-surface-container-lowest/50 border-t border-outline-variant/10 space-y-3.5">
+                          {/* Botón toggle de cámara */}
+                          <div className="flex items-center justify-between pb-1 border-b border-outline-variant/5">
+                            <span className="text-[10px] text-on-surface-variant italic font-medium">Asigna la posición de la cámara del visor 3D para cada paso.</span>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                const newVal = cameraOverlayActive ? 'off' : 'on'
+                                localStorage.setItem('cameraOverlay', newVal)
+                                setCameraOverlayActive(!cameraOverlayActive)
+                                window.dispatchEvent(new StorageEvent('storage', {
+                                  key: 'cameraOverlay', newValue: newVal
+                                }))
+                              }}
+                              className={cn(
+                                "flex items-center gap-1.5 text-[11px] font-bold px-2.5 py-1 rounded-md border transition-all duration-200",
+                                cameraOverlayActive
+                                  ? "bg-teal-500/10 border-teal-500/30 text-teal-400 hover:bg-teal-500/20"
+                                  : "bg-surface-container border-outline-variant/20 text-on-surface-variant hover:text-on-surface"
+                              )}
+                            >
+                              <Camera className="h-3.5 w-3.5" />
+                              {cameraOverlayActive ? '🟢 Guía de Cámara Activa' : '⚪ Activar Guía de Cámara'}
+                            </button>
+                          </div>
+
                           <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2">
                             {glbSteps.map((g) => (
-                              <div key={g.step} className="flex items-center justify-between p-3 rounded-lg bg-surface-container border border-outline-variant/10 text-xs">
-                                <div className="flex items-center gap-2">
-                                  <span className="font-bold text-primary">Paso {g.step}</span>
-                                  <span className="text-on-surface-variant truncate max-w-[120px]">{g.fileName}</span>
+                              <div key={g.step} className="flex flex-col gap-2 p-3 rounded-lg bg-surface-container border border-outline-variant/10 text-xs">
+                                <div className="flex items-center justify-between w-full">
+                                  <div className="flex items-center gap-2">
+                                    <span className="font-bold text-primary">Paso {g.step}</span>
+                                    <span className="text-on-surface-variant truncate max-w-[120px]">{g.fileName}</span>
+                                  </div>
+                                  <div className="flex items-center gap-3">
+                                    {g.progress < 100 ? (
+                                      <div className="flex items-center gap-1.5">
+                                        <Loader2 className="h-3 w-3 animate-spin text-primary" />
+                                        <span className="text-[10px] text-primary">{g.progress}%</span>
+                                      </div>
+                                    ) : (
+                                      <span className="text-[10px] text-success font-semibold uppercase">Listo</span>
+                                    )}
+                                    <button type="button" onClick={() => handleDeleteItem("glb", g.step)} className="text-on-surface-variant hover:text-red-400 p-1">
+                                      <Trash2 className="h-3.5 w-3.5" />
+                                    </button>
+                                  </div>
                                 </div>
-                                <div className="flex items-center gap-3">
-                                  {g.progress < 100 ? (
-                                    <div className="flex items-center gap-1.5">
-                                      <Loader2 className="h-3 w-3 animate-spin text-primary" />
-                                      <span className="text-[10px] text-primary">{g.progress}%</span>
-                                    </div>
-                                  ) : (
-                                    <span className="text-[10px] text-success font-semibold uppercase">Listo</span>
-                                  )}
-                                  <button type="button" onClick={() => handleDeleteItem("glb", g.step)} className="text-on-surface-variant hover:text-red-400 p-1">
-                                    <Trash2 className="h-3.5 w-3.5" />
-                                  </button>
+
+                                {/* Campos de posición de cámara */}
+                                <div className="w-full mt-1.5 pt-1.5 border-t border-outline-variant/10 space-y-1">
+                                  <div className="flex items-center gap-1.5">
+                                    <span className="text-[9px] text-on-surface-variant w-8">POS:</span>
+                                    <input
+                                      type="text"
+                                      readOnly
+                                      value={g.cameraPosition ? `[${g.cameraPosition.map(n => n.toFixed(2)).join(', ')}]` : 'Sin definir'}
+                                      className="flex-1 text-[9px] px-2 py-0.5 rounded bg-surface-container-lowest border border-outline-variant/5 text-on-surface font-mono"
+                                    />
+                                  </div>
+                                  <div className="flex items-center gap-1.5">
+                                    <span className="text-[9px] text-on-surface-variant w-8">TGT:</span>
+                                    <input
+                                      type="text"
+                                      readOnly
+                                      value={g.cameraTarget ? `[${g.cameraTarget.map(n => n.toFixed(2)).join(', ')}]` : 'Sin definir'}
+                                      className="flex-1 text-[9px] px-2 py-0.5 rounded bg-surface-container-lowest border border-outline-variant/5 text-on-surface font-mono"
+                                    />
+                                  </div>
+                                  <div className="flex justify-between items-center mt-1">
+                                    <button
+                                      type="button"
+                                      onClick={async () => {
+                                        try {
+                                          const text = await navigator.clipboard.readText()
+                                          const data = JSON.parse(text)
+                                          if (data.cameraPosition && data.cameraTarget) {
+                                            setGlbSteps(prev => prev.map(s =>
+                                              s.step === g.step
+                                                ? { ...s, cameraPosition: data.cameraPosition, cameraTarget: data.cameraTarget }
+                                                : s
+                                            ))
+                                            setSuccessMsg(`Posición de cámara pegada en Paso ${g.step} ✓`)
+                                          } else {
+                                            setError('El portapapeles no contiene datos de cámara válidos')
+                                          }
+                                        } catch (err) {
+                                          setError('No se pudo leer del portapapeles. Copia primero desde el visor 3D.')
+                                        }
+                                      }}
+                                      className="flex items-center gap-1 text-[10px] font-bold text-teal-400 hover:underline"
+                                    >
+                                      📋 Pegar posición del visor
+                                    </button>
+                                    {(g.cameraPosition || g.cameraTarget) && (
+                                      <button
+                                        type="button"
+                                        onClick={() => {
+                                          setGlbSteps(prev => prev.map(s =>
+                                            s.step === g.step
+                                              ? { ...s, cameraPosition: undefined, cameraTarget: undefined }
+                                              : s
+                                          ))
+                                        }}
+                                        className="text-[9px] text-on-surface-variant hover:text-red-400 font-medium"
+                                      >
+                                        Limpiar
+                                      </button>
+                                    )}
+                                  </div>
                                 </div>
                               </div>
                             ))}
@@ -2827,13 +2948,57 @@ export function DetalleProyectoModal({ isOpen, onClose, proyecto, onUpdate }: De
                               </div>
                             ))}
                           </div>
-                          <button
-                            type="button"
-                            onClick={() => handleSimulateUpload("herrajes")}
-                            className="flex items-center gap-1 text-[11px] font-bold text-primary hover:underline"
-                          >
-                            <Plus className="h-3 w-3" /> Agregar foto de herraje
-                          </button>
+                          <div className="flex items-center gap-3">
+                            <button
+                              type="button"
+                              onClick={() => handleSimulateUpload("herrajes")}
+                              className="flex items-center gap-1 text-[11px] font-bold text-primary hover:underline"
+                            >
+                              <Plus className="h-3 w-3" /> Agregar foto de herraje
+                            </button>
+                            <button
+                              type="button"
+                              onClick={loadSharedHerrajesLibrary}
+                              className="flex items-center gap-1 text-[11px] font-bold text-indigo-400 hover:underline"
+                            >
+                              <Library className="h-3.5 w-3.5" /> Seleccionar de biblioteca compartida
+                            </button>
+                          </div>
+
+                          {showSharedLibrary && (
+                            <div className="mt-2 p-3 rounded-lg bg-surface-container border border-indigo-400/20 space-y-2">
+                              <p className="text-[10px] text-on-surface-variant font-semibold uppercase">
+                                Biblioteca compartida ({sharedHerrajesLibrary.length} herrajes)
+                              </p>
+                              {sharedHerrajesLibrary.length === 0 ? (
+                                <p className="text-[10px] text-on-surface-variant italic">No hay archivos en la biblioteca compartida.</p>
+                              ) : (
+                                <div className="grid grid-cols-2 gap-1.5 max-h-48 overflow-y-auto">
+                                  {sharedHerrajesLibrary.map(name => {
+                                    const isSelected = herrajesFotos.includes(`_shared:${name}`)
+                                    return (
+                                      <label key={name} className={`flex items-center gap-2 p-2 rounded text-[11px] cursor-pointer
+                                        ${isSelected ? 'bg-indigo-500/20 text-indigo-300' : 'hover:bg-surface-container-high'}`}>
+                                        <input
+                                          type="checkbox"
+                                          checked={isSelected}
+                                          onChange={() => {
+                                            if (isSelected) {
+                                              setHerrajesFotos(prev => prev.filter(h => h !== `_shared:${name}`))
+                                            } else {
+                                              setHerrajesFotos(prev => [...prev, `_shared:${name}`])
+                                            }
+                                          }}
+                                          className="accent-indigo-400 mr-1.5"
+                                        />
+                                        <span className="truncate">{name}</span>
+                                      </label>
+                                    )
+                                  })}
+                                </div>
+                              )}
+                            </div>
+                          )}
                         </div>
                       )}
                     </div>

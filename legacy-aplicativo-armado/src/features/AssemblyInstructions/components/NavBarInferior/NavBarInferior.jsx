@@ -84,13 +84,14 @@ export default function NavBarInferior({ id, data }) {
     var newPaso = idx === 0 ? pasos[pasos.length - 1] : pasos[idx - 1];
     
     DesactivarParpadeo(); // Apagar parpadeo y ondas al cambiar de paso manualmente
+    PausedAudio(); // Forzamos estado a pausa para reiniciar el ciclo de audio
     CambiarModelo(newPaso);
     NegativeShow();
 
     setTimeout(() => {
       PositiveShow();
+      PlayingAudio(); // Reproducimos despues del delay (asegura el trigger en el useEffect)
     }, 200);
-    PlayingAudio();
   };
 
   //Función de avanzar un paso
@@ -100,13 +101,14 @@ export default function NavBarInferior({ id, data }) {
     var newPaso = idx === pasos.length - 1 ? pasos[0] : pasos[idx + 1];
 
     DesactivarParpadeo(); // Apagar parpadeo y ondas al cambiar de paso manualmente
+    PausedAudio(); // Forzamos estado a pausa para reiniciar el ciclo de audio
     CambiarModelo(newPaso);
     NegativeShow();
 
     setTimeout(() => {
       PositiveShow();
+      PlayingAudio(); // Reproducimos despues del delay (asegura el trigger en el useEffect)
     }, 200);
-    PlayingAudio();
   };
 
   //Funcion parpadeo de flecha (Animación Premium Obsidian Teal al finalizar el tutorial)

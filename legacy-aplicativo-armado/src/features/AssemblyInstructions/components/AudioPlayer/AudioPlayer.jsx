@@ -55,7 +55,26 @@ export default function AudioPlayer() {
 
   const audioRef = useRef(null);
 
-  // 1. Efecto para cargar el recurso de audio correspondiente (Paso o Ayuda)
+  // ─── Efecto 0: canplaythrough ───
+  // Cuando el audio termina de descargarse (ej: desde Supabase vía proxy),
+  // si phaseAudio ya es "playing", arrancamos inmediatamente.
+  // Esto soluciona el caso donde play() se llama antes de que el audio esté listo.
+  useEffect(() => {
+    const audio = audioRef.current;
+    if (!audio) return;
+
+    const handleCanPlay = () => {
+      const state = useEnviroment.getState();
+      if (state.StartApp === true && state.phaseAudio === "playing") {
+        audio.play().catch(e => console.log("canplaythrough auto-play:", e.message));
+      }
+    };
+
+    audio.addEventListener("canplaythrough", handleCanPlay);
+    return () => audio.removeEventListener("canplaythrough", handleCanPlay);
+  }, []);
+
+  // ─── Efecto 1: Cargar src de audio (Paso o Ayuda) ───
   useEffect(() => {
     if (PanelAyudas) {
       audioRef.current.load();
@@ -89,7 +108,7 @@ export default function AudioPlayer() {
     }
   }, [PanelAyudas, pasoActual, id, idioma]);
 
-  // 2. Se activa el audio inmediatamente al dar click en el botón INICIAR
+  // ─── Efecto 2: Arranque inicial (botón INICIAR) ───
   useEffect(() => {
     if (StartApp === true) {
       if (audioRef.current) {
@@ -98,17 +117,20 @@ export default function AudioPlayer() {
     }
   }, [StartApp]);
 
-  // 3. Control del audio dependiendo de la fase (start, playing, paused) y callbacks de finalización
+  // ─── Efecto 3: Control de fases (start / playing / paused) ───
+  // CRÍTICO: La fase "playing" NO verifica ReadyToPlay.
+  // ReadyToPlay solo se usa en "start" (carga inicial del primer modelo).
+  // El audio del manual ORIGINAL nunca esperaba al modelo 3D para sonar.
   useEffect(() => {
     if (StartApp === true) {
       if (phaseAudio === "start") {
-        if (audioRef.current) {
-          if (ReadyToPlay === true) {
-            audioRef.current.load();
-            audioRef.current.play().catch(e => console.log("Start phase play error:", e));
-          }
+        // Solo la fase "start" espera al modelo 3D (primera carga)
+        if (ReadyToPlay === true && audioRef.current) {
+          audioRef.current.load();
+          audioRef.current.play().catch(e => console.log("Start phase play error:", e));
         }
       } else if (phaseAudio === "playing") {
+        // ← SIN verificar ReadyToPlay — idéntico al original que funcionaba
         AudioEndedFalse();
         if (audioRef.current) {
           audioRef.current.play().catch(e => console.log("Playing phase play error:", e));
@@ -134,7 +156,7 @@ export default function AudioPlayer() {
     }
   }, [phaseAudio, StartApp, ReadyToPlay]);
 
-  // 4. Sincronizar velocidad de reproducción (playbackRate)
+  // ─── Efecto 4: Sincronizar velocidad de reproducción ───
   useEffect(() => {
     if (audioRef.current) {
       audioRef.current.playbackRate = playbackRate;
@@ -151,3 +173,4 @@ export default function AudioPlayer() {
     </>
   );
 }
+

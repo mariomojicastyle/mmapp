@@ -180,6 +180,7 @@ Un **"Manual Vacío"** es un cascarón o aplicación base centralizada (desplega
 - [x] Eliminar dependencias de `3dymedios.com` (localización total de GLB, Matcaps, HDRI, etc.).
 - [x] Exclusión mutua de cortinas en Zustand para evitar traslapes.
 - [x] Manual_Audios_v1: Sincronización y corrección de rutas de audio en español latino a la raíz de Supabase Storage (`sounds/[paso].mp3`) y restauración del ciclo de montaje de `AudioPlayer` para evadir bloqueos de Autoplay.
+- [x] Manual_Audios_v1.1: Herrajes compartidos en Supabase (`_herrajes_compartidos/`), Overlay de cámara con Copy/Paste de coordenadas JSON, campos `cameraPosition`/`cameraTarget` en el modal, y unificación canónica de nombres de herrajes (`limpiarNombreMalla`) — réplica exacta del algoritmo `obtenerNombreLimpioTooltip` del modal para que el visor 3D muestre nombres idénticos (ej: `Bisagra_20040` en vez de `Bisagra`).
 
 ---
 
@@ -190,7 +191,7 @@ Un **"Manual Vacío"** es un cascarón o aplicación base centralizada (desplega
 - **Local App:** [http://localhost:3000](http://localhost:3000)
 
 ---
-*Última actualización de contexto: 02 de Junio, 2026*
+*Última actualización de contexto: 08 de Junio, 2026*
 
 ---
 

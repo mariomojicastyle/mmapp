@@ -103,6 +103,7 @@ export default create(
       EncuestaCompletada:false,
 
       Cliente: '',//Guarda el dato si el mueble es Maderkit o Practimac.
+      showCameraOverlay: false,
 
 
       //A continuación estan todas las funciones que pueden realizar cambios a estos estados globales.
@@ -260,6 +261,8 @@ export default create(
       },
       playbackRate: 1.0,
       setPlaybackRate: (rate) => set(() => ({ playbackRate: rate })),
+      ToggleCameraOverlay: () => set((state) => ({ showCameraOverlay: !state.showCameraOverlay })),
+      SetCameraOverlay: (val) => set(() => ({ showCameraOverlay: val })),
     };
   })
 );

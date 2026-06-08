@@ -334,6 +334,25 @@ export default function Experience({ id, modelUrl, productData }) {
     repositionSkybox(skyBoxRef.current);
   }, [PasoActual, alturas, computedModelMinY, skyBoxRef.current]);
 
+  // Escuchar cambios de localStorage desde la plataforma (otra ventana)
+  useEffect(() => {
+    const handleStorage = (e) => {
+      if (e.key === 'cameraOverlay') {
+        const state = useEnviroment.getState();
+        state.SetCameraOverlay(e.newValue === 'on');
+      }
+    };
+    
+    // Verificar estado inicial al montar
+    const initial = localStorage.getItem('cameraOverlay');
+    if (initial === 'on') {
+      useEnviroment.getState().SetCameraOverlay(true);
+    }
+    
+    window.addEventListener('storage', handleStorage);
+    return () => window.removeEventListener('storage', handleStorage);
+  }, []);
+
   return (
     <>
       <Environment preset="city" blur={0.8} />
@@ -359,6 +378,104 @@ export default function Experience({ id, modelUrl, productData }) {
       <Suspense fallback={<Loader />}>
         {toogle && <Model id={id} modelUrl={modelUrl} orbitControlsRef={useOrbitControls} productData={productData} />}
       </Suspense>
+
+      <CameraOverlay />
     </>
+  );
+}
+
+function CameraOverlay() {
+  const showOverlay = useEnviroment((state) => state.showCameraOverlay);
+  const pasoActual = useEnviroment((state) => state.pasoActual);
+  const [cameraData, setCameraData] = useState({ pos: [0,0,0], target: [0,0,0], fov: 50 });
+  const [copied, setCopied] = useState(false);
+  
+  useFrame(({ camera }) => {
+    if (!showOverlay) return;
+    
+    const pos = camera.position;
+    const debug = window.cameraDebug || {};
+    const target = debug.target || [0, 0.8, 0];
+    
+    setCameraData({
+      pos: [
+        parseFloat(pos.x.toFixed(4)),
+        parseFloat(pos.y.toFixed(4)),
+        parseFloat(pos.z.toFixed(4))
+      ],
+      target: target.map(v => parseFloat(v.toFixed(4))),
+      fov: Math.round(camera.fov)
+    });
+  });
+  
+  if (!showOverlay) return null;
+  
+  const handleCopy = () => {
+    const data = JSON.stringify({
+      step: pasoActual,
+      cameraPosition: cameraData.pos,
+      cameraTarget: cameraData.target
+    });
+    navigator.clipboard.writeText(data);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+  
+  return (
+    <Html
+      position={[0, 0, 0]}
+      style={{
+        position: 'fixed',
+        top: '12px',
+        right: '12px',
+        pointerEvents: 'auto',
+        zIndex: 9999
+      }}
+      calculatePosition={() => [window.innerWidth - 280, 12, 0]}
+    >
+      <div style={{
+        background: 'rgba(0,0,0,0.85)',
+        border: '1px solid rgba(99,255,200,0.3)',
+        borderRadius: '12px',
+        padding: '14px 16px',
+        fontFamily: 'monospace',
+        fontSize: '12px',
+        color: '#63ffc8',
+        minWidth: '240px',
+        backdropFilter: 'blur(8px)',
+        boxShadow: '0 4px 24px rgba(0,0,0,0.5)'
+      }}>
+        <div style={{ fontWeight: 'bold', marginBottom: '8px', fontSize: '13px' }}>
+          🎥 CÁMARA — Paso {pasoActual}
+        </div>
+        <div style={{ marginBottom: '3px' }}>
+          <span style={{ color: '#888' }}>POS:</span> [{cameraData.pos.join(', ')}]
+        </div>
+        <div style={{ marginBottom: '3px' }}>
+          <span style={{ color: '#888' }}>TGT:</span> [{cameraData.target.join(', ')}]
+        </div>
+        <div style={{ marginBottom: '10px' }}>
+          <span style={{ color: '#888' }}>FOV:</span> {cameraData.fov}
+        </div>
+        <button
+          onClick={handleCopy}
+          style={{
+            width: '100%',
+            padding: '8px',
+            border: copied ? '1px solid #63ffc8' : '1px solid rgba(99,255,200,0.3)',
+            borderRadius: '8px',
+            background: copied ? 'rgba(99,255,200,0.15)' : 'rgba(255,255,255,0.05)',
+            color: copied ? '#63ffc8' : '#ccc',
+            cursor: 'pointer',
+            fontFamily: 'monospace',
+            fontSize: '11px',
+            fontWeight: 'bold',
+            transition: 'all 0.2s'
+          }}
+        >
+          {copied ? '✅ ¡Copiado!' : `📋 Copiar posición Paso ${pasoActual}`}
+        </button>
+      </div>
+    </Html>
   );
 }
