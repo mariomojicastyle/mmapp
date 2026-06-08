@@ -2,14 +2,15 @@ import { useRef, useState, useEffect } from "react";
 import useEnviroment from "../../hooks/useEnviroment.js";
 
 function getAudioSrc(id, paso, idioma) {
+  const ts = Date.now();
   switch (idioma) {
     case "en":
-      return `/${id}/sounds/en/${paso}_en.mp3`;
+      return `/${id}/sounds/en/${paso}_en.mp3?t=${ts}`;
     case "es-ES":
-      return `/${id}/sounds/es-ES/${paso}_es-ES.mp3`;
+      return `/${id}/sounds/es-ES/${paso}_es-ES.mp3?t=${ts}`;
     case "es":
     default:
-      return `/${id}/sounds/${paso}.mp3`;
+      return `/${id}/sounds/${paso}.mp3?t=${ts}`;
   }
 }
 
@@ -17,14 +18,15 @@ function getAyudaSrc(id, idioma) {
   if (!id || id === "manual-vacio" || id === "M01536") {
     return `/assets/sounds/01_Ayuda.mp3`;
   }
+  const ts = Date.now();
   switch (idioma) {
     case "en":
-      return `/${id}/sounds/en/01_Ayuda_en.mp3`;
+      return `/${id}/sounds/en/01_Ayuda_en.mp3?t=${ts}`;
     case "es-ES":
-      return `/${id}/sounds/es-ES/01_Ayuda_es-ES.mp3`;
+      return `/${id}/sounds/es-ES/01_Ayuda_es-ES.mp3?t=${ts}`;
     case "es":
     default:
-      return `/${id}/sounds/01_Ayuda.mp3`;
+      return `/${id}/sounds/01_Ayuda.mp3?t=${ts}`;
   }
 }
 

@@ -183,6 +183,8 @@ export function DetalleProyectoModal({ isOpen, onClose, proyecto, onUpdate }: De
 
   // Insumos State
   const [glbSteps, setGlbSteps] = useState<{ step: string; fileName: string; progress: number; cameraPosition?: number[]; cameraTarget?: number[] }[]>([])
+  const [tempPosInputs, setTempPosInputs] = useState<Record<string, string>>({})
+  const [tempTgtInputs, setTempTgtInputs] = useState<Record<string, string>>({})
   const [audioEsSteps, setAudioEsSteps] = useState<{ step: string; fileName: string }[]>([])
   const [audioEnSteps, setAudioEnSteps] = useState<{ step: string; fileName: string }[]>([])
   
@@ -296,7 +298,7 @@ export function DetalleProyectoModal({ isOpen, onClose, proyecto, onUpdate }: De
     }
     const voice = lang === "es" ? ttsVoices.es_latam : lang === "es-ES" ? ttsVoices.es_europe : ttsVoices.en
     const audioKey = `${stepId}_${lang}`
-    setGeneratingAudio(audioKey)
+    setGeneratingAudio(uploadToStorage ? `${audioKey}_upload` : `${audioKey}_preview`)
     setError("")
     try {
       if (uploadToStorage && codigoManual) {
@@ -825,6 +827,149 @@ export function DetalleProyectoModal({ isOpen, onClose, proyecto, onUpdate }: De
       setIsSaving(false)
     }
   }
+
+  const parseCameraCoords = (text: string) => {
+    const cleanVal = text.trim();
+    
+    // 1. Try JSON first
+    try {
+      const data = JSON.parse(cleanVal);
+      if (data.cameraPosition && data.cameraTarget) {
+        return {
+          pos: data.cameraPosition.map(Number),
+          tgt: data.cameraTarget.map(Number)
+        };
+      }
+    } catch (e) {}
+
+    // 2. Check for named position and target in text (case insensitive)
+    const posRegex = /(?:posici[oó]n|pos|position):\s*\[?\s*(-?\d+(?:\.\d+)?)\s*,\s*(-?\d+(?:\.\d+)?)\s*,\s*(-?\d+(?:\.\d+)?)\s*\]?/i;
+    const tgtRegex = /(?:target|tgt):\s*\[?\s*(-?\d+(?:\.\d+)?)\s*,\s*(-?\d+(?:\.\d+)?)\s*,\s*(-?\d+(?:\.\d+)?)\s*\]?/i;
+
+    const posMatch = cleanVal.match(posRegex);
+    const tgtMatch = cleanVal.match(tgtRegex);
+
+    if (posMatch && tgtMatch) {
+      return {
+        pos: [parseFloat(posMatch[1]), parseFloat(posMatch[2]), parseFloat(posMatch[3])],
+        tgt: [parseFloat(tgtMatch[1]), parseFloat(tgtMatch[2]), parseFloat(tgtMatch[3])]
+      };
+    }
+
+    // 3. Generic number extraction
+    const numRegex = /-?\d+(?:\.\d+)?/g;
+    const matches = cleanVal.match(numRegex);
+    if (matches) {
+      if (matches.length === 6) {
+        return {
+          pos: matches.slice(0, 3).map(Number),
+          tgt: matches.slice(3, 6).map(Number)
+        };
+      } else if (matches.length === 3) {
+        return {
+          single: matches.map(Number)
+        };
+      }
+    }
+
+    return null;
+  };
+
+  const handleCameraInputChange = (step: string, type: 'pos' | 'tgt', value: string) => {
+    if (type === 'pos') {
+      setTempPosInputs(prev => ({ ...prev, [step]: value }));
+    } else {
+      setTempTgtInputs(prev => ({ ...prev, [step]: value }));
+    }
+
+    if (value === '') {
+      setGlbSteps(prev => prev.map(s =>
+        s.step === step
+          ? {
+              ...s,
+              cameraPosition: type === 'pos' ? undefined : s.cameraPosition,
+              cameraTarget: type === 'tgt' ? undefined : s.cameraTarget
+            }
+          : s
+      ));
+      if (type === 'pos') {
+        setTempPosInputs(prev => {
+          const copy = { ...prev };
+          delete copy[step];
+          return copy;
+        });
+      } else {
+        setTempTgtInputs(prev => {
+          const copy = { ...prev };
+          delete copy[step];
+          return copy;
+        });
+      }
+      return;
+    }
+
+    const parsed = parseCameraCoords(value);
+    if (parsed) {
+      if (parsed.pos && parsed.tgt) {
+        setGlbSteps(prev => prev.map(s =>
+          s.step === step
+            ? { ...s, cameraPosition: parsed.pos, cameraTarget: parsed.tgt }
+            : s
+        ));
+        setTempPosInputs(prev => {
+          const copy = { ...prev };
+          delete copy[step];
+          return copy;
+        });
+        setTempTgtInputs(prev => {
+          const copy = { ...prev };
+          delete copy[step];
+          return copy;
+        });
+        setSuccessMsg(`Cámara y Target actualizados para Paso ${step} ✓`);
+      } else if (parsed.single) {
+        setGlbSteps(prev => prev.map(s =>
+          s.step === step
+            ? {
+                ...s,
+                cameraPosition: type === 'pos' ? parsed.single : s.cameraPosition,
+                cameraTarget: type === 'tgt' ? parsed.single : s.cameraTarget
+              }
+            : s
+        ));
+        if (type === 'pos') {
+          setTempPosInputs(prev => {
+            const copy = { ...prev };
+            delete copy[step];
+            return copy;
+          });
+        } else {
+          setTempTgtInputs(prev => {
+            const copy = { ...prev };
+            delete copy[step];
+            return copy;
+          });
+        }
+        setSuccessMsg(`${type === 'pos' ? 'Cámara' : 'Target'} actualizado para Paso ${step} ✓`);
+      }
+    }
+  };
+
+  const handleCameraInputBlur = (step: string, type: 'pos' | 'tgt') => {
+    if (type === 'pos') {
+      setTempPosInputs(prev => {
+        const copy = { ...prev };
+        delete copy[step];
+        return copy;
+      });
+    } else {
+      setTempTgtInputs(prev => {
+        const copy = { ...prev };
+        delete copy[step];
+        return copy;
+      });
+    }
+  };
 
   const handleDeleteItem = (type: string, stepOrIndex: any) => {
     handleRealDelete(type, stepOrIndex)
@@ -2216,18 +2361,22 @@ export function DetalleProyectoModal({ isOpen, onClose, proyecto, onUpdate }: De
                                     <span className="text-[9px] text-on-surface-variant w-8">POS:</span>
                                     <input
                                       type="text"
-                                      readOnly
-                                      value={g.cameraPosition ? `[${g.cameraPosition.map(n => n.toFixed(2)).join(', ')}]` : 'Sin definir'}
-                                      className="flex-1 text-[9px] px-2 py-0.5 rounded bg-surface-container-lowest border border-outline-variant/5 text-on-surface font-mono"
+                                      value={tempPosInputs[g.step] !== undefined ? tempPosInputs[g.step] : (g.cameraPosition ? `[${g.cameraPosition.map(n => n.toFixed(4)).join(', ')}]` : '')}
+                                      onChange={(e) => handleCameraInputChange(g.step, 'pos', e.target.value)}
+                                      onBlur={() => handleCameraInputBlur(g.step, 'pos')}
+                                      placeholder="Sin definir"
+                                      className="flex-1 text-[9px] px-2 py-0.5 rounded bg-surface-container-lowest border border-outline-variant/5 text-on-surface font-mono placeholder:text-on-surface-variant/40"
                                     />
                                   </div>
                                   <div className="flex items-center gap-1.5">
                                     <span className="text-[9px] text-on-surface-variant w-8">TGT:</span>
                                     <input
                                       type="text"
-                                      readOnly
-                                      value={g.cameraTarget ? `[${g.cameraTarget.map(n => n.toFixed(2)).join(', ')}]` : 'Sin definir'}
-                                      className="flex-1 text-[9px] px-2 py-0.5 rounded bg-surface-container-lowest border border-outline-variant/5 text-on-surface font-mono"
+                                      value={tempTgtInputs[g.step] !== undefined ? tempTgtInputs[g.step] : (g.cameraTarget ? `[${g.cameraTarget.map(n => n.toFixed(4)).join(', ')}]` : '')}
+                                      onChange={(e) => handleCameraInputChange(g.step, 'tgt', e.target.value)}
+                                      onBlur={() => handleCameraInputBlur(g.step, 'tgt')}
+                                      placeholder="Sin definir"
+                                      className="flex-1 text-[9px] px-2 py-0.5 rounded bg-surface-container-lowest border border-outline-variant/5 text-on-surface font-mono placeholder:text-on-surface-variant/40"
                                     />
                                   </div>
                                   <div className="flex justify-between items-center mt-1">
@@ -2236,11 +2385,11 @@ export function DetalleProyectoModal({ isOpen, onClose, proyecto, onUpdate }: De
                                       onClick={async () => {
                                         try {
                                           const text = await navigator.clipboard.readText()
-                                          const data = JSON.parse(text)
-                                          if (data.cameraPosition && data.cameraTarget) {
+                                          const parsed = parseCameraCoords(text)
+                                          if (parsed && parsed.pos && parsed.tgt) {
                                             setGlbSteps(prev => prev.map(s =>
                                               s.step === g.step
-                                                ? { ...s, cameraPosition: data.cameraPosition, cameraTarget: data.cameraTarget }
+                                                ? { ...s, cameraPosition: parsed.pos, cameraTarget: parsed.tgt }
                                                 : s
                                             ))
                                             setSuccessMsg(`Posición de cámara pegada en Paso ${g.step} ✓`)
@@ -2248,7 +2397,7 @@ export function DetalleProyectoModal({ isOpen, onClose, proyecto, onUpdate }: De
                                             setError('El portapapeles no contiene datos de cámara válidos')
                                           }
                                         } catch (err) {
-                                          setError('No se pudo leer del portapapeles. Copia primero desde el visor 3D.')
+                                          setError('No se pudo leer del portapapeles. Copia primero desde el visor 3D o habilita permisos.')
                                         }
                                       }}
                                       className="flex items-center gap-1 text-[10px] font-bold text-teal-400 hover:underline"
@@ -2463,7 +2612,13 @@ export function DetalleProyectoModal({ isOpen, onClose, proyecto, onUpdate }: De
                                         : "bg-surface-container text-on-surface-variant hover:text-primary hover:bg-surface-container-high"
                                     )}
                                   >
-                                    {playingAudio === "00_es" ? <Square className="h-3 w-3 animate-pulse" /> : <Volume2 className="h-3 w-3" />}
+                                    {generatingAudio === "00_es_preview" ? (
+                                      <Loader2 className="h-3 w-3 animate-spin text-primary" />
+                                    ) : playingAudio === "00_es" ? (
+                                      <Square className="h-3 w-3 animate-pulse" />
+                                    ) : (
+                                      <Volume2 className="h-3 w-3" />
+                                    )}
                                     {playingAudio === "00_es" ? "Detener ES" : "Escuchar ES"}
                                   </button>
                                   <button
@@ -2472,8 +2627,8 @@ export function DetalleProyectoModal({ isOpen, onClose, proyecto, onUpdate }: De
                                     onClick={() => handleGenerateAudio("00", ttsSaludo.texto_es, "es", true)}
                                     className="flex items-center gap-1.5 rounded-lg bg-primary/10 hover:bg-primary/15 px-2.5 py-1 text-[10px] text-primary font-bold transition"
                                   >
-                                    {generatingAudio === "00_es" ? <Loader2 className="h-3 w-3 animate-spin" /> : <Mic className="h-3 w-3" />}
-                                    Generar y Subir ES
+                                    {generatingAudio === "00_es_upload" ? <Loader2 className="h-3 w-3 animate-spin" /> : <Mic className="h-3 w-3" />}
+                                    Subir Audio
                                   </button>
                                 </div>
                               </div>
@@ -2519,7 +2674,13 @@ export function DetalleProyectoModal({ isOpen, onClose, proyecto, onUpdate }: De
                                         : "bg-surface-container text-on-surface-variant hover:text-primary hover:bg-surface-container-high"
                                     )}
                                   >
-                                    {playingAudio === "00_en" ? <Square className="h-3 w-3 animate-pulse" /> : <Volume2 className="h-3 w-3" />}
+                                    {generatingAudio === "00_en_preview" ? (
+                                      <Loader2 className="h-3 w-3 animate-spin text-primary" />
+                                    ) : playingAudio === "00_en" ? (
+                                      <Square className="h-3 w-3 animate-pulse" />
+                                    ) : (
+                                      <Volume2 className="h-3 w-3" />
+                                    )}
                                     {playingAudio === "00_en" ? "Detener EN" : "Escuchar EN"}
                                   </button>
                                   <button
@@ -2528,9 +2689,10 @@ export function DetalleProyectoModal({ isOpen, onClose, proyecto, onUpdate }: De
                                     onClick={() => handleGenerateAudio("00", ttsSaludo.texto_en, "en", true)}
                                     className="flex items-center gap-1.5 rounded-lg bg-primary/10 hover:bg-primary/15 px-2.5 py-1 text-[10px] text-primary font-bold transition"
                                   >
-                                    {generatingAudio === "00_en" ? <Loader2 className="h-3 w-3 animate-spin" /> : <Mic className="h-3 w-3" />}
-                                    Generar y Subir EN
+                                    {generatingAudio === "00_en_upload" ? <Loader2 className="h-3 w-3 animate-spin" /> : <Mic className="h-3 w-3" />}
+                                    Subir Audio
                                   </button>
+
                                 </div>
                               </div>
                             </div>
@@ -2567,7 +2729,13 @@ export function DetalleProyectoModal({ isOpen, onClose, proyecto, onUpdate }: De
                                         : "bg-surface-container text-on-surface-variant hover:text-primary hover:bg-surface-container-high"
                                     )}
                                   >
-                                    {playingAudio === "01_Ayuda_es" ? <Square className="h-3 w-3 animate-pulse" /> : <Volume2 className="h-3 w-3" />}
+                                    {generatingAudio === "01_Ayuda_es_preview" ? (
+                                      <Loader2 className="h-3 w-3 animate-spin text-primary" />
+                                    ) : playingAudio === "01_Ayuda_es" ? (
+                                      <Square className="h-3 w-3 animate-pulse" />
+                                    ) : (
+                                      <Volume2 className="h-3 w-3" />
+                                    )}
                                     {playingAudio === "01_Ayuda_es" ? "Detener ES" : "Escuchar ES"}
                                   </button>
                                   <button
@@ -2576,8 +2744,8 @@ export function DetalleProyectoModal({ isOpen, onClose, proyecto, onUpdate }: De
                                     onClick={() => handleGenerateAudio("01_Ayuda", ttsAyuda.texto_es, "es", true)}
                                     className="flex items-center gap-1.5 rounded-lg bg-primary/10 hover:bg-primary/15 px-2.5 py-1 text-[10px] text-primary font-bold transition"
                                   >
-                                    {generatingAudio === "01_Ayuda_es" ? <Loader2 className="h-3 w-3 animate-spin" /> : <Mic className="h-3 w-3" />}
-                                    Generar y Subir ES
+                                    {generatingAudio === "01_Ayuda_es_upload" ? <Loader2 className="h-3 w-3 animate-spin" /> : <Mic className="h-3 w-3" />}
+                                    Subir Audio
                                   </button>
                                 </div>
                               </div>
@@ -2623,7 +2791,13 @@ export function DetalleProyectoModal({ isOpen, onClose, proyecto, onUpdate }: De
                                         : "bg-surface-container text-on-surface-variant hover:text-primary hover:bg-surface-container-high"
                                     )}
                                   >
-                                    {playingAudio === "01_Ayuda_en" ? <Square className="h-3 w-3 animate-pulse" /> : <Volume2 className="h-3 w-3" />}
+                                    {generatingAudio === "01_Ayuda_en_preview" ? (
+                                      <Loader2 className="h-3 w-3 animate-spin text-primary" />
+                                    ) : playingAudio === "01_Ayuda_en" ? (
+                                      <Square className="h-3 w-3 animate-pulse" />
+                                    ) : (
+                                      <Volume2 className="h-3 w-3" />
+                                    )}
                                     {playingAudio === "01_Ayuda_en" ? "Detener EN" : "Escuchar EN"}
                                   </button>
                                   <button
@@ -2632,8 +2806,8 @@ export function DetalleProyectoModal({ isOpen, onClose, proyecto, onUpdate }: De
                                     onClick={() => handleGenerateAudio("01_Ayuda", ttsAyuda.texto_en, "en", true)}
                                     className="flex items-center gap-1.5 rounded-lg bg-primary/10 hover:bg-primary/15 px-2.5 py-1 text-[10px] text-primary font-bold transition"
                                   >
-                                    {generatingAudio === "01_Ayuda_en" ? <Loader2 className="h-3 w-3 animate-spin" /> : <Mic className="h-3 w-3" />}
-                                    Generar y Subir EN
+                                    {generatingAudio === "01_Ayuda_en_upload" ? <Loader2 className="h-3 w-3 animate-spin" /> : <Mic className="h-3 w-3" />}
+                                    Subir Audio
                                   </button>
                                 </div>
                               </div>
@@ -2700,7 +2874,13 @@ export function DetalleProyectoModal({ isOpen, onClose, proyecto, onUpdate }: De
                                             : "bg-surface-container text-on-surface-variant hover:text-primary hover:bg-surface-container-high"
                                         )}
                                       >
-                                        {playingAudio === `${p.paso}_es` ? <Square className="h-2.5 w-2.5 animate-pulse" /> : <Volume2 className="h-2.5 w-2.5" />}
+                                        {generatingAudio === `${p.paso}_es_preview` ? (
+                                          <Loader2 className="h-2.5 w-2.5 animate-spin text-primary" />
+                                        ) : playingAudio === `${p.paso}_es` ? (
+                                          <Square className="h-2.5 w-2.5 animate-pulse" />
+                                        ) : (
+                                          <Volume2 className="h-2.5 w-2.5" />
+                                        )}
                                         {playingAudio === `${p.paso}_es` ? "Detener ES" : "Escuchar ES"}
                                       </button>
                                       <button
@@ -2709,8 +2889,8 @@ export function DetalleProyectoModal({ isOpen, onClose, proyecto, onUpdate }: De
                                         onClick={() => handleGenerateAudio(p.paso, p.texto_es, "es", true)}
                                         className="flex items-center gap-1.5 rounded-lg bg-primary/10 hover:bg-primary/15 px-2 py-1 text-[9px] text-primary font-bold transition"
                                       >
-                                        {generatingAudio === `${p.paso}_es` ? <Loader2 className="h-2.5 w-2.5 animate-spin" /> : <Mic className="h-2.5 w-2.5" />}
-                                        Generar ES
+                                        {generatingAudio === `${p.paso}_es_upload` ? <Loader2 className="h-2.5 w-2.5 animate-spin" /> : <Mic className="h-2.5 w-2.5" />}
+                                        Subir Audio
                                       </button>
                                     </div>
                                   </div>
@@ -2759,7 +2939,13 @@ export function DetalleProyectoModal({ isOpen, onClose, proyecto, onUpdate }: De
                                             : "bg-surface-container text-on-surface-variant hover:text-primary hover:bg-surface-container-high"
                                         )}
                                       >
-                                        {playingAudio === `${p.paso}_en` ? <Square className="h-2.5 w-2.5 animate-pulse" /> : <Volume2 className="h-2.5 w-2.5" />}
+                                        {generatingAudio === `${p.paso}_en_preview` ? (
+                                           <Loader2 className="h-2.5 w-2.5 animate-spin text-primary" />
+                                         ) : playingAudio === `${p.paso}_en` ? (
+                                           <Square className="h-2.5 w-2.5 animate-pulse" />
+                                         ) : (
+                                           <Volume2 className="h-2.5 w-2.5" />
+                                         )}
                                         {playingAudio === `${p.paso}_en` ? "Detener EN" : "Escuchar EN"}
                                       </button>
                                       <button
@@ -2768,8 +2954,8 @@ export function DetalleProyectoModal({ isOpen, onClose, proyecto, onUpdate }: De
                                         onClick={() => handleGenerateAudio(p.paso, p.texto_en, "en", true)}
                                         className="flex items-center gap-1.5 rounded-lg bg-primary/10 hover:bg-primary/15 px-2 py-1 text-[9px] text-primary font-bold transition"
                                       >
-                                        {generatingAudio === `${p.paso}_en` ? <Loader2 className="h-2.5 w-2.5 animate-spin" /> : <Mic className="h-2.5 w-2.5" />}
-                                        Generar EN
+                                        {generatingAudio === `${p.paso}_en_upload` ? <Loader2 className="h-2.5 w-2.5 animate-spin" /> : <Mic className="h-2.5 w-2.5" />}
+                                        Subir Audio
                                       </button>
                                     </div>
                                   </div>

@@ -586,4 +586,13 @@ Los estilos, colores y tiempos de transición de las flechas azules se configura
     - **Detección de Herrajes por Palabras Clave**: Se reemplazó la dependencia de `data.despiece` (que no siempre carga `esHerraje: true` en el visor) por una función `esHerrajeConocido` que usa la misma lógica de clasificación del modal: exclusiones (tapaluz, fondo), inclusiones especiales (caja, puntilla, SKUs numéricos) y keywords genéricos.
     - **Resultado**: Los paneles de herrajes y cantidades del manual 3D ahora muestran nombres precisos y consistentes con el despiece del modal, independientemente de si los datos del despiece están disponibles en el visor.
 
+* **[2026-06-08] AppArmado_v16 / Manual_sonido_v2 — Cámara Flexible, Unificación de Botones y Gestión de Caché de Audio:**
+    - **Edición de Cámara y Pegado Flexible**: Se habilitó la edición directa de los campos de entrada de la cámara (`POS` y `TGT`) en el modal. Los usuarios ahora pueden ingresar coordenadas individuales o pegar textos completos como `"CÁMARA -> posición: [-1.3396, 1.3663, 2.5663] | target: [-0.1186, 0.4350, 0.2247]"`, los cuales se filtran y procesan automáticamente para actualizar ambos campos al instante.
+    - **Unificación de Botones como "Subir Audio"**: Se reemplazaron y unificaron todos los nombres de los botones de subida/generación de TTS (en saludo de bienvenida, tutorial de ayuda y pasos individuales) a la etiqueta estándar **"Subir Audio"**.
+    - **Eliminación Definitiva de Caché en Supabase y Navegador**: 
+        - En la API de subida (`/api/tts/route.ts`), se configuró la cabecera `cacheControl: "0"` para evitar que la CDN de Supabase retenga copias viejas de audios sobrescritos.
+        - En el visor 3D (`AudioPlayer.jsx`), se añadió una marca de tiempo dinámica (`?t=timestamp`) en las llamadas HTTP a los audios. Esto anula la caché del navegador y la del servidor de desarrollo local de Vite (`global.audioCache`), logrando una recarga instantánea de los audios nuevos.
+    - **Aislamiento de Cargas y Visualizadores**: Se separaron las acciones en la interfaz mediante sufijos `_preview` and `_upload` en el estado de generación, aislando la animación de carga del botón "Subir Audio" para que no se active de manera errónea al escuchar previsualizaciones. Se añadió además un spinner de carga en el botón de escucha mientras la locución se sintetiza.
+
+
 

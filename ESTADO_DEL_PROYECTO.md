@@ -181,6 +181,13 @@ Un **"Manual Vacío"** es un cascarón o aplicación base centralizada (desplega
 - [x] Exclusión mutua de cortinas en Zustand para evitar traslapes.
 - [x] Manual_Audios_v1: Sincronización y corrección de rutas de audio en español latino a la raíz de Supabase Storage (`sounds/[paso].mp3`) y restauración del ciclo de montaje de `AudioPlayer` para evadir bloqueos de Autoplay.
 - [x] Manual_Audios_v1.1: Herrajes compartidos en Supabase (`_herrajes_compartidos/`), Overlay de cámara con Copy/Paste de coordenadas JSON, campos `cameraPosition`/`cameraTarget` en el modal, y unificación canónica de nombres de herrajes (`limpiarNombreMalla`) — réplica exacta del algoritmo `obtenerNombreLimpioTooltip` del modal para que el visor 3D muestre nombres idénticos (ej: `Bisagra_20040` en vez de `Bisagra`).
+- [x] Manual_sonido_v2 (08 de Junio, 2026):
+  - Posicionamiento de cámara flexible: Entradas de POS y TGT editables con pegado directo de coordenadas individuales o el texto completo filtrado automáticamente.
+  - Unificación de botones de audio a 'Subir Audio' para Bienvenida, Ayuda e instrucciones paso a paso.
+  - Solución de problemas de caché de Supabase inyectando cacheControl: '0' en las subidas por API.
+  - Sincronización en tiempo real y eliminación de caché en el visor 3D mediante marca de tiempo dinámica (?t=timestamp) en las llamadas a audios en AudioPlayer.jsx.
+  - Independencia de estado de carga: Spinner exclusivo para 'Subir Audio' (usando el sufijo _upload) y spinner de carga premium para la generación de la vista previa de voz (usando el sufijo _preview).
+
 
 ---
 
