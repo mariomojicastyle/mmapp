@@ -5,7 +5,7 @@ import { useRef, useState } from "react";
 import useEnviroment from "../../hooks/useEnviroment.js";
 import { useEffect } from "react";
 import RealiadaAumentada from "./RealidadAumentada/RealidadAumentada.jsx";
-import { IconHelp, IconInfo, IconShadows } from "../Icons.jsx";
+import { IconHelp, IconInfo, IconShadows, IconSun } from "../Icons.jsx";
 // import from "@google/model-viewer"; 
 
 export default function NavBarSuperior({ id, data }) {
@@ -20,6 +20,8 @@ export default function NavBarSuperior({ id, data }) {
   const ayuda1 = useEnviroment((state) => state.ayuda1);
   const sombras = useEnviroment((state) => state.sombras);
   const toggleSombras = useEnviroment((state) => state.toggleSombras);
+  const brillo = useEnviroment((state) => state.brillo || 1.0);
+  const toggleBrillo = useEnviroment((state) => state.toggleBrillo);
   const idioma = useEnviroment((state) => state.idioma);
   const cambiarIdioma = useEnviroment((state) => state.cambiarIdioma);
   const playbackRate = useEnviroment((state) => state.playbackRate);
@@ -125,6 +127,16 @@ export default function NavBarSuperior({ id, data }) {
             title={sombras ? "Calidad Visual: Alta (Sombras)" : "Calidad Visual: Rendimiento"}
           >
             <IconShadows sombras={sombras} />
+          </div>
+
+          {/* <!-- Boton de Brillo (3 niveles) --> */}
+          <div 
+            className="button"
+            id="brightness" 
+            onClick={toggleBrillo} 
+            title={`Iluminación: ${brillo === 1.0 ? "Alta (100%)" : brillo === 0.7 ? "Media (70%)" : "Baja (45%)"}`}
+          >
+            <IconSun brillo={brillo} />
           </div>
 
           {/* <!-- Opciones de cambio de color de vizualización del mueble--> */}
