@@ -216,10 +216,85 @@ export function DetalleProyectoModal({ isOpen, onClose, proyecto, onUpdate }: De
   const [generationProgress, setGenerationProgress] = useState({ current: 0, total: 0 })
   const [translatingText, setTranslatingText] = useState<string | null>(null)
   const [cameraOverlayActive, setCameraOverlayActive] = useState(false)
+  const [lightingEditorActive, setLightingEditorActive] = useState(false)
+  const realtimeChannelRef = useRef<any>(null)
+  const codigoManualRef = useRef(codigoManual)
+
+  useEffect(() => {
+    codigoManualRef.current = codigoManual
+  }, [codigoManual])
 
   useEffect(() => {
     if (typeof window !== "undefined") {
       setCameraOverlayActive(localStorage.getItem('cameraOverlay') === 'on')
+      setLightingEditorActive(localStorage.getItem('lightingEditor') === 'on')
+    }
+
+    const supabase = createClient()
+    const channel = supabase.channel('manual-features-realtime')
+    channel
+      .on('broadcast', { event: 'update-camera' }, ({ payload }) => {
+        if (payload && payload.codigoManual === codigoManualRef.current) {
+          if (!proyecto?.id) return
+          setGlbSteps(prev => {
+            const updated = prev.map(s => 
+              s.step === payload.step 
+                ? { ...s, cameraPosition: payload.cameraPosition, cameraTarget: payload.cameraTarget } 
+                : s
+            )
+            
+            // Si el paso no existe, agregarlo
+            const stepExists = prev.some(s => s.step === payload.step)
+            if (!stepExists) {
+              updated.push({
+                step: payload.step,
+                fileName: `P${payload.step}.glb`,
+                progress: 100,
+                cameraPosition: payload.cameraPosition,
+                cameraTarget: payload.cameraTarget
+              })
+            }
+
+            // Persistir en Supabase usando la sesión del CMS (bypass RLS)
+            const supabaseClient = createClient()
+            supabaseClient
+              .from("configuraciones_manual")
+              .update({ glb_pasos: updated })
+              .eq("proyecto_id", proyecto.id)
+              .then(({ error }) => {
+                if (error) {
+                  console.error("Error guardando glb_pasos desde el CMS:", error)
+                } else {
+                  console.log("glb_pasos guardado en Supabase desde el CMS ✓")
+                }
+              })
+
+            return updated
+          })
+        }
+      })
+      .on('broadcast', { event: 'save-lighting' }, ({ payload }) => {
+        if (payload && payload.codigoManual === codigoManualRef.current) {
+          if (!proyecto?.id) return
+          const supabaseClient = createClient()
+          supabaseClient
+            .from("configuraciones_manual")
+            .update({ lighting_config: payload.lightingConfig })
+            .eq("proyecto_id", proyecto.id)
+            .then(({ error }) => {
+              if (error) {
+                console.error("Error guardando lighting_config desde el CMS:", error)
+              } else {
+                console.log("lighting_config guardado en Supabase desde el CMS ✓")
+              }
+            })
+        }
+      })
+      .subscribe()
+    realtimeChannelRef.current = channel
+
+    return () => {
+      channel.unsubscribe()
     }
   }, [])
 
@@ -1799,7 +1874,7 @@ export function DetalleProyectoModal({ isOpen, onClose, proyecto, onUpdate }: De
                         <span className="font-semibold text-on-surface-variant/90">Enlaces de Previsualización Activos:</span>
                         <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-6 mt-1">
                           <a
-                            href={`http://localhost:5173/${codigoManual}`}
+                            href={`http://localhost:5173/${codigoManual}?cameraOverlay=${cameraOverlayActive ? 'on' : 'off'}&lightingEditor=${lightingEditorActive ? 'on' : 'off'}`}
                             target="_blank"
                             rel="noopener noreferrer"
                             className="text-primary hover:underline font-semibold flex items-center gap-1 transition-all group shrink-0"
@@ -1808,7 +1883,7 @@ export function DetalleProyectoModal({ isOpen, onClose, proyecto, onUpdate }: De
                             <ExternalLink className="h-3 w-3 opacity-60 group-hover:opacity-100 transition-opacity" />
                           </a>
                           <a
-                            href={`https://mariomojica.com/embed/armado/${codigoManual}`}
+                            href={`https://mariomojica.com/embed/armado/${codigoManual}?cameraOverlay=${cameraOverlayActive ? 'on' : 'off'}&lightingEditor=${lightingEditorActive ? 'on' : 'off'}`}
                             target="_blank"
                             rel="noopener noreferrer"
                             className="text-teal-400 hover:underline font-semibold flex items-center gap-1 transition-all group shrink-0"
@@ -2373,6 +2448,13 @@ export function DetalleProyectoModal({ isOpen, onClose, proyecto, onUpdate }: De
                                 window.dispatchEvent(new StorageEvent('storage', {
                                   key: 'cameraOverlay', newValue: newVal
                                 }))
+                                if (realtimeChannelRef.current) {
+                                  realtimeChannelRef.current.send({
+                                    type: 'broadcast',
+                                    event: 'toggle-feature',
+                                    payload: { codigoManual, key: 'cameraOverlay', value: newVal }
+                                  })
+                                }
                               }}
                               className={cn(
                                 "flex items-center gap-1.5 text-[11px] font-bold px-2.5 py-1 rounded-md border transition-all duration-200",
@@ -2383,6 +2465,32 @@ export function DetalleProyectoModal({ isOpen, onClose, proyecto, onUpdate }: De
                             >
                               <Camera className="h-3.5 w-3.5" />
                               {cameraOverlayActive ? '🟢 Guía de Cámara Activa' : '⚪ Activar Guía de Cámara'}
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                const newVal = lightingEditorActive ? 'off' : 'on'
+                                localStorage.setItem('lightingEditor', newVal)
+                                setLightingEditorActive(!lightingEditorActive)
+                                window.dispatchEvent(new StorageEvent('storage', {
+                                  key: 'lightingEditor', newValue: newVal
+                                }))
+                                if (realtimeChannelRef.current) {
+                                  realtimeChannelRef.current.send({
+                                    type: 'broadcast',
+                                    event: 'toggle-feature',
+                                    payload: { codigoManual, key: 'lightingEditor', value: newVal }
+                                  })
+                                }
+                              }}
+                              className={cn(
+                                "flex items-center gap-1.5 text-[11px] font-bold px-2.5 py-1 rounded-md border transition-all duration-200",
+                                lightingEditorActive
+                                  ? "bg-amber-500/10 border-amber-500/30 text-amber-400 hover:bg-amber-500/20"
+                                  : "bg-surface-container border-outline-variant/20 text-on-surface-variant hover:text-on-surface"
+                              )}
+                            >
+                              ☀️ {lightingEditorActive ? '🟢 Editor de Iluminación Activo' : '⚪ Editor de Iluminación'}
                             </button>
                           </div>
 
@@ -2409,71 +2517,30 @@ export function DetalleProyectoModal({ isOpen, onClose, proyecto, onUpdate }: De
                                   </div>
                                 </div>
 
-                                {/* Campos de posición de cámara */}
-                                <div className="w-full mt-1.5 pt-1.5 border-t border-outline-variant/10 space-y-1">
-                                  <div className="flex items-center gap-1.5">
-                                    <span className="text-[9px] text-on-surface-variant w-8">POS:</span>
-                                    <input
-                                      type="text"
-                                      value={tempPosInputs[g.step] !== undefined ? tempPosInputs[g.step] : (g.cameraPosition ? `[${g.cameraPosition.map(n => n.toFixed(4)).join(', ')}]` : '')}
-                                      onChange={(e) => handleCameraInputChange(g.step, 'pos', e.target.value)}
-                                      onBlur={() => handleCameraInputBlur(g.step, 'pos')}
-                                      placeholder="Sin definir"
-                                      className="flex-1 text-[9px] px-2 py-0.5 rounded bg-surface-container-lowest border border-outline-variant/5 text-on-surface font-mono placeholder:text-on-surface-variant/40"
-                                    />
-                                  </div>
-                                  <div className="flex items-center gap-1.5">
-                                    <span className="text-[9px] text-on-surface-variant w-8">TGT:</span>
-                                    <input
-                                      type="text"
-                                      value={tempTgtInputs[g.step] !== undefined ? tempTgtInputs[g.step] : (g.cameraTarget ? `[${g.cameraTarget.map(n => n.toFixed(4)).join(', ')}]` : '')}
-                                      onChange={(e) => handleCameraInputChange(g.step, 'tgt', e.target.value)}
-                                      onBlur={() => handleCameraInputBlur(g.step, 'tgt')}
-                                      placeholder="Sin definir"
-                                      className="flex-1 text-[9px] px-2 py-0.5 rounded bg-surface-container-lowest border border-outline-variant/5 text-on-surface font-mono placeholder:text-on-surface-variant/40"
-                                    />
-                                  </div>
-                                  <div className="flex justify-between items-center mt-1">
+                                {/* Estado de posición de cámara */}
+                                <div className="w-full mt-1.5 pt-1.5 border-t border-outline-variant/10 flex items-center justify-between">
+                                  <span className="text-[10px] text-on-surface-variant font-medium flex items-center gap-1">
+                                    🎥 Cámara: {g.cameraPosition && g.cameraTarget ? (
+                                      <span className="text-teal-400 font-bold">Definida</span>
+                                    ) : (
+                                      <span className="text-on-surface-variant/40 italic">Sin definir</span>
+                                    )}
+                                  </span>
+                                  {(g.cameraPosition || g.cameraTarget) && (
                                     <button
                                       type="button"
-                                      onClick={async () => {
-                                        try {
-                                          const text = await navigator.clipboard.readText()
-                                          const parsed = parseCameraCoords(text)
-                                          if (parsed && parsed.pos && parsed.tgt) {
-                                            setGlbSteps(prev => prev.map(s =>
-                                              s.step === g.step
-                                                ? { ...s, cameraPosition: parsed.pos, cameraTarget: parsed.tgt }
-                                                : s
-                                            ))
-                                            setSuccessMsg(`Posición de cámara pegada en Paso ${g.step} ✓`)
-                                          } else {
-                                            setError('El portapapeles no contiene datos de cámara válidos')
-                                          }
-                                        } catch (err) {
-                                          setError('No se pudo leer del portapapeles. Copia primero desde el visor 3D o habilita permisos.')
-                                        }
+                                      onClick={() => {
+                                        setGlbSteps(prev => prev.map(s =>
+                                          s.step === g.step
+                                            ? { ...s, cameraPosition: undefined, cameraTarget: undefined }
+                                            : s
+                                        ))
                                       }}
-                                      className="flex items-center gap-1 text-[10px] font-bold text-teal-400 hover:underline"
+                                      className="text-[9px] text-on-surface-variant hover:text-red-400 font-medium"
                                     >
-                                      📋 Pegar posición del visor
+                                      Limpiar
                                     </button>
-                                    {(g.cameraPosition || g.cameraTarget) && (
-                                      <button
-                                        type="button"
-                                        onClick={() => {
-                                          setGlbSteps(prev => prev.map(s =>
-                                            s.step === g.step
-                                              ? { ...s, cameraPosition: undefined, cameraTarget: undefined }
-                                              : s
-                                          ))
-                                        }}
-                                        className="text-[9px] text-on-surface-variant hover:text-red-400 font-medium"
-                                      >
-                                        Limpiar
-                                      </button>
-                                    )}
-                                  </div>
+                                  )}
                                 </div>
                               </div>
                             ))}

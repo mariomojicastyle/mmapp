@@ -5,6 +5,7 @@ import useEnviroment from "../hooks/useEnviroment.js";
 import * as THREE from 'three';
 import Model from "./Model.jsx";
 import Floor from "./Floor/Floor.jsx";
+import LightingPanel from "./LightingPanel.jsx";
 
 // Componente Loader para mostrar el progreso de carga del modelo 3D
 function Loader() {
@@ -129,6 +130,7 @@ export default function Experience({ id, modelUrl, productData }) {
   const alturas = useEnviroment((state) => state.alturas);
   const sombras = useEnviroment((state) => state.sombras);
   const computedModelMinY = useEnviroment((state) => state.computedModelMinY);
+  const lightingConfig = useEnviroment((state) => state.lightingConfig);
 
   useFrame(() => {
     const pos = camera.position;
@@ -334,32 +336,104 @@ export default function Experience({ id, modelUrl, productData }) {
     repositionSkybox(skyBoxRef.current);
   }, [PasoActual, alturas, computedModelMinY, skyBoxRef.current]);
 
-  // Escuchar cambios de localStorage desde la plataforma (otra ventana)
+  // Sincronizar tone mapping y exposición en caliente con el renderer
   useEffect(() => {
+    if (gl) {
+      const toneMappingMap = {
+        ACESFilmic: THREE.ACESFilmicToneMapping,
+        AgX: THREE.AgXToneMapping,
+        Linear: THREE.LinearToneMapping,
+        None: THREE.NoToneMapping,
+      };
+      gl.toneMapping = toneMappingMap[lightingConfig.toneMapping] || THREE.ACESFilmicToneMapping;
+      gl.toneMappingExposure = lightingConfig.exposure;
+    }
+  }, [gl, lightingConfig.toneMapping, lightingConfig.exposure]);
+
+  // Escuchar cambios de localStorage y Supabase Realtime desde la plataforma (otra ventana)
+  useEffect(() => {
+    // 1. Verificar parámetros de búsqueda URL (prioridad al abrir pestaña nueva)
+    const params = new URLSearchParams(window.location.search);
+    const urlCameraOverlay = params.get('cameraOverlay');
+    const urlLightingEditor = params.get('lightingEditor');
+    
+    if (urlCameraOverlay === 'on') {
+      useEnviroment.getState().SetCameraOverlay(true);
+    } else if (urlCameraOverlay === 'off') {
+      useEnviroment.getState().SetCameraOverlay(false);
+    }
+    
+    if (urlLightingEditor === 'on') {
+      useEnviroment.getState().SetLightingEditor(true);
+    } else if (urlLightingEditor === 'off') {
+      useEnviroment.getState().SetLightingEditor(false);
+    }
+
+    // 2. Verificar estado inicial en localStorage
+    const initial = localStorage.getItem('cameraOverlay');
+    if (initial === 'on') {
+      useEnviroment.getState().SetCameraOverlay(true);
+    }
+    const initialLighting = localStorage.getItem('lightingEditor');
+    if (initialLighting === 'on') {
+      useEnviroment.getState().SetLightingEditor(true);
+    }
+
+    // 3. Listener del evento localStorage para cuando compartan origen
     const handleStorage = (e) => {
       if (e.key === 'cameraOverlay') {
         const state = useEnviroment.getState();
         state.SetCameraOverlay(e.newValue === 'on');
       }
+      if (e.key === 'lightingEditor') {
+        const state = useEnviroment.getState();
+        state.SetLightingEditor(e.newValue === 'on');
+      }
     };
-    
-    // Verificar estado inicial al montar
-    const initial = localStorage.getItem('cameraOverlay');
-    if (initial === 'on') {
-      useEnviroment.getState().SetCameraOverlay(true);
-    }
-    
     window.addEventListener('storage', handleStorage);
-    return () => window.removeEventListener('storage', handleStorage);
-  }, []);
+
+    // 4. Suscripción en tiempo real con Supabase Realtime (Broadcast) para comunicación cruzada entre puertos
+    let channel;
+    const initRealtime = async () => {
+      try {
+        const { createClient } = await import("@supabase/supabase-js");
+        const supabase = createClient(
+          import.meta.env.VITE_SUPABASE_URL,
+          import.meta.env.VITE_SUPABASE_ANON_KEY
+        );
+        channel = supabase.channel('manual-features-realtime');
+        channel
+          .on('broadcast', { event: 'toggle-feature' }, ({ payload }) => {
+            if (payload && payload.codigoManual === id) {
+              const state = useEnviroment.getState();
+              if (payload.key === 'cameraOverlay') {
+                state.SetCameraOverlay(payload.value === 'on');
+              }
+              if (payload.key === 'lightingEditor') {
+                state.SetLightingEditor(payload.value === 'on');
+              }
+            }
+          })
+          .subscribe();
+      } catch (err) {
+        console.error("Error al inicializar Supabase Realtime:", err);
+      }
+    };
+    initRealtime();
+    
+    return () => {
+      window.removeEventListener('storage', handleStorage);
+      if (channel) channel.unsubscribe();
+    };
+  }, [id]);
 
   return (
     <>
-      <Environment preset="city" blur={0.8} />
-      <ambientLight intensity={sombras ? 0.25 : 0.4} />
+      <Environment preset="city" blur={0.8} environmentIntensity={lightingConfig.envIntensity} />
+      <ambientLight intensity={sombras ? lightingConfig.ambientShadow : lightingConfig.ambientIntensity} />
       <directionalLight 
         position={[6, 10, 4]} 
-        intensity={1.6} 
+        intensity={lightingConfig.directionalIntensity} 
         castShadow={sombras} 
         shadow-mapSize-width={2048}
         shadow-mapSize-height={2048}
@@ -372,7 +446,7 @@ export default function Experience({ id, modelUrl, productData }) {
         shadow-camera-bottom={-4}
         shadow-camera-near={0.1}
       />
-      <spotLight position={[-5, 5, -5]} intensity={sombras ? 0.5 : 0.8} />
+      <spotLight position={[-5, 5, -5]} intensity={sombras ? lightingConfig.spotShadow : lightingConfig.spotIntensity} />
 
       <OrbitControls
         makeDefault
@@ -393,16 +467,19 @@ export default function Experience({ id, modelUrl, productData }) {
         {toogle && <Model id={id} modelUrl={modelUrl} orbitControlsRef={useOrbitControls} productData={productData} />}
       </Suspense>
 
-      <CameraOverlay />
+      <CameraOverlay orbitControlsRef={useOrbitControls} />
+      <LightingPanel />
     </>
   );
 }
 
-function CameraOverlay() {
+function CameraOverlay({ orbitControlsRef }) {
   const showOverlay = useEnviroment((state) => state.showCameraOverlay);
   const pasoActual = useEnviroment((state) => state.pasoActual);
+  const manualId = useEnviroment((state) => state.id);
   const [cameraData, setCameraData] = useState({ pos: [0,0,0], target: [0,0,0], fov: 50 });
-  const [copied, setCopied] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [saved, setSaved] = useState(false);
   
   useFrame(({ camera }) => {
     if (!showOverlay) return;
@@ -424,15 +501,95 @@ function CameraOverlay() {
   
   if (!showOverlay) return null;
   
-  const handleCopy = () => {
-    const data = JSON.stringify({
-      step: pasoActual,
-      cameraPosition: cameraData.pos,
-      cameraTarget: cameraData.target
-    });
-    navigator.clipboard.writeText(data);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
+  const { camera } = useThree();
+
+  const handleSetCameraPosition = async () => {
+    setSaving(true);
+    try {
+      if (!manualId) {
+        console.error("CameraOverlay: No se encontró ID del manual para guardar.");
+        return;
+      }
+
+      // Obtener coordenadas de la cámara y controles directamente en caliente
+      const currentPos = [
+        parseFloat(camera.position.x.toFixed(4)),
+        parseFloat(camera.position.y.toFixed(4)),
+        parseFloat(camera.position.z.toFixed(4))
+      ];
+      
+      const targetVec = orbitControlsRef?.current?.target || new THREE.Vector3(0, 0.8, 0);
+      const currentTarget = [
+        parseFloat(targetVec.x.toFixed(4)),
+        parseFloat(targetVec.y.toFixed(4)),
+        parseFloat(targetVec.z.toFixed(4))
+      ];
+
+      // 1. Actualizar el store de Zustand del visor localmente de inmediato (para evitar retrasos/saltos)
+      const currentCameraPositions = useEnviroment.getState().cameraPositions || [];
+      const updatedPositions = currentCameraPositions.map(p => {
+        if (p.pasos === pasoActual) {
+          return { ...p, override: true, position: { x: currentPos[0], y: currentPos[1], z: currentPos[2] } };
+        }
+        return p;
+      });
+      if (!currentCameraPositions.some(p => p.pasos === pasoActual)) {
+        updatedPositions.push({
+          pasos: pasoActual,
+          override: true,
+          position: { x: currentPos[0], y: currentPos[1], z: currentPos[2] }
+        });
+      }
+
+      const currentAlturas = useEnviroment.getState().alturas || [];
+      const updatedAlturas = currentAlturas.map(a => {
+        if (a.paso === pasoActual) {
+          return { ...a, target: currentTarget };
+        }
+        return a;
+      });
+      if (!currentAlturas.some(a => a.paso === pasoActual)) {
+        updatedAlturas.push({ paso: pasoActual, target: currentTarget });
+      }
+
+      useEnviroment.getState().ChargerCameraPositions(updatedPositions);
+      useEnviroment.getState().ChargerAlturas(updatedAlturas);
+
+      // 2. Conectar y emitir mensaje Broadcast vía Supabase Realtime para que el CMS guarde con privilegios de administrador
+      const { createClient } = await import("@supabase/supabase-js");
+      const supabase = createClient(
+        import.meta.env.VITE_SUPABASE_URL,
+        import.meta.env.VITE_SUPABASE_ANON_KEY
+      );
+
+      const channel = supabase.channel('manual-features-realtime');
+      channel.subscribe((status) => {
+        if (status === 'SUBSCRIBED') {
+          channel.send({
+            type: 'broadcast',
+            event: 'update-camera',
+            payload: {
+              codigoManual: manualId,
+              step: pasoActual,
+              cameraPosition: currentPos,
+              cameraTarget: currentTarget
+            }
+          });
+          setTimeout(() => {
+            channel.unsubscribe();
+          }, 500);
+        }
+      });
+
+      setSaved(true);
+      setTimeout(() => setSaved(false), 2000);
+      console.log(`✅ Posición de cámara transmitida y actualizada localmente para el paso ${pasoActual}:`, currentPos, currentTarget);
+    } catch (err) {
+      console.error("❌ Error guardando posición de cámara:", err);
+      alert("Error al guardar la posición de la cámara: " + err.message);
+    } finally {
+      setSaving(false);
+    }
   };
   
   return (
@@ -447,9 +604,18 @@ function CameraOverlay() {
       }}
       calculatePosition={() => [window.innerWidth - 280, 12, 0]}
     >
-      <div style={{
-        background: 'rgba(0,0,0,0.85)',
-        border: '1px solid rgba(99,255,200,0.3)',
+      <div 
+        onPointerDown={(e) => e.stopPropagation()}
+        onPointerUp={(e) => e.stopPropagation()}
+        onPointerMove={(e) => e.stopPropagation()}
+        onMouseDown={(e) => e.stopPropagation()}
+        onMouseUp={(e) => e.stopPropagation()}
+        onMouseMove={(e) => e.stopPropagation()}
+        onClick={(e) => e.stopPropagation()}
+        onWheel={(e) => e.stopPropagation()}
+        style={{
+          background: 'rgba(0,0,0,0.85)',
+          border: '1px solid rgba(99,255,200,0.3)',
         borderRadius: '12px',
         padding: '14px 16px',
         fontFamily: 'monospace',
@@ -472,22 +638,24 @@ function CameraOverlay() {
           <span style={{ color: '#888' }}>FOV:</span> {cameraData.fov}
         </div>
         <button
-          onClick={handleCopy}
+          onClick={handleSetCameraPosition}
+          disabled={saving}
           style={{
             width: '100%',
             padding: '8px',
-            border: copied ? '1px solid #63ffc8' : '1px solid rgba(99,255,200,0.3)',
+            border: saved ? '1px solid #63ffc8' : '1px solid rgba(99,255,200,0.3)',
             borderRadius: '8px',
-            background: copied ? 'rgba(99,255,200,0.15)' : 'rgba(255,255,255,0.05)',
-            color: copied ? '#63ffc8' : '#ccc',
+            background: saved ? 'rgba(99,255,200,0.15)' : 'rgba(255,255,255,0.05)',
+            color: saved ? '#63ffc8' : '#ccc',
             cursor: 'pointer',
             fontFamily: 'monospace',
             fontSize: '11px',
             fontWeight: 'bold',
-            transition: 'all 0.2s'
+            transition: 'all 0.2s',
+            opacity: saving ? 0.6 : 1
           }}
         >
-          {copied ? '✅ ¡Copiado!' : `📋 Copiar posición Paso ${pasoActual}`}
+          {saving ? '⏳ Guardando...' : saved ? '✅ ¡Guardado!' : `🎥 Definir posición Paso ${pasoActual}`}
         </button>
       </div>
     </Html>

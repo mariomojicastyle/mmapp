@@ -252,6 +252,23 @@ export default create(
       
       ActualizarCliente: (cliente) => set((state) => ({ Cliente: cliente })),
 
+      // ─── Calibración de Iluminación (panel secreto) ─────────────────────────
+      showLightingEditor: false,
+      SetLightingEditor: (val) => set(() => ({ showLightingEditor: val })),
+      lightingConfig: {
+        ambientIntensity: 0.4,     // ambientLight (sin sombras)
+        ambientShadow: 0.25,       // ambientLight (con sombras)
+        directionalIntensity: 1.6, // directionalLight
+        spotIntensity: 0.8,        // spotLight (sin sombras)
+        spotShadow: 0.5,           // spotLight (con sombras)
+        envIntensity: 1.0,         // Environment map intensity
+        exposure: 1.0,             // toneMappingExposure
+        toneMapping: 'ACESFilmic', // 'ACESFilmic' | 'AgX' | 'Linear' | 'None'
+      },
+      SetLightingConfig: (config) => set((state) => ({
+        lightingConfig: { ...state.lightingConfig, ...config }
+      })),
+
       sombras: false,
       toggleSombras: () => set((state) => ({ sombras: !state.sombras })),
       idioma: "es", // 'es' | 'es-ES' | 'en'

@@ -20,6 +20,7 @@ export default function AssemblyViewer({ productData, steps, id }) {
   const PiezaHerraje = useEnviroment((state) => state.PiezaHerraje);
   const PanelAyudas = useEnviroment((state) => state.PanelAyudas);
   const sombras = useEnviroment((state) => state.sombras);
+  const lightingConfig = useEnviroment((state) => state.lightingConfig);
 
   // Ref para el tooltip flotante y coordenadas del mouse
   const tooltipRef = useRef(null);
@@ -71,6 +72,13 @@ export default function AssemblyViewer({ productData, steps, id }) {
     }
   }, [steps, id, productData]);
 
+  // Inyectar configuración de iluminación persistida desde Supabase
+  useEffect(() => {
+    if (productData?.lightingConfig) {
+      useEnviroment.getState().SetLightingConfig(productData.lightingConfig);
+    }
+  }, [productData]);
+
   const [orientation, setOrientation] = useState(window.orientation);
 
   // Función de reload al cambio de orientacion
@@ -87,6 +95,14 @@ export default function AssemblyViewer({ productData, steps, id }) {
 
   if (!id) return <div className="p-10 text-red-500">Error: No Product ID provided</div>;
 
+  // Mapa de tone mappings
+  const toneMappingMap = {
+    ACESFilmic: THREE.ACESFilmicToneMapping,
+    AgX: THREE.AgXToneMapping,
+    Linear: THREE.LinearToneMapping,
+    None: THREE.NoToneMapping,
+  };
+
   return (
     <div className="fixed inset-0 w-full h-full bg-gray-900 overflow-hidden m-0 p-0">
       <title ref={refTitle}></title>
@@ -100,8 +116,8 @@ export default function AssemblyViewer({ productData, steps, id }) {
           shadows={sombras}
           gl={{
             antialias: true,
-            toneMapping: THREE.ACESFilmicToneMapping,
-            toneMappingExposure: 1.0,
+            toneMapping: toneMappingMap[lightingConfig.toneMapping] || THREE.ACESFilmicToneMapping,
+            toneMappingExposure: lightingConfig.exposure,
             outputColorSpace: THREE.SRGBColorSpace,
           }}
           camera={{position: [0, 1, 2],  fov: 60}} 

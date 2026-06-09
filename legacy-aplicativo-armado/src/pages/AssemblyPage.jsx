@@ -245,7 +245,10 @@ const AssemblyPage = () => {
               "Ajuste de Bisagras": (configData.imagenes_ensambles || []).some(e => e.toLowerCase().includes("bisagra")),
               "Oculta Tornillos": (configData.imagenes_ensambles || []).some(e => e.toLowerCase().includes("oculta")),
               "Garantia del Producto": !!configData.garantia_texto
-            }
+            },
+
+            // Configuración de iluminación persistida (panel secreto de calibración)
+            lightingConfig: configData.lighting_config || null,
           };
 
           // Actualizar dinámicamente el favicon de la pestaña si se subió uno personalizado
