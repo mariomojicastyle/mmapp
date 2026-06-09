@@ -254,14 +254,6 @@ export default create(
 
       sombras: false,
       toggleSombras: () => set((state) => ({ sombras: !state.sombras })),
-      brillo: 1.0,
-      toggleBrillo: () => set((state) => {
-        let proximoBrillo = 1.0;
-        if (state.brillo === 1.0) proximoBrillo = 0.7;
-        else if (state.brillo === 0.7) proximoBrillo = 0.45;
-        else proximoBrillo = 1.0;
-        return { brillo: proximoBrillo };
-      }),
       idioma: "es", // 'es' | 'es-ES' | 'en'
       cambiarIdioma: (nuevoIdioma) => {
         // Forzado estrictamente a 'es' (español latino) para simplificación y pruebas de audio

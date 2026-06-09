@@ -128,7 +128,6 @@ export default function Experience({ id, modelUrl, productData }) {
   const cameraPositions = useEnviroment((state) => state.cameraPositions);
   const alturas = useEnviroment((state) => state.alturas);
   const sombras = useEnviroment((state) => state.sombras);
-  const brillo = useEnviroment((state) => state.brillo || 1.0);
   const computedModelMinY = useEnviroment((state) => state.computedModelMinY);
 
   useFrame(() => {
@@ -357,10 +356,10 @@ export default function Experience({ id, modelUrl, productData }) {
   return (
     <>
       <Environment preset="city" blur={0.8} />
-      <ambientLight intensity={brillo * (sombras ? 0.25 : 0.4)} />
+      <ambientLight intensity={sombras ? 0.25 : 0.4} />
       <directionalLight 
         position={[6, 10, 4]} 
-        intensity={brillo * 1.6} 
+        intensity={1.6} 
         castShadow={sombras} 
         shadow-mapSize-width={2048}
         shadow-mapSize-height={2048}
@@ -373,7 +372,7 @@ export default function Experience({ id, modelUrl, productData }) {
         shadow-camera-bottom={-4}
         shadow-camera-near={0.1}
       />
-      <spotLight position={[-5, 5, -5]} intensity={brillo * (sombras ? 0.5 : 0.8)} />
+      <spotLight position={[-5, 5, -5]} intensity={sombras ? 0.5 : 0.8} />
 
       <OrbitControls
         makeDefault
