@@ -209,6 +209,7 @@ export function DetalleProyectoModal({ isOpen, onClose, proyecto, onUpdate }: De
   const [ttsCantidadPasos, setTtsCantidadPasos] = useState(8)
   const [ttsPasos, setTtsPasos] = useState<{ paso: string; texto_es: string; texto_en: string }[]>([])
   const [generatingAudio, setGeneratingAudio] = useState<string | null>(null)
+  const [downloadingAudio, setDownloadingAudio] = useState<string | null>(null)
   const [playingAudio, setPlayingAudio] = useState<string | null>(null)
   const audioRef = useRef<HTMLAudioElement | null>(null)
   const [generatingAll, setGeneratingAll] = useState(false)
@@ -338,6 +339,59 @@ export function DetalleProyectoModal({ isOpen, onClose, proyecto, onUpdate }: De
   const handleStopAudio = () => {
     if (audioRef.current) { audioRef.current.pause(); audioRef.current.currentTime = 0 }
     setPlayingAudio(null)
+  }
+
+  const handleDownloadAudio = async (stepId: string, lang: "es" | "en") => {
+    if (!codigoManual) {
+      setError("Define el código de carpeta primero.")
+      return
+    }
+    setError("")
+    setSuccessMsg("")
+    const audioKey = `${stepId}_${lang}`
+    setDownloadingAudio(audioKey)
+
+    // La ruta en Storage depende del idioma (es / en)
+    const storagePath = lang === "es"
+      ? `sounds/${stepId}.mp3`
+      : `sounds/${lang}/${stepId}_${lang}.mp3`
+
+    try {
+      const supabase = createClient()
+      const { data } = supabase.storage
+        .from("insumos_manuales")
+        .getPublicUrl(`${codigoManual}/${storagePath}`)
+
+      if (!data?.publicUrl) {
+        throw new Error("No se pudo obtener la URL del archivo.")
+      }
+
+      // Intentar fetch directo para forzar la descarga del Blob (evita que el navegador solo lo reproduzca)
+      try {
+        const res = await fetch(data.publicUrl)
+        if (!res.ok) throw new Error("El archivo no existe en Storage o aún no ha sido subido.")
+        
+        const blob = await res.blob()
+        const blobUrl = URL.createObjectURL(blob)
+        const link = document.createElement("a")
+        link.href = blobUrl
+        link.download = `${stepId}_${lang}.mp3`
+        document.body.appendChild(link)
+        link.click()
+        document.body.removeChild(link)
+        URL.revokeObjectURL(blobUrl)
+        setSuccessMsg(`Audio ${stepId}_${lang}.mp3 descargado con éxito ✓`)
+      } catch (fetchErr) {
+        // Fallback: si hay error de CORS o similar, abrimos en pestaña nueva
+        console.warn("Fallo en la descarga directa, usando fallback de apertura:", fetchErr)
+        window.open(data.publicUrl, "_blank")
+        setSuccessMsg(`Abriendo audio ${stepId}_${lang}.mp3 en una nueva pestaña para su descarga ✓`)
+      }
+    } catch (err: any) {
+      setError("No se pudo descargar el audio: " + err.message)
+    } finally {
+      setDownloadingAudio(null)
+    }
   }
 
   const handleGenerateAll = async () => {
@@ -2630,6 +2684,15 @@ export function DetalleProyectoModal({ isOpen, onClose, proyecto, onUpdate }: De
                                     {generatingAudio === "00_es_upload" ? <Loader2 className="h-3 w-3 animate-spin" /> : <Mic className="h-3 w-3" />}
                                     Subir Audio
                                   </button>
+                                  <button
+                                    type="button"
+                                    disabled={downloadingAudio !== null}
+                                    onClick={() => handleDownloadAudio("00", "es")}
+                                    className="flex items-center gap-1.5 rounded-lg bg-teal-500/10 hover:bg-teal-500/15 px-2.5 py-1 text-[10px] text-teal-400 font-bold border border-teal-500/20 transition"
+                                  >
+                                    {downloadingAudio === "00_es" ? <Loader2 className="h-3 w-3 animate-spin" /> : <Download className="h-3 w-3" />}
+                                    Descargar
+                                  </button>
                                 </div>
                               </div>
 
@@ -2692,6 +2755,15 @@ export function DetalleProyectoModal({ isOpen, onClose, proyecto, onUpdate }: De
                                     {generatingAudio === "00_en_upload" ? <Loader2 className="h-3 w-3 animate-spin" /> : <Mic className="h-3 w-3" />}
                                     Subir Audio
                                   </button>
+                                  <button
+                                    type="button"
+                                    disabled={downloadingAudio !== null}
+                                    onClick={() => handleDownloadAudio("00", "en")}
+                                    className="flex items-center gap-1.5 rounded-lg bg-teal-500/10 hover:bg-teal-500/15 px-2.5 py-1 text-[10px] text-teal-400 font-bold border border-teal-500/20 transition"
+                                  >
+                                    {downloadingAudio === "00_en" ? <Loader2 className="h-3 w-3 animate-spin" /> : <Download className="h-3 w-3" />}
+                                    Descargar
+                                  </button>
 
                                 </div>
                               </div>
@@ -2746,6 +2818,15 @@ export function DetalleProyectoModal({ isOpen, onClose, proyecto, onUpdate }: De
                                   >
                                     {generatingAudio === "01_Ayuda_es_upload" ? <Loader2 className="h-3 w-3 animate-spin" /> : <Mic className="h-3 w-3" />}
                                     Subir Audio
+                                  </button>
+                                  <button
+                                    type="button"
+                                    disabled={downloadingAudio !== null}
+                                    onClick={() => handleDownloadAudio("01_Ayuda", "es")}
+                                    className="flex items-center gap-1.5 rounded-lg bg-teal-500/10 hover:bg-teal-500/15 px-2.5 py-1 text-[10px] text-teal-400 font-bold border border-teal-500/20 transition"
+                                  >
+                                    {downloadingAudio === "01_Ayuda_es" ? <Loader2 className="h-3 w-3 animate-spin" /> : <Download className="h-3 w-3" />}
+                                    Descargar
                                   </button>
                                 </div>
                               </div>
@@ -2808,6 +2889,15 @@ export function DetalleProyectoModal({ isOpen, onClose, proyecto, onUpdate }: De
                                   >
                                     {generatingAudio === "01_Ayuda_en_upload" ? <Loader2 className="h-3 w-3 animate-spin" /> : <Mic className="h-3 w-3" />}
                                     Subir Audio
+                                  </button>
+                                  <button
+                                    type="button"
+                                    disabled={downloadingAudio !== null}
+                                    onClick={() => handleDownloadAudio("01_Ayuda", "en")}
+                                    className="flex items-center gap-1.5 rounded-lg bg-teal-500/10 hover:bg-teal-500/15 px-2.5 py-1 text-[10px] text-teal-400 font-bold border border-teal-500/20 transition"
+                                  >
+                                    {downloadingAudio === "01_Ayuda_en" ? <Loader2 className="h-3 w-3 animate-spin" /> : <Download className="h-3 w-3" />}
+                                    Descargar
                                   </button>
                                 </div>
                               </div>
@@ -2892,6 +2982,15 @@ export function DetalleProyectoModal({ isOpen, onClose, proyecto, onUpdate }: De
                                         {generatingAudio === `${p.paso}_es_upload` ? <Loader2 className="h-2.5 w-2.5 animate-spin" /> : <Mic className="h-2.5 w-2.5" />}
                                         Subir Audio
                                       </button>
+                                      <button
+                                        type="button"
+                                        disabled={downloadingAudio !== null}
+                                        onClick={() => handleDownloadAudio(p.paso, "es")}
+                                        className="flex items-center gap-1.5 rounded-lg bg-teal-500/10 hover:bg-teal-500/15 px-2 py-1 text-[9px] text-teal-400 font-bold border border-teal-500/20 transition"
+                                      >
+                                        {downloadingAudio === `${p.paso}_es` ? <Loader2 className="h-2.5 w-2.5 animate-spin" /> : <Download className="h-2.5 w-2.5" />}
+                                        Descargar
+                                      </button>
                                     </div>
                                   </div>
 
@@ -2956,6 +3055,15 @@ export function DetalleProyectoModal({ isOpen, onClose, proyecto, onUpdate }: De
                                       >
                                         {generatingAudio === `${p.paso}_en_upload` ? <Loader2 className="h-2.5 w-2.5 animate-spin" /> : <Mic className="h-2.5 w-2.5" />}
                                         Subir Audio
+                                      </button>
+                                      <button
+                                        type="button"
+                                        disabled={downloadingAudio !== null}
+                                        onClick={() => handleDownloadAudio(p.paso, "en")}
+                                        className="flex items-center gap-1.5 rounded-lg bg-teal-500/10 hover:bg-teal-500/15 px-2 py-1 text-[9px] text-teal-400 font-bold border border-teal-500/20 transition"
+                                      >
+                                        {downloadingAudio === `${p.paso}_en` ? <Loader2 className="h-2.5 w-2.5 animate-spin" /> : <Download className="h-2.5 w-2.5" />}
+                                        Descargar
                                       </button>
                                     </div>
                                   </div>

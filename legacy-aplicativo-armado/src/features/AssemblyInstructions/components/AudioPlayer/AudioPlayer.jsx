@@ -55,6 +55,7 @@ export default function AudioPlayer() {
   const ActivarAyuda6 = useEnviroment((state) => state.ActivarAyuda6);
   const ActivarParpadeo = useEnviroment((state) => state.ActivarParpadeo);
 
+  const [audioUrl, setAudioUrl] = useState("");
   const audioRef = useRef(null);
 
   // ─── Efecto 0: canplaythrough ───
@@ -78,9 +79,14 @@ export default function AudioPlayer() {
 
   // ─── Efecto 1: Cargar src de audio (Paso o Ayuda) ───
   useEffect(() => {
+    let url = "";
     if (PanelAyudas) {
-      audioRef.current.load();
-      audioRef.current.src = getAyudaSrc(id, idioma);
+      url = getAyudaSrc(id, idioma);
+      setAudioUrl(url);
+      if (audioRef.current) {
+        audioRef.current.src = url;
+        audioRef.current.load();
+      }
       setTimeout(() => {
         if (audioRef.current && (useEnviroment.getState().StartApp === true || PanelAyudas)) {
           audioRef.current.play().catch(e => console.log("Ayuda play error:", e));
@@ -105,8 +111,12 @@ export default function AudioPlayer() {
         }
       };
     } else {
-      audioRef.current.src = getAudioSrc(id, pasoActual, idioma);
-      audioRef.current.load();
+      url = getAudioSrc(id, pasoActual, idioma);
+      setAudioUrl(url);
+      if (audioRef.current) {
+        audioRef.current.src = url;
+        audioRef.current.load();
+      }
     }
   }, [PanelAyudas, pasoActual, id, idioma]);
 
@@ -170,7 +180,7 @@ export default function AudioPlayer() {
       <audio
         id="audio"
         ref={audioRef}
-        src={getAudioSrc(id, pasoActual, idioma)}
+        src={audioUrl}
       ></audio>
     </>
   );
