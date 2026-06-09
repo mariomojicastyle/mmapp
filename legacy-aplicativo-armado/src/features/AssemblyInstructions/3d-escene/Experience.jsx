@@ -356,17 +356,23 @@ export default function Experience({ id, modelUrl, productData }) {
   return (
     <>
       <Environment preset="city" blur={0.8} />
-      <ambientLight intensity={sombras ? 0.3 : 0.5} />
+      <ambientLight intensity={sombras ? 0.25 : 0.4} />
       <directionalLight 
-        position={[10, 10, 5]} 
-        intensity={2} 
+        position={[6, 10, 4]} 
+        intensity={1.6} 
         castShadow={sombras} 
         shadow-mapSize-width={2048}
         shadow-mapSize-height={2048}
-        shadow-bias={-0.0001}
-        shadow-normalBias={0.04}
+        shadow-bias={-0.0002}
+        shadow-normalBias={0.006}
+        shadow-camera-far={25}
+        shadow-camera-left={-4}
+        shadow-camera-right={4}
+        shadow-camera-top={4}
+        shadow-camera-bottom={-4}
+        shadow-camera-near={0.1}
       />
-      <spotLight position={[-5, 5, -5]} intensity={sombras ? 0.6 : 1} />
+      <spotLight position={[-5, 5, -5]} intensity={sombras ? 0.5 : 0.8} />
 
       <OrbitControls
         makeDefault
