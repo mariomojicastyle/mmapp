@@ -132,24 +132,6 @@ export default function Experience({ id, modelUrl, productData }) {
   const computedModelMinY = useEnviroment((state) => state.computedModelMinY);
   const lightingConfig = useEnviroment((state) => state.lightingConfig);
 
-  useFrame(() => {
-    const pos = camera.position;
-    const target = useOrbitControls.current ? useOrbitControls.current.target : { x: 0, y: 0, z: 0 };
-
-    window.cameraDebug = {
-      position: [pos.x, pos.y, pos.z],
-      target: [target.x, target.y, target.z],
-      fov: camera.fov,
-      zoom: camera.zoom
-    };
-
-    // Imprimir en la consola solo cuando la posición o el target cambien significativamente al arrastrar/rotar
-    const currentKey = `POS: [${pos.x.toFixed(2)}, ${pos.y.toFixed(2)}, ${pos.z.toFixed(2)}] | TARGET: [${target.x.toFixed(2)}, ${target.y.toFixed(2)}, ${target.z.toFixed(2)}]`;
-    if (lastLoggedPos.current !== currentKey) {
-      lastLoggedPos.current = currentKey;
-      console.log(`🎥 CÁMARA -> posición: [${pos.x.toFixed(4)}, ${pos.y.toFixed(4)}, ${pos.z.toFixed(4)}] | target: [${target.x.toFixed(4)}, ${target.y.toFixed(4)}, ${target.z.toFixed(4)}]`);
-    }
-  });
 
   //Se actualiza si es Maderkit o Practimac
   useEffect(() => {
@@ -477,32 +459,12 @@ function CameraOverlay({ orbitControlsRef }) {
   const showOverlay = useEnviroment((state) => state.showCameraOverlay);
   const pasoActual = useEnviroment((state) => state.pasoActual);
   const manualId = useEnviroment((state) => state.id);
-  const [cameraData, setCameraData] = useState({ pos: [0,0,0], target: [0,0,0], fov: 50 });
+  const { camera } = useThree();
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   
-  useFrame(({ camera }) => {
-    if (!showOverlay) return;
-    
-    const pos = camera.position;
-    const debug = window.cameraDebug || {};
-    const target = debug.target || [0, 0.8, 0];
-    
-    setCameraData({
-      pos: [
-        parseFloat(pos.x.toFixed(4)),
-        parseFloat(pos.y.toFixed(4)),
-        parseFloat(pos.z.toFixed(4))
-      ],
-      target: target.map(v => parseFloat(v.toFixed(4))),
-      fov: Math.round(camera.fov)
-    });
-  });
-  
   if (!showOverlay) return null;
   
-  const { camera } = useThree();
-
   const handleSetCameraPosition = async () => {
     setSaving(true);
     try {
@@ -581,6 +543,30 @@ function CameraOverlay({ orbitControlsRef }) {
         }
       });
 
+      // 3. Emitir mensaje vía postMessage a window.opener si está disponible
+      if (window.opener) {
+        window.opener.postMessage({
+          type: 'update-camera',
+          payload: {
+            codigoManual: manualId,
+            step: pasoActual,
+            cameraPosition: currentPos,
+            cameraTarget: currentTarget
+          }
+        }, '*');
+        console.log("✅ Posición de cámara enviada vía postMessage a window.opener");
+      }
+
+      // 4. Copiar al portapapeles automáticamente en el formato tradicional
+      const clipText = `🎥 CÁMARA -> posición: [${currentPos.join(', ')}] | target: [${currentTarget.join(', ')}]`;
+      navigator.clipboard.writeText(clipText)
+        .then(() => {
+          console.log("✅ Coordenadas de cámara copiadas al portapapeles:", clipText);
+        })
+        .catch(err => {
+          console.warn("No se pudo copiar al portapapeles:", err);
+        });
+
       setSaved(true);
       setTimeout(() => setSaved(false), 2000);
       console.log(`✅ Posición de cámara transmitida y actualizada localmente para el paso ${pasoActual}:`, currentPos, currentTarget);
@@ -616,26 +602,18 @@ function CameraOverlay({ orbitControlsRef }) {
         style={{
           background: 'rgba(0,0,0,0.85)',
           border: '1px solid rgba(99,255,200,0.3)',
-        borderRadius: '12px',
-        padding: '14px 16px',
-        fontFamily: 'monospace',
-        fontSize: '12px',
-        color: '#63ffc8',
-        minWidth: '240px',
-        backdropFilter: 'blur(8px)',
-        boxShadow: '0 4px 24px rgba(0,0,0,0.5)'
-      }}>
-        <div style={{ fontWeight: 'bold', marginBottom: '8px', fontSize: '13px' }}>
+          borderRadius: '12px',
+          padding: '14px 16px',
+          fontFamily: 'monospace',
+          fontSize: '12px',
+          color: '#63ffc8',
+          minWidth: '240px',
+          backdropFilter: 'blur(8px)',
+          boxShadow: '0 4px 24px rgba(0,0,0,0.5)'
+        }}
+      >
+        <div style={{ fontWeight: 'bold', marginBottom: '8px', fontSize: '13px', textAlign: 'center' }}>
           🎥 CÁMARA — Paso {pasoActual}
-        </div>
-        <div style={{ marginBottom: '3px' }}>
-          <span style={{ color: '#888' }}>POS:</span> [{cameraData.pos.join(', ')}]
-        </div>
-        <div style={{ marginBottom: '3px' }}>
-          <span style={{ color: '#888' }}>TGT:</span> [{cameraData.target.join(', ')}]
-        </div>
-        <div style={{ marginBottom: '10px' }}>
-          <span style={{ color: '#888' }}>FOV:</span> {cameraData.fov}
         </div>
         <button
           onClick={handleSetCameraPosition}

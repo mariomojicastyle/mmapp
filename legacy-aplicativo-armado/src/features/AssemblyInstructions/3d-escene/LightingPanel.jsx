@@ -88,6 +88,18 @@ export default function LightingPanel() {
         }
       });
 
+      // Emitir mensaje vía postMessage a window.opener si está disponible
+      if (window.opener) {
+        window.opener.postMessage({
+          type: 'save-lighting',
+          payload: {
+            codigoManual: manualId,
+            lightingConfig: lightingConfig
+          }
+        }, '*');
+        console.log("✅ Configuración de iluminación enviada vía postMessage a window.opener");
+      }
+
       setSaved(true);
       setTimeout(() => setSaved(false), 2500);
       console.log("✅ Evento de guardado de iluminación transmitido:", lightingConfig);

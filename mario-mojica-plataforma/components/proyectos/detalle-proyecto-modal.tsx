@@ -219,6 +219,11 @@ export function DetalleProyectoModal({ isOpen, onClose, proyecto, onUpdate }: De
   const [lightingEditorActive, setLightingEditorActive] = useState(false)
   const realtimeChannelRef = useRef<any>(null)
   const codigoManualRef = useRef(codigoManual)
+  const proyectoRef = useRef(proyecto)
+
+  useEffect(() => {
+    proyectoRef.current = proyecto
+  }, [proyecto])
 
   useEffect(() => {
     codigoManualRef.current = codigoManual
@@ -230,12 +235,82 @@ export function DetalleProyectoModal({ isOpen, onClose, proyecto, onUpdate }: De
       setLightingEditorActive(localStorage.getItem('lightingEditor') === 'on')
     }
 
+    const handleMessage = (event: MessageEvent) => {
+      // Validar origen básico
+      if (typeof event.origin === 'string' && !event.origin.includes('localhost') && !event.origin.includes('mariomojica.com')) {
+        return
+      }
+
+      const { type, payload } = event.data || {}
+      if (type === 'update-camera') {
+        if (payload && payload.codigoManual === codigoManualRef.current) {
+          const currentProyecto = proyectoRef.current
+          if (!currentProyecto?.id) return
+          
+          setGlbSteps(prev => {
+            const updated = prev.map(s => 
+              s.step === payload.step 
+                ? { ...s, cameraPosition: payload.cameraPosition, cameraTarget: payload.cameraTarget } 
+                : s
+            )
+            
+            const stepExists = prev.some(s => s.step === payload.step)
+            if (!stepExists) {
+              updated.push({
+                step: payload.step,
+                fileName: `P${payload.step}.glb`,
+                progress: 100,
+                cameraPosition: payload.cameraPosition,
+                cameraTarget: payload.cameraTarget
+              })
+            }
+
+            const supabaseClient = createClient()
+            supabaseClient
+              .from("configuraciones_manual")
+              .update({ glb_pasos: updated })
+              .eq("proyecto_id", currentProyecto.id)
+              .then(({ error }) => {
+                if (error) {
+                  console.error("Error guardando glb_pasos desde postMessage:", error)
+                } else {
+                  console.log("glb_pasos guardado en Supabase vía postMessage ✓")
+                  setSuccessMsg(`Cámara guardada para Paso ${payload.step} ✓`)
+                }
+              })
+
+            return updated
+          })
+        }
+      } else if (type === 'save-lighting') {
+        if (payload && payload.codigoManual === codigoManualRef.current) {
+          const currentProyecto = proyectoRef.current
+          if (!currentProyecto?.id) return
+          
+          const supabaseClient = createClient()
+          supabaseClient
+            .from("configuraciones_manual")
+            .update({ lighting_config: payload.lightingConfig })
+            .eq("proyecto_id", currentProyecto.id)
+            .then(({ error }) => {
+              if (error) {
+                console.error("Error guardando lighting_config desde postMessage:", error)
+              } else {
+                console.log("lighting_config guardado en Supabase vía postMessage ✓")
+                setSuccessMsg("Configuración de iluminación guardada ✓")
+              }
+            })
+        }
+      }
+    }
+
     const supabase = createClient()
     const channel = supabase.channel('manual-features-realtime')
     channel
       .on('broadcast', { event: 'update-camera' }, ({ payload }) => {
         if (payload && payload.codigoManual === codigoManualRef.current) {
-          if (!proyecto?.id) return
+          const currentProyecto = proyectoRef.current
+          if (!currentProyecto?.id) return
           setGlbSteps(prev => {
             const updated = prev.map(s => 
               s.step === payload.step 
@@ -260,12 +335,13 @@ export function DetalleProyectoModal({ isOpen, onClose, proyecto, onUpdate }: De
             supabaseClient
               .from("configuraciones_manual")
               .update({ glb_pasos: updated })
-              .eq("proyecto_id", proyecto.id)
+              .eq("proyecto_id", currentProyecto.id)
               .then(({ error }) => {
                 if (error) {
                   console.error("Error guardando glb_pasos desde el CMS:", error)
                 } else {
                   console.log("glb_pasos guardado en Supabase desde el CMS ✓")
+                  setSuccessMsg(`Cámara guardada para Paso ${payload.step} ✓`)
                 }
               })
 
@@ -275,17 +351,19 @@ export function DetalleProyectoModal({ isOpen, onClose, proyecto, onUpdate }: De
       })
       .on('broadcast', { event: 'save-lighting' }, ({ payload }) => {
         if (payload && payload.codigoManual === codigoManualRef.current) {
-          if (!proyecto?.id) return
+          const currentProyecto = proyectoRef.current
+          if (!currentProyecto?.id) return
           const supabaseClient = createClient()
           supabaseClient
             .from("configuraciones_manual")
             .update({ lighting_config: payload.lightingConfig })
-            .eq("proyecto_id", proyecto.id)
+            .eq("proyecto_id", currentProyecto.id)
             .then(({ error }) => {
               if (error) {
                 console.error("Error guardando lighting_config desde el CMS:", error)
               } else {
                 console.log("lighting_config guardado en Supabase desde el CMS ✓")
+                setSuccessMsg("Configuración de iluminación guardada ✓")
               }
             })
         }
@@ -293,8 +371,11 @@ export function DetalleProyectoModal({ isOpen, onClose, proyecto, onUpdate }: De
       .subscribe()
     realtimeChannelRef.current = channel
 
+    window.addEventListener('message', handleMessage)
+
     return () => {
       channel.unsubscribe()
+      window.removeEventListener('message', handleMessage)
     }
   }, [])
 
@@ -1876,7 +1957,7 @@ export function DetalleProyectoModal({ isOpen, onClose, proyecto, onUpdate }: De
                           <a
                             href={`http://localhost:5173/${codigoManual}?cameraOverlay=${cameraOverlayActive ? 'on' : 'off'}&lightingEditor=${lightingEditorActive ? 'on' : 'off'}`}
                             target="_blank"
-                            rel="noopener noreferrer"
+                            rel="opener"
                             className="text-primary hover:underline font-semibold flex items-center gap-1 transition-all group shrink-0"
                           >
                             Local: http://localhost:5173/{codigoManual}
@@ -1885,7 +1966,7 @@ export function DetalleProyectoModal({ isOpen, onClose, proyecto, onUpdate }: De
                           <a
                             href={`https://mariomojica.com/embed/armado/${codigoManual}?cameraOverlay=${cameraOverlayActive ? 'on' : 'off'}&lightingEditor=${lightingEditorActive ? 'on' : 'off'}`}
                             target="_blank"
-                            rel="noopener noreferrer"
+                            rel="opener"
                             className="text-teal-400 hover:underline font-semibold flex items-center gap-1 transition-all group shrink-0"
                           >
                             Producción: mariomojica.com/embed/armado/{codigoManual}
@@ -2518,29 +2599,80 @@ export function DetalleProyectoModal({ isOpen, onClose, proyecto, onUpdate }: De
                                 </div>
 
                                 {/* Estado de posición de cámara */}
-                                <div className="w-full mt-1.5 pt-1.5 border-t border-outline-variant/10 flex items-center justify-between">
-                                  <span className="text-[10px] text-on-surface-variant font-medium flex items-center gap-1">
-                                    🎥 Cámara: {g.cameraPosition && g.cameraTarget ? (
-                                      <span className="text-teal-400 font-bold">Definida</span>
-                                    ) : (
-                                      <span className="text-on-surface-variant/40 italic">Sin definir</span>
+                                <div className="w-full mt-1.5 pt-1.5 border-t border-outline-variant/10">
+                                  <div className="flex items-center justify-between">
+                                    <span className="text-[10px] text-on-surface-variant font-medium flex items-center gap-1">
+                                      🎥 Cámara: {g.cameraPosition && g.cameraTarget ? (
+                                        <span className="text-teal-400 font-bold">Definida</span>
+                                      ) : (
+                                        <span className="text-on-surface-variant/40 italic">Sin definir</span>
+                                      )}
+                                    </span>
+                                    {(g.cameraPosition || g.cameraTarget) && (
+                                      <button
+                                        type="button"
+                                        onClick={() => {
+                                          setGlbSteps(prev => {
+                                            const updated = prev.map(s =>
+                                              s.step === g.step
+                                                ? { ...s, cameraPosition: undefined, cameraTarget: undefined }
+                                                : s
+                                            );
+                                            const supabaseClient = createClient();
+                                            supabaseClient
+                                              .from("configuraciones_manual")
+                                              .update({ glb_pasos: updated })
+                                              .eq("proyecto_id", proyecto?.id);
+                                            return updated;
+                                          });
+                                        }}
+                                        className="text-[9px] text-on-surface-variant hover:text-red-400 font-medium"
+                                      >
+                                        Limpiar
+                                      </button>
                                     )}
-                                  </span>
-                                  {(g.cameraPosition || g.cameraTarget) && (
-                                    <button
-                                      type="button"
-                                      onClick={() => {
-                                        setGlbSteps(prev => prev.map(s =>
-                                          s.step === g.step
-                                            ? { ...s, cameraPosition: undefined, cameraTarget: undefined }
-                                            : s
-                                        ))
+                                  </div>
+                                  
+                                  {/* Pegar coordenadas manualmente */}
+                                  <div className="mt-1 flex items-center gap-1">
+                                    <input
+                                      type="text"
+                                      placeholder="Pegar posición de cámara..."
+                                      value={tempPosInputs[g.step] || ""}
+                                      onChange={(e) => {
+                                        const val = e.target.value;
+                                        setTempPosInputs(prev => ({ ...prev, [g.step]: val }));
+                                        
+                                        const parsed = parseCameraCoords(val);
+                                        if (parsed && parsed.pos && parsed.tgt) {
+                                          setGlbSteps(prev => {
+                                            const updated = prev.map(s =>
+                                              s.step === g.step
+                                                ? { ...s, cameraPosition: parsed.pos, cameraTarget: parsed.tgt }
+                                                : s
+                                            );
+                                            const supabaseClient = createClient();
+                                            supabaseClient
+                                              .from("configuraciones_manual")
+                                              .update({ glb_pasos: updated })
+                                              .eq("proyecto_id", proyecto?.id)
+                                              .then(({ error }) => {
+                                                if (!error) {
+                                                  setSuccessMsg(`Cámara guardada para Paso ${g.step} ✓`);
+                                                }
+                                              });
+                                            return updated;
+                                          });
+                                          setTempPosInputs(prev => {
+                                            const copy = { ...prev };
+                                            delete copy[g.step];
+                                            return copy;
+                                          });
+                                        }
                                       }}
-                                      className="text-[9px] text-on-surface-variant hover:text-red-400 font-medium"
-                                    >
-                                      Limpiar
-                                    </button>
-                                  )}
+                                      className="text-[9px] w-full bg-surface-container-lowest border border-outline-variant/30 rounded px-2 py-0.5 outline-none focus:border-primary text-on-surface placeholder:text-on-surface-variant/40"
+                                    />
+                                  </div>
                                 </div>
                               </div>
                             ))}

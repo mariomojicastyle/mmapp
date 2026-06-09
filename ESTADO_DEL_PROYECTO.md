@@ -187,6 +187,11 @@ Un **"Manual Vacío"** es un cascarón o aplicación base centralizada (desplega
   - Solución de problemas de caché de Supabase inyectando cacheControl: '0' en las subidas por API.
   - Sincronización en tiempo real y eliminación de caché en el visor 3D mediante marca de tiempo dinámica (?t=timestamp) en las llamadas a audios en AudioPlayer.jsx.
   - Independencia de estado de carga: Spinner exclusivo para 'Subir Audio' (usando el sufijo _upload) y spinner de carga premium para la generación de la vista previa de voz (usando el sufijo _preview).
+- [x] Manual_Iluminacion_Camara (09 de Junio, 2026):
+  - **Calibración de Iluminación 3D en Caliente**: Implementación de un editor flotante premium (`LightingPanel.jsx`) en el visor 3D para calibrar luces y tone mapping en caliente y guardarlos directamente en Supabase desde el CMS.
+  - **Guardado Automático de Cámara e Iluminación (postMessage)**: Conexión local robusta e instantánea entre el visor 3D (`localhost:5173`) y el CMS (`localhost:3003` / `mariomojica.com`) mediante la API HTML5 `postMessage` cross-origin (utilizando `rel="opener"` en los enlaces de previsualización), automatizando la persistencia a Supabase en caliente.
+  - **Copia al Portapapeles y Casilleros de Pegado**: Se añade copia automática al portapapeles al pulsar "Definir posición" y se restauran inputs de texto individuales por paso en el modal para permitir el copiado y pegado clásico en cualquier situación.
+  - **Corrección de Pantalla Negra y Rendimiento**: Reubicación de hooks de React en `CameraOverlay` para evitar fallos de ejecución y eliminación de bucles `useFrame` redundantes a 60fps para optimizar recursos.
 
 
 ---
