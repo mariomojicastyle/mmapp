@@ -192,6 +192,11 @@ Un **"Manual Vacío"** es un cascarón o aplicación base centralizada (desplega
   - **Guardado Automático de Cámara e Iluminación (postMessage)**: Conexión local robusta e instantánea entre el visor 3D (`localhost:5173`) y el CMS (`localhost:3003` / `mariomojica.com`) mediante la API HTML5 `postMessage` cross-origin (utilizando `rel="opener"` en los enlaces de previsualización), automatizando la persistencia a Supabase en caliente.
   - **Copia al Portapapeles y Casilleros de Pegado**: Se añade copia automática al portapapeles al pulsar "Definir posición" y se restauran inputs de texto individuales por paso en el modal para permitir el copiado y pegado clásico en cualquier situación.
   - **Corrección de Pantalla Negra y Rendimiento**: Reubicación de hooks de React en `CameraOverlay` para evitar fallos de ejecución y eliminación de bucles `useFrame` redundantes a 60fps para optimizar recursos.
+- [x] Manual_Exportacion_glb_geometry_nodes (10 de Junio, 2026):
+  - **Bake de Geometry Nodes a Objetos Reales**: Desarrollo de scripts en Python para Blender (`bake_geometry_nodes_v1.py`, `_v2.py`, `_v3.py`) que permiten hornear de forma masiva animaciones procedimentales generadas por Geometry Nodes directamente sobre los objetos reales de la escena, eliminando los planos emisores para evitar duplicidad.
+  - **Compresión Draco y Animaciones Unificadas**: Integración de la compresión Draco en la exportación de GLB (`export_draco_mesh_compression_enable=True`) para optimizar el peso en web y configuración del modo de animación a `Active actions merged` (`export_animation_mode='ACTIVE_ACTIONS'`) para unificar pistas.
+  - **Restauración de Escena y Seguridad**: Implementación de reversión de archivo automática (`revert_blend=True` con `bpy.ops.wm.revert_mainfile()`) para no alterar el archivo `.blend` original en disco y uso de cadenas con nombres de objeto en lugar de referencias directas de C++ para evitar errores de `ReferenceError: StructRNA of type Object has been removed`.
+  - **Soporte de Pausas y Silencios en TTS (Next.js)**: Adición de instructivo interactivo en el modal de detalles del proyecto y lógica en la API TTS para intercalar silencios exactos (`[pausa: X]`) basados en el formato binario nativo del motor de voz, evitando cortes del decodificador en la web.
 
 
 ---

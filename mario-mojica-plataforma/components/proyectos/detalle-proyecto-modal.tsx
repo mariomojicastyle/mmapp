@@ -2707,6 +2707,21 @@ export function DetalleProyectoModal({ isOpen, onClose, proyecto, onUpdate }: De
                       {openSection === "audios" && (
                         <div className="p-5 bg-surface-container-lowest/50 border-t border-outline-variant/10 space-y-6 text-xs">
                           
+                          {/* ─── INSTRUCTIVO DE PAUSAS ─────────────────────────────────── */}
+                          <div className="p-3.5 rounded-xl border border-teal-500/20 bg-teal-500/5 flex items-start gap-2.5">
+                            <span className="text-base">💡</span>
+                            <div className="space-y-1">
+                              <span className="font-bold text-teal-400 block">Tip: Inserta Silencios Exactos</span>
+                              <p className="text-on-surface-variant text-[10px] leading-relaxed">
+                                Puedes agregar pausas de silencio exactas en cualquier parte del texto usando la etiqueta:{" "}
+                                <code className="bg-surface-container border border-outline-variant/20 px-1.5 py-0.5 rounded text-teal-300 font-mono text-[10px] select-all cursor-pointer" title="Hacer clic para seleccionar y copiar">
+                                  [pausa: 1]
+                                </code>{" "}
+                                (cambia el número por los segundos que desees, ej: <code className="text-teal-300 font-mono">[pausa: 2]</code>).
+                              </p>
+                            </div>
+                          </div>
+
                           {/* ─── CONFIGURACIÓN DE VOCES ─────────────────────────────── */}
                           <div className="p-4 rounded-xl border border-outline-variant/10 bg-surface-container/30 space-y-3">
                             <span className="text-[10px] font-bold text-primary uppercase tracking-wider block">🎙️ Configuración de Voces por Idioma / Región</span>

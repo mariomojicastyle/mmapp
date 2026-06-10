@@ -602,6 +602,15 @@ Los estilos, colores y tiempos de transición de las flechas azules se configura
     - **Corrección de Pantalla Negra (Reglas de Hooks)**: Se corrigió un error en `CameraOverlay` que producía pantalla negra al alternar el panel de cámara, reubicando el hook `useThree()` en la raíz del componente (antes de las cláusulas de guarda condicionales).
     - **Optimización del Ciclo useFrame**: Se eliminaron los bucles `useFrame` que corrían a 60fps en `Experience` y `CameraOverlay` para calcular y actualizar coordenadas constantemente, optimizando la CPU/GPU al interactuar con el modelo 3D.
 
+* **[2026-06-10] AppArmado_v18 / Manual_Exportacion_glb_geometry_nodes — Bake de Geometry Nodes, Draco, Reversión de Blend y Silencios TTS:**
+    - **Bake Masivo de Geometry Nodes a Mallas Reales**: Creación de scripts de Python para Blender (`bake_geometry_nodes_v1.py`, `_v2.py`, `_v3.py`) que automatizan el traspaso de animaciones procedimentales de múltiples objetos emisores (`Plane`, `Plane.001`, etc.) hacia los componentes físicos del modelo, desactivando modificadores temporalmente para evadir bucles de retroalimentación.
+    - **Compresión Draco de Malla en GLB**: Incorporación de los parámetros `export_draco_mesh_compression_enable=True` y `export_draco_mesh_compression_level=6` en el operador de exportación glTF de Blender, optimizando drásticamente el peso del archivo `.glb` para la web sin pérdida perceptible de calidad geométrica.
+    - **Compilación Unificada de Animaciones (`Active Actions Merged`)**: Configuración del modo de animación del exportador a `ACTIVE_ACTIONS` para compilar todas las pistas individuales de movimiento en un único clip de animación, garantizando compatibilidad inmediata con Three.js y reproducciones sincronizadas.
+    - **Prevención contra ReferenceError de Blender en Python**: Refactorización del flujo de selección y limpieza de objetos para registrar estados usando cadenas de nombres (`strings`) en lugar de referencias directas a structs de C++ (`bpy.types.Object`), neutralizando errores por referencias nulas al remover los emisores destruidos.
+    - **Descarte de Cambios con Reversión Automática**: Programación de la instrucción `bpy.ops.wm.revert_mainfile()` al final del flujo del script para recargar el archivo original `.blend` desde el disco, deshaciendo los cambios temporales de animación y eliminando emisores en el archivo de trabajo mientras se conserva el GLB exportado.
+    - **Instructivo y Procesamiento de Silencios en TTS**: Añadido instructivo interactivo en Obsidian Teal en el panel de carga de audios (`detalle-proyecto-modal.tsx`) para la etiqueta de pausas `[pausa: X]`. En la API, se programó la síntesis de silencios concatenando búferes binarios nativos del motor edge-tts (formato idéntico de audio) para evitar colapsos o desincronizaciones en el decodificador de HTML5 Audio del cliente.
+
+
 
 
 
