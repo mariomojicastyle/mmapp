@@ -814,9 +814,62 @@ export function DetalleProyectoModal({ isOpen, onClose, proyecto, onUpdate }: De
     triggerUpload(type, data)
   }
 
+  const optimizarImagenHerraje = (file: File): Promise<{ blob: Blob; name: string }> => {
+    return new Promise((resolve, reject) => {
+      if (!file.type.startsWith('image/')) {
+        reject(new Error('El archivo seleccionado no es una imagen.'));
+        return;
+      }
+
+      const img = new window.Image();
+      const objectUrl = URL.createObjectURL(file);
+      
+      img.onload = () => {
+        URL.revokeObjectURL(objectUrl);
+        const canvas = document.createElement("canvas");
+        const targetSize = 320;
+        canvas.width = targetSize;
+        canvas.height = targetSize;
+        
+        const ctx = canvas.getContext("2d");
+        if (!ctx) {
+          reject(new Error("No se pudo obtener el contexto 2D del canvas."));
+          return;
+        }
+
+        const srcWidth = img.width;
+        const srcHeight = img.height;
+        
+        // Recorte proporcional cuadrado (object-fit: cover)
+        const size = Math.min(srcWidth, srcHeight);
+        const x = (srcWidth - size) / 2;
+        const y = (srcHeight - size) / 2;
+        
+        ctx.drawImage(img, x, y, size, size, 0, 0, targetSize, targetSize);
+        
+        canvas.toBlob((blob) => {
+          if (blob) {
+            const baseName = file.name.substring(0, file.name.lastIndexOf('.')) || file.name;
+            const newName = `${baseName}.webp`;
+            resolve({ blob, name: newName });
+          } else {
+            reject(new Error("Error al generar el Blob WebP."));
+          }
+        }, "image/webp", 0.85);
+      };
+
+      img.onerror = () => {
+        URL.revokeObjectURL(objectUrl);
+        reject(new Error("Error al cargar la imagen original."));
+      };
+
+      img.src = objectUrl;
+    });
+  };
+
   const handleRealUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
-    if (!file || !uploadTarget || !codigoManual) return
+    const files = e.target.files
+    if (!files || files.length === 0 || !uploadTarget || !codigoManual) return
 
     setIsSaving(true)
     setError("")
@@ -824,135 +877,165 @@ export function DetalleProyectoModal({ isOpen, onClose, proyecto, onUpdate }: De
 
     try {
       const supabase = createClient()
-      const fileExt = file.name.split('.').pop() || ""
-      
-      let path = ""
-      let updatedStateCallback = () => {}
-
       const { type, step } = uploadTarget
+      
+      let uploadCount = 0
+      const totalFiles = files.length
+      const uploadedNames: string[] = []
 
-      if (type === 'glb') {
-        let stepStr = step
-        if (!stepStr) {
-          // Intentar extraer el número de paso del nombre del archivo (ej: P01.glb -> 01, P1.glb -> 01)
-          const match = file.name.match(/P(\d+)/i)
-          if (match) {
-            stepStr = match[1].padStart(2, "0")
-          } else {
-            const numMatch = file.name.match(/(\d+)/)
-            if (numMatch) {
-              stepStr = numMatch[1].padStart(2, "0")
-            } else {
-              // Si no tiene número, encontrar el primer número de paso disponible que no colisione
-              let nextStep = 0
-              let tempStepStr = String(nextStep).padStart(2, "0")
-              while (glbSteps.some(s => s.step === tempStepStr)) {
-                nextStep++
-                tempStepStr = String(nextStep).padStart(2, "0")
-              }
-              stepStr = tempStepStr
-            }
+      for (let i = 0; i < totalFiles; i++) {
+        const file = files[i]
+        
+        let fileToUpload: File | Blob = file
+        let fileExt = file.name.split('.').pop() || ""
+        let fileNameToUse = file.name
+        let uploadContentType = file.type
+
+        if (type === 'herrajes') {
+          try {
+            const optimizado = await optimizarImagenHerraje(file)
+            fileToUpload = optimizado.blob
+            fileNameToUse = optimizado.name
+            fileExt = "webp"
+            uploadContentType = "image/webp"
+          } catch (optErr: any) {
+            console.warn("Fallo al optimizar la imagen del herraje, subiendo original:", optErr)
           }
         }
-        path = `${codigoManual}/models/P${stepStr}.glb`
-        updatedStateCallback = () => {
-          setGlbSteps(prev => {
-            const existing = prev.find(s => s.step === stepStr)
-            const filtered = prev.filter(s => s.step !== stepStr)
-            return [...filtered, { 
-              step: stepStr, 
-              fileName: `P${stepStr}.glb`, 
-              progress: 100,
-              cameraPosition: existing?.cameraPosition,
-              cameraTarget: existing?.cameraTarget
-            }].sort((a,b) => a.step.localeCompare(b.step))
-          })
+        
+        let path = ""
+        let updatedStateCallback = () => {}
+
+        if (type === 'glb') {
+          let stepStr = step
+          if (!stepStr) {
+            // Intentar extraer el número de paso del nombre del archivo (ej: P01.glb -> 01, P1.glb -> 01)
+            const match = file.name.match(/P(\d+)/i)
+            if (match) {
+              stepStr = match[1].padStart(2, "0")
+            } else {
+              const numMatch = file.name.match(/(\d+)/)
+              if (numMatch) {
+                stepStr = numMatch[1].padStart(2, "0")
+              } else {
+                // Si no tiene número, encontrar el primer número de paso disponible que no colisione
+                let nextStep = 0
+                let tempStepStr = String(nextStep).padStart(2, "0")
+                while (glbSteps.some(s => s.step === tempStepStr)) {
+                  nextStep++
+                  tempStepStr = String(nextStep).padStart(2, "0")
+                }
+                stepStr = tempStepStr
+              }
+            }
+          }
+          path = `${codigoManual}/models/P${stepStr}.glb`
+          updatedStateCallback = () => {
+            setGlbSteps(prev => {
+              const existing = prev.find(s => s.step === stepStr)
+              const filtered = prev.filter(s => s.step !== stepStr)
+              return [...filtered, { 
+                step: stepStr, 
+                fileName: `P${stepStr}.glb`, 
+                progress: 100,
+                cameraPosition: existing?.cameraPosition,
+                cameraTarget: existing?.cameraTarget
+              }].sort((a,b) => a.step.localeCompare(b.step))
+            })
+          }
+        } else if (type === 'audio_es') {
+          const stepStr = step || "00"
+          path = `${codigoManual}/sounds/es/${stepStr}_es.mp3`
+          updatedStateCallback = () => {
+            setAudioEsSteps(prev => {
+              const filtered = prev.filter(s => s.step !== stepStr)
+              return [...filtered, { step: stepStr, fileName: `${stepStr}_es.mp3` }].sort((a,b) => a.step.localeCompare(b.step))
+            })
+          }
+        } else if (type === 'audio_en') {
+          const stepStr = step || "00"
+          path = `${codigoManual}/sounds/en/${stepStr}_en.mp3`
+          updatedStateCallback = () => {
+            setAudioEnSteps(prev => {
+              const filtered = prev.filter(s => s.step !== stepStr)
+              return [...filtered, { step: stepStr, fileName: `${stepStr}_en.mp3` }].sort((a,b) => a.step.localeCompare(b.step))
+            })
+          }
+        } else if (type === 'audio_ayuda') {
+          path = `${codigoManual}/sounds/01_Ayuda.${fileExt}`
+          updatedStateCallback = () => setAudioAyuda(`01_Ayuda.${fileExt}`)
+        } else if (type === 'tools') {
+          path = `${codigoManual}/herramientas.${fileExt}`
+          updatedStateCallback = () => setImgHerramientas(`herramientas.${fileExt}`)
+        } else if (type === 'ensamble') {
+          const sanitizedName = file.name.replace(/[^a-zA-Z0-9.]/g, "_")
+          path = `${codigoManual}/ensambles/${sanitizedName}`
+          updatedStateCallback = () => setEnsambles(prev => [...prev, sanitizedName])
+        } else if (type === 'garantia') {
+          path = `${codigoManual}/garantia.${fileExt}`
+          updatedStateCallback = () => setGarantiaDoc(`garantia.${fileExt}`)
+        } else if (type === 'herrajes') {
+          const sanitizedName = fileNameToUse.replace(/[^a-zA-Z0-9.]/g, "_")
+          path = `${codigoManual}/herrajes/${sanitizedName}`
+          updatedStateCallback = () => setHerrajesFotos(prev => [...prev, sanitizedName])
+        } else if (type === 'renders') {
+          const sanitizedName = file.name.replace(/[^a-zA-Z0-9.]/g, "_")
+          path = `${codigoManual}/renders/${sanitizedName}`
+          updatedStateCallback = () => setRenders(prev => [...prev, sanitizedName])
+        } else if (type === 'logo') {
+          path = `${codigoManual}/logo.${fileExt}`
+          updatedStateCallback = () => setLogoUrl(`logo.${fileExt}`)
+        } else if (type === 'favicon') {
+          path = `${codigoManual}/favicon.${fileExt}`
+          updatedStateCallback = () => setFaviconUrl(`favicon.${fileExt}`)
+        } else if (type === 'pbr_floor_diff') {
+          path = `${codigoManual}/textures/floor_diff.${fileExt}`
+          updatedStateCallback = () => setPbrFloorDiff(`textures/floor_diff.${fileExt}`)
+        } else if (type === 'pbr_floor_normal') {
+          path = `${codigoManual}/textures/floor_normal.${fileExt}`
+          updatedStateCallback = () => setPbrFloorNormal(`textures/floor_normal.${fileExt}`)
+        } else if (type === 'pbr_floor_roughness') {
+          path = `${codigoManual}/textures/floor_roughness.${fileExt}`
+          updatedStateCallback = () => setPbrFloorRoughness(`textures/floor_roughness.${fileExt}`)
+        } else if (type === 'pbr_floor_height') {
+          path = `${codigoManual}/textures/floor_height.${fileExt}`
+          updatedStateCallback = () => setPbrFloorHeight(`textures/floor_height.${fileExt}`)
+        } else if (type === 'pbr_wall_diff') {
+          path = `${codigoManual}/textures/wall_diff.${fileExt}`
+          updatedStateCallback = () => setPbrWallDiff(`textures/wall_diff.${fileExt}`)
+        } else if (type === 'pbr_wall_normal') {
+          path = `${codigoManual}/textures/wall_normal.${fileExt}`
+          updatedStateCallback = () => setPbrWallNormal(`textures/wall_normal.${fileExt}`)
+        } else if (type === 'pbr_wall_roughness') {
+          path = `${codigoManual}/textures/wall_roughness.${fileExt}`
+          updatedStateCallback = () => setPbrWallRoughness(`textures/wall_roughness.${fileExt}`)
+        } else if (type === 'pbr_wall_height') {
+          path = `${codigoManual}/textures/wall_height.${fileExt}`
+          updatedStateCallback = () => setPbrWallHeight(`textures/wall_height.${fileExt}`)
         }
-      } else if (type === 'audio_es') {
-        const stepStr = step || "00"
-        path = `${codigoManual}/sounds/es/${stepStr}_es.mp3`
-        updatedStateCallback = () => {
-          setAudioEsSteps(prev => {
-            const filtered = prev.filter(s => s.step !== stepStr)
-            return [...filtered, { step: stepStr, fileName: `${stepStr}_es.mp3` }].sort((a,b) => a.step.localeCompare(b.step))
+
+        const { error: uploadError } = await supabase.storage
+          .from("insumos_manuales")
+          .upload(path, fileToUpload, {
+            upsert: true,
+            contentType: uploadContentType
           })
-        }
-      } else if (type === 'audio_en') {
-        const stepStr = step || "00"
-        path = `${codigoManual}/sounds/en/${stepStr}_en.mp3`
-        updatedStateCallback = () => {
-          setAudioEnSteps(prev => {
-            const filtered = prev.filter(s => s.step !== stepStr)
-            return [...filtered, { step: stepStr, fileName: `${stepStr}_en.mp3` }].sort((a,b) => a.step.localeCompare(b.step))
-          })
-        }
-      } else if (type === 'audio_ayuda') {
-        path = `${codigoManual}/sounds/01_Ayuda.${fileExt}`
-        updatedStateCallback = () => setAudioAyuda(`01_Ayuda.${fileExt}`)
-      } else if (type === 'tools') {
-        path = `${codigoManual}/herramientas.${fileExt}`
-        updatedStateCallback = () => setImgHerramientas(`herramientas.${fileExt}`)
-      } else if (type === 'ensamble') {
-        const sanitizedName = file.name.replace(/[^a-zA-Z0-9.]/g, "_")
-        path = `${codigoManual}/ensambles/${sanitizedName}`
-        updatedStateCallback = () => setEnsambles(prev => [...prev, sanitizedName])
-      } else if (type === 'garantia') {
-        path = `${codigoManual}/garantia.${fileExt}`
-        updatedStateCallback = () => setGarantiaDoc(`garantia.${fileExt}`)
-      } else if (type === 'herrajes') {
-        const sanitizedName = file.name.replace(/[^a-zA-Z0-9.]/g, "_")
-        path = `${codigoManual}/herrajes/${sanitizedName}`
-        updatedStateCallback = () => setHerrajesFotos(prev => [...prev, sanitizedName])
-      } else if (type === 'renders') {
-        const sanitizedName = file.name.replace(/[^a-zA-Z0-9.]/g, "_")
-        path = `${codigoManual}/renders/${sanitizedName}`
-        updatedStateCallback = () => setRenders(prev => [...prev, sanitizedName])
-      } else if (type === 'logo') {
-        path = `${codigoManual}/logo.${fileExt}`
-        updatedStateCallback = () => setLogoUrl(`logo.${fileExt}`)
-      } else if (type === 'favicon') {
-        path = `${codigoManual}/favicon.${fileExt}`
-        updatedStateCallback = () => setFaviconUrl(`favicon.${fileExt}`)
-      } else if (type === 'pbr_floor_diff') {
-        path = `${codigoManual}/textures/floor_diff.${fileExt}`
-        updatedStateCallback = () => setPbrFloorDiff(`textures/floor_diff.${fileExt}`)
-      } else if (type === 'pbr_floor_normal') {
-        path = `${codigoManual}/textures/floor_normal.${fileExt}`
-        updatedStateCallback = () => setPbrFloorNormal(`textures/floor_normal.${fileExt}`)
-      } else if (type === 'pbr_floor_roughness') {
-        path = `${codigoManual}/textures/floor_roughness.${fileExt}`
-        updatedStateCallback = () => setPbrFloorRoughness(`textures/floor_roughness.${fileExt}`)
-      } else if (type === 'pbr_floor_height') {
-        path = `${codigoManual}/textures/floor_height.${fileExt}`
-        updatedStateCallback = () => setPbrFloorHeight(`textures/floor_height.${fileExt}`)
-      } else if (type === 'pbr_wall_diff') {
-        path = `${codigoManual}/textures/wall_diff.${fileExt}`
-        updatedStateCallback = () => setPbrWallDiff(`textures/wall_diff.${fileExt}`)
-      } else if (type === 'pbr_wall_normal') {
-        path = `${codigoManual}/textures/wall_normal.${fileExt}`
-        updatedStateCallback = () => setPbrWallNormal(`textures/wall_normal.${fileExt}`)
-      } else if (type === 'pbr_wall_roughness') {
-        path = `${codigoManual}/textures/wall_roughness.${fileExt}`
-        updatedStateCallback = () => setPbrWallRoughness(`textures/wall_roughness.${fileExt}`)
-      } else if (type === 'pbr_wall_height') {
-        path = `${codigoManual}/textures/wall_height.${fileExt}`
-        updatedStateCallback = () => setPbrWallHeight(`textures/wall_height.${fileExt}`)
+
+        if (uploadError) throw uploadError
+
+        updatedStateCallback()
+        uploadCount++
+        uploadedNames.push(fileNameToUse)
       }
 
-      const { error: uploadError } = await supabase.storage
-        .from("insumos_manuales")
-        .upload(path, file, {
-          upsert: true,
-          contentType: file.type
-        })
-
-      if (uploadError) throw uploadError
-
-      updatedStateCallback()
-      setSuccessMsg(`¡Archivo "${file.name}" cargado en Storage correctamente!`)
+      if (totalFiles === 1) {
+        setSuccessMsg(`¡Archivo "${uploadedNames[0]}" cargado en Storage correctamente!`)
+      } else {
+        setSuccessMsg(`¡Se cargaron ${uploadCount} de ${totalFiles} archivos correctamente!`)
+      }
     } catch (err: any) {
       console.error(err)
-      setError(err.message || "Error al subir el archivo a Supabase Storage.")
+      setError(err.message || "Error al subir los archivos a Supabase Storage.")
     } finally {
       setIsSaving(false)
       setUploadTarget(null)
@@ -1225,12 +1308,8 @@ export function DetalleProyectoModal({ isOpen, onClose, proyecto, onUpdate }: De
     }
     name = resultParts.join("_")
 
-    // 3. Curación definitiva de sufijos de Blender (ej. "PARAL_6A001" -> "PARAL_6A")
-    // Se ejecuta al final para atrapar el 001 incluso si antes tenía un _1 (ej. Paral_5A001_1 -> Paral_5A001 -> Paral_5A)
-    name = name.replace(/[._]?0\d\d$/i, "")
-    name = name.replace(/_$/, "")
-    
-    // 4. Limpieza de sufijos comunes de materiales (ej. Cubierta_balance -> Cubierta)
+    // 3. Limpieza de sufijos comunes de materiales (ej. Cubierta_balance -> Cubierta)
+    // Se ejecuta ANTES que la curación de Blender para que no tape los dígitos finales
     const sufijosMat = ["_BALANCE", "_TAPA", "_CANTO", "_LAMINADO", " BALANCE", " TAPA", " CANTO", " LAMINADO"]
     let upperName = name.toUpperCase()
     for (const suf of sufijosMat) {
@@ -1239,8 +1318,19 @@ export function DetalleProyectoModal({ isOpen, onClose, proyecto, onUpdate }: De
         upperName = name.toUpperCase()
       }
     }
+
+    // 4. Curación definitiva de sufijos de Blender (ej. "PARAL_6A001" -> "PARAL_6A")
+    // Se ejecuta al final para atrapar el 001 incluso si antes tenía un _1 (ej. Paral_5A001_1 -> Paral_5A001 -> Paral_5A)
+    name = name.replace(/[._]?0\d\d$/i, "")
+    name = name.replace(/_$/, "")
     
-    // 4. Regla específica para PERNO_ con espacio
+    // Regla de blindaje adicional contra códigos de inventario concatenados con números de copia
+    // Caso 1: Código de 5 dígitos de herraje (ej. 20020) + 3 dígitos de copia (ej. 006) = 8 dígitos (ej. 20020006)
+    name = name.replace(/_(200\d{2})\d{3}$/i, "_$1")
+    // Caso 2: Código de 7 dígitos (ej. 0002715) + 3 dígitos de copia (ej. 003) = 10 dígitos (ej. 0002715003)
+    name = name.replace(/_(000\d{4})\d{3}$/i, "_$1")
+    
+    // 5. Regla específica para PERNO_ con espacio
     if (name.toUpperCase().startsWith("PERNO_") && name.includes(" ")) {
       name = name.split(" ")[0]
     }
@@ -1273,6 +1363,7 @@ export function DetalleProyectoModal({ isOpen, onClose, proyecto, onUpdate }: De
         throw new Error("El archivo P00.glb no existe en el repositorio.")
       }
       
+      // eslint-disable-next-line react-hooks/purity
       const response = await fetch(`${signedData.signedUrl}&t=${Date.now()}`, { cache: "no-store" })
       if (!response.ok) {
         throw new Error(`El archivo P00.glb ya no existe o fue borrado (Código ${response.status}).`)
@@ -1311,6 +1402,7 @@ export function DetalleProyectoModal({ isOpen, onClose, proyecto, onUpdate }: De
             } 
           } = {}
           const instanciasContadas = new Set<string>()
+          const herrajesFisicosRegistrados: { nombreLimpio: string; center: any; uuid: string }[] = []
           
           // Detectar escala global del modelo (metros vs milímetros)
           const sceneBBox = new THREE.Box3().setFromObject(gltf.scene)
@@ -1377,24 +1469,6 @@ export function DetalleProyectoModal({ isOpen, onClose, proyecto, onUpdate }: De
                 }
               }
               
-              // 3. Evitar doble conteo por multi-materiales (ej. frente y balance)
-              let instanceId = child.uuid
-              if (child.parent && child.parent.type !== 'Scene') {
-                if (parentName.toUpperCase().startsWith("PIEZA")) {
-                  instanceId = child.parent.uuid
-                } else {
-                  const nombreLimpioPadre = obtenerNombreLimpioTooltip(parentName)
-                  if (!rawName || nombreLimpio === nombreLimpioPadre) {
-                    instanceId = child.parent.uuid
-                  }
-                }
-              }
-              
-              if (instanciasContadas.has(instanceId)) {
-                return // Ya contamos esta pieza (otra cara/malla del mismo objeto)
-              }
-              instanciasContadas.add(instanceId)
-              
               // Clasificación inteligente de Herrajes vs Piezas
               let esHerraje = false
               const nombreLower = nombreLimpio.toLowerCase()
@@ -1412,6 +1486,82 @@ export function DetalleProyectoModal({ isOpen, onClose, proyecto, onUpdate }: De
                 // Palabras clave genéricas
                 esHerraje = /tornillo|perno|tarugo|bisagra|deslizador|corredera|soporte|clavo|tapa|minifix|cama|perfil|regula|patin|pivote|tuerca|arandela|jaladera|tirador|pija|angulo|union|mensula|mariposa/i.test(nombreLimpio)
               }
+
+              // 3. Evitar doble conteo por multi-materiales (ej. frente y balance) y unificar herrajes espacialmente
+              let instanceId = child.uuid
+              
+              if (esHerraje) {
+                // Solo aplicar unificación espacial a herrajes complejos multi-malla (Bisagras y Correderas).
+                // Los herrajes simples de unión (pernos, tornillos, tarugos, deslizadores, etc.) se cuentan individualmente.
+                const lowerLimpio = nombreLimpio.toLowerCase()
+                const esHerrajeComplejo = /bisagra|corredera/i.test(lowerLimpio)
+                
+                if (esHerrajeComplejo) {
+                  // Unificación espacial para herrajes (bisagras, correderas, etc.) que constan de múltiples submallas muy cercanas.
+                  // Usamos el centro de su Bounding Box y una tolerancia de 100 mm.
+                  const box = new THREE.Box3().setFromObject(child)
+                  const center = new THREE.Vector3()
+                  box.getCenter(center)
+                  
+                  const herrajeCercano = herrajesFisicosRegistrados.find(h => {
+                    if (h.nombreLimpio !== nombreLimpio) return false
+                    const dist = center.distanceTo(h.center) * mult // Distancia en milímetros reales
+                    return dist < 100 // Umbral de 100 mm
+                  })
+                  
+                  if (herrajeCercano) {
+                    instanceId = herrajeCercano.uuid
+                  } else {
+                    herrajesFisicosRegistrados.push({
+                      nombreLimpio,
+                      center,
+                      uuid: child.uuid
+                    })
+                    instanceId = child.uuid
+                  }
+                } else {
+                  // Para herrajes simples de fijación (pernos, tornillos, tarugos, puntillas), 
+                  // aplicamos un filtro de superposición física estricto (tolerancia de 2 mm) 
+                  // para descartar objetos duplicados accidentalmente en Blender en la misma posición.
+                  const box = new THREE.Box3().setFromObject(child)
+                  const center = new THREE.Vector3()
+                  box.getCenter(center)
+                  
+                  const herrajeDuplicado = herrajesFisicosRegistrados.find(h => {
+                    if (h.nombreLimpio !== nombreLimpio) return false
+                    const dist = center.distanceTo(h.center) * mult // Distancia en milímetros reales
+                    return dist < 2 // Tolerancia de 2 mm para duplicados exactos
+                  })
+                  
+                  if (herrajeDuplicado) {
+                    instanceId = herrajeDuplicado.uuid
+                  } else {
+                    herrajesFisicosRegistrados.push({
+                      nombreLimpio,
+                      center,
+                      uuid: child.uuid
+                    })
+                    instanceId = child.uuid
+                  }
+                }
+              } else {
+                // Unificación por jerarquía estándar para piezas de madera
+                if (child.parent && child.parent.type !== 'Scene') {
+                  if (parentName.toUpperCase().startsWith("PIEZA")) {
+                    instanceId = child.parent.uuid
+                  } else {
+                    const nombreLimpioPadre = obtenerNombreLimpioTooltip(parentName)
+                    if (!rawName || nombreLimpio === nombreLimpioPadre) {
+                      instanceId = child.parent.uuid
+                    }
+                  }
+                }
+              }
+              
+              if (instanciasContadas.has(instanceId)) {
+                return // Ya contamos esta pieza (otra cara/malla del mismo objeto)
+              }
+              instanciasContadas.add(instanceId)
               
               let esFondo = false;
               let finalName = nombreLimpio
@@ -1510,25 +1660,28 @@ export function DetalleProyectoModal({ isOpen, onClose, proyecto, onUpdate }: De
             }
           }
           
-          // Post-procesamiento: Consolidar correderas multi-parte
+          // Post-procesamiento: Consolidar correderas bajo un nombre canónico sin alterar sus cantidades de malla reales
           const corredKeys = Object.keys(conteo).filter(k => 
             conteo[k].esHerraje && k.toLowerCase().startsWith("corredera")
           )
           if (corredKeys.length > 0) {
             const totalPartes = corredKeys.reduce((sum, k) => sum + conteo[k].cantidad, 0)
-            const frentesCajon = Object.values(conteo)
-              .filter(v => !v.esHerraje && v.nombreLimpio.toLowerCase().includes("frente") && v.nombreLimpio.toLowerCase().includes("cajon"))
-              .reduce((sum, v) => sum + v.cantidad, 0)
-            
             const canonical = corredKeys.find(k => /corredera[_\s]\d/i.test(k)) || corredKeys[0]
-            const cantidadReal = frentesCajon > 0 ? Math.round(totalPartes / frentesCajon) : totalPartes
             
             for (const k of corredKeys) {
               if (k !== canonical) delete conteo[k]
             }
-            conteo[canonical].cantidad = cantidadReal
-            console.log(`[DESPIECE] Correderas: ${totalPartes} partes / ${frentesCajon} frentes = ${cantidadReal} correderas`)
+            conteo[canonical].cantidad = totalPartes
+            console.log(`[DESPIECE] Correderas: ${totalPartes} mallas en total`)
           }
+          
+          // Post-procesamiento: Aplicar división por 2 para Bisagras y Correderas (instrucción del usuario)
+          Object.keys(conteo).forEach(k => {
+            const lowerKey = k.toLowerCase()
+            if (conteo[k].esHerraje && (lowerKey.startsWith("bisagra") || lowerKey.startsWith("corredera"))) {
+              conteo[k].cantidad = Math.round(conteo[k].cantidad / 2)
+            }
+          })
           
           const nuevoDespiece: ItemDespiece[] = Object.values(conteo).map((info) => {
             const itemExistente = despiece.find(d => 
@@ -1591,9 +1744,11 @@ export function DetalleProyectoModal({ isOpen, onClose, proyecto, onUpdate }: De
             return a.nombre.localeCompare(b.nombre)
           })
           
-          setDespiece(normalizarYAsignarPiezas(nuevoDespiece))
+          const despieceNormalizado = normalizarYAsignarPiezas(nuevoDespiece)
+          setDespiece(despieceNormalizado)
+          handleSaveDespiece(despieceNormalizado)
           setIsScanning(false)
-          setSuccessMsg("¡Modelo P00.glb escaneado y despiece generado con éxito!")
+          setSuccessMsg("¡Modelo P00.glb escaneado y despiece guardado automáticamente con éxito!")
         },
         undefined,
         (err) => {
@@ -2495,6 +2650,7 @@ export function DetalleProyectoModal({ isOpen, onClose, proyecto, onUpdate }: De
                     ref={fileInputRef}
                     onChange={handleRealUpload}
                     className="hidden"
+                    multiple
                   />
 
                   {/* Accordion list */}

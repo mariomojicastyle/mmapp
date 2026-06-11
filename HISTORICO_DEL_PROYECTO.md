@@ -610,6 +610,21 @@ Los estilos, colores y tiempos de transición de las flechas azules se configura
     - **Descarte de Cambios con Reversión Automática**: Programación de la instrucción `bpy.ops.wm.revert_mainfile()` al final del flujo del script para recargar el archivo original `.blend` desde el disco, deshaciendo los cambios temporales de animación y eliminando emisores en el archivo de trabajo mientras se conserva el GLB exportado.
     - **Instructivo y Procesamiento de Silencios en TTS**: Añadido instructivo interactivo en Obsidian Teal en el panel de carga de audios (`detalle-proyecto-modal.tsx`) para la etiqueta de pausas `[pausa: X]`. En la API, se programó la síntesis de silencios concatenando búferes binarios nativos del motor edge-tts (formato idéntico de audio) para evitar colapsos o desincronizaciones en el decodificador de HTML5 Audio del cliente.
 
+* **[2026-06-11] AppArmado_v19 / Plataforma_v8 — Unificación Espacial, Filtro de Superposición de 2mm, Persistencia de Despiece Automática y Sincronía Completa del Visor 3D:**
+    - **Unificación Espacial de Herrajes Complejos (Bisagras y Correderas)**:
+        - Se resolvió la duplicación recurrente en el despiece de bisagras (daba 8 en lugar de 4) causada porque sus mallas se segmentan en Blender por animación móvil/fija (unas cuelgan del Empty de la puerta y otras de `Scene`).
+        - Se implementó un algoritmo de consolidación en Three.js en la plataforma y el visor que evalúa el centro tridimensional del Bounding Box de cada herraje. Si otra submalla del mismo tipo (ej: `Bisagra_20040`) está a menos de **100 mm (10 cm)**, hereda el mismo `instanceId` para agruparlas en 1 sola pieza real.
+        - Se programó una división entre 2 de la cantidad de bisagras y correderas al final del escaneo para reportar con absoluta precisión **4 bisagras y 4 correderas** en el CMS.
+    - **Filtro de Superposición Estricto (2 mm) para Herrajes Simples**:
+        - Para evitar la consolidación errónea de herrajes de unión individuales que están a poca distancia (como pernos o tornillos), se restringió la unificación espacial de 100 mm a herrajes complejos.
+        - Para herrajes simples (pernos, tornillos, tarugos, puntillas), se implementó un filtro de superposición estricto con una tolerancia de **2 mm**. Esto descarta mallas superpuestas exactamente en la misma coordenada por errores de modelado en Blender (duplicaciones accidentales con Shift+D).
+        - Gracias a este filtro, el escáner ignora los 4 duplicados accidentales de puntillas del modelo `P00.glb` y reporta exactamente **34 puntillas físicas reales** y **28 pernos**.
+    - **Persistencia Automática de Despiece (Supabase)**:
+        - Se automatizó la persistencia del despiece al terminar el escaneo del GLB llamando directamente a `handleSaveDespiece` desde la rutina de éxito del escáner en [detalle-proyecto-modal.tsx](file:///c:/Desarrollo/mmapp/mario-mojica-plataforma/components/proyectos/detalle-proyecto-modal.tsx#L1743-L1753). Esto evita que la columna `despiece` quede en `null` por fallos de interacción del usuario al no pulsar el botón manual de guardar.
+    - **Sincronía e Integridad del Visor 3D**:
+        - Se modificó [PanelHerrajes.jsx](file:///c:/Desarrollo/mmapp/legacy-aplicativo-armado/src/features/AssemblyInstructions/components/NavBarInferior/PanelHerrajes/PanelHerrajes.jsx#L201-L224) para que en el paso inicial 00, herede estrictamente la cantidad del despiece oficial (`data.despiece`) de Supabase en lugar de extraerla del nombre del nodo del GLB (lo cual reportaba 16 correderas al haber 16 mallas físicas).
+        - Se alineó el fallback local de [PanelCantidades.jsx](file:///c:/Desarrollo/mmapp/legacy-aplicativo-armado/src/features/AssemblyInstructions/components/NavBarInferior/PanelHerrajes/PanelCantidades/PanelCantidades.jsx#L141-L276) importando `three` y aplicando las mismas reglas de unificación espacial (100 mm), filtro de superposición de 2 mm y división entre 2. Esto garantiza coherencia visual absoluta en las cantidades del manual incluso si falla la base de datos o corre de forma local.
+
 
 
 

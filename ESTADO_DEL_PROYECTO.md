@@ -197,7 +197,11 @@ Un **"Manual Vacío"** es un cascarón o aplicación base centralizada (desplega
   - **Compresión Draco y Animaciones Unificadas**: Integración de la compresión Draco en la exportación de GLB (`export_draco_mesh_compression_enable=True`) para optimizar el peso en web y configuración del modo de animación a `Active actions merged` (`export_animation_mode='ACTIVE_ACTIONS'`) para unificar pistas.
   - **Restauración de Escena y Seguridad**: Implementación de reversión de archivo automática (`revert_blend=True` con `bpy.ops.wm.revert_mainfile()`) para no alterar el archivo `.blend` original en disco y uso de cadenas con nombres de objeto en lugar de referencias directas de C++ para evitar errores de `ReferenceError: StructRNA of type Object has been removed`.
   - **Soporte de Pausas y Silencios en TTS (Next.js)**: Adición de instructivo interactivo en el modal de detalles del proyecto y lógica en la API TTS para intercalar silencios exactos (`[pausa: X]`) basados en el formato binario nativo del motor de voz, evitando cortes del decodificador en la web.
-
+- [x] Manual_Escaner (11 de Junio, 2026):
+  - **Unificación Espacial de Herrajes Complejos**: Algoritmo tridimensional en Three.js que consolida submallas separadas por animación (bisagras y correderas) a menos de 100 mm en una única pieza física real, dividiendo al final entre 2 para reportar con absoluta precisión 4 bisagras y 4 correderas.
+  - **Filtro de Superposición Estricto (2 mm)**: Para herrajes simples (pernos y puntillas), se restringe la tolerancia a 2 mm para ignorar copias duplicadas accidentalmente en Blender con Shift+D, reportando 34 puntillas y 28 pernos de forma blindada.
+  - **Persistencia Automática de Despiece**: Automatización del guardado del despiece en Supabase (`despiece`) inmediatamente tras finalizar el escaneo con éxito en la plataforma Next.js.
+  - **Sincronía Completa del Visor 3D**: Modificaciones en `PanelHerrajes.jsx` para heredar las cantidades estimadas directamente de `data.despiece` en el paso inicial 00, y réplica del algoritmo espacial/superposición en el fallback local en `PanelCantidades.jsx`.
 
 ---
 
@@ -208,7 +212,7 @@ Un **"Manual Vacío"** es un cascarón o aplicación base centralizada (desplega
 - **Local App:** [http://localhost:3000](http://localhost:3000)
 
 ---
-*Última actualización de contexto: 08 de Junio, 2026*
+*Última actualización de contexto: 11 de Junio, 2026*
 
 ---
 

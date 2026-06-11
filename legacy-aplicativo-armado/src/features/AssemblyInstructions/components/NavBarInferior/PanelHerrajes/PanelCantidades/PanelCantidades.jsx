@@ -1,6 +1,7 @@
 import useEnviroment from "../../../../hooks/useEnviroment";
 import { useEffect, useState } from "react";
 import "./PanelCantidades.css";
+import * as THREE from "three";
 
 export default function PanelCantidades({ id, data }) {
   const pasoInicial = useEnviroment((state) => state.pasoInicial);
@@ -67,11 +68,8 @@ export default function PanelCantidades({ id, data }) {
     }
     name = resultParts.join("_");
 
-    // 3. Curación de sufijos de Blender (ej. "Bisagra_20040001" → "Bisagra_20040")
-    name = name.replace(/[._]?0\d\d$/i, "");
-    name = name.replace(/_$/, "");
-    
-    // 4. Limpieza de sufijos de materiales
+    // 3. Limpieza de sufijos comunes de materiales (ej. Cubierta_balance -> Cubierta)
+    // Se ejecuta ANTES que la curación de Blender para que no tape los dígitos finales
     const sufijosMat = ["_BALANCE", "_TAPA", "_CANTO", "_LAMINADO", " BALANCE", " TAPA", " CANTO", " LAMINADO"];
     let upperName = name.toUpperCase();
     for (const suf of sufijosMat) {
@@ -80,6 +78,16 @@ export default function PanelCantidades({ id, data }) {
         upperName = name.toUpperCase();
       }
     }
+
+    // 4. Curación definitiva de sufijos de Blender (ej. "Bisagra_20040001" → "Bisagra_20040")
+    name = name.replace(/[._]?0\d\d$/i, "");
+    name = name.replace(/_$/, "");
+    
+    // Regla de blindaje adicional contra códigos de inventario concatenados con números de copia
+    // Caso 1: Código de 5 dígitos de herraje (ej. 20020) + 3 dígitos de copia (ej. 006) = 8 dígitos (ej. 20020006)
+    name = name.replace(/_(200\d{2})\d{3}$/i, "_$1");
+    // Caso 2: Código de 7 dígitos (ej. 0002715) + 3 dígitos de copia (ej. 003) = 10 dígitos (ej. 0002715003)
+    name = name.replace(/_(000\d{4})\d{3}$/i, "_$1");
     
     // 5. Regla específica para PERNO_ con espacio
     if (name.toUpperCase().startsWith("PERNO_") && name.includes(" ")) {
@@ -132,40 +140,114 @@ export default function PanelCantidades({ id, data }) {
         return;
       }
 
+      // Detectar escala global del modelo (metros vs milímetros)
+      const sceneBBox = new THREE.Box3().setFromObject(pasoInicial);
+      const sceneSize = new THREE.Vector3();
+      sceneBBox.getSize(sceneSize);
+      const maxSceneDim = Math.max(sceneSize.x, sceneSize.y, sceneSize.z);
+      const mult = maxSceneDim > 0 && maxSceneDim < 20 ? 1000 : 1;
+
       const counts = {};
-      const explicitQuantities = {};
       const nombresUnicos = new Set();
       const tempCantidades = [];
+      const herrajesFisicosRegistrados = [];
 
       pasoInicial.traverse((child) => {
         try {
-          if (!child.name) return;
-          const name = child.name;
+          if (child.type !== 'Mesh' && !child.isMesh) return;
+          const rawName = child.name || "";
 
           if (
-            name.includes("Scene") ||
-            name.includes("Capa") ||
-            name.includes("Camera") ||
-            name.includes("Texto") ||
-            name.includes("Pieza") ||
-            name.includes("Collection") ||
-            name.includes("Plane") ||
-            name.includes("Text")
+            rawName.includes("Scene") ||
+            rawName.includes("Capa") ||
+            rawName.includes("Camera") ||
+            rawName.includes("Texto") ||
+            rawName.includes("Pieza") ||
+            rawName.includes("Collection") ||
+            rawName.includes("Plane") ||
+            rawName.includes("Text")
           ) {
             return;
           }
 
-          // Aplicar la misma limpieza que el modal
-          const cleanName = limpiarNombreMalla(name);
-          if (!cleanName || !esHerrajeConocido(cleanName)) return;
-
-          counts[cleanName] = (counts[cleanName] || 0) + 1;
-
-          const matchCantidad = name.match(/Cantidad\((\d+)\)/i);
-          if (matchCantidad) {
-            explicitQuantities[cleanName] = matchCantidad[1];
+          // Resolvamos el nombre del herraje priorizando el parent y geometry, igual que en el modal
+          let parentName = "";
+          if (child.parent && child.parent.type !== 'Scene' && child.parent.name) {
+            parentName = child.parent.name;
           }
 
+          let nameToClean = rawName;
+          if (parentName && !parentName.toUpperCase().startsWith("PIEZA") && parentName.toLowerCase() !== "scene") {
+            nameToClean = parentName;
+          } else if (child.geometry && child.geometry.name) {
+            nameToClean = child.geometry.name;
+          } else if (rawName.includes("_")) {
+            const parts = rawName.split("_");
+            if (parts[0].toLowerCase().startsWith("pieza")) {
+              nameToClean = parts.slice(1).join("_");
+            }
+          }
+
+          // Aplicar la misma limpieza que el modal
+          let cleanName = limpiarNombreMalla(nameToClean);
+          if (!cleanName || !esHerrajeConocido(cleanName)) return;
+
+          // BLINDAJE DINÁMICO CONTRA DUPLICADOS USANDO EL DESPIECE OFICIAL (data.despiece)
+          if (cleanName && data?.despiece) {
+            const herrajesOficiales = data.despiece
+              .filter(item => item.esHerraje)
+              .map(item => item.nombre);
+            
+            if (herrajesOficiales.length > 0 && !herrajesOficiales.includes(cleanName)) {
+              const coincidencia = herrajesOficiales.find(oficial => {
+                if (cleanName.startsWith(oficial)) {
+                  const resto = cleanName.substring(oficial.length);
+                  return /^[._]?\d+$/.test(resto);
+                }
+                return false;
+              });
+              if (coincidencia) {
+                cleanName = coincidencia;
+              }
+            }
+          }
+
+          // Unificación espacial y de superposición idéntica a la plataforma
+          let registrarInstancia = true;
+          const lowerLimpio = cleanName.toLowerCase();
+          const esHerrajeComplejo = /bisagra|corredera/i.test(lowerLimpio);
+
+          const box = new THREE.Box3().setFromObject(child);
+          const center = new THREE.Vector3();
+          box.getCenter(center);
+
+          if (esHerrajeComplejo) {
+            const herrajeCercano = herrajesFisicosRegistrados.find(h => {
+              if (h.nombreLimpio !== cleanName) return false;
+              const dist = center.distanceTo(h.center) * mult;
+              return dist < 100; // 100 mm
+            });
+            if (herrajeCercano) {
+              registrarInstancia = false;
+            } else {
+              herrajesFisicosRegistrados.push({ nombreLimpio: cleanName, center, uuid: child.uuid });
+            }
+          } else {
+            const herrajeDuplicado = herrajesFisicosRegistrados.find(h => {
+              if (h.nombreLimpio !== cleanName) return false;
+              const dist = center.distanceTo(h.center) * mult;
+              return dist < 2; // 2 mm
+            });
+            if (herrajeDuplicado) {
+              registrarInstancia = false;
+            } else {
+              herrajesFisicosRegistrados.push({ nombreLimpio: cleanName, center, uuid: child.uuid });
+            }
+          }
+
+          if (!registrarInstancia) return;
+
+          counts[cleanName] = (counts[cleanName] || 0) + 1;
           nombresUnicos.add(cleanName);
         } catch (childErr) {
           console.error("Error procesando nodo de herraje:", childErr);
@@ -173,14 +255,18 @@ export default function PanelCantidades({ id, data }) {
       });
 
       nombresUnicos.forEach((cleanName) => {
-        const cantidadFinal = explicitQuantities[cleanName] !== undefined 
-          ? explicitQuantities[cleanName] 
-          : String(counts[cleanName]);
+        let cantidadFinalNum = counts[cleanName] || 0;
+        
+        // Aplicar división por 2 para Bisagras y Correderas (instrucción del usuario)
+        const lowerLimpio = cleanName.toLowerCase();
+        if (lowerLimpio.startsWith("bisagra") || lowerLimpio.startsWith("corredera")) {
+          cantidadFinalNum = Math.round(cantidadFinalNum / 2);
+        }
 
         tempCantidades.push({
           displayName: cleanName,
           value: cleanName,
-          cantidad: cantidadFinal,
+          cantidad: String(cantidadFinalNum),
           imageUrl: getHerrajeImageUrl(cleanName)
         });
       });

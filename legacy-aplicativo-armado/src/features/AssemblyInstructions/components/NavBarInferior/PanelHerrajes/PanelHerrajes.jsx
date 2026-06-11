@@ -79,11 +79,8 @@ export default function PanelHerrajes({ id, data }) {
     }
     name = resultParts.join("_");
 
-    // 3. Curación de sufijos de Blender (ej. "Bisagra_20040001" → "Bisagra_20040")
-    name = name.replace(/[._]?0\d\d$/i, "");
-    name = name.replace(/_$/, "");
-    
-    // 4. Limpieza de sufijos de materiales
+    // 3. Limpieza de sufijos comunes de materiales (ej. Cubierta_balance -> Cubierta)
+    // Se ejecuta ANTES que la curación de Blender para que no tape los dígitos finales
     const sufijosMat = ["_BALANCE", "_TAPA", "_CANTO", "_LAMINADO", " BALANCE", " TAPA", " CANTO", " LAMINADO"];
     let upperName = name.toUpperCase();
     for (const suf of sufijosMat) {
@@ -92,6 +89,16 @@ export default function PanelHerrajes({ id, data }) {
         upperName = name.toUpperCase();
       }
     }
+
+    // 4. Curación definitiva de sufijos de Blender (ej. "Bisagra_20040001" → "Bisagra_20040")
+    name = name.replace(/[._]?0\d\d$/i, "");
+    name = name.replace(/_$/, "");
+    
+    // Regla de blindaje adicional contra códigos de inventario concatenados con números de copia
+    // Caso 1: Código de 5 dígitos de herraje (ej. 20020) + 3 dígitos de copia (ej. 006) = 8 dígitos (ej. 20020006)
+    name = name.replace(/_(200\d{2})\d{3}$/i, "_$1");
+    // Caso 2: Código de 7 dígitos (ej. 0002715) + 3 dígitos de copia (ej. 003) = 10 dígitos (ej. 0002715003)
+    name = name.replace(/_(000\d{4})\d{3}$/i, "_$1");
     
     // 5. Regla específica para PERNO_ con espacio
     if (name.toUpperCase().startsWith("PERNO_") && name.includes(" ")) {
@@ -125,53 +132,106 @@ export default function PanelHerrajes({ id, data }) {
     const nombresUnicos = new Set();
 
     model.traverse((child) => {
-      if (!child.name) return;
-      const name = child.name;
+      if (child.type !== 'Mesh' && !child.isMesh) return;
+      
+      const rawName = child.name || "";
 
       // Exclusiones de elementos comunes 3D
       if (
-        name.includes("Scene") ||
-        name.includes("Capa") ||
-        name.includes("Camera") ||
-        name.includes("Collection") ||
-        name.includes("Plane") ||
-        name.includes("Texto") ||
-        name.includes("Text") ||
-        name.includes("Pieza")
+        rawName.includes("Scene") ||
+        rawName.includes("Capa") ||
+        rawName.includes("Camera") ||
+        rawName.includes("Collection") ||
+        rawName.includes("Plane") ||
+        rawName.includes("Texto") ||
+        rawName.includes("Text") ||
+        rawName.includes("Pieza")
       ) {
         return;
       }
 
       let cantidad = "";
-      if (name.includes("-")) {
-        const characters = name.split("-");
+      if (rawName.includes("-")) {
+        const characters = rawName.split("-");
         cantidad = characters[2] || "";
       }
 
-      // Aplicar la misma limpieza que el modal para obtener el nombre canónico
-      const cleanName = limpiarNombreMalla(name);
+      // Resolvamos el nombre del herraje priorizando el parent y geometry, igual que en el modal
+      let parentName = "";
+      if (child.parent && child.parent.type !== 'Scene' && child.parent.name) {
+        parentName = child.parent.name;
+      }
+
+      let nameToClean = rawName;
+      if (parentName && !parentName.toUpperCase().startsWith("PIEZA") && parentName.toLowerCase() !== "scene") {
+        nameToClean = parentName;
+      } else if (child.geometry && child.geometry.name) {
+        nameToClean = child.geometry.name;
+      } else if (rawName.includes("_")) {
+        const parts = rawName.split("_");
+        if (parts[0].toLowerCase().startsWith("pieza")) {
+          nameToClean = parts.slice(1).join("_");
+        }
+      }
+
+      // Aplicar la limpieza del nombre
+      let cleanName = limpiarNombreMalla(nameToClean);
       if (!cleanName || !esHerrajeConocido(cleanName)) return;
+
+      // BLINDAJE DINÁMICO CONTRA DUPLICADOS USANDO EL DESPIECE OFICIAL (data.despiece)
+      if (cleanName && data?.despiece) {
+        const herrajesOficiales = data.despiece
+          .filter(item => item.esHerraje)
+          .map(item => item.nombre);
+        
+        if (herrajesOficiales.length > 0 && !herrajesOficiales.includes(cleanName)) {
+          const coincidencia = herrajesOficiales.find(oficial => {
+            if (cleanName.startsWith(oficial)) {
+              const resto = cleanName.substring(oficial.length);
+              return /^[._]?\d+$/.test(resto);
+            }
+            return false;
+          });
+          if (coincidencia) {
+            cleanName = coincidencia;
+          }
+        }
+      }
 
       if (PasoActual === "00") {
         if (!nombresUnicos.has(cleanName)) {
           nombresUnicos.add(cleanName);
+          
+          let cantidadFinal = "";
+          if (data?.despiece && Array.isArray(data.despiece)) {
+            const oficial = data.despiece.find(d => d.esHerraje && d.nombre === cleanName);
+            if (oficial) {
+              cantidadFinal = String(oficial.cantidad);
+            }
+          }
+          
+          // Fallback al nombre del nodo si no se encuentra en el despiece
+          if (!cantidadFinal) {
+            cantidadFinal = cantidad;
+          }
+
           tempHerrajes.push({
             displayName: cleanName,
-            value: name,
-            cantidad: cantidad,
+            value: rawName,
+            cantidad: cantidadFinal,
             imageUrl: getHerrajeImageUrl(cleanName)
           });
         }
       } else {
         // En pasos de armado: mostrar herrajes activos (con marcador # o sin guión)
-        if (name.includes("-")) {
-          const characters = name.split("-");
+        if (rawName.includes("-")) {
+          const characters = rawName.split("-");
           if (characters[1] && characters[1].includes("#")) {
             if (!nombresUnicos.has(cleanName)) {
               nombresUnicos.add(cleanName);
               tempHerrajes.push({
                 displayName: cleanName,
-                value: name,
+                value: rawName,
                 imageUrl: getHerrajeImageUrl(cleanName)
               });
             }
@@ -181,7 +241,7 @@ export default function PanelHerrajes({ id, data }) {
             nombresUnicos.add(cleanName);
             tempHerrajes.push({
               displayName: cleanName,
-              value: name,
+              value: rawName,
               imageUrl: getHerrajeImageUrl(cleanName)
             });
           }
