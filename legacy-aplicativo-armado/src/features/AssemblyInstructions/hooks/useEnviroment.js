@@ -83,6 +83,9 @@ export default create(
 
       //Global state de cada una de las ayudas que se activan
       ayuda1: false,
+      ayudaLuz: false,
+      ayudaVelocidad: false,
+      ayudaIdioma: false,
       // ayuda2: false,
       ayuda3: false,
       ayuda3ArrowLeft: false,
@@ -214,26 +217,173 @@ export default create(
         PanelAyudas: true,
         panelTips: false,
         PanelShow: false,
-        PanelCantidades: false
+        PanelCantidades: false,
+        ayuda1: false,
+        ayudaLuz: false,
+        ayudaVelocidad: false,
+        ayudaIdioma: false,
+        ayuda3: false,
+        ayuda3ArrowLeft: false,
+        ayuda3ArrowCenter: false,
+        ayuda3ArrowRight: false,
+        ayuda4: false,
+        ayuda5: false,
+        ayuda6: false
       })),
-      PanelAyudasFalse: () => set((state) => ({ PanelAyudas: false, btnCerrar: false })),
+      PanelAyudasFalse: () => set((state) => ({
+        PanelAyudas: false,
+        btnCerrar: false,
+        phaseAudio: "paused",
+        ayuda1: false,
+        ayudaLuz: false,
+        ayudaVelocidad: false,
+        ayudaIdioma: false,
+        ayuda3: false,
+        ayuda3ArrowLeft: false,
+        ayuda3ArrowCenter: false,
+        ayuda3ArrowRight: false,
+        ayuda4: false,
+        ayuda5: false,
+        ayuda6: false
+      })),
 
 
-      ActivarAyuda1: () => set((state) => ({ ayuda1: true })),
+      ActivarAyuda1: () => set((state) => ({
+        ayuda1: true,
+        ayudaLuz: false,
+        ayudaVelocidad: false,
+        ayudaIdioma: false,
+        ayuda3: false,
+        ayuda3ArrowLeft: false,
+        ayuda3ArrowCenter: false,
+        ayuda3ArrowRight: false,
+        ayuda4: false,
+        ayuda5: false,
+        ayuda6: false
+      })),
       // quitar ayuda2 - tooltip de los colores
       // ActivarAyuda2: () => set((state) => ({ ayuda2: true })),
-      ActivarAyuda3: () => set((state) => ({ ayuda3: true })),
+      ActivarAyudaLuz: () => set((state) => ({
+        ayuda1: false,
+        ayudaLuz: true,
+        ayudaVelocidad: false,
+        ayudaIdioma: false,
+        ayuda3: false,
+        ayuda3ArrowLeft: false,
+        ayuda3ArrowCenter: false,
+        ayuda3ArrowRight: false,
+        ayuda4: false,
+        ayuda5: false,
+        ayuda6: false
+      })),
+      ActivarAyudaVelocidad: () => set((state) => ({
+        ayuda1: false,
+        ayudaLuz: false,
+        ayudaVelocidad: true,
+        ayudaIdioma: false,
+        ayuda3: false,
+        ayuda3ArrowLeft: false,
+        ayuda3ArrowCenter: false,
+        ayuda3ArrowRight: false,
+        ayuda4: false,
+        ayuda5: false,
+        ayuda6: false
+      })),
+      ActivarAyudaIdioma: () => set((state) => ({
+        ayuda1: false,
+        ayudaLuz: false,
+        ayudaVelocidad: false,
+        ayudaIdioma: true,
+        ayuda3: false,
+        ayuda3ArrowLeft: false,
+        ayuda3ArrowCenter: false,
+        ayuda3ArrowRight: false,
+        ayuda4: false,
+        ayuda5: false,
+        ayuda6: false
+      })),
+      ActivarAyuda3: () => set((state) => ({
+        ayuda1: false,
+        ayudaLuz: false,
+        ayudaVelocidad: false,
+        ayudaIdioma: false,
+        ayuda3: true,
+        ayuda3ArrowLeft: false,
+        ayuda3ArrowCenter: true,
+        ayuda3ArrowRight: false,
+        ayuda4: false,
+        ayuda5: false,
+        ayuda6: false
+      })),
+      ActivarAyuda3Right: () => set((state) => ({
+        ayuda3ArrowLeft: false,
+        ayuda3ArrowCenter: false,
+        ayuda3ArrowRight: true
+      })),
+      ActivarAyuda3Left: () => set((state) => ({
+        ayuda3ArrowLeft: true,
+        ayuda3ArrowCenter: false,
+        ayuda3ArrowRight: false
+      })),
       SetAyuda3ArrowLeft: (val) => set(() => ({ ayuda3ArrowLeft: val })),
       SetAyuda3ArrowCenter: (val) => set(() => ({ ayuda3ArrowCenter: val })),
       SetAyuda3ArrowRight: (val) => set(() => ({ ayuda3ArrowRight: val })),
-      ActivarAyuda4: () => set((state) => ({ ayuda4: true })),
-      ActivarAyuda5: () => set((state) => ({ ayuda5: true })),
-      ActivarAyuda6: () => set((state) => ({ ayuda6: true })),
+      ActivarAyuda4: () => set((state) => ({
+        ayuda1: false,
+        ayudaLuz: false,
+        ayudaVelocidad: false,
+        ayudaIdioma: false,
+        ayuda3: false,
+        ayuda3ArrowLeft: false,
+        ayuda3ArrowCenter: false,
+        ayuda3ArrowRight: false,
+        ayuda4: true,
+        ayuda5: false,
+        ayuda6: false
+      })),
+      ActivarAyuda5: () => set((state) => ({
+        ayuda1: false,
+        ayudaLuz: false,
+        ayudaVelocidad: false,
+        ayudaIdioma: false,
+        ayuda3: false,
+        ayuda3ArrowLeft: false,
+        ayuda3ArrowCenter: false,
+        ayuda3ArrowRight: false,
+        ayuda4: false,
+        ayuda5: true,
+        ayuda6: false
+      })),
+      ActivarAyuda6: () => set((state) => ({
+        ayuda1: false,
+        ayudaLuz: false,
+        ayudaVelocidad: false,
+        ayudaIdioma: false,
+        ayuda3: false,
+        ayuda3ArrowLeft: false,
+        ayuda3ArrowCenter: false,
+        ayuda3ArrowRight: false,
+        ayuda4: false,
+        ayuda5: false,
+        ayuda6: true
+      })),
       ActivarParpadeo: () => set((state) => ({ Parpadeo: true })),
       DesactivarParpadeo: () => set((state) => ({ Parpadeo: false })),
-      AyudasActivadas: () => set((state) => ({ ayuda1: true, ayuda3: true, ayuda4: true, ayuda5: true, ayuda6: true })),
+      AyudasActivadas: () => set((state) => ({
+        ayuda1: true,
+        ayudaLuz: true,
+        ayudaVelocidad: true,
+        ayudaIdioma: true,
+        ayuda3: true,
+        ayuda4: true,
+        ayuda5: true,
+        ayuda6: true
+      })),
       ResetAyudas: () => set((state) => ({
         ayuda1: false,
+        ayudaLuz: false,
+        ayudaVelocidad: false,
+        ayudaIdioma: false,
         ayuda3: false,
         ayuda3ArrowLeft: false,
         ayuda3ArrowCenter: false,
@@ -271,10 +421,34 @@ export default create(
 
       sombras: false,
       toggleSombras: () => set((state) => ({ sombras: !state.sombras })),
-      idioma: "es", // 'es' | 'es-ES' | 'en'
+      idioma: (() => {
+        if (typeof window !== "undefined" && window.navigator) {
+          const userLang = window.navigator.language || "en";
+          if (userLang.startsWith("es")) {
+            // Intentar usar la zona horaria del sistema para discriminar geográficamente
+            try {
+              const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+              if (timeZone && timeZone.includes("Europe")) {
+                return "es-ES"; // Si la zona horaria es de Europa, español de España
+              }
+              if (timeZone && timeZone.includes("America")) {
+                return "es"; // Si la zona horaria es de América, español latino
+              }
+            } catch (e) {
+              // Fallback silencioso si falla la resolución de la zona horaria
+            }
+            
+            // Fallback clásico según el código del navegador
+            if (userLang === "es-ES" || userLang.startsWith("es-ES")) {
+              return "es-ES";
+            }
+            return "es"; // Español Latino
+          }
+        }
+        return "en"; // Inglés por defecto
+      })(),
       cambiarIdioma: (nuevoIdioma) => {
-        // Forzado estrictamente a 'es' (español latino) para simplificación y pruebas de audio
-        set(() => ({ idioma: "es" }));
+        set(() => ({ idioma: nuevoIdioma }));
       },
       playbackRate: 1.0,
       setPlaybackRate: (rate) => set(() => ({ playbackRate: rate })),

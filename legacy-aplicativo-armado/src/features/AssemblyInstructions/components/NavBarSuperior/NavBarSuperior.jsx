@@ -18,6 +18,9 @@ export default function NavBarSuperior({ id, data }) {
   const PanelAyudasTrue = useEnviroment((state) => state.PanelAyudasTrue);
   const PanelAyudas = useEnviroment((state) => state.PanelAyudas);
   const ayuda1 = useEnviroment((state) => state.ayuda1);
+  const ayudaLuz = useEnviroment((state) => state.ayudaLuz);
+  const ayudaVelocidad = useEnviroment((state) => state.ayudaVelocidad);
+  const ayudaIdioma = useEnviroment((state) => state.ayudaIdioma);
   const sombras = useEnviroment((state) => state.sombras);
   const toggleSombras = useEnviroment((state) => state.toggleSombras);
   const idioma = useEnviroment((state) => state.idioma);
@@ -25,6 +28,53 @@ export default function NavBarSuperior({ id, data }) {
   const playbackRate = useEnviroment((state) => state.playbackRate);
   const setPlaybackRate = useEnviroment((state) => state.setPlaybackRate);
   const [showSpeedMenu, setShowSpeedMenu] = useState(false);
+  const [showLangMenu, setShowLangMenu] = useState(false);
+
+  const texts = {
+    es: {
+      tutorialTitle: "Tutorial de Interfaz",
+      infoTitle: "Informacion General",
+      shadowsHigh: "Calidad Visual: Alta (Sombras)",
+      shadowsLow: "Calidad Visual: Rendimiento",
+      speedTitle: "Velocidad de reproducción de audio",
+      langTitle: "Cambiar idioma del manual",
+      ayuda1Title: "Guía y Herramientas",
+      ayuda1Items: [
+        "Marca del producto",
+        "Herramientas requeridas",
+        "Indicaciones especiales",
+        "Garantía del mueble"
+      ],
+      ayudaLuzTitle: "Lámpara",
+      ayudaLuzText: "Lampara",
+      ayudaVelocidadTitle: "Tiempo",
+      ayudaVelocidadText: "Tiempo",
+      ayudaIdiomaTitle: "Idioma",
+      ayudaIdiomaText: "Idioma"
+    },
+    en: {
+      tutorialTitle: "Interface Tutorial",
+      infoTitle: "General Information",
+      shadowsHigh: "Visual Quality: High (Shadows)",
+      shadowsLow: "Visual Quality: Performance",
+      speedTitle: "Audio playback speed",
+      langTitle: "Change manual language",
+      ayuda1Title: "Guide & Tools",
+      ayuda1Items: [
+        "Product brand",
+        "Required tools",
+        "Special instructions",
+        "Furniture warranty"
+      ],
+      ayudaLuzTitle: "Lamp",
+      ayudaLuzText: "Lighting Quality",
+      ayudaVelocidadTitle: "Time",
+      ayudaVelocidadText: "Audio Speed",
+      ayudaIdiomaTitle: "Language",
+      ayudaIdiomaText: "Change Language"
+    }
+  };
+  const t = idioma === "en" ? texts.en : texts.es;
 
 
   const idiomaOptions = [
@@ -62,17 +112,18 @@ export default function NavBarSuperior({ id, data }) {
     btnCerrarTrue();
   }
 
-  // Cerrar el popover al hacer clic fuera del botón
+  // Cerrar los popovers al hacer clic fuera del botón
   useEffect(() => {
-    if (!showSpeedMenu) return;
+    if (!showSpeedMenu && !showLangMenu) return;
     const handleOutsideClick = () => {
       setShowSpeedMenu(false);
+      setShowLangMenu(false);
     };
     document.addEventListener("click", handleOutsideClick);
     return () => {
       document.removeEventListener("click", handleOutsideClick);
     };
-  }, [showSpeedMenu]);
+  }, [showSpeedMenu, showLangMenu]);
   
 
   return (
@@ -96,23 +147,22 @@ export default function NavBarSuperior({ id, data }) {
           </div> */}
 
           {/* <!-- Boton de ayuda --> */}
-          <div className="button" id="help" title="Tutorial de Interfaz" onClick={showPanelAyudas}>
+          <div className="button" id="help" title={t.tutorialTitle} onClick={showPanelAyudas}>
             <IconHelp />
           </div>
 
           {/* <!-- Boton de información --> */}
-          <div id="info" title="Informacion General" className="button" onClick={showPanelTips}>
+          <div id="info" title={t.infoTitle} className="button" onClick={showPanelTips}>
             <IconInfo />
             
             {/* Burbuja de ayuda 1: Guía y Herramientas */}
             <div className={`ayuda-bubble ayuda1 ${PanelAyudas && ayuda1 ? "is-active" : ""}`} onClick={(e) => e.stopPropagation()}>
               <div className="ayuda-bubble-arrow arrow-up"></div>
-              <div className="ayuda-bubble-title">Guía y Herramientas</div>
+              <div className="ayuda-bubble-title">{t.ayuda1Title}</div>
               <ul className="ayuda-bubble-list">
-                <li className="ayuda-bubble-item">Marca del producto</li>
-                <li className="ayuda-bubble-item">Herramientas requeridas</li>
-                <li className="ayuda-bubble-item">Indicaciones especiales</li>
-                <li className="ayuda-bubble-item">Garantía del mueble</li>
+                {t.ayuda1Items.map((item, idx) => (
+                  <li key={idx} className="ayuda-bubble-item">{item}</li>
+                ))}
               </ul>
             </div>
           </div>
@@ -122,9 +172,16 @@ export default function NavBarSuperior({ id, data }) {
             className="button"
             id="shadows" 
             onClick={toggleSombras} 
-            title={sombras ? "Calidad Visual: Alta (Sombras)" : "Calidad Visual: Rendimiento"}
+            title={sombras ? t.shadowsHigh : t.shadowsLow}
           >
             <IconShadows sombras={sombras} />
+
+            {/* Burbuja de ayuda Luz: Lámpara */}
+            <div className={`ayuda-bubble ayudaLuz ${PanelAyudas && ayudaLuz ? "is-active" : ""}`} onClick={(e) => e.stopPropagation()}>
+              <div className="ayuda-bubble-arrow arrow-up"></div>
+              <div className="ayuda-bubble-title">{t.ayudaLuzTitle}</div>
+              <div className="ayuda-bubble-text">{t.ayudaLuzText}</div>
+            </div>
           </div>
 
           {/* <!-- Opciones de cambio de color de vizualización del mueble--> */}
@@ -157,10 +214,11 @@ export default function NavBarSuperior({ id, data }) {
             <button
               className="button"
               id="btnSpeed"
-              title="Velocidad de reproducción de audio"
+              title={t.speedTitle}
               onClick={(e) => {
                 e.stopPropagation(); // Evitar que el clic en el botón cierre el menú inmediatamente
                 setShowSpeedMenu(!showSpeedMenu);
+                setShowLangMenu(false); // Cerrar el menú de idioma
               }}
               type="button"
             >
@@ -181,11 +239,67 @@ export default function NavBarSuperior({ id, data }) {
                     }}
                     type="button"
                   >
-                    {rate === 1.0 ? "1.0x (Normal)" : `${rate}x`}
+                    {rate === 1.0 ? (idioma === "en" ? "1.0x (Normal)" : "1.0x (Normal)") : `${rate}x`}
                   </button>
                 ))}
               </div>
             )}
+
+            {/* Burbuja de ayuda Velocidad: Tiempo */}
+            <div className={`ayuda-bubble ayudaVelocidad ${PanelAyudas && ayudaVelocidad ? "is-active" : ""}`} onClick={(e) => e.stopPropagation()}>
+              <div className="ayuda-bubble-arrow arrow-up"></div>
+              <div className="ayuda-bubble-title">{t.ayudaVelocidadTitle}</div>
+              <div className="ayuda-bubble-text">{t.ayudaVelocidadText}</div>
+            </div>
+          </div>
+
+          {/* Botón de control de idioma (tipo popover flotante) */}
+          <div className="lang-controller-container" style={{ position: "relative" }}>
+            <button
+              className="button"
+              id="btnLang"
+              title={t.langTitle}
+              onClick={(e) => {
+                e.stopPropagation(); // Evitar que el clic cierre el menú
+                setShowLangMenu(!showLangMenu);
+                setShowSpeedMenu(false); // Cerrar el menú de velocidad
+              }}
+              type="button"
+            >
+              <span className="lang-btn-text" style={{ fontSize: "0.85rem", fontWeight: "700", fontFamily: "var(--font-sans)" }}>
+                {idioma === "en" ? "EN" : idioma === "es-ES" ? "EU" : "ES"}
+              </span>
+            </button>
+
+            {showLangMenu && (
+              <div className="lang-menu" onClick={(e) => e.stopPropagation()}>
+                {[
+                  { value: "en", label: "English", sub: "US / UK" },
+                  { value: "es", label: "Español", sub: "Latinoamérica" },
+                  { value: "es-ES", label: "Español", sub: "España" },
+                ].map((opt) => (
+                  <button
+                    key={opt.value}
+                    className={`lang-menu-item ${idioma === opt.value ? "lang-menu-item--active" : ""}`}
+                    onClick={() => {
+                      cambiarIdioma(opt.value);
+                      setShowLangMenu(false);
+                    }}
+                    type="button"
+                  >
+                    <span className="lang-menu-label">{opt.label}</span>
+                    <span className="lang-menu-sub">{opt.sub}</span>
+                  </button>
+                ))}
+              </div>
+            )}
+
+            {/* Burbuja de ayuda Idioma: Idioma */}
+            <div className={`ayuda-bubble ayudaIdioma ${PanelAyudas && ayudaIdioma ? "is-active" : ""}`} onClick={(e) => e.stopPropagation()}>
+              <div className="ayuda-bubble-arrow arrow-up"></div>
+              <div className="ayuda-bubble-title">{t.ayudaIdiomaTitle}</div>
+              <div className="ayuda-bubble-text">{t.ayudaIdiomaText}</div>
+            </div>
           </div>
 
           {/* <!-- Link de la libreria, que permite el uso del icono en SVG perteneciente al boton de realidad aumentada  --> */}

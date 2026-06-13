@@ -49,7 +49,12 @@ export default function AudioPlayer() {
   const PanelAyudas = useEnviroment((state) => state.PanelAyudas);
   const PanelAyudasFalse = useEnviroment((state) => state.PanelAyudasFalse);
   const ActivarAyuda1 = useEnviroment((state) => state.ActivarAyuda1);
+  const ActivarAyudaLuz = useEnviroment((state) => state.ActivarAyudaLuz);
+  const ActivarAyudaVelocidad = useEnviroment((state) => state.ActivarAyudaVelocidad);
+  const ActivarAyudaIdioma = useEnviroment((state) => state.ActivarAyudaIdioma);
   const ActivarAyuda3 = useEnviroment((state) => state.ActivarAyuda3);
+  const ActivarAyuda3Right = useEnviroment((state) => state.ActivarAyuda3Right);
+  const ActivarAyuda3Left = useEnviroment((state) => state.ActivarAyuda3Left);
   const ActivarAyuda4 = useEnviroment((state) => state.ActivarAyuda4);
   const ActivarAyuda5 = useEnviroment((state) => state.ActivarAyuda5);
   const ActivarAyuda6 = useEnviroment((state) => state.ActivarAyuda6);
@@ -95,15 +100,25 @@ export default function AudioPlayer() {
 
       audioRef.current.ontimeupdate = () => {
         let ct = audioRef.current.currentTime;
-        if (Math.round(ct) == 2) {
+        if (Math.round(ct) == 3) {
           ActivarAyuda1();
-        } else if (Math.round(ct) == 10) {
+        } else if (Math.round(ct) == 12) {
+          ActivarAyudaLuz();
+        } else if (Math.round(ct) == 31) {
+          ActivarAyudaVelocidad();
+        } else if (Math.round(ct) == 34) {
+          ActivarAyudaIdioma();
+        } else if (Math.round(ct) == 41) {
           ActivarAyuda3();
-        } else if (Math.round(ct) == 22) {
+        } else if (Math.round(ct) == 48) {
+          ActivarAyuda3Right();
+        } else if (Math.round(ct) == 50) {
+          ActivarAyuda3Left();
+        } else if (Math.round(ct) == 54) {
           ActivarAyuda4();
-        } else if (Math.round(ct) == 35) {
+        } else if (Math.round(ct) == 68) {
           ActivarAyuda5();
-        } else if (Math.round(ct) == 38) {
+        } else if (Math.round(ct) == 74) {
           ActivarAyuda6();
         } else if (audioRef.current.ended) {
           PanelAyudasFalse();

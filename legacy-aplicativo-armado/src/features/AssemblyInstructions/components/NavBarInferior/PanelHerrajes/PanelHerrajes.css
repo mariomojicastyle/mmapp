@@ -164,12 +164,12 @@
 
 /* Botón flotante premium de cantidades totales de herrajes */
 .option-cantidades-container {
-  margin-top: 40px;
+  margin-top: 0;
   width: 100%;
   display: flex;
   justify-content: center;
   align-items: center;
-  padding-bottom: 3rem;
+  padding-bottom: 1rem;
 }
 
 .option-cantidades-btn {

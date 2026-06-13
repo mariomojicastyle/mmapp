@@ -529,3 +529,13 @@ svg circle:nth-child(2) {
     background: var(--surface);
   }
 }
+
+/* Contenedor flotante de la barra de progreso de carga (Loader 3D) */
+.progress-model-loader-container {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 1000;
+  pointer-events: none;
+}

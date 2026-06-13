@@ -180,6 +180,8 @@ export function DetalleProyectoModal({ isOpen, onClose, proyecto, onUpdate }: De
   const [pbrWallNormal, setPbrWallNormal] = useState("")
   const [pbrWallRoughness, setPbrWallRoughness] = useState("")
   const [pbrWallHeight, setPbrWallHeight] = useState("")
+  const [tipoAmbiente, setTipoAmbiente] = useState("habitacion")
+  const [colorAmbiente, setColorAmbiente] = useState("#e8e8e8")
 
   // Insumos State
   const [glbSteps, setGlbSteps] = useState<{ step: string; fileName: string; progress: number; cameraPosition?: number[]; cameraTarget?: number[] }[]>([])
@@ -459,16 +461,40 @@ export function DetalleProyectoModal({ isOpen, onClose, proyecto, onUpdate }: De
     setError("")
     try {
       if (uploadToStorage && codigoManual) {
-        const storagePath = lang === "es"
-          ? `sounds/${stepId}.mp3`
-          : `sounds/${lang}/${stepId}_${lang}.mp3`
-        const res = await fetch("/api/tts", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ text, voice, codigoManual, storagePath })
-        })
-        if (!res.ok) { const err = await res.json(); throw new Error(err.error) }
-        setSuccessMsg(`Audio ${audioKey} generado y subido a Storage ✓`)
+        if (lang === "es") {
+          // Generar y subir tanto Español Latino como Español España en paralelo
+          const storagePathEs = `sounds/${stepId}.mp3`
+          const storagePathEsEs = `sounds/es-ES/${stepId}_es-ES.mp3`
+          
+          const pEs = fetch("/api/tts", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ text, voice: ttsVoices.es_latam, codigoManual, storagePath: storagePathEs })
+          })
+          
+          const pEsEs = fetch("/api/tts", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ text, voice: ttsVoices.es_europe, codigoManual, storagePath: storagePathEsEs })
+          })
+
+          const [resEs, resEsEs] = await Promise.all([pEs, pEsEs])
+
+          if (!resEs.ok) { const err = await resEs.json(); throw new Error(`Error en Español Latino: ${err.error}`) }
+          if (!resEsEs.ok) { const err = await resEsEs.json(); throw new Error(`Error en Español España: ${err.error}`) }
+
+          setSuccessMsg(`Audios en Español Latino y Español España para ${stepId} generados y subidos ✓`)
+        } else {
+          // Comportamiento estándar para otros idiomas individuales
+          const storagePath = lang === "en" ? `sounds/en/${stepId}_en.mp3` : `sounds/es-ES/${stepId}_es-ES.mp3`
+          const res = await fetch("/api/tts", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ text, voice, codigoManual, storagePath })
+          })
+          if (!res.ok) { const err = await res.json(); throw new Error(err.error) }
+          setSuccessMsg(`Audio ${audioKey} generado y subido a Storage ✓`)
+        }
       } else {
         const res = await fetch("/api/tts", {
           method: "POST",
@@ -729,6 +755,8 @@ export function DetalleProyectoModal({ isOpen, onClose, proyecto, onUpdate }: De
               setPbrWallNormal(data.pbr_wall_normal || "")
               setPbrWallRoughness(data.pbr_wall_roughness || "")
               setPbrWallHeight(data.pbr_wall_height || "")
+              setTipoAmbiente(data.tipo_ambiente || "habitacion")
+              setColorAmbiente(data.color_ambiente || "#e8e8e8")
 
               setGlbSteps((data.glb_pasos as any) || [])
               setAudioEsSteps((data.audio_es_pasos as any) || [])
@@ -1861,6 +1889,8 @@ export function DetalleProyectoModal({ isOpen, onClose, proyecto, onUpdate }: De
           pbr_wall_normal: pbrWallNormal,
           pbr_wall_roughness: pbrWallRoughness,
           pbr_wall_height: pbrWallHeight,
+          tipo_ambiente: tipoAmbiente,
+          color_ambiente: colorAmbiente,
 
           glb_pasos: glbSteps,
           audio_es_pasos: audioEsSteps,
@@ -2640,6 +2670,63 @@ export function DetalleProyectoModal({ isOpen, onClose, proyecto, onUpdate }: De
                             </div>
                           </div>
                         </div>
+                      </div>
+
+                      {/* Estilo de Ambiente */}
+                      <div className="bg-surface-container-low/40 p-4 rounded-xl border border-outline-variant/5 space-y-4">
+                        <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+                          <div className="space-y-1">
+                            <div className="text-xs font-bold text-on-surface">Estilo de Ambiente 3D</div>
+                            <div className="text-[11px] text-on-surface-variant">Selecciona el tipo de entorno para la visualización del manual.</div>
+                          </div>
+                          <div className="flex gap-2">
+                            <button
+                              type="button"
+                              onClick={() => setTipoAmbiente("habitacion")}
+                              className={`rounded-lg px-3 py-1.5 text-xs font-semibold transition ${
+                                tipoAmbiente === "habitacion"
+                                  ? "bg-primary text-primary-container"
+                                  : "bg-surface-container hover:bg-surface-container-high text-on-surface-variant"
+                              }`}
+                            >
+                              🏠 Habitación Clásica
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setTipoAmbiente("estudio")}
+                              className={`rounded-lg px-3 py-1.5 text-xs font-semibold transition ${
+                                tipoAmbiente === "estudio"
+                                  ? "bg-primary text-primary-container"
+                                  : "bg-surface-container hover:bg-surface-container-high text-on-surface-variant"
+                              }`}
+                            >
+                              🎨 Estudio 3D (Spline)
+                            </button>
+                          </div>
+                        </div>
+
+                        {tipoAmbiente === "estudio" && (
+                          <div className="flex items-center gap-4 border-t border-outline-variant/10 pt-3">
+                            <div className="space-y-0.5">
+                              <span className="text-[10px] font-bold text-on-surface-variant uppercase tracking-wider">Color de Fondo y Piso</span>
+                              <p className="text-[10px] text-on-surface-variant/70">Define el tono del entorno de estudio 3D.</p>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <input
+                                type="color"
+                                value={colorAmbiente}
+                                onChange={(e) => setColorAmbiente(e.target.value)}
+                                className="h-7 w-7 cursor-pointer rounded border border-outline-variant bg-transparent p-0"
+                              />
+                              <input
+                                type="text"
+                                value={colorAmbiente}
+                                onChange={(e) => setColorAmbiente(e.target.value)}
+                                className="w-20 rounded border border-outline-variant bg-surface-container px-2 py-1 text-[11px] text-on-surface outline-none focus:border-primary"
+                              />
+                            </div>
+                          </div>
+                        )}
                       </div>
                     </div>
                   </div>

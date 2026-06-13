@@ -7,87 +7,7 @@ import Model from "./Model.jsx";
 import Floor from "./Floor/Floor.jsx";
 import LightingPanel from "./LightingPanel.jsx";
 
-// Componente Loader para mostrar el progreso de carga del modelo 3D
-function Loader() {
-  const { progress } = useProgress();
-  const CheckReadyToPlay = useEnviroment((state) => state.CheckReadyToPlay);
-  const [displayProgress, setDisplayProgress] = useState(0);
 
-  useEffect(() => {
-    CheckReadyToPlay(progress);
-  }, [progress, CheckReadyToPlay]);
-
-  // Animación idéntica a la pantalla inicial para llenado y conteo numérico fluido
-  useEffect(() => {
-    let animationFrameId;
-    let startTimestamp = null;
-    const duration = 600; // Animación de llenado suave de 600ms
-    
-    const startValue = displayProgress;
-    const endValue = Math.round(progress);
-
-    if (startValue === endValue) return;
-
-    const step = (timestamp) => {
-      if (!startTimestamp) startTimestamp = timestamp;
-      const t = Math.min((timestamp - startTimestamp) / duration, 1);
-      const ease = t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t;
-      const currentVal = Math.round(startValue + (endValue - startValue) * ease);
-      
-      setDisplayProgress(currentVal);
-      
-      if (t < 1) {
-        animationFrameId = window.requestAnimationFrame(step);
-      }
-    };
-    
-    animationFrameId = window.requestAnimationFrame(step);
-    
-    return () => {
-      window.cancelAnimationFrame(animationFrameId);
-    };
-  }, [progress]);
-
-  const fillerStyles = {
-    height: '100%',
-    width: `${displayProgress}%`,
-    backgroundColor: "color-mix(in srgb, var(--primary) 20%, transparent)",
-    transition: 'width 0.1s linear', // Transición lineal ultrarápida para acoplarse al animationframe
-    borderRadius: 'inherit',
-    boxShadow: '0 0 10px var(--primary-glow)'
-  };
-
-  const textContainerStyles = {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    width: '100%',
-    height: '100%',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    pointerEvents: 'none'
-  };
-
-  const labelStyles = {
-    color: '#ffff00', // Amarillo exacto de la captura
-    fontWeight: 'bold',
-    fontSize: '0.85rem',
-    fontFamily: 'var(--font-sans)',
-    textShadow: '0 1px 2px rgba(0,0,0,0.8)'
-  };
-
-  return (
-    <Html center>
-      <div className="progress-model-loader" style={{ position: 'relative' }}>
-        <div style={fillerStyles} className="progressBar"></div>
-        <div style={textContainerStyles}>
-          <span style={labelStyles}>{`${displayProgress}%`}</span>
-        </div>
-      </div>
-    </Html>
-  );
-}
 
 // Función para cargar la imagen panorámica y dividirla en 6 texturas
 function getTexturesFromAtlasFile(atlasImgUrl, tilesNum) {
@@ -121,6 +41,12 @@ export default function Experience({ id, modelUrl, productData }) {
   const useOrbitControls = useRef();
   const [cameraTarget, setCameraTarget] = useState([0, 0.8, 0]);
   const lastLoggedPos = useRef(""); // Guardar última posición impresa para evitar inundar la consola
+
+  const { progress } = useProgress();
+  const CheckReadyToPlay = useEnviroment((state) => state.CheckReadyToPlay);
+  useEffect(() => {
+    CheckReadyToPlay(progress);
+  }, [progress, CheckReadyToPlay]);
 
   const toogle = useEnviroment((state) => state.show);
   const CargarPasoInicial = useEnviroment((state) => state.CargarPasoInicial);
@@ -256,6 +182,10 @@ export default function Experience({ id, modelUrl, productData }) {
 
   // Crear el skybox / escenario PBR o básico
   useEffect(() => {
+    if (productData?.tipoAmbiente === "estudio") {
+      // Si está en modo estudio, no creamos ni agregamos el skybox
+      return;
+    }
     let materials;
     if (hasWallTextures) {
       // Crear material PBR para las paredes del escenario
@@ -311,7 +241,7 @@ export default function Experience({ id, modelUrl, productData }) {
       materials.forEach(m => m.dispose());
       skyBoxRef.current = null;
     };
-  }, [hasWallTextures, stableWallTextureMaps, textures, scene]);
+  }, [hasWallTextures, stableWallTextureMaps, textures, scene, productData?.tipoAmbiente]);
 
   // Actualizar posición del skybox al cambiar de paso o cuando se computa el minY del modelo
   useEffect(() => {
@@ -409,8 +339,33 @@ export default function Experience({ id, modelUrl, productData }) {
     };
   }, [id]);
 
+  const isEstudio = productData?.tipoAmbiente === "estudio";
+  const colorAmbienteVal = productData?.colorAmbiente || "#e8e8e8";
+
+  const floorY = useMemo(() => {
+    let planeValue = null;
+    if (alturas && alturas.length > 0) {
+      const altData = alturas.find(a => a.paso === PasoActual);
+      if (altData && altData.plane !== undefined) {
+        planeValue = altData.plane;
+      }
+    }
+    if (planeValue === null && computedModelMinY !== null) {
+      planeValue = computedModelMinY;
+    }
+    return planeValue !== null ? planeValue - 0.001 : -0.001;
+  }, [alturas, PasoActual, computedModelMinY]);
+
   return (
     <>
+      {isEstudio && (
+        <>
+          <color attach="background" args={[colorAmbienteVal]} />
+          <fog attach="fog" args={[colorAmbienteVal, 5, 15]} />
+          <gridHelper args={[30, 30, '#b5b5c3', '#d1d1db']} position={[0, floorY + 0.002, 0]} />
+        </>
+      )}
+
       <Environment preset="city" blur={0.8} environmentIntensity={lightingConfig.envIntensity} />
       <ambientLight intensity={sombras ? lightingConfig.ambientShadow : lightingConfig.ambientIntensity} />
       <directionalLight 
@@ -445,7 +400,7 @@ export default function Experience({ id, modelUrl, productData }) {
         <Floor productData={productData} />
       </Suspense>
 
-      <Suspense fallback={<Loader />}>
+      <Suspense fallback={null}>
         {toogle && <Model id={id} modelUrl={modelUrl} orbitControlsRef={useOrbitControls} productData={productData} />}
       </Suspense>
 

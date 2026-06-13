@@ -16,8 +16,8 @@
   }
 }
 
-/* Asegura posicionamiento del botón de información para la burbuja ayuda1 */
-#info {
+/* Asegura posicionamiento de los botones superiores para las burbujas */
+#info, #shadows {
   position: relative;
 }
 
@@ -148,12 +148,18 @@
    ========================================================================== */
 
 /* Ayuda 1: Guía y Herramientas (NavBar Superior) */
-.ayuda-bubble.ayuda1 {
+.ayuda-bubble.ayuda1,
+.ayuda-bubble.ayudaLuz,
+.ayuda-bubble.ayudaVelocidad,
+.ayuda-bubble.ayudaIdioma {
   top: calc(100% + 11px);
   left: 50%;
   transform: translateX(-50%) scale(0.95);
 }
-.ayuda-bubble.ayuda1.is-active {
+.ayuda-bubble.ayuda1.is-active,
+.ayuda-bubble.ayudaLuz.is-active,
+.ayuda-bubble.ayudaVelocidad.is-active,
+.ayuda-bubble.ayudaIdioma.is-active {
   transform: translateX(-50%) scale(1);
 }
 
@@ -180,9 +186,15 @@
   z-index: -1;
   transition: background 0.3s cubic-bezier(0.4, 0, 0.2, 1),
               border-color 0.3s cubic-bezier(0.4, 0, 0.2, 1),
-              box-shadow 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+              box-shadow 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+              width 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+              height 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+              bottom 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 .ayuda3-arrow.is-active {
+  width: 12px;
+  height: 12px;
+  bottom: -7px;
   background: var(--primary, #00f2fe) !important;
   border-color: var(--primary, #00f2fe) !important;
   box-shadow: 0 0 12px rgba(0, 242, 254, 0.9) !important;

@@ -205,6 +205,12 @@ Un **"Manual Vacío"** es un cascarón o aplicación base centralizada (desplega
   - **Persistencia Automática de Despiece**: Automatización del guardado del despiece en Supabase (`despiece`) inmediatamente tras finalizar el escaneo con éxito en la plataforma Next.js.
   - **Sincronía Completa del Visor 3D**: Modificaciones en `PanelHerrajes.jsx` para heredar las cantidades estimadas directamente de `data.despiece` en el paso inicial 00, y réplica del algoritmo espacial/superposición en el fallback local en `PanelCantidades.jsx`.
 - [x] **Estabilización de Animaciones (v18 - 13 de Junio, 2026)**: Resolución de la suite de bugs del horneado de Geometry Nodes. Se descartó la jerarquía de parentesco (causa raíz de matrices singulares por escala cero, cizalladura por escala no uniforme y desapariciones) a favor de un horneado directo en coordenadas de mundo absoluto (World Space) con unificación por cuaterniones y filtros antiflip.
+- [x] **Internacionalización y Modo Estudio 3D (Manual_Entorno_mejorado - 13 de Junio, 2026)**:
+  - **Internacionalización a Inglés**: Traducción dinámica de toda la interfaz visual (las 8 nubes de ayuda, tooltips, panel de cantidades, realidad aumentada con popup de QR y panel de tips generales) en tiempo real al cambiar a "EN". Implementación del atributo `data-tip-key` para no romper el filtrado de tips en español.
+  - **Ajuste de Spacing**: Reubicación del botón de cantidades dentro de la lista `.menu` para heredar el `gap` idéntico a las fichas de los herrajes.
+  - **Modo Estudio 3D (Spline)**: Escenario digital infinito configurable desde la plataforma mediante `tipo_ambiente` y `color_ambiente` en Supabase.
+  - **Sombras Reales en Modo Estudio**: Malla de suelo de `30x30` que recibe sombras en WebGL y se desvanece de manera invisible en la niebla al compartir el mismo color de fondo.
+  - **Control de Color en la Plataforma**: Selector de color interactivo en el modal para cambiar el tono de fondo/piso del estudio en caliente.
 
 ---
 

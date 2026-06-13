@@ -655,3 +655,13 @@ Los estilos, colores y tiempos de transición de las flechas azules se configura
       8. **Fase 6 (Reversión)**: Ejecuta una reversión automática del archivo `.blend` para no ensuciar el archivo de trabajo.
     - **Lección Aprendida**: La simplicidad estructural superó a los esquemas jerárquicos complejos. El horneado directo en coordenadas de mundo evita singularidades matemáticas por escala cero e incompatibilidades de deformaciones oblicuas en exportadores WebGL.
 
+* **[2026-06-13] AppArmado_v21 / Plataforma_v9 — Internacionalización, Espaciado del Menú y Modo Estudio 3D (Manual_Entorno_mejorado):**
+    - **Internacionalización Completa a Inglés (EN)**: Se tradujeron de manera dinámica todas las cadenas textuales de la interfaz del visor 3D al cambiar a "EN". Esto incluye las 8 nubes/bocadillos del tutorial de ayuda, los tooltips de piezas, la lista de herrajes activos, el panel inferior de total de cantidades, el panel lateral de tips generales y el modal flotante de Realidad Aumentada con su código QR. Para preservar la funcionalidad de búsqueda de tips en español en la base de datos, se implementó el atributo `data-tip-key` que mantiene el filtro nativo sin alterar el texto visible del usuario.
+    - **Ajuste de Margen y Alineación en Herrajes**: Se corrigió el espaciado vertical del botón de total de cantidades en el panel inferior. Al mover el contenedor dentro de la lista `.menu` e igualar sus estilos en `PanelHerrajes.css`, ahora hereda un `gap: 20px` idéntico al de las tarjetas de herrajes individuales, resolviendo la desalineación visual.
+    - **Modo Estudio 3D (Estilo Spline) con Sombras Reales**:
+        - Se implementó la opción de alternar entre el ambiente de habitación clásico (skybox 360 y piso texturizado) y el "Modo Estudio 3D" digital.
+        - En Modo Estudio, se desactivan el skybox y el piso texturizado, y se renderiza una escena limpia con color de fondo plano, niebla (`fog`) y una cuadrícula de referencia (`gridHelper`).
+        - Se habilitaron sombras WebGL reales en el piso. La malla de suelo (`30x30`) recibe sombras suaves y se integra de manera invisible con el fondo plano mediante la niebla, logrando un efecto digital de espacio infinito continuo.
+    - **Control CMS y Persistencia**: Se añadieron las columnas `tipo_ambiente` (text, default `'habitacion'`) y `color_ambiente` (text, default `'#e8e8e8'`) a la tabla `public.configuraciones_manual` en Supabase. El modal de edición de proyectos en la plataforma Next.js (`detalle-proyecto-modal.tsx`) se actualizó para incluir un selector de ambiente y un picker de color interactivo que se guardan y leen en Supabase, y se transmiten al visor 3D.
+
+

@@ -16,6 +16,19 @@ export default function PanelHerrajes({ id, data }) {
   const CloudOneTime = useEnviroment((state) => state.CloudOneTime);
   const CloudOneTimeFalse = useEnviroment((state) => state.CloudOneTimeFalse);
   const StartApp = useEnviroment((state) => state.StartApp);
+  const idioma = useEnviroment((state) => state.idioma);
+
+  const texts = {
+    es: {
+      title: "Toca algún herraje para localizarlo en el 3D",
+      totalHardware: "Cantidades Totales de Herrajes",
+    },
+    en: {
+      title: "Tap a hardware piece to locate it in 3D",
+      totalHardware: "Total Hardware Quantities",
+    }
+  };
+  const t = idioma === "en" ? texts.en : texts.es;
 
   const [herrajes, setHerrajes] = useState([]);
 
@@ -174,6 +187,11 @@ export default function PanelHerrajes({ id, data }) {
         }
       }
 
+      // Ajustar nombres de herrajes en inglés en el listado si corresponde
+      // Por ejemplo, para herrajes comunes como Tornillo, Perno, etc., podríamos traducirlos al inglés si idioma === 'en'
+      // Pero para mantener la consistencia con el manual físico y las bolsas impresas que suelen tener nombres locales,
+      // habitualmente se conserva el displayName tal cual o con traducción opcional. Para este alcance, mantenemos los displayNames.
+
       // Aplicar la limpieza del nombre
       let cleanName = limpiarNombreMalla(nameToClean);
       if (!cleanName || !esHerrajeConocido(cleanName)) return;
@@ -280,7 +298,7 @@ export default function PanelHerrajes({ id, data }) {
     <>
       <aside className={`panel ${PanelShow ? "is-active" : ""}`}>
         <nav className="menu">
-          <h2 className="menu-title">Toca algún herraje para localizarlo en el 3D</h2>
+          <h2 className="menu-title">{t.title}</h2>
           {herrajes.map((herraje, index) => (
             <div
               key={herraje.value}
@@ -298,17 +316,15 @@ export default function PanelHerrajes({ id, data }) {
               )}
             </div>
           ))}
+
+          {/* Botón flotante premium para ver cantidades totales de herrajes */}
+          <div className="option-cantidades-container">
+            <button className="option-cantidades-btn" onClick={ShowPanelCantidades}>
+              <span className="material-symbols-outlined option-cantidades-icon">inventory</span>
+              <span className="option-cantidades-text">{t.totalHardware}</span>
+            </button>
+          </div>
         </nav>
-
-        {/* Botón flotante premium para ver cantidades totales de herrajes */}
-        <div className="option-cantidades-container">
-          <button className="option-cantidades-btn" onClick={ShowPanelCantidades}>
-            <span className="material-symbols-outlined option-cantidades-icon">inventory</span>
-            <span className="option-cantidades-text">Cantidades Totales de Herrajes</span>
-            
-
-          </button>
-        </div>
       </aside>
     </>
   );

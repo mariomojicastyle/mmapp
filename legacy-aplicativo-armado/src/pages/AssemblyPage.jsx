@@ -249,6 +249,8 @@ const AssemblyPage = () => {
 
             // Configuración de iluminación persistida (panel secreto de calibración)
             lightingConfig: configData.lighting_config || null,
+            tipoAmbiente: configData.tipo_ambiente || "habitacion",
+            colorAmbiente: configData.color_ambiente || "#e8e8e8",
           };
 
           // Actualizar dinámicamente el favicon de la pestaña si se subió uno personalizado

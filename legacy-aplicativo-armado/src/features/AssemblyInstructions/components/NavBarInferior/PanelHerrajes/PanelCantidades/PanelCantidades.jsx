@@ -6,6 +6,17 @@ import * as THREE from "three";
 export default function PanelCantidades({ id, data }) {
   const pasoInicial = useEnviroment((state) => state.pasoInicial);
   const PanelCantidadesState = useEnviroment((state) => state.PanelCantidades);
+  const idioma = useEnviroment((state) => state.idioma);
+
+  const texts = {
+    es: {
+      title: "Cantidades Totales de Herrajes",
+    },
+    en: {
+      title: "Total Hardware Quantities",
+    }
+  };
+  const t = idioma === "en" ? texts.en : texts.es;
 
   const [cantidades, setCantidades] = useState([]);
 
@@ -280,7 +291,7 @@ export default function PanelCantidades({ id, data }) {
   return (
     <>
       <aside className={`panel3 ${PanelCantidadesState ? "is-active" : ""}`}>
-        <h2 className="menu-title">Cantidades Totales de Herrajes</h2>
+        <h2 className="menu-title">{t.title}</h2>
 
         <nav className="menu3">
           {cantidades.map((item) => (

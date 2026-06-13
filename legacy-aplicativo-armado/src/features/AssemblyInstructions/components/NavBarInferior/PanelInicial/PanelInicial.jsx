@@ -100,7 +100,7 @@ export default function PanelInicial() {
       {/* Background Spline Scene */}
       <div className="spline-wrapper">
         <iframe 
-          src="https://my.spline.design/r4xbot-pS1luNxTefqsyDlc4ZbCw1Fj/?v=7" 
+          src="https://my.spline.design/r4xbot-pS1luNxTefqsyDlc4ZbCw1Fj/?v=8" 
           frameBorder="0" 
           width="100%" 
           height="100%" 

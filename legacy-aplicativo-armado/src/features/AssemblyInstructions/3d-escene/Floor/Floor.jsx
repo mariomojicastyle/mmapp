@@ -51,10 +51,17 @@ export default function Floor({ productData }) {
 
   return (
     <>
-      <mesh position-y={floorY} rotation-x={-Math.PI / 2} receiveShadow>
-        <planeGeometry args={[12, 12]} />
-        <meshStandardMaterial {...floorTexture} bumpScale={0.03} />
-      </mesh>
+      {productData?.tipoAmbiente === "estudio" ? (
+        <mesh position-y={floorY} rotation-x={-Math.PI / 2} receiveShadow>
+          <planeGeometry args={[30, 30]} />
+          <meshStandardMaterial color={productData?.colorAmbiente || "#e8e8e8"} roughness={0.8} metalness={0.1} />
+        </mesh>
+      ) : (
+        <mesh position-y={floorY} rotation-x={-Math.PI / 2} receiveShadow>
+          <planeGeometry args={[12, 12]} />
+          <meshStandardMaterial {...floorTexture} bumpScale={0.03} />
+        </mesh>
+      )}
       
       {sombras && (
         <ContactShadows

@@ -12,12 +12,26 @@
 
 .contenedor1-1 {
   height: 100%;
-  width: 35%;
+  width: 332px;
   display: flex;
   align-items: center;
   justify-content: flex-start;
-  gap: 15px;
+  gap: 0; /* Espaciado asimétrico controlado individualmente para alineación perfecta */
   pointer-events: auto;
+}
+
+/* Márgenes individuales asimétricos en escritorio para alineación con botones de abajo */
+.contenedor1-1 > #help {
+  margin-right: 16px;
+}
+.contenedor1-1 > #info {
+  margin-right: 20px;
+}
+.contenedor1-1 > #shadows {
+  margin-right: 20px;
+}
+.contenedor1-1 > .speed-controller-container {
+  margin-right: 16px;
 }
 
 form {
@@ -47,6 +61,7 @@ form {
   color: var(--text-secondary);
   box-shadow: var(--glass-shadow);
   transition: var(--transition-smooth);
+  flex-shrink: 0;
 }
 
 .button:hover {
@@ -80,23 +95,15 @@ form {
 }
 
 /* Responsive adjustments */
-@media (max-width: 1600px) {
-  .contenedor1-1 {
-    width: 45%;
-  }
-}
-
-@media (max-width: 1280px) {
-  .contenedor1-1 {
-    width: 55%;
-  }
-}
-
 @media (max-width: 787px) {
   .contenedor1-1 {
-    width: 90%;
+    width: 284px;
     justify-content: flex-start;
-    gap: 12px;
+    gap: 16px;
+  }
+
+  .contenedor1-1 > * {
+    margin-right: 0 !important;
   }
 
   .button {
@@ -112,8 +119,12 @@ form {
 
 @media (max-width: 320px) {
   .contenedor1-1 {
-    width: 95%;
-    gap: 8px;
+    width: 254px;
+    gap: 16px;
+  }
+
+  .contenedor1-1 > * {
+    margin-right: 0 !important;
   }
 
   .button {
@@ -240,6 +251,7 @@ form {
 .speed-controller-container {
   position: relative;
   pointer-events: auto;
+  flex-shrink: 0;
 }
 
 .speed-btn-text {
@@ -310,5 +322,132 @@ form {
   .speed-menu-item {
     padding: 6px 10px;
     font-size: 0.72rem;
+  }
+}
+
+/* ─── Círculo concéntrico para los botones de velocidad e idioma ────── */
+#btnSpeed, #btnLang {
+  position: relative;
+}
+
+#btnSpeed::before, #btnLang::before {
+  content: "";
+  position: absolute;
+  width: 39px;
+  height: 39px;
+  border: 3px solid currentColor;
+  border-radius: 50%;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+  box-sizing: border-box;
+  transition: var(--transition-smooth);
+}
+
+@media (max-width: 787px) {
+  #btnSpeed::before, #btnLang::before {
+    width: 31px;
+    height: 31px;
+    border-width: 2.4px;
+  }
+}
+
+@media (max-width: 320px) {
+  #btnSpeed::before, #btnLang::before {
+    width: 25px;
+    height: 25px;
+    border-width: 2px;
+  }
+}
+
+/* ─── Contenedor y Menú de Idioma ──────────────────────────────────── */
+.lang-controller-container {
+  position: relative;
+  pointer-events: auto;
+  flex-shrink: 0;
+}
+
+.lang-menu {
+  position: absolute;
+  top: 60px;
+  right: 0px;
+  display: flex;
+  flex-direction: column;
+  background: var(--surface, rgba(15, 25, 35, 0.75));
+  backdrop-filter: var(--glass-blur, blur(12px));
+  -webkit-backdrop-filter: var(--glass-blur, blur(12px));
+  border: 1px solid var(--border-light, rgba(255, 255, 255, 0.08));
+  border-radius: 12px;
+  padding: 6px;
+  min-width: 155px; /* Ancho para acomodar textos completos */
+  box-shadow: var(--glass-shadow, 0 10px 30px rgba(0, 0, 0, 0.3));
+  z-index: 100;
+  gap: 4px;
+  animation: fadeInDown 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.lang-menu-item {
+  background: transparent;
+  border: none;
+  border-radius: 8px;
+  color: var(--text-secondary, rgba(255, 255, 255, 0.6));
+  font-family: var(--font-title, 'Inter', sans-serif);
+  font-weight: 600;
+  font-size: 0.78rem;
+  padding: 8px 12px;
+  cursor: pointer;
+  text-align: left;
+  transition: all 0.2s ease;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  align-items: flex-start;
+}
+
+.lang-menu-item:hover {
+  color: var(--primary, #2dd4bf);
+  background: var(--surface-active, rgba(45, 212, 191, 0.08));
+}
+
+.lang-menu-item--active {
+  background: var(--primary, #2dd4bf) !important;
+  color: var(--bg-primary, #0a0f14) !important;
+}
+
+.lang-menu-label {
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
+.lang-menu-sub {
+  font-size: 0.62rem;
+  opacity: 0.8;
+  font-weight: 500;
+  color: inherit;
+}
+
+.lang-menu-item--active .lang-menu-sub {
+  color: var(--bg-primary, #0a0f14) !important;
+  opacity: 0.9;
+}
+
+/* Responsivo para el menú de idiomas en móviles */
+@media (max-width: 787px) {
+  .lang-menu {
+    top: 50px;
+    min-width: 130px;
+  }
+  
+  .lang-menu-item {
+    padding: 6px 10px;
+  }
+  
+  .lang-menu-label {
+    font-size: 0.72rem;
+  }
+  
+  .lang-menu-sub {
+    font-size: 0.58rem;
   }
 }

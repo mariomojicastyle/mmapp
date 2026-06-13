@@ -10,7 +10,102 @@ import PanelCantidades from "./PanelHerrajes/PanelCantidades/PanelCantidades";
 import PanelInicial from "./PanelInicial/PanelInicial";
 import PanelAyudas from "./PanelAyudas/PanelAyudas";
 import { IconLeft, IconRight, IconReset, IconPlay, IconPause } from "../Icons.jsx";
+import { useProgress } from "@react-three/drei";
 
+
+function LoaderProgress() {
+  const { progress } = useProgress();
+  const [targetProgress, setTargetProgress] = useState(0);
+  const [displayProgress, setDisplayProgress] = useState(0);
+
+  // Sincronizar targetProgress de forma estrictamente ascendente (monotónica)
+  useEffect(() => {
+    const rawProgress = Math.round(progress);
+
+    // Si el progreso de Three.js baja a menos de 5, asumimos que es una nueva carga de modelo
+    if (rawProgress < 5) {
+      setTargetProgress(rawProgress);
+      setDisplayProgress(rawProgress);
+    } else if (rawProgress > targetProgress) {
+      setTargetProgress(rawProgress);
+    }
+  }, [progress]);
+
+  // Efecto para animar displayProgress suavemente hacia targetProgress
+  useEffect(() => {
+    let animationFrameId;
+    let startTimestamp = null;
+    const duration = 500; // Animación de llenado suave de 500ms
+    
+    const startValue = displayProgress;
+    const endValue = targetProgress;
+
+    if (startValue === endValue) return;
+
+    const step = (timestamp) => {
+      if (!startTimestamp) startTimestamp = timestamp;
+      const t = Math.min((timestamp - startTimestamp) / duration, 1);
+      const ease = t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t;
+      const currentVal = Math.round(startValue + (endValue - startValue) * ease);
+      
+      setDisplayProgress(currentVal);
+      
+      if (t < 1) {
+        animationFrameId = window.requestAnimationFrame(step);
+      }
+    };
+    
+    animationFrameId = window.requestAnimationFrame(step);
+    
+    return () => {
+      window.cancelAnimationFrame(animationFrameId);
+    };
+  }, [targetProgress]);
+
+  // Si no está cargando (progreso es 100%) no mostramos nada
+  if (progress >= 100 && displayProgress >= 100) return null;
+
+  const fillerStyles = {
+    height: '100%',
+    width: `${displayProgress}%`,
+    backgroundColor: "var(--primary, #00f2fe)",
+    transition: 'width 0.1s linear',
+    borderRadius: 'inherit',
+    boxShadow: '0 0 10px var(--primary-glow)',
+    flexShrink: 0
+  };
+
+  const textContainerStyles = {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    width: '100%',
+    height: '100%',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    pointerEvents: 'none'
+  };
+
+  const labelStyles = {
+    color: '#ffff00', // Amarillo
+    fontWeight: 'bold',
+    fontSize: '0.85rem',
+    fontFamily: 'var(--font-sans)',
+    textShadow: '0 1px 2px rgba(0,0,0,0.8)'
+  };
+
+  return (
+    <div className="progress-model-loader-container">
+      <div className="progress-model-loader" style={{ position: 'relative' }}>
+        <div style={fillerStyles} className="progressBar"></div>
+        <div style={textContainerStyles}>
+          <span style={labelStyles}>{`${displayProgress}%`}</span>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 export default function NavBarInferior({ id, data }) {
   const refLeft = useRef(null);
@@ -20,6 +115,33 @@ export default function NavBarInferior({ id, data }) {
   const PasoActual = useEnviroment((state) => state.pasoActual);
   const phaseAudio = useEnviroment((state) => state.phaseAudio);
   const toogle = useEnviroment((state) => state.show);
+  const idioma = useEnviroment((state) => state.idioma);
+
+  const texts = {
+    es: {
+      leftTitle: "Retroceder un paso",
+      rightTitle: "Ir al siguiente paso",
+      pauseTitle: "Pausar, Activar o Reiniciar",
+      ayuda3Title: "Navegación de Armado",
+      ayuda3Text: "Avanza o retrocede entre los pasos del manual interactivo para ver el proceso en orden.",
+      ayuda4Title: "Buscador de Piezas",
+      ayuda4Text: "Consulta la lista detallada de piezas y herrajes requeridos para el paso de ensamble actual.",
+      ayuda5Title: "Reproducir / Pausar",
+      ayuda5Text: "Controla la locución por voz y la reproducción del audio explicativo paso a paso."
+    },
+    en: {
+      leftTitle: "Go back one step",
+      rightTitle: "Go to the next step",
+      pauseTitle: "Play, Pause or Restart",
+      ayuda3Title: "Assembly Navigation",
+      ayuda3Text: "Go forward or backward through the interactive steps to view the process in order.",
+      ayuda4Title: "Parts Search",
+      ayuda4Text: "Check the detailed list of parts and hardware required for the current assembly step.",
+      ayuda5Title: "Play / Pause",
+      ayuda5Text: "Control the voiceover and playback of the step-by-step explanatory audio."
+    }
+  };
+  const t = idioma === "en" ? texts.en : texts.es;
 
   const CambiarModelo = useEnviroment((state) => state.CambiarModelo);
   const PositiveShow = useEnviroment((state) => state.PositiveShow);
@@ -156,9 +278,10 @@ export default function NavBarInferior({ id, data }) {
     <>
       <div className="contenedor">
         <div className="SesionArriba">
+          <LoaderProgress />
           <PanelBtn />
 
-          <button ref={refLeft} id="left" title="Retroceder un paso" onClick={leftButtton}>
+          <button ref={refLeft} id="left" title={t.leftTitle} onClick={leftButtton}>
             <IconLeft style={{ width: "60%" }} />
           </button>
 
@@ -192,7 +315,7 @@ export default function NavBarInferior({ id, data }) {
           <button 
             ref={refRight} 
             id="right" 
-            title="Ir al siguiente paso"
+            title={t.rightTitle}
             onClick={RightButtton}
             className={rippleActive ? "ripple-impact-active" : ""}
           >
@@ -213,7 +336,7 @@ export default function NavBarInferior({ id, data }) {
             )}
           </button>
 
-          <div id="btnPause" title="Pausar, Activar o Reiniciar" className="button" onClick={PlayButton}>
+          <div id="btnPause" title={t.pauseTitle} className="button" onClick={PlayButton}>
             {renderPausePlayIcon()}
           </div>
 
@@ -222,27 +345,27 @@ export default function NavBarInferior({ id, data }) {
             <div className={`ayuda3-arrow arrow-left ${ayuda3ArrowLeft ? 'is-active' : ''}`}></div>
             <div className={`ayuda3-arrow arrow-center ${ayuda3ArrowCenter ? 'is-active' : ''}`}></div>
             <div className={`ayuda3-arrow arrow-right ${ayuda3ArrowRight ? 'is-active' : ''}`}></div>
-            <div className="ayuda-bubble-title">Navegación de Armado</div>
+            <div className="ayuda-bubble-title">{t.ayuda3Title}</div>
             <div className="ayuda-bubble-text">
-              Avanza o retrocede entre los pasos del manual interactivo para ver el proceso en orden.
+              {t.ayuda3Text}
             </div>
           </div>
 
           {/* Burbuja de ayuda 4: Buscador de Piezas */}
           <div className={`ayuda-bubble ayuda4 ${isPanelAyudasActive && ayuda4 ? "is-active" : ""}`}>
             <div className="ayuda-bubble-arrow arrow-down"></div>
-            <div className="ayuda-bubble-title">Buscador de Piezas</div>
+            <div className="ayuda-bubble-title">{t.ayuda4Title}</div>
             <div className="ayuda-bubble-text">
-              Consulta la lista detallada de piezas y herrajes requeridos para el paso de ensamble actual.
+              {t.ayuda4Text}
             </div>
           </div>
 
           {/* Burbuja de ayuda 5: Reproducir / Pausar */}
           <div className={`ayuda-bubble ayuda5 ${isPanelAyudasActive && ayuda5 ? "is-active" : ""}`}>
             <div className="ayuda-bubble-arrow arrow-down"></div>
-            <div className="ayuda-bubble-title">Reproducir / Pausar</div>
+            <div className="ayuda-bubble-title">{t.ayuda5Title}</div>
             <div className="ayuda-bubble-text">
-              Controla la locución por voz y la reproducción del audio explicativo paso a paso.
+              {t.ayuda5Text}
             </div>
           </div>
         </div>
