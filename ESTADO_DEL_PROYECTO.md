@@ -204,6 +204,7 @@ Un **"Manual Vacío"** es un cascarón o aplicación base centralizada (desplega
   - **Filtro de Superposición Estricto (2 mm)**: Para herrajes simples (pernos y puntillas), se restringe la tolerancia a 2 mm para ignorar copias duplicadas accidentalmente en Blender con Shift+D, reportando 34 puntillas y 28 pernos de forma blindada.
   - **Persistencia Automática de Despiece**: Automatización del guardado del despiece en Supabase (`despiece`) inmediatamente tras finalizar el escaneo con éxito en la plataforma Next.js.
   - **Sincronía Completa del Visor 3D**: Modificaciones en `PanelHerrajes.jsx` para heredar las cantidades estimadas directamente de `data.despiece` en el paso inicial 00, y réplica del algoritmo espacial/superposición en el fallback local en `PanelCantidades.jsx`.
+- [x] **Estabilización de Animaciones (v18 - 13 de Junio, 2026)**: Resolución de la suite de bugs del horneado de Geometry Nodes. Se descartó la jerarquía de parentesco (causa raíz de matrices singulares por escala cero, cizalladura por escala no uniforme y desapariciones) a favor de un horneado directo en coordenadas de mundo absoluto (World Space) con unificación por cuaterniones y filtros antiflip.
 
 ---
 
@@ -214,7 +215,7 @@ Un **"Manual Vacío"** es un cascarón o aplicación base centralizada (desplega
 - **Local App:** [http://localhost:3000](http://localhost:3000)
 
 ---
-*Última actualización de contexto: 11 de Junio, 2026*
+*Última actualización de contexto: 13 de Junio, 2026*
 
 ---
 

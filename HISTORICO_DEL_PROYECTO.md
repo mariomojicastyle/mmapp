@@ -628,3 +628,30 @@ Los estilos, colores y tiempos de transición de las flechas azules se configura
     - **Precisión de Rotación por Cuaterniones**: Se modificó el script de horneado (`bake_geometry_nodes_v4.py` y `bake_geometry_nodes.py`) para forzar temporalmente el modo de rotación de todas las piezas a `QUATERNION` antes de aplicar los keyframes y restaurar el estado original en la reversión. Esto elimina por completo el Gimbal Lock y los saltos de interpolación característicos de los ángulos de Euler, evitando que el fondo rote de forma descontrolada o al revés en la interpolación entre frames.
     - **Corrección de Cuaternión Antiflip**: Se programó un filtro de continuidad en el tiempo. Si el producto punto del cuaternión calculado y el del frame anterior es negativo ($q \cdot q_{prev} < 0$), se niega el cuaternión ($q = -q$), forzando a la interpolación slerp en Three.js/GLTF a tomar el camino de rotación física más corto.
     - **Ajuste de Parent Inverse en Jerarquías**: Se descubrió que Blender calcula las transformaciones locales de los hijos multiplicando la matriz del padre y la matriz de parentesco inverso (`matrix_parent_inverse`). Si un objeto (como los fondos superiores) fue emparentado manteniendo su transformación original, no tener en cuenta esta propiedad causaba rotaciones oblicuas incorrectas y deformaciones diagonales. Se refinó la fórmula local a `matrix_local = (parent_matrix @ orig_obj.matrix_parent_inverse).inverted() @ world_matrix` con fallback en caso de escala cero, logrando una precisión absoluta del 100% que impide colisiones del fondo con la estructura en el GLB.
+
+* **[2026-06-13] bake_geometry_nodes — Diagnóstico, Evolución y Estabilización Final (v6 a v18):**
+    - **Contexto del Problema**: Se analizó el comportamiento errático del script de horneado de animaciones de Blender Geometry Nodes (`bake_geometry_nodes`) al exportar archivos GLB. Tras múltiples iteraciones entre la versión v6 (estable inicial) y la v18 (solución definitiva), se identificaron fallas críticas de geometría vacía, desincronización y rotaciones oblicuas (cizalladura) causadas por jerarquías de parentesco complejas al escalar a cero.
+    - **Tabla Comparativa de la Evolución de Versiones**:
+      
+      | Versión | Problema Observado | Causa Raíz Identificada |
+      | :--- | :--- | :--- |
+      | **v6** | Bloqueo/Crash `ValueError: matrix does not have an inverse` en modelos como P08. | Los objetos padres vacíos heredan escala `0` de `mueble_principal`, lo que resulta en matrices singulares (determinante = 0) no invertibles. |
+      | **v7 - v8** | GLB vacío (sin geometría 3D visible). | Los objetos se exportan ocultos ("ojitos apagados" / `hide_viewport=True`). El script desactivaba Geometry Nodes pero no los hacía visibles. |
+      | **v9 - v11** | El objeto se inicia rotado 180° y presenta un tambaleo brusco en el frame 49. | Introducción del "Motor Orbital" (padre vacío) con `matrix_parent_inverse = Identidad` en lugar de la inversa real, sin protección de flip de cuaternión en el motor. |
+      | **v12 - v13** | GLB vacío de nuevo. | El Motor Orbital hereda escala real; al dividir por un valor cercano a cero, las coordenadas explotan a más de 100 km, y el exportador GLTF descarta la jerarquía. |
+      | **v14** | Las piezas rotan 90° de forma independiente (cizalladura/shear). | El Motor Orbital fuerza escala `(1,1,1)` mientras el mueble tiene escala no uniforme, rompiendo la descomposición de escala de los hijos rotados. |
+      | **v15 - v16** | GLB vacío. | Reincidencia en la explosión de coordenadas al heredar la escala de vuelta por el Motor Orbital. |
+      | **v17** | GLB vacío. | Retorno a la arquitectura de la v6, pero con herencia de escala 0 en Empties y objetos ocultos. |
+      | **v18 ✅** | **¡Perfecto y 100% Estable!** Sin deformaciones ni pérdidas de geometría. | **Eliminación absoluta de jerarquías de parentesco**. Cada pieza obtiene y hornea sus coordenadas directamente en el espacio del mundo (World Space). Los objetos se fuerzan como visibles de forma explícita. |
+
+    - **Arquitectura Ganadora de la Versión v18**:
+      1. **Fase 1 (Lectura Procedimental)**: Lee y guarda en memoria todas las transformaciones de las instancias generadas por Geometry Nodes, frame por frame.
+      2. **Fase 1.5 (Filtro Anti-GiroLoco)**: Para frames con escala crítica ($\le 0.001$), sustituye la rotación por la más cercana de un frame visible y válido.
+      3. **Fase 2 (Desactivación)**: Desactiva por completo los modificadores de Geometry Nodes.
+      4. **Fase 3 (Desvinculación Jerárquica)**: Elimina el parentesco de todos los objetos, los unifica en modo de rotación `QUATERNION` y los hace visibles (`hide_set`, `hide_viewport` y `hide_render` en `False`).
+      5. **Fase 4 (Horneado Directo)**: Escribe keyframes de posición, rotación y escala directamente en el espacio de coordenadas del mundo (sin padres), aplicando un filtro antiflip de cuaternión.
+      6. **Fase 4.5 (Limpieza)**: Elimina mallas emisoras temporales (`Plane`, `Plane.001`, etc.).
+      7. **Fase 5 (Exportación Optimizada)**: Exporta a formato GLB usando compresión de malla Draco y combinando las animaciones activas en un único clip.
+      8. **Fase 6 (Reversión)**: Ejecuta una reversión automática del archivo `.blend` para no ensuciar el archivo de trabajo.
+    - **Lección Aprendida**: La simplicidad estructural superó a los esquemas jerárquicos complejos. El horneado directo en coordenadas de mundo evita singularidades matemáticas por escala cero e incompatibilidades de deformaciones oblicuas en exportadores WebGL.
+
