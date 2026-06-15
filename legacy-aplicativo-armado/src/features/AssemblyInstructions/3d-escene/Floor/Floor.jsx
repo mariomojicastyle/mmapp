@@ -8,6 +8,7 @@ export default function Floor({ productData }) {
   const alturas = useEnviroment((state) => state.alturas);
   const sombras = useEnviroment((state) => state.sombras);
   const computedModelMinY = useEnviroment((state) => state.computedModelMinY);
+  const customColors = useEnviroment((state) => state.customColors);
 
   const pasoIndex = parseInt(pasoActual, 10) || 0;
   
@@ -54,12 +55,12 @@ export default function Floor({ productData }) {
       {productData?.tipoAmbiente === "estudio" ? (
         <mesh position-y={floorY} rotation-x={-Math.PI / 2} receiveShadow>
           <planeGeometry args={[30, 30]} />
-          <meshStandardMaterial color={productData?.colorAmbiente || "#e8e8e8"} roughness={0.8} metalness={0.1} />
+          <meshStandardMaterial color={customColors.floor || productData?.colorPiso || productData?.colorAmbiente || "#e8e8e8"} roughness={0.8} metalness={0.1} />
         </mesh>
       ) : (
         <mesh position-y={floorY} rotation-x={-Math.PI / 2} receiveShadow>
           <planeGeometry args={[12, 12]} />
-          <meshStandardMaterial {...floorTexture} bumpScale={0.03} />
+          <meshStandardMaterial {...floorTexture} color={customColors.floor || "#ffffff"} bumpScale={0.03} />
         </mesh>
       )}
       

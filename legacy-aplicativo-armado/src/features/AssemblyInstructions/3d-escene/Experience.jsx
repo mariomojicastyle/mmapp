@@ -57,6 +57,7 @@ export default function Experience({ id, modelUrl, productData }) {
   const sombras = useEnviroment((state) => state.sombras);
   const computedModelMinY = useEnviroment((state) => state.computedModelMinY);
   const lightingConfig = useEnviroment((state) => state.lightingConfig);
+  const customColors = useEnviroment((state) => state.customColors);
 
 
   //Se actualiza si es Maderkit o Practimac
@@ -360,9 +361,17 @@ export default function Experience({ id, modelUrl, productData }) {
     <>
       {isEstudio && (
         <>
-          <color attach="background" args={[colorAmbienteVal]} />
-          <fog attach="fog" args={[colorAmbienteVal, 5, 15]} />
-          <gridHelper args={[30, 30, '#b5b5c3', '#d1d1db']} position={[0, floorY + 0.002, 0]} />
+          <color attach="background" args={[customColors.background || colorAmbienteVal]} />
+          <fog attach="fog" args={[customColors.background || colorAmbienteVal, 5, 15]} />
+          <gridHelper 
+            args={[
+              30, 
+              30, 
+              customColors.gridCenter || '#b5b5c3', 
+              customColors.gridLines || '#d1d1db'
+            ]} 
+            position={[0, floorY + 0.002, 0]} 
+          />
         </>
       )}
 

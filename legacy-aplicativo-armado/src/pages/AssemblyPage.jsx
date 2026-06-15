@@ -119,10 +119,15 @@ const AssemblyPage = () => {
           const secundario = configData.color_secundario || "#111827";
           const colorTextoBtn = configData.color_texto_botones || "#ffffff";
           const opacidad = configData.opacidad_manual !== undefined && configData.opacidad_manual !== null ? configData.opacidad_manual : 100;
+          const opacidadNubes = configData.opacidad_nubes !== undefined && configData.opacidad_nubes !== null ? configData.opacidad_nubes : 20;
 
           document.documentElement.style.setProperty('--primary', primario);
           document.documentElement.style.setProperty('--secondary', secundario);
           document.documentElement.style.setProperty('--btn-text-color', colorTextoBtn);
+          document.documentElement.style.setProperty('--nubes-bg-opacity', opacidadNubes + '%');
+          
+          const estiloTitulos = configData.estilo_titulos || "glow";
+          document.documentElement.setAttribute('data-estilo-titulos', estiloTitulos);
 
           if (opacidad < 100) {
             // Aplicar opacidad dinámica usando color-mix
@@ -251,6 +256,9 @@ const AssemblyPage = () => {
             lightingConfig: configData.lighting_config || null,
             tipoAmbiente: configData.tipo_ambiente || "habitacion",
             colorAmbiente: configData.color_ambiente || "#e8e8e8",
+            colorPiso: configData.color_piso || "#e8e8e8",
+            colorMallaCentro: configData.color_malla_centro || "#b5b5c3",
+            colorMallaLineas: configData.color_malla_lineas || "#d1d1db",
           };
 
           // Actualizar dinámicamente el favicon de la pestaña si se subió uno personalizado

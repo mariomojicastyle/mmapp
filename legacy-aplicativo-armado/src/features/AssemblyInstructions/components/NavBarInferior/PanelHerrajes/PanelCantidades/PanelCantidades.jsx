@@ -291,9 +291,8 @@ export default function PanelCantidades({ id, data }) {
   return (
     <>
       <aside className={`panel3 ${PanelCantidadesState ? "is-active" : ""}`}>
-        <h2 className="menu-title">{t.title}</h2>
-
         <nav className="menu3">
+          <h2 className="menu-title">{t.title}</h2>
           {cantidades.map((item) => (
             <div key={item.value} className="option3">
               <div>

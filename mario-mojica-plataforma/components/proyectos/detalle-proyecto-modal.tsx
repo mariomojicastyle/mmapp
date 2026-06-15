@@ -76,6 +76,8 @@ export function normalizarYAsignarPiezas(items: ItemDespiece[]): ItemDespiece[] 
     return (b.espesor || 0) - (a.espesor || 0)
   })
 
+
+
   let piezaCounter = 1
 
   const formatearRange = (start: number, qty: number): string => {
@@ -146,6 +148,33 @@ interface DetalleProyectoModalProps {
   onUpdate?: () => void
 }
 
+// Funciones auxiliares para normalizar y validar códigos de colores (soporte para formato RGBA de Inkscape de 8 caracteres)
+const normalizeColorInput = (val: string): string => {
+  let clean = val.trim().replace(/#/g, "");
+  clean = clean.replace(/[^0-9A-Fa-f]/g, "");
+  if (clean.length === 8 || clean.length > 8) {
+    clean = clean.substring(0, 6);
+  }
+  return clean ? `#${clean}` : "";
+};
+
+const getValidHexColor = (val: string): string => {
+  let clean = val.trim().replace(/#/g, "");
+  if (clean.length === 8) {
+    clean = clean.substring(0, 6);
+  }
+  if (/^[0-9A-Fa-f]{6}$/.test(clean)) {
+    return `#${clean.toLowerCase()}`;
+  }
+  if (/^[0-9A-Fa-f]{3}$/.test(clean)) {
+    const r = clean[0];
+    const g = clean[1];
+    const b = clean[2];
+    return `#${r}${r}${g}${g}${b}${b}`.toLowerCase();
+  }
+  return "#000000";
+};
+
 export function DetalleProyectoModal({ isOpen, onClose, proyecto, onUpdate }: DetalleProyectoModalProps) {
   const { isSuperAdmin, isCoequipero } = usePermissions()
   const [activeTab, setActiveTab] = useState<"solicitud" | "insumos" | "despiece">("solicitud")
@@ -159,6 +188,7 @@ export function DetalleProyectoModal({ isOpen, onClose, proyecto, onUpdate }: De
   const [colorSecundario, setColorSecundario] = useState("#111827")
   const [colorTextoBotones, setColorTextoBotones] = useState("#ffffff")
   const [opacidadManual, setOpacidadManual] = useState(100)
+  const [opacidadNubes, setOpacidadNubes] = useState(20)
   const [logoUrl, setLogoUrl] = useState("")
   const [faviconUrl, setFaviconUrl] = useState("")
   
@@ -170,6 +200,7 @@ export function DetalleProyectoModal({ isOpen, onClose, proyecto, onUpdate }: De
   const [fontBody, setFontBody] = useState("Inter")
   const [fontBodySize, setFontBodySize] = useState("0.9rem")
   const [fontBodyColor, setFontBodyColor] = useState("#BEC8CE")
+  const [estiloTitulos, setEstiloTitulos] = useState("glow")
 
   // Estados para texturas PBR (Piso y Paredes/Escenario)
   const [pbrFloorDiff, setPbrFloorDiff] = useState("")
@@ -182,6 +213,9 @@ export function DetalleProyectoModal({ isOpen, onClose, proyecto, onUpdate }: De
   const [pbrWallHeight, setPbrWallHeight] = useState("")
   const [tipoAmbiente, setTipoAmbiente] = useState("habitacion")
   const [colorAmbiente, setColorAmbiente] = useState("#e8e8e8")
+  const [colorPiso, setColorPiso] = useState("#e8e8e8")
+  const [colorMallaCentro, setColorMallaCentro] = useState("#b5b5c3")
+  const [colorMallaLineas, setColorMallaLineas] = useState("#d1d1db")
 
   // Insumos State
   const [glbSteps, setGlbSteps] = useState<{ step: string; fileName: string; progress: number; cameraPosition?: number[]; cameraTarget?: number[] }[]>([])
@@ -735,6 +769,7 @@ export function DetalleProyectoModal({ isOpen, onClose, proyecto, onUpdate }: De
               setColorSecundario(data.color_secundario || "#111827")
               setColorTextoBotones(data.color_texto_botones || "#ffffff")
               setOpacidadManual(data.opacidad_manual !== undefined && data.opacidad_manual !== null ? data.opacidad_manual : 100)
+              setOpacidadNubes(data.opacidad_nubes !== undefined && data.opacidad_nubes !== null ? data.opacidad_nubes : 20)
               setLogoUrl(data.logo_url || "")
               setFaviconUrl(data.favicon_url || "")
               
@@ -745,6 +780,7 @@ export function DetalleProyectoModal({ isOpen, onClose, proyecto, onUpdate }: De
               setFontBody(data.font_body || "Inter")
               setFontBodySize(data.font_body_size || "0.9rem")
               setFontBodyColor(data.font_body_color || "#BEC8CE")
+              setEstiloTitulos(data.estilo_titulos || "glow")
 
               // Cargar texturas PBR
               setPbrFloorDiff(data.pbr_floor_diff || "")
@@ -757,6 +793,9 @@ export function DetalleProyectoModal({ isOpen, onClose, proyecto, onUpdate }: De
               setPbrWallHeight(data.pbr_wall_height || "")
               setTipoAmbiente(data.tipo_ambiente || "habitacion")
               setColorAmbiente(data.color_ambiente || "#e8e8e8")
+              setColorPiso(data.color_piso || "#e8e8e8")
+              setColorMallaCentro(data.color_malla_centro || "#b5b5c3")
+              setColorMallaLineas(data.color_malla_lineas || "#d1d1db")
 
               setGlbSteps((data.glb_pasos as any) || [])
               setAudioEsSteps((data.audio_es_pasos as any) || [])
@@ -1869,6 +1908,7 @@ export function DetalleProyectoModal({ isOpen, onClose, proyecto, onUpdate }: De
           color_secundario: colorSecundario,
           color_texto_botones: colorTextoBotones,
           opacidad_manual: opacidadManual,
+          opacidad_nubes: opacidadNubes,
           logo_url: logoUrl,
           favicon_url: faviconUrl,
           
@@ -1876,6 +1916,7 @@ export function DetalleProyectoModal({ isOpen, onClose, proyecto, onUpdate }: De
           font_title: fontTitle,
           font_title_size: fontTitleSize,
           font_title_color: fontTitleColor,
+          estilo_titulos: estiloTitulos,
           font_body: fontBody,
           font_body_size: fontBodySize,
           font_body_color: fontBodyColor,
@@ -1891,6 +1932,9 @@ export function DetalleProyectoModal({ isOpen, onClose, proyecto, onUpdate }: De
           pbr_wall_height: pbrWallHeight,
           tipo_ambiente: tipoAmbiente,
           color_ambiente: colorAmbiente,
+          color_piso: colorPiso,
+          color_malla_centro: colorMallaCentro,
+          color_malla_lineas: colorMallaLineas,
 
           glb_pasos: glbSteps,
           audio_es_pasos: audioEsSteps,
@@ -2175,14 +2219,15 @@ export function DetalleProyectoModal({ isOpen, onClose, proyecto, onUpdate }: De
                         <div className="flex gap-2">
                           <input
                             type="color"
-                            value={colorPrimario}
-                            onChange={e => setColorPrimario(e.target.value)}
+                            value={getValidHexColor(colorPrimario)}
+                            onChange={e => setColorPrimario(normalizeColorInput(e.target.value))}
                             className="h-9 w-12 rounded-lg border border-outline-variant bg-transparent cursor-pointer"
                           />
                           <input
                             type="text"
                             value={colorPrimario}
-                            onChange={e => setColorPrimario(e.target.value)}
+                            onChange={e => setColorPrimario(normalizeColorInput(e.target.value))}
+                            placeholder="#000000"
                             className="flex-1 rounded-lg border border-outline-variant bg-surface-container-low px-3 py-1.5 text-xs text-on-surface outline-none focus:border-primary"
                           />
                         </div>
@@ -2194,14 +2239,15 @@ export function DetalleProyectoModal({ isOpen, onClose, proyecto, onUpdate }: De
                         <div className="flex gap-2">
                           <input
                             type="color"
-                            value={colorSecundario}
-                            onChange={e => setColorSecundario(e.target.value)}
+                            value={getValidHexColor(colorSecundario)}
+                            onChange={e => setColorSecundario(normalizeColorInput(e.target.value))}
                             className="h-9 w-12 rounded-lg border border-outline-variant bg-transparent cursor-pointer"
                           />
                           <input
                             type="text"
                             value={colorSecundario}
-                            onChange={e => setColorSecundario(e.target.value)}
+                            onChange={e => setColorSecundario(normalizeColorInput(e.target.value))}
+                            placeholder="#000000"
                             className="flex-1 rounded-lg border border-outline-variant bg-surface-container-low px-3 py-1.5 text-xs text-on-surface outline-none focus:border-primary"
                           />
                         </div>
@@ -2213,14 +2259,15 @@ export function DetalleProyectoModal({ isOpen, onClose, proyecto, onUpdate }: De
                         <div className="flex gap-2">
                           <input
                             type="color"
-                            value={colorTextoBotones}
-                            onChange={e => setColorTextoBotones(e.target.value)}
+                            value={getValidHexColor(colorTextoBotones)}
+                            onChange={e => setColorTextoBotones(normalizeColorInput(e.target.value))}
                             className="h-9 w-12 rounded-lg border border-outline-variant bg-transparent cursor-pointer"
                           />
                           <input
                             type="text"
                             value={colorTextoBotones}
-                            onChange={e => setColorTextoBotones(e.target.value)}
+                            onChange={e => setColorTextoBotones(normalizeColorInput(e.target.value))}
+                            placeholder="#000000"
                             className="flex-1 rounded-lg border border-outline-variant bg-surface-container-low px-3 py-1.5 text-xs text-on-surface outline-none focus:border-primary"
                           />
                         </div>
@@ -2238,10 +2285,10 @@ export function DetalleProyectoModal({ isOpen, onClose, proyecto, onUpdate }: De
                         </span>
                       </div>
                       <div className="flex items-center gap-4 bg-surface-container-low/40 p-4 rounded-xl border border-outline-variant/5">
-                        <span className="text-[11px] font-medium text-on-surface-variant/70 shrink-0">Translúcido (10%)</span>
+                        <span className="text-[11px] font-medium text-on-surface-variant/70 shrink-0">Translúcido (1%)</span>
                         <input
                           type="range"
-                          min="10"
+                          min="1"
                           max="100"
                           value={opacidadManual}
                           onChange={e => setOpacidadManual(Number(e.target.value))}
@@ -2251,6 +2298,33 @@ export function DetalleProyectoModal({ isOpen, onClose, proyecto, onUpdate }: De
                       </div>
                       <p className="text-[10px] text-on-surface-variant/60 leading-relaxed">
                         Regula la transparencia de las barras y paneles flotantes sobre el espacio 3D. Valores inferiores al 100% activan automáticamente un elegante efecto esmerilado translúcido (*Glassmorphism*).
+                      </p>
+                    </div>
+
+                    {/* Control de Opacidad de Nubes de Ayuda */}
+                    <div className="border-t border-outline-variant/10 pt-4 flex flex-col gap-3">
+                      <div className="flex items-center justify-between">
+                        <span className="text-[11px] font-bold text-on-surface-variant/90 uppercase tracking-wider flex items-center gap-1.5">
+                          ☁️ Opacidad de Nubes de Ayuda
+                        </span>
+                        <span className="text-[11px] font-bold text-primary px-2.5 py-0.5 rounded-full bg-primary/10 border border-primary/20">
+                          {`Opacidad (${opacidadNubes}%)`}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-4 bg-surface-container-low/40 p-4 rounded-xl border border-outline-variant/5">
+                        <span className="text-[11px] font-medium text-on-surface-variant/70 shrink-0">Translúcido (1%)</span>
+                        <input
+                          type="range"
+                          min="1"
+                          max="100"
+                          value={opacidadNubes}
+                          onChange={e => setOpacidadNubes(Number(e.target.value))}
+                          className="flex-1 h-1.5 bg-surface-container-high border border-outline-variant/10 rounded-lg appearance-none cursor-pointer accent-primary focus:outline-none"
+                        />
+                        <span className="text-[11px] font-medium text-on-surface-variant/70 shrink-0">Sólido (100%)</span>
+                      </div>
+                      <p className="text-[10px] text-on-surface-variant/60 leading-relaxed">
+                        Controla el nivel de transparencia de los globos y nubes de ayuda instructivas en el espacio 3D de forma independiente.
                       </p>
                     </div>
 
@@ -2280,6 +2354,7 @@ export function DetalleProyectoModal({ isOpen, onClose, proyecto, onUpdate }: De
                                 <option value="Roboto">Roboto</option>
                                 <option value="Ubuntu">Ubuntu</option>
                                 <option value="Poppins">Poppins</option>
+                                <option value="Prompt">Prompt</option>
                               </select>
                             </label>
 
@@ -2300,17 +2375,33 @@ export function DetalleProyectoModal({ isOpen, onClose, proyecto, onUpdate }: De
                             <div className="flex gap-2">
                               <input
                                 type="color"
-                                value={fontTitleColor}
-                                onChange={e => setFontTitleColor(e.target.value)}
+                                value={getValidHexColor(fontTitleColor)}
+                                onChange={e => setFontTitleColor(normalizeColorInput(e.target.value))}
                                 className="h-8 w-10 rounded-lg border border-outline-variant bg-transparent cursor-pointer"
                               />
                               <input
                                 type="text"
                                 value={fontTitleColor}
-                                onChange={e => setFontTitleColor(e.target.value)}
+                                onChange={e => setFontTitleColor(normalizeColorInput(e.target.value))}
+                                placeholder="#000000"
                                 className="flex-1 rounded-lg border border-outline-variant bg-surface-container px-3 py-1.5 text-xs text-on-surface outline-none focus:border-primary"
                               />
                             </div>
+                          </label>
+
+                          <label className="flex flex-col gap-1">
+                            <span className="text-[10px] font-semibold text-on-surface-variant">Estilo de Títulos</span>
+                            <select
+                              value={estiloTitulos}
+                              onChange={e => setEstiloTitulos(e.target.value)}
+                              className="rounded-lg border border-outline-variant bg-surface-container px-2 py-1.5 text-xs text-on-surface outline-none focus:border-primary"
+                            >
+                              <option value="glow">Resplandor (Glow de Contraste)</option>
+                              <option value="vignette">Sombra Superior (Viñeta en Degradado)</option>
+                              <option value="tab">Pestaña Superior (Sólida)</option>
+                              <option value="stroke">Subrayado de Acento (Underline Glow)</option>
+                              <option value="accent">Acento Lateral (Bloque Técnico)</option>
+                            </select>
                           </label>
                         </div>
 
@@ -2333,6 +2424,7 @@ export function DetalleProyectoModal({ isOpen, onClose, proyecto, onUpdate }: De
                                 <option value="Roboto">Roboto</option>
                                 <option value="Ubuntu">Ubuntu</option>
                                 <option value="Poppins">Poppins</option>
+                                <option value="Prompt">Prompt</option>
                               </select>
                             </label>
 
@@ -2353,14 +2445,15 @@ export function DetalleProyectoModal({ isOpen, onClose, proyecto, onUpdate }: De
                             <div className="flex gap-2">
                               <input
                                 type="color"
-                                value={fontBodyColor}
-                                onChange={e => setFontBodyColor(e.target.value)}
+                                value={getValidHexColor(fontBodyColor)}
+                                onChange={e => setFontBodyColor(normalizeColorInput(e.target.value))}
                                 className="h-8 w-10 rounded-lg border border-outline-variant bg-transparent cursor-pointer"
                               />
                               <input
                                 type="text"
                                 value={fontBodyColor}
-                                onChange={e => setFontBodyColor(e.target.value)}
+                                onChange={e => setFontBodyColor(normalizeColorInput(e.target.value))}
+                                placeholder="#000000"
                                 className="flex-1 rounded-lg border border-outline-variant bg-surface-container px-3 py-1.5 text-xs text-on-surface outline-none focus:border-primary"
                               />
                             </div>
@@ -2706,24 +2799,99 @@ export function DetalleProyectoModal({ isOpen, onClose, proyecto, onUpdate }: De
                         </div>
 
                         {tipoAmbiente === "estudio" && (
-                          <div className="flex items-center gap-4 border-t border-outline-variant/10 pt-3">
-                            <div className="space-y-0.5">
-                              <span className="text-[10px] font-bold text-on-surface-variant uppercase tracking-wider">Color de Fondo y Piso</span>
-                              <p className="text-[10px] text-on-surface-variant/70">Define el tono del entorno de estudio 3D.</p>
-                            </div>
-                            <div className="flex items-center gap-2">
-                              <input
-                                type="color"
-                                value={colorAmbiente}
-                                onChange={(e) => setColorAmbiente(e.target.value)}
-                                className="h-7 w-7 cursor-pointer rounded border border-outline-variant bg-transparent p-0"
-                              />
-                              <input
-                                type="text"
-                                value={colorAmbiente}
-                                onChange={(e) => setColorAmbiente(e.target.value)}
-                                className="w-20 rounded border border-outline-variant bg-surface-container px-2 py-1 text-[11px] text-on-surface outline-none focus:border-primary"
-                              />
+                          <div className="border-t border-outline-variant/10 pt-4 space-y-4">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                              {/* 1. Fondo */}
+                              <div className="flex items-center justify-between gap-4 bg-surface-container-low/50 p-2.5 rounded-lg border border-outline-variant/5">
+                                <div className="space-y-0.5">
+                                  <span className="text-[10px] font-bold text-on-surface-variant uppercase tracking-wider">Color del Fondo</span>
+                                  <p className="text-[9px] text-on-surface-variant/70">Fondo del estudio 3D.</p>
+                                </div>
+                                <div className="flex items-center gap-1.5">
+                                  <input
+                                    type="color"
+                                    value={getValidHexColor(colorAmbiente)}
+                                    onChange={(e) => setColorAmbiente(normalizeColorInput(e.target.value))}
+                                    className="h-7 w-7 cursor-pointer rounded border border-outline-variant bg-transparent p-0"
+                                  />
+                                  <input
+                                    type="text"
+                                    value={colorAmbiente}
+                                    onChange={(e) => setColorAmbiente(normalizeColorInput(e.target.value))}
+                                    placeholder="#000000"
+                                    className="w-18 rounded border border-outline-variant bg-surface-container px-1.5 py-1 text-[10px] text-on-surface outline-none focus:border-primary text-center font-mono"
+                                  />
+                                </div>
+                              </div>
+
+                              {/* 2. Piso */}
+                              <div className="flex items-center justify-between gap-4 bg-surface-container-low/50 p-2.5 rounded-lg border border-outline-variant/5">
+                                <div className="space-y-0.5">
+                                  <span className="text-[10px] font-bold text-on-surface-variant uppercase tracking-wider">Color del Piso</span>
+                                  <p className="text-[9px] text-on-surface-variant/70">Suelo que recibe sombras.</p>
+                                </div>
+                                <div className="flex items-center gap-1.5">
+                                  <input
+                                    type="color"
+                                    value={getValidHexColor(colorPiso)}
+                                    onChange={(e) => setColorPiso(normalizeColorInput(e.target.value))}
+                                    className="h-7 w-7 cursor-pointer rounded border border-outline-variant bg-transparent p-0"
+                                  />
+                                  <input
+                                    type="text"
+                                    value={colorPiso}
+                                    onChange={(e) => setColorPiso(normalizeColorInput(e.target.value))}
+                                    placeholder="#000000"
+                                    className="w-18 rounded border border-outline-variant bg-surface-container px-1.5 py-1 text-[10px] text-on-surface outline-none focus:border-primary text-center font-mono"
+                                  />
+                                </div>
+                              </div>
+
+                              {/* 3. Centro de Malla */}
+                              <div className="flex items-center justify-between gap-4 bg-surface-container-low/50 p-2.5 rounded-lg border border-outline-variant/5">
+                                <div className="space-y-0.5">
+                                  <span className="text-[10px] font-bold text-on-surface-variant uppercase tracking-wider">Malla (Centro)</span>
+                                  <p className="text-[9px] text-on-surface-variant/70">Eje central de la cuadrícula.</p>
+                                </div>
+                                <div className="flex items-center gap-1.5">
+                                  <input
+                                    type="color"
+                                    value={getValidHexColor(colorMallaCentro)}
+                                    onChange={(e) => setColorMallaCentro(normalizeColorInput(e.target.value))}
+                                    className="h-7 w-7 cursor-pointer rounded border border-outline-variant bg-transparent p-0"
+                                  />
+                                  <input
+                                    type="text"
+                                    value={colorMallaCentro}
+                                    onChange={(e) => setColorMallaCentro(normalizeColorInput(e.target.value))}
+                                    placeholder="#000000"
+                                    className="w-18 rounded border border-outline-variant bg-surface-container px-1.5 py-1 text-[10px] text-on-surface outline-none focus:border-primary text-center font-mono"
+                                  />
+                                </div>
+                              </div>
+
+                              {/* 4. Líneas de Malla */}
+                              <div className="flex items-center justify-between gap-4 bg-surface-container-low/50 p-2.5 rounded-lg border border-outline-variant/5">
+                                <div className="space-y-0.5">
+                                  <span className="text-[10px] font-bold text-on-surface-variant uppercase tracking-wider">Malla (Líneas)</span>
+                                  <p className="text-[9px] text-on-surface-variant/70">Líneas secundarias de cuadrícula.</p>
+                                </div>
+                                <div className="flex items-center gap-1.5">
+                                  <input
+                                    type="color"
+                                    value={getValidHexColor(colorMallaLineas)}
+                                    onChange={(e) => setColorMallaLineas(normalizeColorInput(e.target.value))}
+                                    className="h-7 w-7 cursor-pointer rounded border border-outline-variant bg-transparent p-0"
+                                  />
+                                  <input
+                                    type="text"
+                                    value={colorMallaLineas}
+                                    onChange={(e) => setColorMallaLineas(normalizeColorInput(e.target.value))}
+                                    placeholder="#000000"
+                                    className="w-18 rounded border border-outline-variant bg-surface-container px-1.5 py-1 text-[10px] text-on-surface outline-none focus:border-primary text-center font-mono"
+                                  />
+                                </div>
+                              </div>
                             </div>
                           </div>
                         )}

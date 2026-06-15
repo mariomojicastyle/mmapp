@@ -1,0 +1,9 @@
+feat(viewer/plataforma): Add English translation and Studio 3D mode
+
+- Translate all help bubbles, active hardware lists, and QR tips to English.
+- Implement Studio 3D (Spline style) environment with customizable color, fog, and grid helper.
+- Enable real WebGL shadows on floor in study mode fading into the fog.
+- Align bottom quantities button spacing to match the hardware card gap.
+- Persist tipo_ambiente and color_ambiente configurations in Supabase.
+
+Co-Authored-By: Claude <noreply@anthropic.com>

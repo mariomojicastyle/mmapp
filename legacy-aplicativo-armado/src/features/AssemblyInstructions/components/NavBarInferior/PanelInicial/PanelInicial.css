@@ -68,7 +68,7 @@
   cursor: pointer;
   display: none;
   border-radius: 100px;
-  background: color-mix(in srgb, var(--primary) 20%, transparent); /* 80% de transparencia (20% de opacidad) del color principal */
+  background: color-mix(in srgb, var(--primary) var(--nubes-bg-opacity, 20%), transparent); /* Sincronizado con opacidad de nubes */
   border: 2px solid var(--primary);
   color: var(--btn-text-color); /* Color dinámico asociado a los textos/iconos */
   box-shadow: 0 0 20px var(--primary-glow);
@@ -79,9 +79,13 @@
 
 #inicio:hover {
   background: var(--primary);
-  color: var(--bg-primary);
+  color: var(--secondary, #ffffff);
   box-shadow: 0 0 35px var(--primary-glow);
   transform: scale(1.05);
+}
+
+#inicio:hover > .imagen {
+  color: var(--secondary, #ffffff) !important;
 }
 
 #inicio > .imagen {
@@ -94,7 +98,7 @@
   font-family: var(--font-title, var(--font-sans));
   font-size: var(--font-title-size, 1.35rem);
   font-weight: 700;
-  color: var(--font-title-color, var(--btn-text-color, #ffffff)); /* Sincronizado dinámicamente con el color de títulos del CMS */
+  color: var(--secondary, #ffffff) !important; /* Forzar color secundario */
   letter-spacing: 0.05em;
   text-transform: uppercase;
   background-size: contain;
@@ -179,7 +183,7 @@
   font-size: var(--font-body-size, 0.85rem);
   font-family: var(--font-sans);
   font-weight: 700;
-  color: var(--font-title-color, var(--primary)) !important; /* Excepción de portada: Sincronizado con el color de la fuente Título */
+  color: var(--secondary, #ffffff) !important; /* Forzar color secundario permanente como en los botones */
   margin-right: 8px;
 }
 

@@ -264,14 +264,14 @@ form {
   right: 0px;
   display: flex;
   flex-direction: column;
-  background: var(--surface, rgba(15, 25, 35, 0.75));
+  background: color-mix(in srgb, var(--primary) var(--nubes-bg-opacity, 20%), transparent);
   backdrop-filter: var(--glass-blur, blur(12px));
   -webkit-backdrop-filter: var(--glass-blur, blur(12px));
-  border: 1px solid var(--border-light, rgba(255, 255, 255, 0.08));
-  border-radius: 12px;
-  padding: 6px;
+  border: 1px solid var(--primary, #00f2fe);
+  border-radius: 20px;
+  padding: 10px 8px;
   min-width: 120px;
-  box-shadow: var(--glass-shadow, 0 10px 30px rgba(0, 0, 0, 0.3));
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5), 0 0 15px var(--primary-glow);
   z-index: 100;
   gap: 4px;
   animation: fadeInDown 0.2s cubic-bezier(0.4, 0, 0.2, 1);
@@ -281,9 +281,10 @@ form {
   background: transparent;
   border: none;
   border-radius: 8px;
-  color: var(--text-secondary, rgba(255, 255, 255, 0.6));
-  font-family: var(--font-title, 'Inter', sans-serif);
-  font-weight: 600;
+  color: var(--secondary, #ffffff) !important;
+  opacity: 0.65;
+  font-family: var(--font-sans, 'Inter', sans-serif);
+  font-weight: 500;
   font-size: 0.78rem;
   padding: 8px 12px;
   cursor: pointer;
@@ -292,13 +293,15 @@ form {
 }
 
 .speed-menu-item:hover {
-  color: var(--primary, #2dd4bf);
-  background: var(--surface-active, rgba(45, 212, 191, 0.08));
+  opacity: 1;
+  background: color-mix(in srgb, var(--primary) 10%, transparent);
 }
 
 .speed-menu-item--active {
-  background: var(--primary, #2dd4bf) !important;
-  color: var(--bg-primary, #0a0f14) !important;
+  background: color-mix(in srgb, var(--primary) 15%, transparent) !important;
+  color: var(--secondary, #ffffff) !important;
+  opacity: 1 !important;
+  font-weight: 800 !important;
 }
 
 @keyframes fadeInDown {
@@ -317,6 +320,8 @@ form {
   .speed-menu {
     top: 50px;
     min-width: 100px;
+    border-radius: 16px;
+    padding: 8px 6px;
   }
   
   .speed-menu-item {
@@ -374,14 +379,14 @@ form {
   right: 0px;
   display: flex;
   flex-direction: column;
-  background: var(--surface, rgba(15, 25, 35, 0.75));
+  background: color-mix(in srgb, var(--primary) var(--nubes-bg-opacity, 20%), transparent);
   backdrop-filter: var(--glass-blur, blur(12px));
   -webkit-backdrop-filter: var(--glass-blur, blur(12px));
-  border: 1px solid var(--border-light, rgba(255, 255, 255, 0.08));
-  border-radius: 12px;
-  padding: 6px;
+  border: 1px solid var(--primary, #00f2fe);
+  border-radius: 20px;
+  padding: 10px 8px;
   min-width: 155px; /* Ancho para acomodar textos completos */
-  box-shadow: var(--glass-shadow, 0 10px 30px rgba(0, 0, 0, 0.3));
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5), 0 0 15px var(--primary-glow);
   z-index: 100;
   gap: 4px;
   animation: fadeInDown 0.2s cubic-bezier(0.4, 0, 0.2, 1);
@@ -391,9 +396,10 @@ form {
   background: transparent;
   border: none;
   border-radius: 8px;
-  color: var(--text-secondary, rgba(255, 255, 255, 0.6));
-  font-family: var(--font-title, 'Inter', sans-serif);
-  font-weight: 600;
+  color: var(--secondary, #ffffff) !important;
+  opacity: 0.65;
+  font-family: var(--font-sans, 'Inter', sans-serif);
+  font-weight: 500;
   font-size: 0.78rem;
   padding: 8px 12px;
   cursor: pointer;
@@ -406,18 +412,20 @@ form {
 }
 
 .lang-menu-item:hover {
-  color: var(--primary, #2dd4bf);
-  background: var(--surface-active, rgba(45, 212, 191, 0.08));
+  opacity: 1;
+  background: color-mix(in srgb, var(--primary) 10%, transparent);
 }
 
 .lang-menu-item--active {
-  background: var(--primary, #2dd4bf) !important;
-  color: var(--bg-primary, #0a0f14) !important;
+  background: color-mix(in srgb, var(--primary) 15%, transparent) !important;
+  color: var(--secondary, #ffffff) !important;
+  opacity: 1 !important;
+  font-weight: 800 !important;
 }
 
 .lang-menu-label {
   font-size: 0.78rem;
-  font-weight: 700;
+  font-weight: inherit; /* Hereda el font-weight de lang-menu-item */
 }
 
 .lang-menu-sub {
@@ -428,7 +436,7 @@ form {
 }
 
 .lang-menu-item--active .lang-menu-sub {
-  color: var(--bg-primary, #0a0f14) !important;
+  color: var(--secondary, #ffffff) !important;
   opacity: 0.9;
 }
 
@@ -437,6 +445,8 @@ form {
   .lang-menu {
     top: 50px;
     min-width: 130px;
+    border-radius: 16px;
+    padding: 8px 6px;
   }
   
   .lang-menu-item {

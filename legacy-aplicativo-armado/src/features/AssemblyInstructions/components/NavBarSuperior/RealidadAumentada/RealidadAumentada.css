@@ -81,14 +81,14 @@
   position: absolute;
   bottom: 0px; /* Alineado exactamente con la línea/cuadrante inferior del botón circular */
   right: 68px; /* Posicionado a la izquierda del botón de PC */
-  background: rgba(10, 20, 24, 0.97);
+  background: color-mix(in srgb, var(--primary) var(--nubes-bg-opacity, 20%), transparent) !important;
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
   border: 1px solid var(--primary, #00f2fe);
   box-shadow: 0 15px 50px rgba(0, 0, 0, 0.6), 0 0 30px rgba(0, 242, 254, 0.2);
   border-radius: 16px;
   padding: 18px;
-  color: var(--text-primary, #ffffff);
+  color: var(--secondary, #ffffff) !important;
   font-family: var(--font-sans, "Play-Regular", sans-serif);
   z-index: 10000;
   pointer-events: auto;
@@ -117,7 +117,7 @@
   position: absolute;
   width: 10px;
   height: 10px;
-  background: rgba(10, 20, 24, 0.97);
+  background: color-mix(in srgb, var(--primary) var(--nubes-bg-opacity, 20%), transparent) !important;
   border-right: 1px solid var(--primary, #00f2fe);
   border-top: 1px solid var(--primary, #00f2fe);
   bottom: 21px; /* Alineada milimétricamente con el cuadrante izquierdo (centro vertical) del botón circular */
@@ -133,7 +133,7 @@
   right: 12px;
   background: transparent;
   border: none;
-  color: var(--text-secondary, #b3c5cc);
+  color: var(--secondary, #ffffff) !important;
   cursor: pointer;
   display: flex;
   align-items: center;
@@ -142,7 +142,7 @@
 }
 
 .qr-bubble-close:hover {
-  color: var(--primary, #00f2fe);
+  color: var(--primary, #00f2fe) !important;
   transform: scale(1.15);
 }
 
@@ -151,7 +151,7 @@
 }
 
 .qr-bubble-title {
-  color: var(--primary, #00f2fe);
+  color: var(--secondary, #ffffff) !important;
   font-weight: 700;
   font-size: 0.95rem;
   margin-bottom: 8px;
@@ -168,7 +168,7 @@
 }
 
 .qr-bubble-text {
-  color: var(--text-secondary, #b3c5cc);
+  color: var(--secondary, #ffffff) !important;
   font-size: 0.82rem;
   line-height: 1.45;
   font-weight: 500;

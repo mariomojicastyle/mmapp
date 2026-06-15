@@ -60,7 +60,7 @@ export default function AudioPlayer() {
   const ActivarAyuda6 = useEnviroment((state) => state.ActivarAyuda6);
   const ActivarParpadeo = useEnviroment((state) => state.ActivarParpadeo);
 
-  const [audioUrl, setAudioUrl] = useState("");
+  const [audioUrl, setAudioUrl] = useState(null);
   const audioRef = useRef(null);
 
   // ─── Efecto 0: canplaythrough ───
@@ -195,7 +195,7 @@ export default function AudioPlayer() {
       <audio
         id="audio"
         ref={audioRef}
-        src={audioUrl}
+        src={audioUrl || null}
       ></audio>
     </>
   );

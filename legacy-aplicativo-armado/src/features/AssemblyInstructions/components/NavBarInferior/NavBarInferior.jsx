@@ -68,38 +68,29 @@ function LoaderProgress() {
   const fillerStyles = {
     height: '100%',
     width: `${displayProgress}%`,
-    backgroundColor: "var(--primary, #00f2fe)",
-    transition: 'width 0.1s linear',
+    backgroundColor: "color-mix(in srgb, var(--primary) var(--nubes-bg-opacity, 20%), transparent)",
     borderRadius: 'inherit',
     boxShadow: '0 0 10px var(--primary-glow)',
-    flexShrink: 0
-  };
-
-  const textContainerStyles = {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    width: '100%',
-    height: '100%',
+    flexShrink: 0,
+    textAlign: 'right',
     display: 'flex',
     alignItems: 'center',
-    justifyContent: 'center',
-    pointerEvents: 'none'
+    justifyContent: 'flex-end'
   };
 
   const labelStyles = {
-    color: '#ffff00', // Amarillo
+    color: 'var(--secondary, #ffffff)', // Forzar color secundario permanente
     fontWeight: 'bold',
     fontSize: '0.85rem',
     fontFamily: 'var(--font-sans)',
-    textShadow: '0 1px 2px rgba(0,0,0,0.8)'
+    textShadow: '0 1px 2px rgba(0,0,0,0.8)',
+    marginRight: '8px'
   };
 
   return (
     <div className="progress-model-loader-container">
-      <div className="progress-model-loader" style={{ position: 'relative' }}>
-        <div style={fillerStyles} className="progressBar"></div>
-        <div style={textContainerStyles}>
+      <div className="progress-model-loader">
+        <div style={fillerStyles} className="progressBar">
           <span style={labelStyles}>{`${displayProgress}%`}</span>
         </div>
       </div>

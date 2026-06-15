@@ -72,10 +72,31 @@ export default function AssemblyViewer({ productData, steps, id }) {
     }
   }, [steps, id, productData]);
 
-  // Inyectar configuración de iluminación persistida desde Supabase
+  // Inyectar configuración de iluminación y colores iniciales persistidos
   useEffect(() => {
-    if (productData?.lightingConfig) {
-      useEnviroment.getState().SetLightingConfig(productData.lightingConfig);
+    if (productData) {
+      if (productData.lightingConfig) {
+        useEnviroment.getState().SetLightingConfig(productData.lightingConfig);
+      }
+      
+      const initialBgColor = productData.colorAmbiente || "#e8e8e8";
+      const initialFloorColor = productData.colorPiso || "#e8e8e8";
+      const initialGridCenter = productData.colorMallaCentro || "#b5b5c3";
+      const initialGridLines = productData.colorMallaLineas || "#d1d1db";
+      
+      const state = useEnviroment.getState();
+      if (!state.customColors.background) {
+        state.setCustomColor("background", initialBgColor);
+      }
+      if (!state.customColors.floor) {
+        state.setCustomColor("floor", initialFloorColor);
+      }
+      if (state.customColors.gridCenter === "#b5b5c3" || !state.customColors.gridCenter) {
+        state.setCustomColor("gridCenter", initialGridCenter);
+      }
+      if (state.customColors.gridLines === "#d1d1db" || !state.customColors.gridLines) {
+        state.setCustomColor("gridLines", initialGridLines);
+      }
     }
   }, [productData]);
 

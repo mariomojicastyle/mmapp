@@ -147,6 +147,113 @@ div[style*=".svg"] tspan {
   pointer-events: none;
 }
 
+/* ──────────────────────────────────────────────────────────────────────────
+   Estilos Dinámicos de Títulos (Seleccionables desde el CMS)
+   ────────────────────────────────────────────────────────────────────────── */
+
+/* 1. Estilo: Resplandor (Glow de Contraste) */
+[data-estilo-titulos="glow"] .menu-title {
+  color: var(--font-title-color, var(--primary, #00f2fe)) !important;
+  text-shadow: -1px -1px 0 var(--secondary), 
+               1px -1px 0 var(--secondary), 
+               -1px 1px 0 var(--secondary), 
+               1px 1px 0 var(--secondary), 
+               0 0 12px var(--primary-glow) !important;
+  margin: 10px auto 16px auto !important;
+  font-size: 1.55rem !important;
+  font-weight: 700 !important;
+  text-align: center !important;
+}
+
+/* 2. Estilo: Sombra Superior (Viñeta en Degradado) */
+[data-estilo-titulos="vignette"]::before {
+  content: "";
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 140px;
+  background: linear-gradient(to bottom, rgba(0, 0, 0, 0.28) 0%, rgba(0, 0, 0, 0) 100%);
+  pointer-events: none;
+  z-index: 1;
+}
+
+[data-estilo-titulos="vignette"] .menu-title {
+  color: var(--secondary, #ffffff) !important; /* Texto secundario nítido sobre el degradado */
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.5) !important;
+  margin: 10px auto 16px auto !important;
+  font-size: 1.55rem !important;
+  font-weight: 700 !important;
+  text-align: center !important;
+}
+
+/* 3. Estilo: Pestaña Superior (Sólida) */
+[data-estilo-titulos="tab"] .menu-title {
+  background: var(--primary) !important;
+  border: 1px solid var(--primary, #00f2fe) !important;
+  border-radius: 100px !important;
+  padding: 8px 24px !important;
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.25), 0 0 15px var(--primary-glow) !important;
+  color: var(--secondary, #ffffff) !important;
+  width: 90% !important;
+  max-width: 480px !important;
+  box-sizing: border-box !important;
+  margin: 10px auto 16px auto !important;
+  font-size: 0.95rem !important;
+  font-weight: 700 !important;
+  text-shadow: none !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+/* 4. Estilo: Subrayado de Acento (Underline Glow) */
+[data-estilo-titulos="stroke"] .menu-title {
+  color: var(--font-title-color, var(--secondary, #ffffff)) !important;
+  position: relative !important;
+  padding-bottom: 12px !important;
+  margin: 10px auto 16px auto !important;
+  font-size: 1.55rem !important;
+  font-weight: 700 !important;
+  text-shadow: 0 1.5px 3px color-mix(in srgb, var(--secondary) 40%, transparent) !important;
+  text-align: center !important;
+  display: block !important;
+}
+
+[data-estilo-titulos="stroke"] .menu-title::after {
+  content: "" !important;
+  position: absolute !important;
+  bottom: 0 !important;
+  left: 50% !important;
+  transform: translateX(-50%) !important;
+  width: 180px !important;
+  height: 2px !important;
+  background: linear-gradient(to right, transparent, var(--primary, #00f2fe), transparent) !important;
+  box-shadow: 0 0 10px var(--primary-glow) !important;
+}
+
+/* 5. Estilo: Acento Lateral (Bloque Técnico) */
+[data-estilo-titulos="accent"] .menu-title {
+  background: color-mix(in srgb, var(--primary) 8%, transparent) !important;
+  backdrop-filter: var(--glass-blur, blur(8px)) !important;
+  -webkit-backdrop-filter: var(--glass-blur, blur(8px)) !important;
+  border-left: 4px solid var(--primary) !important;
+  border-top: 1px solid rgba(255, 255, 255, 0.05) !important;
+  border-right: 1px solid rgba(255, 255, 255, 0.05) !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05) !important;
+  border-radius: 8px !important;
+  padding: 12px 18px !important;
+  color: var(--secondary, #ffffff) !important;
+  text-shadow: none !important;
+  font-size: 0.95rem !important;
+  font-weight: 700 !important;
+  max-width: 480px !important;
+  width: 90% !important;
+  box-sizing: border-box !important;
+  text-align: center !important;
+  margin: 6px auto 16px auto !important;
+}
+
 
 
 

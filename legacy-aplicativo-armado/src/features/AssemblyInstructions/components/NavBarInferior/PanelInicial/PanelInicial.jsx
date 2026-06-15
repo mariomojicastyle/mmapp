@@ -49,9 +49,8 @@ export default function PanelInicial() {
 
   const fillerStyles = {
     height: '100%',
-    width: `${progress}%`,
-    backgroundColor: "color-mix(in srgb, var(--primary) 20%, transparent)",
-    transition: 'width 1s ease-in-out',
+    width: `${displayProgress}%`,
+    backgroundColor: "color-mix(in srgb, var(--primary) var(--nubes-bg-opacity, 20%), transparent)",
     borderRadius: 'inherit',
     textAlign: 'right',
     display: 'flex',
@@ -61,13 +60,13 @@ export default function PanelInicial() {
 
   const labelStyles = {
     padding: 5,
-    color: 'white',
+    color: 'var(--secondary, #ffffff)',
     fontWeight: 'bold'
   }
 
-  //Aparece el boton de iniciar, cuando el progreso de carga a llegado al 100%
+  // Aparece el boton de iniciar, cuando el progreso de carga ha llegado al 100%
   useEffect(() => {
-    if (progressBar.current && progressBar.current.style.width == "100%") {
+    if (displayProgress === 100) {
       window.setTimeout(() => {
         const inicioBtn = document.getElementById("inicio");
         if (inicioBtn) {
@@ -86,7 +85,30 @@ export default function PanelInicial() {
         }
       }, 2000);
     }
-  }, [progress]);
+  }, [displayProgress]);
+
+  // Mecanismo de respaldo (Bypass por Timeout): Si tras 5 segundos no ha cargado, forzar inicio
+  useEffect(() => {
+    const backupTimeout = window.setTimeout(() => {
+      if (displayProgress < 100) {
+        console.warn("Carga lenta o bloqueada. Activando bypass de inicio seguro...");
+        setDisplayProgress(100);
+        const inicioBtn = document.getElementById("inicio");
+        if (inicioBtn) {
+          inicioBtn.style.display = "flex";
+        }
+        const progContainer = document.querySelector(".progress");
+        if (progContainer) {
+          progContainer.style.opacity = "0";
+          window.setTimeout(() => {
+            if (progContainer) progContainer.style.display = "none";
+          }, 500);
+        }
+      }
+    }, 6000);
+
+    return () => window.clearTimeout(backupTimeout);
+  }, [displayProgress]);
   
   //Se desactiva el panel inicial, y se inicializa el global state de iniciar el aplicativo.
   const Start = () => {

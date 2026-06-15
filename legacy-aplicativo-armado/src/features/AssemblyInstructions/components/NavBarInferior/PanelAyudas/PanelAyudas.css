@@ -24,7 +24,7 @@
 /* Burbuja base */
 .ayuda-bubble {
   position: absolute;
-  background: color-mix(in srgb, var(--primary) 20%, transparent); /* 80% de transparencia del color principal */
+  background: color-mix(in srgb, var(--primary) var(--nubes-bg-opacity, 20%), transparent);
   backdrop-filter: var(--glass-blur, blur(12px));
   -webkit-backdrop-filter: var(--glass-blur, blur(12px));
   border: 1px solid var(--primary, #00f2fe);
@@ -56,7 +56,7 @@
 }
 
 .ayuda-bubble-title {
-  color: var(--font-title-color, var(--primary, #00f2fe));
+  color: var(--secondary, #ffffff) !important;
   font-family: var(--font-sans, "Inter", sans-serif);
   font-weight: 700;
   font-size: var(--font-title-size, 1.05rem);
@@ -71,7 +71,7 @@
 }
 
 .ayuda-bubble-text {
-  color: var(--font-body-color, var(--text-secondary, #b3c5cc));
+  color: var(--secondary, #ffffff) !important;
   font-size: var(--font-body-size, 0.85rem);
   line-height: 1.45;
   font-weight: 500;
@@ -89,7 +89,7 @@
 }
 
 .ayuda-bubble-item {
-  color: var(--font-body-color, var(--text-secondary, #b3c5cc));
+  color: var(--secondary, #ffffff) !important;
   font-size: var(--font-body-size, 0.85rem);
   font-weight: 500;
   display: flex;
@@ -104,8 +104,8 @@
   width: 6px;
   height: 6px;
   border-radius: 50%;
-  background: var(--primary, #00f2fe);
-  box-shadow: 0 0 6px var(--primary, #00f2fe);
+  background: var(--secondary, #ffffff) !important;
+  box-shadow: 0 0 6px var(--secondary, #ffffff) !important;
 }
 
 /* ==========================================================================

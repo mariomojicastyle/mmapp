@@ -171,7 +171,7 @@ Un **"Manual Vacío"** es un cascarón o aplicación base centralizada (desplega
 
 ---
 
-## 🛠️ 6. Aplicativo de Armado (Legacy Restore)
+## 📂 6. Aplicativo de Armado (Legacy Restore)
 **Estado:** Integración inmersiva de Gama (R4X Bot) completada al 100% en la portada de carga (App_Armado_V11). Rediseño Obsidian Teal Premium finalizado con tooltips y SVGs nativos.
 
 ### 🎯 Objetivos de la Fase
@@ -211,6 +211,9 @@ Un **"Manual Vacío"** es un cascarón o aplicación base centralizada (desplega
   - **Modo Estudio 3D (Spline)**: Escenario digital infinito configurable desde la plataforma mediante `tipo_ambiente` y `color_ambiente` en Supabase.
   - **Sombras Reales en Modo Estudio**: Malla de suelo de `30x30` que recibe sombras en WebGL y se desvanece de manera invisible en la niebla al compartir el mismo color de fondo.
   - **Control de Color en la Plataforma**: Selector de color interactivo en el modal para cambiar el tono de fondo/piso del estudio en caliente.
+- [x] **Bypass Resiliente de Carga y Sombra Tonal (15 de Junio, 2026)**:
+  - **Bypass de Pantalla de Carga**: Se añadió un temporizador de respaldo en `PanelInicial.jsx` para que el botón "Iniciar" aparezca a los 6 segundos de forma automatizada, evitando bloqueos por fallos o timeouts en la red de Supabase.
+  - **Sombra de Contraste Tonal**: Reemplazo de la sombra negra (`rgba(0,0,0,0.4)`) por una sombra tonal fluida (`color-mix` basada en `var(--secondary)`) en el título bajo la regla de Underline Glow para un contraste natural.
 
 ---
 
@@ -221,7 +224,7 @@ Un **"Manual Vacío"** es un cascarón o aplicación base centralizada (desplega
 - **Local App:** [http://localhost:3000](http://localhost:3000)
 
 ---
-*Última actualización de contexto: 13 de Junio, 2026*
+*Última actualización de contexto: 15 de Junio, 2026*
 
 ---
 

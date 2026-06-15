@@ -421,6 +421,19 @@ export default create(
 
       sombras: false,
       toggleSombras: () => set((state) => ({ sombras: !state.sombras })),
+
+      customColors: {
+        background: "",
+        floor: "",
+        gridCenter: "#b5b5c3",
+        gridLines: "#d1d1db",
+      },
+      setCustomColor: (key, val) => set((state) => ({
+        customColors: {
+          ...state.customColors,
+          [key]: val
+        }
+      })),
       idioma: (() => {
         if (typeof window !== "undefined" && window.navigator) {
           const userLang = window.navigator.language || "en";

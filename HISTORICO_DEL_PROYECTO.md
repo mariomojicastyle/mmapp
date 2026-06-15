@@ -664,4 +664,10 @@ Los estilos, colores y tiempos de transición de las flechas azules se configura
         - Se habilitaron sombras WebGL reales en el piso. La malla de suelo (`30x30`) recibe sombras suaves y se integra de manera invisible con el fondo plano mediante la niebla, logrando un efecto digital de espacio infinito continuo.
     - **Control CMS y Persistencia**: Se añadieron las columnas `tipo_ambiente` (text, default `'habitacion'`) y `color_ambiente` (text, default `'#e8e8e8'`) a la tabla `public.configuraciones_manual` en Supabase. El modal de edición de proyectos en la plataforma Next.js (`detalle-proyecto-modal.tsx`) se actualizó para incluir un selector de ambiente y un picker de color interactivo que se guardan y leen en Supabase, y se transmiten al visor 3D.
 
+* **[2026-06-15] AppArmado_v22 / Plataforma_v10 — Estilo de Títulos 'Underline Glow', Sombra Tonal Basada en el Secundario y Bypass Resiliente por Timeout:**
+    - **Estilo de Títulos 'Underline Glow'**: Reemplazo del estilo 'Delineado' (`stroke`) con renderizado pixelado en navegador por 'Subrayado de Acento (Underline Glow)'. Implementa una línea degradada de acento brillante al fondo del texto mediante pseudo-elementos `::after`.
+    - **Sombra Tonal Táctil**: Sustitución de la sombra de texto dura gris (`rgba(0,0,0,0.4)`) por una mezcla tonal basada en el color secundario (`color-mix(in srgb, var(--secondary) 40%, transparent)`), logrando una integración de color premium que previene halos grises en el fondo 3D.
+    - **Mecanismo de Bypass de Carga por Timeout**: Adición de un temporizador de respaldo en `PanelInicial.jsx` que a los 6 segundos de inactividad o lentitud en la respuesta de la red del storage de Supabase, auto-completa la barra al 100% y activa el botón "Iniciar" para garantizar accesibilidad en conexiones lentas o bloqueadas.
+
+
 

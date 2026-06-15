@@ -45,12 +45,12 @@ export default function NavBarSuperior({ id, data }) {
         "Indicaciones especiales",
         "Garantía del mueble"
       ],
-      ayudaLuzTitle: "Lámpara",
-      ayudaLuzText: "Lampara",
-      ayudaVelocidadTitle: "Tiempo",
-      ayudaVelocidadText: "Tiempo",
-      ayudaIdiomaTitle: "Idioma",
-      ayudaIdiomaText: "Idioma"
+      ayudaLuzTitle: "Iluminación 3D",
+      ayudaLuzText: "Activa o desactiva las sombras detalladas para mejorar la calidad visual o aumentar el rendimiento.",
+      ayudaVelocidadTitle: "Velocidad de Audio",
+      ayudaVelocidadText: "Modifica el ritmo y velocidad del audio guía que te asiste en el armado.",
+      ayudaIdiomaTitle: "Idioma del Manual",
+      ayudaIdiomaText: "Cambia el idioma de los textos y audios informativos a Español o Inglés."
     },
     en: {
       tutorialTitle: "Interface Tutorial",
@@ -66,12 +66,12 @@ export default function NavBarSuperior({ id, data }) {
         "Special instructions",
         "Furniture warranty"
       ],
-      ayudaLuzTitle: "Lamp",
-      ayudaLuzText: "Lighting Quality",
-      ayudaVelocidadTitle: "Time",
-      ayudaVelocidadText: "Audio Speed",
-      ayudaIdiomaTitle: "Language",
-      ayudaIdiomaText: "Change Language"
+      ayudaLuzTitle: "3D Lighting",
+      ayudaLuzText: "Enable or disable detailed shadows to improve visual quality or boost performance.",
+      ayudaVelocidadTitle: "Audio Speed",
+      ayudaVelocidadText: "Modify the speed of the audio narration guiding you through the assembly.",
+      ayudaIdiomaTitle: "Manual Language",
+      ayudaIdiomaText: "Switch the language of texts and audio guides between Spanish and English."
     }
   };
   const t = idioma === "en" ? texts.en : texts.es;
