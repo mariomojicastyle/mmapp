@@ -5,8 +5,10 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import AssemblyPage from './pages/AssemblyPage'
 
 function App() {
+  const basename = window.location.pathname.startsWith('/embed/armado') ? '/embed/armado' : '';
+
   return (
-    <Router>
+    <Router basename={basename}>
       <Routes>
         <Route path="/" element={<Navigate to="/M01536" />} />
         <Route path="/:id" element={<AssemblyPage />} />
