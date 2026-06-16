@@ -4,3 +4,9 @@
 
 [[plugins]]
   package = "@netlify/plugin-nextjs"
+
+[[redirects]]
+  from = "/embed/armado/*"
+  to = "https://mario-mojica-armado.netlify.app/:splat"
+  status = 200
+  force = true
