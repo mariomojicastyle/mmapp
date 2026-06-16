@@ -277,45 +277,93 @@
     position: static !important;
   }
 
-  /* Centrar todas las burbujas superiores en móvil */
-  .ayuda-bubble.ayuda1,
-  .ayuda-bubble.ayudaLuz,
-  .ayuda-bubble.ayudaVelocidad,
-  .ayuda-bubble.ayudaIdioma {
+  /* Redefinición individual indestructible de burbujas superiores en móvil */
+  
+  /* Ayuda 1: Guía y Herramientas (Apunta al segundo botón 'info') */
+  .ayuda-bubble.ayuda1 {
+    position: absolute !important;
+    left: 4px !important;
+    right: auto !important;
+    top: 54px !important;
+    transform: scale(0.95) !important;
+    min-width: 270px !important;
+    max-width: 290px !important;
+    transform-origin: left top !important;
+  }
+  .ayuda-bubble.ayuda1.is-active {
+    transform: scale(1) !important;
+  }
+  .ayuda-bubble.ayuda1 .ayuda-bubble-arrow {
+    left: 80px !important;
+    right: auto !important;
+    transform: rotate(45deg) !important;
+  }
+
+  /* Ayuda Luz: Iluminación 3D (Apunta al tercer botón 'shadows', en el centro) */
+  .ayuda-bubble.ayudaLuz {
     position: absolute !important;
     left: 50% !important;
-    top: 54px !important; /* Ajustado justo abajo de los botones superiores de 44px */
+    right: auto !important;
+    top: 54px !important;
     transform: translateX(-50%) scale(0.95) !important;
     min-width: 270px !important;
     max-width: 290px !important;
+    transform-origin: center top !important;
   }
-
-  .ayuda-bubble.ayuda1.is-active,
-  .ayuda-bubble.ayudaLuz.is-active,
-  .ayuda-bubble.ayudaVelocidad.is-active,
-  .ayuda-bubble.ayudaIdioma.is-active {
+  .ayuda-bubble.ayudaLuz.is-active {
     transform: translateX(-50%) scale(1) !important;
-  }
-
-  /* Ajustar la posicion de la flecha de cada burbuja superior */
-  .ayuda-bubble.ayuda1 .ayuda-bubble-arrow {
-    left: calc(50% - 62px) !important;
   }
   .ayuda-bubble.ayudaLuz .ayuda-bubble-arrow {
     left: 50% !important;
-  }
-  .ayuda-bubble.ayudaVelocidad .ayuda-bubble-arrow {
-    left: calc(50% + 62px) !important;
-  }
-  .ayuda-bubble.ayudaIdioma .ayuda-bubble-arrow {
-    left: calc(50% + 124px) !important;
+    right: auto !important;
+    transform: translateX(-50%) rotate(45deg) !important;
   }
 
-  /* Centrar las burbujas inferiores en móvil y acoplarlas a los botones */
+  /* Ayuda Velocidad: Velocidad de Audio (Apunta al cuarto botón 'speed') */
+  .ayuda-bubble.ayudaVelocidad {
+    position: absolute !important;
+    left: auto !important;
+    right: 4px !important;
+    top: 54px !important;
+    transform: scale(0.95) !important;
+    min-width: 270px !important;
+    max-width: 290px !important;
+    transform-origin: right top !important;
+  }
+  .ayuda-bubble.ayudaVelocidad.is-active {
+    transform: scale(1) !important;
+  }
+  .ayuda-bubble.ayudaVelocidad .ayuda-bubble-arrow {
+    left: auto !important;
+    right: 80px !important;
+    transform: rotate(45deg) !important;
+  }
+
+  /* Ayuda Idioma: Idioma del Manual (Apunta al quinto botón 'lang') */
+  .ayuda-bubble.ayudaIdioma {
+    position: absolute !important;
+    left: auto !important;
+    right: 4px !important;
+    top: 54px !important;
+    transform: scale(0.95) !important;
+    min-width: 270px !important;
+    max-width: 290px !important;
+    transform-origin: right top !important;
+  }
+  .ayuda-bubble.ayudaIdioma.is-active {
+    transform: scale(1) !important;
+  }
+  .ayuda-bubble.ayudaIdioma .ayuda-bubble-arrow {
+    left: auto !important;
+    right: 18px !important;
+    transform: rotate(45deg) !important;
+  }
+
+  /* Centrar las burbujas inferiores en móvil y elevarlas a bottom: 80px para no tapar los botones */
   .ayuda-bubble.ayuda3,
   .ayuda-bubble.ayuda4,
   .ayuda-bubble.ayuda5 {
-    bottom: 56px !important;
+    bottom: 80px !important;
     left: 50% !important;
     transform: translateX(-50%) scale(0.95) !important;
     min-width: 270px !important;
