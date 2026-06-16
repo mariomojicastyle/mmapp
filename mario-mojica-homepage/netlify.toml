@@ -15,30 +15,36 @@
   from = "/assets/*"
   to = "https://mario-mojica-armado.netlify.app/assets/:splat"
   status = 200
+  force = true
 
 [[redirects]]
   from = "/manual-vacio/*"
   to = "https://mario-mojica-armado.netlify.app/manual-vacio/:splat"
   status = 200
+  force = true
 
 [[redirects]]
   from = "/M*"
   to = "https://mario-mojica-armado.netlify.app/M:splat"
   status = 200
+  force = true
 
 [[redirects]]
   from = "/textures/*"
   to = "https://mario-mojica-armado.netlify.app/textures/:splat"
   status = 200
+  force = true
 
 [[redirects]]
   from = "/Matcaps/*"
   to = "https://mario-mojica-armado.netlify.app/Matcaps/:splat"
   status = 200
+  force = true
 
 [[redirects]]
   from = "/hdri/*"
   to = "https://mario-mojica-armado.netlify.app/hdri/:splat"
   status = 200
+  force = true
 
 
