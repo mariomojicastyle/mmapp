@@ -4,3 +4,69 @@
 
 [[plugins]]
   package = "@netlify/plugin-nextjs"
+
+[[redirects]]
+  from = "/embed/armado/assets/herrajes_compartidos/*"
+  to = "https://dezaisaunoumhqpssols.supabase.co/storage/v1/object/public/insumos_manuales/_herrajes_compartidos/:splat"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "/embed/armado/:manualId/herrajes/*"
+  to = "https://dezaisaunoumhqpssols.supabase.co/storage/v1/object/public/insumos_manuales/_herrajes_compartidos/:splat"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "/embed/armado/:manualId/:category/*"
+  to = "https://dezaisaunoumhqpssols.supabase.co/storage/v1/object/public/insumos_manuales/:manualId/:category/:splat"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "/embed/armado/:manualId/:file"
+  to = "https://dezaisaunoumhqpssols.supabase.co/storage/v1/object/public/insumos_manuales/:manualId/:file"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "/embed/armado/*"
+  to = "https://mario-mojica-armado.netlify.app/:splat"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "/assets/*"
+  to = "https://mario-mojica-armado.netlify.app/assets/:splat"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "/manual-vacio/*"
+  to = "https://mario-mojica-armado.netlify.app/manual-vacio/:splat"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "/M*"
+  to = "https://mario-mojica-armado.netlify.app/M:splat"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "/textures/*"
+  to = "https://mario-mojica-armado.netlify.app/textures/:splat"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "/Matcaps/*"
+  to = "https://mario-mojica-armado.netlify.app/Matcaps/:splat"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "/hdri/*"
+  to = "https://mario-mojica-armado.netlify.app/hdri/:splat"
+  status = 200
+  force = true
