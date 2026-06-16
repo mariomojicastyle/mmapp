@@ -26,3 +26,19 @@
   to = "https://mario-mojica-armado.netlify.app/M:splat"
   status = 200
 
+[[redirects]]
+  from = "/textures/*"
+  to = "https://mario-mojica-armado.netlify.app/textures/:splat"
+  status = 200
+
+[[redirects]]
+  from = "/Matcaps/*"
+  to = "https://mario-mojica-armado.netlify.app/Matcaps/:splat"
+  status = 200
+
+[[redirects]]
+  from = "/hdri/*"
+  to = "https://mario-mojica-armado.netlify.app/hdri/:splat"
+  status = 200
+
+
