@@ -15,7 +15,7 @@ function getAudioSrc(id, paso, idioma) {
 }
 
 function getAyudaSrc(id, idioma) {
-  if (!id || id === "manual-vacio" || id === "M01536") {
+  if (!id || id === "manual-vacio") {
     return `/assets/sounds/01_Ayuda.mp3`;
   }
   const ts = Date.now();

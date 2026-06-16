@@ -10,7 +10,7 @@ function App() {
   return (
     <Router basename={basename}>
       <Routes>
-        <Route path="/" element={<Navigate to="/M01536" />} />
+        <Route path="/" element={<Navigate to="/M00001" />} />
         <Route path="/:id" element={<AssemblyPage />} />
       </Routes>
     </Router>
