@@ -135,13 +135,11 @@ export default function PanelInicial() {
   const texts = {
     es: {
       arButton: "Ver en tu espacio",
-      arExplain: "Proyecta este mueble en escala real en tu habitación para guiarte en el proceso de armado.",
-      arVolume: "🔊 ¡Hola, soy Gama! Sube el volumen de tu móvil",
+      arExplain: "Proyecta el mueble en escala real en tu habitacion para guiarte en el proceso de armado y sube el volumen para escuchar las instrucciones",
     },
     en: {
       arButton: "View in your space",
-      arExplain: "Project this furniture in real scale in your room to guide you in the assembly process.",
-      arVolume: "🔊 Hi, I'm Gama! Turn up your device's volume",
+      arExplain: "Project the furniture in real scale in your room to guide you in the assembly process and turn up the volume to hear the instructions",
     }
   };
   const t = idioma === "en" ? texts.en : texts.es;
@@ -150,7 +148,7 @@ export default function PanelInicial() {
     <aside 
       className="PanelInicial" 
       ref={useCharger} 
-      style={isArMode ? { background: "radial-gradient(circle, #ffffff 0%, #f3f4f6 100%)", backgroundColor: "#ffffff", padding: "30px 20px" } : {}}
+      style={isArMode ? { background: "radial-gradient(circle, #ffffff 0%, #f3f4f6 100%)", backgroundColor: "#ffffff", padding: "0", display: "flex", flexDirection: "column", height: "100vh", position: "relative" } : {}}
     >
       {/* Background Spline Scene / AR Minimal Backdrop */}
       {!isArMode ? (
@@ -182,44 +180,45 @@ export default function PanelInicial() {
           </div>
         </>
       ) : (
-        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "space-between", height: "100%", width: "100%", zIndex: 10 }}>
-          {/* ARRIBA: Logo MM */}
-          <div style={{ width: "100%", display: "flex", justifyContent: "center", marginTop: "15px" }}>
+        <div style={{ display: "flex", flexDirection: "column", height: "100%", width: "100%", position: "relative" }}>
+          {/* ARRIBA (50% de la pantalla): Centrado del Logo MM */}
+          <div style={{ height: "50%", width: "100%", display: "flex", alignItems: "center", justifyContent: "center", boxSizing: "border-box", padding: "20px" }}>
             <img 
               src={getAssetPath("/assets/Logo_MM_en.svg")} 
               alt="Mario Mojica Logo" 
-              style={{ width: "230px", height: "auto", filter: "drop-shadow(0 4px 10px rgba(0,0,0,0.06))" }} 
+              style={{ width: "245px", height: "auto", filter: "drop-shadow(0 4px 10px rgba(0,0,0,0.06))" }} 
             />
           </div>
 
-          {/* CENTRO: Barra de Carga Inline Localizada */}
-          <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "10px", width: "100%" }}>
-            {displayProgress < 100 ? (
-              <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "12px" }}>
-                <div style={{ width: "240px", height: "18px", border: "2px solid var(--primary, #0d9488)", borderRadius: "100px", overflow: "hidden", position: "relative", background: "rgba(13, 148, 136, 0.05)" }}>
-                  <div style={{ ...fillerStyles, width: `${displayProgress}%`, boxShadow: "0 0 8px rgba(13, 148, 136, 0.4)" }}>
-                    <span style={{ padding: "0 8px", color: "var(--primary, #0d9488)", fontWeight: "bold", fontSize: "10px" }}>{`${displayProgress}%`}</span>
-                  </div>
-                </div>
-                <span style={{ fontSize: "12px", color: "#6b7280", fontWeight: "600", letterSpacing: "0.05em", textTransform: "uppercase" }}>
-                  {idioma === "en" ? "Loading experience..." : "Cargando experiencia..."}
-                </span>
-              </div>
-            ) : (
-              <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "8px", color: "var(--primary, #0d9488)", opacity: 0.85 }}>
-                <span className="material-symbols-outlined" style={{ fontSize: "42px", filter: "drop-shadow(0 0 10px rgba(13, 148, 136, 0.3))" }}>view_in_ar_new</span>
-              </div>
-            )}
+          {/* CENTRO: Barra de progreso original con Cubo superpuesto en el medio */}
+          <div className="progress" style={{ opacity: 1, display: "block" }}>
+            <div style={fillerStyles} className="progressBar" ref={progressBar}>
+              <span style={labelStyles}>{`${displayProgress}%`}</span>
+            </div>
           </div>
+          
+          {displayProgress < 100 && (
+            <div style={{ 
+              position: "fixed", 
+              top: "calc(55% - 60px)", 
+              left: "50%", 
+              transform: "translate(-50%, -50%)", 
+              zIndex: 30, 
+              color: "var(--primary, #0d9488)", 
+              display: "flex", 
+              justifyContent: "center", 
+              alignItems: "center", 
+              pointerEvents: "none" 
+            }}>
+              <span className="material-symbols-outlined" style={{ fontSize: "52px", filter: "drop-shadow(0 0 10px rgba(13, 148, 136, 0.4))" }}>view_in_ar_new</span>
+            </div>
+          )}
 
-          {/* ABAJO: Explicación, Aviso de Volumen y Botón de Acción */}
-          <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "22px", width: "100%", maxWidth: "340px", marginBottom: "15px" }}>
-            <div style={{ display: "flex", flexDirection: "column", gap: "8px", textAlign: "center", padding: "0 10px" }}>
-              <p style={{ fontSize: "14.5px", color: "#374151", margin: "0", lineHeight: "1.5", fontWeight: "600" }}>
+          {/* ABAJO (50% de la pantalla): Texto explicativo centrado y Botón */}
+          <div style={{ height: "50%", width: "100%", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", boxSizing: "border-box", padding: "20px", gap: "24px" }}>
+            <div style={{ width: "100%", maxWidth: "340px", textAlign: "center" }}>
+              <p style={{ fontSize: "14.5px", color: "#374151", margin: "0", lineHeight: "1.6", fontWeight: "600" }}>
                 {t.arExplain}
-              </p>
-              <p style={{ fontSize: "13.5px", color: "#0d9488", margin: "6px 0 0 0", fontWeight: "700", display: "flex", alignItems: "center", justifyContent: "center", gap: "4px" }}>
-                {t.arVolume}
               </p>
             </div>
             
