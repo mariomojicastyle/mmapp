@@ -1,0 +1,114 @@
+{
+    "name": "M01536ES_Escritorio_Repisa",
+    "pasos" : [
+        "00",
+        "01",
+        "02",
+        "03",
+        "04",
+        "05"
+      ],
+    "posiciones": [
+        "-0.716",
+        "-0.272",
+        "-0.272",
+        "-0.008",
+        "-0.289",
+        "-0.289"
+    ],
+
+    
+    "alturas": [
+        {
+            "skyBox": 1.57,
+            "plane": 0.38
+        },
+        {
+            "skyBox":1.57,
+            "plane":0.38
+        },
+        {
+            "skyBox": 1.57,
+            "plane": 0.38
+        },
+        {
+            "skyBox": 1.57,
+            "plane": 0.38
+        },
+        {
+            "skyBox": 1.57,
+            "plane": 0.43
+        },
+        {
+            "skyBox": 1.57,
+            "plane": 0.38
+        }
+    ],
+
+    "cameraPositions":[
+        {
+            "pasos": "00",
+            "position": {
+                "x": -2.1770,
+                "y": 1.46147,
+                "z": 4.45278
+            }
+        },
+        {
+            "pasos": "01",
+            "position": {
+                "x": -1.775793,
+                "y": 3.0748207,
+                "z": 2.2761257
+            }
+        },
+        {
+            "pasos": "02",
+            "position": {
+                "x": 2.31478,
+                "y": 1.91016,
+                "z": 3.70979
+            }
+        },
+        {
+            "pasos": "03",
+            "position": {
+                "x": -0.9280113720955765,
+                "y": 1.7158844382924463,
+                "z": 2.190437522709681
+            }
+        },
+        {
+            "pasos": "04",
+            "position": {
+                "x": 4.4711,
+                "y": 2.7873,
+                "z": -2.0084
+            }
+        },
+        {
+            "pasos": "05",
+            "position": {
+                "x": 1.400,
+                "y": 2.471,
+                "z": 3.282
+            }
+        }
+    ],
+
+    
+
+    "tips":{
+         "Logo":true,  
+         "2 Herramientas Necesarias":true,
+         "3 Herramientas Necesarias":false,
+         "Sistema de Anclaje":false,
+         "Pulsador para Abrir":false,
+         "Ensamble Minifix":true,
+         "Ensamble Tuerca Plástica":true,
+         "Ajuste de Bisagras": false,
+         "Oculta Tornillos":true,
+         "Garantia del Producto":true
+    },
+    "logo":"url('/assets/Logo_mm.svg')" 
+}
