@@ -130,48 +130,130 @@ export default function PanelInicial() {
     }
   }
 
+  const texts = {
+    es: {
+      arButton: "Ver en tu espacio",
+      arExplain: "Proyecta este mueble en escala real en tu habitación para guiarte en el proceso de armado.",
+      arVolume: "🔊 ¡Hola, soy Gama! Sube el volumen de tu móvil",
+    },
+    en: {
+      arButton: "View in your space",
+      arExplain: "Project this furniture in real scale in your room to guide you in the assembly process.",
+      arVolume: "🔊 Hi, I'm Gama! Turn up your device's volume",
+    }
+  };
+  const t = idioma === "en" ? texts.en : texts.es;
 
   return <>
-    <aside className="PanelInicial" ref={useCharger}>
+    <aside 
+      className="PanelInicial" 
+      ref={useCharger} 
+      style={isArMode ? { background: "radial-gradient(circle, #ffffff 0%, #f3f4f6 100%)", padding: "30px 20px" } : {}}
+    >
       {/* Background Spline Scene / AR Minimal Backdrop */}
       {!isArMode ? (
-        <div className="spline-wrapper">
-          <iframe 
-            src="https://my.spline.design/r4xbot-pS1luNxTefqsyDlc4ZbCw1Fj/?v=8" 
-            frameBorder="0" 
-            width="100%" 
-            height="100%" 
-            className="spline-bg"
-            title="Spline 3D Scene"
-          ></iframe>
-        </div>
+        <>
+          <div className="spline-wrapper">
+            <iframe 
+              src="https://my.spline.design/r4xbot-pS1luNxTefqsyDlc4ZbCw1Fj/?v=8" 
+              frameBorder="0" 
+              width="100%" 
+              height="100%" 
+              className="spline-bg"
+              title="Spline 3D Scene"
+            ></iframe>
+          </div>
+
+          {/* Top Content (Progress Bar & Button - Solo visible en modo no-AR) */}
+          <div className="content-top">
+            <div className="progress">
+              {/* Barra de progreso */}
+              <div style={fillerStyles} className="progressBar" ref={progressBar}>
+                <span style={labelStyles}>{`${displayProgress}%`}</span>
+              </div>
+            </div>
+            <div className="optionI" id="inicio" onClick={Start}>
+              <div className="imagen">
+                {idioma === "en" ? "Start" : "Iniciar"}
+              </div>
+            </div>
+          </div>
+        </>
       ) : (
-        <div className="spline-wrapper" style={{ background: "radial-gradient(circle, #0f242d 0%, #080f13 100%)", display: "flex", alignItems: "center", justifyContent: "center" }}>
-          <div style={{ color: "var(--primary, #00f2fe)", display: "flex", flexDirection: "column", alignItems: "center", gap: "10px", opacity: 0.8 }}>
-            <span className="material-symbols-outlined" style={{ fontSize: "64px", filter: "drop-shadow(0 0 15px rgba(0, 242, 254, 0.4))" }}>view_in_ar_new</span>
-            <span style={{ fontSize: "16px", fontWeight: "600", letterSpacing: "0.1em", textTransform: "uppercase", color: "var(--secondary, #ffffff)" }}>Experiencia AR</span>
+        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "space-between", height: "100%", width: "100%", zIndex: 10 }}>
+          {/* ARRIBA: Logo MM */}
+          <div style={{ width: "100%", display: "flex", justifyContent: "center", marginTop: "15px" }}>
+            <img 
+              src={getAssetPath("/assets/Logo_MM_en.svg")} 
+              alt="Mario Mojica Logo" 
+              style={{ width: "230px", height: "auto", filter: "drop-shadow(0 4px 10px rgba(0,0,0,0.06))" }} 
+            />
+          </div>
+
+          {/* CENTRO: Barra de Carga Inline Localizada */}
+          <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "10px", width: "100%" }}>
+            {displayProgress < 100 ? (
+              <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "12px" }}>
+                <div style={{ width: "240px", height: "18px", border: "2px solid var(--primary, #0d9488)", borderRadius: "100px", overflow: "hidden", position: "relative", background: "rgba(13, 148, 136, 0.05)" }}>
+                  <div style={{ ...fillerStyles, width: `${displayProgress}%`, boxShadow: "0 0 8px rgba(13, 148, 136, 0.4)" }}>
+                    <span style={{ padding: "0 8px", color: "var(--primary, #0d9488)", fontWeight: "bold", fontSize: "10px" }}>{`${displayProgress}%`}</span>
+                  </div>
+                </div>
+                <span style={{ fontSize: "12px", color: "#6b7280", fontWeight: "600", letterSpacing: "0.05em", textTransform: "uppercase" }}>
+                  {idioma === "en" ? "Loading experience..." : "Cargando experiencia..."}
+                </span>
+              </div>
+            ) : (
+              <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "8px", color: "var(--primary, #0d9488)", opacity: 0.85 }}>
+                <span className="material-symbols-outlined" style={{ fontSize: "42px", filter: "drop-shadow(0 0 10px rgba(13, 148, 136, 0.3))" }}>view_in_ar_new</span>
+              </div>
+            )}
+          </div>
+
+          {/* ABAJO: Explicación, Aviso de Volumen y Botón de Acción */}
+          <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "22px", width: "100%", maxWidth: "340px", marginBottom: "15px" }}>
+            <div style={{ display: "flex", flexDirection: "column", gap: "8px", textAlign: "center", padding: "0 10px" }}>
+              <p style={{ fontSize: "14.5px", color: "#374151", margin: "0", lineHeight: "1.5", fontWeight: "600" }}>
+                {t.arExplain}
+              </p>
+              <p style={{ fontSize: "13.5px", color: "#0d9488", margin: "6px 0 0 0", fontWeight: "700", display: "flex", alignItems: "center", justifyContent: "center", gap: "4px" }}>
+                {t.arVolume}
+              </p>
+            </div>
+            
+            {displayProgress === 100 && (
+              <button 
+                onClick={Start}
+                style={{
+                  cursor: "pointer",
+                  borderRadius: "100px",
+                  background: "var(--primary, #0d9488)",
+                  border: "none",
+                  color: "#ffffff",
+                  padding: "14px 44px",
+                  fontSize: "1.15rem",
+                  fontWeight: "700",
+                  textTransform: "uppercase",
+                  letterSpacing: "0.05em",
+                  boxShadow: "0 8px 20px rgba(13, 148, 136, 0.3)",
+                  transition: "all 0.3s ease",
+                  outline: "none"
+                }}
+                onMouseOver={(e) => {
+                  e.currentTarget.style.transform = "scale(1.04)";
+                  e.currentTarget.style.boxShadow = "0 10px 25px rgba(13, 148, 136, 0.4)";
+                }}
+                onMouseOut={(e) => {
+                  e.currentTarget.style.transform = "scale(1)";
+                  e.currentTarget.style.boxShadow = "0 8px 20px rgba(13, 148, 136, 0.3)";
+                }}
+              >
+                {t.arButton}
+              </button>
+            )}
           </div>
         </div>
       )}
-
-      {/* Top Content (Progress Bar & Button) */}
-      <div className="content-top">
-        <div className="progress">
-          {/* Barra de progreso */}
-          <div style={fillerStyles} className="progressBar" ref={progressBar}>
-            <span style={labelStyles}>{`${displayProgress}%`}</span>
-          </div>
-        </div>
-        <div className="optionI" id="inicio" onClick={Start}>
-          <div className="imagen">
-            {isArMode 
-              ? (idioma === "en" ? "Project in AR" : "Proyectar en AR")
-              : (idioma === "en" ? "Start" : "Iniciar")
-            }
-          </div>
-        </div>
-      </div>
     </aside>
-
   </>
 }
