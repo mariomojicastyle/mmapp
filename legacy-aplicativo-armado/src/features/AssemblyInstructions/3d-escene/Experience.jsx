@@ -273,14 +273,18 @@ export default function Experience({ id, modelUrl, productData }) {
     
     if (urlCameraOverlay === 'on') {
       useEnviroment.getState().SetCameraOverlay(true);
+      localStorage.setItem('cameraOverlay', 'on');
     } else if (urlCameraOverlay === 'off') {
       useEnviroment.getState().SetCameraOverlay(false);
+      localStorage.removeItem('cameraOverlay');
     }
     
     if (urlLightingEditor === 'on') {
       useEnviroment.getState().SetLightingEditor(true);
+      localStorage.setItem('lightingEditor', 'on');
     } else if (urlLightingEditor === 'off') {
       useEnviroment.getState().SetLightingEditor(false);
+      localStorage.removeItem('lightingEditor');
     }
 
     // 2. Verificar estado inicial en localStorage
@@ -297,11 +301,17 @@ export default function Experience({ id, modelUrl, productData }) {
     const handleStorage = (e) => {
       if (e.key === 'cameraOverlay') {
         const state = useEnviroment.getState();
-        state.SetCameraOverlay(e.newValue === 'on');
+        const val = e.newValue === 'on';
+        state.SetCameraOverlay(val);
+        if (val) localStorage.setItem('cameraOverlay', 'on');
+        else localStorage.removeItem('cameraOverlay');
       }
       if (e.key === 'lightingEditor') {
         const state = useEnviroment.getState();
-        state.SetLightingEditor(e.newValue === 'on');
+        const val = e.newValue === 'on';
+        state.SetLightingEditor(val);
+        if (val) localStorage.setItem('lightingEditor', 'on');
+        else localStorage.removeItem('lightingEditor');
       }
     };
     window.addEventListener('storage', handleStorage);
@@ -321,10 +331,16 @@ export default function Experience({ id, modelUrl, productData }) {
             if (payload && payload.codigoManual === id) {
               const state = useEnviroment.getState();
               if (payload.key === 'cameraOverlay') {
-                state.SetCameraOverlay(payload.value === 'on');
+                const val = payload.value === 'on';
+                state.SetCameraOverlay(val);
+                if (val) localStorage.setItem('cameraOverlay', 'on');
+                else localStorage.removeItem('cameraOverlay');
               }
               if (payload.key === 'lightingEditor') {
-                state.SetLightingEditor(payload.value === 'on');
+                const val = payload.value === 'on';
+                state.SetLightingEditor(val);
+                if (val) localStorage.setItem('lightingEditor', 'on');
+                else localStorage.removeItem('lightingEditor');
               }
             }
           })
@@ -428,7 +444,9 @@ function CameraOverlay({ orbitControlsRef }) {
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   
-  if (!showOverlay) return null;
+  const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || window.innerWidth <= 787;
+  
+  if (isMobile || !showOverlay) return null;
   
   const handleSetCameraPosition = async () => {
     setSaving(true);

@@ -16,12 +16,13 @@ export default function PanelInicial() {
   const idioma = useEnviroment((state) => state.idioma);
 
   const [displayProgress, setDisplayProgress] = useState(0);
-  const [isArMode, setIsArMode] = useState(false);
-
-  useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    setIsArMode(params.get("ar") === "true");
-  }, []);
+  const [isArMode] = useState(() => {
+    if (typeof window !== "undefined") {
+      const params = new URLSearchParams(window.location.search);
+      return params.get("ar") === "true";
+    }
+    return false;
+  });
 
   useEffect(() => {
     let animationFrameId;
@@ -148,7 +149,7 @@ export default function PanelInicial() {
     <aside 
       className="PanelInicial" 
       ref={useCharger} 
-      style={isArMode ? { background: "radial-gradient(circle, #ffffff 0%, #f3f4f6 100%)", padding: "30px 20px" } : {}}
+      style={isArMode ? { background: "radial-gradient(circle, #ffffff 0%, #f3f4f6 100%)", backgroundColor: "#ffffff", padding: "30px 20px" } : {}}
     >
       {/* Background Spline Scene / AR Minimal Backdrop */}
       {!isArMode ? (
