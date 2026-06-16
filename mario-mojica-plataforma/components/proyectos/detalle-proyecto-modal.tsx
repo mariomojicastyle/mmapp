@@ -954,9 +954,22 @@ export function DetalleProyectoModal({ isOpen, onClose, proyecto, onUpdate }: De
         const file = files[i]
         
         let fileToUpload: File | Blob = file
-        let fileExt = file.name.split('.').pop() || ""
+        let fileExt = (file.name.split('.').pop() || "").toLowerCase()
         let fileNameToUse = file.name
-        let uploadContentType = file.type
+        
+        // Mapeo seguro de tipo MIME según extensión para evitar errores de preflight/WAF
+        const mimeMap: Record<string, string> = {
+          svg: "image/svg+xml",
+          pdf: "application/pdf",
+          glb: "model/gltf-binary",
+          png: "image/png",
+          jpg: "image/jpeg",
+          jpeg: "image/jpeg",
+          webp: "image/webp",
+          mp3: "audio/mpeg",
+          wav: "audio/wav"
+        }
+        let uploadContentType = mimeMap[fileExt] || file.type || "application/octet-stream"
 
         if (type === 'herrajes') {
           try {
@@ -1173,6 +1186,14 @@ export function DetalleProyectoModal({ isOpen, onClose, proyecto, onUpdate }: De
         const ext = pbrWallHeight.split('.').pop() || "png"
         path = `${codigoManual}/textures/wall_height.${ext}`
         updatedStateCallback = () => setPbrWallHeight("")
+      } else if (type === 'tools') {
+        const ext = imgHerramientas.split('.').pop() || "png"
+        path = `${codigoManual}/herramientas.${ext}`
+        updatedStateCallback = () => setImgHerramientas("")
+      } else if (type === 'garantia') {
+        const ext = garantiaDoc.split('.').pop() || "pdf"
+        path = `${codigoManual}/garantia.${ext}`
+        updatedStateCallback = () => setGarantiaDoc("")
       }
 
       if (path) {
@@ -3762,13 +3783,23 @@ export function DetalleProyectoModal({ isOpen, onClose, proyecto, onUpdate }: De
                         <div className="p-4 bg-surface-container-lowest/50 border-t border-outline-variant/10 text-xs">
                           <div className="flex items-center justify-between p-3.5 rounded-lg bg-surface-container border border-outline-variant/10">
                             <span className="font-semibold text-on-surface truncate">{imgHerramientas || "Sin imagen cargada"}</span>
-                            <button
-                              type="button"
-                              onClick={() => handleSimulateUpload("tools")}
-                              className="text-primary hover:underline font-bold"
-                            >
-                              Subir Imagen
-                            </button>
+                            {imgHerramientas ? (
+                              <button
+                                type="button"
+                                onClick={() => handleDeleteItem("tools", null)}
+                                className="text-on-surface-variant hover:text-red-400 p-1"
+                              >
+                                <Trash2 className="h-3.5 w-3.5" />
+                              </button>
+                            ) : (
+                              <button
+                                type="button"
+                                onClick={() => handleSimulateUpload("tools")}
+                                className="text-primary hover:underline font-bold"
+                              >
+                                Subir Imagen
+                              </button>
+                            )}
                           </div>
                         </div>
                       )}
@@ -3829,13 +3860,23 @@ export function DetalleProyectoModal({ isOpen, onClose, proyecto, onUpdate }: De
                         <div className="p-4 bg-surface-container-lowest/50 border-t border-outline-variant/10 text-xs">
                           <div className="flex items-center justify-between p-3.5 rounded-lg bg-surface-container border border-outline-variant/10">
                             <span className="font-semibold text-on-surface truncate">{garantiaDoc || "Sin garantía cargada"}</span>
-                            <button
-                              type="button"
-                              onClick={() => handleSimulateUpload("garantia")}
-                              className="text-primary hover:underline font-bold"
-                            >
-                              Subir Archivo
-                            </button>
+                            {garantiaDoc ? (
+                              <button
+                                type="button"
+                                onClick={() => handleDeleteItem("garantia", null)}
+                                className="text-on-surface-variant hover:text-red-400 p-1"
+                              >
+                                <Trash2 className="h-3.5 w-3.5" />
+                              </button>
+                            ) : (
+                              <button
+                                type="button"
+                                onClick={() => handleSimulateUpload("garantia")}
+                                className="text-primary hover:underline font-bold"
+                              >
+                                Subir Archivo
+                              </button>
+                            )}
                           </div>
                         </div>
                       )}
@@ -3922,42 +3963,6 @@ export function DetalleProyectoModal({ isOpen, onClose, proyecto, onUpdate }: De
                       )}
                     </div>
 
-                    {/* 8. Renders fotorealistas */}
-                    <div className="flex flex-col">
-                      <button
-                        type="button"
-                        onClick={() => toggleSection("renders")}
-                        className="flex items-center justify-between p-4 font-bold text-sm text-on-surface bg-surface-container-low hover:bg-surface-container transition-colors"
-                      >
-                        <span className="flex items-center gap-2">
-                          <Image className="h-4.5 w-4.5 text-sky-400" />
-                          8. Renders Fotorealistas 3D ({renders.length})
-                        </span>
-                        {openSection === "renders" ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
-                      </button>
-                      
-                      {openSection === "renders" && (
-                        <div className="p-4 bg-surface-container-lowest/50 border-t border-outline-variant/10 space-y-3 text-xs">
-                          <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-                            {renders.map((ren, idx) => (
-                              <div key={idx} className="flex items-center justify-between p-3 rounded-lg bg-surface-container border border-outline-variant/10">
-                                <span className="font-medium text-on-surface truncate">{ren}</span>
-                                <button type="button" onClick={() => handleDeleteItem("renders", idx)} className="text-on-surface-variant hover:text-red-400 p-1">
-                                  <Trash2 className="h-3.5 w-3.5" />
-                                </button>
-                              </div>
-                            ))}
-                          </div>
-                          <button
-                            type="button"
-                            onClick={() => handleSimulateUpload("renders")}
-                            className="flex items-center gap-1 text-[11px] font-bold text-primary hover:underline"
-                          >
-                            <Plus className="h-3 w-3" /> Agregar render
-                          </button>
-                        </div>
-                      )}
-                    </div>
 
                   </div>
                 </div>

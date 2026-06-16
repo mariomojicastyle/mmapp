@@ -263,4 +263,73 @@
   .ayuda-bubble.ayuda6 .ayuda-bubble-arrow.arrow-right {
     bottom: 15px; /* Posicionada para que su centro esté a 20px de la base (centro del botón móvil de 40px) */
   }
+
+  /* Hacer que el contenedor de los botones de arriba sea el ancestro posicionado */
+  .contenedor1-1 {
+    position: relative !important;
+  }
+
+  /* Desactivar relative en los botones individuales en movil para que las nubes se posicionen respecto a .contenedor1-1 */
+  #info, 
+  #shadows, 
+  .speed-controller-container, 
+  .lang-controller-container {
+    position: static !important;
+  }
+
+  /* Centrar todas las burbujas superiores en móvil */
+  .ayuda-bubble.ayuda1,
+  .ayuda-bubble.ayudaLuz,
+  .ayuda-bubble.ayudaVelocidad,
+  .ayuda-bubble.ayudaIdioma {
+    position: absolute !important;
+    left: 50% !important;
+    top: 54px !important; /* Ajustado justo abajo de los botones superiores de 44px */
+    transform: translateX(-50%) scale(0.95) !important;
+    min-width: 270px !important;
+    max-width: 290px !important;
+  }
+
+  .ayuda-bubble.ayuda1.is-active,
+  .ayuda-bubble.ayudaLuz.is-active,
+  .ayuda-bubble.ayudaVelocidad.is-active,
+  .ayuda-bubble.ayudaIdioma.is-active {
+    transform: translateX(-50%) scale(1) !important;
+  }
+
+  /* Ajustar la posicion de la flecha de cada burbuja superior */
+  .ayuda-bubble.ayuda1 .ayuda-bubble-arrow {
+    left: calc(50% - 62px) !important;
+  }
+  .ayuda-bubble.ayudaLuz .ayuda-bubble-arrow {
+    left: 50% !important;
+  }
+  .ayuda-bubble.ayudaVelocidad .ayuda-bubble-arrow {
+    left: calc(50% + 62px) !important;
+  }
+  .ayuda-bubble.ayudaIdioma .ayuda-bubble-arrow {
+    left: calc(50% + 124px) !important;
+  }
+
+  /* Centrar las burbujas inferiores en móvil */
+  .ayuda-bubble.ayuda4,
+  .ayuda-bubble.ayuda5 {
+    left: 50% !important;
+    transform: translateX(-50%) scale(0.95) !important;
+    min-width: 270px !important;
+    max-width: 290px !important;
+  }
+
+  .ayuda-bubble.ayuda4.is-active,
+  .ayuda-bubble.ayuda5.is-active {
+    transform: translateX(-50%) scale(1) !important;
+  }
+
+  /* Ajustar la posicion de la flecha de cada burbuja inferior */
+  .ayuda-bubble.ayuda4 .ayuda-bubble-arrow {
+    left: calc(50% - 120px) !important;
+  }
+  .ayuda-bubble.ayuda5 .ayuda-bubble-arrow {
+    left: calc(50% + 120px) !important;
+  }
 }

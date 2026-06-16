@@ -27,6 +27,8 @@ Este archivo es la "Memoria RAM" para Antigravity. Contiene el contexto de lo qu
 - **TopNav:** Implementa créditos dinámicos desde el perfil de Supabase (fallback a 1,250).
 - **Control de Acceso:** Solo `superadmin` y `coequipero` tienen permisos para crear proyectos.
 - **Detección de Nombres**: Se prioriza `child.parent.name` si no contiene la palabra "PIEZA" ni es "Scene", manteniendo la cohesión con los tooltips.
+- **MIME Types en Subidas:** Se solucionó el error `TypeError: Failed to fetch` en subidas de archivos `.svg`/`.pdf` mediante un mapeo estricto de extensiones a tipos MIME que solventa fallos cuando el navegador reporta un tipo vacío en Windows.
+- **Burbujas de Ayuda en Móvil:** Se centraron horizontalmente todas las burbujas superiores e inferiores en responsive y se desplazaron sus flechas direccionales de forma asimétrica para coincidir con la posición de sus botones correspondientes sin recortarse.
 
 ---
 

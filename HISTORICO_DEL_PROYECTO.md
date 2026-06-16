@@ -677,6 +677,12 @@ Los estilos, colores y tiempos de transición de las flechas azules se configura
     - **Soporte para Múltiples Clips de Animación**: Actualización del componente `Model.jsx` para iterar y reproducir simultáneamente todos los clips de animación contenidos en el GLB de pasos, dando soporte nativo a manuales complejos con tracks de animación segmentados.
     - **Bypass de Caché por Session Cache Buster**: Inyección de una variable única de sesión (`?v=sessionBuster`) en las solicitudes de assets locales y dinámicos en `assets.js`, lo que obliga al navegador y al CDN de Netlify a buscar y descargar los nuevos assets en caliente tras recargar la página en lugar de leer versiones viejas del caché.
 
+* **[2026-06-16] AppArmado_v24 / Plataforma_v11 — Centrado de Nubes de Ayuda, Subidas Robustas SVG/PDF y Remoción de Renders**:
+    - **Centrado y Rediseño de Flechas en Nubes de Ayuda (Móvil)**: Ajuste en `PanelAyudas.css` para que en pantallas móviles todas las nubes de ayuda se posicionen respecto al contenedor `.contenedor1-1` y se centren horizontalmente en la pantalla (`left: 50%; transform: translateX(-50%)`), evitando desbordamientos laterales. Se desplazaron individualmente las flechas mediante offsets exactos (`-62px`, `0px`, `+62px`, `+124px` para arriba, y `-120px`, `+120px` para abajo) para apuntar con precisión a sus botones de origen.
+    - **Mapeo de Tipos MIME en Subida (Bypass de CORS/Failed to fetch)**: Corrección de un fallo recurrente al subir archivos `.svg` y `.pdf` en Windows donde el navegador reporta un tipo MIME vacío, provocando rechazos del WAF o CORS preflight. Se implementó un mapeo de extensiones seguro en `handleRealUpload` de la plataforma para asignar de forma explícita `image/svg+xml`, `application/pdf`, etc.
+    - **Eliminación de Renders 3D en el Modal**: Se removió el acordeón y la opción de subir "Renders Fotorealistas 3D" en el panel administrativo.
+    - **Visualización y Eliminación de Garantía y Herramientas**: Integración de soporte para eliminar imágenes de herramientas y documentos de garantía del Storage de Supabase y reiniciar sus estados con iconos de papelera en el modal.
+
 
 
 
