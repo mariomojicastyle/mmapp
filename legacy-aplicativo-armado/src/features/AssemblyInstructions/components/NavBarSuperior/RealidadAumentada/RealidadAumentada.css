@@ -207,34 +207,24 @@
    Ajustes Responsivos para Dispositivos Móviles
    ========================================================================== */
 @media (max-width: 787px) {
-  /* En móviles, ocultamos el botón de PC y el popover del QR */
-  .ar-btn-pc, .qr-bubble {
+  /* En móviles, ocultamos el popover del QR pero el botón AR se mantiene visible */
+  .qr-bubble {
     display: none !important;
   }
   
-  /* Mostramos el botón nativo de model-viewer en móviles */
-  model-viewer [slot="ar-button"] {
+  /* El botón se muestra con display flex */
+  .ar-btn-pc {
     display: flex !important;
   }
   
-  /* En móviles, model-viewer recupera su tamaño y comportamiento normales */
-  .AR model-viewer {
-    display: block !important;
-    position: static !important;
-    width: 100% !important;
-    height: 100% !important;
-    pointer-events: auto !important;
-    visibility: visible !important;
-  }
-  
-  /* En móviles, el contenedor .AR adopta el estilo del botón flotante nativo de model-viewer */
+  /* En móviles, el contenedor .AR adopta el tamaño y estilo del botón flotante */
   .AR {
     display: flex;
     position: fixed;
-    width: 44px;
-    height: 44px;
+    width: 52px;
+    height: 52px;
     bottom: 190px;
-    right: 10px;
+    right: 15px;
     left: auto !important; /* Anular la posición left de PC */
     transform: none !important; /* Anular el transform de PC */
     z-index: 50;
@@ -244,14 +234,26 @@
     backdrop-filter: var(--glass-blur, blur(12px)) !important;
     -webkit-backdrop-filter: var(--glass-blur, blur(12px)) !important;
     border: 1px solid var(--border-light, rgba(113, 211, 247, 0.15)) !important;
+    pointer-events: auto !important;
   }
 }
 
 @media (max-width: 320px) {
   .AR {
-    width: 35px;
-    height: 35px;
+    width: 44px;
+    height: 44px;
     bottom: 130px;
     right: 5px;
+  }
+  .ar-btn-pc {
+    width: 44px !important;
+    height: 44px !important;
+    min-width: 44px !important;
+    min-height: 44px !important;
+    max-width: 44px !important;
+    max-height: 44px !important;
+  }
+  .ar-btn-pc .material-symbols-outlined {
+    font-size: 22px !important;
   }
 }

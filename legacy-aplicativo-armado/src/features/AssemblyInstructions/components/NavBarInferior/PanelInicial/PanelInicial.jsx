@@ -13,8 +13,15 @@ export default function PanelInicial() {
   
   const StartAppTrue = useEnviroment((state) => state.StartAppTrue);
   const icono = useEnviroment((state) => state.icono);
+  const idioma = useEnviroment((state) => state.idioma);
 
   const [displayProgress, setDisplayProgress] = useState(0);
+  const [isArMode, setIsArMode] = useState(false);
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    setIsArMode(params.get("ar") === "true");
+  }, []);
 
   useEffect(() => {
     let animationFrameId;
@@ -114,6 +121,13 @@ export default function PanelInicial() {
   const Start = () => {
     useCharger.current.style.display = "none";
     StartAppTrue();
+    
+    // Si estamos en modo AR, lanzar la experiencia inmediatamente tras habilitar la app
+    if (isArMode && typeof window.__activateAR === "function") {
+      setTimeout(() => {
+        window.__activateAR();
+      }, 150);
+    }
   }
 
 
@@ -140,7 +154,12 @@ export default function PanelInicial() {
           </div>
         </div>
         <div className="optionI" id="inicio" onClick={Start}>
-          <div className="imagen">Iniciar</div>
+          <div className="imagen">
+            {isArMode 
+              ? (idioma === "en" ? "Project in AR" : "Proyectar en AR")
+              : (idioma === "en" ? "Start" : "Iniciar")
+            }
+          </div>
         </div>
       </div>
     </aside>
