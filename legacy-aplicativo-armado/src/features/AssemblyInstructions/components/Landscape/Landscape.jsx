@@ -1,4 +1,5 @@
 import useEnviroment from "../../hooks/useEnviroment";
+import { getAssetPath } from "../../../../lib/assets.js";
 import "./Landscape.css"
 
 //El aplicativo en dispositivos moviles, si es orientado de manera horizontal, se muestran los renders del mueble. 
@@ -9,8 +10,8 @@ export default function Landscape() {
 
     return <>
         <div id="landscape">
-            <div style={{ backgroundImage: "url(" + `/${id}/renders/render1.jpg` + ")" }}></div>
-            <div style={{ backgroundImage: "url(" + `/${id}/renders/render2.jpg` + ")" }}></div>
+            <div style={{ backgroundImage: "url(" + getAssetPath(`/${id}/renders/render1.jpg`) + ")" }}></div>
+            <div style={{ backgroundImage: "url(" + getAssetPath(`/${id}/renders/render2.jpg`) + ")" }}></div>
         </div>
 
 

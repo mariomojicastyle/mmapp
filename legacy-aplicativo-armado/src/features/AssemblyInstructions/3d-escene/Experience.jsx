@@ -6,6 +6,7 @@ import * as THREE from 'three';
 import Model from "./Model.jsx";
 import Floor from "./Floor/Floor.jsx";
 import LightingPanel from "./LightingPanel.jsx";
+import { getAssetPath } from "../../../lib/assets.js";
 
 
 
@@ -105,9 +106,9 @@ export default function Experience({ id, modelUrl, productData }) {
 
   const wallTextureConfig = useMemo(() => {
     const config = {
-      map: productData?.pbrWallDiff || "/textures/floor/floor-diff.webp",
-      normalMap: productData?.pbrWallNormal || "/textures/floor/floor-normal.webp",
-      roughnessMap: productData?.pbrWallRoughness || "/textures/floor/floor-roughness.webp",
+      map: productData?.pbrWallDiff || getAssetPath("/textures/floor/floor-diff.webp"),
+      normalMap: productData?.pbrWallNormal || getAssetPath("/textures/floor/floor-normal.webp"),
+      roughnessMap: productData?.pbrWallRoughness || getAssetPath("/textures/floor/floor-roughness.webp"),
     };
     if (productData?.pbrWallHeight) {
       config.bumpMap = productData.pbrWallHeight;
@@ -142,7 +143,7 @@ export default function Experience({ id, modelUrl, productData }) {
   }, [hasWallTextures, stableWallTextureMaps]);
 
   // Cargar el modelo GLB inicial (paso 00)
-  const initialModelUrl = `/${id}/models/P00.glb`;
+  const initialModelUrl = getAssetPath(`/${id}/models/P00.glb`);
   const { scene: gltfScene } = useGLTF(initialModelUrl);
 
   useEffect(() => {

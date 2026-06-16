@@ -4,6 +4,7 @@ import * as THREE from "three";
 import { useThree, useFrame } from "@react-three/fiber";
 import useEnviroment from "../hooks/useEnviroment.js";
 import Floor from "./Floor/Floor.jsx";
+import { getAssetPath } from "../../../lib/assets.js";
 
 function obtenerNombreLimpioTooltip(rawName) {
   if (!rawName) return "";
@@ -106,7 +107,7 @@ export default function Model(props) {
 
   useEffect(() => {
     const loader = new THREE.TextureLoader();
-    loader.load("/Matcaps/3.png", (texture) => {
+    loader.load(getAssetPath("/Matcaps/3.png"), (texture) => {
       matcapTexture.current = texture;
       highlightMaterialRef.current = new THREE.MeshMatcapMaterial({
         matcap: texture,
@@ -133,7 +134,7 @@ export default function Model(props) {
 
   // Carga del modelo GLB y sus animaciones - Local por paso
   const { scene, animations, cameras } = useGLTF(
-    `/${props.id}/models/P${pasoActual}.glb`
+    getAssetPath(`/${props.id}/models/P${pasoActual}.glb`)
   );
 
   const sombras = useEnviroment((state) => state.sombras);
@@ -304,7 +305,7 @@ export default function Model(props) {
           Temporizador(child);
         } else if (toolTip === child.name) {
           PiezaHerraje([cleanChildName]);
-          textMaterial2 = textureLoader.load("/Matcaps/3.png");
+          textMaterial2 = textureLoader.load(getAssetPath("/Matcaps/3.png"));
           if (!textMaterial2 || !textMaterial2.isMaterial) {
             console.error("Error: textMaterial2 is undefined or invalid");
             return;

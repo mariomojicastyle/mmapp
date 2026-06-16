@@ -2,6 +2,7 @@ import { useRef } from "react";
 import { useEffect } from "react";
 import useEnviroment from "../../../hooks/useEnviroment";
 import FormularioEncuesta from "./FormularioEncuesta/FormularioEncuesta.jsx";
+import { getAssetPath } from "../../../../../../lib/assets.js";
 import "./PanelEncuesta.css";
 export default function PanelEncuesta() {
   const EncuestaMitad = useEnviroment((state) => state.EncuestaMitad);
@@ -49,7 +50,7 @@ export default function PanelEncuesta() {
                 <h1>¡Responde y gana!</h1>
             </div>
             <div className="LogoM">
-              <img src="/assets/Logo_Maderkit_blanco.svg" alt="" />
+              <img src={getAssetPath("/assets/Logo_Maderkit_blanco.svg")} alt="" />
             </div>
             <div className="close" onClick={closeBtn}>
               <span className="material-symbols-outlined">close</span>

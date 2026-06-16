@@ -1,6 +1,7 @@
 import React, { useEffect } from "react";
 import "./PanelTips.css";
 import useEnviroment from "../../hooks/useEnviroment.js";
+import { getAssetPath } from "../../../../lib/assets.js";
 
 export default function PanelTips({ id, data }) {
   
@@ -69,27 +70,27 @@ export default function PanelTips({ id, data }) {
     const found = data.ensamblesList.find(name => 
       name.toLowerCase().includes(keyword.toLowerCase())
     );
-    return found ? `/${id}/ensambles/${found}` : null;
+    return found ? getAssetPath(`/${id}/ensambles/${found}`) : null;
   };
 
   //Arreglo con los diferentes tips disponibles.
   const Tips = {
     DosHerramientasNecesarias: data.isDynamicCMS && data.imagenHerramientas 
-      ? `/${id}/${data.imagenHerramientas}` 
-      : '/assets/tips/Martillo_Destornillador.svg',
+      ? getAssetPath(`/${id}/${data.imagenHerramientas}`) 
+      : getAssetPath('/assets/tips/Martillo_Destornillador.svg'),
     
-    TresHerramientasNecesarias: '/assets/tips/Martillo_Destornillador_Allen.svg',
+    TresHerramientasNecesarias: getAssetPath('/assets/tips/Martillo_Destornillador_Allen.svg'),
     
-    SistemaDeAnclaje: findEnsamble("anclaje") || '/assets/tips/Sistema_Anclaje.svg',
-    PulsadorParaAbrir: findEnsamble("pulsador") || '/assets/tips/Pulsador_Para_Abrir.svg',
-    EnsambleMinifix: findEnsamble("minifix") || '/assets/tips/Ensamble_Minifix.svg',
-    EnsambleTuercaPlástica: findEnsamble("tuerca") || '/assets/tips/Ensamble_Tuerca_Plastica.svg',
-    AjusteDeBisagras: findEnsamble("bisagra") || '/assets/tips/Ajuste_Bisagras.svg',
-    OcultaTornillos: findEnsamble("oculta") || '/assets/tips/Oculta_Tornillos.svg',
+    SistemaDeAnclaje: findEnsamble("anclaje") || getAssetPath('/assets/tips/Sistema_Anclaje.svg'),
+    PulsadorParaAbrir: findEnsamble("pulsador") || getAssetPath('/assets/tips/Pulsador_Para_Abrir.svg'),
+    EnsambleMinifix: findEnsamble("minifix") || getAssetPath('/assets/tips/Ensamble_Minifix.svg'),
+    EnsambleTuercaPlástica: findEnsamble("tuerca") || getAssetPath('/assets/tips/Ensamble_Tuerca_Plastica.svg'),
+    AjusteDeBisagras: findEnsamble("bisagra") || getAssetPath('/assets/tips/Ajuste_Bisagras.svg'),
+    OcultaTornillos: findEnsamble("oculta") || getAssetPath('/assets/tips/Oculta_Tornillos.svg'),
     
     GarantiaDelProducto: data.isDynamicCMS && data.garantiaDoc 
-      ? `/${id}/${data.garantiaDoc}` 
-      : "/assets/tips/Certificado_de_Garantia_v12.pdf",
+      ? getAssetPath(`/${id}/${data.garantiaDoc}`) 
+      : getAssetPath("/assets/tips/Certificado_de_Garantia_v12.pdf"),
   };
 
   if (!data || !data.tips) return null;

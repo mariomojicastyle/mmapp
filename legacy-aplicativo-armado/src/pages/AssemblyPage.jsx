@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import AssemblyViewer from '../features/AssemblyInstructions/AssemblyViewer';
 import { supabase } from '../lib/supabase';
+import { getAssetPath } from '../lib/assets.js';
 
 function normalizarYAsignarPiezas(items) {
   if (!items || !Array.isArray(items)) return [];
@@ -277,7 +278,7 @@ const AssemblyPage = () => {
         }
 
         // 2. Si no está en Supabase, intentar cargar archivo local public/[id]/data.json (Retrocompatibilidad)
-        const response = await fetch(`/${id}/data.json`);
+        const response = await fetch(getAssetPath(`/${id}/data.json`));
         if (!response.ok) throw new Error(`No se encontró data.json para ${id}`);
         const data = await response.json();
         setProductData(data);
@@ -287,7 +288,7 @@ const AssemblyPage = () => {
         
         try {
           // Fallback a manual-vacio
-          const fallbackResponse = await fetch(`/manual-vacio/data.json`);
+          const fallbackResponse = await fetch(getAssetPath(`/manual-vacio/data.json`));
           if (!fallbackResponse.ok) throw new Error("No se pudo cargar la plantilla de Manual Vacío");
           const fallbackData = await fallbackResponse.json();
           fallbackData.name = `Manual Vacío - ${id}`;

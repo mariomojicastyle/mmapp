@@ -2,6 +2,7 @@ import { useTexture, ContactShadows } from "@react-three/drei";
 import * as THREE from "three";
 import { DoubleSide, RepeatWrapping } from "three";
 import useEnviroment from "../../hooks/useEnviroment";
+import { getAssetPath } from "../../../../lib/assets.js";
 
 export default function Floor({ productData }) {
   const pasoActual = useEnviroment((state) => state.pasoActual);
@@ -24,9 +25,9 @@ export default function Floor({ productData }) {
   const hasFloorTextures = !!(productData?.pbrFloorDiff || productData?.pbrFloorNormal || productData?.pbrFloorRoughness || productData?.pbrFloorHeight);
 
   const floorTextureConfig = {
-    map: productData?.pbrFloorDiff || "/textures/floor/floor-diff.webp",    
-    normalMap: productData?.pbrFloorNormal || "/textures/floor/floor-normal.webp",
-    roughnessMap: productData?.pbrFloorRoughness || "/textures/floor/floor-roughness.webp",
+    map: productData?.pbrFloorDiff || getAssetPath("/textures/floor/floor-diff.webp"),    
+    normalMap: productData?.pbrFloorNormal || getAssetPath("/textures/floor/floor-normal.webp"),
+    roughnessMap: productData?.pbrFloorRoughness || getAssetPath("/textures/floor/floor-roughness.webp"),
   };
 
   if (productData?.pbrFloorHeight) {
@@ -35,7 +36,7 @@ export default function Floor({ productData }) {
 
   // Solo incluir el aoMap de madera local si no se ha subido una textura de piso personalizada
   if (!hasFloorTextures) {
-    floorTextureConfig.aoMap = "/textures/floor/floor-ao.webp";
+    floorTextureConfig.aoMap = getAssetPath("/textures/floor/floor-ao.webp");
   }
 
   const floorTexture = useTexture(floorTextureConfig);

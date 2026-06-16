@@ -2,6 +2,7 @@ import useEnviroment from "../../../../hooks/useEnviroment";
 import { useEffect, useState } from "react";
 import "./PanelCantidades.css";
 import * as THREE from "three";
+import { getAssetPath } from "../../../../../../lib/assets.js";
 
 export default function PanelCantidades({ id, data }) {
   const pasoInicial = useEnviroment((state) => state.pasoInicial);
@@ -33,9 +34,9 @@ export default function PanelCantidades({ id, data }) {
       if (matchedFile) {
         if (matchedFile.startsWith('_shared:')) {
           const realName = matchedFile.replace('_shared:', '');
-          return `/assets/herrajes_compartidos/${realName}`;
+          return getAssetPath(`/assets/herrajes_compartidos/${realName}`);
         }
-        return `/${id}/herrajes/${matchedFile}`;
+        return getAssetPath(`/${id}/herrajes/${matchedFile}`);
       }
     }
     return null;

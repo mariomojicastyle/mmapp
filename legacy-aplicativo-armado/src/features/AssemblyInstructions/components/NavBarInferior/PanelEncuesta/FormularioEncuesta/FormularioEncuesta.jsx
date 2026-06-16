@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import useEnviroment from "../../../../hooks/useEnviroment";
 import "./FormularioEncuesta.css";
+import { getAssetPath } from "../../../../../../../lib/assets.js";
 
 export default function FormularioEncuesta() {
   const ActivarEncuesta = useEnviroment((state) => state.ActivarEncuesta);
@@ -128,7 +129,7 @@ export default function FormularioEncuesta() {
                   </div>
                   <div className="LogoM2">
                     <img
-                      src="/assets/Logo_Maderkit_blanco.svg"
+                      src={getAssetPath("/assets/Logo_Maderkit_blanco.svg")}
                       alt=""
                     />
                   </div>
@@ -280,7 +281,7 @@ export default function FormularioEncuesta() {
                 <div className="conFooter">
                   <div className="LogoM2">
                     <img
-                      src="/assets/Logo_Maderkit_blanco.svg"
+                      src={getAssetPath("/assets/Logo_Maderkit_blanco.svg")}
                       alt=""
                     />
                   </div>
@@ -318,7 +319,7 @@ export default function FormularioEncuesta() {
                 <div className="conFooter">
                   <div className="LogoM2">
                     <img
-                      src="/assets/Logo_Maderkit_blanco.svg"
+                      src={getAssetPath("/assets/Logo_Maderkit_blanco.svg")}
                       alt=""
                     />
                   </div>
@@ -356,7 +357,7 @@ export default function FormularioEncuesta() {
                 <div className="conFooter">
                   <div className="LogoM2">
                     <img
-                      src="/assets/Logo_Maderkit_blanco.svg"
+                      src={getAssetPath("/assets/Logo_Maderkit_blanco.svg")}
                       alt=""
                     />
                   </div>
@@ -376,7 +377,7 @@ export default function FormularioEncuesta() {
                 <div className="conFooter">
                 <div className="LogoM2">
                     <img
-                      src="/assets/Logo_Maderkit_blanco.svg"
+                      src={getAssetPath("/assets/Logo_Maderkit_blanco.svg")}
                       alt=""
                     />
                   </div>

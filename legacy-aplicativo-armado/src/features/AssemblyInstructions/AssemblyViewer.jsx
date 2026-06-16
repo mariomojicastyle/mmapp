@@ -7,6 +7,7 @@ import Landscape from "./components/Landscape/Landscape.jsx";
 import useEnviroment from "./hooks/useEnviroment";
 import * as THREE from "three";
 import PanelInicial from "./components/NavBarInferior/PanelInicial/PanelInicial";
+import { getAssetPath } from "../../lib/assets.js";
 
 export default function AssemblyViewer({ productData, steps, id }) {
   // Variables y funciones extraidas del state management (useEnviroment)
@@ -53,7 +54,7 @@ export default function AssemblyViewer({ productData, steps, id }) {
   const refTitle = useRef();
 
   // Construir la URL del modelo según el paso actual
-  const modelUrl = `/${id}/models/P${pasoActual}.glb`;
+  const modelUrl = getAssetPath(`/${id}/models/P${pasoActual}.glb`);
 
   // Efecto para inicializar el store con los datos del data.json
   useEffect(() => {

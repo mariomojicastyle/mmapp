@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import useEnviroment from "../../../hooks/useEnviroment";
 import QRCode from "react-qr-code";
+import { getAssetPath } from "../../../../../lib/assets.js";
 import "./RealidadAumentada.css";
 
 export default function RealiadaAumentada({ id }) {
@@ -41,13 +42,13 @@ export default function RealiadaAumentada({ id }) {
   // Apenas inicia el aplicativo, se agrega la ruta del paso 00.
   useEffect(() => {
     if (refAr.current) {
-      refAr.current.src = `/${id}/models/P00.glb`;
+      refAr.current.src = getAssetPath(`/${id}/models/P00.glb`);
     }
   }, [id]);
 
   useEffect(() => {
     if (refAr.current) {
-      refAr.current.src = `/${id}/models/P${pasoActual}.glb`;
+      refAr.current.src = getAssetPath(`/${id}/models/P${pasoActual}.glb`);
     }
   }, [pasoActual, Cliente, id]);
 
