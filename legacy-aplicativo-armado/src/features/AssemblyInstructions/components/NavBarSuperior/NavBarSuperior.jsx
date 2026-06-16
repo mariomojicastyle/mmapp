@@ -184,30 +184,28 @@ export default function NavBarSuperior({ id, data }) {
             </div>
           </div>
 
-          {/* <!-- Opciones de cambio de color de vizualización del mueble--> */}
-          <form>
+          {/* <!-- Opciones de cambio de color de vizualización del mueble (desactivadas) --> */}
+          {/* <form>
             <div className="Escenarios">
-              {/* <!-- Opcion cambio de visualización Azúl --> */}
-              {/* <div
+              <div
                 type="checkbox"
                 id="color1"
                 className="button seleccionado"
                 ref={refOp1}
                 onClick={changeOpcion1}
                 name="group1[]"
-              ></div> */}
+              ></div>
 
-              {/* <!-- Opcion cambio de visualización Amarillo --> */}
-              {/* <div
+              <div
                 type="checkbox"
                 id="color2"
                 className="button"
                 ref={refOp2}
                 onClick={changeOpcion2}
                 name="group1[]"
-              ></div> */}
+              ></div>
             </div>
-          </form>
+          </form> */}
 
           {/* Botón de control de velocidad (tipo popover flotante) */}
           <div className="speed-controller-container" style={{ position: "relative" }}>

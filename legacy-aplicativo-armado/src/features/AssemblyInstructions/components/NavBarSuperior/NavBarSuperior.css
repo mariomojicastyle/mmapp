@@ -103,9 +103,9 @@ form {
 /* Responsive adjustments */
 @media (max-width: 787px) {
   .contenedor1-1 {
-    width: 100%;
-    justify-content: center;
-    gap: 16px;
+    width: 292px; /* Alineación perfecta con el ancho de la barra inferior */
+    justify-content: space-between;
+    gap: 0;
   }
 
   .contenedor1-1 > * {

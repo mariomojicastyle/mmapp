@@ -262,6 +262,10 @@ svg circle:nth-child(2) {
     width: 31px;
   }
 
+  .circule {
+    display: none !important; /* Ocultar el círculo de PC para evitar duplicados en móviles */
+  }
+
   .card2 {
     width: 52px; /* Ligeramente más grande que los de 44px */
     height: 52px;
@@ -293,7 +297,7 @@ svg circle:nth-child(2) {
   .circule2 circle {
     fill: none;
     stroke: rgba(226, 226, 235, 0.1);
-    stroke-width: 6;
+    stroke-width: 8; /* Incrementado de 6 a 8 (grosor +33%) */
     stroke-linecap: round;
     transform: none;
   }
