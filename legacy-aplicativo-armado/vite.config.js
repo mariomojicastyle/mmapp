@@ -22,7 +22,7 @@ try {
 }
 
 export default defineConfig({
-  base: './',
+  base: '/',
   plugins: [
     react(),
     {
