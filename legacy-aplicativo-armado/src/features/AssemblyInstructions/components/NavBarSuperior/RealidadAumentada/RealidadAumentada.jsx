@@ -73,7 +73,7 @@ export default function RealiadaAumentada({ id }) {
           <button 
             slot="ar-button"
             style={{
-              backgroundColor: "white",
+              backgroundColor: "transparent",
               width: "100%",
               height: "100%",
               borderRadius: "50%",
@@ -81,10 +81,11 @@ export default function RealiadaAumentada({ id }) {
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
-              cursor: "pointer"
+              cursor: "pointer",
+              color: "inherit"
             }}
           >
-            <span className="material-symbols-outlined" style={{ color: "#f28f1d" }}>
+            <span className="material-symbols-outlined" style={{ color: "var(--primary, #00f2fe)" }}>
               view_in_ar_new
             </span>
           </button>

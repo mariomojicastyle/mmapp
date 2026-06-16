@@ -231,17 +231,19 @@
   .AR {
     display: flex;
     position: fixed;
-    width: 40px;
-    height: 40px;
+    width: 44px;
+    height: 44px;
     bottom: 190px;
     right: 10px;
     left: auto !important; /* Anular la posición left de PC */
     transform: none !important; /* Anular el transform de PC */
     z-index: 50;
-    box-shadow: 0 3px 5px -1px rgba(0, 0, 0, 0.2),
-                0 6px 10px 0 rgba(0, 0, 0, 0.14), 0 1px 18px 0 rgba(0, 0, 0, 0.12);
+    box-shadow: var(--glass-shadow, 0 8px 32px rgba(0, 0, 0, 0.3));
     border-radius: 50%;
-    background: #ffffff;
+    background: var(--surface, rgba(13, 24, 29, 0.7)) !important;
+    backdrop-filter: var(--glass-blur, blur(12px)) !important;
+    -webkit-backdrop-filter: var(--glass-blur, blur(12px)) !important;
+    border: 1px solid var(--border-light, rgba(113, 211, 247, 0.15)) !important;
   }
 }
 
