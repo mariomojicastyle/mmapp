@@ -311,15 +311,18 @@
     left: calc(50% + 124px) !important;
   }
 
-  /* Centrar las burbujas inferiores en móvil */
+  /* Centrar las burbujas inferiores en móvil y acoplarlas a los botones */
+  .ayuda-bubble.ayuda3,
   .ayuda-bubble.ayuda4,
   .ayuda-bubble.ayuda5 {
+    bottom: 56px !important;
     left: 50% !important;
     transform: translateX(-50%) scale(0.95) !important;
     min-width: 270px !important;
     max-width: 290px !important;
   }
 
+  .ayuda-bubble.ayuda3.is-active,
   .ayuda-bubble.ayuda4.is-active,
   .ayuda-bubble.ayuda5.is-active {
     transform: translateX(-50%) scale(1) !important;

@@ -223,6 +223,10 @@ Un **"Manual Vacío"** es un cascarón o aplicación base centralizada (desplega
 - [x] **Bypass Resiliente de Carga y Sombra Tonal (15 de Junio, 2026)**:
   - **Bypass de Pantalla de Carga**: Se añadió un temporizador de respaldo en `PanelInicial.jsx` para que el botón "Iniciar" aparezca a los 6 segundos de forma automatizada, evitando bloqueos por fallos o timeouts en la red de Supabase.
   - **Sombra de Contraste Tonal**: Reemplazo de la sombra negra (`rgba(0,0,0,0.4)`) por una sombra tonal fluida (`color-mix` basada en `var(--secondary)`) en el título bajo la regla de Underline Glow para un contraste natural.
+- [x] **Estabilización de Redirecciones, Fullscreen y Posición de Nubes (16 de Junio, 2026)**:
+  - **Resolución de Assets (Herramientas y Garantía)**: Reordenamiento de las reglas de redirección en `netlify.toml` de todos los proyectos y en `_redirects` para priorizar archivos individuales (`/:manualId/:file`) antes que directorios de categorías (`/:manualId/:category/*`), eliminando barras diagonales no deseadas que causaban fallos 404 en el Storage de Supabase.
+  - **Fullscreen por Rotación**: Inyección de lógica robusta en `AssemblyPage.jsx` para detectar rotación horizontal en dispositivos móviles e invocar `requestFullscreen` de forma interactiva (con fallback a listeners de interacción en pantalla si es bloqueado inicialmente por políticas del navegador).
+  - **Alineación de Nubes y z-index**: Incremento del `z-index` de `.contenedor` a `1000` en `NavBarInferior.css` para permitir el paso por encima del botón de AR, y alineación vertical estricta a `bottom: 56px !important` para todas las burbujas inferiores en la media query móvil de `PanelAyudas.css`.
 
 ---
 
@@ -233,7 +237,7 @@ Un **"Manual Vacío"** es un cascarón o aplicación base centralizada (desplega
 - **Local App:** [http://localhost:3000](http://localhost:3000)
 
 ---
-*Última actualización de contexto: 15 de Junio, 2026*
+*Última actualización de contexto: 16 de Junio, 2026*
 
 ---
 

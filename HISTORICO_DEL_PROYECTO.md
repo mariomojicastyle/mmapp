@@ -683,6 +683,12 @@ Los estilos, colores y tiempos de transición de las flechas azules se configura
     - **Eliminación de Renders 3D en el Modal**: Se removió el acordeón y la opción de subir "Renders Fotorealistas 3D" en el panel administrativo.
     - **Visualización y Eliminación de Garantía y Herramientas**: Integración de soporte para eliminar imágenes de herramientas y documentos de garantía del Storage de Supabase y reiniciar sus estados con iconos de papelera en el modal.
 
+* **[2026-06-16] AppArmado_v25 / Plataforma_v12 — Corrección de Redirecciones Netlify, Fullscreen por Rotación Móvil y Acoplamiento de Nubes**:
+    - **Redirección de Assets**: Se corrigió el orden de las reglas de proxy en `netlify.toml` de todos los proyectos (`legacy-aplicativo-armado`, `mariomojica-portfolio` y `mario-mojica-homepage`) y en `public/_redirects` de la aplicación de armado. Se colocó la regla de archivo individual (`/:manualId/:file`) antes de la regla general de categoría (`/:manualId/:category/*`), evitando que Netlify añada una barra diagonal al final (ej. `herramientas.svg/` o `garantia.pdf/`) que provocaba errores 404 de Supabase Storage.
+    - **Fullscreen automático al girar la pantalla**: Inyección de un `useEffect` robusto en `AssemblyPage.jsx` para dispositivos móviles que detecta la orientación landscape y solicita `requestFullscreen()` en el elemento raíz del documento. Para saltar las políticas de seguridad de gestos de usuario (User Gesture), se añaden listeners temporales de toque/clic en la pantalla tras la rotación que activan el fullscreen inmediatamente al interactuar. Al regresar a portrait, se sale de fullscreen mediante `exitFullscreen()`.
+    - **Alineación de nubes inferiores y z-index**: Se incrementó el `z-index` de `.contenedor` en `NavBarInferior.css` a `1000` para garantizar que las nubes se rendericen por encima del botón flotante de AR. Además, se redefinieron las burbujas inferiores `.ayuda3`, `.ayuda4` y `.ayuda5` en la media query de `PanelAyudas.css` a `bottom: 56px !important` y centradas horizontalmente (`left: 50% !important`, `transform: translateX(-50%) !important`), de modo que queden perfectamente alineadas y acopladas a los botones inferiores sin desfases verticales en celulares.
+
+
 
 
 

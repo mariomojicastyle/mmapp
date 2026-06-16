@@ -304,6 +304,73 @@ const AssemblyPage = () => {
     fetchProduct();
   }, [id]);
 
+  // Efecto para activar el modo pantalla completa (fullscreen) al rotar a landscape en móviles
+  useEffect(() => {
+    // Detectar si es un dispositivo móvil
+    const isMobile = /Mobi|Android|iPhone|iPad|iPod/i.test(navigator.userAgent) || 
+                     (window.matchMedia && window.matchMedia("(pointer: coarse)").matches);
+    
+    if (!isMobile) return;
+
+    const handleFullscreenRequest = () => {
+      if (!document.fullscreenElement) {
+        document.documentElement.requestFullscreen().catch((err) => {
+          console.warn("Fullscreen automático bloqueado, esperando interacción táctil del usuario:", err);
+        });
+      }
+    };
+
+    const handleFullscreenExit = () => {
+      if (document.fullscreenElement) {
+        document.exitFullscreen().catch((err) => {
+          console.warn("Error al salir de fullscreen:", err);
+        });
+      }
+    };
+
+    const checkOrientation = () => {
+      const isLandscape = window.matchMedia("(orientation: landscape)").matches;
+      
+      if (isLandscape) {
+        // Intentar ir a fullscreen
+        handleFullscreenRequest();
+        
+        // Agregar listeners para el primer toque en caso de bloqueo por política de gestos de usuario
+        window.addEventListener("touchstart", handleFullscreenRequest, { once: true });
+        window.addEventListener("click", handleFullscreenRequest, { once: true });
+      } else {
+        // Salir de fullscreen si está activo
+        handleFullscreenExit();
+        
+        // Limpiar listeners si regresa a portrait
+        window.removeEventListener("touchstart", handleFullscreenRequest);
+        window.removeEventListener("click", handleFullscreenRequest);
+      }
+    };
+
+    // Escuchar cambios de orientación y resize
+    window.addEventListener("resize", checkOrientation);
+    if (screen.orientation) {
+      screen.orientation.addEventListener("change", checkOrientation);
+    } else {
+      window.addEventListener("orientationchange", checkOrientation);
+    }
+
+    // Ejecutar chequeo inicial
+    checkOrientation();
+
+    return () => {
+      window.removeEventListener("resize", checkOrientation);
+      if (screen.orientation) {
+        screen.orientation.removeEventListener("change", checkOrientation);
+      } else {
+        window.removeEventListener("orientationchange", checkOrientation);
+      }
+      window.removeEventListener("touchstart", handleFullscreenRequest);
+      window.removeEventListener("click", handleFullscreenRequest);
+    };
+  }, []);
+
   if (loading) return <div className="flex h-screen w-screen items-center justify-center bg-gray-900 text-white font-semibold">Cargando manual dinámico...</div>;
   
   if (!productData) return <div className="flex h-screen w-screen items-center justify-center bg-gray-900 text-white">Manual no encontrado</div>;

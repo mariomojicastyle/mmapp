@@ -7,7 +7,7 @@
   background: transparent;
   flex-direction: column;
   pointer-events: none;
-  z-index: 10;
+  z-index: 1000;
 }
 
 .SesionArriba {

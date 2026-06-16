@@ -42,14 +42,14 @@
   force = true
 
 [[redirects]]
-  from = "/embed/armado/:manualId/:category/*"
-  to = "https://dezaisaunoumhqpssols.supabase.co/storage/v1/object/public/insumos_manuales/:manualId/:category/:splat"
+  from = "/embed/armado/:manualId/:file"
+  to = "https://dezaisaunoumhqpssols.supabase.co/storage/v1/object/public/insumos_manuales/:manualId/:file"
   status = 200
   force = true
 
 [[redirects]]
-  from = "/embed/armado/:manualId/:file"
-  to = "https://dezaisaunoumhqpssols.supabase.co/storage/v1/object/public/insumos_manuales/:manualId/:file"
+  from = "/embed/armado/:manualId/:category/*"
+  to = "https://dezaisaunoumhqpssols.supabase.co/storage/v1/object/public/insumos_manuales/:manualId/:category/:splat"
   status = 200
   force = true
 
