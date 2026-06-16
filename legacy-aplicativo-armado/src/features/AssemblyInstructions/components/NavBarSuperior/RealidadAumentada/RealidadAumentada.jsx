@@ -95,12 +95,19 @@ export default function RealiadaAumentada({ id }) {
         useEnviroment.getState().PausedAudio();
       }
       
-      // Al salir de AR, asegurarse de marcar la app como iniciada para no mostrar la pantalla de bienvenida y reanudar audio
+      // Al salir de AR, asegurarse de marcar la app como iniciada para no mostrar la pantalla de bienvenida y recargar la página limpia
       if (status === "not-presenting") {
         if (arActiveRef.current) {
           arActiveRef.current = false;
-          // Reanudar el audio del paso de armado de fondo
-          useEnviroment.getState().PlayingAudio();
+          
+          // Construir la nueva URL sin el parámetro 'ar=true' pero conservando el paso actual
+          const url = new URL(window.location.href);
+          url.searchParams.delete("ar");
+          url.searchParams.set("step", pasoActual);
+          
+          // Forzar la recarga automática a la nueva URL limpia del manual 3D para reactivar animaciones y audio de fondo
+          window.location.href = url.toString();
+          return;
         }
         StartAppTrue();
       }
