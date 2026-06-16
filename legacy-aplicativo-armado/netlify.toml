@@ -7,6 +7,16 @@
   VITE_SUPABASE_ANON_KEY = "sb_publishable_HyhWSanS2mhByF476p_EzA_6oq2bQOT"
 
 [[redirects]]
+  from = "/assets/herrajes_compartidos/*"
+  to = "https://dezaisaunoumhqpssols.supabase.co/storage/v1/object/public/insumos_manuales/_herrajes_compartidos/:splat"
+  status = 200
+
+[[redirects]]
+  from = "/:manualId/herrajes/*"
+  to = "https://dezaisaunoumhqpssols.supabase.co/storage/v1/object/public/insumos_manuales/_herrajes_compartidos/:splat"
+  status = 200
+
+[[redirects]]
   from = "/:manualId/:category/*"
   to = "https://dezaisaunoumhqpssols.supabase.co/storage/v1/object/public/insumos_manuales/:manualId/:category/:splat"
   status = 200
@@ -15,5 +25,6 @@
   from = "/:manualId/:file"
   to = "https://dezaisaunoumhqpssols.supabase.co/storage/v1/object/public/insumos_manuales/:manualId/:file"
   status = 200
+
 
 
