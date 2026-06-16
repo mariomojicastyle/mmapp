@@ -208,6 +208,7 @@
   left: -6px;
   transform: rotate(-90deg);
   transform-origin: center;
+  overflow: visible !important; /* Evita recortes en el borde exterior del trazo grueso */
 }
 
 svg circle {
@@ -292,6 +293,7 @@ svg circle:nth-child(2) {
     align-items: center;
     transform: rotate(-90deg);
     transform-origin: center; /* Evita que se desacople en navegadores móviles al rotar */
+    overflow: visible !important; /* Permite que el calibre de 8px sobresalga del SVG sin recortarse */
   }
 
   .circule2 circle {

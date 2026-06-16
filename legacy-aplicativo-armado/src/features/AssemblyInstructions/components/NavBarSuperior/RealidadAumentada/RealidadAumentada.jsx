@@ -10,6 +10,7 @@ export default function RealiadaAumentada({ id }) {
   const CambiarModelo = useEnviroment((state) => state.CambiarModelo);
   const StartAppTrue = useEnviroment((state) => state.StartAppTrue);
   const refAr = useRef(null);
+  const arActiveRef = useRef(false); // Rastrea si la sesión de AR estaba activa para reanudar el audio al salir
   
   const PanelAyudas = useEnviroment((state) => state.PanelAyudas);
   const PanelShow = useEnviroment((state) => state.PanelShow);
@@ -90,11 +91,17 @@ export default function RealiadaAumentada({ id }) {
       
       // Pausar audio cuando inicie la proyección en el espacio
       if (status === "session-started") {
+        arActiveRef.current = true;
         useEnviroment.getState().PausedAudio();
       }
       
-      // Al salir de AR, asegurarse de marcar la app como iniciada para no mostrar la pantalla de bienvenida
+      // Al salir de AR, asegurarse de marcar la app como iniciada para no mostrar la pantalla de bienvenida y reanudar audio
       if (status === "not-presenting") {
+        if (arActiveRef.current) {
+          arActiveRef.current = false;
+          // Reanudar el audio del paso de armado de fondo
+          useEnviroment.getState().PlayingAudio();
+        }
         StartAppTrue();
       }
     };
