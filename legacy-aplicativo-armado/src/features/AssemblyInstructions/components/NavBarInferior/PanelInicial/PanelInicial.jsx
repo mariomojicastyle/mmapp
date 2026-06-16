@@ -133,17 +133,26 @@ export default function PanelInicial() {
 
   return <>
     <aside className="PanelInicial" ref={useCharger}>
-      {/* Background Spline Scene */}
-      <div className="spline-wrapper">
-        <iframe 
-          src="https://my.spline.design/r4xbot-pS1luNxTefqsyDlc4ZbCw1Fj/?v=8" 
-          frameBorder="0" 
-          width="100%" 
-          height="100%" 
-          className="spline-bg"
-          title="Spline 3D Scene"
-        ></iframe>
-      </div>
+      {/* Background Spline Scene / AR Minimal Backdrop */}
+      {!isArMode ? (
+        <div className="spline-wrapper">
+          <iframe 
+            src="https://my.spline.design/r4xbot-pS1luNxTefqsyDlc4ZbCw1Fj/?v=8" 
+            frameBorder="0" 
+            width="100%" 
+            height="100%" 
+            className="spline-bg"
+            title="Spline 3D Scene"
+          ></iframe>
+        </div>
+      ) : (
+        <div className="spline-wrapper" style={{ background: "radial-gradient(circle, #0f242d 0%, #080f13 100%)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+          <div style={{ color: "var(--primary, #00f2fe)", display: "flex", flexDirection: "column", alignItems: "center", gap: "10px", opacity: 0.8 }}>
+            <span className="material-symbols-outlined" style={{ fontSize: "64px", filter: "drop-shadow(0 0 15px rgba(0, 242, 254, 0.4))" }}>view_in_ar_new</span>
+            <span style={{ fontSize: "16px", fontWeight: "600", letterSpacing: "0.1em", textTransform: "uppercase", color: "var(--secondary, #ffffff)" }}>Experiencia AR</span>
+          </div>
+        </div>
+      )}
 
       {/* Top Content (Progress Bar & Button) */}
       <div className="content-top">

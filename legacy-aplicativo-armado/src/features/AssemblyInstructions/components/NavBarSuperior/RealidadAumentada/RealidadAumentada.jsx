@@ -87,6 +87,12 @@ export default function RealiadaAumentada({ id }) {
     const handleArStatus = (event) => {
       const status = event.detail.status;
       console.log("AR Status:", status);
+      
+      // Pausar audio cuando inicie la proyección en el espacio
+      if (status === "session-started") {
+        useEnviroment.getState().PausedAudio();
+      }
+      
       // Al salir de AR, asegurarse de marcar la app como iniciada para no mostrar la pantalla de bienvenida
       if (status === "not-presenting") {
         StartAppTrue();
@@ -101,6 +107,9 @@ export default function RealiadaAumentada({ id }) {
 
   // Iniciar AR programáticamente
   const iniciarAR = () => {
+    // Pausar audio de fondo inmediatamente
+    useEnviroment.getState().PausedAudio();
+
     if (refAr.current) {
       if (refAr.current.canActivateAR) {
         refAr.current.activateAR();
