@@ -7,7 +7,7 @@ const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
 
 const supabaseUrl = 'https://dezaisaunoumhqpssols.supabase.co'
-const serviceRoleKey = 'sb_secret_t2GY5165gsl0IAureM6-eQ_eXQxHibt'
+const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY || ''
 
 const supabase = createClient(supabaseUrl, serviceRoleKey)
 const herrajesDir = path.join(__dirname, 'public', 'assets', 'herrajes')
