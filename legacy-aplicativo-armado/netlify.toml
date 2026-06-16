@@ -6,3 +6,14 @@
   VITE_SUPABASE_URL = "https://dezaisaunoumhqpssols.supabase.co"
   VITE_SUPABASE_ANON_KEY = "sb_publishable_HyhWSanS2mhByF476p_EzA_6oq2bQOT"
 
+[[redirects]]
+  from = "/:manualId/:category/*"
+  to = "https://dezaisaunoumhqpssols.supabase.co/storage/v1/object/public/insumos_manuales/:manualId/:category/:splat"
+  status = 200
+
+[[redirects]]
+  from = "/:manualId/:file"
+  to = "https://dezaisaunoumhqpssols.supabase.co/storage/v1/object/public/insumos_manuales/:manualId/:file"
+  status = 200
+
+
