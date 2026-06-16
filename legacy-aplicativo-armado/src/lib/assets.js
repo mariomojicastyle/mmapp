@@ -1,3 +1,5 @@
+const sessionBuster = Date.now();
+
 export function getAssetPath(path) {
   if (!path) return '';
   // If it's already an absolute URL, return it
@@ -11,5 +13,6 @@ export function getAssetPath(path) {
   }
   const basename = window.location.pathname.startsWith('/embed/armado') ? '/embed/armado' : '';
   const cleanPath = path.startsWith('/') ? path : `/${path}`;
-  return `${basename}${cleanPath}`;
+  const separator = cleanPath.includes('?') ? '&' : '?';
+  return `${basename}${cleanPath}${separator}v=${sessionBuster}`;
 }

@@ -163,7 +163,6 @@ export default function Model(props) {
 
   // Desestructuración de las animaciones del modelo
   const { actions } = useAnimations(animations, scene);
-  const action = actions.Animation || actions[Object.keys(actions)[0]]; // Fallback to first animation if named differently
 
   // Configuración inicial del modelo GLB, de la animación y de la cámara
   useEffect(() => {
@@ -194,11 +193,15 @@ export default function Model(props) {
       }
     }
 
-    if (StartApp === true && action) {
-      action.reset(); // Reinicia siempre la animación al cambiar de modelo
-      action.clampWhenFinished = true; // Detiene la animación cuando finaliza
-      action.loop = THREE.LoopOnce;    // Ejecuta la animación una sola vez
-      action.play(); // Iniciar la animación si la app ha comenzado
+    if (StartApp === true && actions) {
+      Object.values(actions).forEach((act) => {
+        if (act) {
+          act.reset(); // Reinicia siempre la animación al cambiar de modelo
+          act.clampWhenFinished = true; // Detiene la animación cuando finaliza
+          act.loop = THREE.LoopOnce;    // Ejecuta la animación una sola vez
+          act.play(); // Iniciar la animación si la app ha comenzado
+        }
+      });
     }
 
     let camarasCount = 0;
@@ -266,26 +269,34 @@ export default function Model(props) {
     if (props.orbitControlsRef && props.orbitControlsRef.current) {
       props.orbitControlsRef.current.update();
     }
-  }, [scene, StartApp, action, camera, CameraPosition, pasoActual, props.orbitControlsRef]);
+  }, [scene, StartApp, actions, camera, CameraPosition, pasoActual, props.orbitControlsRef]);
 
   // para activar la animación cuando se de clic en el botón "repetir"
   useEffect(() => {
-    if (ResetBool === true && action) {
-      action.paused = false;  // Asegura que la animación no esté pausada
-      action.reset();  // Reinicia la animación
-      action.play();  // Reproduce la animación después del reinicio
+    if (ResetBool === true && actions) {
+      Object.values(actions).forEach((act) => {
+        if (act) {
+          act.paused = false;  // Asegura que la animación no esté pausada
+          act.reset();  // Reinicia la animación
+          act.play();  // Reproduce la animación después del reinicio
+        }
+      });
       ResetBoolFalse();  // Resetea el booleano para evitar múltiples reinicios
     } else if (ResetBool === true) {
       ResetBoolFalse();
     }
-}, [ResetBool, action]);
+  }, [ResetBool, actions]);
 
   useEffect(() => {
-    if (action) {
-      if (action.isRunning() && phaseAudio === 'paused') action.paused = true
-      else if (phaseAudio === 'playing') action.paused = false
+    if (actions) {
+      Object.values(actions).forEach((act) => {
+        if (act) {
+          if (act.isRunning() && phaseAudio === 'paused') act.paused = true;
+          else if (phaseAudio === 'playing') act.paused = false;
+        }
+      });
     }
-  }, [phaseAudio, action])
+  }, [phaseAudio, actions]);
 
 
   // Efecto para manejar la activación del ToolTip.
