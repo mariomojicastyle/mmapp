@@ -112,13 +112,7 @@ export default defineConfig({
                   }
                 } catch {}
               }
-              // 3. Buscar localmente
-              for (const ext of extensions) {
-                const localPath = path.join(__dirname, 'public', 'assets', 'herrajes', `${resourceName}.${ext}`)
-                if (fs.existsSync(localPath)) {
-                  return next()
-                }
-              }
+
               // 4. No encontrado — responder vacío sin error para no contaminar consola
               res.statusCode = 204
               res.end()
