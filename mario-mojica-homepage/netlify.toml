@@ -10,3 +10,19 @@
   to = "https://mario-mojica-armado.netlify.app/:splat"
   status = 200
   force = true
+
+[[redirects]]
+  from = "/assets/*"
+  to = "https://mario-mojica-armado.netlify.app/assets/:splat"
+  status = 200
+
+[[redirects]]
+  from = "/manual-vacio/*"
+  to = "https://mario-mojica-armado.netlify.app/manual-vacio/:splat"
+  status = 200
+
+[[redirects]]
+  from = "/M*"
+  to = "https://mario-mojica-armado.netlify.app/M:splat"
+  status = 200
+
