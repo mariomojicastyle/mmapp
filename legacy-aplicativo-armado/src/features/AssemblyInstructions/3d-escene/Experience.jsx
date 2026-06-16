@@ -266,52 +266,47 @@ export default function Experience({ id, modelUrl, productData }) {
 
   // Escuchar cambios de localStorage y Supabase Realtime desde la plataforma (otra ventana)
   useEffect(() => {
-    // 1. Verificar parámetros de búsqueda URL (prioridad al abrir pestaña nueva)
+    // 1. Limpiar cualquier estado fantasma previo de localStorage para evitar que quede pegado
+    if (typeof window !== "undefined") {
+      localStorage.removeItem('cameraOverlay');
+      localStorage.removeItem('lightingEditor');
+    }
+
+    const isMobileUA = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || window.innerWidth <= 787;
+
+    // Si es móvil, forzar apagado incondicional
+    if (isMobileUA) {
+      useEnviroment.getState().SetCameraOverlay(false);
+      useEnviroment.getState().SetLightingEditor(false);
+      return;
+    }
+
+    // 2. Verificar parámetros de búsqueda URL (prioridad al abrir pestaña nueva en PC)
     const params = new URLSearchParams(window.location.search);
     const urlCameraOverlay = params.get('cameraOverlay');
     const urlLightingEditor = params.get('lightingEditor');
     
     if (urlCameraOverlay === 'on') {
       useEnviroment.getState().SetCameraOverlay(true);
-      localStorage.setItem('cameraOverlay', 'on');
     } else if (urlCameraOverlay === 'off') {
       useEnviroment.getState().SetCameraOverlay(false);
-      localStorage.removeItem('cameraOverlay');
     }
     
     if (urlLightingEditor === 'on') {
       useEnviroment.getState().SetLightingEditor(true);
-      localStorage.setItem('lightingEditor', 'on');
     } else if (urlLightingEditor === 'off') {
       useEnviroment.getState().SetLightingEditor(false);
-      localStorage.removeItem('lightingEditor');
     }
 
-    // 2. Verificar estado inicial en localStorage
-    const initial = localStorage.getItem('cameraOverlay');
-    if (initial === 'on') {
-      useEnviroment.getState().SetCameraOverlay(true);
-    }
-    const initialLighting = localStorage.getItem('lightingEditor');
-    if (initialLighting === 'on') {
-      useEnviroment.getState().SetLightingEditor(true);
-    }
-
-    // 3. Listener del evento localStorage para cuando compartan origen
+    // 3. Listener del evento localStorage para cuando compartan origen (solo PC)
     const handleStorage = (e) => {
       if (e.key === 'cameraOverlay') {
         const state = useEnviroment.getState();
-        const val = e.newValue === 'on';
-        state.SetCameraOverlay(val);
-        if (val) localStorage.setItem('cameraOverlay', 'on');
-        else localStorage.removeItem('cameraOverlay');
+        state.SetCameraOverlay(e.newValue === 'on');
       }
       if (e.key === 'lightingEditor') {
         const state = useEnviroment.getState();
-        const val = e.newValue === 'on';
-        state.SetLightingEditor(val);
-        if (val) localStorage.setItem('lightingEditor', 'on');
-        else localStorage.removeItem('lightingEditor');
+        state.SetLightingEditor(e.newValue === 'on');
       }
     };
     window.addEventListener('storage', handleStorage);
@@ -331,16 +326,10 @@ export default function Experience({ id, modelUrl, productData }) {
             if (payload && payload.codigoManual === id) {
               const state = useEnviroment.getState();
               if (payload.key === 'cameraOverlay') {
-                const val = payload.value === 'on';
-                state.SetCameraOverlay(val);
-                if (val) localStorage.setItem('cameraOverlay', 'on');
-                else localStorage.removeItem('cameraOverlay');
+                state.SetCameraOverlay(payload.value === 'on');
               }
               if (payload.key === 'lightingEditor') {
-                const val = payload.value === 'on';
-                state.SetLightingEditor(val);
-                if (val) localStorage.setItem('lightingEditor', 'on');
-                else localStorage.removeItem('lightingEditor');
+                state.SetLightingEditor(payload.value === 'on');
               }
             }
           })

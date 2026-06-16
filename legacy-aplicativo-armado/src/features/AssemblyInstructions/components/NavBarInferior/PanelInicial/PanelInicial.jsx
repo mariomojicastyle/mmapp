@@ -3,6 +3,7 @@ import './PanelInicial.css';
 import { Html, useProgress, useGLTF } from '@react-three/drei'
 import { useRef, useState, useEffect } from 'react';
 import useEnviroment from '../../../hooks/useEnviroment';
+import { getAssetPath } from "../../../../../lib/assets.js";
 
 
 export default function PanelInicial() {
