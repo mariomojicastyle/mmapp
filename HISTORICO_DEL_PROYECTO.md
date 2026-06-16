@@ -669,5 +669,14 @@ Los estilos, colores y tiempos de transición de las flechas azules se configura
     - **Sombra Tonal Táctil**: Sustitución de la sombra de texto dura gris (`rgba(0,0,0,0.4)`) por una mezcla tonal basada en el color secundario (`color-mix(in srgb, var(--secondary) 40%, transparent)`), logrando una integración de color premium que previene halos grises en el fondo 3D.
     - **Mecanismo de Bypass de Carga por Timeout**: Adición de un temporizador de respaldo en `PanelInicial.jsx` que a los 6 segundos de inactividad o lentitud en la respuesta de la red del storage de Supabase, auto-completa la barra al 100% y activa el botón "Iniciar" para garantizar accesibilidad en conexiones lentas o bloqueadas.
 
+* **[2026-06-16] AppArmado_v23 / Manual_Online — Assets con Path Absoluto, Soporte Multi-Animación y Bypass de Caché de Sesión**:
+    - **Resolución de Carga de Assets en Producción**: Implementación de una utilidad de prefijo dinámico (`assets.js`) para redirigir correctamente las llamadas de assets locales estáticos y de manuales cuando la app se carga embebida bajo la subruta proxy `/embed/armado/*` en `mariomojica.com`.
+    - **Bypass de Limitación de Proxies en Netlify**: Configuración de reglas explícitas de proxy en `netlify.toml` del portfolio y del homepage para desviar recursos dinámicos (`models`, `sounds`, `herrajes`) directamente hacia el storage de Supabase, evitando el encadenamiento de proxies de Netlify que provocaba errores 404.
+    - **Exclusión de Assets Estáticos Locales**: Adición de reglas prioritarias en `netlify.toml` para asegurar que las carpetas locales de la aplicación (`/assets/`, `/textures/`, `/Matcaps/`, `/hdri/`, `/manual-vacio/`) se sirvan desde el CDN de Netlify del visor en vez de enviarse a Supabase.
+    - **Configuración de base path absoluto en Vite**: Migración de `base: './'` a `base: '/'` en `vite.config.js` para asegurar que el bundle del visor busque sus recursos de sistema en rutas absolutas, previniendo secuestros por parte de las reglas dinámicas.
+    - **Soporte para Múltiples Clips de Animación**: Actualización del componente `Model.jsx` para iterar y reproducir simultáneamente todos los clips de animación contenidos en el GLB de pasos, dando soporte nativo a manuales complejos con tracks de animación segmentados.
+    - **Bypass de Caché por Session Cache Buster**: Inyección de una variable única de sesión (`?v=sessionBuster`) en las solicitudes de assets locales y dinámicos en `assets.js`, lo que obliga al navegador y al CDN de Netlify a buscar y descargar los nuevos assets en caliente tras recargar la página en lugar de leer versiones viejas del caché.
+
+
 
 
