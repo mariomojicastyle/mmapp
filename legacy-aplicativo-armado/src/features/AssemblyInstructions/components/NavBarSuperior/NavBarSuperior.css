@@ -64,12 +64,18 @@ form {
   flex-shrink: 0;
 }
 
-.button:hover {
-  transform: scale(1.08);
-  border-color: var(--primary);
-  color: var(--primary);
-  box-shadow: 0 0 25px var(--primary-glow);
-  background: var(--surface-active);
+@media (hover: hover) {
+  .button:hover {
+    transform: scale(1.08);
+    border-color: var(--primary);
+    color: var(--primary);
+    box-shadow: 0 0 25px var(--primary-glow);
+    background: var(--surface-active);
+  }
+}
+
+.button:active {
+  transform: scale(0.95);
 }
 
 .button>svg {
@@ -97,8 +103,8 @@ form {
 /* Responsive adjustments */
 @media (max-width: 787px) {
   .contenedor1-1 {
-    width: 284px;
-    justify-content: flex-start;
+    width: 100%;
+    justify-content: center;
     gap: 16px;
   }
 
