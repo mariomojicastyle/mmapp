@@ -4465,6 +4465,21 @@ export function DetalleProyectoModal({ isOpen, onClose, proyecto, onUpdate }: De
               </div>
               
               <div className="flex items-center gap-3">
+                {activeTab === "insumos" && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const isDev = process.env.NODE_ENV === 'development';
+                      const url = isDev ? 'http://localhost:5173/calibrador.html' : 'https://mariomojica.com/embed/armado/calibrador.html';
+                      window.open(url, '_blank');
+                    }}
+                    className="flex items-center gap-2 rounded-xl border border-teal-500/30 px-5 py-2.5 text-sm font-medium text-teal-400 transition hover:bg-teal-500/10"
+                  >
+                    <Wrench className="h-4 w-4" />
+                    Abrir Calibrador UI
+                  </button>
+                )}
+                
                 <button
                   type="button"
                   onClick={onClose}
