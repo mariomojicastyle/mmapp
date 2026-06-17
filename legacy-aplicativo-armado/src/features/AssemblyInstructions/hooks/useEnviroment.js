@@ -121,7 +121,8 @@ export default create(
             panelTips: true,
             PanelShow: false,
             PanelCantidades: false,
-            PanelAyudas: false
+            PanelAyudas: false,
+            PiezaHerraje: ""
           };
         });
       },
@@ -129,7 +130,7 @@ export default create(
       
       NamePieza: (name) => {set((state) => {return { PiezaHerraje: name[0] };});},
       NuevosPasos: (pasos) => {set((state) => {return { pasos: pasos };});},
-      CambiarModelo: (paso) => {set((state) => {return { pasoActual: paso };});},
+      CambiarModelo: (paso) => {set((state) => {return { pasoActual: paso, PiezaHerraje: "" };});},
       CargarPasoInicial: (paso) => {set((state) => {return { pasoInicial: paso };});},
 
       CargarPasoInicial: (paso) => {set((state) => {return { pasoInicial: paso };});},
@@ -169,7 +170,8 @@ export default create(
         PanelShow: true,
         panelTips: false,
         PanelCantidades: false,
-        PanelAyudas: false
+        PanelAyudas: false,
+        PiezaHerraje: ""
       })),
 
 
@@ -177,7 +179,8 @@ export default create(
         PanelCantidades: true,
         panelTips: false,
         PanelShow: false,
-        PanelAyudas: false
+        PanelAyudas: false,
+        PiezaHerraje: ""
       })),
       PanelCantidadesFalse: () => set((state) => ({ PanelCantidades: false })),
 
@@ -218,6 +221,7 @@ export default create(
         panelTips: false,
         PanelShow: false,
         PanelCantidades: false,
+        PiezaHerraje: "",
         ayuda1: false,
         ayudaLuz: false,
         ayudaVelocidad: false,

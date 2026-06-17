@@ -19,6 +19,7 @@ export default function AssemblyViewer({ productData, steps, id }) {
   const ChargerCameraPositions = useEnviroment((state) => state.ChargerCameraPositions);
   const pasoActual = useEnviroment((state) => state.pasoActual);
   const PiezaHerraje = useEnviroment((state) => state.PiezaHerraje);
+  const NamePieza = useEnviroment((state) => state.NamePieza);
   const PanelAyudas = useEnviroment((state) => state.PanelAyudas);
   const sombras = useEnviroment((state) => state.sombras);
   const lightingConfig = useEnviroment((state) => state.lightingConfig);
@@ -160,7 +161,7 @@ export default function AssemblyViewer({ productData, steps, id }) {
             outputColorSpace: THREE.SRGBColorSpace,
           }}
           camera={{position: [0, 1, 2],  fov: 60}} 
-          onPointerMissed={() => PiezaHerraje([""])}
+          onPointerMissed={() => NamePieza([""])}
         >
           <Experience id={id} modelUrl={modelUrl} productData={productData} />
         </Canvas>
