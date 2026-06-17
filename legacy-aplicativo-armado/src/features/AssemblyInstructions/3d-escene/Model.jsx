@@ -99,6 +99,20 @@ export default function Model(props) {
 
   //Inicializar Materialoriginal
   const originalMaterials = useRef(new Map());
+  
+  const activeMeshRef = useRef(null);
+  const isTouchDevice = typeof window !== "undefined" && ('ontouchstart' in window || navigator.maxTouchPoints > 0);
+  const globalPiezaHerraje = useEnviroment((state) => state.PiezaHerraje);
+
+  useEffect(() => {
+    if (globalPiezaHerraje === "" && activeMeshRef.current) {
+      const originalMat = originalMaterials.current.get(activeMeshRef.current);
+      if (originalMat) {
+        activeMeshRef.current.material = originalMat;
+      }
+      activeMeshRef.current = null;
+    }
+  }, [globalPiezaHerraje]);
 
 
   // Cargar la textura del Matcap y crear el material único al inicio para evitar re-compilaciones en GPU
@@ -354,8 +368,156 @@ export default function Model(props) {
     }
   }, [toolTip]);
 
+  function obtenerNombreDeObjeto(object) {
+    if (!object) return "";
+    
+    // 1. Detectar si el nombre del mesh es directamente la pegatina "Pieza XX" (formato no redundante o combinado)
+    const rawName = object.name || "";
+    if (rawName.toUpperCase().startsWith("PIEZA")) {
+      let clean = rawName.replace(/[._]?0\d\d$/i, "");
+      const match = clean.match(/Pieza[_\s]*\d+/i);
+      if (match) {
+        return match[0].trim();
+      } else {
+        return clean.split(".")[0].trim();
+      }
+    }
+
+    // 2. Detectar si el padre es un Empty de pegatina "Pieza XX" del GLB (para retrocompatibilidad)
+    const parentName = object.parent ? object.parent.name || "" : "";
+    if (parentName.toUpperCase().startsWith("PIEZA")) {
+      let clean = parentName.replace(/[._]?0\d\d$/i, "");
+      const match = clean.match(/Pieza[_\s]*\d+/i);
+      if (match) {
+        return match[0].trim();
+      } else {
+        return clean.split(".")[0].trim();
+      }
+    }
+
+    const name = obtenerNombreLimpioTooltip(object.name);
+    
+    // 1. Obtener dimensiones físicas del mesh actual
+    const worldBox = new THREE.Box3().setFromObject(object);
+    const worldSize = new THREE.Vector3();
+    worldBox.getSize(worldSize);
+    
+    let dimX = worldSize.x;
+    let dimY = worldSize.y;
+    let dimZ = worldSize.z;
+    const minDim = Math.min(dimX, dimY, dimZ);
+    
+    if (minDim < 0.0001 && object.parent && object.parent.type !== 'Scene') {
+      const parentBox = new THREE.Box3().setFromObject(object.parent);
+      const parentSize = new THREE.Vector3();
+      parentBox.getSize(parentSize);
+      dimX = parentSize.x;
+      dimY = parentSize.y;
+      dimZ = parentSize.z;
+    }
+    
+    const dims = [Math.abs(dimX), Math.abs(dimY), Math.abs(dimZ)].sort((a, b) => b - a);
+    
+    // 2. Autodetectar escala (metros vs milímetros)
+    const scaleMult = dims[0] > 20 ? 1 : 1000;
+    const l = Math.round(dims[0] * scaleMult);
+    const w = Math.round(dims[1] * scaleMult);
+    
+    // Buscar la pieza en el despiece para obtener el número de sticker ("Pieza XX")
+    let displayName = name;
+    if (props.productData?.despiece) {
+      // Encontrar por nombre y dimensiones físicas (tolerancia de 2mm por redondeos)
+      const itemEncontrado = props.productData.despiece.find(
+        (d) => 
+          d.nombre && 
+          obtenerNombreLimpioTooltip(d.nombre).toLowerCase() === name.toLowerCase() &&
+          Math.abs((d.largo || 0) - l) <= 2 &&
+          Math.abs((d.ancho || 0) - w) <= 2
+      );
+      
+      if (itemEncontrado) {
+        let numSticker = itemEncontrado.piezaNumeroStart;
+        if (itemEncontrado.piezaNumeroRange && itemEncontrado.piezaNumeroStart !== undefined) {
+          // Encontrar todos los meshes en la escena actual con este mismo nombre limpio y dimensiones similares
+          const hermanos = [];
+          scene.traverse((child) => {
+            if (child.isMesh && obtenerNombreLimpioTooltip(child.name).toLowerCase() === name.toLowerCase()) {
+              const hBox = new THREE.Box3().setFromObject(child);
+              const hSize = new THREE.Vector3();
+              hBox.getSize(hSize);
+              
+              let hX = hSize.x;
+              let hY = hSize.y;
+              let hZ = hSize.z;
+              const hMin = Math.min(hX, hY, hZ);
+              
+              if (hMin < 0.0001 && child.parent && child.parent.type !== 'Scene') {
+                const pBox = new THREE.Box3().setFromObject(child.parent);
+                const pSize = new THREE.Vector3();
+                pBox.getSize(pSize);
+                hX = pSize.x;
+                hY = pSize.y;
+                hZ = pSize.z;
+              }
+              
+              const hDims = [Math.abs(hX), Math.abs(hY), Math.abs(hZ)].sort((a, b) => b - a);
+              const hl = Math.round(hDims[0] * scaleMult);
+              const hw = Math.round(hDims[1] * scaleMult);
+              
+              if (Math.abs(hl - l) <= 2 && Math.abs(hw - w) <= 2) {
+                hermanos.push(child);
+              }
+            }
+          });
+          // Encontrar el índice de nuestro mesh en la lista de hermanos
+          const idx = hermanos.indexOf(object);
+          if (idx !== -1 && idx < itemEncontrado.cantidad) {
+            numSticker = itemEncontrado.piezaNumeroStart + idx;
+          }
+        }
+        
+        if (numSticker !== undefined) {
+          displayName = `Pieza ${String(numSticker).padStart(2, "0")}`;
+        }
+      }
+    }
+    return displayName;
+  }
+
+  function handleTouchSelect(event) {
+    event.stopPropagation();
+    if (!highlightMaterialRef.current) return;
+
+    const displayName = obtenerNombreDeObjeto(event.object);
+    const currentPieza = useEnviroment.getState().PiezaHerraje;
+
+    if (currentPieza === displayName) {
+      // Toggle off si se toca la misma pieza ya seleccionada
+      PiezaHerraje([""]);
+    } else {
+      // Registrar material original si no existía
+      if (!originalMaterials.current.has(event.object)) {
+        originalMaterials.current.set(event.object, event.object.material);
+      }
+
+      // Desmarcar pieza anteriormente resaltada
+      if (activeMeshRef.current && activeMeshRef.current !== event.object) {
+        const originalMat = originalMaterials.current.get(activeMeshRef.current);
+        if (originalMat) {
+          activeMeshRef.current.material = originalMat;
+        }
+      }
+
+      // Resaltar pieza nueva
+      event.object.material = highlightMaterialRef.current;
+      activeMeshRef.current = event.object;
+      PiezaHerraje([displayName]);
+    }
+  }
+
   function onPointerEnter(event) {
     event.stopPropagation();
+    if (isTouchDevice) return;
 
     // Guarda el material original si no ha sido guardado antes, utilizando el material cacheado
     if (highlightMaterialRef.current) { 
@@ -364,121 +526,10 @@ export default function Model(props) {
       }    
 
       event.object.material = highlightMaterialRef.current;
+      activeMeshRef.current = event.object;
       document.body.style.cursor = "pointer";
 
-      // 1. Detectar si el nombre del mesh es directamente la pegatina "Pieza XX" (formato no redundante o combinado)
-      const rawName = event.object.name || "";
-      if (rawName.toUpperCase().startsWith("PIEZA")) {
-        let clean = rawName.replace(/[._]?0\d\d$/i, "");
-        const match = clean.match(/Pieza[_\s]*\d+/i);
-        if (match) {
-          PiezaHerraje([match[0].trim()]);
-        } else {
-          PiezaHerraje([clean.split(".")[0].trim()]);
-        }
-        return;
-      }
-
-      // 2. Detectar si el padre es un Empty de pegatina "Pieza XX" del GLB (para retrocompatibilidad)
-      const parentName = event.object.parent ? event.object.parent.name || "" : "";
-      if (parentName.toUpperCase().startsWith("PIEZA")) {
-        let clean = parentName.replace(/[._]?0\d\d$/i, "");
-        const match = clean.match(/Pieza[_\s]*\d+/i);
-        if (match) {
-          PiezaHerraje([match[0].trim()]);
-        } else {
-          PiezaHerraje([clean.split(".")[0].trim()]);
-        }
-        return;
-      }
-
-      const name = obtenerNombreLimpioTooltip(event.object.name);
-      
-      // 1. Obtener dimensiones físicas del mesh actual
-      const worldBox = new THREE.Box3().setFromObject(event.object);
-      const worldSize = new THREE.Vector3();
-      worldBox.getSize(worldSize);
-      
-      let dimX = worldSize.x;
-      let dimY = worldSize.y;
-      let dimZ = worldSize.z;
-      const minDim = Math.min(dimX, dimY, dimZ);
-      
-      if (minDim < 0.0001 && event.object.parent && event.object.parent.type !== 'Scene') {
-        const parentBox = new THREE.Box3().setFromObject(event.object.parent);
-        const parentSize = new THREE.Vector3();
-        parentBox.getSize(parentSize);
-        dimX = parentSize.x;
-        dimY = parentSize.y;
-        dimZ = parentSize.z;
-      }
-      
-      const dims = [Math.abs(dimX), Math.abs(dimY), Math.abs(dimZ)].sort((a, b) => b - a);
-      
-      // 2. Autodetectar escala (metros vs milímetros)
-      const scaleMult = dims[0] > 20 ? 1 : 1000;
-      const l = Math.round(dims[0] * scaleMult);
-      const w = Math.round(dims[1] * scaleMult);
-      
-      // Buscar la pieza en el despiece para obtener el número de sticker ("Pieza XX")
-      let displayName = name;
-      if (props.productData?.despiece) {
-        // Encontrar por nombre y dimensiones físicas (tolerancia de 2mm por redondeos)
-        const itemEncontrado = props.productData.despiece.find(
-          (d) => 
-            d.nombre && 
-            obtenerNombreLimpioTooltip(d.nombre).toLowerCase() === name.toLowerCase() &&
-            Math.abs((d.largo || 0) - l) <= 2 &&
-            Math.abs((d.ancho || 0) - w) <= 2
-        );
-        
-        if (itemEncontrado) {
-          let numSticker = itemEncontrado.piezaNumeroStart;
-          if (itemEncontrado.piezaNumeroRange && itemEncontrado.piezaNumeroStart !== undefined) {
-            // Encontrar todos los meshes en la escena actual con este mismo nombre limpio y dimensiones similares
-            const hermanos = [];
-            scene.traverse((child) => {
-              if (child.isMesh && obtenerNombreLimpioTooltip(child.name).toLowerCase() === name.toLowerCase()) {
-                const hBox = new THREE.Box3().setFromObject(child);
-                const hSize = new THREE.Vector3();
-                hBox.getSize(hSize);
-                
-                let hX = hSize.x;
-                let hY = hSize.y;
-                let hZ = hSize.z;
-                const hMin = Math.min(hX, hY, hZ);
-                
-                if (hMin < 0.0001 && child.parent && child.parent.type !== 'Scene') {
-                  const pBox = new THREE.Box3().setFromObject(child.parent);
-                  const pSize = new THREE.Vector3();
-                  pBox.getSize(pSize);
-                  hX = pSize.x;
-                  hY = pSize.y;
-                  hZ = pSize.z;
-                }
-                
-                const hDims = [Math.abs(hX), Math.abs(hY), Math.abs(hZ)].sort((a, b) => b - a);
-                const hl = Math.round(hDims[0] * scaleMult);
-                const hw = Math.round(hDims[1] * scaleMult);
-                
-                if (Math.abs(hl - l) <= 2 && Math.abs(hw - w) <= 2) {
-                  hermanos.push(child);
-                }
-              }
-            });
-            // Encontrar el índice de nuestro mesh en la lista de hermanos
-            const idx = hermanos.indexOf(event.object);
-            if (idx !== -1 && idx < itemEncontrado.cantidad) {
-              numSticker = itemEncontrado.piezaNumeroStart + idx;
-            }
-          }
-          
-          if (numSticker !== undefined) {
-            displayName = `Pieza ${String(numSticker).padStart(2, "0")}`;
-          }
-        }
-      }
-
+      const displayName = obtenerNombreDeObjeto(event.object);
       PiezaHerraje([displayName]);
     } else {
       console.log("Material de resaltado sin cargarse");
@@ -487,18 +538,10 @@ export default function Model(props) {
 
   function onPointerLeave(event) {
     event.stopPropagation();
-
-    // Restaurar material original
-    const originalMaterial = originalMaterials.current.get(event.object);
-    if (originalMaterial) {
-      event.object.material = originalMaterial;
-    } else {
-      console.error("Error: original material is undefined or not found");
-    }
+    if (isTouchDevice) return;
 
     document.body.style.cursor = "default";
-
-    // Limpiar el estado de la pieza seleccionada para ocultar el tooltip
+    // Limpiar el estado de la pieza seleccionada para ocultar el tooltip (el useEffect restaurará el material)
     PiezaHerraje([""]);
   }
 
@@ -538,6 +581,9 @@ export default function Model(props) {
         object={scene}
         onClick={(event) => {
           event.stopPropagation();
+          if (isTouchDevice) {
+            handleTouchSelect(event);
+          }
         }}
         onPointerEnter={onPointerEnter}
         onPointerLeave={onPointerLeave}

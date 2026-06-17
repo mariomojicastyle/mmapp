@@ -23,6 +23,8 @@ export default function AssemblyViewer({ productData, steps, id }) {
   const sombras = useEnviroment((state) => state.sombras);
   const lightingConfig = useEnviroment((state) => state.lightingConfig);
 
+  const isTouchDevice = typeof window !== "undefined" && ('ontouchstart' in window || navigator.maxTouchPoints > 0);
+
   // Ref para el tooltip flotante y coordenadas del mouse
   const tooltipRef = useRef(null);
   const mouseCoordsRef = useRef({ x: 0, y: 0 });
@@ -31,7 +33,7 @@ export default function AssemblyViewer({ productData, steps, id }) {
   useEffect(() => {
     const handleMouseMove = (event) => {
       mouseCoordsRef.current = { x: event.clientX, y: event.clientY };
-      if (tooltipRef.current) {
+      if (tooltipRef.current && !isTouchDevice) {
         tooltipRef.current.style.left = `${event.clientX + 18}px`;
         tooltipRef.current.style.top = `${event.clientY + 12}px`;
       }
@@ -41,15 +43,30 @@ export default function AssemblyViewer({ productData, steps, id }) {
     return () => {
       window.removeEventListener("mousemove", handleMouseMove);
     };
-  }, []);
+  }, [isTouchDevice]);
 
   // Posicionar inmediatamente el tooltip cuando aparezca (se monte en el DOM)
   useEffect(() => {
     if (PiezaHerraje && tooltipRef.current) {
-      tooltipRef.current.style.left = `${mouseCoordsRef.current.x + 18}px`;
-      tooltipRef.current.style.top = `${mouseCoordsRef.current.y + 12}px`;
+      if (isTouchDevice) {
+        // Dispositivo táctil: centrado y a 10px de los botones superiores
+        const topBar = document.querySelector(".contenedor1-1") || document.querySelector(".contenedor1");
+        let topPosition = 112; // Fallback razonable
+        if (topBar) {
+          const rect = topBar.getBoundingClientRect();
+          topPosition = rect.bottom + 10;
+        }
+        tooltipRef.current.style.left = "50%";
+        tooltipRef.current.style.transform = "translateX(-50%)";
+        tooltipRef.current.style.top = `${topPosition}px`;
+      } else {
+        // PC: Sigue al cursor
+        tooltipRef.current.style.left = `${mouseCoordsRef.current.x + 18}px`;
+        tooltipRef.current.style.top = `${mouseCoordsRef.current.y + 12}px`;
+        tooltipRef.current.style.transform = "none";
+      }
     }
-  }, [PiezaHerraje]);
+  }, [PiezaHerraje, isTouchDevice]);
 
   const refTitle = useRef();
 
@@ -143,6 +160,7 @@ export default function AssemblyViewer({ productData, steps, id }) {
             outputColorSpace: THREE.SRGBColorSpace,
           }}
           camera={{position: [0, 1, 2],  fov: 60}} 
+          onPointerMissed={() => PiezaHerraje([""])}
         >
           <Experience id={id} modelUrl={modelUrl} productData={productData} />
         </Canvas>
