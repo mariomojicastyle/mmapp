@@ -50,7 +50,7 @@
 
 @media (max-width: 787px) {
   .cerrar {
-    top: 15px;
+    top: 50px !important;
     right: 15px;
     height: 44px;
     width: 44px;
@@ -63,7 +63,7 @@
 
 @media (max-width: 320px) {
   .cerrar {
-    top: 10px;
+    top: 40px !important;
     right: 10px;
     height: 38px;
     width: 38px;

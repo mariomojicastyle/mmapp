@@ -385,7 +385,7 @@
     transform: scale(1) !important;
   }
   .ayuda-bubble.ayuda4 .ayuda-bubble-arrow {
-    left: 22px !important;
+    left: 18px !important;
     right: auto !important;
     transform: rotate(225deg) !important;
   }
@@ -405,7 +405,7 @@
   }
   .ayuda-bubble.ayuda5 .ayuda-bubble-arrow {
     left: auto !important;
-    right: 22px !important;
+    right: 18px !important;
     transform: rotate(225deg) !important;
   }
 }

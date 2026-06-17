@@ -208,7 +208,7 @@ export default function NavBarSuperior({ id, data }) {
           </form> */}
 
           {/* Botón de control de velocidad (tipo popover flotante) */}
-          <div className="speed-controller-container" style={{ position: "relative" }}>
+          <div className="speed-controller-container">
             <button
               className="button"
               id="btnSpeed"
@@ -252,7 +252,7 @@ export default function NavBarSuperior({ id, data }) {
           </div>
 
           {/* Botón de control de idioma (tipo popover flotante) */}
-          <div className="lang-controller-container" style={{ position: "relative" }}>
+          <div className="lang-controller-container">
             <button
               className="button"
               id="btnLang"

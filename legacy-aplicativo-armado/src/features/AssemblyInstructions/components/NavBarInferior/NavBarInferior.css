@@ -253,6 +253,12 @@ svg circle:nth-child(2) {
     bottom: 20px;
   }
 
+  .SesionArriba {
+    width: 292px !important;
+    margin: 0 auto !important;
+    position: relative !important;
+  }
+
   .button, #left, #right {
     height: 44px;
     width: 44px;

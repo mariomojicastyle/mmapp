@@ -697,10 +697,8 @@ Los estilos, colores y tiempos de transición de las flechas azules se configura
         - Se configuró `ayuda4` (Buscador) a `left: 4px !important; right: auto !important; transform-origin: left bottom !important` con su flecha en `left: 22px !important` (apuntando al botón de la lupa `Q`).
         - Se configuró `ayuda5` (Play/Pausa) a `right: 4px !important; left: auto !important; transform-origin: right bottom !important` con su flecha en `right: 22px !important; left: auto !important` (apuntando al botón de play `▶`).
     - **Interactividad del Botón de AR (z-index)**:
-        - Para que el botón flotante de AR se dibuje por encima de la burbuja `ayuda5` y permanezca 100% interactivo y en primer plano en móviles, se incrementó el `z-index` de `.AR` a `1001 !important` en `RealidadAumentada.css`, superando el `z-index: 1000` de `.contenedor` que agrupa las nubes.
+        - Para que el botón flotante de AR se dibuje por encima de la burbuja `ayuda5` y permanezca 100% interactivo y en primer plano en móviles, se incrementó el `z-index` de `.AR` a `1001 !important` in `RealidadAumentada.css`, superando el `z-index: 1000` de `.contenedor` que agrupa las nubes.
 
-
-
-
-
-
+* **[2026-06-17] AppArmado_v26.1 — Aumento de Distancia Vertical y Simetría de Botones Superiores**:
+    - **Separación de la Barra Superior y Botón Cerrar**: Incrementado el `top` del contenedor `.contenedor1` (botones superiores) y del botón de cerrar `.cerrar` en móviles a `50px !important` (y a `40px !important` en pantallas extra pequeñas de 320px). Esto aleja la UI superior de la barra de direcciones del navegador del teléfono móvil en 30px adicionales, mejorando drásticamente el aire visual y logrando una simetría armónica respecto a la holgura de la barra inferior.
+    - **Alineación con Nubes de Ayuda**: Al ser `.contenedor1-1` el ancestro posicionado relativo de las nubes superiores en móviles, el desplazamiento vertical de la barra superior arrastra automáticamente las burbujas asociadas, manteniendo de forma blindada la luz de separación de 2px de las flechas.
