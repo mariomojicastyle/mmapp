@@ -102,6 +102,10 @@ form {
 
 /* Responsive adjustments */
 @media (max-width: 787px) {
+  .contenedor1 {
+    height: 52px !important;
+  }
+
   .contenedor1-1 {
     width: 292px; /* Alineación perfecta con el ancho de la barra inferior */
     justify-content: space-between;

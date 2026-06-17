@@ -284,7 +284,7 @@
     position: absolute !important;
     left: 4px !important;
     right: auto !important;
-    top: 54px !important;
+    top: 56px !important;
     transform: scale(0.95) !important;
     min-width: 270px !important;
     max-width: 290px !important;
@@ -304,7 +304,7 @@
     position: absolute !important;
     left: 50% !important;
     right: auto !important;
-    top: 54px !important;
+    top: 56px !important;
     transform: translateX(-50%) scale(0.95) !important;
     min-width: 270px !important;
     max-width: 290px !important;
@@ -324,7 +324,7 @@
     position: absolute !important;
     left: auto !important;
     right: 4px !important;
-    top: 54px !important;
+    top: 56px !important;
     transform: scale(0.95) !important;
     min-width: 270px !important;
     max-width: 290px !important;
@@ -344,7 +344,7 @@
     position: absolute !important;
     left: auto !important;
     right: 4px !important;
-    top: 54px !important;
+    top: 56px !important;
     transform: scale(0.95) !important;
     min-width: 270px !important;
     max-width: 290px !important;
@@ -359,28 +359,53 @@
     transform: rotate(45deg) !important;
   }
 
-  /* Centrar las burbujas inferiores en móvil y elevarlas a bottom: 80px para no tapar los botones */
-  .ayuda-bubble.ayuda3,
-  .ayuda-bubble.ayuda4,
-  .ayuda-bubble.ayuda5 {
-    bottom: 80px !important;
+  /* Nube Navegación (ayuda3): 2px de holgura con el círculo central */
+  .ayuda-bubble.ayuda3 {
+    bottom: 60px !important;
     left: 50% !important;
     transform: translateX(-50%) scale(0.95) !important;
     min-width: 270px !important;
     max-width: 290px !important;
   }
-
-  .ayuda-bubble.ayuda3.is-active,
-  .ayuda-bubble.ayuda4.is-active,
-  .ayuda-bubble.ayuda5.is-active {
+  .ayuda-bubble.ayuda3.is-active {
     transform: translateX(-50%) scale(1) !important;
   }
 
-  /* Ajustar la posicion de la flecha de cada burbuja inferior */
+  /* Nube Buscador (ayuda4): 2px de la lupa */
+  .ayuda-bubble.ayuda4 {
+    bottom: 56px !important;
+    left: 4px !important;
+    right: auto !important;
+    transform: scale(0.95) !important;
+    transform-origin: left bottom !important;
+    min-width: 270px !important;
+    max-width: 290px !important;
+  }
+  .ayuda-bubble.ayuda4.is-active {
+    transform: scale(1) !important;
+  }
   .ayuda-bubble.ayuda4 .ayuda-bubble-arrow {
-    left: calc(50% - 120px) !important;
+    left: 22px !important;
+    right: auto !important;
+    transform: rotate(225deg) !important;
+  }
+
+  /* Nube Play/Pausa (ayuda5): 2px de play */
+  .ayuda-bubble.ayuda5 {
+    bottom: 56px !important;
+    left: auto !important;
+    right: 4px !important;
+    transform: scale(0.95) !important;
+    transform-origin: right bottom !important;
+    min-width: 270px !important;
+    max-width: 290px !important;
+  }
+  .ayuda-bubble.ayuda5.is-active {
+    transform: scale(1) !important;
   }
   .ayuda-bubble.ayuda5 .ayuda-bubble-arrow {
-    left: calc(50% + 120px) !important;
+    left: auto !important;
+    right: 22px !important;
+    transform: rotate(225deg) !important;
   }
 }

@@ -688,6 +688,18 @@ Los estilos, colores y tiempos de transición de las flechas azules se configura
     - **Fullscreen automático al girar la pantalla**: Inyección de un `useEffect` robusto en `AssemblyPage.jsx` para dispositivos móviles que detecta la orientación landscape y solicita `requestFullscreen()` en el elemento raíz del documento. Para saltar las políticas de seguridad de gestos de usuario (User Gesture), se añaden listeners temporales de toque/clic en la pantalla tras la rotación que activan el fullscreen inmediatamente al interactuar. Al regresar a portrait, se sale de fullscreen mediante `exitFullscreen()`.
     - **Alineación de nubes y z-index**: Se incrementó el `z-index` de `.contenedor` en `NavBarInferior.css` a `1000` para garantizar que las nubes se rendericen por encima del botón flotante de AR (el cual tiene `z-index: 50`). Además, se redefinieron de forma asimétrica e individual las nubes superiores (`ayuda1` a la izquierda, `ayudaLuz` al centro, y `ayudaVelocidad`/`ayudaIdioma` a la derecha con `right: 4px`) para evitar desbordes y alinear milimétricamente sus flechas en cualquier celular. Las nubes inferiores `.ayuda3`, `.ayuda4` y `.ayuda5` se elevaron en la media query de `PanelAyudas.css` a `bottom: 80px !important` y se centraron horizontalmente (`left: 50% !important`, `transform: translateX(-50%) !important`), de modo que floten elegantemente sobre los botones inferiores y dejen el slider de pasos y el play/pausa 100% visibles y libres de obstrucción.
 
+* **[2026-06-17] AppArmado_v26 / Plataforma_v13 — Alineación Milimétrica a 2px de Nubes y Ajuste de z-index para AR en Móviles**:
+    - **Alineación Vertical Milimétrica (La Luz de 2px)**:
+        - Se configuró la altura de la barra superior en móviles (`.contenedor1`) a un valor fijo de `52px !important` en `NavBarSuperior.css`.
+        - Se redefinieron los valores de `top` de las burbujas superiores a `56px !important` en `PanelAyudas.css`, lo que posiciona la punta de sus flechas en `50px`, dejando una luz de separación de exactamente **2 píxeles** con respecto al borde inferior de los botones (`48px`).
+        - En la barra inferior, se bajaron y acoplaron las nubes a sus respectivos botones: `ayuda3` (Navegación) a `bottom: 60px !important` (dejando 2px con el círculo central del paso de 52px), y `ayuda4` (Buscador) y `ayuda5` (Play/Pausa) a `bottom: 56px !important` (dejando 2px con los botones de 44px).
+    - **Alineación Horizontal Asimétrica e Individual de Nubes Inferiores**:
+        - Se configuró `ayuda4` (Buscador) a `left: 4px !important; right: auto !important; transform-origin: left bottom !important` con su flecha en `left: 22px !important` (apuntando al botón de la lupa `Q`).
+        - Se configuró `ayuda5` (Play/Pausa) a `right: 4px !important; left: auto !important; transform-origin: right bottom !important` con su flecha en `right: 22px !important; left: auto !important` (apuntando al botón de play `▶`).
+    - **Interactividad del Botón de AR (z-index)**:
+        - Para que el botón flotante de AR se dibuje por encima de la burbuja `ayuda5` y permanezca 100% interactivo y en primer plano en móviles, se incrementó el `z-index` de `.AR` a `1001 !important` en `RealidadAumentada.css`, superando el `z-index: 1000` de `.contenedor` que agrupa las nubes.
+
+
 
 
 
