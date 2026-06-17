@@ -574,3 +574,17 @@ svg circle:nth-child(2) {
   z-index: 1000;
   pointer-events: none;
 }
+
+/* CALIBRATOR_GENERATED_START */
+@media (max-width: 787px) {
+  .contenedor { bottom: 20px !important; }
+}
+
+@media (max-width: 320px) {
+  .contenedor { bottom: 3px !important; }
+}
+
+@media (min-width: 788px) and (max-width: 1024px) {
+  .contenedor { bottom: 20px !important; }
+}
+/* CALIBRATOR_GENERATED_END */

@@ -476,3 +476,17 @@ form {
     font-size: 0.58rem;
   }
 }
+
+/* CALIBRATOR_GENERATED_START */
+@media (max-width: 787px) {
+  .contenedor1 { top: 20px !important; }
+}
+
+@media (max-width: 320px) {
+  .contenedor1 { top: 3px !important; }
+}
+
+@media (min-width: 788px) and (max-width: 1024px) {
+  .contenedor1 { top: 20px !important; }
+}
+/* CALIBRATOR_GENERATED_END */

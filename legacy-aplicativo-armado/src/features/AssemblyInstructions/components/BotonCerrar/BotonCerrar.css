@@ -74,3 +74,25 @@
   }
 }
 
+/* CALIBRATOR_GENERATED_START */
+@media (max-width: 787px) {
+  .cerrar {
+    top: 278px !important;
+    right: 15px !important;
+  }
+}
+
+@media (max-width: 320px) {
+  .cerrar {
+    top: 200px !important;
+    right: 0px !important;
+  }
+}
+
+@media (min-width: 788px) and (max-width: 1024px) {
+  .cerrar {
+    top: 300px !important;
+    right: 20px !important;
+  }
+}
+/* CALIBRATOR_GENERATED_END */

@@ -409,3 +409,92 @@
     transform: rotate(225deg) !important;
   }
 }
+
+/* CALIBRATOR_GENERATED_START */
+/* --- Móviles (ej: Tecno Camon 40 Pro / Móvil Estándar) --- */
+@media (max-width: 787px) {
+  /* Burbujas Superiores */
+  .ayuda-bubble.ayuda1 { left: -82px !important; right: auto !important; }
+  .ayuda-bubble.ayuda1 .ayuda-bubble-arrow.arrow-up { left: 107px !important; right: auto !important; }
+
+  .ayuda-bubble.ayudaLuz { left: 50% !important; right: auto !important; transform: translateX(-50%) scale(1) !important; }
+  .ayuda-bubble.ayudaLuz .ayuda-bubble-arrow.arrow-up { left: 50% !important; right: auto !important; transform: translateX(-50%) rotate(45deg) !important; }
+
+  .ayuda-bubble.ayudaVelocidad { right: -81px !important; left: auto !important; }
+  .ayuda-bubble.ayudaVelocidad .ayuda-bubble-arrow.arrow-up { right: 94px !important; left: auto !important; }
+
+  .ayuda-bubble.ayudaIdioma { right: -14px !important; left: auto !important; }
+  .ayuda-bubble.ayudaIdioma .ayuda-bubble-arrow.arrow-up { right: 26px !important; left: auto !important; }
+
+  /* Burbujas Inferiores */
+  .ayuda-bubble.ayuda3 { bottom: 80px !important; left: 50% !important; right: auto !important; transform: translateX(-50%) scale(1) !important; }
+  .ayuda-bubble.ayuda3 .ayuda3-arrow.arrow-center { left: 50% !important; right: auto !important; transform: translateX(-50%) rotate(225deg) !important; }
+
+  .ayuda-bubble.ayuda4 { bottom: 80px !important; left: 4px !important; right: auto !important; }
+  .ayuda-bubble.ayuda4 .ayuda-bubble-arrow.arrow-down { left: 39px !important; right: auto !important; }
+
+  .ayuda-bubble.ayuda5 { bottom: 80px !important; right: 4px !important; left: auto !important; }
+  .ayuda-bubble.ayuda5 .ayuda-bubble-arrow.arrow-down { right: 28px !important; left: auto !important; }
+
+  .ayuda-bubble.ayuda6 { right: 68px !important; left: auto !important; }
+  .ayuda-bubble.ayuda6 .ayuda-bubble-arrow.arrow-right { right: -6px !important; left: auto !important; }
+}
+
+/* --- Móviles Pequeños (320px) --- */
+@media (max-width: 320px) {
+  /* Burbujas Superiores */
+  .ayuda-bubble.ayuda1 { left: -34px !important; right: auto !important; }
+  .ayuda-bubble.ayuda1 .ayuda-bubble-arrow.arrow-up { left: 60px !important; right: auto !important; }
+
+  .ayuda-bubble.ayudaLuz { left: 50% !important; right: auto !important; transform: translateX(-50%) scale(1) !important; }
+  .ayuda-bubble.ayudaLuz .ayuda-bubble-arrow.arrow-up { left: 50% !important; right: auto !important; transform: translateX(-50%) rotate(45deg) !important; }
+
+  .ayuda-bubble.ayudaVelocidad { right: -33px !important; left: auto !important; }
+  .ayuda-bubble.ayudaVelocidad .ayuda-bubble-arrow.arrow-up { right: 46px !important; left: auto !important; }
+
+  .ayuda-bubble.ayudaIdioma { right: 19px !important; left: auto !important; }
+  .ayuda-bubble.ayudaIdioma .ayuda-bubble-arrow.arrow-up { right: -5px !important; left: auto !important; }
+
+  /* Burbujas Inferiores */
+  .ayuda-bubble.ayuda3 { bottom: 80px !important; left: 50% !important; right: auto !important; transform: translateX(-50%) scale(1) !important; }
+  .ayuda-bubble.ayuda3 .ayuda3-arrow.arrow-center { left: 50% !important; right: auto !important; transform: translateX(-50%) rotate(225deg) !important; }
+
+  .ayuda-bubble.ayuda4 { bottom: 80px !important; left: 0px !important; right: auto !important; }
+  .ayuda-bubble.ayuda4 .ayuda-bubble-arrow.arrow-down { left: 25px !important; right: auto !important; }
+
+  .ayuda-bubble.ayuda5 { bottom: 80px !important; right: 1px !important; left: auto !important; }
+  .ayuda-bubble.ayuda5 .ayuda-bubble-arrow.arrow-down { right: 11px !important; left: auto !important; }
+
+  .ayuda-bubble.ayuda6 { right: 62px !important; left: auto !important; }
+  .ayuda-bubble.ayuda6 .ayuda-bubble-arrow.arrow-right { right: -6px !important; left: auto !important; }
+}
+
+/* --- Tablets (788px a 1024px) --- */
+@media (min-width: 788px) and (max-width: 1024px) {
+  /* Burbujas Superiores */
+  .ayuda-bubble.ayuda1 { left: -104px !important; right: auto !important; }
+  .ayuda-bubble.ayuda1 .ayuda-bubble-arrow.arrow-up { left: 130px !important; right: auto !important; }
+
+  .ayuda-bubble.ayudaLuz { left: 50% !important; right: auto !important; transform: translateX(-50%) scale(1) !important; }
+  .ayuda-bubble.ayudaLuz .ayuda-bubble-arrow.arrow-up { left: 50% !important; right: auto !important; transform: translateX(-50%) rotate(45deg) !important; }
+
+  .ayuda-bubble.ayudaVelocidad { right: -104px !important; left: auto !important; }
+  .ayuda-bubble.ayudaVelocidad .ayuda-bubble-arrow.arrow-up { right: 117px !important; left: auto !important; }
+
+  .ayuda-bubble.ayudaIdioma { right: -104px !important; left: auto !important; }
+  .ayuda-bubble.ayudaIdioma .ayuda-bubble-arrow.arrow-up { right: 116px !important; left: auto !important; }
+
+  /* Burbujas Inferiores */
+  .ayuda-bubble.ayuda3 { bottom: 80px !important; left: 50% !important; right: auto !important; transform: translateX(-50%) scale(1) !important; }
+  .ayuda-bubble.ayuda3 .ayuda3-arrow.arrow-center { left: 50% !important; right: auto !important; transform: translateX(-50%) rotate(225deg) !important; }
+
+  .ayuda-bubble.ayuda4 { bottom: 80px !important; left: 85px !important; right: auto !important; }
+  .ayuda-bubble.ayuda4 .ayuda-bubble-arrow.arrow-down { left: 146px !important; right: auto !important; }
+
+  .ayuda-bubble.ayuda5 { bottom: 80px !important; right: 83px !important; left: auto !important; }
+  .ayuda-bubble.ayuda5 .ayuda-bubble-arrow.arrow-down { right: 139px !important; left: auto !important; }
+
+  .ayuda-bubble.ayuda6 { right: 68px !important; left: auto !important; }
+  .ayuda-bubble.ayuda6 .ayuda-bubble-arrow.arrow-right { right: -6px !important; left: auto !important; }
+}
+/* CALIBRATOR_GENERATED_END */

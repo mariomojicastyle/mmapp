@@ -257,3 +257,26 @@
     font-size: 22px !important;
   }
 }
+
+/* CALIBRATOR_GENERATED_START */
+@media (max-width: 787px) {
+  .AR {
+    bottom: 200px !important;
+    right: 15px !important;
+  }
+}
+
+@media (max-width: 320px) {
+  .AR {
+    bottom: 130px !important;
+    right: 1px !important;
+  }
+}
+
+@media (min-width: 788px) and (max-width: 1024px) {
+  .AR {
+    bottom: 300px !important;
+    right: 20px !important;
+  }
+}
+/* CALIBRATOR_GENERATED_END */
