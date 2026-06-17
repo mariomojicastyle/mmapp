@@ -418,26 +418,26 @@
 /* --- Móviles (ej: Tecno Camon 40 Pro / Móvil Estándar) --- */
 @media (max-width: 787px) {
   /* Burbujas Superiores */
-  .ayuda-bubble.ayuda1 { top: 62px !important; left: -96px !important; right: auto !important; }
+  .ayuda-bubble.ayuda1 { top: 56px !important; left: -96px !important; right: auto !important; }
   .ayuda-bubble.ayuda1 .ayuda-bubble-arrow.arrow-up { left: 117px !important; right: auto !important; }
 
-  .ayuda-bubble.ayudaLuz { top: 62px !important; left: 50% !important; right: auto !important; transform: translateX(-50%) scale(1) !important; }
+  .ayuda-bubble.ayudaLuz { top: 56px !important; left: 50% !important; right: auto !important; transform: translateX(-50%) scale(1) !important; }
   .ayuda-bubble.ayudaLuz .ayuda-bubble-arrow.arrow-up { left: 50% !important; right: auto !important; transform: translateX(-50%) rotate(45deg) !important; }
 
-  .ayuda-bubble.ayudaVelocidad { top: 62px !important; right: -34px !important; left: auto !important; }
+  .ayuda-bubble.ayudaVelocidad { top: 56px !important; right: -34px !important; left: auto !important; }
   .ayuda-bubble.ayudaVelocidad .ayuda-bubble-arrow.arrow-up { right: 105px !important; left: auto !important; }
 
-  .ayuda-bubble.ayudaIdioma { top: 62px !important; right: -34px !important; left: auto !important; }
+  .ayuda-bubble.ayudaIdioma { top: 56px !important; right: -34px !important; left: auto !important; }
   .ayuda-bubble.ayudaIdioma .ayuda-bubble-arrow.arrow-up { right: 43px !important; left: auto !important; }
 
   /* Burbujas Inferiores */
-  .ayuda-bubble.ayuda3 { bottom: 67px !important; left: 50% !important; right: auto !important; transform: translateX(-50%) scale(1) !important; }
+  .ayuda-bubble.ayuda3 { bottom: 80px !important; left: 50% !important; right: auto !important; transform: translateX(-50%) scale(1) !important; }
   .ayuda-bubble.ayuda3 .ayuda3-arrow.arrow-center { left: 50% !important; right: auto !important; transform: translateX(-50%) rotate(225deg) !important; }
 
-  .ayuda-bubble.ayuda4 { bottom: 67px !important; left: -34px !important; right: auto !important; }
+  .ayuda-bubble.ayuda4 { bottom: 80px !important; left: -34px !important; right: auto !important; }
   .ayuda-bubble.ayuda4 .ayuda-bubble-arrow.arrow-down { left: 55px !important; right: auto !important; }
 
-  .ayuda-bubble.ayuda5 { bottom: 67px !important; right: -34px !important; left: auto !important; }
+  .ayuda-bubble.ayuda5 { bottom: 80px !important; right: -34px !important; left: auto !important; }
   .ayuda-bubble.ayuda5 .ayuda-bubble-arrow.arrow-down { right: 44px !important; left: auto !important; }
 
   .ayuda-bubble.ayuda6 { right: 64px !important; left: auto !important; }
@@ -447,26 +447,26 @@
 /* --- Móviles Pequeños (320px) --- */
 @media (max-width: 320px) {
   /* Burbujas Superiores */
-  .ayuda-bubble.ayuda1 { top: 57px !important; left: -82px !important; right: auto !important; }
+  .ayuda-bubble.ayuda1 { top: 56px !important; left: -82px !important; right: auto !important; }
   .ayuda-bubble.ayuda1 .ayuda-bubble-arrow.arrow-up { left: 100px !important; right: auto !important; }
 
-  .ayuda-bubble.ayudaLuz { top: 57px !important; left: 50% !important; right: auto !important; transform: translateX(-50%) scale(1) !important; }
+  .ayuda-bubble.ayudaLuz { top: 56px !important; left: 50% !important; right: auto !important; transform: translateX(-50%) scale(1) !important; }
   .ayuda-bubble.ayudaLuz .ayuda-bubble-arrow.arrow-up { left: 50% !important; right: auto !important; transform: translateX(-50%) rotate(45deg) !important; }
 
-  .ayuda-bubble.ayudaVelocidad { top: 57px !important; right: -33px !important; left: auto !important; }
+  .ayuda-bubble.ayudaVelocidad { top: 56px !important; right: -33px !important; left: auto !important; }
   .ayuda-bubble.ayudaVelocidad .ayuda-bubble-arrow.arrow-up { right: 93px !important; left: auto !important; }
 
-  .ayuda-bubble.ayudaIdioma { top: 57px !important; right: -32px !important; left: auto !important; }
+  .ayuda-bubble.ayudaIdioma { top: 56px !important; right: -32px !important; left: auto !important; }
   .ayuda-bubble.ayudaIdioma .ayuda-bubble-arrow.arrow-up { right: 37px !important; left: auto !important; }
 
   /* Burbujas Inferiores */
-  .ayuda-bubble.ayuda3 { bottom: 54px !important; left: 50% !important; right: auto !important; transform: translateX(-50%) scale(1) !important; }
+  .ayuda-bubble.ayuda3 { bottom: undefinedpx !important; left: 50% !important; right: auto !important; transform: translateX(-50%) scale(1) !important; }
   .ayuda-bubble.ayuda3 .ayuda3-arrow.arrow-center { left: 50% !important; right: auto !important; transform: translateX(-50%) rotate(225deg) !important; }
 
-  .ayuda-bubble.ayuda4 { bottom: 54px !important; left: -32px !important; right: auto !important; }
+  .ayuda-bubble.ayuda4 { bottom: undefinedpx !important; left: -32px !important; right: auto !important; }
   .ayuda-bubble.ayuda4 .ayuda-bubble-arrow.arrow-down { left: 50px !important; right: auto !important; }
 
-  .ayuda-bubble.ayuda5 { bottom: 54px !important; right: -33px !important; left: auto !important; }
+  .ayuda-bubble.ayuda5 { bottom: undefinedpx !important; right: -33px !important; left: auto !important; }
   .ayuda-bubble.ayuda5 .ayuda-bubble-arrow.arrow-down { right: 41px !important; left: auto !important; }
 
   .ayuda-bubble.ayuda6 { right: 59px !important; left: auto !important; }
@@ -476,26 +476,26 @@
 /* --- Tablets (788px a 1024px) --- */
 @media (min-width: 788px) and (max-width: 1024px) {
   /* Burbujas Superiores */
-  .ayuda-bubble.ayuda1 { top: 63px !important; left: -126px !important; right: auto !important; }
+  .ayuda-bubble.ayuda1 { top: 56px !important; left: -126px !important; right: auto !important; }
   .ayuda-bubble.ayuda1 .ayuda-bubble-arrow.arrow-up { left: 151px !important; right: auto !important; }
 
-  .ayuda-bubble.ayudaLuz { top: 63px !important; left: 50% !important; right: auto !important; transform: translateX(-50%) scale(1) !important; }
+  .ayuda-bubble.ayudaLuz { top: 56px !important; left: 50% !important; right: auto !important; transform: translateX(-50%) scale(1) !important; }
   .ayuda-bubble.ayudaLuz .ayuda-bubble-arrow.arrow-up { left: 50% !important; right: auto !important; transform: translateX(-50%) rotate(45deg) !important; }
 
-  .ayuda-bubble.ayudaVelocidad { top: 63px !important; right: -138px !important; left: auto !important; }
+  .ayuda-bubble.ayudaVelocidad { top: 56px !important; right: -138px !important; left: auto !important; }
   .ayuda-bubble.ayudaVelocidad .ayuda-bubble-arrow.arrow-up { right: 151px !important; left: auto !important; }
 
-  .ayuda-bubble.ayudaIdioma { top: 63px !important; right: -137px !important; left: auto !important; }
+  .ayuda-bubble.ayudaIdioma { top: 56px !important; right: -137px !important; left: auto !important; }
   .ayuda-bubble.ayudaIdioma .ayuda-bubble-arrow.arrow-up { right: 150px !important; left: auto !important; }
 
   /* Burbujas Inferiores */
-  .ayuda-bubble.ayuda3 { bottom: 91px !important; left: 50% !important; right: auto !important; transform: translateX(-50%) scale(1) !important; }
+  .ayuda-bubble.ayuda3 { bottom: undefinedpx !important; left: 50% !important; right: auto !important; transform: translateX(-50%) scale(1) !important; }
   .ayuda-bubble.ayuda3 .ayuda3-arrow.arrow-center { left: 50% !important; right: auto !important; transform: translateX(-50%) rotate(225deg) !important; }
 
-  .ayuda-bubble.ayuda4 { bottom: 91px !important; left: 75px !important; right: auto !important; }
+  .ayuda-bubble.ayuda4 { bottom: undefinedpx !important; left: 75px !important; right: auto !important; }
   .ayuda-bubble.ayuda4 .ayuda-bubble-arrow.arrow-down { left: 154px !important; right: auto !important; }
 
-  .ayuda-bubble.ayuda5 { bottom: 91px !important; right: 83px !important; left: auto !important; }
+  .ayuda-bubble.ayuda5 { bottom: undefinedpx !important; right: 83px !important; left: auto !important; }
   .ayuda-bubble.ayuda5 .ayuda-bubble-arrow.arrow-down { right: 139px !important; left: auto !important; }
 
   .ayuda-bubble.ayuda6 { right: 68px !important; left: auto !important; }

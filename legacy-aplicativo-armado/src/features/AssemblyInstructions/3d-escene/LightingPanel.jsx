@@ -280,7 +280,7 @@ export default function LightingPanel() {
             </div>
 
             {/* Botones de acción */}
-            <div style={{ display: "flex", gap: "6px" }}>
+            <div style={{ display: "flex", gap: "6px", marginBottom: "6px" }}>
               <button
                 onClick={handleReset}
                 style={{
@@ -320,6 +320,21 @@ export default function LightingPanel() {
                 {saving ? "⏳ Guardando..." : saved ? "✅ ¡Guardado!" : "💾 Guardar en Supabase"}
               </button>
             </div>
+            {/* Boton Calibrador */}
+            <button
+              onClick={() => window.open('/calibrador.html', '_blank')}
+              style={{
+                ...btnBase,
+                width: "100%",
+                background: "rgba(255,255,255,0.05)",
+                color: "#63ffc8",
+                borderColor: "rgba(99,255,200,0.3)",
+              }}
+              onMouseEnter={(e) => (e.currentTarget.style.background = "rgba(99,255,200,0.15)")}
+              onMouseLeave={(e) => (e.currentTarget.style.background = "rgba(255,255,255,0.05)")}
+            >
+              📐 Abrir Calibrador UI
+            </button>
           </>
         )}
       </div>
