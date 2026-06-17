@@ -1,7 +1,7 @@
 {
   "mode-camon": {
     "margins": {
-      "top": 30,
+      "top": 20,
       "bottom": 20
     },
     "cerrar": {
@@ -46,8 +46,8 @@
         "arrowVal": -6
       }
     },
-    "nubesTop": 62,
-    "nubesBottom": 67
+    "nubesTop": 56,
+    "nubesBottom": 80
   },
   "mode-standard": {
     "margins": {
@@ -95,9 +95,7 @@
         "bubbleVal": 60,
         "arrowVal": -6
       }
-    },
-    "nubesTop": 57,
-    "nubesBottom": 66
+    }
   },
   "mode-small": {
     "margins": {
@@ -145,9 +143,7 @@
         "bubbleVal": 59,
         "arrowVal": -6
       }
-    },
-    "nubesTop": 57,
-    "nubesBottom": 54
+    }
   },
   "mode-tablet": {
     "margins": {
@@ -195,9 +191,7 @@
         "bubbleVal": 68,
         "arrowVal": -6
       }
-    },
-    "nubesTop": 63,
-    "nubesBottom": 91
+    }
   },
   "mode-fluid": {
     "margins": {
@@ -245,8 +239,6 @@
         "bubbleVal": 68,
         "arrowVal": -6
       }
-    },
-    "nubesTop": 62,
-    "nubesBottom": 90
+    }
   }
 }

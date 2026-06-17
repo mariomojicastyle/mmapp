@@ -26,35 +26,31 @@ export default function PanelInicial() {
   });
 
   useEffect(() => {
-    let animationFrameId;
-    let startTimestamp = null;
-    const duration = 1000; 
+    let intervalId;
     
-    const startValue = displayProgress;
-    const endValue = Math.round(progress);
+    // Si la app está cargando y el progress real sigue en 0 o muy bajo (común sin Content-Length)
+    // Simulamos un progreso progresivo para que no se quede estática.
+    if (active && progress < 100) {
+      intervalId = setInterval(() => {
+        setDisplayProgress(prev => {
+          // Si el progreso real da un salto, lo tomamos. Si no, simulamos hasta el 90%.
+          const actualProgress = Math.max(prev, Math.round(progress));
+          if (actualProgress < 90) {
+            // Crece rápido al inicio, lento al final
+            const step = actualProgress < 40 ? 5 : actualProgress < 75 ? 2 : 1;
+            return actualProgress + step;
+          }
+          return actualProgress; // Se queda en 90% máximo hasta que el real reporte 100%
+        });
+      }, 200); // 5 actualizaciones por segundo
+    } else if (progress >= 100) {
+      setDisplayProgress(100);
+    }
 
-    if (startValue === endValue) return;
-
-    const step = (timestamp) => {
-      if (!startTimestamp) startTimestamp = timestamp;
-      const t = Math.min((timestamp - startTimestamp) / duration, 1);
-      const ease = t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t;
-      const currentVal = Math.round(startValue + (endValue - startValue) * ease);
-      
-      setDisplayProgress(currentVal);
-      
-      if (t < 1) {
-        animationFrameId = window.requestAnimationFrame(step);
-      }
-    };
-    
-    animationFrameId = window.requestAnimationFrame(step);
-    
     return () => {
-      window.cancelAnimationFrame(animationFrameId);
+      if (intervalId) clearInterval(intervalId);
     };
-  }, [progress]);
-
+  }, [active, progress]);
 
   const fillerStyles = {
     height: '100%',
@@ -64,7 +60,8 @@ export default function PanelInicial() {
     textAlign: 'right',
     display: 'flex',
     alignItems: 'center',
-    justifyContent: 'flex-end'
+    justifyContent: 'flex-end',
+    transition: 'width 0.3s ease-out' // Transición CSS suave
   }
 
   const labelStyles = {
@@ -73,17 +70,15 @@ export default function PanelInicial() {
     fontWeight: 'bold'
   }
 
-  // Aparece el boton de iniciar, cuando el progreso de carga ha llegado al 100%
+  // Aparece el boton de iniciar, cuando el progreso ha llegado al 100%
   useEffect(() => {
-    if (displayProgress === 100) {
-      window.setTimeout(() => {
-        const inicioBtn = document.getElementById("inicio");
-        if (inicioBtn) {
-          inicioBtn.style.display = "flex";
-        }
-      }, 500);
+    if (progress >= 100) {
+      const inicioBtn = document.getElementById("inicio");
+      if (inicioBtn) {
+        inicioBtn.style.display = "flex";
+      }
 
-      // Oculta la barra de progreso 2 segundos después
+      // Oculta la barra de progreso 1 segundo después (más rápido que antes)
       window.setTimeout(() => {
         const progContainer = document.querySelector(".progress");
         if (progContainer) {
@@ -92,14 +87,14 @@ export default function PanelInicial() {
             if (progContainer) progContainer.style.display = "none";
           }, 500);
         }
-      }, 2000);
+      }, 1000);
     }
-  }, [displayProgress]);
+  }, [progress]);
 
-  // Mecanismo de respaldo (Bypass por Timeout): Si tras 5 segundos no ha cargado, forzar inicio
+  // Mecanismo de respaldo (Bypass por Timeout): Si tras 8 segundos no ha cargado, forzar inicio
   useEffect(() => {
     const backupTimeout = window.setTimeout(() => {
-      if (displayProgress < 100) {
+      if (progress < 100) {
         console.warn("Carga lenta o bloqueada. Activando bypass de inicio seguro...");
         setDisplayProgress(100);
         const inicioBtn = document.getElementById("inicio");
@@ -114,10 +109,10 @@ export default function PanelInicial() {
           }, 500);
         }
       }
-    }, 6000);
+    }, 8000); // Aumentado a 8 segundos porque los GLB pesados en móvil pueden tardar
 
     return () => window.clearTimeout(backupTimeout);
-  }, [displayProgress]);
+  }, [progress]);
   
   //Se desactiva el panel inicial, y se inicializa el global state de iniciar el aplicativo.
   const Start = () => {
@@ -236,23 +231,21 @@ export default function PanelInicial() {
               </p>
             </div>
             
-            {displayProgress === 100 && (
-              <div 
-                className="optionI" 
-                id="inicio" 
-                onClick={Start} 
-                style={{ 
-                  marginTop: "0", 
-                  display: "flex", 
-                  zIndex: 40,
-                  pointerEvents: "auto"
-                }}
-              >
-                <div className="imagen">
-                  {t.arButton}
-                </div>
+            <div 
+              className="optionI" 
+              id="inicio" 
+              onClick={Start} 
+              style={{ 
+                marginTop: "0", 
+                display: (displayProgress === 100 || progress >= 100) ? "flex" : "none", 
+                zIndex: 40,
+                pointerEvents: "auto"
+              }}
+            >
+              <div className="imagen">
+                {t.arButton}
               </div>
-            )}
+            </div>
           </div>
         </div>
       )}

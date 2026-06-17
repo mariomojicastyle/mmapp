@@ -271,6 +271,27 @@ export default function Model(props) {
     }
   }, [scene, StartApp, actions, camera, CameraPosition, pasoActual, props.orbitControlsRef]);
 
+  // Preload de pasos adyacentes para que las transiciones sean instantáneas y fluidas
+  useEffect(() => {
+    if (pasos && pasos.length > 0) {
+      const idx = pasos.indexOf(pasoActual);
+      if (idx !== -1) {
+        // Preload del paso siguiente
+        if (idx < pasos.length - 1) {
+          const nextStep = pasos[idx + 1];
+          const nextUrl = getAssetPath(`/${props.id}/models/P${nextStep}.glb`);
+          useGLTF.preload(nextUrl);
+        }
+        // Preload del paso anterior
+        if (idx > 0) {
+          const prevStep = pasos[idx - 1];
+          const prevUrl = getAssetPath(`/${props.id}/models/P${prevStep}.glb`);
+          useGLTF.preload(prevUrl);
+        }
+      }
+    }
+  }, [pasoActual, pasos, props.id]);
+
   // para activar la animación cuando se de clic en el botón "repetir"
   useEffect(() => {
     if (ResetBool === true && actions) {

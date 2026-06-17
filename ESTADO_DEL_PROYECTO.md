@@ -233,6 +233,10 @@ Un **"Manual Vacío"** es un cascarón o aplicación base centralizada (desplega
   - **Barra Inferior**: Centrado y acotado el ancho de `.SesionArriba` a exactamente `292px !important` en dispositivos móviles, sirviendo como marco de anclaje relativo exacto para las burbujas inferiores, eliminando cualquier desfase horizontal por ancho de pantalla.
   - **Burbujas Inferiores**: Redefinido el offset de las flechas de `ayuda4` (Buscador) y `ayuda5` (Play/Pausa) a `18px !important` para coincidir milimétricamente con el centro de la lupa y del botón play.
   - **Z-Index de Realidad Aumentada**: Incrementado el `z-index` de `.AR` a `1001 !important` en dispositivos móviles para sobrepasar la barra inferior de botones (`z-index: 1000`), manteniendo el botón de AR flotante e interactivo en primer plano en todo momento.
+- [x] **Solución de Carga Errática en AR Móvil y Preload Dinámico de GLBs (17 de Junio, 2026)**:
+  - **Botón AR Fijo en el DOM**: Se modificó `PanelInicial.jsx` para renderizar el botón `#inicio` permanentemente en el DOM de React, controlando su visibilidad mediante estilos inline `display: (displayProgress === 100 || progress >= 100) ? "flex" : "none"`. Esto corrige referencias nulas de DOM (`document.getElementById("inicio")`) y asegura que el botón aparezca de manera instantánea cuando Three.js completa la carga de los modelos.
+  - **Simulación de Progreso**: Implementación de una simulación progresiva suave hasta el 90% para amortiguar el salto brusco de 0% a 100% (causado por la falta de cabeceras `Content-Length` en servidores de almacenamiento).
+  - **Preload Dinámico de Modelos**: Se añadió preloading en `Model.jsx` usando `useGLTF.preload()` para los pasos `pasoActual + 1` y `pasoActual - 1`, permitiendo que el navegador descargue en segundo plano los modelos adyacentes y eliminando los retardos y pantallas vacías en la transición de pasos.
 
 ---
 
