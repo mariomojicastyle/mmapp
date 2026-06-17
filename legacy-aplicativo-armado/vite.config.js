@@ -59,26 +59,26 @@ function updateCSSFiles(calibrationData) {
   const ayudasCSS = `/* --- Móviles (ej: Tecno Camon 40 Pro / Móvil Estándar) --- */
 @media (max-width: 787px) {
   /* Burbujas Superiores */
-  .ayuda-bubble.ayuda1 { left: ${camon.bubbles.ayuda1.bubbleVal}px !important; right: auto !important; }
+  .ayuda-bubble.ayuda1 { top: ${camon.nubesTop !== undefined ? camon.nubesTop : 56}px !important; left: ${camon.bubbles.ayuda1.bubbleVal}px !important; right: auto !important; }
   .ayuda-bubble.ayuda1 .ayuda-bubble-arrow.arrow-up { left: ${camon.bubbles.ayuda1.arrowVal}px !important; right: auto !important; }
 
-  .ayuda-bubble.ayudaLuz { left: ${camon.bubbles.ayudaLuz.bubbleVal}% !important; right: auto !important; transform: translateX(-50%) scale(1) !important; }
+  .ayuda-bubble.ayudaLuz { top: ${camon.nubesTop !== undefined ? camon.nubesTop : 56}px !important; left: ${camon.bubbles.ayudaLuz.bubbleVal}% !important; right: auto !important; transform: translateX(-50%) scale(1) !important; }
   .ayuda-bubble.ayudaLuz .ayuda-bubble-arrow.arrow-up { left: ${camon.bubbles.ayudaLuz.arrowVal}% !important; right: auto !important; transform: translateX(-50%) rotate(45deg) !important; }
 
-  .ayuda-bubble.ayudaVelocidad { right: ${camon.bubbles.ayudaVelocidad.bubbleVal}px !important; left: auto !important; }
+  .ayuda-bubble.ayudaVelocidad { top: ${camon.nubesTop !== undefined ? camon.nubesTop : 56}px !important; right: ${camon.bubbles.ayudaVelocidad.bubbleVal}px !important; left: auto !important; }
   .ayuda-bubble.ayudaVelocidad .ayuda-bubble-arrow.arrow-up { right: ${camon.bubbles.ayudaVelocidad.arrowVal}px !important; left: auto !important; }
 
-  .ayuda-bubble.ayudaIdioma { right: ${camon.bubbles.ayudaIdioma.bubbleVal}px !important; left: auto !important; }
+  .ayuda-bubble.ayudaIdioma { top: ${camon.nubesTop !== undefined ? camon.nubesTop : 56}px !important; right: ${camon.bubbles.ayudaIdioma.bubbleVal}px !important; left: auto !important; }
   .ayuda-bubble.ayudaIdioma .ayuda-bubble-arrow.arrow-up { right: ${camon.bubbles.ayudaIdioma.arrowVal}px !important; left: auto !important; }
 
   /* Burbujas Inferiores */
-  .ayuda-bubble.ayuda3 { bottom: 80px !important; left: ${camon.bubbles.ayuda3.bubbleVal}% !important; right: auto !important; transform: translateX(-50%) scale(1) !important; }
+  .ayuda-bubble.ayuda3 { bottom: ${camon.nubesBottom}px !important; left: ${camon.bubbles.ayuda3.bubbleVal}% !important; right: auto !important; transform: translateX(-50%) scale(1) !important; }
   .ayuda-bubble.ayuda3 .ayuda3-arrow.arrow-center { left: ${camon.bubbles.ayuda3.arrowVal}% !important; right: auto !important; transform: translateX(-50%) rotate(225deg) !important; }
 
-  .ayuda-bubble.ayuda4 { bottom: 80px !important; left: ${camon.bubbles.ayuda4.bubbleVal}px !important; right: auto !important; }
+  .ayuda-bubble.ayuda4 { bottom: ${camon.nubesBottom}px !important; left: ${camon.bubbles.ayuda4.bubbleVal}px !important; right: auto !important; }
   .ayuda-bubble.ayuda4 .ayuda-bubble-arrow.arrow-down { left: ${camon.bubbles.ayuda4.arrowVal}px !important; right: auto !important; }
 
-  .ayuda-bubble.ayuda5 { bottom: 80px !important; right: ${camon.bubbles.ayuda5.bubbleVal}px !important; left: auto !important; }
+  .ayuda-bubble.ayuda5 { bottom: ${camon.nubesBottom}px !important; right: ${camon.bubbles.ayuda5.bubbleVal}px !important; left: auto !important; }
   .ayuda-bubble.ayuda5 .ayuda-bubble-arrow.arrow-down { right: ${camon.bubbles.ayuda5.arrowVal}px !important; left: auto !important; }
 
   .ayuda-bubble.ayuda6 { right: ${camon.bubbles.ayuda6.bubbleVal}px !important; left: auto !important; }
@@ -88,26 +88,26 @@ function updateCSSFiles(calibrationData) {
 /* --- Móviles Pequeños (320px) --- */
 @media (max-width: 320px) {
   /* Burbujas Superiores */
-  .ayuda-bubble.ayuda1 { left: ${small.bubbles.ayuda1.bubbleVal}px !important; right: auto !important; }
+  .ayuda-bubble.ayuda1 { top: ${small.nubesTop !== undefined ? small.nubesTop : 56}px !important; left: ${small.bubbles.ayuda1.bubbleVal}px !important; right: auto !important; }
   .ayuda-bubble.ayuda1 .ayuda-bubble-arrow.arrow-up { left: ${small.bubbles.ayuda1.arrowVal}px !important; right: auto !important; }
 
-  .ayuda-bubble.ayudaLuz { left: ${small.bubbles.ayudaLuz.bubbleVal}% !important; right: auto !important; transform: translateX(-50%) scale(1) !important; }
+  .ayuda-bubble.ayudaLuz { top: ${small.nubesTop !== undefined ? small.nubesTop : 56}px !important; left: ${small.bubbles.ayudaLuz.bubbleVal}% !important; right: auto !important; transform: translateX(-50%) scale(1) !important; }
   .ayuda-bubble.ayudaLuz .ayuda-bubble-arrow.arrow-up { left: ${small.bubbles.ayudaLuz.arrowVal}% !important; right: auto !important; transform: translateX(-50%) rotate(45deg) !important; }
 
-  .ayuda-bubble.ayudaVelocidad { right: ${small.bubbles.ayudaVelocidad.bubbleVal}px !important; left: auto !important; }
+  .ayuda-bubble.ayudaVelocidad { top: ${small.nubesTop !== undefined ? small.nubesTop : 56}px !important; right: ${small.bubbles.ayudaVelocidad.bubbleVal}px !important; left: auto !important; }
   .ayuda-bubble.ayudaVelocidad .ayuda-bubble-arrow.arrow-up { right: ${small.bubbles.ayudaVelocidad.arrowVal}px !important; left: auto !important; }
 
-  .ayuda-bubble.ayudaIdioma { right: ${small.bubbles.ayudaIdioma.bubbleVal}px !important; left: auto !important; }
+  .ayuda-bubble.ayudaIdioma { top: ${small.nubesTop !== undefined ? small.nubesTop : 56}px !important; right: ${small.bubbles.ayudaIdioma.bubbleVal}px !important; left: auto !important; }
   .ayuda-bubble.ayudaIdioma .ayuda-bubble-arrow.arrow-up { right: ${small.bubbles.ayudaIdioma.arrowVal}px !important; left: auto !important; }
 
   /* Burbujas Inferiores */
-  .ayuda-bubble.ayuda3 { bottom: 80px !important; left: ${small.bubbles.ayuda3.bubbleVal}% !important; right: auto !important; transform: translateX(-50%) scale(1) !important; }
+  .ayuda-bubble.ayuda3 { bottom: ${small.nubesBottom}px !important; left: ${small.bubbles.ayuda3.bubbleVal}% !important; right: auto !important; transform: translateX(-50%) scale(1) !important; }
   .ayuda-bubble.ayuda3 .ayuda3-arrow.arrow-center { left: ${small.bubbles.ayuda3.arrowVal}% !important; right: auto !important; transform: translateX(-50%) rotate(225deg) !important; }
 
-  .ayuda-bubble.ayuda4 { bottom: 80px !important; left: ${small.bubbles.ayuda4.bubbleVal}px !important; right: auto !important; }
+  .ayuda-bubble.ayuda4 { bottom: ${small.nubesBottom}px !important; left: ${small.bubbles.ayuda4.bubbleVal}px !important; right: auto !important; }
   .ayuda-bubble.ayuda4 .ayuda-bubble-arrow.arrow-down { left: ${small.bubbles.ayuda4.arrowVal}px !important; right: auto !important; }
 
-  .ayuda-bubble.ayuda5 { bottom: 80px !important; right: ${small.bubbles.ayuda5.bubbleVal}px !important; left: auto !important; }
+  .ayuda-bubble.ayuda5 { bottom: ${small.nubesBottom}px !important; right: ${small.bubbles.ayuda5.bubbleVal}px !important; left: auto !important; }
   .ayuda-bubble.ayuda5 .ayuda-bubble-arrow.arrow-down { right: ${small.bubbles.ayuda5.arrowVal}px !important; left: auto !important; }
 
   .ayuda-bubble.ayuda6 { right: ${small.bubbles.ayuda6.bubbleVal}px !important; left: auto !important; }
@@ -117,26 +117,26 @@ function updateCSSFiles(calibrationData) {
 /* --- Tablets (788px a 1024px) --- */
 @media (min-width: 788px) and (max-width: 1024px) {
   /* Burbujas Superiores */
-  .ayuda-bubble.ayuda1 { left: ${tablet.bubbles.ayuda1.bubbleVal}px !important; right: auto !important; }
+  .ayuda-bubble.ayuda1 { top: ${tablet.nubesTop !== undefined ? tablet.nubesTop : 56}px !important; left: ${tablet.bubbles.ayuda1.bubbleVal}px !important; right: auto !important; }
   .ayuda-bubble.ayuda1 .ayuda-bubble-arrow.arrow-up { left: ${tablet.bubbles.ayuda1.arrowVal}px !important; right: auto !important; }
 
-  .ayuda-bubble.ayudaLuz { left: ${tablet.bubbles.ayudaLuz.bubbleVal}% !important; right: auto !important; transform: translateX(-50%) scale(1) !important; }
+  .ayuda-bubble.ayudaLuz { top: ${tablet.nubesTop !== undefined ? tablet.nubesTop : 56}px !important; left: ${tablet.bubbles.ayudaLuz.bubbleVal}% !important; right: auto !important; transform: translateX(-50%) scale(1) !important; }
   .ayuda-bubble.ayudaLuz .ayuda-bubble-arrow.arrow-up { left: ${tablet.bubbles.ayudaLuz.arrowVal}% !important; right: auto !important; transform: translateX(-50%) rotate(45deg) !important; }
 
-  .ayuda-bubble.ayudaVelocidad { right: ${tablet.bubbles.ayudaVelocidad.bubbleVal}px !important; left: auto !important; }
+  .ayuda-bubble.ayudaVelocidad { top: ${tablet.nubesTop !== undefined ? tablet.nubesTop : 56}px !important; right: ${tablet.bubbles.ayudaVelocidad.bubbleVal}px !important; left: auto !important; }
   .ayuda-bubble.ayudaVelocidad .ayuda-bubble-arrow.arrow-up { right: ${tablet.bubbles.ayudaVelocidad.arrowVal}px !important; left: auto !important; }
 
-  .ayuda-bubble.ayudaIdioma { right: ${tablet.bubbles.ayudaIdioma.bubbleVal}px !important; left: auto !important; }
+  .ayuda-bubble.ayudaIdioma { top: ${tablet.nubesTop !== undefined ? tablet.nubesTop : 56}px !important; right: ${tablet.bubbles.ayudaIdioma.bubbleVal}px !important; left: auto !important; }
   .ayuda-bubble.ayudaIdioma .ayuda-bubble-arrow.arrow-up { right: ${tablet.bubbles.ayudaIdioma.arrowVal}px !important; left: auto !important; }
 
   /* Burbujas Inferiores */
-  .ayuda-bubble.ayuda3 { bottom: 80px !important; left: ${tablet.bubbles.ayuda3.bubbleVal}% !important; right: auto !important; transform: translateX(-50%) scale(1) !important; }
+  .ayuda-bubble.ayuda3 { bottom: ${tablet.nubesBottom}px !important; left: ${tablet.bubbles.ayuda3.bubbleVal}% !important; right: auto !important; transform: translateX(-50%) scale(1) !important; }
   .ayuda-bubble.ayuda3 .ayuda3-arrow.arrow-center { left: ${tablet.bubbles.ayuda3.arrowVal}% !important; right: auto !important; transform: translateX(-50%) rotate(225deg) !important; }
 
-  .ayuda-bubble.ayuda4 { bottom: 80px !important; left: ${tablet.bubbles.ayuda4.bubbleVal}px !important; right: auto !important; }
+  .ayuda-bubble.ayuda4 { bottom: ${tablet.nubesBottom}px !important; left: ${tablet.bubbles.ayuda4.bubbleVal}px !important; right: auto !important; }
   .ayuda-bubble.ayuda4 .ayuda-bubble-arrow.arrow-down { left: ${tablet.bubbles.ayuda4.arrowVal}px !important; right: auto !important; }
 
-  .ayuda-bubble.ayuda5 { bottom: 80px !important; right: ${tablet.bubbles.ayuda5.bubbleVal}px !important; left: auto !important; }
+  .ayuda-bubble.ayuda5 { bottom: ${tablet.nubesBottom}px !important; right: ${tablet.bubbles.ayuda5.bubbleVal}px !important; left: auto !important; }
   .ayuda-bubble.ayuda5 .ayuda-bubble-arrow.arrow-down { right: ${tablet.bubbles.ayuda5.arrowVal}px !important; left: auto !important; }
 
   .ayuda-bubble.ayuda6 { right: ${tablet.bubbles.ayuda6.bubbleVal}px !important; left: auto !important; }

@@ -1,11 +1,11 @@
 {
   "mode-camon": {
     "margins": {
-      "top": 20,
+      "top": 30,
       "bottom": 20
     },
     "cerrar": {
-      "top": 278,
+      "top": 270,
       "right": 15
     },
     "ar": {
@@ -14,46 +14,48 @@
     },
     "bubbles": {
       "ayuda1": {
-        "bubbleVal": -82,
-        "arrowVal": 107
+        "bubbleVal": -96,
+        "arrowVal": 117
       },
       "ayudaLuz": {
         "bubbleVal": 50,
         "arrowVal": 50
       },
       "ayudaVelocidad": {
-        "bubbleVal": -81,
-        "arrowVal": 94
+        "bubbleVal": -34,
+        "arrowVal": 105
       },
       "ayudaIdioma": {
-        "bubbleVal": -14,
-        "arrowVal": 26
+        "bubbleVal": -34,
+        "arrowVal": 43
       },
       "ayuda3": {
         "bubbleVal": 50,
         "arrowVal": 50
       },
       "ayuda4": {
-        "bubbleVal": 4,
-        "arrowVal": 39
+        "bubbleVal": -34,
+        "arrowVal": 55
       },
       "ayuda5": {
-        "bubbleVal": 4,
-        "arrowVal": 28
+        "bubbleVal": -34,
+        "arrowVal": 44
       },
       "ayuda6": {
-        "bubbleVal": 68,
+        "bubbleVal": 64,
         "arrowVal": -6
       }
-    }
+    },
+    "nubesTop": 62,
+    "nubesBottom": 67
   },
   "mode-standard": {
     "margins": {
-      "top": 10,
-      "bottom": 10
+      "top": 20,
+      "bottom": 14
     },
     "cerrar": {
-      "top": 270,
+      "top": 268,
       "right": 15
     },
     "ar": {
@@ -62,43 +64,45 @@
     },
     "bubbles": {
       "ayuda1": {
-        "bubbleVal": -66,
-        "arrowVal": 92
+        "bubbleVal": -72,
+        "arrowVal": 93
       },
       "ayudaLuz": {
         "bubbleVal": 50,
         "arrowVal": 50
       },
       "ayudaVelocidad": {
-        "bubbleVal": -67,
-        "arrowVal": 79
+        "bubbleVal": -14,
+        "arrowVal": 84
       },
       "ayudaIdioma": {
-        "bubbleVal": 1,
-        "arrowVal": 11
+        "bubbleVal": -13,
+        "arrowVal": 22
       },
       "ayuda3": {
         "bubbleVal": 50,
         "arrowVal": 50
       },
       "ayuda4": {
-        "bubbleVal": 4,
-        "arrowVal": 23
+        "bubbleVal": -14,
+        "arrowVal": 35
       },
       "ayuda5": {
-        "bubbleVal": 4,
-        "arrowVal": 12
+        "bubbleVal": -14,
+        "arrowVal": 22
       },
       "ayuda6": {
-        "bubbleVal": 68,
+        "bubbleVal": 60,
         "arrowVal": -6
       }
-    }
+    },
+    "nubesTop": 57,
+    "nubesBottom": 66
   },
   "mode-small": {
     "margins": {
       "top": 3,
-      "bottom": 3
+      "bottom": 12
     },
     "cerrar": {
       "top": 200,
@@ -110,8 +114,8 @@
     },
     "bubbles": {
       "ayuda1": {
-        "bubbleVal": -34,
-        "arrowVal": 60
+        "bubbleVal": -82,
+        "arrowVal": 100
       },
       "ayudaLuz": {
         "bubbleVal": 50,
@@ -119,29 +123,31 @@
       },
       "ayudaVelocidad": {
         "bubbleVal": -33,
-        "arrowVal": 46
+        "arrowVal": 93
       },
       "ayudaIdioma": {
-        "bubbleVal": 19,
-        "arrowVal": -5
+        "bubbleVal": -32,
+        "arrowVal": 37
       },
       "ayuda3": {
         "bubbleVal": 50,
         "arrowVal": 50
       },
       "ayuda4": {
-        "bubbleVal": 0,
-        "arrowVal": 25
+        "bubbleVal": -32,
+        "arrowVal": 50
       },
       "ayuda5": {
-        "bubbleVal": 1,
-        "arrowVal": 11
+        "bubbleVal": -33,
+        "arrowVal": 41
       },
       "ayuda6": {
-        "bubbleVal": 62,
+        "bubbleVal": 59,
         "arrowVal": -6
       }
-    }
+    },
+    "nubesTop": 57,
+    "nubesBottom": 54
   },
   "mode-tablet": {
     "margins": {
@@ -158,28 +164,28 @@
     },
     "bubbles": {
       "ayuda1": {
-        "bubbleVal": -104,
-        "arrowVal": 130
+        "bubbleVal": -126,
+        "arrowVal": 151
       },
       "ayudaLuz": {
         "bubbleVal": 50,
         "arrowVal": 50
       },
       "ayudaVelocidad": {
-        "bubbleVal": -104,
-        "arrowVal": 117
+        "bubbleVal": -138,
+        "arrowVal": 151
       },
       "ayudaIdioma": {
-        "bubbleVal": -104,
-        "arrowVal": 116
+        "bubbleVal": -137,
+        "arrowVal": 150
       },
       "ayuda3": {
         "bubbleVal": 50,
         "arrowVal": 50
       },
       "ayuda4": {
-        "bubbleVal": 85,
-        "arrowVal": 146
+        "bubbleVal": 75,
+        "arrowVal": 154
       },
       "ayuda5": {
         "bubbleVal": 83,
@@ -189,7 +195,9 @@
         "bubbleVal": 68,
         "arrowVal": -6
       }
-    }
+    },
+    "nubesTop": 63,
+    "nubesBottom": 91
   },
   "mode-fluid": {
     "margins": {
@@ -206,28 +214,28 @@
     },
     "bubbles": {
       "ayuda1": {
-        "bubbleVal": -102,
-        "arrowVal": 126
+        "bubbleVal": -123,
+        "arrowVal": 148
       },
       "ayudaLuz": {
         "bubbleVal": 50,
         "arrowVal": 50
       },
       "ayudaVelocidad": {
-        "bubbleVal": -106,
-        "arrowVal": 120
+        "bubbleVal": -64,
+        "arrowVal": 149
       },
       "ayudaIdioma": {
-        "bubbleVal": -103,
-        "arrowVal": 116
+        "bubbleVal": -138,
+        "arrowVal": 150
       },
       "ayuda3": {
         "bubbleVal": 50,
         "arrowVal": 50
       },
       "ayuda4": {
-        "bubbleVal": 998,
-        "arrowVal": 140
+        "bubbleVal": 986,
+        "arrowVal": 153
       },
       "ayuda5": {
         "bubbleVal": 983,
@@ -237,6 +245,8 @@
         "bubbleVal": 68,
         "arrowVal": -6
       }
-    }
+    },
+    "nubesTop": 62,
+    "nubesBottom": 90
   }
 }

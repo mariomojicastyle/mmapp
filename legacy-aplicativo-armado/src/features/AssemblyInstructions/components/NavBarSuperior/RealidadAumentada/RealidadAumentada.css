@@ -227,7 +227,7 @@
     right: 15px;
     left: auto !important; /* Anular la posición left de PC */
     transform: none !important; /* Anular el transform de PC */
-    z-index: 1001 !important; /* Superior al z-index 1000 de .contenedor para quedar en primer plano */
+    z-index: 990 !important; /* Ajustado por debajo de .contenedor (1000) para permitir superposición de nubes de ayuda */
     box-shadow: var(--glass-shadow, 0 8px 32px rgba(0, 0, 0, 0.3));
     border-radius: 50%;
     background: var(--surface, rgba(13, 24, 29, 0.7)) !important;
