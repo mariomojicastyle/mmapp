@@ -31,6 +31,45 @@ export default defineConfig({
         server.middlewares.use((req, res, next) => {
           const url = req.url || ''
           
+          // Endpoint para guardar calibración en local
+          if (req.method === 'POST' && url === '/api/save-calibration') {
+            let body = ''
+            req.on('data', chunk => {
+              body += chunk
+            })
+            req.on('end', () => {
+              try {
+                const data = JSON.parse(body)
+                fs.writeFileSync(path.join(__dirname, 'calibration.json'), JSON.stringify(data, null, 2), 'utf-8')
+                res.writeHead(200, { 'Content-Type': 'application/json' })
+                res.end(JSON.stringify({ success: true, message: 'Calibración guardada en local' }))
+              } catch (e) {
+                res.writeHead(400, { 'Content-Type': 'application/json' })
+                res.end(JSON.stringify({ success: false, error: e.message }))
+              }
+            })
+            return
+          }
+
+          // Endpoint para cargar calibración en local
+          if (req.method === 'GET' && url === '/api/load-calibration') {
+            try {
+              const filePath = path.join(__dirname, 'calibration.json')
+              if (fs.existsSync(filePath)) {
+                const data = fs.readFileSync(filePath, 'utf-8')
+                res.writeHead(200, { 'Content-Type': 'application/json' })
+                res.end(data)
+              } else {
+                res.writeHead(404, { 'Content-Type': 'application/json' })
+                res.end(JSON.stringify({ success: false, message: 'No calibration file found' }))
+              }
+            } catch (e) {
+              res.writeHead(500, { 'Content-Type': 'application/json' })
+              res.end(JSON.stringify({ success: false, error: e.message }))
+            }
+            return
+          }
+          
           // Regla especial para herrajes compartidos en Supabase
           if (url.startsWith('/assets/herrajes_compartidos/')) {
             const fileName = url.replace('/assets/herrajes_compartidos/', '')

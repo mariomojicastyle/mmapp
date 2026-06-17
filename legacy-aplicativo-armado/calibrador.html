@@ -1,0 +1,1121 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Calibrador de Ayudas y Nubes</title>
+  
+  <!-- Estilos base y variables CSS -->
+  <link rel="stylesheet" href="./src/index.css">
+  
+  <!-- Iconos de Google Material Symbols (Requerido por el botón de Realidad Aumentada) -->
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200">
+  
+  <!-- Estilos de componentes específicos -->
+  <link rel="stylesheet" href="./src/features/AssemblyInstructions/components/NavBarSuperior/NavBarSuperior.css">
+  <link rel="stylesheet" href="./src/features/AssemblyInstructions/components/NavBarInferior/NavBarInferior.css">
+  <link rel="stylesheet" href="./src/features/AssemblyInstructions/components/BotonCerrar/BotonCerrar.css">
+  <link rel="stylesheet" href="./src/features/AssemblyInstructions/components/NavBarInferior/PanelAyudas/PanelAyudas.css">
+  <link rel="stylesheet" href="./src/features/AssemblyInstructions/components/NavBarSuperior/RealidadAumentada/RealidadAumentada.css">
+  
+  <!-- Estilos extras para forzar que el simulador HTML estático active el tutorial -->
+  <style>
+    /* El calibrador maneja la visibilidad con la clase .is-active */
+    .ayuda-bubble {
+      opacity: 0 !important;
+      visibility: hidden !important;
+      display: none !important;
+      transition: opacity 0.2s ease, transform 0.2s ease !important;
+    }
+    
+    .ayuda-bubble.is-active {
+      opacity: 1 !important;
+      visibility: visible !important;
+      display: block !important;
+    }
+    
+    /* Cortina del tutorial confinada al simulador */
+    .cortina-ayudas {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.4);
+      backdrop-filter: blur(4px);
+      z-index: 5;
+      pointer-events: none;
+    }
+    
+    body {
+      background: #0f1319 url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 20 20"><rect width="20" height="20" fill="none" stroke="%23222" stroke-width="0.5"/></svg>');
+      margin: 0;
+      padding: 0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      width: 100vw;
+      overflow: hidden;
+      font-family: 'Inter', sans-serif;
+    }
+    
+    /* Marco del simulador de teléfono móvil */
+    .simulator-frame {
+      position: relative;
+      background: #111319;
+      border: 12px solid #1e293b;
+      border-radius: 36px;
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7);
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      overflow: hidden;
+      /* Truco CSS: Confinar hijos con position: fixed para que se comporten como absolute dentro de esta caja */
+      transform: translate(0, 0); 
+    }
+
+    /* Modos de pantalla responsivos */
+    .simulator-frame.mode-camon {
+      width: 392px;
+      height: 882px;
+    }
+
+    .simulator-frame.mode-standard {
+      width: 360px;
+      height: 800px;
+    }
+
+    .simulator-frame.mode-small {
+      width: 320px;
+      height: 568px;
+    }
+
+    .simulator-frame.mode-tablet {
+      width: 768px;
+      height: 1024px;
+      border-radius: 24px;
+    }
+
+    .simulator-frame.mode-fluid {
+      width: 100vw;
+      height: 100vh;
+      border: none;
+      border-radius: 0;
+      box-shadow: none;
+    }
+    
+    /* El contenedor UI de AssemblyViewer.jsx */
+    .viewer-overlay {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      z-index: 10;
+      pointer-events: none;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      box-sizing: border-box;
+    }
+    
+    .cerrar {
+      display: flex !important;
+    }
+
+    /* Estilo de la muesca / notch de teléfono simulado */
+    .phone-notch {
+      position: absolute;
+      top: 0;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 150px;
+      height: 24px;
+      background: #1e293b;
+      border-bottom-left-radius: 18px;
+      border-bottom-right-radius: 18px;
+      z-index: 20000;
+      pointer-events: none;
+      transition: all 0.3s ease;
+    }
+
+    .simulator-frame.mode-fluid .phone-notch {
+      display: none;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Contenedor del simulador de teléfono móvil -->
+  <div id="phone-frame" class="simulator-frame mode-camon">
+    <!-- Muesca de la cámara del teléfono -->
+    <div class="phone-notch"></div>
+
+    <!-- Cortina del tutorial -->
+    <div class="cortina-ayudas"></div>
+
+    <!-- Contenedor general del visor simulado -->
+    <div class="viewer-overlay">
+  
+      <!-- Botón de Cerrar (X) -->
+      <button class="cerrar active">
+        <span>✕</span>
+      </button>
+      
+      <!-- Barra Superior -->
+      <div class="contenedor1">
+        <div class="contenedor1-1">
+          <!-- Botón Ayuda (?) -->
+          <div class="button" id="help">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:24px; height:24px;">
+              <circle cx="12" cy="12" r="10"></circle>
+              <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path>
+              <line x1="12" y1="17" x2="12.01" y2="17"></line>
+            </svg>
+          </div>
+
+          <!-- Botón Info (i) -->
+          <div class="button" id="info">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:24px; height:24px;">
+              <circle cx="12" cy="12" r="10"></circle>
+              <line x1="12" y1="16" x2="12" y2="12"></line>
+              <line x1="12" y1="8" x2="12.01" y2="8"></line>
+            </svg>
+            
+            <!-- Burbuja Ayuda 1 -->
+            <div class="ayuda-bubble ayuda1 is-active">
+              <div class="ayuda-bubble-arrow arrow-up"></div>
+              <div class="ayuda-bubble-title">Guía y Herramientas</div>
+              <ul class="ayuda-bubble-list">
+                <li class="ayuda-bubble-item">Marca del producto</li>
+                <li class="ayuda-bubble-item">Herramientas requeridas</li>
+                <li class="ayuda-bubble-item">Indicaciones especiales</li>
+                <li class="ayuda-bubble-item">Garantía del mueble</li>
+              </ul>
+            </div>
+          </div>
+
+          <!-- Botón Sombras (Luz) -->
+          <div class="button" id="shadows">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:24px; height:24px;">
+              <circle cx="12" cy="12" r="5"></circle>
+              <line x1="12" y1="1" x2="12" y2="3"></line>
+              <line x1="12" y1="21" x2="12" y2="23"></line>
+              <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+              <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+              <line x1="1" y1="12" x2="3" y2="12"></line>
+              <line x1="21" y1="12" x2="23" y2="12"></line>
+              <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+              <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+            </svg>
+            
+            <!-- Burbuja Ayuda Luz -->
+            <div class="ayuda-bubble ayudaLuz is-active">
+              <div class="ayuda-bubble-arrow arrow-up"></div>
+              <div class="ayuda-bubble-title">Iluminación 3D</div>
+              <div class="ayuda-bubble-text">Calibra el fondo infinito o las sombras reales del estudio.</div>
+            </div>
+          </div>
+
+          <!-- Botón Velocidad (1x) -->
+          <div class="speed-controller-container">
+            <button class="button" id="btnSpeed" type="button">
+              <span style="font-size: 0.85rem; font-weight: 700; font-family: var(--font-sans);">1.0x</span>
+            </button>
+            
+            <!-- Burbuja Ayuda Velocidad -->
+            <div class="ayuda-bubble ayudaVelocidad is-active">
+              <div class="ayuda-bubble-arrow arrow-up"></div>
+              <div class="ayuda-bubble-title">Velocidad de Audio</div>
+              <div class="ayuda-bubble-text">Acelera o reduce el ritmo de la locución del audio guía.</div>
+            </div>
+          </div>
+
+          <!-- Botón Idioma (ES) -->
+          <div class="lang-controller-container">
+            <button class="button" id="btnLang" type="button">
+              <span style="font-size: 0.85rem; font-weight: 700; font-family: var(--font-sans);">ES</span>
+            </button>
+            
+            <!-- Burbuja Ayuda Idioma -->
+            <div class="ayuda-bubble ayudaIdioma is-active">
+              <div class="ayuda-bubble-arrow arrow-up"></div>
+              <div class="ayuda-bubble-title">Idioma del Manual</div>
+              <div class="ayuda-bubble-text">Modifica el idioma de los textos y audios informativos.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Botón de Realidad Aumentada (AR) -->
+      <div class="AR">
+        <button class="ar-btn-pc" title="Ver en tu espacio (Realidad Aumentada)">
+          <span class="material-symbols-outlined">view_in_ar_new</span>
+        </button>
+        
+        <!-- Burbuja de ayuda 6: Realidad Aumentada -->
+        <div class="ayuda-bubble ayuda6 is-active">
+          <div class="ayuda-bubble-arrow arrow-right"></div>
+          <div class="ayuda-bubble-title">Realidad Aumentada</div>
+          <div class="ayuda-bubble-text">
+            ¡Escanea el espacio y proyecta el mueble 3D interactivo en escala real dentro de tu habitación!
+          </div>
+        </div>
+      </div>
+      
+      <!-- Barra Inferior -->
+      <div class="contenedor">
+        <div class="SesionArriba">
+          <!-- Botón Lupa (Buscador) -->
+          <div class="button" id="btnLupa" style="pointer-events: auto;">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:24px; height:24px;">
+              <circle cx="11" cy="11" r="8"></circle>
+              <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+            </svg>
+          </div>
+
+          <!-- Botón Izquierda (<) -->
+          <button id="left">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:24px; height:24px;">
+              <polyline points="15 18 9 12 15 6"></polyline>
+            </svg>
+          </button>
+
+          <!-- Indicador de Paso (0) -->
+          <div class="slider">
+            <div class="card2">
+              <div class="percent">
+                <div class="number">
+                  <h2 id="numpaso" style="font-size:26px;">0</h2>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Botón Derecha (>) -->
+          <button id="right">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:24px; height:24px;">
+              <polyline points="9 18 15 12 9 6"></polyline>
+            </svg>
+          </button>
+
+          <!-- Botón Play/Pause -->
+          <div id="btnPause" class="button">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:24px; height:24px;">
+              <polygon points="5 3 19 12 5 21 5 3"></polygon>
+            </svg>
+          </div>
+          
+          <!-- Burbuja Ayuda 3: Navegación -->
+          <div class="ayuda-bubble ayuda3 is-active">
+            <div class="ayuda3-arrow arrow-left is-active"></div>
+            <div class="ayuda3-arrow arrow-center is-active"></div>
+            <div class="ayuda3-arrow arrow-right is-active"></div>
+            <div class="ayuda-bubble-title">Navegación de Armado</div>
+            <div class="ayuda-bubble-text">Avanza o retrocede los pasos del manual interactivo.</div>
+          </div>
+
+          <!-- Burbuja Ayuda 4: Buscador -->
+          <div class="ayuda-bubble ayuda4 is-active">
+            <div class="ayuda-bubble-arrow arrow-down"></div>
+            <div class="ayuda-bubble-title">Buscador de Piezas</div>
+            <div class="ayuda-bubble-text">Revisa las piezas y herrajes de este paso.</div>
+          </div>
+
+          <!-- Burbuja Ayuda 5: Play/Pause -->
+          <div class="ayuda-bubble ayuda5 is-active">
+            <div class="ayuda-bubble-arrow arrow-down"></div>
+            <div class="ayuda-bubble-title">Reproducir / Pausar</div>
+            <div class="ayuda-bubble-text">Controla la locución por voz del paso a paso.</div>
+          </div>
+        </div>
+      </div>
+      
+    </div>
+  </div>
+  
+  <!-- Panel de control interactivo lateral (Fijo en la ventana principal del PC) -->
+  <div style="position: fixed; top: 10px; left: 10px; z-index: 100000; background: #0f172a; padding: 12px; border-radius: 12px; border: 1.5px solid var(--primary); display: flex; flex-direction: column; gap: 8px; pointer-events: auto; box-shadow: 0 10px 30px rgba(0,0,0,0.6); width: 235px; max-height: 95vh; overflow-y: auto;">
+    
+    <!-- Selector de modelo de pantalla -->
+    <span style="color: #fff; font-size: 10px; font-weight: bold; text-transform: uppercase; letter-spacing: 0.04em;">Modelo de Pantalla:</span>
+    <select id="screen-mode" onchange="changeScreenMode(this.value)" style="background: #1e293b; color: #fff; border: 1px solid var(--primary); padding: 5px; border-radius: 6px; font-size: 10.5px; cursor: pointer; outline: none; margin-bottom: 4px; font-weight: 600; width: 100%;">
+      <option value="mode-camon">Tecno Camon 40 Pro (392x882)</option>
+      <option value="mode-standard">Móvil Estándar (360x800)</option>
+      <option value="mode-small">Móvil Pequeño (320x568)</option>
+      <option value="mode-tablet">Tablet (768x1024)</option>
+      <option value="mode-fluid">Pantalla Completa (Fluida)</option>
+    </select>
+    
+    <!-- Botones de Acción -->
+    <div style="display: flex; gap: 8px; margin-top: 4px; margin-bottom: 4px;">
+      <button onclick="saveToServer()" style="flex: 1; background: #0ea5e9; color: #fff; border: none; padding: 6px 4px; border-radius: 6px; font-size: 10px; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 4px; transition: all 0.2s;">
+        <span class="material-symbols-outlined" style="font-size: 14px;">save</span> GUARDAR
+      </button>
+      <button onclick="showCSSModal()" style="flex: 1; background: #10b981; color: #fff; border: none; padding: 6px 4px; border-radius: 6px; font-size: 10px; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 4px; transition: all 0.2s;">
+        <span class="material-symbols-outlined" style="font-size: 14px;">code</span> EXPORTAR CSS
+      </button>
+    </div>
+    
+    <!-- Calibración de Márgenes de Pantalla (Distancia de las barras) -->
+    <span style="color: #fff; font-size: 10px; font-weight: bold; border-top: 1px solid #334155; padding-top: 6px; text-transform: uppercase; letter-spacing: 0.04em; margin-top: 2px;">Márgenes de Pantalla (Y):</span>
+    <div style="display: flex; gap: 8px; padding-left: 6px; align-items: center;">
+      <div style="display: flex; flex-direction: column;">
+        <span style="color:#64748b; font-size: 8px; font-weight: bold;">SUPERIOR:</span>
+        <input type="number" id="val-barra-top" value="20" oninput="onInputUpdated()" style="width: 48px; background: #1e293b; color: #fff; border: 1.5px solid var(--primary); border-radius: 4px; font-size: 9.5px; padding: 2px 4px; outline: none;">
+      </div>
+      <div style="display: flex; flex-direction: column;">
+        <span style="color:#64748b; font-size: 8px; font-weight: bold;">INFERIOR:</span>
+        <input type="number" id="val-barra-bottom" value="20" oninput="onInputUpdated()" style="width: 48px; background: #1e293b; color: #fff; border: 1.5px solid var(--primary); border-radius: 4px; font-size: 9.5px; padding: 2px 4px; outline: none;">
+      </div>
+      <span style="color:#64748b; font-size: 9px; margin-top: 12px; font-family: monospace;">(px)</span>
+    </div>
+
+    <!-- Calibración del Botón de Cerrar -->
+    <span style="color: #fff; font-size: 10px; font-weight: bold; border-top: 1px solid #334155; padding-top: 6px; text-transform: uppercase; letter-spacing: 0.04em; margin-top: 2px;">Botón Cerrar (✕):</span>
+    <div style="display: flex; gap: 8px; padding-left: 6px; align-items: center;">
+      <div style="display: flex; flex-direction: column;">
+        <span style="color:#64748b; font-size: 8px; font-weight: bold;">TOP (Y):</span>
+        <input type="number" id="val-cerrar-top" value="27" oninput="onInputUpdated()" style="width: 48px; background: #1e293b; color: #fff; border: 1.5px solid var(--primary); border-radius: 4px; font-size: 9.5px; padding: 2px 4px; outline: none;">
+      </div>
+      <div style="display: flex; flex-direction: column;">
+        <span style="color:#64748b; font-size: 8px; font-weight: bold;">RIGHT (X):</span>
+        <input type="number" id="val-cerrar-right" value="15" oninput="onInputUpdated()" style="width: 48px; background: #1e293b; color: #fff; border: 1.5px solid var(--primary); border-radius: 4px; font-size: 9.5px; padding: 2px 4px; outline: none;">
+      </div>
+      <span style="color:#64748b; font-size: 9px; margin-top: 12px; font-family: monospace;">(px)</span>
+    </div>
+
+    <!-- Calibración del Botón AR -->
+    <span style="color: #fff; font-size: 10px; font-weight: bold; border-top: 1px solid #334155; padding-top: 6px; text-transform: uppercase; letter-spacing: 0.04em; margin-top: 2px;">Botón AR (view_in_ar):</span>
+    <div style="display: flex; gap: 8px; padding-left: 6px; align-items: center;">
+      <div style="display: flex; flex-direction: column;">
+        <span style="color:#64748b; font-size: 8px; font-weight: bold;">BOTTOM (Y):</span>
+        <input type="number" id="val-ar-bottom" value="200" oninput="onInputUpdated()" style="width: 48px; background: #1e293b; color: #fff; border: 1.5px solid var(--primary); border-radius: 4px; font-size: 9.5px; padding: 2px 4px; outline: none;">
+      </div>
+      <div style="display: flex; flex-direction: column;">
+        <span style="color:#64748b; font-size: 8px; font-weight: bold;">RIGHT (X):</span>
+        <input type="number" id="val-ar-right" value="15" oninput="onInputUpdated()" style="width: 48px; background: #1e293b; color: #fff; border: 1.5px solid var(--primary); border-radius: 4px; font-size: 9.5px; padding: 2px 4px; outline: none;">
+      </div>
+      <span style="color:#64748b; font-size: 9px; margin-top: 12px; font-family: monospace;">(px)</span>
+    </div>
+
+    <!-- Checkboxes y Controles de Calibración de Nubes -->
+    <span style="color: #fff; font-size: 10px; font-weight: bold; border-top: 1px solid #334155; padding-top: 6px; text-transform: uppercase; letter-spacing: 0.04em; margin-top: 2px;">Calibrador de Nubes:</span>
+    
+    <!-- ayuda1 -->
+    <div style="background: rgba(255,255,255,0.02); padding: 6px; border-radius: 6px; border: 1px solid #1e293b;">
+      <label style="color:#2dd4bf; font-size:10.5px; cursor:pointer; display:flex; align-items:center; gap:6px; font-weight: 700;">
+        <input type="checkbox" id="chk-ayuda1" checked onchange="toggleBubble('ayuda1', this.checked)"> ayuda1 (Guía / i)
+      </label>
+      <div style="display: flex; gap: 8px; padding-left: 14px; margin-top: 4px;">
+        <div style="display: flex; flex-direction: column;">
+          <span style="color:#64748b; font-size: 8px;">NUBE (X):</span>
+          <input type="number" id="val-nube-ayuda1" value="-82" oninput="onInputUpdated()" style="width: 45px; background: #1e293b; color: #fff; border: 1.2px solid var(--primary); border-radius: 4px; font-size: 9px; padding: 1px 3px; outline: none;">
+        </div>
+        <div style="display: flex; flex-direction: column;">
+          <span style="color:#64748b; font-size: 8px;">FLECHA (X):</span>
+          <input type="number" id="val-flecha-ayuda1" value="107" oninput="onInputUpdated()" style="width: 45px; background: #1e293b; color: #fff; border: 1.2px solid var(--primary); border-radius: 4px; font-size: 9px; padding: 1px 3px; outline: none;">
+        </div>
+        <span style="color:#64748b; font-size: 8px; margin-top: 10px; font-family: monospace;">(L/px)</span>
+      </div>
+    </div>
+
+    <!-- ayudaLuz -->
+    <div style="background: rgba(255,255,255,0.02); padding: 6px; border-radius: 6px; border: 1px solid #1e293b;">
+      <label style="color:#2dd4bf; font-size:10.5px; cursor:pointer; display:flex; align-items:center; gap:6px; font-weight: 700;">
+        <input type="checkbox" id="chk-ayudaLuz" checked onchange="toggleBubble('ayudaLuz', this.checked)"> ayudaLuz (Luz / Sol)
+      </label>
+      <div style="display: flex; gap: 8px; padding-left: 14px; margin-top: 4px;">
+        <div style="display: flex; flex-direction: column;">
+          <span style="color:#64748b; font-size: 8px;">NUBE (X):</span>
+          <input type="number" id="val-nube-ayudaLuz" value="50" oninput="onInputUpdated()" style="width: 45px; background: #1e293b; color: #fff; border: 1.2px solid var(--primary); border-radius: 4px; font-size: 9px; padding: 1px 3px; outline: none;">
+        </div>
+        <div style="display: flex; flex-direction: column;">
+          <span style="color:#64748b; font-size: 8px;">FLECHA (X):</span>
+          <input type="number" id="val-flecha-ayudaLuz" value="50" oninput="onInputUpdated()" style="width: 45px; background: #1e293b; color: #fff; border: 1.2px solid var(--primary); border-radius: 4px; font-size: 9px; padding: 1px 3px; outline: none;">
+        </div>
+        <span style="color:#64748b; font-size: 8px; margin-top: 10px; font-family: monospace;">(L/%)</span>
+      </div>
+    </div>
+
+    <!-- ayudaVelocidad -->
+    <div style="background: rgba(255,255,255,0.02); padding: 6px; border-radius: 6px; border: 1px solid #1e293b;">
+      <label style="color:#2dd4bf; font-size:10.5px; cursor:pointer; display:flex; align-items:center; gap:6px; font-weight: 700;">
+        <input type="checkbox" id="chk-ayudaVel" checked onchange="toggleBubble('ayudaVelocidad', this.checked)"> ayudaVel (Vel / 1x)
+      </label>
+      <div style="display: flex; gap: 8px; padding-left: 14px; margin-top: 4px;">
+        <div style="display: flex; flex-direction: column;">
+          <span style="color:#64748b; font-size: 8px;">NUBE (X):</span>
+          <input type="number" id="val-nube-ayudaVelocidad" value="-81" oninput="onInputUpdated()" style="width: 45px; background: #1e293b; color: #fff; border: 1.2px solid var(--primary); border-radius: 4px; font-size: 9px; padding: 1px 3px; outline: none;">
+        </div>
+        <div style="display: flex; flex-direction: column;">
+          <span style="color:#64748b; font-size: 8px;">FLECHA (X):</span>
+          <input type="number" id="val-flecha-ayudaVelocidad" value="94" oninput="onInputUpdated()" style="width: 45px; background: #1e293b; color: #fff; border: 1.2px solid var(--primary); border-radius: 4px; font-size: 9px; padding: 1px 3px; outline: none;">
+        </div>
+        <span style="color:#64748b; font-size: 8px; margin-top: 10px; font-family: monospace;">(R/px)</span>
+      </div>
+    </div>
+
+    <!-- ayudaIdioma -->
+    <div style="background: rgba(255,255,255,0.02); padding: 6px; border-radius: 6px; border: 1px solid #1e293b;">
+      <label style="color:#2dd4bf; font-size:10.5px; cursor:pointer; display:flex; align-items:center; gap:6px; font-weight: 700;">
+        <input type="checkbox" id="chk-ayudaIdi" checked onchange="toggleBubble('ayudaIdioma', this.checked)"> ayudaIdioma (ES)
+      </label>
+      <div style="display: flex; gap: 8px; padding-left: 14px; margin-top: 4px;">
+        <div style="display: flex; flex-direction: column;">
+          <span style="color:#64748b; font-size: 8px;">NUBE (X):</span>
+          <input type="number" id="val-nube-ayudaIdioma" value="-14" oninput="onInputUpdated()" style="width: 45px; background: #1e293b; color: #fff; border: 1.2px solid var(--primary); border-radius: 4px; font-size: 9px; padding: 1px 3px; outline: none;">
+        </div>
+        <div style="display: flex; flex-direction: column;">
+          <span style="color:#64748b; font-size: 8px;">FLECHA (X):</span>
+          <input type="number" id="val-flecha-ayudaIdioma" value="26" oninput="onInputUpdated()" style="width: 45px; background: #1e293b; color: #fff; border: 1.2px solid var(--primary); border-radius: 4px; font-size: 9px; padding: 1px 3px; outline: none;">
+        </div>
+        <span style="color:#64748b; font-size: 8px; margin-top: 10px; font-family: monospace;">(R/px)</span>
+      </div>
+    </div>
+
+    <!-- ayuda3 -->
+    <div style="background: rgba(255,255,255,0.02); padding: 6px; border-radius: 6px; border: 1px solid #1e293b;">
+      <label style="color:#38bdf8; font-size:10.5px; cursor:pointer; display:flex; align-items:center; gap:6px; font-weight: 700;">
+        <input type="checkbox" id="chk-ayuda3" checked onchange="toggleBubble('ayuda3', this.checked)"> ayuda3 (Pasos)
+      </label>
+      <div style="display: flex; gap: 8px; padding-left: 14px; margin-top: 4px;">
+        <div style="display: flex; flex-direction: column;">
+          <span style="color:#64748b; font-size: 8px;">NUBE (X):</span>
+          <input type="number" id="val-nube-ayuda3" value="50" oninput="onInputUpdated()" style="width: 45px; background: #1e293b; color: #fff; border: 1.2px solid var(--primary); border-radius: 4px; font-size: 9px; padding: 1px 3px; outline: none;">
+        </div>
+        <div style="display: flex; flex-direction: column;">
+          <span style="color:#64748b; font-size: 8px;">FLECHA (X):</span>
+          <input type="number" id="val-flecha-ayuda3" value="50" oninput="onInputUpdated()" style="width: 45px; background: #1e293b; color: #fff; border: 1.2px solid var(--primary); border-radius: 4px; font-size: 9px; padding: 1px 3px; outline: none;">
+        </div>
+        <span style="color:#64748b; font-size: 8px; margin-top: 10px; font-family: monospace;">(L/%)</span>
+      </div>
+    </div>
+
+    <!-- ayuda4 -->
+    <div style="background: rgba(255,255,255,0.02); padding: 6px; border-radius: 6px; border: 1px solid #1e293b;">
+      <label style="color:#38bdf8; font-size:10.5px; cursor:pointer; display:flex; align-items:center; gap:6px; font-weight: 700;">
+        <input type="checkbox" id="chk-ayuda4" checked onchange="toggleBubble('ayuda4', this.checked)"> ayuda4 (Lupa)
+      </label>
+      <div style="display: flex; gap: 8px; padding-left: 14px; margin-top: 4px;">
+        <div style="display: flex; flex-direction: column;">
+          <span style="color:#64748b; font-size: 8px;">NUBE (X):</span>
+          <input type="number" id="val-nube-ayuda4" value="4" oninput="onInputUpdated()" style="width: 45px; background: #1e293b; color: #fff; border: 1.2px solid var(--primary); border-radius: 4px; font-size: 9px; padding: 1px 3px; outline: none;">
+        </div>
+        <div style="display: flex; flex-direction: column;">
+          <span style="color:#64748b; font-size: 8px;">FLECHA (X):</span>
+          <input type="number" id="val-flecha-ayuda4" value="39" oninput="onInputUpdated()" style="width: 45px; background: #1e293b; color: #fff; border: 1.2px solid var(--primary); border-radius: 4px; font-size: 9px; padding: 1px 3px; outline: none;">
+        </div>
+        <span style="color:#64748b; font-size: 8px; margin-top: 10px; font-family: monospace;">(L/px)</span>
+      </div>
+    </div>
+
+    <!-- ayuda5 -->
+    <div style="background: rgba(255,255,255,0.02); padding: 6px; border-radius: 6px; border: 1px solid #1e293b;">
+      <label style="color:#38bdf8; font-size:10.5px; cursor:pointer; display:flex; align-items:center; gap:6px; font-weight: 700;">
+        <input type="checkbox" id="chk-ayuda5" checked onchange="toggleBubble('ayuda5', this.checked)"> ayuda5 (Play)
+      </label>
+      <div style="display: flex; gap: 8px; padding-left: 14px; margin-top: 4px;">
+        <div style="display: flex; flex-direction: column;">
+          <span style="color:#64748b; font-size: 8px;">NUBE (X):</span>
+          <input type="number" id="val-nube-ayuda5" value="4" oninput="onInputUpdated()" style="width: 45px; background: #1e293b; color: #fff; border: 1.2px solid var(--primary); border-radius: 4px; font-size: 9px; padding: 1px 3px; outline: none;">
+        </div>
+        <div style="display: flex; flex-direction: column;">
+          <span style="color:#64748b; font-size: 8px;">FLECHA (X):</span>
+          <input type="number" id="val-flecha-ayuda5" value="28" oninput="onInputUpdated()" style="width: 45px; background: #1e293b; color: #fff; border: 1.2px solid var(--primary); border-radius: 4px; font-size: 9px; padding: 1px 3px; outline: none;">
+        </div>
+        <span style="color:#64748b; font-size: 8px; margin-top: 10px; font-family: monospace;">(R/px)</span>
+      </div>
+    </div>
+
+    <!-- ayuda6 -->
+    <div style="background: rgba(255,255,255,0.02); padding: 6px; border-radius: 6px; border: 1px solid #1e293b; margin-bottom: 4px;">
+      <label style="color:#38bdf8; font-size:10.5px; cursor:pointer; display:flex; align-items:center; gap:6px; font-weight: 700;">
+        <input type="checkbox" id="chk-ayuda6" checked onchange="toggleBubble('ayuda6', this.checked)"> ayuda6 (AR)
+      </label>
+      <div style="display: flex; gap: 8px; padding-left: 14px; margin-top: 4px;">
+        <div style="display: flex; flex-direction: column;">
+          <span style="color:#64748b; font-size: 8px;">NUBE (X):</span>
+          <input type="number" id="val-nube-ayuda6" value="68" oninput="onInputUpdated()" style="width: 45px; background: #1e293b; color: #fff; border: 1.2px solid var(--primary); border-radius: 4px; font-size: 9px; padding: 1px 3px; outline: none;">
+        </div>
+        <div style="display: flex; flex-direction: column;">
+          <span style="color:#64748b; font-size: 8px;">FLECHA (X):</span>
+          <input type="number" id="val-flecha-ayuda6" value="-6" oninput="onInputUpdated()" style="width: 45px; background: #1e293b; color: #fff; border: 1.2px solid var(--primary); border-radius: 4px; font-size: 9px; padding: 1px 3px; outline: none;">
+        </div>
+        <span style="color:#64748b; font-size: 8px; margin-top: 10px; font-family: monospace;">(R/px)</span>
+      </div>
+    </div>
+
+    <!-- Guía rápida de archivos para calibrar -->
+    <span style="color: #64748b; font-size: 9px; font-weight: bold; border-top: 1px solid #334155; padding-top: 6px; text-transform: uppercase; margin-top: 2px;">Info:</span>
+    <span style="color: #94a3b8; font-size: 9px; font-family: monospace; line-height: 1.2;">* L: Left (Izquierda)<br>* R: Right (Derecha)  <script>
+    // Configuración inicial de las posiciones por perfil
+    const defaultProfiles = {
+      'mode-camon': {
+        margins: { top: 20, bottom: 20 },
+        cerrar: { top: 27, right: 15 },
+        ar: { bottom: 200, right: 15 },
+        bubbles: {
+          ayuda1: { bubbleVal: -82, arrowVal: 107 },
+          ayudaLuz: { bubbleVal: 50, arrowVal: 50 },
+          ayudaVelocidad: { bubbleVal: -81, arrowVal: 94 },
+          ayudaIdioma: { bubbleVal: -14, arrowVal: 26 },
+          ayuda3: { bubbleVal: 50, arrowVal: 50 },
+          ayuda4: { bubbleVal: 4, arrowVal: 39 },
+          ayuda5: { bubbleVal: 4, arrowVal: 28 },
+          ayuda6: { bubbleVal: 68, arrowVal: -6 }
+        }
+      },
+      'mode-standard': {
+        margins: { top: 50, bottom: 20 },
+        cerrar: { top: 50, right: 15 },
+        ar: { bottom: 190, right: 15 },
+        bubbles: {
+          ayuda1: { bubbleVal: 4, arrowVal: 80 },
+          ayudaLuz: { bubbleVal: 50, arrowVal: 50 },
+          ayudaVelocidad: { bubbleVal: 4, arrowVal: 80 },
+          ayudaIdioma: { bubbleVal: 4, arrowVal: 18 },
+          ayuda3: { bubbleVal: 50, arrowVal: 50 },
+          ayuda4: { bubbleVal: 4, arrowVal: 18 },
+          ayuda5: { bubbleVal: 4, arrowVal: 18 },
+          ayuda6: { bubbleVal: 68, arrowVal: -6 }
+        }
+      },
+      'mode-small': {
+        margins: { top: 40, bottom: 10 },
+        cerrar: { top: 40, right: 10 },
+        ar: { bottom: 130, right: 5 },
+        bubbles: {
+          ayuda1: { bubbleVal: 4, arrowVal: 80 },
+          ayudaLuz: { bubbleVal: 50, arrowVal: 50 },
+          ayudaVelocidad: { bubbleVal: 4, arrowVal: 80 },
+          ayudaIdioma: { bubbleVal: 4, arrowVal: 18 },
+          ayuda3: { bubbleVal: 50, arrowVal: 50 },
+          ayuda4: { bubbleVal: 4, arrowVal: 18 },
+          ayuda5: { bubbleVal: 4, arrowVal: 18 },
+          ayuda6: { bubbleVal: 68, arrowVal: -6 }
+        }
+      },
+      'mode-tablet': {
+        margins: { top: 30, bottom: 120 },
+        cerrar: { top: 30, right: 20 },
+        ar: { bottom: 120, right: 20 },
+        bubbles: {
+          ayuda1: { bubbleVal: 50, arrowVal: 50 },
+          ayudaLuz: { bubbleVal: 50, arrowVal: 50 },
+          ayudaVelocidad: { bubbleVal: 50, arrowVal: 50 },
+          ayudaIdioma: { bubbleVal: 50, arrowVal: 50 },
+          ayuda3: { bubbleVal: 50, arrowVal: 50 },
+          ayuda4: { bubbleVal: 50, arrowVal: 50 },
+          ayuda5: { bubbleVal: 50, arrowVal: 50 },
+          ayuda6: { bubbleVal: 68, arrowVal: -6 }
+        }
+      },
+      'mode-fluid': {
+        margins: { top: 15, bottom: 120 },
+        cerrar: { top: 15, right: 15 },
+        ar: { bottom: 120, right: 15 },
+        bubbles: {
+          ayuda1: { bubbleVal: 50, arrowVal: 50 },
+          ayudaLuz: { bubbleVal: 50, arrowVal: 50 },
+          ayudaVelocidad: { bubbleVal: 50, arrowVal: 50 },
+          ayudaIdioma: { bubbleVal: 50, arrowVal: 50 },
+          ayuda3: { bubbleVal: 50, arrowVal: 50 },
+          ayuda4: { bubbleVal: 50, arrowVal: 50 },
+          ayuda5: { bubbleVal: 50, arrowVal: 50 },
+          ayuda6: { bubbleVal: 68, arrowVal: -6 }
+        }
+      }
+    };
+
+    let currentProfile = 'mode-camon';
+    let profilesData = JSON.parse(JSON.stringify(defaultProfiles));
+
+    const bubbleSides = {
+      ayuda1: 'left',
+      ayudaLuz: 'left_percent',
+      ayudaVelocidad: 'right',
+      ayudaIdioma: 'right',
+      ayuda3: 'left_percent',
+      ayuda4: 'left',
+      ayuda5: 'right',
+      ayuda6: 'right'
+    };
+
+    // Cargar perfil seleccionado en los inputs del panel
+    function loadProfileToInputs(profileKey) {
+      const data = profilesData[profileKey];
+      if (!data) return;
+      
+      document.getElementById('val-barra-top').value = data.margins.top;
+      document.getElementById('val-barra-bottom').value = data.margins.bottom;
+      
+      document.getElementById('val-cerrar-top').value = data.cerrar.top;
+      document.getElementById('val-cerrar-right').value = data.cerrar.right;
+      
+      document.getElementById('val-ar-bottom').value = data.ar.bottom;
+      document.getElementById('val-ar-right').value = data.ar.right;
+      
+      Object.keys(data.bubbles).forEach(bubbleId => {
+        const bubbleInput = document.getElementById('val-nube-' + bubbleId);
+        const arrowInput = document.getElementById('val-flecha-' + bubbleId);
+        if (bubbleInput) bubbleInput.value = data.bubbles[bubbleId].bubbleVal;
+        if (arrowInput) arrowInput.value = data.bubbles[bubbleId].arrowVal;
+      });
+    }
+
+    // Actualizar el perfil activo en memoria con los valores de los inputs
+    function updateActiveProfileFromInputs() {
+      const data = profilesData[currentProfile];
+      if (!data) return;
+      
+      data.margins.top = parseFloat(document.getElementById('val-barra-top').value) || 0;
+      data.margins.bottom = parseFloat(document.getElementById('val-barra-bottom').value) || 0;
+      
+      data.cerrar.top = parseFloat(document.getElementById('val-cerrar-top').value) || 0;
+      data.cerrar.right = parseFloat(document.getElementById('val-cerrar-right').value) || 0;
+      
+      data.ar.bottom = parseFloat(document.getElementById('val-ar-bottom').value) || 0;
+      data.ar.right = parseFloat(document.getElementById('val-ar-right').value) || 0;
+      
+      Object.keys(data.bubbles).forEach(bubbleId => {
+        const bubbleInput = document.getElementById('val-nube-' + bubbleId);
+        const arrowInput = document.getElementById('val-flecha-' + bubbleId);
+        if (bubbleInput) data.bubbles[bubbleId].bubbleVal = parseFloat(bubbleInput.value) || 0;
+        if (arrowInput) data.bubbles[bubbleId].arrowVal = parseFloat(arrowInput.value) || 0;
+      });
+      
+      // Auto-guardar copia en localStorage
+      localStorage.setItem('calibration_data', JSON.stringify(profilesData));
+    }
+
+    // Aplicar estilos en tiempo real en base a los valores del perfil actual
+    function applyAllStyles() {
+      const data = profilesData[currentProfile];
+      if (!data) return;
+      
+      // 1. Márgenes de las barras
+      const topBarEl = document.querySelector('.contenedor1');
+      const bottomBarEl = document.querySelector('.contenedor');
+      if (topBarEl) topBarEl.style.setProperty('top', data.margins.top + 'px', 'important');
+      if (bottomBarEl) bottomBarEl.style.setProperty('bottom', data.margins.bottom + 'px', 'important');
+      
+      // 2. Botón Cerrar
+      const cerrarEl = document.querySelector('.cerrar');
+      if (cerrarEl) {
+        cerrarEl.style.setProperty('top', data.cerrar.top + 'px', 'important');
+        cerrarEl.style.setProperty('right', data.cerrar.right + 'px', 'important');
+      }
+      
+      // 3. Botón AR
+      const arEl = document.querySelector('.AR');
+      if (arEl) {
+        arEl.style.setProperty('bottom', data.ar.bottom + 'px', 'important');
+        arEl.style.setProperty('right', data.ar.right + 'px', 'important');
+      }
+      
+      // 4. Burbujas y sus flechas
+      Object.keys(data.bubbles).forEach(bubbleId => {
+        const bubbleEl = document.querySelector('.ayuda-bubble.' + bubbleId);
+        if (!bubbleEl) return;
+        
+        const arrowEl = bubbleEl.querySelector('.ayuda-bubble-arrow') || bubbleEl.querySelector('.ayuda3-arrow.arrow-center');
+        if (!arrowEl) return;
+        
+        const side = bubbleSides[bubbleId];
+        const bVal = data.bubbles[bubbleId].bubbleVal;
+        const aVal = data.bubbles[bubbleId].arrowVal;
+        const unit = side.includes('percent') ? '%' : 'px';
+        
+        if (side === 'left' || side === 'left_percent') {
+          bubbleEl.style.setProperty('left', bVal + unit, 'important');
+          bubbleEl.style.setProperty('right', 'auto', 'important');
+          arrowEl.style.setProperty('left', aVal + unit, 'important');
+          arrowEl.style.setProperty('right', 'auto', 'important');
+          
+          if (side === 'left_percent') {
+            bubbleEl.style.setProperty('transform', 'translateX(-50%) scale(1)', 'important');
+            arrowEl.style.setProperty('transform', 'translateX(-50%) rotate(45deg)', 'important');
+          } else {
+            bubbleEl.style.setProperty('transform', 'scale(1)', 'important');
+          }
+        } else if (side === 'right') {
+          bubbleEl.style.setProperty('right', bVal + unit, 'important');
+          bubbleEl.style.setProperty('left', 'auto', 'important');
+          arrowEl.style.setProperty('right', aVal + unit, 'important');
+          arrowEl.style.setProperty('left', 'auto', 'important');
+          bubbleEl.style.setProperty('transform', 'scale(1)', 'important');
+        }
+      });
+    }
+
+    // Manejador del evento input
+    function onInputUpdated() {
+      updateActiveProfileFromInputs();
+      applyAllStyles();
+    }
+
+    // Cambiar de modo de pantalla
+    function changeScreenMode(mode) {
+      const frame = document.getElementById('phone-frame');
+      if (frame) {
+        frame.className = 'simulator-frame ' + mode;
+      }
+      currentProfile = mode;
+      loadProfileToInputs(mode);
+      applyAllStyles();
+    }
+
+    // Mostrar/ocultar visibilidad de burbujas
+    function toggleBubble(className, show) {
+      const el = document.querySelector('.ayuda-bubble.' + className);
+      if (el) {
+        if (show) {
+          el.classList.add('is-active');
+        } else {
+          el.classList.remove('is-active');
+        }
+      }
+    }
+
+    // Cargar calibración persistida al iniciar
+    async function loadCalibration() {
+      try {
+        const response = await fetch('/api/load-calibration');
+        if (response.ok) {
+          const savedData = await response.json();
+          // Mezclar con los perfiles por defecto
+          Object.keys(savedData).forEach(profileKey => {
+            if (profilesData[profileKey]) {
+              if (savedData[profileKey].margins) {
+                profilesData[profileKey].margins = { ...profilesData[profileKey].margins, ...savedData[profileKey].margins };
+              }
+              if (savedData[profileKey].cerrar) {
+                profilesData[profileKey].cerrar = { ...profilesData[profileKey].cerrar, ...savedData[profileKey].cerrar };
+              }
+              if (savedData[profileKey].ar) {
+                profilesData[profileKey].ar = { ...profilesData[profileKey].ar, ...savedData[profileKey].ar };
+              }
+              if (savedData[profileKey].bubbles) {
+                Object.keys(savedData[profileKey].bubbles).forEach(bubbleKey => {
+                  if (profilesData[profileKey].bubbles[bubbleKey]) {
+                    profilesData[profileKey].bubbles[bubbleKey] = {
+                      ...profilesData[profileKey].bubbles[bubbleKey],
+                      ...savedData[profileKey].bubbles[bubbleKey]
+                    };
+                  }
+                });
+              }
+            }
+          });
+          showToast('Calibración cargada del servidor');
+        } else {
+          const localData = localStorage.getItem('calibration_data');
+          if (localData) {
+            profilesData = JSON.parse(localData);
+            showToast('Calibración cargada de caché local');
+          }
+        }
+      } catch (e) {
+        console.error('Error al cargar calibración:', e);
+      }
+      
+      loadProfileToInputs(currentProfile);
+      applyAllStyles();
+    }
+
+    // Guardar en el archivo del servidor
+    async function saveToServer() {
+      try {
+        const response = await fetch('/api/save-calibration', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(profilesData)
+        });
+        if (response.ok) {
+          showToast('¡Calibración guardada en local con éxito!');
+        } else {
+          showToast('Error al guardar en el servidor', '#ef4444');
+        }
+      } catch (e) {
+        console.error(e);
+        showToast('Error al conectar con el servidor', '#ef4444');
+      }
+    }
+
+    // Compilar CSS final
+    function generateCSS() {
+      const camon = profilesData['mode-camon'];
+      const small = profilesData['mode-small'];
+      const tablet = profilesData['mode-tablet'];
+      
+      // PanelAyudas.css
+      let ayudasCSS = `/* ==========================================================================
+   Ajustes Responsivos para Nubes de Ayuda (Generados por Calibrador)
+   ========================================================================== */
+
+/* --- Móviles (ej: Tecno Camon 40 Pro / Móvil Estándar) --- */
+@media (max-width: 787px) {
+  /* Burbujas Superiores */
+  .ayuda-bubble.ayuda1 { left: ${camon.bubbles.ayuda1.bubbleVal}px !important; right: auto !important; }
+  .ayuda-bubble.ayuda1 .ayuda-bubble-arrow.arrow-up { left: ${camon.bubbles.ayuda1.arrowVal}px !important; right: auto !important; }
+
+  .ayuda-bubble.ayudaLuz { left: ${camon.bubbles.ayudaLuz.bubbleVal}% !important; right: auto !important; transform: translateX(-50%) scale(1) !important; }
+  .ayuda-bubble.ayudaLuz .ayuda-bubble-arrow.arrow-up { left: ${camon.bubbles.ayudaLuz.arrowVal}% !important; right: auto !important; transform: translateX(-50%) rotate(45deg) !important; }
+
+  .ayuda-bubble.ayudaVelocidad { right: ${camon.bubbles.ayudaVelocidad.bubbleVal}px !important; left: auto !important; }
+  .ayuda-bubble.ayudaVelocidad .ayuda-bubble-arrow.arrow-up { right: ${camon.bubbles.ayudaVelocidad.arrowVal}px !important; left: auto !important; }
+
+  .ayuda-bubble.ayudaIdioma { right: ${camon.bubbles.ayudaIdioma.bubbleVal}px !important; left: auto !important; }
+  .ayuda-bubble.ayudaIdioma .ayuda-bubble-arrow.arrow-up { right: ${camon.bubbles.ayudaIdioma.arrowVal}px !important; left: auto !important; }
+
+  /* Burbujas Inferiores */
+  .ayuda-bubble.ayuda3 { bottom: 80px !important; left: ${camon.bubbles.ayuda3.bubbleVal}% !important; right: auto !important; transform: translateX(-50%) scale(1) !important; }
+  .ayuda-bubble.ayuda3 .ayuda3-arrow.arrow-center { left: ${camon.bubbles.ayuda3.arrowVal}% !important; right: auto !important; transform: translateX(-50%) rotate(225deg) !important; }
+
+  .ayuda-bubble.ayuda4 { bottom: 80px !important; left: ${camon.bubbles.ayuda4.bubbleVal}px !important; right: auto !important; }
+  .ayuda-bubble.ayuda4 .ayuda-bubble-arrow.arrow-down { left: ${camon.bubbles.ayuda4.arrowVal}px !important; right: auto !important; }
+
+  .ayuda-bubble.ayuda5 { bottom: 80px !important; right: ${camon.bubbles.ayuda5.bubbleVal}px !important; left: auto !important; }
+  .ayuda-bubble.ayuda5 .ayuda-bubble-arrow.arrow-down { right: ${camon.bubbles.ayuda5.arrowVal}px !important; left: auto !important; }
+
+  .ayuda-bubble.ayuda6 { right: ${camon.bubbles.ayuda6.bubbleVal}px !important; left: auto !important; }
+  .ayuda-bubble.ayuda6 .ayuda-bubble-arrow.arrow-right { right: ${camon.bubbles.ayuda6.arrowVal}px !important; left: auto !important; }
+}
+
+/* --- Móviles Pequeños (320px) --- */
+@media (max-width: 320px) {
+  /* Burbujas Superiores */
+  .ayuda-bubble.ayuda1 { left: ${small.bubbles.ayuda1.bubbleVal}px !important; right: auto !important; }
+  .ayuda-bubble.ayuda1 .ayuda-bubble-arrow.arrow-up { left: ${small.bubbles.ayuda1.arrowVal}px !important; right: auto !important; }
+
+  .ayuda-bubble.ayudaLuz { left: ${small.bubbles.ayudaLuz.bubbleVal}% !important; right: auto !important; transform: translateX(-50%) scale(1) !important; }
+  .ayuda-bubble.ayudaLuz .ayuda-bubble-arrow.arrow-up { left: ${small.bubbles.ayudaLuz.arrowVal}% !important; right: auto !important; transform: translateX(-50%) rotate(45deg) !important; }
+
+  .ayuda-bubble.ayudaVelocidad { right: ${small.bubbles.ayudaVelocidad.bubbleVal}px !important; left: auto !important; }
+  .ayuda-bubble.ayudaVelocidad .ayuda-bubble-arrow.arrow-up { right: ${small.bubbles.ayudaVelocidad.arrowVal}px !important; left: auto !important; }
+
+  .ayuda-bubble.ayudaIdioma { right: ${small.bubbles.ayudaIdioma.bubbleVal}px !important; left: auto !important; }
+  .ayuda-bubble.ayudaIdioma .ayuda-bubble-arrow.arrow-up { right: ${small.bubbles.ayudaIdioma.arrowVal}px !important; left: auto !important; }
+
+  /* Burbujas Inferiores */
+  .ayuda-bubble.ayuda3 { bottom: 80px !important; left: ${small.bubbles.ayuda3.bubbleVal}% !important; right: auto !important; transform: translateX(-50%) scale(1) !important; }
+  .ayuda-bubble.ayuda3 .ayuda3-arrow.arrow-center { left: ${small.bubbles.ayuda3.arrowVal}% !important; right: auto !important; transform: translateX(-50%) rotate(225deg) !important; }
+
+  .ayuda-bubble.ayuda4 { bottom: 80px !important; left: ${small.bubbles.ayuda4.bubbleVal}px !important; right: auto !important; }
+  .ayuda-bubble.ayuda4 .ayuda-bubble-arrow.arrow-down { left: ${small.bubbles.ayuda4.arrowVal}px !important; right: auto !important; }
+
+  .ayuda-bubble.ayuda5 { bottom: 80px !important; right: ${small.bubbles.ayuda5.bubbleVal}px !important; left: auto !important; }
+  .ayuda-bubble.ayuda5 .ayuda-bubble-arrow.arrow-down { right: ${small.bubbles.ayuda5.arrowVal}px !important; left: auto !important; }
+
+  .ayuda-bubble.ayuda6 { right: ${small.bubbles.ayuda6.bubbleVal}px !important; left: auto !important; }
+  .ayuda-bubble.ayuda6 .ayuda-bubble-arrow.arrow-right { right: ${small.bubbles.ayuda6.arrowVal}px !important; left: auto !important; }
+}
+
+/* --- Tablets (788px a 1024px) --- */
+@media (min-width: 788px) and (max-width: 1024px) {
+  /* Burbujas Superiores */
+  .ayuda-bubble.ayuda1 { left: ${tablet.bubbles.ayuda1.bubbleVal}px !important; right: auto !important; }
+  .ayuda-bubble.ayuda1 .ayuda-bubble-arrow.arrow-up { left: ${tablet.bubbles.ayuda1.arrowVal}px !important; right: auto !important; }
+
+  .ayuda-bubble.ayudaLuz { left: ${tablet.bubbles.ayudaLuz.bubbleVal}% !important; right: auto !important; transform: translateX(-50%) scale(1) !important; }
+  .ayuda-bubble.ayudaLuz .ayuda-bubble-arrow.arrow-up { left: ${tablet.bubbles.ayudaLuz.arrowVal}% !important; right: auto !important; transform: translateX(-50%) rotate(45deg) !important; }
+
+  .ayuda-bubble.ayudaVelocidad { right: ${tablet.bubbles.ayudaVelocidad.bubbleVal}px !important; left: auto !important; }
+  .ayuda-bubble.ayudaVelocidad .ayuda-bubble-arrow.arrow-up { right: ${tablet.bubbles.ayudaVelocidad.arrowVal}px !important; left: auto !important; }
+
+  .ayuda-bubble.ayudaIdioma { right: ${tablet.bubbles.ayudaIdioma.bubbleVal}px !important; left: auto !important; }
+  .ayuda-bubble.ayudaIdioma .ayuda-bubble-arrow.arrow-up { right: ${tablet.bubbles.ayudaIdioma.arrowVal}px !important; left: auto !important; }
+
+  /* Burbujas Inferiores */
+  .ayuda-bubble.ayuda3 { bottom: 80px !important; left: ${tablet.bubbles.ayuda3.bubbleVal}% !important; right: auto !important; transform: translateX(-50%) scale(1) !important; }
+  .ayuda-bubble.ayuda3 .ayuda3-arrow.arrow-center { left: ${tablet.bubbles.ayuda3.arrowVal}% !important; right: auto !important; transform: translateX(-50%) rotate(225deg) !important; }
+
+  .ayuda-bubble.ayuda4 { bottom: 80px !important; left: ${tablet.bubbles.ayuda4.bubbleVal}px !important; right: auto !important; }
+  .ayuda-bubble.ayuda4 .ayuda-bubble-arrow.arrow-down { left: ${tablet.bubbles.ayuda4.arrowVal}px !important; right: auto !important; }
+
+  .ayuda-bubble.ayuda5 { bottom: 80px !important; right: ${tablet.bubbles.ayuda5.bubbleVal}px !important; left: auto !important; }
+  .ayuda-bubble.ayuda5 .ayuda-bubble-arrow.arrow-down { right: ${tablet.bubbles.ayuda5.arrowVal}px !important; left: auto !important; }
+
+  .ayuda-bubble.ayuda6 { right: ${tablet.bubbles.ayuda6.bubbleVal}px !important; left: auto !important; }
+  .ayuda-bubble.ayuda6 .ayuda-bubble-arrow.arrow-right { right: ${tablet.bubbles.ayuda6.arrowVal}px !important; left: auto !important; }
+}`;
+
+      // BotonCerrar.css
+      let cerrarCSS = `/* ==========================================================================
+   Ajustes Responsivos para Botón Cerrar (Generados por Calibrador)
+   ========================================================================== */
+
+@media (max-width: 787px) {
+  .cerrar {
+    top: ${camon.cerrar.top}px !important;
+    right: ${camon.cerrar.right}px !important;
+  }
+}
+
+@media (max-width: 320px) {
+  .cerrar {
+    top: ${small.cerrar.top}px !important;
+    right: ${small.cerrar.right}px !important;
+  }
+}
+
+@media (min-width: 788px) and (max-width: 1024px) {
+  .cerrar {
+    top: ${tablet.cerrar.top}px !important;
+    right: ${tablet.cerrar.right}px !important;
+  }
+}`;
+
+      // RealidadAumentada.css
+      let arCSS = `/* ==========================================================================
+   Ajustes Responsivos para Botón AR (Generados por Calibrador)
+   ========================================================================== */
+
+@media (max-width: 787px) {
+  .AR {
+    bottom: ${camon.ar.bottom}px !important;
+    right: ${camon.ar.right}px !important;
+  }
+}
+
+@media (max-width: 320px) {
+  .AR {
+    bottom: ${small.ar.bottom}px !important;
+    right: ${small.ar.right}px !important;
+  }
+}
+
+@media (min-width: 788px) and (max-width: 1024px) {
+  .AR {
+    bottom: ${tablet.ar.bottom}px !important;
+    right: ${tablet.ar.right}px !important;
+  }
+}`;
+
+      // NavBars
+      let navbarsCSS = `/* ==========================================================================
+   Ajustes Responsivos para Barra Superior e Inferior (Generados por Calibrador)
+   ========================================================================== */
+
+@media (max-width: 787px) {
+  .contenedor1 { top: ${camon.margins.top}px !important; }
+  .contenedor { bottom: ${camon.margins.bottom}px !important; }
+}
+
+@media (max-width: 320px) {
+  .contenedor1 { top: ${small.margins.top}px !important; }
+  .contenedor { bottom: ${small.margins.bottom}px !important; }
+}
+
+@media (min-width: 788px) and (max-width: 1024px) {
+  .contenedor1 { top: ${tablet.margins.top}px !important; }
+  .contenedor { bottom: ${tablet.margins.bottom}px !important; }
+}`;
+
+      document.getElementById('css-ayudas').value = ayudasCSS;
+      document.getElementById('css-cerrar').value = cerrarCSS;
+      document.getElementById('css-ar').value = arCSS;
+      document.getElementById('css-navbars').value = navbarsCSS;
+    }
+
+    // Modal CSS
+    function showCSSModal() {
+      generateCSS();
+      document.getElementById('css-modal').style.display = 'flex';
+    }
+    
+    function hideCSSModal() {
+      document.getElementById('css-modal').style.display = 'none';
+    }
+
+    // Copiar
+    function copyToClipboard(id) {
+      const textarea = document.getElementById(id);
+      if (textarea) {
+        textarea.select();
+        document.execCommand('copy');
+        showToast('¡Copiado al portapapeles!');
+      }
+    }
+
+    // Toast
+    function showToast(text, color = '#10b981') {
+      const toast = document.getElementById('toast');
+      if (toast) {
+        toast.innerText = text;
+        toast.style.background = color;
+        toast.style.opacity = '1';
+        setTimeout(() => {
+          toast.style.opacity = '0';
+        }, 2500);
+      }
+    }
+
+    // Inicializar
+    window.addEventListener('DOMContentLoaded', () => {
+      loadCalibration();
+    });
+  </script>
+
+  <!-- Toast Notification -->
+  <div id="toast" style="position: fixed; bottom: 20px; right: 20px; background: #10b981; color: #fff; padding: 10px 20px; border-radius: 8px; z-index: 200000; font-size: 12px; font-weight: bold; opacity: 0; pointer-events: none; transition: opacity 0.3s ease; box-shadow: 0 4px 12px rgba(0,0,0,0.3);">
+    Configuración guardada
+  </div>
+
+  <!-- Modal de Exportación CSS -->
+  <div id="css-modal" style="position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.8); backdrop-filter: blur(8px); display: none; justify-content: center; align-items: center; z-index: 300000; pointer-events: auto;">
+    <div style="background: #0f172a; border: 2px solid var(--primary); border-radius: 16px; width: 85%; max-width: 800px; max-height: 85vh; padding: 20px; display: flex; flex-direction: column; gap: 12px; box-shadow: 0 20px 50px rgba(0,0,0,0.8);">
+      <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1.5px solid #1e293b; padding-bottom: 10px;">
+        <span style="color: #fff; font-size: 16px; font-weight: bold; display: flex; align-items: center; gap: 6px;">
+          <span class="material-symbols-outlined" style="color: var(--primary);">code</span> CSS Generado Definitivo
+        </span>
+        <button onclick="hideCSSModal()" style="background: transparent; border: none; color: #64748b; cursor: pointer; display: flex; align-items: center; transition: color 0.2s;">
+          <span class="material-symbols-outlined" style="font-size: 24px;">close</span>
+        </button>
+      </div>
+      
+      <p style="color: #94a3b8; font-size: 11px; margin: 0;">
+        Copia y pega cada bloque de CSS en el archivo correspondiente del proyecto. Los valores corresponden a tus ajustes en el calibrador.
+      </p>
+      
+      <div style="flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; margin-top: 4px;">
+        <!-- Code snippet for PanelAyudas.css -->
+        <div>
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+            <span style="color: #38bdf8; font-size: 11px; font-weight: bold; font-family: monospace;">PanelAyudas.css (ayudas y nubes)</span>
+            <button onclick="copyToClipboard('css-ayudas')" style="background: #1e293b; color: #fff; border: 1px solid #334155; padding: 3px 8px; border-radius: 4px; font-size: 9px; cursor: pointer; font-weight: 600;">Copiar</button>
+          </div>
+          <textarea id="css-ayudas" readonly style="width: 100%; height: 160px; background: #0b0f19; color: #38bdf8; border: 1px solid #1e293b; border-radius: 6px; font-family: monospace; font-size: 10.5px; padding: 10px; resize: none; box-sizing: border-box; outline: none;"></textarea>
+        </div>
+
+        <!-- Code snippet for BotonCerrar.css -->
+        <div>
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+            <span style="color: #10b981; font-size: 11px; font-weight: bold; font-family: monospace;">BotonCerrar.css (botón cerrar X)</span>
+            <button onclick="copyToClipboard('css-cerrar')" style="background: #1e293b; color: #fff; border: 1px solid #334155; padding: 3px 8px; border-radius: 4px; font-size: 9px; cursor: pointer; font-weight: 600;">Copiar</button>
+          </div>
+          <textarea id="css-cerrar" readonly style="width: 100%; height: 100px; background: #0b0f19; color: #10b981; border: 1px solid #1e293b; border-radius: 6px; font-family: monospace; font-size: 10.5px; padding: 10px; resize: none; box-sizing: border-box; outline: none;"></textarea>
+        </div>
+
+        <!-- Code snippet for RealidadAumentada.css -->
+        <div>
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+            <span style="color: #f59e0b; font-size: 11px; font-weight: bold; font-family: monospace;">RealidadAumentada.css (botón AR)</span>
+            <button onclick="copyToClipboard('css-ar')" style="background: #1e293b; color: #fff; border: 1px solid #334155; padding: 3px 8px; border-radius: 4px; font-size: 9px; cursor: pointer; font-weight: 600;">Copiar</button>
+          </div>
+          <textarea id="css-ar" readonly style="width: 100%; height: 100px; background: #0b0f19; color: #f59e0b; border: 1px solid #1e293b; border-radius: 6px; font-family: monospace; font-size: 10.5px; padding: 10px; resize: none; box-sizing: border-box; outline: none;"></textarea>
+        </div>
+
+        <!-- Code snippet for NavBars (Distancias de barras) -->
+        <div>
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+            <span style="color: #ec4899; font-size: 11px; font-weight: bold; font-family: monospace;">NavBarSuperior.css / NavBarInferior.css (Márgenes barras)</span>
+            <button onclick="copyToClipboard('css-navbars')" style="background: #1e293b; color: #fff; border: 1px solid #334155; padding: 3px 8px; border-radius: 4px; font-size: 9px; cursor: pointer; font-weight: 600;">Copiar</button>
+          </div>
+          <textarea id="css-navbars" readonly style="width: 100%; height: 100px; background: #0b0f19; color: #ec4899; border: 1px solid #1e293b; border-radius: 6px; font-family: monospace; font-size: 10.5px; padding: 10px; resize: none; box-sizing: border-box; outline: none;"></textarea>
+        </div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

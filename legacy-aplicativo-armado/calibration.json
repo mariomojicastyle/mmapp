@@ -1,0 +1,242 @@
+{
+  "mode-camon": {
+    "margins": {
+      "top": 20,
+      "bottom": 20
+    },
+    "cerrar": {
+      "top": 27,
+      "right": 15
+    },
+    "ar": {
+      "bottom": 200,
+      "right": 15
+    },
+    "bubbles": {
+      "ayuda1": {
+        "bubbleVal": -82,
+        "arrowVal": 107
+      },
+      "ayudaLuz": {
+        "bubbleVal": 50,
+        "arrowVal": 50
+      },
+      "ayudaVelocidad": {
+        "bubbleVal": -81,
+        "arrowVal": 94
+      },
+      "ayudaIdioma": {
+        "bubbleVal": -14,
+        "arrowVal": 26
+      },
+      "ayuda3": {
+        "bubbleVal": 50,
+        "arrowVal": 50
+      },
+      "ayuda4": {
+        "bubbleVal": 4,
+        "arrowVal": 39
+      },
+      "ayuda5": {
+        "bubbleVal": 4,
+        "arrowVal": 28
+      },
+      "ayuda6": {
+        "bubbleVal": 68,
+        "arrowVal": -6
+      }
+    }
+  },
+  "mode-standard": {
+    "margins": {
+      "top": 50,
+      "bottom": 20
+    },
+    "cerrar": {
+      "top": 50,
+      "right": 15
+    },
+    "ar": {
+      "bottom": 190,
+      "right": 15
+    },
+    "bubbles": {
+      "ayuda1": {
+        "bubbleVal": 4,
+        "arrowVal": 80
+      },
+      "ayudaLuz": {
+        "bubbleVal": 50,
+        "arrowVal": 50
+      },
+      "ayudaVelocidad": {
+        "bubbleVal": 4,
+        "arrowVal": 80
+      },
+      "ayudaIdioma": {
+        "bubbleVal": 4,
+        "arrowVal": 18
+      },
+      "ayuda3": {
+        "bubbleVal": 50,
+        "arrowVal": 50
+      },
+      "ayuda4": {
+        "bubbleVal": 4,
+        "arrowVal": 18
+      },
+      "ayuda5": {
+        "bubbleVal": 4,
+        "arrowVal": 18
+      },
+      "ayuda6": {
+        "bubbleVal": 68,
+        "arrowVal": -6
+      }
+    }
+  },
+  "mode-small": {
+    "margins": {
+      "top": 40,
+      "bottom": 10
+    },
+    "cerrar": {
+      "top": 40,
+      "right": 10
+    },
+    "ar": {
+      "bottom": 130,
+      "right": 5
+    },
+    "bubbles": {
+      "ayuda1": {
+        "bubbleVal": 4,
+        "arrowVal": 80
+      },
+      "ayudaLuz": {
+        "bubbleVal": 50,
+        "arrowVal": 50
+      },
+      "ayudaVelocidad": {
+        "bubbleVal": 4,
+        "arrowVal": 80
+      },
+      "ayudaIdioma": {
+        "bubbleVal": 4,
+        "arrowVal": 18
+      },
+      "ayuda3": {
+        "bubbleVal": 50,
+        "arrowVal": 50
+      },
+      "ayuda4": {
+        "bubbleVal": 4,
+        "arrowVal": 18
+      },
+      "ayuda5": {
+        "bubbleVal": 4,
+        "arrowVal": 18
+      },
+      "ayuda6": {
+        "bubbleVal": 68,
+        "arrowVal": -6
+      }
+    }
+  },
+  "mode-tablet": {
+    "margins": {
+      "top": 30,
+      "bottom": 120
+    },
+    "cerrar": {
+      "top": 30,
+      "right": 20
+    },
+    "ar": {
+      "bottom": 120,
+      "right": 20
+    },
+    "bubbles": {
+      "ayuda1": {
+        "bubbleVal": 50,
+        "arrowVal": 50
+      },
+      "ayudaLuz": {
+        "bubbleVal": 50,
+        "arrowVal": 50
+      },
+      "ayudaVelocidad": {
+        "bubbleVal": 50,
+        "arrowVal": 50
+      },
+      "ayudaIdioma": {
+        "bubbleVal": 50,
+        "arrowVal": 50
+      },
+      "ayuda3": {
+        "bubbleVal": 50,
+        "arrowVal": 50
+      },
+      "ayuda4": {
+        "bubbleVal": 50,
+        "arrowVal": 50
+      },
+      "ayuda5": {
+        "bubbleVal": 50,
+        "arrowVal": 50
+      },
+      "ayuda6": {
+        "bubbleVal": 68,
+        "arrowVal": -6
+      }
+    }
+  },
+  "mode-fluid": {
+    "margins": {
+      "top": 15,
+      "bottom": 120
+    },
+    "cerrar": {
+      "top": 15,
+      "right": 15
+    },
+    "ar": {
+      "bottom": 120,
+      "right": 15
+    },
+    "bubbles": {
+      "ayuda1": {
+        "bubbleVal": 50,
+        "arrowVal": 50
+      },
+      "ayudaLuz": {
+        "bubbleVal": 50,
+        "arrowVal": 50
+      },
+      "ayudaVelocidad": {
+        "bubbleVal": 50,
+        "arrowVal": 50
+      },
+      "ayudaIdioma": {
+        "bubbleVal": 50,
+        "arrowVal": 50
+      },
+      "ayuda3": {
+        "bubbleVal": 50,
+        "arrowVal": 50
+      },
+      "ayuda4": {
+        "bubbleVal": 50,
+        "arrowVal": 50
+      },
+      "ayuda5": {
+        "bubbleVal": 50,
+        "arrowVal": 50
+      },
+      "ayuda6": {
+        "bubbleVal": 68,
+        "arrowVal": -6
+      }
+    }
+  }
+}
