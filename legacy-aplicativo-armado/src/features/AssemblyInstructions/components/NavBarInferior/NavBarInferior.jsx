@@ -134,6 +134,18 @@ export default function NavBarInferior({ id, data }) {
   };
   const t = idioma === "en" ? texts.en : texts.es;
 
+  const ayudasTexto = data?.ayudasTexto || {};
+  const currentLang = idioma === "en" ? "en" : "es";
+
+  const dAyuda3Title = ayudasTexto.ayuda3?.[`title_${currentLang}`] || t.ayuda3Title;
+  const dAyuda3Text = ayudasTexto.ayuda3?.[`content_${currentLang}`] || t.ayuda3Text;
+
+  const dAyuda4Title = ayudasTexto.ayuda4?.[`title_${currentLang}`] || t.ayuda4Title;
+  const dAyuda4Text = ayudasTexto.ayuda4?.[`content_${currentLang}`] || t.ayuda4Text;
+
+  const dAyuda5Title = ayudasTexto.ayuda5?.[`title_${currentLang}`] || t.ayuda5Title;
+  const dAyuda5Text = ayudasTexto.ayuda5?.[`content_${currentLang}`] || t.ayuda5Text;
+
   const CambiarModelo = useEnviroment((state) => state.CambiarModelo);
   const PositiveShow = useEnviroment((state) => state.PositiveShow);
   const NegativeShow = useEnviroment((state) => state.NegativeShow);
@@ -336,27 +348,27 @@ export default function NavBarInferior({ id, data }) {
             <div className={`ayuda3-arrow arrow-left ${ayuda3ArrowLeft ? 'is-active' : ''}`}></div>
             <div className={`ayuda3-arrow arrow-center ${ayuda3ArrowCenter ? 'is-active' : ''}`}></div>
             <div className={`ayuda3-arrow arrow-right ${ayuda3ArrowRight ? 'is-active' : ''}`}></div>
-            <div className="ayuda-bubble-title">{t.ayuda3Title}</div>
+            <div className="ayuda-bubble-title">{dAyuda3Title}</div>
             <div className="ayuda-bubble-text">
-              {t.ayuda3Text}
+              {dAyuda3Text}
             </div>
           </div>
 
           {/* Burbuja de ayuda 4: Buscador de Piezas */}
           <div className={`ayuda-bubble ayuda4 ${isPanelAyudasActive && ayuda4 ? "is-active" : ""}`}>
             <div className="ayuda-bubble-arrow arrow-down"></div>
-            <div className="ayuda-bubble-title">{t.ayuda4Title}</div>
+            <div className="ayuda-bubble-title">{dAyuda4Title}</div>
             <div className="ayuda-bubble-text">
-              {t.ayuda4Text}
+              {dAyuda4Text}
             </div>
           </div>
 
           {/* Burbuja de ayuda 5: Reproducir / Pausar */}
           <div className={`ayuda-bubble ayuda5 ${isPanelAyudasActive && ayuda5 ? "is-active" : ""}`}>
             <div className="ayuda-bubble-arrow arrow-down"></div>
-            <div className="ayuda-bubble-title">{t.ayuda5Title}</div>
+            <div className="ayuda-bubble-title">{dAyuda5Title}</div>
             <div className="ayuda-bubble-text">
-              {t.ayuda5Text}
+              {dAyuda5Text}
             </div>
           </div>
         </div>

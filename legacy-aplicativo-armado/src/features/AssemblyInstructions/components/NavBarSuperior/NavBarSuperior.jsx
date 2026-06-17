@@ -76,6 +76,24 @@ export default function NavBarSuperior({ id, data }) {
   };
   const t = idioma === "en" ? texts.en : texts.es;
 
+  const ayudasTexto = data?.ayudasTexto || {};
+  const currentLang = idioma === "en" ? "en" : "es";
+
+  const dAyuda1Title = ayudasTexto.ayuda1?.[`title_${currentLang}`] || t.ayuda1Title;
+  let dAyuda1Items = t.ayuda1Items;
+  if (ayudasTexto.ayuda1?.[`content_${currentLang}`]) {
+    const rawVal = ayudasTexto.ayuda1[`content_${currentLang}`];
+    dAyuda1Items = rawVal.split('\n').map(s => s.trim()).filter(Boolean);
+  }
+
+  const dAyudaLuzTitle = ayudasTexto.ayudaLuz?.[`title_${currentLang}`] || t.ayudaLuzTitle;
+  const dAyudaLuzText = ayudasTexto.ayudaLuz?.[`content_${currentLang}`] || t.ayudaLuzText;
+
+  const dAyudaVelocidadTitle = ayudasTexto.ayudaVelocidad?.[`title_${currentLang}`] || t.ayudaVelocidadTitle;
+  const dAyudaVelocidadText = ayudasTexto.ayudaVelocidad?.[`content_${currentLang}`] || t.ayudaVelocidadText;
+
+  const dAyudaIdiomaTitle = ayudasTexto.ayudaIdioma?.[`title_${currentLang}`] || t.ayudaIdiomaTitle;
+  const dAyudaIdiomaText = ayudasTexto.ayudaIdioma?.[`content_${currentLang}`] || t.ayudaIdiomaText;
 
   const idiomaOptions = [
     { value: "es", label: "ES", sublabel: "Lat" },
@@ -158,9 +176,9 @@ export default function NavBarSuperior({ id, data }) {
             {/* Burbuja de ayuda 1: Guía y Herramientas */}
             <div className={`ayuda-bubble ayuda1 ${PanelAyudas && ayuda1 ? "is-active" : ""}`} onClick={(e) => e.stopPropagation()}>
               <div className="ayuda-bubble-arrow arrow-up"></div>
-              <div className="ayuda-bubble-title">{t.ayuda1Title}</div>
+              <div className="ayuda-bubble-title">{dAyuda1Title}</div>
               <ul className="ayuda-bubble-list">
-                {t.ayuda1Items.map((item, idx) => (
+                {dAyuda1Items.map((item, idx) => (
                   <li key={idx} className="ayuda-bubble-item">{item}</li>
                 ))}
               </ul>
@@ -179,8 +197,8 @@ export default function NavBarSuperior({ id, data }) {
             {/* Burbuja de ayuda Luz: Lámpara */}
             <div className={`ayuda-bubble ayudaLuz ${PanelAyudas && ayudaLuz ? "is-active" : ""}`} onClick={(e) => e.stopPropagation()}>
               <div className="ayuda-bubble-arrow arrow-up"></div>
-              <div className="ayuda-bubble-title">{t.ayudaLuzTitle}</div>
-              <div className="ayuda-bubble-text">{t.ayudaLuzText}</div>
+              <div className="ayuda-bubble-title">{dAyudaLuzTitle}</div>
+              <div className="ayuda-bubble-text">{dAyudaLuzText}</div>
             </div>
           </div>
 
@@ -246,8 +264,8 @@ export default function NavBarSuperior({ id, data }) {
             {/* Burbuja de ayuda Velocidad: Tiempo */}
             <div className={`ayuda-bubble ayudaVelocidad ${PanelAyudas && ayudaVelocidad ? "is-active" : ""}`} onClick={(e) => e.stopPropagation()}>
               <div className="ayuda-bubble-arrow arrow-up"></div>
-              <div className="ayuda-bubble-title">{t.ayudaVelocidadTitle}</div>
-              <div className="ayuda-bubble-text">{t.ayudaVelocidadText}</div>
+              <div className="ayuda-bubble-title">{dAyudaVelocidadTitle}</div>
+              <div className="ayuda-bubble-text">{dAyudaVelocidadText}</div>
             </div>
           </div>
 
@@ -295,8 +313,8 @@ export default function NavBarSuperior({ id, data }) {
             {/* Burbuja de ayuda Idioma: Idioma */}
             <div className={`ayuda-bubble ayudaIdioma ${PanelAyudas && ayudaIdioma ? "is-active" : ""}`} onClick={(e) => e.stopPropagation()}>
               <div className="ayuda-bubble-arrow arrow-up"></div>
-              <div className="ayuda-bubble-title">{t.ayudaIdiomaTitle}</div>
-              <div className="ayuda-bubble-text">{t.ayudaIdiomaText}</div>
+              <div className="ayuda-bubble-title">{dAyudaIdiomaTitle}</div>
+              <div className="ayuda-bubble-text">{dAyudaIdiomaText}</div>
             </div>
           </div>
 
@@ -307,7 +325,7 @@ export default function NavBarSuperior({ id, data }) {
           />
         </div>
       </div>
-      <RealiadaAumentada id={id}/>
+      <RealiadaAumentada id={id} data={data}/>
     </>
   );
 }

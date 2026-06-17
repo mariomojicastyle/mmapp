@@ -4,7 +4,7 @@ import QRCode from "react-qr-code";
 import { getAssetPath } from "../../../../../lib/assets.js";
 import "./RealidadAumentada.css";
 
-export default function RealiadaAumentada({ id }) {
+export default function RealiadaAumentada({ id, data }) {
   const pasoActual = useEnviroment((state) => state.pasoActual);
   const Cliente = useEnviroment((state) => state.Cliente);
   const CambiarModelo = useEnviroment((state) => state.CambiarModelo);
@@ -40,6 +40,12 @@ export default function RealiadaAumentada({ id }) {
     }
   };
   const t = idioma === "en" ? texts.en : texts.es;
+
+  const ayudasTexto = data?.ayudasTexto || {};
+  const currentLang = idioma === "en" ? "en" : "es";
+
+  const dAyuda6Title = ayudasTexto.ayuda6?.[`title_${currentLang}`] || t.ayuda6Title;
+  const dAyuda6Text = ayudasTexto.ayuda6?.[`content_${currentLang}`] || t.ayuda6Text;
 
   // Estado para controlar la visualización de la burbuja del código QR en PC
   const [showQR, setShowQR] = useState(false);
@@ -223,9 +229,9 @@ export default function RealiadaAumentada({ id }) {
         {/* Burbuja de ayuda 6: Realidad Aumentada (Tutorial interactivo por voz en off) */}
         <div className={`ayuda-bubble ayuda6 ${PanelAyudas && ayuda6 ? "is-active" : ""}`}>
           <div className="ayuda-bubble-arrow arrow-right"></div>
-          <div className="ayuda-bubble-title">{t.ayuda6Title}</div>
+          <div className="ayuda-bubble-title">{dAyuda6Title}</div>
           <div className="ayuda-bubble-text">
-            {t.ayuda6Text}
+            {dAyuda6Text}
           </div>
         </div>
       </div>

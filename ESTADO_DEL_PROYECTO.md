@@ -243,6 +243,12 @@ Un **"Manual Vacío"** es un cascarón o aplicación base centralizada (desplega
   - **Deselección Dinámica por Click en Fondo**: Añadida la directiva `onPointerMissed` en el canvas de R3F (`AssemblyViewer.jsx`) para que al tocar en cualquier espacio vacío del escenario se limpie el tooltip activo, restaurando de manera reactiva el material original de la pieza resaltada mediante un efecto en `Model.jsx`.
 - [x] **Solución a Pausas del Generador de Audio TTS en Producción (17 de Junio, 2026)**:
   - **Restauración de Silencios Base64**: Se corrigió el endpoint `/api/tts/route.ts` de la plataforma Next.js. Debido a que las APIs serverless carecen de binarios locales (`edge-tts` CLI) y scripts Python, se sustituyó el fallback `synthesizeTts("...", voice)` (que no generaba silencio real) por la decodificación directa de un buffer de silencio MP3 puro de 1 segundo en base64 (`SILENT_MP3_BASE64`), garantizando pausas precisas de silencio en los archivos generados en producción.
+- [x] **Ajuste Fino de Audios TTS y Edición Dinámica de Ayudas (Hito Manual_Online_v2 - 17 de Junio, 2026)**:
+  - **Corrección de Detención en Pausas**: Refactorización de la API de TTS en Next.js para eliminar cabeceras ID3v2 redundantes en la concatenación de MP3s de silencios y voz. Al limpiar las cabeceras intermedias con `stripId3`, el decodificador de HTML5 Audio del navegador web puede reproducir de manera continua sin detener el audio al llegar a una pausa.
+  - **CMS de Edición de Ayudas de Interfaz**: Nueva sección **8. Ayudas de Interfaz y Calibrador** en el panel de insumos del CMS. Permite editar en caliente los títulos y descripciones en español e inglés de las 8 burbujas de ayuda (nubes) del tutorial interactivo, con guardado directo en la columna `ayudas_texto` (`jsonb`) en Supabase.
+  - **Traducción Automática**: Botón inteligente en el CMS que traduce automáticamente a inglés el título y contenido de cada ayuda usando el endpoint `/api/translate`.
+  - **Visor Dinámico de Ayudas**: Sincronización del visor para renderizar dinámicamente los textos custom de las nubes y auto-cargar la versión de calibración local o productiva desde el botón del CMS.
+  - **Limpieza de UI**: Eliminación del botón redundante "Abrir Calibrador UI" del pie de página del modal de detalles del CMS.
 
 ---
 

@@ -260,6 +260,7 @@ const AssemblyPage = () => {
             colorPiso: configData.color_piso || "#e8e8e8",
             colorMallaCentro: configData.color_malla_centro || "#b5b5c3",
             colorMallaLineas: configData.color_malla_lineas || "#d1d1db",
+            ayudasTexto: configData.ayudas_texto || null,
           };
 
           // Actualizar dinámicamente el favicon de la pestaña si se subió uno personalizado

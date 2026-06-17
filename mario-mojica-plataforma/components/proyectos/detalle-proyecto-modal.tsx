@@ -2,7 +2,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unused-vars, react-hooks/exhaustive-deps */
 
 import React, { useState, useEffect, useRef } from "react"
-import { X, Download, Paperclip, Image, FileText, Music, Cpu, Layers, Plus, Trash2, Loader2, Eye, ExternalLink, ChevronDown, ChevronUp, UploadCloud, CheckCircle2, AlertCircle, FileSpreadsheet, Box, Boxes, Coins, Hammer, Wrench, Sparkles, Volume2, Play, Square, Mic, Library, Camera } from "lucide-react"
+import { X, Download, Paperclip, Image, FileText, Music, Cpu, Layers, Plus, Trash2, Loader2, Eye, ExternalLink, ChevronDown, ChevronUp, UploadCloud, CheckCircle2, AlertCircle, FileSpreadsheet, Box, Boxes, Coins, Hammer, Wrench, Sparkles, Volume2, Play, Square, Mic, Library, Camera, HelpCircle } from "lucide-react"
 import { motion, AnimatePresence } from "framer-motion"
 import { cn } from "@/lib/utils"
 import { usePermissions } from "@/hooks/use-permissions"
@@ -22,6 +22,57 @@ export interface ItemDespiece {
   piezaNumeroStart?: number
   piezaNumeroRange?: boolean
   piezasLista?: string[]
+}
+
+export const defaultAyudas: Record<string, { title_es: string; content_es: string; title_en: string; content_en: string }> = {
+  ayuda1: {
+    title_es: "Guía y Herramientas",
+    content_es: "Marca del producto\nHerramientas requeridas\nIndicaciones especiales\nGarantía del mueble",
+    title_en: "Guide & Tools",
+    content_en: "Product brand\nRequired tools\nSpecial instructions\nFurniture warranty"
+  },
+  ayudaLuz: {
+    title_es: "Iluminación 3D",
+    content_es: "Activa o desactiva las sombras detalladas para mejorar la calidad visual o aumentar el rendimiento.",
+    title_en: "3D Lighting",
+    content_en: "Enable or disable detailed shadows to improve visual quality or boost performance."
+  },
+  ayudaVelocidad: {
+    title_es: "Velocidad de Audio",
+    content_es: "Modifica el ritmo y velocidad del audio guía que te asiste en el armado.",
+    title_en: "Audio Speed",
+    content_en: "Modify the speed of the audio narration guiding you through the assembly."
+  },
+  ayudaIdioma: {
+    title_es: "Idioma del Manual",
+    content_es: "Cambia el idioma de los textos y audios informativos a Español o Inglés.",
+    title_en: "Manual Language",
+    content_en: "Switch the language of texts and audio guides between Spanish and English."
+  },
+  ayuda3: {
+    title_es: "Navegación de Armado",
+    content_es: "Avanza o retrocede entre los pasos del manual interactivo para ver el proceso en orden.",
+    title_en: "Assembly Navigation",
+    content_en: "Go forward or backward through the interactive steps to view the process in order."
+  },
+  ayuda4: {
+    title_es: "Buscador de Piezas",
+    content_es: "Consulta la lista detallada de piezas y herrajes requeridos para el paso de ensamble actual.",
+    title_en: "Parts Search",
+    content_en: "Check the detailed list of parts and hardware required for the current assembly step."
+  },
+  ayuda5: {
+    title_es: "Reproducir / Pausar",
+    content_es: "Controla la locución por voz y la reproducción del audio explicativo paso a paso.",
+    title_en: "Play / Pause",
+    content_en: "Control the voiceover and playback of the step-by-step explanatory audio."
+  },
+  ayuda6: {
+    title_es: "Realidad Aumentada",
+    content_es: "¡Escanea el espacio y proyecta el mueble 3D interactivo en escala real dentro de tu habitación!",
+    title_en: "Augmented Reality",
+    content_en: "Scan your space and project the interactive 3D model in real scale inside your room!"
+  }
 }
 
 export function normalizarYAsignarPiezas(items: ItemDespiece[]): ItemDespiece[] {
@@ -216,6 +267,8 @@ export function DetalleProyectoModal({ isOpen, onClose, proyecto, onUpdate }: De
   const [colorPiso, setColorPiso] = useState("#e8e8e8")
   const [colorMallaCentro, setColorMallaCentro] = useState("#b5b5c3")
   const [colorMallaLineas, setColorMallaLineas] = useState("#d1d1db")
+  const [ayudasTexto, setAyudasTexto] = useState<any>({})
+  const [translatingAyuda, setTranslatingAyuda] = useState<string | null>(null)
 
   // Insumos State
   const [glbSteps, setGlbSteps] = useState<{ step: string; fileName: string; progress: number; cameraPosition?: number[]; cameraTarget?: number[] }[]>([])
@@ -739,6 +792,66 @@ export function DetalleProyectoModal({ isOpen, onClose, proyecto, onUpdate }: De
     }
   }
 
+  const handleTranslateAyuda = async (helpKey: string) => {
+    const itemData = ayudasTexto[helpKey] || {}
+    const titleEs = itemData.title_es !== undefined ? itemData.title_es : (defaultAyudas[helpKey]?.title_es || "")
+    const contentEs = itemData.content_es !== undefined ? itemData.content_es : (defaultAyudas[helpKey]?.content_es || "")
+
+    if (!titleEs.trim() && !contentEs.trim()) {
+      setError("No hay texto en español para traducir.")
+      return
+    }
+
+    setTranslatingAyuda(helpKey)
+    setError("")
+    setSuccessMsg("")
+
+    try {
+      let titleEn = itemData.title_en || ""
+      let contentEn = itemData.content_en || ""
+
+      if (titleEs.trim()) {
+        const res = await fetch("/api/translate", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ text: titleEs })
+        })
+        if (res.ok) {
+          const data = await res.json()
+          titleEn = data.translation
+        }
+      }
+
+      if (contentEs.trim()) {
+        const res = await fetch("/api/translate", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ text: contentEs })
+        })
+        if (res.ok) {
+          const data = await res.json()
+          contentEn = data.translation
+        }
+      }
+
+      setAyudasTexto((prev: any) => ({
+        ...prev,
+        [helpKey]: {
+          ...(prev[helpKey] || {}),
+          title_es: titleEs,
+          content_es: contentEs,
+          title_en: titleEn,
+          content_en: contentEn
+        }
+      }))
+      setSuccessMsg("Traducción de ayuda completada ✓")
+    } catch (err: any) {
+      setError(err.message || "Error al traducir la ayuda.")
+    } finally {
+      setTranslatingAyuda(null)
+    }
+  }
+
   // Despiece State
   const [despiece, setDespiece] = useState<ItemDespiece[]>([])
   const [isScanning, setIsScanning] = useState(false)
@@ -815,6 +928,7 @@ export function DetalleProyectoModal({ isOpen, onClose, proyecto, onUpdate }: De
               if (tts.ayuda) setTtsAyuda(tts.ayuda)
               if (tts.cantidadPasos) setTtsCantidadPasos(tts.cantidadPasos)
               if (tts.pasos) setTtsPasos(tts.pasos)
+              setAyudasTexto(data.ayudas_texto || {})
             }
           })
       }
@@ -1966,6 +2080,7 @@ export function DetalleProyectoModal({ isOpen, onClose, proyecto, onUpdate }: De
           garantia_texto: garantiaDoc,
           fotos_herrajes: herrajesFotos,
           despiece: despiece,
+          ayudas_texto: ayudasTexto,
           tts_config: {
             voices: ttsVoices,
             saludo: ttsSaludo,
@@ -3963,6 +4078,175 @@ export function DetalleProyectoModal({ isOpen, onClose, proyecto, onUpdate }: De
                       )}
                     </div>
 
+                    {/* 8. Ayudas de Interfaz */}
+                    <div className="flex flex-col">
+                      <button
+                        type="button"
+                        onClick={() => toggleSection("ayudas")}
+                        className="flex items-center justify-between p-4 font-bold text-sm text-on-surface bg-surface-container-low hover:bg-surface-container transition-colors"
+                      >
+                        <span className="flex items-center gap-2">
+                          <HelpCircle className="h-4.5 w-4.5 text-primary" />
+                          8. Ayudas de Interfaz y Calibrador
+                        </span>
+                        {openSection === "ayudas" ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                      </button>
+
+                      {openSection === "ayudas" && (
+                        <div className="p-4 bg-surface-container-lowest/50 border-t border-outline-variant/10 space-y-4 text-xs">
+                          {/* Botón del Calibrador */}
+                          <div className="flex items-center justify-between p-4 bg-primary/5 rounded-xl border border-primary/20">
+                            <div className="space-y-0.5">
+                              <h5 className="text-xs font-bold text-on-surface">Calibrador de Pantalla y Nubes</h5>
+                              <p className="text-[10px] text-on-surface-variant">Ajusta los márgenes generales y la posición vertical de las nubes inferiores en caliente.</p>
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                const url = window.location.hostname === 'localhost' || window.location.hostname.includes('127.0.0.1')
+                                  ? `http://localhost:5173/calibrador.html?id=${codigoManual}`
+                                  : `/embed/armado/calibrador.html?id=${codigoManual}`;
+                                window.open(url, "_blank");
+                              }}
+                              className="flex items-center gap-1.5 rounded-xl bg-primary px-3.5 py-2 text-xs font-bold text-primary-foreground transition-all hover:bg-primary/90 active:scale-[0.98]"
+                            >
+                              <ExternalLink className="h-3.5 w-3.5" />
+                              Abrir Calibrador
+                            </button>
+                          </div>
+
+                          {/* Campos de texto de las nubes */}
+                          <div className="space-y-4">
+                            <h4 className="text-[10px] font-bold text-on-surface-variant uppercase tracking-wider">Textos de Burbujas de Ayuda (Nubes del Tutorial)</h4>
+                            {[
+                              { key: "ayuda1", label: "Ayuda 1: Guía y Herramientas (Menú Superior)" },
+                              { key: "ayudaLuz", label: "Ayuda Luz: Iluminación y Sombras (Menú Superior)" },
+                              { key: "ayudaVelocidad", label: "Ayuda Velocidad: Ritmo de Audio (Menú Superior)" },
+                              { key: "ayudaIdioma", label: "Ayuda Idioma: Cambiar de Idioma (Menú Superior)" },
+                              { key: "ayuda3", label: "Ayuda 3: Navegación de Pasos (Barra Inferior)" },
+                              { key: "ayuda4", label: "Ayuda 4: Buscador de Piezas (Barra Inferior)" },
+                              { key: "ayuda5", label: "Ayuda 5: Play y Pausa de Audio (Barra Inferior)" },
+                              { key: "ayuda6", label: "Ayuda 6: Realidad Aumentada" }
+                            ].map((h) => {
+                              const itemData = ayudasTexto[h.key] || {}
+                              const titleEs = itemData.title_es !== undefined ? itemData.title_es : (defaultAyudas[h.key]?.title_es || "")
+                              const contentEs = itemData.content_es !== undefined ? itemData.content_es : (defaultAyudas[h.key]?.content_es || "")
+                              const titleEn = itemData.title_en !== undefined ? itemData.title_en : (defaultAyudas[h.key]?.title_en || "")
+                              const contentEn = itemData.content_en !== undefined ? itemData.content_en : (defaultAyudas[h.key]?.content_en || "")
+
+                              return (
+                                <div key={h.key} className="p-4 rounded-xl bg-surface-container border border-outline-variant/10 space-y-4">
+                                  <h5 className="font-semibold text-xs text-primary">{h.label}</h5>
+                                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    {/* Español */}
+                                    <div className="space-y-3">
+                                      <span className="text-[10px] font-bold text-on-surface-variant/70 uppercase">Versión Español</span>
+                                      <label className="flex flex-col gap-1">
+                                        <span className="text-[10px] text-on-surface-variant">Título</span>
+                                        <input
+                                          type="text"
+                                          value={titleEs}
+                                          onChange={(e) => {
+                                            const newVal = e.target.value
+                                            setAyudasTexto((prev: any) => ({
+                                              ...prev,
+                                              [h.key]: {
+                                                ...(prev[h.key] || {}),
+                                                title_es: newVal
+                                              }
+                                            }))
+                                          }}
+                                          placeholder="Título en español"
+                                          className="rounded-lg border border-outline-variant bg-surface-container-low px-3 py-1.5 text-xs text-on-surface outline-none transition focus:border-primary"
+                                        />
+                                      </label>
+                                      <label className="flex flex-col gap-1">
+                                        <span className="text-[10px] text-on-surface-variant">Contenido (Para Ayuda 1, coloca un elemento por línea)</span>
+                                        <textarea
+                                          value={contentEs}
+                                          onChange={(e) => {
+                                            const newVal = e.target.value
+                                            setAyudasTexto((prev: any) => ({
+                                              ...prev,
+                                              [h.key]: {
+                                                ...(prev[h.key] || {}),
+                                                content_es: newVal
+                                              }
+                                            }))
+                                          }}
+                                          rows={3}
+                                          placeholder="Contenido en español"
+                                          className="rounded-lg border border-outline-variant bg-surface-container-low px-3 py-1.5 text-xs text-on-surface outline-none transition focus:border-primary"
+                                        />
+                                      </label>
+                                    </div>
+
+                                    {/* Inglés */}
+                                    <div className="space-y-3">
+                                      <div className="flex items-center justify-between">
+                                        <span className="text-[10px] font-bold text-on-surface-variant/70 uppercase">Versión Inglés</span>
+                                        <button
+                                          type="button"
+                                          disabled={translatingAyuda !== null}
+                                          onClick={() => handleTranslateAyuda(h.key)}
+                                          className="flex items-center gap-1 text-[9px] font-bold text-primary hover:underline"
+                                        >
+                                          {translatingAyuda === h.key ? (
+                                            <Loader2 className="h-2.5 w-2.5 animate-spin" />
+                                          ) : (
+                                            <Sparkles className="h-2.5 w-2.5" />
+                                          )}
+                                          Traducir automáticamente
+                                        </button>
+                                      </div>
+                                      <label className="flex flex-col gap-1">
+                                        <span className="text-[10px] text-on-surface-variant">Título (EN)</span>
+                                        <input
+                                          type="text"
+                                          value={titleEn}
+                                          onChange={(e) => {
+                                            const newVal = e.target.value
+                                            setAyudasTexto((prev: any) => ({
+                                              ...prev,
+                                              [h.key]: {
+                                                ...(prev[h.key] || {}),
+                                                title_en: newVal
+                                              }
+                                            }))
+                                          }}
+                                          placeholder="Title in English"
+                                          className="rounded-lg border border-outline-variant bg-surface-container-low px-3 py-1.5 text-xs text-on-surface outline-none transition focus:border-primary"
+                                        />
+                                      </label>
+                                      <label className="flex flex-col gap-1">
+                                        <span className="text-[10px] text-on-surface-variant">Contenido (EN)</span>
+                                        <textarea
+                                          value={contentEn}
+                                          onChange={(e) => {
+                                            const newVal = e.target.value
+                                            setAyudasTexto((prev: any) => ({
+                                              ...prev,
+                                              [h.key]: {
+                                                ...(prev[h.key] || {}),
+                                                content_en: newVal
+                                              }
+                                            }))
+                                          }}
+                                          rows={3}
+                                          placeholder="Content in English"
+                                          className="rounded-lg border border-outline-variant bg-surface-container-low px-3 py-1.5 text-xs text-on-surface outline-none transition focus:border-primary"
+                                        />
+                                      </label>
+                                    </div>
+                                  </div>
+                                </div>
+                              )
+                            })}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+
 
                   </div>
                 </div>
@@ -4465,20 +4749,6 @@ export function DetalleProyectoModal({ isOpen, onClose, proyecto, onUpdate }: De
               </div>
               
               <div className="flex items-center gap-3">
-                {activeTab === "insumos" && (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      const isDev = process.env.NODE_ENV === 'development';
-                      const url = isDev ? 'http://localhost:5173/calibrador.html' : 'https://mariomojica.com/embed/armado/calibrador.html';
-                      window.open(url, '_blank');
-                    }}
-                    className="flex items-center gap-2 rounded-xl border border-teal-500/30 px-5 py-2.5 text-sm font-medium text-teal-400 transition hover:bg-teal-500/10"
-                  >
-                    <Wrench className="h-4 w-4" />
-                    Abrir Calibrador UI
-                  </button>
-                )}
                 
                 <button
                   type="button"

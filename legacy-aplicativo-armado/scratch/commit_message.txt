@@ -1,0 +1,7 @@
+style(ui): Update button borders to white for high contrast
+
+- Reemplazados los bordes semitransparentes oscuros (var(--border-light)) por bordes blancos nítidos (rgba(255, 255, 255, 0.85)) en todos los botones circulares, flechas y porcentaje.
+- Afecta a los botones de barra superior, barra inferior, botón AR y botón de Cerrar.
+- Mejora la accesibilidad y el contraste contra el fondo Obsidian Black en el calibrador y en el aplicativo real.
+
+Co-Authored-By: Claude <noreply@anthropic.com>
