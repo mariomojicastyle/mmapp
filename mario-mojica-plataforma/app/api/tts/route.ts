@@ -46,8 +46,9 @@ async function synthesizeTtsWithPauses(text: string, voice: string): Promise<Buf
       segments.push({ type: "text", value: textAfter })
     }
 
-    // Generar un búfer de silencio base usando tres puntos (pausa natural del lector)
-    const silenceBuffer = await synthesizeTts("...", voice)
+    // Usar un búfer de silencio de 1 segundo pre-renderizado (base64) compatible con formato MP3
+    const SILENT_MP3_BASE64 = "SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjU2LjM2LjEwMAAAAAAAAAAAAAAA//OEAAAAAAAAAAAAAAAAAAAAAAAASW5mbwAAAA8AAAAEAAABIADAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV6urq6urq6urq6urq6urq6urq6urq6urq6v////////////////////////////////8AAAAATGF2YzU2LjQxAAAAAAAAAAAAAAAAJAAAAAAAAAAAASDs90hvAAAAAAAAAAAAAAAAAAAA//MUZAAAAAGkAAAAAAAAA0gAAAAATEFN//MUZAMAAAGkAAAAAAAAA0gAAAAARTMu//MUZAYAAAGkAAAAAAAAA0gAAAAAOTku//MUZAkAAAGkAAAAAAAAA0gAAAAANVVV"
+    const silenceBuffer = Buffer.from(SILENT_MP3_BASE64, "base64")
     
     const buffers: Buffer[] = []
     for (const segment of segments) {
