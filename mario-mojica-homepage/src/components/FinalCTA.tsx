@@ -12,7 +12,7 @@ export default function FinalCTA() {
           Agenda una demostración personalizada para experimentar la plataforma 3D todo en uno en la que confían fábricas y minoristas líderes de todo el mundo.
         </p>
         <Link 
-          href="#contacto" 
+          href="https://portfolio.mariomojica.com/es#contact" 
           className="bg-primary text-white py-5 px-14 rounded-full font-bold text-xl hover:bg-opacity-90 transition-opacity inline-block shadow-xl shadow-primary/30 transition-transform hover:scale-105"
         >
           Agendar Demostración

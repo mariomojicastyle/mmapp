@@ -33,7 +33,7 @@ export default function Header() {
           <nav className="hidden lg:flex items-center gap-8 text-[11px] font-black uppercase tracking-[0.2em]">
             <Link href="#productos" className="hover:opacity-60 transition-all whitespace-nowrap">Productos</Link>
             <Link href={portfolioUrl} className="hover:opacity-60 transition-all whitespace-nowrap">Sobre mi</Link>
-            <Link href="#contacto" className="hover:opacity-60 transition-all whitespace-nowrap">Contacto</Link>
+            <Link href="https://portfolio.mariomojica.com/es#contact" className="hover:opacity-60 transition-all whitespace-nowrap">Contacto</Link>
           </nav>
 
           {/* Mobile Menu Button */}
@@ -65,7 +65,7 @@ export default function Header() {
             <div className="hidden md:flex items-center gap-6 text-[11px] font-black uppercase tracking-[0.2em]">
               <Link href={`${platformUrl}/login`} className="hover:opacity-60 transition-all">Login</Link>
               <Link 
-                href="#solicitar-cita" 
+                href="https://portfolio.mariomojica.com/es#contact" 
                 className={`px-6 py-2.5 rounded-full transition-all text-[11px] font-black uppercase tracking-[0.2em] shadow-lg ${
                   isScrolled || isMenuOpen
                     ? 'bg-primary text-white hover:bg-opacity-90'
@@ -94,11 +94,11 @@ export default function Header() {
         <nav className="flex flex-col items-center gap-8 text-2xl font-black uppercase tracking-[0.2em] text-text-light">
           <Link onClick={() => setIsMenuOpen(false)} href="#productos" className="hover:text-primary transition-colors">Productos</Link>
           <Link onClick={() => setIsMenuOpen(false)} href={portfolioUrl} className="hover:text-primary transition-colors">Sobre mi</Link>
-          <Link onClick={() => setIsMenuOpen(false)} href="#contacto" className="hover:text-primary transition-colors">Contacto</Link>
+          <Link onClick={() => setIsMenuOpen(false)} href="https://portfolio.mariomojica.com/es#contact" className="hover:text-primary transition-colors">Contacto</Link>
           <Link onClick={() => setIsMenuOpen(false)} href={`${platformUrl}/login`} className="hover:text-primary transition-colors">Login</Link>
           <Link 
             onClick={() => setIsMenuOpen(false)}
-            href="#solicitar-cita" 
+            href="https://portfolio.mariomojica.com/es#contact" 
             className="bg-primary text-white px-10 py-4 rounded-full text-xl shadow-xl active:scale-95 transition-all"
           >
             Solicitar Cita

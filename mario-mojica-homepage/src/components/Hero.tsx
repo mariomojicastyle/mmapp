@@ -32,7 +32,7 @@ export default function Hero() {
           className="flex flex-row justify-center gap-6"
         >
           <Link 
-            href="#contacto" 
+            href="https://portfolio.mariomojica.com/es#contact" 
             className="bg-primary text-white py-4 px-10 rounded-full font-semibold text-lg hover:bg-opacity-90 transition-opacity"
           >
             Agendar Demo

@@ -56,7 +56,7 @@ export default function HowItWorks() {
         </motion.div>
 
         <Link 
-          href="#contacto" 
+          href="https://portfolio.mariomojica.com/es#contact" 
           className="bg-primary text-white py-4 px-12 rounded-full font-semibold text-lg hover:bg-opacity-90 transition-opacity inline-block shadow-lg shadow-primary/20"
         >
           Saber más
