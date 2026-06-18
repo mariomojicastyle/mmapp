@@ -52,9 +52,9 @@ export default function Header() {
 
                     {/* Brand / Logo - Centered */}
                     <div className="absolute left-1/2 -translate-x-1/2">
-                        <Link
+                        <a
                             className="transition-all duration-500 block"
-                            href="/"
+                            href="https://mariomojica.com"
                             onClick={closeMenu}
                         >
                             <img
@@ -63,7 +63,7 @@ export default function Header() {
                                 className={`h-7 md:h-9 w-auto transition-all duration-500 ${isScrolled || isMenuOpen ? "brightness-100" : "brightness-0 invert"
                                     }`}
                             />
-                        </Link>
+                        </a>
                     </div>
 
                     {/* Right side: Language Selector */}
