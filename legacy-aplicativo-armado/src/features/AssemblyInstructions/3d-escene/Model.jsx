@@ -540,8 +540,17 @@ export default function Model(props) {
     event.stopPropagation();
     if (isTouchDevice) return;
 
+    // Restaurar material original sincrónicamente (FIX para PC)
+    const originalMaterial = originalMaterials.current.get(event.object);
+    if (originalMaterial) {
+      event.object.material = originalMaterial;
+    }
+    
+    if (activeMeshRef.current === event.object) {
+      activeMeshRef.current = null;
+    }
+
     document.body.style.cursor = "default";
-    // Limpiar el estado de la pieza seleccionada para ocultar el tooltip (el useEffect restaurará el material)
     PiezaHerraje([""]);
   }
 

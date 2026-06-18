@@ -9,6 +9,9 @@ description: Enforces the Mario Mojica platform brand identity, strictly requiri
 The platform was originally designed with **"Tech Ethos"** (Light Theme) as the primary identity. Over time, development drifted exclusively into **"Obsidian Teal"** (Dark Theme). 
 **CRITICAL RULE:** All future UI development MUST support both themes. If a component is built or updated, it must be validated for its "Tech Ethos" light mode appearance first, then mapped to its "Obsidian Teal" dark mode equivalent.
 
+> [!IMPORTANT]
+> **CRITICAL BRANDING NOTE:** The official brand name is strictly **"Mario Mojica"**. The word **"Style"** must NEVER be appended to the brand name in text, metadata, or logos.
+
 ---
 
 ## 1. Primary Theme: "Tech Ethos" (Light Mode)

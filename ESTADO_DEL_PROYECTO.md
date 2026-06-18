@@ -249,6 +249,11 @@ Un **"Manual Vacío"** es un cascarón o aplicación base centralizada (desplega
   - **Traducción Automática**: Botón inteligente en el CMS que traduce automáticamente a inglés el título y contenido de cada ayuda usando el endpoint `/api/translate`.
   - **Visor Dinámico de Ayudas**: Sincronización del visor para renderizar dinámicamente los textos custom de las nubes y auto-cargar la versión de calibración local o productiva desde el botón del CMS.
   - **Limpieza de UI**: Eliminación del botón redundante "Abrir Calibrador UI" del pie de página del modal de detalles del CMS.
+- [x] **Optimización de Interfaz y SEO del Visor de Armado (Hito Manual_Metricas - 18 de Junio, 2026)**:
+  - **Open Graph Local**: Se procesó la imagen previa de portada (`Banner_Manual`) de PNG a formato WebP optimizado y se inyectó en el `index.html` con rutas relativas, resolviendo dependencias de Supabase para previsualizaciones ricas en WhatsApp.
+  - **Iframe de Spline (Bienvenida)**: Se limpió la URL dinámica de Spline y se eliminó el atributo genérico `title="Spline 3D Scene"` del iframe, suprimiendo tooltips nativos indeseados del navegador en PC.
+  - **Corrección de Margen Táctil**: Ajuste de CSS (`margin-top: 0`) para alinear perfectamente el botón "Iniciar" en dispositivos móviles, previniendo superposiciones con el logo y centrándolo en el borde superior de la pantalla.
+  - **Restauración Síncrona de Hover en PC**: Se corrigió un bug de colisión de estados (race condition) originado en la actualización táctil anterior. Se reintrodujo la restauración síncrona del material en `onPointerLeave` exclusivamente para dispositivos no táctiles, evitando que las piezas queden seleccionadas infinitamente al arrastrar el mouse.
 
 ---
 

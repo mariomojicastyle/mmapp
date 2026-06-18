@@ -150,12 +150,12 @@ export default function PanelInicial() {
         <>
           <div className="spline-wrapper">
             <iframe 
-              src="https://my.spline.design/r4xbot-pS1luNxTefqsyDlc4ZbCw1Fj/?v=8" 
+              src="https://my.spline.design/r4xbot-pS1luNxTefqsyDlc4ZbCw1Fj/" 
               frameBorder="0" 
               width="100%" 
               height="100%" 
               className="spline-bg"
-              title="Spline 3D Scene"
+              title="Animación de bienvenida"
             ></iframe>
           </div>
 

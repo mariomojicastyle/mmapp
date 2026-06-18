@@ -205,6 +205,10 @@
     width: 14rem;
   }
   
+  #inicio {
+    margin-top: 0px;
+  }
+
   #inicio > .imagen {
     padding: 0.75rem 2.5rem;
     font-size: 1.15rem;
