@@ -12,6 +12,12 @@
   force = true
 
 [[redirects]]
+  from = "/embed/armado/_assets/*"
+  to = "https://mario-mojica-armado.netlify.app/_assets/:splat"
+  status = 200
+  force = true
+
+[[redirects]]
   from = "/embed/armado/assets/*"
   to = "https://mario-mojica-armado.netlify.app/assets/:splat"
   status = 200
@@ -62,6 +68,12 @@
 [[redirects]]
   from = "/assets/*"
   to = "https://mario-mojica-armado.netlify.app/assets/:splat"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "/_assets/*"
+  to = "https://mario-mojica-armado.netlify.app/_assets/:splat"
   status = 200
   force = true
 
