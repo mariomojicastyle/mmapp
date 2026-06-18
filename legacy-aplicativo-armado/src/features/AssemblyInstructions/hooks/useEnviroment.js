@@ -122,7 +122,8 @@ export default create(
             PanelShow: false,
             PanelCantidades: false,
             PanelAyudas: false,
-            PiezaHerraje: ""
+            PiezaHerraje: "",
+            phaseAudio: "paused"
           };
         });
       },
@@ -171,7 +172,8 @@ export default create(
         panelTips: false,
         PanelCantidades: false,
         PanelAyudas: false,
-        PiezaHerraje: ""
+        PiezaHerraje: "",
+        phaseAudio: "paused"
       })),
 
 
@@ -180,7 +182,8 @@ export default create(
         panelTips: false,
         PanelShow: false,
         PanelAyudas: false,
-        PiezaHerraje: ""
+        PiezaHerraje: "",
+        phaseAudio: "paused"
       })),
       PanelCantidadesFalse: () => set((state) => ({ PanelCantidades: false })),
 
