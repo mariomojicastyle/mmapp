@@ -82,7 +82,7 @@ export default function ProductosPage() {
     } finally {
       setLoading(false)
     }
-  }, [canSeeAll, user?.id, searchQuery, sortField, sortDirection, currentPage])
+  }, [canSeeAll, user, searchQuery, sortField, sortDirection, currentPage])
 
   useEffect(() => {
     setMounted(true)

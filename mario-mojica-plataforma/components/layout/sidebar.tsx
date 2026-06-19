@@ -151,8 +151,12 @@ function RoleSelector({ expanded }: { expanded: boolean }) {
           "flex w-full items-center rounded-lg p-2 text-sm font-medium text-sidebar-text transition-colors hover:bg-sidebar-active-bg/50 hover:text-on-surface cursor-pointer gap-3",
         )}
       >
-        <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded bg-primary/20 text-[10px] font-bold text-primary">
-          {(user?.role?.[0] || 'V').toUpperCase()}
+        <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded overflow-hidden bg-primary/20 text-[10px] font-bold text-primary">
+          {user?.avatar ? (
+            <img src={user.avatar} alt="Avatar" className="h-full w-full object-cover" />
+          ) : (
+            (user?.role?.[0] || 'V').toUpperCase()
+          )}
         </div>
         {expanded && (
           <div className="flex flex-1 flex-col items-start overflow-hidden">

@@ -35,12 +35,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                  supabaseUser.email?.split('@')[0] || 
                  "Usuario"
     
+    const avatar = (profileData?.avatar_url as string) || 
+                   supabaseUser.user_metadata?.avatar_url || 
+                   `https://api.dicebear.com/7.x/avataaars/svg?seed=${name}`
+    
     return {
       id: supabaseUser.id,
       email: supabaseUser.email || "",
       role,
       name,
-      avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${name}`,
+      avatar,
       company: (profileData?.company as string) || supabaseUser.user_metadata?.company,
       job_title: (profileData?.job_title as string) || supabaseUser.user_metadata?.job_title,
       credits: (profileData?.credits as number) || 0

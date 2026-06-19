@@ -34,3 +34,31 @@ Este archivo registra el progreso del proyecto, las funcionalidades implementada
 - [ ] Mejorar el manejo de estados de carga (Skeletons) en las tablas.
 - [ ] Agregar validaciones de formulario más robustas para las invitaciones.
 - [ ] Comenzar con el módulo de **Proyectos** y su vinculación con las solicitudes.
+
+---
+
+## 📅 19 de Junio, 2026
+
+### ✅ Funcionalidades Implementadas
+
+#### 1. Sistema de Carga e Interacción de Avatar
+- **Modal Interactivo de Avatar:** Creado un modal animado oscuro con Framer Motion en la página `/configuracion` con opciones para:
+  - Cargar imágenes desde el dispositivo local.
+  - Tomar fotos directamente en vivo usando la webcam del dispositivo (`getUserMedia`).
+  - Elegir entre dos carruseles deslizables independientes.
+- **Ajuste y Rotación (Crop, Rotate, Zoom & Pan):**
+  - Añadido soporte para mover y arrastrar la imagen (Pan) de forma intuitiva con eventos de puntero.
+  - Añadido un slider de Zoom interactivo para ajustar la escala del avatar en vivo.
+  - Botón de rotación a 90° acumulativos.
+  - El canvas de 150x150 renderiza la imagen en Base64 JPEG (80% calidad) reflejando exactamente el encuadre configurado por el usuario.
+
+#### 2. Galería de Ilustraciones con Doble Carrusel
+- **Personajes:** Franja con 20 avatares no woke y divertidos (10 masculinos y 10 femeninos tradicionales con fondos de colores pasteles alegres).
+- **Otras Ilustraciones (Random):** Segunda franja con 20 ilustraciones abstractas de objetos y formas artísticas con fondos coloridos.
+- **Navegación por Desplazamiento:** Cada franja cuenta con scroll horizontal oculto y flechas absolutas de navegación (incluyendo el botón flotante circular blanco `shadow-lg`) para deslizar individualmente el contenido de forma suave.
+
+#### 3. Sincronización de Avatar en la Interfaz
+- **Header (TopNav):** La foto de perfil reemplaza a las iniciales fijas en el botón del menú de usuario al instante de guardar los cambios sin recargar la página.
+- **Sidebar (RoleSelector):** El avatar se renderiza también en la esquina inferior izquierda del menú lateral del usuario (dentro del selector de roles) en reemplazo de la letra de rol inicial.
+- **Base de Datos & Auth:** Sincronización física en `profiles.avatar_url` de Supabase y en la metadata del usuario de autenticación.
+

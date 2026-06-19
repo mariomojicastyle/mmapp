@@ -1,16 +1,69 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 "use client"
 
-import { Settings, User as UserIcon, Bell, Shield, Globe } from "lucide-react"
+import { Settings, User as UserIcon, Bell, Shield, Globe, Camera, Upload, Smile, X, RefreshCw, ChevronLeft, ChevronRight } from "lucide-react"
 import { useAuth } from "@/lib/auth/auth-context"
 import { usePermissions } from "@/hooks/use-permissions"
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { createClient } from "@/lib/supabase/client"
+import { motion, AnimatePresence } from "framer-motion"
+
+const ILUSTRACIONES = [
+  // 10 Masculinos Divertidos y Coloridos
+  "https://api.dicebear.com/7.x/avataaars/svg?seed=Jack&backgroundColor=b6e3f4&mouth=smile&eyebrows=default&eyes=default",
+  "https://api.dicebear.com/7.x/avataaars/svg?seed=Oliver&backgroundColor=c0aede&mouth=smile&eyebrows=default&eyes=default",
+  "https://api.dicebear.com/7.x/avataaars/svg?seed=George&backgroundColor=d1d4f9&mouth=smile&eyebrows=default&eyes=default",
+  "https://api.dicebear.com/7.x/avataaars/svg?seed=Milo&backgroundColor=ffd5dc&mouth=smile&eyebrows=default&eyes=default",
+  "https://api.dicebear.com/7.x/avataaars/svg?seed=Harry&backgroundColor=ffdfbf&mouth=smile&eyebrows=default&eyes=default",
+  "https://api.dicebear.com/7.x/avataaars/svg?seed=Leo&backgroundColor=c0f2e3&mouth=smile&eyebrows=default&eyes=default",
+  "https://api.dicebear.com/7.x/avataaars/svg?seed=Charlie&backgroundColor=fce8b2&mouth=smile&eyebrows=default&eyes=default",
+  "https://api.dicebear.com/7.x/avataaars/svg?seed=Arthur&backgroundColor=b6e3f4&mouth=smile&eyebrows=default&eyes=default",
+  "https://api.dicebear.com/7.x/avataaars/svg?seed=Thomas&backgroundColor=c0aede&mouth=smile&eyebrows=default&eyes=default",
+  "https://api.dicebear.com/7.x/avataaars/svg?seed=Oscar&backgroundColor=d1d4f9&mouth=smile&eyebrows=default&eyes=default",
+  // 10 Femeninos Divertidos y Coloridos
+  "https://api.dicebear.com/7.x/avataaars/svg?seed=Emma&backgroundColor=ffd5dc&mouth=smile&eyebrows=default&eyes=default",
+  "https://api.dicebear.com/7.x/avataaars/svg?seed=Sophia&backgroundColor=ffdfbf&mouth=smile&eyebrows=default&eyes=default",
+  "https://api.dicebear.com/7.x/avataaars/svg?seed=Lily&backgroundColor=c0f2e3&mouth=smile&eyebrows=default&eyes=default",
+  "https://api.dicebear.com/7.x/avataaars/svg?seed=Zoe&backgroundColor=fce8b2&mouth=smile&eyebrows=default&eyes=default",
+  "https://api.dicebear.com/7.x/avataaars/svg?seed=Aneka&backgroundColor=b6e3f4&mouth=smile&eyebrows=default&eyes=default",
+  "https://api.dicebear.com/7.x/avataaars/svg?seed=Chloe&backgroundColor=c0aede&mouth=smile&eyebrows=default&eyes=default",
+  "https://api.dicebear.com/7.x/avataaars/svg?seed=Mia&backgroundColor=d1d4f9&mouth=smile&eyebrows=default&eyes=default",
+  "https://api.dicebear.com/7.x/avataaars/svg?seed=Grace&backgroundColor=ffd5dc&mouth=smile&eyebrows=default&eyes=default",
+  "https://api.dicebear.com/7.x/avataaars/svg?seed=Ruby&backgroundColor=ffdfbf&mouth=smile&eyebrows=default&eyes=default",
+  "https://api.dicebear.com/7.x/avataaars/svg?seed=Maya&backgroundColor=c0f2e3&mouth=smile&eyebrows=default&eyes=default",
+]
+
+const ILUSTRACIONES_RANDOM = [
+  "https://api.dicebear.com/7.x/shapes/svg?seed=1&backgroundColor=b6e3f4",
+  "https://api.dicebear.com/7.x/icons/svg?seed=2&backgroundColor=c0aede",
+  "https://api.dicebear.com/7.x/shapes/svg?seed=3&backgroundColor=d1d4f9",
+  "https://api.dicebear.com/7.x/icons/svg?seed=4&backgroundColor=ffd5dc",
+  "https://api.dicebear.com/7.x/shapes/svg?seed=5&backgroundColor=ffdfbf",
+  "https://api.dicebear.com/7.x/icons/svg?seed=6&backgroundColor=c0f2e3",
+  "https://api.dicebear.com/7.x/shapes/svg?seed=7&backgroundColor=fce8b2",
+  "https://api.dicebear.com/7.x/icons/svg?seed=8&backgroundColor=b6e3f4",
+  "https://api.dicebear.com/7.x/shapes/svg?seed=9&backgroundColor=c0aede",
+  "https://api.dicebear.com/7.x/icons/svg?seed=10&backgroundColor=d1d4f9",
+  "https://api.dicebear.com/7.x/shapes/svg?seed=11&backgroundColor=ffd5dc",
+  "https://api.dicebear.com/7.x/icons/svg?seed=12&backgroundColor=ffdfbf",
+  "https://api.dicebear.com/7.x/shapes/svg?seed=13&backgroundColor=c0f2e3",
+  "https://api.dicebear.com/7.x/icons/svg?seed=14&backgroundColor=fce8b2",
+  "https://api.dicebear.com/7.x/shapes/svg?seed=15&backgroundColor=b6e3f4",
+  "https://api.dicebear.com/7.x/icons/svg?seed=16&backgroundColor=c0aede",
+  "https://api.dicebear.com/7.x/shapes/svg?seed=17&backgroundColor=d1d4f9",
+  "https://api.dicebear.com/7.x/icons/svg?seed=18&backgroundColor=ffd5dc",
+  "https://api.dicebear.com/7.x/shapes/svg?seed=19&backgroundColor=ffdfbf",
+  "https://api.dicebear.com/7.x/icons/svg?seed=20&backgroundColor=c0f2e3"
+]
 
 export default function ConfiguracionPage() {
   const { user, refreshUser } = useAuth()
   const { isSuperAdmin } = usePermissions()
   const supabase = createClient()
+  
+  const videoRef = useRef<HTMLVideoElement>(null)
+  const carouselRef = useRef<HTMLDivElement>(null)
+  const randomCarouselRef = useRef<HTMLDivElement>(null)
   
   const [loading, setLoading] = useState(false)
   const [formData, setFormData] = useState({
@@ -20,7 +73,25 @@ export default function ConfiguracionPage() {
     empresa: "",
     cargo: ""
   })
+  
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null)
   const [message, setMessage] = useState({ text: "", type: "" })
+  
+  // Modal states
+  const [isModalOpen, setIsModalOpen] = useState(false)
+  const [modalMode, setModalMode] = useState<"selection" | "camera" | "crop">("selection")
+  const [cameraStream, setCameraStream] = useState<MediaStream | null>(null)
+  const [cameraError, setCameraError] = useState<string | null>(null)
+
+  // Crop & rotate states
+  const [selectedImage, setSelectedImage] = useState<string | null>(null)
+  const [rotation, setRotation] = useState<number>(0)
+  const [scale, setScale] = useState<number>(1)
+  const [offset, setOffset] = useState({ x: 0, y: 0 })
+  const [isDragging, setIsDragging] = useState(false)
+  const [dragStart, setDragStart] = useState({ x: 0, y: 0 })
+  
+  const fileInputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
     if (user) {
@@ -35,8 +106,142 @@ export default function ConfiguracionPage() {
         empresa: user.company || "",
         cargo: user.job_title || ""
       })
+      setAvatarUrl(user.avatar || null)
     }
   }, [user])
+
+  const startCamera = async () => {
+    setModalMode("camera")
+    setCameraError(null)
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { width: 400, height: 400, facingMode: "user" }
+      })
+      setCameraStream(stream)
+      setTimeout(() => {
+        if (videoRef.current) {
+          videoRef.current.srcObject = stream
+        }
+      }, 100)
+    } catch (err: any) {
+      console.error(err)
+      setCameraError("No se pudo acceder a la cámara. Asegúrate de otorgar los permisos necesarios.")
+    }
+  }
+
+  const stopCamera = () => {
+    if (cameraStream) {
+      cameraStream.getTracks().forEach(track => track.stop())
+      setCameraStream(null)
+    }
+    setModalMode("selection")
+  }
+
+  const capturePhoto = () => {
+    if (videoRef.current) {
+      const canvas = document.createElement("canvas")
+      canvas.width = 400
+      canvas.height = 400
+      const ctx = canvas.getContext("2d")
+      if (ctx) {
+        ctx.drawImage(videoRef.current, 0, 0, 400, 400)
+        const base64 = canvas.toDataURL("image/jpeg", 0.9)
+        setSelectedImage(base64)
+        setRotation(0)
+        setScale(1)
+        setOffset({ x: 0, y: 0 })
+        
+        if (cameraStream) {
+          cameraStream.getTracks().forEach(track => track.stop())
+          setCameraStream(null)
+        }
+        
+        setModalMode("crop")
+      }
+    }
+  }
+
+  const closeModal = () => {
+    if (cameraStream) {
+      cameraStream.getTracks().forEach(track => track.stop())
+      setCameraStream(null)
+    }
+    setIsModalOpen(false)
+    setModalMode("selection")
+    setSelectedImage(null)
+    setRotation(0)
+    setScale(1)
+    setOffset({ x: 0, y: 0 })
+  }
+
+  const selectIlustracion = (url: string) => {
+    setAvatarUrl(url)
+    closeModal()
+  }
+
+  const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    const reader = new FileReader()
+    reader.onload = (event) => {
+      setSelectedImage(event.target?.result as string)
+      setRotation(0)
+      setScale(1)
+      setOffset({ x: 0, y: 0 })
+      setModalMode("crop")
+    }
+    reader.readAsDataURL(file)
+  }
+
+  // Pointer drag event handlers for avatar pan
+  const handlePointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
+    e.preventDefault()
+    setIsDragging(true)
+    setDragStart({ x: e.clientX - offset.x, y: e.clientY - offset.y })
+  }
+
+  const handlePointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (!isDragging) return
+    const newX = e.clientX - dragStart.x
+    const newY = e.clientY - dragStart.y
+    setOffset({ x: newX, y: newY })
+  }
+
+  const handlePointerUp = () => {
+    setIsDragging(false)
+  }
+
+  const applyCropAndRotate = () => {
+    if (!selectedImage) return
+
+    const img = new Image()
+    img.onload = () => {
+      const canvas = document.createElement("canvas")
+      canvas.width = 150
+      canvas.height = 150
+      const ctx = canvas.getContext("2d")
+      
+      if (ctx) {
+        ctx.fillStyle = "#0e1118"
+        ctx.fillRect(0, 0, 150, 150)
+        
+        // Conversión entre visor de 192px y el canvas de 150px
+        const factor = 150 / 192
+        
+        ctx.translate(75 + offset.x * factor, 75 + offset.y * factor)
+        ctx.rotate((rotation * Math.PI) / 180)
+        ctx.scale(scale, scale)
+        
+        ctx.drawImage(img, -75, -75, 150, 150)
+        
+        const base64 = canvas.toDataURL("image/jpeg", 0.8)
+        setAvatarUrl(base64)
+        closeModal()
+      }
+    }
+    img.src = selectedImage
+  }
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData(prev => ({ ...prev, [e.target.name]: e.target.value }))
@@ -58,7 +263,8 @@ export default function ConfiguracionPage() {
           id: user.id,
           full_name: fullName,
           company: formData.empresa,
-          job_title: formData.cargo
+          job_title: formData.cargo,
+          avatar_url: avatarUrl
         })
 
       if (error) throw error
@@ -67,7 +273,8 @@ export default function ConfiguracionPage() {
         data: { 
           full_name: fullName,
           company: formData.empresa,
-          job_title: formData.cargo
+          job_title: formData.cargo,
+          avatar_url: avatarUrl
         }
       })
 
@@ -153,6 +360,41 @@ export default function ConfiguracionPage() {
               )}
 
               <form onSubmit={handleSubmit} className="space-y-6">
+                {/* Avatar Uploader Section */}
+                <div className="flex flex-col items-center gap-4 sm:flex-row sm:gap-6 border-b border-outline-variant/30 pb-6 mb-6">
+                  <div 
+                    onClick={() => setIsModalOpen(true)}
+                    className="relative group/avatar cursor-pointer shrink-0"
+                  >
+                    <input
+                      type="file"
+                      ref={fileInputRef}
+                      accept="image/*"
+                      onChange={handleAvatarChange}
+                      className="hidden"
+                    />
+                    <div className="h-24 w-24 rounded-full overflow-hidden border-2 border-outline-variant bg-surface-container-high flex items-center justify-center transition-all group-hover/avatar:border-primary">
+                      {avatarUrl ? (
+                        <img src={avatarUrl} alt="Avatar" className="h-full w-full object-cover" />
+                      ) : (
+                        <span className="text-2xl font-black text-primary">
+                          {formData.nombre ? formData.nombre.substring(0, 1).toUpperCase() : ""}
+                          {formData.apellido ? formData.apellido.substring(0, 1).toUpperCase() : ""}
+                        </span>
+                      )}
+                    </div>
+                    <div className="absolute inset-0 bg-black/40 rounded-full flex items-center justify-center opacity-0 group-hover/avatar:opacity-100 transition-opacity">
+                      <Camera className="h-6 w-6 text-white" />
+                    </div>
+                  </div>
+                  <div className="text-center sm:text-left space-y-1">
+                    <p className="text-sm font-semibold text-on-surface">Foto de Perfil</p>
+                    <p className="text-xs text-on-surface-variant max-w-[240px]">
+                      Haz clic en la imagen para subir una nueva foto de perfil (se recomienda cuadrada, máximo 2MB).
+                    </p>
+                  </div>
+                </div>
+
                 <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
                   <div className="space-y-2">
                     <label className="text-xs font-bold uppercase tracking-wider text-on-surface-variant/70 px-1">Nombre</label>
@@ -233,6 +475,296 @@ export default function ConfiguracionPage() {
           </div>
         </div>
       </div>
+
+      {/* Modal interactivo de foto de perfil */}
+      <AnimatePresence>
+        {isModalOpen && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+            {/* Fondo / Backdrop click para cerrar */}
+            <motion.div 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={closeModal}
+              className="absolute inset-0"
+            />
+            
+            {/* Contenido del modal */}
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 15 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 15 }}
+              transition={{ type: "spring", duration: 0.4 }}
+              className="relative z-10 w-full max-w-md overflow-hidden rounded-3xl border border-outline-variant bg-surface-container-low shadow-2xl p-6 flex flex-col gap-6"
+            >
+              {/* Encabezado */}
+              <div className="flex items-center justify-between">
+                <h3 className="text-xl font-bold text-on-surface">
+                  {modalMode === "selection" && "Agregar foto de perfil"}
+                  {modalMode === "camera" && "Tomar foto de perfil"}
+                  {modalMode === "crop" && "Ajustar y rotar"}
+                </h3>
+                <button 
+                  onClick={closeModal}
+                  className="rounded-full p-1.5 text-on-surface-variant hover:bg-surface-container-highest hover:text-on-surface transition-colors"
+                >
+                  <X className="h-5 w-5" />
+                </button>
+              </div>
+
+              {/* Modo: Selección principal */}
+              {modalMode === "selection" && (
+                <div className="flex flex-col gap-6">
+                  {/* Ilustraciones predefinidas */}
+                  <div className="flex flex-col gap-3 relative">
+                    <p className="text-xs font-bold uppercase tracking-wider text-on-surface-variant/70">Ilustraciones predefinidas</p>
+                    
+                    <div className="relative w-full flex items-center group">
+                      {/* Botón scroll izquierdo */}
+                      <button
+                        type="button"
+                        onClick={() => carouselRef.current?.scrollBy({ left: -150, behavior: 'smooth' })}
+                        className="absolute -left-2 z-10 flex h-8 w-8 items-center justify-center rounded-full bg-surface-container-high/90 border border-outline-variant/30 text-on-surface shadow-md backdrop-blur-sm transition-all hover:bg-surface-container-highest active:scale-90"
+                        title="Anterior"
+                      >
+                        <ChevronLeft className="h-4 w-4" />
+                      </button>
+
+                      {/* Carrusel */}
+                      <div 
+                        ref={carouselRef}
+                        style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+                        className="flex w-full items-center gap-3 overflow-x-auto scroll-smooth py-1 px-4 scrollbar-none [&::-webkit-scrollbar]:hidden"
+                      >
+                        {ILUSTRACIONES.map((url, i) => (
+                          <button
+                            key={i}
+                            type="button"
+                            onClick={() => selectIlustracion(url)}
+                            className="w-14 h-14 rounded-full border border-outline-variant/30 overflow-hidden bg-surface-container-high flex-shrink-0 transition-transform hover:scale-110 active:scale-95 shadow-inner"
+                          >
+                            <img src={url} alt={`Ilustración ${i + 1}`} className="h-full w-full object-cover select-none pointer-events-none" />
+                          </button>
+                        ))}
+                      </div>
+
+                      {/* Botón scroll derecho (estilo flotante idéntico a la referencia) */}
+                      <button
+                        type="button"
+                        onClick={() => carouselRef.current?.scrollBy({ left: 150, behavior: 'smooth' })}
+                        className="absolute -right-2 z-10 flex h-9 w-9 items-center justify-center rounded-full bg-white text-black shadow-lg border border-neutral-200 transition-all hover:bg-neutral-50 active:scale-90"
+                        title="Siguiente"
+                      >
+                        <ChevronRight className="h-5 w-5 font-bold" />
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Ilustraciones random */}
+                  <div className="flex flex-col gap-3 relative">
+                    <p className="text-xs font-bold uppercase tracking-wider text-on-surface-variant/70">Otras ilustraciones</p>
+                    
+                    <div className="relative w-full flex items-center group">
+                      {/* Botón scroll izquierdo */}
+                      <button
+                        type="button"
+                        onClick={() => randomCarouselRef.current?.scrollBy({ left: -150, behavior: 'smooth' })}
+                        className="absolute -left-2 z-10 flex h-8 w-8 items-center justify-center rounded-full bg-surface-container-high/90 border border-outline-variant/30 text-on-surface shadow-md backdrop-blur-sm transition-all hover:bg-surface-container-highest active:scale-90"
+                        title="Anterior"
+                      >
+                        <ChevronLeft className="h-4 w-4" />
+                      </button>
+
+                      {/* Carrusel */}
+                      <div 
+                        ref={randomCarouselRef}
+                        style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+                        className="flex w-full items-center gap-3 overflow-x-auto scroll-smooth py-1 px-4 scrollbar-none [&::-webkit-scrollbar]:hidden"
+                      >
+                        {ILUSTRACIONES_RANDOM.map((url, i) => (
+                          <button
+                            key={i}
+                            type="button"
+                            onClick={() => selectIlustracion(url)}
+                            className="w-14 h-14 rounded-full border border-outline-variant/30 overflow-hidden bg-surface-container-high flex-shrink-0 transition-transform hover:scale-110 active:scale-95 shadow-inner"
+                          >
+                            <img src={url} alt={`Ilustración Random ${i + 1}`} className="h-full w-full object-cover select-none pointer-events-none" />
+                          </button>
+                        ))}
+                      </div>
+
+                      {/* Botón scroll derecho */}
+                      <button
+                        type="button"
+                        onClick={() => randomCarouselRef.current?.scrollBy({ left: 150, behavior: 'smooth' })}
+                        className="absolute -right-2 z-10 flex h-9 w-9 items-center justify-center rounded-full bg-white text-black shadow-lg border border-neutral-200 transition-all hover:bg-neutral-50 active:scale-90"
+                        title="Siguiente"
+                      >
+                        <ChevronRight className="h-5 w-5 font-bold" />
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Acciones principales */}
+                  <div className="flex flex-col gap-2">
+                    <button
+                      onClick={() => fileInputRef.current?.click()}
+                      className="flex items-center gap-3 w-full p-4 rounded-2xl bg-surface-container hover:bg-surface-container-highest text-on-surface text-sm font-semibold transition-all border border-outline-variant/10 hover:border-outline-variant/30"
+                    >
+                      <Upload className="h-5 w-5 text-primary" />
+                      <div className="text-left">
+                        <p className="font-bold">Subir desde el dispositivo</p>
+                        <p className="text-xs text-on-surface-variant font-medium">Soporta JPG, PNG y WebP</p>
+                      </div>
+                    </button>
+
+                    <button
+                      onClick={startCamera}
+                      className="flex items-center gap-3 w-full p-4 rounded-2xl bg-surface-container hover:bg-surface-container-highest text-on-surface text-sm font-semibold transition-all border border-outline-variant/10 hover:border-outline-variant/30"
+                    >
+                      <Camera className="h-5 w-5 text-primary" />
+                      <div className="text-left">
+                        <p className="font-bold">Tomar una foto</p>
+                        <p className="text-xs text-on-surface-variant font-medium">Usa la cámara de tu dispositivo</p>
+                      </div>
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {/* Modo: Cámara */}
+              {modalMode === "camera" && (
+                <div className="flex flex-col items-center gap-6">
+                  {cameraError ? (
+                    <div className="flex flex-col items-center gap-4 text-center py-6">
+                      <div className="rounded-full bg-red-500/10 p-3 text-red-500">
+                        <X className="h-8 w-8" />
+                      </div>
+                      <p className="text-sm font-medium text-red-400 max-w-[280px]">{cameraError}</p>
+                      <button
+                        onClick={stopCamera}
+                        className="text-xs font-bold text-primary underline"
+                      >
+                        Volver atrás
+                      </button>
+                    </div>
+                  ) : (
+                    <>
+                      <div className="relative h-56 w-56 rounded-full overflow-hidden border-4 border-primary/20 bg-black flex items-center justify-center">
+                        <video 
+                          ref={videoRef} 
+                          className="h-full w-full object-cover scale-x-[-1]" 
+                          autoPlay 
+                          playsInline 
+                        />
+                        {/* Máscara guía circular */}
+                        <div className="absolute inset-0 rounded-full border border-primary/30 pointer-events-none" />
+                      </div>
+
+                      <div className="flex items-center gap-3 w-full">
+                        <button
+                          onClick={stopCamera}
+                          className="flex-1 h-12 rounded-xl bg-surface-container hover:bg-surface-container-highest text-sm font-bold text-on-surface transition-colors"
+                        >
+                          Cancelar
+                        </button>
+                        <button
+                          onClick={capturePhoto}
+                          className="flex-1 h-12 rounded-xl bg-primary hover:bg-primary/95 text-sm font-bold text-primary-foreground transition-all flex items-center justify-center gap-2"
+                        >
+                          <Camera className="h-4 w-4" />
+                          Capturar
+                        </button>
+                      </div>
+                    </>
+                  )}
+                </div>
+              )}
+
+              {/* Modo: Recortar y Rotar */}
+              {modalMode === "crop" && selectedImage && (
+                <div className="flex flex-col items-center gap-6">
+                  {/* Contenedor de previsualización con máscara circular y esquinas blancas */}
+                  <div className="relative h-64 w-64 overflow-hidden rounded-2xl bg-black/90 flex items-center justify-center border border-outline-variant/30">
+                    <div 
+                      onPointerDown={handlePointerDown}
+                      onPointerMove={handlePointerMove}
+                      onPointerUp={handlePointerUp}
+                      onPointerLeave={handlePointerUp}
+                      className="relative h-48 w-48 rounded-full overflow-hidden cursor-move touch-none select-none active:cursor-grabbing"
+                    >
+                      <img 
+                        src={selectedImage} 
+                        alt="A ajustar" 
+                        style={{ 
+                          transform: `translate(${offset.x}px, ${offset.y}px) scale(${scale}) rotate(${rotation}deg)`,
+                          transformOrigin: "center center"
+                        }}
+                        className="h-full w-full object-cover select-none pointer-events-none transition-transform duration-75" 
+                      />
+                    </div>
+                    
+                    {/* Guías de esquinas blancas como la referencia */}
+                    <div className="absolute inset-0 pointer-events-none flex items-center justify-center">
+                      <div className="absolute inset-0 bg-black/40" />
+                      <div className="absolute h-48 w-48 rounded-full bg-transparent shadow-[0_0_0_9999px_rgba(0,0,0,0.5)] border border-white/20" />
+                      
+                      {/* Esquinas de enfoque */}
+                      <div className="absolute top-6 left-6 w-4 h-4 border-t-2 border-l-2 border-white" />
+                      <div className="absolute top-6 right-6 w-4 h-4 border-t-2 border-r-2 border-white" />
+                      <div className="absolute bottom-6 left-6 w-4 h-4 border-b-2 border-l-2 border-white" />
+                      <div className="absolute bottom-6 right-6 w-4 h-4 border-b-2 border-r-2 border-white" />
+                    </div>
+                  </div>
+
+                  <div className="flex flex-col gap-4 w-full">
+                    {/* Control de Zoom */}
+                    <div className="flex flex-col gap-2 w-full">
+                      <div className="flex items-center justify-between text-xs text-on-surface-variant font-bold px-1">
+                        <span>Aumentar / Reducir tamaño</span>
+                        <span>{Math.round(scale * 100)}%</span>
+                      </div>
+                      <input
+                        type="range"
+                        min="1"
+                        max="3"
+                        step="0.02"
+                        value={scale}
+                        onChange={(e) => setScale(parseFloat(e.target.value))}
+                        className="w-full h-1.5 bg-outline-variant/30 rounded-lg appearance-none cursor-pointer accent-primary focus:outline-none"
+                      />
+                    </div>
+
+                    {/* Botón Rotar */}
+                    <button
+                      onClick={() => setRotation(prev => (prev + 90) % 360)}
+                      className="flex h-11 items-center justify-center gap-2 rounded-xl bg-surface-container hover:bg-surface-container-highest text-sm font-semibold text-on-surface transition-colors w-full border border-outline-variant/10"
+                    >
+                      <RefreshCw className="h-4 w-4" />
+                      Rotar 90°
+                    </button>
+
+                    <div className="flex items-center gap-3 w-full">
+                      <button
+                        onClick={() => setModalMode("selection")}
+                        className="flex-1 h-12 rounded-xl bg-surface-container hover:bg-surface-container-highest text-sm font-bold text-on-surface transition-colors"
+                      >
+                        Atrás
+                      </button>
+                      <button
+                        onClick={applyCropAndRotate}
+                        className="flex-1 h-12 rounded-xl bg-primary hover:bg-primary/95 text-sm font-bold text-primary-foreground transition-all"
+                      >
+                        Guardar Foto
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   )
 }

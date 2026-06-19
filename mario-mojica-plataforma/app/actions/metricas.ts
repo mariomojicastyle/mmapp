@@ -206,6 +206,7 @@ export async function getMetricasDetalleProducto(
   try {
     const supabase = getSupabaseAdmin()
 
+    /* eslint-disable-next-line @typescript-eslint/no-explicit-any */
     let todosEventos: any[] = []
     let offset = 0
     const limitVal = 1000
@@ -248,6 +249,7 @@ export async function getMetricasDetalleProducto(
 
     const eventos = todosEventos
 
+    /* eslint-disable-next-line @typescript-eslint/no-explicit-any */
     const rows = ((eventos || []) as any[]).map((evt) => {
       const meta = evt.metadata || {}
       const mappedEventType = evt.tipo_evento === "help_click" 

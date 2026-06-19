@@ -260,8 +260,7 @@ export function DetalleProyectoModal({ isOpen, onClose, proyecto, onUpdate }: De
         .eq("id", proyecto.id)
 
       if (error) throw error
-
-      proyecto.nombre = editedName.trim()
+ 
       if (onUpdate) onUpdate()
     } catch (err) {
       console.error("Error saving project name:", err)
