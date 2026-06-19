@@ -21,6 +21,12 @@ Este archivo es la "Memoria RAM" para Antigravity. Contiene el contexto de lo qu
   - Omitir el nodo raíz "Scene" para evitar nombres erróneos de piezas.
   - Filas de costo total por sección (Madera, Fondos, Herrajes) y alineación de herrajes a 14 columnas.
   - Bloque resumen de Gran Total al final de la pestaña.
+- [x] **Módulo de Imagen de Perfil Interactiva (Hito Online_1)**:
+  - Carga de imágenes locales y captura nativa de cámara web en vivo (`getUserMedia`) con previsualización circular Obsidian Teal.
+  - Herramientas de ajuste: Zoom mediante slider, arrastre fluido (Pan) por pointer events y rotación acumulada a 90°.
+  - Procesamiento por canvas a 150x150 píxeles codificado a Base64.
+  - Galería con doble carrusel deslizable con flechas flotantes independientes para 20 personajes y 20 ilustraciones abstractas coloridas.
+  - Sincronización en tiempo real del avatar cargado en el header (`TopNav`) y el menú lateral inferior (`RoleSelector` del `Sidebar`).
 
 ### 🚧 Bloqueos / Notas Técnicas
 - **Identidad Visual:** Se utiliza el logo `Logo_vertical_color_en.svg` (corregido) como estándar global.
@@ -264,7 +270,7 @@ Un **"Manual Vacío"** es un cascarón o aplicación base centralizada (desplega
 - **Local App:** [http://localhost:3000](http://localhost:3000)
 
 ---
-*Última actualización de contexto: 16 de Junio, 2026*
+*Última actualización de contexto: 19 de Junio, 2026*
 
 ---
 
