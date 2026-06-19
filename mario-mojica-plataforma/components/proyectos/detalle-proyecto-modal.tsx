@@ -233,6 +233,44 @@ export function DetalleProyectoModal({ isOpen, onClose, proyecto, onUpdate }: De
   const [successMsg, setSuccessMsg] = useState("")
   const [isSaving, setIsSaving] = useState(false)
   const [codigoManual, setCodigoManual] = useState("")
+  
+  // Edición de nombre del proyecto
+  const [isEditingName, setIsEditingName] = useState(false)
+  const [editedName, setEditedName] = useState("")
+  const [isSavingName, setIsSavingName] = useState(false)
+
+  useEffect(() => {
+    if (proyecto?.nombre) {
+      setEditedName(proyecto.nombre)
+    }
+  }, [proyecto?.nombre])
+
+  const handleSaveName = async () => {
+    if (!proyecto || !editedName.trim() || editedName.trim() === proyecto.nombre) {
+      setIsEditingName(false)
+      return
+    }
+
+    setIsSavingName(true)
+    try {
+      const supabaseClient = createClient()
+      const { error } = await supabaseClient
+        .from("proyectos")
+        .update({ nombre: editedName.trim() })
+        .eq("id", proyecto.id)
+
+      if (error) throw error
+
+      proyecto.nombre = editedName.trim()
+      if (onUpdate) onUpdate()
+    } catch (err) {
+      console.error("Error saving project name:", err)
+      setEditedName(proyecto.nombre)
+    } finally {
+      setIsSavingName(false)
+      setIsEditingName(false)
+    }
+  }
 
   const [configId, setConfigId] = useState<string | null>(null)
   const [colorPrimario, setColorPrimario] = useState("#0D9488")
@@ -2129,7 +2167,36 @@ export function DetalleProyectoModal({ isOpen, onClose, proyecto, onUpdate }: De
                   <Cpu className="h-5 w-5 text-primary" />
                 </div>
                 <div>
-                  <h2 className="text-lg font-bold text-on-surface leading-tight">{proyecto.nombre}</h2>
+                  {isEditingName ? (
+                    <input
+                      type="text"
+                      value={editedName}
+                      onChange={(e) => setEditedName(e.target.value)}
+                      onBlur={handleSaveName}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") handleSaveName()
+                        if (e.key === "Escape") {
+                          setEditedName(proyecto?.nombre || "")
+                          setIsEditingName(false)
+                        }
+                      }}
+                      className="bg-surface-container-high text-lg font-bold text-on-surface border-b-2 border-primary focus:outline-none px-1 rounded-t max-w-sm"
+                      autoFocus
+                      disabled={isSavingName}
+                    />
+                  ) : (
+                    <h2 
+                      onClick={() => setIsEditingName(true)}
+                      className="group/title text-lg font-bold text-on-surface leading-tight hover:bg-on-surface/5 px-1.5 py-0.5 rounded cursor-pointer transition border border-transparent hover:border-outline-variant/20 inline-flex items-center gap-2"
+                      title="Haz clic para editar el nombre"
+                    >
+                      {proyecto?.nombre}
+                      <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="text-on-surface-variant/40 opacity-0 group-hover/title:opacity-100 transition-opacity shrink-0">
+                        <path d="M12 20h9"/>
+                        <path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/>
+                      </svg>
+                    </h2>
+                  )}
                   <div className="mt-1 flex items-center gap-2 text-xs text-on-surface-variant/80">
                     <span className="font-semibold text-primary">{proyecto.tipo_proyecto}</span>
                     <span>•</span>

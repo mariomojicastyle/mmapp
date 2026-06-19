@@ -1,0 +1,228 @@
+/* ═══════════════════════════════════════════════════════
+   FeedbackModal — Glassmorphism · Obsidian Teal
+   ═══════════════════════════════════════════════════════ */
+
+/* ── Keyframes ── */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(40px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* ── Overlay ── */
+.feedback-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.55);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  animation: fadeIn 0.3s ease-out forwards;
+}
+
+/* ── Card ── */
+.feedback-card {
+  position: relative;
+  width: 90vw;
+  max-width: 400px;
+  padding: 28px 24px 20px;
+  border-radius: 16px;
+  background: rgba(30, 31, 38, 0.72);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.45),
+              0 0 0 1px rgba(255, 255, 255, 0.04) inset;
+  font-family: var(--font-sans, 'Inter', sans-serif);
+  color: var(--font-body-color, #BEC8CE);
+  animation: slideUp 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* ── Title ── */
+.feedback-title {
+  margin: 0 0 4px;
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #fff;
+  text-align: center;
+}
+
+.feedback-subtitle {
+  margin: 0 0 20px;
+  font-size: 0.85rem;
+  text-align: center;
+  opacity: 0.7;
+}
+
+/* ── Stars ── */
+.feedback-stars {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  margin-bottom: 20px;
+}
+
+.feedback-star {
+  cursor: pointer;
+  transition: transform 200ms ease, filter 200ms ease;
+  will-change: transform;
+}
+
+.feedback-star:hover {
+  transform: scale(1.2);
+}
+
+.feedback-star svg {
+  width: 36px;
+  height: 36px;
+  fill: #555;
+  transition: fill 200ms ease;
+}
+
+.feedback-star.active svg,
+.feedback-star.hover svg {
+  fill: #FFD700;
+  filter: drop-shadow(0 0 6px rgba(255, 215, 0, 0.4));
+}
+
+/* ── Tags (condicionales) ── */
+.feedback-tags-section {
+  margin-bottom: 16px;
+  animation: fadeIn 0.25s ease-out;
+}
+
+.feedback-tags-label {
+  font-size: 0.8rem;
+  margin-bottom: 8px;
+  opacity: 0.8;
+}
+
+.feedback-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.feedback-tag {
+  padding: 6px 14px;
+  border-radius: 100px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: transparent;
+  color: var(--font-body-color, #BEC8CE);
+  font-family: var(--font-sans, 'Inter', sans-serif);
+  font-size: 0.78rem;
+  cursor: pointer;
+  transition: background 200ms ease, border-color 200ms ease, color 200ms ease;
+  user-select: none;
+}
+
+.feedback-tag:hover {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+.feedback-tag.selected {
+  background: var(--primary, #0088AA);
+  border-color: var(--primary, #0088AA);
+  color: var(--btn-text-color, #fff);
+}
+
+/* ── Comment textarea ── */
+.feedback-comment {
+  width: 100%;
+  min-height: 72px;
+  max-height: 120px;
+  padding: 10px 12px;
+  margin-bottom: 20px;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.04);
+  color: #e2e2eb;
+  font-family: var(--font-sans, 'Inter', sans-serif);
+  font-size: 0.85rem;
+  resize: vertical;
+  outline: none;
+  transition: border-color 200ms ease;
+  box-sizing: border-box;
+}
+
+.feedback-comment::placeholder {
+  color: rgba(255, 255, 255, 0.3);
+}
+
+.feedback-comment:focus {
+  border-color: var(--primary, #0088AA);
+}
+
+.feedback-char-count {
+  font-size: 0.7rem;
+  text-align: right;
+  margin-top: -16px;
+  margin-bottom: 14px;
+  opacity: 0.45;
+}
+
+/* ── Actions ── */
+.feedback-actions {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+
+.feedback-submit {
+  width: 100%;
+  padding: 12px 0;
+  border: none;
+  border-radius: 10px;
+  background: linear-gradient(135deg, var(--primary, #0088AA), color-mix(in srgb, var(--primary, #0088AA) 70%, #000));
+  color: var(--btn-text-color, #fff);
+  font-family: var(--font-sans, 'Inter', sans-serif);
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity 200ms ease, transform 150ms ease;
+  letter-spacing: 0.02em;
+}
+
+.feedback-submit:hover {
+  opacity: 0.9;
+}
+
+.feedback-submit:active {
+  transform: scale(0.97);
+}
+
+.feedback-submit:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.feedback-skip {
+  background: none;
+  border: none;
+  color: var(--font-body-color, #BEC8CE);
+  font-family: var(--font-sans, 'Inter', sans-serif);
+  font-size: 0.82rem;
+  cursor: pointer;
+  opacity: 0.6;
+  transition: opacity 200ms ease;
+  padding: 4px 8px;
+}
+
+.feedback-skip:hover {
+  opacity: 1;
+}

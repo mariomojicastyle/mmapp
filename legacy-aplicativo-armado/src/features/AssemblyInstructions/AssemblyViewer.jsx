@@ -8,6 +8,8 @@ import useEnviroment from "./hooks/useEnviroment";
 import * as THREE from "three";
 import PanelInicial from "./components/NavBarInferior/PanelInicial/PanelInicial";
 import { getAssetPath } from "../../lib/assets.js";
+import { useTelemetry } from "../../hooks/useTelemetry.js";
+import FeedbackModal from "./components/FeedbackModal/FeedbackModal.jsx";
 
 export default function AssemblyViewer({ productData, steps, id }) {
   // Variables y funciones extraidas del state management (useEnviroment)
@@ -23,8 +25,56 @@ export default function AssemblyViewer({ productData, steps, id }) {
   const PanelAyudas = useEnviroment((state) => state.PanelAyudas);
   const sombras = useEnviroment((state) => state.sombras);
   const lightingConfig = useEnviroment((state) => state.lightingConfig);
+  const AudioEnded = useEnviroment((state) => state.AudioEnded);
 
   const isTouchDevice = typeof window !== "undefined" && ('ontouchstart' in window || navigator.maxTouchPoints > 0);
+
+  // Telemetría & Feedback Modal
+  const { trackStepReached, trackHelpClick, trackSessionComplete, trackFeedback } = useTelemetry();
+  const [isFeedbackOpen, setIsFeedbackOpen] = useState(false);
+  const hasCompletedSession = useRef(false);
+  const prevPanelAyudas = useRef(PanelAyudas);
+
+  // Trackear cambio de paso
+  useEffect(() => {
+    if (pasoActual) {
+      const stepInt = parseInt(pasoActual, 10);
+      if (!isNaN(stepInt)) {
+        trackStepReached(stepInt);
+      }
+    }
+  }, [pasoActual, trackStepReached]);
+
+  // Trackear clics en panel de ayuda (apertura)
+  useEffect(() => {
+    if (PanelAyudas && !prevPanelAyudas.current) {
+      trackHelpClick("panel_ayudas_abierto");
+    }
+    prevPanelAyudas.current = PanelAyudas;
+  }, [PanelAyudas, trackHelpClick]);
+
+  // Trackear finalización de manual y abrir FeedbackModal (esperando a que termine el audio)
+  useEffect(() => {
+    if (steps && steps.length > 0 && pasoActual === steps[steps.length - 1]) {
+      if (AudioEnded === true && !hasCompletedSession.current) {
+        trackSessionComplete(steps.length);
+        hasCompletedSession.current = true;
+        const timer = setTimeout(() => {
+          setIsFeedbackOpen(true);
+        }, 500);
+        return () => clearTimeout(timer);
+      }
+    }
+  }, [pasoActual, steps, AudioEnded, trackSessionComplete]);
+
+  const handleFeedbackSubmit = ({ rating, tags, comment }) => {
+    trackFeedback(rating, tags, comment);
+    setIsFeedbackOpen(false);
+  };
+
+  const handleFeedbackClose = () => {
+    setIsFeedbackOpen(false);
+  };
 
   // Ref para el tooltip flotante y coordenadas del mouse
   const tooltipRef = useRef(null);
@@ -201,6 +251,13 @@ export default function AssemblyViewer({ productData, steps, id }) {
           {PiezaHerraje}
         </div>
       )}
+
+      {/* Modal de Feedback */}
+      <FeedbackModal
+        isOpen={isFeedbackOpen}
+        onSubmit={handleFeedbackSubmit}
+        onClose={handleFeedbackClose}
+      />
 
     </div>
   );

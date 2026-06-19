@@ -46,8 +46,10 @@ export const PERMISSIONS = {
     MANAGE: ["superadmin", "coequipero", "admin", "designer"],
   },
   PRODUCTOS: {
-    VIEW: ["superadmin", "coequipero", "admin", "designer", "viewer"],
-    MANAGE: ["superadmin", "admin"],
+    VIEW_ALL: ["superadmin", "coequipero"],
+    VIEW_OWN: ["admin", "designer", "viewer"],
+    MANAGE: ["superadmin", "coequipero"],
+    EXPORT_PDF: ["superadmin", "coequipero", "admin"],
   },
   PORTAFOLIO: {
     VIEW: ["superadmin", "coequipero", "admin", "designer", "viewer"],
