@@ -51,7 +51,6 @@ export default function Experience({ id, modelUrl, productData }) {
 
   const toogle = useEnviroment((state) => state.show);
   const CargarPasoInicial = useEnviroment((state) => state.CargarPasoInicial);
-  const ActualizarCliente = useEnviroment((state) => state.ActualizarCliente);
   const PasoActual = useEnviroment((state) => state.pasoActual);
   const cameraPositions = useEnviroment((state) => state.cameraPositions);
   const alturas = useEnviroment((state) => state.alturas);
@@ -59,14 +58,6 @@ export default function Experience({ id, modelUrl, productData }) {
   const computedModelMinY = useEnviroment((state) => state.computedModelMinY);
   const lightingConfig = useEnviroment((state) => state.lightingConfig);
   const customColors = useEnviroment((state) => state.customColors);
-
-
-  //Se actualiza si es Maderkit o Practimac
-  useEffect(() => {
-    if (id && id[0].includes("M")) {
-      ActualizarCliente("Maderkit");
-    }
-  }, [id, ActualizarCliente]);
 
 
   // Actualizar el target de la cámara usando los datos de 'alturas' del JSON

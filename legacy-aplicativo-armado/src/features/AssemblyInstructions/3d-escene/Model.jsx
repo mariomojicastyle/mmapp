@@ -4,7 +4,7 @@ import * as THREE from "three";
 import { useThree, useFrame } from "@react-three/fiber";
 import useEnviroment from "../hooks/useEnviroment.js";
 import Floor from "./Floor/Floor.jsx";
-import { getAssetPath } from "../../../lib/assets.js";
+import { getAssetPath, resolveAlias } from "../../../lib/assets.js";
 
 function obtenerNombreLimpioTooltip(rawName) {
   if (!rawName) return "";
@@ -65,7 +65,7 @@ function obtenerNombreLimpioTooltip(rawName) {
     name = name.split(" ")[0];
   }
   
-  return name;
+  return resolveAlias(name);
 }
 
 

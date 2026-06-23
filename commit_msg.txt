@@ -1,0 +1,6 @@
+feat(landing): Add Portuguese language support and clean console errors
+
+Expanded LanguageContext to support pt. Translated 12 key components
+of the B2B landing page. Fixed some console warnings.
+
+Co-Authored-By: Claude <noreply@anthropic.com>

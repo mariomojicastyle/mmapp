@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import useEnviroment from "../../../hooks/useEnviroment";
 import "./PanelHerrajes.css";
-import { getAssetPath } from "../../../../../lib/assets.js";
+import { getAssetPath, resolveAlias } from "../../../../../lib/assets.js";
 
 export default function PanelHerrajes({ id, data }) {
   const model = useEnviroment((state) => state.model);
@@ -119,7 +119,7 @@ export default function PanelHerrajes({ id, data }) {
       name = name.split(" ")[0];
     }
     
-    return name;
+    return resolveAlias(name);
   };
 
   // Detecta si un nombre limpio corresponde a un herraje usando palabras clave

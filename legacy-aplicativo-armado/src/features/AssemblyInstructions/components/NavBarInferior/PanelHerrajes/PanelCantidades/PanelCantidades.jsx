@@ -2,7 +2,7 @@ import useEnviroment from "../../../../hooks/useEnviroment";
 import { useEffect, useState } from "react";
 import "./PanelCantidades.css";
 import * as THREE from "three";
-import { getAssetPath } from "../../../../../../lib/assets.js";
+import { getAssetPath, resolveAlias } from "../../../../../../lib/assets.js";
 
 export default function PanelCantidades({ id, data }) {
   const pasoInicial = useEnviroment((state) => state.pasoInicial);
@@ -106,7 +106,7 @@ export default function PanelCantidades({ id, data }) {
       name = name.split(" ")[0];
     }
     
-    return name;
+    return resolveAlias(name);
   };
 
   // Detecta si un nombre limpio corresponde a un herraje usando palabras clave

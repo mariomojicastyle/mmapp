@@ -264,6 +264,10 @@ Un **"Manual Vacío"** es un cascarón o aplicación base centralizada (desplega
   - **Iframe de Spline (Bienvenida)**: Se limpió la URL dinámica de Spline y se eliminó el atributo genérico `title="Spline 3D Scene"` del iframe, suprimiendo tooltips nativos indeseados del navegador en PC.
   - **Corrección de Margen Táctil**: Ajuste de CSS (`margin-top: 0`) para alinear perfectamente el botón "Iniciar" en dispositivos móviles, previniendo superposiciones con el logo y centrándolo en el borde superior de la pantalla.
   - **Restauración Síncrona de Hover en PC**: Se corrigió un bug de colisión de estados (race condition) originado en la actualización táctil anterior. Se reintrodujo la restauración síncrona del material en `onPointerLeave` exclusivamente para dispositivos no táctiles, evitando que las piezas queden seleccionadas infinitamente al arrastrar el mouse.
+- [x] **Blindaje Legal Fase 3 y Traducción de Alias (23 de Junio, 2026)**:
+  - **Eliminación de Paridad CSS y Marca**: Remoción de archivos de encuesta obsoletos y del logo de Maderkit. Refactorización de `Landscape.jsx` para usar Tailwind CSS y borrado de `Landscape.css`.
+  - **Garantía Premium Neutra**: Creación de `Garantia.pdf` neutro de la plataforma y su sincronización local y en Supabase Storage.
+  - **Capa de Traducción de Alias en React**: Implementación de `resolveAlias` en `assets.js` e integración en `PanelHerrajes.jsx`, `PanelCantidades.jsx` y `Model.jsx`. Traduce nombres de mallas con SKUs legacy del GLB a nombres limpios en caliente, permitiendo renderizar sus imágenes de forma blindada sin alterar los archivos 3D.
 
 ---
 
@@ -274,7 +278,7 @@ Un **"Manual Vacío"** es un cascarón o aplicación base centralizada (desplega
 - **Local App:** [http://localhost:3000](http://localhost:3000)
 
 ---
-*Última actualización de contexto: 19 de Junio, 2026*
+*Última actualización de contexto: 23 de Junio, 2026*
 
 ---
 

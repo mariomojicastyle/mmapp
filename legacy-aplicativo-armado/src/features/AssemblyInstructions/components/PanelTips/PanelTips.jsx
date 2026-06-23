@@ -90,7 +90,7 @@ export default function PanelTips({ id, data }) {
     
     GarantiaDelProducto: data.isDynamicCMS && data.garantiaDoc 
       ? getAssetPath(`/${id}/${data.garantiaDoc}`) 
-      : getAssetPath("/assets/tips/Certificado_de_Garantia_v12.pdf"),
+      : getAssetPath("/assets/tips/Garantia.pdf"),
   };
 
   if (!data || !data.tips) return null;

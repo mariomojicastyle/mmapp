@@ -230,6 +230,35 @@ export default defineConfig({
     {
       name: 'supabase-assets-proxy',
       configureServer(server) {
+        // Diccionario de alias para mapear códigos SKU antiguos a nombres limpios genéricos
+        const nameAliases = {
+          'caja_0007374': 'Caja_minifix',
+          'caja_0002715': 'Caja_minifix',
+          'deslizador_007391': 'Deslizador',
+          'deslizador_0004696': 'Deslizador',
+          'perno_0007374': 'Perno',
+          'tarugo_20030001': 'Tarugo',
+          'tarugo_20030': 'Tarugo',
+          'tornillo_0000152': 'Tornillo_123',
+          'tornillo_000152': 'Tornillo_456',
+          'tornillo_0004705': 'Tornillo_456',
+          'tuerca_0004674': 'Tuerca',
+          'corredera_350_20080001': 'Rieles',
+          'corredera_350': 'Rieles'
+        };
+
+        const resolveAlias = (name) => {
+          if (!name) return name;
+          const extIndex = name.lastIndexOf('.');
+          const baseName = extIndex !== -1 ? name.substring(0, extIndex) : name;
+          const ext = extIndex !== -1 ? name.substring(extIndex) : '';
+          const key = baseName.toLowerCase();
+          if (nameAliases[key]) {
+            return nameAliases[key] + ext;
+          }
+          return name;
+        };
+
         server.middlewares.use(async (req, res, next) => {
           const url = req.url || ''
           
@@ -274,7 +303,8 @@ export default defineConfig({
           
           // Regla especial para herrajes compartidos en Supabase
           if (url.startsWith('/assets/herrajes_compartidos/')) {
-            const fileName = url.replace('/assets/herrajes_compartidos/', '')
+            const rawFileName = url.replace('/assets/herrajes_compartidos/', '')
+            const fileName = resolveAlias(rawFileName)
             const sharedUrl = `${supabaseUrl}/storage/v1/object/public/insumos_manuales/_herrajes_compartidos/${fileName}`
             
             const fetchShared = async () => {
@@ -323,7 +353,8 @@ export default defineConfig({
           // ─── Manejar texturas internas del GLB ───
           if (matchGlbTexture) {
             const manualId = matchGlbTexture[1]
-            const resourceName = matchGlbTexture[3]
+            const rawResourceName = matchGlbTexture[3]
+            const resourceName = resolveAlias(rawResourceName)
             const extensions = ['webp', 'jpg', 'jpeg', 'png']
             
             const tryResolveTexture = async () => {
