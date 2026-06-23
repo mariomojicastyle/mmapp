@@ -70,10 +70,20 @@ export function useTelemetry() {
   const referrerType = useRef(detectReferrerType());
   const proyectoIdRef = useRef(null);
   const resolvedRef = useRef(false);
+  const eventQueue = useRef([]);
 
   /* ── Envío genérico (fire-and-forget) ── */
   const sendEvent = useCallback(
     (eventType, payload = {}) => {
+      // Si aún no se ha resuelto el proyecto_id, encolamos el evento
+      if (!resolvedRef.current) {
+        eventQueue.current.push({ eventType, payload });
+        return;
+      }
+
+      // Si se resolvió pero no hay proyecto_id (ej. código manual inválido), no enviamos nada
+      if (!proyectoIdRef.current) return;
+
       // Mapear para cumplir con el CHECK constraint de la base de datos
       const tipoEventoDb = eventType === 'feedback' ? 'feedback_submitted' : eventType;
 
@@ -117,9 +127,15 @@ export function useTelemetry() {
           sendEvent('session_start');
         }
         resolvedRef.current = true;
+        // Procesar cola
+        if (eventQueue.current.length > 0) {
+          eventQueue.current.forEach(evt => sendEvent(evt.eventType, evt.payload));
+          eventQueue.current = [];
+        }
       })
       .catch(() => {
         resolvedRef.current = true;
+        eventQueue.current = []; // Descartar si hay error
       });
   }, [codigoManual, sendEvent]);
 

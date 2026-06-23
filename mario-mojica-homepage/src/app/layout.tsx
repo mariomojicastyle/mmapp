@@ -1,9 +1,11 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import CookieConsent from "@/components/CookieConsent";
+import { LanguageProvider } from "@/components/LanguageContext";
 
 export const metadata: Metadata = {
-  title: "Mario Mojica | Plataforma de Visualización 3D & AR",
-  description: "Impulsa tus ventas creando, gestionando y distribuyendo visuales 3D y AR de alto impacto con la plataforma de Mario Mojica.",
+  title: "Manual de Armado Interactivo 3D | Mario Mojica",
+  description: "Transforma tus manuales de papel en guías 3D interactivas con audio, Realidad Aumentada y analíticas. Diseñado para fabricantes de muebles RTA. Industria 4.0.",
 };
 
 export default function RootLayout({
@@ -12,19 +14,16 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html
-      lang="es"
-      className="h-full antialiased dark"
-    >
+    <html lang="es" className="h-full scroll-smooth dark">
       <head>
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
-        <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet" />
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
         <script type="module" src="https://ajax.googleapis.com/ajax/libs/model-viewer/3.5.0/model-viewer.min.js" async></script>
       </head>
       <body className="min-h-full flex flex-col">
-        {children}
+        <LanguageProvider>
+          {children}
+          <CookieConsent />
+        </LanguageProvider>
       </body>
     </html>
   );

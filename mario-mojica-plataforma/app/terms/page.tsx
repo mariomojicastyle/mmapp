@@ -78,13 +78,21 @@ export default function TermsPage() {
   return (
     <div className="min-h-screen bg-[#F8F9FA] text-slate-800 py-12 px-6 lg:px-24">
       <div className="max-w-3xl mx-auto bg-white rounded-2xl border border-slate-100 shadow-sm p-8 lg:p-12">
-        <Link 
-          href="/login" 
+        <a 
+          href="#" 
+          onClick={(e) => {
+            e.preventDefault();
+            if (window.history.length > 1) {
+              window.history.back();
+            } else {
+              window.location.href = "/login";
+            }
+          }}
           className="inline-flex items-center gap-2 text-sm font-semibold text-[#0088AA] hover:underline mb-8"
         >
           <ArrowLeft className="h-4 w-4" />
           {t.back}
-        </Link>
+        </a>
 
         <div className="flex items-center gap-3 mb-6">
           <FileText className="h-8 w-8 text-[#0088AA]" />

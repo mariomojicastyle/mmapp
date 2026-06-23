@@ -739,3 +739,31 @@ Los estilos, colores y tiempos de transición de las flechas azules se configura
       - Ambos carruseles cuentan con flechas de desplazamiento independientes y comportamiento scroll suave.
     - **Sincronización del Perfil**: El avatar seleccionado se asocia físicamente al perfil del usuario actual, actualizándose al instante en la cabecera ([topnav.tsx](file:///c:/Desarrollo/mmapp/mario-mojica-plataforma/components/layout/topnav.tsx#L169-L174)) y el selector de roles del menú del pie del lateral ([sidebar.tsx](file:///c:/Desarrollo/mmapp/mario-mojica-plataforma/components/layout/sidebar.tsx#L154)).
 
+* **[2026-06-22] Plataforma_v16 / Landing_GTM — Respaldo de Landing Page Original y Enfoque de Lanzamiento (Manuales 3D B2B):**
+    - **Respaldo de Landing Page**: Creación del archivo de respaldo [page.original.bak](file:///c:/Desarrollo/mmapp/mario-mojica-homepage/src/app/page.original.bak) para conservar la estructura del home general mientras se re-enfoca la landing comercial hacia el Manual de Armado 3D interactivo.
+    - **Actualización del Manifiesto de Negocio**: Redacción e integración en [MANIFIESTO_NEGOCIO.md](file:///c:/Desarrollo/mmapp/docs/MANIFIESTO_NEGOCIO.md) de las secciones de Go-To-Market (GTM) y Puesta en Marcha, consolidando el manual interactivo 3D como el "Caballo de Troya" B2B para la captación de clientes de la industria RTA y la integración de métricas ejecutivas.
+
+* **[2026-06-22] Landing_GTM_v2 — Implementación de la Nueva Landing B2B (Manual de Armado 3D):**
+    - **Estrategia de Respaldo Completo**: Creación de la carpeta `mario-mojica-homepage/src/components/_original_backup/` con copia íntegra de los 10 componentes originales (Hero, Brands, WhyChoose, HowItWorks, DetailedFeatures, CurationSection, MaximizePotential, ProcessVideo, Showcase, FinalCTA). Combinado con el `page.original.bak` ya existente, permite revertir la landing anterior al 100%.
+    - **Estrategia de Reversión Documentada**: Para restaurar la landing anterior: (1) Copiar `page.original.bak` → `page.tsx`, (2) Restaurar componentes desde `_original_backup/`, (3) No se necesita revertir `globals.css`, `layout.tsx` ni el design system (se mantienen intactos).
+    - **Nuevos Componentes Implementados** (8 componentes nuevos para el enfoque B2B):
+      - `HeroManual.tsx` — Hero enfocado en el dolor de devoluciones por armado de muebles RTA.
+      - `SocialProof.tsx` — Franja de métricas de impacto rápido (reducción reclamos, soporte, tasa finalización).
+      - `PainVsSolution.tsx` — Contraste visual: manual de papel vs. manual 3D interactivo.
+      - `LiveDemo.tsx` — Iframe embebido del visor 3D interactivo real del manual.
+      - `ProductFeatures.tsx` — 6 tarjetas de características (TTS, WebAR, Herrajes, Branding, QR, PBR).
+      - `MetricsSection.tsx` — Sistema de analíticas ejecutivas: funnel de retención, tasa de finalización, sentimiento.
+      - `ClientPortal.tsx` — Portal B2B: acceso autenticado, branding autogestionable, descarga de QR.
+      - `HowItWorksSteps.tsx` — Proceso de integración en 3 pasos para el fabricante.
+      - `FAQ.tsx` — Preguntas frecuentes B2B sobre integración, tiempos y costos.
+      - `ContactCTA.tsx` — Formulario de captura de leads B2B con campos específicos.
+    - **Componentes Modificados**: `Header.tsx` (navegación actualizada), `Footer.tsx` (enlaces ajustados), `layout.tsx` (metadata SEO para Manual de Armado).
+    - **Componentes Eliminados del Render**: `Showcase.tsx`, `ProblemSolution.tsx`, `GondolaViewer.tsx` (no aplicables al nuevo enfoque).
+
+
+
+* **[2026-06-22] Landing_GTM_v2 (Fixes) - Reparación de Modo Oscuro, Permisos AR y Cola de Telemetría**:
+    - **Dark Mode Global y Header Dinámico**: Restauración de la clase `dark` en la raíz de `layout.tsx` para hacer cumplir los Brand Guidelines (Obsidian Teal). Se parcheó `Header.tsx` con colores translúcidos (`bg-[#0a0a0a]/90`) y filtros de logo invertidos (`brightness-0 invert`) para legibilidad sobre el carrusel y en scroll.
+    - **Violaciones de Política de Iframe (AR)**: Solución de advertencia `[Violation] Permissions policy violation: xr-spatial-tracking` inyectando los atributos `allow="xr-spatial-tracking; fullscreen; autoplay; web-share"` en el `LiveDemo.tsx` que aloja el Model Viewer.
+    - **Cola de Eventos de Telemetría (Evitar 400)**: Corrección de error `400 Bad Request` en `telemetria_manuales`. Se implementó un `eventQueue` en `useTelemetry.js` (legacy-aplicativo-armado) para atrapar eventos prematuros (ej: tracking de paso 1 al montar) y retenerlos en memoria hasta que Supabase resuelva el `proyecto_id`.
+    - **Navegación Fluida Landing-Plataforma**: Ajuste de enlaces del `Footer.tsx` (`Aviso de Privacidad` y `Términos`) apuntando a la plataforma B2B con soporte `window.history.back()` nativo.

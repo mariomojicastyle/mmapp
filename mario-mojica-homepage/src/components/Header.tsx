@@ -3,12 +3,13 @@
 import React, { useState, useEffect } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
+import { useLanguage } from './LanguageContext';
 
 export default function Header() {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const { language, setLanguage, t } = useLanguage();
 
-  const portfolioUrl = process.env.NEXT_PUBLIC_PORTFOLIO_URL || 'http://localhost:3000';
   const platformUrl = process.env.NEXT_PUBLIC_PLATFORM_URL || 'http://localhost:3003';
 
   useEffect(() => {
@@ -24,16 +25,16 @@ export default function Header() {
       <header 
         className={`fixed top-0 left-0 w-full z-50 transition-all duration-500 ease-in-out ${
           isScrolled || isMenuOpen
-            ? 'bg-white/90 backdrop-blur-md shadow-lg py-3 text-text-light'
+            ? 'bg-white/90 dark:bg-[#0a0a0a]/90 backdrop-blur-md shadow-lg py-3 text-text-light dark:text-text-dark border-b border-gray-200 dark:border-gray-800'
             : 'bg-primary py-4 text-white'
         }`}
       >
         <div className="container mx-auto px-6 flex items-center justify-between relative h-10">
           {/* Left Column: Navigation */}
           <nav className="hidden lg:flex items-center gap-8 text-[11px] font-black uppercase tracking-[0.2em]">
-            <Link href="#productos" className="hover:opacity-60 transition-all whitespace-nowrap">Productos</Link>
-            <Link href={portfolioUrl} className="hover:opacity-60 transition-all whitespace-nowrap">Sobre mi</Link>
-            <Link href="https://portfolio.mariomojica.com/es#contact" className="hover:opacity-60 transition-all whitespace-nowrap">Contacto</Link>
+            <Link href="#caracteristicas" className="hover:opacity-60 transition-all whitespace-nowrap">{t('Características', 'Features')}</Link>
+            <Link href="#demo" className="hover:opacity-60 transition-all whitespace-nowrap">{t('Demo', 'Demo')}</Link>
+            <Link href="#contacto" className="hover:opacity-60 transition-all whitespace-nowrap">{t('Contacto', 'Contact')}</Link>
           </nav>
 
           {/* Mobile Menu Button */}
@@ -48,7 +49,7 @@ export default function Header() {
 
           <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 transition-all duration-500">
             <Link href="/" className="block">
-              <div className={`relative h-7 md:h-9 w-40 transition-all duration-500 ${isScrolled || isMenuOpen ? 'brightness-100' : 'brightness-0 invert'}`}>
+              <div className={`relative h-7 md:h-9 w-40 transition-all duration-500 ${isScrolled || isMenuOpen ? 'brightness-100 dark:brightness-0 dark:invert' : 'brightness-0 invert'}`}>
                 <Image
                   src="/Logo_Header.svg"
                   alt="Mario Mojica Logo"
@@ -65,21 +66,31 @@ export default function Header() {
             <div className="hidden md:flex items-center gap-6 text-[11px] font-black uppercase tracking-[0.2em]">
               <Link href={`${platformUrl}/login`} className="hover:opacity-60 transition-all">Login</Link>
               <Link 
-                href="https://portfolio.mariomojica.com/es#contact" 
+                href="#contacto" 
                 className={`px-6 py-2.5 rounded-full transition-all text-[11px] font-black uppercase tracking-[0.2em] shadow-lg ${
                   isScrolled || isMenuOpen
                     ? 'bg-primary text-white hover:bg-opacity-90'
                     : 'bg-white text-primary hover:bg-gray-100'
                 }`}
               >
-                Solicitar Cita
+                {t('Cotizar Manual', 'Get a Quote')}
               </Link>
             </div>
             
             <div className="flex items-center gap-1 text-[10px] font-bold">
-              <button className="transition-opacity hover:opacity-100">ES</button>
+              <button 
+                onClick={() => setLanguage('es')}
+                className={`transition-opacity hover:opacity-100 cursor-pointer ${language === 'es' ? 'opacity-100 font-extrabold' : 'opacity-40'}`}
+              >
+                ES
+              </button>
               <span className="opacity-20">/</span>
-              <button className="transition-opacity opacity-40 hover:opacity-100">EN</button>
+              <button 
+                onClick={() => setLanguage('en')}
+                className={`transition-opacity hover:opacity-100 cursor-pointer ${language === 'en' ? 'opacity-100 font-extrabold' : 'opacity-40'}`}
+              >
+                EN
+              </button>
             </div>
           </div>
         </div>
@@ -92,16 +103,16 @@ export default function Header() {
         }`}
       >
         <nav className="flex flex-col items-center gap-8 text-2xl font-black uppercase tracking-[0.2em] text-text-light">
-          <Link onClick={() => setIsMenuOpen(false)} href="#productos" className="hover:text-primary transition-colors">Productos</Link>
-          <Link onClick={() => setIsMenuOpen(false)} href={portfolioUrl} className="hover:text-primary transition-colors">Sobre mi</Link>
-          <Link onClick={() => setIsMenuOpen(false)} href="https://portfolio.mariomojica.com/es#contact" className="hover:text-primary transition-colors">Contacto</Link>
+          <Link onClick={() => setIsMenuOpen(false)} href="#caracteristicas" className="hover:text-primary transition-colors">{t('Características', 'Features')}</Link>
+          <Link onClick={() => setIsMenuOpen(false)} href="#demo" className="hover:text-primary transition-colors">{t('Demo', 'Demo')}</Link>
+          <Link onClick={() => setIsMenuOpen(false)} href="#contacto" className="hover:text-primary transition-colors">{t('Contacto', 'Contact')}</Link>
           <Link onClick={() => setIsMenuOpen(false)} href={`${platformUrl}/login`} className="hover:text-primary transition-colors">Login</Link>
           <Link 
             onClick={() => setIsMenuOpen(false)}
-            href="https://portfolio.mariomojica.com/es#contact" 
+            href="#contacto" 
             className="bg-primary text-white px-10 py-4 rounded-full text-xl shadow-xl active:scale-95 transition-all"
           >
-            Solicitar Cita
+            {t('Cotizar Manual', 'Get a Quote')}
           </Link>
         </nav>
       </div>

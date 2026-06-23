@@ -80,7 +80,7 @@ export default function GondolaViewer() {
             exit={{ opacity: 0 }}
             className="w-full h-full"
           >
-            {/* @ts-expect-error */}
+            {/* @ts-ignore */}
             <model-viewer
               src={PRODUCT_3B_URL}
               ar
@@ -90,7 +90,7 @@ export default function GondolaViewer() {
               shadow-intensity="1"
               style={{ width: "100%", height: "100%" }}
             >
-              {/* @ts-expect-error */}
+              {/* @ts-ignore */}
             </model-viewer>
           </motion.div>
         )}

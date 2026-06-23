@@ -25,6 +25,13 @@ export default function PanelInicial() {
     return false;
   });
 
+  const [isEmbedded, setIsEmbedded] = useState(false);
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      setIsEmbedded(window.self !== window.top);
+    }
+  }, []);
+
   useEffect(() => {
     let intervalId;
     
@@ -167,7 +174,7 @@ export default function PanelInicial() {
                 <span style={labelStyles}>{`${displayProgress}%`}</span>
               </div>
             </div>
-            <div className="optionI" id="inicio" onClick={Start}>
+            <div className="optionI" id="inicio" onClick={Start} style={isEmbedded ? { marginTop: '10px' } : {}}>
               <div className="imagen">
                 {idioma === "en" ? "Start" : "Iniciar"}
               </div>

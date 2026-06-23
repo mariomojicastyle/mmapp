@@ -1,0 +1,91 @@
+A continuación, un borrador de lo que se quiere llegar a tener en la plataforma en un futuro:
+Quiero crear una Startup que se dedique a ofrecer servicios a fábricas de muebles tipo RTA. Se piensa ofrecer 3 planes:
+Servicios Plan 1 Starter:  (5 productos al mes) precio 790 USD mensual
+Render fotorealistico
+Desarrollo Web AR
+Realidad aumentada
+Servicios Plan 2 Estándar: (10 productos al mes) precio 2900 USD mensual    
+Render foto realístico
+Desarrollo Web AR
+Realidad aumentada
+Analíticas de los productos
+Modelado 3D
+Estrategia de penetración para diseño
+Diseño de producto RTA
+Planos de fabricación
+Costeos
+App de armado 3d interactivo
+Servicios Plan 3 Visionario: (transformación digital + Estándar) precio 79000 USD al año
+Render foto realístico
+Desarrollo Web AR
+Realidad aumentada
+Analíticas de los productos
+Modelado 3D
+Estrategia de penetración para diseño
+Diseño de producto RTA
+Planos de fabricación
+Costeos
+App de armado 3d interactivo
+Análisis y diagnóstico de procesos
+Definición de alcances
+Adaptación de herramientas y procesos
+Gestión del cambio cultural
+Prueba piloto
+Retroalimentación de alcances
+Desarrollo de aplicaciones
+Programa de implementación y Mockup's interfaces
+Estrategia de implementación
+Cronograma de implementación
+Implementación
+Como puedes apreciar, el plan 3 Visionario se especializa en transformación digital, que es la aplicación del proyecto MakeLab a cualquier empresa del sector de muebles RTA.
+Dime que opinas de la idea de esta Startup
+División B2B
+Servicio de diseño de producto
+El enfoque es ofrecer el servicio a empresas de manufactura de muebles como por ejemplo muebles listos para armar, escritorios, bibliotecas, cajoneras, estanterías, camas, mesas de noche, cómodas, armarios, tocadores, zapateros, muebles de lavamanos, cocina, alacena, mesas de tv, centros de entretenimiento, mesas de centro, bifes, comedor, muebles de aseo, sillas, sofas, poltronas.
+Plataforma de Innovación y Diseño 3D | Mario Mojica
+Accede a mi portafolio de proyectos reales donde aplico diseño computacional, desarrollo de software personalizado y visualización 3D avanzada. Soluciones probadas para reducir la fricción operativa en I+D y comercial, optimizando la cadena de valor e impulsando la competitividad empresarial digitalmente.
+DISEÑO GENERATIVO Y AUTOMATIZACIÓN: MAXIMIZANDO LA RENTABILIDAD EN LA INDUSTRIA DEL MUEBLE
+Soy Mario Mojica, Diseñador Industrial experto en la automatización de procesos con diseño generativo para la industria del mueble. Mi trayectoria no se mide solo en años, sino en más de 3 millones de productos que hoy habitan hogares en toda Latinoamérica. Desde el 2020, he consolidado mi perfil como estratega tecnológico, dedicándome a resolver la ineficiencia empresarial mediante la fusión de la maestría en manufactura con la aceleración de la IA.
+Mi enfoque no es solo estético; es sistémico. Utilizo un ecosistema de vanguardia —integrando Rhino 3D, Grasshopper y n8n— para transformar la forma en la que se conciben los productos. Mi objetivo es lograr una rentabilidad superior, creando flujos de trabajo optimizados y listos para la Manufactura 4.0. No solo diseño objetos; diseño los sistemas inteligentes que los hacen posibles.
+Especializado en convertir departamentos de diseño lentos en unidades de alto rendimiento, mi metodología integra flujos CNC, visualización avanzada en Blender/Three.js y automatizaciones para mercadeo. He logrado reducir los ciclos de desarrollo y respuesta técnica en hasta un 80%, eliminando cuellos de botella tradicionales.
+Las áreas de diseño convencionales suelen ser costosas y poco ágiles; mi misión es cambiar esa realidad. Sumo 15 años de experiencia en manufactura masiva a un stack tecnológico de IA para entregar renders, planos y manuales de armado con una precisión quirúrgica. Acompaño a las empresas a dar el salto definitivo hacia la transformación digital, implementando procesos que aseguran su competitividad en el mercado global.
+Opción B (Estilo Declaración de Misión)
+Para competir en el mercado actual, la automatización de la manufactura y la capacidad de asombrar al cliente online deben coexistir. Es así como la Industria 4.0 cobra sentido. Hoy, las empresas ya pueden contar con una plataforma robusta que seguirá escalando y llevando la transformación digital a cada etapa del negocio. Con nuestro manual de armado interactivo en 3D, entregamos una herramienta diseñada para reducir drásticamente las reclamaciones por armado defectuoso y consolidar la lealtad del cliente final.
+–
+Luego de analizarlo profundamente, consideró que el emprendimiento que quiero desarrollar es el de ofrecer outsourcing de diseño para la fabricación, enfocado en automatizaciones para que los productos pasen de la idea a la fabricación sin la fricción que representan las actuales áreas de diseño de las empresas que funcionan con herramientas desconectadas, con procesos manuales, tareas repetitivas y con errores. Este sería el producto premium ya que requiere un manejo técnico superior que pondría a las empresas de manufactura en otro nivel. Las herramientas que usaré para este trabajo serían Rhinoceros 3D y Grasshopper con los que se crearán estilos de visualArq y automatizaciones en grasshopper para generar archivos de para fabricacion, csv, dxf, con enfoque particular a las fábricas de muebles en general, muebles tipo kit como los de Maderkit, pero también muebles como los de Jamar, que incluyen partes blandas en espuma y tapizados como sillas, sofas etc.
+Descripción del Outsourcing de diseño:
+Resumen Técnico: Ecosistema MakeLab
+MakeLab es un laboratorio de definición algorítmica basado en Rhinoceros 3D (v8), Grasshopper y VisualArq. No es simplemente un software de diseño, sino un motor de Transformación Digital que convierte el diseño creativo en datos técnicos instantáneos para la industria 4.0.
+1. El Núcleo Tecnológico: "ADN Paramétrico"
+Motor Central: Utiliza estilos de VisualArq para encapsular algoritmos complejos en componentes arquitectónicos simples (puertas, cajones, estructuras) que usuarios sin conocimientos de programación pueden manipular.Geometría Híbrida: Genera simultáneamente volúmenes NURBS de alta precisión para ingeniería y Mallas (Mesh) optimizadas para renderizado, Realidad Aumentada (AR) y aplicativos de armado interactivo.
+Interconectividad: Implementa el plugin Speckle para conectar Rhino con Blender, permitiendo que los cambios en el diseño se reflejen en tiempo real en los activos de marketing (renders y animaciones).
+2. Automatización de Entregables (Outsourcing Efficiency)
+El sistema elimina las tareas repetitivas mediante la generación automática de:
+Producción: Archivos DXF para maquinaria CNC (Biesse), esquemas de optimización de láminas (Optiplaning) y listas de corte.Documentación: Planos técnicos en PDF, manuales de armado de una página y etiquetas de producto, todo vinculado al modelo 3D.
+Finanzas: Cálculo de costos de materiales, herrajes y procesos en tiempo real, con conexión a bases de datos SQL o ERPs como Siesa.
+Logística: Módulos de 3D Nesting (Contenerizador) para optimizar el empaque y despacho, calculando rellenos y dimensiones de cajas automáticamente.
+3. Impacto en el Modelo de Negocio (KPIs de Servicio)
+Para una empresa de outsourcing, MakeLab ofrece métricas de rendimiento disruptivas:
+Reducción de tiempos: Disminución del 85% en el tiempo total de desarrollo (de 4320 minutos a 630 en casos complejos).Escalabilidad: Capacidad de aumentar la velocidad de respuesta en un 50% sin necesidad de incrementar la nómina de dibujantes técnicos.
+Calidad: Eliminación del error humano mediante validaciones algorítmicas y checklists automatizados.
+Se pretende además cubrir otras necesidades muy específicas de una empresa de manufactura.
+Diseño de producto
+Renders de producto para venta online (render generado desde mi PC, no necesito cloud computing)
+3D de realidad aumentada plataforma 3d
+Manual de armado interactivo en 3D
+Video con IA
+Planos de fabricación
+Archivos CNC para fabricación (en duda, no creo que el mercado objetivo sea amplio)
+Aplicativo de empaque
+Para poder mostrar estos servicios de manera coherente, tengo una idea genial del diseño de un sistema constructivo en guadua con el que podré desarrollar muebles como sillas, poltronas, comedor, mesa de centro entre otros. Mi estrategia para no poner todos los huevos en una canasta, es poder trabajar también en la idea de un producto mueble que se pueda vender online como una pieza de diseño de alto valor a partir de un material amigable con el medio ambiente como la guadua. No se que logre mas éxito, si el servicio de outsorcing de diseño o la venta de los muebles.
+Es la idea para ofrecer excelente diseño y llegar hasta la entrega de los archivos de fabricación, la oportunidad que encontré, y es la razón por la que ofrezco el outsorcing, es que las áreas de diseño de las empresas son ineficientes y costosas, encontrando grandes dificultades para transformarse a la velocidad que la tecnología está cambiando, es por esa razón que veo la gran oportunidad de ofrecer un servicio que alivie ese dolor en las empresas de muebles. 
+Soy solo una persona, un diseñador industrial con capacidad de desarrollo de aplicaciones con Antigravity, conocimiento profundo de manufactura de muebles, automatización del diseño de productos. Ayúdame a dar forma a esta imperativa y urgente necesidad de replantear mi vida y el futuro de mi familia, haz tu mejor esfuerzo!
+Para Antigravity:
+Descripción del Servicio para "Antigravity"
+Servicio: "Algorithmic Furniture Manufacturing (AFM) Platform"
+Ofrecemos un servicio de Outsourcing de Ingeniería y Diseño Paramétrico que actúa como el puente digital entre la idea creativa y la planta de producción. A diferencia de las agencias de diseño tradicionales que entregan archivos estáticos, nuestra plataforma entrega un Gemelo Digital (ADN del producto) que autogenera toda la cadena de valor: costos exactos, archivos de maquinado CNC, activos de marketing fotorrealista y soluciones logísticas de empaque en segundos.
+Alcance para nuevas industrias (Sillas, Sofás, Madera sólida): Adaptamos el motor de Grasshopper para gestionar variables de tapicería, ensambles de madera sólida y ergonomía ajustable, garantizando que cualquier cambio en las dimensiones del mueble actualice instantáneamente los consumos de tela, madera y herrajes.
+–
+2.4. Una Especialización para el Diseñador Industrial: Integración de Modelos 3D con React Three Fiber
+Esta sección aprovecha directamente las habilidades de diseño industrial para crear una ventaja competitiva. La mayoría de los sitios web de startups son "folletos" estáticos. Al integrar modelos 3D interactivos, el sitio web se transforma de una herramienta de marketing pasiva a una experiencia de producto activa y atractiva. Esto demuestra valor, aumenta la participación del usuario y crea una identidad de marca memorable que los competidores no pueden replicar fácilmente.
+Además, el auge de la RA/RV y el metaverso apunta a un futuro en el que las experiencias 3D serán el estándar. Aprender react-three-fiber (R3F) ahora no solo mejora el sitio web actual, sino que también proporciona un conjunto de habilidades a la vanguardia de la próxima ola de interacción digital, posicionando a la marca como innovadora y técnicamente sofisticada.
