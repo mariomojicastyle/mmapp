@@ -10,19 +10,19 @@ export default function ClientPortal() {
   const features = [
     {
       icon: 'palette',
-      text: t('Personaliza colores, logotipos, textos de ayuda y faviconos desde tu panel.', 'Customize colors, logos, help texts, and favicons from your panel.'),
+      text: t('Personaliza colores, logotipos, textos de ayuda y faviconos desde tu panel.', 'Customize colors, logos, help texts, and favicons from your panel.', 'Personalize cores, logotipos, textos de ajuda e favicons a partir do seu painel.'),
     },
     {
       icon: 'visibility',
-      text: t('Visualiza la previsualización en vivo de tus manuales antes de publicar.', 'View the live preview of your manuals before publishing.'),
+      text: t('Visualiza la previsualización en vivo de tus manuales antes de publicar.', 'View the live preview of your manuals before publishing.', 'Veja a pré-visualização ao vivo dos seus manuais antes de publicar.'),
     },
     {
       icon: 'download',
-      text: t('Descarga códigos QR e informes de métricas para tus comités de calidad.', 'Download QR codes and metrics reports for your quality committees.'),
+      text: t('Descarga códigos QR e informes de métricas para tus comités de calidad.', 'Download QR codes and metrics reports for your quality committees.', 'Baixe códigos QR e relatórios de métricas para seus comitês de qualidade.'),
     },
     {
       icon: 'forum',
-      text: t('Comunicación fluida y centralizada. Solicita modificaciones técnicas desde la plataforma.', 'Fluid and centralized communication. Request technical changes from the platform.'),
+      text: t('Comunicación fluida y centralizada. Solicita modificaciones técnicas desde la plataforma.', 'Fluid and centralized communication. Request technical changes from the platform.', 'Comunicação fluida e centralizada. Solicite modificações técnicas direto da plataforma.'),
     },
   ];
 
@@ -58,7 +58,7 @@ export default function ClientPortal() {
                 {/* Card 1 — Identidad Visual */}
                 <div className="bg-surface-dark rounded-xl p-4">
                   <span className="material-symbols-outlined text-primary text-2xl mb-2 block">palette</span>
-                  <p className="text-text-dark text-sm font-semibold mb-3">{t("Identidad Visual", "Visual Identity")}</p>
+                  <p className="text-text-dark text-sm font-semibold mb-3">{t("Identidad Visual", "Visual Identity", "Identidade Visual")}</p>
                   <div className="flex items-center gap-2">
                     <span className="w-6 h-6 rounded-full bg-primary" />
                     <span className="w-6 h-6 rounded-full bg-purple-500" />
@@ -69,7 +69,7 @@ export default function ClientPortal() {
                 {/* Card 2 — Códigos QR */}
                 <div className="bg-surface-dark rounded-xl p-4">
                   <span className="material-symbols-outlined text-primary text-2xl mb-2 block">qr_code_2</span>
-                  <p className="text-text-dark text-sm font-semibold mb-3">{t("Códigos QR", "QR Codes")}</p>
+                  <p className="text-text-dark text-sm font-semibold mb-3">{t("Códigos QR", "QR Codes", "Códigos QR")}</p>
                   <div className="border-2 border-dashed border-border-dark w-16 h-16 rounded-lg flex items-center justify-center">
                     <span className="material-symbols-outlined text-text-muted-dark text-3xl">qr_code</span>
                   </div>
@@ -87,10 +87,10 @@ export default function ClientPortal() {
           transition={{ duration: 0.7, ease: 'easeOut', delay: 0.15 }}
         >
           <span className="text-primary text-xs uppercase tracking-widest font-bold mb-4 block">
-            {t("Portal Exclusivo B2B", "Exclusive B2B Portal")}
+            {t("Portal Exclusivo B2B", "Exclusive B2B Portal", "Portal Exclusivo B2B")}
           </span>
           <h2 className="text-3xl lg:text-4xl font-bold mb-8 text-text-light dark:text-text-dark">
-            {t("Tu catálogo bajo control absoluto", "Your Catalog Under Absolute Control")}
+            {t("Tu catálogo bajo control absoluto", "Your Catalog Under Absolute Control", "Seu Catálogo Sob Controle Absoluto")}
           </h2>
 
           <div className="space-y-1">

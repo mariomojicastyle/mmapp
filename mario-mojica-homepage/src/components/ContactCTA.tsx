@@ -22,16 +22,16 @@ export default function ContactCTA() {
   const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
 
   const trustSignals = [
-    { icon: 'verified', text: t('Sin compromiso de compra', 'No purchase commitment') },
-    { icon: 'schedule', text: t('Entrega en 5-10 días hábiles', 'Delivery in 5-10 business days') },
-    { icon: 'lock', text: t('Propiedad industrial 100% protegida y confidencialidad (NDA)', 'Industrial property 100% protected and confidentiality (NDA)') },
+    { icon: 'verified', text: t('Sin compromiso de compra', 'No purchase commitment', 'Sem compromisso de compra') },
+    { icon: 'schedule', text: t('Entrega en 5-10 días hábiles', 'Delivery in 5-10 business days', 'Entrega em 5-10 dias úteis') },
+    { icon: 'lock', text: t('Propiedad industrial 100% protegida y confidencialidad (NDA)', 'Industrial property 100% protected and confidentiality (NDA)', 'Propriedade industrial 100% protegida e confidencialidade (NDA)') },
   ];
 
   const catalogOptions = [
-    t('1 - 10 productos', '1 - 10 products'),
-    t('11 - 50 productos', '11 - 50 products'),
-    t('51 - 200 productos', '51 - 200 products'),
-    t('Más de 200 productos', 'More than 200 products'),
+    t('1 - 10 productos', '1 - 10 products', '1 - 10 produtos'),
+    t('11 - 50 productos', '11 - 50 products', '11 - 50 produtos'),
+    t('51 - 200 productos', '51 - 200 products', '51 - 200 produtos'),
+    t('Más de 200 productos', 'More than 200 products', 'Mais de 200 produtos'),
   ];
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
@@ -55,15 +55,15 @@ export default function ContactCTA() {
           'X-N8N-Token': webhookToken,
         },
         body: JSON.stringify({
-          nombre: formData.nombre,
-          apellido: '-', // Requerido por la automatización original
-          correo: formData.correo,
-          empresa: formData.empresa,
-          pais: 'Colombia', // Mapeado exactamente
-          telefono: formData.telefono || '-',
-          rol: 'Otro', // Mapeado a una opción válida en Baserow
-          interes: 'Manual de armado interactivo en 3D', // Mapeado exactamente a la opción válida en Baserow
-          descripcion: `Catálogo: ${formData.productos}. Comentarios: ${formData.mensaje || 'Sin comentarios'}`,
+          nombre: formData.nombre.trim(),
+          apellido: 'ND', 
+          correo: formData.correo.trim(),
+          empresa: formData.empresa.trim().replace(/\\n/g, ' '),
+          pais: 'Colombia', 
+          telefono: formData.telefono ? formData.telefono.trim() : 'ND',
+          rol: 'Otro',
+          interes: 'Manual de armado interactivo en 3D',
+          descripcion: `Catálogo: ${formData.productos}. Comentarios: ${formData.mensaje ? formData.mensaje.replace(/\\n/g, ' ') : 'ND'}`,
           origen: 'B2B Landing (Manuales 3D)',
           fecha: new Date().toISOString()
         }),
@@ -99,12 +99,13 @@ export default function ContactCTA() {
           transition={{ duration: 0.7, ease: 'easeOut' }}
         >
           <h2 className="text-3xl lg:text-4xl font-bold text-white mb-6">
-            {t('Obtén un prototipo interactivo 3D gratuito', 'Get a Free 3D Interactive Prototype')}
+            {t('Obtén un prototipo interactivo 3D gratuito', 'Get a Free 3D Interactive Prototype', 'Obtenha um protótipo interativo 3D gratuito')}
           </h2>
           <p className="text-text-muted-dark text-lg mb-8 leading-relaxed">
             {t(
               'Envíanos uno de tus muebles y te devolveremos un manual interactivo 3D completo sin costo. Comprueba el impacto antes de decidir.',
-              'Send us one of your furniture products and we will return a complete interactive 3D manual at no cost. Test the impact before you decide.'
+              'Send us one of your furniture products and we will return a complete interactive 3D manual at no cost. Test the impact before you decide.',
+              'Envie-nos um dos seus móveis e devolveremos um manual interativo 3D completo sem custo. Comprove o impacto antes de decidir.'
             )}
           </p>
 
@@ -148,19 +149,20 @@ export default function ContactCTA() {
                     <span className="material-symbols-outlined text-primary text-5xl">task_alt</span>
                   </div>
                   <h3 className="text-2xl font-bold text-white mb-3">
-                    {t('¡Solicitud Recibida!', 'Request Received!')}
+                    {t('¡Solicitud Recibida!', 'Request Received!', 'Solicitação Recebida!')}
                   </h3>
                   <p className="text-text-muted-dark text-sm leading-relaxed max-w-sm mx-auto mb-8">
                     {t(
                       'Hemos recibido tus datos correctamente. Nuestro equipo técnico se pondrá en contacto contigo en las próximas 24 horas para coordinar la entrega de tu prototipo 3D gratuito.',
-                      'We have successfully received your information. Our technical team will reach out within 24 hours to coordinate the delivery of your free 3D prototype.'
+                      'We have successfully received your information. Our technical team will reach out within 24 hours to coordinate the delivery of your free 3D prototype.',
+                      'Recebemos seus dados com sucesso. Nossa equipe técnica entrará em contato em até 24 horas para coordenar a entrega do seu protótipo 3D gratuito.'
                     )}
                   </p>
                   <button
                     onClick={() => setStatus('idle')}
                     className="bg-primary/20 hover:bg-primary border border-primary text-white py-3 px-8 rounded-full font-bold text-sm transition-all cursor-pointer"
                   >
-                    {t('Enviar otra solicitud', 'Send another request')}
+                    {t('Enviar otra solicitud', 'Send another request', 'Enviar outra solicitação')}
                   </button>
                 </motion.div>
               ) : (
@@ -177,7 +179,7 @@ export default function ContactCTA() {
                     value={formData.nombre}
                     onChange={handleChange}
                     required
-                    placeholder={t('Nombre completo *', 'Full Name *')}
+                    placeholder={t('Nombre completo *', 'Full Name *', 'Nome completo *')}
                     className={inputClasses}
                     disabled={status === 'loading'}
                   />
@@ -187,7 +189,7 @@ export default function ContactCTA() {
                     value={formData.empresa}
                     onChange={handleChange}
                     required
-                    placeholder={t('Empresa / Marca *', 'Company / Brand *')}
+                    placeholder={t('Empresa / Marca *', 'Company / Brand *', 'Empresa / Marca *')}
                     className={inputClasses}
                     disabled={status === 'loading'}
                   />
@@ -197,7 +199,7 @@ export default function ContactCTA() {
                     value={formData.correo}
                     onChange={handleChange}
                     required
-                    placeholder={t('Email corporativo *', 'Corporate Email *')}
+                    placeholder={t('Email corporativo *', 'Corporate Email *', 'E-mail corporativo *')}
                     className={inputClasses}
                     disabled={status === 'loading'}
                   />
@@ -206,7 +208,7 @@ export default function ContactCTA() {
                     name="telefono"
                     value={formData.telefono}
                     onChange={handleChange}
-                    placeholder={t('Teléfono / WhatsApp', 'Phone / WhatsApp')}
+                    placeholder={t('Teléfono / WhatsApp', 'Phone / WhatsApp', 'Telefone / WhatsApp')}
                     className={inputClasses}
                     disabled={status === 'loading'}
                   />
@@ -220,7 +222,7 @@ export default function ContactCTA() {
                       disabled={status === 'loading'}
                     >
                       <option value="" disabled>
-                        {t('¿Cuántos productos tiene tu catálogo? *', 'How many products are in your catalog? *')}
+                        {t('¿Cuántos productos tiene tu catálogo? *', 'How many products are in your catalog? *', 'Quantos produtos tem seu catálogo? *')}
                       </option>
                       {catalogOptions.map((option) => (
                         <option key={option} value={option}>
@@ -236,7 +238,7 @@ export default function ContactCTA() {
                     name="mensaje"
                     value={formData.mensaje}
                     onChange={handleChange}
-                    placeholder={t('Mensaje o comentarios', 'Message or comments')}
+                    placeholder={t('Mensaje o comentarios', 'Message or comments', 'Mensagem ou comentários')}
                     rows={3}
                     className={inputClasses}
                     disabled={status === 'loading'}
@@ -246,7 +248,8 @@ export default function ContactCTA() {
                     <div className="text-red-400 text-xs mb-4 text-center">
                       {t(
                         'Hubo un problema al enviar tus datos. Por favor, inténtalo de nuevo.',
-                        'There was a problem sending your details. Please try again.'
+                        'There was a problem sending your details. Please try again.',
+                        'Houve um problema ao enviar seus dados. Por favor, tente novamente.'
                       )}
                     </div>
                   )}
@@ -257,8 +260,8 @@ export default function ContactCTA() {
                     className="w-full bg-primary text-white py-4 rounded-full font-bold text-lg hover:bg-opacity-90 transition-all shadow-xl shadow-primary/30 hover:scale-[1.02] mt-2 flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 disabled:scale-100 disabled:cursor-not-allowed"
                   >
                     {status === 'loading'
-                      ? t('Enviando...', 'Sending...')
-                      : t('Solicitar Prototipo Gratuito', 'Request Free Prototype')}
+                      ? t('Enviando...', 'Sending...', 'Enviando...')
+                      : t('Solicitar Prototipo Gratuito', 'Request Free Prototype', 'Solicitar Protótipo Gratuito')}
                     {status !== 'loading' && (
                       <span className="material-symbols-outlined text-xl">arrow_forward</span>
                     )}
@@ -269,9 +272,9 @@ export default function ContactCTA() {
 
             {status !== 'success' && (
               <p className="text-xs text-text-muted-dark text-center mt-4">
-                {t('Al enviar, aceptas nuestra ', 'By submitting, you agree to our ')}
+                {t('Al enviar, aceptas nuestra ', 'By submitting, you agree to our ', 'Ao enviar, você concorda com nossa ')}
                 <Link href={`${platformUrl}/privacy`} className="text-primary hover:underline">
-                  {t('política de privacidad', 'privacy policy')}
+                  {t('política de privacidad', 'privacy policy', 'política de privacidade')}
                 </Link>.
               </p>
             )}

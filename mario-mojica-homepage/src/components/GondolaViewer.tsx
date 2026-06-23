@@ -1,8 +1,8 @@
 "use client";
 
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { RotateCw, Box, Zap, Maximize2, X, ArrowLeftRight } from "lucide-react";
+import { RotateCw, Box, Zap, ArrowLeftRight } from "lucide-react";
 
 const PRODUCT_360_URL = "https://ikdorsjntqnnxrpgvwrl.supabase.co/storage/v1/object/public/public-assets/kiosco-360/";
 const PRODUCT_3B_URL = "https://ikdorsjntqnnxrpgvwrl.supabase.co/storage/v1/object/public/public-assets/kiosco-3d/P00.glb";
@@ -57,6 +57,7 @@ export default function GondolaViewer() {
             onMouseUp={handleMouseUp}
             onMouseLeave={handleMouseUp}
           >
+            {/* eslint-disable-next-line @next/next/no-img-element */}
             <img 
               src={`${PRODUCT_360_URL}${currentFrame.toString().padStart(2, "0")}.webp`}
               alt="Producto 360"
@@ -80,7 +81,7 @@ export default function GondolaViewer() {
             exit={{ opacity: 0 }}
             className="w-full h-full"
           >
-            {/* @ts-expect-error */}
+            {/* @ts-expect-error model-viewer is a web component */}
             <model-viewer
               src={PRODUCT_3B_URL}
               ar
@@ -90,7 +91,7 @@ export default function GondolaViewer() {
               shadow-intensity="1"
               style={{ width: "100%", height: "100%" }}
             >
-              {/* @ts-expect-error */}
+              {/* @ts-expect-error model-viewer is a web component */}
             </model-viewer>
           </motion.div>
         )}

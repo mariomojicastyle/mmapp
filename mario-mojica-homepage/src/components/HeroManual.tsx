@@ -33,7 +33,7 @@ export default function HeroManual() {
         {/* Badge */}
         <motion.div variants={fadeUp} className="mb-8">
           <span className="border border-primary/50 text-primary text-xs uppercase tracking-widest px-4 py-1 rounded-full inline-block">
-            {t('Industria 4.0', 'Industry 4.0')}
+            {t('Industria 4.0', 'Industry 4.0', 'Indústria 4.0')}
           </span>
         </motion.div>
 
@@ -42,7 +42,7 @@ export default function HeroManual() {
           variants={fadeUp}
           className="text-5xl md:text-6xl lg:text-7xl font-bold mb-6 leading-tight tracking-tight"
         >
-          {t('El fin de las devoluciones por armado defectuoso', 'The end of returns due to faulty assembly')}
+          {t('El fin de las devoluciones por armado defectuoso', 'The end of returns due to faulty assembly', 'O fim das devoluções por montagem defeituosa')}
         </motion.h1>
 
         {/* Subtitle */}
@@ -52,7 +52,8 @@ export default function HeroManual() {
         >
           {t(
             'Guías 3D interactivas con audio paso a paso y Realidad Aumentada. Diseñado para fabricantes de muebles listos para armar.',
-            'Interactive 3D guides with step-by-step audio and Augmented Reality. Designed for ready-to-assemble furniture manufacturers.'
+            'Interactive 3D guides with step-by-step audio and Augmented Reality. Designed for ready-to-assemble furniture manufacturers.',
+            'Guias 3D interativos com áudio passo a passo e Realidade Aumentada. Projetado para fabricantes de móveis prontos para montar.'
           )}
         </motion.p>
 
@@ -65,13 +66,13 @@ export default function HeroManual() {
             href="#demo"
             className="bg-primary text-white py-4 px-10 rounded-full font-semibold text-lg hover:bg-opacity-90 shadow-xl shadow-primary/30 hover:scale-105 transition-all duration-300"
           >
-            {t('Ver Demo Interactiva', 'View Interactive Demo')}
+            {t('Ver Demo Interactiva', 'View Interactive Demo', 'Ver Demo Interativa')}
           </Link>
           <Link
             href="#contacto"
             className="border-2 border-white text-white py-4 px-10 rounded-full font-semibold text-lg hover:bg-white hover:text-black transition-colors duration-300"
           >
-            {t('Cotizar Mi Catálogo', 'Quote My Catalog')}
+            {t('Prototipo Gratuito', 'Free Prototype', 'Protótipo Gratuito')}
           </Link>
         </motion.div>
 
@@ -82,7 +83,8 @@ export default function HeroManual() {
         >
           {t(
             'Sin apps. Sin descargas. Funciona desde el navegador.',
-            'No apps. No downloads. Works right in the browser.'
+            'No apps. No downloads. Works right in the browser.',
+            'Sem apps. Sem downloads. Funciona direto no navegador.'
           )}
         </motion.p>
       </motion.div>

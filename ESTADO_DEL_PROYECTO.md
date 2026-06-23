@@ -27,6 +27,10 @@ Este archivo es la "Memoria RAM" para Antigravity. Contiene el contexto de lo qu
   - Procesamiento por canvas a 150x150 píxeles codificado a Base64.
   - Galería con doble carrusel deslizable con flechas flotantes independientes para 20 personajes y 20 ilustraciones abstractas coloridas.
   - Sincronización en tiempo real del avatar cargado en el header (`TopNav`) y el menú lateral inferior (`RoleSelector` del `Sidebar`).
+- [x] **Localización Multilingüe de la Landing Page B2B (Campaña_01)**:
+  - Expansión de `LanguageContext` para soportar Portugués (pt) además de Español y Inglés.
+  - Traducción estructural de 12 componentes clave (HeroManual, FAQ, ContactCTA, MetricsSection, etc.) inyectando variables en la función global `t()`.
+  - Integración de selector en el Header para cambios en vivo con renderizado condicional rápido.
 
 ### 🚧 Bloqueos / Notas Técnicas
 - **Identidad Visual:** Se utiliza el logo `Logo_vertical_color_en.svg` (corregido) como estándar global.

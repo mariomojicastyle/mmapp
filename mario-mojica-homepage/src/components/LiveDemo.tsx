@@ -42,7 +42,7 @@ export default function LiveDemo() {
           viewport={{ once: true }}
           className="text-4xl font-bold text-white text-center mb-4"
         >
-          {t("Experimenta el manual interactivo", "Experience the interactive manual")}
+          {t("Experimenta el manual interactivo", "Experience the interactive manual", "Experimente o manual interativo")}
         </motion.h2>
 
         <motion.p
@@ -53,8 +53,9 @@ export default function LiveDemo() {
           className="text-text-muted-dark text-lg text-center mb-12"
         >
           {t(
-            "Toca, rota y navega. Esto es exactamente lo que verán tus clientes.",
-            "Touch, rotate, and navigate. This is exactly what your customers will see."
+            "Sube el volumen y haz clic en INICIAR",
+            "Turn up the volume and click INICIAR",
+            "Aumente o volume e clique em INICIAR"
           )}
         </motion.p>
 
@@ -71,7 +72,7 @@ export default function LiveDemo() {
           <button
             onClick={toggleFullscreen}
             className="absolute bottom-4 right-4 bg-primary/20 hover:bg-primary border-2 border-primary text-white rounded-full w-12 h-12 flex items-center justify-center transition-all duration-300 z-10 hover:scale-105 active:scale-95 shadow-lg shadow-primary/40 cursor-pointer"
-            title={isFullscreen ? t("Minimizar", "Minimize") : t("Maximizar", "Maximize")}
+            title={isFullscreen ? t("Minimizar", "Minimize", "Minimizar") : t("Maximizar", "Maximize", "Maximizar")}
           >
             <span className="material-symbols-outlined !text-2xl font-bold">
               {isFullscreen ? "fullscreen_exit" : "fullscreen"}
@@ -84,7 +85,7 @@ export default function LiveDemo() {
             width="100%"
             allowFullScreen
             allow="xr-spatial-tracking; fullscreen; autoplay; web-share"
-            title={t("Manual interactivo 3D — Demo en vivo", "3D Interactive Manual — Live Demo")}
+            title={t("Manual interactivo 3D — Demo en vivo", "3D Interactive Manual — Live Demo", "Manual interativo 3D — Demo ao vivo")}
           />
         </motion.div>
 
@@ -100,7 +101,7 @@ export default function LiveDemo() {
             href="#contacto"
             className="inline-block bg-primary text-white py-4 px-10 rounded-full font-semibold text-lg hover:brightness-110 transition-all duration-300"
           >
-            {t("Solicitar un prototipo con mi mueble", "Request a prototype with my furniture")}
+            {t("Solicitar un prototipo con mi mueble", "Request a prototype with my furniture", "Solicitar um protótipo com meu móvel")}
           </Link>
         </motion.div>
       </div>

@@ -157,7 +157,7 @@ export default function PanelInicial() {
         <>
           <div className="spline-wrapper">
             <iframe 
-              src="https://my.spline.design/r4xbot-pS1luNxTefqsyDlc4ZbCw1Fj/?v=mario" 
+              src="https://my.spline.design/r4xbot-pS1luNxTefqsyDlc4ZbCw1Fj/?v=mario2" 
               frameBorder="0" 
               width="100%" 
               height="100%" 

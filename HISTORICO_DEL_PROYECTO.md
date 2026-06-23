@@ -98,6 +98,16 @@ Este archivo es un registro vivo de la evolución tecnológica del ecosistema Ma
     - **Gestión de Estado:** Se añadió `ResetAyudas` al store Zustand (`useEnviroment.js`) para resetear los tooltips secuenciales cada vez que se abre el panel de ayuda.
     - **Resultado:** Ambos paneles (Ayuda e Información) funcionan al 100% en modo offline, con audio sincronizado, tooltips secuenciales y assets locales.
 * **[2026-05-19] AppArmado_v5 — Refinamiento Coordenadas 3D, Desconexión Total de Red y Optimización de Herrajes:**
+
+---
+
+## 🗓️ Junio 2026
+
+### 🔹 Semana 3: Internacionalización y Estabilidad B2B
+* **Soporte Multilingüe Completo (Español, Inglés, Portugués):**
+  - **Motor de Idiomas:** Se escaló el `LanguageContext` en la Landing Page B2B para aceptar una matriz trilingüe. La firma de la función `t(es, en, pt)` ahora soporta portugués de manera nativa sin impactar la lógica anterior.
+  - **Traducción Integral:** Se adaptaron y tradujeron 12 componentes críticos (`HeroManual`, `HowItWorksSteps`, `ClientPortal`, `FAQ`, `ContactCTA`, entre otros) asegurando un alcance efectivo en el mercado latinoamericano (Brasil).
+  - **Zero Console Errors:** Se llevó a cabo un proceso de depuración profundo para limpiar advertencias en la consola del navegador, asegurando que la carga y ejecución de los iframes con experiencias 3D en la Landing Page estén optimizadas.
     - **Alineación del Espacio 3D y Cámara:** Se eliminó la discrepancia de 1 metro de altura en las coordenadas de Three.js desplazando el contenedor del grupo del modelo de `[0, 1, 0]` a `[0, 0, 0]` en `Model.jsx`. Se sincronizaron las posiciones de `OrbitControls` y el `Floor`, que ahora desciende exactamente `17mm` para evitar colisiones visuales de las piezas de madera con la rejilla de suelo en los primeros pasos del armado.
     - **Desconexión Total y Estandarización Offline (Cero CORS / Network):**
         - Se localizaron múltiples recursos gráficos faltantes, descargándolos en `/assets/` y actualizando sus rutas en el código de forma estricta.

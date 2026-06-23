@@ -2,12 +2,12 @@
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
 
-type Language = 'es' | 'en';
+type Language = 'es' | 'en' | 'pt';
 
 interface LanguageContextType {
   language: Language;
   setLanguage: (lang: Language) => void;
-  t: (esVal: string, enVal: string) => string;
+  t: (esVal: string, enVal: string, ptVal?: string) => string;
 }
 
 const LanguageContext = createContext<LanguageContextType | undefined>(undefined);
@@ -19,15 +19,18 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     // 1. Intentar cargar idioma guardado
     const savedLang = localStorage.getItem('preferred-language') as Language;
-    if (savedLang === 'es' || savedLang === 'en') {
+    if (savedLang === 'es' || savedLang === 'en' || savedLang === 'pt') {
       setTimeout(() => setLanguageState(savedLang), 0);
     } else {
       // 2. Detección automática basada en el idioma del navegador
       const browserLang = navigator.language || 'es';
-      if (!browserLang.toLowerCase().startsWith('es')) {
-        setLanguageState('en');
+      if (browserLang.toLowerCase().startsWith('pt')) {
+        setTimeout(() => setLanguageState('pt'), 0);
+      } else if (!browserLang.toLowerCase().startsWith('es')) {
+        setTimeout(() => setLanguageState('en'), 0);
       }
     }
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setIsLoaded(true);
   }, []);
 
@@ -36,8 +39,10 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
     localStorage.setItem('preferred-language', lang);
   };
 
-  // Función helper rápida para traducir textos inline
-  const t = (esVal: string, enVal: string): string => {
+  // Función helper rápida para traducir textos inline. 
+  // Si falta la traducción en portugués, recae por defecto al español.
+  const t = (esVal: string, enVal: string, ptVal?: string): string => {
+    if (language === 'pt') return ptVal || esVal;
     return language === 'es' ? esVal : enVal;
   };
 

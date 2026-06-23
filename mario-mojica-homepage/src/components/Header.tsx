@@ -32,9 +32,9 @@ export default function Header() {
         <div className="container mx-auto px-6 flex items-center justify-between relative h-10">
           {/* Left Column: Navigation */}
           <nav className="hidden lg:flex items-center gap-8 text-[11px] font-black uppercase tracking-[0.2em]">
-            <Link href="#caracteristicas" className="hover:opacity-60 transition-all whitespace-nowrap">{t('Características', 'Features')}</Link>
-            <Link href="#demo" className="hover:opacity-60 transition-all whitespace-nowrap">{t('Demo', 'Demo')}</Link>
-            <Link href="#contacto" className="hover:opacity-60 transition-all whitespace-nowrap">{t('Contacto', 'Contact')}</Link>
+            <Link href="#caracteristicas" className="hover:opacity-60 transition-all whitespace-nowrap">{t('Características', 'Features', 'Recursos')}</Link>
+            <Link href="#demo" className="hover:opacity-60 transition-all whitespace-nowrap">{t('Demo', 'Demo', 'Demo')}</Link>
+            <Link href="#contacto" className="hover:opacity-60 transition-all whitespace-nowrap">{t('Contacto', 'Contact', 'Contato')}</Link>
           </nav>
 
           {/* Mobile Menu Button */}
@@ -73,7 +73,7 @@ export default function Header() {
                     : 'bg-white text-primary hover:bg-gray-100'
                 }`}
               >
-                {t('Cotizar Manual', 'Get a Quote')}
+                {t('Prototipo Gratuito', 'Free Prototype', 'Protótipo Gratuito')}
               </Link>
             </div>
             
@@ -91,6 +91,13 @@ export default function Header() {
               >
                 EN
               </button>
+              <span className="opacity-20">/</span>
+              <button 
+                onClick={() => setLanguage('pt')}
+                className={`transition-opacity hover:opacity-100 cursor-pointer ${language === 'pt' ? 'opacity-100 font-extrabold' : 'opacity-40'}`}
+              >
+                PT
+              </button>
             </div>
           </div>
         </div>
@@ -103,16 +110,16 @@ export default function Header() {
         }`}
       >
         <nav className="flex flex-col items-center gap-8 text-2xl font-black uppercase tracking-[0.2em] text-text-light">
-          <Link onClick={() => setIsMenuOpen(false)} href="#caracteristicas" className="hover:text-primary transition-colors">{t('Características', 'Features')}</Link>
-          <Link onClick={() => setIsMenuOpen(false)} href="#demo" className="hover:text-primary transition-colors">{t('Demo', 'Demo')}</Link>
-          <Link onClick={() => setIsMenuOpen(false)} href="#contacto" className="hover:text-primary transition-colors">{t('Contacto', 'Contact')}</Link>
+          <Link onClick={() => setIsMenuOpen(false)} href="#caracteristicas" className="hover:text-primary transition-colors">{t('Características', 'Features', 'Recursos')}</Link>
+          <Link onClick={() => setIsMenuOpen(false)} href="#demo" className="hover:text-primary transition-colors">{t('Demo', 'Demo', 'Demo')}</Link>
+          <Link onClick={() => setIsMenuOpen(false)} href="#contacto" className="hover:text-primary transition-colors">{t('Contacto', 'Contact', 'Contato')}</Link>
           <Link onClick={() => setIsMenuOpen(false)} href={`${platformUrl}/login`} className="hover:text-primary transition-colors">Login</Link>
           <Link 
             onClick={() => setIsMenuOpen(false)}
             href="#contacto" 
             className="bg-primary text-white px-10 py-4 rounded-full text-xl shadow-xl active:scale-95 transition-all"
           >
-            {t('Cotizar Manual', 'Get a Quote')}
+            {t('Prototipo Gratuito', 'Free Prototype', 'Protótipo Gratuito')}
           </Link>
         </nav>
       </div>

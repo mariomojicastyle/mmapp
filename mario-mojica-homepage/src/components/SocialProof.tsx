@@ -22,10 +22,10 @@ export default function SocialProof() {
   const { t } = useLanguage();
 
   const stats = [
-    { icon: 'trending_down', value: '-60%', label: t('Reducción de reclamos por armado', 'Reduction in assembly claims') },
-    { icon: 'phone_disabled', value: '-45%', label: t('Llamadas a soporte evitadas', 'Avoided support calls') },
-    { icon: 'task_alt', value: '82%', label: t('Tasa de finalización de armado', 'Assembly completion rate') },
-    { icon: 'sentiment_very_satisfied', value: '71.9%', label: t('Experiencia y opiniones positivas', 'Positive experience and feedback') },
+    { icon: 'trending_down', value: '-60%', label: t('Reducción de reclamos por armado', 'Reduction in assembly claims', 'Redução de reclamações por montagem') },
+    { icon: 'phone_disabled', value: '-45%', label: t('Llamadas a soporte evitadas', 'Avoided support calls', 'Chamadas de suporte evitadas') },
+    { icon: 'task_alt', value: '82%', label: t('Tasa de finalización de armado', 'Assembly completion rate', 'Taxa de conclusão de montagem') },
+    { icon: 'sentiment_very_satisfied', value: '71.9%', label: t('Experiencia y opiniones positivas', 'Positive experience and feedback', 'Experiência e avaliações positivas') },
   ];
 
   return (

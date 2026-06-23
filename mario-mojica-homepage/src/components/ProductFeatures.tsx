@@ -10,50 +10,56 @@ export default function ProductFeatures() {
   const features = [
     {
       icon: "record_voice_over",
-      title: t("Audio Guía Multilingüe (TTS)", "Multilingual Voice Guide (TTS)"),
+      title: t("Audio Guía Multilingüe (TTS)", "Multilingual Voice Guide (TTS)", "Guia de Áudio Multilíngue (TTS)"),
       description: t(
         "Locución profesional en español e inglés generada por IA. Tu cliente solo escucha y arma, sin necesidad de leer.",
-        "Professional AI-generated voiceovers in Spanish and English. Your customer just listens and assembles, no reading required."
+        "Professional AI-generated voiceovers in Spanish and English. Your customer just listens and assembles, no reading required.",
+        "Locução profissional gerada por IA. Seu cliente apenas escuta e monta, sem precisar ler."
       ),
     },
     {
       icon: "view_in_ar",
-      title: t("Realidad Aumentada Nativa", "Native Augmented Reality"),
+      title: t("Realidad Aumentada Nativa", "Native Augmented Reality", "Realidade Aumentada Nativa"),
       description: t(
         "El cliente proyecta el mueble en su casa desde el navegador. Sin apps, sin descargas, sin fricción.",
-        "Customers project the furniture in their room straight from the browser. No apps, no downloads, zero friction."
+        "Customers project the furniture in their room straight from the browser. No apps, no downloads, zero friction.",
+        "O cliente projeta o móvel em sua casa direto do navegador. Sem apps, sem downloads, sem atrito."
       ),
     },
     {
       icon: "hardware",
-      title: t("Identificador de Herrajes", "Hardware Identifier"),
+      title: t("Identificador de Herrajes", "Hardware Identifier", "Identificador de Ferragens"),
       description: t(
         "Cada tornillo, perno y bisagra se resalta visualmente con cantidad exacta por paso de armado.",
-        "Each screw, bolt, and hinge is highlighted visually with exact quantities per assembly step."
+        "Each screw, bolt, and hinge is highlighted visually with exact quantities per assembly step.",
+        "Cada parafuso, pino e dobradiça é destacado visualmente com a quantidade exata por etapa de montagem."
       ),
     },
     {
       icon: "palette",
-      title: t("Branding 100% Corporativo", "100% Corporate Branding"),
+      title: t("Branding 100% Corporativo", "100% Corporate Branding", "Branding 100% Corporativo"),
       description: t(
         "Tu logo, tus colores, tu identidad. El manual se ve como parte de tu marca, no de la nuestra.",
-        "Your logo, your colors, your identity. The manual looks like an extension of your brand, not ours."
+        "Your logo, your colors, your identity. The manual looks like an extension of your brand, not ours.",
+        "Seu logotipo, suas cores, sua identidade. O manual parece parte da sua marca, não da nossa."
       ),
     },
     {
       icon: "qr_code_2",
-      title: t("Código QR Autogenerado", "Auto-Generated QR Code"),
+      title: t("Código QR Autogenerado", "Auto-Generated QR Code", "Código QR Autogerado"),
       description: t(
         "Imprime el QR en la caja del producto. El cliente escanea y accede al manual al instante.",
-        "Print the QR code on the product box. Your customer scans it and accesses the manual instantly."
+        "Print the QR code on the product box. Your customer scans it and accesses the manual instantly.",
+        "Imprima o QR na caixa do produto. O cliente escaneia e acessa o manual instantaneamente."
       ),
     },
     {
       icon: "light_mode",
-      title: t("Escenario 3D Premium (PBR)", "Premium 3D Scene (PBR)"),
+      title: t("Escenario 3D Premium (PBR)", "Premium 3D Scene (PBR)", "Cenário 3D Premium (PBR)"),
       description: t(
         "Texturas fotorrealistas de piso y paredes con iluminación calibrada profesionalmente.",
-        "Photorealistic floor and wall textures with professionally calibrated studio lighting."
+        "Photorealistic floor and wall textures with professionally calibrated studio lighting.",
+        "Texturas fotorrealistas de piso e paredes com iluminação calibrada profissionalmente."
       ),
     },
   ];
@@ -71,7 +77,7 @@ export default function ProductFeatures() {
           viewport={{ once: true }}
           className="text-4xl font-bold mb-4 text-text-light dark:text-text-dark"
         >
-          {t("Todo lo que necesitas en un solo manual", "Everything you need in a single manual")}
+          {t("Todo lo que necesitas en un solo manual", "Everything you need in a single manual", "Tudo o que você precisa em um único manual")}
         </motion.h2>
         <motion.p
           initial={{ opacity: 0, y: 12 }}
@@ -82,7 +88,8 @@ export default function ProductFeatures() {
         >
           {t(
             "Cada detalle pensado para reducir fricción y elevar la experiencia del cliente final.",
-            "Every single detail designed to reduce friction and elevate the end-customer experience."
+            "Every single detail designed to reduce friction and elevate the end-customer experience.",
+            "Cada detalhe pensado para reduzir o atrito e elevar a experiência do cliente final."
           )}
         </motion.p>
       </div>

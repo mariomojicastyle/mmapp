@@ -10,38 +10,38 @@ export default function PainVsSolution() {
   const painPoints = [
     {
       icon: "close",
-      text: t("Manuales impresos confusos e imposibles de seguir", "Confusing and impossible-to-follow printed manuals"),
+      text: t("Manuales impresos confusos e imposibles de seguir", "Confusing and impossible-to-follow printed manuals", "Manuais impressos confusos e impossíveis de seguir"),
     },
     {
       icon: "close",
-      text: t("Herrajes imposibles de distinguir entre sí", "Hardware pieces impossible to distinguish from one another"),
+      text: t("Herrajes imposibles de distinguir entre sí", "Hardware pieces impossible to distinguish from one another", "Ferragens impossíveis de distinguir entre si"),
     },
     {
       icon: "close",
-      text: t("Sin feedback del cliente final sobre el proceso", "No end-customer feedback on the assembly process"),
+      text: t("Sin feedback del cliente final sobre el proceso", "No end-customer feedback on the assembly process", "Sem feedback do cliente final sobre o processo"),
     },
     {
       icon: "close",
-      text: t("Soporte telefónico saturado por dudas de armado", "Phone support overwhelmed by assembly questions"),
+      text: t("Soporte telefónico saturado por dudas de armado", "Phone support overwhelmed by assembly questions", "Suporte telefônico saturado por dúvidas de montagem"),
     },
   ];
 
   const solutionPoints = [
     {
       icon: "check_circle",
-      text: t("Guía 3D rotativa paso a paso con animaciones", "Interactive step-by-step 3D guides with animations"),
+      text: t("Guía 3D rotativa paso a paso con animaciones", "Interactive step-by-step 3D guides with animations", "Guia 3D rotativo passo a passo com animações"),
     },
     {
       icon: "check_circle",
-      text: t("Resaltado interactivo de cada herraje por toque", "Interactive highlighting of each hardware piece on tap"),
+      text: t("Resaltado interactivo de cada herraje por toque", "Interactive highlighting of each hardware piece on tap", "Destaque interativo de cada ferragem ao toque"),
     },
     {
       icon: "check_circle",
-      text: t("Analíticas y reseñas automatizadas por mueble", "Automated analytics and reviews per furniture product"),
+      text: t("Analíticas y reseñas automatizadas por mueble", "Automated analytics and reviews per furniture product", "Análises e avaliações automatizadas por móvel"),
     },
     {
       icon: "check_circle",
-      text: t("Asistente de voz multilingüe integrado (TTS)", "Integrated multilingual voice assistant (TTS)"),
+      text: t("Asistente de voz multilingüe integrado (TTS)", "Integrated multilingual voice assistant (TTS)", "Assistente de voz multilíngue integrado (TTS)"),
     },
   ];
 
@@ -55,7 +55,7 @@ export default function PainVsSolution() {
           viewport={{ once: true }}
           className="text-4xl font-bold text-center mb-16 text-text-light dark:text-text-dark"
         >
-          {t("Manual de papel vs. Manual Interactivo 3D", "Paper Manual vs. Interactive 3D Manual")}
+          {t("Manual de papel vs. Manual Interactivo 3D", "Paper Manual vs. Interactive 3D Manual", "Manual de papel vs. Manual Interativo 3D")}
         </motion.h2>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
@@ -71,7 +71,7 @@ export default function PainVsSolution() {
               <span className="material-symbols-outlined align-middle mr-2 text-red-500">
                 warning
               </span>
-              {t("El Problema", "The Problem")}
+              {t("El Problema", "The Problem", "O Problema")}
             </h3>
 
             <div className="space-y-6">
@@ -109,7 +109,7 @@ export default function PainVsSolution() {
               <span className="material-symbols-outlined align-middle mr-2 text-primary">
                 lightbulb
               </span>
-              {t("La Solución", "The Solution")}
+              {t("La Solución", "The Solution", "A Solução")}
             </h3>
 
             <div className="space-y-6">
