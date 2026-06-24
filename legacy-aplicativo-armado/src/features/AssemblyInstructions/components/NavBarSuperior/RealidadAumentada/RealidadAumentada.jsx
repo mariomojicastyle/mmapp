@@ -168,7 +168,7 @@ export default function RealiadaAumentada({ id, data }) {
           ar-modes="scene-viewer webxr quick-look" 
           camera-controls
           bounds="tight" 
-          alt="Maderkit" 
+          alt="Modelo 3D" 
           autoplay 
           ref={refAr}
           style={{ display: "none" }}

@@ -61,7 +61,7 @@ export default create(
 
       StartApp: false,//Variable que se activa cuando es posible iniciar el aplicativo
 
-      icono: "",//url del icono (Practimac o Maderkit)
+      icono: "",//url del icono del fabricante
 
       AudioEnded: false,//Variable de audio finalizado
 
@@ -105,7 +105,7 @@ export default create(
 
       EncuestaCompletada:false,
 
-      Cliente: '',//Guarda el dato si el mueble es Maderkit o Practimac.
+      Cliente: '',//Guarda el nombre del cliente/fabricante del producto.
       showCameraOverlay: false,
 
 

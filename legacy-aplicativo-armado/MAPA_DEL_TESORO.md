@@ -63,8 +63,8 @@ El proyecto utiliza **Zustand** como manejador de estado global. En lugar de pas
 ### 🕶️ El Núcleo 3D (Carpeta `src/features/AssemblyInstructions/3d-escene/`)
 4. **`AssemblyViewer.jsx`**
    * *Propósito*: El contenedor raíz de la vista 3D. Inicializa el store Zustand con los datos del JSON, define la configuración del renderizador web de Three (`gl`, `toneMapping`, `camera`) y distribuye el Overlay UI.
-5. **`Experience.jsx`**
-   * *Propósito*: Configura las luces de la escena, las sombras, el control de órbita (`OrbitControls`) y el entorno HDRI local (`hdri2/maderkit.hdr`).
+5. **`Experience.jsx (AssemblySceneViewer)`**
+   * *Propósito*: Configura las luces de la escena, las sombras, el control de órbita (`OrbitControls`) y el entorno panorámico local (`hdri2/salon_01.webp`).
 6. **`Model.jsx`**
    * *Propósito*: Carga dinámicamente el modelo GLB del paso correspondiente (`/${id}/models/P${pasoActual}.glb`). Contiene la lógica de animación, detección de clics en piezas, resaltado con Matcaps y emisión de la señal de parpadeo visual.
 
