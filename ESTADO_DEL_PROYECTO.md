@@ -268,6 +268,10 @@ Un **"Manual Vacío"** es un cascarón o aplicación base centralizada (desplega
   - **Eliminación de Paridad CSS y Marca**: Remoción de archivos de encuesta obsoletos y del logo de Maderkit. Refactorización de `Landscape.jsx` para usar Tailwind CSS y borrado de `Landscape.css`.
   - **Garantía Premium Neutra**: Creación de `Garantia.pdf` neutro de la plataforma y su sincronización local y en Supabase Storage.
   - **Capa de Traducción de Alias en React**: Implementación de `resolveAlias` en `assets.js` e integración en `PanelHerrajes.jsx`, `PanelCantidades.jsx` y `Model.jsx`. Traduce nombres de mallas con SKUs legacy del GLB a nombres limpios en caliente, permitiendo renderizar sus imágenes de forma blindada sin alterar los archivos 3D.
+- [x] **Blindaje Legal Fase 4, Ofuscación Estructural y Eliminación de Código Legado (Fase 5) (24 de Junio, 2026)**:
+  - **Refactorización de Escena 3D (R3F)**: Renombrado de `Experience` a `AssemblySceneViewer`, y métodos internos a estándares modernos (e.g. `parseCubemapTextureAtlas`, `alignSkyboxToGround`, `ViewportCameraManager`).
+  - **Ofuscación y Limpieza en Model.jsx**: Renombrado de variables y funciones de control (`cleanMeshIdentifier`, `modelRef`, `materialsCache`, `resolvePartDisplayName`) y corrección de un `ReferenceError` en la fov por defecto de la cámara.
+  - **Fase 5 (Higiene de PI)**: Remoción completa (física y de control de versiones Git) de la carpeta parent `legacy-aplicativo-armado-original` para independizar por completo el aplicativo blindado.
 
 ---
 
@@ -278,7 +282,8 @@ Un **"Manual Vacío"** es un cascarón o aplicación base centralizada (desplega
 - **Local App:** [http://localhost:3000](http://localhost:3000)
 
 ---
-*Última actualización de contexto: 23 de Junio, 2026*
+*Última actualización de contexto: 24 de Junio, 2026*
+
 
 ---
 
