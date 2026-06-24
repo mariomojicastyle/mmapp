@@ -6,7 +6,7 @@ import useEnviroment from "../hooks/useEnviroment.js";
 import Floor from "./Floor/Floor.jsx";
 import { getAssetPath, resolveAlias } from "../../../lib/assets.js";
 
-function obtenerNombreLimpioTooltip(rawName) {
+function cleanMeshIdentifier(rawName) {
   if (!rawName) return "";
   
   // 1. Obtener la primera sección (antes de cualquier "-") y limpiar espacios
@@ -95,10 +95,11 @@ export default function Model(props) {
   const { camera } = useThree();
 
   // Referencia para el modelo 3D
-  const useModel = useRef();
+  // 3D Model Instance Reference
+  const modelRef = useRef();
 
-  //Inicializar Materialoriginal
-  const originalMaterials = useRef(new Map());
+  // original materials cache
+  const materialsCache = useRef(new Map());
   
   const activeMeshRef = useRef(null);
   const isTouchDevice = typeof window !== "undefined" && ('ontouchstart' in window || navigator.maxTouchPoints > 0);
@@ -106,7 +107,7 @@ export default function Model(props) {
 
   useEffect(() => {
     if (globalPiezaHerraje === "" && activeMeshRef.current) {
-      const originalMat = originalMaterials.current.get(activeMeshRef.current);
+      const originalMat = materialsCache.current.get(activeMeshRef.current);
       if (originalMat) {
         activeMeshRef.current.material = originalMat;
       }
@@ -115,7 +116,7 @@ export default function Model(props) {
   }, [globalPiezaHerraje]);
 
 
-  // Cargar la textura del Matcap y crear el material único al inicio para evitar re-compilaciones en GPU
+  // Pre-load highlights texture (Matcap) to prevent runtime compilation overhead
   const matcapTexture = useRef(null);
   const highlightMaterialRef = useRef(null);
 
@@ -130,20 +131,20 @@ export default function Model(props) {
   }, []);
 
 
-  // Posiciones y configuraciones de cámara por defecto
-  const camera_origin_x = -2,
-    camera_origin_y = 1,
-    camera_origin_z = 5,
-    focalDistance_origin = 34;
+  // Standard viewport defaults
+  const defaultCameraPosX = -2,
+    defaultCameraPosY = 1,
+    defaultCameraPosZ = 5,
+    defaultFov = 34;
 
-  // Variables que guardarán la información de la cámara integrada en el GLB
-  var cameraX = -2,
-    cameraY = 1,
-    cameraZ = 5,
-    focalDistance = 34;
+  // Track active camera configurations derived from manual settings
+  var activeCameraX = -2,
+    activeCameraY = 1,
+    activeCameraZ = 5,
+    activeFov = 34;
 
-  // Contador del total de cámaras integradas en el GLB
-  var camaras = 0;
+  // Count of embedded GLB cameras parsed
+  var embeddedCamerasCount = 0;
 
 
   // Carga del modelo GLB y sus animaciones - Local por paso
@@ -243,7 +244,7 @@ export default function Model(props) {
         }
       }
       
-      camera.setFocalLength(posicionDeCamaraActual.fov || focalDistance_origin);
+      camera.setFocalLength(posicionDeCamaraActual.fov || defaultFov);
     } else if (camarasCount > 0 && cameras && cameras.length > 0) {
       // Si la cámara está ubicada en el origen (0,0,0) del parent, se configura su posición
       if (
@@ -273,8 +274,8 @@ export default function Model(props) {
 
     } else {
       // Si no hay cámaras en el archivo GLB, se usa la posición por defecto
-      camera.position.set(camera_origin_x, camera_origin_y, camera_origin_z);
-      camera.setFocalLength(focalDistance_origin);
+      camera.position.set(defaultCameraPosX, defaultCameraPosY, defaultCameraPosZ);
+      camera.setFocalLength(defaultFov);
     }
 
     camera.updateProjectionMatrix();
@@ -340,7 +341,7 @@ export default function Model(props) {
       onPointerFalse(); // Desactiva el puntero para evitar interferencias
 
       scene.traverse((child) => {
-        const cleanChildName = obtenerNombreLimpioTooltip(child.name);
+        const cleanChildName = cleanMeshIdentifier(child.name);
 
         if (
           toolTip.includes(cleanChildName) &&
@@ -368,7 +369,7 @@ export default function Model(props) {
     }
   }, [toolTip]);
 
-  function obtenerNombreDeObjeto(object) {
+  function resolvePartDisplayName(object) {
     if (!object) return "";
     
     // 1. Detectar si el nombre del mesh es directamente la pegatina "Pieza XX" (formato no redundante o combinado)
@@ -395,7 +396,7 @@ export default function Model(props) {
       }
     }
 
-    const name = obtenerNombreLimpioTooltip(object.name);
+    const name = cleanMeshIdentifier(object.name);
     
     // 1. Obtener dimensiones físicas del mesh actual
     const worldBox = new THREE.Box3().setFromObject(object);
@@ -430,7 +431,7 @@ export default function Model(props) {
       const itemEncontrado = props.productData.despiece.find(
         (d) => 
           d.nombre && 
-          obtenerNombreLimpioTooltip(d.nombre).toLowerCase() === name.toLowerCase() &&
+          cleanMeshIdentifier(d.nombre).toLowerCase() === name.toLowerCase() &&
           Math.abs((d.largo || 0) - l) <= 2 &&
           Math.abs((d.ancho || 0) - w) <= 2
       );
@@ -441,7 +442,7 @@ export default function Model(props) {
           // Encontrar todos los meshes en la escena actual con este mismo nombre limpio y dimensiones similares
           const hermanos = [];
           scene.traverse((child) => {
-            if (child.isMesh && obtenerNombreLimpioTooltip(child.name).toLowerCase() === name.toLowerCase()) {
+            if (child.isMesh && cleanMeshIdentifier(child.name).toLowerCase() === name.toLowerCase()) {
               const hBox = new THREE.Box3().setFromObject(child);
               const hSize = new THREE.Vector3();
               hBox.getSize(hSize);
@@ -488,7 +489,7 @@ export default function Model(props) {
     event.stopPropagation();
     if (!highlightMaterialRef.current) return;
 
-    const displayName = obtenerNombreDeObjeto(event.object);
+    const displayName = resolvePartDisplayName(event.object);
     const currentPieza = useEnviroment.getState().PiezaHerraje;
 
     if (currentPieza === displayName) {
@@ -496,13 +497,13 @@ export default function Model(props) {
       PiezaHerraje([""]);
     } else {
       // Registrar material original si no existía
-      if (!originalMaterials.current.has(event.object)) {
-        originalMaterials.current.set(event.object, event.object.material);
+      if (!materialsCache.current.has(event.object)) {
+        materialsCache.current.set(event.object, event.object.material);
       }
 
       // Desmarcar pieza anteriormente resaltada
       if (activeMeshRef.current && activeMeshRef.current !== event.object) {
-        const originalMat = originalMaterials.current.get(activeMeshRef.current);
+        const originalMat = materialsCache.current.get(activeMeshRef.current);
         if (originalMat) {
           activeMeshRef.current.material = originalMat;
         }
@@ -521,15 +522,15 @@ export default function Model(props) {
 
     // Guarda el material original si no ha sido guardado antes, utilizando el material cacheado
     if (highlightMaterialRef.current) { 
-      if (!originalMaterials.current.has(event.object)) {
-        originalMaterials.current.set(event.object, event.object.material);
+      if (!materialsCache.current.has(event.object)) {
+        materialsCache.current.set(event.object, event.object.material);
       }    
 
       event.object.material = highlightMaterialRef.current;
       activeMeshRef.current = event.object;
       document.body.style.cursor = "pointer";
 
-      const displayName = obtenerNombreDeObjeto(event.object);
+      const displayName = resolvePartDisplayName(event.object);
       PiezaHerraje([displayName]);
     } else {
       console.log("Material de resaltado sin cargarse");
@@ -541,7 +542,7 @@ export default function Model(props) {
     if (isTouchDevice) return;
 
     // Restaurar material original sincrónicamente (FIX para PC)
-    const originalMaterial = originalMaterials.current.get(event.object);
+    const originalMaterial = materialsCache.current.get(event.object);
     if (originalMaterial) {
       event.object.material = originalMaterial;
     }
@@ -555,8 +556,8 @@ export default function Model(props) {
   }
 
   function Temporizador(child) {
-    if (!originalMaterials.current.has(child)) {
-      originalMaterials.current.set(child, child.material);
+    if (!materialsCache.current.has(child)) {
+      materialsCache.current.set(child, child.material);
     }
 
     const highlightMat = highlightMaterialRef.current;
@@ -571,12 +572,12 @@ export default function Model(props) {
 
     for (let i = 0; i <= 10; i++) {
       window.setTimeout(() => {
-        toggleMaterial(i % 2 === 0 ? highlightMat : originalMaterials.current.get(child));
+        toggleMaterial(i % 2 === 0 ? highlightMat : materialsCache.current.get(child));
       }, i * 500);
     }
 
     window.setTimeout(() => {
-      const originalMaterial = originalMaterials.current.get(child);
+      const originalMaterial = materialsCache.current.get(child);
       if (originalMaterial) {
         child.material = originalMaterial; 
       }
@@ -586,7 +587,7 @@ export default function Model(props) {
   return (
     <group position={[0, 0, 0]}>
       <primitive
-        ref={useModel}
+        ref={modelRef}
         object={scene}
         onClick={(event) => {
           event.stopPropagation();

@@ -10,8 +10,8 @@ import { getAssetPath } from "../../../lib/assets.js";
 
 
 
-// Función para cargar la imagen panorámica y dividirla en 6 texturas
-function getTexturesFromAtlasFile(atlasImgUrl, tilesNum) {
+// Utility to partition a single panoramic atlas image into cubemap textures
+function parseCubemapTextureAtlas(atlasImgUrl, tilesNum) {
   const textures = [];
   for (let i = 0; i < tilesNum; i++) {
     textures[i] = new THREE.Texture();
@@ -37,11 +37,11 @@ function getTexturesFromAtlasFile(atlasImgUrl, tilesNum) {
   return textures;
 }
 
-export default function Experience({ id, modelUrl, productData }) {
+export default function AssemblySceneViewer({ id, modelUrl, productData }) {
   const { scene, gl, camera } = useThree();
-  const useOrbitControls = useRef();
+  const controlsRef = useRef();
   const [cameraTarget, setCameraTarget] = useState([0, 0.8, 0]);
-  const lastLoggedPos = useRef(""); // Guardar última posición impresa para evitar inundar la consola
+  const lastLoggedPos = useRef(""); // Throttle logging outputs
 
   const { progress } = useProgress();
   const CheckReadyToPlay = useEnviroment((state) => state.CheckReadyToPlay);
@@ -49,7 +49,7 @@ export default function Experience({ id, modelUrl, productData }) {
     CheckReadyToPlay(progress);
   }, [progress, CheckReadyToPlay]);
 
-  const toogle = useEnviroment((state) => state.show);
+  const isModelVisible = useEnviroment((state) => state.show);
   const CargarPasoInicial = useEnviroment((state) => state.CargarPasoInicial);
   const PasoActual = useEnviroment((state) => state.pasoActual);
   const cameraPositions = useEnviroment((state) => state.cameraPositions);
@@ -90,9 +90,9 @@ export default function Experience({ id, modelUrl, productData }) {
 
   const [cacheBuster] = useState(() => Date.now());
   
-  // Cargar la imagen panorámica en formato stripe y dividirla en 6 partes con cache buster
+  // Load panoramic stripe and split it into cubemap tiles
   const textures = useMemo(() => {
-    return getTexturesFromAtlasFile(`${atlasUrl}?v=${cacheBuster}`, 6);
+    return parseCubemapTextureAtlas(`${atlasUrl}?v=${cacheBuster}`, 6);
   }, [atlasUrl, cacheBuster]);
 
   const wallTextureConfig = useMemo(() => {
@@ -146,12 +146,11 @@ export default function Experience({ id, modelUrl, productData }) {
   // Ref para persistir el skybox entre re-renders
   const skyBoxRef = useRef(null);
 
-  // Función unificada para alinear la altura del escenario con el suelo (floorY)
-  const repositionSkybox = (skyBoxMesh) => {
+  // Align environmental background mesh to the computed floor y-axis
+  const alignSkyboxToGround = (skyBoxMesh) => {
     if (!skyBoxMesh) return;
     let planeValue = null;
     
-    // Prioridad 1: plane manual del paso actual en alturas
     if (alturas && alturas.length > 0) {
       const altData = alturas.find(a => a.paso === PasoActual);
       if (altData && altData.plane !== undefined) {
@@ -159,17 +158,16 @@ export default function Experience({ id, modelUrl, productData }) {
       }
     }
     
-    // Prioridad 2: computedModelMinY (auto-grounding)
     if (planeValue === null && computedModelMinY !== null) {
       planeValue = computedModelMinY;
     }
     
     if (planeValue !== null) {
-      const floorY = planeValue - 0.001; // Ajuste idéntico al del Floor para coincidencia exacta
-      const skyBoxY = floorY + 2.25 - 0.001; // Desplazamiento original de alineación del piso
+      const floorY = planeValue - 0.001;
+      const skyBoxY = floorY + 2.25 - 0.001;
       skyBoxMesh.position.set(0, skyBoxY, 0);
     } else {
-      skyBoxMesh.position.set(0, 1.626, 0); // Fallback alineado con la media de plane
+      skyBoxMesh.position.set(0, 1.626, 0);
     }
   };
 
@@ -223,7 +221,7 @@ export default function Experience({ id, modelUrl, productData }) {
     skyBox.geometry.scale(12, 4.5, -12); // Escala original de producción de 12x4.5x-12
     
     // Posicionar inmediatamente en su creación
-    repositionSkybox(skyBox);
+    alignSkyboxToGround(skyBox);
 
     skyBoxRef.current = skyBox;
     scene.add(skyBox);
@@ -238,7 +236,7 @@ export default function Experience({ id, modelUrl, productData }) {
 
   // Actualizar posición del skybox al cambiar de paso o cuando se computa el minY del modelo
   useEffect(() => {
-    repositionSkybox(skyBoxRef.current);
+    alignSkyboxToGround(skyBoxRef.current);
   }, [PasoActual, alturas, computedModelMinY, skyBoxRef.current]);
 
   // Sincronizar tone mapping y exposición en caliente con el renderer
@@ -393,7 +391,7 @@ export default function Experience({ id, modelUrl, productData }) {
 
       <OrbitControls
         makeDefault
-        ref={useOrbitControls}
+        ref={controlsRef}
         autoRotateSpeed={0.85}
         zoomSpeed={0.75}
         target={cameraTarget}
@@ -407,16 +405,16 @@ export default function Experience({ id, modelUrl, productData }) {
       </Suspense>
 
       <Suspense fallback={null}>
-        {toogle && <Model id={id} modelUrl={modelUrl} orbitControlsRef={useOrbitControls} productData={productData} />}
+        {isModelVisible && <Model id={id} modelUrl={modelUrl} orbitControlsRef={controlsRef} productData={productData} />}
       </Suspense>
 
-      <CameraOverlay orbitControlsRef={useOrbitControls} />
+      <ViewportCameraManager orbitControlsRef={controlsRef} />
       <LightingPanel />
     </>
   );
 }
 
-function CameraOverlay({ orbitControlsRef }) {
+function ViewportCameraManager({ orbitControlsRef }) {
   const showOverlay = useEnviroment((state) => state.showCameraOverlay);
   const pasoActual = useEnviroment((state) => state.pasoActual);
   const manualId = useEnviroment((state) => state.id);

@@ -1,6 +1,6 @@
 import { useEffect, useState, useRef } from "react";
 import { Canvas } from "@react-three/fiber";
-import Experience from "./3d-escene/Experience.jsx";
+import AssemblySceneViewer from "./3d-escene/Experience.jsx";
 import NavBarSuperior from "./components/NavBarSuperior/NavBarSuperior.jsx";
 import NavBarInferior from "./components/NavBarInferior/NavBarInferior.jsx";
 import Landscape from "./components/Landscape/Landscape.jsx";
@@ -213,7 +213,7 @@ export default function AssemblyViewer({ productData, steps, id }) {
           camera={{position: [0, 1, 2],  fov: 60}} 
           onPointerMissed={() => NamePieza([""])}
         >
-          <Experience id={id} modelUrl={modelUrl} productData={productData} />
+          <AssemblySceneViewer id={id} modelUrl={modelUrl} productData={productData} />
         </Canvas>
       </div>
 
