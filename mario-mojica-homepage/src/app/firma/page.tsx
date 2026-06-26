@@ -22,13 +22,13 @@ export default function SignaturePage() {
           </div>
           <table cellpadding="0" cellspacing="0" border="0" style="border-collapse: collapse;">
             <tr>
-              <td style="font-size: 13px; color: #4b5563; padding: 2px 0; line-height: 16px;">
-                <span style="color: #0088aa; font-weight: 600;">W:</span> <a href="https://mariomojica.com" target="_blank" style="color: #0088aa; text-decoration: none; font-weight: 500;">mariomojica.com</a>
+              <td style="font-size: 13px; color: #4b5563; padding: 2px 0; line-height: 16px; vertical-align: middle;">
+                <img src="https://mariomojica.com/globe_icon.png" width="13" height="13" alt="Web" style="border: 0; display: inline-block; vertical-align: middle; margin-right: 6px;" /> <a href="https://mariomojica.com" target="_blank" style="color: #0088aa; text-decoration: none; font-weight: 500; vertical-align: middle;">mariomojica.com</a>
               </td>
             </tr>
             <tr>
-              <td style="font-size: 13px; color: #4b5563; padding: 2px 0; line-height: 16px;">
-                <span style="color: #0088aa; font-weight: 600;">E:</span> <a href="mailto:direccion@mariomojica.com" style="color: #4b5563; text-decoration: none;">direccion@mariomojica.com</a>
+              <td style="font-size: 13px; color: #4b5563; padding: 2px 0; line-height: 16px; vertical-align: middle;">
+                <img src="https://mariomojica.com/envelope_icon.png" width="13" height="13" alt="Email" style="border: 0; display: inline-block; vertical-align: middle; margin-right: 6px;" /> <a href="mailto:direccion@mariomojica.com" style="color: #4b5563; text-decoration: none; vertical-align: middle;">direccion@mariomojica.com</a>
               </td>
             </tr>
           </table>
