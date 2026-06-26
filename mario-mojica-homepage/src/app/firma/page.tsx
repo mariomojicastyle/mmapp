@@ -10,7 +10,7 @@ export default function SignaturePage() {
       <tr>
         <td valign="middle" style="padding-right: 20px; border-right: 2px solid #0088aa;">
           <a href="https://mariomojica.com" target="_blank" style="text-decoration: none;">
-            <img src="https://mariomojica.com/Logo_Signature_v2.png" alt="Mario Mojica" width="110" style="border: 0; display: block; width: 110px; height: auto;" />
+            <img src="https://mariomojica.com/Logo_Signature_v3.png" alt="Mario Mojica" width="110" style="border: 0; display: block; width: 110px; height: auto;" />
           </a>
         </td>
         <td valign="middle" style="padding-left: 20px; text-align: left;">
