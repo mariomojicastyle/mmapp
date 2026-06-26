@@ -127,6 +127,41 @@ Para maximizar la conversión B2B y garantizar la trazabilidad de interacciones,
      * **Creación Automática (Inbound):** Para maximizar la velocidad de respuesta comercial (speed-to-lead), n8n crea automáticamente un nuevo Lead en la tabla `Leads` (600) con estado **"Nuevo"** (`3952`), guardando el Asunto y el primer correo en el campo `Descripcion` (9455).
      * **Notificación de Alerta:** Envía un WhatsApp en tiempo real informando que un nuevo prospecto ha iniciado contacto por correo.
 
+### Comparativa de Opciones de Registro y Recomendación Arquitectónica
+
+Para el registro del historial de correos de leads en Baserow se evaluaron dos alternativas técnicas principales:
+
+*   **Opción A (Tabla Secundaria Vinculada - `Interacciones` o `Notas` de Baserow):**
+    *   **Funcionamiento:** Cada correo electrónico (entrante o saliente) se registra como una fila independiente en una tabla secundaria, vinculada mediante una relación de clave foránea al ID del Lead en la tabla principal `Leads` (600).
+    *   **Pros:** Estructura limpia y relacional; evita saturar la tabla principal; preserva metadatos de forma aislada (Fecha, Asunto, Dirección, Sentido [Entrante/Saliente]); permite ordenar, filtrar y realizar analíticas avanzadas de interacción.
+    *   **Contras:** Requiere una tabla configurada adicionalmente en Baserow y un paso extra en el flujo de n8n para asociar los registros.
+
+*   **Opción B (Registro Acumulativo en un Campo Único - `Descripción` o `Notas` en la Tabla `Leads`):**
+    *   **Funcionamiento:** n8n consulta el campo `Descripción` o `Notas` del Lead, concatena el nuevo correo en texto plano y actualiza el mismo registro.
+    *   **Pros:** Simplicidad en la estructura de datos; permite visualizar toda la información directamente en la tarjeta Kanban del Lead sin navegar a subtablas.
+    *   **Contras:** Límite de caracteres en campos de texto; pérdida de estructura (dificulta auditorías y reportes por interacción); riesgo de condiciones de carrera (si llegan correos concurrentes se pueden sobrescribir datos); requiere múltiples peticiones HTTP en n8n (lectura, concatenación y escritura).
+
+---
+
+### Análisis de Decisión
+
+#### 1. ¿Qué se recomienda?
+Se recomienda una **solución híbrida optimizada**:
+*   **Para Leads nuevos:** Usar la **Opción B** para guardar el primer correo del prospecto en el campo `Descripción` (9455) al momento de su creación automática. Esto asegura que el vendedor tenga el contexto del primer contacto de forma visible e inmediata en su Kanban.
+*   **Para Leads existentes:** Usar la **Opción A** para registrar el historial de conversaciones subsecuentes. Cada nuevo correo se inserta en la tabla vinculada `Interacciones`, manteniendo limpia la vista principal y acumulando una bitácora detallada.
+
+#### 2. ¿Qué será más eficiente?
+La **Opción A (Tabla Secundaria Vinculada)** es significativamente más eficiente y robusta a nivel de sistema:
+*   En la **Opción A**, n8n realiza un `POST` atómico directo para insertar la nueva fila en la tabla de interacciones. Es una sola llamada de API y no requiere conocer el estado anterior.
+*   En la **Opción B**, n8n debe hacer un `GET` (leer descripción actual) -> Concatenar texto -> `PATCH` (guardar nuevo contenido). Esto duplica el tráfico de API de Baserow, aumenta el tiempo de ejecución del flujo y expone el sistema a sobreescrituras por condiciones de carrera cuando llegan correos concurrentes.
+
+#### 3. ¿Qué opción está más cerca de generar valor?
+*   **A corto plazo (Speed-to-Value):** La **Opción B** (o el texto consolidado inicial) genera valor inmediato porque reduce la fricción visual para el vendedor, quien puede ver la consulta del cliente en un solo golpe de vista en la plataforma.
+*   **A mediano y largo plazo (Valor Estratégico B2B):** La **Opción A** es la que realmente genera valor de negocio escalable. Permite:
+    1.  Medir métricas de rendimiento (ej: *tiempo promedio de respuesta del vendedor*).
+    2.  Filtrar y automatizar alertas de leads inactivos (ej: *leads sin interacciones en los últimos 15 días*).
+    3.  Integrar múltiples canales en una misma bitácora cronológica (llamadas, correos y alertas de WhatsApp en la misma tabla de interacciones).
+
 ---
 
 ## 🌐 5. Diagrama de Flujo y Redes

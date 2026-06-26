@@ -571,7 +571,7 @@ export default function ConfiguracionPage() {
                       <span>💡</span> ¿Cómo instalarla en tu Gmail?
                     </h3>
                     <ol className="list-decimal pl-5 space-y-2.5 text-xs text-on-surface-variant leading-relaxed">
-                      <li>Haz clic arriba en el botón <strong>"Copiar Firma Formateada"</strong>.</li>
+                      <li>Haz clic arriba en el botón <strong>&quot;Copiar Firma Formateada&quot;</strong>.</li>
                       <li>Abre tu Gmail y ve a <strong>Ajustes</strong> (icono de engranaje) &gt; <strong>Ver todos los ajustes</strong>.</li>
                       <li>En la pestaña <strong>General</strong>, baja hasta la sección <strong>Firma</strong>.</li>
                       <li>Haz clic en <strong>Crear nueva</strong> (o edita tu firma actual), borra el contenido actual y haz clic dentro del cuadro.</li>

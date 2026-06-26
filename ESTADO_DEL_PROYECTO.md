@@ -308,5 +308,10 @@ Un **"Manual Vacío"** es un cascarón o aplicación base centralizada (desplega
 - [x] Resolución de Geometría Invisible: Reparar fallos de visibilidad en parches 2D forzando geometría doble cara real, evitando el backface culling.
 - [x] Orígenes Geométricos: Ajustar el origen de cada malla consolidada al centro geométrico del Bounding Box.
 
+- [x] **Configuración de Leads y CRM en n8n (26 de Junio, 2026)**:
+  - **Integración Gmail-Baserow**: Configuración exitosa del trigger de Gmail para procesar correos entrantes y buscar/crear leads en Baserow CRM basándose en el email del remitente.
+  - **Manejo de Errores y Tipado**: Resolución de bugs críticos de tipado (Type Validation) en n8n al comparar IDs numéricos de Baserow dentro del nodo IF.
+  - **Plantillas Meta WhatsApp**: Creación e integración de plantillas de Utilidad (lerta_correo_respuesta) en Meta WhatsApp Manager, corrigiendo la validación de parámetros dinámicos ({1}) para el envío de alertas de respuesta y nuevos leads al celular del administrador.
+
 ### 🚧 Notas Técnicas
 - **Resolución Bounding Box Volumétrico:** En V30 se resolvió un bug de unión aleatoria obligando al algoritmo a validar colisiones (`bbox_contains`) siempre contra la malla de mayor grosor (MDP) en lugar de capas 2D (Cara), eliminando falsos negativos causados por el orden de extracción de `set()` en Python.
