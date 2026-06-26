@@ -1,0 +1,36 @@
+services:
+  umami:
+    image: ghcr.io/umami-software/umami:postgresql-latest
+    container_name: umami_app
+    restart: unless-stopped
+    ports:
+      - "3010:3000"
+    environment:
+      - DATABASE_URL=postgresql://${DB_USER}:${DB_PASSWORD}@umami_db:5432/${DB_NAME}
+      - DATABASE_TYPE=postgresql
+      - HASH_SALT=${HASH_SALT}
+    depends_on:
+      - umami_db
+    networks:
+      - internal_network
+
+  umami_db:
+    image: postgres:15-alpine
+    container_name: umami_db
+    restart: unless-stopped
+    environment:
+      - POSTGRES_USER=${DB_USER}
+      - POSTGRES_PASSWORD=${DB_PASSWORD}
+      - POSTGRES_DB=${DB_NAME}
+    volumes:
+      - umami_db_data:/var/lib/postgresql/data
+    networks:
+      - internal_network
+
+volumes:
+  umami_db_data:
+
+networks:
+  internal_network:
+    external: true
+    name: internal_network

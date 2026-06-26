@@ -100,13 +100,24 @@ export function useTelemetry() {
         created_at: new Date().toISOString(),
       };
 
-      // Fire-and-forget: no usamos await
-      supabase
-        .from(TABLE)
-        .insert(row)
-        .then(({ error }) => {
-          if (error) console.warn(`[Telemetry] Error inserting "${tipoEventoDb}":`, error.message);
-        });
+      const baseUrl = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+        ? 'http://localhost:3003'
+        : 'https://mariomojica.com';
+
+      fetch(`${baseUrl}/api/metrics/collect`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(row)
+      })
+      .then(async res => {
+        if (!res.ok) {
+          const text = await res.text();
+          console.warn(`[Telemetry] Error: ${res.status} - ${text}`);
+        }
+      })
+      .catch(err => console.warn('[Telemetry] Connection fail:', err.message));
     },
     [codigoManual],
   );

@@ -494,3 +494,22 @@ export async function getMetricasComparacion(
     return { error: err instanceof Error ? err.message : "Error al obtener métricas de comparación" }
   }
 }
+
+// ── 4. getProyectoDetalle ───────────────────────────────────────────────────
+
+export async function getProyectoDetalle(proyectoId: string) {
+  try {
+    const supabase = getSupabaseAdmin()
+    const { data, error } = await supabase
+      .from("proyectos")
+      .select("*, profiles!client_id(full_name, company), solicitudes!solicitud_id(titulo, descripcion, created_at)")
+      .eq("id", proyectoId)
+      .single()
+
+    if (error) throw error
+    return { success: true, data }
+  } catch (err: unknown) {
+    console.error("Error en getProyectoDetalle:", err)
+    return { error: err instanceof Error ? err.message : "Error al obtener detalle del proyecto" }
+  }
+}

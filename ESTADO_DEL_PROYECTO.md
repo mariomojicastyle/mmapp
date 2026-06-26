@@ -31,6 +31,14 @@ Este archivo es la "Memoria RAM" para Antigravity. Contiene el contexto de lo qu
   - Expansión de `LanguageContext` para soportar Portugués (pt) además de Español y Inglés.
   - Traducción estructural de 12 componentes clave (HeroManual, FAQ, ContactCTA, MetricsSection, etc.) inyectando variables en la función global `t()`.
   - Integración de selector en el Header para cambios en vivo con renderizado condicional rápido.
+- [x] **Ecosistema de Analíticas, CRM B2B y Blindaje de Métricas (Hito Manual_Metricas)**:
+  - Despliegue de Umami Analytics en producción en el Hetzner VPS con PostgreSQL y certificado SSL Let's Encrypt bajo el subdominio `analytics.mariomojica.com`.
+  - Integración condicional y asíncrona del script de Umami en la Landing Page y en la Consola CMS Next.js.
+  - Implementación de la tabla `Leads` (600) de Baserow con campo `Estado CRM` de selección única y automatización de alertas de pipeline en n8n.
+  - Creación de API Route `/api/metrics/collect` en Next.js con rate limiting (40 llamadas/min) para evitar escrituras directas del cliente en Supabase.
+  - Diseño e implementación de la vista de reportes PDF de fricción en la consola, optimizada para impresión física en tamaño A4 (`@media print`).
+  - Creación del archivo maestro de diseño técnico [Arquitectura.md](file:///c:/Desarrollo/mmapp/Arquitectura/Arquitectura.md) y diagrama vectorial [arquitectura_V7.svg](file:///c:/Desarrollo/mmapp/Arquitectura/arquitectura_V7.svg) como ancla de referencia para el proyecto.
+
 
 ### 🚧 Bloqueos / Notas Técnicas
 - **Identidad Visual:** Se utiliza el logo `Logo_vertical_color_en.svg` (corregido) como estándar global.
@@ -180,6 +188,8 @@ Un **"Manual Vacío"** es un cascarón o aplicación base centralizada (desplega
 - [x] Notificaciones de leads activas (WhatsApp Cloud API y Email).
 - [x] **[NUEVO] n8n-MCP Integration:** Capacidad de la IA para crear/editar flujos de n8n.
 - [ ] **PENDIENTE:** Monitoreo de tráfico y leads reales.
+
+
 
 ---
 

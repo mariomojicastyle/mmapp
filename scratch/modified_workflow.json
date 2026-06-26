@@ -1,0 +1,541 @@
+{
+  "updatedAt": "2026-03-27T16:28:46.282Z",
+  "createdAt": "2026-03-17T22:04:41.179Z",
+  "id": "9DCA7UuMADzYk24Y",
+  "name": "Captura de Leads & Notificacion WhatsApp",
+  "description": null,
+  "active": true,
+  "isArchived": false,
+  "nodes": [
+    {
+      "parameters": {
+        "phoneNumberId": "1072994099224530",
+        "recipientPhoneNumber": "+573117646907",
+        "template": "plantilla_06|es",
+        "components": {
+          "component": [
+            {
+              "bodyParameters": {
+                "parameter": [
+                  {
+                    "text": "={{ $json.body.nombre }} {{ $json.body.apellido }}"
+                  },
+                  {
+                    "text": "={{ $json.body.correo }}"
+                  },
+                  {
+                    "text": "={{ $json.body.empresa }}"
+                  },
+                  {
+                    "text": "={{ $json.body.pais }}"
+                  },
+                  {
+                    "text": "={{ $json.body.telefono }}"
+                  },
+                  {
+                    "text": "={{ $json.body.rol }}"
+                  },
+                  {
+                    "text": "={{ $json.body.interes }}"
+                  },
+                  {
+                    "text": "={{ $json.body.descripcion }}"
+                  }
+                ]
+              }
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.whatsApp",
+      "typeVersion": 1.1,
+      "position": [
+        -1136,
+        16
+      ],
+      "id": "82e03293-be86-4b97-b88c-39fec89e3563",
+      "name": "Send template",
+      "webhookId": "8b68d4a3-3d92-4abd-a453-95c262b94233",
+      "credentials": {
+        "whatsAppApi": {
+          "id": "RTj8SVTi6w1XDrGl",
+          "name": "WhatsApp Renueva"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "create",
+        "databaseId": 144,
+        "tableId": 600,
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": 5557,
+              "fieldValue": "={{ $('Webhook: Formulario').item.json.body.apellido }}"
+            },
+            {
+              "fieldId": 5558,
+              "fieldValue": "={{ $('Webhook: Formulario').item.json.body.correo }}"
+            },
+            {
+              "fieldId": 5563,
+              "fieldValue": "={{ $('Webhook: Formulario').item.json.body.interes }}"
+            },
+            {
+              "fieldId": 5559,
+              "fieldValue": "={{ $('Webhook: Formulario').item.json.body.empresa }}"
+            },
+            {
+              "fieldId": 5554,
+              "fieldValue": "={{ $('Webhook: Formulario').item.json.body.nombre }}"
+            },
+            {
+              "fieldId": 5560,
+              "fieldValue": "={{ $('Webhook: Formulario').item.json.body.pais }}"
+            },
+            {
+              "fieldId": 5561,
+              "fieldValue": "={{ $('Webhook: Formulario').item.json.body.telefono }}"
+            },
+            {
+              "fieldId": 5562,
+              "fieldValue": "={{ $('Webhook: Formulario').item.json.body.rol }}"
+            },
+            {
+              "fieldId": 9455,
+              "fieldValue": "={{ $('Webhook: Formulario').item.json.body.descripcion }}"
+            },
+            {
+              "fieldId": 9457,
+              "fieldValue": "3952"
+            }
+          ]
+        }
+      },
+      "id": "a7a53162-c277-4f51-b1b6-87e8c4da4d22",
+      "name": "Baserow: Guardar Lead",
+      "type": "n8n-nodes-base.baserow",
+      "typeVersion": 1,
+      "position": [
+        -1136,
+        -128
+      ],
+      "credentials": {
+        "baserowApi": {
+          "id": "cYsd6P460RAacKKN",
+          "name": "Baserow Portfolio API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "fromEmail": "direccion@mariomojica.com",
+        "toEmail": "mariomojica.style@gmail.com",
+        "subject": "=Nuevo Lead: {{ $('Webhook: Formulario').item.json.body.nombre }} ",
+        "emailFormat": "text",
+        "text": "=Nombre: {{ $('Webhook: Formulario').item.json.body.nombre }} \nApellido: {{ $('Webhook: Formulario').item.json.body.apellido }} \nCorreo: {{ $('Webhook: Formulario').item.json.body.correo }} \nEmpresa: {{ $('Webhook: Formulario').item.json.body.empresa }} \nInteres: {{ $('Webhook: Formulario').item.json.body.interes }} \nPais: {{ $('Webhook: Formulario').item.json.body.pais }} \nTelefono: {{ $('Webhook: Formulario').item.json.body.telefono }} \nRol: {{ $('Webhook: Formulario').item.json.body.rol }} \n",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2.1,
+      "position": [
+        -896,
+        -128
+      ],
+      "id": "c40edabc-5c4e-45f7-bfa6-e60c1edeb323",
+      "name": "Send an Email",
+      "webhookId": "abc7c8f0-a1fe-4994-a040-711b99ae2530",
+      "credentials": {
+        "smtp": {
+          "id": "wHWhH88IiCuxvUGZ",
+          "name": "SMTP account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "leads-v3",
+        "options": {}
+      },
+      "id": "44298437-bd4a-43b6-b65b-8c40058e6548",
+      "name": "Webhook: Formulario",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [
+        -1664,
+        32
+      ],
+      "webhookId": "e4512a31-3875-4710-9997-c47cd80749df"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "b1d2c3f2-aea2-46f5-9d0e-65f8f43a34ac",
+              "leftValue": "={{$json.headers[\"x-n8n-token\"]}}",
+              "rightValue": "mm_lead_secure_v1_83f982d1",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        -1440,
+        32
+      ],
+      "id": "6ac62307-f3d2-4ab6-8ff2-a8b95228a49b",
+      "name": "Security Check"
+    }
+  ],
+  "connections": {
+    "Baserow: Guardar Lead": {
+      "main": [
+        [
+          {
+            "node": "Send an Email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook: Formulario": {
+      "main": [
+        [
+          {
+            "node": "Security Check",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Security Check": {
+      "main": [
+        [
+          {
+            "node": "Baserow: Guardar Lead",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Send template",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        []
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "staticData": null,
+  "meta": {
+    "templateCredsSetupCompleted": true
+  },
+  "pinData": {},
+  "versionId": "40932e44-3fae-4348-89e1-82da12976fcf",
+  "activeVersionId": "40932e44-3fae-4348-89e1-82da12976fcf",
+  "versionCounter": 282,
+  "triggerCount": 1,
+  "shared": [
+    {
+      "updatedAt": "2026-03-17T22:04:41.183Z",
+      "createdAt": "2026-03-17T22:04:41.183Z",
+      "role": "workflow:owner",
+      "workflowId": "9DCA7UuMADzYk24Y",
+      "projectId": "FqxrgVd9lTGeHQZk",
+      "project": {
+        "updatedAt": "2026-03-12T18:47:52.559Z",
+        "createdAt": "2026-03-12T18:45:27.673Z",
+        "id": "FqxrgVd9lTGeHQZk",
+        "name": "Mario Mojica <mariomojica.style@gmail.com>",
+        "type": "personal",
+        "icon": null,
+        "description": null,
+        "creatorId": "4639f11e-8602-4d0f-920e-0ebd00602d98"
+      }
+    }
+  ],
+  "tags": [],
+  "activeVersion": {
+    "updatedAt": "2026-03-27T16:29:06.000Z",
+    "createdAt": "2026-03-27T16:28:46.283Z",
+    "versionId": "40932e44-3fae-4348-89e1-82da12976fcf",
+    "workflowId": "9DCA7UuMADzYk24Y",
+    "nodes": [
+      {
+        "parameters": {
+          "phoneNumberId": "1072994099224530",
+          "recipientPhoneNumber": "+573117646907",
+          "template": "plantilla_06|es",
+          "components": {
+            "component": [
+              {
+                "bodyParameters": {
+                  "parameter": [
+                    {
+                      "text": "={{ $json.body.nombre }} {{ $json.body.apellido }}"
+                    },
+                    {
+                      "text": "={{ $json.body.correo }}"
+                    },
+                    {
+                      "text": "={{ $json.body.empresa }}"
+                    },
+                    {
+                      "text": "={{ $json.body.pais }}"
+                    },
+                    {
+                      "text": "={{ $json.body.telefono }}"
+                    },
+                    {
+                      "text": "={{ $json.body.rol }}"
+                    },
+                    {
+                      "text": "={{ $json.body.interes }}"
+                    },
+                    {
+                      "text": "={{ $json.body.descripcion }}"
+                    }
+                  ]
+                }
+              }
+            ]
+          }
+        },
+        "type": "n8n-nodes-base.whatsApp",
+        "typeVersion": 1.1,
+        "position": [
+          -1136,
+          16
+        ],
+        "id": "82e03293-be86-4b97-b88c-39fec89e3563",
+        "name": "Send template",
+        "webhookId": "8b68d4a3-3d92-4abd-a453-95c262b94233",
+        "credentials": {
+          "whatsAppApi": {
+            "id": "RTj8SVTi6w1XDrGl",
+            "name": "WhatsApp Renueva"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "operation": "create",
+          "databaseId": 144,
+          "tableId": 600,
+          "fieldsUi": {
+            "fieldValues": [
+              {
+                "fieldId": 5557,
+                "fieldValue": "={{ $('Webhook: Formulario').item.json.body.apellido }}"
+              },
+              {
+                "fieldId": 5558,
+                "fieldValue": "={{ $('Webhook: Formulario').item.json.body.correo }}"
+              },
+              {
+                "fieldId": 5563,
+                "fieldValue": "={{ $('Webhook: Formulario').item.json.body.interes }}"
+              },
+              {
+                "fieldId": 5559,
+                "fieldValue": "={{ $('Webhook: Formulario').item.json.body.empresa }}"
+              },
+              {
+                "fieldId": 5554,
+                "fieldValue": "={{ $('Webhook: Formulario').item.json.body.nombre }}"
+              },
+              {
+                "fieldId": 5560,
+                "fieldValue": "={{ $('Webhook: Formulario').item.json.body.pais }}"
+              },
+              {
+                "fieldId": 5561,
+                "fieldValue": "={{ $('Webhook: Formulario').item.json.body.telefono }}"
+              },
+              {
+                "fieldId": 5562,
+                "fieldValue": "={{ $('Webhook: Formulario').item.json.body.rol }}"
+              },
+              {
+                "fieldId": 9455,
+                "fieldValue": "={{ $('Webhook: Formulario').item.json.body.descripcion }}"
+              },
+              {
+                "fieldId": 9457,
+                "fieldValue": "3952"
+              }
+            ]
+          }
+        },
+        "id": "a7a53162-c277-4f51-b1b6-87e8c4da4d22",
+        "name": "Baserow: Guardar Lead",
+        "type": "n8n-nodes-base.baserow",
+        "typeVersion": 1,
+        "position": [
+          -1136,
+          -128
+        ],
+        "credentials": {
+          "baserowApi": {
+            "id": "cYsd6P460RAacKKN",
+            "name": "Baserow Portfolio API"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "fromEmail": "direccion@mariomojica.com",
+          "toEmail": "mariomojica.style@gmail.com",
+          "subject": "=Nuevo Lead: {{ $('Webhook: Formulario').item.json.body.nombre }} ",
+          "emailFormat": "text",
+          "text": "=Nombre: {{ $('Webhook: Formulario').item.json.body.nombre }} \nApellido: {{ $('Webhook: Formulario').item.json.body.apellido }} \nCorreo: {{ $('Webhook: Formulario').item.json.body.correo }} \nEmpresa: {{ $('Webhook: Formulario').item.json.body.empresa }} \nInteres: {{ $('Webhook: Formulario').item.json.body.interes }} \nPais: {{ $('Webhook: Formulario').item.json.body.pais }} \nTelefono: {{ $('Webhook: Formulario').item.json.body.telefono }} \nRol: {{ $('Webhook: Formulario').item.json.body.rol }} \n",
+          "options": {}
+        },
+        "type": "n8n-nodes-base.emailSend",
+        "typeVersion": 2.1,
+        "position": [
+          -896,
+          -128
+        ],
+        "id": "c40edabc-5c4e-45f7-bfa6-e60c1edeb323",
+        "name": "Send an Email",
+        "webhookId": "abc7c8f0-a1fe-4994-a040-711b99ae2530",
+        "credentials": {
+          "smtp": {
+            "id": "wHWhH88IiCuxvUGZ",
+            "name": "SMTP account 2"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "httpMethod": "POST",
+          "path": "leads-v3",
+          "options": {}
+        },
+        "id": "44298437-bd4a-43b6-b65b-8c40058e6548",
+        "name": "Webhook: Formulario",
+        "type": "n8n-nodes-base.webhook",
+        "typeVersion": 1,
+        "position": [
+          -1664,
+          32
+        ],
+        "webhookId": "e4512a31-3875-4710-9997-c47cd80749df"
+      },
+      {
+        "parameters": {
+          "conditions": {
+            "options": {
+              "caseSensitive": true,
+              "leftValue": "",
+              "typeValidation": "strict",
+              "version": 3
+            },
+            "conditions": [
+              {
+                "id": "b1d2c3f2-aea2-46f5-9d0e-65f8f43a34ac",
+                "leftValue": "={{$json.headers[\"x-n8n-token\"]}}",
+                "rightValue": "mm_lead_secure_v1_83f982d1",
+                "operator": {
+                  "type": "string",
+                  "operation": "equals",
+                  "name": "filter.operator.equals"
+                }
+              }
+            ],
+            "combinator": "and"
+          },
+          "options": {}
+        },
+        "type": "n8n-nodes-base.if",
+        "typeVersion": 2.3,
+        "position": [
+          -1440,
+          32
+        ],
+        "id": "6ac62307-f3d2-4ab6-8ff2-a8b95228a49b",
+        "name": "Security Check"
+      }
+    ],
+    "connections": {
+      "Baserow: Guardar Lead": {
+        "main": [
+          [
+            {
+              "node": "Send an Email",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Webhook: Formulario": {
+        "main": [
+          [
+            {
+              "node": "Security Check",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Security Check": {
+        "main": [
+          [
+            {
+              "node": "Baserow: Guardar Lead",
+              "type": "main",
+              "index": 0
+            },
+            {
+              "node": "Send template",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          []
+        ]
+      }
+    },
+    "authors": "Mario Mojica",
+    "name": "Version 40932e44",
+    "description": "",
+    "autosaved": true,
+    "workflowPublishHistory": [
+      {
+        "createdAt": "2026-03-27T16:29:06.668Z",
+        "id": 26,
+        "workflowId": "9DCA7UuMADzYk24Y",
+        "versionId": "40932e44-3fae-4348-89e1-82da12976fcf",
+        "event": "activated",
+        "userId": "4639f11e-8602-4d0f-920e-0ebd00602d98"
+      }
+    ]
+  }
+}

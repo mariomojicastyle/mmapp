@@ -86,7 +86,7 @@ export default function EquipoPage() {
   // Modal de eliminación
   const [deleteTarget, setDeleteTarget] = useState<{ type: "member" | "company", id: string, name: string } | null>(null)
   
-  const { isSuperAdmin, isCoequipero, isAdmin, role } = usePermissions()
+  const { user, isSuperAdmin, isCoequipero, isAdmin, role } = usePermissions()
 
   const fetchTeam = async () => {
     setLoading(true)
@@ -149,7 +149,11 @@ export default function EquipoPage() {
   }
 
   const internalTeam = teamMembers.filter(m => m.role === "superadmin" || m.role === "coequipero")
-  const clientTeam = teamMembers.filter(m => m.role === "admin" || m.role === "designer" || m.role === "viewer")
+  const clientTeam = teamMembers.filter(m => {
+    const isClientRole = m.role === "admin" || m.role === "designer" || m.role === "viewer"
+    if (isInternalTeam) return isClientRole
+    return isClientRole && m.company === user?.company
+  })
 
   // Group clients by company
   const groupedClients = clientTeam.reduce((acc, member) => {

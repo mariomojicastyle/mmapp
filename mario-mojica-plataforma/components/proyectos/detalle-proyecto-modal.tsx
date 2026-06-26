@@ -4816,6 +4816,16 @@ export function DetalleProyectoModal({ isOpen, onClose, proyecto, onUpdate }: De
               
               <div className="flex items-center gap-3">
                 
+                <a
+                  href={`/proyectos/${proyecto.id}/reporte`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-2 rounded-xl border border-teal-500/20 bg-teal-500/10 px-5 py-2.5 text-sm font-medium text-teal-400 transition hover:bg-teal-500/20"
+                >
+                  <FileText className="h-4 w-4" />
+                  <span>Reporte de Fricción</span>
+                </a>
+
                 <button
                   type="button"
                   onClick={onClose}

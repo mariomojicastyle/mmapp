@@ -79,6 +79,8 @@ function normalizarYAsignarPiezas(items) {
   return [...maderasConCodigo, ...fondosConCodigo, ...herrajes];
 }
 
+const urlsFirmadasCache = {};
+
 const AssemblyPage = () => {
   const { id } = useParams();
   const [productData, setProductData] = useState(null);
@@ -101,13 +103,62 @@ const AssemblyPage = () => {
 
         if (configData) {
           console.log("Cargando manual dinámico desde Supabase:", configData);
+
+          // ── PRE-FIRMAR ASSETS (IP SHIELD) ───────────────────────────
+          const assetsParaFirmar = [];
+          if (configData.logo_url) assetsParaFirmar.push(configData.logo_url);
+          if (configData.favicon_url) assetsParaFirmar.push(configData.favicon_url);
+          if (configData.imagen_herramientas) assetsParaFirmar.push(configData.imagen_herramientas);
+          if (configData.garantia_texto && configData.garantia_texto.endsWith(".pdf")) assetsParaFirmar.push(configData.garantia_texto);
           
-          // Construir las URLs públicas para los insumos en el Storage
+          (configData.renders_fotorealistas || []).forEach(r => { if (r.url) assetsParaFirmar.push(r.url); });
+          (configData.fotos_herrajes || []).forEach(h => { if (h.url) assetsParaFirmar.push(h.url); });
+          (configData.imagenes_ensambles || []).forEach(e => { if (e.url) assetsParaFirmar.push(e.url); });
+          (configData.glb_pasos || []).forEach(g => { if (g.url) assetsParaFirmar.push(g.url); });
+          (configData.audio_es_pasos || []).forEach(a => { if (a.url) assetsParaFirmar.push(a.url); });
+          (configData.audio_en_pasos || []).forEach(a => { if (a.url) assetsParaFirmar.push(a.url); });
+          if (configData.audio_ayuda) assetsParaFirmar.push(configData.audio_ayuda);
+
+          // Texturas PBR
+          if (configData.pbr_floor_diff) assetsParaFirmar.push(configData.pbr_floor_diff);
+          if (configData.pbr_floor_normal) assetsParaFirmar.push(configData.pbr_floor_normal);
+          if (configData.pbr_floor_roughness) assetsParaFirmar.push(configData.pbr_floor_roughness);
+          if (configData.pbr_floor_height) assetsParaFirmar.push(configData.pbr_floor_height);
+          if (configData.pbr_wall_diff) assetsParaFirmar.push(configData.pbr_wall_diff);
+          if (configData.pbr_wall_normal) assetsParaFirmar.push(configData.pbr_wall_normal);
+          if (configData.pbr_wall_roughness) assetsParaFirmar.push(configData.pbr_wall_roughness);
+          if (configData.pbr_wall_height) assetsParaFirmar.push(configData.pbr_wall_height);
+
+          const preFirmarAsset = async (proyectoId, filePath) => {
+            if (!filePath || filePath.startsWith("http")) return;
+            const fullPath = filePath.startsWith(id + "/") ? filePath : `${id}/${filePath}`;
+            
+            const baseUrl = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+              ? 'http://localhost:3003'
+              : 'https://mariomojica.com';
+
+            try {
+              const res = await fetch(`${baseUrl}/api/assets/sign?proyectoId=${proyectoId}&filePath=${encodeURIComponent(fullPath)}`);
+              if (res.ok) {
+                const data = await res.json();
+                urlsFirmadasCache[filePath] = data.signedUrl;
+              }
+            } catch (err) {
+              console.error("[AssetSign] Error pre-firmando:", filePath, err.message);
+            }
+          };
+
+          const proyectoId = configData.proyecto_id;
+          await Promise.all(assetsParaFirmar.map(path => preFirmarAsset(proyectoId, path)));
+          
+          // Construir las URLs públicas/firmadas para los insumos en el Storage
           const getStorageUrl = (path) => {
             if (!path) return "";
             if (path.startsWith("http")) return path;
+            if (urlsFirmadasCache[path]) {
+              return urlsFirmadasCache[path];
+            }
             const projectUrl = import.meta.env.VITE_SUPABASE_URL;
-            // Asegurar que el path incluya el id del manual como prefijo de subcarpeta
             const fullPath = path.startsWith(id + "/") ? path : `${id}/${path}`;
             return `${projectUrl}/storage/v1/object/public/insumos_manuales/${fullPath}`;
           };
