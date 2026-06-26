@@ -8,7 +8,7 @@ export default function SignaturePage() {
   const signatureHtml = `
     <table cellpadding="0" cellspacing="0" border="0" style="font-family: 'Inter', -apple-system, BlinkMacSystemFont, Arial, sans-serif; background-color: transparent; border-collapse: collapse;">
       <tr>
-        <td valign="middle" style="padding-right: 20px; border-right: 2px solid #0d9488;">
+        <td valign="middle" style="padding-right: 20px; border-right: 2px solid #0088aa;">
           <a href="https://mariomojica.com" target="_blank" style="text-decoration: none;">
             <img src="https://mariomojica.com/Logo_Signature.png" alt="Mario Mojica" width="110" style="border: 0; display: block; width: 110px; height: auto;" />
           </a>
@@ -17,18 +17,18 @@ export default function SignaturePage() {
           <div style="font-size: 16px; font-weight: 700; color: #111827; margin: 0; line-height: 20px; letter-spacing: -0.01em;">
             Mario Mojica
           </div>
-          <div style="font-size: 11px; font-weight: 600; color: #0d9488; text-transform: uppercase; margin: 2px 0 8px 0; line-height: 14px; letter-spacing: 0.05em;">
+          <div style="font-size: 11px; font-weight: 600; color: #0088aa; text-transform: uppercase; margin: 2px 0 8px 0; line-height: 14px; letter-spacing: 0.05em;">
             Architect of 3D Interactive Manuals & B2B SaaS
           </div>
           <table cellpadding="0" cellspacing="0" border="0" style="border-collapse: collapse;">
             <tr>
               <td style="font-size: 13px; color: #4b5563; padding: 2px 0; line-height: 16px;">
-                <span style="color: #0d9488; font-weight: 600;">W:</span> <a href="https://mariomojica.com" target="_blank" style="color: #0d9488; text-decoration: none; font-weight: 500;">mariomojica.com</a>
+                <span style="color: #0088aa; font-weight: 600;">W:</span> <a href="https://mariomojica.com" target="_blank" style="color: #0088aa; text-decoration: none; font-weight: 500;">mariomojica.com</a>
               </td>
             </tr>
             <tr>
               <td style="font-size: 13px; color: #4b5563; padding: 2px 0; line-height: 16px;">
-                <span style="color: #0d9488; font-weight: 600;">E:</span> <a href="mailto:direccion@mariomojica.com" style="color: #4b5563; text-decoration: none;">direccion@mariomojica.com</a>
+                <span style="color: #0088aa; font-weight: 600;">E:</span> <a href="mailto:direccion@mariomojica.com" style="color: #4b5563; text-decoration: none;">direccion@mariomojica.com</a>
               </td>
             </tr>
           </table>
@@ -96,7 +96,7 @@ export default function SignaturePage() {
         {/* Vista previa de la firma */}
         <div style={{
           padding: "30px",
-          border: "1px dashed #0d9488",
+          border: "1px dashed #0088aa",
           borderRadius: "12px",
           backgroundColor: "#fcfdfd",
           marginBottom: "30px",
@@ -111,7 +111,7 @@ export default function SignaturePage() {
           <button
             onClick={handleCopy}
             style={{
-              backgroundColor: copied ? "#059669" : "#0d9488",
+              backgroundColor: copied ? "#059669" : "#0088aa",
               color: "#FFFFFF",
               border: "none",
               padding: "14px 28px",
@@ -120,7 +120,7 @@ export default function SignaturePage() {
               fontWeight: 600,
               cursor: "pointer",
               transition: "all 0.2s ease",
-              boxShadow: "0 4px 6px -1px rgba(13, 148, 136, 0.2)"
+              boxShadow: "0 4px 6px -1px rgba(0, 136, 170, 0.2)"
             }}
           >
             {copied ? "✓ ¡Copiado al Portapapeles!" : "📋 Copiar Firma Formateada"}
