@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 "use client"
 
-import { Settings, User as UserIcon, Bell, Shield, Globe, Camera, Upload, Smile, X, RefreshCw, ChevronLeft, ChevronRight } from "lucide-react"
+import { Settings, User as UserIcon, Bell, Shield, Globe, Camera, Upload, Smile, X, RefreshCw, ChevronLeft, ChevronRight, Mail } from "lucide-react"
 import { useAuth } from "@/lib/auth/auth-context"
 import { usePermissions } from "@/hooks/use-permissions"
 import { useState, useEffect, useRef } from "react"
@@ -76,6 +76,60 @@ export default function ConfiguracionPage() {
   
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null)
   const [message, setMessage] = useState({ text: "", type: "" })
+  const [activeTab, setActiveTab] = useState<"Perfil" | "Firma">("Perfil")
+  const [copiedSignature, setCopiedSignature] = useState(false)
+
+  const userFullName = user?.name || `${formData.nombre} ${formData.apellido}`.trim() || "Mario Mojica"
+  const userEmail = user?.email || formData.email || "direccion@mariomojica.com"
+  const userCargo = user?.job_title || formData.cargo || "Architect of Industry 4.0"
+
+  const dynamicSignatureHtml = `
+    <table cellpadding="0" cellspacing="0" border="0" style="font-family: 'Inter', -apple-system, BlinkMacSystemFont, Arial, sans-serif; background-color: transparent; border-collapse: collapse; text-align: left;">
+      <tr>
+        <td valign="middle" style="padding-right: 20px; border-right: 2px solid #0088aa; text-align: left;">
+          <a href="https://mariomojica.com" target="_blank" style="text-decoration: none;">
+            <img src="https://mariomojica.com/Logo_Signature_v3.png" alt="Mario Mojica" width="110" style="border: 0; display: block; width: 110px; height: auto;" />
+          </a>
+        </td>
+        <td valign="middle" style="padding-left: 20px; text-align: left;">
+          <div style="font-size: 16px; font-weight: 700; color: #111827; margin: 0; line-height: 20px; letter-spacing: -0.01em; text-align: left;">
+            ${userFullName}
+          </div>
+          <div style="font-size: 11px; font-weight: 600; color: #0088aa; text-transform: uppercase; margin: 2px 0 8px 0; line-height: 14px; letter-spacing: 0.05em; text-align: left;">
+            ${userCargo}
+          </div>
+          <table cellpadding="0" cellspacing="0" border="0" style="border-collapse: collapse; text-align: left;">
+            <tr>
+              <td style="font-size: 13px; color: #4b5563; padding: 2px 0; line-height: 16px; vertical-align: middle; text-align: left;">
+                <img src="https://mariomojica.com/globe_icon.png" width="13" height="13" alt="Web" style="border: 0; display: inline-block; vertical-align: middle; margin-right: 6px;" /> <a href="https://mariomojica.com" target="_blank" style="color: #0088aa; text-decoration: none; font-weight: 500; vertical-align: middle;">mariomojica.com</a>
+              </td>
+            </tr>
+            <tr>
+              <td style="font-size: 13px; color: #4b5563; padding: 2px 0; line-height: 16px; vertical-align: middle; text-align: left;">
+                <img src="https://mariomojica.com/envelope_icon.png" width="13" height="13" alt="Email" style="border: 0; display: inline-block; vertical-align: middle; margin-right: 6px;" /> <a href="mailto:${userEmail}" style="color: #4b5563; text-decoration: none; vertical-align: middle;">${userEmail}</a>
+              </td>
+            </tr>
+          </table>
+          <div style="margin-top: 10px; font-size: 11px; color: #9ca3af; font-style: italic; line-height: 14px; text-align: left;">
+            Interactive 3D instructions for RTA furniture manufacturers.
+          </div>
+        </td>
+      </tr>
+    </table>
+  `;
+
+  const handleCopySignature = async () => {
+    try {
+      const blob = new Blob([dynamicSignatureHtml], { type: "text/html" });
+      const data = [new ClipboardItem({ "text/html": blob })];
+      await navigator.clipboard.write(data);
+      setCopiedSignature(true);
+      setTimeout(() => setCopiedSignature(false), 3000);
+    } catch (err) {
+      console.error("Error al copiar la firma:", err);
+      alert("Hubo un error al copiar automáticamente. Por favor, selecciona la firma visualmente con el mouse y cópiala manualmente con Ctrl+C.");
+    }
+  };
   
   // Modal states
   const [isModalOpen, setIsModalOpen] = useState(false)
@@ -309,20 +363,32 @@ export default function ConfiguracionPage() {
           {/* Settings navigation */}
           <div className="flex flex-col gap-1 rounded-2xl bg-surface-container-low p-2 lg:col-span-1 h-fit">
             {[
-              { icon: UserIcon, label: "Perfil", active: true },
-              { icon: Bell, label: "Notificaciones", active: false },
-              { icon: Shield, label: "Seguridad", active: false },
-              { icon: Globe, label: "Idioma y región", active: false },
-              { icon: Settings, label: "Avanzado", active: false },
+              { id: "Perfil" as const, icon: UserIcon, label: "Perfil", disabled: false },
+              { id: "Notificaciones" as const, icon: Bell, label: "Notificaciones", disabled: true },
+              { id: "Seguridad" as const, icon: Shield, label: "Seguridad", disabled: true },
+              { id: "Idioma" as const, icon: Globe, label: "Idioma y región", disabled: true },
+              ...((user?.email?.endsWith('@mariomojica.com') || isSuperAdmin)
+                ? [{ id: "Firma" as const, icon: Mail, label: "Firma de Correo", disabled: false }]
+                : []),
+              { id: "Avanzado" as const, icon: Settings, label: "Avanzado", disabled: true },
             ].map((item) => {
               const Icon = item.icon
+              const isActive = activeTab === item.id
               return (
                 <button
                   key={item.label}
+                  disabled={item.disabled}
+                  onClick={() => {
+                    if (!item.disabled && (item.id === "Perfil" || item.id === "Firma")) {
+                      setActiveTab(item.id)
+                    }
+                  }}
                   className={`flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium transition-all ${
-                    item.active
-                      ? "bg-primary text-primary-foreground shadow-sm"
-                      : "text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface"
+                    item.disabled
+                      ? "opacity-40 cursor-not-allowed text-on-surface-variant/40"
+                      : isActive
+                      ? "bg-primary text-primary-foreground shadow-sm cursor-pointer"
+                      : "text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface cursor-pointer"
                   }`}
                 >
                   <Icon className="h-4 w-4" />
@@ -334,144 +400,188 @@ export default function ConfiguracionPage() {
 
           {/* Settings form container */}
           <div className="lg:col-span-3">
-            <div className="rounded-2xl border border-outline-variant/10 bg-surface-container-low p-6 lg:p-8 shadow-sm">
-              <div className="mb-8 flex items-center justify-between">
-                <div>
-                  <h2 className="text-lg font-bold text-on-surface">Información Personal</h2>
-                  <p className="text-xs text-on-surface-variant">Actualiza tus datos de contacto y empresa.</p>
+            {activeTab === "Perfil" ? (
+              <div className="rounded-2xl border border-outline-variant/10 bg-surface-container-low p-6 lg:p-8 shadow-sm">
+                <div className="mb-8 flex items-center justify-between">
+                  <div>
+                    <h2 className="text-lg font-bold text-on-surface">Información Personal</h2>
+                    <p className="text-xs text-on-surface-variant">Actualiza tus datos de contacto y empresa.</p>
+                  </div>
+                  {user?.credits !== undefined && (
+                    <div className="flex items-center gap-2 rounded-full bg-primary/5 px-3 py-1 ring-1 ring-inset ring-primary/10">
+                      <span className="text-[10px] font-bold uppercase tracking-wider text-primary/70">Créditos Disp.</span>
+                      <span className="text-sm font-bold text-primary">{user.credits.toLocaleString()}</span>
+                    </div>
+                  )}
                 </div>
-                {user?.credits !== undefined && (
-                  <div className="flex items-center gap-2 rounded-full bg-primary/5 px-3 py-1 ring-1 ring-inset ring-primary/10">
-                    <span className="text-[10px] font-bold uppercase tracking-wider text-primary/70">Créditos Disp.</span>
-                    <span className="text-sm font-bold text-primary">{user.credits.toLocaleString()}</span>
+                
+                {message.text && (
+                  <div className={`mb-6 flex items-center gap-2 p-4 rounded-xl text-sm animate-in fade-in slide-in-from-top-2 ${
+                    message.type === 'success' 
+                      ? 'bg-emerald-500/10 text-emerald-500 border border-emerald-500/20' 
+                      : 'bg-red-500/10 text-red-500 border border-red-500/20'
+                  }`}>
+                    <div className={`h-2 w-2 rounded-full ${message.type === 'success' ? 'bg-emerald-500' : 'bg-red-500'}`} />
+                    {message.text}
                   </div>
                 )}
-              </div>
-              
-              {message.text && (
-                <div className={`mb-6 flex items-center gap-2 p-4 rounded-xl text-sm animate-in fade-in slide-in-from-top-2 ${
-                  message.type === 'success' 
-                    ? 'bg-emerald-500/10 text-emerald-500 border border-emerald-500/20' 
-                    : 'bg-red-500/10 text-red-500 border border-red-500/20'
-                }`}>
-                  <div className={`h-2 w-2 rounded-full ${message.type === 'success' ? 'bg-emerald-500' : 'bg-red-500'}`} />
-                  {message.text}
-                </div>
-              )}
 
-              <form onSubmit={handleSubmit} className="space-y-6">
-                {/* Avatar Uploader Section */}
-                <div className="flex flex-col items-center gap-4 sm:flex-row sm:gap-6 border-b border-outline-variant/30 pb-6 mb-6">
-                  <div 
-                    onClick={() => setIsModalOpen(true)}
-                    className="relative group/avatar cursor-pointer shrink-0"
-                  >
-                    <input
-                      type="file"
-                      ref={fileInputRef}
-                      accept="image/*"
-                      onChange={handleAvatarChange}
-                      className="hidden"
-                    />
-                    <div className="h-24 w-24 rounded-full overflow-hidden border-2 border-outline-variant bg-surface-container-high flex items-center justify-center transition-all group-hover/avatar:border-primary">
-                      {avatarUrl ? (
-                        <img src={avatarUrl} alt="Avatar" className="h-full w-full object-cover" />
-                      ) : (
-                        <span className="text-2xl font-black text-primary">
-                          {formData.nombre ? formData.nombre.substring(0, 1).toUpperCase() : ""}
-                          {formData.apellido ? formData.apellido.substring(0, 1).toUpperCase() : ""}
-                        </span>
-                      )}
+                <form onSubmit={handleSubmit} className="space-y-6">
+                  {/* Avatar Uploader Section */}
+                  <div className="flex flex-col items-center gap-4 sm:flex-row sm:gap-6 border-b border-outline-variant/30 pb-6 mb-6">
+                    <div 
+                      onClick={() => setIsModalOpen(true)}
+                      className="relative group/avatar cursor-pointer shrink-0"
+                    >
+                      <input
+                        type="file"
+                        ref={fileInputRef}
+                        accept="image/*"
+                        onChange={handleAvatarChange}
+                        className="hidden"
+                      />
+                      <div className="h-24 w-24 rounded-full overflow-hidden border-2 border-outline-variant bg-surface-container-high flex items-center justify-center transition-all group-hover/avatar:border-primary">
+                        {avatarUrl ? (
+                          <img src={avatarUrl} alt="Avatar" className="h-full w-full object-cover" />
+                        ) : (
+                          <span className="text-2xl font-black text-primary">
+                            {formData.nombre ? formData.nombre.substring(0, 1).toUpperCase() : ""}
+                            {formData.apellido ? formData.apellido.substring(0, 1).toUpperCase() : ""}
+                          </span>
+                        )}
+                      </div>
+                      <div className="absolute inset-0 bg-black/40 rounded-full flex items-center justify-center opacity-0 group-hover/avatar:opacity-100 transition-opacity">
+                        <Camera className="h-6 w-6 text-white" />
+                      </div>
                     </div>
-                    <div className="absolute inset-0 bg-black/40 rounded-full flex items-center justify-center opacity-0 group-hover/avatar:opacity-100 transition-opacity">
-                      <Camera className="h-6 w-6 text-white" />
+                    <div className="text-center sm:text-left space-y-1">
+                      <p className="text-sm font-semibold text-on-surface">Foto de Perfil</p>
+                      <p className="text-xs text-on-surface-variant max-w-[240px]">
+                        Haz clic en la imagen para subir una nueva foto de perfil (se recomienda cuadrada, máximo 2MB).
+                      </p>
                     </div>
                   </div>
-                  <div className="text-center sm:text-left space-y-1">
-                    <p className="text-sm font-semibold text-on-surface">Foto de Perfil</p>
-                    <p className="text-xs text-on-surface-variant max-w-[240px]">
-                      Haz clic en la imagen para subir una nueva foto de perfil (se recomienda cuadrada, máximo 2MB).
+
+                  <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+                    <div className="space-y-2">
+                      <label className="text-xs font-bold uppercase tracking-wider text-on-surface-variant/70 px-1">Nombre</label>
+                      <input
+                        type="text"
+                        name="nombre"
+                        value={formData.nombre}
+                        onChange={handleChange}
+                        disabled={loading}
+                        placeholder="Ej. Zanfairo"
+                        className="h-12 w-full rounded-xl bg-surface-container px-4 text-sm text-on-surface outline-none ring-1 ring-outline-variant/30 transition-all focus:ring-2 focus:ring-primary disabled:opacity-50"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-xs font-bold uppercase tracking-wider text-on-surface-variant/70 px-1">Apellido</label>
+                      <input
+                        type="text"
+                        name="apellido"
+                        value={formData.apellido}
+                        onChange={handleChange}
+                        disabled={loading}
+                        placeholder="Ej. Bernate"
+                        className="h-12 w-full rounded-xl bg-surface-container px-4 text-sm text-on-surface outline-none ring-1 ring-outline-variant/30 transition-all focus:ring-2 focus:ring-primary disabled:opacity-50"
+                      />
+                    </div>
+                    <div className="space-y-2 md:col-span-2">
+                      <label className="text-xs font-bold uppercase tracking-wider text-on-surface-variant/70 px-1">Email</label>
+                      <input
+                        type="email"
+                        name="email"
+                        value={formData.email}
+                        disabled={true}
+                        className="h-12 w-full rounded-xl bg-surface-container px-4 text-sm text-on-surface-variant outline-none ring-1 ring-outline-variant/20 disabled:opacity-60 cursor-not-allowed"
+                        title="El email no se puede modificar desde aquí"
+                      />
+                      <p className="px-1 text-[10px] text-on-surface-variant">El email está vinculado a tu cuenta y no puede cambiarse.</p>
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-xs font-bold uppercase tracking-wider text-on-surface-variant/70 px-1">Empresa</label>
+                      <input
+                        type="text"
+                        name="empresa"
+                        value={formData.empresa}
+                        disabled={true}
+                        className="h-12 w-full rounded-xl bg-surface-container px-4 text-sm text-on-surface-variant outline-none ring-1 ring-outline-variant/20 disabled:opacity-60 cursor-not-allowed"
+                        title="La empresa no se puede modificar desde aquí"
+                      />
+                      <p className="px-1 text-[10px] text-on-surface-variant">La empresa está vinculada a la cuenta y no puede cambiarse.</p>
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-xs font-bold uppercase tracking-wider text-on-surface-variant/70 px-1">Cargo</label>
+                      <input
+                        type="text"
+                        name="cargo"
+                        value={formData.cargo}
+                        onChange={handleChange}
+                        disabled={loading}
+                        placeholder="Ej. Gerente de Ventas"
+                        className="h-12 w-full rounded-xl bg-surface-container px-4 text-sm text-on-surface outline-none ring-1 ring-outline-variant/30 transition-all focus:ring-2 focus:ring-primary disabled:opacity-50"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="flex items-center justify-between pt-4">
+                    <p className="text-[11px] text-on-surface-variant max-w-[200px]">
+                      Al guardar, los cambios se reflejarán en toda la plataforma inmediatamente.
                     </p>
+                    <button 
+                      type="submit"
+                      disabled={loading || !user}
+                      className="flex h-12 items-center justify-center rounded-xl bg-primary px-8 text-sm font-bold text-primary-foreground shadow-lg shadow-primary/20 transition-all hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 disabled:scale-100"
+                    >
+                      {loading ? "Guardando..." : "Guardar Cambios"}
+                    </button>
                   </div>
+                </form>
+              </div>
+            ) : activeTab === "Firma" ? (
+              <div className="rounded-2xl border border-outline-variant/10 bg-surface-container-low p-6 lg:p-8 shadow-sm flex flex-col gap-6">
+                <div>
+                  <h2 className="text-lg font-bold text-on-surface">Firma de Correo Corporativa</h2>
+                  <p className="text-xs text-on-surface-variant font-medium">Genera tu firma oficial de mariomojica.com en texto enriquecido para pegarla en Gmail.</p>
+                </div>
+                
+                {/* Contenedor vista previa (Fondo blanco de correo) */}
+                <div className="rounded-xl border border-outline-variant/20 bg-white p-8 flex justify-center shadow-inner overflow-x-auto text-black">
+                  <div dangerouslySetInnerHTML={{ __html: dynamicSignatureHtml }} />
                 </div>
 
-                <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-                  <div className="space-y-2">
-                    <label className="text-xs font-bold uppercase tracking-wider text-on-surface-variant/70 px-1">Nombre</label>
-                    <input
-                      type="text"
-                      name="nombre"
-                      value={formData.nombre}
-                      onChange={handleChange}
-                      disabled={loading}
-                      placeholder="Ej. Zanfairo"
-                      className="h-12 w-full rounded-xl bg-surface-container px-4 text-sm text-on-surface outline-none ring-1 ring-outline-variant/30 transition-all focus:ring-2 focus:ring-primary disabled:opacity-50"
-                    />
+                <div className="flex flex-col gap-6">
+                  <div className="flex justify-center">
+                    <button
+                      type="button"
+                      onClick={handleCopySignature}
+                      className={`flex h-12 items-center justify-center rounded-xl px-8 text-sm font-bold text-white shadow-lg transition-all hover:scale-[1.02] active:scale-[0.98] cursor-pointer ${
+                        copiedSignature 
+                          ? "bg-emerald-600 shadow-emerald-900/20" 
+                          : "bg-[#0088aa] hover:bg-[#0088aa]/95 shadow-[#0088aa]/20"
+                      }`}
+                    >
+                      {copiedSignature ? "✓ ¡Copiado al Portapapeles!" : "📋 Copiar Firma Formateada"}
+                    </button>
                   </div>
-                  <div className="space-y-2">
-                    <label className="text-xs font-bold uppercase tracking-wider text-on-surface-variant/70 px-1">Apellido</label>
-                    <input
-                      type="text"
-                      name="apellido"
-                      value={formData.apellido}
-                      onChange={handleChange}
-                      disabled={loading}
-                      placeholder="Ej. Bernate"
-                      className="h-12 w-full rounded-xl bg-surface-container px-4 text-sm text-on-surface outline-none ring-1 ring-outline-variant/30 transition-all focus:ring-2 focus:ring-primary disabled:opacity-50"
-                    />
-                  </div>
-                  <div className="space-y-2 md:col-span-2">
-                    <label className="text-xs font-bold uppercase tracking-wider text-on-surface-variant/70 px-1">Email</label>
-                    <input
-                      type="email"
-                      name="email"
-                      value={formData.email}
-                      disabled={true}
-                      className="h-12 w-full rounded-xl bg-surface-container px-4 text-sm text-on-surface-variant outline-none ring-1 ring-outline-variant/20 disabled:opacity-60 cursor-not-allowed"
-                      title="El email no se puede modificar desde aquí"
-                    />
-                    <p className="px-1 text-[10px] text-on-surface-variant">El email está vinculado a tu cuenta y no puede cambiarse.</p>
-                  </div>
-                  <div className="space-y-2">
-                    <label className="text-xs font-bold uppercase tracking-wider text-on-surface-variant/70 px-1">Empresa</label>
-                    <input
-                      type="text"
-                      name="empresa"
-                      value={formData.empresa}
-                      disabled={true}
-                      className="h-12 w-full rounded-xl bg-surface-container px-4 text-sm text-on-surface-variant outline-none ring-1 ring-outline-variant/20 disabled:opacity-60 cursor-not-allowed"
-                      title="La empresa no se puede modificar desde aquí"
-                    />
-                    <p className="px-1 text-[10px] text-on-surface-variant">La empresa está vinculada a la cuenta y no puede cambiarse.</p>
-                  </div>
-                  <div className="space-y-2">
-                    <label className="text-xs font-bold uppercase tracking-wider text-on-surface-variant/70 px-1">Cargo</label>
-                    <input
-                      type="text"
-                      name="cargo"
-                      value={formData.cargo}
-                      onChange={handleChange}
-                      disabled={loading}
-                      placeholder="Ej. Gerente de Ventas"
-                      className="h-12 w-full rounded-xl bg-surface-container px-4 text-sm text-on-surface outline-none ring-1 ring-outline-variant/30 transition-all focus:ring-2 focus:ring-primary disabled:opacity-50"
-                    />
-                  </div>
-                </div>
 
-                <div className="flex items-center justify-between pt-4">
-                  <p className="text-[11px] text-on-surface-variant max-w-[200px]">
-                    Al guardar, los cambios se reflejarán en toda la plataforma inmediatamente.
-                  </p>
-                  <button 
-                    type="submit"
-                    disabled={loading || !user}
-                    className="flex h-12 items-center justify-center rounded-xl bg-primary px-8 text-sm font-bold text-primary-foreground shadow-lg shadow-primary/20 transition-all hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 disabled:scale-100"
-                  >
-                    {loading ? "Guardando..." : "Guardar Cambios"}
-                  </button>
+                  <div className="border-t border-outline-variant/20 pt-6 mt-4">
+                    <h3 className="text-sm font-bold text-on-surface mb-3 flex items-center gap-2">
+                      <span>💡</span> ¿Cómo instalarla en tu Gmail?
+                    </h3>
+                    <ol className="list-decimal pl-5 space-y-2.5 text-xs text-on-surface-variant leading-relaxed">
+                      <li>Haz clic arriba en el botón <strong>"Copiar Firma Formateada"</strong>.</li>
+                      <li>Abre tu Gmail y ve a <strong>Ajustes</strong> (icono de engranaje) &gt; <strong>Ver todos los ajustes</strong>.</li>
+                      <li>En la pestaña <strong>General</strong>, baja hasta la sección <strong>Firma</strong>.</li>
+                      <li>Haz clic en <strong>Crear nueva</strong> (o edita tu firma actual), borra el contenido actual y haz clic dentro del cuadro.</li>
+                      <li>Pega la firma presionando <strong>Ctrl + V</strong> (o clic derecho &gt; Pegar). <em>¡Aparecerá directamente con el diseño, logos y enlaces activos!</em></li>
+                      <li>Baja al final de la página de Gmail y haz clic en <strong>Guardar cambios</strong>.</li>
+                    </ol>
+                  </div>
                 </div>
-              </form>
-            </div>
+              </div>
+            ) : null}
           </div>
         </div>
       </div>
