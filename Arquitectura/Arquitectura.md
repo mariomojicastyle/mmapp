@@ -105,7 +105,31 @@ El hook `useTelemetry.js` envía periódicamente la interacción del usuario (pa
 
 ---
 
-## 🌐 4. Diagrama de Flujo y Redes
+## 🤖 4. Integraciones y Flujos de Automatización Avanzados (n8n + Gmail + Baserow)
+
+Para maximizar la conversión B2B y garantizar la trazabilidad de interacciones, el sistema cuenta con una integración avanzada entre **Gmail**, **n8n** y **Baserow CRM**:
+
+### Flujo de Trabajo: Sincronización Automática de Interacciones y Captura de Leads
+
+1. **Trigger de Correo (Gmail Trigger):**
+   * n8n monitorea en tiempo real los correos enviados o recibidos en `direccion@mariomojica.com` usando la API oficial mediante OAuth 2.0.
+
+2. **Búsqueda en el CRM (Baserow):**
+   * Busca en la tabla `Leads` (ID `600`) si existe un registro cuyo campo `Correo` (Field ID `5558`) coincida con la dirección del remitente.
+
+3. **Lógica Bifurcada (IF: ¿Lead Existe?):**
+   * **Ruta A (El Lead Existe):**
+     * **Registro de Notas (Opción A):** n8n registra el correo (Asunto, Dirección y Cuerpo) en una tabla secundaria vinculada llamada `Interacciones` o `Notas` de Baserow, manteniendo un historial limpio por fila.
+     * **Cambio de Estado:** El `Estado CRM` (Field ID `9457`) del lead se actualiza automáticamente a **"En Seguimiento"** para activar su prioridad en el Kanban.
+     * **Alerta Instantánea:** Se dispara una alerta de WhatsApp mediante el nodo `WhatsApp Renueva` notificando al equipo sobre la respuesta del cliente.
+   * **Ruta B (El Lead NO Existe - Recomendación de Valor):**
+     * **Filtro de SPAM/Internos:** n8n comprueba que el remitente no sea una dirección interna `@mariomojica.com` ni un dominio de spam conocido.
+     * **Creación Automática (Inbound):** Para maximizar la velocidad de respuesta comercial (speed-to-lead), n8n crea automáticamente un nuevo Lead en la tabla `Leads` (600) con estado **"Nuevo"** (`3952`), guardando el Asunto y el primer correo en el campo `Descripcion` (9455).
+     * **Notificación de Alerta:** Envía un WhatsApp en tiempo real informando que un nuevo prospecto ha iniciado contacto por correo.
+
+---
+
+## 🌐 5. Diagrama de Flujo y Redes
 
 * **`mmapp_network` (Docker Bridge):** Conecta `n8n_app`, `baserow_app`, `npm_proxy` y `npm_database`.
 * **`internal_network` (Docker Bridge):** Conecta `umami_app`, `umami_db` y `npm_proxy`. Esta separación evita que la base de datos de Umami sea visible desde otros contenedores del CRM o automatizaciones de negocio.
