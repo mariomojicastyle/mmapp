@@ -7,6 +7,8 @@ function getAudioSrc(id, paso, idioma) {
   switch (idioma) {
     case "en":
       return getAssetPath(`/${id}/sounds/en/${paso}_en.mp3?t=${ts}`);
+    case "pt":
+      return getAssetPath(`/${id}/sounds/pt/${paso}_pt.mp3?t=${ts}`);
     case "es-ES":
       return getAssetPath(`/${id}/sounds/es-ES/${paso}_es-ES.mp3?t=${ts}`);
     case "es":
@@ -23,6 +25,8 @@ function getAyudaSrc(id, idioma) {
   switch (idioma) {
     case "en":
       return getAssetPath(`/${id}/sounds/en/01_Ayuda_en.mp3?t=${ts}`);
+    case "pt":
+      return getAssetPath(`/${id}/sounds/pt/01_Ayuda_pt.mp3?t=${ts}`);
     case "es-ES":
       return getAssetPath(`/${id}/sounds/es-ES/01_Ayuda_es-ES.mp3?t=${ts}`);
     case "es":

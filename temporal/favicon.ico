@@ -1,0 +1,388 @@
+<!DOCTYPE html>
+<html prefix="og: http://ogp.me/ns#">
+
+	<head>
+	<title>Politorno Móveis</title>
+	<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1" />
+	<meta http-equiv="cache-control" content="public" />
+    <meta name="viewport" content="width=414, maximum-scale=1.0, user-scalable=no">
+    <meta name="format-detection" content="telephone=no">
+	<meta name="language" content="pt" />
+	<meta name="allow-search" content="yes" />
+	<meta name="author" content="Olistica, http://www.olistica.com.br/" />
+	<meta name="description" content="A Politorno possui mais de 200 soluções para organizar a sua casa ou espaço comercial. Aqui você encontrará armários multiuso, balcões, cozinhas, sapateiras, gaveteiros, estantes, mesas para computador, penteadeiras, roupeiros, camas, fruteiras e muito mais!" />
+	<meta name="keywords" content="Politorno,móveis,infanto juvenil,eco friendly,xt racer,poli complementos,dormitorio,balcões,cozinhas,sapateiras,gaveteiros,estantes" />
+	<meta name="publisher-email" content="olistica@olistica.com.br" />
+	<meta name="rating" content="general" />
+	<meta name="revisit-after" content="1 days" />
+	<meta name="robots" content="index, follow" />
+	<meta name="DC.rights" content="Copyright© by Olistica All rights reserved." />
+	<meta name="geo.region" content="BR-RS" />
+    <meta property="og:image:type" content="image/jpg">
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="800" />
+    <meta property="og:image" content="https://www.politorno.com.br/images/politorno-moveis.png" />
+	<!-- favicon -->
+    <link rel="apple-touch-icon" sizes="180x180" href="https://www.politorno.com.br/images/favicon/apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="https://www.politorno.com.br/images/favicon/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="https://www.politorno.com.br/images/favicon/favicon-16x16.png">
+    <link rel="manifest" href="https://www.politorno.com.br/images/favicon/site.webmanifest">
+    <link rel="mask-icon" href="https://www.politorno.com.br/images/favicon/safari-pinned-tab.svg" color="#1893c6">
+    <meta name="apple-mobile-web-app-title" content="Politorno Móveis">
+    <meta name="application-name" content="Politorno Móveis">
+    <meta name="msapplication-TileColor" content="#ffffff">
+    <meta name="theme-color" content="#ffffff">
+
+	<!-- css -->
+	<link href="https://www.politorno.com.br/fonts/icomoon/style.css?v=6445" rel="stylesheet" >
+	<link href="https://www.politorno.com.br/fonts/svg/style.css?v=6493" rel="stylesheet" >
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Nunito+Sans:ital,opsz,wght@0,6..12,200..1000;1,6..12,200..1000&display=swap" rel="stylesheet">
+		<link href="https://www.politorno.com.br/css/bundle.css?v=8640" rel="stylesheet" type="text/css" />
+	    
+	<script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.1/jquery.min.js"></script>
+</head>
+<body>
+	<svg aria-hidden="true" style="position: absolute; width: 0; height: 0; overflow: hidden;" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+<defs><symbol id="icon-pedidos" viewBox="0 0 32 32">
+<path d="M0.346 2.208c-0.077 0.051-0.186 0.192-0.243 0.314-0.096 0.198-0.102 1.35-0.102 13.478s0.006 13.28 0.102 13.478c0.211 0.442-0.666 0.41 10.458 0.41 9.216 0 10.099-0.006 10.234-0.102 0.314-0.224 0.326-0.333 0.326-3.258v-2.72l0.474-0.237c0.429-0.218 0.518-0.307 0.973-0.89 0.282-0.352 2.496-3.155 4.922-6.227 2.432-3.066 4.442-5.664 4.474-5.766 0.122-0.416 0.045-0.538-1.99-3.117-1.075-1.363-2.010-2.534-2.080-2.598-0.128-0.109-0.403-0.141-0.589-0.070-0.051 0.019-1.459 1.747-3.123 3.834l-3.027 3.795-0.032-4.966c-0.026-3.827-0.051-5.005-0.115-5.114-0.205-0.365 0.531-0.339-10.445-0.339-8.755 0-10.099 0.013-10.214 0.096zM19.84 8.947v5.178l-1.19 1.498c-0.653 0.826-1.229 1.6-1.28 1.722-0.077 0.173-2.195 6.778-2.426 7.533l-0.038 0.147h-5.933c-6.586 0-6.138-0.032-6.323 0.422-0.166 0.403-0.083 0.8 0.23 1.082 0.141 0.128 0.224 0.128 6.381 0.109l6.24-0.019 2.17-1.082 2.17-1.088v3.776h-18.56v-24.448h18.56v5.171zM29.030 8.678c0.781 0.979 1.395 1.811 1.37 1.85-0.064 0.090-8.525 10.803-8.576 10.867-0.026 0.026-0.698-0.774-1.498-1.779l-1.453-1.837 0.339-0.435c2.106-2.72 8.288-10.483 8.339-10.47 0.032 0.006 0.698 0.819 1.478 1.805zM20.013 21.504c0.32 0.403 0.563 0.755 0.544 0.781-0.070 0.070-3.987 2.054-4.006 2.029s1.459-4.691 1.581-5.011c0.038-0.096 0.16 0.026 0.672 0.672 0.339 0.435 0.883 1.126 1.21 1.53z"></path>
+<path d="M2.886 9.51c-0.435 0.307-0.422 1.069 0.032 1.427l0.173 0.134h7.45c6.912 0 7.469-0.006 7.642-0.109 0.474-0.282 0.506-1.133 0.045-1.453-0.128-0.090-0.954-0.102-7.667-0.102-6.854 0-7.539 0.006-7.674 0.102z"></path>
+<path d="M2.816 14.771c-0.333 0.333-0.333 0.973 0 1.306l0.179 0.179h13.203l0.154-0.154c0.083-0.083 0.186-0.269 0.23-0.416 0.096-0.32 0-0.71-0.23-0.941l-0.154-0.154h-13.203l-0.179 0.179z"></path>
+<path d="M2.886 19.878c-0.397 0.282-0.435 1.069-0.070 1.434 0.128 0.128 0.179 0.128 5.37 0.128h5.242l0.166-0.192c0.23-0.282 0.275-0.678 0.115-1.050-0.090-0.192-0.192-0.32-0.301-0.358s-2.035-0.064-5.267-0.064c-4.614 0-5.12 0.013-5.254 0.102z"></path>
+</symbol></defs></svg>
+
+<svg aria-hidden="true" style="position: absolute; width: 0; height: 0; overflow: hidden;" version="1.1" xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 32 32">
+<defs><symbol id="icon-facebook" viewBox="0 0 32 32">
+<path d="M19 6h5v-6h-5c-3.86 0-7 3.14-7 7v3h-4v6h4v16h6v-16h5l1-6h-6v-3c0-0.542 0.458-1 1-1z"></path>
+</symbol></defs></svg>
+
+<svg aria-hidden="true" style="position: absolute; width: 0; height: 0; overflow: hidden;" version="1.1" xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 32 32">
+<defs><symbol id="icon-instagram" viewBox="0 0 32 32">
+<path d="M16 2.881c4.275 0 4.781 0.019 6.462 0.094 1.563 0.069 2.406 0.331 2.969 0.55 0.744 0.288 1.281 0.638 1.837 1.194 0.563 0.563 0.906 1.094 1.2 1.838 0.219 0.563 0.481 1.412 0.55 2.969 0.075 1.688 0.094 2.194 0.094 6.463s-0.019 4.781-0.094 6.463c-0.069 1.563-0.331 2.406-0.55 2.969-0.288 0.744-0.637 1.281-1.194 1.837-0.563 0.563-1.094 0.906-1.837 1.2-0.563 0.219-1.413 0.481-2.969 0.55-1.688 0.075-2.194 0.094-6.463 0.094s-4.781-0.019-6.463-0.094c-1.563-0.069-2.406-0.331-2.969-0.55-0.744-0.288-1.281-0.637-1.838-1.194-0.563-0.563-0.906-1.094-1.2-1.837-0.219-0.563-0.481-1.413-0.55-2.969-0.075-1.688-0.094-2.194-0.094-6.463s0.019-4.781 0.094-6.463c0.069-1.563 0.331-2.406 0.55-2.969 0.288-0.744 0.638-1.281 1.194-1.838 0.563-0.563 1.094-0.906 1.838-1.2 0.563-0.219 1.412-0.481 2.969-0.55 1.681-0.075 2.188-0.094 6.463-0.094zM16 0c-4.344 0-4.887 0.019-6.594 0.094-1.7 0.075-2.869 0.35-3.881 0.744-1.056 0.412-1.95 0.956-2.837 1.85-0.894 0.888-1.438 1.781-1.85 2.831-0.394 1.019-0.669 2.181-0.744 3.881-0.075 1.713-0.094 2.256-0.094 6.6s0.019 4.887 0.094 6.594c0.075 1.7 0.35 2.869 0.744 3.881 0.413 1.056 0.956 1.95 1.85 2.837 0.887 0.887 1.781 1.438 2.831 1.844 1.019 0.394 2.181 0.669 3.881 0.744 1.706 0.075 2.25 0.094 6.594 0.094s4.888-0.019 6.594-0.094c1.7-0.075 2.869-0.35 3.881-0.744 1.050-0.406 1.944-0.956 2.831-1.844s1.438-1.781 1.844-2.831c0.394-1.019 0.669-2.181 0.744-3.881 0.075-1.706 0.094-2.25 0.094-6.594s-0.019-4.887-0.094-6.594c-0.075-1.7-0.35-2.869-0.744-3.881-0.394-1.063-0.938-1.956-1.831-2.844-0.887-0.887-1.781-1.438-2.831-1.844-1.019-0.394-2.181-0.669-3.881-0.744-1.712-0.081-2.256-0.1-6.6-0.1v0z"></path>
+<path d="M16 7.781c-4.537 0-8.219 3.681-8.219 8.219s3.681 8.219 8.219 8.219 8.219-3.681 8.219-8.219c0-4.537-3.681-8.219-8.219-8.219zM16 21.331c-2.944 0-5.331-2.387-5.331-5.331s2.387-5.331 5.331-5.331c2.944 0 5.331 2.387 5.331 5.331s-2.387 5.331-5.331 5.331z"></path>
+<path d="M26.462 7.456c0 1.060-0.859 1.919-1.919 1.919s-1.919-0.859-1.919-1.919c0-1.060 0.859-1.919 1.919-1.919s1.919 0.859 1.919 1.919z"></path>
+</symbol></defs></svg>
+
+<svg aria-hidden="true" style="position: absolute; width: 0; height: 0; overflow: hidden;" version="1.1" xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 32 32">
+<defs><symbol id="icon-you-tube" viewBox="0 0 32 32">
+<path d="M31.681 9.6c0 0-0.313-2.206-1.275-3.175-1.219-1.275-2.581-1.281-3.206-1.356-4.475-0.325-11.194-0.325-11.194-0.325h-0.012c0 0-6.719 0-11.194 0.325-0.625 0.075-1.987 0.081-3.206 1.356-0.963 0.969-1.269 3.175-1.269 3.175s-0.319 2.588-0.319 5.181v2.425c0 2.587 0.319 5.181 0.319 5.181s0.313 2.206 1.269 3.175c1.219 1.275 2.819 1.231 3.531 1.369 2.563 0.244 10.881 0.319 10.881 0.319s6.725-0.012 11.2-0.331c0.625-0.075 1.988-0.081 3.206-1.356 0.962-0.969 1.275-3.175 1.275-3.175s0.319-2.587 0.319-5.181v-2.425c-0.006-2.588-0.325-5.181-0.325-5.181zM12.694 20.15v-8.994l8.644 4.513-8.644 4.481z"></path>
+</symbol></defs></svg>
+
+<svg  aria-hidden="true" style="position: absolute; width: 0; height: 0; overflow: hidden;" version="1.1" xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 32 32">
+<defs><symbol id="icon-whatsapp" viewBox="0 0 32 32">
+<path d="M26.612 5.693c-2.807-2.81-6.539-4.358-10.516-4.36-8.194 0-14.863 6.669-14.866 14.865-0.001 2.62 0.683 5.178 1.984 7.432l-2.109 7.703 7.881-2.067c2.171 1.184 4.616 1.809 7.104 1.809h0.006c8.193 0 14.862-6.669 14.866-14.866 0.002-3.972-1.543-7.707-4.35-10.517zM16.096 28.565h-0.005c-2.217-0.001-4.391-0.597-6.289-1.722l-0.451-0.268-4.677 1.227 1.248-4.559-0.294-0.467c-1.237-1.967-1.89-4.241-1.889-6.576 0.003-6.812 5.546-12.355 12.361-12.355 3.3 0.001 6.403 1.288 8.735 3.623s3.617 5.44 3.616 8.742c-0.003 6.813-5.546 12.356-12.356 12.356zM22.874 19.311c-0.371-0.186-2.198-1.084-2.538-1.208s-0.588-0.186-0.836 0.186c-0.248 0.372-0.959 1.209-1.176 1.456s-0.433 0.279-0.805 0.093c-0.372-0.186-1.568-0.578-2.987-1.844-1.104-0.985-1.85-2.201-2.066-2.573s-0.002-0.554 0.163-0.758c0.402-0.499 0.805-1.023 0.928-1.271s0.062-0.465-0.031-0.651c-0.093-0.186-0.836-2.014-1.145-2.758-0.302-0.724-0.608-0.626-0.836-0.638-0.216-0.011-0.464-0.013-0.712-0.013s-0.65 0.093-0.991 0.465c-0.34 0.372-1.3 1.27-1.3 3.099s1.331 3.595 1.517 3.842c0.186 0.248 2.619 4 6.345 5.609 0.886 0.383 1.578 0.611 2.118 0.783 0.89 0.283 1.699 0.243 2.339 0.147 0.714-0.107 2.197-0.899 2.507-1.766s0.309-1.611 0.216-1.766c-0.093-0.155-0.34-0.248-0.712-0.434z"></path>
+</symbol></defs></svg>
+
+<header class="site-top">
+	<div class="content">
+     	<h1 class="animated fadeIn" data-wow-delay="00ms" data-wow-duration="1500ms"><a href="https://www.politorno.com.br" title="Politorno Móveis">Politorno Móveis</a></h1>
+		
+        <button class="hamburguer-menu" data-aos="fade-left">
+            <div class="one"></div>
+            <div class="two"></div>
+            <div class="three"></div>
+        </button>
+
+        <ul class="menu animated fadeIn" data-wow-delay="00ms" data-wow-duration="1500ms">
+        	<li class=""><a href="https://www.politorno.com.br/institucional">INSTITUCIONAL</a></li><img src="https://www.politorno.com.br/images/barra-vertical2.png" width="1" height="50" alt=""/>
+        	<li class="triangle ">
+            	PRODUTOS                <ul class="sub-menu">
+                	<li>
+                    	<ul class="itens-sm">
+                        	<li 1 class="item w-10"><a href="https://www.politorno.com.br/produtos/armario-multiuso" ><p><i class="icon-ping"></i>Armário Multiuso</p></a></li><li 2 class="item w-8"><a href="https://www.politorno.com.br/produtos/armario-aereo" ><p><i class="icon-ping"></i>Armário Aéreo</p></a></li><li 3 class="item w-11"><a href="https://www.politorno.com.br/produtos/balcao-de-cozinha" ><p><i class="icon-ping"></i>Balcão de Cozinha</p></a></li><li 4 class="item w-10"><a href="https://www.politorno.com.br/produtos/balcao" ><p><i class="icon-ping"></i>Balcão</p></a></li><li 5 class="item w-10"><a href="https://www.politorno.com.br/produtos/comoda" ><p><i class="icon-ping"></i>Cômoda</p></a></li><li 6 class="item w-8"><a href="https://www.politorno.com.br/produtos/cristaleira" ><p><i class="icon-ping"></i>Cristaleira</p></a></li><li 7 class="item w-11"><a href="https://www.politorno.com.br/produtos/estante" ><p><i class="icon-ping"></i>Estante</p></a></li><li 8 class="item w-10"><a href="https://www.politorno.com.br/produtos/fruteira" ><p><i class="icon-ping"></i>Fruteira</p></a></li><li 9 class="item w-10"><a href="https://www.politorno.com.br/produtos/gaveteiro" ><p><i class="icon-ping"></i>Gaveteiro</p></a></li><li 10 class="item w-8"><a href="https://www.politorno.com.br/produtos/guarda-roupa" ><p><i class="icon-ping"></i>Guarda Roupa</p></a></li><li 11 class="item w-11"><a href="https://www.politorno.com.br/produtos/mesa" ><p><i class="icon-ping"></i>Mesa</p></a></li><li 12 class="item w-10"><a href="https://www.politorno.com.br/produtos/mesa-de-cabeceira" ><p><i class="icon-ping"></i>Mesa de Cabeceira</p></a></li><li 13 class="item w-10"><a href="https://www.politorno.com.br/produtos/paneleiro" ><p><i class="icon-ping"></i>Paneleiro</p></a></li><li 14 class="item w-8"><a href="https://www.politorno.com.br/produtos/penteadeira" ><p><i class="icon-ping"></i>Penteadeira</p></a></li><li 15 class="item w-11"><a href="https://www.politorno.com.br/produtos/sapateira" ><p><i class="icon-ping"></i>Sapateira</p></a></li><li 16 class="item w-10"><a href="https://www.politorno.com.br/produtos/torre-de-fornos" ><p><i class="icon-ping"></i>Torre de Fornos</p></a></li>                        </ul>
+                    </li>
+                </ul>
+            </li><img src="https://www.politorno.com.br/images/barra-vertical2.png" width="1" height="50" alt=""/>
+        	<li class="trianglel ">
+            	LINHAS                <ul class="sub-menu">
+                	<li>
+                    	<ul class="itens-sml">
+                        	<li class="item w-9"><a  href="https://www.politorno.com.br/linhas/dormitorios"><p><i class="icon-ping"></i>Dormitórios</p></a></li><li class="item w-8"><a  href="https://www.politorno.com.br/linhas/cozinhas"><p><i class="icon-ping"></i>Cozinhas</p></a></li><li class="item w-9"><a  href="https://www.politorno.com.br/linhas/policomplementos"><p><i class="icon-ping"></i>Policomplementos</p></a></li>                       </ul>
+                    </li>
+                </ul>
+            </li><img src="https://www.politorno.com.br/images/barra-vertical2.png" width="1" height="50" alt=""/>
+            <li class=""><a href="https://www.politorno.com.br/contato">CONTATO</a></li>
+        </ul>
+        
+        <picture class="animated fadeIn" data-wow-delay="00ms" data-wow-duration="1500ms"><a href="http://pedidos.politorno.com.br:8080/pedidos4/Login.asp" target="_blank" title="Sistema de Pedidos Online">
+            <svg class="icon icon-pedidos"><use xlink:href="#icon-pedidos"></use></svg> Acesso Restrito
+        </a></picture>
+		<div class="medias">
+            <ul class="flag animated fadeIn" data-wow-delay="00ms" data-wow-duration="1500ms">
+                <li><a href="javascript:void(0);" class="idioma current" data-flag="pt" data-url="home" title="Português">Por</a> &nbsp; |</li>
+                <li><a href="javascript:void(0);" class="idioma" data-flag="en" data-url="home" title="English">Eng</a> &nbsp; |</li>
+                <li><a href="javascript:void(0);" class="idioma" data-flag="es" data-url="home" title="Español">Esp</a></li>
+            </ul>
+            <img class="animated fadeIn" data-wow-delay="00ms" data-wow-duration="1500ms"src="https://www.politorno.com.br/images/barra-vertical.png" width="1" height="30" alt=""/>
+            <ul class="midia animated fadeIn" data-wow-delay="00ms" data-wow-duration="1500ms">
+                <li><a href="https://www.facebook.com/politorno?mibextid=ZbWKwL" target="_blank"><svg class="icon icon-facebook"><use xlink:href="#icon-facebook"></use></svg></a></li>
+                <li><a href="https://instagram.com/moveispolitorno?igshid=MzRlODBiNWFlZA==" target="_blank"><svg class="icon icon-instagram"><use xlink:href="#icon-instagram"></use></svg></a></li>
+                <li><a href="https://youtube.com/@politorno?si=fRhugiVAlHbZIfFZ" target="_blank"><svg class="icon icon-you-tube"><use xlink:href="#icon-you-tube"></use></svg></a></li>
+                <li><a href="https://web.whatsapp.com/send?phone=5554991722799" target="_blank"><svg class="icon icon-whatsapp"><use xlink:href="#icon-whatsapp"></use></svg></a></li>
+            </ul>
+        </div>
+        
+    </div>
+    <div class="barra"></div>
+    
+    <div class="drop-down-menu">
+        <ul class="flag">
+            <li><a href="javascript:void(0);" class="idioma current" data-flag="pt" data-url="favicon.ico" title="Português">Por</a> &nbsp; |</li>
+            <li><a href="javascript:void(0);" class="idioma" data-flag="en" data-url="favicon.ico" title="English">Eng</a> &nbsp; |</li>
+            <li><a href="javascript:void(0);" class="idioma" data-flag="es" data-url="favicon.ico" title="Español">Esp</a></li>
+        </ul>
+        
+        <ul class="menu">
+        	<li><a class="" href="https://www.politorno.com.br/institucional">INSTITUCIONAL</a></li>
+        	<li><a class=" opensm" href="javascript:void(0);">PRODUTOS</a></li>
+        	<li><a class=" opensml" href="javascript:void(0);">LINHAS</a></li>
+        	<li><a class="" href="https://www.politorno.com.br/contato">CONTATO</a></li>
+        </ul>
+        <div class="box-sm">
+            <div class="input-line -set-sty9">
+                <a href="javascript:void(0);" class="closesm"><button type="button" class="input-button -set-sty6">voltar</button></a>
+            </div>
+            
+            <ul class="smenu">
+                <li><a  href="https://www.politorno.com.br/produtos/armario-aereo">Armário Aéreo</a></li><li><a  href="https://www.politorno.com.br/produtos/armario-multiuso">Armário Multiuso</a></li><li><a  href="https://www.politorno.com.br/produtos/balcao">Balcão</a></li><li><a  href="https://www.politorno.com.br/produtos/balcao-de-cozinha">Balcão de Cozinha</a></li><li><a  href="https://www.politorno.com.br/produtos/comoda">Cômoda</a></li><li><a  href="https://www.politorno.com.br/produtos/cristaleira">Cristaleira</a></li><li><a  href="https://www.politorno.com.br/produtos/estante">Estante</a></li><li><a  href="https://www.politorno.com.br/produtos/fruteira">Fruteira</a></li><li><a  href="https://www.politorno.com.br/produtos/gaveteiro">Gaveteiro</a></li><li><a  href="https://www.politorno.com.br/produtos/guarda-roupa">Guarda Roupa</a></li><li><a  href="https://www.politorno.com.br/produtos/mesa">Mesa</a></li><li><a  href="https://www.politorno.com.br/produtos/mesa-de-cabeceira">Mesa de Cabeceira</a></li><li><a  href="https://www.politorno.com.br/produtos/paneleiro">Paneleiro</a></li><li><a  href="https://www.politorno.com.br/produtos/penteadeira">Penteadeira</a></li><li><a  href="https://www.politorno.com.br/produtos/sapateira">Sapateira</a></li><li><a  href="https://www.politorno.com.br/produtos/torre-de-fornos">Torre de Fornos</a></li>            </ul>
+        </div>
+        <div class="box-sml">
+            <div class="input-line -set-sty9">
+                <a href="javascript:void(0);" class="closesml"><button type="button" class="input-button -set-sty6">voltar</button></a>
+            </div>
+            
+            <ul class="smenu">
+                <li><a  href="https://www.politorno.com.br/linhas/dormitorios">Dormitórios</a></li><li><a  href="https://www.politorno.com.br/linhas/cozinhas">Cozinhas</a></li><li><a  href="https://www.politorno.com.br/linhas/policomplementos">Policomplementos</a></li>            </ul>
+        </div>
+
+        <picture><a href="http://pedidos.politorno.com.br:8080/pedidos4/Login.asp" target="_blank" title="Sistema de Pedidos Online">
+            <svg class="icon icon-pedidos"><use xlink:href="#icon-pedidos"></use></svg> Acesso Restrito
+        </a></picture>
+        
+        <hr>
+        
+        <ul class="midia">
+            <li><a href="https://www.facebook.com/politorno?mibextid=ZbWKwL" target="_blank"><i class="icon-facebook"></i></a></li>
+            <li><a href="https://instagram.com/moveispolitorno?igshid=MzRlODBiNWFlZA==" target="_blank"><i class="icon-instagram"></i></a></li>
+            <li><a href="https://youtube.com/@politorno?si=fRhugiVAlHbZIfFZ" target="_blank"><i class="icon-youtube"></i></a></li>
+            <li><a href="https://web.whatsapp.com/send?phone=54991722799" target="_blank"><i class="icon-whatsapp"></i></a></li>
+        </ul>
+    </div>
+        
+</header>
+
+	<main class="global" id="scroll-to-top">
+	  <section class="site-home-slider">
+    <div id="slider-wrapper">
+        <ul class="bxslider">
+            <li style="background-image:url(https://www.politorno.com.br/img/slider/g/slider-home-desktop-1-3866.jpg)"><a href=""></a></li><li style="background-image:url(https://www.politorno.com.br/img/slider/g/slider-home-desktop-1-3868.jpg)"><a href=""></a></li><li style="background-image:url(https://www.politorno.com.br/img/slider/g/slider-home-desktop-1-3867.jpg)"><a href=""></a></li><li style="background-image:url(https://www.politorno.com.br/img/slider/g/slider-home-desktop-1-5624.jpg)"><a href=""></a></li><li style="background-image:url(https://www.politorno.com.br/img/slider/g/slider-home-desktop-1-3869.jpg)"><a href=""></a></li>        </ul>
+    </div>
+</section>
+
+<section class="site-home-history">
+	<div class="content">
+    	<div class="left-side">
+        	<h2 class="-set-fr" data-aos="fade-right">
+            	Uma <b>marca</b><br>muitas <b>histórias</b><br>e <b>sonhos</b> reaIizados!            </h2>
+            <hr>
+            <h2 class="-set-sty1" data-aos="fade-down">desde</h2>
+            <p class="number" data-aos="fade-up">1<sup>9</sup>8<sup>5</sup></p>
+            <p class="text" data-aos="fade-up">Num pequeno galpão de chão de terra batida, iniciava o sonho de produzir móveis para compor ambientes. A mesma motivação nos faz reinventar-nos diariamente e produzir moveis inspiradores que fazem parte da história de nossos clientes...</p>
+            
+            <div class="box-midias">
+                <div class="input-line -set-sty1 -fr" data-aos="fade-up">
+                    <a href="https://www.politorno.com.br/institucional"><button type="button" class="input-button">saiba mais</button></a>
+                </div>
+
+                <ul class="_display-desktop" data-aos="fade-up">
+                    <li><a href="https://www.facebook.com/politorno?mibextid=ZbWKwL" target="_blank"><svg class="icon icon-facebook"><use xlink:href="#icon-facebook"></use></svg></a></li>
+                    <li><a href="https://instagram.com/moveispolitorno?igshid=MzRlODBiNWFlZA==" target="_blank"><svg class="icon icon-instagram"><use xlink:href="#icon-instagram"></use></svg></a></li>
+                    <li><a href="https://youtube.com/@politorno?si=fRhugiVAlHbZIfFZ" target="_blank"><svg class="icon icon-you-tube"><use xlink:href="#icon-you-tube"></use></svg></a></li>
+                    <li><a href="https://web.whatsapp.com/send?phone=555491626713" target="_blank"><svg class="icon icon-whatsapp"><use xlink:href="#icon-whatsapp"></use></svg></a></li>
+                </ul>
+            </div>
+        </div>
+    	
+        <div class="right-side" data-aos="fade-left">
+        	<picture><img class="_display-desktop" src="https://www.politorno.com.br/images/fabrica-politorno.png" alt="fábrica politorno"/><img class="_display-mobile" src="https://www.politorno.com.br/images/fabrica-politorno-m.jpg" alt="fábrica politorno"/></picture>
+        </div>
+        
+        <div class="full-box">
+        	<h2 class="-set-fr -set-sty2 _display-desktop-1100" data-aos="fade-left">
+                Exportando<br>desde <font>1992</font><br><br>Presente em<br><font>32 países</font>            </h2>
+            <h2 class="-set-sty12 -set-sty12b" data-aos="fade-right">
+                Exportando<br>desde <font>1992</font><br class="_display-desktop"><br class="_display-desktop">            </h2>
+            <h2 class="-set-sty12" data-aos="fade-left">
+                Presente em<br><font>32 países</font>            </h2>
+        </div>
+    </div>
+</section>
+
+<section class="site-home-products">
+	<hr class="wow fadeIn" data-wow-delay="00ms" data-wow-duration="1500ms">
+	<div class="content">
+    	<h2 class="-set-fl -set-sty3 wow fadeIn" data-wow-delay="00ms" data-wow-duration="1500ms">Linha de <b>Produtos</b></h2>
+    </div>
+</section>
+<section class="site-home-products -set-sty1">
+    <div class="responsive sliderPR wow fadeIn" data-wow-delay="00ms" data-wow-duration="1500ms">
+        
+				<div data-thumb="dormitorios">
+					<div class="contorn dormitorios"></div>
+					<picture>
+						<div><a href="https://www.politorno.com.br/linhas/dormitorios">Conheça a Iinha</a></div>
+						<img src="https://www.politorno.com.br/img/prod-cat/m/dormitorio-1-3239.jpg" alt="DormitÃ³rios"/>
+					</picture>
+				</div>
+			 
+				<div data-thumb="cozinhas">
+					<div class="contorn cozinhas"></div>
+					<picture>
+						<div><a href="https://www.politorno.com.br/linhas/cozinhas">Conheça a Iinha</a></div>
+						<img src="https://www.politorno.com.br/img/prod-cat/m/cozinhas-8-1875.jpg" alt="Cozinhas"/>
+					</picture>
+				</div>
+			 
+				<div data-thumb="policomplementos">
+					<div class="contorn policomplementos"></div>
+					<picture>
+						<div><a href="https://www.politorno.com.br/linhas/policomplementos">Conheça a Iinha</a></div>
+						<img src="https://www.politorno.com.br/img/prod-cat/m/policomplementos-3-3876.jpg" alt="Policomplementos"/>
+					</picture>
+				</div>
+			     </div>
+</section>
+
+<section class="site-home-down">
+	<div class="content wow fadeIn" data-wow-delay="00ms" data-wow-duration="1500ms">
+        <div class="input-line -set-sty1 -fl _display-desktop">
+            <a href="https://www.politorno.com.br/download"><button type="button" class="input-button">saiba mais</button></a>
+        </div>
+        <h2 class="-set-fr -set-sty5">
+            Faça o <b>download</b> <br>e conheça nossos <br><b>produtos.</b>        </h2>
+        <div class="input-line -set-sty11 _display-desktop">
+            <a href="https://www.politorno.com.br/download"><button type="button" class="input-button -set-sty8">Clique aqui</button></a>
+        </div>
+        <div class="input-line -set-sty8 -fl _display-mobile">
+            <a href="https://www.politorno.com.br/download"><button type="button" class="input-button">saiba mais</button></a>
+        </div>
+        <div class="text">
+            <p>A Politorno Móveis é uma indústria de tradição e excelência desde 1985 produzindo móveis para o Brasil e exterior. Com entusiasmo apresenta seu novo catálogo, revelando as tendências e inovações. Este lançamento marca um novo capítulo na história da empresa, que se destaca pela qualidade, design e funcionalidade de seus produtos em Dormitórios, Cozinhas e Complementos. Você é nosso convidado para explorar as novidades e encontrar as soluções perfeitas para seu ambiente.</p>
+            <p>
+			<strong>Linha de Dormitórios:</strong> Barcelona 100% MDF, Madri, Porto, Lisboa e Valência Uma variedade de guarda-roupas, cômodas, mesas de cabeceira, sapateiras, penteadeiras e escrivaninhas, projetados para otimizar o espaço e proporcionar conforto e estilo.<br><br> 
+			<strong>Linha de Cozinhas:</strong> Koya, Amara e Meena. São três modelos exclusivos de cozinhas, que combinam design moderno e praticidade para tornar o coração da casa ainda mais acolhedor.
+		</p>
+            <p>
+			<strong>Linha de Complementos:</strong> Penteadeiras, Sapateiras, Armário Multiuso, Mesas, Gaveteiros, Estantes, Balcões e Fruteiras.<br><br>
+			Uma seleção de móveis versáteis que se adaptam a diferentes necessidades e estilos, complementando a decoração de qualquer ambiente.
+		</p>
+        </div>
+    </div>
+</section>
+
+	</main>
+	 
+<section class="site-footer ">
+	<hr>
+	<div class="content">
+        <ul class="midias wow fadeIn" data-wow-delay="00ms" data-wow-duration="1500ms">
+            <li><a href="https://www.facebook.com/politorno?mibextid=ZbWKwL" target="_blank"><svg class="icon icon-facebook"><use xlink:href="#icon-facebook"></use></svg></a></li>
+            <li><a href="https://instagram.com/moveispolitorno?igshid=MzRlODBiNWFlZA==" target="_blank"><svg class="icon icon-instagram"><use xlink:href="#icon-instagram"></use></svg></a></li>
+            <li><a href="https://youtube.com/@politorno?si=fRhugiVAlHbZIfFZ" target="_blank"><svg class="icon icon-you-tube"><use xlink:href="#icon-you-tube"></use></svg></a></li>
+            <li><a href="https://web.whatsapp.com/send?phone=5554991722799" target="_blank"><svg class="icon icon-whatsapp"><use xlink:href="#icon-whatsapp"></use></svg></a></li>
+        </ul>
+		
+        <ul class="menuf _display-mobile">
+        	<li class="wow fadeIn" data-wow-delay="00ms" data-wow-duration="1500ms">
+            	SAC<br>
+            	<a href="mailto:sac@politorno.com.br">sac@politorno.com.br</a><br>
+            	<a class="bold" href="tel:54991722799">+55 54 9 9172.2799</a><br><br>
+            	<a href="https://www.politorno.com.br/contato#work">RH - TRABALHE CONOSCO</a><br>
+            	<a href="mailto:vagas@politorno.com.br">vagas@politorno.com.br</a><br>
+            	<a href="tel:54984252877">+55 54 9 8425.2877</a>
+            </li>
+        </ul>
+        
+    	<address class="wow fadeIn" data-wow-delay="00ms" data-wow-duration="1500ms">
+        	
+        	<span>Rod. BR470, Km 203,3 | Tuiuty<br>
+            CEP 95710-000 | Bento Gonçalves - RS - BR<br>
+            <a href="tel:5434581300">+55 54 3458.1300</a> &nbsp; | &nbsp; <a href="tel:54991722799">+55 54 9 9172.2799</a> &nbsp; <br>
+            <a href="mailto:contato@politorno.com.br">contato@politorno.com.br</a></span><br><br><br class="_display-desktop"><br class="_display-desktop">
+            <font>Politorno Móveis © todos direitos reservados.</font>
+		        </address>
+        
+        <ul class="menuf _display-desktop -flex">
+        	<li class="wow fadeIn _display-desktop-940" data-wow-delay="00ms" data-wow-duration="1500ms">
+            	<a href="https://www.politorno.com.br/institucional">POLITORNO</a><br>
+            	<a href="javascript:void(0);">PRODUTOS</a><br>
+            	<!--a href="https://www.politorno.com.br/fsc">CERTIFICAÇÃO FSC®</a><br-->
+            	<a href="https://www.politorno.com.br/contato">CONTATO</a>
+            </li>
+        	<li class="wow fadeIn _display-desktop-940" data-wow-delay="00ms" data-wow-duration="1500ms">
+            	<a href="https://www.politorno.com.br/linhas/dormitorios" class="-ttu">Dormitórios</a><br><a href="https://www.politorno.com.br/linhas/cozinhas" class="-ttu">Cozinhas</a><br><a href="https://www.politorno.com.br/linhas/policomplementos" class="-ttu">Policomplementos</a><br>            </li>
+        	<li class="wow fadeIn" data-wow-delay="00ms" data-wow-duration="1500ms">
+            	SAC<br>
+            	<a class="bold" href="tel:54991722799">+55 54 9 9172.2799</a><br><br>
+            	<a href="https://www.politorno.com.br/contato#work">RH - TRABALHE CONOSCO</a><br>
+            	<a href="mailto:vagas@politorno.com.br">vagas@politorno.com.br</a><br>
+            	<a href="tel:54984252877">+55 54 9 8425.2877</a>
+            </li>
+        </ul>
+        
+        <picture><a class="wow fadeIn" data-wow-delay="00ms" data-wow-duration="1500ms" href="https://www.politorno.com.br" title="Politorno Móveis"><img src="https://www.politorno.com.br/images/politorno-moveis.png" alt="Politorno Móveis"/></a></picture>
+    </div>
+    <div class="bar"></div>
+</section>        
+
+<section class="chat-whats" ><svg class="icon icon-whatsapp"><use xlink:href="#icon-whatsapp"></use></svg></section>
+<div class="floating">
+    <div class="header">
+        <div><img src="https://www.politorno.com.br/images/avatar-whats.jpg" alt="Politorno Móveis"/></div>
+        <p>Politorno Móveis</p>
+    </div>
+    <div class="content">
+        <div class="box-whtas" style="width:216px;">
+            <p>
+                Atendimento - Politorno
+                <font>
+                    <br><br>
+                    Ol&aacute;!<br><br>
+                    Como podemos Ajud&aacute;-lo?
+                </font>
+                <span>17:24</span>
+            </p>
+        </div>
+    
+    </div>
+    <div class="btn">
+        <a href="https://web.whatsapp.com/send?phone=5554991722799" target="_blank">
+            <svg class="icon icon-whatsapp"><use xlink:href="#icon-whatsapp"></use></svg>
+            Iniciar Convesa
+        </a>
+    </div>
+</div>			
+
+<div class="box-cookies ">
+    <div class="content">
+        <p>Nós utilizamos cookies e outras tecnologias necessárias para preservação do site, isso nos ajuda a melhorar sua experiência, personalizar nossos serviços e recomendar conteúdo de seu interesse. Se você concorda com a utilização de cookies, clique em "Estou ciente".</p>
+        <input type="button" class="btnlgpd yes button01" value="ESTOU CIENTE" title="ESTOU CIENTE">
+    </div>
+</div>
+
+<button class="scroll-top scroll-to-target" data-target="html">
+    <span class="fa-arrow-up icon-ctrl"></span>
+</button>	     <script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/2.0.2/anime.min.js"></script>
+    <script type="text/javascript" src="https://www.politorno.com.br/js/bundle.js?v=9082997"></script>
+    <!-- Google tag (gtag.js) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-ZT9BB32PYM"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+    
+      gtag('config', 'G-ZT9BB32PYM');
+    </script>
+</body>
+</html>

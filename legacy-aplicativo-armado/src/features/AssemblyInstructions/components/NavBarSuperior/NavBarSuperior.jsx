@@ -72,12 +72,33 @@ export default function NavBarSuperior({ id, data }) {
       ayudaVelocidadText: "Modify the speed of the audio narration guiding you through the assembly.",
       ayudaIdiomaTitle: "Manual Language",
       ayudaIdiomaText: "Switch the language of texts and audio guides between Spanish and English."
+    },
+    pt: {
+      tutorialTitle: "Tutorial de Interface",
+      infoTitle: "Informação Geral",
+      shadowsHigh: "Qualidade Visual: Alta (Sombras)",
+      shadowsLow: "Qualidade Visual: Desempenho",
+      speedTitle: "Velocidade de reprodução de áudio",
+      langTitle: "Mudar idioma do manual",
+      ayuda1Title: "Guia & Ferramentas",
+      ayuda1Items: [
+        "Marca do produto",
+        "Ferramentas necessárias",
+        "Instruções especiais",
+        "Garantia do móvel"
+      ],
+      ayudaLuzTitle: "Iluminação 3D",
+      ayudaLuzText: "Ative ou desative as sombras detalhadas para melhorar a qualidade visual ou aumentar o desempenho.",
+      ayudaVelocidadTitle: "Velocidade de Áudio",
+      ayudaVelocidadText: "Modifique o ritmo e a velocidade do áudio guia que o ajuda na montagem.",
+      ayudaIdiomaTitle: "Idioma del Manual",
+      ayudaIdiomaText: "Altere o idioma dos textos e áudios informativos para Espanhol, Inglês ou Português."
     }
   };
-  const t = idioma === "en" ? texts.en : texts.es;
+  const t = idioma === "en" ? texts.en : idioma === "pt" ? texts.pt : texts.es;
 
   const ayudasTexto = data?.ayudasTexto || {};
-  const currentLang = idioma === "en" ? "en" : "es";
+  const currentLang = idioma === "en" ? "en" : idioma === "pt" ? "pt" : "es";
 
   const dAyuda1Title = ayudasTexto.ayuda1?.[`title_${currentLang}`] || t.ayuda1Title;
   let dAyuda1Items = t.ayuda1Items;
@@ -99,6 +120,7 @@ export default function NavBarSuperior({ id, data }) {
     { value: "es", label: "ES", sublabel: "Lat" },
     { value: "es-ES", label: "ES", sublabel: "EU" },
     { value: "en", label: "EN", sublabel: "" },
+    { value: "pt", label: "PT", sublabel: "" },
   ];
 
   const refOp1 = useRef(null);
@@ -283,7 +305,7 @@ export default function NavBarSuperior({ id, data }) {
               type="button"
             >
               <span className="lang-btn-text" style={{ fontSize: "0.85rem", fontWeight: "700", fontFamily: "var(--font-sans)" }}>
-                {idioma === "en" ? "EN" : idioma === "es-ES" ? "EU" : "ES"}
+                {idioma === "en" ? "EN" : idioma === "pt" ? "PT" : idioma === "es-ES" ? "EU" : "ES"}
               </span>
             </button>
 
@@ -293,6 +315,7 @@ export default function NavBarSuperior({ id, data }) {
                   { value: "en", label: "English", sub: "US / UK" },
                   { value: "es", label: "Español", sub: "Latinoamérica" },
                   { value: "es-ES", label: "Español", sub: "España" },
+                  { value: "pt", label: "Português", sub: "Brasil" },
                 ].map((opt) => (
                   <button
                     key={opt.value}

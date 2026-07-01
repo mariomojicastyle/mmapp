@@ -228,7 +228,7 @@ const getValidHexColor = (val: string): string => {
 
 export function DetalleProyectoModal({ isOpen, onClose, proyecto, onUpdate }: DetalleProyectoModalProps) {
   const { isSuperAdmin, isCoequipero } = usePermissions()
-  const [activeTab, setActiveTab] = useState<"solicitud" | "insumos" | "despiece">("solicitud")
+  const [activeTab, setActiveTab] = useState<"solicitud" | "insumos" | "audios" | "despiece">("solicitud")
   const [error, setError] = useState("")
   const [successMsg, setSuccessMsg] = useState("")
   const [isSaving, setIsSaving] = useState(false)
@@ -328,12 +328,13 @@ export function DetalleProyectoModal({ isOpen, onClose, proyecto, onUpdate }: De
   const [ttsVoices, setTtsVoices] = useState({
     es_latam: "es-CO-GonzaloNeural",
     es_europe: "es-ES-AlvaroNeural",
-    en: "en-US-GuyNeural"
+    en: "en-US-GuyNeural",
+    pt: "pt-BR-AntonioNeural"
   })
-  const [ttsSaludo, setTtsSaludo] = useState({ texto_es: "", texto_en: "" })
-  const [ttsAyuda, setTtsAyuda] = useState({ texto_es: "", texto_en: "" })
+  const [ttsSaludo, setTtsSaludo] = useState({ texto_es: "", texto_en: "", texto_pt: "" })
+  const [ttsAyuda, setTtsAyuda] = useState({ texto_es: "", texto_en: "", texto_pt: "" })
   const [ttsCantidadPasos, setTtsCantidadPasos] = useState(8)
-  const [ttsPasos, setTtsPasos] = useState<{ paso: string; texto_es: string; texto_en: string }[]>([])
+  const [ttsPasos, setTtsPasos] = useState<{ paso: string; texto_es: string; texto_en: string; texto_pt?: string }[]>([])
   const [generatingAudio, setGeneratingAudio] = useState<string | null>(null)
   const [downloadingAudio, setDownloadingAudio] = useState<string | null>(null)
   const [playingAudio, setPlayingAudio] = useState<string | null>(null)
@@ -532,6 +533,13 @@ export function DetalleProyectoModal({ isOpen, onClose, proyecto, onUpdate }: De
     { value: "en-GB-RyanNeural", label: "🇬🇧 Ryan (Reino Unido, Hombre)" },
     { value: "en-GB-SoniaNeural", label: "🇬🇧 Sonia (Reino Unido, Mujer)" },
   ]
+  const TTS_VOICES_PT = [
+    { value: "pt-BR-AntonioNeural", label: "🇧🇷 Antônio (Brasil, Hombre)" },
+    { value: "pt-BR-FranciscaNeural", label: "🇧🇷 Francisca (Brasil, Mujer)" },
+    { value: "pt-BR-ThalitaNeural", label: "🇧🇷 Thalita (Brasil, Mujer)" },
+    { value: "pt-PT-DuarteNeural", label: "🇵🇹 Duarte (Portugal, Hombre)" },
+    { value: "pt-PT-RaquelNeural", label: "🇵🇹 Raquel (Portugal, Mujer)" }
+  ]
 
   // Sincronizar campos de pasos cuando cambia ttsCantidadPasos
   useEffect(() => {
@@ -540,7 +548,7 @@ export function DetalleProyectoModal({ isOpen, onClose, proyecto, onUpdate }: De
       for (let i = 1; i <= ttsCantidadPasos; i++) {
         const stepStr = String(i).padStart(2, "0")
         const existing = prev.find(p => p.paso === stepStr)
-        newPasos.push(existing || { paso: stepStr, texto_es: "", texto_en: "" })
+        newPasos.push(existing || { paso: stepStr, texto_es: "", texto_en: "", texto_pt: "" })
       }
       return newPasos
     })
@@ -574,12 +582,12 @@ export function DetalleProyectoModal({ isOpen, onClose, proyecto, onUpdate }: De
     }
   }
 
-  const handleGenerateAudio = async (stepId: string, text: string, lang: "es" | "es-ES" | "en", uploadToStorage = false) => {
+  const handleGenerateAudio = async (stepId: string, text: string, lang: "es" | "es-ES" | "en" | "pt", uploadToStorage = false) => {
     if (!text.trim()) {
       setError("El texto no puede estar vacío.")
       return
     }
-    const voice = lang === "es" ? ttsVoices.es_latam : lang === "es-ES" ? ttsVoices.es_europe : ttsVoices.en
+    const voice = lang === "es" ? ttsVoices.es_latam : lang === "es-ES" ? ttsVoices.es_europe : lang === "pt" ? ttsVoices.pt : ttsVoices.en
     const audioKey = `${stepId}_${lang}`
     setGeneratingAudio(uploadToStorage ? `${audioKey}_upload` : `${audioKey}_preview`)
     setError("")
@@ -610,7 +618,7 @@ export function DetalleProyectoModal({ isOpen, onClose, proyecto, onUpdate }: De
           setSuccessMsg(`Audios en Español Latino y Español España para ${stepId} generados y subidos ✓`)
         } else {
           // Comportamiento estándar para otros idiomas individuales
-          const storagePath = lang === "en" ? `sounds/en/${stepId}_en.mp3` : `sounds/es-ES/${stepId}_es-ES.mp3`
+          const storagePath = lang === "en" ? `sounds/en/${stepId}_en.mp3` : lang === "pt" ? `sounds/pt/${stepId}_pt.mp3` : `sounds/es-ES/${stepId}_es-ES.mp3`
           const res = await fetch("/api/tts", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
@@ -647,7 +655,7 @@ export function DetalleProyectoModal({ isOpen, onClose, proyecto, onUpdate }: De
     setPlayingAudio(null)
   }
 
-  const handleDownloadAudio = async (stepId: string, lang: "es" | "en") => {
+  const handleDownloadAudio = async (stepId: string, lang: "es" | "en" | "pt") => {
     if (!codigoManual) {
       setError("Define el código de carpeta primero.")
       return
@@ -779,7 +787,7 @@ export function DetalleProyectoModal({ isOpen, onClose, proyecto, onUpdate }: De
     setSuccessMsg(`¡${successCount}/${tasks.length} audios generados y subidos a Storage exitosamente!`)
   }
 
-  const handleTranslateText = async (sourceText: string, targetKey: string, setter: (val: string) => void) => {
+  const handleTranslateText = async (sourceText: string, targetKey: string, setter: (val: string) => void, targetLang?: string) => {
     if (!sourceText.trim()) {
       setError("No hay texto en español para traducir.")
       return
@@ -791,7 +799,7 @@ export function DetalleProyectoModal({ isOpen, onClose, proyecto, onUpdate }: De
       const res = await fetch("/api/translate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ text: sourceText })
+        body: JSON.stringify({ text: sourceText, targetLang: targetLang || "en" })
       })
       if (!res.ok) throw new Error(await res.text())
       const data = await res.json()
@@ -804,23 +812,30 @@ export function DetalleProyectoModal({ isOpen, onClose, proyecto, onUpdate }: De
     }
   }
 
-  const handleTranslateStep = async (stepId: string, sourceText: string) => {
+  const handleTranslateStep = async (stepId: string, sourceText: string, targetLang?: string) => {
     if (!sourceText.trim()) {
       setError("No hay texto en español para traducir.")
       return
     }
-    setTranslatingText(stepId)
+    const translatingKey = targetLang === "pt" ? `${stepId}_pt` : stepId;
+    setTranslatingText(translatingKey)
     setError("")
     setSuccessMsg("")
     try {
       const res = await fetch("/api/translate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ text: sourceText })
+        body: JSON.stringify({ text: sourceText, targetLang: targetLang || "en" })
       })
       if (!res.ok) throw new Error(await res.text())
       const data = await res.json()
-      setTtsPasos(prev => prev.map(item => item.paso === stepId ? { ...item, texto_en: data.translation } : item))
+      setTtsPasos(prev => prev.map(item => {
+        if (item.paso === stepId) {
+          if (targetLang === "pt") return { ...item, texto_pt: data.translation }
+          return { ...item, texto_en: data.translation }
+        }
+        return item
+      }))
       setSuccessMsg(`Traducción del Paso ${stepId} completada ✓`)
     } catch (err: any) {
       setError(err.message || "Error al traducir el texto.")
@@ -2157,7 +2172,7 @@ export function DetalleProyectoModal({ isOpen, onClose, proyecto, onUpdate }: De
             initial={{ opacity: 0, scale: 0.95, y: 20 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: 20 }}
-            className="fixed inset-x-4 top-[5%] z-50 mx-auto max-w-5xl overflow-y-auto max-h-[90vh] rounded-2xl border border-outline-variant bg-surface-container p-0 shadow-2xl flex flex-col"
+            className="fixed inset-x-4 top-[5%] z-50 mx-auto max-w-[1350px] w-[95vw] overflow-y-auto max-h-[90vh] rounded-2xl border border-outline-variant bg-surface-container p-0 shadow-2xl flex flex-col"
           >
             {/* Header */}
             <div className="flex items-center justify-between border-b border-outline-variant px-6 py-5">
@@ -2237,7 +2252,22 @@ export function DetalleProyectoModal({ isOpen, onClose, proyecto, onUpdate }: De
                   )}
                 >
                   <Layers className="h-4 w-4" />
-                  Cargar Insumos CMS (Manual Vacío)
+                  Cargar Insumos CMS
+                </button>
+              )}
+
+              {isTeam && (
+                <button
+                  onClick={() => setActiveTab("audios")}
+                  className={cn(
+                    "py-3.5 px-4 text-sm font-semibold border-b-2 transition-all flex items-center gap-2",
+                    activeTab === "audios" 
+                      ? "border-primary text-primary" 
+                      : "border-transparent text-on-surface-variant/70 hover:text-on-surface"
+                  )}
+                >
+                  <Volume2 className="h-4 w-4" />
+                  Textos y Locución (TTS)
                 </button>
               )}
 
@@ -3303,22 +3333,410 @@ export function DetalleProyectoModal({ isOpen, onClose, proyecto, onUpdate }: De
                       )}
                     </div>
 
-                    {/* 2. Generador de Audios TTS (Text-to-Speech) */}
+                    {/* 2. Imagen de herramientas necesarias */}
                     <div className="flex flex-col">
                       <button
                         type="button"
-                        onClick={() => toggleSection("audios")}
+                        onClick={() => toggleSection("tools")}
                         className="flex items-center justify-between p-4 font-bold text-sm text-on-surface bg-surface-container-low hover:bg-surface-container transition-colors"
                       >
                         <span className="flex items-center gap-2">
-                          <Mic className="h-4.5 w-4.5 text-teal-400" />
-                          2. Generador de Audios TTS (Text-to-Speech)
+                          <Image className="h-4.5 w-4.5 text-amber-400" />
+                          2. Imagen de Herramientas Requeridas
                         </span>
-                        {openSection === "audios" ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                        {openSection === "tools" ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
                       </button>
                       
-                      {openSection === "audios" && (
-                        <div className="p-5 bg-surface-container-lowest/50 border-t border-outline-variant/10 space-y-6 text-xs">
+                      {openSection === "tools" && (
+                        <div className="p-4 bg-surface-container-lowest/50 border-t border-outline-variant/10 text-xs">
+                          <div className="flex items-center justify-between p-3.5 rounded-lg bg-surface-container border border-outline-variant/10">
+                            <span className="font-semibold text-on-surface truncate">{imgHerramientas || "Sin imagen cargada"}</span>
+                            {imgHerramientas ? (
+                              <button
+                                type="button"
+                                onClick={() => handleDeleteItem("tools", null)}
+                                className="text-on-surface-variant hover:text-red-400 p-1"
+                              >
+                                <Trash2 className="h-3.5 w-3.5" />
+                              </button>
+                            ) : (
+                              <button
+                                type="button"
+                                onClick={() => handleSimulateUpload("tools")}
+                                className="text-primary hover:underline font-bold"
+                              >
+                                Subir Imagen
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* 3. Imágenes de Ensambles especiales */}
+                    <div className="flex flex-col">
+                      <button
+                        type="button"
+                        onClick={() => toggleSection("ensambles")}
+                        className="flex items-center justify-between p-4 font-bold text-sm text-on-surface bg-surface-container-low hover:bg-surface-container transition-colors"
+                      >
+                        <span className="flex items-center gap-2">
+                          <Image className="h-4.5 w-4.5 text-purple-400" />
+                          3. Imágenes de Ensambles Especiales ({ensambles.length})
+                        </span>
+                        {openSection === "ensambles" ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                      </button>
+                      
+                      {openSection === "ensambles" && (
+                        <div className="p-4 bg-surface-container-lowest/50 border-t border-outline-variant/10 space-y-3 text-xs">
+                          <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                            {ensambles.map((ens, idx) => (
+                              <div key={idx} className="flex items-center justify-between p-3 rounded-lg bg-surface-container border border-outline-variant/10">
+                                <span className="font-medium text-on-surface truncate">{ens}</span>
+                                <button type="button" onClick={() => handleDeleteItem("ensamble", idx)} className="text-on-surface-variant hover:text-red-400 p-1">
+                                  <Trash2 className="h-3.5 w-3.5" />
+                                </button>
+                              </div>
+                            ))}
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => handleSimulateUpload("ensamble")}
+                            className="flex items-center gap-1 text-[11px] font-bold text-primary hover:underline"
+                          >
+                            <Plus className="h-3 w-3" /> Agregar ensamble especial
+                          </button>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* 4. Garantía del Producto */}
+                    <div className="flex flex-col">
+                      <button
+                        type="button"
+                        onClick={() => toggleSection("garantia")}
+                        className="flex items-center justify-between p-4 font-bold text-sm text-on-surface bg-surface-container-low hover:bg-surface-container transition-colors"
+                      >
+                        <span className="flex items-center gap-2">
+                          <FileText className="h-4.5 w-4.5 text-red-400" />
+                          4. Garantía del Producto
+                        </span>
+                        {openSection === "garantia" ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                      </button>
+                      
+                      {openSection === "garantia" && (
+                        <div className="p-4 bg-surface-container-lowest/50 border-t border-outline-variant/10 text-xs">
+                          <div className="flex items-center justify-between p-3.5 rounded-lg bg-surface-container border border-outline-variant/10">
+                            <span className="font-semibold text-on-surface truncate">{garantiaDoc || "Sin garantía cargada"}</span>
+                            {garantiaDoc ? (
+                              <button
+                                type="button"
+                                onClick={() => handleDeleteItem("garantia", null)}
+                                className="text-on-surface-variant hover:text-red-400 p-1"
+                              >
+                                <Trash2 className="h-3.5 w-3.5" />
+                              </button>
+                            ) : (
+                              <button
+                                type="button"
+                                onClick={() => handleSimulateUpload("garantia")}
+                                className="text-primary hover:underline font-bold"
+                              >
+                                Subir Archivo
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* 5. Fotografías de los Herrajes */}
+                    <div className="flex flex-col">
+                      <button
+                        type="button"
+                        onClick={() => toggleSection("herrajes")}
+                        className="flex items-center justify-between p-4 font-bold text-sm text-on-surface bg-surface-container-low hover:bg-surface-container transition-colors"
+                      >
+                        <span className="flex items-center gap-2">
+                          <Image className="h-4.5 w-4.5 text-indigo-400" />
+                          5. Fotografías de Herrajes Reales ({herrajesFotos.length})
+                        </span>
+                        {openSection === "herrajes" ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                      </button>
+                      
+                      {openSection === "herrajes" && (
+                        <div className="p-4 bg-surface-container-lowest/50 border-t border-outline-variant/10 space-y-3 text-xs">
+                          <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                            {herrajesFotos.map((hf, idx) => (
+                              <div key={idx} className="flex items-center justify-between p-3 rounded-lg bg-surface-container border border-outline-variant/10">
+                                <span className="font-medium text-on-surface truncate">{hf}</span>
+                                <button type="button" onClick={() => handleDeleteItem("herrajes", idx)} className="text-on-surface-variant hover:text-red-400 p-1">
+                                  <Trash2 className="h-3.5 w-3.5" />
+                                </button>
+                              </div>
+                            ))}
+                          </div>
+                          <div className="flex items-center gap-3">
+                            <button
+                              type="button"
+                              onClick={() => handleSimulateUpload("herrajes")}
+                              className="flex items-center gap-1 text-[11px] font-bold text-primary hover:underline"
+                            >
+                              <Plus className="h-3 w-3" /> Agregar foto de herraje
+                            </button>
+                            <button
+                              type="button"
+                              onClick={loadSharedHerrajesLibrary}
+                              className="flex items-center gap-1 text-[11px] font-bold text-indigo-400 hover:underline"
+                            >
+                              <Library className="h-3.5 w-3.5" /> Seleccionar de biblioteca compartida
+                            </button>
+                          </div>
+
+                          {showSharedLibrary && (
+                            <div className="mt-2 p-3 rounded-lg bg-surface-container border border-indigo-400/20 space-y-2">
+                              <p className="text-[10px] text-on-surface-variant font-semibold uppercase">
+                                Biblioteca compartida ({sharedHerrajesLibrary.length} herrajes)
+                              </p>
+                              {sharedHerrajesLibrary.length === 0 ? (
+                                <p className="text-[10px] text-on-surface-variant italic">No hay archivos en la biblioteca compartida.</p>
+                              ) : (
+                                <div className="grid grid-cols-2 gap-1.5 max-h-48 overflow-y-auto">
+                                  {sharedHerrajesLibrary.map(name => {
+                                    const isSelected = herrajesFotos.includes(`_shared:${name}`)
+                                    return (
+                                      <label key={name} className={`flex items-center gap-2 p-2 rounded text-[11px] cursor-pointer
+                                        ${isSelected ? 'bg-indigo-500/20 text-indigo-300' : 'hover:bg-surface-container-high'}`}>
+                                        <input
+                                          type="checkbox"
+                                          checked={isSelected}
+                                          onChange={() => {
+                                            if (isSelected) {
+                                              setHerrajesFotos(prev => prev.filter(h => h !== `_shared:${name}`))
+                                            } else {
+                                              setHerrajesFotos(prev => [...prev, `_shared:${name}`])
+                                            }
+                                          }}
+                                          className="accent-indigo-400 mr-1.5"
+                                        />
+                                        <span className="truncate">{name}</span>
+                                      </label>
+                                    )
+                                  })}
+                                </div>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </div>
+
+                    {/* 6. Ayudas de Interfaz */}
+                    <div className="flex flex-col">
+                      <button
+                        type="button"
+                        onClick={() => toggleSection("ayudas")}
+                        className="flex items-center justify-between p-4 font-bold text-sm text-on-surface bg-surface-container-low hover:bg-surface-container transition-colors"
+                      >
+                        <span className="flex items-center gap-2">
+                          <HelpCircle className="h-4.5 w-4.5 text-primary" />
+                          6. Ayudas de Interfaz y Calibrador
+                        </span>
+                        {openSection === "ayudas" ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                      </button>
+
+                      {openSection === "ayudas" && (
+                        <div className="p-4 bg-surface-container-lowest/50 border-t border-outline-variant/10 space-y-4 text-xs">
+                          {/* Botón del Calibrador */}
+                          <div className="flex items-center justify-between p-4 bg-primary/5 rounded-xl border border-primary/20">
+                            <div className="space-y-0.5">
+                              <h5 className="text-xs font-bold text-on-surface">Calibrador de Pantalla y Nubes</h5>
+                              <p className="text-[10px] text-on-surface-variant">Ajusta los márgenes generales y la posición vertical de las nubes inferiores en caliente.</p>
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                const url = window.location.hostname === 'localhost' || window.location.hostname.includes('127.0.0.1')
+                                  ? `http://localhost:5173/calibrador.html?id=${codigoManual}`
+                                  : `/embed/armado/calibrador.html?id=${codigoManual}`;
+                                window.open(url, "_blank");
+                              }}
+                              className="flex items-center gap-1.5 rounded-xl bg-primary px-3.5 py-2 text-xs font-bold text-primary-foreground transition-all hover:bg-primary/90 active:scale-[0.98]"
+                            >
+                              <ExternalLink className="h-3.5 w-3.5" />
+                              Abrir Calibrador
+                            </button>
+                          </div>
+
+                          {/* Campos de texto de las nubes */}
+                          <div className="space-y-4">
+                            <h4 className="text-[10px] font-bold text-on-surface-variant uppercase tracking-wider">Textos de Burbujas de Ayuda (Nubes del Tutorial)</h4>
+                            {[
+                              { key: "ayuda1", label: "Ayuda 1: Guía y Herramientas (Menú Superior)" },
+                              { key: "ayudaLuz", label: "Ayuda Luz: Iluminación y Sombras (Menú Superior)" },
+                              { key: "ayudaVelocidad", label: "Ayuda Velocidad: Ritmo de Audio (Menú Superior)" },
+                              { key: "ayudaIdioma", label: "Ayuda Idioma: Cambiar de Idioma (Menú Superior)" },
+                              { key: "ayuda3", label: "Ayuda 3: Navegación de Pasos (Barra Inferior)" },
+                              { key: "ayuda4", label: "Ayuda 4: Buscador de Piezas (Barra Inferior)" },
+                              { key: "ayuda5", label: "Ayuda 5: Play y Pausa de Audio (Barra Inferior)" },
+                              { key: "ayuda6", label: "Ayuda 6: Realidad Aumentada" }
+                            ].map((h) => {
+                              const itemData = ayudasTexto[h.key] || {}
+                              const titleEs = itemData.title_es !== undefined ? itemData.title_es : (defaultAyudas[h.key]?.title_es || "")
+                              const contentEs = itemData.content_es !== undefined ? itemData.content_es : (defaultAyudas[h.key]?.content_es || "")
+                              const titleEn = itemData.title_en !== undefined ? itemData.title_en : (defaultAyudas[h.key]?.title_en || "")
+                              const contentEn = itemData.content_en !== undefined ? itemData.content_en : (defaultAyudas[h.key]?.content_en || "")
+
+                              return (
+                                <div key={h.key} className="p-4 rounded-xl bg-surface-container border border-outline-variant/10 space-y-4">
+                                  <h5 className="font-semibold text-xs text-primary">{h.label}</h5>
+                                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    {/* Español */}
+                                    <div className="space-y-3">
+                                      <span className="text-[10px] font-bold text-on-surface-variant/70 uppercase">Versión Español</span>
+                                      <label className="flex flex-col gap-1">
+                                        <span className="text-[10px] text-on-surface-variant">Título</span>
+                                        <input
+                                          type="text"
+                                          value={titleEs}
+                                          onChange={(e) => {
+                                            const newVal = e.target.value
+                                            setAyudasTexto((prev: any) => ({
+                                              ...prev,
+                                              [h.key]: {
+                                                ...(prev[h.key] || {}),
+                                                title_es: newVal
+                                              }
+                                            }))
+                                          }}
+                                          placeholder="Título en español"
+                                          className="rounded-lg border border-outline-variant bg-surface-container-low px-3 py-1.5 text-xs text-on-surface outline-none transition focus:border-primary"
+                                        />
+                                      </label>
+                                      <label className="flex flex-col gap-1">
+                                        <span className="text-[10px] text-on-surface-variant">Contenido (Para Ayuda 1, coloca un elemento por línea)</span>
+                                        <textarea
+                                          value={contentEs}
+                                          onChange={(e) => {
+                                            const newVal = e.target.value
+                                            setAyudasTexto((prev: any) => ({
+                                              ...prev,
+                                              [h.key]: {
+                                                ...(prev[h.key] || {}),
+                                                content_es: newVal
+                                              }
+                                            }))
+                                          }}
+                                          rows={15}
+                                          placeholder="Contenido en español"
+                                          className="rounded-lg border border-outline-variant bg-surface-container-low px-3 py-1.5 text-xs text-on-surface outline-none transition focus:border-primary"
+                                        />
+                                      </label>
+                                    </div>
+
+                                    {/* Inglés */}
+                                    <div className="space-y-3">
+                                      <div className="flex items-center justify-between">
+                                        <span className="text-[10px] font-bold text-on-surface-variant/70 uppercase">Versión Inglés</span>
+                                        <button
+                                          type="button"
+                                          disabled={translatingAyuda !== null}
+                                          onClick={() => handleTranslateAyuda(h.key)}
+                                          className="flex items-center gap-1 text-[9px] font-bold text-primary hover:underline"
+                                        >
+                                          {translatingAyuda === h.key ? (
+                                            <Loader2 className="h-2.5 w-2.5 animate-spin" />
+                                          ) : (
+                                            <Sparkles className="h-2.5 w-2.5" />
+                                          )}
+                                          Traducir automáticamente
+                                        </button>
+                                      </div>
+                                      <label className="flex flex-col gap-1">
+                                        <span className="text-[10px] text-on-surface-variant">Título (EN)</span>
+                                        <input
+                                          type="text"
+                                          value={titleEn}
+                                          onChange={(e) => {
+                                            const newVal = e.target.value
+                                            setAyudasTexto((prev: any) => ({
+                                              ...prev,
+                                              [h.key]: {
+                                                ...(prev[h.key] || {}),
+                                                title_en: newVal
+                                              }
+                                            }))
+                                          }}
+                                          placeholder="Title in English"
+                                          className="rounded-lg border border-outline-variant bg-surface-container-low px-3 py-1.5 text-xs text-on-surface outline-none transition focus:border-primary"
+                                        />
+                                      </label>
+                                      <label className="flex flex-col gap-1">
+                                        <span className="text-[10px] text-on-surface-variant">Contenido (EN)</span>
+                                        <textarea
+                                          value={contentEn}
+                                          onChange={(e) => {
+                                            const newVal = e.target.value
+                                            setAyudasTexto((prev: any) => ({
+                                              ...prev,
+                                              [h.key]: {
+                                                ...(prev[h.key] || {}),
+                                                content_en: newVal
+                                              }
+                                            }))
+                                          }}
+                                          rows={15}
+                                          placeholder="Content in English"
+                                          className="rounded-lg border border-outline-variant bg-surface-container-low px-3 py-1.5 text-xs text-on-surface outline-none transition focus:border-primary"
+                                        />
+                                      </label>
+                                    </div>
+                                  </div>
+                                </div>
+                              )
+                            })}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+
+
+                  </div>
+                </div>
+              )}
+
+              
+              {activeTab === "audios" && isTeam && (
+                <div className="space-y-6">
+                  {/* Banner descriptivo */}
+                  <div className="rounded-xl bg-teal-500/10 border border-teal-500/20 p-4 flex gap-3 items-start">
+                    <Volume2 className="h-5 w-5 text-teal-400 shrink-0 mt-0.5" />
+                    <div>
+                      <h4 className="text-sm font-bold text-on-surface leading-snug">Textos y Locución (TTS)</h4>
+                      <p className="text-xs text-on-surface-variant/90 leading-relaxed mt-0.5">
+                        Administra los audios, saludos y pasos de armado con generación multilingüe (ES, EN, PT).
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Código de manual / carpeta principal */}
+                  <div className="rounded-xl bg-surface-container border border-outline-variant/15 p-5 space-y-4 shadow-sm">
+                    <label className="flex flex-col gap-1.5">
+                      <span className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Código de Carpeta / Manual *</span>
+                      <input
+                        type="text"
+                        value={codigoManual}
+                        onChange={e => setCodigoManual(e.target.value)}
+                        placeholder="Ej: M01536"
+                        className="rounded-xl border border-outline-variant bg-surface-container-low px-4 py-2.5 text-sm text-on-surface outline-none transition focus:border-primary focus:ring-1 focus:ring-primary placeholder:text-on-surface-variant/40"
+                      />
+                    </label>
+
+                    {codigoManual ? (
+                      <div className="mt-1 flex flex-col gap-2 rounded-xl bg-surface-container-lowest/80 border border-outline-variant/5 p-5 text-xs">
+                    {/* 2. Generador de Audios TTS (Text-to-Speech) */}
+                    <div className="flex flex-col">
+                      <div className="p-5 bg-surface-container-lowest/50 border-t border-outline-variant/10 space-y-6 text-xs">
                           
                           {/* ─── INSTRUCTIVO DE PAUSAS ─────────────────────────────────── */}
                           <div className="p-3.5 rounded-xl border border-teal-500/20 bg-teal-500/5 flex items-start gap-2.5">
@@ -3339,7 +3757,7 @@ export function DetalleProyectoModal({ isOpen, onClose, proyecto, onUpdate }: De
                           <div className="p-4 rounded-xl border border-outline-variant/10 bg-surface-container/30 space-y-3">
                             <span className="text-[10px] font-bold text-primary uppercase tracking-wider block">🎙️ Configuración de Voces por Idioma / Región</span>
                             
-                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
                               {/* Español Latam */}
                               <div className="flex flex-col gap-2">
                                 <label className="font-semibold text-on-surface-variant">Español Latinoamérica</label>
@@ -3459,6 +3877,46 @@ export function DetalleProyectoModal({ isOpen, onClose, proyecto, onUpdate }: De
                                   {playingAudio === `preview_${ttsVoices.en}` ? "Detener muestra" : "Escuchar muestra"}
                                 </button>
                               </div>
+
+                              {/* Portugués */}
+                              <div className="flex flex-col gap-2">
+                                <label className="font-semibold text-on-surface-variant">Portugués</label>
+                                <select
+                                  value={ttsVoices.pt}
+                                  onChange={(e) => setTtsVoices(prev => ({ ...prev, pt: e.target.value }))}
+                                  className="rounded-lg border border-outline-variant bg-surface-container px-3 py-2 text-xs text-on-surface outline-none focus:border-primary transition"
+                                >
+                                  {TTS_VOICES_PT.map(v => (
+                                    <option key={v.value} value={v.value}>{v.label}</option>
+                                  ))}
+                                </select>
+                                <button
+                                  type="button"
+                                  disabled={generatingAudio !== null && generatingAudio !== `preview_${ttsVoices.pt}`}
+                                  onClick={() => {
+                                    if (playingAudio === `preview_${ttsVoices.pt}`) {
+                                      handleStopAudio()
+                                    } else {
+                                      handlePreviewVoice(ttsVoices.pt)
+                                    }
+                                  }}
+                                  className={cn(
+                                    "flex items-center justify-center gap-1.5 rounded-lg border py-1 px-3 text-[10px] font-medium transition",
+                                    playingAudio === `preview_${ttsVoices.pt}`
+                                      ? "bg-red-500/10 hover:bg-red-500/20 text-red-400 border-red-500/20 hover:border-red-500/30"
+                                      : "border-outline-variant bg-surface-container text-on-surface-variant hover:text-primary hover:border-primary/50"
+                                  )}
+                                >
+                                  {generatingAudio === `preview_${ttsVoices.pt}` ? (
+                                    <Loader2 className="h-3 w-3 animate-spin text-primary" />
+                                  ) : playingAudio === `preview_${ttsVoices.pt}` ? (
+                                    <Square className="h-3 w-3 text-red-400 animate-pulse" />
+                                  ) : (
+                                    <Volume2 className="h-3 w-3" />
+                                  )}
+                                  {playingAudio === `preview_${ttsVoices.pt}` ? "Detener muestra" : "Escuchar muestra"}
+                                </button>
+                              </div>
                             </div>
                           </div>
 
@@ -3466,15 +3924,15 @@ export function DetalleProyectoModal({ isOpen, onClose, proyecto, onUpdate }: De
                           <div className="p-4 rounded-xl border border-outline-variant/10 bg-surface-container/30 space-y-4">
                             <span className="text-[10px] font-bold text-primary uppercase tracking-wider block">👋 Saludo de Bienvenida (P00 del Manual)</span>
                             
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
                               <div className="flex flex-col gap-1.5">
                                 <span className="font-bold text-on-surface-variant/80">Texto en Español</span>
                                 <textarea
                                   value={ttsSaludo.texto_es}
                                   onChange={(e) => setTtsSaludo(prev => ({ ...prev, texto_es: e.target.value }))}
                                   placeholder="Escribe el saludo o bienvenida que se escuchará al abrir el manual..."
-                                  rows={3}
-                                  className="rounded-lg border border-outline-variant bg-surface-container px-3 py-2 text-xs text-on-surface outline-none focus:border-primary transition resize-y min-h-[60px]"
+                                  rows={15}
+                                  className="rounded-lg border border-outline-variant bg-surface-container px-3 py-2 text-xs text-on-surface outline-none focus:border-primary transition resize-y min-h-[300px]"
                                 />
                                 <div className="flex gap-2 mt-1">
                                   <button
@@ -3544,8 +4002,8 @@ export function DetalleProyectoModal({ isOpen, onClose, proyecto, onUpdate }: De
                                   value={ttsSaludo.texto_en}
                                   onChange={(e) => setTtsSaludo(prev => ({ ...prev, texto_en: e.target.value }))}
                                   placeholder="Write the welcome speech that will play upon opening the manual..."
-                                  rows={3}
-                                  className="rounded-lg border border-outline-variant bg-surface-container px-3 py-2 text-xs text-on-surface outline-none focus:border-primary transition resize-y min-h-[60px]"
+                                  rows={15}
+                                  className="rounded-lg border border-outline-variant bg-surface-container px-3 py-2 text-xs text-on-surface outline-none focus:border-primary transition resize-y min-h-[300px]"
                                 />
                                 <div className="flex gap-2 mt-1">
                                   <button
@@ -3594,6 +4052,77 @@ export function DetalleProyectoModal({ isOpen, onClose, proyecto, onUpdate }: De
 
                                 </div>
                               </div>
+
+                              <div className="flex flex-col gap-1.5">
+                                <div className="flex items-center justify-between">
+                                  <span className="font-bold text-on-surface-variant/80">Texto en Portugués</span>
+                                  <button
+                                    type="button"
+                                    disabled={translatingText !== null}
+                                    onClick={() => handleTranslateText(ttsSaludo.texto_es, "00_pt", (val) => setTtsSaludo(prev => ({ ...prev, texto_pt: val })), "pt")}
+                                    className="flex items-center gap-1 text-[9px] font-bold text-primary hover:underline"
+                                  >
+                                    {translatingText === "00_pt" ? (
+                                      <Loader2 className="h-2.5 w-2.5 animate-spin" />
+                                    ) : (
+                                      <Sparkles className="h-2.5 w-2.5" />
+                                    )}
+                                    Traducir automáticamente
+                                  </button>
+                                </div>
+                                <textarea
+                                  value={ttsSaludo.texto_pt || ""}
+                                  onChange={(e) => setTtsSaludo(prev => ({ ...prev, texto_pt: e.target.value }))}
+                                  placeholder="Escreva a saudação de boas-vindas..."
+                                  rows={15}
+                                  className="rounded-lg border border-outline-variant bg-surface-container px-3 py-2 text-xs text-on-surface outline-none focus:border-primary transition resize-y min-h-[300px]"
+                                />
+                                <div className="flex gap-2 mt-1">
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      if (playingAudio === "00_pt") {
+                                        handleStopAudio()
+                                      } else {
+                                        handleGenerateAudio("00", ttsSaludo.texto_pt || "", "pt", false)
+                                      }
+                                    }}
+                                    className={cn(
+                                      "flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-[10px] font-medium transition",
+                                      playingAudio === "00_pt"
+                                        ? "bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/20"
+                                        : "bg-surface-container text-on-surface-variant hover:text-primary hover:bg-surface-container-high"
+                                    )}
+                                  >
+                                    {generatingAudio === "00_pt_preview" ? (
+                                      <Loader2 className="h-3 w-3 animate-spin text-primary" />
+                                    ) : playingAudio === "00_pt" ? (
+                                      <Square className="h-3 w-3 animate-pulse" />
+                                    ) : (
+                                      <Volume2 className="h-3 w-3" />
+                                    )}
+                                    {playingAudio === "00_pt" ? "Detener PT" : "Escuchar PT"}
+                                  </button>
+                                  <button
+                                    type="button"
+                                    disabled={generatingAudio !== null}
+                                    onClick={() => handleGenerateAudio("00", ttsSaludo.texto_pt || "", "pt", true)}
+                                    className="flex items-center gap-1.5 rounded-lg bg-primary/10 hover:bg-primary/15 px-2.5 py-1 text-[10px] text-primary font-bold transition"
+                                  >
+                                    {generatingAudio === "00_pt_upload" ? <Loader2 className="h-3 w-3 animate-spin" /> : <Mic className="h-3 w-3" />}
+                                    Subir Audio
+                                  </button>
+                                  <button
+                                    type="button"
+                                    disabled={downloadingAudio !== null}
+                                    onClick={() => handleDownloadAudio("00", "pt")}
+                                    className="flex items-center gap-1.5 rounded-lg bg-teal-500/10 hover:bg-teal-500/15 px-2.5 py-1 text-[10px] text-teal-400 font-bold border border-teal-500/20 transition"
+                                  >
+                                    {downloadingAudio === "00_pt" ? <Loader2 className="h-3 w-3 animate-spin" /> : <Download className="h-3 w-3" />}
+                                    Descargar
+                                  </button>
+                                </div>
+                              </div>
                             </div>
                           </div>
 
@@ -3601,15 +4130,15 @@ export function DetalleProyectoModal({ isOpen, onClose, proyecto, onUpdate }: De
                           <div className="p-4 rounded-xl border border-outline-variant/10 bg-surface-container/30 space-y-4">
                             <span className="text-[10px] font-bold text-primary uppercase tracking-wider block">❓ Instrucciones de Ayuda (Tutorial Global)</span>
                             
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
                               <div className="flex flex-col gap-1.5">
                                 <span className="font-bold text-on-surface-variant/80">Texto en Español</span>
                                 <textarea
                                   value={ttsAyuda.texto_es}
                                   onChange={(e) => setTtsAyuda(prev => ({ ...prev, texto_es: e.target.value }))}
                                   placeholder="Escribe las instrucciones de uso para el panel de ayuda..."
-                                  rows={3}
-                                  className="rounded-lg border border-outline-variant bg-surface-container px-3 py-2 text-xs text-on-surface outline-none focus:border-primary transition resize-y min-h-[60px]"
+                                  rows={15}
+                                  className="rounded-lg border border-outline-variant bg-surface-container px-3 py-2 text-xs text-on-surface outline-none focus:border-primary transition resize-y min-h-[300px]"
                                 />
                                 <div className="flex gap-2 mt-1">
                                   <button
@@ -3679,8 +4208,8 @@ export function DetalleProyectoModal({ isOpen, onClose, proyecto, onUpdate }: De
                                   value={ttsAyuda.texto_en}
                                   onChange={(e) => setTtsAyuda(prev => ({ ...prev, texto_en: e.target.value }))}
                                   placeholder="Write user instructions for the help tutorial panel..."
-                                  rows={3}
-                                  className="rounded-lg border border-outline-variant bg-surface-container px-3 py-2 text-xs text-on-surface outline-none focus:border-primary transition resize-y min-h-[60px]"
+                                  rows={15}
+                                  className="rounded-lg border border-outline-variant bg-surface-container px-3 py-2 text-xs text-on-surface outline-none focus:border-primary transition resize-y min-h-[300px]"
                                   />
                                 <div className="flex gap-2 mt-1">
                                   <button
@@ -3728,6 +4257,77 @@ export function DetalleProyectoModal({ isOpen, onClose, proyecto, onUpdate }: De
                                   </button>
                                 </div>
                               </div>
+
+                              <div className="flex flex-col gap-1.5">
+                                <div className="flex items-center justify-between">
+                                  <span className="font-bold text-on-surface-variant/80">Texto en Portugués</span>
+                                  <button
+                                    type="button"
+                                    disabled={translatingText !== null}
+                                    onClick={() => handleTranslateText(ttsAyuda.texto_es, "01_Ayuda_pt", (val) => setTtsAyuda(prev => ({ ...prev, texto_pt: val })), "pt")}
+                                    className="flex items-center gap-1 text-[9px] font-bold text-primary hover:underline"
+                                  >
+                                    {translatingText === "01_Ayuda_pt" ? (
+                                      <Loader2 className="h-2.5 w-2.5 animate-spin" />
+                                    ) : (
+                                      <Sparkles className="h-2.5 w-2.5" />
+                                    )}
+                                    Traducir automáticamente
+                                  </button>
+                                </div>
+                                <textarea
+                                  value={ttsAyuda.texto_pt || ""}
+                                  onChange={(e) => setTtsAyuda(prev => ({ ...prev, texto_pt: e.target.value }))}
+                                  placeholder="Escreva as instruções para o painel de ajuda..."
+                                  rows={15}
+                                  className="rounded-lg border border-outline-variant bg-surface-container px-3 py-2 text-xs text-on-surface outline-none focus:border-primary transition resize-y min-h-[300px]"
+                                />
+                                <div className="flex gap-2 mt-1">
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      if (playingAudio === "01_Ayuda_pt") {
+                                        handleStopAudio()
+                                      } else {
+                                        handleGenerateAudio("01_Ayuda", ttsAyuda.texto_pt || "", "pt", false)
+                                      }
+                                    }}
+                                    className={cn(
+                                      "flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-[10px] font-medium transition",
+                                      playingAudio === "01_Ayuda_pt"
+                                        ? "bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/20"
+                                        : "bg-surface-container text-on-surface-variant hover:text-primary hover:bg-surface-container-high"
+                                    )}
+                                  >
+                                    {generatingAudio === "01_Ayuda_pt_preview" ? (
+                                      <Loader2 className="h-3 w-3 animate-spin text-primary" />
+                                    ) : playingAudio === "01_Ayuda_pt" ? (
+                                      <Square className="h-3 w-3 animate-pulse" />
+                                    ) : (
+                                      <Volume2 className="h-3 w-3" />
+                                    )}
+                                    {playingAudio === "01_Ayuda_pt" ? "Detener PT" : "Escuchar PT"}
+                                  </button>
+                                  <button
+                                    type="button"
+                                    disabled={generatingAudio !== null}
+                                    onClick={() => handleGenerateAudio("01_Ayuda", ttsAyuda.texto_pt || "", "pt", true)}
+                                    className="flex items-center gap-1.5 rounded-lg bg-primary/10 hover:bg-primary/15 px-2.5 py-1 text-[10px] text-primary font-bold transition"
+                                  >
+                                    {generatingAudio === "01_Ayuda_pt_upload" ? <Loader2 className="h-3 w-3 animate-spin" /> : <Mic className="h-3 w-3" />}
+                                    Subir Audio
+                                  </button>
+                                  <button
+                                    type="button"
+                                    disabled={downloadingAudio !== null}
+                                    onClick={() => handleDownloadAudio("01_Ayuda", "pt")}
+                                    className="flex items-center gap-1.5 rounded-lg bg-teal-500/10 hover:bg-teal-500/15 px-2.5 py-1 text-[10px] text-teal-400 font-bold border border-teal-500/20 transition"
+                                  >
+                                    {downloadingAudio === "01_Ayuda_pt" ? <Loader2 className="h-3 w-3 animate-spin" /> : <Download className="h-3 w-3" />}
+                                    Descargar
+                                  </button>
+                                </div>
+                              </div>
                             </div>
                           </div>
 
@@ -3754,14 +4354,14 @@ export function DetalleProyectoModal({ isOpen, onClose, proyecto, onUpdate }: De
                           </div>
 
                           {/* ─── LISTADO DE PASOS (P01...) ─────────────────────────── */}
-                          <div className="space-y-3 max-h-[400px] overflow-y-auto pr-1">
+                          <div className="space-y-3.5 pr-1">
                             {ttsPasos.map((p, idx) => (
                               <div key={p.paso} className="p-3.5 rounded-xl border border-outline-variant/10 bg-surface-container/40 space-y-3">
                                 <div className="flex items-center justify-between border-b border-outline-variant/5 pb-2">
                                   <span className="font-bold text-primary text-xs">Paso {p.paso}</span>
                                 </div>
 
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
                                   <div className="flex flex-col gap-1">
                                     <span className="text-[10px] font-bold text-on-surface-variant/70 uppercase">Español (Latam y Europa)</span>
                                     <textarea
@@ -3771,8 +4371,8 @@ export function DetalleProyectoModal({ isOpen, onClose, proyecto, onUpdate }: De
                                         setTtsPasos(prev => prev.map(item => item.paso === p.paso ? { ...item, texto_es: val } : item))
                                       }}
                                       placeholder="Describe lo que se debe hacer en este paso..."
-                                      rows={2}
-                                      className="rounded-lg border border-outline-variant bg-surface-container px-2 py-1.5 text-xs text-on-surface outline-none focus:border-primary transition resize-y min-h-[45px]"
+                                      rows={15}
+                                      className="rounded-lg border border-outline-variant bg-surface-container px-2 py-1.5 text-xs text-on-surface outline-none focus:border-primary transition resize-y min-h-[300px]"
                                     />
                                     <div className="flex gap-2 mt-1">
                                       <button
@@ -3845,8 +4445,8 @@ export function DetalleProyectoModal({ isOpen, onClose, proyecto, onUpdate }: De
                                         setTtsPasos(prev => prev.map(item => item.paso === p.paso ? { ...item, texto_en: val } : item))
                                       }}
                                       placeholder="Describe what needs to be done in this step..."
-                                      rows={2}
-                                      className="rounded-lg border border-outline-variant bg-surface-container px-2 py-1.5 text-xs text-on-surface outline-none focus:border-primary transition resize-y min-h-[45px]"
+                                      rows={15}
+                                      className="rounded-lg border border-outline-variant bg-surface-container px-2 py-1.5 text-xs text-on-surface outline-none focus:border-primary transition resize-y min-h-[300px]"
                                     />
                                     <div className="flex gap-2 mt-1">
                                       <button
@@ -3894,12 +4494,86 @@ export function DetalleProyectoModal({ isOpen, onClose, proyecto, onUpdate }: De
                                       </button>
                                     </div>
                                   </div>
+
+                                  <div className="flex flex-col gap-1">
+                                    <div className="flex items-center justify-between">
+                                      <span className="text-[10px] font-bold text-on-surface-variant/70 uppercase">Portugués</span>
+                                      <button
+                                        type="button"
+                                        disabled={translatingText !== null}
+                                        onClick={() => handleTranslateStep(p.paso, p.texto_es, "pt")}
+                                        className="flex items-center gap-1 text-[9px] font-bold text-primary hover:underline"
+                                      >
+                                        {translatingText === `${p.paso}_pt` ? (
+                                          <Loader2 className="h-2.5 w-2.5 animate-spin" />
+                                        ) : (
+                                          <Sparkles className="h-2.5 w-2.5" />
+                                        )}
+                                        Traducir automáticamente
+                                      </button>
+                                    </div>
+                                    <textarea
+                                      value={p.texto_pt || ""}
+                                      onChange={(e) => {
+                                        const val = e.target.value
+                                        setTtsPasos(prev => prev.map(item => item.paso === p.paso ? { ...item, texto_pt: val } : item))
+                                      }}
+                                      placeholder="Escreva as instruções para este passo..."
+                                      rows={15}
+                                      className="rounded-lg border border-outline-variant bg-surface-container px-2 py-1.5 text-xs text-on-surface outline-none focus:border-primary transition resize-y min-h-[300px]"
+                                    />
+                                    <div className="flex gap-2 mt-1">
+                                      <button
+                                        type="button"
+                                        onClick={() => {
+                                          if (playingAudio === `${p.paso}_pt`) {
+                                            handleStopAudio()
+                                          } else {
+                                            handleGenerateAudio(p.paso, p.texto_pt || "", "pt", false)
+                                          }
+                                        }}
+                                        className={cn(
+                                          "flex items-center gap-1.5 rounded-lg px-2 py-1 text-[9px] font-medium transition",
+                                          playingAudio === `${p.paso}_pt`
+                                            ? "bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/20"
+                                            : "bg-surface-container text-on-surface-variant hover:text-primary hover:bg-surface-container-high"
+                                        )}
+                                      >
+                                        {generatingAudio === `${p.paso}_pt_preview` ? (
+                                           <Loader2 className="h-2.5 w-2.5 animate-spin text-primary" />
+                                         ) : playingAudio === `${p.paso}_pt` ? (
+                                           <Square className="h-2.5 w-2.5 animate-pulse" />
+                                         ) : (
+                                           <Volume2 className="h-2.5 w-2.5" />
+                                         )}
+                                        {playingAudio === `${p.paso}_pt` ? "Detener PT" : "Escuchar PT"}
+                                      </button>
+                                      <button
+                                        type="button"
+                                        disabled={generatingAudio !== null}
+                                        onClick={() => handleGenerateAudio(p.paso, p.texto_pt || "", "pt", true)}
+                                        className="flex items-center gap-1.5 rounded-lg bg-primary/10 hover:bg-primary/15 px-2 py-1 text-[9px] text-primary font-bold transition"
+                                      >
+                                        {generatingAudio === `${p.paso}_pt_upload` ? <Loader2 className="h-2.5 w-2.5 animate-spin" /> : <Mic className="h-2.5 w-2.5" />}
+                                        Subir Audio
+                                      </button>
+                                      <button
+                                        type="button"
+                                        disabled={downloadingAudio !== null}
+                                        onClick={() => handleDownloadAudio(p.paso, "pt")}
+                                        className="flex items-center gap-1.5 rounded-lg bg-teal-500/10 hover:bg-teal-500/15 px-2 py-1 text-[9px] text-teal-400 font-bold border border-teal-500/20 transition"
+                                      >
+                                        {downloadingAudio === `${p.paso}_pt` ? <Loader2 className="h-2.5 w-2.5 animate-spin" /> : <Download className="h-2.5 w-2.5" />}
+                                        Descargar
+                                      </button>
+                                    </div>
+                                  </div>
                                 </div>
                               </div>
                             ))}
                           </div>
 
-                          {/* ─── BOTÓN GENERAR TODOS Y BARRA DE PROGRESO ─────────────── */}
+                          {/* BOTON GENERAR TODOS Y BARRA DE PROGRESO */}
                           <div className="p-4 rounded-xl border border-primary/20 bg-primary/5 flex flex-col gap-3">
                             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
                               <div>
@@ -3943,382 +4617,18 @@ export function DetalleProyectoModal({ isOpen, onClose, proyecto, onUpdate }: De
                           </div>
 
                         </div>
-                      )}
                     </div>
 
-                    {/* 4. Imagen de herramientas necesarias */}
-                    <div className="flex flex-col">
-                      <button
-                        type="button"
-                        onClick={() => toggleSection("tools")}
-                        className="flex items-center justify-between p-4 font-bold text-sm text-on-surface bg-surface-container-low hover:bg-surface-container transition-colors"
-                      >
-                        <span className="flex items-center gap-2">
-                          <Image className="h-4.5 w-4.5 text-amber-400" />
-                          4. Imagen de Herramientas Requeridas
-                        </span>
-                        {openSection === "tools" ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
-                      </button>
-                      
-                      {openSection === "tools" && (
-                        <div className="p-4 bg-surface-container-lowest/50 border-t border-outline-variant/10 text-xs">
-                          <div className="flex items-center justify-between p-3.5 rounded-lg bg-surface-container border border-outline-variant/10">
-                            <span className="font-semibold text-on-surface truncate">{imgHerramientas || "Sin imagen cargada"}</span>
-                            {imgHerramientas ? (
-                              <button
-                                type="button"
-                                onClick={() => handleDeleteItem("tools", null)}
-                                className="text-on-surface-variant hover:text-red-400 p-1"
-                              >
-                                <Trash2 className="h-3.5 w-3.5" />
-                              </button>
-                            ) : (
-                              <button
-                                type="button"
-                                onClick={() => handleSimulateUpload("tools")}
-                                className="text-primary hover:underline font-bold"
-                              >
-                                Subir Imagen
-                              </button>
-                            )}
-                          </div>
-                        </div>
-                      )}
-                    </div>
-
-                    {/* 5. Imágenes de Ensambles especiales */}
-                    <div className="flex flex-col">
-                      <button
-                        type="button"
-                        onClick={() => toggleSection("ensambles")}
-                        className="flex items-center justify-between p-4 font-bold text-sm text-on-surface bg-surface-container-low hover:bg-surface-container transition-colors"
-                      >
-                        <span className="flex items-center gap-2">
-                          <Image className="h-4.5 w-4.5 text-purple-400" />
-                          5. Imágenes de Ensambles Especiales ({ensambles.length})
-                        </span>
-                        {openSection === "ensambles" ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
-                      </button>
-                      
-                      {openSection === "ensambles" && (
-                        <div className="p-4 bg-surface-container-lowest/50 border-t border-outline-variant/10 space-y-3 text-xs">
-                          <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-                            {ensambles.map((ens, idx) => (
-                              <div key={idx} className="flex items-center justify-between p-3 rounded-lg bg-surface-container border border-outline-variant/10">
-                                <span className="font-medium text-on-surface truncate">{ens}</span>
-                                <button type="button" onClick={() => handleDeleteItem("ensamble", idx)} className="text-on-surface-variant hover:text-red-400 p-1">
-                                  <Trash2 className="h-3.5 w-3.5" />
-                                </button>
-                              </div>
-                            ))}
-                          </div>
-                          <button
-                            type="button"
-                            onClick={() => handleSimulateUpload("ensamble")}
-                            className="flex items-center gap-1 text-[11px] font-bold text-primary hover:underline"
-                          >
-                            <Plus className="h-3 w-3" /> Agregar ensamble especial
-                          </button>
-                        </div>
-                      )}
-                    </div>
-
-                    {/* 6. Garantía del Producto */}
-                    <div className="flex flex-col">
-                      <button
-                        type="button"
-                        onClick={() => toggleSection("garantia")}
-                        className="flex items-center justify-between p-4 font-bold text-sm text-on-surface bg-surface-container-low hover:bg-surface-container transition-colors"
-                      >
-                        <span className="flex items-center gap-2">
-                          <FileText className="h-4.5 w-4.5 text-red-400" />
-                          6. Garantía del Producto
-                        </span>
-                        {openSection === "garantia" ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
-                      </button>
-                      
-                      {openSection === "garantia" && (
-                        <div className="p-4 bg-surface-container-lowest/50 border-t border-outline-variant/10 text-xs">
-                          <div className="flex items-center justify-between p-3.5 rounded-lg bg-surface-container border border-outline-variant/10">
-                            <span className="font-semibold text-on-surface truncate">{garantiaDoc || "Sin garantía cargada"}</span>
-                            {garantiaDoc ? (
-                              <button
-                                type="button"
-                                onClick={() => handleDeleteItem("garantia", null)}
-                                className="text-on-surface-variant hover:text-red-400 p-1"
-                              >
-                                <Trash2 className="h-3.5 w-3.5" />
-                              </button>
-                            ) : (
-                              <button
-                                type="button"
-                                onClick={() => handleSimulateUpload("garantia")}
-                                className="text-primary hover:underline font-bold"
-                              >
-                                Subir Archivo
-                              </button>
-                            )}
-                          </div>
-                        </div>
-                      )}
-                    </div>
-
-                    {/* 7. Fotografías de los Herrajes */}
-                    <div className="flex flex-col">
-                      <button
-                        type="button"
-                        onClick={() => toggleSection("herrajes")}
-                        className="flex items-center justify-between p-4 font-bold text-sm text-on-surface bg-surface-container-low hover:bg-surface-container transition-colors"
-                      >
-                        <span className="flex items-center gap-2">
-                          <Image className="h-4.5 w-4.5 text-indigo-400" />
-                          7. Fotografías de Herrajes Reales ({herrajesFotos.length})
-                        </span>
-                        {openSection === "herrajes" ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
-                      </button>
-                      
-                      {openSection === "herrajes" && (
-                        <div className="p-4 bg-surface-container-lowest/50 border-t border-outline-variant/10 space-y-3 text-xs">
-                          <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-                            {herrajesFotos.map((hf, idx) => (
-                              <div key={idx} className="flex items-center justify-between p-3 rounded-lg bg-surface-container border border-outline-variant/10">
-                                <span className="font-medium text-on-surface truncate">{hf}</span>
-                                <button type="button" onClick={() => handleDeleteItem("herrajes", idx)} className="text-on-surface-variant hover:text-red-400 p-1">
-                                  <Trash2 className="h-3.5 w-3.5" />
-                                </button>
-                              </div>
-                            ))}
-                          </div>
-                          <div className="flex items-center gap-3">
-                            <button
-                              type="button"
-                              onClick={() => handleSimulateUpload("herrajes")}
-                              className="flex items-center gap-1 text-[11px] font-bold text-primary hover:underline"
-                            >
-                              <Plus className="h-3 w-3" /> Agregar foto de herraje
-                            </button>
-                            <button
-                              type="button"
-                              onClick={loadSharedHerrajesLibrary}
-                              className="flex items-center gap-1 text-[11px] font-bold text-indigo-400 hover:underline"
-                            >
-                              <Library className="h-3.5 w-3.5" /> Seleccionar de biblioteca compartida
-                            </button>
-                          </div>
-
-                          {showSharedLibrary && (
-                            <div className="mt-2 p-3 rounded-lg bg-surface-container border border-indigo-400/20 space-y-2">
-                              <p className="text-[10px] text-on-surface-variant font-semibold uppercase">
-                                Biblioteca compartida ({sharedHerrajesLibrary.length} herrajes)
-                              </p>
-                              {sharedHerrajesLibrary.length === 0 ? (
-                                <p className="text-[10px] text-on-surface-variant italic">No hay archivos en la biblioteca compartida.</p>
-                              ) : (
-                                <div className="grid grid-cols-2 gap-1.5 max-h-48 overflow-y-auto">
-                                  {sharedHerrajesLibrary.map(name => {
-                                    const isSelected = herrajesFotos.includes(`_shared:${name}`)
-                                    return (
-                                      <label key={name} className={`flex items-center gap-2 p-2 rounded text-[11px] cursor-pointer
-                                        ${isSelected ? 'bg-indigo-500/20 text-indigo-300' : 'hover:bg-surface-container-high'}`}>
-                                        <input
-                                          type="checkbox"
-                                          checked={isSelected}
-                                          onChange={() => {
-                                            if (isSelected) {
-                                              setHerrajesFotos(prev => prev.filter(h => h !== `_shared:${name}`))
-                                            } else {
-                                              setHerrajesFotos(prev => [...prev, `_shared:${name}`])
-                                            }
-                                          }}
-                                          className="accent-indigo-400 mr-1.5"
-                                        />
-                                        <span className="truncate">{name}</span>
-                                      </label>
-                                    )
-                                  })}
-                                </div>
-                              )}
-                            </div>
-                          )}
-                        </div>
-                      )}
-                    </div>
-
-                    {/* 8. Ayudas de Interfaz */}
-                    <div className="flex flex-col">
-                      <button
-                        type="button"
-                        onClick={() => toggleSection("ayudas")}
-                        className="flex items-center justify-between p-4 font-bold text-sm text-on-surface bg-surface-container-low hover:bg-surface-container transition-colors"
-                      >
-                        <span className="flex items-center gap-2">
-                          <HelpCircle className="h-4.5 w-4.5 text-primary" />
-                          8. Ayudas de Interfaz y Calibrador
-                        </span>
-                        {openSection === "ayudas" ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
-                      </button>
-
-                      {openSection === "ayudas" && (
-                        <div className="p-4 bg-surface-container-lowest/50 border-t border-outline-variant/10 space-y-4 text-xs">
-                          {/* Botón del Calibrador */}
-                          <div className="flex items-center justify-between p-4 bg-primary/5 rounded-xl border border-primary/20">
-                            <div className="space-y-0.5">
-                              <h5 className="text-xs font-bold text-on-surface">Calibrador de Pantalla y Nubes</h5>
-                              <p className="text-[10px] text-on-surface-variant">Ajusta los márgenes generales y la posición vertical de las nubes inferiores en caliente.</p>
-                            </div>
-                            <button
-                              type="button"
-                              onClick={() => {
-                                const url = window.location.hostname === 'localhost' || window.location.hostname.includes('127.0.0.1')
-                                  ? `http://localhost:5173/calibrador.html?id=${codigoManual}`
-                                  : `/embed/armado/calibrador.html?id=${codigoManual}`;
-                                window.open(url, "_blank");
-                              }}
-                              className="flex items-center gap-1.5 rounded-xl bg-primary px-3.5 py-2 text-xs font-bold text-primary-foreground transition-all hover:bg-primary/90 active:scale-[0.98]"
-                            >
-                              <ExternalLink className="h-3.5 w-3.5" />
-                              Abrir Calibrador
-                            </button>
-                          </div>
-
-                          {/* Campos de texto de las nubes */}
-                          <div className="space-y-4">
-                            <h4 className="text-[10px] font-bold text-on-surface-variant uppercase tracking-wider">Textos de Burbujas de Ayuda (Nubes del Tutorial)</h4>
-                            {[
-                              { key: "ayuda1", label: "Ayuda 1: Guía y Herramientas (Menú Superior)" },
-                              { key: "ayudaLuz", label: "Ayuda Luz: Iluminación y Sombras (Menú Superior)" },
-                              { key: "ayudaVelocidad", label: "Ayuda Velocidad: Ritmo de Audio (Menú Superior)" },
-                              { key: "ayudaIdioma", label: "Ayuda Idioma: Cambiar de Idioma (Menú Superior)" },
-                              { key: "ayuda3", label: "Ayuda 3: Navegación de Pasos (Barra Inferior)" },
-                              { key: "ayuda4", label: "Ayuda 4: Buscador de Piezas (Barra Inferior)" },
-                              { key: "ayuda5", label: "Ayuda 5: Play y Pausa de Audio (Barra Inferior)" },
-                              { key: "ayuda6", label: "Ayuda 6: Realidad Aumentada" }
-                            ].map((h) => {
-                              const itemData = ayudasTexto[h.key] || {}
-                              const titleEs = itemData.title_es !== undefined ? itemData.title_es : (defaultAyudas[h.key]?.title_es || "")
-                              const contentEs = itemData.content_es !== undefined ? itemData.content_es : (defaultAyudas[h.key]?.content_es || "")
-                              const titleEn = itemData.title_en !== undefined ? itemData.title_en : (defaultAyudas[h.key]?.title_en || "")
-                              const contentEn = itemData.content_en !== undefined ? itemData.content_en : (defaultAyudas[h.key]?.content_en || "")
-
-                              return (
-                                <div key={h.key} className="p-4 rounded-xl bg-surface-container border border-outline-variant/10 space-y-4">
-                                  <h5 className="font-semibold text-xs text-primary">{h.label}</h5>
-                                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                    {/* Español */}
-                                    <div className="space-y-3">
-                                      <span className="text-[10px] font-bold text-on-surface-variant/70 uppercase">Versión Español</span>
-                                      <label className="flex flex-col gap-1">
-                                        <span className="text-[10px] text-on-surface-variant">Título</span>
-                                        <input
-                                          type="text"
-                                          value={titleEs}
-                                          onChange={(e) => {
-                                            const newVal = e.target.value
-                                            setAyudasTexto((prev: any) => ({
-                                              ...prev,
-                                              [h.key]: {
-                                                ...(prev[h.key] || {}),
-                                                title_es: newVal
-                                              }
-                                            }))
-                                          }}
-                                          placeholder="Título en español"
-                                          className="rounded-lg border border-outline-variant bg-surface-container-low px-3 py-1.5 text-xs text-on-surface outline-none transition focus:border-primary"
-                                        />
-                                      </label>
-                                      <label className="flex flex-col gap-1">
-                                        <span className="text-[10px] text-on-surface-variant">Contenido (Para Ayuda 1, coloca un elemento por línea)</span>
-                                        <textarea
-                                          value={contentEs}
-                                          onChange={(e) => {
-                                            const newVal = e.target.value
-                                            setAyudasTexto((prev: any) => ({
-                                              ...prev,
-                                              [h.key]: {
-                                                ...(prev[h.key] || {}),
-                                                content_es: newVal
-                                              }
-                                            }))
-                                          }}
-                                          rows={3}
-                                          placeholder="Contenido en español"
-                                          className="rounded-lg border border-outline-variant bg-surface-container-low px-3 py-1.5 text-xs text-on-surface outline-none transition focus:border-primary"
-                                        />
-                                      </label>
-                                    </div>
-
-                                    {/* Inglés */}
-                                    <div className="space-y-3">
-                                      <div className="flex items-center justify-between">
-                                        <span className="text-[10px] font-bold text-on-surface-variant/70 uppercase">Versión Inglés</span>
-                                        <button
-                                          type="button"
-                                          disabled={translatingAyuda !== null}
-                                          onClick={() => handleTranslateAyuda(h.key)}
-                                          className="flex items-center gap-1 text-[9px] font-bold text-primary hover:underline"
-                                        >
-                                          {translatingAyuda === h.key ? (
-                                            <Loader2 className="h-2.5 w-2.5 animate-spin" />
-                                          ) : (
-                                            <Sparkles className="h-2.5 w-2.5" />
-                                          )}
-                                          Traducir automáticamente
-                                        </button>
-                                      </div>
-                                      <label className="flex flex-col gap-1">
-                                        <span className="text-[10px] text-on-surface-variant">Título (EN)</span>
-                                        <input
-                                          type="text"
-                                          value={titleEn}
-                                          onChange={(e) => {
-                                            const newVal = e.target.value
-                                            setAyudasTexto((prev: any) => ({
-                                              ...prev,
-                                              [h.key]: {
-                                                ...(prev[h.key] || {}),
-                                                title_en: newVal
-                                              }
-                                            }))
-                                          }}
-                                          placeholder="Title in English"
-                                          className="rounded-lg border border-outline-variant bg-surface-container-low px-3 py-1.5 text-xs text-on-surface outline-none transition focus:border-primary"
-                                        />
-                                      </label>
-                                      <label className="flex flex-col gap-1">
-                                        <span className="text-[10px] text-on-surface-variant">Contenido (EN)</span>
-                                        <textarea
-                                          value={contentEn}
-                                          onChange={(e) => {
-                                            const newVal = e.target.value
-                                            setAyudasTexto((prev: any) => ({
-                                              ...prev,
-                                              [h.key]: {
-                                                ...(prev[h.key] || {}),
-                                                content_en: newVal
-                                              }
-                                            }))
-                                          }}
-                                          rows={3}
-                                          placeholder="Content in English"
-                                          className="rounded-lg border border-outline-variant bg-surface-container-low px-3 py-1.5 text-xs text-on-surface outline-none transition focus:border-primary"
-                                        />
-                                      </label>
-                                    </div>
-                                  </div>
-                                </div>
-                              )
-                            })}
-                          </div>
-                        </div>
-                      )}
-                    </div>
-
-
+                      </div>
+                    ) : (
+                      <div className="text-center py-8 text-on-surface-variant/70 border-2 border-dashed border-outline-variant/30 rounded-xl">
+                        Ingresa el código del manual arriba para cargar los textos y audios.
+                      </div>
+                    )}
                   </div>
                 </div>
               )}
-
-              {activeTab === "despiece" && isTeam && (
+{activeTab === "despiece" && isTeam && (
                 <div className="space-y-6">
                   {/* Banner superior con KPIs y Costo Total */}
                   <div className="rounded-2xl bg-surface-container-low border border-outline-variant/15 p-5 space-y-4 shadow-sm relative overflow-hidden">

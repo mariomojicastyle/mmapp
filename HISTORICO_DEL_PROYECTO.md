@@ -806,3 +806,18 @@ Los estilos, colores y tiempos de transición de las flechas azules se configura
     - **Remoción Completa del Código sin Blindar**: Se eliminó del control de versiones (`git rm -r`) y físicamente de la máquina de desarrollo el directorio `legacy-aplicativo-armado-original` con todos sus submódulos, configuraciones obsoletas y recursos con marcas corporativas de Maderkit.
     - **Aislamiento Total del Visor Blindado**: El aplicativo blindado `legacy-aplicativo-armado` queda establecido como el único visor 3D oficial del proyecto B2B, sin conservar vínculos o históricos locales de la versión de legado anterior.
 
+* **[2026-07-01] Automatización Blender — Segmentación de Versiones de Cohesión por Marca (Maderkit vs Politorno)**:
+    - **Diferenciación y Coexistencia**: Para evitar colisiones de lógica de nomenclatura entre diferentes fabricantes B2B, se renombraron y segmentaron las dos versiones estables del script de Blender en la carpeta [scripts/](file:///c:/Desarrollo/mmapp/scripts/):
+      1. [script_cohesion_Maderkit_v54.py](file:///c:/Desarrollo/mmapp/scripts/script_cohesion_Maderkit_v54.py) (Antiguo `v54`): Conserva la lógica de numeración correlativa secuencial ciega (`contador_global`) y limpieza regex de dígitos finales (`re.sub`). Es 100% estable y compatible con el catálogo del cliente Maderkit.
+      2. [script_cohesion_Politorno_v55.py](file:///c:/Desarrollo/mmapp/scripts/script_cohesion_Politorno_v55.py) (Antiguo `v55`): Incorpora el algoritmo de componentes conexas bajo un umbral de solapamiento físico estricto de 1 mm (`margin=0.001`) y la preservación redundante e íntegra de los nombres con dígitos definidos originalmente en Rhino (ej. `Peça 01`, `Peça 06` y sus duplicados diferenciados por Blender con puntos `.001`). Es 100% compatible con el fabricante brasilero Politorno.
+
+
+
+* **[2026-07-01] Plataforma CMS ?" Protocolos de Traducción Multilingüe y Reestructuración de Locución (TTS)**:
+    - **Protocolos de Traducción Inteligente (PT, EN)**: Implementación de flujos de traducción automática integrando Google Translate y Gemini (fallback avanzado) para la generación de audios TTS en Español, Inglés y Portugués Brasileño.
+    - **Preservación Determinística de Etiquetas [pausa: N]**: Diagnóstico y refactorización del endpoint `/api/translate` para extraer pre-traducción y re-insertar post-traducción las etiquetas de pausas de audio. Se implementó un algoritmo avanzado de *Word-Boundary Alignment* que garantiza la reinserción en separadores de puntuación cercanos (espacios, puntos, comas), previniendo roturas sintácticas como `scre[pausa: 3]ws`.
+    - **Reestructuración Arquitectónica del Modal CMS**:
+        - **Desacoplamiento de Entornos**: El panel de "2. Generador de Audios TTS" fue extraído del tab original (renombrado a "Cargar Insumos CMS") y convertido en una pestaña maestra independiente denominada **"Textos y Locución (TTS)"**.
+        - **Persistencia Reactiva**: El campo identificador `Código de Carpeta / Manual` ahora persiste e hidrata en caliente el estado entre ambas pestañas mediante `useState` heredado.
+        - **Eliminación de Scroll Anidado**: Se suprimió la contención `max-h-[400px]` del listado de pasos, resolviendo un conflicto crítico de UX (scroll dentro de scroll). Ahora la vista de pasos fluye libremente sobre el frame principal (`max-h-[60vh]`).
+        - **Expansión Ergonómica de Textareas**: Multiplicación de la altura base (x5) de los campos de texto del CMS (`rows={15}`, `min-h-[300px]`), mejorando sustancialmente la comodidad de la edición y lectura de los pasos y saludos extensos en los tres idiomas de manera simultánea.

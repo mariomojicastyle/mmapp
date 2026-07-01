@@ -1,6 +1,6 @@
 import type React from "react"
 import type { Metadata } from "next"
-import { Prompt, Geist_Mono } from "next/font/google"
+import { Prompt, Geist_Mono, Nunito_Sans } from "next/font/google"
 import Script from "next/script"
 import { ThemeProvider } from "@/components/theme-provider"
 import { AuthProvider } from "@/lib/auth/auth-context"
@@ -16,6 +16,12 @@ const prompt = Prompt({
 const geistMono = Geist_Mono({
   subsets: ["latin"],
   variable: "--font-geist-mono",
+})
+
+const nunitoSans = Nunito_Sans({
+  subsets: ["latin"],
+  weight: ["300", "400", "600", "700", "800", "900"],
+  variable: "--font-nunito-sans",
 })
 
 export const metadata: Metadata = {
@@ -39,7 +45,7 @@ export default function RootLayout({
           />
         )}
       </head>
-      <body className={`${prompt.variable} ${geistMono.variable} font-sans antialiased`}>
+      <body className={`${prompt.variable} ${geistMono.variable} ${nunitoSans.variable} font-sans antialiased`}>
         <ThemeProvider
           attribute="class"
           defaultTheme="dark"

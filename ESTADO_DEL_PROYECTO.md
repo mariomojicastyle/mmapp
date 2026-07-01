@@ -285,6 +285,12 @@ Un **"Manual Vacío"** es un cascarón o aplicación base centralizada (desplega
 
 ---
 
+
+- [x] **Plataforma CMS - Traducciones TTS y Ergonomía (01 de Julio, 2026)**:
+  - **Reingeniería de Traducción con Pausas**: Refactorización del motor de `/api/translate` garantizando la supervivencia y posicionamiento intacto (Límites de palabra) de las etiquetas de control `[pausa: N]` post-traducción a EN y PT.
+  - **Ergonomía Bilingüe**: Reestructuración del CMS extrayendo la generación de Audio a la nueva pestaña dedicada "Textos y Locución (TTS)", eliminando colisiones de *Nested Scrolling* y quintuplicando la altura de los `textarea` para edición profesional sin ahogo de vista.
+
+
 ## 🔗 Enlaces de Control
 - **Baserow:** [Leads Table](https://baserow.mariomojica.com/database/144/table/600/2509)
 - **n8n Principal:** [https://n8n.mariomojica.com/](https://n8n.mariomojica.com/)

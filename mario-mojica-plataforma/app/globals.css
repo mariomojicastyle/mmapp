@@ -109,6 +109,7 @@
 @theme inline {
   --font-sans: "Prompt", system-ui, -apple-system, sans-serif;
   --font-mono: "Geist Mono", monospace;
+  --font-nunito: var(--font-nunito-sans), system-ui, sans-serif;
 
   --color-surface: var(--surface);
   --color-surface-container-low: var(--surface-container-low);
