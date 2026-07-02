@@ -2,7 +2,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unused-vars, react-hooks/exhaustive-deps */
 
 import React, { useState, useEffect, useRef } from "react"
-import { X, Download, Paperclip, Image, FileText, Music, Cpu, Layers, Plus, Trash2, Loader2, Eye, ExternalLink, ChevronDown, ChevronUp, UploadCloud, CheckCircle2, AlertCircle, FileSpreadsheet, Box, Boxes, Coins, Hammer, Wrench, Sparkles, Volume2, Play, Square, Mic, Library, Camera, HelpCircle } from "lucide-react"
+import { X, Download, Paperclip, Image, FileText, Music, Cpu, Layers, Plus, Trash2, Loader2, Eye, ExternalLink, ChevronDown, ChevronUp, UploadCloud, CheckCircle2, AlertCircle, AlertTriangle, FileSpreadsheet, Box, Boxes, Coins, Hammer, Wrench, Sparkles, Volume2, Play, Square, Mic, Library, Camera, HelpCircle, BookOpen, ScanLine } from "lucide-react"
 import { motion, AnimatePresence } from "framer-motion"
 import { cn } from "@/lib/utils"
 import { usePermissions } from "@/hooks/use-permissions"
@@ -231,6 +231,7 @@ export function DetalleProyectoModal({ isOpen, onClose, proyecto, onUpdate }: De
   const [activeTab, setActiveTab] = useState<"solicitud" | "insumos" | "audios" | "despiece">("solicitud")
   const [error, setError] = useState("")
   const [successMsg, setSuccessMsg] = useState("")
+  const [warningMsg, setWarningMsg] = useState("")
   const [isSaving, setIsSaving] = useState(false)
   const [codigoManual, setCodigoManual] = useState("")
   
@@ -342,6 +343,11 @@ export function DetalleProyectoModal({ isOpen, onClose, proyecto, onUpdate }: De
   const [generatingAll, setGeneratingAll] = useState(false)
   const [generationProgress, setGenerationProgress] = useState({ current: 0, total: 0 })
   const [translatingText, setTranslatingText] = useState<string | null>(null)
+  
+  // Glosario Técnico de Marca (Protocolos de Traducción)
+  const [glosarioTraduccion, setGlosarioTraduccion] = useState<{ es: string; en: string; pt: string }[]>([])
+  const [scanningGlossary, setScanningGlossary] = useState(false)
+  const glossaryFileRef = useRef<HTMLInputElement>(null)
   const [cameraOverlayActive, setCameraOverlayActive] = useState(false)
   const [lightingEditorActive, setLightingEditorActive] = useState(false)
   const realtimeChannelRef = useRef<any>(null)
@@ -795,16 +801,25 @@ export function DetalleProyectoModal({ isOpen, onClose, proyecto, onUpdate }: De
     setTranslatingText(targetKey)
     setError("")
     setSuccessMsg("")
+    setWarningMsg("")
     try {
       const res = await fetch("/api/translate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ text: sourceText, targetLang: targetLang || "en" })
+        body: JSON.stringify({ 
+          text: sourceText, 
+          targetLang: targetLang || "en",
+          glossary: glosarioTraduccion.length > 0 ? glosarioTraduccion : undefined
+        })
       })
       if (!res.ok) throw new Error(await res.text())
       const data = await res.json()
       setter(data.translation)
-      setSuccessMsg("Traducción completada ✓")
+      if (data.warning) {
+        setWarningMsg(data.warning)
+      } else {
+        setSuccessMsg("Traducción completada ✓")
+      }
     } catch (err: any) {
       setError(err.message || "Error al traducir el texto.")
     } finally {
@@ -821,11 +836,16 @@ export function DetalleProyectoModal({ isOpen, onClose, proyecto, onUpdate }: De
     setTranslatingText(translatingKey)
     setError("")
     setSuccessMsg("")
+    setWarningMsg("")
     try {
       const res = await fetch("/api/translate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ text: sourceText, targetLang: targetLang || "en" })
+        body: JSON.stringify({ 
+          text: sourceText, 
+          targetLang: targetLang || "en",
+          glossary: glosarioTraduccion.length > 0 ? glosarioTraduccion : undefined
+        })
       })
       if (!res.ok) throw new Error(await res.text())
       const data = await res.json()
@@ -836,7 +856,11 @@ export function DetalleProyectoModal({ isOpen, onClose, proyecto, onUpdate }: De
         }
         return item
       }))
-      setSuccessMsg(`Traducción del Paso ${stepId} completada ✓`)
+      if (data.warning) {
+        setWarningMsg(`Advertencia en Paso ${stepId}: ${data.warning}`)
+      } else {
+        setSuccessMsg(`Traducción del Paso ${stepId} completada ✓`)
+      }
     } catch (err: any) {
       setError(err.message || "Error al traducir el texto.")
     } finally {
@@ -857,20 +881,26 @@ export function DetalleProyectoModal({ isOpen, onClose, proyecto, onUpdate }: De
     setTranslatingAyuda(helpKey)
     setError("")
     setSuccessMsg("")
+    setWarningMsg("")
 
     try {
       let titleEn = itemData.title_en || ""
       let contentEn = itemData.content_en || ""
+      let warning = ""
 
       if (titleEs.trim()) {
         const res = await fetch("/api/translate", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ text: titleEs })
+          body: JSON.stringify({ 
+            text: titleEs,
+            glossary: glosarioTraduccion.length > 0 ? glosarioTraduccion : undefined
+          })
         })
         if (res.ok) {
           const data = await res.json()
           titleEn = data.translation
+          if (data.warning) warning = data.warning
         }
       }
 
@@ -878,11 +908,15 @@ export function DetalleProyectoModal({ isOpen, onClose, proyecto, onUpdate }: De
         const res = await fetch("/api/translate", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ text: contentEs })
+          body: JSON.stringify({ 
+            text: contentEs,
+            glossary: glosarioTraduccion.length > 0 ? glosarioTraduccion : undefined
+          })
         })
         if (res.ok) {
           const data = await res.json()
           contentEn = data.translation
+          if (data.warning) warning = data.warning
         }
       }
 
@@ -896,12 +930,119 @@ export function DetalleProyectoModal({ isOpen, onClose, proyecto, onUpdate }: De
           content_en: contentEn
         }
       }))
-      setSuccessMsg("Traducción de ayuda completada ✓")
+      if (warning) {
+        setWarningMsg(`Advertencia en Ayuda: ${warning}`)
+      } else {
+        setSuccessMsg("Traducción de ayuda completada ✓")
+      }
     } catch (err: any) {
       setError(err.message || "Error al traducir la ayuda.")
     } finally {
       setTranslatingAyuda(null)
     }
+  }
+
+  // Comprimir imagen antes de enviarla a la API para evitar rate limit de tokens
+  const compressImage = (file: File, maxWidth = 1200, maxHeight = 1200, quality = 0.8): Promise<{ base64: string; mimeType: string }> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader()
+      reader.onload = (event) => {
+        const img = new window.Image()
+        img.onload = () => {
+          const canvas = document.createElement("canvas")
+          let width = img.width
+          let height = img.height
+
+          // Mantener proporción
+          if (width > height) {
+            if (width > maxWidth) {
+              height = Math.round((height * maxWidth) / width)
+              width = maxWidth
+            }
+          } else {
+            if (height > maxHeight) {
+              width = Math.round((width * maxHeight) / height)
+              height = maxHeight
+            }
+          }
+
+          canvas.width = width
+          canvas.height = height
+
+          const ctx = canvas.getContext("2d")
+          if (!ctx) {
+            reject(new Error("No se pudo obtener el contexto 2d del canvas"))
+            return
+          }
+
+          ctx.drawImage(img, 0, 0, width, height)
+          
+          // Convertir a JPEG comprimido
+          const mimeType = "image/jpeg"
+          const dataUrl = canvas.toDataURL(mimeType, quality)
+          const base64 = dataUrl.split(",")[1]
+          
+          resolve({ base64, mimeType })
+        }
+        img.onerror = (err) => reject(err)
+        img.src = event.target?.result as string
+      }
+      reader.onerror = (err) => reject(err)
+      reader.readAsDataURL(file)
+    })
+  }
+
+  // Escanear glosario desde imagen de tabla de herrajes
+  const handleScanGlossary = async (file: File) => {
+    setScanningGlossary(true)
+    setError("")
+    setSuccessMsg("")
+    try {
+      // Comprimir la imagen antes de enviarla al backend
+      const { base64, mimeType } = await compressImage(file)
+
+      const res = await fetch("/api/glossary-scan", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ imageBase64: base64, mimeType })
+      })
+
+      if (!res.ok) throw new Error(await res.text())
+      const data = await res.json()
+
+      if (data.glossary && data.glossary.length > 0) {
+        // Merge: agregar términos nuevos sin duplicar existentes por campo "es"
+        setGlosarioTraduccion(prev => {
+          const existingEs = new Set(prev.map(g => g.es.toLowerCase()))
+          const newTerms = data.glossary.filter(
+            (g: { es: string }) => !existingEs.has(g.es.toLowerCase())
+          )
+          return [...prev, ...newTerms]
+        })
+        setSuccessMsg(`✓ ${data.glossary.length} términos extraídos de la imagen`)
+      } else {
+        setError("No se encontraron términos en la imagen.")
+      }
+    } catch (err: any) {
+      setError(err.message || "Error al escanear la imagen del glosario.")
+    } finally {
+      setScanningGlossary(false)
+    }
+  }
+
+  // Obtener términos duplicados en español para mostrar advertencias de conflicto
+  const getConflictingTerms = () => {
+    const seen = new Set<string>()
+    const conflicts = new Set<string>()
+    for (const term of glosarioTraduccion) {
+      if (!term.es) continue
+      const normalized = term.es.trim().toLowerCase()
+      if (seen.has(normalized)) {
+        conflicts.add(term.es.trim())
+      }
+      seen.add(normalized)
+    }
+    return Array.from(conflicts)
   }
 
   // Despiece State
@@ -980,6 +1121,9 @@ export function DetalleProyectoModal({ isOpen, onClose, proyecto, onUpdate }: De
               if (tts.ayuda) setTtsAyuda(tts.ayuda)
               if (tts.cantidadPasos) setTtsCantidadPasos(tts.cantidadPasos)
               if (tts.pasos) setTtsPasos(tts.pasos)
+              // Cargar Glosario de Traducción
+              if (data.glosario_traduccion) setGlosarioTraduccion(data.glosario_traduccion)
+              else setGlosarioTraduccion([])
               setAyudasTexto(data.ayudas_texto || {})
             }
           })
@@ -2133,6 +2277,7 @@ export function DetalleProyectoModal({ isOpen, onClose, proyecto, onUpdate }: De
           fotos_herrajes: herrajesFotos,
           despiece: despiece,
           ayudas_texto: ayudasTexto,
+          glosario_traduccion: glosarioTraduccion,
           tts_config: {
             voices: ttsVoices,
             saludo: ttsSaludo,
@@ -4626,6 +4771,141 @@ export function DetalleProyectoModal({ isOpen, onClose, proyecto, onUpdate }: De
                       </div>
                     )}
                   </div>
+
+                  {/* ──── GLOSARIO TÉCNICO DE MARCA (al final del tab) ──────────────────── */}
+                  <div className="rounded-xl bg-surface-container border border-outline-variant/15 p-5 space-y-4 shadow-sm">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <BookOpen className="h-4 w-4 text-amber-400" />
+                        <h4 className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">
+                          📖 Glosario Técnico de la Marca ({glosarioTraduccion.length} términos)
+                        </h4>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        {/* Botón Escanear desde Imagen */}
+                        <input
+                          ref={glossaryFileRef}
+                          type="file"
+                          accept="image/*"
+                          className="hidden"
+                          onChange={e => {
+                            const file = e.target.files?.[0]
+                            if (file) handleScanGlossary(file)
+                            e.target.value = ""
+                          }}
+                        />
+                        <button
+                          onClick={() => glossaryFileRef.current?.click()}
+                          disabled={scanningGlossary}
+                          className="flex items-center gap-1.5 rounded-lg bg-amber-500/15 border border-amber-500/30 px-3 py-1.5 text-[10px] font-bold text-amber-300 transition-all hover:bg-amber-500/25 disabled:opacity-50"
+                        >
+                          {scanningGlossary ? (
+                            <><Loader2 className="h-3 w-3 animate-spin" /> Escaneando...</>
+                          ) : (
+                            <><ScanLine className="h-3 w-3" /> Escanear desde Imagen</>
+                          )}
+                        </button>
+                        {/* Botón Agregar Término Manual */}
+                        <button
+                          onClick={() => setGlosarioTraduccion(prev => [...prev, { es: "", en: "", pt: "" }])}
+                          className="flex items-center gap-1 rounded-lg bg-surface-container-high border border-outline-variant/20 px-2.5 py-1.5 text-[10px] font-bold text-on-surface-variant transition-all hover:bg-surface-container-highest"
+                        >
+                          <Plus className="h-3 w-3" /> Agregar
+                        </button>
+                      </div>
+                    </div>
+
+                    {glosarioTraduccion.length > 0 ? (
+                      <div className="rounded-lg border border-outline-variant/10 overflow-hidden">
+                        {/* Header de la tabla */}
+                        <div className="grid grid-cols-[1fr_1fr_1fr_36px] gap-0 bg-surface-container-high/80 border-b border-outline-variant/15 text-[10px] font-bold text-on-surface-variant uppercase tracking-wider">
+                          <div className="px-3 py-2 border-r border-outline-variant/10">🇪🇸 Español</div>
+                          <div className="px-3 py-2 border-r border-outline-variant/10">🇺🇸 English</div>
+                          <div className="px-3 py-2 border-r border-outline-variant/10">🇧🇷 Português</div>
+                          <div className="px-1 py-2"></div>
+                        </div>
+                        {/* Filas */}
+                        <div className="max-h-[250px] overflow-y-auto">
+                          {glosarioTraduccion.map((term, idx) => (
+                            <div key={idx} className="grid grid-cols-[1fr_1fr_1fr_36px] gap-0 border-b border-outline-variant/5 last:border-b-0 group hover:bg-surface-container-low/30 transition-colors">
+                              <input
+                                value={term.es}
+                                onChange={e => {
+                                  const updated = [...glosarioTraduccion]
+                                  updated[idx] = { ...updated[idx], es: e.target.value }
+                                  setGlosarioTraduccion(updated)
+                                }}
+                                placeholder="Ej: Taquete"
+                                className="px-3 py-2 text-xs bg-transparent border-r border-outline-variant/10 text-on-surface outline-none placeholder:text-on-surface-variant/30 focus:bg-primary/5"
+                              />
+                              <input
+                                value={term.en}
+                                onChange={e => {
+                                  const updated = [...glosarioTraduccion]
+                                  updated[idx] = { ...updated[idx], en: e.target.value }
+                                  setGlosarioTraduccion(updated)
+                                }}
+                                placeholder="Ej: Wooden dowel"
+                                className="px-3 py-2 text-xs bg-transparent border-r border-outline-variant/10 text-on-surface outline-none placeholder:text-on-surface-variant/30 focus:bg-primary/5"
+                              />
+                              <input
+                                value={term.pt}
+                                onChange={e => {
+                                  const updated = [...glosarioTraduccion]
+                                  updated[idx] = { ...updated[idx], pt: e.target.value }
+                                  setGlosarioTraduccion(updated)
+                                }}
+                                placeholder="Ej: Cavilha"
+                                className="px-3 py-2 text-xs bg-transparent border-r border-outline-variant/10 text-on-surface outline-none placeholder:text-on-surface-variant/30 focus:bg-primary/5"
+                              />
+                              <button
+                                onClick={() => setGlosarioTraduccion(prev => prev.filter((_, i) => i !== idx))}
+                                className="flex items-center justify-center text-red-400/50 hover:text-red-400 transition-colors"
+                                title="Eliminar término"
+                              >
+                                <Trash2 className="h-3 w-3" />
+                              </button>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="text-center py-6 text-on-surface-variant/50 border-2 border-dashed border-outline-variant/20 rounded-xl space-y-2">
+                        <BookOpen className="h-6 w-6 mx-auto opacity-40" />
+                        <p className="text-[11px]">No hay términos definidos.</p>
+                        <p className="text-[10px] text-on-surface-variant/40">
+                          Sube una imagen de la tabla de herrajes del fabricante o agrega términos manualmente.
+                        </p>
+                      </div>
+                    )}
+
+                    {glosarioTraduccion.length > 0 && (
+                      <p className="text-[10px] text-on-surface-variant/50 flex items-center gap-1.5">
+                        <AlertCircle className="h-3 w-3" />
+                        Estos términos se inyectarán automáticamente como reglas obligatorias al traductor IA cuando hagas clic en &quot;Traducir automáticamente&quot;.
+                      </p>
+                    )}
+
+                    {getConflictingTerms().length > 0 && (
+                      <div className="p-3.5 rounded-xl border border-red-500/20 bg-red-500/5 flex items-start gap-2.5">
+                        <AlertCircle className="h-4 w-4 text-red-400 shrink-0 mt-0.5" />
+                        <div className="space-y-1">
+                          <span className="font-bold text-red-400 block text-xs">⚠️ Conflicto de Términos Duplicados</span>
+                          <p className="text-on-surface-variant text-[10px] leading-relaxed">
+                            Tienes términos repetidos en español con diferentes traducciones. Edítalos para que sean únicos (por ejemplo, especificando su medida o código) y evitar confusión en el traductor:
+                          </p>
+                          <div className="flex flex-wrap gap-1.5 mt-1.5">
+                            {getConflictingTerms().map((term, i) => (
+                              <span key={i} className="px-2 py-0.5 rounded bg-red-500/10 border border-red-500/20 text-red-300 text-[10px] font-mono">
+                                &quot;{term}&quot;
+                              </span>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
                 </div>
               )}
 {activeTab === "despiece" && isTeam && (
@@ -5103,6 +5383,12 @@ export function DetalleProyectoModal({ isOpen, onClose, proyecto, onUpdate }: De
               )}
 
               {/* Status Display Messages */}
+              {warningMsg && (
+                <div className="rounded-xl bg-amber-500/10 p-3.5 text-xs text-amber-400 border border-amber-500/20 flex items-center gap-2">
+                  <AlertTriangle className="h-4 w-4 shrink-0" />
+                  <span>{warningMsg}</span>
+                </div>
+              )}
               {error && (
                 <div className="rounded-xl bg-red-500/10 p-3.5 text-xs text-red-400 border border-red-500/20 flex items-center gap-2">
                   <AlertCircle className="h-4 w-4 shrink-0" />
@@ -5144,7 +5430,7 @@ export function DetalleProyectoModal({ isOpen, onClose, proyecto, onUpdate }: De
                   Cerrar
                 </button>
                 
-                {activeTab === "insumos" && isTeam && (
+                {(activeTab === "insumos" || activeTab === "audios") && isTeam && (
                   <button
                     type="button"
                     onClick={handleSaveInsumos}

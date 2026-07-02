@@ -289,6 +289,12 @@ Un **"Manual Vacío"** es un cascarón o aplicación base centralizada (desplega
 - [x] **Plataforma CMS - Traducciones TTS y Ergonomía (01 de Julio, 2026)**:
   - **Reingeniería de Traducción con Pausas**: Refactorización del motor de `/api/translate` garantizando la supervivencia y posicionamiento intacto (Límites de palabra) de las etiquetas de control `[pausa: N]` post-traducción a EN y PT.
   - **Ergonomía Bilingüe**: Reestructuración del CMS extrayendo la generación de Audio a la nueva pestaña dedicada "Textos y Locución (TTS)", eliminando colisiones de *Nested Scrolling* y quintuplicando la altura de los `textarea` para edición profesional sin ahogo de vista.
+- [x] **Plataforma CMS - Robustez de Traducción, Glosario Inglés y Alineación de Pausas (02 de Julio, 2026)**:
+  - **Cascada de Modelos y Reintentos (Anti-429)**: Incorporación de una cascada secuencial de modelos (`gemini-2.5-flash`, `gemini-flash-latest`, `gemini-2.0-flash`, `gemini-pro-latest`) con reintentos exponenciales en `/api/translate`, previniendo de forma blindada fallos silenciosos por límite de cuota (429).
+  - **Inyección de Glosario por Placeholders**: Rediseño del fallback de Google Translate utilizando variables temporales (`__GLOS_PL_N__`, `__GLOS_SG_N__`) para garantizar la inyección infalible de términos técnicos del glosario.
+  - **Regla de Pluralización en Inglés**: Refactorización de `pluralizeEnglish` para pluralizar únicamente el sustantivo final o penúltimo (evitando "Flats heads screws" y corrigiéndolo a "Flat head screws").
+  - **Ventana de Alineación de Pausas**: Ampliación de la ventana de búsqueda de signos de puntuación a 35 caracteres, permitiendo que las pausas se alineen de forma perfecta con los puntos finales de las oraciones en cualquier idioma.
+  - **Advertencias y Tokens de Salida**: Aumento del límite de tokens de salida a 20,000 en la API para dar cabida a los tokens de pensamiento de los modelos de razonamiento (Gemini 2.5/3.5) y adición de banner amarillo de advertencia en el modal de detalles del CMS Next.js.
 
 
 ## 🔗 Enlaces de Control
@@ -298,7 +304,7 @@ Un **"Manual Vacío"** es un cascarón o aplicación base centralizada (desplega
 - **Local App:** [http://localhost:3000](http://localhost:3000)
 
 ---
-*Última actualización de contexto: 24 de Junio, 2026*
+*Última actualización de contexto: 02 de Julio, 2026*
 
 
 ---
