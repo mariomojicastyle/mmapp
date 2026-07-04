@@ -1,0 +1,36 @@
+import bpy
+
+def force_clean_mesh_names():
+    print("--- Iniciando proceso de renombrado limpio ---")
+    
+    # PASO 1: Renombrado inicial y separación temporal para liberar nombres reales
+    for obj in bpy.data.objects:
+        if obj.type == 'MESH' and obj.data:
+            # Le asignamos un sufijo temporal para "soltar" el nombre original de la base de datos
+            obj.data.name = obj.name + "_rename_temp"
+
+    # PASO 2: Eliminar datos de mallas huérfanas que puedan estar reteniendo los nombres limpios
+    # Esto actúa como un "Purge" interno solo para bloques de malla sin usuarios
+    for mesh in list(bpy.data.meshes):
+        if mesh.users == 0:
+            bpy.data.meshes.remove(mesh)
+
+    # PASO 3: Asignación final del nombre idéntico al objeto
+    for obj in bpy.data.objects:
+        if obj.type == 'MESH' and obj.data:
+            old_name = obj.data.name
+            # Ahora que el nombre limpio está garantizado como libre, lo asignamos
+            obj.data.name = obj.name
+            
+            # Si por alguna razón extrema de Blender queda un residuo, removemos el .001 manualmente
+            if obj.data.name.endswith(".001"):
+                # Intentamos forzar quitando los últimos 4 caracteres
+                target_name = obj.data.name[:-4]
+                obj.data.name = target_name
+                
+            print(f"Objeto: {obj.name} -> Malla Final: {obj.data.name}")
+
+    print("--- Proceso finalizado con éxito ---")
+
+if __name__ == "__main__":
+    force_clean_mesh_names()
