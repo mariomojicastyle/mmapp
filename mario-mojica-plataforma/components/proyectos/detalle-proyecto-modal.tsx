@@ -1048,6 +1048,8 @@ export function DetalleProyectoModal({ isOpen, onClose, proyecto, onUpdate }: De
   // Despiece State
   const [despiece, setDespiece] = useState<ItemDespiece[]>([])
   const [isScanning, setIsScanning] = useState(false)
+  const [debugScanner, setDebugScanner] = useState<{ brand: string; mult: number; totalNodes: number } | null>(null)
+  const [scanLog, setScanLog] = useState<string[]>([])
 
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [uploadTarget, setUploadTarget] = useState<{ type: string; step?: string } | null>(null)
@@ -1736,6 +1738,466 @@ export function DetalleProyectoModal({ isOpen, onClose, proyecto, onUpdate }: De
     return name
   }
 
+  // --- HELPERS ESPECÍFICOS PARA ESCÁNER POLITORNO ---
+  const POLITORNO_PIECE_SYNONYMS = ["PIEZA", "PEÇA", "PECA", "PART", "PIECE"];
+  const POLITORNO_PIECE_REGEX = new RegExp(`^(${POLITORNO_PIECE_SYNONYMS.join("|")})[_\\s]*(\\d+)`, "i");
+
+  const isPieceNamePolitorno = (name: string): boolean => {
+    if (!name) return false;
+    const upper = name.trim().toUpperCase();
+    return POLITORNO_PIECE_SYNONYMS.some(syn => upper.startsWith(syn));
+  };
+
+  const extractPieceNumberPolitorno = (name: string) => {
+    if (!name) return null;
+    const cleaned = name.replace(/[._]?0\d\d$/i, (match) => {
+      return (match.startsWith('.') || match.startsWith('_')) ? '' : match;
+    }).trim();
+    const match = cleaned.match(POLITORNO_PIECE_REGEX);
+    if (match) {
+      return { number: parseInt(match[2], 10), raw: match[2] };
+    }
+    return null;
+  };
+
+  const obtenerNombreLimpioPolitorno = (rawName: string): string => {
+    if (!rawName) return ""
+    
+    // Guardia: Si es un nombre de pieza (Pieza/Peça/Part + número),
+    // conservar el número de pieza limpio
+    const pieceMatch = extractPieceNumberPolitorno(rawName)
+    if (pieceMatch) {
+      return `Peça ${String(pieceMatch.number).padStart(2, "0")}`
+    }
+    
+    // 1. Obtener la primera sección (antes de cualquier "-")
+    let name = rawName.split("-")[0].trim()
+    name = name.split(".")[0]
+    
+    // 2. Regla inteligente del guion bajo (no corta palabras, solo números/códigos redundantes)
+    const parts2 = name.split("_")
+    const resultParts = []
+    let codeCount = 0
+    
+    for (let i = 0; i < parts2.length; i++) {
+      const part = parts2[i]
+      const isPureText = !/\d/.test(part)
+      
+      if (isPureText) {
+        resultParts.push(part)
+      } else {
+        if (codeCount === 0) {
+          if (/^\d+$/.test(part)) {
+            const num = parseInt(part, 10)
+            const isInstance = num < 100 || (part.length === 4 && part.substring(1, 3) === "00")
+            if (isInstance) {
+              continue
+            }
+          }
+          resultParts.push(part)
+          codeCount++
+        } else {
+          break
+        }
+      }
+    }
+    name = resultParts.join("_")
+
+    // 3. Limpieza de sufijos comunes de materiales
+    const sufijosMat = ["_BALANCE", "_TAPA", "_CANTO", "_LAMINADO", " BALANCE", " TAPA", " CANTO", " LAMINADO"]
+    let upperName = name.toUpperCase()
+    for (const suf of sufijosMat) {
+      if (upperName.endsWith(suf)) {
+        name = name.substring(0, name.length - suf.length)
+        upperName = name.toUpperCase()
+      }
+    }
+
+    // 4. Curación definitiva de sufijos de Blender (ej. "PARAL_6A001" -> "PARAL_6A")
+    name = name.replace(/[._]?0\d\d$/i, "")
+    name = name.replace(/_$/, "")
+    
+    return name
+  }
+
+  const esHerrajePolitorno = (nombre: string): boolean => {
+    const nombreLower = nombre.toLowerCase()
+    if (nombreLower.startsWith("tapaluz") || nombreLower.includes("fondo") || nombreLower.includes("fundo") || nombreLower.includes("posterior")) {
+      return false
+    } else if (nombreLower.startsWith("caja") || nombreLower.startsWith("puntilla")) {
+      return true
+    } else if (/^\d+$/.test(nombre)) {
+      return true
+    } else {
+      // Palabras clave genéricas de herrajes en portugués y español
+      return /tornillo|perno|tarugo|bisagra|deslizador|corredera|soporte|clavo|tapa|minifix|cama|perfil|regula|patin|pivote|tuerca|arandela|jaladera|tirador|pija|angulo|union|mensula|mariposa|tampa|parafuso|furo|cavilha|haste|tambor|corrediça|sapata|prego|chave|adesivo|cola/i.test(nombre)
+    }
+  }
+
+  const ejecutarEscaneoPolitorno = (
+    gltf: any,
+    mult: number,
+    THREE: any,
+    despieceExistente: ItemDespiece[],
+    onLog?: (msg: string) => void
+  ): ItemDespiece[] => {
+    const conteo: { 
+      [key: string]: { 
+        cantidad: number; 
+        esHerraje: boolean;
+        esFondo: boolean;
+        nombreLimpio: string;
+        largo?: number;
+        ancho?: number;
+        espesor?: number;
+        piezasDetectadas: number[];
+      } 
+    } = {}
+    
+    const herrajesFisicosRegistrados: { nombreLimpio: string; center: any; uuid: string }[] = []
+    
+    // 1. Estructura temporal para recolectar todas las mallas
+    const collectedMeshes: {
+      child: any;
+      rawName: string;
+      nombreLimpio: string;
+      parentName: string;
+      piezaBaseNum: number | undefined;
+      esHerraje: boolean;
+      instanceId: string;
+      volume: number;
+      dims: number[];
+      rawT: number;
+      esFondo: boolean;
+    }[] = []
+
+    // 2. Primera pasada: Recolectar y determinar parámetros individuales
+    gltf.scene.traverse((child: any) => {
+      if (child.isMesh) {
+        const rawName = child.name || ""
+        let nombreLimpio = ""
+        let parentName = ""
+        if (child.parent && child.parent.type !== 'Scene' && child.parent.name) {
+          parentName = child.parent.name
+        }
+
+        if (parentName && !isPieceNamePolitorno(parentName) && parentName.toLowerCase() !== "scene") {
+          nombreLimpio = obtenerNombreLimpioPolitorno(parentName)
+        } else if (child.geometry && child.geometry.name) {
+          nombreLimpio = obtenerNombreLimpioPolitorno(child.geometry.name)
+        } else if (rawName.includes("_")) {
+          const parts = rawName.split("_")
+          const tieneDescripcion = parts.slice(1).some((part: string) => /[a-zA-Z]/i.test(part))
+          if (isPieceNamePolitorno(parts[0]) && tieneDescripcion) {
+            nombreLimpio = obtenerNombreLimpioPolitorno(parts.slice(1).join("_"))
+          } else {
+            nombreLimpio = obtenerNombreLimpioPolitorno(rawName)
+          }
+        } else {
+          nombreLimpio = obtenerNombreLimpioPolitorno(rawName)
+        }
+
+        if (!nombreLimpio) {
+          if (onLog) onLog(`❌ ${rawName}: Omitido porque nombreLimpio quedó vacío.`)
+          return
+        }
+
+        let piezaBaseNum: number | undefined = undefined
+        let esCodificado = false
+        const pieceMatch = extractPieceNumberPolitorno(rawName)
+        if (pieceMatch) {
+          piezaBaseNum = pieceMatch.number
+          esCodificado = true
+        }
+
+        if (!esCodificado && parentName) {
+          const parentPieceMatch = extractPieceNumberPolitorno(parentName)
+          if (parentPieceMatch) {
+            piezaBaseNum = parentPieceMatch.number
+          }
+        }
+
+        const esHerraje = esHerrajePolitorno(nombreLimpio)
+        let instanceId = child.uuid
+
+        if (esHerraje) {
+          // Unificación espacial de herrajes
+          const lowerLimpio = nombreLimpio.toLowerCase()
+          const esHerrajeComplejo = /bisagra|corredera/i.test(lowerLimpio)
+          const box = new THREE.Box3().setFromObject(child)
+          const center = new THREE.Vector3()
+          box.getCenter(center)
+          
+          if (esHerrajeComplejo) {
+            const herrajeCercano = herrajesFisicosRegistrados.find(h => {
+              if (h.nombreLimpio !== nombreLimpio) return false
+              const dist = center.distanceTo(h.center) * mult
+              return dist < 100
+            })
+            if (herrajeCercano) {
+              instanceId = herrajeCercano.uuid
+            } else {
+              herrajesFisicosRegistrados.push({ nombreLimpio, center, uuid: child.uuid })
+              instanceId = child.uuid
+            }
+          } else {
+            const herrajeDuplicado = herrajesFisicosRegistrados.find(h => {
+              if (h.nombreLimpio !== nombreLimpio) return false
+              const dist = center.distanceTo(h.center) * mult
+              return dist < 2
+            })
+            if (herrajeDuplicado) {
+              instanceId = herrajeDuplicado.uuid
+            } else {
+              herrajesFisicosRegistrados.push({ nombreLimpio, center, uuid: child.uuid })
+              instanceId = child.uuid
+            }
+          }
+        } else {
+          // Unificación por jerarquía estándar para piezas de madera
+          if (child.parent && child.parent.type !== 'Scene' && (child.parent.type === 'Group' || child.parent.type === 'Object3D' || !child.parent.isMesh)) {
+            const nombreLopt = obtenerNombreLimpioPolitorno(parentName)
+            if (!rawName || nombreLimpio === nombreLopt) {
+              instanceId = child.parent.uuid
+            } else {
+              // Si el padre directo no coincide (ej. es el grupo del cajón "Peça 12" o "Peça 13"),
+              // unificamos los sub-meshes del mismo nombre bajo este padre común.
+              instanceId = `${child.parent.uuid}_${nombreLimpio}`
+            }
+          }
+        }
+
+        // Calcular dimensiones locales de la malla
+        let l = 0, w = 0, t = 0, volume = 0, rawT = 0, esFondo = false
+        if (child.geometry) {
+          const localBox = new THREE.Box3().setFromObject(child)
+          const size = new THREE.Vector3()
+          localBox.getSize(size)
+          
+          let dimX = size.x
+          let dimY = size.y
+          let dimZ = size.z
+          const minDim = Math.min(dimX, dimY, dimZ)
+          
+          if (minDim < 0.0001 && child.parent && child.parent.type !== 'Scene') {
+            const parentBox = new THREE.Box3().setFromObject(child.parent)
+            const parentSize = new THREE.Vector3()
+            parentBox.getSize(parentSize)
+            dimX = parentSize.x
+            dimY = parentSize.y
+            dimZ = parentSize.z
+          }
+          
+          const dims = [Math.abs(dimX), Math.abs(dimY), Math.abs(dimZ)].sort((a, b) => b - a)
+          l = Math.round(dims[0] * mult)
+          w = Math.round(dims[1] * mult)
+          t = Math.round(dims[2] * mult)
+          rawT = dims[2] * mult
+
+          // Si es fondo, forzar su nombre antes del agrupamiento
+          if (rawT >= 2.5 && rawT <= 3.5) {
+            esFondo = true
+            t = Math.round(rawT * 10) / 10
+            if (isPieceNamePolitorno(nombreLimpio)) {
+              nombreLimpio = "Fundo"
+            }
+          }
+          
+          volume = l * w * t
+        }
+
+        collectedMeshes.push({
+          child,
+          rawName,
+          nombreLimpio,
+          parentName,
+          piezaBaseNum,
+          esHerraje,
+          instanceId,
+          volume,
+          dims: [l, w, t],
+          rawT,
+          esFondo
+        })
+      }
+    })
+
+    // 3. Agrupar por instanceId y resolver la representativa de mayor volumen
+    const grupos: { [instanceId: string]: typeof collectedMeshes } = {}
+    collectedMeshes.forEach(mesh => {
+      if (!grupos[mesh.instanceId]) {
+        grupos[mesh.instanceId] = []
+      }
+      grupos[mesh.instanceId].push(mesh)
+    })
+
+    Object.keys(grupos).forEach(instanceId => {
+      const group = grupos[instanceId]
+      const esHerraje = group[0].esHerraje
+
+      let representative: typeof collectedMeshes[0]
+      if (!esHerraje) {
+        // Filtrar maderas válidas
+        const maderasValidas = group.filter(m => m.rawT >= 2.5)
+        if (maderasValidas.length === 0) {
+          if (onLog) {
+            group.forEach(m => onLog(`⚠️ ${m.rawName}: Ignorado por espesor delgado (rawT = ${m.rawT.toFixed(2)}mm)`))
+          }
+          return
+        }
+        
+        // Seleccionar la de mayor volumen
+        representative = maderasValidas.reduce((prev, curr) => curr.volume > prev.volume ? curr : prev, maderasValidas[0])
+
+        // Loggear descartes
+        if (onLog && group.length > 1) {
+          group.forEach(m => {
+            if (m !== representative) {
+              onLog(`⚡ ${m.rawName}: Omitido por menor volumen en la misma pieza física (${m.dims.join("x")}mm vs ${representative.dims.join("x")}mm de la principal)`)
+            }
+          })
+        }
+      } else {
+        representative = group[0]
+      }
+
+      // 4. Registrar en el conteo final
+      const { rawName, nombreLimpio, piezaBaseNum, dims, esFondo } = representative
+      let finalName = nombreLimpio
+
+      if (!esHerraje && dims[0] > 0) {
+        finalName = `${nombreLimpio}_${dims[0]}x${dims[1]}x${dims[2]}`
+      }
+
+      if (esHerraje) {
+        if (onLog) onLog(`🔩 ${rawName} (${nombreLimpio}): Herraje registrado.`)
+      } else {
+        if (onLog) onLog(`🪵 ${rawName} (${nombreLimpio}): Madera registrada [${dims[0]}x${dims[1]}x${dims[2]}mm].`)
+      }
+
+      if (conteo[finalName]) {
+        conteo[finalName].cantidad += 1
+        if (piezaBaseNum !== undefined) {
+          if (!conteo[finalName].piezasDetectadas) {
+            conteo[finalName].piezasDetectadas = []
+          }
+          conteo[finalName].piezasDetectadas.push(piezaBaseNum)
+        }
+      } else {
+        conteo[finalName] = {
+          cantidad: 1,
+          esHerraje,
+          esFondo,
+          nombreLimpio,
+          largo: dims[0],
+          ancho: dims[1],
+          espesor: dims[2],
+          piezasDetectadas: piezaBaseNum !== undefined ? [piezaBaseNum] : []
+        }
+      }
+    })
+    
+    // Post-procesamiento: Unificar herrajes con códigos extendidos
+    const herrajeKeys = Object.keys(conteo).filter(k => conteo[k].esHerraje)
+    herrajeKeys.sort((a, b) => a.length - b.length)
+    
+    for (let i = 0; i < herrajeKeys.length; i++) {
+      const shorter = herrajeKeys[i]
+      if (!conteo[shorter]) continue
+      for (let j = i + 1; j < herrajeKeys.length; j++) {
+        const longer = herrajeKeys[j]
+        if (!conteo[longer]) continue
+        if (longer.startsWith(shorter)) {
+          conteo[shorter].cantidad += conteo[longer].cantidad
+          delete conteo[longer]
+        }
+      }
+    }
+    
+    // Post-procesamiento: Consolidar correderas
+    const corredKeys = Object.keys(conteo).filter(k => 
+      conteo[k].esHerraje && k.toLowerCase().startsWith("corrediça")
+    )
+    if (corredKeys.length > 0) {
+      const totalPartes = corredKeys.reduce((sum, k) => sum + conteo[k].cantidad, 0)
+      const canonical = corredKeys.find(k => /corrediça[_\s]\d/i.test(k)) || corredKeys[0]
+      
+      for (const k of corredKeys) {
+        if (k !== canonical) delete conteo[k]
+      }
+      conteo[canonical].cantidad = totalPartes
+    }
+    
+    // Post-procesamiento: Aplicar división por 2 para Bisagras y Correderas
+    Object.keys(conteo).forEach(k => {
+      const lowerKey = k.toLowerCase()
+      if (conteo[k].esHerraje && (lowerKey.startsWith("bisagra") || lowerKey.startsWith("corrediça"))) {
+        conteo[k].cantidad = Math.round(conteo[k].cantidad / 2)
+      }
+    })
+    
+    const nuevoDespiece: ItemDespiece[] = Object.values(conteo).map((info) => {
+      const itemExistente = despieceExistente.find(d => 
+        d.nombre === info.nombreLimpio && 
+        d.largo === info.largo && 
+        d.ancho === info.ancho
+      )
+      
+      let piezaNumero: string | undefined = undefined
+      let piezaNumeroStart: number | undefined = undefined
+      let piezaNumeroRange: boolean | undefined = undefined
+      let piezasLista: string[] | undefined = undefined
+      
+      if (info.piezasDetectadas && info.piezasDetectadas.length > 0) {
+        info.piezasDetectadas.sort((a, b) => a - b)
+        const uniqueNums = Array.from(new Set(info.piezasDetectadas))
+        
+        piezasLista = uniqueNums.map(num => `Pieza ${String(num).padStart(2, "0")}`)
+        
+        if (uniqueNums.length === 1) {
+          const baseNum = uniqueNums[0]
+          piezaNumeroStart = baseNum
+          piezaNumeroRange = false
+          piezaNumero = `Pieza ${String(baseNum).padStart(2, "0")}`
+        } else if (uniqueNums.length > 1) {
+          const startNum = uniqueNums[0]
+          piezaNumeroStart = startNum
+          piezaNumeroRange = true
+          
+          const endNum = uniqueNums[uniqueNums.length - 1]
+          if (uniqueNums.length === 2) {
+            piezaNumero = `Pieza ${String(startNum).padStart(2, "0")} y Pieza ${String(endNum).padStart(2, "0")}`
+          } else {
+            piezaNumero = `Pieza ${String(startNum).padStart(2, "0")} a Pieza ${String(endNum).padStart(2, "0")}`
+          }
+        }
+      }
+      
+      return {
+        nombre: info.nombreLimpio,
+        esHerraje: info.esHerraje,
+        esFondo: info.esFondo,
+        cantidad: info.cantidad,
+        costoUnitario: itemExistente?.costoUnitario || 0,
+        costoM2: itemExistente?.costoM2 || 0,
+        largo: info.largo,
+        ancho: info.ancho,
+        espesor: info.espesor,
+        piezaNumero,
+        piezaNumeroStart,
+        piezaNumeroRange,
+        piezasLista
+      }
+    }).sort((a, b) => {
+      if (a.piezaNumeroStart !== undefined && b.piezaNumeroStart !== undefined) {
+        return a.piezaNumeroStart - b.piezaNumeroStart
+      }
+      return a.nombre.localeCompare(b.nombre)
+    })
+
+    return nuevoDespiece
+  }
+
   const escanearModeloGLB = async () => {
     if (!codigoManual) {
       setError("Por favor define el Código de Carpeta / Manual primero.")
@@ -1787,6 +2249,55 @@ export function DetalleProyectoModal({ isOpen, onClose, proyecto, onUpdate }: De
       loader.load(
         blobUrl,
         (gltf) => {
+          // Detectar escala global del modelo (metros vs milímetros)
+          const sceneBBox = new THREE.Box3().setFromObject(gltf.scene)
+          const sceneSize = new THREE.Vector3()
+          sceneBBox.getSize(sceneSize)
+          const maxSceneDim = Math.max(sceneSize.x, sceneSize.y, sceneSize.z)
+          const mult = maxSceneDim > 0 && maxSceneDim < 20 ? 1000 : 1
+
+          // Detectar marca (Politorno vs Maderkit)
+          const nombreProyecto = (proyecto?.nombre || "").toLowerCase()
+          const companyName = (proyecto?.profiles?.company || "").toLowerCase()
+          let esPolitorno = nombreProyecto.includes("politorno") || companyName.includes("politorno")
+
+          // Detección complementaria analizando nombres de mallas en el GLB
+          if (!esPolitorno) {
+            gltf.scene.traverse((child: any) => {
+              if (child.isMesh && child.name) {
+                const lower = child.name.toLowerCase()
+                if (lower.includes("peça") || lower.includes("peca") || lower.includes("cavilha") || lower.includes("corrediça")) {
+                  esPolitorno = true
+                }
+              }
+            })
+          }
+
+          let totalNodes = 0
+          gltf.scene.traverse((child: any) => {
+            if (child.isMesh) totalNodes++
+          })
+          setDebugScanner({
+            brand: esPolitorno ? "Politorno" : "Maderkit",
+            mult,
+            totalNodes
+          })
+
+          if (esPolitorno) {
+            console.log("🇧🇷 Iniciando escaneo segmentado exclusivo para Politorno...")
+            const logs: string[] = []
+            const nuevoDespiece = ejecutarEscaneoPolitorno(gltf, mult, THREE, despiece, (msg) => logs.push(msg))
+            setScanLog(logs)
+            const despieceNormalizado = normalizarYAsignarPiezas(nuevoDespiece)
+            setDespiece(despieceNormalizado)
+            handleSaveDespiece(despieceNormalizado)
+            setIsScanning(false)
+            setSuccessMsg("¡Modelo P00.glb escaneado y despiece guardado automáticamente con éxito!")
+            URL.revokeObjectURL(blobUrl)
+            return
+          }
+
+          console.log("🇨🇴 Ejecutando escaneo tradicional para Maderkit...")
           const conteo: { 
             [key: string]: { 
               cantidad: number; 
@@ -1802,13 +2313,7 @@ export function DetalleProyectoModal({ isOpen, onClose, proyecto, onUpdate }: De
           const instanciasContadas = new Set<string>()
           const herrajesFisicosRegistrados: { nombreLimpio: string; center: any; uuid: string }[] = []
           
-          // Detectar escala global del modelo (metros vs milímetros)
-          const sceneBBox = new THREE.Box3().setFromObject(gltf.scene)
-          const sceneSize = new THREE.Vector3()
-          sceneBBox.getSize(sceneSize)
-          const maxSceneDim = Math.max(sceneSize.x, sceneSize.y, sceneSize.z)
-          // Si el mueble entero mide menos de 20 unidades, asumimos que fue exportado en metros
-          const mult = maxSceneDim > 0 && maxSceneDim < 20 ? 1000 : 1
+          // Usar la escala global ya detectada al inicio del callback
           
           gltf.scene.traverse((child: any) => {
             if (child.isMesh) {
@@ -1828,8 +2333,8 @@ export function DetalleProyectoModal({ isOpen, onClose, proyecto, onUpdate }: De
                 nombreLimpio = obtenerNombreLimpioTooltip(child.geometry.name)
               } else if (rawName.includes("_")) {
                 const parts = rawName.split("_")
-                // Fallback para formato combinado "Pieza XX_Nombre". Solo cortar si empieza con "Pieza"
-                if (parts[0].toLowerCase().startsWith("pieza")) {
+                const tieneDescripcion = parts.length > 2 || (parts.length === 2 && !/^\d+$/.test(parts[1]))
+                if (parts[0].toLowerCase().startsWith("pieza") && tieneDescripcion) {
                   nombreLimpio = obtenerNombreLimpioTooltip(parts.slice(1).join("_"))
                 } else {
                   nombreLimpio = obtenerNombreLimpioTooltip(rawName)
@@ -4979,6 +5484,28 @@ export function DetalleProyectoModal({ isOpen, onClose, proyecto, onUpdate }: De
                         )}
                       </div>
                     </div>
+
+                    {debugScanner && (
+                      <div className="text-[10px] text-muted-foreground bg-primary/5 rounded-lg px-3 py-2 border border-primary/10 flex flex-col gap-1.5 mt-2 mb-2 w-full">
+                        <div className="flex gap-4">
+                          <span><strong>Escáner Activo:</strong> {debugScanner.brand === "Politorno" ? "🇧🇷 Politorno" : "🇨🇴 Maderkit"}</span>
+                          <span><strong>Escala:</strong> {debugScanner.mult === 1000 ? "Metros (x1000)" : "Milímetros (x1)"}</span>
+                          <span><strong>Meshes analizados:</strong> {debugScanner.totalNodes}</span>
+                        </div>
+                        {scanLog.length > 0 && (
+                          <details className="mt-1 border-t border-border/40 pt-1.5 w-full">
+                            <summary className="cursor-pointer font-bold text-primary hover:underline text-[9px] outline-none">
+                              Ver bitácora de escaneo ({scanLog.length} registros)
+                            </summary>
+                            <div className="max-h-48 overflow-y-auto font-mono text-[9px] bg-surface-container-lowest/80 border border-outline-variant/10 rounded p-2 mt-1.5 space-y-0.5 select-text leading-relaxed">
+                              {scanLog.map((log, lIdx) => (
+                                <div key={lIdx} className="hover:bg-primary/5 px-1 py-0.5 rounded transition-colors">{log}</div>
+                              ))}
+                            </div>
+                          </details>
+                        )}
+                      </div>
+                    )}
 
                     {/* Fichas de KPI rápidas */}
                     <div className="grid grid-cols-3 gap-3">

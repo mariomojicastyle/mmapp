@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import useEnviroment from "../../../hooks/useEnviroment";
 import "./PanelHerrajes.css";
 import { getAssetPath, resolveAlias } from "../../../../../lib/assets.js";
+import { isPieceName } from "../../../../../lib/pieceUtils.js";
 
 export default function PanelHerrajes({ id, data }) {
   const model = useEnviroment((state) => state.model);
@@ -159,7 +160,7 @@ export default function PanelHerrajes({ id, data }) {
         rawName.includes("Plane") ||
         rawName.includes("Texto") ||
         rawName.includes("Text") ||
-        rawName.includes("Pieza")
+        isPieceName(rawName)
       ) {
         return;
       }
@@ -177,13 +178,13 @@ export default function PanelHerrajes({ id, data }) {
       }
 
       let nameToClean = rawName;
-      if (parentName && !parentName.toUpperCase().startsWith("PIEZA") && parentName.toLowerCase() !== "scene") {
+      if (parentName && !isPieceName(parentName) && parentName.toLowerCase() !== "scene") {
         nameToClean = parentName;
       } else if (child.geometry && child.geometry.name) {
         nameToClean = child.geometry.name;
       } else if (rawName.includes("_")) {
         const parts = rawName.split("_");
-        if (parts[0].toLowerCase().startsWith("pieza")) {
+        if (isPieceName(parts[0])) {
           nameToClean = parts.slice(1).join("_");
         }
       }

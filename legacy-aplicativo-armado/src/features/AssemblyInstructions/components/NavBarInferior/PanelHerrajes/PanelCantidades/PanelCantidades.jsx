@@ -1,5 +1,6 @@
 import useEnviroment from "../../../../hooks/useEnviroment";
 import { useEffect, useState } from "react";
+import { isPieceName } from "../../../../../../lib/pieceUtils.js";
 import "./PanelCantidades.css";
 import * as THREE from "three";
 import { getAssetPath, resolveAlias } from "../../../../../../lib/assets.js";
@@ -174,7 +175,7 @@ export default function PanelCantidades({ id, data }) {
             rawName.includes("Capa") ||
             rawName.includes("Camera") ||
             rawName.includes("Texto") ||
-            rawName.includes("Pieza") ||
+            isPieceName(rawName) ||
             rawName.includes("Collection") ||
             rawName.includes("Plane") ||
             rawName.includes("Text")
@@ -189,13 +190,13 @@ export default function PanelCantidades({ id, data }) {
           }
 
           let nameToClean = rawName;
-          if (parentName && !parentName.toUpperCase().startsWith("PIEZA") && parentName.toLowerCase() !== "scene") {
+          if (parentName && !isPieceName(parentName) && parentName.toLowerCase() !== "scene") {
             nameToClean = parentName;
           } else if (child.geometry && child.geometry.name) {
             nameToClean = child.geometry.name;
           } else if (rawName.includes("_")) {
             const parts = rawName.split("_");
-            if (parts[0].toLowerCase().startsWith("pieza")) {
+            if (isPieceName(parts[0])) {
               nameToClean = parts.slice(1).join("_");
             }
           }

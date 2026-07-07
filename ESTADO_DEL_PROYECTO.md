@@ -295,7 +295,7 @@ Un **"Manual Vacío"** es un cascarón o aplicación base centralizada (desplega
   - **Regla de Pluralización en Inglés**: Refactorización de `pluralizeEnglish` para pluralizar únicamente el sustantivo final o penúltimo (evitando "Flats heads screws" y corrigiéndolo a "Flat head screws").
   - **Ventana de Alineación de Pausas**: Ampliación de la ventana de búsqueda de signos de puntuación a 35 caracteres, permitiendo que las pausas se alineen de forma perfecta con los puntos finales de las oraciones en cualquier idioma.
   - **Advertencias y Tokens de Salida**: Aumento del límite de tokens de salida a 20,000 en la API para dar cabida a los tokens de pensamiento de los modelos de razonamiento (Gemini 2.5/3.5) y adición de banner amarillo de advertencia en el modal de detalles del CMS Next.js.
-
+- [x] **Algoritmo de Escaneo y Unificación Compuesta de Cajones (Politorno) (07 de Julio, 2026)**: Resolvimos la anomalía en la cantidad detectada para las mallas internas de los cajones en el escáner de Politorno (`Peça 06`, `Peça 07`, `Peça 08`, `Fundo/Peça 10`). Dado que Three.js optimiza el árbol y cuelga estas piezas directamente de los frentes de los cajones (`Peça 12` y `Peça 13`), implementamos una lógica de identificador de unificación compuesto (`${child.parent.uuid}_${nombreLimpio}`) cuando el nombre del padre no coincide con el de la pieza. Esto cohesiona de forma robusta las primitivas de un mismo cajón, reduciendo la cantidad detectada de 3 a la cantidad real de 2 para cada una de estas piezas.
 
 ## 🔗 Enlaces de Control
 - **Baserow:** [Leads Table](https://baserow.mariomojica.com/database/144/table/600/2509)
@@ -304,7 +304,7 @@ Un **"Manual Vacío"** es un cascarón o aplicación base centralizada (desplega
 - **Local App:** [http://localhost:3000](http://localhost:3000)
 
 ---
-*Última actualización de contexto: 02 de Julio, 2026*
+*Última actualización de contexto: 07 de Julio, 2026*
 
 
 ---

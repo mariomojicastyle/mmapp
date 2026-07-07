@@ -5,9 +5,21 @@ import { useThree, useFrame } from "@react-three/fiber";
 import useEnviroment from "../hooks/useEnviroment.js";
 import Floor from "./Floor/Floor.jsx";
 import { getAssetPath, resolveAlias } from "../../../lib/assets.js";
+import { isPieceName, extractPieceNumber, translatePieceLabel } from "../../../lib/pieceUtils.js";
 
 function cleanMeshIdentifier(rawName) {
   if (!rawName) return "";
+  
+  // GUARDIA: Si es un nombre de pieza (Pieza/Peça/Part + número),
+  // retornarlo tal cual sin recortar el número legítimo
+  const pieceData = extractPieceNumber(rawName);
+  if (pieceData) {
+    return rawName.trim();
+  }
+  // Si empieza con sinónimo de pieza pero sin número, pasar al flujo normal
+  if (isPieceName(rawName)) {
+    return resolveAlias(rawName.trim());
+  }
   
   // 1. Obtener la primera sección (antes de cualquier "-") y limpiar espacios
   let name = rawName.split("-")[0].trim();
@@ -371,29 +383,21 @@ export default function Model(props) {
 
   function resolvePartDisplayName(object) {
     if (!object) return "";
+    const idioma = useEnviroment.getState().idioma;
     
-    // 1. Detectar si el nombre del mesh es directamente la pegatina "Pieza XX" (formato no redundante o combinado)
+    // 1. Detectar si el nombre del mesh es directamente una pegatina de pieza
+    //    (soporta "Pieza XX", "Peça XX", "Part XX", etc.)
     const rawName = object.name || "";
-    if (rawName.toUpperCase().startsWith("PIEZA")) {
-      let clean = rawName.replace(/[._]?0\d\d$/i, "");
-      const match = clean.match(/Pieza[_\s]*\d+/i);
-      if (match) {
-        return match[0].trim();
-      } else {
-        return clean.split(".")[0].trim();
-      }
+    const pieceMatch = extractPieceNumber(rawName);
+    if (pieceMatch) {
+      return translatePieceLabel(pieceMatch.number, idioma);
     }
 
-    // 2. Detectar si el padre es un Empty de pegatina "Pieza XX" del GLB (para retrocompatibilidad)
+    // 2. Detectar si el padre es un Empty de pegatina (retrocompatibilidad)
     const parentName = object.parent ? object.parent.name || "" : "";
-    if (parentName.toUpperCase().startsWith("PIEZA")) {
-      let clean = parentName.replace(/[._]?0\d\d$/i, "");
-      const match = clean.match(/Pieza[_\s]*\d+/i);
-      if (match) {
-        return match[0].trim();
-      } else {
-        return clean.split(".")[0].trim();
-      }
+    const parentPieceMatch = extractPieceNumber(parentName);
+    if (parentPieceMatch) {
+      return translatePieceLabel(parentPieceMatch.number, idioma);
     }
 
     const name = cleanMeshIdentifier(object.name);
@@ -478,7 +482,7 @@ export default function Model(props) {
         }
         
         if (numSticker !== undefined) {
-          displayName = `Pieza ${String(numSticker).padStart(2, "0")}`;
+          displayName = translatePieceLabel(numSticker, useEnviroment.getState().idioma);
         }
       }
     }
