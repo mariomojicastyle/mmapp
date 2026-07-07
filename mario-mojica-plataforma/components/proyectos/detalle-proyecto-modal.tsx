@@ -24,54 +24,70 @@ export interface ItemDespiece {
   piezasLista?: string[]
 }
 
-export const defaultAyudas: Record<string, { title_es: string; content_es: string; title_en: string; content_en: string }> = {
+export const defaultAyudas: Record<string, { title_es: string; content_es: string; title_en: string; content_en: string; title_pt: string; content_pt: string }> = {
   ayuda1: {
     title_es: "Guía y Herramientas",
     content_es: "Marca del producto\nHerramientas requeridas\nIndicaciones especiales\nGarantía del mueble",
     title_en: "Guide & Tools",
-    content_en: "Product brand\nRequired tools\nSpecial instructions\nFurniture warranty"
+    content_en: "Product brand\nRequired tools\nSpecial instructions\nFurniture warranty",
+    title_pt: "Guia e Ferramentas",
+    content_pt: "Marca do produto\nFerramentas necessárias\nInstruções especiais\nGarantia do móvel"
   },
   ayudaLuz: {
     title_es: "Iluminación 3D",
     content_es: "Activa o desactiva las sombras detalladas para mejorar la calidad visual o aumentar el rendimiento.",
     title_en: "3D Lighting",
-    content_en: "Enable or disable detailed shadows to improve visual quality or boost performance."
+    content_en: "Enable or disable detailed shadows to improve visual quality or boost performance.",
+    title_pt: "Iluminação 3D",
+    content_pt: "Ative ou desative as sombras detalhadas para melhorar a qualidade visual ou aumentar o desempenho."
   },
   ayudaVelocidad: {
     title_es: "Velocidad de Audio",
     content_es: "Modifica el ritmo y velocidad del audio guía que te asiste en el armado.",
     title_en: "Audio Speed",
-    content_en: "Modify the speed of the audio narration guiding you through the assembly."
+    content_en: "Modify the speed of the audio narration guiding you through the assembly.",
+    title_pt: "Velocidade do Áudio",
+    content_pt: "Modifique o ritmo e a velocidade do áudio guia que o auxilia na montagem."
   },
   ayudaIdioma: {
     title_es: "Idioma del Manual",
     content_es: "Cambia el idioma de los textos y audios informativos a Español o Inglés.",
     title_en: "Manual Language",
-    content_en: "Switch the language of texts and audio guides between Spanish and English."
+    content_en: "Switch the language of texts and audio guides between Spanish and English.",
+    title_pt: "Idioma do Manual",
+    content_pt: "Altere o idioma dos textos e áudios informativos para Espanhol, Inglês ou Português."
   },
   ayuda3: {
     title_es: "Navegación de Armado",
     content_es: "Avanza o retrocede entre los pasos del manual interactivo para ver el proceso en orden.",
     title_en: "Assembly Navigation",
-    content_en: "Go forward or backward through the interactive steps to view the process in order."
+    content_en: "Go forward or backward through the interactive steps to view the process in order.",
+    title_pt: "Navegação da Montagem",
+    content_pt: "Avance ou retroceda entre os passos del manual interativo para ver o processo em ordem."
   },
   ayuda4: {
     title_es: "Buscador de Piezas",
     content_es: "Consulta la lista detallada de piezas y herrajes requeridos para el paso de ensamble actual.",
     title_en: "Parts Search",
-    content_en: "Check the detailed list of parts and hardware required for the current assembly step."
+    content_en: "Check the detailed list of parts and hardware required for the current assembly step.",
+    title_pt: "Busca de Peças",
+    content_pt: "Consulte a lista detalhada de peças e ferragens necessárias para a etapa de montagem atual."
   },
   ayuda5: {
     title_es: "Reproducir / Pausar",
     content_es: "Controla la locución por voz y la reproducción del audio explicativo paso a paso.",
     title_en: "Play / Pause",
-    content_en: "Control the voiceover and playback of the step-by-step explanatory audio."
+    content_en: "Control the voiceover and playback of the step-by-step explanatory audio.",
+    title_pt: "Reproduzir / Pausar",
+    content_pt: "Controle a locução por voz e a reprodução do áudio explicativo passo a passo."
   },
   ayuda6: {
     title_es: "Realidad Aumentada",
     content_es: "¡Escanea el espacio y proyecta el mueble 3D interactivo en escala real dentro de tu habitación!",
     title_en: "Augmented Reality",
-    content_en: "Scan your space and project the interactive 3D model in real scale inside your room!"
+    content_en: "Scan your space and project the interactive 3D model in real scale inside your room!",
+    title_pt: "Realidade Aumentada",
+    content_pt: "Escaneie o espaço e projete o móvel 3D interativo em escala real dentro da sua sala!"
   }
 }
 
@@ -228,7 +244,7 @@ const getValidHexColor = (val: string): string => {
 
 export function DetalleProyectoModal({ isOpen, onClose, proyecto, onUpdate }: DetalleProyectoModalProps) {
   const { isSuperAdmin, isCoequipero } = usePermissions()
-  const [activeTab, setActiveTab] = useState<"solicitud" | "insumos" | "audios" | "despiece">("solicitud")
+  const [activeTab, setActiveTab] = useState<"solicitud" | "insumos" | "ui" | "audios" | "despiece">("solicitud")
   const [error, setError] = useState("")
   const [successMsg, setSuccessMsg] = useState("")
   const [warningMsg, setWarningMsg] = useState("")
@@ -868,7 +884,7 @@ export function DetalleProyectoModal({ isOpen, onClose, proyecto, onUpdate }: De
     }
   }
 
-  const handleTranslateAyuda = async (helpKey: string) => {
+  const handleTranslateAyuda = async (helpKey: string, targetLang: "en" | "pt" = "en") => {
     const itemData = ayudasTexto[helpKey] || {}
     const titleEs = itemData.title_es !== undefined ? itemData.title_es : (defaultAyudas[helpKey]?.title_es || "")
     const contentEs = itemData.content_es !== undefined ? itemData.content_es : (defaultAyudas[helpKey]?.content_es || "")
@@ -878,14 +894,14 @@ export function DetalleProyectoModal({ isOpen, onClose, proyecto, onUpdate }: De
       return
     }
 
-    setTranslatingAyuda(helpKey)
+    setTranslatingAyuda(`${helpKey}_${targetLang}`)
     setError("")
     setSuccessMsg("")
     setWarningMsg("")
 
     try {
-      let titleEn = itemData.title_en || ""
-      let contentEn = itemData.content_en || ""
+      let translatedTitle = targetLang === "en" ? (itemData.title_en || "") : (itemData.title_pt || "")
+      let translatedContent = targetLang === "en" ? (itemData.content_en || "") : (itemData.content_pt || "")
       let warning = ""
 
       if (titleEs.trim()) {
@@ -894,12 +910,13 @@ export function DetalleProyectoModal({ isOpen, onClose, proyecto, onUpdate }: De
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ 
             text: titleEs,
+            targetLang,
             glossary: glosarioTraduccion.length > 0 ? glosarioTraduccion : undefined
           })
         })
         if (res.ok) {
           const data = await res.json()
-          titleEn = data.translation
+          translatedTitle = data.translation
           if (data.warning) warning = data.warning
         }
       }
@@ -910,12 +927,13 @@ export function DetalleProyectoModal({ isOpen, onClose, proyecto, onUpdate }: De
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ 
             text: contentEs,
+            targetLang,
             glossary: glosarioTraduccion.length > 0 ? glosarioTraduccion : undefined
           })
         })
         if (res.ok) {
           const data = await res.json()
-          contentEn = data.translation
+          translatedContent = data.translation
           if (data.warning) warning = data.warning
         }
       }
@@ -926,8 +944,13 @@ export function DetalleProyectoModal({ isOpen, onClose, proyecto, onUpdate }: De
           ...(prev[helpKey] || {}),
           title_es: titleEs,
           content_es: contentEs,
-          title_en: titleEn,
-          content_en: contentEn
+          ...(targetLang === "en" ? {
+            title_en: translatedTitle,
+            content_en: translatedContent
+          } : {
+            title_pt: translatedTitle,
+            content_pt: translatedContent
+          })
         }
       }))
       if (warning) {
@@ -1673,9 +1696,15 @@ export function DetalleProyectoModal({ isOpen, onClose, proyecto, onUpdate }: De
   const obtenerNombreLimpioTooltip = (rawName: string): string => {
     if (!rawName) return ""
     
+    // Immediate return guard for already cleaned Tornillo names
+    const lowerRaw = rawName.toLowerCase().trim()
+    if (lowerRaw === "tornillo_1" || lowerRaw === "tornillo_2") {
+      return rawName.trim()
+    }
+    
     // 1. Obtener la primera sección (antes de cualquier "-") y limpiar espacios
     let name = rawName.split("-")[0].trim()
-      name = name.split(".")[0]
+    name = name.split(".")[0]
     
     // 2. Regla inteligente del guion bajo (no corta palabras, solo números/códigos redundantes)
     const parts2 = name.split("_")
@@ -1730,9 +1759,18 @@ export function DetalleProyectoModal({ isOpen, onClose, proyecto, onUpdate }: De
     // Caso 2: Código de 7 dígitos (ej. 0002715) + 3 dígitos de copia (ej. 003) = 10 dígitos (ej. 0002715003)
     name = name.replace(/_(000\d{4})\d{3}$/i, "_$1")
     
-    // 5. Regla específica para PERNO_ con espacio
-    if (name.toUpperCase().startsWith("PERNO_") && name.includes(" ")) {
-      name = name.split(" ")[0]
+    // Specific rule for two types of Tornillos (inverted to match P01 correct screw)
+    const lowerName = name.toLowerCase()
+    if (lowerName.startsWith("tornillo_0000152")) {
+      name = "Tornillo_2"
+    } else if (lowerName.startsWith("tornillo_0004705") || lowerName.startsWith("tornillo_000152")) {
+      name = "Tornillo_1"
+    } else {
+      // Nueva regla: Quitar codificación numérica de herrajes españoles (todo lo que va desde el primer '_')
+      const esHerrajeMaderkit = /tornillo|perno|tarugo|bisagra|deslizador|corredera|soporte|clavo|tapa|minifix|cama|perfil|regula|patin|pivote|tuerca|arandela|jaladera|tirador|pija|angulo|union|mensula|mariposa/i.test(name)
+      if (esHerrajeMaderkit && name.includes("_")) {
+        name = name.split("_")[0]
+      }
     }
     
     return name
@@ -2902,7 +2940,22 @@ export function DetalleProyectoModal({ isOpen, onClose, proyecto, onUpdate }: De
                   )}
                 >
                   <Layers className="h-4 w-4" />
-                  Cargar Insumos CMS
+                  Cargar Insumos
+                </button>
+              )}
+
+              {isTeam && (
+                <button
+                  onClick={() => setActiveTab("ui")}
+                  className={cn(
+                    "py-3.5 px-4 text-sm font-semibold border-b-2 transition-all flex items-center gap-2",
+                    activeTab === "ui" 
+                      ? "border-primary text-primary" 
+                      : "border-transparent text-on-surface-variant/70 hover:text-on-surface"
+                  )}
+                >
+                  <Sparkles className="h-4 w-4" />
+                  Personalización UI
                 </button>
               )}
 
@@ -2917,7 +2970,7 @@ export function DetalleProyectoModal({ isOpen, onClose, proyecto, onUpdate }: De
                   )}
                 >
                   <Volume2 className="h-4 w-4" />
-                  Textos y Locución (TTS)
+                  Textos y Locución
                 </button>
               )}
 
@@ -3088,7 +3141,417 @@ export function DetalleProyectoModal({ isOpen, onClose, proyecto, onUpdate }: De
                     )}
                   </div>
 
-                  {/* Personalización Gráfica (Branding) */}
+                  {/* Accordion list */}
+                  <div className="rounded-xl border border-outline-variant/15 overflow-hidden divide-y divide-outline-variant/15 bg-surface-container-low">
+
+                    
+                    {/* 1. GLB de los pasos */}
+                    <div className="flex flex-col">
+                      <button
+                        type="button"
+                        onClick={() => toggleSection("glb")}
+                        className="flex items-center justify-between p-4 font-bold text-sm text-on-surface bg-surface-container-low hover:bg-surface-container transition-colors"
+                      >
+                        <span className="flex items-center gap-2">
+                          <Box className="h-4.5 w-4.5 text-primary" />
+                          1. Modelos GLB de los Pasos ({glbSteps.length})
+                        </span>
+                        {openSection === "glb" ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                      </button>
+                      
+                      {openSection === "glb" && (
+                        <div className="p-4 bg-surface-container-lowest/50 border-t border-outline-variant/10 space-y-3.5">
+                          {/* Botón toggle de cámara */}
+                          <div className="flex items-center justify-between pb-1 border-b border-outline-variant/5">
+                            <span className="text-[10px] text-on-surface-variant italic font-medium">Asigna la posición de la cámara del visor 3D para cada paso.</span>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                const newVal = cameraOverlayActive ? 'off' : 'on'
+                                localStorage.setItem('cameraOverlay', newVal)
+                                setCameraOverlayActive(!cameraOverlayActive)
+                                window.dispatchEvent(new StorageEvent('storage', {
+                                  key: 'cameraOverlay', newValue: newVal
+                                }))
+                                if (realtimeChannelRef.current) {
+                                  realtimeChannelRef.current.send({
+                                    type: 'broadcast',
+                                    event: 'toggle-feature',
+                                    payload: { codigoManual, key: 'cameraOverlay', value: newVal }
+                                  })
+                                }
+                              }}
+                              className={cn(
+                                "flex items-center gap-1.5 text-[11px] font-bold px-2.5 py-1 rounded-md border transition-all duration-200",
+                                cameraOverlayActive
+                                  ? "bg-teal-500/10 border-teal-500/30 text-teal-400 hover:bg-teal-500/20"
+                                  : "bg-surface-container border-outline-variant/20 text-on-surface-variant hover:text-on-surface"
+                              )}
+                            >
+                              <Camera className="h-3.5 w-3.5" />
+                              {cameraOverlayActive ? '🟢 Guía de Cámara Activa' : '⚪ Activar Guía de Cámara'}
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                const newVal = lightingEditorActive ? 'off' : 'on'
+                                localStorage.setItem('lightingEditor', newVal)
+                                setLightingEditorActive(!lightingEditorActive)
+                                window.dispatchEvent(new StorageEvent('storage', {
+                                  key: 'lightingEditor', newValue: newVal
+                                }))
+                                if (realtimeChannelRef.current) {
+                                  realtimeChannelRef.current.send({
+                                    type: 'broadcast',
+                                    event: 'toggle-feature',
+                                    payload: { codigoManual, key: 'lightingEditor', value: newVal }
+                                  })
+                                }
+                              }}
+                              className={cn(
+                                "flex items-center gap-1.5 text-[11px] font-bold px-2.5 py-1 rounded-md border transition-all duration-200",
+                                lightingEditorActive
+                                  ? "bg-amber-500/10 border-amber-500/30 text-amber-400 hover:bg-amber-500/20"
+                                  : "bg-surface-container border-outline-variant/20 text-on-surface-variant hover:text-on-surface"
+                              )}
+                            >
+                              ☀️ {lightingEditorActive ? '🟢 Editor de Iluminación Activo' : '⚪ Editor de Iluminación'}
+                            </button>
+                          </div>
+
+                          <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2">
+                            {glbSteps.map((g) => (
+                              <div key={g.step} className="flex flex-col gap-2 p-3 rounded-lg bg-surface-container border border-outline-variant/10 text-xs">
+                                <div className="flex items-center justify-between w-full">
+                                  <div className="flex items-center gap-2">
+                                    <span className="font-bold text-primary">Paso {g.step}</span>
+                                    <span className="text-on-surface-variant truncate max-w-[120px]">{g.fileName}</span>
+                                  </div>
+                                  <div className="flex items-center gap-3">
+                                    {g.progress < 100 ? (
+                                      <div className="flex items-center gap-1.5">
+                                        <Loader2 className="h-3 w-3 animate-spin text-primary" />
+                                        <span className="text-[10px] text-primary">{g.progress}%</span>
+                                      </div>
+                                    ) : (
+                                      <span className="text-[10px] text-success font-semibold uppercase">Listo</span>
+                                    )}
+                                    <button type="button" onClick={() => handleDeleteItem("glb", g.step)} className="text-on-surface-variant hover:text-red-400 p-1">
+                                      <Trash2 className="h-3.5 w-3.5" />
+                                    </button>
+                                  </div>
+                                </div>
+
+                                {/* Estado de posición de cámara */}
+                                <div className="w-full mt-1.5 pt-1.5 border-t border-outline-variant/10">
+                                  <div className="flex items-center justify-between">
+                                    <span className="text-[10px] text-on-surface-variant font-medium flex items-center gap-1">
+                                      🎥 Cámara: {g.cameraPosition && g.cameraTarget ? (
+                                        <span className="text-teal-400 font-bold">Definida</span>
+                                      ) : (
+                                        <span className="text-on-surface-variant/40 italic">Sin definir</span>
+                                      )}
+                                    </span>
+                                    {(g.cameraPosition || g.cameraTarget) && (
+                                      <button
+                                        type="button"
+                                        onClick={() => {
+                                          setGlbSteps(prev => {
+                                            const updated = prev.map(s =>
+                                              s.step === g.step
+                                                ? { ...s, cameraPosition: undefined, cameraTarget: undefined }
+                                                : s
+                                            );
+                                            const supabaseClient = createClient();
+                                            supabaseClient
+                                              .from("configuraciones_manual")
+                                              .update({ glb_pasos: updated })
+                                              .eq("proyecto_id", proyecto?.id);
+                                            return updated;
+                                          });
+                                        }}
+                                        className="text-[9px] text-on-surface-variant hover:text-red-400 font-medium"
+                                      >
+                                        Limpiar
+                                      </button>
+                                    )}
+                                  </div>
+                                  
+                                  {/* Pegar coordenadas manualmente */}
+                                  <div className="mt-1 flex items-center gap-1">
+                                    <input
+                                      type="text"
+                                      placeholder="Pegar posición de cámara..."
+                                      value={tempPosInputs[g.step] || ""}
+                                      onChange={(e) => {
+                                        const val = e.target.value;
+                                        setTempPosInputs(prev => ({ ...prev, [g.step]: val }));
+                                        
+                                        const parsed = parseCameraCoords(val);
+                                        if (parsed && parsed.pos && parsed.tgt) {
+                                          setGlbSteps(prev => {
+                                            const updated = prev.map(s =>
+                                              s.step === g.step
+                                                ? { ...s, cameraPosition: parsed.pos, cameraTarget: parsed.tgt }
+                                                : s
+                                            );
+                                            const supabaseClient = createClient();
+                                            supabaseClient
+                                              .from("configuraciones_manual")
+                                              .update({ glb_pasos: updated })
+                                              .eq("proyecto_id", proyecto?.id)
+                                              .then(({ error }) => {
+                                                if (!error) {
+                                                  setSuccessMsg(`Cámara guardada para Paso ${g.step} ✓`);
+                                                }
+                                              });
+                                            return updated;
+                                          });
+                                          setTempPosInputs(prev => {
+                                            const copy = { ...prev };
+                                            delete copy[g.step];
+                                            return copy;
+                                          });
+                                        }
+                                      }}
+                                      className="text-[9px] w-full bg-surface-container-lowest border border-outline-variant/30 rounded px-2 py-0.5 outline-none focus:border-primary text-on-surface placeholder:text-on-surface-variant/40"
+                                    />
+                                  </div>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                          
+                          <button
+                            type="button"
+                            onClick={() => handleSimulateUpload("glb")}
+                            className="flex items-center gap-1.5 rounded-lg border border-primary/30 border-dashed px-4 py-2 text-xs font-semibold text-primary transition hover:bg-primary/5 hover:border-primary"
+                          >
+                            <Plus className="h-3.5 w-3.5" />
+                            Agregar Nuevo Paso (GLB)
+                          </button>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* 2. Imagen de herramientas necesarias */}
+                    <div className="flex flex-col">
+                      <button
+                        type="button"
+                        onClick={() => toggleSection("tools")}
+                        className="flex items-center justify-between p-4 font-bold text-sm text-on-surface bg-surface-container-low hover:bg-surface-container transition-colors"
+                      >
+                        <span className="flex items-center gap-2">
+                          <Image className="h-4.5 w-4.5 text-amber-400" />
+                          2. Imagen de Herramientas Requeridas
+                        </span>
+                        {openSection === "tools" ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                      </button>
+                      
+                      {openSection === "tools" && (
+                        <div className="p-4 bg-surface-container-lowest/50 border-t border-outline-variant/10 text-xs">
+                          <div className="flex items-center justify-between p-3.5 rounded-lg bg-surface-container border border-outline-variant/10">
+                            <span className="font-semibold text-on-surface truncate">{imgHerramientas || "Sin imagen cargada"}</span>
+                            {imgHerramientas ? (
+                              <button
+                                type="button"
+                                onClick={() => handleDeleteItem("tools", null)}
+                                className="text-on-surface-variant hover:text-red-400 p-1"
+                              >
+                                <Trash2 className="h-3.5 w-3.5" />
+                              </button>
+                            ) : (
+                              <button
+                                type="button"
+                                onClick={() => handleSimulateUpload("tools")}
+                                className="text-primary hover:underline font-bold"
+                              >
+                                Subir Imagen
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* 3. Imágenes de Ensambles especiales */}
+                    <div className="flex flex-col">
+                      <button
+                        type="button"
+                        onClick={() => toggleSection("ensambles")}
+                        className="flex items-center justify-between p-4 font-bold text-sm text-on-surface bg-surface-container-low hover:bg-surface-container transition-colors"
+                      >
+                        <span className="flex items-center gap-2">
+                          <Image className="h-4.5 w-4.5 text-purple-400" />
+                          3. Imágenes de Ensambles Especiales ({ensambles.length})
+                        </span>
+                        {openSection === "ensambles" ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                      </button>
+                      
+                      {openSection === "ensambles" && (
+                        <div className="p-4 bg-surface-container-lowest/50 border-t border-outline-variant/10 space-y-3 text-xs">
+                          <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                            {ensambles.map((ens, idx) => (
+                              <div key={idx} className="flex items-center justify-between p-3 rounded-lg bg-surface-container border border-outline-variant/10">
+                                <span className="font-medium text-on-surface truncate">{ens}</span>
+                                <button type="button" onClick={() => handleDeleteItem("ensamble", idx)} className="text-on-surface-variant hover:text-red-400 p-1">
+                                  <Trash2 className="h-3.5 w-3.5" />
+                                </button>
+                              </div>
+                            ))}
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => handleSimulateUpload("ensamble")}
+                            className="flex items-center gap-1 text-[11px] font-bold text-primary hover:underline"
+                          >
+                            <Plus className="h-3 w-3" /> Agregar ensamble especial
+                          </button>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* 4. Garantía del Producto */}
+                    <div className="flex flex-col">
+                      <button
+                        type="button"
+                        onClick={() => toggleSection("garantia")}
+                        className="flex items-center justify-between p-4 font-bold text-sm text-on-surface bg-surface-container-low hover:bg-surface-container transition-colors"
+                      >
+                        <span className="flex items-center gap-2">
+                          <FileText className="h-4.5 w-4.5 text-red-400" />
+                          4. Garantía del Producto
+                        </span>
+                        {openSection === "garantia" ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                      </button>
+                      
+                      {openSection === "garantia" && (
+                        <div className="p-4 bg-surface-container-lowest/50 border-t border-outline-variant/10 text-xs">
+                          <div className="flex items-center justify-between p-3.5 rounded-lg bg-surface-container border border-outline-variant/10">
+                            <span className="font-semibold text-on-surface truncate">{garantiaDoc || "Sin garantía cargada"}</span>
+                            {garantiaDoc ? (
+                              <button
+                                type="button"
+                                onClick={() => handleDeleteItem("garantia", null)}
+                                className="text-on-surface-variant hover:text-red-400 p-1"
+                              >
+                                <Trash2 className="h-3.5 w-3.5" />
+                              </button>
+                            ) : (
+                              <button
+                                type="button"
+                                onClick={() => handleSimulateUpload("garantia")}
+                                className="text-primary hover:underline font-bold"
+                              >
+                                Subir Archivo
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* 5. Fotografías de los Herrajes */}
+                    <div className="flex flex-col">
+                      <button
+                        type="button"
+                        onClick={() => toggleSection("herrajes")}
+                        className="flex items-center justify-between p-4 font-bold text-sm text-on-surface bg-surface-container-low hover:bg-surface-container transition-colors"
+                      >
+                        <span className="flex items-center gap-2">
+                          <Image className="h-4.5 w-4.5 text-indigo-400" />
+                          5. Fotografías de Herrajes Reales ({herrajesFotos.length})
+                        </span>
+                        {openSection === "herrajes" ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                      </button>
+                      
+                      {openSection === "herrajes" && (
+                        <div className="p-4 bg-surface-container-lowest/50 border-t border-outline-variant/10 space-y-3 text-xs">
+                          <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                            {herrajesFotos.map((hf, idx) => (
+                              <div key={idx} className="flex items-center justify-between p-3 rounded-lg bg-surface-container border border-outline-variant/10">
+                                <span className="font-medium text-on-surface truncate">{hf}</span>
+                                <button type="button" onClick={() => handleDeleteItem("herrajes", idx)} className="text-on-surface-variant hover:text-red-400 p-1">
+                                  <Trash2 className="h-3.5 w-3.5" />
+                                </button>
+                              </div>
+                            ))}
+                          </div>
+                          <div className="flex items-center gap-3">
+                            <button
+                              type="button"
+                              onClick={() => handleSimulateUpload("herrajes")}
+                              className="flex items-center gap-1 text-[11px] font-bold text-primary hover:underline"
+                            >
+                              <Plus className="h-3 w-3" /> Agregar foto de herraje
+                            </button>
+                            <button
+                              type="button"
+                              onClick={loadSharedHerrajesLibrary}
+                              className="flex items-center gap-1 text-[11px] font-bold text-indigo-400 hover:underline"
+                            >
+                              <Library className="h-3.5 w-3.5" /> Seleccionar de biblioteca compartida
+                            </button>
+                          </div>
+
+                          {showSharedLibrary && (
+                            <div className="mt-2 p-3 rounded-lg bg-surface-container border border-indigo-400/20 space-y-2">
+                              <p className="text-[10px] text-on-surface-variant font-semibold uppercase">
+                                Biblioteca compartida ({sharedHerrajesLibrary.length} herrajes)
+                              </p>
+                              {sharedHerrajesLibrary.length === 0 ? (
+                                <p className="text-[10px] text-on-surface-variant italic">No hay archivos en la biblioteca compartida.</p>
+                              ) : (
+                                <div className="grid grid-cols-2 gap-1.5 max-h-48 overflow-y-auto">
+                                  {sharedHerrajesLibrary.map(name => {
+                                    const isSelected = herrajesFotos.includes(`_shared:${name}`)
+                                    return (
+                                      <label key={name} className={`flex items-center gap-2 p-2 rounded text-[11px] cursor-pointer
+                                        ${isSelected ? 'bg-indigo-500/20 text-indigo-300' : 'hover:bg-surface-container-high'}`}>
+                                        <input
+                                          type="checkbox"
+                                          checked={isSelected}
+                                          onChange={() => {
+                                            if (isSelected) {
+                                              setHerrajesFotos(prev => prev.filter(h => h !== `_shared:${name}`))
+                                            } else {
+                                              setHerrajesFotos(prev => [...prev, `_shared:${name}`])
+                                            }
+                                          }}
+                                          className="accent-indigo-400 mr-1.5"
+                                        />
+                                        <span className="truncate">{name}</span>
+                                      </label>
+                                    )
+                                  })}
+                                </div>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </div>
+
+
+
+
+                  </div>
+                </div>
+              )}
+
+              {activeTab === "ui" && isTeam && (
+                <div className="space-y-6">
+                  {/* Banner descriptivo */}
+                  <div className="rounded-xl bg-primary/10 border border-primary/20 p-4 flex gap-3 items-start">
+                    <Sparkles className="h-5 w-5 text-primary shrink-0 mt-0.5" />
+                    <div>
+                      <h4 className="text-sm font-bold text-on-surface leading-snug">Personalización de Apariencia e Identidad</h4>
+                      <p className="text-xs text-on-surface-variant/90 leading-relaxed mt-0.5">
+                        Define la paleta de colores, tipografías, logotipos y las texturas tridimensionales PBR del escenario del manual 3D.
+                      </p>
+                    </div>
+                  </div>
+{/* Personalización Gráfica (Branding) */}
                   <div className="rounded-xl bg-surface-container border border-outline-variant/15 p-5 space-y-4 shadow-sm">
                     <h4 className="text-xs font-bold text-on-surface-variant uppercase tracking-wider flex items-center gap-1.5 border-b border-outline-variant/10 pb-2">
                       🎨 Personalización de Identidad Gráfica (Branding)
@@ -3779,578 +4242,6 @@ export function DetalleProyectoModal({ isOpen, onClose, proyecto, onUpdate }: De
                         )}
                       </div>
                     </div>
-                  </div>
-
-                  {/* Input de archivo real oculto */}
-                  <input
-                    type="file"
-                    ref={fileInputRef}
-                    onChange={handleRealUpload}
-                    className="hidden"
-                    multiple
-                  />
-
-                  {/* Accordion list */}
-                  <div className="rounded-xl border border-outline-variant/15 overflow-hidden divide-y divide-outline-variant/15 bg-surface-container-low">
-
-                    
-                    {/* 1. GLB de los pasos */}
-                    <div className="flex flex-col">
-                      <button
-                        type="button"
-                        onClick={() => toggleSection("glb")}
-                        className="flex items-center justify-between p-4 font-bold text-sm text-on-surface bg-surface-container-low hover:bg-surface-container transition-colors"
-                      >
-                        <span className="flex items-center gap-2">
-                          <Box className="h-4.5 w-4.5 text-primary" />
-                          1. Modelos GLB de los Pasos ({glbSteps.length})
-                        </span>
-                        {openSection === "glb" ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
-                      </button>
-                      
-                      {openSection === "glb" && (
-                        <div className="p-4 bg-surface-container-lowest/50 border-t border-outline-variant/10 space-y-3.5">
-                          {/* Botón toggle de cámara */}
-                          <div className="flex items-center justify-between pb-1 border-b border-outline-variant/5">
-                            <span className="text-[10px] text-on-surface-variant italic font-medium">Asigna la posición de la cámara del visor 3D para cada paso.</span>
-                            <button
-                              type="button"
-                              onClick={() => {
-                                const newVal = cameraOverlayActive ? 'off' : 'on'
-                                localStorage.setItem('cameraOverlay', newVal)
-                                setCameraOverlayActive(!cameraOverlayActive)
-                                window.dispatchEvent(new StorageEvent('storage', {
-                                  key: 'cameraOverlay', newValue: newVal
-                                }))
-                                if (realtimeChannelRef.current) {
-                                  realtimeChannelRef.current.send({
-                                    type: 'broadcast',
-                                    event: 'toggle-feature',
-                                    payload: { codigoManual, key: 'cameraOverlay', value: newVal }
-                                  })
-                                }
-                              }}
-                              className={cn(
-                                "flex items-center gap-1.5 text-[11px] font-bold px-2.5 py-1 rounded-md border transition-all duration-200",
-                                cameraOverlayActive
-                                  ? "bg-teal-500/10 border-teal-500/30 text-teal-400 hover:bg-teal-500/20"
-                                  : "bg-surface-container border-outline-variant/20 text-on-surface-variant hover:text-on-surface"
-                              )}
-                            >
-                              <Camera className="h-3.5 w-3.5" />
-                              {cameraOverlayActive ? '🟢 Guía de Cámara Activa' : '⚪ Activar Guía de Cámara'}
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => {
-                                const newVal = lightingEditorActive ? 'off' : 'on'
-                                localStorage.setItem('lightingEditor', newVal)
-                                setLightingEditorActive(!lightingEditorActive)
-                                window.dispatchEvent(new StorageEvent('storage', {
-                                  key: 'lightingEditor', newValue: newVal
-                                }))
-                                if (realtimeChannelRef.current) {
-                                  realtimeChannelRef.current.send({
-                                    type: 'broadcast',
-                                    event: 'toggle-feature',
-                                    payload: { codigoManual, key: 'lightingEditor', value: newVal }
-                                  })
-                                }
-                              }}
-                              className={cn(
-                                "flex items-center gap-1.5 text-[11px] font-bold px-2.5 py-1 rounded-md border transition-all duration-200",
-                                lightingEditorActive
-                                  ? "bg-amber-500/10 border-amber-500/30 text-amber-400 hover:bg-amber-500/20"
-                                  : "bg-surface-container border-outline-variant/20 text-on-surface-variant hover:text-on-surface"
-                              )}
-                            >
-                              ☀️ {lightingEditorActive ? '🟢 Editor de Iluminación Activo' : '⚪ Editor de Iluminación'}
-                            </button>
-                          </div>
-
-                          <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2">
-                            {glbSteps.map((g) => (
-                              <div key={g.step} className="flex flex-col gap-2 p-3 rounded-lg bg-surface-container border border-outline-variant/10 text-xs">
-                                <div className="flex items-center justify-between w-full">
-                                  <div className="flex items-center gap-2">
-                                    <span className="font-bold text-primary">Paso {g.step}</span>
-                                    <span className="text-on-surface-variant truncate max-w-[120px]">{g.fileName}</span>
-                                  </div>
-                                  <div className="flex items-center gap-3">
-                                    {g.progress < 100 ? (
-                                      <div className="flex items-center gap-1.5">
-                                        <Loader2 className="h-3 w-3 animate-spin text-primary" />
-                                        <span className="text-[10px] text-primary">{g.progress}%</span>
-                                      </div>
-                                    ) : (
-                                      <span className="text-[10px] text-success font-semibold uppercase">Listo</span>
-                                    )}
-                                    <button type="button" onClick={() => handleDeleteItem("glb", g.step)} className="text-on-surface-variant hover:text-red-400 p-1">
-                                      <Trash2 className="h-3.5 w-3.5" />
-                                    </button>
-                                  </div>
-                                </div>
-
-                                {/* Estado de posición de cámara */}
-                                <div className="w-full mt-1.5 pt-1.5 border-t border-outline-variant/10">
-                                  <div className="flex items-center justify-between">
-                                    <span className="text-[10px] text-on-surface-variant font-medium flex items-center gap-1">
-                                      🎥 Cámara: {g.cameraPosition && g.cameraTarget ? (
-                                        <span className="text-teal-400 font-bold">Definida</span>
-                                      ) : (
-                                        <span className="text-on-surface-variant/40 italic">Sin definir</span>
-                                      )}
-                                    </span>
-                                    {(g.cameraPosition || g.cameraTarget) && (
-                                      <button
-                                        type="button"
-                                        onClick={() => {
-                                          setGlbSteps(prev => {
-                                            const updated = prev.map(s =>
-                                              s.step === g.step
-                                                ? { ...s, cameraPosition: undefined, cameraTarget: undefined }
-                                                : s
-                                            );
-                                            const supabaseClient = createClient();
-                                            supabaseClient
-                                              .from("configuraciones_manual")
-                                              .update({ glb_pasos: updated })
-                                              .eq("proyecto_id", proyecto?.id);
-                                            return updated;
-                                          });
-                                        }}
-                                        className="text-[9px] text-on-surface-variant hover:text-red-400 font-medium"
-                                      >
-                                        Limpiar
-                                      </button>
-                                    )}
-                                  </div>
-                                  
-                                  {/* Pegar coordenadas manualmente */}
-                                  <div className="mt-1 flex items-center gap-1">
-                                    <input
-                                      type="text"
-                                      placeholder="Pegar posición de cámara..."
-                                      value={tempPosInputs[g.step] || ""}
-                                      onChange={(e) => {
-                                        const val = e.target.value;
-                                        setTempPosInputs(prev => ({ ...prev, [g.step]: val }));
-                                        
-                                        const parsed = parseCameraCoords(val);
-                                        if (parsed && parsed.pos && parsed.tgt) {
-                                          setGlbSteps(prev => {
-                                            const updated = prev.map(s =>
-                                              s.step === g.step
-                                                ? { ...s, cameraPosition: parsed.pos, cameraTarget: parsed.tgt }
-                                                : s
-                                            );
-                                            const supabaseClient = createClient();
-                                            supabaseClient
-                                              .from("configuraciones_manual")
-                                              .update({ glb_pasos: updated })
-                                              .eq("proyecto_id", proyecto?.id)
-                                              .then(({ error }) => {
-                                                if (!error) {
-                                                  setSuccessMsg(`Cámara guardada para Paso ${g.step} ✓`);
-                                                }
-                                              });
-                                            return updated;
-                                          });
-                                          setTempPosInputs(prev => {
-                                            const copy = { ...prev };
-                                            delete copy[g.step];
-                                            return copy;
-                                          });
-                                        }
-                                      }}
-                                      className="text-[9px] w-full bg-surface-container-lowest border border-outline-variant/30 rounded px-2 py-0.5 outline-none focus:border-primary text-on-surface placeholder:text-on-surface-variant/40"
-                                    />
-                                  </div>
-                                </div>
-                              </div>
-                            ))}
-                          </div>
-                          
-                          <button
-                            type="button"
-                            onClick={() => handleSimulateUpload("glb")}
-                            className="flex items-center gap-1.5 rounded-lg border border-primary/30 border-dashed px-4 py-2 text-xs font-semibold text-primary transition hover:bg-primary/5 hover:border-primary"
-                          >
-                            <Plus className="h-3.5 w-3.5" />
-                            Agregar Nuevo Paso (GLB)
-                          </button>
-                        </div>
-                      )}
-                    </div>
-
-                    {/* 2. Imagen de herramientas necesarias */}
-                    <div className="flex flex-col">
-                      <button
-                        type="button"
-                        onClick={() => toggleSection("tools")}
-                        className="flex items-center justify-between p-4 font-bold text-sm text-on-surface bg-surface-container-low hover:bg-surface-container transition-colors"
-                      >
-                        <span className="flex items-center gap-2">
-                          <Image className="h-4.5 w-4.5 text-amber-400" />
-                          2. Imagen de Herramientas Requeridas
-                        </span>
-                        {openSection === "tools" ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
-                      </button>
-                      
-                      {openSection === "tools" && (
-                        <div className="p-4 bg-surface-container-lowest/50 border-t border-outline-variant/10 text-xs">
-                          <div className="flex items-center justify-between p-3.5 rounded-lg bg-surface-container border border-outline-variant/10">
-                            <span className="font-semibold text-on-surface truncate">{imgHerramientas || "Sin imagen cargada"}</span>
-                            {imgHerramientas ? (
-                              <button
-                                type="button"
-                                onClick={() => handleDeleteItem("tools", null)}
-                                className="text-on-surface-variant hover:text-red-400 p-1"
-                              >
-                                <Trash2 className="h-3.5 w-3.5" />
-                              </button>
-                            ) : (
-                              <button
-                                type="button"
-                                onClick={() => handleSimulateUpload("tools")}
-                                className="text-primary hover:underline font-bold"
-                              >
-                                Subir Imagen
-                              </button>
-                            )}
-                          </div>
-                        </div>
-                      )}
-                    </div>
-
-                    {/* 3. Imágenes de Ensambles especiales */}
-                    <div className="flex flex-col">
-                      <button
-                        type="button"
-                        onClick={() => toggleSection("ensambles")}
-                        className="flex items-center justify-between p-4 font-bold text-sm text-on-surface bg-surface-container-low hover:bg-surface-container transition-colors"
-                      >
-                        <span className="flex items-center gap-2">
-                          <Image className="h-4.5 w-4.5 text-purple-400" />
-                          3. Imágenes de Ensambles Especiales ({ensambles.length})
-                        </span>
-                        {openSection === "ensambles" ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
-                      </button>
-                      
-                      {openSection === "ensambles" && (
-                        <div className="p-4 bg-surface-container-lowest/50 border-t border-outline-variant/10 space-y-3 text-xs">
-                          <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-                            {ensambles.map((ens, idx) => (
-                              <div key={idx} className="flex items-center justify-between p-3 rounded-lg bg-surface-container border border-outline-variant/10">
-                                <span className="font-medium text-on-surface truncate">{ens}</span>
-                                <button type="button" onClick={() => handleDeleteItem("ensamble", idx)} className="text-on-surface-variant hover:text-red-400 p-1">
-                                  <Trash2 className="h-3.5 w-3.5" />
-                                </button>
-                              </div>
-                            ))}
-                          </div>
-                          <button
-                            type="button"
-                            onClick={() => handleSimulateUpload("ensamble")}
-                            className="flex items-center gap-1 text-[11px] font-bold text-primary hover:underline"
-                          >
-                            <Plus className="h-3 w-3" /> Agregar ensamble especial
-                          </button>
-                        </div>
-                      )}
-                    </div>
-
-                    {/* 4. Garantía del Producto */}
-                    <div className="flex flex-col">
-                      <button
-                        type="button"
-                        onClick={() => toggleSection("garantia")}
-                        className="flex items-center justify-between p-4 font-bold text-sm text-on-surface bg-surface-container-low hover:bg-surface-container transition-colors"
-                      >
-                        <span className="flex items-center gap-2">
-                          <FileText className="h-4.5 w-4.5 text-red-400" />
-                          4. Garantía del Producto
-                        </span>
-                        {openSection === "garantia" ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
-                      </button>
-                      
-                      {openSection === "garantia" && (
-                        <div className="p-4 bg-surface-container-lowest/50 border-t border-outline-variant/10 text-xs">
-                          <div className="flex items-center justify-between p-3.5 rounded-lg bg-surface-container border border-outline-variant/10">
-                            <span className="font-semibold text-on-surface truncate">{garantiaDoc || "Sin garantía cargada"}</span>
-                            {garantiaDoc ? (
-                              <button
-                                type="button"
-                                onClick={() => handleDeleteItem("garantia", null)}
-                                className="text-on-surface-variant hover:text-red-400 p-1"
-                              >
-                                <Trash2 className="h-3.5 w-3.5" />
-                              </button>
-                            ) : (
-                              <button
-                                type="button"
-                                onClick={() => handleSimulateUpload("garantia")}
-                                className="text-primary hover:underline font-bold"
-                              >
-                                Subir Archivo
-                              </button>
-                            )}
-                          </div>
-                        </div>
-                      )}
-                    </div>
-
-                    {/* 5. Fotografías de los Herrajes */}
-                    <div className="flex flex-col">
-                      <button
-                        type="button"
-                        onClick={() => toggleSection("herrajes")}
-                        className="flex items-center justify-between p-4 font-bold text-sm text-on-surface bg-surface-container-low hover:bg-surface-container transition-colors"
-                      >
-                        <span className="flex items-center gap-2">
-                          <Image className="h-4.5 w-4.5 text-indigo-400" />
-                          5. Fotografías de Herrajes Reales ({herrajesFotos.length})
-                        </span>
-                        {openSection === "herrajes" ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
-                      </button>
-                      
-                      {openSection === "herrajes" && (
-                        <div className="p-4 bg-surface-container-lowest/50 border-t border-outline-variant/10 space-y-3 text-xs">
-                          <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-                            {herrajesFotos.map((hf, idx) => (
-                              <div key={idx} className="flex items-center justify-between p-3 rounded-lg bg-surface-container border border-outline-variant/10">
-                                <span className="font-medium text-on-surface truncate">{hf}</span>
-                                <button type="button" onClick={() => handleDeleteItem("herrajes", idx)} className="text-on-surface-variant hover:text-red-400 p-1">
-                                  <Trash2 className="h-3.5 w-3.5" />
-                                </button>
-                              </div>
-                            ))}
-                          </div>
-                          <div className="flex items-center gap-3">
-                            <button
-                              type="button"
-                              onClick={() => handleSimulateUpload("herrajes")}
-                              className="flex items-center gap-1 text-[11px] font-bold text-primary hover:underline"
-                            >
-                              <Plus className="h-3 w-3" /> Agregar foto de herraje
-                            </button>
-                            <button
-                              type="button"
-                              onClick={loadSharedHerrajesLibrary}
-                              className="flex items-center gap-1 text-[11px] font-bold text-indigo-400 hover:underline"
-                            >
-                              <Library className="h-3.5 w-3.5" /> Seleccionar de biblioteca compartida
-                            </button>
-                          </div>
-
-                          {showSharedLibrary && (
-                            <div className="mt-2 p-3 rounded-lg bg-surface-container border border-indigo-400/20 space-y-2">
-                              <p className="text-[10px] text-on-surface-variant font-semibold uppercase">
-                                Biblioteca compartida ({sharedHerrajesLibrary.length} herrajes)
-                              </p>
-                              {sharedHerrajesLibrary.length === 0 ? (
-                                <p className="text-[10px] text-on-surface-variant italic">No hay archivos en la biblioteca compartida.</p>
-                              ) : (
-                                <div className="grid grid-cols-2 gap-1.5 max-h-48 overflow-y-auto">
-                                  {sharedHerrajesLibrary.map(name => {
-                                    const isSelected = herrajesFotos.includes(`_shared:${name}`)
-                                    return (
-                                      <label key={name} className={`flex items-center gap-2 p-2 rounded text-[11px] cursor-pointer
-                                        ${isSelected ? 'bg-indigo-500/20 text-indigo-300' : 'hover:bg-surface-container-high'}`}>
-                                        <input
-                                          type="checkbox"
-                                          checked={isSelected}
-                                          onChange={() => {
-                                            if (isSelected) {
-                                              setHerrajesFotos(prev => prev.filter(h => h !== `_shared:${name}`))
-                                            } else {
-                                              setHerrajesFotos(prev => [...prev, `_shared:${name}`])
-                                            }
-                                          }}
-                                          className="accent-indigo-400 mr-1.5"
-                                        />
-                                        <span className="truncate">{name}</span>
-                                      </label>
-                                    )
-                                  })}
-                                </div>
-                              )}
-                            </div>
-                          )}
-                        </div>
-                      )}
-                    </div>
-
-                    {/* 6. Ayudas de Interfaz */}
-                    <div className="flex flex-col">
-                      <button
-                        type="button"
-                        onClick={() => toggleSection("ayudas")}
-                        className="flex items-center justify-between p-4 font-bold text-sm text-on-surface bg-surface-container-low hover:bg-surface-container transition-colors"
-                      >
-                        <span className="flex items-center gap-2">
-                          <HelpCircle className="h-4.5 w-4.5 text-primary" />
-                          6. Ayudas de Interfaz y Calibrador
-                        </span>
-                        {openSection === "ayudas" ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
-                      </button>
-
-                      {openSection === "ayudas" && (
-                        <div className="p-4 bg-surface-container-lowest/50 border-t border-outline-variant/10 space-y-4 text-xs">
-                          {/* Botón del Calibrador */}
-                          <div className="flex items-center justify-between p-4 bg-primary/5 rounded-xl border border-primary/20">
-                            <div className="space-y-0.5">
-                              <h5 className="text-xs font-bold text-on-surface">Calibrador de Pantalla y Nubes</h5>
-                              <p className="text-[10px] text-on-surface-variant">Ajusta los márgenes generales y la posición vertical de las nubes inferiores en caliente.</p>
-                            </div>
-                            <button
-                              type="button"
-                              onClick={() => {
-                                const url = window.location.hostname === 'localhost' || window.location.hostname.includes('127.0.0.1')
-                                  ? `http://localhost:5173/calibrador.html?id=${codigoManual}`
-                                  : `/embed/armado/calibrador.html?id=${codigoManual}`;
-                                window.open(url, "_blank");
-                              }}
-                              className="flex items-center gap-1.5 rounded-xl bg-primary px-3.5 py-2 text-xs font-bold text-primary-foreground transition-all hover:bg-primary/90 active:scale-[0.98]"
-                            >
-                              <ExternalLink className="h-3.5 w-3.5" />
-                              Abrir Calibrador
-                            </button>
-                          </div>
-
-                          {/* Campos de texto de las nubes */}
-                          <div className="space-y-4">
-                            <h4 className="text-[10px] font-bold text-on-surface-variant uppercase tracking-wider">Textos de Burbujas de Ayuda (Nubes del Tutorial)</h4>
-                            {[
-                              { key: "ayuda1", label: "Ayuda 1: Guía y Herramientas (Menú Superior)" },
-                              { key: "ayudaLuz", label: "Ayuda Luz: Iluminación y Sombras (Menú Superior)" },
-                              { key: "ayudaVelocidad", label: "Ayuda Velocidad: Ritmo de Audio (Menú Superior)" },
-                              { key: "ayudaIdioma", label: "Ayuda Idioma: Cambiar de Idioma (Menú Superior)" },
-                              { key: "ayuda3", label: "Ayuda 3: Navegación de Pasos (Barra Inferior)" },
-                              { key: "ayuda4", label: "Ayuda 4: Buscador de Piezas (Barra Inferior)" },
-                              { key: "ayuda5", label: "Ayuda 5: Play y Pausa de Audio (Barra Inferior)" },
-                              { key: "ayuda6", label: "Ayuda 6: Realidad Aumentada" }
-                            ].map((h) => {
-                              const itemData = ayudasTexto[h.key] || {}
-                              const titleEs = itemData.title_es !== undefined ? itemData.title_es : (defaultAyudas[h.key]?.title_es || "")
-                              const contentEs = itemData.content_es !== undefined ? itemData.content_es : (defaultAyudas[h.key]?.content_es || "")
-                              const titleEn = itemData.title_en !== undefined ? itemData.title_en : (defaultAyudas[h.key]?.title_en || "")
-                              const contentEn = itemData.content_en !== undefined ? itemData.content_en : (defaultAyudas[h.key]?.content_en || "")
-
-                              return (
-                                <div key={h.key} className="p-4 rounded-xl bg-surface-container border border-outline-variant/10 space-y-4">
-                                  <h5 className="font-semibold text-xs text-primary">{h.label}</h5>
-                                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                    {/* Español */}
-                                    <div className="space-y-3">
-                                      <span className="text-[10px] font-bold text-on-surface-variant/70 uppercase">Versión Español</span>
-                                      <label className="flex flex-col gap-1">
-                                        <span className="text-[10px] text-on-surface-variant">Título</span>
-                                        <input
-                                          type="text"
-                                          value={titleEs}
-                                          onChange={(e) => {
-                                            const newVal = e.target.value
-                                            setAyudasTexto((prev: any) => ({
-                                              ...prev,
-                                              [h.key]: {
-                                                ...(prev[h.key] || {}),
-                                                title_es: newVal
-                                              }
-                                            }))
-                                          }}
-                                          placeholder="Título en español"
-                                          className="rounded-lg border border-outline-variant bg-surface-container-low px-3 py-1.5 text-xs text-on-surface outline-none transition focus:border-primary"
-                                        />
-                                      </label>
-                                      <label className="flex flex-col gap-1">
-                                        <span className="text-[10px] text-on-surface-variant">Contenido (Para Ayuda 1, coloca un elemento por línea)</span>
-                                        <textarea
-                                          value={contentEs}
-                                          onChange={(e) => {
-                                            const newVal = e.target.value
-                                            setAyudasTexto((prev: any) => ({
-                                              ...prev,
-                                              [h.key]: {
-                                                ...(prev[h.key] || {}),
-                                                content_es: newVal
-                                              }
-                                            }))
-                                          }}
-                                          rows={15}
-                                          placeholder="Contenido en español"
-                                          className="rounded-lg border border-outline-variant bg-surface-container-low px-3 py-1.5 text-xs text-on-surface outline-none transition focus:border-primary"
-                                        />
-                                      </label>
-                                    </div>
-
-                                    {/* Inglés */}
-                                    <div className="space-y-3">
-                                      <div className="flex items-center justify-between">
-                                        <span className="text-[10px] font-bold text-on-surface-variant/70 uppercase">Versión Inglés</span>
-                                        <button
-                                          type="button"
-                                          disabled={translatingAyuda !== null}
-                                          onClick={() => handleTranslateAyuda(h.key)}
-                                          className="flex items-center gap-1 text-[9px] font-bold text-primary hover:underline"
-                                        >
-                                          {translatingAyuda === h.key ? (
-                                            <Loader2 className="h-2.5 w-2.5 animate-spin" />
-                                          ) : (
-                                            <Sparkles className="h-2.5 w-2.5" />
-                                          )}
-                                          Traducir automáticamente
-                                        </button>
-                                      </div>
-                                      <label className="flex flex-col gap-1">
-                                        <span className="text-[10px] text-on-surface-variant">Título (EN)</span>
-                                        <input
-                                          type="text"
-                                          value={titleEn}
-                                          onChange={(e) => {
-                                            const newVal = e.target.value
-                                            setAyudasTexto((prev: any) => ({
-                                              ...prev,
-                                              [h.key]: {
-                                                ...(prev[h.key] || {}),
-                                                title_en: newVal
-                                              }
-                                            }))
-                                          }}
-                                          placeholder="Title in English"
-                                          className="rounded-lg border border-outline-variant bg-surface-container-low px-3 py-1.5 text-xs text-on-surface outline-none transition focus:border-primary"
-                                        />
-                                      </label>
-                                      <label className="flex flex-col gap-1">
-                                        <span className="text-[10px] text-on-surface-variant">Contenido (EN)</span>
-                                        <textarea
-                                          value={contentEn}
-                                          onChange={(e) => {
-                                            const newVal = e.target.value
-                                            setAyudasTexto((prev: any) => ({
-                                              ...prev,
-                                              [h.key]: {
-                                                ...(prev[h.key] || {}),
-                                                content_en: newVal
-                                              }
-                                            }))
-                                          }}
-                                          rows={15}
-                                          placeholder="Content in English"
-                                          className="rounded-lg border border-outline-variant bg-surface-container-low px-3 py-1.5 text-xs text-on-surface outline-none transition focus:border-primary"
-                                        />
-                                      </label>
-                                    </div>
-                                  </div>
-                                </div>
-                              )
-                            })}
-                          </div>
-                        </div>
-                      )}
-                    </div>
-
-
                   </div>
                 </div>
               )}
@@ -5411,6 +5302,238 @@ export function DetalleProyectoModal({ isOpen, onClose, proyecto, onUpdate }: De
                     )}
                   </div>
 
+
+                  {/* Ayudas de Interfaz y Calibrador */}
+                  <div className="rounded-xl border border-outline-variant/15 overflow-hidden bg-surface-container-low mt-6">
+                  {/* 6. Ayudas de Interfaz */}
+                  <div className="flex flex-col">
+                    <button
+                      type="button"
+                      onClick={() => toggleSection("ayudas")}
+                      className="flex items-center justify-between p-4 font-bold text-sm text-on-surface bg-surface-container-low hover:bg-surface-container transition-colors"
+                    >
+                      <span className="flex items-center gap-2">
+                        <HelpCircle className="h-4.5 w-4.5 text-primary" />
+                        Ayudas de Interfaz y Calibrador
+                      </span>
+                      {openSection === "ayudas" ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                    </button>
+
+                    {openSection === "ayudas" && (
+                      <div className="p-4 bg-surface-container-lowest/50 border-t border-outline-variant/10 space-y-4 text-xs">
+                        {/* Botón del Calibrador */}
+                        <div className="flex items-center justify-between p-4 bg-primary/5 rounded-xl border border-primary/20">
+                          <div className="space-y-0.5">
+                            <h5 className="text-xs font-bold text-on-surface">Calibrador de Pantalla y Nubes</h5>
+                            <p className="text-[10px] text-on-surface-variant">Ajusta los márgenes generales y la posición vertical de las nubes inferiores en caliente.</p>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const url = window.location.hostname === 'localhost' || window.location.hostname.includes('127.0.0.1')
+                                ? `http://localhost:5173/calibrador.html?id=${codigoManual}`
+                                : `/embed/armado/calibrador.html?id=${codigoManual}`;
+                              window.open(url, "_blank");
+                            }}
+                            className="flex items-center gap-1.5 rounded-xl bg-primary px-3.5 py-2 text-xs font-bold text-primary-foreground transition-all hover:bg-primary/90 active:scale-[0.98]"
+                          >
+                            <ExternalLink className="h-3.5 w-3.5" />
+                            Abrir Calibrador
+                          </button>
+                        </div>
+
+                        {/* Campos de texto de las nubes */}
+                        <div className="space-y-4">
+                          <h4 className="text-[10px] font-bold text-on-surface-variant uppercase tracking-wider">Textos de Burbujas de Ayuda (Nubes del Tutorial)</h4>
+                          {[
+                            { key: "ayuda1", label: "Ayuda 1: Guía y Herramientas (Menú Superior)" },
+                            { key: "ayudaLuz", label: "Ayuda Luz: Iluminación y Sombras (Menú Superior)" },
+                            { key: "ayudaVelocidad", label: "Ayuda Velocidad: Ritmo de Audio (Menú Superior)" },
+                            { key: "ayudaIdioma", label: "Ayuda Idioma: Cambiar de Idioma (Menú Superior)" },
+                            { key: "ayuda3", label: "Ayuda 3: Navegación de Pasos (Barra Inferior)" },
+                            { key: "ayuda4", label: "Ayuda 4: Buscador de Piezas (Barra Inferior)" },
+                            { key: "ayuda5", label: "Ayuda 5: Play y Pausa de Audio (Barra Inferior)" },
+                            { key: "ayuda6", label: "Ayuda 6: Realidad Aumentada" }
+                          ].map((h) => {
+                            const itemData = ayudasTexto[h.key] || {}
+                            const titleEs = itemData.title_es !== undefined ? itemData.title_es : (defaultAyudas[h.key]?.title_es || "")
+                            const contentEs = itemData.content_es !== undefined ? itemData.content_es : (defaultAyudas[h.key]?.content_es || "")
+                            const titleEn = itemData.title_en !== undefined ? itemData.title_en : (defaultAyudas[h.key]?.title_en || "")
+                            const contentEn = itemData.content_en !== undefined ? itemData.content_en : (defaultAyudas[h.key]?.content_en || "")
+                            const titlePt = itemData.title_pt !== undefined ? itemData.title_pt : (defaultAyudas[h.key]?.title_pt || "")
+                            const contentPt = itemData.content_pt !== undefined ? itemData.content_pt : (defaultAyudas[h.key]?.content_pt || "")
+
+                            return (
+                              <div key={h.key} className="p-4 rounded-xl bg-surface-container border border-outline-variant/10 space-y-4">
+                                <h5 className="font-semibold text-xs text-primary">{h.label}</h5>
+                                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                  {/* Español */}
+                                  <div className="space-y-3">
+                                    <span className="text-[10px] font-bold text-on-surface-variant/70 uppercase">Versión Español</span>
+                                    <label className="flex flex-col gap-1">
+                                      <span className="text-[10px] text-on-surface-variant">Título</span>
+                                      <input
+                                        type="text"
+                                        value={titleEs}
+                                        onChange={(e) => {
+                                          const newVal = e.target.value
+                                          setAyudasTexto((prev: any) => ({
+                                            ...prev,
+                                            [h.key]: {
+                                              ...(prev[h.key] || {}),
+                                              title_es: newVal
+                                            }
+                                          }))
+                                        }}
+                                        placeholder="Título en español"
+                                        className="rounded-lg border border-outline-variant bg-surface-container-low px-3 py-1.5 text-xs text-on-surface outline-none transition focus:border-primary"
+                                      />
+                                    </label>
+                                    <label className="flex flex-col gap-1">
+                                      <span className="text-[10px] text-on-surface-variant">Contenido (Para Ayuda 1, coloca un elemento por línea)</span>
+                                      <textarea
+                                        value={contentEs}
+                                        onChange={(e) => {
+                                          const newVal = e.target.value
+                                          setAyudasTexto((prev: any) => ({
+                                            ...prev,
+                                            [h.key]: {
+                                              ...(prev[h.key] || {}),
+                                              content_es: newVal
+                                            }
+                                          }))
+                                        }}
+                                        rows={5}
+                                        placeholder="Contenido en español"
+                                        className="rounded-lg border border-outline-variant bg-surface-container-low px-3 py-1.5 text-xs text-on-surface outline-none transition focus:border-primary"
+                                      />
+                                    </label>
+                                  </div>
+
+                                  {/* Inglés */}
+                                  <div className="space-y-3">
+                                    <div className="flex items-center justify-between">
+                                      <span className="text-[10px] font-bold text-on-surface-variant/70 uppercase">Versión Inglés</span>
+                                      <button
+                                        type="button"
+                                        disabled={translatingAyuda !== null}
+                                        onClick={() => handleTranslateAyuda(h.key, "en")}
+                                        className="flex items-center gap-1 text-[9px] font-bold text-primary hover:underline"
+                                      >
+                                        {translatingAyuda === `${h.key}_en` ? (
+                                          <Loader2 className="h-2.5 w-2.5 animate-spin" />
+                                        ) : (
+                                          <Sparkles className="h-2.5 w-2.5" />
+                                        )}
+                                        Traducir automáticamente
+                                      </button>
+                                    </div>
+                                    <label className="flex flex-col gap-1">
+                                      <span className="text-[10px] text-on-surface-variant">Título (EN)</span>
+                                      <input
+                                        type="text"
+                                        value={titleEn}
+                                        onChange={(e) => {
+                                          const newVal = e.target.value
+                                          setAyudasTexto((prev: any) => ({
+                                            ...prev,
+                                            [h.key]: {
+                                              ...(prev[h.key] || {}),
+                                              title_en: newVal
+                                            }
+                                          }))
+                                        }}
+                                        placeholder="Title in English"
+                                        className="rounded-lg border border-outline-variant bg-surface-container-low px-3 py-1.5 text-xs text-on-surface outline-none transition focus:border-primary"
+                                      />
+                                    </label>
+                                    <label className="flex flex-col gap-1">
+                                      <span className="text-[10px] text-on-surface-variant">Contenido (EN)</span>
+                                      <textarea
+                                        value={contentEn}
+                                        onChange={(e) => {
+                                          const newVal = e.target.value
+                                          setAyudasTexto((prev: any) => ({
+                                            ...prev,
+                                            [h.key]: {
+                                              ...(prev[h.key] || {}),
+                                              content_en: newVal
+                                            }
+                                          }))
+                                        }}
+                                        rows={5}
+                                        placeholder="Content in English"
+                                        className="rounded-lg border border-outline-variant bg-surface-container-low px-3 py-1.5 text-xs text-on-surface outline-none transition focus:border-primary"
+                                      />
+                                    </label>
+                                  </div>
+
+                                  {/* Portugués */}
+                                  <div className="space-y-3">
+                                    <div className="flex items-center justify-between">
+                                      <span className="text-[10px] font-bold text-on-surface-variant/70 uppercase">Versión Portugués</span>
+                                      <button
+                                        type="button"
+                                        disabled={translatingAyuda !== null}
+                                        onClick={() => handleTranslateAyuda(h.key, "pt")}
+                                        className="flex items-center gap-1 text-[9px] font-bold text-primary hover:underline"
+                                      >
+                                        {translatingAyuda === `${h.key}_pt` ? (
+                                          <Loader2 className="h-2.5 w-2.5 animate-spin" />
+                                        ) : (
+                                          <Sparkles className="h-2.5 w-2.5" />
+                                        )}
+                                        Traducir automáticamente
+                                      </button>
+                                    </div>
+                                    <label className="flex flex-col gap-1">
+                                      <span className="text-[10px] text-on-surface-variant">Título (PT)</span>
+                                      <input
+                                        type="text"
+                                        value={titlePt}
+                                        onChange={(e) => {
+                                          const newVal = e.target.value
+                                          setAyudasTexto((prev: any) => ({
+                                            ...prev,
+                                            [h.key]: {
+                                              ...(prev[h.key] || {}),
+                                              title_pt: newVal
+                                            }
+                                          }))
+                                        }}
+                                        placeholder="Título em português"
+                                        className="rounded-lg border border-outline-variant bg-surface-container-low px-3 py-1.5 text-xs text-on-surface outline-none transition focus:border-primary"
+                                      />
+                                    </label>
+                                    <label className="flex flex-col gap-1">
+                                      <span className="text-[10px] text-on-surface-variant">Contenido (PT)</span>
+                                      <textarea
+                                        value={contentPt}
+                                        onChange={(e) => {
+                                          const newVal = e.target.value
+                                          setAyudasTexto((prev: any) => ({
+                                            ...prev,
+                                            [h.key]: {
+                                              ...(prev[h.key] || {}),
+                                              content_pt: newVal
+                                            }
+                                          }))
+                                        }}
+                                        rows={5}
+                                        placeholder="Conteúdo em português"
+                                        className="rounded-lg border border-outline-variant bg-surface-container-low px-3 py-1.5 text-xs text-on-surface outline-none transition focus:border-primary"
+                                      />
+                                    </label>
+                                  </div>
+                                </div>
+                              </div>
+                            )
+                          })}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                  </div>
                 </div>
               )}
 {activeTab === "despiece" && isTeam && (
@@ -5931,6 +6054,17 @@ export function DetalleProyectoModal({ isOpen, onClose, proyecto, onUpdate }: De
 
             </div>
 
+
+            {/* Input de archivo real oculto */}
+{/* Input de archivo real oculto */}
+                <input
+                  type="file"
+                  ref={fileInputRef}
+                  onChange={handleRealUpload}
+                  className="hidden"
+                  multiple
+                />
+
             {/* Modal Footer */}
             <div className="flex items-center justify-between border-t border-outline-variant p-6 bg-surface-container-low">
               <div className="text-xs text-on-surface-variant/60 font-mono">
@@ -5957,7 +6091,7 @@ export function DetalleProyectoModal({ isOpen, onClose, proyecto, onUpdate }: De
                   Cerrar
                 </button>
                 
-                {(activeTab === "insumos" || activeTab === "audios") && isTeam && (
+                {(activeTab === "insumos" || activeTab === "ui" || activeTab === "audios") && isTeam && (
                   <button
                     type="button"
                     onClick={handleSaveInsumos}

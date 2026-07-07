@@ -10,6 +10,12 @@ import { isPieceName, extractPieceNumber, translatePieceLabel } from "../../../l
 function cleanMeshIdentifier(rawName) {
   if (!rawName) return "";
   
+  // Immediate return guard for already cleaned Tornillo names
+  const lowerRaw = rawName.toLowerCase().trim();
+  if (lowerRaw === "tornillo_1" || lowerRaw === "tornillo_2") {
+    return rawName.trim();
+  }
+  
   // GUARDIA: Si es un nombre de pieza (Pieza/Peça/Part + número),
   // retornarlo tal cual sin recortar el número legítimo
   const pieceData = extractPieceNumber(rawName);
@@ -18,7 +24,7 @@ function cleanMeshIdentifier(rawName) {
   }
   // Si empieza con sinónimo de pieza pero sin número, pasar al flujo normal
   if (isPieceName(rawName)) {
-    return resolveAlias(rawName.trim());
+    return rawName.trim();
   }
   
   // 1. Obtener la primera sección (antes de cualquier "-") y limpiar espacios
@@ -72,12 +78,21 @@ function cleanMeshIdentifier(rawName) {
     }
   }
 
-  // 5. Regla específica para PERNO_ con espacio
-  if (name.toUpperCase().startsWith("PERNO_") && name.includes(" ")) {
-    name = name.split(" ")[0];
+  // Specific rule for two types of Tornillos (inverted to match P01 correct screw)
+  const lowerName = name.toLowerCase();
+  if (lowerName.startsWith("tornillo_0000152")) {
+    name = "Tornillo_2";
+  } else if (lowerName.startsWith("tornillo_0004705") || lowerName.startsWith("tornillo_000152")) {
+    name = "Tornillo_1";
+  } else {
+    // Nueva regla: Quitar codificación numérica de herrajes españoles (todo lo que va desde el primer '_')
+    const esHerrajeMaderkit = /tornillo|perno|tarugo|bisagra|deslizador|corredera|riel|soporte|clavo|tapa|minifix|cama|perfil|regula|patin|pivote|tuerca|arandela|jaladera|tirador|pija|angulo|union|mensula|mariposa/i.test(name);
+    if (esHerrajeMaderkit && name.includes("_")) {
+      name = name.split("_")[0];
+    }
   }
   
-  return resolveAlias(name);
+  return name;
 }
 
 

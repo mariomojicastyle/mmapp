@@ -3,17 +3,26 @@ const sessionBuster = Date.now();
 export const nameAliases = {
   'caja_0007374': 'Caja_minifix',
   'caja_0002715': 'Caja_minifix',
+  'caja': 'Caja_minifix',
   'deslizador_007391': 'Deslizador',
   'deslizador_0004696': 'Deslizador',
+  'deslizador': 'Deslizador',
   'perno_0007374': 'Perno',
+  'perno': 'Perno',
   'tarugo_20030001': 'Tarugo',
   'tarugo_20030': 'Tarugo',
-  'tornillo_0000152': 'Tornillo_123',
-  'tornillo_000152': 'Tornillo_456',
-  'tornillo_0004705': 'Tornillo_456',
+  'tarugo': 'Tarugo',
+  'tornillo_0000152': 'Tornillo_2',
+  'tornillo_000152': 'Tornillo_1',
+  'tornillo_0004705': 'Tornillo_1',
+  'tornillo_1': 'Tornillo_1',
+  'tornillo_2': 'Tornillo_2',
+  'tornillo': 'Tornillo',
   'tuerca_0004674': 'Tuerca',
+  'tuerca': 'Tuerca',
   'corredera_350_20080001': 'Rieles',
-  'corredera_350': 'Rieles'
+  'corredera_350': 'Rieles',
+  'corredera': 'Rieles'
 };
 
 export function resolveAlias(name) {

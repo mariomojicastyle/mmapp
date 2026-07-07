@@ -38,6 +38,11 @@ Este archivo es la "Memoria RAM" para Antigravity. Contiene el contexto de lo qu
   - Creación de API Route `/api/metrics/collect` en Next.js con rate limiting (40 llamadas/min) para evitar escrituras directas del cliente en Supabase.
   - Diseño e implementación de la vista de reportes PDF de fricción en la consola, optimizada para impresión física en tamaño A4 (`@media print`).
   - Creación del archivo maestro de diseño técnico [Arquitectura.md](file:///c:/Desarrollo/mmapp/Arquitectura/Arquitectura.md) y diagrama vectorial [arquitectura_V7.svg](file:///c:/Desarrollo/mmapp/Arquitectura/arquitectura_V7.svg) como ancla de referencia para el proyecto.
+- [x] **Resolución y Separación de Tornillos Maderkit (PolitornoP01 - 07 de Julio, 2026)**:
+  - Corrección de la duplicidad y colisión de tornillos de dos tipos (Tornillo_1 y Tornillo_2) en la Estantería Multifuncional (M00001).
+  - Reestructuración de la base de datos para separar el inventario oficial en Tornillo_1 (84 unidades, corto plateado para correderas) y Tornillo_2 (32 unidades, largo negro de estructura).
+  - Inversión de mapeos y blindaje del algoritmo de limpieza en detalle-proyecto-modal.tsx, PanelHerrajes.jsx, PanelCantidades.jsx, y Model.jsx, resolviendo que Tornillo_0000152 se limpie a Tornillo_2 y Tornillo_0004705 a Tornillo_1.
+  - Corrección del bypass en PanelBtn.jsx para permitir la apertura inmediata de PanelCantidades en el paso 00.
 
 
 ### 🚧 Bloqueos / Notas Técnicas

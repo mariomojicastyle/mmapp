@@ -34,23 +34,58 @@ export default function PanelHerrajes({ id, data }) {
 
   const [herrajes, setHerrajes] = useState([]);
 
+  const sanitizeForCompare = (s) => {
+    if (!s) return "";
+    return s.toLowerCase()
+      .replace(/ç/g, "_")
+      .replace(/ã/g, "a")
+      .replace(/õ/g, "o")
+      .replace(/[^a-z0-9]/g, "_")
+      .replace(/_+/g, "_")
+      .replace(/^_+|_+$/g, "");
+  };
+
   // Resuelve la imagen del herraje a través del proxy de Vite.
   // Cadena de resolución: {manualId}/herrajes/ → _herrajes_compartidos/ → /assets/herrajes/
   const getHerrajeImageUrl = (keyName) => {
     if (data?.isDynamicCMS && Array.isArray(data?.fotosHerrajesList)) {
-      const keyLower = keyName.toLowerCase();
-      const matchedFile = data.fotosHerrajesList.find(file => {
+      const keyClean = resolveAlias(limpiarNombreMalla(keyName));
+      const keySan = sanitizeForCompare(keyClean);
+      
+      let bestMatch = null;
+      let bestScore = -1;
+      
+      for (const file of data.fotosHerrajesList) {
         const cleanFile = file.startsWith('_shared:') ? file.replace('_shared:', '') : file;
         const baseName = cleanFile.substring(0, cleanFile.lastIndexOf('.')) || cleanFile;
-        return baseName.toLowerCase() === keyLower;
-      });
+        const fileSan = sanitizeForCompare(baseName);
+        
+        if (fileSan === keySan) {
+          bestMatch = file;
+          break;
+        }
+        
+        if (keySan.startsWith(fileSan)) {
+          const score = fileSan.length;
+          if (score > bestScore) {
+            bestScore = score;
+            bestMatch = file;
+          }
+        } else if (fileSan.startsWith(keySan)) {
+          const score = keySan.length;
+          if (score > bestScore) {
+            bestScore = score;
+            bestMatch = file;
+          }
+        }
+      }
 
-      if (matchedFile) {
-        if (matchedFile.startsWith('_shared:')) {
-          const realName = matchedFile.replace('_shared:', '');
+      if (bestMatch) {
+        if (bestMatch.startsWith('_shared:')) {
+          const realName = bestMatch.replace('_shared:', '');
           return getAssetPath(`/assets/herrajes_compartidos/${realName}`);
         }
-        return getAssetPath(`/${id}/herrajes/${matchedFile}`);
+        return getAssetPath(`/${id}/herrajes/${bestMatch}`);
       }
     }
     return null;
@@ -60,6 +95,12 @@ export default function PanelHerrajes({ id, data }) {
   // Garantiza que el nombre mostrado sea IDÉNTICO al del despiece en la plataforma.
   const limpiarNombreMalla = (rawName) => {
     if (!rawName) return "";
+    
+    // Immediate return guard for already cleaned Tornillo names
+    const lowerRaw = rawName.toLowerCase().trim();
+    if (lowerRaw === "tornillo_1" || lowerRaw === "tornillo_2") {
+      return rawName.trim();
+    }
     
     // 1. Obtener la primera sección (antes de cualquier "-") y limpiar
     let name = rawName.split("-")[0].trim();
@@ -115,12 +156,21 @@ export default function PanelHerrajes({ id, data }) {
     // Caso 2: Código de 7 dígitos (ej. 0002715) + 3 dígitos de copia (ej. 003) = 10 dígitos (ej. 0002715003)
     name = name.replace(/_(000\d{4})\d{3}$/i, "_$1");
     
-    // 5. Regla específica para PERNO_ con espacio
-    if (name.toUpperCase().startsWith("PERNO_") && name.includes(" ")) {
-      name = name.split(" ")[0];
+    // Specific rule for two types of Tornillos (inverted to match P01 correct screw)
+    const lowerName = name.toLowerCase();
+    if (lowerName.startsWith("tornillo_0000152")) {
+      name = "Tornillo_2";
+    } else if (lowerName.startsWith("tornillo_0004705") || lowerName.startsWith("tornillo_000152")) {
+      name = "Tornillo_1";
+    } else {
+      // Nueva regla: Quitar codificación numérica de herrajes españoles (todo lo que va desde el primer '_')
+      const esHerrajeMaderkit = /tornillo|perno|tarugo|bisagra|deslizador|corredera|riel|soporte|clavo|tapa|minifix|cama|perfil|regula|patin|pivote|tuerca|arandela|jaladera|tirador|pija|angulo|union|mensula|mariposa/i.test(name);
+      if (esHerrajeMaderkit && name.includes("_")) {
+        name = name.split("_")[0];
+      }
     }
     
-    return resolveAlias(name);
+    return name;
   };
 
   // Detecta si un nombre limpio corresponde a un herraje usando palabras clave
@@ -132,8 +182,8 @@ export default function PanelHerrajes({ id, data }) {
     // Inclusiones especiales
     if (lower.startsWith("caja") || lower.startsWith("puntilla")) return true;
     if (/^\d+$/.test(nombreLimpio)) return true;
-    // Palabras clave genéricas
-    return /tornillo|perno|tarugo|bisagra|deslizador|corredera|soporte|clavo|tapa|minifix|cama|perfil|regula|patin|pivote|tuerca|arandela|jaladera|tirador|pija|angulo|union|mensula|mariposa/i.test(nombreLimpio);
+    // Palabras clave genéricas (Español y Portugués)
+    return /tornillo|perno|tarugo|bisagra|deslizador|corredera|riel|soporte|clavo|tapa|minifix|cama|perfil|regula|patin|pivote|tuerca|arandela|jaladera|tirador|pija|angulo|union|mensula|mariposa|parafuso|cavilha|chave|cola|corrediça|dobradiça|prego|sapata|haste|tambor|tampa|suporte|cantoneira|porca|arruela|puxador|pino|girofix/i.test(nombreLimpio);
   };
 
   // Se realiza un recorrido por el modelo para extraer SOLO herrajes (NO piezas de madera).

@@ -6,6 +6,7 @@ import "./PanelBtn.css";
 export default function PanelBtn() {
 
   const PositivePanel = useEnviroment((state) => state.PositivePanel);
+  const PanelCantidadesTrue = useEnviroment((state) => state.PanelCantidadesTrue);
   const btnCerrarTrue = useEnviroment((state) => state.btnCerrarTrue);
   const AudioEnded = useEnviroment((state) => state.AudioEnded);
   const pasoActual = useEnviroment((state) => state.pasoActual);
@@ -37,7 +38,12 @@ export default function PanelBtn() {
 
   // Al dar click se activa el panel de herrajes
   const ClickPanelBtn = () => {
-    PositivePanel();
+    const pasoInt = parseInt(pasoActual, 10);
+    if (pasoInt === 0) {
+      PanelCantidadesTrue();
+    } else {
+      PositivePanel();
+    }
     btnCerrarTrue();
   };
 
