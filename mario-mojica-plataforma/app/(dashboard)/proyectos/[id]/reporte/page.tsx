@@ -1,6 +1,7 @@
 import { getProyectoDetalle, getMetricasDetalleProducto } from "@/app/actions/metricas"
 import { redirect } from "next/navigation"
 import Link from "next/link"
+import BotonImprimir from "@/components/proyectos/boton-imprimir"
 
 interface PageProps {
   params: Promise<{ id: string }>
@@ -67,13 +68,7 @@ export default async function ReportePage({ params }: PageProps) {
           <span className="material-symbols-outlined text-base">arrow_back</span>
           Volver a Proyectos
         </Link>
-        <button
-          onClick={() => window.print()}
-          className="flex items-center gap-2 bg-teal-600 hover:bg-teal-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors shadow-sm cursor-pointer"
-        >
-          <span className="material-symbols-outlined text-base">print</span>
-          Imprimir Reporte (PDF)
-        </button>
+        <BotonImprimir />
       </div>
 
       {/* Contenido Imprimible */}

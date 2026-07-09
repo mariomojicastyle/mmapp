@@ -64,6 +64,8 @@ export default create(
       icono: "",//url del icono del fabricante
 
       AudioEnded: false,//Variable de audio finalizado
+      AnimationEnded: false,//Variable de animación 3D finalizada
+      colorObjetoTocado: "#ec4899",//Color de objeto tocado / resaltado
 
       CloudOneTime: true,//Valida que los tootlips de los paneles solo se activen una vez.
 
@@ -205,6 +207,11 @@ export default create(
 
       AudioEndedFalse: (icon) => set((state) => ({ AudioEnded: false })),
       AudioEndedTrue: (icon) => set((state) => ({ AudioEnded: true })),
+
+      AnimationEndedFalse: () => set((state) => ({ AnimationEnded: false })),
+      AnimationEndedTrue: () => set((state) => ({ AnimationEnded: true })),
+
+      SetColorObjetoTocado: (color) => set(() => ({ colorObjetoTocado: color })),
 
 
       CloudOneTimeFalse: () => set((state) => ({ CloudOneTime: false })),

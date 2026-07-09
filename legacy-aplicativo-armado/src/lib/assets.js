@@ -54,3 +54,55 @@ export function getAssetPath(path) {
   return `${basename}${cleanPath}${separator}v=${sessionBuster}`;
 }
 
+export function translateHerraje(name, glosario, idioma) {
+  if (!name || !glosario || !Array.isArray(glosario) || glosario.length === 0) {
+    return name;
+  }
+  const cleanLang = (idioma || 'es').toLowerCase();
+  
+  const sanitize = (s) => {
+    if (!s) return "";
+    return s.toLowerCase()
+      .replace(/ç/g, "_")
+      .replace(/ã/g, "a")
+      .replace(/õ/g, "o")
+      .replace(/[^a-z0-9]/g, "_")
+      .replace(/_+/g, "_")
+      .replace(/^_+|_+$/g, "");
+  };
+
+  const nameSan = sanitize(name);
+  if (!nameSan) return name;
+
+  // Ordenamos el glosario por longitud del término en pt desc, luego es desc, luego en desc
+  // para hacer primero la coincidencia más larga (evitar falsos positivos parciales)
+  const sortedGlosario = [...glosario].sort((a, b) => {
+    const lenA = Math.max((a.pt || "").length, (a.es || "").length, (a.en || "").length);
+    const lenB = Math.max((b.pt || "").length, (b.es || "").length, (b.en || "").length);
+    return lenB - lenA;
+  });
+
+  for (const entry of sortedGlosario) {
+    const ptSan = sanitize(entry.pt);
+    const esSan = sanitize(entry.es);
+    const enSan = sanitize(entry.en);
+    
+    // Coincidencia exacta o por prefijo
+    const isMatch = (
+      (ptSan && (nameSan === ptSan || nameSan.startsWith(ptSan) || ptSan.startsWith(nameSan))) ||
+      (esSan && (nameSan === esSan || nameSan.startsWith(esSan) || esSan.startsWith(nameSan))) ||
+      (enSan && (nameSan === enSan || nameSan.startsWith(enSan) || enSan.startsWith(nameSan)))
+    );
+    
+    if (isMatch) {
+      if (cleanLang === 'en' && entry.en) return entry.en;
+      if (cleanLang === 'pt' && entry.pt) return entry.pt;
+      if (cleanLang === 'es' && entry.es) return entry.es;
+      return entry[cleanLang] || entry.es || entry.pt || entry.en || name;
+    }
+  }
+
+  return name;
+}
+
+

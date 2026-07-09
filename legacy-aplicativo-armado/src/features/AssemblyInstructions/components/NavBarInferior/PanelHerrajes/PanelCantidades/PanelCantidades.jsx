@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import { isPieceName } from "../../../../../../lib/pieceUtils.js";
 import "./PanelCantidades.css";
 import * as THREE from "three";
-import { getAssetPath, resolveAlias } from "../../../../../../lib/assets.js";
+import { getAssetPath, resolveAlias, translateHerraje } from "../../../../../../lib/assets.js";
 
 export default function PanelCantidades({ id, data }) {
   const pasoInicial = useEnviroment((state) => state.pasoInicial);
@@ -356,7 +356,7 @@ export default function PanelCantidades({ id, data }) {
           {cantidades.map((item) => (
             <div key={item.value} className="option3">
               <div>
-                <p className="cantidad">{item.displayName}</p>
+                <p className="cantidad">{translateHerraje(item.value, data?.glosarioTraduccion, idioma)}</p>
                 <div
                   className="imagen"
                   style={{

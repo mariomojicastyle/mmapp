@@ -848,3 +848,19 @@ Los estilos, colores y tiempos de transición de las flechas azules se configura
     - **Persistencia en Base de Datos**: Actualización en Supabase de la columna `despiece` para el proyecto `M00001` con cantidades e identificadores sincronizados, eliminando la duplicidad genérica de `"Tornillo"` y previniendo la normalización incorrecta.
     - **Bypass de Panel de Cantidades en Paso Inicial**: Corrección en `PanelBtn.jsx` para forzar que el botón principal de la botonera inferior abra el panel de despiece/cantidades directamente si el usuario está en el paso de bienvenida `00`, evitando bloqueos del visor.
 
+* **[2026-07-08] Sincronización de Animación y Encuesta Final (FeedbackModal):**
+    - **Contexto del Problema**: En el último paso del manual, la encuesta final de opinión (`FeedbackModal`) se abría antes de que finalizara la animación 3D de las piezas. Esto ocurría porque la activación dependía únicamente de la finalización del audio TTS (`AudioEnded === true`), interrumpiendo visualmente el armado.
+    - **Implementación de Sincronización Doble**:
+      - Se creó el estado global `AnimationEnded` en [useEnviroment.js](file:///C:/Desarrollo/mmapp/legacy-aplicativo-armado/src/features/AssemblyInstructions/hooks/useEnviroment.js) para monitorear el estado de las animaciones 3D.
+      - En [Model.jsx](file:///C:/Desarrollo/mmapp/legacy-aplicativo-armado/src/features/AssemblyInstructions/3d-escene/Model.jsx), se destructuró el `mixer` de Three.js y se configuró un `useEffect` que escucha el evento `'finished'` del mezclador de animaciones. Cuando no hay más acciones de animación en ejecución, se marca `AnimationEnded` como `true`. Si un paso no contiene animaciones, se marca inmediatamente como `true`.
+      - En [AssemblyViewer.jsx](file:///C:/Desarrollo/mmapp/legacy-aplicativo-armado/src/features/AssemblyInstructions/AssemblyViewer.jsx), se actualizó el disparador del modal de feedback para exigir ambas condiciones: `AudioEnded === true && AnimationEnded === true`.
+
+* **[2026-07-08] Personalización de Color de Objeto Tocado:**
+    - **Contexto del Requerimiento**: Habilitar a los administradores la posibilidad de personalizar el color de realce (highlight) de los objetos 3D (piezas/herrajes) al interactuar con ellos, reemplazando el color rosado estático original.
+    - **Base de Datos**: Añadida la columna `color_objeto_tocado` (tipo `text` con fallback `#ec4899`) en la tabla `configuraciones_manual`.
+    - **Plataforma CMS**: Añadido selector de color interactivo e input de texto hexadecimal en la pestaña **"Personalización UI"** justo después de "Color de Texto / Iconos" en [detalle-proyecto-modal.tsx](file:///c:/Desarrollo/mmapp/mario-mojica-plataforma/components/proyectos/detalle-proyecto-modal.tsx). Se vinculó al guardado en base de datos.
+    - **Visualizador 3D**: Configurada la carga de la variable en el store global de Zustand en [useEnviroment.js](file:///c:/Desarrollo/mmapp/legacy-aplicativo-armado/src/features/AssemblyInstructions/hooks/useEnviroment.js), se inyectó desde la página principal y se aplicó al material de realce de Three.js en [Model.jsx](file:///c:/Desarrollo/mmapp/legacy-aplicativo-armado/src/features/AssemblyInstructions/3d-escene/Model.jsx), con actualización reactiva en caliente si el valor en el store cambia.
+
+
+
+

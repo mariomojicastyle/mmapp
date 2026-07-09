@@ -4,7 +4,7 @@ import * as THREE from "three";
 import { useThree, useFrame } from "@react-three/fiber";
 import useEnviroment from "../hooks/useEnviroment.js";
 import Floor from "./Floor/Floor.jsx";
-import { getAssetPath, resolveAlias } from "../../../lib/assets.js";
+import { getAssetPath, resolveAlias, translateHerraje } from "../../../lib/assets.js";
 import { isPieceName, extractPieceNumber, translatePieceLabel } from "../../../lib/pieceUtils.js";
 
 function cleanMeshIdentifier(rawName) {
@@ -116,6 +116,9 @@ export default function Model(props) {
   const Cliente = useEnviroment((state) => state.Cliente);
   const PiezaHerraje = useEnviroment((state) => state.NamePieza);
   const SetComputedModelMinY = useEnviroment((state) => state.SetComputedModelMinY);
+  const AnimationEndedTrue = useEnviroment((state) => state.AnimationEndedTrue);
+  const AnimationEndedFalse = useEnviroment((state) => state.AnimationEndedFalse);
+  const colorObjetoTocado = useEnviroment((state) => state.colorObjetoTocado);
 
   const CameraPosition = useEnviroment ((state) => state.cameraPositions)
   const alturas = useEnviroment((state) => state.alturas);
@@ -153,9 +156,16 @@ export default function Model(props) {
       matcapTexture.current = texture;
       highlightMaterialRef.current = new THREE.MeshMatcapMaterial({
         matcap: texture,
+        color: new THREE.Color(useEnviroment.getState().colorObjetoTocado || "#ec4899"),
       });
     });
   }, []);
+
+  useEffect(() => {
+    if (highlightMaterialRef.current) {
+      highlightMaterialRef.current.color.set(colorObjetoTocado || "#ec4899");
+    }
+  }, [colorObjetoTocado]);
 
 
   // Standard viewport defaults
@@ -204,7 +214,37 @@ export default function Model(props) {
   let textMaterial, textMaterial2;
 
   // Desestructuración de las animaciones del modelo
-  const { actions } = useAnimations(animations, scene);
+  const { actions, mixer } = useAnimations(animations, scene);
+
+  // Control de estado de animación finalizada
+  useEffect(() => {
+    if (!actions || Object.keys(actions).length === 0) {
+      AnimationEndedTrue();
+      return;
+    }
+
+    AnimationEndedFalse();
+
+    if (!mixer) return;
+
+    const handleFinished = (e) => {
+      let anyRunning = false;
+      Object.values(actions).forEach((act) => {
+        if (act && act.isRunning()) {
+          anyRunning = true;
+        }
+      });
+
+      if (!anyRunning) {
+        AnimationEndedTrue();
+      }
+    };
+
+    mixer.addEventListener("finished", handleFinished);
+    return () => {
+      mixer.removeEventListener("finished", handleFinished);
+    };
+  }, [actions, mixer, AnimationEndedTrue, AnimationEndedFalse, pasoActual]);
 
   // Configuración inicial del modelo GLB, de la animación y de la cámara
   useEffect(() => {
@@ -337,6 +377,7 @@ export default function Model(props) {
   // para activar la animación cuando se de clic en el botón "repetir"
   useEffect(() => {
     if (ResetBool === true && actions) {
+      AnimationEndedFalse();
       Object.values(actions).forEach((act) => {
         if (act) {
           act.paused = false;  // Asegura que la animación no esté pausada
@@ -348,7 +389,7 @@ export default function Model(props) {
     } else if (ResetBool === true) {
       ResetBoolFalse();
     }
-  }, [ResetBool, actions]);
+  }, [ResetBool, actions, ResetBoolFalse, AnimationEndedFalse]);
 
   useEffect(() => {
     if (actions) {
@@ -498,8 +539,14 @@ export default function Model(props) {
         
         if (numSticker !== undefined) {
           displayName = translatePieceLabel(numSticker, useEnviroment.getState().idioma);
+        } else {
+          displayName = translateHerraje(displayName, props.productData?.glosarioTraduccion, useEnviroment.getState().idioma);
         }
+      } else {
+        displayName = translateHerraje(displayName, props.productData?.glosarioTraduccion, useEnviroment.getState().idioma);
       }
+    } else {
+      displayName = translateHerraje(displayName, props.productData?.glosarioTraduccion, useEnviroment.getState().idioma);
     }
     return displayName;
   }

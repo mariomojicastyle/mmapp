@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import useEnviroment from "../../../hooks/useEnviroment";
 import "./PanelHerrajes.css";
-import { getAssetPath, resolveAlias } from "../../../../../lib/assets.js";
+import { getAssetPath, resolveAlias, translateHerraje } from "../../../../../lib/assets.js";
 import { isPieceName } from "../../../../../lib/pieceUtils.js";
 
 export default function PanelHerrajes({ id, data }) {
@@ -287,6 +287,7 @@ export default function PanelHerrajes({ id, data }) {
 
           tempHerrajes.push({
             displayName: cleanName,
+            cleanName: cleanName,
             value: rawName,
             cantidad: cantidadFinal,
             imageUrl: getHerrajeImageUrl(cleanName)
@@ -301,6 +302,7 @@ export default function PanelHerrajes({ id, data }) {
               nombresUnicos.add(cleanName);
               tempHerrajes.push({
                 displayName: cleanName,
+                cleanName: cleanName,
                 value: rawName,
                 imageUrl: getHerrajeImageUrl(cleanName)
               });
@@ -311,6 +313,7 @@ export default function PanelHerrajes({ id, data }) {
             nombresUnicos.add(cleanName);
             tempHerrajes.push({
               displayName: cleanName,
+              cleanName: cleanName,
               value: rawName,
               imageUrl: getHerrajeImageUrl(cleanName)
             });
@@ -357,7 +360,7 @@ export default function PanelHerrajes({ id, data }) {
               className="option"
               onClick={() => Tooltip(herraje.value)}
             >
-              {herraje.displayName}
+              {translateHerraje(herraje.cleanName, data?.glosarioTraduccion, idioma)}
               {herraje.imageUrl && (
                 <div
                   className="imagen"

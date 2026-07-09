@@ -292,6 +292,7 @@ export function DetalleProyectoModal({ isOpen, onClose, proyecto, onUpdate }: De
   const [colorPrimario, setColorPrimario] = useState("#0D9488")
   const [colorSecundario, setColorSecundario] = useState("#111827")
   const [colorTextoBotones, setColorTextoBotones] = useState("#ffffff")
+  const [colorObjetoTocado, setColorObjetoTocado] = useState("#ec4899")
   const [opacidadManual, setOpacidadManual] = useState(100)
   const [opacidadNubes, setOpacidadNubes] = useState(20)
   const [logoUrl, setLogoUrl] = useState("")
@@ -1099,6 +1100,7 @@ export function DetalleProyectoModal({ isOpen, onClose, proyecto, onUpdate }: De
               setColorPrimario(data.color_primario || "#0D9488")
               setColorSecundario(data.color_secundario || "#111827")
               setColorTextoBotones(data.color_texto_botones || "#ffffff")
+              setColorObjetoTocado(data.color_objeto_tocado || "#ec4899")
               setOpacidadManual(data.opacidad_manual !== undefined && data.opacidad_manual !== null ? data.opacidad_manual : 100)
               setOpacidadNubes(data.opacidad_nubes !== undefined && data.opacidad_nubes !== null ? data.opacidad_nubes : 20)
               setLogoUrl(data.logo_url || "")
@@ -2781,6 +2783,7 @@ export function DetalleProyectoModal({ isOpen, onClose, proyecto, onUpdate }: De
           color_primario: colorPrimario,
           color_secundario: colorSecundario,
           color_texto_botones: colorTextoBotones,
+          color_objeto_tocado: colorObjetoTocado,
           opacidad_manual: opacidadManual,
           opacidad_nubes: opacidadNubes,
           logo_url: logoUrl,
@@ -3557,7 +3560,7 @@ export function DetalleProyectoModal({ isOpen, onClose, proyecto, onUpdate }: De
                       🎨 Personalización de Identidad Gráfica (Branding)
                     </h4>
                     
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
                       {/* Color Primario */}
                       <label className="flex flex-col gap-1.5">
                         <span className="text-xs font-semibold text-on-surface-variant">Color Primario</span>
@@ -3613,6 +3616,26 @@ export function DetalleProyectoModal({ isOpen, onClose, proyecto, onUpdate }: De
                             value={colorTextoBotones}
                             onChange={e => setColorTextoBotones(normalizeColorInput(e.target.value))}
                             placeholder="#000000"
+                            className="flex-1 rounded-lg border border-outline-variant bg-surface-container-low px-3 py-1.5 text-xs text-on-surface outline-none focus:border-primary"
+                          />
+                        </div>
+                      </label>
+
+                      {/* Color de Objeto Tocado */}
+                      <label className="flex flex-col gap-1.5">
+                        <span className="text-xs font-semibold text-on-surface-variant">Color de Objeto Tocado</span>
+                        <div className="flex gap-2">
+                          <input
+                            type="color"
+                            value={getValidHexColor(colorObjetoTocado)}
+                            onChange={e => setColorObjetoTocado(normalizeColorInput(e.target.value))}
+                            className="h-9 w-12 rounded-lg border border-outline-variant bg-transparent cursor-pointer"
+                          />
+                          <input
+                            type="text"
+                            value={colorObjetoTocado}
+                            onChange={e => setColorObjetoTocado(normalizeColorInput(e.target.value))}
+                            placeholder="#ec4899"
                             className="flex-1 rounded-lg border border-outline-variant bg-surface-container-low px-3 py-1.5 text-xs text-on-surface outline-none focus:border-primary"
                           />
                         </div>

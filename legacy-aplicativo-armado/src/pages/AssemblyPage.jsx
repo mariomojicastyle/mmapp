@@ -312,6 +312,8 @@ const AssemblyPage = () => {
             colorMallaCentro: configData.color_malla_centro || "#b5b5c3",
             colorMallaLineas: configData.color_malla_lineas || "#d1d1db",
             ayudasTexto: configData.ayudas_texto || null,
+            glosarioTraduccion: configData.glosario_traduccion || [],
+            colorObjetoTocado: configData.color_objeto_tocado || "#ec4899",
           };
 
           // Actualizar dinámicamente el favicon de la pestaña si se subió uno personalizado

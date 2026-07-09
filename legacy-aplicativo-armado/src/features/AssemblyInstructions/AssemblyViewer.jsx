@@ -19,6 +19,7 @@ export default function AssemblyViewer({ productData, steps, id }) {
   const ChargerPositionFloor = useEnviroment((state) => state.ChargerPositionFloor);
   const ChargerAlturas = useEnviroment((state) => state.ChargerAlturas);
   const ChargerCameraPositions = useEnviroment((state) => state.ChargerCameraPositions);
+  const SetColorObjetoTocado = useEnviroment((state) => state.SetColorObjetoTocado);
   const pasoActual = useEnviroment((state) => state.pasoActual);
   const PiezaHerraje = useEnviroment((state) => state.PiezaHerraje);
   const NamePieza = useEnviroment((state) => state.NamePieza);
@@ -26,6 +27,7 @@ export default function AssemblyViewer({ productData, steps, id }) {
   const sombras = useEnviroment((state) => state.sombras);
   const lightingConfig = useEnviroment((state) => state.lightingConfig);
   const AudioEnded = useEnviroment((state) => state.AudioEnded);
+  const AnimationEnded = useEnviroment((state) => state.AnimationEnded);
 
   const isTouchDevice = typeof window !== "undefined" && ('ontouchstart' in window || navigator.maxTouchPoints > 0);
 
@@ -33,15 +35,13 @@ export default function AssemblyViewer({ productData, steps, id }) {
   const { trackStepReached, trackHelpClick, trackSessionComplete, trackFeedback } = useTelemetry();
   const [isFeedbackOpen, setIsFeedbackOpen] = useState(false);
   const hasCompletedSession = useRef(false);
-  const prevPanelAyudas = useRef(PanelAyudas);
+  const prevPanelAyudas = useRef(false);
 
-  // Trackear cambio de paso
+  // Trackear alcance de pasos
   useEffect(() => {
-    if (pasoActual) {
-      const stepInt = parseInt(pasoActual, 10);
-      if (!isNaN(stepInt)) {
-        trackStepReached(stepInt);
-      }
+    const pasoInt = parseInt(pasoActual, 10);
+    if (!isNaN(pasoInt) && pasoInt > 0) {
+      trackStepReached(pasoInt);
     }
   }, [pasoActual, trackStepReached]);
 
@@ -53,10 +53,10 @@ export default function AssemblyViewer({ productData, steps, id }) {
     prevPanelAyudas.current = PanelAyudas;
   }, [PanelAyudas, trackHelpClick]);
 
-  // Trackear finalización de manual y abrir FeedbackModal (esperando a que termine el audio)
+  // Trackear finalización de manual y abrir FeedbackModal (esperando a que terminen el audio y la animación 3D)
   useEffect(() => {
     if (steps && steps.length > 0 && pasoActual === steps[steps.length - 1]) {
-      if (AudioEnded === true && !hasCompletedSession.current) {
+      if (AudioEnded === true && AnimationEnded === true && !hasCompletedSession.current) {
         trackSessionComplete(steps.length);
         hasCompletedSession.current = true;
         const timer = setTimeout(() => {
@@ -65,7 +65,7 @@ export default function AssemblyViewer({ productData, steps, id }) {
         return () => clearTimeout(timer);
       }
     }
-  }, [pasoActual, steps, AudioEnded, trackSessionComplete]);
+  }, [pasoActual, steps, AudioEnded, AnimationEnded, trackSessionComplete]);
 
   const handleFeedbackSubmit = ({ rating, tags, comment }) => {
     trackFeedback(rating, tags, comment);
@@ -134,12 +134,13 @@ export default function AssemblyViewer({ productData, steps, id }) {
       if (productData.posiciones) ChargerPositionFloor(productData.posiciones);
       if (productData.cameraPositions) ChargerCameraPositions(productData.cameraPositions);
       if (productData.alturas) ChargerAlturas(productData.alturas);
+      if (productData.colorObjetoTocado) SetColorObjetoTocado(productData.colorObjetoTocado);
 
       if (refTitle.current) {
         refTitle.current.innerHTML = productData.name;
       }
     }
-  }, [steps, id, productData]);
+  }, [steps, id, productData, SetColorObjetoTocado]);
 
   // Inyectar configuración de iluminación y colores iniciales persistidos
   useEffect(() => {
