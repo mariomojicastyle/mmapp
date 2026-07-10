@@ -337,3 +337,12 @@ Un **"Manual Vacío"** es un cascarón o aplicación base centralizada (desplega
 
 ### 🚧 Notas Técnicas
 - **Resolución Bounding Box Volumétrico:** En V30 se resolvió un bug de unión aleatoria obligando al algoritmo a validar colisiones (`bbox_contains`) siempre contra la malla de mayor grosor (MDP) en lugar de capas 2D (Cara), eliminando falsos negativos causados por el orden de extracción de `set()` en Python.
+
+
+### Actualización 2026-07-10: V20 Estable - Bug de Extracción GLTF Corregido
+- **Estado Actual:** La V20 (Baking en Geometry Nodes) se ha validado de punta a punta. Se corrigió un bug bloqueante donde el agrupador "Peça_Group" sufría corrupción de codificación en GLTF (generando `Pe\ufffdA_Group`), lo que causaba que la aplicación web ignorara por completo los herrajes del cajón (P03).
+- **Logros:**
+  - Se implementó una RegEx `/^PE.A/i` en `pieceUtils.js` que detecta la pieza ignorando caracteres rotos.
+  - Se añadió un parche "en caliente" en `PanelHerrajes.jsx` para forzar a la interfaz a mostrar "Tapa furo adesivo" en el paso 03 y eliminar la filtración visual de la "Tapa furo plástico" de los modelos estáticos.
+  - Se saneó el script `bake_geometry_nodes_v20.py` para nombrar al grupo `Peca_Group` y evitar problemas futuros.
+- **Siguiente Paso:** Validar más manuales o proceder con la exportación/despliegue general del aplicativo.

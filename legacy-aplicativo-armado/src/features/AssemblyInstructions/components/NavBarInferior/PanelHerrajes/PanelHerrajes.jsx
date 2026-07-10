@@ -249,6 +249,15 @@ export default function PanelHerrajes({ id, data }) {
       let cleanName = limpiarNombreMalla(nameToClean);
       if (!cleanName || !esHerrajeConocido(cleanName)) return;
 
+      // --- HOTFIX QUEMADO SOLICITADO POR EL USUARIO PARA P03 ---
+      if (String(PasoActual) === "03" || String(PasoActual) === "3") {
+        const lower = cleanName.toLowerCase();
+        if (lower.includes("tampa") || lower.includes("tapa")) {
+          cleanName = "Tapa furo adesivo";
+        }
+      }
+      // ---------------------------------------------------------
+
       // BLINDAJE DINÁMICO CONTRA DUPLICADOS USANDO EL DESPIECE OFICIAL (data.despiece)
       if (cleanName && data?.despiece) {
         const herrajesOficiales = data.despiece

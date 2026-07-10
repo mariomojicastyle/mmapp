@@ -99,7 +99,7 @@ def bake_geometry_nodes_instances(emitter_prefix="Plane", start_frame=None, end_
         print(f" -> Objeto pivote seleccionado para el Vacío: '{pivot_obj.name}'")
         
         # Crear el objeto Vacío (Empty)
-        parent_empty = bpy.data.objects.new("Peça_Group", None)
+        parent_empty = bpy.data.objects.new("Peca_Group", None)
         scene.collection.objects.link(parent_empty)
         parent_empty.rotation_mode = 'QUATERNION'
         print(f" -> Vacío Padre '{parent_empty.name}' creado.")

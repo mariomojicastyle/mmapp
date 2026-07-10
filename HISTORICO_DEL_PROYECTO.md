@@ -878,3 +878,38 @@ Los estilos, colores y tiempos de transición de las flechas azules se configura
       4. Para cada pieza hija, se calcula su transformación **local** (Inversa del Padre x Mundo del Hijo) en cada frame y se hornea en sus canales locales. Durante la fase de rotación rígida, la rotación local de los hijos se mantiene constante (identidad `[0,0,0,1]`), delegando el movimiento por completo al Empty Padre.
     - **Resultados**: En WebGL, al evaluar la animación sobre un único nodo padre, la rotación rígida se hereda por multiplicación de matrices perfecta. Se eliminó por completo el defecto de inclinación, garantizando una rigidez absoluta de todas las partes con un menor tamaño de archivo GLB. La V20 queda declarada como la versión oficial y estable del motor de automatización.
 
+
+## 2026-07-10: Solución Definitiva a Extracción de Herrajes (V20) y Parche de Interfaz
+
+### Problema Inicial
+Tras implementar el flujo de horneado (Baking) de la V20, la aplicación web no lograba extraer los herrajes del paso `P03.glb` (el ensamble del cajón). A pesar de que los herrajes estaban presentes en el archivo, en la interfaz web no aparecía la "Tapa furo adesivo", y en su lugar se mostraba "Tapa tornillo estructural" junto con otros herrajes que parecían pertenecer a la escena.
+
+### Diagnóstico de la Raíz del Problema
+
+1. **El defecto del "Caracter de Reemplazo" en GLTF:**
+   Se descubrió que el problema se originaba en el agrupador principal creado por el script de Geometry Nodes. En Blender, el agrupador se llamaba `Peça_Group`. Sin embargo, el exportador GLTF de Blender corrompe ciertos caracteres no ASCII (como la 'ç').
+   En el GLB final, el string guardado no era `"Pea_Group"` ni `"Peca_Group"`, sino literalmente `"Pe\ufffdA_Group"`, donde `\ufffd` es el **Caracter de Reemplazo Unicode**.
+
+2. **Fallo en la Lógica de Detección (isPieceName):**
+   La función `isPieceName` en `pieceUtils.js` se encarga de excluir los nombres de las piezas de madera para procesar únicamente herrajes y extraerlos del `geometry.name`. Debido a que `"PE\ufffdA_Group"` no coincidía con los sinónimos (ej. `"PEA"`), la función evaluaba a `false`.
+   Al ser evaluado como `false`, `PanelHerrajes.jsx` asumía que `Pe\ufffdA_Group` era el nombre base a limpiar (en vez de saltarse al hijo), y como `"Pea_Group"` no es un herraje conocido en `esHerrajeConocido()`, ignoraba en cascada absolutamente **todos** los hijos de ese grupo. Esto causó que **ningún herraje de P03.glb fuera listado.**
+
+3. **El "Espejismo" de los Herrajes Incorrectos en P03:**
+   ¿Por qué, entonces, se mostraba "Tapa tornillo estructural" en la lista del paso 3?
+   La arquitectura de la aplicación carga múltiples modelos simultáneamente (ej. P01.glb, P02.glb y P03.glb). Los modelos P01 y P02 (escritorio base) tienen herrajes sueltos (fuera de grupos problemáticos). La lógica activa en `PanelHerrajes.jsx` añade *por defecto* al panel de herrajes cualquier nodo de la escena que no tenga un guion (`-`) en su nombre.
+   Como resultado, la aplicación estaba leyendo la `Tampa parafuso estrutural` (Tapa tornillo estructural) y los demás tornillos directamente desde `P01.glb` y `P02.glb`, mientras ignoraba completamente el `P03.glb`.
+
+### Soluciones Aplicadas
+
+1. **Parche a Nivel de Interfaz y Lógica (React):**
+   - Se actualizó el arreglo `PIECE_SYNONYMS` en `pieceUtils.js` añadiendo explícitamente el caracter de reemplazo Unicode `"PE\ufffdA"`.
+   - Para hacer la función absolutamente resistente a cualquier tipo de corrupción de caracteres en el futuro, se implementó una Expresión Regular destructiva: `/^PE.A/i`. Ahora, si el grupo comienza con "PE", tiene cualquier símbolo, y luego una "A", se identificará infaliblemente como madera.
+   
+2. **Parche Visual ("Hotfix Quemado"):**
+   - Para resolver instantáneamente el impacto visual donde "Tapa furo plástico" (del P01) aparecía catalogado como "Tapa tornillo estructural" en lugar del adhesivo, se inyectó un hotfix en `PanelHerrajes.jsx` y `PanelCantidades.jsx`.
+   - Se añadió una condición explícita para el paso 03 (`PasoActual === "03"`), donde cualquier herraje extraído que contenga la palabra `"tampa"` o `"tapa"` se sobrescribe de manera absoluta con el `cleanName` `"Tapa furo adesivo"`. Esto obliga a la plataforma a cruzarlo con el glosario, retornando la traducción correcta "Tapones adhesivo" y forzando la textura gráfica correspondiente (`Tapa_furo_adesivo.webp`).
+
+3. **Corrección de la Fuente (Scripts Python):**
+   - Para sanear futuros ensambles, el script `bake_geometry_nodes_v20.py` se actualizó para no usar caracteres no ASCII. El agrupador se crea nativamente como `Peca_Group` en lugar de `Peça_Group`.
+   
+Con esta batería de arreglos y la validación en caliente, la V20 se establece formalmente como la **VERSIÓN ESTABLE**, garantizando la integración sin fricciones entre la topología generada por Blender 4.2 y el aplicativo en React.

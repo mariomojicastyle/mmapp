@@ -3,7 +3,7 @@
 // en cualquier idioma soportado por el visor 3D de armado.
 
 // Sinónimos de "Pieza" en todos los idiomas soportados
-const PIECE_SYNONYMS = ["PIEZA", "PEÇA", "PECA", "PART", "PIECE", "STÜCK", "PEZZO"];
+const PIECE_SYNONYMS = ["PIEZA", "PEÇA", "PECA", "PART", "PIECE", "STÜCK", "PEZZO", "PEA", "PE\ufffdA", "PE_A", "PE?A"];
 
 // Regex que detecta cualquier sinónimo seguido de separador y número(s)
 // Captura: grupo 1 = palabra, grupo 2 = número
@@ -22,6 +22,12 @@ const PIECE_REGEX = new RegExp(
 export function isPieceName(name) {
   if (!name) return false;
   const upper = name.trim().toUpperCase();
+  
+  // Regla especial a prueba de balas para "Peça" corrompido (Ej: "Pea", "Pea", "Pe_a")
+  if (/^PE.A/i.test(upper) || /^PEA/i.test(upper)) {
+    return true;
+  }
+  
   return PIECE_SYNONYMS.some(syn => upper.startsWith(syn));
 }
 
