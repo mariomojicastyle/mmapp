@@ -50,10 +50,10 @@ function cleanMeshIdentifier(rawName) {
       resultParts.push(part);
     } else {
       if (codeCount === 0) {
-        // Filtro para detectar números de instancia (ej. _1, _2 ... _99, _1001, _2001)
         if (/^\d+$/.test(part)) {
           const num = parseInt(part, 10);
-          const isInstance = num < 100 || (part.length === 4 && part.substring(1, 3) === "00");
+          const isEnsamblaje = lowerRaw.startsWith("ensamblaje");
+          const isInstance = !isEnsamblaje && (num < 100 || (part.length === 4 && part.substring(1, 3) === "00"));
           if (isInstance) {
             // Es una instancia generada por Rhino/Blender, la omitimos
             continue;

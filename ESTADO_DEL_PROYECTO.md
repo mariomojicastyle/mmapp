@@ -43,6 +43,9 @@ Este archivo es la "Memoria RAM" para Antigravity. Contiene el contexto de lo qu
   - Reestructuración de la base de datos para separar el inventario oficial en Tornillo_1 (84 unidades, corto plateado para correderas) y Tornillo_2 (32 unidades, largo negro de estructura).
   - Inversión de mapeos y blindaje del algoritmo de limpieza en detalle-proyecto-modal.tsx, PanelHerrajes.jsx, PanelCantidades.jsx, y Model.jsx, resolviendo que Tornillo_0000152 se limpie a Tornillo_2 y Tornillo_0004705 a Tornillo_1.
   - Corrección del bypass en PanelBtn.jsx para permitir la apertura inmediata de PanelCantidades en el paso 00.
+- [x] **Preservación de Números en Nombres "Ensamblaje" (Politorno02 - 10 de Julio, 2026)**:
+  - Evitar la eliminación de números menores a 100 en piezas o geometrías cuyo nombre comience con "Ensamblaje" (ej: `Ensamblaje_Paso_1`), ya que representan estructuras previamente armadas.
+  - Se modificó la lógica en `Model.jsx`, `PanelCantidades.jsx`, `PanelHerrajes.jsx` y `detalle-proyecto-modal.tsx` para incorporar esta regla y conservar los dígitos de forma coherente en todo el sistema.
 
 
 ### 🚧 Bloqueos / Notas Técnicas
@@ -311,7 +314,7 @@ Un **"Manual Vacío"** es un cascarón o aplicación base centralizada (desplega
 - **Local App:** [http://localhost:3000](http://localhost:3000)
 
 ---
-*Última actualización de contexto: 07 de Julio, 2026*
+*Última actualización de contexto: 10 de Julio, 2026*
 
 
 ---

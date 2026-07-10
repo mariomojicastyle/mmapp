@@ -109,7 +109,8 @@ export default function PanelCantidades({ id, data }) {
         if (codeCount === 0) {
           if (/^\d+$/.test(part)) {
             const num = parseInt(part, 10);
-            const isInstance = num < 100 || (part.length === 4 && part.substring(1, 3) === "00");
+            const isEnsamblaje = lowerRaw.startsWith("ensamblaje");
+            const isInstance = !isEnsamblaje && (num < 100 || (part.length === 4 && part.substring(1, 3) === "00"));
             if (isInstance) {
               continue;
             }
