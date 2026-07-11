@@ -425,7 +425,41 @@ const AssemblyPage = () => {
     };
   }, []);
 
-  if (loading) return <div className="flex h-screen w-screen items-center justify-center bg-gray-900 text-white font-semibold">Cargando manual dinámico...</div>;
+  const searchParams = new URLSearchParams(window.location.search);
+  const lang = searchParams.get('lang') || 'es';
+  
+  const loadingText = {
+    es: "Preparando experiencia 3D...",
+    en: "Preparing 3D experience...",
+    pt: "Preparando experiência 3D..."
+  }[lang] || "Preparando experiencia 3D...";
+
+  if (loading) {
+    return (
+      <div className="flex flex-col h-screen w-screen items-center justify-center bg-white relative">
+        <svg 
+          xmlns="http://www.w3.org/2000/svg" 
+          viewBox="0 0 24 24" 
+          width="52px" 
+          height="52px" 
+          fill="none" 
+          stroke="var(--primary, #0B192C)" 
+          strokeWidth="2" 
+          strokeLinecap="round" 
+          strokeLinejoin="round" 
+          className="animate-pulse mb-6"
+          style={{ filter: "drop-shadow(0 0 10px rgba(11, 25, 44, 0.2))" }}
+        >
+          <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z" />
+          <polyline points="3.27 6.96 12 12.01 20.73 6.96" />
+          <line x1="12" y1="22.08" x2="12" y2="12" />
+        </svg>
+        <span className="font-semibold tracking-wide" style={{ color: "var(--primary, #0B192C)", fontSize: "15px" }}>
+          {loadingText}
+        </span>
+      </div>
+    );
+  }
   
   if (!productData) return <div className="flex h-screen w-screen items-center justify-center bg-gray-900 text-white">Manual no encontrado</div>;
 

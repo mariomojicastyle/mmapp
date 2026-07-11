@@ -316,6 +316,12 @@ Los estilos, colores y tiempos de transición de las flechas azules se configura
         - **Interacción y Blinking:** Se restableció la animación parpadeante (`blinking`) y la interactividad por clic de las piezas 3D y herrajes, sincronizándola con el estado global de reproducción del audio.
     - **Resultado:** Aplicativo de armado migrado completamente a la versión v5, independiente de servidores de red, estable ante cambios de producto, sin warnings de Three.js y con una alineación visual perfecta de cámara, modelos y terreno.
 
+* **[2026-07-11] Politorno_Multimarca_Full — Valla Publicitaria Digital B2B:**
+    - **Reemplazo del Precargador y Co-branding UI:** Se rediseñó la experiencia inicial del visor 3D para potenciar las ventas corporativas. Se implementó un panel frontal flotante interactivo (`PanelInicial.jsx`) que lee el logotipo corporativo configurado en Supabase (CMS).
+    - **Loop CSS Infinito:** Se implementó una animación inteligente (`brandLoop`) de 10 segundos que otorga protagonismo temporal rotativo entre la marca del cliente B2B ("Productos [Politorno]") y el autor ("Potenciados por [Mario Mojica]"), logrando una alianza de co-branding muy sofisticada y amigable.
+    - **Internacionalización Dinámica:** Se expandió el objeto de traducciones interno del visor de ensamblaje para cambiar "Productos" / "Potenciados por" a tres idiomas (ES, EN, PT) en tiempo real basado en la URL `?lang=`.
+    - **Posicionamiento Responsivo sobre 3D:** El panel blanco de marca se ajustó posicionalmente (`top: 36%`, `left: 50%`) con compensación `translate` para coincidir con perfecta tolerancia matemática sobre el panel de vidrio pre-renderizado dentro de la propia escena de Spline, independientemente de la relación de aspecto del navegador.
+
 ---
 
 * **[2026-05-20] AppArmado_v7 — Consolidación de Monorepo y Corrección de Hover Reactivo:**

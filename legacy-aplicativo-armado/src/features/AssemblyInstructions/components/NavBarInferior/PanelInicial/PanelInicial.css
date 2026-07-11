@@ -228,4 +228,67 @@
     height: 5rem;
     width: 11rem;
   }
+}
+
+/* ──────────────────────────────────────────────────────────────────────────
+   La Valla Publicitaria Digital (Client Branding Overlay Loop)
+   ────────────────────────────────────────────────────────────────────────── */
+.client-branding-shield {
+  position: absolute;
+  top: 36%; /* Subido para coincidir exactamente con el panel de vidrio 3D de MM */
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 660px; /* 20% más ancho para tolerancias */
+  max-width: 95vw;
+  height: 384px; /* 20% más alto para tolerancias */
+  background-color: #f1f2f4; /* Color sólido que se camufla o contrasta elegantemente con el fondo de Spline */
+  border-radius: 30px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: 15px; /* Espaciado entre textos y logo */
+  z-index: 10;
+  pointer-events: none; /* No bloquear interacción con el 3D detrás */
+  animation: brandLoop 10s infinite;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.08), inset 0 0 0 1px rgba(255,255,255,0.8);
+}
+
+.branding-text-top, .branding-text-bottom {
+  font-family: var(--font-sans);
+  color: #64748b; /* Gris sutil */
+  font-weight: 500;
+  font-size: 0.95rem;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  opacity: 0.8;
+}
+
+.branding-text-bottom {
+  font-size: 0.85rem;
+  letter-spacing: 1px;
+}
+
+.client-logo-overlay {
+  width: 280px;
+  height: 140px;
+  background-size: contain;
+  background-position: center;
+  background-repeat: no-repeat;
+  filter: drop-shadow(0 4px 10px rgba(0, 0, 0, 0.15));
+}
+
+/* 
+  Loop de 10 Segundos:
+  0s - 4.5s: Visible (Politorno domina)
+  4.5s - 5.5s: Fade out
+  5.5s - 8.5s: Invisible (Mario Mojica brilla)
+  8.5s - 10s: Fade in
+*/
+@keyframes brandLoop {
+  0%   { opacity: 1; }
+  45%  { opacity: 1; }
+  55%  { opacity: 0; }
+  85%  { opacity: 0; }
+  100% { opacity: 1; }
 }

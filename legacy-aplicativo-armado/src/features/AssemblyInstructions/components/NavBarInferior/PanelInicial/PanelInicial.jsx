@@ -138,14 +138,20 @@ export default function PanelInicial() {
     es: {
       arButton: "Ver en tu espacio",
       arExplain: "Sube el volumen para escuchar las instrucciones y proyecta el mueble en tu espacio.",
+      productos: "Productos",
+      potenciados: "Potenciados por",
     },
     en: {
       arButton: "View in your space",
       arExplain: "Turn up the volume to hear the instructions and project the furniture in your space.",
+      productos: "Products",
+      potenciados: "Powered by",
     },
     pt: {
       arButton: "Ver no seu espaço",
       arExplain: "Aumente o volume para ouvir as instruções e projete o móvel no seu espaço.",
+      productos: "Produtos",
+      potenciados: "Potencializado por",
     }
   };
   const t = idioma === "en" ? texts.en : (idioma === "pt" ? texts.pt : texts.es);
@@ -169,6 +175,18 @@ export default function PanelInicial() {
               title="Animación de bienvenida"
             ></iframe>
           </div>
+
+          {/* El Escudo de Cristal (Client Branding Overlay) */}
+          {icono && !icono.includes("Logo_mm.svg") && !icono.includes("Logo_MM_en.svg") && (
+            <div className="client-branding-shield">
+              <span className="branding-text-top">{t.productos}</span>
+              <div 
+                className="client-logo-overlay" 
+                style={{ backgroundImage: icono }}
+              ></div>
+              <span className="branding-text-bottom">{t.potenciados}</span>
+            </div>
+          )}
 
           {/* Top Content (Progress Bar & Button - Solo visible en modo no-AR) */}
           <div className="content-top">
