@@ -37,12 +37,21 @@ export default function RealiadaAumentada({ id, data }) {
       ayuda6Title: "Augmented Reality",
       ayuda6Text: "Scan your space and project the interactive 3D model in real scale inside your room!",
       notSupported: "Augmented Reality is not supported on your device."
+    },
+    pt: {
+      arPcTitle: "Ver no seu espaço (Realidade Aumentada)",
+      closeTitle: "Fechar",
+      qrTitle: "Ver no seu espaço",
+      qrText: "Escaneie este código QR com a câmera do seu celular para projetar este móvel em tamanho real.",
+      ayuda6Title: "Realidade Aumentada",
+      ayuda6Text: "Escaneie o espaço e projete o móvel 3D interativo em tamanho real dentro do seu ambiente!",
+      notSupported: "O seu dispositivo não é compatível com Realidade Aumentada nativa."
     }
   };
-  const t = idioma === "en" ? texts.en : texts.es;
+  const t = idioma === "en" ? texts.en : (idioma === "pt" ? texts.pt : texts.es);
 
   const ayudasTexto = data?.ayudasTexto || {};
-  const currentLang = idioma === "en" ? "en" : "es";
+  const currentLang = idioma === "en" ? "en" : (idioma === "pt" ? "pt" : "es");
 
   const dAyuda6Title = ayudasTexto.ayuda6?.[`title_${currentLang}`] || t.ayuda6Title;
   const dAyuda6Text = ayudasTexto.ayuda6?.[`content_${currentLang}`] || t.ayuda6Text;

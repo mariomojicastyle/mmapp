@@ -142,9 +142,13 @@ export default function PanelInicial() {
     en: {
       arButton: "View in your space",
       arExplain: "Turn up the volume to hear the instructions and project the furniture in your space.",
+    },
+    pt: {
+      arButton: "Ver no seu espaço",
+      arExplain: "Aumente o volume para ouvir as instruções e projete o móvel no seu espaço.",
     }
   };
-  const t = idioma === "en" ? texts.en : texts.es;
+  const t = idioma === "en" ? texts.en : (idioma === "pt" ? texts.pt : texts.es);
 
   return <>
     <aside 
