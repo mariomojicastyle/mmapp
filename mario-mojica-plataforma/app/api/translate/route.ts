@@ -28,88 +28,39 @@ const MODELS_TO_TRY = [
   "gemini-pro-latest"    // Mapea a Gemini 1.5 Pro
 ]
 
-// Extrae etiquetas [pausa: N] del texto, retorna texto limpio y array de pausas con posición relativa
-function extractPauses(text: string): { cleanText: string; pauses: { relativePos: number; tag: string }[] } {
-  const pauseRegex = /\[(?:pausa|pause):\s*(\d+)\]/gi
-  const pauses: { relativePos: number; tag: string }[] = []
-  let cleanText = ""
-  let lastIndex = 0
-  let match
-
-  // Calcular longitud total del texto sin etiquetas para posiciones relativas
-  const textWithoutPauses = text.replace(pauseRegex, "")
-  const totalCleanLength = textWithoutPauses.length
-
-  pauseRegex.lastIndex = 0
-  let cleanOffset = 0
-
-  while ((match = pauseRegex.exec(text)) !== null) {
-    const textBefore = text.substring(lastIndex, match.index)
-    cleanText += textBefore
-    cleanOffset += textBefore.length
-
-    const relativePos = totalCleanLength > 0 ? cleanOffset / totalCleanLength : 1
-    pauses.push({ relativePos, tag: `[pausa: ${match[1]}]` })
-
-    lastIndex = match.index + match[0].length
-  }
-
-  cleanText += text.substring(lastIndex)
-  return { cleanText, pauses }
+interface PausePlaceholder {
+  placeholder: string;
+  tag: string;
 }
 
-// Re-inserta las etiquetas de pausa en el texto traducido, ajustando al separador más cercano
-// Prioriza signos de puntuación y saltos de línea (Tier 1) sobre espacios (Tier 2) en una ventana razonable
-function reinsertPauses(translatedText: string, pauses: { relativePos: number; tag: string }[]): string {
-  if (pauses.length === 0) return translatedText
+// Reemplaza etiquetas [pausa: N] por marcadores únicos __PAU_N__ y retorna el texto modificado y el mapa de restauración
+function replacePausesWithPlaceholders(text: string): { processedText: string; pauseMap: PausePlaceholder[] } {
+  const pauseRegex = /\[(?:pausa|pause):\s*(\d+)\]/gi
+  const pauseMap: PausePlaceholder[] = []
+  let idx = 0
+  
+  const processedText = text.replace(pauseRegex, (match, p1) => {
+    const placeholder = `__PAU_${idx}__`
+    pauseMap.push({ placeholder, tag: `[pausa: ${p1}]` })
+    idx++
+    return placeholder
+  })
 
-  const totalLen = translatedText.length
-  const tier1Separators = new Set(['.', ',', ';', ':', '!', '?', '\n'])
-  const tier2Separators = new Set([' '])
+  return { processedText, pauseMap }
+}
 
-  const sorted = [...pauses].sort((a, b) => b.relativePos - a.relativePos)
-
+// Restaura los marcadores __PAU_N__ a sus respectivas etiquetas [pausa: N], aplicando un fallback seguro si alguno se pierde
+function restorePausesFromPlaceholders(translatedText: string, pauseMap: PausePlaceholder[]): string {
   let result = translatedText
-  for (const pause of sorted) {
-    const rawPos = Math.min(Math.round(pause.relativePos * totalLen), totalLen)
-
-    let bestPos = rawPos
-    let foundTier1 = false
-
-    // 1. Buscar primero un separador Tier 1 (puntuación/salto de línea) en una ventana de 35 caracteres a la redonda
-    const WINDOW_SIZE = 35
-    for (let d = 0; d <= WINDOW_SIZE; d++) {
-      const backIdx = rawPos - d
-      if (backIdx >= 0 && backIdx < totalLen && tier1Separators.has(result[backIdx])) {
-        bestPos = backIdx + 1
-        foundTier1 = true
-        break
-      }
-      const fwdIdx = rawPos + d
-      if (fwdIdx < totalLen && fwdIdx >= 0 && tier1Separators.has(result[fwdIdx])) {
-        bestPos = fwdIdx + 1
-        foundTier1 = true
-        break
-      }
+  
+  for (const item of pauseMap) {
+    const regex = new RegExp(item.placeholder, "gi")
+    if (regex.test(result)) {
+      result = result.replace(regex, item.tag)
+    } else {
+      // Fallback seguro: si el marcador se perdió en la traducción, se añade al final de la línea/texto
+      result = result.trim() + " " + item.tag
     }
-
-    // 2. Si no se encontró ningún separador Tier 1 en la ventana, buscar el separador Tier 2 (espacio) más cercano
-    if (!foundTier1) {
-      for (let i = 0; i <= totalLen; i++) {
-        const backIdx = rawPos - i
-        if (backIdx >= 0 && backIdx < totalLen && (tier1Separators.has(result[backIdx]) || tier2Separators.has(result[backIdx]))) {
-          bestPos = backIdx + 1
-          break
-        }
-        const fwdIdx = rawPos + i
-        if (fwdIdx < totalLen && fwdIdx >= 0 && (tier1Separators.has(result[fwdIdx]) || tier2Separators.has(result[fwdIdx]))) {
-          bestPos = fwdIdx + 1
-          break
-        }
-      }
-    }
-
-    result = result.substring(0, bestPos) + pause.tag + result.substring(bestPos)
   }
 
   return result
@@ -252,9 +203,9 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // 1. Extraer pausas del texto original
-    const { cleanText, pauses } = extractPauses(text)
-    const textToTranslate = cleanText.trim()
+    // 1. Reemplazar pausas por marcadores en el texto original
+    const { processedText: textWithPlaceholders, pauseMap } = replacePausesWithPlaceholders(text)
+    const textToTranslate = textWithPlaceholders.trim()
 
     if (!textToTranslate) {
       return NextResponse.json({ translation: text, engine: "passthrough" })
@@ -274,6 +225,7 @@ export async function POST(request: NextRequest) {
 La traducción debe ser natural, fluida y sonar como si una persona nativa la hubiese escrito.
 MUY IMPORTANTE: La duración del audio en ${targetName} al ser leído debe ser muy similar a la duración del audio en español original, ya que ambos audios comparten la misma animación 3D.
 Por favor, asegúrate de que el texto en ${targetName} tenga una longitud y número de palabras/sílabas comparable para que tome un tiempo de lectura muy similar al español. Evita redundancias o frases largas que extiendan el audio innecesariamente.
+IMPORTANTE: El texto contiene marcadores especiales de pausa como __PAU_0__, __PAU_1__, etc. Debes mantener estos marcadores EXACTAMENTE en la misma posición semántica en el texto traducido (normalmente al final de la oración o cláusula correspondiente). No los traduzcas, no los elimines y no los modifiques.
 Retorna únicamente el texto traducido al ${targetName}, sin explicaciones, sin introducciones y sin comillas adicionales.
 ${buildGlossaryPromptBlock(glossary, targetLang || "en")}
 Texto a traducir:
@@ -329,8 +281,8 @@ Texto a traducir:
       }
 
       if (translatedText) {
-        // Re-insertar pausas en el texto traducido
-        translatedText = reinsertPauses(translatedText, pauses)
+        // Restaurar pausas en el texto traducido
+        translatedText = restorePausesFromPlaceholders(translatedText, pauseMap)
         console.log("API Translate - Traducción devuelta (Gemini):", translatedText)
         return NextResponse.json({
           translation: translatedText,
@@ -403,8 +355,8 @@ Texto a traducir:
       }
     }
 
-    // Re-insertar pausas en el texto traducido
-    translation = reinsertPauses(translation, pauses)
+    // Restaurar pausas en el texto traducido
+    translation = restorePausesFromPlaceholders(translation, pauseMap)
     console.log("API Translate - Traducción devuelta (Google con Glosario):", translation)
 
     return NextResponse.json({ translation, engine: "google" })

@@ -32,9 +32,20 @@ export default function PanelTips({ id, data }) {
       hingeAdjustment: "Hinge Adjustment",
       screwCover: "Screw Cover",
       warrantyText: "Product Warranty"
+    },
+    pt: {
+      twoTools: "2 Ferramentas Necessárias",
+      threeTools: "3 Ferramentas Necessárias",
+      anchorageSystem: "Sistema de Ancoragem",
+      pusherToOpen: "Pulsador para Abrir",
+      minifixAssembly: "Montagem Minifix",
+      plasticNutAssembly: "Montagem Porca Plástica",
+      hingeAdjustment: "Ajuste de Dobradiças",
+      screwCover: "Oculta Parafusos",
+      warrantyText: "Garantia do Produto"
     }
   };
-  const t = idioma === "en" ? texts.en : texts.es;
+  const t = texts[idioma] || texts.es;
 
   //Se activan los tips correspondientes al mueble
   useEffect(() => {

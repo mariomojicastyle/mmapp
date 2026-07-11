@@ -46,6 +46,9 @@ Este archivo es la "Memoria RAM" para Antigravity. Contiene el contexto de lo qu
 - [x] **Preservación de Números en Nombres "Ensamblaje" (Politorno02 - 10 de Julio, 2026)**:
   - Evitar la eliminación de números menores a 100 en piezas o geometrías cuyo nombre comience con "Ensamblaje" (ej: `Ensamblaje_Paso_1`), ya que representan estructuras previamente armadas.
   - Se modificó la lógica en `Model.jsx`, `PanelCantidades.jsx`, `PanelHerrajes.jsx` y `detalle-proyecto-modal.tsx` para incorporar esta regla y conservar los dígitos de forma coherente en todo el sistema.
+- [x] **Optimización de Garantía Genérica y Traducción de Nombres de Malla (Politorno_UP! - 11 de Julio, 2026)**:
+  - **Garantía Neutral B2B**: Regeneración algorítmica del documento `Garantia.pdf` vía script de Puppeteer en formato exacto A4 de 3 páginas (ES, EN, PT). Se codificó el logotipo SVG en Base64 para carga instantánea y se inyectó la estética Obsidian Teal oscura, eliminando menciones específicas de marca (Ej. Politorno).
+  - **Traducción Universal de Tooltips**: Implementación de una regla incondicional en `translateHerraje` (`src/lib/assets.js`). Cualquier submalla detectada cuyo nombre inicie con "Ensamblaje" (ej: `Ensamblaje_Paso_2`) será traducida automáticamente a "Ensamblaje previo" (ES), "Previous assembly" (EN) o "Montagem anterior" (PT). Se integró además un fallback para términos comunes como "Gaveta".
 
 
 ### 🚧 Bloqueos / Notas Técnicas

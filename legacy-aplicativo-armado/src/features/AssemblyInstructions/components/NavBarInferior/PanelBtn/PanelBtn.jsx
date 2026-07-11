@@ -10,8 +10,15 @@ export default function PanelBtn() {
   const btnCerrarTrue = useEnviroment((state) => state.btnCerrarTrue);
   const AudioEnded = useEnviroment((state) => state.AudioEnded);
   const pasoActual = useEnviroment((state) => state.pasoActual);
+  const idioma = useEnviroment((state) => state.idioma);
 
   const [showTooltip, setShowTooltip] = useState(false);
+
+  const traducciones = {
+    es: "Herrajes Necesarios",
+    en: "Necessary Hardware",
+    pt: "Ferragens Necessárias"
+  };
 
   // Al cambiar de paso, apagamos el tooltip inmediatamente para evitar cualquier residuo visual
   useEffect(() => {
@@ -60,7 +67,7 @@ export default function PanelBtn() {
         {/* Burbuja de ayuda premium nativa Glassmorphic Obsidian Teal */}
         <div className={`ayuda-herrajes-tooltip ${showTooltip ? "is-active" : ""}`}>
           <div className="ayuda-herrajes-arrow"></div>
-          <span className="ayuda-herrajes-text">Herrajes Necesarios</span>
+          <span className="ayuda-herrajes-text">{traducciones[idioma] || traducciones.es}</span>
         </div>
       </button>
     </>

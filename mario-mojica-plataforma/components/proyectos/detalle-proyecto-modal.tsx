@@ -358,6 +358,7 @@ export function DetalleProyectoModal({ isOpen, onClose, proyecto, onUpdate }: De
   const [playingAudio, setPlayingAudio] = useState<string | null>(null)
   const audioRef = useRef<HTMLAudioElement | null>(null)
   const [generatingAll, setGeneratingAll] = useState(false)
+  const [translatingAll, setTranslatingAll] = useState(false)
   const [generationProgress, setGenerationProgress] = useState({ current: 0, total: 0 })
   const [translatingText, setTranslatingText] = useState<string | null>(null)
   
@@ -740,6 +741,95 @@ export function DetalleProyectoModal({ isOpen, onClose, proyecto, onUpdate }: De
 
     console.log("Generando en lote con voces:", ttsVoices)
 
+    // ----- FASE 1: TRADUCCIÓN AUTOMÁTICA -----
+    setTranslatingAll(true)
+    let totalToTranslate = 0
+    let translatedCount = 0
+
+    if (ttsSaludo.texto_es && !ttsSaludo.texto_en) totalToTranslate++
+    if (ttsSaludo.texto_es && !ttsSaludo.texto_pt) totalToTranslate++
+    if (ttsAyuda.texto_es && !ttsAyuda.texto_en) totalToTranslate++
+    if (ttsAyuda.texto_es && !ttsAyuda.texto_pt) totalToTranslate++
+    for (const p of ttsPasos) {
+      if (p.texto_es && !p.texto_en) totalToTranslate++
+      if (p.texto_es && !p.texto_pt) totalToTranslate++
+    }
+
+    if (totalToTranslate > 0) {
+      setGenerationProgress({ current: 0, total: totalToTranslate })
+    }
+
+    const helperTranslate = async (textEs: string, targetLang: string) => {
+      try {
+        const res = await fetch("/api/translate", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ 
+            text: textEs, 
+            targetLang: targetLang,
+            glossary: glosarioTraduccion.length > 0 ? glosarioTraduccion : undefined
+          })
+        })
+        if (!res.ok) throw new Error("Error en traducción")
+        const data = await res.json()
+        return data.translation || ""
+      } catch (err) {
+        console.error("Error traduciendo a", targetLang, err)
+        return ""
+      }
+    }
+
+    const newSaludo = { ...ttsSaludo }
+    const newAyuda = { ...ttsAyuda }
+    const newPasos = [...ttsPasos]
+
+    if (totalToTranslate > 0) {
+      // Saludo
+      if (newSaludo.texto_es && !newSaludo.texto_en) {
+        newSaludo.texto_en = await helperTranslate(newSaludo.texto_es, "en")
+        translatedCount++
+        setGenerationProgress({ current: translatedCount, total: totalToTranslate })
+      }
+      if (newSaludo.texto_es && !newSaludo.texto_pt) {
+        newSaludo.texto_pt = await helperTranslate(newSaludo.texto_es, "pt")
+        translatedCount++
+        setGenerationProgress({ current: translatedCount, total: totalToTranslate })
+      }
+      
+      // Ayuda
+      if (newAyuda.texto_es && !newAyuda.texto_en) {
+        newAyuda.texto_en = await helperTranslate(newAyuda.texto_es, "en")
+        translatedCount++
+        setGenerationProgress({ current: translatedCount, total: totalToTranslate })
+      }
+      if (newAyuda.texto_es && !newAyuda.texto_pt) {
+        newAyuda.texto_pt = await helperTranslate(newAyuda.texto_es, "pt")
+        translatedCount++
+        setGenerationProgress({ current: translatedCount, total: totalToTranslate })
+      }
+
+      // Pasos
+      for (let i = 0; i < newPasos.length; i++) {
+        if (newPasos[i].texto_es && !newPasos[i].texto_en) {
+          newPasos[i].texto_en = await helperTranslate(newPasos[i].texto_es, "en")
+          translatedCount++
+          setGenerationProgress({ current: translatedCount, total: totalToTranslate })
+        }
+        if (newPasos[i].texto_es && !newPasos[i].texto_pt) {
+          newPasos[i].texto_pt = await helperTranslate(newPasos[i].texto_es, "pt")
+          translatedCount++
+          setGenerationProgress({ current: translatedCount, total: totalToTranslate })
+        }
+      }
+
+      setTtsSaludo(newSaludo)
+      setTtsAyuda(newAyuda)
+      setTtsPasos(newPasos)
+    }
+    
+    setTranslatingAll(false)
+    // ----- FIN FASE 1 -----
+
     // Guardar la configuración de voces en la base de datos para que persista
     try {
       const supabase = createClient()
@@ -749,10 +839,10 @@ export function DetalleProyectoModal({ isOpen, onClose, proyecto, onUpdate }: De
           proyecto_id: proyecto.id,
           tts_config: {
             voices: ttsVoices,
-            saludo: ttsSaludo,
-            ayuda: ttsAyuda,
+            saludo: newSaludo,
+            ayuda: newAyuda,
             cantidadPasos: ttsCantidadPasos,
-            pasos: ttsPasos
+            pasos: newPasos
           }
         }, { onConflict: "proyecto_id" })
       if (configError) throw configError
@@ -761,27 +851,30 @@ export function DetalleProyectoModal({ isOpen, onClose, proyecto, onUpdate }: De
       console.error("Error al guardar configuración de voces en Supabase:", dbErr)
     }
 
-    // Construir la lista de tareas: saludo, ayuda, y cada paso, en 3 idiomas
-    const tasks: { stepId: string; text: string; lang: "es" | "es-ES" | "en" }[] = []
+    // Construir la lista de tareas: saludo, ayuda, y cada paso, en 4 idiomas
+    const tasks: { stepId: string; text: string; lang: "es" | "es-ES" | "en" | "pt" }[] = []
     // Saludo
-    if (ttsSaludo.texto_es) {
-      tasks.push({ stepId: "00", text: ttsSaludo.texto_es, lang: "es" })
-      tasks.push({ stepId: "00", text: ttsSaludo.texto_es, lang: "es-ES" })
+    if (newSaludo.texto_es) {
+      tasks.push({ stepId: "00", text: newSaludo.texto_es, lang: "es" })
+      tasks.push({ stepId: "00", text: newSaludo.texto_es, lang: "es-ES" })
     }
-    if (ttsSaludo.texto_en) tasks.push({ stepId: "00", text: ttsSaludo.texto_en, lang: "en" })
+    if (newSaludo.texto_en) tasks.push({ stepId: "00", text: newSaludo.texto_en, lang: "en" })
+    if (newSaludo.texto_pt) tasks.push({ stepId: "00", text: newSaludo.texto_pt, lang: "pt" })
     // Ayuda
-    if (ttsAyuda.texto_es) {
-      tasks.push({ stepId: "01_Ayuda", text: ttsAyuda.texto_es, lang: "es" })
-      tasks.push({ stepId: "01_Ayuda", text: ttsAyuda.texto_es, lang: "es-ES" })
+    if (newAyuda.texto_es) {
+      tasks.push({ stepId: "01_Ayuda", text: newAyuda.texto_es, lang: "es" })
+      tasks.push({ stepId: "01_Ayuda", text: newAyuda.texto_es, lang: "es-ES" })
     }
-    if (ttsAyuda.texto_en) tasks.push({ stepId: "01_Ayuda", text: ttsAyuda.texto_en, lang: "en" })
+    if (newAyuda.texto_en) tasks.push({ stepId: "01_Ayuda", text: newAyuda.texto_en, lang: "en" })
+    if (newAyuda.texto_pt) tasks.push({ stepId: "01_Ayuda", text: newAyuda.texto_pt, lang: "pt" })
     // Pasos
-    for (const p of ttsPasos) {
+    for (const p of newPasos) {
       if (p.texto_es) {
         tasks.push({ stepId: p.paso, text: p.texto_es, lang: "es" })
         tasks.push({ stepId: p.paso, text: p.texto_es, lang: "es-ES" })
       }
       if (p.texto_en) tasks.push({ stepId: p.paso, text: p.texto_en, lang: "en" })
+      if (p.texto_pt) tasks.push({ stepId: p.paso, text: p.texto_pt, lang: "pt" })
     }
 
     if (tasks.length === 0) { setError("No hay textos para generar."); setGeneratingAll(false); return }
@@ -790,7 +883,7 @@ export function DetalleProyectoModal({ isOpen, onClose, proyecto, onUpdate }: De
     let successCount = 0
     for (let i = 0; i < tasks.length; i++) {
       const t = tasks[i]
-      const voice = t.lang === "es" ? ttsVoices.es_latam : t.lang === "es-ES" ? ttsVoices.es_europe : ttsVoices.en
+      const voice = t.lang === "es" ? ttsVoices.es_latam : t.lang === "es-ES" ? ttsVoices.es_europe : t.lang === "pt" ? ttsVoices.pt : ttsVoices.en
       console.log(`Generando tarea ${i+1}/${tasks.length}: paso=${t.stepId}, lang=${t.lang}, voice=${voice}`)
       const storagePath = t.lang === "es"
         ? `sounds/${t.stepId}.mp3`
@@ -5143,7 +5236,7 @@ export function DetalleProyectoModal({ isOpen, onClose, proyecto, onUpdate }: De
                             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
                               <div>
                                 <span className="font-bold text-on-surface text-sm block">Generar todo en lote</span>
-                                <span className="text-[10px] text-on-surface-variant block">Genera y sube a Supabase Storage todos los textos configurados en Español Latam, Español Europa e Inglés en un solo proceso.</span>
+                                <span className="text-[10px] text-on-surface-variant block">Traduce automáticamente textos faltantes y sube a Supabase Storage todos los audios en Español (Latam y Europa), Inglés y Portugués.</span>
                               </div>
                               <button
                                 type="button"
@@ -5154,7 +5247,7 @@ export function DetalleProyectoModal({ isOpen, onClose, proyecto, onUpdate }: De
                                 {generatingAll ? (
                                   <>
                                     <Loader2 className="h-4 w-4 animate-spin text-black" />
-                                    Generando...
+                                    {translatingAll ? "Traduciendo..." : "Generando..."}
                                   </>
                                 ) : (
                                   <>
@@ -5168,13 +5261,13 @@ export function DetalleProyectoModal({ isOpen, onClose, proyecto, onUpdate }: De
                             {generatingAll && (
                               <div className="space-y-1.5">
                                 <div className="flex justify-between text-[10px] font-semibold text-on-surface-variant">
-                                  <span>Progreso: {generationProgress.current} / {generationProgress.total} audios</span>
-                                  <span>{Math.round((generationProgress.current / generationProgress.total) * 100)}%</span>
+                                  <span>{translatingAll ? "Traduciendo textos faltantes:" : "Progreso de audios:"} {generationProgress.current} / {generationProgress.total}</span>
+                                  <span>{Math.round((generationProgress.current / Math.max(generationProgress.total, 1)) * 100)}%</span>
                                 </div>
                                 <div className="h-2 w-full bg-surface-container rounded-full overflow-hidden border border-outline-variant/10">
                                   <div
                                     className="h-full bg-primary transition-all duration-300 rounded-full"
-                                    style={{ width: `${(generationProgress.current / generationProgress.total) * 100}%` }}
+                                    style={{ width: `${(generationProgress.current / Math.max(generationProgress.total, 1)) * 100}%` }}
                                   />
                                 </div>
                               </div>

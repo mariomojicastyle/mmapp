@@ -55,7 +55,15 @@ export function getAssetPath(path) {
 }
 
 export function translateHerraje(name, glosario, idioma) {
-  if (!name || !glosario || !Array.isArray(glosario) || glosario.length === 0) {
+  const fallbackGlosario = [
+    { pt: "gaveta", es: "cajón", en: "drawer" },
+    { pt: "fundo", es: "fondo", en: "bottom" },
+    { pt: "porta", es: "puerta", en: "door" }
+  ];
+
+  const mergedGlosario = Array.isArray(glosario) ? [...glosario, ...fallbackGlosario] : fallbackGlosario;
+
+  if (!name) {
     return name;
   }
   const cleanLang = (idioma || 'es').toLowerCase();
@@ -74,9 +82,16 @@ export function translateHerraje(name, glosario, idioma) {
   const nameSan = sanitize(name);
   if (!nameSan) return name;
 
+  // REGLA ESPECIAL (Nueva Convención): Siempre que la pieza contenga "ensamblaje", se asume el bloque previo.
+  if (nameSan.startsWith("ensamblaje")) {
+    if (cleanLang === 'en') return "Previous assembly";
+    if (cleanLang === 'pt') return "Montagem anterior";
+    return "Ensamblaje previo";
+  }
+
   // Ordenamos el glosario por longitud del término en pt desc, luego es desc, luego en desc
   // para hacer primero la coincidencia más larga (evitar falsos positivos parciales)
-  const sortedGlosario = [...glosario].sort((a, b) => {
+  const sortedGlosario = [...mergedGlosario].sort((a, b) => {
     const lenA = Math.max((a.pt || "").length, (a.es || "").length, (a.en || "").length);
     const lenB = Math.max((b.pt || "").length, (b.es || "").length, (b.en || "").length);
     return lenB - lenA;
