@@ -36,6 +36,7 @@ export default function PanelInicial() {
   });
 
   const showCleanBackdrop = isArMode || (isMobile && modoArranqueMovil === "simple");
+  const isDemoMode = showCleanBackdrop && !isArMode;
 
   const [isEmbedded, setIsEmbedded] = useState(false);
   useEffect(() => {
@@ -230,7 +231,8 @@ export default function PanelInicial() {
             </div>
           </div>
         </>
-      ) : (
+      ) : isArMode ? (
+        // Pantalla original de Realidad Aumentada (QR)
         <div style={{ display: "flex", flexDirection: "column", height: "100%", width: "100%", position: "relative" }}>
           {/* ARRIBA (50% de la pantalla): Centrado del Logo MM (20% más grande, 245px -> 294px) */}
           <div style={{ height: "50%", width: "100%", display: "flex", alignItems: "center", justifyContent: "center", boxSizing: "border-box", padding: "20px" }}>
@@ -304,6 +306,68 @@ export default function PanelInicial() {
             </div>
           </div>
         </div>
+      ) : (
+        // Pantalla nueva optimizada para el Modo Demo Móvil
+        <div className="demo-welcome-container">
+          <div className="demo-welcome-logo-section">
+            <img 
+              src={getAssetPath("/assets/Logo_MM_en.svg")} 
+              alt="Mario Mojica Logo" 
+              className="demo-welcome-logo"
+            />
+          </div>
+
+          <div className="demo-welcome-loader-section">
+            <div className="demo-progress-container">
+              <div className="progress">
+                <div style={fillerStyles} className="progressBar" ref={progressBar}>
+                  <span style={labelStyles}>{`${displayProgress}%`}</span>
+                </div>
+              </div>
+              
+              <div className="demo-cube-icon">
+                <svg 
+                  xmlns="http://www.w3.org/2000/svg" 
+                  viewBox="0 0 24 24" 
+                  width="44px" 
+                  height="44px" 
+                  fill="none" 
+                  stroke="currentColor" 
+                  strokeWidth="2" 
+                  strokeLinecap="round" 
+                  strokeLinejoin="round"
+                >
+                  <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z" />
+                  <polyline points="3.27 6.96 12 12.01 20.73 6.96" />
+                  <line x1="12" y1="22.08" x2="12" y2="12" />
+                </svg>
+              </div>
+            </div>
+
+            <div className="demo-welcome-controls">
+              <p className="demo-welcome-explain">
+                {t.arExplain}
+              </p>
+              
+              <div 
+                className="optionI" 
+                id="inicio" 
+                onClick={Start} 
+                style={{ 
+                  marginTop: "0", 
+                  display: (displayProgress === 100 || progress >= 100) ? "flex" : "none", 
+                  zIndex: 40,
+                  pointerEvents: "auto"
+                }}
+              >
+                <div className="imagen">
+                  {idioma === "en" ? "Start" : "Iniciar"}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )
       )}
     </aside>
   </>;

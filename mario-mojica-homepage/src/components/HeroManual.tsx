@@ -64,6 +64,12 @@ export default function HeroManual() {
         >
           <Link
             href="#demo"
+            onClick={(e) => {
+              if (typeof window !== "undefined" && (window as any).__triggerLiveDemoFullscreen) {
+                e.preventDefault();
+                (window as any).__triggerLiveDemoFullscreen();
+              }
+            }}
             className="bg-primary text-white py-4 px-10 rounded-full font-semibold text-lg hover:bg-opacity-90 shadow-xl shadow-primary/30 hover:scale-105 transition-all duration-300"
           >
             {t('Ver Demo Interactiva', 'View Interactive Demo', 'Ver Demo Interativa')}

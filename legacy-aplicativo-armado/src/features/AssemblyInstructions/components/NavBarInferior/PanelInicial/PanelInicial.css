@@ -291,4 +291,122 @@
   55%  { opacity: 0; }
   85%  { opacity: 0; }
   100% { opacity: 1; }
+}
+
+/* ──────────────────────────────────────────────────────────────────────────
+   Pantalla de Bienvenida para el Modo Demo Móvil (Optimizado)
+   ────────────────────────────────────────────────────────────────────────── */
+.demo-welcome-container {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  width: 100vw;
+  box-sizing: border-box;
+  padding: 24px;
+  justify-content: space-evenly;
+  align-items: center;
+  position: relative;
+  background: radial-gradient(circle, #ffffff 0%, #f3f4f6 100%);
+  background-color: #ffffff;
+}
+
+.demo-welcome-logo-section {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+}
+
+.demo-welcome-logo {
+  width: 240px;
+  height: auto;
+  max-width: 80%;
+  filter: drop-shadow(0 4px 10px rgba(0, 0, 0, 0.05));
+}
+
+.demo-welcome-loader-section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+  max-width: 380px;
+  gap: 20px;
+}
+
+.demo-progress-container {
+  position: relative;
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 30px;
+}
+
+.demo-progress-container .progress {
+  width: 100%;
+  margin: 0 !important;
+}
+
+.demo-cube-icon {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 10;
+  color: var(--primary, #0d9488);
+  pointer-events: none;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.demo-cube-icon svg {
+  filter: drop-shadow(0 0 10px rgba(13, 148, 136, 0.4));
+}
+
+.demo-welcome-controls {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  width: 100%;
+}
+
+.demo-welcome-explain {
+  font-size: 14px;
+  color: var(--primary, #0d9488);
+  margin: 0;
+  line-height: 1.5;
+  font-weight: 600;
+  text-align: center;
+}
+
+/* Diseño Horizontal adaptativo para pantallas cortas (Landscape o iframe pequeño) */
+@media (max-height: 480px) {
+  .demo-welcome-container {
+    flex-direction: row;
+    justify-content: space-around;
+    padding: 16px 24px;
+  }
+
+  .demo-welcome-logo-section {
+    width: 40%;
+    justify-content: center;
+  }
+
+  .demo-welcome-logo {
+    width: 180px;
+    max-width: 100%;
+  }
+
+  .demo-welcome-loader-section {
+    width: 55%;
+    max-width: 450px;
+    gap: 12px;
+  }
+
+  .demo-welcome-explain {
+    font-size: 12.5px;
+    line-height: 1.4;
+  }
 }

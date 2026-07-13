@@ -52,6 +52,20 @@ export default function LiveDemo() {
     };
   }, []);
 
+  // Registrar el disparador global para maximizar desde otros componentes
+  useEffect(() => {
+    (window as any).__triggerLiveDemoFullscreen = () => {
+      if (containerRef.current && !document.fullscreenElement) {
+        containerRef.current.requestFullscreen().catch((err) => {
+          console.error("Error attempting to enable fullscreen:", err);
+        });
+      }
+    };
+    return () => {
+      delete (window as any).__triggerLiveDemoFullscreen;
+    };
+  }, []);
+
   const toggleFullscreen = () => {
     if (!containerRef.current) return;
     if (!document.fullscreenElement) {
@@ -103,7 +117,7 @@ export default function LiveDemo() {
 
           <iframe
             src={`${appArmadoUrl}/M00001`}
-            className={`w-full block ${isFullscreen ? "h-full min-h-screen" : "aspect-video"}`}
+            className={`w-full block ${isFullscreen ? "h-full min-h-screen" : "aspect-[16/13.5]"}`}
             width="100%"
             allowFullScreen
             allow="xr-spatial-tracking; fullscreen; autoplay; web-share"
