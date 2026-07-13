@@ -117,7 +117,7 @@ export default function LiveDemo() {
 
           <iframe
             src={`${appArmadoUrl}/M00001`}
-            className={`w-full block ${isFullscreen ? "h-full min-h-screen" : "aspect-[16/13.5]"}`}
+            className={`w-full block ${isFullscreen ? "h-full min-h-screen" : "aspect-[16/16.2]"}`}
             width="100%"
             allowFullScreen
             allow="xr-spatial-tracking; fullscreen; autoplay; web-share"
@@ -137,7 +137,7 @@ export default function LiveDemo() {
             href="#contacto"
             className="inline-block bg-primary text-white py-4 px-10 rounded-full font-semibold text-lg hover:brightness-110 transition-all duration-300"
           >
-            {t("Solicitar un prototipo con mi mueble", "Request a prototype with my furniture", "Solicitar um protótipo com meu móvel")}
+            {t("Solicitar un prototipo con mueble de mi marca", "Request a prototype with my brand's furniture", "Solicitar um protótipo com móvel da minha marca")}
           </Link>
         </motion.div>
       </div>

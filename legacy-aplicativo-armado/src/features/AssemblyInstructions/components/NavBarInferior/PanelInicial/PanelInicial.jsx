@@ -137,6 +137,8 @@ export default function PanelInicial() {
   //Se desactiva el panel inicial, y se inicializa el global state de iniciar el aplicativo.
   const Start = () => {
     useCharger.current.style.display = "none";
+    // Reactivar el audio explícitamente al iniciar para evitar silencios persistentes
+    useEnviroment.getState().PlayingAudio();
     StartAppTrue();
     
     // Si estamos en modo AR, lanzar la experiencia inmediatamente tras habilitar la app

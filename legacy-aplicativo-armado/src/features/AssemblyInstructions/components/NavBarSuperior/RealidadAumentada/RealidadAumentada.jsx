@@ -234,20 +234,22 @@ export default function RealiadaAumentada({ id, data }) {
           <button slot="ar-button" style={{ display: "none" }}></button>
         </model-viewer>
 
-        {/* Botón premium de AR Obsidian Teal (Unificado para PC y Móvil) */}
-        <button 
-          className={`ar-btn-pc ${showQR ? "active" : ""}`}
-          onClick={() => {
-            if (isMobile) {
-              iniciarAR();
-            } else {
-              setShowQR(!showQR);
-            }
-          }}
-          title={t.arPcTitle}
-        >
-          <span className="material-symbols-outlined">view_in_ar_new</span>
-        </button>
+        {/* Botón premium de AR Obsidian Teal (Unificado para PC y Móvil - Oculto en móvil inline) */}
+        {(!isMobile || isFullscreen) && (
+          <button 
+            className={`ar-btn-pc ${showQR ? "active" : ""}`}
+            onClick={() => {
+              if (isMobile) {
+                iniciarAR();
+              } else {
+                setShowQR(!showQR);
+              }
+            }}
+            title={t.arPcTitle}
+          >
+            <span className="material-symbols-outlined">view_in_ar_new</span>
+          </button>
+        )}
 
 
 

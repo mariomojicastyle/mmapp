@@ -269,8 +269,8 @@
 .close-fullscreen-btn {
   display: flex !important;
   position: fixed !important;
-  left: 15px !important; /* Lado izquierdo (simétrico al right: 15px de AR) */
-  bottom: 200px !important; /* Misma altura que AR (bottom: 200px) */
+  right: 15px !important; /* Lado derecho (alineado verticalmente con AR) */
+  top: 140px !important; /* Parte media superior (top: 140px) */
   height: 52px !important;
   width: 52px !important;
   min-width: 52px !important;
@@ -316,15 +316,19 @@
 /* Breakpoints simétricos de posicionamiento y tamaño */
 @media (max-width: 787px) {
   .close-fullscreen-btn {
-    bottom: 200px !important;
-    left: 15px !important;
+    top: 140px !important;
+    right: 15px !important;
+    left: auto !important;
+    bottom: auto !important;
   }
 }
 
 @media (max-width: 320px) {
   .close-fullscreen-btn {
-    bottom: 130px !important;
-    left: 1px !important;
+    top: 100px !important;
+    right: 5px !important;
+    left: auto !important;
+    bottom: auto !important;
     width: 44px !important;
     height: 44px !important;
     min-width: 44px !important;
@@ -343,8 +347,10 @@
     right: 20px !important;
   }
   .close-fullscreen-btn {
-    bottom: 300px !important;
-    left: 20px !important;
+    top: 150px !important;
+    right: 20px !important;
+    left: auto !important;
+    bottom: auto !important;
   }
 }
 /* CALIBRATOR_GENERATED_END */
