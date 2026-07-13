@@ -247,7 +247,7 @@
     bottom: 130px;
     right: 5px;
   }
-  .ar-btn-pc, .minimize-btn {
+  .ar-btn-pc {
     width: 44px !important;
     height: 44px !important;
     min-width: 44px !important;
@@ -255,14 +255,22 @@
     max-width: 44px !important;
     max-height: 44px !important;
   }
-  .ar-btn-pc .material-symbols-outlined, .minimize-btn .material-symbols-outlined {
+  .ar-btn-pc .material-symbols-outlined {
     font-size: 22px !important;
   }
 }
 
-/* Botón de minimizar premium Obsidian Teal (mismo estilo que ar-btn-pc) */
-.minimize-btn {
+/* Botón de cerrar "X" premium Obsidian Teal (posicionado simétrico a .AR) */
+.close-fullscreen-btn {
+  display: none !important; /* Oculto por defecto en PC (no-fullscreen) */
+}
+
+/* En pantalla completa, se muestra con posición fija y diseño Obsidian Teal */
+.close-fullscreen-btn {
   display: flex !important;
+  position: fixed !important;
+  left: 15px !important; /* Lado izquierdo (simétrico al right: 15px de AR) */
+  bottom: 200px !important; /* Misma altura que AR (bottom: 200px) */
   height: 52px !important;
   width: 52px !important;
   min-width: 52px !important;
@@ -270,12 +278,12 @@
   max-width: 52px !important;
   max-height: 52px !important;
   aspect-ratio: 1 / 1 !important;
-  flex-shrink: 0 !important; /* Prevenir deformaciones flexbox */
+  flex-shrink: 0 !important;
   border-radius: 50% !important;
   padding: 0 !important;
   margin: 0 !important;
   box-sizing: border-box !important;
-  align-self: center !important;
+  z-index: 990 !important; /* Mismo z-index que .AR */
   background: var(--surface, rgba(13, 24, 29, 0.7)) !important;
   backdrop-filter: var(--glass-blur, blur(12px)) !important;
   -webkit-backdrop-filter: var(--glass-blur, blur(12px)) !important;
@@ -289,7 +297,7 @@
   pointer-events: auto !important;
 }
 
-.minimize-btn:hover {
+.close-fullscreen-btn:hover {
   transform: scale(1.08) !important;
   border-color: var(--primary, #00f2fe) !important;
   color: var(--primary, #00f2fe) !important;
@@ -297,7 +305,7 @@
   background: var(--secondary) !important;
 }
 
-.minimize-btn .material-symbols-outlined {
+.close-fullscreen-btn .material-symbols-outlined {
   font-size: 28px !important;
   color: inherit !important;
   display: flex !important;
@@ -305,18 +313,27 @@
   justify-content: center !important;
 }
 
-/* CALIBRATOR_GENERATED_START */
+/* Breakpoints simétricos de posicionamiento y tamaño */
 @media (max-width: 787px) {
-  .AR {
+  .close-fullscreen-btn {
     bottom: 200px !important;
-    right: 15px !important;
+    left: 15px !important;
   }
 }
 
 @media (max-width: 320px) {
-  .AR {
+  .close-fullscreen-btn {
     bottom: 130px !important;
-    right: 1px !important;
+    left: 1px !important;
+    width: 44px !important;
+    height: 44px !important;
+    min-width: 44px !important;
+    min-height: 44px !important;
+    max-width: 44px !important;
+    max-height: 44px !important;
+  }
+  .close-fullscreen-btn .material-symbols-outlined {
+    font-size: 22px !important;
   }
 }
 
@@ -324,6 +341,10 @@
   .AR {
     bottom: 300px !important;
     right: 20px !important;
+  }
+  .close-fullscreen-btn {
+    bottom: 300px !important;
+    left: 20px !important;
   }
 }
 /* CALIBRATOR_GENERATED_END */

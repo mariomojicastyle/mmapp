@@ -64,11 +64,20 @@ export default function RealiadaAumentada({ id, data }) {
   // Escuchar eventos de fullscreen local y mensajes del padre para sincronizar el estado
   useEffect(() => {
     const handleFs = () => {
-      setIsFullscreen(!!document.fullscreenElement);
+      const isFull = !!document.fullscreenElement;
+      setIsFullscreen(isFull);
+      if (!isFull) {
+        // Pausar el audio al salir del modo pantalla completa de forma local
+        useEnviroment.getState().PausedAudio();
+      }
     };
     const handleMessage = (event) => {
       if (event.data && event.data.type === "FULLSCREEN_CHANGE") {
         setIsFullscreen(event.data.isFullscreen);
+        if (!event.data.isFullscreen) {
+          // Pausar el audio cuando el padre nos notifique que ha salido de pantalla completa
+          useEnviroment.getState().PausedAudio();
+        }
       }
     };
     document.addEventListener("fullscreenchange", handleFs);
@@ -80,8 +89,16 @@ export default function RealiadaAumentada({ id, data }) {
   }, []);
 
   const exitFullscreen = () => {
+    // Pausar el audio inmediatamente al salir voluntariamente
+    useEnviroment.getState().PausedAudio();
+
     if (typeof window !== "undefined" && window.self !== window.top) {
       window.parent.postMessage({ type: "MM_MANUAL_MINIMIZAR" }, "*");
+      if (document.fullscreenElement) {
+        document.exitFullscreen().catch((err) => {
+          console.warn("Error al salir de fullscreen local:", err);
+        });
+      }
     } else {
       if (document.fullscreenElement) {
         document.exitFullscreen().catch((err) => {
@@ -232,16 +249,7 @@ export default function RealiadaAumentada({ id, data }) {
           <span className="material-symbols-outlined">view_in_ar_new</span>
         </button>
 
-        {/* Botón de minimizar en móviles, visible solo en pantalla completa */}
-        {isFullscreen && (
-          <button 
-            className="minimize-btn"
-            onClick={exitFullscreen}
-            title={idioma === "en" ? "Minimize" : (idioma === "pt" ? "Minimizar" : "Minimizar")}
-          >
-            <span className="material-symbols-outlined">fullscreen_exit</span>
-          </button>
-        )}
+
 
         {/* Popover del Código QR para escritorio (PC) - Obsidian Teal Premium */}
         {!isMobile && (
@@ -286,6 +294,17 @@ export default function RealiadaAumentada({ id, data }) {
           </div>
         </div>
       </div>
+
+      {/* Botón de cerrar "X" en móviles, visible solo en pantalla completa, simétrico al botón de AR */}
+      {isFullscreen && (
+        <button 
+          className="close-fullscreen-btn"
+          onClick={exitFullscreen}
+          title={idioma === "en" ? "Close" : (idioma === "pt" ? "Fechar" : "Cerrar")}
+        >
+          <span className="material-symbols-outlined">close</span>
+        </button>
+      )}
     </>
   );
 }

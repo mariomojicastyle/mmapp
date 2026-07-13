@@ -59,7 +59,8 @@ Este archivo es la "Memoria RAM" para Antigravity. Contiene el contexto de lo qu
   - Implementación de la pantalla de bienvenida limpia y responsiva (Simple) en modo demo móvil sin alterar la pantalla QR.
   - Aumento de la altura del iframe de la demo en un 50% (`aspect-[16/13.5]` en lugar de `aspect-video`).
   - Intercepción de los botones de la landing page ("Ver Demo Interactiva") para lanzar pantalla completa directamente.
-  - Rediseño e integración del botón circular de minimizar al lado del botón de AR (a 5px) en el visor en modo fullscreen, removiendo el botón externo de la landing page.
+  - Rediseño e integración del botón circular de cerrar "X" (close-fullscreen-btn) independiente, posicionado de forma perfectamente simétrica a la izquierda del botón de AR a `left: 15px; bottom: 200px` en móviles.
+  - Detención automática del audio de la guía de instrucciones (llamando a `PausedAudio()`) al salir de la pantalla completa (vía botón "X", tecla ESC, o gesto nativo).
   - Corrección de la limpieza de nombres de pieza para duplicados de Blender que pierden el punto (ej: `11003` -> `11`).
 
 

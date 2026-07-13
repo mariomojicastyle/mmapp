@@ -149,8 +149,14 @@ export default function PanelInicial() {
     // Auto-maximizar al iniciar en móviles
     if (isMobile) {
       if (typeof window !== "undefined" && window.self !== window.top) {
-        // Embebido en iframe: Notificar al padre
+        // Embebido en iframe: Notificar al padre para maximizar el contenedor
         window.parent.postMessage({ type: "MM_MANUAL_INICIAR" }, "*");
+        // Y también solicitar maximizado local inmediato del propio iframe para asegurar el gesto de usuario
+        if (document.documentElement.requestFullscreen) {
+          document.documentElement.requestFullscreen().catch((err) => {
+            console.warn("Fullscreen local falló en iframe:", err);
+          });
+        }
       } else {
         // Directo en navegador: Fullscreen nativo
         if (!document.fullscreenElement) {
