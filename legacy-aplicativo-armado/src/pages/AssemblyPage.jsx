@@ -245,6 +245,8 @@ const AssemblyPage = () => {
             despiece: normalizarYAsignarPiezas(configData.despiece || []),
             logo: configData.logo_url ? `url('${getStorageUrl(configData.logo_url)}')` : "url('/assets/Logo_mm.svg')",
             favicon: configData.favicon_url ? getStorageUrl(configData.favicon_url) : "/favicon.png",
+            brandingShieldActivo: configData.branding_shield_activo !== false, // Default to true if null/undefined
+            modoArranqueMovil: configData.modo_arranque_movil || "gamma",
             
             // Insumos del CMS para resolución dinámica
             imagenHerramientas: configData.imagen_herramientas,

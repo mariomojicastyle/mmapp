@@ -297,6 +297,8 @@ export function DetalleProyectoModal({ isOpen, onClose, proyecto, onUpdate }: De
   const [opacidadNubes, setOpacidadNubes] = useState(20)
   const [logoUrl, setLogoUrl] = useState("")
   const [faviconUrl, setFaviconUrl] = useState("")
+  const [brandingShieldActivo, setBrandingShieldActivo] = useState(true)
+  const [modoArranqueMovil, setModoArranqueMovil] = useState("gamma")
   
   // Opciones de personalización de Tipografía avanzadas
   const [fontTitle, setFontTitle] = useState("Inter")
@@ -1198,6 +1200,8 @@ export function DetalleProyectoModal({ isOpen, onClose, proyecto, onUpdate }: De
               setOpacidadNubes(data.opacidad_nubes !== undefined && data.opacidad_nubes !== null ? data.opacidad_nubes : 20)
               setLogoUrl(data.logo_url || "")
               setFaviconUrl(data.favicon_url || "")
+              setBrandingShieldActivo(data.branding_shield_activo !== undefined && data.branding_shield_activo !== null ? data.branding_shield_activo : true)
+              setModoArranqueMovil(data.modo_arranque_movil || "gamma")
               
               // Cargar valores tipográficos (o dejar fallbacks)
               setFontTitle(data.font_title || "Inter")
@@ -2882,6 +2886,8 @@ export function DetalleProyectoModal({ isOpen, onClose, proyecto, onUpdate }: De
           opacidad_nubes: opacidadNubes,
           logo_url: logoUrl,
           favicon_url: faviconUrl,
+          branding_shield_activo: brandingShieldActivo,
+          modo_arranque_movil: modoArranqueMovil,
           
           // Guardar campos de tipografía en BD
           font_title: fontTitle,
@@ -3924,7 +3930,7 @@ export function DetalleProyectoModal({ isOpen, onClose, proyecto, onUpdate }: De
                       </div>
                     </div>
 
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                       {/* Logo URL / Upload */}
                       <label className="flex flex-col gap-1.5">
                         <span className="text-xs font-semibold text-on-surface-variant">Logotipo Corporativo (.SVG o .PNG)</span>
@@ -3943,6 +3949,31 @@ export function DetalleProyectoModal({ isOpen, onClose, proyecto, onUpdate }: De
                           >
                             Cargar
                           </button>
+                        </div>
+                      </label>
+
+                      {/* Valla Publicitaria / Co-branding */}
+                      <label className="flex flex-col gap-1.5">
+                        <span className="text-xs font-semibold text-on-surface-variant">Valla Publicitaria / Co-branding</span>
+                        <div className="flex items-center h-[34px] gap-2">
+                          <button
+                            type="button"
+                            onClick={() => setBrandingShieldActivo(!brandingShieldActivo)}
+                            className={cn(
+                              "relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-primary/20",
+                              brandingShieldActivo ? "bg-primary" : "bg-surface-container-high"
+                            )}
+                          >
+                            <span
+                              className={cn(
+                                "pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out",
+                                brandingShieldActivo ? "translate-x-5" : "translate-x-0"
+                              )}
+                            />
+                          </button>
+                          <span className="text-xs font-medium text-on-surface">
+                            {brandingShieldActivo ? "Activado" : "Desactivado"}
+                          </span>
                         </div>
                       </label>
 
@@ -3965,6 +3996,20 @@ export function DetalleProyectoModal({ isOpen, onClose, proyecto, onUpdate }: De
                             Cargar
                           </button>
                         </div>
+                      </label>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <label className="flex flex-col gap-1.5">
+                        <span className="text-xs font-semibold text-on-surface-variant">Modo de Arranque Móvil</span>
+                        <select
+                          value={modoArranqueMovil}
+                          onChange={e => setModoArranqueMovil(e.target.value)}
+                          className="rounded-lg border border-outline-variant bg-surface-container px-3 py-1.5 text-xs text-on-surface outline-none focus:border-primary"
+                        >
+                          <option value="gamma">Gamma (Interactiva con Robot Spline)</option>
+                          <option value="simple">Simple (Backdrop limpio MM)</option>
+                        </select>
                       </label>
                     </div>
 

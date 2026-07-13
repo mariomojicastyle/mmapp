@@ -45,7 +45,12 @@ export function extractPieceNumber(name) {
   }).trim();
   const match = cleaned.match(PIECE_REGEX);
   if (match) {
-    return { number: parseInt(match[2], 10), raw: match[2] };
+    let numStr = match[2];
+    // Si el número es largo y termina en 0xx (sufijo de Blender sin punto/guion bajo, ej: 11003 -> 11)
+    if (numStr.length >= 4 && /0\d\d$/.test(numStr)) {
+      numStr = numStr.substring(0, numStr.length - 3);
+    }
+    return { number: parseInt(numStr, 10), raw: numStr };
   }
   return null;
 }

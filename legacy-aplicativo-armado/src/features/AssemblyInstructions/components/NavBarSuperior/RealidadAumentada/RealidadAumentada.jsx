@@ -59,6 +59,37 @@ export default function RealiadaAumentada({ id, data }) {
   // Estado para controlar la visualización de la burbuja del código QR en PC
   const [showQR, setShowQR] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
+  const [isFullscreen, setIsFullscreen] = useState(false);
+
+  // Escuchar eventos de fullscreen local y mensajes del padre para sincronizar el estado
+  useEffect(() => {
+    const handleFs = () => {
+      setIsFullscreen(!!document.fullscreenElement);
+    };
+    const handleMessage = (event) => {
+      if (event.data && event.data.type === "FULLSCREEN_CHANGE") {
+        setIsFullscreen(event.data.isFullscreen);
+      }
+    };
+    document.addEventListener("fullscreenchange", handleFs);
+    window.addEventListener("message", handleMessage);
+    return () => {
+      document.removeEventListener("fullscreenchange", handleFs);
+      window.removeEventListener("message", handleMessage);
+    };
+  }, []);
+
+  const exitFullscreen = () => {
+    if (typeof window !== "undefined" && window.self !== window.top) {
+      window.parent.postMessage({ type: "MM_MANUAL_MINIMIZAR" }, "*");
+    } else {
+      if (document.fullscreenElement) {
+        document.exitFullscreen().catch((err) => {
+          console.warn("Error al salir de fullscreen:", err);
+        });
+      }
+    }
+  };
 
   // Detectar si el dispositivo es móvil o pantalla pequeña
   useEffect(() => {
@@ -200,6 +231,17 @@ export default function RealiadaAumentada({ id, data }) {
         >
           <span className="material-symbols-outlined">view_in_ar_new</span>
         </button>
+
+        {/* Botón de minimizar en móviles, visible solo en pantalla completa */}
+        {isFullscreen && (
+          <button 
+            className="minimize-btn"
+            onClick={exitFullscreen}
+            title={idioma === "en" ? "Minimize" : (idioma === "pt" ? "Minimizar" : "Minimizar")}
+          >
+            <span className="material-symbols-outlined">fullscreen_exit</span>
+          </button>
+        )}
 
         {/* Popover del Código QR para escritorio (PC) - Obsidian Teal Premium */}
         {!isMobile && (

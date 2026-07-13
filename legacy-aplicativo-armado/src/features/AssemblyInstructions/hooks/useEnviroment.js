@@ -62,6 +62,8 @@ export default create(
       StartApp: false,//Variable que se activa cuando es posible iniciar el aplicativo
 
       icono: "",//url del icono del fabricante
+      brandingShieldActivo: true,
+      modoArranqueMovil: "gamma",
 
       AudioEnded: false,//Variable de audio finalizado
       AnimationEnded: false,//Variable de animación 3D finalizada
@@ -203,6 +205,8 @@ export default create(
 
       StartAppTrue: () => set((state) => ({ StartApp: true })),
       ChargerIcon: (icon) => set((state) => ({ icono: icon })),
+      ChargerBrandingShieldActivo: (activo) => set((state) => ({ brandingShieldActivo: activo })),
+      ChargerModoArranqueMovil: (modo) => set((state) => ({ modoArranqueMovil: modo })),
 
 
       AudioEndedFalse: (icon) => set((state) => ({ AudioEnded: false })),

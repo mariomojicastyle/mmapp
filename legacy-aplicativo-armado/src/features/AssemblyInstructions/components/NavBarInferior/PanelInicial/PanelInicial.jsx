@@ -15,6 +15,8 @@ export default function PanelInicial() {
   const StartAppTrue = useEnviroment((state) => state.StartAppTrue);
   const icono = useEnviroment((state) => state.icono);
   const idioma = useEnviroment((state) => state.idioma);
+  const brandingShieldActivo = useEnviroment((state) => state.brandingShieldActivo);
+  const modoArranqueMovil = useEnviroment((state) => state.modoArranqueMovil);
 
   const [displayProgress, setDisplayProgress] = useState(0);
   const [isArMode] = useState(() => {
@@ -24,6 +26,16 @@ export default function PanelInicial() {
     }
     return false;
   });
+
+  const [isMobile] = useState(() => {
+    if (typeof window !== "undefined") {
+      return /Mobi|Android|iPhone|iPad|iPod/i.test(navigator.userAgent) || 
+             (window.matchMedia && window.matchMedia("(pointer: coarse)").matches);
+    }
+    return false;
+  });
+
+  const showCleanBackdrop = isArMode || (isMobile && modoArranqueMovil === "simple");
 
   const [isEmbedded, setIsEmbedded] = useState(false);
   useEffect(() => {
@@ -132,6 +144,21 @@ export default function PanelInicial() {
         window.__activateAR();
       }, 150);
     }
+
+    // Auto-maximizar al iniciar en móviles
+    if (isMobile) {
+      if (typeof window !== "undefined" && window.self !== window.top) {
+        // Embebido en iframe: Notificar al padre
+        window.parent.postMessage({ type: "MM_MANUAL_INICIAR" }, "*");
+      } else {
+        // Directo en navegador: Fullscreen nativo
+        if (!document.fullscreenElement) {
+          document.documentElement.requestFullscreen().catch((err) => {
+            console.warn("Fullscreen automático bloqueado:", err);
+          });
+        }
+      }
+    }
   }
 
   const texts = {
@@ -160,10 +187,10 @@ export default function PanelInicial() {
     <aside 
       className="PanelInicial" 
       ref={useCharger} 
-      style={isArMode ? { background: "radial-gradient(circle, #ffffff 0%, #f3f4f6 100%)", backgroundColor: "#ffffff", padding: "0", display: "flex", flexDirection: "column", height: "100vh", position: "relative" } : {}}
+      style={showCleanBackdrop ? { background: "radial-gradient(circle, #ffffff 0%, #f3f4f6 100%)", backgroundColor: "#ffffff", padding: "0", display: "flex", flexDirection: "column", height: "100vh", position: "relative" } : {}}
     >
       {/* Background Spline Scene / AR Minimal Backdrop */}
-      {!isArMode ? (
+      {!showCleanBackdrop ? (
         <>
           <div className="spline-wrapper">
             <iframe 
@@ -177,7 +204,7 @@ export default function PanelInicial() {
           </div>
 
           {/* El Escudo de Cristal (Client Branding Overlay) */}
-          {icono && !icono.includes("Logo_mm.svg") && !icono.includes("Logo_MM_en.svg") && (
+          {brandingShieldActivo && icono && !icono.includes("Logo_mm.svg") && !icono.includes("Logo_MM_en.svg") && (
             <div className="client-branding-shield">
               <span className="branding-text-top">{t.productos}</span>
               <div 

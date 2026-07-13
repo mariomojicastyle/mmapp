@@ -13,11 +13,42 @@ export default function LiveDemo() {
 
   useEffect(() => {
     const handleFullscreenChange = () => {
-      setIsFullscreen(!!document.fullscreenElement);
+      const isFull = !!document.fullscreenElement;
+      setIsFullscreen(isFull);
+      // Enviar el estado de fullscreen al iframe para sincronización
+      const iframe = containerRef.current?.querySelector("iframe");
+      if (iframe && iframe.contentWindow) {
+        iframe.contentWindow.postMessage({ type: "FULLSCREEN_CHANGE", isFullscreen: isFull }, "*");
+      }
     };
     document.addEventListener("fullscreenchange", handleFullscreenChange);
     return () => {
       document.removeEventListener("fullscreenchange", handleFullscreenChange);
+    };
+  }, []);
+
+  // Escuchar mensajes del visor 3D para entrar/salir de pantalla completa
+  useEffect(() => {
+    const handleMessage = (event: MessageEvent) => {
+      if (event.data) {
+        if (event.data.type === "MM_MANUAL_INICIAR") {
+          if (containerRef.current && !document.fullscreenElement) {
+            containerRef.current.requestFullscreen().catch((err) => {
+              console.error("Error attempting to enable fullscreen:", err);
+            });
+          }
+        } else if (event.data.type === "MM_MANUAL_MINIMIZAR") {
+          if (document.fullscreenElement) {
+            document.exitFullscreen().catch((err) => {
+              console.error("Error exiting fullscreen:", err);
+            });
+          }
+        }
+      }
+    };
+    window.addEventListener("message", handleMessage);
+    return () => {
+      window.removeEventListener("message", handleMessage);
     };
   }, []);
 
@@ -68,16 +99,7 @@ export default function LiveDemo() {
           viewport={{ once: true }}
           className="relative rounded-2xl overflow-hidden shadow-2xl shadow-primary/10 border border-border-dark bg-black w-full"
         >
-          {/* Maximize/Minimize Button */}
-          <button
-            onClick={toggleFullscreen}
-            className="absolute bottom-4 right-4 bg-primary/20 hover:bg-primary border-2 border-primary text-white rounded-full w-12 h-12 flex items-center justify-center transition-all duration-300 z-10 hover:scale-105 active:scale-95 shadow-lg shadow-primary/40 cursor-pointer"
-            title={isFullscreen ? t("Minimizar", "Minimize", "Minimizar") : t("Maximizar", "Maximize", "Maximizar")}
-          >
-            <span className="material-symbols-outlined !text-2xl font-bold">
-              {isFullscreen ? "fullscreen_exit" : "fullscreen"}
-            </span>
-          </button>
+
 
           <iframe
             src={`${appArmadoUrl}/M00001`}

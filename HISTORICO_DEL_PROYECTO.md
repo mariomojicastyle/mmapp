@@ -919,3 +919,14 @@ Tras implementar el flujo de horneado (Baking) de la V20, la aplicación web no 
    - Para sanear futuros ensambles, el script `bake_geometry_nodes_v20.py` se actualizó para no usar caracteres no ASCII. El agrupador se crea nativamente como `Peca_Group` en lugar de `Peça_Group`.
    
 Con esta batería de arreglos y la validación en caliente, la V20 se establece formalmente como la **VERSIÓN ESTABLE**, garantizando la integración sin fricciones entre la topología generada por Blender 4.2 y el aplicativo en React.
+
+* **[2026-07-13] Modo de Arranque Móvil, Pantalla Completa Automática y Alineación de Controles:**
+    - **Base de Datos**: Añadida la columna `modo_arranque_movil` (tipo `text` con fallback `'gamma'`) en la tabla `configuraciones_manual`.
+    - **Plataforma CMS**: Añadido selector dropdown en la pestaña **"Personalización UI"** de [detalle-proyecto-modal.tsx](file:///c:/Desarrollo/mmapp/mario-mojica-plataforma/components/proyectos/detalle-proyecto-modal.tsx) para elegir entre modo Gamma (interactivo con robot Spline) y Simple (backdrop limpio Mario Mojica).
+    - **Auto-Fullscreen en Móviles**: Modificada la acción de inicio en [PanelInicial.jsx](file:///c:/Desarrollo/mmapp/legacy-aplicativo-armado/src/features/AssemblyInstructions/components/NavBarInferior/PanelInicial/PanelInicial.jsx) para solicitar automáticamente pantalla completa al pulsar "INICIAR" en dispositivos móviles.
+    - **Integración de Controles (Exit Fullscreen)**:
+      - Removido el botón flotante e impreciso de maximizar del contenedor principal [LiveDemo.tsx](file:///c:/Desarrollo/mmapp/mario-mojica-homepage/src/components/LiveDemo.tsx) de la landing page.
+      - Implementado el botón `.minimize-btn` directamente dentro del visor [RealidadAumentada.jsx](file:///c:/Desarrollo/mmapp/legacy-aplicativo-armado/src/features/AssemblyInstructions/components/NavBarSuperior/RealidadAumentada/RealidadAumentada.jsx) cuando `isFullscreen` es verdadero.
+      - Rediseñado el contenedor `.AR` en [RealidadAumentada.css](file:///c:/Desarrollo/mmapp/legacy-aplicativo-armado/src/features/AssemblyInstructions/components/NavBarSuperior/RealidadAumentada/RealidadAumentada.css) como un flex horizontal transparente en móviles, alineando los botones de AR y minimizar con una separación exacta de `5px`.
+      - Sincronización del estado de fullscreen bidireccional entre la ventana madre y el iframe del visor mediante `postMessage`.
+    - **Corrección de Limpieza de Piezas**: Corregido el algoritmo de extracción en [pieceUtils.js](file:///c:/Desarrollo/mmapp/legacy-aplicativo-armado/src/lib/pieceUtils.js) para detectar y recortar sufijos numéricos de duplicados de Blender que pierdan el punto (ej: `11003` -> `11`), protegiendo la visualización de los cajones en la Estantería sin alterar la nomenclatura legítima de otras marcas.

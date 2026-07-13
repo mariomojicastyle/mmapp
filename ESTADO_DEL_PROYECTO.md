@@ -54,6 +54,12 @@ Este archivo es la "Memoria RAM" para Antigravity. Contiene el contexto de lo qu
   - Textos descriptivos multi-idioma (ES, EN, PT) que indican de forma nativa: "Productos [Cliente] Potenciados por [MARIO MOJICA]".
   - **Traducción Universal de Tooltips**: Implementación de una regla incondicional en `translateHerraje` (`src/lib/assets.js`). Cualquier submalla detectada cuyo nombre inicie con "Ensamblaje" (ej: `Ensamblaje_Paso_2`) será traducida automáticamente a "Ensamblaje previo" (ES), "Previous assembly" (EN) o "Montagem anterior" (PT). Se integró además un fallback para términos comunes como "Gaveta".
   - **Traducción de Nubes AR**: Integración del idioma Portugués en los textos estáticos del botón y modal de Realidad Aumentada (`RealidadAumentada.jsx` y `PanelInicial.jsx`).
+- [x] **Modo de Arranque Móvil y Fullscreen Automático (Politorno_Multimarca_Full - 13 de Julio, 2026)**:
+  - Creación del selector "Modo de Arranque Móvil" (Simple vs Gamma) en la base de datos y CMS.
+  - Implementación de la pantalla de bienvenida limpia (Simple) en móviles omitiendo Spline.
+  - Automatización de la pantalla completa al pulsar "INICIAR" en dispositivos móviles.
+  - Rediseño e integración del botón circular de minimizar al lado del botón de AR (a 5px) en el visor en modo fullscreen, removiendo el botón externo de la landing page.
+  - Corrección de la limpieza de nombres de pieza para duplicados de Blender que pierden el punto (ej: `11003` -> `11`).
 
 
 ### 🚧 Bloqueos / Notas Técnicas

@@ -1,9 +1,12 @@
-# Protocolo de Arranque
-Cada vez que iniciamos, tu primera tarea absoluta debe ser leer los siguientes archivos para recuperar el contexto del proyecto:
-- [ESTADO_DEL_PROYECTO.md](file:///c:/Desarrollo/mmapp/ESTADO_DEL_PROYECTO.md)
-- [HISTORICO_DEL_PROYECTO.md](file:///c:/Desarrollo/mmapp/HISTORICO_DEL_PROYECTO.md)
-- [MANIFIESTO_NEGOCIO.md](file:///c:/Desarrollo/mmapp/MANIFIESTO_NEGOCIO.md)
-- [Arquitectura.md](file:///c:/Desarrollo/mmapp/Arquitectura.md)
+# Protocolo de Arranque (Optimizado)
+Cada vez que iniciamos, tu primera tarea absoluta debe ser recuperar el contexto leyendo los siguientes archivos estructurados en paralelo:
+
+- [ESTADO_DEL_PROYECTO.md](file:///c:/Desarrollo/mmapp/ESTADO_DEL_PROYECTO.md) - Memoria RAM y tareas activas.
+- [HISTORICO_DEL_PROYECTO.md](file:///c:/Desarrollo/mmapp/HISTORICO_DEL_PROYECTO.md) - Registro cronológico de hitos.
+- [MANIFIESTO_NEGOCIO.md](file:///c:/Desarrollo/mmapp/docs/MANIFIESTO_NEGOCIO.md) - GTM: Foco Comercial Manual 3D.
+- [Arquitectura.md](file:///c:/Desarrollo/mmapp/Arquitectura/Arquitectura.md) - Topología del Ecosistema B2B y VPS.
+- [GUIA_CONFIGURACION_CAMARA.md](file:///c:/Desarrollo/mmapp/docs/GUIA_CONFIGURACION_CAMARA.md) - Captura y persistencia SQL de coordenadas 3D.
+- [reputacion_web.md](file:///c:/Desarrollo/mmapp/docs/reputacion_web.md) - Protocolo DNS (SPF/DKIM/DMARC) y disputas Antivirus.
 
 ---
 
