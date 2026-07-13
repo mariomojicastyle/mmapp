@@ -367,7 +367,6 @@ export default function PanelInicial() {
             </div>
           </div>
         </div>
-      )
       )}
     </aside>
   </>;
