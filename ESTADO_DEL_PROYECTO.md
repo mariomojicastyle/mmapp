@@ -230,6 +230,8 @@ Un **"Manual Vacío"** es un cascarón o aplicación base centralizada (desplega
 - [x] **[NUEVO - 14 de Julio, 2026] Diseño del Árbol de Clientes B2B:** Modelado del esquema relacional (Empresas + Contactos) para prospección en Baserow y creación del documento de referencia [CRM.md](file:///c:/Desarrollo/mmapp/Arquitectura/CRM.md) inyectado al arranque de [AGENTS.md](file:///c:/Desarrollo/mmapp/AGENTS.md).
 - [x] **[NUEVO - 14 de Julio, 2026] Carpeta Comercial y Semilla Tier 2:** Creación de la carpeta `/Comercial`, guardado del estudio [ranking_empresas_rta_brasil.md](file:///c:/Desarrollo/mmapp/Comercial/ranking_empresas_rta_brasil.md) (agregado a [AGENTS.md](file:///c:/Desarrollo/mmapp/AGENTS.md)) e inyección automática en Baserow de las 15 empresas del Tier 2 para prospección.
 - [ ] **PENDIENTE:** Monitoreo de tráfico y leads reales.
+- [x] **Configuración de LinkedIn Personal (14 de Julio, 2026):** Perfil de Mario Mojica optimizado con titular persuasivo B2B en español y portugués, correo corporativo verificado como principal, biografía ("Acerca de") en ambos idiomas, y aptitudes alineadas a la Industria 4.0.
+- [ ] **PENDIENTE:** Crear Página de Empresa en LinkedIn (Bloqueado temporalmente por política de cuenta nueva de LinkedIn; reintentar el 15 de Julio).
 
 
 
