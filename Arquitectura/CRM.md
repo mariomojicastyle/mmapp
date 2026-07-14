@@ -23,13 +23,13 @@ Para evitar la duplicidad de información y permitir la prospección basada en c
                 │ (1 a Muchos)
                 ▼
 ┌─────────────────────────────────┐
-│   TABLA B: CONTACTOS (ID 600)   │  (Las Ramas: Personas / Leads)
+│   TABLA B: CONTACTOS (ID 994)   │  (Las Ramas: Personas / Leads)
 └───────────────┬─────────────────┘
                 │
                 │ (1 a Muchos)
                 ▼
 ┌─────────────────────────────────┐
-│ TABLA C: INTERACCIONES (ID 988) │  (Las Hojas: Historial/Bitácora)
+│ TABLA C: INTERACCIONES (ID 995) │  (Las Hojas: Historial/Bitácora)
 └─────────────────────────────────┘
 ```
 
@@ -48,7 +48,7 @@ Almacena la información de las fábricas de muebles objetivo.
 | **`Notas del Target`** | `Long Text` | Comentarios estratégicos y catálogo del cliente. |
 | **`Leads`** | `Link Row` | Relación inversa automática con la Tabla B (Contactos). |
 
-### Tabla B: Contactos / Leads (ID: 600)
+### Tabla B: Contactos / Leads (ID: 994)
 Almacena los datos de los tomadores de decisión dentro de las empresas.
 
 | Nombre del Campo | Tipo de Dato Baserow | Descripción / Opciones |
@@ -56,20 +56,20 @@ Almacena los datos de los tomadores de decisión dentro de las empresas.
 | **`Nombre`** | `Text (Primary)` | Nombre del contacto. |
 | **`Apellido`** | `Text` | Apellido del contacto. |
 | **`Email`** | `Email` | Email corporativo directo de la persona. |
-| **`Empresa Vinculada`** | `Link Row (ID 9499)` | **Relación** con la Tabla A (Empresas - ID 991). |
+| **`Empresa Vinculada`** | `Link Row (ID 9545)` | **Relación** con la Tabla A (Empresas - ID 991). |
 | **`Telefono`** | `Text` | Número móvil de contacto. |
 | **`Rol`** | `Text` | Cargo / Puesto (Ej: *Gerente de I+D, Comprador, CEO*). |
 | **`Estado CRM`** | `Single Select` | *Prospecto, Primer Contacto, Demo Agendada, Negociación, Cerrado Ganado, Cerrado Perdido*. |
-| **`Interacciones`** | `Link Row (ID 9462)` | **Relación** con la Tabla C (Interacciones - ID 988). |
+| **`Interacciones`** | `Link Row (ID 9544)` | **Relación** con la Tabla C (Interacciones - ID 995). |
 | **`Descripcion de la idea`** | `Long Text` | Mensaje inicial o descripción de su interés. |
 
-### Tabla C: Interacciones (ID: 988)
+### Tabla C: Interacciones (ID: 995)
 Bitácora de contactos y respuestas vinculadas a un lead.
 
 | Nombre del Campo | Tipo de Dato Baserow | Descripción / Opciones |
 | :--- | :--- | :--- |
 | **`Asunto`** | `Text (Primary)` | Asunto del email o resumen del mensaje. |
-| **`Lead`** | `Link Row (ID 9461)` | Relación con la Tabla B (Contactos - ID 600). |
+| **`Lead`** | `Link Row (ID 9543)` | Relación con la Tabla B (Contactos - ID 994). |
 | **`Cuerpo`** | `Long Text` | Detalle o contenido completo del mensaje. |
 | **`Direccion`** | `Single Select` | *Entrante, Saliente*. |
 
