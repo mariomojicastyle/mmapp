@@ -13,48 +13,65 @@ El CRM está soportado sobre **Baserow** (versión autohospedada en Docker dentr
 
 ## 📐 2. Modelo Relacional de Datos (Árbol de Clientes)
 
-Para evitar la duplicidad de información y permitir la prospección basada en cuentas corporativas (**Account-Based Marketing / ABM**), el CRM está estructurado en dos tablas vinculadas mediante una relación de clave foránea (Uno-a-Muchos):
+Para evitar la duplicidad de información y permitir la prospección basada en cuentas corporativas (**Account-Based Marketing / ABM**), el CRM está estructurado en tres tablas vinculadas mediante relaciones de clave foránea (Uno-a-Muchos):
 
 ```
-┌───────────────────────────┐
-│     TABLA A: EMPRESAS     │  (El Tronco: Datos Corporativos)
-└─────────────┬─────────────┘
-              │
-              │ (1 a Muchos)
-              ▼
-┌───────────────────────────┐
-│     TABLA B: CONTACTOS    │  (Las Ramas: Personas / Decisores)
-└───────────────────────────┘
+┌─────────────────────────────────┐
+│    TABLA A: EMPRESAS (ID 989)   │  (El Tronco: Datos Corporativos)
+└───────────────┬─────────────────┘
+                │
+                │ (1 a Muchos)
+                ▼
+┌─────────────────────────────────┐
+│   TABLA B: CONTACTOS (ID 600)   │  (Las Ramas: Personas / Leads)
+└───────────────┬─────────────────┘
+                │
+                │ (1 a Muchos)
+                ▼
+┌─────────────────────────────────┐
+│ TABLA C: INTERACCIONES (ID 988) │  (Las Hojas: Historial/Bitácora)
+└─────────────────────────────────┘
 ```
 
-### Tabla A: Empresas (Companies)
+### Tabla A: Empresas (ID: 989)
 Almacena la información de las fábricas de muebles objetivo.
 
 | Nombre del Campo | Tipo de Dato Baserow | Descripción / Opciones |
 | :--- | :--- | :--- |
-| **`Nombre de la Empresa`** | `Text` | Nombre oficial (Ej: *Jamar, Maderkit, Politorno*). |
+| **`Nombre de la Empresa`** | `Text (Primary)` | Nombre oficial (Ej: *Jamar, Maderkit, Politorno*). |
 | **`Sitio Web`** | `URL` | Enlace a la página web del fabricante. |
 | **`LinkedIn Corporativo`** | `URL` | Perfil de LinkedIn de la empresa. |
-| **`País`** | `Single Select` | Ubicación geográfica (Ej: *Colombia, Brasil, México, etc.*). |
-| **`Nicho / Segmento`** | `Single Select` | Tipo de mueble (Ej: *RTA Furniture, Cocinas, Oficina, Tapizados*). |
-| **`Dolor Principal`** | `Single Select` | Cuello de botella detectado (Ej: *Devolución de herrajes, R&D lento*). |
-| **`Estado Comercial`** | `Single Select` | *Prospecto, Contactado, Demo Agendada, Negociación, Cliente, Perdido*. |
+| **`Pais`** | `Text` | Ubicación geográfica. |
+| **`Nicho / Segmento`** | `Single Select` | *Mobiliario RTA, Oficina, Cocinas, Tapizados, Otro*. |
+| **`Dolor Principal`** | `Single Select` | *Devoluciones de herrajes, R&D lento, Falta de WebAR, Ninguno*. |
+| **`Estado Comercial`** | `Single Select` | *Prospecto, Contactado, Demo Agendada, Negociación, Cerrado Ganado, Cerrado Perdido*. |
 | **`Notas del Target`** | `Long Text` | Comentarios estratégicos y catálogo del cliente. |
+| **`Leads`** | `Link Row` | Relación inversa automática con la Tabla B (Contactos). |
 
-### Tabla B: Contactos (Contacts)
+### Tabla B: Contactos / Leads (ID: 600)
 Almacena los datos de los tomadores de decisión dentro de las empresas.
 
 | Nombre del Campo | Tipo de Dato Baserow | Descripción / Opciones |
 | :--- | :--- | :--- |
-| **`Nombre y Apellido`** | `Text` | Nombre completo del contacto. |
-| **`Empresa`** | `Link to Table` | **Relación** con la Tabla A (Empresas). |
-| **`Cargo`** | `Text` | Puesto exacto (Ej: *Gerente de I+D, Comprador de Herrajes, CEO*). |
-| **`Rol en la Compra`** | `Single Select` | *Decisor, Influenciador, Campeón Interno, Bloqueador*. |
-| **`LinkedIn Personal`** | `URL` | **Crítico:** Enlace para análisis de IA y personalización de mensajes. |
-| **`Correo Electrónico`** | `Email` | Email corporativo directo de la persona. |
-| **`WhatsApp / Teléfono`** | `Phone` | Número móvil de contacto. |
-| **`Último Contacto`** | `Date` | Fecha de la última interacción realizada. |
-| **`Estado del Contacto`** | `Single Select` | *Sin Contactar, Mensaje Enviado, En Conversación, Rechazado*. |
+| **`Nombre`** | `Text (Primary)` | Nombre del contacto. |
+| **`Apellido`** | `Text` | Apellido del contacto. |
+| **`Email`** | `Email` | Email corporativo directo de la persona. |
+| **`Empresa Vinculada`** | `Link Row (ID 9475)` | **Relación** con la Tabla A (Empresas - ID 989). |
+| **`Telefono`** | `Text` | Número móvil de contacto. |
+| **`Rol`** | `Text` | Cargo / Puesto (Ej: *Gerente de I+D, Comprador, CEO*). |
+| **`Estado CRM`** | `Single Select` | *Prospecto, Primer Contacto, Demo Agendada, Negociación, Cerrado Ganado, Cerrado Perdido*. |
+| **`Interacciones`** | `Link Row (ID 9462)` | **Relación** con la Tabla C (Interacciones - ID 988). |
+| **`Descripcion de la idea`** | `Long Text` | Mensaje inicial o descripción de su interés. |
+
+### Tabla C: Interacciones (ID: 988)
+Bitácora de contactos y respuestas vinculadas a un lead.
+
+| Nombre del Campo | Tipo de Dato Baserow | Descripción / Opciones |
+| :--- | :--- | :--- |
+| **`Asunto`** | `Text (Primary)` | Asunto del email o resumen del mensaje. |
+| **`Lead`** | `Link Row (ID 9461)` | Relación con la Tabla B (Contactos - ID 600). |
+| **`Cuerpo`** | `Long Text` | Detalle o contenido completo del mensaje. |
+| **`Direccion`** | `Single Select` | *Entrante, Saliente*. |
 
 ---
 
