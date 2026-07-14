@@ -17,7 +17,7 @@ Para evitar la duplicidad de información y permitir la prospección basada en c
 
 ```
 ┌─────────────────────────────────┐
-│    TABLA A: EMPRESAS (ID 989)   │  (El Tronco: Datos Corporativos)
+│    TABLA A: EMPRESAS (ID 991)   │  (El Tronco: Datos Corporativos)
 └───────────────┬─────────────────┘
                 │
                 │ (1 a Muchos)
@@ -33,7 +33,7 @@ Para evitar la duplicidad de información y permitir la prospección basada en c
 └─────────────────────────────────┘
 ```
 
-### Tabla A: Empresas (ID: 989)
+### Tabla A: Empresas (ID: 991)
 Almacena la información de las fábricas de muebles objetivo.
 
 | Nombre del Campo | Tipo de Dato Baserow | Descripción / Opciones |
@@ -56,7 +56,7 @@ Almacena los datos de los tomadores de decisión dentro de las empresas.
 | **`Nombre`** | `Text (Primary)` | Nombre del contacto. |
 | **`Apellido`** | `Text` | Apellido del contacto. |
 | **`Email`** | `Email` | Email corporativo directo de la persona. |
-| **`Empresa Vinculada`** | `Link Row (ID 9475)` | **Relación** con la Tabla A (Empresas - ID 989). |
+| **`Empresa Vinculada`** | `Link Row (ID 9499)` | **Relación** con la Tabla A (Empresas - ID 991). |
 | **`Telefono`** | `Text` | Número móvil de contacto. |
 | **`Rol`** | `Text` | Cargo / Puesto (Ej: *Gerente de I+D, Comprador, CEO*). |
 | **`Estado CRM`** | `Single Select` | *Prospecto, Primer Contacto, Demo Agendada, Negociación, Cerrado Ganado, Cerrado Perdido*. |
