@@ -67,6 +67,11 @@ Este archivo es la "Memoria RAM" para Antigravity. Contiene el contexto de lo qu
   - Definido el tema claro **"Tech Ethos"** en `AGENTS.md` como el estándar global predeterminado del proyecto para diseño de gráficos e interfaces.
   - Rediseñado por completo el archivo `Ensamble_Minifix.svg` en `temporal/SVG/` y en los assets públicos del visor (`legacy-aplicativo-armado/public/assets/tips/`), reduciendo el tamaño y mejorando la calidad con trazados nativos de línea limpia en lugar de vectorizaciones automáticas rugosas.
   - Aplicados gradientes metálicos realistas, contornos suavizados en gris pizarra, y un resplandor en cian para la flecha indicativa de giro de 180°.
+- [x] **Ajuste de CTA y Resolución de Desbordamiento Horizontal Móvil (14 de Julio, 2026)**:
+  - Cambiada la etiqueta del botón de solicitud a `"Solicitar un prototipo con tu marca"` con traducciones en inglés y portugués en [LiveDemo.tsx](file:///c:/Desarrollo/mmapp/mario-mojica-homepage/src/components/LiveDemo.tsx).
+  - Resuelto el desbordamiento horizontal en celulares: optimizados los estilos responsivos del logotipo y el contenedor en [Header.tsx](file:///c:/Desarrollo/mmapp/mario-mojica-homepage/src/components/Header.tsx) (`w-32 md:w-40` y `px-4 md:px-6` en móviles) para dar espacio a los botones del menú y selector de idioma.
+  - Implementada protección contra scroll horizontal forzado configurando `max-width: 100%; overflow-x: hidden` en `html, body` dentro de [globals.css](file:///c:/Desarrollo/mmapp/mario-mojica-homepage/src/app/globals.css) y clase `overflow-x-hidden` en el `<main>` de [page.tsx](file:///c:/Desarrollo/mmapp/mario-mojica-homepage/src/app/page.tsx).
+
 
 
 ### 🚧 Bloqueos / Notas Técnicas

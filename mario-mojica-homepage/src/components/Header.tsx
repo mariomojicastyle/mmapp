@@ -29,7 +29,7 @@ export default function Header() {
             : 'bg-primary py-4 text-white'
         }`}
       >
-        <div className="container mx-auto px-6 flex items-center justify-between relative h-10">
+        <div className="container mx-auto px-4 md:px-6 flex items-center justify-between relative h-10">
           {/* Left Column: Navigation */}
           <nav className="hidden lg:flex items-center gap-8 text-[11px] font-black uppercase tracking-[0.2em]">
             <Link href="#caracteristicas" className="hover:opacity-60 transition-all whitespace-nowrap">{t('Características', 'Features', 'Recursos')}</Link>
@@ -49,7 +49,7 @@ export default function Header() {
 
           <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 transition-all duration-500">
             <Link href="/" className="block">
-              <div className={`relative h-7 md:h-9 w-40 transition-all duration-500 ${isScrolled || isMenuOpen ? 'brightness-100 dark:brightness-0 dark:invert' : 'brightness-0 invert'}`}>
+              <div className={`relative h-7 md:h-9 w-32 md:w-40 transition-all duration-500 ${isScrolled || isMenuOpen ? 'brightness-100 dark:brightness-0 dark:invert' : 'brightness-0 invert'}`}>
                 <Image
                   src="/Logo_Header.svg"
                   alt="Mario Mojica Logo"

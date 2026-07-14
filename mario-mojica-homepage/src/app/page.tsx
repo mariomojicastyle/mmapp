@@ -15,7 +15,7 @@ import Footer from '@/components/Footer';
 
 export default function Home() {
   return (
-    <main className="min-h-screen bg-background-light dark:bg-background-dark text-text-light dark:text-text-dark font-sans antialiased">
+    <main className="min-h-screen bg-background-light dark:bg-background-dark text-text-light dark:text-text-dark font-sans antialiased overflow-x-hidden">
       <Header />
       <article>
         <HeroManual />
