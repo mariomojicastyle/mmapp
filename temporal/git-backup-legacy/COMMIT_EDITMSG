@@ -1,0 +1,8 @@
+fix(assembly): recuperar alineacion de skybox y visualizacion de pieza hover
+
+- Ajustar la alineacion del skybox 1mm hacia abajo para evitar Z-fighting con el piso.
+- Restaurar iconos interactivos y componentes de ayuda en la barra inferior.
+- Renderizar reactivamente el nombre de la pieza en #TextOption al hacer hover.
+- Anadir guia de arquitectura MAPA_DEL_TESORO.md para referencia rapida.
+
+Co-Authored-By: Antigravity <noreply@antigravity.ai>

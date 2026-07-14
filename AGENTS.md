@@ -119,3 +119,7 @@ Default values cause runtime failures.
 1. `n8n_validate_workflow({id})` - Validate deployed workflow
 2. `n8n_autofix_workflow({id})` - Auto-fix common errors
 3. `n8n_executions({action: 'list'})` - Monitor execution status
+
+## Estilo de Diseño Estándar
+- **Estilo de Diseño Primario:** El estilo estándar para diseñar gráficos, diagramas, interfaces de usuario y componentes visuales en este proyecto es el tema claro **"Tech Ethos"** (Light Theme) como estética predeterminada. Evita el uso del estilo oscuro "Obsidian Teal" a menos que sea explícitamente solicitado por el usuario o se trate de un modo de visualización nocturna secundario.
+

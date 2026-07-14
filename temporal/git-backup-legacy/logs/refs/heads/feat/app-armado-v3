@@ -1,0 +1,3 @@
+0000000000000000000000000000000000000000 837be81793f1089e878fc03c4d97a89687bf75a1 Mario <mariodesign@gmail.com> 1779141265 -0500	branch: Created from HEAD
+837be81793f1089e878fc03c4d97a89687bf75a1 34835f5cc6c1ad363a015eadd310da634f150b19 Mario <mariodesign@gmail.com> 1779141266 -0500	commit: feat(3d-viewer): App_armado_v3 - Refactor state and 3D positioning
+34835f5cc6c1ad363a015eadd310da634f150b19 64a2f02f3097a64004a07ea0039d47ddca58d1e3 Mario <mariodesign@gmail.com> 1779146567 -0500	commit: feat(assembly): Restore help tutorial and info panel with offline assets

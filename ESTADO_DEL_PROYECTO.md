@@ -59,9 +59,14 @@ Este archivo es la "Memoria RAM" para Antigravity. Contiene el contexto de lo qu
   - Implementación de la pantalla de bienvenida limpia y responsiva (Simple) en modo demo móvil sin alterar la pantalla QR.
   - Aumento de la altura del iframe de la demo en un 50% (`aspect-[16/13.5]` en lugar de `aspect-video`).
   - Intercepción de los botones de la landing page ("Ver Demo Interactiva") para lanzar pantalla completa directamente.
-  - Rediseño e integración del botón circular de cerrar "X" (close-fullscreen-btn) independiente, posicionado de forma perfectamente simétrica a la izquierda del botón de AR a `left: 15px; bottom: 200px` en móviles.
-  - Detención automática del audio de la guía de instrucciones (llamando a `PausedAudio()`) al salir de la pantalla completa (vía botón "X", tecla ESC, o gesto nativo).
+  - Rediseño e integración del botón circular de cerrar "X" (close-fullscreen-btn) independiente, posicionado de forma perfectamente simétrica en la esquina superior derecha (`right: 15px; top: 140px` en móviles) para alineación vertical con el botón de AR.
+  - Detención automática del audio de la guía de instrucciones (llamando a `PausedAudio()`) al salir de la pantalla completa (vía botón "X", tecla ESC, o gesto nativo), previniendo reproducciones en segundo plano.
+  - Corrección del auto-pausado al arrancar: condicionado el evento de fullscreen local del iframe para no silenciar el audio/animaciones al inicio.
   - Corrección de la limpieza de nombres de pieza para duplicados de Blender que pierden el punto (ej: `11003` -> `11`).
+- [x] **Rediseño del SVG Ensamble Minifix al Estilo Tech Ethos (14 de Julio, 2026)**:
+  - Definido el tema claro **"Tech Ethos"** en `AGENTS.md` como el estándar global predeterminado del proyecto para diseño de gráficos e interfaces.
+  - Rediseñado por completo el archivo `Ensamble_Minifix.svg` en `temporal/SVG/` y en los assets públicos del visor (`legacy-aplicativo-armado/public/assets/tips/`), reduciendo el tamaño y mejorando la calidad con trazados nativos de línea limpia en lugar de vectorizaciones automáticas rugosas.
+  - Aplicados gradientes metálicos realistas, contornos suavizados en gris pizarra, y un resplandor en cian para la flecha indicativa de giro de 180°.
 
 
 ### 🚧 Bloqueos / Notas Técnicas

@@ -1,0 +1,58 @@
+0000000000000000000000000000000000000000 1257cb0fd030364e299dc0e36cddeecbcae39c5c Mario Mojica <mariomojica.style@gmail.com> 1763562582 -0500	commit (initial): Backup inicial: Frontend mm-app y archivos de infraestructura
+1257cb0fd030364e299dc0e36cddeecbcae39c5c 0000000000000000000000000000000000000000 Mario Mojica <mariomojica.style@gmail.com> 1763562603 -0500	Branch: renamed refs/heads/master to refs/heads/main
+0000000000000000000000000000000000000000 1257cb0fd030364e299dc0e36cddeecbcae39c5c Mario Mojica <mariomojica.style@gmail.com> 1763562603 -0500	Branch: renamed refs/heads/master to refs/heads/main
+1257cb0fd030364e299dc0e36cddeecbcae39c5c 176e571b957a96a6702d8cf702dddf52fa6dc1b1 Mario Mojica <mariomojica.style@gmail.com> 1763577843 -0500	commit: Configuración base estable: Tailwind malo, Vite y estructura inicial
+176e571b957a96a6702d8cf702dddf52fa6dc1b1 176e571b957a96a6702d8cf702dddf52fa6dc1b1 Mario Mojica <mariomojica.style@gmail.com> 1763577957 -0500	checkout: moving from main to feature/desarrollo-frontend
+176e571b957a96a6702d8cf702dddf52fa6dc1b1 176e571b957a96a6702d8cf702dddf52fa6dc1b1 Mario Mojica <mariomojica.style@gmail.com> 1763586343 -0500	checkout: moving from feature/desarrollo-frontend to feature/desarrollo-frontend
+176e571b957a96a6702d8cf702dddf52fa6dc1b1 49f5d7ef432475dd442d1dba51a194023aeb7c04 Mario Mojica <mariomojica.style@gmail.com> 1763589091 -0500	commit: Estilos con Taildwind
+49f5d7ef432475dd442d1dba51a194023aeb7c04 176e571b957a96a6702d8cf702dddf52fa6dc1b1 Mario Mojica <mariomojica.style@gmail.com> 1763589105 -0500	checkout: moving from feature/desarrollo-frontend to main
+176e571b957a96a6702d8cf702dddf52fa6dc1b1 49f5d7ef432475dd442d1dba51a194023aeb7c04 Mario Mojica <mariomojica.style@gmail.com> 1763589129 -0500	merge feature/desarrollo-frontend: Fast-forward
+49f5d7ef432475dd442d1dba51a194023aeb7c04 dac925e3323635011f526533b55f992deeb13a18 Mario Mojica <mariomojica.style@gmail.com> 1763647772 -0500	commit: Fix: Install Supabase dependencies
+dac925e3323635011f526533b55f992deeb13a18 1274fdb987dfb6ec44a98233632aee9d83d3c811 Mario Mojica <mariomojica.style@gmail.com> 1763648538 -0500	commit: Setup: Project structure and router
+1274fdb987dfb6ec44a98233632aee9d83d3c811 d091753ba16d2cc8f2d40e557f6cb5e436266eb7 Mario Mojica <mariomojica.style@gmail.com> 1763655779 -0500	commit: Fix: Add redirect rule for SPA routing
+d091753ba16d2cc8f2d40e557f6cb5e436266eb7 8ffc321c5b89239725f53f5404801b7ea14b04fe Mario Mojica <mariomojica.style@gmail.com> 1763658089 -0500	commit: Release: Finish Phase 6. Full website structure with Layout and Pages
+8ffc321c5b89239725f53f5404801b7ea14b04fe 572ec3cb9c68a05d6bb834e28e45f2dfbd1af0e7 Mario Mojica <mariomojica.style@gmail.com> 1763659080 -0500	commit: Fix: Main entry point now uses App.jsx router
+572ec3cb9c68a05d6bb834e28e45f2dfbd1af0e7 2c5188e9c5a6e53b04d2d017510bdf921fdcc785 Mario Mojica <mariomojica.style@gmail.com> 1763660252 -0500	commit: Fix: Sync filenames and update App structure
+2c5188e9c5a6e53b04d2d017510bdf921fdcc785 dcbf8b166ade5ae477f6288332be340273dce605 Mario Mojica <mariomojica.style@gmail.com> 1763667072 -0500	commit: Fix: Remove syntax errors and connect n8n
+dcbf8b166ade5ae477f6288332be340273dce605 ae1576713ae5bef504e1ac40a784f14d1c788e85 Mario Mojica <mariomojica.style@gmail.com> 1763668206 -0500	commit: Fix webhook url
+ae1576713ae5bef504e1ac40a784f14d1c788e85 143fce9491170fcdf53d5e0153a4399f2d58a5c5 Mario Mojica <mariomojica.style@gmail.com> 1763734048 -0500	commit: Update contact form webhook URL
+143fce9491170fcdf53d5e0153a4399f2d58a5c5 2eedf5e3c1cd3c7826b8c11438f077c5b96b5699 Mario Mojica <mariomojica.style@gmail.com> 1763734549 -0500	commit: Remove port from contact webhook URL
+2eedf5e3c1cd3c7826b8c11438f077c5b96b5699 00754c3f375f0a2597a177a718a6be9ecd98f212 Mario Mojica <mariomojica.style@gmail.com> 1764096415 -0500	commit: feat(3d-viewer): finalizacion de visor 3D, rutas corregidas y encuesta eliminada
+00754c3f375f0a2597a177a718a6be9ecd98f212 6aa2b54d9179be343e6084dc9fcbc5a02c45d330 Mario Mojica <mariomojica.style@gmail.com> 1764099458 -0500	commit: feat(3d-viewer): ajuste responsive
+6aa2b54d9179be343e6084dc9fcbc5a02c45d330 6aa2b54d9179be343e6084dc9fcbc5a02c45d330 Mario Mojica <mariomojica.style@gmail.com> 1764099959 -0500	checkout: moving from main to Inicio-Curador
+6aa2b54d9179be343e6084dc9fcbc5a02c45d330 88d0765188a488ef4d5103c725f42fef49afbe6f Mario Mojica <mariomojica.style@gmail.com> 1768967141 -0500	commit: feat(assembly): implement immersive app-mode, fix supabase data connection and improve 3D lighting
+88d0765188a488ef4d5103c725f42fef49afbe6f 6aa2b54d9179be343e6084dc9fcbc5a02c45d330 Mario Mojica <mariomojica.style@gmail.com> 1769001957 -0500	checkout: moving from Inicio-Curador to main
+6aa2b54d9179be343e6084dc9fcbc5a02c45d330 88d0765188a488ef4d5103c725f42fef49afbe6f Mario Mojica <mariomojica.style@gmail.com> 1769001972 -0500	merge Inicio-Curador: Fast-forward
+88d0765188a488ef4d5103c725f42fef49afbe6f 88d0765188a488ef4d5103c725f42fef49afbe6f Mario Mojica <mariomojica.style@gmail.com> 1769002007 -0500	checkout: moving from main to feature/ajuste-secuencia-glb
+88d0765188a488ef4d5103c725f42fef49afbe6f 4cbffac75d28d8094905c09e444178fd76516a19 Mario Mojica <mariomojica.style@gmail.com> 1769544721 -0500	commit: feat: Finalización visor 3D, tutorial interactivo, bienvenida y estructura login
+4cbffac75d28d8094905c09e444178fd76516a19 88d0765188a488ef4d5103c725f42fef49afbe6f Mario Mojica <mariomojica.style@gmail.com> 1769544794 -0500	checkout: moving from feature/ajuste-secuencia-glb to main
+88d0765188a488ef4d5103c725f42fef49afbe6f 837be81793f1089e878fc03c4d97a89687bf75a1 Mario Mojica <mariomojica.style@gmail.com> 1769544817 -0500	pull origin main: Merge made by the 'ort' strategy.
+837be81793f1089e878fc03c4d97a89687bf75a1 837be81793f1089e878fc03c4d97a89687bf75a1 Mario Mojica <mariomojica.style@gmail.com> 1769545055 -0500	checkout: moving from main to feature/plataforma-saas-login
+837be81793f1089e878fc03c4d97a89687bf75a1 837be81793f1089e878fc03c4d97a89687bf75a1 Mario Mojica <mariomojica.style@gmail.com> 1769611309 -0500	checkout: moving from feature/plataforma-saas-login to main
+837be81793f1089e878fc03c4d97a89687bf75a1 837be81793f1089e878fc03c4d97a89687bf75a1 Mario Mojica <mariomojica.style@gmail.com> 1769611557 -0500	checkout: moving from main to feature/plataforma-saas-login
+837be81793f1089e878fc03c4d97a89687bf75a1 837be81793f1089e878fc03c4d97a89687bf75a1 Mario Mojica <mariomojica.style@gmail.com> 1769612104 -0500	checkout: moving from feature/plataforma-saas-login to main
+837be81793f1089e878fc03c4d97a89687bf75a1 837be81793f1089e878fc03c4d97a89687bf75a1 Mario Mojica <mariomojica.style@gmail.com> 1769612384 -0500	checkout: moving from main to main
+837be81793f1089e878fc03c4d97a89687bf75a1 4cbffac75d28d8094905c09e444178fd76516a19 Mario Mojica <mariomojica.style@gmail.com> 1769613052 -0500	checkout: moving from main to feature/ajuste-secuencia-glb
+4cbffac75d28d8094905c09e444178fd76516a19 837be81793f1089e878fc03c4d97a89687bf75a1 Mario Mojica <mariomojica.style@gmail.com> 1769614409 -0500	checkout: moving from feature/ajuste-secuencia-glb to main
+837be81793f1089e878fc03c4d97a89687bf75a1 837be81793f1089e878fc03c4d97a89687bf75a1 Mario Mojica <mariomojica.style@gmail.com> 1769614602 -0500	checkout: moving from main to feature/saas-v2-con-ia
+837be81793f1089e878fc03c4d97a89687bf75a1 3ea4c9f714a8cfb0ebef4501ecaed6371e510f7f Mario Mojica <mariomojica.style@gmail.com> 1769699420 -0500	commit: Avance en desarrollo frontend
+3ea4c9f714a8cfb0ebef4501ecaed6371e510f7f 837be81793f1089e878fc03c4d97a89687bf75a1 Mario Mojica <mario@MarioMojica.(none)> 1771107802 -0500	checkout: moving from feature/saas-v2-con-ia to main
+837be81793f1089e878fc03c4d97a89687bf75a1 837be81793f1089e878fc03c4d97a89687bf75a1 Mario Mojica <mario@MarioMojica.(none)> 1771107811 -0500	reset: moving to origin/main
+837be81793f1089e878fc03c4d97a89687bf75a1 837be81793f1089e878fc03c4d97a89687bf75a1 Mario Mojica <mario@MarioMojica.(none)> 1771108331 -0500	checkout: moving from main to main
+837be81793f1089e878fc03c4d97a89687bf75a1 837be81793f1089e878fc03c4d97a89687bf75a1 Mario <mariodesign@gmail.com> 1779141265 -0500	checkout: moving from main to feat/app-armado-v3
+837be81793f1089e878fc03c4d97a89687bf75a1 34835f5cc6c1ad363a015eadd310da634f150b19 Mario <mariodesign@gmail.com> 1779141266 -0500	commit: feat(3d-viewer): App_armado_v3 - Refactor state and 3D positioning
+34835f5cc6c1ad363a015eadd310da634f150b19 64a2f02f3097a64004a07ea0039d47ddca58d1e3 Mario <mariodesign@gmail.com> 1779146567 -0500	commit: feat(assembly): Restore help tutorial and info panel with offline assets
+64a2f02f3097a64004a07ea0039d47ddca58d1e3 837be81793f1089e878fc03c4d97a89687bf75a1 Mario <mariodesign@gmail.com> 1779146704 -0500	checkout: moving from feat/app-armado-v3 to main
+837be81793f1089e878fc03c4d97a89687bf75a1 64a2f02f3097a64004a07ea0039d47ddca58d1e3 Mario <mariodesign@gmail.com> 1779146712 -0500	merge feat/app-armado-v3: Fast-forward (no commit created; -m option ignored)
+64a2f02f3097a64004a07ea0039d47ddca58d1e3 64a2f02f3097a64004a07ea0039d47ddca58d1e3 Mario <mariodesign@gmail.com> 1779146772 -0500	checkout: moving from main to feat/app-armado-v5
+64a2f02f3097a64004a07ea0039d47ddca58d1e3 f45246d0ec6fb5d19fd00b131fac6d392b46a8b4 Mario <mariodesign@gmail.com> 1779200397 -0500	commit: fix(panels): Restore click interaction and hardware blinking
+f45246d0ec6fb5d19fd00b131fac6d392b46a8b4 479ce03b360a3d02695dd667b443aaa677212fa0 Mario <mariodesign@gmail.com> 1779204535 -0500	commit: fix(assembly): Resolve incorrect slide hardware, tooltip layout scaling and duplication bugs
+479ce03b360a3d02695dd667b443aaa677212fa0 e1645a0eca75d41f79d36ef93c0de33d48a1d4e9 Mario <mariodesign@gmail.com> 1779219358 -0500	commit: fix(3d-scene): align glb models and camera positions on unshifted coordinates
+e1645a0eca75d41f79d36ef93c0de33d48a1d4e9 837725968db618bddfc6c2fc623e676facb9b31e Mario <mariodesign@gmail.com> 1779224756 -0500	commit: feat(assembly): Refine 3D coords alignment, complete localization and network decoupling
+837725968db618bddfc6c2fc623e676facb9b31e 64a2f02f3097a64004a07ea0039d47ddca58d1e3 Mario <mariodesign@gmail.com> 1779224759 -0500	checkout: moving from feat/app-armado-v5 to main
+64a2f02f3097a64004a07ea0039d47ddca58d1e3 837725968db618bddfc6c2fc623e676facb9b31e Mario <mariodesign@gmail.com> 1779224766 -0500	merge feat/app-armado-v5: Fast-forward
+837725968db618bddfc6c2fc623e676facb9b31e 837725968db618bddfc6c2fc623e676facb9b31e Mario <mariodesign@gmail.com> 1779224780 -0500	checkout: moving from main to feat/app-armado-v6
+837725968db618bddfc6c2fc623e676facb9b31e ea24be87fba6a1979bf25c410ab221cf2a579cf2 Mario <mariodesign@gmail.com> 1779300013 -0500	commit: fix(assembly): recuperar alineacion de skybox y visualizacion de pieza hover
+ea24be87fba6a1979bf25c410ab221cf2a579cf2 837725968db618bddfc6c2fc623e676facb9b31e Mario <mariodesign@gmail.com> 1779300100 -0500	checkout: moving from feat/app-armado-v6 to main
+837725968db618bddfc6c2fc623e676facb9b31e ea24be87fba6a1979bf25c410ab221cf2a579cf2 Mario <mariodesign@gmail.com> 1779300109 -0500	merge feat/app-armado-v6: Fast-forward
+ea24be87fba6a1979bf25c410ab221cf2a579cf2 ea24be87fba6a1979bf25c410ab221cf2a579cf2 Mario <mariodesign@gmail.com> 1779300137 -0500	checkout: moving from main to App_Armado_V7
