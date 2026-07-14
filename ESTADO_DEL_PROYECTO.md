@@ -228,6 +228,7 @@ Un **"Manual Vacío"** es un cascarón o aplicación base centralizada (desplega
 - [x] Notificaciones de leads activas (WhatsApp Cloud API y Email).
 - [x] **[NUEVO] n8n-MCP Integration:** Capacidad de la IA para crear/editar flujos de n8n.
 - [x] **[NUEVO - 14 de Julio, 2026] Diseño del Árbol de Clientes B2B:** Modelado del esquema relacional (Empresas + Contactos) para prospección en Baserow y creación del documento de referencia [CRM.md](file:///c:/Desarrollo/mmapp/Arquitectura/CRM.md) inyectado al arranque de [AGENTS.md](file:///c:/Desarrollo/mmapp/AGENTS.md).
+- [x] **[NUEVO - 14 de Julio, 2026] Carpeta Comercial y Semilla Tier 2:** Creación de la carpeta `/Comercial`, guardado del estudio [ranking_empresas_rta_brasil.md](file:///c:/Desarrollo/mmapp/Comercial/ranking_empresas_rta_brasil.md) (agregado a [AGENTS.md](file:///c:/Desarrollo/mmapp/AGENTS.md)) e inyección automática en Baserow de las 15 empresas del Tier 2 para prospección.
 - [ ] **PENDIENTE:** Monitoreo de tráfico y leads reales.
 
 

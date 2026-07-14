@@ -961,5 +961,10 @@ Con esta batería de arreglos y la validación en caliente, la V20 se establece 
     - **Esquema Relacional**: Estructuración del CRM de Baserow en dos tablas vinculadas (Empresas y Contactos) para habilitar estrategias de Account-Based Marketing (ABM) e inyección de perfiles de LinkedIn para prospección.
     - **Documentación y Protocolo**: Creación del archivo técnico [CRM.md](file:///c:/Desarrollo/mmapp/Arquitectura/CRM.md) en la carpeta de Arquitectura e inyección del mismo en el protocolo de arranque de [AGENTS.md](file:///c:/Desarrollo/mmapp/AGENTS.md).
 
+* **[2026-07-14] Creación de Carpeta Comercial e Inyección de Tier 2 RTA:**
+    - **Nueva Carpeta de Negocio**: Creación del directorio `/Comercial` dedicado al crecimiento comercial y marketing del proyecto.
+    - **Estudio de Mercado**: Guardado del estudio de competidores [ranking_empresas_rta_brasil.md](file:///c:/Desarrollo/mmapp/Comercial/ranking_empresas_rta_brasil.md) y registro en [AGENTS.md](file:///c:/Desarrollo/mmapp/AGENTS.md) para lectura de contexto inicial.
+    - **Semilla del CRM**: Diseño y ejecución del script [inject_tier2_companies.js](file:///c:/Desarrollo/mmapp/scratch/inject_tier2_companies.js) para cargar en masa las 15 empresas del Tier 2 de RTA en Brasil en la tabla de Empresas de Baserow, permitiendo iniciar la prospección comercial controlada.
+
 
 
