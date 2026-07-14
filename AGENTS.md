@@ -7,6 +7,7 @@ Cada vez que iniciamos, tu primera tarea absoluta debe ser recuperar el contexto
 - [Arquitectura.md](file:///c:/Desarrollo/mmapp/Arquitectura/Arquitectura.md) - Topología del Ecosistema B2B y VPS.
 - [METRICAS.md](file:///c:/Desarrollo/mmapp/Arquitectura/METRICAS.md) - Ecosistema de Métricas y Analíticas B2B (Umami/Supabase).
 - [CRM.md](file:///c:/Desarrollo/mmapp/Arquitectura/CRM.md) - Diseño Relacional B2B y Árbol de Clientes (Baserow).
+- [ranking_empresas_rta_brasil.md](file:///c:/Desarrollo/mmapp/Comercial/ranking_empresas_rta_brasil.md) - Inteligencia de Mercado: Directorio y Tiers RTA Brasil.
 - [GUIA_CONFIGURACION_CAMARA.md](file:///c:/Desarrollo/mmapp/docs/GUIA_CONFIGURACION_CAMARA.md) - Captura y persistencia SQL de coordenadas 3D.
 - [reputacion_web.md](file:///c:/Desarrollo/mmapp/docs/reputacion_web.md) - Protocolo DNS (SPF/DKIM/DMARC) y disputas Antivirus.
 
