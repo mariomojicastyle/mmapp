@@ -957,5 +957,9 @@ Con esta batería de arreglos y la validación en caliente, la V20 se establece 
     - **Homepage**: Configuración de rastreo declarativo (`data-umami-event`) en [Header.tsx](file:///c:/Desarrollo/mmapp/mario-mojica-homepage/src/components/Header.tsx) (para enlaces, selector de idiomas y login), en [LiveDemo.tsx](file:///c:/Desarrollo/mmapp/mario-mojica-homepage/src/components/LiveDemo.tsx) (para el CTA del prototipo), y en [ContactCTA.tsx](file:///c:/Desarrollo/mmapp/mario-mojica-homepage/src/components/ContactCTA.tsx) (rastreando envíos exitosos de leads tras su recepción por n8n).
     - **Documentación y Protocolo de Arranque**: Creación del documento técnico de referencia [METRICAS.md](file:///c:/Desarrollo/mmapp/Arquitectura/METRICAS.md) en la carpeta de Arquitectura e inyección del mismo en el protocolo de inicio de [AGENTS.md](file:///c:/Desarrollo/mmapp/AGENTS.md) para lectura y recuperación de contexto síncrona.
 
+* **[2026-07-14] Diseño Relacional de CRM y Árbol de Clientes B2B:**
+    - **Esquema Relacional**: Estructuración del CRM de Baserow en dos tablas vinculadas (Empresas y Contactos) para habilitar estrategias de Account-Based Marketing (ABM) e inyección de perfiles de LinkedIn para prospección.
+    - **Documentación y Protocolo**: Creación del archivo técnico [CRM.md](file:///c:/Desarrollo/mmapp/Arquitectura/CRM.md) en la carpeta de Arquitectura e inyección del mismo en el protocolo de arranque de [AGENTS.md](file:///c:/Desarrollo/mmapp/AGENTS.md).
+
 
 
