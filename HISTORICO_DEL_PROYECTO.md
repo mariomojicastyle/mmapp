@@ -948,4 +948,9 @@ Con esta batería de arreglos y la validación en caliente, la V20 se establece 
     - **Corrección de Overflows**: Optimizado el espaciado del contenedor (`px-4 md:px-6`) y el ancho del logotipo (`w-32 md:w-40`) en móviles dentro de [Header.tsx](file:///c:/Desarrollo/mmapp/mario-mojica-homepage/src/components/Header.tsx). Esto libera espacio suficiente en pantallas estrechas para alojar el botón de menú y el selector de idiomas sin romper el ancho de la página.
     - **Estilo Anti-Desplazamiento**: Agregadas reglas de `max-width: 100%; overflow-x: hidden;` en `html, body` dentro de [globals.css](file:///c:/Desarrollo/mmapp/mario-mojica-homepage/src/app/globals.css) y clase `overflow-x-hidden` en el contenedor `main` de [page.tsx](file:///c:/Desarrollo/mmapp/mario-mojica-homepage/src/app/page.tsx) como capa de seguridad absoluta para impedir que elementos del DOM expandan el viewport móvil.
 
+* **[2026-07-14] Corrección de Recorte de Controles Inferiores en Móvil:**
+    - **Posicionamiento Seguro de Botones**: En [NavBarInferior.css](file:///c:/Desarrollo/mmapp/legacy-aplicativo-armado/src/features/AssemblyInstructions/components/NavBarInferior/NavBarInferior.css), se modificó la posición `bottom` para utilizar `env(safe-area-inset-bottom)`. Esto detecta dinámicamente si el dispositivo tiene barra de gestos física (como el home indicator de iOS o la barra de tres botones de Android).
+    - **Aumento de Margen de Elevación**: Se aumentó el margen base en móviles de `20px` a `32px` (`bottom: calc(32px + env(safe-area-inset-bottom))`) para garantizar que la barra de control (zoom, pasos, play/pause) nunca quede tapada por el sistema en modo pantalla completa, asegurando su visibilidad y facilidad de interacción.
+
+
 

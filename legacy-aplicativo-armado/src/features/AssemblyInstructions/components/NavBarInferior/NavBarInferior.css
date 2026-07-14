@@ -2,7 +2,7 @@
   position: fixed;
   width: 100%;
   height: 8vh;
-  bottom: 24px;
+  bottom: calc(24px + env(safe-area-inset-bottom));
   display: flex;
   background: transparent;
   flex-direction: column;
@@ -250,7 +250,7 @@ svg circle:nth-child(2) {
 @media (max-width: 787px) {
   .contenedor {
     height: 52px;
-    bottom: 20px;
+    bottom: calc(32px + env(safe-area-inset-bottom));
   }
 
   .SesionArriba {
@@ -330,7 +330,7 @@ svg circle:nth-child(2) {
 @media (max-width: 320px) {
   .contenedor {
     height: 44px;
-    bottom: 10px;
+    bottom: calc(20px + env(safe-area-inset-bottom));
   }
 
   .button, #left, #right {

@@ -71,6 +71,9 @@ Este archivo es la "Memoria RAM" para Antigravity. Contiene el contexto de lo qu
   - Cambiada la etiqueta del botón de solicitud a `"Solicitar un prototipo con tu marca"` con traducciones en inglés y portugués en [LiveDemo.tsx](file:///c:/Desarrollo/mmapp/mario-mojica-homepage/src/components/LiveDemo.tsx).
   - Resuelto el desbordamiento horizontal en celulares: optimizados los estilos responsivos del logotipo y el contenedor en [Header.tsx](file:///c:/Desarrollo/mmapp/mario-mojica-homepage/src/components/Header.tsx) (`w-32 md:w-40` y `px-4 md:px-6` en móviles) para dar espacio a los botones del menú y selector de idioma.
   - Implementada protección contra scroll horizontal forzado configurando `max-width: 100%; overflow-x: hidden` en `html, body` dentro de [globals.css](file:///c:/Desarrollo/mmapp/mario-mojica-homepage/src/app/globals.css) y clase `overflow-x-hidden` en el `<main>` de [page.tsx](file:///c:/Desarrollo/mmapp/mario-mojica-homepage/src/app/page.tsx).
+- [x] **Resolución del Recorte de Botones Inferiores en Fullscreen Móvil (14 de Julio, 2026)**:
+  - Modificado el posicionamiento bottom en [NavBarInferior.css](file:///c:/Desarrollo/mmapp/legacy-aplicativo-armado/src/features/AssemblyInstructions/components/NavBarInferior/NavBarInferior.css) utilizando `env(safe-area-inset-bottom)` combinada con un margen base aumentado para móviles (`bottom: calc(32px + env(safe-area-inset-bottom))` en pantallas de hasta 787px de ancho, y `20px` en pantallas de 320px). Esto evita que los botones queden sumergidos bajo la barra de gestos o el teclado del sistema, manteniéndolos 100% visibles.
+
 
 
 
