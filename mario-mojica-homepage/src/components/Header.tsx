@@ -32,9 +32,9 @@ export default function Header() {
         <div className="container mx-auto px-4 md:px-6 flex items-center justify-between relative h-10">
           {/* Left Column: Navigation */}
           <nav className="hidden lg:flex items-center gap-8 text-[11px] font-black uppercase tracking-[0.2em]">
-            <Link href="#caracteristicas" className="hover:opacity-60 transition-all whitespace-nowrap">{t('Características', 'Features', 'Recursos')}</Link>
-            <Link href="#demo" className="hover:opacity-60 transition-all whitespace-nowrap">{t('Demo', 'Demo', 'Demo')}</Link>
-            <Link href="#contacto" className="hover:opacity-60 transition-all whitespace-nowrap">{t('Contacto', 'Contact', 'Contato')}</Link>
+            <Link href="#caracteristicas" data-umami-event="Navbar Navigation" data-umami-event-target="caracteristicas" className="hover:opacity-60 transition-all whitespace-nowrap">{t('Características', 'Features', 'Recursos')}</Link>
+            <Link href="#demo" data-umami-event="Navbar Navigation" data-umami-event-target="demo" className="hover:opacity-60 transition-all whitespace-nowrap">{t('Demo', 'Demo', 'Demo')}</Link>
+            <Link href="#contacto" data-umami-event="Navbar Navigation" data-umami-event-target="contacto" className="hover:opacity-60 transition-all whitespace-nowrap">{t('Contacto', 'Contact', 'Contato')}</Link>
           </nav>
 
           {/* Mobile Menu Button */}
@@ -64,9 +64,10 @@ export default function Header() {
           {/* Right Column: Actions & Language */}
           <div className="flex items-center gap-6">
             <div className="hidden md:flex items-center gap-6 text-[11px] font-black uppercase tracking-[0.2em]">
-              <Link href={`${platformUrl}/login`} className="hover:opacity-60 transition-all">Login</Link>
+              <Link href={`${platformUrl}/login`} data-umami-event="Navbar Login Clicked" className="hover:opacity-60 transition-all">Login</Link>
               <Link 
                 href="#contacto" 
+                data-umami-event="Navbar Free Prototype Clicked"
                 className={`px-6 py-2.5 rounded-full transition-all text-[11px] font-black uppercase tracking-[0.2em] shadow-lg ${
                   isScrolled || isMenuOpen
                     ? 'bg-primary text-white hover:bg-opacity-90'
@@ -80,6 +81,8 @@ export default function Header() {
             <div className="flex items-center gap-1 text-[10px] font-bold">
               <button 
                 onClick={() => setLanguage('es')}
+                data-umami-event="Language Changed"
+                data-umami-event-lang="es"
                 className={`transition-opacity hover:opacity-100 cursor-pointer ${language === 'es' ? 'opacity-100 font-extrabold' : 'opacity-40'}`}
               >
                 ES
@@ -87,6 +90,8 @@ export default function Header() {
               <span className="opacity-20">/</span>
               <button 
                 onClick={() => setLanguage('en')}
+                data-umami-event="Language Changed"
+                data-umami-event-lang="en"
                 className={`transition-opacity hover:opacity-100 cursor-pointer ${language === 'en' ? 'opacity-100 font-extrabold' : 'opacity-40'}`}
               >
                 EN
@@ -94,6 +99,8 @@ export default function Header() {
               <span className="opacity-20">/</span>
               <button 
                 onClick={() => setLanguage('pt')}
+                data-umami-event="Language Changed"
+                data-umami-event-lang="pt"
                 className={`transition-opacity hover:opacity-100 cursor-pointer ${language === 'pt' ? 'opacity-100 font-extrabold' : 'opacity-40'}`}
               >
                 PT

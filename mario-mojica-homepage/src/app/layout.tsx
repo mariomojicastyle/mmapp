@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import Script from "next/script";
 import "./globals.css";
-import CookieConsent from "@/components/CookieConsent";
 import { LanguageProvider } from "@/components/LanguageContext";
 
 export const metadata: Metadata = {
@@ -30,7 +29,6 @@ export default function RootLayout({
       <body className="min-h-full flex flex-col">
         <LanguageProvider>
           {children}
-          <CookieConsent />
         </LanguageProvider>
       </body>
     </html>

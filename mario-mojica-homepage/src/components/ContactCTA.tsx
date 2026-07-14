@@ -73,6 +73,14 @@ export default function ContactCTA() {
         throw new Error(`Server error: ${response.status}`);
       }
 
+      // Tracking de Umami para conversiones exitosas
+      if (typeof window !== 'undefined' && (window as any).umami) {
+        (window as any).umami.track('Lead Form Submitted', {
+          catalog: formData.productos,
+          company: formData.empresa
+        });
+      }
+
       setStatus('success');
       setFormData({
         nombre: '',

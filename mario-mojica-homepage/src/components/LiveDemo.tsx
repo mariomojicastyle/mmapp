@@ -135,6 +135,7 @@ export default function LiveDemo() {
         >
           <Link
             href="#contacto"
+            data-umami-event="Body Free Prototype Clicked"
             className="inline-block bg-primary text-white py-4 px-10 rounded-full font-semibold text-lg hover:brightness-110 transition-all duration-300"
           >
             {t("Solicitar un prototipo con tu marca", "Request a prototype with your brand", "Solicitar um protótipo com a sua marca")}

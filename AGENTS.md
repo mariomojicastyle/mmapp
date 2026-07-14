@@ -5,6 +5,7 @@ Cada vez que iniciamos, tu primera tarea absoluta debe ser recuperar el contexto
 - [HISTORICO_DEL_PROYECTO.md](file:///c:/Desarrollo/mmapp/HISTORICO_DEL_PROYECTO.md) - Registro cronológico de hitos.
 - [MANIFIESTO_NEGOCIO.md](file:///c:/Desarrollo/mmapp/docs/MANIFIESTO_NEGOCIO.md) - GTM: Foco Comercial Manual 3D.
 - [Arquitectura.md](file:///c:/Desarrollo/mmapp/Arquitectura/Arquitectura.md) - Topología del Ecosistema B2B y VPS.
+- [METRICAS.md](file:///c:/Desarrollo/mmapp/Arquitectura/METRICAS.md) - Ecosistema de Métricas y Analíticas B2B (Umami/Supabase).
 - [GUIA_CONFIGURACION_CAMARA.md](file:///c:/Desarrollo/mmapp/docs/GUIA_CONFIGURACION_CAMARA.md) - Captura y persistencia SQL de coordenadas 3D.
 - [reputacion_web.md](file:///c:/Desarrollo/mmapp/docs/reputacion_web.md) - Protocolo DNS (SPF/DKIM/DMARC) y disputas Antivirus.
 

@@ -38,6 +38,9 @@ Este archivo es la "Memoria RAM" para Antigravity. Contiene el contexto de lo qu
   - Creación de API Route `/api/metrics/collect` en Next.js con rate limiting (40 llamadas/min) para evitar escrituras directas del cliente en Supabase.
   - Diseño e implementación de la vista de reportes PDF de fricción en la consola, optimizada para impresión física en tamaño A4 (`@media print`).
   - Creación del archivo maestro de diseño técnico [Arquitectura.md](file:///c:/Desarrollo/mmapp/Arquitectura/Arquitectura.md) y diagrama vectorial [arquitectura_V7.svg](file:///c:/Desarrollo/mmapp/Arquitectura/arquitectura_V7.svg) como ancla de referencia para el proyecto.
+  - **[NUEVO - 14 de Julio, 2026]** Integración de analíticas de Umami en la aplicación base del visor 3D (`legacy-aplicativo-armado`) habilitando el rastreo automático y multitenant de visitas y eventos de pasos (`Session Start`, `Step Reached`, `Help Clicked`, `Session Complete`, `Feedback Submitted`) para la Estantería Multifuncional (M00001), Politorno y cualquier manual futuro.
+  - **[NUEVO - 14 de Julio, 2026]** Implementación de rastreo declarativo de eventos de Umami en la landing page (`mario-mojica-homepage`) en enlaces de la Navbar, clics de cambio de idioma, CTAs de solicitud de demo y envío exitoso del formulario de leads.
+  - **[NUEVO - 14 de Julio, 2026]** Creación del documento [METRICAS.md](file:///c:/Desarrollo/mmapp/Arquitectura/METRICAS.md) e inyección en el Protocolo de Arranque del archivo [AGENTS.md](file:///c:/Desarrollo/mmapp/AGENTS.md).
 - [x] **Resolución y Separación de Tornillos Maderkit (PolitornoP01 - 07 de Julio, 2026)**:
   - Corrección de la duplicidad y colisión de tornillos de dos tipos (Tornillo_1 y Tornillo_2) en la Estantería Multifuncional (M00001).
   - Reestructuración de la base de datos para separar el inventario oficial en Tornillo_1 (84 unidades, corto plateado para correderas) y Tornillo_2 (32 unidades, largo negro de estructura).

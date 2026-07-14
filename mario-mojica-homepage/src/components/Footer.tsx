@@ -82,7 +82,6 @@ export default function Footer() {
             <div className="flex gap-6">
               <Link className="hover:text-white transition-colors" href={`${platformUrl}/terms`}>{t('Términos de Servicio', 'Terms of Service', 'Termos de Serviço')}</Link>
               <Link className="hover:text-white transition-colors" href={`${platformUrl}/privacy`}>{t('Aviso de Privacidad', 'Privacy Notice', 'Aviso de Privacidade')}</Link>
-              <button onClick={() => window.dispatchEvent(new CustomEvent('open-cookie-settings'))} className="hover:text-white transition-colors text-left">{t('Configuración de Cookies', 'Cookie Settings', 'Configurações de Cookies')}</button>
             </div>
           </div>
           

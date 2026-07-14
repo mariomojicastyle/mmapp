@@ -72,9 +72,40 @@ export function useTelemetry() {
   const resolvedRef = useRef(false);
   const eventQueue = useRef([]);
 
+  /* ── Cargar script de Umami dinámicamente ── */
+  useEffect(() => {
+    if (typeof window !== 'undefined' && !window.umami) {
+      const websiteId = import.meta.env.VITE_UMAMI_WEBSITE_ID || '61ad7bc7-dc54-4916-a586-4c9d94be795a';
+      const script = document.createElement('script');
+      script.async = true;
+      script.defer = true;
+      script.src = 'https://analytics.mariomojica.com/script.js';
+      script.setAttribute('data-website-id', websiteId);
+      script.setAttribute('data-domains', 'mariomojica.com');
+      document.head.appendChild(script);
+    }
+  }, []);
+
   /* ── Envío genérico (fire-and-forget) ── */
   const sendEvent = useCallback(
     (eventType, payload = {}) => {
+      // Enviar evento en paralelo a Umami si está disponible
+      if (typeof window !== 'undefined' && window.umami) {
+        let umamiEventName = eventType;
+        if (eventType === 'session_start') umamiEventName = 'Session Start';
+        else if (eventType === 'step_reached') umamiEventName = 'Step Reached';
+        else if (eventType === 'help_click') umamiEventName = 'Help Clicked';
+        else if (eventType === 'session_complete') umamiEventName = 'Session Complete';
+        else if (eventType === 'feedback') umamiEventName = 'Feedback Submitted';
+
+        window.umami.track(umamiEventName, {
+          manual: codigoManual || 'unknown',
+          device: deviceType.current,
+          referrer: referrerType.current,
+          ...payload
+        });
+      }
+
       // Si aún no se ha resuelto el proyecto_id, encolamos el evento
       if (!resolvedRef.current) {
         eventQueue.current.push({ eventType, payload });
