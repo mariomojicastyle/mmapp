@@ -971,3 +971,10 @@ Con esta batería de arreglos y la validación en caliente, la V20 se establece 
     - **Localización Bilingüe**: Traducción y configuración de la sección "Acerca de" (About/Sobre) en español y portugués brasileño para captar la atención de los directores de diseño y producción de las empresas RTA brasileñas.
     - **Credenciales y Seguridad**: Verificación exitosa de la dirección de correo electrónico corporativo (`direccion@mariomojica.com`) como cuenta de correo principal del perfil, y adición de las 10 aptitudes (skills) clave del negocio.
     - **Registro de Log de Bloqueo**: Documentación del bloqueo temporal de 24 horas impuesto por LinkedIn para la creación de la Página de Empresa para cuentas nuevas.
+
+* **[2026-07-15] Blindaje de Propiedad Intelectual y Ofuscación 3D GLB (IP Shield):**
+    - **Protección Antirrobo**: Implementación de un sistema de ofuscación binaria XOR en caliente para archivos `.glb` (aplicado sobre los primeros 1024 bytes de la cabecera).
+    - **Integración CMS y Visor**: Ofuscación automatizada al subir modelos en el CMS Next.js (`detalle-proyecto-modal.tsx`) y descifrado efímero en la memoria RAM del cliente mediante URLs de Blob (`blob:`) en el visualizador React/Vite (`Model.jsx` y `Experience.jsx`) y el escáner de despiece en Next.js.
+    - **Migración Retroactiva**: Ejecución de un script automatizado (`encrypt_existing_glbs.js`) que protegió retroactivamente los 21 archivos `.glb` activos de la Mesa Tijuca, la Estantería Multifuncional y los manuales de desarrollo en Supabase Storage.
+    - **Documentación de Seguridad B2B**: Creación del manual técnico corporativo [Seguridad.md](file:///c:/Desarrollo/mmapp/docs/Seguridad.md) detallando el funcionamiento del IP Shield como propuesta de valor de seguridad para clientes B2B.
+

@@ -85,6 +85,7 @@ Este archivo es la "Memoria RAM" para Antigravity. Contiene el contexto de lo qu
   - Ofuscación en caliente en la subida en el CMS (`detalle-proyecto-modal.tsx`) y desencriptación en caliente en el frontend de Vite (`Model.jsx`) y escáner de despiece en Next.js.
   - Creación y ejecución de un script de migración masiva (`encrypt_existing_glbs.js`) en Supabase Storage, protegiendo 21 archivos `.glb` correspondientes a la Mesa Tijuca, Estantería Multifuncional y plantillas de desarrollo.
   - El modelo 3D desencriptado ahora solo reside efímeramente en la memoria RAM del cliente, sirviendo archivos corruptos e inservibles al descargar por inspección de red.
+  - Creación del documento corporativo [Seguridad.md](file:///c:/Desarrollo/mmapp/docs/Seguridad.md) que detalla el protocolo y arquitectura de seguridad (IP Shield) para clientes B2B.
 
 
 

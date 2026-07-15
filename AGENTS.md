@@ -13,6 +13,7 @@ Cada vez que iniciamos, tu primera tarea absoluta debe ser recuperar el contexto
 - [historico_de_posts.md](file:///c:/Desarrollo/mmapp/Comercial/historico_de_posts.md) - Registro de copys publicados y métricas de rendimiento.
 - [GUIA_CONFIGURACION_CAMARA.md](file:///c:/Desarrollo/mmapp/docs/GUIA_CONFIGURACION_CAMARA.md) - Captura y persistencia SQL de coordenadas 3D.
 - [reputacion_web.md](file:///c:/Desarrollo/mmapp/docs/reputacion_web.md) - Protocolo DNS (SPF/DKIM/DMARC) y disputas Antivirus.
+- [Seguridad.md](file:///c:/Desarrollo/mmapp/docs/Seguridad.md) - Protocolo de blindaje 3D (IP Shield) y enmascaramiento GLB.
 
 ---
 
