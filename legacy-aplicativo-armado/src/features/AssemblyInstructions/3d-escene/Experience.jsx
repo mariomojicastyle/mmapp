@@ -608,7 +608,7 @@ export default function AssemblySceneViewer(props) {
     let active = true;
     setDecryptedUrl(null);
     
-    getProtectedGLB(urlOriginal)
+    getProtectedGLB(urlOriginal, props.id)
       .then(objUrl => {
         if (active) setDecryptedUrl(objUrl);
       })

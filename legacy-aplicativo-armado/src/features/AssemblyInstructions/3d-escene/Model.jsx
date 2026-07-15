@@ -6,21 +6,21 @@ import useEnviroment from "../hooks/useEnviroment.js";
 import Floor from "./Floor/Floor.jsx";
 import { getAssetPath, resolveAlias, translateHerraje } from "../../../lib/assets.js";
 import { isPieceName, extractPieceNumber, translatePieceLabel } from "../../../lib/pieceUtils.js";
-import { obfuscateBuffer } from "../../../lib/crypto.js";
+import { decryptBuffer } from "../../../lib/cryptoAES.js";
 
 const glbCache = {}; // Cache local: Url original -> ObjectURL del Blob desencriptado
 
-export async function getProtectedGLB(url) {
+export async function getProtectedGLB(url, manualId) {
   if (glbCache[url]) return glbCache[url];
   
   const response = await fetch(url);
   if (!response.ok) throw new Error(`Error descargando modelo: ${response.status}`);
   const buffer = await response.arrayBuffer();
   
-  // Revertir ofuscación en memoria
-  obfuscateBuffer(buffer);
+  // Revertir cifrado AES-256 en memoria
+  const decrypted = await decryptBuffer(buffer, manualId);
   
-  const blob = new Blob([buffer], { type: "model/gltf-binary" });
+  const blob = new Blob([decrypted], { type: "model/gltf-binary" });
   const objectUrl = URL.createObjectURL(blob);
   glbCache[url] = objectUrl;
   return objectUrl;
@@ -379,7 +379,7 @@ function ActualModel(props) {
         if (idx < pasos.length - 1) {
           const nextStep = pasos[idx + 1];
           const nextUrl = getAssetPath(`/${props.id}/models/P${nextStep}.glb`);
-          getProtectedGLB(nextUrl)
+          getProtectedGLB(nextUrl, props.id)
             .then(objUrl => useGLTF.preload(objUrl))
             .catch(err => console.warn("[Preload] Error precargando paso siguiente:", err));
         }
@@ -387,7 +387,7 @@ function ActualModel(props) {
         if (idx > 0) {
           const prevStep = pasos[idx - 1];
           const prevUrl = getAssetPath(`/${props.id}/models/P${prevStep}.glb`);
-          getProtectedGLB(prevUrl)
+          getProtectedGLB(prevUrl, props.id)
             .then(objUrl => useGLTF.preload(objUrl))
             .catch(err => console.warn("[Preload] Error precargando paso anterior:", err));
         }
@@ -698,7 +698,7 @@ export default function Model(props) {
     let active = true;
     setDecryptedUrl(null); // Limpiar pantalla en cambio de paso
     
-    getProtectedGLB(urlOriginal)
+    getProtectedGLB(urlOriginal, props.id)
       .then(objUrl => {
         if (active) setDecryptedUrl(objUrl);
       })

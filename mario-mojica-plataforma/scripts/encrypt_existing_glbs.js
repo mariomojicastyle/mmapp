@@ -1,5 +1,6 @@
 const fs = require('fs');
 const path = require('path');
+const crypto = require('crypto');
 const { createClient } = require('@supabase/supabase-js');
 
 // 1. Cargar variables de entorno desde .env.local de forma manual
@@ -36,18 +37,50 @@ if (!supabaseUrl || !supabaseServiceKey) {
 console.log("Conectando a Supabase:", supabaseUrl);
 const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-// Utilidad de enmascaramiento binario XOR
-function obfuscateBuffer(buffer) {
-  const key = [0xAA, 0x55, 0x1F, 0x2E];
-  const bytesToProcess = Math.min(1024, buffer.length);
-  for (let i = 0; i < bytesToProcess; i++) {
-    buffer[i] = buffer[i] ^ key[i % key.length];
-  }
+const MASTER_SALT = "MARIO_MOJICA_3D_DRM_KEY_2026"; // Clave de sal maestra
+
+// Deriva una clave simétrica de 256 bits única para el manual (Node.js compatible con Web Crypto)
+function deriveKeyNode(manualId) {
+  return crypto.pbkdf2Sync(MASTER_SALT + manualId, manualId, 1000, 32, 'sha256');
+}
+
+// Cifra los primeros 4KB del Buffer con AES-256-GCM
+function encryptBufferNode(buffer, manualId) {
+  const key = deriveKeyNode(manualId);
+  const iv = crypto.randomBytes(12); // Vector de inicialización de 12 bytes
+  
+  const bytesToEncrypt = Math.min(4096, buffer.length);
+  const chunkToEncrypt = buffer.slice(0, bytesToEncrypt);
+  const remainingChunk = buffer.slice(bytesToEncrypt);
+  
+  const cipher = crypto.createCipheriv('aes-256-gcm', key, iv);
+  const encryptedChunk = Buffer.concat([cipher.update(chunkToEncrypt), cipher.final()]);
+  const tag = cipher.getAuthTag(); // 16 bytes tag de autenticación
+  
+  // Estructura final compatible: [IV (12 bytes)] + [Chunk Cifrado] + [Tag (16 bytes)] + [Resto del archivo]
+  return Buffer.concat([iv, encryptedChunk, tag, remainingChunk]);
+}
+
+// Descifra los primeros 4KB con AES-256-GCM (para verificar o revertir de ser necesario)
+function decryptBufferNode(buffer, manualId) {
+  const key = deriveKeyNode(manualId);
+  const iv = buffer.slice(0, 12);
+  
+  const encryptedChunkSize = Math.min(4096, buffer.length - 12 - 16);
+  const encryptedChunk = buffer.slice(12, 12 + encryptedChunkSize);
+  const tag = buffer.slice(12 + encryptedChunkSize, 12 + encryptedChunkSize + 16);
+  const remainingChunk = buffer.slice(12 + encryptedChunkSize + 16);
+  
+  const decipher = crypto.createDecipheriv('aes-256-gcm', key, iv);
+  decipher.setAuthTag(tag);
+  const decryptedChunk = Buffer.concat([decipher.update(encryptedChunk), decipher.final()]);
+  
+  return Buffer.concat([decryptedChunk, remainingChunk]);
 }
 
 async function runMigration() {
   try {
-    console.log("=== INICIANDO MIGRACIÓN DE ARCHIVOS GLB ===");
+    console.log("=== INICIANDO MIGRACIÓN DE ARCHIVOS GLB A AES-256 ===");
     
     // 2. Listar carpetas raíces en el bucket 'insumos_manuales'
     const { data: rootItems, error: listError } = await supabase.storage
@@ -56,7 +89,7 @@ async function runMigration() {
       
     if (listError) throw listError;
     
-    // Filtrar sólo carpetas (los archivos de configuración se guardan en carpetas con códigos de manual)
+    // Filtrar sólo carpetas
     const manuals = rootItems.filter(item => item.id === null || !item.metadata); 
     console.log(`Se detectaron ${manuals.length} carpetas de manuales.`);
     
@@ -95,39 +128,50 @@ async function runMigration() {
         
         // Convertir blob a Buffer de Node
         const arrayBuffer = await blob.arrayBuffer();
-        const buffer = Buffer.from(arrayBuffer);
+        let buffer = Buffer.from(arrayBuffer);
         
-        // 5. Validar cabecera binaria
-        // El formato GLB normal tiene el número mágico 'glTF' en ASCII en los primeros 4 bytes (0x46546C67)
+        // 5. Validar cabecera binaria y aplicar encriptación AES
         const magic = buffer.toString('ascii', 0, 4);
         
+        // Si el archivo está en formato original sin encriptar, o está en formato XOR antiguo, lo encriptamos
+        let needsEncryption = false;
+        
         if (magic === 'glTF') {
-          console.log(`   [?] El archivo no está protegido. Aplicando ofuscación XOR...`);
+          console.log(`   [?] El archivo está en formato GLB estándar. Cifrando con AES-256...`);
+          needsEncryption = true;
+        } else if (buffer[0] === 0xCD && buffer[1] === 0x39 && buffer[2] === 0x4B && buffer[3] === 0x68) {
+          console.log(`   [?] Detectado formato XOR antiguo. Re-descifrando y cifrando con AES-256...`);
           
-          // Aplicar la ofuscación XOR
-          obfuscateBuffer(buffer);
+          // Revertir XOR primero para obtener el GLB limpio
+          const keyXOR = [0xAA, 0x55, 0x1F, 0x2E];
+          const bytesToProcess = Math.min(1024, buffer.length);
+          for (let i = 0; i < bytesToProcess; i++) {
+            buffer[i] = buffer[i] ^ keyXOR[i % keyXOR.length];
+          }
+          
+          needsEncryption = true;
+        }
+        
+        if (needsEncryption) {
+          // Aplicar cifrado AES-256 en caliente
+          const encryptedBuffer = encryptBufferNode(buffer, folderName);
           
           // 6. Subir el archivo encriptado (sobreescribiendo con upsert)
           const { error: uploadError } = await supabase.storage
             .from('insumos_manuales')
-            .upload(filePath, buffer, {
+            .upload(filePath, encryptedBuffer, {
               upsert: true,
               contentType: 'model/gltf-binary'
             });
             
           if (uploadError) {
-            console.error(`   [❌] Error al subir el archivo protegido:`, uploadError.message);
+            console.error(`   [❌] Error al subir el archivo cifrado con AES:`, uploadError.message);
           } else {
-            console.log(`   [✅] Archivo protegido y subido con éxito.`);
+            console.log(`   [✅] Archivo cifrado con AES-256 y subido con éxito.`);
           }
         } else {
-          // Verificar si ya tiene nuestra firma XOR aplicada
-          // El primer byte de 'glTF' es 'g' (0x67). Encriptado con 0xAA da 0xCD (205)
-          if (buffer[0] === 0xCD && buffer[1] === 0x39 && buffer[2] === 0x4B && buffer[3] === 0x68) {
-            console.log(`   [🛡️] El archivo ya está protegido correctamente.`);
-          } else {
-            console.log(`   [⚠️] Cabecera desconocida (${buffer.slice(0, 4).toString('hex')}). Omitiendo para seguridad.`);
-          }
+          // Validar si ya está cifrado con AES-256 (no empieza con glTF ni XOR)
+          console.log(`   [🛡️] El archivo ya se encuentra protegido con AES-256 (o tiene un formato externo).`);
         }
       }
     }
