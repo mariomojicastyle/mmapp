@@ -427,15 +427,6 @@ const AssemblyPage = () => {
     };
   }, []);
 
-  const searchParams = new URLSearchParams(window.location.search);
-  const lang = searchParams.get('lang') || 'es';
-  
-  const loadingText = {
-    es: "Preparando experiencia 3D...",
-    en: "Preparing 3D experience...",
-    pt: "Preparando experiência 3D..."
-  }[lang] || "Preparando experiencia 3D...";
-
   if (loading) {
     return (
       <div className="flex flex-col h-screen w-screen items-center justify-center bg-white relative">
@@ -456,9 +447,17 @@ const AssemblyPage = () => {
           <polyline points="3.27 6.96 12 12.01 20.73 6.96" />
           <line x1="12" y1="22.08" x2="12" y2="12" />
         </svg>
-        <span className="font-semibold tracking-wide" style={{ color: "var(--primary, #0B192C)", fontSize: "15px" }}>
-          {loadingText}
-        </span>
+        <div className="flex flex-col items-center gap-1 text-center">
+          <span className="font-semibold tracking-wide" style={{ color: "var(--primary, #0B192C)", fontSize: "15px" }}>
+            Preparando uma experiência 3D...
+          </span>
+          <span className="font-semibold tracking-wide" style={{ color: "var(--primary, #0B192C)", fontSize: "15px" }}>
+            Preparing 3D experience...
+          </span>
+          <span className="font-semibold tracking-wide" style={{ color: "var(--primary, #0B192C)", fontSize: "15px" }}>
+            Preparando experiencia 3D...
+          </span>
+        </div>
       </div>
     );
   }

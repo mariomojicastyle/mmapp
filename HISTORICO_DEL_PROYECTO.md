@@ -978,3 +978,21 @@ Con esta batería de arreglos y la validación en caliente, la V20 se establece 
     - **Migración Retroactiva**: Ejecución de un script automatizado (`encrypt_existing_glbs.js`) que protegió retroactivamente los 21 archivos `.glb` activos de la Mesa Tijuca, la Estantería Multifuncional y los manuales de desarrollo en Supabase Storage.
     - **Documentación de Seguridad B2B**: Creación del manual técnico corporativo [Seguridad.md](file:///c:/Desarrollo/mmapp/docs/Seguridad.md) detallando el funcionamiento del IP Shield como propuesta de valor de seguridad para clientes B2B.
 
+* **[2026-07-15] Corrección de LinkedIn de Notável en CRM B2B (Baserow):**
+    - **Ajuste de Notável**: Se actualizó exclusivamente el perfil de **Móveis Notável** (ID 2) a su URL real de compañía `https://www.linkedin.com/company/notável-design-móveis/` (encontrado manualmente por el usuario), preservando intactos el resto de enlaces de la semilla del Tier 2.
+    - **Automatización**: Ejecución del script `update_notavel_only.js` en caliente.
+
+* **[2026-07-15] Expansión Multicanal y WhatsApp en CRM (Baserow):**
+    - **Estructura de Datos**: Creación de los campos `Facebook` (URL), `Instagram` (URL), `WhatsApp` (URL), `Canal Preferido` (Selección Única) y `Actividad en Redes` (Selección Única) en la tabla 991. Se incluyó "WhatsApp" como opción de canal preferido.
+    - **Poblamiento Seguro y Canal Directo**: Actualización de la información para las 15 empresas del Tier 2 brasileño. Se mapeó el link directo de WhatsApp para **Poliman Móveis** (ID 14), vaciando sus campos de Instagram y Facebook por inactividad comercial en esas redes.
+    - **Automatización**: Ejecución de los scripts `add_whatsapp_field.js`, `reorder_columns_with_whatsapp.js` y `update_poliman_whatsapp.js`.
+
+
+
+
+
+
+
+
+
+
