@@ -3,7 +3,7 @@ import { OrbitControls, Html, useProgress, useGLTF, useHelper, Environment, useT
 import React, { useRef, useEffect, Suspense, useState, useMemo } from "react";
 import useEnviroment from "../hooks/useEnviroment.js";
 import * as THREE from 'three';
-import Model from "./Model.jsx";
+import Model, { getProtectedGLB } from "./Model.jsx";
 import Floor from "./Floor/Floor.jsx";
 import LightingPanel from "./LightingPanel.jsx";
 import { getAssetPath } from "../../../lib/assets.js";
@@ -37,7 +37,7 @@ function parseCubemapTextureAtlas(atlasImgUrl, tilesNum) {
   return textures;
 }
 
-export default function AssemblySceneViewer({ id, modelUrl, productData }) {
+function ActualAssemblySceneViewer({ id, modelUrl, productData, decryptedUrl }) {
   const { scene, gl, camera } = useThree();
   const controlsRef = useRef();
   const [cameraTarget, setCameraTarget] = useState([0, 0.8, 0]);
@@ -133,9 +133,8 @@ export default function AssemblySceneViewer({ id, modelUrl, productData }) {
     }
   }, [hasWallTextures, stableWallTextureMaps]);
 
-  // Cargar el modelo GLB inicial (paso 00)
-  const initialModelUrl = getAssetPath(`/${id}/models/P00.glb`);
-  const { scene: gltfScene } = useGLTF(initialModelUrl);
+  // Cargar el modelo GLB inicial (paso 00) - Capa protegida
+  const { scene: gltfScene } = useGLTF(decryptedUrl);
 
   useEffect(() => {
     if (gltfScene) {
@@ -599,4 +598,28 @@ function ViewportCameraManager({ orbitControlsRef }) {
       </div>
     </Html>
   );
+}
+
+export default function AssemblySceneViewer(props) {
+  const [decryptedUrl, setDecryptedUrl] = useState(null);
+  const urlOriginal = getAssetPath(`/${props.id}/models/P00.glb`);
+  
+  useEffect(() => {
+    let active = true;
+    setDecryptedUrl(null);
+    
+    getProtectedGLB(urlOriginal)
+      .then(objUrl => {
+        if (active) setDecryptedUrl(objUrl);
+      })
+      .catch(err => {
+        console.error("Error al cargar escena base encriptada:", err);
+      });
+      
+    return () => { active = false; };
+  }, [urlOriginal]);
+  
+  if (!decryptedUrl) return null; // Esperar a la desencriptación inicial
+  
+  return <ActualAssemblySceneViewer {...props} decryptedUrl={decryptedUrl} />;
 }

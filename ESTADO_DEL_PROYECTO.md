@@ -41,6 +41,10 @@ Este archivo es la "Memoria RAM" para Antigravity. Contiene el contexto de lo qu
   - **[NUEVO - 14 de Julio, 2026]** Integración de analíticas de Umami en la aplicación base del visor 3D (`legacy-aplicativo-armado`) habilitando el rastreo automático y multitenant de visitas y eventos de pasos (`Session Start`, `Step Reached`, `Help Clicked`, `Session Complete`, `Feedback Submitted`) para la Estantería Multifuncional (M00001), Politorno y cualquier manual futuro.
   - **[NUEVO - 14 de Julio, 2026]** Implementación de rastreo declarativo de eventos de Umami en la landing page (`mario-mojica-homepage`) en enlaces de la Navbar, clics de cambio de idioma, CTAs de solicitud de demo y envío exitoso del formulario de leads.
   - **[NUEVO - 14 de Julio, 2026]** Creación del documento [METRICAS.md](file:///c:/Desarrollo/mmapp/Arquitectura/METRICAS.md) e inyección en el Protocolo de Arranque del archivo [AGENTS.md](file:///c:/Desarrollo/mmapp/AGENTS.md).
+  - **[NUEVO - 15 de Julio, 2026]** Creación del documento [activos_digitales_y_redes.md](file:///c:/Desarrollo/mmapp/Comercial/activos_digitales_y_redes.md) e inyección en el Protocolo de Arranque del archivo [AGENTS.md](file:///c:/Desarrollo/mmapp/AGENTS.md).
+  - **[NUEVO - 15 de Julio, 2026]** Creación del documento [guia_copy_voz_de_marca.md](file:///c:/Desarrollo/mmapp/Comercial/guia_copy_voz_de_marca.md) e inyección en el Protocolo de Arranque del archivo [AGENTS.md](file:///c:/Desarrollo/mmapp/AGENTS.md).
+  - **[NUEVO - 15 de Julio, 2026]** Configuración de redirección limpia nativa en Next.js (`/demo` -> manual real de pruebas) para uso estético en publicaciones y tracking de Umami.
+  - **[NUEVO - 15 de Julio, 2026]** Creación del documento [historico_de_posts.md](file:///c:/Desarrollo/mmapp/Comercial/historico_de_posts.md) para control de rendimiento de copys en redes.
 - [x] **Resolución y Separación de Tornillos Maderkit (PolitornoP01 - 07 de Julio, 2026)**:
   - Corrección de la duplicidad y colisión de tornillos de dos tipos (Tornillo_1 y Tornillo_2) en la Estantería Multifuncional (M00001).
   - Reestructuración de la base de datos para separar el inventario oficial en Tornillo_1 (84 unidades, corto plateado para correderas) y Tornillo_2 (32 unidades, largo negro de estructura).
@@ -76,6 +80,11 @@ Este archivo es la "Memoria RAM" para Antigravity. Contiene el contexto de lo qu
   - Implementada protección contra scroll horizontal forzado configurando `max-width: 100%; overflow-x: hidden` en `html, body` dentro de [globals.css](file:///c:/Desarrollo/mmapp/mario-mojica-homepage/src/app/globals.css) y clase `overflow-x-hidden` en el `<main>` de [page.tsx](file:///c:/Desarrollo/mmapp/mario-mojica-homepage/src/app/page.tsx).
 - [x] **Resolución del Recorte de Botones Inferiores en Fullscreen Móvil (14 de Julio, 2026)**:
   - Modificado el posicionamiento bottom en [NavBarInferior.css](file:///c:/Desarrollo/mmapp/legacy-aplicativo-armado/src/features/AssemblyInstructions/components/NavBarInferior/NavBarInferior.css) utilizando `env(safe-area-inset-bottom)` combinada con un margen base aumentado para móviles (`bottom: calc(32px + env(safe-area-inset-bottom))` en pantallas de hasta 787px de ancho, y `20px` en pantallas de 320px). Esto evita que los botones queden sumergidos bajo la barra de gestos o el teclado del sistema, manteniéndolos 100% visibles.
+- [x] **Blindaje de Propiedad Intelectual y Ofuscación de Archivos 3D GLB (15 de Julio, 2026)**:
+  - Implementación de un sistema de protección y enmascaramiento binario XOR asíncrono para los archivos `.glb`.
+  - Ofuscación en caliente en la subida en el CMS (`detalle-proyecto-modal.tsx`) y desencriptación en caliente en el frontend de Vite (`Model.jsx`) y escáner de despiece en Next.js.
+  - Creación y ejecución de un script de migración masiva (`encrypt_existing_glbs.js`) en Supabase Storage, protegiendo 21 archivos `.glb` correspondientes a la Mesa Tijuca, Estantería Multifuncional y plantillas de desarrollo.
+  - El modelo 3D desencriptado ahora solo reside efímeramente en la memoria RAM del cliente, sirviendo archivos corruptos e inservibles al descargar por inspección de red.
 
 
 
@@ -231,7 +240,8 @@ Un **"Manual Vacío"** es un cascarón o aplicación base centralizada (desplega
 - [x] **[NUEVO - 14 de Julio, 2026] Carpeta Comercial y Semilla Tier 2:** Creación de la carpeta `/Comercial`, guardado del estudio [ranking_empresas_rta_brasil.md](file:///c:/Desarrollo/mmapp/Comercial/ranking_empresas_rta_brasil.md) (agregado a [AGENTS.md](file:///c:/Desarrollo/mmapp/AGENTS.md)) e inyección automática en Baserow de las 15 empresas del Tier 2 para prospección.
 - [ ] **PENDIENTE:** Monitoreo de tráfico y leads reales.
 - [x] **Configuración de LinkedIn Personal (14 de Julio, 2026):** Perfil de Mario Mojica optimizado con titular persuasivo B2B en español y portugués, correo corporativo verificado como principal, biografía ("Acerca de") en ambos idiomas, y aptitudes alineadas a la Industria 4.0.
-- [ ] **PENDIENTE:** Crear Página de Empresa en LinkedIn (Bloqueado temporalmente por política de cuenta nueva de LinkedIn; reintentar el 15 de Julio).
+- [x] **Gestión de Activos Digitales y Redes (15 de Julio, 2026):** Creación del documento [activos_digitales_y_redes.md](file:///c:/Desarrollo/mmapp/Comercial/activos_digitales_y_redes.md) que contiene el registro de perfiles y la estrategia de contenido.
+- [ ] **PENDIENTE:** Crear Página de Empresa en LinkedIn (Reintentar creación a lo largo del día de hoy, 15 de Julio).
 
 
 

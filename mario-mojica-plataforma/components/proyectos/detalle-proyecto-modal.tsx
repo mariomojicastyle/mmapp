@@ -7,6 +7,7 @@ import { motion, AnimatePresence } from "framer-motion"
 import { cn } from "@/lib/utils"
 import { usePermissions } from "@/hooks/use-permissions"
 import { createClient } from "@/lib/supabase/client"
+import { obfuscateBuffer } from "@/lib/crypto"
 
 export interface ItemDespiece {
   nombre: string
@@ -1444,6 +1445,17 @@ export function DetalleProyectoModal({ isOpen, onClose, proyecto, onUpdate }: De
             }
           }
           path = `${codigoManual}/models/P${stepStr}.glb`
+
+          // Encriptar el modelo en caliente antes de subirlo a Supabase Storage
+          try {
+            const arrayBuffer = await file.arrayBuffer()
+            obfuscateBuffer(arrayBuffer)
+            fileToUpload = new File([arrayBuffer], fileNameToUse, { type: file.type || "model/gltf-binary" })
+          } catch (cryptErr) {
+            console.error("Error al encriptar el GLB antes de subir:", cryptErr)
+            throw new Error("No se pudo proteger el modelo 3D antes de subir.")
+          }
+
           updatedStateCallback = () => {
             setGlbSteps(prev => {
               const existing = prev.find(s => s.step === stepStr)
@@ -2369,8 +2381,13 @@ export function DetalleProyectoModal({ isOpen, onClose, proyecto, onUpdate }: De
       
       const fileBlob = await response.blob()
       
+      // Desencriptar el modelo en caliente antes de cargarlo en THREE.js para análisis de despiece
+      const decryptedBuffer = await fileBlob.arrayBuffer()
+      obfuscateBuffer(decryptedBuffer)
+      const decryptedBlob = new Blob([decryptedBuffer], { type: "model/gltf-binary" })
+      
       // Creamos una URL local temporal segura para el Blob
-      const blobUrl = URL.createObjectURL(fileBlob)
+      const blobUrl = URL.createObjectURL(decryptedBlob)
       
       // Cargamos THREE, GLTFLoader y DRACOLoader dinámicamente para soportar SSR en Next.js
       const THREE = await import("three")

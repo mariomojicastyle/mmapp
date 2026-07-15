@@ -6,6 +6,25 @@ import useEnviroment from "../hooks/useEnviroment.js";
 import Floor from "./Floor/Floor.jsx";
 import { getAssetPath, resolveAlias, translateHerraje } from "../../../lib/assets.js";
 import { isPieceName, extractPieceNumber, translatePieceLabel } from "../../../lib/pieceUtils.js";
+import { obfuscateBuffer } from "../../../lib/crypto.js";
+
+const glbCache = {}; // Cache local: Url original -> ObjectURL del Blob desencriptado
+
+export async function getProtectedGLB(url) {
+  if (glbCache[url]) return glbCache[url];
+  
+  const response = await fetch(url);
+  if (!response.ok) throw new Error(`Error descargando modelo: ${response.status}`);
+  const buffer = await response.arrayBuffer();
+  
+  // Revertir ofuscación en memoria
+  obfuscateBuffer(buffer);
+  
+  const blob = new Blob([buffer], { type: "model/gltf-binary" });
+  const objectUrl = URL.createObjectURL(blob);
+  glbCache[url] = objectUrl;
+  return objectUrl;
+}
 
 function cleanMeshIdentifier(rawName) {
   if (!rawName) return "";
@@ -96,7 +115,7 @@ function cleanMeshIdentifier(rawName) {
 }
 
 
-export default function Model(props) {
+function ActualModel(props) {
   // Obtiene los estados y funciones del contexto de uso
   const pasoActual = useEnviroment((state) => state.pasoActual);
   const ChargeModel = useEnviroment((state) => state.ChargeModel);
@@ -184,10 +203,8 @@ export default function Model(props) {
   var embeddedCamerasCount = 0;
 
 
-  // Carga del modelo GLB y sus animaciones - Local por paso
-  const { scene, animations, cameras } = useGLTF(
-    getAssetPath(`/${props.id}/models/P${pasoActual}.glb`)
-  );
+  // Carga del modelo GLB y sus animaciones - Local por paso (Capa protegida)
+  const { scene, animations, cameras } = useGLTF(props.decryptedUrl);
 
   const sombras = useEnviroment((state) => state.sombras);
 
@@ -353,7 +370,7 @@ export default function Model(props) {
     }
   }, [scene, StartApp, actions, camera, CameraPosition, pasoActual, props.orbitControlsRef]);
 
-  // Preload de pasos adyacentes para que las transiciones sean instantáneas y fluidas
+  // Preload de pasos adyacentes para que las transiciones sean instantáneas y fluidas (Capa protegida)
   useEffect(() => {
     if (pasos && pasos.length > 0) {
       const idx = pasos.indexOf(pasoActual);
@@ -362,13 +379,17 @@ export default function Model(props) {
         if (idx < pasos.length - 1) {
           const nextStep = pasos[idx + 1];
           const nextUrl = getAssetPath(`/${props.id}/models/P${nextStep}.glb`);
-          useGLTF.preload(nextUrl);
+          getProtectedGLB(nextUrl)
+            .then(objUrl => useGLTF.preload(objUrl))
+            .catch(err => console.warn("[Preload] Error precargando paso siguiente:", err));
         }
         // Preload del paso anterior
         if (idx > 0) {
           const prevStep = pasos[idx - 1];
           const prevUrl = getAssetPath(`/${props.id}/models/P${prevStep}.glb`);
-          useGLTF.preload(prevUrl);
+          getProtectedGLB(prevUrl)
+            .then(objUrl => useGLTF.preload(objUrl))
+            .catch(err => console.warn("[Preload] Error precargando paso anterior:", err));
         }
       }
     }
@@ -666,4 +687,29 @@ export default function Model(props) {
       />
     </group>
   );
+}
+
+export default function Model(props) {
+  const pasoActual = useEnviroment((state) => state.pasoActual);
+  const [decryptedUrl, setDecryptedUrl] = useState(null);
+  const urlOriginal = getAssetPath(`/${props.id}/models/P${pasoActual}.glb`);
+
+  useEffect(() => {
+    let active = true;
+    setDecryptedUrl(null); // Limpiar pantalla en cambio de paso
+    
+    getProtectedGLB(urlOriginal)
+      .then(objUrl => {
+        if (active) setDecryptedUrl(objUrl);
+      })
+      .catch(err => {
+        console.error("Error al cargar y descifrar el modelo 3D:", err);
+      });
+      
+    return () => { active = false; };
+  }, [urlOriginal]);
+
+  if (!decryptedUrl) return null; // Transición fluida durante la desencriptación
+
+  return <ActualModel {...props} decryptedUrl={decryptedUrl} />;
 }
