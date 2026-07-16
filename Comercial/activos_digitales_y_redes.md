@@ -25,6 +25,18 @@ Para maximizar la efectividad del modelo de ventas corporativo B2B y Account-Bas
 * **Estado Actual:** En periodo de espera. LinkedIn restringe la creación de páginas corporativas de empresa a cuentas nuevas durante las primeras 24 horas.
 * **Próxima Acción:** Reintentar la creación de la Página de Empresa a partir de hoy, 15 de Julio de 2026.
 
+### C. Canal Oficial de YouTube: `@MarioMojicaff`
+* **Propósito:** Alojar demostraciones del Manual 3D, tutoriales técnicos y contenido de liderazgo de opinión para la captación B2B.
+* **Nombres Oficiales del Canal:**
+  * **Versión Portugués (Principal):** `Mario Mojica - Montagens 3D - Móveis RTA`
+  * **Versión Español:** `Mario Mojica - Armados 3D - Muebles RTA`
+* **URL:** [youtube.com/@MarioMojicaff](https://www.youtube.com/@MarioMojicaff)
+* **Configuración Realizada (16 de Julio, 2026):**
+  * Descripciones optimizadas para SEO (español y traducción al portugués).
+  * Vínculos estratégicos hacia `/demo`, sitio web y LinkedIn.
+  * Categoría predeterminada establecida en **Ciencia y tecnología**.
+  * Visibilidad predeterminada de carga en **Oculto**.
+
 ---
 
 ## 📈 2. Estrategia de Contenido y Publicación (Outreach)

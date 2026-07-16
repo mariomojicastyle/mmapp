@@ -170,3 +170,90 @@ La **Opción A (Tabla Secundaria Vinculada)** es significativamente más eficien
 * **`internal_network` (Docker Bridge):** Conecta `umami_app`, `umami_db` y `npm_proxy`. Esta separación evita que la base de datos de Umami sea visible desde otros contenedores del CRM o automatizaciones de negocio.
 
 Para una representación gráfica interactiva de estas conexiones, ver el diagrama vectorial generado en [arquitectura_V7.svg](file:///c:/Desarrollo/mmapp/Arquitectura/arquitectura_V7.svg).
+
+---
+
+## 🗺️ 6. Mapeo de Código y Arquitectura del Visor 3D (legacy-aplicativo-armado)
+
+Este apartado sirve como mapa de referencia compacta para la arquitectura, el flujo de datos, el manejo de estados globales y la responsabilidad de cada archivo clave dentro del proyecto [legacy-aplicativo-armado](file:///c:/Desarrollo/mmapp/legacy-aplicativo-armado/).
+
+### A. Arquitectura General y Jerarquía
+
+El aplicativo es una experiencia 3D interactiva construida en **React + Three.js** utilizando `@react-three/fiber` (R3F) y `@react-three/drei`. Los menús e interfaces se superponen sobre el lienzo 3D como capas HTML tradicionales (Overlay UI).
+
+```mermaid
+graph TD
+    A[main.jsx / App.jsx] --> B[pages/AssemblyPage.jsx]
+    B -- Carga data.json del producto --> C[AssemblyViewer.jsx]
+    C --> D[Lienzo 3D: Canvas]
+    C --> E[Capa de Interfaz: Overlay UI]
+    
+    D --> D1[3d-escene/Experience.jsx]
+    D1 --> D2[3d-escene/Model.jsx - Modelo GLB paso a paso]
+    D1 --> D3[3d-escene/Floor.jsx - Rejilla del Suelo]
+    
+    E --> E1[components/NavBarSuperior.jsx]
+    E --> E2[components/NavBarInferior.jsx]
+    E --> E3[components/Landscape.jsx - Alertas de giro]
+    
+    E2 --> E2a[PanelHerrajes.jsx - Panel lateral de piezas]
+    E2 --> E2b[PanelAyudas.jsx - Tutorial interactivo]
+    E2 --> E2c[PanelTips.jsx - Información técnica/Garantía]
+    E2 --> E2d[AudioPlayer.jsx - Control de voz en off]
+```
+
+### B. El Cerebro Global: `useEnviroment.js`
+*Ubicación:* [useEnviroment.js](file:///c:/Desarrollo/mmapp/legacy-aplicativo-armado/src/features/AssemblyInstructions/hooks/useEnviroment.js)
+
+El proyecto utiliza **Zustand** como manejador de estado global. En lugar de pasar propiedades de padre a hijo, los componentes se suscriben a este store.
+
+*   **`pasoActual`** (String): El paso de armado actual (ej. `"00"`, `"01"`, `"02"`). Controla qué modelo `.glb` cargar.
+*   **`pasos`** (Array): Lista de todos los identificadores de paso cargados desde el `data.json`.
+*   **`id`** (String): El ID del producto (ej. `"M01536"`). Define las rutas de assets.
+*   **`phaseAudio`** (String): Estado de reproducción (`"start"`, `"playing"`, `"paused"`, `"reset"`).
+*   **`PiezaHerraje`** (String): Nombre del elemento que el usuario está señalando o tocando en 3D. Se muestra en el banner inferior.
+*   **`show`** (Boolean): Variable de transición rápida para desmontar y remontar el Canvas 3D al cambiar de paso, limpiando memoria.
+*   **`Parpadeo`** (Boolean): Si es `true`, hace destellar la flecha de avanzar paso.
+*   **Paneles Activos:** `panelTips`, `PanelAyudas`, `PanelCantidades` y `PanelShow` controlan qué ventana modal o panel lateral está abierto.
+
+### C. Inventario de Archivos Clave
+
+#### Cimientos y Enrutamiento
+1.  **`index.html`**
+    *   *Propósito:* Punto de entrada web. Aloja fuentes locales (`Play-Regular`) para evitar retrasos de carga.
+2.  **`src/main.jsx` & `src/App.jsx`**
+    *   *Propósito:* Configura el enrutador (`react-router-dom`). Redirige la raíz `/` automáticamente al ID de producto por defecto (`/M01536`).
+3.  **`src/pages/AssemblyPage.jsx`**
+    *   *Propósito:* Captura el ID de la URL y hace un `fetch` dinámico del archivo `/${id}/data.json` que reside en la carpeta pública. Si tiene éxito, renderiza el `AssemblyViewer`.
+
+#### El Núcleo 3D (Carpeta `src/features/AssemblyInstructions/3d-escene/`)
+4.  **`AssemblyViewer.jsx`**
+    *   *Propósito:* El contenedor raíz de la vista 3D. Inicializa el store Zustand con los datos del JSON, define la configuración del renderizador web de Three (`gl`, `toneMapping`, `camera`) y distribuye el Overlay UI.
+5.  **`Experience.jsx (AssemblySceneViewer)`**
+    *   *Propósito:* Configura las luces de la escena, las sombras, el control de órbita (`OrbitControls`) y el entorno panorámico local (`hdri2/salon_01.webp`).
+6.  **`Model.jsx`**
+    *   *Propósito:* Carga dinámicamente el modelo GLB del paso correspondiente (`/${id}/models/P${pasoActual}.glb`). Contiene la lógica de animación, detección de clics en piezas, resaltado con Matcaps y emisión de la señal de parpadeo visual.
+
+#### La Interfaz HTML (Carpeta `src/features/AssemblyInstructions/components/`)
+7.  **`NavBarSuperior/NavBarSuperior.jsx` & `.css`**
+    *   *Propósito:* Controles del borde superior: Botón de ayuda (`?`), información técnica (`i`) y el botón de Realidad Aumentada (`AR.html`). Contiene selectores de color del mueble (desactivados).
+8.  **`NavBarInferior/NavBarInferior.jsx` & `.css`**
+    *   *Propósito:* Controles del borde inferior: Flecha izquierda (`left`), Flecha derecha (`right`), Play/Pausa/Reset de audio, e indicador circular de porcentaje completado.
+    *   *⚠️ Nota Crítica:* Este archivo contiene **grandes imágenes SVG embebidas en formato Base64**, lo que lo hace muy pesado de leer.
+9.  **`AudioPlayer/AudioPlayer.jsx`**
+    *   *Propósito:* Gestiona el elemento de audio HTML5 `<audio>` que reproduce las instrucciones habladas (`/${id}/sounds/...`). Coordina con Zustand la detención y reinicio de la narración en sincronía con el visualizador.
+10. **`PanelTips/PanelTips.jsx`**
+    *   *Propósito:* Panel de información técnica (herramientas necesarias, sistemas de ensamble, garantía). Libre de links externos.
+11. **`NavBarInferior/PanelHerrajes/PanelHerrajes.jsx`**
+    *   *Propósito:* Barra flotante que muestra qué herrajes se necesitan en el paso actual. Contiene el tutorial gráfico para localizarlos.
+12. **`NavBarInferior/PanelAyudas/PanelAyudas.jsx`**
+    *   *Propósito:* Despliega el tutorial inicial del aplicativo en 5 pasos interactivos de ayuda.
+
+---
+
+### D. Simplificación y Ahorro de Tokens de la IA
+
+Al modificar este proyecto, es importante tener en cuenta:
+1.  **SVGs Embebidos Gigantes en JSX (Densidad de Texto):** Archivos como `NavBarInferior.jsx` y `NavBarSuperior.jsx` tienen en su JSX iconos y flechas representados como strings SVG larguísimos o cadenas de Base64. Cada lectura procesa miles de caracteres inútiles. Se recomienda externalizar o ignorar estas zonas en ediciones no relacionadas.
+2.  **Manipulación Imperativa del DOM:** La aplicación mezcla React con manipulación directa del DOM (`document.querySelector`, inyección con `.innerHTML`). Hay que editar con cautela para no romper este puente.
+3.  **Ediciones Quirúrgicas:** Utilizar reemplazos de bloques específicos en lugar de reescribir archivos completos para mantener la estabilidad del código.

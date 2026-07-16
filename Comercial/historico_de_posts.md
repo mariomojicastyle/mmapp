@@ -75,5 +75,55 @@ Como la página de empresa `mariomojicaff` tiene 0 seguidores iniciales, el algo
 | **Reacciones (Likes/etc)**| *Pendiente* | *Pendiente* | |
 | **Comentarios** | *Pendiente* | *Pendiente* | |
 | **Compartidos** | *Pendiente* | *Pendiente* | |
+| **Compartidos** | *Pendiente* | *Pendiente* | |
 | **Clics en Link (Umami)**| *Pendiente* | *Pendiente* | Registrar clics en `/demo` |
+
+---
+
+### [POST 02] Lanzamiento del Video en Portugués — Manual 3D
+* **Fecha de Publicación:** 16 de Julio, 2026
+* **Red Social / Canal:** YouTube Canal Oficial (`@MarioMojicaff`)
+* **Formato:** Video Oficial de Producto (Portugués)
+* **URL del Video:** `https://youtu.be/TplkX2Xc108`
+* **Enlace Utilizado:** `mariomojica.com/demo`
+* **Fórmula de Copy:** PAS (Problema - Agitação - Solução)
+* **Pilar de Contenido:** Pilar 1 (Fricción Oculta) + Pilar 3 (CX)
+* **Etiquetas de YouTube Utilizadas:** `Mario Mojica, Manual de montagem 3D, Móveis RTA, Montagem de móveis, Indústria moveleira, Pós-venda moveleiro, Movergs, Fimma, Realidade Aumentada móveis, Automação de móveis, Projeto de móveis, Arapongas móveis, Bento Gonçalves móveis, Smart Assembly 3D, Manual interativo`
+
+#### 📝 Texto Publicado (Descripción):
+> Sua fábrica gasta muito tempo e dinheiro com assistência técnica pós-venda devido a erros de montagem? 
+>
+> O manual de papel confuso em preto e branco é o principal motivo pelo qual os clientes danificam as peças na hora de montar e fazem reclamações em e-commerce.
+>
+> Elimine esse gargalo de forma definitiva.
+>
+> Apresentamos o Manual de Montagem 3D Interativo para fabricantes de móveis RTA (desmontados).
+>
+> ✅ Para o cliente (Zero Estresse):
+> • Animação 3D interativa em tempo real.
+> • Rotação 360º e zoom dinâmico na tela do celular.
+> • Áudio guiado passo a passo. Sem necessidade de instalar nenhum aplicativo.
+>
+> 📊 Para a fábrica (Decisões com Dados):
+> • Um funil de retenção de montagem passo a passo que mostra exatamente onde os usuários encontram dificuldades, permitindo otimizar o produto com dados de campo.
+> • Redução drástica de devoluções e custos de pós-venda.
+>
+> 👉 Experimente a demonstração interativa: https://mariomojica.com/demo
+>
+> Entre em contato e veja como aplicar no seu catálogo:
+> 📧 direccion@mariomojica.com
+> 🔗 https://mariomojica.com
+>
+> #ManualDeMontagem3D #MoveisRTA #PosVendaInteligente #IndustriaMoveleira #Indústria40 #CustomerExperience #B2B #ReadyToAssemble #Movergs #Fimma
+
+#### 📈 Rendimiento Histórico:
+*(Actualizar a los 7 y 30 días del post)*
+
+| Métrica | 7 Días (23/07/2026) | 30 Días (16/08/2026) | Notas |
+| :--- | :--- | :--- | :--- |
+| **Impresiones / Vistas** | *Pendiente* | *Pendiente* | |
+| **Reacciones / Likes** | *Pendiente* | *Pendiente* | |
+| **Comentarios** | *Pendiente* | *Pendiente* | |
+| **Clics /demo (Umami)** | *Pendiente* | *Pendiente* | |
+
 

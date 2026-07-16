@@ -19,7 +19,9 @@ Tu memoria y estado están guardados en `ventas_ram.md` (ubicado en esta misma c
 2. **ACTUALIZA** el archivo `ventas_ram.md` usando `replace_file_content` o `write_to_file` con cada nuevo avance, nuevo prospecto, o cambio de estado. No confíes en la memoria de la conversación; si no está en la RAM, no existe.
 
 ## Playbooks y Templates
-Tienes acceso a tácticas y recursos adicionales en las carpetas `playbooks/` y `templates/`. Si tienes dudas sobre cómo abordar un correo en frío, responder a una objeción o hacer un seguimiento, lee los archivos en esas carpetas.
+Tienes acceso a tácticas y recursos adicionales en las carpetas `playbooks/` y `templates/`:
+*   [lead_enrichment_osint.md](file:///c:/Desarrollo/mmapp/.agent/skills/b2b-sales-closer/playbooks/lead_enrichment_osint.md): Guía de enriquecimiento de Leads mediante OSINT y automatización de URLs de LinkedIn/WhatsApp en el CRM.
+*   Si tienes dudas sobre cómo abordar un correo en frío, responder a una objeción o hacer un seguimiento, lee los archivos en esas carpetas.
 
 ## Flujo de Trabajo
 1. **Identificación:** El usuario te da un nombre, empresa o URL.

@@ -991,6 +991,21 @@ Con esta batería de arreglos y la validación en caliente, la V20 se establece 
     - **Branding y Optimización**: Se optimizó el perfil comercial de Facebook de Mario Mojica y se creó la página de empresa oficial *"Mario Mojica - Smart Assembly 3D - Inteligência Moveleira"*, enfocada en el sector RTA de Brasil.
     - **Conexión de Canales**: Se vinculó la cuenta profesional de Instagram `@mariomojicaff` a la nueva página de Facebook y se enlazaron exitosamente tanto Instagram como el canal de YouTube en la plataforma Metricool para la programación de videos, shorts y demos interactivos.
 
+* **[2026-07-16] Inyección de Empresas del Tier 1 y Ajuste Estratégico del Manifiesto B2B:**
+    - **Carga Masiva**: Creación y ejecución exitosa del script [inject_tier1_companies.js](file:///c:/Desarrollo/mmapp/scratch/inject_tier1_companies.js) para inyectar a los 15 gigantes RTA de Brasil (como Bartira, Kappesberg, Henn, Madesa, etc.) en la tabla de Empresas (ID 991).
+    - **Enriquecimiento**: Registro de sus sitios web, LinkedIn, Instagram y Facebook corporativos, canales de comunicación preferidos de prospección, nivel de actividad en redes y estimaciones de facturación anual / empleados.
+    - **Alineación del Manifiesto**: Actualización de [MANIFIESTO_NEGOCIO.md](file:///c:/Desarrollo/mmapp/docs/MANIFIESTO_NEGOCIO.md) para inyectar la diferenciación y segmentación core de mercado entre Planejados (Dell Anno), Modulados (Favorita/New) y RTA/Seriados (Politorno/Madesa) para consolidar el enfoque de ventas y automatización.
+    - **Validación con Movel Sul (Tier 2)**: Contraste con el histórico de expositores (2016-2026). Se identificaron e inyectaron 2 ausencias clave de gran volumen mediante [inject_missing_exhibitors.js](file:///c:/Desarrollo/mmapp/scratch/inject_missing_exhibitors.js): *Kits Paraná* (Fila ID 31) y *Möbler Móveis* (Fila ID 32) en la tabla de Empresas (991).
+    - **Validación y Corrección de LinkedIn**: Creación y ejecución de [validate_tier1_linkedin.js](file:///c:/Desarrollo/mmapp/scratch/validate_tier1_linkedin.js) y [update_tier1_linkedin.js](file:///c:/Desarrollo/mmapp/scratch/update_tier1_linkedin.js) para comprobar y actualizar los slugs de LinkedIn corporativos de Tier 1. Se resolvió la redirección de error `/company/unavailable/` dejando en blanco la de *Móveis Lopas* (sin presencia en la red) y aplicando percent-encoding. Se documentó el protocolo en [CRM.md](file:///c:/Desarrollo/mmapp/Comercial/CRM.md).
+    - **Inyección de Leads de Nuevas Cuentas**: Creación y ejecución de [inject_new_leads.js](file:///c:/Desarrollo/mmapp/scratch/inject_new_leads.js), [fix_and_inject_leads.js](file:///c:/Desarrollo/mmapp/scratch/fix_and_inject_leads.js) y [populate_human_socials.js](file:///c:/Desarrollo/mmapp/scratch/populate_human_socials.js) para registrar y enriquecer a 5 tomadores de decisión clave en la tabla de Leads (994): *Jamylle Duarte* (Gerente de P&D), *Edson Stocki* (Gerente de Producción) y *Evaldo Luís Arruda* (Presidente) vinculados a Kits Paraná (fila 31); y *Ricardo Carandina* y *Diogenys Marcelo Carandina* (Sócios-Administradores) vinculados a Möbler Móveis (fila 32). Se rellenaron los campos de texto redundantes `Empresa` y `Pais` y se inyectaron los enlaces de búsqueda automatizados de redes sociales (LinkedIn, Facebook, Instagram) para cada lead.
+
+
+
+
+
+
+
+
 
 
 

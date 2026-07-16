@@ -11,6 +11,12 @@ La industria del mueble tradicional, en especial el sector de mobiliario **RTA (
 
 Nuestra startup nace para ser el **puente digital interactivo** que fusiona estos mundos. No vendemos archivos de diseño estáticos (planos planos, renders aislados). Entregamos el **ADN del Producto (Gemelo Digital Paramétrico)**: un modelo matemático inteligente que automatiza la generación de toda la cadena de valor en segundos.
 
+### Segmentación y Estructura del Mercado de Mobiliario B2B
+Para posicionar nuestras soluciones con la máxima precisión, diferenciamos los tres segmentos core del mercado de carpintería a gran escala:
+*   **Planejados (Ej: Dell Anno):** Producción a la medida exacta (corte milimétrico bajo pedido mediante Promob en fábrica). El canal es de showrooms exclusivos y el ensamblado final lo realiza un montador profesional contratado por la tienda.
+*   **Modulados (Ej: Favorita / New / Casa Brasileira):** La fábrica produce módulos estandarizados de medidas fijas (ej: gabinetes de cocina de 30, 40, 60 y 80 cm) y la tienda multimarcas "arma" la composición y la instala en casa del cliente según el plano tridimensional adaptado.
+*   **RTA / Seriados (Ej: Politorno, Kappesberg, Madesa):** Muebles económicos, prefabricados y empaquetados en una sola caja plana. Están diseñados exclusivamente para el auto-armado (*Do-It-Yourself / DIY*) y se venden en retail tradicional y e-commerce masivos.
+
 ### El Dolor del Mercado
 * **Ineficiencia en I+D:** Las áreas de diseño en fábricas tradicionales son lentas y costosas. Modificar la dimensión de un mueble requiere redibujar planos manualmente, recalcular despieces y re-costear procesos, lo que toma días y genera errores humanos en cascada.
 * **Falta de Agilidad Comercial:** Las empresas no pueden probar el mercado a la velocidad que exige la era digital. La generación de renders realistas y entornos WebAR suele ser tercerizada a costos elevados y tiempos lentos.
