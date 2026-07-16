@@ -987,11 +987,9 @@ Con esta batería de arreglos y la validación en caliente, la V20 se establece 
     - **Poblamiento Seguro y Canal Directo**: Actualización de la información para las 15 empresas del Tier 2 brasileño. Se mapeó el link directo de WhatsApp para **Poliman Móveis** (ID 14), vaciando sus campos de Instagram y Facebook por inactividad comercial en esas redes.
     - **Automatización**: Ejecución de los scripts `add_whatsapp_field.js`, `reorder_columns_with_whatsapp.js` y `update_poliman_whatsapp.js`.
 
-
-
-
-
-
+* **[2026-07-15] Ecosistema de Redes Sociales B2B (Facebook, Instagram y YouTube):**
+    - **Branding y Optimización**: Se optimizó el perfil comercial de Facebook de Mario Mojica y se creó la página de empresa oficial *"Mario Mojica - Smart Assembly 3D - Inteligência Moveleira"*, enfocada en el sector RTA de Brasil.
+    - **Conexión de Canales**: Se vinculó la cuenta profesional de Instagram `@mariomojicaff` a la nueva página de Facebook y se enlazaron exitosamente tanto Instagram como el canal de YouTube en la plataforma Metricool para la programación de videos, shorts y demos interactivos.
 
 
 
