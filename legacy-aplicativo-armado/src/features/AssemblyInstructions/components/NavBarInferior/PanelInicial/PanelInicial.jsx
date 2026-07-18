@@ -181,18 +181,21 @@ export default function PanelInicial() {
     es: {
       arButton: "Ver en tu espacio",
       arExplain: "Sube el volumen para escuchar las instrucciones y proyecta el mueble en tu espacio.",
+      demoExplain: "Sube el volumen para escuchar las instrucciones.",
       productos: "Productos",
       potenciados: "Potenciados por",
     },
     en: {
       arButton: "View in your space",
       arExplain: "Turn up the volume to hear the instructions and project the furniture in your space.",
+      demoExplain: "Turn up the volume to hear the instructions.",
       productos: "Products",
       potenciados: "Powered by",
     },
     pt: {
       arButton: "Ver no seu espaço",
       arExplain: "Aumente o volume para ouvir as instruções e projete o móvel no seu espaço.",
+      demoExplain: "Aumente o volume para ouvir as instruções.",
       productos: "Produtos",
       potenciados: "Potencializado por",
     }
@@ -361,7 +364,7 @@ export default function PanelInicial() {
 
             <div className="demo-welcome-controls">
               <p className="demo-welcome-explain">
-                {t.arExplain}
+                {t.demoExplain}
               </p>
               
               <div 
