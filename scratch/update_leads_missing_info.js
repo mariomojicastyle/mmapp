@@ -3,7 +3,7 @@ const https = require('https');
 const username = 'mariomojica.style@gmail.com';
 const password = 'MarioMojicaBaserow2026!';
 const baserowUrl = 'baserow.mariomojica.com';
-const tableId = 994;
+const contactosTableId = 994;
 
 function request(method, path, data = null, token = null) {
   return new Promise((resolve, reject) => {
@@ -52,11 +52,26 @@ async function run() {
     const token = authResponse.token;
     console.log('Autenticación exitosa.');
 
-    console.log(`2. Consultando vistas de la tabla ${tableId}...`);
-    const views = await request('GET', `/api/database/views/table/${tableId}/`, null, token);
-    console.log('Vistas encontradas:', JSON.stringify(views, null, 2));
+    // 2. Actualizar Cesar (31) y Ana (32) en tabla de Leads (994)
+    console.log('2. Completando Empresa, Pais y Status en tabla de Leads (994)...');
+    
+    const payload = {
+      "Empresa": "Möbler Móveis",
+      "Pais": "Brasil",
+      "Status": 4017 // Nuevo
+    };
+
+    // Cesar Moresca (ID: 31)
+    await request('PATCH', `/api/database/rows/table/${contactosTableId}/31/?user_field_names=true`, payload, token);
+    console.log('   Cesar Moresca (ID 31) actualizado con éxito.');
+
+    // Ana Cláudia Rocha (ID: 32)
+    await request('PATCH', `/api/database/rows/table/${contactosTableId}/32/?user_field_names=true`, payload, token);
+    console.log('   Ana Cláudia Rocha (ID 32) actualizada con éxito.');
+
+    console.log('\n¡Campos completados en la vista grid de Leads!');
   } catch (error) {
-    console.error('Error al consultar vistas:', error.message);
+    console.error('Error durante la ejecución:', error.message);
   }
 }
 

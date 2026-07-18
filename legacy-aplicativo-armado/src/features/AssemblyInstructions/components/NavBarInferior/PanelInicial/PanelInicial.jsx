@@ -35,7 +35,7 @@ export default function PanelInicial() {
     return false;
   });
 
-  const showCleanBackdrop = isArMode || (isMobile && modoArranqueMovil === "simple");
+  const showCleanBackdrop = isArMode || isMobile || modoArranqueMovil === "simple";
   const isDemoMode = showCleanBackdrop && !isArMode;
 
   const [isEmbedded, setIsEmbedded] = useState(false);

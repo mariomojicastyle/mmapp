@@ -88,7 +88,10 @@ Este archivo es la "Memoria RAM" para Antigravity. Contiene el contexto de lo qu
   - Ofuscación en caliente en la subida en el CMS (`detalle-proyecto-modal.tsx`) y desencriptación en caliente en el frontend de Vite (`Model.jsx`) y escáner de despiece en Next.js.
   - Creación y ejecución de un script de migración masiva (`encrypt_existing_glbs.js`) en Supabase Storage, protegiendo 21 archivos `.glb` correspondientes a la Mesa Tijuca, Estantería Multifuncional y plantillas de desarrollo.
   - El modelo 3D desencriptado ahora solo reside efímeramente en la memoria RAM del cliente, sirviendo archivos corruptos e inservibles al descargar por inspección de red.
-  - Creación del documento corporativo [Seguridad.md](file:///c:/Desarrollo/mmapp/docs/Seguridad.md) que detalla el protocolo y arquitectura de seguridad (IP Shield) para clientes B2B.
+- [x] **Optimización de Carga Móvil y Visibilidad del Botón de AR (18 de Julio, 2026)**:
+  - Discriminación de descarga del iframe de Spline 3D (`PanelInicial.jsx`): En dispositivos móviles (`isMobile = true`), el visor omite la descarga del peso de Spline 3D (~15-20MB), cargando instantáneamente el backdrop ligero Obsidian Teal con logo y progreso.
+  - Eliminada la restricción de pantalla completa (`isFullscreen`) en el renderizado del botón de Realidad Aumentada (`RealidadAumentada.jsx`), asegurando que el botón `ar-btn-pc` permanezca visible y funcional siempre en navegadores móviles.
+
 
 
 

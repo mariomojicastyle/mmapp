@@ -316,6 +316,12 @@ Los estilos, colores y tiempos de transición de las flechas azules se configura
         - **Interacción y Blinking:** Se restableció la animación parpadeante (`blinking`) y la interactividad por clic de las piezas 3D y herrajes, sincronizándola con el estado global de reproducción del audio.
     - **Resultado:** Aplicativo de armado migrado completamente a la versión v5, independiente de servidores de red, estable ante cambios de producto, sin warnings de Three.js y con una alineación visual perfecta de cámara, modelos y terreno.
 
+* **[2026-07-18] Optimización Móvil y Corrección de Botón AR:**
+    - **Carga Ultra-Rápida en Celulares:** Modificado `PanelInicial.jsx` para discriminar navegadores móviles (`isMobile = true`) y omitir la descarga del iframe pesado de Spline 3D (~15-20MB), cargando instantáneamente el backdrop ligero Obsidian Teal con logo y progreso.
+    - **Visibilidad Permanente de Realidad Aumentada:** Eliminada la condición `isFullscreen` en `RealidadAumentada.jsx` que ocultaba el botón `ar-btn-pc` en móviles sin maximizar. El botón AR ahora permanece visible y totalmente interactivo en todo momento.
+
+---
+
 * **[2026-07-11] Politorno_Multimarca_Full — Valla Publicitaria Digital B2B:**
     - **Reemplazo del Precargador y Co-branding UI:** Se rediseñó la experiencia inicial del visor 3D para potenciar las ventas corporativas. Se implementó un panel frontal flotante interactivo (`PanelInicial.jsx`) que lee el logotipo corporativo configurado en Supabase (CMS).
     - **Loop CSS Infinito:** Se implementó una animación inteligente (`brandLoop`) de 10 segundos que otorga protagonismo temporal rotativo entre la marca del cliente B2B ("Productos [Politorno]") y el autor ("Potenciados por [Mario Mojica]"), logrando una alianza de co-branding muy sofisticada y amigable.

@@ -3,7 +3,7 @@ const https = require('https');
 const username = 'mariomojica.style@gmail.com';
 const password = 'MarioMojicaBaserow2026!';
 const baserowUrl = 'baserow.mariomojica.com';
-const tableId = 994;
+const contactosTableId = 994;
 
 function request(method, path, data = null, token = null) {
   return new Promise((resolve, reject) => {
@@ -47,16 +47,14 @@ function request(method, path, data = null, token = null) {
 
 async function run() {
   try {
-    console.log('1. Autenticando en Baserow...');
     const authResponse = await request('POST', '/api/user/token-auth/', { username, password });
     const token = authResponse.token;
-    console.log('Autenticación exitosa.');
-
-    console.log(`2. Consultando vistas de la tabla ${tableId}...`);
-    const views = await request('GET', `/api/database/views/table/${tableId}/`, null, token);
-    console.log('Vistas encontradas:', JSON.stringify(views, null, 2));
+    const row28 = await request('GET', `/api/database/rows/table/${contactosTableId}/28/?user_field_names=true`, null, token);
+    const row29 = await request('GET', `/api/database/rows/table/${contactosTableId}/29/?user_field_names=true`, null, token);
+    console.log('Row 28:', JSON.stringify(row28, null, 2));
+    console.log('Row 29:', JSON.stringify(row29, null, 2));
   } catch (error) {
-    console.error('Error al consultar vistas:', error.message);
+    console.error('Error:', error.message);
   }
 }
 

@@ -14,7 +14,7 @@ Este documento es el "alma" comunicativa de la marca **Mario Mojica**. Cada post
 ### 1.2 Qué Vendemos (y Qué NO Vendemos)
 * **NO vendemos:** "Visualizaciones 3D bonitas", "renders", "modelos 3D", "herramientas digitales", ni "plataformas tecnológicas genéricas".
 * **SÍ vendemos:** Una **plataforma integrada de optimización operativa, postventa inteligente y captura de datos de clientes** para fabricantes de muebles RTA.
-* **El Producto Estrella (Caballo de Troya B2B):** El **Manual de Armado Interactivo 3D**. Es nuestro producto de entrada al mercado. Resuelve el dolor más visible, inmediato y cuantificable de los fabricantes (devoluciones, SAC colapsado, reputación online). Una vez dentro con el manual, escalamos hacia automatización de fábrica, planos CNC y diseño paramétrico como upsell natural.
+* **El Producto Estrella (Caballo de Troya B2B):** El **Manual de Armado Interactivo 3D**. Es nuestro producto de entrada al mercado. Resuelve el dolor más visible, inmediato y cuantificable de los fabricantes (devoluciones, servicio al cliente colapsado, reputación online). Una vez dentro con el manual, escalamos hacia automatización de fábrica, planos CNC y diseño paramétrico como upsell natural.
 
 ### 1.3 Mercado Objetivo
 * **Primario:** Fabricantes de muebles **RTA (Ready-To-Assemble / Listo para armar)** en Brasil y Latinoamérica. Materiales predominantes: MDP y MDF con acabados en pintura UV o BP.
@@ -33,7 +33,7 @@ No somos una corporación aburrida que habla en tercera persona. No somos una ag
 | Rasgo | Cómo Suena | Ejemplo |
 | :--- | :--- | :--- |
 | **Empático con la planta** | Hablamos el idioma del taller. Entendemos de madera (MDF, MDP), de herrajes (Minifix, bisagras, pernos, correderas), de maquinaria (seccionadoras, taladros CNC tipo Biesse) y de logística de cajas planas. | *"Sabemos lo que significa recibir la llamada del viernes a las 5pm: un cliente frustrado que rompió un tablero porque la pieza B parecía la pieza D en el manual."* |
-| **Directo y sin rodeos** | Frases cortas. Contundentes. Sin adornos. Dejamos que los datos y los beneficios hablen solos. | ❌ *"Nuestra innovadora solución sinérgica optimiza..."* → ✅ *"Tu SAC recibe 200 llamadas al mes preguntando por el mismo tornillo. Nosotros las eliminamos."* |
+| **Directo y sin rodeos** | Frases cortas. Contundentes. Sin adornos. Dejamos que los datos y los beneficios hablen solos. | ❌ *"Nuestra innovadora solución sinérgica optimiza..."* → ✅ *"Tu servicio al cliente recibe 200 llamadas al mes preguntando por el mismo tornillo. Nosotros las eliminamos."* |
 | **Retador del Status Quo** | Invitamos con firmeza (nunca con arrogancia) a cuestionar por qué siguen usando procesos analógicos en plena era de la Industria 4.0. | *"¿Por qué tu fábrica invierte millones en maquinaria CNC de última generación pero sigue entregando un folleto en blanco y negro para armar el mueble?"* |
 
 ### 2.2 Palabras y Expresiones Prohibidas
@@ -45,6 +45,7 @@ No somos una corporación aburrida que habla en tercera persona. No somos una ag
 | "Style" (en cualquier contexto de marca) | No es parte de la identidad (ver Regla 1.1). |
 | "Herramienta", "Software", "App" | Nos reducen a un producto tecnológico genérico. Somos una *plataforma de optimización*. |
 | "Fácil de usar" | Genérico. En su lugar, describir la experiencia: *"Control 360º, zoom y audio guiado en su idioma"*. |
+| "SAC" | Demasiado corporativo/frío. Usar siempre **"servicio al cliente"**. |
 
 ---
 
@@ -56,7 +57,7 @@ Todo contenido que publiquemos debe encajar en uno de estos cuatro pilares. Si n
 **Objetivo:** Poner el dedo en la llaga. Hacer visible lo que el fabricante ya sabe pero no cuantifica.
 
 * El costo real de un manual de papel mal diseñado (devoluciones, reposición de tableros rotos, logística inversa).
-* Las llamadas repetitivas al SAC preguntando *"¿dónde va este tornillo?"* o *"¿cuál es la pieza A?"*.
+* Las llamadas repetitivas a servicio al cliente preguntando *"¿dónde va este tornillo?"* o *"¿cuál es la pieza A?"*.
 * La pérdida silenciosa de reputación cuando el cliente califica con 1 estrella en Mercado Livre o MadeiraMadeira porque "el mueble es imposible de armar".
 * La lentitud de los departamentos de I+D: modificar una dimensión del mueble requiere redibujar planos manualmente, recalcular despieces y re-costear. Eso toma días y genera errores en cascada.
 
@@ -92,7 +93,7 @@ La más efectiva para posts de LinkedIn y emails en frío.
 * **Problema:** Abre con una verdad incómoda de la fábrica.
   > *"El 12% de tus clientes califica mal tu mueble porque no entendió el manual en papel."*
 * **Agitación:** Haz que duela. Explica las consecuencias a largo plazo.
-  > *"Eso significa devoluciones que absorben tu margen de ganancia, tu SAC saturado respondiendo el mismo correo sobre las bisagras, y una reputación en caída libre en Mercado Livre."*
+  > *"Eso significa devoluciones que absorben tu margen de ganancia, tu servicio al cliente saturado respondiendo el mismo correo sobre las bisagras, y una reputación en caída libre en Mercado Livre."*
 * **Solución:** Presenta el Manual 3D como la salida natural.
   > *"Existe una forma de eliminar ese cuello de botella de raíz. ¿Te muestro cómo funciona con tu propio catálogo?"*
 
@@ -176,7 +177,7 @@ Antes de publicar cualquier pieza de contenido, verificar:
 - [ ] ¿Se incluyó un CTA claro y orientado a la acción?
 - [ ] ¿El tono es empático, directo y retador (no arrogante ni genérico)?
 - [ ] ¿Se mencionan datos concretos o beneficios medibles (no promesas abstractas)?
-- [ ] ¿El contenido habla el idioma de la fábrica (herrajes, MDP, CNC, SAC)?
+- [ ] ¿El contenido habla el idioma de la fábrica (herrajes, MDP, CNC, servicio al cliente)?
 - [ ] ¿Se respetó la regla de video nativo en LinkedIn (NO links de YouTube en el post)?
 - [ ] ¿El gancho de apertura (primeras 2 líneas) genera curiosidad suficiente para que hagan clic en "ver más"?
 
@@ -247,7 +248,7 @@ Este es el resumen ejecutivo más potente para presentaciones rápidas (pitch), 
 | :---: | :--- | :--- |
 | 🏭 1 | **Reducción de devoluciones y garantías** | Evita que el cliente rompa el mueble al armarlo mal. Salva miles de dólares mensuales en reposición de inventario y logística inversa. |
 | 🏭 2 | **Analítica de datos y comportamiento** | La fábrica descubre exactamente en qué paso se equivocan o demoran los clientes, permitiendo mejorar el diseño estructural del mueble con datos reales de campo. |
-| 🏭 3 | **Ahorro masivo en Servicio al Cliente (SAC)** | Disminuye radicalmente las costosas horas-hombre del equipo de soporte atendiendo llamadas de clientes frustrados o confundidos. |
+| 🏭 3 | **Ahorro masivo en Servicio al Cliente** | Disminuye radicalmente las costosas horas-hombre del equipo de soporte atendiendo llamadas de clientes frustrados o confundidos. |
 
 ### Top 3: Beneficios para el Usuario Final (El argumento del empoderamiento)
 
@@ -321,3 +322,18 @@ Este directorio documenta las entidades, portales y ferias clave del sector mueb
 | **Formóbile** | Reed Exhibitions | São Paulo, SP | Industria de muebles y madera en general | La feria más grande de América Latina para el sector. |
 
 > **💡 Tip de Prospección:** Los sitios web de estas ferias publican catálogos completos de expositores con datos de contacto. Cada expositor es un prospecto potencial para el Manual 3D.
+
+---
+
+## 🔗 13. Enlaces Oficiales y Llamados a la Acción (CTA)
+
+Para garantizar consistencia y profesionalismo en la prospección, siempre debemos utilizar los siguientes enlaces oficiales en nuestros copys y comunicaciones B2B:
+
+### 13.1 El Enlace de la Demo (Manual 3D)
+* **URL a utilizar:** `mariomojica.com/demo`
+* **Propósito:** Redirige directamente al entorno interactivo del Manual 3D.
+* **Dónde usarlo:** 
+  * En el **primer comentario** de las publicaciones de LinkedIn (NUNCA en el cuerpo del post, para no hundir el alcance orgánico. Ver regla 9.1).
+  * En correos electrónicos en frío o mensajes directos de WhatsApp y LinkedIn.
+  * *Ejemplo de uso:* "Por si tienes curiosidad de probarlo tú mismo desde tu celular, te dejo nuestra demo interactiva: mariomojica.com/demo"
+* **Por qué usar este formato:** Es un enlace corto, limpio, anclado al dominio de la marca (genera confianza B2B) y permite el trackeo centralizado de clics y conversiones en Umami.

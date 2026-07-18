@@ -56,17 +56,37 @@ Almacena la información de las fábricas de muebles objetivo.
 ### Tabla B: Contactos / Leads (ID: 994)
 Almacena los datos de los tomadores de decisión dentro de las empresas.
 
-| Nombre del Campo | Tipo de Dato Baserow | Descripción / Opciones |
+| Nombre del Campo | Tipo de Dato Baserow | Descripción / Opciones / IDs |
 | :--- | :--- | :--- |
 | **`Nombre`** | `Text (Primary)` | Nombre del contacto. |
 | **`Apellido`** | `Text` | Apellido del contacto. |
-| **`Email`** | `Email` | Email corporativo directo de la persona. |
-| **`Empresa Vinculada`** | `Link Row (ID 9545)` | **Relación** con la Tabla A (Empresas - ID 991). |
-| **`Telefono`** | `Text` | Número móvil de contacto. |
-| **`Rol`** | `Text` | Cargo / Puesto (Ej: *Gerente de I+D, Comprador, CEO*). |
-| **`Estado CRM`** | `Single Select` | *Prospecto, Primer Contacto, Demo Agendada, Negociación, Cerrado Ganado, Cerrado Perdido*. |
-| **`Interacciones`** | `Link Row (ID 9544)` | **Relación** con la Tabla C (Interacciones - ID 995). |
-| **`Descripcion de la idea`** | `Long Text` | Mensaje inicial o descripción de su interés. |
+| **`Empresa`** | `Text` | Nombre de la empresa en texto plano (Ej: *Möbler Móveis*). Requerido para visualización en grid. |
+| **`Empresa Vinculada`** | `Link Row (ID 9545)` | **Relación formal** con la Tabla A (Empresas - ID 991). Vincula la fila de la empresa. |
+| **`Pais`** | `Text` | País del contacto (Ej: *Brasil*). Requerido para filtrado rápido en la vista de Leads. |
+| **`Rol`** | `Text` | Cargo / Puesto (Ej: *Gerente Geral, Consultora comercial*). |
+| **`Email`** | `Email` | Email corporativo directo de la persona (Ej: *nombre.apellido@empresa.ind.br*). |
+| **`Telefono`** | `Text` | Número móvil o teléfono de la empresa (Ej: *+55 43 3242-8800*). |
+| **`Status`** | `Single Select (ID 9534)` | Estado del flujo: **`Nuevo` (ID 4017)**, `Contactado` (ID 4018), `Agendado` (ID 4019), `Descartado` (ID 4020). |
+| **`Estado CRM`** | `Single Select (ID 9537)` | Estado de prospección: **`Prospecto` (ID 4021)**, `Primer Contacto` (ID 4022), `Demo Agendada` (ID 4023), `Negociación` (ID 4024). |
+| **`LinkedIn`** | `URL (ID 9552)` | Enlace directo al perfil personal de LinkedIn. |
+| **`Facebook`** | `URL (ID 9553)` | Enlace directo o URL de búsqueda estructurada en Facebook. |
+| **`Instagram`** | `URL (ID 9554)` | Enlace directo o URL de búsqueda estructurada en Instagram. |
+| **`WhatsApp`** | `URL (ID 9555)` | Enlace directo a WhatsApp Business (Ej: `https://wa.me/number`). |
+| **`Canal Preferido`** | `Single Select (ID 9556)`| `LinkedIn` (ID 4037), `Instagram` (ID 4038), `WhatsApp` (ID 4040), `Correo` (ID 4041). |
+| **`Actividad en Redes`** | `Single Select (ID 9557)`| `Muy Activo` (ID 4043), `Moderado` (ID 4044), `Inactivo` (ID 4045). |
+| **`Notas`** | `Text` | Filtro inicial u observaciones (Ej: *FI*). |
+| **`Origen`** | `Text` | Origen del prospecto (Ej: *Prospección Activa*). |
+| **`Descripcion de la idea`** | `Long Text (ID 9536)`| Mensaje inicial o descripción de su rol estratégico e interés. |
+
+> [!IMPORTANT]
+> **Protocolo de Inserción de Leads (Tabla B): Cero Celdas Vacías**
+> Para garantizar la integridad de los datos y evitar registros incompletos al prospectar de forma manual o asíncrona, se **PROHÍBE** insertar un lead solo con los datos superficiales (Nombre, Cargo y LinkedIn). Toda inyección de un nuevo lead debe aplicar una rutina de enriquecimiento deductivo obligatorio:
+> 1. **Relación y Contexto:** Completar redundantemente `Empresa Vinculada` (Link Row), `Empresa` (Texto plano para Grid) y `Pais`.
+> 2. **Deducción de Contacto:** Inferir el `Email` basándose en el patrón del dominio corporativo (ej. *nombre.apellido@dominio.com*) y asignar el `Telefono` y `WhatsApp` matriz de la empresa si no hay uno directo.
+> 3. **Generación de Enlaces:** Inyectar automáticamente las URLs de búsqueda parametrizada para `Facebook` y `Instagram` concatenando el Nombre y la Empresa.
+> 4. **Estados por Defecto:** Asignar siempre `Status` (Nuevo), `Estado CRM` (Prospecto), `Canal Preferido` (LinkedIn) y `Actividad en Redes` (Inactivo).
+> 
+> *Usa el script `scratch/insert_lead_factory.js` para estandarizar este proceso.*
 
 ### Tabla C: Interacciones (ID: 995)
 Bitácora de contactos y respuestas vinculadas a un lead.

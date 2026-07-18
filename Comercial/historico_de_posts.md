@@ -126,4 +126,43 @@ Como la página de empresa `mariomojicaff` tiene 0 seguidores iniciales, el algo
 | **Comentarios** | *Pendiente* | *Pendiente* | |
 | **Clics /demo (Umami)** | *Pendiente* | *Pendiente* | |
 
+---
+
+## 📩 Plantillas de Conexión de LinkedIn (Outreach B2B)
+
+Estas plantillas en portugués están optimizadas para el límite de **200 caracteres** de las cuentas gratuitas de LinkedIn. Diseñadas para que los tomadores de decisión conecten con el perfil personal de **Mario Mojica** y empiecen a ver sus publicaciones de valor orgánicamente.
+
+### Opción 1: Enfoque de Networking y Sector Moveleiro (184 caracteres)
+> Olá [Nome]! Vejo que você também atua no setor moveleiro aqui no Brasil. Gostaria de me conectar para acompanhar seu trabalho e compartilhar ideias sobre inovação e design 3D. Abraço!
+
+### Opción 2: Revolución de la Montaje y Satisfacción del Cliente (185 caracteres)
+> Olá [Nome]! Apoio fabricantes de móveis a revolucionar a montagem com guias 3D interativas, tornando a experiência do cliente muito mais feliz com a marca. Gostaria de me conectar. Abraço!
+
+### Opción 3: Informal / De Colega a Colega (191 caracteres)
+> Olá [Nome], tudo bem? Notei sua atuação no setor de móveis e decidi me conectar. Adoraria ter você na minha rede para compartilharmos experiências e novidades do mercado moveleiro. Um abraço!
+
+---
+
+## 💬 Estrategia de Social Selling: Comentarios B2B (Sin Enlaces)
+
+**Regla de Oro:** **NUNCA** incluir enlaces hacia tu web o hacer ventas directas en la sección de comentarios de publicaciones de terceros (ej. ferias, empresas). 
+*   **Razón 1:** El algoritmo de LinkedIn oculta los comentarios que contienen enlaces externos.
+*   **Razón 2:** Aleja a los prospectos al percibirse como Spam.
+
+**El Objetivo Real:** Aportar valor y generar curiosidad. Tu comentario debe demostrar autoridad en la industria para que los gerentes hagan clic en tu nombre. ¡Tu perfil optimizado es el que hará la venta y les dará el enlace!
+
+### Plantillas de Comentarios Estratégicos
+
+**Ejemplo 1: Felicitar + Destacar una Tendencia (Innovación y Experiencia)**
+*   🇪🇸 **ES:** *"¡Excelente iniciativa! Eventos como la [Nombre del Evento] son vitales hoy en día. El sector de muebles RTA está evolucionando rapidísimo y cada vez es más importante innovar en la experiencia del cliente para destacarse, desde el showroom hasta el ensamblaje en casa."*
+*   🇧🇷 **PT:** *"Excelente iniciativa! Eventos como a [Nombre del Evento] são vitais hoje em dia. O setor de móveis RTA está evoluindo muito rápido e cada vez é mais importante inovar na experiência do cliente para se destacar, desde o showroom até a montagem em casa."*
+
+**Ejemplo 2: Opinión de Experto + Retos del Sector (Devoluciones)**
+*   🇪🇸 **ES:** *"Qué gran evento. En mis conversaciones con fábricas de muebles he notado que el principal reto para 2026 es reducir las devoluciones y mejorar la experiencia post-venta. Sin duda, espacios como este ayudan a conectar soluciones. ¡Mucho éxito!"*
+*   🇧🇷 **PT:** *"Que grande evento! Nas minhas conversas com fábricas de móveis, tenho notado que o principal desafio para 2026 é reduzir as devoluções e melhorar a experiência pós-venda. Sem dúvida, espaços como este ajudam a conectar soluções. Muito sucesso!"*
+
+
+
+
+
 

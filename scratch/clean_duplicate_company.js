@@ -3,7 +3,9 @@ const https = require('https');
 const username = 'mariomojica.style@gmail.com';
 const password = 'MarioMojicaBaserow2026!';
 const baserowUrl = 'baserow.mariomojica.com';
-const tableId = 994;
+
+const empresasTableId = 991;
+const contactosTableId = 994;
 
 function request(method, path, data = null, token = null) {
   return new Promise((resolve, reject) => {
@@ -52,11 +54,36 @@ async function run() {
     const token = authResponse.token;
     console.log('Autenticación exitosa.');
 
-    console.log(`2. Consultando vistas de la tabla ${tableId}...`);
-    const views = await request('GET', `/api/database/views/table/${tableId}/`, null, token);
-    console.log('Vistas encontradas:', JSON.stringify(views, null, 2));
+    // 2. Re-vincular los contactos Cesar (31) y Ana (32) a la Empresa correcta (ID: 32)
+    console.log('2. Re-vinculando contactos a la Empresa Mobler Moveis correcta (ID: 32)...');
+    
+    // Cesar Moresca (ID: 31)
+    await request('PATCH', `/api/database/rows/table/${contactosTableId}/31/?user_field_names=true`, {
+      "Empresa Vinculada": [32]
+    }, token);
+    console.log('   Cesar Moresca (ID 31) re-vinculado con éxito a la empresa ID 32.');
+
+    // Ana Cláudia Rocha (ID: 32)
+    await request('PATCH', `/api/database/rows/table/${contactosTableId}/32/?user_field_names=true`, {
+      "Empresa Vinculada": [32]
+    }, token);
+    console.log('   Ana Cláudia Rocha (ID 32) re-vinculada con éxito a la empresa ID 32.');
+
+    // 3. Eliminar filas 33, 34 y 35 en la tabla 991
+    console.log('3. Eliminando filas duplicadas/vacías (IDs: 33, 34, 35) de la tabla de Empresas (991)...');
+    
+    for (const rowId of [33, 34, 35]) {
+      try {
+        await request('DELETE', `/api/database/rows/table/${empresasTableId}/${rowId}/`, null, token);
+        console.log(`   Fila ID ${rowId} eliminada con éxito.`);
+      } catch (err) {
+        console.error(`   Error al eliminar fila ID ${rowId}:`, err.message);
+      }
+    }
+
+    console.log('\n¡Limpieza completada!');
   } catch (error) {
-    console.error('Error al consultar vistas:', error.message);
+    console.error('Error durante la ejecución:', error.message);
   }
 }
 
