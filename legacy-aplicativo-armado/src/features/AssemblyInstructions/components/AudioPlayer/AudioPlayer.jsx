@@ -156,7 +156,7 @@ export default function AudioPlayer() {
   // ─── Efecto 2: Arranque inicial (botón INICIAR) ───
   useEffect(() => {
     if (StartApp === true) {
-      if (audioRef.current) {
+      if (audioRef.current && audioRef.current.paused) {
         audioRef.current.play().catch(e => console.log("Iniciar app play error:", e));
       }
     }
@@ -170,14 +170,14 @@ export default function AudioPlayer() {
     if (StartApp === true) {
       if (phaseAudio === "start") {
         // Solo la fase "start" espera al modelo 3D (primera carga)
-        if (ReadyToPlay === true && audioRef.current) {
+        if (ReadyToPlay === true && audioRef.current && audioRef.current.paused) {
           audioRef.current.load();
           audioRef.current.play().catch(e => console.log("Start phase play error:", e));
         }
       } else if (phaseAudio === "playing") {
         // ← SIN verificar ReadyToPlay — idéntico al original que funcionaba
         AudioEndedFalse();
-        if (audioRef.current) {
+        if (audioRef.current && audioRef.current.paused) {
           audioRef.current.play().catch(e => console.log("Playing phase play error:", e));
         }
       } else if (phaseAudio === "paused") {
