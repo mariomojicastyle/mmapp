@@ -141,6 +141,13 @@ export default function PanelInicial() {
     useEnviroment.getState().PlayingAudio();
     StartAppTrue();
     
+    // Reproducir audio DIRECTAMENTE desde el gesto de usuario (requerido en iframes móviles)
+    // Los navegadores móviles exigen que audio.play() se llame sincrónicamente
+    // desde un handler de click, no desde un useEffect asíncrono.
+    if (typeof window.__directAudioPlay === "function") {
+      window.__directAudioPlay();
+    }
+    
     // Si estamos en modo AR, lanzar la experiencia inmediatamente tras habilitar la app
     if (isArMode && typeof window.__activateAR === "function") {
       setTimeout(() => {

@@ -68,6 +68,19 @@ export default function AudioPlayer() {
   const [audioUrl, setAudioUrl] = useState(null);
   const audioRef = useRef(null);
 
+  // ─── Puente directo para play desde gesto de usuario (mobile iframe) ───
+  // Registra una función global que PanelInicial.jsx puede llamar sincrónicamente
+  // dentro del click handler de INICIAR, preservando la activación de usuario
+  // que los navegadores móviles exigen para audio.play().
+  useEffect(() => {
+    window.__directAudioPlay = () => {
+      if (audioRef.current) {
+        audioRef.current.play().catch(e => console.warn("Direct audio play:", e.message));
+      }
+    };
+    return () => { delete window.__directAudioPlay; };
+  }, []);
+
   // ─── Efecto 0: canplaythrough ───
   // Cuando el audio termina de descargarse (ej: desde Supabase vía proxy),
   // si phaseAudio ya es "playing", arrancamos inmediatamente.
