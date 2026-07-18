@@ -375,7 +375,7 @@ export default function NavBarInferior({ id, data }) {
 
         {/* El AudioPlayer invisible se mantiene funcional renderizado aquí de forma segura */}
         <Suspense>
-          {toogle ? <AudioPlayer /> : null}
+          {toogle ? <AudioPlayer id={id} /> : null}
         </Suspense>
 
         {/* TODOS LOS PANELES SE UBICAN EN ESTA SESION, PARA NO POSEER PROBLEMAS CON EL Z-INDEX */}

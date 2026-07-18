@@ -35,8 +35,9 @@ function getAyudaSrc(id, idioma) {
   }
 }
 
-export default function AudioPlayer() {
-  const id = useEnviroment((state) => state.id);
+export default function AudioPlayer({ id: propId }) {
+  const stateId = useEnviroment((state) => state.id);
+  const id = propId || stateId;
   const pasoActual = useEnviroment((state) => state.pasoActual);
   const idioma = useEnviroment((state) => state.idioma);
   const playbackRate = useEnviroment((state) => state.playbackRate);
