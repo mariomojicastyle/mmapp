@@ -319,6 +319,8 @@ Los estilos, colores y tiempos de transición de las flechas azules se configura
 * **[2026-07-18] Optimización Móvil y Corrección de Botón AR:**
     - **Carga Ultra-Rápida en Celulares:** Modificado `PanelInicial.jsx` para discriminar navegadores móviles (`isMobile = true`) y omitir la descarga del iframe pesado de Spline 3D (~15-20MB), cargando instantáneamente el backdrop ligero Obsidian Teal con logo y progreso.
     - **Visibilidad Permanente de Realidad Aumentada:** Eliminada la condición `isFullscreen` en `RealidadAumentada.jsx` que ocultaba el botón `ar-btn-pc` en móviles sin maximizar. El botón AR ahora permanece visible y totalmente interactivo en todo momento.
+    - **Resolución de Autoplay y Fullscreen Móvil:** Reemplazada la página Next.js con iframe por una redirección Netlify 302 directa a `/embed/armado/M00001` para resolver assets por proxy. Creado puente de audio directo (`__directAudioPlay`) en el click handler táctil para conservar el gesto de usuario.
+    - **Prevención de Auto-Pausado por Orientación:** Añadida bandera de inicio de 1.5s (`window.__startingApp`) para evitar que el chequeo de orientación portrait pause automáticamente el audio y la animación al arrancar.
 
 ---
 

@@ -91,6 +91,8 @@ Este archivo es la "Memoria RAM" para Antigravity. Contiene el contexto de lo qu
 - [x] **Optimización de Carga Móvil y Visibilidad del Botón de AR (18 de Julio, 2026)**:
   - Discriminación de descarga del iframe de Spline 3D (`PanelInicial.jsx`): En dispositivos móviles (`isMobile = true`), el visor omite la descarga del peso de Spline 3D (~15-20MB), cargando instantáneamente el backdrop ligero Obsidian Teal con logo y progreso.
   - Eliminada la restricción de pantalla completa (`isFullscreen`) en el renderizado del botón de Realidad Aumentada (`RealidadAumentada.jsx`), asegurando que el botón `ar-btn-pc` permanezca visible y funcional siempre en navegadores móviles.
+  - Resolución de Autoplay y Fullscreen Móvil (`/demo`): Reemplazada la página Next.js con iframe por una redirección Netlify 302 directa a `/embed/armado/M00001` para resolver assets por proxy. Creado puente de audio directo (`__directAudioPlay`) en el click handler táctil para conservar el gesto de usuario.
+  - Prevención de Auto-Pausado por Orientación (`RealidadAumentada.jsx` / `PanelInicial.jsx`): Añadida bandera de inicio de 1.5s (`window.__startingApp`) para evitar que el chequeo de orientación portrait pause automáticamente el audio y la animación al arrancar.
 
 
 
