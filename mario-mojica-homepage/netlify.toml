@@ -7,7 +7,7 @@
 
 [[redirects]]
   from = "/demo"
-  to = "/M00001"
+  to = "/embed/armado/M00001"
   status = 302
   force = true
 
