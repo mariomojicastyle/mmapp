@@ -136,6 +136,13 @@ export default function PanelInicial() {
   
   //Se desactiva el panel inicial, y se inicializa el global state de iniciar el aplicativo.
   const Start = () => {
+    if (typeof window !== "undefined") {
+      window.__startingApp = true;
+      setTimeout(() => {
+        window.__startingApp = false;
+      }, 1500);
+    }
+
     useCharger.current.style.display = "none";
     // Reactivar el audio explícitamente al iniciar para evitar silencios persistentes
     useEnviroment.getState().PlayingAudio();

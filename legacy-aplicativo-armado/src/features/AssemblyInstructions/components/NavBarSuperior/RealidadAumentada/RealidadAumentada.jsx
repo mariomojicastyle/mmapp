@@ -70,7 +70,9 @@ export default function RealiadaAumentada({ id, data }) {
         // Pausar el audio al salir de fullscreen localmente solo si NO estamos embebidos en un iframe
         // (si estamos embebidos, la pausa se sincroniza mediante el mensaje FULLSCREEN_CHANGE del padre)
         if (typeof window !== "undefined" && window.self === window.top) {
-          useEnviroment.getState().PausedAudio();
+          if (!window.__startingApp) {
+            useEnviroment.getState().PausedAudio();
+          }
         }
       }
     };
