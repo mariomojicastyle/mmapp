@@ -12,6 +12,18 @@
   force = true
 
 [[redirects]]
+  from = "/Mesa_Tijuca"
+  to = "/embed/armado/160447.0001_Mesa_Tijuca?cameraOverlay=off&lightingEditor=off"
+  status = 302
+  force = true
+
+[[redirects]]
+  from = "/mesa_tijuca"
+  to = "/embed/armado/160447.0001_Mesa_Tijuca?cameraOverlay=off&lightingEditor=off"
+  status = 302
+  force = true
+
+[[redirects]]
   from = "/embed/armado/assets/herrajes_compartidos/*"
   to = "https://dezaisaunoumhqpssols.supabase.co/storage/v1/object/public/insumos_manuales/_herrajes_compartidos/:splat"
   status = 200
