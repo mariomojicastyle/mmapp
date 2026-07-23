@@ -95,8 +95,9 @@ Este archivo es la "Memoria RAM" para Antigravity. Contiene el contexto de lo qu
 - [x] **Corrección de Enlace de Portafolio (22 de Julio, 2026)**:
   - Reemplazada la URL hardcoded `http://localhost:3002` en [Footer.tsx](file:///c:/Desarrollo/mmapp/mario-mojica-homepage/src/components/Footer.tsx) por la variable de entorno `NEXT_PUBLIC_PORTFOLIO_URL` y fallback predeterminado `'https://portfolio.mariomojica.com'`.
   - Configurada la variable `NEXT_PUBLIC_PORTFOLIO_URL=https://portfolio.mariomojica.com` en `.env.local` y `.env.example` de la landing page (`mario-mojica-homepage`).
-- [x] **Corrección de Navegación y Pausa de Audio en Botón Home (23 de Julio, 2026)**:
-  - Corregida la acción del botón flotante "Home" (casita) en [RealidadAumentada.jsx](file:///c:/Desarrollo/mmapp/legacy-aplicativo-armado/src/features/AssemblyInstructions/components/NavBarSuperior/RealidadAumentada/RealidadAumentada.jsx): ahora detiene/pausa de inmediato todo audio en reproducción (`PausedAudio()`), des-maximiza el marco y redirige la pestaña activa directamente a la URL de destino (`window.top.location.href`), eliminando la apertura redundante de pestañas secundarias `_blank`.
+- [x] **Ajuste de Margen Inferior y Viewport Dinámico (100dvh) en Maximizado (23 de Julio, 2026)**:
+  - Elevada la barra inferior `.contenedor` en móvil a **`bottom: calc(52px + env(safe-area-inset-bottom))`** en [NavBarInferior.css](file:///c:/Desarrollo/mmapp/legacy-aplicativo-armado/src/features/AssemblyInstructions/components/NavBarInferior/NavBarInferior.css) y [calibrador.html](file:///c:/Desarrollo/mmapp/legacy-aplicativo-armado/calibrador.html), eliminando el recorte de la mitad inferior de los botones flotantes de navegación.
+  - Implementado `100dvh` (Dynamic Viewport Height) en [LiveDemo.tsx](file:///c:/Desarrollo/mmapp/mario-mojica-homepage/src/components/LiveDemo.tsx) para ajustar con precisión la altura del overlay a la barra de navegación dinámica de navegadores móviles.
 
 
 
