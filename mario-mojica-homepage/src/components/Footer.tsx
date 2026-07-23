@@ -8,6 +8,7 @@ import { useLanguage } from './LanguageContext';
 export default function Footer() {
   const { t } = useLanguage();
   const platformUrl = process.env.NEXT_PUBLIC_PLATFORM_URL || 'http://localhost:3003';
+  const portfolioUrl = process.env.NEXT_PUBLIC_PORTFOLIO_URL || 'https://portfolio.mariomojica.com';
 
   return (
     <footer className="bg-[#0a0a0a] text-white py-20 px-4 border-t border-gray-900">
@@ -69,7 +70,7 @@ export default function Footer() {
                   <li><Link className="hover:text-primary transition-colors" href="#demo">{t('Manual de Muestra', 'Sample Manual', 'Manual de Amostra')}</Link></li>
                   <li><Link className="hover:text-primary transition-colors" href="#">{t('Blog de la Industria', 'Industry Blog', 'Blog da Indústria')}</Link></li>
                   <li><Link className="hover:text-primary transition-colors" href="#">{t('Soporte Técnico', 'Technical Support', 'Suporte Técnico')}</Link></li>
-                  <li><Link className="hover:text-primary transition-colors" href="http://localhost:3002" target="_blank">{t('Portafolio', 'Portfolio', 'Portfólio')}</Link></li>
+                  <li><Link className="hover:text-primary transition-colors" href={portfolioUrl} target="_blank">{t('Portafolio', 'Portfolio', 'Portfólio')}</Link></li>
                 </ul>
               </div>
             </div>

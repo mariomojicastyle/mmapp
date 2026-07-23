@@ -92,7 +92,10 @@ Este archivo es la "Memoria RAM" para Antigravity. Contiene el contexto de lo qu
   - Discriminación de descarga del iframe de Spline 3D (`PanelInicial.jsx`): En dispositivos móviles (`isMobile = true`), el visor omite la descarga del peso de Spline 3D (~15-20MB), cargando instantáneamente el backdrop ligero Obsidian Teal con logo y progreso.
   - Eliminada la restricción de pantalla completa (`isFullscreen`) en el renderizado del botón de Realidad Aumentada (`RealidadAumentada.jsx`), asegurando que el botón `ar-btn-pc` permanezca visible y funcional siempre en navegadores móviles.
   - Resolución de Autoplay y Fullscreen Móvil (`/demo`): Reemplazada la página Next.js con iframe por una redirección Netlify 302 directa a `/embed/armado/M00001` para resolver assets por proxy. Creado puente de audio directo (`__directAudioPlay`) en el click handler táctil para conservar el gesto de usuario.
-  - Prevención de Auto-Pausado por Orientación (`RealidadAumentada.jsx` / `PanelInicial.jsx`): Añadida bandera de inicio de 1.5s (`window.__startingApp`) para evitar que el chequeo de orientación portrait pause automáticamente el audio y la animación al arrancar.
+- [x] **Corrección de Enlace de Portafolio (22 de Julio, 2026)**:
+  - Reemplazada la URL hardcoded `http://localhost:3002` en [Footer.tsx](file:///c:/Desarrollo/mmapp/mario-mojica-homepage/src/components/Footer.tsx) por la variable de entorno `NEXT_PUBLIC_PORTFOLIO_URL` y fallback predeterminado `'https://portfolio.mariomojica.com'`.
+  - Configurada la variable `NEXT_PUBLIC_PORTFOLIO_URL=https://portfolio.mariomojica.com` en `.env.local` y `.env.example` de la landing page (`mario-mojica-homepage`).
+
 
 
 
@@ -142,7 +145,7 @@ CREATE TABLE public.configuraciones_manual (
     id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
     proyecto_id uuid REFERENCES public.proyectos(id) ON DELETE CASCADE UNIQUE,
     -- Identidad Gráfica (Personalización de Cliente Admin)
-    color_primario text DEFAULT '#0D9488', -- Obsidian Teal por defecto
+    color_primario text DEFAULT '#0088aa', -- Obsidian Teal por defecto
     color_secundario text DEFAULT '#111827',
     logo_url text,
     favicon_url text,
@@ -250,6 +253,7 @@ Un **"Manual Vacío"** es un cascarón o aplicación base centralizada (desplega
 - [x] **[NUEVO - 16 de Julio, 2026] Carga Completa de Empresas del Tier 1:** Inyectados los 15 líderes masivos de RTA Brasil (Bartira, Kappesberg, Henn, Madesa, etc.) en la tabla de Empresas (ID 991) con sus respectivos metadatos comerciales, dolores de producción y canales preferidos de prospección.
 - [x] **[NUEVO - 16 de Julio, 2026] Carga de Expositores RTA de Movel Sul (Tier 2):** Identificados e inyectados en la tabla de Empresas (ID 991) los fabricantes clave *Kits Paraná* (Fila ID 31, cocinas en kit) y *Möbler Móveis* (Fila ID 32, salas RTA) tras contrastar el histórico de expositores de la feria Movelsul.
 - [x] **[NUEVO - 16 de Julio, 2026] Validación y Corrección de LinkedIn Tier 1:** Corregidos todos los enlaces de las 15 empresas del Tier 1 en la tabla 991 usando el algoritmo de escaneo de variaciones en paralelo, resolviendo los errores de redirección `/company/unavailable/` y documentando el protocolo en [CRM.md](file:///c:/Desarrollo/mmapp/Comercial/CRM.md).
+- [x] **[NUEVO - 21 de Julio, 2026] Migración de Lead y Nuevos Prospectos:** Actualizado el perfil de Vitor Machado por su cambio a *Delucci Móveis*. Se registró la nueva empresa en el CRM (ID 67) y se inyectaron sus contactos clave: Vanessa Guindani (Marketing), Kelwin Pawlak (Projetista) y Alon Gabriel (Compras).
 - [ ] **PENDIENTE:** Monitoreo de tráfico y leads reales.
 - [x] **Configuración de LinkedIn Personal (14 de Julio, 2026):** Perfil de Mario Mojica optimizado con titular persuasivo B2B en español y portugués, correo corporativo verificado como principal, biografía ("Acerca de") en ambos idiomas, y aptitudes alineadas a la Industria 4.0.
 - [x] **Gestión de Activos Digitales y Redes (15 de Julio, 2026):** Creación del documento [activos_digitales_y_redes.md](file:///c:/Desarrollo/mmapp/Comercial/activos_digitales_y_redes.md) que contiene el registro de perfiles y la estrategia de contenido. Se optimizó el perfil comercial de Facebook, se creó la página de empresa oficial "Mario Mojica - Smart Assembly 3D - Inteligência Moveleira" y se vincularon exitosamente Instagram y YouTube en el hub de publicaciones.
