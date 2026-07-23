@@ -195,14 +195,33 @@ export default function RealiadaAumentada({ id, data }) {
   }, [StartAppTrue]);
 
   // Iniciar AR programáticamente
-  const iniciarAR = () => {
+  const iniciarAR = async () => {
     // Pausar audio de fondo inmediatamente
     useEnviroment.getState().PausedAudio();
 
     if (refAr.current) {
       if (refAr.current.canActivateAR) {
+        try {
+          refAr.current.activateAR();
+          return;
+        } catch (e) {
+          console.warn("activateAR error:", e);
+        }
+      }
+
+      // Fallback intent para Android si canActivateAR retorna falso por estar dentro de un iframe o tener display hidden
+      const isAndroid = /android/i.test(navigator.userAgent);
+      const glbUrl = refAr.current.src;
+      if (isAndroid && glbUrl) {
+        const intentUrl = `intent://arvr.google.com/scene-viewer/1.0?file=${encodeURIComponent(glbUrl)}&title=${encodeURIComponent("Modelo 3D")}&mode=ar_preferred#Intent;scheme=https;package=com.google.ar.core;action=android.intent.action.VIEW;end;`;
+        window.location.href = intentUrl;
+        return;
+      }
+
+      // Si no es android o falla el intent, intentar activateAR() forzado
+      try {
         refAr.current.activateAR();
-      } else {
+      } catch (e) {
         alert(t.notSupported);
       }
     }
@@ -230,7 +249,7 @@ export default function RealiadaAumentada({ id, data }) {
       <div className={`AR ${isPanelOpen ? "panel-herrajes-open" : ""}`}>
         {/* 
           Etiqueta de model viewer.
-          Se deja en el DOM de forma oculta en móvil y PC para poder invocar activateAR() por JS.
+          Se posiciona de forma imperceptible (no display:none) para que model-viewer inicialice WebXR/SceneViewer correctamente.
         */}
         <model-viewer 
           ar 
@@ -240,7 +259,7 @@ export default function RealiadaAumentada({ id, data }) {
           alt="Modelo 3D" 
           autoplay 
           ref={refAr}
-          style={{ display: "none" }}
+          style={{ position: "fixed", width: "1px", height: "1px", opacity: 0, pointerEvents: "none", top: 0, left: 0 }}
         >
           {/* Botón slot ar-button requerido por model-viewer pero no usado visualmente */}
           <button slot="ar-button" style={{ display: "none" }}></button>
