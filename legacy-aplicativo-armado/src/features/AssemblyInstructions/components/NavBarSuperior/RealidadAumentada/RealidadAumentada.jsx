@@ -297,7 +297,8 @@ export default function RealiadaAumentada({ id, data }) {
         {/* Botón premium de AR Obsidian Teal (Unificado para PC y Móvil) */}
         <button 
           className={`ar-btn-pc ${showQR ? "active" : ""}`}
-          onClick={() => {
+          onClick={(e) => {
+            e.currentTarget.blur();
             if (isMobile) {
               iniciarAR();
             } else {

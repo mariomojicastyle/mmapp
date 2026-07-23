@@ -1,7 +1,7 @@
 // Generación de tokens HMAC-SHA256 para peticiones AR al Edge Function decrypt-glb
 // El token firma (manualId:step:timestamp) y tiene TTL de 30 minutos.
 
-const AR_HMAC_SECRET = import.meta.env.VITE_AR_HMAC_SECRET || "";
+const AR_HMAC_SECRET = import.meta.env.VITE_AR_HMAC_SECRET || "MARIO_MOJICA_AR_HMAC_SECRET_2026";
 
 /**
  * Genera un token HMAC-SHA256 firmado para autorizar peticiones AR al Edge Function.
