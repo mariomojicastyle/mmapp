@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import useEnviroment from "../../../hooks/useEnviroment";
 import QRCode from "react-qr-code";
 import { getAssetPath } from "../../../../../lib/assets.js";
+import { getDecryptGlbUrl } from "../../../../../lib/arToken.js";
 import "./RealidadAumentada.css";
 
 export default function RealiadaAumentada({ id, data }) {
@@ -138,14 +139,19 @@ export default function RealiadaAumentada({ id, data }) {
 
   // Apenas inicia el aplicativo, se agrega la ruta del paso 00.
   useEffect(() => {
-    if (refAr.current) {
-      refAr.current.src = getAssetPath(`/${id}/models/P00.glb`);
+    if (refAr.current && id) {
+      getDecryptGlbUrl(id, "P00").then((url) => {
+        if (refAr.current) refAr.current.src = url;
+      });
     }
   }, [id]);
 
   useEffect(() => {
-    if (refAr.current) {
-      refAr.current.src = getAssetPath(`/${id}/models/P${pasoActual}.glb`);
+    if (refAr.current && id) {
+      const stepStr = `P${pasoActual}`;
+      getDecryptGlbUrl(id, stepStr).then((url) => {
+        if (refAr.current) refAr.current.src = url;
+      });
     }
   }, [pasoActual, Cliente, id]);
 
