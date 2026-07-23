@@ -245,10 +245,19 @@ export default function RealiadaAumentada({ id, data }) {
           <button 
             className="home-btn-pc"
             onClick={() => {
+              // 1. Pausar el audio del manual inmediatamente
+              useEnviroment.getState().PausedAudio();
+
               const targetUrl = homeUrl || "https://mariomojica.com";
               if (typeof window !== "undefined") {
                 if (window.self !== window.top) {
-                  window.open(targetUrl, "_blank");
+                  // Notificar al contenedor padre para cerrar/minimizar el overlay
+                  window.parent.postMessage({ type: "MM_MANUAL_MINIMIZAR" }, "*");
+                  try {
+                    window.top.location.href = targetUrl;
+                  } catch (e) {
+                    window.location.href = targetUrl;
+                  }
                 } else {
                   window.location.href = targetUrl;
                 }
