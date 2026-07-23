@@ -13,9 +13,13 @@ Nuestra startup nace para ser el **puente digital interactivo** que fusiona esto
 
 ### Segmentación y Estructura del Mercado de Mobiliario B2B
 Para posicionar nuestras soluciones con la máxima precisión, diferenciamos los tres segmentos core del mercado de carpintería a gran escala:
+
 *   **Planejados (Ej: Dell Anno):** Producción a la medida exacta (corte milimétrico bajo pedido mediante Promob en fábrica). El canal es de showrooms exclusivos y el ensamblado final lo realiza un montador profesional contratado por la tienda.
 *   **Modulados (Ej: Favorita / New / Casa Brasileira):** La fábrica produce módulos estandarizados de medidas fijas (ej: gabinetes de cocina de 30, 40, 60 y 80 cm) y la tienda multimarcas "arma" la composición y la instala en casa del cliente según el plano tridimensional adaptado.
-*   **RTA / Seriados (Ej: Politorno, Kappesberg, Madesa):** Muebles económicos, prefabricados y empaquetados en una sola caja plana. Están diseñados exclusivamente para el auto-armado (*Do-It-Yourself / DIY*) y se venden en retail tradicional y e-commerce masivos.
+*   **RTA / Seriados (Ej: Politorno, Kappesberg, Madesa, Multimóveis):** 
+    *   **Nomenclatura Técnica e Industrial (B2B):** **RTA (Ready-To-Assemble / Pronto para Montar)** es el término estándar global y corporativo utilizado por la industria (respaldado por la ABIMÓVEL, Movergs, eMóbile e IEMI en Brasil). Define la categoría industrial de muebles en caja plana (*flat-pack*) optimizados para logística, e-commerce y exportación. *(Nota: En el retail y comercio electrónico local se le conoce popularmente como "móvel em kit" o "kit de cozinha", pero a nivel industrial B2B el estándar técnico es estrictamente RTA).*
+    *   **El Pacto Económico del RTA:** El producto RTA se basa en una ecuación económica transparente: el consumidor acepta voluntariamente el riesgo del auto-ensamblaje (*Do-It-Yourself / DIY*) para acceder a un precio competitivo, ahorrándole a la fábrica los costos de flete volumétrico y la mano de obra final de producción.
+    *   **La Oportunidad del Acompañamiento:** Dado que el cliente decide finalizar el producto en su hogar para ahorrar, nuestra plataforma evita que la industria lo deje solo con un manual de papel frío e ineficiente. El Manual 3D por voz asegura que la terminación final sea un éxito, evitando bloqueos, reclamos y pérdida de reputación de marca.
 
 ### El Dolor del Mercado
 * **Ineficiencia en I+D:** Las áreas de diseño en fábricas tradicionales son lentas y costosas. Modificar la dimensión de un mueble requiere redibujar planos manualmente, recalcular despieces y re-costear procesos, lo que toma días y genera errores humanos en cascada.

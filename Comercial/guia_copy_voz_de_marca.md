@@ -45,43 +45,53 @@ No somos una corporación aburrida que habla en tercera persona. No somos una ag
 | "Style" (en cualquier contexto de marca) | No es parte de la identidad (ver Regla 1.1). |
 | "Herramienta", "Software", "App" | Nos reducen a un producto tecnológico genérico. Somos una *plataforma de optimización*. |
 | "Fácil de usar" | Genérico. En su lugar, describir la experiencia: *"Control 360º, zoom y audio guiado en su idioma"*. |
-| "SAC" | Demasiado corporativo/frío. Usar siempre **"servicio al cliente"**. |
+| **"SAC"** | **PROHIBIDO.** Demasiado corporativo/frío o poco empático. Usar siempre **"servicio al cliente"**. |
+| **"se tranca / se trancan"** | **PROHIBIDO.** Vocabulario informal/impreciso. Usar siempre **"se bloquea / se bloquean"**. |
+| **Foco excesivo en "Devoluciones"** | **PROHIBIDO como argumento principal.** Es difícil de cuantificar y las cifras puras de devoluciones son minúsculas. **El foco principal SIEMPRE es transformar e intensificar la Experiencia de Armado del Cliente (CX)**, eliminando la frustración del papel con un asistente 3D interactivo por voz que genera satisfacción y excelentes reseñas. |
 
 ---
 
 ## 📐 3. Pilares de Contenido (Content Pillars)
 
-Todo contenido que publiquemos debe encajar en uno de estos cuatro pilares. Si no encaja, no se publica:
+Todo contenido que publiquemos debe estructurarse estrictamente en torno a estos cuatro pilares interconectados. Si una pieza de contenido no encaja en esta narrativa, no se publica:
 
-### Pilar 1: La Fricción Oculta (Ataque al Dolor)
-**Objetivo:** Poner el dedo en la llaga. Hacer visible lo que el fabricante ya sabe pero no cuantifica.
+```mermaid
+graph TD
+    P1[Pilar 1: El Abandono Oculto & El Último Empleado] --> P2[Pilar 2: Smart Assembly 3D & Empatía en Acción]
+    P2 --> P3[Pilar 3: Telemetría de Campo & ROI B2B]
+    P3 --> P4[Pilar 4: Manufactura 4.0 & ADN Paramétrico]
+```
 
-* El costo real de un manual de papel mal diseñado (devoluciones, reposición de tableros rotos, logística inversa).
-* Las llamadas repetitivas a servicio al cliente preguntando *"¿dónde va este tornillo?"* o *"¿cuál es la pieza A?"*.
-* La pérdida silenciosa de reputación cuando el cliente califica con 1 estrella en Mercado Livre o MadeiraMadeira porque "el mueble es imposible de armar".
-* La lentitud de los departamentos de I+D: modificar una dimensión del mueble requiere redibujar planos manualmente, recalcular despieces y re-costear. Eso toma días y genera errores en cascada.
+### Pilar 1: El Abandono Oculto y la Falta de Empatía (La Filosofía del "Último Empleado")
+**Objetivo:** Cuestionar el status quo ético y operativo de la fábrica. Hacer visible la contradicción entre una planta hiper-automatizada y el abandono del cliente en su hogar.
 
-### Pilar 2: El ROI de la Digitalización (Demostración de Valor B2B)
-**Objetivo:** Traducir la tecnología en números que un director financiero entienda.
+* **La Pregunta Provocadora:** *"¿Tratas a tu cliente como el último empleado en la línea de ensamblaje de tu fábrica?"*
+* **El Muro de Papel:** El manual impreso en blanco y negro no es una solución; es trasladar el problema de producción al comprador. Es un elemento frío, estático y totalmente carente de empatía que no escucha, no responde, no hace zoom ni acompaña cuando el usuario se bloquea.
+* **El Abandono en el Momento de la Verdad:** Las fábricas invierten millones en máquinas CNC, recubrimientos y robótica, pero se desentienden del producto cuando se lo entregan al cliente final en una caja.
+* **De Piezas Sin Alma a un Producto Real:** Exponer la frustración de entregar una "caja de piezas sin alma" frente al respeto de guiar al cliente para que su mueble cobre vida, acompañándolo en el proceso y detectando puntos clave para mejorar la calidad del producto y la experiencia del usuario.
 
-* Reducción medible de devoluciones por armado erróneo.
-* Ahorro masivo en horas-persona de soporte postventa.
-* El embudo de fricción paso a paso: saber exactamente en qué paso se trancan los clientes para poder rediseñar el producto en fábrica (dato que antes no existía).
-* Automatización de exportaciones CNC con Grasshopper: pasar de 3 días de trabajo manual de ingeniería a 10 minutos.
+### Pilar 2: Smart Assembly 3D & Empatía en Acción (La Experiencia del Consumidor - CX)
+**Objetivo:** Demostrar cómo nuestra plataforma reemplaza ese "muro de papel" por un asistente interactivo 3D por voz que toma al cliente de la mano, convirtiendo el armado en un momento de satisfacción de marca.
 
-### Pilar 3: La Experiencia del Consumidor (Customer Experience - CX)
-**Objetivo:** Conectar emocionalmente con la realidad del comprador final del mueble.
+* **Acompañamiento Humano Digital:** El visor 3D interactivo no es un "modelo 3D bonito", es **Empatía de Marca en Acción**. Cero descargas, cero registros; el usuario escanea el QR en la caja y recibe asistencia inmediata en su idioma.
+* **Control Absoluto del Usuario:** Orientación 360°, zoom milimétrico a barrenos/agujeros y locución explicativa paso a paso que elimina la duda sobre cuál es la pieza "A" o el tornillo "B".
+* **Transformación del Sentimiento (CX):** Cambiar la frustración de *"voy a tener que pagarle a alguien para que lo arme"* por el empoderamiento y orgullo de *"lo armé yo mismo a la primera"*.
+* **Protección de la Reputación Online:** Evitar que opiniones de 1 estrella en marketplaces como Mercado Libre, Amazon, Homecenter, Walmart, etc., arruinen el posicionamiento del producto por fallas en la guía impresa.
 
-* El comprador moderno (generación digital) no tolera guías impresas complejas. Escanea un QR, ve el mueble ensamblarse en 3D con audio y lo arma solo, sin contratar a nadie.
-* La conveniencia de Realidad Aumentada Web: visualizar el mueble a escala real en tu propia sala antes de comprarlo, directamente desde el navegador, sin descargar apps.
-* El momento de verdad: abrir la caja, ver 47 piezas sueltas y un folleto confuso... versus escanear un código QR y ver exactamente cómo encaja cada tabla en tiempo real.
+### Pilar 3: Telemetría de Campo y ROI B2B (La Ciencia de los Datos de Postventa)
+**Objetivo:** Traducir la empatía del visor en datos gerenciales estratégicos y rentabilidad cuantificable para directivos de fábrica (CEOs, Calidad, Finanzas).
 
-### Pilar 4: Liderazgo de Opinión (Thought Leadership)
-**Objetivo:** Posicionar a Mario Mojica como referente técnico de la industria RTA 4.0.
+* **El Control de Calidad Extendido:** *"Hasta hoy, tu control de calidad terminaba cuando el camión salía de la fábrica. Con nuestra plataforma, llega hasta la sala del cliente."*
+* **El Embudo de Armado (Funnel de Fricción):** Detección matemática exacta de en qué paso específico se bloquean los usuarios. Permite rediseñar el producto físico o el herraje en fábrica con datos reales de campo.
+* **Ahorro Cuantificable:** Reducción drástica de llamadas costosas a servicio al cliente, disminución de reposición de tableros rotos por mal ensamble y reducción de logística inversa.
+* **Voz del Cliente (VoC) y CSAT Automatizados:** Captura de reseñas, tiempos de armado y calificación del cliente directamente al finalizar los pasos.
 
-* Publicaciones del tipo "Antes y Después" en procesos de diseño (ej: *"Cómo pasamos de 3 días a 10 minutos para exportar planos CNC usando Grasshopper"*).
-* Reflexiones sobre el futuro de la postventa inteligente basada en datos.
-* Análisis del mercado brasileño de RTA y tendencias de digitalización en los polos de Arapongas, Bento Gonçalves y Ubá.
+### Pilar 4: Manufactura 4.0 & ADN Paramétrico (Ingeniería y Autogestión B2B)
+**Objetivo:** Posicionar el ecosistema Mario Mojica como el puente tecnológico integral entre el diseño algorítmico en fábrica y el portal autogestionable del cliente.
+
+* **Automatización de R&D (Grasshopper / Rhino Compute):** Reducir el tiempo de ingeniería de 3 días a 10 minutos para exportar planos CNC, listas de corte, 3D nesting y costeo paramétrico.
+* **Portal B2B Autogestionable:** El fabricante gestiona su marca en nuestra plataforma (color primario, logotipos, favicons, audios) y descarga sus códigos QR listos para imprimir en caja.
+* **Liderazgo en la Industria Mueblera:** Casos de estudio técnicos y presencia de marca en los principales polos industriales de Latinoamérica y Brasil (Arapongas, Bento Gonçalves, Ubá, Movergs, Fimma).
 
 ---
 
@@ -105,7 +115,7 @@ Para contenido de liderazgo de opinión y presentaciones ejecutivas.
 * **Reencuadrar:** Cambia la perspectiva del interlocutor.
   > *"El manual de armado no es solo una hoja de instrucciones. Es el último paso de tu control de calidad, pero esta vez sucede en el hogar del cliente, donde tú no tienes control... hasta ahora."*
 * **Resolver:** Presenta la plataforma como la respuesta inevitable.
-  > *"Nuestro embudo de fricción te dice exactamente en qué paso se trancan tus clientes. Por primera vez, puedes optimizar tu producto con datos reales de campo."*
+  > *"Nuestro embudo de fricción te dice exactamente en qué paso se bloquean tus clientes. Por primera vez, puedes optimizar tu producto con datos reales de campo."*
 
 ### 4.3 Fórmula BAB (Before → After → Bridge)
 Para demos, videos y testimoniales.
@@ -122,7 +132,7 @@ Para demos, videos y testimoniales.
 ## 🎯 5. Argumentos de Venta por Audiencia
 
 ### Para el Director de Postventa / Calidad:
-> *"Sabemos que tu equipo de soporte recibe las mismas preguntas todos los días. Nuestro manual 3D interactivo elimina esas llamadas repetitivas de raíz. Y el reporte de fricción te dice exactamente en qué paso se trancan tus clientes para que puedas auditar el diseño del producto en fábrica."*
+> *"Sabemos que tu equipo de soporte recibe las mismas preguntas todos los días. Nuestro manual 3D interactivo elimina esas llamadas repetitivas de raíz. Y el reporte de fricción te dice exactamente en qué paso se bloquean tus clientes para que puedas auditar el diseño del producto en fábrica."*
 
 ### Para el Director de Marketing / E-commerce:
 > *"Un código QR en tu caja de cartón. El comprador lo escanea y ve cómo se ensambla el mueble en 3D con audio guiado. Sin descargas, sin registro. Eso se traduce en mejores reseñas en Mercado Livre y MadeiraMadeira, menos devoluciones y una experiencia de marca que tu competencia no tiene."*
@@ -330,10 +340,23 @@ Este directorio documenta las entidades, portales y ferias clave del sector mueb
 Para garantizar consistencia y profesionalismo en la prospección, siempre debemos utilizar los siguientes enlaces oficiales en nuestros copys y comunicaciones B2B:
 
 ### 13.1 El Enlace de la Demo (Manual 3D)
-* **URL a utilizar:** `mariomojica.com/demo`
-* **Propósito:** Redirige directamente al entorno interactivo del Manual 3D.
+* **URL a utilizar:** `https://mariomojica.com/demo`
+* **Propósito:** Redirigir directamente al entorno interactivo del Manual 3D.
 * **Dónde usarlo:** 
   * En el **primer comentario** de las publicaciones de LinkedIn (NUNCA en el cuerpo del post, para no hundir el alcance orgánico. Ver regla 9.1).
   * En correos electrónicos en frío o mensajes directos de WhatsApp y LinkedIn.
-  * *Ejemplo de uso:* "Por si tienes curiosidad de probarlo tú mismo desde tu celular, te dejo nuestra demo interactiva: mariomojica.com/demo"
-* **Por qué usar este formato:** Es un enlace corto, limpio, anclado al dominio de la marca (genera confianza B2B) y permite el trackeo centralizado de clics y conversiones en Umami.
+  * *Ejemplo de uso:* "Por si tienes curiosidad de probarlo tú mismo desde tu celular, te dejo nuestra demo interactiva: https://mariomojica.com/demo"
+* **Por qué usar este formato:** Incluir siempre el prefijo seguro `https://` garantiza que la plataforma (LinkedIn, WhatsApp, etc.) reconozca visualmente la URL como un hipervínculo clicable activo y transmite confianza de seguridad (SSL) al cliente B2B.
+
+---
+
+## 🎨 14. Categoría de Post Editorial Tipográfico (Visual Headline)
+
+Esta categoría de publicación utiliza una imagen donde **el titular del texto es el protagonista visual**. Su propósito es detener el scroll del usuario en LinkedIn mediante un diseño limpio, de alto contraste tipográfico y apariencia diseñada por un humano (sin el aspecto genérico o recargado de la IA).
+
+### 14.1 Reglas del Formato
+1. **El Titular como Imagen:** La imagen debe contener una frase corta, retadora o empática (máximo 10 palabras) escrita en tipografía sans-serif gruesa y limpia (ej. Inter Bold, Outfit, Montserrat).
+2. **Jerarquía Visual:** Uso de colores de acento (como encerrar una palabra en un círculo dibujado a mano o usar un fondo de color contrastante) para destacar el núcleo del mensaje.
+3. **Composición Minimalista:** Un fondo de color plano y un único elemento gráfico (como una ilustración vectorial simple de un herraje, un tornillo o una silla) que complemente el texto sin saturar el diseño.
+4. **Acabado Humano:** Estilo gráfico plano (flat design) o vectorizado limpio. Evitar degradados complejos, brillos exagerados y fotorrealismo de IA que resten seriedad corporativa B2B.
+

@@ -1,0 +1,36 @@
+<svg width="842" height="595" viewBox="0 0 842 595" xmlns="http://www.w3.org/2000/svg">
+  <!-- Corporate Catalog Minimalist Layout -->
+  <!-- Designed by Antigravity - Editable Template -->
+  
+  <rect width="842" height="595" fill="#f0f0f0" />
+  
+  <g id="main_layout">
+    <!-- Sidebar / Index -->
+    <rect id="sidebar" x="0" y="0" width="300" height="595" fill="#7a8474" />
+    <text x="150" y="300" font-family="serif" font-size="120" fill="#ffffff" opacity="0.2" text-anchor="middle">01</text>
+    <text x="150" y="480" font-family="Arial, sans-serif" font-size="14" fill="#ffffff" text-anchor="middle" letter-spacing="4">CATALOGUE DESIGN</text>
+    
+    <!-- Main Grid Content -->
+    <g id="grid_content" transform="translate(320, 60)">
+      <rect x="0" y="0" width="240" height="300" fill="#bebebe" />
+      <text x="120" y="150" font-family="Arial, sans-serif" font-size="14" fill="#ffffff" text-anchor="middle">PRIMARY VISUAL</text>
+      
+      <rect x="260" y="0" width="240" height="140" fill="#7a8474" />
+      <text x="380" y="75" font-family="Arial, sans-serif" font-size="12" fill="#ffffff" text-anchor="middle">ACCENT 1</text>
+      
+      <rect x="260" y="160" width="240" height="140" fill="#e0e0e0" />
+      <text x="380" y="235" font-family="Arial, sans-serif" font-size="12" fill="#666666" text-anchor="middle">ACCENT 2</text>
+      
+      <!-- List Area -->
+      <g id="list_items" transform="translate(0, 330)">
+        <rect x="0" y="0" width="150" height="180" fill="#ffffff" />
+        <rect x="175" y="0" width="150" height="180" fill="#ffffff" />
+        <rect x="350" y="0" width="150" height="180" fill="#ffffff" />
+        
+        <rect x="10" y="10" width="130" height="80" fill="#f5f5f5" />
+        <rect x="185" y="10" width="130" height="80" fill="#f5f5f5" />
+        <rect x="360" y="10" width="130" height="80" fill="#f5f5f5" />
+      </g>
+    </g>
+  </g>
+</svg>

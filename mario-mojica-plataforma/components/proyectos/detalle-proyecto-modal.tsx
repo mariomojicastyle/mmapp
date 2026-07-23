@@ -300,6 +300,8 @@ export function DetalleProyectoModal({ isOpen, onClose, proyecto, onUpdate }: De
   const [faviconUrl, setFaviconUrl] = useState("")
   const [brandingShieldActivo, setBrandingShieldActivo] = useState(true)
   const [modoArranqueMovil, setModoArranqueMovil] = useState("gamma")
+  const [homeButtonActivo, setHomeButtonActivo] = useState(false)
+  const [homeUrl, setHomeUrl] = useState("https://mariomojica.com")
   
   // Opciones de personalización de Tipografía avanzadas
   const [fontTitle, setFontTitle] = useState("Inter")
@@ -1203,6 +1205,8 @@ export function DetalleProyectoModal({ isOpen, onClose, proyecto, onUpdate }: De
               setFaviconUrl(data.favicon_url || "")
               setBrandingShieldActivo(data.branding_shield_activo !== undefined && data.branding_shield_activo !== null ? data.branding_shield_activo : true)
               setModoArranqueMovil(data.modo_arranque_movil || "gamma")
+              setHomeButtonActivo(data.home_button_activo || false)
+              setHomeUrl(data.home_url || "https://mariomojica.com")
               
               // Cargar valores tipográficos (o dejar fallbacks)
               setFontTitle(data.font_title || "Inter")
@@ -2904,6 +2908,8 @@ export function DetalleProyectoModal({ isOpen, onClose, proyecto, onUpdate }: De
           favicon_url: faviconUrl,
           branding_shield_activo: brandingShieldActivo,
           modo_arranque_movil: modoArranqueMovil,
+          home_button_activo: homeButtonActivo,
+          home_url: homeUrl,
           
           // Guardar campos de tipografía en BD
           font_title: fontTitle,
@@ -4017,7 +4023,7 @@ export function DetalleProyectoModal({ isOpen, onClose, proyecto, onUpdate }: De
 
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <label className="flex flex-col gap-1.5">
-                        <span className="text-xs font-semibold text-on-surface-variant">Modo de Arranque Móvil</span>
+                        <span className="text-xs font-semibold text-on-surface-variant">Modo de Arranque en Móviles</span>
                         <select
                           value={modoArranqueMovil}
                           onChange={e => setModoArranqueMovil(e.target.value)}
@@ -4027,7 +4033,34 @@ export function DetalleProyectoModal({ isOpen, onClose, proyecto, onUpdate }: De
                           <option value="simple">Simple (Backdrop limpio MM)</option>
                         </select>
                       </label>
+
+                      <label className="flex flex-col gap-1.5">
+                        <span className="text-xs font-semibold text-on-surface-variant">Botón Ir a Inicio (Home)</span>
+                        <select
+                          value={homeButtonActivo ? "activado" : "desactivado"}
+                          onChange={e => setHomeButtonActivo(e.target.value === "activado")}
+                          className="rounded-lg border border-outline-variant bg-surface-container px-3 py-1.5 text-xs text-on-surface outline-none focus:border-primary"
+                        >
+                          <option value="desactivado">Desactivado</option>
+                          <option value="activado">Activado (Icono Casita)</option>
+                        </select>
+                      </label>
                     </div>
+
+                    {homeButtonActivo && (
+                      <div className="grid grid-cols-1 gap-4">
+                        <label className="flex flex-col gap-1.5">
+                          <span className="text-xs font-semibold text-on-surface-variant">URL de Destino (Home)</span>
+                          <input
+                            type="text"
+                            value={homeUrl}
+                            onChange={e => setHomeUrl(e.target.value)}
+                            placeholder="https://mariomojica.com"
+                            className="rounded-lg border border-outline-variant bg-surface-container px-3 py-1.5 text-xs text-on-surface outline-none focus:border-primary"
+                          />
+                        </label>
+                      </div>
+                    )}
 
                     {/* Sección de Texturas PBR del Escenario */}
                     <div className="border-t border-outline-variant/10 pt-4 space-y-4">

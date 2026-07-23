@@ -64,6 +64,8 @@ export default create(
       icono: "",//url del icono del fabricante
       brandingShieldActivo: true,
       modoArranqueMovil: "gamma",
+      homeButtonActivo: false,
+      homeUrl: "https://mariomojica.com",
 
       AudioEnded: false,//Variable de audio finalizado
       AnimationEnded: false,//Variable de animación 3D finalizada
@@ -207,6 +209,8 @@ export default create(
       ChargerIcon: (icon) => set((state) => ({ icono: icon })),
       ChargerBrandingShieldActivo: (activo) => set((state) => ({ brandingShieldActivo: activo })),
       ChargerModoArranqueMovil: (modo) => set((state) => ({ modoArranqueMovil: modo })),
+      ChargerHomeButtonActivo: (activo) => set((state) => ({ homeButtonActivo: activo })),
+      ChargerHomeUrl: (url) => set((state) => ({ homeUrl: url })),
 
 
       AudioEndedFalse: (icon) => set((state) => ({ AudioEnded: false })),

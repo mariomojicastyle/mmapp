@@ -21,6 +21,8 @@ export default function AssemblyViewer({ productData, steps, id }) {
   const ChargerCameraPositions = useEnviroment((state) => state.ChargerCameraPositions);
   const ChargerBrandingShieldActivo = useEnviroment((state) => state.ChargerBrandingShieldActivo);
   const ChargerModoArranqueMovil = useEnviroment((state) => state.ChargerModoArranqueMovil);
+  const ChargerHomeButtonActivo = useEnviroment((state) => state.ChargerHomeButtonActivo);
+  const ChargerHomeUrl = useEnviroment((state) => state.ChargerHomeUrl);
   const SetColorObjetoTocado = useEnviroment((state) => state.SetColorObjetoTocado);
   const pasoActual = useEnviroment((state) => state.pasoActual);
   const PiezaHerraje = useEnviroment((state) => state.PiezaHerraje);
@@ -143,6 +145,8 @@ export default function AssemblyViewer({ productData, steps, id }) {
       } else {
         ChargerModoArranqueMovil("gamma");
       }
+      ChargerHomeButtonActivo(productData.homeButtonActivo === true);
+      if (productData.homeUrl) ChargerHomeUrl(productData.homeUrl);
       if (productData.posiciones) ChargerPositionFloor(productData.posiciones);
       if (productData.cameraPositions) ChargerCameraPositions(productData.cameraPositions);
       if (productData.alturas) ChargerAlturas(productData.alturas);

@@ -1009,6 +1009,12 @@ Con esta batería de arreglos y la validación en caliente, la V20 se establece 
     - **Reemplazo de URL de Portafolio**: Se modificó [Footer.tsx](file:///c:/Desarrollo/mmapp/mario-mojica-homepage/src/components/Footer.tsx) para sustituir el valor hardcoded de desarrollo `http://localhost:3002` por la variable de entorno `NEXT_PUBLIC_PORTFOLIO_URL`, con fallback por defecto `'https://portfolio.mariomojica.com'`.
     - **Configuración de Entorno**: Se registró la variable `NEXT_PUBLIC_PORTFOLIO_URL=https://portfolio.mariomojica.com` en los archivos `.env.local` y `.env.example` de la landing page.
 
+* **[2026-07-23] Visor 3D y Plataforma CMS — Botón Opcional Home "Casita" y Corrección de Arranque Móvil:**
+    - **Botón Flotante 'Ir a la Home'**: Creación e integración del botón `.home-btn-pc` en el visor 3D ([RealidadAumentada.jsx](file:///c:/Desarrollo/mmapp/legacy-aplicativo-armado/src/features/AssemblyInstructions/components/NavBarSuperior/RealidadAumentada/RealidadAumentada.jsx) y [RealidadAumentada.css](file:///c:/Desarrollo/mmapp/legacy-aplicativo-armado/src/features/AssemblyInstructions/components/NavBarSuperior/RealidadAumentada/RealidadAumentada.css)), estilizado en Obsidian Teal Glassmorphism e inyectado en el borde lateral derecho.
+    - **Control CMS**: Creación de las columnas `home_button_activo` y `home_url` en Supabase `configuraciones_manual`, e integración de los controles de activación/desactivación e input de URL de destino en la pestaña **Personalización UI** del modal ([detalle-proyecto-modal.tsx](file:///c:/Desarrollo/mmapp/mario-mojica-plataforma/components/proyectos/detalle-proyecto-modal.tsx)), renombrando el selector a **"Modo de Arranque en Móviles"**.
+    - **Corrección de Lógica de Arranque**: Corrección del condicional en [PanelInicial.jsx](file:///c:/Desarrollo/mmapp/legacy-aplicativo-armado/src/features/AssemblyInstructions/components/NavBarInferior/PanelInicial/PanelInicial.jsx) para evaluar `isArMode || (isMobile && modoArranqueMovil === "simple")`, asegurando que en PC se renderice siempre la animación 3D de Spline con el robot Gama sin verse afectado por la regla móvil.
+    - **Texto Trilingüe de Instrucciones**: Ajuste del aviso de volumen en 3 idiomas en el orden exacto solicitado (1º PT, 2º EN, 3º ES).
+
 
 
 

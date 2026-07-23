@@ -35,7 +35,7 @@ export default function PanelInicial() {
     return false;
   });
 
-  const showCleanBackdrop = isArMode || isMobile || modoArranqueMovil === "simple";
+  const showCleanBackdrop = isArMode || (isMobile && modoArranqueMovil === "simple");
   const isDemoMode = showCleanBackdrop && !isArMode;
 
   const [isEmbedded, setIsEmbedded] = useState(false);
@@ -184,25 +184,41 @@ export default function PanelInicial() {
     }
   }
 
+  const triLingualDemoExplain = (
+    <>
+      Aumente o volume para ouvir as instruções.<br />
+      Turn up the volume to hear the instructions.<br />
+      Sube el volumen para escuchar las instrucciones.
+    </>
+  );
+
+  const triLingualArExplain = (
+    <>
+      Aumente o volume para ouvir as instruções e projete o móvel no seu espaço.<br />
+      Turn up the volume to hear the instructions and project the furniture in your space.<br />
+      Sube el volumen para escuchar las instrucciones y proyecta el mueble en tu espacio.
+    </>
+  );
+
   const texts = {
     es: {
       arButton: "Ver en tu espacio",
-      arExplain: "Sube el volumen para escuchar las instrucciones y proyecta el mueble en tu espacio.",
-      demoExplain: "Sube el volumen para escuchar las instrucciones.",
+      arExplain: triLingualArExplain,
+      demoExplain: triLingualDemoExplain,
       productos: "Productos",
       potenciados: "Potenciados por",
     },
     en: {
       arButton: "View in your space",
-      arExplain: "Turn up the volume to hear the instructions and project the furniture in your space.",
-      demoExplain: "Turn up the volume to hear the instructions.",
+      arExplain: triLingualArExplain,
+      demoExplain: triLingualDemoExplain,
       productos: "Products",
       potenciados: "Powered by",
     },
     pt: {
       arButton: "Ver no seu espaço",
-      arExplain: "Aumente o volume para ouvir as instruções e projete o móvel no seu espaço.",
-      demoExplain: "Aumente o volume para ouvir as instruções.",
+      arExplain: triLingualArExplain,
+      demoExplain: triLingualDemoExplain,
       productos: "Produtos",
       potenciados: "Potencializado por",
     }

@@ -1,0 +1,200 @@
+<svg width="1920" height="9720" viewBox="0 0 1920 9720" xmlns="http://www.w3.org/2000/svg">
+  <!-- Detailed Yellow Portfolio Template -->
+  <!-- Inspired by plantilla-portafolio-color-diseno-plano_23-2149215470.jpg -->
+  <!-- Designed by Antigravity - Fully Editable SVG -->
+  
+  <rect width="1920" height="9720" fill="#f0f0f0" />
+  
+  <!-- Page 01: Cover (Landscape 1920x1080) -->
+  <g id="page_01_cover" transform="translate(0, 0)">
+    <rect width="1920" height="1080" fill="#ffffff" />
+    <rect id="cover_accent" x="100" y="100" width="400" height="600" fill="#ffcc00" />
+    <g transform="translate(600, 200)">
+      <text y="0" font-family="Arial, sans-serif" font-size="100" font-weight="bold" fill="#1a1a1a">JAMES DON</text>
+      <text y="80" font-family="Arial, sans-serif" font-size="48" fill="#666666">Photographer</text>
+      <g transform="translate(0, 200)">
+        <text y="0" font-family="Arial, sans-serif" font-size="32" fill="#999999">yourname@company.com</text>
+        <text y="50" font-family="Arial, sans-serif" font-size="32" fill="#999999">www.yourportfolio.com</text>
+        <text y="100" font-family="Arial, sans-serif" font-size="32" fill="#999999">north street avenue</text>
+      </g>
+    </g>
+    
+    <text x="100" y="850" font-family="Arial, sans-serif" font-size="180" font-weight="extrabold" fill="#1a1a1a">Portfolio</text>
+    
+    <!-- Hero Image Placeholder (Right Side) -->
+    <rect x="1100" y="100" width="720" height="880" fill="#eeeeee" />
+    <text x="1460" y="540" font-family="Arial, sans-serif" font-size="48" fill="#999999" text-anchor="middle">HERO IMAGE</text>
+    
+    <rect x="100" y="980" width="60" height="60" fill="#1a1a1a" />
+    <rect x="1760" y="900" width="100" height="120" fill="#ffcc00" />
+  </g>
+  
+  <!-- Page 02: About Me (Landscape 1920x1080) -->
+  <g id="page_02_about" transform="translate(0, 1080)">
+    <rect width="1920" height="1080" fill="#ffffff" />
+    <g transform="translate(100, 150)">
+      <text y="0" font-family="Arial, sans-serif" font-size="120" font-weight="bold" fill="#1a1a1a">About Me</text>
+      <rect x="0" y="50" width="300" height="10" fill="#ffcc00" />
+    </g>
+    
+    <rect x="100" y="350" width="500" height="600" fill="#dddddd" />
+    
+    <g transform="translate(650, 400)">
+      <text y="0" font-family="Arial, sans-serif" font-size="80" font-weight="bold" fill="#1a1a1a">Hello, I'm James</text>
+      <text y="100" font-family="Arial, sans-serif" font-size="32" fill="#1a1a1a" width="1000">
+        Professional photographer with a passion for capturing moments that tell a story. 
+        Specialized in landscape and urban photography.
+      </text>
+      
+      <!-- Social Media Section -->
+      <g transform="translate(0, 300)">
+        <g transform="translate(0, 0)">
+          <circle cx="25" cy="25" r="25" fill="#1a1a1a" /> 
+          <text x="70" y="40" font-family="Arial, sans-serif" font-size="32">facebook.com/jamesdon</text>
+        </g>
+        <g transform="translate(0, 80)">
+          <circle cx="25" cy="25" r="25" fill="#1a1a1a" /> 
+          <text x="70" y="40" font-family="Arial, sans-serif" font-size="32">instagram.com/jamesdon</text>
+        </g>
+      </g>
+    </g>
+    
+    <rect x="1820" y="100" width="50" height="50" fill="#1a1a1a" />
+    <text x="1845" y="135" font-family="Arial, sans-serif" font-size="24" fill="#ffffff" text-anchor="middle">02</text>
+  </g>
+
+  <!-- Page 03: Table of Contents (Landscape 1920x1080) -->
+  <g id="page_03_toc" transform="translate(0, 2160)">
+    <rect width="1920" height="1080" fill="#ffffff" />
+    <g transform="translate(100, 150)">
+      <text y="0" font-family="Arial, sans-serif" font-size="120" font-weight="bold" fill="#1a1a1a">Index</text>
+      <rect x="0" y="50" width="200" height="10" fill="#ffcc00" />
+    </g>
+    
+    <g transform="translate(600, 350)">
+      <g transform="translate(0, 0)">
+        <text font-family="Arial, sans-serif" font-size="64" font-weight="bold">01. Project Showcase</text>
+        <text x="800" font-family="Arial, sans-serif" font-size="64" text-anchor="end">04</text>
+        <rect y="30" width="800" height="2" fill="#ffcc00" />
+      </g>
+      <g transform="translate(0, 150)">
+        <text font-family="Arial, sans-serif" font-size="64" font-weight="bold">02. Urban Exploration</text>
+        <text x="800" font-family="Arial, sans-serif" font-size="64" text-anchor="end">06</text>
+        <rect y="30" width="800" height="2" fill="#ffcc00" />
+      </g>
+      <g transform="translate(0, 300)">
+        <text font-family="Arial, sans-serif" font-size="64" font-weight="bold">03. Nature's Silence</text>
+        <text x="800" font-family="Arial, sans-serif" font-size="64" text-anchor="end">08</text>
+        <rect y="30" width="800" height="2" fill="#ffcc00" />
+      </g>
+    </g>
+    
+    <rect x="1820" y="100" width="50" height="50" fill="#1a1a1a" />
+    <text x="1845" y="135" font-family="Arial, sans-serif" font-size="24" fill="#ffffff" text-anchor="middle">03</text>
+  </g>
+  
+  <!-- Page 04: Project Detail (Landscape 1920x1080) -->
+  <g id="page_04_project_detail" transform="translate(0, 3240)">
+    <rect width="1920" height="1080" fill="#ffffff" />
+    <rect x="0" y="0" width="300" height="100" fill="#ffcc00" />
+    
+    <rect x="100" y="150" width="1000" height="800" fill="#eeeeee" />
+    <g transform="translate(1150, 300)">
+       <text y="0" font-family="Arial, sans-serif" font-size="36" fill="#999999" letter-spacing="8">PROJECT 01</text>
+       <text y="100" font-family="Arial, sans-serif" font-size="80" font-weight="extrabold" fill="#1a1a1a">Urban Exploration</text>
+       <text y="200" font-family="Arial, sans-serif" font-size="64" font-weight="bold" fill="#ffcc00">2019</text>
+       
+       <text y="350" font-family="Arial, sans-serif" font-size="28" fill="#666666" width="600">
+         A deep dive into the hidden corners of the city, 
+         capturing the raw beauty of industrial decay.
+       </text>
+    </g>
+    
+    <rect x="1820" y="100" width="50" height="50" fill="#1a1a1a" />
+    <text x="1845" y="135" font-family="Arial, sans-serif" font-size="24" fill="#ffffff" text-anchor="middle">04</text>
+  </g>
+
+  <!-- Page 05: Project Gallery (Landscape 1920x1080) -->
+  <g id="page_05_gallery" transform="translate(0, 4320)">
+    <rect width="1920" height="1080" fill="#ffffff" />
+    <rect x="100" y="100" width="800" height="880" fill="#eeeeee" />
+    <rect x="950" y="100" width="400" height="420" fill="#eeeeee" />
+    <rect x="1400" y="100" width="400" height="420" fill="#eeeeee" />
+    <rect x="950" y="560" width="850" height="420" fill="#ffcc00" />
+    
+    <g transform="translate(1000, 750)">
+      <text y="0" font-family="Arial, sans-serif" font-size="48" font-weight="bold" fill="#1a1a1a">CITY ARCHIVE</text>
+      <text y="80" font-family="Arial, sans-serif" font-size="32" fill="#1a1a1a">Series of 12 photographs</text>
+    </g>
+    
+    <rect x="1820" y="50" width="50" height="50" fill="#1a1a1a" />
+    <text x="1845" y="85" font-family="Arial, sans-serif" font-size="24" fill="#ffffff" text-anchor="middle">05</text>
+  </g>
+  
+  <!-- Page 06: Project 02 (Landscape 1920x1080) -->
+  <g id="page_06_project_02" transform="translate(0, 5400)">
+    <rect width="1920" height="1080" fill="#ffffff" />
+    <rect x="100" y="100" width="1200" height="600" fill="#eeeeee" />
+    <rect x="1350" y="100" width="470" height="880" fill="#ffcc00" />
+    
+    <g transform="translate(100, 750)">
+      <text y="0" font-family="Arial, sans-serif" font-size="100" font-weight="extrabold" fill="#1a1a1a">NATURE'S SILENCE</text>
+      <text y="80" font-family="Arial, sans-serif" font-size="48" font-weight="bold" fill="#ffcc00">Project 02 | 2021</text>
+    </g>
+    
+    <rect x="1350" y="100" width="50" height="50" fill="#1a1a1a" />
+    <text x="1375" y="135" font-family="Arial, sans-serif" font-size="24" fill="#ffffff" text-anchor="middle">06</text>
+  </g>
+
+  <!-- Page 07: Project 02 Layout 2 (Landscape 1920x1080) -->
+  <g id="page_07_layout_2" transform="translate(0, 6480)">
+    <rect width="1920" height="1080" fill="#ffffff" />
+    <rect x="600" y="100" width="1220" height="880" fill="#eeeeee" />
+    <rect x="500" y="800" width="200" height="200" fill="#ffcc00" />
+    
+    <g transform="translate(100, 300)">
+      <text y="0" font-family="Arial, sans-serif" font-size="48" fill="#999999">LANDSCAPE SERIES</text>
+      <text y="100" font-family="Arial, sans-serif" font-size="64" font-weight="bold">Minimalism in the Wild</text>
+      <text y="250" font-family="Arial, sans-serif" font-size="32" fill="#666666" width="400">
+        Exploring the vast openness of the Northern plains.
+      </text>
+    </g>
+    
+    <rect x="100" y="100" width="50" height="50" fill="#1a1a1a" />
+    <text x="125" y="135" font-family="Arial, sans-serif" font-size="24" fill="#ffffff" text-anchor="middle">07</text>
+  </g>
+  
+  <!-- Page 08: Project 03 (Landscape 1920x1080) -->
+  <g id="page_08_project_03" transform="translate(0, 7560)">
+    <rect width="1920" height="1080" fill="#ffffff" />
+    <g transform="translate(100, 100)">
+      <text y="0" font-family="Arial, sans-serif" font-size="100" font-weight="extrabold" fill="#1a1a1a">URBAN LIGHTS</text>
+      <rect x="0" y="20" width="600" height="10" fill="#ffcc00" />
+    </g>
+    
+    <rect x="100" y="250" width="1200" height="700" fill="#eeeeee" />
+    <rect x="1350" y="250" width="470" height="700" fill="#dddddd" />
+    <rect x="1000" y="850" width="400" height="150" fill="#ffcc00" />
+    
+    <text x="100" y="1030" font-family="Arial, sans-serif" font-size="64" font-weight="bold" fill="#ffcc00">2022</text>
+    
+    <rect x="1820" y="50" width="50" height="50" fill="#1a1a1a" />
+    <text x="1845" y="85" font-family="Arial, sans-serif" font-size="24" fill="#ffffff" text-anchor="middle">08</text>
+  </g>
+
+  <!-- Page 09: Final Slide (Landscape 1920x1080) -->
+  <g id="page_09_last" transform="translate(0, 8640)">
+    <rect width="1920" height="1080" fill="#ffffff" />
+    <rect x="0" y="0" width="200" height="200" fill="#ffcc00" />
+    <rect x="250" y="100" width="1420" height="600" fill="#eeeeee" />
+    <rect x="1670" y="600" width="250" height="480" fill="#ffcc00" />
+    
+    <g transform="translate(250, 800)">
+      <text y="0" font-family="Arial, sans-serif" font-size="48" fill="#999999">STAY CONNECTED</text>
+      <text y="100" font-family="Arial, sans-serif" font-size="80" font-weight="bold">Looking for a Photographer?</text>
+    </g>
+    
+    <rect x="1820" y="50" width="50" height="50" fill="#1a1a1a" />
+    <text x="1845" y="85" font-family="Arial, sans-serif" font-size="24" fill="#ffffff" text-anchor="middle">09</text>
+  </g>
+</svg>

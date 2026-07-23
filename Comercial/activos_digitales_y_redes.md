@@ -11,19 +11,14 @@ Para maximizar la efectividad del modelo de ventas corporativo B2B y Account-Bas
 ### A. Perfil Personal: Mario Mojica (Marca Personal)
 * **Propósito:** Generar tracción orgánica inicial mediante autoridad técnica, interactuar de manera directa con tomadores de decisión (Directores de R&D, Compradores, CEOs) y ejecutar la venta consultiva.
 * **URL:** [linkedin.com/in/mario-mojica](https://www.linkedin.com/in/mario-mojica)
-* **Configuración Reciente (14 de Julio, 2026):**
-  - Titular (Headline) persuasivo B2B enfocado en manuales de armado 3D y la Industria 4.0.
-  - Biografía ("Acerca de") traducida en Español y Portugués Brasileño.
-  - Correo principal verificado como `direccion@mariomojica.com`.
-* **Publicaciones Hito:**
-  - **Lanzamiento del Manual 3D interactivo (14/15 de Julio, 2026):** Publicación en video real del funcionamiento del visualizador 3D, acompañado de copy comercial persuasivo con hashtags clave (`#IndustriaMueblera #MueblesRTA #Innovacion #Manual3D #CustomerExperience #B2B #Movergs #Fimma`).
+* **Headline Actual:** `Fundador & CEO @ Mario Mojica | Aceleramos P&D em fábricas RTA | melhoramos a experiência do cliente com Manuais 3D interativos | Redução de custos por terceirização e porta de entrada para a Indústria 4.0`
+* **Configuración:** Correo verificado `direccion@mariomojica.com`.
 
-### B. Cuenta Corporativa: `mariomojicaff` (Empresa)
-* **Propósito:** Activo corporativo inicial que servirá para la creación y administración de la Página de Empresa de la startup en LinkedIn.
-* **URL:** [linkedin.com/in/mariomojicaff](https://www.linkedin.com/in/mariomojicaff)
-* **Fecha de Creación:** 14 de Julio, 2026.
-* **Estado Actual:** En periodo de espera. LinkedIn restringe la creación de páginas corporativas de empresa a cuentas nuevas durante las primeras 24 horas.
-* **Próxima Acción:** Reintentar la creación de la Página de Empresa a partir de hoy, 15 de Julio de 2026.
+### B. Página Corporativa de Empresa en LinkedIn
+* **Propósito:** Activo corporativo oficial para la marca en LinkedIn, vinculada directamente desde la cuenta personal de Mario Mojica.
+* **Nombre Oficial:** `Mario Mojica - Ensamblaje inteligente 3D`
+* **Estado Actual:** Creada y activa, vinculada al perfil personal principal ([mario-mojica](https://www.linkedin.com/in/mario-mojica)).
+* **Nota Histórica:** La cuenta previa `mariomojicaff` fue cerrada definitivamente.
 
 ### C. Canal Oficial de YouTube: `@MarioMojicaff`
 * **Propósito:** Alojar demostraciones del Manual 3D, tutoriales técnicos y contenido de liderazgo de opinión para la captación B2B.

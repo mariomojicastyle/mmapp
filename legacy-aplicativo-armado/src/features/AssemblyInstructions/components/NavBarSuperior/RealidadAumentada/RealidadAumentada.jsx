@@ -18,10 +18,13 @@ export default function RealiadaAumentada({ id, data }) {
   const ayuda6 = useEnviroment((state) => state.ayuda6);
   const panelTips = useEnviroment((state) => state.panelTips);
   const idioma = useEnviroment((state) => state.idioma);
+  const homeButtonActivo = useEnviroment((state) => state.homeButtonActivo);
+  const homeUrl = useEnviroment((state) => state.homeUrl);
 
   const texts = {
     es: {
       arPcTitle: "Ver en tu espacio (Realidad Aumentada)",
+      homeTitle: "Ir a la página principal",
       closeTitle: "Cerrar",
       qrTitle: "Ver en tu espacio",
       qrText: "Escanea este código QR con la cámara de tu móvil para proyectar este mueble en escala real.",
@@ -31,6 +34,7 @@ export default function RealiadaAumentada({ id, data }) {
     },
     en: {
       arPcTitle: "View in your space (Augmented Reality)",
+      homeTitle: "Go to Homepage",
       closeTitle: "Close",
       qrTitle: "View in your space",
       qrText: "Scan this QR code with your mobile camera to project this furniture in real scale.",
@@ -40,6 +44,7 @@ export default function RealiadaAumentada({ id, data }) {
     },
     pt: {
       arPcTitle: "Ver no seu espaço (Realidade Aumentada)",
+      homeTitle: "Ir para a página inicial",
       closeTitle: "Fechar",
       qrTitle: "Ver no seu espaço",
       qrText: "Escaneie este código QR com a câmera do seu celular para projetar este móvel em tamanho real.",
@@ -238,6 +243,26 @@ export default function RealiadaAumentada({ id, data }) {
           {/* Botón slot ar-button requerido por model-viewer pero no usado visualmente */}
           <button slot="ar-button" style={{ display: "none" }}></button>
         </model-viewer>
+
+        {/* Botón opcional Home "Casita" Obsidian Teal */}
+        {homeButtonActivo && (
+          <button 
+            className="home-btn-pc"
+            onClick={() => {
+              const targetUrl = homeUrl || "https://mariomojica.com";
+              if (typeof window !== "undefined") {
+                if (window.self !== window.top) {
+                  window.open(targetUrl, "_blank");
+                } else {
+                  window.location.href = targetUrl;
+                }
+              }
+            }}
+            title={t.homeTitle}
+          >
+            <span className="material-symbols-outlined">home</span>
+          </button>
+        )}
 
         {/* Botón premium de AR Obsidian Teal (Unificado para PC y Móvil) */}
         <button 

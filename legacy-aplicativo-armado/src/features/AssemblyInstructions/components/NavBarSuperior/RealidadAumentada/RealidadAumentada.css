@@ -5,6 +5,8 @@
   right: 15px;
   z-index: 50;
   display: flex;
+  flex-direction: column;
+  gap: 12px;
   align-items: center;
   justify-content: center;
   transition: var(--transition-smooth, all 0.3s ease); /* Transición suave al desplazarse lateralmente */
@@ -69,6 +71,51 @@
 .ar-btn-pc .material-symbols-outlined {
   font-size: 28px !important;
   color: inherit !important; /* Asegurar que herede el color gris/teal del botón */
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+/* Botón flotante opcional 'Home' (Casita) Obsidian Teal */
+.home-btn-pc {
+  display: flex !important;
+  height: 52px !important;
+  width: 52px !important;
+  min-width: 52px !important;
+  min-height: 52px !important;
+  max-width: 52px !important;
+  max-height: 52px !important;
+  aspect-ratio: 1 / 1 !important;
+  flex-shrink: 0 !important;
+  border-radius: 50% !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  box-sizing: border-box !important;
+  align-self: center !important;
+  background: var(--surface, rgba(13, 24, 29, 0.7)) !important;
+  backdrop-filter: var(--glass-blur, blur(12px)) !important;
+  -webkit-backdrop-filter: var(--glass-blur, blur(12px)) !important;
+  border: 1px solid var(--border-light) !important;
+  cursor: pointer !important;
+  align-items: center !important;
+  justify-content: center !important;
+  color: var(--btn-text-color, #ffffff) !important;
+  box-shadow: var(--glass-shadow, 0 8px 32px rgba(0, 0, 0, 0.3)) !important;
+  transition: var(--transition-smooth, all 0.3s ease) !important;
+  pointer-events: auto !important;
+}
+
+.home-btn-pc:hover {
+  transform: scale(1.08) !important;
+  border-color: var(--primary, #00f2fe) !important;
+  color: var(--primary, #00f2fe) !important;
+  box-shadow: 0 0 25px var(--primary-glow, rgba(0, 242, 254, 0.45)) !important;
+  background: var(--secondary) !important;
+}
+
+.home-btn-pc .material-symbols-outlined {
+  font-size: 28px !important;
+  color: inherit !important;
   display: flex !important;
   align-items: center !important;
   justify-content: center !important;

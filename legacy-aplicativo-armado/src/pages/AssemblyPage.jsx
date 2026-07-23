@@ -247,6 +247,8 @@ const AssemblyPage = () => {
             favicon: configData.favicon_url ? getStorageUrl(configData.favicon_url) : "/favicon.png",
             brandingShieldActivo: configData.branding_shield_activo !== false, // Default to true if null/undefined
             modoArranqueMovil: configData.modo_arranque_movil || "gamma",
+            homeButtonActivo: configData.home_button_activo === true,
+            homeUrl: configData.home_url || "https://mariomojica.com",
             
             // Insumos del CMS para resolución dinámica
             imagenHerramientas: configData.imagen_herramientas,

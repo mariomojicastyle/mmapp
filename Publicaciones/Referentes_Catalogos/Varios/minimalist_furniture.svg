@@ -1,0 +1,43 @@
+<svg width="842" height="595" viewBox="0 0 842 595" xmlns="http://www.w3.org/2000/svg">
+  <!-- Minimalist Furniture Catalogue Layout -->
+  <!-- Designed by Antigravity - Editable Template -->
+  
+  <rect width="842" height="595" fill="#ffffff" />
+  
+  <g id="furniture_layout">
+    <!-- Left Feature -->
+    <rect x="40" y="40" width="361" height="300" fill="#000000" />
+    <text x="60" y="80" font-family="Arial, sans-serif" font-size="12" fill="#ffffff" letter-spacing="2">FEATURED</text>
+    <text x="60" y="130" font-family="serif" font-size="42" font-weight="light" fill="#ffffff">SOFA</text>
+    <text x="60" y="170" font-family="serif" font-size="42" font-weight="light" fill="#ffffff">COLLECTION</text>
+    
+    <!-- Product Grid -->
+    <g id="products" transform="translate(441, 40)">
+      <g id="prod_1">
+        <rect x="0" y="0" width="170" height="170" fill="#f4f4f4" />
+        <rect x="0" y="170" width="170" height="80" fill="#000000" />
+        <text x="15" y="200" font-family="Arial, sans-serif" font-size="14" font-weight="bold" fill="#ffffff">PRODUCT 01</text>
+        <text x="15" y="225" font-family="Arial, sans-serif" font-size="12" fill="#ffffff">$1,200.00</text>
+      </g>
+      
+      <g id="prod_2" transform="translate(190, 0)">
+        <rect x="0" y="0" width="170" height="170" fill="#f4f4f4" />
+        <rect x="0" y="170" width="170" height="80" fill="#eeeeee" />
+        <text x="15" y="200" font-family="Arial, sans-serif" font-size="14" font-weight="bold" fill="#000000">PRODUCT 02</text>
+        <text x="15" y="225" font-family="Arial, sans-serif" font-size="12" fill="#666666">$950.00</text>
+      </g>
+    </g>
+    
+    <!-- Detail Area -->
+    <rect x="40" y="360" width="762" height="180" fill="#f9f9f9" />
+    <line x1="60" y1="400" x2="200" y2="400" stroke="#000000" stroke-width="2" />
+    <text x="60" y="430" font-family="Arial, sans-serif" font-size="18" font-weight="bold" fill="#000000">TECHNICAL SPECIFICATIONS</text>
+    
+    <g opacity="0.2">
+      <rect x="300" y="380" width="100" height="140" fill="#000000" />
+      <rect x="420" y="380" width="100" height="140" fill="#000000" />
+      <rect x="540" y="380" width="100" height="140" fill="#000000" />
+      <rect x="660" y="380" width="100" height="140" fill="#000000" />
+    </g>
+  </g>
+</svg>

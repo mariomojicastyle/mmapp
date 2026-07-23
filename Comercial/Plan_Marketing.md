@@ -91,7 +91,8 @@ Estos módulos **no se construyen ni se muestran** en la interfaz. Si en el futu
 5. Guardar **Google Client ID** y **Google Client Secret** en `.env.local`.
 
 ### Paso 3: Registrar App en LinkedIn Developer Portal
-1. Ir a [linkedin.com/developers](https://www.linkedin.com/developers/) y crear una app asociada a la página de empresa.
+1. **LinkedIn Personal:** [linkedin.com/in/mario-mojica](https://www.linkedin.com/in/mario-mojica) (Mario Mojica)
+* **Página de Empresa:** `Mario Mojica - Ensamblaje inteligente 3D`
 2. Habilitar los productos **Share on LinkedIn** y **Sign In with LinkedIn using OpenID Connect**.
 3. En la pestaña Auth, añadir las URLs de redirección para localhost y producción.
 4. Guardar **LinkedIn Client ID** y **LinkedIn Client Secret** en `.env.local`.
