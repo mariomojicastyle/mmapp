@@ -72,13 +72,13 @@ export default function LiveDemo() {
           viewport={{ once: true }}
           className={`transition-all duration-300 bg-black ${
             isMaximized
-              ? "fixed inset-0 z-[9999] w-screen h-[100dvh] rounded-none border-0 shadow-none"
+              ? "fixed inset-0 z-[9999] w-full h-full rounded-none border-0 shadow-none"
               : "relative rounded-2xl overflow-hidden shadow-2xl shadow-primary/10 border border-border-dark w-full"
           }`}
         >
           <iframe
             src={`${appArmadoUrl}/M00001`}
-            className={`w-full block ${isMaximized ? "h-[100dvh] min-h-[100dvh]" : "aspect-[16/19.5]"}`}
+            className={`w-full block ${isMaximized ? "h-full" : "aspect-[16/19.5]"}`}
             width="100%"
             allowFullScreen
             allow="xr-spatial-tracking; fullscreen; autoplay; web-share"

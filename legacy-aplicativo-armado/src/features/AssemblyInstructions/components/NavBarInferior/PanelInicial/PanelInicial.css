@@ -156,11 +156,12 @@
 /* Progress bar container */
 .progress {
   position: fixed;
-  top: calc(55% - 60px);
+  top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
   z-index: 20;
-  width: 250px;
+  width: 60%;
+  max-width: 300px;
   height: 22px;
   background: transparent;
   border: 2px solid var(--primary);
@@ -343,8 +344,13 @@
 }
 
 .demo-progress-container .progress {
-  width: 100%;
-  margin: 0 !important;
+  position: relative;
+  top: auto;
+  left: auto;
+  transform: none;
+  width: 60%;
+  max-width: 300px;
+  margin: 0 auto !important;
 }
 
 .demo-cube-icon {

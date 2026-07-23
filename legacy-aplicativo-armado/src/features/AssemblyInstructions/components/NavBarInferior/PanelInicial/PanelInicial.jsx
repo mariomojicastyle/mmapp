@@ -170,17 +170,17 @@ export default function PanelInicial() {
 
   const triLingualDemoExplain = (
     <>
-      Aumente o volume para ouvir as instruções.<br />
-      Turn up the volume to hear the instructions.<br />
-      Sube el volumen para escuchar las instrucciones.
+      PT: Aumente o volume para ouvir as instruções.<br /><br />
+      EN: Turn up the volume to hear the instructions.<br /><br />
+      ES: Sube el volumen para escuchar las instrucciones.
     </>
   );
 
   const triLingualArExplain = (
     <>
-      Aumente o volume para ouvir as instruções e projete o móvel no seu espaço.<br />
-      Turn up the volume to hear the instructions and project the furniture in your space.<br />
-      Sube el volumen para escuchar las instrucciones y proyecta el mueble en tu espacio.
+      PT: Aumente o volume para ouvir as instruções e projete o móvel no seu espaço.<br /><br />
+      EN: Turn up the volume to hear the instructions and project the furniture in your space.<br /><br />
+      ES: Sube el volumen para escuchar las instrucciones y proyecta el mueble en tu espacio.
     </>
   );
 
