@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Script from "next/script";
 import "./globals.css";
 import { LanguageProvider } from "@/components/LanguageContext";
+import UmamiIgnoreManager from "@/components/UmamiIgnoreManager";
 
 export const metadata: Metadata = {
   title: "Manual de Armado Interactivo 3D | Mario Mojica",
@@ -28,6 +29,7 @@ export default function RootLayout({
       </head>
       <body className="min-h-full flex flex-col">
         <LanguageProvider>
+          <UmamiIgnoreManager />
           {children}
         </LanguageProvider>
       </body>

@@ -74,15 +74,24 @@ export function useTelemetry() {
 
   /* ── Cargar script de Umami dinámicamente ── */
   useEffect(() => {
-    if (typeof window !== 'undefined' && !window.umami) {
-      const websiteId = import.meta.env.VITE_UMAMI_WEBSITE_ID || '61ad7bc7-dc54-4916-a586-4c9d94be795a';
-      const script = document.createElement('script');
-      script.async = true;
-      script.defer = true;
-      script.src = 'https://analytics.mariomojica.com/script.js';
-      script.setAttribute('data-website-id', websiteId);
-      script.setAttribute('data-domains', 'mariomojica.com');
-      document.head.appendChild(script);
+    if (typeof window !== 'undefined') {
+      const urlParams = new URLSearchParams(window.location.search);
+      if (urlParams.get("ignore_me") === "true" || urlParams.get("no_track") === "true") {
+        localStorage.setItem("umami.disabled", "1");
+      } else if (urlParams.get("track_me") === "true") {
+        localStorage.removeItem("umami.disabled");
+      }
+
+      if (!window.umami) {
+        const websiteId = import.meta.env.VITE_UMAMI_WEBSITE_ID || '61ad7bc7-dc54-4916-a586-4c9d94be795a';
+        const script = document.createElement('script');
+        script.async = true;
+        script.defer = true;
+        script.src = 'https://analytics.mariomojica.com/script.js';
+        script.setAttribute('data-website-id', websiteId);
+        script.setAttribute('data-domains', 'mariomojica.com');
+        document.head.appendChild(script);
+      }
     }
   }, []);
 
