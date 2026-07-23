@@ -9,39 +9,23 @@ export default function LiveDemo() {
   const { t } = useLanguage();
   const appArmadoUrl = process.env.NEXT_PUBLIC_APP_ARMADO_URL || 'http://localhost:5173';
   const containerRef = useRef<HTMLDivElement>(null);
-  const [isFullscreen, setIsFullscreen] = useState(false);
+  const [isMaximized, setIsMaximized] = useState(false);
 
-  useEffect(() => {
-    const handleFullscreenChange = () => {
-      const isFull = !!document.fullscreenElement;
-      setIsFullscreen(isFull);
-      // Enviar el estado de fullscreen al iframe para sincronización
-      const iframe = containerRef.current?.querySelector("iframe");
-      if (iframe && iframe.contentWindow) {
-        iframe.contentWindow.postMessage({ type: "FULLSCREEN_CHANGE", isFullscreen: isFull }, "*");
-      }
-    };
-    document.addEventListener("fullscreenchange", handleFullscreenChange);
-    return () => {
-      document.removeEventListener("fullscreenchange", handleFullscreenChange);
-    };
-  }, []);
-
-  // Escuchar mensajes del visor 3D para entrar/salir de pantalla completa
+  // Escuchar mensajes del visor 3D para maximizar/minimizar el contenedor vía CSS
   useEffect(() => {
     const handleMessage = (event: MessageEvent) => {
       if (event.data) {
         if (event.data.type === "MM_MANUAL_INICIAR") {
-          if (containerRef.current && !document.fullscreenElement) {
-            containerRef.current.requestFullscreen().catch((err) => {
-              console.error("Error attempting to enable fullscreen:", err);
-            });
+          setIsMaximized(true);
+          const iframe = containerRef.current?.querySelector("iframe");
+          if (iframe && iframe.contentWindow) {
+            iframe.contentWindow.postMessage({ type: "FULLSCREEN_CHANGE", isFullscreen: true }, "*");
           }
         } else if (event.data.type === "MM_MANUAL_MINIMIZAR") {
-          if (document.fullscreenElement) {
-            document.exitFullscreen().catch((err) => {
-              console.error("Error exiting fullscreen:", err);
-            });
+          setIsMaximized(false);
+          const iframe = containerRef.current?.querySelector("iframe");
+          if (iframe && iframe.contentWindow) {
+            iframe.contentWindow.postMessage({ type: "FULLSCREEN_CHANGE", isFullscreen: false }, "*");
           }
         }
       }
@@ -51,31 +35,6 @@ export default function LiveDemo() {
       window.removeEventListener("message", handleMessage);
     };
   }, []);
-
-  // Registrar el disparador global para maximizar desde otros componentes
-  useEffect(() => {
-    (window as any).__triggerLiveDemoFullscreen = () => {
-      if (containerRef.current && !document.fullscreenElement) {
-        containerRef.current.requestFullscreen().catch((err) => {
-          console.error("Error attempting to enable fullscreen:", err);
-        });
-      }
-    };
-    return () => {
-      delete (window as any).__triggerLiveDemoFullscreen;
-    };
-  }, []);
-
-  const toggleFullscreen = () => {
-    if (!containerRef.current) return;
-    if (!document.fullscreenElement) {
-      containerRef.current.requestFullscreen().catch((err) => {
-        console.error("Error attempting to enable fullscreen:", err);
-      });
-    } else {
-      document.exitFullscreen();
-    }
-  };
 
   return (
     <section id="demo" className="py-24 md:py-32 px-4 bg-[#0a0a0a]">
@@ -104,20 +63,22 @@ export default function LiveDemo() {
           )}
         </motion.p>
 
-        {/* Iframe container */}
+        {/* Iframe container con Maximizado por Capa CSS (sin errores de gestos HTML5 API) */}
         <motion.div
           ref={containerRef}
           initial={{ opacity: 0, scale: 0.95 }}
           whileInView={{ opacity: 1, scale: 1 }}
           transition={{ duration: 0.8, ease: "easeOut" }}
           viewport={{ once: true }}
-          className="relative rounded-2xl overflow-hidden shadow-2xl shadow-primary/10 border border-border-dark bg-black w-full"
+          className={`transition-all duration-300 bg-black ${
+            isMaximized
+              ? "fixed inset-0 z-[9999] w-screen h-screen rounded-none border-0 shadow-none"
+              : "relative rounded-2xl overflow-hidden shadow-2xl shadow-primary/10 border border-border-dark w-full"
+          }`}
         >
-
-
           <iframe
             src={`${appArmadoUrl}/M00001`}
-            className={`w-full block ${isFullscreen ? "h-full min-h-screen" : "aspect-[16/19.5]"}`}
+            className={`w-full block ${isMaximized ? "h-screen min-h-screen" : "aspect-[16/19.5]"}`}
             width="100%"
             allowFullScreen
             allow="xr-spatial-tracking; fullscreen; autoplay; web-share"

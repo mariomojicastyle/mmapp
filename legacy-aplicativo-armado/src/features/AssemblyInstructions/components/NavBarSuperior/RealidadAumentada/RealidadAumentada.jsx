@@ -84,10 +84,6 @@ export default function RealiadaAumentada({ id, data }) {
     const handleMessage = (event) => {
       if (event.data && event.data.type === "FULLSCREEN_CHANGE") {
         setIsFullscreen(event.data.isFullscreen);
-        if (!event.data.isFullscreen) {
-          // Pausar el audio cuando el padre nos notifique que ha salido de pantalla completa
-          useEnviroment.getState().PausedAudio();
-        }
       }
     };
     document.addEventListener("fullscreenchange", handleFs);

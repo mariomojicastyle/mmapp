@@ -95,10 +95,10 @@ Este archivo es la "Memoria RAM" para Antigravity. Contiene el contexto de lo qu
 - [x] **Corrección de Enlace de Portafolio (22 de Julio, 2026)**:
   - Reemplazada la URL hardcoded `http://localhost:3002` en [Footer.tsx](file:///c:/Desarrollo/mmapp/mario-mojica-homepage/src/components/Footer.tsx) por la variable de entorno `NEXT_PUBLIC_PORTFOLIO_URL` y fallback predeterminado `'https://portfolio.mariomojica.com'`.
   - Configurada la variable `NEXT_PUBLIC_PORTFOLIO_URL=https://portfolio.mariomojica.com` en `.env.local` y `.env.example` de la landing page (`mario-mojica-homepage`).
-- [x] **Ajustes de Posicionamiento Flotante, Botón CTA Unilínea y Altura de Frame (23 de Julio, 2026)**:
-  - Bajados los botones flotantes laterales de AR y Home en 20px a **`bottom: 160px`** en [RealidadAumentada.css](file:///c:/Desarrollo/mmapp/legacy-aplicativo-armado/src/features/AssemblyInstructions/components/NavBarSuperior/RealidadAumentada/RealidadAumentada.css) y [calibrador.html](file:///c:/Desarrollo/mmapp/legacy-aplicativo-armado/calibrador.html).
-  - Cambiada la etiqueta del botón CTA a **"Solicitar Prototipo"** en una sola línea responsiva en [LiveDemo.tsx](file:///c:/Desarrollo/mmapp/mario-mojica-homepage/src/components/LiveDemo.tsx).
-  - Aumentada la altura del iframe del manual en la Homepage en un 20% (`aspect-[16/19.5]`) para dar mayor holgura al escenario 3D.
+- [x] **Solución Definitiva de Maximizado CSS Sin Pausas ni Errores de API Fullscreen (23 de Julio, 2026)**:
+  - Diagnosticada la causa raíz del cierre y pausa automática: las llamadas en conflicto a la API `requestFullscreen()` de HTML5 entre iframe y marco padre eran rechazadas en navegadores móviles por pérdida de contexto de gesto de usuario en eventos `postMessage` asíncronos.
+  - Reemplazada la API nativa de pantalla completa HTML5 por una capa de **Maximizado Nativo CSS** (`fixed inset-0 z-[9999] w-screen h-screen`) en [LiveDemo.tsx](file:///c:/Desarrollo/mmapp/mario-mojica-homepage/src/components/LiveDemo.tsx).
+  - Al presionar **INICIAR**, el contenedor se expande suavemente a la totalidad de la pantalla del dispositivo, la animación y el audio arrancan al instante y nunca más vuelve a pedir un segundo clic ni se pausa por bloqueos de permisos móviles.
 
 
 
