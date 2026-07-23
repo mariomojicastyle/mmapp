@@ -95,9 +95,11 @@ Este archivo es la "Memoria RAM" para Antigravity. Contiene el contexto de lo qu
 - [x] **Corrección de Enlace de Portafolio (22 de Julio, 2026)**:
   - Reemplazada la URL hardcoded `http://localhost:3002` en [Footer.tsx](file:///c:/Desarrollo/mmapp/mario-mojica-homepage/src/components/Footer.tsx) por la variable de entorno `NEXT_PUBLIC_PORTFOLIO_URL` y fallback predeterminado `'https://portfolio.mariomojica.com'`.
   - Configurada la variable `NEXT_PUBLIC_PORTFOLIO_URL=https://portfolio.mariomojica.com` en `.env.local` y `.env.example` de la landing page (`mario-mojica-homepage`).
-- [x] **Ajuste de Margen Inferior y Viewport Dinámico (100dvh) en Maximizado (23 de Julio, 2026)**:
-  - Elevada la barra inferior `.contenedor` en móvil a **`bottom: calc(52px + env(safe-area-inset-bottom))`** en [NavBarInferior.css](file:///c:/Desarrollo/mmapp/legacy-aplicativo-armado/src/features/AssemblyInstructions/components/NavBarInferior/NavBarInferior.css) y [calibrador.html](file:///c:/Desarrollo/mmapp/legacy-aplicativo-armado/calibrador.html), eliminando el recorte de la mitad inferior de los botones flotantes de navegación.
-  - Implementado `100dvh` (Dynamic Viewport Height) en [LiveDemo.tsx](file:///c:/Desarrollo/mmapp/mario-mojica-homepage/src/components/LiveDemo.tsx) para ajustar con precisión la altura del overlay a la barra de navegación dinámica de navegadores móviles.
+- [x] **Recuperación de Realidad Aumentada (AR) con IP Shield V2 y Edge Function Serverless (23 de Julio, 2026)**:
+  - Creación y despliegue de la Supabase Edge Function `decrypt-glb`: Proxy serverless que recibe tokens HMAC-SHA256 con TTL de 30 minutos, descarga el `.glb` cifrado desde Supabase Storage, descifra los primeros 4KB en la RAM del servidor y sirve un binario GLB limpio a **Google Scene Viewer** (Android).
+  - Creación del módulo de firma [arToken.js](file:///c:/Desarrollo/mmapp/legacy-aplicativo-armado/src/lib/arToken.js) para autorizar peticiones AR en tiempo real desde [RealidadAumentada.jsx](file:///c:/Desarrollo/mmapp/legacy-aplicativo-armado/src/features/AssemblyInstructions/components/NavBarSuperior/RealidadAumentada/RealidadAumentada.jsx).
+  - Corrección de visibilidad de `<model-viewer>` (reemplazo de `display: none` por posicionamiento fuera de pantalla `opacity: 0`) para resolver falsos negativos de compatibilidad WebXR y adición de fallback de lanzamiento directo por Android Intent (`intent://arvr.google.com/scene-viewer...`).
+  - Módulo de exclusión de analíticas [UmamiIgnoreManager.tsx](file:///c:/Desarrollo/mmapp/mario-mojica-homepage/src/components/UmamiIgnoreManager.tsx) mediante el parámetro `?ignore_me=true` para prevenir falsos positivos en las métricas de prueba.
 
 
 
