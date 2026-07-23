@@ -272,7 +272,7 @@
     position: fixed !important;
     width: auto !important;
     height: auto !important;
-    bottom: 180px !important;
+    bottom: 160px !important;
     right: 15px !important;
     left: auto !important; /* Anular la posición left de PC */
     transform: none !important; /* Anular el transform de PC */

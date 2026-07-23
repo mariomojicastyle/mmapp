@@ -95,14 +95,10 @@ Este archivo es la "Memoria RAM" para Antigravity. Contiene el contexto de lo qu
 - [x] **Corrección de Enlace de Portafolio (22 de Julio, 2026)**:
   - Reemplazada la URL hardcoded `http://localhost:3002` en [Footer.tsx](file:///c:/Desarrollo/mmapp/mario-mojica-homepage/src/components/Footer.tsx) por la variable de entorno `NEXT_PUBLIC_PORTFOLIO_URL` y fallback predeterminado `'https://portfolio.mariomojica.com'`.
   - Configurada la variable `NEXT_PUBLIC_PORTFOLIO_URL=https://portfolio.mariomojica.com` en `.env.local` y `.env.example` de la landing page (`mario-mojica-homepage`).
-- [x] **Botón Opcional Home "Casita" y Corrección de Arranque Móvil vs PC (23 de Julio, 2026)**:
-  - Creación e integración del botón flotante opcional "Ir a la Home" (`.home-btn-pc`) con icono de casita en el visor 3D, posicionado simétricamente en el borde derecho en Obsidian Teal.
-  - Adición de las columnas `home_button_activo` y `home_url` en la tabla `configuraciones_manual` de Supabase, y de sus controles de activación/desactivación e input de URL de destino en la pestaña **Personalización UI** del modal CMS ([detalle-proyecto-modal.tsx](file:///c:/Desarrollo/mmapp/mario-mojica-plataforma/components/proyectos/detalle-proyecto-modal.tsx)), renombrando el selector a **"Modo de Arranque en Móviles"**.
-  - Corrección de la lógica de evaluación en [PanelInicial.jsx](file:///c:/Desarrollo/mmapp/legacy-aplicativo-armado/src/features/AssemblyInstructions/components/NavBarInferior/PanelInicial/PanelInicial.jsx) (`isArMode || (isMobile && modoArranqueMovil === "simple")`) asegurando que los navegadores de escritorio (PC) carguen siempre la escena 3D inmersiva de Spline con Gama.
-  - Actualización del aviso explicativo de volumen en 3 idiomas con ordenamiento trilingüe estricto (1º Portugués, 2º Inglés, 3º Español).
-
-
-
+- [x] **Ajustes de Posicionamiento Flotante, Botón CTA Unilínea y Altura de Frame (23 de Julio, 2026)**:
+  - Bajados los botones flotantes laterales de AR y Home en 20px a **`bottom: 160px`** en [RealidadAumentada.css](file:///c:/Desarrollo/mmapp/legacy-aplicativo-armado/src/features/AssemblyInstructions/components/NavBarSuperior/RealidadAumentada/RealidadAumentada.css) y [calibrador.html](file:///c:/Desarrollo/mmapp/legacy-aplicativo-armado/calibrador.html).
+  - Cambiada la etiqueta del botón CTA a **"Solicitar Prototipo"** en una sola línea responsiva en [LiveDemo.tsx](file:///c:/Desarrollo/mmapp/mario-mojica-homepage/src/components/LiveDemo.tsx).
+  - Aumentada la altura del iframe del manual en la Homepage en un 20% (`aspect-[16/19.5]`) para dar mayor holgura al escenario 3D.
 
 
 

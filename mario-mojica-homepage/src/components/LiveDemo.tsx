@@ -117,7 +117,7 @@ export default function LiveDemo() {
 
           <iframe
             src={`${appArmadoUrl}/M00001`}
-            className={`w-full block ${isFullscreen ? "h-full min-h-screen" : "aspect-[16/16.2]"}`}
+            className={`w-full block ${isFullscreen ? "h-full min-h-screen" : "aspect-[16/19.5]"}`}
             width="100%"
             allowFullScreen
             allow="xr-spatial-tracking; fullscreen; autoplay; web-share"
@@ -136,9 +136,9 @@ export default function LiveDemo() {
           <Link
             href="#contacto"
             data-umami-event="Body Free Prototype Clicked"
-            className="inline-block bg-primary text-white py-4 px-10 rounded-full font-semibold text-lg hover:brightness-110 transition-all duration-300"
+            className="inline-block bg-primary text-white py-4 px-10 rounded-full font-semibold text-lg hover:brightness-110 transition-all duration-300 whitespace-nowrap"
           >
-            {t("Solicitar un prototipo con tu marca", "Request a prototype with your brand", "Solicitar um protótipo com a sua marca")}
+            {t("Solicitar Prototipo", "Request Prototype", "Solicitar Protótipo")}
           </Link>
         </motion.div>
       </div>
