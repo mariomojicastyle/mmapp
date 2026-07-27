@@ -79,6 +79,45 @@ export async function saveMarketingCuenta(cuenta: MarketingCuentaData) {
   try {
     const supabase = getSupabaseAdmin()
 
+    // Canje automático a Token de Página Permanente (Never-Expiring) para Facebook/Instagram
+    if (cuenta.plataforma === "facebook" && cuenta.access_token) {
+      const appId = process.env.FACEBOOK_APP_ID || "1736322840851405"
+      const appSecret = process.env.FACEBOOK_APP_SECRET || "7737fa1205f9dfed3d6aef88e0ec08d4"
+      try {
+        // 1. Canjear por Token de Usuario de Larga Duración (60 Días)
+        const exRes = await fetch(
+          `https://graph.facebook.com/v19.0/oauth/access_token?grant_type=fb_exchange_token&client_id=${appId}&client_secret=${appSecret}&fb_exchange_token=${cuenta.access_token}`
+        )
+        let activeToken = cuenta.access_token
+        if (exRes.ok) {
+          const exData = await exRes.json()
+          if (exData.access_token) {
+            activeToken = exData.access_token
+          }
+        }
+
+        // 2. Extraer Token de Página Permanente (Never Expiring Token)
+        const pageRes = await fetch(
+          `https://graph.facebook.com/v19.0/1219474691249252?fields=access_token,name,id,instagram_business_account&access_token=${activeToken}`
+        )
+        if (pageRes.ok) {
+          const pageData = await pageRes.json()
+          if (pageData.access_token) {
+            cuenta.access_token = pageData.access_token
+            cuenta.cuenta_id_externo = pageData.id || "1219474691249252"
+            if (pageData.instagram_business_account?.id) {
+              cuenta.metadatos = {
+                ...cuenta.metadatos,
+                instagram_business_account: pageData.instagram_business_account,
+              }
+            }
+          }
+        }
+      } catch (exErr) {
+        console.error("Error al canjear token a Never-Expiring:", exErr)
+      }
+    }
+
     // Eliminar previas cuentas de la misma plataforma para mantener limpio 1 registro por proveedor
     await supabase
       .from("marketing_cuentas")
