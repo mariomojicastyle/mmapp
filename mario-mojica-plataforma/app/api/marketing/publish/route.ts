@@ -257,6 +257,9 @@ export async function GET(request: NextRequest) {
 
               const mediaData = await mediaRes.json()
               if (mediaRes.ok && mediaData.id) {
+                // Esperar 3.5 segundos a que Instagram procese el contenedor de imagen en CDN
+                await new Promise((resolve) => setTimeout(resolve, 3500))
+
                 const publishRes = await fetch(`https://graph.facebook.com/v19.0/${targetIgId}/media_publish`, {
                   method: "POST",
                   headers: { "Content-Type": "application/json" },
