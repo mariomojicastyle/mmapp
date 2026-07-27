@@ -38,6 +38,12 @@ Este archivo es la "Memoria RAM" para Antigravity. Contiene el contexto de lo qu
   - Creación de API Route `/api/metrics/collect` en Next.js con rate limiting (40 llamadas/min) para evitar escrituras directas del cliente en Supabase.
   - Diseño e implementación de la vista de reportes PDF de fricción en la consola, optimizada para impresión física en tamaño A4 (`@media print`).
   - Creación del archivo maestro de diseño técnico [Arquitectura.md](file:///c:/Desarrollo/mmapp/Arquitectura/Arquitectura.md) y diagrama vectorial [arquitectura_V7.svg](file:///c:/Desarrollo/mmapp/Arquitectura/arquitectura_V7.svg) como ancla de referencia para el proyecto.
+- [x] **Módulo de Publicaciones Multicanal B2B & Worker Autónomo en n8n (Hito Merkadeo)**:
+  - Editor multicanal con previsualización en vivo para LinkedIn, Instagram, Facebook y YouTube.
+  - Reordenamiento Drag & Drop de carruseles y compresión optimizada por Canvas en cliente (<150KB por imagen).
+  - API Route de publicación `/api/marketing/publish` con llamadas Graph API y LinkedIn UGC Posts.
+  - Conexión con worker en segundo plano de n8n (`marketing_publisher_worker`) ejecutándose minutalmente.
+  - Solución del límite de transferencia de Server Actions (25MB en `next.config.ts`) y prevención de errores de hidratación (`suppressHydrationWarning`).
   - **[NUEVO - 14 de Julio, 2026]** Integración de analíticas de Umami en la aplicación base del visor 3D (`legacy-aplicativo-armado`) habilitando el rastreo automático y multitenant de visitas y eventos de pasos (`Session Start`, `Step Reached`, `Help Clicked`, `Session Complete`, `Feedback Submitted`) para la Estantería Multifuncional (M00001), Politorno y cualquier manual futuro.
   - **[NUEVO - 14 de Julio, 2026]** Implementación de rastreo declarativo de eventos de Umami en la landing page (`mario-mojica-homepage`) en enlaces de la Navbar, clics de cambio de idioma, CTAs de solicitud de demo y envío exitoso del formulario de leads.
   - **[NUEVO - 14 de Julio, 2026]** Creación del documento [METRICAS.md](file:///c:/Desarrollo/mmapp/Arquitectura/METRICAS.md) e inyección en el Protocolo de Arranque del archivo [AGENTS.md](file:///c:/Desarrollo/mmapp/AGENTS.md).
@@ -100,6 +106,18 @@ Este archivo es la "Memoria RAM" para Antigravity. Contiene el contexto de lo qu
   - Creación del módulo de firma [arToken.js](file:///c:/Desarrollo/mmapp/legacy-aplicativo-armado/src/lib/arToken.js) para autorizar peticiones AR en tiempo real desde [RealidadAumentada.jsx](file:///c:/Desarrollo/mmapp/legacy-aplicativo-armado/src/features/AssemblyInstructions/components/NavBarSuperior/RealidadAumentada/RealidadAumentada.jsx).
   - Corrección de visibilidad de `<model-viewer>` (reemplazo de `display: none` por posicionamiento fuera de pantalla `opacity: 0`) para resolver falsos negativos de compatibilidad WebXR y adición de fallback de lanzamiento directo por Android Intent (`intent://arvr.google.com/scene-viewer...`).
   - Módulo de exclusión de analíticas [UmamiIgnoreManager.tsx](file:///c:/Desarrollo/mmapp/mario-mojica-homepage/src/components/UmamiIgnoreManager.tsx) mediante el parámetro `?ignore_me=true` para prevenir falsos positivos en las métricas de prueba.
+- [x] **Módulo de Marketing Nativo — Fase 1 Completada (Pasos 1 a 4 - 24 de Julio, 2026)**:
+  - **Capa de Datos & RLS:** Creación del esquema SQL ([marketing_v1_schema.sql](file:///c:/Desarrollo/mmapp/mario-mojica-plataforma/scripts/marketing_v1_schema.sql)) con 5 tablas en Supabase (`marketing_cuentas`, `marketing_posts`, `marketing_colas`, `marketing_metricas`, `marketing_post_metricas`) con políticas RLS restringidas a `superadmin`.
+  - **Permisos & Navegación:** Configuración de `MARKETING` en [roles.ts](file:///c:/Desarrollo/mmapp/mario-mojica-plataforma/lib/auth/roles.ts) e integración del ítem `/marketing` con ícono `Megaphone` en la sección PLATAFORMA de [navigation.ts](file:///c:/Desarrollo/mmapp/mario-mojica-plataforma/lib/navigation.ts).
+  - **Server Actions:** Implementación de [marketing.ts](file:///c:/Desarrollo/mmapp/mario-mojica-plataforma/app/actions/marketing.ts) para CRUD de cuentas, publicaciones y colas.
+  - **OAuth 2.0 Auth Routes:** Endpoints de autenticación y callback para Google Drive / YouTube (`/api/auth/google`), Meta / FB / IG (`/api/auth/facebook`), y LinkedIn (`/api/auth/linkedin`).
+  - **Componentes UI Especializados:**
+    - [drive-file-picker.tsx](file:///c:/Desarrollo/mmapp/mario-mojica-plataforma/components/marketing/drive-file-picker.tsx): Explorador modal de archivos multimedia de Google Drive.
+    - [editor-post-modal.tsx](file:///c:/Desarrollo/mmapp/mario-mojica-plataforma/components/marketing/editor-post-modal.tsx): Editor multicanal con **Vista Previa en Vivo Simultánea** para LinkedIn, Instagram, Facebook y YouTube, con truco de primer comentario (`/demo`).
+    - [calendario-semanal.tsx](file:///c:/Desarrollo/mmapp/mario-mojica-plataforma/components/marketing/calendario-semanal.tsx): Planificador semanal con mapa de calor de máximo CTR (Martes-Jueves 8:30-10:00 AM).
+  - **Workers de n8n Desplegados:**
+    - `marketing_publisher_worker` (ID: `rhkOkQuv7M4ARSEm`): Cron ejecutor minutal de publicaciones.
+    - `marketing_token_refresher` (ID: `vdhZa14gtVnatV3u`): Renovador automático diario de tokens OAuth.
 
 
 

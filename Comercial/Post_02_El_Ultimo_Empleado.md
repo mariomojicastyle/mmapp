@@ -39,6 +39,36 @@ Respetemos el pacto con el cliente. Acompáñalo en la terminación de su produc
 
 #MueblesRTA #ReadyToAssemble #CustomerExperience #IndustriaMueblera #Manual3D #PostventaInteligente #EmpatiaDeMarca #Industria40
 
+### 📝 Copy para Publicar (Português):
+
+Você trata o seu cliente como o último funcionário da linha de montagem da sua fábrica? 🏭🛑
+
+Vamos falar sobre um fato real na relação marca-cliente do setor de móveis RTA:
+
+O comprador aceita um pacto econômico implícito. Ele assume voluntariamente o risco de finalizar a fabricação de um produto em sua própria casa em troca de um preço mais acessível. Ao montar o móvel ele mesmo, economiza para a fábrica os altos custos de frete volumétrico e a mão de obra da montagem final.
+
+O cliente decide finalizar o produto para economizar.
+
+E como a indústria moveleira responde? Deixa ele completamente sozinho.
+
+Entrega um manual impresso em preto e branco: uma barreira fria, estática e sem empatia. Quando o usuário trava na sala de casa diante de peças ambíguas, ele não liga para o suporte técnico. Todos sabemos o quanto o atendimento telefônico pode ser cansativo e desgastante.
+
+O que acontece na realidade é que a frustração se transforma em irritação. O cliente se expõe a uma montagem defeituosa ou toma a amarga decisão de pagar um montador terceirizado, destruindo exatamente a economia pela qual escolheu a sua marca.
+
+A indústria não pode continuar se esquivando da etapa final do seu próprio produto.
+
+Na Mario Mojica, ajudamos as fábricas a acompanhar essa finalização:
+Substituímos o papel por um Manual 3D Interativo por voz que guia o cliente diretamente pelo celular. Sem downloads, com rotação 360°, zoom milimétrico e locução guiada para que essa caixa de peças sem alma ganhe vida logo de primeira.
+
+E para a sua fábrica:
+📊 Economia direta em engenharia (eliminamos a sobrecarga de criar manuais internamente) + telemetria em tempo real sobre as etapas onde os usuários travam para melhorar o projeto na planta.
+
+Vamos respeitar o pacto com o cliente. Acompanhe ele na finalização do seu produto.
+
+👉 Teste a demonstração interativa no primeiro comentário pelo seu celular. 👇
+
+#MoveisRTA #ReadyToAssemble #CustomerExperience #IndustriaMoveleira #ManualDeMontagem3D #PosVendaInteligente #EmpatiaDeMarca #Industria40
+
 ---
 
 ## 🎭 Post 02_v2: "El cliente como socio de manufactura" (Foco en el Abandono de la Industria)
@@ -66,6 +96,31 @@ Si el cliente finaliza tu producto, tu deber como marca es no dejarlo solo.
 👉 Revisa la demo interactiva en el primer comentario. 👇
 
 #CustomerExperience #MoveisRTA #Manual3D #Postventa #IndustriaMueblera #Empatia #B2B
+
+### 📝 Copy para Publicar (Português):
+**"O cliente como sócio de fabricação"** (Foco no Abandono da Indústria)
+
+Na indústria de móveis RTA, o seu cliente não é apenas um comprador: é quem finaliza a fabricação do seu produto na própria sala de casa. 📦🛠️
+
+Este é um fato inegável do mercado: o cliente assume o risco da montagem para evitar custos logísticos de volume e ter acesso a um preço melhor. Ele decide concluir a parte final da produção em casa para economizar.
+
+No entanto, a indústria moveleira comete um erro estrutural: abandona o cliente exatamente na etapa em que ele mais precisa de ajuda.
+
+Entrega uma caixa cheia de peças e um manual impresso que não ouve, não responde e não faz zoom. Quando o usuário trava, evita a todo custo ligar para o suporte técnico pela burocracia do processo. A frustração cresce e a experiência se deteriora.
+
+O cliente se vê diante de dois caminhos: arriscar uma montagem defeituosa ou gastar dinheiro contratando um terceiro, anulando o benefício econômico pelo qual comprou o móvel.
+
+Um manual impresso é a prova física de que a marca jogou o problema nas costas de quem sustenta o seu negócio.
+
+Na Mario Mojica, transformamos esse abandono em acompanhamento real.
+
+Nossa plataforma de Manuais de Montagem 3D Interativos por voz guia o usuário passo a passo na finalização do produto. Devolvemos o controle com assistência 360° e protegemos a reputação da sua marca em marketplaces como Mercado Livre, Amazon ou Magazine Luiza.
+
+Se o cliente finaliza o seu produto, o seu dever como marca é não deixá-lo sozinho.
+
+👉 Confira a demo interativa no primeiro comentário. 👇
+
+#CustomerExperience #MoveisRTA #ManualDeMontagem3D #PosVendaInteligente #IndustriaMoveleira #Empatia #B2B
 
 ---
 
@@ -98,8 +153,37 @@ Acompañar a tu cliente en la terminación de su producto no es un lujo; es resp
 
 #Industria40 #MueblesRTA #CalidadYPostventa #ManualDeArmado3D #CustomerExperience #B2B #Muebles
 
+### 📝 Copy para Publicar (Português):
+
+Existe uma lacuna silenciosa na proposta de valor do mobiliário RTA: 📄💔
+
+O modelo de negócio funciona porque o cliente decide finalizar o produto em casa para economizar o custo logístico da caixa montada. O consumidor assume a mão de obra final para ter um preço competitivo.
+
+Mas assim que a caixa sai da fábrica, a indústria o deixa sozinho.
+
+Quando o usuário abre a caixa e se depara com um manual estático em preto e branco, ele bate de frente com uma barreira fria. Ao travar com uma ferragem ou uma posição confusa, ele não liga para o suporte; o consumidor detesta a burocracia do atendimento telefônico.
+
+O que acontece é a frustração e a amarga decisão de pagar uma montagem externa, quebrando a promessa de economia do móvel RTA ou terminando com um produto mal montado na sala.
+
+A indústria de móveis RTA não pode tratar o seu comprador como o último funcionário da linha de produção sem lhe dar ferramentas de verdade.
+
+Na Mario Mojica, fechamos essa lacuna.
+
+Nossa plataforma de Manuais 3D Interativos acompanha o cliente na finalização do seu móvel:
+• Assistência por voz e interação 3D passo a passo no celular (zero downloads).
+• Eliminação do estresse de montagem e proteção do produto físico.
+• Telemetria de pós-venda para que a sua fábrica saiba onde as pessoas travam e melhore o produto na planta.
+
+Acompanhar o seu cliente na finalização do produto não é um luxo; é respeitar a decisão de compra dele.
+
+👉 Teste como é a experiência no primeiro comentário. 👇
+
+#Industria40 #MoveisRTA #QualidadeEPosVenda #ManualDeMontagem3D #CustomerExperience #B2B #Moveis #Movergs #Fimma
+
 ---
 
 ## 💬 Texto para el Primer Comentario (Aplica para v1, v2 y v3):
 
-> Para probar la experiencia interactiva desde tu celular y ver cómo acompañamos al usuario a dar vida al producto: https://mariomojica.com/demo 🚀
+> **Español:** Para probar la experiencia interactiva desde tu celular y ver cómo acompañamos al usuario a dar vida al producto: https://mariomojica.com/demo 🚀
+> 
+> **Português:** Para testar a experiência interativa pelo seu celular e ver como acompanhamos o usuário a dar vida ao produto: https://mariomojica.com/demo 🚀

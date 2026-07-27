@@ -335,18 +335,22 @@ Este directorio documenta las entidades, portales y ferias clave del sector mueb
 
 ---
 
-## 🔗 13. Enlaces Oficiales y Llamados a la Acción (CTA)
+## 🔗 13. Enlaces Oficiales, Formatos y Calibres de Mensajes
 
-Para garantizar consistencia y profesionalismo en la prospección, siempre debemos utilizar los siguientes enlaces oficiales en nuestros copys y comunicaciones B2B:
+Para garantizar consistencia y profesionalismo en la prospección, siempre debemos utilizar los siguientes enlaces oficiales y reglas estrictas de formato:
 
-### 13.1 El Enlace de la Demo (Manual 3D)
+### 13.1 El Enlace de la Demo (Manual 3D) y Sintaxis Limpia de Hipervínculo
 * **URL a utilizar:** `https://mariomojica.com/demo`
-* **Propósito:** Redirigir directamente al entorno interactivo del Manual 3D.
-* **Dónde usarlo:** 
-  * En el **primer comentario** de las publicaciones de LinkedIn (NUNCA en el cuerpo del post, para no hundir el alcance orgánico. Ver regla 9.1).
-  * En correos electrónicos en frío o mensajes directos de WhatsApp y LinkedIn.
-  * *Ejemplo de uso:* "Por si tienes curiosidad de probarlo tú mismo desde tu celular, te dejo nuestra demo interactiva: https://mariomojica.com/demo"
-* **Por qué usar este formato:** Incluir siempre el prefijo seguro `https://` garantiza que la plataforma (LinkedIn, WhatsApp, etc.) reconozca visualmente la URL como un hipervínculo clicable activo y transmite confianza de seguridad (SSL) al cliente B2B.
+* **Regla Inflexible de Prefijo:** Usar SIEMPRE `https://` completo para asegurar que los clientes de mensajería (LinkedIn, WhatsApp, Email) lo conviertan en un hipervínculo azul clicable.
+* **Regla Inflexible de Aislamiento:** NUNCA colocar caracteres pegados al final de la URL (como signos de interrogación `?`, puntos `.`, comas `,` o punto y coma `;`). Ejemplo: `https://mariomojica.com/demo?` rompe el enlace. La URL debe ir aislada al final del párrafo o precedida por un espacio limpio.
+* **Inclusión Obligatoria:** El enlace a la demo debe incluirse SIEMPRE en todas las variantes de mensaje (desde notas de 300 hasta correos de 1200 caracteres).
+
+### 13.2 Calibres Estándar de Mensajes de Outreach B2B y Regla Obligatoria de Asunto
+Todas las propuestas y copys de prospección se generarán en cuatro longitudes exactas estandarizadas:
+1. **300 Caracteres (Nota de Conexión en LinkedIn):** Ultra-conciso, directo al rol y dolor principal con el enlace limpio al final. No requiere asunto.
+2. **600 Caracteres (InMail / Mensaje Corto de Prospección):** Requiere **SIEMPRE** un **Asunto (Assunto)** directo de alto CTR (35-65 caracteres). Presentación ligera, contexto de la fábrica y llamado a la acción con el enlace.
+3. **900 Caracteres (Mensaje Extendido / Correo Breve):** Requiere **SIEMPRE** un **Asunto (Assunto)** directo de alto CTR. Explicación del impacto en la planta, ROI de calidad y propuesta de demostración.
+4. **1200 Caracteres (Email Corporativo Completo / Propuesta B2B):** Requiere **SIEMPRE** un **Asunto (Assunto)** directo de alto CTR. Desglose del dolor RTA, los beneficios para fábrica y consumidor, y el sistema de métricas de postventa.
 
 ---
 

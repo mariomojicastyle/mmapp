@@ -2,6 +2,13 @@
 
 Este archivo es un registro vivo de la evolución tecnológica del ecosistema Mario Mojica Style. Complementa a `ESTADO_DEL_PROYECTO.md` conservando la memoria de decisiones, retos y soluciones técnicas.
 
+## 🗓️ Julio 2026
+
+### 🔹 Hito Merkadeo (26 de Julio, 2026): Motor de Publicaciones Multicanal B2B & Integración n8n
+- **Editor Multi-Canal Persistente**: Desarrollo del componente `EditorPostModal` con soporte para drag & drop de carruseles de imágenes, compresión cliente en Canvas y vista previa simultánea (LinkedIn, Instagram, Facebook y YouTube).
+- **Publicador Autónomo en n8n**: Creación de la API Route `/api/marketing/publish` y el worker `marketing_publisher_worker` en n8n para consultar minutalmente la cola de posts en Supabase y ejecutarlos vía Meta Graph API y LinkedIn UGC API.
+- **Robustez de Transferencia y UI**: Configuración de `next.config.ts` (25MB en Server Actions) y supresión de falsos errores de hidratación de extensiones de navegador.
+
 ---
 
 ## 🗓️ Marzo 2026

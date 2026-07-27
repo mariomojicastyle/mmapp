@@ -6,6 +6,7 @@ import {
   Image,
   Lightbulb,
   Users,
+  Megaphone,
   Puzzle,
   BarChart3,
   Receipt,
@@ -42,6 +43,7 @@ export const navigationSections: NavSection[] = [
     label: "PLATAFORMA",
     items: [
       { name: "Equipo", href: "/equipo", icon: Users },
+      { name: "Marketing", href: "/marketing", icon: Megaphone },
       { name: "Integraciones", href: "/integraciones", icon: Puzzle },
       { name: "Uso", href: "/uso", icon: BarChart3 },
       { name: "Facturación", href: "/facturacion", icon: Receipt },

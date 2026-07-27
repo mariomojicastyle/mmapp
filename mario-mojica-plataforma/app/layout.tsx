@@ -45,7 +45,7 @@ export default function RootLayout({
           />
         )}
       </head>
-      <body className={`${prompt.variable} ${geistMono.variable} ${nunitoSans.variable} font-sans antialiased`}>
+      <body className={`${prompt.variable} ${geistMono.variable} ${nunitoSans.variable} font-sans antialiased`} suppressHydrationWarning>
         <ThemeProvider
           attribute="class"
           defaultTheme="dark"

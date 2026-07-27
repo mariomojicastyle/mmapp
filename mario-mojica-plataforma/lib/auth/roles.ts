@@ -67,4 +67,8 @@ export const PERMISSIONS = {
     VIEW: ["superadmin", "coequipero", "admin", "designer", "viewer"],
     MANAGE: ["superadmin", "admin"],
   },
+  MARKETING: {
+    VIEW: ["superadmin"],
+    MANAGE: ["superadmin"],
+  },
 } as const
