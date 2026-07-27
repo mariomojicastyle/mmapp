@@ -58,6 +58,84 @@ async function ensurePublicImageUrl(supabase: any, imageStr: string): Promise<st
   return null
 }
 
+// Sube una imagen directamente como un activo nativo a la API de LinkedIn (v2 Assets & UGC)
+async function uploadLinkedInImageAsset(accessToken: string, authorUrn: string, imageStr: string): Promise<string | null> {
+  try {
+    let buffer: Buffer | null = null
+    let contentType = "image/jpeg"
+
+    if (imageStr.startsWith("data:image/")) {
+      const matches = imageStr.match(/^data:(image\/[a-zA-Z]+);base64,(.+)$/)
+      if (matches) {
+        contentType = matches[1]
+        buffer = Buffer.from(matches[2], "base64")
+      }
+    } else if (imageStr.startsWith("http://") || imageStr.startsWith("https://")) {
+      const res = await fetch(imageStr)
+      if (res.ok) {
+        const arrayBuf = await res.arrayBuffer()
+        buffer = Buffer.from(arrayBuf)
+        const cType = res.headers.get("content-type")
+        if (cType) contentType = cType
+      }
+    }
+
+    if (!buffer) return null
+
+    // Step 1: Register Upload
+    const regRes = await fetch("https://api.linkedin.com/v2/assets?action=registerUpload", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        registerUploadRequest: {
+          recipes: ["urn:li:digitalmediaRecipe:feedshare-image"],
+          owner: authorUrn,
+          serviceRelationships: [
+            {
+              relationshipType: "OWNER",
+              identifier: "urn:li:userGeneratedContent",
+            },
+          ],
+        },
+      }),
+    })
+
+    const regData = await regRes.json()
+    if (!regRes.ok) {
+      console.error("Error en LinkedIn registerUpload:", regData)
+      return null
+    }
+
+    const uploadUrl = regData.value?.uploadMechanism?.["com.linkedin.digitalmedia.uploading.MediaUploadHttpRequest"]?.uploadUrl
+    const assetUrn = regData.value?.asset
+
+    if (!uploadUrl || !assetUrn) return null
+
+    // Step 2: Upload Binary Payload
+    const uploadRes = await fetch(uploadUrl, {
+      method: "PUT",
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        "Content-Type": contentType,
+      },
+      body: new Uint8Array(buffer),
+    })
+
+    if (uploadRes.ok) {
+      return assetUrn
+    } else {
+      console.error("Error al subir binario a LinkedIn uploadUrl:", uploadRes.statusText)
+      return null
+    }
+  } catch (err) {
+    console.error("Excepción en uploadLinkedInImageAsset:", err)
+    return null
+  }
+}
+
 export async function GET(request: NextRequest) {
   try {
     const supabase = getSupabaseAdmin()
@@ -288,24 +366,31 @@ export async function GET(request: NextRequest) {
         if (liCuenta && liCuenta.access_token) {
           try {
             const authorUrn = `urn:li:person:${liCuenta.cuenta_id_externo}`
+            const linkedInAssetUrns: string[] = []
+
+            // Subir imágenes nativas directamente a los servidores de LinkedIn
+            if (rawImages.length > 0) {
+              for (const rawImg of rawImages) {
+                const assetUrn = await uploadLinkedInImageAsset(liCuenta.access_token, authorUrn, rawImg)
+                if (assetUrn) linkedInAssetUrns.push(assetUrn)
+              }
+            }
 
             const shareContentObj: any = {
               shareCommentary: {
                 text: post.contenido_base,
               },
-              shareMediaCategory: publicImageUrls.length > 0 ? "ARTICLE" : "NONE",
+              shareMediaCategory: linkedInAssetUrns.length > 0 ? "IMAGE" : "NONE",
             }
 
-            if (publicImageUrls.length > 0) {
-              shareContentObj.media = [
-                {
-                  status: "READY",
-                  originalUrl: publicImageUrls[0],
-                  title: {
-                    text: post.titulo || "Mario Mojica - Smart Assembly 3D",
-                  },
+            if (linkedInAssetUrns.length > 0) {
+              shareContentObj.media = linkedInAssetUrns.map((urn) => ({
+                status: "READY",
+                media: urn,
+                title: {
+                  text: post.titulo || "Mario Mojica - Smart Assembly 3D",
                 },
-              ]
+              }))
             }
 
             const liRes = await fetch("https://api.linkedin.com/v2/ugcPosts", {
