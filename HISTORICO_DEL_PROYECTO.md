@@ -4,6 +4,26 @@ Este archivo es un registro vivo de la evolución tecnológica del ecosistema Ma
 
 ## 🗓️ Julio 2026
 
+### 🔹 Hito Mercadeo_Face_Insta_OK & Arquitectura V8 (27 de Julio, 2026): Consolidación de Publicación Multicanal (FB/IG), Planificador 24H y Arquitectura V8
+
+#### 1. Publicación Multicanal HD (Facebook & Instagram):
+- **Motor de Publicación Directa (`/api/marketing/publish`)**: Verificado en vivo con publicación de Single Photo y Carruseles a la Página de Facebook `Mario Mojica - Smart Assembly 3D - Inteligência Moveleira` (`1219474691249252`) e Instagram Business `@mariomojicaff`.
+- **Conversor Base64 DataURL a HTTPS**: Implementación de `ensurePublicImageUrl()` subiendo automáticamente imágenes del Canvas cliente al bucket público `marketing-media` en Supabase Storage, garantizando URLs HTTPS públicas exigidas por la CDN de Meta.
+- **Pausa Técnica CDN de Instagram**: Incorporación de un retraso asíncrono de 3.5 segundos (`setTimeout(3500)`) entre `POST /media` y `POST /media_publish` para permitir que el backend de Meta finalice el procesamiento del contenedor de imágenes.
+- **Intercambio Automático de Tokens**: `saveMarketingCuenta` convierte tokens efímeros Explorer a tokens de 60 días y extrae el **Never-Expiring Page Access Token** para la página comercial.
+
+#### 2. Rediseño UI del Planificador Semanal Estilo Metricool:
+- **Grilla de 24 Horas**: Cobertura de `00:00` a `23:00` horas.
+- **Cabecera Sticky de Días**: Posición `sticky top-0 z-20` con efecto de desenfoque (`backdrop-blur-md`) manteniendo los días de la semana congelados mientras se navega por el tiempo.
+- **Mapa de Calor CTR B2B (Metricool Heatmap)**: Resaltado de horas de mayor rendimiento comercial B2B con degradados de color coral/rosa e indicador `🔥 Pico` para prospección RTA Brasil.
+- **Selector de Zonas Horarias**: Alternancia entre **Bento Gonçalves / Brasil (UTC-3)** y **Colombia (UTC-5)** con cálculo automático de equivalencia de hora local (ej. `08:00 (06:00 Col)`).
+- **Gestión de Eliminación**: Límite de `max-h-[380px]` en Próximas Publicaciones con scrollbar y botón destructivo `🗑️ Eliminar` en el modal de edición.
+
+#### 3. Documentación Arquitectónica V8:
+- Consolidación de los entregables de infraestructura: `Arquitectura/arquitectura_V8.svg`, `Arquitectura/arquitectura_V8.md` y `Arquitectura/guia_replicacion_V8.md`.
+
+---
+
 ### 🔹 Hito Merkadeo V2 / Marketing_02 (26-27 de Julio, 2026): Motor de Publicaciones Multicanal B2B & Conexión Meta (FB/IG)
 
 #### 1. Arquitectura y Componentes UI:

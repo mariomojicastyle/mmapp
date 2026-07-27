@@ -1,6 +1,11 @@
-# Arquitectura de la Solución B2B — Mario Mojica (Versión 7)
+# Arquitectura de la Solución B2B — Mario Mojica (Versión 8)
 
-Este documento detalla de forma exhaustiva la arquitectura técnica y el ecosistema de aplicaciones, seguridad, automatización y métricas de la plataforma de **Mario Mojica**. Está diseñado para servir como punto de referencia estructural y técnico para el desarrollo continuo y la replicabilidad del sistema.
+> **Versión Actual:** V8 (Julio 2026)  
+> **Documento de Especificación V8:** [arquitectura_V8.md](file:///c:/Desarrollo/mmapp/Arquitectura/arquitectura_V8.md)  
+> **Diagrama Vectorial V8:** [arquitectura_V8.svg](file:///c:/Desarrollo/mmapp/Arquitectura/arquitectura_V8.svg)  
+> **Guía de Replicación V8:** [guia_replicacion_V8.md](file:///c:/Desarrollo/mmapp/Arquitectura/guia_replicacion_V8.md)
+
+Este documento detalla de forma exhaustiva la arquitectura técnica y el ecosistema de aplicaciones, seguridad, motor de mercadeo multicanal Meta (Facebook e Instagram), automatización y métricas de la plataforma de **Mario Mojica**. Está diseñado para servir como punto de referencia estructural y técnico para el desarrollo continuo y la replicabilidad del sistema.
 
 ---
 

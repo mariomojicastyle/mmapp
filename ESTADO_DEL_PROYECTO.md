@@ -27,14 +27,13 @@ Este archivo es la "Memoria RAM" para Antigravity. Contiene el contexto de lo qu
   - Procesamiento por canvas a 150x150 píxeles codificado a Base64.
   - Galería con doble carrusel deslizable con flechas flotantes independientes para 20 personajes y 20 ilustraciones abstractas coloridas.
   - Sincronización en tiempo real del avatar cargado en el header (`TopNav`) y el menú lateral inferior (`RoleSelector` del `Sidebar`).
-- [x] **Módulo de Publicaciones Multicanal B2B (Hito Merkadeo V2)**:
-  - Publicador autónomo en n8n (`marketing_publisher_worker`) conectado minutalmente vía cron a `https://mariomojica.com/api/marketing/publish`.
-  - Integración completa con Meta Graph API (Páginas de Facebook e Instagram Business) y LinkedIn UGC API.
-  - Generación y almacenamiento de Token de Página en Supabase (`marketing_cuentas`) y creación del modal `ConfigTokensModal` para gestión directa de credenciales.
-  - Verificación en vivo exitosa: Publicación automática confirmada en el muro oficial de Facebook ("Mario Mojica - Smart Assembly 3D") con visto bueno de n8n 🟢.
-  - Expansión de `LanguageContext` para soportar Portugués (pt) además de Español y Inglés.
-  - Traducción estructural de 12 componentes clave (HeroManual, FAQ, ContactCTA, MetricsSection, etc.) inyectando variables en la función global `t()`.
-  - Integración de selector en el Header para cambios en vivo con renderizado condicional rápido.
+- [x] **Módulo de Publicaciones Multicanal B2B (Hito Mercadeo_Face_Insta_OK & Arquitectura V8)**:
+  - Publicación directa multi-formato (Single Photo & Carrusel HD) verificada en vivo a Facebook Page (`1219474691249252`) e Instagram Business (`@mariomojicaff`).
+  - Intercambio automático de tokens a **Never-Expiring Page Access Token** en `saveMarketingCuenta`.
+  - Conversor de imágenes Base64 DataURL a URLs públicas HTTPS vía bucket `marketing-media` de Supabase para cumplir requerimientos de Meta CDN.
+  - Planificador Semanal B2B de 24 horas con mapa de calor de CTR B2B (tonos coral/rosa), cabecera sticky de días y selector de zona horaria dinámico (Brasil - Bento Gonçalves UTC-3 vs Colombia UTC-5).
+  - Límite de contenedor y scrollbar en Próximas Publicaciones (`max-h-[380px]`) y botón de borrado `🗑️ Eliminar` con alto contraste en modal y lista.
+  - Consolidación y actualización de la documentación arquitectónica en `Arquitectura/arquitectura_V8.svg`, `Arquitectura/arquitectura_V8.md` y `Arquitectura/guia_replicacion_V8.md`.
 - [x] **Ecosistema de Analíticas, CRM B2B y Blindaje de Métricas (Hito Manual_Metricas)**:
   - Despliegue de Umami Analytics en producción en el Hetzner VPS con PostgreSQL y certificado SSL Let's Encrypt bajo el subdominio `analytics.mariomojica.com`.
   - Integración condicional y asíncrona del script de Umami en la Landing Page y en la Consola CMS Next.js.
