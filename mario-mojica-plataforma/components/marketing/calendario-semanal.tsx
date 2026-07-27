@@ -235,12 +235,17 @@ export function CalendarioSemanal({ posts, onSelectSlot, onSelectPost }: Calenda
                     className={`min-h-[56px] p-2 rounded-xl border text-left flex flex-col justify-between transition-all ${slotStyle}`}
                   >
                     <div className="flex items-center justify-between">
-                      <span className="text-[10px] font-semibold flex items-center gap-1 opacity-80">
+                      <span className="text-[10px] font-semibold flex items-center gap-1 opacity-90">
                         <Clock className="h-2.5 w-2.5" />
                         {hora}
+                        {selectedTimezone === "America/Sao_Paulo" && (
+                          <span className="text-[8px] opacity-60">
+                            ({(parseInt(hora.split(":")[0]) - 2 + 24) % 24}:00 COT)
+                          </span>
+                        )}
                       </span>
                       {intensity === 3 && postsInSlot.length === 0 && (
-                        <span className="text-[9px] font-bold text-rose-400 flex items-center gap-0.5" title="Horario Pico CTR B2B">
+                        <span className="text-[9px] font-bold text-rose-400 flex items-center gap-0.5" title="Horario Pico CTR B2B RTA Brasil">
                           <Flame className="h-2.5 w-2.5" /> Pico
                         </span>
                       )}

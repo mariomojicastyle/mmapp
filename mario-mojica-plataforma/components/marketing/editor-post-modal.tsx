@@ -793,8 +793,8 @@ export function EditorPostModal({ isOpen, onClose, onSuccess, onDelete, initialD
               {/* Botón de Eliminar Publicación (Sólo si es una edición de post existente) */}
               {initialData?.id && (
                 confirmDelete ? (
-                  <div className="flex items-center gap-2 bg-error/10 border border-error/30 p-1 rounded-xl">
-                    <span className="text-xs text-error font-bold px-2">¿Eliminar?</span>
+                  <div className="flex items-center gap-2 bg-surface-container-high border border-error/40 p-1.5 rounded-xl shadow-inner">
+                    <span className="text-xs text-rose-400 font-bold px-2">¿Eliminar?</span>
                     <button
                       onClick={async () => {
                         setSaving(true)
@@ -809,13 +809,13 @@ export function EditorPostModal({ isOpen, onClose, onSuccess, onDelete, initialD
                         onClose()
                       }}
                       disabled={saving}
-                      className="px-3 py-1 bg-error text-error-container text-xs font-bold rounded-lg hover:opacity-90 transition-opacity"
+                      className="px-3 py-1 bg-rose-500/20 hover:bg-rose-500/30 text-rose-300 border border-rose-500/50 text-xs font-bold rounded-lg transition-all"
                     >
                       Sí, Eliminar
                     </button>
                     <button
                       onClick={() => setConfirmDelete(false)}
-                      className="px-2 py-1 text-xs text-on-surface-variant hover:text-on-surface"
+                      className="px-2 py-1 text-xs text-on-surface-variant hover:text-on-surface transition-colors"
                     >
                       No
                     </button>
