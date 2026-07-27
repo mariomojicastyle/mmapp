@@ -29,10 +29,18 @@ Este archivo es un registro vivo de la evolución tecnológica del ecosistema Ma
   - Se agregaron las fallbacks de producción para `FACEBOOK_APP_ID` y `FACEBOOK_APP_SECRET`.
 
 #### 4. Hito Alcanzado & Verificación en Vivo:
-- 🟢 **Publicación en Muro Confirmada**: Publicación automática procesada por n8n (`Ejecución #921`, `succeeded in 4.011s`) e inyectada exitosamente en el muro oficial de Facebook (*Mario Mojica - Smart Assembly 3D*).
-- 📌 **Pendiente Próxima Sesión (Mañana)**:
-  1. Adjuntar payloads multimedia (imágenes/carruseles GLB renderizados) en la API de Meta y LinkedIn.
-  2. Finalizar la vinculación Business de la cuenta de Instagram `@mariomojicaff` en Meta Business Suite.
+- 🟢 **Publicación en Muro Facebook Confirmada**: Publicación automática procesada por n8n (`Ejecución #921`, `succeeded in 4.011s`) e inyectada exitosamente en el muro oficial de Facebook (*Mario Mojica - Smart Assembly 3D - Inteligência Moveleira*).
+- 🟢 **Subida de Imágenes Ultra HD 2K**: Motor de procesamiento actualizado a `2048px` y `98%` calidad HD con renderizado y alojamiento automático en el bucket público de Supabase Storage (`marketing-media`).
+- 🟢 **Vinculación Oficial de Instagram Business**: Perfil comercial **`@mariomojicaff`** vinculado exitosamente a la Página de Facebook principal **`Mario Mojica - Smart Assembly 3D - Inteligência Moveleira`** dentro del Portfolio Comercial de Meta.
+
+#### 📌 Inventario Oficial de Cuentas y Vinculaciones de Marketing:
+| Canal / Activo | ID Externo / Usuario | Nombre de Cuenta / Página | Estado de Vinculación |
+| :--- | :--- | :--- | :--- |
+| **Facebook Page** | `1219474691249252` | `Mario Mojica - Smart Assembly 3D - Inteligência Moveleira` | 🟢 **ACTIVA & PUBLICANDO EN VIVO** |
+| **Instagram Business** | `@mariomojicaff` | `Mario Mojica` | 🟢 **VINCULADA A LA PÁGINA DE FB EN META BUSINESS** |
+| **App de Desarrollador Meta** | `1736322840851405` | `Mario Mojica Marketing` | 🟢 **APP OFICIAL MARKETING API** |
+| **Bucket de Medios HD** | `marketing-media` | `Supabase Public Storage` | 🟢 **PUBLICACIÓN 2K HD ACTIVA** |
+| **Worker n8n** | `rhkOkQuv7M4ARSEm` | `marketing_publisher_worker` | 🟢 **EJECUCIÓN CRON MINUTAL ACTIVA** |
 
 #### 📌 Inventario Oficial de Apps de Meta (Control y Limpieza):
 | Nombre de App | App ID | Estado / Uso Principal |
