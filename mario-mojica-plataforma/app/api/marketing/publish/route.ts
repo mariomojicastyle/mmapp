@@ -17,6 +17,51 @@ function getSupabaseAdmin() {
   })
 }
 
+// Convierte DataURL o Base64 a una URL pública HTTPS alojada en Supabase Storage
+async function ensurePublicImageUrl(supabase: any, imageStr: string): Promise<string | null> {
+  if (!imageStr || typeof imageStr !== "string") return null
+  const trimmed = imageStr.trim()
+
+  if (trimmed.startsWith("http://") || trimmed.startsWith("https://")) {
+    return trimmed
+  }
+
+  if (trimmed.startsWith("data:image/")) {
+    try {
+      const matches = trimmed.match(/^data:(image\/[a-zA-Z]+);base64,(.+)$/)
+      if (!matches) return null
+      const mimeType = matches[1]
+      const base64Data = matches[2]
+      const buffer = Buffer.from(base64Data, "base64")
+      const ext = mimeType.split("/")[1] || "jpeg"
+      const fileName = `post_media_${Date.now()}_${Math.random().toString(36).substring(2, 7)}.${ext}`
+
+      const { error: uploadErr } = await supabase.storage
+        .from("marketing-media")
+        .upload(fileName, buffer, {
+          contentType: mimeType,
+          upsert: true,
+        })
+
+      if (uploadErr) {
+        console.error("Error al subir imagen a Supabase Storage:", uploadErr)
+        return null
+      }
+
+      const { data: publicUrlData } = supabase.storage
+        .from("marketing-media")
+        .getPublicUrl(fileName)
+
+      return publicUrlData?.publicUrl || null
+    } catch (err) {
+      console.error("Excepción en ensurePublicImageUrl:", err)
+      return null
+    }
+  }
+
+  return null
+}
+
 export async function GET(request: NextRequest) {
   try {
     const supabase = getSupabaseAdmin()
@@ -62,6 +107,24 @@ export async function GET(request: NextRequest) {
 
       const destinos = post.plataformas_destino || []
 
+      // Extraer imágenes asociadas al post
+      let rawImages: string[] = []
+      if (Array.isArray(post.drive_file_ids) && post.drive_file_ids.length > 0) {
+        rawImages = post.drive_file_ids.filter((u: string) => typeof u === "string" && u.trim().length > 0)
+      }
+      if (rawImages.length === 0 && Array.isArray(post.overrides_redes?.archivos_detalles)) {
+        rawImages = post.overrides_redes.archivos_detalles
+          .map((f: any) => f.thumbnailUrl || f.webContentLink)
+          .filter(Boolean)
+      }
+
+      // Convertir todas las imágenes Base64 / DataURL a URLs públicas HTTPS en Supabase Storage
+      const publicImageUrls: string[] = []
+      for (const rawImg of rawImages) {
+        const pUrl = await ensurePublicImageUrl(supabase, rawImg)
+        if (pUrl) publicImageUrls.push(pUrl)
+      }
+
       // A. Publicar en Facebook Page
       if (destinos.includes("facebook")) {
         const fbCuenta = cuentasMap.get("facebook")
@@ -81,18 +144,72 @@ export async function GET(request: NextRequest) {
               }
             }
 
-            const postFbRes = await fetch(`https://graph.facebook.com/v19.0/${targetId}/feed`, {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({
-                message: post.contenido_base,
-                access_token: targetToken,
-              }),
-            })
+            if (publicImageUrls.length === 0) {
+              // Publicación de solo texto
+              const postFbRes = await fetch(`https://graph.facebook.com/v19.0/${targetId}/feed`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                  message: post.contenido_base,
+                  access_token: targetToken,
+                }),
+              })
+              const postFbData = await postFbRes.json()
+              if (!postFbRes.ok) {
+                errores.push(`Facebook: ${postFbData.error?.message || "Error al publicar en Feed"}`)
+              }
+            } else if (publicImageUrls.length === 1) {
+              // Publicación con 1 foto
+              const postFbRes = await fetch(`https://graph.facebook.com/v19.0/${targetId}/photos`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                  url: publicImageUrls[0],
+                  caption: post.contenido_base,
+                  access_token: targetToken,
+                }),
+              })
+              const postFbData = await postFbRes.json()
+              if (!postFbRes.ok) {
+                errores.push(`Facebook Photos: ${postFbData.error?.message || "Error al publicar foto"}`)
+              }
+            } else {
+              // Publicación de carrusel (Múltiples fotos)
+              const photoIds: string[] = []
+              for (const imgUrl of publicImageUrls) {
+                const uploadPhotoRes = await fetch(`https://graph.facebook.com/v19.0/${targetId}/photos`, {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({
+                    url: imgUrl,
+                    published: false,
+                    access_token: targetToken,
+                  }),
+                })
+                const photoData = await uploadPhotoRes.json()
+                if (uploadPhotoRes.ok && photoData.id) {
+                  photoIds.push(photoData.id)
+                }
+              }
 
-            const postFbData = await postFbRes.json()
-            if (!postFbRes.ok) {
-              errores.push(`Facebook: ${postFbData.error?.message || "Error al publicar en Feed"}`)
+              if (photoIds.length > 0) {
+                const attachedMedia = photoIds.map((id) => ({ media_fbid: id }))
+                const postFbRes = await fetch(`https://graph.facebook.com/v19.0/${targetId}/feed`, {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({
+                    message: post.contenido_base,
+                    attached_media: attachedMedia,
+                    access_token: targetToken,
+                  }),
+                })
+                const postFbData = await postFbRes.json()
+                if (!postFbRes.ok) {
+                  errores.push(`Facebook Multi-photo: ${postFbData.error?.message || "Error al publicar carrusel"}`)
+                }
+              } else {
+                errores.push("Facebook: No se pudieron procesar las imágenes del carrusel")
+              }
             }
           } catch (fbErr: any) {
             errores.push(`Facebook Exception: ${fbErr.message}`)
@@ -105,43 +222,61 @@ export async function GET(request: NextRequest) {
       // B. Publicar en Instagram Business
       if (destinos.includes("instagram")) {
         const igCuenta = cuentasMap.get("instagram") || cuentasMap.get("facebook")
-        const igId = igCuenta?.metadatos?.instagram_business_account?.id
 
-        if (igCuenta && igCuenta.access_token && igId) {
+        if (igCuenta && igCuenta.access_token) {
           try {
-            // Instagram requiere primero crear un container multimedia y luego publicarlo
-            const mediaRes = await fetch(`https://graph.facebook.com/v19.0/${igId}/media`, {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({
-                caption: post.contenido_base,
-                access_token: igCuenta.access_token,
-              }),
-            })
+            let targetIgId = igCuenta?.metadatos?.instagram_business_account?.id
 
-            const mediaData = await mediaRes.json()
-            if (mediaRes.ok && mediaData.id) {
-              // Publicar container de Instagram
-              const publishRes = await fetch(`https://graph.facebook.com/v19.0/${igId}/media_publish`, {
+            // Si no estaba en metadatos, consultar a la Graph API por el id de la cuenta conectada
+            if (!targetIgId) {
+              const pageIgRes = await fetch(
+                `https://graph.facebook.com/v19.0/1219474691249252?fields=instagram_business_account&access_token=${igCuenta.access_token}`
+              )
+              if (pageIgRes.ok) {
+                const pageIgData = await pageIgRes.json()
+                if (pageIgData.instagram_business_account?.id) {
+                  targetIgId = pageIgData.instagram_business_account.id
+                }
+              }
+            }
+
+            if (publicImageUrls.length > 0 && targetIgId) {
+              // Instagram requiere una imagen/video público
+              const mediaRes = await fetch(`https://graph.facebook.com/v19.0/${targetIgId}/media`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
-                  creation_id: mediaData.id,
+                  image_url: publicImageUrls[0],
+                  caption: post.contenido_base,
                   access_token: igCuenta.access_token,
                 }),
               })
-              const publishData = await publishRes.json()
-              if (!publishRes.ok) {
-                errores.push(`Instagram Publish: ${publishData.error?.message || "Error al publicar en Instagram"}`)
+
+              const mediaData = await mediaRes.json()
+              if (mediaRes.ok && mediaData.id) {
+                const publishRes = await fetch(`https://graph.facebook.com/v19.0/${targetIgId}/media_publish`, {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({
+                    creation_id: mediaData.id,
+                    access_token: igCuenta.access_token,
+                  }),
+                })
+                const publishData = await publishRes.json()
+                if (!publishRes.ok) {
+                  errores.push(`Instagram Publish: ${publishData.error?.message || "Error al publicar en Instagram"}`)
+                }
+              } else {
+                errores.push(`Instagram Media: ${mediaData.error?.message || "Error al crear media container en Instagram"}`)
               }
-            } else {
-              errores.push(`Instagram Media: ${mediaData.error?.message || "Error al crear media container en Instagram"}`)
+            } else if (!targetIgId) {
+              errores.push("Instagram: La página de Facebook no tiene vinculada una cuenta de Instagram Business")
             }
           } catch (igErr: any) {
             errores.push(`Instagram Exception: ${igErr.message}`)
           }
         } else {
-          errores.push("Instagram: Falta cuenta conectada o vinculación Business con la página de Facebook")
+          errores.push("Instagram: Falta cuenta conectada")
         }
       }
 
