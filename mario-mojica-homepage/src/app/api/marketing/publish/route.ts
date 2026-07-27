@@ -293,17 +293,19 @@ export async function GET(request: NextRequest) {
               shareCommentary: {
                 text: post.contenido_base,
               },
-              shareMediaCategory: publicImageUrls.length > 0 ? "IMAGE" : "NONE",
+              shareMediaCategory: publicImageUrls.length > 0 ? "ARTICLE" : "NONE",
             }
 
             if (publicImageUrls.length > 0) {
-              shareContentObj.media = publicImageUrls.map((url) => ({
-                status: "READY",
-                originalUrl: url,
-                title: {
-                  text: post.titulo || "Mario Mojica - Smart Assembly 3D",
+              shareContentObj.media = [
+                {
+                  status: "READY",
+                  originalUrl: publicImageUrls[0],
+                  title: {
+                    text: post.titulo || "Mario Mojica - Smart Assembly 3D",
+                  },
                 },
-              }))
+              ]
             }
 
             const liRes = await fetch("https://api.linkedin.com/v2/ugcPosts", {
