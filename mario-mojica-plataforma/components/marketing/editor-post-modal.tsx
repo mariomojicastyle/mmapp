@@ -117,7 +117,7 @@ export function EditorPostModal({ isOpen, onClose, onSuccess, initialData }: Edi
       const img = new Image()
       const url = URL.createObjectURL(file)
       img.onload = () => {
-        const maxDim = 1200
+        const maxDim = 2048
         let w = img.width
         let h = img.height
         if (w > maxDim || h > maxDim) {
@@ -134,8 +134,11 @@ export function EditorPostModal({ isOpen, onClose, onSuccess, initialData }: Edi
         canvas.height = h
         const ctx = canvas.getContext("2d")
         if (ctx) {
+          ctx.imageSmoothingEnabled = true
+          ctx.imageSmoothingQuality = "high"
           ctx.drawImage(img, 0, 0, w, h)
-          const compressed = canvas.toDataURL("image/jpeg", 0.85)
+          // Preservar nitidez HD al 98% de calidad para textos y gráficos
+          const compressed = canvas.toDataURL("image/jpeg", 0.98)
           URL.revokeObjectURL(url)
           resolve(compressed)
           return
