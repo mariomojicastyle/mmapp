@@ -1,55 +1,68 @@
-# 🧠 Manifiesto de Negocio: Algorithmic Furniture Manufacturing (AFM)
+# 🧠 Manifiesto de Negocio: Software para la Industria de Manufactura (Smart Manufacturing & Digital Twins)
 
-Este documento es la **columna vertebral conceptual** y la hoja de ruta estratégica de la startup de **Mario Mojica**. Define la filosofía, el modelo de negocio, el stack tecnológico y los pasos a seguir para transformar la industria del mueble a través del diseño algorítmico y la Manufactura 4.0.
+Este documento es la **columna vertebral conceptual** y la hoja de ruta estratégica de **Mario Mojica (MM)**. Define la filosofía, el modelo de negocio, la arquitectura tecnológica y los pasos tácticos para posicionar a **[mariomojica.com](https://mariomojica.com)** como la **firma de desarrollo de software para la industria de la Manufactura (Manufactura 4.0)**, con una vertical de foco prioritario y especialización profunda en el **sector del mueble y mobiliario RTA**.
 
 ---
 
-## 👁️ 1. Visión y Propósito Central
+## 👁️ 1. Visión, Posicionamiento y Propósito Central
 
-### El Puente Digital Algorítmico
-La industria del mueble tradicional, en especial el sector de mobiliario **RTA (Ready-To-Assemble / Listo para armar)** y mobiliario tapizado, sufre de una desconexión crítica en su cadena de valor. El proceso creativo de diseño, la ingeniería de detalle, el costeo de producción, el marketing y la experiencia de armado del cliente final operan en silos aislados con herramientas desconectadas.
+### Definición de Categoría: Firma de Software para Manufactura
+**Mario Mojica (MM)** se define principalmente como una **empresa y firma de desarrollo de software especializado para el sector de la Manufactura**. Desarrollamos soluciones tecnológicas de **Manufactura 4.0**, integrando gemelos digitales paramétricos, asistencia interactiva 3D de ensamblaje, telemetría de comportamiento en campo y automatización de ingeniería (CAD/CAM/CNC).
 
-Nuestra startup nace para ser el **puente digital interactivo** que fusiona estos mundos. No vendemos archivos de diseño estáticos (planos planos, renders aislados). Entregamos el **ADN del Producto (Gemelo Digital Paramétrico)**: un modelo matemático inteligente que automatiza la generación de toda la cadena de valor en segundos.
+Al enmarcar nuestra identidad dentro de la categoría macro de **Software para Manufactura**, logramos:
+1. **Claridad Ejecutiva:** Comunicar de forma instantánea a CEOs, directores de planta e inversionistas el alcance tecnológico de la firma.
+2. **Alta Encontrabilidad (SEO & B2B Matchmaking):** Capturar intenciones de búsqueda corporativas, licitaciones y categorizaciones en directorios industriales B2B bajo términos consolidados como *software de manufactura*, *manufactura 4.0*, *gemelo digital industrial* y *smart manufacturing*.
+3. **Escalabilidad de Plataforma:** Construir un motor de software cuyos núcleos (motor 3D, telemetría, generador de planos, costeo y empaque) aplican a la manufactura en general, mientras concentramos nuestra energía comercial en una vertical de dominio absoluto.
 
-### Segmentación y Estructura del Mercado de Mobiliario B2B
-Para posicionar nuestras soluciones con la máxima precisión, diferenciamos los tres segmentos core del mercado de carpintería a gran escala:
+---
+
+### Vertical de Foco Prioritario: La Industria del Mueble
+Dentro del amplio espectro de la manufactura, **nuestro campo de acción inmediato y especialización profunda está en la Industria del Mueble**. La fabricación de mobiliario es una de las industrias de manufactura discreta de mayor volumen global, pero padece una desconexión crítica en su cadena digital de valor.
+
+#### Segmentación y Estructura del Mercado de Mobiliario B2B
+Para posicionar nuestras soluciones de software con la máxima precisión, diferenciamos los tres segmentos core del mercado mueblero:
 
 *   **Planejados (Ej: Dell Anno):** Producción a la medida exacta (corte milimétrico bajo pedido mediante Promob en fábrica). El canal es de showrooms exclusivos y el ensamblado final lo realiza un montador profesional contratado por la tienda.
 *   **Modulados (Ej: Favorita / New / Casa Brasileira):** La fábrica produce módulos estandarizados de medidas fijas (ej: gabinetes de cocina de 30, 40, 60 y 80 cm) y la tienda multimarcas "arma" la composición y la instala en casa del cliente según el plano tridimensional adaptado.
 *   **RTA / Seriados (Ej: Politorno, Kappesberg, Madesa, Multimóveis):** 
-    *   **Nomenclatura Técnica e Industrial (B2B):** **RTA (Ready-To-Assemble / Pronto para Montar)** es el término estándar global y corporativo utilizado por la industria (respaldado por la ABIMÓVEL, Movergs, eMóbile e IEMI en Brasil). Define la categoría industrial de muebles en caja plana (*flat-pack*) optimizados para logística, e-commerce y exportación. *(Nota: En el retail y comercio electrónico local se le conoce popularmente como "móvel em kit" o "kit de cozinha", pero a nivel industrial B2B el estándar técnico es estrictamente RTA).*
+    *   **Nomenclatura Técnica e Industrial (B2B):** **RTA (Ready-To-Assemble / Pronto para Montar)** es el término estándar global y corporativo utilizado por la industria (respaldado por la ABIMÓVEL, Movergs, eMóbile e IEMI en Brasil). Define la categoría industrial de muebles en caja plana (*flat-pack*) optimizados para logística, e-commerce y exportación. *(Nota: En el retail y comercio electrónico local se le conoce popularmente como "móvel em kit" o "kit de cozinha", pero a nivel industrial B2B el estándar técnico es strictly RTA).*
     *   **El Pacto Económico del RTA:** El producto RTA se basa en una ecuación económica transparente: el consumidor acepta voluntariamente el riesgo del auto-ensamblaje (*Do-It-Yourself / DIY*) para acceder a un precio competitivo, ahorrándole a la fábrica los costos de flete volumétrico y la mano de obra final de producción.
-    *   **La Oportunidad del Acompañamiento:** Dado que el cliente decide finalizar el producto en su hogar para ahorrar, nuestra plataforma evita que la industria lo deje solo con un manual de papel frío e ineficiente. El Manual 3D por voz asegura que la terminación final sea un éxito, evitando bloqueos, reclamos y pérdida de reputación de marca.
+    *   **La Oportunidad del Acompañamiento Digital:** Dado que el cliente decide finalizar el producto en su hogar para ahorrar, nuestra plataforma de software evita que la fábrica lo deje solo con un manual de papel frío e ineficiente. El Manual 3D por voz asegura que la terminación final sea un éxito, evitando bloqueos, reclamos y pérdida de reputación de marca.
 
-### El Dolor del Mercado
-* **Ineficiencia en I+D:** Las áreas de diseño en fábricas tradicionales son lentas y costosas. Modificar la dimensión de un mueble requiere redibujar planos manualmente, recalcular despieces y re-costear procesos, lo que toma días y genera errores humanos en cascada.
+---
+
+### El Dolor de la Manufactura Mueblera
+* **Ineficiencia en I+D / Ingeniería:** Las áreas de diseño e ingeniería en plantas tradicionales son lentas y costosas. Modificar la dimensión de un producto requiere redibujar planos manualmente, recalcular despieces y re-costear procesos, lo que toma días y genera errores humanos en cascada.
 * **Falta de Agilidad Comercial:** Las empresas no pueden probar el mercado a la velocidad que exige la era digital. La generación de renders realistas y entornos WebAR suele ser tercerizada a costos elevados y tiempos lentos.
-* **Fricción en Postventa:** Los manuales en papel mal diseñados provocan frustración en el usuario final, armados defectuosos y un alto volumen de devoluciones y reclamos costosos.
+* **Fricción en Postventa:** Los manuales en papel mal diseñados provocan frustración en el usuario final, armados defectuosos y un alto volumen de devoluciones y reclamos costosos que erosionan el margen del fabricante.
+
+---
 
 ### 🎯 Foco Táctico Inmediato (GTM): El Manual de Armado 3D como "Caballo de Troya" B2B
-Aunque nuestra visión a largo plazo es la automatización completa (AFM / MakeLab), **el producto de entrada comercial inmediato es el Manual de Armado Interactivo 3D**.
-* **¿Por qué?** Resuelve el dolor más visible, inmediato y cuantificable de los fabricantes RTA (devoluciones por armado incorrecto, soporte técnico telefónico saturado y mala reputación online).
-* **Fácil Adopción:** A diferencia del outsourcing de ingeniería que requiere cambiar procesos internos de la fábrica, el Manual 3D se vende como un entregable de marketing/postventa que se integra fácilmente mediante un código QR o iframe en el sitio del cliente (PDP).
-* **Estrategia Comercial:** Salir al mercado ofreciendo este producto estrella. Una vez que ganemos la confianza del fabricante RTA con el manual 3D y demostremos su valor en analíticas de escaneo y retención de clientes, introduciremos los servicios de automatización de fábrica, planos CNC y diseño paramétrico como un *upsell* natural.
+Aunque nuestra visión como firma de software de manufactura abarca la automatización integral de la planta (AFM / MakeLab), **el producto de entrada comercial inmediato es el Manual de Armado Interactivo 3D**.
+
+* **¿Por qué?** Resuelve el dolor más visible, inmediato y cuantificable de los fabricantes de muebles (devoluciones por armado incorrecto, soporte técnico telefónico saturado y mala reputación online).
+* **Fácil Adopción:** A diferencia del outsourcing de ingeniería que requiere cambiar procesos internos de la fábrica, el Manual 3D se vende como un módulo de software de marketing/postventa que se integra fácilmente mediante un código QR o iframe en el sitio del cliente (PDP).
+* **Estrategia Comercial:** Salir al mercado ofreciendo este producto estrella. Una vez que ganemos la confianza del fabricante RTA con el manual 3D y demostremos el valor de nuestras analíticas y telemetría de campo, introduciremos los módulos de automatización de fábrica, planos CNC y diseño paramétrico como un *upsell* natural.
 
 ---
 
 ## 🚀 2. Los Tres Pilares de Valor (Ecosistema MakeLab)
 
-Nuestra ventaja competitiva radica en el **Ecosistema MakeLab**, un laboratorio de definición algorítmica basado en **Rhinoceros 3D (v8), Grasshopper y VisualArq** que habilita tres pilares:
+Nuestra ventaja competitiva radica en el **Ecosistema MakeLab**, una suite de software industrial basada en **Rhinoceros 3D (v8), Grasshopper, VisualArq, WebGL (Three.js) y Supabase** que habilita tres pilares:
 
 ```mermaid
 graph TD
-    A[ADN Paramétrico en Rhino/Grasshopper] --> B(Pilar 1: Visualización & WebAR)
+    A[ADN Paramétrico & Software de Manufactura] --> B(Pilar 1: Visualización & WebAR)
     A --> C(Pilar 2: Automatización de Fábrica - CNC/Planos)
-    A --> D(Pilar 3: Optimización Postventa - Manuales 3D)
+    A --> D(Pilar 3: Telemetría & Manuales 3D)
     B --> E[Impacto: Ventas y Marketing]
-    C --> F[Impacto: Eficiencia Operativa]
-    D --> G[Impacto: Reducción de Devoluciones]
+    C --> F[Impacto: Eficiencia Operativa en Planta]
+    D --> G[Impacto: Control de Calidad Extendido en Campo]
 ```
 
 ### Pilar 1: Digitalización y Marketing Visual de Alto Impacto
-* **Renders Fotorrealistas 4K:** Generados localmente mediante pipelines optimizados, eliminando la dependencia de render farms costosas. Permiten prototipar infinitas variantes de color, maderas, textiles y herrajes en caliente.
+* **Renders Fotorrealistas 4K:** Generados localmente mediante pipelines de software optimizados, eliminando la dependencia de render farms costosas. Permiten prototipar infinitas variantes de color, maderas, textiles y herrajes en caliente.
 * **Realidad Aumentada Web (WebAR):** Visualización interactiva a escala real directamente desde el navegador móvil del cliente, incrementando la conversión de compra online al eliminar la incertidumbre espacial.
 
 ### Pilar 2: Automatización de Fábrica e Industria 4.0 (Outsourcing de Ingeniería)
@@ -58,15 +71,16 @@ graph TD
 * **Costeo en Tiempo Real:** Enlace paramétrico con bases de datos de materiales y herrajes para dar visibilidad financiera inmediata a cambios de diseño.
 * **3D Nesting (Empaque Eficiente):** Módulo de cubicación automática que define las dimensiones óptimas de las cajas y empaques para logística.
 
-### Pilar 3: Optimización Postventa (Manuales de Armado 3D)
+### Pilar 3: Optimización Postventa & Telemetría (Manuales de Armado 3D)
 * **Visor 3D Interactivo:** El aplicativo web (`Three.js / React Three Fiber`) permite al cliente final rotar el mueble, visualizar la secuencia exacta paso a paso y recibir indicaciones por voz (TTS).
 * **Escaneo de Piezas Inteligente:** Algoritmo integrado que extrae de manera exacta la cantidad de madera y herrajes requeridos directamente desde el modelo 3D para pintarlo en el tutorial interactivo.
+* **Telemetría de Campo:** Captura asíncrona de datos de interacción (embudo de armado, tiempos, bloqueos por paso) que entrega a la fábrica datos gerenciales inéditos sobre su producto en manos del consumidor.
 
 ---
 
 ## 💰 3. Modelo de Negocio y Estructura de Planes
 
-Ofrecemos un modelo de **Outsourcing Técnico y Transformación Digital** estructurado en tres niveles de servicio (SaaS / Suscripción mensual B2B):
+Ofrecemos un modelo de **Software de Manufactura como Servicio (SaaS B2B)** y **Outsourcing de Transformación Digital** estructurado en tres niveles:
 
 | Característica | Plan 1: Starter | Plan 2: Estándar (Recomendado) | Plan 3: Visionario |
 | :--- | :--- | :--- | :--- |
@@ -74,28 +88,28 @@ Ofrecemos un modelo de **Outsourcing Técnico y Transformación Digital** estruc
 | **Volumen** | Hasta 5 productos / mes | Hasta 10 productos / mes | Transformación Digital Llave en Mano |
 | **Entregables Visuales** | Renders 4K + WebAR | Renders 4K + WebAR + Modelado 3D | Todo lo del Plan Estándar |
 | **Entregables Técnicos** | - | Planos, Costeo Paramétrico, Cubicaje | Adaptación a la medida del ERP/Fábrica |
-| **Postventa** | - | Manual de Armado 3D Interactivo | Aplicativos y herramientas customizadas |
+| **Postventa & Software** | - | Manual de Armado 3D Interactivo + Telemetría | Aplicativos y herramientas de software customizadas |
 | **Consultoría & Procesos** | - | Estrategia de diseño RTA | Diagnóstico, Gestión del cambio, Mockups, Pruebas piloto |
 
 ---
 
-## 🌿 4. Estrategia Dual: Servicios vs. Producto (Muebles en Guadua)
+## 🌿 4. Estrategia Dual: Software B2B vs. Producto Físico Sandbox (Muebles en Guadua)
 
-Para maximizar la resiliencia financiera y mitigar los riesgos de depender de un único canal de ingresos, implementamos una **Estrategia Dual**:
+Para maximizar la resiliencia financiera y validar el software en condiciones reales de producción, implementamos una **Estrategia Dual**:
 
-1. **B2B: Outsourcing de Ingeniería y Automatización (SaaS/Servicio):** Genera flujo de caja recurrente de alto valor. Alivia el dolor de ineficiencia en departamentos de diseño lentos de grandes fabricantes (como Maderkit o Jamar).
-2. **B2C: Venta Online de Muebles de Diseño Premium en Guadua (Producto):**
-   - **Validación Interna:** Sirve como el "sandbox" real para probar nuestro propio pipeline: desde el diseño paramétrico en Guadua (uniones, estructura sustentable) hasta los manuales de armado 3D y WebAR del e-commerce.
+1. **B2B: Software para Manufactura y Automatización de Ingeniería (SaaS/Servicio):** Genera flujo de caja recurrente de alto valor. Alivia el dolor de ineficiencia en departamentos de diseño e ingeniería de grandes fabricantes (como Maderkit, Jamar, Politorno).
+2. **B2C: Venta Online de Muebles Premium en Guadua (Sandbox de Producto Físico):**
+   - **Validación Interna:** Sirve como el laboratorio real (*sandbox*) para probar y perfeccionar nuestro propio software: desde el diseño paramétrico en Guadua (uniones, estructura sustentable) hasta los manuales de armado 3D, la telemetría y el WebAR del e-commerce.
    - **Producto Físico Verde:** Venta de mobiliario ecológico de alto valor estético y estructural enfocado a nichos de diseño sostenible e-commerce.
 
 ---
 
 ## 💻 5. Arquitectura del Stack Tecnológico
 
-Nuestra plataforma se compone de dos vertientes interconectadas (la fábrica algorítmica y la visualización web):
+Nuestra plataforma se compone de dos vertientes interconectadas (el motor de manufactura en planta y la visualización web de campo):
 
 ```
-       [ Rhino 8 / Grasshopper (Local/Compute) ] -- ADN Paramétrico
+       [ Rhino 8 / Grasshopper (Local/Compute) ] -- ADN Paramétrico de Manufactura
                         │
                         ├─ (Archivos de fabricación: DXF, CSV, PDF)
                         ▼
@@ -103,52 +117,54 @@ Nuestra plataforma se compone de dos vertientes interconectadas (la fábrica alg
                         │
          ┌──────────────┴──────────────┐
          ▼                             ▼
- [ Next.js Platform (Port 3003) ]   [ R3F Assembly App (Port 3004 / Embed) ]
-   - CMS de administración             - Visor 3D del usuario final
-   - Configuración de manuales         - Guía por voz interactiva (TTS)
-   - Carga de PBR e Iluminación        - Visualización en caliente (postMessage)
+  [ Next.js Platform (Port 3003) ]   [ R3F Assembly App (Port 3004 / Embed) ]
+    - CMS de administración             - Visor 3D del usuario final
+    - Configuración de manuales         - Guía por voz interactiva (TTS)
+    - Carga de PBR e Iluminación        - Visualización en caliente (postMessage)
+    - Telemetría & Reporte PDF          - Captura de métricas de fricción
 ```
 
-1. **Algoritmos y Computación Paramétrica (Rhino Compute + Grasshopper):** Corre los scripts en segundo plano para realizar el procesamiento geométrico y generar las exportaciones de archivos técnicos (DXF, CSV).
-2. **Base de Datos y Almacenamiento (Supabase):** Repositorio central de perfiles de usuario, solicitudes de diseño, configuraciones de branding del cliente, modelos GLB de pasos, audios y texturas PBR.
-3. **Plataforma de Administración (Next.js - Puerto 3003):** Dashboard del administrador (Mario Mojica) para gestionar insumos, editar audios, calibrar luces, definir texturas y generar el código QR de inserción.
-4. **Visor de Usuario Final (React Three Fiber - Puerto 3004):** Aplicación interactiva ligera incrustable en los e-commerce (PDP) de los clientes que consume los datos de Supabase en tiempo real.
+1. **Algoritmos y Computación Paramétrica (Rhino Compute + Grasshopper):** Corre los scripts en segundo plano para realizar el procesamiento geométrico y generar las exportaciones de archivos técnicos (DXF, CSV, Nesting).
+2. **Base de Datos y Almacenamiento (Supabase Cloud):** Repositorio central de perfiles de usuario, solicitudes de diseño, configuraciones de branding del cliente, modelos GLB de pasos, audios, texturas PBR y registros de telemetría.
+3. **Plataforma de Administración (Next.js - Puerto 3003):** Dashboard del administrador (Mario Mojica) para gestionar proyectos, editar audios, calibrar luces, definir texturas, generar el código QR de inserción y emitir reportes de analítica en PDF.
+4. **Visor de Usuario Final (React Three Fiber - Puerto 3004):** Aplicación interactiva ligera incrustable en los e-commerce (PDP) de los clientes que consume los datos de Supabase en tiempo real y registra eventos de telemetría sin cookies.
 
 ---
 
 ## 🗺️ 6. Hoja de Ruta Táctica (Roadmap de Acción)
 
-### Fase 1: Consolidación Tecnológica (Foco Actual)
-- [x] Levantar servidores locales de desarrollo en puertos 3003 y 3004.
-- [x] Estabilizar el visor interactivo de armado con soporte de audio TTS y sombras reales.
+### Fase 1: Consolidación Tecnológica y Plataforma (Completada / Foco Continuo)
+- [x] Estabilizar los servidores de desarrollo y producción de la plataforma de software.
+- [x] Consolidar el visor interactivo de armado con soporte de audio TTS, sombras reales y branding dinámico.
 - [x] Implementar la calibración de iluminación y cámaras en tiempo real con persistencia en Supabase.
-- [ ] Desarrollar y validar los scripts de empaquetado y nesting en Grasshopper.
+- [x] Blindaje de propiedad intelectual (IP Shield) con cifrado GLB y URLs firmadas.
+- [x] Despliegue del motor de analíticas (Umami + API de telemetría en Next.js) y reporte PDF de fricción A4.
 
-### Fase 2: Creación de Contenido y Posicionamiento de Marca
-* **Demo Pública Imbatible:** Utilizar el diseño del mueble de Guadua para publicar un caso de estudio real en la web: mostrar el render, el WebAR, el despiece automatizado y el manual 3D en funcionamiento.
-* **LinkedIn Technical Posting:** Generar posts demostrando "Antes y Después" en procesos de diseño. Ejemplos: "Cómo pasamos de 3 días a 10 minutos para exportar planos CNC usando Grasshopper".
-* **Blog de Transformación Digital:** Crear artículos en el portafolio explicando los dolores ocultos de las áreas de I+D y cómo la automatización paramétrica incrementa la rentabilidad.
+### Fase 2: Creación de Contenido y Posicionamiento de Marca (Manufactura 4.0)
+* **Demo Pública Imbatible:** Utilizar el caso de estudio de Guadua y Politorno para mostrar en la web el render, el WebAR, el despiece automatizado y el manual 3D con telemetría en funcionamiento.
+* **LinkedIn Technical Posting:** Generar publicaciones demostrando la eficiencia del software de manufactura: "Cómo pasamos de 3 días a 10 minutos para exportar planos CNC usando Grasshopper".
+* **Posicionamiento en la Industria Mueblera:** Presencia técnica y outreach directo en los principales polos industriales de Brasil y Latinoamérica (Arapongas, Bento Gonçalves, Ubá, Movergs, Fimma).
 
-### Fase 3: Captura de Clientes e Iteración
-* **Prospección B2B:** Ofrecer diagnósticos gratuitos de flujo de trabajo de diseño a fabricantes medianos.
-* **Lanzamiento B2C:** Publicar y vender las primeras piezas físicas de Guadua online para validar la logística del manual de armado y WebAR en tiempo real con compradores reales.
+### Fase 3: Captura de Clientes e Iteración Comercial
+* **Prospección B2B:** Ofrecer diagnósticos gratuitos de flujo de trabajo de ingeniería a fabricantes medianos de mobiliario RTA.
+* **Lanzamiento B2C Sandbox:** Publicar y vender las primeras piezas físicas de Guadua online para validar la logística del manual de armado y WebAR con compradores reales.
 
 ---
 
-## 📈 7. Puesta en Marcha del Negocio: Foco Estratégico en el Manual de Armado 3D
+## 📈 7. Puesta en Marcha del Negocio: Foco Estratégico en el Manual 3D + Telemetría
 
-Para la fase de lanzamiento comercial de la startup, **nos enfocamos de forma prioritaria y exclusiva en la venta y distribución del Manual de Armado Interactivo 3D**. Este producto actúa como nuestro caballo de troya comercial, permitiéndonos adquirir clientes B2B de forma ágil sin exigirles cambios en sus procesos de diseño o ingeniería internos.
+Para la fase de lanzamiento comercial de la firma de software, **nos enfocamos de forma prioritaria en la venta y distribución del Manual de Armado Interactivo 3D con Telemetría de Campo**. Este módulo actúa como nuestro caballo de troya comercial, permitiéndonos adquirir clientes B2B de forma ágil sin exigirles cambios inmediatos en sus procesos de diseño o ingeniería internos.
 
-Nuestra propuesta comercial no se limita a vender "visualizaciones 3D bonitas"; vendemos una **plataforma integrada de optimización operativa, postventa inteligente y captura de datos de clientes**.
+Nuestra propuesta comercial no se limita a vender "visualizaciones 3D bonitas"; vendemos una **plataforma integrada de software para optimización operativa, postventa inteligente y captura de datos de clientes**.
 
 ### 7.1 El Argumento Comercial de Venta (Go-To-Market)
 El manual de armado 3D se presenta ante los fabricantes de muebles RTA bajo una propuesta de valor de alto retorno de inversión (ROI):
 1. **Reducción de Devoluciones y Garantías:** Minimiza los errores del usuario final al armar el mueble. Si un cliente rompe una pieza de madera por seguir mal un manual de papel, la empresa debe asumir el costo de reposición. El manual interactivo 3D con guías visuales y por voz reduce esta fricción drásticamente.
-2. **Descongestionamiento del Soporte Postventa:** Menos llamadas telefónicas redundantes a la línea de ayuda consultando *"¿dónde va este tornillo?"* o *"¿cuál es la pieza A?"*.
+2. **Descongestionamiento del Servicio al Cliente:** Menos llamadas telefónicas redundantes a la línea de soporte preguntando *"¿dónde va este tornillo?"* o *"¿cuál es la pieza A?"*.
 3. **Instalación Instantánea:** Los fabricantes solo deben imprimir un código QR autogenerado en la caja de cartón del mueble o incluir un enlace de inserción (iframe) en sus tiendas en línea (PDP). El usuario final escanea el QR y accede a la guía de inmediato en su celular, sin descargar aplicaciones ni registrarse.
 
 ### 7.2 El Sistema de Métricas Ejecutivas (Optimización de Muebles basada en Datos)
-El verdadero diferencial tecnológico para convencer a la junta directiva de una fábrica de muebles es el **módulo de analíticas automatizadas**. A través de la interacción del cliente con el visor 3D, la plataforma captura datos y genera un **Informe Ejecutivo en PDF (Modelo Estanteria.pdf)**:
+El verdadero diferencial tecnológico para convencer a la junta directiva de una fábrica de muebles es el **módulo de analíticas automatizadas de nuestro software**. A través de la interacción del cliente con el visor 3D, la plataforma captura datos y genera un **Informe Ejecutivo en PDF (Modelo de Fricción A4)**:
 * **El Embudo de Armado (Funnel paso a paso):** Gráfico de retención que detalla cuántos usuarios iniciaron el armado y cuántos llegaron a cada paso. Esto permite identificar cuellos de botella del producto físico.
   * *Ejemplo de Alerta Automatizada del Sistema:* *"Alerta de Fricción Crítica: El Paso 8 registró la mayor pérdida de usuarios en el camino, con 32 abandonos en esta transición. Se recomienda auditar la claridad visual o de audio de este paso."* Con esto, el fabricante sabe si debe cambiar un herraje complejo o rediseñar el paso en fábrica.
 * **Tasa de Finalización (Completion Rate):** Muestra el porcentaje de éxito total del proceso de armado.
@@ -156,16 +172,14 @@ El verdadero diferencial tecnológico para convencer a la junta directiva de una
 * **Sentimiento y Reseñas de Clientes:** Un muro de opiniones directas de los usuarios recolectadas al terminar el manual (ej: *"El audio va muy rápido en la explicación de las bisagras traseras"*, *"Excelente manual, muy fácil"*), lo que otorga a la fábrica una visibilidad directa del cliente final que antes no tenía.
 
 ### 7.3 Portal B2B de Acceso y Colaboración Fluidos
-Para que la relación entre nuestra startup y los fabricantes sea escalable y profesional, los clientes acceden a un panel seguro en nuestra plataforma mediante un **usuario y contraseña exclusivos**:
-* **Branding e Identidad Autogestionables:** Cada cliente (ej: Jamar, Maderkit) ingresa a su cuenta y define su **Color Primario** corporativo (que tiñe la interfaz del manual), carga sus logotipos, faviconos y configura los textos y traducciones de las 8 burbujas de ayuda del tutorial interactivo.
-* **Calibrador y Visor en Caliente:** El cliente puede visualizar de forma segura la previsualización en vivo de sus manuales, calibrar las luces del escenario virtual PBR, definir la posición predeterminada de la cámara por paso y guardar la configuración instantáneamente en nuestra base de datos mediante la integración de la plataforma.
+Para que la relación entre nuestra firma de software y los fabricantes sea escalable y profesional, los clientes acceden a un panel seguro en nuestra plataforma mediante un **usuario y contraseña exclusivos**:
+* **Branding e Identidad Autogestionables:** Cada cliente (ej: Jamar, Maderkit, Politorno) ingresa a su cuenta y define su **Color Primario** corporativo (que tiñe la interfaz del manual), carga sus logotipos, faviconos y configura los textos y traducciones de las 8 burbujas de ayuda del tutorial interactivo.
+* **Calibrador y Visor en Caliente:** El cliente puede visualizar de forma segura la previsualización en vivo de sus manuales, calibrar las luces del escenario virtual PBR, definir la posición predeterminada de la cámara por paso y guardar la configuración instantáneamente en nuestra base de datos.
 * **Descarga de QR e Informes:** El cliente ingresa a su zona de control privada para visualizar sus paneles de métricas interactivas y descargar los reportes mensuales en PDF para sus comités de calidad.
 
 ### 7.4 Traducción al Diseño de la Landing Page
-Este enfoque estratégico dicta que la landing page (`localhost:3004`) ya no debe hablar de "plataformas 3D generalistas" o "diseño generativo abstracto". Debe centrarse en **vender el Manual de Armado 3D como solución integral**.
+Este enfoque estratégico dicta que la landing page (`mariomojica.com`) se posicione como la entrada a una **firma de software para la industria de manufactura**, destacando la solución de armado 3D e inteligencia de datos como su producto insignia.
 * **El Hero** ataca el dolor directo del fabricante RTA.
 * **El centro de la página** muestra el visualizador 3D interactivo en vivo.
 * **La sección principal de beneficios** explica el sistema de analíticas automáticas (el reporte de fricción, abandonos paso a paso y reviews de clientes).
 * **El cierre de venta** destaca la plataforma CMS colaborativa donde el cliente inicia sesión para controlar sus marcas y descargar sus códigos QR.
-
-

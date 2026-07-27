@@ -6,18 +6,21 @@ Este documento es el "alma" comunicativa de la marca **Mario Mojica**. Cada post
 
 ## 🚫 1. Reglas Inquebrantables de Identidad
 
-### 1.1 El Nombre
+### 1.1 El Nombre y Definición Canónica
 * **Nombre Oficial de la Marca:** **Mario Mojica**
+* **Definición Canónica de la Firma (Norma Obligatoria):** Nos definimos siempre como **"Desarrollador de Software para la Manufactura"** (ES) / **"Desenvolvedor de Software para Manufatura"** (PT) / **"Manufacturing Software Developer"** (EN).
+* **PROHIBIDO:** NUNCA usar simplemente "Software para Manufactura" como si fuera un producto en caja. Somos una *firma desarrolladora de software e integración tecnológica*.
 * **Formas aceptables:** "Mario Mojica", "el equipo de Mario Mojica", "nuestra plataforma".
 * **PROHIBIDO:** Nunca bajo ninguna circunstancia se debe utilizar la palabra **"Style"** o derivaciones similares (Mario Mojica Style, MM Style, etc.). Dicho término fue únicamente un requerimiento técnico de registro para la dirección de correo electrónico y **no forma parte de la identidad de la marca**.
 
 ### 1.2 Qué Vendemos (y Qué NO Vendemos)
 * **NO vendemos:** "Visualizaciones 3D bonitas", "renders", "modelos 3D", "herramientas digitales", ni "plataformas tecnológicas genéricas".
-* **SÍ vendemos:** Una **plataforma integrada de optimización operativa, postventa inteligente y captura de datos de clientes** para fabricantes de muebles RTA.
-* **El Producto Estrella (Caballo de Troya B2B):** El **Manual de Armado Interactivo 3D**. Es nuestro producto de entrada al mercado. Resuelve el dolor más visible, inmediato y cuantificable de los fabricantes (devoluciones, servicio al cliente colapsado, reputación online). Una vez dentro con el manual, escalamos hacia automatización de fábrica, planos CNC y diseño paramétrico como upsell natural.
+* **SÍ vendemos:** Una **plataforma y suite de software de manufactura para optimización operativa, postventa inteligente y captura de datos de clientes** especializada en la industria del mueble.
+* **El Producto Estrella (Caballo de Troya B2B):** El **Manual de Armado Interactivo 3D**. Es nuestro módulo de entrada al mercado. Resuelve el dolor más visible, inmediato y cuantificable de los fabricantes (devoluciones, servicio al cliente colapsado, reputación online). Una vez dentro con el manual, escalamos hacia automatización de fábrica, planos CNC y diseño paramétrico como upsell natural.
 
 ### 1.3 Mercado Objetivo
-* **Primario:** Fabricantes de muebles **RTA (Ready-To-Assemble / Listo para armar)** en Brasil y Latinoamérica. Materiales predominantes: MDP y MDF con acabados en pintura UV o BP.
+* **Posicionamiento de Firma:** **Firma de software para el sector de la Manufactura (Manufactura 4.0)**, con foco vertical prioritario e inmediato en la Industria del Mueble.
+* **Segmentación de Muebles:** Fabricantes de muebles **RTA (Ready-To-Assemble / Listo para armar)**, Seriados, Modulados y Planejados en Brasil y Latinoamérica. Materiales predominantes: MDP y MDF con acabados en pintura UV o BP.
 * **Polos Geográficos Clave:** Arapongas (PR), Bento Gonçalves (RS), Ubá (MG), São Bento do Sul (SC).
 * **Tomadores de Decisión:** Directores de I+D/Diseño, Gerentes de Producción, Directores de Postventa/Calidad, CEOs/Fundadores de fábricas medianas.
 * **Idiomas del Contenido:** Español (principal), Portugués Brasileño (mercado prioritario), Inglés (alcance global).

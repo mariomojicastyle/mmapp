@@ -288,6 +288,24 @@ export async function GET(request: NextRequest) {
         if (liCuenta && liCuenta.access_token) {
           try {
             const authorUrn = `urn:li:person:${liCuenta.cuenta_id_externo}`
+
+            const shareContentObj: any = {
+              shareCommentary: {
+                text: post.contenido_base,
+              },
+              shareMediaCategory: publicImageUrls.length > 0 ? "IMAGE" : "NONE",
+            }
+
+            if (publicImageUrls.length > 0) {
+              shareContentObj.media = publicImageUrls.map((url) => ({
+                status: "READY",
+                originalUrl: url,
+                title: {
+                  text: post.titulo || "Mario Mojica - Smart Assembly 3D",
+                },
+              }))
+            }
+
             const liRes = await fetch("https://api.linkedin.com/v2/ugcPosts", {
               method: "POST",
               headers: {
@@ -299,12 +317,7 @@ export async function GET(request: NextRequest) {
                 author: authorUrn,
                 lifecycleState: "PUBLISHED",
                 specificContent: {
-                  "com.linkedin.ugc.ShareContent": {
-                    shareCommentary: {
-                      text: post.contenido_base,
-                    },
-                    shareMediaCategory: "NONE",
-                  },
+                  "com.linkedin.ugc.ShareContent": shareContentObj,
                 },
                 visibility: {
                   "com.linkedin.ugc.MemberNetworkVisibility": "PUBLIC",

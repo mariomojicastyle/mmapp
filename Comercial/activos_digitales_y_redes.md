@@ -11,12 +11,17 @@ Para maximizar la efectividad del modelo de ventas corporativo B2B y Account-Bas
 ### A. Perfil Personal: Mario Mojica (Marca Personal)
 * **Propósito:** Generar tracción orgánica inicial mediante autoridad técnica, interactuar de manera directa con tomadores de decisión (Directores de R&D, Compradores, CEOs) y ejecutar la venta consultiva.
 * **URL:** [linkedin.com/in/mario-mojica](https://www.linkedin.com/in/mario-mojica)
-* **Headline Actual:** `Fundador & CEO @ Mario Mojica | Aceleramos P&D em fábricas RTA | melhoramos a experiência do cliente com Manuais 3D interativos | Redução de custos por terceirização e porta de entrada para a Indústria 4.0`
+* **Headline Actual (Español):** `Fundador & CEO @ Mario Mojica | Desarrollamos software para optimizar procesos en plantas de Manufactura | Foco en la Industria del Mueble RTA | Manuales 3D de Armado de productos | Industria 4.0`
+* **Headline Actual (Portugués - Brasil):** `Fundador & CEO @ Mario Mojica | Desenvolvemos software para otimizar processos em fábricas de Manufatura | Foco na Indústria de Móveis RTA | Manuais 3D de Montagem de produtos | Indústria 4.0`
+* **Headline Actual (Inglés - Global):** `Founder & CEO @ Mario Mojica | We develop software to optimize manufacturing plant processes | Focused on the RTA Furniture Industry | Interactive 3D Product Assembly Manuals | Industry 4.0`
 * **Configuración:** Correo verificado `direccion@mariomojica.com`.
 
 ### B. Página Corporativa de Empresa en LinkedIn
 * **Propósito:** Activo corporativo oficial para la marca en LinkedIn, vinculada directamente desde la cuenta personal de Mario Mojica.
-* **Nombre Oficial:** `Mario Mojica - Ensamblaje inteligente 3D`
+* **Nombres Oficiales por Idioma:**
+  * **Español:** `Mario Mojica - Desarrollador de Software para Manufactura`
+  * **Portugués:** `Mario Mojica - Desenvolvedor de Software para Manufatura`
+  * **Inglés:** `Mario Mojica - Manufacturing Software Developer`
 * **Estado Actual:** Creada y activa, vinculada al perfil personal principal ([mario-mojica](https://www.linkedin.com/in/mario-mojica)).
 * **Nota Histórica:** La cuenta previa `mariomojicaff` fue cerrada definitivamente.
 
@@ -31,6 +36,18 @@ Para maximizar la efectividad del modelo de ventas corporativo B2B y Account-Bas
   * Vínculos estratégicos hacia `/demo`, sitio web y LinkedIn.
   * Categoría predeterminada establecida en **Ciencia y tecnología**.
   * Visibilidad predeterminada de carga en **Oculto**.
+
+### D. Cuenta Oficial de Instagram: `@mariomojicaff`
+* **Propósito:** Publicación directa multi-formato (Single Photo & Carrusel HD) y reels demostrativos para posicionamiento visual B2B.
+* **Usuario:** `@mariomojicaff`
+* **Biografía Oficial (Presentación - 150 caracteres max):**
+  ```text
+  Desarrollador de software para la Industria de Manufactura ⚙️
+  Foco: Muebles RTA 🪵
+  Manuales 3D de Armado por Voz & Datos 🚀
+  👇 Demo Interactiva:
+  ```
+* **Enlace de Bio:** `mariomojica.com/demo`
 
 ---
 
