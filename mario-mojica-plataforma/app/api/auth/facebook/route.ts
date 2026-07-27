@@ -10,11 +10,11 @@ export async function GET(request: NextRequest) {
     )
   }
 
-  // Scopes oficiales habilitados en la App de Negocios de Meta (Mario Mojica Marketing)
+  // Scope estándar compatible email para flujo OAuth fluido
   const params = new URLSearchParams({
     client_id: appId,
     redirect_uri: redirectUri,
-    scope: "pages_show_list,pages_read_engagement,pages_manage_posts,instagram_basic,instagram_content_publish",
+    scope: "email",
     response_type: "code",
   })
 
