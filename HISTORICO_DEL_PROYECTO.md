@@ -4,10 +4,35 @@ Este archivo es un registro vivo de la evolución tecnológica del ecosistema Ma
 
 ## 🗓️ Julio 2026
 
-### 🔹 Hito Merkadeo (26 de Julio, 2026): Motor de Publicaciones Multicanal B2B & Integración n8n
-- **Editor Multi-Canal Persistente**: Desarrollo del componente `EditorPostModal` con soporte para drag & drop de carruseles de imágenes, compresión cliente en Canvas y vista previa simultánea (LinkedIn, Instagram, Facebook y YouTube).
-- **Publicador Autónomo en n8n**: Creación de la API Route `/api/marketing/publish` y el worker `marketing_publisher_worker` en n8n para consultar minutalmente la cola de posts en Supabase y ejecutarlos vía Meta Graph API y LinkedIn UGC API.
-- **Robustez de Transferencia y UI**: Configuración de `next.config.ts` (25MB en Server Actions) y supresión de falsos errores de hidratación de extensiones de navegador.
+### 🔹 Hito Merkadeo V2 / Marketing_02 (26-27 de Julio, 2026): Motor de Publicaciones Multicanal B2B & Conexión Meta (FB/IG)
+
+#### 1. Arquitectura y Componentes UI:
+- **Editor Multi-Canal Persistente (`EditorPostModal`)**: Componente reactivo con soporte para drag & drop de imágenes en carrusel, vista previa en tiempo real por red (LinkedIn, Facebook, Instagram y YouTube), compresión del lado del cliente vía HTML5 Canvas (<150KB JPEG por imagen) y límite ampliado a 25MB en Server Actions (`next.config.ts`).
+- **Modal de Gestión Directa de Tokens (`ConfigTokensModal`)**: Creación del componente modal y botón **`🔑 Configurar Tokens API`** en la interfaz de `app.mariomojica.com/marketing` para inyectar/refrescar tokens de páginas empresariales directamente en Supabase sin depender de bloqueos OAuth del navegador.
+- **Planificador Semanal B2B**: Grilla con franjas horarias óptimas de CTR B2B (`08:30` a `21:00`), emparejador de slots más cercano y cálculo de zonas horarias locales.
+
+#### 2. Infraestructura de Publicación Autónoma (n8n & Next.js API Route):
+- **Worker Autónomo n8n (`marketing_publisher_worker`, ID `rhkOkQuv7M4ARSEm`)**: Flujo cron de n8n configurado para ejecutarse minutalmente llamando a la API pública de producción `https://mariomojica.com/api/marketing/publish`.
+- **API Engine (`app/api/marketing/publish/route.ts`)**:
+  - Consulta en Supabase (`marketing_posts`) publicaciones con estado `programado` y `fecha_programada <= AHORA`.
+  - Extrae de la tabla `marketing_cuentas` las credenciales conectadas.
+  - Para Facebook: Consulta dinámicamente `/v19.0/me/accounts` obteniendo el **Page Access Token** y el ID real de la página (`1219474691249252`), realizando la publicación vía Graph API POST a `/v19.0/{page_id}/feed`.
+  - Actualiza automáticamente el estado en Supabase a `publicado` o `fallido` con su log de error exacto.
+
+#### 3. Diagnóstico y Solución de Autenticación Meta:
+- **Resolució del error `(#200) / (#283) Requires pages_read_engagement & pages_manage_posts`**:
+  - Se identificó que las llamadas a perfiles personales no son permitidas por Meta v19.0+.
+  - Se configuró la App oficial **`Mario Mojica Marketing`** (App ID `1736322840851405`) con los permisos `pages_read_engagement` y `pages_manage_posts` en estado *Listo para la prueba*.
+  - Se extrajo el Token de Página de la fanpage oficial **`Mario Mojica - Smart Assembly 3D - Inteligência Moveleira`** (ID: `1219474691249252`).
+- **Resolución de Bloqueos Netlify & Redirecciones 404**:
+  - Se corrigió la regla `from = "/M*"` en `mario-mojica-homepage/netlify.toml` que interceptaba erróneamente las rutas `/api/*` enviándolas a 404.
+  - Se agregaron las fallbacks de producción para `FACEBOOK_APP_ID` y `FACEBOOK_APP_SECRET`.
+
+#### 4. Hito Alcanzado & Verificación en Vivo:
+- 🟢 **Publicación en Muro Confirmada**: Publicación automática procesada por n8n (`Ejecución #921`, `succeeded in 4.011s`) e inyectada exitosamente en el muro oficial de Facebook (*Mario Mojica - Smart Assembly 3D*).
+- 📌 **Pendiente Próxima Sesión (Mañana)**:
+  1. Adjuntar payloads multimedia (imágenes/carruseles GLB renderizados) en la API de Meta y LinkedIn.
+  2. Finalizar la vinculación Business de la cuenta de Instagram `@mariomojicaff` en Meta Business Suite.
 
 #### 📌 Inventario Oficial de Apps de Meta (Control y Limpieza):
 | Nombre de App | App ID | Estado / Uso Principal |
