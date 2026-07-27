@@ -1,10 +1,11 @@
 "use client"
 
 import React, { useState, useEffect } from "react"
-import { Calendar as CalendarIcon, Plus, Loader2, Share2, AlertCircle, CheckCircle2, RefreshCw, Link2, HardDrive, Edit3 } from "lucide-react"
+import { Calendar as CalendarIcon, Plus, Loader2, Share2, AlertCircle, CheckCircle2, RefreshCw, Link2, HardDrive, Edit3, KeyRound } from "lucide-react"
 import Link from "next/link"
 import { getMarketingPosts, getMarketingCuentas } from "@/app/actions/marketing"
 import { EditorPostModal } from "@/components/marketing/editor-post-modal"
+import { ConfigTokensModal } from "@/components/marketing/config-tokens-modal"
 import { CalendarioSemanal, MarketingPost } from "@/components/marketing/calendario-semanal"
 
 interface MarketingCuenta {
@@ -26,6 +27,7 @@ export default function MarketingPage() {
   const [cuentas, setCuentas] = useState<MarketingCuenta[]>([])
   const [loading, setLoading] = useState(true)
   const [isEditorOpen, setIsEditorOpen] = useState(false)
+  const [isConfigTokensOpen, setIsConfigTokensOpen] = useState(false)
   const [editingPost, setEditingPost] = useState<MarketingPost | null>(null)
 
   const fetchData = async () => {
@@ -139,13 +141,22 @@ export default function MarketingPage() {
           </p>
         </div>
 
-        <button
-          onClick={handleOpenNewEditor}
-          className="flex items-center gap-2 rounded-xl bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground transition-opacity hover:opacity-90 shadow-md shadow-primary/20 cursor-pointer"
-        >
-          <Plus className="h-4 w-4" />
-          Crear Publicación
-        </button>
+        <div className="flex items-center gap-2.5">
+          <button
+            onClick={() => setIsConfigTokensOpen(true)}
+            className="flex items-center gap-2 rounded-xl bg-surface-container-high border border-outline-variant/30 px-3.5 py-2.5 text-xs font-semibold text-on-surface hover:bg-surface-container-highest transition-colors cursor-pointer"
+          >
+            <KeyRound className="h-4 w-4 text-primary" />
+            Configurar Tokens API
+          </button>
+          <button
+            onClick={handleOpenNewEditor}
+            className="flex items-center gap-2 rounded-xl bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground transition-opacity hover:opacity-90 shadow-md shadow-primary/20 cursor-pointer"
+          >
+            <Plus className="h-4 w-4" />
+            Crear Publicación
+          </button>
+        </div>
       </div>
 
       {/* Métricas Rápidas */}
@@ -352,6 +363,13 @@ export default function MarketingPage() {
         }}
         onSuccess={() => fetchData()}
         initialData={editingPost}
+      />
+
+      {/* Modal de Configuración Directa de Tokens API */}
+      <ConfigTokensModal
+        isOpen={isConfigTokensOpen}
+        onClose={() => setIsConfigTokensOpen(false)}
+        onSuccess={() => fetchData()}
       />
     </div>
   )
