@@ -10,11 +10,11 @@ export async function GET(request: NextRequest) {
     )
   }
 
-  // Scope estándar compatible email para flujo OAuth fluido
+  // En Apps de Negocios de Meta, no se envía parámetro 'scope' en la URL inicial
+  // para usar la configuración nativa de casos de uso de la app.
   const params = new URLSearchParams({
     client_id: appId,
     redirect_uri: redirectUri,
-    scope: "email",
     response_type: "code",
   })
 
