@@ -33,6 +33,19 @@ Este archivo es un registro vivo de la evolución tecnológica del ecosistema Ma
 - 🟢 **Subida de Imágenes Ultra HD 2K**: Motor de procesamiento actualizado a `2048px` y `98%` calidad HD con renderizado y alojamiento automático en el bucket público de Supabase Storage (`marketing-media`).
 - 🟢 **Vinculación Oficial de Instagram Business**: Perfil comercial **`@mariomojicaff`** vinculado exitosamente a la Página de Facebook principal **`Mario Mojica - Smart Assembly 3D - Inteligência Moveleira`** dentro del Portfolio Comercial de Meta.
 
+#### 5. Protocolo Oficial de Habilitación de Permisos de Instagram (Meta Developers):
+- **Ubicación en el Panel de Meta Developers**: `App Mario Mojica Marketing` (`1736322840851405`) -> `Casos de uso` -> `API de Instagram` -> `Permisos y funciones`.
+- **Permisos Obligatorios para Publicación Automática**:
+  1. `pages_show_list`
+  2. `pages_read_engagement`
+  3. `pages_manage_posts`
+  4. 🟢 **`instagram_basic`**: Requerido para leer el perfil y vincular el ID de la cuenta empresarial.
+  5. 🟢 **`instagram_content_publish`**: Requerido para crear contenedores multimedia y publicar en el Feed de Instagram.
+- **Ruta de Extracción en Graph API Explorer**:
+  - `App de Meta`: **Mario Mojica Marketing**
+  - `Usuario o página`: **Mario Mojica - Smart Assembly 3D - Inteligência Moveleira**
+  - Permisos activos confirmados: `pages_show_list`, `pages_read_engagement`, `pages_manage_posts`, `instagram_basic`, `instagram_content_publish`.
+
 #### 📌 Inventario Oficial de Cuentas y Vinculaciones de Marketing:
 | Canal / Activo | ID Externo / Usuario | Nombre de Cuenta / Página | Estado de Vinculación |
 | :--- | :--- | :--- | :--- |

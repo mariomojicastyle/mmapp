@@ -126,17 +126,20 @@ export async function GET(request: NextRequest) {
         const fbCuenta = cuentasMap.get("facebook")
         if (fbCuenta && fbCuenta.access_token) {
           try {
-            const pagesRes = await fetch(
-              `https://graph.facebook.com/v19.0/me/accounts?access_token=${fbCuenta.access_token}`
-            )
             let targetToken = fbCuenta.access_token
-            let targetId = fbCuenta.cuenta_id_externo
+            let targetId = "1219474691249252"
 
-            if (pagesRes.ok) {
-              const pagesData = await pagesRes.json()
-              if (pagesData.data && pagesData.data.length > 0) {
-                targetToken = pagesData.data[0].access_token || fbCuenta.access_token
-                targetId = pagesData.data[0].id || fbCuenta.cuenta_id_externo
+            // Intentar obtener Token de Página dinámico si el token almacenado es de Usuario
+            const pageRes = await fetch(
+              `https://graph.facebook.com/v19.0/1219474691249252?fields=access_token,name,id,instagram_business_account&access_token=${fbCuenta.access_token}`
+            )
+            if (pageRes.ok) {
+              const pageData = await pageRes.json()
+              if (pageData.access_token) {
+                targetToken = pageData.access_token
+              }
+              if (pageData.id) {
+                targetId = pageData.id
               }
             }
 
