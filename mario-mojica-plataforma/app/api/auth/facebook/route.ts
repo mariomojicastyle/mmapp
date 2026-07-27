@@ -10,11 +10,11 @@ export async function GET(request: NextRequest) {
     )
   }
 
-  // Scope estándar compatible para evitar la alerta "Invalid Scopes" en Meta OAuth
+  // Scopes oficiales habilitados en la App de Negocios de Meta (Mario Mojica Marketing)
   const params = new URLSearchParams({
     client_id: appId,
     redirect_uri: redirectUri,
-    scope: "public_profile",
+    scope: "pages_show_list,pages_read_engagement,pages_manage_posts,instagram_basic,instagram_content_publish",
     response_type: "code",
   })
 
