@@ -28,7 +28,6 @@ const HORAS_24 = Array.from({ length: 24 }, (_, i) => `${i.toString().padStart(2
 const TIMEZONES = [
   { id: "America/Sao_Paulo", label: "🇧🇷 Bento Gonçalves / Brasil (UTC-3)" },
   { id: "America/Bogota", label: "🇨🇴 Colombia / Ecuador (UTC-5)" },
-  { id: "UTC", label: "🌐 Universal (UTC)" },
 ]
 
 export function CalendarioSemanal({ posts, onSelectSlot, onSelectPost }: CalendarioSemanalProps) {
@@ -239,8 +238,8 @@ export function CalendarioSemanal({ posts, onSelectSlot, onSelectPost }: Calenda
                         <Clock className="h-2.5 w-2.5" />
                         {hora}
                         {selectedTimezone === "America/Sao_Paulo" && (
-                          <span className="text-[8px] opacity-60">
-                            ({(parseInt(hora.split(":")[0]) - 2 + 24) % 24}:00 COT)
+                          <span className="text-[8px] font-medium opacity-60">
+                            ({(parseInt(hora.split(":")[0]) - 2 + 24) % 24}:00 Col)
                           </span>
                         )}
                       </span>
