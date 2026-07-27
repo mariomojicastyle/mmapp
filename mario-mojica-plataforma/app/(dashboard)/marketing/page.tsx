@@ -1,9 +1,9 @@
 "use client"
 
 import React, { useState, useEffect } from "react"
-import { Calendar as CalendarIcon, Plus, Loader2, Share2, AlertCircle, CheckCircle2, RefreshCw, Link2, HardDrive, Edit3, KeyRound } from "lucide-react"
+import { Calendar as CalendarIcon, Plus, Loader2, Share2, AlertCircle, CheckCircle2, RefreshCw, Link2, HardDrive, Edit3, KeyRound, Trash2 } from "lucide-react"
 import Link from "next/link"
-import { getMarketingPosts, getMarketingCuentas } from "@/app/actions/marketing"
+import { getMarketingPosts, getMarketingCuentas, deleteMarketingPost } from "@/app/actions/marketing"
 import { EditorPostModal } from "@/components/marketing/editor-post-modal"
 import { ConfigTokensModal } from "@/components/marketing/config-tokens-modal"
 import { CalendarioSemanal, MarketingPost } from "@/components/marketing/calendario-semanal"
@@ -54,6 +54,13 @@ export default function MarketingPage() {
   const handleOpenEditEditor = (post: MarketingPost) => {
     setEditingPost(post)
     setIsEditorOpen(true)
+  }
+
+  const handleDeletePost = async (id: string) => {
+    const res = await deleteMarketingPost(id)
+    if (res.success) {
+      setPosts((prev) => prev.filter((p) => p.id !== id))
+    }
   }
 
   const handleSelectSlot = (date: Date) => {
@@ -214,7 +221,7 @@ export default function MarketingPage() {
                 </p>
               </div>
             ) : (
-              <div className="divide-y divide-outline-variant/20">
+              <div className="max-h-[380px] overflow-y-auto pr-1 divide-y divide-outline-variant/20 custom-scrollbar">
                 {posts.map((post) => (
                   <div
                     key={post.id}
@@ -238,7 +245,7 @@ export default function MarketingPage() {
                       </p>
                     </div>
 
-                    <div className="text-right shrink-0">
+                    <div className="text-right shrink-0 flex flex-col items-end gap-1">
                       <span className="text-[11px] font-semibold text-primary block">
                         {post.fecha_programada
                           ? new Date(post.fecha_programada).toLocaleDateString("es-ES", {
@@ -249,9 +256,23 @@ export default function MarketingPage() {
                             })
                           : "Sin fecha"}
                       </span>
-                      <span className="text-[10px] text-on-surface-variant opacity-0 group-hover:opacity-100 transition-opacity font-medium">
-                        Haz clic para reprogramar ✏️
-                      </span>
+                      <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <span className="text-[10px] text-on-surface-variant font-medium">
+                          Editar ✏️
+                        </span>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            if (confirm(`¿Eliminar la publicación "${post.titulo || "Sin título"}"?`)) {
+                              handleDeletePost(post.id)
+                            }
+                          }}
+                          className="p-1 rounded text-error hover:bg-error/10 transition-colors"
+                          title="Eliminar publicación"
+                        >
+                          <Trash2 className="h-3 w-3" />
+                        </button>
+                      </div>
                     </div>
                   </div>
                 ))}
@@ -362,6 +383,7 @@ export default function MarketingPage() {
           setEditingPost(null)
         }}
         onSuccess={() => fetchData()}
+        onDelete={handleDeletePost}
         initialData={editingPost}
       />
 

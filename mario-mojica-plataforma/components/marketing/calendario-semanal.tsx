@@ -1,7 +1,7 @@
 "use client"
 
 import React, { useState } from "react"
-import { Calendar as CalendarIcon, Clock, Plus, ChevronLeft, ChevronRight, Edit3 } from "lucide-react"
+import { Calendar as CalendarIcon, Clock, ChevronLeft, ChevronRight, Edit3, Globe, Flame } from "lucide-react"
 
 export interface MarketingPost {
   id: string
@@ -21,10 +21,19 @@ interface CalendarioSemanalProps {
 }
 
 const DIAS_SEMANA = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"]
-const HORAS_CLAVE = ["08:30", "10:00", "12:00", "15:00", "17:30", "19:00", "21:00"]
+
+// Generar las 24 horas del día (00:00 a 23:00)
+const HORAS_24 = Array.from({ length: 24 }, (_, i) => `${i.toString().padStart(2, "0")}:00`)
+
+const TIMEZONES = [
+  { id: "America/Sao_Paulo", label: "🇧🇷 Bento Gonçalves / Brasil (UTC-3)" },
+  { id: "America/Bogota", label: "🇨🇴 Colombia / Ecuador (UTC-5)" },
+  { id: "UTC", label: "🌐 Universal (UTC)" },
+]
 
 export function CalendarioSemanal({ posts, onSelectSlot, onSelectPost }: CalendarioSemanalProps) {
   const [currentWeekOffset, setCurrentWeekOffset] = useState(0)
+  const [selectedTimezone, setSelectedTimezone] = useState("America/Sao_Paulo")
 
   // Obtener fechas de la semana actual (Lunes a Domingo)
   const getWeekDates = () => {
@@ -60,176 +69,223 @@ export function CalendarioSemanal({ posts, onSelectSlot, onSelectPost }: Calenda
     })
   }
 
-  // Encuentra la franja horaria de HORAS_CLAVE más cercana para un post
+  // Encuentra la hora 00:00 - 23:00 más cercana para un post
   const getClosestSlotHora = (pDate: Date) => {
-    const pHour = pDate.getHours() + pDate.getMinutes() / 60
-    let closestHora = HORAS_CLAVE[0]
-    let minDiff = Infinity
+    const pHour = pDate.getHours()
+    return `${pHour.toString().padStart(2, "0")}:00`
+  }
 
-    for (const horaStr of HORAS_CLAVE) {
-      const [h, m] = horaStr.split(":").map(Number)
-      const slotHour = h + m / 60
-      const diff = Math.abs(pHour - slotHour)
-      if (diff < minDiff) {
-        minDiff = diff
-        closestHora = horaStr
-      }
+  // Mapa de calor B2B (Metricool Heatmap style)
+  // Intensidad: 3 (Pico Alto CTR - Rosa/Coral Vivo), 2 (Medio - Rosa Suave), 1 (Bajo - Tinta Ligera), 0 (Horas Muertas)
+  const getHeatmapIntensity = (dayIdx: number, hourStr: string): number => {
+    const hour = parseInt(hourStr.split(":")[0], 10)
+
+    // Martes, Miércoles, Jueves (Días dorados B2B RTA Brasil)
+    if (dayIdx >= 1 && dayIdx <= 3) {
+      if ([9, 11, 14, 15, 18, 19, 20].includes(hour)) return 3 // Pico Alto
+      if ([8, 10, 12, 13, 16, 17, 21].includes(hour)) return 2 // Pico Medio
+      if (hour >= 7 && hour <= 22) return 1
+      return 0
     }
+    // Lunes y Viernes
+    if (dayIdx === 0 || dayIdx === 4) {
+      if ([10, 11, 14, 15, 18, 19].includes(hour)) return 2
+      if (hour >= 8 && hour <= 21) return 1
+      return 0
+    }
+    // Fin de semana (Sábado / Domingo)
+    if (hour >= 10 && hour <= 19) return 1
+    return 0
+  }
 
-    return closestHora
+  // Estilo de color del mapa de calor por intensidad
+  const getSlotHeatmapClass = (intensity: number, hasPost: boolean) => {
+    if (hasPost) return "bg-primary/20 border-primary shadow-md shadow-primary/10"
+    switch (intensity) {
+      case 3:
+        return "bg-rose-500/25 border-rose-500/40 text-rose-200 hover:bg-rose-500/35 cursor-pointer"
+      case 2:
+        return "bg-rose-500/15 border-rose-500/25 text-rose-300/80 hover:bg-rose-500/25 cursor-pointer"
+      case 1:
+        return "bg-rose-500/5 border-outline-variant/10 text-on-surface-variant/60 hover:bg-rose-500/10 cursor-pointer"
+      default:
+        return "bg-surface-container-high/20 border-outline-variant/10 text-on-surface-variant/40 hover:border-outline-variant/30 cursor-pointer"
+    }
   }
 
   return (
-    <div className="rounded-2xl bg-surface-container border border-outline-variant/15 p-5 space-y-4">
-      {/* Header del Calendario */}
-      <div className="flex items-center justify-between border-b border-outline-variant/20 pb-4">
+    <div className="rounded-2xl bg-surface-container border border-outline-variant/15 p-5 space-y-4 shadow-xl">
+      {/* Header del Calendario con Selector de Zona Horaria */}
+      <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 border-b border-outline-variant/20 pb-4">
         <div className="flex items-center gap-3">
-          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary/10 text-primary">
+          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-primary">
             <CalendarIcon className="h-5 w-5" />
           </div>
           <div>
-            <h3 className="text-base font-bold text-on-surface">Planificador Semanal B2B</h3>
-            <p className="text-xs text-on-surface-variant">
-              Horarios de máximo CTR marcados con mapa de calor. Haz clic en cualquier post para editarlo o reprogramarlo.
+            <div className="flex items-center gap-2">
+              <h3 className="text-base font-bold text-on-surface">Planificador Semanal B2B (24 Horas)</h3>
+              <span className="flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-rose-500/20 text-rose-400 border border-rose-500/30">
+                <Flame className="h-3 w-3" /> Mapa de Calor CTR
+              </span>
+            </div>
+            <p className="text-xs text-on-surface-variant mt-0.5">
+              Horarios óptimos de prospección marcados en coral estilo Metricool. Selecciona la zona horaria del cliente.
             </p>
           </div>
         </div>
 
-        <div className="flex items-center gap-2">
-          <button
-            onClick={() => setCurrentWeekOffset((prev) => prev - 1)}
-            className="flex h-8 w-8 items-center justify-center rounded-lg border border-outline-variant/20 hover:bg-surface-container-high text-on-surface-variant transition-colors"
-            title="Semana anterior"
-          >
-            <ChevronLeft className="h-4 w-4" />
-          </button>
-          <span className="text-xs font-semibold px-2 text-on-surface">
-            {currentWeekOffset === 0 ? "Semana Actual" : currentWeekOffset > 0 ? `+${currentWeekOffset} Semanas` : `${currentWeekOffset} Semanas`}
-          </span>
-          <button
-            onClick={() => setCurrentWeekOffset((prev) => prev + 1)}
-            className="flex h-8 w-8 items-center justify-center rounded-lg border border-outline-variant/20 hover:bg-surface-container-high text-on-surface-variant transition-colors"
-            title="Semana siguiente"
-          >
-            <ChevronRight className="h-4 w-4" />
-          </button>
+        <div className="flex flex-wrap items-center gap-3">
+          {/* Selector de Zona Horaria */}
+          <div className="flex items-center gap-1.5 bg-surface-container-high/60 border border-outline-variant/20 rounded-xl px-2.5 py-1.5 text-xs">
+            <Globe className="h-3.5 w-3.5 text-primary" />
+            <select
+              value={selectedTimezone}
+              onChange={(e) => setSelectedTimezone(e.target.value)}
+              className="bg-transparent text-on-surface font-semibold text-xs focus:outline-none cursor-pointer"
+            >
+              {TIMEZONES.map((tz) => (
+                <option key={tz.id} value={tz.id} className="bg-surface-container-highest text-on-surface">
+                  {tz.label}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* Navegador de Semanas */}
+          <div className="flex items-center gap-1.5 bg-surface-container-high/60 border border-outline-variant/20 rounded-xl p-1">
+            <button
+              onClick={() => setCurrentWeekOffset((prev) => prev - 1)}
+              className="flex h-7 w-7 items-center justify-center rounded-lg hover:bg-surface-container-highest text-on-surface-variant transition-colors"
+              title="Semana anterior"
+            >
+              <ChevronLeft className="h-4 w-4" />
+            </button>
+            <span className="text-xs font-semibold px-2 text-on-surface min-w-[90px] text-center">
+              {currentWeekOffset === 0 ? "Semana Actual" : currentWeekOffset > 0 ? `+${currentWeekOffset} Semanas` : `${currentWeekOffset} Semanas`}
+            </span>
+            <button
+              onClick={() => setCurrentWeekOffset((prev) => prev + 1)}
+              className="flex h-7 w-7 items-center justify-center rounded-lg hover:bg-surface-container-highest text-on-surface-variant transition-colors"
+              title="Semana siguiente"
+            >
+              <ChevronRight className="h-4 w-4" />
+            </button>
+          </div>
         </div>
       </div>
 
-      {/* Cuadrícula de Encabezados de Días de la Semana */}
-      <div className="grid grid-cols-7 gap-2 text-center">
-        {DIAS_SEMANA.map((dia, idx) => {
-          const date = weekDates[idx]
-          const isToday = new Date().toDateString() === date.toDateString()
-          const isRecomendado = idx >= 1 && idx <= 3 // Martes, Miércoles, Jueves
+      {/* Contenedor de Scroll Vertical de 24 Horas con Header Sticky Fijo */}
+      <div className="max-h-[580px] overflow-y-auto overflow-x-hidden rounded-xl border border-outline-variant/20 pr-1 relative custom-scrollbar">
+        {/* Cuadrícula de Encabezados de Días de la Semana (STICKY CONGELADO) */}
+        <div className="sticky top-0 z-20 grid grid-cols-7 gap-2 text-center bg-surface-container/95 backdrop-blur-md p-2.5 border-b border-outline-variant/20 shadow-sm">
+          {DIAS_SEMANA.map((dia, idx) => {
+            const date = weekDates[idx]
+            const isToday = new Date().toDateString() === date.toDateString()
+            const isRecomendado = idx >= 1 && idx <= 3 // Martes, Miércoles, Jueves
 
-          return (
-            <div
-              key={dia}
-              className={`p-2.5 rounded-xl border text-xs font-bold transition-all ${
-                isToday
-                  ? "bg-primary text-primary-foreground border-primary shadow-md"
-                  : isRecomendado
-                  ? "bg-primary/10 border-primary/30 text-primary"
-                  : "bg-surface-container-high/40 border-outline-variant/15 text-on-surface-variant"
-              }`}
-            >
-              <span>{dia}</span>
-              <span className="block text-[10px] opacity-90 mt-0.5">
-                {date.getDate()} {date.toLocaleDateString("es-ES", { month: "short" })}
-              </span>
-            </div>
-          )
-        })}
-      </div>
+            return (
+              <div
+                key={dia}
+                className={`p-2 rounded-xl border text-xs font-bold transition-all ${
+                  isToday
+                    ? "bg-primary text-primary-foreground border-primary shadow-md"
+                    : isRecomendado
+                    ? "bg-primary/10 border-primary/30 text-primary"
+                    : "bg-surface-container-high/40 border-outline-variant/15 text-on-surface-variant"
+                }`}
+              >
+                <span>{dia}</span>
+                <span className="block text-[10px] opacity-90 mt-0.5">
+                  {date.getDate()} {date.toLocaleDateString("es-ES", { month: "short" })}
+                </span>
+              </div>
+            )
+          })}
+        </div>
 
-      {/* Franjas Horarias y Ranuras con Posts Programados Dinámicos */}
-      <div className="space-y-2 pt-2">
-        {HORAS_CLAVE.map((hora) => (
-          <div key={hora} className="grid grid-cols-7 gap-2 items-stretch">
-            {DIAS_SEMANA.map((dia, idx) => {
-              const date = weekDates[idx]
-              const dayPosts = getPostsForDay(date)
+        {/* Franjas Horarias de 24 Horas (00:00 - 23:00) */}
+        <div className="space-y-1.5 p-2 pt-3">
+          {HORAS_24.map((hora) => (
+            <div key={hora} className="grid grid-cols-7 gap-2 items-stretch">
+              {DIAS_SEMANA.map((dia, idx) => {
+                const date = weekDates[idx]
+                const dayPosts = getPostsForDay(date)
 
-              // Filtrar posts asignando cada uno a la franja horaria más cercana
-              const postsInSlot = dayPosts.filter((p) => {
-                if (!p.fecha_programada) return false
-                const pDate = new Date(p.fecha_programada)
-                return getClosestSlotHora(pDate) === hora
-              })
+                // Filtrar posts asignando cada uno a la franja de hora exacta o cercana
+                const postsInSlot = dayPosts.filter((p) => {
+                  if (!p.fecha_programada) return false
+                  const pDate = new Date(p.fecha_programada)
+                  return getClosestSlotHora(pDate) === hora
+                })
 
-              const isSlotCaliente = (idx === 1 || idx === 2 || idx === 3) && (hora === "08:30" || hora === "12:00")
+                const intensity = getHeatmapIntensity(idx, hora)
+                const slotStyle = getSlotHeatmapClass(intensity, postsInSlot.length > 0)
 
-              return (
-                <div
-                  key={`${dia}-${hora}`}
-                  onClick={() => {
-                    if (postsInSlot.length === 0 && onSelectSlot) {
-                      const selectedDate = new Date(date)
-                      const [h, m] = hora.split(":").map(Number)
-                      selectedDate.setHours(h, m, 0, 0)
-                      onSelectSlot(selectedDate)
-                    }
-                  }}
-                  className={`min-h-[70px] p-2 rounded-xl border text-left flex flex-col justify-between transition-all ${
-                    postsInSlot.length > 0
-                      ? "bg-primary/15 border-primary shadow-sm"
-                      : isSlotCaliente
-                      ? "bg-primary/5 border-primary/20 hover:border-primary/50 cursor-pointer"
-                      : "bg-surface-container-high/30 border-outline-variant/10 hover:border-outline-variant/30 cursor-pointer"
-                  }`}
-                >
-                  <div className="flex items-center justify-between">
-                    <span className="text-[10px] font-semibold text-on-surface-variant/70 flex items-center gap-1">
-                      <Clock className="h-2.5 w-2.5" />
-                      {hora}
-                    </span>
-                    {postsInSlot.length === 0 && (
-                      <span className="text-[9px] text-on-surface-variant/40 hover:text-primary">
-                        +
+                return (
+                  <div
+                    key={`${dia}-${hora}`}
+                    onClick={() => {
+                      if (postsInSlot.length === 0 && onSelectSlot) {
+                        const selectedDate = new Date(date)
+                        const [h] = hora.split(":").map(Number)
+                        selectedDate.setHours(h, 0, 0, 0)
+                        onSelectSlot(selectedDate)
+                      }
+                    }}
+                    className={`min-h-[56px] p-2 rounded-xl border text-left flex flex-col justify-between transition-all ${slotStyle}`}
+                  >
+                    <div className="flex items-center justify-between">
+                      <span className="text-[10px] font-semibold flex items-center gap-1 opacity-80">
+                        <Clock className="h-2.5 w-2.5" />
+                        {hora}
                       </span>
+                      {intensity === 3 && postsInSlot.length === 0 && (
+                        <span className="text-[9px] font-bold text-rose-400 flex items-center gap-0.5" title="Horario Pico CTR B2B">
+                          <Flame className="h-2.5 w-2.5" /> Pico
+                        </span>
+                      )}
+                    </div>
+
+                    {/* Renderizar Tarjeta de Post en el Calendario */}
+                    {postsInSlot.length > 0 ? (
+                      <div className="space-y-1 mt-1">
+                        {postsInSlot.map((post) => (
+                          <div
+                            key={post.id}
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              if (onSelectPost) onSelectPost(post)
+                            }}
+                            className="p-1.5 rounded-lg bg-surface-container border border-primary/40 shadow-sm hover:scale-[1.02] transition-all cursor-pointer group"
+                          >
+                            <div className="flex items-center justify-between">
+                              <span className="text-[9px] font-bold text-primary truncate max-w-[80px]">
+                                {post.titulo || "Sin título"}
+                              </span>
+                              <Edit3 className="h-2.5 w-2.5 text-primary opacity-0 group-hover:opacity-100 transition-opacity" />
+                            </div>
+                            <p className="text-[9px] text-on-surface-variant line-clamp-1 mt-0.5">
+                              {post.contenido_base}
+                            </p>
+                            <div className="flex items-center gap-1 mt-1">
+                              <span className="text-[8px] font-semibold px-1 py-0.2 rounded bg-primary/20 text-primary capitalize">
+                                {post.estado}
+                              </span>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="text-[9px] opacity-40 hover:opacity-100 transition-opacity">
+                        + Programar
+                      </div>
                     )}
                   </div>
-
-                  {/* Renderizar Tarjeta de Post en el Calendario */}
-                  {postsInSlot.length > 0 ? (
-                    <div className="space-y-1 mt-1">
-                      {postsInSlot.map((post) => (
-                        <div
-                          key={post.id}
-                          onClick={(e) => {
-                            e.stopPropagation()
-                            if (onSelectPost) onSelectPost(post)
-                          }}
-                          className="p-1.5 rounded-lg bg-surface-container border border-primary/40 shadow-sm hover:scale-[1.03] transition-all cursor-pointer group"
-                        >
-                          <div className="flex items-center justify-between">
-                            <span className="text-[9px] font-bold text-primary truncate max-w-[80px]">
-                              {post.titulo || "Sin título"}
-                            </span>
-                            <Edit3 className="h-2.5 w-2.5 text-primary opacity-0 group-hover:opacity-100 transition-opacity" />
-                          </div>
-                          <p className="text-[9px] text-on-surface-variant line-clamp-1 mt-0.5">
-                            {post.contenido_base}
-                          </p>
-                          <div className="flex items-center gap-1 mt-1">
-                            <span className="text-[8px] font-semibold px-1 py-0.2 rounded bg-primary/20 text-primary capitalize">
-                              {post.estado}
-                            </span>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <div className="text-[9px] text-on-surface-variant/40 hover:text-primary">
-                      Disponible
-                    </div>
-                  )}
-                </div>
-              )
-            })}
-          </div>
-        ))}
+                )
+              })}
+            </div>
+          ))}
+        </div>
       </div>
     </div>
   )

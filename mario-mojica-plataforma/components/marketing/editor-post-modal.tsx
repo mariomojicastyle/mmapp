@@ -1,9 +1,9 @@
 "use client"
 
 import React, { useState, useEffect } from "react"
-import { X, Calendar, Send, Eye, Sparkles, Check, UploadCloud, Film, Image as ImageIcon, ChevronLeft, ChevronRight, GripVertical, ArrowUp, ArrowDown } from "lucide-react"
+import { X, Calendar, Send, Eye, Sparkles, Check, UploadCloud, Film, Image as ImageIcon, ChevronLeft, ChevronRight, GripVertical, ArrowUp, ArrowDown, Trash2 } from "lucide-react"
 import { motion, AnimatePresence } from "framer-motion"
-import { createMarketingPost, updateMarketingPost } from "@/app/actions/marketing"
+import { createMarketingPost, updateMarketingPost, deleteMarketingPost } from "@/app/actions/marketing"
 
 export interface DriveFile {
   id: string
@@ -17,6 +17,7 @@ interface EditorPostModalProps {
   isOpen: boolean
   onClose: () => void
   onSuccess?: () => void
+  onDelete?: (id: string) => Promise<void>
   initialData?: {
     id?: string
     titulo?: string | null
@@ -28,7 +29,8 @@ interface EditorPostModalProps {
   } | null
 }
 
-export function EditorPostModal({ isOpen, onClose, onSuccess, initialData }: EditorPostModalProps) {
+export function EditorPostModal({ isOpen, onClose, onSuccess, onDelete, initialData }: EditorPostModalProps) {
+  const [confirmDelete, setConfirmDelete] = useState(false)
   const [titulo, setTitulo] = useState("")
   const [contenidoBase, setContenidoBase] = useState("")
   const [primerComentario, setPrimerComentario] = useState("Prueba la demo interactiva del manual 3D en tu propio celular aquí: https://mariomojica.com/demo 🚀")
@@ -779,13 +781,58 @@ export function EditorPostModal({ isOpen, onClose, onSuccess, initialData }: Edi
           </div>
 
           {/* Footer del Modal */}
-          <div className="flex items-center justify-between px-6 py-4 border-t border-outline-variant/20 bg-surface-container">
-            <button
-              onClick={onClose}
-              className="px-4 py-2 rounded-xl text-sm font-medium text-on-surface-variant hover:bg-surface-container-highest transition-colors"
-            >
-              Cancelar
-            </button>
+          <div className="flex flex-wrap items-center justify-between gap-3 px-6 py-4 border-t border-outline-variant/20 bg-surface-container">
+            <div className="flex items-center gap-3">
+              <button
+                onClick={onClose}
+                className="px-4 py-2 rounded-xl text-sm font-medium text-on-surface-variant hover:bg-surface-container-highest transition-colors"
+              >
+                Cancelar
+              </button>
+
+              {/* Botón de Eliminar Publicación (Sólo si es una edición de post existente) */}
+              {initialData?.id && (
+                confirmDelete ? (
+                  <div className="flex items-center gap-2 bg-error/10 border border-error/30 p-1 rounded-xl">
+                    <span className="text-xs text-error font-bold px-2">¿Eliminar?</span>
+                    <button
+                      onClick={async () => {
+                        setSaving(true)
+                        if (onDelete && initialData.id) {
+                          await onDelete(initialData.id)
+                        } else if (initialData.id) {
+                          await deleteMarketingPost(initialData.id)
+                        }
+                        setSaving(false)
+                        setConfirmDelete(false)
+                        if (onSuccess) onSuccess()
+                        onClose()
+                      }}
+                      disabled={saving}
+                      className="px-3 py-1 bg-error text-error-container text-xs font-bold rounded-lg hover:opacity-90 transition-opacity"
+                    >
+                      Sí, Eliminar
+                    </button>
+                    <button
+                      onClick={() => setConfirmDelete(false)}
+                      className="px-2 py-1 text-xs text-on-surface-variant hover:text-on-surface"
+                    >
+                      No
+                    </button>
+                  </div>
+                ) : (
+                  <button
+                    onClick={() => setConfirmDelete(true)}
+                    className="flex items-center gap-1.5 px-3 py-2 rounded-xl border border-error/30 text-error hover:bg-error/10 text-xs font-semibold transition-colors"
+                    title="Eliminar publicación permanentemente"
+                  >
+                    <Trash2 className="h-3.5 w-3.5" />
+                    Eliminar
+                  </button>
+                )
+              )}
+            </div>
+
             <div className="flex items-center gap-3">
               <button
                 onClick={() => handleSave("borrador")}
