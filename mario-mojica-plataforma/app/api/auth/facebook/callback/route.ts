@@ -12,8 +12,8 @@ export async function GET(request: NextRequest) {
     )
   }
 
-  const appId = process.env.FACEBOOK_APP_ID || "1010974468469260"
-  const appSecret = process.env.FACEBOOK_APP_SECRET || "a19788456a8fda79b7dfee4570f506ab"
+  const appId = process.env.FACEBOOK_APP_ID || "1736322840851405"
+  const appSecret = process.env.FACEBOOK_APP_SECRET || "8c5ef6d0bdf06eab47e57102eb5281dc"
   const redirectUri = "https://app.mariomojica.com/api/auth/facebook/callback"
 
   if (!appId || !appSecret) {
