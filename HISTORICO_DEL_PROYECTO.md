@@ -9,6 +9,15 @@ Este archivo es un registro vivo de la evolución tecnológica del ecosistema Ma
 - **Publicador Autónomo en n8n**: Creación de la API Route `/api/marketing/publish` y el worker `marketing_publisher_worker` en n8n para consultar minutalmente la cola de posts en Supabase y ejecutarlos vía Meta Graph API y LinkedIn UGC API.
 - **Robustez de Transferencia y UI**: Configuración de `next.config.ts` (25MB en Server Actions) y supresión de falsos errores de hidratación de extensiones de navegador.
 
+#### 📌 Inventario Oficial de Apps de Meta (Control y Limpieza):
+| Nombre de App | App ID | Estado / Uso Principal |
+| :--- | :--- | :--- |
+| **`Mario Mojica Marketing`** | `1736322840851405` | 🟢 **OFICIAL MARKETING** (Publicación FB & IG) |
+| **`Portfolio Leads`** | `789877134189531` | 🟢 **OFICIAL WHATSAPP** (API Leads & Notificaciones) |
+| **`Mario Mojica Platform`** | `1010974468469260` | 🟡 Inactiva (Prueba de Login previa) |
+| **`Portafolio Nuevo`** | `2359711811200697` | 🔴 Deprecada (Para borrar) |
+| **`Mario Mojica Marketing`** | `1407378518112964` | 🔴 Deprecada (Para borrar) |
+
 ---
 
 ## 🗓️ Marzo 2026

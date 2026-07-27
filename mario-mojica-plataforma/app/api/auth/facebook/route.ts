@@ -2,10 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 
 export async function GET(request: NextRequest) {
   const appId = process.env.FACEBOOK_APP_ID
-  const redirectUri =
-    process.env.NODE_ENV === "production"
-      ? "https://mariomojica.com/api/auth/facebook/callback"
-      : "http://localhost:3003/api/auth/facebook/callback"
+  const redirectUri = "https://mariomojica.com/api/auth/facebook/callback"
 
   if (!appId || appId.trim() === "") {
     return NextResponse.redirect(
