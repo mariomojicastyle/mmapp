@@ -5,6 +5,11 @@
 [[plugins]]
   package = "@netlify/plugin-nextjs"
 
+# Excepción para las API Routes internas (no reescribir a armado)
+[[redirects]]
+  from = "/api/*"
+  status = 200
+
 [[redirects]]
   from = "/demo"
   to = "/embed/armado/M00001"
@@ -101,9 +106,10 @@
   status = 200
   force = true
 
+# Redirección específica para códigos de producto M00... (para no interceptar /marketing ni /api)
 [[redirects]]
-  from = "/M*"
-  to = "https://mario-mojica-armado.netlify.app/M:splat"
+  from = "/M00*"
+  to = "https://mario-mojica-armado.netlify.app/M00:splat"
   status = 200
   force = true
 
@@ -124,5 +130,3 @@
   to = "https://mario-mojica-armado.netlify.app/hdri/:splat"
   status = 200
   force = true
-
-
