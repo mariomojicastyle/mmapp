@@ -49,6 +49,12 @@ Para maximizar la efectividad del modelo de ventas corporativo B2B y Account-Bas
   ```
 * **Enlace de Bio:** `mariomojica.com/demo`
 
+### E. Página Oficial de Facebook: `Mario Mojica`
+* **Propósito:** Canal secundario de difusión B2B y meta ads para mercados industriales en Latinoamérica y Brasil.
+* **Nombre Oficial:** `Mario Mojica - Desenvolvedor de Software para Manufatura` (PT) / `Mario Mojica - Desarrollador de Software para Manufactura` (ES)
+* **Presentación (Bio):** `Desenvolvedor de software para a Indústria de Manufatura ⚙️ Otimizamos processos em fábricas de Móveis RTA com Manuais 3D de Montagem. 🌐 mariomojica.com/demo`
+* **Categoría:** `Empresa de software` / `Desarrollador de software`
+
 ---
 
 ## 📈 2. Estrategia de Contenido y Publicación (Outreach)

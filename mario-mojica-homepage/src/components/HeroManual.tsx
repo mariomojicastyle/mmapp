@@ -32,28 +32,36 @@ export default function HeroManual() {
       >
         {/* Badge */}
         <motion.div variants={fadeUp} className="mb-8">
-          <span className="border border-primary/50 text-primary text-xs uppercase tracking-widest px-4 py-1 rounded-full inline-block">
-            {t('Industria 4.0', 'Industry 4.0', 'Indústria 4.0')}
+          <span className="border border-primary/50 text-primary text-xs uppercase tracking-widest px-4 py-1.5 rounded-full inline-block font-semibold bg-primary/10">
+            {t(
+              'DESARROLLO DE SOFTWARE DE MANUFACTURA | INDUSTRIA 4.0',
+              'MANUFACTURING SOFTWARE DEVELOPMENT | INDUSTRY 4.0',
+              'DESENVOLVIMENTO DE SOFTWARE PARA MANUFATURA | INDÚSTRIA 4.0'
+            )}
           </span>
         </motion.div>
 
         {/* H1 */}
         <motion.h1
           variants={fadeUp}
-          className="text-5xl md:text-6xl lg:text-7xl font-bold mb-6 leading-tight tracking-tight"
+          className="text-4xl md:text-5xl lg:text-6xl font-extrabold mb-6 leading-tight tracking-tight text-white"
         >
-          {t('El fin de las devoluciones por armado defectuoso', 'The end of returns due to faulty assembly', 'O fim das devoluções por montagem defeituosa')}
+          {t(
+            'Software especializado para la Industria de Manufactura de Muebles',
+            'Specialized Software for the Furniture Manufacturing Industry',
+            'Software especializado para a Indústria de Manufatura de Móveis'
+          )}
         </motion.h1>
 
         {/* Subtitle */}
         <motion.p
           variants={fadeUp}
-          className="text-gray-300 mb-12 text-xl leading-relaxed max-w-2xl mx-auto"
+          className="text-gray-300 mb-12 text-lg md:text-xl leading-relaxed max-w-3xl mx-auto"
         >
           {t(
-            'Guías 3D interactivas con audio paso a paso y Realidad Aumentada. Diseñado para fabricantes de muebles listos para armar.',
-            'Interactive 3D guides with step-by-step audio and Augmented Reality. Designed for ready-to-assemble furniture manufacturers.',
-            'Guias 3D interativos com áudio passo a passo e Realidade Aumentada. Projetado para fabricantes de móveis prontos para montar.'
+            'Desarrollamos software para la manufactura de muebles. Escalamos tus procesos de fabricación y creamos para tus clientes una experiencia memorable desde la compra hasta el uso.',
+            'We develop software for furniture manufacturing. We scale your manufacturing processes and create a memorable experience for your customers from purchase to use.',
+            'Desenvolvemos software para a manufatura de móveis. Escalamos seus processos de fabricação e criamos para seus clientes uma experiência memorável desde a compra até o uso.'
           )}
         </motion.p>
 
@@ -70,25 +78,25 @@ export default function HeroManual() {
                 (window as any).__triggerLiveDemoFullscreen();
               }
             }}
-            className="bg-primary text-white py-4 px-10 rounded-full font-semibold text-lg hover:bg-opacity-90 shadow-xl shadow-primary/30 hover:scale-105 transition-all duration-300"
+            className="bg-primary text-white py-4 px-9 rounded-full font-semibold text-lg hover:bg-opacity-90 shadow-xl shadow-primary/30 hover:scale-105 transition-all duration-300"
           >
-            {t('Ver Demo Interactiva', 'View Interactive Demo', 'Ver Demo Interativa')}
+            {t('Ver Demo 3D en Vivo', 'View Live 3D Demo', 'Ver Demo 3D ao Vivo')}
           </Link>
           <Link
             href="#contacto"
-            className="border-2 border-white text-white py-4 px-10 rounded-full font-semibold text-lg hover:bg-white hover:text-black transition-colors duration-300"
+            className="border-2 border-white/80 text-white py-4 px-9 rounded-full font-semibold text-lg hover:bg-white hover:text-black transition-colors duration-300"
           >
-            {t('Prototipo Gratuito', 'Free Prototype', 'Protótipo Gratuito')}
+            {t('Solicitar Prototipo', 'Request Prototype', 'Solicitar Protótipo')}
           </Link>
         </motion.div>
 
         {/* Subtle note */}
         <motion.p
           variants={fadeUp}
-          className="text-gray-500 text-sm"
+          className="text-gray-400 text-sm font-medium"
         >
           {t(
-            'Sin apps. Sin descargas. Funciona desde el navegador.',
+            'Sin apps. Sin descargas. Funciona directo desde el navegador.',
             'No apps. No downloads. Works right in the browser.',
             'Sem apps. Sem downloads. Funciona direto no navegador.'
           )}

@@ -21,7 +21,7 @@ Para evaluar el impacto de cada publicación, analizamos tres niveles de métric
 * **Formato:** Imagen Editorial / Gráfica de Encuesta (92.5% Sí / 7.5% No) + Rostro de Empresario Preocupado + Copy Persuasivo
 * **Enlace Utilizado:** `mariomojica.com/demo` (en el primer comentario)
 * **Pilar de Contenido:** Pilar 1 (El Abandono Oculto & La Filosofía del "Último Empleado")
-* **Archivo Fuente:** [Post_02_El_Ultimo_Empleado.md](file:///c:/Desarrollo/mmapp/Comercial/Post_02_El_Ultimo_Empleado.md)
+* **Archivo Fuente:** [Post_02_El_Ultimo_Empleado.md](file:///c:/Desarrollo/mmapp/Comercial/Posts/Post_02_El_Ultimo_Empleado.md)
 
 #### 📝 Opción v1: "El Pacto RTA y la Deserción de la Industria" (Foco en el Hecho Real y la Ecuación Económica)
 > ¿Tratas a tu cliente como el último empleado en la línea de ensamblaje de tu fábrica? 🏭🛑
@@ -113,7 +113,7 @@ Para evaluar el impacto de cada publicación, analizamos tres niveles de métric
 * **Enlace Utilizado:** `mariomojica.com/demo`
 * **Fórmula de Copy:** AIDA (Atención, Interés, Deseo, Acción) / PAS
 * **Pilar de Contenido:** Pilar 1 (La Fricción Oculta en Montaje) + Pilar 3 (CX)
-* **Archivo Fuente:** [Post_01_Tornillo_Sobrante.md](file:///c:/Desarrollo/mmapp/Comercial/Post_01_Tornillo_Sobrante.md)
+* **Archivo Fuente:** [Post_01_Tornillo_Sobrante.md](file:///c:/Desarrollo/mmapp/Comercial/Posts/Post_01_Tornillo_Sobrante.md)
 
 #### 📝 Copy v1 (El Misterioso Caso del Tornillo Sobrante):
 > Terminas de armar tu nuevo mueble, das un paso atrás para admirarlo... y en el piso hay un tornillo solitario mirándote. 😳🔩

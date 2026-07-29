@@ -20,14 +20,16 @@ Al enmarcar nuestra identidad dentro de la categoría macro de **Software para M
 Dentro del amplio espectro de la manufactura, **nuestro campo de acción inmediato y especialización profunda está en la Industria del Mueble**. La fabricación de mobiliario es una de las industrias de manufactura discreta de mayor volumen global, pero padece una desconexión crítica en su cadena digital de valor.
 
 #### Segmentación y Estructura del Mercado de Mobiliario B2B
-Para posicionar nuestras soluciones de software con la máxima precisión, diferenciamos los tres segmentos core del mercado mueblero:
+Para posicionar nuestras soluciones de software con la máxima precisión, abarcamos las 5 categorías industriales del mercado mueblero:
 
-*   **Planejados (Ej: Dell Anno):** Producción a la medida exacta (corte milimétrico bajo pedido mediante Promob en fábrica). El canal es de showrooms exclusivos y el ensamblado final lo realiza un montador profesional contratado por la tienda.
-*   **Modulados (Ej: Favorita / New / Casa Brasileira):** La fábrica produce módulos estandarizados de medidas fijas (ej: gabinetes de cocina de 30, 40, 60 y 80 cm) y la tienda multimarcas "arma" la composición y la instala en casa del cliente según el plano tridimensional adaptado.
 *   **RTA / Seriados (Ej: Politorno, Kappesberg, Madesa, Multimóveis):** 
-    *   **Nomenclatura Técnica e Industrial (B2B):** **RTA (Ready-To-Assemble / Pronto para Montar)** es el término estándar global y corporativo utilizado por la industria (respaldado por la ABIMÓVEL, Movergs, eMóbile e IEMI en Brasil). Define la categoría industrial de muebles en caja plana (*flat-pack*) optimizados para logística, e-commerce y exportación. *(Nota: En el retail y comercio electrónico local se le conoce popularmente como "móvel em kit" o "kit de cozinha", pero a nivel industrial B2B el estándar técnico es strictly RTA).*
-    *   **El Pacto Económico del RTA:** El producto RTA se basa en una ecuación económica transparente: el consumidor acepta voluntariamente el riesgo del auto-ensamblaje (*Do-It-Yourself / DIY*) para acceder a un precio competitivo, ahorrándole a la fábrica los costos de flete volumétrico y la mano de obra final de producción.
-    *   **La Oportunidad del Acompañamiento Digital:** Dado que el cliente decide finalizar el producto en su hogar para ahorrar, nuestra plataforma de software evita que la fábrica lo deje solo con un manual de papel frío e ineficiente. El Manual 3D por voz asegura que la terminación final sea un éxito, evitando bloqueos, reclamos y pérdida de reputación de marca.
+    *   **Nomenclatura Técnica e Industrial (B2B):** **RTA (Ready-To-Assemble / Pronto para Montar)** es el término estándar global y corporativo utilizado por la industria (respaldado por la ABIMÓVEL, Movergs, eMóbile e IEMI en Brasil). Define la categoría industrial de muebles en caja plana (*flat-pack*) optimizados para logística, e-commerce y exportación.
+    *   **El Pacto Económico del RTA:** El consumidor acepta voluntariamente el riesgo del auto-ensamblaje (*Do-It-Yourself / DIY*) a cambio de un precio competitivo, ahorrándole a la fábrica los costos de flete volumétrico y la mano de obra final de producción.
+    *   **La Oportunidad del Acompañamiento Digital:** El Manual 3D por voz asegura que la terminación final sea un éxito, evitando bloqueos, reclamos y pérdida de reputación de marca.
+*   **Modulados (Ej: Favorita / New / Casa Brasileira):** Módulos estandarizados de medidas fijas (ej: gabinetes de cocina de 30, 40, 60 y 80 cm) adaptados según el espacio.
+*   **Planejados / A Medida (Ej: Dell Anno, Florense):** Producción a la medida exacta bajo pedido mediante herramientas de diseño en fábrica para showrooms y arquitectos.
+*   **Tapizados y Espumados (Ej: K1 Upholstery, Natuzzi, Salas y Colchones):** Mobiliario acolchado con estructura, espumas y textiles (sofás, poltronas, pufs, salas de estar y colchones).
+*   **Personalizados y Especiales:** Mobiliario corporativo, comercial o técnico diseñado bajo requerimientos únicos de proyecto.
 
 ---
 
@@ -38,12 +40,13 @@ Para posicionar nuestras soluciones de software con la máxima precisión, difer
 
 ---
 
-### 🎯 Foco Táctico Inmediato (GTM): El Manual de Armado 3D como "Caballo de Troya" B2B
-Aunque nuestra visión como firma de software de manufactura abarca la automatización integral de la planta (AFM / MakeLab), **el producto de entrada comercial inmediato es el Manual de Armado Interactivo 3D**.
+### 🎯 Foco Táctico Inmediato (GTM): El Manual 3D como Primer Módulo de una Plataforma Tecnológica Multi-Aplicaciones
+Aunque nuestra visión como firma de software de manufactura abarca la suite completa de automatización de planta y marketing industrial (Ecosistema MakeLab), **el Manual de Armado Interactivo 3D es el primer producto comercial insignia** desplegado sobre nuestra **Plataforma Tecnológica Multi-Aplicaciones SaaS B2B**.
 
-* **¿Por qué?** Resuelve el dolor más visible, inmediato y cuantificable de los fabricantes de muebles (devoluciones por armado incorrecto, soporte técnico telefónico saturado y mala reputación online).
-* **Fácil Adopción:** A diferencia del outsourcing de ingeniería que requiere cambiar procesos internos de la fábrica, el Manual 3D se vende como un módulo de software de marketing/postventa que se integra fácilmente mediante un código QR o iframe en el sitio del cliente (PDP).
-* **Estrategia Comercial:** Salir al mercado ofreciendo este producto estrella. Una vez que ganemos la confianza del fabricante RTA con el manual 3D y demostremos el valor de nuestras analíticas y telemetría de campo, introduciremos los módulos de automatización de fábrica, planos CNC y diseño paramétrico como un *upsell* natural.
+* **Plataforma Multi-Aplicaciones:** El fabricante no adquiere un visor aislado; accede a una plataforma de software integral de manufactura que conecta múltiples aplicaciones especializadas (Visor 3D Interactivo, CMS de Identidad de Marca, Generador de Códigos QR, Motor de Analíticas de Campo, y las futuras aplicaciones de Definidor de Empaque/Cubicaje, Renders 4K/WebAR y Automatización CAD/CAM/CNC).
+* **El "Caballo de Troya" B2B:** El Manual 3D resuelve el dolor más visible, inmediato y cuantificable de los fabricantes de muebles (devoluciones por armado incorrecto, soporte técnico telefónico saturado y mala reputación online).
+* **Fácil Adopción:** A diferencia del outsourcing de ingeniería que requiere cambiar procesos internos de la fábrica, el Manual 3D se vende como el primer módulo de software de postventa y marketing que se integra fácilmente mediante un código QR o iframe en el sitio del cliente (PDP).
+* **Estrategia Comercial:** Salir al mercado ofreciendo la plataforma con este producto estrella. Una vez que ganemos la confianza del fabricante RTA con el manual 3D y demostremos el valor de nuestras analíticas y datos de campo, introduciremos las siguientes aplicaciones de la plataforma (automatización de fábrica, planos CNC y diseño paramétrico) como un *upsell* natural.
 
 ---
 
@@ -178,8 +181,8 @@ Para que la relación entre nuestra firma de software y los fabricantes sea esca
 * **Descarga de QR e Informes:** El cliente ingresa a su zona de control privada para visualizar sus paneles de métricas interactivas y descargar los reportes mensuales en PDF para sus comités de calidad.
 
 ### 7.4 Traducción al Diseño de la Landing Page
-Este enfoque estratégico dicta que la landing page (`mariomojica.com`) se posicione como la entrada a una **firma de software para la industria de manufactura**, destacando la solución de armado 3D e inteligencia de datos como su producto insignia.
-* **El Hero** ataca el dolor directo del fabricante RTA.
-* **El centro de la página** muestra el visualizador 3D interactivo en vivo.
-* **La sección principal de beneficios** explica el sistema de analíticas automáticas (el reporte de fricción, abandonos paso a paso y reviews de clientes).
-* **El cierre de venta** destaca la plataforma CMS colaborativa donde el cliente inicia sesión para controlar sus marcas y descargar sus códigos QR.
+Este enfoque estratégico dicta que la landing page (`mariomojica.com`) se posicione como la entrada principal a una **Plataforma Tecnológica de Software para la Industria de la Manufactura (Manufactura 4.0)**, presentando el **Manual de Armado 3D por Voz** como su primer producto comercial en vivo, conectado a una suite multi-aplicaciones.
+* **El Hero**: Presenta a **Mario Mojica** como la Plataforma Tecnológica de Manufactura, destacando la conexión entre el diseño de fábrica y el consumidor mediante nuestro primer módulo insignia (el asistente 3D por voz).
+* **El Centro de la Página**: Despliega la demo interactiva 3D en vivo como prueba de la potencia del software.
+* **Sección de Inteligencia y Métricas**: Explica el valor de las métricas en tiempo real (reporte de fricción A4, abandonos paso a paso y reseñas de clientes).
+* **Sección de Plataforma Multi-Aplicaciones**: Muestra el panel CMS de la plataforma donde el cliente administra sus marcas, descarga códigos QR y tiene visibilidad del ecosistema de aplicaciones (manuales 3D, definidor de empaque, renders/WebAR y automatización de planos CNC).

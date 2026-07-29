@@ -367,3 +367,69 @@ Esta categoría de publicación utiliza una imagen donde **el titular del texto 
 3. **Composición Minimalista:** Un fondo de color plano y un único elemento gráfico (como una ilustración vectorial simple de un herraje, un tornillo o una silla) que complemente el texto sin saturar el diseño.
 4. **Acabado Humano:** Estilo gráfico plano (flat design) o vectorizado limpio. Evitar degradados complejos, brillos exagerados y fotorrealismo de IA que resten seriedad corporativa B2B.
 
+---
+
+## ⚙️ 15. Procedimientos Operativos Estándar (SOP) de Outreach, Social Selling y Registro CRM (Baserow)
+
+Esta sección documenta la metodología operacional exacta que la IA y la firma aplican al interactuar con prospectos en LinkedIn y registrar información en el CRM Baserow. Garantiza consistencia absoluta al iniciar un nuevo chat o sesión de trabajo.
+
+### 15.1 Nota de Conexión en LinkedIn (Solicitud de 300 Caracteres)
+* **Extensión Estricta:** Longitud total del string entre **240 y 270 caracteres** (margen de seguridad para no superar el límite estricto de 300 caracteres de LinkedIn).
+* **Estructura Estándar:**
+  1. **Saludo Personalizado:** `Olá [Primeiro Nome],`
+  2. **Reconocimiento Específico:** Halago sincero y directo al rol, hito o trayectoria del prospecto (ej: *"admirável sua liderança de 20 anos na Engenharia de Processos da Ditália!"*, *"parabéns pelo novo cargo no P&D da Italínea!"*).
+  3. **Posicionamiento Canónico:** *"Como Desenvolvedor de Software para Manufatura,"*
+  4. **Propuesta de Valor:** Breve beneficio ligado a su área (*"conectamos a engenharia fabril ao pós-venda com Manuais 3D Interativos por voz."*).
+  5. **Cierre e Hipervínculo Limpio:** *"Será uma honra conectar: https://mariomojica.com/demo"*
+* **Prohibición de Lenguaje:** Estrictamente prohibido usar la palabra **"telemetria"**, así como palabras vacías ("innovador", "disruptivo", "SAC").
+* **Formato de Entrega:** Siempre entregado en un bloque de código markdown ` ```text ... ``` ` para copia directa con 1 clic.
+
+### 15.2 InMail y Mensajes Cortos (Solicitudes de 600 y 900 Caracteres)
+* **Estructura Obligatoria de Asunto:** Todo mensaje de 600 o 900 caracteres debe iniciar obligatoriamente con una línea de asunto de alto CTR (entre 35 y 65 caracteres):
+  * Ejemplo: `Assunto: Inovação no pós-venda 3D para a [Nome da Empresa]`
+* **Extensión Estricta:**
+  * **Formato 600 Caracteres:** Total acumulado (Asunto + Cuerpo) entre **520 y 570 caracteres**.
+  * **Formato 900 Caracteres:** Total acumulado (Asunto + Cuerpo) entre **800 y 870 caracteres**.
+* **Cuerpo del Mensaje:**
+  1. Reconocimiento de la empresa, polo industrial (Bento Gonçalves, Arapongas, Mauá, Ubá) y rol ejecutivo.
+  2. Presentación como Desenvolvedor de Software para Manufatura.
+  3. Problema del papel frente a la solución del Manual 3D Interactivo guiado por voz.
+  4. Call-to-action directo invitando a probar la demostración con hipervínculo limpio: `https://mariomojica.com/demo`.
+* **Formato de Entrega:** Bloque de código markdown ` ```text ... ``` `.
+
+### 15.3 Comentarios a Publicaciones del Prospecto
+* **Extensión Estricta:** Máximo **600 caracteres**.
+* **Estrategia de Copia (Técnica de Reflejo):**
+  1. **Validación Inicial:** Elogiar y validar la publicación específica del prospecto (asistencia a ferias como iSalone/Movelsul/Fórum E-Commerce, hitos de aniversario, proyectos educativos con escuelas locales, reflexiones de liderazgo).
+  2. **Puente Tecnológico Sutil:** Conectar la idea expresada en el post con el valor de llevar la precisión de ingeniería y diseño al consumidor en 3D por voz.
+  3. **Cierre de Valor:** Invitar a conocer la demostración técnica con el enlace aislado e hipervinculado `https://mariomojica.com/demo`.
+* **Prohibición:** Evitar sonar comercialmente agresivo o invasivo. El comentario debe aportar valor a la conversación iniciada por el prospecto.
+
+### 15.4 Comentarios de Social Selling y Liderazgo de Opinión (Posts de Terceros / Debates)
+* **Estrategia:** Responder a debates del sector (ej. burnout creativo, inteligencia artificial, futuro del diseño industrial, transformación digital en la manufactura).
+* **Tono Moderado y Empático:** Evitar confrontaciones agresivas. Si el post aborda vulnerabilidad o fatiga del diseñador, validar primero el sentimiento y luego reencuadrar la tecnología como una herramienta que **libera de la operatividad y multiplica el impacto humano**.
+* **Posicionamiento:** Presentar a Mario Mojica como Diseñador Industrial y Desarrollador de Software para Manufatura que aplica la tecnología para optimizar costos fabriles y elevar la experiencia del usuario (CX).
+
+### 15.5 Protocolo Inquebrantable de Registro en CRM Baserow (Tabla 991 y 994)
+Cada vez que el usuario solicite "agregar" o "ingresar" a un prospecto o empresa en Baserow, la IA debe seguir estrictamente este flujo:
+
+1. **Regla de Cero Celdas Vacías:** Todos los campos deben quedar completos o con inferencias lógicas profesionales.
+2. **Extracción Exacta de la URL de LinkedIn:** Copiar la URL completa visible en la barra de direcciones del navegador (ej. `https://www.linkedin.com/in/jair-b-9658ba55/`). Asegurar que los slugs e identificadores de LinkedIn no contengan errores de sintaxis.
+3. **Gestión de la Empresa (Tabla 991 - Empresas):**
+   * Buscar la empresa en la Tabla 991. Si no existe, crear la ficha corporativa con: `Nombre de la Empresa`, `Sitio Web`, `LinkedIn Corporativo`, `Pais: Brasil`, `Canal Preferido: 4029` (LinkedIn), `Actividad en Redes: 4033` (Muy Activo) y notas del target.
+4. **Inyección del Lead (Tabla 994 - Leads):**
+   * `Nombre`: Primer Nombre
+   * `Apellido`: Apellidos
+   * `Empresa`: Nombre textual de la empresa
+   * `Empresa Vinculada`: `[ID_FILA_TABLA_991]` (relación de clave foránea)
+   * `Pais`: `Brasil`
+   * `Rol`: Cargo exacto del perfil
+   * `LinkedIn`: URL completa y exacta extraída
+   * `Origen`: `Prospección Activa`
+   * `Email`: Inferencia corporativa `[nombre].[apellido]@[dominio_empresa]`
+   * `Telefono` / `WhatsApp`: Teléfono matriz de la empresa y enlace `https://wa.me/...`
+   * `Facebook` / `Instagram`: Enlaces de búsqueda parametrizada
+   * `Status`: `4017` (Nuevo)
+   * `Estado CRM`: `4021` (Prospecto)
+   * `Canal Preferido`: `4037` (LinkedIn)
+   * `Actividad en Redes`: `4045` (Inactivo)
