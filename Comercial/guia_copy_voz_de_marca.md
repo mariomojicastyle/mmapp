@@ -96,6 +96,16 @@ graph TD
 * **Portal B2B Autogestionable:** El fabricante gestiona su marca en nuestra plataforma (color primario, logotipos, favicons, audios) y descarga sus códigos QR listos para imprimir en caja.
 * **Liderazgo en la Industria Mueblera:** Casos de estudio técnicos y presencia de marca en los principales polos industriales de Latinoamérica y Brasil (Arapongas, Bento Gonçalves, Ubá, Movergs, Fimma).
 
+### 4.3 La Metáfora Maestra (El Gemelo Digital & El GPS del Armado)
+La analogía narrativa oficial para explicar nuestra tecnología de forma clara, contextualizada e impactante a cualquier equipo de I+D (P&D), Marketing o Dirección Industrial:
+
+> **"Así como Google Maps es el gemelo digital del planeta que reemplazó a los mapas de papel impresos, nosotros desarrollamos el gemelo digital del mueble: el GPS del armado de muebles."**
+
+* **Contexto de uso obligatorio:** Nunca lanzar frases como *"nadie vuelve al mapa de papel"* de forma aislada sin haber contextualizado previamente la transición digital. La secuencia narrativa correcta es:
+  1. **El Antecesor:** Los mapas de papel impresos que la gente usaba antes (Manuales de papel fríos e ineficientes).
+  2. **El Gemelo Digital (Google Maps):** La navegación por voz 3D en tiempo real (Nuestra plataforma de Manuales 3D por Voz).
+  3. **La Evolución Inevitable:** El paso del papel a la asistencia interactiva (El GPS del armado de muebles).
+
 ---
 
 ## 🛠️ 4. Fórmulas de Copywriting Aprobadas

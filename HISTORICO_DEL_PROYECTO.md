@@ -4,6 +4,21 @@ Este archivo es un registro vivo de la evolución tecnológica del ecosistema Ma
 
 ## 🗓️ Julio 2026
 
+### 🔹 Hito Fundacional 3DBimFab (3BF) — Web-BIM Configurator (30 de Julio, 2026)
+- **Evolución Concepto y Nomenclatura**: Eliminación definitiva de nombres legacy (*MakeLab*) sustituidos por **3DBimFab (3BF)**.
+- **Documento Fundacional**: Creación de [3BF.md](file:///c:/Desarrollo/mmapp/3BF.md) con la definición de la metodología (3D, BIM, Fab) y la visión Web-BIM para eliminar la dependencia de licencias VisualARQ.
+- **Reordenamiento Estratégico de Pilares de Negocio**:
+  - **Pilar 1 (Núcleo)**: Automatización de Fábrica e Industria 4.0 (Grasshopper Engine + DXF + Nesting + CNC).
+  - **Pilar 2 (Periferia)**: Digitalización, Marketing Visual y Configurador Web 3D Paramétrico (React + Three.js).
+  - **Pilar 3 (Periferia)**: Optimización Postventa & Telemetría (Manuales 3D + Métricas de Campo).
+- **Consolidación de Protocolo y Monorepo**:
+  - Inclusión de [3BF.md](file:///c:/Desarrollo/mmapp/3BF.md) en el protocolo de arranque obligatorio [AGENTS.md](file:///c:/Desarrollo/mmapp/AGENTS.md).
+  - Creación de la estructura del proyecto en `c:\Desarrollo\mmapp\3bf\`.
+  - Migración de scripts Python clave (`get_io.py`, `test_final.py`, `script_cohesion_v10.py`) desde el repositorio obsoleto `b2b-rhino-compute` hacia `3bf/docs/legacy-rhino-compute/`.
+  - Elaboración y fijación del plan de implementación definitivo en [c:\Desarrollo\mmapp\3bf\plan_de_implementacion.md](file:///c:/Desarrollo/mmapp/3bf/plan_de_implementacion.md) con arquitectura Netlify (Frontend i18n) + Rhino Compute Local (Engine).
+
+---
+
 ### 🔹 Hito Mercadeo_Face_Insta_OK & Arquitectura V8 (27 de Julio, 2026): Consolidación de Publicación Multicanal (FB/IG), Planificador 24H y Arquitectura V8
 
 #### 1. Publicación Multicanal HD (Facebook & Instagram):

@@ -41,7 +41,7 @@ Para posicionar nuestras soluciones de software con la máxima precisión, abarc
 ---
 
 ### 🎯 Foco Táctico Inmediato (GTM): El Manual 3D como Primer Módulo de una Plataforma Tecnológica Multi-Aplicaciones
-Aunque nuestra visión como firma de software de manufactura abarca la suite completa de automatización de planta y marketing industrial (Ecosistema MakeLab), **el Manual de Armado Interactivo 3D es el primer producto comercial insignia** desplegado sobre nuestra **Plataforma Tecnológica Multi-Aplicaciones SaaS B2B**.
+Aunque nuestra visión como firma de software de manufactura abarca la suite completa de automatización de planta y marketing industrial (Ecosistema 3DBimFab), **el Manual de Armado Interactivo 3D es el primer producto comercial insignia** desplegado sobre nuestra **Plataforma Tecnológica Multi-Aplicaciones SaaS B2B**.
 
 * **Plataforma Multi-Aplicaciones:** El fabricante no adquiere un visor aislado; accede a una plataforma de software integral de manufactura que conecta múltiples aplicaciones especializadas (Visor 3D Interactivo, CMS de Identidad de Marca, Generador de Códigos QR, Motor de Analíticas de Campo, y las futuras aplicaciones de Definidor de Empaque/Cubicaje, Renders 4K/WebAR y Automatización CAD/CAM/CNC).
 * **El "Caballo de Troya" B2B:** El Manual 3D resuelve el dolor más visible, inmediato y cuantificable de los fabricantes de muebles (devoluciones por armado incorrecto, soporte técnico telefónico saturado y mala reputación online).
@@ -50,31 +50,44 @@ Aunque nuestra visión como firma de software de manufactura abarca la suite com
 
 ---
 
-## 🚀 2. Los Tres Pilares de Valor (Ecosistema MakeLab)
+## 🚀 2. Los Tres Pilares de Valor (Ecosistema 3DBimFab)
 
-Nuestra ventaja competitiva radica en el **Ecosistema MakeLab**, una suite de software industrial basada en **Rhinoceros 3D (v8), Grasshopper, VisualArq, WebGL (Three.js) y Supabase** que habilita tres pilares:
+> 📄 **Documento Fundacional Completo:** [3BF.md](file:///c:/Desarrollo/mmapp/3BF.md)
+
+### Definición de 3DBimFab (3BF)
+**3DBimFab** es nuestra metodología de trabajo convertida en identidad — el motor que convierte el diseño paramétrico en un bien tangible de forma automatizada:
+- **3D (Geometría):** Entorno tridimensional avanzado con Rhinoceros 8, precisión milimétrica en cada pieza.
+- **BIM (Información Inteligente):** Algoritmos en Grasshopper y metadatos paramétricos propios que convierten cada mueble en un objeto inteligente con su "ADN" de costos, materiales y procesos.
+- **Fab (Manufactura Digital):** Generación automatizada de archivos DXF para CNC, listas de corte, manuales de armado interactivos 3D, activos WebAR e instrucciones de empaque — todo desde un único modelo paramétrico.
+
+### Visión Web-BIM: Eliminación de VisualARQ
+La evolución estratégica de 3BF es reemplazar VisualARQ (capa de UI dentro de Rhino, +$695 USD/licencia) por un **Parser Web nativo** que lee los parámetros del `.gh` (Grasshopper), genera un JSON Schema y renderiza una interfaz de configuración web en React, democratizando el acceso al diseño paramétrico a cualquier usuario con navegador — sin licencias ni conocimiento técnico. Esto trasciende el BIM tradicional hacia un paradigma **Web-BIM para manufactura** que integra DfMA, personalización masiva e integración e-commerce.
+
+Nuestra ventaja competitiva radica en el **Ecosistema 3DBimFab**, una suite de software industrial basada en **Rhinoceros 3D (v8), Grasshopper (motor headless), Rhino Compute API, WebGL (Three.js/R3F) y Supabase** que habilita tres pilares:
 
 ```mermaid
 graph TD
-    A[ADN Paramétrico & Software de Manufactura] --> B(Pilar 1: Visualización & WebAR)
-    A --> C(Pilar 2: Automatización de Fábrica - CNC/Planos)
-    A --> D(Pilar 3: Telemetría & Manuales 3D)
-    B --> E[Impacto: Ventas y Marketing]
-    C --> F[Impacto: Eficiencia Operativa en Planta]
-    D --> G[Impacto: Control de Calidad Extendido en Campo]
+    A["ADN Paramétrico — Grasshopper Engine"] --> C("Pilar 1: Automatización de Fábrica — CNC/Planos (NÚCLEO)")
+    A --> B("Pilar 2: Visualización, WebAR & Configurador Web 3D")
+    A --> D("Pilar 3: Telemetría & Manuales 3D")
+    C --> F["Impacto: Eficiencia Operativa en Planta"]
+    B --> E["Impacto: Ventas y Marketing"]
+    D --> G["Impacto: Control de Calidad Extendido en Campo"]
 ```
 
-### Pilar 1: Digitalización y Marketing Visual de Alto Impacto
-* **Renders Fotorrealistas 4K:** Generados localmente mediante pipelines de software optimizados, eliminando la dependencia de render farms costosas. Permiten prototipar infinitas variantes de color, maderas, textiles y herrajes en caliente.
-* **Realidad Aumentada Web (WebAR):** Visualización interactiva a escala real directamente desde el navegador móvil del cliente, incrementando la conversión de compra online al eliminar la incertidumbre espacial.
-
-### Pilar 2: Automatización de Fábrica e Industria 4.0 (Outsourcing de Ingeniería)
+### Pilar 1: Automatización de Fábrica e Industria 4.0 — NÚCLEO (Outsourcing de Ingeniería)
+* **Grasshopper como Motor Headless:** El corazón de 3BF. Los algoritmos paramétricos corren de forma independiente, exponiendo sus parámetros vía JSON Schema para ser consumidos por la web.
 * **Planos de Fabricación Automatizados:** Generación instantánea de vistas, acotados y despieces técnicos a partir de los parámetros del modelo.
 * **Integración CNC & Listas de Corte:** Exportación de archivos listos para maquinaria (DXF para seccionadoras y taladros CNC tipo Biesse), optimización de láminas (Optiplaning) y etiquetado inteligente.
 * **Costeo en Tiempo Real:** Enlace paramétrico con bases de datos de materiales y herrajes para dar visibilidad financiera inmediata a cambios de diseño.
 * **3D Nesting (Empaque Eficiente):** Módulo de cubicación automática que define las dimensiones óptimas de las cajas y empaques para logística.
 
-### Pilar 3: Optimización Postventa & Telemetría (Manuales de Armado 3D)
+### Pilar 2: Digitalización, Marketing Visual y Configurador Web 3D (Periferia)
+* **Renders Fotorrealistas 4K:** Generados localmente mediante pipelines de software optimizados, eliminando la dependencia de render farms costosas. Permiten prototipar infinitas variantes de color, maderas, textiles y herrajes en caliente.
+* **Realidad Aumentada Web (WebAR):** Visualización interactiva a escala real directamente desde el navegador móvil del cliente, incrementando la conversión de compra online al eliminar la incertidumbre espacial.
+* **Configurador Web 3D Paramétrico:** Interfaz web nativa (React + Three.js) que permite al cliente final personalizar dimensiones, materiales, herrajes y colores del mueble directamente desde el navegador, con actualización en tiempo real de la geometría 3D vía Rhino Compute API.
+
+### Pilar 3: Optimización Postventa & Telemetría (Periferia — Manuales de Armado 3D)
 * **Visor 3D Interactivo:** El aplicativo web (`Three.js / React Three Fiber`) permite al cliente final rotar el mueble, visualizar la secuencia exacta paso a paso y recibir indicaciones por voz (TTS).
 * **Escaneo de Piezas Inteligente:** Algoritmo integrado que extrae de manera exacta la cantidad de madera y herrajes requeridos directamente desde el modelo 3D para pintarlo en el tutorial interactivo.
 * **Telemetría de Campo:** Captura asíncrona de datos de interacción (embudo de armado, tiempos, bloqueos por paso) que entrega a la fábrica datos gerenciales inéditos sobre su producto en manos del consumidor.

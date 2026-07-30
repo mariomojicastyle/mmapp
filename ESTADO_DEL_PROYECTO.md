@@ -4,10 +4,24 @@ Este archivo es la "Memoria RAM" para Antigravity. Contiene el contexto de lo qu
 
 ---
 
-## 🏗️ 1. Plataforma B2B (Foco Actual)
-**Estado:** Integración Supabase avanzada e Identidad Visual estandarizada.
+## 🏗️ 1. Plataforma B2B & 3DBimFab (Foco Actual)
+**Estado:** Integración Supabase avanzada, Identidad Visual estandarizada e Hito Fundacional de **3DBimFab (3BF)** completado.
 
-### 🎯 Objetivos de la Fase
+### 🧩 Hito 3DBimFab (3BF) — Motor Paramétrico Web-BIM
+- [x] **Renombramiento Global de Legacy**: Reemplazado término histórico *MakeLab* por **3DBimFab (3BF)** en toda la documentación.
+- [x] **Documento Fundacional [3BF.md](file:///c:/Desarrollo/mmapp/3BF.md)**: Creado e integrado en el protocolo de arranque ([AGENTS.md](file:///c:/Desarrollo/mmapp/AGENTS.md)).
+- [x] **Manifiesto de Negocio Actualizado [MANIFIESTO_NEGOCIO.md](file:///c:/Desarrollo/mmapp/docs/MANIFIESTO_NEGOCIO.md)**: Reflejada la evolución de 3BF (eliminación de VisualARQ por Parser Web nativo, paradigma Web-BIM para manufactura RTA y DfMA).
+- [x] **Reordenamiento Estratégico de Pilares**:
+  - **Pilar 1**: Automatización de Fábrica e Industria 4.0 (**Núcleo / Core Engine**).
+  - **Pilar 2**: Digitalización y Marketing Visual + Configurador Web 3D (Periferia).
+  - **Pilar 3**: Optimización Postventa & Telemetría (Periferia).
+- [x] **Estructuración y Plan de Implementación (`3bf/`)**:
+  - Creada la carpeta del proyecto en [c:/Desarrollo/mmapp/3bf/](file:///c:/Desarrollo/mmapp/3bf/).
+  - Creado e instalado el plan definitivo en [plan_de_implementacion.md](file:///c:/Desarrollo/mmapp/3bf/plan_de_implementacion.md) con 8 fases y gates de validación.
+  - Abstraídos y migrados los scripts de automatización clave (`get_io.py`, `test_final.py`, `script_cohesion_v10.py`) hacia `3bf/docs/legacy-rhino-compute/`.
+  - Definida la estrategia de despliegue en **Netlify** con servidor **Rhino Compute Local** y soporte multiidioma (`es`, `pt`, `en`).
+
+### 🎯 Objetivos de la Fase (Plataforma B2B)
 - [x] Migrar equipo a Supabase dinámico.
 - [x] Corregir errores de hidratación y referencias en Solicitudes.
 - [x] Sistema de Notificaciones Realtime (UI + DB + n8n).
@@ -33,7 +47,10 @@ Este archivo es la "Memoria RAM" para Antigravity. Contiene el contexto de lo qu
   - Conversor de imágenes Base64 DataURL a URLs públicas HTTPS vía bucket `marketing-media` de Supabase para cumplir requerimientos de Meta CDN.
   - Planificador Semanal B2B de 24 horas con mapa de calor de CTR B2B (tonos coral/rosa), cabecera sticky de días y selector de zona horaria dinámico (Brasil - Bento Gonçalves UTC-3 vs Colombia UTC-5).
   - Límite de contenedor y scrollbar en Próximas Publicaciones (`max-h-[380px]`) y botón de borrado `🗑️ Eliminar` con alto contraste en modal y lista.
-  - Consolidación y actualización de la documentación arquitectónica en `Arquitectura/arquitectura_V8.svg`, `Arquitectura/arquitectura_V8.md` y `Arquitectura/guia_replicacion_V8.md`.
+  - [x] **Campaña de Posicionamiento B2B "Forbes Style" & Estrategia Obviedades**:
+  - Creación del Post 04 ("Experiencia Premium / La Silla Más Cómoda") en [Post_04_Experiencia_Premium.md](file:///c:/Desarrollo/mmapp/Comercial/Posts/Post_04_Experiencia_Premium.md) y registro en [historico_de_posts.md](file:///c:/Desarrollo/mmapp/Comercial/historico_de_posts.md).
+  - Plantillas multipágina vectoriales Forbes en 3:4 (1080x1440 px) en [08_Post_Julio_Forbes_2026.svg](file:///c:/Desarrollo/mmapp/Publicaciones/08_Post_Julio_Forbes_2026.svg).
+  - Creación de [Propuestas_Temas_Linkedin.md](file:///c:/Desarrollo/mmapp/Comercial/Posts/Propuestas_Temas_Linkedin.md) con el desglose completo de las 20 analogías de la **# Estrategia Obviedades** y plan de contenido semanal.
 - [x] **Ecosistema de Analíticas, CRM B2B y Blindaje de Métricas (Hito Manual_Metricas)**:
   - Despliegue de Umami Analytics en producción en el Hetzner VPS con PostgreSQL y certificado SSL Let's Encrypt bajo el subdominio `analytics.mariomojica.com`.
   - Integración condicional y asíncrona del script de Umami en la Landing Page y en la Consola CMS Next.js.

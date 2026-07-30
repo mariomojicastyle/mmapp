@@ -1,7 +1,7 @@
 "use client"
 
 import React, { useState, useEffect } from "react"
-import { X, Calendar, Send, Eye, Sparkles, Check, UploadCloud, Film, Image as ImageIcon, ChevronLeft, ChevronRight, GripVertical, ArrowUp, ArrowDown, Trash2 } from "lucide-react"
+import { X, Calendar, Send, Eye, Sparkles, Check, UploadCloud, Film, Image as ImageIcon, ChevronLeft, ChevronRight, GripVertical, ArrowUp, ArrowDown, Trash2, Globe } from "lucide-react"
 import { motion, AnimatePresence } from "framer-motion"
 import { createMarketingPost, updateMarketingPost, deleteMarketingPost } from "@/app/actions/marketing"
 
@@ -36,6 +36,7 @@ export function EditorPostModal({ isOpen, onClose, onSuccess, onDelete, initialD
   const [primerComentario, setPrimerComentario] = useState("Prueba la demo interactiva del manual 3D en tu propio celular aquí: https://mariomojica.com/demo 🚀")
   const [plataformas, setPlataformas] = useState<string[]>(["instagram", "facebook"])
   const [fechaProgramada, setFechaProgramada] = useState("")
+  const [programTimezone, setProgramTimezone] = useState("America/Sao_Paulo")
   const [selectedFiles, setSelectedFiles] = useState<DriveFile[]>([])
   const [previewTab, setPreviewTab] = useState<"linkedin" | "instagram" | "facebook" | "youtube">("instagram")
   const [activeImageIndex, setActiveImageIndex] = useState(0)
@@ -43,7 +44,30 @@ export function EditorPostModal({ isOpen, onClose, onSuccess, onDelete, initialD
   const [isDragging, setIsDragging] = useState(false)
   const [draggedItemIndex, setDraggedItemIndex] = useState<number | null>(null)
 
-  // Formateador de fecha local a YYYY-MM-DDTHH:mm para datetime-local input
+  // Convierte una cadena "YYYY-MM-DDTHH:mm" ingresada en una zona horaria dada a ISO UTC string real
+  const parseLocalDateTimeToISO = (dateTimeStr: string, timeZone: string): string => {
+    if (!dateTimeStr) return new Date().toISOString()
+    const [datePart, timePart] = dateTimeStr.split("T")
+    if (!datePart || !timePart) return new Date(dateTimeStr).toISOString()
+    const [year, month, day] = datePart.split("-").map(Number)
+    const [hours, minutes] = timePart.split(":").map(Number)
+
+    const offsetHours = timeZone === "America/Sao_Paulo" ? -3 : -5
+    const utcDate = new Date(Date.UTC(year, month - 1, day, hours - offsetHours, minutes))
+    return utcDate.toISOString()
+  }
+
+  // Convierte una fecha ISO UTC recibida a la representación "YYYY-MM-DDTHH:mm" en la zona horaria seleccionada
+  const formatISOToLocalDateTimeInput = (isoStr: string, timeZone: string): string => {
+    const d = new Date(isoStr)
+    if (isNaN(d.getTime())) return ""
+    const offsetHours = timeZone === "America/Sao_Paulo" ? -3 : -5
+    const targetDate = new Date(d.getTime() + offsetHours * 3600 * 1000)
+    const pad = (n: number) => n.toString().padStart(2, "0")
+    return `${targetDate.getUTCFullYear()}-${pad(targetDate.getUTCMonth() + 1)}-${pad(targetDate.getUTCDate())}T${pad(targetDate.getUTCHours())}:${pad(targetDate.getUTCMinutes())}`
+  }
+
+  // Formateador por defecto para fecha actual
   const formatLocalDateForInput = (d: Date) => {
     const pad = (n: number) => n.toString().padStart(2, "0")
     return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`
@@ -57,10 +81,9 @@ export function EditorPostModal({ isOpen, onClose, onSuccess, onDelete, initialD
         setPlataformas(initialData.plataformas_destino || ["instagram", "facebook"])
 
         if (initialData.fecha_programada) {
-          const d = new Date(initialData.fecha_programada)
-          setFechaProgramada(formatLocalDateForInput(d))
+          setFechaProgramada(formatISOToLocalDateTimeInput(initialData.fecha_programada, programTimezone))
         } else {
-          setFechaProgramada(formatLocalDateForInput(new Date(Date.now() + 600000))) // Default +10 min
+          setFechaProgramada(formatISOToLocalDateTimeInput(new Date(Date.now() + 600000).toISOString(), programTimezone)) // Default +10 min
         }
 
         if (initialData.overrides_redes?.primer_comentario) {
@@ -264,9 +287,10 @@ export function EditorPostModal({ isOpen, onClose, onSuccess, onDelete, initialD
 
     setSaving(true)
 
-    // Convertir input datetime-local a Date objeto de forma limpia
-    const dateObj = fechaProgramada ? new Date(fechaProgramada) : new Date(Date.now() + 600000)
-    const fechaIso = isNaN(dateObj.getTime()) ? new Date().toISOString() : dateObj.toISOString()
+    // Convertir input datetime-local a ISO string UTC limpia considerando la zona horaria seleccionada
+    const fechaIso = fechaProgramada
+      ? parseLocalDateTimeToISO(fechaProgramada, programTimezone)
+      : new Date(Date.now() + 600000).toISOString()
 
     // Limpiar archivos válidos
     const cleanFiles = selectedFiles.filter(
@@ -544,9 +568,28 @@ export function EditorPostModal({ isOpen, onClose, onSuccess, onDelete, initialD
 
               {/* Programación de Fecha y Hora */}
               <div>
-                <label className="text-xs font-bold uppercase tracking-wider text-on-surface-variant mb-1.5 block">
-                  Fecha y Hora de Publicación
-                </label>
+                <div className="flex items-center justify-between mb-1.5">
+                  <label className="text-xs font-bold uppercase tracking-wider text-on-surface-variant">
+                    Fecha y Hora de Publicación
+                  </label>
+                  <select
+                    value={programTimezone}
+                    onChange={(e) => {
+                      const newTz = e.target.value
+                      if (fechaProgramada) {
+                        const currentIso = parseLocalDateTimeToISO(fechaProgramada, programTimezone)
+                        setProgramTimezone(newTz)
+                        setFechaProgramada(formatISOToLocalDateTimeInput(currentIso, newTz))
+                      } else {
+                        setProgramTimezone(newTz)
+                      }
+                    }}
+                    className="bg-surface-container border border-outline-variant/20 rounded-lg px-2 py-1 text-[11px] font-semibold text-primary focus:outline-none cursor-pointer"
+                  >
+                    <option value="America/Sao_Paulo">🇧🇷 Brasil (UTC-3)</option>
+                    <option value="America/Bogota">🇨🇴 Colombia (UTC-5)</option>
+                  </select>
+                </div>
                 <div className="relative">
                   <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-on-surface-variant" />
                   <input
@@ -556,6 +599,36 @@ export function EditorPostModal({ isOpen, onClose, onSuccess, onDelete, initialD
                     className="w-full rounded-xl bg-surface-container border border-outline-variant/20 pl-9 pr-4 py-2 text-sm text-on-surface focus:outline-none focus:border-primary"
                   />
                 </div>
+                {fechaProgramada && (
+                  <p className="text-[11px] text-on-surface-variant/80 mt-1.5 flex items-center gap-1">
+                    <Globe className="h-3 w-3 text-primary" />
+                    {programTimezone === "America/Sao_Paulo" ? (
+                      <span>
+                        Equivale a las{" "}
+                        <strong className="text-primary">
+                          {(() => {
+                            const iso = parseLocalDateTimeToISO(fechaProgramada, "America/Sao_Paulo")
+                            const colInput = formatISOToLocalDateTimeInput(iso, "America/Bogota")
+                            return colInput.split("T")[1] || ""
+                          })()}
+                        </strong>{" "}
+                        hora Colombia (UTC-5)
+                      </span>
+                    ) : (
+                      <span>
+                        Equivale a las{" "}
+                        <strong className="text-primary">
+                          {(() => {
+                            const iso = parseLocalDateTimeToISO(fechaProgramada, "America/Bogota")
+                            const brInput = formatISOToLocalDateTimeInput(iso, "America/Sao_Paulo")
+                            return brInput.split("T")[1] || ""
+                          })()}
+                        </strong>{" "}
+                        hora Brasil (UTC-3)
+                      </span>
+                    )}
+                  </p>
+                )}
               </div>
             </div>
 

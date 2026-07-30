@@ -15,7 +15,39 @@ Para evaluar el impacto de cada publicación, analizamos tres niveles de métric
 
 ## 🗄️ Registro de Publicaciones (Orden Cronológico: Más Reciente Arriba, Más Antiguo al Final)
 
-### [NUEVO / POST 02 CAMPAÑA] ¿Tratas a tu cliente como el último empleado en la línea de ensamblaje?
+### [NUEVO / POST 04 CAMPAÑA FORBES] La diferencia entre perder un cliente y ganarlo para siempre
+* **Fecha de Creación / Borrador:** 29 de Julio, 2026
+* **Red Social / Canal:** LinkedIn Personal (`mario-mojica`) / Página de Empresa (`Mario Mojica - Desenvolvedor de Software para Manufatura`)
+* **Formato:** Fotografía Fotorrealista Flow 3:4 (50/50 Split) + Maquetación Editorial Forbes en Inkscape (`08_Post_Julio_Forbes_2026.svg`)
+* **Enlace Utilizado:** `mariomojica.com/demo`
+* **Pilar de Contenido:** Pilar 1 (El Abandono Oculto) + Pilar 2 (Smart Assembly 3D & CX)
+* **Archivo Fuente:** [Post_04_Experiencia_Premium.md](file:///c:/Desarrollo/mmapp/Comercial/Posts/Post_04_Experiencia_Premium.md)
+
+#### 📝 Copy Seleccionado (Outreach / Social Selling 581 Caracteres ES / 581 Caracteres PT):
+
+**Español:**
+> La diferencia entre perder un cliente y ganarlo para siempre.
+>
+> Lucas malgasta su tarde en el suelo, descifrando planos confusos y herrajes sueltos. Camila, en cambio, disfruta su sala mientras ensambla su mueble con la fluidez de un juego, guiada paso a paso por voz y 3D en su celular.
+>
+> El armado de tus productos no tiene por qué ser una experiencia incómoda, todos preferimos una silla más cómoda. Cuando acompañas la etapa final de armado en el hogar del comprador, el acompañamiento se convierte en lealtad.
+>
+> Visítanos para ascender la experiencia de tus clientes:
+> https://mariomojica.com/demo
+
+**Português (Brasil):**
+> A diferença entre perder um cliente e conquistá-lo para sempre.
+>
+> Lucas perde a tarde no chão, decifrando manuais confusos e ferragens soltas. Camila, por outro lado, aproveita a sala enquanto monta seu móvel com a fluidez de um jogo, guiada passo a passo por voz e 3D no celular.
+>
+> A montagem dos seus produtos não precisa ser uma experiência incômoda, todos preferimos uma cadeira mais confortável. Quando você acompanha a etapa final de montagem na casa do comprador, o acompanhamento vira lealdade.
+>
+> Visite-nos para elevar a experiência dos seus clientes:
+> https://mariomojica.com/demo
+
+---
+
+### [POST 02 CAMPAÑA] ¿Tratas a tu cliente como el último empleado en la línea de ensamblaje?
 * **Fecha de Creación / Borrador:** 23 de Julio, 2026
 * **Red Social / Canal:** LinkedIn Personal (`mario-mojica`) / Página de Empresa (`Mario Mojica - Ensamblaje inteligente 3D`)
 * **Formato:** Imagen Editorial / Gráfica de Encuesta (92.5% Sí / 7.5% No) + Rostro de Empresario Preocupado + Copy Persuasivo

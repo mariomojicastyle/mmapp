@@ -1,0 +1,16 @@
+{
+  "name": "@3bf/monorepo",
+  "version": "1.0.0",
+  "private": true,
+  "description": "3DBimFab (3BF) — Motor de Manufactura Digital y Configurador Web 3D Paramétrico",
+  "scripts": {
+    "build": "pnpm -r run build",
+    "dev": "pnpm --filter @3bf/web dev",
+    "test": "pnpm -r run test",
+    "lint": "pnpm -r run lint"
+  },
+  "packageManager": "pnpm@10.29.3",
+  "devDependencies": {
+    "typescript": "^5.3.3"
+  }
+}

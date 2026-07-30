@@ -419,6 +419,28 @@ export async function GET(request: NextRequest) {
             const liData = await liRes.json()
             if (!liRes.ok) {
               errores.push(`LinkedIn: ${liData.message || "Error al publicar en LinkedIn"}`)
+            } else {
+              // Publicar Primer Comentario Automático si está configurado
+              const primerComentario = post.overrides_redes?.primer_comentario
+              const shareUrn = liRes.headers.get("x-restli-id") || liData.id
+              if (primerComentario && shareUrn) {
+                try {
+                  await fetch(`https://api.linkedin.com/v2/socialActions/${encodeURIComponent(shareUrn)}/comments`, {
+                    method: "POST",
+                    headers: {
+                      Authorization: `Bearer ${liCuenta.access_token}`,
+                      "Content-Type": "application/json",
+                      "X-Restli-Protocol-Version": "2.0.0",
+                    },
+                    body: JSON.stringify({
+                      actor: authorUrn,
+                      message: { text: primerComentario },
+                    }),
+                  })
+                } catch (cErr) {
+                  console.error("Error al publicar primer comentario en LinkedIn:", cErr)
+                }
+              }
             }
           } catch (liErr: any) {
             errores.push(`LinkedIn Exception: ${liErr.message}`)
