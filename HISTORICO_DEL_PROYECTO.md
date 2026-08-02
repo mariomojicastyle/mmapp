@@ -5,12 +5,31 @@ Este archivo es un registro vivo de la evolución tecnológica del ecosistema Ma
 ## 🗓️ Agosto 2026
 
 ### 🔹 Hito 3DBimFab (3BF) v1 — Integración Paramétrica Nativa Rhino 8 & Grasshopper (01 de Agosto, 2026)
-- **Cálculo Nativo 19 Piezas**: Eliminación de duplicaciones artificiales en Python y decodificación nativa de BReps OpenNURBS (`archive3dm`) mediante `rhino3dm.CommonObject.Decode()` para Three.js.
-- **Modo Technical "Cristal Tintado 70%"**: Renderizado 3D estilo CAD con `<Edges color="#000000" threshold={15} />` de `@react-three/drei` y selector de modos 3D (💎 Cristal, 🧱 Sólido, 📐 Líneas).
-- **Arquitectura de Variantes `.ghx`**: Carga dinámica automatizada en `3bf_worker.py` para variantes por número de cajones (`Cajon_Experimento_Viktor_1cajon.ghx`, `2cajones.ghx`, `3cajones.ghx`).
-- **Sliders con Límites Auto-Detectados**: Extracción en XML de `<Min>`, `<Max>` y `<Value>` con etiquetas 1:1 de Grasshopper y componente `EditableNumberInput` para ingresar valores exactos con auto-clampeo.
-- **Mapeo de Value Lists**: Formateo estricto a entero sin decimales (`"351"`, `"400"`) enviando `System.Int32` y `System.String` para conmutación inmediata de Value Lists en RhinoCompute 8.
-- **Script de Arranque Unificado (`/Arranque3BF`)**: Creación de `3BF/start_3bf.ps1` e inyección de la sección `/Arranque3BF` en `3BF_Proceso.md` y `AGENTS.md`.
+
+#### 1. Diagnóstico y Recálculo Nativo de las 19 Piezas Reales:
+- **Geometría 100% Pura de Rhino 8**: Se resolvió la lectura de las 19 piezas reales del mueble (3 frentes de cajón, 3 posteriores, 3 tapas luz, 3 laterales derechos, 3 laterales izquierdos, cubierta superior, cubierta inferior, lateral izquierdo y lateral derecho), eliminando cualquier duplicación artificial en Python.
+- **Descodificación OpenNURBS (`archive3dm`)**: Implementación en `3bf_worker.py` del método `rhino3dm.CommonObject.Decode()` para deserializar los BReps OpenNURBS complejos devueltos por `rhino.compute.exe` y calcular sus coordenadas 3D en metros.
+- **Alineación del Piso en Y = 0**: Remoción del contenedor `<Stage>` de Drei para evitar el centrado vertical automático y garantizar que la grilla descansara en `Y = 0` bajo la base del mueble.
+
+#### 2. Renderizado Técnico 3D "Rhino Technical" (Cristal Tintado 70%):
+- **Aristas CAD Nítidas**: Integración de `<Edges color="#000000" threshold={15} />` de `@react-three/drei` en cada malla.
+- **Modos Visuales en Tiempo Real**: Implementación de selectores UI para alternar entre **💎 Cristal** (`transparent opacity={0.70}` tintado con el color del acabado), **🧱 Sólido** (opaco con sombra) y **📐 Líneas** (Wireframe).
+
+#### 3. Arquitectura de Variantes `.ghx` para Conmutación de Cajones:
+- **Descubrimiento de Estado en Rhino 8**: Identificación de que RhinoCompute serializa las mallas horneadas en el estado activo guardado en Grasshopper.
+- **Gestión Dinámica de Archivos**: Creación de la carga inteligente de variantes en `3bf_worker.py` para alternar automáticamente entre `Cajon_Experimento_Viktor_1cajon.ghx`, `2cajones.ghx` y `3cajones.ghx` guardados en `temporal/`.
+
+#### 4. Sliders con Límites Auto-Detectados & Entrada Numérica Editable:
+- **Extracción de Rangos en XML**: Desarrollo de la función `parse_ghx_slider_limits` para leer `<Min>`, `<Max>` y `<Value>` desde la etiqueta `<chunk name="Slider">` de Grasshopper.
+- **Estandarización de Etiquetas 1:1**: Renombrado de controles en `ControlPanel.tsx` para coincidir 1:1 con Grasshopper (`Ancho`, `Alto`, `Profundidad`, `Cantidada de Cajones`, `Abrir Cajones`, `Profundidad cajon`, `Altura lateral de cajon`).
+- **Componente `EditableNumberInput`**: Habilitación de edición numérica directa al hacer clic sobre cualquier cifra, con auto-clampeo automático al rango permitido (`min`-`max`) al presionar `Enter` o perder foco (`onBlur`).
+
+#### 5. Mapeo Estricto de `Value List` para Parámetros Numéricos:
+- **Detección de Tipos de Datos**: Corrección del formateo de parámetros en `3bf_worker.py` enviando enteros limpios sin decimales (`"351"`, `"400"`) mediante `System.Int32` y `System.String`, permitiendo la conmutación inmediata de Value Lists en RhinoCompute 8.
+
+#### 6. Comando de Arranque Unificado (`/Arranque3BF`):
+- **Script de Automatización (`start_3bf.ps1`)**: Creación de un script PowerShell que verifica y arranca los 3 procesos principales (`rhino.compute.exe` en puerto 5000, `3bf_worker.py` en puerto 8005 y `Next.js Web App` en puerto 3005).
+- **Documentación de Control**: Registro del comando `/Arranque3BF` en `3BF_Proceso.md` y en el protocolo de arranque de `AGENTS.md`.
 
 ---
 
