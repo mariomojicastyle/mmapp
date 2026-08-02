@@ -1149,12 +1149,14 @@ Con esta batería de arreglos y la validación en caliente, la V20 se establece 
     - **Optimización SEO y GEO (Motores de IA)**: Inyección de datos estructurados Schema.org `JSON-LD` (`SoftwareApplication` / `Organization`) en [layout.tsx](file:///c:/Desarrollo/mmapp/mario-mojica-homepage/src/app/layout.tsx) para indexación en ChatGPT, Perplexity, Gemini y Copilot.
     - **Solución a las Advertencias del Meta Sharing Debugger**: Configuración de `og:image` fija WebP de alta resolución (1200x630), `og:url` y la meta etiqueta `fb:app_id` `1736322840851405` tanto en la homepage como en el visor 3D embebido (`legacy-aplicativo-armado/index.html`), asegurando previsualizaciones visuales de alta calidad en WhatsApp y Facebook.
 
-* **[2026-07-31] Cierre y Eliminación del Experimento 3BF (3DBimFab Web Configurator):**
-    - **Resumen de la Experiencia:** Se intentó construir un configurador paramétrico web local (`/3bf`) conectando una interfaz frontend en React/Three.js con un servidor ejecutable de Rhino Compute (`rhino.compute.exe` en puerto 5000).
-    - **Diagnóstico y Causas del Descarte:**
-      1. El motor de Rhino Compute exige rígidas banderas y etiquetas de salida C# (`RH_IN:` / `RH_OUT:`) propias de Hops que no forman parte de los archivos paramétricos estándar de Grasshopper (como `Cajon_Experimental_ShapeDriver_02.ghx`). Al no encontrar esas etiquetas, Rhino Compute lanza de forma ininterrumpida excepciones internas HTTP 500 (`PayAttentionException`).
-      2. Las plataformas de mercado como ShapeDiver no emplean Rhino Compute genérico ni etiquetas `RH_IN:`, sino clusters y compiladores propietarios C# que convierten a binarios `.glb` en su propia nube.
-    - **Acción Ejecutada:** Por solicitud explícita del usuario, se detuvieron los procesos dev, se eliminó completamente la carpeta `c:\Desarrollo\mmapp\3bf` del sistema y se removió todo el módulo del contexto activo para enfocar esfuerzos en soluciones efectivas.
+* **[2026-08-01] ¡ÉXITO TOTAL E HITOS FUNDACIONALES DE 3DBIMFAB (3BF) CON RHINO 8 & GRASSHOPPER!**
+    - **Triunfo Tecnológico y Resurrección de 3BF:** Se resolvió de manera definitiva la comunicación con RhinoCompute 8, logrando el recálculo paramétrico nativo de 19 piezas reales en tiempo real desde Grasshopper hacia Three.js.
+    - **Logros Consolidados:**
+      1. Modo de renderizado técnico **Rhino Technical (💎 Cristal Tintado al 70%)** con delineado CAD de aristas negras nítidas.
+      2. Carga dinámica de variantes `.ghx` por cantidad de cajones (`1cajon.ghx`, `2cajones.ghx`, `3cajones.ghx`).
+      3. Auto-detección de límites `min` / `max` en sliders XML y edición numérica directa con auto-clampeo (`EditableNumberInput`).
+      4. Mapeo estricto de `Value List` enviando datos en formato `System.Int32` y `System.String` sin decimales flotantes.
+      5. Creación del comando unificado **`/Arranque3BF`** y el script `start_3bf.ps1` para iniciar los 3 daemons en un solo paso.
 
 
 
