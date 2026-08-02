@@ -7,19 +7,18 @@ Este archivo es la "Memoria RAM" para Antigravity. Contiene el contexto de lo qu
 ## 🏗️ 1. Plataforma B2B & 3DBimFab (Foco Actual)
 **Estado:** Integración Supabase avanzada, Identidad Visual estandarizada e Hito Fundacional de **3DBimFab (3BF)** completado.
 
-### 🧩 Hito 3DBimFab (3BF) — Motor Paramétrico Web-BIM
-- [x] **Renombramiento Global de Legacy**: Reemplazado término histórico *MakeLab* por **3DBimFab (3BF)** en toda la documentación.
-- [x] **Documento Fundacional [3BF.md](file:///c:/Desarrollo/mmapp/3BF.md)**: Creado e integrado en el protocolo de arranque ([AGENTS.md](file:///c:/Desarrollo/mmapp/AGENTS.md)).
-- [x] **Manifiesto de Negocio Actualizado [MANIFIESTO_NEGOCIO.md](file:///c:/Desarrollo/mmapp/docs/MANIFIESTO_NEGOCIO.md)**: Reflejada la evolución de 3BF (eliminación de VisualARQ por Parser Web nativo, paradigma Web-BIM para manufactura RTA y DfMA).
-- [x] **Reordenamiento Estratégico de Pilares**:
-  - **Pilar 1**: Automatización de Fábrica e Industria 4.0 (**Núcleo / Core Engine**).
-  - **Pilar 2**: Digitalización y Marketing Visual + Configurador Web 3D (Periferia).
-  - **Pilar 3**: Optimización Postventa & Telemetría (Periferia).
-- [x] **Estructuración y Plan de Implementación (`3bf/`)**:
-  - Creada la carpeta del proyecto en [c:/Desarrollo/mmapp/3bf/](file:///c:/Desarrollo/mmapp/3bf/).
-  - Creado e instalado el plan definitivo en [plan_de_implementacion.md](file:///c:/Desarrollo/mmapp/3bf/plan_de_implementacion.md) con 8 fases y gates de validación.
-  - Abstraídos y migrados los scripts de automatización clave (`get_io.py`, `test_final.py`, `script_cohesion_v10.py`) hacia `3bf/docs/legacy-rhino-compute/`.
-  - Definida la estrategia de despliegue en **Netlify** con servidor **Rhino Compute Local** y soporte multiidioma (`es`, `pt`, `en`).
+### 🧩 Proyecto Independiente 3BF (3DBimFab Engine — Inspirado en VIKTOR.ai) — Estado: IMPLEMENTADO Y VALIDADO
+- [x] **Creación del Proyecto Independiente `3BF/`**: Inicializado el proyecto autónomo en `c:\Desarrollo\mmapp\3BF\` con su propio `package.json`, servidor web Next.js en puerto `3005`, y ejecutor independiente `worker/3bf_worker.py` en Python (FastAPI) en puerto `8005`.
+- [x] **Arquitectura Inspirada en VIKTOR.ai**: Frontend React/Next.js con visor 3D R3F, controles paramétricos DfMA, tabla de despiece de madera, inventario de herrajes y exportador de planos CNC en DXF.
+- [x] **Compilación de Producción Validada**: Verificada la compilación estática y dinámica de Next.js (`npm run build`) con 0 errores (7/7 páginas generadas exitosamente).
+- [x] **Preparado para Embebido**: Vista `/embed` lista con protocolo `postMessage` y cabeceras permisivas de iFrame para acoplamiento seguro a la plataforma.
+- [x] **[NUEVO - 01 de Agosto, 2026] Hito 3BF Paramétrico Nativo (Rhino 8 & Grasshopper)**:
+  - **19 Piezas Nativa de Rhino 8**: Eliminación de duplicación artificial en Python y extracción nativa de los BReps OpenNURBS (`archive3dm`) mediante `rhino3dm.CommonObject.Decode()`.
+  - **Modo Technical "Cristal Tintado 70%"**: Renderizado 3D estilo CAD con `<Edges color="#000000" threshold={15} />` de `@react-three/drei` y selector de modos 3D (💎 Cristal, 🧱 Sólido, 📐 Líneas).
+  - **Arquitectura de Variantes `.ghx`**: Carga dinámica automatizada en `3bf_worker.py` para variantes por número de cajones (`Cajon_Experimento_Viktor_1cajon.ghx`, `2cajones.ghx`, `3cajones.ghx`).
+  - **Sliders con Límites Auto-Detectados**: Extracción en XML de `<Min>`, `<Max>` y `<Value>` con etiquetas 1:1 de Grasshopper y componente `EditableNumberInput` para ingresar valores exactos con auto-clampeo.
+  - **Mapeo de Value Lists**: Formateo estricto a entero sin decimales (`"351"`, `"400"`) enviando `System.Int32` y `System.String` para conmutación inmediata de Value Lists en RhinoCompute 8.
+
 
 ### 🎯 Objetivos de la Fase (Plataforma B2B)
 - [x] Migrar equipo a Supabase dinámico.

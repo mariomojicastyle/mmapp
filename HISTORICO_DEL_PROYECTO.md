@@ -2,6 +2,18 @@
 
 Este archivo es un registro vivo de la evolución tecnológica del ecosistema Mario Mojica Style. Complementa a `ESTADO_DEL_PROYECTO.md` conservando la memoria de decisiones, retos y soluciones técnicas.
 
+## 🗓️ Agosto 2026
+
+### 🔹 Hito 3DBimFab (3BF) v1 — Integración Paramétrica Nativa Rhino 8 & Grasshopper (01 de Agosto, 2026)
+- **Cálculo Nativo 19 Piezas**: Eliminación de duplicaciones artificiales en Python y decodificación nativa de BReps OpenNURBS (`archive3dm`) mediante `rhino3dm.CommonObject.Decode()` para Three.js.
+- **Modo Technical "Cristal Tintado 70%"**: Renderizado 3D estilo CAD con `<Edges color="#000000" threshold={15} />` de `@react-three/drei` y selector de modos 3D (💎 Cristal, 🧱 Sólido, 📐 Líneas).
+- **Arquitectura de Variantes `.ghx`**: Carga dinámica automatizada en `3bf_worker.py` para variantes por número de cajones (`Cajon_Experimento_Viktor_1cajon.ghx`, `2cajones.ghx`, `3cajones.ghx`).
+- **Sliders con Límites Auto-Detectados**: Extracción en XML de `<Min>`, `<Max>` y `<Value>` con etiquetas 1:1 de Grasshopper y componente `EditableNumberInput` para ingresar valores exactos con auto-clampeo.
+- **Mapeo de Value Lists**: Formateo estricto a entero sin decimales (`"351"`, `"400"`) enviando `System.Int32` y `System.String` para conmutación inmediata de Value Lists en RhinoCompute 8.
+- **Script de Arranque Unificado (`/Arranque3BF`)**: Creación de `3BF/start_3bf.ps1` e inyección de la sección `/Arranque3BF` en `3BF_Proceso.md` y `AGENTS.md`.
+
+---
+
 ## 🗓️ Julio 2026
 
 ### 🔹 Hito Fundacional 3DBimFab (3BF) — Web-BIM Configurator (30 de Julio, 2026)
@@ -1117,6 +1129,13 @@ Con esta batería de arreglos y la validación en caliente, la V20 se establece 
     - **Taxonomía de 5 Categorías Muebleras**: Actualización de [MANIFIESTO_NEGOCIO.md](file:///c:/Desarrollo/mmapp/docs/MANIFIESTO_NEGOCIO.md) para registrar formalmente las 5 grandes categorías del mercado: RTA / Seriados, Modulados, Planeados, Tapizados/Espumados (sofás, pufs, colchones) y Personalizados.
     - **Optimización SEO y GEO (Motores de IA)**: Inyección de datos estructurados Schema.org `JSON-LD` (`SoftwareApplication` / `Organization`) en [layout.tsx](file:///c:/Desarrollo/mmapp/mario-mojica-homepage/src/app/layout.tsx) para indexación en ChatGPT, Perplexity, Gemini y Copilot.
     - **Solución a las Advertencias del Meta Sharing Debugger**: Configuración de `og:image` fija WebP de alta resolución (1200x630), `og:url` y la meta etiqueta `fb:app_id` `1736322840851405` tanto en la homepage como en el visor 3D embebido (`legacy-aplicativo-armado/index.html`), asegurando previsualizaciones visuales de alta calidad en WhatsApp y Facebook.
+
+* **[2026-07-31] Cierre y Eliminación del Experimento 3BF (3DBimFab Web Configurator):**
+    - **Resumen de la Experiencia:** Se intentó construir un configurador paramétrico web local (`/3bf`) conectando una interfaz frontend en React/Three.js con un servidor ejecutable de Rhino Compute (`rhino.compute.exe` en puerto 5000).
+    - **Diagnóstico y Causas del Descarte:**
+      1. El motor de Rhino Compute exige rígidas banderas y etiquetas de salida C# (`RH_IN:` / `RH_OUT:`) propias de Hops que no forman parte de los archivos paramétricos estándar de Grasshopper (como `Cajon_Experimental_ShapeDriver_02.ghx`). Al no encontrar esas etiquetas, Rhino Compute lanza de forma ininterrumpida excepciones internas HTTP 500 (`PayAttentionException`).
+      2. Las plataformas de mercado como ShapeDiver no emplean Rhino Compute genérico ni etiquetas `RH_IN:`, sino clusters y compiladores propietarios C# que convierten a binarios `.glb` en su propia nube.
+    - **Acción Ejecutada:** Por solicitud explícita del usuario, se detuvieron los procesos dev, se eliminó completamente la carpeta `c:\Desarrollo\mmapp\3bf` del sistema y se removió todo el módulo del contexto activo para enfocar esfuerzos en soluciones efectivas.
 
 
 

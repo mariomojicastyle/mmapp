@@ -208,7 +208,96 @@ graph TB
 
 ---
 
-## 🔗 6. Referencia: Captura del Estilo VisualARQ (Antecedente)
+## 🏛️ 6. Análisis de Arquitecturas a Emular (Benchmark: ShapeDiver)
+
+Para garantizar que el motor de **3DBimFab (3BF)** escale con estándares de clase mundial, tomamos como referencia técnica la arquitectura de **ShapeDiver**, el estándar global para desplegar definiciones paramétricas de Grasshopper en la web.
+
+### 6.1 Arquitectura de 4 Capas de ShapeDiver
+
+```mermaid
+graph TD
+    subgraph "1. Client Layer (Frontend & WebGL)"
+        A["Navegador Web del Usuario"] --> B["ShapeDiver Viewer SDK (Three.js Engine)"]
+        A --> C["UI Web (Sliders, Dropdowns, Toggles en React/Vue)"]
+    end
+
+    subgraph "2. API Gateway & Orchestration Layer"
+        D["Geometry Backend API (REST / GraphQL)"]
+        E["Ticket & Session Manager"]
+    end
+
+    subgraph "3. Computation & Cache Layer (Backend Cloud)"
+        F["Graph-Based Caching System (Redis / DB)"]
+        G["Clúster de Servidores Headless (Rhino / Grasshopper Engines)"]
+    end
+
+    subgraph "4. Asset Pipeline & Formatos"
+        H["Mallas 3D: glTF 2.0 + Compresión Draco"]
+        I["Archivos Técnicos Exportables (DXF, STEP, PDF, BOM JSON)"]
+    end
+
+    C -->|1. Petición POST /compute {ticket, params}| D
+    D --> E
+    E --> F
+    F -- "Hit (Caché)" --> D
+    F -- "Miss (Computar)" --> G
+    G -->|Genera| H
+    G -->|Genera| I
+    H -->|2. Stream de Mallas glTF| B
+    B -->|3. Renderizado GPU 60fps| A
+```
+
+### 6.2 Desglose Técnico de Componentes
+
+1. **Capa de Autoría y Plugin Grasshopper**:
+   - Mapeo declarativo de Entradas (`Inputs`: Sliders, Dropdowns, Swatches, File Uploads) y Salidas (`Outputs`: Mallas 3D, Planos, Despiece).
+   - Generación de un **JSON Schema** que abstrae los parámetros para que la web los consuma sin abrir el archivo `.gh`.
+
+2. **Capa de Computación & Caché (Geometry Backend API)**:
+   - **Ticket System**: Asignación de fichas/tokens de sesión por modelo cargado para seguridad y aislamiento.
+   - **Graph-Based Caching**: Almacenamiento en caché de estados intermedios del árbol de componentes de Grasshopper. Si un parámetro no afecta una rama del modelo, esa subgeometría se recupera instantáneamente de memoria en <50ms sin reevaluar todo el motor.
+
+3. **Capa de Transporte (glTF 2.0 + Compresión Draco)**:
+   - En lugar de enviar geometría CAD pesada (`.3dm`, `.brep`), convierte el modelo resultante a **glTF 2.0 binario (`.glb`)** comprimido con Draco. Esto reduce la transferencia por red en un **80-90%** (archivos de 50MB bajan a 2-4MB).
+
+4. **Capa de Presentación Client-Side (ShapeDiver Viewer / Three.js)**:
+   - Visor JavaScript basado en Three.js con **actualización incremental de escena** (`mesh.replace()`), permitiendo intercambiar submallas modificadas sin recargar ni parpadear la escena 3D.
+
+### 6.3 Paralelismo e Implementación en 3BF
+
+| Componente ShapeDiver | Equivalente en 3BF (Mario Mojica) | Estado en 3BF |
+| :--- | :--- | :--- |
+| **Plugin GH (Inputs/Outputs)** | Convención Nombres `RH_IN:` y `RH_OUT:` en `.gh` | ✅ Implementado |
+| **Geometry Backend API** | API Gateway + Motor de Cómputo (Rhino Compute / ShapeDiver Headless API / Custom Worker) | 🔄 En Evaluación de Arquitectura |
+| **Formato de Transmisión** | `.glb` cifrado (IP Shield AES-256) + Draco | ✅ Implementado |
+| **3D Viewer SDK** | React Three Fiber (R3F) + Zustand State Engine | ✅ Implementado |
+| **Diferenciador 3BF** | Integración nativa DfMA para Muebles RTA (planos CNC Biesse, despiece herrajes, telemetría y manuales 3D) | ✅ Ventaja Competitiva 3BF |
+
+### 6.4 Matriz Comparativa de Soluciones (con Enlaces Oficiales)
+
+| Solución / Enlace | Tipo / Modelo | Motor de Cálculo | Enfoque Principal | Fortalezas | Limitaciones |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| 🌐 **[ShapeDiver](https://www.shapediver.com/)** | Commercial SaaS | Grasshopper / Rhino | Configuradores 3D WebGL para e-commerce / productos | Listo para usar, caché optimizada, visor WebGL ultrarrápido | Costos recurrentes por créditos/uso, atado a su infraestructura |
+| 🌐 **[VIKTOR.ai](https://www.viktor.ai/)** | Commercial SaaS / Enterprise | Python + Grasshopper / CAD | Aplicaciones web completas de ingeniería y cálculo | Integra código Python, dashboards, análisis estructural y CAD | Enfoque más ingenieril que de visualización e-commerce |
+| 🌐 **[Packhunt](https://www.packhunt.io/)** | Commercial SaaS | Grasshopper / CAD | Flujos *Configure-to-Production* para arquitectura y manufactura | Generación directa de datos para fábrica y cumplimiento de normas | Licenciamiento empresarial especializado en sector AEC |
+| 🌐 **[BeeGraphy](https://beegraphy.com/)** | Freemium SaaS | Editor de Nodos Cloud propio (Nativo Web) | Diseño paramétrico 100% en navegador y configurador web | Cero software local (funciona sin Rhino), edición colaborativa | Ecosistema de nodos menos maduro que Grasshopper |
+| 🌐 **[Hypar](https://hypar.io/)** | Commercial / Freemium | C# / Python / Open BIM | Generación de edificios y automatización BIM | Enfoque Web-BIM nativo, rápido para diseño generativo de edificación | Orientado a edificación, no a manufactura de productos |
+| 🌐 **[Speckle](https://speckle.systems/)** | **Open Source** (MIT) | Conectores multi-software (Rhino, GH, Revit, etc.) | Gestión y *Streaming* de datos 3D ("Git para AEC") | Código abierto, excelente API WebGL, sincronización multicanal | No evalúa lógica paramétrica por sí solo (necesita un runner) |
+| 🌐 **[Rhino Compute](https://developer.rhino3d.com/guides/compute/)** | **Developer API** (Licencia Rhino) | Rhino 8 / Grasshopper Headless | Motor Backend REST para desarrollo custom *(Opción de evaluación para 3BF)* | Control 100% total, sin intermediarios, costo fijo por servidor | Requiere desarrollo total de DevOps, caché y visor WebGL |
+| 🌐 **[CadQuery](https://cadquery.readthedocs.io/)** | **Open Source** (Apache 2.0) | OpenCASCADE (Python) | Modelado CAD paramétrico sólido por código | 100% libre de licencias comercial de Rhino | Basado en código Python (sin interfaz visual de nodos tipo GH) |
+
+### 6.5 Evaluación Abierta de Infraestructura de Backend para 3BF
+
+El núcleo de **3DBimFab (3BF)** radica en la **experiencia del usuario y la integración con la planta de manufactura** (DfMA, despiece de herrajes, planos CNC Biesse, telemetría de campo y manuales 3D). El motor de backend geométrico es un componente modular en proceso de evaluación estratégica bajo 4 posibles caminos:
+
+1. **Camino A — ShapeDiver como Backend Headless (SaaS API)**: Consumir el Geometry Backend API de ShapeDiver como motor de cálculo en la nube, liberando el desarrollo de la gestión de servidores (DevOps) y concentrando el esfuerzo en la interfaz DfMA y la plataforma B2B.
+2. **Camino B — Rhino Compute + Capa Custom de Caché (Self-Hosted)**: Implementar servidores propios con Rhino Compute agregando un middleware custom (Redis / Node.js) para orquestación de caché, seguridad (IP Shield) y exportación `glTF`.
+3. **Camino C — Pipeline Abierto con Speckle + Workers Async**: Utilizar Speckle para el streaming de datos 3D y desacoplar la evaluación paramétrica con microservicios asíncronos.
+4. **Camino D — Motor Nativo Open Source (CadQuery / WebAssembly)**: Evaluar engines sin licencias comerciales de Rhino para componentes seriados estándar de la industria mueblera RTA.
+
+---
+
+## 🔗 7. Referencia: Captura del Estilo VisualARQ (Antecedente)
 
 La siguiente captura muestra la interfaz de VisualARQ dentro de Rhino, donde los parámetros del Grasshopper se exponen como un formulario de "Propiedades del Mueble". Este es el comportamiento que el **Parser Web** de 3BF replicará de forma nativa en el navegador:
 
@@ -216,7 +305,7 @@ La siguiente captura muestra la interfaz de VisualARQ dentro de Rhino, donde los
 
 ---
 
-## 📂 7. Ubicación en el Ecosistema
+## 📂 8. Ubicación en el Ecosistema
 
 ```
 mmapp/
@@ -240,7 +329,7 @@ mmapp/
 
 ---
 
-## 🗺️ 8. Próximo Paso
+## 🗺️ 9. Próximo Paso
 
 El **Plan de Implementación** detallado para llevar la arquitectura 3BF de la conceptualización al desarrollo se encuentra en:
 

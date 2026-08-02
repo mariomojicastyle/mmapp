@@ -1,0 +1,14 @@
+[worker]
+name = "3BF Worker Python Engine"
+port = 8005
+version = "1.0.0"
+environment = "development"
+
+[integrations]
+grasshopper_enabled = true
+rhino_compute_url = "http://localhost:8081"
+cadquery_enabled = true
+
+[output]
+export_dir = "exports"
+temp_dir = "temp"
