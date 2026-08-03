@@ -18,15 +18,22 @@ Para sacarle el máximo provecho a nuestra maquinaria de ventas, sigue este fluj
 | **Jamar** | Benny Naimark | Líder/Gerencia | Altos costos y fricción en el armado de muebles (según T&C) | Mensaje Enviado | 24 Junio 2026 - Mensaje enviado por LinkedIn | Hacer seguimiento el 27 Junio si no hay respuesta |
 | **Móveis Henn** | Rudgeri Henkel | Gerente de Planejamento e Materiais | Costos de asistencia técnica, errores de ensamble, piezas dañadas en RTA | Esperando respuesta WhatsApp | 03 Agosto 2026 - Dio su WhatsApp directo en LinkedIn | Escribir mensaje por WhatsApp |
 | **Móveis Henn** | Jacson Perin | Coordenador de Marketing / Director de Arte | Experiencia de cliente final en post-venta, soporte de armado visual | Por contactar | Recomendado por Jonas Borck | Enviar solicitud de conexión en LinkedIn |
+| **Demóbile** | Junio César Françolin | Gerente de Produção | Control de calidad extendido al hogar, telemetría de ensamble para producción | Mensaje Enviado | 03 Agosto 2026 - Vio el perfil de Mario en LinkedIn | Enviar mensaje corto de seguimiento |
 
 ## 💡 Estrategias y Tareas en Curso
 - [x] Definir el canal oficial para enviar el mensaje a Benny de Jamar (LinkedIn).
 - [ ] Enviar primer mensaje de aproximación a Rudgeri Henkel vía WhatsApp.
 - [ ] Contactar a Jacson Perin (Coordenador de Marketing) vía LinkedIn.
+- [ ] Enviar mensaje de seguimiento a Junio César Françolin de Demóbile.
 - [ ] Identificar 3 nuevas empresas de retail o fabricación de muebles para agregar al pipeline.
 
 ## 📝 Registro de Interacciones Históricas
 *Aquí se registrarán resúmenes de respuestas, reuniones o correos enviados para mantener el contexto detallado que no cabe en la tabla.*
+
+**Demóbile (Junio César Françolin):**
+- *Contexto previo:* Mario le envió mensaje el 22 de Julio hablando sobre cultura 5S y manuales 3D.
+- *03 de Agosto 2026:* Junio ve el perfil de Mario en LinkedIn. Decidimos hacer un seguimiento rápido de gancho.
+
 
 **Móveis Henn (Rudgeri Henkel & Jacson Perin):**
 - *Contexto previo:* Jonas Borck recomendó a Mario entrar en contacto con ellos. 
