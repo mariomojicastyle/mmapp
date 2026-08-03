@@ -1,6 +1,6 @@
 # 🏛️ Guión e Historia de Michael Thonet (1859) para Storyboard Studio
 
-Este documento contiene la estructura completa del guión de concepto y los prompts individuales de video optimizados para **Storyboard Studio** de Google Flow.
+Este documento contiene la estructura completa del guión de concepto, los prompts de video optimizados para **Storyboard Studio** de Google Flow y el listado de nombres numerados para tus archivos de video.
 
 ---
 
@@ -18,56 +18,81 @@ Cierre de audio: solo al final, sobre el plano del café lleno de gente y una tr
 
 ---
 
-## 🎬 2. Prompts de Video y Tiempos de Animación (Admitidos por Google Flow)
+## 🎬 2. Prompts de Video y Tiempos (Inglés)
 
 ### **Escena 1: Int. Taller De Ebanistería - Noche**
-*   **01. The Workshop at Night (4s)**
-    *   **Prompt:** `Slow camera push-in towards the craftsman. Candle flames gently flicker on the tables. Volumetric dust particles float slowly in the warm light rays. Cinematic, ultra-realistic.`
-*   **02. Sketching the Curves (6s)**
-    *   **Prompt:** `Close-up shot of hands sketching a chair design on parchment with charcoal. Fine charcoal dust particles scatter. Soft warm lighting and dynamic shadows moving.`
-*   **03. Testing the Wood (6s)**
-    *   **Prompt:** `The ebanist slowly bends the wooden rod with his hands. Subtle wood fiber flexing. Dust particles falling. Camera pans slightly to the right, dramatic focus on the wood curve.`
-
----
+*   **01. The Workshop at Night (4s)** ➔ `Slow camera push-in towards the craftsman. Candle flames gently flicker on the tables. Volumetric dust particles float slowly in the warm light rays. Cinematic, ultra-realistic.`
+*   **02. Sketching the Curves (6s)** ➔ `Close-up shot of hands sketching a chair design on parchment with charcoal. Fine charcoal dust particles scatter. Soft warm lighting and dynamic shadows moving.`
+*   **03. Testing the Wood (6s)** ➔ `The ebanist slowly bends the wooden rod with his hands. Subtle wood fiber flexing. Dust particles falling. Camera pans slightly to the right, dramatic focus on the wood curve.`
 
 ### **Escena 2: Int. Fábrica De Vapor - Día**
-*   **01. The Steam Chamber (6s)**
-    *   **Prompt:** `Billowing white steam rising and swirling from iron boilers. Workers pull metal levers in slow motion. High contrast industrial lighting, steam particles in the air.`
-*   **02. Handling the Beechwood (6s)**
-    *   **Prompt:** `Side tracking shot of workers carrying a steaming hot wood bar. Steam continuously evaporates off the wood. Cinematic industrial atmosphere, realistic motion.`
-*   **03. The Perfect Arch (4s)**
-    *   **Prompt:** `Extreme close-up of a hot wooden bar bending around a metal circular mold. Tiny droplets of water hiss and evaporate off the wood. Light steam rising.`
-
----
+*   **01. The Steam Chamber (6s)** ➔ `Billowing white steam rising and swirling from iron boilers. Workers pull metal levers in slow motion. High contrast industrial lighting, steam particles in the air.`
+*   **02. Handling the Beechwood (6s)** ➔ `Side tracking shot of workers carrying a steaming hot wood bar. Steam continuously evaporates off the wood. Cinematic industrial atmosphere, realistic motion.`
+*   **03. The Perfect Arch (4s)** ➔ `Extreme close-up of a hot wooden bar bending around a metal circular mold. Tiny droplets of water hiss and evaporate off the wood. Light steam rising.`
 
 ### **Escena 3: Int. Almacén De Thonet - Día**
-*   **01. The Weight of Inefficiency (4s)**
-    *   **Prompt:** `Slow camera dolly backward. The craftsman stands still and concerned among hundreds of piled chairs. Soft sunlight through windows, floating dust motes.`
-*   **02. Deconstructing the Icon (6s)**
-    *   **Prompt:** `Close-up of hands using a vintage screwdriver to unscrew wood joints. Metal screws turning, minor wood friction details, high depth of field.`
-*   **03. The Flat Pack Revolution (6s)**
-    *   **Prompt:** `Overhead shot. Hands carefully arranging curved wooden parts flat inside a rustic wooden crate. Dust puffs up slightly as parts touch. Text label on the crate is visible.`
-
----
+*   **01. The Weight of Inefficiency (4s)** ➔ `Slow camera dolly backward. The craftsman stands still and concerned among hundreds of piled chairs. Soft sunlight through windows, floating dust motes.`
+*   **02. Deconstructing the Icon (6s)** ➔ `Close-up of hands using a vintage screwdriver to unscrew wood joints. Metal screws turning, minor wood friction details, high depth of field.`
+*   **03. The Flat Pack Revolution (6s)** ➔ `Overhead shot. Hands carefully arranging curved wooden parts flat inside a rustic wooden crate. Dust puffs up slightly as parts touch. Text label on the crate is visible.`
 
 ### **Escena 4: Int. Café De París - Día**
-*   **01. The Arrival at the Café (4s)**
-    *   **Prompt:** `Slow zoom-in towards the wooden crate sitting in the middle of a sunlit café under renovation. Dust particles dance in the bright window light. Background activity.`
-*   **02. Unpacking the Pieces (6s)**
-    *   **Prompt:** `Panning shot over wooden chair pieces spread out flat on a table. Sunlight shifts slightly, showing textures of the wood grain and paper manual.`
-*   **03. The Assembly Process (6s)**
-    *   **Prompt:** `Close-up of hands tightening a screw to connect the round seat frame to the backrest. The screwdriver rotates, wood and iron meet, detailed textures.`
-*   **04. A Design Icon Stands (6s)**
-    *   **Prompt:** `Low angle shot. A hand lifts the finished Thonet chair and places it firmly on the black and white tiled floor. Subtle camera shake on impact, lens flare.`
+*   **01. The Arrival at the Café (4s)** ➔ `Slow zoom-in towards the wooden crate sitting in the middle of a sunlit café under renovation. Dust particles dance in the bright window light. Background activity.`
+*   **02. Unpacking the Pieces (6s)** ➔ `Panning shot over wooden chair pieces spread out flat on a table. Sunlight shifts shifts slightly, showing textures of the wood grain and paper manual.`
+*   **03. The Assembly Process (6s)** ➔ `Close-up of hands tightening a screw to connect the round seat frame to the backrest. The screwdriver rotates, wood and iron meet, detailed textures.`
+*   **04. A Design Icon Stands (6s)** ➔ `Low angle shot. A hand lifts the finished Thonet chair and places it firmly on the black and white tiled floor. Subtle camera shake on impact, lens flare.`
+
+### **Escena 5: Int. Café De París - Atardecer**
+*   **01. Evening Glow at Café (8s)** ➔ `Slow horizontal pan across a bustling 1860 Parisian café. People talking in slow motion, warm sunset light shifting through the windows. Golden hour glow.`
+*   **02. The Detail of Design (4s)** ➔ `Focus pull from the elegant curve of a Thonet chair in the foreground to the lively, softly blurred café scene in the background. Warm particles in the air.`
+*   **03. A Legacy in Motion (6s)** ➔ `Camera tracks slowly as a glowing blue digital holographic grid begins to scan and overlay onto the historic café scene, transitioning past into future.`
+*   **04. The Digital Evolution (8s)** ➔ `Slow zoom-out. The glowing "Mario Mojica" digital 3D logo floats elegantly over a table. The background café softly dims as the logo shines with volumetric light.`
 
 ---
 
-### **Escena 5: Int. Café De París - Atardecer**
-*   **01. Evening Glow at Café (8s)**
-    *   **Prompt:** `Slow horizontal pan across a bustling 1860 Parisian café. People talking in slow motion, warm sunset light shifting through the windows. Golden hour glow.`
-*   **02. The Detail of Design (4s)**
-    *   **Prompt:** `Focus pull from the elegant curve of a Thonet chair in the foreground to the lively, softly blurred café scene in the background. Warm particles in the air.`
-*   **03. A Legacy in Motion (6s)**
-    *   **Prompt:** `Camera tracks slowly as a glowing blue digital holographic grid begins to scan and overlay onto the historic café scene, transitioning past into future.`
-*   **04. The Digital Evolution (8s)**
-    *   **Prompt:** `Slow zoom-out. The glowing "Mario Mojica" digital 3D logo floats elegantly over a table. The background café softly dims as the logo shines with volumetric light.`
+## 📁 3. Versión en Español y Nombres de Archivo para Organización
+
+Utiliza esta guía numerada para renombrar tus videos una vez generados en Storyboard Studio:
+
+### 🔨 Escena 1: El Taller de Ebanistería (Noche)
+*   **Archivo:** `01_E1_Taller_Noche.mp4` (4s)
+    *   **Movimiento:** Acercamiento lento de la cámara hacia el artesano. Las velas parpadean suavemente sobre las mesas. Partículas de polvo flotan en los rayos de luz cálida. Realismo cinematográfico.
+*   **Archivo:** `02_E1_Bocetando_Curvas.mp4` (6s)
+    *   **Movimiento:** Plano detalle de las manos dibujando el diseño de la silla con carboncillo sobre un papel antiguo. Polvo de carboncillo se esparce. Iluminación cálida y sombras en movimiento.
+*   **Archivo:** `03_E1_Probando_Madera.mp4` (6s)
+    *   **Movimiento:** El ebanista dobla lentamente la vara de madera con sus manos. Se aprecia la flexión de las fibras y polvo cayendo. Enfoque dramático sobre la curva.
+
+### 💨 Escena 2: La Fábrica de Vapor (Día)
+*   **Archivo:** `04_E2_Caldera_Vapor.mp4` (6s)
+    *   **Movimiento:** Vapor denso y blanco subiendo y arremolinándose desde las calderas de hierro. Los obreros jalan palancas metálicas en cámara lenta. Luz industrial de alto contraste.
+*   **Archivo:** `05_E2_Cargando_Madera.mp4` (6s)
+    *   **Movimiento:** Toma de seguimiento lateral de los obreros cargando una barra de madera humeante recién sacada. El vapor se evapora del material en movimiento.
+*   **Archivo:** `06_E2_Arco_Perfecto.mp4` (4s)
+    *   **Movimiento:** Primer plano extremo de la madera caliente doblándose alrededor del molde circular de hierro. Pequeñas gotas de agua sisean y se evaporan sobre la madera caliente.
+
+### 📦 Escena 3: El Almacén y la Caja Plana (Día)
+*   **Archivo:** `07_E3_Peso_Ineficiencia.mp4` (4s)
+    *   **Movimiento:** Retroceso lento de la cámara. El artesano permanece quieto y preocupado entre cientos de sillas apiladas. Luz solar suave y polvo flotando.
+*   **Archivo:** `08_E3_Desarmando_Icono.mp4` (6s)
+    *   **Movimiento:** Plano detalle de manos utilizando un destornillador antiguo para retirar los pernos de la madera. El tornillo gira con fricción realista en alta definición.
+*   **Archivo:** `09_E3_Revolucion_Caja_Plana.mp4` (6s)
+    *   **Movimiento:** Vista cenital. Manos acomodando de forma plana y compacta las piezas de las sillas dentro de la caja de madera rústica. Polvo fino se levanta al encajar las piezas.
+
+### ☕ Escena 4: Llegada y Ensamble en el Café (Día)
+*   **Archivo:** `10_E4_Llegada_Cafe.mp4` (4s)
+    *   **Movimiento:** Zoom lento hacia la caja de madera de un metro cúbico ubicada en medio del café en remodelación. El polvo baila bajo la intensa luz de la ventana.
+*   **Archivo:** `11_E4_Desempaque_Piezas.mp4` (6s)
+    *   **Movimiento:** Paneo sobre las piezas de madera dispuestas en el suelo y la mesa de trabajo. El sol se desplaza mostrando el grano de la madera y las instrucciones litográficas.
+*   **Archivo:** `12_E4_Proceso_Ensamble.mp4` (6s)
+    *   **Movimiento:** Plano detalle de las manos apretando un perno para unir el asiento circular con el respaldo. Giro del destornillador y acople milimétrico.
+*   **Archivo:** `13_E4_Icono_Terminado.mp4` (6s)
+    *   **Movimiento:** Toma desde ángulo bajo. Una mano levanta la silla Thonet terminada y la asienta firmemente en el piso de baldosas blancas y negras. Leve vibración y destello de luz.
+
+### 🍷 Escena 5: El Café Inaugurado y la Era Digital (Atardecer)
+*   **Archivo:** `14_E5_Atardecer_Cafe.mp4` (8s)
+    *   **Movimiento:** Paneo horizontal lento por el bullicioso café parisino de 1860. Clientes conversando en cámara lenta bajo la luz dorada del atardecer.
+*   **Archivo:** `15_E5_Detalle_Silla.mp4` (4s)
+    *   **Movimiento:** Cambio de enfoque desde la curva elegante de la silla Thonet en primer plano hacia el fondo concurrido y desenfocado del café.
+*   **Archivo:** `16_E5_Legado_Movimiento.mp4` (6s)
+    *   **Movimiento:** La cámara avanza lentamente mientras una cuadrícula holográfica digital de color azul escanea e integra el café histórico hacia el futuro digital.
+*   **Archivo:** `17_E5_Evolucion_Digital.mp4` (8s)
+    *   **Movimiento:** Zoom out lento. El logotipo digital en 3D de "Mario Mojica" flota con luz volumétrica sobre la mesa del café, cerrando la historia con estética premium.
