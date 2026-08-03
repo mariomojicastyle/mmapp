@@ -78,10 +78,15 @@ export default function ControlPanel() {
   // Función para re-calcular cuando cambian los parámetros
   const ejecutarComputo = async () => {
     try {
+      const payload = {
+        model_id: parametros.model_id || "M00001",
+        gh_file: parametros.gh_file || "Cubierta.ghx",
+        ...parametros
+      };
       const res = await fetch("/api/compute", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ model_id: parametros.model_id || "M00001", parameters: parametros }),
+        body: JSON.stringify(payload),
       });
       const data = await res.json();
       if (data.status === "success") {

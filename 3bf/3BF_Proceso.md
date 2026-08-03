@@ -20,6 +20,12 @@ Para garantizar que los servicios permanezcan activos a la primera sin cerrarse 
 2. **🐍 3BF Worker Python Engine**: `python -u worker/3bf_worker.py` ➔ `http://localhost:8005` *(Solver FastAPI DfMA en C:\Desarrollo\mmapp\3BF)*
 3. **🌐 3BF Web App**: `npm run dev` ➔ `http://localhost:3005` *(Interfaz Web React / Three.js en C:\Desarrollo\mmapp\3BF)*
 
+### 🛠️ Protocolo de Recuperación Rápida ante Bloqueo / API Fallback:
+Si el visor se pone en blanco o muestra el badge amarillo `Worker: API Fallback`:
+1. **Borrar Caché de Desarrollo `.next`**: `Remove-Item -Recurse -Force c:\Desarrollo\mmapp\3BF\.next`
+2. **Reiniciar Servidor Web**: Ejecutar `npm run dev` en `c:\Desarrollo\mmapp\3BF`.
+3. **Verificar Servicios**: Confirmar respuesta HTTP 200 en `http://localhost:5000/version` y `http://localhost:8005/health`.
+
 ---
 
 ## 📐 Diagrama del Flujo de Datos (Visual Tech Ethos)

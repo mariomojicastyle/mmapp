@@ -83,7 +83,42 @@ Ubicación: **Esquina superior izquierda del visor 3D** (`absolute top-3 left-3 
 
 ---
 
+## 📌 5. Procedimiento de Recuperación Rápida ante Bloqueo (`Worker: API Fallback`)
+
+### 5.1 Causa del Bloqueo (`API Fallback` / Canvas Blanco):
+1. **Corrupción de Caché Dev `.next`**: Al ejecutar `npm run build` o alternar ramas git (`git checkout`), la caché interna de desarrollo de Next.js en `3BF/.next` pierde la sincronía de referencias estáticas, produciendo un error `MODULE_NOT_FOUND` en las llamadas internas a `/api/compute`.
+2. **Desconexión del Worker Python en `localhost:8005`**: Si el Worker de Python o RhinoCompute sufren una desconexión o parpadeo en las peticiones HTTP, el frontend conmuta automáticamente al estado degradado de seguridad `Worker: API Fallback`.
+
+### 5.2 Pasos de Diagnóstico y Recuperación Paso a Paso:
+
+#### Paso 1: Verificar el Estado de los 3 Servicios Persistentes (`Daemons`)
+Ejecutar en la terminal el verificador de salud:
+```powershell
+python -c "import requests; print('Rhino 5000:', requests.get('http://localhost:5000/version').status_code); print('Python 8005:', requests.get('http://localhost:8005/health').status_code); print('Next.js 3005:', requests.get('http://localhost:3005').status_code)"
+```
+* **Esperado**: Todos deben responder `ONLINE [200]`.
+
+#### Paso 2: Limpieza de Caché Dev `.next` y Reinicio del Servidor Web
+Si se presenta pantalla blanca o error de módulos:
+```powershell
+# 1. Eliminar la carpeta de caché corrompida
+Remove-Item -Recurse -Force c:\Desarrollo\mmapp\3BF\.next
+
+# 2. Reiniciar el servidor de desarrollo de Next.js
+cd c:\Desarrollo\mmapp\3BF
+npm run dev
+```
+
+#### Paso 3: Reinicio de Daemons de Segundo Plano (`/Arranque3BF`)
+Si el Worker de Python (8005) o RhinoCompute (5000) se cerraron, re-lanzarlos como Daemons en segundo plano (`IsDaemon: true`):
+1. **RhinoCompute 8**: `C:\Users\mario\AppData\Roaming\McNeel\Rhinoceros\packages\8.0\Hops\0.17.0\rhino.compute\rhino.compute.exe`
+2. **3BF Worker Python**: `python -u worker/3bf_worker.py` en `c:\Desarrollo\mmapp\3BF`
+3. **3BF Web App Next.js**: `npm run dev` en `c:\Desarrollo\mmapp\3BF`
+
+---
+
 ## 📌 Archivos Clave del Sistema:
-* `c:\Desarrollo\mmapp\3BF\components\viewer\Viewer3D.tsx` (Geometría dual, normales vectoriales, renderizado R3F)
+* `c:\Desarrollo\mmapp\3BF\components\viewer\Viewer3D.tsx` (Geometría dual, normales vectoriales, renderizado R3F, `key={activeMap.uuid}`)
 * `c:\Desarrollo\mmapp\3BF\components\viewer\CalibrationPanel.tsx` (Interfaz UI del Panel Flotante de Calibración)
+* `c:\Desarrollo\mmapp\3BF\app\api\compute\route.ts` (Bucle de conexión multiorigen `localhost:8005` y fallback)
 * `c:\Desarrollo\mmapp\3BF\lib\store.ts` (Estado Zustand `calibracion` y valores por defecto)
