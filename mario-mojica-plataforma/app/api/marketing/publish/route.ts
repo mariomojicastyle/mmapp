@@ -225,6 +225,8 @@ export async function GET(request: NextRequest) {
               }
             }
 
+            const primerComentario = post.overrides_redes?.primer_comentario
+
             if (publicImageUrls.length === 0) {
               // Publicación de solo texto
               const postFbRes = await fetch(`https://graph.facebook.com/v19.0/${targetId}/feed`, {
@@ -238,6 +240,13 @@ export async function GET(request: NextRequest) {
               const postFbData = await postFbRes.json()
               if (!postFbRes.ok) {
                 errores.push(`Facebook: ${postFbData.error?.message || "Error al publicar en Feed"}`)
+              } else if (primerComentario && postFbData.id) {
+                // Publicar Primer Comentario Automático en Facebook
+                await fetch(`https://graph.facebook.com/v19.0/${postFbData.id}/comments`, {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({ message: primerComentario, access_token: targetToken }),
+                }).catch(() => {})
               }
             } else if (publicImageUrls.length === 1) {
               // Publicación con 1 foto
@@ -253,6 +262,14 @@ export async function GET(request: NextRequest) {
               const postFbData = await postFbRes.json()
               if (!postFbRes.ok) {
                 errores.push(`Facebook Photos: ${postFbData.error?.message || "Error al publicar foto"}`)
+              } else if (primerComentario && (postFbData.post_id || postFbData.id)) {
+                // Publicar Primer Comentario Automático en la foto de Facebook
+                const targetPostId = postFbData.post_id || postFbData.id
+                await fetch(`https://graph.facebook.com/v19.0/${targetPostId}/comments`, {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({ message: primerComentario, access_token: targetToken }),
+                }).catch(() => {})
               }
             } else {
               // Publicación de carrusel (Múltiples fotos)
@@ -287,6 +304,12 @@ export async function GET(request: NextRequest) {
                 const postFbData = await postFbRes.json()
                 if (!postFbRes.ok) {
                   errores.push(`Facebook Multi-photo: ${postFbData.error?.message || "Error al publicar carrusel"}`)
+                } else if (primerComentario && postFbData.id) {
+                  await fetch(`https://graph.facebook.com/v19.0/${postFbData.id}/comments`, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ message: primerComentario, access_token: targetToken }),
+                  }).catch(() => {})
                 }
               } else {
                 errores.push("Facebook: No se pudieron procesar las imágenes del carrusel")
@@ -303,6 +326,7 @@ export async function GET(request: NextRequest) {
       // B. Publicar en Instagram Business
       if (destinos.includes("instagram")) {
         const igCuenta = cuentasMap.get("instagram") || cuentasMap.get("facebook")
+        const primerComentario = post.overrides_redes?.primer_comentario
 
         if (igCuenta && igCuenta.access_token) {
           try {
@@ -349,6 +373,13 @@ export async function GET(request: NextRequest) {
                 const publishData = await publishRes.json()
                 if (!publishRes.ok) {
                   errores.push(`Instagram Publish: ${publishData.error?.message || "Error al publicar en Instagram"}`)
+                } else if (primerComentario && publishData.id) {
+                  // Publicar Primer Comentario Automático en Instagram Business
+                  await fetch(`https://graph.facebook.com/v19.0/${publishData.id}/comments`, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ message: primerComentario, access_token: igCuenta.access_token }),
+                  }).catch(() => {})
                 }
               } else {
                 errores.push(`Instagram Media: ${mediaData.error?.message || "Error al crear media container en Instagram"}`)
@@ -367,6 +398,8 @@ export async function GET(request: NextRequest) {
       // C. Publicar en LinkedIn
       if (destinos.includes("linkedin")) {
         const liCuenta = cuentasMap.get("linkedin")
+        const primerComentario = post.overrides_redes?.primer_comentario
+
         if (liCuenta && liCuenta.access_token) {
           try {
             const authorUrn = `urn:li:person:${liCuenta.cuenta_id_externo}`
@@ -421,7 +454,6 @@ export async function GET(request: NextRequest) {
               errores.push(`LinkedIn: ${liData.message || "Error al publicar en LinkedIn"}`)
             } else {
               // Publicar Primer Comentario Automático si está configurado
-              const primerComentario = post.overrides_redes?.primer_comentario
               const shareUrn = liRes.headers.get("x-restli-id") || liData.id
               if (primerComentario && shareUrn) {
                 try {
