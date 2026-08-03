@@ -9,6 +9,7 @@ export async function GET(request: NextRequest) {
     client_id: appId,
     redirect_uri: redirectUri,
     response_type: "code",
+    scope: "pages_show_list,pages_read_engagement,pages_manage_posts,instagram_basic,instagram_content_publish",
   })
 
   return NextResponse.redirect(
