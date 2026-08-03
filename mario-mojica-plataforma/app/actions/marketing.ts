@@ -81,8 +81,8 @@ export async function saveMarketingCuenta(cuenta: MarketingCuentaData) {
 
     // Canje automático a Token de Página Permanente (Never-Expiring) para Facebook/Instagram
     if (cuenta.plataforma === "facebook" && cuenta.access_token) {
-      const appId = process.env.FACEBOOK_APP_ID || "1736322840851405"
-      const appSecret = process.env.FACEBOOK_APP_SECRET || "7737fa1205f9dfed3d6aef88e0ec08d4"
+      const appId = process.env.FACEBOOK_APP_ID || "1407378518112964"
+      const appSecret = process.env.FACEBOOK_APP_SECRET || "802560ec8c78ebeb7d55e305ea8233d6"
       try {
         // 1. Canjear por Token de Usuario de Larga Duración (60 Días)
         const exRes = await fetch(
