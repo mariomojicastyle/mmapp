@@ -173,3 +173,38 @@ Antes de insertar o actualizar enlaces de LinkedIn en Baserow de forma masiva:
     *   **La celda en Baserow DEBE dejarse vacía (`""`)**.
     *   *Razón:* Es común que empresas tradicionales o familiares en Brasil (como *Móveis Lopas* en Tier 1 o *Imcal Móveis* en Tier 2) no tengan una página de empresa oficial en LinkedIn. Dejar la celda vacía es mejor y más consistente que guardar un enlace tentativo que tire error al hacer clic.
 
+---
+
+## 🔑 6. Configuración y Credenciales del Publicador Multicanal (Meta/LinkedIn)
+
+Para garantizar la continuidad operativa de la automatización de marketing y evitar bloqueos por expiraciones de sesión de Meta o duplicaciones en reintentos, se establece el siguiente diseño técnico y configuración del publicador.
+
+### A. Aplicación de Meta en Desarrollo (Bypass de Restricciones)
+Para publicar de forma automatizada en tus propios perfiles comerciales, la aplicación de Meta **DEBE mantenerse en "Modo de desarrollo" (Development Mode)**. Esto evita la exigencia de la *Verificación de Negocio* (trámite comercial/legal con Meta que tarda días) y de auditorías formales (*App Review*).
+
+*   **App ID:** `1407378518112964`
+*   **App Secret:** `802560ec8c78ebeb7d55e305ea8233d6`
+*   **Tipo de App:** `Ninguno` (para heredar permisos estándar flexibles).
+*   **URL de Política de Privacidad (Obligatorio en Meta):** `https://mariomojica.com/` (configurado en *Básica*).
+*   **Dominios de la app (Configurado en Básica):** `mariomojica.com`, `app.mariomojica.com`.
+*   **Permiso public_profile:** Configurado con **Acceso Avanzado** (habilitado tras poner la URL de privacidad).
+*   **URI de redireccionamiento de OAuth válidos (Configurado en Inicio de sesión con Facebook -> Configurar):**
+    👉 `https://app.mariomojica.com/api/auth/facebook/callback`
+*   **Permisos solicitados (Scopes):** `pages_show_list`, `pages_read_engagement`, `pages_manage_posts`, `instagram_basic`, `instagram_content_publish`.
+
+### B. Flujo de Automatización en n8n (marketing_publisher_worker)
+El worker automático de n8n (flujo con ID `rhkOkQuv7M4ARSEm`) realiza peticiones programadas para procesar la cola de posts en Supabase.
+*   **Frecuencia:** Cada 1 minuto.
+*   **Endpoint de Llamada:** `GET https://app.mariomojica.com/api/marketing/publish`
+    > [!IMPORTANT]
+    > **Uso del Subdominio `app.`**
+    > n8n debe llamar estrictamente a `app.mariomojica.com` y **NUNCA** al dominio principal `mariomojica.com`. La landing page principal corre en una instancia distinta sin acceso a las variables de entorno de Supabase, lo que provoca errores 500 (*Falta configuración de Supabase URL o Service Role Key*).
+*   **Headers:** El nodo HTTP Request en n8n incluye la cabecera `User-Agent: Mozilla/5.0...` para simular un navegador estándar y saltarse posibles filtros WAF de Cloudflare o Netlify en el servidor.
+
+### C. Prevención de Publicaciones Duplicadas (Idempotencia)
+Para evitar que un reintento manual o un fallo parcial duplique publicaciones en redes que ya se enviaron correctamente (por ejemplo, que LinkedIn se publique con éxito pero Facebook falle, y al reintentar se publique en LinkedIn de nuevo):
+1.  **Registro de Éxito:** Al publicarse exitosamente un post en cualquier plataforma, la API Route actualiza inmediatamente la base de datos Supabase inyectando la red en el arreglo `publicado_plataformas` dentro de `overrides_redes` del post (`overrides_redes: { publicado_plataformas: ["linkedin"] }`).
+2.  **Omisión Inteligente:** En las ejecuciones siguientes, la API comprueba ese arreglo. Si la plataforma de destino ya está listada como publicada con éxito, la **omite automáticamente** y solo procesa los destinos fallidos.
+3.  **Estado Final:** Una vez que todas las plataformas de destino han completado con éxito la publicación, el estado del post se actualiza a `publicado` y el arreglo de control se limpia.
+
+
