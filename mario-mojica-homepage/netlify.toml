@@ -5,6 +5,15 @@
 [[plugins]]
   package = "@netlify/plugin-nextjs"
 
+# Cabeceras de Seguridad Globales (HSTS, SSL, Anti-Clickjacking)
+[[headers]]
+  for = "/*"
+  [headers.values]
+    Strict-Transport-Security = "max-age=31536000; includeSubDomains; preload"
+    X-Frame-Options = "SAMEORIGIN"
+    X-Content-Type-Options = "nosniff"
+    X-XSS-Protection = "1; mode=block"
+
 # Excepción para las API Routes internas (no reescribir a armado)
 [[redirects]]
   from = "/api/*"
