@@ -203,8 +203,13 @@ export async function GET(request: NextRequest) {
         if (pUrl) publicImageUrls.push(pUrl)
       }
 
+      const overrides = post.overrides_redes || {}
+      const publicadasExitosamente = Array.isArray(overrides.publicado_plataformas)
+        ? (overrides.publicado_plataformas as string[])
+        : []
+
       // A. Publicar en Facebook Page
-      if (destinos.includes("facebook")) {
+      if (destinos.includes("facebook") && !publicadasExitosamente.includes("facebook")) {
         const fbCuenta = cuentasMap.get("facebook")
         if (fbCuenta && fbCuenta.access_token) {
           try {
@@ -315,6 +320,20 @@ export async function GET(request: NextRequest) {
                 errores.push("Facebook: No se pudieron procesar las imágenes del carrusel")
               }
             }
+
+            // Si se publicó con éxito sin errores, guardar estado
+            if (errores.filter(e => e.startsWith("Facebook")).length === 0) {
+              publicadasExitosamente.push("facebook")
+              await supabase
+                .from("marketing_posts")
+                .update({
+                  overrides_redes: {
+                    ...overrides,
+                    publicado_plataformas: publicadasExitosamente
+                  }
+                })
+                .eq("id", post.id)
+            }
           } catch (fbErr: any) {
             errores.push(`Facebook Exception: ${fbErr.message}`)
           }
@@ -324,7 +343,7 @@ export async function GET(request: NextRequest) {
       }
 
       // B. Publicar en Instagram Business
-      if (destinos.includes("instagram")) {
+      if (destinos.includes("instagram") && !publicadasExitosamente.includes("instagram")) {
         const igCuenta = cuentasMap.get("instagram") || cuentasMap.get("facebook")
         const primerComentario = post.overrides_redes?.primer_comentario
 
@@ -387,6 +406,20 @@ export async function GET(request: NextRequest) {
             } else if (!targetIgId) {
               errores.push("Instagram: La página de Facebook no tiene vinculada una cuenta de Instagram Business")
             }
+
+            // Si se publicó con éxito sin errores, guardar estado
+            if (errores.filter(e => e.startsWith("Instagram")).length === 0) {
+              publicadasExitosamente.push("instagram")
+              await supabase
+                .from("marketing_posts")
+                .update({
+                  overrides_redes: {
+                    ...overrides,
+                    publicado_plataformas: publicadasExitosamente
+                  }
+                })
+                .eq("id", post.id)
+            }
           } catch (igErr: any) {
             errores.push(`Instagram Exception: ${igErr.message}`)
           }
@@ -396,7 +429,7 @@ export async function GET(request: NextRequest) {
       }
 
       // C. Publicar en LinkedIn
-      if (destinos.includes("linkedin")) {
+      if (destinos.includes("linkedin") && !publicadasExitosamente.includes("linkedin")) {
         const liCuenta = cuentasMap.get("linkedin")
         const primerComentario = post.overrides_redes?.primer_comentario
 
@@ -473,6 +506,20 @@ export async function GET(request: NextRequest) {
                   console.error("Error al publicar primer comentario en LinkedIn:", cErr)
                 }
               }
+            }
+
+            // Si se publicó con éxito sin errores, guardar estado
+            if (errores.filter(e => e.startsWith("LinkedIn")).length === 0) {
+              publicadasExitosamente.push("linkedin")
+              await supabase
+                .from("marketing_posts")
+                .update({
+                  overrides_redes: {
+                    ...overrides,
+                    publicado_plataformas: publicadasExitosamente
+                  }
+                })
+                .eq("id", post.id)
             }
           } catch (liErr: any) {
             errores.push(`LinkedIn Exception: ${liErr.message}`)
