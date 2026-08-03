@@ -2,7 +2,35 @@
 
 Este archivo es un registro vivo de la evolución tecnológica del ecosistema Mario Mojica Style. Complementa a `ESTADO_DEL_PROYECTO.md` conservando la memoria de decisiones, retos y soluciones técnicas.
 
-## 🗓️ Agosto 2026
+### 🔹 Hito 3DBimFab (3BF) — Calibración Visual 3D, Normales Perpendiculares & Textura PBR (02 de Agosto, 2026)
+
+#### 1. Panel de Calibración Flotante (`CalibrationPanel.tsx` / `🎛️ Calibrar 3D`):
+- **Ajuste en Tiempo Real**: Creación de un panel flotante de calibración en la esquina superior izquierda del visor (`absolute top-3 left-3 z-30`) para modificar parámetros de renderizado en vivo en WebGL.
+- **10 Controles de Calibración**:
+  - **Material**: Color sólido base (`colorSolido`, Hex `#9CA3AF`), Opacidad de solidez (`opacidadMadera`, $0-100\%$), Rugosidad (`rugosidadMadera`, $0-1$), Metalicidad (`metalicidadMadera`, $0-1$).
+  - **Aristas**: Interruptor de visibilidad (`mostrarAristas`), Color de aristas (`colorAristas`, Hex `#111827`), Opacidad de aristas (`opacidadAristas`, $0-100\%$), Ángulo umbral (`thresholdAristas`, $1^\circ-89^\circ$).
+  - **Iluminación**: Luz directa principal (`intensidadLuzDirecta`, $0-3\text{x}$) y Luz ambiental global (`intensidadLuzAmbiental`, $0-2\text{x}$).
+  - **Restablecimiento**: Botón `🔄 Restablecer Valores por Defecto`.
+
+#### 2. Auto-Corrección Vectorial de Normales 3D ($100\%$ Outward-Facing Normals):
+- **Diagnóstico Vectorial**: Identificación de que ciertas caras triangulares tenían su vector normal apuntando hacia el centro interno de la madera ($\vec{N} \cdot \vec{V}_{out} < 0$), causando sombreados invertidos y transparencias falsas.
+- **Algoritmo de Inversión de Vértices**: Desarrollo en `Viewer3D.tsx` del algoritmo que evalúa la dirección del producto punto de la normal de cada cara contra el vector saliente desde el centro del volumen delimitador (`BoxCenter`). Si la normal es interna, invierte automáticamente los vértices ($p_B \leftrightarrow p_C$), garantizando que el **100% de las normales apunten hacia el exterior**.
+
+#### 3. Geometría Dual en Memoria (Indexed vs Non-Indexed):
+- **Aristas Nítidas (`EdgesGeometry`)**: Generadas desde la malla indexada original de 8 vértices (`indexedGeo`) con filtro de ángulo umbral (`thresholdAristas`), eliminando líneas diagonales y duplicadas.
+- **Malla Sólida (`toNonIndexed()`)**: Convertida a no-indexada para recalcular normales de cara $100\%$ perpendiculares a cada plano ($90^\circ$). Esto elimina el suavizado de esquinas a $45^\circ$, **suprimiendo los gradientes de sombra en los cantos y eliminando por completo la línea de costura**.
+
+#### 4. Oclusión Z-Buffer Estricta y Filtro de Piezas Coplanares:
+- **Aristas en Fase Opaca**: Configuración de `<lineBasicMaterial>` with `depthTest={true}`, `depthWrite={true}`, `transparent={false}`, obligando a que la madera sólida ocluya las líneas traseras e internas.
+- **Filtro de Cajas Internas Coplanares**: Filtrado dinámico de las mallas internas de los cajones (`Lateral Izq Cajon`, `Lateral Der Cajon`, `Posterior de Cajon`) cuando los cajones se encuentran cerrados (`apertura_cajones === 0`) en modo Sólido o Renderizado.
+
+#### 5. Re-Compilación Dinámica GLSL en WebGL y Validación Autónoma por Browser Automation:
+- **Causa Raíz del Re-Renderizado**: En React Three Fiber, los materiales montados inicialmente con `map={null}` compilan shaders GLSL en GPU sin `#define USE_MAP`. Al actualizar `map` asincrónicamente con la textura descargada, Three.js no re-compilaba el shader GLSL, manteniendo la pieza en gris.
+- **Inyección de Key Única en `<meshStandardMaterial>`**: Solucionado añadiendo `key={activeMap ? activeMap.uuid : "no-map"}`, obligando a Three.js a instanciar `#define USE_MAP` en el Fragment Shader tan pronto la textura finaliza su carga.
+- **Uploader de Bitmaps Personalizados (`📁 Cargar Bitmap`)**: Soporte en `CalibrationPanel.tsx` para subir imágenes PNG/JPG locales vía `FileReader` y DataURL, activando automáticamente el visor en modo `🖼️ Renderizado`.
+- **Validación Visual Autónoma por Playwright (Chromium Headless)**: Implementación de scripts de automatización con Playwright Python para navegar a `http://localhost:3005`, accionar los controles visuales, capturar imágenes reales del canvas WebGL y verificar visualmente la veta melamínica sin alucinaciones.
+
+---
 
 ### 🔹 Hito 3DBimFab (3BF) v1 — Integración Paramétrica Nativa Rhino 8 & Grasshopper (01 de Agosto, 2026)
 
