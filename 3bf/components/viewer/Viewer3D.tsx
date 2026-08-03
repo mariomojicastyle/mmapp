@@ -6,30 +6,40 @@ import { OrbitControls, Grid, Stage, Edges } from "@react-three/drei";
 import { use3BFStore } from "@/lib/store";
 import * as THREE from "three";
 
-function useMarfilTexture(tipoMapeado?: string) {
-  const [texture, setTexture] = React.useState<THREE.CanvasTexture | THREE.Texture | null>(null);
+function useMarfilTexture(customUrl?: string | null, tipoMapeado?: string) {
+  const [texture, setTexture] = React.useState<THREE.Texture | null>(null);
   const isTraversada = tipoMapeado === "Cubierta Atravesada" || tipoMapeado === "Entrepaño Atravesado";
+
+  const textureSrc = customUrl || "/textures/Marfil_diffuse.jpg";
 
   React.useEffect(() => {
     if (typeof window === "undefined") return;
 
-    const img = new Image();
-    img.src = "/textures/Marfil_diffuse.jpg";
-    img.onload = () => {
-      const tex = new THREE.CanvasTexture(img);
-      tex.wrapS = THREE.MirroredRepeatWrapping;
-      tex.wrapT = THREE.MirroredRepeatWrapping;
-      tex.repeat.set(1.0, 1.0);
-      tex.center.set(0.5, 0.5);
-      tex.rotation = isTraversada ? Math.PI / 2 : 0;
-      tex.colorSpace = THREE.SRGBColorSpace;
-      tex.needsUpdate = true;
-      setTexture(tex);
-    };
-  }, [isTraversada]);
+    const loader = new THREE.TextureLoader();
+    loader.setCrossOrigin("anonymous");
+    loader.load(
+      textureSrc,
+      (tex) => {
+        tex.wrapS = THREE.MirroredRepeatWrapping;
+        tex.wrapT = THREE.MirroredRepeatWrapping;
+        tex.repeat.set(4.0, 4.0);
+        tex.center.set(0.5, 0.5);
+        tex.rotation = isTraversada ? Math.PI / 2 : 0;
+        tex.colorSpace = THREE.SRGBColorSpace;
+        tex.needsUpdate = true;
+        setTexture(tex);
+      },
+      undefined,
+      (err) => {
+        console.error("TextureLoader error:", err);
+      }
+    );
+  }, [textureSrc, isTraversada]);
 
   return texture;
 }
+
+import CalibrationPanel from "./CalibrationPanel";
 
 function BoardMesh({
   position,
@@ -50,12 +60,132 @@ function BoardMesh({
   indices?: number[];
   tipoMapeado?: string;
 }) {
-  const isWireframe = modoVisual === "lineas";
-  const isTransparent = modoVisual === "semitransparente";
+  const { calibracion } = use3BFStore();
+
+  // 1. Cargar Textura PBR Marfil / Bitmap Personalizado (HOOK - SIEMPRE PRIMERO)
+  const loadedTexture = useMarfilTexture(calibracion.customTextureUrl, tipoMapeado);
+
+  // 2. Malla Poligonal 3D Real & Aristas (HOOKS - SIEMPRE ANTES DE RETURNS CONDICIONALES)
+  const { customGeometry, edgesGeometry } = React.useMemo(() => {
+    if (vertices && indices && vertices.length > 0 && indices.length > 0) {
+      // 1. Malla Indexada para la generación limpia de Aristas Negras sin duplicados
+      const indexedGeo = new THREE.BufferGeometry();
+      indexedGeo.setAttribute("position", new THREE.Float32BufferAttribute(vertices, 3));
+      indexedGeo.setIndex(indices);
+      indexedGeo.computeVertexNormals();
+
+      let edges: THREE.EdgesGeometry | null = null;
+      try {
+        edges = new THREE.EdgesGeometry(indexedGeo, calibracion.thresholdAristas);
+      } catch {
+        edges = null;
+      }
+
+      // 2. Malla No-Indexada para Normales de Cara 100% Perpendiculares (Sin Gradientes de Sombra ni Costuras)
+      const geo = indexedGeo.toNonIndexed();
+      geo.computeBoundingBox();
+
+      const box = geo.boundingBox || new THREE.Box3();
+      const boxCenter = new THREE.Vector3();
+      box.getCenter(boxCenter);
+
+      const posAttr = geo.attributes.position;
+
+      // Garantizar que las normales de todas las 6 caras apunten 100% HACIA AFUERA (Outward-Facing Normals)
+      for (let i = 0; i < posAttr.count; i += 3) {
+        const pA = new THREE.Vector3(posAttr.getX(i), posAttr.getY(i), posAttr.getZ(i));
+        const pB = new THREE.Vector3(posAttr.getX(i + 1), posAttr.getY(i + 1), posAttr.getZ(i + 1));
+        const pC = new THREE.Vector3(posAttr.getX(i + 2), posAttr.getY(i + 2), posAttr.getZ(i + 2));
+
+        const triCenter = new THREE.Vector3().add(pA).add(pB).add(pC).divideScalar(3);
+        const outVector = new THREE.Vector3().subVectors(triCenter, boxCenter);
+
+        const edge1 = new THREE.Vector3().subVectors(pB, pA);
+        const edge2 = new THREE.Vector3().subVectors(pC, pA);
+        const normal = new THREE.Vector3().crossVectors(edge1, edge2);
+
+        // Si la normal apunta hacia el centro interno de la caja, invertir el orden de los vértices (Flipping Inverted Normal)
+        if (normal.dot(outVector) < 0) {
+          posAttr.setXYZ(i + 1, pC.x, pC.y, pC.z);
+          posAttr.setXYZ(i + 2, pB.x, pB.y, pB.z);
+        }
+      }
+
+      posAttr.needsUpdate = true;
+      geo.computeVertexNormals();
+
+      const uvs = new Float32Array(posAttr.count * 2);
+
+      let minX = Infinity, minY = Infinity, minZ = Infinity;
+      for (let i = 0; i < posAttr.count; i++) {
+        const x = posAttr.getX(i);
+        const y = posAttr.getY(i);
+        const z = posAttr.getZ(i);
+        if (x < minX) minX = x;
+        if (y < minY) minY = y;
+        if (z < minZ) minZ = z;
+      }
+
+      for (let i = 0; i < posAttr.count; i += 3) {
+        const pA = new THREE.Vector3(posAttr.getX(i), posAttr.getY(i), posAttr.getZ(i));
+        const pB = new THREE.Vector3(posAttr.getX(i + 1), posAttr.getY(i + 1), posAttr.getZ(i + 1));
+        const pC = new THREE.Vector3(posAttr.getX(i + 2), posAttr.getY(i + 2), posAttr.getZ(i + 2));
+
+        const cb = new THREE.Vector3().subVectors(pC, pB);
+        const ab = new THREE.Vector3().subVectors(pA, pB);
+        const normal = cb.cross(ab).normalize();
+
+        const absX = Math.abs(normal.x);
+        const absY = Math.abs(normal.y);
+        const absZ = Math.abs(normal.z);
+
+        // Proyección Triplanar UV estable (Veta longitudinal de melamina Marfil)
+        for (let j = 0; j < 3; j++) {
+          const idx = i + j;
+          const x = posAttr.getX(idx);
+          const y = posAttr.getY(idx);
+          const z = posAttr.getZ(idx);
+
+          if (absY >= absX && absY >= absZ) {
+            // Cara Superior e Inferior del Tablero (Plano XZ continuo para la veta de madera)
+            uvs[idx * 2] = x * 1.5;
+            uvs[idx * 2 + 1] = z * 1.5;
+          } else if (absX >= absY && absX >= absZ) {
+            // Cara Lateral Izquierda / Derecha (Plano ZY continuo)
+            uvs[idx * 2] = z * 1.5;
+            uvs[idx * 2 + 1] = y * 1.5;
+          } else {
+            // Cara Frontal / Trasera (Plano XY continuo)
+            uvs[idx * 2] = x * 1.5;
+            uvs[idx * 2 + 1] = y * 1.5;
+          }
+        }
+      }
+
+      geo.setAttribute("uv", new THREE.BufferAttribute(uvs, 2));
+
+      return { customGeometry: geo, edgesGeometry: edges };
+    }
+    return { customGeometry: null, edgesGeometry: null };
+  }, [vertices, indices, calibracion.thresholdAristas]);
+
+  const boxEdgesGeometry = React.useMemo(() => {
+    if (!customGeometry && size && size.length === 3) {
+      try {
+        const boxGeo = new THREE.BoxGeometry(size[0], size[1], size[2]);
+        return new THREE.EdgesGeometry(boxGeo, calibracion.thresholdAristas);
+      } catch {
+        return null;
+      }
+    }
+    return null;
+  }, [customGeometry, size, calibracion.thresholdAristas]);
 
   // Identificar tipo de objeto para asignar color y material de manufactura DfMA
+  const isWireframe = modoVisual === "lineas";
+  const isTransparent = modoVisual === "semitransparente";
   const isHardwarePerno = name.includes("Perno") || name.includes("Tornillo");
-  const isHardwareCaja = name.includes("Caja");
+  const isHardwareCaja = (name.includes("Caja") && !name.includes("Cajon") && !name.includes("Cajón")) || name === "RH_OUT:Caja";
   const isHardwareTarugo = name.includes("Tarugo") || name.includes("Soporte");
   const isMachining = name.includes("Maquinados");
   const isTapaLuz = name.includes("Tapa Luz") || name.includes("Regleta");
@@ -63,8 +193,8 @@ function BoardMesh({
   let meshColor = mainColor;
   let metalness = 0.1;
   let roughness = 0.4;
-  let opacity = isTransparent ? 0.70 : 1.0;
-  let transparent = isTransparent;
+  let opacity = isTransparent ? 0.70 : calibracion.opacidadMadera;
+  let transparent = isTransparent || opacity < 1.0;
 
   if (isHardwarePerno) {
     meshColor = "#9CA3AF"; // Plateado metálico
@@ -107,76 +237,32 @@ function BoardMesh({
     return null;
   }
 
-  // Cargar Textura PBR Marfil Melamínica según orientación de Grasshopper
-  const loadedTexture = useMarfilTexture(tipoMapeado);
-
   if (isWoodBoard) {
+    roughness = calibracion.rugosidadMadera;
+    metalness = calibracion.metalicidadMadera;
     if (modoVisual === "solido") {
-      meshColor = "#9CA3AF"; // Gris Técnico Rhino 8 Sólido
-      opacity = 1.0;
-      transparent = false;
-      roughness = 0.5;
-      metalness = 0.1;
+      meshColor = calibracion.colorSolido; // Color calibrable (default #9CA3AF)
+      opacity = calibracion.opacidadMadera;
+      transparent = opacity < 1.0;
     } else if (modoVisual === "renderizado") {
-      opacity = 1.0;
-      transparent = false;
-      roughness = 0.4;
-      metalness = 0.05;
+      opacity = calibracion.opacidadMadera;
+      transparent = opacity < 1.0;
     }
   }
 
-  // Si disponemos de la malla poligonal 3D real de Grasshopper (vértices e índices exactos)
-  const customGeometry = React.useMemo(() => {
-    if (vertices && indices && vertices.length > 0 && indices.length > 0) {
-      const geo = new THREE.BufferGeometry();
-      geo.setAttribute("position", new THREE.Float32BufferAttribute(vertices, 3));
-      geo.setIndex(indices);
-      geo.computeVertexNormals();
+  const activeMap = (isWoodBoard && (calibracion.customTextureUrl || isRenderedMode)) ? loadedTexture : null;
+  const hasMap = activeMap !== null;
 
-      // Generar UVs simples en los 8 vértices indexados
-      const uvs: number[] = [];
-      for (let i = 0; i < vertices.length; i += 3) {
-        uvs.push(vertices[i] * 1.5, vertices[i + 1] * 1.5);
-      }
-      geo.setAttribute("uv", new THREE.Float32BufferAttribute(uvs, 2));
-
-      return geo;
-    }
-    return null;
-  }, [vertices, indices]);
-
-  // Aristas negras estilo Rhino 8 en coordenadas de mundo nativas de Three.js
-  const edgesGeometry = React.useMemo(() => {
-    if (customGeometry) {
-      try {
-        return new THREE.EdgesGeometry(customGeometry, 15);
-      } catch {
-        return null;
-      }
-    }
-    return null;
-  }, [customGeometry]);
-
-  const boxEdgesGeometry = React.useMemo(() => {
-    if (!customGeometry && size && size.length === 3) {
-      try {
-        const boxGeo = new THREE.BoxGeometry(size[0], size[1], size[2]);
-        return new THREE.EdgesGeometry(boxGeo, 15);
-      } catch {
-        return null;
-      }
-    }
-    return null;
-  }, [customGeometry, size]);
-
-  const activeMap = (isRenderedMode && isWoodBoard) ? loadedTexture : null;
+  // Si hay mapa de textura activo (imagen subida o modo renderizado), ignorar el color gris base y forzar blanco puro #ffffff
+  const finalMeshColor = hasMap ? "#ffffff" : (modoVisual === "solido" ? calibracion.colorSolido : meshColor);
 
   if (customGeometry) {
     return (
       <group>
         <mesh geometry={customGeometry}>
           <meshStandardMaterial
-            color={(isRenderedMode && isWoodBoard) ? "#ffffff" : meshColor}
+            key={activeMap ? activeMap.uuid : "no-map"}
+            color={finalMeshColor}
             map={activeMap}
             transparent={transparent}
             opacity={opacity}
@@ -184,20 +270,17 @@ function BoardMesh({
             metalness={metalness}
             wireframe={isWireframe}
             depthWrite={!transparent}
-            polygonOffset
-            polygonOffsetFactor={1}
-            polygonOffsetUnits={1}
           />
         </mesh>
-        {edgesGeometry && (
+        {edgesGeometry && calibracion.mostrarAristas && (
           <lineSegments geometry={edgesGeometry}>
             <lineBasicMaterial
-              color="#000000"
+              color={calibracion.colorAristas}
               linewidth={1}
               depthTest={true}
-              depthWrite={!transparent}
-              transparent={transparent}
-              opacity={transparent ? opacity : 1.0}
+              depthWrite={true}
+              transparent={false}
+              opacity={1.0}
             />
           </lineSegments>
         )}
@@ -210,7 +293,8 @@ function BoardMesh({
       <mesh>
         <boxGeometry args={size} />
         <meshStandardMaterial
-          color={(isRenderedMode && isWoodBoard) ? "#ffffff" : meshColor}
+          key={activeMap ? activeMap.uuid : "no-map"}
+          color={finalMeshColor}
           map={activeMap}
           transparent={transparent}
           opacity={opacity}
@@ -218,20 +302,17 @@ function BoardMesh({
           metalness={metalness}
           wireframe={isWireframe}
           depthWrite={!transparent}
-          polygonOffset
-          polygonOffsetFactor={1}
-          polygonOffsetUnits={1}
         />
       </mesh>
-      {boxEdgesGeometry && (
+      {boxEdgesGeometry && calibracion.mostrarAristas && (
         <lineSegments geometry={boxEdgesGeometry}>
           <lineBasicMaterial
-            color="#000000"
+            color={calibracion.colorAristas}
             linewidth={1}
             depthTest={true}
-            depthWrite={!transparent}
-            transparent={transparent}
-            opacity={transparent ? opacity : 1.0}
+            depthWrite={true}
+            transparent={false}
+            opacity={1.0}
           />
         </lineSegments>
       )}
@@ -265,7 +346,7 @@ function ParametricFurnitureMesh() {
     });
 
     return (
-      <group ref={meshRef}>
+      <group ref={meshRef} position={[-width / 2, 0, -depth / 2]}>
         {visibleRealMeshes.map((m, idx) => (
           <BoardMesh
             key={idx}
@@ -369,23 +450,24 @@ function ParametricFurnitureMesh() {
 }
 
 export default function Viewer3D() {
-  const { tema, resultado } = use3BFStore();
+  const { tema, resultado, calibracion } = use3BFStore();
 
   return (
     <div className="w-full h-full relative rounded-xl overflow-hidden shadow-inner border border-gray-200 dark:border-gray-800">
+      {/* Panel Flotante de Calibración Temporal en Esquina Superior Izquierda */}
+      <CalibrationPanel />
+
       <Canvas
         camera={{ position: [2, 1.5, 2.5], fov: 45 }}
         shadows
         gl={{ preserveDrawingBuffer: true, antialias: true }}
       >
         <color attach="background" args={[tema === "obsidian" ? "#0D1117" : "#F3F4F6"]} />
-        <ambientLight intensity={0.7} />
-        <directionalLight position={[5, 8, 5]} intensity={1.2} castShadow />
 
-        {/* Iluminación de Estudio de Alta Definición */}
-        <ambientLight intensity={0.8} />
-        <directionalLight position={[5, 8, 5]} intensity={1.5} castShadow />
-        <directionalLight position={[-5, 5, -5]} intensity={0.5} />
+        {/* Iluminación de Estudio Calibrable en Tiempo Real */}
+        <ambientLight intensity={calibracion.intensidadLuzAmbiental} />
+        <directionalLight position={[5, 8, 5]} intensity={calibracion.intensidadLuzDirecta} castShadow />
+        <directionalLight position={[-5, 5, -5]} intensity={calibracion.intensidadLuzAmbiental * 0.5} />
 
         {/* Modelo Mueble en Coordenadas Reales de Grasshopper */}
         <ParametricFurnitureMesh />

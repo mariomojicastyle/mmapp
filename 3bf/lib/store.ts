@@ -72,12 +72,25 @@ export interface ComputoResultado {
   };
 }
 
-interface State3BF {
-  // Parámetros
+export interface CalibracionVisual {
+  opacidadMadera: number;        // 0.0 a 1.0
+  rugosidadMadera: number;       // 0.0 a 1.0
+  metalicidadMadera: number;     // 0.0 a 1.0
+  colorSolido: string;           // Hex (#9CA3AF)
+  customTextureUrl: string | null; // DataURL de imagen bitmap subida por el usuario
+  opacidadAristas: number;       // 0.0 a 1.0
+  colorAristas: string;          // Hex (#111827)
+  thresholdAristas: number;      // 1 a 89 grados
+  intensidadLuzDirecta: number;  // 0.0 a 3.0
+  intensidadLuzAmbiental: number;// 0.0 a 2.0
+  mostrarAristas: boolean;       // true/false
+  mostrarPanelCalibracion: boolean; // Toggle flotante
+}
+
+export interface State3BF {
   parametros: ParametrosMueble;
   setParametro: <K extends keyof ParametrosMueble>(key: K, value: ParametrosMueble[K]) => void;
   
-  // Estado de Computación
   resultado: ComputoResultado | null;
   cargando: boolean;
   error: string | null;
@@ -98,7 +111,27 @@ interface State3BF {
   // Modo de Visualización 3D (Rhino Style: Cristal, Sólido, Líneas, Renderizado)
   modoVisual: "solido" | "semitransparente" | "lineas" | "renderizado";
   setModoVisual: (modo: "solido" | "semitransparente" | "lineas" | "renderizado") => void;
+
+  // Calibración de Visualización 3D en tiempo real (Studio Tuner)
+  calibracion: CalibracionVisual;
+  setCalibracion: <K extends keyof CalibracionVisual>(key: K, value: CalibracionVisual[K]) => void;
+  resetCalibracion: () => void;
 }
+
+export const defaultCalibracion: CalibracionVisual = {
+  opacidadMadera: 1.0,
+  rugosidadMadera: 0.4,
+  metalicidadMadera: 0.05,
+  colorSolido: "#9CA3AF",
+  customTextureUrl: null,
+  opacidadAristas: 0.75,
+  colorAristas: "#111827",
+  thresholdAristas: 15,
+  intensidadLuzDirecta: 1.5,
+  intensidadLuzAmbiental: 0.8,
+  mostrarAristas: true,
+  mostrarPanelCalibracion: false,
+};
 
 export const use3BFStore = create<State3BF>((set) => ({
   parametros: {
@@ -155,4 +188,11 @@ export const use3BFStore = create<State3BF>((set) => ({
 
   modoVisual: "semitransparente",
   setModoVisual: (modoVisual) => set({ modoVisual }),
+
+  calibracion: defaultCalibracion,
+  setCalibracion: (key, value) =>
+    set((state) => ({
+      calibracion: { ...state.calibracion, [key]: value },
+    })),
+  resetCalibracion: () => set({ calibracion: defaultCalibracion }),
 }));

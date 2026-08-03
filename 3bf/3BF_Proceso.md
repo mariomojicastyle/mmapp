@@ -73,9 +73,30 @@ Para garantizar que los servicios permanezcan activos a la primera sin cerrarse 
 - **Hallazgo de Formato**: Cuando un componente de Grasshopper es un `Value List`, el envío de valores con punto decimal (`"351.0"`) hace que Grasshopper descarte la opción.
 - **Formateo Estricto**: `3bf_worker.py` convierte los parámetros a cadenas de enteros limpios (`"351"`, `"400"`) enviando tanto `System.Int32` como `System.String`.
 
+### 🎛️ 6. Calibración de Renderizado 3D PBR, Normales Perpendiculares y Oclusión Z-Buffer
+
+- **Auto-Corrección Vectorial de Normales 3D**:
+  - Se implementó la verificación y corrección de la orientación de las normales de cara en `Viewer3D.tsx`. Si una normal apunta hacia el centro interno del tablero ($\vec{N} \cdot \vec{V}_{out} < 0$), el sistema invierte automáticamente el orden de los vértices ($p_B \leftrightarrow p_C$). Esto garantiza que el **100% de las normales apunten hacia afuera ($100\%$ Outward-Facing Normals)**.
+- **Geometría Dual en Memoria (Indexed vs Non-Indexed)**:
+  - **Malla Indexada (`indexedGeo`)**: Se utiliza únicamente para generar `THREE.EdgesGeometry(indexedGeo, threshold)` sin líneas diagonales ni duplicadas.
+  - **Malla No-Indexada (`toNonIndexed()`)**: Recalcula normales de cara $100\%$ perpendiculares a cada plano ($90^\circ$). Esto evita el suavizado de esquinas a $45^\circ$ y **elimina por completo los gradientes de sombra en los cantos y la línea de costura**.
+- **Oclusión Z-Buffer y Aristas Opacas**:
+  - `<lineBasicMaterial>` se configura con `depthTest={true}`, `depthWrite={true}`, `transparent={false}`, forzando a que las aristas de contorno se dibujen en la fase opaca. La madera sólida ocluye el 100% de las líneas traseras e internas.
+- **Panel de Calibración Flotante (`CalibrationPanel.tsx`)**:
+  - Ubicado en la esquina superior izquierda del visor (`🎛️ Calibrar 3D`), permite ajustar en tiempo real: color base sólido (`#9CA3AF`), opacidad ($0-100\%$), rugosidad ($0-1$), metalicidad ($0-1$), interruptor de aristas, color de aristas (`#111827`), opacidad de aristas, ángulo umbral ($1^\circ-89^\circ$), luz directa ($0-3\text{x}$) y luz ambiental ($0-2\text{x}$).
+
 ---
 
-## 📋 Detalle Técnico Paso a Paso del Procesamiento 3BF
+## 🔄 Estado Final del Ecosistema 3BF
+
+- **3BF Worker Python (`3bf_worker.py`)**: Corriendo en `http://localhost:8005`.
+- **RhinoCompute 8 (`rhino.compute.exe`)**: Corriendo en `http://localhost:5000`.
+- **Aplicación Web Next.js 3BF**: Corriendo en `http://localhost:3005`.
+- **Archivos de Definición en `temporal/`**:
+  - `Cajon_Experimento_Viktor_1cajon.ghx`
+  - `Cajon_Experimento_Viktor_2cajones.ghx`
+  - `Cajon_Experimento_Viktor_3cajones.ghx`
+- **Textura PBR Integrada**: `c:\Desarrollo\mmapp\3BF\public\textures\Marfil_diffuse.jpg`.
 
 ### 📄 Paso 1: Lectura, Etiquetado y Saneamiento del Archivo (`.ghx`)
 
