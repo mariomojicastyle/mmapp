@@ -12,8 +12,25 @@ export interface ParametrosMueble {
   tipo_herraje: string;   // Minifix, Perno
   cant_cajones?: number;  // Para Cajonera GH
   apertura_cajones?: number; // 0 - 300mm animación de apertura
-  profundidad_cajon?: number; // 200 - 600mm
-  altura_lateral_cajon?: number; // 50 - 250mm
+  profundidad_cajon?: number; // 351, 400mm
+  altura_lateral_cajon?: number; // 102, 138, 147, 200mm
+  distancia_bajo_laterales?: number; // 25, 30mm
+  tipo_cajon?: string; // Corredera Estandar, Corredera Tipo X
+  // Parámetros Cubierta.ghx (VisualARQ DfMA)
+  recedido_izquierdo?: number;
+  recedido_derecho?: number;
+  union_izquierda?: string;
+  union_derecha?: string;
+  orientacion_maquinado_minifix?: string;
+  orientacion_minifix?: string;
+  posicion_tarugo?: string;
+  posicion_tornillo?: string;
+  borde_izquierdo?: string;
+  borde_derecho?: string;
+  lado_balance_cubierta?: string;
+  tipo_mapeado_cubierta?: string;
+  lado_balance_entrepanio?: string;
+  tipo_mapeado_entrepanio?: string;
 }
 
 export interface PiezaDespiece {
@@ -44,6 +61,8 @@ export interface ComputoResultado {
     name: string;
     size: [number, number, number];
     position: [number, number, number];
+    vertices?: number[];
+    indices?: number[];
   }>;
   execution_time_ms: number;
   worker_info?: {
@@ -76,9 +95,9 @@ interface State3BF {
   workerStatus: "checking" | "online" | "offline";
   setWorkerStatus: (status: "checking" | "online" | "offline") => void;
   
-  // Modo de Visualización 3D
-  modoVisual: "solido" | "semitransparente" | "lineas";
-  setModoVisual: (modo: "solido" | "semitransparente" | "lineas") => void;
+  // Modo de Visualización 3D (Rhino Style: Cristal, Sólido, Líneas, Renderizado)
+  modoVisual: "solido" | "semitransparente" | "lineas" | "renderizado";
+  setModoVisual: (modo: "solido" | "semitransparente" | "lineas" | "renderizado") => void;
 }
 
 export const use3BFStore = create<State3BF>((set) => ({
@@ -96,6 +115,23 @@ export const use3BFStore = create<State3BF>((set) => ({
     apertura_cajones: 0,
     profundidad_cajon: 351,
     altura_lateral_cajon: 102,
+    distancia_bajo_laterales: 30,
+    tipo_cajon: "Corredera Estandar",
+    // Defaults Cubierta.ghx
+    recedido_izquierdo: 0,
+    recedido_derecho: 0,
+    union_izquierda: "Minifix",
+    union_derecha: "Tornillo tarugo",
+    orientacion_maquinado_minifix: "abajo",
+    orientacion_minifix: "abajo",
+    posicion_tarugo: "1",
+    posicion_tornillo: "1",
+    borde_izquierdo: "MDP",
+    borde_derecho: "MDP",
+    lado_balance_cubierta: "Cara B",
+    tipo_mapeado_cubierta: "Cubierta",
+    lado_balance_entrepanio: "Cara B",
+    tipo_mapeado_entrepanio: "Cubierta",
   },
 
   setParametro: (key, value) =>

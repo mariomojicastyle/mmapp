@@ -18,6 +18,7 @@ Este archivo es la "Memoria RAM" para Antigravity. Contiene el contexto de lo qu
   - **Arquitectura de Variantes `.ghx`**: Carga dinámica automatizada en `3bf_worker.py` para variantes por número de cajones (`Cajon_Experimento_Viktor_1cajon.ghx`, `2cajones.ghx`, `3cajones.ghx`).
   - **Sliders con Límites Auto-Detectados**: Extracción en XML de `<Min>`, `<Max>` y `<Value>` con etiquetas 1:1 de Grasshopper y componente `EditableNumberInput` para ingresar valores exactos con auto-clampeo.
   - **Mapeo de Value Lists**: Formateo estricto a entero sin decimales (`"351"`, `"400"`) enviando `System.Int32` y `System.String` para conmutación inmediata de Value Lists en RhinoCompute 8.
+  - **[NUEVO - 02 de Agosto, 2026] Protocolo de Arranque `/Arranque3BF` Optimizado**: Invocación garantizada como Daemons de fondo independientes (`IsDaemon: true`) de los 3 procesos principales (RhinoCompute 5000, Python Worker 8005 y Next.js Web App 3005) para asegurar el encendido persistente a la primera.
 
 
 ### 🎯 Objetivos de la Fase (Plataforma B2B)

@@ -33,7 +33,7 @@ if (-not $workerTest) {
 $webTest = Get-NetTCPConnection -LocalPort 3005 -ErrorAction SilentlyContinue
 if (-not $webTest) {
     Write-Host "⚡ arrancando Aplicación Web Next.js 3BF (Puerto 3005)..." -ForegroundColor Yellow
-    Start-Process -FilePath "npm" -ArgumentList "run dev" -WorkingDirectory $3bfFolder -WindowStyle Hidden
+    Start-Process -FilePath "cmd.exe" -ArgumentList "/c npm run dev" -WorkingDirectory $3bfFolder -WindowStyle Hidden
     Start-Sleep -Seconds 3
 } else {
     Write-Host "✅ Aplicación Web Next.js ya se encuentra activa en puerto 3005." -ForegroundColor Green

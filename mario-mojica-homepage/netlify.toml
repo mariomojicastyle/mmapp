@@ -7,18 +7,6 @@
 
 # Excepción para las API Routes internas (no reescribir a armado)
 [[redirects]]
-  from = "http://mariomojica.com/*"
-  to = "https://mariomojica.com/:splat"
-  status = 301
-  force = true
-
-[[redirects]]
-  from = "http://www.mariomojica.com/*"
-  to = "https://mariomojica.com/:splat"
-  status = 301
-  force = true
-
-[[redirects]]
   from = "/api/*"
   status = 200
 

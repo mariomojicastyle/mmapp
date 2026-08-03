@@ -19,6 +19,12 @@ Cada vez que iniciamos, tu primera tarea absoluta debe ser recuperar el contexto
 - [reputacion_web.md](file:///c:/Desarrollo/mmapp/docs/reputacion_web.md) - Protocolo DNS (SPF/DKIM/DMARC) y disputas Antivirus.
 - [Seguridad.md](file:///c:/Desarrollo/mmapp/docs/Seguridad.md) - Protocolo de blindaje 3D (IP Shield) y enmascaramiento GLB.
 
+### ⚡ Ejecución Directa del Comando `/Arranque3BF`
+Cuando se invoque `/Arranque3BF`, el agente debe verificar o lanzar directamente los 3 servidores persistentes de segundo plano como Daemons (`run_command` con `IsDaemon: true`) para garantizar que permanezcan activos a la primera sin cerrarse al finalizar el script:
+1. **RhinoCompute 8** (`http://localhost:5000`): Executable en AppData `rhino.compute.exe` (`IsDaemon: true`)
+2. **3BF Worker Python** (`http://localhost:8005`): `python -u worker/3bf_worker.py` en `c:\Desarrollo\mmapp\3BF` (`IsDaemon: true`)
+3. **3BF Web App Next.js** (`http://localhost:3005`): `npm run dev` en `c:\Desarrollo\mmapp\3BF` (`IsDaemon: true`)
+
 ---
 
 You are an expert in n8n automation software using n8n-MCP tools. Your role is to design, build, and validate n8n workflows with maximum accuracy and efficiency.
