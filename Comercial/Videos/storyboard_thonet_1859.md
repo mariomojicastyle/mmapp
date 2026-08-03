@@ -1,6 +1,6 @@
 # 🏛️ Guión e Historia de Michael Thonet (1859) para Storyboard Studio
 
-Este documento contiene la estructura completa del guión de concepto, los prompts de video optimizados para **Storyboard Studio** de Google Flow y el listado de nombres numerados para tus archivos de video.
+Este documento contiene la estructura completa del guión de concepto, los prompts de video optimizados para **Storyboard Studio** de Google Flow, el listado de nombres de video para organizar tus archivos físicos y el guión de locución (Voiceover) cronometrado para tu editor de video.
 
 ---
 
@@ -96,3 +96,53 @@ Utiliza esta guía numerada para renombrar tus videos una vez generados en Story
     *   **Movimiento:** La cámara avanza lentamente mientras una cuadrícula holográfica digital de color azul escanea e integra el café histórico hacia el futuro digital.
 *   **Archivo:** `17_E5_Evolucion_Digital.mp4` (8s)
     *   **Movimiento:** Zoom out lento. El logotipo digital en 3D de "Mario Mojica" flota con luz volumétrica sobre la mesa del café, cerrando la historia con estética premium.
+
+---
+
+## 🎙️ 4. Guión de Locución (Voiceover) Sincronizado por Tiempos
+
+Este guión está adaptado para ser narrado a una velocidad natural (aproximadamente 2.5 palabras por segundo). Puedes grabarlo y empatarlo con la línea de tiempo de tu editor de video:
+
+### 🔨 Escena 1: El Taller de Ebanistería (Noche) - Duración: 16s
+*   **01_E1_Taller_Noche.mp4 (4s):**
+    > *"En 1859, Michael Thonet imaginó algo imposible para su época..."*
+*   **02_E1_Bocetando_Curvas.mp4 (6s):**
+    > *"...domar la madera a su voluntad, dibujando curvas que desafiaban la física."*
+*   **03_E1_Probando_Madera.mp4 (6s):**
+    > *"Pero para cambiar el diseño del mueble, debía cambiar la manufactura."*
+
+### 💨 Escena 2: La Fábrica de Vapor (Día) - Duración: 16s (Nota: cargando madera ajustado a 6s en edición)
+*   **04_E2_Caldera_Vapor.mp4 (6s):**
+    > *"Sometiendo la madera de haya al fuego, al agua y al vapor a alta presión..."*
+*   **05_E2_Cargando_Madera.mp4 (6s):**
+    > *"...la volvieron maleable para curvarla en moldes de hierro sin quebrarla."*
+*   **06_E2_Arco_Perfecto.mp4 (4s):**
+    > *"Nacía el curvado al vapor industrial."*
+
+### 📦 Escena 3: El Almacén y la Caja Plana (Día) - Duración: 16s
+*   **07_E3_Peso_Ineficiencia.mp4 (4s):**
+    > *"Pero las sillas armadas ocupaban demasiado espacio."*
+*   **08_E3_Desarmando_Icono.mp4 (6s):**
+    > *"Thonet entendió que pagar fletes por transportar aire arruinaría su negocio."*
+*   **09_E3_Revolucion_Caja_Plana.mp4 (6s):**
+    > *"Así que la desarmó en seis piezas de madera, diez tornillos y dos tuercas."*
+
+### ☕ Escena 4: Llegada y Ensamble en el Café (Día) - Duración: 22s
+*   **10_E4_Llegada_Cafe.mp4 (4s):**
+    > *"Logrando empacar treinta y seis sillas completas en un solo metro cúbico."*
+*   **11_E4_Desempaque_Piezas.mp4 (6s):**
+    > *"Al abrir la caja en París, el cliente se encontraba con un rompecabezas."*
+*   **12_E4_Proceso_Ensamble.mp4 (6s):**
+    > *"Con solo una hoja de instrucciones litográfica, comenzó el ensamble."*
+*   **13_E4_Icono_Terminado.mp4 (6s):**
+    > *"Nacía el primer mueble listo para armar de la historia."*
+
+### 🍷 Escena 5: El Café Inaugurado y la Era Digital (Atardecer) - Duración: 24s
+*   **14_E5_Atardecer_Cafe.mp4 (8s):**
+    > *"La silla número catorce conquistó los cafés de Europa y redefinió la logística para siempre."*
+*   **15_E5_Detalle_Silla.mp4 (4s):**
+    > *"Una obra maestra que transformó la experiencia del consumidor."*
+*   **16_E5_Legado_Movimiento.mp4 (6s):**
+    > *"Hoy, esa misma empatía por el usuario da el siguiente paso evolutivo..."*
+*   **17_E5_Evolucion_Digital.mp4 (6s - ajustado para cierre de audio):**
+    > *"...Mario Mojica. La era digital de la experiencia de ensamble."*
