@@ -61,7 +61,7 @@ Dado que las aplicaciones nativas de AR (como **Google Scene Viewer** en Android
 
 ---
 
-## 🔒 ¿Por qué es altamente seguro?
+## 🔒 ¿Por qué es highly seguro?
 
 1. **Inexpugnable contra IAs:** AES-256 en modo GCM es el estándar militar y bancario de cifrado. Aunque un atacante sepa que el archivo original empieza con la firma `glTF` (ataque de texto plano conocido), **es matemáticamente imposible** que una IA o supercomputadora deduzca la clave de descifrado.
 2. **Claves Dinámicas:** Las claves de cifrado cambian para cada manual del sistema. Comprometer la clave de un manual no compromete la seguridad de ningún otro modelo.
@@ -71,7 +71,26 @@ Dado que las aplicaciones nativas de AR (como **Google Scene Viewer** en Android
 
 ---
 
+## 🌐 5. Seguridad DNS, SSL/TLS & Protección contra Operadores Móviles (Cloudflare Proxy)
+
+Para garantizar la inmunidad total del dominio `mariomojica.com` frente a bloqueos de operadores móviles (Claro/Tigo/Movistar) y resolver falsos positivos de certificados no verificados:
+
+### A. Gestión DNS Anycast & IPv6 Nativo (Cloudflare)
+- **Nameservers Dedicados:** Delegación DNS completa a los servidores Anycast de Cloudflare (`justin.ns.cloudflare.com` y `tara.ns.cloudflare.com`).
+- **CNAME Flattening & IPv6:** Enrutamiento dinámico que expone direcciones IPv6 nativas para antenas 4G/LTE/5G, resolviendo la causa raíz de los errores `ERR_CONNECTION_TIMED_OUT` en dispositivos móviles.
+- **Protección contra DDoS & WAF:** Filtrado automático de bots, escáneres maliciosos y ataques de denegación de servicio a nivel de borde (Edge Network).
+
+### B. Cabeceras de Seguridad HSTS & SSL Compliance
+- **Strict-Transport-Security (HSTS):** `max-age=31536000; includeSubDomains; preload` forzando a los navegadores a conectar **única y exclusivamente mediante HTTPS**.
+- **Cabeceras Anti-Clickjacking y XSS:**
+  - `X-Frame-Options: SAMEORIGIN`
+  - `X-Content-Type-Options: nosniff`
+  - `X-XSS-Protection: 1; mode=block`
+
+---
+
 ## 📁 ¿Es visible este archivo en internet?
 **No. Este documento de seguridad NO es público ni accesible desde internet:**
 * El repositorio de GitHub es **privado**. Solo los desarrolladores con acceso pueden leerlo.
 * Las carpetas `/docs` o `/Comercial` en la raíz del repositorio **no se compilan ni se exponen** en la carpeta de distribución pública (`/public` o `/dist`) del servidor web (Netlify/Next.js). Solo el código y los assets declarados formalmente se suben a la web de producción.
+
