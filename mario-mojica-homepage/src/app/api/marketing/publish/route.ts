@@ -2,8 +2,12 @@ import { NextRequest, NextResponse } from "next/server"
 import { createClient } from "@supabase/supabase-js"
 
 function getSupabaseAdmin() {
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || "https://dezaisaunoumhqpssols.supabase.co"
-  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY || "sb_secret_t2GY5165gsl0IAureM6-eQ_eXQxHibt"
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY
+
+  if (!supabaseUrl || !serviceRoleKey) {
+    throw new Error("Falta configuración de Supabase URL o Service Role Key")
+  }
 
   return createClient(supabaseUrl, serviceRoleKey, {
     auth: {
