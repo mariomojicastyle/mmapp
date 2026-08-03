@@ -1,7 +1,7 @@
 "use client"
 
 import React, { useState, useEffect } from "react"
-import { X, Calendar, Send, Eye, Sparkles, Check, UploadCloud, Film, Image as ImageIcon, ChevronLeft, ChevronRight, GripVertical, ArrowUp, ArrowDown, Trash2, Globe } from "lucide-react"
+import { X, Calendar, Send, Eye, Sparkles, Check, UploadCloud, Film, Image as ImageIcon, ChevronLeft, ChevronRight, GripVertical, ArrowUp, ArrowDown, Trash2, Globe, Loader2 } from "lucide-react"
 import { motion, AnimatePresence } from "framer-motion"
 import { createMarketingPost, updateMarketingPost, deleteMarketingPost } from "@/app/actions/marketing"
 
@@ -142,7 +142,7 @@ export function EditorPostModal({ isOpen, onClose, onSuccess, onDelete, initialD
       const img = new Image()
       const url = URL.createObjectURL(file)
       img.onload = () => {
-        const maxDim = 2048
+        const maxDim = 1600
         let w = img.width
         let h = img.height
         if (w > maxDim || h > maxDim) {
@@ -162,8 +162,8 @@ export function EditorPostModal({ isOpen, onClose, onSuccess, onDelete, initialD
           ctx.imageSmoothingEnabled = true
           ctx.imageSmoothingQuality = "high"
           ctx.drawImage(img, 0, 0, w, h)
-          // Preservar nitidez HD al 98% de calidad para textos y gráficos
-          const compressed = canvas.toDataURL("image/jpeg", 0.98)
+          // Preservar alta definición comprimida a 85% para transmisión de alto rendimiento
+          const compressed = canvas.toDataURL("image/jpeg", 0.85)
           URL.revokeObjectURL(url)
           resolve(compressed)
           return
@@ -287,43 +287,49 @@ export function EditorPostModal({ isOpen, onClose, onSuccess, onDelete, initialD
 
     setSaving(true)
 
-    // Convertir input datetime-local a ISO string UTC limpia considerando la zona horaria seleccionada
-    const fechaIso = fechaProgramada
-      ? parseLocalDateTimeToISO(fechaProgramada, programTimezone)
-      : new Date(Date.now() + 600000).toISOString()
+    try {
+      // Convertir input datetime-local a ISO string UTC limpia considerando la zona horaria seleccionada
+      const fechaIso = fechaProgramada
+        ? parseLocalDateTimeToISO(fechaProgramada, programTimezone)
+        : new Date(Date.now() + 600000).toISOString()
 
-    // Limpiar archivos válidos
-    const cleanFiles = selectedFiles.filter(
-      (f) => f.thumbnailUrl || (f.name && !f.name.startsWith("Medio "))
-    )
+      // Limpiar archivos válidos
+      const cleanFiles = selectedFiles.filter(
+        (f) => f.thumbnailUrl || (f.name && !f.name.startsWith("Medio "))
+      )
 
-    const postPayload = {
-      titulo: titulo || null,
-      contenido_base: contenidoBase,
-      overrides_redes: {
-        ...(initialData?.overrides_redes || {}),
-        primer_comentario: primerComentario,
-        archivos_detalles: cleanFiles,
-      },
-      drive_file_ids: cleanFiles.map((f) => f.thumbnailUrl || f.id),
-      plataformas_destino: plataformas,
-      estado: estado, // Cambia el estado a 'programado' obligatoriamente al reprogramar
-      fecha_programada: estado === "programado" ? fechaIso : null,
-    }
+      const postPayload = {
+        titulo: titulo || null,
+        contenido_base: contenidoBase,
+        overrides_redes: {
+          ...(initialData?.overrides_redes || {}),
+          primer_comentario: primerComentario,
+          archivos_detalles: cleanFiles,
+        },
+        drive_file_ids: cleanFiles.map((f) => f.thumbnailUrl || f.id),
+        plataformas_destino: plataformas,
+        estado: estado, // Cambia el estado a 'programado' obligatoriamente al reprogramar
+        fecha_programada: estado === "programado" ? fechaIso : null,
+      }
 
-    let res
-    if (initialData?.id) {
-      res = await updateMarketingPost(initialData.id, postPayload)
-    } else {
-      res = await createMarketingPost(postPayload)
-    }
+      let res
+      if (initialData?.id) {
+        res = await updateMarketingPost(initialData.id, postPayload)
+      } else {
+        res = await createMarketingPost(postPayload)
+      }
 
-    setSaving(false)
-    if (res.success) {
-      if (onSuccess) onSuccess()
-      onClose()
-    } else {
-      alert("Error al guardar: " + res.error)
+      if (res.success) {
+        if (onSuccess) onSuccess()
+        onClose()
+      } else {
+        alert("Error al guardar: " + (res.error || "No se pudo procesar la publicación"))
+      }
+    } catch (err: any) {
+      console.error("Excepción en handleSave:", err)
+      alert("Ocurrió un error inesperado al procesar la publicación: " + (err.message || err))
+    } finally {
+      setSaving(false)
     }
   }
 
@@ -910,17 +916,27 @@ export function EditorPostModal({ isOpen, onClose, onSuccess, onDelete, initialD
               <button
                 onClick={() => handleSave("borrador")}
                 disabled={saving}
-                className="px-4 py-2 rounded-xl border border-outline-variant/30 text-sm font-semibold text-on-surface hover:bg-surface-container-highest transition-colors"
+                className="flex items-center gap-2 px-4 py-2 rounded-xl border border-outline-variant/30 text-sm font-semibold text-on-surface hover:bg-surface-container-highest transition-colors disabled:opacity-50 disabled:cursor-wait"
               >
-                Guardar Borrador
+                {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
+                <span>{saving ? "Guardando..." : "Guardar Borrador"}</span>
               </button>
               <button
                 onClick={() => handleSave("programado")}
                 disabled={saving}
-                className="flex items-center gap-2 px-5 py-2 rounded-xl bg-primary text-sm font-semibold text-primary-foreground transition-opacity hover:opacity-90 shadow-md shadow-primary/20"
+                className="flex items-center gap-2 px-5 py-2 rounded-xl bg-primary text-sm font-semibold text-primary-foreground transition-all hover:opacity-90 shadow-md shadow-primary/20 disabled:opacity-60 disabled:cursor-wait"
               >
-                <Send className="h-4 w-4" />
-                {initialData?.id ? "Reprogramar / Guardar" : "Programar Publicación"}
+                {saving ? (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    <span>Procesando...</span>
+                  </>
+                ) : (
+                  <>
+                    <Send className="h-4 w-4" />
+                    <span>{initialData?.id ? "Reprogramar / Guardar" : "Programar Publicación"}</span>
+                  </>
+                )}
               </button>
             </div>
           </div>
