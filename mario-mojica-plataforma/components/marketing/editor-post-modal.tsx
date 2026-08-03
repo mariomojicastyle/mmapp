@@ -288,15 +288,37 @@ export function EditorPostModal({ isOpen, onClose, onSuccess, onDelete, initialD
     setSaving(true)
 
     try {
+      // Convertir cualquier DataURL local a URL pública HTTPS en Supabase Storage para un payload ultraligero (<1KB)
+      const processedFiles: DriveFile[] = []
+      for (const f of selectedFiles) {
+        let finalUrl = f.thumbnailUrl || f.id
+        if (finalUrl && finalUrl.startsWith("data:image/")) {
+          try {
+            const uploadRes = await fetch("/api/marketing/upload", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ dataUrl: finalUrl }),
+            })
+            const uploadData = await uploadRes.json()
+            if (uploadRes.ok && uploadData.url) {
+              finalUrl = uploadData.url
+            }
+          } catch (uErr) {
+            console.error("Error al convertir DataURL a URL de Storage:", uErr)
+          }
+        }
+        processedFiles.push({
+          id: finalUrl,
+          name: f.name,
+          mimeType: f.mimeType,
+          thumbnailUrl: finalUrl,
+        })
+      }
+
       // Convertir input datetime-local a ISO string UTC limpia considerando la zona horaria seleccionada
       const fechaIso = fechaProgramada
         ? parseLocalDateTimeToISO(fechaProgramada, programTimezone)
         : new Date(Date.now() + 600000).toISOString()
-
-      // Limpiar archivos válidos
-      const cleanFiles = selectedFiles.filter(
-        (f) => f.thumbnailUrl || (f.name && !f.name.startsWith("Medio "))
-      )
 
       const postPayload = {
         titulo: titulo || null,
@@ -304,9 +326,9 @@ export function EditorPostModal({ isOpen, onClose, onSuccess, onDelete, initialD
         overrides_redes: {
           ...(initialData?.overrides_redes || {}),
           primer_comentario: primerComentario,
-          archivos_detalles: cleanFiles,
+          archivos_detalles: processedFiles,
         },
-        drive_file_ids: cleanFiles.map((f) => f.thumbnailUrl || f.id),
+        drive_file_ids: processedFiles.map((f) => f.thumbnailUrl || f.id),
         plataformas_destino: plataformas,
         estado: estado, // Cambia el estado a 'programado' obligatoriamente al reprogramar
         fecha_programada: estado === "programado" ? fechaIso : null,
