@@ -1,7 +1,7 @@
 "use client"
 
 import React, { useState, useEffect } from "react"
-import { X, Calendar, Send, Eye, Sparkles, Check, UploadCloud, Film, Image as ImageIcon, ChevronLeft, ChevronRight, GripVertical, ArrowUp, ArrowDown, Trash2, Globe, Loader2 } from "lucide-react"
+import { X, Calendar, Send, Eye, Sparkles, Check, UploadCloud, Film, Image as ImageIcon, ChevronLeft, ChevronRight, GripVertical, ArrowUp, ArrowDown, Trash2, Globe, Loader2, Link2 } from "lucide-react"
 import { motion, AnimatePresence } from "framer-motion"
 import { createMarketingPost, updateMarketingPost, deleteMarketingPost } from "@/app/actions/marketing"
 import { createClient } from "@/lib/supabase/client"
@@ -248,6 +248,39 @@ export function EditorPostModal({ isOpen, onClose, onSuccess, onDelete, initialD
 
       setSelectedFiles((prev) => [...prev, ...newFiles])
     }
+  }
+
+  const parseGoogleDriveLink = (url: string) => {
+    const regExp = /\/file\/d\/([a-zA-Z0-9_-]+)|id=([a-zA-Z0-9_-]+)/
+    const match = url.match(regExp)
+    if (match) {
+      const fileId = match[1] || match[2]
+      return {
+        id: fileId,
+        directUrl: `https://docs.google.com/uc?export=download&id=${fileId}`,
+      }
+    }
+    return null
+  }
+
+  const handleAddGoogleDriveLink = (url: string) => {
+    const parsed = parseGoogleDriveLink(url)
+    if (!parsed) {
+      alert("Enlace de Google Drive inválido. Asegúrate de copiar el enlace de compartir del archivo.")
+      return
+    }
+
+    const isImage = url.toLowerCase().includes(".jpg") || url.toLowerCase().includes(".png") || url.toLowerCase().includes(".jpeg")
+    const mimeType = isImage ? "image/jpeg" : "video/mp4"
+
+    const newFile: DriveFile = {
+      id: parsed.directUrl,
+      name: `Google Drive - ${parsed.id.substring(0, 6)}...`,
+      mimeType: mimeType,
+      thumbnailUrl: parsed.directUrl,
+    }
+
+    setSelectedFiles((prev) => [...prev, newFile])
   }
 
   // Reordenamiento Drag & Drop
@@ -538,6 +571,32 @@ export function EditorPostModal({ isOpen, onClose, onSuccess, onDelete, initialD
                   <p className="text-[11px] text-on-surface-variant mt-1">
                     o haz clic para seleccionar archivos (PNG, JPG, MP4)
                   </p>
+                </div>
+
+                {/* Integración del enlace de Google Drive */}
+                <div className="mt-3 flex gap-2">
+                  <div className="relative flex-1">
+                    <Link2 className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-on-surface-variant/50" />
+                    <input
+                      type="text"
+                      id="gdrive-link-input"
+                      placeholder="Pegar enlace público de Google Drive..."
+                      className="w-full rounded-xl bg-surface-container border border-outline-variant/20 pl-9 pr-3.5 py-2 text-xs text-on-surface placeholder:text-on-surface-variant/50 focus:outline-none focus:border-primary"
+                    />
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const input = document.getElementById("gdrive-link-input") as HTMLInputElement
+                      if (input && input.value.trim()) {
+                        handleAddGoogleDriveLink(input.value.trim())
+                        input.value = ""
+                      }
+                    }}
+                    className="px-4 py-2 bg-surface-container-highest border border-outline-variant/25 hover:border-primary/40 hover:bg-primary/5 text-xs font-bold text-on-surface hover:text-primary rounded-xl flex items-center gap-1.5 transition-all cursor-pointer"
+                  >
+                    Agregar enlace
+                  </button>
                 </div>
 
                 {/* Lista de Medios Reordenables con Drag & Drop o Flechas */}
