@@ -1,6 +1,6 @@
 # 🏛️ Guión e Historia de Michael Thonet (1859) para Storyboard Studio
 
-Este documento contiene la estructura completa del guión de concepto, los prompts de video optimizados para **Storyboard Studio** de Google Flow, el listado de nombres de video para organizar tus archivos físicos y el guión de locución (Voiceover) cronometrado para tu editor de video.
+Este documento contiene la estructura completa del guión de concepto, los prompts de video optimizados para **Storyboard Studio** de Google Flow, el listado de nombres de video para organizar tus archivos físicos, el guión de locución (Voiceover) cronometrado para tu editor de video y el texto limpio para el generador de voz (TTS).
 
 ---
 
@@ -115,7 +115,7 @@ Este guión está adaptado para ser narrado a una velocidad natural (aproximadam
 *   **04_E2_Caldera_Vapor.mp4 (6s):**
     > *"Sometiendo la madera de haya al fuego, al agua y al vapor a alta presión..."*
 *   **05_E2_Cargando_Madera.mp4 (6s):**
-    > *"...la volvieron maleable para curvarla en moldes de hierro sin quebrarla."*
+    > *"...la volvieron maleable para curvarla en moldes de hierro semirígidos."*
 *   **06_E2_Arco_Perfecto.mp4 (4s):**
     > *"Nacía el curvado al vapor industrial."*
 
@@ -146,3 +146,11 @@ Este guión está adaptado para ser narrado a una velocidad natural (aproximadam
     > *"Hoy, esa misma empatía por el usuario da el siguiente paso evolutivo..."*
 *   **17_E5_Evolucion_Digital.mp4 (6s - ajustado para cierre de audio):**
     > *"...Mario Mojica. La era digital de la experiencia de ensamble."*
+
+---
+
+## 🎙️ 5. Texto Limpio para Generador de Voz (TTS)
+
+Copia y pega este bloque completo en tu generador de inteligencia artificial de voz (ej. ElevenLabs, Play.ht, etc.) para crear el archivo de audio continuo de una sola vez:
+
+> "En 1859, Michael Thonet imaginó algo imposible para su época: domar la madera a su voluntad, dibujando curvas que desafiaban la física. Pero para cambiar el diseño del mueble, debía cambiar la manufactura. Sometiendo la madera de haya al fuego, al agua y al vapor a alta presión, la volvieron maleable para curvarla en moldes de hierro semirígidos. Nacía el curvado al vapor industrial. Pero las sillas armadas ocupaban demasiado espacio. Thonet entendió que pagar fletes por transportar aire arruinaría su negocio. Así que la desarmó en seis piezas de madera, diez tornillos y dos tuercas, logrando empacar de forma plana treinta y seis sillas completas en un solo metro cúbico. Al abrir la caja en París, el cliente se encontraba con un rompecabezas. Con solo una hoja de instrucciones litográfica, comenzó el ensamble. Nacía el primer mueble listo para armar de la historia. La silla número catorce conquistó los cafés de Europa y redefinió la logística para siempre. Una obra maestra que transformó la experiencia del consumidor. Hoy, esa misma empatía por el usuario da el siguiente paso evolutivo. Mario Mojica. La era digital de la experiencia de ensamble."
