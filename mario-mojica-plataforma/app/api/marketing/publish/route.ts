@@ -394,24 +394,40 @@ export async function GET(request: NextRequest) {
             if (publicImageUrls.length > 0 && targetIgId) {
               let mediaId = ""
               let createErr = ""
+              const currentMediaId = post.overrides_redes?.instagram_media_id
 
               if (isVideo) {
-                // Crear contenedor para Reel/Video
-                const mediaRes = await fetch(`https://graph.facebook.com/v19.0/${targetIgId}/media`, {
-                  method: "POST",
-                  headers: { "Content-Type": "application/json" },
-                  body: JSON.stringify({
-                    media_type: "REELS",
-                    video_url: publicImageUrls[0],
-                    caption: post.contenido_base,
-                    access_token: igCuenta.access_token,
-                  }),
-                })
-                const mediaData = await mediaRes.json()
-                if (mediaRes.ok && mediaData.id) {
-                  mediaId = mediaData.id
+                if (!currentMediaId) {
+                  // Crear contenedor para Reel/Video
+                  const mediaRes = await fetch(`https://graph.facebook.com/v19.0/${targetIgId}/media`, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                      media_type: "REELS",
+                      video_url: publicImageUrls[0],
+                      caption: post.contenido_base,
+                      access_token: igCuenta.access_token,
+                    }),
+                  })
+                  const mediaData = await mediaRes.json()
+                  if (mediaRes.ok && mediaData.id) {
+                    mediaId = mediaData.id
+                    // Guardar temporalmente el mediaId en los overrides del post
+                    await supabase
+                      .from("marketing_posts")
+                      .update({
+                        overrides_redes: {
+                          ...overrides,
+                          instagram_media_id: mediaId
+                        }
+                      })
+                      .eq("id", post.id)
+                    errores.push("Instagram: Video enviado para procesamiento. Se publicará en el próximo minuto.")
+                  } else {
+                    createErr = mediaData.error?.message || "Error al crear contenedor de video en Instagram"
+                  }
                 } else {
-                  createErr = mediaData.error?.message || "Error al crear contenedor de video en Instagram"
+                  mediaId = currentMediaId
                 }
               } else {
                 // Crear contenedor para foto
@@ -432,15 +448,11 @@ export async function GET(request: NextRequest) {
                 }
               }
 
-              if (mediaId) {
-                // Polling de procesamiento de video para Instagram
-                let status = "IN_PROGRESS"
-                let attempts = 0
-                const maxAttempts = 10
+              if (mediaId && (!isVideo || currentMediaId)) {
+                // Consultar estado de procesamiento para video (asíncrono)
+                let status = "FINISHED"
 
-                while (status === "IN_PROGRESS" && attempts < maxAttempts && isVideo) {
-                  await new Promise((resolve) => setTimeout(resolve, 5000)) // Esperar 5s
-                  attempts++
+                if (isVideo) {
                   try {
                     const statusRes = await fetch(
                       `https://graph.facebook.com/v19.0/${mediaId}?fields=status_code&access_token=${igCuenta.access_token}`
@@ -451,13 +463,11 @@ export async function GET(request: NextRequest) {
                     }
                   } catch (e) {
                     console.error("Error al consultar estado de procesamiento en Instagram:", e)
+                    status = "IN_PROGRESS"
                   }
-                }
-
-                if (!isVideo) {
-                  // Pequeño delay de cortesía para fotos
+                } else {
+                  // Fotos: Pequeño delay de cortesía
                   await new Promise((resolve) => setTimeout(resolve, 3500))
-                  status = "FINISHED"
                 }
 
                 if (status === "FINISHED" || status === "READY") {
@@ -472,36 +482,49 @@ export async function GET(request: NextRequest) {
                   const publishData = await publishRes.json()
                   if (!publishRes.ok) {
                     errores.push(`Instagram Publish: ${publishData.error?.message || "Error al publicar en Instagram"}`)
-                  } else if (primerComentario && publishData.id) {
-                    // Publicar Primer Comentario Automático en Instagram Business
-                    await fetch(`https://graph.facebook.com/v19.0/${publishData.id}/comments`, {
-                      method: "POST",
-                      headers: { "Content-Type": "application/json" },
-                      body: JSON.stringify({ message: primerComentario, access_token: igCuenta.access_token }),
-                    }).catch(() => {})
+                  } else {
+                    publicadasExitosamente.push("instagram")
+                    // Guardar éxito y limpiar el instagram_media_id de overrides
+                    await supabase
+                      .from("marketing_posts")
+                      .update({
+                        overrides_redes: {
+                          ...overrides,
+                          instagram_media_id: null,
+                          publicado_plataformas: publicadasExitosamente
+                        }
+                      })
+                      .eq("id", post.id)
+
+                    if (primerComentario && publishData.id) {
+                      // Publicar Primer Comentario Automático en Instagram Business
+                      await fetch(`https://graph.facebook.com/v19.0/${publishData.id}/comments`, {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ message: primerComentario, access_token: igCuenta.access_token }),
+                      }).catch(() => {})
+                    }
                   }
+                } else if (status === "ERROR") {
+                  // Limpiar overrides por error
+                  await supabase
+                    .from("marketing_posts")
+                    .update({
+                      overrides_redes: {
+                        ...overrides,
+                        instagram_media_id: null
+                      }
+                    })
+                    .eq("id", post.id)
+                  errores.push("Instagram: El procesamiento del video falló en Meta.")
                 } else {
-                  errores.push(`Instagram: El procesamiento del video expiró o falló con estado ${status}`)
+                  errores.push("Instagram: El video sigue procesándose en Meta. Se consultará en el próximo minuto.")
                 }
-              } else {
+              } else if (createErr) {
                 errores.push(`Instagram Media: ${createErr}`)
               }
             } else if (!targetIgId) {
               errores.push("Instagram: La página de Facebook no tiene vinculada una cuenta de Instagram Business")
-            }
-
-            // Si se publicó con éxito sin errores, guardar estado
-            if (errores.filter(e => e.startsWith("Instagram")).length === 0) {
-              publicadasExitosamente.push("instagram")
-              await supabase
-                .from("marketing_posts")
-                .update({
-                  overrides_redes: {
-                    ...overrides,
-                    publicado_plataformas: publicadasExitosamente
-                  }
-                })
-                .eq("id", post.id)
             }
           } catch (igErr: any) {
             errores.push(`Instagram Exception: ${igErr.message}`)
@@ -613,6 +636,8 @@ export async function GET(request: NextRequest) {
       }
 
       // Actualizar estado final del post en Supabase estrictamente
+      const esEsperaInstagram = errores.length === 1 && (errores[0].includes("sigue procesándose") || errores[0].includes("enviado para procesamiento"))
+
       if (errores.length === 0) {
         await supabase
           .from("marketing_posts")
@@ -624,6 +649,16 @@ export async function GET(request: NextRequest) {
           .eq("id", post.id)
 
         resultados.push({ id: post.id, titulo: post.titulo, estado: "publicado", errores: [] })
+      } else if (esEsperaInstagram) {
+        await supabase
+          .from("marketing_posts")
+          .update({
+            estado: "programado",
+            error_mensaje: errores.join(" | "),
+          })
+          .eq("id", post.id)
+
+        resultados.push({ id: post.id, titulo: post.titulo, estado: "procesando_instagram", errores })
       } else {
         await supabase
           .from("marketing_posts")
