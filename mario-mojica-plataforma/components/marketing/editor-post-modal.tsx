@@ -809,6 +809,7 @@ export function EditorPostModal({ isOpen, onClose, onSuccess, onDelete, initialD
                                 className="w-full h-full object-contain bg-surface-container-high"
                                 controls
                                 playsInline
+                                crossOrigin="anonymous"
                               />
                             ) : (
                               <img
@@ -902,6 +903,7 @@ export function EditorPostModal({ isOpen, onClose, onSuccess, onDelete, initialD
                               className="w-full h-full object-contain"
                               controls
                               playsInline
+                              crossOrigin="anonymous"
                             />
                           ) : (
                             <img
@@ -965,6 +967,7 @@ export function EditorPostModal({ isOpen, onClose, onSuccess, onDelete, initialD
                               className="w-full h-full object-contain"
                               controls
                               playsInline
+                              crossOrigin="anonymous"
                             />
                           ) : (
                             <img
