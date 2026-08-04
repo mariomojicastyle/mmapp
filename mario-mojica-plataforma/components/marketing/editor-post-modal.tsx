@@ -18,6 +18,15 @@ function dataURLtoBlob(dataurl: string) {
   return new Blob([u8arr], { type: mime })
 }
 
+function getGoogleDriveEmbedUrl(url?: string) {
+  if (!url) return null
+  const match = url.match(/id=([a-zA-Z0-9_-]+)/)
+  if (match) {
+    return `https://drive.google.com/file/d/${match[1]}/preview`
+  }
+  return null
+}
+
 export interface DriveFile {
   id: string
   name: string
@@ -803,6 +812,16 @@ export function EditorPostModal({ isOpen, onClose, onSuccess, onDelete, initialD
                           {(() => {
                             const cur = selectedFiles[activeImageIndex] || selectedFiles[0];
                             const isV = cur && (cur.mimeType?.startsWith("video") || cur.thumbnailUrl?.startsWith("data:video") || cur.name?.toLowerCase().endsWith(".mp4"));
+                            const gDriveEmbed = cur.thumbnailUrl?.includes("google") ? getGoogleDriveEmbedUrl(cur.thumbnailUrl) : null
+                            if (gDriveEmbed) {
+                              return (
+                                <iframe
+                                  src={gDriveEmbed}
+                                  className="w-full h-full border-0 bg-surface-container-high"
+                                  allow="autoplay"
+                                />
+                              )
+                            }
                             return isV ? (
                               <video
                                 src={cur.thumbnailUrl}
@@ -897,21 +916,31 @@ export function EditorPostModal({ isOpen, onClose, onSuccess, onDelete, initialD
                         {(() => {
                           const cur = selectedFiles[activeImageIndex] || selectedFiles[0];
                           const isV = cur && (cur.mimeType?.startsWith("video") || cur.thumbnailUrl?.startsWith("data:video") || cur.name?.toLowerCase().endsWith(".mp4"));
-                          return isV ? (
-                            <video
-                              src={cur.thumbnailUrl}
-                              className="w-full h-full object-contain"
-                              controls
-                              playsInline
-                              crossOrigin="anonymous"
-                            />
-                          ) : (
-                            <img
-                              src={cur.thumbnailUrl}
-                              alt="FB Preview"
-                              className="w-full h-full object-contain"
-                            />
-                          );
+                            const gDriveEmbed = cur.thumbnailUrl?.includes("google") ? getGoogleDriveEmbedUrl(cur.thumbnailUrl) : null
+                            if (gDriveEmbed) {
+                              return (
+                                <iframe
+                                  src={gDriveEmbed}
+                                  className="w-full h-full border-0 bg-surface-container-high"
+                                  allow="autoplay"
+                                />
+                              )
+                            }
+                            return isV ? (
+                              <video
+                                src={cur.thumbnailUrl}
+                                className="w-full h-full object-contain"
+                                controls
+                                playsInline
+                                crossOrigin="anonymous"
+                              />
+                            ) : (
+                              <img
+                                src={cur.thumbnailUrl}
+                                alt="FB Preview"
+                                className="w-full h-full object-contain"
+                              />
+                            );
                         })()}
                         {selectedFiles.length > 1 && (
                           <>
@@ -961,21 +990,31 @@ export function EditorPostModal({ isOpen, onClose, onSuccess, onDelete, initialD
                         {(() => {
                           const cur = selectedFiles[activeImageIndex] || selectedFiles[0];
                           const isV = cur && (cur.mimeType?.startsWith("video") || cur.thumbnailUrl?.startsWith("data:video") || cur.name?.toLowerCase().endsWith(".mp4"));
-                          return isV ? (
-                            <video
-                              src={cur.thumbnailUrl}
-                              className="w-full h-full object-contain"
-                              controls
-                              playsInline
-                              crossOrigin="anonymous"
-                            />
-                          ) : (
-                            <img
-                              src={cur.thumbnailUrl}
-                              alt="LinkedIn Preview"
-                              className="w-full h-full object-contain"
-                            />
-                          );
+                            const gDriveEmbed = cur.thumbnailUrl?.includes("google") ? getGoogleDriveEmbedUrl(cur.thumbnailUrl) : null
+                            if (gDriveEmbed) {
+                              return (
+                                <iframe
+                                  src={gDriveEmbed}
+                                  className="w-full h-full border-0 bg-surface-container-high"
+                                  allow="autoplay"
+                                />
+                              )
+                            }
+                            return isV ? (
+                              <video
+                                src={cur.thumbnailUrl}
+                                className="w-full h-full object-contain"
+                                controls
+                                playsInline
+                                crossOrigin="anonymous"
+                              />
+                            ) : (
+                              <img
+                                src={cur.thumbnailUrl}
+                                alt="LinkedIn Preview"
+                                className="w-full h-full object-contain"
+                              />
+                            );
                         })()}
                         {selectedFiles.length > 1 && (
                           <>
