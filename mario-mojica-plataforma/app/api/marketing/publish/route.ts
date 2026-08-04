@@ -62,20 +62,20 @@ async function ensurePublicImageUrl(supabase: any, imageStr: string): Promise<st
   return null
 }
 
-// Sube una imagen directamente como un activo nativo a la API de LinkedIn (v2 Assets & UGC)
-async function uploadLinkedInImageAsset(accessToken: string, authorUrn: string, imageStr: string): Promise<string | null> {
+// Sube un archivo directamente como un activo nativo a la API de LinkedIn (v2 Assets & UGC)
+async function uploadLinkedInMediaAsset(accessToken: string, authorUrn: string, mediaStr: string, isVideo: boolean): Promise<string | null> {
   try {
     let buffer: Buffer | null = null
-    let contentType = "image/jpeg"
+    let contentType = isVideo ? "video/mp4" : "image/jpeg"
 
-    if (imageStr.startsWith("data:image/")) {
-      const matches = imageStr.match(/^data:(image\/[a-zA-Z]+);base64,(.+)$/)
+    if (mediaStr.startsWith("data:")) {
+      const matches = mediaStr.match(/^data:([^;]+);base64,(.+)$/)
       if (matches) {
         contentType = matches[1]
         buffer = Buffer.from(matches[2], "base64")
       }
-    } else if (imageStr.startsWith("http://") || imageStr.startsWith("https://")) {
-      const res = await fetch(imageStr)
+    } else if (mediaStr.startsWith("http://") || mediaStr.startsWith("https://")) {
+      const res = await fetch(mediaStr)
       if (res.ok) {
         const arrayBuf = await res.arrayBuffer()
         buffer = Buffer.from(arrayBuf)
@@ -86,6 +86,8 @@ async function uploadLinkedInImageAsset(accessToken: string, authorUrn: string, 
 
     if (!buffer) return null
 
+    const recipe = isVideo ? "urn:li:digitalmediaRecipe:feedshare-video" : "urn:li:digitalmediaRecipe:feedshare-image"
+
     // Step 1: Register Upload
     const regRes = await fetch("https://api.linkedin.com/v2/assets?action=registerUpload", {
       method: "POST",
@@ -95,7 +97,7 @@ async function uploadLinkedInImageAsset(accessToken: string, authorUrn: string, 
       },
       body: JSON.stringify({
         registerUploadRequest: {
-          recipes: ["urn:li:digitalmediaRecipe:feedshare-image"],
+          recipes: [recipe],
           owner: authorUrn,
           serviceRelationships: [
             {
@@ -135,7 +137,7 @@ async function uploadLinkedInImageAsset(accessToken: string, authorUrn: string, 
       return null
     }
   } catch (err) {
-    console.error("Excepción en uploadLinkedInImageAsset:", err)
+    console.error("Excepción en uploadLinkedInMediaAsset:", err)
     return null
   }
 }
@@ -196,7 +198,11 @@ export async function GET(request: NextRequest) {
           .filter(Boolean)
       }
 
-      // Convertir todas las imágenes Base64 / DataURL a URLs públicas HTTPS en Supabase Storage
+      // Evaluar si es video
+      const isVideo = Array.isArray(post.overrides_redes?.archivos_detalles) &&
+        post.overrides_redes.archivos_detalles.some((f: any) => f.mimeType?.startsWith("video/") || f.name?.endsWith(".mp4"))
+
+      // Convertir todas las imágenes/videos Base64 / DataURL a URLs públicas HTTPS en Supabase Storage
       const publicImageUrls: string[] = []
       for (const rawImg of rawImages) {
         const pUrl = await ensurePublicImageUrl(supabase, rawImg)
@@ -247,6 +253,27 @@ export async function GET(request: NextRequest) {
                 errores.push(`Facebook: ${postFbData.error?.message || "Error al publicar en Feed"}`)
               } else if (primerComentario && postFbData.id) {
                 // Publicar Primer Comentario Automático en Facebook
+                await fetch(`https://graph.facebook.com/v19.0/${postFbData.id}/comments`, {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({ message: primerComentario, access_token: targetToken }),
+                }).catch(() => {})
+              }
+            } else if (isVideo) {
+              // Publicación de video en Facebook
+              const postFbRes = await fetch(`https://graph.facebook.com/v19.0/${targetId}/videos`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                  file_url: publicImageUrls[0],
+                  description: post.contenido_base,
+                  access_token: targetToken,
+                }),
+              })
+              const postFbData = await postFbRes.json()
+              if (!postFbRes.ok) {
+                errores.push(`Facebook Video: ${postFbData.error?.message || "Error al publicar video"}`)
+              } else if (primerComentario && postFbData.id) {
                 await fetch(`https://graph.facebook.com/v19.0/${postFbData.id}/comments`, {
                   method: "POST",
                   headers: { "Content-Type": "application/json" },
@@ -365,43 +392,99 @@ export async function GET(request: NextRequest) {
             }
 
             if (publicImageUrls.length > 0 && targetIgId) {
-              // Instagram requiere una imagen/video público
-              const mediaRes = await fetch(`https://graph.facebook.com/v19.0/${targetIgId}/media`, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                  image_url: publicImageUrls[0],
-                  caption: post.contenido_base,
-                  access_token: igCuenta.access_token,
-                }),
-              })
+              let mediaId = ""
+              let createErr = ""
 
-              const mediaData = await mediaRes.json()
-              if (mediaRes.ok && mediaData.id) {
-                // Esperar 3.5 segundos a que Instagram procese el contenedor de imagen en CDN
-                await new Promise((resolve) => setTimeout(resolve, 3500))
-
-                const publishRes = await fetch(`https://graph.facebook.com/v19.0/${targetIgId}/media_publish`, {
+              if (isVideo) {
+                // Crear contenedor para Reel/Video
+                const mediaRes = await fetch(`https://graph.facebook.com/v19.0/${targetIgId}/media`, {
                   method: "POST",
                   headers: { "Content-Type": "application/json" },
                   body: JSON.stringify({
-                    creation_id: mediaData.id,
+                    media_type: "REELS",
+                    video_url: publicImageUrls[0],
+                    caption: post.contenido_base,
                     access_token: igCuenta.access_token,
                   }),
                 })
-                const publishData = await publishRes.json()
-                if (!publishRes.ok) {
-                  errores.push(`Instagram Publish: ${publishData.error?.message || "Error al publicar en Instagram"}`)
-                } else if (primerComentario && publishData.id) {
-                  // Publicar Primer Comentario Automático en Instagram Business
-                  await fetch(`https://graph.facebook.com/v19.0/${publishData.id}/comments`, {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ message: primerComentario, access_token: igCuenta.access_token }),
-                  }).catch(() => {})
+                const mediaData = await mediaRes.json()
+                if (mediaRes.ok && mediaData.id) {
+                  mediaId = mediaData.id
+                } else {
+                  createErr = mediaData.error?.message || "Error al crear contenedor de video en Instagram"
                 }
               } else {
-                errores.push(`Instagram Media: ${mediaData.error?.message || "Error al crear media container en Instagram"}`)
+                // Crear contenedor para foto
+                const mediaRes = await fetch(`https://graph.facebook.com/v19.0/${targetIgId}/media`, {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({
+                    image_url: publicImageUrls[0],
+                    caption: post.contenido_base,
+                    access_token: igCuenta.access_token,
+                  }),
+                })
+                const mediaData = await mediaRes.json()
+                if (mediaRes.ok && mediaData.id) {
+                  mediaId = mediaData.id
+                } else {
+                  createErr = mediaData.error?.message || "Error al crear contenedor de imagen en Instagram"
+                }
+              }
+
+              if (mediaId) {
+                // Polling de procesamiento de video para Instagram
+                let status = "IN_PROGRESS"
+                let attempts = 0
+                const maxAttempts = 10
+
+                while (status === "IN_PROGRESS" && attempts < maxAttempts && isVideo) {
+                  await new Promise((resolve) => setTimeout(resolve, 5000)) // Esperar 5s
+                  attempts++
+                  try {
+                    const statusRes = await fetch(
+                      `https://graph.facebook.com/v19.0/${mediaId}?fields=status_code&access_token=${igCuenta.access_token}`
+                    )
+                    if (statusRes.ok) {
+                      const statusData = await statusRes.json()
+                      status = statusData.status_code || "IN_PROGRESS"
+                    }
+                  } catch (e) {
+                    console.error("Error al consultar estado de procesamiento en Instagram:", e)
+                  }
+                }
+
+                if (!isVideo) {
+                  // Pequeño delay de cortesía para fotos
+                  await new Promise((resolve) => setTimeout(resolve, 3500))
+                  status = "FINISHED"
+                }
+
+                if (status === "FINISHED" || status === "READY") {
+                  const publishRes = await fetch(`https://graph.facebook.com/v19.0/${targetIgId}/media_publish`, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                      creation_id: mediaId,
+                      access_token: igCuenta.access_token,
+                    }),
+                  })
+                  const publishData = await publishRes.json()
+                  if (!publishRes.ok) {
+                    errores.push(`Instagram Publish: ${publishData.error?.message || "Error al publicar en Instagram"}`)
+                  } else if (primerComentario && publishData.id) {
+                    // Publicar Primer Comentario Automático en Instagram Business
+                    await fetch(`https://graph.facebook.com/v19.0/${publishData.id}/comments`, {
+                      method: "POST",
+                      headers: { "Content-Type": "application/json" },
+                      body: JSON.stringify({ message: primerComentario, access_token: igCuenta.access_token }),
+                    }).catch(() => {})
+                  }
+                } else {
+                  errores.push(`Instagram: El procesamiento del video expiró o falló con estado ${status}`)
+                }
+              } else {
+                errores.push(`Instagram Media: ${createErr}`)
               }
             } else if (!targetIgId) {
               errores.push("Instagram: La página de Facebook no tiene vinculada una cuenta de Instagram Business")
@@ -438,10 +521,10 @@ export async function GET(request: NextRequest) {
             const authorUrn = `urn:li:person:${liCuenta.cuenta_id_externo}`
             const linkedInAssetUrns: string[] = []
 
-            // Subir imágenes nativas directamente a los servidores de LinkedIn
+            // Subir imágenes/videos nativos directamente a los servidores de LinkedIn
             if (rawImages.length > 0) {
               for (const rawImg of rawImages) {
-                const assetUrn = await uploadLinkedInImageAsset(liCuenta.access_token, authorUrn, rawImg)
+                const assetUrn = await uploadLinkedInMediaAsset(liCuenta.access_token, authorUrn, rawImg, isVideo)
                 if (assetUrn) linkedInAssetUrns.push(assetUrn)
               }
             }
@@ -450,7 +533,7 @@ export async function GET(request: NextRequest) {
               shareCommentary: {
                 text: post.contenido_base,
               },
-              shareMediaCategory: linkedInAssetUrns.length > 0 ? "IMAGE" : "NONE",
+              shareMediaCategory: linkedInAssetUrns.length > 0 ? (isVideo ? "VIDEO" : "IMAGE") : "NONE",
             }
 
             if (linkedInAssetUrns.length > 0) {

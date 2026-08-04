@@ -55,6 +55,7 @@ Este archivo es la "Memoria RAM" para Antigravity. Contiene el contexto de lo qu
   - Conversor de imágenes Base64 DataURL a URLs públicas HTTPS vía bucket `marketing-media` de Supabase para cumplir requerimientos de Meta CDN.
   - Planificador Semanal B2B de 24 horas con mapa de calor de CTR B2B (tonos coral/rosa), cabecera sticky de días y selector de zona horaria dinámico (Brasil - Bento Gonçalves UTC-3 vs Colombia UTC-5).
   - Límite de contenedor y scrollbar en Próximas Publicaciones (`max-h-[380px]`) y botón de borrado `🗑️ Eliminar` con alto contraste en modal y lista.
+  - **[NUEVO - 04 de Agosto, 2026] Soporte de Publicación de Video en Meta y LinkedIn**: Implementado el soporte de publicación nativa de videos MP4 para Facebook (Videos API `/videos`), Instagram (Reels API con sondeo de estado/polling) y LinkedIn (Digitalmedia URN con receta `feedshare-video` y categoría `"VIDEO"`).
   - [x] **Campaña de Posicionamiento B2B "Forbes Style" & Estrategia Obviedades**:
   - Creación del Post 04 ("Experiencia Premium / La Silla Más Cómoda") en [Post_04_Experiencia_Premium.md](file:///c:/Desarrollo/mmapp/Comercial/Posts/Post_04_Experiencia_Premium.md) y registro en [historico_de_posts.md](file:///c:/Desarrollo/mmapp/Comercial/historico_de_posts.md).
   - Plantillas multipágina vectoriales Forbes en 3:4 (1080x1440 px) en [08_Post_Julio_Forbes_2026.svg](file:///c:/Desarrollo/mmapp/Publicaciones/08_Post_Julio_Forbes_2026.svg).

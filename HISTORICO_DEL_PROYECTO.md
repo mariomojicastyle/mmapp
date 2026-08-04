@@ -1,5 +1,13 @@
 # 📜 Histórico del Proyecto: mariomojica.com
 
+### 🔹 Hito Video_Marketing — Soporte de Publicación de Video en Meta y LinkedIn (04 de Agosto, 2026)
+
+- **Publicación de Video en Facebook**: Implementación de la API de Videos de Facebook (`/videos`) utilizando el parámetro `file_url` para subir y publicar remotamente videos de Google Drive.
+- **Publicación de Video en Instagram (Reels)**: Integración del flujo de subida de Reels (`media_type: 'REELS'`) a la API de Instagram Business, con lógica de sondeo (polling) asíncrono para verificar que el video esté completamente procesado (`FINISHED`) antes de publicar.
+- **Publicación de Video en LinkedIn**: Configuración de la receta `feedshare-video` y la categoría de medio `"VIDEO"` en el UGC Post para publicar y procesar nativamente videos MP4 en la red profesional.
+
+---
+
 ### 🔹 Hito Drive_Video — Integración de Video MP4 y Google Drive sin Almacenamiento en Supabase (03 de Agosto, 2026)
 
 - **Soporte de Video en Mockups**: Habilitación dinámica de etiquetas `<video>` y renderizado de ícono de película cinematográfica (`Film`) en miniaturas para el Editor Multi-Canal B2B de Next.js, implementando `crossOrigin="anonymous"` para resolución de CORS y credenciales locales en navegadores Chrome/Safari.
