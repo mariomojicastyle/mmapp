@@ -595,8 +595,10 @@ export async function GET(request: NextRequest) {
               // Publicar Primer Comentario Automático si está configurado
               const shareUrn = liRes.headers.get("x-restli-id") || liData.id
               if (primerComentario && shareUrn) {
+                // Convertir ugcPost URN a share URN para compatibilidad con la API de socialActions
+                const normalizedShareUrn = shareUrn.replace("urn:li:ugcPost:", "urn:li:share:")
                 try {
-                  await fetch(`https://api.linkedin.com/v2/socialActions/${encodeURIComponent(shareUrn)}/comments`, {
+                  const commentRes = await fetch(`https://api.linkedin.com/v2/socialActions/${encodeURIComponent(normalizedShareUrn)}/comments`, {
                     method: "POST",
                     headers: {
                       Authorization: `Bearer ${liCuenta.access_token}`,
@@ -608,6 +610,10 @@ export async function GET(request: NextRequest) {
                       message: { text: primerComentario },
                     }),
                   })
+                  if (!commentRes.ok) {
+                    const commentErrData = await commentRes.json()
+                    console.error("Error al publicar primer comentario en LinkedIn:", commentErrData)
+                  }
                 } catch (cErr) {
                   console.error("Error al publicar primer comentario en LinkedIn:", cErr)
                 }
