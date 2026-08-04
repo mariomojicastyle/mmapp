@@ -537,10 +537,12 @@ export function EditorPostModal({ isOpen, onClose, onSuccess, onDelete, initialD
                             <span className="h-5 w-5 rounded-full bg-surface-container-highest flex items-center justify-center text-[10px] font-bold shrink-0 text-on-surface">
                               {idx + 1}
                             </span>
-                            {file.thumbnailUrl ? (
+                            {file.thumbnailUrl && !isVideo ? (
                               <img src={file.thumbnailUrl} alt="Preview" className="h-8 w-8 rounded-lg object-cover border border-outline-variant/20 shrink-0" />
                             ) : isVideo ? (
-                              <Film className="h-4 w-4 text-error shrink-0" />
+                              <div className="h-8 w-8 rounded-lg border border-outline-variant/20 shrink-0 bg-surface-container-highest flex items-center justify-center">
+                                <Film className="h-3.5 w-3.5 text-rose-400" />
+                              </div>
                             ) : (
                               <ImageIcon className="h-4 w-4 text-primary shrink-0" />
                             )}
@@ -708,11 +710,24 @@ export function EditorPostModal({ isOpen, onClose, onSuccess, onDelete, initialD
                     <div className="aspect-square bg-surface-container-high flex items-center justify-center overflow-hidden relative group">
                       {selectedFiles.length > 0 ? (
                         <>
-                          <img
-                            src={selectedFiles[activeImageIndex]?.thumbnailUrl || selectedFiles[0].thumbnailUrl}
-                            alt="Preview IG"
-                            className="w-full h-full object-contain bg-surface-container-high"
-                          />
+                          {(() => {
+                            const cur = selectedFiles[activeImageIndex] || selectedFiles[0];
+                            const isV = cur && (cur.mimeType?.startsWith("video") || cur.thumbnailUrl?.startsWith("data:video") || cur.name?.toLowerCase().endsWith(".mp4"));
+                            return isV ? (
+                              <video
+                                src={cur.thumbnailUrl}
+                                className="w-full h-full object-contain bg-surface-container-high"
+                                controls
+                                playsInline
+                              />
+                            ) : (
+                              <img
+                                src={cur.thumbnailUrl}
+                                alt="Preview IG"
+                                className="w-full h-full object-contain bg-surface-container-high"
+                              />
+                            );
+                          })()}
 
                           {selectedFiles.length > 1 && (
                             <>
@@ -788,11 +803,24 @@ export function EditorPostModal({ isOpen, onClose, onSuccess, onDelete, initialD
                     </p>
                     {selectedFiles.length > 0 && (
                       <div className="relative rounded-lg overflow-hidden border border-outline-variant/15 aspect-square bg-surface-container-high flex items-center justify-center">
-                        <img
-                          src={selectedFiles[activeImageIndex]?.thumbnailUrl || selectedFiles[0].thumbnailUrl}
-                          alt="FB Preview"
-                          className="w-full h-full object-contain"
-                        />
+                        {(() => {
+                          const cur = selectedFiles[activeImageIndex] || selectedFiles[0];
+                          const isV = cur && (cur.mimeType?.startsWith("video") || cur.thumbnailUrl?.startsWith("data:video") || cur.name?.toLowerCase().endsWith(".mp4"));
+                          return isV ? (
+                            <video
+                              src={cur.thumbnailUrl}
+                              className="w-full h-full object-contain"
+                              controls
+                              playsInline
+                            />
+                          ) : (
+                            <img
+                              src={cur.thumbnailUrl}
+                              alt="FB Preview"
+                              className="w-full h-full object-contain"
+                            />
+                          );
+                        })()}
                         {selectedFiles.length > 1 && (
                           <>
                             <button
@@ -838,11 +866,24 @@ export function EditorPostModal({ isOpen, onClose, onSuccess, onDelete, initialD
                     </p>
                     {selectedFiles.length > 0 && (
                       <div className="relative rounded-lg overflow-hidden border border-outline-variant/15 aspect-square bg-surface-container-high flex items-center justify-center">
-                        <img
-                          src={selectedFiles[activeImageIndex]?.thumbnailUrl || selectedFiles[0].thumbnailUrl}
-                          alt="LinkedIn Preview"
-                          className="w-full h-full object-contain"
-                        />
+                        {(() => {
+                          const cur = selectedFiles[activeImageIndex] || selectedFiles[0];
+                          const isV = cur && (cur.mimeType?.startsWith("video") || cur.thumbnailUrl?.startsWith("data:video") || cur.name?.toLowerCase().endsWith(".mp4"));
+                          return isV ? (
+                            <video
+                              src={cur.thumbnailUrl}
+                              className="w-full h-full object-contain"
+                              controls
+                              playsInline
+                            />
+                          ) : (
+                            <img
+                              src={cur.thumbnailUrl}
+                              alt="LinkedIn Preview"
+                              className="w-full h-full object-contain"
+                            />
+                          );
+                        })()}
                         {selectedFiles.length > 1 && (
                           <>
                             <button
