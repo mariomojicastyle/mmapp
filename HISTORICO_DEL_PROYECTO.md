@@ -1,6 +1,22 @@
 # 📜 Histórico del Proyecto: mariomojica.com
 
-Este archivo es un registro vivo de la evolución tecnológica del ecosistema Mario Mojica Style. Complementa a `ESTADO_DEL_PROYECTO.md` conservando la memoria de decisiones, retos y soluciones técnicas.
+### 🔹 Hito Drive_Video — Integración de Video MP4 y Google Drive sin Almacenamiento en Supabase (03 de Agosto, 2026)
+
+- **Soporte de Video en Mockups**: Habilitación dinámica de etiquetas `<video>` y renderizado de ícono de película cinematográfica (`Film`) en miniaturas para el Editor Multi-Canal B2B de Next.js, implementando `crossOrigin="anonymous"` para resolución de CORS y credenciales locales en navegadores Chrome/Safari.
+- **Soporte Nativo de Google Drive (Almacenamiento Cero)**: Creación de políticas RLS en Supabase Storage para el bucket `marketing-media`. Implementación en el cliente de un parser de enlaces públicos de Google Drive (`parseGoogleDriveLink`) para extraer el ID del archivo y generar URLs de descarga directa (`drive.usercontent.google.com`).
+- **Evadir Restricciones CORP de Google**: Integración de iframe de visualización interactiva oficial de Google Drive (`/preview`) en los mockups de redes sociales del panel del CMS para eludir las restricciones de origen cruzado de Google (`Cross-Origin-Resource-Policy: same-site`), manteniendo la descarga directa limpia para consumo asíncrono y publicación en n8n.
+- **Bypass de Límites de Carga**: Superación exitosa de los límites de carga de funciones serverless de Netlify (6MB) al permitir guardar y previsualizar videos pesados (~50MB) de la campaña de Michael Thonet mediante Google Drive.
+
+---
+
+### 🔹 Hito Blindaje Cloudflare DNS Anycast, IPv6 Nativo, HSTS & IP Shield V2 (03 de Agosto, 2026)
+
+- **Cloudflare Anycast Security Edge**: Delegación DNS a `justin` y `tara.ns.cloudflare.com` con CNAME Flattening IPv6 nativo para antenas móviles LTE/5G (Claro, Tigo, Movistar), resolviendo bloqueos `ERR_CONNECTION_TIMED_OUT`.
+- **Cabeceras HSTS & SSL Compliance**: Inyección de `Strict-Transport-Security: max-age=31536000; includeSubDomains; preload` forzando conexiones HTTPS, junto con cabeceras anti-clickjacking y WAF a nivel de borde.
+- **IP Shield V2 AES-256-GCM & Serverless Edge Decrypt**: Cifrado simétrico de los primeros 4KB de cada modelo GLB con derivación PBKDF2 (`MASTER_SALT + manualId`), descifrado en RAM del cliente con `Web Crypto API` (`blob:`) y proxy serverless via Supabase Edge Function `decrypt-glb` con tokens HMAC-SHA256 (TTL 30 min) para Realidad Aumentada (Google Scene Viewer).
+- **Actualización Arquitectónica V8**: Refactorización de [Arquitectura.md](file:///c:/Desarrollo/mmapp/Arquitectura/Arquitectura.md) y regeneración del diagrama vectorial [arquitectura_V8.svg](file:///c:/Desarrollo/mmapp/Arquitectura/arquitectura_V8.svg).
+
+---
 
 ### 🔹 Hito 3DBimFab (3BF) — Calibración Visual 3D, Normales Perpendiculares & Textura PBR (02 de Agosto, 2026)
 
