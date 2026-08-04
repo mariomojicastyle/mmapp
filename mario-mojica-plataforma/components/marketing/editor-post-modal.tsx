@@ -4,6 +4,19 @@ import React, { useState, useEffect } from "react"
 import { X, Calendar, Send, Eye, Sparkles, Check, UploadCloud, Film, Image as ImageIcon, ChevronLeft, ChevronRight, GripVertical, ArrowUp, ArrowDown, Trash2, Globe, Loader2 } from "lucide-react"
 import { motion, AnimatePresence } from "framer-motion"
 import { createMarketingPost, updateMarketingPost, deleteMarketingPost } from "@/app/actions/marketing"
+import { createClient } from "@/lib/supabase/client"
+
+function dataURLtoBlob(dataurl: string) {
+  const arr = dataurl.split(",")
+  const mime = arr[0].match(/:(.*?);/)?.[1] || "application/octet-stream"
+  const bstr = atob(arr[1])
+  let n = bstr.length
+  const u8arr = new Uint8Array(n)
+  while (n--) {
+    u8arr[n] = bstr.charCodeAt(n)
+  }
+  return new Blob([u8arr], { type: mime })
+}
 
 export interface DriveFile {
   id: string
@@ -288,23 +301,41 @@ export function EditorPostModal({ isOpen, onClose, onSuccess, onDelete, initialD
     setSaving(true)
 
     try {
-      // Convertir cualquier DataURL local a URL pública HTTPS en Supabase Storage para un payload ultraligero (<1KB)
+      // Convertir cualquier DataURL local a URL pública HTTPS en Supabase Storage de forma directa desde el navegador (soporta archivos de más de 6MB)
       const processedFiles: DriveFile[] = []
+      const supabase = createClient()
+
       for (const f of selectedFiles) {
         let finalUrl = f.thumbnailUrl || f.id
-        if (finalUrl && finalUrl.startsWith("data:image/")) {
+        if (finalUrl && (finalUrl.startsWith("data:image/") || finalUrl.startsWith("data:video/"))) {
           try {
-            const uploadRes = await fetch("/api/marketing/upload", {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ dataUrl: finalUrl }),
-            })
-            const uploadData = await uploadRes.json()
-            if (uploadRes.ok && uploadData.url) {
-              finalUrl = uploadData.url
+            const blob = dataURLtoBlob(finalUrl)
+            const ext = blob.type.split("/")[1] || "jpg"
+            const fileName = `post_media_${Date.now()}_${Math.random().toString(36).substring(2, 7)}.${ext}`
+
+            const { error: uploadErr } = await supabase.storage
+              .from("marketing-media")
+              .upload(fileName, blob, {
+                contentType: blob.type,
+                upsert: true,
+              })
+
+            if (uploadErr) {
+              throw new Error(uploadErr.message)
+            }
+
+            const { data: publicUrlData } = supabase.storage
+              .from("marketing-media")
+              .getPublicUrl(fileName)
+
+            if (publicUrlData?.publicUrl) {
+              finalUrl = publicUrlData.publicUrl
             }
           } catch (uErr) {
-            console.error("Error al convertir DataURL a URL de Storage:", uErr)
+            console.error("Error al subir archivo a Supabase Storage:", uErr)
+            alert("Error al subir archivo: " + (uErr instanceof Error ? uErr.message : "Error desconocido"))
+            setSaving(false)
+            return
           }
         }
         processedFiles.push({
