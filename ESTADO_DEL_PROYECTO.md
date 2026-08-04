@@ -84,6 +84,11 @@ Este archivo es la "Memoria RAM" para Antigravity. Contiene el contexto de lo qu
   - **[NUEVO - 16 de Julio, 2026]** Actualización de [MANIFIESTO_NEGOCIO.md](file:///c:/Desarrollo/mmapp/docs/MANIFIESTO_NEGOCIO.md) con la segmentación de mercado de carpintería: *Planejados* (Dell Anno), *Modulados* (Favorita/New) y *RTA/Seriados* (Politorno/Madesa).
   - **[NUEVO - 27 de Julio, 2026]** Giro Estratégico de Posicionamiento B2B: Redefinición oficial de **Mario Mojica (MM)** como **Firma de desarrollo de software para el sector de la Manufactura (Manufactura 4.0 / Smart Manufacturing)** en [MANIFIESTO_NEGOCIO.md](file:///c:/Desarrollo/mmapp/docs/MANIFIESTO_NEGOCIO.md) y [guia_copy_voz_de_marca.md](file:///c:/Desarrollo/mmapp/Comercial/guia_copy_voz_de_marca.md), estableciendo la Industria del Mueble como vertical de foco inmediato y el Manual 3D con telemetría como módulo de entrada (Caballo de Troya).
   - **[NUEVO - 29 de Julio, 2026]** Hito **Ajuste_GeoSeo**: Redefinición del Hero de la HomePage (`mario-mojica-homepage`), optimización de metadatos SEO / GEO para motores de IA y buscadores (Schema.org `JSON-LD`), taxonomía de 5 categorías muebleras en el Manifiesto de Negocio y corrección completa de las previsualizaciones OpenGraph/Facebook/WhatsApp con imagen fija HD de 1200x630 y meta etiqueta `fb:app_id`.
+  - **[NUEVO - 03 de Agosto, 2026] Hito Drive_Video (Integración de Videos MP4 y Google Drive)**:
+    - **Soporte de Video en Mockups**: Habilitación dinámica de etiquetas `<video>` y renderizado de ícono de película cinematográfica (`Film`) en miniaturas para el Editor Multi-Canal B2B de Next.js, implementando `crossOrigin="anonymous"` para resolución de CORS y credenciales locales en navegadores Chrome/Safari.
+    - **Soporte Nativo de Google Drive (Almacenamiento Cero)**: Creación de políticas RLS en Supabase Storage para el bucket `marketing-media`. Implementación en el cliente de un parser de enlaces públicos de Google Drive (`parseGoogleDriveLink`) para extraer el ID del archivo y generar URLs de descarga directa (`drive.usercontent.google.com`).
+    - **Evadir Restricciones CORP de Google**: Integración de iframe de visualización interactiva oficial de Google Drive (`/preview`) en los mockups de redes sociales del panel del CMS para eludir las restricciones de origen cruzado de Google (`Cross-Origin-Resource-Policy: same-site`), manteniendo la descarga directa limpia para consumo asíncrono y publicación en n8n.
+    - **Bypass de Límites de Carga**: Superación exitosa de los límites de carga de funciones serverless de Netlify (6MB) al permitir guardar y previsualizar videos pesados (~50MB) de la campaña de Michael Thonet mediante Google Drive.
 - [x] **Resolución y Separación de Tornillos Maderkit (PolitornoP01 - 07 de Julio, 2026)**:
   - Corrección de la duplicidad y colisión de tornillos de dos tipos (Tornillo_1 y Tornillo_2) en la Estantería Multifuncional (M00001).
   - Reestructuración de la base de datos para separar el inventario oficial en Tornillo_1 (84 unidades, corto plateado para correderas) y Tornillo_2 (32 unidades, largo negro de estructura).
@@ -427,7 +432,7 @@ Un **"Manual Vacío"** es un cascarón o aplicación base centralizada (desplega
 - **Local App:** [http://localhost:3000](http://localhost:3000)
 
 ---
-*Última actualización de contexto: 10 de Julio, 2026*
+*Última actualización de contexto: 03 de Agosto, 2026*
 
 
 ---

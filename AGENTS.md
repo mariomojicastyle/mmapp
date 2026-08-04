@@ -15,12 +15,13 @@ Cada vez que iniciamos, tu primera tarea absoluta debe ser recuperar el contexto
 - [Diseñador_Post.md](file:///c:/Desarrollo/mmapp/Comercial/Diseñador_Post.md) - Diseñador de Post en SVG: Plantillas y formato multipágina de Inkscape.
 - [historico_de_posts.md](file:///c:/Desarrollo/mmapp/Comercial/historico_de_posts.md) - Registro de copys publicados y métricas de rendimiento.
 - [historico_de_hashtags.md](file:///c:/Desarrollo/mmapp/Comercial/historico_de_hashtags.md) - Bitácora de hashtags y rendimiento por etiqueta.
+- [Historia_Manual.md](file:///c:/Desarrollo/mmapp/Comercial/Historia_Manual.md) - Investigación Histórica: De Thonet (1859) y Bauhaus (1926) a la Era Digital 3D.
 - [GUIA_CONFIGURACION_CAMARA.md](file:///c:/Desarrollo/mmapp/docs/GUIA_CONFIGURACION_CAMARA.md) - Captura y persistencia SQL de coordenadas 3D.
 - [reputacion_web.md](file:///c:/Desarrollo/mmapp/docs/reputacion_web.md) - Protocolo DNS (SPF/DKIM/DMARC) y disputas Antivirus.
 - [Seguridad.md](file:///c:/Desarrollo/mmapp/docs/Seguridad.md) - Protocolo de blindaje 3D (IP Shield), Cloudflare DNS, HSTS y SSL Compliance.
 
-### ⚡ Ejecución Directa del Comando `/Arranque3BF`
-Cuando se invoque `/Arranque3BF`, el agente debe verificar o lanzar directamente los 3 servidores persistentes de segundo plano como Daemons (`run_command` con `IsDaemon: true`) para garantizar que permanezcan activos a la primera sin cerrarse al finalizar el script:
+### ⚡ Comando Explicito `/Arranque3BF`
+Nota: El arranque general del agente (`arranque` / inicio de sesión) solo realiza la lectura y recuperación de contexto. El comando `/Arranque3BF` es una instrucción explícita que el usuario ejecutará únicamente cuando requiera poner en marcha los servicios de 3BF. Cuando el usuario invoque explícitamente `/Arranque3BF`, se deben verificar o lanzar los 3 servidores de segundo plano como Daemons (`run_command` con `IsDaemon: true`):
 1. **RhinoCompute 8** (`http://localhost:5000`): Executable en AppData `rhino.compute.exe` (`IsDaemon: true`)
 2. **3BF Worker Python** (`http://localhost:8005`): `python -u worker/3bf_worker.py` en `c:\Desarrollo\mmapp\3BF` (`IsDaemon: true`)
 3. **3BF Web App Next.js** (`http://localhost:3005`): `npm run dev` en `c:\Desarrollo\mmapp\3BF` (`IsDaemon: true`)

@@ -1,6 +1,7 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1150 840" width="100%" height="100%">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1150 900" width="100%" height="100%">
     <style>
         .background { fill: #0b0f19; }
+        .box-cloudflare { fill: #111827; stroke: #f97316; stroke-width: 2.5; rx: 12; filter: drop-shadow(0px 0px 8px rgba(249, 115, 22, 0.3)); }
         .box-core { fill: #111827; stroke: #00f2fe; stroke-width: 2.5; rx: 12; filter: drop-shadow(0px 0px 8px rgba(0, 242, 254, 0.25)); }
         .box-vps { fill: #111827; stroke: #8b5cf6; stroke-width: 2.5; rx: 12; filter: drop-shadow(0px 0px 8px rgba(139, 92, 246, 0.25)); }
         .box-frontend { fill: #111827; stroke: #14b8a6; stroke-width: 2.5; rx: 12; filter: drop-shadow(0px 0px 8px rgba(20, 184, 166, 0.25)); }
@@ -10,6 +11,7 @@
         
         .title { fill: #00f2fe; font-family: 'Segoe UI', Roboto, sans-serif; font-size: 26px; font-weight: 800; letter-spacing: 0.5px; }
         .subtitle { fill: #9ca3af; font-family: 'Segoe UI', Roboto, sans-serif; font-size: 14px; font-weight: 400; }
+        .box-title-cloudflare { fill: #fdba74; font-family: 'Segoe UI', Roboto, sans-serif; font-size: 16px; font-weight: 700; }
         .box-title-core { fill: #00f2fe; font-family: 'Segoe UI', Roboto, sans-serif; font-size: 17px; font-weight: 700; }
         .box-title-vps { fill: #a78bfa; font-family: 'Segoe UI', Roboto, sans-serif; font-size: 17px; font-weight: 700; }
         .box-title-frontend { fill: #2dd4bf; font-family: 'Segoe UI', Roboto, sans-serif; font-size: 17px; font-weight: 700; }
@@ -24,10 +26,11 @@
         .line-flow { stroke: #06b6d4; stroke-width: 2; stroke-dasharray: 6,4; fill: none; }
         .line-sec { stroke: #8b5cf6; stroke-width: 2; stroke-dasharray: 4,4; fill: none; }
         .line-marketing { stroke: #ec4899; stroke-width: 2; stroke-dasharray: 5,4; fill: none; }
-        .line-static { stroke: #374151; stroke-width: 1.5; fill: none; }
+        .line-cf { stroke: #f97316; stroke-width: 2; stroke-dasharray: 4,4; fill: none; }
         .arrow-flow { fill: #06b6d4; }
         .arrow-sec { fill: #8b5cf6; }
         .arrow-mkt { fill: #ec4899; }
+        .arrow-cf { fill: #f97316; }
     </style>
     <defs>
         <marker id="arrowhead-flow" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
@@ -39,128 +42,138 @@
         <marker id="arrowhead-mkt" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
             <polygon points="0 0, 10 3.5, 0 7" class="arrow-mkt" />
         </marker>
+        <marker id="arrowhead-cf" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+            <polygon points="0 0, 10 3.5, 0 7" class="arrow-cf" />
+        </marker>
     </defs>
     
     <!-- Background -->
     <rect width="100%" height="100%" class="background" />
     
     <!-- Header Title -->
-    <text x="575" y="42" text-anchor="middle" class="title">Ecosistema B2B Mario Mojica</text>
-    <text x="575" y="66" text-anchor="middle" class="subtitle">Arquitectura V8 (Plataforma B2B, Motor de Mercadeo Multicanal Meta, CRM y Hetzner VPS)</text>
+    <text x="575" y="38" text-anchor="middle" class="title">Ecosistema B2B Mario Mojica</text>
+    <text x="575" y="60" text-anchor="middle" class="subtitle">Arquitectura V8 (Cloudflare Edge Security, IP Shield V2 AES-256, Meta Engine, CRM &amp; Hetzner VPS)</text>
+
+    <!-- CLOUDFLARE SECURITY EDGE SHIELD (TOP BAR) -->
+    <rect x="50" y="80" width="1050" height="60" class="box-cloudflare" />
+    <text x="70" y="102" class="box-title-cloudflare">🛡️ Cloudflare Anycast Security Edge (mariomojica.com)</text>
+    <text x="70" y="123" class="text">Nameservers: justin &amp; tara.ns.cloudflare.com • CNAME Flattening IPv6 Nativo (LTE/5G) • WAF Anti-DDoS • HSTS Preload (max-age=31536000)</text>
 
     <!-- TOP LAYER: PLATAFORMA B2B & MARKETING ENGINE -->
     
     <!-- 1. Next.js Plataforma B2B & Marketing Hub (Top-Left) -->
-    <rect x="50" y="95" width="340" height="210" class="box-frontend" />
-    <text x="70" y="125" class="box-title-frontend">Plataforma B2B / Marketing Hub (Next.js)</text>
-    <text x="70" y="150" class="text">🚀 Módulo de Mercadeo (Planificador 24H + Heatmap)</text>
-    <text x="70" y="170" class="text">🌎 Selector de Zonas Horarias (Bento/BRT vs Colombia)</text>
-    <text x="70" y="190" class="text">POST /api/marketing/publish (Graph API v19.0 Engine)</text>
-    <text x="70" y="210" class="text">🔑 Token Exchange Auto: Never-Expiring Page Access</text>
-    <text x="70" y="230" class="text">🎨 Canvas HD 2K (2048px @ 98% JPEG) Generator</text>
-    <text x="70" y="250" class="text">API /api/metrics/collect &amp; /api/assets/sign (IP Shield)</text>
-    <text x="70" y="280" class="text-dim">Netlify App • Puerto 3003 • Mario Mojica Marketing App ID</text>
+    <rect x="50" y="160" width="340" height="225" class="box-frontend" />
+    <text x="70" y="190" class="box-title-frontend">Plataforma B2B / Marketing Hub (Next.js)</text>
+    <text x="70" y="215" class="text">🚀 Módulo de Mercadeo (Planificador 24H + Heatmap)</text>
+    <text x="70" y="235" class="text">🌎 Selector de Zonas Horarias (Bento/BRT vs Colombia)</text>
+    <text x="70" y="255" class="text">POST /api/marketing/publish (Graph API v19.0 Engine)</text>
+    <text x="70" y="275" class="text">🔑 Token Exchange Auto: Never-Expiring Page Access</text>
+    <text x="70" y="295" class="text">🎨 Canvas HD 2K (2048px @ 98% JPEG) Generator</text>
+    <text x="70" y="315" class="text">🔐 Cifrado IP Shield V2 (AES-256-GCM 4KB Header)</text>
+    <text x="70" y="335" class="text">API /api/metrics/collect &amp; /api/assets/sign</text>
+    <text x="70" y="365" class="text-dim">Netlify App • Puerto 3003 • Mario Mojica Marketing App ID</text>
 
     <!-- 2. Visor 3D / App Armado (Top-Center) -->
-    <rect x="420" y="95" width="310" height="210" class="box-frontend" />
-    <text x="440" y="125" class="box-title-frontend">Visor 3D / App Armado (Vite + R3F)</text>
-    <text x="440" y="150" class="text">Three.js (@react-three/fiber)</text>
-    <text x="440" y="170" class="text">Hook useTelemetry (Despacha POST a Next.js)</text>
-    <text x="440" y="190" class="text">Cache urlsFirmadasCache (IP Shield 3D Security)</text>
-    <text x="440" y="210" class="text">Animación Sequencial GLB + Audio Sync</text>
-    <text x="440" y="230" class="text">Modo Fricción &amp; Diagnóstico de Coordenadas 3D</text>
-    <text x="440" y="280" class="text-dim">Netlify CDN • Puerto 5173 • WebGL 2.0 Engine</text>
+    <rect x="420" y="160" width="310" height="225" class="box-frontend" />
+    <text x="440" y="190" class="box-title-frontend">Visor 3D / App Armado (Vite + R3F)</text>
+    <text x="440" y="215" class="text">Three.js (@react-three/fiber)</text>
+    <text x="440" y="235" class="text">Hook useTelemetry (Despacha POST a Next.js)</text>
+    <text x="440" y="255" class="text">🔐 Descifrado AES-256 en RAM (Web Crypto API)</text>
+    <text x="440" y="275" class="text">URL Efímera blob:https://... (IP Shield V2)</text>
+    <text x="440" y="295" class="text">📱 AR Google Scene Viewer (Edge Function HMAC)</text>
+    <text x="440" y="315" class="text">Modo Fricción &amp; Diagnóstico Coordenadas 3D</text>
+    <text x="440" y="365" class="text-dim">Netlify CDN • Puerto 5173 • WebGL 2.0 Engine</text>
 
     <!-- 3. Meta API Graph Publisher (Top-Right) -->
-    <rect x="760" y="95" width="340" height="210" class="box-marketing" />
-    <text x="780" y="125" class="box-title-marketing">Meta Graph API v19.0 (Facebook &amp; IG)</text>
-    <text x="780" y="150" class="text">🔵 Facebook Page: 1219474691249252</text>
-    <text x="780" y="170" class="text">  └─ POST /v19.0/{page_id}/photos (Single/Carousel)</text>
-    <text x="780" y="190" class="text">📸 Instagram Business: @mariomojicaff</text>
-    <text x="780" y="210" class="text">  ├─ POST /v19.0/{ig_id}/media (Container)</text>
-    <text x="780" y="230" class="text">  └─ POST /v19.0/{ig_id}/media_publish (+3.5s CDN Delay)</text>
-    <text x="780" y="255" class="text">Permisos: instagram_basic, instagram_content_publish</text>
-    <text x="780" y="280" class="text-dim">App ID: 1736322840851405 • Token Perenne de Página</text>
+    <rect x="760" y="160" width="340" height="225" class="box-marketing" />
+    <text x="780" y="190" class="box-title-marketing">Meta Graph API v19.0 (Facebook &amp; IG)</text>
+    <text x="780" y="215" class="text">🔵 Facebook Page: 1219474691249252</text>
+    <text x="780" y="235" class="text">  └─ POST /v19.0/{page_id}/photos (Single/Carousel)</text>
+    <text x="780" y="255" class="text">📸 Instagram Business: @mariomojicaff</text>
+    <text x="780" y="275" class="text">  ├─ POST /v19.0/{ig_id}/media (Container)</text>
+    <text x="780" y="295" class="text">  └─ POST /v19.0/{ig_id}/media_publish (+3.5s CDN Delay)</text>
+    <text x="780" y="320" class="text">Permisos: instagram_basic, instagram_content_publish</text>
+    <text x="780" y="365" class="text-dim">App ID: 1736322840851405 • Token Perenne de Página</text>
 
-    <!-- CENTER LAYER: SUPABASE CLOUD & STORAGE -->
+    <!-- CENTER LAYER: SUPABASE CLOUD & STORAGE & EDGE FUNCTIONS -->
 
     <!-- 4. Supabase Cloud Backend (Center) -->
-    <rect x="250" y="345" width="650" height="180" class="box-core" />
-    <text x="270" y="375" class="box-title-core">Supabase Cloud Backend (Postgres + Storage)</text>
-    <text x="270" y="405" class="text">🗄️ Tablas SQL: marketing_posts, marketing_cuentas, proyectos, telemetria_friccion</text>
-    <text x="270" y="430" class="text">🪣 Bucket Privado insumos_manuales: Archivos .glb, audios y texturas con firmado URL</text>
-    <text x="270" y="455" class="text">🖼️ Bucket Público marketing-media: Base64 Canvas HD enrutados a HTTPS para Meta CDN</text>
-    <text x="270" y="480" class="text">🔑 Auth Service &amp; Row Level Security (RLS) en Postgres 15</text>
-    <text x="270" y="505" class="text-dim">Host Supabase Cloud • Admin Client getSupabaseAdmin() • Auto Backup</text>
+    <rect x="250" y="415" width="650" height="195" class="box-core" />
+    <text x="270" y="445" class="box-title-core">Supabase Cloud Backend (Postgres + Storage + Edge Functions)</text>
+    <text x="270" y="475" class="text">🗄️ Tablas SQL: marketing_posts, marketing_cuentas, proyectos, telemetria_friccion</text>
+    <text x="270" y="500" class="text">🪣 Bucket Privado insumos_manuales: Modelos GLB cifrados AES-256 (Inservibles)</text>
+    <text x="270" y="525" class="text">🖼️ Bucket Público marketing-media: Base64 Canvas HD enrutados a HTTPS para Meta CDN</text>
+    <text x="270" y="550" class="text">⚡ Edge Function decrypt-glb: Token HMAC-SHA256 (TTL 30m) para AR Scene Viewer</text>
+    <text x="270" y="585" class="text-dim">Host Supabase Cloud • Admin Client getSupabaseAdmin() • Auto Backup</text>
 
 
     <!-- BOTTOM LAYER: VPS HETZNER, N8N, CRM & LANDING -->
 
     <!-- 5. VPS Hetzner (Bottom-Left & Center) -->
-    <rect x="200" y="565" width="550" height="230" class="box-vps" />
-    <text x="220" y="595" class="box-title-vps">VPS Hetzner (Dockerized Stack B2B)</text>
+    <rect x="200" y="640" width="550" height="235" class="box-vps" />
+    <text x="220" y="670" class="box-title-vps">VPS Hetzner (Dockerized Stack B2B)</text>
     
     <!-- Nginx Proxy Manager -->
-    <rect x="220" y="620" width="240" height="50" class="inner-app" />
-    <text x="235" y="640" class="inner-title">Nginx Proxy Manager</text>
-    <text x="235" y="658" class="text-dim">SSL Let's Encrypt / Reverse Proxy Host</text>
+    <rect x="220" y="695" width="240" height="50" class="inner-app" />
+    <text x="235" y="715" class="inner-title">Nginx Proxy Manager</text>
+    <text x="235" y="733" class="text-dim">SSL Let's Encrypt / Reverse Proxy Host</text>
     
     <!-- Umami Analytics -->
-    <rect x="480" y="620" width="250" height="50" class="inner-app" />
-    <text x="495" y="640" class="inner-title">Umami Analytics</text>
-    <text x="495" y="658" class="text-dim">analytics.mariomojica.com (Pixel Tracking)</text>
+    <rect x="480" y="695" width="250" height="50" class="inner-app" />
+    <text x="495" y="715" class="inner-title">Umami Analytics</text>
+    <text x="495" y="733" class="text-dim">analytics.mariomojica.com (Pixel Tracking)</text>
     
     <!-- n8n Automation Engine -->
-    <rect x="220" y="690" width="240" height="60" class="inner-app" />
-    <text x="235" y="710" class="inner-title">n8n Automation Engine</text>
-    <text x="235" y="730" class="text-dim">Webhook Leads + Marketing Cron Worker</text>
+    <rect x="220" y="765" width="240" height="60" class="inner-app" />
+    <text x="235" y="785" class="inner-title">n8n Automation Engine</text>
+    <text x="235" y="805" class="text-dim">Webhook Leads + Marketing Cron Worker</text>
     
     <!-- Baserow B2B CRM -->
-    <rect x="480" y="690" width="250" height="60" class="inner-app" />
-    <text x="495" y="710" class="inner-title">Baserow B2B CRM</text>
-    <text x="495" y="730" class="text-dim">Directorio RTA Brasil (Tier 1/2) + Leads</text>
+    <rect x="480" y="765" width="250" height="60" class="inner-app" />
+    <text x="495" y="785" class="inner-title">Baserow B2B CRM</text>
+    <text x="495" y="805" class="text-dim">Directorio RTA Brasil (Tier 1/2) + Leads</text>
 
-    <text x="220" y="780" class="text-dim">Ubuntu VPS • Docker Bridge internal_network • Backup Semanal • Disk Clean (56%)</text>
+    <text x="220" y="855" class="text-dim">Ubuntu VPS • Docker Bridge internal_network • Backup Semanal • Disk Clean (56%)</text>
 
     <!-- 6. Rhino Compute Standalone (Bottom-Left) -->
-    <rect x="50" y="565" width="130" height="230" class="box-rhino" />
-    <text x="60" y="595" class="box-title-rhino">Rhino Compute</text>
-    <text x="60" y="625" class="text">Grasshopper</text>
-    <text x="60" y="645" class="text">API 8081</text>
-    <text x="60" y="675" class="text-dim">Generación</text>
-    <text x="60" y="695" class="text-dim">Paramétrica 3D</text>
+    <rect x="50" y="640" width="130" height="235" class="box-rhino" />
+    <text x="60" y="670" class="box-title-rhino">Rhino Compute</text>
+    <text x="60" y="700" class="text">Grasshopper</text>
+    <text x="60" y="720" class="text">API 8081</text>
+    <text x="60" y="750" class="text-dim">Generación</text>
+    <text x="60" y="770" class="text-dim">Paramétrica 3D</text>
 
     <!-- 7. Landing Page / Portafolio (Bottom-Right) -->
-    <rect x="780" y="565" width="320" height="230" class="box-frontend" />
-    <text x="800" y="595" class="box-title-frontend">Landing Page / Portafolio (Next.js)</text>
-    <text x="800" y="625" class="text">🌐 mariomojica.com (Netlify CDN)</text>
-    <text x="800" y="650" class="text">📥 Formulario de Captura de Leads B2B</text>
-    <text x="800" y="675" class="text">⚡ Alertas WhatsApp Alertas Cloud API</text>
-    <text x="800" y="700" class="text">📲 Integración Demo Manual 3D Móvil</text>
-    <text x="800" y="730" class="text-dim">App ID WhatsApp Leads: 789877134189531</text>
+    <rect x="780" y="640" width="320" height="235" class="box-frontend" />
+    <text x="800" y="670" class="box-title-frontend">Landing Page / Portafolio (Next.js)</text>
+    <text x="800" y="700" class="text">🌐 mariomojica.com (Netlify CDN)</text>
+    <text x="800" y="725" class="text">📥 Formulario de Captura de Leads B2B</text>
+    <text x="800" y="750" class="text">⚡ Alertas WhatsApp Alertas Cloud API</text>
+    <text x="800" y="775" class="text">📲 Integración Demo Manual 3D Móvil</text>
+    <text x="800" y="805" class="text-dim">App ID WhatsApp Leads: 789877134189531</text>
 
     <!-- CONNECTIONS & DATAFLOWS -->
     
     <!-- Next.js Marketing Hub to Meta Graph API -->
-    <path d="M 390,200 L 760,200" class="line-marketing" marker-end="url(#arrowhead-mkt)" />
-    <text x="575" y="190" text-anchor="middle" class="text-marketing">Publicar Post (Photo / Carousel + Caption)</text>
+    <path d="M 390,265 L 760,265" class="line-marketing" marker-end="url(#arrowhead-mkt)" />
+    <text x="575" y="255" text-anchor="middle" class="text-marketing">Publicar Post (Photo / Carousel + Caption)</text>
 
     <!-- Next.js Marketing Hub to Supabase Storage marketing-media -->
-    <path d="M 220,305 L 220,345" class="line-flow" marker-end="url(#arrowhead-flow)" />
-    <text x="110" y="330" class="text-label">ensurePublicImageUrl()</text>
+    <path d="M 220,385 L 220,415" class="line-flow" marker-end="url(#arrowhead-flow)" />
+    <text x="110" y="400" class="text-label">ensurePublicImageUrl()</text>
 
     <!-- Meta Graph API pulling image from Supabase Storage marketing-media -->
-    <path d="M 930,305 L 930,345" class="line-marketing" marker-end="url(#arrowhead-mkt)" />
-    <text x="940" y="330" class="text-marketing">Fetch Image via HTTPS URL</text>
+    <path d="M 930,385 L 930,415" class="line-marketing" marker-end="url(#arrowhead-mkt)" />
+    <text x="940" y="400" class="text-marketing">Fetch Image via HTTPS URL</text>
 
     <!-- Visor 3D to Next.js API -->
-    <path d="M 420,150 L 390,150" class="line-flow" marker-end="url(#arrowhead-flow)" />
+    <path d="M 420,215 L 390,215" class="line-flow" marker-end="url(#arrowhead-flow)" />
 
     <!-- Landing Page to n8n Webhook -->
-    <path d="M 940,565 L 940,545 L 340,545 L 340,690" class="line-sec" marker-end="url(#arrowhead-sec)" />
-    <text x="640" y="540" text-anchor="middle" class="text-label" fill="#8b5cf6">Webhook Captura Lead &amp; Alerta WhatsApp</text>
+    <path d="M 940,640 L 940,620 L 340,620 L 340,765" class="line-sec" marker-end="url(#arrowhead-sec)" />
+    <text x="640" y="615" text-anchor="middle" class="text-label" fill="#8b5cf6">Webhook Captura Lead &amp; Alerta WhatsApp</text>
 
     <!-- n8n to Baserow CRM -->
-    <path d="M 460,720 L 480,720" class="line-sec" marker-end="url(#arrowhead-sec)" />
+    <path d="M 460,795 L 480,795" class="line-sec" marker-end="url(#arrowhead-sec)" />
 
 </svg>

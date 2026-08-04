@@ -95,18 +95,24 @@ El servidor VPS (Ubuntu) corre de forma aislada un conjunto de contenedores Dock
 
 ## 🔒 3. Protocolos de Seguridad y Optimización
 
-### A. IP Shield (Protección de Diseños 3D)
-Para evitar que los modelos `.glb` sean descargados por terceros directamente desde las llamadas de red:
-1. El visor 3D nunca solicita la URL pública directa del archivo.
-2. Al iniciar la escena, el visor realiza una petición masiva asíncrona al endpoint `/api/assets/sign` de la Plataforma Next.js.
-3. El endpoint valida las cabeceras HTTP `Origin` y `Referer`. Solo si coinciden con el dominio autorizado registrado para ese proyecto (o `localhost` en desarrollo) se procede con la firma.
-4. La Plataforma de Next.js (usando la clave de acceso administrativa `service_role`) genera una URL firmada en Supabase Storage con un tiempo de vida (TTL) de 300 segundos (5 minutos) y la retorna.
-5. El visor almacena las URLs temporales en un caché en memoria local (`urlsFirmadasCache`) para que Three.js cargue y renderice fluidamente los assets de forma instantánea.
+### A. IP Shield V2 (Protección Criptográfica 3D AES-256-GCM & Edge Serverless)
+Para garantizar la inmunidad total de los modelos `.glb` y la propiedad intelectual B2B contra descargas no autorizadas, scraping o descompilación:
+1. **Cifrado en la Subida (CMS Next.js):** Se deriva una clave simétrica de 256 bits por manual (`MASTER_SALT + manualId`) vía PBKDF2. Los primeros 4KB del binario GLB se cifran en caliente con **AES-256-GCM** y un Vector de Inicialización (IV) de 12 bytes antes de subirse a Supabase Storage.
+2. **Almacenamiento Inservible:** El binario alojado en Supabase Storage es corrupto e inservible para visores estándar (Blender, Unity, Unreal Engine, 3D Viewer) en caso de intento de descarga o inspección de red.
+3. **Descifrado en RAM (Visor React/Vite):** La `Web Crypto API` descifra los primeros 4KB en la RAM del cliente y genera una URL de memoria local efímera `blob:https://mariomojica.com/...` para renderizado en Three.js.
+4. **Proxy Serverless para Realidad Aumentada (AR):** Dado que Google Scene Viewer opera fuera del contexto JS del navegador, la Edge Function serverless `decrypt-glb` valida tokens efímeros firmados con **HMAC-SHA256** (TTL de 30 min) para descifrar en RAM de Supabase y servir el flujo de bytes directamente al móvil con cabeceras `no-store` y `no-cache`.
+5. **Firmado de URLs:** Adicionalmente, el endpoint `/api/assets/sign` genera URLs firmadas temporales (TTL 300s) validando cabeceras HTTP `Origin` y `Referer` autorizadas.
 
 ### B. Soberanía de Métricas y Telemetrías
 El hook `useTelemetry.js` envía periódicamente la interacción del usuario (paso actual, tiempo de ensamblado, errores de orientación, clics en audio).
 * En lugar de insertar datos directamente usando el SDK de Supabase (lo cual requeriría abrir permisos de escritura anónimos en la base de datos), los datos se envían por POST a `/api/metrics/collect`.
 * Esta API Route valida la estructura de datos e inserta el registro usando la API interna segura, protegiendo la base de datos contra inyecciones y SPAM mediante un rate limiter de 40 llamadas/min.
+
+### C. Blindaje Edge, DNS Anycast & Cloudflare WAF / HSTS
+Para garantizar disponibilidad ininterrumpida y protección frente a redes móviles (Claro, Tigo, Movistar):
+* **Gestión DNS Anycast & IPv6 Nativo:** Delegación de DNS a los servidores Anycast de Cloudflare (`justin.ns.cloudflare.com` y `tara.ns.cloudflare.com`). Se implementa CNAME Flattening con IPv6 nativo para antenas 4G/LTE/5G, resolviendo bloqueos y errores `ERR_CONNECTION_TIMED_OUT` en móviles.
+* **Protección WAF & Anti-DDoS:** Filtrado automático de bots, escáneres maliciosos y ataques de denegación de servicio en la red de borde (Edge Network).
+* **Cabeceras HSTS & SSL Compliance:** Inyección de `Strict-Transport-Security: max-age=31536000; includeSubDomains; preload` forzando el tráfico HTTPS, junto con cabeceras anti-clickjacking y XSS (`X-Frame-Options: SAMEORIGIN`, `X-Content-Type-Options: nosniff`, `X-XSS-Protection: 1; mode=block`).
 
 ---
 
