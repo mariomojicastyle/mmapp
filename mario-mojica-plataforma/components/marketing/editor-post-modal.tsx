@@ -257,7 +257,7 @@ export function EditorPostModal({ isOpen, onClose, onSuccess, onDelete, initialD
       const fileId = match[1] || match[2]
       return {
         id: fileId,
-        directUrl: `https://docs.google.com/uc?export=download&id=${fileId}`,
+        directUrl: `https://drive.usercontent.google.com/download?id=${fileId}&export=download`,
       }
     }
     return null
