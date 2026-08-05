@@ -91,6 +91,9 @@ Si el visor se pone en blanco o muestra el badge amarillo `Worker: API Fallback`
 - **Panel de Calibración Flotante (`CalibrationPanel.tsx`)**:
   - Ubicado en la esquina superior izquierda del visor (`🎛️ Calibrar 3D`), permite ajustar en tiempo real: color base sólido (`#9CA3AF`), opacidad ($0-100\%$), rugosidad ($0-1$), metalicidad ($0-1$), interruptor de aristas, color de aristas (`#111827`), opacidad de aristas, ángulo umbral ($1^\circ-89^\circ$), luz directa ($0-3\text{x}$) y luz ambiental ($0-2\text{x}$).
 
+- **Desmantelamiento Definitivo de Secciones Residuales (`Tablero & Espesor`)**:
+  - La sección hardcoded "Tablero & Espesor" fue eliminada permanentemente del panel de control (`ControlPanel.tsx`). La interfaz de 3BF es 100% autónoma y guiada exclusivamente por los parámetros nativos expuestos por los algoritmos de Grasshopper (`.ghx`).
+
 ---
 
 ## 🔄 Estado Final del Ecosistema 3BF

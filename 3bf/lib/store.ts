@@ -31,6 +31,8 @@ export interface ParametrosMueble {
   tipo_mapeado_cubierta?: string;
   lado_balance_entrepanio?: string;
   tipo_mapeado_entrepanio?: string;
+  ghx_content?: string;
+  custom_filename?: string;
 }
 
 export interface PiezaDespiece {
@@ -112,6 +114,10 @@ export interface State3BF {
   modoVisual: "solido" | "semitransparente" | "lineas" | "renderizado";
   setModoVisual: (modo: "solido" | "semitransparente" | "lineas" | "renderizado") => void;
 
+  // Escenario Limpio / Vacío
+  escenarioLimpio: boolean;
+  setEscenarioLimpio: (limpio: boolean) => void;
+ 
   // Calibración de Visualización 3D en tiempo real (Studio Tuner)
   calibracion: CalibracionVisual;
   setCalibracion: <K extends keyof CalibracionVisual>(key: K, value: CalibracionVisual[K]) => void;
@@ -135,7 +141,7 @@ export const defaultCalibracion: CalibracionVisual = {
 
 export const use3BFStore = create<State3BF>((set) => ({
   parametros: {
-    model_id: "M00001",
+    model_id: "",
     ancho: 1200,
     alto: 800,
     profundidad: 400,
@@ -188,6 +194,9 @@ export const use3BFStore = create<State3BF>((set) => ({
 
   modoVisual: "semitransparente",
   setModoVisual: (modoVisual) => set({ modoVisual }),
+
+  escenarioLimpio: false,
+  setEscenarioLimpio: (escenarioLimpio) => set({ escenarioLimpio }),
 
   calibracion: defaultCalibracion,
   setCalibracion: (key, value) =>

@@ -14,14 +14,14 @@ export default function CalibrationPanel() {
       {/* Botón de apertura/cierre del panel de calibración */}
       <button
         onClick={() => setCalibracion("mostrarPanelCalibracion", !isOpen)}
-        className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-semibold backdrop-blur-md transition-all shadow-md border ${
+        className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-bold transition-all shadow-md border cursor-pointer ${
           isOpen
             ? "bg-cyan-600 text-white border-cyan-400 ring-2 ring-cyan-500/30"
-            : "bg-white/80 dark:bg-gray-900/80 text-gray-700 dark:text-gray-200 border-gray-200 dark:border-gray-700 hover:bg-white dark:hover:bg-gray-800"
+            : "bg-[#E2E8F0]/50 text-[#0F172A] border border-slate-300/60 backdrop-blur-sm hover:bg-[#E2E8F0]/80 hover:border-cyan-500"
         }`}
       >
-        <Sliders className="w-3.5 h-3.5" />
-        <span>🎛️ Calibrar 3D</span>
+        <Sliders className="w-3.5 h-3.5 text-cyan-600 dark:text-cyan-400" />
+        <span>Calibrar 3D</span>
       </button>
 
       {/* Panel Flotante Desplegable */}

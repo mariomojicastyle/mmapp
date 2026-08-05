@@ -12,12 +12,12 @@
 }
 
 [data-theme="obsidian"] {
-  --bg-main: #0D1117;
-  --bg-surface: #161B22;
-  --border-color: #30363D;
-  --text-main: #F0F6FC;
-  --text-muted: #8B949E;
-  --brand-color: #00C9A7;
+  --bg-main: #0B0F17;
+  --bg-surface: #131B2E;
+  --border-color: #233044;
+  --text-main: #F8FAFC;
+  --text-muted: #94A3B8;
+  --brand-color: #06B6D4;
 }
 
 body {
@@ -34,7 +34,60 @@ body {
 }
 
 [data-theme="obsidian"] .glass-panel {
-  background: rgba(22, 27, 34, 0.85);
+  background: rgba(19, 27, 46, 0.92);
   backdrop-filter: blur(12px);
-  border: 1px solid rgba(48, 54, 61, 0.8);
+  border: 1px solid #233044;
+}
+
+/* Custom Scrollbar for Obsidian Teal */
+[data-theme="obsidian"] ::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+[data-theme="obsidian"] ::-webkit-scrollbar-track {
+  background: #0B0F17;
+}
+
+[data-theme="obsidian"] ::-webkit-scrollbar-thumb {
+  background: #233044;
+  border-radius: 4px;
+}
+
+[data-theme="obsidian"] ::-webkit-scrollbar-thumb:hover {
+  background: #06B6D4;
+}
+
+/* Reglas de texto luminoso blanco para Tema Obsidian Teal */
+[data-theme="obsidian"] label,
+[data-theme="obsidian"] span,
+[data-theme="obsidian"] p,
+[data-theme="obsidian"] .text-gray-900,
+[data-theme="obsidian"] .text-gray-800,
+[data-theme="obsidian"] .text-gray-700 {
+  color: #F8FAFC;
+}
+
+/* EXCEPCIÓN CRÍTICA: Preservar texto oscuro en cualquier contenedor o botón con fondo claro */
+[data-theme="obsidian"] [class*="bg-[#E2E8F0]"],
+[data-theme="obsidian"] [class*="bg-[#E2E8F0]"] *,
+[data-theme="obsidian"] button[class*="bg-[#E2E8F0]"],
+[data-theme="obsidian"] button[class*="bg-[#E2E8F0]"] * {
+  color: #0F172A !important;
+}
+
+/* Reglas estandarizadas para cajas de selección y menús desplegables */
+select,
+[data-theme="obsidian"] select {
+  background-color: #E2E8F0 !important;
+  color: #0F172A !important;
+  border-color: #CBD5E1 !important;
+  border-radius: 0.5rem !important;
+  font-weight: 700 !important;
+}
+
+select option,
+[data-theme="obsidian"] select option {
+  background-color: #FFFFFF !important;
+  color: #0F172A !important;
 }
