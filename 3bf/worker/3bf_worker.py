@@ -66,6 +66,31 @@ class ComputeParams(BaseModel):
     cant_cajones: int = 3
     apertura_mm: float = 0.0
     parameters: dict = {}
+    
+    # Parámetros del Cajón
+    apertura_cajones: float = 0.0
+    profundidad_cajon: float = 351.0
+    altura_lateral_cajon: float = 102.0
+    distancia_bajo_laterales: float = 30.0
+    tipo_cajon: str = "Corredera Estandar"
+    
+    # Parámetros de la Cubierta / DfMA
+    union_izquierda: str = "Minifix"
+    union_derecha: str = "Tornillo tarugo"
+    orientacion_maquinado_minifix: str = "abajo"
+    orientacion_minifix: str = "abajo"
+    posicion_tarugo: str = "1"
+    posicion_tornillo: str = "1"
+    borde_izquierdo: str = "MDP"
+    borde_derecho: str = "MDP"
+    lado_balance_cubierta: str = "Cara B"
+    tipo_mapeado_cubierta: str = "Cubierta"
+    lado_balance_entrepanio: str = "Cara B"
+    tipo_mapeado_entrepanio: str = "Cubierta"
+    recedido_izquierdo: float = 0.0
+    # Cargar contenido XML directo si se subió un archivo desde el cliente
+    ghx_content: str = ""
+    custom_filename: str = ""
 
 @app.get("/health")
 def health_check():
@@ -75,7 +100,7 @@ def health_check():
 def compute_model(params: ComputeParams):
     start_time = time.time()
     
-    p = params.parameters or {}
+    p = params.model_dump()
     ancho = float(p.get("ancho", params.ancho))
     alto = float(p.get("alto", params.alto))
     prof = float(p.get("profundidad", params.profundidad))
@@ -127,25 +152,63 @@ def compute_model(params: ComputeParams):
     
     # 2. Selección de Algoritmo NATIVO (.ghx)
     model_id = str(p.get("model_id", params.model_id))
-    if "Cubierta" in model_id:
-        ghx_file = r"C:\Desarrollo\mmapp\temporal\Cubierta.ghx"
-    else:
-        ghx_file = r"C:\Desarrollo\mmapp\temporal\Cajon_Experimento_Viktor_v1.1.ghx"
-        if not os.path.exists(ghx_file):
-            ghx_file = r"C:\Desarrollo\mmapp\temporal\Cajon_Experimento_Viktor_RhinoCompute.ghx"
+    raw_ghx_content = str(p.get("ghx_content", ""))
+    custom_filename = str(p.get("custom_filename", ""))
+    
+    root = None
+    ghx_file = ""
+
+    if raw_ghx_content:
+        try:
+            root = ET.fromstring(raw_ghx_content)
+            ghx_file = "uploaded_custom.ghx"
+        except Exception as err:
+            print(f"[3BF Worker] Error parseando XML de ghx_content: {err}", flush=True)
+
+    if root is None:
+        search_dirs = [
+            r"C:\Desarrollo\mmapp\3BF\Definiciones",
+            r"C:\Desarrollo\mmapp\temporal"
+        ]
+        custom_filename = str(p.get("custom_filename", ""))
+        candidates = [
+            f"{model_id}.ghx",
+            f"{model_id}.gh",
+            model_id,
+            custom_filename,
+            "Cubierta.ghx",
+            "Cajon_Experimento_3DBimFab.ghx",
+            "Cajon_Experimento_Viktor_v1.1.ghx",
+        ]
+        
+        found_path = None
+        for sdir in search_dirs:
+            for cand in candidates:
+                if not cand:
+                    continue
+                cand_path = os.path.join(sdir, cand)
+                if os.path.exists(cand_path) and os.path.isfile(cand_path):
+                    found_path = cand_path
+                    break
+            if found_path:
+                break
+                
+        if found_path:
+            ghx_file = found_path
 
     real_meshes = []
     rhino_compute_success = False
     rhino_outputs_count = 0
     
     try:
-        if os.path.exists(ghx_file):
-            tree = ET.parse(ghx_file)
-            root = tree.getroot()
+        if root is not None or (ghx_file and os.path.exists(ghx_file)):
+            if root is None:
+                tree = ET.parse(ghx_file)
+                root = tree.getroot()
             
             # Si es el modelo Cubierta, aplicar bypass de VisualARQ 'Set Value' para enviar la geometría nativa a RhinoCompute
             # Si es el modelo Cubierta, aplicar bypass de VisualARQ 'Set Value' para enviar la geometría nativa a RhinoCompute (Izquierda Y Derecha)
-            if "Cubierta" in ghx_file:
+            if "Cubierta" in model_id or "Cubierta" in custom_filename or "Cubierta" in ghx_file:
                 rewire_map = {
                     '21465fe2-869f-4061-8a2d-f4bb9399f6e5': '3dc7bf67-ab8d-4c61-aa05-93175f1ce926', # Nurbs Cubierta -> Base Board 3D (Estructural y Permanente)
                     

@@ -5,6 +5,7 @@ import { Canvas } from "@react-three/fiber";
 import { OrbitControls, Grid, Stage, Edges } from "@react-three/drei";
 import { use3BFStore } from "@/lib/store";
 import * as THREE from "three";
+import { Download } from "lucide-react";
 
 function useMarfilTexture(customUrl?: string | null, tipoMapeado?: string) {
   const [texture, setTexture] = React.useState<THREE.Texture | null>(null);
@@ -238,9 +239,12 @@ function BoardMesh({
   }
 
   if (isWoodBoard) {
-    roughness = calibracion.rugosidadMadera;
-    metalness = calibracion.metalicidadMadera;
-    if (modoVisual === "solido") {
+    roughness = isTransparent ? 0.15 : calibracion.rugosidadMadera;
+    metalness = isTransparent ? 0.1 : calibracion.metalicidadMadera;
+    if (modoVisual === "semitransparente") {
+      opacity = 0.52;
+      transparent = true;
+    } else if (modoVisual === "solido") {
       meshColor = calibracion.colorSolido; // Color calibrable (default #9CA3AF)
       opacity = calibracion.opacidadMadera;
       transparent = opacity < 1.0;
@@ -261,7 +265,7 @@ function BoardMesh({
       <group>
         <mesh geometry={customGeometry}>
           <meshStandardMaterial
-            key={activeMap ? activeMap.uuid : "no-map"}
+            key={`${activeMap ? activeMap.uuid : "no-map"}-${modoVisual}`}
             color={finalMeshColor}
             map={activeMap}
             transparent={transparent}
@@ -269,7 +273,7 @@ function BoardMesh({
             roughness={roughness}
             metalness={metalness}
             wireframe={isWireframe}
-            depthWrite={!transparent}
+            depthWrite={true}
           />
         </mesh>
         {edgesGeometry && calibracion.mostrarAristas && (
@@ -281,6 +285,9 @@ function BoardMesh({
               depthWrite={true}
               transparent={false}
               opacity={1.0}
+              polygonOffset={true}
+              polygonOffsetFactor={1}
+              polygonOffsetUnits={1}
             />
           </lineSegments>
         )}
@@ -293,7 +300,7 @@ function BoardMesh({
       <mesh>
         <boxGeometry args={size} />
         <meshStandardMaterial
-          key={activeMap ? activeMap.uuid : "no-map"}
+          key={`${activeMap ? activeMap.uuid : "no-map"}-${modoVisual}`}
           color={finalMeshColor}
           map={activeMap}
           transparent={transparent}
@@ -301,7 +308,7 @@ function BoardMesh({
           roughness={roughness}
           metalness={metalness}
           wireframe={isWireframe}
-          depthWrite={!transparent}
+          depthWrite={true}
         />
       </mesh>
       {boxEdgesGeometry && calibracion.mostrarAristas && (
@@ -313,6 +320,9 @@ function BoardMesh({
             depthWrite={true}
             transparent={false}
             opacity={1.0}
+            polygonOffset={true}
+            polygonOffsetFactor={1}
+            polygonOffsetUnits={1}
           />
         </lineSegments>
       )}
@@ -320,9 +330,21 @@ function BoardMesh({
   );
 }
 
-function ParametricFurnitureMesh() {
+function ParametricFurnitureMesh({ setFurnitureGroup }: { setFurnitureGroup: (g: THREE.Group | null) => void }) {
   const { parametros, resultado, modoVisual } = use3BFStore();
   const meshRef = useRef<THREE.Group>(null);
+
+  React.useEffect(() => {
+    if (meshRef.current) {
+      setFurnitureGroup(meshRef.current);
+    }
+    return () => setFurnitureGroup(null);
+  }, [resultado, setFurnitureGroup]);
+
+  // Si no hay modelo seleccionado (estado inicial / vacío), no renderizar ningún mueble en el escenario
+  if (!parametros.model_id) {
+    return null;
+  }
 
   // Convertir milímetros a unidades de Three.js (metros: 1000mm = 1m)
   const width = parametros.ancho / 1000;
@@ -334,20 +356,9 @@ function ParametricFurnitureMesh() {
 
   // RENDERIZADO 100% REAL DE GRASSHOPPER (Rhino 8 RhinoCompute Engine)
   if (resultado?.real_meshes && resultado.real_meshes.length > 0) {
-    const isSolidOrRendered = modoVisual === "solido" || modoVisual === "renderizado";
-    const isDrawerClosed = (parametros.apertura_cajones || 0) === 0;
-
-    const visibleRealMeshes = resultado.real_meshes.filter((m) => {
-      const isInternalDrawerBox = m.name.includes("Lateral Izq Cajon") || m.name.includes("Lateral Der Cajon") || m.name.includes("Posterior de Cajon");
-      if (isSolidOrRendered && isDrawerClosed && isInternalDrawerBox) {
-        return false;
-      }
-      return true;
-    });
-
     return (
-      <group ref={meshRef} position={[-width / 2, 0, -depth / 2]}>
-        {visibleRealMeshes.map((m, idx) => (
+      <group ref={meshRef} position={[0, 0, 0]}>
+        {resultado.real_meshes.map((m, idx) => (
           <BoardMesh
             key={idx}
             position={m.position}
@@ -364,96 +375,41 @@ function ParametricFurnitureMesh() {
     );
   }
 
-  // Renderizado especial para el Cajón Experimento Viktor (Parseado de Grasshopper .ghx)
-  if (parametros.model_id === "Cajon_Experimento_Viktor") {
-    const cantCajones = parametros.cant_cajones || 3;
-    const aperturaZ = (parametros.apertura_cajones || 0) / 1000;
-    const drawerHeight = (height - thickness * 2) / cantCajones;
-
-    return (
-      <group ref={meshRef} position={[0, height / 2, 0]}>
-        {/* Estructura Externa: Lateral Izquierdo, Derecho, Techo, Piso */}
-        <BoardMesh position={[-width / 2 + thickness / 2, 0, 0]} size={[thickness, height, depth]} name="Lateral Izquierdo" mainColor={mainColor} modoVisual={modoVisual} />
-        <BoardMesh position={[width / 2 - thickness / 2, 0, 0]} size={[thickness, height, depth]} name="Lateral Derecho" mainColor={mainColor} modoVisual={modoVisual} />
-        <BoardMesh position={[0, height / 2 - thickness / 2, 0]} size={[width, thickness, depth]} name="Techo Superior" mainColor={mainColor} modoVisual={modoVisual} />
-        <BoardMesh position={[0, -height / 2 + thickness / 2, 0]} size={[width, thickness, depth]} name="Piso Inferior" mainColor={mainColor} modoVisual={modoVisual} />
-
-        {/* RH_OUT: Tapa Luz (Regleta / Moldura Frontal Superior) */}
-        <mesh position={[0, height / 2 - thickness - 0.03, depth / 2 - thickness / 2]}>
-          <boxGeometry args={[width - thickness * 2, 0.06, thickness]} />
-          <meshStandardMaterial color="#111827" roughness={0.3} metalness={0.2} />
-        </mesh>
-
-        {/* Fondo Trasero 3mm */}
-        <mesh position={[0, 0, -depth / 2 + 0.003]}>
-          <boxGeometry args={[width - 0.004, height - 0.004, 0.003]} />
-          <meshStandardMaterial color="#D1D5DB" roughness={0.8} />
-        </mesh>
-
-        {/* Cajones Animados */}
-        {Array.from({ length: cantCajones }).map((_, idx) => {
-          const yPos = height / 2 - thickness - drawerHeight * idx - drawerHeight / 2;
-          const showInternalBox = aperturaZ > 0 || modoVisual === "semitransparente";
-
-          return (
-            <group key={idx} position={[0, yPos, aperturaZ]}>
-              {/* Frente de Cajón */}
-              <BoardMesh position={[0, 0, depth / 2 - thickness / 2]} size={[width - thickness * 2 - 0.004, drawerHeight - 0.006, thickness]} name={`Frente Cajon ${idx+1}`} mainColor={mainColor} modoVisual={modoVisual} />
-              {/* Tirador metálico */}
-              <mesh position={[0, 0, depth / 2 + 0.015]}>
-                <boxGeometry args={[0.12, 0.015, 0.02]} />
-                <meshStandardMaterial color="#9CA3AF" metalness={0.8} roughness={0.2} />
-              </mesh>
-              {/* Caja Interna de Madera (Solo visible al abrir cajones o en modo Cristal) */}
-              {showInternalBox && (
-                <>
-                  <BoardMesh position={[-width / 2 + thickness + 0.02, -0.02, 0]} size={[thickness, drawerHeight - 0.05, depth - 0.08]} name="Lateral Cajon Izq" mainColor="#F3F4F6" modoVisual={modoVisual} />
-                  <BoardMesh position={[width / 2 - thickness - 0.02, -0.02, 0]} size={[thickness, drawerHeight - 0.05, depth - 0.08]} name="Lateral Cajon Der" mainColor="#F3F4F6" modoVisual={modoVisual} />
-                </>
-              )}
-            </group>
-          );
-        })}
-      </group>
-    );
-  }
-
-  return (
-    <group ref={meshRef} position={[0, height / 2, 0]}>
-      <BoardMesh position={[-width / 2 + thickness / 2, 0, 0]} size={[thickness, height, depth]} name="Lateral Izquierdo" mainColor={mainColor} modoVisual={modoVisual} />
-      <BoardMesh position={[width / 2 - thickness / 2, 0, 0]} size={[thickness, height, depth]} name="Lateral Derecho" mainColor={mainColor} modoVisual={modoVisual} />
-      <BoardMesh position={[0, height / 2 - thickness / 2, 0]} size={[width - thickness * 2, thickness, depth]} name="Techo Superior" mainColor={mainColor} modoVisual={modoVisual} />
-      <BoardMesh position={[0, -height / 2 + thickness / 2, 0]} size={[width - thickness * 2, thickness, depth]} name="Piso Inferior" mainColor={mainColor} modoVisual={modoVisual} />
-      <BoardMesh position={[0, 0, 0]} size={[width - thickness * 2, thickness, depth - 0.02]} name="Estante Central" mainColor={mainColor} modoVisual={modoVisual} />
-
-      {/* Fondo Trasero 3mm */}
-      <mesh position={[0, 0, -depth / 2 + 0.003]}>
-        <boxGeometry args={[width - 0.004, height - 0.004, 0.003]} />
-        <meshStandardMaterial color="#E5E7EB" roughness={0.8} />
-      </mesh>
-
-      {/* Puertas opcionales (transparentes para ver interior) */}
-      {parametros.incluir_puertas && (
-        <>
-          <mesh position={[-width / 4, 0, depth / 2 + thickness / 2]}>
-            <boxGeometry args={[width / 2 - 0.004, height - 0.008, thickness]} />
-            <meshStandardMaterial color={mainColor} roughness={0.2} opacity={0.9} transparent />
-          </mesh>
-          <mesh position={[width / 4, 0, depth / 2 + thickness / 2]}>
-            <boxGeometry args={[width / 2 - 0.004, height - 0.008, thickness]} />
-            <meshStandardMaterial color={mainColor} roughness={0.2} opacity={0.9} transparent />
-          </mesh>
-        </>
-      )}
-    </group>
-  );
+  return null;
 }
 
 export default function Viewer3D() {
-  const { tema, resultado, calibracion } = use3BFStore();
+  const { tema, resultado, calibracion, escenarioLimpio, parametros } = use3BFStore();
+  const [furnitureGroup, setFurnitureGroup] = React.useState<THREE.Group | null>(null);
+
+  const exportToGLB = () => {
+    if (!furnitureGroup) {
+      alert("Espera a que el modelo esté cargado en pantalla para exportar.");
+      return;
+    }
+    
+    // Importación dinámica para evitar issues de compilación y optimizar bundle size
+    import("three/examples/jsm/exporters/GLTFExporter.js").then(({ GLTFExporter }) => {
+      const exporter = new GLTFExporter();
+      exporter.parse(
+        furnitureGroup,
+        (gltf) => {
+          const blob = new Blob([gltf as ArrayBuffer], { type: "application/octet-stream" });
+          const link = document.createElement("a");
+          link.href = URL.createObjectURL(blob);
+          link.download = `${parametros.model_id || "mueble"}.glb`;
+          link.click();
+        },
+        (error) => {
+          console.error("Error al exportar GLB:", error);
+        },
+        { binary: true }
+      );
+    });
+  };
 
   return (
-    <div className="w-full h-full relative rounded-xl overflow-hidden shadow-inner border border-gray-200 dark:border-gray-800">
+    <div className="w-full h-full relative rounded-xl overflow-hidden shadow-inner border border-gray-200 dark:border-cyan-900/50 glass-panel">
       {/* Panel Flotante de Calibración Temporal en Esquina Superior Izquierda */}
       <CalibrationPanel />
 
@@ -469,8 +425,8 @@ export default function Viewer3D() {
         <directionalLight position={[5, 8, 5]} intensity={calibracion.intensidadLuzDirecta} castShadow />
         <directionalLight position={[-5, 5, -5]} intensity={calibracion.intensidadLuzAmbiental * 0.5} />
 
-        {/* Modelo Mueble en Coordenadas Reales de Grasshopper */}
-        <ParametricFurnitureMesh />
+        {/* Modelo Mueble en Coordenadas Reales de Grasshopper (se oculta si escenarioLimpio es true) */}
+        {!escenarioLimpio && <ParametricFurnitureMesh setFurnitureGroup={setFurnitureGroup} />}
 
         {/* Grilla del Piso Ubicada en la Base Real (Y = 0) */}
         <Grid
@@ -503,6 +459,16 @@ export default function Viewer3D() {
           </>
         )}
       </div>
+
+      {/* Botón Descargar GLB */}
+      {resultado?.real_meshes && resultado.real_meshes.length > 0 && (
+        <button
+          onClick={exportToGLB}
+          className="absolute bottom-3 right-3 bg-cyan-600 hover:bg-cyan-500 text-white text-xs px-4 py-2 rounded-full font-bold shadow-lg border border-cyan-400 transition-all flex items-center gap-2 z-10 cursor-pointer"
+        >
+          <Download className="w-3.5 h-3.5" /> Descargar GLB
+        </button>
+      )}
     </div>
   );
 }
