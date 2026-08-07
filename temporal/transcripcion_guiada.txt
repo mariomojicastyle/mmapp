@@ -1,0 +1,38 @@
+[00:30 - 00:45]: Aquí empieza a hablar acerca de que el trasfondo del diseño me otorga una ventaja
+[00:45 - 01:00]: Si ves el bloque número 2 de la idea original es donde resalta digamos mi trasfondo de diseño Cómo apoyar eso a mi nuevo perfil como de desarrollo desarrollador web
+[01:00 - 01:15]: desarrollador de aplicación desarrollador de software luego entra una parte donde estamos mostrando más habilidades de diseño
+[01:15 - 01:30]: en 3D renderizado sí
+[01:30 - 01:45]: luego viene la del bloque 3 que es donde se habla de la plataforma sass eso lo tienes bien organizado en la propuesta original La que transmite estoy mostrando allí en mi desarrollo más reciente es una
+[01:45 - 02:00]: masas completa para la administración y visualización de manuales de armado 3D Eso me parece que está bien allí deberíamos recuperar como Aquí se habla un poco de la plataforma de cómo está interiormente
+[02:00 - 02:15]: dividida en proyectos en diferentes secciones en las que mostraban allí pero bueno De todas formas Mira tú cómo puedes armar tu mueble Pero antes Te
+[02:30 - 02:45]: Hola hola cómo vamos a armar tu mueble pero algo te mostraré
+[03:00 - 03:15]: América una explicación esa parte de la plataforma amerita una narración más
+[03:15 - 03:30]: más robusta más larga ya que está como demasiado corta y el video está un poquito largo Entonces si puedes mejorar Esa esa narración del bloque 3 mucho mejor
+[03:30 - 03:45]: cuando muestran el tema de aplicaciones Allí es donde se demuestra que pues el manual
+[03:45 - 04:00]: solamente una Sí y se pueden hacer hay otras que están en proceso como calculador de empaque y el creador de contenido que el creador de contenido ya tenemos una automatización
+[04:00 - 04:15]: qué tipo crm pero nos hace falta todavía un conectarlo con inteligencias artificiales pues para generación de contenido automático pero pues en ese camino vamos
+[04:15 - 04:30]: sigamos aquí es valioso Resaltar las métricas cada manual de ensamble le Reporta a la plataforma todas las interacciones
+[04:30 - 04:45]: usuarios Qué pasó en el paso número uno el paso número 2 recoger mediante encuesta el el sentimiento de los usuarios y aquí ya estoy mostrando la plataforma CR
+[04:45 - 05:00]: Pon la de hola en publicar contenido automático Perdón no para marketing Sí para montar información en linkedin Facebook y bueno Y aquí ya pasamos a al bloque 4
+[05:00 - 05:15]: paramétrico 3D vinpac que allí empieza bien adicionalmente desarrolla 3D vinpac nuestro motor paramétrico de manufactura digital está solución de algoritmos paramétricos las ópera a través de a pirino con virus Bueno está bien esa parte
+[05:15 - 05:30]: cualquier cosa adicional yo te la voy diciendo aquí en este video Está bien hasta ahí está bien porque pues la persona está mirando es el funcionamiento del de class Cooper
+[05:30 - 05:45]: aquí me gustaría que hablaras más del patio y el front-end de 3 de ninfa
+[05:45 - 06:00]: Qué es el lector de algoritmos de Grace hopper por el cual una mano una empresa de manufactura puede hacer que sus productos sean generados a
+[06:00 - 06:15]: bibliotecas que gestionen mucho más rápido en las áreas de i + d porque ya no hay que partir de cero sino que se parte de bloques ya prediseñados o estilos de muebles
+[06:15 - 06:30]: es en colaboración para ayudar a darle un salto evolutivo a lo que es la fábrica a las empresas a las fábricas que que diseñan muebles ya que los procesos
+[06:30 - 06:45]: departamentos de diseño tradicionales están un poco muy están desconectados de la empresa porque pues trabajan como aislados de calidad de producción y digamos que
+[06:45 - 07:00]: Dónde puedes amarrar a una calidad producción en fin aquí entramos al bloque
+[07:00 - 07:15]: lectura bloque número 5 detrás de estas soluciones hay una arquitectura protegida en el borde con closer bueno allí hablas de los protocolos bueno esos textos
+[07:15 - 07:30]: se muestra el gráfico de la arquitectura
+[07:30 - 07:45]: Cómo están configuradas las métricas para tener registro de las visitas de los comportamientos con conexión pues
+[07:45 - 08:00]: en tiempo real al al celular para estar revisando las configuraciones de reputación del sitio pues para que pueda propagarse libremente y las personas tengan confianza en el sitio
+[08:00 - 08:15]: en términos de seguridad hay que hablar acerca de la seguridad algo de la importancia de la propiedad intelectual en los archivos 3D para las plataformas y también
+[08:15 - 08:30]: temas de seguridad para para evitar ataques de ataques por robo de información de la plataforma aquí entramos en el
+[08:30 - 08:45]: seguimos hablando de automatizaciones de los agentes de guía que utilizamos en la manera en que lo utilizamos y las
+[08:45 - 09:00]: o las habilidades que pueden que tienen en estos momentos nuestra plataforma que es muy importante lo que le da pues más robustez a todo el ecosistema aquí
+[09:00 - 09:15]: Cómo se pueden Aquí vemos el supabase
+[09:15 - 09:30]: Cómo configuramos nuestras tablas Sí cómo nuestras tablas se alimentan automáticamente
+[09:30 - 09:45]: nada de eso es manual Aquí vamos a ver una automatización n8n que es la que digamos recibe todos los links que vienen de de las de la página web
+[09:45 - 10:00]: y también me notifican al celular y al final llegamos a esta parte
+[10:00 - 10:15]: dónde no sé si se puede hablar acerca del futuro de lo que de cómo vemos el futuro México
+[10:15 - 10:29]: y así termina

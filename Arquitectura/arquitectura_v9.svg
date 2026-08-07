@@ -1,0 +1,150 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 960" width="100%" height="100%">
+    <style>
+        .background { fill: #f8fafc; }
+        .box-cloudflare { fill: #ffffff; stroke: #ea580c; stroke-width: 2; rx: 12; filter: drop-shadow(0px 4px 6px rgba(234, 88, 12, 0.08)); }
+        .box-core { fill: #ffffff; stroke: #0284c7; stroke-width: 2; rx: 12; filter: drop-shadow(0px 4px 6px rgba(2, 132, 199, 0.08)); }
+        .box-vps { fill: #ffffff; stroke: #7c3aed; stroke-width: 2; rx: 12; filter: drop-shadow(0px 4px 6px rgba(124, 58, 237, 0.08)); }
+        .box-frontend { fill: #ffffff; stroke: #0d9488; stroke-width: 2; rx: 12; filter: drop-shadow(0px 4px 6px rgba(13, 148, 136, 0.08)); }
+        .box-marketing { fill: #ffffff; stroke: #db2777; stroke-width: 2; rx: 12; filter: drop-shadow(0px 4px 6px rgba(219, 39, 119, 0.08)); }
+        .box-3bf { fill: #ffffff; stroke: #d97706; stroke-width: 2; rx: 12; filter: drop-shadow(0px 4px 6px rgba(217, 119, 6, 0.08)); }
+        .inner-app { fill: #f1f5f9; stroke: #cbd5e1; stroke-width: 1; rx: 8; }
+        
+        .title { fill: #0f172a; font-family: 'Inter', -apple-system, sans-serif; font-size: 26px; font-weight: 800; }
+        .subtitle { fill: #64748b; font-family: 'Inter', -apple-system, sans-serif; font-size: 14px; font-weight: 500; }
+        .box-title-cloudflare { fill: #c2410c; font-family: 'Inter', -apple-system, sans-serif; font-size: 16px; font-weight: 700; }
+        .box-title-core { fill: #0369a1; font-family: 'Inter', -apple-system, sans-serif; font-size: 17px; font-weight: 700; }
+        .box-title-vps { fill: #6d28d9; font-family: 'Inter', -apple-system, sans-serif; font-size: 17px; font-weight: 700; }
+        .box-title-frontend { fill: #0f766e; font-family: 'Inter', -apple-system, sans-serif; font-size: 17px; font-weight: 700; }
+        .box-title-marketing { fill: #be185d; font-family: 'Inter', -apple-system, sans-serif; font-size: 17px; font-weight: 700; }
+        .box-title-3bf { fill: #b45309; font-family: 'Inter', -apple-system, sans-serif; font-size: 16px; font-weight: 700; }
+        .inner-title { fill: #1e293b; font-family: 'Inter', -apple-system, sans-serif; font-size: 13px; font-weight: 700; }
+        .text { fill: #334155; font-family: 'Inter', -apple-system, sans-serif; font-size: 12.5px; font-weight: 500; }
+        .text-dim { fill: #64748b; font-family: 'Inter', -apple-system, sans-serif; font-size: 11px; }
+        .text-label { fill: #0284c7; font-family: 'Inter', -apple-system, sans-serif; font-size: 11px; font-weight: 600; }
+        .text-marketing { fill: #be185d; font-family: 'Inter', -apple-system, sans-serif; font-size: 11px; font-weight: 600; }
+        
+        .line-flow { stroke: #0284c7; stroke-width: 2; stroke-dasharray: 6,4; fill: none; }
+        .line-sec { stroke: #7c3aed; stroke-width: 2; stroke-dasharray: 4,4; fill: none; }
+        .line-marketing { stroke: #db2777; stroke-width: 2; stroke-dasharray: 5,4; fill: none; }
+        .line-cf { stroke: #ea580c; stroke-width: 2; stroke-dasharray: 4,4; fill: none; }
+        .arrow-flow { fill: #0284c7; }
+        .arrow-sec { fill: #7c3aed; }
+        .arrow-mkt { fill: #db2777; }
+        .arrow-cf { fill: #ea580c; }
+    </style>
+    <defs>
+        <marker id="arrowhead-flow" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+            <polygon points="0 0, 10 3.5, 0 7" class="arrow-flow" />
+        </marker>
+        <marker id="arrowhead-sec" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+            <polygon points="0 0, 10 3.5, 0 7" class="arrow-sec" />
+        </marker>
+        <marker id="arrowhead-mkt" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+            <polygon points="0 0, 10 3.5, 0 7" class="arrow-mkt" />
+        </marker>
+        <marker id="arrowhead-cf" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+            <polygon points="0 0, 10 3.5, 0 7" class="arrow-cf" />
+        </marker>
+    </defs>
+    
+    <!-- Background -->
+    <rect width="100%" height="100%" class="background" />
+    
+    <!-- Header Title -->
+    <text x="600" y="42" text-anchor="middle" class="title">Ecosistema de Software B2B &amp; Plataforma 3D</text>
+    <text x="600" y="66" text-anchor="middle" class="subtitle">Arquitectura V9 (Cloudflare Security Edge, Motor Paramétrico 3DBimFab, Supabase Cloud &amp; Hetzner Docker VPS)</text>
+
+    <!-- CLOUDFLARE SECURITY EDGE SHIELD (TOP BAR) -->
+    <rect x="50" y="88" width="1100" height="64" class="box-cloudflare" />
+    <text x="75" y="112" class="box-title-cloudflare">🛡️ Seguridad en el Borde &amp; Blindaje DNS (Cloudflare Enterprise Edge)</text>
+    <text x="75" y="134" class="text">WAF Anti-DDoS • SSL/TLS Full Strict • HSTS Preload • IP Shield V2 (Cifrado AES-256 en cliente para activos 3D) • DNS SPF/DKIM/DMARC</text>
+
+    <!-- LAYER 1: FRONTEND WEB APPS & MARKETING HUB -->
+    
+    <!-- 1. Next.js SaaS Web App & Manuales 3D (Top-Left) -->
+    <rect x="50" y="172" width="350" height="235" class="box-frontend" />
+    <text x="70" y="202" class="box-title-frontend">Plataforma SaaS &amp; Manuales 3D (Next.js 14)</text>
+    <text x="70" y="228" class="text">📱 Visor 3D Interactivo (React Three Fiber / Three.js)</text>
+    <text x="70" y="248" class="text">🗣️ Locución Sincronizada Multi-idioma (Audio Web API)</text>
+    <text x="70" y="268" class="text">🔐 IP Shield V2: Descifrado AES-256 en Memoria RAM</text>
+    <text x="70" y="288" class="text">🎨 Canvas HD 2K Generator &amp; Marketing Hub API</text>
+    <text x="70" y="308" class="text">📊 Coordenadas 3D &amp; Telemetría en Tiempo Real</text>
+    <text x="70" y="328" class="text">⚡ API REST Router: /api/marketing, /api/assets/sign</text>
+    <text x="70" y="362" class="text-dim">Desplegado en Netlify CDN • TypeScript • Tailwind CSS</text>
+
+    <!-- 2. Motor Paramétrico 3DBimFab (Top-Center) -->
+    <rect x="425" y="172" width="340" height="235" class="box-3bf" />
+    <text x="445" y="202" class="box-title-3bf">Motor Paramétrico 3DBimFab (Rhino Compute)</text>
+    <text x="445" y="228" class="text">⚙️ Ejecución de Algoritmos Grasshopper (.ghx)</text>
+    <text x="445" y="248" class="text">📐 Generación de Geometría en Tiempo Real para E-Commerce</text>
+    <text x="445" y="268" class="text">🐍 Python Worker (FastAPI REST Server en Puerto 8005)</text>
+    <text x="445" y="288" class="text">🖨️ Exportación Automática a GLB, DXF &amp; BOM (Listas de Corte)</text>
+    <text x="445" y="308" class="text">🐳 Rhino.Compute 8 Headless Server (Dockerized Container)</text>
+    <text x="445" y="362" class="text-dim">Grasshopper Web API Engine • Render &amp; Configuración 3D</text>
+
+    <!-- 3. Meta Graph API Auto-Publisher (Top-Right) -->
+    <rect x="790" y="172" width="360" height="235" class="box-marketing" />
+    <text x="810" y="202" class="box-title-marketing">Meta Graph API v19.0 (Social Media Engine)</text>
+    <text x="810" y="228" class="text">🔵 Facebook Graph API: Publicación de Fotos y Carruseles</text>
+    <text x="810" y="248" class="text">📸 Instagram Business API: Creación y Publicación en Contenedores</text>
+    <text x="810" y="268" class="text">🔑 Token Exchange Perenne &amp; Renovación Automática</text>
+    <text x="810" y="288" class="text">📅 Cron Worker 24H: Programación Automática de Posts</text>
+    <text x="810" y="308" class="text">📈 Seguimiento de Métricas &amp; Rendimiento por Hashtag</text>
+    <text x="810" y="362" class="text-dim">Publicación Automática Multicanal B2B</text>
+
+    <!-- LAYER 2: SUPABASE CLOUD BACKEND & STORAGE -->
+
+    <!-- 4. Supabase Cloud Backend (Center) -->
+    <rect x="250" y="435" width="700" height="200" class="box-core" />
+    <text x="270" y="465" class="box-title-core">Backend Nube Supabase (PostgreSQL + Auth + Storage + Edge Functions)</text>
+    <text x="270" y="495" class="text">🗄️ Base de Datos Relacional PostgreSQL (RLS &amp; Índices de Alto Rendimiento)</text>
+    <text x="270" y="520" class="text">🔒 Bucket Privado "insumos_manuales": Modelos 3D cifrados con AES-256</text>
+    <text x="270" y="545" class="text">🖼️ Bucket Público "marketing-media": Imágen Canvas HD para Meta CDN</text>
+    <text x="270" y="570" class="text">⚡ Supabase Edge Functions: Descifrado seguro con Firma HMAC-SHA256 (TTL 30m)</text>
+    <text x="270" y="605" class="text-dim">Servidor Nube Supabase • Triggers SQL • Backups Diarios Automatizados</text>
+
+    <!-- LAYER 3: HETZNER VPS, DOCKER STACK, N8N & BASEROW CRM -->
+
+    <!-- 5. VPS Hetzner Stack Docker (Bottom) -->
+    <rect x="50" y="665" width="715" height="250" class="box-vps" />
+    <text x="70" y="695" class="box-title-vps">Servidor VPS Hetzner (Stack B2B en Contenedores Docker)</text>
+    
+    <!-- Sub-boxes -->
+    <rect x="70" y="720" width="220" height="60" class="inner-app" />
+    <text x="85" y="743" class="inner-title">Nginx Proxy Manager</text>
+    <text x="85" y="763" class="text-dim">SSL Let's Encrypt / Reverse Proxy</text>
+    
+    <rect x="305" y="720" width="220" height="60" class="inner-app" />
+    <text x="320" y="743" class="inner-title">Umami Analytics</text>
+    <text x="320" y="763" class="text-dim">Privacidad &amp; Telemetría Web</text>
+    
+    <rect x="540" y="720" width="210" height="60" class="inner-app" />
+    <text x="555" y="743" class="inner-title">n8n Automation</text>
+    <text x="555" y="763" class="text-dim">Flujos de Trabajo &amp; Webhooks</text>
+    
+    <rect x="70" y="795" width="310" height="65" class="inner-app" />
+    <text x="85" y="818" class="inner-title">Baserow B2B CRM Relacional</text>
+    <text x="85" y="840" class="text-dim">Gestión de Pipeline de Ventas, Clientes &amp; Leads</text>
+    
+    <rect x="400" y="795" width="350" height="65" class="inner-app" />
+    <text x="415" y="818" class="inner-title">Worker Python 3DBimFab</text>
+    <text x="415" y="840" class="text-dim">Servicio de Computación Paramétrica 3D (Port 8005)</text>
+
+    <text x="70" y="895" class="text-dim">Linux Ubuntu VPS • Red Aislada Docker Bridge • Monitoreo de Recursos &amp; Alerting</text>
+
+    <!-- 6. Landing Page & Portfolio Hub (Bottom-Right) -->
+    <rect x="790" y="665" width="360" height="250" class="box-frontend" />
+    <text x="810" y="695" class="box-title-frontend">Landing Page / Portafolio SaaS (Next.js)</text>
+    <text x="810" y="725" class="text">🌐 mariomojica.com (Hosting en Netlify CDN)</text>
+    <text x="810" y="750" class="text">📥 Formulario Dinámico de Captura de Leads B2B</text>
+    <text x="810" y="775" class="text">📲 Integración con WhatsApp Cloud API para Alertas</text>
+    <text x="810" y="800" class="text">📱 PWA Móvil para Técnicos &amp; Clientes Finales</text>
+    <text x="810" y="895" class="text-dim">SEO &amp; GEO Optimizado • Rendimiento Web Vitals 99/100</text>
+
+    <!-- CONNECTIONS & DATAFLOWS -->
+    <path d="M 400,280 L 425,280" class="line-flow" marker-end="url(#arrowhead-flow)" />
+    <path d="M 400,290 L 790,290" class="line-marketing" marker-end="url(#arrowhead-mkt)" />
+    <path d="M 225,407 L 225,435" class="line-flow" marker-end="url(#arrowhead-flow)" />
+    <path d="M 970,407 L 970,435" class="line-marketing" marker-end="url(#arrowhead-mkt)" />
+    <path d="M 970,665 L 970,635 L 600,635 L 600,720" class="line-sec" marker-end="url(#arrowhead-sec)" />
+</svg>

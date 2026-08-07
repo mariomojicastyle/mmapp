@@ -27,6 +27,13 @@ Este archivo es la "Memoria RAM" para Antigravity. Contiene el contexto de lo qu
     - **Auto-Corrección Vectorial de Normales ($100\%$ Outward Normals)**: Algoritmo en `Viewer3D.tsx` que detecta y voltea automáticamente la orientación del triángulo si la normal apunta hacia el interior de la masa del tablero ($\vec{N} \cdot \vec{V}_{out} < 0$).
     - **Geometría Dual en Memoria**: Malla indexada para aristas perimetrales de $90^\circ$ sin duplicados + Malla no-indexada para normales de cara $100\%$ perpendiculares a $90^\circ$ (eliminando gradientes de sombra en los bordes y la línea de costura).
     - **Oclusión Z-Buffer Estricta**: Aristas configuradas en el pase opaco (`depthTest={true}`, `depthWrite={true}`) evitando transparencias falsas o filtración de líneas traseras.
+  - **[NUEVO - 06 de Agosto, 2026] Hito de Perfil Comercial Upwork & Producción de Video de Presentación**:
+    - **Video de Presentación Publicado & Funcionando**: Producido y sincronizado video de 9m 33s en inglés y español demostrando el visor SaaS de manuales 3D, el motor paramétrico 3DBimFab, la arquitectura de seguridad IP Shield V2, la base de datos Supabase PostgreSQL y los contenedores Docker en Hetzner VPS.
+    - **Alojamiento en YouTube**: Publicado en modo **No listado (Unlisted)** con la opción **Permitir incorporación (Allow embedding)** activada (`https://youtu.be/wK_a7Fvp2nk`), integrado sin errores en el modal de presentación de Upwork.
+    - **Guion Maestro Sincronizado & Prompts de IA**: Creado el archivo [`docs/Upwork/video_presentacion.md`](file:///c:/Desarrollo/mmapp/docs/Upwork/video_presentacion.md) con las versiones en español V2, inglés TTS V2, prompts cinemáticos para Google Flow y guía técnica de Docker.
+    - **Solución al Bug de Caracteres XML en API TTS (`/api/tts`)**: Diagnóstico y corrección del bug en `mario-mojica-plataforma/app/api/tts/route.ts` añadiendo `escapeXml()` para evitar fallos silenciosos (0 bytes) al procesar ampersands (`&`) en textos como `R&D`.
+    - **Perfil de Upwork**: Configurado con el título `Full-Stack Software Engineer | Next.js, Python & AI Automation`, tarifa de `$30.00/hr` y estrategia de portafolio B2B refactorizada.
+
 
 
 ### 🎯 Objetivos de la Fase (Plataforma B2B)
