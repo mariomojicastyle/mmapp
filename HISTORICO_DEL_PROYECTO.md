@@ -1,5 +1,15 @@
 # 📜 Histórico del Proyecto: mariomojica.com
 
+### 🔹 Hito Upwork_Video — Producción y Publicación de Video de Presentación Profesional & Solución XML en API TTS (06 de Agosto, 2026)
+
+- **Video de Presentación Profesional Publicado**: Grabado, producido y sincronizado video de 9m 33s en inglés y español demostrando la plataforma SaaS de manuales 3D, el motor paramétrico 3DBimFab, la arquitectura de seguridad IP Shield V2, Supabase SQL y Docker en Hetzner VPS.
+- **Alojamiento en YouTube (No Listado + Permitir Incorporación)**: Publicado en modo **No listado (Unlisted)** con la casilla **Permitir incorporación (Allow embedding)** activada (`https://youtu.be/wK_a7Fvp2nk`), integrado sin errores en el reproductor modal del perfil de Upwork.
+- **Diagnóstico y Corrección de Bug XML en API TTS (`/api/tts`)**: Diagnóstico empírico y solución del fallo que generaba 0 bytes de audio al sintetizar párrafos con ampersands (`&`) en textos como `R&D`. Se implementó la función `escapeXml()` en `mario-mojica-plataforma/app/api/tts/route.ts` para sanitizar automáticamente caracteres especiales reservado en SSML/XML (`&`, `<`, `>`, `"`, `'`).
+- **Guion Maestro Sincronizado**: Creado el documento [`docs/Upwork/video_presentacion.md`](file:///c:/Desarrollo/mmapp/docs/Upwork/video_presentacion.md) con las versiones en español e inglés TTS organizadas por bloques conceptuales.
+- **Configuración de Perfil Upwork**: Publicado el título oficial `Full-Stack Software Engineer | Next.js, Python & AI Automation`, tarifa de `$30.00/hr` y estrategia de portafolio B2B refactorizada en [`docs/Upwork/perfil.md`](file:///c:/Desarrollo/mmapp/docs/Upwork/perfil.md).
+
+---
+
 ### 🔹 Hito Video_Marketing — Soporte de Publicación de Video en Meta y LinkedIn (04 de Agosto, 2026)
 
 - **Publicación de Video en Facebook**: Implementación de la API de Videos de Facebook (`/videos`) utilizando el parámetro `file_url` para subir y publicar remotamente videos de Google Drive.

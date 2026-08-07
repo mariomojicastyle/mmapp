@@ -3,13 +3,27 @@ import { NextRequest, NextResponse } from "next/server"
 import { createClient } from "@supabase/supabase-js"
 import { MsEdgeTTS, OUTPUT_FORMAT } from "msedge-tts"
 
+function escapeXml(unsafe: string): string {
+  return unsafe.replace(/[&<>"']/g, (m) => {
+    switch (m) {
+      case '&': return '&amp;'
+      case '<': return '&lt;'
+      case '>': return '&gt;'
+      case '"': return '&quot;'
+      case "'": return '&apos;'
+      default: return m
+    }
+  })
+}
+
 // Genera audio básico sin pausas mediante msedge-tts (WebSockets puros)
 async function synthesizeTts(text: string, voice: string): Promise<Buffer> {
   const tts = new MsEdgeTTS()
   // Usar formato MP3 de calidad estándar
   await tts.setMetadata(voice, OUTPUT_FORMAT.AUDIO_24KHZ_48KBITRATE_MONO_MP3)
   
-  const { audioStream } = tts.toStream(text)
+  const safeText = escapeXml(text)
+  const { audioStream } = tts.toStream(safeText)
   const chunks: Buffer[] = []
   
   return new Promise((resolve, reject) => {
