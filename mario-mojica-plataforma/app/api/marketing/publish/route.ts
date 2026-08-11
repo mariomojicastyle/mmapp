@@ -17,13 +17,25 @@ function getSupabaseAdmin() {
   })
 }
 
+function resolveGoogleDriveUrl(url: string): string {
+  if (!url || typeof url !== "string") return url
+  const trimmed = url.trim()
+  const regExp = /\/file\/d\/([a-zA-Z0-9_-]+)|id=([a-zA-Z0-9_-]+)/
+  const match = trimmed.match(regExp)
+  if (match) {
+    const fileId = match[1] || match[2]
+    return `https://drive.usercontent.google.com/download?id=${fileId}&export=download&confirm=t`
+  }
+  return trimmed
+}
+
 // Convierte DataURL o Base64 a una URL pública HTTPS alojada en Supabase Storage
 async function ensurePublicImageUrl(supabase: any, imageStr: string): Promise<string | null> {
   if (!imageStr || typeof imageStr !== "string") return null
   const trimmed = imageStr.trim()
 
   if (trimmed.startsWith("http://") || trimmed.startsWith("https://")) {
-    return trimmed
+    return resolveGoogleDriveUrl(trimmed)
   }
 
   if (trimmed.startsWith("data:image/")) {
@@ -75,16 +87,25 @@ async function uploadLinkedInMediaAsset(accessToken: string, authorUrn: string, 
         buffer = Buffer.from(matches[2], "base64")
       }
     } else if (mediaStr.startsWith("http://") || mediaStr.startsWith("https://")) {
-      const res = await fetch(mediaStr)
+      const targetUrl = resolveGoogleDriveUrl(mediaStr)
+      const res = await fetch(targetUrl, {
+        headers: { "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)" }
+      })
       if (res.ok) {
+        const cType = res.headers.get("content-type") || ""
+        if (cType.includes("text/html")) {
+          console.error("Error al descargar media para LinkedIn: La URL respondió HTML en lugar de un archivo multimedia binario.", targetUrl)
+          return null
+        }
         const arrayBuf = await res.arrayBuffer()
         buffer = Buffer.from(arrayBuf)
-        const cType = res.headers.get("content-type")
-        if (cType) contentType = cType
+        if (cType && !cType.includes("application/octet-stream")) {
+          contentType = cType
+        }
       }
     }
 
-    if (!buffer) return null
+    if (!buffer || buffer.length === 0) return null
 
     const recipe = isVideo ? "urn:li:digitalmediaRecipe:feedshare-video" : "urn:li:digitalmediaRecipe:feedshare-image"
 
@@ -131,6 +152,10 @@ async function uploadLinkedInMediaAsset(accessToken: string, authorUrn: string, 
     })
 
     if (uploadRes.ok) {
+      if (isVideo) {
+        // Pausa de ingesta de 5 segundos para que los servidores de LinkedIn procesen el video
+        await new Promise((r) => setTimeout(r, 5000))
+      }
       return assetUrn
     } else {
       console.error("Error al subir binario a LinkedIn uploadUrl:", uploadRes.statusText)
@@ -197,6 +222,8 @@ export async function GET(request: NextRequest) {
           .map((f: any) => f.thumbnailUrl || f.webContentLink)
           .filter(Boolean)
       }
+
+      rawImages = rawImages.map((u) => resolveGoogleDriveUrl(u))
 
       // Evaluar si es video
       const isVideo = Array.isArray(post.overrides_redes?.archivos_detalles) &&
@@ -548,7 +575,11 @@ export async function GET(request: NextRequest) {
             if (rawImages.length > 0) {
               for (const rawImg of rawImages) {
                 const assetUrn = await uploadLinkedInMediaAsset(liCuenta.access_token, authorUrn, rawImg, isVideo)
-                if (assetUrn) linkedInAssetUrns.push(assetUrn)
+                if (assetUrn) {
+                  linkedInAssetUrns.push(assetUrn)
+                } else {
+                  errores.push("LinkedIn: No se pudo subir el archivo multimedia a LinkedIn (falló la descarga del binario o la carga).")
+                }
               }
             }
 

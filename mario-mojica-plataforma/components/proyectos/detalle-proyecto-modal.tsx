@@ -670,7 +670,12 @@ export function DetalleProyectoModal({ isOpen, onClose, proyecto, onUpdate }: De
         audioRef.current = audio
         setPlayingAudio(audioKey)
         audio.onended = () => { setPlayingAudio(null); URL.revokeObjectURL(url) }
-        await audio.play()
+        audio.onerror = () => { setPlayingAudio(null); URL.revokeObjectURL(url) }
+        try {
+          await audio.play()
+        } catch (playErr) {
+          console.warn("Reproducción en vista previa diferida o bloqueada por política del navegador:", playErr)
+        }
       }
     } catch (err: any) {
       setError(err.message || "Error al generar el audio.")

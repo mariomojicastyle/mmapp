@@ -134,19 +134,18 @@ async function synthesizeTtsWithPauses(text: string, voice: string): Promise<Buf
     const silenceBuffer = Buffer.from(SILENT_MP3_BASE64, "base64")
     const cleanSilenceBuffer = stripLameHeader(silenceBuffer)
     
-    const buffers: Buffer[] = []
-    for (let i = 0; i < segments.length; i++) {
-      const segment = segments[i]
-      if (segment.type === "text" && typeof segment.value === "string") {
-        const buf = await synthesizeTts(segment.value, voice)
-        const finalBuf = stripLameHeader(buf)
-        buffers.push(finalBuf)
-      } else if (segment.type === "pause" && typeof segment.value === "number") {
-        const pauseBuf = Buffer.concat(Array(segment.value).fill(cleanSilenceBuffer))
-        buffers.push(pauseBuf)
-      }
-    }
-    return Buffer.concat(buffers)
+    const renderedSegments = await Promise.all(
+      segments.map(async (segment) => {
+        if (segment.type === "text" && typeof segment.value === "string") {
+          const buf = await synthesizeTts(segment.value, voice)
+          return stripLameHeader(buf)
+        } else if (segment.type === "pause" && typeof segment.value === "number") {
+          return Buffer.concat(Array(segment.value).fill(cleanSilenceBuffer))
+        }
+        return Buffer.alloc(0)
+      })
+    )
+    return Buffer.concat(renderedSegments)
   } else {
     return await synthesizeTts(text, voice)
   }
