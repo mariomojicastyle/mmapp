@@ -142,9 +142,20 @@
     <text x="810" y="895" class="text-dim">SEO &amp; GEO Optimizado • Rendimiento Web Vitals 99/100</text>
 
     <!-- CONNECTIONS & DATAFLOWS -->
-    <path d="M 400,280 L 425,280" class="line-flow" marker-end="url(#arrowhead-flow)" />
-    <path d="M 400,290 L 790,290" class="line-marketing" marker-end="url(#arrowhead-mkt)" />
-    <path d="M 225,407 L 225,435" class="line-flow" marker-end="url(#arrowhead-flow)" />
-    <path d="M 970,407 L 970,435" class="line-marketing" marker-end="url(#arrowhead-mkt)" />
-    <path d="M 970,665 L 970,635 L 600,635 L 600,720" class="line-sec" marker-end="url(#arrowhead-sec)" />
+    <!-- 1. SaaS Platform -> 3DBimFab Engine -->
+    <path d="M 400,280 L 425,280" class="line-flow" marker-end="url(#arrowhead-flow)" id="path-saas-3bf" />
+    <!-- 2. SaaS Platform -> Meta Graph API -->
+    <path d="M 400,340 H 790" class="line-marketing" marker-end="url(#arrowhead-mkt)" id="path-saas-meta" />
+    <!-- 3. SaaS Platform -> Supabase Cloud -->
+    <path d="M 300,407 L 300,435" class="line-flow" marker-end="url(#arrowhead-flow)" id="path-saas-supabase" />
+    <!-- 4. SaaS Visor 3D -> Hetzner Umami Analytics -->
+    <path d="M 120,407 L 120,650 L 320,650 L 320,720" class="line-sec" marker-end="url(#arrowhead-sec)" id="path-saas-umami" />
+    <!-- 5. Meta Graph API -> Supabase Cloud -->
+    <path d="M 870,407 L 870,435" class="line-marketing" marker-end="url(#arrowhead-mkt)" id="path-meta-supabase" />
+    <!-- 6. Supabase Cloud -> Hetzner n8n / Baserow CRM -->
+    <path d="M 450,635 L 450,720" class="line-sec" marker-end="url(#arrowhead-sec)" id="path-supabase-hetzner" />
+    <!-- 7. Landing Page -> Supabase Cloud -->
+    <path d="M 900,665 L 900,635" class="line-flow" marker-end="url(#arrowhead-flow)" id="path-landing-supabase" />
+    <!-- 8. Landing Page -> Hetzner n8n Webhook -->
+    <path d="M 970,665 L 970,650 L 600,650 L 600,720" class="line-sec" marker-end="url(#arrowhead-sec)" id="path-landing-n8n" />
 </svg>

@@ -151,6 +151,120 @@ Este guión está adaptado para ser narrado a una velocidad natural (aproximadam
 
 ## 🎙️ 5. Texto Limpio para Generador de Voz (TTS)
 
-Copia y pega este bloque completo en tu generador de inteligencia artificial de voz (ej. ElevenLabs, Play.ht, etc.) para crear el archivo de audio continuo de una sola vez:
+### 🇪🇸 Versión en Español (Con Pausas Estructuradas)
 
-> "En 1859, Michael Thonet imaginó algo imposible para su época: domar la madera a su voluntad, dibujando curvas que desafiaban la física. Pero para cambiar el diseño del mueble, debía cambiar la manufactura. Sometiendo la madera de haya al fuego, al agua y al vapor a alta presión, la volvieron maleable para curvarla en moldes de hierro semirígidos. Nacía el curvado al vapor industrial. Pero las sillas armadas ocupaban demasiado espacio. Thonet entendió que pagar fletes por transportar aire arruinaría su negocio. Así que la desarmó en seis piezas de madera, diez tornillos y dos tuercas, logrando empacar de forma plana treinta y seis sillas completas en un solo metro cúbico. Al abrir la caja en París, el cliente se encontraba con un rompecabezas. Con solo una hoja de instrucciones litográfica, comenzó el ensamble. Nacía el primer mueble listo para armar de la historia. La silla número catorce conquistó los cafés de Europa y redefinió la logística para siempre. Una obra maestra que transformó la experiencia del consumidor. Hoy, esa misma empatía por el usuario da el siguiente paso evolutivo. Mario Mojica. La era digital de la experiencia de ensamble."
+```text
+En 1859, Michael Thonet imaginó algo imposible para su época: 
+[pausa: 1]
+Moldear la madera a su voluntad, dibujando curvas que desafiaban la física. 
+[pausa: 1]
+Pero para cambiar el diseño del mueble, debía cambiar la manufactura. 
+[pausa: 1]
+Sometiendo la madera de haya a altas temperaturas, al vapor y alta presión, la volvieron maleable para curvarla en moldes de hierro semirígidos. 
+[pausa: 1]
+Nacía el curvado al vapor industrial. Pero las sillas armadas ocupaban demasiado espacio. 
+[pausa: 1]
+Thonet entendió que pagar fletes por transportar aire arruinaría su negocio. 
+[pausa: 1]
+Así que la desarmó en seis piezas de madera, diez tornillos y dos tuercas, 
+logrando empacar de forma plana treinta y seis sillas completas en un solo metro cúbico. 
+[pausa: 1]
+Al abrir la caja en París, el cliente se encontraba con un rompecabezas. 
+[pausa: 1]
+Con solo una hoja de instrucciones litográfica, comenzó el ensamble. 
+[pausa: 1]
+Nacía el primer mueble listo para armar de la historia. 
+[pausa: 1]
+La silla número catorce conquistó los cafés de Europa y redefinió la logística para siempre. 
+[pausa: 1]
+Una obra maestra que transformó la experiencia del consumidor. 
+[pausa: 1]
+La logistica de mueble evolucionó en el siglo 19; ya es hora de que las instrucciones de ensamble también lo hagan.
+Dejamos atras el papel estatico para dar paso al ensamble dinamico en 3 dimensiones
+[pausa: 1]
+Mario Mojíca, la era digital de la experiencia de ensamble ya llegó.
+```
+
+---
+
+### 🇧🇷 Versión en Portugués / Brasil (Traducción Optimizada con Mismas Pausas)
+
+```text
+Em 1859, Michael Thonet imaginou algo impossível para a sua época: 
+[pausa: 1]
+Moldar a madeira à sua vontade, desenhando curvas que desafiavam a física. 
+[pausa: 1]
+Mas para mudar o design do móvel, ele precisava mudar a manufatura. 
+[pausa: 1]
+Submetendo a madeira de faia a altas temperaturas, ao vapor e a alta pressão, eles a tornaram maleável para curvá-la em moldes de ferro semirrígidos. 
+[pausa: 1]
+Nascia a curvatura a vapor industrial. Mas as cadeiras montadas ocupavam espaço demais. 
+[pausa: 1]
+Thonet entendeu que pagar frete para transportar ar arruinaria o seu negócio. 
+[pausa: 1]
+Por isso, ele a desmontou em seis peças de madeira, dez parafusos e duas porcas, 
+conseguindo embalar de forma plana trinta e seis cadeiras completas em um único metro cúbico. 
+[pausa: 1]
+Ao abrir a caixa em Paris, o cliente se deparava com um quebra-cabeça. 
+[pausa: 1]
+Com apenas uma folha de instruções litográfica, começou a montagem. 
+[pausa: 1]
+Nascia o primeiro móvel pronto para montar da história. 
+[pausa: 1]
+A cadeira número catorze conquistou os cafés da Europa e redefiniu a logística para sempre. 
+[pausa: 1]
+Uma obra-prima que transformou a experiência do consumidor. 
+[pausa: 1]
+A logística do móvel evoluiu no século 19; já passou da hora das instruções de montagem também evoluírem.
+Deixamos para trás o papel estático para dar lugar à montagem dinâmica em 3 dimensões
+[pausa: 1]
+Mario Mojica, a era digital da experiência de montagem já chegou.
+```
+
+---
+
+## 📱 6. Copy para Redes Sociales (Post Publicado + Primer Comentario)
+
+### 🇪🇸 Versión en Español (Publicado)
+
+**Título Interno Opcional:** `¿Creerías que armamos muebles igual que hace 70 años?`
+
+**Texto del Post:**
+```text
+En 1859, Michael Thonet inventó la caja plana para no transportar aire. 📦
+
+Casi 170 años después, ¿por qué seguimos obligando al cliente a descifrar manuales en papel? 📄❌
+
+En Mario Mojica creamos el 'GPS del ensamble': asistencia 3D interactiva por voz. 🚀
+
+Mira la historia en el video 👇
+```
+
+**Primer Comentario (Link a la Demo):**
+```text
+Prueba la demo interactiva del manual 3D en tu propio celular aquí: https://mariomojica.com/demo 🚀
+```
+
+---
+
+### 🇧🇷 Versión en Portugués / Brasil (Adaptación para Redes)
+
+**Título Interno Opcional:** `Você acreditaria que montamos móveis exatamente como há 70 anos?`
+
+**Texto do Post:**
+```text
+Em 1859, Michael Thonet inventou a caixa plana para não transportar ar. 📦
+
+Quase 170 anos depois, por que continuamos obrigando o cliente a decifrar manuais em papel? 📄❌
+
+Na Mario Mojica criamos o 'GPS da montagem': assistência 3D interativa por voz. 🚀
+
+Assista à história no vídeo 👇
+```
+
+**Primeiro Comentário (Link da Demo):**
+```text
+Experimente a demonstração interativa do manual 3D no seu próprio celular aqui: https://mariomojica.com/demo 🚀
+```
+
+

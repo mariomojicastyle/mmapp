@@ -34,8 +34,18 @@ Para evaluar el impacto de cada publicación, analizamos tres niveles de métric
 > 
 > Esta es la nueva era de la industria. Si quieres conocer cómo evolucionó el ensamble desde 1859 hasta hoy, sígueme en mi perfil: esta semana estaré contando toda la historia. 
 > 
-> Prueba en vivo este nuevo hito de la manufactura: 👇
-> https://mariomojica.com/demo
+**Opción C (Copy Corto Publicado en Instagram / Reels / TikTok):**
+> **Título Interno Opcional:** *¿Creerías que armamos muebles igual que hace 70 años?*
+> 
+> En 1859, Michael Thonet inventó la caja plana para no transportar aire. 📦
+> 
+> Casi 170 años después, ¿por qué seguimos obligando al cliente a descifrar manuales en papel? 📄❌
+> 
+> En Mario Mojica creamos el 'GPS del ensamble': asistencia 3D interactiva por voz. 🚀
+> 
+> Mira la historia en el video 👇
+> 
+> *(Primer comentario)*: Prueba la demo interactiva del manual 3D en tu propio celular aquí: https://mariomojica.com/demo 🚀
 
 ---
 
