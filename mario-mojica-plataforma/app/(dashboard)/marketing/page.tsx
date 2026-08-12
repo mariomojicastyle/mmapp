@@ -248,12 +248,17 @@ export default function MarketingPage() {
                     <div className="text-right shrink-0 flex flex-col items-end gap-1">
                       <span className="text-[11px] font-semibold text-primary block">
                         {post.fecha_programada
-                          ? new Date(post.fecha_programada).toLocaleDateString("es-ES", {
-                              day: "numeric",
-                              month: "short",
-                              hour: "2-digit",
-                              minute: "2-digit",
-                            })
+                          ? (() => {
+                              const d = new Date(post.fecha_programada)
+                              const brDate = new Date(d.getTime() - 3 * 3600 * 1000)
+                              const colDate = new Date(d.getTime() - 5 * 3600 * 1000)
+                              const pad = (n: number) => n.toString().padStart(2, "0")
+                              const months = ["ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "nov", "dic"]
+                              const dateStr = `${brDate.getUTCDate()} ${months[brDate.getUTCMonth()]}`
+                              const brTime = `${pad(brDate.getUTCHours())}:${pad(brDate.getUTCMinutes())} BR`
+                              const colTime = `${pad(colDate.getUTCHours())}:${pad(colDate.getUTCMinutes())} Col`
+                              return `${dateStr}, ${brTime} (${colTime})`
+                            })()
                           : "Sin fecha"}
                       </span>
                       <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">

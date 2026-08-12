@@ -136,7 +136,7 @@ export function EditorPostModal({ isOpen, onClose, onSuccess, onDelete, initialD
         setTitulo("")
         setContenidoBase("")
         setPlataformas(["instagram", "facebook"])
-        setFechaProgramada(formatLocalDateForInput(new Date(Date.now() + 86400000)))
+        setFechaProgramada(formatISOToLocalDateTimeInput(new Date(Date.now() + 86400000).toISOString(), programTimezone))
         setSelectedFiles([])
       }
       setActiveImageIndex(0)

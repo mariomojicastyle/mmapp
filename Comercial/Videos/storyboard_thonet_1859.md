@@ -227,15 +227,15 @@ Mario Mojica, a era digital da experiência de montagem já chegou.
 
 ### 🇪🇸 Versión en Español (Publicado)
 
-**Título Interno Opcional:** `¿Creerías que armamos muebles igual que hace 70 años?`
+**Título Interno Opcional:** `¿Sabías que el primer mueble listo para armar nació en 1859?`
 
 **Texto del Post:**
 ```text
-En 1859, Michael Thonet inventó la caja plana para no transportar aire. 📦
+El primer mueble listo para armar es de 1859. ¿Lo sabías? 📦
 
-Casi 170 años después, ¿por qué seguimos obligando al cliente a descifrar manuales en papel? 📄❌
+Casi 170 años después, ¡y seguimos usando un instructivo de ensamble impreso en papel! 📄❌
 
-En Mario Mojica creamos el 'GPS del ensamble': asistencia 3D interactiva por voz. 🚀
+En Mario Mojica creamos el 'Google Maps' de los manuales de ensamble. 🚀
 
 Mira la historia en el video 👇
 ```
@@ -249,15 +249,15 @@ Prueba la demo interactiva del manual 3D en tu propio celular aquí: https://mar
 
 ### 🇧🇷 Versión en Portugués / Brasil (Adaptación para Redes)
 
-**Título Interno Opcional:** `Você acreditaria que montamos móveis exatamente como há 70 anos?`
+**Título Interno Opcional:** `Você sabia que o primeiro móvel pronto para montar nasceu em 1859?`
 
 **Texto do Post:**
 ```text
-Em 1859, Michael Thonet inventou a caixa plana para não transportar ar. 📦
+O primeiro móvel pronto para montar é de 1859. Você sabia? 📦
 
-Quase 170 anos depois, por que continuamos obrigando o cliente a decifrar manuais em papel? 📄❌
+Quase 170 anos depois, e ainda continuamos usando um manual de montagem impresso em papel! 📄❌
 
-Na Mario Mojica criamos o 'GPS da montagem': assistência 3D interativa por voz. 🚀
+Na Mario Mojica criamos o 'Google Maps' dos manuais de montagem. 🚀
 
 Assista à história no vídeo 👇
 ```

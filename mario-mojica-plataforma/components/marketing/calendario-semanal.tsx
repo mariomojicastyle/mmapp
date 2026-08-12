@@ -51,7 +51,22 @@ export function CalendarioSemanal({ posts, onSelectSlot, onSelectPost }: Calenda
 
   const weekDates = getWeekDates()
 
-  // Buscar posts programados para un día específico
+  // Convierte un string ISO UTC a componentes de fecha/hora en la zona horaria seleccionada
+  const getPartsInTimezone = (isoStr: string, timeZone: string) => {
+    const d = new Date(isoStr)
+    if (isNaN(d.getTime())) return null
+    const offsetHours = timeZone === "America/Sao_Paulo" ? -3 : -5
+    const targetDate = new Date(d.getTime() + offsetHours * 3600 * 1000)
+    return {
+      year: targetDate.getUTCFullYear(),
+      month: targetDate.getUTCMonth(),
+      date: targetDate.getUTCDate(),
+      hours: targetDate.getUTCHours(),
+      minutes: targetDate.getUTCMinutes(),
+    }
+  }
+
+  // Buscar posts programados para un día específico considerando la zona horaria seleccionada
   const getPostsForDay = (date: Date) => {
     const year = date.getFullYear()
     const month = date.getMonth()
@@ -59,19 +74,21 @@ export function CalendarioSemanal({ posts, onSelectSlot, onSelectPost }: Calenda
 
     return posts.filter((p) => {
       if (!p.fecha_programada) return false
-      const pDate = new Date(p.fecha_programada)
+      const parts = getPartsInTimezone(p.fecha_programada, selectedTimezone)
+      if (!parts) return false
       return (
-        pDate.getFullYear() === year &&
-        pDate.getMonth() === month &&
-        pDate.getDate() === day
+        parts.year === year &&
+        parts.month === month &&
+        parts.date === day
       )
     })
   }
 
-  // Encuentra la hora 00:00 - 23:00 más cercana para un post
-  const getClosestSlotHora = (pDate: Date) => {
-    const pHour = pDate.getHours()
-    return `${pHour.toString().padStart(2, "0")}:00`
+  // Encuentra la hora 00:00 - 23:00 más cercana para un post en la zona horaria seleccionada
+  const getClosestSlotHora = (isoStr: string, timeZone: string) => {
+    const parts = getPartsInTimezone(isoStr, timeZone)
+    if (!parts) return ""
+    return `${parts.hours.toString().padStart(2, "0")}:00`
   }
 
   // Mapa de calor B2B (Metricool Heatmap style)
@@ -210,11 +227,10 @@ export function CalendarioSemanal({ posts, onSelectSlot, onSelectPost }: Calenda
                 const date = weekDates[idx]
                 const dayPosts = getPostsForDay(date)
 
-                // Filtrar posts asignando cada uno a la franja de hora exacta o cercana
+                // Filtrar posts asignando cada uno a la franja de hora exacta o cercana en selectedTimezone
                 const postsInSlot = dayPosts.filter((p) => {
                   if (!p.fecha_programada) return false
-                  const pDate = new Date(p.fecha_programada)
-                  return getClosestSlotHora(pDate) === hora
+                  return getClosestSlotHora(p.fecha_programada, selectedTimezone) === hora
                 })
 
                 const intensity = getHeatmapIntensity(idx, hora)
@@ -225,10 +241,13 @@ export function CalendarioSemanal({ posts, onSelectSlot, onSelectPost }: Calenda
                     key={`${dia}-${hora}`}
                     onClick={() => {
                       if (postsInSlot.length === 0 && onSelectSlot) {
-                        const selectedDate = new Date(date)
+                        const year = date.getFullYear()
+                        const month = date.getMonth()
+                        const day = date.getDate()
                         const [h] = hora.split(":").map(Number)
-                        selectedDate.setHours(h, 0, 0, 0)
-                        onSelectSlot(selectedDate)
+                        const offsetHours = selectedTimezone === "America/Sao_Paulo" ? -3 : -5
+                        const utcDate = new Date(Date.UTC(year, month, day, h - offsetHours, 0, 0))
+                        onSelectSlot(utcDate)
                       }
                     }}
                     className={`min-h-[56px] p-2 rounded-xl border text-left flex flex-col justify-between transition-all ${slotStyle}`}
@@ -237,9 +256,13 @@ export function CalendarioSemanal({ posts, onSelectSlot, onSelectPost }: Calenda
                       <span className="text-[10px] font-semibold flex items-center gap-1 opacity-90">
                         <Clock className="h-2.5 w-2.5" />
                         {hora}
-                        {selectedTimezone === "America/Sao_Paulo" && (
+                        {selectedTimezone === "America/Sao_Paulo" ? (
                           <span className="text-[8px] font-medium opacity-60">
-                            ({(parseInt(hora.split(":")[0]) - 2 + 24) % 24}:00 Col)
+                            ({((parseInt(hora.split(":")[0]) - 2 + 24) % 24).toString().padStart(2, "0")}:00 Col)
+                          </span>
+                        ) : (
+                          <span className="text-[8px] font-medium opacity-60">
+                            ({((parseInt(hora.split(":")[0]) + 2) % 24).toString().padStart(2, "0")}:00 BR)
                           </span>
                         )}
                       </span>
