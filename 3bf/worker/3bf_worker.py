@@ -101,6 +101,108 @@ class MetadataParams(BaseModel):
     custom_filename: str = ""
     ghx_content: str = ""
 
+def parse_num_prefix(text: str) -> float:
+    clean = text.replace("RH_IN:", "").strip()
+    match = re.search(r'^(\d+(?:\.\d+)?)', clean)
+    if match:
+        try:
+            return float(match.group(1))
+        except:
+            pass
+    return 999.0
+
+def extract_parameter_groups(root, default_values):
+    rh_inputs = list(default_values.keys())
+    
+    # 1. Mapear TODOS los GUIDs internos de cada objeto a su NickName RH_IN:
+    guid_to_nick = {}
+    for chunk in root.iter("chunk"):
+        if chunk.attrib.get("name") == "Object":
+            container = chunk.find("chunks/chunk[@name='Container']")
+            if container is not None:
+                nick_item = container.find("items/item[@name='NickName']")
+                if nick_item is not None and nick_item.text and nick_item.text.startswith("RH_IN:"):
+                    nick = nick_item.text
+                    for item in chunk.iter("item"):
+                        if item.text and (len(item.text) == 36 and item.text.count("-") == 4):
+                            guid_to_nick[item.text] = nick
+
+    # 2. Mapear Grupos explícitos de Grasshopper
+    gh_groups = {}
+    for chunk in root.iter("chunk"):
+        if chunk.attrib.get("name") == "Object":
+            name_item = chunk.find("items/item[@name='Name']")
+            if name_item is not None and "Group" in str(name_item.text):
+                container = chunk.find("chunks/chunk[@name='Container']")
+                if container is not None:
+                    g_nick = container.find("items/item[@name='NickName']")
+                    g_title = g_nick.text if g_nick is not None and g_nick.text else ""
+                    if g_title and not g_title.startswith("RH_"):
+                        for item in container.iter("item"):
+                            if item.text and item.text in guid_to_nick:
+                                nick = guid_to_nick[item.text]
+                                if nick.startswith("RH_IN:"):
+                                    if g_title not in gh_groups:
+                                        gh_groups[g_title] = []
+                                    if nick not in gh_groups[g_title]:
+                                        gh_groups[g_title].append(nick)
+
+    grouped_results = []
+    assigned_nicks = set()
+
+    for g_title, nicks in gh_groups.items():
+        if len(nicks) >= 1:
+            sorted_nicks = sorted(nicks, key=parse_num_prefix)
+            min_rank = min((parse_num_prefix(n) for n in sorted_nicks), default=999.0)
+            grouped_results.append({
+                "title": g_title,
+                "parameters": sorted_nicks,
+                "_rank": min_rank
+            })
+            assigned_nicks.update(nicks)
+
+    # Ordenar las tarjetas por el estándar VisualARQ (el número de sus miembros 01.x, 02.x, 05.x)
+    grouped_results.sort(key=lambda g: g["_rank"])
+    for g in grouped_results:
+        g.pop("_rank", None)
+
+    # 3. Categorización DfMA únicamente para los parámetros huérfanos que NO estén agrupados en GH
+    remaining = [p for p in rh_inputs if p not in assigned_nicks]
+    
+    cat_dim = []
+    cat_reced = []
+    cat_uniones = []
+    cat_cantos = []
+    cat_otros = []
+
+    for p in remaining:
+        pl = p.lower()
+        if any(k in pl for k in ["ancho", "alto", "profundidad"]):
+            cat_dim.append(p)
+        elif any(k in pl for k in ["recedido"]):
+            cat_reced.append(p)
+        elif any(k in pl for k in ["union", "orientacion", "tarugo", "tornillo", "minifix", "cajon", "cajón"]):
+            cat_uniones.append(p)
+        elif any(k in pl for k in ["borde", "balance", "mapeado", "textura", "acabado"]):
+            cat_cantos.append(p)
+        else:
+            cat_otros.append(p)
+
+    final_groups = list(grouped_results)
+
+    if cat_dim:
+        final_groups.append({"title": "📏 Dimensiones Principales", "parameters": sorted(cat_dim, key=parse_num_prefix)})
+    if cat_reced:
+        final_groups.append({"title": "📐 Recedidos y Ajustes", "parameters": sorted(cat_reced, key=parse_num_prefix)})
+    if cat_uniones:
+        final_groups.append({"title": "🔩 Uniones y Herrajes DfMA", "parameters": sorted(cat_uniones, key=parse_num_prefix)})
+    if cat_cantos:
+        final_groups.append({"title": "🪵 Cantos y Mapeado de Texturas", "parameters": sorted(cat_cantos, key=parse_num_prefix)})
+    if cat_otros:
+        final_groups.append({"title": "⚙️ Otros Parámetros", "parameters": sorted(cat_otros, key=parse_num_prefix)})
+
+    return final_groups
+
 @app.post("/metadata")
 def get_model_metadata(params: MetadataParams):
     p = params.model_dump()
@@ -192,11 +294,14 @@ def get_model_metadata(params: MetadataParams):
                             if name_item is not None and sel_item is not None and sel_item.text == "true":
                                 default_values[nick] = name_item.text
 
+    parameter_groups = extract_parameter_groups(root, default_values) if root is not None else []
+
     return {
         "status": "success",
         "model_id": model_id,
         "slider_limits": slider_limits,
-        "default_values": default_values
+        "default_values": default_values,
+        "parameter_groups": parameter_groups
     }
 
 app.add_middleware(
@@ -623,6 +728,7 @@ def compute_model(params: ComputeParams):
         "execution_time_ms": execution_time_ms,
         "slider_limits": slider_limits,
         "default_values": default_values,
+        "parameter_groups": extract_parameter_groups(root, default_values) if root is not None else [],
         "summary": {
             "dimensiones": f"{ancho} x {alto} x {prof} mm",
             "area_madera_m2": round(area_madera_m2, 3),

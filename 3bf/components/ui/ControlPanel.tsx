@@ -72,404 +72,127 @@ const EditableNumberInput = ({
   );
 };
 
+function limpiarEtiqueta(paramKey: string): string {
+  return paramKey
+    .replace("RH_IN:", "")
+    .replace(/^[\d.]+[_\s]*/, "") // Ocultar prefijos estilo VisualARQ (ej: '01.0_', '05.2 ', '01_')
+    .replace(/_/g, " ")
+    .trim();
+}
+
+function RenderParamControl({ paramKey }: { paramKey: string }) {
+  const { parametros, setParametro, resultado } = use3BFStore();
+  const label = limpiarEtiqueta(paramKey);
+  const storeKey = MAPA_PARAMETROS[paramKey] || paramKey.replace("RH_IN:", "").toLowerCase().replace(/\s+/g, "_");
+  const value = (parametros as any)[storeKey];
+  const limit = resultado?.slider_limits?.[paramKey];
+
+  const pl = paramKey.toLowerCase();
+  const esSelectorTexto = pl.includes("union") || pl.includes("borde") || pl.includes("balance") || pl.includes("mapeado") || pl.includes("orientacion") || pl.includes("posicion") || pl.includes("tipo_cajon");
+  const esSlider = !esSelectorTexto;
+
+  // Si es un Slider Numérico
+  if (esSlider) {
+    const minVal = limit?.min ?? 0;
+    const maxVal = limit?.max ?? (pl.includes("ancho") || pl.includes("alto") || pl.includes("profundidad") ? 1200 : 200);
+    const numVal = typeof value === "number" ? value : (limit?.default ?? minVal);
+
+    return (
+      <div className="flex flex-col gap-1.5 p-2 rounded-lg bg-[#E2E8F0] dark:bg-[#1E293B]/70 border border-slate-300 dark:border-slate-700/60 shadow-sm text-xs">
+        <div className="flex justify-between font-medium">
+          <label className="font-bold text-gray-800 dark:text-slate-100">{label}</label>
+          <EditableNumberInput
+            value={numVal}
+            min={minVal}
+            max={maxVal}
+            onChange={(val) => setParametro(storeKey as any, val)}
+            className="text-cyan-600 dark:text-cyan-300 font-bold"
+          />
+        </div>
+        <input
+          type="range"
+          min={minVal}
+          max={maxVal}
+          step={maxVal <= 10 ? 0.1 : (maxVal <= 200 ? 1 : 10)}
+          value={Math.min(maxVal, Math.max(minVal, numVal))}
+          onChange={(e) => setParametro(storeKey as any, Number(e.target.value))}
+          className="w-full accent-cyan-600 cursor-pointer"
+        />
+      </div>
+    );
+  }
+
+  // Opciones predefinidas para Value Lists
+  let options: string[] = [];
+  if (pl.includes("union")) {
+    options = ["Minifix", "Tornillo tarugo", "Entrepaño"];
+  } else if (pl.includes("orientacion")) {
+    options = ["abajo", "arriba"];
+  } else if (pl.includes("posicion")) {
+    options = ["1", "2"];
+  } else if (pl.includes("borde")) {
+    options = ["MDP", "Canto"];
+  } else if (pl.includes("balance")) {
+    options = ["Cara A", "Cara B", "D/D"];
+  } else if (pl.includes("mapeado")) {
+    options = ["Cubierta", "Cubierta Atravesada"];
+  } else if (pl.includes("cajon")) {
+    options = ["Corredera Estandar", "Corredera Tipo X"];
+  } else {
+    options = [String(value || "Por defecto")];
+  }
+
+  return (
+    <div className="flex justify-between items-center bg-[#E2E8F0] dark:bg-[#1E293B]/70 p-2 rounded-lg border border-slate-300 dark:border-slate-700/60 text-xs text-[#0F172A] dark:text-slate-100 shadow-sm">
+      <span className="font-bold text-[11px] text-[#0F172A] dark:text-slate-200">{label}:</span>
+      <select
+        value={String(value || options[0])}
+        onChange={(e) => setParametro(storeKey as any, e.target.value)}
+        className="text-xs p-1 rounded-lg bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 font-bold text-[#0F172A] dark:text-cyan-300 outline-none cursor-pointer"
+      >
+        {options.map((opt) => (
+          <option key={opt} value={opt}>
+            {opt}
+          </option>
+        ))}
+      </select>
+    </div>
+  );
+}
+
 // Panel de Parámetros Dinámico Autónomo (Sólo visible cuando hay un archivo cargado)
 function ParametrosPanel() {
-  const { parametros, setParametro } = use3BFStore();
+  const { parametros, setParametro, resultado } = use3BFStore();
 
   if (!parametros.model_id) return null;
 
-  const currentModelStr = `${parametros.model_id} ${parametros.custom_filename || ""}`.toLowerCase();
-  const esCubierta = currentModelStr.includes("cubierta");
-  const esCajonera = !esCubierta || currentModelStr.includes("cajon");
+  const esCubierta = (parametros.model_id + (parametros.custom_filename || "")).toLowerCase().includes("cubierta");
+
+  const groups: Array<{ title: string; parameters: string[] }> = resultado?.parameter_groups && resultado.parameter_groups.length > 0
+    ? resultado.parameter_groups
+    : [
+        {
+          title: "📐 Parámetros Generales DfMA",
+          parameters: Object.keys(MAPA_PARAMETROS)
+        }
+      ];
 
   return (
     <div className="flex flex-col gap-3.5">
-      {/* Controles de Dimensiones */}
-      <div className="flex flex-col gap-3.5 p-3 rounded-xl bg-cyan-950/20 dark:bg-[#131B2E]/60 border border-cyan-200/80 dark:border-cyan-900/40 shadow-sm">
-        <div className="text-xs font-extrabold text-gray-900 dark:text-[#F8FAFC] flex items-center gap-1.5 pb-1.5 border-b border-cyan-200/50 dark:border-cyan-900/40">
-          <Box className="w-4 h-4 text-cyan-600 dark:text-cyan-400" /> Dimensiones Generales
-        </div>
-
-        {/* Ancho */}
-        <div className="flex flex-col gap-1.5">
-          <div className="flex justify-between text-xs font-medium">
-            <label className="font-bold text-gray-800 dark:text-slate-100">Ancho</label>
-            <EditableNumberInput
-              value={parametros.ancho}
-              min={300}
-              max={1000}
-              onChange={(val) => setParametro("ancho", val)}
-              className="text-cyan-600 dark:text-cyan-300 font-bold"
-            />
-          </div>
-          <input
-            type="range"
-            min={300}
-            max={1000}
-            step={10}
-            value={Math.min(1000, Math.max(300, parametros.ancho))}
-            onChange={(e) => setParametro("ancho", Number(e.target.value))}
-            className="w-full accent-cyan-600 cursor-pointer"
-          />
-        </div>
-
-        {/* Alto (Sólo para muebles de altura vertical, no para Cubierta) */}
-        {!esCubierta && (
-          <div className="flex flex-col gap-1.5">
-            <div className="flex justify-between text-xs font-medium">
-              <label className="font-bold text-gray-800 dark:text-slate-100">Alto</label>
-              <EditableNumberInput
-                value={parametros.alto}
-                min={300}
-                max={1200}
-                onChange={(val) => setParametro("alto", val)}
-                className="text-cyan-600 dark:text-cyan-300 font-bold"
-              />
-            </div>
-            <input
-              type="range"
-              min={300}
-              max={1200}
-              step={10}
-              value={Math.min(1200, Math.max(300, parametros.alto))}
-              onChange={(e) => setParametro("alto", Number(e.target.value))}
-              className="w-full accent-cyan-600 cursor-pointer"
-            />
-          </div>
-        )}
-
-        {/* Profundidad */}
-        <div className="flex flex-col gap-1.5">
-          <div className="flex justify-between text-xs font-medium">
-            <label className="font-bold text-gray-800 dark:text-slate-100">Profundidad</label>
-            <EditableNumberInput
-              value={parametros.profundidad}
-              min={200}
-              max={1000}
-              onChange={(val) => setParametro("profundidad", val)}
-              className="text-cyan-600 dark:text-cyan-300 font-bold"
-            />
-          </div>
-          <input
-            type="range"
-            min={200}
-            max={1000}
-            step={10}
-            value={Math.min(1000, Math.max(200, parametros.profundidad))}
-            onChange={(e) => setParametro("profundidad", Number(e.target.value))}
-            className="w-full accent-cyan-600 cursor-pointer"
-          />
-        </div>
-      </div>
-
-      {/* Controles Específicos para Muebles tipo Cajonera / Almacenamiento */}
-      {esCajonera && (
-        <div className="flex flex-col gap-3.5">
-          {/* Cantidad de Cajones (Menú Desplegable) */}
-          <div className="flex flex-col gap-1.5 p-3 rounded-xl bg-cyan-950/20 dark:bg-[#131B2E]/60 border border-cyan-200/80 dark:border-cyan-900/40 shadow-sm">
-            <div className="flex justify-between text-xs font-medium">
-              <label className="font-bold text-gray-800 dark:text-white flex items-center gap-1.5">
-                <Box className="w-4 h-4 text-cyan-600 dark:text-cyan-400" /> Cantidad de Cajones
-              </label>
-              <span className="font-mono font-bold text-cyan-700 dark:text-cyan-300">{parametros.cant_cajones || 3} {parametros.cant_cajones === 1 ? "Cajón" : "Cajones"}</span>
-            </div>
-            <select
-              value={parametros.cant_cajones || 3}
-              onChange={(e) => setParametro("cant_cajones", Number(e.target.value))}
-              className="w-full text-xs p-2 rounded-lg bg-[#E2E8F0] text-[#0F172A] border border-slate-300 outline-none font-bold cursor-pointer shadow-sm"
-            >
-              <option value={1}>1 Cajón</option>
-              <option value={2}>2 Cajones</option>
-              <option value={3}>3 Cajones</option>
-            </select>
+      {groups.map((grp, idx) => (
+        <div key={`group-${idx}`} className="flex flex-col gap-3 p-3 rounded-xl bg-cyan-950/20 dark:bg-[#131B2E]/60 border border-cyan-200/80 dark:border-cyan-900/40 shadow-sm">
+          <div className="text-xs font-extrabold text-gray-900 dark:text-[#F8FAFC] flex items-center gap-1.5 pb-1.5 border-b border-cyan-200/50 dark:border-cyan-900/40">
+            <Box className="w-4 h-4 text-cyan-600 dark:text-cyan-400" />
+            <span>{grp.title}</span>
           </div>
 
-          {/* Abrir Cajones */}
-          <div className="flex flex-col gap-1.5 p-3 rounded-xl bg-cyan-950/20 dark:bg-[#131B2E]/60 border border-cyan-200/80 dark:border-cyan-900/40 shadow-sm">
-            <div className="flex justify-between text-xs font-medium">
-              <label className="font-bold text-gray-800 dark:text-white flex items-center gap-1.5">
-                <Box className="w-4 h-4 text-cyan-600 dark:text-cyan-400" /> Abrir Cajones
-              </label>
-              <EditableNumberInput
-                value={parametros.apertura_cajones || 0}
-                min={0}
-                max={300}
-                onChange={(val) => setParametro("apertura_cajones", val)}
-                className="text-cyan-700 dark:text-cyan-300 font-bold"
-              />
-            </div>
-            <input
-              type="range"
-              min={0}
-              max={300}
-              step={10}
-              value={parametros.apertura_cajones || 0}
-              onChange={(e) => setParametro("apertura_cajones", Number(e.target.value))}
-              className="w-full accent-cyan-600 cursor-pointer"
-            />
-          </div>
-
-          {/* Profundidad cajon (Menú Desplegable) */}
-          <div className="flex flex-col gap-1.5 p-3 rounded-xl bg-cyan-950/20 dark:bg-[#131B2E]/60 border border-cyan-200/80 dark:border-cyan-900/40 shadow-sm">
-            <div className="flex justify-between text-xs font-medium">
-              <label className="font-bold text-gray-800 dark:text-white flex items-center gap-1.5">
-                <Box className="w-4 h-4 text-cyan-600 dark:text-cyan-400" /> Profundidad cajón
-              </label>
-              <span className="font-mono font-bold text-cyan-700 dark:text-cyan-300">{parametros.profundidad_cajon || 351} mm</span>
-            </div>
-            <select
-              value={parametros.profundidad_cajon || 351}
-              onChange={(e) => setParametro("profundidad_cajon", Number(e.target.value))}
-              className="w-full text-xs p-2 rounded-lg bg-[#E2E8F0] text-[#0F172A] border border-slate-300 outline-none font-bold cursor-pointer shadow-sm"
-            >
-              <option value={351}>351 mm</option>
-              <option value={400}>400 mm</option>
-            </select>
-          </div>
-
-          {/* Altura lateral de cajon (Menú Desplegable) */}
-          <div className="flex flex-col gap-1.5 p-3 rounded-xl bg-cyan-950/20 dark:bg-[#131B2E]/60 border border-cyan-200/80 dark:border-cyan-900/40 shadow-sm">
-            <div className="flex justify-between text-xs font-medium">
-              <label className="font-bold text-gray-800 dark:text-white flex items-center gap-1.5">
-                <Box className="w-4 h-4 text-cyan-600 dark:text-cyan-400" /> Altura lateral de cajón
-              </label>
-              <span className="font-mono font-bold text-cyan-700 dark:text-cyan-300">{parametros.altura_lateral_cajon || 102} mm</span>
-            </div>
-            <select
-              value={parametros.altura_lateral_cajon || 102}
-              onChange={(e) => setParametro("altura_lateral_cajon", Number(e.target.value))}
-              className="w-full text-xs p-2 rounded-lg bg-[#E2E8F0] text-[#0F172A] border border-slate-300 outline-none font-bold cursor-pointer shadow-sm"
-            >
-              <option value={102}>102 mm</option>
-              <option value={138}>138 mm</option>
-              <option value={147}>147 mm</option>
-              <option value={200}>200 mm</option>
-            </select>
-          </div>
-
-          {/* Distancia bajo laterales */}
-          <div className="flex flex-col gap-1.5 p-3 rounded-xl bg-cyan-950/20 dark:bg-[#131B2E]/60 border border-cyan-200/80 dark:border-cyan-900/40 shadow-sm">
-            <div className="flex justify-between text-xs font-medium">
-              <label className="font-bold text-gray-800 dark:text-white flex items-center gap-1.5">
-                <Box className="w-4 h-4 text-cyan-600 dark:text-cyan-400" /> Distancia bajo laterales
-              </label>
-              <span className="font-mono font-bold text-cyan-700 dark:text-cyan-300">{parametros.distancia_bajo_laterales || 30} mm</span>
-            </div>
-            <select
-              value={parametros.distancia_bajo_laterales || 30}
-              onChange={(e) => setParametro("distancia_bajo_laterales", Number(e.target.value))}
-              className="w-full text-xs p-2 rounded-lg bg-[#E2E8F0] text-[#0F172A] border border-slate-300 outline-none font-bold cursor-pointer shadow-sm"
-            >
-              <option value={25}>25 mm</option>
-              <option value={30}>30 mm</option>
-            </select>
-          </div>
-
-          {/* Tipo Cajon (Corredera) */}
-          <div className="flex flex-col gap-1.5 p-3 rounded-xl bg-cyan-950/20 dark:bg-[#131B2E]/60 border border-cyan-200/80 dark:border-cyan-900/40 shadow-sm">
-            <div className="flex justify-between text-xs font-medium">
-              <label className="font-bold text-gray-800 dark:text-white flex items-center gap-1.5">
-                <Box className="w-4 h-4 text-cyan-600 dark:text-cyan-400" /> Tipo Cajón (Corredera)
-              </label>
-              <span className="font-mono font-bold text-[11px] text-cyan-700 dark:text-cyan-300">{parametros.tipo_cajon || "Corredera Estandar"}</span>
-            </div>
-            <select
-              value={parametros.tipo_cajon || "Corredera Estandar"}
-              onChange={(e) => setParametro("tipo_cajon", e.target.value)}
-              className="w-full text-xs p-2 rounded-lg bg-[#E2E8F0] text-[#0F172A] border border-slate-300 outline-none font-bold cursor-pointer shadow-sm"
-            >
-              <option value="Corredera Estandar">Corredera Estándar (27.5 mm)</option>
-              <option value="Corredera Tipo X">Corredera Tipo X (40.0 mm)</option>
-            </select>
+          <div className="flex flex-col gap-2">
+            {grp.parameters.map((pKey) => (
+              <RenderParamControl key={pKey} paramKey={pKey} />
+            ))}
           </div>
         </div>
-      )}
-
-      {/* Controles Específicos para Cubierta.ghx (VisualARQ DfMA) */}
-      {esCubierta && (
-        <div className="flex flex-col gap-3.5 p-3 rounded-xl bg-cyan-950/20 dark:bg-[#131B2E]/60 border border-cyan-200/80 dark:border-cyan-900/40 shadow-sm">
-          <div className="text-xs font-bold text-gray-800 dark:text-white flex items-center justify-between pb-1 border-b border-cyan-200/50 dark:border-cyan-900/40">
-            <span>📐 Parámetros DfMA VisualARQ Cubierta</span>
-          </div>
-
-          {/* Recedidos */}
-          <div className="grid grid-cols-2 gap-2">
-            <div className="flex flex-col gap-1 bg-[#E2E8F0] p-2 rounded-lg border border-slate-300 text-xs">
-              <label className="font-semibold text-[11px] text-[#0F172A]">Recedido Izq</label>
-              <input
-                type="number"
-                min={0}
-                max={200}
-                value={parametros.recedido_izquierdo ?? 0}
-                onChange={(e) => setParametro("recedido_izquierdo", Number(e.target.value))}
-                className="w-full text-xs font-mono p-1 rounded bg-transparent outline-none text-[#0F172A] font-bold"
-              />
-            </div>
-            <div className="flex flex-col gap-1 bg-[#E2E8F0] p-2 rounded-lg border border-slate-300 text-xs">
-              <label className="font-semibold text-[11px] text-[#0F172A]">Recedido Der</label>
-              <input
-                type="number"
-                min={0}
-                max={200}
-                value={parametros.recedido_derecho ?? 0}
-                onChange={(e) => setParametro("recedido_derecho", Number(e.target.value))}
-                className="w-full text-xs font-mono p-1 rounded bg-transparent outline-none text-[#0F172A] font-bold"
-              />
-            </div>
-          </div>
-
-          {/* Uniones Izquierda y Derecha */}
-          <div className="flex flex-col gap-2 p-2.5 rounded-lg bg-[#E2E8F0] border border-slate-300 text-xs text-[#0F172A]">
-            <span className="font-bold text-[#0F172A]">Uniones Estructurales</span>
-            
-            <div className="flex justify-between items-center">
-              <span className="text-[11px] text-[#0F172A]">Unión Izquierda:</span>
-              <select
-                value={parametros.union_izquierda || "Minifix"}
-                onChange={(e) => setParametro("union_izquierda", e.target.value)}
-                className="text-xs p-1 rounded-lg bg-white border border-slate-300 font-bold text-[#0F172A]"
-              >
-                <option value="Minifix">Minifix</option>
-                <option value="Tornillo tarugo">Tornillo tarugo</option>
-                <option value="Entrepaño">Entrepaño</option>
-              </select>
-            </div>
-
-            <div className="flex justify-between items-center">
-              <span className="text-[11px] text-[#0F172A]">Unión Derecha:</span>
-              <select
-                value={parametros.union_derecha || "Tornillo tarugo"}
-                onChange={(e) => setParametro("union_derecha", e.target.value)}
-                className="text-xs p-1 rounded-lg bg-white border border-slate-300 font-bold text-[#0F172A]"
-              >
-                <option value="Minifix">Minifix</option>
-                <option value="Tornillo tarugo">Tornillo tarugo</option>
-                <option value="Entrepaño">Entrepaño</option>
-              </select>
-            </div>
-
-            <div className="grid grid-cols-2 gap-2 pt-1 border-t border-slate-300 text-[11px] text-[#0F172A]">
-              <div className="flex flex-col gap-1">
-                <span>Orientación Minifix:</span>
-                <select
-                  value={parametros.orientacion_minifix || "abajo"}
-                  onChange={(e) => setParametro("orientacion_minifix", e.target.value)}
-                  className="text-xs p-1 rounded-lg bg-white border border-slate-300 text-[#0F172A] font-bold"
-                >
-                  <option value="abajo">Abajo</option>
-                  <option value="arriba">Arriba</option>
-                </select>
-              </div>
-              <div className="flex flex-col gap-1">
-                <span>Maquinado Minifix:</span>
-                <select
-                  value={parametros.orientacion_maquinado_minifix || "abajo"}
-                  onChange={(e) => setParametro("orientacion_maquinado_minifix", e.target.value)}
-                  className="text-xs p-1 rounded-lg bg-white border border-slate-300 text-[#0F172A] font-bold"
-                >
-                  <option value="abajo">Abajo</option>
-                  <option value="arriba">Arriba</option>
-                </select>
-              </div>
-              <div className="flex flex-col gap-1">
-                <span>Posición Tarugo:</span>
-                <select
-                  value={parametros.posicion_tarugo || "1"}
-                  onChange={(e) => setParametro("posicion_tarugo", e.target.value)}
-                  className="text-xs p-1 rounded-lg bg-white border border-slate-300 text-[#0F172A] font-bold"
-                >
-                  <option value="1">1 (Frontal)</option>
-                  <option value="2">2 (Posterior)</option>
-                </select>
-              </div>
-              <div className="flex flex-col gap-1">
-                <span>Posición Tornillo:</span>
-                <select
-                  value={parametros.posicion_tornillo || "1"}
-                  onChange={(e) => setParametro("posicion_tornillo", e.target.value)}
-                  className="text-xs p-1 rounded-lg bg-white border border-slate-300 text-[#0F172A] font-bold"
-                >
-                  <option value="1">1 (Frontal)</option>
-                  <option value="2">2 (Posterior)</option>
-                </select>
-              </div>
-              <div className="flex flex-col gap-1">
-                <span>Borde Izquierdo:</span>
-                <select
-                  value={parametros.borde_izquierdo || "MDP"}
-                  onChange={(e) => setParametro("borde_izquierdo", e.target.value)}
-                  className="text-xs p-1 rounded-lg bg-white border border-slate-300 text-[#0F172A] font-bold"
-                >
-                  <option value="MDP">MDP</option>
-                  <option value="Canto">Canto</option>
-                </select>
-              </div>
-              <div className="flex flex-col gap-1">
-                <span>Borde Derecho:</span>
-                <select
-                  value={parametros.borde_derecho || "MDP"}
-                  onChange={(e) => setParametro("borde_derecho", e.target.value)}
-                  className="text-xs p-1 rounded-lg bg-white border border-slate-300 text-[#0F172A] font-bold"
-                >
-                  <option value="MDP">MDP</option>
-                  <option value="Canto">Canto</option>
-                </select>
-              </div>
-            </div>
-
-            {/* Mapeados y Texturas */}
-            <div className="flex flex-col gap-1.5 pt-2 border-t border-slate-300">
-              <span className="font-bold text-[#0F172A]">Mapeado de Texturas</span>
-              <div className="flex justify-between items-center">
-                <span className="text-[10px] text-[#0F172A]">Lado Balance Cubierta:</span>
-                <select
-                  value={parametros.lado_balance_cubierta || "Cara B"}
-                  onChange={(e) => setParametro("lado_balance_cubierta", e.target.value)}
-                  className="text-xs p-1 rounded-lg bg-white border border-slate-300 text-[#0F172A] font-bold"
-                >
-                  <option value="Cara A">Cara A</option>
-                  <option value="Cara B">Cara B</option>
-                  <option value="D/D">D/D</option>
-                </select>
-              </div>
-              <div className="flex justify-between items-center">
-                <span className="text-[10px] text-[#0F172A]">Mapeado Cubierta:</span>
-                <select
-                  value={parametros.tipo_mapeado_cubierta || "Cubierta"}
-                  onChange={(e) => setParametro("tipo_mapeado_cubierta", e.target.value)}
-                  className="text-xs p-1 rounded-lg bg-white border border-slate-300 text-[#0F172A] font-bold"
-                >
-                  <option value="Cubierta">Cubierta</option>
-                  <option value="Cubierta Atravesada">Atravesada</option>
-                </select>
-              </div>
-              <div className="flex justify-between items-center">
-                <span className="text-[10px] text-[#0F172A]">Lado Balance Entrepaño:</span>
-                <select
-                  value={parametros.lado_balance_entrepanio || "Cara B"}
-                  onChange={(e) => setParametro("lado_balance_entrepanio", e.target.value)}
-                  className="text-xs p-1 rounded-lg bg-white border border-slate-300 text-[#0F172A] font-bold"
-                >
-                  <option value="Cara A">Cara A</option>
-                  <option value="Cara B">Cara B</option>
-                  <option value="D/D">D/D</option>
-                </select>
-              </div>
-              <div className="flex justify-between items-center">
-                <span className="text-[10px] text-[#0F172A]">Mapeado Entrepaño:</span>
-                <select
-                  value={parametros.tipo_mapeado_entrepanio || "Cubierta"}
-                  onChange={(e) => setParametro("tipo_mapeado_entrepanio", e.target.value)}
-                  className="text-xs p-1 rounded-lg bg-white border border-slate-300 text-[#0F172A] font-bold"
-                >
-                  <option value="Cubierta">Cubierta</option>
-                  <option value="Cubierta Atravesada">Atravesada</option>
-                </select>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
+      ))}
 
       {/* Color de Acabado & Puertas (Card Organizada) */}
       <div className="flex flex-col gap-2.5 p-3 rounded-xl bg-cyan-950/20 dark:bg-[#131B2E]/60 border border-cyan-200/80 dark:border-cyan-900/40 shadow-sm">
