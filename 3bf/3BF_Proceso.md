@@ -28,9 +28,14 @@ Si el visor se pone en blanco o muestra el badge amarillo `Worker: API Fallback`
 
 ---
 
-## 📐 Diagrama del Flujo de Datos (Visual Tech Ethos)
+## 📐 Diagrama del Flujo de Datos (Visual Tech Ethos - Versión 3.0 Estable)
 
-![Diagrama del Flujo de Datos 3BF](./3BF_Proceso_Diagrama.svg)
+![Diagrama del Flujo de Datos 3BF V3](./3BF_Proceso_Diagrama_V3.svg)
+
+> **Historial y Evolución de Versiones del Diagrama:**
+> - [Versión 3.0 (Estable Actual - Doble Inyección Universal XML & Coherencia Total)](./3BF_Proceso_Diagrama_V3.svg)
+> - [Versión 2.0 (Transicional - Schema Discovery Inicial)](./3BF_Proceso_Diagrama_V2.svg)
+> - [Versión 1.0 (Histórica - Pipeline Lineal Inicial)](./3BF_Proceso_Diagrama_V1.svg)
 
 ---
 
@@ -93,6 +98,23 @@ Si el visor se pone en blanco o muestra el badge amarillo `Worker: API Fallback`
 
 - **Desmantelamiento Definitivo de Secciones Residuales (`Tablero & Espesor`)**:
   - La sección hardcoded "Tablero & Espesor" fue eliminada permanentemente del panel de control (`ControlPanel.tsx`). La interfaz de 3BF es 100% autónoma y guiada exclusivamente por los parámetros nativos expuestos por los algoritmos de Grasshopper (`.ghx`).
+
+---
+
+### 🏛️ 7. Arquitectura V3.0: Doble Inyección Universal XML & Coherencia Total (Release Estable)
+
+- **Evolución Arquitectónica (V1 ➔ V2 ➔ V3)**:
+  * **Versión 1.0 (Histórica)**: Pipeline Lineal Inicial. Ceguera semántica, puente Base64 pasivo y UI rígida con nombres quemados (`ancho`, `alto`).
+  * **Versión 2.0 (Transicional)**: Schema Discovery Inicial. Escaneaba metadatos en `/metadata`, pero presentaba debilidades: RhinoCompute ignoraba los cambios en sliders porque no se actualizaban los nodos `<Value>` en el XML nativo antes de Base64, y solo se detectaban `Number Sliders` simples.
+  * **Versión 3.0 (Estable Actual)**: **Doble Inyección Universal en Caliente (Universal Hot XML Ingestion)**.
+    1. **Eslabón 2.1 (Schema Discovery Total)**: Escanea en **5 ms** todos los `Number Sliders` (min/max/default) y `Value Lists` (opciones completas y opción activa), estructurando las tarjetas según la jerarquía VisualARQ (`01.x`, `02.x`).
+    2. **Eslabón 2.2 (Inyección en Caliente en Árbol XML)**: Inyecta directamente en memoria los valores del usuario tanto en `<item name="Value">` (Sliders) como en `<item name="Selected">` (Value Lists) antes de codificar en Base64. RhinoCompute 8 calcula siempre sobre el archivo ya modificado con **cero pérdida de parámetros**.
+- **Coherencia Absoluta 3D vs UI**:
+  - Las dimensiones modificadas en sliders (Ancho, Profundidad, Recedidos) y los cambios en selectores de herrajes (Minifix, Tornillos, Cantos, Mapeados) se reflejan simultáneamente en la interfaz y en el visor Three.js con latencia de ~200 ms.
+- **Trilogía Oficial de Diagramas Vectoriales**:
+  - [Versión 3.0 (Estable)](./3BF_Proceso_Diagrama_V3.svg)
+  - [Versión 2.0 (Transicional)](./3BF_Proceso_Diagrama_V2.svg)
+  - [Versión 1.0 (Histórica)](./3BF_Proceso_Diagrama_V1.svg)
 
 ---
 

@@ -1,0 +1,249 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 720" width="100%" height="100%" style="background-color: #ffffff; font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
+  <defs>
+    <!-- Card Gradients -->
+    <linearGradient id="cardGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#ffffff" />
+      <stop offset="100%" stop-color="#f8fafc" />
+    </linearGradient>
+    <linearGradient id="blueHeader" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#0284c7" />
+      <stop offset="100%" stop-color="#0369a1" />
+    </linearGradient>
+    <linearGradient id="indigoHeader" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#4f46e5" />
+      <stop offset="100%" stop-color="#4338ca" />
+    </linearGradient>
+    <linearGradient id="tealHeader" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#0d9488" />
+      <stop offset="100%" stop-color="#0f766e" />
+    </linearGradient>
+    <linearGradient id="goldBadge" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#f59e0b" />
+      <stop offset="100%" stop-color="#d97706" />
+    </linearGradient>
+    <linearGradient id="subCardGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#eff6ff" />
+      <stop offset="100%" stop-color="#dbeafe" />
+    </linearGradient>
+    
+    <!-- Shadow Filter -->
+    <filter id="shadow" x="-5%" y="-5%" width="110%" height="110%">
+      <feDropShadow dx="0" dy="4" stdDeviation="6" flood-color="#0f172a" flood-opacity="0.07" />
+    </filter>
+    
+    <!-- Arrowhead Markers -->
+    <marker id="arrowBlue" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 1 L 10 5 L 0 9 z" fill="#0284c7" />
+    </marker>
+    <marker id="arrowIndigo" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 1 L 10 5 L 0 9 z" fill="#4f46e5" />
+    </marker>
+    <marker id="arrowTeal" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 1 L 10 5 L 0 9 z" fill="#0d9488" />
+    </marker>
+  </defs>
+
+  <!-- Canvas Background & Border -->
+  <rect width="1440" height="720" fill="#ffffff" stroke="#e2e8f0" stroke-width="2" rx="14" />
+
+  <!-- Header Section -->
+  <g transform="translate(40, 35)">
+    <text x="0" y="22" font-size="22" font-weight="800" fill="#0f172a" letter-spacing="-0.5">3DBimFab (3BF) - Arquitectura de Doble Inyección Universal y Coherencia Total</text>
+    <rect x="910" y="4" width="135" height="22" rx="6" fill="#fef3c7" stroke="#fde68a" />
+    <text x="977" y="19" font-size="10" font-weight="800" fill="#b45309" text-anchor="middle">VERSIÓN 3.0 (ESTABLE)</text>
+    <text x="0" y="45" font-size="13" fill="#64748b">Pipeline Blindado: Schema Discovery 2.1 (5ms) + Inyección XML en Caliente (Sliders &amp; Value Lists) ➔ RhinoCompute 8 ➔ Three.js</text>
+    <line x1="0" y1="58" x2="1360" y2="58" stroke="#f1f5f9" stroke-width="2" />
+  </g>
+
+  <!-- ==================== STEP 1: Grasshopper ==================== -->
+  <g transform="translate(40, 115)" filter="url(#shadow)">
+    <rect width="215" height="390" rx="10" fill="url(#cardGrad)" stroke="#cbd5e1" stroke-width="1.5" />
+    <rect width="215" height="40" rx="10" fill="url(#blueHeader)" />
+    <rect y="28" width="215" height="12" fill="#0284c7" />
+    <text x="15" y="25" font-size="13" font-weight="700" fill="#ffffff">1. Grasshopper (.ghx)</text>
+    
+    <!-- Sub-box 1 -->
+    <rect x="12" y="52" width="191" height="65" rx="6" fill="#ffffff" stroke="#e2e8f0" />
+    <text x="20" y="70" font-size="11" font-weight="700" fill="#0369a1">RH_IN: Entradas Vivas</text>
+    <text x="20" y="86" font-size="10" fill="#475569">• Sliders (01.1 Ancho, Recedidos)</text>
+    <text x="20" y="99" font-size="10" fill="#475569">• Value Lists (Uniones, Posición)</text>
+    <text x="20" y="112" font-size="9" fill="#0284c7">✦ Independencia de nombres</text>
+
+    <!-- Sub-box 2 -->
+    <rect x="12" y="125" width="191" height="60" rx="6" fill="#ffffff" stroke="#e2e8f0" />
+    <text x="20" y="143" font-size="11" font-weight="700" fill="#0369a1">GH_Group: Categorías</text>
+    <text x="20" y="159" font-size="10" fill="#475569">• Dimensiones (01.x), Herrajes (02.x)</text>
+    <text x="20" y="172" font-size="10" fill="#475569">• Estándar Jerárquico VisualARQ</text>
+
+    <!-- Sub-box 3 -->
+    <rect x="12" y="193" width="191" height="60" rx="6" fill="#ffffff" stroke="#e2e8f0" />
+    <text x="20" y="211" font-size="11" font-weight="700" fill="#0369a1">RH_OUT: Salidas DfMA</text>
+    <text x="20" y="227" font-size="10" fill="#475569">• Tableros, Melaminas, Cantos</text>
+    <text x="20" y="240" font-size="10" fill="#475569">• Tornillos, Tarugos, Minifix</text>
+
+    <!-- Sub-box 4 -->
+    <rect x="12" y="261" width="191" height="115" rx="6" fill="#f8fafc" stroke="#e2e8f0" />
+    <text x="20" y="279" font-size="11" font-weight="700" fill="#0f172a">Árbol XML (.ghx)</text>
+    <text x="20" y="295" font-size="10" fill="#64748b">• NickNames RH_IN / OUT</text>
+    <text x="20" y="310" font-size="10" fill="#64748b">• Contenedores de Grupo</text>
+    <text x="20" y="325" font-size="10" fill="#64748b">• Nodos &lt;Slider&gt; y &lt;ListItem&gt;</text>
+    <text x="20" y="340" font-size="10" fill="#64748b">• Sin sobreescritura nativa</text>
+    <text x="20" y="355" font-size="10" font-weight="700" fill="#0284c7">• Fuente Única de Verdad</text>
+  </g>
+
+  <!-- Connection 1 -> 2 -->
+  <path d="M 255 310 L 290 310" stroke="#0284c7" stroke-width="2.5" marker-end="url(#arrowBlue)" fill="none" />
+
+  <!-- ==================== STEP 2: Python Worker (V3 DEFINITIVO) ==================== -->
+  <g transform="translate(290, 115)" filter="url(#shadow)">
+    <rect width="270" height="390" rx="10" fill="url(#cardGrad)" stroke="#f59e0b" stroke-width="2" />
+    <rect width="270" height="40" rx="10" fill="url(#indigoHeader)" />
+    <rect y="28" width="270" height="12" fill="#4f46e5" />
+    <text x="15" y="25" font-size="13" font-weight="700" fill="#ffffff">2. Python Worker Engine (:8005)</text>
+
+    <!-- Sub-box 2.1: ESCÁNER DE INTROSPECCIÓN -->
+    <rect x="12" y="52" width="246" height="135" rx="8" fill="url(#subCardGrad)" stroke="#93c5fd" stroke-width="1.2" />
+    <rect x="20" y="60" width="130" height="18" rx="4" fill="#2563eb" />
+    <text x="25" y="73" font-size="9" font-weight="700" fill="#ffffff">2.1 SCHEMA DISCOVERY</text>
+    <text x="20" y="95" font-size="11" font-weight="700" fill="#1e3a8a">Escáner de Interfaz &amp; XML</text>
+    <text x="20" y="112" font-size="10" fill="#1e40af">• Escaneo total de Sliders (Min/Max/Def)</text>
+    <text x="20" y="126" font-size="10" fill="#1e40af">• Escaneo de Value Lists (Options/Def)</text>
+    <text x="20" y="140" font-size="10" fill="#1e40af">• Extracción jerárquica de grupos</text>
+    <text x="20" y="154" font-size="10" font-weight="700" fill="#2563eb">• Endpoint /metadata (Responde en 5ms)</text>
+    <text x="20" y="168" font-size="9" fill="#3b82f6">➔ Construye tarjetas y selects al instante</text>
+
+    <!-- Sub-box 2.2: INYECCIÓN UNIVERSAL EN CALIENTE -->
+    <rect x="12" y="195" width="246" height="182" rx="8" fill="#ffffff" stroke="#fde68a" stroke-width="1.2" />
+    <rect x="20" y="203" width="165" height="18" rx="4" fill="#d97706" />
+    <text x="25" y="216" font-size="9" font-weight="700" fill="#ffffff">2.2 UNIVERSAL HOT INJECTION</text>
+    <text x="20" y="238" font-size="11" font-weight="700" fill="#0f172a">Inyección en Árbol XML (V3 Core)</text>
+    <text x="20" y="254" font-size="10" font-weight="700" fill="#b45309">🔥 1. Inyecta &lt;Value&gt; en Sliders</text>
+    <text x="20" y="268" font-size="10" font-weight="700" fill="#b45309">🔥 2. Inyecta &lt;Selected&gt; en Value Lists</text>
+    <text x="20" y="282" font-size="10" fill="#475569">• Async def compute_model (await req.json)</text>
+    <text x="20" y="296" font-size="10" fill="#475569">• Sincronización física en /temporal (.ghx)</text>
+    <text x="20" y="310" font-size="10" fill="#475569">• Bust-Cache con marcas de tiempo</text>
+    <text x="20" y="324" font-size="10" font-weight="700" fill="#0284c7">• Descodificación OpenNURBS C++</text>
+    <text x="20" y="338" font-size="9" fill="#059669">➔ 22 mallas siempre sincronizadas con UI</text>
+    <text x="20" y="352" font-size="9" fill="#64748b">• Tiempo de respuesta: ~200 ms</text>
+  </g>
+
+  <!-- Connection 2 -> 3 -->
+  <path d="M 560 310 L 595 310" stroke="#0284c7" stroke-width="2.5" marker-end="url(#arrowBlue)" fill="none" />
+
+  <!-- ==================== STEP 3: RhinoCompute 8 ==================== -->
+  <g transform="translate(595, 115)" filter="url(#shadow)">
+    <rect width="215" height="390" rx="10" fill="url(#cardGrad)" stroke="#cbd5e1" stroke-width="1.5" />
+    <rect width="215" height="40" rx="10" fill="url(#blueHeader)" />
+    <rect y="28" width="215" height="12" fill="#0284c7" />
+    <text x="15" y="25" font-size="13" font-weight="700" fill="#ffffff">3. RhinoCompute 8 (:5000)</text>
+
+    <!-- Sub-box 1 -->
+    <rect x="12" y="52" width="191" height="60" rx="6" fill="#ffffff" stroke="#e2e8f0" />
+    <text x="20" y="70" font-size="11" font-weight="700" fill="#0369a1">Solver Paramétrico</text>
+    <text x="20" y="86" font-size="10" fill="#475569">• Motor Rhino 8 Headless</text>
+    <text x="20" y="99" font-size="10" fill="#475569">• Recibe XML precargado</text>
+
+    <!-- Sub-box 2 -->
+    <rect x="12" y="120" width="191" height="60" rx="6" fill="#ffffff" stroke="#e2e8f0" />
+    <text x="20" y="138" font-size="11" font-weight="700" fill="#0369a1">Evaluación Booleana DfMA</text>
+    <text x="20" y="154" font-size="10" fill="#475569">• Cálculo dimensional exacto</text>
+    <text x="20" y="167" font-size="10" fill="#475569">• Sustracción de maquinados</text>
+
+    <!-- Sub-box 3 -->
+    <rect x="12" y="188" width="191" height="188" rx="6" fill="#f8fafc" stroke="#e2e8f0" />
+    <text x="20" y="206" font-size="11" font-weight="700" fill="#0f172a">Serialización OpenNURBS</text>
+    <text x="20" y="222" font-size="10" fill="#64748b">• Serialización archive3dm</text>
+    <text x="20" y="237" font-size="10" fill="#64748b">• Respuesta HTTP 200</text>
+    <text x="20" y="252" font-size="10" fill="#64748b">• Latencia ~ 200 ms</text>
+    <text x="20" y="267" font-size="10" fill="#64748b">• Árbol InnerTree devuelto</text>
+    <text x="20" y="282" font-size="10" fill="#64748b">• Geometría pura sin render</text>
+    <text x="20" y="297" font-size="10" fill="#64748b">• Generación de Breps / Meshes</text>
+    <text x="20" y="312" font-size="10" font-weight="700" fill="#059669">• Cero pérdida de sliders</text>
+  </g>
+
+  <!-- Connection 3 -> 4 -->
+  <path d="M 810 310 L 845 310" stroke="#0284c7" stroke-width="2.5" marker-end="url(#arrowBlue)" fill="none" />
+
+  <!-- ==================== STEP 4: Descodificador C++ ==================== -->
+  <g transform="translate(845, 115)" filter="url(#shadow)">
+    <rect width="220" height="390" rx="10" fill="url(#cardGrad)" stroke="#cbd5e1" stroke-width="1.5" />
+    <rect width="220" height="40" rx="10" fill="url(#blueHeader)" />
+    <rect y="28" width="220" height="12" fill="#0284c7" />
+    <text x="15" y="25" font-size="13" font-weight="700" fill="#ffffff">4. Descodificador C++</text>
+
+    <!-- Sub-box 1 -->
+    <rect x="12" y="52" width="196" height="60" rx="6" fill="#ffffff" stroke="#e2e8f0" />
+    <text x="20" y="70" font-size="11" font-weight="700" fill="#0369a1">rhino3dm.Decode()</text>
+    <text x="20" y="86" font-size="10" fill="#475569">• Deserializador binario C++</text>
+    <text x="20" y="99" font-size="10" fill="#475569">• Decodificación de mallas</text>
+
+    <!-- Sub-box 2 -->
+    <rect x="12" y="120" width="196" height="60" rx="6" fill="#ffffff" stroke="#e2e8f0" />
+    <text x="20" y="138" font-size="11" font-weight="700" fill="#0369a1">Normalización Espacial</text>
+    <text x="20" y="154" font-size="10" fill="#475569">• BoundingBox (X, Y, Z)</text>
+    <text x="20" y="167" font-size="10" fill="#475569">• Conversión Rhino ➔ Three.js</text>
+
+    <!-- Sub-box 3 -->
+    <rect x="12" y="188" width="196" height="188" rx="6" fill="#f8fafc" stroke="#e2e8f0" />
+    <text x="20" y="206" font-size="11" font-weight="700" fill="#0f172a">Estructuración JSON</text>
+    <text x="20" y="222" font-size="10" fill="#64748b">• Arreglo real_meshes (22 piezas)</text>
+    <text x="20" y="237" font-size="10" fill="#64748b">• Vértices locales e índices</text>
+    <text x="20" y="252" font-size="10" fill="#64748b">• Posiciones y centros en metros</text>
+    <text x="20" y="267" font-size="10" fill="#64748b">• Nombres nativos RH_OUT:</text>
+    <text x="20" y="282" font-size="10" fill="#64748b">• Envío a Next.js /api/compute</text>
+    <text x="20" y="297" font-size="10" fill="#64748b">• Retorno en JSON estructurado</text>
+  </g>
+
+  <!-- Connection 4 -> 5 -->
+  <path d="M 1065 310 L 1100 310" stroke="#0284c7" stroke-width="2.5" marker-end="url(#arrowBlue)" fill="none" />
+
+  <!-- ==================== STEP 5: Web Three.js ==================== -->
+  <g transform="translate(1100, 115)" filter="url(#shadow)">
+    <rect width="240" height="390" rx="10" fill="url(#cardGrad)" stroke="#cbd5e1" stroke-width="1.5" />
+    <rect width="240" height="40" rx="10" fill="url(#tealHeader)" />
+    <rect y="28" width="240" height="12" fill="#0d9488" />
+    <text x="15" y="25" font-size="13" font-weight="700" fill="#ffffff">5. Three.js Viewer (:3005)</text>
+
+    <!-- Sub-box 1 -->
+    <rect x="12" y="52" width="216" height="60" rx="6" fill="#f0fdf4" stroke="#86efac" />
+    <text x="20" y="70" font-size="11" font-weight="700" fill="#15803d">UI Dinámica (VisualARQ)</text>
+    <text x="20" y="86" font-size="10" fill="#166534">• Tarjetas y Sliders automáticos</text>
+    <text x="20" y="99" font-size="10" fill="#166534">• Selects con opciones del .ghx</text>
+
+    <!-- Sub-box 2 -->
+    <rect x="12" y="120" width="216" height="60" rx="6" fill="#ffffff" stroke="#e2e8f0" />
+    <text x="20" y="138" font-size="11" font-weight="700" fill="#0f766e">React Three Fiber</text>
+    <text x="20" y="154" font-size="10" fill="#475569">• Renderizado 3D en tiempo real</text>
+    <text x="20" y="167" font-size="10" fill="#475569">• RaycastHandler centralizado</text>
+
+    <!-- Sub-box 3 -->
+    <rect x="12" y="188" width="216" height="188" rx="6" fill="#f8fafc" stroke="#e2e8f0" />
+    <text x="20" y="206" font-size="11" font-weight="700" fill="#0f172a">Experiencia DfMA Interactiva</text>
+    <text x="20" y="222" font-size="10" fill="#64748b">• Modos: 💎 Cristal | 🧱 Sólido | 📐 Líneas</text>
+    <text x="20" y="237" font-size="10" fill="#64748b">• Texturizado PBR y bordes limpios</text>
+    <text x="20" y="252" font-size="10" fill="#64748b">• Despiece &amp; Costos en vivo</text>
+    <text x="20" y="267" font-size="10" fill="#64748b">• Animación de cajones / herrajes</text>
+    <text x="20" y="282" font-size="10" fill="#64748b">• Purga y sincronización de estado</text>
+    <text x="20" y="297" font-size="10" font-weight="700" fill="#0d9488">• Coherencia total 3D vs UI</text>
+  </g>
+
+  <!-- ==================== BUCLES BIDIRECCIONALES ==================== -->
+  
+  <!-- Loop 1: METADATA FAST LOOP -->
+  <path d="M 1220 115 C 1220 75, 425 75, 425 115" stroke="#4f46e5" stroke-width="2" stroke-dasharray="5,5" marker-end="url(#arrowIndigo)" fill="none" />
+  <g transform="translate(820, 62)">
+    <rect x="-180" y="0" width="360" height="24" rx="12" fill="#eff6ff" stroke="#bfdbfe" />
+    <text x="0" y="16" font-size="10" font-weight="700" fill="#1e40af" text-anchor="middle">⚡ Fast Metadata Loop: /metadata escanea y arma la UI en 5 ms</text>
+  </g>
+
+  <!-- Loop 2: PARAMETRIC 3D CAD LOOP -->
+  <path d="M 1220 505 L 1220 610 L 425 610 L 425 505" stroke="#0d9488" stroke-width="2.5" stroke-dasharray="6,6" marker-end="url(#arrowTeal)" fill="none" />
+
+  <!-- Loop 2 Banner -->
+  <g transform="translate(820, 585)" filter="url(#shadow)">
+    <rect x="-290" y="0" width="580" height="50" rx="10" fill="#ffffff" stroke="#0d9488" stroke-width="1.5" />
+    <text x="0" y="22" font-size="12" font-weight="700" fill="#0f766e" text-anchor="middle">🔄 Bucle Paramétrico en Tiempo Real (Universal Hot XML Ingestion)</text>
+    <text x="0" y="38" font-size="11" fill="#334155" text-anchor="middle">Usuario modifica Slider / Selector ➔ Inyección XML en Caliente ➔ Recálculo Rhino 8 en ~200ms</text>
+  </g>
+
+</svg>

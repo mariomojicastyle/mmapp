@@ -1,0 +1,178 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1350 620" width="100%" height="100%" style="background-color: #ffffff; font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
+  <defs>
+    <!-- Card Gradients -->
+    <linearGradient id="cardGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#ffffff" />
+      <stop offset="100%" stop-color="#f8fafc" />
+    </linearGradient>
+    <linearGradient id="blueHeader" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#0284c7" />
+      <stop offset="100%" stop-color="#0369a1" />
+    </linearGradient>
+    <linearGradient id="tealHeader" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#0d9488" />
+      <stop offset="100%" stop-color="#0f766e" />
+    </linearGradient>
+    
+    <!-- Shadow Filter -->
+    <filter id="shadow" x="-5%" y="-5%" width="110%" height="110%">
+      <feDropShadow dx="0" dy="4" stdDeviation="5" flood-color="#0f172a" flood-opacity="0.08" />
+    </filter>
+    
+    <!-- Arrowhead Markers -->
+    <marker id="arrow" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 1 L 10 5 L 0 9 z" fill="#0284c7" />
+    </marker>
+    <marker id="arrowLoop" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 1 L 10 5 L 0 9 z" fill="#0d9488" />
+    </marker>
+  </defs>
+
+  <!-- Canvas Border -->
+  <rect width="1350" height="620" fill="#ffffff" stroke="#e2e8f0" stroke-width="2" rx="12" />
+
+  <!-- Header Section -->
+  <text x="40" y="45" font-size="20" font-weight="700" fill="#0f172a">3DBimFab (3BF) - Arquitectura y Flujo de Procesamiento Paramétrico 3D</text>
+  <text x="40" y="68" font-size="13" fill="#64748b">Diagrama Visual de Evaluación en Tiempo Real (Grasshopper ➔ RhinoCompute 8 ➔ Web Three.js)</text>
+  <line x1="40" y1="85" x2="1310" y2="85" stroke="#f1f5f9" stroke-width="2" />
+
+  <!-- STEP 1: Grasshopper -->
+  <g transform="translate(40, 110)" filter="url(#shadow)">
+    <rect width="220" height="290" rx="10" fill="url(#cardGrad)" stroke="#cbd5e1" stroke-width="1.5" />
+    <rect width="220" height="38" rx="10" fill="url(#blueHeader)" />
+    <rect y="26" width="220" height="12" fill="#0284c7" />
+    <text x="15" y="24" font-size="13" font-weight="700" fill="#ffffff">1. Grasshopper (.ghx)</text>
+    
+    <rect x="12" y="50" width="196" height="50" rx="6" fill="#ffffff" stroke="#e2e8f0" />
+    <text x="20" y="68" font-size="11" font-weight="700" fill="#0369a1">RH_IN: Modificadores</text>
+    <text x="20" y="85" font-size="10" fill="#475569">RH_IN:Ancho (Slider)</text>
+    <text x="20" y="95" font-size="10" fill="#475569">RH_IN:Alto, Profundidad...</text>
+
+    <rect x="12" y="110" width="196" height="50" rx="6" fill="#ffffff" stroke="#e2e8f0" />
+    <text x="20" y="128" font-size="11" font-weight="700" fill="#0369a1">RH_OUT: Piezas Mueble</text>
+    <text x="20" y="145" font-size="10" fill="#475569">RH_OUT:Frente de Cajon</text>
+    <text x="20" y="155" font-size="10" fill="#475569">RH_OUT:TapaLuz, Laterales...</text>
+
+    <rect x="12" y="170" width="196" height="108" rx="6" fill="#f8fafc" stroke="#e2e8f0" />
+    <text x="20" y="188" font-size="11" font-weight="700" fill="#0f172a">Estructura XML (.ghx)</text>
+    <text x="20" y="205" font-size="10" fill="#64748b">• NickName RH_IN / RH_OUT</text>
+    <text x="20" y="220" font-size="10" fill="#64748b">• Contenedores de Grupo</text>
+    <text x="20" y="235" font-size="10" fill="#64748b">• Atributos InstanceGuid</text>
+    <text x="20" y="250" font-size="10" fill="#64748b">• Sin sobreescritura nativa</text>
+  </g>
+
+  <!-- Connection 1 -> 2 -->
+  <path d="M 260 255 L 295 255" stroke="#0284c7" stroke-width="2.5" marker-end="url(#arrow)" fill="none" />
+
+  <!-- STEP 2: Python Worker -->
+  <g transform="translate(295, 110)" filter="url(#shadow)">
+    <rect width="220" height="290" rx="10" fill="url(#cardGrad)" stroke="#cbd5e1" stroke-width="1.5" />
+    <rect width="220" height="38" rx="10" fill="url(#blueHeader)" />
+    <rect y="26" width="220" height="12" fill="#0284c7" />
+    <text x="15" y="24" font-size="13" font-weight="700" fill="#ffffff">2. Python Worker (:8005)</text>
+
+    <rect x="12" y="50" width="196" height="50" rx="6" fill="#ffffff" stroke="#e2e8f0" />
+    <text x="20" y="68" font-size="11" font-weight="700" fill="#0369a1">Lectura Base64 (algo)</text>
+    <text x="20" y="85" font-size="10" fill="#475569">Codificación XML Base64</text>
+
+    <rect x="12" y="110" width="196" height="50" rx="6" fill="#ffffff" stroke="#e2e8f0" />
+    <text x="20" y="128" font-size="11" font-weight="700" fill="#0369a1">InnerTree Payload</text>
+    <text x="20" y="145" font-size="10" fill="#475569">{"RH_IN:Ancho": "1200.0"}</text>
+
+    <rect x="12" y="170" width="196" height="108" rx="6" fill="#f8fafc" stroke="#e2e8f0" />
+    <text x="20" y="188" font-size="11" font-weight="700" fill="#0f172a">Motor 3BF Worker</text>
+    <text x="20" y="205" font-size="10" fill="#64748b">• FastAPI / Uvicorn Server</text>
+    <text x="20" y="220" font-size="10" fill="#64748b">• Saneamiento de Headers</text>
+    <text x="20" y="235" font-size="10" fill="#64748b">• POST /grasshopper</text>
+    <text x="20" y="250" font-size="10" fill="#64748b">• Orquestación de hilos</text>
+  </g>
+
+  <!-- Connection 2 -> 3 -->
+  <path d="M 515 255 L 550 255" stroke="#0284c7" stroke-width="2.5" marker-end="url(#arrow)" fill="none" />
+
+  <!-- STEP 3: RhinoCompute 8 -->
+  <g transform="translate(550, 110)" filter="url(#shadow)">
+    <rect width="220" height="290" rx="10" fill="url(#cardGrad)" stroke="#cbd5e1" stroke-width="1.5" />
+    <rect width="220" height="38" rx="10" fill="url(#blueHeader)" />
+    <rect y="26" width="220" height="12" fill="#0284c7" />
+    <text x="15" y="24" font-size="13" font-weight="700" fill="#ffffff">3. RhinoCompute 8 (:5000)</text>
+
+    <rect x="12" y="50" width="196" height="50" rx="6" fill="#ffffff" stroke="#e2e8f0" />
+    <text x="20" y="68" font-size="11" font-weight="700" fill="#0369a1">Solver Paramétrico</text>
+    <text x="20" y="85" font-size="10" fill="#475569">Rhino 8 Engine (Licencia OK)</text>
+
+    <rect x="12" y="110" width="196" height="50" rx="6" fill="#ffffff" stroke="#e2e8f0" />
+    <text x="20" y="128" font-size="11" font-weight="700" fill="#0369a1">Generación Breps / Box</text>
+    <text x="20" y="145" font-size="10" fill="#475569">Recálculo 15 piezas reales</text>
+
+    <rect x="12" y="170" width="196" height="108" rx="6" fill="#f8fafc" stroke="#e2e8f0" />
+    <text x="20" y="188" font-size="11" font-weight="700" fill="#0f172a">Retorno OpenNURBS</text>
+    <text x="20" y="205" font-size="10" fill="#64748b">• Serialización archive3dm</text>
+    <text x="20" y="220" font-size="10" fill="#64748b">• Respuesta HTTP 200</text>
+    <text x="20" y="235" font-size="10" fill="#64748b">• Latencia &lt; 200 ms</text>
+    <text x="20" y="250" font-size="10" fill="#64748b">• Árbol InnerTree devuelto</text>
+  </g>
+
+  <!-- Connection 3 -> 4 -->
+  <path d="M 770 255 L 805 255" stroke="#0284c7" stroke-width="2.5" marker-end="url(#arrow)" fill="none" />
+
+  <!-- STEP 4: Descodificador -->
+  <g transform="translate(805, 110)" filter="url(#shadow)">
+    <rect width="220" height="290" rx="10" fill="url(#cardGrad)" stroke="#cbd5e1" stroke-width="1.5" />
+    <rect width="220" height="38" rx="10" fill="url(#blueHeader)" />
+    <rect y="26" width="220" height="12" fill="#0284c7" />
+    <text x="15" y="24" font-size="13" font-weight="700" fill="#ffffff">4. Descodificador C++</text>
+
+    <rect x="12" y="50" width="196" height="50" rx="6" fill="#ffffff" stroke="#e2e8f0" />
+    <text x="20" y="68" font-size="11" font-weight="700" fill="#0369a1">rhino3dm.Decode</text>
+    <text x="20" y="85" font-size="10" fill="#475569">Deserializador C++ nativo</text>
+
+    <rect x="12" y="110" width="196" height="50" rx="6" fill="#ffffff" stroke="#e2e8f0" />
+    <text x="20" y="128" font-size="11" font-weight="700" fill="#0369a1">BoundingBox (X, Y, Z)</text>
+    <text x="20" y="145" font-size="10" fill="#475569">Dimensiones &amp; Centros (m)</text>
+
+    <rect x="12" y="170" width="196" height="108" rx="6" fill="#f8fafc" stroke="#e2e8f0" />
+    <text x="20" y="188" font-size="11" font-weight="700" fill="#0f172a">Estructuración JSON</text>
+    <text x="20" y="205" font-size="10" fill="#64748b">• Arreglo real_meshes</text>
+    <text x="20" y="220" font-size="10" fill="#64748b">• Normalización ejes X,Z,Y</text>
+    <text x="20" y="235" font-size="10" fill="#64748b">• Envío a Next.js Route</text>
+    <text x="20" y="250" font-size="10" fill="#64748b">• Retorno a cliente web</text>
+  </g>
+
+  <!-- Connection 4 -> 5 -->
+  <path d="M 1025 255 L 1060 255" stroke="#0284c7" stroke-width="2.5" marker-end="url(#arrow)" fill="none" />
+
+  <!-- STEP 5: Web Three.js -->
+  <g transform="translate(1060, 110)" filter="url(#shadow)">
+    <rect width="230" height="290" rx="10" fill="url(#cardGrad)" stroke="#cbd5e1" stroke-width="1.5" />
+    <rect width="230" height="38" rx="10" fill="url(#tealHeader)" />
+    <rect y="26" width="230" height="12" fill="#0d9488" />
+    <text x="15" y="24" font-size="13" font-weight="700" fill="#ffffff">5. Three.js Viewer (:3005)</text>
+
+    <rect x="12" y="50" width="206" height="50" rx="6" fill="#ffffff" stroke="#e2e8f0" />
+    <text x="20" y="68" font-size="11" font-weight="700" fill="#0f766e">React Three Fiber</text>
+    <text x="20" y="85" font-size="10" fill="#475569">Instanciación THREE.Mesh</text>
+
+    <rect x="12" y="110" width="206" height="50" rx="6" fill="#ffffff" stroke="#e2e8f0" />
+    <text x="20" y="128" font-size="11" font-weight="700" fill="#0f766e">EdgesGeometry CAD</text>
+    <text x="20" y="145" font-size="10" fill="#475569">Bordes limpios Tech Ethos</text>
+
+    <rect x="12" y="170" width="206" height="108" rx="6" fill="#f0fdf4" stroke="#bbf7d0" />
+    <text x="20" y="188" font-size="11" font-weight="700" fill="#15803d">Mueble 3D Vivo</text>
+    <text x="20" y="205" font-size="10" fill="#166534">• ControlPanel Sliders UI</text>
+    <text x="20" y="220" font-size="10" fill="#166534">• Renderizado en tiempo real</text>
+    <text x="20" y="235" font-size="10" fill="#166534">• Expansión dinámica</text>
+    <text x="20" y="250" font-size="10" fill="#166534">• Experiencia ShapeDiver</text>
+  </g>
+
+  <!-- Interactive Loop Path (Bottom) -->
+  <path d="M 1175 400 L 1175 480 L 405 480 L 405 400" stroke="#0d9488" stroke-width="2.5" stroke-dasharray="6,6" marker-end="url(#arrowLoop)" fill="none" />
+
+  <!-- Loop Card Banner -->
+  <g transform="translate(675, 455)" filter="url(#shadow)">
+    <rect x="-240" y="0" width="480" height="50" rx="10" fill="#ffffff" stroke="#0d9488" stroke-width="1.5" />
+    <text x="0" y="22" font-size="12" font-weight="700" fill="#0f766e" text-anchor="middle">🔄 Bucle de Interacción en Tiempo Real (Loop Paramétrico)</text>
+    <text x="0" y="38" font-size="11" fill="#334155" text-anchor="middle">Usuario mueve Slider Ancho ➔ Petición POST /api/compute ➔ Recálculo Rhino 8 en 200ms</text>
+  </g>
+
+</svg>

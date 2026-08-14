@@ -113,6 +113,30 @@ function RaycastHandler() {
   return null;
 }
 
+function RhinoAxisTracker({ onUpdate }: { onUpdate: (axes: { x: { x: number; y: number }, y: { x: number; y: number }, z: { x: number; y: number } }) => void }) {
+  const { camera } = useThree();
+
+  useFrame(() => {
+    // Rhino X: (+1, 0, 0)
+    // Rhino Y: (0, 0, -1) (Profundidad horizontal hacia el fondo)
+    // Rhino Z: (0, +1, 0) (Altura vertical)
+    const qInv = camera.quaternion.clone().invert();
+    const vX = new THREE.Vector3(1, 0, 0).applyQuaternion(qInv);
+    const vY = new THREE.Vector3(0, 0, -1).applyQuaternion(qInv);
+    const vZ = new THREE.Vector3(0, 1, 0).applyQuaternion(qInv);
+
+    const len = 25; // Longitud del brazo en píxeles
+
+    onUpdate({
+      x: { x: vX.x * len, y: -vX.y * len },
+      y: { x: vY.x * len, y: -vY.y * len },
+      z: { x: vZ.x * len, y: -vZ.y * len },
+    });
+  });
+
+  return null;
+}
+
 function BoardMesh({
   position,
   size,
@@ -470,7 +494,6 @@ function ParametricFurnitureMesh({ setFurnitureGroup }: { setFurnitureGroup: (g:
                   vertices={m.vertices}
                   indices={m.indices}
                   tipoMapeado={m.name.includes("Cubierta") ? parametros.tipo_mapeado_cubierta : parametros.tipo_mapeado_entrepanio}
-                  interactive={!isDecorative}
                 />
               );
             })}
@@ -544,6 +567,11 @@ export default function Viewer3D() {
   const { tema, resultado, calibracion, escenarioLimpio, parametros, hoveredPiece } = use3BFStore();
   const [furnitureGroup, setFurnitureGroup] = React.useState<THREE.Group | null>(null);
   const [mousePos, setMousePos] = React.useState({ x: 0, y: 0 });
+  const [rhinoAxes, setRhinoAxes] = React.useState({
+    x: { x: 22, y: 0 },
+    y: { x: -8, y: -12 },
+    z: { x: 0, y: -22 },
+  });
   const containerRef = useRef<HTMLDivElement>(null);
 
   const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
@@ -624,7 +652,7 @@ export default function Viewer3D() {
       )}
 
       <Canvas
-        camera={{ position: [2, 1.5, 2.5], fov: 45 }}
+        camera={{ position: [0.6, 0.9, 1.1], fov: 45 }}
         shadows
         gl={{ preserveDrawingBuffer: true, antialias: true }}
       >
@@ -632,8 +660,8 @@ export default function Viewer3D() {
 
         {/* Iluminación de Estudio Calibrable en Tiempo Real */}
         <ambientLight intensity={calibracion.intensidadLuzAmbiental} />
-        <directionalLight position={[5, 8, 5]} intensity={calibracion.intensidadLuzDirecta} castShadow />
-        <directionalLight position={[-5, 5, -5]} intensity={calibracion.intensidadLuzAmbiental * 0.5} />
+        <directionalLight position={[3, 6, 3]} intensity={calibracion.intensidadLuzDirecta} castShadow />
+        <directionalLight position={[-3, 4, -4]} intensity={calibracion.intensidadLuzAmbiental * 0.5} />
 
         {/* Modelo Mueble en Coordenadas Reales de Grasshopper y Handler de Raycast Centralizado */}
         {!escenarioLimpio && (
@@ -657,11 +685,86 @@ export default function Viewer3D() {
           infiniteGrid
         />
 
-        <OrbitControls makeDefault minDistance={0.8} maxDistance={6} enableDamping />
+        <OrbitControls makeDefault target={[0.25, 0, -0.24]} minDistance={0.5} maxDistance={6} enableDamping />
+
+        {/* Tracker de Orientación de Cámara (Estilo Rhino 8) */}
+        <RhinoAxisTracker onUpdate={setRhinoAxes} />
       </Canvas>
 
-      {/* Marca de Agua 3BF Engine */}
-      <div className="absolute bottom-3 left-3 bg-black/60 backdrop-blur-md text-white text-xs px-3 py-1.5 rounded-full border border-white/10 flex items-center gap-2 pointer-events-none shadow-lg">
+      {/* Widget de Ejes X, Y, Z Idéntico a Rhino 8 (Vectorial SVG en Esquina Inferior Izquierda) */}
+      <div className="absolute bottom-3 left-3 pointer-events-none z-10 select-none flex items-center justify-center p-1">
+        <svg width="68" height="68" viewBox="0 0 68 68" className="overflow-visible">
+          {/* Origen central en (34, 34) */}
+          {/* Eje X (Ancho) */}
+          <line
+            x1="34"
+            y1="34"
+            x2={34 + rhinoAxes.x.x}
+            y2={34 + rhinoAxes.x.y}
+            stroke={tema === "obsidian" ? "#94a3b8" : "#475569"}
+            strokeWidth="1.6"
+            strokeLinecap="round"
+          />
+          <text
+            x={34 + rhinoAxes.x.x * 1.3}
+            y={34 + rhinoAxes.x.y * 1.3 + 4}
+            fill={tema === "obsidian" ? "#cbd5e1" : "#334155"}
+            fontSize="11"
+            fontFamily="Inter, -apple-system, sans-serif"
+            fontWeight="700"
+            textAnchor="middle"
+          >
+            x
+          </text>
+
+          {/* Eje Y (Profundidad) */}
+          <line
+            x1="34"
+            y1="34"
+            x2={34 + rhinoAxes.y.x}
+            y2={34 + rhinoAxes.y.y}
+            stroke={tema === "obsidian" ? "#94a3b8" : "#475569"}
+            strokeWidth="1.6"
+            strokeLinecap="round"
+          />
+          <text
+            x={34 + rhinoAxes.y.x * 1.3}
+            y={34 + rhinoAxes.y.y * 1.3 + 4}
+            fill={tema === "obsidian" ? "#cbd5e1" : "#334155"}
+            fontSize="11"
+            fontFamily="Inter, -apple-system, sans-serif"
+            fontWeight="700"
+            textAnchor="middle"
+          >
+            y
+          </text>
+
+          {/* Eje Z (Altura) */}
+          <line
+            x1="34"
+            y1="34"
+            x2={34 + rhinoAxes.z.x}
+            y2={34 + rhinoAxes.z.y}
+            stroke={tema === "obsidian" ? "#94a3b8" : "#475569"}
+            strokeWidth="1.6"
+            strokeLinecap="round"
+          />
+          <text
+            x={34 + rhinoAxes.z.x * 1.3}
+            y={34 + rhinoAxes.z.y * 1.3 + 4}
+            fill={tema === "obsidian" ? "#cbd5e1" : "#334155"}
+            fontSize="11"
+            fontFamily="Inter, -apple-system, sans-serif"
+            fontWeight="700"
+            textAnchor="middle"
+          >
+            z
+          </text>
+        </svg>
+      </div>
+
+      {/* Marca de Agua 3BF Engine (Ubicada a la derecha de los Ejes Rhino) */}
+      <div className="absolute bottom-3 left-24 bg-black/60 backdrop-blur-md text-white text-xs px-3 py-1.5 rounded-full border border-white/10 flex items-center gap-2 pointer-events-none shadow-lg">
         {resultado?.real_meshes && resultado.real_meshes.length > 0 ? (
           <>
             <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse" />

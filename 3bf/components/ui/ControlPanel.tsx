@@ -83,19 +83,26 @@ function limpiarEtiqueta(paramKey: string): string {
 function RenderParamControl({ paramKey }: { paramKey: string }) {
   const { parametros, setParametro, resultado } = use3BFStore();
   const label = limpiarEtiqueta(paramKey);
-  const storeKey = MAPA_PARAMETROS[paramKey] || paramKey.replace("RH_IN:", "").toLowerCase().replace(/\s+/g, "_");
-  const value = (parametros as any)[storeKey];
-  const limit = resultado?.slider_limits?.[paramKey];
+  const storeKey = paramKey;
+  const rawKeyClean = paramKey.replace("RH_IN:", "").toLowerCase().replace(/\s+/g, "_");
+  const legacyKey = MAPA_PARAMETROS[paramKey];
 
-  const pl = paramKey.toLowerCase();
-  const esSelectorTexto = pl.includes("union") || pl.includes("borde") || pl.includes("balance") || pl.includes("mapeado") || pl.includes("orientacion") || pl.includes("posicion") || pl.includes("tipo_cajon");
-  const esSlider = !esSelectorTexto;
+  const limit = resultado?.slider_limits?.[paramKey];
+  const value = (parametros as any)[storeKey] ?? (legacyKey ? (parametros as any)[legacyKey] : (parametros as any)[rawKeyClean]) ?? limit?.default;
+
+  const isValueList = limit?.type === "valuelist" || (limit?.options && limit.options.length > 0);
+  const esSlider = !isValueList && (limit?.type === "slider" || limit?.min !== undefined || typeof value === "number");
 
   // Si es un Slider Numérico
   if (esSlider) {
     const minVal = limit?.min ?? 0;
-    const maxVal = limit?.max ?? (pl.includes("ancho") || pl.includes("alto") || pl.includes("profundidad") ? 1200 : 200);
-    const numVal = typeof value === "number" ? value : (limit?.default ?? minVal);
+    const maxVal = limit?.max ?? (paramKey.toLowerCase().includes("ancho") || paramKey.toLowerCase().includes("alto") || paramKey.toLowerCase().includes("profundidad") ? 1200 : 200);
+    const numVal: number = typeof value === "number" ? value : (typeof limit?.default === "number" ? limit.default : Number(limit?.default ?? minVal));
+
+    const handleNumChange = (val: number) => {
+      setParametro(storeKey as any, val);
+      if (legacyKey) setParametro(legacyKey as any, val);
+    };
 
     return (
       <div className="flex flex-col gap-1.5 p-2 rounded-lg bg-[#E2E8F0] dark:bg-[#1E293B]/70 border border-slate-300 dark:border-slate-700/60 shadow-sm text-xs">
@@ -105,7 +112,7 @@ function RenderParamControl({ paramKey }: { paramKey: string }) {
             value={numVal}
             min={minVal}
             max={maxVal}
-            onChange={(val) => setParametro(storeKey as any, val)}
+            onChange={handleNumChange}
             className="text-cyan-600 dark:text-cyan-300 font-bold"
           />
         </div>
@@ -115,39 +122,40 @@ function RenderParamControl({ paramKey }: { paramKey: string }) {
           max={maxVal}
           step={maxVal <= 10 ? 0.1 : (maxVal <= 200 ? 1 : 10)}
           value={Math.min(maxVal, Math.max(minVal, numVal))}
-          onChange={(e) => setParametro(storeKey as any, Number(e.target.value))}
+          onChange={(e) => handleNumChange(Number(e.target.value))}
           className="w-full accent-cyan-600 cursor-pointer"
         />
       </div>
     );
   }
 
-  // Opciones predefinidas para Value Lists
-  let options: string[] = [];
-  if (pl.includes("union")) {
-    options = ["Minifix", "Tornillo tarugo", "Entrepaño"];
-  } else if (pl.includes("orientacion")) {
-    options = ["abajo", "arriba"];
-  } else if (pl.includes("posicion")) {
-    options = ["1", "2"];
-  } else if (pl.includes("borde")) {
-    options = ["MDP", "Canto"];
-  } else if (pl.includes("balance")) {
-    options = ["Cara A", "Cara B", "D/D"];
-  } else if (pl.includes("mapeado")) {
-    options = ["Cubierta", "Cubierta Atravesada"];
-  } else if (pl.includes("cajon")) {
-    options = ["Corredera Estandar", "Corredera Tipo X"];
-  } else {
-    options = [String(value || "Por defecto")];
+  // Opciones verdaderas traídas dinámicamente desde Grasshopper
+  let options: string[] = limit?.options && limit.options.length > 0 ? limit.options : [];
+  if (options.length === 0) {
+    const pl = paramKey.toLowerCase();
+    if (pl.includes("union")) options = ["Minifix", "Tornillo tarugo", "Entrepaño"];
+    else if (pl.includes("orientacion")) options = ["abajo", "arriba"];
+    else if (pl.includes("posicion")) options = ["1", "2"];
+    else if (pl.includes("borde")) options = ["MDP", "Canto"];
+    else if (pl.includes("balance")) options = ["Cara A", "Cara B", "D/D"];
+    else if (pl.includes("mapeado")) options = ["Cubierta", "Cubierta Atravesada"];
+    else if (pl.includes("cajon")) options = ["Corredera Estandar", "Corredera Tipo X"];
+    else options = [String(value || "Por defecto")];
   }
+
+  const selectedValue = String(value ?? limit?.default ?? options[0]);
+
+  const handleSelectChange = (newVal: string) => {
+    setParametro(storeKey as any, newVal);
+    if (legacyKey) setParametro(legacyKey as any, newVal);
+  };
 
   return (
     <div className="flex justify-between items-center bg-[#E2E8F0] dark:bg-[#1E293B]/70 p-2 rounded-lg border border-slate-300 dark:border-slate-700/60 text-xs text-[#0F172A] dark:text-slate-100 shadow-sm">
       <span className="font-bold text-[11px] text-[#0F172A] dark:text-slate-200">{label}:</span>
       <select
-        value={String(value || options[0])}
-        onChange={(e) => setParametro(storeKey as any, e.target.value)}
+        value={selectedValue}
+        onChange={(e) => handleSelectChange(e.target.value)}
         className="text-xs p-1 rounded-lg bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 font-bold text-[#0F172A] dark:text-cyan-300 outline-none cursor-pointer"
       >
         {options.map((opt) => (
@@ -168,12 +176,16 @@ function ParametrosPanel() {
 
   const esCubierta = (parametros.model_id + (parametros.custom_filename || "")).toLowerCase().includes("cubierta");
 
+  const uniqueFallbackParams = Array.from(new Set(Object.values(MAPA_PARAMETROS))).map(
+    (val) => Object.keys(MAPA_PARAMETROS).find((k) => MAPA_PARAMETROS[k] === val)!
+  );
+
   const groups: Array<{ title: string; parameters: string[] }> = resultado?.parameter_groups && resultado.parameter_groups.length > 0
     ? resultado.parameter_groups
     : [
         {
           title: "📐 Parámetros Generales DfMA",
-          parameters: Object.keys(MAPA_PARAMETROS)
+          parameters: uniqueFallbackParams
         }
       ];
 
@@ -316,13 +328,22 @@ export default function ControlPanel() {
       if (data.status === "success" && data.default_values) {
         lastModelRef.current = modelId; // Marcar como cargado
         
-        // Sincronizar store
+        // Sincronizar store dinámicamente con cualquier clave de Grasshopper
         Object.entries(data.default_values).forEach(([ghKey, val]) => {
-          const storeKey = MAPA_PARAMETROS[ghKey];
-          if (storeKey) {
-            setParametro(storeKey as any, val);
-          }
+          setParametro(ghKey as any, val);
+          const cleanKey = ghKey.replace("RH_IN:", "").toLowerCase().replace(/\s+/g, "_");
+          setParametro(cleanKey as any, val);
+          const legacyKey = MAPA_PARAMETROS[ghKey];
+          if (legacyKey) setParametro(legacyKey as any, val);
         });
+
+        // Actualizar INMEDIATAMENTE los grupos de la interfaz y límites de sliders sin esperar al 3D
+        const currRes = use3BFStore.getState().resultado;
+        setResultado({
+          ...(currRes || {}),
+          parameter_groups: data.parameter_groups || [],
+          slider_limits: data.slider_limits || {}
+        } as any);
       }
     } catch (err) {
       console.error("Error sincronizando parámetros desde archivo:", err);
@@ -359,12 +380,24 @@ export default function ControlPanel() {
     }
   };
 
+  // 🧹 Purga Previa Obligatoria (Clean-Before-Load Pattern)
+  const purgarEstadoCompleto = () => {
+    setResultado(null);
+    lastModelRef.current = null;
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
+  };
+
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
     const filename = file.name;
     const modelName = filename.replace(/\.(gh|ghx)$/i, "");
+
+    // 1. Purga total previa de interfaz y modelo 3D viejo
+    purgarEstadoCompleto();
 
     if (filename.toLowerCase().endsWith(".ghx")) {
       const reader = new FileReader();
@@ -376,7 +409,6 @@ export default function ControlPanel() {
           return [...filtered, { id: modelName, filename, content }];
         });
 
-        lastModelRef.current = null; // Forzar sincronización de UI
         setParametro("ghx_content", content);
         setParametro("custom_filename", filename);
         setParametro("model_id", modelName);
@@ -388,7 +420,6 @@ export default function ControlPanel() {
         const filtered = prev.filter((f) => f.id !== modelName);
         return [...filtered, { id: modelName, filename }];
       });
-      lastModelRef.current = null; // Forzar sincronización de UI
       setParametro("ghx_content", "");
       setParametro("custom_filename", filename);
       setParametro("model_id", modelName);
@@ -397,24 +428,23 @@ export default function ControlPanel() {
   };
 
   const handleSelectModel = (selectedId: string) => {
+    // 1. Purga total previa de interfaz y modelo 3D viejo
+    purgarEstadoCompleto();
+
     if (!selectedId) {
-      lastModelRef.current = null;
       setParametro("model_id", "");
       setParametro("custom_filename", "");
       setParametro("ghx_content", "");
-      setResultado(null);
       return;
     }
 
     const found = loadedFiles.find((f) => f.id === selectedId);
     if (found) {
-      lastModelRef.current = null; // Forzar sincronización de UI
       setParametro("model_id", found.id);
       setParametro("custom_filename", found.filename);
       setParametro("ghx_content", found.content || "");
       sincronizarParametrosDesdeArchivo(found.id, found.filename, found.content || "");
     } else {
-      lastModelRef.current = null; // Forzar sincronización de UI
       setParametro("model_id", selectedId);
       setParametro("custom_filename", `${selectedId}.ghx`);
       setParametro("ghx_content", "");
@@ -504,9 +534,12 @@ export default function ControlPanel() {
           className="hidden"
         />
 
-        {/* Botón para explorar disco duro (Cápsula rounded-full) */}
+        {/* Botón para explorar disco duro (Cápsula rounded-full con purga previa) */}
         <button
-          onClick={() => fileInputRef.current?.click()}
+          onClick={() => {
+            purgarEstadoCompleto();
+            fileInputRef.current?.click();
+          }}
           className="w-full py-2 px-4 rounded-full bg-cyan-600 hover:bg-cyan-500 text-white font-bold text-xs shadow-md border border-cyan-400/40 transition flex items-center justify-center gap-2 cursor-pointer"
         >
           <FileUp className="w-4 h-4" /> Buscar en disco

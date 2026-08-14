@@ -1,5 +1,19 @@
 # 📜 Histórico del Proyecto: mariomojica.com
 
+### 🔹 Hito 3BF_Alineado — Alineación Geométrica 1:1 CAD/WebGL, Widget de Ejes Rhino 8 & Protocolo Purge-First (14 de Agosto, 2026)
+
+- **Alineación Geométrica 1:1 Rhino ➔ Three.js**: Resolución del efecto espejo en profundidad en el visor 3D mediante la transformación de coordenadas dextrógira coherente (`Three.js X = Rhino X`, `Three.js Y = Rhino Z`, `Three.js Z = -Rhino Y`), con inversión de devanado de caras triangulares (CCW) para conservar normales 100% exteriores sin reflejos especulares ni inversiones de izquierda/derecha.
+- **Widget Vectorial de Ejes X, Y, Z (Estilo Rhino 8)**: Implementación de `RhinoAxisTracker` y widget vectorial SVG minimalista en la esquina inferior izquierda que replica con exactitud los ejes triédricos `x`, `y`, `z` de Rhinoceros, sincronizándose de forma fluida a 60 FPS con `OrbitControls` sin tocar el framebuffer de WebGL.
+- **Protocolo de Purga Previa (Purge-First en 3 Niveles)**:
+  * **Nivel 1 (Web React)**: Función `purgarEstadoCompleto()` en `ControlPanel.tsx` que resetea el explorador de archivos, el resultado previo y las referencias de caché antes de cargar una nueva definición.
+  * **Nivel 2 (Python Worker)**: Purga física en disco (`os.remove(custom_path)`) antes de escribir `uploaded_custom.ghx` en `/metadata` y `/compute`.
+  * **Nivel 3 (RhinoCompute 8)**: Inyección dinámica de `<!-- 3BF_CACHE_BUST: timestamp -->` para invalidar la memoria RAM del solver de Grasshopper.
+- **Corrección de Coincidencia Estricta de Signos (`-1` vs `1`)**: Eliminación del bug de neutralización de signos negativos en `3bf_worker.py` reemplazando búsquedas de subcadenas por comparaciones estrictas (`tv_low == in_name`), permitiendo el desplazamiento simétrico exacto de 64 mm en pernos Minifix.
+- **Consolidación del Estándar de Salidas Agrupadas (`RH_OUT:...`)**: Homologación del estándar de exportación de McNeel Hops / RhinoCompute 8 envolviendo componentes en grupos `GH_Group`, garantizando el retorno íntegro de las 24 mallas poligonales (tableros, pernos, cajas y maquinados CNC).
+- **Diagrama de Arquitectura Oficial Versión 3.0**: Publicación de `3BF_Proceso_Diagrama_V3.svg` y `3BF_Arquitectura_V3.svg` bajo el estándar visual *Tech Ethos*.
+
+---
+
 ### 🔹 Hito 3BF_Mesh_OK — Optimización de Carga, Raycasting Centralizado por Profundidad & Exportación Limpia a Blender (13 de Agosto, 2026)
 
 - **Sincronización Dinámica de Metadatos (Endpoint `/metadata`)**: Creado el endpoint `/metadata` en `3bf_worker.py` y proxy en Next.js `/api/metadata` que parsea los `default_values` del XML de Grasshopper en milisegundos sin invocar a RhinoCompute, reduciendo el tiempo de carga a la mitad (~1.5s) y eliminando peticiones dobles o parpadeos iniciales.

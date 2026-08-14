@@ -1,6 +1,7 @@
 import os
 import sys
 import json
+import re
 import base64
 import time
 import math
@@ -8,10 +9,10 @@ import requests
 import uvicorn
 import rhino3dm
 import xml.etree.ElementTree as ET
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 
 app = FastAPI(title="3BF Worker Python Engine", version="1.0.0")
 
@@ -27,24 +28,45 @@ def parse_ghx_slider_limits(ghx_path):
         for chunk in root.iter("chunk"):
             if chunk.attrib.get("name") == "Object":
                 name_item = chunk.find("items/item[@name='Name']")
-                if name_item is not None and "Number Slider" in str(name_item.text):
-                    container = chunk.find("chunks/chunk[@name='Container']")
-                    if container is not None:
-                        nick_item = container.find("items/item[@name='NickName']")
+                comp_name = str(name_item.text) if name_item is not None else ""
+                container = chunk.find("chunks/chunk[@name='Container']")
+                if container is not None:
+                    nick_item = container.find("items/item[@name='NickName']")
+                    nick = nick_item.text or "" if nick_item is not None else ""
+                    
+                    if nick.startswith("RH_IN:"):
+                        # 1. Slider
                         slider_chunk = container.find("chunks/chunk[@name='Slider']")
-                        
-                        if nick_item is not None and slider_chunk is not None:
-                            nick = nick_item.text or ""
-                            min_item = slider_chunk.find("items/item[@name='Min']")
-                            max_item = slider_chunk.find("items/item[@name='Max']")
-                            val_item = slider_chunk.find("items/item[@name='Value']")
+                        if slider_chunk is not None or "Slider" in comp_name:
+                            min_item = slider_chunk.find("items/item[@name='Min']") if slider_chunk is not None else None
+                            max_item = slider_chunk.find("items/item[@name='Max']") if slider_chunk is not None else None
+                            val_item = slider_chunk.find("items/item[@name='Value']") if slider_chunk is not None else None
 
                             if min_item is not None and max_item is not None:
                                 limits[nick] = {
+                                    "type": "slider",
                                     "min": float(min_item.text),
                                     "max": float(max_item.text),
                                     "default": float(val_item.text) if val_item is not None else float(min_item.text)
                                 }
+                        
+                        # 2. Value List
+                        val_options = []
+                        val_selected = None
+                        for sub in chunk.iter("chunk"):
+                            if sub.attrib.get("name") == "ListItem":
+                                n_item = sub.find("items/item[@name='Name']")
+                                s_item = sub.find("items/item[@name='Selected']")
+                                if n_item is not None and n_item.text:
+                                    val_options.append(n_item.text)
+                                    if s_item is not None and s_item.text == "true":
+                                        val_selected = n_item.text
+                        if val_options:
+                            limits[nick] = {
+                                "type": "valuelist",
+                                "options": val_options,
+                                "default": val_selected or val_options[0]
+                            }
     except Exception as e:
         print(f"[3BF Worker] Error parseando límites slider: {e}", flush=True)
 
@@ -60,37 +82,35 @@ def parse_ghx_default_values(ghx_path):
         root = tree.getroot()
 
         for chunk in root.iter("chunk"):
-            # 1. Sliders (Números)
             if chunk.attrib.get("name") == "Object":
-                name_item = chunk.find("items/item[@name='Name']")
-                if name_item is not None and "Number Slider" in str(name_item.text):
-                    container = chunk.find("chunks/chunk[@name='Container']")
-                    if container is not None:
-                        nick_item = container.find("items/item[@name='NickName']")
+                container = chunk.find("chunks/chunk[@name='Container']")
+                if container is not None:
+                    nick_item = container.find("items/item[@name='NickName']")
+                    nick = nick_item.text or "" if nick_item is not None else ""
+                    if nick.startswith("RH_IN:"):
                         slider_chunk = container.find("chunks/chunk[@name='Slider']")
-                        if nick_item is not None and slider_chunk is not None:
-                            nick = nick_item.text or ""
+                        if slider_chunk is not None:
                             val_item = slider_chunk.find("items/item[@name='Value']")
-                            if val_item is not None and nick.startswith("RH_IN:"):
+                            if val_item is not None:
                                 try:
                                     defaults[nick] = float(val_item.text)
                                 except:
                                     defaults[nick] = val_item.text
-
-            # 2. Value Lists (Selectores)
-            if chunk.attrib.get("name") == "Container":
-                nick = ""
-                for it in chunk.findall("items/item"):
-                    if it.attrib.get("name") == "NickName":
-                        nick = it.text or ""
-                
-                if nick.startswith("RH_IN:"):
-                    for sub in chunk.iter("chunk"):
-                        if sub.attrib.get("name") == "ListItem":
-                            name_item = sub.find("items/item[@name='Name']")
-                            sel_item = sub.find("items/item[@name='Selected']")
-                            if name_item is not None and sel_item is not None and sel_item.text == "true":
-                                defaults[nick] = name_item.text
+                        
+                        # Value List
+                        first_opt = None
+                        sel_opt = None
+                        for sub in chunk.iter("chunk"):
+                            if sub.attrib.get("name") == "ListItem":
+                                name_item = sub.find("items/item[@name='Name']")
+                                sel_item = sub.find("items/item[@name='Selected']")
+                                if name_item is not None and name_item.text:
+                                    if first_opt is None:
+                                        first_opt = name_item.text
+                                    if sel_item is not None and sel_item.text == "true":
+                                        sel_opt = name_item.text
+                        if first_opt is not None:
+                            defaults[nick] = sel_opt or first_opt
     except Exception as e:
         print(f"[3BF Worker] Error parseando valores por defecto del GHX: {e}", flush=True)
 
@@ -110,6 +130,20 @@ def parse_num_prefix(text: str) -> float:
         except:
             pass
     return 999.0
+
+def find_user_param_value(p_dict: dict, nick: str, default_val):
+    if not isinstance(p_dict, dict):
+        return default_val
+    if nick in p_dict and p_dict[nick] is not None:
+        return p_dict[nick]
+    clean_target = re.sub(r'^RH_IN:\s*[\d.]*[_\s]*', '', nick).strip().lower().replace(' ', '_')
+    for k, v in p_dict.items():
+        if not isinstance(k, str) or v is None:
+            continue
+        clean_k = re.sub(r'^RH_IN:\s*[\d.]*[_\s]*', '', k).strip().lower().replace(' ', '_')
+        if clean_k and (clean_k == clean_target or clean_k in clean_target or clean_target in clean_k):
+            return v
+    return default_val
 
 def extract_parameter_groups(root, default_values):
     rh_inputs = list(default_values.keys())
@@ -204,9 +238,9 @@ def extract_parameter_groups(root, default_values):
     return final_groups
 
 @app.post("/metadata")
-def get_model_metadata(params: MetadataParams):
-    p = params.model_dump()
-    model_id = p.get("model_id")
+async def get_model_metadata(request: Request):
+    p = await request.json()
+    model_id = p.get("model_id", "Cubierta")
     raw_ghx_content = p.get("ghx_content", "")
     custom_filename = p.get("custom_filename", "")
     
@@ -216,9 +250,19 @@ def get_model_metadata(params: MetadataParams):
     if raw_ghx_content:
         try:
             root = ET.fromstring(raw_ghx_content)
-            ghx_file = "uploaded_custom.ghx"
-        except:
-            pass
+            temp_dir = r"C:\Desarrollo\mmapp\temporal"
+            os.makedirs(temp_dir, exist_ok=True)
+            custom_path = os.path.join(temp_dir, "uploaded_custom.ghx")
+            if os.path.exists(custom_path):
+                try:
+                    os.remove(custom_path)
+                except Exception:
+                    pass
+            with open(custom_path, "w", encoding="utf-8") as f:
+                f.write(raw_ghx_content)
+            ghx_file = custom_path
+        except Exception as err:
+            print(f"[3BF Worker /metadata] Error guardando XML subido: {err}", flush=True)
             
     if root is None:
         search_dirs = [
@@ -280,19 +324,32 @@ def get_model_metadata(params: MetadataParams):
                                 if nick.startswith("RH_IN:"):
                                     default_values[nick] = slider_limits[nick]["default"]
 
-            # Extraer value list defaults
+            # Extraer value list defaults y sus opciones reales
             if chunk.attrib.get("name") == "Container":
                 nick = ""
                 for it in chunk.findall("items/item"):
                     if it.attrib.get("name") == "NickName":
                         nick = it.text or ""
                 if nick.startswith("RH_IN:"):
+                    vl_options = []
+                    vl_selected = None
                     for sub in chunk.iter("chunk"):
                         if sub.attrib.get("name") == "ListItem":
                             name_item = sub.find("items/item[@name='Name']")
                             sel_item = sub.find("items/item[@name='Selected']")
-                            if name_item is not None and sel_item is not None and sel_item.text == "true":
-                                default_values[nick] = name_item.text
+                            if name_item is not None and name_item.text:
+                                opt_text = name_item.text.strip()
+                                vl_options.append(opt_text)
+                                if sel_item is not None and sel_item.text == "true":
+                                    vl_selected = opt_text
+                    if vl_options:
+                        selected_final = vl_selected or vl_options[0]
+                        slider_limits[nick] = {
+                            "type": "valuelist",
+                            "options": vl_options,
+                            "default": selected_final
+                        }
+                        default_values[nick] = selected_final
 
     parameter_groups = extract_parameter_groups(root, default_values) if root is not None else []
 
@@ -312,7 +369,11 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+from pydantic import BaseModel, ConfigDict
+
 class ComputeParams(BaseModel):
+    model_config = ConfigDict(extra="allow")
+    
     model_id: str = "Cajon_Experimento_Viktor"
     ancho: float = 1200.0
     alto: float = 800.0
@@ -350,16 +411,18 @@ class ComputeParams(BaseModel):
 def health_check():
     return {"status": "ok", "worker": "3BF Python Engine", "rhino_compute": "http://127.0.0.1:5000"}
 
+from fastapi import FastAPI, HTTPException, Request
+
 @app.post("/compute")
-def compute_model(params: ComputeParams):
+async def compute_model(request: Request):
     start_time = time.time()
     
-    p = params.model_dump()
-    ancho = float(p.get("ancho", params.ancho))
-    alto = float(p.get("alto", params.alto))
-    prof = float(p.get("profundidad", params.profundidad))
-    cant_cajones = int(p.get("cant_cajones", params.cant_cajones))
-    apertura_mm = float(p.get("apertura_cajones", p.get("apertura_mm", params.apertura_mm)))
+    p = await request.json()
+    ancho = float(find_user_param_value(p, "RH_IN:Ancho", find_user_param_value(p, "ancho", 1200.0)))
+    alto = float(find_user_param_value(p, "RH_IN:Alto", find_user_param_value(p, "alto", 800.0)))
+    prof = float(find_user_param_value(p, "RH_IN:Profundidad", find_user_param_value(p, "profundidad", 400.0)))
+    cant_cajones = int(p.get("cant_cajones", 3))
+    apertura_mm = float(p.get("apertura_cajones", p.get("apertura_mm", 0.0)))
     prof_cajon_param = float(p.get("profundidad_cajon", 351.0))
     alt_lat_cajon_param = float(p.get("altura_lateral_cajon", 102.0))
     dist_bajo_lat_param = float(p.get("distancia_bajo_laterales", 30.0))
@@ -405,7 +468,7 @@ def compute_model(params: ComputeParams):
     costo_total = math.ceil(((area_madera_m2 * 48.0) + (correderas_count * 4.50) + 20.0) * 100) / 100
     
     # 2. Selección de Algoritmo NATIVO (.ghx)
-    model_id = str(p.get("model_id", params.model_id))
+    model_id = str(p.get("model_id", "Cajon_Experimento_Viktor"))
     raw_ghx_content = str(p.get("ghx_content", ""))
     custom_filename = str(p.get("custom_filename", ""))
     
@@ -415,9 +478,19 @@ def compute_model(params: ComputeParams):
     if raw_ghx_content:
         try:
             root = ET.fromstring(raw_ghx_content)
-            ghx_file = "uploaded_custom.ghx"
+            temp_dir = r"C:\Desarrollo\mmapp\temporal"
+            os.makedirs(temp_dir, exist_ok=True)
+            custom_path = os.path.join(temp_dir, "uploaded_custom.ghx")
+            if os.path.exists(custom_path):
+                try:
+                    os.remove(custom_path)
+                except Exception:
+                    pass
+            with open(custom_path, "w", encoding="utf-8") as f:
+                f.write(raw_ghx_content)
+            ghx_file = custom_path
         except Exception as err:
-            print(f"[3BF Worker] Error parseando XML de ghx_content: {err}", flush=True)
+            print(f"[3BF Worker /compute] Error guardando XML subido: {err}", flush=True)
 
     if root is None:
         search_dirs = [
@@ -496,31 +569,26 @@ def compute_model(params: ComputeParams):
                                 if name_item is not None and sel_item is not None and sel_item.text == "true":
                                     default_values[nick] = name_item.text
 
-            is_legacy_cubierta = False
+            # 1. Actualizar Number Sliders en caliente en el XML
+            for chunk in root.iter("chunk"):
+                if chunk.attrib.get("name") == "Object":
+                    container = chunk.find("chunks/chunk[@name='Container']")
+                    if container is not None:
+                        nick_item = container.find("items/item[@name='NickName']")
+                        slider_chunk = container.find("chunks/chunk[@name='Slider']")
+                        if nick_item is not None and slider_chunk is not None:
+                            nick = nick_item.text or ""
+                            if nick.startswith("RH_IN:"):
+                                val_item = slider_chunk.find("items/item[@name='Value']")
+                                if val_item is not None:
+                                    def_v = default_values.get(nick, 0.0)
+                                    user_v = find_user_param_value(p, nick, def_v)
+                                    try:
+                                        val_item.text = str(float(user_v))
+                                    except:
+                                        val_item.text = str(user_v)
 
-            # Mapeo de NickNames de Value Lists a sus valores deseados (formato texto)
-            value_list_targets = {
-                "RH_IN:Cantidada de Cajones": str(int(cant_cajones)),
-                "RH_IN:Cantidad de Cajones": str(int(cant_cajones)),
-                "RH_IN:Profundidad cajon": str(int(prof_cajon_param)),
-                "RH_IN:Altura lateral de cajon": str(int(alt_lat_cajon_param)),
-                "RH_IN:Distancia bajo laterales": str(int(dist_bajo_lat_param)),
-                "RH_IN:Tipo Cajon": tipo_cajon_param,
-                # Parámetros Cubierta.ghx (VisualARQ DfMA)
-                "RH_IN:03 Tipo de union izquierda": str(p.get("union_izquierda", "Minifix")),
-                "RH_IN:04 Tipo de union Derecha": str(p.get("union_derecha", "Tornillo tarugo")),
-                "RH_IN:05 Orientacion maquinado minifix": str(p.get("orientacion_maquinado_minifix", "abajo")),
-                "RH_IN:06 Orientacion minifix": str(p.get("orientacion_minifix", "abajo")),
-                "RH_IN:Posicion Tarugo": str(p.get("posicion_tarugo", "1")),
-                "RH_IN:Posicion Tornillo": str(p.get("posicion_tornillo", "1")),
-                "RH_IN:Borde izquierdo": str(p.get("borde_izquierdo", "MDP")),
-                "RH_IN:Borde derecho": str(p.get("borde_derecho", "MDP")),
-                "RH_IN:Lado balance cubierta": str(p.get("lado_balance_cubierta", "Cara B")),
-                "RH_IN:Tipo de mapeado cubierta": str(p.get("tipo_mapeado_cubierta", "Cubierta")),
-                "RH_IN:Lado balance entrepaño": str(p.get("lado_balance_entrepanio", "Cara B")),
-                "RH_IN:Tipo de mapeado entrepaño": str(p.get("tipo_mapeado_entrepanio", "Cubierta")),
-            }
-            
+            # 2. Actualizar Value Lists en caliente en el XML
             for chunk in root.iter("chunk"):
                 if chunk.attrib.get("name") == "Container":
                     nick = ""
@@ -528,44 +596,62 @@ def compute_model(params: ComputeParams):
                         if it.attrib.get("name") == "NickName":
                             nick = it.text or ""
                     
-                    if nick in value_list_targets:
-                        target_val = value_list_targets[nick]
+                    if nick.startswith("RH_IN:"):
+                        def_v = default_values.get(nick, "")
+                        user_v = find_user_param_value(p, nick, def_v)
+                        target_val = str(user_v).strip()
+                        
                         for sub in chunk.iter("chunk"):
                             if sub.attrib.get("name") == "ListItem":
                                 name_item = sub.find("items/item[@name='Name']")
                                 expr_item = sub.find("items/item[@name='Expression']")
                                 sel_item = sub.find("items/item[@name='Selected']")
                                 
-                                item_name = name_item.text if name_item is not None else ""
-                                item_expr = expr_item.text if expr_item is not None else ""
+                                item_name = (name_item.text if name_item is not None else "").strip()
+                                item_expr = (expr_item.text if expr_item is not None else "").strip()
                                 
                                 if sel_item is not None:
-                                    if item_name == target_val or item_expr == target_val:
+                                    tv_low = target_val.lower()
+                                    in_name = item_name.lower()
+                                    in_expr = item_expr.lower()
+                                    
+                                    # Coincidencia exacta obligatoria para evitar colisión de substrings (ej: '1' dentro de '-1')
+                                    if tv_low == in_name or tv_low == in_expr:
+                                        sel_item.text = "true"
+                                    elif len(tv_low) > 2 and (tv_low in in_name or in_name in tv_low):
                                         sel_item.text = "true"
                                     else:
                                         sel_item.text = "false"
 
             xml_bytes = ET.tostring(root, encoding="utf-8")
-            # Inyectar un comentario XML dinámico para romper la caché interna de RhinoCompute y obligarlo a releer el archivo
             xml_str = xml_bytes.decode("utf-8") + f"\n<!-- 3BF_CACHE_BUST: {int(time.time() * 1000)} -->"
             xml_bytes = xml_str.encode("utf-8")
             
             b64_algo = base64.b64encode(xml_bytes).decode("utf-8")
             print(f"[3BF Worker] Solucionando modelo {model_id} ({ghx_file}) en RhinoCompute (Bust Cache Activo)", flush=True)
             
-            # Reactivador / Despertador: Micro-fluctuación imperceptible para forzar a RhinoCompute a limpiar caché y recalcular la geometría completa
             reactivador_ping = (int(time.time() * 1000) % 2) * 0.0001
-            effective_ancho = float(ancho) + reactivador_ping
 
-            payload_values = [
-                {"ParamName": "RH_IN:Ancho", "InnerTree": {"{0}": [{"type": "System.Double", "data": str(effective_ancho)}]}},
-                {"ParamName": "RH_IN:01 Ancho", "InnerTree": {"{0}": [{"type": "System.Double", "data": str(effective_ancho)}]}},
-                {"ParamName": "RH_IN:Alto", "InnerTree": {"{0}": [{"type": "System.Double", "data": str(float(alto))}]}},
-                {"ParamName": "RH_IN:Profundidad", "InnerTree": {"{0}": [{"type": "System.Double", "data": str(float(prof))}]}},
-                {"ParamName": "RH_IN:02 Profundidad", "InnerTree": {"{0}": [{"type": "System.Double", "data": str(float(prof))}]}},
-                {"ParamName": "RH_IN:07 Recedido izquierdo", "InnerTree": {"{0}": [{"type": "System.Double", "data": str(float(p.get("recedido_izquierdo", 0)))}]}},
-                {"ParamName": "RH_IN:08 Recedido derecho", "InnerTree": {"{0}": [{"type": "System.Double", "data": str(float(p.get("recedido_derecho", 0)))}]}},
-            ]
+            # Armar payload_values 100% DINÁMICO para RhinoCompute a partir de los RH_IN: del XML
+            payload_values = []
+            for nick, def_val in default_values.items():
+                user_val = find_user_param_value(p, nick, def_val)
+                if isinstance(def_val, (int, float)):
+                    try:
+                        num_v = float(user_val)
+                        if "ancho" in nick.lower():
+                            num_v += reactivador_ping
+                        payload_values.append({
+                            "ParamName": nick,
+                            "InnerTree": {"{0}": [{"type": "System.Double", "data": str(num_v)}]}
+                        })
+                    except:
+                        pass
+                else:
+                    payload_values.append({
+                        "ParamName": nick,
+                        "InnerTree": {"{0}": [{"type": "System.String", "data": str(user_val)}]}
+                    })
             if "Cubierta" not in ghx_file:
                 payload_values.extend([
                     {"ParamName": "RH_IN:Cantidada de Cajones", "InnerTree": {"{0}": [{"type": "System.String", "data": str(int(cant_cajones))}]}},
@@ -606,24 +692,24 @@ def compute_model(params: ComputeParams):
                                         center = obj.get("Center", {"X": 0, "Y": 0, "Z": 0})
                                         
                                         min_x, max_x = obj["X"]["T0"] / 1000.0, obj["X"]["T1"] / 1000.0
-                                        min_y, max_y = obj["Y"]["T0"] / 1000.0, obj["Y"]["T1"] / 1000.0
+                                        min_y, max_y = -obj["Y"]["T1"] / 1000.0, -obj["Y"]["T0"] / 1000.0
                                         min_z, max_z = obj["Z"]["T0"] / 1000.0, obj["Z"]["T1"] / 1000.0
                                         
                                         real_meshes.append({
                                             "name": p_name,
                                             "size": [x_sz, z_sz, y_sz],
-                                            "position": [center["X"]/1000.0, center["Z"]/1000.0, center["Y"]/1000.0],
+                                            "position": [center["X"]/1000.0, center["Z"]/1000.0, -center["Y"]/1000.0],
                                             "vertices": [
                                                 min_x, min_z, min_y,  min_x, max_z, min_y,  max_x, max_z, min_y,  max_x, min_z, min_y,
                                                 min_x, min_z, max_y,  min_x, max_z, max_y,  max_x, max_z, max_y,  max_x, min_z, max_y,
                                             ],
                                             "indices": [
-                                                0, 2, 1,  0, 3, 2,
-                                                4, 5, 6,  4, 6, 7,
-                                                0, 1, 5,  0, 5, 4,
-                                                2, 3, 7,  2, 7, 6,
-                                                0, 4, 7,  0, 7, 3,
-                                                1, 2, 6,  1, 6, 5
+                                                0, 1, 2,  0, 2, 3,
+                                                4, 6, 5,  4, 7, 6,
+                                                0, 5, 1,  0, 4, 5,
+                                                2, 7, 3,  2, 6, 7,
+                                                0, 7, 4,  0, 3, 7,
+                                                1, 5, 6,  1, 6, 2
                                             ]
                                         })
                                     elif "archive3dm" in obj or "opennurbs" in obj:
@@ -637,44 +723,37 @@ def compute_model(params: ComputeParams):
                                             center_y = (bbox.Min.Y + bbox.Max.Y) / 2.0 / 1000.0
                                             center_z = (bbox.Min.Z + bbox.Max.Z) / 2.0 / 1000.0
                                             
-                                            alias_map = {}
-                                            if is_legacy_cubierta:
-                                                alias_map = {
-                                                    "RH_OUT:Balance cubierta": "RH_OUT:Perno",
-                                                    "RH_OUT:Color cubierta": "RH_OUT:Caja",
-                                                    "RH_OUT:MDP": "RH_OUT:Tornillo",
-                                                    "RH_OUT:Color entrepaño": "RH_OUT:Tarugo"
-                                                }
-                                            effective_name = alias_map.get(p_name, p_name)
+                                            effective_name = p_name
 
                                             mesh_dict = {
                                                 "name": effective_name,
                                                 "size": [x_sz, z_sz, y_sz],
-                                                "position": [center_x, center_z, center_y]
+                                                "position": [center_x, center_z, -center_y]
                                             }
                                             
                                             # Si el objeto es una Malla Poligonal real, extraer vértices e índices de triángulos
                                             if isinstance(decoded_geom, rhino3dm.Mesh):
                                                 verts = []
                                                 for v in decoded_geom.Vertices:
-                                                    # Convertir a coordenadas locales restando el centro geométrico en mm
+                                                    # Convertir a coordenadas locales restando el centro geométrico en mm (Three.js Z = -Rhino Y)
                                                     local_x = (v.X - (center_x * 1000.0)) / 1000.0
                                                     local_y = (v.Y - (center_y * 1000.0)) / 1000.0
                                                     local_z = (v.Z - (center_z * 1000.0)) / 1000.0
-                                                    verts.extend([round(local_x, 4), round(local_z, 4), round(local_y, 4)])
+                                                    verts.extend([round(local_x, 4), round(local_z, 4), round(-local_y, 4)])
                                                 indices = []
                                                 for i in range(len(decoded_geom.Faces)):
                                                     f = decoded_geom.Faces[i]
-                                                    indices.extend([f[0], f[1], f[2]])
+                                                    # Al reflejar Z (-local_y), invertir orden de vértices para mantener normales hacia afuera (CCW)
+                                                    indices.extend([f[0], f[2], f[1]])
                                                     if f[2] != f[3]:
-                                                        indices.extend([f[2], f[3], f[0]])
+                                                        indices.extend([f[2], f[0], f[3]])
                                                 if verts and indices:
                                                     mesh_dict["vertices"] = verts
                                                     mesh_dict["indices"] = indices
                                             elif isinstance(decoded_geom, rhino3dm.Brep):
                                                 # Generar malla 3D poligonal exacta para objetos Brep/NURBS en coordenadas de mundo Three.js
                                                 min_x, max_x = bbox.Min.X / 1000.0, bbox.Max.X / 1000.0
-                                                min_y, max_y = bbox.Min.Y / 1000.0, bbox.Max.Y / 1000.0
+                                                min_y, max_y = -bbox.Max.Y / 1000.0, -bbox.Min.Y / 1000.0
                                                 min_z, max_z = bbox.Min.Z / 1000.0, bbox.Max.Z / 1000.0
                                                 
                                                 mesh_dict["vertices"] = [
@@ -682,9 +761,9 @@ def compute_model(params: ComputeParams):
                                                     min_x, min_z, max_y,  min_x, max_z, max_y,  max_x, max_z, max_y,  max_x, min_z, max_y,
                                                 ]
                                                 mesh_dict["indices"] = [
-                                                    0, 2, 1,  0, 3, 2,
-                                                    4, 5, 6,  4, 6, 7,
-                                                    0, 1, 5,  0, 5, 4,
+                                                    0, 1, 2,  0, 2, 3,
+                                                    4, 6, 5,  4, 7, 6,
+                                                    0, 5, 1,  0, 4, 5,
                                                     2, 3, 7,  2, 7, 6,
                                                     0, 4, 7,  0, 7, 3,
                                                     1, 2, 6,  1, 6, 5

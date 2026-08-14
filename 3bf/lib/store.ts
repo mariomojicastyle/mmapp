@@ -66,6 +66,15 @@ export interface ComputoResultado {
     vertices?: number[];
     indices?: number[];
   }>;
+  slider_limits?: Record<string, {
+    min?: number;
+    max?: number;
+    default?: number | string;
+    type?: string;
+    options?: string[];
+  }>;
+  groups?: Record<string, string[]>;
+  parameter_groups?: Array<{ title: string; parameters: string[] }>;
   execution_time_ms: number;
   worker_info?: {
     engine: string;
@@ -130,7 +139,7 @@ export interface State3BF {
 
 export const defaultCalibracion: CalibracionVisual = {
   opacidadMadera: 1.0,
-  roughnessMadera: 0.4,
+  rugosidadMadera: 0.4,
   metalicidadMadera: 0.05,
   colorSolido: "#9CA3AF",
   customTextureUrl: null,
