@@ -79,14 +79,14 @@ Almacena los datos de los tomadores de decisión dentro de las empresas.
 | **`Descripcion de la idea`** | `Long Text (ID 9536)`| Mensaje inicial o descripción de su rol estratégico e interés. |
 
 > [!IMPORTANT]
-> **Protocolo de Inserción de Leads (Tabla B): Cero Celdas Vacías**
-> Para garantizar la integridad de los datos y evitar registros incompletos al prospectar de forma manual o asíncrona, se **PROHÍBE** insertar un lead solo con los datos superficiales (Nombre, Cargo y LinkedIn). Toda inyección de un nuevo lead debe aplicar una rutina de enriquecimiento deductivo obligatorio:
-> 1. **Relación y Contexto:** Completar redundantemente `Empresa Vinculada` (Link Row), `Empresa` (Texto plano para Grid) y `Pais`.
-> 2. **Deducción de Contacto:** Inferir el `Email` basándose en el patrón del dominio corporativo (ej. *nombre.apellido@dominio.com*) y asignar el `Telefono` y `WhatsApp` matriz de la empresa si no hay uno directo.
-> 3. **Generación de Enlaces:** Inyectar automáticamente las URLs de búsqueda parametrizada para `Facebook` y `Instagram` concatenando el Nombre y la Empresa.
+> **Protocolo de Inserción de Leads (Tabla B): Completado Real de Celdas (Sin Inferencias de Contacto)**
+> Para garantizar la calidad y veracidad del CRM al prospectar de forma manual o asíncrona, se establece la regla de registrar únicamente la información de contacto disponible y real:
+> 1. **Relación y Contexto:** Completar de forma obligatoria `Empresa Vinculada` (Link Row), `Empresa` (Texto plano para Grid) y `Pais`.
+> 2. **Contacto Real (Sin Suposiciones):** Registrar el `Email` y el `Telefono`/`WhatsApp` únicamente si han sido identificados o suministrados de forma real y verificada. Si esta información no está disponible, **se debe dejar la celda completamente vacía (`""`)**; no se deben inferir correos basados en dominios corporativos ni asignar números de teléfono de la empresa matriz como si fueran personales.
+> 3. **Generación de Enlaces de Búsqueda:** Inyectar las URLs de búsqueda parametrizada para `Facebook` y `Instagram` concatenando el Nombre y la Empresa para facilitar la indagación manual del vendedor.
 > 4. **Estados por Defecto:** Asignar siempre `Status` (Nuevo), `Estado CRM` (Prospecto), `Canal Preferido` (LinkedIn) y `Actividad en Redes` (Inactivo).
 > 
-> *Usa el script `scratch/insert_lead_factory.js` para estandarizar este proceso.*
+> *Usa el script `scratch/register_lead_and_generate.js` para estandarizar este proceso.*
 
 ### Tabla C: Interacciones (ID: 995)
 Bitácora de contactos y respuestas vinculadas a un lead.

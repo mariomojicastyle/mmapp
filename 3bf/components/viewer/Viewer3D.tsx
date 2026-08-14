@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useRef } from "react";
-import { Canvas } from "@react-three/fiber";
+import { Canvas, useThree, useFrame } from "@react-three/fiber";
 import { OrbitControls, Grid, Stage, Edges } from "@react-three/drei";
 import { use3BFStore } from "@/lib/store";
 import * as THREE from "three";
@@ -41,6 +41,77 @@ function useMarfilTexture(customUrl?: string | null, tipoMapeado?: string) {
 }
 
 import CalibrationPanel from "./CalibrationPanel";
+
+function obtenerNombreUnificadoPieza(obj: THREE.Object3D): string {
+  const meshName = (obj.name || "").replace("RH_OUT:", "").trim();
+  const parentName = obj.parent ? obj.parent.name : "";
+  const meshNameLower = meshName.toLowerCase();
+  const parentNameLower = parentName.toLowerCase();
+
+  // 1. Si es un tablero / cubierta (grupo padre "Cubierta" o nombre que incluye "cubierta", "mdp", "balance", "color")
+  if (parentNameLower === "cubierta" || meshNameLower.includes("cubierta")) {
+    return "Cubierta";
+  }
+  if (meshNameLower.includes("entrepaño") || meshNameLower.includes("entrepanio")) {
+    return "Entrepaño";
+  }
+  if (meshNameLower.includes("lateral")) {
+    return "Lateral";
+  }
+
+  // 2. Herrajes
+  if (meshNameLower.includes("caja")) {
+    return "Caja Minifix";
+  }
+  if (meshNameLower.includes("perno")) {
+    return "Perno Minifix";
+  }
+  if (meshNameLower.includes("tarugo")) {
+    return "Tarugo";
+  }
+  if (meshNameLower.includes("tornillo")) {
+    return "Tornillo";
+  }
+  if (meshNameLower.includes("maquinado")) {
+    return "Maquinado CNC";
+  }
+
+  // Fallback limpio sin números sufijos tipo .001 o 2 al final
+  return meshName.replace(/\.\d+$/, "").replace(/\d+$/, "").trim();
+}
+
+function RaycastHandler() {
+  const { raycaster, scene } = useThree();
+  const setHoveredPiece = use3BFStore((state) => state.setHoveredPiece);
+
+  useFrame(() => {
+    // Evaluar raycast centralizado contra todos los objetos de la escena frame a frame
+    const intersects = raycaster.intersectObjects(scene.children, true);
+    
+    // Buscar la primera malla física visible con un nombre válido de Grasshopper
+    const validHit = intersects.find((hit) => {
+      const obj = hit.object;
+      const name = obj.name || "";
+      return (
+        obj.type === "Mesh" && 
+        obj.visible && 
+        name.length > 0 &&
+        !name.toLowerCase().includes("floor") &&
+        !name.toLowerCase().includes("grid") &&
+        !name.toLowerCase().includes("plane")
+      );
+    });
+
+    if (validHit) {
+      const nombreUnificado = obtenerNombreUnificadoPieza(validHit.object);
+      setHoveredPiece(nombreUnificado);
+    } else {
+      setHoveredPiece(null);
+    }
+  });
+
+  return null;
+}
 
 function BoardMesh({
   position,
@@ -84,36 +155,11 @@ function BoardMesh({
 
       // 2. Malla No-Indexada para Normales de Cara 100% Perpendiculares (Sin Gradientes de Sombra ni Costuras)
       const geo = indexedGeo.toNonIndexed();
+      geo.computeVertexNormals();
       geo.computeBoundingBox();
-
-      const box = geo.boundingBox || new THREE.Box3();
-      const boxCenter = new THREE.Vector3();
-      box.getCenter(boxCenter);
+      geo.computeBoundingSphere();
 
       const posAttr = geo.attributes.position;
-
-      // Garantizar que las normales de todas las 6 caras apunten 100% HACIA AFUERA (Outward-Facing Normals)
-      for (let i = 0; i < posAttr.count; i += 3) {
-        const pA = new THREE.Vector3(posAttr.getX(i), posAttr.getY(i), posAttr.getZ(i));
-        const pB = new THREE.Vector3(posAttr.getX(i + 1), posAttr.getY(i + 1), posAttr.getZ(i + 1));
-        const pC = new THREE.Vector3(posAttr.getX(i + 2), posAttr.getY(i + 2), posAttr.getZ(i + 2));
-
-        const triCenter = new THREE.Vector3().add(pA).add(pB).add(pC).divideScalar(3);
-        const outVector = new THREE.Vector3().subVectors(triCenter, boxCenter);
-
-        const edge1 = new THREE.Vector3().subVectors(pB, pA);
-        const edge2 = new THREE.Vector3().subVectors(pC, pA);
-        const normal = new THREE.Vector3().crossVectors(edge1, edge2);
-
-        // Si la normal apunta hacia el centro interno de la caja, invertir el orden de los vértices (Flipping Inverted Normal)
-        if (normal.dot(outVector) < 0) {
-          posAttr.setXYZ(i + 1, pC.x, pC.y, pC.z);
-          posAttr.setXYZ(i + 2, pB.x, pB.y, pB.z);
-        }
-      }
-
-      posAttr.needsUpdate = true;
-      geo.computeVertexNormals();
 
       const uvs = new Float32Array(posAttr.count * 2);
 
@@ -182,6 +228,8 @@ function BoardMesh({
     return null;
   }, [customGeometry, size, calibracion.thresholdAristas]);
 
+  const cleanName = name.replace("RH_OUT:", "");
+
   // Identificar tipo de objeto para asignar color y material de manufactura DfMA
   const isWireframe = modoVisual === "lineas";
   const isTransparent = modoVisual === "semitransparente";
@@ -233,14 +281,18 @@ function BoardMesh({
   const isRenderedMode = modoVisual === "renderizado";
   const isWoodBoard = !isHardwarePerno && !isHardwareCaja && !isHardwareTarugo && !isMachining && !isTapaLuz;
 
+  const isMdpExpuesto = name.includes("MDP");
+  const isBalance = name.includes("Balance");
+  const isMelaminaCara = name.includes("Color") || (!isMdpExpuesto && !isBalance);
+
   // En modo Sólido o Renderizado, ocultar sólamente los volúmenes rojos de Maquinado CNC (que no son herrajes físicos)
   if (isSolidOrRendered && isMachining) {
     return null;
   }
 
   if (isWoodBoard) {
-    roughness = isTransparent ? 0.15 : calibracion.rugosidadMadera;
-    metalness = isTransparent ? 0.1 : calibracion.metalicidadMadera;
+    roughness = isTransparent ? 0.15 : (isMdpExpuesto ? 0.85 : (isBalance ? 0.5 : calibracion.rugosidadMadera));
+    metalness = isTransparent ? 0.1 : (isMdpExpuesto ? 0.0 : (isBalance ? 0.0 : calibracion.metalicidadMadera));
     if (modoVisual === "semitransparente") {
       opacity = 0.52;
       transparent = true;
@@ -254,28 +306,39 @@ function BoardMesh({
     }
   }
 
-  const activeMap = (isWoodBoard && (calibracion.customTextureUrl || isRenderedMode)) ? loadedTexture : null;
+  const activeMap = (isWoodBoard && isMelaminaCara && (calibracion.customTextureUrl || isRenderedMode)) ? loadedTexture : null;
   const hasMap = activeMap !== null;
 
   // Si hay mapa de textura activo (imagen subida o modo renderizado), ignorar el color gris base y forzar blanco puro #ffffff
-  const finalMeshColor = hasMap ? "#ffffff" : (modoVisual === "solido" ? calibracion.colorSolido : meshColor);
+  let finalMeshColor = hasMap ? "#ffffff" : (modoVisual === "solido" ? calibracion.colorSolido : meshColor);
+
+  if (modoVisual === "renderizado" && isWoodBoard) {
+    if (isMdpExpuesto) {
+      finalMeshColor = "#D5B88A"; // Color madera aglomerada/viruta prensada
+    } else if (isBalance) {
+      finalMeshColor = "#F9FAFB"; // Blanco/gris de balance limpio
+    }
+  }
 
   if (customGeometry) {
     return (
-      <group>
-        <mesh geometry={customGeometry}>
-          <meshStandardMaterial
-            key={`${activeMap ? activeMap.uuid : "no-map"}-${modoVisual}`}
-            color={finalMeshColor}
-            map={activeMap}
-            transparent={transparent}
-            opacity={opacity}
-            roughness={roughness}
-            metalness={metalness}
-            wireframe={isWireframe}
-            depthWrite={true}
-          />
-        </mesh>
+      <mesh 
+        position={position}
+        name={cleanName}
+        geometry={customGeometry}
+      >
+        <meshStandardMaterial
+          key={`${activeMap ? activeMap.uuid : "no-map"}-${modoVisual}`}
+          color={finalMeshColor}
+          map={activeMap}
+          transparent={transparent}
+          opacity={opacity}
+          roughness={roughness}
+          metalness={metalness}
+          wireframe={isWireframe}
+          depthWrite={true}
+          side={THREE.DoubleSide}
+        />
         {edgesGeometry && calibracion.mostrarAristas && (
           <lineSegments geometry={edgesGeometry}>
             <lineBasicMaterial
@@ -291,26 +354,27 @@ function BoardMesh({
             />
           </lineSegments>
         )}
-      </group>
+      </mesh>
     );
   }
 
   return (
-    <group position={position}>
-      <mesh>
-        <boxGeometry args={size} />
-        <meshStandardMaterial
-          key={`${activeMap ? activeMap.uuid : "no-map"}-${modoVisual}`}
-          color={finalMeshColor}
-          map={activeMap}
-          transparent={transparent}
-          opacity={opacity}
-          roughness={roughness}
-          metalness={metalness}
-          wireframe={isWireframe}
-          depthWrite={true}
-        />
-      </mesh>
+    <mesh
+      position={position}
+      name={cleanName}
+    >
+      <boxGeometry args={size} />
+      <meshStandardMaterial
+        key={`${activeMap ? activeMap.uuid : "no-map"}-${modoVisual}`}
+        color={finalMeshColor}
+        map={activeMap}
+        transparent={transparent}
+        opacity={opacity}
+        roughness={roughness}
+        metalness={metalness}
+        wireframe={isWireframe}
+        depthWrite={true}
+      />
       {boxEdgesGeometry && calibracion.mostrarAristas && (
         <lineSegments geometry={boxEdgesGeometry}>
           <lineBasicMaterial
@@ -326,7 +390,7 @@ function BoardMesh({
           />
         </lineSegments>
       )}
-    </group>
+    </mesh>
   );
 }
 
@@ -356,21 +420,119 @@ function ParametricFurnitureMesh({ setFurnitureGroup }: { setFurnitureGroup: (g:
 
   // RENDERIZADO 100% REAL DE GRASSHOPPER (Rhino 8 RhinoCompute Engine)
   if (resultado?.real_meshes && resultado.real_meshes.length > 0) {
+    const isModelCubierta = parametros.model_id.toLowerCase().includes("cubierta");
+    const parentBoardGroupName = isModelCubierta ? "Cubierta" : "Tableros";
+
+    // 1. Deduplicar globalmente la lista total de mallas reales: si existe una versión "X2", eliminar la versión obsoleta "X"
+    const namesWith2 = new Set(resultado.real_meshes.filter(m => m.name.endsWith("2")).map(m => m.name.slice(0, -1)));
+    const cleanRealMeshes = resultado.real_meshes.filter(m => {
+      if (!m.name.endsWith("2") && namesWith2.has(m.name)) {
+        return false; // Descartar la versión obsoleta duplicada de toda la escena
+      }
+      return true;
+    });
+
+    // 2. Separar mallas limpias en grupos estructurados
+    const boardMeshes = cleanRealMeshes.filter(m => {
+      const n = m.name.toLowerCase();
+      return n.includes("cubierta") || n.includes("mdp") || n.includes("balance") || n.includes("entrepaño") || n.includes("madera") || n.includes("board");
+    });
+
+    const hardwareMeshes = cleanRealMeshes.filter(m => {
+      const n = m.name.toLowerCase();
+      return (n.includes("perno") || n.includes("caja") || n.includes("tarugo") || n.includes("tornillo") || n.includes("soporte")) && !n.includes("cajon") && !n.includes("cajón");
+    });
+
+    const machiningMeshes = cleanRealMeshes.filter(m => 
+      m.name.toLowerCase().includes("maquinados") || m.name.toLowerCase().includes("machining")
+    );
+
+    // Mallas sobrantes legítimas (fallbacks verdaderos)
+    const otherMeshes = cleanRealMeshes.filter(m => 
+      !boardMeshes.includes(m) && !hardwareMeshes.includes(m) && !machiningMeshes.includes(m)
+    );
+
     return (
-      <group ref={meshRef} position={[0, 0, 0]}>
-        {resultado.real_meshes.map((m, idx) => (
-          <BoardMesh
-            key={idx}
-            position={m.position}
-            size={m.size}
-            name={m.name}
-            mainColor={mainColor}
-            modoVisual={modoVisual}
-            vertices={m.vertices}
-            indices={m.indices}
-            tipoMapeado={m.name.includes("Cubierta") ? parametros.tipo_mapeado_cubierta : parametros.tipo_mapeado_entrepanio}
-          />
-        ))}
+      <group ref={meshRef} position={[0, 0, 0]} name="Mueble Parametrico">
+        {/* Grupo Padre: Tableros / Cubierta */}
+        {boardMeshes.length > 0 && (
+          <group name={parentBoardGroupName}>
+            {boardMeshes.map((m, idx) => {
+              const isDecorative = m.name.toLowerCase().includes("color") || m.name.toLowerCase().includes("balance");
+              return (
+                <BoardMesh
+                  key={`board-${idx}`}
+                  position={m.position}
+                  size={m.size}
+                  name={m.name}
+                  mainColor={mainColor}
+                  modoVisual={modoVisual}
+                  vertices={m.vertices}
+                  indices={m.indices}
+                  tipoMapeado={m.name.includes("Cubierta") ? parametros.tipo_mapeado_cubierta : parametros.tipo_mapeado_entrepanio}
+                  interactive={!isDecorative}
+                />
+              );
+            })}
+          </group>
+        )}
+
+        {/* Grupo Padre: Herrajes */}
+        {hardwareMeshes.length > 0 && (
+          <group name="Herrajes">
+            {hardwareMeshes.map((m, idx) => (
+              <BoardMesh
+                key={`hardware-${idx}`}
+                position={m.position}
+                size={m.size}
+                name={m.name}
+                mainColor={mainColor}
+                modoVisual={modoVisual}
+                vertices={m.vertices}
+                indices={m.indices}
+                tipoMapeado={m.name.includes("Cubierta") ? parametros.tipo_mapeado_cubierta : parametros.tipo_mapeado_entrepanio}
+              />
+            ))}
+          </group>
+        )}
+
+        {/* Grupo Padre: Maquinados */}
+        {machiningMeshes.length > 0 && (
+          <group name="Maquinados">
+            {machiningMeshes.map((m, idx) => (
+              <BoardMesh
+                key={`machining-${idx}`}
+                position={m.position}
+                size={m.size}
+                name={m.name}
+                mainColor={mainColor}
+                modoVisual={modoVisual}
+                vertices={m.vertices}
+                indices={m.indices}
+                tipoMapeado={m.name.includes("Cubierta") ? parametros.tipo_mapeado_cubierta : parametros.tipo_mapeado_entrepanio}
+              />
+            ))}
+          </group>
+        )}
+
+        {/* Grupo Padre: Otros */}
+        {otherMeshes.length > 0 && (
+          <group name="Otros">
+            {otherMeshes.map((m, idx) => (
+              <BoardMesh
+                key={`other-${idx}`}
+                position={m.position}
+                size={m.size}
+                name={m.name}
+                mainColor={mainColor}
+                modoVisual={modoVisual}
+                vertices={m.vertices}
+                indices={m.indices}
+                tipoMapeado={m.name.includes("Cubierta") ? parametros.tipo_mapeado_cubierta : parametros.tipo_mapeado_entrepanio}
+              />
+            ))}
+          </group>
+        )}
       </group>
     );
   }
@@ -379,8 +541,19 @@ function ParametricFurnitureMesh({ setFurnitureGroup }: { setFurnitureGroup: (g:
 }
 
 export default function Viewer3D() {
-  const { tema, resultado, calibracion, escenarioLimpio, parametros } = use3BFStore();
+  const { tema, resultado, calibracion, escenarioLimpio, parametros, hoveredPiece } = use3BFStore();
   const [furnitureGroup, setFurnitureGroup] = React.useState<THREE.Group | null>(null);
+  const [mousePos, setMousePos] = React.useState({ x: 0, y: 0 });
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (!containerRef.current) return;
+    const rect = containerRef.current.getBoundingClientRect();
+    setMousePos({
+      x: e.clientX - rect.left,
+      y: e.clientY - rect.top,
+    });
+  };
 
   const exportToGLB = () => {
     if (!furnitureGroup) {
@@ -391,8 +564,26 @@ export default function Viewer3D() {
     // Importación dinámica para evitar issues de compilación y optimizar bundle size
     import("three/examples/jsm/exporters/GLTFExporter.js").then(({ GLTFExporter }) => {
       const exporter = new GLTFExporter();
+      
+      // Clonar el grupo en memoria para limpiarlo antes de exportar
+      const clone = furnitureGroup.clone();
+      
+      // Filtrar y remover todas las líneas (aristas de visualización de Three.js) para que no ensucien el archivo en Blender
+      const linesToRemove: THREE.Object3D[] = [];
+      clone.traverse((child) => {
+        const c = child as any;
+        if (c.isLine || c.isLineSegments) {
+          linesToRemove.push(child);
+        }
+      });
+      linesToRemove.forEach((line) => {
+        if (line.parent) {
+          line.parent.remove(line);
+        }
+      });
+
       exporter.parse(
-        furnitureGroup,
+        clone, // exportar el clon limpio sin aristas de visualización
         (gltf) => {
           const blob = new Blob([gltf as ArrayBuffer], { type: "application/octet-stream" });
           const link = document.createElement("a");
@@ -409,9 +600,28 @@ export default function Viewer3D() {
   };
 
   return (
-    <div className="w-full h-full relative rounded-xl overflow-hidden shadow-inner border border-gray-200 dark:border-cyan-900/50 glass-panel">
+    <div 
+      ref={containerRef}
+      onMouseMove={handleMouseMove}
+      onMouseLeave={() => use3BFStore.getState().setHoveredPiece(null)}
+      className="w-full h-full relative rounded-xl overflow-hidden shadow-inner border border-gray-200 dark:border-cyan-900/50 glass-panel"
+    >
       {/* Panel Flotante de Calibración Temporal en Esquina Superior Izquierda */}
       <CalibrationPanel />
+
+      {/* Tooltip flotante al lado del mouse (Estética simplificada del manual de armado) */}
+      {hoveredPiece && (
+        <div 
+          style={{
+            left: `${mousePos.x + 15}px`,
+            top: `${mousePos.y + 15}px`,
+            borderColor: parametros.color_acabado || "#0088aa"
+          }}
+          className="absolute border-2 bg-slate-900/80 dark:bg-[#0D1117]/80 backdrop-blur-md text-white text-xs px-4 py-1.5 rounded-xl font-sans font-bold shadow-lg z-20 pointer-events-none transition-all duration-75 text-center min-w-[80px]"
+        >
+          {hoveredPiece}
+        </div>
+      )}
 
       <Canvas
         camera={{ position: [2, 1.5, 2.5], fov: 45 }}
@@ -425,8 +635,13 @@ export default function Viewer3D() {
         <directionalLight position={[5, 8, 5]} intensity={calibracion.intensidadLuzDirecta} castShadow />
         <directionalLight position={[-5, 5, -5]} intensity={calibracion.intensidadLuzAmbiental * 0.5} />
 
-        {/* Modelo Mueble en Coordenadas Reales de Grasshopper (se oculta si escenarioLimpio es true) */}
-        {!escenarioLimpio && <ParametricFurnitureMesh setFurnitureGroup={setFurnitureGroup} />}
+        {/* Modelo Mueble en Coordenadas Reales de Grasshopper y Handler de Raycast Centralizado */}
+        {!escenarioLimpio && (
+          <>
+            <ParametricFurnitureMesh setFurnitureGroup={setFurnitureGroup} />
+            <RaycastHandler />
+          </>
+        )}
 
         {/* Grilla del Piso Ubicada en la Base Real (Y = 0) */}
         <Grid
@@ -454,7 +669,7 @@ export default function Viewer3D() {
           </>
         ) : (
           <>
-            <span className="w-2 h-2 rounded-full bg-cyan-400" />
+            <span className="w-2.5 h-2.5 rounded-full bg-cyan-400" />
             <span>3BF WebGL Viewer (R3F Engine)</span>
           </>
         )}

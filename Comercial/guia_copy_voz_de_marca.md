@@ -420,13 +420,13 @@ Esta sección documenta la metodología operacional exacta que la IA y la firma 
 * **Tono Moderado y Empático:** Evitar confrontaciones agresivas. Si el post aborda vulnerabilidad o fatiga del diseñador, validar primero el sentimiento y luego reencuadrar la tecnología como una herramienta que **libera de la operatividad y multiplica el impacto humano**.
 * **Posicionamiento:** Presentar a Mario Mojica como Diseñador Industrial y Desarrollador de Software para Manufatura que aplica la tecnología para optimizar costos fabriles y elevar la experiencia del usuario (CX).
 
-### 15.5 Protocolo Inquebrantable de Registro en CRM Baserow (Tabla 991 y 994)
+### 15.5 Protocolo de Registro en CRM Baserow (Tabla 991 y 994)
 Cada vez que el usuario solicite "agregar" o "ingresar" a un prospecto o empresa en Baserow, la IA debe seguir estrictamente este flujo:
 
-1. **Regla de Cero Celdas Vacías:** Todos los campos deben quedar completos o con inferencias lógicas profesionales.
+1. **Regla de Información Real (Sin Inferencias de Contacto):** Solo rellenar correo electrónico, teléfono o WhatsApp si se cuenta con la información real verificada. Si no se encuentra, se dejan estas celdas vacías ("").
 2. **Extracción Exacta de la URL de LinkedIn:** Copiar la URL completa visible en la barra de direcciones del navegador (ej. `https://www.linkedin.com/in/jair-b-9658ba55/`). Asegurar que los slugs e identificadores de LinkedIn no contengan errores de sintaxis.
 3. **Gestión de la Empresa (Tabla 991 - Empresas):**
-   * Buscar la empresa en la Tabla 991. Si no existe, crear la ficha corporativa con: `Nombre de la Empresa`, `Sitio Web`, `LinkedIn Corporativo`, `Pais: Brasil`, `Canal Preferido: 4029` (LinkedIn), `Actividad en Redes: 4033` (Muy Activo) y notas del target.
+   * Buscar la empresa en la Tabla 991. Si no existe, crear la ficha corporativa con: `Nombre de la Empresa`, `Sitio Web`, `LinkedIn Corporativo`, `Pais: Brasil`, `Canal Preferido: 4029` (LinkedIn), `Actividad en Redes: 4035` (Inactivo por defecto) y notas del target.
 4. **Inyección del Lead (Tabla 994 - Leads):**
    * `Nombre`: Primer Nombre
    * `Apellido`: Apellidos
@@ -436,8 +436,8 @@ Cada vez que el usuario solicite "agregar" o "ingresar" a un prospecto o empresa
    * `Rol`: Cargo exacto del perfil
    * `LinkedIn`: URL completa y exacta extraída
    * `Origen`: `Prospección Activa`
-   * `Email`: Inferencia corporativa `[nombre].[apellido]@[dominio_empresa]`
-   * `Telefono` / `WhatsApp`: Teléfono matriz de la empresa y enlace `https://wa.me/...`
+   * `Email`: Solo si se encuentra el correo real; de lo contrario, vacío.
+   * `Telefono` / `WhatsApp`: Solo si se encuentra el real de contacto; de lo contrario, vacío.
    * `Facebook` / `Instagram`: Enlaces de búsqueda parametrizada
    * `Status`: `4017` (Nuevo)
    * `Estado CRM`: `4021` (Prospecto)

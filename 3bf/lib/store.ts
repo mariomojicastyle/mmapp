@@ -122,11 +122,15 @@ export interface State3BF {
   calibracion: CalibracionVisual;
   setCalibracion: <K extends keyof CalibracionVisual>(key: K, value: CalibracionVisual[K]) => void;
   resetCalibracion: () => void;
+
+  // Interacción de piezas
+  hoveredPiece: string | null;
+  setHoveredPiece: (name: string | null) => void;
 }
 
 export const defaultCalibracion: CalibracionVisual = {
   opacidadMadera: 1.0,
-  rugosidadMadera: 0.4,
+  roughnessMadera: 0.4,
   metalicidadMadera: 0.05,
   colorSolido: "#9CA3AF",
   customTextureUrl: null,
@@ -191,17 +195,20 @@ export const use3BFStore = create<State3BF>((set) => ({
   
   workerStatus: "checking",
   setWorkerStatus: (workerStatus) => set({ workerStatus }),
-
+ 
   modoVisual: "semitransparente",
   setModoVisual: (modoVisual) => set({ modoVisual }),
-
+ 
   escenarioLimpio: false,
   setEscenarioLimpio: (escenarioLimpio) => set({ escenarioLimpio }),
-
+ 
   calibracion: defaultCalibracion,
   setCalibracion: (key, value) =>
     set((state) => ({
       calibracion: { ...state.calibracion, [key]: value },
     })),
   resetCalibracion: () => set({ calibracion: defaultCalibracion }),
+
+  hoveredPiece: null,
+  setHoveredPiece: (hoveredPiece) => set({ hoveredPiece }),
 }));

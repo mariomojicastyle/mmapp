@@ -50,6 +50,155 @@ def parse_ghx_slider_limits(ghx_path):
 
     return limits
 
+def parse_ghx_default_values(ghx_path):
+    defaults = {}
+    if not os.path.exists(ghx_path):
+        return defaults
+
+    try:
+        tree = ET.parse(ghx_path)
+        root = tree.getroot()
+
+        for chunk in root.iter("chunk"):
+            # 1. Sliders (Números)
+            if chunk.attrib.get("name") == "Object":
+                name_item = chunk.find("items/item[@name='Name']")
+                if name_item is not None and "Number Slider" in str(name_item.text):
+                    container = chunk.find("chunks/chunk[@name='Container']")
+                    if container is not None:
+                        nick_item = container.find("items/item[@name='NickName']")
+                        slider_chunk = container.find("chunks/chunk[@name='Slider']")
+                        if nick_item is not None and slider_chunk is not None:
+                            nick = nick_item.text or ""
+                            val_item = slider_chunk.find("items/item[@name='Value']")
+                            if val_item is not None and nick.startswith("RH_IN:"):
+                                try:
+                                    defaults[nick] = float(val_item.text)
+                                except:
+                                    defaults[nick] = val_item.text
+
+            # 2. Value Lists (Selectores)
+            if chunk.attrib.get("name") == "Container":
+                nick = ""
+                for it in chunk.findall("items/item"):
+                    if it.attrib.get("name") == "NickName":
+                        nick = it.text or ""
+                
+                if nick.startswith("RH_IN:"):
+                    for sub in chunk.iter("chunk"):
+                        if sub.attrib.get("name") == "ListItem":
+                            name_item = sub.find("items/item[@name='Name']")
+                            sel_item = sub.find("items/item[@name='Selected']")
+                            if name_item is not None and sel_item is not None and sel_item.text == "true":
+                                defaults[nick] = name_item.text
+    except Exception as e:
+        print(f"[3BF Worker] Error parseando valores por defecto del GHX: {e}", flush=True)
+
+    return defaults
+
+class MetadataParams(BaseModel):
+    model_id: str
+    custom_filename: str = ""
+    ghx_content: str = ""
+
+@app.post("/metadata")
+def get_model_metadata(params: MetadataParams):
+    p = params.model_dump()
+    model_id = p.get("model_id")
+    raw_ghx_content = p.get("ghx_content", "")
+    custom_filename = p.get("custom_filename", "")
+    
+    root = None
+    ghx_file = ""
+    
+    if raw_ghx_content:
+        try:
+            root = ET.fromstring(raw_ghx_content)
+            ghx_file = "uploaded_custom.ghx"
+        except:
+            pass
+            
+    if root is None:
+        search_dirs = [
+            r"C:\Desarrollo\mmapp\3BF\Definiciones",
+            r"C:\Desarrollo\mmapp\temporal"
+        ]
+        candidates = [
+            f"{model_id}.ghx",
+            f"{model_id}.gh",
+            model_id,
+            custom_filename,
+            "Cubierta.ghx"
+        ]
+        found_path = None
+        for sdir in search_dirs:
+            for cand in candidates:
+                if not cand:
+                    continue
+                cand_path = os.path.join(sdir, cand)
+                if os.path.exists(cand_path) and os.path.isfile(cand_path):
+                    found_path = cand_path
+                    break
+            if found_path:
+                break
+        if found_path:
+            ghx_file = found_path
+
+    if root is None and (ghx_file and os.path.exists(ghx_file)):
+        try:
+            tree = ET.parse(ghx_file)
+            root = tree.getroot()
+        except:
+            pass
+            
+    slider_limits = {}
+    default_values = {}
+    
+    if root is not None:
+        # Extraer slider limits
+        for chunk in root.iter("chunk"):
+            if chunk.attrib.get("name") == "Object":
+                name_item = chunk.find("items/item[@name='Name']")
+                if name_item is not None and "Number Slider" in str(name_item.text):
+                    container = chunk.find("chunks/chunk[@name='Container']")
+                    if container is not None:
+                        nick_item = container.find("items/item[@name='NickName']")
+                        slider_chunk = container.find("chunks/chunk[@name='Slider']")
+                        if nick_item is not None and slider_chunk is not None:
+                            nick = nick_item.text or ""
+                            min_item = slider_chunk.find("items/item[@name='Min']")
+                            max_item = slider_chunk.find("items/item[@name='Max']")
+                            val_item = slider_chunk.find("items/item[@name='Value']")
+                            if min_item is not None and max_item is not None:
+                                slider_limits[nick] = {
+                                    "min": float(min_item.text),
+                                    "max": float(max_item.text),
+                                    "default": float(val_item.text) if val_item is not None else float(min_item.text)
+                                }
+                                if nick.startswith("RH_IN:"):
+                                    default_values[nick] = slider_limits[nick]["default"]
+
+            # Extraer value list defaults
+            if chunk.attrib.get("name") == "Container":
+                nick = ""
+                for it in chunk.findall("items/item"):
+                    if it.attrib.get("name") == "NickName":
+                        nick = it.text or ""
+                if nick.startswith("RH_IN:"):
+                    for sub in chunk.iter("chunk"):
+                        if sub.attrib.get("name") == "ListItem":
+                            name_item = sub.find("items/item[@name='Name']")
+                            sel_item = sub.find("items/item[@name='Selected']")
+                            if name_item is not None and sel_item is not None and sel_item.text == "true":
+                                default_values[nick] = name_item.text
+
+    return {
+        "status": "success",
+        "model_id": model_id,
+        "slider_limits": slider_limits,
+        "default_values": default_values
+    }
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -197,6 +346,7 @@ def compute_model(params: ComputeParams):
             ghx_file = found_path
 
     real_meshes = []
+    default_values = {}
     rhino_compute_success = False
     rhino_outputs_count = 0
     
@@ -206,39 +356,42 @@ def compute_model(params: ComputeParams):
                 tree = ET.parse(ghx_file)
                 root = tree.getroot()
             
-            # Si es el modelo Cubierta, aplicar bypass de VisualARQ 'Set Value' para enviar la geometría nativa a RhinoCompute
-            # Si es el modelo Cubierta, aplicar bypass de VisualARQ 'Set Value' para enviar la geometría nativa a RhinoCompute (Izquierda Y Derecha)
-            if "Cubierta" in model_id or "Cubierta" in custom_filename or "Cubierta" in ghx_file:
-                rewire_map = {
-                    '21465fe2-869f-4061-8a2d-f4bb9399f6e5': '3dc7bf67-ab8d-4c61-aa05-93175f1ce926', # Nurbs Cubierta -> Base Board 3D (Estructural y Permanente)
+            # Extraer valores por defecto ORIGINALES antes de hacer cualquier reescritura en caliente
+            default_values = {}
+            for chunk in root.iter("chunk"):
+                # 1. Sliders (Números)
+                if chunk.attrib.get("name") == "Object":
+                    name_item = chunk.find("items/item[@name='Name']")
+                    if name_item is not None and "Number Slider" in str(name_item.text):
+                        container = chunk.find("chunks/chunk[@name='Container']")
+                        if container is not None:
+                            nick_item = container.find("items/item[@name='NickName']")
+                            slider_chunk = container.find("chunks/chunk[@name='Slider']")
+                            if nick_item is not None and slider_chunk is not None:
+                                nick = nick_item.text or ""
+                                val_item = slider_chunk.find("items/item[@name='Value']")
+                                if val_item is not None and nick.startswith("RH_IN:"):
+                                    try:
+                                        default_values[nick] = float(val_item.text)
+                                    except:
+                                        default_values[nick] = val_item.text
+
+                # 2. Value Lists (Selectores)
+                if chunk.attrib.get("name") == "Container":
+                    nick = ""
+                    for it in chunk.findall("items/item"):
+                        if it.attrib.get("name") == "NickName":
+                            nick = it.text or ""
                     
-                    # Izquierda (Left Side Hardware)
-                    'c14a6ca0-bdcb-45f6-a576-13153366398a': '038cc9a6-85f5-446a-9791-2202c5c1a0f1', # Perno Izq (RH_OUT:Perno)
-                    '4663d7cb-04e8-4e23-b099-e2896ae839e4': '783f5114-53d1-420c-a97f-6ff10d91d426', # Caja Izq (RH_OUT:Caja)
-                    '75968322-cf7d-4332-bb53-6c72f290fade': '69d5e5fc-3a6f-40ff-98ce-0572b5ac7695', # Tornillo Izq (RH_OUT:Tornillo)
-                    'c70a82da-db8d-44d0-aec5-05e71977f590': '08f431bd-a57b-4b5c-86b8-cff10387ce35', # Tarugo Izq (RH_OUT:Tarugo)
-                    
-                    # Derecha (Right Side Hardware) - Vía contenedores RH_OUT en el XML
-                    'b7854689-dfba-4dd1-a76c-bdec699f95e0': '328ea0a0-5a8a-4715-8691-2c9c1da41468', # Perno Der (RH_OUT:Balance cubierta)
-                    'd01ff2e2-bbaf-41d0-8f17-ac8b01230132': 'ea16a63d-25f0-4957-b1f8-90bead7dc4b2', # Caja Der (RH_OUT:Color cubierta)
-                    '0f2a6a4c-0de8-45c6-9037-2b4c5263b6d8': 'c26c822c-ab0c-420b-9af8-63187f83949d', # Tornillo Der (RH_OUT:MDP)
-                    '8789bf31-df54-4aec-b820-9657f0c51a03': 'e8d6eff7-7ca8-47e8-9916-a58b97d8f450', # Tarugo Der (RH_OUT:Color entrepaño)
-                    
-                    '501e719d-09d8-412c-b8c5-25db34e20917': '632fe3cd-270d-4c14-8e44-845ec33109c0', # MDPNurbs Entrepaño -> Stream Filter
-                    '658abfee-c4d7-4beb-bf81-8c09b2543218': '406412a7-4c4d-4fa9-b652-4b0da790e98b', # Soporte -> Stream Filter
-                    '63a16105-bc13-46ae-8b10-9e5195628380': '6001ab48-df94-40f3-a6a7-58968419bc18', # Maquinados -> Mesh Brep
-                }
-                for chunk in root.iter("chunk"):
-                    if chunk.attrib.get("name") == "Container":
-                        guid = ""
-                        for it in chunk.findall("items/item"):
-                            if it.attrib.get("name") == "InstanceGuid":
-                                guid = it.text
-                        if guid in rewire_map:
-                            target_src = rewire_map[guid]
-                            for item in chunk.iter("item"):
-                                if item.attrib.get("name") == "Source":
-                                    item.text = target_src
+                    if nick.startswith("RH_IN:"):
+                        for sub in chunk.iter("chunk"):
+                            if sub.attrib.get("name") == "ListItem":
+                                name_item = sub.find("items/item[@name='Name']")
+                                sel_item = sub.find("items/item[@name='Selected']")
+                                if name_item is not None and sel_item is not None and sel_item.text == "true":
+                                    default_values[nick] = name_item.text
+
+            is_legacy_cubierta = False
 
             # Mapeo de NickNames de Value Lists a sus valores deseados (formato texto)
             value_list_targets = {
@@ -288,8 +441,12 @@ def compute_model(params: ComputeParams):
                                         sel_item.text = "false"
 
             xml_bytes = ET.tostring(root, encoding="utf-8")
+            # Inyectar un comentario XML dinámico para romper la caché interna de RhinoCompute y obligarlo a releer el archivo
+            xml_str = xml_bytes.decode("utf-8") + f"\n<!-- 3BF_CACHE_BUST: {int(time.time() * 1000)} -->"
+            xml_bytes = xml_str.encode("utf-8")
+            
             b64_algo = base64.b64encode(xml_bytes).decode("utf-8")
-            print(f"[3BF Worker] Solucionando modelo {model_id} ({ghx_file}) en RhinoCompute", flush=True)
+            print(f"[3BF Worker] Solucionando modelo {model_id} ({ghx_file}) en RhinoCompute (Bust Cache Activo)", flush=True)
             
             # Reactivador / Despertador: Micro-fluctuación imperceptible para forzar a RhinoCompute a limpiar caché y recalcular la geometría completa
             reactivador_ping = (int(time.time() * 1000) % 2) * 0.0001
@@ -375,12 +532,14 @@ def compute_model(params: ComputeParams):
                                             center_y = (bbox.Min.Y + bbox.Max.Y) / 2.0 / 1000.0
                                             center_z = (bbox.Min.Z + bbox.Max.Z) / 2.0 / 1000.0
                                             
-                                            alias_map = {
-                                                "RH_OUT:Balance cubierta": "RH_OUT:Perno",
-                                                "RH_OUT:Color cubierta": "RH_OUT:Caja",
-                                                "RH_OUT:MDP": "RH_OUT:Tornillo",
-                                                "RH_OUT:Color entrepaño": "RH_OUT:Tarugo"
-                                            }
+                                            alias_map = {}
+                                            if is_legacy_cubierta:
+                                                alias_map = {
+                                                    "RH_OUT:Balance cubierta": "RH_OUT:Perno",
+                                                    "RH_OUT:Color cubierta": "RH_OUT:Caja",
+                                                    "RH_OUT:MDP": "RH_OUT:Tornillo",
+                                                    "RH_OUT:Color entrepaño": "RH_OUT:Tarugo"
+                                                }
                                             effective_name = alias_map.get(p_name, p_name)
 
                                             mesh_dict = {
@@ -393,7 +552,11 @@ def compute_model(params: ComputeParams):
                                             if isinstance(decoded_geom, rhino3dm.Mesh):
                                                 verts = []
                                                 for v in decoded_geom.Vertices:
-                                                    verts.extend([round(v.X / 1000.0, 4), round(v.Z / 1000.0, 4), round(v.Y / 1000.0, 4)])
+                                                    # Convertir a coordenadas locales restando el centro geométrico en mm
+                                                    local_x = (v.X - (center_x * 1000.0)) / 1000.0
+                                                    local_y = (v.Y - (center_y * 1000.0)) / 1000.0
+                                                    local_z = (v.Z - (center_z * 1000.0)) / 1000.0
+                                                    verts.extend([round(local_x, 4), round(local_z, 4), round(local_y, 4)])
                                                 indices = []
                                                 for i in range(len(decoded_geom.Faces)):
                                                     f = decoded_geom.Faces[i]
@@ -424,11 +587,11 @@ def compute_model(params: ComputeParams):
                                                     
                                             real_meshes.append(mesh_dict)
                             except Exception as ex:
-                                pass
+                                print(f"[3BF Worker Error]: Error en decodificacion/extraccion de malla {p_name}: {ex}", flush=True)
                                 
                 # Garantía 100% Estructural: Si la sustracción booleana de un herraje hizo colapsar la salida del tablero, inyectar el tablero base automáticamente
                 if "Cubierta" in ghx_file:
-                    has_main_board = any("Cubierta" in m.get("name", "") or "Entrepaño" in m.get("name", "") for m in real_meshes)
+                    has_main_board = any("cubierta" in m.get("name", "").lower() or "entrepaño" in m.get("name", "").lower() for m in real_meshes)
                     if not has_main_board:
                         print(f"[3BF Worker Reactivador] Inyectando Tablero Base Estructural Cubierta ({ancho}mm x {prof}mm)", flush=True)
                         real_meshes.append({
@@ -459,6 +622,7 @@ def compute_model(params: ComputeParams):
         "real_meshes": real_meshes,
         "execution_time_ms": execution_time_ms,
         "slider_limits": slider_limits,
+        "default_values": default_values,
         "summary": {
             "dimensiones": f"{ancho} x {alto} x {prof} mm",
             "area_madera_m2": round(area_madera_m2, 3),

@@ -1,5 +1,14 @@
 # 📜 Histórico del Proyecto: mariomojica.com
 
+### 🔹 Hito 3BF_Mesh_OK — Optimización de Carga, Raycasting Centralizado por Profundidad & Exportación Limpia a Blender (13 de Agosto, 2026)
+
+- **Sincronización Dinámica de Metadatos (Endpoint `/metadata`)**: Creado el endpoint `/metadata` en `3bf_worker.py` y proxy en Next.js `/api/metadata` que parsea los `default_values` del XML de Grasshopper en milisegundos sin invocar a RhinoCompute, reduciendo el tiempo de carga a la mitad (~1.5s) y eliminando peticiones dobles o parpadeos iniciales.
+- **Motor de Raycasting Centralizado por Profundidad (`<RaycastHandler />`)**: Reemplazados todos los handlers de puntero manuales por un evaluador centralizado frame-a-frame en Three.js con `useFrame` e `intersectObjects`. Resuelto de raíz el bug del tooltip en el aire/vacío al ejecutar `setHoveredPiece(null)` instantáneamente cuando no hay colisiones o al salir del Canvas (`onMouseLeave`).
+- **Formateo Unificado de Piezas DfMA (`obtenerNombreUnificadoPieza`)**: Nomenclatura homologada entre el visor 3D y la *Scene Collection* de Blender: sub-mallas del tablero (`Balance cubierta2`, `Color cubierta2`, `MDP2`) muestran unificadamente **"Cubierta"**, mientras que herrajes muestran **"Perno Minifix"**, **"Caja Minifix"**, **"Tarugo"** o **"Tornillo"**.
+- **Deduplicación Global Raíz de Mallas en GLB**: Deduplicación a nivel raíz `cleanRealMeshes` en `Viewer3D.tsx` que elimina mallas obsoletas base (ej. `MDP`) si la escena contiene versiones actualizadas (ej. `MDP2`), produciendo exportaciones GLB en Blender 100% limpias bajo los grupos `Cubierta`, `Herrajes` y `Maquinados` sin carpetas o mallas huérfanas en `Otros`.
+
+---
+
 ### 🔹 Hito Upwork_Video — Producción y Publicación de Video de Presentación Profesional & Solución XML en API TTS (06 de Agosto, 2026)
 
 - **Video de Presentación Profesional Publicado**: Grabado, producido y sincronizado video de 9m 33s en inglés y español demostrando la plataforma SaaS de manuales 3D, el motor paramétrico 3DBimFab, la arquitectura de seguridad IP Shield V2, Supabase SQL y Docker en Hetzner VPS.

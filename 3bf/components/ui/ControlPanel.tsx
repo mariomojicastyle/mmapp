@@ -506,6 +506,32 @@ function ParametrosPanel() {
   );
 }
 
+const MAPA_PARAMETROS: Record<string, string> = {
+  "RH_IN:Ancho": "ancho",
+  "RH_IN:01 Ancho": "ancho",
+  "RH_IN:Alto": "alto",
+  "RH_IN:02 Alto": "alto",
+  "RH_IN:Profundidad": "profundidad",
+  "RH_IN:Cantidada de Cajones": "cant_cajones",
+  "RH_IN:Cantidad de Cajones": "cant_cajones",
+  "RH_IN:Profundidad cajon": "profundidad_cajon",
+  "RH_IN:Altura lateral de cajon": "altura_lateral_cajon",
+  "RH_IN:Distancia bajo laterales": "distancia_bajo_laterales",
+  "RH_IN:Tipo Cajon": "tipo_cajon",
+  "RH_IN:03 Tipo de union izquierda": "union_izquierda",
+  "RH_IN:04 Tipo de union Derecha": "union_derecha",
+  "RH_IN:05 Orientacion maquinado minifix": "orientacion_maquinado_minifix",
+  "RH_IN:06 Orientacion minifix": "orientacion_minifix",
+  "RH_IN:Posicion Tarugo": "posicion_tarugo",
+  "RH_IN:Posicion Tornillo": "posicion_tornillo",
+  "RH_IN:Borde izquierdo": "borde_izquierdo",
+  "RH_IN:Borde derecho": "borde_derecho",
+  "RH_IN:Lado balance cubierta": "lado_balance_cubierta",
+  "RH_IN:Tipo de mapeado cubierta": "tipo_mapeado_cubierta",
+  "RH_IN:Lado balance entrepaño": "lado_balance_entrepanio",
+  "RH_IN:Tipo de mapeado entrepaño": "tipo_mapeado_entrepanio",
+};
+
 export default function ControlPanel() {
   const {
     parametros,
@@ -522,7 +548,8 @@ export default function ControlPanel() {
   } = use3BFStore();
 
   const [loadedFiles, setLoadedFiles] = React.useState<Array<{ id: string; filename: string; content?: string }>>([]);
-
+  const [isSyncing, setIsSyncing] = React.useState(false);
+  const lastModelRef = React.useRef<string | null>(null);
   const fileInputRef = React.useRef<HTMLInputElement>(null);
 
   // Comprobar estado de conexión del Worker Python
@@ -547,6 +574,39 @@ export default function ControlPanel() {
   useEffect(() => {
     verificarWorker();
   }, []);
+
+  // Sincronizar parámetros de la interfaz web desde el archivo Grasshopper de forma ultra-rápida (5ms)
+  const sincronizarParametrosDesdeArchivo = async (modelId: string, customFilename?: string, ghxContent?: string) => {
+    setIsSyncing(true);
+    try {
+      const payload = {
+        model_id: modelId,
+        custom_filename: customFilename || `${modelId}.ghx`,
+        ghx_content: ghxContent || "",
+      };
+      const res = await fetch("/api/metadata", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      const data = await res.json();
+      if (data.status === "success" && data.default_values) {
+        lastModelRef.current = modelId; // Marcar como cargado
+        
+        // Sincronizar store
+        Object.entries(data.default_values).forEach(([ghKey, val]) => {
+          const storeKey = MAPA_PARAMETROS[ghKey];
+          if (storeKey) {
+            setParametro(storeKey as any, val);
+          }
+        });
+      }
+    } catch (err) {
+      console.error("Error sincronizando parámetros desde archivo:", err);
+    } finally {
+      setIsSyncing(false);
+    }
+  };
 
   // Función para re-calcular cuando cambian los parámetros
   const ejecutarComputo = async () => {
@@ -593,9 +653,11 @@ export default function ControlPanel() {
           return [...filtered, { id: modelName, filename, content }];
         });
 
+        lastModelRef.current = null; // Forzar sincronización de UI
         setParametro("ghx_content", content);
         setParametro("custom_filename", filename);
         setParametro("model_id", modelName);
+        sincronizarParametrosDesdeArchivo(modelName, filename, content);
       };
       reader.readAsText(file);
     } else {
@@ -603,14 +665,17 @@ export default function ControlPanel() {
         const filtered = prev.filter((f) => f.id !== modelName);
         return [...filtered, { id: modelName, filename }];
       });
+      lastModelRef.current = null; // Forzar sincronización de UI
       setParametro("ghx_content", "");
       setParametro("custom_filename", filename);
       setParametro("model_id", modelName);
+      sincronizarParametrosDesdeArchivo(modelName, filename, "");
     }
   };
 
   const handleSelectModel = (selectedId: string) => {
     if (!selectedId) {
+      lastModelRef.current = null;
       setParametro("model_id", "");
       setParametro("custom_filename", "");
       setParametro("ghx_content", "");
@@ -620,19 +685,24 @@ export default function ControlPanel() {
 
     const found = loadedFiles.find((f) => f.id === selectedId);
     if (found) {
+      lastModelRef.current = null; // Forzar sincronización de UI
       setParametro("model_id", found.id);
       setParametro("custom_filename", found.filename);
       setParametro("ghx_content", found.content || "");
+      sincronizarParametrosDesdeArchivo(found.id, found.filename, found.content || "");
     } else {
+      lastModelRef.current = null; // Forzar sincronización de UI
       setParametro("model_id", selectedId);
       setParametro("custom_filename", `${selectedId}.ghx`);
       setParametro("ghx_content", "");
+      sincronizarParametrosDesdeArchivo(selectedId, `${selectedId}.ghx`, "");
     }
   };
 
   useEffect(() => {
+    if (isSyncing) return; // Evitar disparar cómputo mientras se sincronizan los parámetros
     ejecutarComputo();
-  }, [parametros]);
+  }, [parametros, isSyncing]);
 
   return (
     <div className="p-4 flex flex-col gap-5 h-full overflow-y-auto">
