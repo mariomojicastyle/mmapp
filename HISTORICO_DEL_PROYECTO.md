@@ -1,5 +1,27 @@
 # 📜 Histórico del Proyecto: mariomojica.com
 
+### 🔹 Hito 3BF_Costos — Motor de Costeo B2B, Negociación de Proveedurías, Descuentos de Cara, Desperdicio Nesting & Google Sheets Optimizer (15 de Agosto, 2026)
+
+- **Directorio Modular de "Negociación Proveedurías"**: Reestructuración de la vista de base de datos incorporando fichas desplegables en orden alfabético estricto de una sola línea (`Arauco`, `Duratex`, `Masisa`, `Novopan`), permitiendo expandir o colapsar individualmente matrices de importación complejas y configuraciones de TRM.
+- **Matriz Viva y Matemática de Liquidación Novopan (Ecuador ➔ Colombia)**: Integración reactiva completa de los parámetros de importación desde Ecuador (Apoyo Volumen 20.0%, Apoyo Tasa 15.1%, Pronto Pago 3.5%, Gastos Nacionalización 8.7%, Financiación 1.1%, Flete $18.57/m³ y TRM Novopan de $4.000 COP), liquidando al centavo el costo de cada lámina y su costo por metro cuadrado.
+- **Algoritmo de Descuento por Tipo de Acabado / Cara (`D/B` vs `D/D`)**: Detección y columna editable `Desc. Cara (I)` en la tabla de tableros. Aplica 5.0% de descuento a tableros con balance blanco (`D/B`) y 0.0% a tableros con diseño en ambas caras (`D/D`, `D/KN`, madera), logrando coincidencia exacta con la columna `I` de la plantilla de costos industrial.
+- **Control de Porcentaje de Desperdicio de Corte / Nesting (`% DESP`)**: Implementación del cálculo industrial de consumo real según la fórmula oficial de Excel `EDP`: $\text{Factor} = \frac{1}{1 - \frac{\% \text{Desp}}{100}}$, con control global editable en cabecera (`10.0%` por defecto) y casillas fila a fila por pieza en la lista de corte (BOM).
+- **Auto-selección Numérica Global y Soporte Coma/Punto (`DecimalInput`)**: Estandarización en toda la plataforma del componente de entrada numérica con auto-selección total al tocar con el puntero del ratón (`select()`), eliminación de ceros residuales invasivos y compatibilidad simultánea con punto y coma decimal.
+- **Optimizador de Plantillas ERP para Google Sheets (`FILE_TOO_LARGE` y `#NAME?` Resueltos)**: 
+  * Eliminación de cuadrículas fantasmas (1.048.576 filas en `BD` y 16.383 columnas en `HERRAJES CANTOS`), reduciendo el peso de `4.66 MB` a `602 KB` (reducción del 87%).
+  * Restauración de los 35 Rangos Nombrados Globales (`TRM`, `MPLAMINAS`, `MP2HERRAJES_CANTOS`, `CODIGOS`), permitiendo abrir la plantilla instantáneamente en Google Sheets con cálculos vivos y cero errores.
+- **Simplificación del Selector de Sustrato en BOM**: Menú desplegable optimizado que muestra exclusivamente el nombre comercial limpio del material sin sufijos redundantes de precio, delegando la visualización económica a su columna dedicada de `Costo m²`.
+
+---
+
+- **Creación del Documento Maestro `WORKER.md`**: Publicación oficial del documento técnico [`3BF/WORKER.md`](file:///c:/Desarrollo/mmapp/3BF/WORKER.md) y registro en el protocolo de arranque de [`AGENTS.md`](file:///c:/Desarrollo/mmapp/AGENTS.md), blindando la memoria del microservicio `3bf_worker.py` (FastAPI / Three.js).
+- **Matriz de Texturizado DfMA y Mapeo Cúbico de 6 Niveles**: Estandarización de la tabla de giros angulares ortogonales (`Rotate 3D`) para los 6 tipos de piezas de mobiliario (`0: Vertical`, `1: Vertical Atravesada`, `2: Frontal`, `3: Frontal Atravesada`, `4: Horizontal`, `5: Horizontal Atravesada`) con caja estándar cúbica de 600 x 600 x 600 mm.
+- **Algoritmo de Mapeo Cúbico 3D Real (BoxMapping Nativo de 6 Caras)**: Implementación del componente Python nativo en Rhino 8 que evalúa la normal dominante de cada vértice para eliminar rayas estiradas en cantos perimetrales y proyectar la veta continua sin dependencias de plugins externos como *Human*.
+- **Pipeline de Extracción de UVs en el Worker**: Extracción de `decoded_geom.TextureCoordinates` en `3bf_worker.py` y renderizado PBR en `Viewer3D.tsx`, logrando la representación física 1:1 de vetas longitudinales y transversales para optimización de corte CNC (Nesting).
+- **Purga Total al "Buscar en Disco"**: Reseteo de variables de estado en `purgarEstadoCompleto()` (`model_id = ""`, `custom_filename = ""`) y eliminación de fallbacks hardcodeados en `ControlPanel.tsx`, dejando la interfaz 100% limpia.
+
+---
+
 ### 🔹 Hito 3BF_Alineado — Alineación Geométrica 1:1 CAD/WebGL, Widget de Ejes Rhino 8 & Protocolo Purge-First (14 de Agosto, 2026)
 
 - **Alineación Geométrica 1:1 Rhino ➔ Three.js**: Resolución del efecto espejo en profundidad en el visor 3D mediante la transformación de coordenadas dextrógira coherente (`Three.js X = Rhino X`, `Three.js Y = Rhino Z`, `Three.js Z = -Rhino Y`), con inversión de devanado de caras triangulares (CCW) para conservar normales 100% exteriores sin reflejos especulares ni inversiones de izquierda/derecha.

@@ -6,6 +6,7 @@ Cada vez que iniciamos, tu primera tarea absoluta debe ser recuperar el contexto
 - [MANIFIESTO_NEGOCIO.md](file:///c:/Desarrollo/mmapp/docs/MANIFIESTO_NEGOCIO.md) - GTM: Foco Comercial Manual 3D.
 - [3BF.md](file:///c:/Desarrollo/mmapp/3BF.md) - 3DBimFab: Motor de Manufactura Digital Paramétrica (Grasshopper → Web).
 - [3BF_Proceso.md](file:///c:/Desarrollo/mmapp/3BF/3BF_Proceso.md) - Flujo paramétrico, comandos de arranque /Arranque3BF e hitos 3BF.
+- [WORKER.md](file:///c:/Desarrollo/mmapp/3BF/WORKER.md) - Memoria Técnica y Estándar de Comunicación GHX ➔ Web (FastAPI/Three.js).
 - [Arquitectura.md](file:///c:/Desarrollo/mmapp/Arquitectura/Arquitectura.md) - Topología del Ecosistema B2B y VPS.
 - [METRICAS.md](file:///c:/Desarrollo/mmapp/Arquitectura/METRICAS.md) - Ecosistema de Métricas y Analíticas B2B (Umami/Supabase).
 - [CRM.md](file:///c:/Desarrollo/mmapp/Comercial/CRM.md) - Diseño Relacional B2B y Árbol de Clientes (Baserow).

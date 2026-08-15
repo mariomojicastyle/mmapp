@@ -145,6 +145,7 @@ function BoardMesh({
   modoVisual,
   vertices,
   indices,
+  uvs: grasshopperUvs,
   tipoMapeado,
 }: {
   position: [number, number, number];
@@ -154,6 +155,7 @@ function BoardMesh({
   modoVisual: string;
   vertices?: number[];
   indices?: number[];
+  uvs?: number[];
   tipoMapeado?: string;
 }) {
   const { calibracion } = use3BFStore();
@@ -175,6 +177,16 @@ function BoardMesh({
         edges = new THREE.EdgesGeometry(indexedGeo, calibracion.thresholdAristas);
       } catch {
         edges = null;
+      }
+
+      // Si la malla ya trae coordenadas UV nativas asignadas por Grasshopper (BoxMapping)
+      if (grasshopperUvs && grasshopperUvs.length > 0) {
+        indexedGeo.setAttribute("uv", new THREE.Float32BufferAttribute(grasshopperUvs, 2));
+        const geo = indexedGeo.toNonIndexed();
+        geo.computeVertexNormals();
+        geo.computeBoundingBox();
+        geo.computeBoundingSphere();
+        return { customGeometry: geo, edgesGeometry: edges };
       }
 
       // 2. Malla No-Indexada para Normales de Cara 100% Perpendiculares (Sin Gradientes de Sombra ni Costuras)
@@ -238,7 +250,7 @@ function BoardMesh({
       return { customGeometry: geo, edgesGeometry: edges };
     }
     return { customGeometry: null, edgesGeometry: null };
-  }, [vertices, indices, calibracion.thresholdAristas]);
+  }, [vertices, indices, grasshopperUvs, calibracion.thresholdAristas]);
 
   const boxEdgesGeometry = React.useMemo(() => {
     if (!customGeometry && size && size.length === 3) {
@@ -493,6 +505,7 @@ function ParametricFurnitureMesh({ setFurnitureGroup }: { setFurnitureGroup: (g:
                   modoVisual={modoVisual}
                   vertices={m.vertices}
                   indices={m.indices}
+                  uvs={m.uvs}
                   tipoMapeado={m.name.includes("Cubierta") ? parametros.tipo_mapeado_cubierta : parametros.tipo_mapeado_entrepanio}
                 />
               );
@@ -513,6 +526,7 @@ function ParametricFurnitureMesh({ setFurnitureGroup }: { setFurnitureGroup: (g:
                 modoVisual={modoVisual}
                 vertices={m.vertices}
                 indices={m.indices}
+                uvs={m.uvs}
                 tipoMapeado={m.name.includes("Cubierta") ? parametros.tipo_mapeado_cubierta : parametros.tipo_mapeado_entrepanio}
               />
             ))}
@@ -532,6 +546,7 @@ function ParametricFurnitureMesh({ setFurnitureGroup }: { setFurnitureGroup: (g:
                 modoVisual={modoVisual}
                 vertices={m.vertices}
                 indices={m.indices}
+                uvs={m.uvs}
                 tipoMapeado={m.name.includes("Cubierta") ? parametros.tipo_mapeado_cubierta : parametros.tipo_mapeado_entrepanio}
               />
             ))}

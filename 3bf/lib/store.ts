@@ -65,6 +65,7 @@ export interface ComputoResultado {
     position: [number, number, number];
     vertices?: number[];
     indices?: number[];
+    uvs?: number[];
   }>;
   slider_limits?: Record<string, {
     min?: number;
@@ -98,6 +99,162 @@ export interface CalibracionVisual {
   mostrarPanelCalibracion: boolean; // Toggle flotante
 }
 
+export interface HerrajeRecord {
+  id: string;
+  codigo: string;
+  nombreGhx: string;
+  descripcion: string;
+  categoria: "Minifix" | "Tornillos" | "Tarugos" | "Correderas" | "Bisagras" | "Soportes" | "Accesorios";
+  mallasPorUnidad: number;
+  costoCop: number;
+  costoUsd: number;
+  unidad: "UND" | "PAR" | "JGO" | "KIT";
+  pesoKg: number;
+  proveedor: string;
+}
+
+export interface NegociacionNovopan {
+  apoyoVolumenPct: number;          // 20.00%
+  apoyoTasaPct: number;             // 15.10%
+  prontoPagoPct: number;            // 3.50%
+  trmNovopan: number;               // 4000 COP
+  gastosNacionalizacionPct: number; // 8.70%
+  financiacionPct: number;          // 1.10%
+  fleteInternacionalM3Usd: number;  // 18.57 USD/m3
+}
+
+export const NEGOCIACION_NOVOPAN_DEFECTO: NegociacionNovopan = {
+  apoyoVolumenPct: 20.00,
+  apoyoTasaPct: 15.10,
+  prontoPagoPct: 3.50,
+  trmNovopan: 4000,
+  gastosNacionalizacionPct: 8.70,
+  financiacionPct: 1.10,
+  fleteInternacionalM3Usd: 18.57,
+};
+
+export function detectarDescuentoCara(nombreComercial: string): number {
+  const n = (nombreComercial || "").toUpperCase();
+  if (n.includes("D/B") || n.includes("BALANCE") || n.includes("1 CARA") || n.includes("CARA B")) {
+    return 5.0; // 5% de descuento por acabado con balance blanco (D/B)
+  }
+  return 0.0; // 0% de descuento para D/D (2 caras diseño), D/KN, D/MAD, etc.
+}
+
+export function calcularCostoLaminaNovopan(
+  precioListaUsd: number,
+  largoMm: number,
+  anchoMm: number,
+  calibreMm: number,
+  descuentoCaraPct?: number,
+  negociacion: NegociacionNovopan = NEGOCIACION_NOVOPAN_DEFECTO,
+  nombreComercial: string = ""
+) {
+  const areaM2 = (largoMm * anchoMm) / 1_000_000.0;
+  const volumenM3 = areaM2 * (calibreMm / 1000.0);
+  
+  const descPct = descuentoCaraPct !== undefined ? descuentoCaraPct : detectarDescuentoCara(nombreComercial);
+  const descCara = descPct / 100.0;
+  const eNeto = precioListaUsd * (1.0 - descCara);
+  
+  const flete = negociacion.fleteInternacionalM3Usd * volumenM3;
+  
+  const prontoPago = (eNeto + flete) * (negociacion.prontoPagoPct / 100.0);
+  const apoyoVolumen = eNeto * (negociacion.apoyoVolumenPct / 100.0);
+  const apoyoTasa = eNeto * (negociacion.apoyoTasaPct / 100.0);
+  
+  const totalDescuentos = prontoPago + apoyoVolumen + apoyoTasa;
+  const gastosNacionalizacion = eNeto * (negociacion.gastosNacionalizacionPct / 100.0);
+  
+  const costoUsdAjustado = eNeto - totalDescuentos + gastosNacionalizacion;
+  const costoUsdFinal = costoUsdAjustado * (1.0 + negociacion.financiacionPct / 100.0);
+  
+  const costoLaminaCop = Math.round(costoUsdFinal * negociacion.trmNovopan);
+  const costoLaminaUsd = Number(costoUsdFinal.toFixed(4));
+  const costoM2Cop = Math.round(costoLaminaCop / areaM2);
+  const costoM2Usd = Number((costoUsdFinal / areaM2).toFixed(4));
+
+  return {
+    areaM2: Number(areaM2.toFixed(3)),
+    volumenM3: Number(volumenM3.toFixed(4)),
+    precioListaUsd,
+    descuentoCaraPct: descPct,
+    costoLaminaUsd,
+    costoLaminaCop,
+    costoM2Usd,
+    costoM2Cop,
+    desglose: {
+      eNeto: Number(eNeto.toFixed(4)),
+      flete: Number(flete.toFixed(4)),
+      prontoPago: Number(prontoPago.toFixed(4)),
+      apoyoVolumen: Number(apoyoVolumen.toFixed(4)),
+      apoyoTasa: Number(apoyoTasa.toFixed(4)),
+      gastosNacionalizacion: Number(gastosNacionalizacion.toFixed(4)),
+      costoUsdAjustado: Number(costoUsdAjustado.toFixed(4)),
+      costoUsdFinal: Number(costoUsdFinal.toFixed(4))
+    }
+  };
+}
+
+export interface TableroRecord {
+  id: string;
+  codigo: string;
+  sustrato: "MDP" | "MDF" | "MDF RH" | "HDF" | "Triplex";
+  nombreComercial: string;
+  calibreMm: number;
+  largoLaminaMm: number;
+  anchoLaminaMm: number;
+  costoListaUsd: number;  // Precio de lista oficial del proveedor (ej: $43.568 Novopan)
+  descuentoCaraPct?: number; // Descuento por cara/acabado (5% D/B Balance o 0% D/D)
+  costoLaminaUsd: number; // Costo neto en fábrica tras descuentos y fletes
+  costoLaminaCop: number; // Costo fábrica en COP (ej: $117.126)
+  costoM2Usd: number;     // Costo m² en fábrica
+  costoM2Cop: number;     // Costo m² en COP
+  proveedor: string;
+}
+
+export interface CantoRecord {
+  id: string;
+  codigo: string;
+  descripcion: string;
+  espesorMm: number;
+  anchoMm: number;
+  tipo: "Flexible" | "Rígido 2mm" | "Melamínico";
+  costoMlCop: number;
+  costoMlUsd: number;
+  proveedor: string;
+}
+
+export const HERRAJES_INICIALES_DEFECTO: HerrajeRecord[] = [
+  { id: "h1", codigo: "20070022", nombreGhx: "Perno", descripcion: "Perno Minifix 34mm Acero/Plástico", categoria: "Minifix", mallasPorUnidad: 2, costoCop: 1150, costoUsd: 0.28, unidad: "UND", pesoKg: 0.005, proveedor: "Hafele" },
+  { id: "h2", codigo: "20070009", nombreGhx: "Caja", descripcion: "Caja Minifix 15mm Zamak Niquelada", categoria: "Minifix", mallasPorUnidad: 1, costoCop: 1450, costoUsd: 0.35, unidad: "UND", pesoKg: 0.008, proveedor: "Hafele" },
+  { id: "h3", codigo: "005895", nombreGhx: "Tarugo", descripcion: "Tarugo de Madera Estriado 8x30mm", categoria: "Tarugos", mallasPorUnidad: 1, costoCop: 210, costoUsd: 0.05, unidad: "UND", pesoKg: 0.001, proveedor: "Nacional" },
+  { id: "h4", codigo: "0000149", nombreGhx: "Tornillo", descripcion: "Tornillo Ensamble 4x50mm Cincado", categoria: "Tornillos", mallasPorUnidad: 1, costoCop: 330, costoUsd: 0.08, unidad: "UND", pesoKg: 0.003, proveedor: "Spax" },
+  { id: "h5", codigo: "010679", nombreGhx: "Soporte", descripcion: "Soporte de Entrepaño con Perno Ø5mm", categoria: "Soportes", mallasPorUnidad: 1, costoCop: 620, costoUsd: 0.15, unidad: "UND", pesoKg: 0.004, proveedor: "Ducasse" },
+  { id: "h6", codigo: "20060067", nombreGhx: "Corredera Estandar", descripcion: "Par Correderas Telescópicas 450mm Cierre Suave", categoria: "Correderas", mallasPorUnidad: 2, costoCop: 18500, costoUsd: 4.50, unidad: "PAR", pesoKg: 0.450, proveedor: "Ducasse" },
+  { id: "h7", codigo: "000478", nombreGhx: "Bisagra Codo 0", descripcion: "Bisagra Recta 35mm Cierre Suave con Base 4 Huecos", categoria: "Bisagras", mallasPorUnidad: 2, costoCop: 7800, costoUsd: 1.90, unidad: "UND", pesoKg: 0.085, proveedor: "Blum" },
+  { id: "h8", codigo: "000468", nombreGhx: "Manija Bar", descripcion: "Tirador Metálico 128mm Negro Mate", categoria: "Accesorios", mallasPorUnidad: 1, costoCop: 9200, costoUsd: 2.25, unidad: "UND", pesoKg: 0.120, proveedor: "Ducasse" },
+];
+
+// Cálculo inicial de Novopan con la matriz de negociación
+const cal15 = calcularCostoLaminaNovopan(43.568, 2440, 2150, 15, 5.0, NEGOCIACION_NOVOPAN_DEFECTO, "MDPKOR Ceniza 15mm 215x244 D/B Poro");
+const cal25 = calcularCostoLaminaNovopan(69.570, 2440, 2150, 25, 0.0, NEGOCIACION_NOVOPAN_DEFECTO, "MDPKOR Ceniza 25mm 215x244 D/D Poro");
+
+export const TABLEROS_INICIALES_DEFECTO: TableroRecord[] = [
+  { id: "t1", codigo: "NH0030615", sustrato: "MDP", nombreComercial: "MDPKOR Ceniza 15mm 215x244 D/B Poro", calibreMm: 15, largoLaminaMm: 2440, anchoLaminaMm: 2150, costoListaUsd: 43.568, descuentoCaraPct: 5.0, costoLaminaUsd: cal15.costoLaminaUsd, costoLaminaCop: cal15.costoLaminaCop, costoM2Usd: cal15.costoM2Usd, costoM2Cop: cal15.costoM2Cop, proveedor: "Novopan" },
+  { id: "t2", codigo: "NP2020625", sustrato: "MDP", nombreComercial: "MDPKOR Ceniza 25mm 215x244 D/D Poro", calibreMm: 25, largoLaminaMm: 2440, anchoLaminaMm: 2150, costoListaUsd: 69.570, descuentoCaraPct: 0.0, costoLaminaUsd: cal25.costoLaminaUsd, costoLaminaCop: cal25.costoLaminaCop, costoM2Usd: cal25.costoM2Usd, costoM2Cop: cal25.costoM2Cop, proveedor: "Novopan" },
+  { id: "t3", codigo: "CB2251415", sustrato: "MDP", nombreComercial: "SUPERCOR Wengue 15mm 183x244", calibreMm: 15, largoLaminaMm: 2440, anchoLaminaMm: 1830, costoListaUsd: 27.820, descuentoCaraPct: 0.0, costoLaminaUsd: 27.82, costoLaminaCop: 114060, costoM2Usd: 6.23, costoM2Cop: 25540, proveedor: "Masisa" },
+  { id: "t4", codigo: "FD0012827", sustrato: "HDF", nombreComercial: "FONDO Blanco 2.7mm 210x280", calibreMm: 2.7, largoLaminaMm: 2800, anchoLaminaMm: 2100, costoListaUsd: 10.230, descuentoCaraPct: 0.0, costoLaminaUsd: 10.23, costoLaminaCop: 41940, costoM2Usd: 1.74, costoM2Cop: 7130, proveedor: "Duratex" },
+  { id: "t5", codigo: "MR0015018", sustrato: "MDF RH", nombreComercial: "MDF RH Hidrófugo 18mm 183x244", calibreMm: 18, largoLaminaMm: 2440, anchoLaminaMm: 1830, costoListaUsd: 46.080, descuentoCaraPct: 0.0, costoLaminaUsd: 46.08, costoLaminaCop: 188930, costoM2Usd: 10.32, costoM2Cop: 42310, proveedor: "Arauco" },
+];
+
+export const CANTOS_INICIALES_DEFECTO: CantoRecord[] = [
+  { id: "c1", codigo: "0004623", descripcion: "Canto PVC Ceniza 19mm x 0.5mm", espesorMm: 0.5, anchoMm: 19, tipo: "Flexible", costoMlCop: 380, costoMlUsd: 0.09, proveedor: "Rehau" },
+  { id: "c2", codigo: "000360", descripcion: "Canto PVC Rígido Ceniza 22mm x 2.0mm", espesorMm: 2.0, anchoMm: 22, tipo: "Rígido 2mm", costoMlCop: 1850, costoMlUsd: 0.45, proveedor: "Rehau" },
+  { id: "c3", codigo: "0000253", descripcion: "Canto PVC Blanco Nevado 19mm x 0.5mm", espesorMm: 0.5, anchoMm: 19, tipo: "Flexible", costoMlCop: 320, costoMlUsd: 0.08, proveedor: "Proadec" },
+  { id: "c4", codigo: "0000313", descripcion: "Canto PVC Glacial 33mm x 2.0mm", espesorMm: 2.0, anchoMm: 33, tipo: "Rígido 2mm", costoMlCop: 2400, costoMlUsd: 0.58, proveedor: "Rehau" },
+];
+
 export interface State3BF {
   parametros: ParametrosMueble;
   setParametro: <K extends keyof ParametrosMueble>(key: K, value: ParametrosMueble[K]) => void;
@@ -112,8 +269,8 @@ export interface State3BF {
   setTema: (tema: "tech" | "obsidian") => void;
   
   // Pestaña Activa
-  pestanaActiva: "3d" | "despiece" | "costos" | "dxf";
-  setPestanaActiva: (pestana: "3d" | "despiece" | "costos" | "dxf") => void;
+  pestanaActiva: "3d" | "despiece" | "basedatos" | "costos" | "dxf";
+  setPestanaActiva: (pestana: "3d" | "despiece" | "basedatos" | "costos" | "dxf") => void;
   
   // Worker Python Status
   workerStatus: "checking" | "online" | "offline";
@@ -135,6 +292,20 @@ export interface State3BF {
   // Interacción de piezas
   hoveredPiece: string | null;
   setHoveredPiece: (name: string | null) => void;
+
+  dbHerrajes: HerrajeRecord[];
+  dbTableros: TableroRecord[];
+  dbCantos: CantoRecord[];
+  moneda: "USD" | "COP";
+  negociacionNovopan: NegociacionNovopan;
+  setDbHerrajes: (herrajes: HerrajeRecord[]) => void;
+  setDbTableros: (tableros: TableroRecord[]) => void;
+  setDbCantos: (cantos: CantoRecord[]) => void;
+  setMoneda: (moneda: "USD" | "COP") => void;
+  setNegociacionNovopan: (neg: NegociacionNovopan) => void;
+  updateNegociacionNovopan: (field: keyof NegociacionNovopan, value: number) => void;
+  updateDbHerraje: (id: string, field: keyof HerrajeRecord, value: any) => void;
+  updateDbTablero: (id: string, field: keyof TableroRecord, value: any) => void;
 }
 
 export const defaultCalibracion: CalibracionVisual = {
@@ -220,4 +391,103 @@ export const use3BFStore = create<State3BF>((set) => ({
 
   hoveredPiece: null,
   setHoveredPiece: (hoveredPiece) => set({ hoveredPiece }),
+
+  // =========================================================================
+  // 🗄️ BASE DE DATOS DE MATERIAS PRIMAS & COSTOS VIVOS EN TIEMPO REAL
+  // =========================================================================
+  dbHerrajes: HERRAJES_INICIALES_DEFECTO,
+  dbTableros: TABLEROS_INICIALES_DEFECTO,
+  dbCantos: CANTOS_INICIALES_DEFECTO,
+  moneda: "COP",
+  negociacionNovopan: NEGOCIACION_NOVOPAN_DEFECTO,
+
+  setDbHerrajes: (dbHerrajes) => {
+    try { localStorage.setItem("3bf_db_herrajes", JSON.stringify(dbHerrajes)); } catch {}
+    set({ dbHerrajes });
+  },
+  setDbTableros: (dbTableros) => {
+    try { localStorage.setItem("3bf_db_tableros", JSON.stringify(dbTableros)); } catch {}
+    set({ dbTableros });
+  },
+  setDbCantos: (dbCantos) => {
+    try { localStorage.setItem("3bf_db_cantos", JSON.stringify(dbCantos)); } catch {}
+    set({ dbCantos });
+  },
+  setMoneda: (moneda) => set({ moneda }),
+
+  setNegociacionNovopan: (negociacionNovopan) =>
+    set((state) => {
+      const recalculated = state.dbTableros.map((t) => {
+        if (t.proveedor === "Novopan") {
+          const cal = calcularCostoLaminaNovopan(t.costoListaUsd, t.largoLaminaMm, t.anchoLaminaMm, t.calibreMm, undefined, negociacionNovopan, t.nombreComercial);
+          return {
+            ...t,
+            costoLaminaUsd: cal.costoLaminaUsd,
+            costoLaminaCop: cal.costoLaminaCop,
+            costoM2Usd: cal.costoM2Usd,
+            costoM2Cop: cal.costoM2Cop
+          };
+        }
+        return t;
+      });
+      try {
+        localStorage.setItem("3bf_negociacion_novopan", JSON.stringify(negociacionNovopan));
+        localStorage.setItem("3bf_db_tableros", JSON.stringify(recalculated));
+      } catch {}
+      return { negociacionNovopan, dbTableros: recalculated };
+    }),
+
+  updateNegociacionNovopan: (field, value) =>
+    set((state) => {
+      const updatedNeg = { ...state.negociacionNovopan, [field]: value };
+      const recalculated = state.dbTableros.map((t) => {
+        if (t.proveedor === "Novopan") {
+          const cal = calcularCostoLaminaNovopan(t.costoListaUsd, t.largoLaminaMm, t.anchoLaminaMm, t.calibreMm, undefined, updatedNeg, t.nombreComercial);
+          return {
+            ...t,
+            costoLaminaUsd: cal.costoLaminaUsd,
+            costoLaminaCop: cal.costoLaminaCop,
+            costoM2Usd: cal.costoM2Usd,
+            costoM2Cop: cal.costoM2Cop
+          };
+        }
+        return t;
+      });
+      try {
+        localStorage.setItem("3bf_negociacion_novopan", JSON.stringify(updatedNeg));
+        localStorage.setItem("3bf_db_tableros", JSON.stringify(recalculated));
+      } catch {}
+      return { negociacionNovopan: updatedNeg, dbTableros: recalculated };
+    }),
+
+  updateDbHerraje: (id, field, value) =>
+    set((state) => {
+      const updated = state.dbHerrajes.map((h) => (h.id === id ? { ...h, [field]: value } : h));
+      try { localStorage.setItem("3bf_db_herrajes", JSON.stringify(updated)); } catch {}
+      return { dbHerrajes: updated };
+    }),
+
+  updateDbTablero: (id, field, value) =>
+    set((state) => {
+      const updated = state.dbTableros.map((t) => {
+        if (t.id !== id) return t;
+        const mod = { ...t, [field]: value };
+        if (mod.proveedor === "Novopan") {
+          const cal = calcularCostoLaminaNovopan(mod.costoListaUsd, mod.largoLaminaMm, mod.anchoLaminaMm, mod.calibreMm, mod.descuentoCaraPct, state.negociacionNovopan, mod.nombreComercial);
+          mod.costoLaminaUsd = cal.costoLaminaUsd;
+          mod.costoLaminaCop = cal.costoLaminaCop;
+          mod.costoM2Usd = cal.costoM2Usd;
+          mod.costoM2Cop = cal.costoM2Cop;
+          mod.descuentoCaraPct = cal.descuentoCaraPct;
+        } else {
+          const areaM2 = (mod.largoLaminaMm * mod.anchoLaminaMm) / 1_000_000.0;
+          mod.costoM2Usd = Number((mod.costoLaminaUsd / areaM2).toFixed(2));
+          mod.costoLaminaCop = Math.round(mod.costoLaminaUsd * 4000);
+          mod.costoM2Cop = Math.round(mod.costoM2Usd * 4000);
+        }
+        return mod;
+      });
+      try { localStorage.setItem("3bf_db_tableros", JSON.stringify(updated)); } catch {}
+      return { dbTableros: updated };
+    }),
 }));

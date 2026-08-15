@@ -611,14 +611,12 @@ async def compute_model(request: Request):
                                 item_expr = (expr_item.text if expr_item is not None else "").strip()
                                 
                                 if sel_item is not None:
-                                    tv_low = target_val.lower()
-                                    in_name = item_name.lower()
-                                    in_expr = item_expr.lower()
+                                    tv_low = target_val.lower().strip()
+                                    in_name = item_name.lower().strip()
+                                    in_expr = item_expr.lower().strip()
                                     
-                                    # Coincidencia exacta obligatoria para evitar colisión de substrings (ej: '1' dentro de '-1')
+                                    # Coincidencia estrictamente exacta (evitar que 'horizontal' active 'horizontal atravesada')
                                     if tv_low == in_name or tv_low == in_expr:
-                                        sel_item.text = "true"
-                                    elif len(tv_low) > 2 and (tv_low in in_name or in_name in tv_low):
                                         sel_item.text = "true"
                                     else:
                                         sel_item.text = "false"
@@ -674,6 +672,7 @@ async def compute_model(request: Request):
                 data_rc = res_rc.json()
                 rhino_outputs_count = len(data_rc.get("values", []))
                 
+                text_outputs = {}
                 for val in data_rc.get("values", []):
                     p_name = val.get("ParamName", "Pieza GH")
                     inner_tree = val.get("InnerTree", {})
@@ -682,6 +681,8 @@ async def compute_model(request: Request):
                             raw_data = item.get("data")
                             if not raw_data:
                                 continue
+                            if isinstance(raw_data, str) and not raw_data.strip().startswith("{") and not raw_data.strip().startswith("["):
+                                text_outputs[p_name] = raw_data.strip('"').strip()
                             try:
                                 obj = json.loads(raw_data) if isinstance(raw_data, str) else raw_data
                                 if isinstance(obj, dict):
@@ -734,12 +735,17 @@ async def compute_model(request: Request):
                                             # Si el objeto es una Malla Poligonal real, extraer vértices e índices de triángulos
                                             if isinstance(decoded_geom, rhino3dm.Mesh):
                                                 verts = []
-                                                for v in decoded_geom.Vertices:
+                                                uvs = []
+                                                has_tex_coords = hasattr(decoded_geom, "TextureCoordinates") and len(decoded_geom.TextureCoordinates) == len(decoded_geom.Vertices)
+                                                for idx, v in enumerate(decoded_geom.Vertices):
                                                     # Convertir a coordenadas locales restando el centro geométrico en mm (Three.js Z = -Rhino Y)
                                                     local_x = (v.X - (center_x * 1000.0)) / 1000.0
                                                     local_y = (v.Y - (center_y * 1000.0)) / 1000.0
                                                     local_z = (v.Z - (center_z * 1000.0)) / 1000.0
                                                     verts.extend([round(local_x, 4), round(local_z, 4), round(-local_y, 4)])
+                                                    if has_tex_coords:
+                                                        tc = decoded_geom.TextureCoordinates[idx]
+                                                        uvs.extend([round(tc.X, 4), round(tc.Y, 4)])
                                                 indices = []
                                                 for i in range(len(decoded_geom.Faces)):
                                                     f = decoded_geom.Faces[i]
@@ -750,6 +756,8 @@ async def compute_model(request: Request):
                                                 if verts and indices:
                                                     mesh_dict["vertices"] = verts
                                                     mesh_dict["indices"] = indices
+                                                    if uvs and len(uvs) == len(verts) * 2 // 3:
+                                                        mesh_dict["uvs"] = uvs
                                             elif isinstance(decoded_geom, rhino3dm.Brep):
                                                 # Generar malla 3D poligonal exacta para objetos Brep/NURBS en coordenadas de mundo Three.js
                                                 min_x, max_x = bbox.Min.X / 1000.0, bbox.Max.X / 1000.0
@@ -788,15 +796,153 @@ async def compute_model(request: Request):
     except Exception as err:
         print(f"[RhinoCompute Notice]: {err}", flush=True)
         
-    
     execution_time_ms = round((time.time() - start_time) * 1000, 2)
-    
     slider_limits = parse_ghx_slider_limits(ghx_file)
+
+    # =========================================================================
+    # 📊 CÓMPUTO DINÁMICO DE DESPIECE (BOM) E INVENTARIO DE HERRAJES VIVO (DfMA)
+    # =========================================================================
+    # =========================================================================
+    # 🔩 CÓMPUTO DINÁMICO DE HERRAJES 100% FIEL AL GHX
+    # =========================================================================
+    PALABRAS_CLAVE_HERRAJES = ["perno", "caja", "tarugo", "tornillo", "soporte", "corredera", "bisagra", "pata", "manija", "tirador", "nivelador", "acople", "tuerca", "arandela", "minifix"]
     
+    conteo_mallas_herrajes = {}
+    for m in real_meshes:
+        raw_name = m.get("name", "").strip()
+        name_lower = raw_name.lower()
+        
+        # Descartar maquinados o geometrías de sustracción
+        if "maquinado" in name_lower:
+            continue
+            
+        # Detectar si es un herraje por palabras clave
+        es_herraje = any(k in name_lower for k in PALABRAS_CLAVE_HERRAJES)
+        if es_herraje:
+            # Respetar 100% el nombre definido por el usuario/diseñador en Grasshopper (limpiando solo el prefijo RH_OUT:)
+            nombre_herraje_ghx = raw_name.replace("RH_OUT:", "").strip()
+            if nombre_herraje_ghx:
+                conteo_mallas_herrajes[nombre_herraje_ghx] = conteo_mallas_herrajes.get(nombre_herraje_ghx, 0) + 1
+
+    herrajes_final = []
+    costo_herrajes_calc = 0.0
+
+    for nombre_ghx, m_count in conteo_mallas_herrajes.items():
+        # Regla DfMA para herrajes compuestos (ej: Perno Minifix taquete + espiga = 2 mallas / unidad)
+        mallas_por_herraje = 2 if "perno" in nombre_ghx.lower() else 1
+        cant_real = math.ceil(m_count / mallas_por_herraje)
+        
+        # Costeo paramétrico base (se conectará a Supabase por nombre/referencia)
+        costo_unit = 0.35 if "caja" in nombre_ghx.lower() else (0.28 if "perno" in nombre_ghx.lower() else 0.08)
+        costo_herrajes_calc += cant_real * costo_unit
+        
+        herrajes_final.append({
+            "nombre": nombre_ghx,
+            "cantidad": cant_real,
+            "unidad": "pares" if "corredera" in nombre_ghx.lower() else "piezas"
+        })
+
+    # Fallback si es un modelo sin mallas explícitas de herrajes
+    if not herrajes_final and "cajon" in (model_id + custom_filename).lower():
+        minifix_cant = 16 + (cant_cajones * 8)
+        tarugos_cant = cant_cajones * 12
+        herrajes_final = [
+            {"nombre": "Caja Minifix 15mm", "cantidad": minifix_cant, "unidad": "piezas"},
+            {"nombre": "Perno Minifix 34mm", "cantidad": minifix_cant, "unidad": "piezas"},
+            {"nombre": "Tarugo Madera 8x30mm", "cantidad": tarugos_cant, "unidad": "piezas"},
+            {"nombre": f"Par Correderas ({tipo_cajon_param})", "cantidad": cant_cajones, "unidad": "pares"}
+        ]
+        costo_herrajes_calc = (minifix_cant * 0.63) + (tarugos_cant * 0.05) + (cant_cajones * 4.50)
+
+    # =========================================================================
+    # 🪵 ESCANEO GEOMÉTRICO 3D DIRECTO DE TABLEROS (BOM REAL DfMA)
+    # =========================================================================
+    tableros_detectados = {}
+    for m in real_meshes:
+        name_lower = m.get("name", "").lower()
+        if any(h in name_lower for h in ["perno", "caja", "tarugo", "tornillo", "soporte", "corredera", "maquinado"]):
+            continue
+            
+        size = m.get("size", [0, 0, 0])
+        pos = m.get("position", [0, 0, 0])
+        
+        # Dimensiones físicas en milímetros
+        dims_mm = sorted([round(size[0] * 1000.0, 1), round(size[1] * 1000.0, 1), round(size[2] * 1000.0, 1)])
+        esp_malla = dims_mm[0]
+        anc_malla = dims_mm[1]
+        lar_malla = dims_mm[2]
+        
+        # Filtrar solo elementos que califiquen como tableros (ancho y largo >= 40mm)
+        if lar_malla >= 40.0 and anc_malla >= 40.0:
+            if esp_malla < 5.0:
+                esp_malla = 15.0
+                
+            # Clave de posición en el plano horizontal/vertical para consolidar Color, Balance y MDP en 1 tablero físico
+            # Tolerancia de 5mm en centros X/Z
+            pos_key = f"{round(pos[0] * 50) / 50.0}_{round(pos[2] * 50) / 50.0}_{lar_malla}_{anc_malla}"
+            
+            # Nombre de la pieza
+            custom_name = None
+            for k_out, v_out in text_outputs.items():
+                if any(k in k_out.lower() for k in ["nombre", "pieza", "piecename"]):
+                    custom_name = v_out
+                    break
+                    
+            if custom_name:
+                nombre_limpio = custom_name
+            else:
+                nombre_limpio = m.get("name", "").replace("RH_OUT:", "").strip()
+                for prefix in ["MDP ", "Color ", "Balance ", "Nurbs ", "Brep ", "MDP", "Color", "Balance"]:
+                    if nombre_limpio.startswith(prefix):
+                        nombre_limpio = nombre_limpio[len(prefix):].strip()
+                nombre_limpio = nombre_limpio.capitalize()
+                if not nombre_limpio or nombre_limpio in ["Cubierta2", "Entrepaño2", "Pieza", "Mdp", "Tablero"]:
+                    nombre_limpio = "Cubierta" if "cubierta" in name_lower else ("Entrepaño" if "entrepaño" in name_lower else "Tablero")
+
+            if pos_key not in tableros_detectados:
+                tableros_detectados[pos_key] = {
+                    "nombre": nombre_limpio,
+                    "largo": lar_malla,
+                    "ancho": anc_malla,
+                    "espesor": esp_malla,
+                    "cantidad": 1,
+                    "tipo": "Estructura DfMA"
+                }
+            else:
+                # Conservar el espesor real del tablero (ej. 15mm) y el nombre más descriptivo
+                tableros_detectados[pos_key]["espesor"] = max(tableros_detectados[pos_key]["espesor"], esp_malla)
+                if tableros_detectados[pos_key]["nombre"] in ["Tablero", "Mdp", "Balance"] and nombre_limpio not in ["Tablero", "Mdp", "Balance"]:
+                    tableros_detectados[pos_key]["nombre"] = nombre_limpio
+
+    if tableros_detectados:
+        agrupados = {}
+        for tab in tableros_detectados.values():
+            k_dim = f"{tab['nombre']}_{tab['largo']}_{tab['ancho']}_{tab['espesor']}"
+            if k_dim in agrupados:
+                agrupados[k_dim]["cantidad"] += 1
+            else:
+                agrupados[k_dim] = tab
+        piezas_madera_final = list(agrupados.values())
+    else:
+        # Fallback sintético solo si no se extrajeron mallas de tableros
+        piezas_madera_final = [
+            {"nombre": "Cubierta", "ancho": float(prof), "largo": float(ancho), "espesor": 15.0, "cantidad": 1, "tipo": "Estructura DfMA"}
+        ]
+
+    area_madera_m2 = sum((item["ancho"] * item["largo"] * item["cantidad"]) for item in piezas_madera_final) / 1_000_000.0
+    costo_madera = area_madera_m2 * 28.50
+    costo_herrajes_calc = sum(h["cantidad"] * 0.45 for h in herrajes_final)
+    costo_total = round(costo_madera + costo_herrajes_calc + 8.50, 2)
+
+    dim_str = f"{ancho} x {prof} x 15 mm"
+    if piezas_madera_final:
+        p0 = piezas_madera_final[0]
+        dim_str = f"{p0['largo']} x {p0['ancho']} x {p0['espesor']} mm"
+
     return {
         "status": "success",
-        "model_id": "Cajon_Experimento_Viktor",
-        "source_gh": "temporal/Cajon_Experimento_Viktor_RhinoCompute.ghx",
+        "model_id": model_id,
+        "source_gh": ghx_file,
         "rhino8_compute": {
             "active": rhino_compute_success,
             "server": "http://localhost:5000",
@@ -809,13 +955,13 @@ async def compute_model(request: Request):
         "default_values": default_values,
         "parameter_groups": extract_parameter_groups(root, default_values) if root is not None else [],
         "summary": {
-            "dimensiones": f"{ancho} x {alto} x {prof} mm",
+            "dimensiones": dim_str,
             "area_madera_m2": round(area_madera_m2, 3),
             "costo_estimado_usd": costo_total,
-            "piezas_totales": sum(p["cantidad"] for p in piezas_madera)
+            "piezas_totales": sum(p["cantidad"] for p in piezas_madera_final)
         },
-        "despiece": piezas_madera,
-        "herrajes": herrajes
+        "despiece": piezas_madera_final,
+        "herrajes": herrajes_final
     }
 
 if __name__ == "__main__":

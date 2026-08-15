@@ -4,8 +4,9 @@ import React, { useEffect } from "react";
 import Viewer3D from "@/components/viewer/Viewer3D";
 import ControlPanel from "@/components/ui/ControlPanel";
 import DespieceView from "@/components/views/DespieceView";
+import DatabaseView from "@/components/views/DatabaseView";
 import { use3BFStore } from "@/lib/store";
-import { Box, Layers, Cpu, CheckCircle2, AlertCircle } from "lucide-react";
+import { Box, Layers, Cpu, CheckCircle2, AlertCircle, Database } from "lucide-react";
 
 export default function Home3BF() {
   const { pestanaActiva, setPestanaActiva, workerStatus, setWorkerStatus } = use3BFStore();
@@ -52,7 +53,7 @@ export default function Home3BF() {
         <div className="absolute left-1/2 -translate-x-1/2 flex bg-cyan-950/20 dark:bg-[#131B2E]/60 p-1 rounded-full border border-cyan-200/80 dark:border-cyan-900/50 text-xs shadow-md backdrop-blur-md gap-1">
           <button
             onClick={() => setPestanaActiva("3d")}
-            className={`px-5 py-1.5 rounded-full transition flex items-center gap-1.5 font-bold cursor-pointer ${
+            className={`px-4 py-1.5 rounded-full transition flex items-center gap-1.5 font-bold cursor-pointer ${
               pestanaActiva === "3d"
                 ? "bg-cyan-600 text-white shadow-md border border-cyan-400/40"
                 : "bg-[#E2E8F0]/50 text-[#0F172A] hover:bg-[#E2E8F0]/80 border border-slate-300/60 backdrop-blur-sm"
@@ -62,13 +63,23 @@ export default function Home3BF() {
           </button>
           <button
             onClick={() => setPestanaActiva("despiece")}
-            className={`px-5 py-1.5 rounded-full transition flex items-center gap-1.5 font-bold cursor-pointer ${
+            className={`px-4 py-1.5 rounded-full transition flex items-center gap-1.5 font-bold cursor-pointer ${
               pestanaActiva === "despiece"
                 ? "bg-cyan-600 text-white shadow-md border border-cyan-400/40"
                 : "bg-[#E2E8F0]/50 text-[#0F172A] hover:bg-[#E2E8F0]/80 border border-slate-300/60 backdrop-blur-sm"
             }`}
           >
             <Layers className="w-3.5 h-3.5" /> Despiece & Costos
+          </button>
+          <button
+            onClick={() => setPestanaActiva("basedatos")}
+            className={`px-4 py-1.5 rounded-full transition flex items-center gap-1.5 font-bold cursor-pointer ${
+              pestanaActiva === "basedatos"
+                ? "bg-cyan-600 text-white shadow-md border border-cyan-400/40"
+                : "bg-[#E2E8F0]/50 text-[#0F172A] hover:bg-[#E2E8F0]/80 border border-slate-300/60 backdrop-blur-sm"
+            }`}
+          >
+            <Database className="w-3.5 h-3.5" /> Base de Datos
           </button>
         </div>
 
@@ -96,7 +107,13 @@ export default function Home3BF() {
       <div className="flex-1 flex overflow-hidden p-3 gap-3">
         {/* Columna Izquierda: Visor 3D o Tablas de Datos */}
         <div className="flex-1 h-full flex flex-col relative">
-          {pestanaActiva === "3d" ? <Viewer3D /> : <DespieceView />}
+          {pestanaActiva === "3d" ? (
+            <Viewer3D />
+          ) : pestanaActiva === "despiece" ? (
+            <DespieceView />
+          ) : (
+            <DatabaseView />
+          )}
         </div>
 
         {/* Columna Derecha: Panel de Control de Parámetros */}

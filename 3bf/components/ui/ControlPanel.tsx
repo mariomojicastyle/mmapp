@@ -4,8 +4,8 @@ import React, { useEffect } from "react";
 import { use3BFStore } from "@/lib/store";
 import { Sliders, Box, Layers, Palette, Cpu, CheckCircle2, AlertCircle, FolderOpen, FileUp } from "lucide-react";
 
-// Componente para editar el número haciendo clic (con auto-clampeo al rango min-max)
-const EditableNumberInput = ({
+// Componente para ingresar/editar números con auto-selección total al hacer foco
+const DirectNumberInput = ({
   value,
   min,
   max,
@@ -20,55 +20,58 @@ const EditableNumberInput = ({
   onChange: (val: number) => void;
   className?: string;
 }) => {
-  const [isEditing, setIsEditing] = React.useState(false);
-  const [tempValue, setTempValue] = React.useState(String(value));
+  const [localText, setLocalText] = React.useState(String(value));
+  const [isFocused, setIsFocused] = React.useState(false);
 
   React.useEffect(() => {
-    setTempValue(String(value));
-  }, [value]);
+    if (!isFocused) {
+      setLocalText(String(value));
+    }
+  }, [value, isFocused]);
 
-  const handleCommit = () => {
-    let num = Number(tempValue);
-    if (isNaN(num)) num = value;
-    const clamped = Math.min(max, Math.max(min, num));
-    setTempValue(String(clamped));
-    onChange(clamped);
-    setIsEditing(false);
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const raw = e.target.value;
+    setLocalText(raw);
+    const normalizado = raw.replace(/\./g, "").replace(",", ".");
+    const num = parseFloat(normalizado);
+    if (!isNaN(num)) {
+      onChange(num);
+    }
   };
 
-  if (isEditing) {
-    return (
-      <div className="flex items-center gap-1">
-        <input
-          type="number"
-          min={min}
-          max={max}
-          value={tempValue}
-          onChange={(e) => setTempValue(e.target.value)}
-          onBlur={handleCommit}
-          onKeyDown={(e) => {
-            if (e.key === "Enter") handleCommit();
-            if (e.key === "Escape") {
-              setTempValue(String(value));
-              setIsEditing(false);
-            }
-          }}
-          autoFocus
-          className="w-16 px-1 py-0.5 text-right text-xs font-mono font-bold bg-[#E2E8F0] border-2 border-cyan-500 rounded outline-none shadow-inner text-[#0F172A]"
-        />
-        <span className="text-[11px] font-mono text-gray-500">{unit}</span>
-      </div>
-    );
-  }
+  const handleFocus = (e: React.FocusEvent<HTMLInputElement>) => {
+    setIsFocused(true);
+    e.target.select();
+  };
+
+  const handleBlur = () => {
+    setIsFocused(false);
+    const normalizado = localText.replace(/\./g, "").replace(",", ".");
+    let num = parseFloat(normalizado);
+    if (isNaN(num)) num = value;
+    const clamped = Math.min(max, Math.max(min, num));
+    onChange(clamped);
+    setLocalText(String(clamped));
+  };
 
   return (
-    <button
-      onClick={() => setIsEditing(true)}
-      title="Haz clic para ingresar la medida exacta"
-      className={`font-mono font-bold hover:underline hover:text-cyan-500 cursor-pointer ${className}`}
-    >
-      {value} {unit}
-    </button>
+    <div className="flex items-center gap-1">
+      <input
+        type="text"
+        inputMode="decimal"
+        value={localText}
+        onFocus={handleFocus}
+        onBlur={handleBlur}
+        onChange={handleChange}
+        onKeyDown={(e) => {
+          if (e.key === "Enter") {
+            (e.target as HTMLInputElement).blur();
+          }
+        }}
+        className={`w-16 px-1.5 py-0.5 text-right text-xs font-mono font-bold bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 focus:border-cyan-500 dark:focus:border-cyan-400 focus:ring-1 focus:ring-cyan-500 rounded outline-none shadow-sm text-slate-800 dark:text-cyan-300 transition ${className}`}
+      />
+      <span className="text-[11px] font-mono text-slate-500 dark:text-slate-400 font-semibold">{unit}</span>
+    </div>
   );
 };
 
@@ -108,7 +111,7 @@ function RenderParamControl({ paramKey }: { paramKey: string }) {
       <div className="flex flex-col gap-1.5 p-2 rounded-lg bg-[#E2E8F0] dark:bg-[#1E293B]/70 border border-slate-300 dark:border-slate-700/60 shadow-sm text-xs">
         <div className="flex justify-between font-medium">
           <label className="font-bold text-gray-800 dark:text-slate-100">{label}</label>
-          <EditableNumberInput
+          <DirectNumberInput
             value={numVal}
             min={minVal}
             max={maxVal}
@@ -168,26 +171,19 @@ function RenderParamControl({ paramKey }: { paramKey: string }) {
   );
 }
 
-// Panel de Parámetros Dinámico Autónomo (Sólo visible cuando hay un archivo cargado)
+// Panel de Parámetros Dinámico Autónomo (Sólo visible cuando hay un archivo cargado con grupos reales)
 function ParametrosPanel() {
   const { parametros, setParametro, resultado } = use3BFStore();
 
   if (!parametros.model_id) return null;
 
+  // Si no hay grupos dinámicos parseados del archivo, mantener el panel 100% limpio
+  if (!resultado?.parameter_groups || resultado.parameter_groups.length === 0) {
+    return null;
+  }
+
   const esCubierta = (parametros.model_id + (parametros.custom_filename || "")).toLowerCase().includes("cubierta");
-
-  const uniqueFallbackParams = Array.from(new Set(Object.values(MAPA_PARAMETROS))).map(
-    (val) => Object.keys(MAPA_PARAMETROS).find((k) => MAPA_PARAMETROS[k] === val)!
-  );
-
-  const groups: Array<{ title: string; parameters: string[] }> = resultado?.parameter_groups && resultado.parameter_groups.length > 0
-    ? resultado.parameter_groups
-    : [
-        {
-          title: "📐 Parámetros Generales DfMA",
-          parameters: uniqueFallbackParams
-        }
-      ];
+  const groups = resultado.parameter_groups;
 
   return (
     <div className="flex flex-col gap-3.5">
@@ -383,6 +379,9 @@ export default function ControlPanel() {
   // 🧹 Purga Previa Obligatoria (Clean-Before-Load Pattern)
   const purgarEstadoCompleto = () => {
     setResultado(null);
+    setParametro("model_id", "");
+    setParametro("custom_filename", "");
+    setParametro("ghx_content", "");
     lastModelRef.current = null;
     if (fileInputRef.current) {
       fileInputRef.current.value = "";
