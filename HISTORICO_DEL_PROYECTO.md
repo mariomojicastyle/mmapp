@@ -1,5 +1,21 @@
 # 📜 Histórico del Proyecto: mariomojica.com
 
+### 🔹 Hito 3BF_ManoObra_CIF — Ficha Financiera Industrial 100%, Pestaña de Mano de Obra & CIF y Detección Automática DfMA de Cantos (15 de Agosto, 2026)
+
+- **Ficha Financiera Industrial Consolidada (100.00% Ficha Técnica)**:
+  * Implementación del modelo contable de costeo por absorción estándar (**NIC 2 / RTA**) que proyecta la totalidad del costo de fabricación: $\text{Costo Total (100\%)} = \text{Materia Prima Directa (77.78\%)} + \text{Tercerizaciones (0.00\%)} + \text{Mano de Obra + Prestaciones (12.42\%)} + \text{Costos Indirectos de Fabricación - CIF (9.80\%)}$.
+  * Algoritmo de liquidación matemática directa: $\mathbf{\text{Costo Total}} = \frac{\text{Total MP} + \text{Tercerizaciones}}{1 - (\% \text{MO+PRES} + \% \text{CIF})}$, permitiendo conocer con exactitud el valor monetario de MOD y CIF aún con cómputos preliminares de materiales.
+- **Nueva Pestaña Modular `🏭 Mano de Obra & CIF` en Base de Datos**:
+  * Controles interactivos con `DecimalInput` para parametrizar en tiempo real los porcentajes de **Mano de Obra Directa + Prestaciones** (`12.42%` por defecto), **Costos Indirectos de Fabricación - CIF** (`9.80%` por defecto), **Adicionales & Consumibles** (`0.40%` por defecto), y costos fijos de **Tercerizaciones & Maquilas** en COP.
+  * Tarjeta de matriz consolidada de distribución del 100% con barra proporcional tricolor y desglose legal de cargas prestacionales (cesantías, primas, salud, pensión, ARL, parafiscales) y CIF de planta (depreciación de CNCs Morbidelli/Skipper, energía industrial, adhesivos PUR y desgaste de fresas).
+- **Tabla 4 "Resumen de Costo" en la Vista de Despiece (`DespieceView.tsx`)**:
+  * Incorporada la tabla financiera completa que detalla fila por fila: 1. Láminas, 2. Fondos, 3. Cantos, 4. Empaque, 5. Herrajes, 6. Adicionales, Subtotal MP (77.78%), 7. Tercerizaciones (0.00%), 8. MO+PRES (12.42%), 9. CIF (9.80%) y Gran Total (100.00%).
+  * Sincronización íntegra del payload de guardado en **Supabase** y almacenamiento local con campos desglosados de `costo_total_fabricacion_100_cop/usd`, `mano_obra_pres_cop/usd` y `cif_cop/usd`.
+- **Detección y Cómputo Automático de Cantos DfMA (Visor 3D ➔ BOM)**:
+  * Conexión reactiva entre los selectores de borde del configurador 3D (`Borde Izquierdo`, `Borde Derecho`, `Unión`) y la tabla de cantos: detecta automáticamente si una pieza requiere 0, 1 o 2 cantos en ancho y largo sin intervención manual, con fórmula oficial de despunte de $+100\text{ mm}$ por borde.
+
+---
+
 ### 🔹 Hito 3BF_Costos — Motor de Costeo B2B, Negociación de Proveedurías, Descuentos de Cara, Desperdicio Nesting & Google Sheets Optimizer (15 de Agosto, 2026)
 
 - **Directorio Modular de "Negociación Proveedurías"**: Reestructuración de la vista de base de datos incorporando fichas desplegables en orden alfabético estricto de una sola línea (`Arauco`, `Duratex`, `Masisa`, `Novopan`), permitiendo expandir o colapsar individualmente matrices de importación complejas y configuraciones de TRM.

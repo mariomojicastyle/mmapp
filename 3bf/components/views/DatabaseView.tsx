@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useMemo, useEffect } from "react";
-import { use3BFStore, HerrajeRecord, TableroRecord, CantoRecord, NegociacionNovopan, calcularCostoLaminaNovopan, NEGOCIACION_NOVOPAN_DEFECTO } from "@/lib/store";
+import { use3BFStore, HerrajeRecord, TableroRecord, CantoRecord, NegociacionNovopan, calcularCostoLaminaNovopan, NEGOCIACION_NOVOPAN_DEFECTO, CANTOS_INICIALES_DEFECTO } from "@/lib/store";
 import { 
   Database, 
   Search, 
@@ -116,16 +116,19 @@ export default function DatabaseView() {
     dbTableros, 
     dbCantos, 
     negociacionNovopan,
+    costosConversion,
     setDbHerrajes, 
     setDbTableros, 
     setDbCantos,
     setNegociacionNovopan,
+    setCostosConversion,
     updateNegociacionNovopan,
+    updateCostoConversion,
     updateDbHerraje,
     updateDbTablero
   } = use3BFStore();
 
-  const [tab, setTab] = useState<"herrajes" | "tableros" | "cantos" | "proveedores">("herrajes");
+  const [tab, setTab] = useState<"herrajes" | "tableros" | "cantos" | "proveedores" | "conversion">("herrajes");
   const [busqueda, setBusqueda] = useState("");
   const [guardado, setGuardado] = useState(false);
   const [importando, setImportando] = useState(false);
@@ -158,7 +161,7 @@ export default function DatabaseView() {
       const tSaved = localStorage.getItem("3bf_db_tableros");
       if (tSaved) {
         const parsed: TableroRecord[] = JSON.parse(tSaved);
-        const sanitized = parsed.map((t) => {
+        const sanitized = parsed.map((t: TableroRecord) => {
           const lista = t.costoListaUsd ?? t.costoLaminaUsd ?? 43.568;
           if (t.proveedor === "Novopan") {
             const cal = calcularCostoLaminaNovopan(lista, t.largoLaminaMm || 2440, t.anchoLaminaMm || 2150, t.calibreMm || 15, undefined, currentNeg, t.nombreComercial);
@@ -187,7 +190,20 @@ export default function DatabaseView() {
       }
 
       const cSaved = localStorage.getItem("3bf_db_cantos");
-      if (cSaved) setDbCantos(JSON.parse(cSaved));
+      if (cSaved) {
+        const parsed: CantoRecord[] = JSON.parse(cSaved);
+        const map = new Map<string, CantoRecord>();
+        CANTOS_INICIALES_DEFECTO.forEach((c: CantoRecord) => map.set(c.codigo, c));
+        parsed.forEach((c: CantoRecord) => map.set(c.codigo, c));
+        const merged = Array.from(map.values());
+        setDbCantos(merged);
+        localStorage.setItem("3bf_db_cantos", JSON.stringify(merged));
+      } else {
+        setDbCantos(CANTOS_INICIALES_DEFECTO);
+      }
+
+      const convSaved = localStorage.getItem("3bf_costos_conversion");
+      if (convSaved) setCostosConversion(JSON.parse(convSaved));
     } catch {}
   }, []);
 
@@ -196,7 +212,7 @@ export default function DatabaseView() {
     const q = busqueda.toLowerCase().trim();
     if (!q) return dbHerrajes;
     return dbHerrajes.filter(
-      (h) =>
+      (h: HerrajeRecord) =>
         h.nombreGhx.toLowerCase().includes(q) ||
         h.codigo.toLowerCase().includes(q) ||
         h.descripcion.toLowerCase().includes(q) ||
@@ -209,7 +225,7 @@ export default function DatabaseView() {
     const q = busqueda.toLowerCase().trim();
     if (!q) return dbTableros;
     return dbTableros.filter(
-      (t) =>
+      (t: TableroRecord) =>
         t.nombreComercial.toLowerCase().includes(q) ||
         t.codigo.toLowerCase().includes(q) ||
         t.sustrato.toLowerCase().includes(q) ||
@@ -221,7 +237,7 @@ export default function DatabaseView() {
     const q = busqueda.toLowerCase().trim();
     if (!q) return dbCantos;
     return dbCantos.filter(
-      (c) =>
+      (c: CantoRecord) =>
         c.descripcion.toLowerCase().includes(q) ||
         c.codigo.toLowerCase().includes(q) ||
         c.tipo.toLowerCase().includes(q) ||
@@ -255,7 +271,7 @@ export default function DatabaseView() {
   };
 
   const handleDeleteHerraje = (id: string) => {
-    setDbHerrajes(dbHerrajes.filter((h) => h.id !== id));
+    setDbHerrajes(dbHerrajes.filter((h: HerrajeRecord) => h.id !== id));
   };
 
   const handleGuardarEnSupabase = () => {
@@ -264,6 +280,7 @@ export default function DatabaseView() {
     localStorage.setItem("3bf_db_tableros", JSON.stringify(dbTableros));
     localStorage.setItem("3bf_db_cantos", JSON.stringify(dbCantos));
     localStorage.setItem("3bf_negociacion_novopan", JSON.stringify(negociacionNovopan));
+    localStorage.setItem("3bf_costos_conversion", JSON.stringify(costosConversion));
     setTimeout(() => setGuardado(false), 2500);
   };
 
@@ -367,10 +384,21 @@ export default function DatabaseView() {
             <Building2 className="w-3.5 h-3.5 text-purple-600" />
             Negociación Proveedurías
           </button>
+          <button
+            onClick={() => setTab("conversion")}
+            className={`px-3 py-1 rounded-md font-bold transition flex items-center gap-1.5 cursor-pointer ${
+              tab === "conversion"
+                ? "bg-white dark:bg-slate-900 text-amber-700 dark:text-amber-300 shadow-sm border border-amber-200 dark:border-amber-800"
+                : "text-amber-700 dark:text-amber-400 hover:text-amber-900 font-semibold"
+            }`}
+          >
+            <Coins className="w-3.5 h-3.5 text-amber-600" />
+            Mano de Obra & CIF
+          </button>
         </div>
 
         {/* Buscador */}
-        {tab !== "proveedores" && (
+        {tab !== "proveedores" && tab !== "conversion" && (
           <div className="flex items-center gap-2">
             <div className="relative">
               <Search className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-1/2 -translate-y-1/2" />
@@ -418,7 +446,7 @@ export default function DatabaseView() {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-200 dark:divide-slate-800">
-              {herrajesFiltrados.map((h) => (
+              {herrajesFiltrados.map((h: HerrajeRecord) => (
                 <tr key={h.id} className="hover:bg-cyan-50/40 dark:hover:bg-slate-800/50 transition group">
                   {/* Código ERP */}
                   <td className="p-2">
@@ -533,7 +561,7 @@ export default function DatabaseView() {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-200 dark:divide-slate-800">
-              {tablerosFiltrados.map((t) => {
+              {tablerosFiltrados.map((t: TableroRecord) => {
                 const areaLaminaM2 = Number((((t.largoLaminaMm || 2440) * (t.anchoLaminaMm || 2150)) / 1_000_000.0).toFixed(3));
                 const laminaCop = t.costoLaminaCop ?? 0;
                 const m2Cop = t.costoM2Cop ?? 0;
@@ -641,7 +669,7 @@ export default function DatabaseView() {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-200 dark:divide-slate-800">
-              {cantosFiltrados.map((c) => (
+              {cantosFiltrados.map((c: CantoRecord) => (
                 <tr key={c.id} className="hover:bg-cyan-50/40 dark:hover:bg-slate-800/50 transition">
                   <td className="p-2.5 font-mono text-[11px] font-bold text-slate-700 dark:text-slate-300">{c.codigo}</td>
                   <td className="p-2.5 font-medium text-slate-800 dark:text-slate-200">{c.descripcion}</td>
@@ -1097,13 +1125,247 @@ export default function DatabaseView() {
                       <div className="p-2 rounded bg-purple-950/80 border border-purple-700/60">
                         <span className="text-[10px] text-purple-300 uppercase block font-bold">Costo en Fábrica (COP)</span>
                         <span className="font-mono font-extrabold text-sm text-white">
-                          ${(dbTableros.find((t) => t.codigo === "NH0030615")?.costoLaminaCop ?? 117126).toLocaleString("es-CO")} COP
+                          ${(dbTableros.find((t: TableroRecord) => t.codigo === "NH0030615")?.costoLaminaCop ?? 117126).toLocaleString("es-CO")} COP
                         </span>
                       </div>
                     </div>
                   </div>
                 </div>
               )}
+            </div>
+          </div>
+        )}
+
+        {/* ========================================================================= */}
+        {/* 🏭 VISTA 5: MANO DE OBRA & CIF (COSTOS DE CONVERSIÓN INDUSTRIAL) */}
+        {/* ========================================================================= */}
+        {tab === "conversion" && (
+          <div className="flex-1 overflow-y-auto space-y-4 pr-1">
+            {/* Header explicativo */}
+            <div className="p-4 rounded-xl bg-gradient-to-r from-amber-50 to-orange-50 dark:from-amber-950/40 dark:to-orange-950/30 border border-amber-200 dark:border-amber-800/60 shadow-sm">
+              <div className="flex items-start justify-between">
+                <div className="space-y-1">
+                  <div className="flex items-center gap-2">
+                    <Coins className="w-5 h-5 text-amber-600 dark:text-amber-400" />
+                    <h3 className="font-extrabold text-sm text-amber-900 dark:text-amber-200">
+                      Parámetros de Conversión Industrial (Mano de Obra & CIF)
+                    </h3>
+                  </div>
+                  <p className="text-xs text-amber-800/80 dark:text-amber-300/80 max-w-3xl leading-relaxed">
+                    En el estándar de manufactura industrial y costeo absorbente (NIC 2 / RTA), el <strong>100% del costo de fabricación</strong> se compone de los <strong>Materiales Directos (MP: 77.78%)</strong>, la <strong>Mano de Obra Directa + Prestaciones (12.42%)</strong> y los <strong>Costos Indirectos de Fabricación (9.80%)</strong>.
+                  </p>
+                </div>
+                <span className="px-2.5 py-1 bg-amber-200/80 dark:bg-amber-900 text-amber-900 dark:text-amber-200 font-mono font-bold text-[11px] rounded-lg border border-amber-300 dark:border-amber-700">
+                  Estándar ERP 100%
+                </span>
+              </div>
+            </div>
+
+            {/* Grid de Configuración de Factores */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {/* Tarjeta 1: Mano de Obra + Prestaciones */}
+              <div className="p-4 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-sm flex flex-col justify-between gap-3">
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between pb-2 border-b border-slate-100 dark:border-slate-700">
+                    <span className="font-extrabold text-slate-800 dark:text-slate-100 flex items-center gap-1.5 text-xs">
+                      <span className="w-2.5 h-2.5 rounded-full bg-cyan-500 inline-block"></span>
+                      Mano de Obra + Prestaciones (MO+PRES)
+                    </span>
+                    <span className="px-2 py-0.5 rounded bg-cyan-50 dark:bg-cyan-950/60 text-cyan-700 dark:text-cyan-300 font-bold text-[10px]">
+                      MOD + Carga Social
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                    Impacto porcentual sobre el costo total del producto que absorbe operarios de seccionado, canteado, mecanizado CNC, ensamble y factor prestacional legal.
+                  </p>
+                  
+                  {/* Desglose Prestacional */}
+                  <div className="p-2 rounded bg-slate-50 dark:bg-slate-900/60 text-[10px] text-slate-600 dark:text-slate-400 space-y-1 border border-slate-100 dark:border-slate-800">
+                    <div className="flex justify-between">
+                      <span>• Cesantías + Prima (8.33% c/u):</span>
+                      <span className="font-mono font-bold text-slate-700 dark:text-slate-300">16.66%</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>• Salud, Pensión & ARL (Riesgo III/IV):</span>
+                      <span className="font-mono font-bold text-slate-700 dark:text-slate-300">22.93%</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>• Parafiscales (SENA, ICBF, Caja):</span>
+                      <span className="font-mono font-bold text-slate-700 dark:text-slate-300">9.00%</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex items-center justify-between pt-2 border-t border-slate-100 dark:border-slate-700 bg-cyan-50/50 dark:bg-cyan-950/20 p-2.5 rounded-lg">
+                  <span className="font-bold text-slate-700 dark:text-slate-200 text-xs">Porcentaje en Costo:</span>
+                  <div className="flex items-center gap-1.5">
+                    <DecimalInput
+                      value={costosConversion.pctManoObraPres}
+                      onChange={(val) => updateCostoConversion("pctManoObraPres", val)}
+                      className="w-20 font-mono font-extrabold text-sm text-right text-cyan-800 dark:text-cyan-200 bg-white dark:bg-slate-900 border border-cyan-300 dark:border-cyan-700 rounded px-2 py-1 outline-none shadow-sm"
+                    />
+                    <span className="font-extrabold text-cyan-700 dark:text-cyan-300 text-sm">%</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Tarjeta 2: Costos Indirectos de Fabricación (CIF) */}
+              <div className="p-4 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-sm flex flex-col justify-between gap-3">
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between pb-2 border-b border-slate-100 dark:border-slate-700">
+                    <span className="font-extrabold text-slate-800 dark:text-slate-100 flex items-center gap-1.5 text-xs">
+                      <span className="w-2.5 h-2.5 rounded-full bg-purple-500 inline-block"></span>
+                      Costos Indirectos de Fabricación (CIF)
+                    </span>
+                    <span className="px-2 py-0.5 rounded bg-purple-50 dark:bg-purple-950/60 text-purple-700 dark:text-purple-300 font-bold text-[10px]">
+                      Planta & Maquinaria
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                    Gastos generales de planta, depreciación horaria de maquinaria CNC, consumo eléctrico de corte, pegamentos industriales (EVA/PUR), fresas y supervisión.
+                  </p>
+
+                  {/* Desglose CIF */}
+                  <div className="p-2 rounded bg-slate-50 dark:bg-slate-900/60 text-[10px] text-slate-600 dark:text-slate-400 space-y-1 border border-slate-100 dark:border-slate-800">
+                    <div className="flex justify-between">
+                      <span>• Depreciación CNC (Morbidelli/Skipper):</span>
+                      <span className="font-mono font-bold text-slate-700 dark:text-slate-300">3.80%</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>• Energía industrial & Plantas de vacío:</span>
+                      <span className="font-mono font-bold text-slate-700 dark:text-slate-300">2.50%</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>• Adhesivos PUR, desgaste fresas & mtto:</span>
+                      <span className="font-mono font-bold text-slate-700 dark:text-slate-300">3.50%</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex items-center justify-between pt-2 border-t border-slate-100 dark:border-slate-700 bg-purple-50/50 dark:bg-purple-950/20 p-2.5 rounded-lg">
+                  <span className="font-bold text-slate-700 dark:text-slate-200 text-xs">Porcentaje en Costo:</span>
+                  <div className="flex items-center gap-1.5">
+                    <DecimalInput
+                      value={costosConversion.pctCIF}
+                      onChange={(val) => updateCostoConversion("pctCIF", val)}
+                      className="w-20 font-mono font-extrabold text-sm text-right text-purple-800 dark:text-purple-200 bg-white dark:bg-slate-900 border border-purple-300 dark:border-purple-700 rounded px-2 py-1 outline-none shadow-sm"
+                    />
+                    <span className="font-extrabold text-purple-700 dark:text-purple-300 text-sm">%</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Tarjeta 3: Adicionales y Tercerizaciones */}
+              <div className="p-4 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-sm flex flex-col justify-between gap-3">
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between pb-2 border-b border-slate-100 dark:border-slate-700">
+                    <span className="font-extrabold text-slate-800 dark:text-slate-100 flex items-center gap-1.5 text-xs">
+                      <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 inline-block"></span>
+                      Insumos Adicionales & Tercerizaciones
+                    </span>
+                    <span className="px-2 py-0.5 rounded bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 font-bold text-[10px]">
+                      Variables
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                    Margen de seguridad para consumibles menores (estopas, disolventes, etiquetas de código de barras) y servicios de maquila externa.
+                  </p>
+
+                  <div className="space-y-2 pt-1">
+                    <div className="flex items-center justify-between p-2 rounded bg-slate-50 dark:bg-slate-900/60 border border-slate-100 dark:border-slate-800">
+                      <span className="text-[11px] font-bold text-slate-700 dark:text-slate-300">Adicionales (%):</span>
+                      <div className="flex items-center gap-1">
+                        <DecimalInput
+                          value={costosConversion.pctAdicionales}
+                          onChange={(val) => updateCostoConversion("pctAdicionales", val)}
+                          className="w-16 font-mono font-bold text-xs text-right text-slate-800 dark:text-slate-100 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 rounded px-1.5 py-0.5"
+                        />
+                        <span className="font-bold text-slate-500">%</span>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center justify-between p-2 rounded bg-slate-50 dark:bg-slate-900/60 border border-slate-100 dark:border-slate-800">
+                      <span className="text-[11px] font-bold text-slate-700 dark:text-slate-300">Tercerizaciones ($):</span>
+                      <div className="flex items-center gap-1">
+                        <DecimalInput
+                          value={costosConversion.costoTercerizacionesCop}
+                          onChange={(val) => updateCostoConversion("costoTercerizacionesCop", val)}
+                          className="w-20 font-mono font-bold text-xs text-right text-slate-800 dark:text-slate-100 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 rounded px-1.5 py-0.5"
+                        />
+                        <span className="font-bold text-slate-500">COP</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="pt-2 border-t border-slate-100 dark:border-slate-700 text-[10px] text-slate-400">
+                  Valores configurables para el cálculo del 100% en la ficha de costos.
+                </div>
+              </div>
+            </div>
+
+            {/* Matriz Visual de Construcción del 100% del Costo */}
+            <div className="p-4 rounded-xl bg-slate-900 text-white border border-slate-800 shadow-md space-y-3">
+              <div className="flex items-center justify-between pb-2 border-b border-slate-800">
+                <span className="font-extrabold text-xs flex items-center gap-2 text-amber-400">
+                  <Coins className="w-4 h-4" />
+                  Matriz Consolidada de Distribución del Costo Total (100.00%)
+                </span>
+                <span className="text-[10px] font-mono text-slate-400">Formula Absorbente: Total = MP / (1 - MO% - CIF%)</span>
+              </div>
+
+              {/* Barra de Distribución Proporcional */}
+              <div className="space-y-1.5">
+                <div className="w-full h-5 rounded-lg overflow-hidden flex shadow-inner bg-slate-800 border border-slate-700">
+                  <div
+                    style={{ width: `${(100 - costosConversion.pctManoObraPres - costosConversion.pctCIF).toFixed(2)}%` }}
+                    className="bg-emerald-500 h-full flex items-center justify-center text-[10px] font-mono font-extrabold text-slate-950 transition-all duration-300"
+                    title="Materia Prima (MP)"
+                  >
+                    MP {(100 - costosConversion.pctManoObraPres - costosConversion.pctCIF).toFixed(1)}%
+                  </div>
+                  <div
+                    style={{ width: `${costosConversion.pctManoObraPres}%` }}
+                    className="bg-cyan-500 h-full flex items-center justify-center text-[10px] font-mono font-extrabold text-slate-950 transition-all duration-300"
+                    title="Mano de Obra (MO+PRES)"
+                  >
+                    MO {costosConversion.pctManoObraPres.toFixed(1)}%
+                  </div>
+                  <div
+                    style={{ width: `${costosConversion.pctCIF}%` }}
+                    className="bg-purple-500 h-full flex items-center justify-center text-[10px] font-mono font-extrabold text-slate-950 transition-all duration-300"
+                    title="Costos Indirectos (CIF)"
+                  >
+                    CIF {costosConversion.pctCIF.toFixed(1)}%
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-3 gap-2 text-center pt-2">
+                  <div className="p-2 rounded bg-slate-800/80 border border-emerald-900/40">
+                    <span className="text-[10px] text-emerald-400 uppercase font-bold block">1. Materia Prima Directa (MP)</span>
+                    <span className="font-mono font-extrabold text-sm text-white">
+                      {(100 - costosConversion.pctManoObraPres - costosConversion.pctCIF).toFixed(2)}%
+                    </span>
+                    <span className="text-[10px] text-slate-400 block">Tableros + Cantos + Herrajes + Empaque</span>
+                  </div>
+
+                  <div className="p-2 rounded bg-slate-800/80 border border-cyan-900/40">
+                    <span className="text-[10px] text-cyan-400 uppercase font-bold block">2. Mano de Obra (MO+PRES)</span>
+                    <span className="font-mono font-extrabold text-sm text-white">
+                      {costosConversion.pctManoObraPres.toFixed(2)}%
+                    </span>
+                    <span className="text-[10px] text-slate-400 block">MOD + Carga Prestacional Completa</span>
+                  </div>
+
+                  <div className="p-2 rounded bg-slate-800/80 border border-purple-900/40">
+                    <span className="text-[10px] text-purple-400 uppercase font-bold block">3. Costos Indirectos (CIF)</span>
+                    <span className="font-mono font-extrabold text-sm text-white">
+                      {costosConversion.pctCIF.toFixed(2)}%
+                    </span>
+                    <span className="text-[10px] text-slate-400 block">Depreciación CNC + Energía + Insumos</span>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         )}

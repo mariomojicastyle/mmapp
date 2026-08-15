@@ -134,11 +134,17 @@ def parse_num_prefix(text: str) -> float:
 def find_user_param_value(p_dict: dict, nick: str, default_val):
     if not isinstance(p_dict, dict):
         return default_val
-    if nick in p_dict and p_dict[nick] is not None:
-        return p_dict[nick]
+    sub_p = p_dict.get("parameters", {})
+    if not isinstance(sub_p, dict):
+        sub_p = {}
+        
+    combined = {**p_dict, **sub_p}
+    if nick in combined and combined[nick] is not None:
+        return combined[nick]
+        
     clean_target = re.sub(r'^RH_IN:\s*[\d.]*[_\s]*', '', nick).strip().lower().replace(' ', '_')
-    for k, v in p_dict.items():
-        if not isinstance(k, str) or v is None:
+    for k, v in combined.items():
+        if not isinstance(k, str) or v is None or k == "parameters":
             continue
         clean_k = re.sub(r'^RH_IN:\s*[\d.]*[_\s]*', '', k).strip().lower().replace(' ', '_')
         if clean_k and (clean_k == clean_target or clean_k in clean_target or clean_target in clean_k):
@@ -783,7 +789,14 @@ async def compute_model(request: Request):
                                 
                 # Garantía 100% Estructural: Si la sustracción booleana de un herraje hizo colapsar la salida del tablero, inyectar el tablero base automáticamente
                 if "Cubierta" in ghx_file:
-                    has_main_board = any("cubierta" in m.get("name", "").lower() or "entrepaño" in m.get("name", "").lower() for m in real_meshes)
+                    u_izq_str = str(find_user_param_value(p, "RH_IN:02.1 Union izquierda", find_user_param_value(p, "union_izquierda", ""))).lower()
+                    u_der_str = str(find_user_param_value(p, "RH_IN:02.0 Union Derecha", find_user_param_value(p, "union_derecha", ""))).lower()
+                    tiene_entrepanio = "entrepaño" in u_izq_str or "entrepanio" in u_izq_str or u_izq_str == "3" or "entrepaño" in u_der_str or "entrepanio" in u_der_str or u_der_str == "3"
+                    
+                    if not tiene_entrepanio:
+                        real_meshes = [m for m in real_meshes if "entrepaño" not in m.get("name", "").lower() and "entrepanio" not in m.get("name", "").lower() and "soporte" not in m.get("name", "").lower()]
+
+                    has_main_board = any("cubierta" in m.get("name", "").lower() or ("entrepaño" in m.get("name", "").lower() and tiene_entrepanio) for m in real_meshes)
                     if not has_main_board:
                         print(f"[3BF Worker Reactivador] Inyectando Tablero Base Estructural Cubierta ({ancho}mm x {prof}mm)", flush=True)
                         real_meshes.append({
@@ -855,9 +868,9 @@ async def compute_model(request: Request):
         costo_herrajes_calc = (minifix_cant * 0.63) + (tarugos_cant * 0.05) + (cant_cajones * 4.50)
 
     # =========================================================================
-    # 🪵 ESCANEO GEOMÉTRICO 3D DIRECTO DE TABLEROS (BOM REAL DfMA)
+    # 🪵 ESCANEO GEOMÉTRICO 3D DIRECTO DE TABLEROS (BOM REAL DfMA CONSOLIDADO)
     # =========================================================================
-    tableros_detectados = {}
+    tableros_consolidados = []
     for m in real_meshes:
         name_lower = m.get("name", "").lower()
         if any(h in name_lower for h in ["perno", "caja", "tarugo", "tornillo", "soporte", "corredera", "maquinado"]):
@@ -877,10 +890,6 @@ async def compute_model(request: Request):
             if esp_malla < 5.0:
                 esp_malla = 15.0
                 
-            # Clave de posición en el plano horizontal/vertical para consolidar Color, Balance y MDP en 1 tablero físico
-            # Tolerancia de 5mm en centros X/Z
-            pos_key = f"{round(pos[0] * 50) / 50.0}_{round(pos[2] * 50) / 50.0}_{lar_malla}_{anc_malla}"
-            
             # Nombre de la pieza
             custom_name = None
             for k_out, v_out in text_outputs.items():
@@ -899,29 +908,74 @@ async def compute_model(request: Request):
                 if not nombre_limpio or nombre_limpio in ["Cubierta2", "Entrepaño2", "Pieza", "Mdp", "Tablero"]:
                     nombre_limpio = "Cubierta" if "cubierta" in name_lower else ("Entrepaño" if "entrepaño" in name_lower else "Tablero")
 
-            if pos_key not in tableros_detectados:
-                tableros_detectados[pos_key] = {
+            # Buscar si ya existe un tablero en la misma zona espacial (Tolerancia 60mm en centros X/Y/Z)
+            encontrado = False
+            for t in tableros_consolidados:
+                dist_x = abs(t["pos"][0] - pos[0]) * 1000.0
+                dist_y = abs(t["pos"][1] - pos[1]) * 1000.0
+                dist_z = abs(t["pos"][2] - pos[2]) * 1000.0
+                
+                if dist_x < 60.0 and dist_y < 60.0 and dist_z < 60.0:
+                    encontrado = True
+                    # Consolidar tomando la cota máxima del tablero físico real y el nombre más específico
+                    t["largo"] = max(t["largo"], lar_malla)
+                    t["ancho"] = max(t["ancho"], anc_malla)
+                    t["espesor"] = max(t["espesor"], esp_malla)
+                    if t["nombre"] in ["Tablero", "Mdp", "Balance"] and nombre_limpio not in ["Tablero", "Mdp", "Balance"]:
+                        t["nombre"] = nombre_limpio
+                    break
+                    
+            if not encontrado:
+                tableros_consolidados.append({
                     "nombre": nombre_limpio,
                     "largo": lar_malla,
                     "ancho": anc_malla,
                     "espesor": esp_malla,
                     "cantidad": 1,
-                    "tipo": "Estructura DfMA"
-                }
-            else:
-                # Conservar el espesor real del tablero (ej. 15mm) y el nombre más descriptivo
-                tableros_detectados[pos_key]["espesor"] = max(tableros_detectados[pos_key]["espesor"], esp_malla)
-                if tableros_detectados[pos_key]["nombre"] in ["Tablero", "Mdp", "Balance"] and nombre_limpio not in ["Tablero", "Mdp", "Balance"]:
-                    tableros_detectados[pos_key]["nombre"] = nombre_limpio
+                    "tipo": "Estructura DfMA",
+                    "pos": pos
+                })
 
-    if tableros_detectados:
+    # Limpiar campo de posición interno y agrupar piezas idénticas
+    if "Cubierta" in ghx_file:
+        u_izq_str = str(find_user_param_value(p, "RH_IN:02.1 Union izquierda", find_user_param_value(p, "union_izquierda", ""))).lower()
+        u_der_str = str(find_user_param_value(p, "RH_IN:02.0 Union Derecha", find_user_param_value(p, "union_derecha", ""))).lower()
+        tiene_entrepanio = "entrepaño" in u_izq_str or "entrepanio" in u_izq_str or u_izq_str == "3" or "entrepaño" in u_der_str or "entrepanio" in u_der_str or u_der_str == "3" or any("soporte" in m.get("name", "").lower() for m in real_meshes)
+        
+        ancho_nom = float(find_user_param_value(p, "RH_IN:01 Ancho", find_user_param_value(p, "ancho", 500.0)))
+        prof_nom = float(find_user_param_value(p, "RH_IN:02 Profundidad", find_user_param_value(p, "profundidad", 500.0)))
+
+        if tiene_entrepanio:
+            piezas_madera_final = [
+                {
+                    "nombre": "Entrepaño",
+                    "largo": round(ancho_nom - 1.0, 1),  # Pierde 0.5mm por lado para entrar y salir fácilmente del nicho
+                    "ancho": round(prof_nom, 1),
+                    "espesor": 15.0,
+                    "cantidad": 1,
+                    "tipo": "Entrepaño Deslizable DfMA"
+                }
+            ]
+        else:
+            piezas_madera_final = [
+                {
+                    "nombre": "Cubierta",
+                    "largo": round(ancho_nom, 1),  # Cota nominal precisa que gobierna desde el configurador
+                    "ancho": round(prof_nom, 1),
+                    "espesor": 15.0,
+                    "cantidad": 1,
+                    "tipo": "Estructura Fija DfMA"
+                }
+            ]
+    elif tableros_consolidados:
         agrupados = {}
-        for tab in tableros_detectados.values():
+        for tab in tableros_consolidados:
             k_dim = f"{tab['nombre']}_{tab['largo']}_{tab['ancho']}_{tab['espesor']}"
             if k_dim in agrupados:
                 agrupados[k_dim]["cantidad"] += 1
             else:
-                agrupados[k_dim] = tab
+                item_copy = {k: v for k, v in tab.items() if k != "pos"}
+                agrupados[k_dim] = item_copy
         piezas_madera_final = list(agrupados.values())
     else:
         # Fallback sintético solo si no se extrajeron mallas de tableros

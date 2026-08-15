@@ -228,3 +228,54 @@ $$\mathbf{\text{Costo Total Pieza}} = \text{Área Neta } (\text{m}^2) \times \te
 * Detección y eliminación de cuadrículas infinitas ($1.048.576\text{ filas en BD}$, $16.383\text{ columnas en HERRAJES CANTOS}$) para reducir archivos de $4.66\text{ MB}$ a $601\text{ KB}$ sin pérdida de datos.
 * Restauración de los 35 Rangos Nombrados Globales (`TRM`, `MPLAMINAS`, `MP2HERRAJES_CANTOS`, `CODIGOS`) para garantizar cero errores `#NAME?` al abrir plantillas en Google Sheets.
 
+---
+
+## 8. Reglas de Ingeniería DfMA: Cubiertas Fijas vs Entrepaños Deslizables en Nicho
+
+### 📐 8.1. Regla de Medida Nominal Gobernante
+* **Principio Rector:** La medida que gobierna el modelo es siempre la dimensión nominal configurada en la interfaz (`RH_IN:01 Ancho` y `RH_IN:02 Profundidad`).
+
+* **Versión Cubierta Fija (`Minifix`, `Tornillo tarugo`, `Ya definida`):**
+  * La pieza encaja de forma precisa en el nicho del armario.
+  * **Nombre en BOM:** `Cubierta`.
+  * **Dimensiones en Lista de Corte:** $\text{Largo} = \text{Ancho Nominal}$, $\text{Ancho} = \text{Profundidad Nominal}$.
+  * **Herrajes:** Cajas Minifix, Pernos o Tornillos según selección.
+  * **Cantos:** Canto frontal visto ($L=1$) + Cantos laterales según selectores 3D de Borde Derecho / Izquierdo ($A \in \{0, 1, 2\}$) en PVC Rígido 22x2.0mm.
+
+* **Versión Entrepaño Deslizable (`Union = Entrepaño` / Soportes Activos):**
+  * En el mundo físico, un entrepaño móvil debe entrar y salir fácilmente del nicho sin friccionar con los costados del armario.
+  * **Holgura DfMA:** Pierde $0.5\text{ mm}$ por cada lado ($\mathbf{-1.0\text{ mm}}$ en la longitud transversal del nicho).
+  * **Nombre en BOM:** `Entrepaño`.
+  * **Dimensiones en Lista de Corte:** $\text{Largo} = \text{Ancho Nominal} - 1.0\text{ mm}$, $\text{Ancho} = \text{Profundidad Nominal}$.
+  * **Herrajes:** Soportes de Entrepaño (4 unidades).
+  * **Cantos:** Canto frontal visto exclusivamente ($A=0, L=1$) en Canto PVC Ceniza 19x0.5mm.
+
+---
+
+## 9. Modelo Financiero y Ficha Técnica Consolidada (100.00% del Costo)
+
+El motor económico de 3BF implementa el estándar contable de **Costeo por Absorción Estándar (NIC 2 / RTA)**, proyectando la totalidad del costo de fabricación del producto:
+
+$$\mathbf{\text{Costo Total (100\%)}} = \text{Materia Prima Directa (MP)} + \text{Tercerizaciones} + \text{Mano de Obra Directa + Prestaciones (MO+PRES)} + \text{Costos Indirectos de Fabricación (CIF)}$$
+
+### 📊 9.1. Distribución Porcentual Estándar de Fábrica
+1. **Materia Prima Directa ($\text{MP: } 77.78\%$):**
+   * **Láminas & Tableros:** Tableros MDP/MDF liquidados con matriz de proveedor y factor de desperdicio.
+   * **Fondos:** Tableros delgados de 2.7 a 3 mm.
+   * **Cantos:** Metros lineales reales con fórmula oficial de despunte ($+100\text{ mm}$ por borde canteado).
+   * **Material de Empaque:** Cajas de cartón corrugado y láminas de cartón panal.
+   * **Herrajes:** Tornillería, Minifix, tarugos, correderas y cantoneras.
+   * **Adicionales & Consumibles ($0.40\%$):** Pegantes, disolventes, estopas y etiquetas barcode.
+2. **Tercerizaciones ($0.00\%$):** Procesos y servicios industriales maquilados en el exterior.
+3. **Mano de Obra Directa + Prestaciones ($\text{MO+PRES: } 12.42\%$):**
+   * Absorbe salarios base de operarios de planta (seccionadora, canteadora, centro de mecanizado CNC, embalaje) y la carga prestacional legal obligatoria (Cesantías, Primas, Vacaciones, Salud, Pensión, ARL Riesgo III/IV y Parafiscales).
+4. **Costos Indirectos de Fabricación ($\text{CIF: } 9.80\%$):**
+   * Depreciación horaria de maquinaria CNC (Morbidelli, Skipper), consumo eléctrico de corte/aspiración, adhesivos termofusibles (EVA/PUR), desgaste de fresas/sierras diamantadas y supervisión de nave industrial.
+
+### 🧮 9.2. Ecuación de Liquidación Automática
+$$\mathbf{\text{COSTO TOTAL DE FABRICACIÓN (100\%)}} = \frac{\text{Total MP Directa} + \text{Tercerizaciones}}{1 - (\% \text{MO+PRES} + \% \text{CIF})} = \frac{\text{Total MP Directa} + \text{Tercerizaciones}}{\mathbf{0.7778}}$$
+$$\mathbf{\text{MO+PRES (\$)}} = \text{Costo Total} \times 12.42\%$$
+$$\mathbf{\text{CIF (\$)}} = \text{Costo Total} \times 9.80\%$$
+
+
+

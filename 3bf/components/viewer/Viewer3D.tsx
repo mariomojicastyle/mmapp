@@ -82,7 +82,7 @@ function obtenerNombreUnificadoPieza(obj: THREE.Object3D): string {
 
 function RaycastHandler() {
   const { raycaster, scene } = useThree();
-  const setHoveredPiece = use3BFStore((state) => state.setHoveredPiece);
+  const { setHoveredPiece } = use3BFStore();
 
   useFrame(() => {
     // Evaluar raycast centralizado contra todos los objetos de la escena frame a frame
@@ -460,8 +460,8 @@ function ParametricFurnitureMesh({ setFurnitureGroup }: { setFurnitureGroup: (g:
     const parentBoardGroupName = isModelCubierta ? "Cubierta" : "Tableros";
 
     // 1. Deduplicar globalmente la lista total de mallas reales: si existe una versión "X2", eliminar la versión obsoleta "X"
-    const namesWith2 = new Set(resultado.real_meshes.filter(m => m.name.endsWith("2")).map(m => m.name.slice(0, -1)));
-    const cleanRealMeshes = resultado.real_meshes.filter(m => {
+    const namesWith2 = new Set(resultado.real_meshes.filter((m: any) => m.name.endsWith("2")).map((m: any) => m.name.slice(0, -1)));
+    const cleanRealMeshes = resultado.real_meshes.filter((m: any) => {
       if (!m.name.endsWith("2") && namesWith2.has(m.name)) {
         return false; // Descartar la versión obsoleta duplicada de toda la escena
       }
@@ -469,22 +469,22 @@ function ParametricFurnitureMesh({ setFurnitureGroup }: { setFurnitureGroup: (g:
     });
 
     // 2. Separar mallas limpias en grupos estructurados
-    const boardMeshes = cleanRealMeshes.filter(m => {
+    const boardMeshes = cleanRealMeshes.filter((m: any) => {
       const n = m.name.toLowerCase();
       return n.includes("cubierta") || n.includes("mdp") || n.includes("balance") || n.includes("entrepaño") || n.includes("madera") || n.includes("board");
     });
 
-    const hardwareMeshes = cleanRealMeshes.filter(m => {
+    const hardwareMeshes = cleanRealMeshes.filter((m: any) => {
       const n = m.name.toLowerCase();
       return (n.includes("perno") || n.includes("caja") || n.includes("tarugo") || n.includes("tornillo") || n.includes("soporte")) && !n.includes("cajon") && !n.includes("cajón");
     });
 
-    const machiningMeshes = cleanRealMeshes.filter(m => 
+    const machiningMeshes = cleanRealMeshes.filter((m: any) => 
       m.name.toLowerCase().includes("maquinados") || m.name.toLowerCase().includes("machining")
     );
 
     // Mallas sobrantes legítimas (fallbacks verdaderos)
-    const otherMeshes = cleanRealMeshes.filter(m => 
+    const otherMeshes = cleanRealMeshes.filter((m: any) => 
       !boardMeshes.includes(m) && !hardwareMeshes.includes(m) && !machiningMeshes.includes(m)
     );
 
@@ -493,7 +493,7 @@ function ParametricFurnitureMesh({ setFurnitureGroup }: { setFurnitureGroup: (g:
         {/* Grupo Padre: Tableros / Cubierta */}
         {boardMeshes.length > 0 && (
           <group name={parentBoardGroupName}>
-            {boardMeshes.map((m, idx) => {
+            {boardMeshes.map((m: any, idx: number) => {
               const isDecorative = m.name.toLowerCase().includes("color") || m.name.toLowerCase().includes("balance");
               return (
                 <BoardMesh
@@ -516,7 +516,7 @@ function ParametricFurnitureMesh({ setFurnitureGroup }: { setFurnitureGroup: (g:
         {/* Grupo Padre: Herrajes */}
         {hardwareMeshes.length > 0 && (
           <group name="Herrajes">
-            {hardwareMeshes.map((m, idx) => (
+            {hardwareMeshes.map((m: any, idx: number) => (
               <BoardMesh
                 key={`hardware-${idx}`}
                 position={m.position}
@@ -536,7 +536,7 @@ function ParametricFurnitureMesh({ setFurnitureGroup }: { setFurnitureGroup: (g:
         {/* Grupo Padre: Maquinados */}
         {machiningMeshes.length > 0 && (
           <group name="Maquinados">
-            {machiningMeshes.map((m, idx) => (
+            {machiningMeshes.map((m: any, idx: number) => (
               <BoardMesh
                 key={`machining-${idx}`}
                 position={m.position}
@@ -556,7 +556,7 @@ function ParametricFurnitureMesh({ setFurnitureGroup }: { setFurnitureGroup: (g:
         {/* Grupo Padre: Otros */}
         {otherMeshes.length > 0 && (
           <group name="Otros">
-            {otherMeshes.map((m, idx) => (
+            {otherMeshes.map((m: any, idx: number) => (
               <BoardMesh
                 key={`other-${idx}`}
                 position={m.position}

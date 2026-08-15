@@ -249,10 +249,13 @@ export const TABLEROS_INICIALES_DEFECTO: TableroRecord[] = [
 ];
 
 export const CANTOS_INICIALES_DEFECTO: CantoRecord[] = [
+  { id: "c_0002788", codigo: "0002788", descripcion: "CANTO PVC CENIZA 19MM N", espesorMm: 0.5, anchoMm: 19, tipo: "Flexible", costoMlCop: 194.26, costoMlUsd: 0.05, proveedor: "Novopan" },
+  { id: "c_017288", codigo: "017288", descripcion: "CANTO PVC CENDRA ESCANDINAVO 22MM", espesorMm: 0.5, anchoMm: 22, tipo: "Flexible", costoMlCop: 381.28, costoMlUsd: 0.10, proveedor: "Novopan" },
   { id: "c1", codigo: "0004623", descripcion: "Canto PVC Ceniza 19mm x 0.5mm", espesorMm: 0.5, anchoMm: 19, tipo: "Flexible", costoMlCop: 380, costoMlUsd: 0.09, proveedor: "Rehau" },
   { id: "c2", codigo: "000360", descripcion: "Canto PVC Rígido Ceniza 22mm x 2.0mm", espesorMm: 2.0, anchoMm: 22, tipo: "Rígido 2mm", costoMlCop: 1850, costoMlUsd: 0.45, proveedor: "Rehau" },
-  { id: "c3", codigo: "0000253", descripcion: "Canto PVC Blanco Nevado 19mm x 0.5mm", espesorMm: 0.5, anchoMm: 19, tipo: "Flexible", costoMlCop: 320, costoMlUsd: 0.08, proveedor: "Proadec" },
-  { id: "c4", codigo: "0000313", descripcion: "Canto PVC Glacial 33mm x 2.0mm", espesorMm: 2.0, anchoMm: 33, tipo: "Rígido 2mm", costoMlCop: 2400, costoMlUsd: 0.58, proveedor: "Rehau" },
+  { id: "c3", codigo: "000361", descripcion: "Canto PVC Rígido Ceniza 33mm x 2.0mm", espesorMm: 2.0, anchoMm: 33, tipo: "Rígido 2mm", costoMlCop: 2450, costoMlUsd: 0.60, proveedor: "Rehau" },
+  { id: "c4", codigo: "0000253", descripcion: "Canto PVC Blanco Nevado 19mm x 0.5mm", espesorMm: 0.5, anchoMm: 19, tipo: "Flexible", costoMlCop: 320, costoMlUsd: 0.08, proveedor: "Proadec" },
+  { id: "c5", codigo: "0000313", descripcion: "Canto PVC Glacial 33mm x 2.0mm", espesorMm: 2.0, anchoMm: 33, tipo: "Rígido 2mm", costoMlCop: 2400, costoMlUsd: 0.58, proveedor: "Rehau" },
 ];
 
 export interface State3BF {
@@ -296,17 +299,61 @@ export interface State3BF {
   dbHerrajes: HerrajeRecord[];
   dbTableros: TableroRecord[];
   dbCantos: CantoRecord[];
+  costosConversion: CostosConversionConfig;
+  fichasConfig: Record<string, FichaCostosConfig>;
   moneda: "USD" | "COP";
   negociacionNovopan: NegociacionNovopan;
   setDbHerrajes: (herrajes: HerrajeRecord[]) => void;
   setDbTableros: (tableros: TableroRecord[]) => void;
   setDbCantos: (cantos: CantoRecord[]) => void;
+  setCostosConversion: (costos: CostosConversionConfig) => void;
+  updateCostoConversion: <K extends keyof CostosConversionConfig>(field: K, value: CostosConversionConfig[K]) => void;
+  setFichaConfig: (modelKey: string, config: Partial<FichaCostosConfig>) => void;
+  getFichaConfig: (modelKey: string) => FichaCostosConfig;
   setMoneda: (moneda: "USD" | "COP") => void;
   setNegociacionNovopan: (neg: NegociacionNovopan) => void;
   updateNegociacionNovopan: (field: keyof NegociacionNovopan, value: number) => void;
   updateDbHerraje: (id: string, field: keyof HerrajeRecord, value: any) => void;
   updateDbTablero: (id: string, field: keyof TableroRecord, value: any) => void;
 }
+
+export interface FichaCostosConfig {
+  desperdicioGlobalPct: number;
+  desperdicioPorPieza: Record<number, number>;
+  materialesPorPieza: Record<number, string>;
+  cantosPorPieza: Record<number, {
+    cantosAncho: number;
+    cantosLargo: number;
+    cantoCodigo?: string;
+  }>;
+  piezasNombres?: Record<number, string>;
+  versionActual?: string;
+}
+
+export const FICHA_DEFECTO: FichaCostosConfig = {
+  desperdicioGlobalPct: 10.0,
+  desperdicioPorPieza: {},
+  materialesPorPieza: {},
+  cantosPorPieza: {},
+  piezasNombres: {},
+  versionActual: "v1.0",
+};
+
+export interface CostosConversionConfig {
+  pctManoObraPres: number;       // 12.42% por defecto
+  pctCIF: number;                // 9.80% por defecto
+  pctAdicionales: number;        // 0.40% por defecto
+  costoTercerizacionesCop: number; // 0 COP
+  costoEmpaqueCop: number;       // 0 COP
+}
+
+export const COSTOS_CONVERSION_DEFECTO: CostosConversionConfig = {
+  pctManoObraPres: 12.42,
+  pctCIF: 9.80,
+  pctAdicionales: 0.40,
+  costoTercerizacionesCop: 0.0,
+  costoEmpaqueCop: 0.0,
+};
 
 export const defaultCalibracion: CalibracionVisual = {
   opacidadMadera: 1.0,
@@ -323,7 +370,7 @@ export const defaultCalibracion: CalibracionVisual = {
   mostrarPanelCalibracion: false,
 };
 
-export const use3BFStore = create<State3BF>((set) => ({
+export const use3BFStore = create<State3BF>((set, get) => ({
   parametros: {
     model_id: "",
     ancho: 1200,
@@ -398,6 +445,8 @@ export const use3BFStore = create<State3BF>((set) => ({
   dbHerrajes: HERRAJES_INICIALES_DEFECTO,
   dbTableros: TABLEROS_INICIALES_DEFECTO,
   dbCantos: CANTOS_INICIALES_DEFECTO,
+  costosConversion: COSTOS_CONVERSION_DEFECTO,
+  fichasConfig: {},
   moneda: "COP",
   negociacionNovopan: NEGOCIACION_NOVOPAN_DEFECTO,
 
@@ -412,6 +461,41 @@ export const use3BFStore = create<State3BF>((set) => ({
   setDbCantos: (dbCantos) => {
     try { localStorage.setItem("3bf_db_cantos", JSON.stringify(dbCantos)); } catch {}
     set({ dbCantos });
+  },
+  setCostosConversion: (costosConversion) => {
+    try { localStorage.setItem("3bf_costos_conversion", JSON.stringify(costosConversion)); } catch {}
+    set({ costosConversion });
+  },
+  updateCostoConversion: (field, value) =>
+    set((state) => {
+      const updated = { ...state.costosConversion, [field]: value };
+      try { localStorage.setItem("3bf_costos_conversion", JSON.stringify(updated)); } catch {}
+      return { costosConversion: updated };
+    }),
+  setFichaConfig: (modelKey, config) =>
+    set((state) => {
+      const current = state.fichasConfig[modelKey] || FICHA_DEFECTO;
+      const updatedModelConfig = { ...current, ...config };
+      const updated = {
+        ...state.fichasConfig,
+        [modelKey]: updatedModelConfig
+      };
+      try {
+        localStorage.setItem(`3bf_ficha_config_${modelKey}`, JSON.stringify(updatedModelConfig));
+        localStorage.setItem("3bf_fichas_config", JSON.stringify(updated));
+      } catch {}
+      return { fichasConfig: updated };
+    }),
+  getFichaConfig: (modelKey) => {
+    const state = get();
+    if (state.fichasConfig[modelKey]) {
+      return state.fichasConfig[modelKey];
+    }
+    try {
+      const saved = localStorage.getItem(`3bf_ficha_config_${modelKey}`);
+      if (saved) return JSON.parse(saved);
+    } catch {}
+    return FICHA_DEFECTO;
   },
   setMoneda: (moneda) => set({ moneda }),
 

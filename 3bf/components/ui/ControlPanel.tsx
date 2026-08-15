@@ -187,7 +187,7 @@ function ParametrosPanel() {
 
   return (
     <div className="flex flex-col gap-3.5">
-      {groups.map((grp, idx) => (
+      {groups.map((grp: { title: string; parameters: string[] }, idx: number) => (
         <div key={`group-${idx}`} className="flex flex-col gap-3 p-3 rounded-xl bg-cyan-950/20 dark:bg-[#131B2E]/60 border border-cyan-200/80 dark:border-cyan-900/40 shadow-sm">
           <div className="text-xs font-extrabold text-gray-900 dark:text-[#F8FAFC] flex items-center gap-1.5 pb-1.5 border-b border-cyan-200/50 dark:border-cyan-900/40">
             <Box className="w-4 h-4 text-cyan-600 dark:text-cyan-400" />
@@ -195,7 +195,7 @@ function ParametrosPanel() {
           </div>
 
           <div className="flex flex-col gap-2">
-            {grp.parameters.map((pKey) => (
+            {grp.parameters.map((pKey: string) => (
               <RenderParamControl key={pKey} paramKey={pKey} />
             ))}
           </div>
@@ -254,11 +254,18 @@ const MAPA_PARAMETROS: Record<string, string> = {
   "RH_IN:05 Orientacion maquinado minifix": "orientacion_maquinado_minifix",
   "RH_IN:06 Orientacion minifix": "orientacion_minifix",
   "RH_IN:Posicion Tarugo": "posicion_tarugo",
+  "RH_IN:02.4 Posicion Tarugo": "posicion_tarugo",
   "RH_IN:Posicion Tornillo": "posicion_tornillo",
+  "RH_IN:02.5Posicion Tornillo": "posicion_tornillo",
+  "RH_IN:02.3Posicion Minifix": "posicion_minifix",
   "RH_IN:Borde izquierdo": "borde_izquierdo",
+  "RH_IN:03.4 Borde izquierdo": "borde_izquierdo",
   "RH_IN:Borde derecho": "borde_derecho",
+  "RH_IN:03.3 Borde derecho": "borde_derecho",
   "RH_IN:Lado balance cubierta": "lado_balance_cubierta",
+  "RH_IN:03.1 Lado balance": "lado_balance_cubierta",
   "RH_IN:Tipo de mapeado cubierta": "tipo_mapeado_cubierta",
+  "RH_IN:03.0 Mapeado": "tipo_mapeado_cubierta",
   "RH_IN:Lado balance entrepaño": "lado_balance_entrepanio",
   "RH_IN:Tipo de mapeado entrepaño": "tipo_mapeado_entrepanio",
 };
