@@ -113,7 +113,8 @@ export default function DespieceView() {
     getFichaConfig,
     negociacionNovopan,
     moneda,
-    setMoneda
+    setMoneda,
+    hidratarDesdeLocalStorage
   } = use3BFStore();
 
   const trm = negociacionNovopan?.trmNovopan || 4000;
@@ -126,7 +127,11 @@ export default function DespieceView() {
 
   // Leer configuración inicial directamente del Store de Zustand / localStorage
   const fichaInicial = getFichaConfig(modelKey);
-  const [versionActual, setVersionActual] = useState(fichaInicial.versionActual || "v1.0");
+  const [versionActual, setVersionActual] = useState(
+    fichaInicial.versionActual && !fichaInicial.versionActual.startsWith("v") 
+      ? fichaInicial.versionActual 
+      : "BD 1.0"
+  );
   const [piezasEditadas, setPiezasEditadas] = useState<Array<{ nombre: string; largo: number; ancho: number; espesor: number; cantidad: number; tipo?: string }>>([]);
   const [materialesPorPieza, setMaterialesPorPieza] = useState<Record<number, string>>(fichaInicial.materialesPorPieza || {});
   const [desperdicioGlobalPct, setDesperdicioGlobalPct] = useState<number>(fichaInicial.desperdicioGlobalPct ?? 10.0);
@@ -139,7 +144,15 @@ export default function DespieceView() {
     cantoCodigo?: string;
   }>>(fichaInicial.cantosPorPieza || {});
 
+  // Costo manual de empaque (Fase transicional previa al módulo dedicado de empaque)
+  const [costoEmpaqueManualCop, setCostoEmpaqueManualCop] = useState<number | undefined>(fichaInicial.costoEmpaqueManualCop);
+  const [costoEmpaqueManualUsd, setCostoEmpaqueManualUsd] = useState<number | undefined>(fichaInicial.costoEmpaqueManualUsd);
+
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
+
+  useEffect(() => {
+    hidratarDesdeLocalStorage();
+  }, []);
 
   // Sincronizar reactivamente si cambia de modelo
   useEffect(() => {
@@ -149,7 +162,23 @@ export default function DespieceView() {
     setMaterialesPorPieza(config.materialesPorPieza || {});
     setCantosPorPieza(config.cantosPorPieza || {});
     setVersionActual(config.versionActual || "v1.0");
+    setCostoEmpaqueManualCop(config.costoEmpaqueManualCop ?? 0);
+    setCostoEmpaqueManualUsd(config.costoEmpaqueManualUsd ?? 0);
   }, [modelKey]);
+
+  const handleEmpaqueChange = (val: number) => {
+    if (moneda === "COP") {
+      setCostoEmpaqueManualCop(val);
+      setCostoEmpaqueManualUsd(Number((val / trm).toFixed(2)));
+      sincronizarCambios({ costoEmpaqueManualCop: val, costoEmpaqueManualUsd: Number((val / trm).toFixed(2)) });
+    } else {
+      const usd = val;
+      const cop = Math.round(usd * trm);
+      setCostoEmpaqueManualCop(cop);
+      setCostoEmpaqueManualUsd(usd);
+      sincronizarCambios({ costoEmpaqueManualCop: cop, costoEmpaqueManualUsd: usd });
+    }
+  };
 
   // Persistir reactivamente cada cambio en Zustand y LocalStorage
   const sincronizarCambios = (cambios: Partial<typeof fichaInicial>) => {
@@ -228,21 +257,55 @@ export default function DespieceView() {
     // 1. Cubierta / Tapa Superior: Lectura directa de los selectores de borde 3D
     if (n.includes("cubierta") || n.includes("tapa")) {
       const p = params || {};
-      const valIzq = String(
-        p["RH_IN:03.4 Borde izquierdo"] ?? 
-        p["RH_IN:Borde izquierdo"] ?? 
-        p["borde_izquierdo"] ?? 
-        "MDP"
-      ).toLowerCase();
+      
+      const obtenerValorBorde = (tipo: "izquierdo" | "derecho") => {
+        const claves = tipo === "izquierdo"
+          ? [
+              "RH_IN:03.4 Borde izquierdo",
+              "RH_IN:Borde izquierdo",
+              "borde_izquierdo",
+              "03.4_borde_izquierdo"
+            ]
+          : [
+              "RH_IN:03.3 Borde derecho",
+              "RH_IN:Borde derecho",
+              "borde_derecho",
+              "03.3_borde_derecho"
+            ];
 
-      const valDer = String(
-        p["RH_IN:03.3 Borde derecho"] ?? 
-        p["RH_IN:Borde derecho"] ?? 
-        p["borde_derecho"] ?? 
-        "MDP"
-      ).toLowerCase();
+        // 1. Prioridad: Buscar valores explícitamente definidos en las claves exactas
+        for (const clave of claves) {
+          const val = p[clave];
+          if (val !== undefined && val !== null && String(val).trim() !== "") {
+            return String(val);
+          }
+        }
 
-      // En Grasshopper: 'Canto' = 0 (Lleva Canto), 'MDP' = 1 (Sin Canto)
+        // 2. Buscar cualquier propiedad en el objeto que coincida
+        for (const [k, v] of Object.entries(p)) {
+          const kl = k.toLowerCase();
+          if (kl.includes("borde") && (tipo === "izquierdo" ? (kl.includes("izquierdo") || kl.includes("izq")) : (kl.includes("derecho") || kl.includes("der")))) {
+            if (v !== undefined && v !== null && String(v).trim() !== "") {
+              return String(v);
+            }
+          }
+        }
+
+        // 3. Revisar en los límites por defecto del resultado de Grasshopper
+        const limits = (resultado as any)?.slider_limits || {};
+        for (const clave of claves) {
+          if (limits[clave]?.default !== undefined) {
+            return String(limits[clave].default);
+          }
+        }
+
+        return "MDP";
+      };
+
+      const valIzq = obtenerValorBorde("izquierdo").toLowerCase();
+      const valDer = obtenerValorBorde("derecho").toLowerCase();
+
+      // En Grasshopper / UI: 'Canto' = Lleva Canto (1), 'MDP' = Sin Canto (0)
       const izqTieneCanto = valIzq.includes("canto") || valIzq === "0";
       const derTieneCanto = valDer.includes("canto") || valDer === "0";
 
@@ -275,21 +338,26 @@ export default function DespieceView() {
     return { cantosAncho: 1, cantosLargo: 1, cantoCodigo: codigoCanto };
   };
 
-  // Obtener la configuración activa de cantos para una pieza (con fallback reactivo al 3D)
+  // Obtener la configuración activa de cantos para una pieza (Leída 100% automáticamente del 3D)
   const getCantoPieza = (idx: number, nombre: string, espesor: number) => {
-    const manual = cantosPorPieza[idx];
-    if (manual) return manual;
-    return getCantoConfigDefecto(nombre, espesor, parametros);
+    const config3D = getCantoConfigDefecto(nombre, espesor, parametros);
+    // El material de canto asignado por el usuario o el detectado por defecto
+    const materialAsignado = cantosPorPieza[idx]?.cantoCodigo || config3D.cantoCodigo;
+
+    return {
+      cantosAncho: config3D.cantosAncho,
+      cantosLargo: config3D.cantosLargo,
+      cantoCodigo: materialAsignado
+    };
   };
 
-  const handleCantoChange = (idx: number, field: "cantosAncho" | "cantosLargo" | "cantoCodigo", val: any, nombre: string, espesor: number) => {
+  const handleMaterialCantoChange = (idx: number, nuevoCodigoCanto: string) => {
     setCantosPorPieza((prev) => {
-      const current = prev[idx] ?? getCantoConfigDefecto(nombre, espesor, parametros);
       const updated = {
         ...prev,
         [idx]: {
-          ...current,
-          [field]: val
+          ...(prev[idx] || {}),
+          cantoCodigo: nuevoCodigoCanto
         }
       };
       sincronizarCambios({ cantosPorPieza: updated });
@@ -502,8 +570,12 @@ export default function DespieceView() {
     const herrajesCop = resumenHerrajes.costoTotalHerrajesCop;
     const herrajesUsd = resumenHerrajes.costoTotalHerrajesUsd;
 
-    const empaqueCop = costosConversion?.costoEmpaqueCop || 0;
-    const empaqueUsd = Number((empaqueCop / trm).toFixed(2));
+    const empaqueCop = costoEmpaqueManualCop !== undefined && costoEmpaqueManualCop !== null
+      ? costoEmpaqueManualCop 
+      : (costosConversion?.costoEmpaqueCop || 0);
+    const empaqueUsd = costoEmpaqueManualUsd !== undefined && costoEmpaqueManualUsd !== null && costoEmpaqueManualUsd > 0
+      ? costoEmpaqueManualUsd
+      : Number((empaqueCop / trm).toFixed(2));
 
     // Subtotal Base MP
     const baseMpCop = laminaCop + fondosCop + cantoCop + herrajesCop + empaqueCop;
@@ -560,7 +632,7 @@ export default function DespieceView() {
       cifCop, cifUsd, pctCif,
       costoTotalFabCop, costoTotalFabUsd
     };
-  }, [resumenMadera, resumenCantos, resumenHerrajes, costosConversion, trm]);
+  }, [resumenMadera, resumenCantos, resumenHerrajes, costosConversion, trm, costoEmpaqueManualCop, costoEmpaqueManualUsd]);
 
   // Costo Total Consolidado (Materia Prima Directa)
   const costoTotalMuebleCop = resumenIndustrial.totalMpCop;
@@ -597,6 +669,8 @@ export default function DespieceView() {
         materialesPorPieza,
         cantosPorPieza,
         versionActual,
+        costoEmpaqueManualCop,
+        costoEmpaqueManualUsd,
         piezasNombres: piezasEditadas.reduce((acc: Record<number, string>, p: any, i: number) => ({ ...acc, [i]: p.nombre }), {})
       });
 
@@ -608,6 +682,8 @@ export default function DespieceView() {
         moneda: moneda,
         trm: trm,
         desperdicio_global_pct: desperdicioGlobalPct,
+        costo_empaque_manual_cop: costoEmpaqueManualCop,
+        costo_empaque_manual_usd: costoEmpaqueManualUsd,
         despiece: resumenMadera.items.map((i: any) => ({
           nombre: i.nombre,
           largo: i.largo,
@@ -636,6 +712,8 @@ export default function DespieceView() {
           metros_canto_total: resumenCantos.cantTotalMetros,
           costo_cantos_cop: resumenCantos.costoTotalCantosCop,
           costo_cantos_usd: resumenCantos.costoTotalCantosUsd,
+          costo_empaque_cop: resumenIndustrial.empaqueCop,
+          costo_empaque_usd: resumenIndustrial.empaqueUsd,
           costo_total_mp_cop: resumenIndustrial.totalMpCop,
           costo_total_mp_usd: resumenIndustrial.totalMpUsd,
           mano_obra_pres_cop: resumenIndustrial.moPresCop,
@@ -678,7 +756,12 @@ export default function DespieceView() {
       const res = await fetch("/api/export", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ model_id: parametros.model_id || "Cubierta", parameters: parametros }),
+        body: JSON.stringify({ 
+          model_id: parametros.model_id || parametros.custom_filename || "Cubierta", 
+          parameters: parametros,
+          despiece: piezasActivas,
+          version: versionActual
+        }),
       });
       const data = await res.json();
       if (data.dxf_content) {
@@ -686,7 +769,7 @@ export default function DespieceView() {
         const url = URL.createObjectURL(blob);
         const a = document.createElement("a");
         a.href = url;
-        a.download = data.filename || "mueble_3bf.dxf";
+        a.download = data.filename || `Cubierta_CAM_${versionActual}.dxf`;
         a.click();
       }
     } catch (e) {
@@ -727,12 +810,12 @@ export default function DespieceView() {
             {guardadoExitoso ? (
               <>
                 <Check className="w-3.5 h-3.5" />
-                <span>¡Ficha Guardada!</span>
+                <span>¡Guardado!</span>
               </>
             ) : (
               <>
                 <Save className="w-3.5 h-3.5" />
-                <span>{guardando ? "Guardando..." : "💾 Guardar Ficha en BD"}</span>
+                <span>{guardando ? "Guardando..." : "Guardar"}</span>
               </>
             )}
           </button>
@@ -751,9 +834,9 @@ export default function DespieceView() {
               }}
               className="text-xs font-bold py-1 px-2 rounded bg-slate-100 dark:bg-slate-700 border border-slate-300 dark:border-slate-600 text-cyan-700 dark:text-cyan-300 outline-none cursor-pointer"
             >
-              <option value="v1.0">v1.0 (Definitivo)</option>
-              <option value="v1.1">v1.1 (Revisión)</option>
-              <option value="v2.0">v2.0 (Rediseño)</option>
+              <option value="BD 1.0">BD 1.0</option>
+              <option value="BD 1.1">BD 1.1</option>
+              <option value="BD 2.0">BD 2.0</option>
             </select>
           </div>
 
@@ -863,8 +946,8 @@ export default function DespieceView() {
                 </th>
                 
                 {/* COLUMNAS DE CANTOS */}
-                <th className="p-2.5 w-32 text-center bg-blue-50/80 dark:bg-blue-950/40 text-blue-800 dark:text-blue-200" title="Cantidad de cantos en Ancho (A) y Largo (L): 0, 1 o 2 por lado">
-                  Cantos (A × L) 📐
+                <th className="p-2.5 w-32 text-center bg-blue-50/80 dark:bg-blue-950/40 text-blue-800 dark:text-blue-200" title="Cantidad de cantos en Largo (L) y Ancho (A) leída automáticamente del modelo 3D">
+                  Cantos (L × A) 📐
                 </th>
                 <th className="p-2.5 min-w-[180px] bg-blue-50/80 dark:bg-blue-950/40 text-blue-800 dark:text-blue-200" title="Material de canto aplicado a esta pieza">
                   Material Canto 🎗️
@@ -948,34 +1031,24 @@ export default function DespieceView() {
                     </div>
                   </td>
 
-                  {/* CANTOS: MICRO-SELECTOR (A y L) */}
+                  {/* CANTOS AUTOMÁTICOS LEÍDOS DEL 3D (L × A) */}
                   <td className="p-2 text-center bg-blue-50/20 dark:bg-blue-950/10">
-                    <div className="flex items-center justify-center gap-1.5">
-                      <div className="flex items-center gap-0.5" title="Cantos en los 2 Anchos (0, 1 o 2)">
-                        <span className="text-[10px] font-bold text-slate-500">A:</span>
-                        <select
-                          value={p.cantosAncho}
-                          onChange={(e) => handleCantoChange(idx, "cantosAncho", Number(e.target.value), p.nombre, p.espesor)}
-                          className="font-mono font-bold text-xs px-1 py-0.5 rounded bg-white dark:bg-slate-800 border border-blue-300 dark:border-blue-700 text-blue-700 dark:text-blue-300 outline-none cursor-pointer"
-                        >
-                          <option value={0}>0</option>
-                          <option value={1}>1</option>
-                          <option value={2}>2</option>
-                        </select>
-                      </div>
-
-                      <div className="flex items-center gap-0.5" title="Cantos en los 2 Largos (0, 1 o 2)">
-                        <span className="text-[10px] font-bold text-slate-500">L:</span>
-                        <select
-                          value={p.cantosLargo}
-                          onChange={(e) => handleCantoChange(idx, "cantosLargo", Number(e.target.value), p.nombre, p.espesor)}
-                          className="font-mono font-bold text-xs px-1 py-0.5 rounded bg-white dark:bg-slate-800 border border-blue-300 dark:border-blue-700 text-blue-700 dark:text-blue-300 outline-none cursor-pointer"
-                        >
-                          <option value={0}>0</option>
-                          <option value={1}>1</option>
-                          <option value={2}>2</option>
-                        </select>
-                      </div>
+                    <div className="flex items-center justify-center gap-1 font-mono text-xs" title="Cantos leídos automáticamente del 3D: L (Largos) y A (Anchos)">
+                      <span className={`px-1.5 py-0.5 rounded border text-[11px] font-bold ${
+                        p.cantosLargo > 0 
+                          ? "bg-blue-100 dark:bg-blue-900/60 text-blue-800 dark:text-blue-200 border-blue-300 dark:border-blue-700 font-extrabold shadow-sm" 
+                          : "bg-slate-100 dark:bg-slate-800/80 text-slate-400 border-slate-200 dark:border-slate-700"
+                      }`}>
+                        {p.cantosLargo} L
+                      </span>
+                      <span className="text-slate-400 text-[10px]">×</span>
+                      <span className={`px-1.5 py-0.5 rounded border text-[11px] font-bold ${
+                        p.cantosAncho > 0 
+                          ? "bg-blue-100 dark:bg-blue-900/60 text-blue-800 dark:text-blue-200 border-blue-300 dark:border-blue-700 font-extrabold shadow-sm" 
+                          : "bg-slate-100 dark:bg-slate-800/80 text-slate-400 border-slate-200 dark:border-slate-700"
+                      }`}>
+                        {p.cantosAncho} A
+                      </span>
                     </div>
                   </td>
 
@@ -983,7 +1056,7 @@ export default function DespieceView() {
                   <td className="p-2 bg-blue-50/20 dark:bg-blue-950/10">
                     <select
                       value={p.cantoCodigo || "NONE"}
-                      onChange={(e) => handleCantoChange(idx, "cantoCodigo", e.target.value, p.nombre, p.espesor)}
+                      onChange={(e) => handleMaterialCantoChange(idx, e.target.value)}
                       className="text-[11px] font-medium px-2 py-0.5 rounded bg-white dark:bg-slate-800 border border-blue-200 dark:border-blue-800 text-slate-700 dark:text-slate-300 outline-none cursor-pointer w-full shadow-sm"
                     >
                       <option value="NONE">(Sin Canto)</option>
@@ -1289,17 +1362,38 @@ export default function DespieceView() {
                 </td>
               </tr>
 
-              {/* 4. Empaque */}
-              <tr className="hover:bg-slate-50/60 dark:hover:bg-slate-800/40 transition">
+              {/* 4. Empaque (Editable Manualmente) */}
+              <tr className="hover:bg-amber-50/20 dark:hover:bg-slate-800/40 transition">
                 <td className="p-2 text-center font-mono font-bold text-slate-500">4</td>
                 <td className="p-2 font-medium text-slate-700 dark:text-slate-300 pl-7">
-                  Material de Empaque (Cajas / Cartón Panal)
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="font-bold text-slate-800 dark:text-slate-200">
+                      Material de Empaque (Cajas / Cartón Panal)
+                    </span>
+                    <span className="text-[10px] text-amber-700 dark:text-amber-300 font-mono font-bold bg-amber-100 dark:bg-amber-950/60 px-2 py-0.5 rounded border border-amber-300 dark:border-amber-700 flex items-center gap-1 shadow-sm">
+                      <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse"></span>
+                      Manual ✏️
+                    </span>
+                  </div>
                 </td>
                 <td className="p-2 text-center text-slate-500 text-[11px]">Material Directo</td>
-                <td className="p-2 text-right font-mono text-slate-500">
-                  {formatMoneyCustom(resumenIndustrial.empaqueCop, resumenIndustrial.empaqueUsd)}
+                <td className="p-2 text-right bg-amber-50/30 dark:bg-amber-950/20">
+                  <div className="flex items-center justify-end gap-1">
+                    <span className="text-amber-600 dark:text-amber-400 font-mono font-bold">
+                      $
+                    </span>
+                    <DecimalInput
+                      value={moneda === "COP" ? (costoEmpaqueManualCop ?? 0) : (costoEmpaqueManualUsd ?? 0)}
+                      decimals={moneda === "COP" ? 0 : 2}
+                      onChange={handleEmpaqueChange}
+                      className="w-28 text-right font-mono font-extrabold text-slate-900 dark:text-slate-100 bg-white dark:bg-slate-800 border border-amber-300 dark:border-amber-600 rounded px-2 py-1 outline-none shadow-sm focus:border-amber-500 focus:ring-1 focus:ring-amber-500 transition text-xs"
+                    />
+                    <span className="text-[10px] font-mono text-slate-400 font-bold ml-0.5">
+                      {moneda}
+                    </span>
+                  </div>
                 </td>
-                <td className="p-2 text-center font-mono font-bold text-slate-400">
+                <td className="p-2 text-center font-mono font-extrabold text-amber-700 dark:text-amber-300 bg-amber-50/30 dark:bg-amber-950/20">
                   {resumenIndustrial.pctEmpaqueReal}%
                 </td>
               </tr>
@@ -1441,34 +1535,12 @@ export default function DespieceView() {
           </div>
         </div>
 
-        {/* Acciones */}
-        <div className="grid grid-cols-2 gap-2 pt-1 border-t border-slate-100 dark:border-slate-700">
-          <button
-            onClick={guardarEnSupabase}
-            disabled={guardando}
-            className={`py-2.5 px-4 rounded-lg font-bold text-xs shadow-md transition flex items-center justify-center gap-2 cursor-pointer ${
-              guardadoExitoso
-                ? "bg-emerald-600 text-white"
-                : "bg-slate-800 hover:bg-slate-900 text-white dark:bg-cyan-700 dark:hover:bg-cyan-600"
-            }`}
-          >
-            {guardadoExitoso ? (
-              <>
-                <Check className="w-4 h-4 text-white" />
-                ¡Ficha {versionActual} Guardada en Supabase!
-              </>
-            ) : (
-              <>
-                <Save className="w-4 h-4" />
-                {guardando ? "Guardando..." : `Guardar Ficha ${versionActual} en Supabase`}
-              </>
-            )}
-          </button>
-
+        {/* Acciones de Exportación */}
+        <div className="flex justify-end pt-2 border-t border-slate-100 dark:border-slate-700">
           <button
             onClick={descargarDXF}
             disabled={descargando}
-            className="py-2.5 px-4 rounded-lg bg-cyan-600 hover:bg-cyan-700 active:scale-[0.99] text-white font-bold text-xs shadow-sm transition flex items-center justify-center gap-2 disabled:opacity-50 cursor-pointer"
+            className="w-full sm:w-auto py-2.5 px-6 rounded-lg bg-cyan-600 hover:bg-cyan-700 active:scale-[0.99] text-white font-bold text-xs shadow-sm transition flex items-center justify-center gap-2 disabled:opacity-50 cursor-pointer"
           >
             <Download className="w-4 h-4" />
             {descargando ? "Generando DXF..." : "Exportar DXF para Seccionadora CNC"}

@@ -149,8 +149,27 @@ function RenderParamControl({ paramKey }: { paramKey: string }) {
   const selectedValue = String(value ?? limit?.default ?? options[0]);
 
   const handleSelectChange = (newVal: string) => {
+    // 1. Clave exacta de Grasshopper
     setParametro(storeKey as any, newVal);
+    // 2. Clave limpia
+    setParametro(rawKeyClean as any, newVal);
+    // 3. Clave legacy
     if (legacyKey) setParametro(legacyKey as any, newVal);
+    
+    // 4. Si es un control de borde, sincronizar explícitamente todas las variantes para evitar sobreescritura
+    const pkl = paramKey.toLowerCase();
+    if (pkl.includes("izquierdo") || pkl.includes("izq")) {
+      setParametro("borde_izquierdo" as any, newVal);
+      setParametro("RH_IN:Borde izquierdo" as any, newVal);
+      setParametro("RH_IN:03.4 Borde izquierdo" as any, newVal);
+      setParametro("03.4_borde_izquierdo" as any, newVal);
+    }
+    if (pkl.includes("derecho") || pkl.includes("der")) {
+      setParametro("borde_derecho" as any, newVal);
+      setParametro("RH_IN:Borde derecho" as any, newVal);
+      setParametro("RH_IN:03.3 Borde derecho" as any, newVal);
+      setParametro("03.3_borde_derecho" as any, newVal);
+    }
   };
 
   return (

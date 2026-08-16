@@ -9,7 +9,13 @@ import { use3BFStore } from "@/lib/store";
 import { Box, Layers, Cpu, CheckCircle2, AlertCircle, Database } from "lucide-react";
 
 export default function Home3BF() {
-  const { pestanaActiva, setPestanaActiva, workerStatus, setWorkerStatus } = use3BFStore();
+  const { 
+    pestanaActiva, 
+    setPestanaActiva, 
+    workerStatus, 
+    setWorkerStatus,
+    hidratarDesdeLocalStorage 
+  } = use3BFStore();
 
   const verificarWorker = async () => {
     try {
@@ -30,6 +36,8 @@ export default function Home3BF() {
   };
 
   useEffect(() => {
+    // Hidratar inmediatamente toda la base de datos de materias primas y costos
+    hidratarDesdeLocalStorage();
     verificarWorker();
   }, []);
 
@@ -93,7 +101,7 @@ export default function Home3BF() {
           <span className="font-bold text-[#0F172A]">Worker:</span>
           {workerStatus === "online" ? (
             <span className="text-emerald-700 font-bold flex items-center gap-1">
-              <CheckCircle2 className="w-3 h-3 text-emerald-600" /> Online (Py)
+              <CheckCircle2 className="w-3 h-3 text-emerald-600" /> Online
             </span>
           ) : (
             <span className="text-amber-700 font-bold flex items-center gap-1">

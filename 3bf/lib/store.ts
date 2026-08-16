@@ -226,11 +226,11 @@ export interface CantoRecord {
 }
 
 export const HERRAJES_INICIALES_DEFECTO: HerrajeRecord[] = [
-  { id: "h1", codigo: "20070022", nombreGhx: "Perno", descripcion: "Perno Minifix 34mm Acero/Plástico", categoria: "Minifix", mallasPorUnidad: 2, costoCop: 1150, costoUsd: 0.28, unidad: "UND", pesoKg: 0.005, proveedor: "Hafele" },
-  { id: "h2", codigo: "20070009", nombreGhx: "Caja", descripcion: "Caja Minifix 15mm Zamak Niquelada", categoria: "Minifix", mallasPorUnidad: 1, costoCop: 1450, costoUsd: 0.35, unidad: "UND", pesoKg: 0.008, proveedor: "Hafele" },
-  { id: "h3", codigo: "005895", nombreGhx: "Tarugo", descripcion: "Tarugo de Madera Estriado 8x30mm", categoria: "Tarugos", mallasPorUnidad: 1, costoCop: 210, costoUsd: 0.05, unidad: "UND", pesoKg: 0.001, proveedor: "Nacional" },
-  { id: "h4", codigo: "0000149", nombreGhx: "Tornillo", descripcion: "Tornillo Ensamble 4x50mm Cincado", categoria: "Tornillos", mallasPorUnidad: 1, costoCop: 330, costoUsd: 0.08, unidad: "UND", pesoKg: 0.003, proveedor: "Spax" },
-  { id: "h5", codigo: "010679", nombreGhx: "Soporte", descripcion: "Soporte de Entrepaño con Perno Ø5mm", categoria: "Soportes", mallasPorUnidad: 1, costoCop: 620, costoUsd: 0.15, unidad: "UND", pesoKg: 0.004, proveedor: "Ducasse" },
+  { id: "h1", codigo: "20070022", nombreGhx: "Perno", descripcion: "Perno Minifix 34mm Acero/Plástico", categoria: "Minifix", mallasPorUnidad: 2, costoCop: 87, costoUsd: 0.022, unidad: "UND", pesoKg: 0.005, proveedor: "Hafele" },
+  { id: "h2", codigo: "20070009", nombreGhx: "Caja", descripcion: "Caja Minifix 15mm Zamak Niquelada", categoria: "Minifix", mallasPorUnidad: 1, costoCop: 100, costoUsd: 0.025, unidad: "UND", pesoKg: 0.008, proveedor: "Hafele" },
+  { id: "h3", codigo: "005895", nombreGhx: "Tarugo", descripcion: "Tarugo de Madera Estriado 8x30mm", categoria: "Tarugos", mallasPorUnidad: 1, costoCop: 17, costoUsd: 0.004, unidad: "UND", pesoKg: 0.001, proveedor: "Nacional" },
+  { id: "h4", codigo: "0000149", nombreGhx: "Tornillo", descripcion: "Tornillo Ensamble 4x50mm Cincado", categoria: "Tornillos", mallasPorUnidad: 1, costoCop: 27, costoUsd: 0.007, unidad: "UND", pesoKg: 0.003, proveedor: "Spax" },
+  { id: "h5", codigo: "010679", nombreGhx: "Soporte", descripcion: "Soporte de Entrepaño con Perno Ø5mm", categoria: "Soportes", mallasPorUnidad: 1, costoCop: 150, costoUsd: 0.038, unidad: "UND", pesoKg: 0.004, proveedor: "Ducasse" },
   { id: "h6", codigo: "20060067", nombreGhx: "Corredera Estandar", descripcion: "Par Correderas Telescópicas 450mm Cierre Suave", categoria: "Correderas", mallasPorUnidad: 2, costoCop: 18500, costoUsd: 4.50, unidad: "PAR", pesoKg: 0.450, proveedor: "Ducasse" },
   { id: "h7", codigo: "000478", nombreGhx: "Bisagra Codo 0", descripcion: "Bisagra Recta 35mm Cierre Suave con Base 4 Huecos", categoria: "Bisagras", mallasPorUnidad: 2, costoCop: 7800, costoUsd: 1.90, unidad: "UND", pesoKg: 0.085, proveedor: "Blum" },
   { id: "h8", codigo: "000468", nombreGhx: "Manija Bar", descripcion: "Tirador Metálico 128mm Negro Mate", categoria: "Accesorios", mallasPorUnidad: 1, costoCop: 9200, costoUsd: 2.25, unidad: "UND", pesoKg: 0.120, proveedor: "Ducasse" },
@@ -315,6 +315,7 @@ export interface State3BF {
   updateNegociacionNovopan: (field: keyof NegociacionNovopan, value: number) => void;
   updateDbHerraje: (id: string, field: keyof HerrajeRecord, value: any) => void;
   updateDbTablero: (id: string, field: keyof TableroRecord, value: any) => void;
+  hidratarDesdeLocalStorage: () => void;
 }
 
 export interface FichaCostosConfig {
@@ -328,6 +329,8 @@ export interface FichaCostosConfig {
   }>;
   piezasNombres?: Record<number, string>;
   versionActual?: string;
+  costoEmpaqueManualCop?: number;
+  costoEmpaqueManualUsd?: number;
 }
 
 export const FICHA_DEFECTO: FichaCostosConfig = {
@@ -336,7 +339,9 @@ export const FICHA_DEFECTO: FichaCostosConfig = {
   materialesPorPieza: {},
   cantosPorPieza: {},
   piezasNombres: {},
-  versionActual: "v1.0",
+  versionActual: "BD 1.0",
+  costoEmpaqueManualCop: 0,
+  costoEmpaqueManualUsd: 0,
 };
 
 export interface CostosConversionConfig {
@@ -574,4 +579,68 @@ export const use3BFStore = create<State3BF>((set, get) => ({
       try { localStorage.setItem("3bf_db_tableros", JSON.stringify(updated)); } catch {}
       return { dbTableros: updated };
     }),
+
+  hidratarDesdeLocalStorage: () => {
+    if (typeof window === "undefined") return;
+    try {
+      const hSaved = localStorage.getItem("3bf_db_herrajes");
+      if (hSaved) set({ dbHerrajes: JSON.parse(hSaved) });
+
+      const nSaved = localStorage.getItem("3bf_negociacion_novopan");
+      const currentNeg: NegociacionNovopan = nSaved ? JSON.parse(nSaved) : NEGOCIACION_NOVOPAN_DEFECTO;
+      if (nSaved) set({ negociacionNovopan: currentNeg });
+
+      const tSaved = localStorage.getItem("3bf_db_tableros");
+      if (tSaved) {
+        const parsed: TableroRecord[] = JSON.parse(tSaved);
+        const sanitized = parsed.map((t: TableroRecord) => {
+          const lista = t.costoListaUsd ?? t.costoLaminaUsd ?? 43.568;
+          if (t.proveedor === "Novopan") {
+            const cal = calcularCostoLaminaNovopan(lista, t.largoLaminaMm || 2440, t.anchoLaminaMm || 2150, t.calibreMm || 15, undefined, currentNeg, t.nombreComercial);
+            return {
+              ...t,
+              costoListaUsd: lista,
+              costoLaminaUsd: cal.costoLaminaUsd,
+              costoLaminaCop: cal.costoLaminaCop,
+              costoM2Usd: cal.costoM2Usd,
+              costoM2Cop: cal.costoM2Cop,
+            };
+          }
+          const areaM2 = ((t.largoLaminaMm || 2440) * (t.anchoLaminaMm || 2150)) / 1_000_000.0;
+          const laminaUsd = t.costoLaminaUsd ?? lista;
+          const m2Usd = Number((laminaUsd / areaM2).toFixed(2));
+          return {
+            ...t,
+            costoListaUsd: lista,
+            costoLaminaUsd: laminaUsd,
+            costoLaminaCop: t.costoLaminaCop ?? Math.round(laminaUsd * 4000),
+            costoM2Usd: t.costoM2Usd ?? m2Usd,
+            costoM2Cop: t.costoM2Cop ?? Math.round(m2Usd * 4000),
+          };
+        });
+        set({ dbTableros: sanitized });
+      }
+
+      const cSaved = localStorage.getItem("3bf_db_cantos");
+      if (cSaved) {
+        const parsed: CantoRecord[] = JSON.parse(cSaved);
+        const map = new Map<string, CantoRecord>();
+        CANTOS_INICIALES_DEFECTO.forEach((c: CantoRecord) => map.set(c.codigo, c));
+        parsed.forEach((c: CantoRecord) => map.set(c.codigo, c));
+        const merged = Array.from(map.values());
+        set({ dbCantos: merged });
+      }
+
+      const mSaved = localStorage.getItem("3bf_moneda");
+      if (mSaved === "USD" || mSaved === "COP") set({ moneda: mSaved });
+
+      const convSaved = localStorage.getItem("3bf_costos_conversion");
+      if (convSaved) set({ costosConversion: JSON.parse(convSaved) });
+
+      const fSaved = localStorage.getItem("3bf_fichas_config");
+      if (fSaved) set({ fichasConfig: JSON.parse(fSaved) });
+    } catch (e) {
+      console.error("Error hidratando base de datos desde localStorage:", e);
+    }
+  },
 }));

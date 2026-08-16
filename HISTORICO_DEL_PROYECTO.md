@@ -1,5 +1,28 @@
 # 📜 Histórico del Proyecto: mariomojica.com
 
+### 🔹 Hito 3BF_DXF — Generador CAM DXF Nativo para Biesse Skipper, 5 Vistas Desplegadas en Cruz, Convención NURBS DfMA e Hidratación Inmediata de Store (15 de Agosto, 2026)
+
+- **Generador CAM DXF Nativo para Centros de Mecanizado Biesse Skipper (`/export-dxf`)**:
+  * Implementación del motor vectorial nativo en formato **AutoCAD 2007 (AC1021)** compatible al 100% con los postprocesadores de centros de mecanizado y seccionadoras **Biesse Skipper (BiesseWorks / bSolid / TpaCAD)**.
+  * Esquema ortogonal de **5 vistas desplegadas en cruz**:
+    1. **Cara Superior $W_0$ (Centro):** Contorno de corte pasante `TCHW0B8D1500` con cajas Minifix $\varnothing 15\text{ mm}$ a $13.5\text{ mm}$ de profundidad (`TCHW0B15D1350`).
+    2. **Cantos Laterales Desplegados ($W_1$ Izq, $W_3$ Der):** Rectángulos cerrados (`TCHW1B8`, `TCHW3B8`) con taladros de espiga Minifix y tarugos $\varnothing 8\text{ mm}$ a $25\text{ mm}$ de profundidad (`TCHW1B8D2500`, `TCHW3B8D2500`) con separación estándar (*Gap = 20mm*).
+    3. **Cantos Frontal y Posterior Desplegados ($W_4$ Sup, $W_2$ Inf):** Rectángulos cerrados (`TCHW4B8`, `TCHW2B8`) con *Gap = 20mm*.
+  * **Diferenciación Dinámica Pieza Mecanizada vs Pieza de Corte Puro**:
+    * **Cubierta:** Genera contorno + cajas Minifix + taladros en cantos (`Cubierta_498x480_15mm_BD1.0.dxf`).
+    * **Entrepaño:** Genera contorno rectangular ($497 \times 480\text{ mm}$) con sus 4 cantos desplegados completamente limpios de perforaciones para corte directo en seccionadora (`Entrepaño_497x480_15mm_BD1.0.dxf`).
+- **Convención Oficial de Nombres y Eliminación de Z-Fighting (NURBS vs Meshes)**:
+  * **Regla DfMA Establecida:** Salidas `RH_OUT:...` para elementos visibles y texturizados en la web (`Color`, `Balance`, `Herrajes`); nombres `Nurbs [Pieza]` para sólidos matemáticos Brep internos de cálculo y CAM.
+  * **Eliminación Total de Titileo:** El worker y el visor 3D Three.js filtran automáticamente los sólidos `Nurbs`, eliminando piezas duplicadas o parpadeos en pantalla y reservando los Breps para el despiece BOM y el DXF.
+- **Hidratación Global Inmediata al Inicio (`hidratarDesdeLocalStorage`)**:
+  * Ejecución en el primer ciclo de montaje de `app/page.tsx` y `DespieceView.tsx`, asegurando que los costos de catálogo (Caja $100 COP, Perno $87 COP, Tarugo $17 COP, Tornillo $27 COP, Soporte $150 COP) aparezcan correctos desde el primer milisegundo sin necesidad de visitar la pestaña Base de Datos.
+- **Refinamiento UI en Cabecera de Despiece**:
+  * Retiro del botón redundante inferior, simplificación del botón superior a **`Guardar`** con icono monocromático y selector de versiones limpio (**`BD 1.0`**, **`BD 1.1`**, **`BD 2.0`**).
+- **Actualización de la Memoria Técnica en `WORKER.md`**:
+  * Inyectadas las Secciones 10 (Módulo CAM DXF Biesse Skipper), 11 (Fundamentos NURBS vs Mallas) y 12 (Persistencia e Hidratación Inmediata).
+
+---
+
 ### 🔹 Hito 3BF_ManoObra_CIF — Ficha Financiera Industrial 100%, Pestaña de Mano de Obra & CIF y Detección Automática DfMA de Cantos (15 de Agosto, 2026)
 
 - **Ficha Financiera Industrial Consolidada (100.00% Ficha Técnica)**:

@@ -764,26 +764,12 @@ async def compute_model(request: Request):
                                                     mesh_dict["indices"] = indices
                                                     if uvs and len(uvs) == len(verts) * 2 // 3:
                                                         mesh_dict["uvs"] = uvs
-                                            elif isinstance(decoded_geom, rhino3dm.Brep):
-                                                # Generar malla 3D poligonal exacta para objetos Brep/NURBS en coordenadas de mundo Three.js
-                                                min_x, max_x = bbox.Min.X / 1000.0, bbox.Max.X / 1000.0
-                                                min_y, max_y = -bbox.Max.Y / 1000.0, -bbox.Min.Y / 1000.0
-                                                min_z, max_z = bbox.Min.Z / 1000.0, bbox.Max.Z / 1000.0
-                                                
-                                                mesh_dict["vertices"] = [
-                                                    min_x, min_z, min_y,  min_x, max_z, min_y,  max_x, max_z, min_y,  max_x, min_z, min_y,
-                                                    min_x, min_z, max_y,  min_x, max_z, max_y,  max_x, max_z, max_y,  max_x, min_z, max_y,
-                                                ]
-                                                mesh_dict["indices"] = [
-                                                    0, 1, 2,  0, 2, 3,
-                                                    4, 6, 5,  4, 7, 6,
-                                                    0, 5, 1,  0, 4, 5,
-                                                    2, 3, 7,  2, 7, 6,
-                                                    0, 4, 7,  0, 7, 3,
-                                                    1, 2, 6,  1, 6, 5
-                                                ]
-                                                    
-                                            real_meshes.append(mesh_dict)
+                                                    real_meshes.append(mesh_dict)
+                                            elif isinstance(decoded_geom, rhino3dm.Brep) or "nurbs" in p_name.lower():
+                                                # Sólido NURBS analítico puro: se reserva para cómputo DfMA/BOM y CAM DXF (no para render visual)
+                                                mesh_dict["is_nurbs_solid"] = True
+                                                # No lo agregamos a real_meshes si es puro NURBS para evitar superposición/titileo visual en Three.js
+                                                pass
                             except Exception as ex:
                                 print(f"[3BF Worker Error]: Error en decodificacion/extraccion de malla {p_name}: {ex}", flush=True)
                                 
@@ -1017,6 +1003,172 @@ async def compute_model(request: Request):
         "despiece": piezas_madera_final,
         "herrajes": herrajes_final
     }
+
+
+# =============================================================================
+# 📐 ENDPOINT DE EXPORTACIÓN CAM DXF PARA SECCIONADORA / CENTRO BIESSE SKIPPER
+# =============================================================================
+@app.post("/export-dxf")
+async def export_dxf_biesse(request: Request):
+    try:
+        import io
+        import ezdxf
+        
+        data = await request.json()
+        model_id = data.get("model_id", "Cubierta")
+        params = data.get("parameters", {})
+        despiece = data.get("despiece", [])
+        version = data.get("version", "BD 1.0")
+
+        # Seleccionar la pieza principal a mecanizar
+        if despiece and len(despiece) > 0:
+            pieza = despiece[0]
+        else:
+            ancho_p = float(params.get("RH_IN:01.1 Ancho", params.get("ancho", 498.0)))
+            prof_p = float(params.get("RH_IN:01.2 Profundidad", params.get("profundidad", 480.0)))
+            pieza = {
+                "nombre": model_id,
+                "largo": ancho_p,
+                "ancho": prof_p,
+                "espesor": 15.0
+            }
+
+        nombre = pieza.get("nombre", model_id)
+        largo = float(pieza.get("largo", 498.0))
+        ancho = float(pieza.get("ancho", 480.0))
+        espesor = float(pieza.get("espesor", 15.0))
+
+        # Crear documento DXF con versión AC1021 (AutoCAD 2007, estándar oficial Biesse)
+        doc = ezdxf.new(dxfversion="AC1021")
+        msp = doc.modelspace()
+
+        # Profundidad de corte en centésimas de milímetro (ej: 15.0mm -> D1500)
+        prof_corte_tag = f"D{int(espesor * 100):04d}"
+        capa_contorno = f"TCHW0B8{prof_corte_tag}"
+
+        # Registrar capas CAM estándar Biesse Skipper
+        doc.layers.new(name=capa_contorno, dxfattribs={"color": 18})
+        doc.layers.new(name="TCHW1B8", dxfattribs={"color": 18})       # Canto Izquierdo (W1)
+        doc.layers.new(name="TCHW2B8", dxfattribs={"color": 18})       # Canto Inferior / Trasero (W2)
+        doc.layers.new(name="TCHW3B8", dxfattribs={"color": 18})       # Canto Derecho (W3)
+        doc.layers.new(name="TCHW4B8", dxfattribs={"color": 18})       # Canto Superior / Frontal (W4)
+        doc.layers.new(name="TCHW0B2D1200", dxfattribs={"color": 18})  # Taladros Ø5mm Cara Superior a 12mm
+        doc.layers.new(name="TCHW0B15D1350", dxfattribs={"color": 18}) # Cajas Minifix Ø15mm a 13.5mm
+        doc.layers.new(name="TCHW1B8D2500", dxfattribs={"color": 18})  # Perforación Canto Izquierdo Ø8mm a 25mm
+        doc.layers.new(name="TCHW3B8D2500", dxfattribs={"color": 18})  # Perforación Canto Derecho Ø8mm a 25mm
+
+        # Geometría de la Pieza Central (Cara Superior W0)
+        hx = largo / 2.0
+        hy = ancho / 2.0
+        gap = 20.0  # Separación estándar ortogonal entre la pieza central y las vistas de cantos
+
+        # 1. Contorno de Pieza Central (Cara Superior W0)
+        puntos_central = [
+            (-hx, -hy),
+            (hx, -hy),
+            (hx, hy),
+            (-hx, hy)
+        ]
+        msp.add_lwpolyline(puntos_central, close=True, dxfattribs={"layer": capa_contorno})
+
+        # 2. Vistas Desplegadas de los 4 Cantos (W1: Izq, W2: Inf, W3: Der, W4: Sup)
+        # Canto Izquierdo (W1) - Vista Lateral Izquierda
+        puntos_canto_izq = [
+            (-hx - gap, -hy),
+            (-hx - gap, hy),
+            (-hx - gap - espesor, hy),
+            (-hx - gap - espesor, -hy)
+        ]
+        msp.add_lwpolyline(puntos_canto_izq, close=True, dxfattribs={"layer": "TCHW1B8"})
+
+        # Canto Derecho (W3) - Vista Lateral Derecha
+        puntos_canto_der = [
+            (hx + gap, -hy),
+            (hx + gap, hy),
+            (hx + gap + espesor, hy),
+            (hx + gap + espesor, -hy)
+        ]
+        msp.add_lwpolyline(puntos_canto_der, close=True, dxfattribs={"layer": "TCHW3B8"})
+
+        # Canto Superior (W4) - Vista Frontal / Superior
+        puntos_canto_sup = [
+            (-hx, hy + gap),
+            (hx, hy + gap),
+            (hx, hy + gap + espesor),
+            (-hx, hy + gap + espesor)
+        ]
+        msp.add_lwpolyline(puntos_canto_sup, close=True, dxfattribs={"layer": "TCHW4B8"})
+
+        # Canto Inferior (W2) - Vista Posterior / Inferior
+        puntos_canto_inf = [
+            (-hx, -hy - gap),
+            (hx, -hy - gap),
+            (hx, -hy - gap - espesor),
+            (-hx, -hy - gap - espesor)
+        ]
+        msp.add_lwpolyline(puntos_canto_inf, close=True, dxfattribs={"layer": "TCHW2B8"})
+
+        # 3. Posicionamiento de mecanizados DfMA (Minifix / Tarugos / Pernos)
+        offset_canto_y = 37.0
+        y_pos1 = hy - offset_canto_y
+        y_pos2 = -hy + offset_canto_y
+
+        es_entrepanio = "entrepaño" in nombre.lower() or "entrepanio" in nombre.lower()
+
+        # Si es un Entrepaño deslizable, es una pieza lisa de corte para seccionadora (sin perforaciones booleanas)
+        if not es_entrepanio:
+            union_izq = str(params.get("RH_IN:02.1 Union izquierda") or params.get("union_izquierda") or "Minifix").lower()
+            union_der = str(params.get("RH_IN:02.0 Union Derecha") or params.get("union_derecha") or "Ya definida").lower()
+
+            # Mecanizado Lado Izquierdo (Cubierta)
+            if "minifix" in union_izq:
+                x_izq_caja = -hx + 34.0
+                # Cajas Minifix Ø15mm en Cara Superior W0
+                msp.add_circle((x_izq_caja, y_pos1), radius=7.5, dxfattribs={"layer": "TCHW0B15D1350"})
+                msp.add_circle((x_izq_caja, y_pos2), radius=7.5, dxfattribs={"layer": "TCHW0B15D1350"})
+                # Perforación de canto Ø8mm en la vista del Canto Izquierdo (W1)
+                x_canto_izq_centro = -hx - gap - (espesor / 2.0)
+                msp.add_circle((x_canto_izq_centro, y_pos1), radius=4.0, dxfattribs={"layer": "TCHW1B8D2500"})
+                msp.add_circle((x_canto_izq_centro, y_pos2), radius=4.0, dxfattribs={"layer": "TCHW1B8D2500"})
+            elif "tarugo" in union_izq or "tornillo" in union_izq:
+                x_canto_izq_centro = -hx - gap - (espesor / 2.0)
+                msp.add_circle((x_canto_izq_centro, y_pos1), radius=4.0, dxfattribs={"layer": "TCHW1B8D2500"})
+                msp.add_circle((x_canto_izq_centro, y_pos2), radius=4.0, dxfattribs={"layer": "TCHW1B8D2500"})
+
+            # Mecanizado Lado Derecho (Cubierta)
+            if "minifix" in union_der:
+                x_der_caja = hx - 34.0
+                # Cajas Minifix Ø15mm en Cara Superior W0
+                msp.add_circle((x_der_caja, y_pos1), radius=7.5, dxfattribs={"layer": "TCHW0B15D1350"})
+                msp.add_circle((x_der_caja, y_pos2), radius=7.5, dxfattribs={"layer": "TCHW0B15D1350"})
+                # Perforación de canto Ø8mm en la vista del Canto Derecho (W3)
+                x_canto_der_centro = hx + gap + (espesor / 2.0)
+                msp.add_circle((x_canto_der_centro, y_pos1), radius=4.0, dxfattribs={"layer": "TCHW3B8D2500"})
+                msp.add_circle((x_canto_der_centro, y_pos2), radius=4.0, dxfattribs={"layer": "TCHW3B8D2500"})
+            elif "tarugo" in union_der or "tornillo" in union_der:
+                x_canto_der_centro = hx + gap + (espesor / 2.0)
+                msp.add_circle((x_canto_der_centro, y_pos1), radius=4.0, dxfattribs={"layer": "TCHW3B8D2500"})
+                msp.add_circle((x_canto_der_centro, y_pos2), radius=4.0, dxfattribs={"layer": "TCHW3B8D2500"})
+
+        # Serializar DXF a texto
+        stream = io.StringIO()
+        doc.write(stream)
+        dxf_content = stream.getvalue()
+
+        version_clean = version.replace(" ", "")
+        filename = f"{nombre}_{int(largo)}x{int(ancho)}_{int(espesor)}mm_{version_clean}.dxf"
+
+        return {
+            "status": "success",
+            "filename": filename,
+            "dxf_content": dxf_content,
+            "machine_profile": "Biesse Skipper (bSolid/BiesseWorks)",
+            "dimensions": f"{largo} x {ancho} x {espesor} mm"
+        }
+    except Exception as e:
+        print(f"[3BF Worker DXF Error]: {e}", flush=True)
+        return {"status": "error", "message": str(e)}
+
 
 if __name__ == "__main__":
     print("[3BF Worker] Arrancando 3BF Worker Python Engine en puerto 8005...", flush=True)

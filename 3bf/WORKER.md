@@ -277,5 +277,95 @@ $$\mathbf{\text{COSTO TOTAL DE FABRICACIÓN (100\%)}} = \frac{\text{Total MP Dir
 $$\mathbf{\text{MO+PRES (\$)}} = \text{Costo Total} \times 12.42\%$$
 $$\mathbf{\text{CIF (\$)}} = \text{Costo Total} \times 9.80\%$$
 
+---
+
+## 🏭 10. Módulo CAM & Generador de DXF CNC para Biesse Skipper (`/export-dxf`)
+
+Para cerrar el ciclo de manufactura digital (**DfMA ➔ CAM ➔ CNC**), el worker incorpora un generador vectorial nativo en formato **AutoCAD 2007 (AC1021)** compatible al 100% con los postprocesadores de centros de mecanizado y seccionadoras **Biesse Skipper (BiesseWorks / bSolid / TpaCAD)**.
+
+```
+                     ┌──────────────────────────────┐
+                     │ Canto Superior / Frontal(W4) │
+                     └──────────────────────────────┘
+                                  ▲ (gap 20mm)
+ ┌───────────────┐   ┌──────────────────────────────┐   ┌───────────────┐
+ │Canto Izq (W1) │◄──│   VISTA SUPERIOR (Cara W0)   │──►│Canto Der (W3) │
+ │ 2x Taladros Ø8│   │      4x Cajas Minifix Ø15    │   │ 2x Taladros Ø8│
+ └───────────────┘   └──────────────────────────────┘   └───────────────┘
+                                  ▼ (gap 20mm)
+                     ┌──────────────────────────────┐
+                     │Canto Inferior / Trasero (W2) │
+                     └──────────────────────────────┘
+```
+
+### 🏷️ 10.1. Estándar de Nomenclatura Paramétrica de Capas Biesse (`TCHW...`)
+La Biesse Skipper lee automáticamente las herramientas, caras y profundidades sin reprogramación manual mediante la sintaxis:
+$$\mathbf{TCH + W[\text{Cara}] + B[\text{Herramienta}] + D[\text{Profundidad}]}$$
+
+| Capa DXF | Operación / Herramienta | Cara de Trabajo | Profundidad | Entidad Geométrica |
+| :--- | :--- | :---: | :---: | :--- |
+| **`TCHW0B8D[Prof]`** | Contorno de Corte / Desbaste ($\varnothing 8\text{ mm}$) | $W_0$ (Cara Superior) | Pasante (ej. $15.0\text{ mm} \rightarrow D1500$) | `LWPOLYLINE` cerrada rectangular ($L \times A$) |
+| **`TCHW1B8`** | Vista Canto Lateral Izquierdo | $W_1$ (Side 1 / Left) | N/A | `LWPOLYLINE` cerrada ($Espesor \times Ancho$) |
+| **`TCHW2B8`** | Vista Canto Inferior / Trasero | $W_2$ (Side 2 / Bottom) | N/A | `LWPOLYLINE` cerrada ($Largo \times Espesor$) |
+| **`TCHW3B8`** | Vista Canto Lateral Derecho | $W_3$ (Side 3 / Right) | N/A | `LWPOLYLINE` cerrada ($Espesor \times Ancho$) |
+| **`TCHW4B8`** | Vista Canto Superior / Frontal | $W_4$ (Side 4 / Top) | N/A | `LWPOLYLINE` cerrada ($Largo \times Espesor$) |
+| **`TCHW0B15D1350`** | Cajas Minifix ($\varnothing 15\text{ mm}$) | $W_0$ (Cara Superior) | **$13.50\text{ mm}$** | `CIRCLE` ($r=7.5\text{ mm}$) en coordenadas $X,Y$ 3D |
+| **`TCHW1B8D2500`** | Taladro espiga Minifix / Tarugo en Canto Izquierdo | $W_1$ (Canto Izquierdo) | **$25.00\text{ mm}$** | `CIRCLE` ($r=4.0\text{ mm}$) en vista de canto $W_1$ |
+| **`TCHW3B8D2500`** | Taladro espiga Minifix / Tarugo en Canto Derecho | $W_3$ (Canto Derecho) | **$25.00\text{ mm}$** | `CIRCLE` ($r=4.0\text{ mm}$) en vista de canto $W_3$ |
+| **`TCHW0B2D1200`** | Taladros verticales de ensamble / soporte entrepaño ($\varnothing 5\text{ mm}$) | $W_0$ (Cara Superior) | **$12.00\text{ mm}$** | `CIRCLE` ($r=2.5\text{ mm}$) en coordenadas $X,Y$ 3D |
+
+### 📐 10.2. Relaciones Matemáticas del Despliegue Ortogonal en 5 Vistas
+Para un panel de dimensiones $Largo = L$, $Ancho = A$, $Espesor = E$, centrado en el origen con $hx = L/2$, $hy = A/2$ y separación estándar de vistas $\text{Gap} = 20.0\text{ mm}$:
+1. **Pieza Central (Cara $W_0$):** Rectángulo cerrado de $(-hx, -hy)$ a $(hx, hy)$.
+2. **Canto Izquierdo ($W_1$):** Rectángulo cerrado de $X \in [-hx-\text{Gap}-E, -hx-\text{Gap}]$ y $Y \in [-hy, hy]$.
+3. **Canto Derecho ($W_3$):** Rectángulo cerrado de $X \in [hx+\text{Gap}, hx+\text{Gap}+E]$ y $Y \in [-hy, hy]$.
+4. **Canto Superior ($W_4$):** Rectángulo cerrado de $X \in [-hx, hx]$ y $Y \in [hy+\text{Gap}, hy+\text{Gap}+E]$.
+5. **Canto Inferior ($W_2$):** Rectángulo cerrado de $X \in [-hx, hx]$ y $Y \in [-hy-\text{Gap}-E, -hy-\text{Gap}]$.
+6. **Centros de Perforación de Cantos ($W_1 / W_3$):**
+   $$X_{W1} = -hx - \text{Gap} - \frac{E}{2}, \quad X_{W3} = hx + \text{Gap} + \frac{E}{2}$$
+   $$Y_1 = hy - 37.0\text{ mm}, \quad Y_2 = -hy + 37.0\text{ mm}$$
+
+### 📁 10.3. Nombrado Inteligente Dinámico
+El archivo exportado se nombra automáticamente según las propiedades reales del modelo y versión:
+$$\mathbf{[NombrePieza]\_[Largo]x[Ancho]\_[Espesor]mm\_BD[Version].dxf} \quad \text{(ej: } \texttt{Cubierta\_498x480\_15mm\_BD1.0.dxf}\text{)}$$
+
+---
+
+## 🎯 11. Fundamentos de Geometría Digital: NURBS vs Mallas (Meshes)
+
+En la arquitectura 3BF, los sólidos **NURBS (Breps)** y las **Mallas Poligonales (Meshes)** tienen roles complementarios y estrictamente diferenciados:
+
+```mermaid
+graph TD
+    A["Grasshopper (.ghx)"] -->|"Geometría Paramétrica Exacta"| B["NURBS / Brep (RhinoCompute)"]
+    B -->|"1. Vectorial Analítico Exacto (Arcos, Centros, Radios)"| C["Exportador CAM DXF (Biesse Skipper)"]
+    B -->|"2. Teselado / Facetado Liviano (Triángulos)"| D["Mallas JSON (Three.js WebGL 60 FPS)"]
+```
+
+1. **NURBS / Brep (Fuente de la Verdad Geométrica - CRÍTICO):**
+   * **Propósito:** Fabricación digital CNC, tolerancias milimétricas y corte.
+   * **Razón:** Un taladro en NURBS es un cilindro matemático perfecto ($r = 7.500\text{ mm}$). El generador CAM extrae los vectores analíticos directamente del Brep/NURBS para que la broca de la Skipper realice un mecanizado suave y preciso.
+   * **Regla de Oro:** **Nunca eliminar los componentes NURBS de Grasshopper**, ya que son indispensables para el despiece real y la generación de código máquina.
+
+2. **Mallas Poligonales / Meshes (Vehículo de Visualización Web - CRÍTICO):**
+   * **Propósito:** Renderizado 3D interactivo en el navegador a 60 FPS vía WebGL / Three.js.
+   * **Razón:** Las GPUs no procesan ecuaciones polinómicas NURBS en tiempo real. RhinoCompute tesela los sólidos a mallas livianas con mapeo UV (`BoxMapping`) para permitir rotación, explosión y personalización visual instantánea en la web.
+
+---
+
+## ⚡ 12. Arquitectura de Persistencia e Hidratación Inmediata
+
+Para eliminar discrepancias de precios al abrir archivos GHX:
+* **Función Global `hidratarDesdeLocalStorage()`:** Se ejecuta en el primer ciclo de montaje de `app/page.tsx` y `DespieceView.tsx`.
+* **Catálogo Oficial por Defecto (`lib/store.ts`):**
+  * **Caja Minifix 15mm:** `$100 COP` ($0.025 USD).
+  * **Perno Minifix 34mm:** `$87 COP` ($0.022 USD).
+  * **Tarugo 8x30mm:** `$17 COP` ($0.004 USD).
+  * **Tornillo 4x50mm:** `$27 COP` ($0.007 USD).
+  * **Soporte Entrepaño Ø5mm:** `$150 COP` ($0.038 USD).
+* **Control de Versiones de Ficha:** Opciones limpias: **`BD 1.0`**, **`BD 1.1`**, **`BD 2.0`**.
+* **Acción de Guardado:** Botón minimalista unificado en cabecera: **`Guardar`** con estado de confirmación `¡Guardado!`.
+
+
 
 

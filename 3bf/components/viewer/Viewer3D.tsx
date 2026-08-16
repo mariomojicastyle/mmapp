@@ -469,8 +469,17 @@ function ParametricFurnitureMesh({ setFurnitureGroup }: { setFurnitureGroup: (g:
     });
 
     // 2. Separar mallas limpias en grupos estructurados
+    // Si la escena ya contiene mallas texturizadas (Color, Balance, MDP), reservamos los sólidos NURBS para CAM/DXF y BOM para evitar duplicados visuales
+    const hasTexturedMeshes = cleanRealMeshes.some((m: any) => {
+      const n = m.name.toLowerCase();
+      return n.includes("color") || n.includes("balance") || (n.includes("mdp") && !n.includes("nurbs"));
+    });
+
     const boardMeshes = cleanRealMeshes.filter((m: any) => {
       const n = m.name.toLowerCase();
+      if (hasTexturedMeshes && (n.includes("nurbs") || m.is_nurbs_solid)) {
+        return false; // Evita superposición visual del sólido NURBS con la malla texturizada
+      }
       return n.includes("cubierta") || n.includes("mdp") || n.includes("balance") || n.includes("entrepaño") || n.includes("madera") || n.includes("board");
     });
 

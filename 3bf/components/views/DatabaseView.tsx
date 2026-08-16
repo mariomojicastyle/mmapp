@@ -435,8 +435,8 @@ export default function DatabaseView() {
                 <th className="p-2.5 w-24">Ref ERP</th>
                 <th className="p-2.5 w-44">Nombre GHX (Match 1:1)</th>
                 <th className="p-2.5">Descripción Comercial</th>
-                <th className="p-2.5 w-28 text-center" title="Número de submallas que representan 1 herraje físico en el 3D">
-                  Mallas / Ud
+                <th className="p-2.5 w-20 text-center" title="Número de submallas que representan 1 herraje físico en el 3D">
+                  Mallas
                 </th>
                 <th className="p-2.5 w-28 text-right">Costo (COP)</th>
                 <th className="p-2.5 w-24 text-right">Costo (USD)</th>
@@ -486,12 +486,12 @@ export default function DatabaseView() {
                     <select
                       value={h.mallasPorUnidad}
                       onChange={(e) => handleUpdateHerraje(h.id, "mallasPorUnidad", Number(e.target.value))}
-                      className="text-xs font-bold px-2 py-0.5 rounded bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-800 dark:text-cyan-300 outline-none cursor-pointer"
+                      className="text-xs font-bold px-2 py-0.5 rounded bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-800 dark:text-cyan-300 outline-none cursor-pointer text-center"
                     >
-                      <option value={1}>1 malla</option>
-                      <option value={2}>2 mallas (Perno)</option>
-                      <option value={3}>3 mallas</option>
-                      <option value={4}>4 mallas</option>
+                      <option value={1}>1</option>
+                      <option value={2}>2</option>
+                      <option value={3}>3</option>
+                      <option value={4}>4</option>
                     </select>
                   </td>
                   {/* Costo COP */}
