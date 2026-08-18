@@ -104,6 +104,9 @@ export default function DespieceView() {
   const { 
     resultado, 
     parametros,
+    instancias,
+    getDespieceGlobal,
+    getHerrajesGlobal,
     dbHerrajes,
     dbTableros,
     dbCantos,
@@ -185,16 +188,22 @@ export default function DespieceView() {
     setFichaConfig(modelKey, cambios);
   };
 
-  useEffect(() => {
-    if (resultado?.despiece) {
-      setPiezasEditadas(resultado.despiece);
-    }
-  }, [resultado?.despiece]);
+  const piezasGlobales = useMemo(() => {
+    const list = getDespieceGlobal();
+    if (list.length > 0) return list;
+    return resultado?.despiece || [];
+  }, [instancias, resultado?.despiece, getDespieceGlobal]);
 
-  // Piezas activas garantizadas 1:1 con el cómputo 3D
-  const piezasActivas = (resultado?.despiece && piezasEditadas.length === resultado.despiece.length)
+  useEffect(() => {
+    if (piezasGlobales && piezasGlobales.length > 0) {
+      setPiezasEditadas(piezasGlobales);
+    }
+  }, [piezasGlobales]);
+
+  // Piezas activas garantizadas 1:1 con el cómputo 3D de todas las instancias
+  const piezasActivas = (piezasGlobales && piezasEditadas.length === piezasGlobales.length)
     ? piezasEditadas 
-    : (resultado?.despiece || []);
+    : (piezasGlobales || []);
 
   // Formateadores monetarios exactos sin pérdidas por redondeo
   const formatMoneyCustom = (copVal: number, usdVal: number) => {
@@ -505,15 +514,28 @@ export default function DespieceView() {
     };
   }, [resumenMadera.items]);
 
-  // Cálculos de Herrajes con valores nativos COP y USD
+  const herrajesGlobales = useMemo(() => {
+    const list = getHerrajesGlobal();
+    if (list.length > 0) return list;
+    return resultado?.herrajes || [];
+  }, [instancias, resultado?.herrajes, getHerrajesGlobal]);
+
+  // Cálculos Consolidados de Herrajes Globales
   const resumenHerrajes = useMemo(() => {
-    if (!resultado?.herrajes) return { items: [], costoTotalHerrajesCop: 0, costoTotalHerrajesUsd: 0, cantTotalHerrajes: 0 };
-    
+    if (!herrajesGlobales || herrajesGlobales.length === 0) {
+      return {
+        items: [],
+        costoTotalHerrajesCop: 0,
+        costoTotalHerrajesUsd: 0,
+        cantTotalHerrajes: 0
+      };
+    }
+
     let totalCop = 0;
     let totalUsd = 0;
     let totalCant = 0;
 
-    const items = resultado.herrajes.map((h: any) => {
+    const items = herrajesGlobales.map((h: any) => {
       const nameLower = h.nombre.toLowerCase().trim();
       
       // Match en dbHerrajes
@@ -544,7 +566,8 @@ export default function DespieceView() {
         costoUnitarioCop: unitCop,
         costoUnitarioUsd: unitUsd,
         costoTotalCop: filaCop,
-        costoTotalUsd: Number(filaUsd.toFixed(2))
+        costoTotalUsd: Number(filaUsd.toFixed(2)),
+        instanciaNombre: h.instanciaNombre,
       };
     });
 
@@ -554,7 +577,7 @@ export default function DespieceView() {
       costoTotalHerrajesUsd: Number(totalUsd.toFixed(2)),
       cantTotalHerrajes: totalCant
     };
-  }, [resultado?.herrajes, dbHerrajes, trm]);
+  }, [herrajesGlobales, dbHerrajes, trm]);
 
   // Cálculos del Modelo Financiero Industrial (100% = MP + Tercerizaciones + MO+PRES + CIF)
   const resumenIndustrial = useMemo(() => {

@@ -243,6 +243,47 @@ def extract_parameter_groups(root, default_values):
 
     return final_groups
 
+def find_ghx_in_system(model_id: str, custom_filename: str = "") -> str:
+    search_dirs = [
+        r"C:\Desarrollo\mmapp\3BF\Definiciones",
+        r"C:\Desarrollo\mmapp\temporal"
+    ]
+    
+    # 1. Lista priorizada de objetivos exactos
+    exact_targets = []
+    if custom_filename:
+        c_clean = custom_filename.replace("/", "\\").split("\\")[-1].lower()
+        exact_targets.append(c_clean)
+        if not c_clean.endswith(".ghx") and not c_clean.endswith(".gh"):
+            exact_targets.append(f"{c_clean}.ghx")
+    if model_id:
+        m_clean = model_id.replace("/", "\\").split("\\")[-1].lower()
+        if not m_clean.endswith(".ghx") and not m_clean.endswith(".gh"):
+            exact_targets.append(f"{m_clean}.ghx")
+        exact_targets.append(m_clean)
+
+    # Buscar coincidencia exacta primero
+    for sdir in search_dirs:
+        if not os.path.exists(sdir):
+            continue
+        for root_dir, _, files in os.walk(sdir):
+            for f in files:
+                f_lower = f.lower()
+                for target in exact_targets:
+                    if f_lower == target or f_lower == f"{target}.ghx":
+                        return os.path.join(root_dir, f)
+
+    # 2. Fallbacks si no se encontró coincidencia exacta
+    fallbacks = ["cubierta.ghx", "cajon_experimento_3dbimfab.ghx"]
+    for sdir in search_dirs:
+        if not os.path.exists(sdir):
+            continue
+        for root_dir, _, files in os.walk(sdir):
+            for f in files:
+                if f.lower() in fallbacks:
+                    return os.path.join(root_dir, f)
+    return ""
+
 @app.post("/metadata")
 async def get_model_metadata(request: Request):
     p = await request.json()
@@ -271,30 +312,7 @@ async def get_model_metadata(request: Request):
             print(f"[3BF Worker /metadata] Error guardando XML subido: {err}", flush=True)
             
     if root is None:
-        search_dirs = [
-            r"C:\Desarrollo\mmapp\3BF\Definiciones",
-            r"C:\Desarrollo\mmapp\temporal"
-        ]
-        candidates = [
-            f"{model_id}.ghx",
-            f"{model_id}.gh",
-            model_id,
-            custom_filename,
-            "Cubierta.ghx"
-        ]
-        found_path = None
-        for sdir in search_dirs:
-            for cand in candidates:
-                if not cand:
-                    continue
-                cand_path = os.path.join(sdir, cand)
-                if os.path.exists(cand_path) and os.path.isfile(cand_path):
-                    found_path = cand_path
-                    break
-            if found_path:
-                break
-        if found_path:
-            ghx_file = found_path
+        ghx_file = find_ghx_in_system(model_id, custom_filename)
 
     if root is None and (ghx_file and os.path.exists(ghx_file)):
         try:
@@ -441,7 +459,7 @@ async def compute_model(request: Request):
     anc_interior = ancho - (esp * 2)
     alt_interior = alto - (esp * 2)
     anc_frente_cajon = anc_interior - 4
-    alt_frente_cajon = (alt_interior - ((cant_cajones + 1) * 3)) / cant_cajones
+    alt_frente_cajon = (alt_interior - ((cant_cajones + 1) * 3)) / max(1, cant_cajones)
     prof_cajon = prof - 50
     alt_lateral_cajon = max(80.0, alt_frente_cajon - 30)
     
@@ -499,35 +517,7 @@ async def compute_model(request: Request):
             print(f"[3BF Worker /compute] Error guardando XML subido: {err}", flush=True)
 
     if root is None:
-        search_dirs = [
-            r"C:\Desarrollo\mmapp\3BF\Definiciones",
-            r"C:\Desarrollo\mmapp\temporal"
-        ]
-        custom_filename = str(p.get("custom_filename", ""))
-        candidates = [
-            f"{model_id}.ghx",
-            f"{model_id}.gh",
-            model_id,
-            custom_filename,
-            "Cubierta.ghx",
-            "Cajon_Experimento_3DBimFab.ghx",
-            "Cajon_Experimento_Viktor_v1.1.ghx",
-        ]
-        
-        found_path = None
-        for sdir in search_dirs:
-            for cand in candidates:
-                if not cand:
-                    continue
-                cand_path = os.path.join(sdir, cand)
-                if os.path.exists(cand_path) and os.path.isfile(cand_path):
-                    found_path = cand_path
-                    break
-            if found_path:
-                break
-                
-        if found_path:
-            ghx_file = found_path
+        ghx_file = find_ghx_in_system(model_id, custom_filename)
 
     real_meshes = []
     default_values = {}

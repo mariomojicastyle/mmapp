@@ -118,6 +118,51 @@ Si el visor se pone en blanco o muestra el badge amarillo `Worker: API Fallback`
 
 ---
 
+### 🎮 8. Contorno de Silueta $100\%$ Continuo y Ceñido en 3D (Cero Efecto Sombra)
+
+Se calibró la coordenada vertical ($Y$) de los desvíos sobre los pernos para montarse exactamente sobre el cuerpo del herraje (`p.center.y`):
+
+```mermaid
+flowchart TD
+    A["Arista de Madera (Canto a cota yCoord)"] --> B["Transición Vertical Suave al eje del Perno (pernoY)"]
+    B --> C["Recorrido y Arco en la Cota Real del Perno (p.tip, pernoY, z)"]
+    C --> D["Regreso Vertical al Canto de la Madera (yCoord)"]
+    D --> E["🎯 Línea Ceñida a la Geometría Física (Cero Efecto Sombra)"]
+```
+
+#### 📐 Perfeccionamiento de Cota:
+1. **🚫 Eliminación del Efecto Sombra:**
+   * La línea ya no cae al suelo (`minY`) ni flota en el techo (`maxY`), sino que se acopla a la altura real del cilindro del perno (`pernoY`).
+2. **✨ Continuidad 3D Total:**
+   * La transición entre la madera y el perno es tridimensionalmente continua y ceñida a los bordes visibles que dan al vacío.
+3. **🔶 Calibre $4\text{ px}$ Nítido:**
+   * Trazado continuo en `#ff9500` con `@react-three/drei` `<Line>`.
+
+### 🧲 9. Snap Base Point Estilo Blender (Flujo Completo Origen ➔ Destino)
+
+Se implementó el ciclo integral de selección de punto base y pegado magnético a puntos destino:
+
+```mermaid
+flowchart TD
+    A["1. Presionar G (Modo Mover)"] --> B["2. Presionar B (Snap Base Point)"]
+    B --> C["🧊 La Pieza se Congela / Queda Inmóvil"]
+    C --> D["3. Pasar cursor por vértice (□) o mitad (△)"]
+    D --> E["4. Clic Izquierdo (o Derecho) sobre el icono naranja"]
+    E --> F["🎯 Punto Origen Fijado + Reanudación de Movimiento"]
+    F --> G["5. Desplazar hacia el punto destino (Grid / Eje / Referencia)"]
+    G --> H["🧲 Aparece Icono Destino Naranja (□) + Snap Magnético Automático"]
+    H --> I["6. Clic Izquierdo / Enter: Pieza fijada en el destino"]
+```
+
+#### 📐 Perfeccionamiento Visual y Cinemático:
+1. **🔶 Iconografía Naranja Sólida y Nítida:**
+   * Calibre delineado de $2.5\text{ px}$ en `#ff9500` $100\%$ sólido y brillante (`depthTest={false}`, `renderOrder={999}`).
+   * Tamaño proporcionado: Cuadrado $\square$ de $24\text{ mm}$ para Endpoints y Triángulo $\triangle$ de $28\text{ mm}$ para Midpoints.
+2. **🎯 Anclaje de Origen:**
+   * Al hacer clic sobre el vértice o punto medio, la coordenada se bloquea como origen de arrastre.
+3. **🧲 Snapping Magnético en Destino:**
+   * A medida que se desplaza la pieza, al aproximarse a un punto destino, se dibuja el marcador de destino y la pieza se **pega magnéticamente** al punto objetivo.
+
 ## 🔄 Estado Final del Ecosistema 3BF
 
 - **3BF Worker Python (`3bf_worker.py`)**: Corriendo en `http://localhost:8005`.

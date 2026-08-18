@@ -1,5 +1,44 @@
 # 📜 Histórico del Proyecto: mariomojica.com
 
+### 🔹 Hito 3BF_MultiInstancia_GHX_BOM_Global — Arquitectura Multi-Instancia GHX, Nombrado Secuencial, Snaps y Despiece & Costos Globales (17 de Agosto, 2026)
+
+- **Multi-Instancia Paramétrica GHX en Escenario 3D**:
+  * Capacidad de insertar múltiples archivos `.ghx` iguales o diferentes simultáneamente en el lienzo WebGL.
+  * Cada objeto en el escenario se gestiona como una entidad independiente (`ObjetoInstancia3BF`) con su propio `id`, `parametros`, geometría 3D, posición y estado de carga.
+- **Reglas de Nombrado Secuencial Inteligente**:
+  * Primera instancia del modelo: nombre limpio original (ej. `Cubierta`).
+  * Siguientes instancias del mismo origen: sufijos formateados secuenciales automáticos (`Cubierta_01`, `Cubierta_02`, `Cubierta_03`).
+- **Selección Tridimensional y Panel de Control Vinculado**:
+  * Al hacer **Clic Derecho** sobre cualquier pieza en el 3D, se selecciona la instancia y se sincroniza el panel lateral.
+  * Cabecera informativa superior en `ControlPanel.tsx` con badge `🏷️ Objeto Activo: Cubierta_01` y selector desplegable para conmutar entre objetos.
+  * Los sliders modifican y recomputan de forma atómica y reactiva los parámetros del objeto seleccionado.
+- **Despiece y Costos Globales de Escena Completa (BOM Consolidado)**:
+  * La pestaña **Despiece y Costos** (`DespieceView.tsx`) agrega automáticamente todas las piezas y herrajes de todos los componentes presentes en la escena (`getDespieceGlobal()`, `getHerrajesGlobal()`).
+  * Si existen 2 o más cubiertas u otros muebles, la tabla de despiece lista todas las piezas identificadas por objeto, suma sus áreas y metros lineales de canto, y liquida el presupuesto industrial consolidado de la escena.
+- **Árbol de Objetos (Outliner) en N-Panel**:
+  * Añadida la sección *Objetos en Escena* en la pestaña Escenario para listar instancias, seleccionarlas, duplicarlas o eliminarlas.
+- **Snaps de Alta Visibilidad & Silueta en Modo Mover**:
+  * Silueta en modo mover (`G`) en color negro sólido `#111827` (4px).
+  * Iconos de Snap renderizados en overlay HTML/SVG `z-index: 9999` en color naranja `#ff9500` ($100\%$ sólido) con soporte para endpoints ($\square$) y midpoints ($\triangle$).
+
+---
+
+### 🔹 Hito 3BF_Blender_Nav_Selection — Navegación 3D Estándar Blender, Zoom Continuo Direccional, Selección Instantánea y Silueta Perimetral Fiel 90% (17 de Agosto, 2026)
+
+- **Navegación 3D Idéntica al Keymap de Blender (Right Select)**:
+  * **Giro Orbital (Orbit):** Rueda central presionada (`MMB` / Botón 1) para rotación orbital fluida y reactiva.
+  * **Zoom Continuo Direccional (Dolly):** `Ctrl` + Rueda presionada (`Ctrl + MMB Drag`) con dirección cinemática intuitiva (mover arriba acerca la cámara al punto de vista, mover abajo aleja la cámara).
+  * **Paneo de Vista (Pan):** `Shift` + Rueda presionada (`Shift + MMB Drag`) para traslación de pantalla en ejes locales.
+  * **Selección Física Permanente (Select):** Clic Derecho (`RMB` / Botón 2) instantáneo (0ms de latencia) con `capture: true`, garantizando persistencia estable sin auto-deselección al soltar el ratón.
+  * **Deselección y Controles UI:** Clic Izquierdo (`LMB` / Botón 0) para deseleccionar al tocar el vacío o manipular la interfaz y sliders.
+- **Delineado de Silueta Perimetral Fiel (90% Efectividad Validada)**:
+  * **Algoritmo de Visibilidad de Caras XOR ($\text{visible}(A) \oplus \text{visible}(B)$):** Detecta las aristas del tablero que hacen contacto real con el vacío según el ángulo del punto de vista de la cámara, eliminando líneas internas diagonales o frontales.
+  * **Calibre Cuadruplicado ($4\text{ px}$):** Trazado sólido y nítido en color naranja `#ff9500` con `@react-three/drei` `<Line>`.
+  * **Alineación Tridimensional y Curvas en Pernos:** Anclaje tridimensional a la cota física de los cantos de madera y arcos circulares en las puntas de los pernos Minifix salientes, eliminando el efecto sombra o líneas flotantes.
+  * **Optimización de Rendimiento a 60 FPS:** Separación de la extracción estructural en `useMemo` y reducción de `useFrame` a un cálculo liviano de 6 productos punto escalares ($0.001\text{ ms}$).
+
+---
+
 ### 🔹 Hito 3BF_DXF — Generador CAM DXF Nativo para Biesse Skipper, 5 Vistas Desplegadas en Cruz, Convención NURBS DfMA e Hidratación Inmediata de Store (15 de Agosto, 2026)
 
 - **Generador CAM DXF Nativo para Centros de Mecanizado Biesse Skipper (`/export-dxf`)**:

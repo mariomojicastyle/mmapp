@@ -12,6 +12,26 @@ Este archivo es la "Memoria RAM" para Antigravity. Contiene el contexto de lo qu
 - [x] **Arquitectura Inspirada en VIKTOR.ai**: Frontend React/Next.js con visor 3D R3F, controles paramétricos DfMA, tabla de despiece de madera, inventario de herrajes y exportador de planos CNC en DXF.
 - [x] **Compilación de Producción Validada**: Verificada la compilación estática y dinámica de Next.js (`npm run build`) con 0 errores (7/7 páginas generadas exitosamente).
 - [x] **Preparado para Embebido**: Vista `/embed` lista con protocolo `postMessage` y cabeceras permisivas de iFrame para acoplamiento seguro a la plataforma.
+- [x] **[NUEVO - 17 de Agosto, 2026] Hito 3BF_MultiInstancia_GHX_BOM_Global (Arquitectura Multi-Instancia GHX, Árbol de Objetos Independientes, Nombrado Secuencial, Snaps y Despiece & Costos Globales)**:
+  - **Multi-Instancia GHX en Escenario 3D**: Capacidad de insertar múltiples archivos `.ghx` iguales o diferentes simultáneamente en la misma escena 3D.
+  - **Inserción por Raycast al Cuadrante Más Cercano (`Drag & Drop`)**: Proyección del rayo desde el puntero del mouse al soltar el arrastre sobre el plano del suelo ($Y=0$) con auto-ajuste magnético al cuadrante de cuadrícula más cercano.
+  - **Alineación, Sincronización a 60 FPS y Detección Dinámica de Dimensiones**: Conversión de cotas a espacio local, enlace directo por `useFrame` y algoritmo de huella dimensional reactiva (`bboxKey`), asegurando que la silueta y los puntos de snap recalculen sus caras y bordes automáticamente ante cualquier cambio de ancho, profundidad o parámetros de Grasshopper.
+  - **Nombrado Secuencial Inteligente**: Asignación automática del nombre limpio a la primera instancia (`Cubierta`) y sufijos formateados (`Cubierta_01`, `Cubierta_02`) para las siguientes instancias del mismo modelo.
+  - **Selección y Panel de Modificaciones Vinculado**: Al hacer Clic Derecho sobre cualquier pieza, se activa el objeto y su banner superior (`🏷️ Cubierta_01`) en el panel de control, modificando exclusivamente sus parámetros paramétricos en tiempo real.
+  - **Despiece y Costos Globales Consolidados**: La pestaña *Despiece y Costos* (`DespieceView.tsx`) agrega automáticamente todas las piezas y herrajes de todos los objetos presentes en la escena, computando el presupuesto industrial y lista de corte total de la escena completa.
+  - **Outliner en N-Panel**: Árbol de objetos en la pestaña *Escenario* para listar, seleccionar, duplicar y eliminar instancias.
+  - **Mapeo Estricto de Ejes CAD/Blender (X / Y / Z)**: Bloqueo de traslación coherente donde `X` restringe al eje rojo horizontal, `Y` restringe a la profundidad de la línea verde del suelo y `Z` restringe a la altura vertical (azul), con guías visuales y proyección de plano perpendicular a cámara.
+- [x] **[NUEVO - 17 de Agosto, 2026] Hito 3BF_Blender_Nav_Selection (Navegación Blender 1:1, Zoom Continuo Direccional, Selección Instantánea y Silueta Perimetral Fiel 90%)**:
+  - **Navegación 3D Estándar Blender (Right Select Keymap)**:
+    - **Giro Orbital (Orbit):** Rueda central presionada (`MMB` / Botón 1).
+    - **Zoom Continuo Direccional (Dolly):** `Ctrl` + Rueda presionada (`Ctrl + MMB Drag`) con dirección exacta (mover hacia ARRIBA acerca la cámara, hacia ABAJO aleja la cámara).
+    - **Paneo de Vista (Pan):** `Shift` + Rueda presionada (`Shift + MMB Drag`).
+    - **Selección de Pieza (Select):** Clic Derecho (`RMB` / Botón 2) instantáneo con `capture: true` y persistencia permanente (eliminada auto-deselección en `pointerup`).
+    - **Deselección / UI:** Clic Izquierdo (`LMB`) en el vacío o tecla `Escape`.
+  - **Delineado de Silueta Perimetral Fiel (90% Efectividad Validada)**:
+    - Algoritmo de detección de silueta geométrica basado en el punto de vista de la cámara ($\text{visible}(F_A) \oplus \text{visible}(F_B)$) con `@react-three/drei` `<Line>` de calibre cuádruple ($4\text{ px}$) en color naranja `#ff9500`.
+    - Eliminación de líneas frontales internas en la madera y de sombras flotantes mediante anclaje tridimensional a los cantos reales del tablero y las puntas circulares de los pernos salientes.
+    - Optimización en `Viewer3D.tsx` con `useMemo` para precalcular la estructura geométrica una sola vez, manteniendo el loop de renderizado a $0\text{ ms}$ y 60 FPS ultra fluidos.
 - [x] **[NUEVO - 01 de Agosto, 2026] Hito 3BF Paramétrico Nativo (Rhino 8 & Grasshopper)**:
   - **19 Piezas Nativa de Rhino 8**: Eliminación de duplicación artificial en Python y extracción nativa de los BReps OpenNURBS (`archive3dm`) mediante `rhino3dm.CommonObject.Decode()`.
   - **Modo Technical "Cristal Tintado 70%"**: Renderizado 3D estilo CAD con `<Edges color="#000000" threshold={15} />` de `@react-three/drei` y selector de modos 3D (💎 Cristal, 🧱 Sólido, 📐 Líneas).

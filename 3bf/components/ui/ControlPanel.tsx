@@ -2,7 +2,7 @@
 
 import React, { useEffect } from "react";
 import { use3BFStore } from "@/lib/store";
-import { Sliders, Box, Layers, Palette, Cpu, CheckCircle2, AlertCircle, FolderOpen, FileUp } from "lucide-react";
+import { Sliders, Box, Layers, Palette, Cpu, CheckCircle2, AlertCircle, FolderOpen, FileUp, Camera, Check } from "lucide-react";
 
 // Componente para ingresar/editar números con auto-selección total al hacer foco
 const DirectNumberInput = ({
@@ -84,14 +84,18 @@ function limpiarEtiqueta(paramKey: string): string {
 }
 
 function RenderParamControl({ paramKey }: { paramKey: string }) {
-  const { parametros, setParametro, resultado } = use3BFStore();
+  const { parametros, setParametro, resultado, objetoActivoId, instancias, setParametroInstancia } = use3BFStore();
+  const instanciaActiva = objetoActivoId ? instancias[objetoActivoId] : null;
+  const currentParams = instanciaActiva ? instanciaActiva.parametros : parametros;
+  const currentResult = instanciaActiva ? instanciaActiva.resultado : resultado;
+
   const label = limpiarEtiqueta(paramKey);
   const storeKey = paramKey;
   const rawKeyClean = paramKey.replace("RH_IN:", "").toLowerCase().replace(/\s+/g, "_");
   const legacyKey = MAPA_PARAMETROS[paramKey];
 
-  const limit = resultado?.slider_limits?.[paramKey];
-  const value = (parametros as any)[storeKey] ?? (legacyKey ? (parametros as any)[legacyKey] : (parametros as any)[rawKeyClean]) ?? limit?.default;
+  const limit = currentResult?.slider_limits?.[paramKey];
+  const value = (currentParams as any)[storeKey] ?? (legacyKey ? (currentParams as any)[legacyKey] : (currentParams as any)[rawKeyClean]) ?? limit?.default;
 
   const isValueList = limit?.type === "valuelist" || (limit?.options && limit.options.length > 0);
   const esSlider = !isValueList && (limit?.type === "slider" || limit?.min !== undefined || typeof value === "number");
@@ -103,8 +107,13 @@ function RenderParamControl({ paramKey }: { paramKey: string }) {
     const numVal: number = typeof value === "number" ? value : (typeof limit?.default === "number" ? limit.default : Number(limit?.default ?? minVal));
 
     const handleNumChange = (val: number) => {
-      setParametro(storeKey as any, val);
-      if (legacyKey) setParametro(legacyKey as any, val);
+      if (objetoActivoId) {
+        setParametroInstancia(objetoActivoId, storeKey, val);
+        if (legacyKey) setParametroInstancia(objetoActivoId, legacyKey, val);
+      } else {
+        setParametro(storeKey as any, val);
+        if (legacyKey) setParametro(legacyKey as any, val);
+      }
     };
 
     return (
@@ -149,26 +158,38 @@ function RenderParamControl({ paramKey }: { paramKey: string }) {
   const selectedValue = String(value ?? limit?.default ?? options[0]);
 
   const handleSelectChange = (newVal: string) => {
-    // 1. Clave exacta de Grasshopper
-    setParametro(storeKey as any, newVal);
-    // 2. Clave limpia
-    setParametro(rawKeyClean as any, newVal);
-    // 3. Clave legacy
-    if (legacyKey) setParametro(legacyKey as any, newVal);
-    
-    // 4. Si es un control de borde, sincronizar explícitamente todas las variantes para evitar sobreescritura
-    const pkl = paramKey.toLowerCase();
-    if (pkl.includes("izquierdo") || pkl.includes("izq")) {
-      setParametro("borde_izquierdo" as any, newVal);
-      setParametro("RH_IN:Borde izquierdo" as any, newVal);
-      setParametro("RH_IN:03.4 Borde izquierdo" as any, newVal);
-      setParametro("03.4_borde_izquierdo" as any, newVal);
-    }
-    if (pkl.includes("derecho") || pkl.includes("der")) {
-      setParametro("borde_derecho" as any, newVal);
-      setParametro("RH_IN:Borde derecho" as any, newVal);
-      setParametro("RH_IN:03.3 Borde derecho" as any, newVal);
-      setParametro("03.3_borde_derecho" as any, newVal);
+    if (objetoActivoId) {
+      setParametroInstancia(objetoActivoId, storeKey, newVal);
+      setParametroInstancia(objetoActivoId, rawKeyClean, newVal);
+      if (legacyKey) setParametroInstancia(objetoActivoId, legacyKey, newVal);
+
+      const pkl = paramKey.toLowerCase();
+      if (pkl.includes("izquierdo") || pkl.includes("izq")) {
+        setParametroInstancia(objetoActivoId, "borde_izquierdo", newVal);
+        setParametroInstancia(objetoActivoId, "RH_IN:Borde izquierdo", newVal);
+        setParametroInstancia(objetoActivoId, "RH_IN:03.4 Borde izquierdo", newVal);
+      }
+      if (pkl.includes("derecho") || pkl.includes("der")) {
+        setParametroInstancia(objetoActivoId, "borde_derecho", newVal);
+        setParametroInstancia(objetoActivoId, "RH_IN:Borde derecho", newVal);
+        setParametroInstancia(objetoActivoId, "RH_IN:03.3 Borde derecho", newVal);
+      }
+    } else {
+      setParametro(storeKey as any, newVal);
+      setParametro(rawKeyClean as any, newVal);
+      if (legacyKey) setParametro(legacyKey as any, newVal);
+      
+      const pkl = paramKey.toLowerCase();
+      if (pkl.includes("izquierdo") || pkl.includes("izq")) {
+        setParametro("borde_izquierdo" as any, newVal);
+        setParametro("RH_IN:Borde izquierdo" as any, newVal);
+        setParametro("RH_IN:03.4 Borde izquierdo" as any, newVal);
+      }
+      if (pkl.includes("derecho") || pkl.includes("der")) {
+        setParametro("borde_derecho" as any, newVal);
+        setParametro("RH_IN:Borde derecho" as any, newVal);
+        setParametro("RH_IN:03.3 Borde derecho" as any, newVal);
+      }
     }
   };
 
@@ -482,8 +503,90 @@ export default function ControlPanel() {
     ejecutarComputo();
   }, [parametros, isSyncing]);
 
+  const [guardandoFoto, setGuardandoFoto] = React.useState(false);
+  const [fotoCapturada, setFotoCapturada] = React.useState(false);
+
+  const capturarMiniatura = async () => {
+    try {
+      const canvas = document.querySelector("canvas");
+      if (!canvas) {
+        alert("No se encontró el lienzo 3D.");
+        return;
+      }
+      setGuardandoFoto(true);
+      const imageBase64 = canvas.toDataURL("image/png");
+      const modelId = parametros.model_id || "Cubierta";
+
+      const res = await fetch("/api/thumbnail", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ model_id: modelId, imageBase64 }),
+      });
+
+      if (res.ok) {
+        setFotoCapturada(true);
+        setTimeout(() => setFotoCapturada(false), 2500);
+        window.dispatchEvent(new CustomEvent("3bf-thumbnail-updated", { detail: { modelId } }));
+      }
+    } catch (err) {
+      console.error("Error al capturar snapshot:", err);
+    } finally {
+      setGuardandoFoto(false);
+    }
+  };
+
+  const { instancias, objetoActivoId, seleccionarInstancia } = use3BFStore();
+  const instanciaActiva = objetoActivoId ? instancias[objetoActivoId] : null;
+
   return (
     <div className="p-4 flex flex-col gap-5 h-full overflow-y-auto">
+      {/* 🏷️ CABECERA: OBJETO ACTIVO EN EL ESCENARIO (Multi-Instancia) */}
+      {instanciaActiva ? (
+        <div className="flex flex-col gap-2 p-3 rounded-xl bg-cyan-600/10 dark:bg-cyan-950/40 border border-cyan-500/40 shadow-sm">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <span className="w-2.5 h-2.5 rounded-full bg-cyan-500 animate-pulse" />
+              <div>
+                <span className="text-[10px] text-gray-500 uppercase tracking-wider font-bold block">
+                  Objeto Activo
+                </span>
+                <span className="font-extrabold text-sm text-cyan-950 dark:text-cyan-200">
+                  {instanciaActiva.nombreVisible}
+                </span>
+              </div>
+            </div>
+            <div className="text-[10px] font-mono px-2 py-0.5 rounded bg-cyan-100 dark:bg-cyan-900/60 text-cyan-800 dark:text-cyan-300 font-bold">
+              {instanciaActiva.definitionId}
+            </div>
+          </div>
+
+          {/* Selector rápido entre instancias si hay más de 1 */}
+          {Object.keys(instancias).length > 1 && (
+            <div className="flex items-center gap-1.5 pt-1.5 border-t border-cyan-200/50 dark:border-cyan-900/40 text-xs">
+              <span className="text-[10px] font-bold text-gray-500">Cambiar:</span>
+              <select
+                value={objetoActivoId || ""}
+                onChange={(e) => seleccionarInstancia(e.target.value)}
+                className="flex-1 text-xs p-1 rounded-md bg-white dark:bg-slate-800 border border-cyan-300 dark:border-cyan-800 font-bold text-slate-800 dark:text-cyan-300 outline-none cursor-pointer"
+              >
+                {Object.values(instancias).map((inst) => (
+                  <option key={inst.id} value={inst.id}>
+                    {inst.nombreVisible} ({inst.definitionId})
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
+        </div>
+      ) : (
+        <div className="p-3 rounded-xl bg-amber-500/10 border border-amber-500/30 text-xs text-amber-900 dark:text-amber-200">
+          <p className="font-bold mb-0.5">Sin objeto seleccionado</p>
+          <p className="text-[11px] text-gray-600 dark:text-gray-400">
+            Haz clic derecho sobre un objeto en el visor 3D para editar sus parámetros o arrastra una nueva pieza.
+          </p>
+        </div>
+      )}
+
       {/* Selector de Tema y Modo Render 3D */}
       <div className="flex flex-col gap-2.5 p-3 rounded-xl bg-cyan-950/20 dark:bg-[#131B2E]/60 border border-cyan-200/80 dark:border-cyan-900/40 text-xs shadow-sm">
         <div className="flex items-center justify-between">
@@ -542,6 +645,30 @@ export default function ControlPanel() {
             </button>
           </div>
         </div>
+
+        {/* Botón Capturar Miniatura: Aparece cada vez que hay un GHX cargado */}
+        {parametros.model_id && (
+          <div className="pt-2 border-t border-cyan-200/50 dark:border-cyan-900/40">
+            <button
+              onClick={capturarMiniatura}
+              disabled={guardandoFoto}
+              title={`Capturar la vista actual del lienzo 3D como miniatura para ${parametros.model_id}`}
+              className="w-full flex items-center justify-center gap-2 py-2 px-3 rounded-lg font-bold text-xs transition-all shadow-sm border bg-white dark:bg-[#131B2E] hover:bg-cyan-50 dark:hover:bg-cyan-950/60 text-slate-800 dark:text-cyan-300 border-slate-300 dark:border-cyan-800/60 cursor-pointer hover:border-cyan-500 hover:scale-[1.01]"
+            >
+              {fotoCapturada ? (
+                <>
+                  <Check className="w-4 h-4 text-emerald-500" />
+                  <span className="text-emerald-600 dark:text-emerald-400 font-bold">¡Miniatura Guardada con Éxito!</span>
+                </>
+              ) : (
+                <>
+                  <Camera className="w-4 h-4 text-cyan-600 dark:text-cyan-400" />
+                  <span>{guardandoFoto ? "Capturando miniatura..." : "Capturar Miniatura"}</span>
+                </>
+              )}
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Sección Abrir archivo Grasshopper */}

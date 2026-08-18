@@ -1,0 +1,53 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 240" width="100%" height="100%">
+  <defs>
+    <radialGradient id="sphereLight" cx="35%" cy="35%" r="65%">
+      <stop offset="0%" stop-color="#E2D4C0" />
+      <stop offset="35%" stop-color="#C5B39A" />
+      <stop offset="70%" stop-color="#8F785E" />
+      <stop offset="100%" stop-color="#3D2E1E" />
+    </radialGradient>
+    <linearGradient id="woodGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#DECCA6"/>
+      <stop offset="50%" stop-color="#C2AE8B"/>
+      <stop offset="100%" stop-color="#8C7352"/>
+    </linearGradient>
+    <filter id="dropShadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="6" stdDeviation="6" flood-color="#000000" flood-opacity="0.4"/>
+    </filter>
+  </defs>
+
+  <!-- Fondo de estudio estilo Blender Asset Preview -->
+  <rect width="240" height="240" rx="20" fill="#1E232A" />
+  <circle cx="120" cy="120" r="105" fill="#15191E" stroke="#2D333B" stroke-width="1.5" />
+  <ellipse cx="120" cy="185" rx="80" ry="18" fill="#0D1013" opacity="0.7" />
+
+  <!-- Geometría 3D de Cubierta Paramétrica DfMA en Isométrica -->
+  <g transform="translate(120, 115) scale(0.95)" filter="url(#dropShadow)">
+    <!-- Cara Superior -->
+    <polygon points="-75,-25 15,-60 85,-20 -5,15" fill="url(#woodGrad)" stroke="#EAE0D0" stroke-width="1.2" stroke-linejoin="round"/>
+    
+    <!-- Cara Frontal Izquierda -->
+    <polygon points="-75,-25 -5,15 -5,35 -75,-5" fill="#8C7352" stroke="#685235" stroke-width="1" stroke-linejoin="round"/>
+    
+    <!-- Cara Frontal Derecha -->
+    <polygon points="-5,15 85,-20 85,0 -5,35" fill="#A8906D" stroke="#7A6445" stroke-width="1" stroke-linejoin="round"/>
+
+    <!-- Perforaciones y Mecanizados Minifix CNC en la Cubierta -->
+    <!-- Perforación 1 -->
+    <ellipse cx="-45" cy="-8" rx="4.5" ry="2.2" fill="#2B1F13" stroke="#523E28" stroke-width="0.8"/>
+    <ellipse cx="-35" cy="-12" rx="3.5" ry="1.8" fill="#1A140D"/>
+    
+    <!-- Perforación 2 -->
+    <ellipse cx="35" cy="-7" rx="4.5" ry="2.2" fill="#2B1F13" stroke="#523E28" stroke-width="0.8"/>
+    <ellipse cx="45" cy="-11" rx="3.5" ry="1.8" fill="#1A140D"/>
+
+    <!-- Indicador de Canto PVC Aplicado -->
+    <path d="M-75,-25 L-5,15 L-5,35 L-75,-5 Z" fill="none" stroke="#00C9A7" stroke-width="1.5" stroke-dasharray="3,2" opacity="0.9"/>
+  </g>
+
+  <!-- Badge Indicador Blender Style -->
+  <g transform="translate(185, 25)">
+    <rect x="-8" y="-8" width="28" height="28" rx="6" fill="#0088AA" opacity="0.9"/>
+    <path d="M6,0 L6,12 M0,6 L12,6" stroke="#FFFFFF" stroke-width="2" stroke-linecap="round"/>
+  </g>
+</svg>

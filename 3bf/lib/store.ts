@@ -1,5 +1,45 @@
 import { create } from "zustand";
 
+export interface ObjetoInstancia3BF {
+  id: string;                       // e.g. "inst_Cubierta_12345"
+  nombreVisible: string;            // "Cubierta", "Cubierta_01", "Cubierta_02"
+  definitionId: string;             // "Cubierta"
+  archivo: string;                  // "Cubierta.ghx"
+  ghxContent?: string;
+  parametros: Record<string, any>;  // Parámetros específicos de esta instancia
+  resultado: ComputoResultado | null; // Mallas 3D y despiece de esta instancia
+  cargando: boolean;
+  posicion: [number, number, number]; // [X, Y, Z] en metros
+  rotacion: [number, number, number];
+  posicionPrevia: [number, number, number];
+}
+
+export function generarNombreSecuencial(definitionId: string, instancias: Record<string, ObjetoInstancia3BF>): string {
+  const baseName = definitionId.replace(/\.(gh|ghx)$/i, "").trim();
+  const existentes = Object.values(instancias).map((i) => i.nombreVisible);
+
+  if (!existentes.includes(baseName)) {
+    return baseName;
+  }
+
+  // Buscar el sufijo numérico más alto (ej: Cubierta_01, Cubierta_02)
+  let maxNum = 0;
+  const regex = new RegExp(`^${baseName}_(\\d+)$`, "i");
+
+  existentes.forEach((nom) => {
+    const match = nom.match(regex);
+    if (match) {
+      const num = parseInt(match[1], 10);
+      if (!isNaN(num) && num > maxNum) {
+        maxNum = num;
+      }
+    }
+  });
+
+  const siguienteNum = String(maxNum + 1).padStart(2, "0");
+  return `${baseName}_${siguienteNum}`;
+}
+
 export interface ParametrosMueble {
   model_id: string;       // M00001, M00002 / Cajon_Experimento_Viktor
   ancho: number;          // mm
@@ -34,6 +74,39 @@ export interface ParametrosMueble {
   ghx_content?: string;
   custom_filename?: string;
 }
+
+export const MAPA_PARAMETROS: Record<string, string> = {
+  "RH_IN:Ancho": "ancho",
+  "RH_IN:01 Ancho": "ancho",
+  "RH_IN:Alto": "alto",
+  "RH_IN:02 Alto": "alto",
+  "RH_IN:Profundidad": "profundidad",
+  "RH_IN:Cantidada de Cajones": "cant_cajones",
+  "RH_IN:Cantidad de Cajones": "cant_cajones",
+  "RH_IN:Profundidad cajon": "profundidad_cajon",
+  "RH_IN:Altura lateral de cajon": "altura_lateral_cajon",
+  "RH_IN:Distancia bajo laterales": "distancia_bajo_laterales",
+  "RH_IN:Tipo Cajon": "tipo_cajon",
+  "RH_IN:03 Tipo de union izquierda": "union_izquierda",
+  "RH_IN:04 Tipo de union Derecha": "union_derecha",
+  "RH_IN:05 Orientacion maquinado minifix": "orientacion_maquinado_minifix",
+  "RH_IN:06 Orientacion minifix": "orientacion_minifix",
+  "RH_IN:Posicion Tarugo": "posicion_tarugo",
+  "RH_IN:02.4 Posicion Tarugo": "posicion_tarugo",
+  "RH_IN:Posicion Tornillo": "posicion_tornillo",
+  "RH_IN:02.5Posicion Tornillo": "posicion_tornillo",
+  "RH_IN:02.3Posicion Minifix": "posicion_minifix",
+  "RH_IN:Borde izquierdo": "borde_izquierdo",
+  "RH_IN:03.4 Borde izquierdo": "borde_izquierdo",
+  "RH_IN:Borde derecho": "borde_derecho",
+  "RH_IN:03.3 Borde derecho": "borde_derecho",
+  "RH_IN:Lado balance cubierta": "lado_balance_cubierta",
+  "RH_IN:03.1 Lado balance": "lado_balance_cubierta",
+  "RH_IN:Tipo de mapeado cubierta": "tipo_mapeado_cubierta",
+  "RH_IN:03.2 Tipo de mapeado": "tipo_mapeado_cubierta",
+  "RH_IN:Lado balance": "lado_balance_cubierta",
+  "RH_IN:Tipo de mapeado": "tipo_mapeado_cubierta",
+};
 
 export interface PiezaDespiece {
   nombre: string;
@@ -97,6 +170,19 @@ export interface CalibracionVisual {
   intensidadLuzAmbiental: number;// 0.0 a 2.0
   mostrarAristas: boolean;       // true/false
   mostrarPanelCalibracion: boolean; // Toggle flotante
+  // Configuración de la Malla del Escenario (Grid / Ground Plane)
+  mostrarGrilla: boolean;           // Activar / Desactivar malla
+  mostrarEjesCoordenadas: boolean;  // Activar / Desactivar ejes X / Y
+  mostrarEjeX: boolean;             // Activar / Desactivar Eje X
+  mostrarEjeY: boolean;             // Activar / Desactivar Eje Y
+  distanciaCuadricula: number;      // cellSize (en metros, e.g. 0.1 = 100mm)
+  grosorGrillaDelgada: number;      // cellThickness (e.g. 1.0)
+  colorGrillaDelgada: string;       // cellColor (e.g. "#E5E7EB")
+  distanciaSeccion: number;         // sectionSize (en metros, e.g. 0.5 = 500mm)
+  grosorGrillaGruesa: number;       // sectionThickness (e.g. 1.5)
+  colorGrillaGruesa: string;        // sectionColor (e.g. "#0088aa")
+  colorEjeX: string;                // Hex (#ef4444)
+  colorEjeY: string;                // Hex (#22c55e)
 }
 
 export interface HerrajeRecord {
@@ -296,6 +382,53 @@ export interface State3BF {
   hoveredPiece: string | null;
   setHoveredPiece: (name: string | null) => void;
 
+  // Blender N-Panel (Sidebar Multifuncional con tecla N)
+  mostrarNPanel: boolean;
+  setMostrarNPanel: (mostrar: boolean | ((prev: boolean) => boolean)) => void;
+  pestanaNPanel: "muebles" | "materiales" | "calibrar" | "escenario";
+  setPestanaNPanel: (pestana: "muebles" | "materiales" | "calibrar" | "escenario") => void;
+
+  // Multi-Instancia GHX en Escenario 3D
+  instancias: Record<string, ObjetoInstancia3BF>;
+  objetoActivoId: string | null;
+  agregarInstanciaGHX: (item: { id: string; archivo?: string; nombre?: string; ghx_content?: string }, posicionInicial?: [number, number, number]) => Promise<string>;
+  eliminarInstancia: (id: string) => void;
+  duplicarInstancia: (id: string) => Promise<string>;
+  seleccionarInstancia: (id: string | null) => void;
+  setParametroInstancia: (id: string, key: string, value: any) => void;
+  setPosicionInstancia: (id: string, pos: [number, number, number]) => void;
+  recomputarInstancia: (id: string) => Promise<void>;
+  recomputarTodas: () => Promise<void>;
+  
+  // Despiece & Herrajes Globales Multiobjeto (BOM Escenario Completo)
+  getDespieceGlobal: () => Array<PiezaDespiece & { instanciaNombre: string; instanciaId: string }>;
+  getHerrajesGlobal: () => Array<HerrajeItem & { instanciaNombre: string; instanciaId: string }>;
+
+  // Selección & Transformación Espacial Estilo Blender (G: Grab / B: Base Point Snap)
+  objetoSeleccionado: boolean;
+  posicionObjeto: [number, number, number]; // [X, Y, Z] en metros
+  posicionPrevia: [number, number, number];
+  rotacionObjeto: [number, number, number];
+  modoTransformacion: "none" | "grab";
+  ejeBloqueado: "none" | "X" | "Y" | "Z";
+  snapActivo: boolean;
+  snapPicking: boolean;
+  snapBasePoint: [number, number, number] | null;
+  snapTargetPoint: [number, number, number] | null;
+  snapTargetType: "corner" | "midpoint" | null;
+
+  setObjetoSeleccionado: (sel: boolean) => void;
+  setPosicionObjeto: (pos: [number, number, number]) => void;
+  iniciarGrab: () => void;
+  confirmarGrab: () => void;
+  cancelarGrab: () => void;
+  setEjeBloqueado: (eje: "none" | "X" | "Y" | "Z") => void;
+  toggleSnapMode: () => void;
+  setSnapPicking: (picking: boolean) => void;
+  setSnapBasePoint: (pt: [number, number, number] | null) => void;
+  setSnapTargetPoint: (pt: [number, number, number] | null, tipo?: "corner" | "midpoint" | null) => void;
+  setSnapTargetType: (tipo: "corner" | "midpoint" | null) => void;
+
   dbHerrajes: HerrajeRecord[];
   dbTableros: TableroRecord[];
   dbCantos: CantoRecord[];
@@ -316,6 +449,7 @@ export interface State3BF {
   updateDbHerraje: (id: string, field: keyof HerrajeRecord, value: any) => void;
   updateDbTablero: (id: string, field: keyof TableroRecord, value: any) => void;
   hidratarDesdeLocalStorage: () => void;
+  cargarDefinicion: (item: { id: string; archivo?: string; nombre?: string }) => Promise<void>;
 }
 
 export interface FichaCostosConfig {
@@ -368,11 +502,24 @@ export const defaultCalibracion: CalibracionVisual = {
   customTextureUrl: null,
   opacidadAristas: 0.75,
   colorAristas: "#111827",
-  thresholdAristas: 15,
+  thresholdAristas: 40,
   intensidadLuzDirecta: 1.5,
   intensidadLuzAmbiental: 0.8,
   mostrarAristas: true,
   mostrarPanelCalibracion: false,
+  // Configuración de Malla del Escenario
+  mostrarGrilla: true,
+  mostrarEjesCoordenadas: true,
+  mostrarEjeX: true,
+  mostrarEjeY: true,
+  distanciaCuadricula: 0.1,
+  grosorGrillaDelgada: 1.0,
+  colorGrillaDelgada: "#E5E7EB",
+  distanciaSeccion: 0.5,
+  grosorGrillaGruesa: 1.5,
+  colorGrillaGruesa: "#CBD5E1",
+  colorEjeX: "#ef4444",
+  colorEjeY: "#22c55e",
 };
 
 export const use3BFStore = create<State3BF>((set, get) => ({
@@ -443,6 +590,449 @@ export const use3BFStore = create<State3BF>((set, get) => ({
 
   hoveredPiece: null,
   setHoveredPiece: (hoveredPiece) => set({ hoveredPiece }),
+
+  // Blender N-Panel (Sidebar)
+  mostrarNPanel: false,
+  setMostrarNPanel: (mostrar) =>
+    set((state) => ({
+      mostrarNPanel: typeof mostrar === "function" ? mostrar(state.mostrarNPanel) : mostrar,
+    })),
+  pestanaNPanel: "muebles",
+  setPestanaNPanel: (pestanaNPanel) => set({ pestanaNPanel: pestanaNPanel as any }),
+
+  // =========================================================================
+  // 🏢 MULTI-INSTANCIA GHX EN ESCENARIO 3D (Árbol de Objetos Independientes)
+  // =========================================================================
+  instancias: {},
+  objetoActivoId: null,
+
+  agregarInstanciaGHX: async (item: { id: string; archivo?: string; nombre?: string; ghx_content?: string }, posicionInicial?: [number, number, number]) => {
+    const definitionId = item.id;
+    const filename = item.archivo || `${item.id}.ghx`;
+    const state = get();
+    
+    const id = `inst_${definitionId}_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`;
+    const nombreVisible = generarNombreSecuencial(definitionId, state.instancias);
+
+    // Calcular posición desplazada si no se especifica
+    let pos: [number, number, number] = posicionInicial || [0, 0, 0];
+    if (!posicionInicial) {
+      const cantExistentes = Object.keys(state.instancias).length;
+      if (cantExistentes > 0) {
+        // Desplazar 0.7m en X por cada instancia para no superponerlas en el origen
+        pos = [cantExistentes * 0.65, 0, 0];
+      }
+    }
+
+    // 1. Obtener metadata de sliders por defecto para esta definición
+    let defaultParams: Record<string, any> = {
+      model_id: definitionId,
+      custom_filename: filename,
+      ancho: 1200,
+      alto: 800,
+      profundidad: 400,
+      espesor_madera: 15,
+      material: "MDP_15mm",
+      color_acabado: "#0088aa",
+      incluir_puertas: true,
+      tipo_herraje: "Minifix",
+    };
+
+    let parameterGroups: any[] = [];
+    let sliderLimits: any = {};
+
+    try {
+      const metaRes = await fetch("/api/metadata", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ model_id: definitionId, custom_filename: filename, ghx_content: item.ghx_content }),
+      });
+      if (metaRes.ok) {
+        const meta = await metaRes.json();
+        if (meta.status === "success" && meta.default_values) {
+          parameterGroups = meta.parameter_groups || [];
+          sliderLimits = meta.slider_limits || {};
+          Object.entries(meta.default_values).forEach(([k, v]) => {
+            defaultParams[k] = v;
+            const cleanKey = k.replace("RH_IN:", "").toLowerCase().replace(/\s+/g, "_");
+            defaultParams[cleanKey] = v;
+            const legacyKey = (MAPA_PARAMETROS as any)[k];
+            if (legacyKey) defaultParams[legacyKey] = v;
+          });
+        }
+      }
+    } catch (e) {
+      console.warn("No se pudo obtener metadata previa:", e);
+    }
+
+    const nuevaInstancia: ObjetoInstancia3BF = {
+      id,
+      nombreVisible,
+      definitionId,
+      archivo: filename,
+      ghxContent: item.ghx_content,
+      parametros: defaultParams,
+      resultado: {
+        parameter_groups: parameterGroups,
+        slider_limits: sliderLimits,
+      } as any,
+      cargando: true,
+      posicion: pos,
+      rotacion: [0, 0, 0],
+      posicionPrevia: pos,
+    };
+
+    set((s) => ({
+      instancias: { ...s.instancias, [id]: nuevaInstancia },
+      objetoActivoId: id,
+      objetoSeleccionado: true,
+      posicionObjeto: pos,
+      posicionPrevia: pos,
+      parametros: defaultParams as any,
+      escenarioLimpio: false,
+    }));
+
+    // 2. Ejecutar cómputo de la nueva instancia
+    await get().recomputarInstancia(id);
+    return id;
+  },
+
+  eliminarInstancia: (id: string) =>
+    set((state) => {
+      const { [id]: _, ...resto } = state.instancias;
+      const idsRestantes = Object.keys(resto);
+      const nuevoActivoId = idsRestantes.length > 0 ? idsRestantes[0] : null;
+      const nuevoActivo = nuevoActivoId ? resto[nuevoActivoId] : null;
+
+      return {
+        instancias: resto,
+        objetoActivoId: nuevoActivoId,
+        objetoSeleccionado: nuevoActivoId !== null,
+        posicionObjeto: nuevoActivo ? nuevoActivo.posicion : [0, 0, 0],
+        posicionPrevia: nuevoActivo ? nuevoActivo.posicion : [0, 0, 0],
+        parametros: nuevoActivo ? (nuevoActivo.parametros as any) : state.parametros,
+        resultado: nuevoActivo ? nuevoActivo.resultado : null,
+      };
+    }),
+
+  duplicarInstancia: async (id: string) => {
+    const state = get();
+    const original = state.instancias[id];
+    if (!original) return "";
+
+    const nuevoId = `inst_${original.definitionId}_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`;
+    const nombreVisible = generarNombreSecuencial(original.definitionId, state.instancias);
+    const nuevaPos: [number, number, number] = [
+      original.posicion[0] + 0.3,
+      original.posicion[1],
+      original.posicion[2] + 0.3,
+    ];
+
+    const duplicada: ObjetoInstancia3BF = {
+      ...original,
+      id: nuevoId,
+      nombreVisible,
+      parametros: { ...original.parametros },
+      posicion: nuevaPos,
+      posicionPrevia: nuevaPos,
+      cargando: true,
+    };
+
+    set((s) => ({
+      instancias: { ...s.instancias, [nuevoId]: duplicada },
+      objetoActivoId: nuevoId,
+      objetoSeleccionado: true,
+      posicionObjeto: nuevaPos,
+      posicionPrevia: nuevaPos,
+      parametros: duplicada.parametros as any,
+    }));
+
+    await get().recomputarInstancia(nuevoId);
+    return nuevoId;
+  },
+
+  seleccionarInstancia: (id: string | null) => {
+    if (!id) {
+      set({ objetoActivoId: null, objetoSeleccionado: false });
+      return;
+    }
+    const inst = get().instancias[id];
+    if (inst) {
+      set({
+        objetoActivoId: id,
+        objetoSeleccionado: true,
+        posicionObjeto: inst.posicion,
+        posicionPrevia: inst.posicion,
+        parametros: inst.parametros as any,
+        resultado: inst.resultado,
+      });
+    }
+  },
+
+  setParametroInstancia: (id: string, key: string, value: any) => {
+    const state = get();
+    const inst = state.instancias[id];
+    if (!inst) return;
+
+    const nextParams = { ...inst.parametros, [key]: value };
+    const cleanKey = key.replace("RH_IN:", "").toLowerCase().replace(/\s+/g, "_");
+    nextParams[cleanKey] = value;
+    const legacyKey = (MAPA_PARAMETROS as any)[key];
+    if (legacyKey) nextParams[legacyKey] = value;
+
+    set((s) => ({
+      instancias: {
+        ...s.instancias,
+        [id]: { ...s.instancias[id], parametros: nextParams },
+      },
+      parametros: s.objetoActivoId === id ? (nextParams as any) : s.parametros,
+    }));
+
+    get().recomputarInstancia(id);
+  },
+
+  setPosicionInstancia: (id: string, pos: [number, number, number]) => {
+    set((s) => {
+      const inst = s.instancias[id];
+      if (!inst) return s;
+      return {
+        instancias: {
+          ...s.instancias,
+          [id]: { ...inst, posicion: pos },
+        },
+        posicionObjeto: s.objetoActivoId === id ? pos : s.posicionObjeto,
+      };
+    });
+  },
+
+  recomputarInstancia: async (id: string) => {
+    const inst = get().instancias[id];
+    if (!inst) return;
+
+    set((s) => ({
+      instancias: {
+        ...s.instancias,
+        [id]: { ...s.instancias[id], cargando: true },
+      },
+    }));
+
+    try {
+      const computeRes = await fetch("/api/compute", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          ...inst.parametros,
+          model_id: inst.definitionId,
+          custom_filename: inst.archivo,
+          ghx_content: inst.ghxContent,
+        }),
+      });
+
+      const data = await computeRes.json();
+      if (computeRes.ok && data.status === "success") {
+        set((s) => {
+          const currentInst = s.instancias[id];
+          if (!currentInst) return s;
+          const updatedInst = {
+            ...currentInst,
+            resultado: data,
+            cargando: false,
+          };
+          return {
+            instancias: { ...s.instancias, [id]: updatedInst },
+            resultado: s.objetoActivoId === id ? data : s.resultado,
+          };
+        });
+      } else {
+        set((s) => ({
+          instancias: {
+            ...s.instancias,
+            [id]: { ...s.instancias[id], cargando: false },
+          },
+        }));
+      }
+    } catch (err) {
+      console.error("Error en cómputo de instancia:", id, err);
+      set((s) => ({
+        instancias: {
+          ...s.instancias,
+          [id]: { ...s.instancias[id], cargando: false },
+        },
+      }));
+    }
+  },
+
+  recomputarTodas: async () => {
+    const ids = Object.keys(get().instancias);
+    await Promise.all(ids.map((id) => get().recomputarInstancia(id)));
+  },
+
+  getDespieceGlobal: () => {
+    const state = get();
+    const list: Array<PiezaDespiece & { instanciaNombre: string; instanciaId: string }> = [];
+    Object.values(state.instancias).forEach((inst) => {
+      if (inst.resultado?.despiece) {
+        inst.resultado.despiece.forEach((p) => {
+          list.push({
+            ...p,
+            instanciaNombre: inst.nombreVisible,
+            instanciaId: inst.id,
+          });
+        });
+      }
+    });
+    return list;
+  },
+
+  getHerrajesGlobal: () => {
+    const state = get();
+    const list: Array<HerrajeItem & { instanciaNombre: string; instanciaId: string }> = [];
+    Object.values(state.instancias).forEach((inst) => {
+      if (inst.resultado?.herrajes) {
+        inst.resultado.herrajes.forEach((h) => {
+          list.push({
+            ...h,
+            instanciaNombre: inst.nombreVisible,
+            instanciaId: inst.id,
+          });
+        });
+      }
+    });
+    return list;
+  },
+
+  // =========================================================================
+  // 🎮 SELECCIÓN & TRANSFORMACIÓN ESPACIAL ESTILO BLENDER (G: Grab / B: Snap)
+  // =========================================================================
+  objetoSeleccionado: false,
+  posicionObjeto: [0, 0, 0],
+  posicionPrevia: [0, 0, 0],
+  rotacionObjeto: [0, 0, 0],
+  modoTransformacion: "none",
+  ejeBloqueado: "none",
+  snapActivo: false,
+  snapPicking: false,
+  snapBasePoint: null,
+  snapTargetPoint: null,
+  snapTargetType: null,
+
+  setObjetoSeleccionado: (objetoSeleccionado) => {
+    set((s) => {
+      if (!objetoSeleccionado) {
+        return { objetoSeleccionado: false, objetoActivoId: null };
+      }
+      return { objetoSeleccionado: true };
+    });
+  },
+  setPosicionObjeto: (posicionObjeto) => {
+    set((s) => {
+      const activeId = s.objetoActivoId;
+      if (activeId && s.instancias[activeId]) {
+        return {
+          posicionObjeto,
+          instancias: {
+            ...s.instancias,
+            [activeId]: { ...s.instancias[activeId], posicion: posicionObjeto },
+          },
+        };
+      }
+      return { posicionObjeto };
+    });
+  },
+
+  iniciarGrab: () => {
+    const state = get();
+    const activeId = state.objetoActivoId;
+    const inst = activeId ? state.instancias[activeId] : null;
+    const pos = inst ? inst.posicion : state.posicionObjeto;
+
+    set(() => ({
+      modoTransformacion: "grab",
+      posicionPrevia: [...pos],
+      posicionObjeto: [...pos],
+      ejeBloqueado: "none",
+      snapActivo: false,
+      snapPicking: false,
+      snapBasePoint: null,
+      snapTargetPoint: null,
+      snapTargetType: null,
+    }));
+  },
+
+  confirmarGrab: () => {
+    const state = get();
+    const activeId = state.objetoActivoId;
+    const currentPos = state.posicionObjeto;
+
+    if (activeId && state.instancias[activeId]) {
+      set((s) => ({
+        modoTransformacion: "none",
+        instancias: {
+          ...s.instancias,
+          [activeId]: {
+            ...s.instancias[activeId],
+            posicion: [...currentPos],
+            posicionPrevia: [...currentPos],
+          },
+        },
+        posicionPrevia: [...currentPos],
+        ejeBloqueado: "none",
+        snapActivo: false,
+        snapPicking: false,
+        snapBasePoint: null,
+        snapTargetPoint: null,
+        snapTargetType: null,
+      }));
+    } else {
+      set({ modoTransformacion: "none" });
+    }
+  },
+
+  cancelarGrab: () => {
+    const state = get();
+    const activeId = state.objetoActivoId;
+    const prevPos = state.posicionPrevia;
+
+    if (activeId && state.instancias[activeId]) {
+      set((s) => ({
+        modoTransformacion: "none",
+        posicionObjeto: [...prevPos],
+        instancias: {
+          ...s.instancias,
+          [activeId]: {
+            ...s.instancias[activeId],
+            posicion: [...prevPos],
+          },
+        },
+        ejeBloqueado: "none",
+        snapActivo: false,
+        snapPicking: false,
+        snapBasePoint: null,
+        snapTargetPoint: null,
+        snapTargetType: null,
+      }));
+    } else {
+      set({ modoTransformacion: "none" });
+    }
+  },
+
+  setEjeBloqueado: (eje) =>
+    set((state) => ({
+      ejeBloqueado: state.ejeBloqueado === eje ? "none" : eje,
+    })),
+
+  toggleSnapMode: () =>
+    set((state) => ({
+      snapPicking: !state.snapPicking,
+      snapActivo: true,
+      snapTargetPoint: null,
+      snapTargetType: null,
+    })),
+
+  setSnapPicking: (snapPicking) => set({ snapPicking }),
+  setSnapBasePoint: (snapBasePoint) => set({ snapBasePoint, snapPicking: false, snapActivo: true }),
+  setSnapTargetPoint: (snapTargetPoint, tipo = null) => set({ snapTargetPoint, snapTargetType: tipo || null }),
+  setSnapTargetType: (snapTargetType) => set({ snapTargetType }),
 
   // =========================================================================
   // 🗄️ BASE DE DATOS DE MATERIAS PRIMAS & COSTOS VIVOS EN TIEMPO REAL
@@ -643,4 +1233,9 @@ export const use3BFStore = create<State3BF>((set, get) => ({
       console.error("Error hidratando base de datos desde localStorage:", e);
     }
   },
+
+  cargarDefinicion: async (item: { id: string; archivo?: string; nombre?: string }) => {
+    await get().agregarInstanciaGHX(item);
+  },
 }));
+
