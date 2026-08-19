@@ -28,15 +28,15 @@ body {
 }
 
 .glass-panel {
-  background: rgba(255, 255, 255, 0.85);
+  background-color: var(--bg-surface);
   backdrop-filter: blur(12px);
-  border: 1px solid var(--border-color);
+  border-color: var(--border-color);
 }
 
 [data-theme="obsidian"] .glass-panel {
-  background: rgba(19, 27, 46, 0.92);
+  background-color: var(--bg-surface);
   backdrop-filter: blur(12px);
-  border: 1px solid #233044;
+  border-color: var(--border-color);
 }
 
 /* Custom Scrollbar for Obsidian Teal */

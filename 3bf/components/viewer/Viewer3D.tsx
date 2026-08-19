@@ -132,7 +132,7 @@ function RhinoAxisTracker({ onUpdate }: { onUpdate: (axes: { x: { x: number; y: 
 }
 
 function GroundInfiniteAxes() {
-  const { calibracion } = use3BFStore();
+  const { calibracion, coloresApariencia } = use3BFStore();
 
   if (!calibracion.mostrarGrilla || !calibracion.mostrarEjesCoordenadas) return null;
 
@@ -146,7 +146,7 @@ function GroundInfiniteAxes() {
             [-100, 0, 0],
             [100, 0, 0],
           ]}
-          color={calibracion.colorEjeX || "#ef4444"}
+          color={coloresApariencia.ejeX || calibracion.colorEjeX || "#ef4444"}
           lineWidth={axisWidth}
           toneMapped={false}
           renderOrder={100}
@@ -161,7 +161,7 @@ function GroundInfiniteAxes() {
             [0, 0, -100],
             [0, 0, 100],
           ]}
-          color={calibracion.colorEjeY || "#22c55e"}
+          color={coloresApariencia.ejeY || calibracion.colorEjeY || "#22c55e"}
           lineWidth={axisWidth}
           toneMapped={false}
           renderOrder={100}
@@ -197,7 +197,7 @@ function BoardMesh({
   tipoMapeado?: string;
   instanciaId?: string;
 }) {
-  const { calibracion, objetoSeleccionado, setHoveredPiece } = use3BFStore();
+  const { calibracion, objetoSeleccionado, setHoveredPiece, coloresApariencia } = use3BFStore();
   const loadedTexture = useMarfilTexture(calibracion.customTextureUrl, tipoMapeado);
 
   const { customGeometry, edgesGeometry } = React.useMemo(() => {
@@ -297,19 +297,19 @@ function BoardMesh({
   let transparent = isTransparent || opacity < 1.0;
 
   if (isHardwarePerno) {
-    meshColor = "#9CA3AF";
+    meshColor = coloresApariencia.colorHerrajes || "#9CA3AF";
     metalness = 0.85;
     roughness = 0.25;
     opacity = 1.0;
     transparent = false;
   } else if (isHardwareCaja) {
-    meshColor = "#D97706";
+    meshColor = coloresApariencia.colorHerrajes || "#D97706";
     metalness = 0.75;
     roughness = 0.3;
     opacity = 1.0;
     transparent = false;
   } else if (isHardwareTarugo) {
-    meshColor = "#B45309";
+    meshColor = coloresApariencia.colorHerrajes || "#B45309";
     metalness = 0.0;
     roughness = 0.8;
     opacity = 1.0;
@@ -321,7 +321,7 @@ function BoardMesh({
     opacity = 0.6;
     transparent = true;
   } else if (isTapaLuz) {
-    meshColor = "#1F2937";
+    meshColor = coloresApariencia.colorTapacantos || "#1F2937";
     metalness = 0.2;
     roughness = 0.4;
     opacity = 1.0;
@@ -344,10 +344,11 @@ function BoardMesh({
     roughness = isTransparent ? 0.15 : (isMdpExpuesto ? 0.85 : (isBalance ? 0.5 : calibracion.rugosidadMadera));
     metalness = isTransparent ? 0.1 : (isMdpExpuesto ? 0.0 : (isBalance ? 0.0 : calibracion.metalicidadMadera));
     if (modoVisual === "semitransparente") {
+      meshColor = coloresApariencia.mallasCristal || "#0284C7";
       opacity = 0.52;
       transparent = true;
     } else if (modoVisual === "solido") {
-      meshColor = calibracion.colorSolido;
+      meshColor = coloresApariencia.materialPorDefecto || calibracion.colorSolido || "#E2E8F0";
       opacity = calibracion.opacidadMadera;
       transparent = opacity < 1.0;
     } else if (modoVisual === "renderizado") {
@@ -358,7 +359,7 @@ function BoardMesh({
 
   const activeMap = (isWoodBoard && isMelaminaCara && (calibracion.customTextureUrl || isRenderedMode)) ? loadedTexture : null;
   const hasMap = activeMap !== null;
-  let finalMeshColor = hasMap ? "#ffffff" : (modoVisual === "solido" ? calibracion.colorSolido : meshColor);
+  let finalMeshColor = hasMap ? "#ffffff" : (modoVisual === "solido" ? (coloresApariencia.materialPorDefecto || calibracion.colorSolido) : meshColor);
 
   if (modoVisual === "renderizado" && isWoodBoard) {
     if (isMdpExpuesto) {
@@ -600,7 +601,7 @@ function extractStaticGeometry(furnitureGroup: THREE.Group) {
 }
 
 function BoardSilhouetteOutline({ furnitureGroup }: { furnitureGroup: THREE.Group | null }) {
-  const { objetoSeleccionado, modoTransformacion, objetoActivoId } = use3BFStore();
+  const { objetoSeleccionado, modoTransformacion, objetoActivoId, coloresApariencia } = use3BFStore();
   const { camera } = useThree();
   const [silhouettePoints, setSilhouettePoints] = React.useState<[number, number, number][][]>([]);
   const outlineGroupRef = useRef<THREE.Group>(null);
@@ -673,7 +674,11 @@ function BoardSilhouetteOutline({ furnitureGroup }: { furnitureGroup: THREE.Grou
         <Line
           key={`sil-${idx}`}
           points={pts}
-          color={modoTransformacion === "grab" ? "#111827" : "#ff9500"}
+          color={
+            modoTransformacion === "grab"
+              ? (coloresApariencia.objetosBloqueados || "#111827")
+              : (coloresApariencia.objetosSeleccionados || "#FF9500")
+          }
           lineWidth={4.0}
           toneMapped={false}
           renderOrder={200}
@@ -814,7 +819,7 @@ function extractCandidatePoints(furnitureGroup: THREE.Group) {
 }
 
 function SnapPointMarkers({ furnitureGroup }: { furnitureGroup: THREE.Group | null }) {
-  const { snapPicking, snapBasePoint, snapTargetPoint, setSnapBasePoint, modoTransformacion, posicionObjeto, objetoActivoId } = use3BFStore();
+  const { snapPicking, snapBasePoint, snapTargetPoint, setSnapBasePoint, modoTransformacion, posicionObjeto, objetoActivoId, coloresApariencia } = use3BFStore();
   const { camera, raycaster, gl } = useThree();
   const [hoveredPoint, setHoveredPoint] = React.useState<{ pos: [number, number, number]; tipo: "corner" | "midpoint" } | null>(null);
   const snapGroupRef = useRef<THREE.Group>(null);
@@ -852,17 +857,15 @@ function SnapPointMarkers({ furnitureGroup }: { furnitureGroup: THREE.Group | nu
     }
 
     const candidatePoints = candidatePointsRef.current;
-    if (candidatePoints.length === 0) {
-      if (hoveredPoint !== null) setHoveredPoint(null);
-      return;
-    }
+    if (candidatePoints.length === 0) return;
 
     let closestPoint: { pos: [number, number, number]; tipo: "corner" | "midpoint" } | null = null;
-    let minDistance = 0.055; // Umbral de 55mm de proximidad del cursor
+    let minDistance = 0.08; // Umbral de atracción de 80mm en espacio de mundo
 
     for (const pt of candidatePoints) {
-      const worldPos = new THREE.Vector3(...pt.pos).add(groupWorldPos);
-      const dist = raycaster.ray.distanceToPoint(worldPos);
+      const worldPt = new THREE.Vector3(pt.pos[0], pt.pos[1], pt.pos[2]).add(groupWorldPos);
+      const dist = raycaster.ray.distanceToPoint(worldPt);
+
       if (dist < minDistance) {
         minDistance = dist;
         closestPoint = pt;
@@ -911,6 +914,7 @@ function SnapPointMarkers({ furnitureGroup }: { furnitureGroup: THREE.Group | nu
   }, [snapPicking, modoTransformacion, hoveredPoint, setSnapBasePoint, gl]);
 
   const { snapTargetType } = use3BFStore();
+  const snapColor = coloresApariencia.puntoSnap || coloresApariencia.objetosSeleccionados || "#FF9500";
 
   if (!furnitureGroup) return null;
 
@@ -928,7 +932,7 @@ function SnapPointMarkers({ furnitureGroup }: { furnitureGroup: THREE.Group | nu
                     y="-5"
                     width="10"
                     height="10"
-                    fill="#ff9500"
+                    fill={snapColor}
                     stroke="#ffffff"
                     strokeWidth="1.5"
                     style={{ filter: "drop-shadow(0 0 2px rgba(0,0,0,0.6))" }}
@@ -936,7 +940,7 @@ function SnapPointMarkers({ furnitureGroup }: { furnitureGroup: THREE.Group | nu
                 ) : (
                   <polygon
                     points="0,-6 6,5 -6,5"
-                    fill="#ff9500"
+                    fill={snapColor}
                     stroke="#ffffff"
                     strokeWidth="1.5"
                     style={{ filter: "drop-shadow(0 0 2px rgba(0,0,0,0.6))" }}
@@ -956,7 +960,7 @@ function SnapPointMarkers({ furnitureGroup }: { furnitureGroup: THREE.Group | nu
               {snapTargetType === "midpoint" ? (
                 <polygon
                   points="0,-6 6,5 -6,5"
-                  fill="#ff9500"
+                  fill={snapColor}
                   stroke="#ffffff"
                   strokeWidth="1.5"
                   style={{ filter: "drop-shadow(0 0 2px rgba(0,0,0,0.6))" }}
@@ -967,7 +971,7 @@ function SnapPointMarkers({ furnitureGroup }: { furnitureGroup: THREE.Group | nu
                   y="-5"
                   width="10"
                   height="10"
-                  fill="#ff9500"
+                  fill={snapColor}
                   stroke="#ffffff"
                   strokeWidth="1.5"
                   style={{ filter: "drop-shadow(0 0 2px rgba(0,0,0,0.6))" }}
@@ -988,7 +992,7 @@ function SnapPointMarkers({ furnitureGroup }: { furnitureGroup: THREE.Group | nu
                   cx="0"
                   cy="0"
                   r="3.5"
-                  fill="#ff9500"
+                  fill={snapColor}
                   stroke="#ffffff"
                   strokeWidth="1.5"
                   style={{ filter: "drop-shadow(0 0 2px rgba(0,0,0,0.6))" }}
@@ -1619,6 +1623,7 @@ export default function Viewer3D() {
     tema,
     resultado,
     calibracion,
+    coloresApariencia,
     escenarioLimpio,
     parametros,
     hoveredPiece,
@@ -1657,13 +1662,6 @@ export default function Viewer3D() {
           target.tagName === "SELECT" ||
           target.isContentEditable)
       ) {
-        return;
-      }
-
-      // Atajo N: Toggle N-Panel
-      if ((e.key === "n" || e.key === "N") && !e.ctrlKey && !e.altKey && !e.metaKey && modoTransformacion !== "grab") {
-        e.preventDefault();
-        setMostrarNPanel((prev) => !prev);
         return;
       }
 
@@ -1959,7 +1957,7 @@ export default function Viewer3D() {
         shadows
         gl={{ preserveDrawingBuffer: true, antialias: true }}
       >
-        <color attach="background" args={[tema === "obsidian" ? "#0D1117" : "#F3F4F6"]} />
+        <color attach="background" args={[coloresApariencia.fondo3D || (tema === "obsidian" ? "#0D1117" : "#F3F4F6")]} />
         <CameraRefBridge cameraRef={cameraRef} />
         <ThumbnailCapturer />
         <RaycastHandler />
@@ -1990,10 +1988,10 @@ export default function Viewer3D() {
             args={[10, 10]}
             cellSize={calibracion.distanciaCuadricula}
             cellThickness={calibracion.grosorGrillaDelgada}
-            cellColor={calibracion.colorGrillaDelgada}
+            cellColor={coloresApariencia.rejillaSecundaria || calibracion.colorGrillaDelgada}
             sectionSize={calibracion.distanciaSeccion}
             sectionThickness={calibracion.grosorGrillaGruesa}
-            sectionColor={calibracion.colorGrillaGruesa}
+            sectionColor={coloresApariencia.rejillaPrincipal || calibracion.colorGrillaGruesa}
             fadeDistance={8}
             infiniteGrid
           />
@@ -2026,14 +2024,14 @@ export default function Viewer3D() {
             y1="34"
             x2={34 + rhinoAxes.x.x}
             y2={34 + rhinoAxes.x.y}
-            stroke={calibracion.colorEjeX || (tema === "obsidian" ? "#94a3b8" : "#475569")}
+            stroke={coloresApariencia.iconoPlanoUniversalX || (tema === "obsidian" ? "#94a3b8" : "#475569")}
             strokeWidth="1.6"
             strokeLinecap="round"
           />
           <text
             x={34 + rhinoAxes.x.x * 1.3}
             y={34 + rhinoAxes.x.y * 1.3 + 4}
-            fill={tema === "obsidian" ? "#cbd5e1" : "#334155"}
+            fill={coloresApariencia.textoPrincipal || (tema === "obsidian" ? "#cbd5e1" : "#334155")}
             fontSize="11"
             fontFamily="Inter, -apple-system, sans-serif"
             fontWeight="700"
@@ -2046,14 +2044,14 @@ export default function Viewer3D() {
             y1="34"
             x2={34 + rhinoAxes.y.x}
             y2={34 + rhinoAxes.y.y}
-            stroke={calibracion.colorEjeY || (tema === "obsidian" ? "#94a3b8" : "#475569")}
+            stroke={coloresApariencia.iconoPlanoUniversalY || (tema === "obsidian" ? "#94a3b8" : "#475569")}
             strokeWidth="1.6"
             strokeLinecap="round"
           />
           <text
             x={34 + rhinoAxes.y.x * 1.3}
             y={34 + rhinoAxes.y.y * 1.3 + 4}
-            fill={tema === "obsidian" ? "#cbd5e1" : "#334155"}
+            fill={coloresApariencia.textoPrincipal || (tema === "obsidian" ? "#cbd5e1" : "#334155")}
             fontSize="11"
             fontFamily="Inter, -apple-system, sans-serif"
             fontWeight="700"
@@ -2066,14 +2064,14 @@ export default function Viewer3D() {
             y1="34"
             x2={34 + rhinoAxes.z.x}
             y2={34 + rhinoAxes.z.y}
-            stroke={tema === "obsidian" ? "#94a3b8" : "#475569"}
+            stroke={coloresApariencia.iconoPlanoUniversalZ || (tema === "obsidian" ? "#94a3b8" : "#475569")}
             strokeWidth="1.6"
             strokeLinecap="round"
           />
           <text
             x={34 + rhinoAxes.z.x * 1.3}
             y={34 + rhinoAxes.z.y * 1.3 + 4}
-            fill={tema === "obsidian" ? "#cbd5e1" : "#334155"}
+            fill={coloresApariencia.textoPrincipal || (tema === "obsidian" ? "#cbd5e1" : "#334155")}
             fontSize="11"
             fontFamily="Inter, -apple-system, sans-serif"
             fontWeight="700"
@@ -2082,20 +2080,6 @@ export default function Viewer3D() {
             z
           </text>
         </svg>
-      </div>
-
-      <div className="absolute bottom-3 left-24 bg-black/60 backdrop-blur-md text-white text-xs px-3 py-1.5 rounded-full border border-white/10 flex items-center gap-2 pointer-events-none shadow-lg">
-        {resultado?.real_meshes && resultado.real_meshes.length > 0 ? (
-          <>
-            <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse" />
-            <span className="font-semibold text-emerald-300">Geometría Real de Grasshopper (Rhino 8 Engine)</span>
-          </>
-        ) : (
-          <>
-            <span className="w-2.5 h-2.5 rounded-full bg-cyan-400" />
-            <span>3BF WebGL Viewer (R3F Engine)</span>
-          </>
-        )}
       </div>
 
       {/* Botón Descargar GLB */}

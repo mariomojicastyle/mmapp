@@ -2,7 +2,85 @@
 
 import React, { useEffect } from "react";
 import { use3BFStore } from "@/lib/store";
-import { Sliders, Box, Layers, Palette, Cpu, CheckCircle2, AlertCircle, FolderOpen, FileUp, Camera, Check } from "lucide-react";
+import { Sliders, Box, Layers, Palette, Cpu, CheckCircle2, AlertCircle, Camera, Check } from "lucide-react";
+
+// =========================================================================
+// 🎨 ICONOS DE MODOS DE VISUALIZACIÓN (INSPIRADOS EN BLENDER 4.X)
+// =========================================================================
+
+// 1. Líneas (Wireframe)
+export const IconModoLineas = ({ className = "w-4 h-4" }: { className?: string }) => (
+  <svg viewBox="0 0 24 24" fill="none" className={className} stroke="currentColor">
+    <circle cx="12" cy="12" r="9" strokeWidth="1.6" />
+    <line x1="12" y1="3" x2="12" y2="21" strokeWidth="1.3" />
+    <ellipse cx="12" cy="12" rx="4.5" ry="9" strokeWidth="1.3" />
+    <line x1="3.8" y1="8.5" x2="20.2" y2="8.5" strokeWidth="1.3" />
+    <line x1="3.8" y1="15.5" x2="20.2" y2="15.5" strokeWidth="1.3" />
+  </svg>
+);
+
+// 2. Cristal (Semitransparente / Glass Tinted)
+export const IconModoCristal = ({ className = "w-4 h-4", isActivo = false }: { className?: string; isActivo?: boolean }) => (
+  <svg viewBox="0 0 24 24" fill="none" className={className}>
+    {/* Fondo de Cristal Azulado Semitransparente Vívido */}
+    <circle 
+      cx="12" 
+      cy="12" 
+      r="9" 
+      fill={isActivo ? "#0284c7" : "#0284c7"} 
+      fillOpacity={isActivo ? "0.6" : "0.32"} 
+      stroke={isActivo ? "#FFFFFF" : "#0284c7"} 
+      strokeWidth="1.6" 
+    />
+    
+    {/* Malla interna con tono azul cyan */}
+    <line x1="12" y1="3" x2="12" y2="21" stroke={isActivo ? "#FFFFFF" : "#0284c7"} strokeWidth="1.2" strokeOpacity={isActivo ? "0.85" : "0.75"} />
+    <ellipse cx="12" cy="12" rx="4.5" ry="9" stroke={isActivo ? "#FFFFFF" : "#0284c7"} strokeWidth="1.2" strokeOpacity={isActivo ? "0.85" : "0.75"} />
+    <line x1="3.8" y1="8.5" x2="20.2" y2="8.5" stroke={isActivo ? "#FFFFFF" : "#0284c7"} strokeWidth="1.2" strokeOpacity={isActivo ? "0.85" : "0.75"} />
+    <line x1="3.8" y1="15.5" x2="20.2" y2="15.5" stroke={isActivo ? "#FFFFFF" : "#0284c7"} strokeWidth="1.2" strokeOpacity={isActivo ? "0.85" : "0.75"} />
+    
+    {/* Arco de Brillo Especular Superior Izquierdo (Reflejo de Vidrio) */}
+    <path 
+      d="M 6.5 7 A 7 7 0 0 1 11.5 5" 
+      stroke="#FFFFFF" 
+      strokeWidth="2" 
+      strokeLinecap="round" 
+      opacity={isActivo ? "1" : "0.95"} 
+    />
+  </svg>
+);
+
+// 3. Sólido (Solid)
+export const IconModoSolido = ({ className = "w-4 h-4" }: { className?: string }) => (
+  <svg viewBox="0 0 24 24" className={className}>
+    <circle cx="12" cy="12" r="9" fill="currentColor" stroke="currentColor" strokeWidth="1.6" />
+  </svg>
+);
+
+// 4. Renderizado (Render / Specular)
+export const IconModoRender = ({ className = "w-4 h-4" }: { className?: string }) => (
+  <svg viewBox="0 0 24 24" fill="none" className={className}>
+    <circle cx="12" cy="12" r="9" fill="#1E293B" stroke="currentColor" strokeWidth="1.6" />
+    {/* Highlight especular superior izquierdo */}
+    <ellipse
+      cx="8"
+      cy="7.5"
+      rx="3.2"
+      ry="1.8"
+      transform="rotate(-35 8 7.5)"
+      fill="#FFFFFF"
+    />
+    <ellipse
+      cx="14.5"
+      cy="16"
+      rx="2.2"
+      ry="1.1"
+      transform="rotate(-35 14.5 16)"
+      fill="#FFFFFF"
+      opacity="0.85"
+    />
+  </svg>
+);
 
 // Componente para ingresar/editar números con auto-selección total al hacer foco
 const DirectNumberInput = ({
@@ -325,10 +403,8 @@ export default function ControlPanel() {
     escenarioLimpio,
   } = use3BFStore();
 
-  const [loadedFiles, setLoadedFiles] = React.useState<Array<{ id: string; filename: string; content?: string }>>([]);
   const [isSyncing, setIsSyncing] = React.useState(false);
   const lastModelRef = React.useRef<string | null>(null);
-  const fileInputRef = React.useRef<HTMLInputElement>(null);
 
   // Comprobar estado de conexión del Worker Python
   const verificarWorker = async () => {
@@ -423,81 +499,6 @@ export default function ControlPanel() {
     }
   };
 
-  // 🧹 Purga Previa Obligatoria (Clean-Before-Load Pattern)
-  const purgarEstadoCompleto = () => {
-    setResultado(null);
-    setParametro("model_id", "");
-    setParametro("custom_filename", "");
-    setParametro("ghx_content", "");
-    lastModelRef.current = null;
-    if (fileInputRef.current) {
-      fileInputRef.current.value = "";
-    }
-  };
-
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    const filename = file.name;
-    const modelName = filename.replace(/\.(gh|ghx)$/i, "");
-
-    // 1. Purga total previa de interfaz y modelo 3D viejo
-    purgarEstadoCompleto();
-
-    if (filename.toLowerCase().endsWith(".ghx")) {
-      const reader = new FileReader();
-      reader.onload = (event) => {
-        const content = event.target?.result as string;
-
-        setLoadedFiles((prev) => {
-          const filtered = prev.filter((f) => f.id !== modelName);
-          return [...filtered, { id: modelName, filename, content }];
-        });
-
-        setParametro("ghx_content", content);
-        setParametro("custom_filename", filename);
-        setParametro("model_id", modelName);
-        sincronizarParametrosDesdeArchivo(modelName, filename, content);
-      };
-      reader.readAsText(file);
-    } else {
-      setLoadedFiles((prev) => {
-        const filtered = prev.filter((f) => f.id !== modelName);
-        return [...filtered, { id: modelName, filename }];
-      });
-      setParametro("ghx_content", "");
-      setParametro("custom_filename", filename);
-      setParametro("model_id", modelName);
-      sincronizarParametrosDesdeArchivo(modelName, filename, "");
-    }
-  };
-
-  const handleSelectModel = (selectedId: string) => {
-    // 1. Purga total previa de interfaz y modelo 3D viejo
-    purgarEstadoCompleto();
-
-    if (!selectedId) {
-      setParametro("model_id", "");
-      setParametro("custom_filename", "");
-      setParametro("ghx_content", "");
-      return;
-    }
-
-    const found = loadedFiles.find((f) => f.id === selectedId);
-    if (found) {
-      setParametro("model_id", found.id);
-      setParametro("custom_filename", found.filename);
-      setParametro("ghx_content", found.content || "");
-      sincronizarParametrosDesdeArchivo(found.id, found.filename, found.content || "");
-    } else {
-      setParametro("model_id", selectedId);
-      setParametro("custom_filename", `${selectedId}.ghx`);
-      setParametro("ghx_content", "");
-      sincronizarParametrosDesdeArchivo(selectedId, `${selectedId}.ghx`, "");
-    }
-  };
-
   useEffect(() => {
     if (isSyncing) return; // Evitar disparar cómputo mientras se sincronizan los parámetros
     ejecutarComputo();
@@ -580,133 +581,119 @@ export default function ControlPanel() {
         </div>
       )}
 
-      {/* Selector de Tema y Modo Render 3D */}
-      <div className="flex flex-col gap-2.5 p-3 rounded-xl bg-cyan-950/20 dark:bg-[#131B2E]/60 border border-cyan-200/80 dark:border-cyan-900/40 text-xs shadow-sm">
-        <div className="flex items-center justify-between">
-          <span className="text-xs font-extrabold text-gray-900 dark:text-[#F8FAFC]">Tema:</span>
-          <div className="flex gap-1.5">
-            <button
-              onClick={() => {
-                setTema("tech");
-                document.documentElement.setAttribute("data-theme", "tech");
-                document.documentElement.classList.remove("dark");
-              }}
-              className={`px-3.5 py-1 rounded-full transition cursor-pointer text-xs font-bold ${tema === "tech" ? "bg-cyan-600 text-white shadow-md border border-cyan-400/40" : "bg-[#E2E8F0]/50 text-[#0F172A] hover:bg-[#E2E8F0]/80 border border-slate-300/60 backdrop-blur-sm"}`}
-            >
-              Light
-            </button>
-            <button
-              onClick={() => {
-                setTema("obsidian");
-                document.documentElement.setAttribute("data-theme", "obsidian");
-                document.documentElement.classList.add("dark");
-              }}
-              className={`px-3.5 py-1 rounded-full transition cursor-pointer text-xs font-bold ${tema === "obsidian" ? "bg-cyan-600 text-white shadow-md border border-cyan-400/40" : "bg-[#E2E8F0]/50 text-[#0F172A] hover:bg-[#E2E8F0]/80 border border-slate-300/60 backdrop-blur-sm"}`}
-            >
-              Dark
-            </button>
-          </div>
+      {/* 🎛️ BARRA DE VISUALIZACIÓN COMPACTA (Modos 3D Izquierda + Tema Light/Dark Derecha) */}
+      <div className="flex items-center justify-between p-2 rounded-xl bg-cyan-950/20 dark:bg-[#131B2E]/60 border border-cyan-200/80 dark:border-cyan-900/40 text-xs shadow-sm gap-2">
+        {/* 1. Botonera de 4 Modos 3D (Estilo Blender) a la Izquierda */}
+        <div className="flex items-center p-0.5 rounded-xl bg-slate-200/80 dark:bg-[#090D14]/90 border border-slate-300/80 dark:border-cyan-900/40 gap-0.5 shadow-inner">
+          {/* 1. Líneas (Wireframe) */}
+          <button
+            onClick={() => setModoVisual("lineas")}
+            title="1. Modo Líneas (Wireframe)"
+            className={`p-1.5 rounded-lg transition-all cursor-pointer flex items-center justify-center ${
+              modoVisual === "lineas"
+                ? "bg-cyan-600 dark:bg-cyan-500 text-white shadow-md ring-1 ring-cyan-400/50 scale-105"
+                : "text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-300/60 dark:hover:bg-slate-800"
+            }`}
+          >
+            <IconModoLineas className="w-4 h-4" />
+          </button>
+
+          {/* 2. Cristal (Semitransparente / Glass) */}
+          <button
+            onClick={() => setModoVisual("semitransparente")}
+            title="2. Modo Cristal (Semitransparente 70%)"
+            className={`p-1.5 rounded-lg transition-all cursor-pointer flex items-center justify-center ${
+              modoVisual === "semitransparente"
+                ? "bg-cyan-600 dark:bg-cyan-500 text-white shadow-md ring-1 ring-cyan-400/50 scale-105"
+                : "text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-300/60 dark:hover:bg-slate-800"
+            }`}
+          >
+            <IconModoCristal className="w-4 h-4" isActivo={modoVisual === "semitransparente"} />
+          </button>
+
+          {/* 3. Sólido (Solid) */}
+          <button
+            onClick={() => setModoVisual("solido")}
+            title="3. Modo Sólido (Solid)"
+            className={`p-1.5 rounded-lg transition-all cursor-pointer flex items-center justify-center ${
+              modoVisual === "solido"
+                ? "bg-cyan-600 dark:bg-cyan-500 text-white shadow-md ring-1 ring-cyan-400/50 scale-105"
+                : "text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-300/60 dark:hover:bg-slate-800"
+            }`}
+          >
+            <IconModoSolido className="w-4 h-4" />
+          </button>
+
+          {/* 4. Renderizado (Render / Specular) */}
+          <button
+            onClick={() => setModoVisual("renderizado")}
+            title="4. Modo Renderizado (PBR / Specular)"
+            className={`p-1.5 rounded-lg transition-all cursor-pointer flex items-center justify-center ${
+              modoVisual === "renderizado"
+                ? "bg-cyan-600 dark:bg-cyan-500 text-white shadow-md ring-1 ring-cyan-400/50 scale-105"
+                : "text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-300/60 dark:hover:bg-slate-800"
+            }`}
+          >
+            <IconModoRender className="w-4 h-4" />
+          </button>
         </div>
 
-        {/* Modo Renderizado 3D */}
-        <div className="flex items-center justify-between pt-2 border-t border-cyan-200/50 dark:border-cyan-900/40">
-          <span className="text-xs font-extrabold text-gray-900 dark:text-[#F8FAFC]">Modo:</span>
-          <div className="flex gap-1.5 flex-wrap justify-end">
-            <button
-              onClick={() => setModoVisual("semitransparente")}
-              className={`px-3 py-1 rounded-full transition text-[11px] cursor-pointer font-bold ${modoVisual === "semitransparente" ? "bg-cyan-600 text-white shadow-md border border-cyan-400/40" : "bg-[#E2E8F0]/50 text-[#0F172A] hover:bg-[#E2E8F0]/80 border border-slate-300/60 backdrop-blur-sm"}`}
-            >
-              💎 Cristal
-            </button>
-            <button
-              onClick={() => setModoVisual("solido")}
-              className={`px-3 py-1 rounded-full transition text-[11px] cursor-pointer font-bold ${modoVisual === "solido" ? "bg-cyan-600 text-white shadow-md border border-cyan-400/40" : "bg-[#E2E8F0]/50 text-[#0F172A] hover:bg-[#E2E8F0]/80 border border-slate-300/60 backdrop-blur-sm"}`}
-            >
-              🧱 Sólido
-            </button>
-            <button
-              onClick={() => setModoVisual("renderizado")}
-              className={`px-3 py-1 rounded-full transition text-[11px] cursor-pointer font-bold ${modoVisual === "renderizado" ? "bg-cyan-600 text-white shadow-md border border-cyan-400/40" : "bg-[#E2E8F0]/50 text-[#0F172A] hover:bg-[#E2E8F0]/80 border border-slate-300/60 backdrop-blur-sm"}`}
-            >
-              🖼️ Renderizado
-            </button>
-            <button
-              onClick={() => setModoVisual("lineas")}
-              className={`px-3 py-1 rounded-full transition text-[11px] cursor-pointer font-bold ${modoVisual === "lineas" ? "bg-cyan-600 text-white shadow-md border border-cyan-400/40" : "bg-[#E2E8F0]/50 text-[#0F172A] hover:bg-[#E2E8F0]/80 border border-slate-300/60 backdrop-blur-sm"}`}
-            >
-              📐 Líneas
-            </button>
-          </div>
+        {/* 2. Switch de Tema (Light / Dark) a la Derecha */}
+        <div className="flex items-center p-0.5 rounded-xl bg-slate-200/80 dark:bg-[#090D14]/90 border border-slate-300/80 dark:border-cyan-900/40 gap-0.5 shadow-inner">
+          <button
+            onClick={() => {
+              setTema("tech");
+              document.documentElement.setAttribute("data-theme", "tech");
+              document.documentElement.classList.remove("dark");
+            }}
+            className={`px-3 py-1 rounded-lg transition-all cursor-pointer text-xs font-bold ${
+              tema === "tech"
+                ? "bg-cyan-600 text-white shadow-sm"
+                : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
+            }`}
+          >
+            Light
+          </button>
+          <button
+            onClick={() => {
+              setTema("obsidian");
+              document.documentElement.setAttribute("data-theme", "obsidian");
+              document.documentElement.classList.add("dark");
+            }}
+            className={`px-3 py-1 rounded-lg transition-all cursor-pointer text-xs font-bold ${
+              tema === "obsidian"
+                ? "bg-cyan-600 text-white shadow-sm"
+                : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
+            }`}
+          >
+            Dark
+          </button>
         </div>
-
-        {/* Botón Capturar Miniatura: Aparece cada vez que hay un GHX cargado */}
-        {parametros.model_id && (
-          <div className="pt-2 border-t border-cyan-200/50 dark:border-cyan-900/40">
-            <button
-              onClick={capturarMiniatura}
-              disabled={guardandoFoto}
-              title={`Capturar la vista actual del lienzo 3D como miniatura para ${parametros.model_id}`}
-              className="w-full flex items-center justify-center gap-2 py-2 px-3 rounded-lg font-bold text-xs transition-all shadow-sm border bg-white dark:bg-[#131B2E] hover:bg-cyan-50 dark:hover:bg-cyan-950/60 text-slate-800 dark:text-cyan-300 border-slate-300 dark:border-cyan-800/60 cursor-pointer hover:border-cyan-500 hover:scale-[1.01]"
-            >
-              {fotoCapturada ? (
-                <>
-                  <Check className="w-4 h-4 text-emerald-500" />
-                  <span className="text-emerald-600 dark:text-emerald-400 font-bold">¡Miniatura Guardada con Éxito!</span>
-                </>
-              ) : (
-                <>
-                  <Camera className="w-4 h-4 text-cyan-600 dark:text-cyan-400" />
-                  <span>{guardandoFoto ? "Capturando miniatura..." : "Capturar Miniatura"}</span>
-                </>
-              )}
-            </button>
-          </div>
-        )}
       </div>
 
-      {/* Sección Abrir archivo Grasshopper */}
-      <div className="flex flex-col gap-2.5 p-3 rounded-xl bg-cyan-950/20 dark:bg-[#131B2E]/60 border border-cyan-200/80 dark:border-cyan-900/40 shadow-sm">
-        <label className="text-xs font-bold text-gray-900 dark:text-white flex items-center gap-1.5">
-          <FolderOpen className="w-4 h-4 text-cyan-600 dark:text-cyan-400" /> Abrir archivo Grasshopper
-        </label>
-
-        {/* File input oculto para examinar disco duro */}
-        <input
-          type="file"
-          ref={fileInputRef}
-          accept=".gh,.ghx"
-          onChange={handleFileChange}
-          className="hidden"
-        />
-
-        {/* Botón para explorar disco duro (Cápsula rounded-full con purga previa) */}
-        <button
-          onClick={() => {
-            purgarEstadoCompleto();
-            fileInputRef.current?.click();
-          }}
-          className="w-full py-2 px-4 rounded-full bg-cyan-600 hover:bg-cyan-500 text-white font-bold text-xs shadow-md border border-cyan-400/40 transition flex items-center justify-center gap-2 cursor-pointer"
-        >
-          <FileUp className="w-4 h-4" /> Buscar en disco
-        </button>
-
-        {/* Desplegable de archivos cargados (Formato Rectangular con Esquinas Redondeadas rounded-lg) */}
-        <select
-          value={parametros.model_id}
-          onChange={(e) => handleSelectModel(e.target.value)}
-          className="w-full text-xs p-2 rounded-lg bg-[#E2E8F0] text-[#0F172A] border border-slate-300 outline-none font-bold cursor-pointer shadow-sm"
-        >
-          <option value=""></option>
-          {loadedFiles.map((f) => {
-            const cleanName = f.filename.replace(/\.(gh|ghx)$/i, "");
-            return (
-              <option key={f.id} value={f.id}>
-                {cleanName}
-              </option>
-            );
-          })}
-        </select>
-      </div>
+      {/* Botón Capturar Miniatura: Aparece cada vez que hay un GHX cargado */}
+      {parametros.model_id && (
+        <div className="p-2 rounded-xl bg-cyan-950/20 dark:bg-[#131B2E]/60 border border-cyan-200/80 dark:border-cyan-900/40 text-xs shadow-sm">
+          <button
+            onClick={capturarMiniatura}
+            disabled={guardandoFoto}
+            title={`Capturar la vista actual del lienzo 3D como miniatura para ${parametros.model_id}`}
+            className="w-full flex items-center justify-center gap-2 py-2 px-3 rounded-lg font-bold text-xs transition-all shadow-sm border bg-white dark:bg-[#131B2E] hover:bg-cyan-50 dark:hover:bg-cyan-950/60 text-slate-800 dark:text-cyan-300 border-slate-300 dark:border-cyan-800/60 cursor-pointer hover:border-cyan-500 hover:scale-[1.01]"
+          >
+            {fotoCapturada ? (
+              <>
+                <Check className="w-4 h-4 text-emerald-500" />
+                <span className="text-emerald-600 dark:text-emerald-400 font-bold">¡Miniatura Guardada con Éxito!</span>
+              </>
+            ) : (
+              <>
+                <Camera className="w-4 h-4 text-cyan-600 dark:text-cyan-400" />
+                <span>{guardandoFoto ? "Capturando miniatura..." : "Capturar Miniatura"}</span>
+              </>
+            )}
+          </button>
+        </div>
+      )}
 
       {/* Panel de Parámetros Dinámico */}
       <ParametrosPanel />

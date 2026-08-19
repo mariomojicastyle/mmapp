@@ -1,5 +1,23 @@
 # 📜 Histórico del Proyecto: mariomojica.com
 
+### 🔹 Hito 3BF_UI_Colores — Personalización de Apariencia Estilo Rhinoceros 8, Glosario Completo de Colores 2D/3D/BOM, Guardado Predefinido, Copiado/Pegado Rápido #HEX 1-Touch, N-Panel Contextual y Overlay en Fichas de Datos (18 de Agosto, 2026)
+
+- **Panel de Apariencia y Glosario Completo de Colores (Estilo Rhinoceros 8)**:
+  * Incorporación de la pestaña 6 `Apariencia` en el N-Panel (`AppearanceSettingsPanel.tsx`) con tabla interactiva de swatches dividida por categorías: *Colores de la vista* (fondo 3D, rejilla mayor/menor, ejes X/Y/Z, silueta), *Visualización de objetos* (selección `#FF9500`, bloqueados, material base, cristal, herrajes, cantos), *Objetos de interfaz* (paneles, bordes, textos, marca, botones, TopNav), *Ficha de Despiece & Base de Datos* (encabezados, celdas/filas, divisores, total consolidado, KPIs) y *Widgets* (Gizmo U/V/W, puntos snap).
+  * Selector de Esquema de Color integrado: **Oscuro**, **Claro** y **Personalizado**.
+- **Vinculación Reactiva en Tiempo Real (60 FPS) & ThemeManager**:
+  * Vinculación directa en Three.js/R3F para siluetas de selección, marcadores de snap, mallas y rejillas.
+  * Inyector dinámico de variables CSS (`ThemeManager.tsx`) para fondos de panel, bordes, cabeceras de tabla (`--tabla-th-bg`), totales y tarjetas KPI.
+- **Workflow Rápido de Copiar y Pegar #HEX con 1 Solo Toque**:
+  * Botones individuales en cada fila para copiar el color hexadecimal con 1 clic al portapapeles y pegar directamente (`ClipboardPaste`) con feedback visual instantáneo (`COPIADO` / `PEGADO`).
+- **Persistencia de Preset ("Guardar como predefinido")**:
+  * Botón para almacenar la combinación de colores activa en `localStorage` (`3bf_colores_predefinidos`) con auto-hidratación inmediata al abrir la plataforma.
+- **N-Panel Contextual y Overlay Limpio por Vista**:
+  * **Visor 3D:** El N-Panel reside en su posición nativa dentro del lienzo WebGL con ancho redimensionable y tira vertical de 6 pestañas.
+  * **Despiece & Costos y Base de Datos:** Eliminado el botón circular flotante invasivo; al presionar **`N`**, el panel de Apariencia se despliega directamente encima del panel fijo derecho (`ControlPanel`), cubriéndolo al 100% sin invadir las tablas de datos y mostrando exclusivamente la configuración de esa sección.
+
+---
+
 ### 🔹 Hito BiblioMuebles_Ram_Ventas — Biblioteca de Muebles Blender 4.x, Sincronía Google Drive (G:), RAM de Ventas & BOM Consolidado (18 de Agosto, 2026)
 
 - **Biblioteca de Muebles & Asset Browser Estilo Blender 4.x**:

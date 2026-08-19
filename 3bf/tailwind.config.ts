@@ -24,6 +24,9 @@ const config: Config = {
         "obsidian-muted": "#8B949E",
         "obsidian-teal": "#00C9A7",
       },
+      fontFamily: {
+        prompt: ["var(--font-prompt)", "sans-serif"],
+      },
     },
   },
   plugins: [],

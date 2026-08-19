@@ -16,7 +16,7 @@ Cuando el usuario ejecute `/super-commit - [NOMBRE_NUEVA_RAMA]`, el agente DEBE 
    - Analizar los cambios actuales (git status/diff).
    - Realizar `git add .`.
    - Generar un commit con formato Conventional Commits: `<tipo>(<alcance>): <Descripción corta>`.
-   - Añadir en el pie: `Co-Authored-By: Antigravity <noreply@antigravity.ai>`.
+   - Mantener autoría 100% limpia sin firmas de coautoría.
 3. **Sincronización con Main**:
    - Cambiar a `main` (`git checkout main`).
    - Traer cambios remotos (`git pull origin main`).

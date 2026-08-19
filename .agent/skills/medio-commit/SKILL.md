@@ -32,7 +32,7 @@ Cuando el usuario ejecute un comando como `/mediocommit - [nueva-rama]`, debes e
 
 ## Restricciones
 - Asegúrate de esperar a que cada comando termine en la terminal antes de continuar.
-- El mensaje del commit debe ser descriptivo pero conciso, siempre incluyendo el `Co-Authored-By: Claude <noreply@anthropic.com>`.
+- El mensaje del commit debe ser descriptivo pero conciso, con autoría 100% limpia sin etiquetas de coautoría de IA.
 - Si hay conflictos durante el `merge`, detén el proceso e informa al usuario inmediatamente para que lo resuelva.
 
 ## Ejemplos

@@ -120,7 +120,8 @@ export default function DespieceView() {
     moneda,
     setMoneda,
     setModalGuardarComoAbierto,
-    hidratarDesdeLocalStorage
+    hidratarDesdeLocalStorage,
+    coloresApariencia,
   } = use3BFStore();
 
   const trm = negociacionNovopan?.trmNovopan || 4000;
@@ -955,27 +956,63 @@ export default function DespieceView() {
 
       {/* Tarjetas de Resumen Económico DfMA (4 Tarjetas Consolidando Tableros, Herrajes, Cantos y Total) */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <div className="p-3 rounded-lg bg-white dark:bg-slate-800 border border-cyan-200 dark:border-cyan-900/50 shadow-sm text-center">
+        <div 
+          style={{ 
+            backgroundColor: coloresApariencia?.kpiTarjetaFondo || coloresApariencia?.fondoPaneles, 
+            borderColor: coloresApariencia?.tablaBorde || coloresApariencia?.bordePaneles 
+          }}
+          className="p-3 rounded-lg border shadow-sm text-center transition-colors"
+        >
           <span className="text-[10px] text-slate-500 uppercase block font-semibold">Superficie Tableros</span>
-          <span className="text-base font-extrabold text-cyan-700 dark:text-cyan-300 font-mono">
+          <span 
+            style={{ color: coloresApariencia?.kpiTarjetaTexto || coloresApariencia?.colorMarca }}
+            className="text-base font-extrabold font-mono"
+          >
             {resumenMadera.areaTotalM2} m²
           </span>
         </div>
-        <div className="p-3 rounded-lg bg-white dark:bg-slate-800 border border-emerald-200 dark:border-emerald-900/50 shadow-sm text-center">
+        <div 
+          style={{ 
+            backgroundColor: coloresApariencia?.kpiTarjetaFondo || coloresApariencia?.fondoPaneles, 
+            borderColor: coloresApariencia?.tablaBorde || coloresApariencia?.bordePaneles 
+          }}
+          className="p-3 rounded-lg border shadow-sm text-center transition-colors"
+        >
           <span className="text-[10px] text-slate-500 uppercase block font-semibold">Herrajes Totales</span>
-          <span className="text-base font-extrabold text-emerald-700 dark:text-emerald-300 font-mono">
+          <span 
+            style={{ color: coloresApariencia?.kpiTarjetaTexto || coloresApariencia?.colorMarca }}
+            className="text-base font-extrabold font-mono"
+          >
             {resumenHerrajes.cantTotalHerrajes} u
           </span>
         </div>
-        <div className="p-3 rounded-lg bg-white dark:bg-slate-800 border border-amber-200 dark:border-amber-900/50 shadow-sm text-center">
+        <div 
+          style={{ 
+            backgroundColor: coloresApariencia?.kpiTarjetaFondo || coloresApariencia?.fondoPaneles, 
+            borderColor: coloresApariencia?.tablaBorde || coloresApariencia?.bordePaneles 
+          }}
+          className="p-3 rounded-lg border shadow-sm text-center transition-colors"
+        >
           <span className="text-[10px] text-slate-500 uppercase block font-semibold">Metros Canto (+100mm)</span>
-          <span className="text-base font-extrabold text-amber-700 dark:text-amber-300 font-mono">
+          <span 
+            style={{ color: coloresApariencia?.kpiTarjetaTexto || coloresApariencia?.colorMarca }}
+            className="text-base font-extrabold font-mono"
+          >
             {resumenCantos.cantTotalMetros} ml
           </span>
         </div>
-        <div className="p-3 rounded-lg bg-white dark:bg-slate-800 border border-purple-200 dark:border-purple-900/50 shadow-sm text-center">
+        <div 
+          style={{ 
+            backgroundColor: coloresApariencia?.kpiTarjetaFondo || coloresApariencia?.fondoPaneles, 
+            borderColor: coloresApariencia?.tablaBorde || coloresApariencia?.bordePaneles 
+          }}
+          className="p-3 rounded-lg border shadow-sm text-center transition-colors"
+        >
           <span className="text-[10px] text-slate-500 uppercase block font-semibold">Costo Total Estimado</span>
-          <span className="text-base font-extrabold text-purple-700 dark:text-purple-300 font-mono">
+          <span 
+            style={{ color: coloresApariencia?.kpiTarjetaTexto || coloresApariencia?.colorMarca }}
+            className="text-base font-extrabold font-mono"
+          >
             {formatMoneyCustom(costoTotalMuebleCop, costoTotalMuebleUsd)}
           </span>
         </div>
@@ -1014,10 +1051,23 @@ export default function DespieceView() {
           </div>
         </div>
 
-        <div className="overflow-x-auto rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 shadow-sm">
+        <div 
+          style={{ 
+            backgroundColor: coloresApariencia?.tablaFilaFondo || coloresApariencia?.fondoPaneles, 
+            borderColor: coloresApariencia?.tablaBorde || coloresApariencia?.bordePaneles 
+          }}
+          className="overflow-x-auto rounded-lg border shadow-sm transition-colors"
+        >
           <table className="w-full text-left border-collapse text-xs">
             <thead>
-              <tr className="bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 font-bold border-b border-slate-200 dark:border-slate-700 whitespace-nowrap">
+              <tr 
+                style={{ 
+                  backgroundColor: coloresApariencia?.tablaEncabezadoFondo || "#F1F5F9", 
+                  color: coloresApariencia?.tablaEncabezadoTexto || "#0F172A",
+                  borderColor: coloresApariencia?.tablaBorde || coloresApariencia?.bordePaneles 
+                }}
+                className="font-bold border-b whitespace-nowrap transition-colors"
+              >
                 <th className="p-2.5 w-28">Pieza</th>
                 <th className="p-2.5 min-w-[170px]">Descripción</th>
                 <th className="p-2.5 min-w-[220px]">Sustrato / Tablero</th>
@@ -1213,10 +1263,23 @@ export default function DespieceView() {
           <span className="text-[10px] text-slate-400 font-mono">Costos sincronizados desde Base de Datos</span>
         </div>
 
-        <div className="overflow-hidden rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 shadow-sm">
+        <div 
+          style={{ 
+            backgroundColor: coloresApariencia?.tablaFilaFondo || coloresApariencia?.fondoPaneles, 
+            borderColor: coloresApariencia?.tablaBorde || coloresApariencia?.bordePaneles 
+          }}
+          className="overflow-hidden rounded-lg border shadow-sm transition-colors"
+        >
           <table className="w-full text-left border-collapse text-xs">
             <thead>
-              <tr className="bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 font-bold border-b border-slate-200 dark:border-slate-700 whitespace-nowrap">
+              <tr 
+                style={{ 
+                  backgroundColor: coloresApariencia?.tablaEncabezadoFondo || "#F1F5F9", 
+                  color: coloresApariencia?.tablaEncabezadoTexto || "#0F172A",
+                  borderColor: coloresApariencia?.tablaBorde || coloresApariencia?.bordePaneles 
+                }}
+                className="font-bold border-b whitespace-nowrap transition-colors"
+              >
                 <th className="p-2.5 w-36">Herraje (GHX)</th>
                 <th className="p-2.5">Descripción Comercial</th>
                 <th className="p-2.5 w-16 text-center">UM</th>
@@ -1290,10 +1353,23 @@ export default function DespieceView() {
           <span className="text-[10px] text-slate-400 font-mono">Fórmula oficial: (+100 mm despunte por borde)</span>
         </div>
 
-        <div className="overflow-hidden rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 shadow-sm">
+        <div 
+          style={{ 
+            backgroundColor: coloresApariencia?.tablaFilaFondo || coloresApariencia?.fondoPaneles, 
+            borderColor: coloresApariencia?.tablaBorde || coloresApariencia?.bordePaneles 
+          }}
+          className="overflow-hidden rounded-lg border shadow-sm transition-colors"
+        >
           <table className="w-full text-left border-collapse text-xs">
             <thead>
-              <tr className="bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 font-bold border-b border-slate-200 dark:border-slate-700 whitespace-nowrap">
+              <tr 
+                style={{ 
+                  backgroundColor: coloresApariencia?.tablaEncabezadoFondo || "#F1F5F9", 
+                  color: coloresApariencia?.tablaEncabezadoTexto || "#0F172A",
+                  borderColor: coloresApariencia?.tablaBorde || coloresApariencia?.bordePaneles 
+                }}
+                className="font-bold border-b whitespace-nowrap transition-colors"
+              >
                 <th className="p-2.5 w-24">Código</th>
                 <th className="p-2.5">Descripción Canto</th>
                 <th className="p-2.5 w-20 text-center">Tipo</th>
@@ -1392,10 +1468,23 @@ export default function DespieceView() {
           </div>
         </div>
 
-        <div className="overflow-hidden rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 shadow-sm">
+        <div 
+          style={{ 
+            backgroundColor: coloresApariencia?.tablaFilaFondo || coloresApariencia?.fondoPaneles, 
+            borderColor: coloresApariencia?.tablaBorde || coloresApariencia?.bordePaneles 
+          }}
+          className="overflow-hidden rounded-lg border shadow-sm transition-colors"
+        >
           <table className="w-full text-left border-collapse text-xs">
             <thead>
-              <tr className="bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 font-bold border-b border-slate-200 dark:border-slate-700 whitespace-nowrap">
+              <tr 
+                style={{ 
+                  backgroundColor: coloresApariencia?.tablaEncabezadoFondo || "#F1F5F9", 
+                  color: coloresApariencia?.tablaEncabezadoTexto || "#0F172A",
+                  borderColor: coloresApariencia?.tablaBorde || coloresApariencia?.bordePaneles 
+                }}
+                className="font-bold border-b whitespace-nowrap transition-colors"
+              >
                 <th className="p-2.5 w-12 text-center">#</th>
                 <th className="p-2.5">Componente del Costo</th>
                 <th className="p-2.5 w-44 text-center">Categoría de Costo</th>
@@ -1587,14 +1676,33 @@ export default function DespieceView() {
 
             {/* Fila Gran Total 100% */}
             <tfoot>
-              <tr className="bg-slate-900 text-white border-t-2 border-amber-500 font-bold whitespace-nowrap">
-                <td colSpan={3} className="p-3 text-right text-amber-400 uppercase text-xs tracking-wider">
+              <tr 
+                style={{ 
+                  backgroundColor: coloresApariencia?.tablaTotalFondo || "#0F172A", 
+                  borderColor: coloresApariencia?.colorMarca || "#F59E0B" 
+                }}
+                className="border-t-2 font-bold whitespace-nowrap transition-colors"
+              >
+                <td 
+                  colSpan={3} 
+                  style={{ color: coloresApariencia?.tablaTotalTexto || "#F8FAFC" }}
+                  className="p-3 text-right uppercase text-xs tracking-wider"
+                >
                   🏆 COSTO TOTAL DEL PRODUCTO (100%):
                 </td>
-                <td className="p-3 text-right font-mono font-extrabold text-white text-base">
+                <td 
+                  style={{ color: coloresApariencia?.tablaTotalTexto || "#FFFFFF" }}
+                  className="p-3 text-right font-mono font-extrabold text-base"
+                >
                   {formatMoneyCustom(resumenIndustrial.costoTotalFabCop, resumenIndustrial.costoTotalFabUsd)}
                 </td>
-                <td className="p-3 text-center font-mono font-extrabold text-amber-400 text-sm bg-slate-950">
+                <td 
+                  style={{ 
+                    backgroundColor: coloresApariencia?.tablaTotalFondo || "#020617", 
+                    color: coloresApariencia?.tablaTotalTexto || "#F8FAFC" 
+                  }}
+                  className="p-3 text-center font-mono font-extrabold text-sm"
+                >
                   100.00%
                 </td>
               </tr>

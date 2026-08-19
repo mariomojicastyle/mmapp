@@ -40,6 +40,140 @@ export function generarNombreSecuencial(definitionId: string, instancias: Record
   return `${baseName}_${siguienteNum}`;
 }
 
+export interface ColoresApariencia {
+  // Colores de la vista (3D Viewport)
+  fondo3D: string;
+  rejillaPrincipal: string;
+  rejillaSecundaria: string;
+  ejeX: string;
+  ejeY: string;
+  ejeZ: string;
+  iconoPlanoUniversalX: string;
+  iconoPlanoUniversalY: string;
+  iconoPlanoUniversalZ: string;
+  siluetaBordes: string;
+
+  // Visualización de objetos (3D BIM)
+  objetosSeleccionados: string;
+  objetosBloqueados: string;
+  materialPorDefecto: string;
+  mallasCristal: string;
+  colorHerrajes: string;
+  colorTapacantos: string;
+
+  // Objetos de interfaz (UI 2D BIM)
+  fondoPaneles: string;
+  bordePaneles: string;
+  textoPrincipal: string;
+  textoSecundario: string;
+  colorMarca: string;
+  botonActivo: string;
+  fondoTopNav: string;
+  lineasReferencia: string;
+
+  // Ficha de Despiece, BOM & Base de Datos
+  tablaEncabezadoFondo: string;
+  tablaEncabezadoTexto: string;
+  tablaFilaFondo: string;
+  tablaBorde: string;
+  tablaTotalFondo: string;
+  tablaTotalTexto: string;
+  kpiTarjetaFondo: string;
+  kpiTarjetaTexto: string;
+
+  // Colores de widget (Gizmo & Ejes)
+  widgetEjeU: string;
+  widgetEjeV: string;
+  widgetEjeW: string;
+  puntoSnap: string;
+}
+
+export const PRESET_COLORES_CLARO: ColoresApariencia = {
+  fondo3D: "#F8FAFC",
+  rejillaPrincipal: "#94A3B8",
+  rejillaSecundaria: "#CBD5E1",
+  ejeX: "#EF4444",
+  ejeY: "#22C55E",
+  ejeZ: "#3B82F6",
+  iconoPlanoUniversalX: "#64748B",
+  iconoPlanoUniversalY: "#64748B",
+  iconoPlanoUniversalZ: "#64748B",
+  siluetaBordes: "#0F172A",
+
+  objetosSeleccionados: "#FF9500",
+  objetosBloqueados: "#94A3B8",
+  materialPorDefecto: "#E2E8F0",
+  mallasCristal: "#0284C7",
+  colorHerrajes: "#CBD5E1",
+  colorTapacantos: "#0284C7",
+
+  fondoPaneles: "#FFFFFF",
+  bordePaneles: "#E2E8F0",
+  textoPrincipal: "#0F172A",
+  textoSecundario: "#64748B",
+  colorMarca: "#0891B2",
+  botonActivo: "#0891B2",
+  fondoTopNav: "#FFFFFF",
+  lineasReferencia: "#0F172A",
+
+  tablaEncabezadoFondo: "#F1F5F9",
+  tablaEncabezadoTexto: "#0F172A",
+  tablaFilaFondo: "#FFFFFF",
+  tablaBorde: "#E2E8F0",
+  tablaTotalFondo: "#0F172A",
+  tablaTotalTexto: "#F8FAFC",
+  kpiTarjetaFondo: "#FFFFFF",
+  kpiTarjetaTexto: "#0891B2",
+
+  widgetEjeU: "#EF4444",
+  widgetEjeV: "#22C55E",
+  widgetEjeW: "#3B82F6",
+  puntoSnap: "#FF9500",
+};
+
+export const PRESET_COLORES_OSCURO: ColoresApariencia = {
+  fondo3D: "#0B0F17",
+  rejillaPrincipal: "#334155",
+  rejillaSecundaria: "#1E293B",
+  ejeX: "#EF4444",
+  ejeY: "#22C55E",
+  ejeZ: "#3B82F6",
+  iconoPlanoUniversalX: "#475569",
+  iconoPlanoUniversalY: "#475569",
+  iconoPlanoUniversalZ: "#475569",
+  siluetaBordes: "#000000",
+
+  objetosSeleccionados: "#FF9500",
+  objetosBloqueados: "#475569",
+  materialPorDefecto: "#1E293B",
+  mallasCristal: "#38BDF8",
+  colorHerrajes: "#475569",
+  colorTapacantos: "#06B6D4",
+
+  fondoPaneles: "#131B2E",
+  bordePaneles: "#1E293B",
+  textoPrincipal: "#F8FAFC",
+  textoSecundario: "#94A3B8",
+  colorMarca: "#06B6D4",
+  botonActivo: "#0891B2",
+  fondoTopNav: "#131B2E",
+  lineasReferencia: "#FFFFFF",
+
+  tablaEncabezadoFondo: "#1E293B",
+  tablaEncabezadoTexto: "#F8FAFC",
+  tablaFilaFondo: "#131B2E",
+  tablaBorde: "#233044",
+  tablaTotalFondo: "#0B0F17",
+  tablaTotalTexto: "#38BDF8",
+  kpiTarjetaFondo: "#131B2E",
+  kpiTarjetaTexto: "#06B6D4",
+
+  widgetEjeU: "#EF4444",
+  widgetEjeV: "#22C55E",
+  widgetEjeW: "#3B82F6",
+  puntoSnap: "#FF9500",
+};
+
 export interface ParametrosMueble {
   model_id: string;       // M00001, M00002 / Cajon_Experimento_Viktor
   ancho: number;          // mm
@@ -430,8 +564,17 @@ export interface State3BF {
   // Blender N-Panel (Sidebar Multifuncional con tecla N)
   mostrarNPanel: boolean;
   setMostrarNPanel: (mostrar: boolean | ((prev: boolean) => boolean)) => void;
-  pestanaNPanel: "muebles" | "componentes" | "materiales" | "calibrar" | "escenario";
-  setPestanaNPanel: (pestana: "muebles" | "componentes" | "materiales" | "calibrar" | "escenario") => void;
+  pestanaNPanel: "componentes" | "muebles" | "materiales" | "calibrar" | "escenario" | "apariencia";
+  setPestanaNPanel: (pestana: "componentes" | "muebles" | "materiales" | "calibrar" | "escenario" | "apariencia") => void;
+
+  // 🎨 Apariencia & Personalización de Colores (Estilo Rhinoceros 8)
+  esquemaColor: "oscuro" | "claro" | "personalizado";
+  coloresApariencia: ColoresApariencia;
+  setEsquemaColor: (esquema: "oscuro" | "claro" | "personalizado") => void;
+  setColorApariencia: (clave: keyof ColoresApariencia, valor: string) => void;
+  restaurarColoresApariencia: () => void;
+  guardarComoPredefinido: () => void;
+  cargarColoresPredefinidos: () => void;
 
   // Catálogo de Muebles (Asset Browser Blender Style / Google Drive)
   arbolCarpetasMuebles: CarpetaMuebleNode[];
@@ -664,8 +807,66 @@ export const use3BFStore = create<State3BF>((set, get) => ({
     set((state) => ({
       mostrarNPanel: typeof mostrar === "function" ? mostrar(state.mostrarNPanel) : mostrar,
     })),
-  pestanaNPanel: "muebles",
+  pestanaNPanel: "componentes",
   setPestanaNPanel: (pestanaNPanel) => set({ pestanaNPanel: pestanaNPanel as any }),
+
+  // 🎨 Apariencia & Personalización de Colores (Estilo Rhinoceros 8)
+  esquemaColor: "claro",
+  coloresApariencia: PRESET_COLORES_CLARO,
+  setEsquemaColor: (esquema) => {
+    if (esquema === "claro") {
+      set({ esquemaColor: "claro", coloresApariencia: PRESET_COLORES_CLARO, tema: "tech" });
+      if (typeof document !== "undefined") {
+        document.documentElement.setAttribute("data-theme", "tech");
+        document.documentElement.classList.remove("dark");
+      }
+    } else if (esquema === "oscuro") {
+      set({ esquemaColor: "oscuro", coloresApariencia: PRESET_COLORES_OSCURO, tema: "obsidian" });
+      if (typeof document !== "undefined") {
+        document.documentElement.setAttribute("data-theme", "obsidian");
+        document.documentElement.classList.add("dark");
+      }
+    } else {
+      set({ esquemaColor: "personalizado" });
+    }
+  },
+  setColorApariencia: (clave, valor) =>
+    set((state) => ({
+      esquemaColor: "personalizado",
+      coloresApariencia: {
+        ...state.coloresApariencia,
+        [clave]: valor,
+      },
+    })),
+  restaurarColoresApariencia: () =>
+    set((state) => ({
+      coloresApariencia: state.tema === "obsidian" ? PRESET_COLORES_OSCURO : PRESET_COLORES_CLARO,
+      esquemaColor: state.tema === "obsidian" ? "oscuro" : "claro",
+    })),
+  guardarComoPredefinido: () => {
+    const state = get();
+    if (typeof window !== "undefined" && window.localStorage) {
+      localStorage.setItem("3bf_colores_predefinidos", JSON.stringify(state.coloresApariencia));
+      localStorage.setItem("3bf_esquema_color", state.esquemaColor);
+    }
+  },
+  cargarColoresPredefinidos: () => {
+    if (typeof window !== "undefined" && window.localStorage) {
+      const guardado = localStorage.getItem("3bf_colores_predefinidos");
+      const esquema = localStorage.getItem("3bf_esquema_color") as any;
+      if (guardado) {
+        try {
+          const parsed = JSON.parse(guardado);
+          set({
+            coloresApariencia: parsed,
+            esquemaColor: esquema || "personalizado",
+          });
+        } catch (e) {
+          console.warn("Error cargando colores predefinidos:", e);
+        }
+      }
+    }
+  },
 
   // =========================================================================
   // 🪑 CATÁLOGO DE MUEBLES (ASSET BROWSER BLENDER STYLE & GOOGLE DRIVE)

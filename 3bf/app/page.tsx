@@ -6,6 +6,7 @@ import ControlPanel from "@/components/ui/ControlPanel";
 import DespieceView from "@/components/views/DespieceView";
 import DatabaseView from "@/components/views/DatabaseView";
 import SaveFurnitureModal from "@/components/ui/SaveFurnitureModal";
+import NPanel from "@/components/viewer/NPanel";
 import { use3BFStore } from "@/lib/store";
 import { Box, Layers, Cpu, CheckCircle2, AlertCircle, Database } from "lucide-react";
 
@@ -15,7 +16,9 @@ export default function Home3BF() {
     setPestanaActiva, 
     workerStatus, 
     setWorkerStatus,
-    hidratarDesdeLocalStorage 
+    hidratarDesdeLocalStorage,
+    coloresApariencia,
+    setMostrarNPanel,
   } = use3BFStore();
 
   const verificarWorker = async () => {
@@ -40,7 +43,28 @@ export default function Home3BF() {
     // Hidratar inmediatamente toda la base de datos de materias primas y costos
     hidratarDesdeLocalStorage();
     verificarWorker();
-  }, []);
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      const target = e.target as HTMLElement;
+      if (
+        target &&
+        (target.tagName === "INPUT" ||
+          target.tagName === "TEXTAREA" ||
+          target.tagName === "SELECT" ||
+          target.isContentEditable)
+      ) {
+        return;
+      }
+
+      if ((e.key === "n" || e.key === "N" || e.code === "KeyN") && !e.ctrlKey && !e.altKey && !e.metaKey) {
+        e.preventDefault();
+        use3BFStore.getState().setMostrarNPanel((prev) => !prev);
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [hidratarDesdeLocalStorage]);
 
   return (
     <main className="w-screen h-screen flex flex-col overflow-hidden bg-[var(--bg-main)] text-[var(--text-main)]">
@@ -48,7 +72,14 @@ export default function Home3BF() {
       <SaveFurnitureModal />
 
       {/* TopNav Barra Superior */}
-      <header className="h-14 px-4 flex items-center justify-between border-b border-gray-200 dark:border-gray-800 glass-panel z-10 relative">
+      <header 
+        style={{ 
+          backgroundColor: coloresApariencia?.fondoTopNav || coloresApariencia?.fondoPaneles, 
+          borderColor: coloresApariencia?.bordePaneles,
+          color: coloresApariencia?.textoPrincipal 
+        }}
+        className="h-14 px-4 flex items-center justify-between border-b glass-panel z-10 relative transition-colors"
+      >
         <div className="flex items-center gap-3">
           <div className="w-8 h-8 rounded-lg bg-gradient-to-tr from-cyan-600 to-teal-400 flex items-center justify-center text-white font-bold text-sm shadow-md">
             3BF
@@ -57,7 +88,9 @@ export default function Home3BF() {
             <h1 className="font-bold text-sm leading-none flex items-center gap-1.5">
               3DBimFab Engine <span className="text-[10px] px-1.5 py-0.5 rounded bg-cyan-100 dark:bg-cyan-950 text-cyan-700 dark:text-cyan-300 font-mono">v1.0</span>
             </h1>
-            <p className="text-[10px] text-gray-500">Motor de Manufactura Digital Paramétrica & DfMA</p>
+            <p className="font-prompt text-[7.65px] text-gray-500 dark:text-gray-400 font-medium tracking-[0.015em] mt-0.5 leading-tight whitespace-nowrap">
+              Powered by <span className="font-semibold text-cyan-600 dark:text-cyan-400">MARIO MOJICA</span>, Form & Future
+            </p>
           </div>
         </div>
 
@@ -118,7 +151,7 @@ export default function Home3BF() {
       {/* Cuerpo Principal dividido en 2 columnas */}
       <div className="flex-1 flex overflow-hidden p-3 gap-3">
         {/* Columna Izquierda: Visor 3D o Tablas de Datos */}
-        <div className="flex-1 h-full flex flex-col relative">
+        <div className="flex-1 h-full flex flex-col relative overflow-hidden">
           {pestanaActiva === "3d" ? (
             <Viewer3D />
           ) : pestanaActiva === "despiece" ? (
@@ -129,8 +162,16 @@ export default function Home3BF() {
         </div>
 
         {/* Columna Derecha: Panel de Control de Parámetros */}
-        <div className="w-80 h-full glass-panel rounded-xl border border-gray-200 dark:border-cyan-900/50 flex flex-col">
+        <div 
+          style={{ 
+            backgroundColor: coloresApariencia?.fondoPaneles, 
+            borderColor: coloresApariencia?.bordePaneles,
+            color: coloresApariencia?.textoPrincipal 
+          }}
+          className="w-80 h-full glass-panel rounded-xl border flex flex-col transition-colors shrink-0 relative overflow-hidden"
+        >
           <ControlPanel />
+          {pestanaActiva !== "3d" && <NPanel />}
         </div>
       </div>
     </main>

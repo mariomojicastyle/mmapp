@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from "react";
 import { use3BFStore, defaultCalibracion } from "@/lib/store";
 import FurnitureAssetBrowser from "./FurnitureAssetBrowser";
+import AppearanceSettingsPanel from "./AppearanceSettingsPanel";
 import { 
   ChevronLeft, 
   ChevronRight, 
@@ -22,7 +23,8 @@ import {
   Eye,
   Grid3X3,
   Trash2,
-  Copy
+  Copy,
+  Paintbrush
 } from "lucide-react";
 
 interface DefinicionItem {
@@ -151,6 +153,7 @@ const MATERIALES_PBR: MaterialPBRItem[] = [
 
 export default function NPanel() {
   const { 
+    pestanaActiva,
     mostrarNPanel, 
     setMostrarNPanel, 
     pestanaNPanel, 
@@ -165,7 +168,8 @@ export default function NPanel() {
     objetoActivoId,
     seleccionarInstancia,
     duplicarInstancia,
-    eliminarInstancia
+    eliminarInstancia,
+    coloresApariencia,
   } = use3BFStore();
 
   const [ancho, setAncho] = useState(340);
@@ -299,86 +303,107 @@ export default function NPanel() {
   return (
     <>
       {/* ========================================================================= */}
-      {/* 🔘 BOTÓN PESTAÑA CHEVRON ESTILO BLENDER (<) EN ESQUINA SUPERIOR DERECHA     */}
+      {/* 🔘 BOTÓN PESTAÑA CHEVRON ESTILO BLENDER (<) EN ESQUINA SUPERIOR DERECHA (Solo en Visor 3D) */}
       {/* ========================================================================= */}
-      <div 
-        className={`absolute top-3 right-3 z-30 transition-all duration-200 ${
-          mostrarNPanel 
-            ? "opacity-0 pointer-events-none scale-75" 
-            : "opacity-100 pointer-events-auto scale-100"
-        }`}
-      >
-        <button
-          onClick={() => setMostrarNPanel(true)}
-          title="Mostrar panel lateral (Atajo: N)"
-          className="flex items-center justify-center w-7 h-7 rounded-xl bg-white/90 dark:bg-[#131B2E]/90 hover:bg-cyan-50 dark:hover:bg-cyan-950/80 border border-slate-300/80 dark:border-cyan-800/60 shadow-lg backdrop-blur-md text-slate-700 dark:text-cyan-300 transition-all cursor-pointer group hover:scale-105"
+      {pestanaActiva === "3d" && (
+        <div 
+          className={`absolute top-3 right-3 z-30 transition-all duration-200 ${
+            mostrarNPanel 
+              ? "opacity-0 pointer-events-none scale-75" 
+              : "opacity-100 pointer-events-auto scale-100"
+          }`}
         >
-          <ChevronLeft className="w-4 h-4 text-cyan-600 dark:text-cyan-400 group-hover:-translate-x-0.5 transition-transform" />
-        </button>
-      </div>
+          <button
+            onClick={() => setMostrarNPanel(true)}
+            title="Mostrar panel lateral (Atajo: N)"
+            className="flex items-center justify-center w-7 h-7 rounded-xl bg-white/90 dark:bg-[#131B2E]/90 hover:bg-cyan-50 dark:hover:bg-cyan-950/80 border border-slate-300/80 dark:border-cyan-800/60 shadow-lg backdrop-blur-md text-slate-700 dark:text-cyan-300 transition-all cursor-pointer group hover:scale-105"
+          >
+            <ChevronLeft className="w-4 h-4 text-cyan-600 dark:text-cyan-400 group-hover:-translate-x-0.5 transition-transform" />
+          </button>
+        </div>
+      )}
 
       {/* ========================================================================= */}
       {/* 🗂️ SIDEBAR N-PANEL REDIMENSIONABLE (Borde Izquierdo + Pestañas Verticales)   */}
       {/* ========================================================================= */}
       <aside
-        style={{ width: `${ancho}px` }}
-        className={`absolute top-3 bottom-3 right-3 z-20 rounded-2xl glass-panel border border-slate-200/90 dark:border-cyan-900/60 shadow-2xl flex flex-row overflow-hidden transition-transform ${
-          isResizing ? "transition-none select-none" : "duration-300 ease-in-out"
-        } ${
-          mostrarNPanel 
-            ? "translate-x-0 opacity-100 pointer-events-auto" 
-            : "translate-x-[110%] opacity-0 pointer-events-none"
-        }`}
+        style={pestanaActiva === "3d" ? { 
+          width: `${ancho}px`,
+          backgroundColor: coloresApariencia?.fondoPaneles,
+          borderColor: coloresApariencia?.bordePaneles,
+          color: coloresApariencia?.textoPrincipal
+        } : {
+          backgroundColor: coloresApariencia?.fondoPaneles,
+          color: coloresApariencia?.textoPrincipal
+        }}
+        className={pestanaActiva === "3d" 
+          ? `absolute top-3 bottom-3 right-3 z-40 rounded-2xl glass-panel border shadow-2xl flex flex-row overflow-hidden transition-transform ${
+              isResizing ? "transition-none select-none" : "duration-300 ease-in-out"
+            } ${
+              mostrarNPanel 
+                ? "translate-x-0 opacity-100 pointer-events-auto" 
+                : "translate-x-[110%] opacity-0 pointer-events-none"
+            }`
+          : `absolute inset-0 z-40 rounded-xl glass-panel flex flex-col overflow-hidden transition-transform duration-300 ease-in-out ${
+              mostrarNPanel 
+                ? "translate-x-0 opacity-100 pointer-events-auto" 
+                : "translate-x-full opacity-0 pointer-events-none"
+            }`
+        }
       >
         {/* ========================================================================= */}
-        {/* ↔️ CONTROLADOR DE REDIMENSIÓN EN BORDE IZQUIERDO (Estilo Blender)           */}
+        {/* ↔️ CONTROLADOR DE REDIMENSIÓN EN BORDE IZQUIERDO (Solo en Visor 3D)         */}
         {/* ========================================================================= */}
-        <div
-          onMouseDown={handleMouseDownResize}
-          title="Arrastrar para redimensionar el ancho (Blender style)"
-          className="absolute top-0 bottom-0 left-0 w-3 -translate-x-1.5 cursor-ew-resize z-40 group flex items-center justify-center hover:bg-cyan-500/10 transition-colors"
-        >
-          <div 
-            className={`w-0.5 h-16 rounded-full transition-all ${
-              isResizing 
-                ? "bg-cyan-500 shadow-md shadow-cyan-500/60 w-1" 
-                : "bg-transparent group-hover:bg-cyan-500/80"
-            }`} 
-          />
-        </div>
+        {pestanaActiva === "3d" && (
+          <div
+            onMouseDown={handleMouseDownResize}
+            title="Arrastrar para redimensionar el ancho (Blender style)"
+            className="absolute top-0 bottom-0 left-0 w-3 -translate-x-1.5 cursor-ew-resize z-40 group flex items-center justify-center hover:bg-cyan-500/10 transition-colors"
+          >
+            <div 
+              className={`w-0.5 h-16 rounded-full transition-all ${
+                isResizing 
+                  ? "bg-cyan-500 shadow-md shadow-cyan-500/60 w-1" 
+                  : "bg-transparent group-hover:bg-cyan-500/80"
+              }`} 
+            />
+          </div>
+        )}
 
         {/* ========================================================================= */}
         {/* 📑 COLUMNA PRINCIPAL DE CONTENIDO (Ancho fluido, consistente y fijo)      */}
         {/* ========================================================================= */}
-        <div className="flex-1 min-w-0 flex flex-col overflow-hidden border-r border-slate-200/80 dark:border-cyan-900/40">
+        <div 
+          style={{ borderColor: coloresApariencia?.bordePaneles }}
+          className={`flex-1 min-w-0 flex flex-col overflow-hidden ${
+            pestanaActiva === "3d" ? "border-r" : ""
+          }`}
+        >
           
           {/* Cabecera del Panel */}
-          <div className="p-3 pb-2.5 border-b border-slate-200/80 dark:border-cyan-900/40 bg-slate-50/50 dark:bg-[#0B0F17]/40 flex items-center justify-between shrink-0">
-            <div className="flex items-center gap-2 min-w-0">
-              <div className="w-6 h-6 rounded-lg bg-cyan-600/10 dark:bg-cyan-400/10 text-cyan-600 dark:text-cyan-400 flex items-center justify-center font-bold text-xs shrink-0">
-                {pestanaNPanel === "muebles" && <Package className="w-3.5 h-3.5" />}
-                {pestanaNPanel === "componentes" && <Boxes className="w-3.5 h-3.5" />}
-                {pestanaNPanel === "materiales" && <Palette className="w-3.5 h-3.5" />}
-                {pestanaNPanel === "calibrar" && <Sliders className="w-3.5 h-3.5" />}
-                {pestanaNPanel === "escenario" && <Grid3X3 className="w-3.5 h-3.5" />}
-              </div>
-              <div className="min-w-0">
-                <h2 className="text-xs font-bold text-slate-900 dark:text-white leading-tight flex items-center gap-1.5 truncate">
-                  {pestanaNPanel === "muebles" && "Biblioteca de Muebles"}
-                  {pestanaNPanel === "componentes" && "Biblioteca de Componentes"}
-                  {pestanaNPanel === "materiales" && "Paleta de Materiales"}
-                  {pestanaNPanel === "calibrar" && "Calibración 3D"}
-                  {pestanaNPanel === "escenario" && "Malla del Escenario"}
-                  <span className="text-[9px] px-1 rounded bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-slate-300 font-mono font-normal shrink-0">N</span>
-                </h2>
-                <p className="text-[10px] text-slate-500 dark:text-slate-400 truncate">
-                  {pestanaNPanel === "muebles" && "Catálogos por Marca & Tipología (Drive)"}
-                  {pestanaNPanel === "componentes" && "Definiciones GHX por Categoría"}
-                  {pestanaNPanel === "materiales" && "Muestrario PBR & Melaminas"}
-                  {pestanaNPanel === "calibrar" && "Renderizado, Luces & Aristas"}
-                  {pestanaNPanel === "escenario" && "Cuadrícula, Ejes & Suelo"}
-                </p>
-              </div>
+          <div 
+            style={{ 
+              backgroundColor: coloresApariencia?.fondoPaneles, 
+              borderColor: coloresApariencia?.bordePaneles 
+            }}
+            className="p-3 pb-2.5 border-b flex items-center justify-between shrink-0"
+          >
+            <div className="min-w-0">
+              <h2 
+                style={{ color: coloresApariencia?.textoPrincipal }}
+                className="text-xs font-bold leading-tight truncate"
+              >
+                {pestanaActiva === "despiece"
+                  ? "Apariencia - Despiece & Costos"
+                  : pestanaActiva === "basedatos"
+                  ? "Apariencia - Base de Datos"
+                  : pestanaNPanel === "componentes" ? "Biblioteca de Componentes"
+                  : pestanaNPanel === "muebles" ? "Biblioteca de Muebles"
+                  : pestanaNPanel === "materiales" ? "Paleta de Materiales"
+                  : pestanaNPanel === "calibrar" ? "Calibración 3D"
+                  : pestanaNPanel === "escenario" ? "Malla del Escenario"
+                  : "Apariencia & Colores"}
+              </h2>
             </div>
 
             <button
@@ -390,15 +415,20 @@ export default function NPanel() {
             </button>
           </div>
 
-          {/* ========================================================================= */}
-          {/* VISTA 1: PESTAÑA MUEBLES (Asset Browser Catálogos por Marca / Drive)       */}
-          {/* ========================================================================= */}
-          {pestanaNPanel === "muebles" && <FurnitureAssetBrowser />}
+          {/* Si estamos en Despiece o Base de Datos: mostrar exclusivamente Apariencia */}
+          {pestanaActiva !== "3d" ? (
+            <AppearanceSettingsPanel />
+          ) : (
+            <>
+              {/* ========================================================================= */}
+              {/* VISTA 1: PESTAÑA MUEBLES (Asset Browser Catálogos por Marca / Drive)       */}
+              {/* ========================================================================= */}
+              {pestanaNPanel === "muebles" && <FurnitureAssetBrowser />}
 
-          {/* ========================================================================= */}
-          {/* VISTA 2: PESTAÑA COMPONENTES (Definiciones GHX en Crudo)                  */}
-          {/* ========================================================================= */}
-          {pestanaNPanel === "componentes" && (
+              {/* ========================================================================= */}
+              {/* VISTA 2: PESTAÑA COMPONENTES (Definiciones GHX en Crudo)                  */}
+              {/* ========================================================================= */}
+              {pestanaNPanel === "componentes" && (
             <div className="flex-1 min-w-0 flex flex-col overflow-hidden">
               
               {/* Buscador */}
@@ -407,7 +437,7 @@ export default function NPanel() {
                   <Search className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 pointer-events-none" />
                   <input
                     type="text"
-                    placeholder="Buscar en definiciones..."
+                    placeholder="Buscar componentes..."
                     value={busqueda}
                     onChange={(e) => setBusqueda(e.target.value)}
                     className="w-full pl-8 pr-3 py-1.5 text-xs rounded-xl bg-slate-100 dark:bg-[#0B0F17]/80 border border-slate-200 dark:border-cyan-900/40 text-slate-800 dark:text-slate-200 placeholder:text-slate-400 focus:outline-none focus:border-cyan-500 transition"
@@ -434,9 +464,8 @@ export default function NPanel() {
 
               {/* Grid de Miniaturas Blender Style (Thumbnail + Nombre) */}
               <div className="flex-1 overflow-y-auto p-2.5 custom-scrollbar">
-                <div className="text-[10px] text-slate-400 font-semibold px-1 mb-2 flex items-center justify-between">
-                  <span>DEFINICIONES ({mueblesFiltrados.length})</span>
-                  <span className="text-[9px] text-cyan-600 dark:text-cyan-400 font-mono">Arrastrar al Escenario</span>
+                <div className="text-[10px] text-slate-400 font-semibold px-1 mb-2">
+                  <span>COMPONENTES ({mueblesFiltrados.length})</span>
                 </div>
 
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5 p-1">
@@ -480,7 +509,7 @@ export default function NPanel() {
 
                 {mueblesFiltrados.length === 0 && (
                   <div className="p-6 text-center text-slate-400 text-xs">
-                    No hay definiciones en la categoría <span className="font-bold">"{categoriaMueble}"</span>.
+                    No hay componentes en la categoría <span className="font-bold">"{categoriaMueble}"</span>.
                   </div>
                 )}
               </div>
@@ -1121,8 +1150,22 @@ export default function NPanel() {
             </div>
           )}
 
+          {/* ========================================================================= */}
+          {/* VISTA 6: PESTAÑA APARIENCIA (Personalización de Colores Rhino 8 Style)    */}
+          {/* ========================================================================= */}
+          {pestanaNPanel === "apariencia" && <AppearanceSettingsPanel />}
+            </>
+          )}
+
           {/* Pie de Panel Informativo */}
-          <div className="p-2 border-t border-slate-200/80 dark:border-cyan-900/40 bg-slate-50/50 dark:bg-[#0B0F17]/40 text-[10px] text-slate-400 flex items-center justify-between px-3 shrink-0">
+          <div 
+            style={{ 
+              backgroundColor: coloresApariencia?.fondoPaneles, 
+              borderColor: coloresApariencia?.bordePaneles,
+              color: coloresApariencia?.textoSecundario
+            }}
+            className="p-2 border-t text-[10px] flex items-center justify-between px-3 shrink-0"
+          >
             <span className="flex items-center gap-1">
               <Info className="w-3 h-3" /> 3DBimFab Hub
             </span>
@@ -1131,105 +1174,132 @@ export default function NPanel() {
         </div>
 
         {/* ========================================================================= */}
-        {/* 🏷️ TIRA DE PESTAÑAS VERTICALES ESTILO BLENDER (Derecha del N-Panel)       */}
+        {/* 🏷️ TIRA DE PESTAÑAS VERTICALES ESTILO BLENDER (Solo visible en Visor 3D)   */}
         {/* ========================================================================= */}
-        <div className="w-8 shrink-0 flex flex-col py-3 items-center gap-2 bg-slate-100/80 dark:bg-[#090D14]/90 border-l border-slate-200/60 dark:border-cyan-900/30 select-none">
-          
-          {/* Pestaña Vertical 1: Muebles */}
-          <button
-            onClick={() => setPestanaNPanel("muebles")}
-            title="Biblioteca de Muebles (Catálogos por Marca)"
-            className={`w-7 py-2.5 px-1 rounded-lg flex flex-col items-center justify-center gap-1.5 transition-all cursor-pointer ${
-              pestanaNPanel === "muebles"
-                ? "bg-cyan-600 text-white shadow-md font-bold"
-                : "text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-white hover:bg-slate-200/60 dark:hover:bg-slate-800"
-            }`}
+        {pestanaActiva === "3d" && (
+          <div 
+            style={{ 
+              backgroundColor: coloresApariencia?.fondoPaneles, 
+              borderColor: coloresApariencia?.bordePaneles 
+            }}
+            className="w-8 shrink-0 flex flex-col py-3 items-center gap-2 border-l select-none"
           >
-            <Package className="w-3.5 h-3.5 shrink-0" />
-            <span 
-              style={{ writingMode: "vertical-rl" }}
-              className="text-[9px] tracking-wide font-sans leading-none"
+            
+            {/* Pestaña Vertical 1: Componentes */}
+            <button
+              onClick={() => setPestanaNPanel("componentes")}
+              title="Biblioteca de Componentes (Definiciones GHX)"
+              className={`w-7 py-2.5 px-1 rounded-lg flex flex-col items-center justify-center gap-1.5 transition-all cursor-pointer ${
+                pestanaNPanel === "componentes"
+                  ? "bg-cyan-600 text-white shadow-md font-bold"
+                  : "text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-white hover:bg-slate-200/60 dark:hover:bg-slate-800"
+              }`}
             >
-              Muebles
-            </span>
-          </button>
+              <Boxes className="w-3.5 h-3.5 shrink-0" />
+              <span 
+                style={{ writingMode: "vertical-rl" }}
+                className="text-[9px] tracking-wide font-sans leading-none"
+              >
+                Componentes
+              </span>
+            </button>
 
-          {/* Pestaña Vertical 2: Componentes */}
-          <button
-            onClick={() => setPestanaNPanel("componentes")}
-            title="Biblioteca de Componentes (Definiciones GHX)"
-            className={`w-7 py-2.5 px-1 rounded-lg flex flex-col items-center justify-center gap-1.5 transition-all cursor-pointer ${
-              pestanaNPanel === "componentes"
-                ? "bg-cyan-600 text-white shadow-md font-bold"
-                : "text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-white hover:bg-slate-200/60 dark:hover:bg-slate-800"
-            }`}
-          >
-            <Boxes className="w-3.5 h-3.5 shrink-0" />
-            <span 
-              style={{ writingMode: "vertical-rl" }}
-              className="text-[9px] tracking-wide font-sans leading-none"
+            {/* Pestaña Vertical 2: Muebles */}
+            <button
+              onClick={() => setPestanaNPanel("muebles")}
+              title="Biblioteca de Muebles (Catálogos por Marca)"
+              className={`w-7 py-2.5 px-1 rounded-lg flex flex-col items-center justify-center gap-1.5 transition-all cursor-pointer ${
+                pestanaNPanel === "muebles"
+                  ? "bg-cyan-600 text-white shadow-md font-bold"
+                  : "text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-white hover:bg-slate-200/60 dark:hover:bg-slate-800"
+              }`}
             >
-              Componentes
-            </span>
-          </button>
+              <Package className="w-3.5 h-3.5 shrink-0" />
+              <span 
+                style={{ writingMode: "vertical-rl" }}
+                className="text-[9px] tracking-wide font-sans leading-none"
+              >
+                Muebles
+              </span>
+            </button>
 
-          {/* Pestaña Vertical 3: Materiales */}
-          <button
-            onClick={() => setPestanaNPanel("materiales")}
-            title="Paleta de Materiales PBR"
-            className={`w-7 py-2.5 px-1 rounded-lg flex flex-col items-center justify-center gap-1.5 transition-all cursor-pointer ${
-              pestanaNPanel === "materiales"
-                ? "bg-cyan-600 text-white shadow-md font-bold"
-                : "text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-white hover:bg-slate-200/60 dark:hover:bg-slate-800"
-            }`}
-          >
-            <Palette className="w-3.5 h-3.5 shrink-0" />
-            <span 
-              style={{ writingMode: "vertical-rl" }}
-              className="text-[9px] tracking-wide font-sans leading-none"
+            {/* Pestaña Vertical 3: Materiales */}
+            <button
+              onClick={() => setPestanaNPanel("materiales")}
+              title="Paleta de Materiales PBR"
+              className={`w-7 py-2.5 px-1 rounded-lg flex flex-col items-center justify-center gap-1.5 transition-all cursor-pointer ${
+                pestanaNPanel === "materiales"
+                  ? "bg-cyan-600 text-white shadow-md font-bold"
+                  : "text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-white hover:bg-slate-200/60 dark:hover:bg-slate-800"
+              }`}
             >
-              Materiales
-            </span>
-          </button>
+              <Palette className="w-3.5 h-3.5 shrink-0" />
+              <span 
+                style={{ writingMode: "vertical-rl" }}
+                className="text-[9px] tracking-wide font-sans leading-none"
+              >
+                Materiales
+              </span>
+            </button>
 
-          {/* Pestaña Vertical 4: Calibrar */}
-          <button
-            onClick={() => setPestanaNPanel("calibrar")}
-            title="Calibración de Renderizado 3D"
-            className={`w-7 py-2.5 px-1 rounded-lg flex flex-col items-center justify-center gap-1.5 transition-all cursor-pointer ${
-              pestanaNPanel === "calibrar"
-                ? "bg-cyan-600 text-white shadow-md font-bold"
-                : "text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-white hover:bg-slate-200/60 dark:hover:bg-slate-800"
-            }`}
-          >
-            <Sliders className="w-3.5 h-3.5 shrink-0" />
-            <span 
-              style={{ writingMode: "vertical-rl" }}
-              className="text-[9px] tracking-wide font-sans leading-none"
+            {/* Pestaña Vertical 4: Calibrar */}
+            <button
+              onClick={() => setPestanaNPanel("calibrar")}
+              title="Calibración de Renderizado 3D"
+              className={`w-7 py-2.5 px-1 rounded-lg flex flex-col items-center justify-center gap-1.5 transition-all cursor-pointer ${
+                pestanaNPanel === "calibrar"
+                  ? "bg-cyan-600 text-white shadow-md font-bold"
+                  : "text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-white hover:bg-slate-200/60 dark:hover:bg-slate-800"
+              }`}
             >
-              Calibrar
-            </span>
-          </button>
+              <Sliders className="w-3.5 h-3.5 shrink-0" />
+              <span 
+                style={{ writingMode: "vertical-rl" }}
+                className="text-[9px] tracking-wide font-sans leading-none"
+              >
+                Calibrar
+              </span>
+            </button>
 
-          {/* Pestaña Vertical 5: Escenario */}
-          <button
-            onClick={() => setPestanaNPanel("escenario")}
-            title="Personalización del Escenario y Malla"
-            className={`w-7 py-2.5 px-1 rounded-lg flex flex-col items-center justify-center gap-1.5 transition-all cursor-pointer ${
-              pestanaNPanel === "escenario"
-                ? "bg-cyan-600 text-white shadow-md font-bold"
-                : "text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-white hover:bg-slate-200/60 dark:hover:bg-slate-800"
-            }`}
-          >
-            <Grid3X3 className="w-3.5 h-3.5 shrink-0" />
-            <span 
-              style={{ writingMode: "vertical-rl" }}
-              className="text-[9px] tracking-wide font-sans leading-none"
+            {/* Pestaña Vertical 5: Escenario */}
+            <button
+              onClick={() => setPestanaNPanel("escenario")}
+              title="Personalización del Escenario y Malla"
+              className={`w-7 py-2.5 px-1 rounded-lg flex flex-col items-center justify-center gap-1.5 transition-all cursor-pointer ${
+                pestanaNPanel === "escenario"
+                  ? "bg-cyan-600 text-white shadow-md font-bold"
+                  : "text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-white hover:bg-slate-200/60 dark:hover:bg-slate-800"
+              }`}
             >
-              Escenario
-            </span>
-          </button>
-        </div>
+              <Grid3X3 className="w-3.5 h-3.5 shrink-0" />
+              <span 
+                style={{ writingMode: "vertical-rl" }}
+                className="text-[9px] tracking-wide font-sans leading-none"
+              >
+                Escenario
+              </span>
+            </button>
+
+            {/* Pestaña Vertical 6: Apariencia */}
+            <button
+              onClick={() => setPestanaNPanel("apariencia")}
+              title="Personalización de Apariencia y Colores (Estilo Rhinoceros 8)"
+              className={`w-7 py-2.5 px-1 rounded-lg flex flex-col items-center justify-center gap-1.5 transition-all cursor-pointer ${
+                pestanaNPanel === "apariencia"
+                  ? "bg-cyan-600 text-white shadow-md font-bold"
+                  : "text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-white hover:bg-slate-200/60 dark:hover:bg-slate-800"
+              }`}
+            >
+              <Paintbrush className="w-3.5 h-3.5 shrink-0" />
+              <span 
+                style={{ writingMode: "vertical-rl" }}
+                className="text-[9px] tracking-wide font-sans leading-none"
+              >
+                Apariencia
+              </span>
+            </button>
+          </div>
+        )}
       </aside>
     </>
   );

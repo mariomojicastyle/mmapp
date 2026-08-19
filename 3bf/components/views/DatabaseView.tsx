@@ -125,7 +125,8 @@ export default function DatabaseView() {
     updateNegociacionNovopan,
     updateCostoConversion,
     updateDbHerraje,
-    updateDbTablero
+    updateDbTablero,
+    coloresApariencia,
   } = use3BFStore();
 
   const [tab, setTab] = useState<"herrajes" | "tableros" | "cantos" | "proveedores" | "conversion">("herrajes");
@@ -424,14 +425,27 @@ export default function DatabaseView() {
       </div>
 
       {/* Contenedor Principal */}
-      <div className="flex-1 overflow-y-auto rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-inner">
+      <div 
+        style={{ 
+          backgroundColor: coloresApariencia?.tablaFilaFondo || coloresApariencia?.fondoPaneles, 
+          borderColor: coloresApariencia?.tablaBorde || coloresApariencia?.bordePaneles 
+        }}
+        className="flex-1 overflow-y-auto rounded-lg border shadow-inner transition-colors"
+      >
         {/* ================================================================= */}
         {/* 🔩 TABLA 1: HERRAJES & ACCESORIOS (CON REGLAS DE MALLAS DfMA)     */}
         {/* ================================================================= */}
         {tab === "herrajes" && (
           <table className="w-full text-left border-collapse text-xs">
-            <thead className="sticky top-0 bg-slate-100 dark:bg-slate-800/90 text-slate-600 dark:text-slate-300 backdrop-blur-sm z-10">
-              <tr className="border-b border-slate-200 dark:border-slate-700 font-bold">
+            <thead 
+              style={{ 
+                backgroundColor: coloresApariencia?.tablaEncabezadoFondo || "#F1F5F9", 
+                color: coloresApariencia?.tablaEncabezadoTexto || "#0F172A",
+                borderColor: coloresApariencia?.tablaBorde || coloresApariencia?.bordePaneles 
+              }}
+              className="sticky top-0 backdrop-blur-sm z-10 font-bold border-b transition-colors"
+            >
+              <tr className="border-b font-bold">
                 <th className="p-2.5 w-24">Ref ERP</th>
                 <th className="p-2.5 w-44">Nombre GHX (Match 1:1)</th>
                 <th className="p-2.5">Descripción Comercial</th>
