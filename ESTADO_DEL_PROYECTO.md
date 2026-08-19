@@ -8,8 +8,8 @@ Este archivo es la "Memoria RAM" para Antigravity. Contiene el contexto de lo qu
 **Estado:** Integración Supabase avanzada, Identidad Visual estandarizada e Hito Fundacional de **3DBimFab (3BF)** completado.
 
 ### 🧠 RAM de Ventas B2B & CRM Relacional Multimodal (`/ventas-ram`) — Estado: IMPLEMENTADO Y VALIDADO
-- [x] **Módulo Completo de RAM de Ventas (`/ventas-ram`)**: Implementado en la plataforma Next.js con permisos de rol (`VENTAS_RAM`), navegación con ícono `BrainCircuit` y diseño Tech Ethos / Obsidian Teal.
-- [x] **Visión Multimodal con Ingesta Multi-Captura**: Soporte para pegar múltiples capturas en secuencia con `Ctrl+V` (o seleccionar archivos) con galería cronológica numerada y compresión inteligente en cliente (JPEG 1280px a 0.82) para envíos ultrarrápidos (< 2 segundos).
+- [x] **Módulo Completo de RAM de Ventas (`/ventas-ram`)**: Implementado en la plataforma Next.js con permisos de rol (`VENTAS_RAM`), navegación con ícono `BrainCircuit`, diseño Tech Ethos / Obsidian Teal, márgenes de contenedor estándar (`p-6 space-y-6`) homologados con Proyectos y **divisor redimensionable (Splitter interactivo)** para ajustar el ancho entre el Directorio y la Ficha con persistencia local.
+- [x] **Visión Multimodal con Ingesta Multi-Captura**: Soporte para **arrastrar y soltar (Drag and Drop)** imágenes directamente sobre la zona punteada o pegar múltiples capturas en secuencia con `Ctrl+V` (o seleccionar archivos) con galería cronológica numerada, compresión inteligente en cliente (JPEG 1280px a 0.82) y modelos probados en vivo (`gemini-3.5-flash`, `gemini-3.5-flash-lite`).
 - [x] **Extracción Automática de Prospectos con IA**: Modal `+ Nuevo` con auto-completado mediante Visión Gemini desde capturas de perfil de LinkedIn / WhatsApp (extrayendo Empresa, Nombre, Cargo, Teléfono, URL, Región y Notas).
 - [x] **Modo Dual Separado: Archivo Histórico vs Acción Comercial Bajo Demanda**:
   - **Pestaña 1 (`⚡ Analizar & Archivar Evento`)**: Extrae conclusiones de eventos pasados y guarda hitos limpios en el historial sin forzar respuestas inventadas.
@@ -17,6 +17,28 @@ Este archivo es la "Memoria RAM" para Antigravity. Contiene el contexto de lo qu
 - [x] **Persistencia Reactiva & Memoria Local**: Indexación inmediata y sincronización fluida entre Supabase, memoria local y la memoria activa `.agent/skills/b2b-sales-closer/ventas_ram.md`.
 
 ### 🧩 Proyecto Independiente 3BF (3DBimFab Engine — Inspirado en VIKTOR.ai) — Estado: IMPLEMENTADO Y VALIDADO
+- [x] **[NUEVO - 19 de Agosto, 2026] Hito Auth_Purga_Metadata_JWT (Resolución Definitiva de HTTP 431 y Aislamiento de Storage de Avatares)**:
+  - **Purga de `raw_user_meta_data` en Supabase Auth**: Ejecutado script de limpieza con clave de servicio para remover la cadena Base64 pesada de la cuenta `mariomojica.style@gmail.com` en la nube de Supabase Auth.
+  - **Aislamiento en PostgreSQL `profiles`**: La foto de perfil se conserva exclusivamente en la tabla SQL `profiles.avatar_url` para que los tokens JWT de sesión se emitan siempre ligeros (<300 bytes), eliminando permanentemente el error 431 al iniciar sesión.
+- [x] **[NUEVO - 19 de Agosto, 2026] Hito Perfil_Avatar_Proporciones_Fieles (Corrección de Aspect-Ratio Natural y Renderizado Fiel en Modal 'Ajustar y Rotar')**:
+  - **Detección de Relación de Aspecto Natural**: El canvas ahora calcula dinámicamente `img.naturalWidth / img.naturalHeight` emulando con exactitud el comportamiento CSS `object-cover` del visor circular.
+  - **Eliminación de Distorsión**: Se erradicó el aplastamiento/alargamiento en imágenes verticales u horizontales, permitiendo encuadres simétricos y naturales a 240×240 px con calidad fotográfica 90%.
+- [x] **[NUEVO - 19 de Agosto, 2026] Hito RAM_Ventas_Eliminar_Segmento_Historial (Depuración y Limpieza Individual de Hitos en el Hilo Cronológico)**:
+  - **Botón de Basura Sutil por Tarjeta**: Integrado un icono de eliminación discreto (`Trash2`) en la esquina superior derecha de cada tarjeta de interacción en la pestaña *Hilo de Conversación Completo*.
+  - **Confirmación Rápida & Eliminación Atómica**: Confirmación antes de borrar y persistencia inmediata en `ventas_ram_storage.json` / Supabase, recalculando reactivamente el contador de interacciones del prospecto.
+- [x] **[NUEVO - 19 de Agosto, 2026] Hito RAM_Ventas_Scroll_Independiente (Arquitectura Desktop Viewport con Scroll Aislado e Independiente en Directorio y Ficha de Trabajo)**:
+  - **Fijación de Viewport 100vh**: Estructura de pantalla completa `h-[calc(100vh-57px)] max-h-[calc(100vh-57px)] overflow-hidden` que ancla permanentemente la cabecera superior y el radar táctico.
+  - **Scroll Desacoplado**: El Directorio de Prospectos (columna izquierda) y el Copiloto Workspace (columna derecha) poseen ahora áreas de desplazamiento vertical `overflow-y-auto min-h-0` 100% independientes con scrollbars personalizadas.
+  - **Eliminación de Vacíos Visuales**: Navegar hacia abajo en un prospecto profundo ya no desplaza ni descoloca la columna contraria.
+- [x] **[NUEVO - 19 de Agosto, 2026] Hito RAM_Ventas_Fusion_Duplicados (Auditoría Integral de la Base de Datos B2B, Fusión Sin Pérdida de Datos y Consolidación de Identidades)**:
+  - **Fusión de Douglas Guth (Madesa Móveis)**: Consolidada la ficha con foto de perfil recortada, 2 interacciones cronológicas y próxima acción activa de seguimiento con comparativa del 30% de ahorro.
+  - **Restauración de Andre Luis de Melo Levinski (Kit's Paraná)**: Corregida la duplicidad nominal y restaurada su identidad completa con 2 interacciones registradas y puentes relacionales a Marcos Benedito y Jamylle Duarte.
+  - **Mantenimiento de Red Relacional**: Blindaje de los 22 prospectos comerciales únicos activos sin duplicados ni registros huérfanos.
+- [x] **[NUEVO - 19 de Agosto, 2026] Hito RAM_Ventas_Avatar_Profile (Extracción Inteligente de Foto de Perfil de LinkedIn con Bounding Box de Gemini, Recorte en Cliente 160×160px e Integración en Directorio y Ficha)**:
+  - **Detección y Bounding Box con Gemini (`avatar_box`)**: Actualizado el endpoint `/api/ventas-ram/extraer-perfil` para identificar el rostro o foto de perfil en capturas de LinkedIn y devolver coordenadas normalizadas `[ymin, xmin, ymax, xmax]`.
+  - **Recorte Automático en Canvas**: Algoritmo en cliente que recorta y escala la fotografía a un avatar cuadrado nítido de 160×160px sin sobrecargar el servidor.
+  - **Directorio de Prospectos Enriquecido**: Renderizado de foto de perfil circular con indicador de temperatura en la esquina inferior y fallback con iniciales elegantes para prospectos sin foto.
+  - **Cabecera de Ficha y Modal de Prospecto**: Visualización del avatar grande con borde activo en la ficha de trabajo y previsualización inmediata en el modal de creación/edición.
 - [x] **Creación del Proyecto Independiente `3BF/`**: Inicializado el proyecto autónomo en `c:\Desarrollo\mmapp\3BF\` con su propio `package.json`, servidor web Next.js en puerto `3005`, y ejecutor independiente `worker/3bf_worker.py` en Python (FastAPI) en puerto `8005`.
 - [x] **Arquitectura Inspirada en VIKTOR.ai**: Frontend React/Next.js con visor 3D R3F, controles paramétricos DfMA, tabla de despiece de madera, inventario de herrajes y exportador de planos CNC en DXF.
 - [x] **Compilación de Producción Validada**: Verificada la compilación estática y dinámica de Next.js (`npm run build`) con 0 errores (7/7 páginas generadas exitosamente).

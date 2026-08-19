@@ -271,25 +271,55 @@ export default function ConfiguracionPage() {
 
     const img = new Image()
     img.onload = () => {
+      // Canvas de alta resolución 240x240 px
+      const canvasSize = 240
       const canvas = document.createElement("canvas")
-      canvas.width = 150
-      canvas.height = 150
+      canvas.width = canvasSize
+      canvas.height = canvasSize
       const ctx = canvas.getContext("2d")
       
       if (ctx) {
         ctx.fillStyle = "#0e1118"
-        ctx.fillRect(0, 0, 150, 150)
+        ctx.fillRect(0, 0, canvasSize, canvasSize)
         
-        // Conversión entre visor de 192px y el canvas de 150px
-        const factor = 150 / 192
+        // El visor en UI es de 192x192 px (h-48 w-48)
+        const viewerSize = 192
+        const factor = canvasSize / viewerSize
         
-        ctx.translate(75 + offset.x * factor, 75 + offset.y * factor)
+        // Calcular aspect ratio natural para replicar object-cover sin distorsión
+        const naturalW = img.naturalWidth || 1
+        const naturalH = img.naturalHeight || 1
+        const imgAspect = naturalW / naturalH
+        
+        let drawW = viewerSize
+        let drawH = viewerSize
+        
+        if (imgAspect > 1) {
+          // Imagen horizontal: llena altura, ancho se expande
+          drawH = viewerSize
+          drawW = viewerSize * imgAspect
+        } else {
+          // Imagen vertical: llena ancho, altura se expande
+          drawW = viewerSize
+          drawH = viewerSize / imgAspect
+        }
+        
+        const finalDrawW = drawW * factor
+        const finalDrawH = drawH * factor
+        
+        ctx.imageSmoothingEnabled = true
+        ctx.imageSmoothingQuality = "high"
+        
+        ctx.save()
+        ctx.translate(canvasSize / 2 + offset.x * factor, canvasSize / 2 + offset.y * factor)
         ctx.rotate((rotation * Math.PI) / 180)
         ctx.scale(scale, scale)
         
-        ctx.drawImage(img, -75, -75, 150, 150)
+        // Dibujar centrado respetando proporciones reales
+        ctx.drawImage(img, -finalDrawW / 2, -finalDrawH / 2, finalDrawW, finalDrawH)
+        ctx.restore()
         
-        const base64 = canvas.toDataURL("image/jpeg", 0.8)
+        const base64 = canvas.toDataURL("image/jpeg", 0.90)
         setAvatarUrl(base64)
         closeModal()
       }
@@ -311,6 +341,7 @@ export default function ConfiguracionPage() {
     try {
       const fullName = `${formData.nombre} ${formData.apellido}`.trim()
       
+      // Guardar avatar_url en la base de datos profiles (sin inflar las cookies de sesión)
       const { error } = await supabase
         .from('profiles')
         .upsert({ 
@@ -323,12 +354,14 @@ export default function ConfiguracionPage() {
 
       if (error) throw error
 
+      // En auth.updateUser solo actualizamos los datos ligeros para evitar el error HTTP 431
+      const isHttpUrl = avatarUrl && (avatarUrl.startsWith("http://") || avatarUrl.startsWith("https://"))
       const { error: authError } = await supabase.auth.updateUser({
         data: { 
           full_name: fullName,
           company: formData.empresa,
           job_title: formData.cargo,
-          avatar_url: avatarUrl
+          avatar_url: isHttpUrl ? avatarUrl : undefined
         }
       })
 

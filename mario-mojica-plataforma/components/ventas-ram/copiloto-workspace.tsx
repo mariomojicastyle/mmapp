@@ -25,6 +25,7 @@ import {
   UserCheck,
   Mic,
   MicOff,
+  ExternalLink,
 } from "lucide-react"
 import {
   VentasProspecto,
@@ -45,6 +46,7 @@ interface CopilotoWorkspaceProps {
   onDeleteProspecto: () => void
   onChangeTemperatura: (temp: TemperaturaLead) => void
   onSaveInteraccion: (data: Omit<VentasInteraccion, "id" | "created_at">) => Promise<void>
+  onDeleteInteraccion?: (interaccionId: string) => Promise<void>
 }
 
 export function CopilotoWorkspace({
@@ -56,6 +58,7 @@ export function CopilotoWorkspace({
   onDeleteProspecto,
   onChangeTemperatura,
   onSaveInteraccion,
+  onDeleteInteraccion,
 }: CopilotoWorkspaceProps) {
   const [workspaceMode, setWorkspaceMode] = useState<"analisis" | "historia">("analisis")
   const [imagenesBase64, setImagenesBase64] = useState<string[]>([])
@@ -248,21 +251,54 @@ export function CopilotoWorkspace({
     window.addEventListener("paste", handlePaste)
     return () => window.removeEventListener("paste", handlePaste)
   }, [])
+  
+  const [isDraggingOver, setIsDraggingOver] = useState(false)
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = e.target.files
-    if (files && files.length > 0) {
-      Array.from(files).forEach((file) => {
+  // Procesar lista de archivos (desde input o drop)
+  const processFiles = (files: FileList | File[]) => {
+    Array.from(files).forEach((file) => {
+      if (file.type.startsWith("image/")) {
         const reader = new FileReader()
         reader.onload = async (event) => {
           if (event.target?.result) {
             const rawImg = event.target.result as string
             const compressed = await compressImage(rawImg)
             setImagenesBase64((prev) => [...prev, compressed])
+            setWorkspaceMode("analisis")
           }
         }
         reader.readAsDataURL(file)
-      })
+      }
+    })
+  }
+
+  // Handlers para Drag and Drop
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    if (!isDraggingOver) setIsDraggingOver(true)
+  }
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    setIsDraggingOver(false)
+  }
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    setIsDraggingOver(false)
+    if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+      processFiles(e.dataTransfer.files)
+    }
+  }
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files
+    if (files && files.length > 0) {
+      processFiles(files)
+      e.target.value = "" // Limpiar para permitir volver a seleccionar el mismo archivo
     }
   }
 
@@ -322,6 +358,54 @@ export function CopilotoWorkspace({
     }
   }
 
+  // Recortar Avatar Calibrado: Balance Milimétrico (+2.0% Offset) y Crecimiento del 2% (Scale 86%)
+  const cropAvatar = (imgSrc: string, box: number[]): Promise<string> => {
+    return new Promise((resolve) => {
+      const img = new Image()
+      img.onload = () => {
+        const [ymin, xmin, ymax, xmax] = box
+        const rawW = ((xmax - xmin) / 1000) * img.naturalWidth
+        const rawH = ((ymax - ymin) / 1000) * img.naturalHeight
+
+        // Proporción cuadrada con margen optimizado al 86% (crecimiento del 2% en encuadre)
+        const rawSide = Math.max(rawW, rawH)
+        const side = rawSide * 0.86
+
+        // Centro calibrado (1px más hacia la izquierda: +2.0% offset equilibrado)
+        const cx = ((xmin + xmax) / 2000) * img.naturalWidth + side * 0.020
+        const cy = ((ymin + ymax) / 2000) * img.naturalHeight
+
+        let sx = cx - side / 2
+        let sy = cy - side / 2
+        let sw = side
+        let sh = side
+
+        // Clamp para evitar salirse de los bordes de la imagen
+        if (sx < 0) { sx = 0; sw = Math.min(sw, img.naturalWidth) }
+        if (sy < 0) { sy = 0; sh = Math.min(sh, img.naturalHeight) }
+        if (sx + sw > img.naturalWidth) sw = img.naturalWidth - sx
+        if (sy + sh > img.naturalHeight) sh = img.naturalHeight - sy
+
+        // Canvas cuadrado de alta nitidez a 180x180 px
+        const size = 180
+        const canvas = document.createElement("canvas")
+        canvas.width = size
+        canvas.height = size
+        const ctx = canvas.getContext("2d")
+        if (ctx) {
+          ctx.imageSmoothingEnabled = true
+          ctx.imageSmoothingQuality = "high"
+          ctx.drawImage(img, sx, sy, sw, sh, 0, 0, size, size)
+          resolve(canvas.toDataURL("image/jpeg", 0.90))
+        } else {
+          resolve("")
+        }
+      }
+      img.onerror = () => resolve("")
+      img.src = imgSrc
+    })
+  }
+
   // Actualizar Ficha de Contacto Directamente desde la Captura de Perfil
   const handleActualizarFichaConCaptura = async () => {
     if (!prospecto || !onSaveProspecto) return
@@ -329,17 +413,23 @@ export function CopilotoWorkspace({
 
     setUpdatingProfile(true)
     try {
+      const baseImg = imagenesBase64[0] || null
       const res = await fetch("/api/ventas-ram/extraer-perfil", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          imagen_base64: imagenesBase64[0] || null,
+          imagen_base64: baseImg,
           url_o_texto: textoManual.trim() || null,
         }),
       })
 
       if (!res.ok) throw new Error("Error extrayendo datos de perfil")
       const data = await res.json()
+
+      let croppedAvatar: string | null = null
+      if (baseImg && data.avatar_box && Array.isArray(data.avatar_box) && data.avatar_box.length === 4) {
+        croppedAvatar = await cropAvatar(baseImg, data.avatar_box)
+      }
 
       const updates: Partial<VentasProspecto> = {
         id: prospecto.id,
@@ -349,13 +439,14 @@ export function CopilotoWorkspace({
         contacto_telefono: data.contacto_telefono || prospecto.contacto_telefono,
         perfil_url: data.perfil_url || prospecto.perfil_url,
         pais: data.pais || prospecto.pais,
+        avatar_url: croppedAvatar || prospecto.avatar_url,
         notas_estrategicas: data.notas_estrategicas
           ? `${prospecto.notas_estrategicas ? `${prospecto.notas_estrategicas}\n\n` : ""}${data.notas_estrategicas}`
           : prospecto.notas_estrategicas,
       }
 
       await onSaveProspecto(updates)
-      alert(`¡Ficha actualizada con éxito!\nEmpresa: ${updates.empresa}\nCargo: ${updates.contacto_cargo || "N/A"}`)
+      alert(`¡Ficha actualizada con éxito!\nContacto: ${updates.contacto_nombre}\nEmpresa: ${updates.empresa}\nCargo: ${updates.contacto_cargo || "N/A"}${croppedAvatar ? "\n✓ Foto de perfil extraída e integrada" : ""}`)
       setImagenesBase64([])
       setTextoManual("")
     } catch (err) {
@@ -433,6 +524,8 @@ export function CopilotoWorkspace({
         mensaje_final_enviado: incluirBorrador
           ? (analisisActual.traduccion_es || analisisActual.borrador_pt)
           : (analisisActual.proxima_accion_sugerida || "Hito registrado en el historial."),
+        contactos_referidos: analisisActual.contactos_referidos || [],
+        proxima_accion_sugerida: analisisActual.proxima_accion_sugerida || null,
       })
 
       // Actualizar automáticamente la próxima acción y el plazo del Radar (48 horas)
@@ -469,18 +562,55 @@ export function CopilotoWorkspace({
 
   return (
     <div className="flex flex-col h-full rounded-2xl bg-surface-container border border-outline-variant/20 shadow-sm overflow-hidden">
-      {/* Header del Prospecto */}
-      <div className="p-4 border-b border-outline-variant/15 flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-surface-container-high/40">
-        <div>
-          <div className="flex items-center gap-2">
-            <h2 className="text-base font-bold text-on-surface">{prospecto.empresa}</h2>
-            <span className="text-xs text-on-surface-variant">({prospecto.pais})</span>
+      {/* Header del Prospecto (Fijo) */}
+      <div className="p-4 border-b border-outline-variant/15 flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-surface-container-high/40 shrink-0">
+        <div className="flex items-start gap-3.5">
+          {/* Avatar / Fotografía de Perfil */}
+          <div className="shrink-0 relative mt-0.5">
+            {prospecto.avatar_url ? (
+              <img
+                src={prospecto.avatar_url}
+                alt={prospecto.contacto_nombre}
+                className="h-12 w-12 rounded-full object-cover border-2 border-primary/40 bg-surface-container shadow-sm"
+              />
+            ) : (
+              <div className="h-12 w-12 rounded-full bg-gradient-to-br from-primary/20 via-surface-container-high to-surface-container border-2 border-outline-variant/30 flex items-center justify-center text-primary font-bold text-sm shadow-sm">
+                {prospecto.contacto_nombre
+                  ? prospecto.contacto_nombre
+                      .split(" ")
+                      .map((n) => n[0])
+                      .slice(0, 2)
+                      .join("")
+                      .toUpperCase()
+                  : "MM"}
+              </div>
+            )}
           </div>
-          <p className="text-xs text-on-surface/90 font-medium">
-            {prospecto.contacto_nombre}
-            {prospecto.contacto_cargo ? ` • ${prospecto.contacto_cargo}` : ""}
-            {prospecto.contacto_telefono ? ` • 📞 ${prospecto.contacto_telefono}` : ""}
-          </p>
+
+          <div>
+            <div className="flex items-center gap-2">
+              <h2 className="text-base font-bold text-on-surface">{prospecto.empresa}</h2>
+              <span className="text-xs text-on-surface-variant">({prospecto.pais})</span>
+            </div>
+            <div className="flex items-center flex-wrap gap-1 text-xs text-on-surface/90 font-medium mt-0.5">
+              <a
+                href={
+                  prospecto.perfil_url ||
+                  `https://www.linkedin.com/search/results/all/?keywords=${encodeURIComponent(
+                    `${prospecto.contacto_nombre} ${prospecto.empresa}`
+                  )}`
+                }
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1 font-bold text-on-surface hover:text-primary hover:underline transition-colors group/headerlink"
+                title={prospecto.perfil_url ? "Abrir perfil de LinkedIn" : "Buscar prospecto en LinkedIn"}
+              >
+                <span>{prospecto.contacto_nombre}</span>
+                <ExternalLink className="h-3 w-3 text-primary opacity-70 group-hover/headerlink:opacity-100 transition-opacity shrink-0" />
+              </a>
+              {prospecto.contacto_cargo ? <span className="text-on-surface-variant">• {prospecto.contacto_cargo}</span> : ""}
+              {prospecto.contacto_telefono ? <span className="text-on-surface-variant">• 📞 {prospecto.contacto_telefono}</span> : ""}
+            </div>
 
           {/* Relación / Puente en la Red */}
           {prospecto.referido_por_nombre && (
@@ -505,6 +635,7 @@ export function CopilotoWorkspace({
             </div>
           )}
         </div>
+      </div>
 
         <div className="flex items-center gap-2">
           {/* Selector Rápido de Temperatura */}
@@ -532,7 +663,7 @@ export function CopilotoWorkspace({
 
           <button
             onClick={onDeleteProspecto}
-            className="p-1.5 rounded-xl text-on-surface-variant hover:text-rose-500 hover:bg-rose-500/10 transition-colors cursor-pointer"
+            className="p-1.5 rounded-xl bg-surface-container border border-outline-variant/30 text-on-surface-variant/50 hover:text-rose-500 hover:border-rose-500/30 hover:bg-rose-500/10 transition-colors cursor-pointer"
             title="Eliminar prospecto"
           >
             <Trash2 className="h-4 w-4" />
@@ -540,8 +671,8 @@ export function CopilotoWorkspace({
         </div>
       </div>
 
-      {/* Selector de Modo de Trabajo: Archivar/Analizar vs Hilo Completo */}
-      <div className="px-4 pt-3 pb-0 border-b border-outline-variant/15 flex items-center gap-2 bg-surface-container-high/20">
+      {/* Selector de Modo de Trabajo: Archivar/Analizar vs Hilo Completo (Fijo) */}
+      <div className="px-4 pt-3 pb-0 border-b border-outline-variant/15 flex items-center gap-2 bg-surface-container-high/20 shrink-0">
         <button
           onClick={() => setWorkspaceMode("analisis")}
           className={`flex items-center gap-2 px-3.5 py-2 border-b-2 text-xs font-bold transition-all cursor-pointer ${
@@ -593,8 +724,13 @@ export function CopilotoWorkspace({
                 </div>
               </div>
 
-              {/* Galería de Capturas */}
-              <div className="space-y-2.5">
+              {/* Galería de Capturas / Dropzone Interactivo */}
+              <div
+                onDragOver={handleDragOver}
+                onDragLeave={handleDragLeave}
+                onDrop={handleDrop}
+                className="space-y-2.5"
+              >
                 {imagenesBase64.length > 0 ? (
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
                     {imagenesBase64.map((img, index) => (
@@ -623,24 +759,47 @@ export function CopilotoWorkspace({
 
                     <div
                       onClick={() => fileInputRef.current?.click()}
-                      className="h-28 border-2 border-dashed border-outline-variant/40 hover:border-primary/60 rounded-xl flex flex-col items-center justify-center p-2 text-center cursor-pointer transition-colors bg-surface-container/40 group"
+                      className={`h-28 border-2 border-dashed rounded-xl flex flex-col items-center justify-center p-2 text-center cursor-pointer transition-all ${
+                        isDraggingOver
+                          ? "border-primary bg-primary/15 scale-[1.02] shadow-md shadow-primary/20"
+                          : "border-outline-variant/40 hover:border-primary/60 bg-surface-container/40 group"
+                      }`}
                     >
                       <Plus className="h-5 w-5 text-primary group-hover:scale-110 transition-transform mb-1" />
-                      <span className="text-[10px] font-bold text-on-surface">Añadir (+ Ctrl+V)</span>
+                      <span className="text-[10px] font-bold text-on-surface">
+                        {isDraggingOver ? "Suelta aquí" : "Añadir (Arrastrar / Ctrl+V)"}
+                      </span>
                     </div>
                   </div>
                 ) : (
                   <div
                     onClick={() => fileInputRef.current?.click()}
-                    className="border-2 border-dashed border-outline-variant/40 hover:border-primary/60 rounded-xl p-4 text-center cursor-pointer transition-colors bg-surface-container/50 group flex flex-col sm:flex-row items-center justify-center gap-3"
+                    className={`border-2 border-dashed rounded-xl p-5 text-center cursor-pointer transition-all flex flex-col sm:flex-row items-center justify-center gap-3 ${
+                      isDraggingOver
+                        ? "border-primary bg-primary/15 scale-[1.01] shadow-lg shadow-primary/25 ring-2 ring-primary/30"
+                        : "border-outline-variant/40 hover:border-primary/60 bg-surface-container/50 group"
+                    }`}
                   >
-                    <UploadCloud className="h-6 w-6 text-primary group-hover:scale-110 transition-transform opacity-80 shrink-0" />
+                    <UploadCloud
+                      className={`h-7 w-7 text-primary transition-transform shrink-0 ${
+                        isDraggingOver ? "scale-125 animate-bounce" : "group-hover:scale-110 opacity-80"
+                      }`}
+                    />
                     <div className="text-left">
                       <p className="text-xs font-bold text-on-surface">
-                        Presiona <kbd className="px-1.5 py-0.5 rounded bg-surface-container-highest border border-outline-variant/30 text-primary font-mono text-[10px]">Ctrl + V</kbd> para pegar captura(s) del chat
+                        {isDraggingOver ? (
+                          <span className="text-primary font-extrabold">¡Suelta tus imágenes aquí para añadirlas!</span>
+                        ) : (
+                          <>
+                            <span>Arrastra y suelta imágenes aquí</span> o presiona{" "}
+                            <kbd className="px-1.5 py-0.5 rounded bg-surface-container-highest border border-outline-variant/30 text-primary font-mono text-[10px]">
+                              Ctrl + V
+                            </kbd>
+                          </>
+                        )}
                       </p>
                       <p className="text-[10px] text-on-surface-variant mt-0.5">
-                        O haz clic aquí para subir imágenes desde tu equipo
+                        Soporta arrastrar múltiples capturas simultáneamente o clic para examinar
                       </p>
                     </div>
                   </div>
@@ -685,26 +844,24 @@ export function CopilotoWorkspace({
 
               {/* Botones de Acción */}
               <div className="flex flex-col sm:flex-row items-center justify-end gap-2 pt-1">
-                {/* Botón A: Actualizar Ficha de Contacto */}
-                {imagenesBase64.length > 0 && (
-                  <button
-                    onClick={handleActualizarFichaConCaptura}
-                    disabled={updatingProfile || analyzing}
-                    className="w-full sm:w-auto flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-xl bg-surface-container hover:bg-primary/10 border border-primary/30 text-xs font-bold text-primary transition-colors shadow-xs cursor-pointer disabled:opacity-50"
-                  >
-                    {updatingProfile ? (
-                      <>
-                        <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                        <span>Extrayendo perfil...</span>
-                      </>
-                    ) : (
-                      <>
-                        <UserCheck className="h-3.5 w-3.5" />
-                        <span>🔄 Actualizar Ficha con esta Captura</span>
-                      </>
-                    )}
-                  </button>
-                )}
+                {/* Botón A: Actualizar Ficha de Contacto (Siempre visible) */}
+                <button
+                  onClick={handleActualizarFichaConCaptura}
+                  disabled={(imagenesBase64.length === 0 && !textoManual.trim()) || updatingProfile || analyzing}
+                  className="w-full sm:w-auto flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-xl bg-surface-container hover:bg-primary/10 border border-primary/30 text-xs font-bold text-primary transition-colors shadow-xs cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+                >
+                  {updatingProfile ? (
+                    <>
+                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                      <span>Extrayendo perfil...</span>
+                    </>
+                  ) : (
+                    <>
+                      <UserCheck className="h-3.5 w-3.5" />
+                      <span>🔄 Actualizar Ficha con esta Captura</span>
+                    </>
+                  )}
+                </button>
 
                 {/* Botón B: Analizar Interacción / Chat */}
                 <button
@@ -746,9 +903,32 @@ export function CopilotoWorkspace({
                     </span>
                   </div>
 
-                  <p className="text-xs text-on-surface leading-relaxed bg-surface-container-high/40 p-3 rounded-xl border border-outline-variant/15">
+                  <p className="text-xs text-on-surface leading-relaxed bg-surface-container-high/40 p-3 rounded-xl border border-outline-variant/15 whitespace-pre-line">
                     {analisisActual.analisis_es}
                   </p>
+
+                  {/* Contactos Referidos o Puentes Facilitados */}
+                  {analisisActual.contactos_referidos && analisisActual.contactos_referidos.length > 0 && (
+                    <div className="space-y-2 pt-1">
+                      <span className="text-[11px] font-bold text-emerald-600 dark:text-emerald-400 flex items-center gap-1.5">
+                        <span>🌟 {analisisActual.contactos_referidos.length} Contacto(s) / Derivación(es) Facilitada(s):</span>
+                      </span>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                        {analisisActual.contactos_referidos.map((ref, idx) => (
+                          <div key={idx} className="p-2.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-xs space-y-0.5">
+                            <p className="font-bold text-on-surface flex items-center justify-between">
+                              <span>👤 {ref.nombre}</span>
+                              <span className="text-[9px] px-1.5 py-0.2 rounded bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 font-semibold uppercase">Referido</span>
+                            </p>
+                            {ref.cargo && <p className="text-[11px] text-on-surface-variant font-medium">{ref.cargo}</p>}
+                            {ref.contacto && (
+                              <p className="text-[11px] font-mono text-emerald-600 dark:text-emerald-400 font-semibold">{ref.contacto}</p>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
 
                   {analisisActual.proxima_accion_sugerida && (
                     <div className="flex items-center gap-2 text-xs font-semibold text-primary bg-primary/5 p-2 rounded-lg border border-primary/20">
@@ -870,6 +1050,7 @@ export function CopilotoWorkspace({
               interacciones={interacciones}
               prospecto={prospecto}
               onSaveInteraccion={onSaveInteraccion}
+              onDeleteInteraccion={onDeleteInteraccion}
             />
           </div>
         )}

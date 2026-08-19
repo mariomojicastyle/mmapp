@@ -16,6 +16,7 @@ import {
   ArrowRight,
   Mic,
   MicOff,
+  Trash2,
 } from "lucide-react"
 import { VentasProspecto, VentasInteraccion, CanalContacto } from "@/lib/types/ventas-ram"
 import { RefinamientoChat } from "./refinamiento-chat"
@@ -24,6 +25,7 @@ interface HistorialTimelineProps {
   interacciones: VentasInteraccion[]
   prospecto?: VentasProspecto | null
   onSaveInteraccion?: (data: Omit<VentasInteraccion, "id" | "created_at">) => Promise<void>
+  onDeleteInteraccion?: (interaccionId: string) => Promise<void>
 }
 
 interface JugadaGenerada {
@@ -37,8 +39,10 @@ export function HistorialTimeline({
   interacciones,
   prospecto,
   onSaveInteraccion,
+  onDeleteInteraccion,
 }: HistorialTimelineProps) {
   const [copiedId, setCopiedId] = useState<string | null>(null)
+  const [deletingId, setDeletingId] = useState<string | null>(null)
   const [generatingJugada, setGeneratingJugada] = useState(false)
   const [jugadaActiva, setJugadaActiva] = useState<JugadaGenerada | null>(null)
   const [copiedJugada, setCopiedJugada] = useState(false)
@@ -115,7 +119,6 @@ export function HistorialTimeline({
       }
 
       recognition.onend = () => {
-        // Si no fue detenido manualmente y el usuario sigue en modo escucha, reanudar
         if (!manualStopRef.current) {
           try {
             recognition.start()
@@ -229,6 +232,22 @@ export function HistorialTimeline({
       setJugadaActiva(null)
     } finally {
       setSavingJugada(false)
+    }
+  }
+
+  const handleDeleteInteraccionItem = async (interaccionId: string) => {
+    if (!onDeleteInteraccion) return
+    const confirmar = window.confirm("¿Deseas eliminar este hito del historial cronológico?")
+    if (!confirmar) return
+
+    setDeletingId(interaccionId)
+    try {
+      await onDeleteInteraccion(interaccionId)
+    } catch (err) {
+      console.error("Error eliminando hito:", err)
+      alert("No se pudo eliminar el hito.")
+    } finally {
+      setDeletingId(null)
     }
   }
 
@@ -469,34 +488,84 @@ export function HistorialTimeline({
                     </div>
                   </div>
 
-                  {hasDualReply && (
-                    <button
-                      onClick={() => handleCopy(item.id, item.borrador_pt)}
-                      className="flex items-center gap-1 px-2 py-0.5 rounded-md bg-surface-container-high hover:bg-primary/15 text-on-surface hover:text-primary transition-colors text-[10px] font-semibold cursor-pointer shrink-0"
-                      title="Copiar mensaje"
-                    >
-                      {copiedId === item.id ? (
-                        <>
-                          <Check className="h-3 w-3 text-emerald-500" />
-                          <span className="text-emerald-500">Copiado</span>
-                        </>
-                      ) : (
-                        <>
-                          <Copy className="h-3 w-3" />
-                          <span>Copiar PT</span>
-                        </>
-                      )}
-                    </button>
-                  )}
+                  <div className="flex items-center gap-1.5 shrink-0">
+                    {hasDualReply && (
+                      <button
+                        onClick={() => handleCopy(item.id, item.borrador_pt)}
+                        className="flex items-center gap-1 px-2 py-0.5 rounded-md bg-surface-container-high hover:bg-primary/15 text-on-surface hover:text-primary transition-colors text-[10px] font-semibold cursor-pointer"
+                        title="Copiar mensaje"
+                      >
+                        {copiedId === item.id ? (
+                          <>
+                            <Check className="h-3 w-3 text-emerald-500" />
+                            <span className="text-emerald-500">Copiado</span>
+                          </>
+                        ) : (
+                          <>
+                            <Copy className="h-3 w-3" />
+                            <span>Copiar PT</span>
+                          </>
+                        )}
+                      </button>
+                    )}
+
+                    {onDeleteInteraccion && item.id && (
+                      <button
+                        onClick={() => handleDeleteInteraccionItem(item.id)}
+                        disabled={deletingId === item.id}
+                        className="p-1 rounded-md text-on-surface-variant/40 hover:text-rose-500 hover:bg-rose-500/10 transition-colors cursor-pointer"
+                        title="Eliminar este hito del historial"
+                      >
+                        {deletingId === item.id ? (
+                          <Loader2 className="h-3.5 w-3.5 animate-spin text-rose-500" />
+                        ) : (
+                          <Trash2 className="h-3.5 w-3.5" />
+                        )}
+                      </button>
+                    )}
+                  </div>
                 </div>
 
-                {/* Cuerpo Condensado */}
-                <div className="p-3 space-y-2 border-t border-outline-variant/10">
-                  <p className="text-xs text-on-surface/90 leading-relaxed">
+                {/* Cuerpo del Hito Enriquecido */}
+                <div className="p-3 space-y-3 border-t border-outline-variant/10">
+                  <p className="text-xs text-on-surface leading-relaxed whitespace-pre-line">
                     {item.resumen_es}
                   </p>
 
-                  {(item.traduccion_es || item.mensaje_final_enviado) && (
+                  {/* Tarjetas de Contactos Referidos / Derivaciones */}
+                  {item.contactos_referidos && item.contactos_referidos.length > 0 && (
+                    <div className="space-y-1.5 pt-1">
+                      <span className="text-[11px] font-bold text-emerald-600 dark:text-emerald-400 flex items-center gap-1.5">
+                        <span>🌟 {item.contactos_referidos.length} Contacto(s) / Derivación(es) Facilitada(s):</span>
+                      </span>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                        {item.contactos_referidos.map((ref, idx) => (
+                          <div key={idx} className="p-2.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-xs space-y-0.5">
+                            <p className="font-bold text-on-surface flex items-center justify-between">
+                              <span>👤 {ref.nombre}</span>
+                              <span className="text-[9px] px-1.5 py-0.2 rounded bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 font-semibold uppercase">Referido</span>
+                            </p>
+                            {ref.cargo && <p className="text-[11px] text-on-surface-variant font-medium">{ref.cargo}</p>}
+                            {ref.contacto && (
+                              <p className="text-[11px] font-mono text-emerald-600 dark:text-emerald-400 font-semibold">{ref.contacto}</p>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Próximo Paso Sugerido del Hito */}
+                  {item.proxima_accion_sugerida && (
+                    <div className="flex items-start gap-2 text-xs font-semibold text-primary bg-primary/5 p-2.5 rounded-lg border border-primary/20">
+                      <span className="shrink-0">💡 Próximo Paso Sugerido:</span>
+                      <span className="text-on-surface font-normal leading-relaxed">
+                        {item.proxima_accion_sugerida}
+                      </span>
+                    </div>
+                  )}
+
+                  {(item.traduccion_es || (item.mensaje_final_enviado && item.mensaje_final_enviado !== item.proxima_accion_sugerida)) && (
                     <div className="flex items-start gap-2 bg-surface-container-high/40 p-2.5 rounded-lg border border-outline-variant/15 text-[11px] text-on-surface-variant italic">
                       <Quote className="h-3.5 w-3.5 text-primary shrink-0 opacity-70 mt-0.5" />
                       <span className="leading-snug">{item.traduccion_es || item.mensaje_final_enviado}</span>

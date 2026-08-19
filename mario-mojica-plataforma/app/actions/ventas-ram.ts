@@ -765,3 +765,41 @@ export async function deleteVentasProspecto(id: string): Promise<{ success: bool
     return { success: true }
   }
 }
+
+export async function deleteVentasInteraccion(
+  prospectoId: string,
+  interaccionId: string
+): Promise<{ success: boolean; error?: string }> {
+  const disk = loadDiskStore()
+  if (disk.interacciones[prospectoId]) {
+    disk.interacciones[prospectoId] = disk.interacciones[prospectoId].filter(
+      (i) => i.id !== interaccionId
+    )
+  }
+
+  const pIdx = disk.prospectos.findIndex((p) => p.id === prospectoId)
+  if (pIdx >= 0) {
+    const count = (disk.interacciones[prospectoId] || []).length
+    disk.prospectos[pIdx] = {
+      ...disk.prospectos[pIdx],
+      interacciones_count: count,
+    }
+  }
+
+  saveDiskStore(disk.prospectos, disk.interacciones)
+
+  try {
+    const supabase = getSupabaseAdmin()
+    if (!supabase) return { success: true }
+
+    await supabase
+      .from("ventas_interacciones")
+      .delete()
+      .eq("id", interaccionId)
+
+    return { success: true }
+  } catch (err: any) {
+    console.error("Error en deleteVentasInteraccion:", err)
+    return { success: true }
+  }
+}

@@ -1,7 +1,7 @@
 "use client"
 
 import React, { useState, useMemo } from "react"
-import { Search, Plus, Flame, Clock, ArrowUpDown, Building2, MessageSquare, Mail, Phone, Trash2 } from "lucide-react"
+import { Search, Plus, Flame, Clock, ArrowUpDown, Building2, MessageSquare, Mail, Phone, Trash2, ExternalLink } from "lucide-react"
 import { VentasProspecto, TemperaturaLead, CanalContacto } from "@/lib/types/ventas-ram"
 
 interface ListaProspectosProps {
@@ -154,8 +154,8 @@ export function ListaProspectos({
 
   return (
     <div className="flex flex-col h-full rounded-2xl bg-surface-container border border-outline-variant/20 shadow-sm overflow-hidden">
-      {/* Header y Acciones */}
-      <div className="p-4 border-b border-outline-variant/15 space-y-3">
+      {/* Header y Acciones (Fijo) */}
+      <div className="p-4 border-b border-outline-variant/15 space-y-3 shrink-0">
         <div className="flex items-center justify-between">
           <div>
             <h2 className="text-base font-bold text-on-surface flex items-center gap-2">
@@ -280,110 +280,157 @@ export function ListaProspectos({
                     : "border-l-transparent hover:bg-surface-container-high/60"
                 }`}
               >
-                <div className="flex items-start justify-between gap-2">
-                  <div className="min-w-0 flex-1">
-                    <div className="flex items-center gap-1.5">
-                      <span className="font-bold text-xs text-on-surface truncate block">
-                        {p.empresa}
-                      </span>
-                      <span className="text-[10px] text-on-surface-variant shrink-0">
-                        ({p.pais})
-                      </span>
-                    </div>
-
-                    <p className="text-[11px] font-medium text-on-surface/90 truncate mt-0.5">
-                      {p.contacto_nombre}
-                    </p>
-
-                    {p.contacto_cargo && (
-                      <p className="text-[10px] text-on-surface-variant truncate">
-                        {p.contacto_cargo}
-                      </p>
+                <div className="flex items-start gap-3">
+                  {/* Avatar / Fotografía de Perfil */}
+                  <div className="shrink-0 relative">
+                    {p.avatar_url ? (
+                      <img
+                        src={p.avatar_url}
+                        alt={p.contacto_nombre}
+                        className="h-10 w-10 rounded-full object-cover border-2 border-outline-variant/30 bg-surface-container shadow-xs"
+                      />
+                    ) : (
+                      <div className="h-10 w-10 rounded-full bg-gradient-to-br from-primary/20 via-surface-container-high to-surface-container border-2 border-outline-variant/30 flex items-center justify-center text-primary font-bold text-xs shadow-xs">
+                        {p.contacto_nombre
+                          ? p.contacto_nombre
+                              .split(" ")
+                              .map((n) => n[0])
+                              .slice(0, 2)
+                              .join("")
+                              .toUpperCase()
+                          : "MM"}
+                      </div>
                     )}
-                  </div>
-
-                  {/* Badge de Temperatura y Botón de Eliminar */}
-                  <div className="flex items-center gap-1 shrink-0">
-                    <span
-                      className={`px-2 py-0.5 rounded-full text-[10px] font-semibold border flex items-center gap-1 ${tempBadge.classes}`}
+                    {/* Indicador de temperatura sobre el avatar */}
+                    <div
+                      className={`absolute -bottom-0.5 -right-0.5 h-3.5 w-3.5 rounded-full border-2 border-surface-container flex items-center justify-center text-[8px] ${
+                        p.temperatura === "caliente"
+                          ? "bg-amber-500 text-white"
+                          : p.temperatura === "enfriando"
+                          ? "bg-rose-500 text-white"
+                          : "bg-primary text-primary-foreground"
+                      }`}
+                      title={`Temperatura: ${tempBadge.label}`}
                     >
-                      <span>{tempBadge.icon}</span>
-                      <span>{tempBadge.label}</span>
-                    </span>
+                      {tempBadge.icon}
+                    </div>
+                  </div>
 
-                    {onDeleteProspecto && (
-                      <button
-                        type="button"
-                        onClick={(e) => {
-                          e.stopPropagation()
-                          onDeleteProspecto(p)
-                        }}
-                        className="opacity-0 group-hover:opacity-100 p-1 rounded-lg text-on-surface-variant hover:text-rose-500 hover:bg-rose-500/10 transition-all cursor-pointer"
-                        title="Eliminar prospecto"
-                      >
-                        <Trash2 className="h-3.5 w-3.5" />
-                      </button>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-1.5">
+                          <span className="font-bold text-xs text-on-surface truncate block">
+                            {p.empresa}
+                          </span>
+                          <span className="text-[10px] text-on-surface-variant shrink-0">
+                            ({p.pais})
+                          </span>
+                        </div>
+
+                        <div className="flex items-center gap-1 mt-0.5">
+                          <a
+                            href={
+                              p.perfil_url ||
+                              `https://www.linkedin.com/search/results/all/?keywords=${encodeURIComponent(
+                                `${p.contacto_nombre} ${p.empresa}`
+                              )}`
+                            }
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            onClick={(e) => e.stopPropagation()}
+                            className="inline-flex items-center gap-1 text-[11px] font-bold text-on-surface hover:text-primary hover:underline transition-colors group/link truncate"
+                            title={p.perfil_url ? "Abrir perfil de LinkedIn" : "Buscar prospecto en LinkedIn"}
+                          >
+                            <span className="truncate">{p.contacto_nombre}</span>
+                            <ExternalLink className="h-2.5 w-2.5 opacity-60 group-hover/link:opacity-100 transition-opacity text-primary shrink-0" />
+                          </a>
+                        </div>
+
+                        {p.contacto_cargo && (
+                          <p className="text-[10px] text-on-surface-variant truncate">
+                            {p.contacto_cargo}
+                          </p>
+                        )}
+                      </div>
+
+                      {/* Botón de Eliminar en la esquina superior derecha */}
+                      <div className="flex items-center gap-1 shrink-0 -mt-0.5">
+                        {onDeleteProspecto && (
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              onDeleteProspecto(p)
+                            }}
+                            className="p-1 rounded-lg text-on-surface-variant/40 hover:text-rose-500 hover:bg-rose-500/10 transition-colors cursor-pointer"
+                            title="Eliminar prospecto"
+                          >
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </button>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Relación / Puente de Conexión */}
+                    {p.referido_por_nombre && (
+                      <div className="mt-1.5 flex items-center gap-1 text-[9px] text-amber-500 font-semibold bg-amber-500/10 border border-amber-500/20 px-2 py-0.5 rounded-md truncate">
+                        <span>🔗</span>
+                        <span className="truncate">Puente: {p.referido_por_nombre}</span>
+                      </div>
                     )}
-                  </div>
-                </div>
 
-                {/* Relación / Puente de Conexión */}
-                {p.referido_por_nombre && (
-                  <div className="mt-1.5 flex items-center gap-1 text-[9px] text-amber-500 font-semibold bg-amber-500/10 border border-amber-500/20 px-2 py-0.5 rounded-md truncate">
-                    <span>🔗</span>
-                    <span className="truncate">Puente: {p.referido_por_nombre}</span>
-                  </div>
-                )}
+                    {(() => {
+                      const firstName = (p.contacto_nombre || "").toLowerCase().split(" ")[0]
+                      const apadrinados = prospectos.filter(
+                        (other) =>
+                          other.id !== p.id &&
+                          (other.referido_por_id === p.id ||
+                            (other.referido_por_nombre &&
+                              firstName &&
+                              firstName.length > 2 &&
+                              other.referido_por_nombre.toLowerCase().includes(firstName)))
+                      )
+                      if (apadrinados.length === 0) return null
+                      return (
+                        <div className="mt-1.5 flex items-center gap-1 text-[9px] text-emerald-600 dark:text-emerald-400 font-semibold bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded-md truncate">
+                          <span>🌟</span>
+                          <span className="truncate">
+                            Padrino B2B: Conectó con {apadrinados.map((a) => `${a.contacto_nombre.split(" ")[0]} (${a.empresa})`).join(", ")}
+                          </span>
+                        </div>
+                      )
+                    })()}
 
-                {(() => {
-                  const firstName = (p.contacto_nombre || "").toLowerCase().split(" ")[0]
-                  const apadrinados = prospectos.filter(
-                    (other) =>
-                      other.id !== p.id &&
-                      (other.referido_por_id === p.id ||
-                        (other.referido_por_nombre &&
-                          firstName &&
-                          firstName.length > 2 &&
-                          other.referido_por_nombre.toLowerCase().includes(firstName)))
-                  )
-                  if (apadrinados.length === 0) return null
-                  return (
-                    <div className="mt-1.5 flex items-center gap-1 text-[9px] text-emerald-600 dark:text-emerald-400 font-semibold bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded-md truncate">
-                      <span>🌟</span>
-                      <span className="truncate">
-                        Padrino B2B: Conectó con {apadrinados.map((a) => `${a.contacto_nombre.split(" ")[0]} (${a.empresa})`).join(", ")}
+                    {/* Próxima Acción o Nota con Resaltado del Radar */}
+                    {p.proxima_accion_descripcion && (
+                      <div
+                        className={`mt-2 p-1.5 rounded-lg text-[10px] font-medium leading-snug ${
+                          checkIsUrgente(p)
+                            ? "bg-amber-500/15 border border-amber-500/30 text-amber-800 dark:text-amber-300 font-semibold"
+                            : "bg-primary/5 text-primary"
+                        }`}
+                      >
+                        <p className="line-clamp-1">
+                          {checkIsUrgente(p) ? "⏳ " : "📌 "}
+                          {p.proxima_accion_descripcion}
+                        </p>
+                      </div>
+                    )}
+
+                    {/* Footer del Item: Canal y Fecha */}
+                    <div className="mt-2.5 flex items-center justify-between text-[10px] text-on-surface-variant/80">
+                      <span className="flex items-center gap-1">
+                        {getCanalIcon(p.canal_preferido)}
+                        <span>{p.canal_preferido}</span>
+                      </span>
+
+                      <span className="flex items-center gap-1">
+                        <Clock className="h-3 w-3" />
+                        <span>{formatTiempoRelativo(p.ultima_interaccion_at)}</span>
                       </span>
                     </div>
-                  )
-                })()}
-
-                {/* Próxima Acción o Nota con Resaltado del Radar */}
-                {p.proxima_accion_descripcion && (
-                  <div
-                    className={`mt-2 p-1.5 rounded-lg text-[10px] font-medium leading-snug ${
-                      checkIsUrgente(p)
-                        ? "bg-amber-500/15 border border-amber-500/30 text-amber-800 dark:text-amber-300 font-semibold"
-                        : "bg-primary/5 text-primary"
-                    }`}
-                  >
-                    <p className="line-clamp-1">
-                      {checkIsUrgente(p) ? "⏳ " : "📌 "}
-                      {p.proxima_accion_descripcion}
-                    </p>
                   </div>
-                )}
-
-                {/* Footer del Item: Canal y Fecha */}
-                <div className="mt-2.5 flex items-center justify-between text-[10px] text-on-surface-variant/80">
-                  <span className="flex items-center gap-1">
-                    {getCanalIcon(p.canal_preferido)}
-                    <span>{p.canal_preferido}</span>
-                  </span>
-
-                  <span className="flex items-center gap-1">
-                    <Clock className="h-3 w-3" />
-                    <span>{formatTiempoRelativo(p.ultima_interaccion_at)}</span>
-                  </span>
                 </div>
               </div>
             )

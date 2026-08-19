@@ -96,6 +96,13 @@ Para sacarle el máximo provecho a nuestra maquinaria de ventas, sigue este fluj
 - *Avance:* Andre Luis respondió en LinkedIn recomendando enviar la presentación a Marcos Benedito (`marcos.benedito@kitsparana.com.br`) y Jamylle Duarte (`jamylle.duarte@kitsparana.com.br`).
 - *Acción:* Mario le agradeció y se redactó el correo corporativo formal para Marcos y Jamylle.
 
-**Indústria de Móveis Bartira (Denis Roveri - 17 de Agosto 2026):**
-- *Avance:* Denis informó amablemente que ya no forma parte de Bartira. Mario le respondió dejando abiertas las puertas profesionales para futuros proyectos en el sector.
+**Móveis Henn (Jonas Borck & Marcos - 19 de Agosto 2026):**
+- *Perfil & Situación:* Jonas Borck (Analista de Engenharia de Produtos en Móveis Henn, gigante del sector RTA en Brasil).
+- *Hito 1 (Prospección Maestra & Apadrinamiento B2B):* Mario inició contacto en LinkedIn. Jonas aclaró que él no diseña los manuales directamente, pero tras el trato empático y profesional de Mario (15 años en Maderkit, calculadora con 30% de ahorro en la *Cômoda Ravenna D737* y piloto 3D sin costo), Jonas se convirtió en 'Padrino B2B' y promotor interno.
+- *Contactos Facilitados:*
+  1. **Marcos** (Coordenador de Engenharia e P&D - Jefe de Jonas): WhatsApp directo `+55 49 8807-4325`.
+  2. **Rudgeri Henkel** (Ingeniería / Toma de decisiones).
+  3. **Édio Grassi** (Ingeniería / Toma de decisiones).
+  4. **Jacson Perin** (Coordenador de Marketing).
+- *Próxima Jugada Táctica:* Escribir de inmediato a Marcos por WhatsApp referenciado por Jonas para presentar el ahorro del 30% y el piloto 3D de la Cômoda Ravenna D737. Mantener a Jonas informado para consolidar la alianza.
 

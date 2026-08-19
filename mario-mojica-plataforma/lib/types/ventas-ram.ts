@@ -43,6 +43,12 @@ export interface VentasInteraccion {
   borrador_pt: string
   traduccion_es: string
   mensaje_final_enviado: string | null
+  contactos_referidos?: {
+    nombre: string
+    cargo?: string
+    contacto?: string
+  }[]
+  proxima_accion_sugerida?: string | null
   created_at: string
 }
 
@@ -52,6 +58,11 @@ export interface AnalisisIAResponse {
     cargo?: string
     empresa?: string
   }
+  contactos_referidos?: {
+    nombre: string
+    cargo?: string
+    contacto?: string
+  }[]
   analisis_es: string
   intencion_detectada: string
   termometro: TemperaturaLead

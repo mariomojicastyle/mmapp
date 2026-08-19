@@ -1,7 +1,7 @@
 "use client"
 
-import React, { useState, useEffect } from "react"
-import { BrainCircuit, Loader2, RefreshCw, Flame, ShieldAlert } from "lucide-react"
+import React, { useState, useEffect, useRef, useCallback } from "react"
+import { BrainCircuit, Loader2, RefreshCw, Flame, ShieldAlert, GripVertical } from "lucide-react"
 import { VentasProspecto, VentasInteraccion, TemperaturaLead } from "@/lib/types/ventas-ram"
 import {
   getVentasProspectos,
@@ -10,6 +10,7 @@ import {
   deleteVentasProspecto,
   updateTemperaturaProspecto,
   saveVentasInteraccion,
+  deleteVentasInteraccion,
 } from "@/app/actions/ventas-ram"
 import { ListaProspectos } from "@/components/ventas-ram/lista-prospectos"
 import { CopilotoWorkspace } from "@/components/ventas-ram/copiloto-workspace"
@@ -22,6 +23,62 @@ export default function VentasRamPage() {
   const [selectedProspecto, setSelectedProspecto] = useState<VentasProspecto | null>(null)
   const [interacciones, setInteracciones] = useState<VentasInteraccion[]>([])
   const [loading, setLoading] = useState(true)
+
+  // Splitter / Distribución de Ancho de Paneles
+  const [splitPercent, setSplitPercent] = useState<number>(33.33)
+  const [isDragging, setIsDragging] = useState(false)
+  const containerRef = useRef<HTMLDivElement>(null)
+
+  // Cargar ancho preferido guardado
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem("ventas_ram_panel_split")
+      if (saved) {
+        const val = parseFloat(saved)
+        if (!isNaN(val) && val >= 20 && val <= 60) {
+          setSplitPercent(val)
+        }
+      }
+    } catch (e) {
+      console.error("Error leyendo splitPercent de localStorage:", e)
+    }
+  }, [])
+
+  // Iniciar Arrastre del Separador
+  const handleMouseDown = useCallback((e: React.MouseEvent) => {
+    e.preventDefault()
+    setIsDragging(true)
+  }, [])
+
+  // Listeners de Arrastre Globales
+  useEffect(() => {
+    if (!isDragging) return
+
+    const handleMouseMove = (e: MouseEvent) => {
+      if (!containerRef.current) return
+      const rect = containerRef.current.getBoundingClientRect()
+      const currentX = e.clientX - rect.left
+      const newPercent = (currentX / rect.width) * 100
+      // Clampear entre 20% y 60%
+      const clamped = Math.max(20, Math.min(60, newPercent))
+      setSplitPercent(clamped)
+    }
+
+    const handleMouseUp = () => {
+      setIsDragging(false)
+      try {
+        localStorage.setItem("ventas_ram_panel_split", splitPercent.toString())
+      } catch {}
+    }
+
+    window.addEventListener("mousemove", handleMouseMove)
+    window.addEventListener("mouseup", handleMouseUp)
+
+    return () => {
+      window.removeEventListener("mousemove", handleMouseMove)
+      window.removeEventListener("mouseup", handleMouseUp)
+    }
+  }, [isDragging, splitPercent])
 
   // Modal Prospecto (Crear / Editar)
   const [isModalOpen, setIsModalOpen] = useState(false)
@@ -134,10 +191,34 @@ export default function VentasRamPage() {
     }
   }
 
+  // Eliminar interacción individual del historial cronológico
+  const handleDeleteInteraccion = async (interaccionId: string) => {
+    if (!selectedProspecto) return
+    const res = await deleteVentasInteraccion(selectedProspecto.id, interaccionId)
+    if (res.success) {
+      setInteracciones((prev) => prev.filter((i) => i.id !== interaccionId))
+      setSelectedProspecto((prev) =>
+        prev
+          ? {
+              ...prev,
+              interacciones_count: Math.max(0, (prev.interacciones_count || 1) - 1),
+            }
+          : null
+      )
+      setProspectos((prev) =>
+        prev.map((p) =>
+          p.id === selectedProspecto.id
+            ? { ...p, interacciones_count: Math.max(0, (p.interacciones_count || 1) - 1) }
+            : p
+        )
+      )
+    }
+  }
+
   return (
-    <div className="space-y-4">
-      {/* Header Principal de la Página */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+    <div className="h-[calc(100vh-57px)] max-h-[calc(100vh-57px)] p-6 space-y-4 flex flex-col overflow-hidden">
+      {/* Header Principal de la Página (Fijo) */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 shrink-0">
         <div className="flex items-center gap-3">
           <div className="h-10 w-10 rounded-2xl bg-primary/10 text-primary flex items-center justify-center shadow-xs">
             <BrainCircuit className="h-5 w-5" />
@@ -174,16 +255,22 @@ export default function VentasRamPage() {
         </div>
       </div>
 
-      {/* Grid Principal a 2 Columnas */}
+      {/* Contenedor Principal con Splitter Resizable & Scroll 100% Independiente */}
       {loading && prospectos.length === 0 ? (
-        <div className="flex flex-col items-center justify-center p-16 text-on-surface-variant">
+        <div className="flex flex-col items-center justify-center p-16 text-on-surface-variant flex-1 min-h-0">
           <Loader2 className="h-8 w-8 animate-spin text-primary mb-2" />
           <p className="text-xs font-medium">Cargando memoria comercial...</p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 h-[calc(100vh-210px)] min-h-[620px]">
-          {/* Columna Izquierda: Directorio & Radar (4 de 12 Cols) */}
-          <div className="lg:col-span-4 h-full">
+        <div
+          ref={containerRef}
+          style={{ "--left-split": `${splitPercent}%`, "--right-split": `${100 - splitPercent}%` } as React.CSSProperties}
+          className={`flex flex-col lg:flex-row gap-4 lg:gap-0 flex-1 min-h-0 h-full overflow-hidden relative ${
+            isDragging ? "cursor-col-resize select-none" : ""
+          }`}
+        >
+          {/* Columna Izquierda: Directorio & Radar con Scroll Propio */}
+          <div className="w-full lg:w-[calc(var(--left-split)-12px)] h-full min-h-0 shrink-0 flex flex-col overflow-hidden">
             <ListaProspectos
               prospectos={prospectos}
               selectedId={selectedProspecto?.id || null}
@@ -196,8 +283,32 @@ export default function VentasRamPage() {
             />
           </div>
 
-          {/* Columna Derecha: Copiloto Workspace & Bitácora (8 de 12 Cols) */}
-          <div className="lg:col-span-8 h-full">
+          {/* Separador Arrastrable (Canal Completo de 24px de Separación como Hitbox) */}
+          <div
+            onMouseDown={handleMouseDown}
+            onDoubleClick={() => {
+              setSplitPercent(33.33)
+              try {
+                localStorage.setItem("ventas_ram_panel_split", "33.33")
+              } catch {}
+            }}
+            className={`hidden lg:flex items-center justify-center w-6 shrink-0 h-full z-20 cursor-col-resize select-none group transition-colors rounded-xl ${
+              isDragging ? "bg-primary/10" : "hover:bg-primary/5"
+            }`}
+            title="Arrastra desde este espacio para ajustar el ancho (Doble clic para restablecer)"
+          >
+            {/* Indicador Visual en la Línea Media */}
+            <div
+              className={`w-1 rounded-full transition-all duration-200 ${
+                isDragging
+                  ? "bg-primary w-1.5 h-20 shadow-lg shadow-primary/40"
+                  : "bg-outline-variant/35 h-12 group-hover:bg-primary/80 group-hover:h-16"
+              }`}
+            />
+          </div>
+
+          {/* Columna Derecha: Copiloto Workspace & Bitácora con Scroll Propio */}
+          <div className="w-full lg:w-[calc(var(--right-split)-12px)] h-full min-h-0 flex-1 flex flex-col overflow-hidden">
             <CopilotoWorkspace
               prospecto={selectedProspecto}
               todosLosProspectos={prospectos}
@@ -210,6 +321,7 @@ export default function VentasRamPage() {
               onDeleteProspecto={() => setProspectoAEliminar(selectedProspecto)}
               onChangeTemperatura={handleChangeTemperatura}
               onSaveInteraccion={handleSaveInteraccion}
+              onDeleteInteraccion={handleDeleteInteraccion}
             />
           </div>
         </div>

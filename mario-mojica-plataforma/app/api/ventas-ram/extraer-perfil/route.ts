@@ -18,7 +18,8 @@ Esquema JSON:
   "canal_preferido": "LinkedIn" | "WhatsApp" | "Email" | "Teléfono",
   "pais": "País y/o estado si es visible (ej. 'Brasil (Rio Grande do Sul)', 'Brasil', 'Colombia')",
   "temperatura": "caliente" | "tibio" | "enfriando" | "pausado",
-  "notas_estrategicas": "Resumen conciso del 'Acerca de' / bio, dolor deducido o contexto relevante de la empresa para la venta de manuales 3D y software de manufactura"
+  "notas_estrategicas": "Resumen conciso del 'Acerca de' / bio, dolor deducido o contexto relevante de la empresa para la venta de manuales 3D y software de manufactura",
+  "avatar_box": [ymin, xmin, ymax, xmax] // Coordenadas normalizadas de 0 a 1000 del círculo INTERNO o rostro de la foto de perfil (CRÍTICO: Excluye el anillo exterior 'Open to work', bordes de la UI o franjas de fondo; encuadra con precisión y simetría el rostro y hombros centrado como un cuadrado perfecto [ymin, xmin, ymax, xmax]), o null si no hay foto visible
 }
 `
 
@@ -61,12 +62,13 @@ Responde ÚNICAMENTE en JSON válido con el esquema solicitado.`,
       })
     }
 
+    // Modelos oficiales y verificados de Google Gemini API (probados en vivo)
     const candidateModels = [
-      "gemini-3.1-flash-lite",
-      "gemini-flash-lite-latest",
+      "gemini-3.5-flash",
       "gemini-3.5-flash-lite",
-      "gemini-3.6-flash",
+      "gemini-3.7-flash",
       "gemini-3-flash-preview",
+      "gemini-3.1-flash-lite-preview",
       "gemini-flash-latest",
     ]
     let parsed: any = null

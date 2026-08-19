@@ -51,7 +51,7 @@ export function ProspectoModal({
   const [tipoRelacion, setTipoRelacion] = useState("")
   const [saving, setSaving] = useState(false)
 
-  // Estado de Auto-Completado con IA
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null)
   const [extracting, setExtracting] = useState(false)
   const [capturaPerfil, setCapturaPerfil] = useState<string | null>(null)
   const [urlOTexto, setUrlOTexto] = useState("")
@@ -71,6 +71,7 @@ export function ProspectoModal({
       setNotas(initialData.notas_estrategicas || "")
       setReferidoPorNombre(initialData.referido_por_nombre || "")
       setTipoRelacion(initialData.tipo_relacion || "")
+      setAvatarUrl(initialData.avatar_url || null)
       setCapturaPerfil(null)
       setUrlOTexto("")
     } else {
@@ -86,6 +87,7 @@ export function ProspectoModal({
       setNotas("")
       setReferidoPorNombre("")
       setTipoRelacion("")
+      setAvatarUrl(null)
       setCapturaPerfil(null)
       setUrlOTexto("")
     }
@@ -118,6 +120,50 @@ export function ProspectoModal({
       }
       img.onerror = () => resolve(dataUrl)
       img.src = dataUrl
+    })
+  }
+
+  // Recortar Avatar Calibrado: Balance Milimétrico (+2.0% Offset) y Crecimiento del 2% (Scale 86%)
+  const cropAvatar = (imgSrc: string, box: number[]): Promise<string> => {
+    return new Promise((resolve) => {
+      const img = new Image()
+      img.onload = () => {
+        const [ymin, xmin, ymax, xmax] = box
+        const rawW = ((xmax - xmin) / 1000) * img.naturalWidth
+        const rawH = ((ymax - ymin) / 1000) * img.naturalHeight
+
+        const rawSide = Math.max(rawW, rawH)
+        const side = rawSide * 0.86
+
+        const cx = ((xmin + xmax) / 2000) * img.naturalWidth + side * 0.020
+        const cy = ((ymin + ymax) / 2000) * img.naturalHeight
+
+        let sx = cx - side / 2
+        let sy = cy - side / 2
+        let sw = side
+        let sh = side
+
+        if (sx < 0) { sx = 0; sw = Math.min(sw, img.naturalWidth) }
+        if (sy < 0) { sy = 0; sh = Math.min(sh, img.naturalHeight) }
+        if (sx + sw > img.naturalWidth) sw = img.naturalWidth - sx
+        if (sy + sh > img.naturalHeight) sh = img.naturalHeight - sy
+
+        const size = 180
+        const canvas = document.createElement("canvas")
+        canvas.width = size
+        canvas.height = size
+        const ctx = canvas.getContext("2d")
+        if (ctx) {
+          ctx.imageSmoothingEnabled = true
+          ctx.imageSmoothingQuality = "high"
+          ctx.drawImage(img, sx, sy, sw, sh, 0, 0, size, size)
+          resolve(canvas.toDataURL("image/jpeg", 0.90))
+        } else {
+          resolve("")
+        }
+      }
+      img.onerror = () => resolve("")
+      img.src = imgSrc
     })
   }
 
@@ -181,6 +227,11 @@ export function ProspectoModal({
       if (data.pais) setPais(data.pais)
       if (data.temperatura) setTemperatura(data.temperatura)
       if (data.notas_estrategicas) setNotas(data.notas_estrategicas)
+
+      if (payloadImg && data.avatar_box && Array.isArray(data.avatar_box) && data.avatar_box.length === 4) {
+        const cropped = await cropAvatar(payloadImg, data.avatar_box)
+        if (cropped) setAvatarUrl(cropped)
+      }
     } catch (err) {
       console.error("Error extrayendo perfil:", err)
       alert("No se pudo extraer automáticamente. Puedes completar los campos manualmente.")
@@ -272,6 +323,7 @@ export function ProspectoModal({
         canal_preferido: canalPreferido,
         pais: pais.trim() || "Brasil",
         temperatura,
+        avatar_url: avatarUrl || initialData?.avatar_url || null,
         proxima_accion_descripcion: proximaAccion.trim() || null,
         notas_estrategicas: notas.trim() || null,
         referido_por_nombre: referidoPorNombre.trim() || null,
@@ -402,10 +454,24 @@ export function ProspectoModal({
 
             {capturaPerfil && (
               <div className="flex items-center justify-between text-[11px] pt-1 border-t border-primary/15">
-                <span className="text-primary font-medium">✓ Captura de perfil cargada</span>
+                <div className="flex items-center gap-2">
+                  {avatarUrl ? (
+                    <img
+                      src={avatarUrl}
+                      alt="Avatar extraído"
+                      className="h-7 w-7 rounded-full object-cover border border-primary"
+                    />
+                  ) : null}
+                  <span className="text-primary font-medium">
+                    ✓ Captura de perfil cargada {avatarUrl ? "(Foto extraída)" : ""}
+                  </span>
+                </div>
                 <button
                   type="button"
-                  onClick={() => setCapturaPerfil(null)}
+                  onClick={() => {
+                    setCapturaPerfil(null)
+                    setAvatarUrl(null)
+                  }}
                   className="text-rose-500 hover:underline cursor-pointer text-[10px]"
                 >
                   Quitar imagen
