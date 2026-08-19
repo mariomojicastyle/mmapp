@@ -451,19 +451,50 @@ function BoardMesh({
   );
 }
 
-function extractStaticGeometry(furnitureGroup: THREE.Group) {
-  let boardMesh: THREE.Object3D | null = null;
+function getFurnitureGroupBoardBox(furnitureGroup: THREE.Group): THREE.Box3 {
+  furnitureGroup.updateWorldMatrix(true, true);
+  const box = new THREE.Box3();
+  
   furnitureGroup.traverse((child) => {
-    if (!boardMesh && (child as THREE.Mesh).isMesh && (child.name.includes("MDP") || child.name.includes("Cubierta"))) {
-      boardMesh = child;
+    if ((child as THREE.Mesh).isMesh) {
+      const m = child as THREE.Mesh;
+      const n = (m.name || "").toLowerCase();
+      // Tableros de madera principales
+      if (n.includes("cubierta") || n.includes("mdp") || n.includes("tablero") || n.includes("madera") || n.includes("entrepaño") || n.includes("balance") || n.includes("board")) {
+        if (m.geometry) {
+          m.geometry.computeBoundingBox();
+          if (m.geometry.boundingBox) {
+            const childBox = m.geometry.boundingBox.clone().applyMatrix4(m.matrixWorld);
+            box.union(childBox);
+          }
+        }
+      }
     }
   });
 
-  const targetObj = boardMesh || furnitureGroup;
-  targetObj.updateWorldMatrix(true, true);
-  furnitureGroup.updateWorldMatrix(true, true);
+  if (box.isEmpty()) {
+    furnitureGroup.traverse((child) => {
+      if ((child as THREE.Mesh).isMesh) {
+        const m = child as THREE.Mesh;
+        if (m.geometry) {
+          m.geometry.computeBoundingBox();
+          if (m.geometry.boundingBox) {
+            const childBox = m.geometry.boundingBox.clone().applyMatrix4(m.matrixWorld);
+            box.union(childBox);
+          }
+        }
+      }
+    });
+  }
 
-  const worldBox = new THREE.Box3().setFromObject(targetObj);
+  if (box.isEmpty()) {
+    box.setFromObject(furnitureGroup);
+  }
+  return box;
+}
+
+function extractStaticGeometry(furnitureGroup: THREE.Group) {
+  const worldBox = getFurnitureGroupBoardBox(furnitureGroup);
   if (worldBox.isEmpty()) return null;
 
   const groupWorldPos = new THREE.Vector3();
@@ -569,7 +600,7 @@ function extractStaticGeometry(furnitureGroup: THREE.Group) {
 }
 
 function BoardSilhouetteOutline({ furnitureGroup }: { furnitureGroup: THREE.Group | null }) {
-  const { objetoSeleccionado, posicionObjeto, modoTransformacion, resultado, objetoActivoId } = use3BFStore();
+  const { objetoSeleccionado, modoTransformacion, objetoActivoId } = use3BFStore();
   const { camera } = useThree();
   const [silhouettePoints, setSilhouettePoints] = React.useState<[number, number, number][][]>([]);
   const outlineGroupRef = useRef<THREE.Group>(null);
@@ -589,18 +620,7 @@ function BoardSilhouetteOutline({ furnitureGroup }: { furnitureGroup: THREE.Grou
     }
 
     // 🎯 DETECCIÓN DINÁMICA DE CAMBIO DE GEOMETRÍA O PARÁMETROS
-    let boardMesh: THREE.Object3D | null = null;
-    furnitureGroup.traverse((child) => {
-      if (!boardMesh && (child as THREE.Mesh).isMesh && (child.name.includes("MDP") || child.name.includes("Cubierta"))) {
-        boardMesh = child;
-      }
-    });
-
-    const targetObj = boardMesh || furnitureGroup;
-    targetObj.updateWorldMatrix(true, true);
-    furnitureGroup.updateWorldMatrix(true, true);
-
-    const worldBox = new THREE.Box3().setFromObject(targetObj);
+    const worldBox = getFurnitureGroupBoardBox(furnitureGroup);
     const groupWorldPos = new THREE.Vector3();
     furnitureGroup.getWorldPosition(groupWorldPos);
 
@@ -744,18 +764,7 @@ function SelectionController() {
 }
 
 function extractCandidatePoints(furnitureGroup: THREE.Group) {
-  let boardMesh: THREE.Object3D | null = null;
-  furnitureGroup.traverse((child) => {
-    if (!boardMesh && (child as THREE.Mesh).isMesh && (child.name.includes("MDP") || child.name.includes("Cubierta"))) {
-      boardMesh = child;
-    }
-  });
-
-  const targetObj = boardMesh || furnitureGroup;
-  targetObj.updateWorldMatrix(true, true);
-  furnitureGroup.updateWorldMatrix(true, true);
-
-  const worldBox = new THREE.Box3().setFromObject(targetObj);
+  const worldBox = getFurnitureGroupBoardBox(furnitureGroup);
   if (worldBox.isEmpty()) return [];
 
   const groupWorldPos = new THREE.Vector3();
@@ -827,18 +836,7 @@ function SnapPointMarkers({ furnitureGroup }: { furnitureGroup: THREE.Group | nu
     }
 
     // 🎯 DETECCIÓN DINÁMICA DE DIMENSIONES PARA SNAPS
-    let boardMesh: THREE.Object3D | null = null;
-    furnitureGroup.traverse((child) => {
-      if (!boardMesh && (child as THREE.Mesh).isMesh && (child.name.includes("MDP") || child.name.includes("Cubierta"))) {
-        boardMesh = child;
-      }
-    });
-
-    const targetObj = boardMesh || furnitureGroup;
-    targetObj.updateWorldMatrix(true, true);
-    furnitureGroup.updateWorldMatrix(true, true);
-
-    const worldBox = new THREE.Box3().setFromObject(targetObj);
+    const worldBox = getFurnitureGroupBoardBox(furnitureGroup);
     const groupWorldPos = new THREE.Vector3();
     furnitureGroup.getWorldPosition(groupWorldPos);
 
@@ -1577,6 +1575,43 @@ function CameraRefBridge({ cameraRef }: { cameraRef: React.MutableRefObject<THRE
   return null;
 }
 
+function ThumbnailCapturer() {
+  const { gl, scene, camera } = useThree();
+  React.useEffect(() => {
+    (window as any).__capturarThumbnail3BF = () => {
+      try {
+        gl.render(scene, camera);
+        const srcCanvas = gl.domElement;
+        const width = srcCanvas.width;
+        const height = srcCanvas.height;
+        if (!width || !height) return null;
+
+        // Recorte cuadrado exactamente centrado
+        const size = Math.min(width, height);
+        const startX = (width - size) / 2;
+        const startY = (height - size) / 2;
+
+        const offscreen = document.createElement("canvas");
+        offscreen.width = 360;
+        offscreen.height = 360;
+        const ctx = offscreen.getContext("2d");
+        if (ctx) {
+          ctx.drawImage(srcCanvas, startX, startY, size, size, 0, 0, 360, 360);
+          return offscreen.toDataURL("image/webp", 0.92);
+        }
+        return srcCanvas.toDataURL("image/webp", 0.85);
+      } catch (e) {
+        console.error("Error al capturar thumbnail 3D centrado:", e);
+        return null;
+      }
+    };
+    return () => {
+      delete (window as any).__capturarThumbnail3BF;
+    };
+  }, [gl, scene, camera]);
+  return null;
+}
+
 export default function Viewer3D() {
   const controlsRef = useRef<any>(null);
   const cameraRef = useRef<THREE.Camera | null>(null);
@@ -1926,6 +1961,7 @@ export default function Viewer3D() {
       >
         <color attach="background" args={[tema === "obsidian" ? "#0D1117" : "#F3F4F6"]} />
         <CameraRefBridge cameraRef={cameraRef} />
+        <ThumbnailCapturer />
         <RaycastHandler />
         <ambientLight intensity={calibracion.intensidadLuzAmbiental} />
         <directionalLight 

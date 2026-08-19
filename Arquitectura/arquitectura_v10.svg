@@ -1,0 +1,213 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 1020" width="100%" height="100%">
+    <style>
+        .background { fill: #f8fafc; }
+        .box-cloudflare { fill: #ffffff; stroke: #ea580c; stroke-width: 2; rx: 12; filter: drop-shadow(0px 4px 6px rgba(234, 88, 12, 0.08)); }
+        .box-core { fill: #ffffff; stroke: #0284c7; stroke-width: 2; rx: 12; filter: drop-shadow(0px 4px 6px rgba(2, 132, 199, 0.08)); }
+        .box-vps { fill: #ffffff; stroke: #7c3aed; stroke-width: 2; rx: 12; filter: drop-shadow(0px 4px 6px rgba(124, 58, 237, 0.08)); }
+        .box-frontend { fill: #ffffff; stroke: #0d9488; stroke-width: 2; rx: 12; filter: drop-shadow(0px 4px 6px rgba(13, 148, 136, 0.08)); }
+        .box-marketing { fill: #ffffff; stroke: #db2777; stroke-width: 2; rx: 12; filter: drop-shadow(0px 4px 6px rgba(219, 39, 119, 0.08)); }
+        .box-3bf { fill: #ffffff; stroke: #d97706; stroke-width: 2; rx: 12; filter: drop-shadow(0px 4px 6px rgba(217, 119, 6, 0.08)); }
+        .inner-app { fill: #f1f5f9; stroke: #cbd5e1; stroke-width: 1; rx: 8; }
+        
+        .title { fill: #0f172a; font-family: 'Inter', -apple-system, sans-serif; font-size: 26px; font-weight: 800; }
+        .subtitle { fill: #64748b; font-family: 'Inter', -apple-system, sans-serif; font-size: 14px; font-weight: 500; }
+        .box-title-cloudflare { fill: #c2410c; font-family: 'Inter', -apple-system, sans-serif; font-size: 16px; font-weight: 700; }
+        .box-title-core { fill: #0369a1; font-family: 'Inter', -apple-system, sans-serif; font-size: 17px; font-weight: 700; }
+        .box-title-vps { fill: #6d28d9; font-family: 'Inter', -apple-system, sans-serif; font-size: 17px; font-weight: 700; }
+        .box-title-frontend { fill: #0f766e; font-family: 'Inter', -apple-system, sans-serif; font-size: 17px; font-weight: 700; }
+        .box-title-marketing { fill: #be185d; font-family: 'Inter', -apple-system, sans-serif; font-size: 17px; font-weight: 700; }
+        .box-title-3bf { fill: #b45309; font-family: 'Inter', -apple-system, sans-serif; font-size: 16px; font-weight: 700; }
+        .inner-title { fill: #1e293b; font-family: 'Inter', -apple-system, sans-serif; font-size: 13px; font-weight: 700; }
+        .text { fill: #334155; font-family: 'Inter', -apple-system, sans-serif; font-size: 12px; font-weight: 500; }
+        .text-dim { fill: #64748b; font-family: 'Inter', -apple-system, sans-serif; font-size: 11px; }
+        .text-label { fill: #0284c7; font-family: 'Inter', -apple-system, sans-serif; font-size: 11px; font-weight: 600; }
+        .text-marketing { fill: #be185d; font-family: 'Inter', -apple-system, sans-serif; font-size: 11px; font-weight: 600; }
+        
+        .line-flow { stroke: #0284c7; stroke-width: 2; stroke-dasharray: 6,4; fill: none; }
+        .line-sec { stroke: #7c3aed; stroke-width: 2; stroke-dasharray: 4,4; fill: none; }
+        .line-marketing { stroke: #db2777; stroke-width: 2; stroke-dasharray: 5,4; fill: none; }
+        .line-cf { stroke: #ea580c; stroke-width: 2; stroke-dasharray: 4,4; fill: none; }
+        .line-3bf { stroke: #d97706; stroke-width: 2; stroke-dasharray: 5,4; fill: none; }
+        .arrow-flow { fill: #0284c7; }
+        .arrow-sec { fill: #7c3aed; }
+        .arrow-mkt { fill: #db2777; }
+        .arrow-cf { fill: #ea580c; }
+        .arrow-3bf { fill: #d97706; }
+    </style>
+    <defs>
+        <marker id="arrowhead-flow" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+            <polygon points="0 0, 10 3.5, 0 7" class="arrow-flow" />
+        </marker>
+        <marker id="arrowhead-sec" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+            <polygon points="0 0, 10 3.5, 0 7" class="arrow-sec" />
+        </marker>
+        <marker id="arrowhead-mkt" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+            <polygon points="0 0, 10 3.5, 0 7" class="arrow-mkt" />
+        </marker>
+        <marker id="arrowhead-cf" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+            <polygon points="0 0, 10 3.5, 0 7" class="arrow-cf" />
+        </marker>
+        <marker id="arrowhead-3bf" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+            <polygon points="0 0, 10 3.5, 0 7" class="arrow-3bf" />
+        </marker>
+    </defs>
+    
+    <!-- Background -->
+    <rect width="100%" height="100%" class="background" />
+    
+    <!-- Header -->
+    <text x="50" y="45" class="title">Arquitectura de la Solución B2B — Mario Mojica</text>
+    <text x="50" y="70" class="subtitle">Versión 10 (Agosto 2026) | Ecosistema B2B, 3DBimFab Paramétrico, Google Drive &amp; RAM de Ventas</text>
+    
+    <!-- 1. CLOUDFLARE EDGE & DNS SHIELD -->
+    <rect x="50" y="95" width="1180" height="95" class="box-cloudflare" />
+    <text x="70" y="120" class="box-title-cloudflare">CLOUDFLARE EDGE &amp; DNS ANYCAST SHIELD (Seguridad &amp; Enrutamiento Global)</text>
+    
+    <rect x="70" y="130" width="360" height="48" class="inner-app" />
+    <text x="80" y="148" class="inner-title">DNS Anycast &amp; CNAME Flattening</text>
+    <text x="80" y="166" class="text-dim">IPv6 Nativo + Enrutamiento 4G/5G Móvil</text>
+    
+    <rect x="450" y="130" width="370" height="48" class="inner-app" />
+    <text x="460" y="148" class="inner-title">WAF, DDoS &amp; SSL Compliance</text>
+    <text x="460" y="166" class="text-dim">HSTS (preload) + Anti-Clickjacking + XSS</text>
+    
+    <rect x="840" y="130" width="370" height="48" class="inner-app" />
+    <text x="850" y="148" class="inner-title">Subdominios Seguros (SSL Let's Encrypt)</text>
+    <text x="850" y="166" class="text-dim">n8n, baserow, analytics.mariomojica.com</text>
+
+    <!-- 2. FRONTEND CLIENTES & 3D EXPERIENCES -->
+    <rect x="50" y="210" width="370" height="420" class="box-frontend" />
+    <text x="70" y="235" class="box-title-frontend">CAPA FRONTEND &amp; EXPERIENCIA 3D</text>
+    
+    <rect x="70" y="250" width="330" height="85" class="inner-app" />
+    <text x="85" y="270" class="inner-title">Plataforma CMS B2B (Next.js)</text>
+    <text x="85" y="290" class="text">Panel de Proyectos &amp; Telemetría</text>
+    <text x="85" y="310" class="text-dim">Tech Ethos (Light) &amp; Obsidian (Dark)</text>
+    
+    <rect x="70" y="345" width="330" height="85" class="inner-app" />
+    <text x="85" y="365" class="inner-title">Visor 3D Interactivo (App Armado)</text>
+    <text x="85" y="385" class="text">Instrucciones de Armado por Voz</text>
+    <text x="85" y="405" class="text-dim">React Three Fiber + Web Crypto RAM</text>
+    
+    <rect x="70" y="440" width="330" height="85" class="inner-app" />
+    <text x="85" y="460" class="inner-title">Landing Page &amp; Portafolio</text>
+    <text x="85" y="480" class="text">Captación de Leads RTA Brasil</text>
+    <text x="85" y="500" class="text-dim">mariomojica.com (SEO/GEO + Netlify)</text>
+
+    <rect x="70" y="535" width="330" height="80" class="inner-app" />
+    <text x="85" y="555" class="inner-title">AR Scene Viewer &amp; QR</text>
+    <text x="85" y="575" class="text">Realidad Aumentada sin Apps</text>
+    <text x="85" y="595" class="text-dim">HMAC-SHA256 Token Stream</text>
+
+    <!-- 3. SUPABASE CLOUD CORE & IP SHIELD -->
+    <rect x="450" y="210" width="370" height="420" class="box-core" />
+    <text x="470" y="235" class="box-title-core">SUPABASE CLOUD &amp; IP SHIELD V2</text>
+    
+    <rect x="470" y="250" width="330" height="85" class="inner-app" />
+    <text x="485" y="270" class="inner-title">PostgreSQL Database</text>
+    <text x="485" y="290" class="text">Proyectos, Configuración &amp; Perfiles</text>
+    <text x="485" y="310" class="text-dim">Tablas: telemetria_manuales, ventas_ram</text>
+    
+    <rect x="470" y="345" width="330" height="85" class="inner-app" />
+    <text x="485" y="365" class="inner-title">Storage Privado (Insumos 3D)</text>
+    <text x="485" y="385" class="text">Bucket Cifrado con AES-256-GCM</text>
+    <text x="485" y="405" class="text-dim">Modelos .glb corruptos para piratería</text>
+    
+    <rect x="470" y="440" width="330" height="85" class="inner-app" />
+    <text x="485" y="460" class="inner-title">Edge Functions (Decrypt GLB)</text>
+    <text x="485" y="480" class="text">Descifrado Serverless en RAM</text>
+    <text x="485" y="500" class="text-dim">Deno Runtime + HMAC Token TTL 30m</text>
+
+    <rect x="470" y="535" width="330" height="80" class="inner-app" />
+    <text x="485" y="555" class="inner-title">API Gateways &amp; Metrics Collector</text>
+    <text x="485" y="575" class="text">Rate Limiter (40 req/min por IP)</text>
+    <text x="485" y="595" class="text-dim">Endpoints firmados: /api/assets/sign</text>
+
+    <!-- 4. HETZNER VPS & AUTOMATIZACIÓN B2B -->
+    <rect x="850" y="210" width="380" height="420" class="box-vps" />
+    <text x="870" y="235" class="box-title-vps">HETZNER VPS (Docker Microservicios)</text>
+    
+    <rect x="870" y="250" width="340" height="85" class="inner-app" />
+    <text x="885" y="270" class="inner-title">n8n Automation Engine</text>
+    <text x="885" y="290" class="text">Flujos: Leads, WhatsApp &amp; Gmail</text>
+    <text x="885" y="310" class="text-dim">Mapeo bidireccional de prospectos</text>
+    
+    <rect x="870" y="345" width="340" height="85" class="inner-app" />
+    <text x="885" y="365" class="inner-title">Baserow B2B CRM</text>
+    <text x="885" y="385" class="text">Tabla 994 (Leads) &amp; 991 (Empresas)</text>
+    <text x="885" y="405" class="text-dim">Directorio RTA Brasil + Estados CRM</text>
+    
+    <rect x="870" y="440" width="340" height="85" class="inner-app" />
+    <text x="885" y="460" class="inner-title">Umami Analytics</text>
+    <text x="885" y="480" class="text">Analítica Web Privada Sin Cookies</text>
+    <text x="885" y="500" class="text-dim">Telemetría de navegación y conversión</text>
+
+    <rect x="870" y="535" width="340" height="80" class="inner-app" />
+    <text x="885" y="555" class="inner-title">Nginx Proxy Manager</text>
+    <text x="885" y="575" class="text">Reverse Proxy &amp; Certificados SSL</text>
+    <text x="885" y="595" class="text-dim">Red mmapp_network aislada</text>
+
+    <!-- 5. 3DBIMFAB MOTOR PARAMÉTRICO & GOOGLE DRIVE -->
+    <rect x="50" y="650" width="680" height="340" class="box-3bf" />
+    <text x="70" y="675" class="box-title-3bf">3DBIMFAB — MOTOR PARAMÉTRICO DE MANUFACTURA DIGITAL &amp; DRIVE</text>
+    
+    <rect x="70" y="690" width="300" height="135" class="inner-app" />
+    <text x="85" y="710" class="inner-title">Biblioteca de Muebles (Blender 4.x Style)</text>
+    <text x="85" y="730" class="text">• Sincronía Google Drive (G:\Mi unidad\Muebles)</text>
+    <text x="85" y="750" class="text">• Catálogo por Marcas (RTA, Politorno, etc.)</text>
+    <text x="85" y="770" class="text">• Miniaturas 3D cuadradas centradas WebP</text>
+    <text x="85" y="790" class="text">• Edición inline de nombres &amp; Guardar como</text>
+    <text x="85" y="810" class="text-dim">Paquetes completos .3bf.json</text>
+
+    <rect x="390" y="690" width="320" height="135" class="inner-app" />
+    <text x="405" y="710" class="inner-title">Biblioteca de Componentes GHX</text>
+    <text x="405" y="730" class="text">• Definiciones GHX en crudo modulares</text>
+    <text x="405" y="750" class="text">• Arrastrar al Escenario (Drag &amp; Drop)</text>
+    <text x="405" y="770" class="text">• Multi-instancia con nombres secuenciales</text>
+    <text x="405" y="790" class="text">• Detección y bounding box a 60 FPS</text>
+    <text x="405" y="810" class="text-dim">Rhino 8 Engine (Hops/Compute :5000)</text>
+
+    <rect x="70" y="840" width="300" height="130" class="inner-app" />
+    <text x="85" y="860" class="inner-title">Worker Python &amp; FastAPI (:8005)</text>
+    <text x="85" y="880" class="text">• Decodificación pura de mallas GHX</text>
+    <text x="85" y="900" class="text">• Transformaciones XYZ y rotaciones</text>
+    <text x="85" y="920" class="text">• Exportación GLB y metadatos de piezas</text>
+    <text x="85" y="940" class="text-dim">Cero parches espaciales en código</text>
+
+    <rect x="390" y="840" width="320" height="130" class="inner-app" />
+    <text x="405" y="860" class="inner-title">Despiece, Costos &amp; Herrajes (BOM)</text>
+    <text x="405" y="880" class="text">• Unificación y consolidación de herrajes</text>
+    <text x="405" y="900" class="text">• Dimensiones únicas reactivas por pieza</text>
+    <text x="405" y="920" class="text">• Separación Pieza (GHX) vs Descripción</text>
+    <text x="405" y="940" class="text-dim">Cálculo de melaminas, cantos y desperdicio</text>
+
+    <!-- 6. RAM DE VENTAS & PROSPECCIÓN B2B -->
+    <rect x="750" y="650" width="480" height="340" class="box-marketing" />
+    <text x="770" y="675" class="box-title-marketing">RAM DE VENTAS — CRM DE PROSPECCIÓN &amp; OUTREACH</text>
+    
+    <rect x="770" y="690" width="440" height="135" class="inner-app" />
+    <text x="785" y="710" class="inner-title">Outreach Copilot Multicalibre (ES / PT)</text>
+    <text x="785" y="730" class="text">• 300 Caracteres: Notas de Conexión LinkedIn</text>
+    <text x="785" y="750" class="text">• 600 Caracteres: InMail / Mensaje Corto</text>
+    <text x="785" y="770" class="text">• 900 Caracteres: Mensaje Extendido B2B</text>
+    <text x="785" y="790" class="text">• 1500 Caracteres: Propuesta Corporativa</text>
+    <text x="785" y="810" class="text-dim">Personalización por Polo Industrial RTA</text>
+
+    <rect x="770" y="840" width="440" height="130" class="inner-app" />
+    <text x="785" y="860" class="inner-title">Termómetro &amp; Memoria Comercial</text>
+    <text x="785" y="880" class="text">• Estados: Caliente, Tibio, Enfriando, Pausado</text>
+    <text x="785" y="900" class="text">• Analizador Multimodal de Capturas LinkedIn</text>
+    <text x="785" y="920" class="text">• Sincronización con Baserow &amp; Supabase</text>
+    <text x="785" y="940" class="text-dim">Filosofía: "El último empleado de la fábrica"</text>
+
+    <!-- Connectors -->
+    <path d="M 235 190 L 235 210" class="line-cf" marker-end="url(#arrowhead-cf)" />
+    <path d="M 635 190 L 635 210" class="line-cf" marker-end="url(#arrowhead-cf)" />
+    <path d="M 1040 190 L 1040 210" class="line-cf" marker-end="url(#arrowhead-cf)" />
+
+    <path d="M 420 380 L 450 380" class="line-flow" marker-end="url(#arrowhead-flow)" />
+    <path d="M 820 380 L 850 380" class="line-sec" marker-end="url(#arrowhead-sec)" />
+    
+    <path d="M 235 630 L 235 650" class="line-3bf" marker-end="url(#arrowhead-3bf)" />
+    <path d="M 990 630 L 990 650" class="line-marketing" marker-end="url(#arrowhead-mkt)" />
+</svg>

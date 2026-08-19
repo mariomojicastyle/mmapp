@@ -5,6 +5,7 @@ import Viewer3D from "@/components/viewer/Viewer3D";
 import ControlPanel from "@/components/ui/ControlPanel";
 import DespieceView from "@/components/views/DespieceView";
 import DatabaseView from "@/components/views/DatabaseView";
+import SaveFurnitureModal from "@/components/ui/SaveFurnitureModal";
 import { use3BFStore } from "@/lib/store";
 import { Box, Layers, Cpu, CheckCircle2, AlertCircle, Database } from "lucide-react";
 
@@ -43,6 +44,9 @@ export default function Home3BF() {
 
   return (
     <main className="w-screen h-screen flex flex-col overflow-hidden bg-[var(--bg-main)] text-[var(--text-main)]">
+      {/* Modal Global Guardar Como Mueble (Google Drive / Marcas) */}
+      <SaveFurnitureModal />
+
       {/* TopNav Barra Superior */}
       <header className="h-14 px-4 flex items-center justify-between border-b border-gray-200 dark:border-gray-800 glass-panel z-10 relative">
         <div className="flex items-center gap-3">

@@ -2,10 +2,13 @@
 
 import React, { useState, useEffect } from "react";
 import { use3BFStore, defaultCalibracion } from "@/lib/store";
+import FurnitureAssetBrowser from "./FurnitureAssetBrowser";
 import { 
   ChevronLeft, 
   ChevronRight, 
   Box, 
+  Boxes,
+  Package,
   Palette, 
   Sliders, 
   Search, 
@@ -353,7 +356,8 @@ export default function NPanel() {
           <div className="p-3 pb-2.5 border-b border-slate-200/80 dark:border-cyan-900/40 bg-slate-50/50 dark:bg-[#0B0F17]/40 flex items-center justify-between shrink-0">
             <div className="flex items-center gap-2 min-w-0">
               <div className="w-6 h-6 rounded-lg bg-cyan-600/10 dark:bg-cyan-400/10 text-cyan-600 dark:text-cyan-400 flex items-center justify-center font-bold text-xs shrink-0">
-                {pestanaNPanel === "muebles" && <Box className="w-3.5 h-3.5" />}
+                {pestanaNPanel === "muebles" && <Package className="w-3.5 h-3.5" />}
+                {pestanaNPanel === "componentes" && <Boxes className="w-3.5 h-3.5" />}
                 {pestanaNPanel === "materiales" && <Palette className="w-3.5 h-3.5" />}
                 {pestanaNPanel === "calibrar" && <Sliders className="w-3.5 h-3.5" />}
                 {pestanaNPanel === "escenario" && <Grid3X3 className="w-3.5 h-3.5" />}
@@ -361,13 +365,15 @@ export default function NPanel() {
               <div className="min-w-0">
                 <h2 className="text-xs font-bold text-slate-900 dark:text-white leading-tight flex items-center gap-1.5 truncate">
                   {pestanaNPanel === "muebles" && "Biblioteca de Muebles"}
+                  {pestanaNPanel === "componentes" && "Biblioteca de Componentes"}
                   {pestanaNPanel === "materiales" && "Paleta de Materiales"}
                   {pestanaNPanel === "calibrar" && "Calibración 3D"}
                   {pestanaNPanel === "escenario" && "Malla del Escenario"}
                   <span className="text-[9px] px-1 rounded bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-slate-300 font-mono font-normal shrink-0">N</span>
                 </h2>
                 <p className="text-[10px] text-slate-500 dark:text-slate-400 truncate">
-                  {pestanaNPanel === "muebles" && "Definiciones GHX por Categoría"}
+                  {pestanaNPanel === "muebles" && "Catálogos por Marca & Tipología (Drive)"}
+                  {pestanaNPanel === "componentes" && "Definiciones GHX por Categoría"}
                   {pestanaNPanel === "materiales" && "Muestrario PBR & Melaminas"}
                   {pestanaNPanel === "calibrar" && "Renderizado, Luces & Aristas"}
                   {pestanaNPanel === "escenario" && "Cuadrícula, Ejes & Suelo"}
@@ -385,9 +391,14 @@ export default function NPanel() {
           </div>
 
           {/* ========================================================================= */}
-          {/* VISTA 1: PESTAÑA MUEBLES (Asset Browser Grid Estilo Blender)              */}
+          {/* VISTA 1: PESTAÑA MUEBLES (Asset Browser Catálogos por Marca / Drive)       */}
           {/* ========================================================================= */}
-          {pestanaNPanel === "muebles" && (
+          {pestanaNPanel === "muebles" && <FurnitureAssetBrowser />}
+
+          {/* ========================================================================= */}
+          {/* VISTA 2: PESTAÑA COMPONENTES (Definiciones GHX en Crudo)                  */}
+          {/* ========================================================================= */}
+          {pestanaNPanel === "componentes" && (
             <div className="flex-1 min-w-0 flex flex-col overflow-hidden">
               
               {/* Buscador */}
@@ -428,7 +439,7 @@ export default function NPanel() {
                   <span className="text-[9px] text-cyan-600 dark:text-cyan-400 font-mono">Arrastrar al Escenario</span>
                 </div>
 
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5 p-1">
                   {mueblesFiltrados.map((item) => {
                     return (
                       <div
@@ -438,33 +449,30 @@ export default function NPanel() {
                         onDragEnd={handleDragEnd}
                         onClick={() => use3BFStore.getState().cargarDefinicion(item)}
                         onDoubleClick={() => use3BFStore.getState().cargarDefinicion(item)}
-                        title={`${item.nombre} (${item.archivo}) - Doble clic o arrastra al 3D para abrir`}
-                        className={`p-1.5 rounded-xl border border-slate-200/90 dark:border-cyan-900/40 hover:border-cyan-400 dark:hover:border-cyan-500 flex flex-col items-center justify-between transition-all cursor-grab active:cursor-grabbing group bg-white/70 dark:bg-[#131B2E]/70 hover:bg-white dark:hover:bg-[#131B2E] hover:shadow-md ${
+                        title={`${item.nombre} (${item.archivo}) - Haz doble clic o arrastra al visor 3D`}
+                        className={`group flex flex-col items-center cursor-grab active:cursor-grabbing p-1 rounded-xl hover:bg-slate-100/80 dark:hover:bg-slate-800/50 transition-all select-none relative ${
                           draggedItemId === item.id ? "opacity-40 scale-95" : ""
                         }`}
                       >
-                        {/* Miniatura Cuadrada de Previsualización (Render Blender Style) */}
-                        <div className="w-full aspect-square bg-[#15191E] rounded-lg overflow-hidden border border-slate-700/50 relative flex items-center justify-center p-1 shadow-inner group-hover:scale-[1.02] transition-transform">
+                        {/* Miniatura Cuadrada Estilo Blender (Sin badges superpuestos) */}
+                        <div className="w-full aspect-square rounded-xl overflow-hidden bg-slate-100 dark:bg-[#131B2E] border border-slate-200/70 dark:border-slate-800 shadow-2xs group-hover:border-cyan-500/80 group-hover:shadow-md transition-all relative flex items-center justify-center p-1">
                           {item.thumbnail ? (
                             <img 
                               src={item.thumbnail} 
                               alt={item.nombre} 
-                              className="w-full h-full object-contain pointer-events-none"
+                              className="w-full h-full object-cover rounded-lg pointer-events-none"
                             />
                           ) : (
-                            <Box className="w-8 h-8 text-cyan-500 opacity-80" />
+                            <Box className="w-8 h-8 text-cyan-600 dark:text-cyan-400 opacity-70" />
                           )}
-
-                          {/* Badge de Categoría Discreto */}
-                          <span className="absolute bottom-1 right-1 text-[8px] font-mono px-1 py-0.2 rounded bg-black/70 text-slate-300 font-semibold backdrop-blur-xs">
-                            {item.categoria}
-                          </span>
                         </div>
 
-                        {/* Nombre del GHX Centrado y Limpio */}
-                        <h4 className="text-[11px] font-bold text-slate-800 dark:text-slate-200 text-center truncate w-full group-hover:text-cyan-600 dark:group-hover:text-cyan-400 mt-1.5 px-0.5 leading-tight">
-                          {item.nombre}
-                        </h4>
+                        {/* Nombre Limpio Estilo Blender (Sin rebordes) */}
+                        <div className="w-full mt-1.5 px-0.5 text-center">
+                          <p className="text-xs font-semibold text-slate-700 dark:text-slate-200 truncate group-hover:text-cyan-600 dark:group-hover:text-cyan-400 transition-colors">
+                            {item.nombre}
+                          </p>
+                        </div>
                       </div>
                     );
                   })}
@@ -1130,27 +1138,46 @@ export default function NPanel() {
           {/* Pestaña Vertical 1: Muebles */}
           <button
             onClick={() => setPestanaNPanel("muebles")}
-            title="Biblioteca de Muebles"
-            className={`w-7 py-3 px-1 rounded-lg flex flex-col items-center justify-center gap-1.5 transition-all cursor-pointer ${
+            title="Biblioteca de Muebles (Catálogos por Marca)"
+            className={`w-7 py-2.5 px-1 rounded-lg flex flex-col items-center justify-center gap-1.5 transition-all cursor-pointer ${
               pestanaNPanel === "muebles"
                 ? "bg-cyan-600 text-white shadow-md font-bold"
                 : "text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-white hover:bg-slate-200/60 dark:hover:bg-slate-800"
             }`}
           >
-            <Box className="w-3.5 h-3.5 shrink-0" />
+            <Package className="w-3.5 h-3.5 shrink-0" />
             <span 
               style={{ writingMode: "vertical-rl" }}
-              className="text-[10px] tracking-wide font-sans leading-none"
+              className="text-[9px] tracking-wide font-sans leading-none"
             >
               Muebles
             </span>
           </button>
 
-          {/* Pestaña Vertical 2: Materiales */}
+          {/* Pestaña Vertical 2: Componentes */}
+          <button
+            onClick={() => setPestanaNPanel("componentes")}
+            title="Biblioteca de Componentes (Definiciones GHX)"
+            className={`w-7 py-2.5 px-1 rounded-lg flex flex-col items-center justify-center gap-1.5 transition-all cursor-pointer ${
+              pestanaNPanel === "componentes"
+                ? "bg-cyan-600 text-white shadow-md font-bold"
+                : "text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-white hover:bg-slate-200/60 dark:hover:bg-slate-800"
+            }`}
+          >
+            <Boxes className="w-3.5 h-3.5 shrink-0" />
+            <span 
+              style={{ writingMode: "vertical-rl" }}
+              className="text-[9px] tracking-wide font-sans leading-none"
+            >
+              Componentes
+            </span>
+          </button>
+
+          {/* Pestaña Vertical 3: Materiales */}
           <button
             onClick={() => setPestanaNPanel("materiales")}
             title="Paleta de Materiales PBR"
-            className={`w-7 py-3 px-1 rounded-lg flex flex-col items-center justify-center gap-1.5 transition-all cursor-pointer ${
+            className={`w-7 py-2.5 px-1 rounded-lg flex flex-col items-center justify-center gap-1.5 transition-all cursor-pointer ${
               pestanaNPanel === "materiales"
                 ? "bg-cyan-600 text-white shadow-md font-bold"
                 : "text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-white hover:bg-slate-200/60 dark:hover:bg-slate-800"
@@ -1159,17 +1186,17 @@ export default function NPanel() {
             <Palette className="w-3.5 h-3.5 shrink-0" />
             <span 
               style={{ writingMode: "vertical-rl" }}
-              className="text-[10px] tracking-wide font-sans leading-none"
+              className="text-[9px] tracking-wide font-sans leading-none"
             >
               Materiales
             </span>
           </button>
 
-          {/* Pestaña Vertical 3: Calibrar */}
+          {/* Pestaña Vertical 4: Calibrar */}
           <button
             onClick={() => setPestanaNPanel("calibrar")}
             title="Calibración de Renderizado 3D"
-            className={`w-7 py-3 px-1 rounded-lg flex flex-col items-center justify-center gap-1.5 transition-all cursor-pointer ${
+            className={`w-7 py-2.5 px-1 rounded-lg flex flex-col items-center justify-center gap-1.5 transition-all cursor-pointer ${
               pestanaNPanel === "calibrar"
                 ? "bg-cyan-600 text-white shadow-md font-bold"
                 : "text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-white hover:bg-slate-200/60 dark:hover:bg-slate-800"
@@ -1178,17 +1205,17 @@ export default function NPanel() {
             <Sliders className="w-3.5 h-3.5 shrink-0" />
             <span 
               style={{ writingMode: "vertical-rl" }}
-              className="text-[10px] tracking-wide font-sans leading-none"
+              className="text-[9px] tracking-wide font-sans leading-none"
             >
               Calibrar
             </span>
           </button>
 
-          {/* Pestaña Vertical 4: Escenario */}
+          {/* Pestaña Vertical 5: Escenario */}
           <button
             onClick={() => setPestanaNPanel("escenario")}
             title="Personalización del Escenario y Malla"
-            className={`w-7 py-3 px-1 rounded-lg flex flex-col items-center justify-center gap-1.5 transition-all cursor-pointer ${
+            className={`w-7 py-2.5 px-1 rounded-lg flex flex-col items-center justify-center gap-1.5 transition-all cursor-pointer ${
               pestanaNPanel === "escenario"
                 ? "bg-cyan-600 text-white shadow-md font-bold"
                 : "text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-white hover:bg-slate-200/60 dark:hover:bg-slate-800"
@@ -1197,7 +1224,7 @@ export default function NPanel() {
             <Grid3X3 className="w-3.5 h-3.5 shrink-0" />
             <span 
               style={{ writingMode: "vertical-rl" }}
-              className="text-[10px] tracking-wide font-sans leading-none"
+              className="text-[9px] tracking-wide font-sans leading-none"
             >
               Escenario
             </span>

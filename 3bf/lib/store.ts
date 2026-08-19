@@ -78,24 +78,38 @@ export interface ParametrosMueble {
 export const MAPA_PARAMETROS: Record<string, string> = {
   "RH_IN:Ancho": "ancho",
   "RH_IN:01 Ancho": "ancho",
+  "RH_IN:01.1 Ancho": "ancho",
+  "RH_IN:01.0 Ancho": "ancho",
   "RH_IN:Alto": "alto",
   "RH_IN:02 Alto": "alto",
   "RH_IN:Profundidad": "profundidad",
+  "RH_IN:01.2 Profundidad": "profundidad",
+  "RH_IN:02 Profundidad": "profundidad",
+  "RH_IN:02.0 Profundidad": "profundidad",
   "RH_IN:Cantidada de Cajones": "cant_cajones",
   "RH_IN:Cantidad de Cajones": "cant_cajones",
   "RH_IN:Profundidad cajon": "profundidad_cajon",
   "RH_IN:Altura lateral de cajon": "altura_lateral_cajon",
   "RH_IN:Distancia bajo laterales": "distancia_bajo_laterales",
   "RH_IN:Tipo Cajon": "tipo_cajon",
+  "RH_IN:02.0 Union Derecha": "union_derecha",
+  "RH_IN:02.1 Union izquierda": "union_izquierda",
   "RH_IN:03 Tipo de union izquierda": "union_izquierda",
   "RH_IN:04 Tipo de union Derecha": "union_derecha",
+  "RH_IN:02.2 Recedido derecho": "recedido_derecho",
+  "RH_IN:02.3 Recedido izquierdo": "recedido_izquierdo",
+  "RH_IN:02.4 Orientacion maquinado minifix": "orientacion_maquinado_minifix",
+  "RH_IN:02.5 Orientacion minifix": "orientacion_minifix",
   "RH_IN:05 Orientacion maquinado minifix": "orientacion_maquinado_minifix",
   "RH_IN:06 Orientacion minifix": "orientacion_minifix",
   "RH_IN:Posicion Tarugo": "posicion_tarugo",
   "RH_IN:02.4 Posicion Tarugo": "posicion_tarugo",
+  "RH_IN:02.7 Posicion Tarugo": "posicion_tarugo",
   "RH_IN:Posicion Tornillo": "posicion_tornillo",
   "RH_IN:02.5Posicion Tornillo": "posicion_tornillo",
+  "RH_IN:02.8 Posicion Tornillo": "posicion_tornillo",
   "RH_IN:02.3Posicion Minifix": "posicion_minifix",
+  "RH_IN:02.6 Posicion Minifix": "posicion_minifix",
   "RH_IN:Borde izquierdo": "borde_izquierdo",
   "RH_IN:03.4 Borde izquierdo": "borde_izquierdo",
   "RH_IN:Borde derecho": "borde_derecho",
@@ -103,18 +117,49 @@ export const MAPA_PARAMETROS: Record<string, string> = {
   "RH_IN:Lado balance cubierta": "lado_balance_cubierta",
   "RH_IN:03.1 Lado balance": "lado_balance_cubierta",
   "RH_IN:Tipo de mapeado cubierta": "tipo_mapeado_cubierta",
+  "RH_IN:03.0 Mapeado": "tipo_mapeado_cubierta",
   "RH_IN:03.2 Tipo de mapeado": "tipo_mapeado_cubierta",
   "RH_IN:Lado balance": "lado_balance_cubierta",
   "RH_IN:Tipo de mapeado": "tipo_mapeado_cubierta",
+  "RH_IN:Lado balance entrepaño": "lado_balance_entrepanio",
+  "RH_IN:Tipo de mapeado entrepaño": "tipo_mapeado_entrepanio",
 };
+
+export interface CarpetaMuebleNode {
+  id: string; // ej: "rta-design" o "rta-design/escritorios"
+  nombre: string; // ej: "RTA Design", "Escritorios"
+  tipo: "marca" | "tipologia";
+  padreId: string | null;
+  ruta: string;
+  subcarpetas?: CarpetaMuebleNode[];
+}
+
+export interface MuebleGuardadoItem {
+  id: string;
+  nombre: string;
+  marca: string;
+  tipologia: string;
+  rutaCarpeta: string;
+  fechaGuardado: string;
+  thumbnail?: string;
+  descripcionComercial?: string;
+  instancias: Record<string, ObjetoInstancia3BF>;
+  fichaConfig?: FichaCostosConfig;
+  dimensionesEnvolventes?: { ancho: number; alto: number; profundidad: number };
+  totalPiezas?: number;
+  costoEstimadoCop?: number;
+  costoEstimadoUsd?: number;
+}
 
 export interface PiezaDespiece {
   nombre: string;
+  descripcion?: string;
   ancho: number;
   largo: number;
   espesor: number;
   cantidad: number;
-  tipo: string;
+  tipo?: string;
+  pos?: [number, number, number];
 }
 
 export interface HerrajeItem {
@@ -385,8 +430,27 @@ export interface State3BF {
   // Blender N-Panel (Sidebar Multifuncional con tecla N)
   mostrarNPanel: boolean;
   setMostrarNPanel: (mostrar: boolean | ((prev: boolean) => boolean)) => void;
-  pestanaNPanel: "muebles" | "materiales" | "calibrar" | "escenario";
-  setPestanaNPanel: (pestana: "muebles" | "materiales" | "calibrar" | "escenario") => void;
+  pestanaNPanel: "muebles" | "componentes" | "materiales" | "calibrar" | "escenario";
+  setPestanaNPanel: (pestana: "muebles" | "componentes" | "materiales" | "calibrar" | "escenario") => void;
+
+  // Catálogo de Muebles (Asset Browser Blender Style / Google Drive)
+  arbolCarpetasMuebles: CarpetaMuebleNode[];
+  mueblesGuardados: MuebleGuardadoItem[];
+  muebleActivoGuardado: MuebleGuardadoItem | null;
+  carpetaSeleccionadaId: string;
+  modalGuardarComoAbierto: boolean;
+  guardandoMueble: boolean;
+  urlGoogleDrive: string;
+
+  setCarpetaSeleccionadaId: (id: string) => void;
+  setModalGuardarComoAbierto: (abierto: boolean) => void;
+  setUrlGoogleDrive: (url: string) => void;
+  cargarArbolMuebles: () => Promise<void>;
+  crearCarpetaMueble: (nombre: string, tipo?: "marca" | "tipologia", padreId?: string | null) => Promise<boolean>;
+  guardarMuebleComo: (datos: { nombre: string; marca: string; tipologia: string; descripcion?: string }) => Promise<boolean>;
+  renombrarMuebleGuardado: (id: string, nuevoNombre: string) => Promise<boolean>;
+  eliminarMuebleGuardado: (id: string) => Promise<boolean>;
+  abrirMueble: (mueble: MuebleGuardadoItem) => Promise<void>;
 
   // Multi-Instancia GHX en Escenario 3D
   instancias: Record<string, ObjetoInstancia3BF>;
@@ -394,6 +458,7 @@ export interface State3BF {
   agregarInstanciaGHX: (item: { id: string; archivo?: string; nombre?: string; ghx_content?: string }, posicionInicial?: [number, number, number]) => Promise<string>;
   eliminarInstancia: (id: string) => void;
   duplicarInstancia: (id: string) => Promise<string>;
+  renombrarInstancia: (id: string, nuevoNombre: string) => void;
   seleccionarInstancia: (id: string | null) => void;
   setParametroInstancia: (id: string, key: string, value: any) => void;
   setPosicionInstancia: (id: string, pos: [number, number, number]) => void;
@@ -401,7 +466,7 @@ export interface State3BF {
   recomputarTodas: () => Promise<void>;
   
   // Despiece & Herrajes Globales Multiobjeto (BOM Escenario Completo)
-  getDespieceGlobal: () => Array<PiezaDespiece & { instanciaNombre: string; instanciaId: string }>;
+  getDespieceGlobal: () => Array<PiezaDespiece & { instanciaNombre: string; instanciaId: string; descripcion: string }>;
   getHerrajesGlobal: () => Array<HerrajeItem & { instanciaNombre: string; instanciaId: string }>;
 
   // Selección & Transformación Espacial Estilo Blender (G: Grab / B: Base Point Snap)
@@ -455,6 +520,7 @@ export interface State3BF {
 export interface FichaCostosConfig {
   desperdicioGlobalPct: number;
   desperdicioPorPieza: Record<number, number>;
+  descripcionesPersonalizadas?: Record<number, string>;
   materialesPorPieza: Record<number, string>;
   cantosPorPieza: Record<number, {
     cantosAncho: number;
@@ -470,6 +536,7 @@ export interface FichaCostosConfig {
 export const FICHA_DEFECTO: FichaCostosConfig = {
   desperdicioGlobalPct: 10.0,
   desperdicioPorPieza: {},
+  descripcionesPersonalizadas: {},
   materialesPorPieza: {},
   cantosPorPieza: {},
   piezasNombres: {},
@@ -599,6 +666,210 @@ export const use3BFStore = create<State3BF>((set, get) => ({
     })),
   pestanaNPanel: "muebles",
   setPestanaNPanel: (pestanaNPanel) => set({ pestanaNPanel: pestanaNPanel as any }),
+
+  // =========================================================================
+  // 🪑 CATÁLOGO DE MUEBLES (ASSET BROWSER BLENDER STYLE & GOOGLE DRIVE)
+  // =========================================================================
+  arbolCarpetasMuebles: [],
+  mueblesGuardados: [],
+  muebleActivoGuardado: null,
+  carpetaSeleccionadaId: "all",
+  modalGuardarComoAbierto: false,
+  guardandoMueble: false,
+  urlGoogleDrive: "https://drive.google.com/drive/folders/1zzeGpgyLbCUKRuUhT7Lk-_7xRW_kZf9t",
+
+  setCarpetaSeleccionadaId: (carpetaSeleccionadaId) => set({ carpetaSeleccionadaId }),
+  setModalGuardarComoAbierto: (modalGuardarComoAbierto) => set({ modalGuardarComoAbierto }),
+  setUrlGoogleDrive: (urlGoogleDrive) => set({ urlGoogleDrive }),
+
+  cargarArbolMuebles: async () => {
+    try {
+      const res = await fetch("/api/drive/muebles?action=list_tree");
+      if (res.ok) {
+        const data = await res.json();
+        if (data.tree) {
+          set({ arbolCarpetasMuebles: data.tree });
+        }
+        if (data.muebles) {
+          set({ mueblesGuardados: data.muebles });
+        }
+        if (data.driveUrl) {
+          set({ urlGoogleDrive: data.driveUrl });
+        }
+      }
+    } catch (e) {
+      console.warn("Usando catálogo local de muebles:", e);
+    }
+  },
+
+  crearCarpetaMueble: async (nombre: string, tipo: "marca" | "tipologia" = "tipologia", padreId: string | null = null) => {
+    const cleanName = nombre.trim();
+    if (!cleanName) return false;
+
+    const slug = cleanName.toLowerCase().replace(/\s+/g, "-");
+    const id = padreId ? `${padreId}/${slug}` : slug;
+    const ruta = padreId ? `${padreId}/${cleanName}` : cleanName;
+
+    const nuevaCarpeta: CarpetaMuebleNode = {
+      id,
+      nombre: cleanName,
+      tipo,
+      padreId: padreId || null,
+      ruta,
+      subcarpetas: []
+    };
+
+    set((state) => {
+      if (!padreId) {
+        return { arbolCarpetasMuebles: [...state.arbolCarpetasMuebles, nuevaCarpeta] };
+      }
+      const updatedTree = state.arbolCarpetasMuebles.map((m) => {
+        if (m.id === padreId) {
+          return { ...m, subcarpetas: [...(m.subcarpetas || []), nuevaCarpeta] };
+        }
+        return m;
+      });
+      return { arbolCarpetasMuebles: updatedTree };
+    });
+
+    try {
+      await fetch("/api/drive/muebles", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "create_folder", folder: nuevaCarpeta }),
+      });
+    } catch (e) {
+      console.warn("Carpeta persistida localmente:", e);
+    }
+    return true;
+  },
+
+  guardarMuebleComo: async (datos: { nombre: string; marca: string; tipologia: string; descripcion?: string }) => {
+    set({ guardandoMueble: true });
+    const state = get();
+    try {
+      const id = `mueble_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`;
+      const rutaCarpeta = `${datos.marca}/${datos.tipologia}`;
+      const modelKey = state.parametros.model_id || "Cubierta";
+      const fichaConfig = state.getFichaConfig(modelKey);
+      const despieceGlobal = state.getDespieceGlobal();
+
+      // Capturar miniatura 3D real desde el Canvas WebGL
+      let thumbnail: string | undefined = undefined;
+      if (typeof window !== "undefined" && (window as any).__capturarThumbnail3BF) {
+        thumbnail = (window as any).__capturarThumbnail3BF() || undefined;
+      }
+
+      const nuevoMueble: MuebleGuardadoItem = {
+        id,
+        nombre: datos.nombre,
+        marca: datos.marca,
+        tipologia: datos.tipologia,
+        rutaCarpeta,
+        fechaGuardado: new Date().toISOString(),
+        thumbnail,
+        descripcionComercial: datos.descripcion || `Mueble diseñado en 3BF (${datos.marca})`,
+        instancias: JSON.parse(JSON.stringify(state.instancias)),
+        fichaConfig,
+        totalPiezas: despieceGlobal.reduce((acc, p) => acc + (p.cantidad || 1), 0),
+      };
+
+      // Guardar en Store y localStorage
+      set((s) => ({
+        mueblesGuardados: [nuevoMueble, ...s.mueblesGuardados.filter((m) => m.id !== id)],
+        muebleActivoGuardado: nuevoMueble,
+        modalGuardarComoAbierto: false,
+      }));
+
+      try {
+        await fetch("/api/drive/muebles", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ action: "save_furniture", furniture: nuevoMueble }),
+        });
+      } catch (err) {
+        console.warn("Mueble guardado en local:", err);
+      }
+
+      set({ guardandoMueble: false });
+      return true;
+    } catch (err) {
+      console.error("Error al guardar mueble:", err);
+      set({ guardandoMueble: false });
+      return false;
+    }
+  },
+
+  renombrarMuebleGuardado: async (id: string, nuevoNombre: string) => {
+    const clean = nuevoNombre.trim();
+    if (!clean) return false;
+
+    set((state) => ({
+      mueblesGuardados: state.mueblesGuardados.map((m) =>
+        m.id === id ? { ...m, nombre: clean } : m
+      ),
+      muebleActivoGuardado:
+        state.muebleActivoGuardado?.id === id
+          ? { ...state.muebleActivoGuardado, nombre: clean }
+          : state.muebleActivoGuardado,
+    }));
+
+    try {
+      await fetch("/api/drive/muebles", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "rename_furniture", id, nuevoNombre: clean }),
+      });
+    } catch (e) {
+      console.warn("Renombrado persistido localmente:", e);
+    }
+    return true;
+  },
+
+  eliminarMuebleGuardado: async (id: string) => {
+    set((state) => ({
+      mueblesGuardados: state.mueblesGuardados.filter((m) => m.id !== id),
+      muebleActivoGuardado:
+        state.muebleActivoGuardado?.id === id ? null : state.muebleActivoGuardado,
+    }));
+
+    try {
+      await fetch("/api/drive/muebles", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "delete_furniture", id }),
+      });
+    } catch (e) {
+      console.warn("Eliminación persistida localmente:", e);
+    }
+    return true;
+  },
+
+  abrirMueble: async (mueble: MuebleGuardadoItem) => {
+    if (!mueble || !mueble.instancias) return;
+
+    // 1. Restaurar instancias en el Store
+    const restoredInstancias = JSON.parse(JSON.stringify(mueble.instancias));
+    const firstKey = Object.keys(restoredInstancias)[0] || null;
+
+    // 2. Restaurar ficha técnica si existe
+    if (mueble.fichaConfig) {
+      const modelKey = get().parametros.model_id || "Cubierta";
+      get().setFichaConfig(modelKey, mueble.fichaConfig);
+    }
+
+    set({
+      instancias: restoredInstancias,
+      objetoActivoId: firstKey,
+      objetoSeleccionado: !!firstKey,
+      muebleActivoGuardado: mueble,
+      escenarioLimpio: false,
+      pestanaActiva: "3d",
+    });
+
+    // 3. Recomputar todas las instancias con Grasshopper
+    await get().recomputarTodas();
+  },
 
   // =========================================================================
   // 🏢 MULTI-INSTANCIA GHX EN ESCENARIO 3D (Árbol de Objetos Independientes)
@@ -751,6 +1022,19 @@ export const use3BFStore = create<State3BF>((set, get) => ({
     return nuevoId;
   },
 
+  renombrarInstancia: (id: string, nuevoNombre: string) => {
+    set((s) => {
+      const inst = s.instancias[id];
+      if (!inst) return s;
+      return {
+        instancias: {
+          ...s.instancias,
+          [id]: { ...inst, nombreVisible: nuevoNombre },
+        },
+      };
+    });
+  },
+
   seleccionarInstancia: (id: string | null) => {
     if (!id) {
       set({ objetoActivoId: null, objetoSeleccionado: false });
@@ -777,6 +1061,12 @@ export const use3BFStore = create<State3BF>((set, get) => ({
     const nextParams = { ...inst.parametros, [key]: value };
     const cleanKey = key.replace("RH_IN:", "").toLowerCase().replace(/\s+/g, "_");
     nextParams[cleanKey] = value;
+    
+    const pureKey = key.replace(/^RH_IN:\s*/i, "").replace(/^[\d.]+[_\s]*/, "").toLowerCase().replace(/\s+/g, "_");
+    if (pureKey) {
+      nextParams[pureKey] = value;
+    }
+
     const legacyKey = (MAPA_PARAMETROS as any)[key];
     if (legacyKey) nextParams[legacyKey] = value;
 
@@ -869,12 +1159,13 @@ export const use3BFStore = create<State3BF>((set, get) => ({
 
   getDespieceGlobal: () => {
     const state = get();
-    const list: Array<PiezaDespiece & { instanciaNombre: string; instanciaId: string }> = [];
+    const list: Array<PiezaDespiece & { instanciaNombre: string; instanciaId: string; descripcion: string }> = [];
     Object.values(state.instancias).forEach((inst) => {
       if (inst.resultado?.despiece) {
         inst.resultado.despiece.forEach((p) => {
           list.push({
             ...p,
+            descripcion: p.descripcion || inst.nombreVisible || p.nombre,
             instanciaNombre: inst.nombreVisible,
             instanciaId: inst.id,
           });

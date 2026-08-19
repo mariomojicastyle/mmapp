@@ -1,5 +1,44 @@
 # 📜 Histórico del Proyecto: mariomojica.com
 
+### 🔹 Hito BiblioMuebles_Ram_Ventas — Biblioteca de Muebles Blender 4.x, Sincronía Google Drive (G:), RAM de Ventas & BOM Consolidado (18 de Agosto, 2026)
+
+- **Biblioteca de Muebles & Asset Browser Estilo Blender 4.x**:
+  * Reestructuración de la interfaz en el N-Panel separando las definiciones `.ghx` en crudo (**Componentes**) de las composiciones y catálogos comerciales (**Muebles**).
+  * Estética minimalista pura inspirada en Blender 4.x: sin marcos envolventes pesados, sin badges de categoría invasivos, con miniaturas 3D cuadradas nítidas y nombres limpios centrados.
+  * Edición inline de nombres mediante doble clic o icono de lápiz, con guardado instantáneo al presionar `Enter`.
+- **Integración Nativa Bidireccional con Google Drive (`G:\Mi unidad\Muebles`)**:
+  * Conexión directa y en vivo con Google Drive para escritorio (`provider: google_drive_desktop_active`).
+  * Eliminación de listas quemadas en código: el árbol jerárquico de marcas (`RTA Design`, `Politorno`, `Henn`, `Bartira`, `Genmo Base`, `Partira`) y tipologías se escanea 100% en tiempo real.
+  * Botón interactivo **`Ir al Drive ↗`** que abre la carpeta oficial en Google Drive Web en una nueva pestaña y botón **`Sincronizar` (`RefreshCw`)** para refrescar carpetas agregadas o eliminadas.
+  * Flujo completo "Guardar como..." y "Abrir Mueble", empaquetando geometría, parámetros, ficha técnica y miniaturas en archivos `.3bf.json`.
+- **Captura Fotográfica 3D WebGL Centrada (360×360 px)**:
+  * Componente `ThumbnailCapturer` que extrae el centro exacto del viewport 3D en formato WebP cuadrado de alta resolución, evitando bordes negros y desalineaciones.
+- **Armonización Visual de la Biblioteca de Componentes**:
+  * Rediseño de las tarjetas de definiciones GHX con el mismo estándar minimalista de Blender, preservando la funcionalidad de arrastrar y soltar (`drag & drop`) hacia el escenario 3D.
+- **Despiece Multi-Instancia y Consolidación Pura de Herrajes**:
+  * Reflejo de dimensiones reactivas por instancia (ej. 498 mm vs 1540 mm), separando el origen técnico (`Pieza`) de la descripción comercial editable.
+  * Unificación total de herrajes (8 cajas y 8 pernos para 2 cubiertas) leídos de forma pura y directa desde Grasshopper sin parches espaciales en código.
+- **Módulo Comercial RAM de Ventas & Arquitectura V10**:
+  * Documentación completa del módulo de prospección en `Comercial/RAM_de_ventas.md` y actualización del diagrama de arquitectura a la versión 10 (`Arquitectura/arquitectura_v10.svg` y `Arquitectura/Arquitectura.md`).
+  * Inclusión de `RAM_de_ventas.md` en el protocolo de arranque de `AGENTS.md`.
+
+---
+
+- **Módulo Completo de RAM de Ventas (`/ventas-ram`)**:
+  * Implementado en la plataforma Next.js con permisos de rol de usuario (`VENTAS_RAM`), navegación con ícono `BrainCircuit` y diseño Tech Ethos / Obsidian Teal.
+- **Visión Multimodal con Ingesta Multi-Captura**:
+  * Soporte para pegar múltiples capturas en secuencia con `Ctrl+V` (o selector de archivos) con galería cronológica numerada (`#1`, `#2`, `#3`...).
+  * Compresión inteligente en cliente (redimensión proporcional a 1280px y JPEG 0.82) reduciendo payloads de 20MB a menos de 400KB para envíos ultrarrápidos (< 2 segundos).
+- **Auto-Extracción Inteligente de Prospectos con IA**:
+  * Modal `+ Nuevo` con auto-completado mediante Visión Gemini desde capturas de perfil de LinkedIn / WhatsApp (extrayendo Empresa, Nombre, Cargo, Teléfono, URL, Región y Notas con salvaguardas anti-alucinación).
+- **Separación Clara: Archivo Histórico vs Acción Comercial Bajo Demanda**:
+  * **Pestaña 1 (`⚡ Analizar & Archivar Evento`)**: Extrae conclusiones ejecutivas de eventos pasados y guarda hitos limpios en el historial sin generar respuestas inventadas.
+  * **Pestaña 2 (`💬 Hilo de Conversación Completo`)**: Muestra la bitácora cronológica con citas reales del chat, banner proactivo de **Próxima Jugada Táctica** y botón protagónico **`⚡ Activar Antigravity: Redactar Mensaje`** para generar respuestas bajo demanda en **Português Brasileño + Traducción en Español** con refinamiento interactivo.
+- **Persistencia Reactiva & Memoria Local**:
+  * Sincronización transparente entre Supabase, memoria local y la memoria activa `.agent/skills/b2b-sales-closer/ventas_ram.md`.
+
+---
+
 ### 🔹 Hito 3BF_MultiInstancia_GHX_BOM_Global — Arquitectura Multi-Instancia GHX, Nombrado Secuencial, Snaps y Despiece & Costos Globales (17 de Agosto, 2026)
 
 - **Multi-Instancia Paramétrica GHX en Escenario 3D**:

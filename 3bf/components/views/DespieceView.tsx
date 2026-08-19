@@ -19,7 +19,8 @@ import {
   Percent, 
   Scissors,
   Ruler,
-  Maximize2
+  Maximize2,
+  Database
 } from "lucide-react";
 
 /**
@@ -114,9 +115,11 @@ export default function DespieceView() {
     fichasConfig,
     setFichaConfig,
     getFichaConfig,
+    renombrarInstancia,
     negociacionNovopan,
     moneda,
     setMoneda,
+    setModalGuardarComoAbierto,
     hidratarDesdeLocalStorage
   } = use3BFStore();
 
@@ -136,6 +139,7 @@ export default function DespieceView() {
       : "BD 1.0"
   );
   const [piezasEditadas, setPiezasEditadas] = useState<Array<{ nombre: string; largo: number; ancho: number; espesor: number; cantidad: number; tipo?: string }>>([]);
+  const [descripcionesPersonalizadas, setDescripcionesPersonalizadas] = useState<Record<number, string>>((fichaInicial as any).descripcionesPersonalizadas || {});
   const [materialesPorPieza, setMaterialesPorPieza] = useState<Record<number, string>>(fichaInicial.materialesPorPieza || {});
   const [desperdicioGlobalPct, setDesperdicioGlobalPct] = useState<number>(fichaInicial.desperdicioGlobalPct ?? 10.0);
   const [desperdicioPorPieza, setDesperdicioPorPieza] = useState<Record<number, number>>(fichaInicial.desperdicioPorPieza || {});
@@ -152,6 +156,7 @@ export default function DespieceView() {
   const [costoEmpaqueManualUsd, setCostoEmpaqueManualUsd] = useState<number | undefined>(fichaInicial.costoEmpaqueManualUsd);
 
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
+  const [editingDescIndex, setEditingDescIndex] = useState<number | null>(null);
 
   useEffect(() => {
     hidratarDesdeLocalStorage();
@@ -162,6 +167,7 @@ export default function DespieceView() {
     const config = getFichaConfig(modelKey);
     setDesperdicioGlobalPct(config.desperdicioGlobalPct ?? 10.0);
     setDesperdicioPorPieza(config.desperdicioPorPieza || {});
+    setDescripcionesPersonalizadas((config as any).descripcionesPersonalizadas || {});
     setMaterialesPorPieza(config.materialesPorPieza || {});
     setCantosPorPieza(config.cantosPorPieza || {});
     setVersionActual(config.versionActual || "v1.0");
@@ -200,10 +206,13 @@ export default function DespieceView() {
     }
   }, [piezasGlobales]);
 
-  // Piezas activas garantizadas 1:1 con el cómputo 3D de todas las instancias
-  const piezasActivas = (piezasGlobales && piezasEditadas.length === piezasGlobales.length)
-    ? piezasEditadas 
-    : (piezasGlobales || []);
+  // Piezas activas garantizadas 1:1 con el cómputo 3D de todas las instancias en tiempo real
+  const piezasActivas = useMemo(() => {
+    if (editingIndex !== null && piezasEditadas.length === piezasGlobales.length) {
+      return piezasEditadas;
+    }
+    return piezasGlobales || [];
+  }, [piezasGlobales, piezasEditadas, editingIndex]);
 
   // Formateadores monetarios exactos sin pérdidas por redondeo
   const formatMoneyCustom = (copVal: number, usdVal: number) => {
@@ -399,6 +408,9 @@ export default function DespieceView() {
       const areaM2 = (p.largo * p.ancho * p.cantidad) / 1_000_000.0;
       areaTotalM2 += areaM2;
 
+      // Nombre de descripción oficial asignado por el diseñador
+      const descOficial = descripcionesPersonalizadas[idx] || p.descripcion || p.instanciaNombre || p.nombre;
+
       // Desperdicio de esta pieza (o el global si no se ha sobreescrito)
       const despPct = desperdicioPorPieza[idx] !== undefined ? desperdicioPorPieza[idx] : desperdicioGlobalPct;
       
@@ -429,6 +441,7 @@ export default function DespieceView() {
 
       return {
         ...p,
+        descripcionOficial: descOficial,
         materialSeleccionado: mat,
         areaM2: Number(areaM2.toFixed(3)),
         desperdicioPct: despPct,
@@ -452,7 +465,7 @@ export default function DespieceView() {
       costoTotalMaderaCop: Math.round(totalMaderaCop),
       costoTotalMaderaUsd: Number(totalMaderaUsd.toFixed(2))
     };
-  }, [piezasActivas, materialesPorPieza, dbTableros, dbCantos, trm, desperdicioGlobalPct, desperdicioPorPieza, cantosPorPieza, parametros]);
+  }, [piezasActivas, descripcionesPersonalizadas, materialesPorPieza, dbTableros, dbCantos, trm, desperdicioGlobalPct, desperdicioPorPieza, cantosPorPieza, parametros]);
 
   // Cálculos Consolidados de Cantos (Metros Lineales y Costos)
   const resumenCantos = useMemo(() => {
@@ -520,7 +533,7 @@ export default function DespieceView() {
     return resultado?.herrajes || [];
   }, [instancias, resultado?.herrajes, getHerrajesGlobal]);
 
-  // Cálculos Consolidados de Herrajes Globales
+  // Cálculos Consolidados de Herrajes Globales (Unificación total de herrajes idénticos del escenario)
   const resumenHerrajes = useMemo(() => {
     if (!herrajesGlobales || herrajesGlobales.length === 0) {
       return {
@@ -535,8 +548,19 @@ export default function DespieceView() {
     let totalUsd = 0;
     let totalCant = 0;
 
-    const items = herrajesGlobales.map((h: any) => {
-      const nameLower = h.nombre.toLowerCase().trim();
+    // Consolidación de herrajes agrupando por código/tipo único
+    const mapaHerrajes = new Map<string, {
+      nombreGhx: string;
+      descripcion: string;
+      unidad: string;
+      cantidad: number;
+      costoUnitarioCop: number;
+      costoUnitarioUsd: number;
+    }>();
+
+    herrajesGlobales.forEach((h: any) => {
+      const nameClean = (h.nombre || "").trim();
+      const nameLower = nameClean.toLowerCase();
       
       // Match en dbHerrajes
       let match = dbHerrajes.find((rec: HerrajeRecord) => rec.nombreGhx.toLowerCase().trim() === nameLower);
@@ -544,30 +568,42 @@ export default function DespieceView() {
         match = dbHerrajes.find((rec: HerrajeRecord) => nameLower.includes(rec.nombreGhx.toLowerCase().trim()) || rec.nombreGhx.toLowerCase().trim().includes(nameLower));
       }
 
-      const descComercial = match ? match.descripcion : h.nombre;
+      const key = match ? match.codigo : nameLower;
+      const descComercial = match ? match.descripcion : nameClean;
       const unidadMed = match ? match.unidad : (h.unidad || "UND");
       
       // Costos unitarios exactos
       const unitCop = match ? match.costoCop : Math.round(0.20 * trm);
       const unitUsd = match ? match.costoUsd : 0.20;
+      const cant = Number(h.cantidad) || 0;
 
-      const filaCop = h.cantidad * unitCop;
-      const filaUsd = h.cantidad * unitUsd;
+      if (!mapaHerrajes.has(key)) {
+        mapaHerrajes.set(key, {
+          nombreGhx: nameClean,
+          descripcion: descComercial,
+          unidad: unidadMed,
+          cantidad: cant,
+          costoUnitarioCop: unitCop,
+          costoUnitarioUsd: unitUsd,
+        });
+      } else {
+        const exist = mapaHerrajes.get(key)!;
+        exist.cantidad += cant;
+      }
+    });
+
+    const items = Array.from(mapaHerrajes.values()).map((item) => {
+      const filaCop = item.cantidad * item.costoUnitarioCop;
+      const filaUsd = item.cantidad * item.costoUnitarioUsd;
 
       totalCop += filaCop;
       totalUsd += filaUsd;
-      totalCant += h.cantidad;
+      totalCant += item.cantidad;
 
       return {
-        nombreGhx: h.nombre,
-        descripcion: descComercial,
-        unidad: unidadMed,
-        cantidad: h.cantidad,
-        costoUnitarioCop: unitCop,
-        costoUnitarioUsd: unitUsd,
+        ...item,
         costoTotalCop: filaCop,
         costoTotalUsd: Number(filaUsd.toFixed(2)),
-        instanciaNombre: h.instanciaNombre,
       };
     });
 
@@ -681,6 +717,20 @@ export default function DespieceView() {
     });
   };
 
+  const handleDescripcionChange = (idx: number, nuevaDesc: string) => {
+    setDescripcionesPersonalizadas((prev) => {
+      const updated = { ...prev, [idx]: nuevaDesc };
+      sincronizarCambios({ descripcionesPersonalizadas: updated });
+      return updated;
+    });
+
+    // Si la pieza proviene de una instancia del escenario, actualizar su nombre oficial en el store
+    const pieza = piezasActivas[idx];
+    if (pieza && (pieza as any).instanciaId) {
+      renombrarInstancia((pieza as any).instanciaId, nuevaDesc);
+    }
+  };
+
   const guardarEnSupabase = async () => {
     setGuardando(true);
     setGuardadoExitoso(false);
@@ -689,6 +739,7 @@ export default function DespieceView() {
       sincronizarCambios({
         desperdicioGlobalPct,
         desperdicioPorPieza,
+        descripcionesPersonalizadas,
         materialesPorPieza,
         cantosPorPieza,
         versionActual,
@@ -709,6 +760,7 @@ export default function DespieceView() {
         costo_empaque_manual_usd: costoEmpaqueManualUsd,
         despiece: resumenMadera.items.map((i: any) => ({
           nombre: i.nombre,
+          descripcion: i.descripcionOficial || i.nombre,
           largo: i.largo,
           ancho: i.ancho,
           espesor: i.espesor,
@@ -817,28 +869,38 @@ export default function DespieceView() {
           </span>
         </div>
 
-        {/* Acciones de Cabecera: Guardar Ficha, Versión y Moneda */}
-        <div className="flex items-center gap-2.5 flex-wrap">
-          {/* Botón Principal de Guardado en Cabecera Superior */}
+        {/* Acciones de Cabecera: Guardar Ficha, Guardar Como Mueble, Versión y Moneda */}
+        <div className="flex items-center gap-2 flex-wrap">
+          {/* Botón Guardar Como Mueble (Google Drive / Catálogo de Marcas) */}
+          <button
+            onClick={() => setModalGuardarComoAbierto(true)}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-gradient-to-r from-cyan-600 to-teal-500 hover:from-cyan-500 hover:to-teal-400 text-white font-bold text-xs shadow-sm transition cursor-pointer"
+            title="Guardar este mueble con toda su geometría 3D y ficha de costos en Google Drive"
+          >
+            <Save className="w-3.5 h-3.5" />
+            <span>Guardar como...</span>
+          </button>
+
+          {/* Botón de Sincronización Rápida en Base de Datos */}
           <button
             onClick={guardarEnSupabase}
             disabled={guardando}
             className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg font-bold text-xs shadow-sm transition cursor-pointer ${
               guardadoExitoso
                 ? "bg-emerald-600 text-white hover:bg-emerald-700 animate-pulse"
-                : "bg-cyan-600 hover:bg-cyan-700 text-white"
+                : "bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 text-slate-800 dark:text-slate-200"
             }`}
-            title="Guarda de forma permanente la ficha técnica, desperdicios, materiales y cantos"
+            title="Guarda de forma permanente la ficha técnica, desperdicios, materiales y cantos en Supabase"
           >
             {guardadoExitoso ? (
               <>
-                <Check className="w-3.5 h-3.5" />
-                <span>¡Guardado!</span>
+                <Check className="w-3.5 h-3.5 text-white" />
+                <span>¡Sincronizado!</span>
               </>
             ) : (
               <>
-                <Save className="w-3.5 h-3.5" />
-                <span>{guardando ? "Guardando..." : "Guardar"}</span>
+                <Database className="w-3.5 h-3.5 text-cyan-600 dark:text-cyan-400" />
+                <span>{guardando ? "Sincronizando..." : "Sincronizar BD"}</span>
               </>
             )}
           </button>
@@ -957,6 +1019,7 @@ export default function DespieceView() {
             <thead>
               <tr className="bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 font-bold border-b border-slate-200 dark:border-slate-700 whitespace-nowrap">
                 <th className="p-2.5 w-28">Pieza</th>
+                <th className="p-2.5 min-w-[170px]">Descripción</th>
                 <th className="p-2.5 min-w-[220px]">Sustrato / Tablero</th>
                 <th className="p-2.5 w-16 text-center">Largo</th>
                 <th className="p-2.5 w-16 text-center">Ancho</th>
@@ -987,31 +1050,36 @@ export default function DespieceView() {
             <tbody className="divide-y divide-slate-200 dark:divide-slate-800">
               {resumenMadera.items.map((p: any, idx: number) => (
                 <tr key={idx} className="hover:bg-cyan-50/40 dark:hover:bg-slate-800/50 transition group whitespace-nowrap">
-                  {/* Nombre Editable */}
+                  {/* Columna 1: Pieza (Nombre GHX de origen) */}
+                  <td className="p-2.5 font-bold text-slate-800 dark:text-slate-200">
+                    {p.nombre}
+                  </td>
+
+                  {/* Columna 2: Descripción (Nombre Oficial Editable) */}
                   <td className="p-2.5">
-                    {editingIndex === idx ? (
+                    {editingDescIndex === idx ? (
                       <input
                         type="text"
-                        value={p.nombre}
+                        value={p.descripcionOficial}
                         autoFocus
                         onFocus={(e) => e.target.select()}
-                        onBlur={() => setEditingIndex(null)}
+                        onBlur={() => setEditingDescIndex(null)}
                         onKeyDown={(e) => {
-                          if (e.key === "Enter" || e.key === "Escape") setEditingIndex(null);
+                          if (e.key === "Enter" || e.key === "Escape") setEditingDescIndex(null);
                         }}
-                        onChange={(e) => handleNombreChange(idx, e.target.value)}
+                        onChange={(e) => handleDescripcionChange(idx, e.target.value)}
                         className="p-1 w-full text-xs font-bold text-cyan-700 dark:text-cyan-300 bg-white dark:bg-slate-700 border border-cyan-400 rounded outline-none shadow-sm"
                       />
                     ) : (
                       <div
-                        onClick={() => setEditingIndex(idx)}
-                        className="flex items-center justify-between gap-1.5 cursor-pointer group"
-                        title="Haz clic para renombrar la pieza"
+                        onClick={() => setEditingDescIndex(idx)}
+                        className="flex items-center justify-between gap-1.5 cursor-pointer group hover:bg-slate-100 dark:hover:bg-slate-700/50 px-2 py-1 rounded transition"
+                        title="Haz clic para nombrar o renombrar la descripción oficial de la pieza"
                       >
                         <span className="font-bold text-slate-800 dark:text-slate-200 group-hover:text-cyan-600 transition">
-                          {p.nombre}
+                          {p.descripcionOficial}
                         </span>
-                        <Edit2 className="w-3 h-3 text-slate-300 opacity-0 group-hover:opacity-100 transition" />
+                        <Edit2 className="w-3.5 h-3.5 text-slate-400 dark:text-slate-500 opacity-60 group-hover:opacity-100 group-hover:text-cyan-600 transition shrink-0" />
                       </div>
                     )}
                   </td>
@@ -1106,7 +1174,7 @@ export default function DespieceView() {
             {/* Fila de Total de Madera */}
             <tfoot>
               <tr className="bg-slate-100/80 dark:bg-slate-800/80 border-t-2 border-slate-300 dark:border-slate-600 font-bold whitespace-nowrap">
-                <td colSpan={5} className="p-2.5 text-right text-slate-600 dark:text-slate-300 uppercase text-[10px] tracking-wider">
+                <td colSpan={6} className="p-2.5 text-right text-slate-600 dark:text-slate-300 uppercase text-[10px] tracking-wider">
                   Total Tableros & Madera:
                 </td>
                 <td className="p-2.5 text-center font-mono font-bold text-slate-800 dark:text-slate-200">

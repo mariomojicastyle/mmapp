@@ -541,7 +541,7 @@ export default function ControlPanel() {
   return (
     <div className="p-4 flex flex-col gap-5 h-full overflow-y-auto">
       {/* 🏷️ CABECERA: OBJETO ACTIVO EN EL ESCENARIO (Multi-Instancia) */}
-      {instanciaActiva ? (
+      {instanciaActiva && (
         <div className="flex flex-col gap-2 p-3 rounded-xl bg-cyan-600/10 dark:bg-cyan-950/40 border border-cyan-500/40 shadow-sm">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
@@ -577,13 +577,6 @@ export default function ControlPanel() {
               </select>
             </div>
           )}
-        </div>
-      ) : (
-        <div className="p-3 rounded-xl bg-amber-500/10 border border-amber-500/30 text-xs text-amber-900 dark:text-amber-200">
-          <p className="font-bold mb-0.5">Sin objeto seleccionado</p>
-          <p className="text-[11px] text-gray-600 dark:text-gray-400">
-            Haz clic derecho sobre un objeto en el visor 3D para editar sus parámetros o arrastra una nueva pieza.
-          </p>
         </div>
       )}
 

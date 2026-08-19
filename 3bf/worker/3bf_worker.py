@@ -143,12 +143,31 @@ def find_user_param_value(p_dict: dict, nick: str, default_val):
         return combined[nick]
         
     clean_target = re.sub(r'^RH_IN:\s*[\d.]*[_\s]*', '', nick).strip().lower().replace(' ', '_')
+    
+    # Priorizar claves exactas RH_IN: antes que fallbacks genéricos como ancho: 1200
+    best_val = None
+    best_priority = -1
+
     for k, v in combined.items():
         if not isinstance(k, str) or v is None or k == "parameters":
             continue
         clean_k = re.sub(r'^RH_IN:\s*[\d.]*[_\s]*', '', k).strip().lower().replace(' ', '_')
         if clean_k and (clean_k == clean_target or clean_k in clean_target or clean_target in clean_k):
-            return v
+            priority = 0
+            if k == nick:
+                priority = 3
+            elif k.startswith("RH_IN:"):
+                priority = 2
+            elif clean_k == clean_target:
+                priority = 1
+            
+            if priority > best_priority:
+                best_priority = priority
+                best_val = v
+                
+    if best_val is not None:
+        return best_val
+        
     return default_val
 
 def extract_parameter_groups(root, default_values):
@@ -918,8 +937,8 @@ async def compute_model(request: Request):
         u_der_str = str(find_user_param_value(p, "RH_IN:02.0 Union Derecha", find_user_param_value(p, "union_derecha", ""))).lower()
         tiene_entrepanio = "entrepaño" in u_izq_str or "entrepanio" in u_izq_str or u_izq_str == "3" or "entrepaño" in u_der_str or "entrepanio" in u_der_str or u_der_str == "3" or any("soporte" in m.get("name", "").lower() for m in real_meshes)
         
-        ancho_nom = float(find_user_param_value(p, "RH_IN:01 Ancho", find_user_param_value(p, "ancho", 500.0)))
-        prof_nom = float(find_user_param_value(p, "RH_IN:02 Profundidad", find_user_param_value(p, "profundidad", 500.0)))
+        ancho_nom = float(find_user_param_value(p, "RH_IN:01.1 Ancho", find_user_param_value(p, "RH_IN:01 Ancho", find_user_param_value(p, "ancho", 500.0))))
+        prof_nom = float(find_user_param_value(p, "RH_IN:01.2 Profundidad", find_user_param_value(p, "RH_IN:02 Profundidad", find_user_param_value(p, "profundidad", 500.0))))
 
         if tiene_entrepanio:
             piezas_madera_final = [

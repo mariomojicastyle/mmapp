@@ -12,6 +12,7 @@ import {
   Receipt,
   Settings,
   Bell,
+  BrainCircuit,
   type LucideIcon,
 } from "lucide-react"
 
@@ -44,6 +45,7 @@ export const navigationSections: NavSection[] = [
     items: [
       { name: "Equipo", href: "/equipo", icon: Users },
       { name: "Marketing", href: "/marketing", icon: Megaphone },
+      { name: "Ventas RAM", href: "/ventas-ram", icon: BrainCircuit },
       { name: "Integraciones", href: "/integraciones", icon: Puzzle },
       { name: "Uso", href: "/uso", icon: BarChart3 },
       { name: "Facturación", href: "/facturacion", icon: Receipt },

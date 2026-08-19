@@ -344,12 +344,35 @@ La aplicación React recibe el JSON `real_meshes` y renderiza cada pieza con mat
 
 ---
 
+---
+
+### 🪑 7. Biblioteca de Muebles & Asset Browser Estilo Blender 4.x
+- **Reestructuración de la Interfaz**: División en el N-Panel separando las definiciones `.ghx` en crudo (**Componentes**) de los muebles y composiciones terminadas (**Muebles**).
+- **Estética Minimalista Pura de Blender 4.x**: Miniaturas 3D cuadradas sin marcos grises ni badges superpuestos, con nombres limpios centrados debajo de la imagen.
+- **Edición Inline de Nombres**: Doble clic o icono de lápiz para renombrar archivos `.3bf.json` en tiempo real con la tecla `Enter`.
+- **Miniaturas 3D Automáticas y Centradas**: Captura WebGL de alta resolución recortando el centro exacto del visor a 360×360 px en formato WebP.
+
+---
+
+### ☁️ 8. Sincronización Nativa con Google Drive (`G:\Mi unidad\Muebles`)
+- **Almacenamiento Directo y Bidireccional**: Integración con Google Drive para escritorio en Windows (`G:\Mi unidad\Muebles`).
+- **Escaneo en Vivo sin Listas Quemadas**: La interfaz lee en tiempo real la estructura de marcas (`RTA Design`, `Politorno`, `Henn`, `Bartira`, etc.) y sus subcarpetas tipológicas. Si se borra o agrega una carpeta en Google Drive, se actualiza al instante con el botón **`Sincronizar`**.
+- **Botón `Ir al Drive ↗`**: Enlace directo que abre la carpeta oficial en Google Drive Web en una nueva pestaña.
+- **Flujo "Guardar como..." & "Abrir Mueble"**: Empaquetado completo de la geometría 3D, posiciones, rotaciones, parámetros y ficha técnica de costos en archivos estructurados `.3bf.json`.
+
+---
+
+### 🔩 9. Multi-Instancia, Despiece & Consolidación Pura de Herrajes (BOM)
+- **Multi-Instancia Reactiva**: Capacidad de insertar múltiples piezas idénticas o diferentes en el mismo escenario con nombres secuenciales automáticos (`Cubierta`, `Cubierta_01`).
+- **Alineación de Despiece & Costos**: Cada fila de la lista de corte refleja las dimensiones reales de cada instancia (ej. 498 mm vs 1540 mm), separando el origen técnico (`Pieza`) de la denominación oficial de producto (`Descripción`).
+- **Consolidación Unificada de Herrajes**: Agrupación total de cajas y pernos del escenario completo en filas unificadas leídas 100% de forma pura desde Grasshopper (ej. 8 cajas y 8 pernos para 2 cubiertas) sin parches en código.
+- **Silueta Perimetral Dinámica a 60 FPS**: Contorno de selección naranja `#ff9500` con recálculo dinámico envolvente que se adapta instantáneamente a cambios de ancho, profundidad y transformaciones espaciales.
+
+---
+
 ## 🔄 Estado Final del Ecosistema 3BF
 
-- **3BF Worker Python (`3bf_worker.py`)**: Corriendo en `http://localhost:8005`.
-- **RhinoCompute 8 (`rhino.compute.exe`)**: Corriendo en `http://localhost:5000`.
+- **3BF Worker Python (`3bf_worker.py`)**: Corriendo en `http://localhost:8005` (FastAPI).
+- **RhinoCompute 8 (`rhino.compute.exe`)**: Corriendo en `http://localhost:5000` (Rhino 8 Engine).
 - **Aplicación Web Next.js 3BF**: Corriendo en `http://localhost:3005`.
-- **Archivos de Definición en `temporal/`**:
-  - `Cajon_Experimento_Viktor_1cajon.ghx`
-  - `Cajon_Experimento_Viktor_2cajones.ghx`
-  - `Cajon_Experimento_Viktor_3cajones.ghx`
+- **Google Drive Storage**: Sincronizado en `G:\Mi unidad\Muebles`.
