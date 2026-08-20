@@ -641,7 +641,7 @@ export interface State3BF {
   // Multi-Instancia GHX en Escenario 3D
   instancias: Record<string, ObjetoInstancia3BF>;
   objetoActivoId: string | null;
-  agregarInstanciaGHX: (item: { id: string; archivo?: string; nombre?: string; ghx_content?: string }, posicionInicial?: [number, number, number]) => Promise<string>;
+  agregarInstanciaGHX: (item: { id: string; archivo?: string; rutaRelativa?: string; nombre?: string; ghx_content?: string }, posicionInicial?: [number, number, number]) => Promise<string>;
   eliminarInstancia: (id: string) => void;
   duplicarInstancia: (id: string) => Promise<string>;
   renombrarInstancia: (id: string, nuevoNombre: string) => void;
@@ -1234,9 +1234,9 @@ export const use3BFStore = create<State3BF>((set, get) => ({
   instancias: {},
   objetoActivoId: null,
 
-  agregarInstanciaGHX: async (item: { id: string; archivo?: string; nombre?: string; ghx_content?: string }, posicionInicial?: [number, number, number]) => {
+  agregarInstanciaGHX: async (item: { id: string; archivo?: string; rutaRelativa?: string; nombre?: string; ghx_content?: string }, posicionInicial?: [number, number, number]) => {
     const definitionId = item.id;
-    const filename = item.archivo || `${item.id}.ghx`;
+    const filename = item.rutaRelativa || item.archivo || `${item.id}.ghx`;
     const state = get();
     
     const id = `inst_${definitionId}_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`;
