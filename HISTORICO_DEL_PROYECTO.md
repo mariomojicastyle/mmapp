@@ -1,5 +1,23 @@
 # 📜 Histórico del Proyecto: mariomojica.com
 
+### 🔹 Hito 3BF_Web — Despliegue de Producción en Netlify con Dominio https://3bf.mariomojica.com, Puente Cloudflare Tunnel con RhinoCompute 8, Icono Oficial Icon_3BF y Homologación Visual Tech Ethos en Base de Datos (20 de Agosto, 2026)
+
+- **Despliegue y Activación en la Nube (`https://3bf.mariomojica.com`)**:
+  * Configuración del archivo `3bf/netlify.toml` con plugin `@netlify/plugin-nextjs`, directivas de compilación estática/dinámica, archivo `robots.txt` y cabeceras HTTP de no-indexación (`X-Robots-Tag: noindex, nofollow, noarchive, nosnippet`).
+  * Creación y vinculación del subdominio oficial con registro CNAME en Cloudflare DNS y certificado SSL aprovisionado.
+- **Túnel Seguro de Comunicación Cloudflare Tunnel (`cloudflared`)**:
+  * Instalación y ejecución del túnel seguro de Cloudflare comunicando el puerto local `8005` (FastAPI / RhinoCompute 8) con la web en Netlify mediante `NEXT_PUBLIC_3BF_WORKER_URL`.
+  * Verificación del indicador de estado en vivo en la barra superior (`🟢 vBeta 0.1 Online`).
+- **Saneamiento Integral del Historial Git**:
+  * Purga histórica mediante `git filter-branch` de videos residuales antiguos (>100MB) para asegurar sincronización y deploys limpios a GitHub.
+- **Icono Oficial `Icon_3BF`**:
+  * Procesamiento del asset `Icon_3BF.png` a formatos `.ico` y `.png` multirresolución (16x16 hasta 256x256) e integración en `RootLayout` como favicon oficial del navegador con soporte cache-busting.
+- **Homologación de Tablas y Limpieza Visual en Base de Datos (`DatabaseView.tsx`)**:
+  * Homologación uniforme del fondo de la fila de cabeceras en la tabla de tableros, eliminando franjas y bloques de color en `Lista (USD)`, `Desc. Cara` y `Fábrica (COP)`.
+  * Eliminación de emojis/sufijos redundantes (✏️, (I), 🏭) para una estética 100% sobria y profesional.
+
+---
+
 ### 🔹 Hito 3BF_UI — Homologación Integral de Apariencia Tech Ethos / Obsidian Teal en Base de Datos, Botones Píldora Visor 3D, Reordenamiento Ergonómico DfMA y Calibración Milimétrica de Barra Superior (19 de Agosto, 2026)
 
 - **Homologación Visual Completa de Base de Datos (`DatabaseView.tsx`)**:
