@@ -675,34 +675,19 @@ export default function DatabaseView() {
                 <th className="p-2.5 w-32 text-center">Formato Lámina</th>
                 <th className="p-2.5 w-20 text-center">Área (m²)</th>
                 <th 
-                  style={{ 
-                    backgroundColor: coloresApariencia?.insigniaFondo || "#CFFAFE",
-                    color: coloresApariencia?.insigniaTexto || "#0E7490",
-                    borderColor: coloresApariencia?.tablaBorde || "#CBD5E1"
-                  }}
-                  className="p-2.5 w-28 text-right font-extrabold border-l border-r" 
+                  className="p-2.5 w-28 text-right" 
                   title="Precio de lista oficial del catálogo del proveedor en USD"
                 >
                   Lista (USD) ✏️
                 </th>
                 <th 
-                  style={{ 
-                    backgroundColor: coloresApariencia?.insigniaFondo || "#CFFAFE",
-                    color: coloresApariencia?.insigniaTexto || "#0E7490",
-                    borderColor: coloresApariencia?.tablaBorde || "#CBD5E1"
-                  }}
-                  className="p-2.5 w-24 text-center font-extrabold border-r" 
+                  className="p-2.5 w-24 text-center" 
                   title="Descuento adicional por acabado de cara (5% para D/B Balance Blanco o 0% para 2 caras diseño D/D)"
                 >
                   Desc. Cara (I)
                 </th>
                 <th 
-                  style={{ 
-                    backgroundColor: coloresApariencia?.panelContenedor || "#E2E8F0",
-                    color: coloresApariencia?.estadoActivo || "#10b981",
-                    borderColor: coloresApariencia?.tablaBorde || "#CBD5E1"
-                  }}
-                  className="p-2.5 w-32 text-right font-extrabold border-r" 
+                  className="p-2.5 w-32 text-right" 
                   title="Costo liquidado de la lámina puesto en fábrica tras descuentos por negociación y fletes"
                 >
                   Fábrica (COP) 🏭
