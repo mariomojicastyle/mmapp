@@ -25,6 +25,11 @@ Este documento es el "alma" comunicativa de la marca **Mario Mojica**. Cada post
 * **Tomadores de Decisión:** Directores de I+D/Diseño, Gerentes de Producción, Directores de Postventa/Calidad, CEOs/Fundadores de fábricas medianas.
 * **Idiomas del Contenido:** Español (principal), Portugués Brasileño (mercado prioritario), Inglés (alcance global).
 
+### 1.4 Canales Oficiales de Contacto y Representación
+* **WhatsApp Oficial:** **`+57 311 764 6907`** (Único número corporativo oficial para prospección, seguimiento y soporte B2B).
+* **Correo Electrónico Oficial:** **`mariomojica.style@gmail.com`**
+* **Sitio Web & Demo:** **`https://mariomojica.com`** / **`https://mariomojica.com/demo`**
+
 ---
 
 ## 🗣️ 2. El Tono de Voz (Brand Persona)

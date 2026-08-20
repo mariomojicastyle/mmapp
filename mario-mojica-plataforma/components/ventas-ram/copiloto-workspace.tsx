@@ -26,6 +26,7 @@ import {
   Mic,
   MicOff,
   ExternalLink,
+  Calendar,
 } from "lucide-react"
 import {
   VentasProspecto,
@@ -36,6 +37,7 @@ import {
 } from "@/lib/types/ventas-ram"
 import { RefinamientoChat } from "./refinamiento-chat"
 import { HistorialTimeline } from "./historial-timeline"
+import { AgendarModal } from "./agendar-modal"
 
 interface CopilotoWorkspaceProps {
   prospecto: VentasProspecto | null
@@ -90,6 +92,31 @@ export function CopilotoWorkspace({
   const [mostrarBorradorRespuesta, setMostrarBorradorRespuesta] = useState(false)
   const [copiedPT, setCopiedPT] = useState(false)
   const [savingInteraction, setSavingInteraction] = useState(false)
+  const [showAgendarModal, setShowAgendarModal] = useState(false)
+
+  const handleSaveCita = async (fechaIso: string, descripcion: string) => {
+    if (!prospecto || !onSaveProspecto) return
+    await onSaveProspecto({
+      id: prospecto.id,
+      temperatura: "caliente",
+      proxima_accion_at: fechaIso,
+      proxima_accion_descripcion: descripcion,
+    })
+    if (onSaveInteraccion) {
+      await onSaveInteraccion({
+        prospecto_id: prospecto.id,
+        canal: "Google Meet",
+        tipo_entrada: "texto",
+        imagen_url: null,
+        resumen_es: descripcion,
+        intencion_detectada: "Reunión Agendada",
+        termometro: "caliente",
+        borrador_pt: "",
+        traduccion_es: descripcion,
+        mensaje_final_enviado: descripcion,
+      })
+    }
+  }
 
   // Dictado de voz para comentarios
   const [isListeningComment, setIsListeningComment] = useState(false)
@@ -652,6 +679,17 @@ export function CopilotoWorkspace({
             <option value="cerrado_perdido">❌ Perdido</option>
           </select>
 
+          {/* Botón 1-Clic: Agendar Cita en Google Calendar */}
+          <button
+            type="button"
+            onClick={() => setShowAgendarModal(true)}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-gradient-to-r from-primary/20 via-primary/10 to-surface-container border border-primary/40 text-primary hover:border-primary hover:bg-primary/20 transition-all text-xs font-bold cursor-pointer shadow-xs"
+            title="Agendar Cita B2B en Google Calendar con conversión de horario"
+          >
+            <Calendar className="h-3.5 w-3.5 text-primary" />
+            <span>Agendar Cita</span>
+          </button>
+
           <button
             onClick={onEditProspecto}
             className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-surface-container border border-outline-variant/30 text-on-surface hover:text-primary hover:border-primary/50 transition-colors text-xs font-semibold cursor-pointer"
@@ -1051,10 +1089,19 @@ export function CopilotoWorkspace({
               prospecto={prospecto}
               onSaveInteraccion={onSaveInteraccion}
               onDeleteInteraccion={onDeleteInteraccion}
+              onOpenAgendar={() => setShowAgendarModal(true)}
             />
           </div>
         )}
       </div>
+
+      {/* Modal Inteligente de Agendamiento B2B */}
+      <AgendarModal
+        isOpen={showAgendarModal}
+        onClose={() => setShowAgendarModal(false)}
+        prospecto={prospecto}
+        onSaveCita={handleSaveCita}
+      />
     </div>
   )
 }

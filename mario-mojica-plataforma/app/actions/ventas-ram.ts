@@ -466,7 +466,22 @@ export async function getVentasProspectos(): Promise<{ success: boolean; data: V
       .select("*, ventas_interacciones(count)")
       .order("ultima_interaccion_at", { ascending: false })
 
-    if (error || !data || data.length === 0) {
+    // Si la tabla en Supabase está vacía, auto-sembrar con los datos del disco
+    if (!error && data && data.length === 0 && disk.prospectos.length > 0) {
+      console.log("Sembrando Supabase con datos locales iniciales...")
+      for (const p of disk.prospectos) {
+        const { interacciones_count, ...pData } = p
+        await supabase.from("ventas_prospectos").upsert([pData], { onConflict: "id" })
+        const interList = disk.interacciones[p.id] || []
+        for (const inter of interList) {
+          await supabase.from("ventas_interacciones").upsert([inter], { onConflict: "id" })
+        }
+      }
+      return { success: true, data: disk.prospectos }
+    }
+
+    if (error || !data) {
+      console.warn("Supabase select warning, usando disco:", error?.message)
       const dataWithCounts = disk.prospectos.map((p) => ({
         ...p,
         interacciones_count: (disk.interacciones[p.id] || []).length,
@@ -474,26 +489,15 @@ export async function getVentasProspectos(): Promise<{ success: boolean; data: V
       return { success: true, data: dataWithCounts }
     }
 
-    const mapped = data.map((p: any) => {
-      const count = p.ventas_interacciones?.[0]?.count || (disk.interacciones[p.id] || []).length
+    const mapped: VentasProspecto[] = data.map((p: any) => {
+      const count = p.ventas_interacciones?.[0]?.count ?? (disk.interacciones[p.id] || []).length
       return {
         ...p,
         interacciones_count: count,
       }
     })
 
-    // Merge con todos los prospectos del almacenamiento en disco
-    const combined = [...mapped]
-    disk.prospectos.forEach((dp) => {
-      if (!combined.some((p) => p.id === dp.id)) {
-        combined.push({
-          ...dp,
-          interacciones_count: (disk.interacciones[dp.id] || []).length,
-        })
-      }
-    })
-
-    return { success: true, data: combined }
+    return { success: true, data: mapped }
   } catch (err: any) {
     console.error("Error en getVentasProspectos:", err)
     const disk = loadDiskStore()
@@ -508,20 +512,8 @@ export async function getVentasProspectoById(id: string): Promise<{
 }> {
   try {
     const disk = loadDiskStore()
-
-    if (id.startsWith("p-")) {
-      const prospecto = disk.prospectos.find((p) => p.id === id) || disk.prospectos[0]
-      const interacciones = disk.interacciones[prospecto.id] || []
-      return {
-        success: true,
-        data: {
-          prospecto,
-          interacciones,
-        },
-      }
-    }
-
     const supabase = getSupabaseAdmin()
+
     if (!supabase) {
       const prospecto = disk.prospectos.find((p) => p.id === id) || disk.prospectos[0]
       const interacciones = disk.interacciones[prospecto.id] || []
@@ -534,11 +526,12 @@ export async function getVentasProspectoById(id: string): Promise<{
       }
     }
 
+    // 1. Consultar prospecto en Supabase
     const { data: prospecto, error: pError } = await supabase
       .from("ventas_prospectos")
       .select("*")
       .eq("id", id)
-      .single()
+      .maybeSingle()
 
     if (pError || !prospecto) {
       const fallback = disk.prospectos.find((p) => p.id === id) || disk.prospectos[0]
@@ -552,14 +545,15 @@ export async function getVentasProspectoById(id: string): Promise<{
       }
     }
 
-    const { data: interacciones } = await supabase
+    // 2. Consultar interacciones en Supabase
+    const { data: interacciones, error: iError } = await supabase
       .from("ventas_interacciones")
       .select("*")
       .eq("prospecto_id", id)
       .order("created_at", { ascending: false })
 
     const diskInteracciones = disk.interacciones[prospecto.id] || []
-    const finalInteracciones = interacciones && interacciones.length > 0 ? interacciones : diskInteracciones
+    const finalInteracciones = !iError && interacciones && interacciones.length > 0 ? interacciones : diskInteracciones
 
     return {
       success: true,
@@ -618,36 +612,18 @@ export async function saveVentasProspecto(
       return { success: true, data: newP }
     }
 
-    if (payload.id && !payload.id.startsWith("p-")) {
-      const { data, error } = await supabase
-        .from("ventas_prospectos")
-        .update({
-          ...payload,
-          updated_at: new Date().toISOString(),
-        })
-        .eq("id", payload.id)
-        .select()
-        .single()
+    const { interacciones_count, ...upsertData } = newP
+    const { data, error } = await supabase
+      .from("ventas_prospectos")
+      .upsert([upsertData], { onConflict: "id" })
+      .select()
+      .single()
 
-      if (error) {
-        console.warn("Supabase update warning, guardado en disco:", error.message)
-        return { success: true, data: newP }
-      }
-      return { success: true, data }
-    } else {
-      const { id, ...insertData } = payload
-      const { data, error } = await supabase
-        .from("ventas_prospectos")
-        .insert([{ ...insertData, updated_at: new Date().toISOString() }])
-        .select()
-        .single()
-
-      if (error) {
-        console.warn("Supabase insert warning, guardado en disco:", error.message)
-        return { success: true, data: newP }
-      }
-      return { success: true, data }
+    if (error) {
+      console.warn("Supabase upsert warning, guardado en disco:", error.message)
+      return { success: true, data: newP }
     }
+    return { success: true, data: data || newP }
   } catch (err: any) {
     console.warn("Error en saveVentasProspecto (usando disco):", err.message)
     return { success: true, data: newP }
@@ -720,9 +696,10 @@ export async function saveVentasInteraccion(
       return { success: true, data: newI }
     }
 
+    // 1. Guardar o actualizar interacción en Supabase
     const { data, error } = await supabase
       .from("ventas_interacciones")
-      .insert([payload])
+      .upsert([newI], { onConflict: "id" })
       .select()
       .single()
 
@@ -731,6 +708,7 @@ export async function saveVentasInteraccion(
       return { success: true, data: newI }
     }
 
+    // 2. Actualizar última interacción y temperatura en el prospecto
     await supabase
       .from("ventas_prospectos")
       .update({
@@ -740,7 +718,7 @@ export async function saveVentasInteraccion(
       })
       .eq("id", payload.prospecto_id)
 
-    return { success: true, data }
+    return { success: true, data: data || newI }
   } catch (err: any) {
     console.warn("Error en saveVentasInteraccion (usando disco):", err.message)
     return { success: true, data: newI }

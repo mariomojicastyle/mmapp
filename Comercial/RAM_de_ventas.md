@@ -3,7 +3,9 @@
 > **Ubicación en Plataforma:** `mario-mojica-plataforma/app/(dashboard)/ventas-ram`  
 > **Tipos Core:** `mario-mojica-plataforma/lib/types/ventas-ram.ts`  
 > **Acciones Serverless:** `mario-mojica-plataforma/app/actions/ventas-ram.ts`  
-> **Persistencia:** Supabase PostgreSQL (`ventas_prospectos`, `ventas_interacciones`) & Baserow B2B
+> **Persistencia:** Supabase PostgreSQL (`ventas_prospectos`, `ventas_interacciones`) & Baserow B2B  
+> **WhatsApp Oficial:** `+57 311 764 6907`  
+> **Email Oficial:** `mariomojica.style@gmail.com`  
 
 El **RAM de Ventas** es el módulo central de memoria activa y prospección comercial estratégica de la plataforma de **Mario Mojica**. Diseñado para acelerar el ciclo de ventas B2B con tomadores de decisiones de la industria mueblera RTA (directores comerciales, gerentes de ingeniería y CEOs de Brasil y Latinoamérica).
 

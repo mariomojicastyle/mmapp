@@ -1,6 +1,9 @@
 # 🧠 RAM de Ventas B2B (Estado en Vivo)
 
-> **Nota para el Agente:** Este documento es la fuente de la verdad para el CRM B2B. Actualízalo siempre que haya un avance con un prospecto o se inicie una nueva estrategia.
+> **Nota para el Agente:** Este documento es la fuente de la verdad para el CRM B2B. Actualízalo siempre que haya un avance con un prospecto o se inicie una nueva estrategia.  
+> **WhatsApp Oficial Mario Mojica:** `+57 311 764 6907` (3117646907)  
+> **Email Oficial:** `mariomojica.style@gmail.com`  
+> **Demo Oficial:** `https://mariomojica.com/demo`  
 
 ## 📖 ¿Cómo usar esta habilidad (Guía para Mario)?
 Para sacarle el máximo provecho a nuestra maquinaria de ventas, sigue este flujo:

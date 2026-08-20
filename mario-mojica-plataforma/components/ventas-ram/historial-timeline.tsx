@@ -17,6 +17,7 @@ import {
   Mic,
   MicOff,
   Trash2,
+  Calendar,
 } from "lucide-react"
 import { VentasProspecto, VentasInteraccion, CanalContacto } from "@/lib/types/ventas-ram"
 import { RefinamientoChat } from "./refinamiento-chat"
@@ -26,6 +27,7 @@ interface HistorialTimelineProps {
   prospecto?: VentasProspecto | null
   onSaveInteraccion?: (data: Omit<VentasInteraccion, "id" | "created_at">) => Promise<void>
   onDeleteInteraccion?: (interaccionId: string) => Promise<void>
+  onOpenAgendar?: () => void
 }
 
 interface JugadaGenerada {
@@ -40,6 +42,7 @@ export function HistorialTimeline({
   prospecto,
   onSaveInteraccion,
   onDeleteInteraccion,
+  onOpenAgendar,
 }: HistorialTimelineProps) {
   const [copiedId, setCopiedId] = useState<string | null>(null)
   const [deletingId, setDeletingId] = useState<string | null>(null)
@@ -322,23 +325,37 @@ export function HistorialTimeline({
               </button>
             </div>
 
-            <button
-              onClick={handleGenerarJugada}
-              disabled={generatingJugada}
-              className="flex items-center justify-center gap-2 px-4 py-2 rounded-xl bg-primary text-xs font-bold text-primary-foreground hover:opacity-90 transition-opacity shadow-md shadow-primary/20 cursor-pointer shrink-0 disabled:opacity-50"
-            >
-              {generatingJugada ? (
-                <>
-                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                  <span>Antigravity pensando...</span>
-                </>
-              ) : (
-                <>
-                  <Sparkles className="h-3.5 w-3.5" />
-                  <span>⚡ Activar Antigravity: Redactar Mensaje</span>
-                </>
+            <div className="flex items-center gap-2 shrink-0">
+              {onOpenAgendar && (
+                <button
+                  type="button"
+                  onClick={onOpenAgendar}
+                  className="flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl bg-surface-container hover:bg-surface-container-high border border-primary/40 text-primary hover:border-primary text-xs font-bold transition-all cursor-pointer shadow-xs"
+                  title="Agendar Cita B2B en Google Calendar"
+                >
+                  <Calendar className="h-3.5 w-3.5" />
+                  <span>Agendar Cita</span>
+                </button>
               )}
-            </button>
+
+              <button
+                onClick={handleGenerarJugada}
+                disabled={generatingJugada}
+                className="flex items-center justify-center gap-2 px-4 py-2 rounded-xl bg-primary text-xs font-bold text-primary-foreground hover:opacity-90 transition-opacity shadow-md shadow-primary/20 cursor-pointer disabled:opacity-50"
+              >
+                {generatingJugada ? (
+                  <>
+                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                    <span>Antigravity pensando...</span>
+                  </>
+                ) : (
+                  <>
+                    <Sparkles className="h-3.5 w-3.5" />
+                    <span>⚡ Activar Antigravity: Redactar Mensaje</span>
+                  </>
+                )}
+              </button>
+            </div>
           </div>
 
           {/* 2. ÁREA DE RESPUESTA GENERADA POR ANTIGRAVITY */}

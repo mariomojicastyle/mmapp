@@ -6,7 +6,7 @@ export type TemperaturaLead =
   | "cerrado_ganado"
   | "cerrado_perdido"
 
-export type CanalContacto = "LinkedIn" | "WhatsApp" | "Email" | "Teléfono" | "Reunión" | "Otro"
+export type CanalContacto = "LinkedIn" | "WhatsApp" | "Email" | "Teléfono" | "Reunión" | "Google Meet" | "Zoom" | "Teams" | "Otro"
 
 export interface VentasProspecto {
   id: string
@@ -14,6 +14,7 @@ export interface VentasProspecto {
   contacto_nombre: string
   contacto_cargo: string | null
   contacto_telefono?: string | null
+  contacto_email?: string | null
   perfil_url?: string | null
   canal_preferido: CanalContacto
   pais: string

@@ -2,6 +2,8 @@
 
 Este archivo es la "Memoria RAM" para Antigravity. Contiene el contexto de lo que estamos trabajando justo ahora, los objetivos pendientes y los bloqueos.
 
+> **Contacto Oficial Mario Mojica:** WhatsApp: **`+57 311 764 6907`** (3117646907) | Email: **`mariomojica.style@gmail.com`** | Demo: **`https://mariomojica.com/demo`**
+
 ---
 
 ## 🏗️ 1. Plataforma B2B & 3DBimFab (Foco Actual)
