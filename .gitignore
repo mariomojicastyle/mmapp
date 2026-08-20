@@ -33,11 +33,9 @@ mario-mojica-landing-page
 
 # Temporary backups and assets
 Temporales/
-temporal/
 Publicaciones/
-*.mp4
-*.zip
-*.gz
+temporal/
+temporal
 
 # Upwork local directory
 docs/Upwork/

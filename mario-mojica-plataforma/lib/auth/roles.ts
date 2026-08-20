@@ -71,4 +71,12 @@ export const PERMISSIONS = {
     VIEW: ["superadmin"],
     MANAGE: ["superadmin"],
   },
+  VENTAS_RAM: {
+    VIEW: ["superadmin"],
+    MANAGE: ["superadmin"],
+  },
+  "VENTAS RAM": {
+    VIEW: ["superadmin"],
+    MANAGE: ["superadmin"],
+  },
 } as const

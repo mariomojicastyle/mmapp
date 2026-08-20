@@ -2,10 +2,88 @@
 
 import React, { useEffect } from "react";
 import { use3BFStore } from "@/lib/store";
-import { Sliders, Box, Layers, Palette, Cpu, CheckCircle2, AlertCircle, FolderOpen, FileUp } from "lucide-react";
+import { Sliders, Box, Layers, Palette, Cpu, CheckCircle2, AlertCircle, Camera, Check } from "lucide-react";
 
-// Componente para editar el número haciendo clic (con auto-clampeo al rango min-max)
-const EditableNumberInput = ({
+// =========================================================================
+// 🎨 ICONOS DE MODOS DE VISUALIZACIÓN (INSPIRADOS EN BLENDER 4.X)
+// =========================================================================
+
+// 1. Líneas (Wireframe)
+export const IconModoLineas = ({ className = "w-4 h-4" }: { className?: string }) => (
+  <svg viewBox="0 0 24 24" fill="none" className={className} stroke="currentColor">
+    <circle cx="12" cy="12" r="9" strokeWidth="1.6" />
+    <line x1="12" y1="3" x2="12" y2="21" strokeWidth="1.3" />
+    <ellipse cx="12" cy="12" rx="4.5" ry="9" strokeWidth="1.3" />
+    <line x1="3.8" y1="8.5" x2="20.2" y2="8.5" strokeWidth="1.3" />
+    <line x1="3.8" y1="15.5" x2="20.2" y2="15.5" strokeWidth="1.3" />
+  </svg>
+);
+
+// 2. Cristal (Semitransparente / Glass Tinted)
+export const IconModoCristal = ({ className = "w-4 h-4", isActivo = false }: { className?: string; isActivo?: boolean }) => (
+  <svg viewBox="0 0 24 24" fill="none" className={className}>
+    {/* Fondo de Cristal Azulado Semitransparente Vívido */}
+    <circle 
+      cx="12" 
+      cy="12" 
+      r="9" 
+      fill={isActivo ? "#0284c7" : "#0284c7"} 
+      fillOpacity={isActivo ? "0.6" : "0.32"} 
+      stroke={isActivo ? "#FFFFFF" : "#0284c7"} 
+      strokeWidth="1.6" 
+    />
+    
+    {/* Malla interna con tono azul cyan */}
+    <line x1="12" y1="3" x2="12" y2="21" stroke={isActivo ? "#FFFFFF" : "#0284c7"} strokeWidth="1.2" strokeOpacity={isActivo ? "0.85" : "0.75"} />
+    <ellipse cx="12" cy="12" rx="4.5" ry="9" stroke={isActivo ? "#FFFFFF" : "#0284c7"} strokeWidth="1.2" strokeOpacity={isActivo ? "0.85" : "0.75"} />
+    <line x1="3.8" y1="8.5" x2="20.2" y2="8.5" stroke={isActivo ? "#FFFFFF" : "#0284c7"} strokeWidth="1.2" strokeOpacity={isActivo ? "0.85" : "0.75"} />
+    <line x1="3.8" y1="15.5" x2="20.2" y2="15.5" stroke={isActivo ? "#FFFFFF" : "#0284c7"} strokeWidth="1.2" strokeOpacity={isActivo ? "0.85" : "0.75"} />
+    
+    {/* Arco de Brillo Especular Superior Izquierdo (Reflejo de Vidrio) */}
+    <path 
+      d="M 6.5 7 A 7 7 0 0 1 11.5 5" 
+      stroke="#FFFFFF" 
+      strokeWidth="2" 
+      strokeLinecap="round" 
+      opacity={isActivo ? "1" : "0.95"} 
+    />
+  </svg>
+);
+
+// 3. Sólido (Solid)
+export const IconModoSolido = ({ className = "w-4 h-4" }: { className?: string }) => (
+  <svg viewBox="0 0 24 24" className={className}>
+    <circle cx="12" cy="12" r="9" fill="currentColor" stroke="currentColor" strokeWidth="1.6" />
+  </svg>
+);
+
+// 4. Renderizado (Render / Specular)
+export const IconModoRender = ({ className = "w-4 h-4" }: { className?: string }) => (
+  <svg viewBox="0 0 24 24" fill="none" className={className}>
+    <circle cx="12" cy="12" r="9" fill="#1E293B" stroke="currentColor" strokeWidth="1.6" />
+    {/* Highlight especular superior izquierdo */}
+    <ellipse
+      cx="8"
+      cy="7.5"
+      rx="3.2"
+      ry="1.8"
+      transform="rotate(-35 8 7.5)"
+      fill="#FFFFFF"
+    />
+    <ellipse
+      cx="14.5"
+      cy="16"
+      rx="2.2"
+      ry="1.1"
+      transform="rotate(-35 14.5 16)"
+      fill="#FFFFFF"
+      opacity="0.85"
+    />
+  </svg>
+);
+
+// Componente para ingresar/editar números con auto-selección total al hacer foco
+const DirectNumberInput = ({
   value,
   min,
   max,
@@ -20,491 +98,315 @@ const EditableNumberInput = ({
   onChange: (val: number) => void;
   className?: string;
 }) => {
-  const [isEditing, setIsEditing] = React.useState(false);
-  const [tempValue, setTempValue] = React.useState(String(value));
+  const { coloresApariencia, guardarEstadoHistorial } = use3BFStore();
+  const [localText, setLocalText] = React.useState(String(value));
+  const [isFocused, setIsFocused] = React.useState(false);
 
   React.useEffect(() => {
-    setTempValue(String(value));
-  }, [value]);
+    if (!isFocused) {
+      setLocalText(String(value));
+    }
+  }, [value, isFocused]);
 
-  const handleCommit = () => {
-    let num = Number(tempValue);
-    if (isNaN(num)) num = value;
-    const clamped = Math.min(max, Math.max(min, num));
-    setTempValue(String(clamped));
-    onChange(clamped);
-    setIsEditing(false);
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const raw = e.target.value;
+    setLocalText(raw);
+    const normalizado = raw.replace(/\./g, "").replace(",", ".");
+    const num = parseFloat(normalizado);
+    if (!isNaN(num)) {
+      onChange(num);
+    }
   };
 
-  if (isEditing) {
+  const handleFocus = (e: React.FocusEvent<HTMLInputElement>) => {
+    setIsFocused(true);
+    e.target.select();
+  };
+
+  const handleBlur = () => {
+    setIsFocused(false);
+    const normalizado = localText.replace(/\./g, "").replace(",", ".");
+    let num = parseFloat(normalizado);
+    if (isNaN(num)) num = value;
+    const clamped = Math.min(max, Math.max(min, num));
+    onChange(clamped);
+    setLocalText(String(clamped));
+    guardarEstadoHistorial();
+  };
+
+  return (
+    <div className="flex items-center gap-1">
+      <input
+        type="text"
+        inputMode="decimal"
+        value={localText}
+        onFocus={handleFocus}
+        onBlur={handleBlur}
+        onChange={handleChange}
+        onKeyDown={(e) => {
+          if (e.key === "Enter") {
+            (e.target as HTMLInputElement).blur();
+          }
+        }}
+        style={{
+          borderColor: coloresApariencia?.bordePaneles,
+          backgroundColor: coloresApariencia?.fondoAplicacion,
+          color: coloresApariencia?.botonActivo
+        }}
+        className={`w-16 px-1.5 py-0.5 text-right text-xs font-mono font-bold border rounded outline-none shadow-xs transition ${className}`}
+      />
+      <span style={{ color: coloresApariencia?.textoSecundario }} className="text-[11px] font-mono font-semibold">{unit}</span>
+    </div>
+  );
+};
+
+function limpiarEtiqueta(paramKey: string): string {
+  return paramKey
+    .replace("RH_IN:", "")
+    .replace(/^[\d.]+[_\s]*/, "") // Ocultar prefijos estilo VisualARQ (ej: '01.0_', '05.2 ', '01_')
+    .replace(/_/g, " ")
+    .trim();
+}
+
+function RenderParamControl({ paramKey }: { paramKey: string }) {
+  const { parametros, setParametro, resultado, objetoActivoId, instancias, setParametroInstancia, coloresApariencia, guardarEstadoHistorial } = use3BFStore();
+  const instanciaActiva = objetoActivoId ? instancias[objetoActivoId] : null;
+  const currentParams = instanciaActiva ? instanciaActiva.parametros : parametros;
+  const currentResult = instanciaActiva ? instanciaActiva.resultado : resultado;
+
+  const label = limpiarEtiqueta(paramKey);
+  const storeKey = paramKey;
+  const rawKeyClean = paramKey.replace("RH_IN:", "").toLowerCase().replace(/\s+/g, "_");
+  const legacyKey = MAPA_PARAMETROS[paramKey];
+
+  const limit = currentResult?.slider_limits?.[paramKey];
+  const value = (currentParams as any)[storeKey] ?? (legacyKey ? (currentParams as any)[legacyKey] : (currentParams as any)[rawKeyClean]) ?? limit?.default;
+
+  const isValueList = limit?.type === "valuelist" || (limit?.options && limit.options.length > 0);
+  const esSlider = !isValueList && (limit?.type === "slider" || limit?.min !== undefined || typeof value === "number");
+
+  // Si es un Slider Numérico
+  if (esSlider) {
+    const minVal = limit?.min ?? 0;
+    const maxVal = limit?.max ?? (paramKey.toLowerCase().includes("ancho") || paramKey.toLowerCase().includes("alto") || paramKey.toLowerCase().includes("profundidad") ? 1200 : 200);
+    const numVal: number = typeof value === "number" ? value : (typeof limit?.default === "number" ? limit.default : Number(limit?.default ?? minVal));
+
+    const handleNumChange = (val: number) => {
+      if (objetoActivoId) {
+        setParametroInstancia(objetoActivoId, storeKey, val);
+        if (rawKeyClean !== storeKey) setParametroInstancia(objetoActivoId, rawKeyClean, val);
+        if (legacyKey) setParametroInstancia(objetoActivoId, legacyKey, val);
+      } else {
+        setParametro(storeKey as any, val);
+        if (rawKeyClean !== storeKey) setParametro(rawKeyClean as any, val);
+        if (legacyKey) setParametro(legacyKey as any, val);
+      }
+    };
+
     return (
-      <div className="flex items-center gap-1">
+      <div 
+        style={{ 
+          backgroundColor: coloresApariencia?.fondoPaneles, 
+          borderColor: coloresApariencia?.bordePaneles || "#CBD5E1" 
+        }}
+        className="flex flex-col gap-1.5 p-2 rounded-lg border shadow-xs text-xs"
+      >
+        <div className="flex justify-between font-medium items-center">
+          <label style={{ color: coloresApariencia?.textoPrincipal }} className="font-bold">{label}</label>
+          <DirectNumberInput
+            value={numVal}
+            min={minVal}
+            max={maxVal}
+            onChange={handleNumChange}
+          />
+        </div>
         <input
-          type="number"
-          min={min}
-          max={max}
-          value={tempValue}
-          onChange={(e) => setTempValue(e.target.value)}
-          onBlur={handleCommit}
-          onKeyDown={(e) => {
-            if (e.key === "Enter") handleCommit();
-            if (e.key === "Escape") {
-              setTempValue(String(value));
-              setIsEditing(false);
-            }
-          }}
-          autoFocus
-          className="w-16 px-1 py-0.5 text-right text-xs font-mono font-bold bg-[#E2E8F0] border-2 border-cyan-500 rounded outline-none shadow-inner text-[#0F172A]"
+          type="range"
+          min={minVal}
+          max={maxVal}
+          step={maxVal <= 10 ? 0.1 : (maxVal <= 200 ? 1 : 10)}
+          value={Math.min(maxVal, Math.max(minVal, numVal))}
+          onChange={(e) => handleNumChange(Number(e.target.value))}
+          onPointerUp={() => guardarEstadoHistorial()}
+          onKeyUp={() => guardarEstadoHistorial()}
+          onTouchEnd={() => guardarEstadoHistorial()}
+          style={{ accentColor: coloresApariencia?.botonActivo || "#0891B2" }}
+          className="w-full cursor-pointer"
         />
-        <span className="text-[11px] font-mono text-gray-500">{unit}</span>
       </div>
     );
   }
 
+  // Opciones verdaderas traídas dinámicamente desde Grasshopper
+  let options: string[] = limit?.options && limit.options.length > 0 ? limit.options : [];
+  if (options.length === 0) {
+    const pl = paramKey.toLowerCase();
+    if (pl.includes("union") || pl.includes("unión")) {
+      options = ["Minifix", "Tornillo", "Tarugo", "Ranura", "Sin Mecanizado"];
+    } else if (pl.includes("borde")) {
+      options = ["MDP", "PVC 1mm", "PVC 2mm", "Canto Grueso", "Sin Tapacanto"];
+    } else if (pl.includes("posicion") || pl.includes("posición")) {
+      options = ["1", "0", "2", "3"];
+    } else if (pl.includes("orientacion") || pl.includes("orientación")) {
+      options = ["abajo", "arriba", "frente", "atras"];
+    } else if (pl.includes("mapeado")) {
+      options = ["Horizontal Atravesada", "Vertical", "Diagonal"];
+    } else if (pl.includes("lado balance")) {
+      options = ["Cara B", "Cara A", "Ambas"];
+    } else {
+      options = ["Opción A", "Opción B", "Por Defecto"];
+    }
+  }
+
+  const selectedValue = String(value ?? limit?.default ?? options[0]);
+
+  const handleSelectChange = (newVal: string) => {
+    if (objetoActivoId) {
+      setParametroInstancia(objetoActivoId, storeKey, newVal);
+      setParametroInstancia(objetoActivoId, rawKeyClean, newVal);
+      if (legacyKey) setParametroInstancia(objetoActivoId, legacyKey, newVal);
+
+      const pkl = paramKey.toLowerCase();
+      if (pkl.includes("izquierdo") || pkl.includes("izq")) {
+        setParametroInstancia(objetoActivoId, "borde_izquierdo", newVal);
+        setParametroInstancia(objetoActivoId, "RH_IN:Borde izquierdo", newVal);
+        setParametroInstancia(objetoActivoId, "RH_IN:03.4 Borde izquierdo", newVal);
+      }
+      if (pkl.includes("derecho") || pkl.includes("der")) {
+        setParametroInstancia(objetoActivoId, "borde_derecho", newVal);
+        setParametroInstancia(objetoActivoId, "RH_IN:Borde derecho", newVal);
+        setParametroInstancia(objetoActivoId, "RH_IN:03.3 Borde derecho", newVal);
+      }
+    } else {
+      setParametro(storeKey as any, newVal);
+      setParametro(rawKeyClean as any, newVal);
+      if (legacyKey) setParametro(legacyKey as any, newVal);
+      
+      const pkl = paramKey.toLowerCase();
+      if (pkl.includes("izquierdo") || pkl.includes("izq")) {
+        setParametro("borde_izquierdo" as any, newVal);
+        setParametro("RH_IN:Borde izquierdo" as any, newVal);
+        setParametro("RH_IN:03.4 Borde izquierdo" as any, newVal);
+      }
+      if (pkl.includes("derecho") || pkl.includes("der")) {
+        setParametro("borde_derecho" as any, newVal);
+        setParametro("RH_IN:Borde derecho" as any, newVal);
+        setParametro("RH_IN:03.3 Borde derecho" as any, newVal);
+      }
+    }
+    guardarEstadoHistorial();
+  };
+
   return (
-    <button
-      onClick={() => setIsEditing(true)}
-      title="Haz clic para ingresar la medida exacta"
-      className={`font-mono font-bold hover:underline hover:text-cyan-500 cursor-pointer ${className}`}
+    <div 
+      style={{ 
+        backgroundColor: coloresApariencia?.fondoPaneles, 
+        borderColor: coloresApariencia?.bordePaneles || "#CBD5E1" 
+      }}
+      className="flex justify-between items-center p-2 rounded-lg border text-xs shadow-sm"
     >
-      {value} {unit}
-    </button>
-  );
-};
-
-// Panel de Parámetros Dinámico Autónomo (Sólo visible cuando hay un archivo cargado)
-function ParametrosPanel() {
-  const { parametros, setParametro } = use3BFStore();
-
-  if (!parametros.model_id) return null;
-
-  const currentModelStr = `${parametros.model_id} ${parametros.custom_filename || ""}`.toLowerCase();
-  const esCubierta = currentModelStr.includes("cubierta");
-  const esCajonera = !esCubierta || currentModelStr.includes("cajon");
-
-  return (
-    <div className="flex flex-col gap-3.5">
-      {/* Controles de Dimensiones */}
-      <div className="flex flex-col gap-3.5 p-3 rounded-xl bg-cyan-950/20 dark:bg-[#131B2E]/60 border border-cyan-200/80 dark:border-cyan-900/40 shadow-sm">
-        <div className="text-xs font-extrabold text-gray-900 dark:text-[#F8FAFC] flex items-center gap-1.5 pb-1.5 border-b border-cyan-200/50 dark:border-cyan-900/40">
-          <Box className="w-4 h-4 text-cyan-600 dark:text-cyan-400" /> Dimensiones Generales
-        </div>
-
-        {/* Ancho */}
-        <div className="flex flex-col gap-1.5">
-          <div className="flex justify-between text-xs font-medium">
-            <label className="font-bold text-gray-800 dark:text-slate-100">Ancho</label>
-            <EditableNumberInput
-              value={parametros.ancho}
-              min={300}
-              max={1000}
-              onChange={(val) => setParametro("ancho", val)}
-              className="text-cyan-600 dark:text-cyan-300 font-bold"
-            />
-          </div>
-          <input
-            type="range"
-            min={300}
-            max={1000}
-            step={10}
-            value={Math.min(1000, Math.max(300, parametros.ancho))}
-            onChange={(e) => setParametro("ancho", Number(e.target.value))}
-            className="w-full accent-cyan-600 cursor-pointer"
-          />
-        </div>
-
-        {/* Alto (Sólo para muebles de altura vertical, no para Cubierta) */}
-        {!esCubierta && (
-          <div className="flex flex-col gap-1.5">
-            <div className="flex justify-between text-xs font-medium">
-              <label className="font-bold text-gray-800 dark:text-slate-100">Alto</label>
-              <EditableNumberInput
-                value={parametros.alto}
-                min={300}
-                max={1200}
-                onChange={(val) => setParametro("alto", val)}
-                className="text-cyan-600 dark:text-cyan-300 font-bold"
-              />
-            </div>
-            <input
-              type="range"
-              min={300}
-              max={1200}
-              step={10}
-              value={Math.min(1200, Math.max(300, parametros.alto))}
-              onChange={(e) => setParametro("alto", Number(e.target.value))}
-              className="w-full accent-cyan-600 cursor-pointer"
-            />
-          </div>
-        )}
-
-        {/* Profundidad */}
-        <div className="flex flex-col gap-1.5">
-          <div className="flex justify-between text-xs font-medium">
-            <label className="font-bold text-gray-800 dark:text-slate-100">Profundidad</label>
-            <EditableNumberInput
-              value={parametros.profundidad}
-              min={200}
-              max={1000}
-              onChange={(val) => setParametro("profundidad", val)}
-              className="text-cyan-600 dark:text-cyan-300 font-bold"
-            />
-          </div>
-          <input
-            type="range"
-            min={200}
-            max={1000}
-            step={10}
-            value={Math.min(1000, Math.max(200, parametros.profundidad))}
-            onChange={(e) => setParametro("profundidad", Number(e.target.value))}
-            className="w-full accent-cyan-600 cursor-pointer"
-          />
-        </div>
-      </div>
-
-      {/* Controles Específicos para Muebles tipo Cajonera / Almacenamiento */}
-      {esCajonera && (
-        <div className="flex flex-col gap-3.5">
-          {/* Cantidad de Cajones (Menú Desplegable) */}
-          <div className="flex flex-col gap-1.5 p-3 rounded-xl bg-cyan-950/20 dark:bg-[#131B2E]/60 border border-cyan-200/80 dark:border-cyan-900/40 shadow-sm">
-            <div className="flex justify-between text-xs font-medium">
-              <label className="font-bold text-gray-800 dark:text-white flex items-center gap-1.5">
-                <Box className="w-4 h-4 text-cyan-600 dark:text-cyan-400" /> Cantidad de Cajones
-              </label>
-              <span className="font-mono font-bold text-cyan-700 dark:text-cyan-300">{parametros.cant_cajones || 3} {parametros.cant_cajones === 1 ? "Cajón" : "Cajones"}</span>
-            </div>
-            <select
-              value={parametros.cant_cajones || 3}
-              onChange={(e) => setParametro("cant_cajones", Number(e.target.value))}
-              className="w-full text-xs p-2 rounded-lg bg-[#E2E8F0] text-[#0F172A] border border-slate-300 outline-none font-bold cursor-pointer shadow-sm"
-            >
-              <option value={1}>1 Cajón</option>
-              <option value={2}>2 Cajones</option>
-              <option value={3}>3 Cajones</option>
-            </select>
-          </div>
-
-          {/* Abrir Cajones */}
-          <div className="flex flex-col gap-1.5 p-3 rounded-xl bg-cyan-950/20 dark:bg-[#131B2E]/60 border border-cyan-200/80 dark:border-cyan-900/40 shadow-sm">
-            <div className="flex justify-between text-xs font-medium">
-              <label className="font-bold text-gray-800 dark:text-white flex items-center gap-1.5">
-                <Box className="w-4 h-4 text-cyan-600 dark:text-cyan-400" /> Abrir Cajones
-              </label>
-              <EditableNumberInput
-                value={parametros.apertura_cajones || 0}
-                min={0}
-                max={300}
-                onChange={(val) => setParametro("apertura_cajones", val)}
-                className="text-cyan-700 dark:text-cyan-300 font-bold"
-              />
-            </div>
-            <input
-              type="range"
-              min={0}
-              max={300}
-              step={10}
-              value={parametros.apertura_cajones || 0}
-              onChange={(e) => setParametro("apertura_cajones", Number(e.target.value))}
-              className="w-full accent-cyan-600 cursor-pointer"
-            />
-          </div>
-
-          {/* Profundidad cajon (Menú Desplegable) */}
-          <div className="flex flex-col gap-1.5 p-3 rounded-xl bg-cyan-950/20 dark:bg-[#131B2E]/60 border border-cyan-200/80 dark:border-cyan-900/40 shadow-sm">
-            <div className="flex justify-between text-xs font-medium">
-              <label className="font-bold text-gray-800 dark:text-white flex items-center gap-1.5">
-                <Box className="w-4 h-4 text-cyan-600 dark:text-cyan-400" /> Profundidad cajón
-              </label>
-              <span className="font-mono font-bold text-cyan-700 dark:text-cyan-300">{parametros.profundidad_cajon || 351} mm</span>
-            </div>
-            <select
-              value={parametros.profundidad_cajon || 351}
-              onChange={(e) => setParametro("profundidad_cajon", Number(e.target.value))}
-              className="w-full text-xs p-2 rounded-lg bg-[#E2E8F0] text-[#0F172A] border border-slate-300 outline-none font-bold cursor-pointer shadow-sm"
-            >
-              <option value={351}>351 mm</option>
-              <option value={400}>400 mm</option>
-            </select>
-          </div>
-
-          {/* Altura lateral de cajon (Menú Desplegable) */}
-          <div className="flex flex-col gap-1.5 p-3 rounded-xl bg-cyan-950/20 dark:bg-[#131B2E]/60 border border-cyan-200/80 dark:border-cyan-900/40 shadow-sm">
-            <div className="flex justify-between text-xs font-medium">
-              <label className="font-bold text-gray-800 dark:text-white flex items-center gap-1.5">
-                <Box className="w-4 h-4 text-cyan-600 dark:text-cyan-400" /> Altura lateral de cajón
-              </label>
-              <span className="font-mono font-bold text-cyan-700 dark:text-cyan-300">{parametros.altura_lateral_cajon || 102} mm</span>
-            </div>
-            <select
-              value={parametros.altura_lateral_cajon || 102}
-              onChange={(e) => setParametro("altura_lateral_cajon", Number(e.target.value))}
-              className="w-full text-xs p-2 rounded-lg bg-[#E2E8F0] text-[#0F172A] border border-slate-300 outline-none font-bold cursor-pointer shadow-sm"
-            >
-              <option value={102}>102 mm</option>
-              <option value={138}>138 mm</option>
-              <option value={147}>147 mm</option>
-              <option value={200}>200 mm</option>
-            </select>
-          </div>
-
-          {/* Distancia bajo laterales */}
-          <div className="flex flex-col gap-1.5 p-3 rounded-xl bg-cyan-950/20 dark:bg-[#131B2E]/60 border border-cyan-200/80 dark:border-cyan-900/40 shadow-sm">
-            <div className="flex justify-between text-xs font-medium">
-              <label className="font-bold text-gray-800 dark:text-white flex items-center gap-1.5">
-                <Box className="w-4 h-4 text-cyan-600 dark:text-cyan-400" /> Distancia bajo laterales
-              </label>
-              <span className="font-mono font-bold text-cyan-700 dark:text-cyan-300">{parametros.distancia_bajo_laterales || 30} mm</span>
-            </div>
-            <select
-              value={parametros.distancia_bajo_laterales || 30}
-              onChange={(e) => setParametro("distancia_bajo_laterales", Number(e.target.value))}
-              className="w-full text-xs p-2 rounded-lg bg-[#E2E8F0] text-[#0F172A] border border-slate-300 outline-none font-bold cursor-pointer shadow-sm"
-            >
-              <option value={25}>25 mm</option>
-              <option value={30}>30 mm</option>
-            </select>
-          </div>
-
-          {/* Tipo Cajon (Corredera) */}
-          <div className="flex flex-col gap-1.5 p-3 rounded-xl bg-cyan-950/20 dark:bg-[#131B2E]/60 border border-cyan-200/80 dark:border-cyan-900/40 shadow-sm">
-            <div className="flex justify-between text-xs font-medium">
-              <label className="font-bold text-gray-800 dark:text-white flex items-center gap-1.5">
-                <Box className="w-4 h-4 text-cyan-600 dark:text-cyan-400" /> Tipo Cajón (Corredera)
-              </label>
-              <span className="font-mono font-bold text-[11px] text-cyan-700 dark:text-cyan-300">{parametros.tipo_cajon || "Corredera Estandar"}</span>
-            </div>
-            <select
-              value={parametros.tipo_cajon || "Corredera Estandar"}
-              onChange={(e) => setParametro("tipo_cajon", e.target.value)}
-              className="w-full text-xs p-2 rounded-lg bg-[#E2E8F0] text-[#0F172A] border border-slate-300 outline-none font-bold cursor-pointer shadow-sm"
-            >
-              <option value="Corredera Estandar">Corredera Estándar (27.5 mm)</option>
-              <option value="Corredera Tipo X">Corredera Tipo X (40.0 mm)</option>
-            </select>
-          </div>
-        </div>
-      )}
-
-      {/* Controles Específicos para Cubierta.ghx (VisualARQ DfMA) */}
-      {esCubierta && (
-        <div className="flex flex-col gap-3.5 p-3 rounded-xl bg-cyan-950/20 dark:bg-[#131B2E]/60 border border-cyan-200/80 dark:border-cyan-900/40 shadow-sm">
-          <div className="text-xs font-bold text-gray-800 dark:text-white flex items-center justify-between pb-1 border-b border-cyan-200/50 dark:border-cyan-900/40">
-            <span>📐 Parámetros DfMA VisualARQ Cubierta</span>
-          </div>
-
-          {/* Recedidos */}
-          <div className="grid grid-cols-2 gap-2">
-            <div className="flex flex-col gap-1 bg-[#E2E8F0] p-2 rounded-lg border border-slate-300 text-xs">
-              <label className="font-semibold text-[11px] text-[#0F172A]">Recedido Izq</label>
-              <input
-                type="number"
-                min={0}
-                max={200}
-                value={parametros.recedido_izquierdo ?? 0}
-                onChange={(e) => setParametro("recedido_izquierdo", Number(e.target.value))}
-                className="w-full text-xs font-mono p-1 rounded bg-transparent outline-none text-[#0F172A] font-bold"
-              />
-            </div>
-            <div className="flex flex-col gap-1 bg-[#E2E8F0] p-2 rounded-lg border border-slate-300 text-xs">
-              <label className="font-semibold text-[11px] text-[#0F172A]">Recedido Der</label>
-              <input
-                type="number"
-                min={0}
-                max={200}
-                value={parametros.recedido_derecho ?? 0}
-                onChange={(e) => setParametro("recedido_derecho", Number(e.target.value))}
-                className="w-full text-xs font-mono p-1 rounded bg-transparent outline-none text-[#0F172A] font-bold"
-              />
-            </div>
-          </div>
-
-          {/* Uniones Izquierda y Derecha */}
-          <div className="flex flex-col gap-2 p-2.5 rounded-lg bg-[#E2E8F0] border border-slate-300 text-xs text-[#0F172A]">
-            <span className="font-bold text-[#0F172A]">Uniones Estructurales</span>
-            
-            <div className="flex justify-between items-center">
-              <span className="text-[11px] text-[#0F172A]">Unión Izquierda:</span>
-              <select
-                value={parametros.union_izquierda || "Minifix"}
-                onChange={(e) => setParametro("union_izquierda", e.target.value)}
-                className="text-xs p-1 rounded-lg bg-white border border-slate-300 font-bold text-[#0F172A]"
-              >
-                <option value="Minifix">Minifix</option>
-                <option value="Tornillo tarugo">Tornillo tarugo</option>
-                <option value="Entrepaño">Entrepaño</option>
-              </select>
-            </div>
-
-            <div className="flex justify-between items-center">
-              <span className="text-[11px] text-[#0F172A]">Unión Derecha:</span>
-              <select
-                value={parametros.union_derecha || "Tornillo tarugo"}
-                onChange={(e) => setParametro("union_derecha", e.target.value)}
-                className="text-xs p-1 rounded-lg bg-white border border-slate-300 font-bold text-[#0F172A]"
-              >
-                <option value="Minifix">Minifix</option>
-                <option value="Tornillo tarugo">Tornillo tarugo</option>
-                <option value="Entrepaño">Entrepaño</option>
-              </select>
-            </div>
-
-            <div className="grid grid-cols-2 gap-2 pt-1 border-t border-slate-300 text-[11px] text-[#0F172A]">
-              <div className="flex flex-col gap-1">
-                <span>Orientación Minifix:</span>
-                <select
-                  value={parametros.orientacion_minifix || "abajo"}
-                  onChange={(e) => setParametro("orientacion_minifix", e.target.value)}
-                  className="text-xs p-1 rounded-lg bg-white border border-slate-300 text-[#0F172A] font-bold"
-                >
-                  <option value="abajo">Abajo</option>
-                  <option value="arriba">Arriba</option>
-                </select>
-              </div>
-              <div className="flex flex-col gap-1">
-                <span>Maquinado Minifix:</span>
-                <select
-                  value={parametros.orientacion_maquinado_minifix || "abajo"}
-                  onChange={(e) => setParametro("orientacion_maquinado_minifix", e.target.value)}
-                  className="text-xs p-1 rounded-lg bg-white border border-slate-300 text-[#0F172A] font-bold"
-                >
-                  <option value="abajo">Abajo</option>
-                  <option value="arriba">Arriba</option>
-                </select>
-              </div>
-              <div className="flex flex-col gap-1">
-                <span>Posición Tarugo:</span>
-                <select
-                  value={parametros.posicion_tarugo || "1"}
-                  onChange={(e) => setParametro("posicion_tarugo", e.target.value)}
-                  className="text-xs p-1 rounded-lg bg-white border border-slate-300 text-[#0F172A] font-bold"
-                >
-                  <option value="1">1 (Frontal)</option>
-                  <option value="2">2 (Posterior)</option>
-                </select>
-              </div>
-              <div className="flex flex-col gap-1">
-                <span>Posición Tornillo:</span>
-                <select
-                  value={parametros.posicion_tornillo || "1"}
-                  onChange={(e) => setParametro("posicion_tornillo", e.target.value)}
-                  className="text-xs p-1 rounded-lg bg-white border border-slate-300 text-[#0F172A] font-bold"
-                >
-                  <option value="1">1 (Frontal)</option>
-                  <option value="2">2 (Posterior)</option>
-                </select>
-              </div>
-              <div className="flex flex-col gap-1">
-                <span>Borde Izquierdo:</span>
-                <select
-                  value={parametros.borde_izquierdo || "MDP"}
-                  onChange={(e) => setParametro("borde_izquierdo", e.target.value)}
-                  className="text-xs p-1 rounded-lg bg-white border border-slate-300 text-[#0F172A] font-bold"
-                >
-                  <option value="MDP">MDP</option>
-                  <option value="Canto">Canto</option>
-                </select>
-              </div>
-              <div className="flex flex-col gap-1">
-                <span>Borde Derecho:</span>
-                <select
-                  value={parametros.borde_derecho || "MDP"}
-                  onChange={(e) => setParametro("borde_derecho", e.target.value)}
-                  className="text-xs p-1 rounded-lg bg-white border border-slate-300 text-[#0F172A] font-bold"
-                >
-                  <option value="MDP">MDP</option>
-                  <option value="Canto">Canto</option>
-                </select>
-              </div>
-            </div>
-
-            {/* Mapeados y Texturas */}
-            <div className="flex flex-col gap-1.5 pt-2 border-t border-slate-300">
-              <span className="font-bold text-[#0F172A]">Mapeado de Texturas</span>
-              <div className="flex justify-between items-center">
-                <span className="text-[10px] text-[#0F172A]">Lado Balance Cubierta:</span>
-                <select
-                  value={parametros.lado_balance_cubierta || "Cara B"}
-                  onChange={(e) => setParametro("lado_balance_cubierta", e.target.value)}
-                  className="text-xs p-1 rounded-lg bg-white border border-slate-300 text-[#0F172A] font-bold"
-                >
-                  <option value="Cara A">Cara A</option>
-                  <option value="Cara B">Cara B</option>
-                  <option value="D/D">D/D</option>
-                </select>
-              </div>
-              <div className="flex justify-between items-center">
-                <span className="text-[10px] text-[#0F172A]">Mapeado Cubierta:</span>
-                <select
-                  value={parametros.tipo_mapeado_cubierta || "Cubierta"}
-                  onChange={(e) => setParametro("tipo_mapeado_cubierta", e.target.value)}
-                  className="text-xs p-1 rounded-lg bg-white border border-slate-300 text-[#0F172A] font-bold"
-                >
-                  <option value="Cubierta">Cubierta</option>
-                  <option value="Cubierta Atravesada">Atravesada</option>
-                </select>
-              </div>
-              <div className="flex justify-between items-center">
-                <span className="text-[10px] text-[#0F172A]">Lado Balance Entrepaño:</span>
-                <select
-                  value={parametros.lado_balance_entrepanio || "Cara B"}
-                  onChange={(e) => setParametro("lado_balance_entrepanio", e.target.value)}
-                  className="text-xs p-1 rounded-lg bg-white border border-slate-300 text-[#0F172A] font-bold"
-                >
-                  <option value="Cara A">Cara A</option>
-                  <option value="Cara B">Cara B</option>
-                  <option value="D/D">D/D</option>
-                </select>
-              </div>
-              <div className="flex justify-between items-center">
-                <span className="text-[10px] text-[#0F172A]">Mapeado Entrepaño:</span>
-                <select
-                  value={parametros.tipo_mapeado_entrepanio || "Cubierta"}
-                  onChange={(e) => setParametro("tipo_mapeado_entrepanio", e.target.value)}
-                  className="text-xs p-1 rounded-lg bg-white border border-slate-300 text-[#0F172A] font-bold"
-                >
-                  <option value="Cubierta">Cubierta</option>
-                  <option value="Cubierta Atravesada">Atravesada</option>
-                </select>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Color de Acabado & Puertas (Card Organizada) */}
-      <div className="flex flex-col gap-2.5 p-3 rounded-xl bg-cyan-950/20 dark:bg-[#131B2E]/60 border border-cyan-200/80 dark:border-cyan-900/40 shadow-sm">
-        <label className="font-bold text-xs text-gray-800 dark:text-white flex items-center gap-1.5">
-          <Palette className="w-4 h-4 text-cyan-600 dark:text-cyan-400" /> Color de Acabado
-        </label>
-        <div className="flex items-center justify-between bg-[#E2E8F0] p-2 rounded-lg border border-slate-300 shadow-sm text-[#0F172A]">
-          <span className="text-xs font-bold text-[#0F172A]" style={{ color: "#0F172A" }}>Color seleccionado:</span>
-          <div className="flex items-center gap-2">
-            <input
-              type="color"
-              value={parametros.color_acabado}
-              onChange={(e) => setParametro("color_acabado", e.target.value)}
-              className="w-7 h-7 rounded cursor-pointer border-0"
-            />
-            <span className="text-xs font-mono font-bold text-[#0F172A]" style={{ color: "#0F172A" }}>{parametros.color_acabado}</span>
-          </div>
-        </div>
-
-        {/* Toggle Puertas */}
-        {!esCubierta && (
-          <label className="flex items-center justify-between text-xs font-bold cursor-pointer p-2 rounded-lg bg-[#E2E8F0] border border-slate-300 text-[#0F172A] shadow-sm">
-            <span className="text-[#0F172A]" style={{ color: "#0F172A" }}>Incluir Puertas Frontales</span>
-            <input
-              type="checkbox"
-              checked={parametros.incluir_puertas}
-              onChange={(e) => setParametro("incluir_puertas", e.target.checked)}
-              className="w-4 h-4 accent-cyan-600 rounded cursor-pointer"
-            />
-          </label>
-        )}
-      </div>
+      <span style={{ color: coloresApariencia?.textoPrincipal }} className="font-bold text-[11px]">{label}:</span>
+      <select
+        value={selectedValue}
+        onChange={(e) => handleSelectChange(e.target.value)}
+        style={{ 
+          borderColor: coloresApariencia?.bordePaneles || "#CBD5E1",
+          backgroundColor: coloresApariencia?.fondoAplicacion,
+          color: coloresApariencia?.textoPrincipal
+        }}
+        className="text-xs p-1 rounded-lg border font-bold outline-none cursor-pointer"
+      >
+        {options.map((opt) => (
+          <option key={opt} value={opt}>
+            {opt}
+          </option>
+        ))}
+      </select>
     </div>
   );
 }
+
+// Panel de Parámetros Dinámico Autónomo (Sólo visible cuando hay un archivo cargado con grupos reales)
+function ParametrosPanel() {
+  const { parametros, resultado, coloresApariencia } = use3BFStore();
+
+  if (!parametros.model_id) return null;
+
+  // Si no hay grupos dinámicos parseados del archivo, mantener el panel 100% limpio
+  if (!resultado?.parameter_groups || resultado.parameter_groups.length === 0) {
+    return null;
+  }
+
+  const groups = resultado.parameter_groups;
+
+  return (
+    <div className="flex flex-col gap-3.5">
+      {groups.map((grp: { title: string; parameters: string[] }, idx: number) => (
+        <div 
+          key={`group-${idx}`} 
+          style={{ 
+            borderColor: coloresApariencia?.insigniaFondo || coloresApariencia?.bordePaneles,
+            backgroundColor: coloresApariencia?.fondoPaneles ? `${coloresApariencia.fondoPaneles}80` : undefined
+          }}
+          className="flex flex-col gap-3 p-3 rounded-xl border shadow-sm"
+        >
+          <div 
+            style={{ 
+              borderColor: coloresApariencia?.insigniaFondo || coloresApariencia?.bordePaneles,
+              color: coloresApariencia?.textoPrincipal 
+            }}
+            className="text-xs font-extrabold flex items-center gap-1.5 pb-1.5 border-b"
+          >
+            <Box 
+              style={{ color: coloresApariencia?.botonActivo || "#0891b2" }} 
+              className="w-4 h-4 shrink-0" 
+            />
+            <span>{grp.title}</span>
+          </div>
+
+          <div className="flex flex-col gap-2">
+            {grp.parameters.map((pKey: string) => (
+              <RenderParamControl key={pKey} paramKey={pKey} />
+            ))}
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+const MAPA_PARAMETROS: Record<string, string> = {
+  "RH_IN:Ancho": "ancho",
+  "RH_IN:01 Ancho": "ancho",
+  "RH_IN:Alto": "alto",
+  "RH_IN:02 Alto": "alto",
+  "RH_IN:Profundidad": "profundidad",
+  "RH_IN:Cantidada de Cajones": "cant_cajones",
+  "RH_IN:Cantidad de Cajones": "cant_cajones",
+  "RH_IN:Profundidad cajon": "profundidad_cajon",
+  "RH_IN:Altura lateral de cajon": "altura_lateral_cajon",
+  "RH_IN:Distancia bajo laterales": "distancia_bajo_laterales",
+  "RH_IN:Tipo Cajon": "tipo_cajon",
+  "RH_IN:03 Tipo de union izquierda": "union_izquierda",
+  "RH_IN:04 Tipo de union Derecha": "union_derecha",
+  "RH_IN:05 Orientacion maquinado minifix": "orientacion_maquinado_minifix",
+  "RH_IN:06 Orientacion minifix": "orientacion_minifix",
+  "RH_IN:Posicion Tarugo": "posicion_tarugo",
+  "RH_IN:02.4 Posicion Tarugo": "posicion_tarugo",
+  "RH_IN:Posicion Tornillo": "posicion_tornillo",
+  "RH_IN:02.5Posicion Tornillo": "posicion_tornillo",
+  "RH_IN:02.3Posicion Minifix": "posicion_minifix",
+  "RH_IN:Borde izquierdo": "borde_izquierdo",
+  "RH_IN:03.4 Borde izquierdo": "borde_izquierdo",
+  "RH_IN:Borde derecho": "borde_derecho",
+  "RH_IN:03.3 Borde derecho": "borde_derecho",
+  "RH_IN:Lado balance cubierta": "lado_balance_cubierta",
+  "RH_IN:03.1 Lado balance": "lado_balance_cubierta",
+  "RH_IN:Tipo de mapeado cubierta": "tipo_mapeado_cubierta",
+  "RH_IN:03.0 Mapeado": "tipo_mapeado_cubierta",
+  "RH_IN:Lado balance entrepaño": "lado_balance_entrepanio",
+  "RH_IN:Tipo de mapeado entrepaño": "tipo_mapeado_entrepanio",
+};
 
 export default function ControlPanel() {
   const {
@@ -521,21 +423,24 @@ export default function ControlPanel() {
     escenarioLimpio,
   } = use3BFStore();
 
-  const [loadedFiles, setLoadedFiles] = React.useState<Array<{ id: string; filename: string; content?: string }>>([]);
+  const [isSyncing, setIsSyncing] = React.useState(false);
+  const lastModelRef = React.useRef<string | null>(null);
 
-  const fileInputRef = React.useRef<HTMLInputElement>(null);
-
-  // Comprobar estado de conexión del Worker Python
+  // Comprobar estado de conexión del Worker Python y RhinoCompute
   const verificarWorker = async () => {
     try {
-      const res = await fetch("/api/compute", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ model_id: "Cubierta", ancho: 1200, alto: 800, profundidad: 400 }),
+      const res = await fetch("/api/health", {
+        method: "GET",
+        headers: { "Cache-Control": "no-cache" },
+        signal: AbortSignal.timeout(3000),
       });
-      const data = await res.json();
-      if (data.status === "success" || data.real_meshes || res.ok) {
-        setWorkerStatus("online");
+      if (res.ok) {
+        const data = await res.json();
+        if (data.status === "online" && data.worker && data.rhino_compute) {
+          setWorkerStatus("online");
+        } else {
+          setWorkerStatus("offline");
+        }
       } else {
         setWorkerStatus("offline");
       }
@@ -546,7 +451,62 @@ export default function ControlPanel() {
 
   useEffect(() => {
     verificarWorker();
+    const interval = setInterval(verificarWorker, 8000);
+    const handleReactivation = () => {
+      verificarWorker();
+    };
+
+    window.addEventListener("focus", handleReactivation);
+    document.addEventListener("visibilitychange", handleReactivation);
+
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener("focus", handleReactivation);
+      document.removeEventListener("visibilitychange", handleReactivation);
+    };
   }, []);
+
+  // Sincronizar parámetros de la interfaz web desde el archivo Grasshopper de forma ultra-rápida (5ms)
+  const sincronizarParametrosDesdeArchivo = async (modelId: string, customFilename?: string, ghxContent?: string) => {
+    setIsSyncing(true);
+    try {
+      const payload = {
+        model_id: modelId,
+        custom_filename: customFilename || `${modelId}.ghx`,
+        ghx_content: ghxContent || "",
+      };
+      const res = await fetch("/api/metadata", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      const data = await res.json();
+      if (data.status === "success" && data.default_values) {
+        lastModelRef.current = modelId; // Marcar como cargado
+        
+        // Sincronizar store dinámicamente con cualquier clave de Grasshopper
+        Object.entries(data.default_values).forEach(([ghKey, val]) => {
+          setParametro(ghKey as any, val);
+          const cleanKey = ghKey.replace("RH_IN:", "").toLowerCase().replace(/\s+/g, "_");
+          setParametro(cleanKey as any, val);
+          const legacyKey = MAPA_PARAMETROS[ghKey];
+          if (legacyKey) setParametro(legacyKey as any, val);
+        });
+
+        // Actualizar INMEDIATAMENTE los grupos de la interfaz y límites de sliders sin esperar al 3D
+        const currRes = use3BFStore.getState().resultado;
+        setResultado({
+          ...(currRes || {}),
+          parameter_groups: data.parameter_groups || [],
+          slider_limits: data.slider_limits || {}
+        } as any);
+      }
+    } catch (err) {
+      console.error("Error sincronizando parámetros desde archivo:", err);
+    } finally {
+      setIsSyncing(false);
+    }
+  };
 
   // Función para re-calcular cuando cambian los parámetros
   const ejecutarComputo = async () => {
@@ -576,166 +536,49 @@ export default function ControlPanel() {
     }
   };
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    const filename = file.name;
-    const modelName = filename.replace(/\.(gh|ghx)$/i, "");
-
-    if (filename.toLowerCase().endsWith(".ghx")) {
-      const reader = new FileReader();
-      reader.onload = (event) => {
-        const content = event.target?.result as string;
-
-        setLoadedFiles((prev) => {
-          const filtered = prev.filter((f) => f.id !== modelName);
-          return [...filtered, { id: modelName, filename, content }];
-        });
-
-        setParametro("ghx_content", content);
-        setParametro("custom_filename", filename);
-        setParametro("model_id", modelName);
-      };
-      reader.readAsText(file);
-    } else {
-      setLoadedFiles((prev) => {
-        const filtered = prev.filter((f) => f.id !== modelName);
-        return [...filtered, { id: modelName, filename }];
-      });
-      setParametro("ghx_content", "");
-      setParametro("custom_filename", filename);
-      setParametro("model_id", modelName);
-    }
-  };
-
-  const handleSelectModel = (selectedId: string) => {
-    if (!selectedId) {
-      setParametro("model_id", "");
-      setParametro("custom_filename", "");
-      setParametro("ghx_content", "");
-      setResultado(null);
-      return;
-    }
-
-    const found = loadedFiles.find((f) => f.id === selectedId);
-    if (found) {
-      setParametro("model_id", found.id);
-      setParametro("custom_filename", found.filename);
-      setParametro("ghx_content", found.content || "");
-    } else {
-      setParametro("model_id", selectedId);
-      setParametro("custom_filename", `${selectedId}.ghx`);
-      setParametro("ghx_content", "");
-    }
-  };
-
   useEffect(() => {
+    if (isSyncing) return; // Evitar disparar cómputo mientras se sincronizan los parámetros
     ejecutarComputo();
-  }, [parametros]);
+  }, [parametros, isSyncing]);
+
+  const { instancias, objetoActivoId, coloresApariencia } = use3BFStore();
+  const instanciaActiva = objetoActivoId ? instancias[objetoActivoId] : null;
 
   return (
-    <div className="p-4 flex flex-col gap-5 h-full overflow-y-auto">
-      {/* Selector de Tema y Modo Render 3D */}
-      <div className="flex flex-col gap-2.5 p-3 rounded-xl bg-cyan-950/20 dark:bg-[#131B2E]/60 border border-cyan-200/80 dark:border-cyan-900/40 text-xs shadow-sm">
-        <div className="flex items-center justify-between">
-          <span className="text-xs font-extrabold text-gray-900 dark:text-[#F8FAFC]">Tema:</span>
-          <div className="flex gap-1.5">
-            <button
-              onClick={() => {
-                setTema("tech");
-                document.documentElement.setAttribute("data-theme", "tech");
-                document.documentElement.classList.remove("dark");
-              }}
-              className={`px-3.5 py-1 rounded-full transition cursor-pointer text-xs font-bold ${tema === "tech" ? "bg-cyan-600 text-white shadow-md border border-cyan-400/40" : "bg-[#E2E8F0]/50 text-[#0F172A] hover:bg-[#E2E8F0]/80 border border-slate-300/60 backdrop-blur-sm"}`}
+    <div className="p-4 flex flex-col gap-5 h-full overflow-y-auto no-scrollbar">
+      {/* 🏷️ CABECERA: OBJETO ACTIVO EN EL ESCENARIO (Multi-Instancia) */}
+      {instanciaActiva && (
+        <div 
+          style={{ 
+            borderColor: coloresApariencia?.insigniaFondo || coloresApariencia?.bordePaneles,
+            backgroundColor: coloresApariencia?.fondoPaneles ? `${coloresApariencia.fondoPaneles}80` : undefined
+          }}
+          className="flex flex-col gap-2 p-3 rounded-xl border shadow-sm"
+        >
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <span 
+                style={{ backgroundColor: coloresApariencia?.estadoActivo || "#10B981" }} 
+                className="w-2.5 h-2.5 rounded-full animate-pulse shrink-0" 
+              />
+              <span 
+                style={{ color: coloresApariencia?.textoPrincipal }} 
+                className="font-extrabold text-sm leading-none"
+              >
+                {instanciaActiva.nombreVisible}
+              </span>
+            </div>
+            <div 
+              style={{ 
+                color: coloresApariencia?.estadoActivo || "#10B981" 
+              }} 
+              className="text-[10px] font-mono font-bold tracking-wide"
             >
-              Light
-            </button>
-            <button
-              onClick={() => {
-                setTema("obsidian");
-                document.documentElement.setAttribute("data-theme", "obsidian");
-                document.documentElement.classList.add("dark");
-              }}
-              className={`px-3.5 py-1 rounded-full transition cursor-pointer text-xs font-bold ${tema === "obsidian" ? "bg-cyan-600 text-white shadow-md border border-cyan-400/40" : "bg-[#E2E8F0]/50 text-[#0F172A] hover:bg-[#E2E8F0]/80 border border-slate-300/60 backdrop-blur-sm"}`}
-            >
-              Dark
-            </button>
+              {instanciaActiva.definitionId}
+            </div>
           </div>
         </div>
-
-        {/* Modo Renderizado 3D */}
-        <div className="flex items-center justify-between pt-2 border-t border-cyan-200/50 dark:border-cyan-900/40">
-          <span className="text-xs font-extrabold text-gray-900 dark:text-[#F8FAFC]">Modo:</span>
-          <div className="flex gap-1.5 flex-wrap justify-end">
-            <button
-              onClick={() => setModoVisual("semitransparente")}
-              className={`px-3 py-1 rounded-full transition text-[11px] cursor-pointer font-bold ${modoVisual === "semitransparente" ? "bg-cyan-600 text-white shadow-md border border-cyan-400/40" : "bg-[#E2E8F0]/50 text-[#0F172A] hover:bg-[#E2E8F0]/80 border border-slate-300/60 backdrop-blur-sm"}`}
-            >
-              💎 Cristal
-            </button>
-            <button
-              onClick={() => setModoVisual("solido")}
-              className={`px-3 py-1 rounded-full transition text-[11px] cursor-pointer font-bold ${modoVisual === "solido" ? "bg-cyan-600 text-white shadow-md border border-cyan-400/40" : "bg-[#E2E8F0]/50 text-[#0F172A] hover:bg-[#E2E8F0]/80 border border-slate-300/60 backdrop-blur-sm"}`}
-            >
-              🧱 Sólido
-            </button>
-            <button
-              onClick={() => setModoVisual("renderizado")}
-              className={`px-3 py-1 rounded-full transition text-[11px] cursor-pointer font-bold ${modoVisual === "renderizado" ? "bg-cyan-600 text-white shadow-md border border-cyan-400/40" : "bg-[#E2E8F0]/50 text-[#0F172A] hover:bg-[#E2E8F0]/80 border border-slate-300/60 backdrop-blur-sm"}`}
-            >
-              🖼️ Renderizado
-            </button>
-            <button
-              onClick={() => setModoVisual("lineas")}
-              className={`px-3 py-1 rounded-full transition text-[11px] cursor-pointer font-bold ${modoVisual === "lineas" ? "bg-cyan-600 text-white shadow-md border border-cyan-400/40" : "bg-[#E2E8F0]/50 text-[#0F172A] hover:bg-[#E2E8F0]/80 border border-slate-300/60 backdrop-blur-sm"}`}
-            >
-              📐 Líneas
-            </button>
-          </div>
-        </div>
-      </div>
-
-      {/* Sección Abrir archivo Grasshopper */}
-      <div className="flex flex-col gap-2.5 p-3 rounded-xl bg-cyan-950/20 dark:bg-[#131B2E]/60 border border-cyan-200/80 dark:border-cyan-900/40 shadow-sm">
-        <label className="text-xs font-bold text-gray-900 dark:text-white flex items-center gap-1.5">
-          <FolderOpen className="w-4 h-4 text-cyan-600 dark:text-cyan-400" /> Abrir archivo Grasshopper
-        </label>
-
-        {/* File input oculto para examinar disco duro */}
-        <input
-          type="file"
-          ref={fileInputRef}
-          accept=".gh,.ghx"
-          onChange={handleFileChange}
-          className="hidden"
-        />
-
-        {/* Botón para explorar disco duro (Cápsula rounded-full) */}
-        <button
-          onClick={() => fileInputRef.current?.click()}
-          className="w-full py-2 px-4 rounded-full bg-cyan-600 hover:bg-cyan-500 text-white font-bold text-xs shadow-md border border-cyan-400/40 transition flex items-center justify-center gap-2 cursor-pointer"
-        >
-          <FileUp className="w-4 h-4" /> Buscar en disco
-        </button>
-
-        {/* Desplegable de archivos cargados (Formato Rectangular con Esquinas Redondeadas rounded-lg) */}
-        <select
-          value={parametros.model_id}
-          onChange={(e) => handleSelectModel(e.target.value)}
-          className="w-full text-xs p-2 rounded-lg bg-[#E2E8F0] text-[#0F172A] border border-slate-300 outline-none font-bold cursor-pointer shadow-sm"
-        >
-          <option value=""></option>
-          {loadedFiles.map((f) => {
-            const cleanName = f.filename.replace(/\.(gh|ghx)$/i, "");
-            return (
-              <option key={f.id} value={f.id}>
-                {cleanName}
-              </option>
-            );
-          })}
-        </select>
-      </div>
+      )}
 
       {/* Panel de Parámetros Dinámico */}
       <ParametrosPanel />

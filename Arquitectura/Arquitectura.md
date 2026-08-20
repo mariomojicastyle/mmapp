@@ -1,17 +1,17 @@
-# Arquitectura de la Solución B2B — Mario Mojica (Versión 8)
+# Arquitectura de la Solución B2B — Mario Mojica (Versión 10)
 
-> **Versión Actual:** V8 (Julio 2026)  
-> **Documento de Especificación V8:** [arquitectura_V8.md](file:///c:/Desarrollo/mmapp/Arquitectura/arquitectura_V8.md)  
-> **Diagrama Vectorial V8:** [arquitectura_V8.svg](file:///c:/Desarrollo/mmapp/Arquitectura/arquitectura_V8.svg)  
-> **Guía de Replicación V8:** [guia_replicacion_V8.md](file:///c:/Desarrollo/mmapp/Arquitectura/guia_replicacion_V8.md)
+> **Versión Actual:** V10 (Agosto 2026)  
+> **Diagrama Vectorial V10:** [arquitectura_v10.svg](file:///c:/Desarrollo/mmapp/Arquitectura/arquitectura_v10.svg)  
+> **Documento de Especificación 3BF:** [3BF.md](file:///c:/Desarrollo/mmapp/3BF.md) & [3BF_Proceso.md](file:///c:/Desarrollo/mmapp/3BF/3BF_Proceso.md)  
+> **Módulo Comercial:** [RAM_de_ventas.md](file:///c:/Desarrollo/mmapp/Comercial/RAM_de_ventas.md) & [CRM.md](file:///c:/Desarrollo/mmapp/Comercial/CRM.md)
 
-Este documento detalla de forma exhaustiva la arquitectura técnica y el ecosistema de aplicaciones, seguridad, motor de mercadeo multicanal Meta (Facebook e Instagram), automatización y métricas de la plataforma de **Mario Mojica**. Está diseñado para servir como punto de referencia estructural y técnico para el desarrollo continuo y la replicabilidad del sistema.
+Este documento detalla de forma exhaustiva la arquitectura técnica del ecosistema B2B de **Mario Mojica**, integrando la plataforma central, el blindaje criptográfico IP Shield, la analítica web privada en VPS, el motor paramétrico de manufactura digital **3DBimFab** sincronizado con Google Drive y el sistema inteligente de prospección **RAM de Ventas**.
 
 ---
 
-## 🛠️ 1. Vista General del Ecosistema
+## 🛠️ 1. Topología del Ecosistema
 
-El sistema está estructurado bajo una arquitectura **Headless distribuida**, acoplando servicios de Backend-as-a-Service (BaaS), aplicaciones frontend interactivas en 3D, un clúster de microservicios dockerizados en un VPS para automatización/analítica, y renderizado paramétrico local.
+El sistema está estructurado bajo una arquitectura **Headless distribuida y modular**, que articula seis componentes estratégicos:
 
 ```
                                       ┌────────────────────────────────┐
@@ -34,237 +34,68 @@ El sistema está estructurado bajo una arquitectura **Headless distribuida**, ac
                │     Next.js (Netlify)     │
                └─────────────┬─────────────┘
                              │
-                             ▼
-               ┌───────────────────────────┐
-               │      Supabase Cloud       │
-               │ (PostgreSQL, Storage Priv)│
-               └───────────────────────────┘
+                             ├──────────────────────────────────────────────┐
+                             ▼                                              ▼
+               ┌───────────────────────────┐                  ┌───────────────────────────┐
+               │      Supabase Cloud       │                  │   3DBimFab Parametric     │
+               │ (PostgreSQL, Storage Priv)│                  │ (Next.js, FastAPI, Rhino) │
+               └───────────────────────────┘                  └─────────────┬─────────────┘
+                                                                            │ (Sync Bidireccional)
+                                                                            ▼
+                                                              ┌───────────────────────────┐
+                                                              │ Google Drive (G:\Muebles) │
+                                                              └───────────────────────────┘
 ```
 
 ---
 
 ## 📦 2. Detalle de Componentes
 
-### A. Capa de Frontend y Experiencia 3D
-
-1. **Plataforma CMS B2B (Next.js):**
-   * **Directorio:** `mario-mojica-plataforma/`
-   * **Descripción:** Panel de administración donde Mario Mojica gestiona sus proyectos y visualiza reportes de comportamiento.
-   * **Framework:** Next.js (App Router) en React. Estilo premium basado en la estética *Obsidian Teal* (modo oscuro por defecto) y *Tech Ethos* para impresión.
-   * **Endpoints Críticos:**
-     * `/api/metrics/collect`: Recolector de telemetría con rate limiting local en memoria (máximo 40 peticiones por minuto por IP/sesión).
-     * `/api/assets/sign`: Generador seguro de URLs firmadas para archivos `.glb` y audios.
-     * `/proyectos/[id]/reporte`: Vista dinámica optimizada para impresión física en tamaño A4 (`@media print`) que genera el Reporte de Fricción mensual sin dependencias pesadas.
-
-2. **Visor 3D Interactivo (App Armado):**
-   * **Directorio:** `legacy-aplicativo-armado/`
-   * **Descripción:** El motor interactivo que renderiza las instrucciones de ensamblado de los muebles en 3D en tiempo real.
-   * **Librerías Clave:** React (Vite), Three.js mediante `@react-three/fiber` y `@react-three/drei` para el control de cámara y orbitales, Zustand para el manejo del estado global.
-
-3. **Landing Page y Portafolio:**
-   * **Directorio:** `mario-mojica-homepage/` (y `mario-mojica-landing-page/`)
-   * **Descripción:** Sitio corporativo público diseñado para la captación de leads en la industria de muebles RTA (prioridad: Brasil y Latinoamérica).
+### A. Capa Frontend & Experiencias 3D
+1. **Plataforma CMS B2B (Next.js):** Panel de control para gestión de proyectos, configuración de manuales, métricas y el nuevo módulo **RAM de Ventas** (`/ventas-ram`).
+2. **Visor 3D Interactivo (App Armado):** Motor WebGL (React Three Fiber) con locución paso a paso, orbitales con amortiguación y descifrado de geometría en RAM.
+3. **Landing Page Corporativa (`mariomojica.com`):** Portafolio B2B optimizado para Generative Engine Optimization (GEO) y SEO, enfocado en marcas de muebles RTA.
+4. **Realidad Aumentada (AR Scene Viewer):** Acceso móvil vía código QR sin instalación de aplicaciones, transmitiendo el modelo 3D mediante streaming serverless firmado.
 
 ---
 
-### B. Capa de Datos e Infraestructura Core (Supabase Cloud)
-
-* **Base de Datos Relacional (PostgreSQL):** Almacena las tablas de `proyectos`, `configuraciones_manual`, `profiles` y la tabla `telemetria_manuales` donde se consolida la interacción de los usuarios con el visor.
-* **Storage Privado (IP Shield):** El bucket `insumos_manuales` está configurado como **Privado**. No es posible acceder de forma directa a los archivos `.glb`, audios o texturas PBR sin una firma de corta duración (5 minutos), evitando la piratería y la descarga no autorizada de los assets de diseño.
-
----
-
-### C. Capa de Automatización y CRM (Hetzner VPS)
-
-El servidor VPS (Ubuntu) corre de forma aislada un conjunto de contenedores Docker interconectados en redes locales:
-
-1. **Nginx Proxy Manager (`npm_proxy`):**
-   * Gestiona el enrutamiento externo y expone subdominios seguros con SSL Let's Encrypt automático (`n8n.mariomojica.com`, `baserow.mariomojica.com` y `analytics.mariomojica.com`).
-   * Está conectado a la red externa de aplicaciones y a la red `internal_network` de Umami.
-
-2. **n8n Automation Engine (`n8n_app`):**
-   * Gestiona flujos de trabajo e integraciones. El flujo **`9DCA7UuMADzYk24Y`** intercepta el registro de leads del portafolio, inyecta su estado por defecto, y dispara alertas en WhatsApp y Gmail.
-
-3. **Baserow CRM (`baserow_app`):**
-   * Utilizado como base de datos y Kanban para el equipo de ventas. La tabla **`Leads`** (ID `600`) dentro de la base de datos `Portafolio` (ID `144`) contiene el campo tipo select **`Estado CRM`** (Field ID `9457`) para estructurar el embudo comercial (`Prospecto`, `Primer Contacto`, `Demo Agendada`, `Negociación`, `Cerrado Ganado`, `Cerrado Perdido`).
-
-4. **Umami Analytics (`umami_app` & `umami_db`):**
-   * Analítica web privada autoalojada y libre de cookies. La base de datos es PostgreSQL (`postgres:15-alpine`) y la aplicación corre en el puerto interno `3000` (mapeado en host al `3010`), conectada al proxy de Nginx mediante la red `internal_network`.
+### B. Supabase Cloud Core & IP Shield V2
+* **Base de Datos PostgreSQL:** Almacena proyectos, usuarios, telemetría de armado (`telemetria_manuales`), prospección (`ventas_prospectos`, `ventas_interacciones`) y catálogos de materiales.
+* **Storage Privado Cifrado:** Modelos `.glb` protegidos con cifrado en caliente **AES-256-GCM** (los primeros 4KB quedan corruptos en reposo).
+* **Edge Functions:** Microservicio Deno para descifrado seguro en memoria RAM y generación de streams temporales con validación HMAC-SHA256.
+* **Gateways con Rate Limiting:** `/api/metrics/collect` protegido contra spam con límite estricto de 40 req/min por IP.
 
 ---
 
-## 🔒 3. Protocolos de Seguridad y Optimización
-
-### A. IP Shield V2 (Protección Criptográfica 3D AES-256-GCM & Edge Serverless)
-Para garantizar la inmunidad total de los modelos `.glb` y la propiedad intelectual B2B contra descargas no autorizadas, scraping o descompilación:
-1. **Cifrado en la Subida (CMS Next.js):** Se deriva una clave simétrica de 256 bits por manual (`MASTER_SALT + manualId`) vía PBKDF2. Los primeros 4KB del binario GLB se cifran en caliente con **AES-256-GCM** y un Vector de Inicialización (IV) de 12 bytes antes de subirse a Supabase Storage.
-2. **Almacenamiento Inservible:** El binario alojado en Supabase Storage es corrupto e inservible para visores estándar (Blender, Unity, Unreal Engine, 3D Viewer) en caso de intento de descarga o inspección de red.
-3. **Descifrado en RAM (Visor React/Vite):** La `Web Crypto API` descifra los primeros 4KB en la RAM del cliente y genera una URL de memoria local efímera `blob:https://mariomojica.com/...` para renderizado en Three.js.
-4. **Proxy Serverless para Realidad Aumentada (AR):** Dado que Google Scene Viewer opera fuera del contexto JS del navegador, la Edge Function serverless `decrypt-glb` valida tokens efímeros firmados con **HMAC-SHA256** (TTL de 30 min) para descifrar en RAM de Supabase y servir el flujo de bytes directamente al móvil con cabeceras `no-store` y `no-cache`.
-5. **Firmado de URLs:** Adicionalmente, el endpoint `/api/assets/sign` genera URLs firmadas temporales (TTL 300s) validando cabeceras HTTP `Origin` y `Referer` autorizadas.
-
-### B. Soberanía de Métricas y Telemetrías
-El hook `useTelemetry.js` envía periódicamente la interacción del usuario (paso actual, tiempo de ensamblado, errores de orientación, clics en audio).
-* En lugar de insertar datos directamente usando el SDK de Supabase (lo cual requeriría abrir permisos de escritura anónimos en la base de datos), los datos se envían por POST a `/api/metrics/collect`.
-* Esta API Route valida la estructura de datos e inserta el registro usando la API interna segura, protegiendo la base de datos contra inyecciones y SPAM mediante un rate limiter de 40 llamadas/min.
-
-### C. Blindaje Edge, DNS Anycast & Cloudflare WAF / HSTS
-Para garantizar disponibilidad ininterrumpida y protección frente a redes móviles (Claro, Tigo, Movistar):
-* **Gestión DNS Anycast & IPv6 Nativo:** Delegación de DNS a los servidores Anycast de Cloudflare (`justin.ns.cloudflare.com` y `tara.ns.cloudflare.com`). Se implementa CNAME Flattening con IPv6 nativo para antenas 4G/LTE/5G, resolviendo bloqueos y errores `ERR_CONNECTION_TIMED_OUT` en móviles.
-* **Protección WAF & Anti-DDoS:** Filtrado automático de bots, escáneres maliciosos y ataques de denegación de servicio en la red de borde (Edge Network).
-* **Cabeceras HSTS & SSL Compliance:** Inyección de `Strict-Transport-Security: max-age=31536000; includeSubDomains; preload` forzando el tráfico HTTPS, junto con cabeceras anti-clickjacking y XSS (`X-Frame-Options: SAMEORIGIN`, `X-Content-Type-Options: nosniff`, `X-XSS-Protection: 1; mode=block`).
+### C. Hetzner VPS (Microservicios Docker)
+1. **Nginx Proxy Manager (`npm_proxy`):** Enrutador perimetral con certificados SSL automáticos (Let's Encrypt) para subdominios corporativos.
+2. **n8n Automation Engine (`n8n_app`):** Automatización de leads entrantes, alertas en WhatsApp y sincronización bidireccional con Gmail.
+3. **Baserow B2B CRM (`baserow_app`):** Base de datos relacional para el embudo de ventas (Tabla 994 Leads, Tabla 991 Empresas) con estados de seguimiento.
+4. **Umami Analytics (`umami_app` & `umami_db`):** Analítica web soberana y libre de cookies.
 
 ---
 
-## 🤖 4. Integraciones y Flujos de Automatización Avanzados (n8n + Gmail + Baserow)
+### D. 3DBimFab — Motor de Manufactura Digital Paramétrica & Google Drive
+El motor 3DBimFab opera bajo un clúster local de 3 servicios interconectados:
 
-Para maximizar la conversión B2B y garantizar la trazabilidad de interacciones, el sistema cuenta con una integración avanzada entre **Gmail**, **n8n** y **Baserow CRM**:
-
-### Flujo de Trabajo: Sincronización Automática de Interacciones y Captura de Leads
-
-1. **Trigger de Correo (Gmail Trigger):**
-   * n8n monitorea en tiempo real los correos enviados o recibidos en `direccion@mariomojica.com` usando la API oficial mediante OAuth 2.0.
-
-2. **Búsqueda en el CRM (Baserow):**
-   * Busca en la tabla `Leads` (ID `600`) si existe un registro cuyo campo `Correo` (Field ID `5558`) coincida con la dirección del remitente.
-
-3. **Lógica Bifurcada (IF: ¿Lead Existe?):**
-   * **Ruta A (El Lead Existe):**
-     * **Registro de Notas (Opción A):** n8n registra el correo (Asunto, Dirección y Cuerpo) en una tabla secundaria vinculada llamada `Interacciones` o `Notas` de Baserow, manteniendo un historial limpio por fila.
-     * **Cambio de Estado:** El `Estado CRM` (Field ID `9457`) del lead se actualiza automáticamente a **"En Seguimiento"** para activar su prioridad en el Kanban.
-     * **Alerta Instantánea:** Se dispara una alerta de WhatsApp mediante el nodo `WhatsApp Renueva` notificando al equipo sobre la respuesta del cliente.
-   * **Ruta B (El Lead NO Existe - Recomendación de Valor):**
-     * **Filtro de SPAM/Internos:** n8n comprueba que el remitente no sea una dirección interna `@mariomojica.com` ni un dominio de spam conocido.
-     * **Creación Automática (Inbound):** Para maximizar la velocidad de respuesta comercial (speed-to-lead), n8n crea automáticamente un nuevo Lead en la tabla `Leads` (600) con estado **"Nuevo"** (`3952`), guardando el Asunto y el primer correo en el campo `Descripcion` (9455).
-     * **Notificación de Alerta:** Envía un WhatsApp en tiempo real informando que un nuevo prospecto ha iniciado contacto por correo.
-
-### Comparativa de Opciones de Registro y Recomendación Arquitectónica
-
-Para el registro del historial de correos de leads en Baserow se evaluaron dos alternativas técnicas principales:
-
-*   **Opción A (Tabla Secundaria Vinculada - `Interacciones` o `Notas` de Baserow):**
-    *   **Funcionamiento:** Cada correo electrónico (entrante o saliente) se registra como una fila independiente en una tabla secundaria, vinculada mediante una relación de clave foránea al ID del Lead en la tabla principal `Leads` (600).
-    *   **Pros:** Estructura limpia y relacional; evita saturar la tabla principal; preserva metadatos de forma aislada (Fecha, Asunto, Dirección, Sentido [Entrante/Saliente]); permite ordenar, filtrar y realizar analíticas avanzadas de interacción.
-    *   **Contras:** Requiere una tabla configurada adicionalmente en Baserow y un paso extra en el flujo de n8n para asociar los registros.
-
-*   **Opción B (Registro Acumulativo en un Campo Único - `Descripción` o `Notas` en la Tabla `Leads`):**
-    *   **Funcionamiento:** n8n consulta el campo `Descripción` o `Notas` del Lead, concatena el nuevo correo en texto plano y actualiza el mismo registro.
-    *   **Pros:** Simplicidad en la estructura de datos; permite visualizar toda la información directamente en la tarjeta Kanban del Lead sin navegar a subtablas.
-    *   **Contras:** Límite de caracteres en campos de texto; pérdida de estructura (dificulta auditorías y reportes por interacción); riesgo de condiciones de carrera (si llegan correos concurrentes se pueden sobrescribir datos); requiere múltiples peticiones HTTP en n8n (lectura, concatenación y escritura).
+1. **RhinoCompute 8 (`:5000`):** Ejecutable `rhino.compute.exe` que resuelve algoritmos Grasshopper (`.ghx`) en C++ a máxima velocidad.
+2. **3BF Python Worker (`:8005`):** Servidor FastAPI que decodifica geometría pura, aplica transformaciones $X,Y,Z$ a nivel de vértice, normaliza mallas y exporta archivos `.glb`.
+3. **3BF Next.js Web App (`:3005`):** Visor WebGL y entorno de autoría paramétrica que incluye:
+   - **Biblioteca de Muebles (Asset Browser Blender 4.x):** Navegación jerárquica por marcas (`RTA Design`, `Politorno`, `Henn`, `Bartira`, etc.), miniaturas WebGL 3D cuadradas centradas (360×360 px), edición inline de nombres por doble clic y flujo de "Guardar como..." / "Abrir Mueble".
+   - **Sincronización Nativa con Google Drive (`G:\Mi unidad\Muebles`):** Lectura en vivo sin listas quemadas por defecto, persistencia de paquetes `.3bf.json` y botón interactivo `Ir al Drive ↗`.
+   - **Biblioteca de Componentes GHX:** Bloques constructivos modulares con drag & drop y nombrado secuencial automático (`Cubierta`, `Cubierta_01`).
+   - **Motor BOM y Ficha Técnica de Costos:** Despiece interactivo con dimensiones reactivas únicas por instancia y unificación consolidada de herrajes (ej. 8 Cajas y 8 Pernos para 2 cubiertas).
 
 ---
 
-### Análisis de Decisión
-
-#### 1. ¿Qué se recomienda?
-Se recomienda una **solución híbrida optimizada**:
-*   **Para Leads nuevos:** Usar la **Opción B** para guardar el primer correo del prospecto en el campo `Descripción` (9455) al momento de su creación automática. Esto asegura que el vendedor tenga el contexto del primer contacto de forma visible e inmediata en su Kanban.
-*   **Para Leads existentes:** Usar la **Opción A** para registrar el historial de conversaciones subsecuentes. Cada nuevo correo se inserta en la tabla vinculada `Interacciones`, manteniendo limpia la vista principal y acumulando una bitácora detallada.
-
-#### 2. ¿Qué será más eficiente?
-La **Opción A (Tabla Secundaria Vinculada)** es significativamente más eficiente y robusta a nivel de sistema:
-*   En la **Opción A**, n8n realiza un `POST` atómico directo para insertar la nueva fila en la tabla de interacciones. Es una sola llamada de API y no requiere conocer el estado anterior.
-*   En la **Opción B**, n8n debe hacer un `GET` (leer descripción actual) -> Concatenar texto -> `PATCH` (guardar nuevo contenido). Esto duplica el tráfico de API de Baserow, aumenta el tiempo de ejecución del flujo y expone el sistema a sobreescrituras por condiciones de carrera cuando llegan correos concurrentes.
-
-#### 3. ¿Qué opción está más cerca de generar valor?
-*   **A corto plazo (Speed-to-Value):** La **Opción B** (o el texto consolidado inicial) genera valor inmediato porque reduce la fricción visual para el vendedor, quien puede ver la consulta del cliente en un solo golpe de vista en la plataforma.
-*   **A mediano y largo plazo (Valor Estratégico B2B):** La **Opción A** es la que realmente genera valor de negocio escalable. Permite:
-    1.  Medir métricas de rendimiento (ej: *tiempo promedio de respuesta del vendedor*).
-    2.  Filtrar y automatizar alertas de leads inactivos (ej: *leads sin interacciones en los últimos 15 días*).
-    3.  Integrar múltiples canales en una misma bitácora cronológica (llamadas, correos y alertas de WhatsApp en la misma tabla de interacciones).
+### E. RAM de Ventas — CRM Inteligente de Prospección B2B
+* **Outreach Copilot:** Generación de copys en 4 calibres de caracteres (300, 600, 900 y 1500) en Español y Portugués Brasileño, contextualizados por polo industrial mueblero (Arapongas, Bento Gonçalves, Ubá, Mirassol).
+* **Termómetro Comercial:** 6 niveles de temperatura (`caliente`, `tibio`, `enfriando`, `pausado`, `cerrado_ganado`, `cerrado_perdido`).
+* **Análisis Multimodal:** Extracción de datos y cargos a partir de capturas de pantalla de perfiles de LinkedIn y WhatsApp.
+* **Control Antiduplicados:** Validación instantánea contra Baserow y Supabase antes de registrar prospectos.
 
 ---
 
-## 🌐 5. Diagrama de Flujo y Redes
-
-* **`mmapp_network` (Docker Bridge):** Conecta `n8n_app`, `baserow_app`, `npm_proxy` y `npm_database`.
-* **`internal_network` (Docker Bridge):** Conecta `umami_app`, `umami_db` y `npm_proxy`. Esta separación evita que la base de datos de Umami sea visible desde otros contenedores del CRM o automatizaciones de negocio.
-
-Para una representación gráfica interactiva de estas conexiones, ver el diagrama vectorial generado en [arquitectura_V7.svg](file:///c:/Desarrollo/mmapp/Arquitectura/arquitectura_V7.svg).
-
----
-
-## 🗺️ 6. Mapeo de Código y Arquitectura del Visor 3D (legacy-aplicativo-armado)
-
-Este apartado sirve como mapa de referencia compacta para la arquitectura, el flujo de datos, el manejo de estados globales y la responsabilidad de cada archivo clave dentro del proyecto [legacy-aplicativo-armado](file:///c:/Desarrollo/mmapp/legacy-aplicativo-armado/).
-
-### A. Arquitectura General y Jerarquía
-
-El aplicativo es una experiencia 3D interactiva construida en **React + Three.js** utilizando `@react-three/fiber` (R3F) y `@react-three/drei`. Los menús e interfaces se superponen sobre el lienzo 3D como capas HTML tradicionales (Overlay UI).
-
-```mermaid
-graph TD
-    A[main.jsx / App.jsx] --> B[pages/AssemblyPage.jsx]
-    B -- Carga data.json del producto --> C[AssemblyViewer.jsx]
-    C --> D[Lienzo 3D: Canvas]
-    C --> E[Capa de Interfaz: Overlay UI]
-    
-    D --> D1[3d-escene/Experience.jsx]
-    D1 --> D2[3d-escene/Model.jsx - Modelo GLB paso a paso]
-    D1 --> D3[3d-escene/Floor.jsx - Rejilla del Suelo]
-    
-    E --> E1[components/NavBarSuperior.jsx]
-    E --> E2[components/NavBarInferior.jsx]
-    E --> E3[components/Landscape.jsx - Alertas de giro]
-    
-    E2 --> E2a[PanelHerrajes.jsx - Panel lateral de piezas]
-    E2 --> E2b[PanelAyudas.jsx - Tutorial interactivo]
-    E2 --> E2c[PanelTips.jsx - Información técnica/Garantía]
-    E2 --> E2d[AudioPlayer.jsx - Control de voz en off]
-```
-
-### B. El Cerebro Global: `useEnviroment.js`
-*Ubicación:* [useEnviroment.js](file:///c:/Desarrollo/mmapp/legacy-aplicativo-armado/src/features/AssemblyInstructions/hooks/useEnviroment.js)
-
-El proyecto utiliza **Zustand** como manejador de estado global. En lugar de pasar propiedades de padre a hijo, los componentes se suscriben a este store.
-
-*   **`pasoActual`** (String): El paso de armado actual (ej. `"00"`, `"01"`, `"02"`). Controla qué modelo `.glb` cargar.
-*   **`pasos`** (Array): Lista de todos los identificadores de paso cargados desde el `data.json`.
-*   **`id`** (String): El ID del producto (ej. `"M01536"`). Define las rutas de assets.
-*   **`phaseAudio`** (String): Estado de reproducción (`"start"`, `"playing"`, `"paused"`, `"reset"`).
-*   **`PiezaHerraje`** (String): Nombre del elemento que el usuario está señalando o tocando en 3D. Se muestra en el banner inferior.
-*   **`show`** (Boolean): Variable de transición rápida para desmontar y remontar el Canvas 3D al cambiar de paso, limpiando memoria.
-*   **`Parpadeo`** (Boolean): Si es `true`, hace destellar la flecha de avanzar paso.
-*   **Paneles Activos:** `panelTips`, `PanelAyudas`, `PanelCantidades` y `PanelShow` controlan qué ventana modal o panel lateral está abierto.
-
-### C. Inventario de Archivos Clave
-
-#### Cimientos y Enrutamiento
-1.  **`index.html`**
-    *   *Propósito:* Punto de entrada web. Aloja fuentes locales (`Play-Regular`) para evitar retrasos de carga.
-2.  **`src/main.jsx` & `src/App.jsx`**
-    *   *Propósito:* Configura el enrutador (`react-router-dom`). Redirige la raíz `/` automáticamente al ID de producto por defecto (`/M01536`).
-3.  **`src/pages/AssemblyPage.jsx`**
-    *   *Propósito:* Captura el ID de la URL y hace un `fetch` dinámico del archivo `/${id}/data.json` que reside en la carpeta pública. Si tiene éxito, renderiza el `AssemblyViewer`.
-
-#### El Núcleo 3D (Carpeta `src/features/AssemblyInstructions/3d-escene/`)
-4.  **`AssemblyViewer.jsx`**
-    *   *Propósito:* El contenedor raíz de la vista 3D. Inicializa el store Zustand con los datos del JSON, define la configuración del renderizador web de Three (`gl`, `toneMapping`, `camera`) y distribuye el Overlay UI.
-5.  **`Experience.jsx (AssemblySceneViewer)`**
-    *   *Propósito:* Configura las luces de la escena, las sombras, el control de órbita (`OrbitControls`) y el entorno panorámico local (`hdri2/salon_01.webp`).
-6.  **`Model.jsx`**
-    *   *Propósito:* Carga dinámicamente el modelo GLB del paso correspondiente (`/${id}/models/P${pasoActual}.glb`). Contiene la lógica de animación, detección de clics en piezas, resaltado con Matcaps y emisión de la señal de parpadeo visual.
-
-#### La Interfaz HTML (Carpeta `src/features/AssemblyInstructions/components/`)
-7.  **`NavBarSuperior/NavBarSuperior.jsx` & `.css`**
-    *   *Propósito:* Controles del borde superior: Botón de ayuda (`?`), información técnica (`i`) y el botón de Realidad Aumentada (`AR.html`). Contiene selectores de color del mueble (desactivados).
-8.  **`NavBarInferior/NavBarInferior.jsx` & `.css`**
-    *   *Propósito:* Controles del borde inferior: Flecha izquierda (`left`), Flecha derecha (`right`), Play/Pausa/Reset de audio, e indicador circular de porcentaje completado.
-    *   *⚠️ Nota Crítica:* Este archivo contiene **grandes imágenes SVG embebidas en formato Base64**, lo que lo hace muy pesado de leer.
-9.  **`AudioPlayer/AudioPlayer.jsx`**
-    *   *Propósito:* Gestiona el elemento de audio HTML5 `<audio>` que reproduce las instrucciones habladas (`/${id}/sounds/...`). Coordina con Zustand la detención y reinicio de la narración en sincronía con el visualizador.
-10. **`PanelTips/PanelTips.jsx`**
-    *   *Propósito:* Panel de información técnica (herramientas necesarias, sistemas de ensamble, garantía). Libre de links externos.
-11. **`NavBarInferior/PanelHerrajes/PanelHerrajes.jsx`**
-    *   *Propósito:* Barra flotante que muestra qué herrajes se necesitan en el paso actual. Contiene el tutorial gráfico para localizarlos.
-12. **`NavBarInferior/PanelAyudas/PanelAyudas.jsx`**
-    *   *Propósito:* Despliega el tutorial inicial del aplicativo en 5 pasos interactivos de ayuda.
-
----
-
-### D. Simplificación y Ahorro de Tokens de la IA
-
-Al modificar este proyecto, es importante tener en cuenta:
-1.  **SVGs Embebidos Gigantes en JSX (Densidad de Texto):** Archivos como `NavBarInferior.jsx` y `NavBarSuperior.jsx` tienen en su JSX iconos y flechas representados como strings SVG larguísimos o cadenas de Base64. Cada lectura procesa miles de caracteres inútiles. Se recomienda externalizar o ignorar estas zonas en ediciones no relacionadas.
-2.  **Manipulación Imperativa del DOM:** La aplicación mezcla React con manipulación directa del DOM (`document.querySelector`, inyección con `.innerHTML`). Hay que editar con cautela para no romper este puente.
-3.  **Ediciones Quirúrgicas:** Utilizar reemplazos de bloques específicos en lugar de reescribir archivos completos para mantener la estabilidad del código.
+## 🔒 3. Seguridad Perimetral y DNS Anycast
+* **Cloudflare DNS & WAF:** Servidores Anycast (`justin.ns.cloudflare.com`, `tara.ns.cloudflare.com`) con CNAME Flattening e IPv6 nativo para eliminar fallos en redes móviles 4G/5G.
+* **HSTS & Headers:** Inyección forzada de HTTPS con `Strict-Transport-Security: max-age=31536000; includeSubDomains; preload` y protección XSS / Anti-Clickjacking.

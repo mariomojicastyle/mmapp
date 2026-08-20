@@ -1,6 +1,7 @@
 import os
 import sys
 import json
+import re
 import base64
 import time
 import math
@@ -8,10 +9,10 @@ import requests
 import uvicorn
 import rhino3dm
 import xml.etree.ElementTree as ET
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 
 app = FastAPI(title="3BF Worker Python Engine", version="1.0.0")
 
@@ -27,28 +28,381 @@ def parse_ghx_slider_limits(ghx_path):
         for chunk in root.iter("chunk"):
             if chunk.attrib.get("name") == "Object":
                 name_item = chunk.find("items/item[@name='Name']")
+                comp_name = str(name_item.text) if name_item is not None else ""
+                container = chunk.find("chunks/chunk[@name='Container']")
+                if container is not None:
+                    nick_item = container.find("items/item[@name='NickName']")
+                    nick = nick_item.text or "" if nick_item is not None else ""
+                    
+                    if nick.startswith("RH_IN:"):
+                        # 1. Slider
+                        slider_chunk = container.find("chunks/chunk[@name='Slider']")
+                        if slider_chunk is not None or "Slider" in comp_name:
+                            min_item = slider_chunk.find("items/item[@name='Min']") if slider_chunk is not None else None
+                            max_item = slider_chunk.find("items/item[@name='Max']") if slider_chunk is not None else None
+                            val_item = slider_chunk.find("items/item[@name='Value']") if slider_chunk is not None else None
+
+                            if min_item is not None and max_item is not None:
+                                limits[nick] = {
+                                    "type": "slider",
+                                    "min": float(min_item.text),
+                                    "max": float(max_item.text),
+                                    "default": float(val_item.text) if val_item is not None else float(min_item.text)
+                                }
+                        
+                        # 2. Value List
+                        val_options = []
+                        val_selected = None
+                        for sub in chunk.iter("chunk"):
+                            if sub.attrib.get("name") == "ListItem":
+                                n_item = sub.find("items/item[@name='Name']")
+                                s_item = sub.find("items/item[@name='Selected']")
+                                if n_item is not None and n_item.text:
+                                    val_options.append(n_item.text)
+                                    if s_item is not None and s_item.text == "true":
+                                        val_selected = n_item.text
+                        if val_options:
+                            limits[nick] = {
+                                "type": "valuelist",
+                                "options": val_options,
+                                "default": val_selected or val_options[0]
+                            }
+    except Exception as e:
+        print(f"[3BF Worker] Error parseando límites slider: {e}", flush=True)
+
+    return limits
+
+def parse_ghx_default_values(ghx_path):
+    defaults = {}
+    if not os.path.exists(ghx_path):
+        return defaults
+
+    try:
+        tree = ET.parse(ghx_path)
+        root = tree.getroot()
+
+        for chunk in root.iter("chunk"):
+            if chunk.attrib.get("name") == "Object":
+                container = chunk.find("chunks/chunk[@name='Container']")
+                if container is not None:
+                    nick_item = container.find("items/item[@name='NickName']")
+                    nick = nick_item.text or "" if nick_item is not None else ""
+                    if nick.startswith("RH_IN:"):
+                        slider_chunk = container.find("chunks/chunk[@name='Slider']")
+                        if slider_chunk is not None:
+                            val_item = slider_chunk.find("items/item[@name='Value']")
+                            if val_item is not None:
+                                try:
+                                    defaults[nick] = float(val_item.text)
+                                except:
+                                    defaults[nick] = val_item.text
+                        
+                        # Value List
+                        first_opt = None
+                        sel_opt = None
+                        for sub in chunk.iter("chunk"):
+                            if sub.attrib.get("name") == "ListItem":
+                                name_item = sub.find("items/item[@name='Name']")
+                                sel_item = sub.find("items/item[@name='Selected']")
+                                if name_item is not None and name_item.text:
+                                    if first_opt is None:
+                                        first_opt = name_item.text
+                                    if sel_item is not None and sel_item.text == "true":
+                                        sel_opt = name_item.text
+                        if first_opt is not None:
+                            defaults[nick] = sel_opt or first_opt
+    except Exception as e:
+        print(f"[3BF Worker] Error parseando valores por defecto del GHX: {e}", flush=True)
+
+    return defaults
+
+class MetadataParams(BaseModel):
+    model_id: str
+    custom_filename: str = ""
+    ghx_content: str = ""
+
+def parse_num_prefix(text: str) -> float:
+    clean = text.replace("RH_IN:", "").strip()
+    match = re.search(r'^(\d+(?:\.\d+)?)', clean)
+    if match:
+        try:
+            return float(match.group(1))
+        except:
+            pass
+    return 999.0
+
+def find_user_param_value(p_dict: dict, nick: str, default_val):
+    if not isinstance(p_dict, dict):
+        return default_val
+    sub_p = p_dict.get("parameters", {})
+    if not isinstance(sub_p, dict):
+        sub_p = {}
+        
+    combined = {**p_dict, **sub_p}
+    if nick in combined and combined[nick] is not None:
+        return combined[nick]
+        
+    clean_target = re.sub(r'^RH_IN:\s*[\d.]*[_\s]*', '', nick).strip().lower().replace(' ', '_')
+    
+    # Priorizar claves exactas RH_IN: antes que fallbacks genéricos como ancho: 1200
+    best_val = None
+    best_priority = -1
+
+    for k, v in combined.items():
+        if not isinstance(k, str) or v is None or k == "parameters":
+            continue
+        clean_k = re.sub(r'^RH_IN:\s*[\d.]*[_\s]*', '', k).strip().lower().replace(' ', '_')
+        if clean_k and (clean_k == clean_target or clean_k in clean_target or clean_target in clean_k):
+            priority = 0
+            if k == nick:
+                priority = 3
+            elif k.startswith("RH_IN:"):
+                priority = 2
+            elif clean_k == clean_target:
+                priority = 1
+            
+            if priority > best_priority:
+                best_priority = priority
+                best_val = v
+                
+    if best_val is not None:
+        return best_val
+        
+    return default_val
+
+def extract_parameter_groups(root, default_values):
+    rh_inputs = list(default_values.keys())
+    
+    # 1. Mapear TODOS los GUIDs internos de cada objeto a su NickName RH_IN:
+    guid_to_nick = {}
+    for chunk in root.iter("chunk"):
+        if chunk.attrib.get("name") == "Object":
+            container = chunk.find("chunks/chunk[@name='Container']")
+            if container is not None:
+                nick_item = container.find("items/item[@name='NickName']")
+                if nick_item is not None and nick_item.text and nick_item.text.startswith("RH_IN:"):
+                    nick = nick_item.text
+                    for item in chunk.iter("item"):
+                        if item.text and (len(item.text) == 36 and item.text.count("-") == 4):
+                            guid_to_nick[item.text] = nick
+
+    # 2. Mapear Grupos explícitos de Grasshopper
+    gh_groups = {}
+    for chunk in root.iter("chunk"):
+        if chunk.attrib.get("name") == "Object":
+            name_item = chunk.find("items/item[@name='Name']")
+            if name_item is not None and "Group" in str(name_item.text):
+                container = chunk.find("chunks/chunk[@name='Container']")
+                if container is not None:
+                    g_nick = container.find("items/item[@name='NickName']")
+                    g_title = g_nick.text if g_nick is not None and g_nick.text else ""
+                    if g_title and not g_title.startswith("RH_"):
+                        for item in container.iter("item"):
+                            if item.text and item.text in guid_to_nick:
+                                nick = guid_to_nick[item.text]
+                                if nick.startswith("RH_IN:"):
+                                    if g_title not in gh_groups:
+                                        gh_groups[g_title] = []
+                                    if nick not in gh_groups[g_title]:
+                                        gh_groups[g_title].append(nick)
+
+    grouped_results = []
+    assigned_nicks = set()
+
+    for g_title, nicks in gh_groups.items():
+        if len(nicks) >= 1:
+            sorted_nicks = sorted(nicks, key=parse_num_prefix)
+            min_rank = min((parse_num_prefix(n) for n in sorted_nicks), default=999.0)
+            grouped_results.append({
+                "title": g_title,
+                "parameters": sorted_nicks,
+                "_rank": min_rank
+            })
+            assigned_nicks.update(nicks)
+
+    # Ordenar las tarjetas por el estándar VisualARQ (el número de sus miembros 01.x, 02.x, 05.x)
+    grouped_results.sort(key=lambda g: g["_rank"])
+    for g in grouped_results:
+        g.pop("_rank", None)
+
+    # 3. Categorización DfMA únicamente para los parámetros huérfanos que NO estén agrupados en GH
+    remaining = [p for p in rh_inputs if p not in assigned_nicks]
+    
+    cat_dim = []
+    cat_reced = []
+    cat_uniones = []
+    cat_cantos = []
+    cat_otros = []
+
+    for p in remaining:
+        pl = p.lower()
+        if any(k in pl for k in ["ancho", "alto", "profundidad"]):
+            cat_dim.append(p)
+        elif any(k in pl for k in ["recedido"]):
+            cat_reced.append(p)
+        elif any(k in pl for k in ["union", "orientacion", "tarugo", "tornillo", "minifix", "cajon", "cajón"]):
+            cat_uniones.append(p)
+        elif any(k in pl for k in ["borde", "balance", "mapeado", "textura", "acabado"]):
+            cat_cantos.append(p)
+        else:
+            cat_otros.append(p)
+
+    final_groups = list(grouped_results)
+
+    if cat_dim:
+        final_groups.append({"title": "📏 Dimensiones Principales", "parameters": sorted(cat_dim, key=parse_num_prefix)})
+    if cat_reced:
+        final_groups.append({"title": "📐 Recedidos y Ajustes", "parameters": sorted(cat_reced, key=parse_num_prefix)})
+    if cat_uniones:
+        final_groups.append({"title": "🔩 Uniones y Herrajes DfMA", "parameters": sorted(cat_uniones, key=parse_num_prefix)})
+    if cat_cantos:
+        final_groups.append({"title": "🪵 Cantos y Mapeado de Texturas", "parameters": sorted(cat_cantos, key=parse_num_prefix)})
+    if cat_otros:
+        final_groups.append({"title": "⚙️ Otros Parámetros", "parameters": sorted(cat_otros, key=parse_num_prefix)})
+
+    return final_groups
+
+def find_ghx_in_system(model_id: str, custom_filename: str = "") -> str:
+    search_dirs = [
+        r"C:\Desarrollo\mmapp\3BF\Definiciones",
+        r"C:\Desarrollo\mmapp\temporal"
+    ]
+    
+    # 1. Lista priorizada de objetivos exactos
+    exact_targets = []
+    if custom_filename:
+        c_clean = custom_filename.replace("/", "\\").split("\\")[-1].lower()
+        exact_targets.append(c_clean)
+        if not c_clean.endswith(".ghx") and not c_clean.endswith(".gh"):
+            exact_targets.append(f"{c_clean}.ghx")
+    if model_id:
+        m_clean = model_id.replace("/", "\\").split("\\")[-1].lower()
+        if not m_clean.endswith(".ghx") and not m_clean.endswith(".gh"):
+            exact_targets.append(f"{m_clean}.ghx")
+        exact_targets.append(m_clean)
+
+    # Buscar coincidencia exacta primero
+    for sdir in search_dirs:
+        if not os.path.exists(sdir):
+            continue
+        for root_dir, _, files in os.walk(sdir):
+            for f in files:
+                f_lower = f.lower()
+                for target in exact_targets:
+                    if f_lower == target or f_lower == f"{target}.ghx":
+                        return os.path.join(root_dir, f)
+
+    # 2. Fallbacks si no se encontró coincidencia exacta
+    fallbacks = ["cubierta.ghx", "cajon_experimento_3dbimfab.ghx"]
+    for sdir in search_dirs:
+        if not os.path.exists(sdir):
+            continue
+        for root_dir, _, files in os.walk(sdir):
+            for f in files:
+                if f.lower() in fallbacks:
+                    return os.path.join(root_dir, f)
+    return ""
+
+@app.post("/metadata")
+async def get_model_metadata(request: Request):
+    p = await request.json()
+    model_id = p.get("model_id", "Cubierta")
+    raw_ghx_content = p.get("ghx_content", "")
+    custom_filename = p.get("custom_filename", "")
+    
+    root = None
+    ghx_file = ""
+    
+    if raw_ghx_content:
+        try:
+            root = ET.fromstring(raw_ghx_content)
+            temp_dir = r"C:\Desarrollo\mmapp\temporal"
+            os.makedirs(temp_dir, exist_ok=True)
+            custom_path = os.path.join(temp_dir, "uploaded_custom.ghx")
+            if os.path.exists(custom_path):
+                try:
+                    os.remove(custom_path)
+                except Exception:
+                    pass
+            with open(custom_path, "w", encoding="utf-8") as f:
+                f.write(raw_ghx_content)
+            ghx_file = custom_path
+        except Exception as err:
+            print(f"[3BF Worker /metadata] Error guardando XML subido: {err}", flush=True)
+            
+    if root is None:
+        ghx_file = find_ghx_in_system(model_id, custom_filename)
+
+    if root is None and (ghx_file and os.path.exists(ghx_file)):
+        try:
+            tree = ET.parse(ghx_file)
+            root = tree.getroot()
+        except:
+            pass
+            
+    slider_limits = {}
+    default_values = {}
+    
+    if root is not None:
+        # Extraer slider limits
+        for chunk in root.iter("chunk"):
+            if chunk.attrib.get("name") == "Object":
+                name_item = chunk.find("items/item[@name='Name']")
                 if name_item is not None and "Number Slider" in str(name_item.text):
                     container = chunk.find("chunks/chunk[@name='Container']")
                     if container is not None:
                         nick_item = container.find("items/item[@name='NickName']")
                         slider_chunk = container.find("chunks/chunk[@name='Slider']")
-                        
                         if nick_item is not None and slider_chunk is not None:
                             nick = nick_item.text or ""
                             min_item = slider_chunk.find("items/item[@name='Min']")
                             max_item = slider_chunk.find("items/item[@name='Max']")
                             val_item = slider_chunk.find("items/item[@name='Value']")
-
                             if min_item is not None and max_item is not None:
-                                limits[nick] = {
+                                slider_limits[nick] = {
                                     "min": float(min_item.text),
                                     "max": float(max_item.text),
                                     "default": float(val_item.text) if val_item is not None else float(min_item.text)
                                 }
-    except Exception as e:
-        print(f"[3BF Worker] Error parseando límites slider: {e}", flush=True)
+                                if nick.startswith("RH_IN:"):
+                                    default_values[nick] = slider_limits[nick]["default"]
 
-    return limits
+            # Extraer value list defaults y sus opciones reales
+            if chunk.attrib.get("name") == "Container":
+                nick = ""
+                for it in chunk.findall("items/item"):
+                    if it.attrib.get("name") == "NickName":
+                        nick = it.text or ""
+                if nick.startswith("RH_IN:"):
+                    vl_options = []
+                    vl_selected = None
+                    for sub in chunk.iter("chunk"):
+                        if sub.attrib.get("name") == "ListItem":
+                            name_item = sub.find("items/item[@name='Name']")
+                            sel_item = sub.find("items/item[@name='Selected']")
+                            if name_item is not None and name_item.text:
+                                opt_text = name_item.text.strip()
+                                vl_options.append(opt_text)
+                                if sel_item is not None and sel_item.text == "true":
+                                    vl_selected = opt_text
+                    if vl_options:
+                        selected_final = vl_selected or vl_options[0]
+                        slider_limits[nick] = {
+                            "type": "valuelist",
+                            "options": vl_options,
+                            "default": selected_final
+                        }
+                        default_values[nick] = selected_final
+
+    parameter_groups = extract_parameter_groups(root, default_values) if root is not None else []
+
+    return {
+        "status": "success",
+        "model_id": model_id,
+        "slider_limits": slider_limits,
+        "default_values": default_values,
+        "parameter_groups": parameter_groups
+    }
 
 app.add_middleware(
     CORSMiddleware,
@@ -58,7 +412,11 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+from pydantic import BaseModel, ConfigDict
+
 class ComputeParams(BaseModel):
+    model_config = ConfigDict(extra="allow")
+    
     model_id: str = "Cajon_Experimento_Viktor"
     ancho: float = 1200.0
     alto: float = 800.0
@@ -94,18 +452,36 @@ class ComputeParams(BaseModel):
 
 @app.get("/health")
 def health_check():
-    return {"status": "ok", "worker": "3BF Python Engine", "rhino_compute": "http://127.0.0.1:5000"}
+    rhino_ok = False
+    active_children = 0
+    try:
+        r = requests.get("http://127.0.0.1:5000/activechildren", timeout=2)
+        if r.status_code == 200:
+            rhino_ok = True
+            active_children = int(r.text.strip()) if r.text.strip().isdigit() else 0
+    except Exception:
+        rhino_ok = False
+
+    return {
+        "status": "ok" if rhino_ok else "degraded",
+        "worker": "3BF Python Engine",
+        "rhino_compute": "http://127.0.0.1:5000",
+        "rhino_ok": rhino_ok,
+        "rhino_active_children": active_children
+    }
+
+from fastapi import FastAPI, HTTPException, Request
 
 @app.post("/compute")
-def compute_model(params: ComputeParams):
+async def compute_model(request: Request):
     start_time = time.time()
     
-    p = params.model_dump()
-    ancho = float(p.get("ancho", params.ancho))
-    alto = float(p.get("alto", params.alto))
-    prof = float(p.get("profundidad", params.profundidad))
-    cant_cajones = int(p.get("cant_cajones", params.cant_cajones))
-    apertura_mm = float(p.get("apertura_cajones", p.get("apertura_mm", params.apertura_mm)))
+    p = await request.json()
+    ancho = float(find_user_param_value(p, "RH_IN:Ancho", find_user_param_value(p, "ancho", 1200.0)))
+    alto = float(find_user_param_value(p, "RH_IN:Alto", find_user_param_value(p, "alto", 800.0)))
+    prof = float(find_user_param_value(p, "RH_IN:Profundidad", find_user_param_value(p, "profundidad", 400.0)))
+    cant_cajones = int(p.get("cant_cajones", 3))
+    apertura_mm = float(p.get("apertura_cajones", p.get("apertura_mm", 0.0)))
     prof_cajon_param = float(p.get("profundidad_cajon", 351.0))
     alt_lat_cajon_param = float(p.get("altura_lateral_cajon", 102.0))
     dist_bajo_lat_param = float(p.get("distancia_bajo_laterales", 30.0))
@@ -118,7 +494,7 @@ def compute_model(params: ComputeParams):
     anc_interior = ancho - (esp * 2)
     alt_interior = alto - (esp * 2)
     anc_frente_cajon = anc_interior - 4
-    alt_frente_cajon = (alt_interior - ((cant_cajones + 1) * 3)) / cant_cajones
+    alt_frente_cajon = (alt_interior - ((cant_cajones + 1) * 3)) / max(1, cant_cajones)
     prof_cajon = prof - 50
     alt_lateral_cajon = max(80.0, alt_frente_cajon - 30)
     
@@ -151,7 +527,7 @@ def compute_model(params: ComputeParams):
     costo_total = math.ceil(((area_madera_m2 * 48.0) + (correderas_count * 4.50) + 20.0) * 100) / 100
     
     # 2. Selección de Algoritmo NATIVO (.ghx)
-    model_id = str(p.get("model_id", params.model_id))
+    model_id = str(p.get("model_id", "Cajon_Experimento_Viktor"))
     raw_ghx_content = str(p.get("ghx_content", ""))
     custom_filename = str(p.get("custom_filename", ""))
     
@@ -161,42 +537,25 @@ def compute_model(params: ComputeParams):
     if raw_ghx_content:
         try:
             root = ET.fromstring(raw_ghx_content)
-            ghx_file = "uploaded_custom.ghx"
+            temp_dir = r"C:\Desarrollo\mmapp\temporal"
+            os.makedirs(temp_dir, exist_ok=True)
+            custom_path = os.path.join(temp_dir, "uploaded_custom.ghx")
+            if os.path.exists(custom_path):
+                try:
+                    os.remove(custom_path)
+                except Exception:
+                    pass
+            with open(custom_path, "w", encoding="utf-8") as f:
+                f.write(raw_ghx_content)
+            ghx_file = custom_path
         except Exception as err:
-            print(f"[3BF Worker] Error parseando XML de ghx_content: {err}", flush=True)
+            print(f"[3BF Worker /compute] Error guardando XML subido: {err}", flush=True)
 
     if root is None:
-        search_dirs = [
-            r"C:\Desarrollo\mmapp\3BF\Definiciones",
-            r"C:\Desarrollo\mmapp\temporal"
-        ]
-        custom_filename = str(p.get("custom_filename", ""))
-        candidates = [
-            f"{model_id}.ghx",
-            f"{model_id}.gh",
-            model_id,
-            custom_filename,
-            "Cubierta.ghx",
-            "Cajon_Experimento_3DBimFab.ghx",
-            "Cajon_Experimento_Viktor_v1.1.ghx",
-        ]
-        
-        found_path = None
-        for sdir in search_dirs:
-            for cand in candidates:
-                if not cand:
-                    continue
-                cand_path = os.path.join(sdir, cand)
-                if os.path.exists(cand_path) and os.path.isfile(cand_path):
-                    found_path = cand_path
-                    break
-            if found_path:
-                break
-                
-        if found_path:
-            ghx_file = found_path
+        ghx_file = find_ghx_in_system(model_id, custom_filename)
 
     real_meshes = []
+    default_values = {}
     rhino_compute_success = False
     rhino_outputs_count = 0
     
@@ -206,63 +565,61 @@ def compute_model(params: ComputeParams):
                 tree = ET.parse(ghx_file)
                 root = tree.getroot()
             
-            # Si es el modelo Cubierta, aplicar bypass de VisualARQ 'Set Value' para enviar la geometría nativa a RhinoCompute
-            # Si es el modelo Cubierta, aplicar bypass de VisualARQ 'Set Value' para enviar la geometría nativa a RhinoCompute (Izquierda Y Derecha)
-            if "Cubierta" in model_id or "Cubierta" in custom_filename or "Cubierta" in ghx_file:
-                rewire_map = {
-                    '21465fe2-869f-4061-8a2d-f4bb9399f6e5': '3dc7bf67-ab8d-4c61-aa05-93175f1ce926', # Nurbs Cubierta -> Base Board 3D (Estructural y Permanente)
-                    
-                    # Izquierda (Left Side Hardware)
-                    'c14a6ca0-bdcb-45f6-a576-13153366398a': '038cc9a6-85f5-446a-9791-2202c5c1a0f1', # Perno Izq (RH_OUT:Perno)
-                    '4663d7cb-04e8-4e23-b099-e2896ae839e4': '783f5114-53d1-420c-a97f-6ff10d91d426', # Caja Izq (RH_OUT:Caja)
-                    '75968322-cf7d-4332-bb53-6c72f290fade': '69d5e5fc-3a6f-40ff-98ce-0572b5ac7695', # Tornillo Izq (RH_OUT:Tornillo)
-                    'c70a82da-db8d-44d0-aec5-05e71977f590': '08f431bd-a57b-4b5c-86b8-cff10387ce35', # Tarugo Izq (RH_OUT:Tarugo)
-                    
-                    # Derecha (Right Side Hardware) - Vía contenedores RH_OUT en el XML
-                    'b7854689-dfba-4dd1-a76c-bdec699f95e0': '328ea0a0-5a8a-4715-8691-2c9c1da41468', # Perno Der (RH_OUT:Balance cubierta)
-                    'd01ff2e2-bbaf-41d0-8f17-ac8b01230132': 'ea16a63d-25f0-4957-b1f8-90bead7dc4b2', # Caja Der (RH_OUT:Color cubierta)
-                    '0f2a6a4c-0de8-45c6-9037-2b4c5263b6d8': 'c26c822c-ab0c-420b-9af8-63187f83949d', # Tornillo Der (RH_OUT:MDP)
-                    '8789bf31-df54-4aec-b820-9657f0c51a03': 'e8d6eff7-7ca8-47e8-9916-a58b97d8f450', # Tarugo Der (RH_OUT:Color entrepaño)
-                    
-                    '501e719d-09d8-412c-b8c5-25db34e20917': '632fe3cd-270d-4c14-8e44-845ec33109c0', # MDPNurbs Entrepaño -> Stream Filter
-                    '658abfee-c4d7-4beb-bf81-8c09b2543218': '406412a7-4c4d-4fa9-b652-4b0da790e98b', # Soporte -> Stream Filter
-                    '63a16105-bc13-46ae-8b10-9e5195628380': '6001ab48-df94-40f3-a6a7-58968419bc18', # Maquinados -> Mesh Brep
-                }
-                for chunk in root.iter("chunk"):
-                    if chunk.attrib.get("name") == "Container":
-                        guid = ""
-                        for it in chunk.findall("items/item"):
-                            if it.attrib.get("name") == "InstanceGuid":
-                                guid = it.text
-                        if guid in rewire_map:
-                            target_src = rewire_map[guid]
-                            for item in chunk.iter("item"):
-                                if item.attrib.get("name") == "Source":
-                                    item.text = target_src
+            # Extraer valores por defecto ORIGINALES antes de hacer cualquier reescritura en caliente
+            default_values = {}
+            for chunk in root.iter("chunk"):
+                # 1. Sliders (Números)
+                if chunk.attrib.get("name") == "Object":
+                    name_item = chunk.find("items/item[@name='Name']")
+                    if name_item is not None and "Number Slider" in str(name_item.text):
+                        container = chunk.find("chunks/chunk[@name='Container']")
+                        if container is not None:
+                            nick_item = container.find("items/item[@name='NickName']")
+                            slider_chunk = container.find("chunks/chunk[@name='Slider']")
+                            if nick_item is not None and slider_chunk is not None:
+                                nick = nick_item.text or ""
+                                val_item = slider_chunk.find("items/item[@name='Value']")
+                                if val_item is not None and nick.startswith("RH_IN:"):
+                                    try:
+                                        default_values[nick] = float(val_item.text)
+                                    except:
+                                        default_values[nick] = val_item.text
 
-            # Mapeo de NickNames de Value Lists a sus valores deseados (formato texto)
-            value_list_targets = {
-                "RH_IN:Cantidada de Cajones": str(int(cant_cajones)),
-                "RH_IN:Cantidad de Cajones": str(int(cant_cajones)),
-                "RH_IN:Profundidad cajon": str(int(prof_cajon_param)),
-                "RH_IN:Altura lateral de cajon": str(int(alt_lat_cajon_param)),
-                "RH_IN:Distancia bajo laterales": str(int(dist_bajo_lat_param)),
-                "RH_IN:Tipo Cajon": tipo_cajon_param,
-                # Parámetros Cubierta.ghx (VisualARQ DfMA)
-                "RH_IN:03 Tipo de union izquierda": str(p.get("union_izquierda", "Minifix")),
-                "RH_IN:04 Tipo de union Derecha": str(p.get("union_derecha", "Tornillo tarugo")),
-                "RH_IN:05 Orientacion maquinado minifix": str(p.get("orientacion_maquinado_minifix", "abajo")),
-                "RH_IN:06 Orientacion minifix": str(p.get("orientacion_minifix", "abajo")),
-                "RH_IN:Posicion Tarugo": str(p.get("posicion_tarugo", "1")),
-                "RH_IN:Posicion Tornillo": str(p.get("posicion_tornillo", "1")),
-                "RH_IN:Borde izquierdo": str(p.get("borde_izquierdo", "MDP")),
-                "RH_IN:Borde derecho": str(p.get("borde_derecho", "MDP")),
-                "RH_IN:Lado balance cubierta": str(p.get("lado_balance_cubierta", "Cara B")),
-                "RH_IN:Tipo de mapeado cubierta": str(p.get("tipo_mapeado_cubierta", "Cubierta")),
-                "RH_IN:Lado balance entrepaño": str(p.get("lado_balance_entrepanio", "Cara B")),
-                "RH_IN:Tipo de mapeado entrepaño": str(p.get("tipo_mapeado_entrepanio", "Cubierta")),
-            }
-            
+                # 2. Value Lists (Selectores)
+                if chunk.attrib.get("name") == "Container":
+                    nick = ""
+                    for it in chunk.findall("items/item"):
+                        if it.attrib.get("name") == "NickName":
+                            nick = it.text or ""
+                    
+                    if nick.startswith("RH_IN:"):
+                        for sub in chunk.iter("chunk"):
+                            if sub.attrib.get("name") == "ListItem":
+                                name_item = sub.find("items/item[@name='Name']")
+                                sel_item = sub.find("items/item[@name='Selected']")
+                                if name_item is not None and sel_item is not None and sel_item.text == "true":
+                                    default_values[nick] = name_item.text
+
+            # 1. Actualizar Number Sliders en caliente en el XML
+            for chunk in root.iter("chunk"):
+                if chunk.attrib.get("name") == "Object":
+                    container = chunk.find("chunks/chunk[@name='Container']")
+                    if container is not None:
+                        nick_item = container.find("items/item[@name='NickName']")
+                        slider_chunk = container.find("chunks/chunk[@name='Slider']")
+                        if nick_item is not None and slider_chunk is not None:
+                            nick = nick_item.text or ""
+                            if nick.startswith("RH_IN:"):
+                                val_item = slider_chunk.find("items/item[@name='Value']")
+                                if val_item is not None:
+                                    def_v = default_values.get(nick, 0.0)
+                                    user_v = find_user_param_value(p, nick, def_v)
+                                    try:
+                                        val_item.text = str(float(user_v))
+                                    except:
+                                        val_item.text = str(user_v)
+
+            # 2. Actualizar Value Lists en caliente en el XML
             for chunk in root.iter("chunk"):
                 if chunk.attrib.get("name") == "Container":
                     nick = ""
@@ -270,40 +627,60 @@ def compute_model(params: ComputeParams):
                         if it.attrib.get("name") == "NickName":
                             nick = it.text or ""
                     
-                    if nick in value_list_targets:
-                        target_val = value_list_targets[nick]
+                    if nick.startswith("RH_IN:"):
+                        def_v = default_values.get(nick, "")
+                        user_v = find_user_param_value(p, nick, def_v)
+                        target_val = str(user_v).strip()
+                        
                         for sub in chunk.iter("chunk"):
                             if sub.attrib.get("name") == "ListItem":
                                 name_item = sub.find("items/item[@name='Name']")
                                 expr_item = sub.find("items/item[@name='Expression']")
                                 sel_item = sub.find("items/item[@name='Selected']")
                                 
-                                item_name = name_item.text if name_item is not None else ""
-                                item_expr = expr_item.text if expr_item is not None else ""
+                                item_name = (name_item.text if name_item is not None else "").strip()
+                                item_expr = (expr_item.text if expr_item is not None else "").strip()
                                 
                                 if sel_item is not None:
-                                    if item_name == target_val or item_expr == target_val:
+                                    tv_low = target_val.lower().strip()
+                                    in_name = item_name.lower().strip()
+                                    in_expr = item_expr.lower().strip()
+                                    
+                                    # Coincidencia estrictamente exacta (evitar que 'horizontal' active 'horizontal atravesada')
+                                    if tv_low == in_name or tv_low == in_expr:
                                         sel_item.text = "true"
                                     else:
                                         sel_item.text = "false"
 
             xml_bytes = ET.tostring(root, encoding="utf-8")
-            b64_algo = base64.b64encode(xml_bytes).decode("utf-8")
-            print(f"[3BF Worker] Solucionando modelo {model_id} ({ghx_file}) en RhinoCompute", flush=True)
+            xml_str = xml_bytes.decode("utf-8") + f"\n<!-- 3BF_CACHE_BUST: {int(time.time() * 1000)} -->"
+            xml_bytes = xml_str.encode("utf-8")
             
-            # Reactivador / Despertador: Micro-fluctuación imperceptible para forzar a RhinoCompute a limpiar caché y recalcular la geometría completa
+            b64_algo = base64.b64encode(xml_bytes).decode("utf-8")
+            print(f"[3BF Worker] Solucionando modelo {model_id} ({ghx_file}) en RhinoCompute (Bust Cache Activo)", flush=True)
+            
             reactivador_ping = (int(time.time() * 1000) % 2) * 0.0001
-            effective_ancho = float(ancho) + reactivador_ping
 
-            payload_values = [
-                {"ParamName": "RH_IN:Ancho", "InnerTree": {"{0}": [{"type": "System.Double", "data": str(effective_ancho)}]}},
-                {"ParamName": "RH_IN:01 Ancho", "InnerTree": {"{0}": [{"type": "System.Double", "data": str(effective_ancho)}]}},
-                {"ParamName": "RH_IN:Alto", "InnerTree": {"{0}": [{"type": "System.Double", "data": str(float(alto))}]}},
-                {"ParamName": "RH_IN:Profundidad", "InnerTree": {"{0}": [{"type": "System.Double", "data": str(float(prof))}]}},
-                {"ParamName": "RH_IN:02 Profundidad", "InnerTree": {"{0}": [{"type": "System.Double", "data": str(float(prof))}]}},
-                {"ParamName": "RH_IN:07 Recedido izquierdo", "InnerTree": {"{0}": [{"type": "System.Double", "data": str(float(p.get("recedido_izquierdo", 0)))}]}},
-                {"ParamName": "RH_IN:08 Recedido derecho", "InnerTree": {"{0}": [{"type": "System.Double", "data": str(float(p.get("recedido_derecho", 0)))}]}},
-            ]
+            # Armar payload_values 100% DINÁMICO para RhinoCompute a partir de los RH_IN: del XML
+            payload_values = []
+            for nick, def_val in default_values.items():
+                user_val = find_user_param_value(p, nick, def_val)
+                if isinstance(def_val, (int, float)):
+                    try:
+                        num_v = float(user_val)
+                        if "ancho" in nick.lower():
+                            num_v += reactivador_ping
+                        payload_values.append({
+                            "ParamName": nick,
+                            "InnerTree": {"{0}": [{"type": "System.Double", "data": str(num_v)}]}
+                        })
+                    except:
+                        pass
+                else:
+                    payload_values.append({
+                        "ParamName": nick,
+                        "InnerTree": {"{0}": [{"type": "System.String", "data": str(user_val)}]}
+                    })
             if "Cubierta" not in ghx_file:
                 payload_values.extend([
                     {"ParamName": "RH_IN:Cantidada de Cajones", "InnerTree": {"{0}": [{"type": "System.String", "data": str(int(cant_cajones))}]}},
@@ -326,6 +703,7 @@ def compute_model(params: ComputeParams):
                 data_rc = res_rc.json()
                 rhino_outputs_count = len(data_rc.get("values", []))
                 
+                text_outputs = {}
                 for val in data_rc.get("values", []):
                     p_name = val.get("ParamName", "Pieza GH")
                     inner_tree = val.get("InnerTree", {})
@@ -334,6 +712,8 @@ def compute_model(params: ComputeParams):
                             raw_data = item.get("data")
                             if not raw_data:
                                 continue
+                            if isinstance(raw_data, str) and not raw_data.strip().startswith("{") and not raw_data.strip().startswith("["):
+                                text_outputs[p_name] = raw_data.strip('"').strip()
                             try:
                                 obj = json.loads(raw_data) if isinstance(raw_data, str) else raw_data
                                 if isinstance(obj, dict):
@@ -344,24 +724,24 @@ def compute_model(params: ComputeParams):
                                         center = obj.get("Center", {"X": 0, "Y": 0, "Z": 0})
                                         
                                         min_x, max_x = obj["X"]["T0"] / 1000.0, obj["X"]["T1"] / 1000.0
-                                        min_y, max_y = obj["Y"]["T0"] / 1000.0, obj["Y"]["T1"] / 1000.0
+                                        min_y, max_y = -obj["Y"]["T1"] / 1000.0, -obj["Y"]["T0"] / 1000.0
                                         min_z, max_z = obj["Z"]["T0"] / 1000.0, obj["Z"]["T1"] / 1000.0
                                         
                                         real_meshes.append({
                                             "name": p_name,
                                             "size": [x_sz, z_sz, y_sz],
-                                            "position": [center["X"]/1000.0, center["Z"]/1000.0, center["Y"]/1000.0],
+                                            "position": [center["X"]/1000.0, center["Z"]/1000.0, -center["Y"]/1000.0],
                                             "vertices": [
                                                 min_x, min_z, min_y,  min_x, max_z, min_y,  max_x, max_z, min_y,  max_x, min_z, min_y,
                                                 min_x, min_z, max_y,  min_x, max_z, max_y,  max_x, max_z, max_y,  max_x, min_z, max_y,
                                             ],
                                             "indices": [
-                                                0, 2, 1,  0, 3, 2,
-                                                4, 5, 6,  4, 6, 7,
-                                                0, 1, 5,  0, 5, 4,
-                                                2, 3, 7,  2, 7, 6,
-                                                0, 4, 7,  0, 7, 3,
-                                                1, 2, 6,  1, 6, 5
+                                                0, 1, 2,  0, 2, 3,
+                                                4, 6, 5,  4, 7, 6,
+                                                0, 5, 1,  0, 4, 5,
+                                                2, 7, 3,  2, 6, 7,
+                                                0, 7, 4,  0, 3, 7,
+                                                1, 5, 6,  1, 6, 2
                                             ]
                                         })
                                     elif "archive3dm" in obj or "opennurbs" in obj:
@@ -375,60 +755,59 @@ def compute_model(params: ComputeParams):
                                             center_y = (bbox.Min.Y + bbox.Max.Y) / 2.0 / 1000.0
                                             center_z = (bbox.Min.Z + bbox.Max.Z) / 2.0 / 1000.0
                                             
-                                            alias_map = {
-                                                "RH_OUT:Balance cubierta": "RH_OUT:Perno",
-                                                "RH_OUT:Color cubierta": "RH_OUT:Caja",
-                                                "RH_OUT:MDP": "RH_OUT:Tornillo",
-                                                "RH_OUT:Color entrepaño": "RH_OUT:Tarugo"
-                                            }
-                                            effective_name = alias_map.get(p_name, p_name)
+                                            effective_name = p_name
 
                                             mesh_dict = {
                                                 "name": effective_name,
                                                 "size": [x_sz, z_sz, y_sz],
-                                                "position": [center_x, center_z, center_y]
+                                                "position": [center_x, center_z, -center_y]
                                             }
                                             
                                             # Si el objeto es una Malla Poligonal real, extraer vértices e índices de triángulos
                                             if isinstance(decoded_geom, rhino3dm.Mesh):
                                                 verts = []
-                                                for v in decoded_geom.Vertices:
-                                                    verts.extend([round(v.X / 1000.0, 4), round(v.Z / 1000.0, 4), round(v.Y / 1000.0, 4)])
+                                                uvs = []
+                                                has_tex_coords = hasattr(decoded_geom, "TextureCoordinates") and len(decoded_geom.TextureCoordinates) == len(decoded_geom.Vertices)
+                                                for idx, v in enumerate(decoded_geom.Vertices):
+                                                    # Convertir a coordenadas locales restando el centro geométrico en mm (Three.js Z = -Rhino Y)
+                                                    local_x = (v.X - (center_x * 1000.0)) / 1000.0
+                                                    local_y = (v.Y - (center_y * 1000.0)) / 1000.0
+                                                    local_z = (v.Z - (center_z * 1000.0)) / 1000.0
+                                                    verts.extend([round(local_x, 4), round(local_z, 4), round(-local_y, 4)])
+                                                    if has_tex_coords:
+                                                        tc = decoded_geom.TextureCoordinates[idx]
+                                                        uvs.extend([round(tc.X, 4), round(tc.Y, 4)])
                                                 indices = []
                                                 for i in range(len(decoded_geom.Faces)):
                                                     f = decoded_geom.Faces[i]
-                                                    indices.extend([f[0], f[1], f[2]])
+                                                    # Al reflejar Z (-local_y), invertir orden de vértices para mantener normales hacia afuera (CCW)
+                                                    indices.extend([f[0], f[2], f[1]])
                                                     if f[2] != f[3]:
-                                                        indices.extend([f[2], f[3], f[0]])
+                                                        indices.extend([f[2], f[0], f[3]])
                                                 if verts and indices:
                                                     mesh_dict["vertices"] = verts
                                                     mesh_dict["indices"] = indices
-                                            elif isinstance(decoded_geom, rhino3dm.Brep):
-                                                # Generar malla 3D poligonal exacta para objetos Brep/NURBS en coordenadas de mundo Three.js
-                                                min_x, max_x = bbox.Min.X / 1000.0, bbox.Max.X / 1000.0
-                                                min_y, max_y = bbox.Min.Y / 1000.0, bbox.Max.Y / 1000.0
-                                                min_z, max_z = bbox.Min.Z / 1000.0, bbox.Max.Z / 1000.0
-                                                
-                                                mesh_dict["vertices"] = [
-                                                    min_x, min_z, min_y,  min_x, max_z, min_y,  max_x, max_z, min_y,  max_x, min_z, min_y,
-                                                    min_x, min_z, max_y,  min_x, max_z, max_y,  max_x, max_z, max_y,  max_x, min_z, max_y,
-                                                ]
-                                                mesh_dict["indices"] = [
-                                                    0, 2, 1,  0, 3, 2,
-                                                    4, 5, 6,  4, 6, 7,
-                                                    0, 1, 5,  0, 5, 4,
-                                                    2, 3, 7,  2, 7, 6,
-                                                    0, 4, 7,  0, 7, 3,
-                                                    1, 2, 6,  1, 6, 5
-                                                ]
-                                                    
-                                            real_meshes.append(mesh_dict)
+                                                    if uvs and len(uvs) == len(verts) * 2 // 3:
+                                                        mesh_dict["uvs"] = uvs
+                                                    real_meshes.append(mesh_dict)
+                                            elif isinstance(decoded_geom, rhino3dm.Brep) or "nurbs" in p_name.lower():
+                                                # Sólido NURBS analítico puro: se reserva para cómputo DfMA/BOM y CAM DXF (no para render visual)
+                                                mesh_dict["is_nurbs_solid"] = True
+                                                # No lo agregamos a real_meshes si es puro NURBS para evitar superposición/titileo visual en Three.js
+                                                pass
                             except Exception as ex:
-                                pass
+                                print(f"[3BF Worker Error]: Error en decodificacion/extraccion de malla {p_name}: {ex}", flush=True)
                                 
                 # Garantía 100% Estructural: Si la sustracción booleana de un herraje hizo colapsar la salida del tablero, inyectar el tablero base automáticamente
                 if "Cubierta" in ghx_file:
-                    has_main_board = any("Cubierta" in m.get("name", "") or "Entrepaño" in m.get("name", "") for m in real_meshes)
+                    u_izq_str = str(find_user_param_value(p, "RH_IN:02.1 Union izquierda", find_user_param_value(p, "union_izquierda", ""))).lower()
+                    u_der_str = str(find_user_param_value(p, "RH_IN:02.0 Union Derecha", find_user_param_value(p, "union_derecha", ""))).lower()
+                    tiene_entrepanio = "entrepaño" in u_izq_str or "entrepanio" in u_izq_str or u_izq_str == "3" or "entrepaño" in u_der_str or "entrepanio" in u_der_str or u_der_str == "3"
+                    
+                    if not tiene_entrepanio:
+                        real_meshes = [m for m in real_meshes if "entrepaño" not in m.get("name", "").lower() and "entrepanio" not in m.get("name", "").lower() and "soporte" not in m.get("name", "").lower()]
+
+                    has_main_board = any("cubierta" in m.get("name", "").lower() or ("entrepaño" in m.get("name", "").lower() and tiene_entrepanio) for m in real_meshes)
                     if not has_main_board:
                         print(f"[3BF Worker Reactivador] Inyectando Tablero Base Estructural Cubierta ({ancho}mm x {prof}mm)", flush=True)
                         real_meshes.append({
@@ -441,15 +820,194 @@ def compute_model(params: ComputeParams):
     except Exception as err:
         print(f"[RhinoCompute Notice]: {err}", flush=True)
         
-    
     execution_time_ms = round((time.time() - start_time) * 1000, 2)
-    
     slider_limits = parse_ghx_slider_limits(ghx_file)
+
+    # =========================================================================
+    # 📊 CÓMPUTO DINÁMICO DE DESPIECE (BOM) E INVENTARIO DE HERRAJES VIVO (DfMA)
+    # =========================================================================
+    # =========================================================================
+    # 🔩 CÓMPUTO DINÁMICO DE HERRAJES 100% FIEL AL GHX
+    # =========================================================================
+    PALABRAS_CLAVE_HERRAJES = ["perno", "caja", "tarugo", "tornillo", "soporte", "corredera", "bisagra", "pata", "manija", "tirador", "nivelador", "acople", "tuerca", "arandela", "minifix"]
     
+    conteo_mallas_herrajes = {}
+    for m in real_meshes:
+        raw_name = m.get("name", "").strip()
+        name_lower = raw_name.lower()
+        
+        # Descartar maquinados o geometrías de sustracción
+        if "maquinado" in name_lower:
+            continue
+            
+        # Detectar si es un herraje por palabras clave
+        es_herraje = any(k in name_lower for k in PALABRAS_CLAVE_HERRAJES)
+        if es_herraje:
+            # Respetar 100% el nombre definido por el usuario/diseñador en Grasshopper (limpiando solo el prefijo RH_OUT:)
+            nombre_herraje_ghx = raw_name.replace("RH_OUT:", "").strip()
+            if nombre_herraje_ghx:
+                conteo_mallas_herrajes[nombre_herraje_ghx] = conteo_mallas_herrajes.get(nombre_herraje_ghx, 0) + 1
+
+    herrajes_final = []
+    costo_herrajes_calc = 0.0
+
+    for nombre_ghx, m_count in conteo_mallas_herrajes.items():
+        # Regla DfMA para herrajes compuestos (ej: Perno Minifix taquete + espiga = 2 mallas / unidad)
+        mallas_por_herraje = 2 if "perno" in nombre_ghx.lower() else 1
+        cant_real = math.ceil(m_count / mallas_por_herraje)
+        
+        # Costeo paramétrico base (se conectará a Supabase por nombre/referencia)
+        costo_unit = 0.35 if "caja" in nombre_ghx.lower() else (0.28 if "perno" in nombre_ghx.lower() else 0.08)
+        costo_herrajes_calc += cant_real * costo_unit
+        
+        herrajes_final.append({
+            "nombre": nombre_ghx,
+            "cantidad": cant_real,
+            "unidad": "pares" if "corredera" in nombre_ghx.lower() else "piezas"
+        })
+
+    # Fallback si es un modelo sin mallas explícitas de herrajes
+    if not herrajes_final and "cajon" in (model_id + custom_filename).lower():
+        minifix_cant = 16 + (cant_cajones * 8)
+        tarugos_cant = cant_cajones * 12
+        herrajes_final = [
+            {"nombre": "Caja Minifix 15mm", "cantidad": minifix_cant, "unidad": "piezas"},
+            {"nombre": "Perno Minifix 34mm", "cantidad": minifix_cant, "unidad": "piezas"},
+            {"nombre": "Tarugo Madera 8x30mm", "cantidad": tarugos_cant, "unidad": "piezas"},
+            {"nombre": f"Par Correderas ({tipo_cajon_param})", "cantidad": cant_cajones, "unidad": "pares"}
+        ]
+        costo_herrajes_calc = (minifix_cant * 0.63) + (tarugos_cant * 0.05) + (cant_cajones * 4.50)
+
+    # =========================================================================
+    # 🪵 ESCANEO GEOMÉTRICO 3D DIRECTO DE TABLEROS (BOM REAL DfMA CONSOLIDADO)
+    # =========================================================================
+    tableros_consolidados = []
+    for m in real_meshes:
+        name_lower = m.get("name", "").lower()
+        if any(h in name_lower for h in ["perno", "caja", "tarugo", "tornillo", "soporte", "corredera", "maquinado"]):
+            continue
+            
+        size = m.get("size", [0, 0, 0])
+        pos = m.get("position", [0, 0, 0])
+        
+        # Dimensiones físicas en milímetros
+        dims_mm = sorted([round(size[0] * 1000.0, 1), round(size[1] * 1000.0, 1), round(size[2] * 1000.0, 1)])
+        esp_malla = dims_mm[0]
+        anc_malla = dims_mm[1]
+        lar_malla = dims_mm[2]
+        
+        # Filtrar solo elementos que califiquen como tableros (ancho y largo >= 40mm)
+        if lar_malla >= 40.0 and anc_malla >= 40.0:
+            if esp_malla < 5.0:
+                esp_malla = 15.0
+                
+            # Nombre de la pieza
+            custom_name = None
+            for k_out, v_out in text_outputs.items():
+                if any(k in k_out.lower() for k in ["nombre", "pieza", "piecename"]):
+                    custom_name = v_out
+                    break
+                    
+            if custom_name:
+                nombre_limpio = custom_name
+            else:
+                nombre_limpio = m.get("name", "").replace("RH_OUT:", "").strip()
+                for prefix in ["MDP ", "Color ", "Balance ", "Nurbs ", "Brep ", "MDP", "Color", "Balance"]:
+                    if nombre_limpio.startswith(prefix):
+                        nombre_limpio = nombre_limpio[len(prefix):].strip()
+                nombre_limpio = nombre_limpio.capitalize()
+                if not nombre_limpio or nombre_limpio in ["Cubierta2", "Entrepaño2", "Pieza", "Mdp", "Tablero"]:
+                    nombre_limpio = "Cubierta" if "cubierta" in name_lower else ("Entrepaño" if "entrepaño" in name_lower else "Tablero")
+
+            # Buscar si ya existe un tablero en la misma zona espacial (Tolerancia 60mm en centros X/Y/Z)
+            encontrado = False
+            for t in tableros_consolidados:
+                dist_x = abs(t["pos"][0] - pos[0]) * 1000.0
+                dist_y = abs(t["pos"][1] - pos[1]) * 1000.0
+                dist_z = abs(t["pos"][2] - pos[2]) * 1000.0
+                
+                if dist_x < 60.0 and dist_y < 60.0 and dist_z < 60.0:
+                    encontrado = True
+                    # Consolidar tomando la cota máxima del tablero físico real y el nombre más específico
+                    t["largo"] = max(t["largo"], lar_malla)
+                    t["ancho"] = max(t["ancho"], anc_malla)
+                    t["espesor"] = max(t["espesor"], esp_malla)
+                    if t["nombre"] in ["Tablero", "Mdp", "Balance"] and nombre_limpio not in ["Tablero", "Mdp", "Balance"]:
+                        t["nombre"] = nombre_limpio
+                    break
+                    
+            if not encontrado:
+                tableros_consolidados.append({
+                    "nombre": nombre_limpio,
+                    "largo": lar_malla,
+                    "ancho": anc_malla,
+                    "espesor": esp_malla,
+                    "cantidad": 1,
+                    "tipo": "Estructura DfMA",
+                    "pos": pos
+                })
+
+    # Limpiar campo de posición interno y agrupar piezas idénticas
+    if "Cubierta" in ghx_file:
+        u_izq_str = str(find_user_param_value(p, "RH_IN:02.1 Union izquierda", find_user_param_value(p, "union_izquierda", ""))).lower()
+        u_der_str = str(find_user_param_value(p, "RH_IN:02.0 Union Derecha", find_user_param_value(p, "union_derecha", ""))).lower()
+        tiene_entrepanio = "entrepaño" in u_izq_str or "entrepanio" in u_izq_str or u_izq_str == "3" or "entrepaño" in u_der_str or "entrepanio" in u_der_str or u_der_str == "3" or any("soporte" in m.get("name", "").lower() for m in real_meshes)
+        
+        ancho_nom = float(find_user_param_value(p, "RH_IN:01.1 Ancho", find_user_param_value(p, "RH_IN:01 Ancho", find_user_param_value(p, "ancho", 500.0))))
+        prof_nom = float(find_user_param_value(p, "RH_IN:01.2 Profundidad", find_user_param_value(p, "RH_IN:02 Profundidad", find_user_param_value(p, "profundidad", 500.0))))
+
+        if tiene_entrepanio:
+            piezas_madera_final = [
+                {
+                    "nombre": "Entrepaño",
+                    "largo": round(ancho_nom - 1.0, 1),  # Pierde 0.5mm por lado para entrar y salir fácilmente del nicho
+                    "ancho": round(prof_nom, 1),
+                    "espesor": 15.0,
+                    "cantidad": 1,
+                    "tipo": "Entrepaño Deslizable DfMA"
+                }
+            ]
+        else:
+            piezas_madera_final = [
+                {
+                    "nombre": "Cubierta",
+                    "largo": round(ancho_nom, 1),  # Cota nominal precisa que gobierna desde el configurador
+                    "ancho": round(prof_nom, 1),
+                    "espesor": 15.0,
+                    "cantidad": 1,
+                    "tipo": "Estructura Fija DfMA"
+                }
+            ]
+    elif tableros_consolidados:
+        agrupados = {}
+        for tab in tableros_consolidados:
+            k_dim = f"{tab['nombre']}_{tab['largo']}_{tab['ancho']}_{tab['espesor']}"
+            if k_dim in agrupados:
+                agrupados[k_dim]["cantidad"] += 1
+            else:
+                item_copy = {k: v for k, v in tab.items() if k != "pos"}
+                agrupados[k_dim] = item_copy
+        piezas_madera_final = list(agrupados.values())
+    else:
+        # Fallback sintético solo si no se extrajeron mallas de tableros
+        piezas_madera_final = [
+            {"nombre": "Cubierta", "ancho": float(prof), "largo": float(ancho), "espesor": 15.0, "cantidad": 1, "tipo": "Estructura DfMA"}
+        ]
+
+    area_madera_m2 = sum((item["ancho"] * item["largo"] * item["cantidad"]) for item in piezas_madera_final) / 1_000_000.0
+    costo_madera = area_madera_m2 * 28.50
+    costo_herrajes_calc = sum(h["cantidad"] * 0.45 for h in herrajes_final)
+    costo_total = round(costo_madera + costo_herrajes_calc + 8.50, 2)
+
+    dim_str = f"{ancho} x {prof} x 15 mm"
+    if piezas_madera_final:
+        p0 = piezas_madera_final[0]
+        dim_str = f"{p0['largo']} x {p0['ancho']} x {p0['espesor']} mm"
+
     return {
         "status": "success",
-        "model_id": "Cajon_Experimento_Viktor",
-        "source_gh": "temporal/Cajon_Experimento_Viktor_RhinoCompute.ghx",
+        "model_id": model_id,
+        "source_gh": ghx_file,
         "rhino8_compute": {
             "active": rhino_compute_success,
             "server": "http://localhost:5000",
@@ -459,15 +1017,183 @@ def compute_model(params: ComputeParams):
         "real_meshes": real_meshes,
         "execution_time_ms": execution_time_ms,
         "slider_limits": slider_limits,
+        "default_values": default_values,
+        "parameter_groups": extract_parameter_groups(root, default_values) if root is not None else [],
         "summary": {
-            "dimensiones": f"{ancho} x {alto} x {prof} mm",
+            "dimensiones": dim_str,
             "area_madera_m2": round(area_madera_m2, 3),
             "costo_estimado_usd": costo_total,
-            "piezas_totales": sum(p["cantidad"] for p in piezas_madera)
+            "piezas_totales": sum(p["cantidad"] for p in piezas_madera_final)
         },
-        "despiece": piezas_madera,
-        "herrajes": herrajes
+        "despiece": piezas_madera_final,
+        "herrajes": herrajes_final
     }
+
+
+# =============================================================================
+# 📐 ENDPOINT DE EXPORTACIÓN CAM DXF PARA SECCIONADORA / CENTRO BIESSE SKIPPER
+# =============================================================================
+@app.post("/export-dxf")
+async def export_dxf_biesse(request: Request):
+    try:
+        import io
+        import ezdxf
+        
+        data = await request.json()
+        model_id = data.get("model_id", "Cubierta")
+        params = data.get("parameters", {})
+        despiece = data.get("despiece", [])
+        version = data.get("version", "BD 1.0")
+
+        # Seleccionar la pieza principal a mecanizar
+        if despiece and len(despiece) > 0:
+            pieza = despiece[0]
+        else:
+            ancho_p = float(params.get("RH_IN:01.1 Ancho", params.get("ancho", 498.0)))
+            prof_p = float(params.get("RH_IN:01.2 Profundidad", params.get("profundidad", 480.0)))
+            pieza = {
+                "nombre": model_id,
+                "largo": ancho_p,
+                "ancho": prof_p,
+                "espesor": 15.0
+            }
+
+        nombre = pieza.get("nombre", model_id)
+        largo = float(pieza.get("largo", 498.0))
+        ancho = float(pieza.get("ancho", 480.0))
+        espesor = float(pieza.get("espesor", 15.0))
+
+        # Crear documento DXF con versión AC1021 (AutoCAD 2007, estándar oficial Biesse)
+        doc = ezdxf.new(dxfversion="AC1021")
+        msp = doc.modelspace()
+
+        # Profundidad de corte en centésimas de milímetro (ej: 15.0mm -> D1500)
+        prof_corte_tag = f"D{int(espesor * 100):04d}"
+        capa_contorno = f"TCHW0B8{prof_corte_tag}"
+
+        # Registrar capas CAM estándar Biesse Skipper
+        doc.layers.new(name=capa_contorno, dxfattribs={"color": 18})
+        doc.layers.new(name="TCHW1B8", dxfattribs={"color": 18})       # Canto Izquierdo (W1)
+        doc.layers.new(name="TCHW2B8", dxfattribs={"color": 18})       # Canto Inferior / Trasero (W2)
+        doc.layers.new(name="TCHW3B8", dxfattribs={"color": 18})       # Canto Derecho (W3)
+        doc.layers.new(name="TCHW4B8", dxfattribs={"color": 18})       # Canto Superior / Frontal (W4)
+        doc.layers.new(name="TCHW0B2D1200", dxfattribs={"color": 18})  # Taladros Ø5mm Cara Superior a 12mm
+        doc.layers.new(name="TCHW0B15D1350", dxfattribs={"color": 18}) # Cajas Minifix Ø15mm a 13.5mm
+        doc.layers.new(name="TCHW1B8D2500", dxfattribs={"color": 18})  # Perforación Canto Izquierdo Ø8mm a 25mm
+        doc.layers.new(name="TCHW3B8D2500", dxfattribs={"color": 18})  # Perforación Canto Derecho Ø8mm a 25mm
+
+        # Geometría de la Pieza Central (Cara Superior W0)
+        hx = largo / 2.0
+        hy = ancho / 2.0
+        gap = 20.0  # Separación estándar ortogonal entre la pieza central y las vistas de cantos
+
+        # 1. Contorno de Pieza Central (Cara Superior W0)
+        puntos_central = [
+            (-hx, -hy),
+            (hx, -hy),
+            (hx, hy),
+            (-hx, hy)
+        ]
+        msp.add_lwpolyline(puntos_central, close=True, dxfattribs={"layer": capa_contorno})
+
+        # 2. Vistas Desplegadas de los 4 Cantos (W1: Izq, W2: Inf, W3: Der, W4: Sup)
+        # Canto Izquierdo (W1) - Vista Lateral Izquierda
+        puntos_canto_izq = [
+            (-hx - gap, -hy),
+            (-hx - gap, hy),
+            (-hx - gap - espesor, hy),
+            (-hx - gap - espesor, -hy)
+        ]
+        msp.add_lwpolyline(puntos_canto_izq, close=True, dxfattribs={"layer": "TCHW1B8"})
+
+        # Canto Derecho (W3) - Vista Lateral Derecha
+        puntos_canto_der = [
+            (hx + gap, -hy),
+            (hx + gap, hy),
+            (hx + gap + espesor, hy),
+            (hx + gap + espesor, -hy)
+        ]
+        msp.add_lwpolyline(puntos_canto_der, close=True, dxfattribs={"layer": "TCHW3B8"})
+
+        # Canto Superior (W4) - Vista Frontal / Superior
+        puntos_canto_sup = [
+            (-hx, hy + gap),
+            (hx, hy + gap),
+            (hx, hy + gap + espesor),
+            (-hx, hy + gap + espesor)
+        ]
+        msp.add_lwpolyline(puntos_canto_sup, close=True, dxfattribs={"layer": "TCHW4B8"})
+
+        # Canto Inferior (W2) - Vista Posterior / Inferior
+        puntos_canto_inf = [
+            (-hx, -hy - gap),
+            (hx, -hy - gap),
+            (hx, -hy - gap - espesor),
+            (-hx, -hy - gap - espesor)
+        ]
+        msp.add_lwpolyline(puntos_canto_inf, close=True, dxfattribs={"layer": "TCHW2B8"})
+
+        # 3. Posicionamiento de mecanizados DfMA (Minifix / Tarugos / Pernos)
+        offset_canto_y = 37.0
+        y_pos1 = hy - offset_canto_y
+        y_pos2 = -hy + offset_canto_y
+
+        es_entrepanio = "entrepaño" in nombre.lower() or "entrepanio" in nombre.lower()
+
+        # Si es un Entrepaño deslizable, es una pieza lisa de corte para seccionadora (sin perforaciones booleanas)
+        if not es_entrepanio:
+            union_izq = str(params.get("RH_IN:02.1 Union izquierda") or params.get("union_izquierda") or "Minifix").lower()
+            union_der = str(params.get("RH_IN:02.0 Union Derecha") or params.get("union_derecha") or "Ya definida").lower()
+
+            # Mecanizado Lado Izquierdo (Cubierta)
+            if "minifix" in union_izq:
+                x_izq_caja = -hx + 34.0
+                # Cajas Minifix Ø15mm en Cara Superior W0
+                msp.add_circle((x_izq_caja, y_pos1), radius=7.5, dxfattribs={"layer": "TCHW0B15D1350"})
+                msp.add_circle((x_izq_caja, y_pos2), radius=7.5, dxfattribs={"layer": "TCHW0B15D1350"})
+                # Perforación de canto Ø8mm en la vista del Canto Izquierdo (W1)
+                x_canto_izq_centro = -hx - gap - (espesor / 2.0)
+                msp.add_circle((x_canto_izq_centro, y_pos1), radius=4.0, dxfattribs={"layer": "TCHW1B8D2500"})
+                msp.add_circle((x_canto_izq_centro, y_pos2), radius=4.0, dxfattribs={"layer": "TCHW1B8D2500"})
+            elif "tarugo" in union_izq or "tornillo" in union_izq:
+                x_canto_izq_centro = -hx - gap - (espesor / 2.0)
+                msp.add_circle((x_canto_izq_centro, y_pos1), radius=4.0, dxfattribs={"layer": "TCHW1B8D2500"})
+                msp.add_circle((x_canto_izq_centro, y_pos2), radius=4.0, dxfattribs={"layer": "TCHW1B8D2500"})
+
+            # Mecanizado Lado Derecho (Cubierta)
+            if "minifix" in union_der:
+                x_der_caja = hx - 34.0
+                # Cajas Minifix Ø15mm en Cara Superior W0
+                msp.add_circle((x_der_caja, y_pos1), radius=7.5, dxfattribs={"layer": "TCHW0B15D1350"})
+                msp.add_circle((x_der_caja, y_pos2), radius=7.5, dxfattribs={"layer": "TCHW0B15D1350"})
+                # Perforación de canto Ø8mm en la vista del Canto Derecho (W3)
+                x_canto_der_centro = hx + gap + (espesor / 2.0)
+                msp.add_circle((x_canto_der_centro, y_pos1), radius=4.0, dxfattribs={"layer": "TCHW3B8D2500"})
+                msp.add_circle((x_canto_der_centro, y_pos2), radius=4.0, dxfattribs={"layer": "TCHW3B8D2500"})
+            elif "tarugo" in union_der or "tornillo" in union_der:
+                x_canto_der_centro = hx + gap + (espesor / 2.0)
+                msp.add_circle((x_canto_der_centro, y_pos1), radius=4.0, dxfattribs={"layer": "TCHW3B8D2500"})
+                msp.add_circle((x_canto_der_centro, y_pos2), radius=4.0, dxfattribs={"layer": "TCHW3B8D2500"})
+
+        # Serializar DXF a texto
+        stream = io.StringIO()
+        doc.write(stream)
+        dxf_content = stream.getvalue()
+
+        version_clean = version.replace(" ", "")
+        filename = f"{nombre}_{int(largo)}x{int(ancho)}_{int(espesor)}mm_{version_clean}.dxf"
+
+        return {
+            "status": "success",
+            "filename": filename,
+            "dxf_content": dxf_content,
+            "machine_profile": "Biesse Skipper (bSolid/BiesseWorks)",
+            "dimensions": f"{largo} x {ancho} x {espesor} mm"
+        }
+    except Exception as e:
+        print(f"[3BF Worker DXF Error]: {e}", flush=True)
+        return {"status": "error", "message": str(e)}
+
 
 if __name__ == "__main__":
     print("[3BF Worker] Arrancando 3BF Worker Python Engine en puerto 8005...", flush=True)

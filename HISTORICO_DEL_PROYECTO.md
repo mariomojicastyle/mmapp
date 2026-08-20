@@ -1,5 +1,220 @@
 # 📜 Histórico del Proyecto: mariomojica.com
 
+### 🔹 Hito 3BF_UI — Homologación Integral de Apariencia Tech Ethos / Obsidian Teal en Base de Datos, Botones Píldora Visor 3D, Reordenamiento Ergonómico DfMA y Calibración Milimétrica de Barra Superior (19 de Agosto, 2026)
+
+- **Homologación Visual Completa de Base de Datos (`DatabaseView.tsx`)**:
+  * Sincronización al 100% de todas las tablas maestras (Herrajes, Tableros, Cantos), paneles de proveedores y costos de conversión industrial con el sistema de variables `coloresApariencia` (Tech Ethos y Obsidian Teal).
+- **Botones Píldora Estilo Visor 3D**:
+  * Estandarización de las pestañas secundarias (*Herrajes & Accesorios*, *Tableros & Sustratos*, *Cantos & Acabados*, *Negociación Proveedurías*, *Mano de Obra & CIF*) y botones de acción (*Importar Excel*, *Guardar Cambios*, *+ Nuevo Herraje*) al formato píldora (`rounded-full`), con bordes redondeados y estados activo/inactivo contrastados.
+- **Reordenamiento Ergonómico DfMA en Herrajes**:
+  * Reubicación de columnas: *Proveedor* situado tras *Descripción Comercial*, y *Unidad* tras *Mallas por Unidad*, logrando una agrupación lógica que posiciona las métricas de costo monetario a la derecha.
+- **Depuración & Limpieza Visual**:
+  * Removido el prefijo `"RH_OUT: "` en todas las filas de la tabla de Herrajes.
+  * Removidas las etiquetas secundarias redundantes de las cabeceras de proveedores (Arauco, Duratex, Masisa, Novopan).
+  * Eliminada la tarjeta de simulación de liquidación y convertidos los indicadores *"Estándar ERP 100%"* y *"4 Proveedores Activos"* a texto plano limpio.
+- **Calibración de Contrastes en Modo Claro (*Tech Ethos*)**:
+  * Fondo de cabeceras de tabla a `#E2E8F0` con divisor `#CBD5E1`, texto `#1E293B`, rayado alternado (*zebra striping* `#FFFFFF` / `#F8FAFC`) y color corporativo cian en el icono de importación de Excel.
+- **Armonización de Alturas en Barra Superior (`app/page.tsx`)**:
+  * Homologación dimensional de todos los componentes de la barra de herramientas (Pestañas centrales, Modos 3D, Botón de Cámara, Switch Light/Dark e indicador `vBeta 0.1 Online`) en contenedores cápsula `h-9` (36px, `p-1`) con elementos interactivos interiores `h-7` (28px).
+
+---
+
+### 🔹 Hito 3BF_Persistencia_Simbiotica_UI_Responsiva — Arquitectura de Gemelo Digital .3bf.json en Google Drive, Persistencia Simbiótica con BD de Costos, Redimensión Ergonómica de Panel y Transición Dinámica Texto/Miniatura (19 de Agosto, 2026)
+
+- **Persistencia Simbiótica (`.3bf.json` en Google Drive + Base de Datos)**:
+  * Al pulsar **Guardar como...**, se genera un paquete integral de Gemelo Digital atómico (`.3bf.json`) almacenado en `G:\Mi unidad\Muebles\[Marca]\[Tipología]\...`.
+  * El paquete encapsula de forma simbiótica: (1) Geometría y parámetros 3D completos, (2) Ficha técnica de despiece, metros de cantos, herrajes y costeo 100%, (3) Miniatura WebGL de alta definición y (4) Metadata comercial.
+  * Los precios de materiales quedan congelados referenciando los registros maestros de la **Base de Datos** (Novopan, Pelíkano, Blum, etc.), logrando una reconstrucción 100% fiel al abrir el mueble.
+- **Redimensión Ergonómica del Panel Derecho**:
+  * Implementado un divisor interactivo (`cursor-ew-resize`) entre el área principal y el panel lateral derecho con persistencia en `localStorage` (de 280px a 800px, predeterminado 380px), eliminando truncamientos en textos como *"líneas de rejilla"*.
+- **Transición Adaptativa Miniatura ➔ Texto Puro**:
+  * En el Asset Browser de Muebles, las tarjetas mantienen un tamaño uniforme acotado estilo Blender (`70×70px`). Al contraer el panel a su mínimo ancho, la miniatura desaparece automáticamente dejando el 100% del ancho para el nombre del producto (`00002`) sin truncamientos.
+- **Unificación del Botón Guardar en Ficha de Despiece**:
+  * Consolidación de los botones duplicados en un único botón redondeado (`rounded-full`) que abre directamente el Asset Browser de Muebles en el panel derecho.
+
+---
+
+### 🔹 Hito 3BF_UI_Colores — Personalización de Apariencia Estilo Rhinoceros 8, Glosario Completo de Colores 2D/3D/BOM, Guardado Predefinido, Copiado/Pegado Rápido #HEX 1-Touch, N-Panel Contextual y Overlay en Fichas de Datos (18 de Agosto, 2026)
+
+- **Panel de Apariencia y Glosario Completo de Colores (Estilo Rhinoceros 8)**:
+  * Incorporación de la pestaña 6 `Apariencia` en el N-Panel (`AppearanceSettingsPanel.tsx`) con tabla interactiva de swatches dividida por categorías: *Colores de la vista* (fondo 3D, rejilla mayor/menor, ejes X/Y/Z, silueta), *Visualización de objetos* (selección `#FF9500`, bloqueados, material base, cristal, herrajes, cantos), *Objetos de interfaz* (paneles, bordes, textos, marca, botones, TopNav), *Ficha de Despiece & Base de Datos* (encabezados, celdas/filas, divisores, total consolidado, KPIs) y *Widgets* (Gizmo U/V/W, puntos snap).
+  * Selector de Esquema de Color integrado: **Oscuro**, **Claro** y **Personalizado**.
+- **Vinculación Reactiva en Tiempo Real (60 FPS) & ThemeManager**:
+  * Vinculación directa en Three.js/R3F para siluetas de selección, marcadores de snap, mallas y rejillas.
+  * Inyector dinámico de variables CSS (`ThemeManager.tsx`) para fondos de panel, bordes, cabeceras de tabla (`--tabla-th-bg`), totales y tarjetas KPI.
+- **Workflow Rápido de Copiar y Pegar #HEX con 1 Solo Toque**:
+  * Botones individuales en cada fila para copiar el color hexadecimal con 1 clic al portapapeles y pegar directamente (`ClipboardPaste`) con feedback visual instantáneo (`COPIADO` / `PEGADO`).
+- **Persistencia de Preset ("Guardar como predefinido")**:
+  * Botón para almacenar la combinación de colores activa en `localStorage` (`3bf_colores_predefinidos`) con auto-hidratación inmediata al abrir la plataforma.
+- **N-Panel Contextual y Overlay Limpio por Vista**:
+  * **Visor 3D:** El N-Panel reside en su posición nativa dentro del lienzo WebGL con ancho redimensionable y tira vertical de 6 pestañas.
+  * **Despiece & Costos y Base de Datos:** Eliminado el botón circular flotante invasivo; al presionar **`N`**, el panel de Apariencia se despliega directamente encima del panel fijo derecho (`ControlPanel`), cubriéndolo al 100% sin invadir las tablas de datos y mostrando exclusivamente la configuración de esa sección.
+
+---
+
+### 🔹 Hito BiblioMuebles_Ram_Ventas — Biblioteca de Muebles Blender 4.x, Sincronía Google Drive (G:), RAM de Ventas & BOM Consolidado (18 de Agosto, 2026)
+
+- **Biblioteca de Muebles & Asset Browser Estilo Blender 4.x**:
+  * Reestructuración de la interfaz en el N-Panel separando las definiciones `.ghx` en crudo (**Componentes**) de las composiciones y catálogos comerciales (**Muebles**).
+  * Estética minimalista pura inspirada en Blender 4.x: sin marcos envolventes pesados, sin badges de categoría invasivos, con miniaturas 3D cuadradas nítidas y nombres limpios centrados.
+  * Edición inline de nombres mediante doble clic o icono de lápiz, con guardado instantáneo al presionar `Enter`.
+- **Integración Nativa Bidireccional con Google Drive (`G:\Mi unidad\Muebles`)**:
+  * Conexión directa y en vivo con Google Drive para escritorio (`provider: google_drive_desktop_active`).
+  * Eliminación de listas quemadas en código: el árbol jerárquico de marcas (`RTA Design`, `Politorno`, `Henn`, `Bartira`, `Genmo Base`, `Partira`) y tipologías se escanea 100% en tiempo real.
+  * Botón interactivo **`Ir al Drive ↗`** que abre la carpeta oficial en Google Drive Web en una nueva pestaña y botón **`Sincronizar` (`RefreshCw`)** para refrescar carpetas agregadas o eliminadas.
+  * Flujo completo "Guardar como..." y "Abrir Mueble", empaquetando geometría, parámetros, ficha técnica y miniaturas en archivos `.3bf.json`.
+- **Captura Fotográfica 3D WebGL Centrada (360×360 px)**:
+  * Componente `ThumbnailCapturer` que extrae el centro exacto del viewport 3D en formato WebP cuadrado de alta resolución, evitando bordes negros y desalineaciones.
+- **Armonización Visual de la Biblioteca de Componentes**:
+  * Rediseño de las tarjetas de definiciones GHX con el mismo estándar minimalista de Blender, preservando la funcionalidad de arrastrar y soltar (`drag & drop`) hacia el escenario 3D.
+- **Despiece Multi-Instancia y Consolidación Pura de Herrajes**:
+  * Reflejo de dimensiones reactivas por instancia (ej. 498 mm vs 1540 mm), separando el origen técnico (`Pieza`) de la descripción comercial editable.
+  * Unificación total de herrajes (8 cajas y 8 pernos para 2 cubiertas) leídos de forma pura y directa desde Grasshopper sin parches espaciales en código.
+- **Módulo Comercial RAM de Ventas & Arquitectura V10**:
+  * Documentación completa del módulo de prospección en `Comercial/RAM_de_ventas.md` y actualización del diagrama de arquitectura a la versión 10 (`Arquitectura/arquitectura_v10.svg` y `Arquitectura/Arquitectura.md`).
+  * Inclusión de `RAM_de_ventas.md` en el protocolo de arranque de `AGENTS.md`.
+
+---
+
+- **Módulo Completo de RAM de Ventas (`/ventas-ram`)**:
+  * Implementado en la plataforma Next.js con permisos de rol de usuario (`VENTAS_RAM`), navegación con ícono `BrainCircuit` y diseño Tech Ethos / Obsidian Teal.
+- **Visión Multimodal con Ingesta Multi-Captura**:
+  * Soporte para pegar múltiples capturas en secuencia con `Ctrl+V` (o selector de archivos) con galería cronológica numerada (`#1`, `#2`, `#3`...).
+  * Compresión inteligente en cliente (redimensión proporcional a 1280px y JPEG 0.82) reduciendo payloads de 20MB a menos de 400KB para envíos ultrarrápidos (< 2 segundos).
+- **Auto-Extracción Inteligente de Prospectos con IA**:
+  * Modal `+ Nuevo` con auto-completado mediante Visión Gemini desde capturas de perfil de LinkedIn / WhatsApp (extrayendo Empresa, Nombre, Cargo, Teléfono, URL, Región y Notas con salvaguardas anti-alucinación).
+- **Separación Clara: Archivo Histórico vs Acción Comercial Bajo Demanda**:
+  * **Pestaña 1 (`⚡ Analizar & Archivar Evento`)**: Extrae conclusiones ejecutivas de eventos pasados y guarda hitos limpios en el historial sin generar respuestas inventadas.
+  * **Pestaña 2 (`💬 Hilo de Conversación Completo`)**: Muestra la bitácora cronológica con citas reales del chat, banner proactivo de **Próxima Jugada Táctica** y botón protagónico **`⚡ Activar Antigravity: Redactar Mensaje`** para generar respuestas bajo demanda en **Português Brasileño + Traducción en Español** con refinamiento interactivo.
+- **Persistencia Reactiva & Memoria Local**:
+  * Sincronización transparente entre Supabase, memoria local y la memoria activa `.agent/skills/b2b-sales-closer/ventas_ram.md`.
+
+---
+
+### 🔹 Hito 3BF_MultiInstancia_GHX_BOM_Global — Arquitectura Multi-Instancia GHX, Nombrado Secuencial, Snaps y Despiece & Costos Globales (17 de Agosto, 2026)
+
+- **Multi-Instancia Paramétrica GHX en Escenario 3D**:
+  * Capacidad de insertar múltiples archivos `.ghx` iguales o diferentes simultáneamente en el lienzo WebGL.
+  * Cada objeto en el escenario se gestiona como una entidad independiente (`ObjetoInstancia3BF`) con su propio `id`, `parametros`, geometría 3D, posición y estado de carga.
+- **Reglas de Nombrado Secuencial Inteligente**:
+  * Primera instancia del modelo: nombre limpio original (ej. `Cubierta`).
+  * Siguientes instancias del mismo origen: sufijos formateados secuenciales automáticos (`Cubierta_01`, `Cubierta_02`, `Cubierta_03`).
+- **Selección Tridimensional y Panel de Control Vinculado**:
+  * Al hacer **Clic Derecho** sobre cualquier pieza en el 3D, se selecciona la instancia y se sincroniza el panel lateral.
+  * Cabecera informativa superior en `ControlPanel.tsx` con badge `🏷️ Objeto Activo: Cubierta_01` y selector desplegable para conmutar entre objetos.
+  * Los sliders modifican y recomputan de forma atómica y reactiva los parámetros del objeto seleccionado.
+- **Despiece y Costos Globales de Escena Completa (BOM Consolidado)**:
+  * La pestaña **Despiece y Costos** (`DespieceView.tsx`) agrega automáticamente todas las piezas y herrajes de todos los componentes presentes en la escena (`getDespieceGlobal()`, `getHerrajesGlobal()`).
+  * Si existen 2 o más cubiertas u otros muebles, la tabla de despiece lista todas las piezas identificadas por objeto, suma sus áreas y metros lineales de canto, y liquida el presupuesto industrial consolidado de la escena.
+- **Árbol de Objetos (Outliner) en N-Panel**:
+  * Añadida la sección *Objetos en Escena* en la pestaña Escenario para listar instancias, seleccionarlas, duplicarlas o eliminarlas.
+- **Snaps de Alta Visibilidad & Silueta en Modo Mover**:
+  * Silueta en modo mover (`G`) en color negro sólido `#111827` (4px).
+  * Iconos de Snap renderizados en overlay HTML/SVG `z-index: 9999` en color naranja `#ff9500` ($100\%$ sólido) con soporte para endpoints ($\square$) y midpoints ($\triangle$).
+
+---
+
+### 🔹 Hito 3BF_Blender_Nav_Selection — Navegación 3D Estándar Blender, Zoom Continuo Direccional, Selección Instantánea y Silueta Perimetral Fiel 90% (17 de Agosto, 2026)
+
+- **Navegación 3D Idéntica al Keymap de Blender (Right Select)**:
+  * **Giro Orbital (Orbit):** Rueda central presionada (`MMB` / Botón 1) para rotación orbital fluida y reactiva.
+  * **Zoom Continuo Direccional (Dolly):** `Ctrl` + Rueda presionada (`Ctrl + MMB Drag`) con dirección cinemática intuitiva (mover arriba acerca la cámara al punto de vista, mover abajo aleja la cámara).
+  * **Paneo de Vista (Pan):** `Shift` + Rueda presionada (`Shift + MMB Drag`) para traslación de pantalla en ejes locales.
+  * **Selección Física Permanente (Select):** Clic Derecho (`RMB` / Botón 2) instantáneo (0ms de latencia) con `capture: true`, garantizando persistencia estable sin auto-deselección al soltar el ratón.
+  * **Deselección y Controles UI:** Clic Izquierdo (`LMB` / Botón 0) para deseleccionar al tocar el vacío o manipular la interfaz y sliders.
+- **Delineado de Silueta Perimetral Fiel (90% Efectividad Validada)**:
+  * **Algoritmo de Visibilidad de Caras XOR ($\text{visible}(A) \oplus \text{visible}(B)$):** Detecta las aristas del tablero que hacen contacto real con el vacío según el ángulo del punto de vista de la cámara, eliminando líneas internas diagonales o frontales.
+  * **Calibre Cuadruplicado ($4\text{ px}$):** Trazado sólido y nítido en color naranja `#ff9500` con `@react-three/drei` `<Line>`.
+  * **Alineación Tridimensional y Curvas en Pernos:** Anclaje tridimensional a la cota física de los cantos de madera y arcos circulares en las puntas de los pernos Minifix salientes, eliminando el efecto sombra o líneas flotantes.
+  * **Optimización de Rendimiento a 60 FPS:** Separación de la extracción estructural en `useMemo` y reducción de `useFrame` a un cálculo liviano de 6 productos punto escalares ($0.001\text{ ms}$).
+
+---
+
+### 🔹 Hito 3BF_DXF — Generador CAM DXF Nativo para Biesse Skipper, 5 Vistas Desplegadas en Cruz, Convención NURBS DfMA e Hidratación Inmediata de Store (15 de Agosto, 2026)
+
+- **Generador CAM DXF Nativo para Centros de Mecanizado Biesse Skipper (`/export-dxf`)**:
+  * Implementación del motor vectorial nativo en formato **AutoCAD 2007 (AC1021)** compatible al 100% con los postprocesadores de centros de mecanizado y seccionadoras **Biesse Skipper (BiesseWorks / bSolid / TpaCAD)**.
+  * Esquema ortogonal de **5 vistas desplegadas en cruz**:
+    1. **Cara Superior $W_0$ (Centro):** Contorno de corte pasante `TCHW0B8D1500` con cajas Minifix $\varnothing 15\text{ mm}$ a $13.5\text{ mm}$ de profundidad (`TCHW0B15D1350`).
+    2. **Cantos Laterales Desplegados ($W_1$ Izq, $W_3$ Der):** Rectángulos cerrados (`TCHW1B8`, `TCHW3B8`) con taladros de espiga Minifix y tarugos $\varnothing 8\text{ mm}$ a $25\text{ mm}$ de profundidad (`TCHW1B8D2500`, `TCHW3B8D2500`) con separación estándar (*Gap = 20mm*).
+    3. **Cantos Frontal y Posterior Desplegados ($W_4$ Sup, $W_2$ Inf):** Rectángulos cerrados (`TCHW4B8`, `TCHW2B8`) con *Gap = 20mm*.
+  * **Diferenciación Dinámica Pieza Mecanizada vs Pieza de Corte Puro**:
+    * **Cubierta:** Genera contorno + cajas Minifix + taladros en cantos (`Cubierta_498x480_15mm_BD1.0.dxf`).
+    * **Entrepaño:** Genera contorno rectangular ($497 \times 480\text{ mm}$) con sus 4 cantos desplegados completamente limpios de perforaciones para corte directo en seccionadora (`Entrepaño_497x480_15mm_BD1.0.dxf`).
+- **Convención Oficial de Nombres y Eliminación de Z-Fighting (NURBS vs Meshes)**:
+  * **Regla DfMA Establecida:** Salidas `RH_OUT:...` para elementos visibles y texturizados en la web (`Color`, `Balance`, `Herrajes`); nombres `Nurbs [Pieza]` para sólidos matemáticos Brep internos de cálculo y CAM.
+  * **Eliminación Total de Titileo:** El worker y el visor 3D Three.js filtran automáticamente los sólidos `Nurbs`, eliminando piezas duplicadas o parpadeos en pantalla y reservando los Breps para el despiece BOM y el DXF.
+- **Hidratación Global Inmediata al Inicio (`hidratarDesdeLocalStorage`)**:
+  * Ejecución en el primer ciclo de montaje de `app/page.tsx` y `DespieceView.tsx`, asegurando que los costos de catálogo (Caja $100 COP, Perno $87 COP, Tarugo $17 COP, Tornillo $27 COP, Soporte $150 COP) aparezcan correctos desde el primer milisegundo sin necesidad de visitar la pestaña Base de Datos.
+- **Refinamiento UI en Cabecera de Despiece**:
+  * Retiro del botón redundante inferior, simplificación del botón superior a **`Guardar`** con icono monocromático y selector de versiones limpio (**`BD 1.0`**, **`BD 1.1`**, **`BD 2.0`**).
+- **Actualización de la Memoria Técnica en `WORKER.md`**:
+  * Inyectadas las Secciones 10 (Módulo CAM DXF Biesse Skipper), 11 (Fundamentos NURBS vs Mallas) y 12 (Persistencia e Hidratación Inmediata).
+
+---
+
+### 🔹 Hito 3BF_ManoObra_CIF — Ficha Financiera Industrial 100%, Pestaña de Mano de Obra & CIF y Detección Automática DfMA de Cantos (15 de Agosto, 2026)
+
+- **Ficha Financiera Industrial Consolidada (100.00% Ficha Técnica)**:
+  * Implementación del modelo contable de costeo por absorción estándar (**NIC 2 / RTA**) que proyecta la totalidad del costo de fabricación: $\text{Costo Total (100\%)} = \text{Materia Prima Directa (77.78\%)} + \text{Tercerizaciones (0.00\%)} + \text{Mano de Obra + Prestaciones (12.42\%)} + \text{Costos Indirectos de Fabricación - CIF (9.80\%)}$.
+  * Algoritmo de liquidación matemática directa: $\mathbf{\text{Costo Total}} = \frac{\text{Total MP} + \text{Tercerizaciones}}{1 - (\% \text{MO+PRES} + \% \text{CIF})}$, permitiendo conocer con exactitud el valor monetario de MOD y CIF aún con cómputos preliminares de materiales.
+- **Nueva Pestaña Modular `🏭 Mano de Obra & CIF` en Base de Datos**:
+  * Controles interactivos con `DecimalInput` para parametrizar en tiempo real los porcentajes de **Mano de Obra Directa + Prestaciones** (`12.42%` por defecto), **Costos Indirectos de Fabricación - CIF** (`9.80%` por defecto), **Adicionales & Consumibles** (`0.40%` por defecto), y costos fijos de **Tercerizaciones & Maquilas** en COP.
+  * Tarjeta de matriz consolidada de distribución del 100% con barra proporcional tricolor y desglose legal de cargas prestacionales (cesantías, primas, salud, pensión, ARL, parafiscales) y CIF de planta (depreciación de CNCs Morbidelli/Skipper, energía industrial, adhesivos PUR y desgaste de fresas).
+- **Tabla 4 "Resumen de Costo" en la Vista de Despiece (`DespieceView.tsx`)**:
+  * Incorporada la tabla financiera completa que detalla fila por fila: 1. Láminas, 2. Fondos, 3. Cantos, 4. Empaque, 5. Herrajes, 6. Adicionales, Subtotal MP (77.78%), 7. Tercerizaciones (0.00%), 8. MO+PRES (12.42%), 9. CIF (9.80%) y Gran Total (100.00%).
+  * Sincronización íntegra del payload de guardado en **Supabase** y almacenamiento local con campos desglosados de `costo_total_fabricacion_100_cop/usd`, `mano_obra_pres_cop/usd` y `cif_cop/usd`.
+- **Detección y Cómputo Automático de Cantos DfMA (Visor 3D ➔ BOM)**:
+  * Conexión reactiva entre los selectores de borde del configurador 3D (`Borde Izquierdo`, `Borde Derecho`, `Unión`) y la tabla de cantos: detecta automáticamente si una pieza requiere 0, 1 o 2 cantos en ancho y largo sin intervención manual, con fórmula oficial de despunte de $+100\text{ mm}$ por borde.
+
+---
+
+### 🔹 Hito 3BF_Costos — Motor de Costeo B2B, Negociación de Proveedurías, Descuentos de Cara, Desperdicio Nesting & Google Sheets Optimizer (15 de Agosto, 2026)
+
+- **Directorio Modular de "Negociación Proveedurías"**: Reestructuración de la vista de base de datos incorporando fichas desplegables en orden alfabético estricto de una sola línea (`Arauco`, `Duratex`, `Masisa`, `Novopan`), permitiendo expandir o colapsar individualmente matrices de importación complejas y configuraciones de TRM.
+- **Matriz Viva y Matemática de Liquidación Novopan (Ecuador ➔ Colombia)**: Integración reactiva completa de los parámetros de importación desde Ecuador (Apoyo Volumen 20.0%, Apoyo Tasa 15.1%, Pronto Pago 3.5%, Gastos Nacionalización 8.7%, Financiación 1.1%, Flete $18.57/m³ y TRM Novopan de $4.000 COP), liquidando al centavo el costo de cada lámina y su costo por metro cuadrado.
+- **Algoritmo de Descuento por Tipo de Acabado / Cara (`D/B` vs `D/D`)**: Detección y columna editable `Desc. Cara (I)` en la tabla de tableros. Aplica 5.0% de descuento a tableros con balance blanco (`D/B`) y 0.0% a tableros con diseño en ambas caras (`D/D`, `D/KN`, madera), logrando coincidencia exacta con la columna `I` de la plantilla de costos industrial.
+- **Control de Porcentaje de Desperdicio de Corte / Nesting (`% DESP`)**: Implementación del cálculo industrial de consumo real según la fórmula oficial de Excel `EDP`: $\text{Factor} = \frac{1}{1 - \frac{\% \text{Desp}}{100}}$, con control global editable en cabecera (`10.0%` por defecto) y casillas fila a fila por pieza en la lista de corte (BOM).
+- **Auto-selección Numérica Global y Soporte Coma/Punto (`DecimalInput`)**: Estandarización en toda la plataforma del componente de entrada numérica con auto-selección total al tocar con el puntero del ratón (`select()`), eliminación de ceros residuales invasivos y compatibilidad simultánea con punto y coma decimal.
+- **Optimizador de Plantillas ERP para Google Sheets (`FILE_TOO_LARGE` y `#NAME?` Resueltos)**: 
+  * Eliminación de cuadrículas fantasmas (1.048.576 filas en `BD` y 16.383 columnas en `HERRAJES CANTOS`), reduciendo el peso de `4.66 MB` a `602 KB` (reducción del 87%).
+  * Restauración de los 35 Rangos Nombrados Globales (`TRM`, `MPLAMINAS`, `MP2HERRAJES_CANTOS`, `CODIGOS`), permitiendo abrir la plantilla instantáneamente en Google Sheets con cálculos vivos y cero errores.
+- **Simplificación del Selector de Sustrato en BOM**: Menú desplegable optimizado que muestra exclusivamente el nombre comercial limpio del material sin sufijos redundantes de precio, delegando la visualización económica a su columna dedicada de `Costo m²`.
+
+---
+
+- **Creación del Documento Maestro `WORKER.md`**: Publicación oficial del documento técnico [`3BF/WORKER.md`](file:///c:/Desarrollo/mmapp/3BF/WORKER.md) y registro en el protocolo de arranque de [`AGENTS.md`](file:///c:/Desarrollo/mmapp/AGENTS.md), blindando la memoria del microservicio `3bf_worker.py` (FastAPI / Three.js).
+- **Matriz de Texturizado DfMA y Mapeo Cúbico de 6 Niveles**: Estandarización de la tabla de giros angulares ortogonales (`Rotate 3D`) para los 6 tipos de piezas de mobiliario (`0: Vertical`, `1: Vertical Atravesada`, `2: Frontal`, `3: Frontal Atravesada`, `4: Horizontal`, `5: Horizontal Atravesada`) con caja estándar cúbica de 600 x 600 x 600 mm.
+- **Algoritmo de Mapeo Cúbico 3D Real (BoxMapping Nativo de 6 Caras)**: Implementación del componente Python nativo en Rhino 8 que evalúa la normal dominante de cada vértice para eliminar rayas estiradas en cantos perimetrales y proyectar la veta continua sin dependencias de plugins externos como *Human*.
+- **Pipeline de Extracción de UVs en el Worker**: Extracción de `decoded_geom.TextureCoordinates` en `3bf_worker.py` y renderizado PBR en `Viewer3D.tsx`, logrando la representación física 1:1 de vetas longitudinales y transversales para optimización de corte CNC (Nesting).
+- **Purga Total al "Buscar en Disco"**: Reseteo de variables de estado en `purgarEstadoCompleto()` (`model_id = ""`, `custom_filename = ""`) y eliminación de fallbacks hardcodeados en `ControlPanel.tsx`, dejando la interfaz 100% limpia.
+
+---
+
+### 🔹 Hito 3BF_Alineado — Alineación Geométrica 1:1 CAD/WebGL, Widget de Ejes Rhino 8 & Protocolo Purge-First (14 de Agosto, 2026)
+
+- **Alineación Geométrica 1:1 Rhino ➔ Three.js**: Resolución del efecto espejo en profundidad en el visor 3D mediante la transformación de coordenadas dextrógira coherente (`Three.js X = Rhino X`, `Three.js Y = Rhino Z`, `Three.js Z = -Rhino Y`), con inversión de devanado de caras triangulares (CCW) para conservar normales 100% exteriores sin reflejos especulares ni inversiones de izquierda/derecha.
+- **Widget Vectorial de Ejes X, Y, Z (Estilo Rhino 8)**: Implementación de `RhinoAxisTracker` y widget vectorial SVG minimalista en la esquina inferior izquierda que replica con exactitud los ejes triédricos `x`, `y`, `z` de Rhinoceros, sincronizándose de forma fluida a 60 FPS con `OrbitControls` sin tocar el framebuffer de WebGL.
+- **Protocolo de Purga Previa (Purge-First en 3 Niveles)**:
+  * **Nivel 1 (Web React)**: Función `purgarEstadoCompleto()` en `ControlPanel.tsx` que resetea el explorador de archivos, el resultado previo y las referencias de caché antes de cargar una nueva definición.
+  * **Nivel 2 (Python Worker)**: Purga física en disco (`os.remove(custom_path)`) antes de escribir `uploaded_custom.ghx` en `/metadata` y `/compute`.
+  * **Nivel 3 (RhinoCompute 8)**: Inyección dinámica de `<!-- 3BF_CACHE_BUST: timestamp -->` para invalidar la memoria RAM del solver de Grasshopper.
+- **Corrección de Coincidencia Estricta de Signos (`-1` vs `1`)**: Eliminación del bug de neutralización de signos negativos en `3bf_worker.py` reemplazando búsquedas de subcadenas por comparaciones estrictas (`tv_low == in_name`), permitiendo el desplazamiento simétrico exacto de 64 mm en pernos Minifix.
+- **Consolidación del Estándar de Salidas Agrupadas (`RH_OUT:...`)**: Homologación del estándar de exportación de McNeel Hops / RhinoCompute 8 envolviendo componentes en grupos `GH_Group`, garantizando el retorno íntegro de las 24 mallas poligonales (tableros, pernos, cajas y maquinados CNC).
+- **Diagrama de Arquitectura Oficial Versión 3.0**: Publicación de `3BF_Proceso_Diagrama_V3.svg` y `3BF_Arquitectura_V3.svg` bajo el estándar visual *Tech Ethos*.
+
+---
+
+### 🔹 Hito 3BF_Mesh_OK — Optimización de Carga, Raycasting Centralizado por Profundidad & Exportación Limpia a Blender (13 de Agosto, 2026)
+
+- **Sincronización Dinámica de Metadatos (Endpoint `/metadata`)**: Creado el endpoint `/metadata` en `3bf_worker.py` y proxy en Next.js `/api/metadata` que parsea los `default_values` del XML de Grasshopper en milisegundos sin invocar a RhinoCompute, reduciendo el tiempo de carga a la mitad (~1.5s) y eliminando peticiones dobles o parpadeos iniciales.
+- **Motor de Raycasting Centralizado por Profundidad (`<RaycastHandler />`)**: Reemplazados todos los handlers de puntero manuales por un evaluador centralizado frame-a-frame en Three.js con `useFrame` e `intersectObjects`. Resuelto de raíz el bug del tooltip en el aire/vacío al ejecutar `setHoveredPiece(null)` instantáneamente cuando no hay colisiones o al salir del Canvas (`onMouseLeave`).
+- **Formateo Unificado de Piezas DfMA (`obtenerNombreUnificadoPieza`)**: Nomenclatura homologada entre el visor 3D y la *Scene Collection* de Blender: sub-mallas del tablero (`Balance cubierta2`, `Color cubierta2`, `MDP2`) muestran unificadamente **"Cubierta"**, mientras que herrajes muestran **"Perno Minifix"**, **"Caja Minifix"**, **"Tarugo"** o **"Tornillo"**.
+- **Deduplicación Global Raíz de Mallas en GLB**: Deduplicación a nivel raíz `cleanRealMeshes` en `Viewer3D.tsx` que elimina mallas obsoletas base (ej. `MDP`) si la escena contiene versiones actualizadas (ej. `MDP2`), produciendo exportaciones GLB en Blender 100% limpias bajo los grupos `Cubierta`, `Herrajes` y `Maquinados` sin carpetas o mallas huérfanas en `Otros`.
+- **Estándar VisualARQ de Organización de Grupos y Sliders**: Implementado algoritmo en `3bf_worker.py` y `ControlPanel.tsx` que respeta la jerarquía multinivel de VisualARQ. Los grupos de Grasshopper (`GH_Group`) definen los títulos de las tarjetas sin números, mientras que los prefijos numéricos principales (`01.x`, `05.x`) ordenan las tarjetas y los sub-prefijos decimales (`.0`, `.1`) ordenan los controles internamente, ocultando la numeración en la web para una UI 100% limpia y auto-organizada.
+
+---
+
 ### 🔹 Hito Upwork_Video — Producción y Publicación de Video de Presentación Profesional & Solución XML en API TTS (06 de Agosto, 2026)
 
 - **Video de Presentación Profesional Publicado**: Grabado, producido y sincronizado video de 9m 33s en inglés y español demostrando la plataforma SaaS de manuales 3D, el motor paramétrico 3DBimFab, la arquitectura de seguridad IP Shield V2, Supabase SQL y Docker en Hetzner VPS.

@@ -28,9 +28,14 @@ Si el visor se pone en blanco o muestra el badge amarillo `Worker: API Fallback`
 
 ---
 
-## 📐 Diagrama del Flujo de Datos (Visual Tech Ethos)
+## 📐 Diagrama del Flujo de Datos (Visual Tech Ethos - Versión 3.0 Estable)
 
-![Diagrama del Flujo de Datos 3BF](./3BF_Proceso_Diagrama.svg)
+![Diagrama del Flujo de Datos 3BF V3](./3BF_Proceso_Diagrama_V3.svg)
+
+> **Historial y Evolución de Versiones del Diagrama:**
+> - [Versión 3.0 (Estable Actual - Doble Inyección Universal XML & Coherencia Total)](./3BF_Proceso_Diagrama_V3.svg)
+> - [Versión 2.0 (Transicional - Schema Discovery Inicial)](./3BF_Proceso_Diagrama_V2.svg)
+> - [Versión 1.0 (Histórica - Pipeline Lineal Inicial)](./3BF_Proceso_Diagrama_V1.svg)
 
 ---
 
@@ -95,6 +100,68 @@ Si el visor se pone en blanco o muestra el badge amarillo `Worker: API Fallback`
   - La sección hardcoded "Tablero & Espesor" fue eliminada permanentemente del panel de control (`ControlPanel.tsx`). La interfaz de 3BF es 100% autónoma y guiada exclusivamente por los parámetros nativos expuestos por los algoritmos de Grasshopper (`.ghx`).
 
 ---
+
+### 🏛️ 7. Arquitectura V3.0: Doble Inyección Universal XML & Coherencia Total (Release Estable)
+
+- **Evolución Arquitectónica (V1 ➔ V2 ➔ V3)**:
+  * **Versión 1.0 (Histórica)**: Pipeline Lineal Inicial. Ceguera semántica, puente Base64 pasivo y UI rígida con nombres quemados (`ancho`, `alto`).
+  * **Versión 2.0 (Transicional)**: Schema Discovery Inicial. Escaneaba metadatos en `/metadata`, pero presentaba debilidades: RhinoCompute ignoraba los cambios en sliders porque no se actualizaban los nodos `<Value>` en el XML nativo antes de Base64, y solo se detectaban `Number Sliders` simples.
+  * **Versión 3.0 (Estable Actual)**: **Doble Inyección Universal en Caliente (Universal Hot XML Ingestion)**.
+    1. **Eslabón 2.1 (Schema Discovery Total)**: Escanea en **5 ms** todos los `Number Sliders` (min/max/default) y `Value Lists` (opciones completas y opción activa), estructurando las tarjetas según la jerarquía VisualARQ (`01.x`, `02.x`).
+    2. **Eslabón 2.2 (Inyección en Caliente en Árbol XML)**: Inyecta directamente en memoria los valores del usuario tanto en `<item name="Value">` (Sliders) como en `<item name="Selected">` (Value Lists) antes de codificar en Base64. RhinoCompute 8 calcula siempre sobre el archivo ya modificado con **cero pérdida de parámetros**.
+- **Coherencia Absoluta 3D vs UI**:
+  - Las dimensiones modificadas en sliders (Ancho, Profundidad, Recedidos) y los cambios en selectores de herrajes (Minifix, Tornillos, Cantos, Mapeados) se reflejan simultáneamente en la interfaz y en el visor Three.js con latencia de ~200 ms.
+- **Trilogía Oficial de Diagramas Vectoriales**:
+  - [Versión 3.0 (Estable)](./3BF_Proceso_Diagrama_V3.svg)
+  - [Versión 2.0 (Transicional)](./3BF_Proceso_Diagrama_V2.svg)
+  - [Versión 1.0 (Histórica)](./3BF_Proceso_Diagrama_V1.svg)
+
+---
+
+### 🎮 8. Contorno de Silueta $100\%$ Continuo y Ceñido en 3D (Cero Efecto Sombra)
+
+Se calibró la coordenada vertical ($Y$) de los desvíos sobre los pernos para montarse exactamente sobre el cuerpo del herraje (`p.center.y`):
+
+```mermaid
+flowchart TD
+    A["Arista de Madera (Canto a cota yCoord)"] --> B["Transición Vertical Suave al eje del Perno (pernoY)"]
+    B --> C["Recorrido y Arco en la Cota Real del Perno (p.tip, pernoY, z)"]
+    C --> D["Regreso Vertical al Canto de la Madera (yCoord)"]
+    D --> E["🎯 Línea Ceñida a la Geometría Física (Cero Efecto Sombra)"]
+```
+
+#### 📐 Perfeccionamiento de Cota:
+1. **🚫 Eliminación del Efecto Sombra:**
+   * La línea ya no cae al suelo (`minY`) ni flota en el techo (`maxY`), sino que se acopla a la altura real del cilindro del perno (`pernoY`).
+2. **✨ Continuidad 3D Total:**
+   * La transición entre la madera y el perno es tridimensionalmente continua y ceñida a los bordes visibles que dan al vacío.
+3. **🔶 Calibre $4\text{ px}$ Nítido:**
+   * Trazado continuo en `#ff9500` con `@react-three/drei` `<Line>`.
+
+### 🧲 9. Snap Base Point Estilo Blender (Flujo Completo Origen ➔ Destino)
+
+Se implementó el ciclo integral de selección de punto base y pegado magnético a puntos destino:
+
+```mermaid
+flowchart TD
+    A["1. Presionar G (Modo Mover)"] --> B["2. Presionar B (Snap Base Point)"]
+    B --> C["🧊 La Pieza se Congela / Queda Inmóvil"]
+    C --> D["3. Pasar cursor por vértice (□) o mitad (△)"]
+    D --> E["4. Clic Izquierdo (o Derecho) sobre el icono naranja"]
+    E --> F["🎯 Punto Origen Fijado + Reanudación de Movimiento"]
+    F --> G["5. Desplazar hacia el punto destino (Grid / Eje / Referencia)"]
+    G --> H["🧲 Aparece Icono Destino Naranja (□) + Snap Magnético Automático"]
+    H --> I["6. Clic Izquierdo / Enter: Pieza fijada en el destino"]
+```
+
+#### 📐 Perfeccionamiento Visual y Cinemático:
+1. **🔶 Iconografía Naranja Sólida y Nítida:**
+   * Calibre delineado de $2.5\text{ px}$ en `#ff9500` $100\%$ sólido y brillante (`depthTest={false}`, `renderOrder={999}`).
+   * Tamaño proporcionado: Cuadrado $\square$ de $24\text{ mm}$ para Endpoints y Triángulo $\triangle$ de $28\text{ mm}$ para Midpoints.
+2. **🎯 Anclaje de Origen:**
+   * Al hacer clic sobre el vértice o punto medio, la coordenada se bloquea como origen de arrastre.
+3. **🧲 Snapping Magnético en Destino:**
+   * A medida que se desplaza la pieza, al aproximarse a un punto destino, se dibuja el marcador de destino y la pieza se **pega magnéticamente** al punto objetivo.
 
 ## 🔄 Estado Final del Ecosistema 3BF
 
@@ -277,12 +344,80 @@ La aplicación React recibe el JSON `real_meshes` y renderiza cada pieza con mat
 
 ---
 
+---
+
+### 🪑 7. Biblioteca de Muebles & Asset Browser Estilo Blender 4.x
+- **Reestructuración de la Interfaz**: División en el N-Panel separando las definiciones `.ghx` en crudo (**Componentes**) de los muebles y composiciones terminadas (**Muebles**).
+- **Estética Minimalista Pura de Blender 4.x**: Miniaturas 3D cuadradas sin marcos grises ni badges superpuestos, con nombres limpios centrados debajo de la imagen.
+- **Edición Inline de Nombres**: Doble clic o icono de lápiz para renombrar archivos `.3bf.json` en tiempo real con la tecla `Enter`.
+- **Miniaturas 3D Automáticas y Centradas**: Captura WebGL de alta resolución recortando el centro exacto del visor a 360×360 px en formato WebP.
+
+---
+
+### ☁️ 8. Sincronización Nativa con Google Drive (`G:\Mi unidad\Muebles`)
+- **Almacenamiento Directo y Bidireccional**: Integración con Google Drive para escritorio en Windows (`G:\Mi unidad\Muebles`).
+- **Escaneo en Vivo sin Listas Quemadas**: La interfaz lee en tiempo real la estructura de marcas (`RTA Design`, `Politorno`, `Henn`, `Bartira`, etc.) y sus subcarpetas tipológicas. Si se borra o agrega una carpeta en Google Drive, se actualiza al instante con el botón **`Sincronizar`**.
+- **Botón `Ir al Drive ↗`**: Enlace directo que abre la carpeta oficial en Google Drive Web en una nueva pestaña.
+- **Flujo "Guardar como..." & "Abrir Mueble"**: Empaquetado completo de la geometría 3D, posiciones, rotaciones, parámetros y ficha técnica de costos en archivos estructurados `.3bf.json`.
+
+---
+
+---
+
+### 📦 10. Arquitectura de Persistencia Simbiótica (`.3bf.json` en Google Drive + Base de Datos)
+
+El flujo de guardado de **3DBimFab (3BF)** opera bajo un modelo de **Persistencia Simbiótica y Gemelo Digital Atómico**. Al pulsar **"Guardar como..."**, el sistema no solo almacena un archivo CAD aislado, sino un paquete integral estructurado:
+
+```mermaid
+flowchart TD
+    subgraph UI["🖥️ 3BF Web App"]
+        A["Escenario 3D (Three.js)"]
+        B["Ficha de Despiece & BOM"]
+        C["Base de Datos de Precios (Novopan/Blum)"]
+    end
+
+    subgraph Save["📦 Guardar como... (Gemelo Digital)"]
+        D["Archivo .3bf.json Atómico"]
+    end
+
+    subgraph Storage["☁️ Google Drive & Sistema"]
+        E["G:\\Mi unidad\\Muebles\\[Marca]\\[Tipología]\\mueble_xxxx.3bf.json"]
+        F["Asset Browser (Indexación en Vivo)"]
+    end
+
+    A & B & C --> D
+    D --> E
+    E --> F
+    F -->|"Abrir Mueble"| A & B
+```
+
+#### 🗂️ Componentes del Archivo `.3bf.json`:
+1. **Geometría y Parámetros 3D**: Registro exacto de todas las instancias del escenario (dimensiones de ancho, alto, profundidad, posiciones, offsets y rotaciones espaciales).
+2. **Ficha Técnica & BOM (Despiece Industrial)**: Lista completa de piezas de corte, metros lineales de cantos, inventario de herrajes DfMA y estructura de costeo consolidada al 100%.
+3. **Miniatura Gráfica WebGL**: Captura en alta definición generada directamente desde el Canvas WebGL.
+4. **Metadata Comercial**: Marca, tipología de catálogo, fecha de creación, descripción comercial y conteo de piezas.
+
+#### 🤝 Funcionamiento en Pareja (Google Drive + Base de Datos):
+- **Contenedor Maestro Autónomo**: El archivo `.3bf.json` en Google Drive preserva tanto la geometría 3D como el estado económico y técnico del producto.
+- **Vinculación con la Base de Datos Maestra**: Los costos de materiales se congelan referenciando la lista de precios maestros de tableros, cantos y herrajes.
+- **Reconstrucción 100% Fiel**: Al abrir el mueble desde el Asset Browser, el sistema reconstituye simultáneamente la escena tridimensional en el visor y toda la ficha técnica de fabricación sin inconsistencias ni pérdidas de datos.
+
+---
+
+### 📏 11. Calibración Global de Despunte Técnico de Cantos (mm)
+
+- **Control Paramétrico Universal**: Se implementó la casilla **`Despunte Canto: [ 100 ] mm`** en la cabecera de la ficha de despiece, permitiendo a cualquier fábrica ajustar su tolerancia de despunte por borde (ej. 50 mm, 80 mm, 100 mm = 10 cm).
+- **Fórmula Oficial Reactiva**:
+  $$\text{Metros} = \left[ \frac{(\text{Ancho} + \text{Despunte}) \times A + (\text{Largo} + \text{Despunte}) \times L}{1000} \right] \times \text{Cantidad}$$
+- **Sincronización & Persistencia**: El valor se recalcula instantáneamente en la tabla de corte (Tabla 1) y en el inventario consolidado de cantos (Tabla 3), persistiendo en la configuración de la ficha técnica y en el archivo `.3bf.json`.
+
+---
+
 ## 🔄 Estado Final del Ecosistema 3BF
 
-- **3BF Worker Python (`3bf_worker.py`)**: Corriendo en `http://localhost:8005`.
-- **RhinoCompute 8 (`rhino.compute.exe`)**: Corriendo en `http://localhost:5000`.
+- **3BF Worker Python (`3bf_worker.py`)**: Corriendo en `http://localhost:8005` (FastAPI).
+- **RhinoCompute 8 (`rhino.compute.exe`)**: Corriendo en `http://localhost:5000` (Rhino 8 Engine).
 - **Aplicación Web Next.js 3BF**: Corriendo en `http://localhost:3005`.
-- **Archivos de Definición en `temporal/`**:
-  - `Cajon_Experimento_Viktor_1cajon.ghx`
-  - `Cajon_Experimento_Viktor_2cajones.ghx`
-  - `Cajon_Experimento_Viktor_3cajones.ghx`
+- **Google Drive Storage**: Sincronizado en `G:\Mi unidad\Muebles`.
+
+

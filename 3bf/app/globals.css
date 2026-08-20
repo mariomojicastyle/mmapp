@@ -28,34 +28,68 @@ body {
 }
 
 .glass-panel {
-  background: rgba(255, 255, 255, 0.85);
+  background-color: var(--bg-surface);
   backdrop-filter: blur(12px);
-  border: 1px solid var(--border-color);
+  border-color: var(--border-color);
 }
 
 [data-theme="obsidian"] .glass-panel {
-  background: rgba(19, 27, 46, 0.92);
+  background-color: var(--bg-surface);
   backdrop-filter: blur(12px);
-  border: 1px solid #233044;
+  border-color: var(--border-color);
 }
 
-/* Custom Scrollbar for Obsidian Teal */
-[data-theme="obsidian"] ::-webkit-scrollbar {
+/* Universal Dynamic Scrollbars */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--scrollbar-thumb, #94A3B8) var(--bg-main, #F1F5F9);
+}
+
+/* Ocultar barra de desplazamiento preservando el scroll con rueda del ratón y touch */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+  width: 0px;
+  height: 0px;
+}
+
+.no-scrollbar {
+  -ms-overflow-style: none; /* IE and Edge */
+  scrollbar-width: none; /* Firefox */
+}
+
+::-webkit-scrollbar {
   width: 6px;
   height: 6px;
 }
 
-[data-theme="obsidian"] ::-webkit-scrollbar-track {
-  background: #0B0F17;
+::-webkit-scrollbar-track {
+  background: var(--bg-main, #F1F5F9);
 }
 
-[data-theme="obsidian"] ::-webkit-scrollbar-thumb {
-  background: #233044;
+::-webkit-scrollbar-thumb {
+  background: var(--scrollbar-thumb, #94A3B8);
   border-radius: 4px;
 }
 
+::-webkit-scrollbar-thumb:hover {
+  background: var(--brand-color, #0891B2);
+}
+
+::-webkit-scrollbar-corner {
+  background: var(--bg-main, #F1F5F9);
+}
+
+/* Custom Scrollbar for Obsidian Teal */
+[data-theme="obsidian"] ::-webkit-scrollbar-track {
+  background: var(--bg-main, #0B0F17);
+}
+
+[data-theme="obsidian"] ::-webkit-scrollbar-thumb {
+  background: var(--scrollbar-thumb, #475569);
+}
+
 [data-theme="obsidian"] ::-webkit-scrollbar-thumb:hover {
-  background: #06B6D4;
+  background: var(--brand-color, #06B6D4);
 }
 
 /* Reglas de texto luminoso blanco para Tema Obsidian Teal */
@@ -79,15 +113,20 @@ body {
 /* Reglas estandarizadas para cajas de selección y menús desplegables */
 select,
 [data-theme="obsidian"] select {
-  background-color: #E2E8F0 !important;
-  color: #0F172A !important;
-  border-color: #CBD5E1 !important;
+  background-color: var(--bg-main, #F1F5F9) !important;
+  color: var(--text-main, #0F172A) !important;
+  border: 1px solid var(--control-border, #CBD5E1) !important;
   border-radius: 0.5rem !important;
   font-weight: 700 !important;
 }
 
+input[type="range"] {
+  border: 1px solid var(--control-border, #CBD5E1);
+  background-color: var(--bg-surface, #FFFFFF);
+}
+
 select option,
 [data-theme="obsidian"] select option {
-  background-color: #FFFFFF !important;
-  color: #0F172A !important;
+  background-color: var(--bg-surface, #FFFFFF) !important;
+  color: var(--text-main, #0F172A) !important;
 }
