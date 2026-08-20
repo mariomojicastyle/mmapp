@@ -29,7 +29,18 @@ function loadDiskStore(): { prospectos: VentasProspecto[]; interacciones: Record
       const raw = fs.readFileSync(DATA_FILE_PATH, "utf-8")
       const parsed = JSON.parse(raw)
       if (parsed.prospectos && Array.isArray(parsed.prospectos)) {
-        return parsed
+        let interMap: Record<string, VentasInteraccion[]> = {}
+        if (Array.isArray(parsed.interacciones)) {
+          for (const item of parsed.interacciones) {
+            if (item.prospecto_id) {
+              if (!interMap[item.prospecto_id]) interMap[item.prospecto_id] = []
+              interMap[item.prospecto_id].push(item)
+            }
+          }
+        } else if (parsed.interacciones && typeof parsed.interacciones === "object") {
+          interMap = parsed.interacciones
+        }
+        return { prospectos: parsed.prospectos, interacciones: interMap }
       }
     }
   } catch (err) {
@@ -552,14 +563,23 @@ export async function getVentasProspectoById(id: string): Promise<{
       .eq("prospecto_id", id)
       .order("created_at", { ascending: false })
 
-    const diskInteracciones = disk.interacciones[prospecto.id] || []
-    const finalInteracciones = !iError && interacciones && interacciones.length > 0 ? interacciones : diskInteracciones
+    if (!iError && Array.isArray(interacciones)) {
+      return {
+        success: true,
+        data: {
+          prospecto,
+          interacciones: interacciones,
+        },
+      }
+    }
 
+    // Fallback solo si Supabase falla
+    const diskInteracciones = disk.interacciones[prospecto.id] || []
     return {
       success: true,
       data: {
         prospecto,
-        interacciones: finalInteracciones,
+        interacciones: diskInteracciones,
       },
     }
   } catch (err: any) {

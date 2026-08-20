@@ -127,6 +127,7 @@ export default function VentasRamPage() {
   // Manejador al seleccionar un prospecto
   const handleSelectProspecto = async (p: VentasProspecto) => {
     setSelectedProspecto(p)
+    setInteracciones([])
     await fetchInteracciones(p.id)
   }
 
