@@ -54,8 +54,8 @@ export default function ThemeManager() {
       root.style.setProperty("--tabla-th-text", coloresApariencia.tablaEncabezadoTexto || "#0F172A");
       root.style.setProperty("--tabla-row-bg", coloresApariencia.tablaFilaFondo || "#FFFFFF");
       root.style.setProperty("--tabla-border", coloresApariencia.tablaBorde || "#E2E8F0");
-      root.style.setProperty("--tabla-total-bg", coloresApariencia.tablaTotalFondo || "#0F172A");
-      root.style.setProperty("--tabla-total-text", coloresApariencia.tablaTotalTexto || "#F8FAFC");
+      root.style.setProperty("--tabla-total-bg", coloresApariencia.tablaTotalFondo || "#E2E8F0");
+      root.style.setProperty("--tabla-total-text", coloresApariencia.tablaTotalTexto || "#0F172A");
       root.style.setProperty("--kpi-card-bg", coloresApariencia.kpiTarjetaFondo || "#FFFFFF");
       root.style.setProperty("--kpi-card-text", coloresApariencia.kpiTarjetaTexto || "#0891B2");
     }

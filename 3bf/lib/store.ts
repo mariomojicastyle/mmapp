@@ -142,8 +142,8 @@ export const PRESET_COLORES_CLARO: ColoresApariencia = {
   tablaEncabezadoTexto: "#1E293B",
   tablaFilaFondo: "#FFFFFF",
   tablaBorde: "#CBD5E1",
-  tablaTotalFondo: "#0F172A",
-  tablaTotalTexto: "#F8FAFC",
+  tablaTotalFondo: "#E2E8F0",
+  tablaTotalTexto: "#0F172A",
   kpiTarjetaFondo: "#FFFFFF",
   kpiTarjetaTexto: "#0891B2",
 
