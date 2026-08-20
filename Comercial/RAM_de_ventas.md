@@ -64,6 +64,21 @@ El módulo genera borradores en tiempo real listos para copiar y pegar, adaptado
 
 ---
 
+### 🔥 Leads Calientes / En Negociación Inmediata:
+1. **Marcos De Henn Brasil (Móveis Henn - Brasil):**
+   - **Cargo:** Decisor / P&D Engenharia (`+55 49 8807-4325`). Correo: `engenharia1@henn.com.br`.
+   - **Estado:** CITA CONFIRMADA vía Google Meet para el **miércoles 26 de agosto de 2026 a las 10:00 BRT (8:00 COL)**.
+   - **Última Acción:** Invitación enviada por Google Calendar y link de Meet compartido por WhatsApp con acuerdo de confirmación el miércoles temprano.
+   - **Próxima Acción:** Enviar recordatorio breve por WhatsApp a las 9:30 BRT el miércoles antes de la demo 3D.
+
+2. **Jonas Borck (Móveis Henn - Brasil):**
+   - **Cargo:** Analista de Engenharia de Produtos (LinkedIn).
+   - **Estado:** Padrino interno y puente comercial.
+   - **Última Acción:** Mensaje enviado por LinkedIn agradeciéndole, informándole de la demo con Marcos del miércoles, consultando la comprensión de español de Marcos y sembrando la semilla de 3DBimFab (Beta).
+   - **Próxima Acción:** Esperar feedback de Jonas sobre el idioma y si se sumará a la reunión.
+
+---
+
 ## 🔄 4. Protocolo Antiduplicados y CRM Sincronizado
 
 - **Detección Automática:** Cada lead extraído por imagen o texto es verificado contra la base de datos de Baserow (Tabla 994 / 600) y Supabase para evitar dobles registros.
