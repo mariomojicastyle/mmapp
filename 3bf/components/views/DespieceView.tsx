@@ -20,7 +20,8 @@ import {
   Scissors,
   Ruler,
   Maximize2,
-  Database
+  Database,
+  FileCode2
 } from "lucide-react";
 
 /**
@@ -35,13 +36,15 @@ function DecimalInput({
   onChange,
   decimals = 1,
   className = "",
-  placeholder = "0"
+  placeholder = "0",
+  style,
 }: {
   value: number;
   onChange: (val: number) => void;
   decimals?: number;
   className?: string;
   placeholder?: string;
+  style?: React.CSSProperties;
 }) {
   const [texto, setTexto] = useState("");
   const [enfocado, setEnfocado] = useState(false);
@@ -97,8 +100,38 @@ function DecimalInput({
       onBlur={handleBlur}
       placeholder={placeholder}
       className={className}
+      style={style}
     />
   );
+}
+
+// Trigonometría vectorial para Donut Chart SVG
+function polarToCartesian(centerX: number, centerY: number, radius: number, angleInDegrees: number) {
+  const angleInRadians = ((angleInDegrees - 90) * Math.PI) / 180.0;
+  return {
+    x: centerX + radius * Math.cos(angleInRadians),
+    y: centerY + radius * Math.sin(angleInRadians),
+  };
+}
+
+function describeArc(x: number, y: number, rOuter: number, rInner: number, startAngle: number, endAngle: number) {
+  const deltaAngle = Math.min(Math.max(endAngle - startAngle, 0.05), 359.99);
+  const adjustedEndAngle = startAngle + deltaAngle;
+  
+  const startOuter = polarToCartesian(x, y, rOuter, adjustedEndAngle);
+  const endOuter = polarToCartesian(x, y, rOuter, startAngle);
+  const startInner = polarToCartesian(x, y, rInner, startAngle);
+  const endInner = polarToCartesian(x, y, rInner, adjustedEndAngle);
+  
+  const largeArcFlag = deltaAngle <= 180 ? "0" : "1";
+  
+  return [
+    "M", startOuter.x, startOuter.y,
+    "A", rOuter, rOuter, 0, largeArcFlag, 0, endOuter.x, endOuter.y,
+    "L", startInner.x, startInner.y,
+    "A", rInner, rInner, 0, largeArcFlag, 1, endInner.x, endInner.y,
+    "Z"
+  ].join(" ");
 }
 
 export default function DespieceView() {
@@ -120,6 +153,8 @@ export default function DespieceView() {
     moneda,
     setMoneda,
     setModalGuardarComoAbierto,
+    setMostrarNPanel,
+    setPestanaNPanel,
     hidratarDesdeLocalStorage,
     coloresApariencia,
   } = use3BFStore();
@@ -143,6 +178,7 @@ export default function DespieceView() {
   const [descripcionesPersonalizadas, setDescripcionesPersonalizadas] = useState<Record<number, string>>((fichaInicial as any).descripcionesPersonalizadas || {});
   const [materialesPorPieza, setMaterialesPorPieza] = useState<Record<number, string>>(fichaInicial.materialesPorPieza || {});
   const [desperdicioGlobalPct, setDesperdicioGlobalPct] = useState<number>(fichaInicial.desperdicioGlobalPct ?? 10.0);
+  const [despunteCantoGlobalMm, setDespunteCantoGlobalMm] = useState<number>(fichaInicial.despunteCantoGlobalMm ?? 100);
   const [desperdicioPorPieza, setDesperdicioPorPieza] = useState<Record<number, number>>(fichaInicial.desperdicioPorPieza || {});
   
   // Configuración de cantos por pieza (A = cantos en ancho, L = cantos en largo, cantoCodigo)
@@ -167,6 +203,7 @@ export default function DespieceView() {
   useEffect(() => {
     const config = getFichaConfig(modelKey);
     setDesperdicioGlobalPct(config.desperdicioGlobalPct ?? 10.0);
+    setDespunteCantoGlobalMm(config.despunteCantoGlobalMm ?? 100);
     setDesperdicioPorPieza(config.desperdicioPorPieza || {});
     setDescripcionesPersonalizadas((config as any).descripcionesPersonalizadas || {});
     setMaterialesPorPieza(config.materialesPorPieza || {});
@@ -175,6 +212,10 @@ export default function DespieceView() {
     setCostoEmpaqueManualCop(config.costoEmpaqueManualCop ?? 0);
     setCostoEmpaqueManualUsd(config.costoEmpaqueManualUsd ?? 0);
   }, [modelKey]);
+
+  // Estado para la gráfica analítica de distribución de costos
+  const [chartMode, setChartMode] = useState<"macro" | "detalle">("detalle");
+  const [hoveredCostKey, setHoveredCostKey] = useState<string | null>(null);
 
   const handleEmpaqueChange = (val: number) => {
     if (moneda === "COP") {
@@ -384,10 +425,34 @@ export default function DespieceView() {
     });
   };
 
+  const handleCambiarCantoEnTabla3 = (codigoViejo: string, nuevoCodigoCanto: string) => {
+    setCantosPorPieza((prev) => {
+      const updated = { ...prev };
+      piezasActivas.forEach((p: any, idx: number) => {
+        const cConfig = getCantoPieza(idx, p.nombre, p.espesor);
+        if (!codigoViejo || cConfig.cantoCodigo === codigoViejo) {
+          updated[idx] = {
+            ...(updated[idx] || {}),
+            cantosAncho: cConfig.cantosAncho,
+            cantosLargo: cConfig.cantosLargo,
+            cantoCodigo: nuevoCodigoCanto
+          };
+        }
+      });
+      sincronizarCambios({ cantosPorPieza: updated });
+      return updated;
+    });
+  };
+
   const handleDesperdicioGlobalChange = (val: number) => {
     setDesperdicioGlobalPct(val);
     setDesperdicioPorPieza({});
     sincronizarCambios({ desperdicioGlobalPct: val, desperdicioPorPieza: {} });
+  };
+
+  const handleDespunteCantoGlobalChange = (val: number) => {
+    setDespunteCantoGlobalMm(val);
+    sincronizarCambios({ despunteCantoGlobalMm: val });
   };
 
   const handleDesperdicioPiezaChange = (idx: number, val: number) => {
@@ -433,11 +498,11 @@ export default function DespieceView() {
       const cConfig = getCantoPieza(idx, p.nombre, p.espesor);
       const cantoMat = dbCantos.find((c: CantoRecord) => c.codigo === cConfig.cantoCodigo);
       
-      // Fórmula oficial de fábrica Excel EDP (+100mm de despunte por borde):
-      // Metros = [((Ancho + 100) * A + (Largo + 100) * L) / 1000] * Cantidad
+      // Fórmula oficial de fábrica Excel EDP (+despunte técnico por borde para canteadora):
+      // Metros = [((Ancho + despunte) * A + (Largo + despunte) * L) / 1000] * Cantidad
       let metrosCantoPieza = 0;
       if (cantoMat && (cConfig.cantosAncho > 0 || cConfig.cantosLargo > 0)) {
-        metrosCantoPieza = Number(((((p.ancho + 100) * cConfig.cantosAncho + (p.largo + 100) * cConfig.cantosLargo) / 1000.0) * p.cantidad).toFixed(2));
+        metrosCantoPieza = Number(((((p.ancho + despunteCantoGlobalMm) * cConfig.cantosAncho + (p.largo + despunteCantoGlobalMm) * cConfig.cantosLargo) / 1000.0) * p.cantidad).toFixed(2));
       }
 
       return {
@@ -466,7 +531,7 @@ export default function DespieceView() {
       costoTotalMaderaCop: Math.round(totalMaderaCop),
       costoTotalMaderaUsd: Number(totalMaderaUsd.toFixed(2))
     };
-  }, [piezasActivas, descripcionesPersonalizadas, materialesPorPieza, dbTableros, dbCantos, trm, desperdicioGlobalPct, desperdicioPorPieza, cantosPorPieza, parametros]);
+  }, [piezasActivas, descripcionesPersonalizadas, materialesPorPieza, dbTableros, dbCantos, trm, desperdicioGlobalPct, despunteCantoGlobalMm, desperdicioPorPieza, cantosPorPieza, parametros]);
 
   // Cálculos Consolidados de Cantos (Metros Lineales y Costos)
   const resumenCantos = useMemo(() => {
@@ -694,9 +759,52 @@ export default function DespieceView() {
     };
   }, [resumenMadera, resumenCantos, resumenHerrajes, costosConversion, trm, costoEmpaqueManualCop, costoEmpaqueManualUsd]);
 
-  // Costo Total Consolidado (Materia Prima Directa)
-  const costoTotalMuebleCop = resumenIndustrial.totalMpCop;
-  const costoTotalMuebleUsd = resumenIndustrial.totalMpUsd;
+  // Listas de datos para la gráfica analítica de distribución de costos
+  const macroCostItems = useMemo(() => [
+    { id: "mp", nombre: "Materia Prima Directa (MP)", valorCop: resumenIndustrial.totalMpCop, valorUsd: resumenIndustrial.totalMpUsd, pct: resumenIndustrial.pctMpTotalReal, color: "#06B6D4" },
+    { id: "mo", nombre: "Mano de Obra Directa (MO)", valorCop: resumenIndustrial.moPresCop, valorUsd: resumenIndustrial.moPresUsd, pct: resumenIndustrial.pctMo, color: "#10B981" },
+    { id: "cif", nombre: "Costos Indirectos (CIF)", valorCop: resumenIndustrial.cifCop, valorUsd: resumenIndustrial.cifUsd, pct: resumenIndustrial.pctCif, color: "#F59E0B" },
+  ], [resumenIndustrial]);
+
+  const detalleCostItems = useMemo(() => [
+    { id: "tableros", nombre: "Lista de tableros", valorCop: resumenIndustrial.laminaCop, valorUsd: resumenIndustrial.laminaUsd, pct: resumenIndustrial.pctLaminaReal, color: "#06B6D4" },
+    { id: "fondos", nombre: "Fondos (MDF)", valorCop: resumenIndustrial.fondosCop, valorUsd: resumenIndustrial.fondosUsd, pct: resumenIndustrial.pctFondosReal, color: "#6366F1" },
+    { id: "cantos", nombre: "Metros de canto", valorCop: resumenIndustrial.cantoCop, valorUsd: resumenIndustrial.cantoUsd, pct: resumenIndustrial.pctCantoReal, color: "#3B82F6" },
+    { id: "empaque", nombre: "Material de Empaque", valorCop: resumenIndustrial.empaqueCop, valorUsd: resumenIndustrial.empaqueUsd, pct: resumenIndustrial.pctEmpaqueReal, color: "#A855F7" },
+    { id: "herrajes", nombre: "Lista de herrajes", valorCop: resumenIndustrial.herrajesCop, valorUsd: resumenIndustrial.herrajesUsd, pct: resumenIndustrial.pctHerrajesReal, color: "#EC4899" },
+    { id: "adicionales", nombre: "Adicionales / Consumibles", valorCop: resumenIndustrial.adicionalesCop, valorUsd: resumenIndustrial.adicionalesUsd, pct: resumenIndustrial.pctAdicionalesReal, color: "#94A3B8" },
+    { id: "tercerizaciones", nombre: "Tercerizaciones", valorCop: resumenIndustrial.tercerizacionesCop, valorUsd: resumenIndustrial.tercerizacionesUsd, pct: resumenIndustrial.pctTercerizacionesReal, color: "#64748B" },
+    { id: "mo", nombre: "Mano de Obra (MO)", valorCop: resumenIndustrial.moPresCop, valorUsd: resumenIndustrial.moPresUsd, pct: resumenIndustrial.pctMo, color: "#10B981" },
+    { id: "cif", nombre: "Costos Indirectos (CIF)", valorCop: resumenIndustrial.cifCop, valorUsd: resumenIndustrial.cifUsd, pct: resumenIndustrial.pctCif, color: "#F59E0B" },
+  ], [resumenIndustrial]);
+
+  const activeChartItems = chartMode === "macro" ? macroCostItems : detalleCostItems;
+
+  const chartSlices = useMemo(() => {
+    const itemsConValor = activeChartItems.filter((i) => i.pct > 0);
+    const sumPct = itemsConValor.reduce((acc, i) => acc + i.pct, 0) || 100;
+    let currentAngle = 0;
+    return itemsConValor.map((item) => {
+      const sliceAngle = (item.pct / sumPct) * 360;
+      const startAngle = currentAngle;
+      const endAngle = currentAngle + sliceAngle;
+      currentAngle = endAngle;
+      return {
+        ...item,
+        startAngle,
+        endAngle,
+      };
+    });
+  }, [activeChartItems]);
+
+  const activeHoveredItem = useMemo(() => {
+    if (!hoveredCostKey) return null;
+    return activeChartItems.find((i) => i.id === hoveredCostKey) || null;
+  }, [hoveredCostKey, activeChartItems]);
+
+  // Costo Total Consolidado del Producto (100% Fabricación: MP + MO + CIF)
+  const costoTotalMuebleCop = resumenIndustrial.costoTotalFabCop;
+  const costoTotalMuebleUsd = resumenIndustrial.costoTotalFabUsd;
 
   if (!resultado) {
     return (
@@ -739,6 +847,7 @@ export default function DespieceView() {
       // 1. Sincronizar estado completo en el Store Global de Zustand y en LocalStorage
       sincronizarCambios({
         desperdicioGlobalPct,
+        despunteCantoGlobalMm,
         desperdicioPorPieza,
         descripcionesPersonalizadas,
         materialesPorPieza,
@@ -757,6 +866,7 @@ export default function DespieceView() {
         moneda: moneda,
         trm: trm,
         desperdicio_global_pct: desperdicioGlobalPct,
+        despunte_canto_global_mm: despunteCantoGlobalMm,
         costo_empaque_manual_cop: costoEmpaqueManualCop,
         costo_empaque_manual_usd: costoEmpaqueManualUsd,
         despiece: resumenMadera.items.map((i: any) => ({
@@ -810,6 +920,7 @@ export default function DespieceView() {
       localStorage.setItem(`3bf_bom_${payload.model_id}_${versionActual}`, JSON.stringify(payload));
       localStorage.setItem(`3bf_ficha_config_${modelKey}`, JSON.stringify({
         desperdicioGlobalPct,
+        despunteCantoGlobalMm,
         desperdicioPorPieza,
         materialesPorPieza,
         cantosPorPieza,
@@ -856,69 +967,62 @@ export default function DespieceView() {
   };
 
   return (
-    <div className="p-4 flex flex-col gap-4 h-full overflow-y-auto bg-slate-50 dark:bg-slate-900/60 rounded-xl border border-slate-200 dark:border-slate-800 text-xs">
-      {/* Barra de Controles: Master Key, Versión, Selector de Moneda, TRM y Botón de Guardado */}
-      <div className="flex flex-wrap items-center justify-between p-2.5 rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-sm gap-2">
-        {/* Identificador GHX */}
-        <div className="flex items-center gap-2 font-semibold text-slate-800 dark:text-slate-100">
-          <ShieldCheck className="w-4 h-4 text-cyan-600" />
-          <span className="font-mono text-xs text-cyan-700 dark:text-cyan-300 font-bold">
-            {parametros.custom_filename || `${parametros.model_id || "Cubierta"}.ghx`}
-          </span>
-          <span className="text-[10px] px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-700 text-slate-500 font-mono">
-            GHX Master Key
-          </span>
-        </div>
-
-        {/* Acciones de Cabecera: Guardar Ficha, Guardar Como Mueble, Versión y Moneda */}
+    <div 
+      style={{ 
+        backgroundColor: coloresApariencia?.fondoPaneles, 
+        borderColor: coloresApariencia?.bordePaneles,
+        color: coloresApariencia?.textoPrincipal 
+      }}
+      className="w-full h-full glass-panel rounded-xl border flex flex-col overflow-y-auto no-scrollbar p-3.5 gap-3.5 text-xs transition-colors"
+    >
+      {/* Barra de Controles: Versión, Selector de Moneda, TRM y Botón de Guardado */}
+      <div 
+        style={{ 
+          backgroundColor: coloresApariencia?.fondoPaneles, 
+          borderColor: coloresApariencia?.bordePaneles 
+        }}
+        className="flex flex-wrap items-center justify-end p-2.5 rounded-lg border shadow-sm gap-2 transition-colors"
+      >
+        {/* Acciones de Cabecera: Guardar Mueble, Versión y Moneda */}
         <div className="flex items-center gap-2 flex-wrap">
-          {/* Botón Guardar Como Mueble (Google Drive / Catálogo de Marcas) */}
+          {/* Botón Único Guardar (Abre el panel deslizante lateral de Biblioteca de Muebles) */}
           <button
-            onClick={() => setModalGuardarComoAbierto(true)}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-gradient-to-r from-cyan-600 to-teal-500 hover:from-cyan-500 hover:to-teal-400 text-white font-bold text-xs shadow-sm transition cursor-pointer"
-            title="Guardar este mueble con toda su geometría 3D y ficha de costos en Google Drive"
+            onClick={() => {
+              setPestanaNPanel("muebles");
+              setMostrarNPanel(true);
+            }}
+            style={{ 
+              backgroundColor: coloresApariencia?.botonActivo || "#0891B2", 
+              color: "#FFFFFF",
+            }}
+            className="flex items-center gap-1.5 px-4 py-1.5 rounded-full font-bold text-xs shadow-md transition cursor-pointer hover:opacity-90 active:scale-95 border border-transparent"
+            title="Abrir Biblioteca de Muebles para guardar y organizar en carpetas"
           >
             <Save className="w-3.5 h-3.5" />
-            <span>Guardar como...</span>
+            <span>Guardar</span>
           </button>
 
-          {/* Botón de Sincronización Rápida en Base de Datos */}
-          <button
-            onClick={guardarEnSupabase}
-            disabled={guardando}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg font-bold text-xs shadow-sm transition cursor-pointer ${
-              guardadoExitoso
-                ? "bg-emerald-600 text-white hover:bg-emerald-700 animate-pulse"
-                : "bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 text-slate-800 dark:text-slate-200"
-            }`}
-            title="Guarda de forma permanente la ficha técnica, desperdicios, materiales y cantos en Supabase"
-          >
-            {guardadoExitoso ? (
-              <>
-                <Check className="w-3.5 h-3.5 text-white" />
-                <span>¡Sincronizado!</span>
-              </>
-            ) : (
-              <>
-                <Database className="w-3.5 h-3.5 text-cyan-600 dark:text-cyan-400" />
-                <span>{guardando ? "Sincronizando..." : "Sincronizar BD"}</span>
-              </>
-            )}
-          </button>
-
-          <div className="h-4 w-px bg-slate-300 dark:bg-slate-600" />
+          <div 
+            style={{ backgroundColor: coloresApariencia?.bordePaneles }}
+            className="h-4 w-px" 
+          />
 
           {/* Selector de Versión */}
           <div className="flex items-center gap-1.5">
-            <Tag className="w-3.5 h-3.5 text-slate-400" />
-            <span className="text-slate-500 font-medium text-[11px]">Versión:</span>
+            <Tag style={{ color: coloresApariencia?.textoSecundario }} className="w-3.5 h-3.5" />
+            <span style={{ color: coloresApariencia?.textoSecundario }} className="font-medium text-[11px]">Versión:</span>
             <select
               value={versionActual}
               onChange={(e) => {
                 setVersionActual(e.target.value);
                 sincronizarCambios({ versionActual: e.target.value });
               }}
-              className="text-xs font-bold py-1 px-2 rounded bg-slate-100 dark:bg-slate-700 border border-slate-300 dark:border-slate-600 text-cyan-700 dark:text-cyan-300 outline-none cursor-pointer"
+              style={{
+                backgroundColor: coloresApariencia?.fondoAplicacion,
+                borderColor: coloresApariencia?.bordePaneles,
+                color: coloresApariencia?.botonActivo,
+              }}
+              className="text-xs font-bold py-1 px-2 rounded border outline-none cursor-pointer"
             >
               <option value="BD 1.0">BD 1.0</option>
               <option value="BD 1.1">BD 1.1</option>
@@ -926,27 +1030,40 @@ export default function DespieceView() {
             </select>
           </div>
 
-          <div className="h-4 w-px bg-slate-300 dark:bg-slate-600" />
+          <div 
+            style={{ backgroundColor: coloresApariencia?.bordePaneles }}
+            className="h-4 w-px" 
+          />
 
           {/* Selector de Moneda (USD / COP) */}
-          <div className="flex items-center bg-slate-100 dark:bg-slate-700/80 p-0.5 rounded-lg border border-slate-300 dark:border-slate-600">
+          <div 
+            style={{ 
+              backgroundColor: coloresApariencia?.fondoAplicacion,
+              borderColor: coloresApariencia?.bordePaneles 
+            }}
+            className="flex items-center p-0.5 rounded-lg border"
+          >
             <button
               onClick={() => setMoneda("USD")}
-              className={`px-2.5 py-0.5 rounded-md font-bold text-[11px] transition cursor-pointer ${
-                moneda === "USD"
-                  ? "bg-white dark:bg-slate-900 text-cyan-700 dark:text-cyan-300 shadow-sm"
-                  : "text-slate-500 hover:text-slate-800"
-              }`}
+              style={moneda === "USD" ? {
+                backgroundColor: coloresApariencia?.botonActivo,
+                color: "#FFFFFF",
+              } : {
+                color: coloresApariencia?.textoSecundario,
+              }}
+              className="px-2.5 py-0.5 rounded-md font-bold text-[11px] transition cursor-pointer shadow-xs"
             >
               USD ($)
             </button>
             <button
               onClick={() => setMoneda("COP")}
-              className={`px-2.5 py-0.5 rounded-md font-bold text-[11px] transition cursor-pointer ${
-                moneda === "COP"
-                  ? "bg-white dark:bg-slate-900 text-emerald-700 dark:text-emerald-300 shadow-sm"
-                  : "text-slate-500 hover:text-slate-800"
-              }`}
+              style={moneda === "COP" ? {
+                backgroundColor: coloresApariencia?.botonActivo,
+                color: "#FFFFFF",
+              } : {
+                color: coloresApariencia?.textoSecundario,
+              }}
+              className="px-2.5 py-0.5 rounded-md font-bold text-[11px] transition cursor-pointer shadow-xs"
             >
               COP ($)
             </button>
@@ -963,9 +1080,14 @@ export default function DespieceView() {
           }}
           className="p-3 rounded-lg border shadow-sm text-center transition-colors"
         >
-          <span className="text-[10px] text-slate-500 uppercase block font-semibold">Superficie Tableros</span>
           <span 
-            style={{ color: coloresApariencia?.kpiTarjetaTexto || coloresApariencia?.colorMarca }}
+            style={{ color: coloresApariencia?.textoSecundario }}
+            className="text-[10px] uppercase block font-bold tracking-wider"
+          >
+            Superficie Tableros
+          </span>
+          <span 
+            style={{ color: coloresApariencia?.botonActivo }}
             className="text-base font-extrabold font-mono"
           >
             {resumenMadera.areaTotalM2} m²
@@ -978,9 +1100,14 @@ export default function DespieceView() {
           }}
           className="p-3 rounded-lg border shadow-sm text-center transition-colors"
         >
-          <span className="text-[10px] text-slate-500 uppercase block font-semibold">Herrajes Totales</span>
           <span 
-            style={{ color: coloresApariencia?.kpiTarjetaTexto || coloresApariencia?.colorMarca }}
+            style={{ color: coloresApariencia?.textoSecundario }}
+            className="text-[10px] uppercase block font-bold tracking-wider"
+          >
+            Herrajes Totales
+          </span>
+          <span 
+            style={{ color: coloresApariencia?.botonActivo }}
             className="text-base font-extrabold font-mono"
           >
             {resumenHerrajes.cantTotalHerrajes} u
@@ -993,9 +1120,14 @@ export default function DespieceView() {
           }}
           className="p-3 rounded-lg border shadow-sm text-center transition-colors"
         >
-          <span className="text-[10px] text-slate-500 uppercase block font-semibold">Metros Canto (+100mm)</span>
           <span 
-            style={{ color: coloresApariencia?.kpiTarjetaTexto || coloresApariencia?.colorMarca }}
+            style={{ color: coloresApariencia?.textoSecundario }}
+            className="text-[10px] uppercase block font-bold tracking-wider"
+          >
+            Metros Canto
+          </span>
+          <span 
+            style={{ color: coloresApariencia?.botonActivo }}
             className="text-base font-extrabold font-mono"
           >
             {resumenCantos.cantTotalMetros} ml
@@ -1008,9 +1140,14 @@ export default function DespieceView() {
           }}
           className="p-3 rounded-lg border shadow-sm text-center transition-colors"
         >
-          <span className="text-[10px] text-slate-500 uppercase block font-semibold">Costo Total Estimado</span>
           <span 
-            style={{ color: coloresApariencia?.kpiTarjetaTexto || coloresApariencia?.colorMarca }}
+            style={{ color: coloresApariencia?.textoSecundario }}
+            className="text-[10px] uppercase block font-bold tracking-wider"
+          >
+            Costo Total Estimado
+          </span>
+          <span 
+            style={{ color: coloresApariencia?.botonActivo }}
             className="text-base font-extrabold font-mono"
           >
             {formatMoneyCustom(costoTotalMuebleCop, costoTotalMuebleUsd)}
@@ -1022,32 +1159,75 @@ export default function DespieceView() {
       {/* 🪵 TABLA 1: LISTA DE CORTE DE TABLEROS (BOM) CON CANTOS Y DESPERDICIO */}
       {/* ===================================================================== */}
       <div className="flex flex-col gap-2">
-        <div className="flex flex-wrap justify-between items-center bg-white dark:bg-slate-800/80 p-2.5 rounded-lg border border-slate-200 dark:border-slate-700 gap-2">
+        <div 
+          style={{ 
+            backgroundColor: coloresApariencia?.fondoPaneles, 
+            borderColor: coloresApariencia?.bordePaneles 
+          }}
+          className="flex flex-wrap justify-between items-center p-2.5 rounded-lg border gap-2 shadow-sm transition-colors"
+        >
           <div className="flex items-center gap-2">
-            <FileText className="w-4 h-4 text-cyan-600" />
-            <h3 className="text-xs font-bold text-slate-800 dark:text-slate-200">
-              1. Lista de Corte de Tableros & Sustratos (BOM)
+            <Layers style={{ color: coloresApariencia?.botonActivo }} className="w-4 h-4" />
+            <h3 style={{ color: coloresApariencia?.textoPrincipal }} className="text-xs font-bold">
+              1. Lista de tableros
             </h3>
           </div>
 
-          {/* Control Global de Desperdicio Nesting */}
-          <div className="flex items-center gap-2 bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800/60 px-3 py-1 rounded-md shadow-sm">
-            <Scissors className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
-            <span className="text-[11px] font-bold text-amber-900 dark:text-amber-200">
-              % Desperdicio Global (Nesting):
-            </span>
-            <div className="flex items-center gap-1">
-              <DecimalInput
-                value={desperdicioGlobalPct}
-                decimals={1}
-                onChange={handleDesperdicioGlobalChange}
-                className="w-14 text-center font-mono font-extrabold text-xs text-amber-800 dark:text-amber-200 bg-white dark:bg-slate-800 border border-amber-300 dark:border-amber-700 rounded px-1 py-0.5 outline-none shadow-sm focus:border-amber-500"
-              />
-              <span className="font-mono font-bold text-amber-700 dark:text-amber-300 text-xs">%</span>
+          <div className="flex items-center gap-2 flex-wrap">
+            {/* Control Global de Desperdicio Nesting */}
+            <div 
+              style={{ 
+                backgroundColor: coloresApariencia?.fondoAplicacion, 
+                borderColor: coloresApariencia?.bordePaneles 
+              }}
+              className="flex items-center gap-2 border px-3 py-1 rounded-md shadow-xs transition-colors"
+            >
+              <span style={{ color: coloresApariencia?.textoPrincipal }} className="text-[11px] font-bold">
+                % Desperdicio Global:
+              </span>
+              <div className="flex items-center gap-1">
+                <DecimalInput
+                  value={desperdicioGlobalPct}
+                  decimals={1}
+                  onChange={handleDesperdicioGlobalChange}
+                  style={{
+                    backgroundColor: coloresApariencia?.fondoPaneles,
+                    borderColor: coloresApariencia?.bordePaneles,
+                    color: coloresApariencia?.textoPrincipal,
+                  }}
+                  className="w-12 text-center font-mono font-extrabold text-xs border rounded px-1 py-0.5 outline-none shadow-xs"
+                />
+                <span style={{ color: coloresApariencia?.textoSecundario }} className="font-mono font-bold text-xs">%</span>
+              </div>
             </div>
-            <span className="text-[10px] text-amber-600/80 dark:text-amber-400/80 font-mono hidden sm:inline" title="Fórmula DfMA de Nesting: Área * Costo m² * [1 / (1 - Desp)]">
-              (1/(1-Desp))
-            </span>
+
+            {/* Control Global de Despunte Técnico de Cantos */}
+            <div 
+              style={{ 
+                backgroundColor: coloresApariencia?.fondoAplicacion, 
+                borderColor: coloresApariencia?.bordePaneles 
+              }}
+              className="flex items-center gap-2 border px-3 py-1 rounded-md shadow-xs transition-colors"
+              title="Despunte técnico por borde para canteadora en milímetros (Estándar de fábrica: 100 mm = 10 cm)"
+            >
+              <span style={{ color: coloresApariencia?.textoPrincipal }} className="text-[11px] font-bold">
+                Despunte Canto:
+              </span>
+              <div className="flex items-center gap-1">
+                <DecimalInput
+                  value={despunteCantoGlobalMm}
+                  decimals={0}
+                  onChange={handleDespunteCantoGlobalChange}
+                  style={{
+                    backgroundColor: coloresApariencia?.fondoPaneles,
+                    borderColor: coloresApariencia?.bordePaneles,
+                    color: coloresApariencia?.textoPrincipal,
+                  }}
+                  className="w-14 text-center font-mono font-extrabold text-xs border rounded px-1 py-0.5 outline-none shadow-xs"
+                />
+                <span style={{ color: coloresApariencia?.textoSecundario }} className="font-mono font-bold text-xs">mm</span>
+              </div>
+            </div>
           </div>
         </div>
 
@@ -1062,46 +1242,54 @@ export default function DespieceView() {
             <thead>
               <tr 
                 style={{ 
-                  backgroundColor: coloresApariencia?.tablaEncabezadoFondo || "#F1F5F9", 
-                  color: coloresApariencia?.tablaEncabezadoTexto || "#0F172A",
+                  backgroundColor: coloresApariencia?.tablaEncabezadoFondo || "#0F172A", 
+                  color: coloresApariencia?.tablaEncabezadoTexto || "#CBD5E1",
                   borderColor: coloresApariencia?.tablaBorde || coloresApariencia?.bordePaneles 
                 }}
                 className="font-bold border-b whitespace-nowrap transition-colors"
               >
                 <th className="p-2.5 w-28">Pieza</th>
                 <th className="p-2.5 min-w-[170px]">Descripción</th>
-                <th className="p-2.5 min-w-[220px]">Sustrato / Tablero</th>
+                <th className="p-2.5 min-w-[220px]">Tableros</th>
                 <th className="p-2.5 w-16 text-center">Largo</th>
                 <th className="p-2.5 w-16 text-center">Ancho</th>
                 <th className="p-2.5 w-14 text-center">Esp.</th>
-                <th className="p-2.5 w-16 text-center">Área</th>
+                <th className="p-2.5 w-16 text-center">m²</th>
                 <th className="p-2.5 w-12 text-center">Cant.</th>
                 <th className="p-2.5 w-20 text-right">Costo m²</th>
-                <th className="p-2.5 w-20 text-center bg-amber-50/80 dark:bg-amber-950/40 text-amber-800 dark:text-amber-200" title="Porcentaje de desperdicio estimado por nesting">
-                  % Desp. ✂️
+                <th className="p-2.5 w-20 text-center" title="Porcentaje de desperdicio estimado por nesting">
+                  % Desp.
                 </th>
                 
                 {/* COLUMNAS DE CANTOS */}
-                <th className="p-2.5 w-32 text-center bg-blue-50/80 dark:bg-blue-950/40 text-blue-800 dark:text-blue-200" title="Cantidad de cantos en Largo (L) y Ancho (A) leída automáticamente del modelo 3D">
-                  Cantos (L × A) 📐
+                <th className="p-2.5 w-32 text-center" title="Cantidad de cantos en Largo (L) y Ancho (A) leída automáticamente del modelo 3D">
+                  Cantos (L × A)
                 </th>
-                <th className="p-2.5 min-w-[180px] bg-blue-50/80 dark:bg-blue-950/40 text-blue-800 dark:text-blue-200" title="Material de canto aplicado a esta pieza">
-                  Material Canto 🎗️
-                </th>
-                <th className="p-2.5 w-20 text-center bg-blue-50/80 dark:bg-blue-950/40 text-blue-800 dark:text-blue-200" title="Metros lineales con +100mm de despunte de canteadora">
-                  Metros
+                <th className="p-2.5 min-w-[180px]">
+                  Cantos
                 </th>
 
-                <th className="p-2.5 w-24 text-right bg-emerald-50/50 dark:bg-emerald-950/20 text-emerald-800 dark:text-emerald-200">
-                  Costo Total
+                <th className="p-2.5 w-28 text-right">
+                  Costo tableros
                 </th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-200 dark:divide-slate-800">
+            <tbody 
+              style={{ borderColor: coloresApariencia?.tablaBorde }}
+              className="divide-y"
+            >
               {resumenMadera.items.map((p: any, idx: number) => (
-                <tr key={idx} className="hover:bg-cyan-50/40 dark:hover:bg-slate-800/50 transition group whitespace-nowrap">
+                <tr 
+                  key={idx} 
+                  style={{ 
+                    backgroundColor: coloresApariencia?.tablaFilaFondo || coloresApariencia?.fondoPaneles,
+                    borderColor: coloresApariencia?.tablaBorde,
+                    color: coloresApariencia?.textoPrincipal
+                  }}
+                  className="transition whitespace-nowrap"
+                >
                   {/* Columna 1: Pieza (Nombre GHX de origen) */}
-                  <td className="p-2.5 font-bold text-slate-800 dark:text-slate-200">
+                  <td style={{ color: coloresApariencia?.textoPrincipal }} className="p-2.5 font-bold">
                     {p.nombre}
                   </td>
 
@@ -1118,18 +1306,24 @@ export default function DespieceView() {
                           if (e.key === "Enter" || e.key === "Escape") setEditingDescIndex(null);
                         }}
                         onChange={(e) => handleDescripcionChange(idx, e.target.value)}
-                        className="p-1 w-full text-xs font-bold text-cyan-700 dark:text-cyan-300 bg-white dark:bg-slate-700 border border-cyan-400 rounded outline-none shadow-sm"
+                        style={{
+                          backgroundColor: coloresApariencia?.fondoAplicacion,
+                          borderColor: coloresApariencia?.botonActivo,
+                          color: coloresApariencia?.botonActivo,
+                        }}
+                        className="p-1 w-full text-xs font-bold border rounded outline-none shadow-xs"
                       />
                     ) : (
                       <div
                         onClick={() => setEditingDescIndex(idx)}
-                        className="flex items-center justify-between gap-1.5 cursor-pointer group hover:bg-slate-100 dark:hover:bg-slate-700/50 px-2 py-1 rounded transition"
+                        style={{ borderColor: "transparent" }}
+                        className="flex items-center justify-between gap-1.5 cursor-pointer px-2 py-1 rounded transition hover:opacity-80"
                         title="Haz clic para nombrar o renombrar la descripción oficial de la pieza"
                       >
-                        <span className="font-bold text-slate-800 dark:text-slate-200 group-hover:text-cyan-600 transition">
+                        <span style={{ color: coloresApariencia?.textoPrincipal }} className="font-bold">
                           {p.descripcionOficial}
                         </span>
-                        <Edit2 className="w-3.5 h-3.5 text-slate-400 dark:text-slate-500 opacity-60 group-hover:opacity-100 group-hover:text-cyan-600 transition shrink-0" />
+                        <Edit2 style={{ color: coloresApariencia?.textoSecundario }} className="w-3.5 h-3.5 opacity-60 shrink-0" />
                       </div>
                     )}
                   </td>
@@ -1139,7 +1333,12 @@ export default function DespieceView() {
                     <select
                       value={p.materialSeleccionado.codigo}
                       onChange={(e) => handleMaterialChange(idx, e.target.value)}
-                      className="text-xs font-bold px-2 py-1 rounded bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-600 text-cyan-700 dark:text-cyan-300 outline-none cursor-pointer w-full shadow-inner hover:border-cyan-500 transition"
+                      style={{
+                        backgroundColor: coloresApariencia?.fondoAplicacion,
+                        borderColor: coloresApariencia?.bordePaneles,
+                        color: coloresApariencia?.botonActivo,
+                      }}
+                      className="text-xs font-bold px-2 py-1 rounded border outline-none cursor-pointer w-full shadow-inner transition"
                     >
                       {dbTableros.map((mat: TableroRecord) => (
                         <option key={mat.codigo} value={mat.codigo}>
@@ -1150,55 +1349,79 @@ export default function DespieceView() {
                   </td>
 
                   {/* Dimensiones Desglosadas */}
-                  <td className="p-2.5 text-center font-mono font-bold text-slate-700 dark:text-slate-300">{p.largo}</td>
-                  <td className="p-2.5 text-center font-mono font-bold text-slate-700 dark:text-slate-300">{p.ancho}</td>
-                  <td className="p-2.5 text-center font-mono font-bold text-cyan-700 dark:text-cyan-300">{p.espesor}</td>
-                  <td className="p-2.5 text-center font-mono text-slate-600 dark:text-slate-400">{p.areaM2}</td>
-                  <td className="p-2.5 text-center font-mono font-extrabold text-slate-900 dark:text-slate-100">{p.cantidad}</td>
-                  <td className="p-2.5 text-right font-mono text-slate-600 dark:text-slate-400">
+                  <td style={{ color: coloresApariencia?.textoPrincipal }} className="p-2.5 text-center font-mono font-bold">{p.largo}</td>
+                  <td style={{ color: coloresApariencia?.textoPrincipal }} className="p-2.5 text-center font-mono font-bold">{p.ancho}</td>
+                  <td style={{ color: coloresApariencia?.botonActivo }} className="p-2.5 text-center font-mono font-bold">{p.espesor}</td>
+                  <td style={{ color: coloresApariencia?.textoSecundario }} className="p-2.5 text-center font-mono">{p.areaM2}</td>
+                  <td style={{ color: coloresApariencia?.textoPrincipal }} className="p-2.5 text-center font-mono font-extrabold">{p.cantidad}</td>
+                  <td style={{ color: coloresApariencia?.textoSecundario }} className="p-2.5 text-right font-mono">
                     {formatUnitCustom(p.costoM2Cop, p.costoM2Usd)}
                   </td>
 
                   {/* % DESPERDICIO EDITABLE POR PIEZA */}
-                  <td className="p-2 text-center bg-amber-50/30 dark:bg-amber-950/20">
+                  <td className="p-2 text-center">
                     <div className="flex items-center justify-center gap-0.5">
                       <DecimalInput
                         value={p.desperdicioPct}
                         decimals={1}
                         onChange={(val) => handleDesperdicioPiezaChange(idx, val)}
-                        className="w-12 text-center font-mono font-extrabold text-amber-800 dark:text-amber-200 bg-white dark:bg-slate-800 border border-amber-300 dark:border-amber-700 rounded px-1 py-0.5 outline-none shadow-sm focus:border-amber-500"
+                        style={{
+                          backgroundColor: coloresApariencia?.fondoAplicacion,
+                          borderColor: coloresApariencia?.bordePaneles,
+                          color: coloresApariencia?.textoPrincipal,
+                        }}
+                        className="w-12 text-center font-mono font-extrabold border rounded px-1 py-0.5 outline-none shadow-xs"
                       />
-                      <span className="text-amber-700 dark:text-amber-300 font-bold font-mono text-[10px]">%</span>
+                      <span style={{ color: coloresApariencia?.textoSecundario }} className="font-bold font-mono text-[10px]">%</span>
                     </div>
                   </td>
 
                   {/* CANTOS AUTOMÁTICOS LEÍDOS DEL 3D (L × A) */}
-                  <td className="p-2 text-center bg-blue-50/20 dark:bg-blue-950/10">
+                  <td className="p-2 text-center">
                     <div className="flex items-center justify-center gap-1 font-mono text-xs" title="Cantos leídos automáticamente del 3D: L (Largos) y A (Anchos)">
-                      <span className={`px-1.5 py-0.5 rounded border text-[11px] font-bold ${
-                        p.cantosLargo > 0 
-                          ? "bg-blue-100 dark:bg-blue-900/60 text-blue-800 dark:text-blue-200 border-blue-300 dark:border-blue-700 font-extrabold shadow-sm" 
-                          : "bg-slate-100 dark:bg-slate-800/80 text-slate-400 border-slate-200 dark:border-slate-700"
-                      }`}>
+                      <span 
+                        style={p.cantosLargo > 0 ? {
+                          backgroundColor: coloresApariencia?.fondoAplicacion,
+                          borderColor: coloresApariencia?.botonActivo,
+                          color: coloresApariencia?.botonActivo,
+                        } : {
+                          backgroundColor: coloresApariencia?.fondoAplicacion,
+                          borderColor: coloresApariencia?.bordePaneles,
+                          color: coloresApariencia?.textoSecundario,
+                        }}
+                        className="px-1.5 py-0.5 rounded border text-[11px] font-extrabold shadow-xs"
+                      >
                         {p.cantosLargo} L
                       </span>
-                      <span className="text-slate-400 text-[10px]">×</span>
-                      <span className={`px-1.5 py-0.5 rounded border text-[11px] font-bold ${
-                        p.cantosAncho > 0 
-                          ? "bg-blue-100 dark:bg-blue-900/60 text-blue-800 dark:text-blue-200 border-blue-300 dark:border-blue-700 font-extrabold shadow-sm" 
-                          : "bg-slate-100 dark:bg-slate-800/80 text-slate-400 border-slate-200 dark:border-slate-700"
-                      }`}>
+                      <span style={{ color: coloresApariencia?.textoSecundario }} className="text-[10px]">×</span>
+                      <span 
+                        style={p.cantosAncho > 0 ? {
+                          backgroundColor: coloresApariencia?.fondoAplicacion,
+                          borderColor: coloresApariencia?.botonActivo,
+                          color: coloresApariencia?.botonActivo,
+                        } : {
+                          backgroundColor: coloresApariencia?.fondoAplicacion,
+                          borderColor: coloresApariencia?.bordePaneles,
+                          color: coloresApariencia?.textoSecundario,
+                        }}
+                        className="px-1.5 py-0.5 rounded border text-[11px] font-extrabold shadow-xs"
+                      >
                         {p.cantosAncho} A
                       </span>
                     </div>
                   </td>
 
                   {/* SELECTOR DE MATERIAL DE CANTO */}
-                  <td className="p-2 bg-blue-50/20 dark:bg-blue-950/10">
+                  <td className="p-2">
                     <select
                       value={p.cantoCodigo || "NONE"}
                       onChange={(e) => handleMaterialCantoChange(idx, e.target.value)}
-                      className="text-[11px] font-medium px-2 py-0.5 rounded bg-white dark:bg-slate-800 border border-blue-200 dark:border-blue-800 text-slate-700 dark:text-slate-300 outline-none cursor-pointer w-full shadow-sm"
+                      style={{
+                        backgroundColor: coloresApariencia?.fondoAplicacion,
+                        borderColor: coloresApariencia?.bordePaneles,
+                        color: coloresApariencia?.textoPrincipal,
+                      }}
+                      className="text-[11px] font-medium px-2 py-0.5 rounded border outline-none cursor-pointer w-full shadow-xs"
                     >
                       <option value="NONE">(Sin Canto)</option>
                       {dbCantos.map((c: CantoRecord) => (
@@ -1209,13 +1432,11 @@ export default function DespieceView() {
                     </select>
                   </td>
 
-                  {/* METROS LINEALES DE CANTO POR PIEZA */}
-                  <td className="p-2.5 text-center font-mono font-bold text-blue-700 dark:text-blue-300 bg-blue-50/20 dark:bg-blue-950/10">
-                    {p.metrosCanto > 0 ? `${p.metrosCanto} m` : "-"}
-                  </td>
-
                   {/* COSTO TOTAL PIEZA TABLERO CON DESPERDICIO */}
-                  <td className="p-2.5 text-right font-mono font-extrabold text-emerald-700 dark:text-emerald-300 bg-emerald-50/30 dark:bg-emerald-950/10">
+                  <td 
+                    style={{ color: coloresApariencia?.estadoActivo || "#10B981" }}
+                    className="p-2.5 text-right font-mono font-extrabold"
+                  >
                     {formatMoneyCustom(p.costoTotalCop, p.costoTotalUsd)}
                   </td>
                 </tr>
@@ -1223,26 +1444,47 @@ export default function DespieceView() {
             </tbody>
             {/* Fila de Total de Madera */}
             <tfoot>
-              <tr className="bg-slate-100/80 dark:bg-slate-800/80 border-t-2 border-slate-300 dark:border-slate-600 font-bold whitespace-nowrap">
-                <td colSpan={6} className="p-2.5 text-right text-slate-600 dark:text-slate-300 uppercase text-[10px] tracking-wider">
-                  Total Tableros & Madera:
+              <tr 
+                style={{ 
+                  backgroundColor: coloresApariencia?.tablaTotalFondo || coloresApariencia?.fondoPaneles, 
+                  borderColor: coloresApariencia?.tablaBorde || coloresApariencia?.bordePaneles,
+                  color: coloresApariencia?.botonActivo || coloresApariencia?.textoPrincipal
+                }}
+                className="border-t-2 font-bold whitespace-nowrap transition-colors"
+              >
+                <td 
+                  colSpan={6} 
+                  style={{ color: coloresApariencia?.botonActivo }}
+                  className="p-2.5 text-right uppercase text-[10px] tracking-wider"
+                >
+                  Total Tableros:
                 </td>
-                <td className="p-2.5 text-center font-mono font-bold text-slate-800 dark:text-slate-200">
-                  {resumenMadera.areaTotalM2} m²
+                <td 
+                  style={{ color: coloresApariencia?.botonActivo }}
+                  className="p-2.5 text-center font-mono font-bold"
+                >
+                  {resumenMadera.areaTotalM2}
                 </td>
-                <td className="p-2.5 text-center font-mono font-bold text-slate-800 dark:text-slate-200">
-                  {resumenMadera.items.reduce((acc: number, i: any) => acc + i.cantidad, 0)} u
+                <td 
+                  style={{ color: coloresApariencia?.botonActivo }}
+                  className="p-2.5 text-center font-mono font-bold"
+                >
+                  {resumenMadera.items.reduce((acc: number, i: any) => acc + i.cantidad, 0)}
                 </td>
-                <td colSpan={2} className="p-2.5 text-center text-amber-700 dark:text-amber-300 font-mono text-[11px] font-bold">
-                  Desp. Base: {desperdicioGlobalPct}%
+                <td 
+                  colSpan={3} 
+                  className="p-2.5"
+                ></td>
+                <td 
+                  style={{ color: coloresApariencia?.textoSecundario }}
+                  className="p-2.5 text-right font-mono text-[10px]"
+                >
+                  Sumatoria:
                 </td>
-                <td colSpan={2} className="p-2.5 text-right font-mono text-blue-700 dark:text-blue-300 text-[11px] font-bold">
-                  Total Canto:
-                </td>
-                <td className="p-2.5 text-center font-mono font-extrabold text-blue-700 dark:text-blue-300 text-xs">
-                  {resumenCantos.cantTotalMetros} ml
-                </td>
-                <td className="p-2.5 text-right font-mono font-extrabold text-emerald-700 dark:text-emerald-300 text-sm bg-emerald-50/50 dark:bg-emerald-950/20">
+                <td 
+                  style={{ color: coloresApariencia?.estadoActivo || "#10B981" }}
+                  className="p-2.5 text-right font-mono font-extrabold text-sm"
+                >
                   {formatMoneyCustom(resumenMadera.costoTotalMaderaCop, resumenMadera.costoTotalMaderaUsd)}
                 </td>
               </tr>
@@ -1255,12 +1497,17 @@ export default function DespieceView() {
       {/* 🔩 TABLA 2: INVENTARIO DE HERRAJES                                    */}
       {/* ===================================================================== */}
       <div className="flex flex-col gap-2">
-        <div className="flex justify-between items-center">
-          <h3 className="text-xs font-bold flex items-center gap-1.5 text-slate-800 dark:text-slate-200">
-            <Hammer className="w-4 h-4 text-cyan-600" />
-            2. Inventario de Herrajes & Accesorios (BOM)
+        <div 
+          style={{ 
+            backgroundColor: coloresApariencia?.fondoPaneles, 
+            borderColor: coloresApariencia?.bordePaneles 
+          }}
+          className="flex justify-between items-center p-2.5 rounded-lg border shadow-sm transition-colors"
+        >
+          <h3 style={{ color: coloresApariencia?.textoPrincipal }} className="text-xs font-bold flex items-center gap-1.5">
+            <Hammer style={{ color: coloresApariencia?.botonActivo }} className="w-4 h-4" />
+            2. Lista de herrajes
           </h3>
-          <span className="text-[10px] text-slate-400 font-mono">Costos sincronizados desde Base de Datos</span>
         </div>
 
         <div 
@@ -1274,8 +1521,8 @@ export default function DespieceView() {
             <thead>
               <tr 
                 style={{ 
-                  backgroundColor: coloresApariencia?.tablaEncabezadoFondo || "#F1F5F9", 
-                  color: coloresApariencia?.tablaEncabezadoTexto || "#0F172A",
+                  backgroundColor: coloresApariencia?.tablaEncabezadoFondo || "#0F172A", 
+                  color: coloresApariencia?.tablaEncabezadoTexto || "#CBD5E1",
                   borderColor: coloresApariencia?.tablaBorde || coloresApariencia?.bordePaneles 
                 }}
                 className="font-bold border-b whitespace-nowrap transition-colors"
@@ -1288,33 +1535,51 @@ export default function DespieceView() {
                 <th className="p-2.5 w-28 text-right">Costo Total</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-200 dark:divide-slate-800">
+            <tbody 
+              style={{ borderColor: coloresApariencia?.tablaBorde }}
+              className="divide-y"
+            >
               {resumenHerrajes.items.map((h: any, idx: number) => (
-                <tr key={idx} className="hover:bg-cyan-50/40 dark:hover:bg-slate-800/50 transition whitespace-nowrap">
+                <tr 
+                  key={idx} 
+                  style={{ 
+                    backgroundColor: coloresApariencia?.tablaFilaFondo || coloresApariencia?.fondoPaneles,
+                    borderColor: coloresApariencia?.tablaBorde,
+                    color: coloresApariencia?.textoPrincipal
+                  }}
+                  className="transition whitespace-nowrap"
+                >
                   {/* Nombre GHX */}
-                  <td className="p-2.5 font-bold text-cyan-700 dark:text-cyan-300 font-mono">
+                  <td style={{ color: coloresApariencia?.botonActivo }} className="p-2.5 font-bold font-mono">
                     {h.nombreGhx}
                   </td>
                   {/* Descripción Comercial */}
-                  <td className="p-2.5 font-medium text-slate-800 dark:text-slate-200">
+                  <td style={{ color: coloresApariencia?.textoPrincipal }} className="p-2.5 font-medium">
                     {h.descripcion}
                   </td>
                   {/* Unidad de Medida */}
-                  <td className="p-2.5 text-center font-mono text-[10px] text-slate-500">
+                  <td style={{ color: coloresApariencia?.textoSecundario }} className="p-2.5 text-center font-mono text-[10px]">
                     {h.unidad}
                   </td>
                   {/* Cantidad */}
-                  <td className="p-2.5 text-center font-mono font-extrabold text-slate-900 dark:text-slate-100">
-                    <span className="px-2.5 py-0.5 rounded bg-cyan-100 dark:bg-cyan-950 text-cyan-800 dark:text-cyan-200 font-mono">
+                  <td className="p-2.5 text-center font-mono font-extrabold">
+                    <span 
+                      style={{ 
+                        backgroundColor: coloresApariencia?.fondoAplicacion,
+                        borderColor: coloresApariencia?.bordePaneles,
+                        color: coloresApariencia?.botonActivo 
+                      }}
+                      className="px-2.5 py-0.5 rounded border font-mono font-bold"
+                    >
                       {h.cantidad}
                     </span>
                   </td>
                   {/* Costo Unitario Nativo */}
-                  <td className="p-2.5 text-right font-mono text-slate-600 dark:text-slate-400">
+                  <td style={{ color: coloresApariencia?.textoSecundario }} className="p-2.5 text-right font-mono">
                     {formatUnitCustom(h.costoUnitarioCop, h.costoUnitarioUsd)}
                   </td>
                   {/* Costo Total en Fila Nativo */}
-                  <td className="p-2.5 text-right font-mono font-bold text-emerald-600 dark:text-emerald-400">
+                  <td style={{ color: coloresApariencia?.estadoActivo || "#10B981" }} className="p-2.5 text-right font-mono font-bold">
                     {formatMoneyCustom(h.costoTotalCop, h.costoTotalUsd)}
                   </td>
                 </tr>
@@ -1322,17 +1587,37 @@ export default function DespieceView() {
             </tbody>
             {/* Fila de Total de Herrajes */}
             <tfoot>
-              <tr className="bg-slate-100/80 dark:bg-slate-800/80 border-t-2 border-slate-300 dark:border-slate-600 font-bold whitespace-nowrap">
-                <td colSpan={3} className="p-2.5 text-right text-slate-600 dark:text-slate-300 uppercase text-[10px] tracking-wider">
-                  Total Herrajes & Accesorios:
+              <tr 
+                style={{ 
+                  backgroundColor: coloresApariencia?.tablaTotalFondo || coloresApariencia?.fondoPaneles, 
+                  borderColor: coloresApariencia?.tablaBorde || coloresApariencia?.bordePaneles,
+                  color: coloresApariencia?.botonActivo || coloresApariencia?.textoPrincipal
+                }}
+                className="border-t-2 font-bold whitespace-nowrap transition-colors"
+              >
+                <td 
+                  colSpan={3} 
+                  style={{ color: coloresApariencia?.botonActivo }}
+                  className="p-2.5 text-right uppercase text-[10px] tracking-wider"
+                >
+                  Total Herrajes:
                 </td>
-                <td className="p-2.5 text-center font-mono font-bold text-slate-800 dark:text-slate-200">
+                <td 
+                  style={{ color: coloresApariencia?.botonActivo }}
+                  className="p-2.5 text-center font-mono font-bold"
+                >
                   {resumenHerrajes.cantTotalHerrajes} u
                 </td>
-                <td className="p-2.5 text-right font-mono text-slate-400 text-[10px]">
+                <td 
+                  style={{ color: coloresApariencia?.textoSecundario }}
+                  className="p-2.5 text-right font-mono text-[10px]"
+                >
                   Sumatoria:
                 </td>
-                <td className="p-2.5 text-right font-mono font-extrabold text-emerald-700 dark:text-emerald-300 text-sm">
+                <td 
+                  style={{ color: coloresApariencia?.estadoActivo || "#10B981" }}
+                  className="p-2.5 text-right font-mono font-extrabold text-sm"
+                >
                   {formatMoneyCustom(resumenHerrajes.costoTotalHerrajesCop, resumenHerrajes.costoTotalHerrajesUsd)}
                 </td>
               </tr>
@@ -1345,12 +1630,17 @@ export default function DespieceView() {
       {/* 🎗️ TABLA 3: INVENTARIO Y METROS LINEALES DE CANTOS (BOM)              */}
       {/* ===================================================================== */}
       <div className="flex flex-col gap-2">
-        <div className="flex justify-between items-center">
-          <h3 className="text-xs font-bold flex items-center gap-1.5 text-slate-800 dark:text-slate-200">
-            <Ruler className="w-4 h-4 text-amber-600" />
-            3. Inventario y Metros Lineales de Cantos (BOM)
+        <div 
+          style={{ 
+            backgroundColor: coloresApariencia?.fondoPaneles, 
+            borderColor: coloresApariencia?.bordePaneles 
+          }}
+          className="flex justify-between items-center p-2.5 rounded-lg border shadow-sm transition-colors"
+        >
+          <h3 style={{ color: coloresApariencia?.textoPrincipal }} className="text-xs font-bold flex items-center gap-1.5">
+            <Ruler style={{ color: coloresApariencia?.botonActivo }} className="w-4 h-4" />
+            3. Metros lineales de canto
           </h3>
-          <span className="text-[10px] text-slate-400 font-mono">Fórmula oficial: (+100 mm despunte por borde)</span>
         </div>
 
         <div 
@@ -1364,8 +1654,8 @@ export default function DespieceView() {
             <thead>
               <tr 
                 style={{ 
-                  backgroundColor: coloresApariencia?.tablaEncabezadoFondo || "#F1F5F9", 
-                  color: coloresApariencia?.tablaEncabezadoTexto || "#0F172A",
+                  backgroundColor: coloresApariencia?.tablaEncabezadoFondo || "#0F172A", 
+                  color: coloresApariencia?.tablaEncabezadoTexto || "#CBD5E1",
                   borderColor: coloresApariencia?.tablaBorde || coloresApariencia?.bordePaneles 
                 }}
                 className="font-bold border-b whitespace-nowrap transition-colors"
@@ -1373,53 +1663,77 @@ export default function DespieceView() {
                 <th className="p-2.5 w-24">Código</th>
                 <th className="p-2.5">Descripción Canto</th>
                 <th className="p-2.5 w-20 text-center">Tipo</th>
-                <th className="p-2.5 w-24 text-center">Calibre / Ancho</th>
+                <th className="p-2.5 w-24 text-center">Ancho / Calibre</th>
                 <th className="p-2.5 w-20 text-center">Piezas</th>
-                <th className="p-2.5 w-32 text-center bg-amber-50/80 dark:bg-amber-950/40 text-amber-800 dark:text-amber-200 font-bold">
-                  Metros (+100mm)
+                <th className="p-2.5 w-32 text-center font-bold">
+                  Metros (ml)
                 </th>
-                <th className="p-2.5 w-28 text-right">Costo / ml</th>
+                <th className="p-2.5 w-28 text-right">Costo (ml)</th>
                 <th className="p-2.5 w-28 text-right">Costo Total</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-200 dark:divide-slate-800">
+            <tbody 
+              style={{ borderColor: coloresApariencia?.tablaBorde }}
+              className="divide-y"
+            >
               {resumenCantos.items.length === 0 ? (
                 <tr>
-                  <td colSpan={8} className="p-4 text-center text-slate-400 font-mono text-[11px]">
+                  <td 
+                    colSpan={8} 
+                    style={{ color: coloresApariencia?.textoSecundario }}
+                    className="p-4 text-center font-mono text-[11px]"
+                  >
                     No se han asignado cantos a las piezas de este mueble.
                   </td>
                 </tr>
               ) : (
                 resumenCantos.items.map((c: any) => (
-                  <tr key={c.codigo} className="hover:bg-amber-50/30 dark:hover:bg-slate-800/50 transition whitespace-nowrap">
-                    <td className="p-2.5 font-mono text-[11px] font-bold text-slate-600 dark:text-slate-400">
+                  <tr 
+                    key={c.codigo} 
+                    style={{ 
+                      backgroundColor: coloresApariencia?.tablaFilaFondo || coloresApariencia?.fondoPaneles,
+                      borderColor: coloresApariencia?.tablaBorde,
+                      color: coloresApariencia?.textoPrincipal
+                    }}
+                    className="transition whitespace-nowrap"
+                  >
+                    <td style={{ color: coloresApariencia?.textoSecundario }} className="p-2.5 font-mono text-[11px] font-bold">
                       {c.codigo}
                     </td>
-                    <td className="p-2.5 font-bold text-slate-800 dark:text-slate-200">
+                    <td style={{ color: coloresApariencia?.textoPrincipal }} className="p-2.5 font-bold">
                       {c.descripcion}
                     </td>
                     <td className="p-2.5 text-center">
-                      <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${
-                        c.tipo === "Rígido 2mm" 
-                          ? "bg-purple-100 dark:bg-purple-950 text-purple-700 dark:text-purple-300" 
-                          : "bg-blue-100 dark:bg-blue-950 text-blue-700 dark:text-blue-300"
-                      }`}>
+                      <span 
+                        style={{
+                          backgroundColor: coloresApariencia?.fondoAplicacion,
+                          borderColor: coloresApariencia?.bordePaneles,
+                          color: coloresApariencia?.botonActivo,
+                        }}
+                        className="px-2 py-0.5 rounded border text-[10px] font-bold"
+                      >
                         {c.tipo}
                       </span>
                     </td>
-                    <td className="p-2.5 text-center font-mono text-slate-600 dark:text-slate-400">
+                    <td style={{ color: coloresApariencia?.textoSecundario }} className="p-2.5 text-center font-mono">
                       {c.anchoMm} mm × {c.espesorMm} mm
                     </td>
-                    <td className="p-2.5 text-center font-mono font-bold text-slate-700 dark:text-slate-300">
+                    <td style={{ color: coloresApariencia?.textoPrincipal }} className="p-2.5 text-center font-mono font-bold">
                       {c.piezasAsociadas} u
                     </td>
-                    <td className="p-2.5 text-center font-mono font-extrabold text-amber-700 dark:text-amber-300 bg-amber-50/30 dark:bg-amber-950/20 text-xs">
-                      {c.metrosLineales} ml
+                    <td 
+                      style={{ color: coloresApariencia?.botonActivo }}
+                      className="p-2.5 text-center font-mono font-extrabold text-xs"
+                    >
+                      {c.metrosLineales}
                     </td>
-                    <td className="p-2.5 text-right font-mono text-slate-600 dark:text-slate-400">
+                    <td style={{ color: coloresApariencia?.textoSecundario }} className="p-2.5 text-right font-mono">
                       {formatUnitCustom(c.costoMlCop, c.costoMlUsd)}
                     </td>
-                    <td className="p-2.5 text-right font-mono font-bold text-emerald-600 dark:text-emerald-400">
+                    <td 
+                      style={{ color: coloresApariencia?.estadoActivo || "#10B981" }}
+                      className="p-2.5 text-right font-mono font-bold"
+                    >
                       {formatMoneyCustom(c.costoTotalCop, c.costoTotalUsd)}
                     </td>
                   </tr>
@@ -1428,17 +1742,37 @@ export default function DespieceView() {
             </tbody>
             {/* Fila de Total de Cantos */}
             <tfoot>
-              <tr className="bg-slate-100/80 dark:bg-slate-800/80 border-t-2 border-slate-300 dark:border-slate-600 font-bold whitespace-nowrap">
-                <td colSpan={5} className="p-2.5 text-right text-slate-600 dark:text-slate-300 uppercase text-[10px] tracking-wider">
-                  Total Metros Lineales & Cantos:
+              <tr 
+                style={{ 
+                  backgroundColor: coloresApariencia?.tablaTotalFondo || coloresApariencia?.fondoPaneles, 
+                  borderColor: coloresApariencia?.tablaBorde || coloresApariencia?.bordePaneles,
+                  color: coloresApariencia?.botonActivo || coloresApariencia?.textoPrincipal
+                }}
+                className="border-t-2 font-bold whitespace-nowrap transition-colors"
+              >
+                <td 
+                  colSpan={5} 
+                  style={{ color: coloresApariencia?.botonActivo }}
+                  className="p-2.5 text-right uppercase text-[10px] tracking-wider"
+                >
+                  Total Metros Lineales:
                 </td>
-                <td className="p-2.5 text-center font-mono font-extrabold text-amber-700 dark:text-amber-300 text-xs bg-amber-50/50 dark:bg-amber-950/30">
-                  {resumenCantos.cantTotalMetros} ml
+                <td 
+                  style={{ color: coloresApariencia?.botonActivo }}
+                  className="p-2.5 text-center font-mono font-extrabold text-xs"
+                >
+                  {resumenCantos.cantTotalMetros}
                 </td>
-                <td className="p-2.5 text-right font-mono text-slate-400 text-[10px]">
+                <td 
+                  style={{ color: coloresApariencia?.textoSecundario }}
+                  className="p-2.5 text-right font-mono text-[10px]"
+                >
                   Sumatoria:
                 </td>
-                <td className="p-2.5 text-right font-mono font-extrabold text-emerald-700 dark:text-emerald-300 text-sm">
+                <td 
+                  style={{ color: coloresApariencia?.estadoActivo || "#10B981" }}
+                  className="p-2.5 text-right font-mono font-extrabold text-sm"
+                >
                   {formatMoneyCustom(resumenCantos.costoTotalCantosCop, resumenCantos.costoTotalCantosUsd)}
                 </td>
               </tr>
@@ -1448,303 +1782,540 @@ export default function DespieceView() {
       </div>
 
       {/* ===================================================================== */}
-      {/* 🏭 TABLA 4: FICHA CONSOLIDADA FINANCIERA (100% COSTO INDUSTRIAL)       */}
+      {/* 🏭 TABLA 4: RESUMEN DE COSTOS & PANEL ANALÍTICO DE DISTRIBUCIÓN       */}
       {/* ===================================================================== */}
       <div className="flex flex-col gap-2">
-        <div className="flex flex-wrap justify-between items-center gap-1">
+        <div 
+          style={{ 
+            backgroundColor: coloresApariencia?.fondoPaneles, 
+            borderColor: coloresApariencia?.bordePaneles 
+          }}
+          className="flex flex-wrap justify-between items-center p-2.5 rounded-lg border shadow-sm transition-colors gap-2"
+        >
           <div className="flex items-center gap-2">
-            <Coins className="w-4 h-4 text-amber-600" />
-            <h3 className="text-xs font-extrabold text-slate-800 dark:text-slate-200">
-              4. Resumen de Costo Industrial Consolidado (100.00% Ficha Técnica)
+            <Coins style={{ color: coloresApariencia?.botonActivo }} className="w-4 h-4" />
+            <h3 style={{ color: coloresApariencia?.textoPrincipal }} className="text-xs font-extrabold">
+              4. Resumen de costos
             </h3>
           </div>
-          <div className="flex items-center gap-2">
-            <span className="text-[10px] bg-amber-50 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300 font-mono font-bold px-2 py-0.5 rounded border border-amber-200 dark:border-amber-800">
-              Absorción Estándar ERP
-            </span>
-            <span className="text-[10px] text-slate-400 font-mono">
-              MP ({resumenIndustrial.pctMpTotalReal}%) + MO ({resumenIndustrial.pctMo}%) + CIF ({resumenIndustrial.pctCif}%)
-            </span>
+
+          {/* Selector de Modo de Gráfica: Macro ERP vs Detalle Insumos */}
+          <div 
+            style={{ 
+              backgroundColor: coloresApariencia?.fondoAplicacion,
+              borderColor: coloresApariencia?.bordePaneles 
+            }}
+            className="flex items-center p-0.5 rounded-lg border text-[11px] font-bold"
+          >
+            <button
+              onClick={() => setChartMode("macro")}
+              style={{
+                backgroundColor: chartMode === "macro" ? coloresApariencia?.botonActivo : "transparent",
+                color: chartMode === "macro" ? "#FFFFFF" : coloresApariencia?.textoSecundario,
+              }}
+              className="px-2.5 py-1 rounded-md transition cursor-pointer"
+            >
+              Macro ERP (MP / MO / CIF)
+            </button>
+            <button
+              onClick={() => setChartMode("detalle")}
+              style={{
+                backgroundColor: chartMode === "detalle" ? coloresApariencia?.botonActivo : "transparent",
+                color: chartMode === "detalle" ? "#FFFFFF" : coloresApariencia?.textoSecundario,
+              }}
+              className="px-2.5 py-1 rounded-md transition cursor-pointer"
+            >
+              Detalle por Insumo
+            </button>
           </div>
         </div>
 
-        <div 
-          style={{ 
-            backgroundColor: coloresApariencia?.tablaFilaFondo || coloresApariencia?.fondoPaneles, 
-            borderColor: coloresApariencia?.tablaBorde || coloresApariencia?.bordePaneles 
-          }}
-          className="overflow-hidden rounded-lg border shadow-sm transition-colors"
-        >
-          <table className="w-full text-left border-collapse text-xs">
-            <thead>
-              <tr 
-                style={{ 
-                  backgroundColor: coloresApariencia?.tablaEncabezadoFondo || "#F1F5F9", 
-                  color: coloresApariencia?.tablaEncabezadoTexto || "#0F172A",
-                  borderColor: coloresApariencia?.tablaBorde || coloresApariencia?.bordePaneles 
-                }}
-                className="font-bold border-b whitespace-nowrap transition-colors"
-              >
-                <th className="p-2.5 w-12 text-center">#</th>
-                <th className="p-2.5">Componente del Costo</th>
-                <th className="p-2.5 w-44 text-center">Categoría de Costo</th>
-                <th className="p-2.5 w-40 text-right">Valor Total ({moneda})</th>
-                <th className="p-2.5 w-32 text-center bg-amber-50/80 dark:bg-amber-950/40 text-amber-800 dark:text-amber-200 font-extrabold">
-                  % Impacto
-                </th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-200 dark:divide-slate-800">
-              {/* 1. Láminas */}
-              <tr className="hover:bg-slate-50/60 dark:hover:bg-slate-800/40 transition">
-                <td className="p-2 text-center font-mono font-bold text-slate-500">1</td>
-                <td className="p-2 font-bold text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
-                  <Layers className="w-3.5 h-3.5 text-cyan-600" />
-                  Láminas & Tableros (MDP / MDF)
-                </td>
-                <td className="p-2 text-center text-slate-500 text-[11px]">Material Directo</td>
-                <td className="p-2 text-right font-mono font-bold text-slate-700 dark:text-slate-300">
-                  {formatMoneyCustom(resumenIndustrial.laminaCop, resumenIndustrial.laminaUsd)}
-                </td>
-                <td className="p-2 text-center font-mono font-extrabold text-cyan-700 dark:text-cyan-300 bg-cyan-50/30 dark:bg-cyan-950/20">
-                  {resumenIndustrial.pctLaminaReal}%
-                </td>
-              </tr>
+        {/* Contenedor Split: Panel Analítico (6 cols) + Tabla Compacta (6 cols) */}
+        <div className="grid grid-cols-1 xl:grid-cols-12 gap-3.5 items-stretch">
+          {/* LADO IZQUIERDO: PANEL ANALÍTICO CON COMPONENTES A LA IZQ Y DONUT AMPLIADO A LA DER (6 cols) */}
+          <div 
+            style={{ 
+              backgroundColor: coloresApariencia?.tablaFilaFondo || coloresApariencia?.fondoPaneles, 
+              borderColor: coloresApariencia?.tablaBorde || coloresApariencia?.bordePaneles 
+            }}
+            className="xl:col-span-6 p-3 rounded-lg border shadow-sm transition-colors flex flex-col justify-between gap-2.5"
+          >
+            {/* Cabecera del Panel Gráfico */}
+            <div className="flex items-center justify-between border-b pb-1.5" style={{ borderColor: coloresApariencia?.bordePaneles }}>
+              <span style={{ color: coloresApariencia?.textoPrincipal }} className="text-xs font-bold">
+                Estructura Porcentual de Costos
+              </span>
+              <span style={{ color: coloresApariencia?.textoSecundario }} className="text-[10px] font-mono">
+                {chartMode === "macro" ? "3 Componentes Principales" : "Desglose Completo de Insumos"}
+              </span>
+            </div>
 
-              {/* 2. Fondos */}
-              <tr className="hover:bg-slate-50/60 dark:hover:bg-slate-800/40 transition">
-                <td className="p-2 text-center font-mono font-bold text-slate-500">2</td>
-                <td className="p-2 font-medium text-slate-700 dark:text-slate-300 pl-7">
-                  Fondos (MDF 2.7mm - 3mm)
-                </td>
-                <td className="p-2 text-center text-slate-500 text-[11px]">Material Directo</td>
-                <td className="p-2 text-right font-mono text-slate-500">
-                  {formatMoneyCustom(resumenIndustrial.fondosCop, resumenIndustrial.fondosUsd)}
-                </td>
-                <td className="p-2 text-center font-mono font-bold text-slate-400">
-                  {resumenIndustrial.pctFondosReal}%
-                </td>
-              </tr>
+            {/* Contenido en 2 Columnas Internas: Lista a la Izquierda + Donut Ampliado a la Derecha */}
+            <div className="flex flex-col lg:flex-row items-center justify-between gap-3 flex-1 py-1">
+              {/* Lista Vertical de Componentes a la Izquierda */}
+              <div className="flex flex-col gap-1 w-full lg:w-[46%] justify-center">
+                {activeChartItems.map((item) => {
+                  const isHovered = hoveredCostKey === item.id || (chartMode === "macro" && hoveredCostKey === "mp" && item.id === "mp");
+                  return (
+                    <div
+                      key={item.id}
+                      onMouseEnter={() => setHoveredCostKey(item.id)}
+                      onMouseLeave={() => setHoveredCostKey(null)}
+                      style={{
+                        backgroundColor: isHovered ? (coloresApariencia?.fondoAplicacion || "#1E293B") : "transparent",
+                        borderColor: isHovered ? item.color : "transparent",
+                      }}
+                      className="flex items-center justify-between py-1 px-2 rounded border transition cursor-pointer text-[11px]"
+                    >
+                      <div className="flex items-center gap-1.5 min-w-0">
+                        <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: item.color }} />
+                        <span style={{ color: coloresApariencia?.textoPrincipal }} className="truncate font-medium text-[10px]">
+                          {item.nombre.replace("Lista de ", "").replace("Directa ", "")}
+                        </span>
+                      </div>
+                      <span 
+                        style={{ color: item.color }} 
+                        className="font-mono font-extrabold ml-1.5 shrink-0 text-[11px]"
+                      >
+                        {item.pct}%
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
 
-              {/* 3. Cantos */}
-              <tr className="hover:bg-slate-50/60 dark:hover:bg-slate-800/40 transition">
-                <td className="p-2 text-center font-mono font-bold text-slate-500">3</td>
-                <td className="p-2 font-bold text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
-                  <Ruler className="w-3.5 h-3.5 text-amber-600" />
-                  Cantos PVC (Flexible & Rígido)
-                </td>
-                <td className="p-2 text-center text-slate-500 text-[11px]">Material Directo</td>
-                <td className="p-2 text-right font-mono font-bold text-slate-700 dark:text-slate-300">
-                  {formatMoneyCustom(resumenIndustrial.cantoCop, resumenIndustrial.cantoUsd)}
-                </td>
-                <td className="p-2 text-center font-mono font-extrabold text-amber-700 dark:text-amber-300 bg-amber-50/30 dark:bg-amber-950/20">
-                  {resumenIndustrial.pctCantoReal}%
-                </td>
-              </tr>
+              {/* Gráfico Donut SVG Reactivo Ampliado a la Derecha */}
+              <div className="flex items-center justify-center relative flex-1 w-full lg:w-[54%] py-1">
+                <svg width="250" height="250" viewBox="-125 -125 250 250" className="overflow-visible">
+                  {chartSlices.map((slice) => {
+                    const isHovered = hoveredCostKey === slice.id || (chartMode === "macro" && hoveredCostKey === "mp" && slice.id === "mp");
+                    const rOuter = isHovered ? 116 : 108;
+                    const rInner = isHovered ? 68 : 72;
+                    const d = describeArc(0, 0, rOuter, rInner, slice.startAngle, slice.endAngle);
 
-              {/* 4. Empaque (Editable Manualmente) */}
-              <tr className="hover:bg-amber-50/20 dark:hover:bg-slate-800/40 transition">
-                <td className="p-2 text-center font-mono font-bold text-slate-500">4</td>
-                <td className="p-2 font-medium text-slate-700 dark:text-slate-300 pl-7">
-                  <div className="flex items-center justify-between gap-2">
-                    <span className="font-bold text-slate-800 dark:text-slate-200">
-                      Material de Empaque (Cajas / Cartón Panal)
-                    </span>
-                    <span className="text-[10px] text-amber-700 dark:text-amber-300 font-mono font-bold bg-amber-100 dark:bg-amber-950/60 px-2 py-0.5 rounded border border-amber-300 dark:border-amber-700 flex items-center gap-1 shadow-sm">
-                      <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse"></span>
-                      Manual ✏️
-                    </span>
-                  </div>
-                </td>
-                <td className="p-2 text-center text-slate-500 text-[11px]">Material Directo</td>
-                <td className="p-2 text-right bg-amber-50/30 dark:bg-amber-950/20">
-                  <div className="flex items-center justify-end gap-1">
-                    <span className="text-amber-600 dark:text-amber-400 font-mono font-bold">
-                      $
-                    </span>
-                    <DecimalInput
-                      value={moneda === "COP" ? (costoEmpaqueManualCop ?? 0) : (costoEmpaqueManualUsd ?? 0)}
-                      decimals={moneda === "COP" ? 0 : 2}
-                      onChange={handleEmpaqueChange}
-                      className="w-28 text-right font-mono font-extrabold text-slate-900 dark:text-slate-100 bg-white dark:bg-slate-800 border border-amber-300 dark:border-amber-600 rounded px-2 py-1 outline-none shadow-sm focus:border-amber-500 focus:ring-1 focus:ring-amber-500 transition text-xs"
-                    />
-                    <span className="text-[10px] font-mono text-slate-400 font-bold ml-0.5">
-                      {moneda}
-                    </span>
-                  </div>
-                </td>
-                <td className="p-2 text-center font-mono font-extrabold text-amber-700 dark:text-amber-300 bg-amber-50/30 dark:bg-amber-950/20">
-                  {resumenIndustrial.pctEmpaqueReal}%
-                </td>
-              </tr>
+                    return (
+                      <path
+                        key={slice.id}
+                        d={d}
+                        fill={slice.color}
+                        stroke={coloresApariencia?.fondoPaneles || "#0F172A"}
+                        strokeWidth={2}
+                        onMouseEnter={() => setHoveredCostKey(slice.id)}
+                        onMouseLeave={() => setHoveredCostKey(null)}
+                        className="cursor-pointer transition-all duration-200 hover:opacity-95"
+                        style={{
+                          filter: isHovered ? "drop-shadow(0 0 8px rgba(6, 182, 212, 0.6))" : "none",
+                          transformOrigin: "center",
+                        }}
+                      >
+                        <title>{`${slice.nombre}: ${slice.pct}% (${formatMoneyCustom(slice.valorCop, slice.valorUsd)})`}</title>
+                      </path>
+                    );
+                  })}
 
-              {/* 5. Herrajes */}
-              <tr className="hover:bg-slate-50/60 dark:hover:bg-slate-800/40 transition">
-                <td className="p-2 text-center font-mono font-bold text-slate-500">5</td>
-                <td className="p-2 font-bold text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
-                  <Hammer className="w-3.5 h-3.5 text-blue-600" />
-                  Herrajes & Accesorios de Ensamble
-                </td>
-                <td className="p-2 text-center text-slate-500 text-[11px]">Material Directo</td>
-                <td className="p-2 text-right font-mono font-bold text-slate-700 dark:text-slate-300">
-                  {formatMoneyCustom(resumenIndustrial.herrajesCop, resumenIndustrial.herrajesUsd)}
-                </td>
-                <td className="p-2 text-center font-mono font-extrabold text-blue-700 dark:text-blue-300 bg-blue-50/30 dark:bg-blue-950/20">
-                  {resumenIndustrial.pctHerrajesReal}%
-                </td>
-              </tr>
+                  {/* Texto Central del Donut */}
+                  <g textAnchor="middle" dominantBaseline="middle">
+                    <text
+                      y="-16"
+                      fill={coloresApariencia?.textoSecundario || "#94A3B8"}
+                      fontSize="10"
+                      fontFamily="monospace"
+                      fontWeight="bold"
+                    >
+                      {activeHoveredItem ? activeHoveredItem.nombre.slice(0, 16) : "TOTAL PRODUCTO"}
+                    </text>
+                    <text
+                      y="6"
+                      fill={activeHoveredItem ? activeHoveredItem.color : (coloresApariencia?.estadoActivo || "#10B981")}
+                      fontSize="18"
+                      fontFamily="monospace"
+                      fontWeight="900"
+                    >
+                      {activeHoveredItem ? `${activeHoveredItem.pct}%` : "100%"}
+                    </text>
+                    <text
+                      y="26"
+                      fill={coloresApariencia?.textoPrincipal || "#F8FAFC"}
+                      fontSize="12"
+                      fontFamily="monospace"
+                      fontWeight="bold"
+                    >
+                      {activeHoveredItem
+                        ? formatMoneyCustom(activeHoveredItem.valorCop, activeHoveredItem.valorUsd)
+                        : formatMoneyCustom(resumenIndustrial.costoTotalFabCop, resumenIndustrial.costoTotalFabUsd)}
+                    </text>
+                  </g>
+                </svg>
+              </div>
+            </div>
+          </div>
 
-              {/* 6. Adicionales */}
-              <tr className="hover:bg-slate-50/60 dark:hover:bg-slate-800/40 transition">
-                <td className="p-2 text-center font-mono font-bold text-slate-500">6</td>
-                <td className="p-2 font-medium text-slate-700 dark:text-slate-300 pl-7">
-                  Adicionales & Consumibles (Estándar 0.40%)
-                </td>
-                <td className="p-2 text-center text-slate-500 text-[11px]">Material Directo</td>
-                <td className="p-2 text-right font-mono text-slate-600 dark:text-slate-400">
-                  {formatMoneyCustom(resumenIndustrial.adicionalesCop, resumenIndustrial.adicionalesUsd)}
-                </td>
-                <td className="p-2 text-center font-mono font-bold text-slate-600 dark:text-slate-400">
-                  {resumenIndustrial.pctAdicionalesReal}%
-                </td>
-              </tr>
-
-              {/* Subtotal MP Directa */}
-              <tr className="bg-emerald-50/60 dark:bg-emerald-950/30 border-y border-emerald-200 dark:border-emerald-800/60 font-bold">
-                <td colSpan={3} className="p-2 text-right text-emerald-900 dark:text-emerald-300 uppercase tracking-wider text-[11px]">
-                  Subtotal Materia Prima Directa (MP):
-                </td>
-                <td className="p-2 text-right font-mono font-extrabold text-emerald-800 dark:text-emerald-200 text-xs">
-                  {formatMoneyCustom(resumenIndustrial.totalMpCop, resumenIndustrial.totalMpUsd)}
-                </td>
-                <td className="p-2 text-center font-mono font-extrabold text-emerald-800 dark:text-emerald-200 bg-emerald-100/60 dark:bg-emerald-900/40 text-xs">
-                  {resumenIndustrial.pctMpTotalReal}%
-                </td>
-              </tr>
-
-              {/* 7. Tercerizaciones */}
-              <tr className="hover:bg-slate-50/60 dark:hover:bg-slate-800/40 transition">
-                <td className="p-2 text-center font-mono font-bold text-slate-500">7</td>
-                <td className="p-2 font-medium text-slate-700 dark:text-slate-300 pl-7">
-                  Tercerizaciones & Maquilas Externas
-                </td>
-                <td className="p-2 text-center text-slate-500 text-[11px]">Servicio Externo</td>
-                <td className="p-2 text-right font-mono text-slate-500">
-                  {formatMoneyCustom(resumenIndustrial.tercerizacionesCop, resumenIndustrial.tercerizacionesUsd)}
-                </td>
-                <td className="p-2 text-center font-mono font-bold text-slate-400">
-                  {resumenIndustrial.pctTercerizacionesReal}%
-                </td>
-              </tr>
-
-              {/* 8. Mano de Obra Directa + Prestaciones */}
-              <tr className="hover:bg-slate-50/60 dark:hover:bg-slate-800/40 transition bg-cyan-50/20 dark:bg-cyan-950/10">
-                <td className="p-2 text-center font-mono font-bold text-slate-500">8</td>
-                <td className="p-2 font-bold text-cyan-900 dark:text-cyan-200 flex items-center gap-1.5">
-                  <span className="w-2 h-2 rounded-full bg-cyan-500 inline-block"></span>
-                  Mano de Obra Directa + Prestaciones (MO+PRES)
-                </td>
-                <td className="p-2 text-center text-cyan-700 dark:text-cyan-400 text-[11px] font-semibold">
-                  Costo de Conversión
-                </td>
-                <td className="p-2 text-right font-mono font-extrabold text-cyan-800 dark:text-cyan-200">
-                  {formatMoneyCustom(resumenIndustrial.moPresCop, resumenIndustrial.moPresUsd)}
-                </td>
-                <td className="p-2 text-center font-mono font-extrabold text-cyan-800 dark:text-cyan-200 bg-cyan-100/50 dark:bg-cyan-900/30 text-xs">
-                  {resumenIndustrial.pctMo}%
-                </td>
-              </tr>
-
-              {/* 9. CIF */}
-              <tr className="hover:bg-slate-50/60 dark:hover:bg-slate-800/40 transition bg-purple-50/20 dark:bg-purple-950/10">
-                <td className="p-2 text-center font-mono font-bold text-slate-500">9</td>
-                <td className="p-2 font-bold text-purple-900 dark:text-purple-200 flex items-center gap-1.5">
-                  <span className="w-2 h-2 rounded-full bg-purple-500 inline-block"></span>
-                  Costos Indirectos de Fabricación (CIF)
-                </td>
-                <td className="p-2 text-center text-purple-700 dark:text-purple-400 text-[11px] font-semibold">
-                  Planta & Depreciación
-                </td>
-                <td className="p-2 text-right font-mono font-extrabold text-purple-800 dark:text-purple-200">
-                  {formatMoneyCustom(resumenIndustrial.cifCop, resumenIndustrial.cifUsd)}
-                </td>
-                <td className="p-2 text-center font-mono font-extrabold text-purple-800 dark:text-purple-200 bg-purple-100/50 dark:bg-purple-900/30 text-xs">
-                  {resumenIndustrial.pctCif}%
-                </td>
-              </tr>
-            </tbody>
-
-            {/* Fila Gran Total 100% */}
-            <tfoot>
-              <tr 
-                style={{ 
-                  backgroundColor: coloresApariencia?.tablaTotalFondo || "#0F172A", 
-                  borderColor: coloresApariencia?.colorMarca || "#F59E0B" 
-                }}
-                className="border-t-2 font-bold whitespace-nowrap transition-colors"
-              >
-                <td 
-                  colSpan={3} 
-                  style={{ color: coloresApariencia?.tablaTotalTexto || "#F8FAFC" }}
-                  className="p-3 text-right uppercase text-xs tracking-wider"
-                >
-                  🏆 COSTO TOTAL DEL PRODUCTO (100%):
-                </td>
-                <td 
-                  style={{ color: coloresApariencia?.tablaTotalTexto || "#FFFFFF" }}
-                  className="p-3 text-right font-mono font-extrabold text-base"
-                >
-                  {formatMoneyCustom(resumenIndustrial.costoTotalFabCop, resumenIndustrial.costoTotalFabUsd)}
-                </td>
-                <td 
+          {/* LADO DERECHO: TABLA FINANCIERA COMPACTA (6 cols) */}
+          <div 
+            style={{ 
+              backgroundColor: coloresApariencia?.tablaFilaFondo || coloresApariencia?.fondoPaneles, 
+              borderColor: coloresApariencia?.tablaBorde || coloresApariencia?.bordePaneles 
+            }}
+            className="xl:col-span-6 overflow-x-auto rounded-lg border shadow-sm transition-colors flex flex-col justify-between"
+          >
+            <table className="w-full text-left border-collapse text-xs">
+              <thead>
+                <tr 
                   style={{ 
-                    backgroundColor: coloresApariencia?.tablaTotalFondo || "#020617", 
-                    color: coloresApariencia?.tablaTotalTexto || "#F8FAFC" 
+                    backgroundColor: coloresApariencia?.tablaEncabezadoFondo || "#0F172A", 
+                    color: coloresApariencia?.tablaEncabezadoTexto || "#CBD5E1",
+                    borderColor: coloresApariencia?.tablaBorde || coloresApariencia?.bordePaneles 
                   }}
-                  className="p-3 text-center font-mono font-extrabold text-sm"
+                  className="font-bold border-b whitespace-nowrap transition-colors"
                 >
-                  100.00%
-                </td>
-              </tr>
-            </tfoot>
-          </table>
+                  <th className="py-2 px-2.5 w-8 text-center">#</th>
+                  <th className="py-2 px-2.5">Componente del Costo</th>
+                  <th className="py-2 px-2.5 w-36 text-center text-[11px]">Categoría</th>
+                  <th className="py-2 px-3 w-40 text-right">Valor ({moneda})</th>
+                </tr>
+              </thead>
+              <tbody 
+                style={{ borderColor: coloresApariencia?.tablaBorde }}
+                className="divide-y"
+              >
+                {/* 1. Láminas */}
+                <tr 
+                  onMouseEnter={() => setHoveredCostKey(chartMode === "macro" ? "mp" : "tableros")}
+                  onMouseLeave={() => setHoveredCostKey(null)}
+                  style={{ 
+                    backgroundColor: hoveredCostKey === "tableros" || (chartMode === "macro" && hoveredCostKey === "mp")
+                      ? (coloresApariencia?.fondoAplicacion || "#1E293B")
+                      : (coloresApariencia?.tablaFilaFondo || coloresApariencia?.fondoPaneles),
+                    borderColor: coloresApariencia?.tablaBorde,
+                    color: coloresApariencia?.textoPrincipal
+                  }}
+                  className="transition cursor-pointer"
+                >
+                  <td style={{ color: coloresApariencia?.textoSecundario }} className="py-1.5 px-2.5 text-center font-mono font-bold">1</td>
+                  <td style={{ color: coloresApariencia?.textoPrincipal }} className="py-1.5 px-2.5 font-bold flex items-center gap-1.5">
+                    <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: "#06B6D4" }} />
+                    <Layers style={{ color: coloresApariencia?.botonActivo }} className="w-3.5 h-3.5 shrink-0" />
+                    Lista de tableros
+                  </td>
+                  <td style={{ color: coloresApariencia?.textoSecundario }} className="py-1.5 px-2.5 text-center text-[10px]">Material Directo</td>
+                  <td style={{ color: coloresApariencia?.textoPrincipal }} className="py-1.5 px-3 text-right font-mono font-bold">
+                    {formatMoneyCustom(resumenIndustrial.laminaCop, resumenIndustrial.laminaUsd)}
+                  </td>
+                </tr>
+
+                {/* 2. Fondos */}
+                <tr 
+                  onMouseEnter={() => setHoveredCostKey(chartMode === "macro" ? "mp" : "fondos")}
+                  onMouseLeave={() => setHoveredCostKey(null)}
+                  style={{ 
+                    backgroundColor: hoveredCostKey === "fondos" || (chartMode === "macro" && hoveredCostKey === "mp")
+                      ? (coloresApariencia?.fondoAplicacion || "#1E293B")
+                      : (coloresApariencia?.tablaFilaFondo || coloresApariencia?.fondoPaneles),
+                    borderColor: coloresApariencia?.tablaBorde,
+                    color: coloresApariencia?.textoPrincipal
+                  }}
+                  className="transition cursor-pointer"
+                >
+                  <td style={{ color: coloresApariencia?.textoSecundario }} className="py-1.5 px-2.5 text-center font-mono font-bold">2</td>
+                  <td style={{ color: coloresApariencia?.textoPrincipal }} className="py-1.5 px-2.5 font-medium pl-6">
+                    Fondos (MDF 2.7mm - 3mm)
+                  </td>
+                  <td style={{ color: coloresApariencia?.textoSecundario }} className="py-1.5 px-2.5 text-center text-[10px]">Material Directo</td>
+                  <td style={{ color: coloresApariencia?.textoSecundario }} className="py-1.5 px-3 text-right font-mono">
+                    {formatMoneyCustom(resumenIndustrial.fondosCop, resumenIndustrial.fondosUsd)}
+                  </td>
+                </tr>
+
+                {/* 3. Cantos */}
+                <tr 
+                  onMouseEnter={() => setHoveredCostKey(chartMode === "macro" ? "mp" : "cantos")}
+                  onMouseLeave={() => setHoveredCostKey(null)}
+                  style={{ 
+                    backgroundColor: hoveredCostKey === "cantos" || (chartMode === "macro" && hoveredCostKey === "mp")
+                      ? (coloresApariencia?.fondoAplicacion || "#1E293B")
+                      : (coloresApariencia?.tablaFilaFondo || coloresApariencia?.fondoPaneles),
+                    borderColor: coloresApariencia?.tablaBorde,
+                    color: coloresApariencia?.textoPrincipal
+                  }}
+                  className="transition cursor-pointer"
+                >
+                  <td style={{ color: coloresApariencia?.textoSecundario }} className="py-1.5 px-2.5 text-center font-mono font-bold">3</td>
+                  <td style={{ color: coloresApariencia?.textoPrincipal }} className="py-1.5 px-2.5 font-bold flex items-center gap-1.5">
+                    <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: "#3B82F6" }} />
+                    <Ruler style={{ color: coloresApariencia?.botonActivo }} className="w-3.5 h-3.5 shrink-0" />
+                    Metros lineales de canto
+                  </td>
+                  <td style={{ color: coloresApariencia?.textoSecundario }} className="py-1.5 px-2.5 text-center text-[10px]">Material Directo</td>
+                  <td style={{ color: coloresApariencia?.textoPrincipal }} className="py-1.5 px-3 text-right font-mono font-bold">
+                    {formatMoneyCustom(resumenIndustrial.cantoCop, resumenIndustrial.cantoUsd)}
+                  </td>
+                </tr>
+
+                {/* 4. Empaque (Editable Manualmente) */}
+                <tr 
+                  onMouseEnter={() => setHoveredCostKey(chartMode === "macro" ? "mp" : "empaque")}
+                  onMouseLeave={() => setHoveredCostKey(null)}
+                  style={{ 
+                    backgroundColor: hoveredCostKey === "empaque" || (chartMode === "macro" && hoveredCostKey === "mp")
+                      ? (coloresApariencia?.fondoAplicacion || "#1E293B")
+                      : (coloresApariencia?.tablaFilaFondo || coloresApariencia?.fondoPaneles),
+                    borderColor: coloresApariencia?.tablaBorde,
+                    color: coloresApariencia?.textoPrincipal
+                  }}
+                  className="transition cursor-pointer"
+                >
+                  <td style={{ color: coloresApariencia?.textoSecundario }} className="py-1.5 px-2.5 text-center font-mono font-bold">4</td>
+                  <td className="py-1.5 px-2.5 font-medium pl-6">
+                    <div className="flex items-center justify-between gap-1.5">
+                      <span style={{ color: coloresApariencia?.textoPrincipal }} className="font-bold truncate text-[11px]">
+                        Material de Empaque (Cajas / Cartón)
+                      </span>
+                      <span 
+                        style={{
+                          backgroundColor: coloresApariencia?.fondoAplicacion,
+                          borderColor: coloresApariencia?.bordePaneles,
+                          color: coloresApariencia?.botonActivo,
+                        }}
+                        className="text-[9px] font-mono font-bold px-1.5 py-0.2 rounded border flex items-center gap-1 shrink-0"
+                      >
+                        <span 
+                          style={{ backgroundColor: coloresApariencia?.botonActivo }}
+                          className="w-1.5 h-1.5 rounded-full animate-pulse"
+                        />
+                        Manual ✏️
+                      </span>
+                    </div>
+                  </td>
+                  <td style={{ color: coloresApariencia?.textoSecundario }} className="py-1.5 px-2.5 text-center text-[10px]">Material Directo</td>
+                  <td className="py-1.5 px-3 text-right">
+                    <div className="flex items-center justify-end gap-1">
+                      <span style={{ color: coloresApariencia?.textoSecundario }} className="font-mono font-bold text-[10px]">
+                        $
+                      </span>
+                      <DecimalInput
+                        value={moneda === "COP" ? (costoEmpaqueManualCop ?? 0) : (costoEmpaqueManualUsd ?? 0)}
+                        decimals={moneda === "COP" ? 0 : 2}
+                        onChange={handleEmpaqueChange}
+                        style={{
+                          backgroundColor: coloresApariencia?.fondoAplicacion,
+                          borderColor: coloresApariencia?.bordePaneles,
+                          color: coloresApariencia?.textoPrincipal,
+                        }}
+                        className="w-20 text-right font-mono font-extrabold border rounded px-1 py-0.5 outline-none shadow-xs text-xs"
+                      />
+                      <span style={{ color: coloresApariencia?.textoSecundario }} className="text-[9px] font-mono font-bold">
+                        {moneda}
+                      </span>
+                    </div>
+                  </td>
+                </tr>
+
+                {/* 5. Herrajes */}
+                <tr 
+                  onMouseEnter={() => setHoveredCostKey(chartMode === "macro" ? "mp" : "herrajes")}
+                  onMouseLeave={() => setHoveredCostKey(null)}
+                  style={{ 
+                    backgroundColor: hoveredCostKey === "herrajes" || (chartMode === "macro" && hoveredCostKey === "mp")
+                      ? (coloresApariencia?.fondoAplicacion || "#1E293B")
+                      : (coloresApariencia?.tablaFilaFondo || coloresApariencia?.fondoPaneles),
+                    borderColor: coloresApariencia?.tablaBorde,
+                    color: coloresApariencia?.textoPrincipal
+                  }}
+                  className="transition cursor-pointer"
+                >
+                  <td style={{ color: coloresApariencia?.textoSecundario }} className="py-1.5 px-2.5 text-center font-mono font-bold">5</td>
+                  <td style={{ color: coloresApariencia?.textoPrincipal }} className="py-1.5 px-2.5 font-bold flex items-center gap-1.5">
+                    <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: "#EC4899" }} />
+                    <Hammer style={{ color: coloresApariencia?.botonActivo }} className="w-3.5 h-3.5 shrink-0" />
+                    Lista de herrajes
+                  </td>
+                  <td style={{ color: coloresApariencia?.textoSecundario }} className="py-1.5 px-2.5 text-center text-[10px]">Material Directo</td>
+                  <td style={{ color: coloresApariencia?.textoPrincipal }} className="py-1.5 px-3 text-right font-mono font-bold">
+                    {formatMoneyCustom(resumenIndustrial.herrajesCop, resumenIndustrial.herrajesUsd)}
+                  </td>
+                </tr>
+
+                {/* 6. Adicionales */}
+                <tr 
+                  onMouseEnter={() => setHoveredCostKey(chartMode === "macro" ? "mp" : "adicionales")}
+                  onMouseLeave={() => setHoveredCostKey(null)}
+                  style={{ 
+                    backgroundColor: hoveredCostKey === "adicionales" || (chartMode === "macro" && hoveredCostKey === "mp")
+                      ? (coloresApariencia?.fondoAplicacion || "#1E293B")
+                      : (coloresApariencia?.tablaFilaFondo || coloresApariencia?.fondoPaneles),
+                    borderColor: coloresApariencia?.tablaBorde,
+                    color: coloresApariencia?.textoPrincipal
+                  }}
+                  className="transition cursor-pointer"
+                >
+                  <td style={{ color: coloresApariencia?.textoSecundario }} className="py-1.5 px-2.5 text-center font-mono font-bold">6</td>
+                  <td style={{ color: coloresApariencia?.textoPrincipal }} className="py-1.5 px-2.5 font-medium pl-6 text-[11px]">
+                    Adicionales & Consumibles (0.40%)
+                  </td>
+                  <td style={{ color: coloresApariencia?.textoSecundario }} className="py-1.5 px-2.5 text-center text-[10px]">Material Directo</td>
+                  <td style={{ color: coloresApariencia?.textoSecundario }} className="py-1.5 px-3 text-right font-mono">
+                    {formatMoneyCustom(resumenIndustrial.adicionalesCop, resumenIndustrial.adicionalesUsd)}
+                  </td>
+                </tr>
+
+                {/* Subtotal MP Directa */}
+                <tr 
+                  style={{ 
+                    backgroundColor: coloresApariencia?.fondoPaneles, 
+                    borderColor: coloresApariencia?.tablaBorde,
+                    color: coloresApariencia?.textoPrincipal 
+                  }}
+                  className="border-y font-bold"
+                >
+                  <td 
+                    colSpan={3} 
+                    style={{ color: coloresApariencia?.textoPrincipal }}
+                    className="py-1.5 px-2.5 text-right uppercase tracking-wider text-[10px]"
+                  >
+                    SUBTOTAL MATERIA PRIMA DIRECTA (MP):
+                  </td>
+                  <td 
+                    style={{ color: coloresApariencia?.estadoActivo || "#10B981" }}
+                    className="py-1.5 px-3 text-right font-mono font-extrabold text-xs"
+                  >
+                    {formatMoneyCustom(resumenIndustrial.totalMpCop, resumenIndustrial.totalMpUsd)}
+                  </td>
+                </tr>
+
+                {/* 7. Tercerizaciones */}
+                <tr 
+                  onMouseEnter={() => setHoveredCostKey(chartMode === "macro" ? null : "tercerizaciones")}
+                  onMouseLeave={() => setHoveredCostKey(null)}
+                  style={{ 
+                    backgroundColor: hoveredCostKey === "tercerizaciones"
+                      ? (coloresApariencia?.fondoAplicacion || "#1E293B")
+                      : (coloresApariencia?.tablaFilaFondo || coloresApariencia?.fondoPaneles),
+                    borderColor: coloresApariencia?.tablaBorde,
+                    color: coloresApariencia?.textoPrincipal
+                  }}
+                  className="transition cursor-pointer"
+                >
+                  <td style={{ color: coloresApariencia?.textoSecundario }} className="py-1.5 px-2.5 text-center font-mono font-bold">7</td>
+                  <td style={{ color: coloresApariencia?.textoPrincipal }} className="py-1.5 px-2.5 font-medium pl-6 text-[11px]">
+                    Tercerizaciones & Maquilas Externas
+                  </td>
+                  <td style={{ color: coloresApariencia?.textoSecundario }} className="py-1.5 px-2.5 text-center text-[10px]">Servicio Externo</td>
+                  <td style={{ color: coloresApariencia?.textoSecundario }} className="py-1.5 px-3 text-right font-mono">
+                    {formatMoneyCustom(resumenIndustrial.tercerizacionesCop, resumenIndustrial.tercerizacionesUsd)}
+                  </td>
+                </tr>
+
+                {/* 8. Mano de Obra Directa + Prestaciones */}
+                <tr 
+                  onMouseEnter={() => setHoveredCostKey("mo")}
+                  onMouseLeave={() => setHoveredCostKey(null)}
+                  style={{ 
+                    backgroundColor: hoveredCostKey === "mo"
+                      ? (coloresApariencia?.fondoAplicacion || "#1E293B")
+                      : (coloresApariencia?.tablaFilaFondo || coloresApariencia?.fondoPaneles),
+                    borderColor: coloresApariencia?.tablaBorde,
+                    color: coloresApariencia?.textoPrincipal
+                  }}
+                  className="transition cursor-pointer"
+                >
+                  <td style={{ color: coloresApariencia?.textoSecundario }} className="py-1.5 px-2.5 text-center font-mono font-bold">8</td>
+                  <td style={{ color: coloresApariencia?.textoPrincipal }} className="py-1.5 px-2.5 font-bold flex items-center gap-1.5">
+                    <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: "#10B981" }} />
+                    Mano de Obra Directa + Prestaciones (MO)
+                  </td>
+                  <td style={{ color: coloresApariencia?.textoSecundario }} className="py-1.5 px-2.5 text-center text-[10px] font-semibold">
+                    Costo Conversión
+                  </td>
+                  <td style={{ color: coloresApariencia?.textoPrincipal }} className="py-1.5 px-3 text-right font-mono font-extrabold">
+                    {formatMoneyCustom(resumenIndustrial.moPresCop, resumenIndustrial.moPresUsd)}
+                  </td>
+                </tr>
+
+                {/* 9. CIF */}
+                <tr 
+                  onMouseEnter={() => setHoveredCostKey("cif")}
+                  onMouseLeave={() => setHoveredCostKey(null)}
+                  style={{ 
+                    backgroundColor: hoveredCostKey === "cif"
+                      ? (coloresApariencia?.fondoAplicacion || "#1E293B")
+                      : (coloresApariencia?.tablaFilaFondo || coloresApariencia?.fondoPaneles),
+                    borderColor: coloresApariencia?.tablaBorde,
+                    color: coloresApariencia?.textoPrincipal
+                  }}
+                  className="transition cursor-pointer"
+                >
+                  <td style={{ color: coloresApariencia?.textoSecundario }} className="py-1.5 px-2.5 text-center font-mono font-bold">9</td>
+                  <td style={{ color: coloresApariencia?.textoPrincipal }} className="py-1.5 px-2.5 font-bold flex items-center gap-1.5">
+                    <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: "#F59E0B" }} />
+                    Costos Indirectos de Fabricación (CIF)
+                  </td>
+                  <td style={{ color: coloresApariencia?.textoSecundario }} className="py-1.5 px-2.5 text-center text-[10px] font-semibold">
+                    Planta & Deprec.
+                  </td>
+                  <td style={{ color: coloresApariencia?.textoPrincipal }} className="py-1.5 px-3 text-right font-mono font-extrabold">
+                    {formatMoneyCustom(resumenIndustrial.cifCop, resumenIndustrial.cifUsd)}
+                  </td>
+                </tr>
+              </tbody>
+
+              {/* Fila Gran Total 100% */}
+              <tfoot>
+                <tr 
+                  style={{ 
+                    backgroundColor: coloresApariencia?.tablaTotalFondo || "#0F172A", 
+                    borderColor: coloresApariencia?.tablaBorde || "#334155" 
+                  }}
+                  className="border-t-2 font-bold whitespace-nowrap transition-colors"
+                >
+                  <td 
+                    colSpan={3} 
+                    style={{ color: coloresApariencia?.botonActivo }}
+                    className="p-2.5 text-right uppercase text-[11px] tracking-wider"
+                  >
+                    COSTO TOTAL PRODUCTO:
+                  </td>
+                  <td 
+                    style={{ color: coloresApariencia?.estadoActivo || "#10B981" }}
+                    className="p-2.5 px-3 text-right font-mono font-extrabold text-sm"
+                  >
+                    {formatMoneyCustom(resumenIndustrial.costoTotalFabCop, resumenIndustrial.costoTotalFabUsd)}
+                  </td>
+                </tr>
+              </tfoot>
+            </table>
+          </div>
         </div>
       </div>
 
       {/* ===================================================================== */}
-      {/* 📦 RESUMEN GENERAL & ACCIONES DE GUARDADO SUPABASE                    */}
+      {/* 📦 ACCIONES DE FABRICACIÓN & EXPORTACIÓN DXF CNC                      */}
       {/* ===================================================================== */}
-      <div className="p-3.5 rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-sm flex flex-col gap-3">
-        <div className="flex flex-wrap items-center justify-between gap-2">
-          <div className="flex items-center gap-2">
-            <Calculator className="w-4 h-4 text-purple-600" />
-            <span className="font-extrabold text-slate-800 dark:text-slate-100">
-              Resumen Consolidado de Fabricación
-            </span>
-          </div>
-          <div className="text-right flex flex-wrap items-center gap-2">
-            <span className="text-[11px] text-slate-500 font-mono">
-              MP ({formatMoneyCustom(resumenIndustrial.totalMpCop, resumenIndustrial.totalMpUsd)}) + 
-              MO ({formatMoneyCustom(resumenIndustrial.moPresCop, resumenIndustrial.moPresUsd)}) + 
-              CIF ({formatMoneyCustom(resumenIndustrial.cifCop, resumenIndustrial.cifUsd)})
-            </span>
-            <span className="font-mono font-extrabold text-base text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-950/60 px-3 py-1 rounded-lg border border-amber-200 dark:border-amber-800">
-              {formatMoneyCustom(resumenIndustrial.costoTotalFabCop, resumenIndustrial.costoTotalFabUsd)}
-            </span>
-          </div>
+      <div 
+        style={{ 
+          backgroundColor: coloresApariencia?.fondoPaneles, 
+          borderColor: coloresApariencia?.bordePaneles 
+        }}
+        className="p-3 rounded-lg border shadow-sm flex flex-wrap items-center justify-between gap-2 transition-colors"
+      >
+        <div className="flex items-center gap-2">
+          <FileCode2 style={{ color: coloresApariencia?.botonActivo }} className="w-4 h-4" />
+          <span style={{ color: coloresApariencia?.textoPrincipal }} className="font-bold text-xs">
+            Archivos de Fabricación CNC
+          </span>
         </div>
 
-        {/* Acciones de Exportación */}
-        <div className="flex justify-end pt-2 border-t border-slate-100 dark:border-slate-700">
-          <button
-            onClick={descargarDXF}
-            disabled={descargando}
-            className="w-full sm:w-auto py-2.5 px-6 rounded-lg bg-cyan-600 hover:bg-cyan-700 active:scale-[0.99] text-white font-bold text-xs shadow-sm transition flex items-center justify-center gap-2 disabled:opacity-50 cursor-pointer"
-          >
-            <Download className="w-4 h-4" />
-            {descargando ? "Generando DXF..." : "Exportar DXF para Seccionadora CNC"}
-          </button>
-        </div>
+        <button
+          onClick={descargarDXF}
+          disabled={descargando}
+          style={{
+            backgroundColor: coloresApariencia?.botonActivo || "#0891b2",
+            color: "#FFFFFF",
+          }}
+          className="w-full sm:w-auto py-2 px-5 rounded-lg font-bold text-xs shadow-sm transition flex items-center justify-center gap-2 disabled:opacity-50 cursor-pointer hover:opacity-90 active:scale-95"
+        >
+          <Download className="w-4 h-4" />
+          {descargando ? "Generando DXF..." : "Exportar DXF para Seccionadora CNC"}
+        </button>
       </div>
     </div>
   );

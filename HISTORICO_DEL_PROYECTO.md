@@ -1,5 +1,39 @@
 # 📜 Histórico del Proyecto: mariomojica.com
 
+### 🔹 Hito 3BF_UI — Homologación Integral de Apariencia Tech Ethos / Obsidian Teal en Base de Datos, Botones Píldora Visor 3D, Reordenamiento Ergonómico DfMA y Calibración Milimétrica de Barra Superior (19 de Agosto, 2026)
+
+- **Homologación Visual Completa de Base de Datos (`DatabaseView.tsx`)**:
+  * Sincronización al 100% de todas las tablas maestras (Herrajes, Tableros, Cantos), paneles de proveedores y costos de conversión industrial con el sistema de variables `coloresApariencia` (Tech Ethos y Obsidian Teal).
+- **Botones Píldora Estilo Visor 3D**:
+  * Estandarización de las pestañas secundarias (*Herrajes & Accesorios*, *Tableros & Sustratos*, *Cantos & Acabados*, *Negociación Proveedurías*, *Mano de Obra & CIF*) y botones de acción (*Importar Excel*, *Guardar Cambios*, *+ Nuevo Herraje*) al formato píldora (`rounded-full`), con bordes redondeados y estados activo/inactivo contrastados.
+- **Reordenamiento Ergonómico DfMA en Herrajes**:
+  * Reubicación de columnas: *Proveedor* situado tras *Descripción Comercial*, y *Unidad* tras *Mallas por Unidad*, logrando una agrupación lógica que posiciona las métricas de costo monetario a la derecha.
+- **Depuración & Limpieza Visual**:
+  * Removido el prefijo `"RH_OUT: "` en todas las filas de la tabla de Herrajes.
+  * Removidas las etiquetas secundarias redundantes de las cabeceras de proveedores (Arauco, Duratex, Masisa, Novopan).
+  * Eliminada la tarjeta de simulación de liquidación y convertidos los indicadores *"Estándar ERP 100%"* y *"4 Proveedores Activos"* a texto plano limpio.
+- **Calibración de Contrastes en Modo Claro (*Tech Ethos*)**:
+  * Fondo de cabeceras de tabla a `#E2E8F0` con divisor `#CBD5E1`, texto `#1E293B`, rayado alternado (*zebra striping* `#FFFFFF` / `#F8FAFC`) y color corporativo cian en el icono de importación de Excel.
+- **Armonización de Alturas en Barra Superior (`app/page.tsx`)**:
+  * Homologación dimensional de todos los componentes de la barra de herramientas (Pestañas centrales, Modos 3D, Botón de Cámara, Switch Light/Dark e indicador `vBeta 0.1 Online`) en contenedores cápsula `h-9` (36px, `p-1`) con elementos interactivos interiores `h-7` (28px).
+
+---
+
+### 🔹 Hito 3BF_Persistencia_Simbiotica_UI_Responsiva — Arquitectura de Gemelo Digital .3bf.json en Google Drive, Persistencia Simbiótica con BD de Costos, Redimensión Ergonómica de Panel y Transición Dinámica Texto/Miniatura (19 de Agosto, 2026)
+
+- **Persistencia Simbiótica (`.3bf.json` en Google Drive + Base de Datos)**:
+  * Al pulsar **Guardar como...**, se genera un paquete integral de Gemelo Digital atómico (`.3bf.json`) almacenado en `G:\Mi unidad\Muebles\[Marca]\[Tipología]\...`.
+  * El paquete encapsula de forma simbiótica: (1) Geometría y parámetros 3D completos, (2) Ficha técnica de despiece, metros de cantos, herrajes y costeo 100%, (3) Miniatura WebGL de alta definición y (4) Metadata comercial.
+  * Los precios de materiales quedan congelados referenciando los registros maestros de la **Base de Datos** (Novopan, Pelíkano, Blum, etc.), logrando una reconstrucción 100% fiel al abrir el mueble.
+- **Redimensión Ergonómica del Panel Derecho**:
+  * Implementado un divisor interactivo (`cursor-ew-resize`) entre el área principal y el panel lateral derecho con persistencia en `localStorage` (de 280px a 800px, predeterminado 380px), eliminando truncamientos en textos como *"líneas de rejilla"*.
+- **Transición Adaptativa Miniatura ➔ Texto Puro**:
+  * En el Asset Browser de Muebles, las tarjetas mantienen un tamaño uniforme acotado estilo Blender (`70×70px`). Al contraer el panel a su mínimo ancho, la miniatura desaparece automáticamente dejando el 100% del ancho para el nombre del producto (`00002`) sin truncamientos.
+- **Unificación del Botón Guardar en Ficha de Despiece**:
+  * Consolidación de los botones duplicados en un único botón redondeado (`rounded-full`) que abre directamente el Asset Browser de Muebles en el panel derecho.
+
+---
+
 ### 🔹 Hito 3BF_UI_Colores — Personalización de Apariencia Estilo Rhinoceros 8, Glosario Completo de Colores 2D/3D/BOM, Guardado Predefinido, Copiado/Pegado Rápido #HEX 1-Touch, N-Panel Contextual y Overlay en Fichas de Datos (18 de Agosto, 2026)
 
 - **Panel de Apariencia y Glosario Completo de Colores (Estilo Rhinoceros 8)**:

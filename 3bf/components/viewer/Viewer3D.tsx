@@ -136,15 +136,18 @@ function GroundInfiniteAxes() {
 
   if (!calibracion.mostrarGrilla || !calibracion.mostrarEjesCoordenadas) return null;
 
-  const axisWidth = calibracion.grosorGrillaGruesa || 1.5;
+  const count = Math.max(1, calibracion.numeroLineasRejilla || 500);
+  const cellSpacing = Math.max(0.001, calibracion.distanciaCuadricula || 0.01);
+  const halfExtent = count * cellSpacing;
+  const axisWidth = calibracion.grosorGrillaGruesa || 2.0;
 
   return (
     <group position={[0, -0.00095, 0]} renderOrder={100}>
       {calibracion.mostrarEjeX && (
         <Line
           points={[
-            [-100, 0, 0],
-            [100, 0, 0],
+            [0, 0, 0],
+            [halfExtent, 0, 0],
           ]}
           color={coloresApariencia.ejeX || calibracion.colorEjeX || "#ef4444"}
           lineWidth={axisWidth}
@@ -158,8 +161,8 @@ function GroundInfiniteAxes() {
       {calibracion.mostrarEjeY && (
         <Line
           points={[
-            [0, 0, -100],
-            [0, 0, 100],
+            [0, 0, 0],
+            [0, 0, -halfExtent],
           ]}
           color={coloresApariencia.ejeY || calibracion.colorEjeY || "#22c55e"}
           lineWidth={axisWidth}
@@ -321,7 +324,7 @@ function BoardMesh({
     opacity = 0.6;
     transparent = true;
   } else if (isTapaLuz) {
-    meshColor = coloresApariencia.colorTapacantos || "#1F2937";
+    meshColor = "#1F2937";
     metalness = 0.2;
     roughness = 0.4;
     opacity = 1.0;
@@ -501,13 +504,14 @@ function extractStaticGeometry(furnitureGroup: THREE.Group) {
   const groupWorldPos = new THREE.Vector3();
   furnitureGroup.getWorldPosition(groupWorldPos);
 
-  // Coordenadas locales puras respecto al origen del grupo
-  const minX = worldBox.min.x - groupWorldPos.x;
-  const maxX = worldBox.max.x - groupWorldPos.x;
-  const minY = worldBox.min.y - groupWorldPos.y;
-  const maxY = worldBox.max.y - groupWorldPos.y;
-  const minZ = worldBox.min.z - groupWorldPos.z;
-  const maxZ = worldBox.max.z - groupWorldPos.z;
+  // Micro-expansión geométrica (0.6mm) para eliminar completamente el Z-fighting con las caras de la malla
+  const eps = 0.0006;
+  const minX = worldBox.min.x - groupWorldPos.x - eps;
+  const maxX = worldBox.max.x - groupWorldPos.x + eps;
+  const minY = worldBox.min.y - groupWorldPos.y - eps;
+  const maxY = worldBox.max.y - groupWorldPos.y + eps;
+  const minZ = worldBox.min.z - groupWorldPos.z - eps;
+  const maxZ = worldBox.max.z - groupWorldPos.z + eps;
 
   const midX = (minX + maxX) / 2;
   const midY = (minY + maxY) / 2;
@@ -540,64 +544,7 @@ function extractStaticGeometry(furnitureGroup: THREE.Group) {
     { fA: 1, fB: 4, p1: [maxX, minY, minZ], p2: [maxX, maxY, minZ] },
   ];
 
-  interface PernoSaliente {
-    side: "left" | "right" | "front" | "back";
-    center: THREE.Vector3;
-    tip: number;
-    radius: number;
-  }
-  const protrudingPernos: PernoSaliente[] = [];
-
-  furnitureGroup.traverse((child) => {
-    if ((child as THREE.Mesh).isMesh && (child.name.includes("Perno") || child.name.includes("Tornillo"))) {
-      const mesh = child as THREE.Mesh;
-      const pWorldBBox = new THREE.Box3().setFromObject(mesh);
-      const pLocalMinX = pWorldBBox.min.x - groupWorldPos.x;
-      const pLocalMaxX = pWorldBBox.max.x - groupWorldPos.x;
-      const pLocalMinZ = pWorldBBox.min.z - groupWorldPos.z;
-      const pLocalMaxZ = pWorldBBox.max.z - groupWorldPos.z;
-      const pLocalCenter = pWorldBBox.getCenter(new THREE.Vector3()).sub(groupWorldPos);
-      const radius = Math.max(0.003, (pWorldBBox.max.y - pWorldBBox.min.y) / 2);
-
-      if (pLocalMinX < minX - 0.001) {
-        protrudingPernos.push({ side: "left", center: pLocalCenter, tip: pLocalMinX, radius });
-      } else if (pLocalMaxX > maxX + 0.001) {
-        protrudingPernos.push({ side: "right", center: pLocalCenter, tip: pLocalMaxX, radius });
-      } else if (pLocalMinZ < minZ - 0.001) {
-        protrudingPernos.push({ side: "back", center: pLocalCenter, tip: pLocalMinZ, radius });
-      } else if (pLocalMaxZ > maxZ + 0.001) {
-        protrudingPernos.push({ side: "front", center: pLocalCenter, tip: pLocalMaxZ, radius });
-      }
-    }
-  });
-
-  const pernoRings: [number, number, number][][] = [];
-  for (const p of protrudingPernos) {
-    const segs = 16;
-    const pts: [number, number, number][] = [];
-    if (p.side === "left" || p.side === "right") {
-      for (let s = 0; s <= segs; s++) {
-        const ang = (s / segs) * Math.PI * 2;
-        pts.push([
-          p.tip,
-          p.center.y + Math.cos(ang) * p.radius,
-          p.center.z + Math.sin(ang) * p.radius
-        ]);
-      }
-    } else {
-      for (let s = 0; s <= segs; s++) {
-        const ang = (s / segs) * Math.PI * 2;
-        pts.push([
-          p.center.x + Math.cos(ang) * p.radius,
-          p.center.y + Math.sin(ang) * p.radius,
-          p.tip
-        ]);
-      }
-    }
-    pernoRings.push(pts);
-  }
-
-  return { faces, edges, pernoRings };
+  return { faces, edges };
 }
 
 function BoardSilhouetteOutline({ furnitureGroup }: { furnitureGroup: THREE.Group | null }) {
@@ -643,7 +590,7 @@ function BoardSilhouetteOutline({ furnitureGroup }: { furnitureGroup: THREE.Grou
       return;
     }
 
-    const { faces, edges, pernoRings } = staticGeometry;
+    const { faces, edges } = staticGeometry;
     const camPos = camera.position;
 
     const isVisible = faces.map((f: any) => {
@@ -659,17 +606,13 @@ function BoardSilhouetteOutline({ furnitureGroup }: { furnitureGroup: THREE.Grou
       }
     }
 
-    for (const ring of pernoRings) {
-      activeSilhouettes.push(ring);
-    }
-
     setSilhouettePoints(activeSilhouettes);
   });
 
   if (!objetoSeleccionado || !furnitureGroup || silhouettePoints.length === 0) return null;
 
   return (
-    <group ref={outlineGroupRef} position={furnitureGroup.position} renderOrder={200}>
+    <group ref={outlineGroupRef} position={furnitureGroup.position} renderOrder={999}>
       {silhouettePoints.map((pts, idx) => (
         <Line
           key={`sil-${idx}`}
@@ -679,10 +622,12 @@ function BoardSilhouetteOutline({ furnitureGroup }: { furnitureGroup: THREE.Grou
               ? (coloresApariencia.objetosBloqueados || "#111827")
               : (coloresApariencia.objetosSeleccionados || "#FF9500")
           }
-          lineWidth={4.0}
+          lineWidth={3.0}
           toneMapped={false}
-          renderOrder={200}
+          renderOrder={999}
           depthTest={false}
+          depthWrite={false}
+          transparent={true}
         />
       ))}
     </group>
@@ -1616,6 +1561,62 @@ function ThumbnailCapturer() {
   return null;
 }
 
+function CameraViewController({ 
+  furnitureGroup, 
+  controlsRef 
+}: { 
+  furnitureGroup: THREE.Group | null;
+  controlsRef: React.MutableRefObject<any>;
+}) {
+  const { camera } = useThree();
+  const centrarCamaraTrigger = use3BFStore((s) => s.centrarCamaraTrigger);
+  const campoDeVisionFov = use3BFStore((s) => s.calibracion.campoDeVisionFov || 45);
+
+  React.useEffect(() => {
+    if (camera && "fov" in camera) {
+      (camera as THREE.PerspectiveCamera).fov = campoDeVisionFov;
+      (camera as THREE.PerspectiveCamera).updateProjectionMatrix();
+    }
+  }, [camera, campoDeVisionFov]);
+
+  React.useEffect(() => {
+    if (centrarCamaraTrigger > 0 && controlsRef.current && camera) {
+      if (furnitureGroup && furnitureGroup.children.length > 0) {
+        const box = new THREE.Box3().setFromObject(furnitureGroup);
+        if (!box.isEmpty()) {
+          const center = new THREE.Vector3();
+          const size = new THREE.Vector3();
+          box.getCenter(center);
+          box.getSize(size);
+
+          const maxDim = Math.max(size.x, size.y, size.z, 0.4);
+          const fov = ((camera as THREE.PerspectiveCamera).fov || 45) * (Math.PI / 180);
+          let cameraDistance = Math.abs(maxDim / 2 / Math.tan(fov / 2)) * 1.5;
+          cameraDistance = Math.max(cameraDistance, 0.8);
+
+          controlsRef.current.target.set(center.x, center.y, center.z);
+          camera.position.set(
+            center.x + cameraDistance * 0.7,
+            center.y + cameraDistance * 0.6,
+            center.z + cameraDistance * 0.9
+          );
+          camera.lookAt(center);
+          controlsRef.current.update();
+          return;
+        }
+      }
+
+      // Default fallback
+      controlsRef.current.target.set(0.25, 0.3, -0.24);
+      camera.position.set(0.6, 0.9, 1.1);
+      camera.lookAt(0.25, 0.3, -0.24);
+      controlsRef.current.update();
+    }
+  }, [centrarCamaraTrigger, furnitureGroup, controlsRef, camera]);
+
+  return null;
+}
+
 export default function Viewer3D() {
   const controlsRef = useRef<any>(null);
   const cameraRef = useRef<THREE.Camera | null>(null);
@@ -1641,6 +1642,8 @@ export default function Viewer3D() {
     snapPicking,
     snapBasePoint,
     toggleSnapMode,
+    deshacer,
+    rehacer,
   } = use3BFStore();
 
   const [furnitureGroup, setFurnitureGroup] = React.useState<THREE.Group | null>(null);
@@ -1662,6 +1665,23 @@ export default function Viewer3D() {
           target.tagName === "SELECT" ||
           target.isContentEditable)
       ) {
+        return;
+      }
+
+      // ⏪ Atajo Ctrl+Z / Cmd+Z: Deshacer (Undo) / Ctrl+Shift+Z / Ctrl+Y: Rehacer (Redo)
+      if ((e.ctrlKey || e.metaKey) && (e.key === "z" || e.key === "Z")) {
+        e.preventDefault();
+        if (e.shiftKey) {
+          rehacer();
+        } else {
+          deshacer();
+        }
+        return;
+      }
+
+      if ((e.ctrlKey || e.metaKey) && (e.key === "y" || e.key === "Y")) {
+        e.preventDefault();
+        rehacer();
         return;
       }
 
@@ -1713,6 +1733,8 @@ export default function Viewer3D() {
     cancelarGrab,
     toggleSnapMode,
     setEjeBloqueado,
+    deshacer,
+    rehacer,
   ]);
 
   const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
@@ -1871,73 +1893,7 @@ export default function Viewer3D() {
         </div>
       )}
 
-      {/* ========================================================================= */}
-      {/* 🎮 HUD MODAL DE TRANSFORMACIÓN ESTILO BLENDER (G / B / X / Y / Z)           */}
-      {/* ========================================================================= */}
-      {modoTransformacion === "grab" && (
-        <div className="absolute top-4 left-1/2 -translate-x-1/2 z-30 bg-slate-950/90 dark:bg-[#0B0F17]/95 backdrop-blur-md text-white px-5 py-2.5 rounded-2xl border border-amber-500/80 shadow-2xl flex items-center gap-4 text-xs font-sans animate-in fade-in zoom-in-95 pointer-events-auto">
-          <div className="flex items-center gap-2">
-            <span className="w-2.5 h-2.5 rounded-full bg-amber-400 animate-ping" />
-            <span className="font-bold text-amber-300 uppercase tracking-wider">Modo Mover (G)</span>
-          </div>
 
-          <div className="h-4 w-px bg-white/20" />
-
-          {/* Selector de Eje */}
-          <div className="flex items-center gap-1.5">
-            <span className="text-slate-400">Eje:</span>
-            <span className={`px-2 py-0.5 rounded font-mono font-bold ${
-              ejeBloqueado === "X" ? "bg-red-500 text-white" :
-              ejeBloqueado === "Y" ? "bg-green-500 text-white" :
-              ejeBloqueado === "Z" ? "bg-blue-500 text-white" :
-              "bg-white/10 text-slate-300"
-            }`}>
-              {ejeBloqueado === "none" ? "Libre (X/Y/Z)" : `Eje ${ejeBloqueado}`}
-            </span>
-          </div>
-
-          <div className="h-4 w-px bg-white/20" />
-
-          {/* Estado de Snap */}
-          <div className="flex items-center gap-1.5">
-            <span className="text-slate-400">Snap [B]:</span>
-            <span className={`px-2 py-0.5 rounded font-bold transition-all ${
-              snapPicking 
-                ? "bg-amber-500 text-slate-950 animate-pulse shadow-sm" 
-                : snapBasePoint 
-                ? "bg-emerald-500 text-white shadow-sm" 
-                : "bg-white/10 text-slate-400"
-            }`}>
-              {snapPicking ? "Elige vértice (□) o mitad (△)" : snapBasePoint ? "Punto Base Fijado" : "Inactivo"}
-            </span>
-          </div>
-
-          <div className="h-4 w-px bg-white/20" />
-
-          {/* Coordenadas Vivas */}
-          <div className="text-[11px] font-mono text-slate-300">
-            <span>X: {posicionObjeto[0]}m</span> | <span>Y: {posicionObjeto[1]}m</span> | <span>Z: {posicionObjeto[2]}m</span>
-          </div>
-
-          <div className="h-4 w-px bg-white/20" />
-
-          {/* Acciones */}
-          <div className="flex items-center gap-2 text-[11px]">
-            <button
-              onClick={(e) => { e.stopPropagation(); confirmarGrab(); }}
-              className="bg-emerald-600 hover:bg-emerald-500 text-white px-2 py-0.5 rounded border border-emerald-400/40 cursor-pointer"
-            >
-              Clic Izq / Enter: Fijar
-            </button>
-            <button
-              onClick={(e) => { e.stopPropagation(); cancelarGrab(); }}
-              className="bg-rose-600 hover:bg-rose-500 text-white px-2 py-0.5 rounded border border-rose-400/40 cursor-pointer"
-            >
-              Esc / Clic Der: Cancelar
-            </button>
-          </div>
-        </div>
-      )}
 
       {hoveredPiece && (
         <div 
@@ -1953,7 +1909,7 @@ export default function Viewer3D() {
       )}
 
       <Canvas
-        camera={{ position: [0.6, 0.9, 1.1], fov: 45 }}
+        camera={{ position: [0.6, 0.9, 1.1], fov: 45, near: 0.005, far: 100 }}
         shadows
         gl={{ preserveDrawingBuffer: true, antialias: true }}
       >
@@ -1985,26 +1941,29 @@ export default function Viewer3D() {
           <Grid
             renderOrder={-10}
             position={[0, -0.001, 0]}
-            args={[10, 10]}
-            cellSize={calibracion.distanciaCuadricula}
-            cellThickness={calibracion.grosorGrillaDelgada}
-            cellColor={coloresApariencia.rejillaSecundaria || calibracion.colorGrillaDelgada}
-            sectionSize={calibracion.distanciaSeccion}
-            sectionThickness={calibracion.grosorGrillaGruesa}
-            sectionColor={coloresApariencia.rejillaPrincipal || calibracion.colorGrillaGruesa}
-            fadeDistance={8}
-            infiniteGrid
+            args={[
+              Math.max(0.1, (calibracion.numeroLineasRejilla || 500) * (calibracion.distanciaCuadricula || 0.01) * 2),
+              Math.max(0.1, (calibracion.numeroLineasRejilla || 500) * (calibracion.distanciaCuadricula || 0.01) * 2),
+            ]}
+            cellSize={calibracion.distanciaCuadricula || 0.01}
+            cellThickness={calibracion.grosorGrillaDelgada || 1.0}
+            cellColor={coloresApariencia.rejillaSecundaria || calibracion.colorGrillaDelgada || "#CBD5E1"}
+            sectionSize={calibracion.distanciaSeccion || 0.1}
+            sectionThickness={calibracion.grosorGrillaGruesa || 1.5}
+            sectionColor={coloresApariencia.rejillaPrincipal || calibracion.colorGrillaGruesa || "#94A3B8"}
+            fadeDistance={Math.max(100, (calibracion.numeroLineasRejilla || 500) * (calibracion.distanciaCuadricula || 0.01) * 4)}
           />
         )}
         <GroundInfiniteAxes />
+        <CameraViewController furnitureGroup={furnitureGroup} controlsRef={controlsRef} />
         <BlenderNavigationController controlsRef={controlsRef} />
         <OrbitControls 
           ref={controlsRef}
           makeDefault 
           enabled={modoTransformacion !== "grab"} 
           target={[0.25, 0, -0.24]} 
-          minDistance={0.5} 
-          maxDistance={6} 
+          minDistance={calibracion.zoomMinimoMetros ?? 0.02} 
+          maxDistance={calibracion.zoomMaximoMetros ?? 30} 
           enableDamping
           dampingFactor={0.05}
           screenSpacePanning={true}
@@ -2017,70 +1976,72 @@ export default function Viewer3D() {
         <RhinoAxisTracker onUpdate={setRhinoAxes} />
       </Canvas>
 
-      <div className="absolute bottom-3 left-3 pointer-events-none z-10 select-none flex items-center justify-center p-1">
-        <svg width="68" height="68" viewBox="0 0 68 68" className="overflow-visible">
-          <line
-            x1="34"
-            y1="34"
-            x2={34 + rhinoAxes.x.x}
-            y2={34 + rhinoAxes.x.y}
-            stroke={coloresApariencia.iconoPlanoUniversalX || (tema === "obsidian" ? "#94a3b8" : "#475569")}
-            strokeWidth="1.6"
-            strokeLinecap="round"
-          />
-          <text
-            x={34 + rhinoAxes.x.x * 1.3}
-            y={34 + rhinoAxes.x.y * 1.3 + 4}
-            fill={coloresApariencia.textoPrincipal || (tema === "obsidian" ? "#cbd5e1" : "#334155")}
-            fontSize="11"
-            fontFamily="Inter, -apple-system, sans-serif"
-            fontWeight="700"
-            textAnchor="middle"
-          >
-            x
-          </text>
-          <line
-            x1="34"
-            y1="34"
-            x2={34 + rhinoAxes.y.x}
-            y2={34 + rhinoAxes.y.y}
-            stroke={coloresApariencia.iconoPlanoUniversalY || (tema === "obsidian" ? "#94a3b8" : "#475569")}
-            strokeWidth="1.6"
-            strokeLinecap="round"
-          />
-          <text
-            x={34 + rhinoAxes.y.x * 1.3}
-            y={34 + rhinoAxes.y.y * 1.3 + 4}
-            fill={coloresApariencia.textoPrincipal || (tema === "obsidian" ? "#cbd5e1" : "#334155")}
-            fontSize="11"
-            fontFamily="Inter, -apple-system, sans-serif"
-            fontWeight="700"
-            textAnchor="middle"
-          >
-            y
-          </text>
-          <line
-            x1="34"
-            y1="34"
-            x2={34 + rhinoAxes.z.x}
-            y2={34 + rhinoAxes.z.y}
-            stroke={coloresApariencia.iconoPlanoUniversalZ || (tema === "obsidian" ? "#94a3b8" : "#475569")}
-            strokeWidth="1.6"
-            strokeLinecap="round"
-          />
-          <text
-            x={34 + rhinoAxes.z.x * 1.3}
-            y={34 + rhinoAxes.z.y * 1.3 + 4}
-            fill={coloresApariencia.textoPrincipal || (tema === "obsidian" ? "#cbd5e1" : "#334155")}
-            fontSize="11"
-            fontFamily="Inter, -apple-system, sans-serif"
-            fontWeight="700"
-            textAnchor="middle"
-          >
-            z
-          </text>
-        </svg>
-      </div>
+      {calibracion.mostrarIconoPlanoUniversal !== false && (
+        <div className="absolute bottom-3 left-3 pointer-events-none z-10 select-none flex items-center justify-center p-1">
+          <svg width="68" height="68" viewBox="0 0 68 68" className="overflow-visible">
+            <line
+              x1="34"
+              y1="34"
+              x2={34 + rhinoAxes.x.x}
+              y2={34 + rhinoAxes.x.y}
+              stroke={coloresApariencia.iconoPlanoUniversalX || (tema === "obsidian" ? "#94a3b8" : "#475569")}
+              strokeWidth="1.6"
+              strokeLinecap="round"
+            />
+            <text
+              x={34 + rhinoAxes.x.x * 1.3}
+              y={34 + rhinoAxes.x.y * 1.3 + 4}
+              fill={coloresApariencia.textoPrincipal || (tema === "obsidian" ? "#cbd5e1" : "#334155")}
+              fontSize="11"
+              fontFamily="Inter, -apple-system, sans-serif"
+              fontWeight="700"
+              textAnchor="middle"
+            >
+              x
+            </text>
+            <line
+              x1="34"
+              y1="34"
+              x2={34 + rhinoAxes.y.x}
+              y2={34 + rhinoAxes.y.y}
+              stroke={coloresApariencia.iconoPlanoUniversalY || (tema === "obsidian" ? "#94a3b8" : "#475569")}
+              strokeWidth="1.6"
+              strokeLinecap="round"
+            />
+            <text
+              x={34 + rhinoAxes.y.x * 1.3}
+              y={34 + rhinoAxes.y.y * 1.3 + 4}
+              fill={coloresApariencia.textoPrincipal || (tema === "obsidian" ? "#cbd5e1" : "#334155")}
+              fontSize="11"
+              fontFamily="Inter, -apple-system, sans-serif"
+              fontWeight="700"
+              textAnchor="middle"
+            >
+              y
+            </text>
+            <line
+              x1="34"
+              y1="34"
+              x2={34 + rhinoAxes.z.x}
+              y2={34 + rhinoAxes.z.y}
+              stroke={coloresApariencia.iconoPlanoUniversalZ || (tema === "obsidian" ? "#94a3b8" : "#475569")}
+              strokeWidth="1.6"
+              strokeLinecap="round"
+            />
+            <text
+              x={34 + rhinoAxes.z.x * 1.3}
+              y={34 + rhinoAxes.z.y * 1.3 + 4}
+              fill={coloresApariencia.textoPrincipal || (tema === "obsidian" ? "#cbd5e1" : "#334155")}
+              fontSize="11"
+              fontFamily="Inter, -apple-system, sans-serif"
+              fontWeight="700"
+              textAnchor="middle"
+            >
+              z
+            </text>
+          </svg>
+        </div>
+      )}
 
       {/* Botón Descargar GLB */}
       {resultado?.real_meshes && resultado.real_meshes.length > 0 && (

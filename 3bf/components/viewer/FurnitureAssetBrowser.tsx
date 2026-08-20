@@ -37,7 +37,14 @@ export default function FurnitureAssetBrowser() {
     renombrarMuebleGuardado,
     eliminarMuebleGuardado,
     urlGoogleDrive,
+    coloresApariencia,
+    anchoPanelDerecho,
   } = use3BFStore();
+
+  const ancho = anchoPanelDerecho || 380;
+  const esMinimo = ancho < 340;
+  const esUltraCompacto = ancho < 420;
+  const esCompacto = ancho < 520;
 
   const [busqueda, setBusqueda] = useState("");
   const [carpetasExpandidas, setCarpetasExpandidas] = useState<Record<string, boolean>>({});
@@ -137,22 +144,42 @@ export default function FurnitureAssetBrowser() {
   });
 
   return (
-    <div className="flex-1 min-w-0 flex flex-col h-full overflow-hidden bg-white dark:bg-[#0B0F17]">
+    <div 
+      style={{ 
+        backgroundColor: coloresApariencia?.fondoPaneles, 
+        color: coloresApariencia?.textoPrincipal 
+      }} 
+      className="flex-1 min-w-0 flex flex-col h-full overflow-hidden transition-colors"
+    >
       
       {/* ========================================================================= */}
       {/* 🔍 BARRA SUPERIOR BLENDER STYLE: BÚSQUEDA & BOTÓN GUARDAR COMO            */}
       {/* ========================================================================= */}
-      <div className="p-2.5 border-b border-slate-200 dark:border-cyan-900/40 bg-slate-50/70 dark:bg-[#0E131F]/80 flex items-center justify-between gap-2 shrink-0">
+      <div 
+        style={{ 
+          backgroundColor: coloresApariencia?.fondoPaneles, 
+          borderColor: coloresApariencia?.bordePaneles 
+        }} 
+        className="p-2.5 border-b flex items-center justify-between gap-2 shrink-0 transition-colors"
+      >
         
         {/* Input Buscador */}
         <div className="relative flex-1 flex items-center">
-          <Search className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 pointer-events-none" />
+          <Search 
+            style={{ color: coloresApariencia?.textoSecundario }} 
+            className="w-3.5 h-3.5 absolute left-2.5 pointer-events-none opacity-60" 
+          />
           <input
             type="text"
             placeholder="Buscar muebles o marcas..."
             value={busqueda}
             onChange={(e) => setBusqueda(e.target.value)}
-            className="w-full pl-8 pr-3 py-1.5 text-xs rounded-xl bg-white dark:bg-[#090D14] border border-slate-200 dark:border-cyan-900/50 text-slate-800 dark:text-slate-200 placeholder:text-slate-400 focus:outline-none focus:border-cyan-500 transition"
+            style={{
+              backgroundColor: coloresApariencia?.fondoAplicacion,
+              borderColor: coloresApariencia?.bordePaneles,
+              color: coloresApariencia?.textoPrincipal,
+            }}
+            className="w-full pl-8 pr-3 py-1.5 text-xs rounded-xl border focus:outline-none focus:ring-1 focus:ring-cyan-500 transition-colors"
           />
         </div>
 
@@ -160,29 +187,48 @@ export default function FurnitureAssetBrowser() {
         <button
           onClick={() => setModalGuardarComoAbierto(true)}
           title="Guardar el diseño actual como un mueble en el catálogo de Google Drive"
-          className="px-3 py-1.5 rounded-xl bg-gradient-to-r from-cyan-600 to-teal-500 hover:from-cyan-500 hover:to-teal-400 text-white font-bold text-xs flex items-center gap-1.5 shadow-sm transition cursor-pointer shrink-0"
+          style={{
+            backgroundColor: coloresApariencia?.botonActivo || "#0891b2",
+            color: "#FFFFFF",
+          }}
+          className="px-2.5 py-1.5 rounded-xl font-bold text-xs flex items-center gap-1.5 shadow-sm transition hover:opacity-90 cursor-pointer shrink-0"
         >
           <Save className="w-3.5 h-3.5" />
-          <span>Guardar como</span>
+          <span>{esUltraCompacto ? "Guardar" : "Guardar como"}</span>
         </button>
       </div>
 
       {/* ========================================================================= */}
-      {/* 📁 CUERPO DEL ASSET BROWSER: PANEL IZQUIERDO (ÁRBOL) + DERECHO (GRID)      */}
+      {/* 📁 CUERPO DEL ASSET BROWSER: PANEL IZQUIERDO (ÁRBOL) + DERECHO (GRID/LIST) */}
       {/* ========================================================================= */}
       <div className="flex-1 min-w-0 flex overflow-hidden">
         
         {/* PANEL IZQUIERDO: Árbol de Catálogos / Marcas (Estilo Blender Asset Browser) */}
-        <div className="w-48 sm:w-56 border-r border-slate-200 dark:border-cyan-900/40 bg-slate-50/40 dark:bg-[#0B0F17]/60 flex flex-col shrink-0 overflow-y-auto custom-scrollbar">
+        <div 
+          style={{ 
+            backgroundColor: coloresApariencia?.fondoPaneles, 
+            borderColor: coloresApariencia?.bordePaneles 
+          }} 
+          className={`${
+            esMinimo ? "w-24" : esUltraCompacto ? "w-28" : esCompacto ? "w-36" : "w-48 sm:w-56"
+          } border-r flex flex-col shrink-0 overflow-y-auto custom-scrollbar transition-all`}
+        >
           
           {/* Cabecera del Árbol */}
-          <div className="p-2 border-b border-slate-200/80 dark:border-cyan-900/30 flex items-center justify-between text-[10px] text-slate-500 font-bold uppercase tracking-wider">
-            <span>Catálogos & Marcas</span>
+          <div 
+            style={{ 
+              borderColor: coloresApariencia?.bordePaneles, 
+              color: coloresApariencia?.textoSecundario 
+            }} 
+            className="p-2 border-b flex items-center justify-between text-[10px] font-bold uppercase tracking-wider"
+          >
+            <span className="truncate">{esUltraCompacto ? "Catálogos" : "Catálogos & Marcas"}</span>
             <div className="flex items-center gap-1">
               <button
                 onClick={handleSincronizarDrive}
                 title="Sincronizar carpetas con Google Drive"
-                className="p-0.5 rounded hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-500 hover:text-cyan-600 dark:hover:text-cyan-400 transition cursor-pointer"
+                style={{ color: coloresApariencia?.textoSecundario }}
+                className="p-0.5 rounded hover:opacity-80 transition cursor-pointer"
               >
                 <RefreshCw className={`w-3.5 h-3.5 ${sincronizando ? "animate-spin text-cyan-600" : ""}`} />
               </button>
@@ -190,7 +236,8 @@ export default function FurnitureAssetBrowser() {
                 <button
                   onClick={() => setCreandoMarca(true)}
                   title="Agregar nueva marca"
-                  className="p-0.5 rounded hover:bg-slate-200 dark:hover:bg-slate-800 text-cyan-600 dark:text-cyan-400 transition cursor-pointer"
+                  style={{ color: coloresApariencia?.colorMarca || coloresApariencia?.textoPrincipal }}
+                  className="p-0.5 rounded hover:opacity-80 transition cursor-pointer"
                 >
                   <Plus className="w-3.5 h-3.5" />
                 </button>
@@ -200,24 +247,40 @@ export default function FurnitureAssetBrowser() {
 
           {/* Formulario rápido para crear nueva marca */}
           {creandoMarca && (
-            <div className="p-2 bg-cyan-50 dark:bg-cyan-950/40 border-b border-cyan-200 dark:border-cyan-900/50 flex flex-col gap-1.5">
+            <div 
+              style={{ 
+                backgroundColor: coloresApariencia?.fondoAplicacion, 
+                borderColor: coloresApariencia?.bordePaneles 
+              }} 
+              className="p-2 border-b flex flex-col gap-1.5"
+            >
               <input
                 type="text"
                 placeholder="Nombre de marca..."
                 value={nombreNuevaMarca}
                 onChange={(e) => setNombreNuevaMarca(e.target.value)}
-                className="px-2 py-1 text-[11px] rounded bg-white dark:bg-[#0B0F17] border border-cyan-400 text-slate-800 dark:text-white focus:outline-none"
+                style={{
+                  backgroundColor: coloresApariencia?.fondoPaneles,
+                  borderColor: coloresApariencia?.bordePaneles,
+                  color: coloresApariencia?.textoPrincipal,
+                }}
+                className="px-2 py-1 text-[11px] rounded border focus:outline-none"
               />
               <div className="flex justify-end gap-1">
                 <button
                   onClick={handleCrearMarca}
-                  className="px-2 py-0.5 text-[9px] bg-cyan-600 text-white rounded font-bold hover:bg-cyan-500"
+                  style={{
+                    backgroundColor: coloresApariencia?.botonActivo || "#0891b2",
+                    color: "#FFFFFF",
+                  }}
+                  className="px-2 py-0.5 text-[9px] rounded font-bold hover:opacity-90"
                 >
                   Agregar
                 </button>
                 <button
                   onClick={() => setCreandoMarca(false)}
-                  className="px-1.5 py-0.5 text-[9px] text-slate-500 hover:text-slate-800"
+                  style={{ color: coloresApariencia?.textoSecundario }}
+                  className="px-1.5 py-0.5 text-[9px] hover:opacity-80"
                 >
                   X
                 </button>
@@ -229,17 +292,27 @@ export default function FurnitureAssetBrowser() {
           <div className="p-1">
             <button
               onClick={() => setCarpetaSeleccionadaId("all")}
-              className={`w-full px-2.5 py-1.5 rounded-lg text-left text-xs flex items-center justify-between font-semibold transition cursor-pointer ${
+              style={
                 carpetaSeleccionadaId === "all"
-                  ? "bg-cyan-600 text-white shadow-xs font-bold"
-                  : "text-slate-700 dark:text-slate-300 hover:bg-slate-200/70 dark:hover:bg-slate-800"
+                  ? { backgroundColor: coloresApariencia?.botonActivo || "#0891b2", color: "#FFFFFF" }
+                  : { color: coloresApariencia?.textoPrincipal }
+              }
+              className={`w-full px-2.5 py-1.5 rounded-lg text-left text-xs flex items-center justify-between font-semibold transition cursor-pointer ${
+                carpetaSeleccionadaId === "all" ? "shadow-xs font-bold" : "hover:opacity-80"
               }`}
             >
               <span className="flex items-center gap-1.5 truncate">
                 <LayoutGrid className="w-3.5 h-3.5 shrink-0" />
                 <span>Todos los Muebles</span>
               </span>
-              <span className={`text-[10px] font-mono px-1.5 py-0.2 rounded ${carpetaSeleccionadaId === "all" ? "bg-cyan-800 text-white" : "bg-slate-200 dark:bg-slate-800 text-slate-500"}`}>
+              <span 
+                style={
+                  carpetaSeleccionadaId === "all"
+                    ? { backgroundColor: "rgba(0,0,0,0.2)", color: "#FFFFFF" }
+                    : { backgroundColor: coloresApariencia?.fondoAplicacion, color: coloresApariencia?.textoSecundario }
+                }
+                className="text-[10px] font-mono px-1.5 py-0.2 rounded"
+              >
                 {mueblesGuardados.length}
               </span>
             </button>
@@ -258,10 +331,20 @@ export default function FurnitureAssetBrowser() {
                 <div key={marca.id} className="flex flex-col">
                   {/* Fila de la Marca */}
                   <div
-                    className={`group flex items-center justify-between px-2 py-1 rounded-lg text-xs transition cursor-pointer ${
+                    style={
                       isSelectedMarca
-                        ? "bg-cyan-600/15 border border-cyan-500 text-cyan-700 dark:text-cyan-300 font-bold"
-                        : "text-slate-700 dark:text-slate-300 hover:bg-slate-200/50 dark:hover:bg-slate-800/60"
+                        ? { 
+                            backgroundColor: coloresApariencia?.fondoAplicacion, 
+                            borderColor: coloresApariencia?.bordePaneles,
+                            color: coloresApariencia?.textoPrincipal,
+                            fontWeight: "bold",
+                          }
+                        : { 
+                            color: coloresApariencia?.textoPrincipal 
+                          }
+                    }
+                    className={`group flex items-center justify-between px-2 py-1 rounded-lg text-xs transition cursor-pointer border ${
+                      isSelectedMarca ? "shadow-2xs" : "border-transparent hover:opacity-80"
                     }`}
                   >
                     <div 
@@ -274,21 +357,28 @@ export default function FurnitureAssetBrowser() {
                           e.stopPropagation();
                           toggleExpandir(marca.id);
                         }}
-                        className="p-0.5 hover:bg-slate-300 dark:hover:bg-slate-700 rounded"
+                        style={{ color: coloresApariencia?.textoSecundario }}
+                        className="p-0.5 rounded hover:opacity-80"
                       >
                         {expandida ? (
-                          <ChevronDown className="w-3 h-3 text-slate-400" />
+                          <ChevronDown className="w-3 h-3" />
                         ) : (
-                          <ChevronRight className="w-3 h-3 text-slate-400" />
+                          <ChevronRight className="w-3 h-3" />
                         )}
                       </button>
-                      <Folder className={`w-3.5 h-3.5 shrink-0 ${isSelectedMarca ? "text-cyan-600 fill-cyan-600" : "text-amber-500"}`} />
+                      <Folder 
+                        style={{ color: isSelectedMarca ? (coloresApariencia?.botonActivo || "#0891b2") : "#F59E0B" }} 
+                        className={`w-3.5 h-3.5 shrink-0 ${isSelectedMarca ? "fill-current" : ""}`} 
+                      />
                       <span className="truncate">{marca.nombre}</span>
                     </div>
 
                     <div className="flex items-center gap-1">
                       {countMarca > 0 && (
-                        <span className="text-[9px] font-mono text-slate-400">
+                        <span 
+                          style={{ color: coloresApariencia?.textoSecundario }}
+                          className="text-[9px] font-mono"
+                        >
                           {countMarca}
                         </span>
                       )}
@@ -298,7 +388,8 @@ export default function FurnitureAssetBrowser() {
                           setCreandoSubcarpetaPara(marca.id);
                         }}
                         title={`Agregar subcarpeta a ${marca.nombre}`}
-                        className="opacity-0 group-hover:opacity-100 p-0.5 rounded hover:bg-slate-300 dark:hover:bg-slate-700 text-slate-500 hover:text-cyan-600 transition"
+                        style={{ color: coloresApariencia?.textoSecundario }}
+                        className="opacity-0 group-hover:opacity-100 p-0.5 rounded hover:opacity-100 transition"
                       >
                         <Plus className="w-3 h-3" />
                       </button>
@@ -307,24 +398,40 @@ export default function FurnitureAssetBrowser() {
 
                   {/* Input rápido para crear subcarpeta tipológica */}
                   {creandoSubcarpetaPara === marca.id && (
-                    <div className="ml-5 my-1 p-1 bg-cyan-50 dark:bg-cyan-950/40 rounded border border-cyan-400 flex flex-col gap-1">
+                    <div 
+                      style={{ 
+                        backgroundColor: coloresApariencia?.fondoAplicacion, 
+                        borderColor: coloresApariencia?.bordePaneles 
+                      }} 
+                      className="ml-5 my-1 p-1 rounded border flex flex-col gap-1"
+                    >
                       <input
                         type="text"
                         placeholder="Ej: Escritorios..."
                         value={nombreNuevaSubcarpeta}
                         onChange={(e) => setNombreNuevaSubcarpeta(e.target.value)}
-                        className="px-1.5 py-0.5 text-[10px] rounded bg-white dark:bg-[#0B0F17] text-slate-800 dark:text-white"
+                        style={{
+                          backgroundColor: coloresApariencia?.fondoPaneles,
+                          borderColor: coloresApariencia?.bordePaneles,
+                          color: coloresApariencia?.textoPrincipal,
+                        }}
+                        className="px-1.5 py-0.5 text-[10px] rounded border focus:outline-none"
                       />
                       <div className="flex justify-end gap-1">
                         <button
                           onClick={() => handleCrearSubcarpeta(marca.id)}
-                          className="px-1.5 py-0.5 text-[8px] bg-cyan-600 text-white rounded font-bold"
+                          style={{
+                            backgroundColor: coloresApariencia?.botonActivo || "#0891b2",
+                            color: "#FFFFFF",
+                          }}
+                          className="px-1.5 py-0.5 text-[8px] rounded font-bold"
                         >
                           Guardar
                         </button>
                         <button
                           onClick={() => setCreandoSubcarpetaPara(null)}
-                          className="px-1 py-0.5 text-[8px] text-slate-500"
+                          style={{ color: coloresApariencia?.textoSecundario }}
+                          className="px-1 py-0.5 text-[8px] hover:opacity-80"
                         >
                           X
                         </button>
@@ -334,7 +441,10 @@ export default function FurnitureAssetBrowser() {
 
                   {/* Subcarpetas por Tipología */}
                   {expandida && marca.subcarpetas && (
-                    <div className="ml-4 pl-1 border-l border-slate-200 dark:border-slate-800 flex flex-col gap-0.5 my-0.5">
+                    <div 
+                      style={{ borderColor: coloresApariencia?.bordePaneles }} 
+                      className="ml-4 pl-1 border-l flex flex-col gap-0.5 my-0.5"
+                    >
                       {marca.subcarpetas.map((sub) => {
                         const isSelectedSub = carpetaSeleccionadaId === sub.id;
                         const countSub = mueblesGuardados.filter(
@@ -347,10 +457,13 @@ export default function FurnitureAssetBrowser() {
                           <button
                             key={sub.id}
                             onClick={() => setCarpetaSeleccionadaId(sub.id)}
-                            className={`px-2 py-1 rounded text-left text-[11px] flex items-center justify-between transition cursor-pointer ${
+                            style={
                               isSelectedSub
-                                ? "bg-cyan-600 text-white font-bold shadow-xs"
-                                : "text-slate-600 dark:text-slate-400 hover:bg-slate-200/50 dark:hover:bg-slate-800/60"
+                                ? { backgroundColor: coloresApariencia?.botonActivo || "#0891b2", color: "#FFFFFF" }
+                                : { color: coloresApariencia?.textoSecundario || coloresApariencia?.textoPrincipal }
+                            }
+                            className={`px-2 py-1 rounded text-left text-[11px] flex items-center justify-between transition cursor-pointer ${
+                              isSelectedSub ? "font-bold shadow-xs" : "hover:opacity-80"
                             }`}
                           >
                             <span className="flex items-center gap-1.5 truncate">
@@ -358,7 +471,14 @@ export default function FurnitureAssetBrowser() {
                               <span className="truncate">{sub.nombre}</span>
                             </span>
                             {countSub > 0 && (
-                              <span className={`text-[9px] font-mono ${isSelectedSub ? "text-white" : "text-slate-400"}`}>
+                              <span 
+                                style={
+                                  isSelectedSub
+                                    ? { color: "#FFFFFF" }
+                                    : { color: coloresApariencia?.textoSecundario }
+                                }
+                                className="text-[9px] font-mono"
+                              >
                                 {countSub}
                               </span>
                             )}
@@ -373,24 +493,36 @@ export default function FurnitureAssetBrowser() {
           </div>
         </div>
 
-        {/* PANEL DERECHO: Grid de Muebles / Assets (Blender Asset Gallery) */}
-        <div className="flex-1 min-w-0 p-3 overflow-y-auto custom-scrollbar flex flex-col">
+        {/* PANEL DERECHO: Galería de Muebles / Assets (Modo Grid o Modo Lista según ancho) */}
+        <div 
+          style={{ backgroundColor: coloresApariencia?.fondoPaneles }} 
+          className="flex-1 min-w-0 p-2 sm:p-3 overflow-y-auto custom-scrollbar flex flex-col transition-colors"
+        >
           
-          <div className="text-[10px] text-slate-400 font-semibold px-1 mb-2.5 flex items-center justify-between">
-            <span className="flex items-center gap-1.5">
-              <Box className="w-3.5 h-3.5 text-cyan-600" />
-              MUEBLES EN CATÁLOGO ({mueblesFiltrados.length})
+          <div 
+            style={{ color: coloresApariencia?.textoSecundario }} 
+            className="text-[10px] font-semibold px-1 mb-2 flex items-center justify-between gap-1 shrink-0"
+          >
+            <span className="flex items-center gap-1 min-w-0 truncate font-bold">
+              <Box 
+                style={{ color: coloresApariencia?.botonActivo || "#0891b2" }} 
+                className="w-3.5 h-3.5 shrink-0" 
+              />
+              <span className="truncate">
+                {esUltraCompacto ? `(${mueblesFiltrados.length})` : `MUEBLES (${mueblesFiltrados.length})`}
+              </span>
             </span>
             
             {/* Acciones de Google Drive */}
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1 shrink-0">
               <button
                 onClick={handleSincronizarDrive}
                 title="Refrescar y sincronizar cambios desde Google Drive"
-                className="flex items-center gap-1 text-[10px] text-slate-600 dark:text-slate-300 hover:text-cyan-600 dark:hover:text-cyan-400 font-semibold p-1 rounded-md hover:bg-slate-100 dark:hover:bg-slate-800 transition cursor-pointer"
+                style={{ color: coloresApariencia?.textoPrincipal }}
+                className="flex items-center gap-1 text-[10px] font-semibold p-1 rounded-md hover:opacity-80 transition cursor-pointer"
               >
                 <RefreshCw className={`w-3 h-3 ${sincronizando ? "animate-spin text-cyan-600" : ""}`} />
-                <span>Sincronizar</span>
+                {!esUltraCompacto && <span>Sincronizar</span>}
               </button>
 
               <a
@@ -398,106 +530,226 @@ export default function FurnitureAssetBrowser() {
                 target="_blank"
                 rel="noopener noreferrer"
                 title="Abrir la carpeta raíz de Google Drive en una nueva pestaña"
-                className="flex items-center gap-1 text-[10px] text-cyan-700 dark:text-cyan-300 font-bold hover:underline bg-cyan-50 dark:bg-cyan-950/60 px-2 py-0.5 rounded-lg border border-cyan-300/80 dark:border-cyan-800/60 shadow-2xs transition cursor-pointer"
+                style={{
+                  backgroundColor: coloresApariencia?.fondoAplicacion,
+                  borderColor: coloresApariencia?.bordePaneles,
+                  color: coloresApariencia?.textoPrincipal,
+                }}
+                className="flex items-center gap-1 text-[10px] font-bold hover:underline px-1.5 py-0.5 rounded-lg border shadow-2xs transition cursor-pointer"
               >
                 <ExternalLink className="w-3 h-3" />
-                <span>Ir al Drive</span>
+                {!esUltraCompacto && <span>Drive</span>}
               </a>
             </div>
           </div>
 
-          {/* Grid de Tarjetas de Muebles */}
-          {/* Grid de Tarjetas de Muebles Estilo Blender Asset Browser */}
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 p-1">
-            {mueblesFiltrados.map((mueble) => {
-              const isEditing = editandoMuebleId === mueble.id;
+          {/* ========================================================================= */}
+          {/* MODO LISTA DE TEXTO (Para anchos estrechos) O MODO GRID (Para anchos amplios) */}
+          {/* ========================================================================= */}
+          {esUltraCompacto ? (
+            /* 📝 MODO TEXTO PURO (Sin miniatura, 100% espacio para el nombre completo) */
+            <div className="flex flex-col gap-1 p-0.5">
+              {mueblesFiltrados.map((mueble) => {
+                const isEditing = editandoMuebleId === mueble.id;
 
-              return (
-                <div
-                  key={mueble.id}
-                  onClick={() => !isEditing && abrirMueble(mueble)}
-                  title={`${mueble.nombre}\nHaz doble clic para editar nombre, o clic para abrir en 3D`}
-                  className="group flex flex-col items-center cursor-pointer p-1 rounded-xl hover:bg-slate-100/80 dark:hover:bg-slate-800/50 transition-all select-none relative"
-                >
-                  {/* Miniatura Cuadrada Estilo Blender */}
-                  <div className="w-full aspect-square rounded-xl overflow-hidden bg-slate-100 dark:bg-[#131B2E] border border-slate-200/70 dark:border-slate-800 shadow-2xs group-hover:border-cyan-500/80 group-hover:shadow-md transition-all relative flex items-center justify-center">
-                    {mueble.thumbnail ? (
-                      <img
-                        src={mueble.thumbnail}
-                        alt={mueble.nombre}
-                        className="w-full h-full object-cover pointer-events-none"
-                      />
-                    ) : (
-                      <div className="flex flex-col items-center justify-center gap-1 text-slate-400 dark:text-slate-500">
-                        <Box className="w-8 h-8 opacity-60 group-hover:scale-105 transition-transform text-cyan-600 dark:text-cyan-400" />
-                      </div>
-                    )}
+                return (
+                  <div
+                    key={mueble.id}
+                    onClick={() => !isEditing && abrirMueble(mueble)}
+                    title={`${mueble.nombre}\nHaz doble clic para renombrar, o clic para abrir en 3D`}
+                    style={{
+                      backgroundColor: coloresApariencia?.fondoAplicacion || "#F1F5F9",
+                      borderColor: coloresApariencia?.bordePaneles || "#E2E8F0",
+                      color: coloresApariencia?.textoPrincipal || "#0F172A",
+                    }}
+                    className="group flex items-center justify-between gap-1 px-2.5 py-2 rounded-xl border shadow-2xs hover:border-cyan-500 transition-all cursor-pointer select-none"
+                  >
+                    <div className="flex items-center min-w-0 flex-1">
+                      {isEditing ? (
+                        <div className="flex items-center gap-1 flex-1 min-w-0" onClick={(e) => e.stopPropagation()}>
+                          <input
+                            type="text"
+                            value={nombreTemporal}
+                            onChange={(e) => setNombreTemporal(e.target.value)}
+                            onKeyDown={(e) => {
+                              if (e.key === "Enter") handleGuardarEdicion(mueble.id);
+                              if (e.key === "Escape") setEditandoMuebleId(null);
+                            }}
+                            onBlur={() => handleGuardarEdicion(mueble.id)}
+                            autoFocus
+                            style={{
+                              backgroundColor: coloresApariencia?.fondoPaneles,
+                              borderColor: coloresApariencia?.bordePaneles,
+                              color: coloresApariencia?.textoPrincipal,
+                            }}
+                            className="w-full px-1.5 py-0.5 text-xs font-bold rounded border focus:outline-none"
+                          />
+                          <button
+                            onClick={() => handleGuardarEdicion(mueble.id)}
+                            style={{
+                              backgroundColor: coloresApariencia?.botonActivo || "#0891b2",
+                              color: "#FFFFFF",
+                            }}
+                            className="p-1 rounded shrink-0"
+                          >
+                            <Check className="w-3 h-3" />
+                          </button>
+                        </div>
+                      ) : (
+                        <span
+                          onDoubleClick={(e) => handleIniciarEdicion(mueble, e)}
+                          className="text-xs font-bold truncate leading-tight tracking-wide"
+                        >
+                          {mueble.nombre}
+                        </span>
+                      )}
+                    </div>
 
-                    {/* Botón de Eliminar en Hover (Discreto en esquina) */}
                     <button
                       onClick={(e) => handleEliminarMueble(mueble.id, e)}
-                      title="Eliminar este mueble del catálogo"
-                      className="absolute top-1.5 right-1.5 p-1 rounded-md bg-black/60 hover:bg-red-600 text-white opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer shadow-xs z-10"
+                      title="Eliminar mueble"
+                      className="p-1 rounded hover:bg-red-500/20 text-slate-400 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer shrink-0 ml-1"
                     >
-                      <Trash2 className="w-2.5 h-2.5" />
+                      <Trash2 className="w-3 h-3" />
                     </button>
                   </div>
+                );
+              })}
+            </div>
+          ) : (
+            /* 🖼️ MODO GRID DE MINIATURAS (Tamaño uniforme y proporcional estilo Blender) */
+            <div className="flex flex-wrap gap-2.5 p-1 content-start items-start">
+              {mueblesFiltrados.map((mueble) => {
+                const isEditing = editandoMuebleId === mueble.id;
 
-                  {/* Nombre Limpio Estilo Blender (Sin rebordes, sin "2 módulos", sin "Abrir") */}
-                  <div className="w-full mt-1.5 px-0.5 text-center">
-                    {isEditing ? (
-                      <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
-                        <input
-                          type="text"
-                          value={nombreTemporal}
-                          onChange={(e) => setNombreTemporal(e.target.value)}
-                          onKeyDown={(e) => {
-                            if (e.key === "Enter") handleGuardarEdicion(mueble.id);
-                            if (e.key === "Escape") setEditandoMuebleId(null);
-                          }}
-                          onBlur={() => handleGuardarEdicion(mueble.id)}
-                          autoFocus
-                          className="w-full px-1 py-0.5 text-xs font-semibold rounded bg-white dark:bg-[#090D14] border border-cyan-500 text-slate-900 dark:text-white text-center focus:outline-none shadow-2xs"
+                return (
+                  <div
+                    key={mueble.id}
+                    onClick={() => !isEditing && abrirMueble(mueble)}
+                    title={`${mueble.nombre}\nHaz doble clic para editar nombre, o clic para abrir en 3D`}
+                    className="group flex flex-col items-center cursor-pointer p-1 rounded-xl transition-all select-none relative hover:opacity-90 w-[76px] shrink-0"
+                  >
+                    {/* Miniatura Cuadrada Estilo Blender (Tamaño uniforme y acotado) */}
+                    <div 
+                      style={{
+                        backgroundColor: coloresApariencia?.fondoAplicacion || "#F1F5F9",
+                        borderColor: coloresApariencia?.fondoAplicacion || coloresApariencia?.bordePaneles || "#E2E8F0",
+                      }}
+                      className="w-[70px] h-[70px] aspect-square rounded-xl overflow-hidden border shadow-2xs transition-all relative flex items-center justify-center p-0 shrink-0"
+                    >
+                      {mueble.thumbnail ? (
+                        <img
+                          src={mueble.thumbnail}
+                          alt={mueble.nombre}
+                          className="w-full h-full object-cover pointer-events-none"
                         />
-                        <button
-                          onClick={() => handleGuardarEdicion(mueble.id)}
-                          className="p-1 bg-cyan-600 text-white rounded hover:bg-cyan-500 shrink-0"
-                        >
-                          <Check className="w-2.5 h-2.5" />
-                        </button>
-                      </div>
-                    ) : (
-                      <p
-                        onDoubleClick={(e) => handleIniciarEdicion(mueble, e)}
-                        className="text-xs font-semibold text-slate-700 dark:text-slate-200 truncate group-hover:text-cyan-600 dark:group-hover:text-cyan-400 transition-colors"
+                      ) : (
+                        <div className="flex flex-col items-center justify-center gap-1 opacity-60">
+                          <Box 
+                            style={{ color: coloresApariencia?.botonActivo || "#0891b2" }} 
+                            className="w-7 h-7 group-hover:scale-105 transition-transform" 
+                          />
+                        </div>
+                      )}
+
+                      {/* Botón de Eliminar en Hover */}
+                      <button
+                        onClick={(e) => handleEliminarMueble(mueble.id, e)}
+                        title="Eliminar este mueble del catálogo"
+                        className="absolute top-1 right-1 p-1 rounded-md bg-black/60 hover:bg-red-600 text-white opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer shadow-xs z-10"
                       >
-                        {mueble.nombre}
-                      </p>
-                    )}
+                        <Trash2 className="w-2.5 h-2.5" />
+                      </button>
+                    </div>
+
+                    {/* Nombre Limpio Estilo Blender */}
+                    <div className="w-full mt-1 px-0.5 text-center">
+                      {isEditing ? (
+                        <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
+                          <input
+                            type="text"
+                            value={nombreTemporal}
+                            onChange={(e) => setNombreTemporal(e.target.value)}
+                            onKeyDown={(e) => {
+                              if (e.key === "Enter") handleGuardarEdicion(mueble.id);
+                              if (e.key === "Escape") setEditandoMuebleId(null);
+                            }}
+                            onBlur={() => handleGuardarEdicion(mueble.id)}
+                            autoFocus
+                            style={{
+                              backgroundColor: coloresApariencia?.fondoAplicacion,
+                              borderColor: coloresApariencia?.bordePaneles,
+                              color: coloresApariencia?.textoPrincipal,
+                            }}
+                            className="w-full px-1 py-0.5 text-[10px] font-semibold rounded border text-center focus:outline-none shadow-2xs"
+                          />
+                          <button
+                            onClick={() => handleGuardarEdicion(mueble.id)}
+                            style={{
+                              backgroundColor: coloresApariencia?.botonActivo || "#0891b2",
+                              color: "#FFFFFF",
+                            }}
+                            className="p-0.5 rounded hover:opacity-90 shrink-0"
+                          >
+                            <Check className="w-2.5 h-2.5" />
+                          </button>
+                        </div>
+                      ) : (
+                        <p
+                          onDoubleClick={(e) => handleIniciarEdicion(mueble, e)}
+                          style={{ color: coloresApariencia?.textoPrincipal }}
+                          className="text-[11px] font-semibold truncate transition-colors leading-tight"
+                        >
+                          {mueble.nombre}
+                        </p>
+                      )}
+                    </div>
                   </div>
-                </div>
-              );
-            })}
-          </div>
+                );
+              })}
+            </div>
+          )}
 
           {/* Estado Vacío */}
           {mueblesFiltrados.length === 0 && (
-            <div className="flex-1 flex flex-col items-center justify-center p-8 text-center text-slate-400 gap-3">
-              <div className="w-12 h-12 rounded-2xl bg-slate-100 dark:bg-slate-800/60 flex items-center justify-center text-slate-400">
+            <div 
+              style={{ color: coloresApariencia?.textoSecundario }} 
+              className="flex-1 flex flex-col items-center justify-center p-8 text-center gap-3"
+            >
+              <div 
+                style={{ backgroundColor: coloresApariencia?.fondoAplicacion }} 
+                className="w-12 h-12 rounded-2xl flex items-center justify-center opacity-70"
+              >
                 <FolderOpen className="w-6 h-6" />
               </div>
               <div className="max-w-xs">
-                <h4 className="text-xs font-bold text-slate-700 dark:text-slate-300">
+                <h4 
+                  style={{ color: coloresApariencia?.textoPrincipal }} 
+                  className="text-xs font-bold"
+                >
                   No hay muebles en esta carpeta
                 </h4>
-                <p className="text-[11px] text-slate-500 mt-1">
+                <p 
+                  style={{ color: coloresApariencia?.textoSecundario }} 
+                  className="text-[11px] mt-1"
+                >
                   Diseña una composición en el Visor 3D y pulsa{" "}
-                  <strong className="text-cyan-600 font-semibold">Guardar como</strong> para añadir tu primer mueble.
+                  <strong 
+                    style={{ color: coloresApariencia?.botonActivo || "#0891b2" }} 
+                    className="font-semibold"
+                  >
+                    Guardar como
+                  </strong>{" "}
+                  para añadir tu primer mueble.
                 </p>
               </div>
               <button
                 onClick={() => setModalGuardarComoAbierto(true)}
-                className="px-3.5 py-1.5 rounded-xl bg-cyan-600 hover:bg-cyan-500 text-white font-bold text-xs flex items-center gap-1.5 shadow-sm transition cursor-pointer"
+                style={{
+                  backgroundColor: coloresApariencia?.botonActivo || "#0891b2",
+                  color: "#FFFFFF",
+                }}
+                className="px-3.5 py-1.5 rounded-xl font-bold text-xs flex items-center gap-1.5 shadow-sm transition hover:opacity-90 cursor-pointer"
               >
                 <Save className="w-3.5 h-3.5" />
                 <span>Guardar Mueble Actual</span>

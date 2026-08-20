@@ -11,7 +11,7 @@ function getStorageDirectory(): string {
   return path.join(process.cwd(), "storage", "muebles");
 }
 
-const OFFICIAL_DRIVE_WEB_URL = "https://drive.google.com/drive/folders/1zzeGpgyLbCUKRuUhT7Lk-_7xRW_kZf9t";
+const OFFICIAL_DRIVE_WEB_URL = "https://drive.google.com/drive/u/0/folders/1zzeGpgyLbCUKrUUhT7Lk-_7xRW_kZf9t";
 
 function ensureStorage(storageDir: string) {
   if (!fs.existsSync(storageDir)) {

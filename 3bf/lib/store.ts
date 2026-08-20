@@ -1,5 +1,7 @@
 import { create } from "zustand";
 
+export const APP_VERSION = "vBeta 0.1";
+
 export interface ObjetoInstancia3BF {
   id: string;                       // e.g. "inst_Cubierta_12345"
   nombreVisible: string;            // "Cubierta", "Cubierta_01", "Cubierta_02"
@@ -12,6 +14,14 @@ export interface ObjetoInstancia3BF {
   posicion: [number, number, number]; // [X, Y, Z] en metros
   rotacion: [number, number, number];
   posicionPrevia: [number, number, number];
+}
+
+export interface SnapshotEscenario {
+  instancias: Record<string, ObjetoInstancia3BF>;
+  objetoActivoId: string | null;
+  posicionObjeto: [number, number, number];
+  parametros: Record<string, any>;
+  resultado: ComputoResultado | null;
 }
 
 export function generarNombreSecuencial(definitionId: string, instancias: Record<string, ObjetoInstancia3BF>): string {
@@ -51,7 +61,6 @@ export interface ColoresApariencia {
   iconoPlanoUniversalX: string;
   iconoPlanoUniversalY: string;
   iconoPlanoUniversalZ: string;
-  siluetaBordes: string;
 
   // Visualización de objetos (3D BIM)
   objetosSeleccionados: string;
@@ -59,17 +68,24 @@ export interface ColoresApariencia {
   materialPorDefecto: string;
   mallasCristal: string;
   colorHerrajes: string;
-  colorTapacantos: string;
 
   // Objetos de interfaz (UI 2D BIM)
+  fondoAplicacion: string;
   fondoPaneles: string;
   bordePaneles: string;
   textoPrincipal: string;
   textoSecundario: string;
   colorMarca: string;
   botonActivo: string;
+  botonInactivo: string;
+  bordeBotonInactivo: string;
+  bordeControles: string;
+  panelContenedor: string;
   fondoTopNav: string;
-  lineasReferencia: string;
+  insigniaFondo: string;
+  insigniaTexto: string;
+  estadoActivo: string;
+  iconosFijos: string;
 
   // Ficha de Despiece, BOM & Base de Datos
   tablaEncabezadoFondo: string;
@@ -98,28 +114,34 @@ export const PRESET_COLORES_CLARO: ColoresApariencia = {
   iconoPlanoUniversalX: "#64748B",
   iconoPlanoUniversalY: "#64748B",
   iconoPlanoUniversalZ: "#64748B",
-  siluetaBordes: "#0F172A",
 
   objetosSeleccionados: "#FF9500",
   objetosBloqueados: "#94A3B8",
   materialPorDefecto: "#E2E8F0",
   mallasCristal: "#0284C7",
   colorHerrajes: "#CBD5E1",
-  colorTapacantos: "#0284C7",
 
+  fondoAplicacion: "#F1F5F9",
   fondoPaneles: "#FFFFFF",
-  bordePaneles: "#E2E8F0",
+  bordePaneles: "#CBD5E1",
   textoPrincipal: "#0F172A",
   textoSecundario: "#64748B",
   colorMarca: "#0891B2",
   botonActivo: "#0891B2",
+  botonInactivo: "#E2E8F0",
+  bordeBotonInactivo: "#CBD5E1",
+  bordeControles: "#CBD5E1",
+  panelContenedor: "#E2E8F0",
   fondoTopNav: "#FFFFFF",
-  lineasReferencia: "#0F172A",
+  insigniaFondo: "#CFFAFE",
+  insigniaTexto: "#0E7490",
+  estadoActivo: "#10B981",
+  iconosFijos: "#0891B2",
 
-  tablaEncabezadoFondo: "#F1F5F9",
-  tablaEncabezadoTexto: "#0F172A",
+  tablaEncabezadoFondo: "#E2E8F0",
+  tablaEncabezadoTexto: "#1E293B",
   tablaFilaFondo: "#FFFFFF",
-  tablaBorde: "#E2E8F0",
+  tablaBorde: "#CBD5E1",
   tablaTotalFondo: "#0F172A",
   tablaTotalTexto: "#F8FAFC",
   kpiTarjetaFondo: "#FFFFFF",
@@ -141,32 +163,38 @@ export const PRESET_COLORES_OSCURO: ColoresApariencia = {
   iconoPlanoUniversalX: "#475569",
   iconoPlanoUniversalY: "#475569",
   iconoPlanoUniversalZ: "#475569",
-  siluetaBordes: "#000000",
 
   objetosSeleccionados: "#FF9500",
   objetosBloqueados: "#475569",
   materialPorDefecto: "#1E293B",
   mallasCristal: "#38BDF8",
   colorHerrajes: "#475569",
-  colorTapacantos: "#06B6D4",
 
+  fondoAplicacion: "#0B0F17",
   fondoPaneles: "#131B2E",
   bordePaneles: "#1E293B",
   textoPrincipal: "#F8FAFC",
-  textoSecundario: "#94A3B8",
-  colorMarca: "#06B6D4",
+  textoSecundario: "#F8FAFC",
+  colorMarca: "#0891B2",
   botonActivo: "#0891B2",
+  botonInactivo: "#1E293B",
+  bordeBotonInactivo: "#334155",
+  bordeControles: "#334155",
+  panelContenedor: "#131B2E",
   fondoTopNav: "#131B2E",
-  lineasReferencia: "#FFFFFF",
+  insigniaFondo: "#083344",
+  insigniaTexto: "#0891B2",
+  estadoActivo: "#10B981",
+  iconosFijos: "#0891B2",
 
   tablaEncabezadoFondo: "#1E293B",
   tablaEncabezadoTexto: "#F8FAFC",
   tablaFilaFondo: "#131B2E",
   tablaBorde: "#233044",
   tablaTotalFondo: "#0B0F17",
-  tablaTotalTexto: "#38BDF8",
+  tablaTotalTexto: "#0891B2",
   kpiTarjetaFondo: "#131B2E",
-  kpiTarjetaTexto: "#06B6D4",
+  kpiTarjetaTexto: "#0891B2",
 
   widgetEjeU: "#EF4444",
   widgetEjeV: "#22C55E",
@@ -354,14 +382,25 @@ export interface CalibracionVisual {
   mostrarEjesCoordenadas: boolean;  // Activar / Desactivar ejes X / Y
   mostrarEjeX: boolean;             // Activar / Desactivar Eje X
   mostrarEjeY: boolean;             // Activar / Desactivar Eje Y
-  distanciaCuadricula: number;      // cellSize (en metros, e.g. 0.1 = 100mm)
+  distanciaCuadricula: number;      // cellSize (en metros, e.g. 0.01 = 10mm)
   grosorGrillaDelgada: number;      // cellThickness (e.g. 1.0)
   colorGrillaDelgada: string;       // cellColor (e.g. "#E5E7EB")
-  distanciaSeccion: number;         // sectionSize (en metros, e.g. 0.5 = 500mm)
+  distanciaSeccion: number;         // sectionSize (en metros, e.g. 0.1 = 100mm)
   grosorGrillaGruesa: number;       // sectionThickness (e.g. 1.5)
   colorGrillaGruesa: string;        // sectionColor (e.g. "#0088aa")
   colorEjeX: string;                // Hex (#ef4444)
   colorEjeY: string;                // Hex (#22c55e)
+
+  // Propiedades de Rejilla (Estándar Rhinoceros 8)
+  numeroLineasRejilla: number;          // e.g. 500
+  espaciadoRejillaSecundariaMm: number; // e.g. 10 (milímetros)
+  lineasPrincipalesCada: number;        // e.g. 10 (líneas de rejilla secundarias)
+  mostrarIconoPlanoUniversal: boolean;  // Mostrar icono de ejes del plano universal
+
+  // 📷 Calibración de Cámara y Zoom
+  zoomMinimoMetros: number;             // Distancia mínima de acercamiento (e.g. 0.02 = 2cm)
+  zoomMaximoMetros: number;             // Distancia máxima de alejamiento (e.g. 30m)
+  campoDeVisionFov: number;             // Lente / FOV en grados (e.g. 45°)
 }
 
 export interface HerrajeRecord {
@@ -564,14 +603,18 @@ export interface State3BF {
   // Blender N-Panel (Sidebar Multifuncional con tecla N)
   mostrarNPanel: boolean;
   setMostrarNPanel: (mostrar: boolean | ((prev: boolean) => boolean)) => void;
-  pestanaNPanel: "componentes" | "muebles" | "materiales" | "calibrar" | "escenario" | "apariencia";
-  setPestanaNPanel: (pestana: "componentes" | "muebles" | "materiales" | "calibrar" | "escenario" | "apariencia") => void;
+  pestanaNPanel: "componentes" | "muebles" | "materiales" | "calibrar" | "apariencia";
+  setPestanaNPanel: (pestana: "componentes" | "muebles" | "materiales" | "calibrar" | "apariencia") => void;
+  anchoPanelDerecho: number;
+  setAnchoPanelDerecho: (ancho: number) => void;
 
-  // 🎨 Apariencia & Personalización de Colores (Estilo Rhinoceros 8)
-  esquemaColor: "oscuro" | "claro" | "personalizado";
+  // 🎨 Apariencia & Personalización de Colores y Tipografía
+  esquemaColor: "claro" | "oscuro";
   coloresApariencia: ColoresApariencia;
-  setEsquemaColor: (esquema: "oscuro" | "claro" | "personalizado") => void;
+  fuenteInterfaz: string;
+  setEsquemaColor: (esquema: "claro" | "oscuro") => void;
   setColorApariencia: (clave: keyof ColoresApariencia, valor: string) => void;
+  setFuenteInterfaz: (fuente: string) => void;
   restaurarColoresApariencia: () => void;
   guardarComoPredefinido: () => void;
   cargarColoresPredefinidos: () => void;
@@ -637,6 +680,19 @@ export interface State3BF {
   setSnapTargetPoint: (pt: [number, number, number] | null, tipo?: "corner" | "midpoint" | null) => void;
   setSnapTargetType: (tipo: "corner" | "midpoint" | null) => void;
 
+  // ⏪ Sistema de Deshacer / Rehacer (Undo / Redo - 100 Estados en memoria)
+  pilaHistorial: SnapshotEscenario[];
+  indiceHistorial: number;
+  puedeDeshacer: boolean;
+  puedeRehacer: boolean;
+  guardarEstadoHistorial: () => void;
+  deshacer: () => void;
+  rehacer: () => void;
+
+  // 📷 Control de Cámara
+  centrarCamaraTrigger: number;
+  centrarCamara: () => void;
+
   dbHerrajes: HerrajeRecord[];
   dbTableros: TableroRecord[];
   dbCantos: CantoRecord[];
@@ -662,6 +718,7 @@ export interface State3BF {
 
 export interface FichaCostosConfig {
   desperdicioGlobalPct: number;
+  despunteCantoGlobalMm?: number;
   desperdicioPorPieza: Record<number, number>;
   descripcionesPersonalizadas?: Record<number, string>;
   materialesPorPieza: Record<number, string>;
@@ -678,6 +735,7 @@ export interface FichaCostosConfig {
 
 export const FICHA_DEFECTO: FichaCostosConfig = {
   desperdicioGlobalPct: 10.0,
+  despunteCantoGlobalMm: 100,
   desperdicioPorPieza: {},
   descripcionesPersonalizadas: {},
   materialesPorPieza: {},
@@ -722,17 +780,31 @@ export const defaultCalibracion: CalibracionVisual = {
   mostrarEjesCoordenadas: true,
   mostrarEjeX: true,
   mostrarEjeY: true,
-  distanciaCuadricula: 0.1,
+  distanciaCuadricula: 0.01,
   grosorGrillaDelgada: 1.0,
   colorGrillaDelgada: "#E5E7EB",
-  distanciaSeccion: 0.5,
+  distanciaSeccion: 0.1,
   grosorGrillaGruesa: 1.5,
   colorGrillaGruesa: "#CBD5E1",
   colorEjeX: "#ef4444",
   colorEjeY: "#22c55e",
+
+  // Propiedades de Rejilla (Estándar Rhinoceros 8)
+  numeroLineasRejilla: 500,
+  espaciadoRejillaSecundariaMm: 10,
+  lineasPrincipalesCada: 10,
+  mostrarIconoPlanoUniversal: true,
+
+  // 📷 Calibración de Cámara y Zoom
+  zoomMinimoMetros: 0.02,
+  zoomMaximoMetros: 30,
+  campoDeVisionFov: 45,
 };
 
 export const use3BFStore = create<State3BF>((set, get) => ({
+  centrarCamaraTrigger: 0,
+  centrarCamara: () => set((s) => ({ centrarCamaraTrigger: (s.centrarCamaraTrigger || 0) + 1 })),
+
   parametros: {
     model_id: "",
     ancho: 1200,
@@ -777,7 +849,7 @@ export const use3BFStore = create<State3BF>((set, get) => ({
   setResultado: (resultado) => set({ resultado }),
   
   tema: "tech",
-  setTema: (tema) => set({ tema }),
+  setTema: (tema) => get().setEsquemaColor(tema === "tech" ? "claro" : "oscuro"),
   
   pestanaActiva: "3d",
   setPestanaActiva: (pestanaActiva) => set({ pestanaActiva }),
@@ -809,60 +881,144 @@ export const use3BFStore = create<State3BF>((set, get) => ({
     })),
   pestanaNPanel: "componentes",
   setPestanaNPanel: (pestanaNPanel) => set({ pestanaNPanel: pestanaNPanel as any }),
+  anchoPanelDerecho: typeof window !== "undefined" && window.localStorage && localStorage.getItem("3bf_ancho_panel_derecho")
+    ? Math.max(280, Math.min(800, Number(localStorage.getItem("3bf_ancho_panel_derecho"))))
+    : 380,
+  setAnchoPanelDerecho: (ancho) => {
+    const normalizado = Math.max(280, Math.min(800, ancho));
+    if (typeof window !== "undefined" && window.localStorage) {
+      localStorage.setItem("3bf_ancho_panel_derecho", String(normalizado));
+    }
+    set({ anchoPanelDerecho: normalizado });
+  },
 
-  // 🎨 Apariencia & Personalización de Colores (Estilo Rhinoceros 8)
+  // 🎨 Apariencia & Personalización de Colores (Perfiles Claro y Oscuro)
   esquemaColor: "claro",
   coloresApariencia: PRESET_COLORES_CLARO,
+  fuenteInterfaz: "sistema",
+  setFuenteInterfaz: (fuente) => {
+    if (typeof window !== "undefined" && window.localStorage) {
+      localStorage.setItem("3bf_fuente_interfaz", fuente);
+    }
+    set({ fuenteInterfaz: fuente });
+  },
   setEsquemaColor: (esquema) => {
+    if (typeof window !== "undefined" && window.localStorage) {
+      localStorage.setItem("3bf_perfil_activo", esquema);
+    }
+    
     if (esquema === "claro") {
-      set({ esquemaColor: "claro", coloresApariencia: PRESET_COLORES_CLARO, tema: "tech" });
+      let coloresClaro = PRESET_COLORES_CLARO;
+      if (typeof window !== "undefined" && window.localStorage) {
+        const guardado = localStorage.getItem("3bf_preset_claro");
+        if (guardado) {
+          try {
+            coloresClaro = { ...PRESET_COLORES_CLARO, ...JSON.parse(guardado) };
+          } catch (e) {
+            console.warn("Error leyendo preset claro:", e);
+          }
+        }
+      }
+      set({ esquemaColor: "claro", coloresApariencia: coloresClaro, tema: "tech" });
       if (typeof document !== "undefined") {
         document.documentElement.setAttribute("data-theme", "tech");
         document.documentElement.classList.remove("dark");
       }
-    } else if (esquema === "oscuro") {
-      set({ esquemaColor: "oscuro", coloresApariencia: PRESET_COLORES_OSCURO, tema: "obsidian" });
+    } else {
+      let coloresOscuro = PRESET_COLORES_OSCURO;
+      if (typeof window !== "undefined" && window.localStorage) {
+        const guardado = localStorage.getItem("3bf_preset_oscuro");
+        if (guardado) {
+          try {
+            coloresOscuro = { ...PRESET_COLORES_OSCURO, ...JSON.parse(guardado) };
+          } catch (e) {
+            console.warn("Error leyendo preset oscuro:", e);
+          }
+        }
+      }
+      set({ esquemaColor: "oscuro", coloresApariencia: coloresOscuro, tema: "obsidian" });
       if (typeof document !== "undefined") {
         document.documentElement.setAttribute("data-theme", "obsidian");
         document.documentElement.classList.add("dark");
       }
-    } else {
-      set({ esquemaColor: "personalizado" });
     }
   },
   setColorApariencia: (clave, valor) =>
     set((state) => ({
-      esquemaColor: "personalizado",
       coloresApariencia: {
         ...state.coloresApariencia,
         [clave]: valor,
+        ...(clave === "fondoPaneles" ? { fondoTopNav: valor } : {}),
+        ...(clave === "bordePaneles" ? { colorMarca: valor } : {}),
+        ...(clave === "botonActivo" ? { iconosFijos: valor } : {}),
       },
     })),
-  restaurarColoresApariencia: () =>
-    set((state) => ({
-      coloresApariencia: state.tema === "obsidian" ? PRESET_COLORES_OSCURO : PRESET_COLORES_CLARO,
-      esquemaColor: state.tema === "obsidian" ? "oscuro" : "claro",
-    })),
+  restaurarColoresApariencia: () => {
+    const state = get();
+    if (state.esquemaColor === "claro") {
+      if (typeof window !== "undefined" && window.localStorage) {
+        localStorage.removeItem("3bf_preset_claro");
+      }
+      set({ coloresApariencia: PRESET_COLORES_CLARO });
+    } else {
+      if (typeof window !== "undefined" && window.localStorage) {
+        localStorage.removeItem("3bf_preset_oscuro");
+      }
+      set({ coloresApariencia: PRESET_COLORES_OSCURO });
+    }
+  },
   guardarComoPredefinido: () => {
     const state = get();
     if (typeof window !== "undefined" && window.localStorage) {
-      localStorage.setItem("3bf_colores_predefinidos", JSON.stringify(state.coloresApariencia));
-      localStorage.setItem("3bf_esquema_color", state.esquemaColor);
+      if (state.esquemaColor === "claro") {
+        localStorage.setItem("3bf_preset_claro", JSON.stringify(state.coloresApariencia));
+        localStorage.setItem("3bf_perfil_activo", "claro");
+      } else {
+        localStorage.setItem("3bf_preset_oscuro", JSON.stringify(state.coloresApariencia));
+        localStorage.setItem("3bf_perfil_activo", "oscuro");
+      }
+      localStorage.setItem("3bf_fuente_interfaz", state.fuenteInterfaz);
     }
   },
   cargarColoresPredefinidos: () => {
     if (typeof window !== "undefined" && window.localStorage) {
-      const guardado = localStorage.getItem("3bf_colores_predefinidos");
-      const esquema = localStorage.getItem("3bf_esquema_color") as any;
-      if (guardado) {
-        try {
-          const parsed = JSON.parse(guardado);
-          set({
-            coloresApariencia: parsed,
-            esquemaColor: esquema || "personalizado",
-          });
-        } catch (e) {
-          console.warn("Error cargando colores predefinidos:", e);
+      const fuenteGuardada = localStorage.getItem("3bf_fuente_interfaz") || "sistema";
+      const perfilActivo = (localStorage.getItem("3bf_perfil_activo") as "claro" | "oscuro") || "claro";
+      if (perfilActivo === "oscuro") {
+        let coloresOscuro = PRESET_COLORES_OSCURO;
+        const guardado = localStorage.getItem("3bf_preset_oscuro");
+        if (guardado) {
+          try {
+            coloresOscuro = { ...PRESET_COLORES_OSCURO, ...JSON.parse(guardado) };
+          } catch {}
+        }
+        set({
+          esquemaColor: "oscuro",
+          coloresApariencia: coloresOscuro,
+          tema: "obsidian",
+          fuenteInterfaz: fuenteGuardada,
+        });
+        if (typeof document !== "undefined") {
+          document.documentElement.setAttribute("data-theme", "obsidian");
+          document.documentElement.classList.add("dark");
+        }
+      } else {
+        let coloresClaro = PRESET_COLORES_CLARO;
+        const guardado = localStorage.getItem("3bf_preset_claro");
+        if (guardado) {
+          try {
+            coloresClaro = { ...PRESET_COLORES_CLARO, ...JSON.parse(guardado) };
+          } catch {}
+        }
+        set({
+          esquemaColor: "claro",
+          coloresApariencia: coloresClaro,
+          tema: "tech",
+          fuenteInterfaz: fuenteGuardada,
+        });
+        if (typeof document !== "undefined") {
+          document.documentElement.setAttribute("data-theme", "tech");
+          document.documentElement.classList.remove("dark");
         }
       }
     }
@@ -877,7 +1033,7 @@ export const use3BFStore = create<State3BF>((set, get) => ({
   carpetaSeleccionadaId: "all",
   modalGuardarComoAbierto: false,
   guardandoMueble: false,
-  urlGoogleDrive: "https://drive.google.com/drive/folders/1zzeGpgyLbCUKRuUhT7Lk-_7xRW_kZf9t",
+  urlGoogleDrive: "https://drive.google.com/drive/u/0/folders/1zzeGpgyLbCUKrUUhT7Lk-_7xRW_kZf9t",
 
   setCarpetaSeleccionadaId: (carpetaSeleccionadaId) => set({ carpetaSeleccionadaId }),
   setModalGuardarComoAbierto: (modalGuardarComoAbierto) => set({ modalGuardarComoAbierto }),
@@ -1166,29 +1322,37 @@ export const use3BFStore = create<State3BF>((set, get) => ({
 
     // 2. Ejecutar cómputo de la nueva instancia
     await get().recomputarInstancia(id);
+    get().guardarEstadoHistorial();
     return id;
   },
 
-  eliminarInstancia: (id: string) =>
-    set((state) => {
-      const { [id]: _, ...resto } = state.instancias;
-      const idsRestantes = Object.keys(resto);
-      const nuevoActivoId = idsRestantes.length > 0 ? idsRestantes[0] : null;
-      const nuevoActivo = nuevoActivoId ? resto[nuevoActivoId] : null;
+  eliminarInstancia: (id: string) => {
+    const state = get();
+    if (state.pilaHistorial.length === 0) {
+      state.guardarEstadoHistorial();
+    }
+    const { [id]: _, ...resto } = state.instancias;
+    const idsRestantes = Object.keys(resto);
+    const nuevoActivoId = idsRestantes.length > 0 ? idsRestantes[0] : null;
+    const nuevoActivo = nuevoActivoId ? resto[nuevoActivoId] : null;
 
-      return {
-        instancias: resto,
-        objetoActivoId: nuevoActivoId,
-        objetoSeleccionado: nuevoActivoId !== null,
-        posicionObjeto: nuevoActivo ? nuevoActivo.posicion : [0, 0, 0],
-        posicionPrevia: nuevoActivo ? nuevoActivo.posicion : [0, 0, 0],
-        parametros: nuevoActivo ? (nuevoActivo.parametros as any) : state.parametros,
-        resultado: nuevoActivo ? nuevoActivo.resultado : null,
-      };
-    }),
+    set({
+      instancias: resto,
+      objetoActivoId: nuevoActivoId,
+      objetoSeleccionado: nuevoActivoId !== null,
+      posicionObjeto: nuevoActivo ? nuevoActivo.posicion : [0, 0, 0],
+      posicionPrevia: nuevoActivo ? nuevoActivo.posicion : [0, 0, 0],
+      parametros: nuevoActivo ? (nuevoActivo.parametros as any) : state.parametros,
+      resultado: nuevoActivo ? nuevoActivo.resultado : null,
+    });
+    get().guardarEstadoHistorial();
+  },
 
   duplicarInstancia: async (id: string) => {
     const state = get();
+    if (state.pilaHistorial.length === 0) {
+      state.guardarEstadoHistorial();
+    }
     const original = state.instancias[id];
     if (!original) return "";
 
@@ -1220,6 +1384,7 @@ export const use3BFStore = create<State3BF>((set, get) => ({
     }));
 
     await get().recomputarInstancia(nuevoId);
+    get().guardarEstadoHistorial();
     return nuevoId;
   },
 
@@ -1283,6 +1448,10 @@ export const use3BFStore = create<State3BF>((set, get) => ({
   },
 
   setPosicionInstancia: (id: string, pos: [number, number, number]) => {
+    const state = get();
+    if (state.pilaHistorial.length === 0) {
+      state.guardarEstadoHistorial();
+    }
     set((s) => {
       const inst = s.instancias[id];
       if (!inst) return s;
@@ -1294,6 +1463,7 @@ export const use3BFStore = create<State3BF>((set, get) => ({
         posicionObjeto: s.objetoActivoId === id ? pos : s.posicionObjeto,
       };
     });
+    get().guardarEstadoHistorial();
   },
 
   recomputarInstancia: async (id: string) => {
@@ -1320,7 +1490,7 @@ export const use3BFStore = create<State3BF>((set, get) => ({
       });
 
       const data = await computeRes.json();
-      if (computeRes.ok && data.status === "success") {
+      if (computeRes.ok && data.status === "success" && data.real_meshes && data.real_meshes.length > 0) {
         set((s) => {
           const currentInst = s.instancias[id];
           if (!currentInst) return s;
@@ -1332,10 +1502,12 @@ export const use3BFStore = create<State3BF>((set, get) => ({
           return {
             instancias: { ...s.instancias, [id]: updatedInst },
             resultado: s.objetoActivoId === id ? data : s.resultado,
+            workerStatus: "online",
           };
         });
       } else {
         set((s) => ({
+          workerStatus: "offline",
           instancias: {
             ...s.instancias,
             [id]: { ...s.instancias[id], cargando: false },
@@ -1345,6 +1517,7 @@ export const use3BFStore = create<State3BF>((set, get) => ({
     } catch (err) {
       console.error("Error en cómputo de instancia:", id, err);
       set((s) => ({
+        workerStatus: "offline",
         instancias: {
           ...s.instancias,
           [id]: { ...s.instancias[id], cargando: false },
@@ -1394,6 +1567,101 @@ export const use3BFStore = create<State3BF>((set, get) => ({
   },
 
   // =========================================================================
+  // ⏪ SISTEMA DE DESHACER / REHACER (UNDO / REDO - 100 ESTADOS)
+  // =========================================================================
+  pilaHistorial: [],
+  indiceHistorial: -1,
+  puedeDeshacer: false,
+  puedeRehacer: false,
+
+  guardarEstadoHistorial: () => {
+    const s = get();
+    const snapshot: SnapshotEscenario = {
+      instancias: Object.fromEntries(
+        Object.entries(s.instancias || {}).map(([k, v]) => [
+          k,
+          { ...v, posicion: [...v.posicion], rotacion: [...(v.rotacion || [0, 0, 0])], parametros: { ...v.parametros } },
+        ])
+      ),
+      objetoActivoId: s.objetoActivoId,
+      posicionObjeto: [...s.posicionObjeto],
+      parametros: { ...s.parametros },
+      resultado: s.resultado,
+    };
+
+    const historialValido = s.pilaHistorial.slice(0, s.indiceHistorial + 1);
+    const nuevoHistorial = [...historialValido, snapshot];
+
+    // Limitar estrictamente a 100 estados de historial
+    if (nuevoHistorial.length > 100) {
+      nuevoHistorial.shift();
+    }
+
+    set({
+      pilaHistorial: nuevoHistorial,
+      indiceHistorial: nuevoHistorial.length - 1,
+      puedeDeshacer: nuevoHistorial.length > 1,
+      puedeRehacer: false,
+    });
+  },
+
+  deshacer: () => {
+    const s = get();
+    if (s.indiceHistorial > 0) {
+      const nuevoIndice = s.indiceHistorial - 1;
+      const estado = s.pilaHistorial[nuevoIndice];
+      if (estado) {
+        set({
+          instancias: Object.fromEntries(
+            Object.entries(estado.instancias || {}).map(([k, v]) => [
+              k,
+              { ...v, posicion: [...v.posicion], rotacion: [...(v.rotacion || [0, 0, 0])], parametros: { ...v.parametros } },
+            ])
+          ),
+          objetoActivoId: estado.objetoActivoId,
+          objetoSeleccionado: estado.objetoActivoId !== null,
+          posicionObjeto: [...estado.posicionObjeto],
+          posicionPrevia: [...estado.posicionObjeto],
+          parametros: { ...estado.parametros } as any,
+          resultado: estado.resultado,
+          indiceHistorial: nuevoIndice,
+          puedeDeshacer: nuevoIndice > 0,
+          puedeRehacer: true,
+          modoTransformacion: "none",
+        });
+      }
+    }
+  },
+
+  rehacer: () => {
+    const s = get();
+    if (s.indiceHistorial < s.pilaHistorial.length - 1) {
+      const nuevoIndice = s.indiceHistorial + 1;
+      const estado = s.pilaHistorial[nuevoIndice];
+      if (estado) {
+        set({
+          instancias: Object.fromEntries(
+            Object.entries(estado.instancias || {}).map(([k, v]) => [
+              k,
+              { ...v, posicion: [...v.posicion], rotacion: [...(v.rotacion || [0, 0, 0])], parametros: { ...v.parametros } },
+            ])
+          ),
+          objetoActivoId: estado.objetoActivoId,
+          objetoSeleccionado: estado.objetoActivoId !== null,
+          posicionObjeto: [...estado.posicionObjeto],
+          posicionPrevia: [...estado.posicionObjeto],
+          parametros: { ...estado.parametros } as any,
+          resultado: estado.resultado,
+          indiceHistorial: nuevoIndice,
+          puedeDeshacer: true,
+          puedeRehacer: nuevoIndice < s.pilaHistorial.length - 1,
+          modoTransformacion: "none",
+        });
+      }
+    }
+  },
+
+  // =========================================================================
   // 🎮 SELECCIÓN & TRANSFORMACIÓN ESPACIAL ESTILO BLENDER (G: Grab / B: Snap)
   // =========================================================================
   objetoSeleccionado: false,
@@ -1434,6 +1702,10 @@ export const use3BFStore = create<State3BF>((set, get) => ({
 
   iniciarGrab: () => {
     const state = get();
+    // Si la pila está vacía, aseguramos el estado inicial antes de mover
+    if (state.pilaHistorial.length === 0) {
+      state.guardarEstadoHistorial();
+    }
     const activeId = state.objetoActivoId;
     const inst = activeId ? state.instancias[activeId] : null;
     const pos = inst ? inst.posicion : state.posicionObjeto;
@@ -1475,6 +1747,7 @@ export const use3BFStore = create<State3BF>((set, get) => ({
         snapTargetPoint: null,
         snapTargetType: null,
       }));
+      get().guardarEstadoHistorial();
     } else {
       set({ modoTransformacion: "none" });
     }

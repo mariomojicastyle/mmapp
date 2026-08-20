@@ -98,6 +98,7 @@ const DirectNumberInput = ({
   onChange: (val: number) => void;
   className?: string;
 }) => {
+  const { coloresApariencia, guardarEstadoHistorial } = use3BFStore();
   const [localText, setLocalText] = React.useState(String(value));
   const [isFocused, setIsFocused] = React.useState(false);
 
@@ -130,6 +131,7 @@ const DirectNumberInput = ({
     const clamped = Math.min(max, Math.max(min, num));
     onChange(clamped);
     setLocalText(String(clamped));
+    guardarEstadoHistorial();
   };
 
   return (
@@ -146,9 +148,14 @@ const DirectNumberInput = ({
             (e.target as HTMLInputElement).blur();
           }
         }}
-        className={`w-16 px-1.5 py-0.5 text-right text-xs font-mono font-bold bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 focus:border-cyan-500 dark:focus:border-cyan-400 focus:ring-1 focus:ring-cyan-500 rounded outline-none shadow-sm text-slate-800 dark:text-cyan-300 transition ${className}`}
+        style={{
+          borderColor: coloresApariencia?.bordePaneles,
+          backgroundColor: coloresApariencia?.fondoAplicacion,
+          color: coloresApariencia?.botonActivo
+        }}
+        className={`w-16 px-1.5 py-0.5 text-right text-xs font-mono font-bold border rounded outline-none shadow-xs transition ${className}`}
       />
-      <span className="text-[11px] font-mono text-slate-500 dark:text-slate-400 font-semibold">{unit}</span>
+      <span style={{ color: coloresApariencia?.textoSecundario }} className="text-[11px] font-mono font-semibold">{unit}</span>
     </div>
   );
 };
@@ -162,7 +169,7 @@ function limpiarEtiqueta(paramKey: string): string {
 }
 
 function RenderParamControl({ paramKey }: { paramKey: string }) {
-  const { parametros, setParametro, resultado, objetoActivoId, instancias, setParametroInstancia } = use3BFStore();
+  const { parametros, setParametro, resultado, objetoActivoId, instancias, setParametroInstancia, coloresApariencia, guardarEstadoHistorial } = use3BFStore();
   const instanciaActiva = objetoActivoId ? instancias[objetoActivoId] : null;
   const currentParams = instanciaActiva ? instanciaActiva.parametros : parametros;
   const currentResult = instanciaActiva ? instanciaActiva.resultado : resultado;
@@ -187,23 +194,30 @@ function RenderParamControl({ paramKey }: { paramKey: string }) {
     const handleNumChange = (val: number) => {
       if (objetoActivoId) {
         setParametroInstancia(objetoActivoId, storeKey, val);
+        if (rawKeyClean !== storeKey) setParametroInstancia(objetoActivoId, rawKeyClean, val);
         if (legacyKey) setParametroInstancia(objetoActivoId, legacyKey, val);
       } else {
         setParametro(storeKey as any, val);
+        if (rawKeyClean !== storeKey) setParametro(rawKeyClean as any, val);
         if (legacyKey) setParametro(legacyKey as any, val);
       }
     };
 
     return (
-      <div className="flex flex-col gap-1.5 p-2 rounded-lg bg-[#E2E8F0] dark:bg-[#1E293B]/70 border border-slate-300 dark:border-slate-700/60 shadow-sm text-xs">
-        <div className="flex justify-between font-medium">
-          <label className="font-bold text-gray-800 dark:text-slate-100">{label}</label>
+      <div 
+        style={{ 
+          backgroundColor: coloresApariencia?.fondoPaneles, 
+          borderColor: coloresApariencia?.bordePaneles || "#CBD5E1" 
+        }}
+        className="flex flex-col gap-1.5 p-2 rounded-lg border shadow-xs text-xs"
+      >
+        <div className="flex justify-between font-medium items-center">
+          <label style={{ color: coloresApariencia?.textoPrincipal }} className="font-bold">{label}</label>
           <DirectNumberInput
             value={numVal}
             min={minVal}
             max={maxVal}
             onChange={handleNumChange}
-            className="text-cyan-600 dark:text-cyan-300 font-bold"
           />
         </div>
         <input
@@ -213,7 +227,11 @@ function RenderParamControl({ paramKey }: { paramKey: string }) {
           step={maxVal <= 10 ? 0.1 : (maxVal <= 200 ? 1 : 10)}
           value={Math.min(maxVal, Math.max(minVal, numVal))}
           onChange={(e) => handleNumChange(Number(e.target.value))}
-          className="w-full accent-cyan-600 cursor-pointer"
+          onPointerUp={() => guardarEstadoHistorial()}
+          onKeyUp={() => guardarEstadoHistorial()}
+          onTouchEnd={() => guardarEstadoHistorial()}
+          style={{ accentColor: coloresApariencia?.botonActivo || "#0891B2" }}
+          className="w-full cursor-pointer"
         />
       </div>
     );
@@ -223,14 +241,21 @@ function RenderParamControl({ paramKey }: { paramKey: string }) {
   let options: string[] = limit?.options && limit.options.length > 0 ? limit.options : [];
   if (options.length === 0) {
     const pl = paramKey.toLowerCase();
-    if (pl.includes("union")) options = ["Minifix", "Tornillo tarugo", "Entrepaño"];
-    else if (pl.includes("orientacion")) options = ["abajo", "arriba"];
-    else if (pl.includes("posicion")) options = ["1", "2"];
-    else if (pl.includes("borde")) options = ["MDP", "Canto"];
-    else if (pl.includes("balance")) options = ["Cara A", "Cara B", "D/D"];
-    else if (pl.includes("mapeado")) options = ["Cubierta", "Cubierta Atravesada"];
-    else if (pl.includes("cajon")) options = ["Corredera Estandar", "Corredera Tipo X"];
-    else options = [String(value || "Por defecto")];
+    if (pl.includes("union") || pl.includes("unión")) {
+      options = ["Minifix", "Tornillo", "Tarugo", "Ranura", "Sin Mecanizado"];
+    } else if (pl.includes("borde")) {
+      options = ["MDP", "PVC 1mm", "PVC 2mm", "Canto Grueso", "Sin Tapacanto"];
+    } else if (pl.includes("posicion") || pl.includes("posición")) {
+      options = ["1", "0", "2", "3"];
+    } else if (pl.includes("orientacion") || pl.includes("orientación")) {
+      options = ["abajo", "arriba", "frente", "atras"];
+    } else if (pl.includes("mapeado")) {
+      options = ["Horizontal Atravesada", "Vertical", "Diagonal"];
+    } else if (pl.includes("lado balance")) {
+      options = ["Cara B", "Cara A", "Ambas"];
+    } else {
+      options = ["Opción A", "Opción B", "Por Defecto"];
+    }
   }
 
   const selectedValue = String(value ?? limit?.default ?? options[0]);
@@ -269,15 +294,27 @@ function RenderParamControl({ paramKey }: { paramKey: string }) {
         setParametro("RH_IN:03.3 Borde derecho" as any, newVal);
       }
     }
+    guardarEstadoHistorial();
   };
 
   return (
-    <div className="flex justify-between items-center bg-[#E2E8F0] dark:bg-[#1E293B]/70 p-2 rounded-lg border border-slate-300 dark:border-slate-700/60 text-xs text-[#0F172A] dark:text-slate-100 shadow-sm">
-      <span className="font-bold text-[11px] text-[#0F172A] dark:text-slate-200">{label}:</span>
+    <div 
+      style={{ 
+        backgroundColor: coloresApariencia?.fondoPaneles, 
+        borderColor: coloresApariencia?.bordePaneles || "#CBD5E1" 
+      }}
+      className="flex justify-between items-center p-2 rounded-lg border text-xs shadow-sm"
+    >
+      <span style={{ color: coloresApariencia?.textoPrincipal }} className="font-bold text-[11px]">{label}:</span>
       <select
         value={selectedValue}
         onChange={(e) => handleSelectChange(e.target.value)}
-        className="text-xs p-1 rounded-lg bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 font-bold text-[#0F172A] dark:text-cyan-300 outline-none cursor-pointer"
+        style={{ 
+          borderColor: coloresApariencia?.bordePaneles || "#CBD5E1",
+          backgroundColor: coloresApariencia?.fondoAplicacion,
+          color: coloresApariencia?.textoPrincipal
+        }}
+        className="text-xs p-1 rounded-lg border font-bold outline-none cursor-pointer"
       >
         {options.map((opt) => (
           <option key={opt} value={opt}>
@@ -291,7 +328,7 @@ function RenderParamControl({ paramKey }: { paramKey: string }) {
 
 // Panel de Parámetros Dinámico Autónomo (Sólo visible cuando hay un archivo cargado con grupos reales)
 function ParametrosPanel() {
-  const { parametros, setParametro, resultado } = use3BFStore();
+  const { parametros, resultado, coloresApariencia } = use3BFStore();
 
   if (!parametros.model_id) return null;
 
@@ -300,15 +337,30 @@ function ParametrosPanel() {
     return null;
   }
 
-  const esCubierta = (parametros.model_id + (parametros.custom_filename || "")).toLowerCase().includes("cubierta");
   const groups = resultado.parameter_groups;
 
   return (
     <div className="flex flex-col gap-3.5">
       {groups.map((grp: { title: string; parameters: string[] }, idx: number) => (
-        <div key={`group-${idx}`} className="flex flex-col gap-3 p-3 rounded-xl bg-cyan-950/20 dark:bg-[#131B2E]/60 border border-cyan-200/80 dark:border-cyan-900/40 shadow-sm">
-          <div className="text-xs font-extrabold text-gray-900 dark:text-[#F8FAFC] flex items-center gap-1.5 pb-1.5 border-b border-cyan-200/50 dark:border-cyan-900/40">
-            <Box className="w-4 h-4 text-cyan-600 dark:text-cyan-400" />
+        <div 
+          key={`group-${idx}`} 
+          style={{ 
+            borderColor: coloresApariencia?.insigniaFondo || coloresApariencia?.bordePaneles,
+            backgroundColor: coloresApariencia?.fondoPaneles ? `${coloresApariencia.fondoPaneles}80` : undefined
+          }}
+          className="flex flex-col gap-3 p-3 rounded-xl border shadow-sm"
+        >
+          <div 
+            style={{ 
+              borderColor: coloresApariencia?.insigniaFondo || coloresApariencia?.bordePaneles,
+              color: coloresApariencia?.textoPrincipal 
+            }}
+            className="text-xs font-extrabold flex items-center gap-1.5 pb-1.5 border-b"
+          >
+            <Box 
+              style={{ color: coloresApariencia?.botonActivo || "#0891b2" }} 
+              className="w-4 h-4 shrink-0" 
+            />
             <span>{grp.title}</span>
           </div>
 
@@ -319,38 +371,6 @@ function ParametrosPanel() {
           </div>
         </div>
       ))}
-
-      {/* Color de Acabado & Puertas (Card Organizada) */}
-      <div className="flex flex-col gap-2.5 p-3 rounded-xl bg-cyan-950/20 dark:bg-[#131B2E]/60 border border-cyan-200/80 dark:border-cyan-900/40 shadow-sm">
-        <label className="font-bold text-xs text-gray-800 dark:text-white flex items-center gap-1.5">
-          <Palette className="w-4 h-4 text-cyan-600 dark:text-cyan-400" /> Color de Acabado
-        </label>
-        <div className="flex items-center justify-between bg-[#E2E8F0] p-2 rounded-lg border border-slate-300 shadow-sm text-[#0F172A]">
-          <span className="text-xs font-bold text-[#0F172A]" style={{ color: "#0F172A" }}>Color seleccionado:</span>
-          <div className="flex items-center gap-2">
-            <input
-              type="color"
-              value={parametros.color_acabado}
-              onChange={(e) => setParametro("color_acabado", e.target.value)}
-              className="w-7 h-7 rounded cursor-pointer border-0"
-            />
-            <span className="text-xs font-mono font-bold text-[#0F172A]" style={{ color: "#0F172A" }}>{parametros.color_acabado}</span>
-          </div>
-        </div>
-
-        {/* Toggle Puertas */}
-        {!esCubierta && (
-          <label className="flex items-center justify-between text-xs font-bold cursor-pointer p-2 rounded-lg bg-[#E2E8F0] border border-slate-300 text-[#0F172A] shadow-sm">
-            <span className="text-[#0F172A]" style={{ color: "#0F172A" }}>Incluir Puertas Frontales</span>
-            <input
-              type="checkbox"
-              checked={parametros.incluir_puertas}
-              onChange={(e) => setParametro("incluir_puertas", e.target.checked)}
-              className="w-4 h-4 accent-cyan-600 rounded cursor-pointer"
-            />
-          </label>
-        )}
-      </div>
     </div>
   );
 }
@@ -406,17 +426,21 @@ export default function ControlPanel() {
   const [isSyncing, setIsSyncing] = React.useState(false);
   const lastModelRef = React.useRef<string | null>(null);
 
-  // Comprobar estado de conexión del Worker Python
+  // Comprobar estado de conexión del Worker Python y RhinoCompute
   const verificarWorker = async () => {
     try {
-      const res = await fetch("/api/compute", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ model_id: "Cubierta", ancho: 1200, alto: 800, profundidad: 400 }),
+      const res = await fetch("/api/health", {
+        method: "GET",
+        headers: { "Cache-Control": "no-cache" },
+        signal: AbortSignal.timeout(3000),
       });
-      const data = await res.json();
-      if (data.status === "success" || data.real_meshes || res.ok) {
-        setWorkerStatus("online");
+      if (res.ok) {
+        const data = await res.json();
+        if (data.status === "online" && data.worker && data.rhino_compute) {
+          setWorkerStatus("online");
+        } else {
+          setWorkerStatus("offline");
+        }
       } else {
         setWorkerStatus("offline");
       }
@@ -427,6 +451,19 @@ export default function ControlPanel() {
 
   useEffect(() => {
     verificarWorker();
+    const interval = setInterval(verificarWorker, 8000);
+    const handleReactivation = () => {
+      verificarWorker();
+    };
+
+    window.addEventListener("focus", handleReactivation);
+    document.addEventListener("visibilitychange", handleReactivation);
+
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener("focus", handleReactivation);
+      document.removeEventListener("visibilitychange", handleReactivation);
+    };
   }, []);
 
   // Sincronizar parámetros de la interfaz web desde el archivo Grasshopper de forma ultra-rápida (5ms)
@@ -504,194 +541,42 @@ export default function ControlPanel() {
     ejecutarComputo();
   }, [parametros, isSyncing]);
 
-  const [guardandoFoto, setGuardandoFoto] = React.useState(false);
-  const [fotoCapturada, setFotoCapturada] = React.useState(false);
-
-  const capturarMiniatura = async () => {
-    try {
-      const canvas = document.querySelector("canvas");
-      if (!canvas) {
-        alert("No se encontró el lienzo 3D.");
-        return;
-      }
-      setGuardandoFoto(true);
-      const imageBase64 = canvas.toDataURL("image/png");
-      const modelId = parametros.model_id || "Cubierta";
-
-      const res = await fetch("/api/thumbnail", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ model_id: modelId, imageBase64 }),
-      });
-
-      if (res.ok) {
-        setFotoCapturada(true);
-        setTimeout(() => setFotoCapturada(false), 2500);
-        window.dispatchEvent(new CustomEvent("3bf-thumbnail-updated", { detail: { modelId } }));
-      }
-    } catch (err) {
-      console.error("Error al capturar snapshot:", err);
-    } finally {
-      setGuardandoFoto(false);
-    }
-  };
-
-  const { instancias, objetoActivoId, seleccionarInstancia } = use3BFStore();
+  const { instancias, objetoActivoId, coloresApariencia } = use3BFStore();
   const instanciaActiva = objetoActivoId ? instancias[objetoActivoId] : null;
 
   return (
-    <div className="p-4 flex flex-col gap-5 h-full overflow-y-auto">
+    <div className="p-4 flex flex-col gap-5 h-full overflow-y-auto no-scrollbar">
       {/* 🏷️ CABECERA: OBJETO ACTIVO EN EL ESCENARIO (Multi-Instancia) */}
       {instanciaActiva && (
-        <div className="flex flex-col gap-2 p-3 rounded-xl bg-cyan-600/10 dark:bg-cyan-950/40 border border-cyan-500/40 shadow-sm">
+        <div 
+          style={{ 
+            borderColor: coloresApariencia?.insigniaFondo || coloresApariencia?.bordePaneles,
+            backgroundColor: coloresApariencia?.fondoPaneles ? `${coloresApariencia.fondoPaneles}80` : undefined
+          }}
+          className="flex flex-col gap-2 p-3 rounded-xl border shadow-sm"
+        >
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <span className="w-2.5 h-2.5 rounded-full bg-cyan-500 animate-pulse" />
-              <div>
-                <span className="text-[10px] text-gray-500 uppercase tracking-wider font-bold block">
-                  Objeto Activo
-                </span>
-                <span className="font-extrabold text-sm text-cyan-950 dark:text-cyan-200">
-                  {instanciaActiva.nombreVisible}
-                </span>
-              </div>
+              <span 
+                style={{ backgroundColor: coloresApariencia?.estadoActivo || "#10B981" }} 
+                className="w-2.5 h-2.5 rounded-full animate-pulse shrink-0" 
+              />
+              <span 
+                style={{ color: coloresApariencia?.textoPrincipal }} 
+                className="font-extrabold text-sm leading-none"
+              >
+                {instanciaActiva.nombreVisible}
+              </span>
             </div>
-            <div className="text-[10px] font-mono px-2 py-0.5 rounded bg-cyan-100 dark:bg-cyan-900/60 text-cyan-800 dark:text-cyan-300 font-bold">
+            <div 
+              style={{ 
+                color: coloresApariencia?.estadoActivo || "#10B981" 
+              }} 
+              className="text-[10px] font-mono font-bold tracking-wide"
+            >
               {instanciaActiva.definitionId}
             </div>
           </div>
-
-          {/* Selector rápido entre instancias si hay más de 1 */}
-          {Object.keys(instancias).length > 1 && (
-            <div className="flex items-center gap-1.5 pt-1.5 border-t border-cyan-200/50 dark:border-cyan-900/40 text-xs">
-              <span className="text-[10px] font-bold text-gray-500">Cambiar:</span>
-              <select
-                value={objetoActivoId || ""}
-                onChange={(e) => seleccionarInstancia(e.target.value)}
-                className="flex-1 text-xs p-1 rounded-md bg-white dark:bg-slate-800 border border-cyan-300 dark:border-cyan-800 font-bold text-slate-800 dark:text-cyan-300 outline-none cursor-pointer"
-              >
-                {Object.values(instancias).map((inst) => (
-                  <option key={inst.id} value={inst.id}>
-                    {inst.nombreVisible} ({inst.definitionId})
-                  </option>
-                ))}
-              </select>
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* 🎛️ BARRA DE VISUALIZACIÓN COMPACTA (Modos 3D Izquierda + Tema Light/Dark Derecha) */}
-      <div className="flex items-center justify-between p-2 rounded-xl bg-cyan-950/20 dark:bg-[#131B2E]/60 border border-cyan-200/80 dark:border-cyan-900/40 text-xs shadow-sm gap-2">
-        {/* 1. Botonera de 4 Modos 3D (Estilo Blender) a la Izquierda */}
-        <div className="flex items-center p-0.5 rounded-xl bg-slate-200/80 dark:bg-[#090D14]/90 border border-slate-300/80 dark:border-cyan-900/40 gap-0.5 shadow-inner">
-          {/* 1. Líneas (Wireframe) */}
-          <button
-            onClick={() => setModoVisual("lineas")}
-            title="1. Modo Líneas (Wireframe)"
-            className={`p-1.5 rounded-lg transition-all cursor-pointer flex items-center justify-center ${
-              modoVisual === "lineas"
-                ? "bg-cyan-600 dark:bg-cyan-500 text-white shadow-md ring-1 ring-cyan-400/50 scale-105"
-                : "text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-300/60 dark:hover:bg-slate-800"
-            }`}
-          >
-            <IconModoLineas className="w-4 h-4" />
-          </button>
-
-          {/* 2. Cristal (Semitransparente / Glass) */}
-          <button
-            onClick={() => setModoVisual("semitransparente")}
-            title="2. Modo Cristal (Semitransparente 70%)"
-            className={`p-1.5 rounded-lg transition-all cursor-pointer flex items-center justify-center ${
-              modoVisual === "semitransparente"
-                ? "bg-cyan-600 dark:bg-cyan-500 text-white shadow-md ring-1 ring-cyan-400/50 scale-105"
-                : "text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-300/60 dark:hover:bg-slate-800"
-            }`}
-          >
-            <IconModoCristal className="w-4 h-4" isActivo={modoVisual === "semitransparente"} />
-          </button>
-
-          {/* 3. Sólido (Solid) */}
-          <button
-            onClick={() => setModoVisual("solido")}
-            title="3. Modo Sólido (Solid)"
-            className={`p-1.5 rounded-lg transition-all cursor-pointer flex items-center justify-center ${
-              modoVisual === "solido"
-                ? "bg-cyan-600 dark:bg-cyan-500 text-white shadow-md ring-1 ring-cyan-400/50 scale-105"
-                : "text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-300/60 dark:hover:bg-slate-800"
-            }`}
-          >
-            <IconModoSolido className="w-4 h-4" />
-          </button>
-
-          {/* 4. Renderizado (Render / Specular) */}
-          <button
-            onClick={() => setModoVisual("renderizado")}
-            title="4. Modo Renderizado (PBR / Specular)"
-            className={`p-1.5 rounded-lg transition-all cursor-pointer flex items-center justify-center ${
-              modoVisual === "renderizado"
-                ? "bg-cyan-600 dark:bg-cyan-500 text-white shadow-md ring-1 ring-cyan-400/50 scale-105"
-                : "text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-300/60 dark:hover:bg-slate-800"
-            }`}
-          >
-            <IconModoRender className="w-4 h-4" />
-          </button>
-        </div>
-
-        {/* 2. Switch de Tema (Light / Dark) a la Derecha */}
-        <div className="flex items-center p-0.5 rounded-xl bg-slate-200/80 dark:bg-[#090D14]/90 border border-slate-300/80 dark:border-cyan-900/40 gap-0.5 shadow-inner">
-          <button
-            onClick={() => {
-              setTema("tech");
-              document.documentElement.setAttribute("data-theme", "tech");
-              document.documentElement.classList.remove("dark");
-            }}
-            className={`px-3 py-1 rounded-lg transition-all cursor-pointer text-xs font-bold ${
-              tema === "tech"
-                ? "bg-cyan-600 text-white shadow-sm"
-                : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
-            }`}
-          >
-            Light
-          </button>
-          <button
-            onClick={() => {
-              setTema("obsidian");
-              document.documentElement.setAttribute("data-theme", "obsidian");
-              document.documentElement.classList.add("dark");
-            }}
-            className={`px-3 py-1 rounded-lg transition-all cursor-pointer text-xs font-bold ${
-              tema === "obsidian"
-                ? "bg-cyan-600 text-white shadow-sm"
-                : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
-            }`}
-          >
-            Dark
-          </button>
-        </div>
-      </div>
-
-      {/* Botón Capturar Miniatura: Aparece cada vez que hay un GHX cargado */}
-      {parametros.model_id && (
-        <div className="p-2 rounded-xl bg-cyan-950/20 dark:bg-[#131B2E]/60 border border-cyan-200/80 dark:border-cyan-900/40 text-xs shadow-sm">
-          <button
-            onClick={capturarMiniatura}
-            disabled={guardandoFoto}
-            title={`Capturar la vista actual del lienzo 3D como miniatura para ${parametros.model_id}`}
-            className="w-full flex items-center justify-center gap-2 py-2 px-3 rounded-lg font-bold text-xs transition-all shadow-sm border bg-white dark:bg-[#131B2E] hover:bg-cyan-50 dark:hover:bg-cyan-950/60 text-slate-800 dark:text-cyan-300 border-slate-300 dark:border-cyan-800/60 cursor-pointer hover:border-cyan-500 hover:scale-[1.01]"
-          >
-            {fotoCapturada ? (
-              <>
-                <Check className="w-4 h-4 text-emerald-500" />
-                <span className="text-emerald-600 dark:text-emerald-400 font-bold">¡Miniatura Guardada con Éxito!</span>
-              </>
-            ) : (
-              <>
-                <Camera className="w-4 h-4 text-cyan-600 dark:text-cyan-400" />
-                <span>{guardandoFoto ? "Capturando miniatura..." : "Capturar Miniatura"}</span>
-              </>
-            )}
-          </button>
         </div>
       )}
 

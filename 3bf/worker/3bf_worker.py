@@ -452,7 +452,23 @@ class ComputeParams(BaseModel):
 
 @app.get("/health")
 def health_check():
-    return {"status": "ok", "worker": "3BF Python Engine", "rhino_compute": "http://127.0.0.1:5000"}
+    rhino_ok = False
+    active_children = 0
+    try:
+        r = requests.get("http://127.0.0.1:5000/activechildren", timeout=2)
+        if r.status_code == 200:
+            rhino_ok = True
+            active_children = int(r.text.strip()) if r.text.strip().isdigit() else 0
+    except Exception:
+        rhino_ok = False
+
+    return {
+        "status": "ok" if rhino_ok else "degraded",
+        "worker": "3BF Python Engine",
+        "rhino_compute": "http://127.0.0.1:5000",
+        "rhino_ok": rhino_ok,
+        "rhino_active_children": active_children
+    }
 
 from fastapi import FastAPI, HTTPException, Request
 

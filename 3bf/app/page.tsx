@@ -7,8 +7,9 @@ import DespieceView from "@/components/views/DespieceView";
 import DatabaseView from "@/components/views/DatabaseView";
 import SaveFurnitureModal from "@/components/ui/SaveFurnitureModal";
 import NPanel from "@/components/viewer/NPanel";
-import { use3BFStore } from "@/lib/store";
-import { Box, Layers, Cpu, CheckCircle2, AlertCircle, Database } from "lucide-react";
+import { use3BFStore, APP_VERSION } from "@/lib/store";
+import { Box, Layers, Cpu, CheckCircle2, AlertCircle, Database, Camera, Check } from "lucide-react";
+import { IconModoLineas, IconModoCristal, IconModoSolido, IconModoRender } from "@/components/ui/ControlPanel";
 
 export default function Home3BF() {
   const { 
@@ -19,18 +20,91 @@ export default function Home3BF() {
     hidratarDesdeLocalStorage,
     coloresApariencia,
     setMostrarNPanel,
+    tema,
+    setTema,
+    esquemaColor,
+    setEsquemaColor,
+    modoVisual,
+    setModoVisual,
+    parametros,
+    anchoPanelDerecho,
+    setAnchoPanelDerecho,
   } = use3BFStore();
+
+  const [guardandoFoto, setGuardandoFoto] = React.useState(false);
+  const [fotoCapturada, setFotoCapturada] = React.useState(false);
+  const [isResizingPanel, setIsResizingPanel] = React.useState(false);
+
+  const handleMouseDownResize = (e: React.MouseEvent) => {
+    e.preventDefault();
+    setIsResizingPanel(true);
+  };
+
+  useEffect(() => {
+    if (!isResizingPanel) return;
+
+    const handleMouseMove = (e: MouseEvent) => {
+      // 12px de padding en el contenedor derecho
+      const nuevoAncho = window.innerWidth - e.clientX - 12;
+      setAnchoPanelDerecho(nuevoAncho);
+    };
+
+    const handleMouseUp = () => {
+      setIsResizingPanel(false);
+    };
+
+    window.addEventListener("mousemove", handleMouseMove);
+    window.addEventListener("mouseup", handleMouseUp);
+
+    return () => {
+      window.removeEventListener("mousemove", handleMouseMove);
+      window.removeEventListener("mouseup", handleMouseUp);
+    };
+  }, [isResizingPanel, setAnchoPanelDerecho]);
+
+  const capturarMiniatura = async () => {
+    try {
+      const canvas = document.querySelector("canvas");
+      if (!canvas) {
+        alert("No se encontró el lienzo 3D.");
+        return;
+      }
+      setGuardandoFoto(true);
+      const imageBase64 = canvas.toDataURL("image/png");
+      const modelId = parametros.model_id || (parametros as any).custom_filename?.replace(/\.ghx$/i, "") || "Cubierta";
+
+      const res = await fetch("/api/thumbnail", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ model_id: modelId, imageBase64 }),
+      });
+
+      if (res.ok) {
+        setFotoCapturada(true);
+        setTimeout(() => setFotoCapturada(false), 2500);
+        window.dispatchEvent(new CustomEvent("3bf-thumbnail-updated", { detail: { modelId } }));
+      }
+    } catch (err) {
+      console.error("Error al capturar snapshot:", err);
+    } finally {
+      setGuardandoFoto(false);
+    }
+  };
 
   const verificarWorker = async () => {
     try {
-      const res = await fetch("/api/compute", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ model_id: "Cubierta", ancho: 1200, alto: 800, profundidad: 400 }),
+      const res = await fetch("/api/health", {
+        method: "GET",
+        headers: { "Cache-Control": "no-cache" },
+        signal: AbortSignal.timeout(3000),
       });
-      const data = await res.json();
-      if (data.status === "success" || data.real_meshes || res.ok) {
-        setWorkerStatus("online");
+      if (res.ok) {
+        const data = await res.json();
+        if (data.status === "online" && data.worker && data.rhino_compute) {
+          setWorkerStatus("online");
+        } else {
+          setWorkerStatus("offline");
+        }
       } else {
         setWorkerStatus("offline");
       }
@@ -43,6 +117,15 @@ export default function Home3BF() {
     // Hidratar inmediatamente toda la base de datos de materias primas y costos
     hidratarDesdeLocalStorage();
     verificarWorker();
+
+    // Heartbeat cada 8 segundos y al reactivar la pantalla / regresar de hibernación
+    const interval = setInterval(verificarWorker, 8000);
+    const handleReactivation = () => {
+      verificarWorker();
+    };
+
+    window.addEventListener("focus", handleReactivation);
+    document.addEventListener("visibilitychange", handleReactivation);
 
     const handleKeyDown = (e: KeyboardEvent) => {
       const target = e.target as HTMLElement;
@@ -63,11 +146,19 @@ export default function Home3BF() {
     };
 
     window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener("focus", handleReactivation);
+      document.removeEventListener("visibilitychange", handleReactivation);
+      window.removeEventListener("keydown", handleKeyDown);
+    };
   }, [hidratarDesdeLocalStorage]);
 
   return (
-    <main className="w-screen h-screen flex flex-col overflow-hidden bg-[var(--bg-main)] text-[var(--text-main)]">
+    <main 
+      style={{ backgroundColor: coloresApariencia?.fondoAplicacion }}
+      className="w-screen h-screen flex flex-col overflow-hidden text-[var(--text-main)] transition-colors"
+    >
       {/* Modal Global Guardar Como Mueble (Google Drive / Marcas) */}
       <SaveFurnitureModal />
 
@@ -78,78 +169,310 @@ export default function Home3BF() {
           borderColor: coloresApariencia?.bordePaneles,
           color: coloresApariencia?.textoPrincipal 
         }}
-        className="h-14 px-4 flex items-center justify-between border-b glass-panel z-10 relative transition-colors"
+        className="h-14 px-3 flex items-center justify-between border-b glass-panel z-10 relative transition-colors"
       >
-        <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-lg bg-gradient-to-tr from-cyan-600 to-teal-400 flex items-center justify-center text-white font-bold text-sm shadow-md">
-            3BF
-          </div>
-          <div>
-            <h1 className="font-bold text-sm leading-none flex items-center gap-1.5">
-              3DBimFab Engine <span className="text-[10px] px-1.5 py-0.5 rounded bg-cyan-100 dark:bg-cyan-950 text-cyan-700 dark:text-cyan-300 font-mono">v1.0</span>
-            </h1>
-            <p className="font-prompt text-[7.65px] text-gray-500 dark:text-gray-400 font-medium tracking-[0.015em] mt-0.5 leading-tight whitespace-nowrap">
-              Powered by <span className="font-semibold text-cyan-600 dark:text-cyan-400">MARIO MOJICA</span>, Form & Future
-            </p>
-          </div>
+        {/* Logotipo Vectorial Completo 3BF (Alineado con precisión milimétrica al visor y sin recortes) */}
+        <div className="flex items-center">
+          <svg
+            viewBox="6.73 15.276 235 59.448"
+            fill="none"
+            xmlns="http://www.w3.org/2000/svg"
+            className="h-9 w-auto select-none overflow-visible"
+            role="img"
+            aria-label="3dBimFab — Powered by MARIO MOJICA"
+          >
+            <g transform="translate(0.54747356,0.5)">
+              <g transform="translate(0.64469146)">
+                {/* Cuadro Rojo 3BF del SVG Oficial */}
+                <rect
+                  x="5.5378542"
+                  y="14.77611"
+                  width="59.447781"
+                  height="59.447781"
+                  fill="#bb0f0f"
+                />
+                {/* Texto 3BF Blanco */}
+                <text
+                  x="8.3642311"
+                  y="54.980133"
+                  style={{
+                    fontFamily: "var(--font-prompt), 'Prompt', sans-serif",
+                    fontSize: "29.9861px",
+                    fill: "#ffffff",
+                  }}
+                >
+                  3BF
+                </text>
+                {/* Texto 3dBimFab */}
+                <text
+                  x="73.092186"
+                  y="54.980133"
+                  style={{
+                    fontFamily: "var(--font-prompt), 'Prompt', sans-serif",
+                    fontSize: "29.9861px",
+                    fill: coloresApariencia?.textoPrincipal || "currentColor",
+                  }}
+                >
+                  3dBimFab
+                </text>
+                {/* Texto Powered by MARIO MOJICA */}
+                <text
+                  x="73.50573"
+                  y="67.131699"
+                  style={{
+                    fontFamily: "var(--font-prompt), 'Prompt', sans-serif",
+                    fontSize: "10.415px",
+                    fill: coloresApariencia?.textoSecundario || "#94a3b8",
+                  }}
+                >
+                  Powered by MARIO MOJICA
+                </text>
+              </g>
+            </g>
+          </svg>
         </div>
 
-        {/* Pestañas de Vista (Centradas con Fondo Cánhamo/Cian Traslúcido de Sección) */}
-        <div className="absolute left-1/2 -translate-x-1/2 flex bg-cyan-950/20 dark:bg-[#131B2E]/60 p-1 rounded-full border border-cyan-200/80 dark:border-cyan-900/50 text-xs shadow-md backdrop-blur-md gap-1">
+        {/* Pestañas de Vista (Centradas con Fondo Cápsula) */}
+        <div 
+          style={{ 
+            borderColor: coloresApariencia?.insigniaFondo || coloresApariencia?.bordePaneles,
+            backgroundColor: coloresApariencia?.panelContenedor || "#E2E8F0"
+          }}
+          className="absolute left-1/2 -translate-x-1/2 flex items-center p-1 rounded-full border text-xs shadow-inner backdrop-blur-md gap-1 h-9"
+        >
           <button
             onClick={() => setPestanaActiva("3d")}
-            className={`px-4 py-1.5 rounded-full transition flex items-center gap-1.5 font-bold cursor-pointer ${
+            style={
               pestanaActiva === "3d"
-                ? "bg-cyan-600 text-white shadow-md border border-cyan-400/40"
-                : "bg-[#E2E8F0]/50 text-[#0F172A] hover:bg-[#E2E8F0]/80 border border-slate-300/60 backdrop-blur-sm"
+                ? { backgroundColor: coloresApariencia?.botonActivo || "#0891b2", borderColor: coloresApariencia?.colorMarca || "#0891b2" }
+                : { backgroundColor: coloresApariencia?.botonInactivo || "#E2E8F0", borderColor: coloresApariencia?.bordeBotonInactivo || "#CBD5E1", color: coloresApariencia?.textoPrincipal || "#0F172A" }
+            }
+            className={`px-4 h-7 rounded-full transition flex items-center gap-1.5 font-bold cursor-pointer ${
+              pestanaActiva === "3d"
+                ? "text-white shadow-md border"
+                : "hover:opacity-90 border backdrop-blur-sm"
             }`}
           >
             <Box className="w-3.5 h-3.5" /> Visor 3D
           </button>
           <button
             onClick={() => setPestanaActiva("despiece")}
-            className={`px-4 py-1.5 rounded-full transition flex items-center gap-1.5 font-bold cursor-pointer ${
+            style={
               pestanaActiva === "despiece"
-                ? "bg-cyan-600 text-white shadow-md border border-cyan-400/40"
-                : "bg-[#E2E8F0]/50 text-[#0F172A] hover:bg-[#E2E8F0]/80 border border-slate-300/60 backdrop-blur-sm"
+                ? { backgroundColor: coloresApariencia?.botonActivo || "#0891b2", borderColor: coloresApariencia?.colorMarca || "#0891b2" }
+                : { backgroundColor: coloresApariencia?.botonInactivo || "#E2E8F0", borderColor: coloresApariencia?.bordeBotonInactivo || "#CBD5E1", color: coloresApariencia?.textoPrincipal || "#0F172A" }
+            }
+            className={`px-4 h-7 rounded-full transition flex items-center gap-1.5 font-bold cursor-pointer ${
+              pestanaActiva === "despiece"
+                ? "text-white shadow-md border"
+                : "hover:opacity-90 border backdrop-blur-sm"
             }`}
           >
             <Layers className="w-3.5 h-3.5" /> Despiece & Costos
           </button>
           <button
             onClick={() => setPestanaActiva("basedatos")}
-            className={`px-4 py-1.5 rounded-full transition flex items-center gap-1.5 font-bold cursor-pointer ${
+            style={
               pestanaActiva === "basedatos"
-                ? "bg-cyan-600 text-white shadow-md border border-cyan-400/40"
-                : "bg-[#E2E8F0]/50 text-[#0F172A] hover:bg-[#E2E8F0]/80 border border-slate-300/60 backdrop-blur-sm"
+                ? { backgroundColor: coloresApariencia?.botonActivo || "#0891b2", borderColor: coloresApariencia?.colorMarca || "#0891b2" }
+                : { backgroundColor: coloresApariencia?.botonInactivo || "#E2E8F0", borderColor: coloresApariencia?.bordeBotonInactivo || "#CBD5E1", color: coloresApariencia?.textoPrincipal || "#0F172A" }
+            }
+            className={`px-4 h-7 rounded-full transition flex items-center gap-1.5 font-bold cursor-pointer ${
+              pestanaActiva === "basedatos"
+                ? "text-white shadow-md border"
+                : "hover:opacity-90 border backdrop-blur-sm"
             }`}
           >
             <Database className="w-3.5 h-3.5" /> Base de Datos
           </button>
         </div>
 
-        {/* Estado del Worker Python (Esquina superior derecha en Gris Traslúcido al 50%) */}
-        <button
-          onClick={verificarWorker}
-          title="Haz clic para comprobar la conexión con el Worker Python"
-          className="flex items-center gap-1.5 text-xs px-3.5 py-1.5 rounded-full bg-[#E2E8F0]/50 border border-slate-300/60 backdrop-blur-sm hover:border-cyan-500 hover:bg-[#E2E8F0]/80 transition cursor-pointer shadow-md text-[#0F172A] font-bold"
-        >
-          <Cpu className="w-3.5 h-3.5 text-cyan-700" />
-          <span className="font-bold text-[#0F172A]">Worker:</span>
-          {workerStatus === "online" ? (
-            <span className="text-emerald-700 font-bold flex items-center gap-1">
-              <CheckCircle2 className="w-3 h-3 text-emerald-600" /> Online
-            </span>
-          ) : (
-            <span className="text-amber-700 font-bold flex items-center gap-1">
-              <AlertCircle className="w-3 h-3 text-amber-600" /> API Fallback
-            </span>
-          )}
-        </button>
+        {/* Lado Derecho: Modos 3D + Botón Foto + Switch Tema Light/Dark + Estado del Worker */}
+        <div className="flex items-center gap-2">
+          {/* 1. Botonera de 4 Modos 3D (Cápsula rounded-full) */}
+          <div 
+            style={{ 
+              borderColor: coloresApariencia?.insigniaFondo || coloresApariencia?.bordePaneles,
+              backgroundColor: coloresApariencia?.panelContenedor || "#E2E8F0"
+            }}
+            className="flex items-center p-1 rounded-full border gap-1 shadow-inner h-9 shrink-0"
+          >
+            {/* 1. Líneas (Wireframe) */}
+            <button
+              onClick={() => setModoVisual("lineas")}
+              title="1. Modo Líneas (Wireframe)"
+              style={
+                modoVisual === "lineas"
+                  ? { backgroundColor: coloresApariencia?.botonActivo || "#0891b2", borderColor: coloresApariencia?.colorMarca || "#0891b2" }
+                  : { backgroundColor: coloresApariencia?.botonInactivo || "#E2E8F0", borderColor: coloresApariencia?.bordeBotonInactivo || "#CBD5E1", color: coloresApariencia?.textoPrincipal || "#0F172A" }
+              }
+              className={`w-7 h-7 rounded-full flex items-center justify-center cursor-pointer transition ${
+                modoVisual === "lineas" ? "text-white shadow-md border" : "hover:opacity-90 border backdrop-blur-sm"
+              }`}
+            >
+              <IconModoLineas className="w-4 h-4" />
+            </button>
+
+            {/* 2. Cristal (Semitransparente / Glass) */}
+            <button
+              onClick={() => setModoVisual("semitransparente")}
+              title="2. Modo Cristal (Semitransparente 70%)"
+              style={
+                modoVisual === "semitransparente"
+                  ? { backgroundColor: coloresApariencia?.botonActivo || "#0891b2", borderColor: coloresApariencia?.colorMarca || "#0891b2" }
+                  : { backgroundColor: coloresApariencia?.botonInactivo || "#E2E8F0", borderColor: coloresApariencia?.bordeBotonInactivo || "#CBD5E1", color: coloresApariencia?.textoPrincipal || "#0F172A" }
+              }
+              className={`w-7 h-7 rounded-full flex items-center justify-center cursor-pointer transition ${
+                modoVisual === "semitransparente" ? "text-white shadow-md border" : "hover:opacity-90 border backdrop-blur-sm"
+              }`}
+            >
+              <IconModoCristal className="w-4 h-4" isActivo={modoVisual === "semitransparente"} />
+            </button>
+
+            {/* 3. Sólido (Solid) */}
+            <button
+              onClick={() => setModoVisual("solido")}
+              title="3. Modo Sólido (Solid)"
+              style={
+                modoVisual === "solido"
+                  ? { backgroundColor: coloresApariencia?.botonActivo || "#0891b2", borderColor: coloresApariencia?.colorMarca || "#0891b2" }
+                  : { backgroundColor: coloresApariencia?.botonInactivo || "#E2E8F0", borderColor: coloresApariencia?.bordeBotonInactivo || "#CBD5E1", color: coloresApariencia?.textoPrincipal || "#0F172A" }
+              }
+              className={`w-7 h-7 rounded-full flex items-center justify-center cursor-pointer transition ${
+                modoVisual === "solido" ? "text-white shadow-md border" : "hover:opacity-90 border backdrop-blur-sm"
+              }`}
+            >
+              <IconModoSolido className="w-4 h-4" />
+            </button>
+
+            {/* 4. Renderizado (Render / Specular) */}
+            <button
+              onClick={() => setModoVisual("renderizado")}
+              title="4. Modo Renderizado (PBR / Specular)"
+              style={
+                modoVisual === "renderizado"
+                  ? { backgroundColor: coloresApariencia?.botonActivo || "#0891b2", borderColor: coloresApariencia?.colorMarca || "#0891b2" }
+                  : { backgroundColor: coloresApariencia?.botonInactivo || "#E2E8F0", borderColor: coloresApariencia?.bordeBotonInactivo || "#CBD5E1", color: coloresApariencia?.textoPrincipal || "#0F172A" }
+              }
+              className={`w-7 h-7 rounded-full flex items-center justify-center cursor-pointer transition ${
+                modoVisual === "renderizado" ? "text-white shadow-md border" : "hover:opacity-90 border backdrop-blur-sm"
+              }`}
+            >
+              <IconModoRender className="w-4 h-4" />
+            </button>
+          </div>
+
+          {/* 2. Botón de Fotografía (Cápsula rounded-full) */}
+          <div
+            style={{ 
+              borderColor: coloresApariencia?.insigniaFondo || coloresApariencia?.bordePaneles,
+              backgroundColor: coloresApariencia?.panelContenedor || "#E2E8F0"
+            }}
+            className="p-1 rounded-full border shadow-inner h-9 shrink-0 flex items-center justify-center"
+          >
+            <button
+              onClick={capturarMiniatura}
+              disabled={!parametros.model_id || guardandoFoto}
+              title={
+                fotoCapturada 
+                  ? "¡Miniatura guardada con éxito!" 
+                  : guardandoFoto 
+                    ? "Capturando miniatura..." 
+                    : "Capturar miniatura del lienzo 3D"
+              }
+              style={
+                fotoCapturada
+                  ? { backgroundColor: "#10B98125", borderColor: "#10B981", color: "#10B981" }
+                  : { backgroundColor: coloresApariencia?.botonInactivo || "#E2E8F0", borderColor: coloresApariencia?.bordeBotonInactivo || "#CBD5E1", color: coloresApariencia?.textoPrincipal || "#0F172A" }
+              }
+              className={`w-7 h-7 rounded-full border flex items-center justify-center transition cursor-pointer ${
+                fotoCapturada ? "shadow-md" : "hover:opacity-90 backdrop-blur-sm"
+              } ${guardandoFoto ? "opacity-50 cursor-not-allowed" : ""}`}
+            >
+              {fotoCapturada ? (
+                <Check className="w-4 h-4 text-emerald-500 shrink-0" />
+              ) : (
+                <Camera 
+                  style={{ color: coloresApariencia?.botonActivo || "#0891b2" }} 
+                  className="w-4 h-4 shrink-0" 
+                />
+              )}
+            </button>
+          </div>
+
+          {/* 3. Switch de Tema (Light / Dark) */}
+          <div 
+            style={{ 
+              borderColor: coloresApariencia?.insigniaFondo || coloresApariencia?.bordePaneles,
+              backgroundColor: coloresApariencia?.panelContenedor || "#E2E8F0"
+            }}
+            className="flex items-center p-1 rounded-full border gap-1 shadow-inner h-9 shrink-0"
+          >
+            <button
+              onClick={() => setEsquemaColor("claro")}
+              style={
+                esquemaColor === "claro"
+                  ? { backgroundColor: coloresApariencia?.botonActivo || "#0891b2", borderColor: coloresApariencia?.colorMarca || "#0891b2" }
+                  : { backgroundColor: coloresApariencia?.botonInactivo || "#E2E8F0", borderColor: coloresApariencia?.bordeBotonInactivo || "#CBD5E1", color: coloresApariencia?.textoPrincipal || "#0F172A" }
+              }
+              className={`px-3.5 h-7 rounded-full transition cursor-pointer text-xs font-bold flex items-center justify-center ${
+                esquemaColor === "claro" ? "text-white shadow-md border" : "hover:opacity-90 border backdrop-blur-sm"
+              }`}
+            >
+              Light
+            </button>
+            <button
+              onClick={() => setEsquemaColor("oscuro")}
+              style={
+                esquemaColor === "oscuro"
+                  ? { backgroundColor: coloresApariencia?.botonActivo || "#0891b2", borderColor: coloresApariencia?.colorMarca || "#0891b2" }
+                  : { backgroundColor: coloresApariencia?.botonInactivo || "#E2E8F0", borderColor: coloresApariencia?.bordeBotonInactivo || "#CBD5E1", color: coloresApariencia?.textoPrincipal || "#0F172A" }
+              }
+              className={`px-3.5 h-7 rounded-full transition cursor-pointer text-xs font-bold flex items-center justify-center ${
+                esquemaColor === "oscuro" ? "text-white shadow-md border" : "hover:opacity-90 border backdrop-blur-sm"
+              }`}
+            >
+              Dark
+            </button>
+          </div>
+
+          {/* 4. Versión del Software y Estado de Conexión */}
+          <div 
+            style={{ 
+              borderColor: coloresApariencia?.insigniaFondo || coloresApariencia?.bordePaneles,
+              backgroundColor: coloresApariencia?.panelContenedor || "#E2E8F0"
+            }}
+            className="flex items-center p-1 rounded-full border shadow-inner h-9 shrink-0"
+          >
+            <button
+              onClick={verificarWorker}
+              title="Haz clic para comprobar la conexión con el Worker Python"
+              style={{
+                backgroundColor: coloresApariencia?.botonInactivo || "#E2E8F0",
+                borderColor: coloresApariencia?.bordeBotonInactivo || "#CBD5E1",
+                color: coloresApariencia?.textoPrincipal || "#0F172A",
+              }}
+              className="flex items-center gap-1.5 text-xs px-3 h-7 rounded-full border backdrop-blur-sm transition cursor-pointer shadow-xs font-bold hover:opacity-90"
+            >
+              <span style={{ color: coloresApariencia?.textoPrincipal || "#0F172A" }} className="font-bold">
+                {APP_VERSION}
+              </span>
+              {workerStatus === "online" ? (
+                <span style={{ color: coloresApariencia?.estadoActivo || "#10B981" }} className="font-bold flex items-center gap-1">
+                  <CheckCircle2 style={{ color: coloresApariencia?.estadoActivo || "#10B981" }} className="w-3 h-3" /> Online
+                </span>
+              ) : (
+                <span className="text-amber-700 dark:text-amber-400 font-bold flex items-center gap-1">
+                  <AlertCircle className="w-3 h-3 text-amber-600 dark:text-amber-400" /> API Fallback
+                </span>
+              )}
+            </button>
+          </div>
+        </div>
       </header>
 
-      {/* Cuerpo Principal dividido en 2 columnas */}
-      <div className="flex-1 flex overflow-hidden p-3 gap-3">
+      {/* Cuerpo Principal dividido en 2 columnas con barra de redimensión ergonómica */}
+      <div className={`flex-1 flex overflow-hidden p-3 gap-0 relative ${isResizingPanel ? "select-none cursor-ew-resize" : ""}`}>
         {/* Columna Izquierda: Visor 3D o Tablas de Datos */}
         <div className="flex-1 h-full flex flex-col relative overflow-hidden">
           {pestanaActiva === "3d" ? (
@@ -161,14 +484,32 @@ export default function Home3BF() {
           )}
         </div>
 
-        {/* Columna Derecha: Panel de Control de Parámetros */}
+        {/* Separador / Handler de Redimensión Ergonómico entre Panel Izquierdo y Derecho */}
+        <div
+          onMouseDown={handleMouseDownResize}
+          title="Arrastra para ajustar el ancho del panel derecho"
+          className="w-3.5 h-full cursor-ew-resize flex items-center justify-center group shrink-0 z-30 select-none hover:bg-cyan-500/10 transition-colors"
+        >
+          <div 
+            className={`w-1 rounded-full transition-all ${
+              isResizingPanel
+                ? "bg-cyan-500 shadow-md shadow-cyan-500/60 w-1.5 h-16"
+                : "bg-slate-300 dark:bg-slate-700 h-10 group-hover:bg-cyan-500/80 group-hover:h-14"
+            }`}
+          />
+        </div>
+
+        {/* Columna Derecha: Panel de Control de Parámetros & NPanel */}
         <div 
           style={{ 
+            width: `${anchoPanelDerecho || 380}px`,
             backgroundColor: coloresApariencia?.fondoPaneles, 
             borderColor: coloresApariencia?.bordePaneles,
             color: coloresApariencia?.textoPrincipal 
           }}
-          className="w-80 h-full glass-panel rounded-xl border flex flex-col transition-colors shrink-0 relative overflow-hidden"
+          className={`h-full glass-panel rounded-xl border flex flex-col transition-colors shrink-0 relative overflow-hidden ${
+            isResizingPanel ? "transition-none" : "transition-all"
+          }`}
         >
           <ControlPanel />
           {pestanaActiva !== "3d" && <NPanel />}

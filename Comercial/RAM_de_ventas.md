@@ -67,3 +67,17 @@ El módulo genera borradores en tiempo real listos para copiar y pegar, adaptado
 - **Detección Automática:** Cada lead extraído por imagen o texto es verificado contra la base de datos de Baserow (Tabla 994 / 600) y Supabase para evitar dobles registros.
 - **Relaciones B2B:** Vinculación directa con la tabla de **Empresas Muebleras** (`ranking_empresas_rta_brasil.md`) para asociar el polo fabril, número de empleados y catálogo de productos.
 - **Registro de Interacciones:** Cada mensaje enviado, respuesta y captura de pantalla queda archivada con fecha, resumen en español y borrador en portugués para seguimiento continuo del embudo.
+
+---
+
+## ⚡ 5. Registro de Mejoras Recientes (UX, Arquitectura & Estabilidad)
+
+| Fecha | Área / Módulo | Mejora Implementada | Impacto Técnico / Operativo |
+| :--- | :--- | :--- | :--- |
+| **19 Ago 2026** | **Navegación Desktop** | **Scroll Independiente (Viewport 100vh)** | Contenedores desacoplados con `overflow-y-auto min-h-0` para el Directorio y el Copiloto Workspace; fija la cabecera superior y radar táctico permanentemente sin vacíos visuales. |
+| **19 Ago 2026** | **Hilo Cronológico** | **Depuración Granular de Hitos (`Trash2`)** | Icono sutil de eliminación en cada tarjeta del historial de conversación con confirmación y actualización reactiva inmediata en disco/Supabase. |
+| **19 Ago 2026** | **Directorio & Ficha** | **Eliminación Directa en Gris Estándar** | Botón de papelera tradicional en tono gris opaco en la esquina superior derecha de cada prospecto y en la cabecera de la ficha para descartar leads fríos rápidamente. |
+| **19 Ago 2026** | **Base de Datos B2B** | **Consolidación & Fusión de Duplicados** | Auditoría y unión atómica de prospectos repetidos (ej. Douglas Guth, Madesa) unificando avatares, notas y registros históricos sin pérdida de contexto. |
+| **19 Ago 2026** | **Escáner de Avatares** | **Calibración de Recorte Circular** | Calibración de offset lateral (+2.0%) y factor de escala (86%) para extraer avatares redondos nítidos sin rebordes blancos en capturas de LinkedIn. |
+| **19 Ago 2026** | **Configuración & Auth** | **Blindaje Anti-HTTP 431 y Aspect-Ratio** | Corrección de distorsión facial en canvas (proporciones naturales 240×240) y persistencia del avatar aislada en la tabla PostgreSQL `profiles` para mantener los JWT de sesión ultra ligeros (<300 bytes). |
+

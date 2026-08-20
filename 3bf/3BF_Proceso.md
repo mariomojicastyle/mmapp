@@ -362,11 +362,54 @@ La aplicación React recibe el JSON `real_meshes` y renderiza cada pieza con mat
 
 ---
 
-### 🔩 9. Multi-Instancia, Despiece & Consolidación Pura de Herrajes (BOM)
-- **Multi-Instancia Reactiva**: Capacidad de insertar múltiples piezas idénticas o diferentes en el mismo escenario con nombres secuenciales automáticos (`Cubierta`, `Cubierta_01`).
-- **Alineación de Despiece & Costos**: Cada fila de la lista de corte refleja las dimensiones reales de cada instancia (ej. 498 mm vs 1540 mm), separando el origen técnico (`Pieza`) de la denominación oficial de producto (`Descripción`).
-- **Consolidación Unificada de Herrajes**: Agrupación total de cajas y pernos del escenario completo en filas unificadas leídas 100% de forma pura desde Grasshopper (ej. 8 cajas y 8 pernos para 2 cubiertas) sin parches en código.
-- **Silueta Perimetral Dinámica a 60 FPS**: Contorno de selección naranja `#ff9500` con recálculo dinámico envolvente que se adapta instantáneamente a cambios de ancho, profundidad y transformaciones espaciales.
+---
+
+### 📦 10. Arquitectura de Persistencia Simbiótica (`.3bf.json` en Google Drive + Base de Datos)
+
+El flujo de guardado de **3DBimFab (3BF)** opera bajo un modelo de **Persistencia Simbiótica y Gemelo Digital Atómico**. Al pulsar **"Guardar como..."**, el sistema no solo almacena un archivo CAD aislado, sino un paquete integral estructurado:
+
+```mermaid
+flowchart TD
+    subgraph UI["🖥️ 3BF Web App"]
+        A["Escenario 3D (Three.js)"]
+        B["Ficha de Despiece & BOM"]
+        C["Base de Datos de Precios (Novopan/Blum)"]
+    end
+
+    subgraph Save["📦 Guardar como... (Gemelo Digital)"]
+        D["Archivo .3bf.json Atómico"]
+    end
+
+    subgraph Storage["☁️ Google Drive & Sistema"]
+        E["G:\\Mi unidad\\Muebles\\[Marca]\\[Tipología]\\mueble_xxxx.3bf.json"]
+        F["Asset Browser (Indexación en Vivo)"]
+    end
+
+    A & B & C --> D
+    D --> E
+    E --> F
+    F -->|"Abrir Mueble"| A & B
+```
+
+#### 🗂️ Componentes del Archivo `.3bf.json`:
+1. **Geometría y Parámetros 3D**: Registro exacto de todas las instancias del escenario (dimensiones de ancho, alto, profundidad, posiciones, offsets y rotaciones espaciales).
+2. **Ficha Técnica & BOM (Despiece Industrial)**: Lista completa de piezas de corte, metros lineales de cantos, inventario de herrajes DfMA y estructura de costeo consolidada al 100%.
+3. **Miniatura Gráfica WebGL**: Captura en alta definición generada directamente desde el Canvas WebGL.
+4. **Metadata Comercial**: Marca, tipología de catálogo, fecha de creación, descripción comercial y conteo de piezas.
+
+#### 🤝 Funcionamiento en Pareja (Google Drive + Base de Datos):
+- **Contenedor Maestro Autónomo**: El archivo `.3bf.json` en Google Drive preserva tanto la geometría 3D como el estado económico y técnico del producto.
+- **Vinculación con la Base de Datos Maestra**: Los costos de materiales se congelan referenciando la lista de precios maestros de tableros, cantos y herrajes.
+- **Reconstrucción 100% Fiel**: Al abrir el mueble desde el Asset Browser, el sistema reconstituye simultáneamente la escena tridimensional en el visor y toda la ficha técnica de fabricación sin inconsistencias ni pérdidas de datos.
+
+---
+
+### 📏 11. Calibración Global de Despunte Técnico de Cantos (mm)
+
+- **Control Paramétrico Universal**: Se implementó la casilla **`Despunte Canto: [ 100 ] mm`** en la cabecera de la ficha de despiece, permitiendo a cualquier fábrica ajustar su tolerancia de despunte por borde (ej. 50 mm, 80 mm, 100 mm = 10 cm).
+- **Fórmula Oficial Reactiva**:
+  $$\text{Metros} = \left[ \frac{(\text{Ancho} + \text{Despunte}) \times A + (\text{Largo} + \text{Despunte}) \times L}{1000} \right] \times \text{Cantidad}$$
+- **Sincronización & Persistencia**: El valor se recalcula instantáneamente en la tabla de corte (Tabla 1) y en el inventario consolidado de cantos (Tabla 3), persistiendo en la configuración de la ficha técnica y en el archivo `.3bf.json`.
 
 ---
 
@@ -376,3 +419,5 @@ La aplicación React recibe el JSON `real_meshes` y renderiza cada pieza con mat
 - **RhinoCompute 8 (`rhino.compute.exe`)**: Corriendo en `http://localhost:5000` (Rhino 8 Engine).
 - **Aplicación Web Next.js 3BF**: Corriendo en `http://localhost:3005`.
 - **Google Drive Storage**: Sincronizado en `G:\Mi unidad\Muebles`.
+
+

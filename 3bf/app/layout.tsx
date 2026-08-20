@@ -1,11 +1,25 @@
 import type { Metadata } from "next";
-import { Prompt } from "next/font/google";
+import { Prompt, Inter, Arimo } from "next/font/google";
 import "./globals.css";
 
 const promptFont = Prompt({
   weight: ["300", "400", "500", "600", "700"],
   subsets: ["latin"],
   variable: "--font-prompt",
+  display: "swap",
+});
+
+const interFont = Inter({
+  weight: ["300", "400", "500", "600", "700"],
+  subsets: ["latin"],
+  variable: "--font-inter",
+  display: "swap",
+});
+
+const arimoFont = Arimo({
+  weight: ["400", "500", "600", "700"],
+  subsets: ["latin"],
+  variable: "--font-arimo",
   display: "swap",
 });
 
@@ -30,7 +44,11 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="es" data-theme="tech" className={promptFont.variable}>
+    <html 
+      lang="es" 
+      data-theme="tech" 
+      className={`${promptFont.variable} ${interFont.variable} ${arimoFont.variable}`}
+    >
       <head>
         <link rel="icon" type="image/png" href="/icon.png?v=2" />
         <link rel="icon" type="image/x-icon" href="/Icon_MM.ico?v=2" />
