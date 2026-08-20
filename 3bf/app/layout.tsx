@@ -26,6 +26,11 @@ const arimoFont = Arimo({
 export const metadata: Metadata = {
   title: "3BF Engine — Powered by MARIO MOJICA, Form & Future",
   description: "Plataforma paramétrica DfMA para la Industria del Mueble RTA.",
+  robots: {
+    index: false,
+    follow: false,
+    nocache: true,
+  },
   icons: {
     icon: [
       { url: "/icon.png?v=2", type: "image/png" },
