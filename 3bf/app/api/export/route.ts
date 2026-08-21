@@ -23,14 +23,14 @@ export async function POST(req: Request) {
       console.warn("⚠️ 3BF Worker Python offline para DXF. Usando generador Biesse Skipper nativo en Next.js.");
     }
 
-    // 2. Generador de respaldo nativo Biesse Skipper en TypeScript
+    // 2. Generador de respaldo nativo Biesse Skipper en TypeScript (Formato AC1009 / R12 estándar universal)
     const params = body.parameters || {};
     const despiece = body.despiece || [];
     const modelId = body.model_id || "Cubierta";
     const version = body.version || "BD 1.0";
 
-    const p0 = despiece.length > 0 ? despiece[0] : null;
-    const nombre = p0?.nombre || modelId;
+    const p0 = body.pieza || (despiece.length > 0 ? despiece[0] : null);
+    const nombre = p0?.descripcion || p0?.nombre || modelId;
     const largo = p0?.largo ?? Number(params["RH_IN:01.1 Ancho"] ?? params.ancho ?? 498);
     const ancho = p0?.ancho ?? Number(params["RH_IN:01.2 Profundidad"] ?? params.profundidad ?? 480);
     const espesor = p0?.espesor ?? 15;
@@ -46,10 +46,17 @@ export async function POST(req: Request) {
     const y1 = hy - offsetCantoY;
     const y2 = -hy + offsetCantoY;
 
-    const unionIzq = String(params["RH_IN:02.1 Union izquierda"] || params.union_izquierda || "Minifix").toLowerCase();
-    const unionDer = String(params["RH_IN:02.0 Union Derecha"] || params.union_derecha || "Ya definida").toLowerCase();
+    let unionIzq = "";
+    let unionDer = "";
+    for (const [k, v] of Object.entries(params)) {
+      const kl = k.toLowerCase();
+      if (kl.includes("union")) {
+        if (kl.includes("izq")) unionIzq = String(v).toLowerCase();
+        else if (kl.includes("der")) unionDer = String(v).toLowerCase();
+      }
+    }
 
-    let entidadesDxf = `0\nSECTION\n2\nHEADER\n9\n$ACADVER\n1\nAC1021\n0\nENDSEC\n0\nSECTION\n2\nTABLES\n0\nTABLE\n2\nLAYER\n0\nLAYER\n2\n${capaContorno}\n62\n18\n0\nLAYER\n2\nTCHW1B8\n62\n18\n0\nLAYER\n2\nTCHW2B8\n62\n18\n0\nLAYER\n2\nTCHW3B8\n62\n18\n0\nLAYER\n2\nTCHW4B8\n62\n18\n0\nLAYER\n2\nTCHW0B15D1350\n62\n18\n0\nLAYER\n2\nTCHW0B2D1200\n62\n18\n0\nLAYER\n2\nTCHW1B8D2500\n62\n18\n0\nLAYER\n2\nTCHW3B8D2500\n62\n18\n0\nENDTAB\n0\nENDSEC\n0\nSECTION\n2\nENTITIES\n`;
+    let entidadesDxf = `0\nSECTION\n2\nHEADER\n9\n$ACADVER\n1\nAC1009\n0\nENDSEC\n0\nSECTION\n2\nTABLES\n0\nTABLE\n2\nLAYER\n70\n10\n0\nLAYER\n2\n${capaContorno}\n70\n0\n62\n18\n6\nCONTINUOUS\n0\nLAYER\n2\nTCHW1B8\n70\n0\n62\n18\n6\nCONTINUOUS\n0\nLAYER\n2\nTCHW2B8\n70\n0\n62\n18\n6\nCONTINUOUS\n0\nLAYER\n2\nTCHW3B8\n70\n0\n62\n18\n6\nCONTINUOUS\n0\nLAYER\n2\nTCHW4B8\n70\n0\n62\n18\n6\nCONTINUOUS\n0\nLAYER\n2\nTCHW0B15D1350\n70\n0\n62\n18\n6\nCONTINUOUS\n0\nLAYER\n2\nTCHW0B2D1200\n70\n0\n62\n18\n6\nCONTINUOUS\n0\nLAYER\n2\nTCHW1B8D2500\n70\n0\n62\n18\n6\nCONTINUOUS\n0\nLAYER\n2\nTCHW3B8D2500\n70\n0\n62\n18\n6\nCONTINUOUS\n0\nENDTAB\n0\nENDSEC\n0\nSECTION\n2\nENTITIES\n`;
 
     // 1. Polilínea de Pieza Central (Cara Superior W0)
     entidadesDxf += `0\nLWPOLYLINE\n8\n${capaContorno}\n90\n4\n70\n1\n10\n${-hx}\n20\n${-hy}\n10\n${hx}\n20\n${-hy}\n10\n${hx}\n20\n${hy}\n10\n${-hx}\n20\n${hy}\n`;
@@ -100,6 +107,27 @@ export async function POST(req: Request) {
         const xCantoDerCentro = hx + gap + (espesor / 2.0);
         entidadesDxf += `0\nCIRCLE\n8\nTCHW3B8D2500\n10\n${xCantoDerCentro}\n20\n${y1}\n40\n4.0\n`;
         entidadesDxf += `0\nCIRCLE\n8\nTCHW3B8D2500\n10\n${xCantoDerCentro}\n20\n${y2}\n40\n4.0\n`;
+      }
+    }
+
+    // 5. Perforaciones y Mecanizados Cruzados Inter-Componentes
+    const mecanizadosCruzados = body.mecanizados_cruzados || [];
+    for (const mec of mecanizadosCruzados) {
+      const uX = Number(mec.u_mm || 0);
+      const vY = Number(mec.v_mm || 0);
+      const diam = Number(mec.diametro_mm || 5.0);
+      const rad = diam / 2.0;
+      const capa = mec.capa_dxf || "TCHW0B2D1200";
+      const cara = mec.cara || "cara_superior";
+
+      if (cara === "canto_izq") {
+        const xPos = -hx - gap - (espesor / 2.0);
+        entidadesDxf += `0\nCIRCLE\n8\n${capa}\n10\n${xPos}\n20\n${vY}\n40\n${rad}\n`;
+      } else if (cara === "canto_der") {
+        const xPos = hx + gap + (espesor / 2.0);
+        entidadesDxf += `0\nCIRCLE\n8\n${capa}\n10\n${xPos}\n20\n${vY}\n40\n${rad}\n`;
+      } else {
+        entidadesDxf += `0\nCIRCLE\n8\n${capa}\n10\n${uX}\n20\n${vY}\n40\n${rad}\n`;
       }
     }
 

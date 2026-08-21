@@ -73,9 +73,9 @@ El módulo genera borradores en tiempo real listos para copiar y pegar, adaptado
 
 2. **Jonas Borck (Móveis Henn - Brasil):**
    - **Cargo:** Analista de Engenharia de Produtos (LinkedIn).
-   - **Estado:** Padrino interno y puente comercial.
-   - **Última Acción:** Mensaje enviado por LinkedIn agradeciéndole, informándole de la demo con Marcos del miércoles, consultando la comprensión de español de Marcos y sembrando la semilla de 3DBimFab (Beta).
-   - **Próxima Acción:** Esperar feedback de Jonas sobre el idioma y si se sumará a la reunión.
+   - **Estado:** Padrino interno y puente comercial (Confirmó asistencia presencial a la sala de juntas con Marcos).
+   - **Última Acción:** Jonas confirmó que Marcos entiende español si se habla pausado, que ambos participarán juntos en la sala de juntas proyectando la pantalla de Marcos en la TV, y sugirió mencionar 3DBimFab durante la presentación. Mario respondió agradeciendo el tip, confirmando el horario (Miércoles 26 a las 10:00 BRT) y comprometiéndose a dar el pincelazo de 3DBimFab.
+   - **Próxima Acción:** Participar en la reunión técnica del miércoles 26 de agosto a las 10:00 BRT (8:00 COL).
 
 ---
 
@@ -87,14 +87,58 @@ El módulo genera borradores en tiempo real listos para copiar y pegar, adaptado
 
 ---
 
-## ⚡ 5. Registro de Mejoras Recientes (UX, Arquitectura & Estabilidad)
+---
 
-| Fecha | Área / Módulo | Mejora Implementada | Impacto Técnico / Operativo |
-| :--- | :--- | :--- | :--- |
-| **19 Ago 2026** | **Navegación Desktop** | **Scroll Independiente (Viewport 100vh)** | Contenedores desacoplados con `overflow-y-auto min-h-0` para el Directorio y el Copiloto Workspace; fija la cabecera superior y radar táctico permanentemente sin vacíos visuales. |
-| **19 Ago 2026** | **Hilo Cronológico** | **Depuración Granular de Hitos (`Trash2`)** | Icono sutil de eliminación en cada tarjeta del historial de conversación con confirmación y actualización reactiva inmediata en disco/Supabase. |
-| **19 Ago 2026** | **Directorio & Ficha** | **Eliminación Directa en Gris Estándar** | Botón de papelera tradicional en tono gris opaco en la esquina superior derecha de cada prospecto y en la cabecera de la ficha para descartar leads fríos rápidamente. |
-| **19 Ago 2026** | **Base de Datos B2B** | **Consolidación & Fusión de Duplicados** | Auditoría y unión atómica de prospectos repetidos (ej. Douglas Guth, Madesa) unificando avatares, notas y registros históricos sin pérdida de contexto. |
-| **19 Ago 2026** | **Escáner de Avatares** | **Calibración de Recorte Circular** | Calibración de offset lateral (+2.0%) y factor de escala (86%) para extraer avatares redondos nítidos sin rebordes blancos en capturas de LinkedIn. |
-| **19 Ago 2026** | **Configuración & Auth** | **Blindaje Anti-HTTP 431 y Aspect-Ratio** | Corrección de distorsión facial en canvas (proporciones naturales 240×240) y persistencia del avatar aislada en la tabla PostgreSQL `profiles` para mantener los JWT de sesión ultra ligeros (<300 bytes). |
+---
+
+## 🤝 6. Protocolo de Sincronización Antigravity & Fluidez Bilingüe (Local-First Brain)
+
+### 🎯 El Propósito Fundamental del RAM de Ventas:
+El mayor cuello de botella en la prospección comercial con tomadores de decisiones en Brasil es la **velocidad y fluidez de respuesta en portugués**. Dado que Mario no habla portugués nativo, Antigravity actúa como el **copiloto en tiempo real** que consulta el hilo histórico completo y genera respuestas inmediatas, hiper-contextualizadas y bilingües.
+
+```
+[Usuario pega Pantallazo de LinkedIn / WhatsApp en Antigravity] 
+                               │
+                               ▼
+        [Antigravity (Cerebro Local con Contexto Total)] 
+          • Historial completo del lead en RAM de Ventas
+          • Dolores de ingeniería y categoría mueblera
+          • Manifiesto B2B y fórmula de alto impacto
+                               │
+                               ▼
+      [⚡ SALIDA EN EL CHAT: 2 BLOQUES DE CÓDIGO (1 CLIC)]
+        1. Bloque en Português do Brasil (Listo para copiar y pegar)
+        2. Bloque en Español (Traducción exacta para auditoría rápida)
+                               │
+                               ▼
+            [INYECCIÓN AUTOMÁTICA EN RAM DE VENTAS]
+        • Actualiza Supabase (`ventas_interacciones` / `ventas_prospectos`)
+        • Guarda en `data/ventas_ram_storage.json`
+        • Registra ambos campos: `borrador_pt` y `traduccion_es`
+        • Actualiza Próxima Jugada Táctica y Temperatura
+                               │
+                               ▼
+        [Visualización Inmediata en Web `localhost:3003/ventas-ram`]
+```
+
+---
+
+### 📋 Regla Estricta de Formato de Salida en el Chat:
+Cada vez que el usuario suba una captura o pida respuesta para un prospecto, Antigravity DEBE responder SIEMPRE con **dos bloques de código separados en el chat**:
+
+1. **Bloque 1: Mensaje en Português do Brasil (1 Clic):**
+   ```text
+   [Texto del mensaje en portugués brasileño natural, cálido y persuasivo]
+   ```
+2. **Bloque 2: Traducción y Auditoría en Español (1 Clic):**
+   ```text
+   [Traducción fiel al español para que Mario entienda exactamente lo que se dice antes de enviar]
+   ```
+
+### 💉 Regla de Inyección en la Base de Datos y Almacén Local:
+Al inyectar el evento en el hilo cronológico (`ventas_ram_storage.json` y Supabase PostgreSQL):
+- `borrador_pt` / `mensaje_final_enviado`: Contiene el texto en portugués.
+- `traduccion_es`: Contiene la traducción exacta en español.
+- `resumen_es`: Resumen ejecutivo del hito en español.
+- `proxima_accion_descripcion`: Tarea y fecha/hora del siguiente paso comercial.
 

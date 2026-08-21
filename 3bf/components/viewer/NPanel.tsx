@@ -46,6 +46,83 @@ interface DefinicionItem {
 
 const CATEGORIAS_FALLBACK = ["Cubiertas"];
 
+const DirectNumberInput = ({
+  value,
+  min,
+  max,
+  unit = "mm",
+  onChange,
+  className = ""
+}: {
+  value: number;
+  min: number;
+  max: number;
+  unit?: string;
+  onChange: (val: number) => void;
+  className?: string;
+}) => {
+  const { coloresApariencia, guardarEstadoHistorial } = use3BFStore();
+  const [localText, setLocalText] = useState(String(value));
+  const [isFocused, setIsFocused] = useState(false);
+
+  useEffect(() => {
+    if (!isFocused) {
+      setLocalText(String(value));
+    }
+  }, [value, isFocused]);
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const raw = e.target.value;
+    setLocalText(raw);
+    const normalizado = raw.replace(/\./g, "").replace(",", ".");
+    const num = parseFloat(normalizado);
+    if (!isNaN(num)) {
+      onChange(num);
+    }
+  };
+
+  const handleFocus = (e: React.FocusEvent<HTMLInputElement>) => {
+    setIsFocused(true);
+    e.target.select();
+  };
+
+  const handleBlur = () => {
+    setIsFocused(false);
+    const normalizado = localText.replace(/\./g, "").replace(",", ".");
+    let num = parseFloat(normalizado);
+    if (isNaN(num)) num = value;
+    const clamped = Math.min(max, Math.max(min, num));
+    onChange(clamped);
+    setLocalText(String(clamped));
+    guardarEstadoHistorial();
+  };
+
+  return (
+    <div className="flex items-center gap-1">
+      <input
+        type="text"
+        inputMode="decimal"
+        value={localText}
+        onFocus={handleFocus}
+        onBlur={handleBlur}
+        onChange={handleChange}
+        onKeyDown={(e) => {
+          if (e.key === "Enter") {
+            (e.target as HTMLInputElement).blur();
+          }
+        }}
+        style={{
+          borderColor: coloresApariencia?.bordePaneles || "#CBD5E1",
+          backgroundColor: coloresApariencia?.fondoAplicacion || "#F8FAFC",
+          color: coloresApariencia?.botonActivo || "#0891b2"
+        }}
+        className={`w-14 px-1.5 py-0.5 text-right text-xs font-mono font-bold border rounded outline-none shadow-2xs transition ${className}`}
+      />
+      <span style={{ color: coloresApariencia?.textoSecundario }} className="text-[11px] font-mono font-semibold">{unit}</span>
+    </div>
+  );
+};
+
 const DEFINICIONES_FALLBACK: DefinicionItem[] = [
   {
     id: "Cubierta",
@@ -146,11 +223,11 @@ export default function NPanel() {
     eliminarInstancia,
     coloresApariencia,
     centrarCamara,
-    anchoPanelDerecho,
-    setAnchoPanelDerecho,
+    anchoNPanel,
+    setAnchoNPanel,
   } = use3BFStore();
 
-  const ancho = anchoPanelDerecho || 380;
+  const ancho = anchoNPanel || 380;
   const [isResizing, setIsResizing] = useState(false);
   const [busqueda, setBusqueda] = useState("");
   const [categoriaMueble, setCategoriaMueble] = useState<string>("Todos");
@@ -173,16 +250,18 @@ export default function NPanel() {
             const idLower = (item.id || "").toLowerCase();
             const catLower = (item.categoria || "").toLowerCase();
             
-            // Prioridad a imagen PNG real si es Cubierta o existe captura
-            let thumb = "/thumbnails/cubierta_render.svg";
-            if (idLower.includes("cubierta")) {
-              thumb = `/thumbnails/Cubierta.png?t=${Date.now()}`;
-            } else if (catLower.includes("comoda") || catLower.includes("cajon")) {
-              thumb = "/thumbnails/comoda_render.svg";
-            } else if (catLower.includes("armario") || catLower.includes("closet")) {
-              thumb = "/thumbnails/armario_render.svg";
-            } else if (catLower.includes("escritorio") || catLower.includes("mesa")) {
-              thumb = "/thumbnails/escritorio_render.svg";
+            // Prioridad a imagen PNG real si existe captura para esta definición
+            let thumb = item.thumbnail ? `${item.thumbnail}?t=${Date.now()}` : "/thumbnails/cubierta_render.svg";
+            if (!item.thumbnail) {
+              if (idLower.includes("cubierta")) {
+                thumb = `/thumbnails/Cubierta.png?t=${Date.now()}`;
+              } else if (catLower.includes("comoda") || catLower.includes("cajon")) {
+                thumb = "/thumbnails/comoda_render.svg";
+              } else if (catLower.includes("armario") || catLower.includes("closet")) {
+                thumb = "/thumbnails/armario_render.svg";
+              } else if (catLower.includes("escritorio") || catLower.includes("mesa")) {
+                thumb = "/thumbnails/escritorio_render.svg";
+              }
             }
             return { ...item, thumbnail: thumb };
           });
@@ -215,8 +294,8 @@ export default function NPanel() {
 
     const onMouseMove = (moveEvent: MouseEvent) => {
       const deltaX = startX - moveEvent.clientX; // Mover a la izquierda ensancha
-      const newWidth = Math.max(280, Math.min(800, startWidth + deltaX));
-      setAnchoPanelDerecho(newWidth);
+      const newWidth = Math.max(140, Math.min(800, startWidth + deltaX));
+      setAnchoNPanel(newWidth);
     };
 
     const onMouseUp = () => {
@@ -227,6 +306,60 @@ export default function NPanel() {
 
     window.addEventListener("mousemove", onMouseMove);
     window.addEventListener("mouseup", onMouseUp);
+  };
+
+  // Estado de captura de miniatura individual para componentes
+  const [capturandoCompId, setCapturandoCompId] = useState<string | null>(null);
+  const [capturaExitosaId, setCapturaExitosaId] = useState<string | null>(null);
+
+  const handleCapturarMiniaturaComponente = async (item: DefinicionItem, e: React.MouseEvent) => {
+    e.stopPropagation();
+    e.preventDefault();
+
+    try {
+      setCapturandoCompId(item.id);
+      const canvas = document.querySelector("canvas");
+      if (!canvas) {
+        alert("No se encontró el lienzo 3D.");
+        return;
+      }
+
+      let imageBase64 = "";
+      if (typeof window !== "undefined" && (window as any).__capturarThumbnail3BF) {
+        imageBase64 = (window as any).__capturarThumbnail3BF() || "";
+      }
+      if (!imageBase64) {
+        imageBase64 = canvas.toDataURL("image/png");
+      }
+
+      const res = await fetch("/api/thumbnail", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ model_id: item.id, imageBase64 }),
+      });
+
+      if (res.ok) {
+        setCapturaExitosaId(item.id);
+        setTimeout(() => setCapturaExitosaId(null), 2000);
+        
+        // Actualizar la miniatura local de inmediato
+        setDefiniciones((prev) =>
+          prev.map((def) =>
+            def.id === item.id
+              ? { ...def, thumbnail: `${imageBase64}` }
+              : def
+          )
+        );
+
+        window.dispatchEvent(
+          new CustomEvent("3bf-thumbnail-updated", { detail: { modelId: item.id, imageBase64 } })
+        );
+      }
+    } catch (err) {
+      console.error("Error al capturar miniatura de componente:", err);
+    } finally {
+      setCapturandoCompId(null);
+    }
   };
 
   // Filtrado de Muebles
@@ -476,7 +609,7 @@ export default function NPanel() {
                   <span>COMPONENTES ({mueblesFiltrados.length})</span>
                 </div>
 
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5 p-1">
+                <div className="flex flex-wrap gap-2 p-1 content-start items-start">
                   {mueblesFiltrados.map((item) => {
                     return (
                       <div
@@ -487,17 +620,17 @@ export default function NPanel() {
                         onClick={() => use3BFStore.getState().cargarDefinicion(item)}
                         onDoubleClick={() => use3BFStore.getState().cargarDefinicion(item)}
                         title={`${item.nombre} (${item.archivo}) - Haz doble clic o arrastra al visor 3D`}
-                        className={`group flex flex-col items-center cursor-grab active:cursor-grabbing p-1 rounded-xl hover:bg-slate-100/80 dark:hover:bg-slate-800/50 transition-all select-none relative ${
+                        className={`group flex flex-col items-center cursor-grab active:cursor-grabbing p-0.5 rounded-xl hover:bg-slate-100/80 dark:hover:bg-slate-800/50 transition-all select-none relative w-[78px] shrink-0 ${
                           draggedItemId === item.id ? "opacity-40 scale-95" : ""
                         }`}
                       >
-                        {/* Miniatura Cuadrada Estilo Blender (Borde ultrafino igual a los demás componentes) */}
+                        {/* Miniatura Cuadrada Estilo Blender (Tamaño constante y uniforme sin sobresaltos) */}
                         <div 
                           style={{
                             backgroundColor: coloresApariencia?.fondoAplicacion || "#F1F5F9",
                             borderColor: coloresApariencia?.fondoAplicacion || coloresApariencia?.bordePaneles || "#E2E8F0",
                           }}
-                          className="w-full aspect-square rounded-xl overflow-hidden border shadow-2xs group-hover:border-cyan-500/80 group-hover:shadow-md transition-all relative flex items-center justify-center p-0"
+                          className="w-[74px] h-[74px] aspect-square rounded-xl overflow-hidden border shadow-2xs group-hover:border-cyan-500/80 group-hover:shadow-md transition-all relative flex items-center justify-center p-0 shrink-0"
                         >
                           {item.thumbnail ? (
                             <img 
@@ -511,6 +644,23 @@ export default function NPanel() {
                               className="w-8 h-8 opacity-70" 
                             />
                           )}
+
+                          {/* Botón de Captura de Miniatura en Hover (Esquina superior derecha) */}
+                          <button
+                            onClick={(e) => handleCapturarMiniaturaComponente(item, e)}
+                            title={`Capturar vista 3D actual como miniatura para ${item.nombre}`}
+                            className={`absolute top-1 right-1 p-1 rounded-md transition-all cursor-pointer shadow-xs z-10 ${
+                              capturaExitosaId === item.id
+                                ? "opacity-100 bg-emerald-600 text-white"
+                                : "opacity-0 group-hover:opacity-100 bg-black/65 hover:bg-cyan-600 text-white"
+                            }`}
+                          >
+                            {capturaExitosaId === item.id ? (
+                              <Check className="w-2.5 h-2.5 text-white" />
+                            ) : (
+                              <Camera className={`w-2.5 h-2.5 ${capturandoCompId === item.id ? "animate-pulse" : ""}`} />
+                            )}
+                          </button>
                         </div>
 
                         {/* Nombre Limpio Estilo Blender (Sin rebordes) */}
@@ -558,8 +708,14 @@ export default function NPanel() {
                 </div>
 
                 {/* Color Sólido Base */}
-                <div className="flex items-center justify-between">
-                  <label style={{ color: coloresApariencia?.textoPrincipal }} className="font-medium">Color Sólido Base</label>
+                <div 
+                  style={{ 
+                    backgroundColor: coloresApariencia?.fondoPaneles, 
+                    borderColor: coloresApariencia?.bordePaneles || "#CBD5E1" 
+                  }}
+                  className="flex items-center justify-between p-2 rounded-lg border shadow-xs text-xs"
+                >
+                  <label style={{ color: coloresApariencia?.textoPrincipal }} className="font-bold">Color Sólido Base</label>
                   <div className="flex items-center gap-2">
                     <input
                       type="color"
@@ -567,13 +723,28 @@ export default function NPanel() {
                       onChange={(e) => setCalibracion("colorSolido", e.target.value)}
                       className="w-6 h-6 rounded cursor-pointer border-0 bg-transparent"
                     />
-                    <span style={{ color: coloresApariencia?.textoSecundario }} className="font-mono text-[10px] uppercase">{calibracion.colorSolido}</span>
+                    <span 
+                      style={{ 
+                        backgroundColor: coloresApariencia?.fondoAplicacion,
+                        borderColor: coloresApariencia?.bordePaneles,
+                        color: coloresApariencia?.textoPrincipal 
+                      }} 
+                      className="font-mono text-[11px] font-bold px-2 py-0.5 rounded border uppercase"
+                    >
+                      {calibracion.colorSolido}
+                    </span>
                   </div>
                 </div>
 
                 {/* Carga de Bitmap / Textura */}
-                <div>
-                  <label style={{ color: coloresApariencia?.textoPrincipal }} className="font-medium block mb-1">Textura Bitmap (JPG/PNG)</label>
+                <div 
+                  style={{ 
+                    backgroundColor: coloresApariencia?.fondoPaneles, 
+                    borderColor: coloresApariencia?.bordePaneles || "#CBD5E1" 
+                  }}
+                  className="flex flex-col gap-1.5 p-2 rounded-lg border shadow-xs text-xs"
+                >
+                  <label style={{ color: coloresApariencia?.textoPrincipal }} className="font-bold block">Textura Bitmap (JPG/PNG)</label>
                   {calibracion.customTextureUrl ? (
                     <div 
                       style={{
@@ -626,33 +797,53 @@ export default function NPanel() {
                   )}
                 </div>
 
-                {/* Opacidad Madera */}
-                <div>
-                  <div className="flex justify-between mb-1">
-                    <span style={{ color: coloresApariencia?.textoPrincipal }}>Opacidad Solidez</span>
-                    <span style={{ color: coloresApariencia?.botonActivo }} className="font-mono font-bold">
-                      {Math.round(calibracion.opacidadMadera * 100)}%
-                    </span>
+                {/* Opacidad Solidez */}
+                <div 
+                  style={{ 
+                    backgroundColor: coloresApariencia?.fondoPaneles, 
+                    borderColor: coloresApariencia?.bordePaneles || "#CBD5E1" 
+                  }}
+                  className="flex flex-col gap-1.5 p-2 rounded-lg border shadow-xs text-xs"
+                >
+                  <div className="flex justify-between font-medium items-center">
+                    <label style={{ color: coloresApariencia?.textoPrincipal }} className="font-bold">Opacidad Solidez</label>
+                    <DirectNumberInput
+                      value={Math.round(calibracion.opacidadMadera * 100)}
+                      min={0}
+                      max={100}
+                      unit="%"
+                      onChange={(val) => setCalibracion("opacidadMadera", val / 100)}
+                    />
                   </div>
                   <input
                     type="range"
                     min="0"
                     max="1"
-                    step="0.05"
+                    step="0.01"
                     value={calibracion.opacidadMadera}
                     onChange={(e) => setCalibracion("opacidadMadera", parseFloat(e.target.value))}
-                    style={{ accentColor: coloresApariencia?.bordePaneles }}
+                    style={{ accentColor: coloresApariencia?.botonActivo || "#0891b2" }}
                     className="w-full h-1.5 bg-slate-200 dark:bg-slate-700 rounded-lg appearance-none cursor-pointer"
                   />
                 </div>
 
                 {/* Rugosidad */}
-                <div>
-                  <div className="flex justify-between mb-1">
-                    <span style={{ color: coloresApariencia?.textoPrincipal }}>Rugosidad (Acabado Mate / Brillo)</span>
-                    <span style={{ color: coloresApariencia?.botonActivo }} className="font-mono font-bold">
-                      {Math.round(calibracion.rugosidadMadera * 100)}%
-                    </span>
+                <div 
+                  style={{ 
+                    backgroundColor: coloresApariencia?.fondoPaneles, 
+                    borderColor: coloresApariencia?.bordePaneles || "#CBD5E1" 
+                  }}
+                  className="flex flex-col gap-1.5 p-2 rounded-lg border shadow-xs text-xs"
+                >
+                  <div className="flex justify-between font-medium items-center">
+                    <label style={{ color: coloresApariencia?.textoPrincipal }} className="font-bold">Rugosidad (Acabado Mate / Brillo)</label>
+                    <DirectNumberInput
+                      value={Math.round(calibracion.rugosidadMadera * 100)}
+                      min={0}
+                      max={100}
+                      unit="%"
+                      onChange={(val) => setCalibracion("rugosidadMadera", val / 100)}
+                    />
                   </div>
                   <input
                     type="range"
@@ -661,18 +852,28 @@ export default function NPanel() {
                     step="0.01"
                     value={calibracion.rugosidadMadera}
                     onChange={(e) => setCalibracion("rugosidadMadera", parseFloat(e.target.value))}
-                    style={{ accentColor: coloresApariencia?.bordePaneles }}
+                    style={{ accentColor: coloresApariencia?.botonActivo || "#0891b2" }}
                     className="w-full h-1.5 bg-slate-200 dark:bg-slate-700 rounded-lg appearance-none cursor-pointer"
                   />
                 </div>
 
                 {/* Metalicidad */}
-                <div>
-                  <div className="flex justify-between mb-1">
-                    <span style={{ color: coloresApariencia?.textoPrincipal }}>Metalicidad / Especular</span>
-                    <span style={{ color: coloresApariencia?.botonActivo }} className="font-mono font-bold">
-                      {Math.round(calibracion.metalicidadMadera * 100)}%
-                    </span>
+                <div 
+                  style={{ 
+                    backgroundColor: coloresApariencia?.fondoPaneles, 
+                    borderColor: coloresApariencia?.bordePaneles || "#CBD5E1" 
+                  }}
+                  className="flex flex-col gap-1.5 p-2 rounded-lg border shadow-xs text-xs"
+                >
+                  <div className="flex justify-between font-medium items-center">
+                    <label style={{ color: coloresApariencia?.textoPrincipal }} className="font-bold">Metalicidad / Especular</label>
+                    <DirectNumberInput
+                      value={Math.round(calibracion.metalicidadMadera * 100)}
+                      min={0}
+                      max={100}
+                      unit="%"
+                      onChange={(val) => setCalibracion("metalicidadMadera", val / 100)}
+                    />
                   </div>
                   <input
                     type="range"
@@ -681,7 +882,7 @@ export default function NPanel() {
                     step="0.01"
                     value={calibracion.metalicidadMadera}
                     onChange={(e) => setCalibracion("metalicidadMadera", parseFloat(e.target.value))}
-                    style={{ accentColor: coloresApariencia?.bordePaneles }}
+                    style={{ accentColor: coloresApariencia?.botonActivo || "#0891b2" }}
                     className="w-full h-1.5 bg-slate-200 dark:bg-slate-700 rounded-lg appearance-none cursor-pointer"
                   />
                 </div>
@@ -708,7 +909,6 @@ export default function NPanel() {
                       type="checkbox"
                       checked={calibracion.mostrarAristas}
                       onChange={(e) => setCalibracion("mostrarAristas", e.target.checked)}
-                      style={{ accentColor: coloresApariencia?.bordePaneles }}
                       className="sr-only peer"
                     />
                     <div 
@@ -721,8 +921,14 @@ export default function NPanel() {
                 {calibracion.mostrarAristas && (
                   <>
                     {/* Color de Aristas */}
-                    <div className="flex items-center justify-between">
-                      <label style={{ color: coloresApariencia?.textoPrincipal }} className="font-medium">Color de Aristas</label>
+                    <div 
+                      style={{ 
+                        backgroundColor: coloresApariencia?.fondoPaneles, 
+                        borderColor: coloresApariencia?.bordePaneles || "#CBD5E1" 
+                      }}
+                      className="flex items-center justify-between p-2 rounded-lg border shadow-xs text-xs"
+                    >
+                      <label style={{ color: coloresApariencia?.textoPrincipal }} className="font-bold">Color de Aristas</label>
                       <div className="flex items-center gap-2">
                         <input
                           type="color"
@@ -730,46 +936,75 @@ export default function NPanel() {
                           onChange={(e) => setCalibracion("colorAristas", e.target.value)}
                           className="w-6 h-6 rounded cursor-pointer border-0 bg-transparent"
                         />
-                        <span style={{ color: coloresApariencia?.textoSecundario }} className="font-mono text-[10px] uppercase">{calibracion.colorAristas}</span>
+                        <span 
+                          style={{ 
+                            backgroundColor: coloresApariencia?.fondoAplicacion,
+                            borderColor: coloresApariencia?.bordePaneles,
+                            color: coloresApariencia?.textoPrincipal 
+                          }} 
+                          className="font-mono text-[11px] font-bold px-2 py-0.5 rounded border uppercase"
+                        >
+                          {calibracion.colorAristas}
+                        </span>
                       </div>
                     </div>
 
                     {/* Opacidad de Aristas */}
-                    <div>
-                      <div className="flex justify-between mb-1">
-                        <span style={{ color: coloresApariencia?.textoPrincipal }}>Opacidad de Aristas</span>
-                        <span style={{ color: coloresApariencia?.botonActivo }} className="font-mono font-bold">
-                          {Math.round(calibracion.opacidadAristas * 100)}%
-                        </span>
+                    <div 
+                      style={{ 
+                        backgroundColor: coloresApariencia?.fondoPaneles, 
+                        borderColor: coloresApariencia?.bordePaneles || "#CBD5E1" 
+                      }}
+                      className="flex flex-col gap-1.5 p-2 rounded-lg border shadow-xs text-xs"
+                    >
+                      <div className="flex justify-between font-medium items-center">
+                        <label style={{ color: coloresApariencia?.textoPrincipal }} className="font-bold">Opacidad de Aristas</label>
+                        <DirectNumberInput
+                          value={Math.round(calibracion.opacidadAristas * 100)}
+                          min={0}
+                          max={100}
+                          unit="%"
+                          onChange={(val) => setCalibracion("opacidadAristas", val / 100)}
+                        />
                       </div>
                       <input
                         type="range"
                         min="0"
                         max="1"
-                        step="0.05"
+                        step="0.01"
                         value={calibracion.opacidadAristas}
                         onChange={(e) => setCalibracion("opacidadAristas", parseFloat(e.target.value))}
-                        style={{ accentColor: coloresApariencia?.bordePaneles }}
+                        style={{ accentColor: coloresApariencia?.botonActivo || "#0891b2" }}
                         className="w-full h-1.5 bg-slate-200 dark:bg-slate-700 rounded-lg appearance-none cursor-pointer"
                       />
                     </div>
 
                     {/* Ángulo Umbral de Aristas */}
-                    <div>
-                      <div className="flex justify-between mb-1">
-                        <span style={{ color: coloresApariencia?.textoPrincipal }}>Ángulo Umbral (Detección)</span>
-                        <span style={{ color: coloresApariencia?.botonActivo }} className="font-mono font-bold">
-                          {calibracion.thresholdAristas}°
-                        </span>
+                    <div 
+                      style={{ 
+                        backgroundColor: coloresApariencia?.fondoPaneles, 
+                        borderColor: coloresApariencia?.bordePaneles || "#CBD5E1" 
+                      }}
+                      className="flex flex-col gap-1.5 p-2 rounded-lg border shadow-xs text-xs"
+                    >
+                      <div className="flex justify-between font-medium items-center">
+                        <label style={{ color: coloresApariencia?.textoPrincipal }} className="font-bold">Ángulo Umbral (Detección)</label>
+                        <DirectNumberInput
+                          value={calibracion.thresholdAristas}
+                          min={1}
+                          max={120}
+                          unit="°"
+                          onChange={(val) => setCalibracion("thresholdAristas", Math.round(val))}
+                        />
                       </div>
                       <input
                         type="range"
                         min="1"
-                        max="89"
+                        max="120"
                         step="1"
                         value={calibracion.thresholdAristas}
                         onChange={(e) => setCalibracion("thresholdAristas", parseInt(e.target.value))}
-                        style={{ accentColor: coloresApariencia?.bordePaneles }}
+                        style={{ accentColor: coloresApariencia?.botonActivo || "#0891b2" }}
                         className="w-full h-1.5 bg-slate-200 dark:bg-slate-700 rounded-lg appearance-none cursor-pointer"
                       />
                     </div>
@@ -794,41 +1029,61 @@ export default function NPanel() {
                 </div>
 
                 {/* Luz Directa */}
-                <div>
-                  <div className="flex justify-between mb-1">
-                    <span style={{ color: coloresApariencia?.textoPrincipal }}>Luz Directa Principal</span>
-                    <span style={{ color: coloresApariencia?.botonActivo }} className="font-mono font-bold">
-                      {calibracion.intensidadLuzDirecta.toFixed(1)}x
-                    </span>
+                <div 
+                  style={{ 
+                    backgroundColor: coloresApariencia?.fondoPaneles, 
+                    borderColor: coloresApariencia?.bordePaneles || "#CBD5E1" 
+                  }}
+                  className="flex flex-col gap-1.5 p-2 rounded-lg border shadow-xs text-xs"
+                >
+                  <div className="flex justify-between font-medium items-center">
+                    <label style={{ color: coloresApariencia?.textoPrincipal }} className="font-bold">Luz Directa Principal</label>
+                    <DirectNumberInput
+                      value={Number(calibracion.intensidadLuzDirecta.toFixed(1))}
+                      min={0}
+                      max={5}
+                      unit="x"
+                      onChange={(val) => setCalibracion("intensidadLuzDirecta", val)}
+                    />
                   </div>
                   <input
                     type="range"
                     min="0"
                     max="3"
-                    step="0.1"
+                    step="0.05"
                     value={calibracion.intensidadLuzDirecta}
                     onChange={(e) => setCalibracion("intensidadLuzDirecta", parseFloat(e.target.value))}
-                    style={{ accentColor: coloresApariencia?.bordePaneles }}
+                    style={{ accentColor: coloresApariencia?.botonActivo || "#0891b2" }}
                     className="w-full h-1.5 bg-slate-200 dark:bg-slate-700 rounded-lg appearance-none cursor-pointer"
                   />
                 </div>
 
                 {/* Luz Ambiental */}
-                <div>
-                  <div className="flex justify-between mb-1">
-                    <span style={{ color: coloresApariencia?.textoPrincipal }}>Luz Ambiental Global</span>
-                    <span style={{ color: coloresApariencia?.botonActivo }} className="font-mono font-bold">
-                      {calibracion.intensidadLuzAmbiental.toFixed(1)}x
-                    </span>
+                <div 
+                  style={{ 
+                    backgroundColor: coloresApariencia?.fondoPaneles, 
+                    borderColor: coloresApariencia?.bordePaneles || "#CBD5E1" 
+                  }}
+                  className="flex flex-col gap-1.5 p-2 rounded-lg border shadow-xs text-xs"
+                >
+                  <div className="flex justify-between font-medium items-center">
+                    <label style={{ color: coloresApariencia?.textoPrincipal }} className="font-bold">Luz Ambiental Global</label>
+                    <DirectNumberInput
+                      value={Number(calibracion.intensidadLuzAmbiental.toFixed(1))}
+                      min={0}
+                      max={3}
+                      unit="x"
+                      onChange={(val) => setCalibracion("intensidadLuzAmbiental", val)}
+                    />
                   </div>
                   <input
                     type="range"
                     min="0"
                     max="2"
-                    step="0.1"
+                    step="0.05"
                     value={calibracion.intensidadLuzAmbiental}
                     onChange={(e) => setCalibracion("intensidadLuzAmbiental", parseFloat(e.target.value))}
-                    style={{ accentColor: coloresApariencia?.bordePaneles }}
+                    style={{ accentColor: coloresApariencia?.botonActivo || "#0891b2" }}
                     className="w-full h-1.5 bg-slate-200 dark:bg-slate-700 rounded-lg appearance-none cursor-pointer"
                   />
                 </div>
@@ -865,12 +1120,22 @@ export default function NPanel() {
                 </button>
 
                 {/* Zoom Mínimo (Acercamiento) */}
-                <div>
-                  <div className="flex justify-between mb-1">
-                    <span style={{ color: coloresApariencia?.textoPrincipal }}>Zoom Mínimo (Acercamiento)</span>
-                    <span style={{ color: coloresApariencia?.botonActivo }} className="font-mono font-bold">
-                      {Math.round((calibracion.zoomMinimoMetros ?? 0.02) * 100)} cm
-                    </span>
+                <div 
+                  style={{ 
+                    backgroundColor: coloresApariencia?.fondoPaneles, 
+                    borderColor: coloresApariencia?.bordePaneles || "#CBD5E1" 
+                  }}
+                  className="flex flex-col gap-1.5 p-2 rounded-lg border shadow-xs text-xs"
+                >
+                  <div className="flex justify-between font-medium items-center">
+                    <label style={{ color: coloresApariencia?.textoPrincipal }} className="font-bold">Zoom Mínimo (Acercamiento)</label>
+                    <DirectNumberInput
+                      value={Math.round((calibracion.zoomMinimoMetros ?? 0.02) * 100)}
+                      min={1}
+                      max={50}
+                      unit="cm"
+                      onChange={(val) => setCalibracion("zoomMinimoMetros", val / 100)}
+                    />
                   </div>
                   <input
                     type="range"
@@ -879,18 +1144,28 @@ export default function NPanel() {
                     step="0.01"
                     value={calibracion.zoomMinimoMetros ?? 0.02}
                     onChange={(e) => setCalibracion("zoomMinimoMetros", parseFloat(e.target.value))}
-                    style={{ accentColor: coloresApariencia?.bordePaneles }}
+                    style={{ accentColor: coloresApariencia?.botonActivo || "#0891b2" }}
                     className="w-full h-1.5 bg-slate-200 dark:bg-slate-700 rounded-lg appearance-none cursor-pointer"
                   />
                 </div>
 
                 {/* Zoom Máximo (Alejamiento) */}
-                <div>
-                  <div className="flex justify-between mb-1">
-                    <span style={{ color: coloresApariencia?.textoPrincipal }}>Zoom Máximo (Alejamiento)</span>
-                    <span style={{ color: coloresApariencia?.botonActivo }} className="font-mono font-bold">
-                      {Math.round(calibracion.zoomMaximoMetros ?? 30)} m
-                    </span>
+                <div 
+                  style={{ 
+                    backgroundColor: coloresApariencia?.fondoPaneles, 
+                    borderColor: coloresApariencia?.bordePaneles || "#CBD5E1" 
+                  }}
+                  className="flex flex-col gap-1.5 p-2 rounded-lg border shadow-xs text-xs"
+                >
+                  <div className="flex justify-between font-medium items-center">
+                    <label style={{ color: coloresApariencia?.textoPrincipal }} className="font-bold">Zoom Máximo (Alejamiento)</label>
+                    <DirectNumberInput
+                      value={Math.round(calibracion.zoomMaximoMetros ?? 30)}
+                      min={2}
+                      max={100}
+                      unit="m"
+                      onChange={(val) => setCalibracion("zoomMaximoMetros", val)}
+                    />
                   </div>
                   <input
                     type="range"
@@ -899,18 +1174,28 @@ export default function NPanel() {
                     step="1"
                     value={calibracion.zoomMaximoMetros ?? 30}
                     onChange={(e) => setCalibracion("zoomMaximoMetros", parseFloat(e.target.value))}
-                    style={{ accentColor: coloresApariencia?.bordePaneles }}
+                    style={{ accentColor: coloresApariencia?.botonActivo || "#0891b2" }}
                     className="w-full h-1.5 bg-slate-200 dark:bg-slate-700 rounded-lg appearance-none cursor-pointer"
                   />
                 </div>
 
                 {/* Campo de Visión (Lente FOV) */}
-                <div>
-                  <div className="flex justify-between mb-1">
-                    <span style={{ color: coloresApariencia?.textoPrincipal }}>Campo de Visión (Lente / FOV)</span>
-                    <span style={{ color: coloresApariencia?.botonActivo }} className="font-mono font-bold">
-                      {Math.round(calibracion.campoDeVisionFov ?? 45)}°
-                    </span>
+                <div 
+                  style={{ 
+                    backgroundColor: coloresApariencia?.fondoPaneles, 
+                    borderColor: coloresApariencia?.bordePaneles || "#CBD5E1" 
+                  }}
+                  className="flex flex-col gap-1.5 p-2 rounded-lg border shadow-xs text-xs"
+                >
+                  <div className="flex justify-between font-medium items-center">
+                    <label style={{ color: coloresApariencia?.textoPrincipal }} className="font-bold">Campo de Visión (Lente / FOV)</label>
+                    <DirectNumberInput
+                      value={Math.round(calibracion.campoDeVisionFov ?? 45)}
+                      min={25}
+                      max={75}
+                      unit="°"
+                      onChange={(val) => setCalibracion("campoDeVisionFov", Math.round(val))}
+                    />
                   </div>
                   <input
                     type="range"
@@ -919,7 +1204,7 @@ export default function NPanel() {
                     step="1"
                     value={calibracion.campoDeVisionFov ?? 45}
                     onChange={(e) => setCalibracion("campoDeVisionFov", parseInt(e.target.value))}
-                    style={{ accentColor: coloresApariencia?.bordePaneles }}
+                    style={{ accentColor: coloresApariencia?.botonActivo || "#0891b2" }}
                     className="w-full h-1.5 bg-slate-200 dark:bg-slate-700 rounded-lg appearance-none cursor-pointer"
                   />
                 </div>

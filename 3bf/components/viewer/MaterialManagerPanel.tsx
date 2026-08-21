@@ -11,7 +11,7 @@ import {
   ChevronDown, 
   ChevronRight, 
   Palette, 
-  Sparkles,
+  Sparkles, 
   Info,
   Sliders,
   Image as ImageIcon,
@@ -27,7 +27,9 @@ export default function MaterialManagerPanel() {
     crearMaterialPBR,
     actualizarMaterialPBR,
     eliminarMaterialPBR,
-    resetCapasYMateriales
+    resetCapasYMateriales,
+    coloresApariencia,
+    esquemaColor
   } = use3BFStore();
 
   const [busqueda, setBusqueda] = useState("");
@@ -142,49 +144,78 @@ export default function MaterialManagerPanel() {
   };
 
   return (
-    <div className="flex flex-col h-full text-xs select-none">
+    <div 
+      style={{
+        backgroundColor: coloresApariencia?.fondoPaneles,
+        color: coloresApariencia?.textoPrincipal
+      }}
+      className="flex flex-col h-full text-xs select-none"
+    >
       {/* 🔍 Barra de Búsqueda y Acciones Rápidas */}
-      <div className="p-3 border-b border-slate-200 dark:border-slate-800 space-y-2">
+      <div 
+        style={{ borderColor: coloresApariencia?.bordePaneles }}
+        className="p-3 border-b space-y-2 shrink-0"
+      >
         <div className="relative">
-          <Search className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400" />
+          <Search 
+            style={{ color: coloresApariencia?.textoSecundario }}
+            className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 opacity-70" 
+          />
           <input
             type="text"
             placeholder="Buscar material PBR..."
             value={busqueda}
             onChange={(e) => setBusqueda(e.target.value)}
-            className="w-full pl-8 pr-3 py-1.5 bg-slate-100 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-md text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-cyan-500"
+            style={{
+              backgroundColor: coloresApariencia?.fondoAplicacion,
+              borderColor: coloresApariencia?.bordePaneles,
+              color: coloresApariencia?.textoPrincipal
+            }}
+            className="w-full pl-8 pr-3 py-1.5 border rounded-md text-xs focus:outline-none focus:ring-1 focus:ring-cyan-500 placeholder:opacity-60 transition-colors"
           />
         </div>
 
         <div className="flex items-center justify-between gap-1">
           <div className="flex gap-1 overflow-x-auto py-0.5 no-scrollbar">
-            {["todos", "Melamina", "Madera", "Metal", "Plastico", "Pintura"].map((t) => (
-              <button
-                key={t}
-                onClick={() => setFiltroTipo(t)}
-                className={`px-2 py-1 rounded text-[10px] font-medium uppercase tracking-wider transition-colors ${
-                  filtroTipo === t
-                    ? "bg-cyan-600 text-white shadow-sm"
-                    : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700"
-                }`}
-              >
-                {t}
-              </button>
-            ))}
+            {["todos", "Melamina", "Madera", "Metal", "Plastico", "Pintura"].map((t) => {
+              const activo = filtroTipo === t;
+              return (
+                <button
+                  key={t}
+                  onClick={() => setFiltroTipo(t)}
+                  style={{
+                    backgroundColor: activo 
+                      ? (coloresApariencia?.botonActivo || "#0891B2") 
+                      : (coloresApariencia?.fondoAplicacion || "#F1F5F9"),
+                    color: activo ? "#FFFFFF" : (coloresApariencia?.textoSecundario || "#64748B"),
+                    borderColor: coloresApariencia?.bordePaneles || "#CBD5E1"
+                  }}
+                  className="px-2 py-1 rounded text-[10px] font-medium uppercase tracking-wider transition-colors border shadow-2xs"
+                >
+                  {t}
+                </button>
+              );
+            })}
           </div>
 
           <div className="flex items-center gap-1 shrink-0">
             <button
               onClick={handleCrearNuevo}
               title="Crear Nuevo Material"
-              className="p-1.5 bg-cyan-600 text-white rounded hover:bg-cyan-700 transition"
+              style={{ backgroundColor: coloresApariencia?.botonActivo || "#0891B2" }}
+              className="p-1.5 text-white rounded hover:opacity-90 transition shadow-xs cursor-pointer"
             >
               <Plus className="w-3.5 h-3.5" />
             </button>
             <button
               onClick={handleDuplicar}
               title="Duplicar Material Seleccionado"
-              className="p-1.5 bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300 rounded hover:bg-slate-300 dark:hover:bg-slate-700 transition"
+              style={{
+                backgroundColor: coloresApariencia?.fondoAplicacion,
+                borderColor: coloresApariencia?.bordePaneles,
+                color: coloresApariencia?.textoPrincipal
+              }}
+              className="p-1.5 border rounded hover:opacity-80 transition shadow-xs cursor-pointer"
             >
               <Copy className="w-3.5 h-3.5" />
             </button>
@@ -192,7 +223,12 @@ export default function MaterialManagerPanel() {
               onClick={handleEliminar}
               title="Eliminar Material Seleccionado"
               disabled={materialesPBR.length <= 1}
-              className="p-1.5 bg-slate-200 dark:bg-slate-800 text-red-600 dark:text-red-400 rounded hover:bg-red-50 dark:hover:bg-red-950/40 disabled:opacity-40 transition"
+              style={{
+                backgroundColor: coloresApariencia?.fondoAplicacion,
+                borderColor: coloresApariencia?.bordePaneles,
+                color: "#EF4444"
+              }}
+              className="p-1.5 border rounded hover:bg-red-500/10 disabled:opacity-30 transition shadow-xs cursor-pointer"
             >
               <Trash2 className="w-3.5 h-3.5" />
             </button>
@@ -201,13 +237,22 @@ export default function MaterialManagerPanel() {
       </div>
 
       {/* 🌐 Galería Superior de Miniaturas / Esferas PBR (Estilo Rhino) */}
-      <div className="p-3 bg-slate-50/60 dark:bg-slate-900/40">
-        <div className="text-[10px] font-semibold uppercase tracking-wider text-slate-500 mb-2 flex items-center justify-between">
-          <span>Catálogo de Materiales ({materialesFiltrados.length})</span>
+      <div 
+        style={{
+          backgroundColor: coloresApariencia?.fondoAplicacion,
+          borderColor: coloresApariencia?.bordePaneles
+        }}
+        className="p-3 border-b"
+      >
+        <div className="text-[10px] font-semibold uppercase tracking-wider mb-2 flex items-center justify-between">
+          <span style={{ color: coloresApariencia?.textoSecundario }}>
+            Catálogo de Materiales ({materialesFiltrados.length})
+          </span>
           <button
             onClick={resetCapasYMateriales}
             title="Restablecer Materiales por Defecto"
-            className="text-slate-400 hover:text-cyan-600 flex items-center gap-1 text-[10px] transition"
+            style={{ color: coloresApariencia?.textoSecundario }}
+            className="hover:opacity-100 flex items-center gap-1 text-[10px] transition cursor-pointer"
           >
             <RotateCcw className="w-2.5 h-2.5" /> Reset
           </button>
@@ -223,15 +268,20 @@ export default function MaterialManagerPanel() {
               <button
                 key={mat.id}
                 onClick={() => setMaterialSeleccionadoId(mat.id)}
-                className={`flex flex-col items-center p-1.5 rounded-lg border transition-all ${
-                  isSel
-                    ? "border-cyan-500 bg-cyan-50 dark:bg-cyan-950/40 ring-1 ring-cyan-500 shadow-sm"
-                    : "border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-800/80 hover:border-slate-300 dark:hover:border-slate-700"
+                style={isSel ? {
+                  backgroundColor: esquemaColor === "oscuro" ? "rgba(8, 145, 178, 0.25)" : "rgba(8, 145, 178, 0.12)",
+                  borderColor: coloresApariencia?.botonActivo || "#0891B2",
+                } : {
+                  backgroundColor: coloresApariencia?.fondoPaneles,
+                  borderColor: coloresApariencia?.bordePaneles,
+                }}
+                className={`flex flex-col items-center p-1.5 rounded-lg border transition-all cursor-pointer shadow-xs ${
+                  isSel ? "ring-1 ring-cyan-500" : "hover:opacity-90"
                 }`}
               >
                 {/* Esfera PBR simulada con gradiente radial y reflejos */}
                 <div
-                  className="w-9 h-9 rounded-full shadow-inner relative overflow-hidden border border-black/10 flex items-center justify-center"
+                  className="w-9 h-9 rounded-full shadow-inner relative overflow-hidden border border-black/20 flex items-center justify-center shrink-0"
                   style={{
                     backgroundColor: mat.colorBase,
                     backgroundImage: mat.texturaUrl
@@ -249,10 +299,16 @@ export default function MaterialManagerPanel() {
                     <Sparkles className="w-3 h-3 text-white/80 absolute bottom-1 right-1 pointer-events-none" />
                   )}
                 </div>
-                <span className="mt-1 text-[10px] font-medium text-slate-800 dark:text-slate-200 truncate w-full text-center">
+                <span 
+                  style={{ color: coloresApariencia?.textoPrincipal }}
+                  className="mt-1 text-[10px] font-medium truncate w-full text-center"
+                >
                   {mat.nombre}
                 </span>
-                <span className="text-[8px] text-slate-400 truncate max-w-full">
+                <span 
+                  style={{ color: coloresApariencia?.textoSecundario }}
+                  className="text-[8px] truncate max-w-full opacity-80"
+                >
                   {mat.tipo}
                 </span>
               </button>
@@ -265,52 +321,97 @@ export default function MaterialManagerPanel() {
       <div
         onMouseDown={startResizing}
         title="Arrastra para redimensionar el espacio de esferas de materiales"
-        className={`h-2 border-y border-slate-200 dark:border-slate-800 bg-slate-100 dark:bg-slate-800/80 hover:bg-cyan-500/80 dark:hover:bg-cyan-500/80 cursor-row-resize flex items-center justify-center transition-colors group select-none shrink-0 ${
-          isResizing ? "bg-cyan-500! dark:bg-cyan-500!" : ""
+        style={{
+          backgroundColor: coloresApariencia?.fondoAplicacion,
+          borderColor: coloresApariencia?.bordePaneles
+        }}
+        className={`h-2 border-y hover:bg-cyan-500/80 cursor-row-resize flex items-center justify-center transition-colors group select-none shrink-0 ${
+          isResizing ? "bg-cyan-500!" : ""
         }`}
       >
-        <div className="w-8 h-1 rounded-full bg-slate-300 dark:bg-slate-600 group-hover:bg-white transition-colors" />
+        <div 
+          style={{ backgroundColor: coloresApariencia?.bordePaneles || "#94A3B8" }}
+          className="w-8 h-1 rounded-full group-hover:bg-white transition-colors" 
+        />
       </div>
 
       {/* 🛠️ Inspector Detallado de Propiedades Físicas PBR (Estilo Rhino) */}
       {materialActivo ? (
-        <div className="flex-1 overflow-y-auto p-3 space-y-2.5 custom-scrollbar">
+        <div 
+          style={{ backgroundColor: coloresApariencia?.fondoPaneles }}
+          className="flex-1 overflow-y-auto p-3 space-y-2.5 custom-scrollbar"
+        >
           {/* Acordeón 1: Nombre y Tipo */}
-          <div className="border border-slate-200 dark:border-slate-800 rounded-lg overflow-hidden bg-white dark:bg-slate-900/60 shadow-sm">
+          <div 
+            style={{ borderColor: coloresApariencia?.bordePaneles }}
+            className="border rounded-lg overflow-hidden shadow-xs"
+          >
             <button
               onClick={() => toggleAcordeon("nombreTipo")}
-              className="w-full flex items-center justify-between p-2.5 bg-slate-50 dark:bg-slate-800/60 font-semibold text-slate-700 dark:text-slate-300"
+              style={{
+                backgroundColor: coloresApariencia?.fondoAplicacion,
+                color: coloresApariencia?.textoPrincipal
+              }}
+              className="w-full flex items-center justify-between p-2.5 font-semibold cursor-pointer"
             >
               <div className="flex items-center gap-1.5">
-                <Palette className="w-3.5 h-3.5 text-cyan-600" />
+                <Palette style={{ color: coloresApariencia?.botonActivo || "#0891B2" }} className="w-3.5 h-3.5" />
                 <span>Nombre y Tipo</span>
               </div>
-              {acordeonAbierto.nombreTipo ? <ChevronDown className="w-3.5 h-3.5" /> : <ChevronRight className="w-3.5 h-3.5" />}
+              {acordeonAbierto.nombreTipo ? (
+                <ChevronDown style={{ color: coloresApariencia?.textoSecundario }} className="w-3.5 h-3.5" />
+              ) : (
+                <ChevronRight style={{ color: coloresApariencia?.textoSecundario }} className="w-3.5 h-3.5" />
+              )}
             </button>
 
             {acordeonAbierto.nombreTipo && (
-              <div className="p-3 space-y-2.5">
+              <div 
+                style={{ backgroundColor: coloresApariencia?.fondoPaneles }}
+                className="p-3 space-y-2.5"
+              >
                 <div>
-                  <label className="block text-[10px] font-medium text-slate-500 mb-1">
+                  <label 
+                    style={{ color: coloresApariencia?.textoSecundario }}
+                    className="block text-[10px] font-medium mb-1"
+                  >
                     Nombre Técnico del Material (Blender / Rhino)
                   </label>
                   <input
                     type="text"
                     value={materialActivo.nombre}
                     onChange={(e) => actualizarMaterialPBR(materialActivo.id, { nombre: e.target.value })}
-                    className="w-full px-2.5 py-1.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded text-slate-800 dark:text-slate-100 font-mono text-xs focus:ring-1 focus:ring-cyan-500 focus:outline-none"
+                    style={{
+                      backgroundColor: coloresApariencia?.fondoAplicacion,
+                      borderColor: coloresApariencia?.bordePaneles,
+                      color: coloresApariencia?.textoPrincipal
+                    }}
+                    className="w-full px-2.5 py-1.5 border rounded font-mono text-xs focus:ring-1 focus:ring-cyan-500 focus:outline-none"
                   />
-                  <span className="text-[9px] text-slate-400 mt-0.5 block">
+                  <span 
+                    style={{ color: coloresApariencia?.textoSecundario }}
+                    className="text-[9px] mt-0.5 block opacity-80"
+                  >
                     Este nombre exacto es el que vinculará la plantilla HD de Blender en el GLB.
                   </span>
                 </div>
 
                 <div>
-                  <label className="block text-[10px] font-medium text-slate-500 mb-1">Tipo de Material</label>
+                  <label 
+                    style={{ color: coloresApariencia?.textoSecundario }}
+                    className="block text-[10px] font-medium mb-1"
+                  >
+                    Tipo de Material
+                  </label>
                   <select
                     value={materialActivo.tipo}
                     onChange={(e) => actualizarMaterialPBR(materialActivo.id, { tipo: e.target.value as any })}
-                    className="w-full px-2.5 py-1.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded text-slate-800 dark:text-slate-100 text-xs focus:ring-1 focus:ring-cyan-500 focus:outline-none"
+                    style={{
+                      backgroundColor: coloresApariencia?.fondoAplicacion,
+                      borderColor: coloresApariencia?.bordePaneles,
+                      color: coloresApariencia?.textoPrincipal
+                    }}
+                    className="w-full px-2.5 py-1.5 border rounded text-xs focus:ring-1 focus:ring-cyan-500 focus:outline-none cursor-pointer"
                   >
                     <option value="PBR">PBR Físico Estándar</option>
                     <option value="Melamina">Melamina / Tablero Laminado</option>
@@ -325,38 +426,67 @@ export default function MaterialManagerPanel() {
           </div>
 
           {/* Acordeón 2: Color Base / Metálico / Rugosidad */}
-          <div className="border border-slate-200 dark:border-slate-800 rounded-lg overflow-hidden bg-white dark:bg-slate-900/60 shadow-sm">
+          <div 
+            style={{ borderColor: coloresApariencia?.bordePaneles }}
+            className="border rounded-lg overflow-hidden shadow-xs"
+          >
             <button
               onClick={() => toggleAcordeon("colorFisico")}
-              className="w-full flex items-center justify-between p-2.5 bg-slate-50 dark:bg-slate-800/60 font-semibold text-slate-700 dark:text-slate-300"
+              style={{
+                backgroundColor: coloresApariencia?.fondoAplicacion,
+                color: coloresApariencia?.textoPrincipal
+              }}
+              className="w-full flex items-center justify-between p-2.5 font-semibold cursor-pointer"
             >
               <div className="flex items-center gap-1.5">
-                <Sliders className="w-3.5 h-3.5 text-cyan-600" />
+                <Sliders style={{ color: coloresApariencia?.botonActivo || "#0891B2" }} className="w-3.5 h-3.5" />
                 <span>Color Base, Metálico & Rugosidad</span>
               </div>
-              {acordeonAbierto.colorFisico ? <ChevronDown className="w-3.5 h-3.5" /> : <ChevronRight className="w-3.5 h-3.5" />}
+              {acordeonAbierto.colorFisico ? (
+                <ChevronDown style={{ color: coloresApariencia?.textoSecundario }} className="w-3.5 h-3.5" />
+              ) : (
+                <ChevronRight style={{ color: coloresApariencia?.textoSecundario }} className="w-3.5 h-3.5" />
+              )}
             </button>
 
             {acordeonAbierto.colorFisico && (
-              <div className="p-3 space-y-3">
+              <div 
+                style={{ backgroundColor: coloresApariencia?.fondoPaneles }}
+                className="p-3 space-y-3"
+              >
                 {/* Color Base */}
                 <div>
                   <div className="flex justify-between items-center mb-1">
-                    <label className="text-[10px] font-medium text-slate-500">Color Base (Albedo)</label>
-                    <span className="font-mono text-[10px] text-slate-600 dark:text-slate-400">{materialActivo.colorBase}</span>
+                    <label 
+                      style={{ color: coloresApariencia?.textoSecundario }}
+                      className="text-[10px] font-medium"
+                    >
+                      Color Base (Albedo)
+                    </label>
+                    <span 
+                      style={{ color: coloresApariencia?.textoSecundario }}
+                      className="font-mono text-[10px]"
+                    >
+                      {materialActivo.colorBase}
+                    </span>
                   </div>
                   <div className="flex items-center gap-2">
                     <input
                       type="color"
                       value={materialActivo.colorBase}
                       onChange={(e) => actualizarMaterialPBR(materialActivo.id, { colorBase: e.target.value })}
-                      className="w-9 h-8 p-0.5 rounded border border-slate-300 dark:border-slate-700 cursor-pointer bg-transparent"
+                      className="w-9 h-8 p-0.5 rounded border border-black/20 cursor-pointer bg-transparent"
                     />
                     <input
                       type="text"
                       value={materialActivo.colorBase}
                       onChange={(e) => actualizarMaterialPBR(materialActivo.id, { colorBase: e.target.value })}
-                      className="flex-1 px-2 py-1 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded text-slate-800 dark:text-slate-200 font-mono text-xs focus:ring-1 focus:ring-cyan-500 focus:outline-none"
+                      style={{
+                        backgroundColor: coloresApariencia?.fondoAplicacion,
+                        borderColor: coloresApariencia?.bordePaneles,
+                        color: coloresApariencia?.textoPrincipal
+                      }}
+                      className="flex-1 px-2 py-1 border rounded font-mono text-xs focus:ring-1 focus:ring-cyan-500 focus:outline-none"
                     />
                   </div>
                 </div>
@@ -364,13 +494,16 @@ export default function MaterialManagerPanel() {
                 {/* 🖼️ Mapa de Textura Difusa con Carga de Archivos */}
                 <div>
                   <div className="flex justify-between items-center mb-1.5">
-                    <label className="text-[10px] font-medium text-slate-500 flex items-center gap-1">
-                      <ImageIcon className="w-3 h-3 text-slate-400" /> Mapa de Textura Difusa
+                    <label 
+                      style={{ color: coloresApariencia?.textoSecundario }}
+                      className="text-[10px] font-medium flex items-center gap-1"
+                    >
+                      <ImageIcon className="w-3 h-3 opacity-70" /> Mapa de Textura Difusa
                     </label>
                     {materialActivo.texturaUrl && (
                       <button
                         onClick={() => actualizarMaterialPBR(materialActivo.id, { texturaUrl: undefined })}
-                        className="text-[9px] text-red-500 hover:underline flex items-center gap-0.5"
+                        className="text-[9px] text-red-500 hover:underline flex items-center gap-0.5 cursor-pointer"
                       >
                         <X className="w-2.5 h-2.5" /> Quitar textura
                       </button>
@@ -388,22 +521,35 @@ export default function MaterialManagerPanel() {
 
                   {/* Previsualización de Textura Actual y Botón de Subida */}
                   {materialActivo.texturaUrl ? (
-                    <div className="flex items-center gap-2 p-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/80">
+                    <div 
+                      style={{
+                        backgroundColor: coloresApariencia?.fondoAplicacion,
+                        borderColor: coloresApariencia?.bordePaneles
+                      }}
+                      className="flex items-center gap-2 p-2 rounded-lg border"
+                    >
                       <div
                         className="w-10 h-10 rounded border border-black/20 shrink-0 shadow-sm overflow-hidden bg-cover bg-center"
                         style={{ backgroundImage: `url(${materialActivo.texturaUrl})` }}
                       />
                       <div className="flex-1 min-w-0">
-                        <p className="text-[10px] font-medium text-slate-700 dark:text-slate-300 truncate">
+                        <p 
+                          style={{ color: coloresApariencia?.textoPrincipal }}
+                          className="text-[10px] font-medium truncate"
+                        >
                           Textura Activa
                         </p>
-                        <span className="text-[9px] text-slate-400 truncate block font-mono">
+                        <span 
+                          style={{ color: coloresApariencia?.textoSecundario }}
+                          className="text-[9px] truncate block font-mono opacity-80"
+                        >
                           {materialActivo.texturaUrl.startsWith("data:") ? "(Imagen personalizada cargada)" : materialActivo.texturaUrl}
                         </span>
                       </div>
                       <button
                         onClick={() => fileInputRef.current?.click()}
-                        className="px-2 py-1 bg-cyan-600 hover:bg-cyan-700 text-white rounded text-[10px] font-medium transition flex items-center gap-1 shrink-0"
+                        style={{ backgroundColor: coloresApariencia?.botonActivo || "#0891B2" }}
+                        className="px-2 py-1 text-white rounded text-[10px] font-medium transition flex items-center gap-1 shrink-0 cursor-pointer shadow-2xs hover:opacity-90"
                       >
                         <Upload className="w-2.5 h-2.5" /> Cambiar
                       </button>
@@ -413,7 +559,12 @@ export default function MaterialManagerPanel() {
                       <div className="flex gap-2">
                         <button
                           onClick={() => fileInputRef.current?.click()}
-                          className="flex-1 py-2 px-3 border border-dashed border-cyan-500 hover:bg-cyan-50 dark:hover:bg-cyan-950/30 text-cyan-600 dark:text-cyan-400 rounded-lg text-center font-medium text-[11px] flex items-center justify-center gap-1.5 transition cursor-pointer"
+                          style={{
+                            borderColor: coloresApariencia?.botonActivo || "#0891B2",
+                            color: coloresApariencia?.botonActivo || "#0891B2",
+                            backgroundColor: esquemaColor === "oscuro" ? "rgba(8, 145, 178, 0.10)" : "rgba(8, 145, 178, 0.05)"
+                          }}
+                          className="flex-1 py-2 px-3 border border-dashed rounded-lg text-center font-medium text-[11px] flex items-center justify-center gap-1.5 transition cursor-pointer hover:opacity-90"
                         >
                           <Upload className="w-3.5 h-3.5" /> Cargar Imagen de Textura
                         </button>
@@ -421,7 +572,12 @@ export default function MaterialManagerPanel() {
 
                       {/* Presets Rápidos de Texturas del Sistema */}
                       <div className="flex items-center gap-1">
-                        <span className="text-[9px] text-slate-400 shrink-0">O elegir preset:</span>
+                        <span 
+                          style={{ color: coloresApariencia?.textoSecundario }}
+                          className="text-[9px] shrink-0"
+                        >
+                          O elegir preset:
+                        </span>
                         <select
                           value=""
                           onChange={(e) => {
@@ -429,7 +585,12 @@ export default function MaterialManagerPanel() {
                               actualizarMaterialPBR(materialActivo.id, { texturaUrl: e.target.value });
                             }
                           }}
-                          className="flex-1 py-0.5 px-1.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded text-[10px] text-slate-700 dark:text-slate-300 focus:outline-none"
+                          style={{
+                            backgroundColor: coloresApariencia?.fondoAplicacion,
+                            borderColor: coloresApariencia?.bordePaneles,
+                            color: coloresApariencia?.textoPrincipal
+                          }}
+                          className="flex-1 py-0.5 px-1.5 border rounded text-[10px] focus:outline-none cursor-pointer"
                         >
                           <option value="">Seleccionar textura...</option>
                           <option value="/textures/Marfil_diffuse.jpg">Marfil Diffuse (Novopan)</option>
@@ -443,8 +604,18 @@ export default function MaterialManagerPanel() {
                 {/* Metálico */}
                 <div>
                   <div className="flex justify-between items-center mb-1">
-                    <label className="text-[10px] font-medium text-slate-500">Metálico (Metallic)</label>
-                    <span className="font-mono text-[10px] text-slate-600 dark:text-slate-400">{materialActivo.metalico.toFixed(2)}</span>
+                    <label 
+                      style={{ color: coloresApariencia?.textoSecundario }}
+                      className="text-[10px] font-medium"
+                    >
+                      Metálico (Metallic)
+                    </label>
+                    <span 
+                      style={{ color: coloresApariencia?.textoSecundario }}
+                      className="font-mono text-[10px]"
+                    >
+                      {materialActivo.metalico.toFixed(2)}
+                    </span>
                   </div>
                   <input
                     type="range"
@@ -453,9 +624,12 @@ export default function MaterialManagerPanel() {
                     step="0.01"
                     value={materialActivo.metalico}
                     onChange={(e) => actualizarMaterialPBR(materialActivo.id, { metalico: parseFloat(e.target.value) })}
-                    className="w-full accent-cyan-600 h-1.5 bg-slate-200 dark:bg-slate-700 rounded-lg cursor-pointer"
+                    className="w-full accent-cyan-600 h-1.5 rounded-lg cursor-pointer"
                   />
-                  <div className="flex justify-between text-[8px] text-slate-400 mt-0.5">
+                  <div 
+                    style={{ color: coloresApariencia?.textoSecundario }}
+                    className="flex justify-between text-[8px] mt-0.5 opacity-80"
+                  >
                     <span>0.00 Dieléctrico</span>
                     <span>1.00 Metal Puro</span>
                   </div>
@@ -464,8 +638,18 @@ export default function MaterialManagerPanel() {
                 {/* Rugosidad */}
                 <div>
                   <div className="flex justify-between items-center mb-1">
-                    <label className="text-[10px] font-medium text-slate-500">Rugosidad (Roughness)</label>
-                    <span className="font-mono text-[10px] text-slate-600 dark:text-slate-400">{materialActivo.rugosidad.toFixed(2)}</span>
+                    <label 
+                      style={{ color: coloresApariencia?.textoSecundario }}
+                      className="text-[10px] font-medium"
+                    >
+                      Rugosidad (Roughness)
+                    </label>
+                    <span 
+                      style={{ color: coloresApariencia?.textoSecundario }}
+                      className="font-mono text-[10px]"
+                    >
+                      {materialActivo.rugosidad.toFixed(2)}
+                    </span>
                   </div>
                   <input
                     type="range"
@@ -474,9 +658,12 @@ export default function MaterialManagerPanel() {
                     step="0.01"
                     value={materialActivo.rugosidad}
                     onChange={(e) => actualizarMaterialPBR(materialActivo.id, { rugosidad: parseFloat(e.target.value) })}
-                    className="w-full accent-cyan-600 h-1.5 bg-slate-200 dark:bg-slate-700 rounded-lg cursor-pointer"
+                    className="w-full accent-cyan-600 h-1.5 rounded-lg cursor-pointer"
                   />
-                  <div className="flex justify-between text-[8px] text-slate-400 mt-0.5">
+                  <div 
+                    style={{ color: coloresApariencia?.textoSecundario }}
+                    className="flex justify-between text-[8px] mt-0.5 opacity-80"
+                  >
                     <span>0.00 Espejo Pulido</span>
                     <span>1.00 Mate Rugoso</span>
                   </div>
@@ -486,24 +673,48 @@ export default function MaterialManagerPanel() {
           </div>
 
           {/* Acordeón 3: Especularidad & F0 */}
-          <div className="border border-slate-200 dark:border-slate-800 rounded-lg overflow-hidden bg-white dark:bg-slate-900/60 shadow-sm">
+          <div 
+            style={{ borderColor: coloresApariencia?.bordePaneles }}
+            className="border rounded-lg overflow-hidden shadow-xs"
+          >
             <button
               onClick={() => toggleAcordeon("especularidad")}
-              className="w-full flex items-center justify-between p-2.5 bg-slate-50 dark:bg-slate-800/60 font-semibold text-slate-700 dark:text-slate-300"
+              style={{
+                backgroundColor: coloresApariencia?.fondoAplicacion,
+                color: coloresApariencia?.textoPrincipal
+              }}
+              className="w-full flex items-center justify-between p-2.5 font-semibold cursor-pointer"
             >
               <div className="flex items-center gap-1.5">
-                <Sparkles className="w-3.5 h-3.5 text-cyan-600" />
+                <Sparkles style={{ color: coloresApariencia?.botonActivo || "#0891B2" }} className="w-3.5 h-3.5" />
                 <span>Especularidad (F0)</span>
               </div>
-              {acordeonAbierto.especularidad ? <ChevronDown className="w-3.5 h-3.5" /> : <ChevronRight className="w-3.5 h-3.5" />}
+              {acordeonAbierto.especularidad ? (
+                <ChevronDown style={{ color: coloresApariencia?.textoSecundario }} className="w-3.5 h-3.5" />
+              ) : (
+                <ChevronRight style={{ color: coloresApariencia?.textoSecundario }} className="w-3.5 h-3.5" />
+              )}
             </button>
 
             {acordeonAbierto.especularidad && (
-              <div className="p-3 space-y-3">
+              <div 
+                style={{ backgroundColor: coloresApariencia?.fondoPaneles }}
+                className="p-3 space-y-3"
+              >
                 <div>
                   <div className="flex justify-between items-center mb-1">
-                    <label className="text-[10px] font-medium text-slate-500">Intensidad Especular F0</label>
-                    <span className="font-mono text-[10px] text-slate-600 dark:text-slate-400">{materialActivo.especularidad.toFixed(2)}</span>
+                    <label 
+                      style={{ color: coloresApariencia?.textoSecundario }}
+                      className="text-[10px] font-medium"
+                    >
+                      Intensidad Especular F0
+                    </label>
+                    <span 
+                      style={{ color: coloresApariencia?.textoSecundario }}
+                      className="font-mono text-[10px]"
+                    >
+                      {materialActivo.especularidad.toFixed(2)}
+                    </span>
                   </div>
                   <input
                     type="range"
@@ -512,7 +723,7 @@ export default function MaterialManagerPanel() {
                     step="0.01"
                     value={materialActivo.especularidad}
                     onChange={(e) => actualizarMaterialPBR(materialActivo.id, { especularidad: parseFloat(e.target.value) })}
-                    className="w-full accent-cyan-600 h-1.5 bg-slate-200 dark:bg-slate-700 rounded-lg cursor-pointer"
+                    className="w-full accent-cyan-600 h-1.5 rounded-lg cursor-pointer"
                   />
                 </div>
               </div>
@@ -520,24 +731,48 @@ export default function MaterialManagerPanel() {
           </div>
 
           {/* Acordeón 4: Opacidad & Refracción (IOR) */}
-          <div className="border border-slate-200 dark:border-slate-800 rounded-lg overflow-hidden bg-white dark:bg-slate-900/60 shadow-sm">
+          <div 
+            style={{ borderColor: coloresApariencia?.bordePaneles }}
+            className="border rounded-lg overflow-hidden shadow-xs"
+          >
             <button
               onClick={() => toggleAcordeon("opacidad")}
-              className="w-full flex items-center justify-between p-2.5 bg-slate-50 dark:bg-slate-800/60 font-semibold text-slate-700 dark:text-slate-300"
+              style={{
+                backgroundColor: coloresApariencia?.fondoAplicacion,
+                color: coloresApariencia?.textoPrincipal
+              }}
+              className="w-full flex items-center justify-between p-2.5 font-semibold cursor-pointer"
             >
               <div className="flex items-center gap-1.5">
-                <Info className="w-3.5 h-3.5 text-cyan-600" />
+                <Info style={{ color: coloresApariencia?.botonActivo || "#0891B2" }} className="w-3.5 h-3.5" />
                 <span>Opacidad & Refracción (IOR)</span>
               </div>
-              {acordeonAbierto.opacidad ? <ChevronDown className="w-3.5 h-3.5" /> : <ChevronRight className="w-3.5 h-3.5" />}
+              {acordeonAbierto.opacidad ? (
+                <ChevronDown style={{ color: coloresApariencia?.textoSecundario }} className="w-3.5 h-3.5" />
+              ) : (
+                <ChevronRight style={{ color: coloresApariencia?.textoSecundario }} className="w-3.5 h-3.5" />
+              )}
             </button>
 
             {acordeonAbierto.opacidad && (
-              <div className="p-3 space-y-3">
+              <div 
+                style={{ backgroundColor: coloresApariencia?.fondoPaneles }}
+                className="p-3 space-y-3"
+              >
                 <div>
                   <div className="flex justify-between items-center mb-1">
-                    <label className="text-[10px] font-medium text-slate-500">Opacidad (Alfa)</label>
-                    <span className="font-mono text-[10px] text-slate-600 dark:text-slate-400">{(materialActivo.opacidad * 100).toFixed(0)}%</span>
+                    <label 
+                      style={{ color: coloresApariencia?.textoSecundario }}
+                      className="text-[10px] font-medium"
+                    >
+                      Opacidad (Alfa)
+                    </label>
+                    <span 
+                      style={{ color: coloresApariencia?.textoSecundario }}
+                      className="font-mono text-[10px]"
+                    >
+                      {(materialActivo.opacidad * 100).toFixed(0)}%
+                    </span>
                   </div>
                   <input
                     type="range"
@@ -546,14 +781,24 @@ export default function MaterialManagerPanel() {
                     step="0.01"
                     value={materialActivo.opacidad}
                     onChange={(e) => actualizarMaterialPBR(materialActivo.id, { opacidad: parseFloat(e.target.value) })}
-                    className="w-full accent-cyan-600 h-1.5 bg-slate-200 dark:bg-slate-700 rounded-lg cursor-pointer"
+                    className="w-full accent-cyan-600 h-1.5 rounded-lg cursor-pointer"
                   />
                 </div>
 
                 <div>
                   <div className="flex justify-between items-center mb-1">
-                    <label className="text-[10px] font-medium text-slate-500">Índice de Refracción (IOR)</label>
-                    <span className="font-mono text-[10px] text-slate-600 dark:text-slate-400">{materialActivo.ior.toFixed(2)}</span>
+                    <label 
+                      style={{ color: coloresApariencia?.textoSecundario }}
+                      className="text-[10px] font-medium"
+                    >
+                      Índice de Refracción (IOR)
+                    </label>
+                    <span 
+                      style={{ color: coloresApariencia?.textoSecundario }}
+                      className="font-mono text-[10px]"
+                    >
+                      {materialActivo.ior.toFixed(2)}
+                    </span>
                   </div>
                   <input
                     type="range"
@@ -562,9 +807,12 @@ export default function MaterialManagerPanel() {
                     step="0.01"
                     value={materialActivo.ior}
                     onChange={(e) => actualizarMaterialPBR(materialActivo.id, { ior: parseFloat(e.target.value) })}
-                    className="w-full accent-cyan-600 h-1.5 bg-slate-200 dark:bg-slate-700 rounded-lg cursor-pointer"
+                    className="w-full accent-cyan-600 h-1.5 rounded-lg cursor-pointer"
                   />
-                  <div className="flex justify-between text-[8px] text-slate-400 mt-0.5">
+                  <div 
+                    style={{ color: coloresApariencia?.textoSecundario }}
+                    className="flex justify-between text-[8px] mt-0.5 opacity-80"
+                  >
                     <span>1.00 Aire</span>
                     <span>1.50 Vidrio / Resina</span>
                     <span>2.42 Diamante</span>
@@ -575,33 +823,55 @@ export default function MaterialManagerPanel() {
           </div>
 
           {/* Acordeón 5: Notas Técnicas */}
-          <div className="border border-slate-200 dark:border-slate-800 rounded-lg overflow-hidden bg-white dark:bg-slate-900/60 shadow-sm">
+          <div 
+            style={{ borderColor: coloresApariencia?.bordePaneles }}
+            className="border rounded-lg overflow-hidden shadow-xs"
+          >
             <button
               onClick={() => toggleAcordeon("notas")}
-              className="w-full flex items-center justify-between p-2.5 bg-slate-50 dark:bg-slate-800/60 font-semibold text-slate-700 dark:text-slate-300"
+              style={{
+                backgroundColor: coloresApariencia?.fondoAplicacion,
+                color: coloresApariencia?.textoPrincipal
+              }}
+              className="w-full flex items-center justify-between p-2.5 font-semibold cursor-pointer"
             >
               <div className="flex items-center gap-1.5">
-                <Info className="w-3.5 h-3.5 text-cyan-600" />
+                <Info style={{ color: coloresApariencia?.botonActivo || "#0891B2" }} className="w-3.5 h-3.5" />
                 <span>Notas & Proveedor</span>
               </div>
-              {acordeonAbierto.notas ? <ChevronDown className="w-3.5 h-3.5" /> : <ChevronRight className="w-3.5 h-3.5" />}
+              {acordeonAbierto.notas ? (
+                <ChevronDown style={{ color: coloresApariencia?.textoSecundario }} className="w-3.5 h-3.5" />
+              ) : (
+                <ChevronRight style={{ color: coloresApariencia?.textoSecundario }} className="w-3.5 h-3.5" />
+              )}
             </button>
 
             {acordeonAbierto.notas && (
-              <div className="p-3">
+              <div 
+                style={{ backgroundColor: coloresApariencia?.fondoPaneles }}
+                className="p-3"
+              >
                 <textarea
                   rows={3}
                   value={materialActivo.notas || ""}
                   onChange={(e) => actualizarMaterialPBR(materialActivo.id, { notas: e.target.value })}
                   placeholder="Observaciones de taller, código de fábrica o parámetros de acabado..."
-                  className="w-full p-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded text-slate-800 dark:text-slate-200 text-xs focus:ring-1 focus:ring-cyan-500 focus:outline-none"
+                  style={{
+                    backgroundColor: coloresApariencia?.fondoAplicacion,
+                    borderColor: coloresApariencia?.bordePaneles,
+                    color: coloresApariencia?.textoPrincipal
+                  }}
+                  className="w-full p-2 border rounded text-xs focus:ring-1 focus:ring-cyan-500 focus:outline-none placeholder:opacity-60"
                 />
               </div>
             )}
           </div>
         </div>
       ) : (
-        <div className="flex-1 flex items-center justify-center text-slate-400 p-4 text-center">
+        <div 
+          style={{ color: coloresApariencia?.textoSecundario }}
+          className="flex-1 flex items-center justify-center p-4 text-center italic"
+        >
           Selecciona o crea un material PBR para editar sus propiedades.
         </div>
       )}

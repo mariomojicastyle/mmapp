@@ -5,13 +5,11 @@ import { use3BFStore } from "@/lib/store";
 import { 
   Search, 
   Layers, 
-  Palette, 
   Lightbulb, 
   LightbulbOff, 
   Box, 
   ChevronDown, 
-  ChevronRight,
-  Info
+  ChevronRight
 } from "lucide-react";
 
 export default function PartBreakdownPanel() {
@@ -24,9 +22,10 @@ export default function PartBreakdownPanel() {
     materialesPBR,
     asignacionesPartes,
     asignarParteACapa,
-    asignarParteAMaterial,
     toggleVisibilidadParte,
-    setHoveredPiece
+    setHoveredPiece,
+    coloresApariencia,
+    esquemaColor
   } = use3BFStore();
 
   const [busqueda, setBusqueda] = useState("");
@@ -96,141 +95,182 @@ export default function PartBreakdownPanel() {
   });
 
   return (
-    <div className="flex flex-col h-full text-xs select-none">
+    <div 
+      style={{
+        backgroundColor: coloresApariencia?.fondoPaneles,
+        color: coloresApariencia?.textoPrincipal
+      }}
+      className="flex flex-col h-full text-xs select-none"
+    >
       {/* 🔍 Buscador Superior */}
-      <div className="p-2.5 border-b border-slate-200 dark:border-slate-800 shrink-0">
+      <div 
+        style={{ borderColor: coloresApariencia?.bordePaneles }}
+        className="p-2.5 border-b shrink-0"
+      >
         <div className="relative">
-          <Search className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400" />
+          <Search 
+            style={{ color: coloresApariencia?.textoSecundario }}
+            className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 opacity-70" 
+          />
           <input
             type="text"
             placeholder="Buscar componente o herraje..."
             value={busqueda}
             onChange={(e) => setBusqueda(e.target.value)}
-            className="w-full pl-8 pr-3 py-1.5 bg-slate-100 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded text-slate-800 dark:text-slate-200 text-xs focus:outline-none focus:ring-1 focus:ring-cyan-500"
+            style={{
+              backgroundColor: coloresApariencia?.fondoAplicacion,
+              borderColor: coloresApariencia?.bordePaneles,
+              color: coloresApariencia?.textoPrincipal
+            }}
+            className="w-full pl-8 pr-3 py-1.5 border rounded text-xs focus:outline-none focus:ring-1 focus:ring-cyan-500 placeholder:opacity-60 transition-colors"
           />
         </div>
       </div>
 
       {/* 🌳 Árbol Jerárquico con Selector de Capa en Línea (Direct Dropdown) */}
-      <div className="flex-1 overflow-y-auto p-2 bg-white dark:bg-slate-900 custom-scrollbar font-sans">
+      <div 
+        style={{ backgroundColor: coloresApariencia?.fondoPaneles }}
+        className="flex-1 overflow-y-auto p-2 custom-scrollbar font-sans"
+      >
         {/* Nodo Raíz: Objeto Padre (Cubierta / Estructura) */}
         <div className="space-y-1">
           <div 
             onClick={() => setNodoPadreAbierto(!nodoPadreAbierto)}
-            className="flex items-center gap-1.5 py-1.5 px-2 rounded hover:bg-slate-100 dark:hover:bg-slate-800/60 cursor-pointer font-bold text-slate-800 dark:text-slate-100 text-xs"
+            style={{ color: coloresApariencia?.textoPrincipal }}
+            className="flex items-center gap-1.5 py-1.5 px-2 rounded hover:opacity-80 transition cursor-pointer font-bold text-xs"
           >
             {nodoPadreAbierto ? (
-              <ChevronDown className="w-3.5 h-3.5 text-slate-500 shrink-0" />
+              <ChevronDown style={{ color: coloresApariencia?.textoSecundario }} className="w-3.5 h-3.5 shrink-0" />
             ) : (
-              <ChevronRight className="w-3.5 h-3.5 text-slate-500 shrink-0" />
+              <ChevronRight style={{ color: coloresApariencia?.textoSecundario }} className="w-3.5 h-3.5 shrink-0" />
             )}
-            <Box className="w-4 h-4 text-cyan-600 shrink-0" />
+            <Box style={{ color: coloresApariencia?.botonActivo || "#0891B2" }} className="w-4 h-4 shrink-0" />
             <span className="truncate text-[12px]">{nombreObjetoPadre}</span>
-            <span className="ml-auto text-[10px] font-mono font-normal text-slate-400">
+            <span 
+              style={{ color: coloresApariencia?.textoSecundario }}
+              className="ml-auto text-[10px] font-mono font-normal"
+            >
               ({partesFiltradas.length})
             </span>
           </div>
 
           {/* Lista de Componentes y Herrajes con Selector Directo de Capa */}
           {nodoPadreAbierto && (
-            <div className="ml-2 pl-2 border-l border-slate-200 dark:border-slate-800 space-y-1 mt-1">
+            <div 
+              style={{ borderColor: coloresApariencia?.bordePaneles }}
+              className="ml-2 pl-2 border-l space-y-1 mt-1"
+            >
               {partesFiltradas.length > 0 ? (
                 partesFiltradas.map((parte) => {
                   const isSel = parte.parteKey === parteSeleccionadaKey;
                   const capaEfectivaId = parte.capaId === "por_defecto" ? getCapaSugeridaId(parte.parteKey, parte.categoria) : parte.capaId;
                   const capaItem = capas.find((c) => c.id === capaEfectivaId) || capas[0];
-                  const materialDeCapa = materialesPBR.find((m) => m.id === capaItem?.materialId) || materialesPBR[0];
 
                   return (
                     <div
                       key={parte.parteKey}
                       onClick={() => {
                         setParteSeleccionadaKey(parte.parteKey);
-                        if (parte.cantidad > 0) setHoveredPiece(parte.nombreLimpio);
                       }}
                       onMouseEnter={() => {
                         if (parte.cantidad > 0) setHoveredPiece(parte.nombreLimpio);
                       }}
                       onMouseLeave={() => setHoveredPiece(null)}
-                      className={`group flex items-center justify-between py-1 px-1.5 rounded transition-all ${
-                        isSel
-                          ? "bg-cyan-50/90 dark:bg-cyan-950/40 border border-cyan-300 dark:border-cyan-800/80 shadow-xs"
-                          : "hover:bg-slate-50 dark:hover:bg-slate-800/50 border border-transparent"
-                      }`}
+                      style={isSel ? {
+                        backgroundColor: esquemaColor === "oscuro" ? "rgba(8, 145, 178, 0.20)" : "rgba(8, 145, 178, 0.10)",
+                        borderColor: coloresApariencia?.botonActivo || "#0891B2",
+                      } : {
+                        borderColor: "transparent",
+                      }}
+                      className="group flex items-center justify-between py-1 px-1.5 rounded border transition-all hover:opacity-90"
                     >
                       {/* Lado Izquierdo: Muestra de Color + Nombre del Componente */}
                       <div className="flex items-center gap-1.5 min-w-0 pr-2">
                         {/* Bloque de Color de la Capa */}
                         <div 
-                          className="w-3.5 h-3.5 rounded shrink-0 border border-black/20 shadow-xs"
-                          style={{ backgroundColor: capaItem?.color || "#8A9EA7" }}
+                          className="w-3.5 h-3.5 rounded shrink-0 border shadow-xs"
+                          style={{ 
+                            backgroundColor: capaItem?.color || "#8A9EA7",
+                            borderColor: coloresApariencia?.bordePaneles || "#475569"
+                          }}
                           title={`Color de capa: ${capaItem?.nombre}`}
                         />
                         <span 
-                          className="truncate text-[11px] font-medium text-slate-800 dark:text-slate-200"
+                          style={{ color: coloresApariencia?.textoPrincipal }}
+                          className="truncate text-[11px] font-medium"
                           title={parte.nombreLimpio}
                         >
                           {parte.nombreLimpio}
                         </span>
                         {parte.cantidad > 1 && (
-                          <span className="text-[9px] text-slate-400 font-mono font-bold shrink-0">
+                          <span 
+                            style={{ color: coloresApariencia?.textoSecundario }}
+                            className="text-[9px] font-mono font-bold shrink-0 opacity-75"
+                          >
                             x{parte.cantidad}
                           </span>
                         )}
                       </div>
 
-                      {/* Lado Derecho: Selector Desplegable de Capa en L?nea */}
+                      {/* Lado Derecho: Selector Desplegable de Capa en Línea */}
                       <div className="flex items-center gap-1 shrink-0" onClick={(e) => e.stopPropagation()}>
                         <select
                           value={capaEfectivaId}
                           onChange={(e) => {
                             asignarParteACapa(parte.parteKey, e.target.value, parte.nombreLimpio);
                           }}
-                          className="py-1 px-2 pr-6 bg-slate-100 dark:bg-slate-800/90 hover:bg-white dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-md text-[11px] font-medium text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-cyan-500 cursor-pointer transition shadow-2xs max-w-[125px] truncate"
+                          style={{
+                            backgroundColor: coloresApariencia?.fondoAplicacion,
+                            borderColor: coloresApariencia?.bordePaneles,
+                            color: coloresApariencia?.textoPrincipal
+                          }}
+                          className="py-1 px-2 pr-6 border rounded-md text-[11px] font-medium focus:outline-none focus:ring-1 focus:ring-cyan-500 cursor-pointer transition shadow-2xs max-w-[125px] truncate"
                           title={`Asignar capa a ${parte.nombreLimpio}`}
                         >
                           {capas.map((capa) => (
-                            <option key={capa.id} value={capa.id}>
+                            <option 
+                              key={capa.id} 
+                              value={capa.id}
+                              style={{
+                                backgroundColor: coloresApariencia?.fondoPaneles || "#0B0F17",
+                                color: coloresApariencia?.textoPrincipal || "#F1F5F9"
+                              }}
+                            >
                               {capa.nombre}
                             </option>
                           ))}
                         </select>
 
-                        {/* Toggle de Visibilidad R?pido */}
+                        {/* Toggle de Visibilidad Rápido */}
                         <button
                           onClick={() => toggleVisibilidadParte(parte.parteKey)}
                           title={parte.visible ? "Ocultar componente" : "Mostrar componente"}
-                          className={`p-1 rounded transition ${
-                            parte.visible
-                              ? "text-amber-500 hover:text-amber-600"
-                              : "text-slate-300 dark:text-slate-600"
+                          style={{
+                            color: parte.visible 
+                              ? (coloresApariencia?.objetosSeleccionados || "#FF9500") 
+                              : (coloresApariencia?.textoSecundario || "#64748B"),
+                          }}
+                          className={`p-1 rounded transition hover:scale-110 cursor-pointer ${
+                            !parte.visible ? "opacity-40" : "opacity-100"
                           }`}
                         >
-                          {parte.visible ? <Lightbulb className="w-3 h-3 fill-amber-400" /> : <LightbulbOff className="w-3 h-3" />}
+                          {parte.visible ? <Lightbulb className="w-3.5 h-3.5 fill-current" /> : <LightbulbOff className="w-3.5 h-3.5" />}
                         </button>
                       </div>
                     </div>
                   );
                 })
               ) : (
-                <div className="text-[11px] text-slate-400 py-3 text-center italic">
+                <div 
+                  style={{ color: coloresApariencia?.textoSecundario }}
+                  className="text-[11px] py-3 text-center italic"
+                >
                   No se encontraron componentes.
                 </div>
               )}
             </div>
           )}
         </div>
-      </div>
-
-      {/* ?? Pie Informativo */}
-      <div className="p-2.5 border-t border-slate-200 dark:border-slate-800 bg-slate-50/80 dark:bg-slate-900/60 text-[10px] text-slate-500 space-y-0.5 shrink-0">
-        <p className="flex items-center gap-1.5 font-medium text-slate-700 dark:text-slate-300">
-          <Layers className="w-3.5 h-3.5 text-cyan-600" />
-          Asignaci?n Directa de Capas:
-        </p>
-        <p className="leading-tight text-[9.5px]">
-          Al cambiar la capa de cualquier componente desde el selector, este hereda autom?ticamente el material PBR de esa capa para el visor y la exportaci?n a <strong>Blender</strong>.
-        </p>
       </div>
     </div>
   );

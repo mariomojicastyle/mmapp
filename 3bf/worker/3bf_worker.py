@@ -719,8 +719,10 @@ async def compute_model(request: Request):
                 rhino_outputs_count = len(data_rc.get("values", []))
                 
                 text_outputs = {}
+                perforaciones_nurbs = []
                 for val in data_rc.get("values", []):
                     p_name = val.get("ParamName", "Pieza GH")
+                    p_name_lower = p_name.lower()
                     inner_tree = val.get("InnerTree", {})
                     for path_key, items in inner_tree.items():
                         for item in items:
@@ -777,6 +779,46 @@ async def compute_model(request: Request):
                                                 "size": [x_sz, z_sz, y_sz],
                                                 "position": [center_x, center_z, -center_y]
                                             }
+
+                                            # Extraer perforaciones analíticas OpenNURBS / BRep / Cilindros
+                                            es_perf = any(k in p_name_lower for k in ["perforacion", "perforaciones", "mecanizado", "drill", "tarugo", "tornillo", "minifix", "guia", "corredera"])
+                                            dx_mm = round(x_sz * 1000.0, 1)
+                                            dy_mm = round(y_sz * 1000.0, 1)
+                                            dz_mm = round(z_sz * 1000.0, 1)
+                                            
+                                            dims = [dx_mm, dz_mm, dy_mm]
+                                            max_dim = max(dims)
+                                            min_dims = [d for d in dims if d < max_dim]
+                                            diam_calc = min(dims) if not min_dims else sum(min_dims) / len(min_dims)
+                                            
+                                            if dx_mm >= dz_mm and dx_mm >= dy_mm:
+                                                eje_calc = "X"
+                                            elif dz_mm >= dx_mm and dz_mm >= dy_mm:
+                                                eje_calc = "Z"
+                                            else:
+                                                eje_calc = "Y"
+                                                
+                                            if diam_calc <= 6.5:
+                                                tipo_calc = "guia_d5"
+                                            elif diam_calc <= 11.0:
+                                                tipo_calc = "tarugo_d8"
+                                            elif diam_calc <= 22.0:
+                                                tipo_calc = "caja_d15"
+                                            elif diam_calc <= 45.0:
+                                                tipo_calc = "bisagra_d35"
+                                            else:
+                                                tipo_calc = "otro"
+
+                                            if es_perf or isinstance(decoded_geom, rhino3dm.Brep):
+                                                perforaciones_nurbs.append({
+                                                    "name": p_name,
+                                                    "size_mm": [dx_mm, dz_mm, dy_mm],
+                                                    "center_local_m": [round(center_x, 4), round(center_z, 4), round(-center_y, 4)],
+                                                    "diametro_mm": round(diam_calc, 1),
+                                                    "profundidad_mm": round(max_dim, 1),
+                                                    "eje_principal": eje_calc,
+                                                    "tipo": tipo_calc
+                                                })
                                             
                                             # Si el objeto es una Malla Poligonal real, extraer vértices e índices de triángulos
                                             if isinstance(decoded_geom, rhino3dm.Mesh):
@@ -784,7 +826,6 @@ async def compute_model(request: Request):
                                                 uvs = []
                                                 has_tex_coords = hasattr(decoded_geom, "TextureCoordinates") and len(decoded_geom.TextureCoordinates) == len(decoded_geom.Vertices)
                                                 for idx, v in enumerate(decoded_geom.Vertices):
-                                                    # Convertir a coordenadas locales restando el centro geométrico en mm (Three.js Z = -Rhino Y)
                                                     local_x = (v.X - (center_x * 1000.0)) / 1000.0
                                                     local_y = (v.Y - (center_y * 1000.0)) / 1000.0
                                                     local_z = (v.Z - (center_z * 1000.0)) / 1000.0
@@ -795,7 +836,6 @@ async def compute_model(request: Request):
                                                 indices = []
                                                 for i in range(len(decoded_geom.Faces)):
                                                     f = decoded_geom.Faces[i]
-                                                    # Orden estándar CCW para normales hacia afuera (100% Outward Normals)
                                                     indices.extend([f[0], f[1], f[2]])
                                                     if f[2] != f[3]:
                                                         indices.extend([f[0], f[2], f[3]])
@@ -806,9 +846,7 @@ async def compute_model(request: Request):
                                                         mesh_dict["uvs"] = uvs
                                                     real_meshes.append(mesh_dict)
                                             elif isinstance(decoded_geom, rhino3dm.Brep) or "nurbs" in p_name.lower():
-                                                # Sólido NURBS analítico puro: se reserva para cómputo DfMA/BOM y CAM DXF (no para render visual)
                                                 mesh_dict["is_nurbs_solid"] = True
-                                                # No lo agregamos a real_meshes si es puro NURBS para evitar superposición/titileo visual en Three.js
                                                 pass
                             except Exception as ex:
                                 print(f"[3BF Worker Error]: Error en decodificacion/extraccion de malla {p_name}: {ex}", flush=True)
@@ -831,7 +869,7 @@ async def compute_model(request: Request):
                             "position": [0, 0.0075, 0]
                         })
 
-                print(f"[3BF Worker] RhinoCompute respondió HTTP 200 | Mallas extraídas: {len(real_meshes)}", flush=True)
+                print(f"[3BF Worker] RhinoCompute respondió HTTP 200 | Mallas: {len(real_meshes)} | Perforaciones NURBS: {len(perforaciones_nurbs)}", flush=True)
     except Exception as err:
         print(f"[RhinoCompute Notice]: {err}", flush=True)
         
@@ -1044,6 +1082,7 @@ async def compute_model(request: Request):
             "real_meshes_extracted": len(real_meshes)
         },
         "real_meshes": real_meshes,
+        "perforaciones_nurbs": perforaciones_nurbs,
         "declared_outputs": declared_outputs,
         "execution_time_ms": execution_time_ms,
         "slider_limits": slider_limits,
@@ -1058,6 +1097,218 @@ async def compute_model(request: Request):
         "despiece": piezas_madera_final,
         "herrajes": herrajes_final
     }
+
+
+# =============================================================================
+# ⚡ ENDPOINT DE MECANIZADO INTER-COMPONENTES DfMA (Detección Espacial de Perforaciones)
+# =============================================================================
+@app.post("/mecanizar-intercomponentes")
+async def mecanizar_intercomponentes(request: Request):
+    try:
+        data = await request.json()
+        instancias = data.get("instancias", [])
+        if not instancias or len(instancias) < 1:
+            return {
+                "status": "success", 
+                "mecanizados_cruzados": {}, 
+                "total_perforaciones": 0, 
+                "resumen": ["Escenario sin componentes para mecanizar."]
+            }
+
+        mecanizados_por_instancia = {}
+        total_perforaciones = 0
+        mensajes_resumen = []
+
+        # Estructurar las instancias con sus tableros y perforaciones en coordenadas mundiales
+        instancias_procesadas = []
+        for inst in instancias:
+            inst_id = inst.get("id")
+            inst_nombre = inst.get("nombreVisible") or inst.get("definitionId") or inst_id
+            pos_inst = inst.get("posicion", [0.0, 0.0, 0.0]) # [X, Y, Z] en metros Three.js
+            
+            # Recolectar tableros de esta instancia
+            tableros = []
+            resultado = inst.get("resultado", {})
+            real_meshes = resultado.get("real_meshes", [])
+            
+            for m in real_meshes:
+                m_name = m.get("name", "").lower()
+                # Tableros de madera
+                if any(k in m_name for k in ["cubierta", "tablero", "lateral", "base", "techo", "fondo", "division", "entrepaño", "entrepanio", "cajon", "frente", "board", "mdp"]):
+                    sz = m.get("size", [0.5, 0.015, 0.5]) # [X, Y, Z] en metros
+                    pos_loc = m.get("position", [0.0, 0.0, 0.0])
+                    
+                    min_x = pos_inst[0] + pos_loc[0] - (sz[0] / 2.0)
+                    max_x = pos_inst[0] + pos_loc[0] + (sz[0] / 2.0)
+                    min_y = pos_inst[1] + pos_loc[1] - (sz[1] / 2.0)
+                    max_y = pos_inst[1] + pos_loc[1] + (sz[1] / 2.0)
+                    min_z = pos_inst[2] + pos_loc[2] - (sz[2] / 2.0)
+                    max_z = pos_inst[2] + pos_loc[2] + (sz[2] / 2.0)
+                    
+                    tableros.append({
+                        "name": m.get("name", "Tablero"),
+                        "size_m": sz,
+                        "pos_local_m": pos_loc,
+                        "bbox_world": [min_x, min_y, min_z, max_x, max_y, max_z],
+                        "largo_mm": round(sz[0] * 1000.0, 1),
+                        "ancho_mm": round(sz[2] * 1000.0, 1),
+                        "espesor_mm": round(sz[1] * 1000.0, 1),
+                    })
+            
+            # Si no hay mallas pero hay despiece o parámetros, crear tablero base sintético
+            if not tableros:
+                desp = resultado.get("despiece", [])
+                p0 = desp[0] if desp else None
+                largo_m = (p0.get("largo", 498.0) if p0 else 0.498) / 1000.0
+                ancho_m = (p0.get("ancho", 480.0) if p0 else 0.480) / 1000.0
+                esp_m = 0.015
+                
+                min_x = pos_inst[0] - (largo_m / 2.0)
+                max_x = pos_inst[0] + (largo_m / 2.0)
+                min_y = pos_inst[1] - (esp_m / 2.0)
+                max_y = pos_inst[1] + (esp_m / 2.0)
+                min_z = pos_inst[2] - (ancho_m / 2.0)
+                max_z = pos_inst[2] + (ancho_m / 2.0)
+                
+                tableros.append({
+                    "name": inst_nombre,
+                    "size_m": [largo_m, esp_m, ancho_m],
+                    "pos_local_m": [0, 0, 0],
+                    "bbox_world": [min_x, min_y, min_z, max_x, max_y, max_z],
+                    "largo_mm": round(largo_m * 1000.0, 1),
+                    "ancho_mm": round(ancho_m * 1000.0, 1),
+                    "espesor_mm": 15.0,
+                })
+            
+            # Recolectar perforaciones analíticas NURBS de esta instancia
+            perforaciones = resultado.get("perforaciones_nurbs", [])
+            
+            # Si no hay perforaciones explícitas en el JSON, buscar si hay herrajes para deducir perforaciones
+            if not perforaciones and resultado.get("herrajes"):
+                for h in resultado.get("herrajes", []):
+                    h_nombre = h.get("nombre", "").lower()
+                    cant = h.get("cantidad", 0)
+                    tipo_h = "caja_d15" if "minifix" in h_nombre else ("tarugo_d8" if "tarugo" in h_nombre else "guia_d5")
+                    diam_h = 15.0 if "minifix" in h_nombre else (8.0 if "tarugo" in h_nombre else 5.0)
+                    
+                    # Generar perforaciones en cantos
+                    largo_tab = tableros[0]["largo_mm"] / 1000.0 if tableros else 0.5
+                    ancho_tab = tableros[0]["ancho_mm"] / 1000.0 if tableros else 0.48
+                    
+                    for i in range(cant):
+                        y_offset = (ancho_tab / 2.0 - 0.037) if i % 2 == 0 else (-ancho_tab / 2.0 + 0.037)
+                        x_offset = (-largo_tab / 2.0) if i < (cant // 2) else (largo_tab / 2.0)
+                        
+                        perforaciones.append({
+                            "name": f"Perforacion {h.get('nombre', 'Herraje')} {i+1}",
+                            "size_mm": [diam_h, diam_h, 30.0],
+                            "center_local_m": [x_offset, 0.0, y_offset],
+                            "diametro_mm": diam_h,
+                            "profundidad_mm": 30.0 if diam_h == 8.0 else 12.0,
+                            "eje_principal": "X",
+                            "tipo": tipo_h
+                        })
+
+            instancias_procesadas.append({
+                "id": inst_id,
+                "nombre": inst_nombre,
+                "pos_m": pos_inst,
+                "tableros": tableros,
+                "perforaciones": perforaciones
+            })
+
+        # Evaluar cruces espaciales inter-componentes
+        for inst_receptora in instancias_procesadas:
+            rec_id = inst_receptora["id"]
+            mecanizados_por_instancia[rec_id] = []
+            
+            for tablero in inst_receptora["tableros"]:
+                b_min_x, b_min_y, b_min_z, b_max_x, b_max_y, b_max_z = tablero["bbox_world"]
+                tab_nombre = tablero["name"]
+                
+                # Margen de tolerancia de contacto (25mm)
+                tol = 0.025
+                
+                for inst_emisora in instancias_procesadas:
+                    if inst_emisora["id"] == rec_id:
+                        continue # Solo perforaciones inter-componentes
+                    
+                    em_pos = inst_emisora["pos_m"]
+                    for perf in inst_emisora["perforaciones"]:
+                        p_center_loc = perf.get("center_local_m", [0, 0, 0])
+                        # Posición mundial del cilindro
+                        pw_x = em_pos[0] + p_center_loc[0]
+                        pw_y = em_pos[1] + p_center_loc[1]
+                        pw_z = em_pos[2] + p_center_loc[2]
+                        
+                        # Test de proximidad e intersección
+                        if (b_min_x - tol <= pw_x <= b_max_x + tol and
+                            b_min_y - tol <= pw_y <= b_max_y + tol and
+                            b_min_z - tol <= pw_z <= b_max_z + tol):
+                            
+                            diam = perf.get("diametro_mm", 5.0)
+                            prof = perf.get("profundidad_mm", 12.0)
+                            tipo = perf.get("tipo", "guia_d5")
+                            
+                            # Coordenadas locales en milímetros respecto al centro de corte del tablero
+                            u_mm = round((pw_x - (b_min_x + b_max_x) / 2.0) * 1000.0, 1)
+                            v_mm = round((pw_z - (b_min_z + b_max_z) / 2.0) * 1000.0, 1)
+                            
+                            # Determinar cara
+                            dist_sup = abs(pw_y - b_max_y)
+                            dist_izq = abs(pw_x - b_min_x)
+                            dist_der = abs(pw_x - b_max_x)
+                            
+                            min_dist = min(dist_sup, dist_izq, dist_der)
+                            if min_dist == dist_izq:
+                                cara = "canto_izq"
+                                capa_dxf = f"TCHW1B8D{int(prof*100):04d}" if diam >= 7.0 else f"TCHW1B2D{int(prof*100):04d}"
+                            elif min_dist == dist_der:
+                                cara = "canto_der"
+                                capa_dxf = f"TCHW3B8D{int(prof*100):04d}" if diam >= 7.0 else f"TCHW3B2D{int(prof*100):04d}"
+                            else:
+                                cara = "cara_superior"
+                                capa_dxf = f"TCHW0B15D{int(prof*100):04d}" if diam >= 14.0 else (f"TCHW0B2D{int(prof*100):04d}" if diam <= 6.0 else f"TCHW0B8D{int(prof*100):04d}")
+                            
+                            mecanizado_item = {
+                                "origen_instancia_id": inst_emisora["id"],
+                                "origen_instancia_nombre": inst_emisora["nombre"],
+                                "nombre_perforacion": perf.get("name", "Perforación"),
+                                "tablero_destino": tab_nombre,
+                                "tipo": tipo,
+                                "diametro_mm": diam,
+                                "profundidad_mm": prof,
+                                "cara": cara,
+                                "capa_dxf": capa_dxf,
+                                "u_mm": u_mm,
+                                "v_mm": v_mm,
+                                "pos_mundial_m": [round(pw_x, 4), round(pw_y, 4), round(pw_z, 4)]
+                            }
+                            
+                            mecanizados_por_instancia[rec_id].append(mecanizado_item)
+                            total_perforaciones += 1
+            
+            if len(mecanizados_por_instancia[rec_id]) > 0:
+                mensajes_resumen.append(f"✓ {len(mecanizados_por_instancia[rec_id])} perforación(es) transferidas a '{inst_receptora['nombre']}'")
+
+        if total_perforaciones == 0:
+            mensajes_resumen.append("No se detectaron contactos o intersecciones entre los componentes actuales.")
+
+        return {
+            "status": "success",
+            "total_perforaciones": total_perforaciones,
+            "mecanizados_cruzados": mecanizados_por_instancia,
+            "resumen": mensajes_resumen
+        }
+    except Exception as e:
+        print(f"[3BF Worker Mecanizado Error]: {e}", flush=True)
+        return {
+            "status": "error", 
+            "message": str(e), 
+            "total_perforaciones": 0, 
+            "mecanizados_cruzados": {}, 
+            "resumen": [f"Error: {e}"]
+        }
 
 
 # =============================================================================
@@ -1076,7 +1327,9 @@ async def export_dxf_biesse(request: Request):
         version = data.get("version", "BD 1.0")
 
         # Seleccionar la pieza principal a mecanizar
-        if despiece and len(despiece) > 0:
+        if data.get("pieza"):
+            pieza = data.get("pieza")
+        elif despiece and len(despiece) > 0:
             pieza = despiece[0]
         else:
             ancho_p = float(params.get("RH_IN:01.1 Ancho", params.get("ancho", 498.0)))
@@ -1088,7 +1341,7 @@ async def export_dxf_biesse(request: Request):
                 "espesor": 15.0
             }
 
-        nombre = pieza.get("nombre", model_id)
+        nombre = pieza.get("descripcion") or pieza.get("nombre", model_id)
         largo = float(pieza.get("largo", 498.0))
         ancho = float(pieza.get("ancho", 480.0))
         espesor = float(pieza.get("espesor", 15.0))
@@ -1172,8 +1425,16 @@ async def export_dxf_biesse(request: Request):
 
         # Si es un Entrepaño deslizable, es una pieza lisa de corte para seccionadora (sin perforaciones booleanas)
         if not es_entrepanio:
-            union_izq = str(params.get("RH_IN:02.1 Union izquierda") or params.get("union_izquierda") or "Minifix").lower()
-            union_der = str(params.get("RH_IN:02.0 Union Derecha") or params.get("union_derecha") or "Ya definida").lower()
+            # Buscar el tipo de unión configurado sin hardcodear Minifix
+            union_izq = ""
+            union_der = ""
+            for k, v in params.items():
+                kl = k.lower()
+                if "union" in kl:
+                    if "izq" in kl:
+                        union_izq = str(v).lower()
+                    elif "der" in kl:
+                        union_der = str(v).lower()
 
             # Mecanizado Lado Izquierdo (Cubierta)
             if "minifix" in union_izq:
@@ -1204,6 +1465,27 @@ async def export_dxf_biesse(request: Request):
                 x_canto_der_centro = hx + gap + (espesor / 2.0)
                 msp.add_circle((x_canto_der_centro, y_pos1), radius=4.0, dxfattribs={"layer": "TCHW3B8D2500"})
                 msp.add_circle((x_canto_der_centro, y_pos2), radius=4.0, dxfattribs={"layer": "TCHW3B8D2500"})
+
+        # 3. Incorporar mecanizados cruzados inter-componentes en el DXF
+        mecanizados_cruzados = data.get("mecanizados_cruzados", [])
+        for mec in mecanizados_cruzados:
+            u_x = float(mec.get("u_mm", 0.0))
+            v_y = float(mec.get("v_mm", 0.0))
+            diam = float(mec.get("diametro_mm", 5.0))
+            capa = mec.get("capa_dxf", "TCHW0B2D1200")
+            cara = mec.get("cara", "cara_superior")
+            
+            if capa not in doc.layers:
+                doc.layers.new(name=capa, dxfattribs={"color": 18})
+                
+            if cara == "canto_izq":
+                x_pos = -hx - gap - (espesor / 2.0)
+                msp.add_circle((x_pos, v_y), radius=(diam / 2.0), dxfattribs={"layer": capa})
+            elif cara == "canto_der":
+                x_pos = hx + gap + (espesor / 2.0)
+                msp.add_circle((x_pos, v_y), radius=(diam / 2.0), dxfattribs={"layer": capa})
+            else:
+                msp.add_circle((u_x, v_y), radius=(diam / 2.0), dxfattribs={"layer": capa})
 
         # Serializar DXF a texto
         stream = io.StringIO()

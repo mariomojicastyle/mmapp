@@ -2,7 +2,7 @@
 
 > **Versión Actual:** V10 (Agosto 2026)  
 > **Diagrama Vectorial V10:** [arquitectura_v10.svg](file:///c:/Desarrollo/mmapp/Arquitectura/arquitectura_v10.svg)  
-> **Documento de Especificación 3BF:** [3BF.md](file:///c:/Desarrollo/mmapp/3BF.md) & [3BF_Proceso.md](file:///c:/Desarrollo/mmapp/3BF/3BF_Proceso.md)  
+> **Documento de Especificación 3BF:** [3BF.md](file:///c:/Desarrollo/mmapp/3BF/3BF.md) & [3BF_Proceso.md](file:///c:/Desarrollo/mmapp/3BF/3BF_Proceso.md)  
 > **Módulo Comercial:** [RAM_de_ventas.md](file:///c:/Desarrollo/mmapp/Comercial/RAM_de_ventas.md) & [CRM.md](file:///c:/Desarrollo/mmapp/Comercial/CRM.md)
 
 Este documento detalla de forma exhaustiva la arquitectura técnica del ecosistema B2B de **Mario Mojica**, integrando la plataforma central, el blindaje criptográfico IP Shield, la analítica web privada en VPS, el motor paramétrico de manufactura digital **3DBimFab** sincronizado con Google Drive y el sistema inteligente de prospección **RAM de Ventas**.

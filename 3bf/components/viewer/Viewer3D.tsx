@@ -5,22 +5,25 @@ import { Canvas, useThree, useFrame } from "@react-three/fiber";
 import { OrbitControls, Grid, Stage, Edges, Line, Html } from "@react-three/drei";
 import { use3BFStore, ObjetoInstancia3BF } from "@/lib/store";
 import * as THREE from "three";
-import { Download } from "lucide-react";
+import * as BufferGeometryUtils from "three/examples/jsm/utils/BufferGeometryUtils.js";
+import { Download, Save, Zap, Trash2 } from "lucide-react";
 import NPanel from "./NPanel";
 
-function useMarfilTexture(customUrl?: string | null, tipoMapeado?: string) {
+function useMaterialTexture(targetUrl?: string | null, tipoMapeado?: string) {
   const [texture, setTexture] = React.useState<THREE.Texture | null>(null);
   const isTraversada = tipoMapeado === "Cubierta Atravesada" || tipoMapeado === "Entrepaño Atravesado";
 
-  const textureSrc = customUrl || "/textures/Marfil_diffuse.jpg";
-
   React.useEffect(() => {
     if (typeof window === "undefined") return;
+    if (!targetUrl) {
+      setTexture(null);
+      return;
+    }
 
     const loader = new THREE.TextureLoader();
     loader.setCrossOrigin("anonymous");
     loader.load(
-      textureSrc,
+      targetUrl,
       (tex) => {
         tex.wrapS = THREE.MirroredRepeatWrapping;
         tex.wrapT = THREE.MirroredRepeatWrapping;
@@ -33,10 +36,11 @@ function useMarfilTexture(customUrl?: string | null, tipoMapeado?: string) {
       },
       undefined,
       (err) => {
-        console.error("TextureLoader error:", err);
+        console.error("TextureLoader error loading:", targetUrl, err);
+        setTexture(null);
       }
     );
-  }, [textureSrc, isTraversada]);
+  }, [targetUrl, isTraversada]);
 
   return texture;
 }
@@ -78,34 +82,102 @@ function obtenerNombreUnificadoPieza(obj: THREE.Object3D): string {
   return meshName.replace(/\.\d+$/, "").replace(/\d+$/, "").trim();
 }
 
-function RaycastHandler() {
-  const { raycaster, scene } = useThree();
-  const { setHoveredPiece } = use3BFStore();
-  const currentHoverRef = useRef<string | null>(null);
-  const frameCount = useRef(0);
+function HoverRaycastTracker({ furnitureGroup }: { furnitureGroup: THREE.Group | null }) {
+  const { camera, scene, gl } = useThree();
+  const { setHoveredPiece, modoTransformacion } = use3BFStore();
 
-  useFrame(() => {
-    const intersects = raycaster.intersectObjects(scene.children, true);
-    const validHit = intersects.find((hit) => {
-      const obj = hit.object;
-      const name = obj.name || "";
-      return (
-        obj.type === "Mesh" && 
-        obj.visible && 
-        name.length > 0 &&
-        !name.toLowerCase().includes("floor") &&
-        !name.toLowerCase().includes("grid") &&
-        !name.toLowerCase().includes("plane") &&
-        !name.toLowerCase().includes("axis")
-      );
-    });
+  React.useEffect(() => {
+    const dom = gl.domElement;
+    const raycaster = new THREE.Raycaster();
+    const pointerNDC = new THREE.Vector2();
 
-    const nextHover = validHit ? obtenerNombreUnificadoPieza(validHit.object) : null;
-    if (nextHover !== currentHoverRef.current) {
-      currentHoverRef.current = nextHover;
-      setHoveredPiece(nextHover);
-    }
-  });
+    const handlePointerMove = (e: PointerEvent) => {
+      // Si está en modo grab o transformación, no activar tooltips
+      if (modoTransformacion !== "none") {
+        setHoveredPiece(null);
+        return;
+      }
+
+      const rect = dom.getBoundingClientRect();
+      if (rect.width === 0 || rect.height === 0) return;
+
+      pointerNDC.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
+      pointerNDC.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
+
+      raycaster.setFromCamera(pointerNDC, camera);
+
+      // Recolectar todos los grupos o mallas de piezas 3BF en el escenario
+      const targets: THREE.Object3D[] = [];
+      if (furnitureGroup) {
+        targets.push(furnitureGroup);
+      }
+      if (typeof window !== "undefined" && (window as any).__3bfInstanceGroups) {
+        const groupsMap: Map<string, THREE.Group> = (window as any).__3bfInstanceGroups;
+        groupsMap.forEach((grp) => {
+          if (grp) targets.push(grp);
+        });
+      }
+
+      if (targets.length === 0) {
+        setHoveredPiece(null);
+        return;
+      }
+
+      const hits = raycaster.intersectObjects(targets, true);
+      const validHit = hits.find((h) => {
+        const obj = h.object;
+        const n = (obj.name || "").toLowerCase();
+        return (
+          obj.type === "Mesh" &&
+          obj.visible &&
+          obj.name.length > 0 &&
+          !n.includes("floor") &&
+          !n.includes("grid") &&
+          !n.includes("plane") &&
+          !n.includes("axis") &&
+          !n.includes("silhouette") &&
+          !n.includes("helper")
+        );
+      });
+
+      if (validHit) {
+        const pieceName = obtenerNombreUnificadoPieza(validHit.object);
+        setHoveredPiece(pieceName);
+        
+        let foundInstId: string | null = (validHit.object as any).userData?.instanciaId || null;
+        let curr = validHit.object.parent;
+        while (curr && !foundInstId) {
+          if ((curr as any).userData?.instanciaId) {
+            foundInstId = (curr as any).userData.instanciaId;
+          }
+          curr = curr.parent;
+        }
+        if (typeof window !== "undefined") {
+          (window as any).__hoveredInstanceId = foundInstId;
+        }
+      } else {
+        setHoveredPiece(null);
+        if (typeof window !== "undefined") {
+          (window as any).__hoveredInstanceId = null;
+        }
+      }
+    };
+
+    const handlePointerLeave = () => {
+      setHoveredPiece(null);
+      if (typeof window !== "undefined") {
+        (window as any).__hoveredInstanceId = null;
+      }
+    };
+
+    dom.addEventListener("pointermove", handlePointerMove, { passive: true });
+    dom.addEventListener("pointerleave", handlePointerLeave);
+
+    return () => {
+      dom.removeEventListener("pointermove", handlePointerMove);
+      dom.removeEventListener("pointerleave", handlePointerLeave);
+    };
+  }, [camera, scene, gl, furnitureGroup, modoTransformacion, setHoveredPiece]);
 
   return null;
 }
@@ -201,7 +273,6 @@ function BoardMesh({
   instanciaId?: string;
 }) {
   const { calibracion, objetoSeleccionado, setHoveredPiece, coloresApariencia, capas, materialesPBR, asignacionesPartes } = use3BFStore();
-  const loadedTexture = useMarfilTexture(calibracion.customTextureUrl, tipoMapeado);
 
   const { customGeometry, edgesGeometry } = React.useMemo(() => {
     if (vertices && indices && vertices.length > 0 && indices.length > 0) {
@@ -212,9 +283,16 @@ function BoardMesh({
 
       let edges: THREE.EdgesGeometry | null = null;
       try {
-        edges = new THREE.EdgesGeometry(indexedGeo, calibracion.thresholdAristas);
+        // 🛠️ Unificar vértices coincidentes (welding) para eliminar líneas de triangulación en caras coplanas
+        const weldedGeo = BufferGeometryUtils.mergeVertices(indexedGeo, 0.001);
+        weldedGeo.computeVertexNormals();
+        edges = new THREE.EdgesGeometry(weldedGeo, calibracion.thresholdAristas || 25);
       } catch {
-        edges = null;
+        try {
+          edges = new THREE.EdgesGeometry(indexedGeo, calibracion.thresholdAristas || 25);
+        } catch {
+          edges = null;
+        }
       }
 
       if (grasshopperUvs && grasshopperUvs.length > 0) {
@@ -286,11 +364,8 @@ function BoardMesh({
 
   const cleanName = name.replace(/^RH_OUT:/, "").trim();
 
-  // 💡 1. Verificar visibilidad individual de la parte
+  // 💡 1. Resolver Asignación de Parte
   const asignacion = asignacionesPartes[name] || asignacionesPartes[cleanName] || asignacionesPartes[`RH_OUT:${cleanName}`];
-  if (asignacion && asignacion.visible === false) {
-    return null;
-  }
 
   const isWireframe = modoVisual === "lineas";
   const isTransparent = modoVisual === "semitransparente";
@@ -301,79 +376,40 @@ function BoardMesh({
   const isTapaLuz = name.includes("Tapa Luz") || name.includes("Regleta");
 
   // 💡 2. Resolver Capa Asignada
-  let capaAsignada = null;
+  let capaAsignada: any = null;
   if (asignacion && asignacion.capaId && asignacion.capaId !== "por_defecto") {
     capaAsignada = capas.find((c) => c.id === asignacion.capaId);
   } else {
     const kLow = name.toLowerCase();
     if (kLow.includes("perno") || kLow.includes("tornillo")) {
-      capaAsignada = capas.find((c) => c.nombre.toLowerCase().includes("acero") || c.nombre.toLowerCase().includes("herraje")) || capas[0];
+      capaAsignada = capas.find((c) => c.id === "capa_herrajes" || c.id === "capa_acero" || c.nombre.toLowerCase().includes("acero") || c.nombre.toLowerCase().includes("herraje"));
     } else if (kLow.includes("caja")) {
-      capaAsignada = capas.find((c) => c.nombre.toLowerCase().includes("zinc") || c.nombre.toLowerCase().includes("herraje")) || capas[0];
+      capaAsignada = capas.find((c) => c.id === "capa_zincado" || c.id === "capa_zinc" || c.nombre.toLowerCase().includes("zinc"));
     } else if (kLow.includes("tarugo") || kLow.includes("soporte")) {
-      capaAsignada = capas.find((c) => c.nombre.toLowerCase().includes("madera") || c.nombre.toLowerCase().includes("herraje")) || capas[0];
+      capaAsignada = capas.find((c) => c.id === "capa_madera" || c.nombre.toLowerCase().includes("madera"));
     } else if (kLow.includes("maquinado") || kLow.includes("perforado")) {
-      capaAsignada = capas.find((c) => c.nombre.toLowerCase().includes("perforad")) || capas[0];
+      capaAsignada = capas.find((c) => c.id === "capa_perforados" || c.nombre.toLowerCase().includes("perforad"));
+    } else if (kLow.includes("balance") || kLow.includes("back")) {
+      capaAsignada = capas.find((c) => c.id === "capa_back" || c.id === "capa_espaldar" || c.nombre.toLowerCase().includes("back"));
     } else if (kLow.includes("mdp")) {
-      capaAsignada = capas.find((c) => c.nombre.toLowerCase() === "mdp") || capas[0];
+      capaAsignada = capas.find((c) => c.id === "capa_mdp" || c.nombre.toLowerCase() === "mdp");
     } else if (kLow.includes("mdf")) {
-      capaAsignada = capas.find((c) => c.nombre.toLowerCase() === "mdf") || capas[0];
-    } else if (kLow.includes("color")) {
-      capaAsignada = capas.find((c) => c.nombre.toLowerCase().includes("tono")) || capas[0];
-    } else if (kLow.includes("balance")) {
-      capaAsignada = capas.find((c) => c.nombre.toLowerCase().includes("back") || c.nombre.toLowerCase().includes("espaldar")) || capas[0];
+      capaAsignada = capas.find((c) => c.id === "capa_mdf" || c.nombre.toLowerCase() === "mdf");
+    } else {
+      // Pieza principal de madera/tablero (Cubierta, Lateral, Tapa, Cajón, Tono, etc.)
+      capaAsignada = capas.find((c) => c.id === "capa_tono" || c.nombre.toLowerCase().includes("tono")) || capas[0];
     }
   }
-
-  // 💡 3. Si la capa asignada tiene el bombillo apagado (visible === false), no renderizar la malla
-  if (capaAsignada && capaAsignada.visible === false) {
-    return null;
+  if (!capaAsignada && capas.length > 0) {
+    capaAsignada = capas[0];
   }
 
-  // 2. Resolver Material PBR Asignado
+  // 💡 3. Resolver Material PBR Asignado
   let materialPBR = null;
   if (asignacion && asignacion.materialId && asignacion.materialId !== "por_capa") {
     materialPBR = materialesPBR.find((m) => m.id === asignacion.materialId);
   } else if (capaAsignada) {
     materialPBR = materialesPBR.find((m) => m.id === capaAsignada.materialId);
-  }
-
-  let meshColor = mainColor;
-  let metalness = 0.1;
-  let roughness = 0.4;
-  let opacity = isTransparent ? 0.70 : calibracion.opacidadMadera;
-  let transparent = isTransparent || opacity < 1.0;
-
-  if (isHardwarePerno) {
-    meshColor = coloresApariencia.colorHerrajes || "#9CA3AF";
-    metalness = 0.85;
-    roughness = 0.25;
-    opacity = 1.0;
-    transparent = false;
-  } else if (isHardwareCaja) {
-    meshColor = coloresApariencia.colorHerrajes || "#D97706";
-    metalness = 0.75;
-    roughness = 0.3;
-    opacity = 1.0;
-    transparent = false;
-  } else if (isHardwareTarugo) {
-    meshColor = coloresApariencia.colorHerrajes || "#B45309";
-    metalness = 0.0;
-    roughness = 0.8;
-    opacity = 1.0;
-    transparent = false;
-  } else if (isMachining) {
-    meshColor = "#EF4444";
-    metalness = 0.2;
-    roughness = 0.5;
-    opacity = 0.6;
-    transparent = true;
-  } else if (isTapaLuz) {
-    meshColor = "#1F2937";
-    metalness = 0.2;
-    roughness = 0.4;
-    opacity = 1.0;
-    transparent = false;
   }
 
   const isSolidOrRendered = modoVisual === "solido" || modoVisual === "renderizado";
@@ -384,65 +420,134 @@ function BoardMesh({
   const isBalance = name.includes("Balance");
   const isMelaminaCara = name.includes("Color") || (!isMdpExpuesto && !isBalance);
 
-  if (isWoodBoard) {
-    roughness = isTransparent ? 0.15 : (isMdpExpuesto ? 0.85 : (isBalance ? 0.5 : calibracion.rugosidadMadera));
-    metalness = isTransparent ? 0.1 : (isMdpExpuesto ? 0.0 : (isBalance ? 0.0 : calibracion.metalicidadMadera));
-    if (modoVisual === "semitransparente") {
-      meshColor = coloresApariencia.mallasCristal || "#0284C7";
-      opacity = 0.52;
-      transparent = true;
-    } else if (modoVisual === "solido") {
-      meshColor = coloresApariencia.materialPorDefecto || calibracion.colorSolido || "#E2E8F0";
-      opacity = calibracion.opacidadMadera;
-      transparent = opacity < 1.0;
-    } else if (modoVisual === "renderizado") {
-      opacity = calibracion.opacidadMadera;
-      transparent = opacity < 1.0;
+  // 💡 4. Determinar Textura Objetivo (targetTextureUrl)
+  let targetTextureUrl: string | null = null;
+  if (modoVisual === "renderizado") {
+    if (materialPBR) {
+      targetTextureUrl = materialPBR.texturaUrl || null;
+    } else if (calibracion.customTextureUrl) {
+      targetTextureUrl = calibracion.customTextureUrl;
+    } else if (isWoodBoard && isMelaminaCara) {
+      targetTextureUrl = "/textures/Marfil_diffuse.jpg";
     }
   }
 
-  // Aplicar propiedades físicas del material PBR si está presente y no estamos en semitransparente
+  // ⚠️ LLAMADO INCONDICIONAL DE HOOK: antes de cualquier return temprano (Reglas de React Hooks)
+  const loadedTexture = useMaterialTexture(targetTextureUrl, tipoMapeado);
+
+  // 💡 5. Verificar Visibilidad (Capa o Parte apagada) - DESPUÉS DE TODOS LOS HOOKS
+  const esParteOculta = asignacion && asignacion.visible === false;
+  const esCapaOculta = capaAsignada && capaAsignada.visible === false;
+  if (esParteOculta || esCapaOculta) {
+    return null;
+  }
+
+  const activeMap = modoVisual === "renderizado" ? loadedTexture : null;
+  const hasMap = activeMap !== null;
+
+  // 💡 6. Propiedades Físicas y Color
+  let meshColor = mainColor;
+  let metalness = calibracion.metalicidadMadera ?? 0.1;
+  let roughness = calibracion.rugosidadMadera ?? 0.4;
+  let opacity = isTransparent ? 0.52 : (calibracion.opacidadMadera ?? 1.0);
+  let transparent = isTransparent || opacity < 0.99;
+  let depthWrite = !transparent || opacity >= 0.95;
+
+  if (isHardwarePerno) {
+    meshColor = coloresApariencia.colorHerrajes || "#9CA3AF";
+    metalness = 0.85;
+    roughness = 0.25;
+    opacity = 1.0;
+    transparent = false;
+    depthWrite = true;
+  } else if (isHardwareCaja) {
+    meshColor = coloresApariencia.colorHerrajes || "#D97706";
+    metalness = 0.75;
+    roughness = 0.3;
+    opacity = 1.0;
+    transparent = false;
+    depthWrite = true;
+  } else if (isHardwareTarugo) {
+    meshColor = coloresApariencia.colorHerrajes || "#B45309";
+    metalness = 0.0;
+    roughness = 0.8;
+    opacity = 1.0;
+    transparent = false;
+    depthWrite = true;
+  } else if (isMachining) {
+    meshColor = "#EF4444";
+    metalness = 0.2;
+    roughness = 0.5;
+    opacity = 0.6;
+    transparent = true;
+    depthWrite = false;
+  } else if (isTapaLuz) {
+    meshColor = "#1F2937";
+    metalness = 0.2;
+    roughness = 0.4;
+    opacity = 1.0;
+    transparent = false;
+    depthWrite = true;
+  } else if (isWoodBoard) {
+    roughness = isTransparent ? 0.15 : (isMdpExpuesto ? 0.85 : (isBalance ? 0.5 : (calibracion.rugosidadMadera ?? 0.58)));
+    metalness = isTransparent ? 0.1 : (isMdpExpuesto ? 0.0 : (isBalance ? 0.0 : (calibracion.metalicidadMadera ?? 0.20)));
+    opacity = isTransparent ? 0.52 : (calibracion.opacidadMadera ?? 1.0);
+    transparent = isTransparent || opacity < 0.99;
+    depthWrite = !isTransparent && opacity >= 0.95;
+  }
+
+  // Aplicar propiedades físicas del material PBR
   if (materialPBR && modoVisual !== "semitransparente") {
     meshColor = materialPBR.colorBase;
-    metalness = materialPBR.metalico;
-    roughness = materialPBR.rugosidad;
-    if (materialPBR.opacidad < 1.0) {
-      opacity = materialPBR.opacidad;
+    metalness = calibracion.metalicidadMadera ?? materialPBR.metalico;
+    roughness = calibracion.rugosidadMadera ?? materialPBR.rugosidad;
+    if (materialPBR.opacidad < 1.0 || (calibracion.opacidadMadera ?? 1.0) < 0.99) {
+      opacity = Math.min(materialPBR.opacidad, calibracion.opacidadMadera ?? 1.0);
       transparent = true;
+      depthWrite = opacity >= 0.95;
     }
   }
 
-  const activeMap = (modoVisual === "renderizado" && isWoodBoard && isMelaminaCara && (calibracion.customTextureUrl || isRenderedMode || (materialPBR && materialPBR.texturaUrl))) ? loadedTexture : null;
-  const hasMap = activeMap !== null;
-  let finalMeshColor = hasMap ? "#ffffff" : (modoVisual === "solido" ? (coloresApariencia.materialPorDefecto || calibracion.colorSolido || "#CBD5E1") : meshColor);
-
-  if (modoVisual === "renderizado" && isWoodBoard && !materialPBR) {
-    if (isMdpExpuesto) {
+  let finalMeshColor = meshColor;
+  if (modoVisual === "semitransparente") {
+    finalMeshColor = coloresApariencia.mallasCristal || "#0284C7";
+    opacity = 0.52;
+    transparent = true;
+    depthWrite = false;
+  } else if (modoVisual === "solido") {
+    // 🎨 MODO SÓLIDO (Solid Mode): El color de la pieza coincide EXACTAMENTE con el color de su capa asignada
+    finalMeshColor = capaAsignada?.color || (materialPBR ? materialPBR.colorBase : (coloresApariencia.materialPorDefecto || calibracion.colorSolido || "#CBD5E1"));
+    if (isWoodBoard) {
+      roughness = calibracion.rugosidadMadera ?? 0.58;
+      metalness = calibracion.metalicidadMadera ?? 0.20;
+      opacity = calibracion.opacidadMadera ?? 1.0;
+      transparent = opacity < 0.99;
+      depthWrite = opacity >= 0.95;
+    }
+  } else if (modoVisual === "renderizado") {
+    if (hasMap) {
+      finalMeshColor = "#ffffff";
+    } else if (materialPBR) {
+      finalMeshColor = materialPBR.colorBase;
+    } else if (isMdpExpuesto) {
       finalMeshColor = "#D5B88A";
     } else if (isBalance) {
       finalMeshColor = "#F9FAFB";
+    } else {
+      finalMeshColor = calibracion.colorSolido || "#CBD5E1";
+    }
+    if (isWoodBoard) {
+      roughness = calibracion.rugosidadMadera ?? 0.58;
+      metalness = calibracion.metalicidadMadera ?? 0.20;
+      opacity = calibracion.opacidadMadera ?? 1.0;
+      transparent = opacity < 0.99;
+      depthWrite = opacity >= 0.95;
     }
   }
 
   const nombreMaterialEfectivo = materialPBR ? materialPBR.nombre : (isWoodBoard ? "M_Marfil" : (isHardwarePerno ? "Acero" : (isHardwareCaja ? "Zinc" : "PBR_Default")));
 
-  const debeMostrarAristas = !objetoSeleccionado && calibracion.mostrarAristas && isWoodBoard;
-
-  const handlePointerOver = (e: any) => {
-    e.stopPropagation();
-    setHoveredPiece(cleanName);
-    if (instanciaId && typeof window !== "undefined") {
-      (window as any).__hoveredInstanceId = instanciaId;
-    }
-  };
-
-  const handlePointerOut = (e: any) => {
-    e.stopPropagation();
-    setHoveredPiece(null);
-    if (typeof window !== "undefined" && (window as any).__hoveredInstanceId === instanciaId) {
-      (window as any).__hoveredInstanceId = null;
-    }
-  };
+  const debeMostrarAristas = calibracion.mostrarAristas !== false && isWoodBoard && modoVisual !== "lineas";
 
   if (customGeometry) {
     return (
@@ -450,11 +555,10 @@ function BoardMesh({
         position={position}
         name={cleanName}
         geometry={customGeometry}
-        onPointerOver={handlePointerOver}
-        onPointerOut={handlePointerOut}
+        userData={{ instanciaId }}
       >
         <meshStandardMaterial
-          key={`${activeMap ? activeMap.uuid : "no-map"}-${modoVisual}-${nombreMaterialEfectivo}`}
+          key={`${activeMap ? (activeMap as any).uuid : "no-map"}-${modoVisual}-${nombreMaterialEfectivo}-${finalMeshColor}-${opacity}-${roughness}-${metalness}`}
           name={nombreMaterialEfectivo}
           color={finalMeshColor}
           map={activeMap}
@@ -463,16 +567,29 @@ function BoardMesh({
           roughness={roughness}
           metalness={metalness}
           wireframe={isWireframe}
-          depthWrite={true}
+          depthWrite={depthWrite}
           side={THREE.DoubleSide}
         />
         {debeMostrarAristas && (
-          <Edges
-            threshold={calibracion.thresholdAristas || 40}
-            color={calibracion.colorAristas}
-            lineWidth={1}
-            renderOrder={10}
-          />
+          edgesGeometry ? (
+            <lineSegments geometry={edgesGeometry} renderOrder={10}>
+              <lineBasicMaterial 
+                color={calibracion.colorAristas || "#111827"} 
+                transparent={(calibracion.opacidadAristas ?? 1.0) < 0.99}
+                opacity={calibracion.opacidadAristas ?? 1.0}
+                depthTest={true} 
+              />
+            </lineSegments>
+          ) : (
+            <Edges
+              threshold={calibracion.thresholdAristas || 25}
+              color={calibracion.colorAristas || "#111827"}
+              opacity={calibracion.opacidadAristas ?? 1.0}
+              transparent={(calibracion.opacidadAristas ?? 1.0) < 0.99}
+              lineWidth={1}
+              renderOrder={10}
+            />
+          )
         )}
       </mesh>
     );
@@ -482,12 +599,11 @@ function BoardMesh({
     <mesh
       position={position}
       name={cleanName}
-      onPointerOver={handlePointerOver}
-      onPointerOut={handlePointerOut}
+      userData={{ instanciaId }}
     >
       <boxGeometry args={size} />
       <meshStandardMaterial
-        key={`${activeMap ? activeMap.uuid : "no-map"}-${modoVisual}-${nombreMaterialEfectivo}`}
+        key={`${activeMap ? (activeMap as any).uuid : "no-map"}-${modoVisual}-${nombreMaterialEfectivo}-${finalMeshColor}-${opacity}-${roughness}-${metalness}`}
         name={nombreMaterialEfectivo}
         color={finalMeshColor}
         map={activeMap}
@@ -496,15 +612,28 @@ function BoardMesh({
         roughness={roughness}
         metalness={metalness}
         wireframe={isWireframe}
-        depthWrite={true}
+        depthWrite={depthWrite}
       />
       {debeMostrarAristas && (
-        <Edges
-          threshold={calibracion.thresholdAristas || 40}
-          color={calibracion.colorAristas}
-          lineWidth={1}
-          renderOrder={10}
-        />
+        boxEdgesGeometry ? (
+          <lineSegments geometry={boxEdgesGeometry} renderOrder={10}>
+            <lineBasicMaterial 
+              color={calibracion.colorAristas || "#111827"} 
+              transparent={(calibracion.opacidadAristas ?? 1.0) < 0.99}
+              opacity={calibracion.opacidadAristas ?? 1.0}
+              depthTest={true} 
+            />
+          </lineSegments>
+        ) : (
+          <Edges
+            threshold={calibracion.thresholdAristas || 25}
+            color={calibracion.colorAristas || "#111827"}
+            opacity={calibracion.opacidadAristas ?? 1.0}
+            transparent={(calibracion.opacidadAristas ?? 1.0) < 0.99}
+            lineWidth={1}
+            renderOrder={10}
+          />
+        )
       )}
     </mesh>
   );
@@ -718,9 +847,16 @@ function SelectionController() {
       } else if (e.button === 0) {
         // 🎯 CLIC IZQUIERDO
         if (modoTransformacion === "none") {
-          const currentHover = use3BFStore.getState().hoveredPiece;
-          if (currentHover === null) {
-            seleccionarInstancia(null);
+          const hoveredInstId = typeof window !== "undefined" ? (window as any).__hoveredInstanceId : null;
+          if (hoveredInstId && use3BFStore.getState().instancias[hoveredInstId]) {
+            seleccionarInstancia(hoveredInstId);
+          } else {
+            const currentHover = use3BFStore.getState().hoveredPiece;
+            if (currentHover !== null) {
+              setObjetoSeleccionado(true);
+            } else {
+              seleccionarInstancia(null);
+            }
           }
         } else if (modoTransformacion === "grab") {
           // ⚠️ Si está eligiendo punto de snap (B), NO confirmar ni deseleccionar
@@ -1685,6 +1821,13 @@ export default function Viewer3D() {
     parametros,
     hoveredPiece,
     setMostrarNPanel,
+    pestanaNPanel,
+    setPestanaNPanel,
+    setModalGuardarComoAbierto,
+    muebleActivoGuardado,
+    instancias,
+    objetoActivoId,
+    seleccionarInstancia,
     objetoSeleccionado,
     setObjetoSeleccionado,
     modoTransformacion,
@@ -1700,9 +1843,16 @@ export default function Viewer3D() {
     toggleSnapMode,
     deshacer,
     rehacer,
+    mecanizadosCruzados,
+    mecanizadoEnProgreso,
+    perforarMueble,
+    limpiarPerforaciones,
+    renombrarInstancia,
   } = use3BFStore();
 
   const [furnitureGroup, setFurnitureGroup] = React.useState<THREE.Group | null>(null);
+  const [editingInstId, setEditingInstId] = React.useState<string | null>(null);
+  const [editTempName, setEditTempName] = React.useState<string>("");
   const [mousePos, setMousePos] = React.useState({ x: 0, y: 0 });
   const [rhinoAxes, setRhinoAxes] = React.useState({
     x: { x: 22, y: 0 },
@@ -2112,23 +2262,240 @@ export default function Viewer3D() {
         </div>
       )}
 
+      {/* 🧭 HUD SUPERIOR IZQUIERDO: JERARQUÍA NOMBRE DE ARCHIVO + (N) COMPONENTES + LISTA DE PIEZAS */}
+      <div className="absolute top-3.5 left-4 z-20 flex flex-col items-start gap-1 select-none pointer-events-auto max-w-[260px]">
+        {/* Nivel 1: Barra de Acciones Superior (Nombre / Guardar + Perforar Mueble) */}
+        <div className="flex items-center gap-1.5 flex-wrap">
+          {muebleActivoGuardado ? (
+            <button
+              onClick={() => {
+                setMostrarNPanel(true);
+                setPestanaNPanel("muebles");
+              }}
+              title="Mueble cargado en el escenario (Haz clic para gestionar en Biblioteca de Muebles)"
+              style={{ 
+                color: coloresApariencia?.textoPrincipal || (tema === "obsidian" ? "#F8FAFC" : "#0F172A"),
+              }}
+              className="flex items-center gap-1.5 text-xs font-bold hover:text-cyan-500 transition-colors cursor-pointer group text-left"
+            >
+              <span className="underline decoration-dotted underline-offset-2 group-hover:decoration-solid truncate">
+                {muebleActivoGuardado.nombre}
+              </span>
+            </button>
+          ) : (
+            <button
+              onClick={() => {
+                setMostrarNPanel(true);
+                setPestanaNPanel("muebles");
+                setModalGuardarComoAbierto(true);
+              }}
+              title="Diseño sin guardar: Haz clic aquí para seleccionar carpeta y guardar"
+              style={{
+                backgroundColor: coloresApariencia?.botonActivo || "#0891b2",
+                borderColor: coloresApariencia?.colorMarca || "#0891b2",
+              }}
+              className="px-3 h-6 rounded-full text-white shadow-md border flex items-center gap-1.5 text-xs font-bold hover:opacity-90 active:scale-95 transition-all cursor-pointer"
+            >
+              <Save className="w-3 h-3 text-white" />
+              <span>Guardar</span>
+            </button>
+          )}
+
+          {/* Botón Perforar Mueble */}
+          <button
+            onClick={async () => {
+              await perforarMueble();
+            }}
+            disabled={mecanizadoEnProgreso}
+            title="Detectar contacto entre piezas y transferir perforaciones al DXF"
+            style={{
+              backgroundColor: Object.keys(mecanizadosCruzados || {}).length > 0 
+                ? (coloresApariencia?.fondoPaneles || "#FFFFFF") 
+                : (coloresApariencia?.fondoPaneles || "#FFFFFF"),
+              borderColor: Object.keys(mecanizadosCruzados || {}).length > 0 
+                ? "#F59E0B" 
+                : (coloresApariencia?.bordePaneles || "#CBD5E1"),
+              color: Object.keys(mecanizadosCruzados || {}).length > 0 
+                ? "#D97706" 
+                : (coloresApariencia?.textoPrincipal || "#0F172A"),
+            }}
+            className="px-2.5 h-6 rounded-full shadow-md border flex items-center gap-1 text-[11px] font-bold hover:border-amber-500 hover:text-amber-600 active:scale-95 transition-all cursor-pointer disabled:opacity-50"
+          >
+            <Zap className={`w-3 h-3 ${mecanizadoEnProgreso ? "animate-spin text-amber-500" : "text-amber-500"}`} />
+            <span>
+              {mecanizadoEnProgreso 
+                ? "Perforando..." 
+                : (Object.keys(mecanizadosCruzados || {}).length > 0 
+                    ? `Perforado (${Object.values(mecanizadosCruzados).flat().length})` 
+                    : "Perforar")}
+            </span>
+          </button>
+
+          {/* Botón Limpiar Perforaciones */}
+          {Object.keys(mecanizadosCruzados || {}).length > 0 && (
+            <button
+              onClick={limpiarPerforaciones}
+              title="Eliminar perforaciones transferidas"
+              style={{
+                backgroundColor: coloresApariencia?.fondoPaneles || "#FFFFFF",
+                borderColor: coloresApariencia?.bordePaneles || "#CBD5E1",
+              }}
+              className="w-6 h-6 rounded-full shadow-md border flex items-center justify-center text-red-500 hover:bg-red-50 hover:border-red-400 active:scale-95 transition-all cursor-pointer"
+            >
+              <Trash2 className="w-3 h-3" />
+            </button>
+          )}
+        </div>
+
+        {/* Nivel 2: Contador de Componentes (N) y Listado Jerárquico */}
+        <div className="flex flex-col items-start gap-0.5">
+          {(() => {
+            const lista = Object.values(instancias || {});
+            
+            // Determinar si hay componentes reales en el escenario
+            let itemsAMostrar: { id: string; nombre: string; isActivo: boolean; isLegacy?: boolean }[] = [];
+
+            if (lista.length > 0) {
+              itemsAMostrar = lista.map((inst, idx) => ({
+                id: inst.id,
+                nombre: inst.nombreVisible || inst.definitionId || `Componente ${idx + 1}`,
+                isActivo: objetoActivoId === inst.id,
+              }));
+            } else if (!escenarioLimpio && ((resultado?.real_meshes && resultado.real_meshes.length > 0) || (resultado?.despiece && resultado.despiece.length > 0))) {
+              const nombreBase = parametros.model_id || (parametros as any).custom_filename?.replace(/\.ghx$/i, "") || "Cubierta";
+              itemsAMostrar = [{
+                id: "base_model",
+                nombre: nombreBase,
+                isActivo: true,
+                isLegacy: true,
+              }];
+            }
+
+            const total = itemsAMostrar.length;
+
+            return (
+              <>
+                <span 
+                  style={{ 
+                    color: coloresApariencia?.textoSecundario || (tema === "obsidian" ? "#94A3B8" : "#64748B"),
+                  }}
+                  className="text-[11px] font-mono font-semibold opacity-85"
+                >
+                  ({total}) {total === 1 ? "Componente" : "Componentes"}:
+                </span>
+
+                {/* Lista de Nombres de Componentes */}
+                <div className="flex flex-col items-start gap-0.5 pl-1 max-h-[35vh] overflow-y-auto custom-scrollbar">
+                  {total > 0 ? (
+                    itemsAMostrar.map((comp) => {
+                      const isEditing = editingInstId === comp.id;
+
+                      if (isEditing) {
+                        return (
+                          <div key={comp.id} className="flex items-center gap-1 text-[11px] font-mono pl-0.5 my-0.5">
+                            <span className="opacity-60 text-[9px]">•</span>
+                            <input
+                              autoFocus
+                              type="text"
+                              value={editTempName}
+                              onChange={(e) => setEditTempName(e.target.value)}
+                              onKeyDown={(e) => {
+                                if (e.key === "Enter") {
+                                  e.preventDefault();
+                                  e.stopPropagation();
+                                  if (editTempName.trim()) {
+                                    renombrarInstancia(comp.id, editTempName.trim());
+                                  }
+                                  setEditingInstId(null);
+                                } else if (e.key === "Escape") {
+                                  e.preventDefault();
+                                  e.stopPropagation();
+                                  setEditingInstId(null);
+                                }
+                              }}
+                              onBlur={() => {
+                                if (editTempName.trim()) {
+                                  renombrarInstancia(comp.id, editTempName.trim());
+                                }
+                                setEditingInstId(null);
+                              }}
+                              style={{
+                                backgroundColor: coloresApariencia?.fondoAplicacion || "#FFFFFF",
+                                borderColor: coloresApariencia?.botonActivo || "#0891b2",
+                                color: coloresApariencia?.textoPrincipal || "#0F172A",
+                              }}
+                              className="px-1.5 py-0.5 text-[11px] font-mono border rounded outline-none w-32 shadow-xs"
+                            />
+                          </div>
+                        );
+                      }
+
+                      return (
+                        <button
+                          key={comp.id}
+                          onClick={() => {
+                            if (!comp.isLegacy) {
+                              seleccionarInstancia(comp.id);
+                            }
+                          }}
+                          onDoubleClick={(e) => {
+                            e.stopPropagation();
+                            setEditingInstId(comp.id);
+                            setEditTempName(comp.nombre);
+                          }}
+                          title={comp.isLegacy ? `${comp.nombre} (Doble clic para renombrar)` : `Doble clic para renombrar: ${comp.nombre}`}
+                          style={{
+                            color: coloresApariencia?.textoSecundario || (tema === "obsidian" ? "#94A3B8" : "#64748B")
+                          }}
+                          className={`flex items-center gap-1 text-[11px] font-mono transition-colors hover:text-cyan-500 cursor-pointer text-left select-none ${
+                            comp.isActivo ? "font-bold opacity-90" : "font-medium opacity-75 hover:opacity-100"
+                          }`}
+                        >
+                          <span className="opacity-60 text-[9px]">•</span>
+                          <span className="truncate max-w-[200px]">{comp.nombre}</span>
+                        </button>
+                      );
+                    })
+                  ) : (
+                    <span 
+                      style={{
+                        color: coloresApariencia?.textoSecundario || (tema === "obsidian" ? "#64748B" : "#94A3B8")
+                      }}
+                      className="text-[10px] italic opacity-60 pl-1"
+                    >
+                      (Escenario vacío)
+                    </span>
+                  )}
+                </div>
+              </>
+            );
+          })()}
+        </div>
+      </div>
+
       <Canvas
         camera={{ position: [0.6, 0.9, 1.1], fov: 45, near: 0.005, far: 100 }}
         shadows
         gl={{ preserveDrawingBuffer: true, antialias: true }}
+        onPointerMissed={() => {
+          use3BFStore.getState().setHoveredPiece(null);
+          if (typeof window !== "undefined") {
+            (window as any).__hoveredInstanceId = null;
+          }
+        }}
       >
         <color attach="background" args={[coloresApariencia.fondo3D || (tema === "obsidian" ? "#0D1117" : "#F3F4F6")]} />
         <CameraRefBridge cameraRef={cameraRef} />
         <ThumbnailCapturer />
-        <RaycastHandler />
-        <ambientLight intensity={calibracion.intensidadLuzAmbiental} />
+        <HoverRaycastTracker furnitureGroup={furnitureGroup} />
+        <ambientLight intensity={calibracion.intensidadLuzAmbiental ?? 0.8} />
         <directionalLight 
           position={[5, 8, 5]} 
-          intensity={calibracion.intensidadLuzDirecta} 
+          intensity={calibracion.intensidadLuzDirecta ?? 1.5} 
           castShadow 
           shadow-mapSize={[1024, 1024]} 
         />
-        <directionalLight position={[-5, 5, -5]} intensity={0.3} />
+        <directionalLight position={[-5, 5, -5]} intensity={(calibracion.intensidadLuzDirecta ?? 1.5) * 0.25} />
         
         {!escenarioLimpio && (
           <>

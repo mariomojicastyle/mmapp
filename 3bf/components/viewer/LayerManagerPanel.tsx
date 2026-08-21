@@ -12,9 +12,7 @@ import {
   LightbulbOff, 
   Lock, 
   Unlock, 
-  Check, 
-  Copy,
-  Sliders,
+  Check,
   Sparkles
 } from "lucide-react";
 
@@ -29,7 +27,9 @@ export default function LayerManagerPanel() {
     toggleBloqueoCapa,
     resetCapasYMateriales,
     setMaterialSeleccionadoId,
-    setPestanaNPanel
+    setPestanaNPanel,
+    coloresApariencia,
+    esquemaColor
   } = use3BFStore();
 
   const [busqueda, setBusqueda] = useState("");
@@ -71,35 +71,57 @@ export default function LayerManagerPanel() {
   };
 
   return (
-    <div className="flex flex-col h-full text-xs select-none">
-      {/* ?? Barra Superior: B?squeda y Acciones de Capa */}
-      <div className="p-3 border-b border-slate-200 dark:border-slate-800 space-y-2">
+    <div 
+      style={{
+        backgroundColor: coloresApariencia?.fondoPaneles,
+        color: coloresApariencia?.textoPrincipal
+      }}
+      className="flex flex-col h-full text-xs select-none"
+    >
+      {/* 🔍 Barra Superior: Búsqueda y Acciones de Capa */}
+      <div 
+        style={{ borderColor: coloresApariencia?.bordePaneles }}
+        className="p-3 border-b space-y-2 shrink-0"
+      >
         <div className="relative">
-          <Search className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400" />
+          <Search 
+            style={{ color: coloresApariencia?.textoSecundario }}
+            className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 opacity-70" 
+          />
           <input
             type="text"
             placeholder="Buscar capa..."
             value={busqueda}
             onChange={(e) => setBusqueda(e.target.value)}
-            className="w-full pl-8 pr-3 py-1.5 bg-slate-100 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-md text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-cyan-500"
+            style={{
+              backgroundColor: coloresApariencia?.fondoAplicacion,
+              borderColor: coloresApariencia?.bordePaneles,
+              color: coloresApariencia?.textoPrincipal
+            }}
+            className="w-full pl-8 pr-3 py-1.5 border rounded-md text-xs focus:outline-none focus:ring-1 focus:ring-cyan-500 placeholder:opacity-60 transition-colors"
           />
         </div>
 
         <div className="flex items-center justify-between">
-          <span className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">
+          <span 
+            style={{ color: coloresApariencia?.textoSecundario }}
+            className="text-[10px] font-semibold uppercase tracking-wider"
+          >
             Capas del Modelo ({capasFiltradas.length})
           </span>
           <div className="flex items-center gap-1">
             <button
               onClick={handleCrearCapa}
-              className="flex items-center gap-1 px-2.5 py-1 bg-cyan-600 hover:bg-cyan-700 text-white rounded text-[11px] font-medium transition shadow-sm"
+              style={{ backgroundColor: coloresApariencia?.botonActivo || "#0891B2" }}
+              className="flex items-center gap-1 px-2.5 py-1 text-white rounded text-[11px] font-medium transition shadow-2xs hover:opacity-90 cursor-pointer"
             >
               <Plus className="w-3 h-3" /> Nueva Capa
             </button>
             <button
               onClick={resetCapasYMateriales}
               title="Restablecer Capas por Defecto"
-              className="p-1 text-slate-400 hover:text-cyan-600 rounded transition"
+              style={{ color: coloresApariencia?.textoSecundario }}
+              className="p-1 hover:opacity-100 rounded transition cursor-pointer"
             >
               <RotateCcw className="w-3.5 h-3.5" />
             </button>
@@ -107,51 +129,45 @@ export default function LayerManagerPanel() {
         </div>
       </div>
 
-      {/* ?? Tabla de Capas (Estilo Panel de Capas de Rhino 8) */}
-      <div className="flex-1 overflow-y-auto">
+      {/* 📋 Tabla de Capas (Estilo Panel de Capas de Rhino 8) */}
+      <div 
+        style={{ backgroundColor: coloresApariencia?.fondoPaneles }}
+        className="flex-1 overflow-y-auto custom-scrollbar"
+      >
         <table className="w-full text-left border-collapse">
-          <thead className="sticky top-0 bg-slate-100 dark:bg-slate-800/90 text-[10px] uppercase font-semibold text-slate-500 border-b border-slate-200 dark:border-slate-700 z-10">
+          <thead 
+            style={{
+              backgroundColor: coloresApariencia?.fondoAplicacion,
+              color: coloresApariencia?.textoSecundario,
+              borderColor: coloresApariencia?.bordePaneles
+            }}
+            className="sticky top-0 text-[10px] uppercase font-semibold border-b z-10"
+          >
             <tr>
-              <th className="py-2 px-2 w-7 text-center" title="Capa Activa">Act</th>
-              <th className="py-2 px-2">Capa</th>
-              <th className="py-2 px-1 w-7 text-center" title="Visibilidad (??)">Vis</th>
-              <th className="py-2 px-1 w-7 text-center" title="Bloqueo (??)">Bloq</th>
+              <th className="py-2 px-2.5">Capa</th>
+              <th className="py-2 px-1 w-7 text-center" title="Visibilidad">Vis</th>
               <th className="py-2 px-1.5 w-7 text-center" title="Color de Capa">Col</th>
               <th className="py-2 px-2">Material Asignado</th>
               <th className="py-2 px-1.5 w-7 text-center"></th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60 font-sans">
+          <tbody 
+            style={{ borderColor: coloresApariencia?.bordePaneles }}
+            className="divide-y font-sans"
+          >
             {capasFiltradas.map((capa) => {
               const materialAsignado = materialesPBR.find((m) => m.id === capa.materialId) || materialesPBR[0];
-              const esActiva = capa.activa;
 
               return (
                 <tr
                   key={capa.id}
-                  className={`group transition-colors ${
-                    esActiva
-                      ? "bg-cyan-50/70 dark:bg-cyan-950/30 font-medium"
-                      : "hover:bg-slate-50 dark:hover:bg-slate-800/40"
-                  }`}
+                  style={{
+                    borderColor: coloresApariencia?.bordePaneles
+                  }}
+                  className="group transition-colors hover:opacity-90"
                 >
-                  {/* Col 1: Capa Activa Check */}
-                  <td className="py-1.5 px-2 text-center">
-                    <button
-                      onClick={() => actualizarCapa(capa.id, { activa: true })}
-                      title={esActiva ? "Capa de trabajo activa" : "Establecer como capa activa"}
-                      className={`w-3.5 h-3.5 rounded-full border flex items-center justify-center transition-all ${
-                        esActiva
-                          ? "border-cyan-600 bg-cyan-600 text-white"
-                          : "border-slate-300 dark:border-slate-600 hover:border-cyan-500"
-                      }`}
-                    >
-                      {esActiva && <Check className="w-2.5 h-2.5 stroke-[3]" />}
-                    </button>
-                  </td>
-
-                  {/* Col 2: Nombre de Capa (Doble clic o clic para editar) */}
-                  <td className="py-1.5 px-2">
+                  {/* Col 1: Nombre de Capa (Doble clic o clic para editar) */}
+                  <td className="py-1.5 px-2.5">
                     {capaEnEdicionId === capa.id ? (
                       <input
                         type="text"
@@ -163,12 +179,18 @@ export default function LayerManagerPanel() {
                           if (e.key === "Enter") guardarEdicionNombre(capa.id);
                           if (e.key === "Escape") setCapaEnEdicionId(null);
                         }}
-                        className="w-full px-1.5 py-0.5 bg-white dark:bg-slate-900 border border-cyan-500 rounded text-slate-800 dark:text-slate-100 text-xs focus:outline-none"
+                        style={{
+                          backgroundColor: coloresApariencia?.fondoAplicacion,
+                          borderColor: coloresApariencia?.botonActivo || "#0891B2",
+                          color: coloresApariencia?.textoPrincipal
+                        }}
+                        className="w-full px-1.5 py-0.5 border rounded text-xs focus:outline-none"
                       />
                     ) : (
                       <div
                         onDoubleClick={() => iniciarEdicion(capa.id, capa.nombre)}
-                        className="cursor-pointer truncate max-w-[90px] sm:max-w-[120px] text-slate-800 dark:text-slate-200"
+                        style={{ color: coloresApariencia?.textoPrincipal }}
+                        className="cursor-pointer truncate max-w-[90px] sm:max-w-[120px] font-medium"
                         title={`${capa.nombre} (Doble clic para renombrar)`}
                       >
                         {capa.nombre}
@@ -176,39 +198,30 @@ export default function LayerManagerPanel() {
                     )}
                   </td>
 
-                  {/* Col 3: Visibilidad (?? Bombillo) */}
+                  {/* Col 2: Visibilidad (Bombillo) */}
                   <td className="py-1.5 px-1 text-center">
                     <button
                       onClick={() => toggleVisibilidadCapa(capa.id)}
-                      title={capa.visible ? "Ocultar capa (??)" : "Mostrar capa"}
-                      className={`p-1 rounded transition ${
-                        capa.visible
-                          ? "text-amber-500 hover:text-amber-600"
-                          : "text-slate-300 dark:text-slate-600 hover:text-slate-400"
+                      title={capa.visible ? "Ocultar capa" : "Mostrar capa"}
+                      style={{
+                        color: capa.visible 
+                          ? (coloresApariencia?.objetosSeleccionados || "#FF9500") 
+                          : (coloresApariencia?.textoSecundario || "#64748B")
+                      }}
+                      className={`p-1 rounded transition hover:scale-110 cursor-pointer ${
+                        !capa.visible ? "opacity-40" : "opacity-100"
                       }`}
                     >
-                      {capa.visible ? <Lightbulb className="w-3.5 h-3.5 fill-amber-400" /> : <LightbulbOff className="w-3.5 h-3.5" />}
+                      {capa.visible ? <Lightbulb className="w-3.5 h-3.5 fill-current" /> : <LightbulbOff className="w-3.5 h-3.5" />}
                     </button>
                   </td>
 
-                  {/* Col 4: Bloqueo (?? Candado) */}
-                  <td className="py-1.5 px-1 text-center">
-                    <button
-                      onClick={() => toggleBloqueoCapa(capa.id)}
-                      title={capa.bloqueada ? "Desbloquear capa" : "Bloquear capa"}
-                      className={`p-1 rounded transition ${
-                        capa.bloqueada
-                          ? "text-amber-600 dark:text-amber-400"
-                          : "text-slate-300 dark:text-slate-600 hover:text-slate-400"
-                      }`}
-                    >
-                      {capa.bloqueada ? <Lock className="w-3.5 h-3.5" /> : <Unlock className="w-3.5 h-3.5" />}
-                    </button>
-                  </td>
-
-                  {/* Col 5: Color de Capa */}
+                  {/* Col 3: Color de Capa */}
                   <td className="py-1.5 px-1.5 text-center">
-                    <div className="relative inline-block w-4 h-4 rounded overflow-hidden shadow-sm border border-slate-300 dark:border-slate-600">
+                    <div 
+                      style={{ borderColor: coloresApariencia?.bordePaneles }}
+                      className="relative inline-block w-4 h-4 rounded overflow-hidden shadow-2xs border"
+                    >
                       <input
                         type="color"
                         value={capa.color}
@@ -223,27 +236,52 @@ export default function LayerManagerPanel() {
                   {/* Col 6: Material PBR Asignado (Selector con Esfera Preview) */}
                   <td className="py-1.5 px-2">
                     <div className="flex items-center gap-1.5">
-                      {/* Esfera preview del material */}
+                      {/* Esfera PBR 3D simulada en miniatura (Iluminada con volumen, reflejos y especularidad) */}
                       <button
                         onClick={() => materialAsignado && irAEditarMaterial(materialAsignado.id)}
                         title={`Editar shader de ${materialAsignado?.nombre || "Material"}`}
-                        className="w-4 h-4 rounded-full border border-black/20 shrink-0 shadow-inner overflow-hidden relative"
+                        className="w-[18px] h-[18px] min-w-[18px] min-h-[18px] rounded-full shadow-inner relative overflow-hidden border border-black/30 flex items-center justify-center shrink-0 cursor-pointer transition hover:scale-110"
                         style={{
+                          width: "18px",
+                          height: "18px",
+                          minWidth: "18px",
+                          minHeight: "18px",
                           backgroundColor: materialAsignado?.colorBase || "#888",
                           backgroundImage: materialAsignado?.texturaUrl
                             ? `url(${materialAsignado.texturaUrl})`
-                            : undefined,
+                            : `radial-gradient(circle at 35% 30%, rgba(255,255,255,${0.85 * (1 - (materialAsignado?.rugosidad ?? 0.4))}), rgba(0,0,0,${0.65 * (1 - (materialAsignado?.rugosidad ?? 0.4))}) 75%)`,
                           backgroundSize: "cover",
                         }}
-                      />
+                      >
+                        {/* Brillo especular 3D */}
+                        <div 
+                          className="absolute top-[2px] left-[3px] w-2 h-1.5 rounded-full bg-white/80 blur-[0.3px] pointer-events-none"
+                          style={{ opacity: 1 - (materialAsignado?.rugosidad ?? 0.4) }}
+                        />
+                        {materialAsignado && materialAsignado.metalico > 0.5 && (
+                          <Sparkles className="w-2.5 h-2.5 text-white/90 absolute bottom-0.5 right-0.5 pointer-events-none" />
+                        )}
+                      </button>
 
                       <select
                         value={capa.materialId}
                         onChange={(e) => actualizarCapa(capa.id, { materialId: e.target.value })}
-                        className="flex-1 py-0.5 px-1.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded text-[11px] text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-cyan-500 truncate"
+                        style={{
+                          backgroundColor: coloresApariencia?.fondoAplicacion,
+                          borderColor: coloresApariencia?.bordePaneles,
+                          color: coloresApariencia?.textoPrincipal
+                        }}
+                        className="flex-1 py-0.5 px-1.5 border rounded text-[11px] focus:outline-none focus:ring-1 focus:ring-cyan-500 truncate cursor-pointer"
                       >
                         {materialesPBR.map((mat) => (
-                          <option key={mat.id} value={mat.id}>
+                          <option 
+                            key={mat.id} 
+                            value={mat.id}
+                            style={{
+                              backgroundColor: coloresApariencia?.fondoPaneles || "#0B0F17",
+                              color: coloresApariencia?.textoPrincipal || "#F1F5F9"
+                            }}
+                          >
                             {mat.nombre} ({mat.tipo})
                           </option>
                         ))}
@@ -257,7 +295,7 @@ export default function LayerManagerPanel() {
                       <button
                         onClick={() => eliminarCapa(capa.id)}
                         title="Eliminar capa"
-                        className="opacity-0 group-hover:opacity-100 p-1 text-slate-400 hover:text-red-500 transition"
+                        className="opacity-0 group-hover:opacity-100 p-1 text-red-500 hover:scale-110 transition cursor-pointer"
                       >
                         <Trash2 className="w-3 h-3" />
                       </button>
@@ -268,17 +306,6 @@ export default function LayerManagerPanel() {
             })}
           </tbody>
         </table>
-      </div>
-
-      {/* 💡 Pie de Información de Capas */}
-      <div className="p-3 border-t border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-900/60 text-[10px] text-slate-500 space-y-1">
-        <p className="flex items-center gap-1.5 font-medium text-slate-700 dark:text-slate-300">
-          <Layers className="w-3.5 h-3.5 text-cyan-600" />
-          Jerarquía de Materiales 3DBimFab:
-        </p>
-        <p>
-          Las mallas del Grasshopper asignadas a cada capa heredan automáticamente el material PBR de esa capa. Al exportar a <strong>GLB</strong>, los materiales conservarán estos nombres exactos para render inmediato en <strong>Blender</strong>.
-        </p>
       </div>
     </div>
   );

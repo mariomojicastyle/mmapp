@@ -4,7 +4,7 @@ Este documento registra el flujo de trabajo técnico completo, paso a paso, con 
 
 ---
 
-## ⚡ Comando de Arranque Unificado (`/Arranque3BF`)
+## ⚡ Comando de Arranque Unificado (`Ejecuta /Arranque3BF`)
 
 Para iniciar la suite completa de **3DBimFab (3BF)** en una sola orden sin necesidad de lanzar tareas manuales separadas, ejecuta el comando de arranque:
 
@@ -413,11 +413,238 @@ flowchart TD
 
 ---
 
+---
+
+### 🎯 12. Sistema Óptico de Raycasting de Cámara (`HoverRaycastTracker`) & Soldado de Aristas Coplanarias
+
+#### 📌 1. Regla de Oro del Tooltip 3D:
+El tooltip / nube flotante con el nombre del componente (`Cubierta`, `Lateral`, `Perno Minifix`, `Tarugo`, `MDP`, etc.) **SOLO debe aparecer en el momento exacto en que la línea de visión de la cámara intersecta físicamente una geometría 3D**.
+Si el puntero del mouse apunta hacia el vacío, la cuadrícula del suelo o el fondo del visor, el tooltip se destruye de inmediato a $0\text{ ms}$.
+
+```
+      [ Ojo / Cámara 3D ]
+             │
+             │ Rayo Óptico (Raycaster)
+             ▼
+   [ Vector Puntero NDC (x,y) ] ───► ¿Intersecta Mesh 3D?
+                                            │
+                       ┌────────────────────┴────────────────────┐
+                       ▼                                         ▼
+                     [ SÍ ]                                    [ NO ]
+          Muestra Tooltip con Nombre                    setHoveredPiece(null)
+          (Cubierta, Perno, etc.)                       (0ms Latencia / Vacío)
+```
+
+#### 🔍 2. Diagnóstico Técnico y Causas de Pérdida de Configuración:
+1. **Persistencia por Clic en Listas/Tablas (`PartBreakdownPanel`):** El evento `onClick` de las filas llamaba `setHoveredPiece(parte.nombreLimpio)`, dejando una variable estática en el store de Zustand que persistía aunque el usuario moviera el mouse hacia el suelo o fuera del lienzo.
+2. **Colisión de Eventos en Mallas:** Colocar `onPointerOver` y `onPointerOut` individualmente dentro de cada `<mesh>` provocaba que al mover el cursor rápidamente, Three.js perdiera el evento de salida sobre mallas con aristas hijas (`lineSegments`), dejando el nombre "congelado".
+3. **Bucle Incontrolado en `useFrame`:** Consultar el raycaster a $60\text{ fps}$ sobre `scene.children` sin filtrar generaba colisiones con líneas de rejilla y objetos invisibles, reactivando el tooltip en cada fotograma.
+
+#### 💻 3. Código Canónico de Recuperación Rápida (Backup Oficial):
+Ubicación: `components/viewer/Viewer3D.tsx` (Montado directamente dentro del árbol `<Canvas>`).
+
+```tsx
+function HoverRaycastTracker({ furnitureGroup }: { furnitureGroup: THREE.Group | null }) {
+  const { camera, scene, gl } = useThree();
+  const { setHoveredPiece, modoTransformacion } = use3BFStore();
+
+  React.useEffect(() => {
+    const dom = gl.domElement;
+    const raycaster = new THREE.Raycaster();
+    const pointerNDC = new THREE.Vector2();
+
+    const handlePointerMove = (e: PointerEvent) => {
+      // Si está en modo grab (G) o transformación, suprimir tooltips
+      if (modoTransformacion !== "none") {
+        setHoveredPiece(null);
+        return;
+      }
+
+      const rect = dom.getBoundingClientRect();
+      if (rect.width === 0 || rect.height === 0) return;
+
+      // 1. Normalización de Coordenadas de Dispositivo (NDC: -1 a +1)
+      pointerNDC.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
+      pointerNDC.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
+
+      // 2. Proyectar el rayo estrictamente desde la cámara activa
+      raycaster.setFromCamera(pointerNDC, camera);
+
+      // 3. Recolectar objetivos válidos (Mueble activo + Instancias del catálogo)
+      const targets: THREE.Object3D[] = [];
+      if (furnitureGroup) {
+        targets.push(furnitureGroup);
+      }
+      if (typeof window !== "undefined" && (window as any).__3bfInstanceGroups) {
+        const groupsMap: Map<string, THREE.Group> = (window as any).__3bfInstanceGroups;
+        groupsMap.forEach((grp) => {
+          if (grp) targets.push(grp);
+        });
+      }
+
+      if (targets.length === 0) {
+        setHoveredPiece(null);
+        return;
+      }
+
+      // 4. Intersección con filtrado estricto de Mallas 3D
+      const hits = raycaster.intersectObjects(targets, true);
+      const validHit = hits.find((h) => {
+        const obj = h.object;
+        const n = (obj.name || "").toLowerCase();
+        return (
+          obj.type === "Mesh" &&
+          obj.visible &&
+          obj.name.length > 0 &&
+          !n.includes("floor") &&
+          !n.includes("grid") &&
+          !n.includes("plane") &&
+          !n.includes("axis") &&
+          !n.includes("silhouette") &&
+          !n.includes("helper")
+        );
+      });
+
+      // 5. Asignación inmediata o Limpieza en Vacío
+      if (validHit) {
+        const pieceName = obtenerNombreUnificadoPieza(validHit.object);
+        setHoveredPiece(pieceName);
+      } else {
+        setHoveredPiece(null);
+        if (typeof window !== "undefined") {
+          (window as any).__hoveredInstanceId = null;
+        }
+      }
+    };
+
+    // 6. Limpieza al salir del Canvas 3D
+    const handlePointerLeave = () => {
+      setHoveredPiece(null);
+      if (typeof window !== "undefined") {
+        (window as any).__hoveredInstanceId = null;
+      }
+    };
+
+    dom.addEventListener("pointermove", handlePointerMove, { passive: true });
+    dom.addEventListener("pointerleave", handlePointerLeave);
+
+    return () => {
+      dom.removeEventListener("pointermove", handlePointerMove);
+      dom.removeEventListener("pointerleave", handlePointerLeave);
+    };
+  }, [camera, scene, gl, furnitureGroup, modoTransformacion, setHoveredPiece]);
+
+  return null;
+}
+```
+
+#### 📐 4. Eliminación de Aristas Falsas en Caras Planas (`BufferGeometryUtils.mergeVertices`):
+En mallas con operaciones booleanas provenientes de Grasshopper, los triángulos coplanares de caras planas a menudo tienen vértices duplicados en los bordes de los orificios. Para que `THREE.EdgesGeometry` reconozca que el ángulo entre caras coplanares es estrictamente $0^\circ$ y **no dibuje líneas falsas entre tarugos y pernos**, se aplica soldadura geométrica previa:
+
+```tsx
+import * as BufferGeometryUtils from "three/examples/jsm/utils/BufferGeometryUtils.js";
+
+// Unificación y soldado de vértices coplanares
+const weldedGeo = BufferGeometryUtils.mergeVertices(indexedGeo, 0.001);
+weldedGeo.computeVertexNormals();
+
+// Extracción de aristas limpias a 90°
+const edges = new THREE.EdgesGeometry(weldedGeo, calibracion.thresholdAristas || 25);
+```
+
+---
+
+### ⚡ 13. Sistema DfMA de Perforación Inter-Componentes & Generación CAM DXF desde OpenNURBS
+
+#### 📌 1. Principio y Visión del Problema:
+Al construir muebles modulares combinando múltiples componentes paramétricos independientes (ej. un componente de nicho/gabinete base + un componente de cajón con correderas):
+- Cada componente `.ghx` genera sus propios volúmenes y mallas de forma autónoma.
+- El componente hijo (ej. cajón/herraje) define sus mecanizados de fijación como **cilindros analíticos OpenNURBS** (BRep o volúmenes cilíndricos con radio, altura y dirección).
+- **Decisión de Diseño Crítica**: En lugar de ejecutar costosas operaciones booleanas destructivas sobre mallas poligonales en Three.js (las cuales degradan la topología, generan vértices defectuosos y ralentizan el visor WebGL), el sistema captura la matriz espacial mundial de los cilindros NURBS y **calcula las intersecciones vectoriales para proyectar los círculos de broca directamente en los planos de corte y maquinado CAM DXF de las piezas receptoras**.
+
+```
+                        [ Escenario 3D WebGL (Three.js) ]
+               ┌───────────────────────────────────────────────────┐
+               │  Componente A (Nicho)  [Pos: 0, 0, 0]             │
+               │  Componente B (Cajón)  [Pos: 0.1, 0, 0.05] (Grab) │
+               └─────────────────────────┬─────────────────────────┘
+                                         │
+                          Botón: [ ⚡ Perforar Mueble ]
+                                         │
+                                         ▼
+            ┌─────────────────────────────────────────────────────────────┐
+            │       Endpoint Worker Python: /mecanizar-intercomponentes   │
+            │  1. Lee cilindros OpenNURBS de todas las definiciones GHX.  │
+            │  2. Aplica matriz de traslación mundial [X, Y, Z] + Snap.   │
+            │  3. Detecta intersección Ray/Cylinder contra caras BBox.    │
+            │  4. Determina cara de entrada (W0: Superior, W1/W3: Cantos).│
+            │  5. Calcula coordenadas locales 2D (u, v) en milímetros.    │
+            └────────────────────────────┬────────────────────────────────┘
+                                         │
+                                         ▼
+                     [ Generación CAM DXF (ezdxf / AC1021) ]
+            ┌─────────────────────────────────────────────────────────────┐
+            │  Para cada tablero en el Despiece (ej. Lateral Izquierdo):  │
+            │  - Dibuja polilínea de contorno (TCHW0B8...).               │
+            │  - Dibuja círculos de broca transferidos en capa estándar:  │
+            │    • Ø5mm Guías:       Capa TCHW0B2D1200 / TCHW1B2D...      │
+            │    • Ø8mm Tarugos:     Capa TCHW1B8D2500 / TCHW3B8D2500     │
+            │    • Ø15mm Cajas Minifix: Capa TCHW0B15D1350                │
+            └─────────────────────────────────────────────────────────────┘
+```
+
+#### 🔍 2. Componentes de la Arquitectura:
+
+1. **Extracción y Deserialización de Cilindros OpenNURBS (`3bf_worker.py`)**:
+   - RhinoCompute evalúa la definición `.ghx` y devuelve objetos `rhino3dm.Brep` / `archive3dm`.
+   - Se extrae el Bounding Box, centro geométrico $[X_c, Y_c, Z_c]$ en metros y dimensiones en milímetros.
+   - Se clasifica el tipo de mecanizado según el diámetro ($\varnothing \le 6.5\text{mm} \rightarrow \text{guia\_d5}$, $\varnothing \le 11\text{mm} \rightarrow \text{tarugo\_d8}$, $\varnothing \le 22\text{mm} \rightarrow \text{caja\_d15}$, $\varnothing \le 45\text{mm} \rightarrow \text{bisagra\_d35}$).
+   - Se serializa en el campo `perforaciones_nurbs: []` de la respuesta JSON del worker.
+
+2. **Detección Espacial Inter-Componentes (`/mecanizar-intercomponentes`)**:
+   - Toma el arreglo completo de instancias en el lienzo con su posición mundial `[X, Y, Z]`.
+   - Evalúa cada tablero de la instancia receptora $A$ contra los cilindros de perforación de la instancia emisora $B$ ($B \neq A$) aplicando una tolerancia de contacto de $25\text{ mm}$.
+   - Proyecta la posición del centro del cilindro a coordenadas $(u, v)$ locales en milímetros relativas al centro de corte del tablero.
+   - Clasifica la cara de contacto (`cara_superior`, `canto_izq`, `canto_der`, etc.) y asigna la capa DXF normalizada según el estándar de centros de mecanizado Biesse Skipper.
+
+3. **Flujo de Usuario en Interfaz (`Viewer3D.tsx` / `DespieceView.tsx` / `store.ts`)**:
+   - **`⚡ Perforar Mueble`**: Dispara la detección espacial, registra los mecanizados cruzados en Zustand (`mecanizadosCruzados`) y actualiza el contador en el botón de estado (ej. `Perforado (8)`).
+   - **`🗑️ Limpiar Perforaciones`**: Restablece los mecanizados cruzados a `{}` en caso de que el usuario decida mover o separar los módulos con la herramienta Grab/Snap.
+   - **`Exportar DXF para Seccionadora CNC`**: Al generar los archivos `.dxf`, inyecta automáticamente las entidades `CIRCLE` de todas las perforaciones transferidas sobre el plano 2D.
+
+4. **Inyección en Exportación DXF (`ezdxf` & Fallback TS)**:
+   - Registra dinámicamente las capas de mecanizado requeridas si no existen en el documento DXF.
+   - Dibuja los círculos con radio exacto en las coordenadas $(u, v)$ correspondientes a la cara plana o a las vistas desplegadas de cantos.
+
+---
+
+---
+
+### 🌟 Hito 14: Sistema de Historial Undo/Redo (100 Estados Ctrl+Z) & Renombrado Interactivo en HUD 3D
+
+#### 📋 Resumen del Logro:
+1. **Historial Profundo de 100 Operaciones (Undo / Redo)**:
+   - Implementación de un stack cronológico con capacidad de hasta 100 snapshots completos del escenario 3D (`SnapshotEscenario`).
+   - Captura de estado ante inserción de componentes, transformaciones espaciales (Grab / Snap), duplicaciones, eliminaciones, cambios de sliders y renombrado.
+   - Atajos globales de teclado activos:
+     - `Ctrl + Z` / `Cmd + Z`: Deshacer (Undo).
+     - `Ctrl + Y` / `Ctrl + Shift + Z` / `Cmd + Shift + Z`: Rehacer (Redo).
+2. **Edición y Renombrado Inline en el HUD de Componentes (Doble Clic)**:
+   - En el listado superior izquierdo del visor 3D (`• Cubierta`, `• Cubierta_01`), el usuario puede hacer **doble clic** sobre cualquier componente para activar un campo de edición inline `<input />`.
+   - Confirmación con `Enter` o clic afuera (`onBlur`), o cancelación con `Escape`.
+   - Llama a `renombrarInstancia(id, nuevoNombre)`, propagando reactivamente el nuevo nombre a la matriz de despiece, tabla de costos, árbol de dependencias y nombres de exportación DXF.
+3. **Exportación DXF Multi-Pieza & Depuración de Residuos**:
+   - Generación de un archivo DXF independiente por cada tablero del mueble (`Cubierta_498x480_15mm_BD1.0.dxf` y `Cubierta_01_498x480_15mm_BD1.0.dxf`).
+   - Eliminación del residuo hardcodeado `"Minifix"` en los defaults de `/export-dxf`, respetando al 100% la unión activa ("Tornillo y Tarugo") y evitando taladros fantasma.
+
+---
+
 ## 🔄 Estado Final del Ecosistema 3BF
 
-- **3BF Worker Python (`3bf_worker.py`)**: Corriendo en `http://localhost:8005` (FastAPI).
+- **3BF Worker Python (`3bf_worker.py`)**: Corriendo en `http://localhost:8005` (FastAPI con endpoints `/compute`, `/mecanizar-intercomponentes` y `/export-dxf`).
 - **RhinoCompute 8 (`rhino.compute.exe`)**: Corriendo en `http://localhost:5000` (Rhino 8 Engine).
 - **Aplicación Web Next.js 3BF**: Corriendo en `http://localhost:3005`.
 - **Google Drive Storage**: Sincronizado en `G:\Mi unidad\Muebles`.
+
 
 

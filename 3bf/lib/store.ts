@@ -347,6 +347,15 @@ export interface ComputoResultado {
     indices?: number[];
     uvs?: number[];
   }>;
+  perforaciones_nurbs?: Array<{
+    name: string;
+    size_mm: [number, number, number];
+    center_local_m: [number, number, number];
+    diametro_mm: number;
+    profundidad_mm: number;
+    eje_principal: "X" | "Y" | "Z";
+    tipo: "guia_d5" | "tarugo_d8" | "caja_d15" | "bisagra_d35" | "otro";
+  }>;
   declared_outputs?: string[];
   slider_limits?: Record<string, {
     min?: number;
@@ -363,6 +372,21 @@ export interface ComputoResultado {
     gh_file?: string;
     ezdxf?: boolean;
   };
+}
+
+export interface PerforacionCruzadaItem {
+  origen_instancia_id: string;
+  origen_instancia_nombre: string;
+  nombre_perforacion: string;
+  tablero_destino: string;
+  tipo: string;
+  diametro_mm: number;
+  profundidad_mm: number;
+  cara: "cara_superior" | "canto_izq" | "canto_der" | "canto_sup" | "canto_inf";
+  capa_dxf: string;
+  u_mm: number;
+  v_mm: number;
+  pos_mundial_m: [number, number, number];
 }
 
 export interface CalibracionVisual {
@@ -686,6 +710,8 @@ export interface State3BF {
   setMostrarNPanel: (mostrar: boolean | ((prev: boolean) => boolean)) => void;
   pestanaNPanel: "componentes" | "muebles" | "capas" | "partes" | "materiales" | "calibrar" | "apariencia";
   setPestanaNPanel: (pestana: "componentes" | "muebles" | "capas" | "partes" | "materiales" | "calibrar" | "apariencia") => void;
+  anchoNPanel: number;
+  setAnchoNPanel: (ancho: number) => void;
   anchoPanelDerecho: number;
   setAnchoPanelDerecho: (ancho: number) => void;
 
@@ -735,6 +761,7 @@ export interface State3BF {
   crearCarpetaMueble: (nombre: string, tipo?: "marca" | "tipologia", padreId?: string | null) => Promise<boolean>;
   guardarMuebleComo: (datos: { nombre: string; marca: string; tipologia: string; descripcion?: string }) => Promise<boolean>;
   renombrarMuebleGuardado: (id: string, nuevoNombre: string) => Promise<boolean>;
+  actualizarThumbnailMueble: (id: string, thumbnail: string) => Promise<boolean>;
   eliminarMuebleGuardado: (id: string) => Promise<boolean>;
   abrirMueble: (mueble: MuebleGuardadoItem) => Promise<void>;
 
@@ -754,6 +781,13 @@ export interface State3BF {
   // Despiece & Herrajes Globales Multiobjeto (BOM Escenario Completo)
   getDespieceGlobal: () => Array<PiezaDespiece & { instanciaNombre: string; instanciaId: string; descripcion: string }>;
   getHerrajesGlobal: () => Array<HerrajeItem & { instanciaNombre: string; instanciaId: string }>;
+
+  // ⚡ Mecanizados y Perforaciones Inter-Componentes DfMA
+  mecanizadosCruzados: Record<string, PerforacionCruzadaItem[]>;
+  mecanizadoEnProgreso: boolean;
+  ultimoResumenMecanizado: string[];
+  perforarMueble: () => Promise<{ status: string; total_perforaciones: number; resumen: string[] }>;
+  limpiarPerforaciones: () => void;
 
   // Selección & Transformación Espacial Estilo Blender (G: Grab / B: Base Point Snap)
   objetoSeleccionado: boolean;
@@ -981,6 +1015,16 @@ export const use3BFStore = create<State3BF>((set, get) => ({
     })),
   pestanaNPanel: "componentes",
   setPestanaNPanel: (pestanaNPanel) => set({ pestanaNPanel: pestanaNPanel as any }),
+  anchoNPanel: typeof window !== "undefined" && window.localStorage && localStorage.getItem("3bf_ancho_npanel")
+    ? Math.max(140, Math.min(800, Number(localStorage.getItem("3bf_ancho_npanel"))))
+    : 380,
+  setAnchoNPanel: (ancho) => {
+    const normalizado = Math.max(140, Math.min(800, ancho));
+    if (typeof window !== "undefined" && window.localStorage) {
+      localStorage.setItem("3bf_ancho_npanel", String(normalizado));
+    }
+    set({ anchoNPanel: normalizado });
+  },
   anchoPanelDerecho: typeof window !== "undefined" && window.localStorage && localStorage.getItem("3bf_ancho_panel_derecho")
     ? Math.max(280, Math.min(800, Number(localStorage.getItem("3bf_ancho_panel_derecho"))))
     : 380,
@@ -1481,6 +1525,29 @@ export const use3BFStore = create<State3BF>((set, get) => ({
     return true;
   },
 
+  actualizarThumbnailMueble: async (id: string, thumbnail: string) => {
+    set((state) => ({
+      mueblesGuardados: state.mueblesGuardados.map((m) =>
+        m.id === id ? { ...m, thumbnail } : m
+      ),
+      muebleActivoGuardado:
+        state.muebleActivoGuardado?.id === id
+          ? { ...state.muebleActivoGuardado, thumbnail }
+          : state.muebleActivoGuardado,
+    }));
+
+    try {
+      await fetch("/api/drive/muebles", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "update_thumbnail", id, thumbnail }),
+      });
+    } catch (e) {
+      console.warn("Actualización de thumbnail persistida localmente:", e);
+    }
+    return true;
+  },
+
   eliminarMuebleGuardado: async (id: string) => {
     set((state) => ({
       mueblesGuardados: state.mueblesGuardados.filter((m) => m.id !== id),
@@ -1687,16 +1754,28 @@ export const use3BFStore = create<State3BF>((set, get) => ({
   },
 
   renombrarInstancia: (id: string, nuevoNombre: string) => {
+    const cleanName = nuevoNombre.trim();
+    if (!cleanName) return;
+
     set((s) => {
+      if (id === "base_model") {
+        return {
+          parametros: {
+            ...s.parametros,
+            model_id: cleanName,
+          },
+        };
+      }
       const inst = s.instancias[id];
       if (!inst) return s;
       return {
         instancias: {
           ...s.instancias,
-          [id]: { ...inst, nombreVisible: nuevoNombre },
+          [id]: { ...inst, nombreVisible: cleanName },
         },
       };
     });
+    get().guardarEstadoHistorial();
   },
 
   seleccionarInstancia: (id: string | null) => {
@@ -1862,6 +1941,66 @@ export const use3BFStore = create<State3BF>((set, get) => ({
       }
     });
     return list;
+  },
+
+  // ⚡ Mecanizados y Perforaciones Inter-Componentes DfMA
+  mecanizadosCruzados: {},
+  mecanizadoEnProgreso: false,
+  ultimoResumenMecanizado: [],
+
+  perforarMueble: async () => {
+    const state = get();
+    set({ mecanizadoEnProgreso: true });
+    try {
+      const instanciasList = Object.values(state.instancias).map((inst) => ({
+        id: inst.id,
+        nombreVisible: inst.nombreVisible,
+        posicion: inst.posicion,
+        resultado: inst.resultado,
+      }));
+
+      // Si no hay multi-instancias pero hay un modelo base activo
+      if (instanciasList.length === 0 && state.resultado) {
+        instanciasList.push({
+          id: "base_model",
+          nombreVisible: state.parametros.model_id || "Cubierta",
+          posicion: [0, 0, 0],
+          resultado: state.resultado,
+        });
+      }
+
+      const res = await fetch("/api/compute/mecanizar", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ instancias: instanciasList }),
+      });
+
+      const data = await res.json();
+      if (data.status === "success" || data.status === "warning") {
+        set({
+          mecanizadosCruzados: data.mecanizados_cruzados || {},
+          ultimoResumenMecanizado: data.resumen || [],
+          mecanizadoEnProgreso: false,
+        });
+        return {
+          status: data.status,
+          total_perforaciones: data.total_perforaciones || 0,
+          resumen: data.resumen || [],
+        };
+      }
+      set({ mecanizadoEnProgreso: false });
+      return { status: "error", total_perforaciones: 0, resumen: ["Error al procesar mecanizado."] };
+    } catch (e: any) {
+      set({ mecanizadoEnProgreso: false });
+      return { status: "error", total_perforaciones: 0, resumen: [e?.message || "Error de red"] };
+    }
+  },
+
+  limpiarPerforaciones: () => {
+    set({
+      mecanizadosCruzados: {},
+      ultimoResumenMecanizado: ["✓ Perforaciones inter-componentes eliminadas."],
+    });
   },
 
   // =========================================================================

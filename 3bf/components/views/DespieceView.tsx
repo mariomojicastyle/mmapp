@@ -21,7 +21,9 @@ import {
   Ruler,
   Maximize2,
   Database,
-  FileCode2
+  FileCode2,
+  Zap,
+  Trash2
 } from "lucide-react";
 
 /**
@@ -157,6 +159,11 @@ export default function DespieceView() {
     setPestanaNPanel,
     hidratarDesdeLocalStorage,
     coloresApariencia,
+    mecanizadosCruzados,
+    mecanizadoEnProgreso,
+    ultimoResumenMecanizado,
+    perforarMueble,
+    limpiarPerforaciones,
   } = use3BFStore();
 
   const trm = negociacionNovopan?.trmNovopan || 4000;
@@ -806,7 +813,7 @@ export default function DespieceView() {
   const costoTotalMuebleCop = resumenIndustrial.costoTotalFabCop;
   const costoTotalMuebleUsd = resumenIndustrial.costoTotalFabUsd;
 
-  if (!resultado) {
+  if (!resultado && Object.keys(instancias || {}).length === 0 && piezasActivas.length === 0) {
     return (
       <div className="p-6 text-center text-xs text-gray-500">
         Calculando despiece DfMA y matriz de costos...
@@ -937,17 +944,47 @@ export default function DespieceView() {
     }
   };
 
-  const descargarDXF = async () => {
-    setDescargando(true);
+  const descargarDXFPieza = async (pieza: any, idx?: number) => {
     try {
+      const piezaNombre = pieza.descripcion || pieza.nombre || `Pieza_${(idx ?? 0) + 1}`;
+      const instanciaId = (pieza as any).instanciaId;
+
+      // Filtrar los mecanizados cruzados correspondientes a esta pieza
+      let mecanizadosParaPieza: any[] = [];
+      if (instanciaId && mecanizadosCruzados[instanciaId]) {
+        mecanizadosParaPieza = mecanizadosCruzados[instanciaId];
+      } else if (mecanizadosCruzados[piezaNombre]) {
+        mecanizadosParaPieza = mecanizadosCruzados[piezaNombre];
+      } else {
+        const todos = Object.values(mecanizadosCruzados || {}).flat();
+        mecanizadosParaPieza = todos.filter((m: any) => 
+          m.tablero_destino?.toLowerCase() === piezaNombre.toLowerCase() ||
+          m.origen_instancia_id === instanciaId
+        );
+        if (mecanizadosParaPieza.length === 0 && Object.keys(mecanizadosCruzados || {}).length > 0) {
+          mecanizadosParaPieza = todos;
+        }
+      }
+
+      // Obtener los parámetros reales específicos de la instancia
+      const inst = instanciaId ? instancias[instanciaId] : null;
+      const paramsPieza = inst?.parametros || parametros;
+
       const res = await fetch("/api/export", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ 
-          model_id: parametros.model_id || parametros.custom_filename || "Cubierta", 
-          parameters: parametros,
-          despiece: piezasActivas,
-          version: versionActual
+          model_id: piezaNombre, 
+          parameters: paramsPieza,
+          pieza: {
+            nombre: pieza.nombre || "Cubierta",
+            descripcion: piezaNombre,
+            largo: pieza.largo,
+            ancho: pieza.ancho,
+            espesor: pieza.espesor,
+          },
+          version: versionActual,
+          mecanizados_cruzados: mecanizadosParaPieza
         }),
       });
       const data = await res.json();
@@ -956,8 +993,34 @@ export default function DespieceView() {
         const url = URL.createObjectURL(blob);
         const a = document.createElement("a");
         a.href = url;
-        a.download = data.filename || `Cubierta_CAM_${versionActual}.dxf`;
+        a.download = data.filename || `${piezaNombre}_CAM_${versionActual}.dxf`;
         a.click();
+      }
+    } catch (e) {
+      console.error(`Error al exportar DXF para ${pieza.descripcion || pieza.nombre}:`, e);
+    }
+  };
+
+  const descargarDXF = async () => {
+    setDescargando(true);
+    try {
+      if (piezasActivas && piezasActivas.length > 0) {
+        for (let i = 0; i < piezasActivas.length; i++) {
+          const p = piezasActivas[i];
+          await descargarDXFPieza(p, i);
+          // Breve pausa para que el navegador procese cada descarga limpiamente
+          if (i < piezasActivas.length - 1) {
+            await new Promise((resolve) => setTimeout(resolve, 350));
+          }
+        }
+      } else {
+        await descargarDXFPieza({
+          nombre: parametros.model_id || "Cubierta",
+          descripcion: parametros.model_id || "Cubierta",
+          largo: Number((parametros as any)["RH_IN:01.1 Ancho"] ?? 498),
+          ancho: Number((parametros as any)["RH_IN:01.2 Profundidad"] ?? 480),
+          espesor: 15
+        }, 0);
       }
     } catch (e) {
       console.error("Error al exportar DXF:", e);
@@ -1272,6 +1335,9 @@ export default function DespieceView() {
                 <th className="p-2.5 w-28 text-right">
                   Costo tableros
                 </th>
+                <th className="p-2.5 w-12 text-center" title="Descargar DXF individual para esta pieza">
+                  DXF
+                </th>
               </tr>
             </thead>
             <tbody 
@@ -1439,6 +1505,22 @@ export default function DespieceView() {
                   >
                     {formatMoneyCustom(p.costoTotalCop, p.costoTotalUsd)}
                   </td>
+
+                  {/* BOTÓN DESCARGA DXF INDIVIDUAL */}
+                  <td className="p-2 text-center">
+                    <button
+                      onClick={() => descargarDXFPieza(p, idx)}
+                      title={`Descargar archivo DXF de mecanizado para ${p.descripcion || p.nombre}`}
+                      style={{
+                        backgroundColor: coloresApariencia?.fondoAplicacion,
+                        borderColor: coloresApariencia?.bordePaneles,
+                        color: coloresApariencia?.botonActivo || "#0891B2",
+                      }}
+                      className="p-1.5 rounded-md border hover:border-cyan-500 hover:scale-105 active:scale-95 transition-all cursor-pointer shadow-xs inline-flex items-center justify-center"
+                    >
+                      <Download className="w-3.5 h-3.5" />
+                    </button>
+                  </td>
                 </tr>
               ))}
             </tbody>
@@ -1472,21 +1554,13 @@ export default function DespieceView() {
                   {resumenMadera.items.reduce((acc: number, i: any) => acc + i.cantidad, 0)}
                 </td>
                 <td 
-                  colSpan={3} 
-                  className="p-2.5"
-                ></td>
-                <td 
-                  style={{ color: coloresApariencia?.textoSecundario }}
-                  className="p-2.5 text-right font-mono text-[10px]"
-                >
-                  Sumatoria:
-                </td>
-                <td 
-                  style={{ color: coloresApariencia?.estadoActivo || "#10B981" }}
+                  colSpan={4} 
+                  style={{ color: coloresApariencia?.botonActivo }}
                   className="p-2.5 text-right font-mono font-extrabold text-sm"
                 >
                   {formatMoneyCustom(resumenMadera.costoTotalMaderaCop, resumenMadera.costoTotalMaderaUsd)}
                 </td>
+                <td className="p-2.5"></td>
               </tr>
             </tfoot>
           </table>
@@ -2295,27 +2369,97 @@ export default function DespieceView() {
           backgroundColor: coloresApariencia?.fondoPaneles, 
           borderColor: coloresApariencia?.bordePaneles 
         }}
-        className="p-3 rounded-lg border shadow-sm flex flex-wrap items-center justify-between gap-2 transition-colors"
+        className="p-3.5 rounded-xl border shadow-sm flex flex-col gap-3 transition-colors"
       >
-        <div className="flex items-center gap-2">
-          <FileCode2 style={{ color: coloresApariencia?.botonActivo }} className="w-4 h-4" />
-          <span style={{ color: coloresApariencia?.textoPrincipal }} className="font-bold text-xs">
-            Archivos de Fabricación CNC
-          </span>
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="flex items-center gap-2">
+            <FileCode2 style={{ color: coloresApariencia?.botonActivo }} className="w-4 h-4" />
+            <div>
+              <h3 style={{ color: coloresApariencia?.textoPrincipal }} className="font-bold text-xs">
+                Mecanizado DfMA & Archivos CNC
+              </h3>
+              <p style={{ color: coloresApariencia?.textoSecundario }} className="text-[11px]">
+                {Object.keys(mecanizadosCruzados || {}).length > 0 
+                  ? `⚡ Perforaciones inter-componentes activas (${Object.values(mecanizadosCruzados).flat().length} transferidas al DXF)`
+                  : "Mecanizados nativos listos para exportar"}
+              </p>
+            </div>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-2">
+            {/* Botón Perforar Mueble */}
+            <button
+              onClick={async () => {
+                await perforarMueble();
+              }}
+              disabled={mecanizadoEnProgreso}
+              style={{
+                backgroundColor: coloresApariencia?.fondoAplicacion || "#F1F5F9",
+                borderColor: coloresApariencia?.bordePaneles || "#CBD5E1",
+                color: coloresApariencia?.textoPrincipal || "#0F172A",
+              }}
+              className="py-2 px-3.5 rounded-lg border font-bold text-xs shadow-xs transition flex items-center justify-center gap-1.5 disabled:opacity-50 cursor-pointer hover:border-cyan-500 hover:text-cyan-600 active:scale-95"
+              title="Detectar contacto entre piezas y transferir perforaciones NURBS al DXF"
+            >
+              <Zap className={`w-3.5 h-3.5 ${mecanizadoEnProgreso ? "animate-spin text-amber-500" : "text-amber-500"}`} />
+              <span>{mecanizadoEnProgreso ? "Perforando..." : "Perforar Mueble"}</span>
+            </button>
+
+            {/* Botón Limpiar Perforaciones */}
+            {Object.keys(mecanizadosCruzados || {}).length > 0 && (
+              <button
+                onClick={limpiarPerforaciones}
+                style={{
+                  backgroundColor: coloresApariencia?.fondoAplicacion || "#F1F5F9",
+                  borderColor: coloresApariencia?.bordePaneles || "#CBD5E1",
+                  color: "#EF4444",
+                }}
+                className="py-2 px-3 rounded-lg border font-bold text-xs shadow-xs transition flex items-center justify-center gap-1.5 cursor-pointer hover:bg-red-50 dark:hover:bg-red-950/30 active:scale-95"
+                title="Eliminar perforaciones transferidas"
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+                <span>Limpiar</span>
+              </button>
+            )}
+
+            {/* Botón Exportar DXF */}
+            <button
+              onClick={descargarDXF}
+              disabled={descargando}
+              style={{
+                backgroundColor: coloresApariencia?.botonActivo || "#0891b2",
+                color: "#FFFFFF",
+              }}
+              className="py-2 px-4 rounded-lg font-bold text-xs shadow-sm transition flex items-center justify-center gap-2 disabled:opacity-50 cursor-pointer hover:opacity-90 active:scale-95"
+            >
+              <Download className="w-4 h-4" />
+              <span>
+                {descargando 
+                  ? "Generando DXFs..." 
+                  : (piezasActivas.length > 1 
+                      ? `Exportar ${piezasActivas.length} DXFs CNC` 
+                      : "Exportar DXF Seccionadora CNC")}
+              </span>
+            </button>
+          </div>
         </div>
 
-        <button
-          onClick={descargarDXF}
-          disabled={descargando}
-          style={{
-            backgroundColor: coloresApariencia?.botonActivo || "#0891b2",
-            color: "#FFFFFF",
-          }}
-          className="w-full sm:w-auto py-2 px-5 rounded-lg font-bold text-xs shadow-sm transition flex items-center justify-center gap-2 disabled:opacity-50 cursor-pointer hover:opacity-90 active:scale-95"
-        >
-          <Download className="w-4 h-4" />
-          {descargando ? "Generando DXF..." : "Exportar DXF para Seccionadora CNC"}
-        </button>
+        {/* Resumen de Perforaciones si hubo mecanizado */}
+        {ultimoResumenMecanizado && ultimoResumenMecanizado.length > 0 && (
+          <div 
+            style={{
+              backgroundColor: coloresApariencia?.fondoAplicacion,
+              borderColor: coloresApariencia?.bordePaneles,
+            }}
+            className="p-2 rounded-lg border text-[11px] flex flex-col gap-0.5"
+          >
+            {ultimoResumenMecanizado.map((msg, idx) => (
+              <span key={idx} style={{ color: msg.includes("✓") ? "#10B981" : (coloresApariencia?.textoSecundario || "#64748B") }}>
+                {msg}
+              </span>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );

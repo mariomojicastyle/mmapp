@@ -52,7 +52,7 @@ Aunque nuestra visión como firma de software de manufactura abarca la suite com
 
 ## 🚀 2. Los Tres Pilares de Valor (Ecosistema 3DBimFab)
 
-> 📄 **Documento Fundacional Completo:** [3BF.md](file:///c:/Desarrollo/mmapp/3BF.md)
+> 📄 **Documento Fundacional Completo:** [3BF.md](file:///c:/Desarrollo/mmapp/3BF/3BF.md)
 
 ### Definición de 3DBimFab (3BF)
 **3DBimFab** es nuestra metodología de trabajo convertida en identidad — el motor que convierte el diseño paramétrico en un bien tangible de forma automatizada:

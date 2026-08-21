@@ -14,8 +14,58 @@ import {
   Table, 
   Sparkles,
   Type,
-  Grid3X3
+  Grid3X3,
+  ClipboardPaste,
+  Pipette
 } from "lucide-react";
+
+// Función de compatibilidad total con formatos de color de Inkscape y CSS
+function procesarColorInkscape(texto: string): string | null {
+  if (!texto) return null;
+  let s = texto.trim();
+  
+  // Quitar prefijos comunes como "RGBA:", "RGB:", "HEX:", "Color:", etc.
+  s = s.replace(/^(rgba|rgb|hex|color)\s*:\s*/i, "").trim();
+  
+  if (s.startsWith("#")) {
+    s = s.substring(1).trim();
+  }
+  
+  // 1. Formato función CSS: rgba(187, 15, 15, 1) o rgb(187, 15, 15)
+  const rgbFuncMatch = s.match(/^rgba?\s*\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)/i);
+  if (rgbFuncMatch) {
+    const r = Math.min(255, Math.max(0, parseInt(rgbFuncMatch[1], 10))).toString(16).padStart(2, "0");
+    const g = Math.min(255, Math.max(0, parseInt(rgbFuncMatch[2], 10))).toString(16).padStart(2, "0");
+    const b = Math.min(255, Math.max(0, parseInt(rgbFuncMatch[3], 10))).toString(16).padStart(2, "0");
+    return `#${r}${g}${b}`.toUpperCase();
+  }
+
+  // 2. Formato de valores RGB separados por comas o espacios: "187, 15, 15"
+  const commaMatch = s.match(/^(\d{1,3})[\s,]+(\d{1,3})[\s,]+(\d{1,3})/);
+  if (commaMatch) {
+    const r = Math.min(255, Math.max(0, parseInt(commaMatch[1], 10))).toString(16).padStart(2, "0");
+    const g = Math.min(255, Math.max(0, parseInt(commaMatch[2], 10))).toString(16).padStart(2, "0");
+    const b = Math.min(255, Math.max(0, parseInt(commaMatch[3], 10))).toString(16).padStart(2, "0");
+    return `#${r}${g}${b}`.toUpperCase();
+  }
+
+  // 3. Formato Oficial Inkscape RGBA 8 caracteres hex (ej: "bb0f0fff" o "0B0F17FF")
+  if (/^[0-9A-Fa-f]{8}$/.test(s)) {
+    return `#${s.substring(0, 6)}`.toUpperCase();
+  }
+
+  // 4. Formato Hex estándar 6 caracteres (ej: "bb0f0f")
+  if (/^[0-9A-Fa-f]{6}$/.test(s)) {
+    return `#${s}`.toUpperCase();
+  }
+
+  // 5. Formato Hex 3 caracteres (ej: "f00")
+  if (/^[0-9A-Fa-f]{3}$/.test(s)) {
+    return `#${s[0]}${s[0]}${s[1]}${s[1]}${s[2]}${s[2]}`.toUpperCase();
+  }
+
+  return null;
+}
 
 interface ColorItemDef {
   key: keyof ColoresApariencia;
@@ -45,6 +95,53 @@ export default function AppearanceSettingsPanel() {
   } = use3BFStore();
 
   const [guardadoFeedback, setGuardadoFeedback] = useState(false);
+  const [copiadoKey, setCopiadoKey] = useState<string | null>(null);
+  const [pegadoKey, setPegadoKey] = useState<string | null>(null);
+
+  // 💧 Cuentagotas Universal de Pantalla (EyeDropper API nativo de Chromium)
+  const abrirCuentagotas = async (key: keyof ColoresApariencia) => {
+    if (typeof window !== "undefined" && "EyeDropper" in window) {
+      try {
+        const eyeDropper = new (window as any).EyeDropper();
+        const result = await eyeDropper.open();
+        if (result?.sRGBHex) {
+          setColorApariencia(key, result.sRGBHex.toUpperCase());
+        }
+      } catch (err: any) {
+        if (err.name !== "AbortError") {
+          console.warn("Cuentagotas cancelado o no disponible:", err);
+        }
+      }
+    } else {
+      alert("El Cuentagotas Universal requiere Google Chrome, Microsoft Edge o Brave.");
+    }
+  };
+
+  const copiarFormatoInkscape = (hexColor: string, key: string) => {
+    const hex = (hexColor || "#888888").replace("#", "").toLowerCase();
+    const inkscapeRgba = `${hex.padEnd(6, "0")}ff`;
+    if (typeof navigator !== "undefined" && navigator.clipboard) {
+      navigator.clipboard.writeText(inkscapeRgba);
+      setCopiadoKey(key);
+      setTimeout(() => setCopiadoKey(null), 1500);
+    }
+  };
+
+  const pegarDesdePortapapeles = async (key: keyof ColoresApariencia) => {
+    if (typeof navigator !== "undefined" && navigator.clipboard) {
+      try {
+        const text = await navigator.clipboard.readText();
+        const parsed = procesarColorInkscape(text);
+        if (parsed) {
+          setColorApariencia(key, parsed);
+          setPegadoKey(key);
+          setTimeout(() => setPegadoKey(null), 1500);
+        }
+      } catch (err) {
+        console.warn("No se pudo leer portapapeles:", err);
+      }
+    }
+  };
 
   // Definición de grupos de colores según la sección activa
   const gruposColores: ColorGroupDef[] = React.useMemo(() => {
@@ -386,7 +483,7 @@ export default function AppearanceSettingsPanel() {
                 type="checkbox"
                 checked={calibracion.mostrarGrilla}
                 onChange={(e) => setCalibracion("mostrarGrilla", e.target.checked)}
-                style={{ accentColor: coloresApariencia?.bordePaneles }}
+                style={{ accentColor: coloresApariencia?.botonActivo || coloresApariencia?.bordePaneles }}
                 className="w-4 h-4 rounded cursor-pointer"
               />
               <span style={{ color: coloresApariencia.textoPrincipal }} className="text-xs font-medium">
@@ -405,7 +502,7 @@ export default function AppearanceSettingsPanel() {
                   setCalibracion("mostrarEjeX", val);
                   setCalibracion("mostrarEjeY", val);
                 }}
-                style={{ accentColor: coloresApariencia?.bordePaneles }}
+                style={{ accentColor: coloresApariencia?.botonActivo || coloresApariencia?.bordePaneles }}
                 className="w-4 h-4 rounded cursor-pointer"
               />
               <span style={{ color: coloresApariencia.textoPrincipal }} className="text-xs font-medium">
@@ -419,7 +516,7 @@ export default function AppearanceSettingsPanel() {
                 type="checkbox"
                 checked={calibracion.mostrarIconoPlanoUniversal !== false}
                 onChange={(e) => setCalibracion("mostrarIconoPlanoUniversal", e.target.checked)}
-                style={{ accentColor: coloresApariencia?.bordePaneles }}
+                style={{ accentColor: coloresApariencia?.botonActivo || coloresApariencia?.bordePaneles }}
                 className="w-4 h-4 rounded cursor-pointer"
               />
               <span style={{ color: coloresApariencia.textoPrincipal }} className="text-xs font-medium">
@@ -473,31 +570,43 @@ export default function AppearanceSettingsPanel() {
                     </span>
                   </div>
 
-                  {/* Bloque de Acciones: Input HEX (1 clic select) + Swatch Visual */}
+                  {/* Bloque de Acciones: Input HEX/Inkscape + Swatch Visual + Cuentagotas Universal */}
                   <div className="shrink-0 flex items-center gap-1.5">
-                    {/* Input de Texto HEX Editable (1 Clic Selecciona Todo) */}
+                    {/* Input de Texto HEX Editable (1 Clic Selecciona Todo + Pegar directo de Inkscape) */}
                     <input
                       type="text"
                       value={valorColor.toUpperCase()}
                       onFocus={(e) => e.currentTarget.select()}
                       onClick={(e) => e.currentTarget.select()}
+                      onPaste={(e) => {
+                        const text = e.clipboardData.getData("text");
+                        const parsed = procesarColorInkscape(text);
+                        if (parsed) {
+                          e.preventDefault();
+                          setColorApariencia(item.key, parsed);
+                        }
+                      }}
                       onChange={(e) => {
                         const val = e.target.value.trim();
-                        if (/^#?[0-9A-Fa-f]{0,6}$/.test(val)) {
+                        const parsed = procesarColorInkscape(val);
+                        if (parsed) {
+                          setColorApariencia(item.key, parsed);
+                        } else if (/^#?[0-9A-Fa-f]{0,8}$/.test(val)) {
                           const formatted = val.startsWith("#") ? val : `#${val}`;
                           setColorApariencia(item.key, formatted);
                         }
                       }}
                       onBlur={(e) => {
-                        const val = e.target.value.trim();
-                        if (/^#?[0-9A-Fa-f]{6}$/.test(val)) {
-                          const formatted = val.startsWith("#") ? val.toUpperCase() : `#${val.toUpperCase()}`;
-                          setColorApariencia(item.key, formatted);
+                        const parsed = procesarColorInkscape(e.target.value);
+                        if (parsed) {
+                          setColorApariencia(item.key, parsed);
+                        } else {
+                          setColorApariencia(item.key, valorColor.length === 7 ? valorColor : "#888888");
                         }
                       }}
                       placeholder="#HEX"
-                      maxLength={7}
-                      title="1 Clic para seleccionar todo y escribir/copiar/pegar"
+                      maxLength={15}
+                      title="Escribe o pega cualquier código (ej: #BB0F0F o bb0f0fff de Inkscape)"
                       style={{
                         backgroundColor: coloresApariencia?.fondoAplicacion,
                         borderColor: coloresApariencia?.bordePaneles,
@@ -506,14 +615,14 @@ export default function AppearanceSettingsPanel() {
                       className="w-16 h-5 text-center text-[10px] font-mono font-bold rounded border focus:outline-none focus:ring-1 focus:ring-cyan-500 selection:bg-cyan-600 selection:text-white cursor-text transition-colors"
                     />
 
-                    {/* Muestra de Color Visual (Clic abre la paleta/cuentagotas) */}
+                    {/* Muestra de Color Visual (Clic abre la paleta clásica) */}
                     <div 
                       className="relative w-5 h-5 rounded border shadow-xs shrink-0 overflow-hidden cursor-pointer hover:scale-110 transition-transform"
                       style={{ 
                         backgroundColor: valorColor,
                         borderColor: coloresApariencia?.bordePaneles || "#94A3B8"
                       }}
-                      title={`Abrir selector visual para ${item.label}`}
+                      title={`Color actual de ${item.label}. Clic para abrir paleta clásica.`}
                     >
                       <input
                         type="color"
@@ -522,6 +631,21 @@ export default function AppearanceSettingsPanel() {
                         className="absolute inset-0 opacity-0 w-full h-full cursor-pointer"
                       />
                     </div>
+
+                    {/* 💧 Botón Cuentagotas Universal (Captura cualquier pixel de la pantalla / Inkscape) */}
+                    <button
+                      type="button"
+                      onClick={() => abrirCuentagotas(item.key)}
+                      title={`Cuentagotas Universal: Haz clic para capturar cualquier color de la pantalla o de Inkscape para ${item.label}`}
+                      style={{
+                        backgroundColor: coloresApariencia?.fondoAplicacion,
+                        borderColor: coloresApariencia?.bordePaneles,
+                        color: coloresApariencia?.colorMarca || "#0891b2",
+                      }}
+                      className="w-5 h-5 flex items-center justify-center rounded border shadow-xs hover:bg-cyan-500/20 hover:scale-110 active:scale-95 transition-all cursor-pointer group"
+                    >
+                      <Pipette className="w-3 h-3 group-hover:rotate-12 transition-transform" />
+                    </button>
                   </div>
                 </div>
               );

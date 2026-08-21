@@ -28,6 +28,7 @@ export async function GET() {
       archivo: string;
       rutaRelativa: string;
       descripcion: string;
+      thumbnail?: string;
     }> = [];
 
     for (const cat of categories) {
@@ -37,9 +38,11 @@ export async function GET() {
       for (const file of files) {
         if (file.isFile() && file.name.toLowerCase().endsWith(".ghx")) {
           const rawName = file.name.replace(/\.ghx$/i, "").trim();
-          // Limpiar sufijos temporales como [Aug-13 '26, 1428] para el nombre visible
           const nombreLimpio = rawName.replace(/\s*\[.*?\]\s*/g, "").trim() || rawName;
-          
+          const cleanId = rawName.replace(/[^a-zA-Z0-9_-]/g, "_");
+          const customThumbPath = path.join(process.cwd(), "public", "thumbnails", `${cleanId}.png`);
+          const customThumbUrl = fs.existsSync(customThumbPath) ? `/thumbnails/${cleanId}.png` : null;
+
           items.push({
             id: rawName,
             nombre: nombreLimpio,
@@ -47,6 +50,7 @@ export async function GET() {
             archivo: file.name,
             rutaRelativa: `${cat}/${file.name}`,
             descripcion: `Definición paramétrica GHX de ${nombreLimpio} (${cat}).`,
+            thumbnail: customThumbUrl || undefined,
           });
         }
       }
