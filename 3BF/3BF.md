@@ -309,12 +309,11 @@ La siguiente captura muestra la interfaz de VisualARQ dentro de Rhino, donde los
 
 ```
 mmapp/
-├── 3BF.md                          ← 📍 ESTE ARCHIVO (Documento Fundacional)
-├── 3bf/                            ← 🆕 Proyecto Configurador Web 3D Paramétrico
-│   ├── plan_de_implementacion.md   ← Plan por fases con gates de validación
-│   ├── packages/                   ← Módulos: gh-parser, compute-bridge, ui-generator, viewer
-│   ├── apps/                       ← App web integrada
-│   └── docs/                       ← Documentación técnica interna
+├── 3BF/                            ← Motor de Manufactura Digital Paramétrica (3DBimFab)
+│   ├── 3BF.md                      ← 📍 ESTE ARCHIVO (Documento Fundacional)
+│   ├── 3BF_Proceso.md              ← Flujo paramétrico y comandos de arranque
+│   ├── WORKER.md                   ← Memoria Técnica del Worker FastAPI
+│   └── ...
 ├── ESTADO_DEL_PROYECTO.md           ← Memoria RAM activa
 ├── HISTORICO_DEL_PROYECTO.md        ← Registro cronológico de hitos
 ├── Arquitectura/                    ← Topología técnica del ecosistema

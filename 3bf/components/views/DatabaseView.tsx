@@ -675,22 +675,22 @@ export default function DatabaseView() {
                 <th className="p-2.5 w-32 text-center">Formato Lámina</th>
                 <th className="p-2.5 w-20 text-center">Área (m²)</th>
                 <th 
-                  className="p-2.5 w-28 text-right" 
+                  className="p-2.5 w-28 text-right font-bold" 
                   title="Precio de lista oficial del catálogo del proveedor en USD"
                 >
-                  Lista (USD) ✏️
+                  Lista (USD)
                 </th>
                 <th 
-                  className="p-2.5 w-24 text-center" 
+                  className="p-2.5 w-24 text-center font-bold" 
                   title="Descuento adicional por acabado de cara (5% para D/B Balance Blanco o 0% para 2 caras diseño D/D)"
                 >
                   Desc. Cara (I)
                 </th>
                 <th 
-                  className="p-2.5 w-32 text-right" 
+                  className="p-2.5 w-32 text-right font-bold" 
                   title="Costo liquidado de la lámina puesto en fábrica tras descuentos por negociación y fletes"
                 >
-                  Fábrica (COP) 🏭
+                  Fábrica (COP)
                 </th>
                 <th className="p-2.5 w-28 text-right">Costo m² (COP)</th>
                 <th className="p-2.5 w-24 text-right">Costo m² (USD)</th>

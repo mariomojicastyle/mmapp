@@ -33,11 +33,12 @@ export const metadata: Metadata = {
   },
   icons: {
     icon: [
-      { url: "/icon.png?v=2", type: "image/png" },
-      { url: "/Icon_MM.ico?v=2", type: "image/x-icon" },
+      { url: "/Icon_3BF.png?v=3", type: "image/png" },
+      { url: "/Icon_3BF.ico?v=3", type: "image/x-icon" },
+      { url: "/favicon.ico?v=3", type: "image/x-icon" },
     ],
-    shortcut: "/Icon_MM.ico?v=2",
-    apple: "/icon.png?v=2",
+    shortcut: "/Icon_3BF.ico?v=3",
+    apple: "/Icon_3BF.png?v=3",
   },
 };
 
@@ -55,9 +56,10 @@ export default function RootLayout({
       className={`${promptFont.variable} ${interFont.variable} ${arimoFont.variable}`}
     >
       <head>
-        <link rel="icon" type="image/png" href="/icon.png?v=2" />
-        <link rel="icon" type="image/x-icon" href="/Icon_MM.ico?v=2" />
-        <link rel="shortcut icon" href="/Icon_MM.ico?v=2" />
+        <link rel="icon" type="image/png" href="/Icon_3BF.png?v=3" />
+        <link rel="icon" type="image/x-icon" href="/Icon_3BF.ico?v=3" />
+        <link rel="shortcut icon" href="/Icon_3BF.ico?v=3" />
+        <link rel="apple-touch-icon" href="/Icon_3BF.png?v=3" />
       </head>
       <body>
         <ThemeManager />

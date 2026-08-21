@@ -143,6 +143,31 @@ export async function POST(request: Request) {
       });
     }
 
+    if (action === "update_thumbnail" && body.id && body.thumbnail) {
+      const scanAndUpdateThumb = (currentDir: string): boolean => {
+        const entries = fs.readdirSync(currentDir, { withFileTypes: true });
+        for (const entry of entries) {
+          const fullPath = path.join(currentDir, entry.name);
+          if (entry.isDirectory()) {
+            if (scanAndUpdateThumb(fullPath)) return true;
+          } else if (entry.isFile() && entry.name === `${body.id}.3bf.json`) {
+            try {
+              const data = JSON.parse(fs.readFileSync(fullPath, "utf-8"));
+              data.thumbnail = body.thumbnail;
+              fs.writeFileSync(fullPath, JSON.stringify(data, null, 2), "utf-8");
+              return true;
+            } catch (e) {
+              console.error("Error actualizando thumbnail de mueble en disco:", e);
+            }
+          }
+        }
+        return false;
+      };
+
+      const ok = scanAndUpdateThumb(storageDir);
+      return NextResponse.json({ success: ok });
+    }
+
     if (action === "rename_furniture" && body.id && body.nuevoNombre) {
       const scanAndRename = (currentDir: string): boolean => {
         const entries = fs.readdirSync(currentDir, { withFileTypes: true });

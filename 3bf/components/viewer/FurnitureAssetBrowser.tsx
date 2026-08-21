@@ -24,6 +24,25 @@ import {
   Check
 } from "lucide-react";
 
+function getMuebleThumbnail(mueble: MuebleGuardadoItem): string {
+  if (mueble.thumbnail) return mueble.thumbnail;
+  const n = (mueble.nombre || "").toLowerCase();
+  const t = (mueble.tipologia || "").toLowerCase();
+  if (n.includes("cubierta") || t.includes("cubierta")) {
+    return "/thumbnails/Cubierta.png";
+  }
+  if (n.includes("comoda") || n.includes("cajon") || n.includes("cajón") || t.includes("comoda") || t.includes("cajon")) {
+    return "/thumbnails/comoda_render.svg";
+  }
+  if (n.includes("armario") || n.includes("closet") || t.includes("armario") || t.includes("closet")) {
+    return "/thumbnails/armario_render.svg";
+  }
+  if (n.includes("escritorio") || n.includes("mesa") || t.includes("escritorio") || t.includes("mesa")) {
+    return "/thumbnails/escritorio_render.svg";
+  }
+  return "/thumbnails/cubierta_render.svg";
+}
+
 export default function FurnitureAssetBrowser() {
   const {
     arbolCarpetasMuebles,
@@ -38,10 +57,10 @@ export default function FurnitureAssetBrowser() {
     eliminarMuebleGuardado,
     urlGoogleDrive,
     coloresApariencia,
-    anchoPanelDerecho,
+    anchoNPanel,
   } = use3BFStore();
 
-  const ancho = anchoPanelDerecho || 380;
+  const ancho = anchoNPanel || 380;
   const esMinimo = ancho < 340;
   const esUltraCompacto = ancho < 420;
   const esCompacto = ancho < 520;
@@ -58,8 +77,58 @@ export default function FurnitureAssetBrowser() {
   const [nombreTemporal, setNombreTemporal] = useState("");
   const [sincronizando, setSincronizando] = useState(false);
 
+  // Redimensión interactiva horizontal del módulo del árbol de carpetas
+  const [anchoArbolCarpetas, setAnchoArbolCarpetas] = useState<number>(() => {
+    if (typeof window !== "undefined" && window.localStorage) {
+      const saved = localStorage.getItem("3bf_ancho_arbol_muebles");
+      if (saved) return Math.max(70, Math.min(500, Number(saved))) || 140;
+    }
+    return 140;
+  });
+
+  const [isResizingArbol, setIsResizingArbol] = useState(false);
+
+  const startResizingArbol = React.useCallback((mouseDownEvent: React.MouseEvent) => {
+    mouseDownEvent.preventDefault();
+    setIsResizingArbol(true);
+
+    const startX = mouseDownEvent.clientX;
+    const startWidth = anchoArbolCarpetas;
+
+    const onMouseMove = (moveEvent: MouseEvent) => {
+      const deltaX = moveEvent.clientX - startX;
+      // Dejar SIEMPRE al menos 84px para la galería de la derecha (para 1 miniatura completa)
+      const maxAllowed = Math.max(70, (anchoNPanel || 380) - 48 - 84);
+      const newWidth = Math.max(70, Math.min(maxAllowed, startWidth + deltaX));
+      setAnchoArbolCarpetas(newWidth);
+      if (typeof window !== "undefined" && window.localStorage) {
+        localStorage.setItem("3bf_ancho_arbol_muebles", String(newWidth));
+      }
+    };
+
+    const onMouseUp = () => {
+      setIsResizingArbol(false);
+      window.removeEventListener("mousemove", onMouseMove);
+      window.removeEventListener("mouseup", onMouseUp);
+    };
+
+    window.addEventListener("mousemove", onMouseMove);
+    window.addEventListener("mouseup", onMouseUp);
+  }, [anchoArbolCarpetas, anchoNPanel]);
+
+  // Espacio efectivo para el árbol garantizando SIEMPRE 84px mínimos para 1 columna de miniaturas
+  const anchoDisponibleTotal = Math.max(160, ancho - 48);
+  const anchoArbolEfectivo = Math.min(Math.max(70, anchoArbolCarpetas), Math.max(70, anchoDisponibleTotal - 84));
+
   useEffect(() => {
     cargarArbolMuebles();
+
+    const handleThumbUpdated = () => {
+      cargarArbolMuebles();
+    };
+
+    window.addEventListener("3bf-thumbnail-updated", handleThumbUpdated);
+    return () => window.removeEventListener("3bf-thumbnail-updated", handleThumbUpdated);
   }, []);
 
   const toggleExpandir = (id: string) => {
@@ -206,12 +275,11 @@ export default function FurnitureAssetBrowser() {
         {/* PANEL IZQUIERDO: Árbol de Catálogos / Marcas (Estilo Blender Asset Browser) */}
         <div 
           style={{ 
+            width: `${anchoArbolEfectivo}px`,
             backgroundColor: coloresApariencia?.fondoPaneles, 
             borderColor: coloresApariencia?.bordePaneles 
           }} 
-          className={`${
-            esMinimo ? "w-24" : esUltraCompacto ? "w-28" : esCompacto ? "w-36" : "w-48 sm:w-56"
-          } border-r flex flex-col shrink-0 overflow-y-auto custom-scrollbar transition-all`}
+          className="border-r flex flex-col shrink-0 overflow-y-auto custom-scrollbar select-none"
         >
           
           {/* Cabecera del Árbol */}
@@ -493,10 +561,32 @@ export default function FurnitureAssetBrowser() {
           </div>
         </div>
 
-        {/* PANEL DERECHO: Galería de Muebles / Assets (Modo Grid o Modo Lista según ancho) */}
+        {/* ↔️ Tirador de Redimensión Horizontal entre Árbol y Galería */}
+        <div
+          onMouseDown={startResizingArbol}
+          title="Arrastra para redimensionar el ancho del árbol de carpetas"
+          style={{
+            backgroundColor: isResizingArbol 
+              ? (coloresApariencia?.botonActivo || "#0891b2") 
+              : "transparent"
+          }}
+          className={`w-1.5 hover:w-2 -ml-[3px] z-10 hover:bg-cyan-500/80 cursor-col-resize flex items-center justify-center transition-all group select-none shrink-0 ${
+            isResizingArbol ? "bg-cyan-500! w-2" : ""
+          }`}
+        >
+          <div 
+            style={{ backgroundColor: coloresApariencia?.bordePaneles || "#94A3B8" }}
+            className="w-0.5 h-6 rounded-full group-hover:bg-white transition-colors" 
+          />
+        </div>
+
+        {/* PANEL DERECHO: Galería de Muebles / Assets (Auto-Fill Grid: 1 Columna Vertical en estrecho, 2+ Columnas en amplio) */}
         <div 
-          style={{ backgroundColor: coloresApariencia?.fondoPaneles }} 
-          className="flex-1 min-w-0 p-2 sm:p-3 overflow-y-auto custom-scrollbar flex flex-col transition-colors"
+          style={{ 
+            backgroundColor: coloresApariencia?.fondoPaneles,
+            minWidth: "84px"
+          }} 
+          className="flex-1 min-w-[84px] p-1.5 sm:p-2.5 overflow-y-auto custom-scrollbar flex flex-col transition-colors"
         >
           
           <div 
@@ -543,172 +633,98 @@ export default function FurnitureAssetBrowser() {
             </div>
           </div>
 
-          {/* ========================================================================= */}
-          {/* MODO LISTA DE TEXTO (Para anchos estrechos) O MODO GRID (Para anchos amplios) */}
-          {/* ========================================================================= */}
-          {esUltraCompacto ? (
-            /* 📝 MODO TEXTO PURO (Sin miniatura, 100% espacio para el nombre completo) */
-            <div className="flex flex-col gap-1 p-0.5">
-              {mueblesFiltrados.map((mueble) => {
-                const isEditing = editandoMuebleId === mueble.id;
+          {/* 🖼️ MODO GRID DE MINIATURAS (Uniforme y constante: se envuelven en filas o columna única sin sobresaltos de escala) */}
+          <div className="flex flex-wrap gap-2 p-1 content-start items-start">
+            {mueblesFiltrados.map((mueble) => {
+              const isEditing = editandoMuebleId === mueble.id;
+              const thumbSrc = getMuebleThumbnail(mueble);
 
-                return (
-                  <div
-                    key={mueble.id}
-                    onClick={() => !isEditing && abrirMueble(mueble)}
-                    title={`${mueble.nombre}\nHaz doble clic para renombrar, o clic para abrir en 3D`}
+              return (
+                <div
+                  key={mueble.id}
+                  onClick={() => !isEditing && abrirMueble(mueble)}
+                  title={`${mueble.nombre} (${mueble.tipologia})\nHaz clic para abrir en 3D o doble clic para renombrar`}
+                  className="group flex flex-col items-center cursor-pointer p-0.5 rounded-xl hover:bg-slate-100/80 dark:hover:bg-slate-800/50 transition-all select-none relative w-[78px] shrink-0"
+                >
+                  {/* Miniatura Cuadrada Estilo Componentes (Tamaño uniforme y constante sin deformarse) */}
+                  <div 
                     style={{
                       backgroundColor: coloresApariencia?.fondoAplicacion || "#F1F5F9",
-                      borderColor: coloresApariencia?.bordePaneles || "#E2E8F0",
-                      color: coloresApariencia?.textoPrincipal || "#0F172A",
+                      borderColor: coloresApariencia?.fondoAplicacion || coloresApariencia?.bordePaneles || "#E2E8F0",
                     }}
-                    className="group flex items-center justify-between gap-1 px-2.5 py-2 rounded-xl border shadow-2xs hover:border-cyan-500 transition-all cursor-pointer select-none"
+                    className="w-[74px] h-[74px] aspect-square rounded-xl overflow-hidden border shadow-2xs group-hover:border-cyan-500/80 group-hover:shadow-md transition-all relative flex items-center justify-center p-0 shrink-0"
                   >
-                    <div className="flex items-center min-w-0 flex-1">
-                      {isEditing ? (
-                        <div className="flex items-center gap-1 flex-1 min-w-0" onClick={(e) => e.stopPropagation()}>
-                          <input
-                            type="text"
-                            value={nombreTemporal}
-                            onChange={(e) => setNombreTemporal(e.target.value)}
-                            onKeyDown={(e) => {
-                              if (e.key === "Enter") handleGuardarEdicion(mueble.id);
-                              if (e.key === "Escape") setEditandoMuebleId(null);
-                            }}
-                            onBlur={() => handleGuardarEdicion(mueble.id)}
-                            autoFocus
-                            style={{
-                              backgroundColor: coloresApariencia?.fondoPaneles,
-                              borderColor: coloresApariencia?.bordePaneles,
-                              color: coloresApariencia?.textoPrincipal,
-                            }}
-                            className="w-full px-1.5 py-0.5 text-xs font-bold rounded border focus:outline-none"
-                          />
-                          <button
-                            onClick={() => handleGuardarEdicion(mueble.id)}
-                            style={{
-                              backgroundColor: coloresApariencia?.botonActivo || "#0891b2",
-                              color: "#FFFFFF",
-                            }}
-                            className="p-1 rounded shrink-0"
-                          >
-                            <Check className="w-3 h-3" />
-                          </button>
-                        </div>
-                      ) : (
-                        <span
-                          onDoubleClick={(e) => handleIniciarEdicion(mueble, e)}
-                          className="text-xs font-bold truncate leading-tight tracking-wide"
-                        >
-                          {mueble.nombre}
-                        </span>
-                      )}
-                    </div>
+                    {thumbSrc ? (
+                      <img
+                        src={thumbSrc}
+                        alt={mueble.nombre}
+                        className="w-full h-full object-cover pointer-events-none"
+                      />
+                    ) : (
+                      <div className="flex flex-col items-center justify-center gap-1 opacity-60">
+                        <Box 
+                          style={{ color: coloresApariencia?.botonActivo || "#0891b2" }} 
+                          className="w-8 h-8 group-hover:scale-105 transition-transform" 
+                        />
+                      </div>
+                    )}
 
+                    {/* Botón de Eliminar en Hover */}
                     <button
                       onClick={(e) => handleEliminarMueble(mueble.id, e)}
-                      title="Eliminar mueble"
-                      className="p-1 rounded hover:bg-red-500/20 text-slate-400 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer shrink-0 ml-1"
+                      title="Eliminar este mueble del catálogo"
+                      className="absolute top-1.5 right-1.5 p-1 rounded-md bg-black/60 hover:bg-red-600 text-white opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer shadow-xs z-10"
                     >
                       <Trash2 className="w-3 h-3" />
                     </button>
                   </div>
-                );
-              })}
-            </div>
-          ) : (
-            /* 🖼️ MODO GRID DE MINIATURAS (Tamaño uniforme y proporcional estilo Blender) */
-            <div className="flex flex-wrap gap-2.5 p-1 content-start items-start">
-              {mueblesFiltrados.map((mueble) => {
-                const isEditing = editandoMuebleId === mueble.id;
 
-                return (
-                  <div
-                    key={mueble.id}
-                    onClick={() => !isEditing && abrirMueble(mueble)}
-                    title={`${mueble.nombre}\nHaz doble clic para editar nombre, o clic para abrir en 3D`}
-                    className="group flex flex-col items-center cursor-pointer p-1 rounded-xl transition-all select-none relative hover:opacity-90 w-[76px] shrink-0"
-                  >
-                    {/* Miniatura Cuadrada Estilo Blender (Tamaño uniforme y acotado) */}
-                    <div 
-                      style={{
-                        backgroundColor: coloresApariencia?.fondoAplicacion || "#F1F5F9",
-                        borderColor: coloresApariencia?.fondoAplicacion || coloresApariencia?.bordePaneles || "#E2E8F0",
-                      }}
-                      className="w-[70px] h-[70px] aspect-square rounded-xl overflow-hidden border shadow-2xs transition-all relative flex items-center justify-center p-0 shrink-0"
-                    >
-                      {mueble.thumbnail ? (
-                        <img
-                          src={mueble.thumbnail}
-                          alt={mueble.nombre}
-                          className="w-full h-full object-cover pointer-events-none"
+                  {/* Nombre Limpio Centrado Abajo Estilo Componentes */}
+                  <div className="w-full mt-1.5 px-0.5 text-center">
+                    {isEditing ? (
+                      <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
+                        <input
+                          type="text"
+                          value={nombreTemporal}
+                          onChange={(e) => setNombreTemporal(e.target.value)}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter") handleGuardarEdicion(mueble.id);
+                            if (e.key === "Escape") setEditandoMuebleId(null);
+                          }}
+                          onBlur={() => handleGuardarEdicion(mueble.id)}
+                          autoFocus
+                          style={{
+                            backgroundColor: coloresApariencia?.fondoAplicacion,
+                            borderColor: coloresApariencia?.bordePaneles,
+                            color: coloresApariencia?.textoPrincipal,
+                          }}
+                          className="w-full px-1 py-0.5 text-[10px] font-semibold rounded border text-center focus:outline-none shadow-2xs"
                         />
-                      ) : (
-                        <div className="flex flex-col items-center justify-center gap-1 opacity-60">
-                          <Box 
-                            style={{ color: coloresApariencia?.botonActivo || "#0891b2" }} 
-                            className="w-7 h-7 group-hover:scale-105 transition-transform" 
-                          />
-                        </div>
-                      )}
-
-                      {/* Botón de Eliminar en Hover */}
-                      <button
-                        onClick={(e) => handleEliminarMueble(mueble.id, e)}
-                        title="Eliminar este mueble del catálogo"
-                        className="absolute top-1 right-1 p-1 rounded-md bg-black/60 hover:bg-red-600 text-white opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer shadow-xs z-10"
-                      >
-                        <Trash2 className="w-2.5 h-2.5" />
-                      </button>
-                    </div>
-
-                    {/* Nombre Limpio Estilo Blender */}
-                    <div className="w-full mt-1 px-0.5 text-center">
-                      {isEditing ? (
-                        <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
-                          <input
-                            type="text"
-                            value={nombreTemporal}
-                            onChange={(e) => setNombreTemporal(e.target.value)}
-                            onKeyDown={(e) => {
-                              if (e.key === "Enter") handleGuardarEdicion(mueble.id);
-                              if (e.key === "Escape") setEditandoMuebleId(null);
-                            }}
-                            onBlur={() => handleGuardarEdicion(mueble.id)}
-                            autoFocus
-                            style={{
-                              backgroundColor: coloresApariencia?.fondoAplicacion,
-                              borderColor: coloresApariencia?.bordePaneles,
-                              color: coloresApariencia?.textoPrincipal,
-                            }}
-                            className="w-full px-1 py-0.5 text-[10px] font-semibold rounded border text-center focus:outline-none shadow-2xs"
-                          />
-                          <button
-                            onClick={() => handleGuardarEdicion(mueble.id)}
-                            style={{
-                              backgroundColor: coloresApariencia?.botonActivo || "#0891b2",
-                              color: "#FFFFFF",
-                            }}
-                            className="p-0.5 rounded hover:opacity-90 shrink-0"
-                          >
-                            <Check className="w-2.5 h-2.5" />
-                          </button>
-                        </div>
-                      ) : (
-                        <p
-                          onDoubleClick={(e) => handleIniciarEdicion(mueble, e)}
-                          style={{ color: coloresApariencia?.textoPrincipal }}
-                          className="text-[11px] font-semibold truncate transition-colors leading-tight"
+                        <button
+                          onClick={() => handleGuardarEdicion(mueble.id)}
+                          style={{
+                            backgroundColor: coloresApariencia?.botonActivo || "#0891b2",
+                            color: "#FFFFFF",
+                          }}
+                          className="p-0.5 rounded hover:opacity-90 shrink-0"
                         >
-                          {mueble.nombre}
-                        </p>
-                      )}
-                    </div>
+                          <Check className="w-2.5 h-2.5" />
+                        </button>
+                      </div>
+                    ) : (
+                      <p
+                        onDoubleClick={(e) => handleIniciarEdicion(mueble, e)}
+                        style={{ color: coloresApariencia?.textoPrincipal }}
+                        className="text-xs font-semibold truncate group-hover:text-cyan-600 dark:group-hover:text-cyan-400 transition-colors leading-tight"
+                      >
+                        {mueble.nombre}
+                      </p>
+                    )}
                   </div>
-                );
-              })}
-            </div>
-          )}
+                </div>
+              );
+            })}
+          </div>
 
           {/* Estado Vacío */}
           {mueblesFiltrados.length === 0 && (

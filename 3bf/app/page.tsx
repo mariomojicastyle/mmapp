@@ -70,8 +70,44 @@ export default function Home3BF() {
         return;
       }
       setGuardandoFoto(true);
-      const imageBase64 = canvas.toDataURL("image/png");
-      const modelId = parametros.model_id || (parametros as any).custom_filename?.replace(/\.ghx$/i, "") || "Cubierta";
+
+      // Captura de alta resolución desde WebGL si está disponible
+      let imageBase64 = "";
+      if (typeof window !== "undefined" && (window as any).__capturarThumbnail3BF) {
+        imageBase64 = (window as any).__capturarThumbnail3BF() || "";
+      }
+      if (!imageBase64) {
+        imageBase64 = canvas.toDataURL("image/png");
+      }
+
+      const {
+        muebleActivoGuardado,
+        actualizarThumbnailMueble,
+        objetoActivoId,
+        instancias,
+        parametros,
+      } = use3BFStore.getState();
+
+      // 1. Si hay un Mueble abierto en el escenario (ej: Borrar_01)
+      if (muebleActivoGuardado) {
+        await actualizarThumbnailMueble(muebleActivoGuardado.id, imageBase64);
+        setFotoCapturada(true);
+        setTimeout(() => setFotoCapturada(false), 2500);
+        window.dispatchEvent(
+          new CustomEvent("3bf-thumbnail-updated", { detail: { muebleId: muebleActivoGuardado.id, imageBase64 } })
+        );
+        return;
+      }
+
+      // 2. Si no es un mueble guardado, asignarlo al Componente Activo en el escenario
+      let modelId = "Cubierta";
+      if (objetoActivoId && instancias[objetoActivoId]) {
+        modelId = instancias[objetoActivoId].definitionId || (parametros as any).model_id || "Cubierta";
+      } else if (parametros.model_id) {
+        modelId = parametros.model_id;
+      } else if ((parametros as any).custom_filename) {
+        modelId = (parametros as any).custom_filename.replace(/\.ghx$/i, "");
+      }
 
       const res = await fetch("/api/thumbnail", {
         method: "POST",
@@ -82,7 +118,9 @@ export default function Home3BF() {
       if (res.ok) {
         setFotoCapturada(true);
         setTimeout(() => setFotoCapturada(false), 2500);
-        window.dispatchEvent(new CustomEvent("3bf-thumbnail-updated", { detail: { modelId } }));
+        window.dispatchEvent(
+          new CustomEvent("3bf-thumbnail-updated", { detail: { modelId, imageBase64 } })
+        );
       }
     } catch (err) {
       console.error("Error al capturar snapshot:", err);
@@ -139,6 +177,24 @@ export default function Home3BF() {
         return;
       }
 
+      // ⏪ DESHACER (Ctrl + Z / Cmd + Z)
+      if ((e.ctrlKey || e.metaKey) && (e.key === "z" || e.key === "Z" || e.code === "KeyZ") && !e.shiftKey) {
+        e.preventDefault();
+        use3BFStore.getState().deshacer();
+        return;
+      }
+
+      // ⏩ REHACER (Ctrl + Y  o  Ctrl + Shift + Z / Cmd + Shift + Z)
+      if (
+        ((e.ctrlKey || e.metaKey) && (e.key === "y" || e.key === "Y" || e.code === "KeyY")) ||
+        ((e.ctrlKey || e.metaKey) && e.shiftKey && (e.key === "z" || e.key === "Z" || e.code === "KeyZ"))
+      ) {
+        e.preventDefault();
+        use3BFStore.getState().rehacer();
+        return;
+      }
+
+      // 🎛️ TOGGLE PANEL N (Tecla N)
       if ((e.key === "n" || e.key === "N" || e.code === "KeyN") && !e.ctrlKey && !e.altKey && !e.metaKey) {
         e.preventDefault();
         use3BFStore.getState().setMostrarNPanel((prev) => !prev);
@@ -372,7 +428,7 @@ export default function Home3BF() {
           >
             <button
               onClick={capturarMiniatura}
-              disabled={!parametros.model_id || guardandoFoto}
+              disabled={guardandoFoto}
               title={
                 fotoCapturada 
                   ? "¡Miniatura guardada con éxito!" 
