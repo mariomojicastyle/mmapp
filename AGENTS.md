@@ -22,11 +22,62 @@ Cada vez que iniciamos, tu primera tarea absoluta debe ser recuperar el contexto
 - [reputacion_web.md](file:///c:/Desarrollo/mmapp/docs/reputacion_web.md) - Protocolo DNS (SPF/DKIM/DMARC) y disputas Antivirus.
 - [Seguridad.md](file:///c:/Desarrollo/mmapp/docs/Seguridad.md) - Protocolo de blindaje 3D (IP Shield), Cloudflare DNS, HSTS y SSL Compliance.
 
-### ⚡ Comando Explicito `/Arranque3BF`
+### ⚡ Comando Explícito `/Arranque3BF`
 Nota: El arranque general del agente (`arranque` / inicio de sesión) solo realiza la lectura y recuperación de contexto. El comando `/Arranque3BF` es una instrucción explícita que el usuario ejecutará únicamente cuando requiera poner en marcha los servicios de 3BF. Cuando el usuario invoque explícitamente `/Arranque3BF`, se deben verificar o lanzar los 3 servidores de segundo plano como Daemons (`run_command` con `IsDaemon: true`):
 1. **RhinoCompute 8** (`http://localhost:5000`): Executable en AppData `rhino.compute.exe` (`IsDaemon: true`)
 2. **3BF Worker Python** (`http://localhost:8005`): `python -u worker/3bf_worker.py` en `c:\Desarrollo\mmapp\3BF` (`IsDaemon: true`)
 3. **3BF Web App Next.js** (`http://localhost:3005`): `npm run dev` en `c:\Desarrollo\mmapp\3BF` (`IsDaemon: true`)
+
+---
+
+## 🧭 La Jerarquía de la Verdad (Estructura de Memoria Activa)
+
+Para evitar el "vértigo digital" y la pérdida de contexto, cada archivo cumple una función estricta:
+
+| Archivo | Metáfora | Función Principal | Cuándo se Actualiza |
+| :--- | :--- | :--- | :--- |
+| **`README.md`** | **El Mapa** | Visión general del repositorio, instalación e índice interactivo de navegación. | Rara vez (solo cambios estructurales). |
+| **`ESTADO_DEL_PROYECTO.md`** | **La Brújula** | **Contexto actual e inmediato**. En qué tarea estamos *ahora*, To-Do y bloqueos ("Memoria RAM"). | Al final de cada sesión o hito. |
+| **`HISTORICO_DEL_PROYECTO.md`** | **El Diario** | Bitácora técnica cronológica de logros e hitos completados. | Cuando se tacha un To-Do en el Estado. |
+| **`Arquitectura/`** | **El Plano** | Diagramas de arquitectura (SVG), especificaciones técnicas y esquemas de datos. | Cuando cambia el stack o los protocolos. |
+| **`MANIFIESTO_NEGOCIO.md`** | **La Visión** | Enfoque de negocio B2B, 5 categorías muebleras y diferenciación comercial. | Ante giros o ampliaciones estratégicas. |
+
+---
+
+## ⚡ Protocolos de Integración y Git Flow
+
+### 1. Protocolo `/super-commit - [PROXIMA_RAMA]`
+Cuando el usuario ejecute `/super-commit - [PROXIMA_RAMA]`, el agente DEBE ejecutar la siguiente secuencia rigurosa:
+
+1. **Documentación de Control (CRÍTICO - PRIMERA ACCIÓN)**:
+   - Actualizar de forma obligatoria `HISTORICO_DEL_PROYECTO.md` con el nuevo hito, fecha y desglose técnico de logros.
+   - Actualizar `ESTADO_DEL_PROYECTO.md` marcando los checks completados y el siguiente foco.
+2. **Validación y Calidad (Nivel 1 de Blindaje)**:
+   - Ejecutar `npx tsc --noEmit` y/o pruebas de compilación para verificar que el código compila sin errores.
+   - **CRÍTICO**: Si hay errores, ABORTAR el proceso de inmediato, informar al usuario y NO tocar Git.
+3. **Commit Profesional**:
+   - Analizar cambios con `git status`.
+   - Realizar `git add -A`.
+   - Generar commit con formato Conventional Commits / Sentry (`feat:`, `fix:`, `ref:`) con autoría 100% limpia sin etiquetas de IA.
+4. **Sincronización con Main**:
+   - Cambiar a `main` (`git checkout main`).
+   - Traer cambios remotos (`git pull origin main`).
+   - Fusionar la rama de trabajo (`git merge [RAMA_TRABAJO]`).
+5. **Control de Despliegue (Netlify / GitHub)**:
+   - Si el usuario indica *"no subas a Netlify"* o *"no push"*, OMITIR el `git push origin main`.
+   - Si el despliegue está autorizado, ejecutar `git push origin main` para disparar el CI/CD en Netlify.
+6. **Limpieza y Nueva Rama de Trabajo**:
+   - Crear y cambiar a la nueva rama solicitada: `git checkout -b [PROXIMA_RAMA]`.
+   - Confirmar al usuario que el hito quedó cerrado y en qué rama se encuentra ubicado para continuar.
+
+### 2. Protocolo `/mediocommit - [PROXIMA_RAMA]`
+Para guardar avances intermedios de trabajo sin disparar despliegues completos:
+- `git add -A` y commit descriptivo profesional.
+- Fusionar en local con `main`.
+- Crear y cambiar a `[PROXIMA_RAMA]`.
+
+### 3. Disparador CRM / Leads
+- Cada vez que el usuario suba capturas de LinkedIn o diga *"Agrega estos leads"* o *"Mete estos contactos al CRM"*, se activa el procesamiento y mapeo automatizado hacia Baserow / CRM B2B.
 
 ---
 

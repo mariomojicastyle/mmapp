@@ -1453,6 +1453,19 @@ Con esta batería de arreglos y la validación en caliente, la V20 se establece 
       4. Mapeo estricto de `Value List` enviando datos en formato `System.Int32` y `System.String` sin decimales flotantes.
       5. Creación del comando unificado **`/Arranque3BF`** y el script `start_3bf.ps1` para iniciar los 3 daemons en un solo paso.
 
+* **[2026-08-20] Hito 3BF_GLBGOOD — Editor de Materiales PBR, Galería Redimensionable y Exportación GLB 100% Sólida para Blender HD:**
+    - **Galería de Materiales Redimensionable**: Implementación de separador interactivo vertical (`cursor-row-resize`) con tirador visual y persistencia en `localStorage` (`3bf_altura_galeria_materiales`) en `MaterialManagerPanel.tsx`.
+    - **Blindaje Total de Normales y Caras Paralelas**: Implementación matemática de orientación de normales inversas para caras paralelas del tablero:
+      - Cara Superior (`Color cubierta`): Normal estrictamente hacia $+Y$ (arriba).
+      - Cara Inferior (`Balance cubierta`): Normal estrictamente hacia $-Y$ (abajo con inversión de vértices).
+      - Cantos y perforaciones (`MDP`): Normales perimetrales hacia afuera.
+    - **Purga de Planos Fantasmas en Blender**: Eliminación definitiva de mallas auxiliares y helpers anónimos de Three.js (`Pieza_3BF...`, sombras, outlines, edges) en el exportador GLB (`Viewer3D.tsx`).
+    - **Separación Estricta de Modos Visuales**:
+      - **Modo Sólido**: Renderizado y exportación en Gris Técnico limpio (`#CBD5E1`) sin texturas.
+      - **Modo Renderizado**: Materiales PBR completos con mapas de madera, melamina, MDP expuesto y metales para Cycles/Eevee.
+    - **Detección Global de Modelos en Escena**: El botón `⬇ Descargar GLB` exporta las instancias activas directamente sin requerir que la pieza esté seleccionada en ese instante.
+
+
 
 
 
