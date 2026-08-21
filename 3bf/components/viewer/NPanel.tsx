@@ -4,6 +4,9 @@ import React, { useState, useEffect } from "react";
 import { use3BFStore, defaultCalibracion, APP_VERSION } from "@/lib/store";
 import FurnitureAssetBrowser from "./FurnitureAssetBrowser";
 import AppearanceSettingsPanel from "./AppearanceSettingsPanel";
+import LayerManagerPanel from "./LayerManagerPanel";
+import MaterialManagerPanel from "./MaterialManagerPanel";
+import PartBreakdownPanel from "./PartBreakdownPanel";
 import { 
   ChevronLeft, 
   ChevronRight, 
@@ -26,7 +29,9 @@ import {
   Copy,
   Paintbrush,
   Camera,
-  Focus
+  Focus,
+  ListTree,
+  Wrench
 } from "lucide-react";
 
 interface DefinicionItem {
@@ -373,7 +378,9 @@ export default function NPanel() {
               >
                 {pestanaNPanel === "componentes" ? "Biblioteca de Componentes"
                   : pestanaNPanel === "muebles" ? "Biblioteca de Muebles"
-                  : pestanaNPanel === "materiales" ? "Paleta de Materiales"
+                  : pestanaNPanel === "capas" ? "Gestor de Capas"
+                  : pestanaNPanel === "partes" ? "Desglose de Partes GHX"
+                  : pestanaNPanel === "materiales" ? "Editor de Materiales PBR"
                   : pestanaNPanel === "calibrar" ? "Calibración 3D"
                   : pestanaActiva === "despiece" ? "Apariencia - Despiece & Costos"
                   : pestanaActiva === "basedatos" ? "Apariencia - Base de Datos"
@@ -396,7 +403,22 @@ export default function NPanel() {
           {pestanaNPanel === "muebles" && <FurnitureAssetBrowser />}
 
           {/* ========================================================================= */}
-          {/* VISTA 2: PESTAÑA COMPONENTES (Definiciones GHX en Crudo)                  */}
+          {/* VISTA 2: PESTAÑA CAPAS (Sistema de Capas Estilo Rhino 8)                   */}
+          {/* ========================================================================= */}
+          {pestanaNPanel === "capas" && <LayerManagerPanel />}
+
+          {/* ========================================================================= */}
+          {/* VISTA 3: PESTAÑA PARTES (Desglose de Partes & Mallas GHX)                 */}
+          {/* ========================================================================= */}
+          {pestanaNPanel === "partes" && <PartBreakdownPanel />}
+
+          {/* ========================================================================= */}
+          {/* VISTA 4: PESTAÑA MATERIALES (Editor PBR Físico Estilo Rhino 8)            */}
+          {/* ========================================================================= */}
+          {pestanaNPanel === "materiales" && <MaterialManagerPanel />}
+
+          {/* ========================================================================= */}
+          {/* VISTA 5: PESTAÑA COMPONENTES (Definiciones GHX en Crudo)                  */}
           {/* ========================================================================= */}
           {pestanaNPanel === "componentes" && (
             <div className="flex-1 min-w-0 flex flex-col overflow-hidden">
@@ -511,56 +533,7 @@ export default function NPanel() {
             </div>
           )}
 
-          {/* ========================================================================= */}
-          {/* VISTA 2: PESTAÑA MATERIALES (Paleta PBR & Melaminas)                       */}
-          {/* ========================================================================= */}
-          {pestanaNPanel === "materiales" && (
-            <div className="flex-1 min-w-0 flex flex-col overflow-hidden p-2.5 space-y-3">
-              <div className="text-[10px] text-slate-400 font-semibold px-1 flex items-center justify-between shrink-0">
-                <span>MELAMINAS & ACABADOS PBR</span>
-                <span className="text-[9px] text-cyan-600 dark:text-cyan-400">Clic para aplicar</span>
-              </div>
 
-              {/* Grid de Materiales */}
-              <div className="flex-1 overflow-y-auto space-y-2 pr-1 custom-scrollbar">
-                <div className="grid grid-cols-2 gap-2">
-                  {materialesFiltrados.map((mat) => {
-                    const isActivo = parametros.color_acabado?.toLowerCase() === mat.colorHex.toLowerCase();
-                    return (
-                      <button
-                        key={mat.id}
-                        onClick={() => aplicarMaterial(mat)}
-                        className={`p-2.5 rounded-xl border text-left flex flex-col justify-between transition-all cursor-pointer group bg-white/70 dark:bg-[#131B2E]/70 hover:bg-white dark:hover:bg-[#131B2E] ${
-                          isActivo
-                            ? "border-cyan-500 ring-2 ring-cyan-500/20 shadow-md"
-                            : "border-slate-200 dark:border-cyan-900/40 hover:border-cyan-400/60"
-                        }`}
-                      >
-                        <div className="flex items-center justify-between mb-2">
-                          <div
-                            style={{ backgroundColor: mat.colorHex }}
-                            className="w-6 h-6 rounded-lg border border-black/10 shadow-xs flex items-center justify-center shrink-0"
-                          >
-                            {isActivo && <Check className="w-3.5 h-3.5 text-white drop-shadow-md" />}
-                          </div>
-                          <span className="text-[9px] font-mono font-bold text-slate-400 truncate">
-                            {mat.proveedor}
-                          </span>
-                        </div>
-
-                        <h5 className="text-[11px] font-bold text-slate-800 dark:text-slate-200 leading-tight truncate">
-                          {mat.nombre}
-                        </h5>
-                        <span className="text-[9px] text-slate-400 mt-0.5 truncate">
-                          {mat.tipo}
-                        </span>
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-            </div>
-          )}
 
           {/* ========================================================================= */}
           {/* VISTA 3: PESTAÑA CALIBRAR (Integración Completa del Calibrador 3D)         */}
@@ -1047,6 +1020,54 @@ export default function NPanel() {
                 className="text-[9px] tracking-wide font-sans leading-none font-semibold"
               >
                 Muebles
+              </span>
+            </button>
+
+            {/* Pestaña Vertical 3: Capas */}
+            <button
+              onClick={() => setPestanaNPanel("capas")}
+              style={
+                pestanaNPanel === "capas"
+                  ? { backgroundColor: coloresApariencia?.botonActivo || "#0891b2", color: "#FFFFFF" }
+                  : { color: coloresApariencia?.textoPrincipal }
+              }
+              title="Gestor de Capas y Materiales Asignados"
+              className={`w-7 py-2.5 px-1 rounded-full flex flex-col items-center justify-center gap-1.5 transition-all cursor-pointer ${
+                pestanaNPanel === "capas"
+                  ? "shadow-md font-bold"
+                  : "hover:opacity-80"
+              }`}
+            >
+              <Layers className="w-3.5 h-3.5 shrink-0" />
+              <span 
+                style={{ writingMode: "vertical-rl" }}
+                className="text-[9px] tracking-wide font-sans leading-none font-semibold"
+              >
+                Capas
+              </span>
+            </button>
+
+            {/* Pestaña Vertical 4: Partes */}
+            <button
+              onClick={() => setPestanaNPanel("partes")}
+              style={
+                pestanaNPanel === "partes"
+                  ? { backgroundColor: coloresApariencia?.botonActivo || "#0891b2", color: "#FFFFFF" }
+                  : { color: coloresApariencia?.textoPrincipal }
+              }
+              title="Desglose de Partes y Mallas GHX"
+              className={`w-7 py-2.5 px-1 rounded-full flex flex-col items-center justify-center gap-1.5 transition-all cursor-pointer ${
+                pestanaNPanel === "partes"
+                  ? "shadow-md font-bold"
+                  : "hover:opacity-80"
+              }`}
+            >
+              <ListTree className="w-3.5 h-3.5 shrink-0" />
+              <span 
+                style={{ writingMode: "vertical-rl" }}
+                className="text-[9px] tracking-wide font-sans leading-none font-semibold"
+              >
+                Partes
               </span>
             </button>
 

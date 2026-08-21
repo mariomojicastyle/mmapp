@@ -394,6 +394,20 @@ async def get_model_metadata(request: Request):
                         }
                         default_values[nick] = selected_final
 
+    declared_outputs = []
+    if root is not None:
+        for chunk in root.iter("chunk"):
+            if chunk.attrib.get("name") == "Object":
+                c = chunk.find("chunks/chunk[@name='Container']")
+                if c is not None:
+                    name_item = c.find("items/item[@name='Name']")
+                    nick_item = c.find("items/item[@name='NickName']")
+                    name_t = (name_item.text or "").strip() if name_item is not None else ""
+                    nick_t = (nick_item.text or "").strip() if nick_item is not None else ""
+                    if nick_t.startswith("RH_OUT:") and name_t != "Group":
+                        if nick_t not in declared_outputs:
+                            declared_outputs.append(nick_t)
+
     parameter_groups = extract_parameter_groups(root, default_values) if root is not None else []
 
     return {
@@ -401,7 +415,8 @@ async def get_model_metadata(request: Request):
         "model_id": model_id,
         "slider_limits": slider_limits,
         "default_values": default_values,
-        "parameter_groups": parameter_groups
+        "parameter_groups": parameter_groups,
+        "declared_outputs": declared_outputs
     }
 
 app.add_middleware(
@@ -780,10 +795,10 @@ async def compute_model(request: Request):
                                                 indices = []
                                                 for i in range(len(decoded_geom.Faces)):
                                                     f = decoded_geom.Faces[i]
-                                                    # Al reflejar Z (-local_y), invertir orden de vértices para mantener normales hacia afuera (CCW)
-                                                    indices.extend([f[0], f[2], f[1]])
+                                                    # Orden estándar CCW para normales hacia afuera (100% Outward Normals)
+                                                    indices.extend([f[0], f[1], f[2]])
                                                     if f[2] != f[3]:
-                                                        indices.extend([f[2], f[0], f[3]])
+                                                        indices.extend([f[0], f[2], f[3]])
                                                 if verts and indices:
                                                     mesh_dict["vertices"] = verts
                                                     mesh_dict["indices"] = indices
@@ -1004,6 +1019,20 @@ async def compute_model(request: Request):
         p0 = piezas_madera_final[0]
         dim_str = f"{p0['largo']} x {p0['ancho']} x {p0['espesor']} mm"
 
+    declared_outputs = []
+    if root is not None:
+        for chunk in root.iter("chunk"):
+            if chunk.attrib.get("name") == "Object":
+                c = chunk.find("chunks/chunk[@name='Container']")
+                if c is not None:
+                    name_item = c.find("items/item[@name='Name']")
+                    nick_item = c.find("items/item[@name='NickName']")
+                    name_t = (name_item.text or "").strip() if name_item is not None else ""
+                    nick_t = (nick_item.text or "").strip() if nick_item is not None else ""
+                    if nick_t.startswith("RH_OUT:") and name_t != "Group":
+                        if nick_t not in declared_outputs:
+                            declared_outputs.append(nick_t)
+
     return {
         "status": "success",
         "model_id": model_id,
@@ -1015,6 +1044,7 @@ async def compute_model(request: Request):
             "real_meshes_extracted": len(real_meshes)
         },
         "real_meshes": real_meshes,
+        "declared_outputs": declared_outputs,
         "execution_time_ms": execution_time_ms,
         "slider_limits": slider_limits,
         "default_values": default_values,

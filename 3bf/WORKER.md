@@ -366,6 +366,31 @@ Para eliminar discrepancias de precios al abrir archivos GHX:
 * **Control de Versiones de Ficha:** Opciones limpias: **`BD 1.0`**, **`BD 1.1`**, **`BD 2.0`**.
 * **Acción de Guardado:** Botón minimalista unificado en cabecera: **`Guardar`** con estado de confirmación `¡Guardado!`.
 
+---
+
+## 💡 13. Estándar de Inicialización y Visibilidad por Defecto (Capas y Partes 100% Activas)
+
+Para garantizar una experiencia CAD limpia, fluida y sin bloqueos visuales:
+
+```mermaid
+flowchart TD
+    A["Arranque de la App / Inserción GHX / Reset"] --> B["Carga de Definición y Mallas"]
+    B --> C["1. Gestor de Capas: visible = true (100% Bombillos Encendidos)"]
+    B --> D["2. Desglose de Partes GHX: visible = true (100% Partes Visibles)"]
+    C --> E["🎯 Visor 3D Three.js: Geometría Completa Renderizada a la Primera"]
+    D --> E
+```
+
+1. **Regla de Oro de Visibilidad Inicial (`visible: true`):**
+   * Al iniciar la plataforma, abrir un nuevo archivo `.ghx`, o presionar el botón de restablecer (`resetCapasYMateriales`), **todas las 19 capas estándar del modelo (`PRESET_CAPAS`) y todas las partes del árbol de Grasshopper inician siempre con `visible: true`**.
+   * Los bombillos del Gestor de Capas y del Desglose de Partes aparecen encendidos de forma predeterminada, evitando que modelos recién arrastrados queden invisibles debido a estados de sesión residuales.
+
+2. **Aislamiento Semántico de Capas:**
+   * **`RH_OUT:Perforados`** $\rightarrow$ Capa **`Perforados`** (Color Rojo / Material Perforados).
+   * **`RH_OUT:Perno` / `RH_OUT:Caja`** $\rightarrow$ Capa **`Zincado`** / **`Acero`** (Materiales Metálicos).
+   * **`RH_OUT:Tarugo`** $\rightarrow$ Capa **`Madera`** (Material Madera).
+   * **`RH_OUT:MDP` / `RH_OUT:Color` / `RH_OUT:Balance`** $\rightarrow$ Capas **`MDP`**, **`Tono`** y **`Back`** (Tableros).
+
 
 
 

@@ -200,7 +200,7 @@ function BoardMesh({
   tipoMapeado?: string;
   instanciaId?: string;
 }) {
-  const { calibracion, objetoSeleccionado, setHoveredPiece, coloresApariencia } = use3BFStore();
+  const { calibracion, objetoSeleccionado, setHoveredPiece, coloresApariencia, capas, materialesPBR, asignacionesPartes } = use3BFStore();
   const loadedTexture = useMarfilTexture(calibracion.customTextureUrl, tipoMapeado);
 
   const { customGeometry, edgesGeometry } = React.useMemo(() => {
@@ -284,7 +284,14 @@ function BoardMesh({
     return null;
   }, [customGeometry, size, calibracion.thresholdAristas]);
 
-  const cleanName = name.replace("RH_OUT:", "");
+  const cleanName = name.replace(/^RH_OUT:/, "").trim();
+
+  // 💡 1. Verificar visibilidad individual de la parte
+  const asignacion = asignacionesPartes[name] || asignacionesPartes[cleanName] || asignacionesPartes[`RH_OUT:${cleanName}`];
+  if (asignacion && asignacion.visible === false) {
+    return null;
+  }
+
   const isWireframe = modoVisual === "lineas";
   const isTransparent = modoVisual === "semitransparente";
   const isHardwarePerno = name.includes("Perno") || name.includes("Tornillo");
@@ -292,6 +299,44 @@ function BoardMesh({
   const isHardwareTarugo = name.includes("Tarugo") || name.includes("Soporte");
   const isMachining = name.includes("Maquinados");
   const isTapaLuz = name.includes("Tapa Luz") || name.includes("Regleta");
+
+  // 💡 2. Resolver Capa Asignada
+  let capaAsignada = null;
+  if (asignacion && asignacion.capaId && asignacion.capaId !== "por_defecto") {
+    capaAsignada = capas.find((c) => c.id === asignacion.capaId);
+  } else {
+    const kLow = name.toLowerCase();
+    if (kLow.includes("perno") || kLow.includes("tornillo")) {
+      capaAsignada = capas.find((c) => c.nombre.toLowerCase().includes("acero") || c.nombre.toLowerCase().includes("herraje")) || capas[0];
+    } else if (kLow.includes("caja")) {
+      capaAsignada = capas.find((c) => c.nombre.toLowerCase().includes("zinc") || c.nombre.toLowerCase().includes("herraje")) || capas[0];
+    } else if (kLow.includes("tarugo") || kLow.includes("soporte")) {
+      capaAsignada = capas.find((c) => c.nombre.toLowerCase().includes("madera") || c.nombre.toLowerCase().includes("herraje")) || capas[0];
+    } else if (kLow.includes("maquinado") || kLow.includes("perforado")) {
+      capaAsignada = capas.find((c) => c.nombre.toLowerCase().includes("perforad")) || capas[0];
+    } else if (kLow.includes("mdp")) {
+      capaAsignada = capas.find((c) => c.nombre.toLowerCase() === "mdp") || capas[0];
+    } else if (kLow.includes("mdf")) {
+      capaAsignada = capas.find((c) => c.nombre.toLowerCase() === "mdf") || capas[0];
+    } else if (kLow.includes("color")) {
+      capaAsignada = capas.find((c) => c.nombre.toLowerCase().includes("tono")) || capas[0];
+    } else if (kLow.includes("balance")) {
+      capaAsignada = capas.find((c) => c.nombre.toLowerCase().includes("back") || c.nombre.toLowerCase().includes("espaldar")) || capas[0];
+    }
+  }
+
+  // 💡 3. Si la capa asignada tiene el bombillo apagado (visible === false), no renderizar la malla
+  if (capaAsignada && capaAsignada.visible === false) {
+    return null;
+  }
+
+  // 2. Resolver Material PBR Asignado
+  let materialPBR = null;
+  if (asignacion && asignacion.materialId && asignacion.materialId !== "por_capa") {
+    materialPBR = materialesPBR.find((m) => m.id === asignacion.materialId);
+  } else if (capaAsignada) {
+    materialPBR = materialesPBR.find((m) => m.id === capaAsignada.materialId);
+  }
 
   let meshColor = mainColor;
   let metalness = 0.1;
@@ -339,10 +384,6 @@ function BoardMesh({
   const isBalance = name.includes("Balance");
   const isMelaminaCara = name.includes("Color") || (!isMdpExpuesto && !isBalance);
 
-  if (isSolidOrRendered && isMachining) {
-    return null;
-  }
-
   if (isWoodBoard) {
     roughness = isTransparent ? 0.15 : (isMdpExpuesto ? 0.85 : (isBalance ? 0.5 : calibracion.rugosidadMadera));
     metalness = isTransparent ? 0.1 : (isMdpExpuesto ? 0.0 : (isBalance ? 0.0 : calibracion.metalicidadMadera));
@@ -360,11 +401,22 @@ function BoardMesh({
     }
   }
 
-  const activeMap = (isWoodBoard && isMelaminaCara && (calibracion.customTextureUrl || isRenderedMode)) ? loadedTexture : null;
-  const hasMap = activeMap !== null;
-  let finalMeshColor = hasMap ? "#ffffff" : (modoVisual === "solido" ? (coloresApariencia.materialPorDefecto || calibracion.colorSolido) : meshColor);
+  // Aplicar propiedades físicas del material PBR si está presente y no estamos en semitransparente
+  if (materialPBR && modoVisual !== "semitransparente") {
+    meshColor = materialPBR.colorBase;
+    metalness = materialPBR.metalico;
+    roughness = materialPBR.rugosidad;
+    if (materialPBR.opacidad < 1.0) {
+      opacity = materialPBR.opacidad;
+      transparent = true;
+    }
+  }
 
-  if (modoVisual === "renderizado" && isWoodBoard) {
+  const activeMap = (modoVisual === "renderizado" && isWoodBoard && isMelaminaCara && (calibracion.customTextureUrl || isRenderedMode || (materialPBR && materialPBR.texturaUrl))) ? loadedTexture : null;
+  const hasMap = activeMap !== null;
+  let finalMeshColor = hasMap ? "#ffffff" : (modoVisual === "solido" ? (coloresApariencia.materialPorDefecto || calibracion.colorSolido || "#CBD5E1") : meshColor);
+
+  if (modoVisual === "renderizado" && isWoodBoard && !materialPBR) {
     if (isMdpExpuesto) {
       finalMeshColor = "#D5B88A";
     } else if (isBalance) {
@@ -372,7 +424,8 @@ function BoardMesh({
     }
   }
 
-  const isMainSolidBoard = isWoodBoard && (isMdpExpuesto || (!name.includes("Color") && !name.includes("Balance")));
+  const nombreMaterialEfectivo = materialPBR ? materialPBR.nombre : (isWoodBoard ? "M_Marfil" : (isHardwarePerno ? "Acero" : (isHardwareCaja ? "Zinc" : "PBR_Default")));
+
   const debeMostrarAristas = !objetoSeleccionado && calibracion.mostrarAristas && isWoodBoard;
 
   const handlePointerOver = (e: any) => {
@@ -401,7 +454,8 @@ function BoardMesh({
         onPointerOut={handlePointerOut}
       >
         <meshStandardMaterial
-          key={`${activeMap ? activeMap.uuid : "no-map"}-${modoVisual}`}
+          key={`${activeMap ? activeMap.uuid : "no-map"}-${modoVisual}-${nombreMaterialEfectivo}`}
+          name={nombreMaterialEfectivo}
           color={finalMeshColor}
           map={activeMap}
           transparent={transparent}
@@ -433,7 +487,8 @@ function BoardMesh({
     >
       <boxGeometry args={size} />
       <meshStandardMaterial
-        key={`${activeMap ? activeMap.uuid : "no-map"}-${modoVisual}`}
+        key={`${activeMap ? activeMap.uuid : "no-map"}-${modoVisual}-${nombreMaterialEfectivo}`}
+        name={nombreMaterialEfectivo}
         color={finalMeshColor}
         map={activeMap}
         transparent={transparent}
@@ -1623,6 +1678,7 @@ export default function Viewer3D() {
   const {
     tema,
     resultado,
+    modoVisual,
     calibracion,
     coloresApariencia,
     escenarioLimpio,
@@ -1747,36 +1803,184 @@ export default function Viewer3D() {
   };
 
   const exportToGLB = () => {
-    if (!furnitureGroup) {
+    const instanceMap: Map<string, THREE.Group> | undefined = typeof window !== "undefined" ? (window as any).__3bfInstanceGroups : undefined;
+    const targetGroups: THREE.Group[] = [];
+    if (furnitureGroup) {
+      targetGroups.push(furnitureGroup);
+    } else if (instanceMap && instanceMap.size > 0) {
+      instanceMap.forEach((grp) => targetGroups.push(grp));
+    }
+
+    if (targetGroups.length === 0) {
       alert("Espera a que el modelo esté cargado en pantalla para exportar.");
       return;
     }
     
     import("three/examples/jsm/exporters/GLTFExporter.js").then(({ GLTFExporter }) => {
       const exporter = new GLTFExporter();
-      const clone = furnitureGroup.clone();
       
-      const linesToRemove: THREE.Object3D[] = [];
-      clone.traverse((child) => {
-        const c = child as any;
-        if (c.isLine || c.isLineSegments) {
-          linesToRemove.push(child);
+      // 1. Crear nodo raíz limpio y purgado para Blender
+      const exportRoot = new THREE.Group();
+      exportRoot.name = parametros.model_id || "Mueble_3BF";
+
+      targetGroups.forEach((targetGroup) => {
+        targetGroup.updateWorldMatrix(true, true);
+        const groupWorldPos = new THREE.Vector3();
+        targetGroup.getWorldPosition(groupWorldPos);
+
+        targetGroup.traverse((child) => {
+          const mesh = child as THREE.Mesh;
+          if (!mesh || !mesh.isMesh) return;
+        
+        // Filtrar objetos ocultos o invisibles
+        if (!mesh.visible) return;
+        const meshName = (mesh.name || "").trim();
+        // Si no tiene nombre explícito de pieza, es un helper/outline/edges interno de Three.js
+        if (!meshName) return;
+        
+        const nLow = meshName.toLowerCase();
+        
+        // Descartar maquinados transparentes, helpers, sombras o sólidos NURBS de cálculo analítico
+        if (
+          nLow.includes("perforado") || 
+          nLow.includes("maquinado") || 
+          nLow.includes("helper") || 
+          nLow.includes("plane") || 
+          nLow.includes("nurbs") ||
+          nLow.includes("edges") ||
+          nLow.includes("outline") ||
+          nLow.includes("silhouette") ||
+          nLow.includes("shadow") ||
+          nLow.includes("axis")
+        ) {
+          return;
         }
-      });
-      linesToRemove.forEach((line) => {
-        if (line.parent) {
-          line.parent.remove(line);
+
+        // Descartar si no tiene geometría válida o tiene 0 vértices
+        if (!mesh.geometry || !mesh.geometry.attributes.position || mesh.geometry.attributes.position.count === 0) {
+          return;
         }
+
+        // 2. Crear geometría limpia con atributos estándar (position, normal, uv)
+        const cleanGeo = mesh.geometry.clone();
+        
+        // Eliminar atributos no estándar que causan conflicto en Blender
+        Object.keys(cleanGeo.attributes).forEach((attrKey) => {
+          if (!["position", "normal", "uv"].includes(attrKey)) {
+            cleanGeo.deleteAttribute(attrKey);
+          }
+        });
+
+        // Asegurar coordenadas UV válidas de 2 componentes
+        if (!cleanGeo.attributes.uv) {
+          const pos = cleanGeo.attributes.position;
+          const uvs = new Float32Array(pos.count * 2);
+          for (let i = 0; i < pos.count; i++) {
+            uvs[i * 2] = pos.getX(i);
+            uvs[i * 2 + 1] = pos.getZ(i);
+          }
+          cleanGeo.setAttribute("uv", new THREE.BufferAttribute(uvs, 2));
+        }
+
+        // Convertir a geometría no indexada y calcular normales
+        let finalGeo = cleanGeo.index ? cleanGeo.toNonIndexed() : cleanGeo;
+        const posAttr = finalGeo.attributes.position;
+        const uvAttr = finalGeo.attributes.uv;
+
+        // 📐 Inversión Explícita Directa de Balance (Multiplicar por -1):
+        if (nLow.includes("balance")) {
+          for (let i = 0; i < posAttr.count; i += 3) {
+            const x1 = posAttr.getX(i + 1), y1 = posAttr.getY(i + 1), z1 = posAttr.getZ(i + 1);
+            const x2 = posAttr.getX(i + 2), y2 = posAttr.getY(i + 2), z2 = posAttr.getZ(i + 2);
+            posAttr.setXYZ(i + 1, x2, y2, z2);
+            posAttr.setXYZ(i + 2, x1, y1, z1);
+
+            if (uvAttr) {
+              const u1 = uvAttr.getX(i + 1), v1 = uvAttr.getY(i + 1);
+              const u2 = uvAttr.getX(i + 2), v2 = uvAttr.getY(i + 2);
+              uvAttr.setXY(i + 1, u2, v2);
+              uvAttr.setXY(i + 2, u1, v1);
+            }
+          }
+          posAttr.needsUpdate = true;
+          if (uvAttr) uvAttr.needsUpdate = true;
+        }
+
+        finalGeo.computeVertexNormals();
+
+        // Forzar vector normal hacia abajo (0, -1, 0) para Balance y (0, 1, 0) para Color
+        if (nLow.includes("balance") && finalGeo.attributes.normal) {
+          const normAttr = finalGeo.attributes.normal;
+          for (let idx = 0; idx < normAttr.count; idx++) {
+            normAttr.setXYZ(idx, 0, -1, 0);
+          }
+          normAttr.needsUpdate = true;
+        } else if (nLow.includes("color") && finalGeo.attributes.normal) {
+          const normAttr = finalGeo.attributes.normal;
+          for (let idx = 0; idx < normAttr.count; idx++) {
+            normAttr.setXYZ(idx, 0, 1, 0);
+          }
+          normAttr.needsUpdate = true;
+        }
+
+        finalGeo.clearGroups();
+
+        // 3. Crear material limpio según el modo visual activo
+        const isExportSolid = modoVisual === "solido";
+        const srcMat = Array.isArray(mesh.material) ? mesh.material[0] : mesh.material;
+        const matName = isExportSolid 
+          ? (meshName ? `${meshName}_Solido` : "Material_Solido_Gris") 
+          : (srcMat?.name || (meshName ? `${meshName}_Mat` : "PBR_Material"));
+
+        const cleanMat = new THREE.MeshStandardMaterial({
+          name: matName,
+          color: isExportSolid 
+            ? new THREE.Color(coloresApariencia.materialPorDefecto || calibracion.colorSolido || "#CBD5E1")
+            : ((srcMat as any)?.color || new THREE.Color("#CBD5E1")),
+          roughness: isExportSolid ? 0.5 : ((srcMat as any)?.roughness ?? 0.4),
+          metalness: isExportSolid ? 0.05 : ((srcMat as any)?.metalness ?? 0.1),
+          map: isExportSolid ? null : ((srcMat as any)?.map || null),
+          transparent: false,
+          opacity: 1.0,
+          side: THREE.DoubleSide
+        });
+
+        const newMesh = new THREE.Mesh(finalGeo, cleanMat);
+        newMesh.name = meshName || "Pieza_3BF";
+        newMesh.children = [];
+
+        // Posicionar en espacio local del mueble
+        const worldPos = new THREE.Vector3();
+        const worldQuat = new THREE.Quaternion();
+        const worldScale = new THREE.Vector3();
+        mesh.getWorldPosition(worldPos);
+        mesh.getWorldQuaternion(worldQuat);
+        mesh.getWorldScale(worldScale);
+
+        newMesh.position.subVectors(worldPos, groupWorldPos);
+        newMesh.quaternion.copy(worldQuat);
+        newMesh.scale.copy(worldScale);
+
+        exportRoot.add(newMesh);
+        });
       });
 
+      if (exportRoot.children.length === 0) {
+        alert("No se encontraron mallas visibles para exportar.");
+        return;
+      }
+
       exporter.parse(
-        clone,
+        exportRoot,
         (gltf) => {
           const blob = new Blob([gltf as ArrayBuffer], { type: "application/octet-stream" });
           const link = document.createElement("a");
           link.href = URL.createObjectURL(blob);
-          link.download = `${parametros.model_id || "mueble"}.glb`;
+          const timestamp = new Date().toISOString().replace(/[:.]/g, "-").slice(11, 19);
+          const fileName = `${parametros.model_id || "Cubierta"}_${timestamp}.glb`;
+          link.download = fileName;
           link.click();
+          console.log(`[3BF GLB Exporter] Exportado exitosamente: ${fileName} con ${exportRoot.children.length} piezas listas para Blender.`);
         },
         (error) => {
           console.error("Error al exportar GLB:", error);

@@ -347,6 +347,7 @@ export interface ComputoResultado {
     indices?: number[];
     uvs?: number[];
   }>;
+  declared_outputs?: string[];
   slider_limits?: Record<string, {
     min?: number;
     max?: number;
@@ -562,6 +563,86 @@ export const CANTOS_INICIALES_DEFECTO: CantoRecord[] = [
   { id: "c5", codigo: "0000313", descripcion: "Canto PVC Glacial 33mm x 2.0mm", espesorMm: 2.0, anchoMm: 33, tipo: "Rígido 2mm", costoMlCop: 2400, costoMlUsd: 0.58, proveedor: "Rehau" },
 ];
 
+// ==============================================================================
+// 🎨 SISTEMA NATIVO DE CAPAS, MATERIALES PBR Y DESGLOSE DE PARTES 3DBIMFAB (3BF)
+// ==============================================================================
+
+export interface MaterialPBRDef {
+  id: string;             // ej: "mat_acero", "mat_duna", "mat_marfil"
+  nombre: string;         // ej: "Acero", "Duna", "M_Marfil", "MDF", "MDP", "Cromo", "P_Negro"
+  tipo: "PBR" | "Melamina" | "Madera" | "Metal" | "Plastico" | "Pintura";
+  colorBase: string;      // Hex "#C5B39A", "#8A9EA7"
+  texturaUrl?: string;    // Ruta "/textures/Marfil_diffuse.jpg" o custom
+  metalico: number;       // 0.00 a 1.00
+  rugosidad: number;      // 0.00 a 1.00
+  especularidad: number;  // F0 0.00 a 1.00
+  opacidad: number;       // 0.00 a 1.00 (Alfa / Transmisión)
+  ior: number;            // Índice de refracción (1.00 a 2.50)
+  notas?: string;         // Especificaciones de taller o proveedor
+}
+
+export interface CapaDef {
+  id: string;             // ej: "capa_acero", "capa_tono", "capa_mdp"
+  nombre: string;         // ej: "Acero", "Aluminio", "Tono", "Back", "Cromo", "MDP", "MDF", "Herrajes", "Perforados"
+  activa: boolean;        // Capa seleccionada actualmente
+  visible: boolean;       // Visibilidad en viewport (💡)
+  bloqueada: boolean;     // Bloqueo de interacción (🔒)
+  color: string;          // Color representativo de la capa (Hex)
+  materialId: string;     // ID del MaterialPBRDef asignado por defecto a la capa
+  tipoLinea?: string;     // "Continua"
+}
+
+export interface AsignacionParteDef {
+  parteKey: string;       // Nombre de malla o RH_OUT (ej. "RH_OUT:Maquinados", "RH_OUT:MDP", "RH_OUT:Perno")
+  nombreVisible: string;  // "Maquinados", "Tablero MDP", "Perno Minifix", etc.
+  capaId: string;         // "por_defecto" | id de CapaDef (ej: "capa_herrajes")
+  materialId: string;     // "por_capa" | id de MaterialPBRDef (ej: "mat_acero")
+  visible: boolean;       // Visibilidad específica por parte
+}
+
+export const PRESET_MATERIALES_PBR: MaterialPBRDef[] = [
+  { id: "mat_acero", nombre: "Acero", tipo: "Metal", colorBase: "#8A9EA7", metalico: 0.90, rugosidad: 0.20, especularidad: 0.90, opacidad: 1.0, ior: 1.50, notas: "Acero pulido para herrajes y pernos" },
+  { id: "mat_aluminio", nombre: "Aluminio", tipo: "Metal", colorBase: "#CBD5E1", metalico: 0.85, rugosidad: 0.30, especularidad: 0.80, opacidad: 1.0, ior: 1.50, notas: "Aluminio anodizado natural" },
+  { id: "mat_marfil", nombre: "M_Marfil", tipo: "Melamina", colorBase: "#C5B39A", texturaUrl: "/textures/Marfil_diffuse.jpg", metalico: 0.05, rugosidad: 0.65, especularidad: 0.50, opacidad: 1.0, ior: 1.50, notas: "Melamina Novopan MDPKOR Marfil" },
+  { id: "mat_duna", nombre: "Duna", tipo: "Melamina", colorBase: "#D2B48C", texturaUrl: "/textures/wood_melamine.jpg", metalico: 0.05, rugosidad: 0.60, especularidad: 0.50, opacidad: 1.0, ior: 1.50, notas: "Melamina Duna tono madera cálida" },
+  { id: "mat_fresno", nombre: "M_Fresno", tipo: "Madera", colorBase: "#C2A67E", metalico: 0.02, rugosidad: 0.55, especularidad: 0.50, opacidad: 1.0, ior: 1.50, notas: "Madera Fresno poro abierto" },
+  { id: "mat_cromo", nombre: "Cromo", tipo: "Metal", colorBase: "#E2E8F0", metalico: 1.00, rugosidad: 0.05, especularidad: 1.00, opacidad: 1.0, ior: 1.50, notas: "Cromado brillante tipo espejo" },
+  { id: "mat_blanco", nombre: "M_Blanco", tipo: "Melamina", colorBase: "#FFFFFF", metalico: 0.05, rugosidad: 0.70, especularidad: 0.50, opacidad: 1.0, ior: 1.50, notas: "Melamina Blanco Glacial mate" },
+  { id: "mat_mdf", nombre: "MDF", tipo: "Madera", colorBase: "#BDB088", metalico: 0.00, rugosidad: 0.85, especularidad: 0.30, opacidad: 1.0, ior: 1.50, notas: "Sustrato MDF crudo fibroso" },
+  { id: "mat_mdp", nombre: "MDP", tipo: "Madera", colorBase: "#D5B88A", metalico: 0.00, rugosidad: 0.80, especularidad: 0.30, opacidad: 1.0, ior: 1.50, notas: "Sustrato MDP aglomerado canto expuesto" },
+  { id: "mat_nurbs", nombre: "Nurbs", tipo: "PBR", colorBase: "#E036C0", metalico: 0.10, rugosidad: 0.30, especularidad: 0.60, opacidad: 0.85, ior: 1.50, notas: "Geometría analítica CAD" },
+  { id: "mat_pnegro", nombre: "P_Negro", tipo: "Plastico", colorBase: "#1A1A1A", metalico: 0.10, rugosidad: 0.40, especularidad: 0.50, opacidad: 1.0, ior: 1.50, notas: "Plástico inyectado negro" },
+  { id: "mat_pblanco", nombre: "P_Blanco", tipo: "Plastico", colorBase: "#F1F5F9", metalico: 0.10, rugosidad: 0.40, especularidad: 0.50, opacidad: 1.0, ior: 1.50, notas: "Plástico inyectado blanco" },
+  { id: "mat_pintura_neg", nombre: "Pintura_Negra", tipo: "Pintura", colorBase: "#0F172A", metalico: 0.30, rugosidad: 0.35, especularidad: 0.60, opacidad: 1.0, ior: 1.50, notas: "Pintura electrostática negra mate" },
+  { id: "mat_pintura_bla", nombre: "Pintura_Blanca", tipo: "Pintura", colorBase: "#F8FAFC", metalico: 0.30, rugosidad: 0.35, especularidad: 0.60, opacidad: 1.0, ior: 1.50, notas: "Pintura electrostática blanca satinada" },
+  { id: "mat_zinc", nombre: "Zinc", tipo: "Metal", colorBase: "#94A3B8", metalico: 0.80, rugosidad: 0.35, especularidad: 0.70, opacidad: 1.0, ior: 1.50, notas: "Zincado plateado anticorrosivo" },
+  { id: "mat_perforados", nombre: "Perforados", tipo: "PBR", colorBase: "#EF4444", metalico: 0.00, rugosidad: 0.50, especularidad: 0.50, opacidad: 1.0, ior: 1.50, notas: "Guías de maquinado CNC y perforaciones" },
+  { id: "mat_bim", nombre: "BIM", tipo: "PBR", colorBase: "#06B6D4", metalico: 0.20, rugosidad: 0.30, especularidad: 0.70, opacidad: 0.75, ior: 1.50, notas: "Ejes y metadatos constructivos BIM" },
+  { id: "mat_zincado", nombre: "Zincado", tipo: "Metal", colorBase: "#A1A1AA", metalico: 0.85, rugosidad: 0.25, especularidad: 0.75, opacidad: 1.0, ior: 1.50, notas: "Herrajes zincados brillantes" },
+];
+
+export const PRESET_CAPAS: CapaDef[] = [
+  { id: "capa_acero", nombre: "Acero", activa: false, visible: true, bloqueada: false, color: "#8A9EA7", materialId: "mat_acero" },
+  { id: "capa_aluminio", nombre: "Aluminio", activa: true, visible: true, bloqueada: false, color: "#CBD5E1", materialId: "mat_aluminio" },
+  { id: "capa_tono", nombre: "Tono", activa: false, visible: true, bloqueada: false, color: "#EAB308", materialId: "mat_marfil" },
+  { id: "capa_back", nombre: "Back", activa: false, visible: true, bloqueada: false, color: "#D97706", materialId: "mat_fresno" },
+  { id: "capa_cromo", nombre: "Cromo", activa: false, visible: true, bloqueada: false, color: "#93C5FD", materialId: "mat_cromo" },
+  { id: "capa_espaldar", nombre: "Espaldar", activa: false, visible: true, bloqueada: false, color: "#64748B", materialId: "mat_blanco" },
+  { id: "capa_mdf", nombre: "MDF", activa: false, visible: true, bloqueada: false, color: "#0D9488", materialId: "mat_mdf" },
+  { id: "capa_mdp", nombre: "MDP", activa: false, visible: true, bloqueada: false, color: "#B45309", materialId: "mat_mdp" },
+  { id: "capa_nurbs", nombre: "Nurbs", activa: false, visible: true, bloqueada: false, color: "#A855F7", materialId: "mat_nurbs" },
+  { id: "capa_plastico_1", nombre: "Plastico_1", activa: false, visible: true, bloqueada: false, color: "#18181B", materialId: "mat_pnegro" },
+  { id: "capa_plastico_2", nombre: "Plastico_2", activa: false, visible: true, bloqueada: false, color: "#FFFFFF", materialId: "mat_pblanco" },
+  { id: "capa_madera", nombre: "Madera", activa: false, visible: true, bloqueada: false, color: "#854D0E", materialId: "mat_fresno" },
+  { id: "capa_pintura_met_n", nombre: "Pintura_Met_N", activa: false, visible: true, bloqueada: false, color: "#09090B", materialId: "mat_pintura_neg" },
+  { id: "capa_pintura_met_b", nombre: "Pintura_Met_B", activa: false, visible: true, bloqueada: false, color: "#F4F4F5", materialId: "mat_pintura_bla" },
+  { id: "capa_zinc", nombre: "Zinc", activa: false, visible: true, bloqueada: false, color: "#10B981", materialId: "mat_zinc" },
+  { id: "capa_perforados", nombre: "Perforados", activa: false, visible: true, bloqueada: false, color: "#EF4444", materialId: "mat_perforados" },
+  { id: "capa_bim", nombre: "BIM", activa: false, visible: true, bloqueada: false, color: "#06B6D4", materialId: "mat_bim" },
+  { id: "capa_herrajes", nombre: "Herrajes", activa: false, visible: true, bloqueada: false, color: "#27272A", materialId: "mat_acero" },
+  { id: "capa_zincado", nombre: "Zincado", activa: false, visible: true, bloqueada: false, color: "#E4E4E7", materialId: "mat_zincado" },
+];
+
 export interface State3BF {
   parametros: ParametrosMueble;
   setParametro: <K extends keyof ParametrosMueble>(key: K, value: ParametrosMueble[K]) => void;
@@ -603,10 +684,29 @@ export interface State3BF {
   // Blender N-Panel (Sidebar Multifuncional con tecla N)
   mostrarNPanel: boolean;
   setMostrarNPanel: (mostrar: boolean | ((prev: boolean) => boolean)) => void;
-  pestanaNPanel: "componentes" | "muebles" | "materiales" | "calibrar" | "apariencia";
-  setPestanaNPanel: (pestana: "componentes" | "muebles" | "materiales" | "calibrar" | "apariencia") => void;
+  pestanaNPanel: "componentes" | "muebles" | "capas" | "partes" | "materiales" | "calibrar" | "apariencia";
+  setPestanaNPanel: (pestana: "componentes" | "muebles" | "capas" | "partes" | "materiales" | "calibrar" | "apariencia") => void;
   anchoPanelDerecho: number;
   setAnchoPanelDerecho: (ancho: number) => void;
+
+  // 🎨 Sistema de Capas, Materiales PBR y Partes GHX
+  capas: CapaDef[];
+  materialesPBR: MaterialPBRDef[];
+  materialSeleccionadoId: string;
+  asignacionesPartes: Record<string, AsignacionParteDef>;
+  crearCapa: (capa?: Partial<CapaDef>) => string;
+  actualizarCapa: (id: string, cambios: Partial<CapaDef>) => void;
+  eliminarCapa: (id: string) => void;
+  toggleVisibilidadCapa: (id: string) => void;
+  toggleBloqueoCapa: (id: string) => void;
+  crearMaterialPBR: (material?: Partial<MaterialPBRDef>) => string;
+  actualizarMaterialPBR: (id: string, cambios: Partial<MaterialPBRDef>) => void;
+  eliminarMaterialPBR: (id: string) => void;
+  setMaterialSeleccionadoId: (id: string) => void;
+  asignarParteACapa: (parteKey: string, capaId: string, nombreVisible?: string) => void;
+  asignarParteAMaterial: (parteKey: string, materialId: string) => void;
+  toggleVisibilidadParte: (parteKey: string) => void;
+  resetCapasYMateriales: () => void;
 
   // 🎨 Apariencia & Personalización de Colores y Tipografía
   esquemaColor: "claro" | "oscuro";
@@ -890,6 +990,204 @@ export const use3BFStore = create<State3BF>((set, get) => ({
       localStorage.setItem("3bf_ancho_panel_derecho", String(normalizado));
     }
     set({ anchoPanelDerecho: normalizado });
+  },
+
+  // 🎨 Estado e Implementación de Capas, Materiales PBR y Partes GHX (Siempre 100% visibles por defecto)
+  capas: (typeof window !== "undefined" && window.localStorage && localStorage.getItem("3bf_capas_v1")
+    ? (JSON.parse(localStorage.getItem("3bf_capas_v1")!) as CapaDef[])
+    : PRESET_CAPAS).map((c) => ({ ...c, visible: true })),
+  materialesPBR: typeof window !== "undefined" && window.localStorage && localStorage.getItem("3bf_materiales_pbr_v1")
+    ? JSON.parse(localStorage.getItem("3bf_materiales_pbr_v1")!)
+    : PRESET_MATERIALES_PBR,
+  materialSeleccionadoId: "mat_acero",
+  asignacionesPartes: typeof window !== "undefined" && window.localStorage && localStorage.getItem("3bf_asignaciones_partes_v1")
+    ? Object.fromEntries(
+        Object.entries(JSON.parse(localStorage.getItem("3bf_asignaciones_partes_v1")!) as Record<string, AsignacionParteDef>).map(([k, v]) => [k, { ...v, visible: true }])
+      )
+    : {},
+
+  crearCapa: (nueva) => {
+    const id = nueva?.id || `capa_${Date.now()}`;
+    const capaCompleta: CapaDef = {
+      id,
+      nombre: nueva?.nombre || `Capa_${get().capas.length + 1}`,
+      activa: false,
+      visible: nueva?.visible ?? true,
+      bloqueada: nueva?.bloqueada ?? false,
+      color: nueva?.color || "#8A9EA7",
+      materialId: nueva?.materialId || get().materialesPBR[0]?.id || "mat_acero",
+      tipoLinea: "Continua",
+      ...nueva,
+    };
+    const listaActualizada = [...get().capas, capaCompleta];
+    if (typeof window !== "undefined" && window.localStorage) {
+      localStorage.setItem("3bf_capas_v1", JSON.stringify(listaActualizada));
+    }
+    set({ capas: listaActualizada });
+    return id;
+  },
+
+  actualizarCapa: (id, cambios) => {
+    const listaActualizada = get().capas.map((c) => (c.id === id ? { ...c, ...cambios } : c));
+    if (cambios.activa) {
+      listaActualizada.forEach((c) => {
+        if (c.id !== id) c.activa = false;
+      });
+    }
+    if (typeof window !== "undefined" && window.localStorage) {
+      localStorage.setItem("3bf_capas_v1", JSON.stringify(listaActualizada));
+    }
+    set({ capas: listaActualizada });
+  },
+
+  eliminarCapa: (id) => {
+    if (get().capas.length <= 1) return;
+    const listaActualizada = get().capas.filter((c) => c.id !== id);
+    if (typeof window !== "undefined" && window.localStorage) {
+      localStorage.setItem("3bf_capas_v1", JSON.stringify(listaActualizada));
+    }
+    set({ capas: listaActualizada });
+  },
+
+  toggleVisibilidadCapa: (id) => {
+    const listaActualizada = get().capas.map((c) => (c.id === id ? { ...c, visible: !c.visible } : c));
+    if (typeof window !== "undefined" && window.localStorage) {
+      localStorage.setItem("3bf_capas_v1", JSON.stringify(listaActualizada));
+    }
+    set({ capas: listaActualizada });
+  },
+
+  toggleBloqueoCapa: (id) => {
+    const listaActualizada = get().capas.map((c) => (c.id === id ? { ...c, bloqueada: !c.bloqueada } : c));
+    if (typeof window !== "undefined" && window.localStorage) {
+      localStorage.setItem("3bf_capas_v1", JSON.stringify(listaActualizada));
+    }
+    set({ capas: listaActualizada });
+  },
+
+  crearMaterialPBR: (nuevo) => {
+    const id = nuevo?.id || `mat_${Date.now()}`;
+    const materialCompleto: MaterialPBRDef = {
+      id,
+      nombre: nuevo?.nombre || `Material_${get().materialesPBR.length + 1}`,
+      tipo: nuevo?.tipo || "PBR",
+      colorBase: nuevo?.colorBase || "#C5B39A",
+      metalico: nuevo?.metalico ?? 0.05,
+      rugosidad: nuevo?.rugosidad ?? 0.50,
+      especularidad: nuevo?.especularidad ?? 0.50,
+      opacidad: nuevo?.opacidad ?? 1.0,
+      ior: nuevo?.ior ?? 1.50,
+      texturaUrl: nuevo?.texturaUrl,
+      notas: nuevo?.notas || "",
+      ...nuevo,
+    };
+    const listaActualizada = [...get().materialesPBR, materialCompleto];
+    if (typeof window !== "undefined" && window.localStorage) {
+      localStorage.setItem("3bf_materiales_pbr_v1", JSON.stringify(listaActualizada));
+    }
+    set({ materialesPBR: listaActualizada, materialSeleccionadoId: id });
+    return id;
+  },
+
+  actualizarMaterialPBR: (id, cambios) => {
+    const listaActualizada = get().materialesPBR.map((m) => (m.id === id ? { ...m, ...cambios } : m));
+    if (typeof window !== "undefined" && window.localStorage) {
+      localStorage.setItem("3bf_materiales_pbr_v1", JSON.stringify(listaActualizada));
+    }
+    set({ materialesPBR: listaActualizada });
+  },
+
+  eliminarMaterialPBR: (id) => {
+    if (get().materialesPBR.length <= 1) return;
+    const listaActualizada = get().materialesPBR.filter((m) => m.id !== id);
+    const nuevoSel = listaActualizada[0]?.id || "";
+    if (typeof window !== "undefined" && window.localStorage) {
+      localStorage.setItem("3bf_materiales_pbr_v1", JSON.stringify(listaActualizada));
+    }
+    set({ materialesPBR: listaActualizada, materialSeleccionadoId: nuevoSel });
+  },
+
+  setMaterialSeleccionadoId: (materialSeleccionadoId) => set({ materialSeleccionadoId }),
+
+  asignarParteACapa: (parteKey, capaId, nombreVisible) => {
+    const prev = get().asignacionesPartes;
+    const actual = prev[parteKey] || {
+      parteKey,
+      nombreVisible: nombreVisible || parteKey.replace(/^RH_OUT:/, ""),
+      capaId: "por_defecto",
+      materialId: "por_capa",
+      visible: true,
+    };
+    const nuevoMap = {
+      ...prev,
+      [parteKey]: {
+        ...actual,
+        capaId,
+        nombreVisible: nombreVisible || actual.nombreVisible,
+      },
+    };
+    if (typeof window !== "undefined" && window.localStorage) {
+      localStorage.setItem("3bf_asignaciones_partes_v1", JSON.stringify(nuevoMap));
+    }
+    set({ asignacionesPartes: nuevoMap });
+  },
+
+  asignarParteAMaterial: (parteKey, materialId) => {
+    const prev = get().asignacionesPartes;
+    const actual = prev[parteKey] || {
+      parteKey,
+      nombreVisible: parteKey.replace(/^RH_OUT:/, ""),
+      capaId: "por_defecto",
+      materialId: "por_capa",
+      visible: true,
+    };
+    const nuevoMap = {
+      ...prev,
+      [parteKey]: {
+        ...actual,
+        materialId,
+      },
+    };
+    if (typeof window !== "undefined" && window.localStorage) {
+      localStorage.setItem("3bf_asignaciones_partes_v1", JSON.stringify(nuevoMap));
+    }
+    set({ asignacionesPartes: nuevoMap });
+  },
+
+  toggleVisibilidadParte: (parteKey) => {
+    const prev = get().asignacionesPartes;
+    const actual = prev[parteKey] || {
+      parteKey,
+      nombreVisible: parteKey.replace(/^RH_OUT:/, ""),
+      capaId: "por_defecto",
+      materialId: "por_capa",
+      visible: true,
+    };
+    const nuevoMap = {
+      ...prev,
+      [parteKey]: {
+        ...actual,
+        visible: !actual.visible,
+      },
+    };
+    if (typeof window !== "undefined" && window.localStorage) {
+      localStorage.setItem("3bf_asignaciones_partes_v1", JSON.stringify(nuevoMap));
+    }
+    set({ asignacionesPartes: nuevoMap });
+  },
+
+  resetCapasYMateriales: () => {
+    if (typeof window !== "undefined" && window.localStorage) {
+      localStorage.removeItem("3bf_capas_v1");
+      localStorage.removeItem("3bf_materiales_pbr_v1");
+      localStorage.removeItem("3bf_asignaciones_partes_v1");
+    }
+    set({
+      capas: PRESET_CAPAS,
+      materialesPBR: PRESET_MATERIALES_PBR,
+      asignacionesPartes: {},
+      materialSeleccionadoId: "mat_acero",
+    });
   },
 
   // 🎨 Apariencia & Personalización de Colores (Perfiles Claro y Oscuro)
