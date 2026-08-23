@@ -8,6 +8,7 @@ import * as THREE from "three";
 import * as BufferGeometryUtils from "three/examples/jsm/utils/BufferGeometryUtils.js";
 import { Download, Save, Zap, Trash2 } from "lucide-react";
 import NPanel from "./NPanel";
+import { GHXAutoWatcher } from "./GHXAutoWatcher";
 
 function useMaterialTexture(targetUrl?: string | null, tipoMapeado?: string) {
   const [texture, setTexture] = React.useState<THREE.Texture | null>(null);
@@ -377,7 +378,8 @@ function BoardMesh({
 
   // 💡 2. Resolver Capa Asignada
   let capaAsignada: any = null;
-  if (asignacion && asignacion.capaId && asignacion.capaId !== "por_defecto") {
+  const isWoodBoardPiece = !isHardwarePerno && !isHardwareCaja && !isHardwareTarugo && !isMachining && !isTapaLuz;
+  if (asignacion && asignacion.capaId && asignacion.capaId !== "por_defecto" && !(isWoodBoardPiece && asignacion.capaId === "capa_acero")) {
     capaAsignada = capas.find((c) => c.id === asignacion.capaId);
   } else {
     const kLow = name.toLowerCase();
@@ -647,8 +649,25 @@ function getFurnitureGroupBoardBox(furnitureGroup: THREE.Group): THREE.Box3 {
     if ((child as THREE.Mesh).isMesh) {
       const m = child as THREE.Mesh;
       const n = (m.name || "").toLowerCase();
-      // Tableros de madera principales
-      if (n.includes("cubierta") || n.includes("mdp") || n.includes("tablero") || n.includes("madera") || n.includes("entrepaño") || n.includes("balance") || n.includes("board")) {
+      // Tableros de madera principales (excluyendo herrajes/maquinados)
+      const isBoard = (
+        n.includes("cubierta") ||
+        n.includes("frente") ||
+        n.includes("lateral") ||
+        n.includes("tapa") ||
+        n.includes("posterior") ||
+        n.includes("cajon") ||
+        n.includes("cajón") ||
+        n.includes("mdp") ||
+        n.includes("tablero") ||
+        n.includes("madera") ||
+        n.includes("entrepaño") ||
+        n.includes("balance") ||
+        n.includes("board") ||
+        n.includes("panel")
+      ) && !n.includes("perno") && !n.includes("tornillo") && !n.includes("tarugo") && !n.includes("maquinados");
+
+      if (isBoard) {
         if (m.geometry) {
           m.geometry.computeBoundingBox();
           if (m.geometry.boundingBox) {
@@ -751,17 +770,19 @@ function BoardSilhouetteOutline({ furnitureGroup }: { furnitureGroup: THREE.Grou
       outlineGroupRef.current.position.copy(furnitureGroup.position);
     }
 
-    // 🎯 DETECCIÓN DINÁMICA DE CAMBIO DE GEOMETRÍA O PARÁMETROS
+    // 🎯 DETECCIÓN DINÁMICA DE CAMBIO DE GEOMETRÍA O PARÁMETROS (X, Y, Z completos)
     const worldBox = getFurnitureGroupBoardBox(furnitureGroup);
     const groupWorldPos = new THREE.Vector3();
     furnitureGroup.getWorldPosition(groupWorldPos);
 
-    // BBox en espacio local para detectar cambios de forma/dimensiones
+    // BBox en espacio local para detectar cambios de forma/dimensiones en todos los ejes
     const locMinX = (worldBox.min.x - groupWorldPos.x).toFixed(3);
     const locMaxX = (worldBox.max.x - groupWorldPos.x).toFixed(3);
+    const locMinY = (worldBox.min.y - groupWorldPos.y).toFixed(3);
+    const locMaxY = (worldBox.max.y - groupWorldPos.y).toFixed(3);
     const locMinZ = (worldBox.min.z - groupWorldPos.z).toFixed(3);
     const locMaxZ = (worldBox.max.z - groupWorldPos.z).toFixed(3);
-    const bboxKey = `${locMinX}_${locMaxX}_${locMinZ}_${locMaxZ}_${objetoActivoId}`;
+    const bboxKey = `${locMinX}_${locMaxX}_${locMinY}_${locMaxY}_${locMinZ}_${locMaxZ}_${objetoActivoId}`;
 
     if (!geoDataRef.current || lastBboxKeyRef.current !== bboxKey) {
       lastBboxKeyRef.current = bboxKey;
@@ -1451,7 +1472,22 @@ function SingleFurnitureInstanceMesh({
     if (hasTexturedMeshes && (n.includes("nurbs") || m.is_nurbs_solid)) {
       return false;
     }
-    return n.includes("cubierta") || n.includes("mdp") || n.includes("balance") || n.includes("entrepaño") || n.includes("madera") || n.includes("board");
+    return (
+      n.includes("cubierta") ||
+      n.includes("frente") ||
+      n.includes("lateral") ||
+      n.includes("tapa") ||
+      n.includes("posterior") ||
+      n.includes("cajon") ||
+      n.includes("cajón") ||
+      n.includes("mdp") ||
+      n.includes("balance") ||
+      n.includes("entrepaño") ||
+      n.includes("madera") ||
+      n.includes("board") ||
+      n.includes("panel") ||
+      n.includes("tablero")
+    );
   });
 
   const hardwareMeshes = cleanRealMeshes.filter((m: any) => {
@@ -1548,6 +1584,7 @@ function SingleFurnitureInstanceMesh({
               modoVisual={modoVisual}
               vertices={m.vertices}
               indices={m.indices}
+              uvs={m.uvs}
               tipoMapeado={m.name.includes("Cubierta") ? inst.parametros.tipo_mapeado_cubierta : inst.parametros.tipo_mapeado_entrepanio}
             />
           ))}
@@ -1848,6 +1885,10 @@ export default function Viewer3D() {
     perforarMueble,
     limpiarPerforaciones,
     renombrarInstancia,
+    eliminarInstancia,
+    guardarCambiosMueble,
+    guardandoMueble,
+    recargarDefinicionInstancia,
   } = use3BFStore();
 
   const [furnitureGroup, setFurnitureGroup] = React.useState<THREE.Group | null>(null);
@@ -1889,6 +1930,29 @@ export default function Viewer3D() {
         e.preventDefault();
         rehacer();
         return;
+      }
+
+      // 🔄 Atajo Shift+R: Actualizar Algoritmo / Hot-Reload GHX
+      if (e.shiftKey && (e.key === "r" || e.key === "R") && !e.ctrlKey && !e.altKey && !e.metaKey) {
+        e.preventDefault();
+        if (objetoActivoId) {
+          recargarDefinicionInstancia(objetoActivoId);
+        }
+        return;
+      }
+
+      // 🗑️ Atajo Delete / Supr / Backspace / X: Eliminar componente seleccionado
+      if (
+        (e.key === "Delete" || e.key === "Del" || e.key === "Backspace" || ((e.key === "x" || e.key === "X") && modoTransformacion !== "grab")) &&
+        !e.ctrlKey &&
+        !e.altKey &&
+        !e.metaKey
+      ) {
+        if (objetoActivoId && modoTransformacion !== "grab") {
+          e.preventDefault();
+          eliminarInstancia(objetoActivoId);
+          return;
+        }
       }
 
       // Atajo G: Iniciar / Confirmar Modo Mover (Grab)
@@ -2264,40 +2328,47 @@ export default function Viewer3D() {
 
       {/* 🧭 HUD SUPERIOR IZQUIERDO: JERARQUÍA NOMBRE DE ARCHIVO + (N) COMPONENTES + LISTA DE PIEZAS */}
       <div className="absolute top-3.5 left-4 z-20 flex flex-col items-start gap-1 select-none pointer-events-auto max-w-[260px]">
-        {/* Nivel 1: Barra de Acciones Superior (Nombre / Guardar + Perforar Mueble) */}
+        {/* Nivel 1: Barra de Acciones Superior (Guardar + Nombre / Perforar Mueble) */}
         <div className="flex items-center gap-1.5 flex-wrap">
-          {muebleActivoGuardado ? (
+          {/* Botón Guardar (Guardar nuevo o Guardar Cambios en caliente) */}
+          <button
+            onClick={async () => {
+              if (muebleActivoGuardado) {
+                await guardarCambiosMueble();
+              } else {
+                setMostrarNPanel(true);
+                setPestanaNPanel("muebles");
+                setModalGuardarComoAbierto(true);
+              }
+            }}
+            disabled={guardandoMueble}
+            title={muebleActivoGuardado ? `Guardar cambios en "${muebleActivoGuardado.nombre}"` : "Guardar nuevo mueble en el catálogo"}
+            style={{
+              backgroundColor: coloresApariencia?.botonActivo || "#0891b2",
+              borderColor: coloresApariencia?.colorMarca || "#0891b2",
+            }}
+            className="px-3 h-6 rounded-full text-white shadow-md border flex items-center gap-1.5 text-xs font-bold hover:opacity-90 active:scale-95 transition-all cursor-pointer disabled:opacity-50"
+          >
+            <Save className={`w-3 h-3 text-white ${guardandoMueble ? "animate-spin" : ""}`} />
+            <span>{guardandoMueble ? "Guardando..." : "Guardar"}</span>
+          </button>
+
+          {/* Nombre del mueble activo (si ya está guardado en catálogo) */}
+          {muebleActivoGuardado && (
             <button
               onClick={() => {
                 setMostrarNPanel(true);
                 setPestanaNPanel("muebles");
               }}
-              title="Mueble cargado en el escenario (Haz clic para gestionar en Biblioteca de Muebles)"
+              title="Mueble activo en catálogo (Haz clic para ver en Biblioteca de Muebles)"
               style={{ 
                 color: coloresApariencia?.textoPrincipal || (tema === "obsidian" ? "#F8FAFC" : "#0F172A"),
               }}
-              className="flex items-center gap-1.5 text-xs font-bold hover:text-cyan-500 transition-colors cursor-pointer group text-left"
+              className="flex items-center gap-1 text-xs font-bold hover:text-cyan-500 transition-colors cursor-pointer group max-w-[130px] truncate"
             >
               <span className="underline decoration-dotted underline-offset-2 group-hover:decoration-solid truncate">
                 {muebleActivoGuardado.nombre}
               </span>
-            </button>
-          ) : (
-            <button
-              onClick={() => {
-                setMostrarNPanel(true);
-                setPestanaNPanel("muebles");
-                setModalGuardarComoAbierto(true);
-              }}
-              title="Diseño sin guardar: Haz clic aquí para seleccionar carpeta y guardar"
-              style={{
-                backgroundColor: coloresApariencia?.botonActivo || "#0891b2",
-                borderColor: coloresApariencia?.colorMarca || "#0891b2",
-              }}
-              className="px-3 h-6 rounded-full text-white shadow-md border flex items-center gap-1.5 text-xs font-bold hover:opacity-90 active:scale-95 transition-all cursor-pointer"
-            >
-              <Save className="w-3 h-3 text-white" />
-              <span>Guardar</span>
             </button>
           )}
 
@@ -2431,29 +2502,43 @@ export default function Viewer3D() {
                       }
 
                       return (
-                        <button
-                          key={comp.id}
-                          onClick={() => {
-                            if (!comp.isLegacy) {
-                              seleccionarInstancia(comp.id);
-                            }
-                          }}
-                          onDoubleClick={(e) => {
-                            e.stopPropagation();
-                            setEditingInstId(comp.id);
-                            setEditTempName(comp.nombre);
-                          }}
-                          title={comp.isLegacy ? `${comp.nombre} (Doble clic para renombrar)` : `Doble clic para renombrar: ${comp.nombre}`}
-                          style={{
-                            color: coloresApariencia?.textoSecundario || (tema === "obsidian" ? "#94A3B8" : "#64748B")
-                          }}
-                          className={`flex items-center gap-1 text-[11px] font-mono transition-colors hover:text-cyan-500 cursor-pointer text-left select-none ${
-                            comp.isActivo ? "font-bold opacity-90" : "font-medium opacity-75 hover:opacity-100"
-                          }`}
-                        >
-                          <span className="opacity-60 text-[9px]">•</span>
-                          <span className="truncate max-w-[200px]">{comp.nombre}</span>
-                        </button>
+                        <div key={comp.id} className="flex items-center gap-1.5 group/item w-full">
+                          <button
+                            onClick={() => {
+                              if (!comp.isLegacy) {
+                                seleccionarInstancia(comp.id);
+                              }
+                            }}
+                            onDoubleClick={(e) => {
+                              e.stopPropagation();
+                              setEditingInstId(comp.id);
+                              setEditTempName(comp.nombre);
+                            }}
+                            title={comp.isLegacy ? `${comp.nombre} (Doble clic para renombrar)` : `Doble clic para renombrar: ${comp.nombre}`}
+                            style={{
+                              color: coloresApariencia?.textoSecundario || (tema === "obsidian" ? "#94A3B8" : "#64748B")
+                            }}
+                            className={`flex items-center gap-1 text-[11px] font-mono transition-colors hover:text-cyan-500 cursor-pointer text-left select-none truncate ${
+                              comp.isActivo ? "font-bold opacity-90" : "font-medium opacity-75 hover:opacity-100"
+                            }`}
+                          >
+                            <span className="opacity-60 text-[9px]">•</span>
+                            <span className="truncate max-w-[170px]">{comp.nombre}</span>
+                          </button>
+
+                          {!comp.isLegacy && (
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                eliminarInstancia(comp.id);
+                              }}
+                              title={`Eliminar ${comp.nombre} (Supr / Delete)`}
+                              className="opacity-0 group-hover/item:opacity-100 p-0.5 hover:text-red-500 transition-opacity cursor-pointer shrink-0 text-slate-400"
+                            >
+                              <Trash2 className="w-3 h-3" />
+                            </button>
+                          )}
+                        </div>
                       );
                     })
                   ) : (
@@ -2623,6 +2708,8 @@ export default function Viewer3D() {
           <Download className="w-3.5 h-3.5" /> Descargar GLB
         </button>
       )}
+      {/* ⚡ Observador Automático de Archivos GHX en Caliente (Auto Hot-Reload) */}
+      <GHXAutoWatcher />
     </div>
   );
 }

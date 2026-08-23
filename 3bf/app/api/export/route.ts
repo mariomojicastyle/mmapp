@@ -120,14 +120,22 @@ export async function POST(req: Request) {
       const capa = mec.capa_dxf || "TCHW0B2D1200";
       const cara = mec.cara || "cara_superior";
 
-      if (cara === "canto_izq") {
+      if (cara === "canto_izq" || uX <= -hx + 20.0) {
         const xPos = -hx - gap - (espesor / 2.0);
         entidadesDxf += `0\nCIRCLE\n8\n${capa}\n10\n${xPos}\n20\n${vY}\n40\n${rad}\n`;
-      } else if (cara === "canto_der") {
+      } else if (cara === "canto_der" || uX >= hx - 20.0) {
         const xPos = hx + gap + (espesor / 2.0);
         entidadesDxf += `0\nCIRCLE\n8\n${capa}\n10\n${xPos}\n20\n${vY}\n40\n${rad}\n`;
+      } else if (cara === "canto_inf" || vY <= -hy + 20.0) {
+        const yPos = -hy - gap - (espesor / 2.0);
+        entidadesDxf += `0\nCIRCLE\n8\n${capa}\n10\n${uX}\n20\n${yPos}\n40\n${rad}\n`;
+      } else if (cara === "canto_sup" || vY >= hy - 20.0) {
+        const yPos = hy + gap + (espesor / 2.0);
+        entidadesDxf += `0\nCIRCLE\n8\n${capa}\n10\n${uX}\n20\n${yPos}\n40\n${rad}\n`;
       } else {
-        entidadesDxf += `0\nCIRCLE\n8\n${capa}\n10\n${uX}\n20\n${vY}\n40\n${rad}\n`;
+        if (Math.abs(uX) <= (hx - 2.0) && Math.abs(vY) <= (hy - 2.0)) {
+          entidadesDxf += `0\nCIRCLE\n8\n${capa}\n10\n${uX}\n20\n${vY}\n40\n${rad}\n`;
+        }
       }
     }
 

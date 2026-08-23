@@ -1539,3 +1539,129 @@ Con esta batería de arreglos y la validación en caliente, la V20 se establece 
     - **Documentación Técnica & Memoria**:
       * Registro del estándar en `3BF/3BF_Proceso.md`, `3BF/PROCESOS/proceso.md` y `ESTADO_DEL_PROYECTO.md`.
 
+---
+
+* **[2026-08-21] Hito 3BF_SaveFurniture_Fix — Botón Guardar Cambios en HUD 3D, Sanitización de Posición/Rotación y Blindaje de Apertura de Muebles:**
+    - **Botón Guardar Cambios Siempre Visible y Funcional en HUD Superior Izquierdo**:
+      * Botón `Guardar` con ícono `<Save />` visible permanentemente en el Nivel 1 del HUD 3D.
+      * Si se trabaja sobre un mueble abierto del catálogo (`muebleActivoGuardado`), al presionar `Guardar` se ejecuta `guardarCambiosMueble()` sobrescribiendo instantáneamente el estado, posiciones 3D, sliders y miniaturas tanto en memoria como en Google Drive (`save_furniture`).
+      * Si es un diseño nuevo no guardado, activa el flujo guiado `Guardar como` (`modalGuardarComoAbierto`).
+    - **Resolución de Error Crítico `TypeError: v.posicion is not iterable`**:
+      * Sanitización profunda con comprobación `Array.isArray()` en `guardarEstadoHistorial`, `deshacer`, `rehacer`, `abrirMueble` y serialización de muebles.
+      * Prevención absoluta de fallos ante instancias antiguas o incompletas restauradas desde Google Drive.
+    - **Documentación Técnica & Memoria**:
+      * Consignado en `ESTADO_DEL_PROYECTO.md` y `3BF/3BF_Proceso.md`.
+
+---
+
+* **[2026-08-22] Hito 3BF_AutoWatchHotReload — Detección Automática de Guardado en Grasshopper (File Watcher mtime & Hot-Reload Autónomo sin Clics):**
+    - **Observador de Archivos GHX en Tiempo Real (`GHXAutoWatcher` & `/check-mtime`)**:
+      * Monitoreo continuo y ultra-ligero del timestamp de modificación (`os.path.getmtime`) de todos los componentes presentes en la escena 3D.
+      * Al presionar `Ctrl + S` en Grasshopper, Windows actualiza el `mtime` del archivo en disco.
+      * El componente `<GHXAutoWatcher />` detecta el cambio en milisegundos, aplica un *debounce* de seguridad de $300\text{ ms}$ (para garantizar que Rhino termine la escritura XML) y dispara `recargarDefinicionInstancia(id)` de forma 100% autónoma.
+    - **Experiencia de Usuario Minimalista y Cero Fricción**:
+      * Se eliminó el botón manual de actualización del encabezado de parámetros (`ControlPanel.tsx`), dejando una interfaz despejada con indicador sutil de estado (`Sincronizando...`).
+      * Las dimensiones configuradas por el usuario se conservan intactas mientras los nuevos parámetros `RH_IN:` y la geometría 3D se actualizan al instante sin mover la cámara.
+    - **Documentación Técnica & Memoria**:
+      * Consignado en `ESTADO_DEL_PROYECTO.md` y `3BF/3BF_Proceso.md`.
+
+---
+
+* **[2026-08-22] Hito 3BF_DeleteComponent — Borrado Rápido de Componentes con Tecla Delete / Supr / Backspace / X y Botón de Papelera en HUD:**
+    - **Atajos de Teclado Globales (`Delete`, `Supr`, `Backspace`, `X`)**:
+      * Al presionar `Delete`, `Backspace` o `X` (mientras no se esté editando texto ni en modo Grab), el componente seleccionado se elimina inmediatamente del escenario 3D.
+      * El foco de selección se transfiere de forma segura al siguiente componente disponible o se limpia el estado si la escena queda vacía.
+      * Cada borrado queda registrado en el historial para poder deshacer con `Ctrl + Z`.
+    - **Icono de Papelera en Lista HUD (`Viewer3D.tsx`)**:
+      * Se integró un botón interactivo de papelera (`Trash2`) visible al pasar el cursor sobre cualquier componente en el listado superior izquierdo, permitiendo eliminarlo también con un clic.
+    - **Documentación Técnica & Memoria**:
+      * Consignado en `ESTADO_DEL_PROYECTO.md` y `3BF/3BF_Proceso.md`.
+
+---
+
+* **[2026-08-22] Hito 3BF_LogoTextColor_And_Color3BF — Atributos Dedicados "Texto Logotipo" y "Color 3BF" en Apariencia:**
+    - **Separación Precisa de Colores de Marca (`app/page.tsx` & `AppearanceSettingsPanel.tsx`)**:
+      * `Texto logotipo` (`textoLogotipo`): Controla exclusivamente el título `"3dBimFab"` y el subtítulo `"Powered by MARIO MOJICA"`.
+      * `Color 3BF` (`color3BF`): Controla independientemente el texto `"3BF"` dentro del recuadro rojo (por defecto `#FFFFFF` blanco inmutable).
+    - **Documentación Técnica & Memoria**:
+      * Consignado en `ESTADO_DEL_PROYECTO.md` y `3BF/3BF_Proceso.md`.
+
+---
+
+* **[2026-08-22] Hito 3BF_UniversalGrainMapping_And_MeshUVFix — Mapeado Universal de Veta 3D y Corrección de UVs en Visor Three.js:**
+    - **Causa Raíz Descubierta en Three.js (`Viewer3D.tsx`)**:
+      * Los tableros que no se llamaban "Cubierta" (como `RH_OUT:Frente de Cajon`, `RH_OUT:Lateral Izquierdo`, etc.) caían en el grupo `otherMeshes`, donde la propiedad `uvs={m.uvs}` no se estaba pasando al componente `BoardMesh`. Por esta razón, el visor WebGL descartaba las coordenadas UV calculadas por Grasshopper y recurría a una proyección triplanar estática.
+      * Se amplió el filtro de `boardMeshes` para incluir `frente`, `lateral`, `tapa`, `posterior`, `cajon`, `panel`, `tablero`, y se garantizó el paso de `uvs={m.uvs}` en todos los grupos.
+    - **Algoritmo Universal de Mapeo en Grasshopper (`3BF`)**:
+      * Reemplazo del complejo esquema de 6 cajas y rotaciones por una proyección adaptativa paramétrica que detecta la orientación del tablero y permite alternar entre `Longitudinal (0)` y `Atravesada (1)`.
+    - **Documentación Técnica & Memoria**:
+      * Consignado en `ESTADO_DEL_PROYECTO.md` y `3BF/3BF_Proceso.md`.
+
+---
+
+* **[2026-08-22] Hito 3BF_ActiveSelectionUX_And_EdgebandGrainFix — Veta Continua en Cantos y UX de Selección Activa en N-Panel:**
+    - **Alineación Continua de Veta en Cantos (Estándar Tapacanto PVC)**:
+      * En el script Python de Grasshopper, la veta en los 4 cantos de cualquier tablero (horizontal, lateral o frontal) corre siempre de forma longitudinal y continua a lo largo del canto a escala métrica ($600\text{ mm}$), mientras que las caras principales responden al selector `Longitudinal / Atravesada`.
+    - **UX de Conexión y Estado Desactivado en N-Panel (`ControlPanel.tsx`)**:
+      * Cuando ningún objeto está seleccionado en el visor 3D, el panel lateral muestra un estado inactivo claro e interactivo con aviso explicativo y botón directo de 1 clic para seleccionar el componente activo, evitando modificar controles desconectados.
+    - **Documentación Técnica & Memoria**:
+      * Consignado en `ESTADO_DEL_PROYECTO.md` y `3BF/3BF_Proceso.md`.
+
+---
+
+* **[2026-08-22] Hito 3BF_DynamicSelectionBoundingBoxFix — Actualización Dinámica del Marco Perimetral de Selección en Todos los Ejes (X, Y, Z):**
+    - **Detección Tridimensional Completa (`Viewer3D.tsx`)**:
+      * La clave de actualización del marco perimetral (`bboxKey`) no estaba evaluando el eje $Y$ (altura). Se incorporaron `locMinY` y `locMaxY` en el hash reactivo, y se amplió el cálculo del BoundingBox para abarcar todas las piezas del mueble (`frente`, `lateral`, `cajon`, etc.), haciendo que el contorno naranja se redimensione de forma fluida e instantánea al cambiar Alto, Ancho o Profundidad.
+    - **Documentación Técnica & Memoria**:
+      * Consignado en `ESTADO_DEL_PROYECTO.md` y `3BF/3BF_Proceso.md`.
+
+---
+
+* **[2026-08-22] Hito 3BF_AutoAssignTonoToLaminas — Asignación Automática de Capa "Tono" para Tableros y Láminas:**
+    - **Coherencia Visual en Desglose de Partes (`PartBreakdownPanel.tsx`)**:
+      * Al importar un componente GHX sin capas explícitas, el sistema ahora asigna automáticamente la capa **"Tono"** a todos los tableros y láminas (`cubierta`, `lateral`, `frente`, `tapa`, `cajon`, `entrepaño`, etc.), mientras que los herrajes (`perno`, `tornillo`, `caja`) se enrutan a sus capas correspondientes.
+      * Se elimina la discrepancia donde el desplegable mostraba "Acero" por defecto pero el visor 3D renderizaba madera.
+    - **Documentación Técnica & Memoria**:
+      * Consignado en `ESTADO_DEL_PROYECTO.md` y `3BF/3BF_Proceso.md`.
+
+---
+
+* **[2026-08-22] Hito 3BF_SanitizeLegacyAceroLayers — Higienización Reactiva de Capas en Memoria Local (localStorage):**
+    - **Saneamiento Automático de Tableros (`lib/store.ts` & `PartBreakdownPanel.tsx` & `Viewer3D.tsx`)**:
+      * Se implementó un filtro de higienización que detecta y reemplaza cualquier asignación residual de `"capa_acero"` en piezas de tablero (`lateral`, `cubierta`, `frente`, `tapa`, `cajon`, `entrepaño`) tanto al cargar el estado desde `localStorage` como en el renderizado del visor 3D, garantizando que el `Lateral Izquierdo` y todos los costados amanezcan y permanezcan vestidos de **Tono (Madera)** de forma 100% confiable.
+    - **Documentación Técnica & Memoria**:
+      * Consignado en `ESTADO_DEL_PROYECTO.md` y `3BF/3BF_Proceso.md`.
+
+---
+
+* **[2026-08-22] Hito 3BF_PureDynamicParameterForwarding — Cero Hardcoding y Descubrimiento Dinámico Universal de Parámetros RH_IN:**
+    - **Arquitectura Paramétrica Pura (`worker/3bf_worker.py`)**:
+      * Se eliminó por completo el bloque legacy hardcodeado de parámetros fijos.
+      * El Worker ahora opera bajo una arquitectura 100% agnóstica al modelo: cualquier slider, lista o parámetro que comience con `RH_IN:*` en Grasshopper (sea "Abrir Cajones", "Abrir Puertas", "Ángulo", "Espesor", etc.) es descubierto dinámicamente desde el XML de Grasshopper y retransmitido a RhinoCompute sin requerir conocimiento previo del mueble.
+    - **Documentación Técnica & Memoria**:
+      * Consignado en `ESTADO_DEL_PROYECTO.md` y `3BF/3BF_Proceso.md`.
+
+---
+
+* **[2026-08-22] Hito 3BF_ComputeDebounceAndAbortController — Fluidez Extrema con Debounce Inteligente y Cancelación de Peticiones Viejas:**
+    - **Control de Concurrencia y Anti-Saturación (`lib/store.ts` & `ControlPanel.tsx`)**:
+      * **Debounce de 180ms en Sliders**: Mientras el usuario arrastra un slider, la interfaz visual (número y barra) se actualiza de forma sedosa a 60 FPS sin saturar a RhinoCompute con 40 peticiones por segundo. El cálculo pesado se dispara únicamente cuando el usuario pausa o suelta el ratón (`onPointerUp`).
+      * **Disparo Instantáneo (0ms) en Input Numérico y Selectores**: Al digitar un número y presionar `Enter` o `Blur`, o al elegir una opción en listas desplegables, el sistema ejecuta el cálculo 3D inmediatamente sin esperar ningún timer.
+      * **AbortController Activo**: Se cancelan automáticamente las peticiones en vuelo previas para erradicar por completo los saltos geométricos ("saltos hacia atrás") provocados por respuestas fuera de orden.
+    - **Documentación Técnica & Memoria**:
+      * Consignado en `ESTADO_DEL_PROYECTO.md` y `3BF/3BF_Proceso.md`.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

@@ -41,14 +41,34 @@ Las primeras "instrucciones" no estaban pensadas para el consumidor final en su 
 
 ---
 
-## 🎨 2. La Filosofía de la Bauhaus y Ferdinand Kramer (1919–1942)
+## 🎨 2. La Revolución Funcionalista: Ferdinand Kramer, la Bauhaus y Das Neue Frankfurt (1925–1951)
 
-La escuela **Bauhaus** (Alemania, 1919–1933), fundada por Walter Gropius, estableció la base ideológica: **"Diseño funcional y de alta calidad para las masas"**.
+Mientras Thonet resolvió la logística del transporte curvando madera sólida, la escuela **Bauhaus** (Walter Gropius, Marcel Breuer) y el movimiento de vanguardia arquitectónica alemana transformaron la filosofía del mueble: **el diseño funcional, accesible, estandarizado y desarmable para la vida moderna**.
 
-### 📐 Ferdinand Kramer y el Mueble Desarmable (*Knock-Down*)
-Ferdinand Kramer (1898–1985), arquitecto y diseñador alemán vinculado a la Bauhaus y a Thonet, fue el **pionero conceptual del mueble plano desarmable**:
-* **Uso de Láminas y Tableros:** En la década de 1920 y durante su exilio en EE.UU. (1940s), Kramer diseñó muebles icónicos (como las mesas *Calvert* y *Charlotte* en 1942) utilizando piezas planas de contrachapado y lámina que se ensamblaban mediante ranuras, pestañas y conectores mecánicos sin requerir pegamento.
-* **El Dibujo en Axonométrica Explosionada:** Los diseñadores de la Bauhaus popularizaron los diagramas visuales en perspectiva explosionada 3D lineal, eliminando explicaciones textuales complejas para que cualquier persona pudiera entender la geometría del producto.
+### 📐 Ferdinand Kramer: El Padre Conceptual del Mueble Plano Knock-Down
+**Ferdinand Kramer (1898–1985)**, arquitecto y diseñador funcionalista alemán vinculado a la Bauhaus de Weimar y figura central del legendario proyecto urbanístico **Das Neue Frankfurt (1925–1930)** junto a Ernst May, fue el verdadero **pionero conceptual y técnico del mobiliario plano desarmable**:
+
+* **Estandarización y Vivienda Social (1925–1930):** En Frankfurt, Kramer diseñó mobiliario modular económico para los nuevos complejos habitacionales. Buscaba que los trabajadores pudieran transportar y armar muebles de alta calidad estética en espacios reducidos sin herramientas complejas.
+* **La Serie Knock-Down y el Encastre Puro (1940s–1951):** Durante su exilio en Estados Unidos (1938–1952), Kramer desarrolló su aclamada serie de muebles **"Knock-Down"** (entre ellos las icónicas mesas *Calvert* y *Charlotte* en 1951, hoy reeditadas por e15).
+  * **Corte Eficiente:** Las piezas se cortaban de una sola lámina de contrachapado de madera (*plywood*), similar al patrón de corte de un sastre textil, eliminando el desperdicio.
+  * **Cero Tornillos y Cero Pegamento:** Se ensamblaban mediante **ranuras y encastres geométricos machihembrados**. Dos paneles cruzados servían de base autoblocante y la superficie superior se encajaba encima.
+  * **Transporte Ultraplano:** Desarmada, la mesa quedaba reducida a láminas planas de apenas milímetros de grosor que cabían bajo el brazo o en una caja de cartón ultradelgada.
+
+```
+┌────────────────────────────────────────────────────────────────────────────────────────┐
+│  EL CONCEPTO KNOCK-DOWN DE FERDINAND KRAMER (1942–1951)                                │
+│                                                                                        │
+│  [1 Lámina de Contrachapado] ➔ Corte por Patrón ➔ 3 Piezas Planas Encastrables         │
+│  (Base Cruzada con Ranura Central + Tapa Superior // Cero Tornillos // Cero Pegamento) │
+└────────────────────────────────────────────────────────────────────────────────────────┘
+```
+
+### 📜 El Nacimiento del Lenguaje Gráfico: La Perspectiva Axonométrica Explosionada
+Con Kramer y la Bauhaus no solo nació el mueble plano moderno, sino también **el lenguaje visual con el que la mente humana entiende el 3D en el papel**:
+
+1. **La Axonometría como Norma de Vanguardia:** Los arquitectos e ingenieros de la Bauhaus abandonaron la perspectiva cónica artística tradicional (con puntos de fuga que deformaban las medidas reales) e introdujeron la **proyección axonométrica e isométrica**, donde las líneas paralelas conservan su escala dimensional exacta.
+2. **El Diagrama Explosionado (Exploded View):** Para explicar cómo se cruzaban las ranuras de madera sin usar párrafos densos de texto en alemán o inglés, crearon los primeros **dibujos técnicos en perspectiva explosionada**: las piezas se dibujaban flotando en el espacio 3D a lo largo de un eje vectorial punteado, mostrando su trayectoria exacta de inserción.
+3. **El Antecesor Directo del 3D Digital:** Este diagrama explosionado en papel fue la semilla matemática de lo que hoy en día ejecutamos en Three.js y WebGL: proyectar objetos tridimensionales en un plano para que el ojo humano entienda el orden de ensamble.
 
 ---
 
@@ -70,8 +90,8 @@ Al expandirse globalmente, traducir manuales de texto a decenas de idiomas resul
 | Era | Hito / Innovador | Innovación Logística / Técnica | Formato de Asistencia | Limitación de la Época |
 | :--- | :--- | :--- | :--- | :--- |
 | **1859** | **Michael Thonet** (Viena) | Silla No. 14: 36 sillas desarmadas en $1\text{ m}^3$. | Lámina litográfica impresa con números de pernos. | Exclusivo para ensambladores en destino / B2B. |
-| **1926** | **Ferdinand Kramer / Bauhaus** | Muebles modulados en lámina y contrachapado desarmables. | Planos visuales en perspectiva axonométrica 3D. | Producción limitada a proyectos de vivienda pública. |
-| **1956** | **Gillis Lundgren / IKEA** | Auto-ensamblaje masivo por el cliente final en cajas planas. | Folleto mudo en papel blanco y negro con dibujo lineal 2D. | Estático, sin orientación 3D dinámica, propenso a errores. |
+| **1925–1951** | **Ferdinand Kramer / Bauhaus** | Serie *Knock-Down* (Calvert/Charlotte) en contrachapado. Encastre sin tornillos. | Planos visuales en perspectiva axonométrica explosionada 3D. | Limitado al papel estático; requería abstracción espacial mental. |
+| **1956** | **Gillis Lundgren / IKEA** | Mesa *Lövet* y auto-ensamblaje masivo por el cliente en cajas planas. | Folleto mudo en papel blanco y negro con dibujo lineal 2D. | Estático, sin orientación 3D dinámica, propenso a errores. |
 | **2026** | **Mario Mojica (Smart Assembly 3D)** | Gemelo Digital 3D, Asistencia por Voz TTS y Telemetría. | **Manual 3D Interactivo por Voz** (WebAR sin descargas). | **Ninguna.** Elimina el papel y conecta la fábrica con la sala del cliente. |
 
 ---

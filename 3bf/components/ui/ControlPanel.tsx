@@ -2,7 +2,7 @@
 
 import React, { useEffect } from "react";
 import { use3BFStore } from "@/lib/store";
-import { Sliders, Box, Layers, Palette, Cpu, CheckCircle2, AlertCircle, Camera, Check } from "lucide-react";
+import { Sliders, Box, Layers, Palette, Cpu, CheckCircle2, AlertCircle, Camera, Check, RotateCw, MousePointerClick } from "lucide-react";
 
 // =========================================================================
 // 🎨 ICONOS DE MODOS DE VISUALIZACIÓN (INSPIRADOS EN BLENDER 4.X)
@@ -95,7 +95,7 @@ const DirectNumberInput = ({
   min: number;
   max: number;
   unit?: string;
-  onChange: (val: number) => void;
+  onChange: (val: number, debounceMs?: number) => void;
   className?: string;
 }) => {
   const { coloresApariencia, guardarEstadoHistorial } = use3BFStore();
@@ -114,7 +114,7 @@ const DirectNumberInput = ({
     const normalizado = raw.replace(/\./g, "").replace(",", ".");
     const num = parseFloat(normalizado);
     if (!isNaN(num)) {
-      onChange(num);
+      onChange(num, 200);
     }
   };
 
@@ -129,7 +129,7 @@ const DirectNumberInput = ({
     let num = parseFloat(normalizado);
     if (isNaN(num)) num = value;
     const clamped = Math.min(max, Math.max(min, num));
-    onChange(clamped);
+    onChange(clamped, 0); // Disparo instantáneo al salir del input
     setLocalText(String(clamped));
     guardarEstadoHistorial();
   };
@@ -191,11 +191,11 @@ function RenderParamControl({ paramKey }: { paramKey: string }) {
     const maxVal = limit?.max ?? (paramKey.toLowerCase().includes("ancho") || paramKey.toLowerCase().includes("alto") || paramKey.toLowerCase().includes("profundidad") ? 1200 : 200);
     const numVal: number = typeof value === "number" ? value : (typeof limit?.default === "number" ? limit.default : Number(limit?.default ?? minVal));
 
-    const handleNumChange = (val: number) => {
+    const handleNumChange = (val: number, debounceMs: number = 180) => {
       if (objetoActivoId) {
-        setParametroInstancia(objetoActivoId, storeKey, val);
-        if (rawKeyClean !== storeKey) setParametroInstancia(objetoActivoId, rawKeyClean, val);
-        if (legacyKey) setParametroInstancia(objetoActivoId, legacyKey, val);
+        setParametroInstancia(objetoActivoId, storeKey, val, debounceMs);
+        if (rawKeyClean !== storeKey) setParametroInstancia(objetoActivoId, rawKeyClean, val, debounceMs);
+        if (legacyKey) setParametroInstancia(objetoActivoId, legacyKey, val, debounceMs);
       } else {
         setParametro(storeKey as any, val);
         if (rawKeyClean !== storeKey) setParametro(rawKeyClean as any, val);
@@ -217,7 +217,7 @@ function RenderParamControl({ paramKey }: { paramKey: string }) {
             value={numVal}
             min={minVal}
             max={maxVal}
-            onChange={handleNumChange}
+            onChange={(val, deb) => handleNumChange(val, deb ?? 0)}
           />
         </div>
         <input
@@ -226,10 +226,19 @@ function RenderParamControl({ paramKey }: { paramKey: string }) {
           max={maxVal}
           step={maxVal <= 10 ? 0.1 : (maxVal <= 200 ? 1 : 10)}
           value={Math.min(maxVal, Math.max(minVal, numVal))}
-          onChange={(e) => handleNumChange(Number(e.target.value))}
-          onPointerUp={() => guardarEstadoHistorial()}
-          onKeyUp={() => guardarEstadoHistorial()}
-          onTouchEnd={() => guardarEstadoHistorial()}
+          onChange={(e) => handleNumChange(Number(e.target.value), 180)}
+          onPointerUp={(e) => {
+            handleNumChange(Number((e.target as HTMLInputElement).value), 0);
+            guardarEstadoHistorial();
+          }}
+          onKeyUp={(e) => {
+            handleNumChange(Number((e.target as HTMLInputElement).value), 0);
+            guardarEstadoHistorial();
+          }}
+          onTouchEnd={(e) => {
+            handleNumChange(Number((e.target as HTMLInputElement).value), 0);
+            guardarEstadoHistorial();
+          }}
           style={{ accentColor: coloresApariencia?.botonActivo || "#0891B2" }}
           className="w-full cursor-pointer"
         />
@@ -262,20 +271,20 @@ function RenderParamControl({ paramKey }: { paramKey: string }) {
 
   const handleSelectChange = (newVal: string) => {
     if (objetoActivoId) {
-      setParametroInstancia(objetoActivoId, storeKey, newVal);
-      setParametroInstancia(objetoActivoId, rawKeyClean, newVal);
-      if (legacyKey) setParametroInstancia(objetoActivoId, legacyKey, newVal);
+      setParametroInstancia(objetoActivoId, storeKey, newVal, 0);
+      setParametroInstancia(objetoActivoId, rawKeyClean, newVal, 0);
+      if (legacyKey) setParametroInstancia(objetoActivoId, legacyKey, newVal, 0);
 
       const pkl = paramKey.toLowerCase();
       if (pkl.includes("izquierdo") || pkl.includes("izq")) {
-        setParametroInstancia(objetoActivoId, "borde_izquierdo", newVal);
-        setParametroInstancia(objetoActivoId, "RH_IN:Borde izquierdo", newVal);
-        setParametroInstancia(objetoActivoId, "RH_IN:03.4 Borde izquierdo", newVal);
+        setParametroInstancia(objetoActivoId, "borde_izquierdo", newVal, 0);
+        setParametroInstancia(objetoActivoId, "RH_IN:Borde izquierdo", newVal, 0);
+        setParametroInstancia(objetoActivoId, "RH_IN:03.4 Borde izquierdo", newVal, 0);
       }
       if (pkl.includes("derecho") || pkl.includes("der")) {
-        setParametroInstancia(objetoActivoId, "borde_derecho", newVal);
-        setParametroInstancia(objetoActivoId, "RH_IN:Borde derecho", newVal);
-        setParametroInstancia(objetoActivoId, "RH_IN:03.3 Borde derecho", newVal);
+        setParametroInstancia(objetoActivoId, "borde_derecho", newVal, 0);
+        setParametroInstancia(objetoActivoId, "RH_IN:Borde derecho", newVal, 0);
+        setParametroInstancia(objetoActivoId, "RH_IN:03.3 Borde derecho", newVal, 0);
       }
     } else {
       setParametro(storeKey as any, newVal);
@@ -328,16 +337,18 @@ function RenderParamControl({ paramKey }: { paramKey: string }) {
 
 // Panel de Parámetros Dinámico Autónomo (Sólo visible cuando hay un archivo cargado con grupos reales)
 function ParametrosPanel() {
-  const { parametros, resultado, coloresApariencia } = use3BFStore();
+  const { parametros, resultado, coloresApariencia, objetoActivoId, instancias } = use3BFStore();
+  const instanciaActiva = objetoActivoId ? instancias[objetoActivoId] : null;
+  const currentResult = instanciaActiva ? instanciaActiva.resultado : resultado;
 
-  if (!parametros.model_id) return null;
+  if (!parametros.model_id && !instanciaActiva) return null;
 
   // Si no hay grupos dinámicos parseados del archivo, mantener el panel 100% limpio
-  if (!resultado?.parameter_groups || resultado.parameter_groups.length === 0) {
+  if (!currentResult?.parameter_groups || currentResult.parameter_groups.length === 0) {
     return null;
   }
 
-  const groups = resultado.parameter_groups;
+  const groups = currentResult.parameter_groups;
 
   return (
     <div className="flex flex-col gap-3.5">
@@ -541,47 +552,91 @@ export default function ControlPanel() {
     ejecutarComputo();
   }, [parametros, isSyncing]);
 
-  const { instancias, objetoActivoId, coloresApariencia } = use3BFStore();
+  const { instancias, objetoActivoId, coloresApariencia, seleccionarInstancia } = use3BFStore();
   const instanciaActiva = objetoActivoId ? instancias[objetoActivoId] : null;
+  const listaInstancias = Object.values(instancias || {});
 
   return (
     <div className="p-4 flex flex-col gap-5 h-full overflow-y-auto no-scrollbar">
       {/* 🏷️ CABECERA: OBJETO ACTIVO EN EL ESCENARIO (Multi-Instancia) */}
-      {instanciaActiva && (
-        <div 
-          style={{ 
-            borderColor: coloresApariencia?.insigniaFondo || coloresApariencia?.bordePaneles,
-            backgroundColor: coloresApariencia?.fondoPaneles ? `${coloresApariencia.fondoPaneles}80` : undefined
-          }}
-          className="flex flex-col gap-2 p-3 rounded-xl border shadow-sm"
-        >
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <span 
-                style={{ backgroundColor: coloresApariencia?.estadoActivo || "#10B981" }} 
-                className="w-2.5 h-2.5 rounded-full animate-pulse shrink-0" 
-              />
-              <span 
-                style={{ color: coloresApariencia?.textoPrincipal }} 
-                className="font-extrabold text-sm leading-none"
-              >
-                {instanciaActiva.nombreVisible}
-              </span>
-            </div>
-            <div 
-              style={{ 
-                color: coloresApariencia?.estadoActivo || "#10B981" 
-              }} 
-              className="text-[10px] font-mono font-bold tracking-wide"
-            >
-              {instanciaActiva.definitionId}
+      {instanciaActiva ? (
+        <>
+          <div 
+            style={{ 
+              borderColor: coloresApariencia?.insigniaFondo || coloresApariencia?.bordePaneles,
+              backgroundColor: coloresApariencia?.fondoPaneles ? `${coloresApariencia.fondoPaneles}80` : undefined
+            }}
+            className="flex flex-col gap-2 p-3 rounded-xl border shadow-sm"
+          >
+            <div className="flex items-center justify-between gap-2">
+              <div className="flex items-center gap-2 min-w-0">
+                <span 
+                  style={{ backgroundColor: coloresApariencia?.estadoActivo || "#10B981" }} 
+                  className={`w-2.5 h-2.5 rounded-full shrink-0 ${instanciaActiva.cargando ? "animate-spin bg-cyan-500" : "animate-pulse"}`} 
+                />
+                <span 
+                  style={{ color: coloresApariencia?.textoPrincipal }} 
+                  className="font-extrabold text-sm leading-none truncate"
+                  title={instanciaActiva.nombreVisible}
+                >
+                  {instanciaActiva.nombreVisible}
+                </span>
+              </div>
+
+              {instanciaActiva.cargando && (
+                <span className="text-[10px] font-bold text-cyan-500 animate-pulse shrink-0">
+                  Sincronizando...
+                </span>
+              )}
             </div>
           </div>
+
+          {/* Panel de Parámetros Dinámico Activo */}
+          <ParametrosPanel />
+        </>
+      ) : (
+        /* 💤 ESTADO INACTIVO: NINGÚN COMPONENTE SELECCIONADO */
+        <div 
+          style={{ 
+            borderColor: coloresApariencia?.bordePaneles || "#CBD5E1",
+            backgroundColor: coloresApariencia?.fondoPaneles ? `${coloresApariencia.fondoPaneles}60` : undefined,
+            color: coloresApariencia?.textoSecundario 
+          }}
+          className="p-6 flex flex-col items-center justify-center text-center gap-3.5 border border-dashed rounded-2xl my-auto shadow-xs"
+        >
+          <div 
+            style={{ 
+              backgroundColor: coloresApariencia?.insigniaFondo || "#CFFAFE", 
+              color: coloresApariencia?.insigniaTexto || "#0891B2" 
+            }}
+            className="w-12 h-12 rounded-full flex items-center justify-center shadow-xs"
+          >
+            <MousePointerClick className="w-6 h-6" />
+          </div>
+
+          <div className="flex flex-col gap-1">
+            <h4 style={{ color: coloresApariencia?.textoPrincipal }} className="font-extrabold text-sm">
+              Ningún componente seleccionado
+            </h4>
+            <p className="text-[11px] leading-relaxed max-w-[220px]">
+              Haz clic sobre el mueble en el visor 3D para activar sus parámetros y la orientación de vetas.
+            </p>
+          </div>
+
+          {listaInstancias.length > 0 && (
+            <button
+              onClick={() => seleccionarInstancia(listaInstancias[0].id)}
+              style={{
+                backgroundColor: coloresApariencia?.botonActivo || "#0891B2",
+                color: "#FFFFFF"
+              }}
+              className="mt-1 px-4 py-2 rounded-xl text-xs font-extrabold shadow-sm hover:opacity-90 active:scale-95 transition cursor-pointer"
+            >
+              Seleccionar {listaInstancias[0].nombreVisible}
+            </button>
+          )}
         </div>
       )}
-
-      {/* Panel de Parámetros Dinámico */}
-      <ParametrosPanel />
     </div>
   );
 }

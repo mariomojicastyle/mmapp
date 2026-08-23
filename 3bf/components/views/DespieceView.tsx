@@ -966,9 +966,10 @@ export default function DespieceView() {
         }
       }
 
-      // Obtener los parámetros reales específicos de la instancia
+      // Obtener los parámetros reales y perforaciones OpenNURBS de la instancia
       const inst = instanciaId ? instancias[instanciaId] : null;
       const paramsPieza = inst?.parametros || parametros;
+      const perfsNurbsPieza = inst?.resultado?.perforaciones_nurbs || resultado?.perforaciones_nurbs || [];
 
       const res = await fetch("/api/export", {
         method: "POST",
@@ -982,7 +983,9 @@ export default function DespieceView() {
             largo: pieza.largo,
             ancho: pieza.ancho,
             espesor: pieza.espesor,
+            perforaciones_nurbs: perfsNurbsPieza,
           },
+          perforaciones_nurbs: perfsNurbsPieza,
           version: versionActual,
           mecanizados_cruzados: mecanizadosParaPieza
         }),

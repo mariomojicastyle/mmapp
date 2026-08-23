@@ -29,6 +29,8 @@ def parse_ghx_slider_limits(ghx_path):
             if chunk.attrib.get("name") == "Object":
                 name_item = chunk.find("items/item[@name='Name']")
                 comp_name = str(name_item.text) if name_item is not None else ""
+                if comp_name == "Group":
+                    continue
                 container = chunk.find("chunks/chunk[@name='Container']")
                 if container is not None:
                     nick_item = container.find("items/item[@name='NickName']")
@@ -83,6 +85,10 @@ def parse_ghx_default_values(ghx_path):
 
         for chunk in root.iter("chunk"):
             if chunk.attrib.get("name") == "Object":
+                name_item = chunk.find("items/item[@name='Name']")
+                comp_name = str(name_item.text) if name_item is not None else ""
+                if comp_name == "Group":
+                    continue
                 container = chunk.find("chunks/chunk[@name='Container']")
                 if container is not None:
                     nick_item = container.find("items/item[@name='NickName']")
@@ -121,15 +127,14 @@ class MetadataParams(BaseModel):
     custom_filename: str = ""
     ghx_content: str = ""
 
-def parse_num_prefix(text: str) -> float:
+def parse_num_prefix(text: str):
     clean = text.replace("RH_IN:", "").strip()
-    match = re.search(r'^(\d+(?:\.\d+)?)', clean)
+    match = re.search(r'^(\d+)(?:\.(\d+))?', clean)
     if match:
-        try:
-            return float(match.group(1))
-        except:
-            pass
-    return 999.0
+        major = int(match.group(1))
+        minor = int(match.group(2)) if match.group(2) is not None else 0
+        return (major, minor, clean.lower())
+    return (999, 999, clean.lower())
 
 def find_user_param_value(p_dict: dict, nick: str, default_val):
     if not isinstance(p_dict, dict):
@@ -173,10 +178,14 @@ def find_user_param_value(p_dict: dict, nick: str, default_val):
 def extract_parameter_groups(root, default_values):
     rh_inputs = list(default_values.keys())
     
-    # 1. Mapear TODOS los GUIDs internos de cada objeto a su NickName RH_IN:
+    # 1. Mapear TODOS los GUIDs de componentes reales a su NickName RH_IN:
     guid_to_nick = {}
     for chunk in root.iter("chunk"):
         if chunk.attrib.get("name") == "Object":
+            name_item = chunk.find("items/item[@name='Name']")
+            comp_name = str(name_item.text) if name_item is not None else ""
+            if comp_name == "Group":
+                continue # IGNORAR marcos visuales Group
             container = chunk.find("chunks/chunk[@name='Container']")
             if container is not None:
                 nick_item = container.find("items/item[@name='NickName']")
@@ -186,7 +195,7 @@ def extract_parameter_groups(root, default_values):
                         if item.text and (len(item.text) == 36 and item.text.count("-") == 4):
                             guid_to_nick[item.text] = nick
 
-    # 2. Mapear Grupos explícitos de Grasshopper
+    # 2. Mapear Grupos explícitos de Grasshopper (marcos grandes)
     gh_groups = {}
     for chunk in root.iter("chunk"):
         if chunk.attrib.get("name") == "Object":
@@ -212,7 +221,7 @@ def extract_parameter_groups(root, default_values):
     for g_title, nicks in gh_groups.items():
         if len(nicks) >= 1:
             sorted_nicks = sorted(nicks, key=parse_num_prefix)
-            min_rank = min((parse_num_prefix(n) for n in sorted_nicks), default=999.0)
+            min_rank = min((parse_num_prefix(n) for n in sorted_nicks), default=(999, 999, ""))
             grouped_results.append({
                 "title": g_title,
                 "parameters": sorted_nicks,
@@ -419,6 +428,41 @@ async def get_model_metadata(request: Request):
         "declared_outputs": declared_outputs
     }
 
+@app.post("/check-mtime")
+async def check_definitions_mtime(request: Request):
+    payload = await request.json()
+    items = payload.get("items", [])
+    results = []
+    for it in items:
+        model_id = it.get("model_id", "")
+        custom_filename = it.get("custom_filename", "")
+        last_mtime = float(it.get("last_mtime", 0))
+        
+        ghx_path = find_ghx_in_system(model_id, custom_filename)
+        current_mtime = 0.0
+        exists = False
+        if ghx_path and os.path.exists(ghx_path):
+            exists = True
+            try:
+                current_mtime = os.path.getmtime(ghx_path)
+            except Exception:
+                pass
+        
+        changed = False
+        if exists and last_mtime > 0 and current_mtime > (last_mtime + 0.1):
+            changed = True
+            
+        results.append({
+            "id": it.get("id"),
+            "model_id": model_id,
+            "filepath": ghx_path,
+            "exists": exists,
+            "current_mtime": current_mtime,
+            "changed": changed
+        })
+        
+    return {"status": "success", "results": results}
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -496,7 +540,7 @@ async def compute_model(request: Request):
     alto = float(find_user_param_value(p, "RH_IN:Alto", find_user_param_value(p, "alto", 800.0)))
     prof = float(find_user_param_value(p, "RH_IN:Profundidad", find_user_param_value(p, "profundidad", 400.0)))
     cant_cajones = int(p.get("cant_cajones", 3))
-    apertura_mm = float(p.get("apertura_cajones", p.get("apertura_mm", 0.0)))
+    apertura_mm = float(find_user_param_value(p, "RH_IN:02.5 Abrir Cajones", find_user_param_value(p, "RH_IN:Abrir Cajones", find_user_param_value(p, "abrir_cajones", find_user_param_value(p, "apertura_cajones", find_user_param_value(p, "apertura_mm", 0.0))))))
     prof_cajon_param = float(p.get("profundidad_cajon", 351.0))
     alt_lat_cajon_param = float(p.get("altura_lateral_cajon", 102.0))
     dist_bajo_lat_param = float(p.get("distancia_bajo_laterales", 30.0))
@@ -657,12 +701,15 @@ async def compute_model(request: Request):
                                 item_expr = (expr_item.text if expr_item is not None else "").strip()
                                 
                                 if sel_item is not None:
-                                    tv_low = target_val.lower().strip()
-                                    in_name = item_name.lower().strip()
-                                    in_expr = item_expr.lower().strip()
+                                    tv_clean = re.sub(r'[^a-z0-9]', '', target_val.lower())
+                                    in_clean = re.sub(r'[^a-z0-9]', '', item_name.lower())
+                                    expr_clean = re.sub(r'[^a-z0-9]', '', item_expr.lower())
                                     
-                                    # Coincidencia estrictamente exacta (evitar que 'horizontal' active 'horizontal atravesada')
-                                    if tv_low == in_name or tv_low == in_expr:
+                                    # Coincidencia exacta o semántica robusta
+                                    if (tv_clean == in_clean or 
+                                        tv_clean == expr_clean or 
+                                        ("tornillo" in tv_clean and "tarugo" in tv_clean and "tornillo" in in_clean and "tarugo" in in_clean) or
+                                        (tv_clean == "minifix" and "minifix" in in_clean)):
                                         sel_item.text = "true"
                                     else:
                                         sel_item.text = "false"
@@ -696,16 +743,7 @@ async def compute_model(request: Request):
                         "ParamName": nick,
                         "InnerTree": {"{0}": [{"type": "System.String", "data": str(user_val)}]}
                     })
-            if "Cubierta" not in ghx_file:
-                payload_values.extend([
-                    {"ParamName": "RH_IN:Cantidada de Cajones", "InnerTree": {"{0}": [{"type": "System.String", "data": str(int(cant_cajones))}]}},
-                    {"ParamName": "RH_IN:Abrir Cajones", "InnerTree": {"{0}": [{"type": "System.Double", "data": str(float(apertura_mm))}]}},
-                    {"ParamName": "RH_IN:Profundidad cajon", "InnerTree": {"{0}": [{"type": "System.String", "data": str(int(prof_cajon_param))}]}},
-                    {"ParamName": "RH_IN:Altura lateral de cajon", "InnerTree": {"{0}": [{"type": "System.String", "data": str(int(alt_lat_cajon_param))}]}},
-                    {"ParamName": "RH_IN:Distancia bajo laterales", "InnerTree": {"{0}": [{"type": "System.String", "data": str(int(dist_bajo_lat_param))}]}},
-                    {"ParamName": "RH_IN:Tipo Cajon", "InnerTree": {"{0}": [{"type": "System.String", "data": tipo_cajon_param}]}}
-                ])
-                
+
             payload_rc = {
                 "algo": b64_algo,
                 "pointer": None,
@@ -781,12 +819,12 @@ async def compute_model(request: Request):
                                             }
 
                                             # Extraer perforaciones analíticas OpenNURBS / BRep / Cilindros
-                                            es_perf = any(k in p_name_lower for k in ["perforacion", "perforaciones", "mecanizado", "drill", "tarugo", "tornillo", "minifix", "guia", "corredera"])
+                                            es_perf = any(k in p_name_lower for k in ["perforad", "perforacion", "perforaciones", "mecanizado", "drill", "tarugo", "tornillo", "minifix", "guia", "corredera", "perno", "caja", "herraje"])
                                             dx_mm = round(x_sz * 1000.0, 1)
                                             dy_mm = round(y_sz * 1000.0, 1)
                                             dz_mm = round(z_sz * 1000.0, 1)
                                             
-                                            dims = [dx_mm, dz_mm, dy_mm]
+                                            dims = [dx_mm, dy_mm, dz_mm]
                                             max_dim = max(dims)
                                             min_dims = [d for d in dims if d < max_dim]
                                             diam_calc = min(dims) if not min_dims else sum(min_dims) / len(min_dims)
@@ -809,10 +847,12 @@ async def compute_model(request: Request):
                                             else:
                                                 tipo_calc = "otro"
 
-                                            if es_perf or isinstance(decoded_geom, rhino3dm.Brep):
+                                            # Solo agregar si es un Brep o Mesh de perforación (máxima dimensión <= 150mm para evitar que un tablero entero se catalogue como perforación)
+                                            if (es_perf or isinstance(decoded_geom, rhino3dm.Brep)) and max_dim <= 150.0 and diam_calc <= 50.0:
                                                 perforaciones_nurbs.append({
                                                     "name": p_name,
-                                                    "size_mm": [dx_mm, dz_mm, dy_mm],
+                                                    "size_mm": [dx_mm, dy_mm, dz_mm],
+                                                    "center_cad_mm": [round((bbox.Min.X + bbox.Max.X) / 2.0, 1), round((bbox.Min.Y + bbox.Max.Y) / 2.0, 1), round((bbox.Min.Z + bbox.Max.Z) / 2.0, 1)],
                                                     "center_local_m": [round(center_x, 4), round(center_z, 4), round(-center_y, 4)],
                                                     "diametro_mm": round(diam_calc, 1),
                                                     "profundidad_mm": round(max_dim, 1),
@@ -1221,6 +1261,7 @@ async def mecanizar_intercomponentes(request: Request):
         for inst_receptora in instancias_procesadas:
             rec_id = inst_receptora["id"]
             mecanizados_por_instancia[rec_id] = []
+            centros_vistos_rec = set()
             
             for tablero in inst_receptora["tableros"]:
                 b_min_x, b_min_y, b_min_z, b_max_x, b_max_y, b_max_z = tablero["bbox_world"]
@@ -1254,21 +1295,34 @@ async def mecanizar_intercomponentes(request: Request):
                             u_mm = round((pw_x - (b_min_x + b_max_x) / 2.0) * 1000.0, 1)
                             v_mm = round((pw_z - (b_min_z + b_max_z) / 2.0) * 1000.0, 1)
                             
-                            # Determinar cara
-                            dist_sup = abs(pw_y - b_max_y)
+                            # Determinar cara y proyección según cercanía a cantos
                             dist_izq = abs(pw_x - b_min_x)
                             dist_der = abs(pw_x - b_max_x)
+                            dist_inf = abs(pw_z - b_min_z)
+                            dist_sup_z = abs(pw_z - b_max_z)
                             
-                            min_dist = min(dist_sup, dist_izq, dist_der)
-                            if min_dist == dist_izq:
+                            # Si está en el borde lateral/frontal/posterior (a menos de 25mm del canto)
+                            if dist_izq <= 0.025:
                                 cara = "canto_izq"
                                 capa_dxf = f"TCHW1B8D{int(prof*100):04d}" if diam >= 7.0 else f"TCHW1B2D{int(prof*100):04d}"
-                            elif min_dist == dist_der:
+                            elif dist_der <= 0.025:
                                 cara = "canto_der"
                                 capa_dxf = f"TCHW3B8D{int(prof*100):04d}" if diam >= 7.0 else f"TCHW3B2D{int(prof*100):04d}"
+                            elif dist_inf <= 0.025:
+                                cara = "canto_inf"
+                                capa_dxf = f"TCHW2B8D{int(prof*100):04d}" if diam >= 7.0 else f"TCHW2B2D{int(prof*100):04d}"
+                            elif dist_sup_z <= 0.025:
+                                cara = "canto_sup"
+                                capa_dxf = f"TCHW4B8D{int(prof*100):04d}" if diam >= 7.0 else f"TCHW4B2D{int(prof*100):04d}"
                             else:
                                 cara = "cara_superior"
                                 capa_dxf = f"TCHW0B15D{int(prof*100):04d}" if diam >= 14.0 else (f"TCHW0B2D{int(prof*100):04d}" if diam <= 6.0 else f"TCHW0B8D{int(prof*100):04d}")
+                            
+                            # Deduplicar perforaciones en la misma posición geométrica
+                            geo_key = (round(u_mm / 4.0) * 4, round(v_mm / 4.0) * 4, cara)
+                            if geo_key in centros_vistos_rec:
+                                continue
+                            centros_vistos_rec.add(geo_key)
                             
                             mecanizado_item = {
                                 "origen_instancia_id": inst_emisora["id"],
@@ -1342,9 +1396,11 @@ async def export_dxf_biesse(request: Request):
             }
 
         nombre = pieza.get("descripcion") or pieza.get("nombre", model_id)
+        descripcion = pieza.get("descripcion", nombre)
         largo = float(pieza.get("largo", 498.0))
         ancho = float(pieza.get("ancho", 480.0))
         espesor = float(pieza.get("espesor", 15.0))
+        es_entrepanio = "entrepaño" in nombre.lower() or "entrepanio" in nombre.lower() or "entrepaño" in descripcion.lower() or "entrepanio" in descripcion.lower()
 
         # Crear documento DXF con versión AC1021 (AutoCAD 2007, estándar oficial Biesse)
         doc = ezdxf.new(dxfversion="AC1021")
@@ -1416,16 +1472,61 @@ async def export_dxf_biesse(request: Request):
         ]
         msp.add_lwpolyline(puntos_canto_inf, close=True, dxfattribs={"layer": "TCHW2B8"})
 
-        # 3. Posicionamiento de mecanizados DfMA (Minifix / Tarugos / Pernos)
-        offset_canto_y = 37.0
-        y_pos1 = hy - offset_canto_y
-        y_pos2 = -hy + offset_canto_y
+        # 3. Incorporar perforaciones analíticas OpenNURBS de la propia pieza (Tornillos, Tarugos, Minifix, Guías)
+        raw_perfs = data.get("perforaciones_nurbs") or pieza.get("perforaciones_nurbs") or []
+        boolean_perfs = [p for p in raw_perfs if "nurbs" in p.get("name", "").lower() or "perforad" in p.get("name", "").lower() or "mecanizad" in p.get("name", "").lower()]
+        perforaciones_propias = boolean_perfs if boolean_perfs else raw_perfs
+        centros_vistos = set()
+        perforaciones_dibujadas = 0
 
-        es_entrepanio = "entrepaño" in nombre.lower() or "entrepanio" in nombre.lower()
+        for p_item in perforaciones_propias:
+            if "center_cad_mm" in p_item:
+                cx, cy, cz = p_item["center_cad_mm"]
+                ux = round(cx - (largo / 2.0), 1)
+                vy = round(cy - (ancho / 2.0), 1)
+            elif "center_local_m" in p_item:
+                ux = round(p_item["center_local_m"][0] * 1000.0, 1)
+                vy = round(-p_item["center_local_m"][2] * 1000.0, 1)
+            else:
+                continue
 
-        # Si es un Entrepaño deslizable, es una pieza lisa de corte para seccionadora (sin perforaciones booleanas)
-        if not es_entrepanio:
-            # Buscar el tipo de unión configurado sin hardcodear Minifix
+            diam = float(p_item.get("diametro_mm", 8.0))
+            prof = float(p_item.get("profundidad_mm", 25.0))
+            
+            c_key = (round(ux, 0), round(vy, 0), round(diam, 0))
+            if c_key in centros_vistos:
+                continue
+            centros_vistos.add(c_key)
+
+            if ux <= -hx + 25.0:
+                # Canto Izquierdo (W1)
+                x_pos = -hx - gap - (espesor / 2.0)
+                capa = f"TCHW1B8D{int(prof*100):04d}" if diam >= 7.0 else f"TCHW1B2D{int(prof*100):04d}"
+                if capa not in doc.layers: doc.layers.new(name=capa, dxfattribs={"color": 18})
+                msp.add_circle((x_pos, vy), radius=(diam / 2.0), dxfattribs={"layer": capa})
+                perforaciones_dibujadas += 1
+            elif ux >= hx - 25.0:
+                # Canto Derecho (W3)
+                x_pos = hx + gap + (espesor / 2.0)
+                capa = f"TCHW3B8D{int(prof*100):04d}" if diam >= 7.0 else f"TCHW3B2D{int(prof*100):04d}"
+                if capa not in doc.layers: doc.layers.new(name=capa, dxfattribs={"color": 18})
+                msp.add_circle((x_pos, vy), radius=(diam / 2.0), dxfattribs={"layer": capa})
+                perforaciones_dibujadas += 1
+            elif diam >= 14.0:
+                # Cajas Minifix en Cara Superior (W0)
+                capa = f"TCHW0B15D{int(prof*100):04d}"
+                if capa not in doc.layers: doc.layers.new(name=capa, dxfattribs={"color": 18})
+                msp.add_circle((ux, vy), radius=(diam / 2.0), dxfattribs={"layer": capa})
+                perforaciones_dibujadas += 1
+            else:
+                # Perforaciones / Guías en Cara Superior (W0)
+                capa = f"TCHW0B2D{int(prof*100):04d}" if diam <= 6.0 else f"TCHW0B8D{int(prof*100):04d}"
+                if capa not in doc.layers: doc.layers.new(name=capa, dxfattribs={"color": 18})
+                msp.add_circle((ux, vy), radius=(diam / 2.0), dxfattribs={"layer": capa})
+                perforaciones_dibujadas += 1
+
+        # Fallback si no vinieron perforaciones_nurbs explícitas
+        if perforaciones_dibujadas == 0 and not es_entrepanio:
             union_izq = ""
             union_der = ""
             for k, v in params.items():
@@ -1436,31 +1537,48 @@ async def export_dxf_biesse(request: Request):
                     elif "der" in kl:
                         union_der = str(v).lower()
 
-            # Mecanizado Lado Izquierdo (Cubierta)
+            y_pos1 = hy - 48.0
+            y_pos2 = -hy + 48.0
+            y_pos_tornillo1 = hy - 80.0
+            y_pos_tornillo2 = -hy + 80.0
+
+            # Mecanizado Lado Izquierdo
             if "minifix" in union_izq:
                 x_izq_caja = -hx + 34.0
-                # Cajas Minifix Ø15mm en Cara Superior W0
                 msp.add_circle((x_izq_caja, y_pos1), radius=7.5, dxfattribs={"layer": "TCHW0B15D1350"})
                 msp.add_circle((x_izq_caja, y_pos2), radius=7.5, dxfattribs={"layer": "TCHW0B15D1350"})
-                # Perforación de canto Ø8mm en la vista del Canto Izquierdo (W1)
                 x_canto_izq_centro = -hx - gap - (espesor / 2.0)
                 msp.add_circle((x_canto_izq_centro, y_pos1), radius=4.0, dxfattribs={"layer": "TCHW1B8D2500"})
                 msp.add_circle((x_canto_izq_centro, y_pos2), radius=4.0, dxfattribs={"layer": "TCHW1B8D2500"})
+            elif "tarugo" in union_izq and "tornillo" in union_izq:
+                x_canto_izq_centro = -hx - gap - (espesor / 2.0)
+                # 2 Tarugos Ø8mm
+                msp.add_circle((x_canto_izq_centro, y_pos1), radius=4.0, dxfattribs={"layer": "TCHW1B8D2500"})
+                msp.add_circle((x_canto_izq_centro, y_pos2), radius=4.0, dxfattribs={"layer": "TCHW1B8D2500"})
+                # 2 Tornillos Ø5mm
+                msp.add_circle((x_canto_izq_centro, y_pos_tornillo1), radius=2.5, dxfattribs={"layer": "TCHW1B2D3500"})
+                msp.add_circle((x_canto_izq_centro, y_pos_tornillo2), radius=2.5, dxfattribs={"layer": "TCHW1B2D3500"})
             elif "tarugo" in union_izq or "tornillo" in union_izq:
                 x_canto_izq_centro = -hx - gap - (espesor / 2.0)
                 msp.add_circle((x_canto_izq_centro, y_pos1), radius=4.0, dxfattribs={"layer": "TCHW1B8D2500"})
                 msp.add_circle((x_canto_izq_centro, y_pos2), radius=4.0, dxfattribs={"layer": "TCHW1B8D2500"})
 
-            # Mecanizado Lado Derecho (Cubierta)
+            # Mecanizado Lado Derecho
             if "minifix" in union_der:
                 x_der_caja = hx - 34.0
-                # Cajas Minifix Ø15mm en Cara Superior W0
                 msp.add_circle((x_der_caja, y_pos1), radius=7.5, dxfattribs={"layer": "TCHW0B15D1350"})
                 msp.add_circle((x_der_caja, y_pos2), radius=7.5, dxfattribs={"layer": "TCHW0B15D1350"})
-                # Perforación de canto Ø8mm en la vista del Canto Derecho (W3)
                 x_canto_der_centro = hx + gap + (espesor / 2.0)
                 msp.add_circle((x_canto_der_centro, y_pos1), radius=4.0, dxfattribs={"layer": "TCHW3B8D2500"})
                 msp.add_circle((x_canto_der_centro, y_pos2), radius=4.0, dxfattribs={"layer": "TCHW3B8D2500"})
+            elif "tarugo" in union_der and "tornillo" in union_der:
+                x_canto_der_centro = hx + gap + (espesor / 2.0)
+                # 2 Tarugos Ø8mm
+                msp.add_circle((x_canto_der_centro, y_pos1), radius=4.0, dxfattribs={"layer": "TCHW3B8D2500"})
+                msp.add_circle((x_canto_der_centro, y_pos2), radius=4.0, dxfattribs={"layer": "TCHW3B8D2500"})
+                # 2 Tornillos Ø5mm
+                msp.add_circle((x_canto_der_centro, y_pos_tornillo1), radius=2.5, dxfattribs={"layer": "TCHW3B2D3500"})
+                msp.add_circle((x_canto_der_centro, y_pos_tornillo2), radius=2.5, dxfattribs={"layer": "TCHW3B2D3500"})
             elif "tarugo" in union_der or "tornillo" in union_der:
                 x_canto_der_centro = hx + gap + (espesor / 2.0)
                 msp.add_circle((x_canto_der_centro, y_pos1), radius=4.0, dxfattribs={"layer": "TCHW3B8D2500"})
@@ -1478,14 +1596,23 @@ async def export_dxf_biesse(request: Request):
             if capa not in doc.layers:
                 doc.layers.new(name=capa, dxfattribs={"color": 18})
                 
-            if cara == "canto_izq":
+            # Clasificar y colocar estrictamente en el canto correspondiente o en el interior del tablero (cero círculos flotantes)
+            if cara == "canto_izq" or u_x <= -hx + 20.0:
                 x_pos = -hx - gap - (espesor / 2.0)
                 msp.add_circle((x_pos, v_y), radius=(diam / 2.0), dxfattribs={"layer": capa})
-            elif cara == "canto_der":
+            elif cara == "canto_der" or u_x >= hx - 20.0:
                 x_pos = hx + gap + (espesor / 2.0)
                 msp.add_circle((x_pos, v_y), radius=(diam / 2.0), dxfattribs={"layer": capa})
+            elif cara == "canto_inf" or v_y <= -hy + 20.0:
+                y_pos = -hy - gap - (espesor / 2.0)
+                msp.add_circle((u_x, y_pos), radius=(diam / 2.0), dxfattribs={"layer": capa})
+            elif cara == "canto_sup" or v_y >= hy - 20.0:
+                y_pos = hy + gap + (espesor / 2.0)
+                msp.add_circle((u_x, y_pos), radius=(diam / 2.0), dxfattribs={"layer": capa})
             else:
-                msp.add_circle((u_x, v_y), radius=(diam / 2.0), dxfattribs={"layer": capa})
+                # Cara Superior W0: Solo si se encuentra rigurosamente dentro del perímetro
+                if abs(u_x) <= (hx - 2.0) and abs(v_y) <= (hy - 2.0):
+                    msp.add_circle((u_x, v_y), radius=(diam / 2.0), dxfattribs={"layer": capa})
 
         # Serializar DXF a texto
         stream = io.StringIO()

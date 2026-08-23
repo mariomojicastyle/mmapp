@@ -46,13 +46,26 @@ export default function PartBreakdownPanel() {
 
   const getCapaSugeridaId = (parteKey: string, categoria: string) => {
     const kLow = parteKey.toLowerCase();
-    if (kLow.includes("maquinado")) return capas.find((c) => c.nombre.toLowerCase().includes("perforad"))?.id || capas[0]?.id;
-    if (categoria === "Herrajes") return capas.find((c) => c.nombre.toLowerCase().includes("herraje") || c.nombre.toLowerCase().includes("acero"))?.id || capas[0]?.id;
-    if (kLow.includes("mdp")) return capas.find((c) => c.nombre.toLowerCase() === "mdp")?.id || capas[0]?.id;
-    if (kLow.includes("mdf")) return capas.find((c) => c.nombre.toLowerCase() === "mdf")?.id || capas[0]?.id;
-    if (kLow.includes("color")) return capas.find((c) => c.nombre.toLowerCase().includes("tono"))?.id || capas[0]?.id;
-    if (kLow.includes("balance")) return capas.find((c) => c.nombre.toLowerCase().includes("back") || c.nombre.toLowerCase().includes("espaldar"))?.id || capas[0]?.id;
-    return capas[0]?.id || "capa_aluminio";
+    if (kLow.includes("maquinado") || kLow.includes("perforado")) {
+      return capas.find((c) => c.nombre.toLowerCase().includes("perforad") || c.id === "capa_perforados")?.id || capas[0]?.id;
+    }
+    if (categoria === "Herrajes" || kLow.includes("perno") || kLow.includes("tornillo") || kLow.includes("corredera")) {
+      return capas.find((c) => c.nombre.toLowerCase().includes("herraje") || c.id === "capa_herrajes" || c.id === "capa_acero")?.id || capas[0]?.id;
+    }
+    if (kLow.includes("caja")) {
+      return capas.find((c) => c.id === "capa_zincado" || c.id === "capa_zinc" || c.nombre.toLowerCase().includes("zinc"))?.id || capas[0]?.id;
+    }
+    if (kLow.includes("tarugo") || kLow.includes("soporte")) {
+      return capas.find((c) => c.id === "capa_madera" || c.nombre.toLowerCase().includes("madera"))?.id || capas[0]?.id;
+    }
+    if (kLow.includes("mdp")) return capas.find((c) => c.nombre.toLowerCase() === "mdp" || c.id === "capa_mdp")?.id || capas[0]?.id;
+    if (kLow.includes("mdf")) return capas.find((c) => c.nombre.toLowerCase() === "mdf" || c.id === "capa_mdf")?.id || capas[0]?.id;
+    if (kLow.includes("balance") || kLow.includes("back")) {
+      return capas.find((c) => c.id === "capa_back" || c.id === "capa_espaldar" || c.nombre.toLowerCase().includes("back"))?.id || capas[0]?.id;
+    }
+    // 🪵 Para cualquier lámina / tablero (Cubierta, Lateral, Frente, Tapa, Cajón, etc.), asignar Capa Tono por defecto
+    const capaTono = capas.find((c) => c.id === "capa_tono" || c.nombre.toLowerCase() === "tono" || c.nombre.toLowerCase().includes("tono"));
+    return capaTono?.id || capas[0]?.id || "capa_tono";
   };
 
   // Mapear partes completas del Grasshopper
@@ -71,12 +84,16 @@ export default function PartBreakdownPanel() {
       categoria = "Tableros";
     }
 
+    const isBoard = categoria === "Tableros";
+    const rawCapaId = asignacion?.capaId;
+    const cleanCapaId = (isBoard && rawCapaId === "capa_acero") ? "por_defecto" : (rawCapaId || "por_defecto");
+
     return {
       parteKey,
       nombreLimpio: cleanName,
       categoria,
       cantidad: count,
-      capaId: asignacion?.capaId || "por_defecto",
+      capaId: cleanCapaId,
       materialId: asignacion?.materialId || "por_capa",
       visible: asignacion?.visible ?? true,
     };

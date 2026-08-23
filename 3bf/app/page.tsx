@@ -247,14 +247,14 @@ export default function Home3BF() {
                   height="59.447781"
                   fill="#bb0f0f"
                 />
-                {/* Texto 3BF Blanco */}
+                {/* Texto 3BF */}
                 <text
                   x="8.3642311"
                   y="54.980133"
                   style={{
                     fontFamily: "var(--font-prompt), 'Prompt', sans-serif",
                     fontSize: "29.9861px",
-                    fill: "#ffffff",
+                    fill: coloresApariencia?.color3BF || "#ffffff",
                   }}
                 >
                   3BF
@@ -266,7 +266,7 @@ export default function Home3BF() {
                   style={{
                     fontFamily: "var(--font-prompt), 'Prompt', sans-serif",
                     fontSize: "29.9861px",
-                    fill: coloresApariencia?.textoPrincipal || "currentColor",
+                    fill: coloresApariencia?.textoLogotipo || coloresApariencia?.textoPrincipal || "currentColor",
                   }}
                 >
                   3dBimFab
@@ -278,7 +278,8 @@ export default function Home3BF() {
                   style={{
                     fontFamily: "var(--font-prompt), 'Prompt', sans-serif",
                     fontSize: "10.415px",
-                    fill: coloresApariencia?.textoSecundario || "#94a3b8",
+                    fill: coloresApariencia?.textoLogotipo || coloresApariencia?.textoPrincipal || "currentColor",
+                    opacity: 0.85,
                   }}
                 >
                   Powered by MARIO MOJICA

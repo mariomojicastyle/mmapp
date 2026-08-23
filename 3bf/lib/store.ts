@@ -75,6 +75,8 @@ export interface ColoresApariencia {
   bordePaneles: string;
   textoPrincipal: string;
   textoSecundario: string;
+  textoLogotipo: string;
+  color3BF: string;
   colorMarca: string;
   botonActivo: string;
   botonInactivo: string;
@@ -126,6 +128,8 @@ export const PRESET_COLORES_CLARO: ColoresApariencia = {
   bordePaneles: "#CBD5E1",
   textoPrincipal: "#0F172A",
   textoSecundario: "#64748B",
+  textoLogotipo: "#0F172A",
+  color3BF: "#FFFFFF",
   colorMarca: "#0891B2",
   botonActivo: "#0891B2",
   botonInactivo: "#E2E8F0",
@@ -175,6 +179,8 @@ export const PRESET_COLORES_OSCURO: ColoresApariencia = {
   bordePaneles: "#1E293B",
   textoPrincipal: "#F8FAFC",
   textoSecundario: "#F8FAFC",
+  textoLogotipo: "#F8FAFC",
+  color3BF: "#FFFFFF",
   colorMarca: "#0891B2",
   botonActivo: "#0891B2",
   botonInactivo: "#1E293B",
@@ -760,6 +766,7 @@ export interface State3BF {
   cargarArbolMuebles: () => Promise<void>;
   crearCarpetaMueble: (nombre: string, tipo?: "marca" | "tipologia", padreId?: string | null) => Promise<boolean>;
   guardarMuebleComo: (datos: { nombre: string; marca: string; tipologia: string; descripcion?: string }) => Promise<boolean>;
+  guardarCambiosMueble: () => Promise<boolean>;
   renombrarMuebleGuardado: (id: string, nuevoNombre: string) => Promise<boolean>;
   actualizarThumbnailMueble: (id: string, thumbnail: string) => Promise<boolean>;
   eliminarMuebleGuardado: (id: string) => Promise<boolean>;
@@ -773,9 +780,10 @@ export interface State3BF {
   duplicarInstancia: (id: string) => Promise<string>;
   renombrarInstancia: (id: string, nuevoNombre: string) => void;
   seleccionarInstancia: (id: string | null) => void;
-  setParametroInstancia: (id: string, key: string, value: any) => void;
+  setParametroInstancia: (id: string, key: string, value: any, debounceMs?: number) => void;
   setPosicionInstancia: (id: string, pos: [number, number, number]) => void;
   recomputarInstancia: (id: string) => Promise<void>;
+  recargarDefinicionInstancia: (id: string) => Promise<boolean>;
   recomputarTodas: () => Promise<void>;
   
   // Despiece & Herrajes Globales Multiobjeto (BOM Escenario Completo)
@@ -1046,7 +1054,12 @@ export const use3BFStore = create<State3BF>((set, get) => ({
   materialSeleccionadoId: "mat_acero",
   asignacionesPartes: typeof window !== "undefined" && window.localStorage && localStorage.getItem("3bf_asignaciones_partes_v1")
     ? Object.fromEntries(
-        Object.entries(JSON.parse(localStorage.getItem("3bf_asignaciones_partes_v1")!) as Record<string, AsignacionParteDef>).map(([k, v]) => [k, { ...v, visible: true }])
+        Object.entries(JSON.parse(localStorage.getItem("3bf_asignaciones_partes_v1")!) as Record<string, AsignacionParteDef>).map(([k, v]) => {
+          const kLow = k.toLowerCase();
+          const isBoard = kLow.includes("lateral") || kLow.includes("cubierta") || kLow.includes("frente") || kLow.includes("tapa") || kLow.includes("cajon") || kLow.includes("cajón") || kLow.includes("entrepaño");
+          const safeCapaId = (isBoard && v.capaId === "capa_acero") ? "capa_tono" : v.capaId;
+          return [k, { ...v, capaId: safeCapaId, visible: true }];
+        })
       )
     : {},
 
@@ -1499,6 +1512,71 @@ export const use3BFStore = create<State3BF>((set, get) => ({
     }
   },
 
+  guardarCambiosMueble: async () => {
+    const state = get();
+    if (!state.muebleActivoGuardado) {
+      set({ modalGuardarComoAbierto: true });
+      return false;
+    }
+
+    set({ guardandoMueble: true });
+    try {
+      const id = state.muebleActivoGuardado.id;
+      const modelKey = state.parametros.model_id || "Cubierta";
+      const fichaConfig = state.getFichaConfig(modelKey);
+      const despieceGlobal = state.getDespieceGlobal();
+
+      let thumbnail = state.muebleActivoGuardado.thumbnail;
+      if (typeof window !== "undefined" && (window as any).__capturarThumbnail3BF) {
+        const nuevoThumb = (window as any).__capturarThumbnail3BF();
+        if (nuevoThumb) thumbnail = nuevoThumb;
+      }
+
+      // Sanitizar instancias
+      const rawInst = state.instancias || {};
+      const sanitizedInst: Record<string, ObjetoInstancia3BF> = {};
+      for (const [k, v] of Object.entries(rawInst)) {
+        sanitizedInst[k] = {
+          ...v,
+          posicion: Array.isArray(v.posicion) ? [...v.posicion] : [0, 0, 0],
+          rotacion: Array.isArray(v.rotacion) ? [...v.rotacion] : [0, 0, 0],
+          parametros: { ...(v.parametros || {}) },
+        };
+      }
+
+      const muebleActualizado: MuebleGuardadoItem = {
+        ...state.muebleActivoGuardado,
+        fechaGuardado: new Date().toISOString(),
+        thumbnail,
+        instancias: sanitizedInst,
+        fichaConfig,
+        totalPiezas: despieceGlobal.reduce((acc, p) => acc + (p.cantidad || 1), 0),
+      };
+
+      set((s) => ({
+        mueblesGuardados: s.mueblesGuardados.map((m) => (m.id === id ? muebleActualizado : m)),
+        muebleActivoGuardado: muebleActualizado,
+        guardandoMueble: false,
+      }));
+
+      try {
+        await fetch("/api/drive/muebles", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ action: "save_furniture", furniture: muebleActualizado }),
+        });
+      } catch (err) {
+        console.warn("Mueble actualizado en local:", err);
+      }
+
+      return true;
+    } catch (err) {
+      console.error("Error al actualizar cambios de mueble:", err);
+      set({ guardandoMueble: false });
+      return false;
+    }
+  },
+
   renombrarMuebleGuardado: async (id: string, nuevoNombre: string) => {
     const clean = nuevoNombre.trim();
     if (!clean) return false;
@@ -1570,8 +1648,17 @@ export const use3BFStore = create<State3BF>((set, get) => ({
   abrirMueble: async (mueble: MuebleGuardadoItem) => {
     if (!mueble || !mueble.instancias) return;
 
-    // 1. Restaurar instancias en el Store
-    const restoredInstancias = JSON.parse(JSON.stringify(mueble.instancias));
+    // 1. Restaurar y sanitizar instancias en el Store
+    const rawInst = mueble.instancias || {};
+    const restoredInstancias: Record<string, ObjetoInstancia3BF> = {};
+    for (const [k, v] of Object.entries(rawInst)) {
+      restoredInstancias[k] = {
+        ...v,
+        posicion: Array.isArray(v.posicion) ? [...v.posicion] : [0, 0, 0],
+        rotacion: Array.isArray(v.rotacion) ? [...v.rotacion] : [0, 0, 0],
+        parametros: { ...(v.parametros || {}) },
+      };
+    }
     const firstKey = Object.keys(restoredInstancias)[0] || null;
 
     // 2. Restaurar ficha técnica si existe
@@ -1591,6 +1678,7 @@ export const use3BFStore = create<State3BF>((set, get) => ({
 
     // 3. Recomputar todas las instancias con Grasshopper
     await get().recomputarTodas();
+    get().guardarEstadoHistorial();
   },
 
   // =========================================================================
@@ -1796,7 +1884,7 @@ export const use3BFStore = create<State3BF>((set, get) => ({
     }
   },
 
-  setParametroInstancia: (id: string, key: string, value: any) => {
+  setParametroInstancia: (id: string, key: string, value: any, debounceMs: number = 180) => {
     const state = get();
     const inst = state.instancias[id];
     if (!inst) return;
@@ -1813,6 +1901,7 @@ export const use3BFStore = create<State3BF>((set, get) => ({
     const legacyKey = (MAPA_PARAMETROS as any)[key];
     if (legacyKey) nextParams[legacyKey] = value;
 
+    // Actualización inmediata del estado local (UI a 60 FPS ultra fluida)
     set((s) => ({
       instancias: {
         ...s.instancias,
@@ -1821,7 +1910,24 @@ export const use3BFStore = create<State3BF>((set, get) => ({
       parametros: s.objetoActivoId === id ? (nextParams as any) : s.parametros,
     }));
 
-    get().recomputarInstancia(id);
+    // Debounce inteligente para cálculos pesados en RhinoCompute
+    if ((globalThis as any).__3bf_debounce_timers?.[id]) {
+      clearTimeout((globalThis as any).__3bf_debounce_timers[id]);
+      delete (globalThis as any).__3bf_debounce_timers[id];
+    }
+
+    if (!(globalThis as any).__3bf_debounce_timers) {
+      (globalThis as any).__3bf_debounce_timers = {};
+    }
+
+    if (debounceMs <= 0) {
+      get().recomputarInstancia(id);
+    } else {
+      (globalThis as any).__3bf_debounce_timers[id] = setTimeout(() => {
+        delete (globalThis as any).__3bf_debounce_timers[id];
+        get().recomputarInstancia(id);
+      }, debounceMs);
+    }
   },
 
   setPosicionInstancia: (id: string, pos: [number, number, number]) => {
@@ -1847,6 +1953,20 @@ export const use3BFStore = create<State3BF>((set, get) => ({
     const inst = get().instancias[id];
     if (!inst) return;
 
+    // Cancelar cualquier petición anterior en vuelo para evitar saltos o respuestas desordenadas
+    if (!(globalThis as any).__3bf_abort_controllers) {
+      (globalThis as any).__3bf_abort_controllers = {};
+    }
+    if ((globalThis as any).__3bf_abort_controllers[id]) {
+      try {
+        (globalThis as any).__3bf_abort_controllers[id].abort();
+      } catch (_) {}
+      delete (globalThis as any).__3bf_abort_controllers[id];
+    }
+
+    const controller = new AbortController();
+    (globalThis as any).__3bf_abort_controllers[id] = controller;
+
     set((s) => ({
       instancias: {
         ...s.instancias,
@@ -1858,6 +1978,7 @@ export const use3BFStore = create<State3BF>((set, get) => ({
       const computeRes = await fetch("/api/compute", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
+        signal: controller.signal,
         body: JSON.stringify({
           ...inst.parametros,
           model_id: inst.definitionId,
@@ -1891,7 +2012,11 @@ export const use3BFStore = create<State3BF>((set, get) => ({
           },
         }));
       }
-    } catch (err) {
+    } catch (err: any) {
+      if (err?.name === "AbortError") {
+        // Petición cancelada limpiamente por un valor de slider más reciente
+        return;
+      }
       console.error("Error en cómputo de instancia:", id, err);
       set((s) => ({
         workerStatus: "offline",
@@ -1900,6 +2025,94 @@ export const use3BFStore = create<State3BF>((set, get) => ({
           [id]: { ...s.instancias[id], cargando: false },
         },
       }));
+    } finally {
+      if ((globalThis as any).__3bf_abort_controllers?.[id] === controller) {
+        delete (globalThis as any).__3bf_abort_controllers[id];
+      }
+    }
+  },
+
+  recargarDefinicionInstancia: async (id: string) => {
+    const inst = get().instancias[id];
+    if (!inst) return false;
+
+    // 1. Activar estado de carga en la instancia
+    set((s) => ({
+      instancias: {
+        ...s.instancias,
+        [id]: { ...s.instancias[id], cargando: true },
+      },
+    }));
+
+    try {
+      // 2. Re-leer metadata fresca desde el archivo GHX en disco
+      const metaRes = await fetch("/api/metadata", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          model_id: inst.definitionId,
+          custom_filename: inst.archivo,
+          ghx_content: inst.ghxContent,
+        }),
+      });
+
+      let updatedParams = { ...inst.parametros };
+      let parameterGroups = inst.resultado?.parameter_groups || [];
+      let sliderLimits = inst.resultado?.slider_limits || {};
+
+      if (metaRes.ok) {
+        const meta = await metaRes.json();
+        if (meta.status === "success" && meta.default_values) {
+          parameterGroups = meta.parameter_groups || [];
+          sliderLimits = meta.slider_limits || {};
+
+          // Conservar valores que el usuario ya modificó, y agregar los nuevos parámetros
+          Object.entries(meta.default_values).forEach(([k, v]) => {
+            if (!(k in updatedParams)) {
+              updatedParams[k] = v;
+            }
+            const cleanKey = k.replace("RH_IN:", "").toLowerCase().replace(/\s+/g, "_");
+            if (!(cleanKey in updatedParams)) {
+              updatedParams[cleanKey] = v;
+            }
+            const legacyKey = (MAPA_PARAMETROS as any)[k];
+            if (legacyKey && !(legacyKey in updatedParams)) {
+              updatedParams[legacyKey] = v;
+            }
+          });
+        }
+      }
+
+      // Actualizar instancia con nueva metadata antes de computar
+      set((s) => ({
+        instancias: {
+          ...s.instancias,
+          [id]: {
+            ...s.instancias[id],
+            parametros: updatedParams,
+            resultado: {
+              ...(s.instancias[id].resultado || {}),
+              parameter_groups: parameterGroups,
+              slider_limits: sliderLimits,
+            } as any,
+          },
+        },
+        parametros: s.objetoActivoId === id ? (updatedParams as any) : s.parametros,
+      }));
+
+      // 3. Recomputar geometría 3D con Grasshopper / RhinoCompute
+      await get().recomputarInstancia(id);
+      get().guardarEstadoHistorial();
+      return true;
+    } catch (err) {
+      console.error("Error al recargar definición GHX de instancia:", id, err);
+      set((s) => ({
+        instancias: {
+          ...s.instancias,
+          [id]: { ...s.instancias[id], cargando: false },
+        },
+      }));
+      return false;
     }
   },
 
@@ -2017,12 +2230,17 @@ export const use3BFStore = create<State3BF>((set, get) => ({
       instancias: Object.fromEntries(
         Object.entries(s.instancias || {}).map(([k, v]) => [
           k,
-          { ...v, posicion: [...v.posicion], rotacion: [...(v.rotacion || [0, 0, 0])], parametros: { ...v.parametros } },
+          {
+            ...v,
+            posicion: Array.isArray(v.posicion) ? [...v.posicion] : [0, 0, 0],
+            rotacion: Array.isArray(v.rotacion) ? [...v.rotacion] : [0, 0, 0],
+            parametros: { ...(v.parametros || {}) },
+          },
         ])
       ),
       objetoActivoId: s.objetoActivoId,
-      posicionObjeto: [...s.posicionObjeto],
-      parametros: { ...s.parametros },
+      posicionObjeto: Array.isArray(s.posicionObjeto) ? [...s.posicionObjeto] : [0, 0, 0],
+      parametros: { ...(s.parametros || {}) },
       resultado: s.resultado,
     };
 
@@ -2052,13 +2270,18 @@ export const use3BFStore = create<State3BF>((set, get) => ({
           instancias: Object.fromEntries(
             Object.entries(estado.instancias || {}).map(([k, v]) => [
               k,
-              { ...v, posicion: [...v.posicion], rotacion: [...(v.rotacion || [0, 0, 0])], parametros: { ...v.parametros } },
+              {
+                ...v,
+                posicion: Array.isArray(v.posicion) ? [...v.posicion] : [0, 0, 0],
+                rotacion: Array.isArray(v.rotacion) ? [...v.rotacion] : [0, 0, 0],
+                parametros: { ...(v.parametros || {}) },
+              },
             ])
           ),
           objetoActivoId: estado.objetoActivoId,
           objetoSeleccionado: estado.objetoActivoId !== null,
-          posicionObjeto: [...estado.posicionObjeto],
-          posicionPrevia: [...estado.posicionObjeto],
+          posicionObjeto: Array.isArray(estado.posicionObjeto) ? [...estado.posicionObjeto] : [0, 0, 0],
+          posicionPrevia: Array.isArray(estado.posicionObjeto) ? [...estado.posicionObjeto] : [0, 0, 0],
           parametros: { ...estado.parametros } as any,
           resultado: estado.resultado,
           indiceHistorial: nuevoIndice,
@@ -2080,13 +2303,18 @@ export const use3BFStore = create<State3BF>((set, get) => ({
           instancias: Object.fromEntries(
             Object.entries(estado.instancias || {}).map(([k, v]) => [
               k,
-              { ...v, posicion: [...v.posicion], rotacion: [...(v.rotacion || [0, 0, 0])], parametros: { ...v.parametros } },
+              {
+                ...v,
+                posicion: Array.isArray(v.posicion) ? [...v.posicion] : [0, 0, 0],
+                rotacion: Array.isArray(v.rotacion) ? [...v.rotacion] : [0, 0, 0],
+                parametros: { ...(v.parametros || {}) },
+              },
             ])
           ),
           objetoActivoId: estado.objetoActivoId,
           objetoSeleccionado: estado.objetoActivoId !== null,
-          posicionObjeto: [...estado.posicionObjeto],
-          posicionPrevia: [...estado.posicionObjeto],
+          posicionObjeto: Array.isArray(estado.posicionObjeto) ? [...estado.posicionObjeto] : [0, 0, 0],
+          posicionPrevia: Array.isArray(estado.posicionObjeto) ? [...estado.posicionObjeto] : [0, 0, 0],
           parametros: { ...estado.parametros } as any,
           resultado: estado.resultado,
           indiceHistorial: nuevoIndice,
