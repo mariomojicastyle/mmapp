@@ -803,9 +803,9 @@ async def compute_model(request: Request):
                                         decoded_geom = rhino3dm.CommonObject.Decode(obj)
                                         if decoded_geom:
                                             bbox = decoded_geom.GetBoundingBox()
-                                            x_sz = max(0.005, abs(bbox.Max.X - bbox.Min.X) / 1000.0)
-                                            y_sz = max(0.005, abs(bbox.Max.Y - bbox.Min.Y) / 1000.0)
-                                            z_sz = max(0.005, abs(bbox.Max.Z - bbox.Min.Z) / 1000.0)
+                                            x_sz = abs(bbox.Max.X - bbox.Min.X) / 1000.0
+                                            y_sz = abs(bbox.Max.Y - bbox.Min.Y) / 1000.0
+                                            z_sz = abs(bbox.Max.Z - bbox.Min.Z) / 1000.0
                                             center_x = (bbox.Min.X + bbox.Max.X) / 2.0 / 1000.0
                                             center_y = (bbox.Min.Y + bbox.Max.Y) / 2.0 / 1000.0
                                             center_z = (bbox.Min.Z + bbox.Max.Z) / 2.0 / 1000.0
@@ -991,9 +991,6 @@ async def compute_model(request: Request):
         
         # Filtrar solo elementos que califiquen como tableros (ancho y largo >= 40mm)
         if lar_malla >= 40.0 and anc_malla >= 40.0:
-            if esp_malla < 5.0:
-                esp_malla = 15.0
-                
             # Nombre de la pieza
             custom_name = None
             for k_out, v_out in text_outputs.items():
@@ -1012,14 +1009,16 @@ async def compute_model(request: Request):
                 if not nombre_limpio or nombre_limpio in ["Cubierta2", "Entrepaño2", "Pieza", "Mdp", "Tablero"]:
                     nombre_limpio = "Cubierta" if "cubierta" in name_lower else ("Entrepaño" if "entrepaño" in name_lower else "Tablero")
 
-            # Buscar si ya existe un tablero en la misma zona espacial (Tolerancia 60mm en centros X/Y/Z)
+            # Buscar si ya existe un tablero en la misma zona espacial (Tolerancia 60mm en centros X/Y/Z) y con dimensiones compatibles
             encontrado = False
             for t in tableros_consolidados:
                 dist_x = abs(t["pos"][0] - pos[0]) * 1000.0
                 dist_y = abs(t["pos"][1] - pos[1]) * 1000.0
                 dist_z = abs(t["pos"][2] - pos[2]) * 1000.0
+                diff_lar = abs(t["largo"] - lar_malla)
+                diff_anc = abs(t["ancho"] - anc_malla)
                 
-                if dist_x < 60.0 and dist_y < 60.0 and dist_z < 60.0:
+                if dist_x < 60.0 and dist_y < 60.0 and dist_z < 60.0 and diff_lar < 15.0 and diff_anc < 15.0:
                     encontrado = True
                     # Consolidar tomando la cota máxima del tablero físico real y el nombre más específico
                     t["largo"] = max(t["largo"], lar_malla)
@@ -1040,8 +1039,18 @@ async def compute_model(request: Request):
                     "pos": pos
                 })
 
-    # Limpiar campo de posición interno y agrupar piezas idénticas
-    if "Cubierta" in ghx_file:
+    # Agrupar piezas idénticas leyendo 100% de la geometría real
+    if tableros_consolidados:
+        agrupados = {}
+        for tab in tableros_consolidados:
+            k_dim = f"{tab['nombre']}_{tab['largo']}_{tab['ancho']}_{tab['espesor']}"
+            if k_dim in agrupados:
+                agrupados[k_dim]["cantidad"] += 1
+            else:
+                item_copy = {k: v for k, v in tab.items() if k != "pos"}
+                agrupados[k_dim] = item_copy
+        piezas_madera_final = list(agrupados.values())
+    elif "Cubierta" in ghx_file:
         u_izq_str = str(find_user_param_value(p, "RH_IN:02.1 Union izquierda", find_user_param_value(p, "union_izquierda", ""))).lower()
         u_der_str = str(find_user_param_value(p, "RH_IN:02.0 Union Derecha", find_user_param_value(p, "union_derecha", ""))).lower()
         tiene_entrepanio = "entrepaño" in u_izq_str or "entrepanio" in u_izq_str or u_izq_str == "3" or "entrepaño" in u_der_str or "entrepanio" in u_der_str or u_der_str == "3" or any("soporte" in m.get("name", "").lower() for m in real_meshes)
@@ -1053,7 +1062,7 @@ async def compute_model(request: Request):
             piezas_madera_final = [
                 {
                     "nombre": "Entrepaño",
-                    "largo": round(ancho_nom - 1.0, 1),  # Pierde 0.5mm por lado para entrar y salir fácilmente del nicho
+                    "largo": round(ancho_nom - 1.0, 1),
                     "ancho": round(prof_nom, 1),
                     "espesor": 15.0,
                     "cantidad": 1,
@@ -1064,23 +1073,13 @@ async def compute_model(request: Request):
             piezas_madera_final = [
                 {
                     "nombre": "Cubierta",
-                    "largo": round(ancho_nom, 1),  # Cota nominal precisa que gobierna desde el configurador
+                    "largo": round(ancho_nom, 1),
                     "ancho": round(prof_nom, 1),
                     "espesor": 15.0,
                     "cantidad": 1,
                     "tipo": "Estructura Fija DfMA"
                 }
             ]
-    elif tableros_consolidados:
-        agrupados = {}
-        for tab in tableros_consolidados:
-            k_dim = f"{tab['nombre']}_{tab['largo']}_{tab['ancho']}_{tab['espesor']}"
-            if k_dim in agrupados:
-                agrupados[k_dim]["cantidad"] += 1
-            else:
-                item_copy = {k: v for k, v in tab.items() if k != "pos"}
-                agrupados[k_dim] = item_copy
-        piezas_madera_final = list(agrupados.values())
     else:
         # Fallback sintético solo si no se extrajeron mallas de tableros
         piezas_madera_final = [

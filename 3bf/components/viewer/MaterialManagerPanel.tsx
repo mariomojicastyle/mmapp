@@ -28,6 +28,7 @@ export default function MaterialManagerPanel() {
     actualizarMaterialPBR,
     eliminarMaterialPBR,
     resetCapasYMateriales,
+    abrirPBRStudioParaMaterial,
     coloresApariencia,
     esquemaColor
   } = use3BFStore();
@@ -206,6 +207,14 @@ export default function MaterialManagerPanel() {
               className="p-1.5 text-white rounded hover:opacity-90 transition shadow-xs cursor-pointer"
             >
               <Plus className="w-3.5 h-3.5" />
+            </button>
+            <button
+              onClick={() => abrirPBRStudioParaMaterial(materialActivo?.id)}
+              title="Abrir 3BF PBR Material Studio (Calibrador 3D con Shader Ball)"
+              className="flex items-center gap-1 px-2 py-1 bg-indigo-600 hover:bg-indigo-700 text-white rounded text-xs font-bold transition shadow-xs cursor-pointer"
+            >
+              <Sparkles className="w-3.5 h-3.5" />
+              <span>PBR Studio</span>
             </button>
             <button
               onClick={handleDuplicar}
@@ -599,6 +608,15 @@ export default function MaterialManagerPanel() {
                       </div>
                     </div>
                   )}
+
+                  {/* Acceso Directo a PBR Studio */}
+                  <button
+                    onClick={() => abrirPBRStudioParaMaterial(materialActivo.id)}
+                    className="w-full mt-2 py-1.5 px-2.5 rounded-lg text-[11px] font-bold bg-indigo-50 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800 hover:bg-indigo-100 dark:hover:bg-indigo-900/50 flex items-center justify-center gap-1.5 transition cursor-pointer shadow-xs"
+                  >
+                    <Sparkles className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" />
+                    <span>🧪 Calibrar en 3BF PBR Studio (Shader Ball)</span>
+                  </button>
                 </div>
 
                 {/* Metálico */}

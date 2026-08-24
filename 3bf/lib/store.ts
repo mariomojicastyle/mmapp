@@ -594,20 +594,151 @@ export const CANTOS_INICIALES_DEFECTO: CantoRecord[] = [
 ];
 
 // ==============================================================================
+// 🤖 3BF AI RENDER STUDIO: BIBLIOTECA DE PROMPTS Y GENERACIÓN FOTORREALISTA (GEMINI / IMAGEN 3)
+// ==============================================================================
+
+export interface PromptTemplateItem {
+  id: string;
+  titulo: string;
+  categoria: "Oficina" | "Hogar / Sala" | "Dormitorio" | "Comercial / Tienda" | "Estudio Fotográfico" | "Exterior / Terraza" | "Personalizado";
+  prompt: string;
+  descripcion?: string;
+  esFavorito?: boolean;
+  esPresetSistema?: boolean;
+  aspectRatio?: "1:1" | "16:9" | "4:3" | "9:16";
+  creadoEn?: string;
+}
+
+export interface RenderIAResultado {
+  id: string;
+  muebleNombre: string;
+  promptUsado: string;
+  imageUrl: string;
+  imageBase64Original?: string;
+  motorUsado: "fal_nano_banana_pro" | "fal_nano_banana" | "fal_phota_enhance" | "fal_bria_product_shot" | "fal_flux_dev" | "fal_flux_schnell" | "google_gemini_imagen3" | "flux_schnell_free" | "pollinations";
+  fecha: string;
+  aspectRatio: string;
+}
+
+export const PROMPTS_INICIALES_DEFECTO: PromptTemplateItem[] = [
+  {
+    id: "preset_oficina_nordica_editorial",
+    titulo: "Oficina Nórdica Editorial (Laptop & Ventanal)",
+    categoria: "Oficina",
+    prompt: "Fotografía editorial de arquitectura de alta gama del mueble adjunto en una oficina contemporánea de estilo nórdico. Mantén el 100% de la geometría, diseño de cajones y tono de madera del producto. Decora el entorno con elementos modernos y sutiles (laptop delgada de última generación, lámpara de sobremesa de diseño, libros de arte), suelo de madera clara, gran ventanal con luz diurna suave y sombras de contacto reales de estudio.",
+    descripcion: "Ambiente de oficina nórdica prémium con laptop, lámpara de diseño y luz de ventana.",
+    esFavorito: true,
+    esPresetSistema: true,
+    aspectRatio: "1:1"
+  },
+  {
+    id: "preset_estudio_fondo_blanco",
+    titulo: "1. Calibración: Fondo Blanco Puro de Estudio",
+    categoria: "Estudio Fotográfico",
+    prompt: "Fotografía comercial de catálogo del mueble de madera adjunto, centrado sobre un ciclorama blanco puro de estudio sin juntas. Preserva estrictamente el 100% del diseño original, proporciones y tono de madera. Iluminación profesional softbox de tres puntos con sombras de contacto suaves y naturales en el piso. Acabado de catálogo de alta fidelidad 8k.",
+    descripcion: "Calibración de producto sobre ciclorama blanco puro con sombra de contacto en el piso.",
+    esFavorito: true,
+    esPresetSistema: true,
+    aspectRatio: "1:1"
+  },
+  {
+    id: "preset_oficina_moderna",
+    titulo: "Oficina Ejecutiva Diurna",
+    categoria: "Oficina",
+    prompt: "Fotografía arquitectónica del mueble adjunto ubicado en una oficina ejecutiva luminosa y contemporánea. Preserva fielmente el diseño y proporciones del producto. Ventanales de piso a techo con luz natural matutina, suelo de madera pulida, plantas de interior y estética minimalista escandinava con iluminación cinemática.",
+    descripcion: "Ambiente corporativo moderno con ventanales e iluminación diurna natural.",
+    esFavorito: true,
+    esPresetSistema: true,
+    aspectRatio: "16:9"
+  },
+  {
+    id: "preset_sala_japandi",
+    titulo: "Sala de Estar Japandi / Nórdica",
+    categoria: "Hogar / Sala",
+    prompt: "Fotografía de diseño interior del mueble de madera adjunto en una sala de estilo Japandi cálida y elegante. Suelo de roble claro, alfombra de lana beige, iluminación ambiental suave y difusa, paredes de yeso texturizado y sombras físicas realistas.",
+    descripcion: "Ambiente cálido, minimalista y elegante con madera clara y textiles suaves.",
+    esFavorito: true,
+    esPresetSistema: true,
+    aspectRatio: "1:1"
+  },
+  {
+    id: "preset_dormitorio_contemporaneo",
+    titulo: "Dormitorio Contemporáneo Cálido",
+    categoria: "Dormitorio",
+    prompt: "Render cinematográfico de interior del mueble adjunto ubicado en un dormitorio contemporáneo de lujo. Cortinas de lino suave, iluminación cálida de acento, tonos tierra neutros y acabado hiperrealista de los materiales de madera.",
+    descripcion: "Dormitorio contemporáneo con iluminación cálida de acento y tonos neutros.",
+    esFavorito: false,
+    esPresetSistema: true,
+    aspectRatio: "16:9"
+  },
+  {
+    id: "preset_estudio_fotografico",
+    titulo: "Estudio Comercial / Catálogo Fondo Neutro",
+    categoria: "Estudio Fotográfico",
+    prompt: "Fotografía de estudio de producto comercial sobre fondo ciclorama neutro beige claro. Iluminación de estudio de tres puntos, sombras suaves de contacto, textura de veta de madera ultra detallada y enfoque nítido de catálogo comercial.",
+    descripcion: "Fondo ciclorama neutro de estudio para catálogo comercial y e-commerce.",
+    esFavorito: true,
+    esPresetSistema: true,
+    aspectRatio: "1:1"
+  },
+  {
+    id: "preset_cocina_comedor",
+    titulo: "Cocina / Comedor Minimalista",
+    categoria: "Hogar / Sala",
+    prompt: "Fotografía editorial de diseño interior del mueble adjunto integrado en una cocina y comedor moderno de lujo. Toques de mármol de fondo, iluminación LED ambiental cálida, luz natural realista y acabados prémium.",
+    descripcion: "Ambiente integrado con acabados de alta gama y mármol respetando el mueble.",
+    esFavorito: false,
+    esPresetSistema: true,
+    aspectRatio: "16:9"
+  },
+  {
+    id: "preset_showroom_boutique",
+    titulo: "Showroom Comercial / Tienda Boutique",
+    categoria: "Comercial / Tienda",
+    prompt: "Fotografía arquitectónica de interior del mueble exhibido en un showroom o tienda boutique de alta gama. Iluminación arquitectónica focalizada, suelo de terrazo pulido y decoración minimalista de lujo.",
+    descripcion: "Exhibición en tienda boutique con focos de acento respetando el diseño del mueble.",
+    esFavorito: false,
+    esPresetSistema: true,
+    aspectRatio: "16:9"
+  }
+];
+
+// ==============================================================================
 // 🎨 SISTEMA NATIVO DE CAPAS, MATERIALES PBR Y DESGLOSE DE PARTES 3DBIMFAB (3BF)
 // ==============================================================================
 
 export interface MaterialPBRDef {
   id: string;             // ej: "mat_acero", "mat_duna", "mat_marfil"
   nombre: string;         // ej: "Acero", "Duna", "M_Marfil", "MDF", "MDP", "Cromo", "P_Negro"
-  tipo: "PBR" | "Melamina" | "Madera" | "Metal" | "Plastico" | "Pintura";
+  tipo: "PBR" | "Melamina" | "Madera" | "Metal" | "Plastico" | "Pintura" | "Textil" | "Vidrio";
   colorBase: string;      // Hex "#C5B39A", "#8A9EA7"
-  texturaUrl?: string;    // Ruta "/textures/Marfil_diffuse.jpg" o custom
+  texturaUrl?: string;    // Albedo / Diffuse Map ("/textures/Marfil_diffuse.jpg" o DataURL)
+  normalMapUrl?: string;  // Normal Map Tangente RGB (DataURL o ruta)
+  roughnessMapUrl?: string; // Roughness Map B&N (DataURL o ruta)
+  metallicMapUrl?: string;  // Metallic Map B&N (DataURL o ruta)
+  aoMapUrl?: string;        // Ambient Occlusion Map B&N (DataURL o ruta)
+  
+  // Parámetros Físicos Principled BSDF
   metalico: number;       // 0.00 a 1.00
   rugosidad: number;      // 0.00 a 1.00
   especularidad: number;  // F0 0.00 a 1.00
+  normalScale?: number;   // Intensidad de relieve (0.0 a 3.0, def: 1.0)
+  aoIntensity?: number;   // Intensidad de oclusión de cavidades (0.0 a 2.0, def: 1.0)
+  clearcoat?: number;     // Capa de resina protectora / barniz (0.0 a 1.0, def: 0.0)
+  clearcoatRoughness?: number; // Rugosidad de resina (0.0 a 1.0, def: 0.1)
   opacidad: number;       // 0.00 a 1.00 (Alfa / Transmisión)
   ior: number;            // Índice de refracción (1.00 a 2.50)
+  
+  // Ajustes de Textura en Calibrador
+  ajustesTextura?: {
+    brillo?: number;
+    contraste?: number;
+    saturacion?: number;
+    normalInvertY?: boolean;
+    roughnessInvert?: boolean;
+  };
+
+  marcaProveedor?: string; // "Pelíkano", "Arauco", "Finsa", "Novopan", etc.
   notas?: string;         // Especificaciones de taller o proveedor
 }
 
@@ -854,6 +985,38 @@ export interface State3BF {
   updateNegociacionNovopan: (field: keyof NegociacionNovopan, value: number) => void;
   updateDbHerraje: (id: string, field: keyof HerrajeRecord, value: any) => void;
   updateDbTablero: (id: string, field: keyof TableroRecord, value: any) => void;
+  // 🤖 3BF AI Render Studio: Biblioteca de Prompts y Motor Fotorrealista
+  modalRenderIAAbierto: boolean;
+  setModalRenderIAAbierto: (abierto: boolean) => void;
+  geminiApiKey: string;
+  setGeminiApiKey: (key: string) => void;
+  falApiKey: string;
+  setFalApiKey: (key: string) => void;
+  bibliotecaPrompts: PromptTemplateItem[];
+  promptActivoRender: string;
+  setPromptActivoRender: (prompt: string) => void;
+  motorSeleccionadoRender: "fal_nano_banana_pro" | "fal_nano_banana" | "fal_bria_product_shot" | "fal_flux_dev" | "fal_flux_schnell" | "google_gemini_imagen3" | "flux_schnell_free" | "pollinations";
+  setMotorSeleccionadoRender: (motor: "fal_nano_banana_pro" | "fal_nano_banana" | "fal_bria_product_shot" | "fal_flux_dev" | "fal_flux_schnell" | "google_gemini_imagen3" | "flux_schnell_free" | "pollinations") => void;
+  aspectRatioRender: "1:1" | "16:9" | "4:3" | "9:16";
+  setAspectRatioRender: (ratio: "1:1" | "16:9" | "4:3" | "9:16") => void;
+  guardarNuevoPrompt: (item: Omit<PromptTemplateItem, "id">) => string;
+  actualizarPrompt: (id: string, cambios: Partial<PromptTemplateItem>) => void;
+  eliminarPrompt: (id: string) => void;
+  toggleFavoritoPrompt: (id: string) => void;
+  restaurarPromptsDefecto: () => void;
+  historialRendersIA: RenderIAResultado[];
+  agregarRenderHistorial: (resultado: RenderIAResultado) => void;
+  eliminarRenderHistorial: (id: string) => void;
+  limpiarHistorialRenders: () => void;
+
+  // 🧪 3BF PBR Material Studio & Shader Ball Lab
+  modalPBRStudioAbierto: boolean;
+  setModalPBRStudioAbierto: (abierto: boolean) => void;
+  materialEnCalibracion: MaterialPBRDef | null;
+  setMaterialEnCalibracion: (mat: MaterialPBRDef | null) => void;
+  abrirPBRStudioParaMaterial: (materialId?: string) => void;
+  aplicarMaterialAMuebleActivo: (materialId: string) => void;
+
   hidratarDesdeLocalStorage: () => void;
   cargarDefinicion: (item: { id: string; archivo?: string; nombre?: string }) => Promise<void>;
 }
@@ -1140,7 +1303,22 @@ export const use3BFStore = create<State3BF>((set, get) => ({
     };
     const listaActualizada = [...get().materialesPBR, materialCompleto];
     if (typeof window !== "undefined" && window.localStorage) {
-      localStorage.setItem("3bf_materiales_pbr_v1", JSON.stringify(listaActualizada));
+      try {
+        localStorage.setItem("3bf_materiales_pbr_v1", JSON.stringify(listaActualizada));
+      } catch (e) {
+        try {
+          // Fallback: Si supera cuota, omitir dataURIs pesados de mapas generados en localStorage
+          const listaLigera = listaActualizada.map((m) => ({
+            ...m,
+            normalMapUrl: m.normalMapUrl?.startsWith("data:") ? null : m.normalMapUrl,
+            roughnessMapUrl: m.roughnessMapUrl?.startsWith("data:") ? null : m.roughnessMapUrl,
+            aoMapUrl: m.aoMapUrl?.startsWith("data:") ? null : m.aoMapUrl,
+          }));
+          localStorage.setItem("3bf_materiales_pbr_v1", JSON.stringify(listaLigera));
+        } catch {
+          console.warn("Storage cuota excedida: Materiales conservados en memoria Zustand.");
+        }
+      }
     }
     set({ materialesPBR: listaActualizada, materialSeleccionadoId: id });
     return id;
@@ -1149,7 +1327,22 @@ export const use3BFStore = create<State3BF>((set, get) => ({
   actualizarMaterialPBR: (id, cambios) => {
     const listaActualizada = get().materialesPBR.map((m) => (m.id === id ? { ...m, ...cambios } : m));
     if (typeof window !== "undefined" && window.localStorage) {
-      localStorage.setItem("3bf_materiales_pbr_v1", JSON.stringify(listaActualizada));
+      try {
+        localStorage.setItem("3bf_materiales_pbr_v1", JSON.stringify(listaActualizada));
+      } catch (e) {
+        try {
+          // Fallback seguro contra cuota de 5MB
+          const listaLigera = listaActualizada.map((m) => ({
+            ...m,
+            normalMapUrl: m.normalMapUrl?.startsWith("data:") ? null : m.normalMapUrl,
+            roughnessMapUrl: m.roughnessMapUrl?.startsWith("data:") ? null : m.roughnessMapUrl,
+            aoMapUrl: m.aoMapUrl?.startsWith("data:") ? null : m.aoMapUrl,
+          }));
+          localStorage.setItem("3bf_materiales_pbr_v1", JSON.stringify(listaLigera));
+        } catch {
+          console.warn("Storage cuota excedida: Materiales actualizados en memoria Zustand.");
+        }
+      }
     }
     set({ materialesPBR: listaActualizada });
   },
@@ -1159,7 +1352,11 @@ export const use3BFStore = create<State3BF>((set, get) => ({
     const listaActualizada = get().materialesPBR.filter((m) => m.id !== id);
     const nuevoSel = listaActualizada[0]?.id || "";
     if (typeof window !== "undefined" && window.localStorage) {
-      localStorage.setItem("3bf_materiales_pbr_v1", JSON.stringify(listaActualizada));
+      try {
+        localStorage.setItem("3bf_materiales_pbr_v1", JSON.stringify(listaActualizada));
+      } catch {
+        console.warn("Storage cuota excedida al eliminar material.");
+      }
     }
     set({ materialesPBR: listaActualizada, materialSeleccionadoId: nuevoSel });
   },
@@ -2659,9 +2856,185 @@ export const use3BFStore = create<State3BF>((set, get) => ({
 
       const fSaved = localStorage.getItem("3bf_fichas_config");
       if (fSaved) set({ fichasConfig: JSON.parse(fSaved) });
+
+      // Hidratar AI Render Studio
+      const pSaved = localStorage.getItem("3bf_biblioteca_prompts");
+      if (pSaved) {
+        try {
+          const customPrompts: PromptTemplateItem[] = JSON.parse(pSaved);
+          // Unir presets con prompts de usuario
+          const idsSet = new Set(customPrompts.map(p => p.id));
+          const presetsFaltantes = PROMPTS_INICIALES_DEFECTO.filter(p => !idsSet.has(p.id));
+          set({ bibliotecaPrompts: [...customPrompts, ...presetsFaltantes] });
+        } catch {}
+      }
+
+      const keySaved = localStorage.getItem("3bf_gemini_api_key");
+      if (keySaved) set({ geminiApiKey: keySaved });
+
+      const falKeySaved = localStorage.getItem("3bf_fal_api_key");
+      if (falKeySaved) set({ falApiKey: falKeySaved });
+
+      const hRendersSaved = localStorage.getItem("3bf_historial_renders");
+      if (hRendersSaved) {
+        try { set({ historialRendersIA: JSON.parse(hRendersSaved) }); } catch {}
+      }
     } catch (e) {
       console.error("Error hidratando base de datos desde localStorage:", e);
     }
+  },
+
+  // 🤖 3BF AI Render Studio: Implementación de Estado y Métodos
+  modalRenderIAAbierto: false,
+  setModalRenderIAAbierto: (modalRenderIAAbierto) => set({ modalRenderIAAbierto }),
+  geminiApiKey: typeof window !== "undefined" && window.localStorage ? localStorage.getItem("3bf_gemini_api_key") || "" : "",
+  setGeminiApiKey: (geminiApiKey) => {
+    if (typeof window !== "undefined" && window.localStorage) {
+      localStorage.setItem("3bf_gemini_api_key", geminiApiKey);
+    }
+    set({ geminiApiKey });
+  },
+  falApiKey: typeof window !== "undefined" && window.localStorage ? localStorage.getItem("3bf_fal_api_key") || "" : "",
+  setFalApiKey: (falApiKey) => {
+    if (typeof window !== "undefined" && window.localStorage) {
+      localStorage.setItem("3bf_fal_api_key", falApiKey);
+    }
+    set({ falApiKey });
+  },
+  bibliotecaPrompts: PROMPTS_INICIALES_DEFECTO,
+  promptActivoRender: PROMPTS_INICIALES_DEFECTO[0].prompt,
+  setPromptActivoRender: (promptActivoRender) => set({ promptActivoRender }),
+  motorSeleccionadoRender: "fal_nano_banana_pro",
+  setMotorSeleccionadoRender: (motorSeleccionadoRender) => set({ motorSeleccionadoRender }),
+  aspectRatioRender: "1:1",
+  setAspectRatioRender: (aspectRatioRender) => set({ aspectRatioRender }),
+
+  guardarNuevoPrompt: (item) => {
+    const id = `prompt_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
+    const nuevo: PromptTemplateItem = {
+      ...item,
+      id,
+      esPresetSistema: false,
+      creadoEn: new Date().toISOString()
+    };
+    set((state) => {
+      const updated = [nuevo, ...state.bibliotecaPrompts];
+      if (typeof window !== "undefined" && window.localStorage) {
+        localStorage.setItem("3bf_biblioteca_prompts", JSON.stringify(updated));
+      }
+      return { bibliotecaPrompts: updated, promptActivoRender: nuevo.prompt };
+    });
+    return id;
+  },
+
+  actualizarPrompt: (id, cambios) => {
+    set((state) => {
+      const updated = state.bibliotecaPrompts.map((p) => (p.id === id ? { ...p, ...cambios } : p));
+      if (typeof window !== "undefined" && window.localStorage) {
+        localStorage.setItem("3bf_biblioteca_prompts", JSON.stringify(updated));
+      }
+      return { bibliotecaPrompts: updated };
+    });
+  },
+
+  eliminarPrompt: (id) => {
+    set((state) => {
+      const target = state.bibliotecaPrompts.find((p) => p.id === id);
+      if (target?.esPresetSistema) return state; // Presets del sistema protegidos
+      const updated = state.bibliotecaPrompts.filter((p) => p.id !== id);
+      if (typeof window !== "undefined" && window.localStorage) {
+        localStorage.setItem("3bf_biblioteca_prompts", JSON.stringify(updated));
+      }
+      return { bibliotecaPrompts: updated };
+    });
+  },
+
+  toggleFavoritoPrompt: (id) => {
+    set((state) => {
+      const updated = state.bibliotecaPrompts.map((p) => (p.id === id ? { ...p, esFavorito: !p.esFavorito } : p));
+      if (typeof window !== "undefined" && window.localStorage) {
+        localStorage.setItem("3bf_biblioteca_prompts", JSON.stringify(updated));
+      }
+      return { bibliotecaPrompts: updated };
+    });
+  },
+
+  restaurarPromptsDefecto: () => {
+    set((state) => {
+      const userPrompts = state.bibliotecaPrompts.filter((p) => !p.esPresetSistema);
+      const restored = [...userPrompts, ...PROMPTS_INICIALES_DEFECTO];
+      if (typeof window !== "undefined" && window.localStorage) {
+        localStorage.setItem("3bf_biblioteca_prompts", JSON.stringify(restored));
+      }
+      return { bibliotecaPrompts: restored };
+    });
+  },
+
+  historialRendersIA: [],
+  agregarRenderHistorial: (resultado) => {
+    set((state) => {
+      const updated = [resultado, ...state.historialRendersIA.slice(0, 24)]; // Máximo 25 renders en memoria
+      if (typeof window !== "undefined" && window.localStorage) {
+        try { localStorage.setItem("3bf_historial_renders", JSON.stringify(updated)); } catch {}
+      }
+      return { historialRendersIA: updated };
+    });
+  },
+
+  eliminarRenderHistorial: (id) => {
+    set((state) => {
+      const updated = state.historialRendersIA.filter((r) => r.id !== id);
+      if (typeof window !== "undefined" && window.localStorage) {
+        try { localStorage.setItem("3bf_historial_renders", JSON.stringify(updated)); } catch {}
+      }
+      return { historialRendersIA: updated };
+    });
+  },
+
+  limpiarHistorialRenders: () => {
+    if (typeof window !== "undefined" && window.localStorage) {
+      localStorage.removeItem("3bf_historial_renders");
+    }
+    set({ historialRendersIA: [] });
+  },
+
+  // 🧪 3BF PBR Material Studio & Shader Ball Lab
+  modalPBRStudioAbierto: false,
+  setModalPBRStudioAbierto: (abierto) => set({ modalPBRStudioAbierto: abierto }),
+  materialEnCalibracion: null,
+  setMaterialEnCalibracion: (mat) => set({ materialEnCalibracion: mat }),
+  abrirPBRStudioParaMaterial: (materialId) => {
+    const state = get();
+    const targetId = materialId || state.materialSeleccionadoId || "mat_duna";
+    const mat = state.materialesPBR.find((m) => m.id === targetId) || state.materialesPBR[0];
+    if (mat) {
+      set({
+        materialEnCalibracion: JSON.parse(JSON.stringify(mat)),
+        materialSeleccionadoId: mat.id,
+        modalPBRStudioAbierto: true,
+      });
+    }
+  },
+  aplicarMaterialAMuebleActivo: (materialId) => {
+    const state = get();
+    const mat = state.materialesPBR.find((m) => m.id === materialId);
+    if (!mat) return;
+
+    // Asignar a la capa activa o a todas las partes principales del mueble
+    const nuevasAsignaciones = { ...state.asignacionesPartes };
+    Object.keys(nuevasAsignaciones).forEach((k) => {
+      if (nuevasAsignaciones[k]) {
+        nuevasAsignaciones[k] = {
+          ...nuevasAsignaciones[k],
+          materialId: mat.id,
+        };
+      }
+    });
+
+    if (typeof window !== "undefined" && window.localStorage) {
+      localStorage.setItem("3bf_asignaciones_partes_v1", JSON.stringify(nuevasAsignaciones));
+    }
+    set({ asignacionesPartes: nuevasAsignaciones, materialSeleccionadoId: mat.id });
   },
 
   cargarDefinicion: async (item: { id: string; archivo?: string; nombre?: string }) => {

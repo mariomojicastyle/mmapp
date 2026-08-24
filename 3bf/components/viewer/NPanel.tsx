@@ -31,7 +31,8 @@ import {
   Camera,
   Focus,
   ListTree,
-  Wrench
+  Wrench,
+  Sparkles
 } from "lucide-react";
 
 interface DefinicionItem {
@@ -225,6 +226,7 @@ export default function NPanel() {
     centrarCamara,
     anchoNPanel,
     setAnchoNPanel,
+    setModalRenderIAAbierto,
   } = use3BFStore();
 
   const ancho = anchoNPanel || 380;
@@ -1425,6 +1427,28 @@ export default function NPanel() {
                 className="text-[9px] tracking-wide font-sans leading-none font-semibold"
               >
                 Apariencia
+              </span>
+            </button>
+
+            {/* Separador sutil */}
+            <div className="w-4 h-px bg-slate-200 dark:bg-slate-700 my-0.5" />
+
+            {/* Botón Acción Directa: Render IA (Google Gemini / Imagen 3) */}
+            <button
+              onClick={() => setModalRenderIAAbierto(true)}
+              style={{
+                backgroundColor: "#0891b218",
+                color: coloresApariencia?.botonActivo || "#0891b2"
+              }}
+              title="3BF AI Render Studio: Generar render fotorrealista con IA"
+              className="w-7 py-2.5 px-1 rounded-full flex flex-col items-center justify-center gap-1.5 transition-all cursor-pointer hover:bg-cyan-600 hover:text-white border border-cyan-500/30 shadow-xs"
+            >
+              <Sparkles className="w-3.5 h-3.5 shrink-0" />
+              <span 
+                style={{ writingMode: "vertical-rl" }}
+                className="text-[9px] tracking-wide font-sans leading-none font-extrabold"
+              >
+                Render IA
               </span>
             </button>
           </div>

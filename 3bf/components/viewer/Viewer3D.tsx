@@ -3,47 +3,84 @@
 import React, { useRef, useEffect } from "react";
 import { Canvas, useThree, useFrame } from "@react-three/fiber";
 import { OrbitControls, Grid, Stage, Edges, Line, Html } from "@react-three/drei";
-import { use3BFStore, ObjetoInstancia3BF } from "@/lib/store";
+import { use3BFStore, ObjetoInstancia3BF, MaterialPBRDef } from "@/lib/store";
 import * as THREE from "three";
 import * as BufferGeometryUtils from "three/examples/jsm/utils/BufferGeometryUtils.js";
+import { RGBELoader } from "three/examples/jsm/loaders/RGBELoader.js";
 import { Download, Save, Zap, Trash2 } from "lucide-react";
 import NPanel from "./NPanel";
 import { GHXAutoWatcher } from "./GHXAutoWatcher";
+import { generarEntornoEquirectangularLocal } from "./ShaderBallViewer";
 
-function useMaterialTexture(targetUrl?: string | null, tipoMapeado?: string) {
-  const [texture, setTexture] = React.useState<THREE.Texture | null>(null);
+function useMaterialPBRMaps(materialPBR?: MaterialPBRDef | null, fallbackUrl?: string | null, tipoMapeado?: string) {
+  const [maps, setMaps] = React.useState<{
+    diffuse: THREE.Texture | null;
+    normal: THREE.Texture | null;
+    roughness: THREE.Texture | null;
+    ao: THREE.Texture | null;
+  }>({ diffuse: null, normal: null, roughness: null, ao: null });
+
   const isTraversada = tipoMapeado === "Cubierta Atravesada" || tipoMapeado === "Entrepaño Atravesado";
+  const targetDiffuse = materialPBR?.texturaUrl || fallbackUrl;
+  const targetNormal = materialPBR?.normalMapUrl || null;
+  const targetRoughness = materialPBR?.roughnessMapUrl || null;
+  const targetAO = materialPBR?.aoMapUrl || null;
 
   React.useEffect(() => {
     if (typeof window === "undefined") return;
-    if (!targetUrl) {
-      setTexture(null);
+    if (!targetDiffuse && !targetNormal && !targetRoughness && !targetAO) {
+      setMaps({ diffuse: null, normal: null, roughness: null, ao: null });
       return;
     }
 
     const loader = new THREE.TextureLoader();
     loader.setCrossOrigin("anonymous");
-    loader.load(
-      targetUrl,
-      (tex) => {
-        tex.wrapS = THREE.MirroredRepeatWrapping;
-        tex.wrapT = THREE.MirroredRepeatWrapping;
-        tex.repeat.set(4.0, 4.0);
-        tex.center.set(0.5, 0.5);
-        tex.rotation = isTraversada ? Math.PI / 2 : 0;
-        tex.colorSpace = THREE.SRGBColorSpace;
-        tex.needsUpdate = true;
-        setTexture(tex);
-      },
-      undefined,
-      (err) => {
-        console.error("TextureLoader error loading:", targetUrl, err);
-        setTexture(null);
-      }
-    );
-  }, [targetUrl, isTraversada]);
 
-  return texture;
+    const setupTex = (tex: THREE.Texture, isColor = false) => {
+      tex.wrapS = THREE.MirroredRepeatWrapping;
+      tex.wrapT = THREE.MirroredRepeatWrapping;
+      tex.repeat.set(4.0, 4.0);
+      tex.center.set(0.5, 0.5);
+      tex.rotation = isTraversada ? Math.PI / 2 : 0;
+      if (isColor) tex.colorSpace = THREE.SRGBColorSpace;
+      tex.needsUpdate = true;
+      return tex;
+    };
+
+    if (targetDiffuse) {
+      loader.load(targetDiffuse, (t) => {
+        setMaps((prev) => ({ ...prev, diffuse: setupTex(t, true) }));
+      });
+    } else {
+      setMaps((prev) => ({ ...prev, diffuse: null }));
+    }
+
+    if (targetNormal) {
+      loader.load(targetNormal, (t) => {
+        setMaps((prev) => ({ ...prev, normal: setupTex(t, false) }));
+      });
+    } else {
+      setMaps((prev) => ({ ...prev, normal: null }));
+    }
+
+    if (targetRoughness) {
+      loader.load(targetRoughness, (t) => {
+        setMaps((prev) => ({ ...prev, roughness: setupTex(t, false) }));
+      });
+    } else {
+      setMaps((prev) => ({ ...prev, roughness: null }));
+    }
+
+    if (targetAO) {
+      loader.load(targetAO, (t) => {
+        setMaps((prev) => ({ ...prev, ao: setupTex(t, false) }));
+      });
+    } else {
+      setMaps((prev) => ({ ...prev, ao: null }));
+    }
+  }, [targetDiffuse, targetNormal, targetRoughness, targetAO, isTraversada]);
+
+  return maps;
 }
 
 function obtenerNombreUnificadoPieza(obj: THREE.Object3D): string {
@@ -363,47 +400,55 @@ function BoardMesh({
     return null;
   }, [customGeometry, size, calibracion.thresholdAristas]);
 
-  const cleanName = name.replace(/^RH_OUT:/, "").trim();
+  const cleanName = name.replace(/^RH_OUT:/i, "").trim();
+  const normalizeKey = (k: string) => k.replace(/^RH_OUT:/i, "").replace(/[_\s]+/g, " ").trim().toLowerCase();
+  const normName = normalizeKey(name);
 
-  // 💡 1. Resolver Asignación de Parte
-  const asignacion = asignacionesPartes[name] || asignacionesPartes[cleanName] || asignacionesPartes[`RH_OUT:${cleanName}`];
+  // 💡 1. Resolver Asignación de Parte con tolerancia a guiones bajos / espacios
+  let asignacion = asignacionesPartes[name] || asignacionesPartes[cleanName] || asignacionesPartes[`RH_OUT:${cleanName}`];
+  if (!asignacion) {
+    const matchedKey = Object.keys(asignacionesPartes).find((k) => normalizeKey(k) === normName);
+    if (matchedKey) asignacion = asignacionesPartes[matchedKey];
+  }
 
   const isWireframe = modoVisual === "lineas";
   const isTransparent = modoVisual === "semitransparente";
-  const isHardwarePerno = name.includes("Perno") || name.includes("Tornillo");
-  const isHardwareCaja = (name.includes("Caja") && !name.includes("Cajon") && !name.includes("Cajón")) || name === "RH_OUT:Caja";
-  const isHardwareTarugo = name.includes("Tarugo") || name.includes("Soporte");
-  const isMachining = name.includes("Maquinados");
-  const isTapaLuz = name.includes("Tapa Luz") || name.includes("Regleta");
-
-  // 💡 2. Resolver Capa Asignada
-  let capaAsignada: any = null;
+  const isHardwarePerno = normName.includes("perno") || normName.includes("tornillo");
+  const isHardwareCaja = (normName.includes("caja") && !normName.includes("cajon") && !normName.includes("cajón")) || normName === "caja";
+  const isHardwareTarugo = normName.includes("tarugo") || normName.includes("soporte");
+  const isMachining = normName.includes("maquinado") || normName.includes("perforado");
+  const isTapaLuz = normName.includes("tapa luz") || normName.includes("regleta");
   const isWoodBoardPiece = !isHardwarePerno && !isHardwareCaja && !isHardwareTarugo && !isMachining && !isTapaLuz;
+
+  // 💡 2. Resolver Capa Asignada (Blindaje: Piezas de madera NUNCA caen en capa_acero)
+  let capaAsignada: any = null;
   if (asignacion && asignacion.capaId && asignacion.capaId !== "por_defecto" && !(isWoodBoardPiece && asignacion.capaId === "capa_acero")) {
     capaAsignada = capas.find((c) => c.id === asignacion.capaId);
   } else {
-    const kLow = name.toLowerCase();
-    if (kLow.includes("perno") || kLow.includes("tornillo")) {
+    if (isHardwarePerno) {
       capaAsignada = capas.find((c) => c.id === "capa_herrajes" || c.id === "capa_acero" || c.nombre.toLowerCase().includes("acero") || c.nombre.toLowerCase().includes("herraje"));
-    } else if (kLow.includes("caja")) {
+    } else if (isHardwareCaja) {
       capaAsignada = capas.find((c) => c.id === "capa_zincado" || c.id === "capa_zinc" || c.nombre.toLowerCase().includes("zinc"));
-    } else if (kLow.includes("tarugo") || kLow.includes("soporte")) {
+    } else if (isHardwareTarugo) {
       capaAsignada = capas.find((c) => c.id === "capa_madera" || c.nombre.toLowerCase().includes("madera"));
-    } else if (kLow.includes("maquinado") || kLow.includes("perforado")) {
+    } else if (isMachining) {
       capaAsignada = capas.find((c) => c.id === "capa_perforados" || c.nombre.toLowerCase().includes("perforad"));
-    } else if (kLow.includes("balance") || kLow.includes("back")) {
+    } else if (normName.includes("balance") || normName.includes("back")) {
       capaAsignada = capas.find((c) => c.id === "capa_back" || c.id === "capa_espaldar" || c.nombre.toLowerCase().includes("back"));
-    } else if (kLow.includes("mdp")) {
+    } else if (normName.includes("mdp")) {
       capaAsignada = capas.find((c) => c.id === "capa_mdp" || c.nombre.toLowerCase() === "mdp");
-    } else if (kLow.includes("mdf")) {
+    } else if (normName.includes("mdf")) {
       capaAsignada = capas.find((c) => c.id === "capa_mdf" || c.nombre.toLowerCase() === "mdf");
     } else {
-      // Pieza principal de madera/tablero (Cubierta, Lateral, Tapa, Cajón, Tono, etc.)
-      capaAsignada = capas.find((c) => c.id === "capa_tono" || c.nombre.toLowerCase().includes("tono")) || capas[0];
+      // Pieza principal de madera/tablero (Cubierta, Lateral, Frente, Tapa, Cajón, etc.) -> Capa Tono
+      capaAsignada = capas.find((c) => c.id === "capa_tono" || c.nombre.toLowerCase() === "tono" || c.nombre.toLowerCase().includes("tono")) || capas.find(c => c.id !== "capa_acero") || capas[0];
     }
   }
   if (!capaAsignada && capas.length > 0) {
     capaAsignada = capas[0];
+  }
+  if (isWoodBoardPiece && capaAsignada?.id === "capa_acero") {
+    capaAsignada = capas.find((c) => c.id === "capa_tono" || c.nombre.toLowerCase().includes("tono")) || capaAsignada;
   }
 
   // 💡 3. Resolver Material PBR Asignado
@@ -435,7 +480,7 @@ function BoardMesh({
   }
 
   // ⚠️ LLAMADO INCONDICIONAL DE HOOK: antes de cualquier return temprano (Reglas de React Hooks)
-  const loadedTexture = useMaterialTexture(targetTextureUrl, tipoMapeado);
+  const pbrMaps = useMaterialPBRMaps(materialPBR, targetTextureUrl, tipoMapeado);
 
   // 💡 5. Verificar Visibilidad (Capa o Parte apagada) - DESPUÉS DE TODOS LOS HOOKS
   const esParteOculta = asignacion && asignacion.visible === false;
@@ -444,7 +489,10 @@ function BoardMesh({
     return null;
   }
 
-  const activeMap = modoVisual === "renderizado" ? loadedTexture : null;
+  const activeMap = modoVisual === "renderizado" ? pbrMaps.diffuse : null;
+  const activeNormal = modoVisual === "renderizado" ? pbrMaps.normal : null;
+  const activeRoughness = modoVisual === "renderizado" ? pbrMaps.roughness : null;
+  const activeAO = modoVisual === "renderizado" ? pbrMaps.ao : null;
   const hasMap = activeMap !== null;
 
   // 💡 6. Propiedades Físicas y Color
@@ -548,6 +596,7 @@ function BoardMesh({
   }
 
   const nombreMaterialEfectivo = materialPBR ? materialPBR.nombre : (isWoodBoard ? "M_Marfil" : (isHardwarePerno ? "Acero" : (isHardwareCaja ? "Zinc" : "PBR_Default")));
+  const normalScaleVal = materialPBR?.normalScale ?? 1.0;
 
   const debeMostrarAristas = calibracion.mostrarAristas !== false && isWoodBoard && modoVisual !== "lineas";
 
@@ -564,6 +613,11 @@ function BoardMesh({
           name={nombreMaterialEfectivo}
           color={finalMeshColor}
           map={activeMap}
+          normalMap={activeNormal}
+          normalScale={activeNormal ? new THREE.Vector2(normalScaleVal, normalScaleVal) : undefined}
+          roughnessMap={activeRoughness}
+          aoMap={activeAO}
+          aoMapIntensity={materialPBR?.aoIntensity ?? 1.0}
           transparent={transparent}
           opacity={opacity}
           roughness={roughness}
@@ -609,6 +663,11 @@ function BoardMesh({
         name={nombreMaterialEfectivo}
         color={finalMeshColor}
         map={activeMap}
+        normalMap={activeNormal}
+        normalScale={activeNormal ? new THREE.Vector2(normalScaleVal, normalScaleVal) : undefined}
+        roughnessMap={activeRoughness}
+        aoMap={activeAO}
+        aoMapIntensity={materialPBR?.aoIntensity ?? 1.0}
         transparent={transparent}
         opacity={opacity}
         roughness={roughness}
@@ -1782,8 +1841,99 @@ function ThumbnailCapturer() {
         return null;
       }
     };
+
+    // 📸 Captura limpia en alta resolución para Render IA (proporción exacta 1:1 sin deformación y fondo blanco puro)
+    (window as any).__capturarEscenaRenderIA = (opts?: { width?: number; height?: number; aspectRatio?: string }) => {
+      try {
+        const targetW = opts?.width || 1024;
+        const targetH = opts?.height || 1024;
+
+        // Ocultar temporalmente ayudas visuales, grilla de suelo Drei, ejes y líneas de selección
+        const hiddenObjects: { obj: THREE.Object3D; wasVisible: boolean }[] = [];
+        scene.traverse((obj) => {
+          const n = (obj.name || "").toLowerCase();
+          const isHelper =
+            n.includes("grid") ||
+            n.includes("helper") ||
+            n.includes("selection") ||
+            n.includes("bbox") ||
+            n.includes("snap") ||
+            n.includes("axes") ||
+            n.includes("ground") ||
+            n.includes("silhouette") ||
+            obj.type === "LineSegments" ||
+            obj.type === "GridHelper" ||
+            obj.type === "AxesHelper" ||
+            obj.type === "Line2" ||
+            (obj as any).isLine ||
+            (obj.type === "Mesh" && (obj.position.y <= 0 && obj.position.y >= -0.01) && !(obj as any).geometry?.attributes?.position?.count);
+
+          if (isHelper) {
+            if (obj.visible) {
+              hiddenObjects.push({ obj, wasVisible: true });
+              obj.visible = false;
+            }
+          }
+        });
+
+        // Forzar render limpio
+        gl.render(scene, camera);
+        const srcCanvas = gl.domElement;
+        const width = srcCanvas.width;
+        const height = srcCanvas.height;
+
+        let resultBase64 = "";
+        if (width && height) {
+          const offscreen = document.createElement("canvas");
+          offscreen.width = targetW;
+          offscreen.height = targetH;
+          const ctx = offscreen.getContext("2d");
+          if (ctx) {
+            ctx.fillStyle = "#FFFFFF"; // Fondo blanco puro de estudio comercial
+
+            // CÁLCULO PROPORCIONAL EXACTO (Cero deformación / Aspect Ratio Matching)
+            const targetRatio = targetW / targetH;
+            const srcRatio = width / height;
+
+            let cropW = width;
+            let cropH = height;
+            let startX = 0;
+            let startY = 0;
+
+            if (srcRatio > targetRatio) {
+              // El canvas original es más ancho: recortar los lados para centrar perfectamente
+              cropW = height * targetRatio;
+              startX = (width - cropW) / 2;
+            } else {
+              // El canvas original es más alto: recortar arriba y abajo para centrar
+              cropH = width / targetRatio;
+              startY = (height - cropH) / 2;
+            }
+
+            ctx.fillRect(0, 0, targetW, targetH);
+            ctx.drawImage(srcCanvas, startX, startY, cropW, cropH, 0, 0, targetW, targetH);
+            resultBase64 = offscreen.toDataURL("image/png");
+          } else {
+            resultBase64 = srcCanvas.toDataURL("image/png");
+          }
+        }
+
+        // Restaurar visibilidad
+        hiddenObjects.forEach(({ obj, wasVisible }) => {
+          obj.visible = wasVisible;
+        });
+        gl.render(scene, camera);
+
+        return resultBase64;
+      } catch (e) {
+        console.error("Error capturando escena limpia para Render IA:", e);
+        return null;
+      }
+    };
+
     return () => {
       delete (window as any).__capturarThumbnail3BF;
+      delete (window as any).__capturarEscenaRenderIA;
     };
   }, [gl, scene, camera]);
   return null;
@@ -1844,6 +1994,44 @@ function CameraViewController({
 
   return null;
 }
+
+function SceneEnvironment() {
+  const { scene } = useThree();
+  useEffect(() => {
+    let active = true;
+    try {
+      const loader = new RGBELoader();
+      loader.load(
+        "/textures/hdri/modern_bathroom_1k.hdr",
+        (tex) => {
+          if (!active) return;
+          tex.mapping = THREE.EquirectangularReflectionMapping;
+          scene.environment = tex;
+        },
+        undefined,
+        () => {
+          if (!active) return;
+          const fallbackEnv = generarEntornoEquirectangularLocal("alps_field_sol", 45);
+          scene.environment = fallbackEnv;
+        }
+      );
+    } catch {
+      if (active) {
+        const fallbackEnv = generarEntornoEquirectangularLocal("alps_field_sol", 45);
+        scene.environment = fallbackEnv;
+      }
+    }
+    return () => {
+      active = false;
+      scene.environment = null;
+    };
+  }, [scene]);
+  return null;
+}
+
+// =========================================================================
+// VISOR 3D PRINCIPAL (VIEWPORT)
+// =========================================================================
 
 export default function Viewer3D() {
   const controlsRef = useRef<any>(null);
@@ -2572,6 +2760,7 @@ export default function Viewer3D() {
         <color attach="background" args={[coloresApariencia.fondo3D || (tema === "obsidian" ? "#0D1117" : "#F3F4F6")]} />
         <CameraRefBridge cameraRef={cameraRef} />
         <ThumbnailCapturer />
+        <SceneEnvironment />
         <HoverRaycastTracker furnitureGroup={furnitureGroup} />
         <ambientLight intensity={calibracion.intensidadLuzAmbiental ?? 0.8} />
         <directionalLight 

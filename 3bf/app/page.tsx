@@ -6,9 +6,11 @@ import ControlPanel from "@/components/ui/ControlPanel";
 import DespieceView from "@/components/views/DespieceView";
 import DatabaseView from "@/components/views/DatabaseView";
 import SaveFurnitureModal from "@/components/ui/SaveFurnitureModal";
+import AIRenderStudioModal from "@/components/ui/AIRenderStudioModal";
+import PBRMaterialStudioModal from "@/components/ui/PBRMaterialStudioModal";
 import NPanel from "@/components/viewer/NPanel";
 import { use3BFStore, APP_VERSION } from "@/lib/store";
-import { Box, Layers, Cpu, CheckCircle2, AlertCircle, Database, Camera, Check } from "lucide-react";
+import { Box, Layers, Cpu, CheckCircle2, AlertCircle, Database, Camera, Check, Sparkles } from "lucide-react";
 import { IconModoLineas, IconModoCristal, IconModoSolido, IconModoRender } from "@/components/ui/ControlPanel";
 
 export default function Home3BF() {
@@ -29,6 +31,7 @@ export default function Home3BF() {
     parametros,
     anchoPanelDerecho,
     setAnchoPanelDerecho,
+    setModalRenderIAAbierto,
   } = use3BFStore();
 
   const [guardandoFoto, setGuardandoFoto] = React.useState(false);
@@ -457,7 +460,30 @@ export default function Home3BF() {
             </button>
           </div>
 
-          {/* 3. Switch de Tema (Light / Dark) */}
+          {/* 3. Botón Render IA Fotorrealista (Google Gemini / Imagen 3) */}
+          <div
+            style={{ 
+              borderColor: coloresApariencia?.insigniaFondo || coloresApariencia?.bordePaneles,
+              backgroundColor: coloresApariencia?.panelContenedor || "#E2E8F0"
+            }}
+            className="p-1 rounded-full border shadow-inner h-9 shrink-0 flex items-center justify-center"
+          >
+            <button
+              onClick={() => setModalRenderIAAbierto(true)}
+              title="3BF AI Render Studio: Generar render fotorrealista con IA"
+              style={{
+                backgroundColor: coloresApariencia?.botonInactivo || "#E2E8F0",
+                borderColor: coloresApariencia?.bordeBotonInactivo || "#CBD5E1",
+                color: coloresApariencia?.textoPrincipal || "#0F172A"
+              }}
+              className="px-3 h-7 rounded-full border flex items-center gap-1.5 transition cursor-pointer hover:opacity-90 backdrop-blur-sm font-bold text-xs"
+            >
+              <Sparkles className="w-3.5 h-3.5 text-cyan-600 shrink-0" />
+              <span>Render IA</span>
+            </button>
+          </div>
+
+          {/* 4. Switch de Tema (Light / Dark) */}
           <div 
             style={{ 
               borderColor: coloresApariencia?.insigniaFondo || coloresApariencia?.bordePaneles,
@@ -572,6 +598,12 @@ export default function Home3BF() {
           {pestanaActiva !== "3d" && <NPanel />}
         </div>
       </div>
+
+      {/* 🤖 Modal 3BF AI Render Studio (Google Gemini / Imagen 3) */}
+      <AIRenderStudioModal />
+
+      {/* 🧪 Modal 3BF PBR Material Studio (Calibrador 3D & Shader Ball) */}
+      <PBRMaterialStudioModal />
     </main>
   );
 }

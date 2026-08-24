@@ -1651,6 +1651,87 @@ Con esta batería de arreglos y la validación en caliente, la V20 se establece 
     - **Documentación Técnica & Memoria**:
       * Consignado en `ESTADO_DEL_PROYECTO.md` y `3BF/3BF_Proceso.md`.
 
+---
+
+* **[2026-08-23] Hito 3BF_PureGeometricThickness1to1 — Fidelidad Geométrica Pura 1:1, Cero Clamping y Lectura Exacta de Espesores desde Grasshopper:**
+    - **Erradicación de Clamping Artificial (`worker/3bf_worker.py`)**:
+      * Se eliminaron por completo las restricciones mínimas heredadas (`max(0.005, ...)` y el condicional legacy `if esp_malla < 5.0: esp_malla = 15.0`) que forzaban a los fondos de cajón y tableros delgados de 3 mm a reportarse como 5 mm o 15 mm.
+      * El Bounding Box de RhinoCompute y la matriz de despiece leen y reportan de forma pura y sin alteraciones las dimensiones reales calculadas por Grasshopper (ej. 3.0 mm para fondos HDF/MDF, 2.7 mm para traseras o 15.0/18.0/25.0 mm para estructuras).
+    - **Afinamiento de Consolidación Espacial Geométrica (`3bf_worker.py`)**:
+      * Se condicionó la fusión de mallas espaciales superpuestas a tolerancias dimensionales estrictas (`diff_lar < 15mm` y `diff_anc < 15mm`), evitando que piezas distintas con centros espaciales cercanos (como laterales de cajón y laterales estructurales del mueble) se fusionen por error.
+    - **Documentación Técnica & Memoria**:
+      * Consignado en `ESTADO_DEL_PROYECTO.md` y `3BF/3BF_Proceso.md`.
+
+---
+
+* **[2026-08-23] Hito 3BF_AIRenderStudio_GeminiImagen3_PromptHub — 3BF AI Render Studio: Motor Fotorrealista fal.ai (Google Nano Banana 1:1, Bria & FLUX Dev), Google Gemini & Prompt Hub:**
+    - **Motor de Render IA Multi-Proveedor (`/api/render-ia`)**:
+      * Integración nativa con **`fal-ai/nano-banana/edit`** (el modelo original de edición de Google utilizado en Google Flow) que calca con fidelidad tridimensional 1:1 el producto de origen a partir de la captura 3D e inserta la ambientación con luz y sombras de contacto reales en el suelo.
+      * Soporte complementario para **Bria Product Shot**, **FLUX.1 Dev** y motor de respaldo **FLUX.1 Libre**.
+    - **Biblioteca de Prompts Calibrada ("Prompt Hub" — `PromptLibraryManager.tsx`)**:
+      * Presets profesionales con nuevo preset de **Calibración Estricta 1:1 en Fondo Blanco Puro**, Oficina Ejecutiva, Sala Japandi, Dormitorio Cálido, Catálogo Fondo Neutro y Showroom Boutique con persistencia en `localStorage`.
+    - **Captura Limpia 3D Proporcional (`Viewer3D.tsx`)**:
+      * Función `__capturarEscenaRenderIA` con recorte $1:1$ centrado (cero deformación anamórfica) y aislamiento puro sin grilla ni gizmos.
+    - **Modal Interactivo "3BF AI Render Studio" (`AIRenderStudioModal.tsx`)**:
+      * Panel de control dual con gestión de API Keys (fal.ai y Google), selector de aspect ratio, comparador Antes/Después y descarga en alta calidad HD (PNG).
+    - **Documentación Técnica & Memoria**:
+      * Consignado en `ESTADO_DEL_PROYECTO.md` y `3BF/3BF_Proceso.md`.
+
+---
+
+### 🔹 Hito 3BF_PBRMaterialStudio_ShaderBallLab — Laboratorio de Calibración de Materiales PBR, Generador Algorítmico de Mapas en Canvas 2D & Shader Ball 3D en Vivo (23 de Agosto, 2026)
+
+- **Generador Algorítmico Instantáneo de Mapas PBR (`lib/pbrMapGenerator.ts`)**:
+  * Motor en Canvas 2D que procesa cualquier imagen o fotografía en $<50\text{ms}$ para generar:
+    * **Normal Map (RGB Tangente)**: Derivadas espaciales de Sobel $3\times 3$ $(dX, dY)$ normalizadas a vector unitario azul/púrpura $(R=X, G=Y, B=Z)$ con micro-relieve táctil de poro y veta.
+    * **Roughness Map (Brillo/Mate B&N)**: Ecualización de luminosidad calibrada según tipo de material (Melamina satinada $0.45$, Madera rústica $0.65$, Metal $0.25$, Pintura $0.30$).
+    * **Ambient Occlusion (AO)**: Detección laplaciana de micro-cavidades para acentuar sombras en el poro de la madera.
+    * **Ajustes de Diffuse**: Brillo, Contraste, Saturación y Tinte cromático (*Color Tint Overlay*).
+- **Shader Ball 3D Interactivo en Tiempo Real (`components/viewer/ShaderBallViewer.tsx`)**:
+  * Visor Three.js con `MeshPhysicalMaterial` / `MeshStandardMaterial` que responde a 60 FPS a los sliders físicos.
+  * Selector de geometrías de prueba intercambiables: **Esfera PBR (*Shader Ball*)**, **Tablero Plano con Cantos** (ideal para melaminas de muebles) y **Cubo Biselado**.
+  * Control de rotación de luz de estudio en $360^\circ$ con slider interactivo.
+- **Modal de Calibración "3BF PBR Material Studio" (`components/ui/PBRMaterialStudioModal.tsx`)**:
+  * Panel dividido en 3 columnas ergonómicas en tema claro **"Tech Ethos"**:
+    * *Columna Izquierda*: Subida de texturas, botón mágico **`✨ Auto-Generar Canales PBR (0.1s)`** y tarjetas de los 4 canales con miniaturas e intensidad de relieve.
+    * *Columna Central*: Visor Shader Ball 3D interactivo con órbita $360^\circ$ y selector de geometría.
+    * *Columna Derecha*: Propiedades Principled BSDF (Nombre, Tipo, Marca/Proveedor, Metalicidad, Capa de resina *Clearcoat*, IOR, Especularidad) con botones `💾 Guardar en Catálogo PBR` y `🎯 Aplicar al Mueble 3D Activo`.
+- **Enlace Físico en Viewport Principal (`Viewer3D.tsx` & `MaterialManagerPanel.tsx`)**:
+  * Incorporación del hook reactivo `useMaterialPBRMaps` para cargar simultáneamente texturas difusas, mapas de normales, rugosidad y AO sobre las mallas del mueble.
+  * Acceso directo con botón **`🧪 PBR Studio`** en la cabecera y en el panel de materiales.
+- **Documentación Técnica & Memoria**:
+  * Registrado en `ESTADO_DEL_PROYECTO.md`, `3BF/3BF_Proceso.md` y artefacto `walkthrough.md`.
+
+---
+
+### 🔹 Hito 3BF_AIRenderStudio_GeminiImagen3_PromptHub_PhotaEnhance — 3BF AI Render Studio: Motor Fotorrealista Google Nano Banana PRO / Imagen 3, Mejorador 4K Phota Enhance, Prompt Hub Persistente & PBR Studio Fullscreen (23 de Agosto, 2026)
+
+- **Integración Directa 3BF AI Render Studio (`components/ui/AIRenderStudioModal.tsx` & `app/api/render-ia/route.ts`)**:
+  * Modal ergonómico expandido a tamaño gigante (`98vw x 95vh`) con modo pantalla completa 100%.
+  * Encuadre 3D conectado en vivo con la captura de alta fidelidad del mueble calibrado en el viewport (texturas PBR, cantos, aristas y piso ciclorama de estudio).
+  * Render resultante protagonista con visualización maximizada, comparador interactivo *Render IA vs Captura 3D*, y botones de acción rápida (*Copiar*, *Usar como Miniatura del Proyecto*, *Descargar HD*).
+- **Motor de Render Fotorrealista de Grado Editorial (`/api/render-ia`)**:
+  * Integración con **`fal-ai/nano-banana-pro/edit` (Google Nano Banana PRO)** con pipeline de óptica fotográfica (apertura f/2.8, lentes de 35mm, sombras físicas de contacto difusas y textura táctil de madera).
+  * Manejo tolerante de credenciales multi-fuente (`falKey`, `falApiKey`, `clientFalKey`, `geminiKey`, `geminiApiKey`) y soporte para motor libre **FLUX.1** de respaldo.
+- **Mejorador de Imagen 4K con Phota Enhance (`fal-ai/phota/enhance`)**:
+  * Botón directo **`✨ Mejorar con Phota 4K`** sobre la barra del render para aumentar nitidez, resolución y micro-texturas preservando 100% la identidad, geometría y veta del mueble.
+  * Guardado automático en el historial de renders como `✨ [Phota 4K Enhanced]`.
+- **Biblioteca de Prompts Calibrada ("Prompt Hub" — `components/ui/PromptLibraryManager.tsx`)**:
+  * Presets editoriales arquitectónicos de alta gama (Oficina Nórdica con Laptop, Estudio Blanco Puro de Catálogo, Sala Japandi Minimalista, Habitación Moderna, Cocina Contemporánea) con persistencia en `localStorage`.
+  * Prompts nativos en español con traducción optimizada y sistema de creación rápida de presets personalizados con categorización.
+  * Optimización vertical al 100% del modal sin espacios muertos inferiores, y botón compacto de restauración de fábrica en el encabezado superior.
+- **Laboratorio PBR con Mueble 3D Real & Control Dedicado de Aristas (`PBRMaterialStudioModal.tsx` & `ShaderBallViewer.tsx`)**:
+  * Rediseño ergonómico a 2 columnas con navegación idéntica a Blender (MMB Órbita, Shift+MMB Pan, Ctrl+MMB Zoom).
+  * Selector de 4 geometrías de prueba: **🔮 Esfera**, **🪵 Tablero Melamina**, **🧊 Cubo** y **🪑 Mueble 3D Real** (piezas paramétricas de RhinoCompute con `EdgesGeometry`).
+  * Sección dedicada **`📐 3. Control de Aristas & Contornos`** en la columna izquierda: activación/desactivación reactiva, selector de color HEX con muestra en vivo, slider de opacidad (10% a 100%) y ángulo de umbral/threshold (1° a 89°).
+  * Soporte para entornos HDRI de exterior (**Poly Haven Alps Field**) e interior nórdico de alta gama (**Poly Haven Modern Bathroom**).
+  * Botón directo **`✨ Lanzar Render AI con este Material`** para conectar la calibración física 3D con la generación fotorrealista.
+- **Coherencia Visual Total con "Apariencia"**:
+  * Adaptabilidad completa de todos los modales, barras, botones, selectores y cajas de alertas al sistema de temas (`tema === "obsidian"` y `coloresApariencia`), garantizando legibilidad y alto contraste tanto en tema claro ("Tech Ethos") como oscuro ("Obsidian").
+
+
+
+
 
 
 
