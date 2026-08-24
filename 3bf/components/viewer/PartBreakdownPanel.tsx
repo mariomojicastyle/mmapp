@@ -22,6 +22,7 @@ export default function PartBreakdownPanel() {
     materialesPBR,
     asignacionesPartes,
     asignarParteACapa,
+    asignarParteAMaterial,
     toggleVisibilidadParte,
     setHoveredPiece,
     coloresApariencia,
@@ -229,19 +230,17 @@ export default function PartBreakdownPanel() {
                         )}
                       </div>
 
-                      {/* Lado Derecho: Selector Desplegable de Capa en Línea */}
+                      {/* Lado Derecho: Selector Desplegable Exclusivo de Capas Maestras */}
                       <div className="flex items-center gap-1 shrink-0" onClick={(e) => e.stopPropagation()}>
                         <select
                           value={capaEfectivaId}
-                          onChange={(e) => {
-                            asignarParteACapa(parte.parteKey, e.target.value, parte.nombreLimpio);
-                          }}
+                          onChange={(e) => asignarParteACapa(parte.parteKey, e.target.value, parte.nombreLimpio)}
                           style={{
                             backgroundColor: coloresApariencia?.fondoAplicacion,
                             borderColor: coloresApariencia?.bordePaneles,
                             color: coloresApariencia?.textoPrincipal
                           }}
-                          className="py-1 px-2 pr-6 border rounded-md text-[11px] font-medium focus:outline-none focus:ring-1 focus:ring-cyan-500 cursor-pointer transition shadow-2xs max-w-[125px] truncate"
+                          className="py-1 px-2 pr-6 border rounded-md text-[11px] font-semibold focus:outline-none focus:ring-1 focus:ring-cyan-500 cursor-pointer transition shadow-2xs max-w-[130px] truncate"
                           title={`Asignar capa a ${parte.nombreLimpio}`}
                         >
                           {capas.map((capa) => (

@@ -37,9 +37,9 @@ function useMaterialPBRMaps(materialPBR?: MaterialPBRDef | null, fallbackUrl?: s
     loader.setCrossOrigin("anonymous");
 
     const setupTex = (tex: THREE.Texture, isColor = false) => {
-      tex.wrapS = THREE.MirroredRepeatWrapping;
-      tex.wrapT = THREE.MirroredRepeatWrapping;
-      tex.repeat.set(4.0, 4.0);
+      tex.wrapS = THREE.RepeatWrapping;
+      tex.wrapT = THREE.RepeatWrapping;
+      tex.repeat.set(1.0, 1.0);
       tex.center.set(0.5, 0.5);
       tex.rotation = isTraversada ? Math.PI / 2 : 0;
       if (isColor) tex.colorSpace = THREE.SRGBColorSpace;
@@ -363,6 +363,7 @@ function BoardMesh({
         const absY = Math.abs(normal.y);
         const absZ = Math.abs(normal.z);
 
+        const UV_SCALE = 1.0 / 0.60; // 600mm x 600mm (0.60m) norma física real
         for (let j = 0; j < 3; j++) {
           const idx = i + j;
           const x = posAttr.getX(idx);
@@ -370,14 +371,14 @@ function BoardMesh({
           const z = posAttr.getZ(idx);
 
           if (absY >= absX && absY >= absZ) {
-            uvs[idx * 2] = x * 1.5;
-            uvs[idx * 2 + 1] = z * 1.5;
+            uvs[idx * 2] = x * UV_SCALE;
+            uvs[idx * 2 + 1] = z * UV_SCALE;
           } else if (absX >= absY && absX >= absZ) {
-            uvs[idx * 2] = z * 1.5;
-            uvs[idx * 2 + 1] = y * 1.5;
+            uvs[idx * 2] = z * UV_SCALE;
+            uvs[idx * 2 + 1] = y * UV_SCALE;
           } else {
-            uvs[idx * 2] = x * 1.5;
-            uvs[idx * 2 + 1] = y * 1.5;
+            uvs[idx * 2] = x * UV_SCALE;
+            uvs[idx * 2 + 1] = y * UV_SCALE;
           }
         }
       }
@@ -401,13 +402,23 @@ function BoardMesh({
   }, [customGeometry, size, calibracion.thresholdAristas]);
 
   const cleanName = name.replace(/^RH_OUT:/i, "").trim();
-  const normalizeKey = (k: string) => k.replace(/^RH_OUT:/i, "").replace(/[_\s]+/g, " ").trim().toLowerCase();
+  const baseCleanName = cleanName.replace(/2$/, "").replace(/_Color$|_MDP$|_Balance$/i, "").trim();
+  const normalizeKey = (k: string) => k.replace(/^RH_OUT:/i, "").replace(/2$/, "").replace(/[_\s]+/g, " ").trim().toLowerCase();
   const normName = normalizeKey(name);
+  const normBase = normalizeKey(baseCleanName);
 
-  // 💡 1. Resolver Asignación de Parte con tolerancia a guiones bajos / espacios
-  let asignacion = asignacionesPartes[name] || asignacionesPartes[cleanName] || asignacionesPartes[`RH_OUT:${cleanName}`];
+  // 💡 1. Resolver Asignación de Parte con tolerancia a guiones bajos / espacios y sufijos
+  let asignacion = asignacionesPartes[name] || 
+                   asignacionesPartes[cleanName] || 
+                   asignacionesPartes[`RH_OUT:${cleanName}`] ||
+                   asignacionesPartes[baseCleanName] ||
+                   asignacionesPartes[`RH_OUT:${baseCleanName}`];
+
   if (!asignacion) {
-    const matchedKey = Object.keys(asignacionesPartes).find((k) => normalizeKey(k) === normName);
+    const matchedKey = Object.keys(asignacionesPartes).find((k) => {
+      const nK = normalizeKey(k);
+      return nK === normName || nK === normBase || normName.startsWith(nK) || nK.startsWith(normName);
+    });
     if (matchedKey) asignacion = asignacionesPartes[matchedKey];
   }
 
@@ -417,8 +428,7 @@ function BoardMesh({
   const isHardwareCaja = (normName.includes("caja") && !normName.includes("cajon") && !normName.includes("cajón")) || normName === "caja";
   const isHardwareTarugo = normName.includes("tarugo") || normName.includes("soporte");
   const isMachining = normName.includes("maquinado") || normName.includes("perforado");
-  const isTapaLuz = normName.includes("tapa luz") || normName.includes("regleta");
-  const isWoodBoardPiece = !isHardwarePerno && !isHardwareCaja && !isHardwareTarugo && !isMachining && !isTapaLuz;
+  const isWoodBoardPiece = !isHardwarePerno && !isHardwareCaja && !isHardwareTarugo && !isMachining;
 
   // 💡 2. Resolver Capa Asignada (Blindaje: Piezas de madera NUNCA caen en capa_acero)
   let capaAsignada: any = null;
@@ -440,7 +450,7 @@ function BoardMesh({
     } else if (normName.includes("mdf")) {
       capaAsignada = capas.find((c) => c.id === "capa_mdf" || c.nombre.toLowerCase() === "mdf");
     } else {
-      // Pieza principal de madera/tablero (Cubierta, Lateral, Frente, Tapa, Cajón, etc.) -> Capa Tono
+      // Pieza principal de madera/tablero (Cubierta, Lateral, Frente, Tapa, Cajón, Tapaluz, etc.) -> Capa Tono
       capaAsignada = capas.find((c) => c.id === "capa_tono" || c.nombre.toLowerCase() === "tono" || c.nombre.toLowerCase().includes("tono")) || capas.find(c => c.id !== "capa_acero") || capas[0];
     }
   }
@@ -452,16 +462,16 @@ function BoardMesh({
   }
 
   // 💡 3. Resolver Material PBR Asignado
-  let materialPBR = null;
+  let materialPBR: MaterialPBRDef | null = null;
   if (asignacion && asignacion.materialId && asignacion.materialId !== "por_capa") {
-    materialPBR = materialesPBR.find((m) => m.id === asignacion.materialId);
+    materialPBR = materialesPBR.find((m) => m.id === asignacion.materialId) || null;
   } else if (capaAsignada) {
-    materialPBR = materialesPBR.find((m) => m.id === capaAsignada.materialId);
+    materialPBR = materialesPBR.find((m) => m.id === capaAsignada.materialId) || null;
   }
 
   const isSolidOrRendered = modoVisual === "solido" || modoVisual === "renderizado";
   const isRenderedMode = modoVisual === "renderizado";
-  const isWoodBoard = !isHardwarePerno && !isHardwareCaja && !isHardwareTarugo && !isMachining && !isTapaLuz;
+  const isWoodBoard = !isHardwarePerno && !isHardwareCaja && !isHardwareTarugo && !isMachining;
 
   const isMdpExpuesto = name.includes("MDP");
   const isBalance = name.includes("Balance");
@@ -470,8 +480,10 @@ function BoardMesh({
   // 💡 4. Determinar Textura Objetivo (targetTextureUrl)
   let targetTextureUrl: string | null = null;
   if (modoVisual === "renderizado") {
-    if (materialPBR) {
-      targetTextureUrl = materialPBR.texturaUrl || null;
+    if (materialPBR && materialPBR.texturaUrl) {
+      targetTextureUrl = materialPBR.texturaUrl;
+    } else if (materialPBR && !materialPBR.texturaUrl) {
+      targetTextureUrl = null;
     } else if (calibracion.customTextureUrl) {
       targetTextureUrl = calibracion.customTextureUrl;
     } else if (isWoodBoard && isMelaminaCara) {
@@ -530,17 +542,9 @@ function BoardMesh({
     roughness = 0.5;
     opacity = 0.6;
     transparent = true;
-    depthWrite = false;
-  } else if (isTapaLuz) {
-    meshColor = "#1F2937";
-    metalness = 0.2;
-    roughness = 0.4;
-    opacity = 1.0;
-    transparent = false;
-    depthWrite = true;
   } else if (isWoodBoard) {
-    roughness = isTransparent ? 0.15 : (isMdpExpuesto ? 0.85 : (isBalance ? 0.5 : (calibracion.rugosidadMadera ?? 0.58)));
-    metalness = isTransparent ? 0.1 : (isMdpExpuesto ? 0.0 : (isBalance ? 0.0 : (calibracion.metalicidadMadera ?? 0.20)));
+    roughness = isTransparent ? 0.75 : (isMdpExpuesto ? 0.85 : (isBalance ? 0.5 : (calibracion.rugosidadMadera ?? 0.58)));
+    metalness = isTransparent ? 0.0 : (isMdpExpuesto ? 0.0 : (isBalance ? 0.0 : (calibracion.metalicidadMadera ?? 0.20)));
     opacity = isTransparent ? 0.52 : (calibracion.opacidadMadera ?? 1.0);
     transparent = isTransparent || opacity < 0.99;
     depthWrite = !isTransparent && opacity >= 0.95;
@@ -562,6 +566,8 @@ function BoardMesh({
   if (modoVisual === "semitransparente") {
     finalMeshColor = coloresApariencia.mallasCristal || "#0284C7";
     opacity = 0.52;
+    roughness = 0.75;
+    metalness = 0.0;
     transparent = true;
     depthWrite = false;
   } else if (modoVisual === "solido") {
@@ -618,6 +624,7 @@ function BoardMesh({
           roughnessMap={activeRoughness}
           aoMap={activeAO}
           aoMapIntensity={materialPBR?.aoIntensity ?? 1.0}
+          envMapIntensity={modoVisual === "renderizado" ? 1.0 : 0.0}
           transparent={transparent}
           opacity={opacity}
           roughness={roughness}
@@ -668,6 +675,7 @@ function BoardMesh({
         roughnessMap={activeRoughness}
         aoMap={activeAO}
         aoMapIntensity={materialPBR?.aoIntensity ?? 1.0}
+        envMapIntensity={modoVisual === "renderizado" ? 1.0 : 0.0}
         transparent={transparent}
         opacity={opacity}
         roughness={roughness}
@@ -1995,9 +2003,15 @@ function CameraViewController({
   return null;
 }
 
-function SceneEnvironment() {
+function SceneEnvironment({ modoVisual }: { modoVisual: string }) {
   const { scene } = useThree();
+
   useEffect(() => {
+    if (modoVisual !== "renderizado") {
+      scene.environment = null;
+      return;
+    }
+
     let active = true;
     try {
       const loader = new RGBELoader();
@@ -2025,7 +2039,7 @@ function SceneEnvironment() {
       active = false;
       scene.environment = null;
     };
-  }, [scene]);
+  }, [scene, modoVisual]);
   return null;
 }
 
@@ -2760,7 +2774,7 @@ export default function Viewer3D() {
         <color attach="background" args={[coloresApariencia.fondo3D || (tema === "obsidian" ? "#0D1117" : "#F3F4F6")]} />
         <CameraRefBridge cameraRef={cameraRef} />
         <ThumbnailCapturer />
-        <SceneEnvironment />
+        <SceneEnvironment modoVisual={modoVisual} />
         <HoverRaycastTracker furnitureGroup={furnitureGroup} />
         <ambientLight intensity={calibracion.intensidadLuzAmbiental ?? 0.8} />
         <directionalLight 

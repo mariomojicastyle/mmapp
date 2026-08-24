@@ -307,53 +307,31 @@ export default function AIRenderStudioModal() {
           }}
         >
           <div className="flex items-center gap-2.5">
-            <div className="p-1.5 rounded-lg bg-gradient-to-tr from-cyan-600 to-indigo-600 text-white shadow-sm">
-              <Sparkles className="w-4 h-4" />
-            </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <h2 className="font-extrabold text-sm tracking-tight" style={{ color: coloresApariencia?.textoPrincipal }}>
-                  3BF AI Render Studio
-                </h2>
-                <span 
-                  className="px-2 py-0.5 rounded-full text-[10px] font-extrabold border"
-                  style={{
-                    backgroundColor: tema === "obsidian" ? "rgba(6, 182, 212, 0.15)" : "#E0F2FE",
-                    color: tema === "obsidian" ? "#67E8F9" : "#0369A1",
-                    borderColor: tema === "obsidian" ? "rgba(6, 182, 212, 0.3)" : "#BAE6FD"
-                  }}
-                >
-                  Google Gemini / Imagen 3
-                </span>
-              </div>
-              <p className="text-[11px]" style={{ color: coloresApariencia?.textoSecundario }}>
-                Renderizado fotorrealista paramétrico 1:1 con prompts arquitectónicos
-              </p>
-            </div>
+            <h2 className="font-extrabold text-sm tracking-tight" style={{ color: coloresApariencia?.textoPrincipal }}>
+              3BF AI Render Studio
+            </h2>
           </div>
 
           {/* Configuración de API Key y Motor */}
           <div className="flex items-center gap-2">
             <button
               onClick={() => setMostrarConfigKey(!mostrarConfigKey)}
-              className="flex items-center gap-1.5 px-2.5 py-1 rounded text-xs font-bold transition border cursor-pointer hover:opacity-90"
-              style={
-                falApiKey || geminiApiKey
-                  ? {
-                      backgroundColor: tema === "obsidian" ? "rgba(16, 185, 129, 0.18)" : "#ECFDF5",
-                      color: tema === "obsidian" ? "#6EE7B7" : "#047857",
-                      borderColor: tema === "obsidian" ? "rgba(16, 185, 129, 0.35)" : "#A7F3D0"
-                    }
-                  : {
-                      backgroundColor: tema === "obsidian" ? "rgba(245, 158, 11, 0.18)" : "#FFFBEB",
-                      color: tema === "obsidian" ? "#FCD34D" : "#B45309",
-                      borderColor: tema === "obsidian" ? "rgba(245, 158, 11, 0.35)" : "#FDE68A"
-                    }
-              }
+              className="flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold transition border cursor-pointer hover:opacity-90 shadow-2xs"
+              style={{
+                backgroundColor: coloresApariencia?.fondoPaneles,
+                borderColor: coloresApariencia?.bordePaneles,
+                color: coloresApariencia?.textoPrincipal
+              }}
               title="Configurar API Keys de fal.ai y Google AI Studio"
             >
-              <Key className="w-3.5 h-3.5" />
-              <span>{falApiKey ? "fal.ai FLUX Conectado" : geminiApiKey ? "Google API Conectada" : "Configurar API Keys"}</span>
+              <span 
+                className={`w-2 h-2 rounded-full shrink-0 ${
+                  falApiKey || geminiApiKey 
+                    ? "bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.8)]" 
+                    : "bg-amber-500"
+                }`} 
+              />
+              <span>{falApiKey || geminiApiKey ? "Api AI Conectada" : "Configurar API Keys"}</span>
             </button>
 
             {/* Alternar Pantalla Completa */}
@@ -480,21 +458,6 @@ export default function AIRenderStudioModal() {
           >
             {/* Vista Previa de la Captura 3D Limpia */}
             <div className="flex flex-col gap-1.5">
-              <div className="flex items-center justify-between">
-                <span className="font-extrabold text-xs flex items-center gap-1.5">
-                  <Camera className="w-3.5 h-3.5 text-cyan-600" />
-                  <span>Encuadre Tridimensional (3D)</span>
-                </span>
-                <button
-                  onClick={refrescarCaptura3D}
-                  className="flex items-center gap-1 text-[11px] font-bold text-cyan-600 hover:underline"
-                  title="Capturar la orientación actual de la cámara 3D"
-                >
-                  <RefreshCw className="w-3 h-3" />
-                  <span>Re-encuadrar 3D</span>
-                </button>
-              </div>
-
               <div className="relative aspect-video rounded-lg border overflow-hidden bg-slate-100 dark:bg-slate-900 flex items-center justify-center shadow-inner group">
                 {captura3DBase64 ? (
                   <img
@@ -528,8 +491,8 @@ export default function AIRenderStudioModal() {
                     color: coloresApariencia?.textoPrincipal
                   }}
                 >
-                  <option value="fal_nano_banana_pro">👑 fal.ai - Google Nano Banana PRO (Recomendado)</option>
-                  <option value="flux_schnell_free">🆓 FLUX.1 Libre (Sin Claves)</option>
+                  <option value="fal_nano_banana_pro">Google Nano Banana PRO (Recomendado)</option>
+                  <option value="flux_schnell_free">FLUX.1 Libre (Sin Claves)</option>
                 </select>
               </div>
 
@@ -559,20 +522,24 @@ export default function AIRenderStudioModal() {
                 <label className="font-bold text-[11px]" style={{ color: coloresApariencia?.textoSecundario }}>
                   Prompt Activo (En Español):
                 </label>
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-1.5">
                   <button
                     onClick={() => setMostrarGuardarPreset(!mostrarGuardarPreset)}
-                    className="text-[11px] font-bold text-indigo-600 dark:text-indigo-400 hover:underline flex items-center gap-1"
+                    style={{ backgroundColor: coloresApariencia?.botonActivo || "#0891b2" }}
+                    className="px-3 py-1 rounded-full text-xs font-semibold text-white shadow-xs transition cursor-pointer hover:opacity-90 flex items-center justify-center"
                     title="Guardar este prompt como un nuevo preset en la biblioteca"
                   >
-                    <PlusCircle className="w-3 h-3" />
                     <span>Guardar Preset</span>
                   </button>
                   <button
                     onClick={() => setPestanaLateral("biblioteca")}
-                    className="text-[11px] font-bold text-cyan-600 hover:underline flex items-center gap-1"
+                    style={{
+                      backgroundColor: pestanaLateral === "biblioteca" ? (coloresApariencia?.botonActivo || "#0891b2") : "transparent",
+                      borderColor: pestanaLateral === "biblioteca" ? (coloresApariencia?.botonActivo || "#0891b2") : (coloresApariencia?.bordePaneles || "#CBD5E1"),
+                      color: pestanaLateral === "biblioteca" ? "#FFFFFF" : (coloresApariencia?.textoPrincipal || "#0F172A"),
+                    }}
+                    className="px-3 py-1 rounded-full text-xs font-semibold border transition cursor-pointer hover:opacity-90 shadow-2xs flex items-center justify-center"
                   >
-                    <BookOpen className="w-3 h-3" />
                     <span>Biblioteca</span>
                   </button>
                 </div>
@@ -581,20 +548,19 @@ export default function AIRenderStudioModal() {
               {/* Formulario Expandible para Guardar Preset con Título */}
               {mostrarGuardarPreset && (
                 <div 
-                  className="p-2.5 rounded-lg border flex flex-col gap-2 shadow-sm animate-in fade-in-50 duration-200"
+                  className="p-2.5 rounded-xl border flex flex-col gap-2 shadow-sm animate-in fade-in-50 duration-200"
                   style={{
                     backgroundColor: coloresApariencia?.fondoAplicacion,
                     borderColor: coloresApariencia?.bordePaneles,
                   }}
                 >
                   <div className="flex items-center justify-between">
-                    <span className="font-bold text-[11px] text-indigo-600 dark:text-indigo-400 flex items-center gap-1">
-                      <Save className="w-3 h-3" />
-                      <span>Guardar como Preset Predefinido</span>
+                    <span className="font-bold text-xs" style={{ color: coloresApariencia?.textoPrincipal }}>
+                      Guardar como Preset Predefinido
                     </span>
                     {presetGuardadoExito && (
                       <span className="text-[11px] font-bold text-emerald-600 flex items-center gap-0.5 animate-bounce">
-                        <CheckCircle2 className="w-3 h-3" />
+                        <CheckCircle2 className="w-3.5 h-3.5" />
                         <span>¡Guardado con éxito!</span>
                       </span>
                     )}
@@ -606,7 +572,7 @@ export default function AIRenderStudioModal() {
                       value={nuevoPresetTitulo}
                       onChange={(e) => setNuevoPresetTitulo(e.target.value)}
                       placeholder="Título del Preset (ej: Oficina Nórdica con Laptop)..."
-                      className="sm:col-span-2 px-2.5 py-1 rounded border text-xs outline-none"
+                      className="sm:col-span-2 px-3 py-1.5 rounded-full border text-xs outline-none"
                       style={{
                         backgroundColor: coloresApariencia?.fondoPaneles,
                         borderColor: coloresApariencia?.bordePaneles,
@@ -616,7 +582,7 @@ export default function AIRenderStudioModal() {
                     <select
                       value={nuevoPresetCategoria}
                       onChange={(e) => setNuevoPresetCategoria(e.target.value as any)}
-                      className="px-2 py-1 rounded border text-xs font-semibold outline-none"
+                      className="px-3 py-1.5 rounded-full border text-xs font-semibold outline-none cursor-pointer"
                       style={{
                         backgroundColor: coloresApariencia?.fondoPaneles,
                         borderColor: coloresApariencia?.bordePaneles,
@@ -635,14 +601,16 @@ export default function AIRenderStudioModal() {
                   <div className="flex items-center justify-end gap-1.5 pt-1">
                     <button
                       onClick={() => setMostrarGuardarPreset(false)}
-                      className="px-2 py-0.5 rounded text-[11px] text-slate-500 hover:bg-slate-200 dark:hover:bg-slate-800"
+                      className="px-3 py-1 rounded-full text-xs font-semibold border transition hover:opacity-80 cursor-pointer shadow-2xs"
+                      style={{ borderColor: coloresApariencia?.bordePaneles, color: coloresApariencia?.textoSecundario }}
                     >
                       Cancelar
                     </button>
                     <button
                       onClick={handleGuardarComoPreset}
                       disabled={!nuevoPresetTitulo.trim()}
-                      className="px-3 py-1 rounded text-xs font-bold bg-indigo-600 hover:bg-indigo-700 text-white shadow-xs disabled:opacity-50 transition"
+                      style={{ backgroundColor: coloresApariencia?.botonActivo || "#0891b2" }}
+                      className="px-3.5 py-1 rounded-full text-xs font-semibold text-white shadow-xs disabled:opacity-50 transition cursor-pointer hover:opacity-90"
                     >
                       Guardar en Biblioteca
                     </button>
@@ -696,16 +664,17 @@ export default function AIRenderStudioModal() {
             <button
               onClick={handleGenerarRender}
               disabled={generando || !promptActivoRender.trim()}
-              className="w-full py-2.5 px-4 rounded-lg font-extrabold text-sm flex items-center justify-center gap-2 transition shadow-md bg-gradient-to-r from-cyan-600 to-indigo-600 hover:from-cyan-700 hover:to-indigo-700 text-white disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full py-2.5 px-4 rounded-full font-semibold text-xs flex items-center justify-center gap-2 transition shadow-xs text-white disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer hover:opacity-90"
+              style={{ backgroundColor: coloresApariencia?.botonActivo || "#0891b2" }}
             >
               {generando ? (
                 <>
-                  <RefreshCw className="w-4 h-4 animate-spin" />
+                  <RefreshCw className="w-3.5 h-3.5 animate-spin" />
                   <span>Procesando con IA Generativa (3-5s)...</span>
                 </>
               ) : (
                 <>
-                  <Sparkles className="w-4 h-4" />
+                  <Sparkles className="w-3.5 h-3.5" />
                   <span>Generar Render Fotorrealista</span>
                 </>
               )}
@@ -787,7 +756,7 @@ export default function AIRenderStudioModal() {
                         <div className="flex items-center gap-1.5">
                           <button
                             onClick={() => setCompararModo("render")}
-                            className="px-2.5 py-1 rounded text-xs font-bold transition cursor-pointer border"
+                            className="flex items-center justify-center px-3.5 py-1 rounded-full text-xs font-semibold transition cursor-pointer border shadow-2xs hover:opacity-90"
                             style={{
                               backgroundColor: compararModo === "render" 
                                 ? (coloresApariencia?.botonActivo || "#0891b2") 
@@ -802,7 +771,7 @@ export default function AIRenderStudioModal() {
                           </button>
                           <button
                             onClick={() => setCompararModo("original")}
-                            className="px-2.5 py-1 rounded text-xs font-bold transition cursor-pointer border"
+                            className="flex items-center justify-center px-3.5 py-1 rounded-full text-xs font-semibold transition cursor-pointer border shadow-2xs hover:opacity-90"
                             style={{
                               backgroundColor: compararModo === "original" 
                                 ? (coloresApariencia?.botonActivo || "#0891b2") 
@@ -819,29 +788,27 @@ export default function AIRenderStudioModal() {
 
                         {/* Botones de Acción sobre la Imagen */}
                         <div className="flex items-center gap-1.5 flex-wrap">
-                          {/* ✨ BOTÓN PROTAGONISTA: MEJORAR CON PHOTA 4K */}
+                          {/* Botón Mejorar 2K */}
                           <button
                             onClick={handleMejorarConPhota}
                             disabled={mejorandoPhota || !renderActual}
-                            className="flex items-center gap-1.5 px-3 py-1 rounded text-xs font-extrabold bg-gradient-to-r from-violet-600 via-purple-600 to-indigo-600 hover:from-violet-700 hover:to-indigo-700 text-white shadow-md transition transform hover:scale-[1.02] cursor-pointer disabled:opacity-50"
-                            title="Mejorar nitidez, texturas y realismo 4K preservando la identidad con Phota Enhance"
+                            style={{ backgroundColor: coloresApariencia?.botonActivo || "#0891b2" }}
+                            className="px-3.5 py-1 rounded-full text-xs font-semibold text-white shadow-xs transition cursor-pointer hover:opacity-90 disabled:opacity-50 flex items-center justify-center"
+                            title="Mejorar nitidez, texturas y resolución a 2K con Phota Enhance"
                           >
                             {mejorandoPhota ? (
-                              <>
-                                <RefreshCw className="w-3.5 h-3.5 animate-spin text-amber-300" />
-                                <span>Mejorando con Phota...</span>
-                              </>
+                              <div className="flex items-center gap-1.5">
+                                <RefreshCw className="w-3.5 h-3.5 animate-spin text-white" />
+                                <span>Mejorando a 2K...</span>
+                              </div>
                             ) : (
-                              <>
-                                <Sparkles className="w-3.5 h-3.5 text-amber-300" />
-                                <span>✨ Mejorar con Phota 4K</span>
-                              </>
+                              <span>Mejorar 2K</span>
                             )}
                           </button>
 
                           <button
                             onClick={handleCopiarImagen}
-                            className="flex items-center gap-1 px-2.5 py-1 rounded text-xs font-bold border transition hover:opacity-80 cursor-pointer"
+                            className="flex items-center gap-1 px-3 py-1 rounded-full text-xs font-semibold border transition hover:opacity-80 cursor-pointer shadow-2xs"
                             style={{ 
                               borderColor: coloresApariencia?.bordePaneles,
                               backgroundColor: coloresApariencia?.fondoPaneles,
@@ -855,7 +822,7 @@ export default function AIRenderStudioModal() {
 
                           <button
                             onClick={handleEstablecerComoMiniatura}
-                            className="flex items-center gap-1 px-2.5 py-1 rounded text-xs font-bold border transition hover:opacity-80 cursor-pointer"
+                            className="flex items-center gap-1 px-3 py-1 rounded-full text-xs font-semibold border transition hover:opacity-80 cursor-pointer shadow-2xs"
                             style={{ 
                               borderColor: coloresApariencia?.bordePaneles,
                               backgroundColor: coloresApariencia?.fondoPaneles,
@@ -869,7 +836,7 @@ export default function AIRenderStudioModal() {
 
                           <button
                             onClick={handleDescargarRender}
-                            className="flex items-center gap-1 px-3 py-1 rounded text-xs font-bold text-white shadow-xs transition cursor-pointer hover:opacity-90"
+                            className="flex items-center gap-1 px-3.5 py-1 rounded-full text-xs font-semibold text-white shadow-xs transition cursor-pointer hover:opacity-90"
                             style={{ backgroundColor: coloresApariencia?.botonActivo || "#0891b2" }}
                             title="Descargar render en alta calidad"
                           >

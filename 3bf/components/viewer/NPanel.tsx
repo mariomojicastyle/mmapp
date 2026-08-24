@@ -226,6 +226,7 @@ export default function NPanel() {
     centrarCamara,
     anchoNPanel,
     setAnchoNPanel,
+    modalRenderIAAbierto,
     setModalRenderIAAbierto,
   } = use3BFStore();
 
@@ -1310,31 +1311,7 @@ export default function NPanel() {
               </span>
             </button>
 
-            {/* Pestaña Vertical 3: Capas */}
-            <button
-              onClick={() => setPestanaNPanel("capas")}
-              style={
-                pestanaNPanel === "capas"
-                  ? { backgroundColor: coloresApariencia?.botonActivo || "#0891b2", color: "#FFFFFF" }
-                  : { color: coloresApariencia?.textoPrincipal }
-              }
-              title="Gestor de Capas y Materiales Asignados"
-              className={`w-7 py-2.5 px-1 rounded-full flex flex-col items-center justify-center gap-1.5 transition-all cursor-pointer ${
-                pestanaNPanel === "capas"
-                  ? "shadow-md font-bold"
-                  : "hover:opacity-80"
-              }`}
-            >
-              <Layers className="w-3.5 h-3.5 shrink-0" />
-              <span 
-                style={{ writingMode: "vertical-rl" }}
-                className="text-[9px] tracking-wide font-sans leading-none font-semibold"
-              >
-                Capas
-              </span>
-            </button>
-
-            {/* Pestaña Vertical 4: Partes */}
+            {/* Pestaña Vertical 3: Partes */}
             <button
               onClick={() => setPestanaNPanel("partes")}
               style={
@@ -1358,7 +1335,31 @@ export default function NPanel() {
               </span>
             </button>
 
-            {/* Pestaña Vertical 3: Materiales */}
+            {/* Pestaña Vertical 4: Capas */}
+            <button
+              onClick={() => setPestanaNPanel("capas")}
+              style={
+                pestanaNPanel === "capas"
+                  ? { backgroundColor: coloresApariencia?.botonActivo || "#0891b2", color: "#FFFFFF" }
+                  : { color: coloresApariencia?.textoPrincipal }
+              }
+              title="Gestor de Capas y Materiales Asignados"
+              className={`w-7 py-2.5 px-1 rounded-full flex flex-col items-center justify-center gap-1.5 transition-all cursor-pointer ${
+                pestanaNPanel === "capas"
+                  ? "shadow-md font-bold"
+                  : "hover:opacity-80"
+              }`}
+            >
+              <Layers className="w-3.5 h-3.5 shrink-0" />
+              <span 
+                style={{ writingMode: "vertical-rl" }}
+                className="text-[9px] tracking-wide font-sans leading-none font-semibold"
+              >
+                Capas
+              </span>
+            </button>
+
+            {/* Pestaña Vertical 5: Materiales */}
             <button
               onClick={() => setPestanaNPanel("materiales")}
               style={
@@ -1382,31 +1383,34 @@ export default function NPanel() {
               </span>
             </button>
 
-            {/* Pestaña Vertical 4: Calibrar */}
+            {/* Pestaña Vertical 6: Render IA */}
             <button
-              onClick={() => setPestanaNPanel("calibrar")}
+              onClick={() => setModalRenderIAAbierto(true)}
               style={
-                pestanaNPanel === "calibrar"
+                modalRenderIAAbierto
                   ? { backgroundColor: coloresApariencia?.botonActivo || "#0891b2", color: "#FFFFFF" }
                   : { color: coloresApariencia?.textoPrincipal }
               }
-              title="Calibración de Renderizado 3D"
+              title="3BF AI Render Studio: Generar render fotorrealista con IA"
               className={`w-7 py-2.5 px-1 rounded-full flex flex-col items-center justify-center gap-1.5 transition-all cursor-pointer ${
-                pestanaNPanel === "calibrar"
+                modalRenderIAAbierto
                   ? "shadow-md font-bold"
                   : "hover:opacity-80"
               }`}
             >
-              <Sliders className="w-3.5 h-3.5 shrink-0" />
+              <Camera className="w-3.5 h-3.5 shrink-0" />
               <span 
                 style={{ writingMode: "vertical-rl" }}
                 className="text-[9px] tracking-wide font-sans leading-none font-semibold"
               >
-                Calibrar
+                Render IA
               </span>
             </button>
 
-            {/* Pestaña Vertical 5: Apariencia */}
+            {/* Separador sutil */}
+            <div className="w-4 h-px bg-slate-200 dark:bg-slate-700 my-0.5" />
+
+            {/* Pestaña Vertical 7: Apariencia */}
             <button
               onClick={() => setPestanaNPanel("apariencia")}
               style={
@@ -1430,25 +1434,27 @@ export default function NPanel() {
               </span>
             </button>
 
-            {/* Separador sutil */}
-            <div className="w-4 h-px bg-slate-200 dark:bg-slate-700 my-0.5" />
-
-            {/* Botón Acción Directa: Render IA (Google Gemini / Imagen 3) */}
+            {/* Pestaña Vertical 8: Calibrar */}
             <button
-              onClick={() => setModalRenderIAAbierto(true)}
-              style={{
-                backgroundColor: "#0891b218",
-                color: coloresApariencia?.botonActivo || "#0891b2"
-              }}
-              title="3BF AI Render Studio: Generar render fotorrealista con IA"
-              className="w-7 py-2.5 px-1 rounded-full flex flex-col items-center justify-center gap-1.5 transition-all cursor-pointer hover:bg-cyan-600 hover:text-white border border-cyan-500/30 shadow-xs"
+              onClick={() => setPestanaNPanel("calibrar")}
+              style={
+                pestanaNPanel === "calibrar"
+                  ? { backgroundColor: coloresApariencia?.botonActivo || "#0891b2", color: "#FFFFFF" }
+                  : { color: coloresApariencia?.textoPrincipal }
+              }
+              title="Calibración de Renderizado 3D"
+              className={`w-7 py-2.5 px-1 rounded-full flex flex-col items-center justify-center gap-1.5 transition-all cursor-pointer ${
+                pestanaNPanel === "calibrar"
+                  ? "shadow-md font-bold"
+                  : "hover:opacity-80"
+              }`}
             >
-              <Sparkles className="w-3.5 h-3.5 shrink-0" />
+              <Sliders className="w-3.5 h-3.5 shrink-0" />
               <span 
                 style={{ writingMode: "vertical-rl" }}
-                className="text-[9px] tracking-wide font-sans leading-none font-extrabold"
+                className="text-[9px] tracking-wide font-sans leading-none font-semibold"
               >
-                Render IA
+                Calibrar
               </span>
             </button>
           </div>

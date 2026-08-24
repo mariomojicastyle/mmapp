@@ -1107,7 +1107,7 @@ export default function DespieceView() {
               backgroundColor: coloresApariencia?.fondoAplicacion,
               borderColor: coloresApariencia?.bordePaneles 
             }}
-            className="flex items-center p-0.5 rounded-lg border"
+            className="flex items-center p-0.5 rounded-full border"
           >
             <button
               onClick={() => setMoneda("USD")}
@@ -1117,7 +1117,7 @@ export default function DespieceView() {
               } : {
                 color: coloresApariencia?.textoSecundario,
               }}
-              className="px-2.5 py-0.5 rounded-md font-bold text-[11px] transition cursor-pointer shadow-xs"
+              className="px-3 py-0.5 rounded-full font-semibold text-[11px] transition cursor-pointer shadow-xs"
             >
               USD ($)
             </button>
@@ -1129,7 +1129,7 @@ export default function DespieceView() {
               } : {
                 color: coloresApariencia?.textoSecundario,
               }}
-              className="px-2.5 py-0.5 rounded-md font-bold text-[11px] transition cursor-pointer shadow-xs"
+              className="px-3 py-0.5 rounded-full font-semibold text-[11px] transition cursor-pointer shadow-xs"
             >
               COP ($)
             </button>
@@ -2401,7 +2401,7 @@ export default function DespieceView() {
                 borderColor: coloresApariencia?.bordePaneles || "#CBD5E1",
                 color: coloresApariencia?.textoPrincipal || "#0F172A",
               }}
-              className="py-2 px-3.5 rounded-lg border font-bold text-xs shadow-xs transition flex items-center justify-center gap-1.5 disabled:opacity-50 cursor-pointer hover:border-cyan-500 hover:text-cyan-600 active:scale-95"
+              className="py-1.5 px-4 rounded-full border font-semibold text-xs shadow-xs transition flex items-center justify-center gap-1.5 disabled:opacity-50 cursor-pointer hover:border-cyan-500 hover:text-cyan-600 active:scale-95"
               title="Detectar contacto entre piezas y transferir perforaciones NURBS al DXF"
             >
               <Zap className={`w-3.5 h-3.5 ${mecanizadoEnProgreso ? "animate-spin text-amber-500" : "text-amber-500"}`} />
@@ -2417,7 +2417,7 @@ export default function DespieceView() {
                   borderColor: coloresApariencia?.bordePaneles || "#CBD5E1",
                   color: "#EF4444",
                 }}
-                className="py-2 px-3 rounded-lg border font-bold text-xs shadow-xs transition flex items-center justify-center gap-1.5 cursor-pointer hover:bg-red-50 dark:hover:bg-red-950/30 active:scale-95"
+                className="py-1.5 px-3.5 rounded-full border font-semibold text-xs shadow-xs transition flex items-center justify-center gap-1.5 cursor-pointer hover:bg-red-50 dark:hover:bg-red-950/30 active:scale-95"
                 title="Eliminar perforaciones transferidas"
               >
                 <Trash2 className="w-3.5 h-3.5" />
@@ -2433,9 +2433,9 @@ export default function DespieceView() {
                 backgroundColor: coloresApariencia?.botonActivo || "#0891b2",
                 color: "#FFFFFF",
               }}
-              className="py-2 px-4 rounded-lg font-bold text-xs shadow-sm transition flex items-center justify-center gap-2 disabled:opacity-50 cursor-pointer hover:opacity-90 active:scale-95"
+              className="py-1.5 px-4 rounded-full font-semibold text-xs shadow-xs transition flex items-center justify-center gap-2 disabled:opacity-50 cursor-pointer hover:opacity-90 active:scale-95"
             >
-              <Download className="w-4 h-4" />
+              <Download className="w-3.5 h-3.5" />
               <span>
                 {descargando 
                   ? "Generando DXFs..." 

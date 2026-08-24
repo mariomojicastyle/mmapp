@@ -31,6 +31,19 @@ import {
   Minimize2,
 } from "lucide-react";
 
+// Icono Oficial Dresser (Material Symbols - Cómoda / Mueble con Cajones)
+function DresserIcon({ className = "w-3.5 h-3.5" }: { className?: string }) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="currentColor"
+      className={className}
+    >
+      <path d="M4 21v-2h1v-4H4v-2h1V9H4V7h1V3h14v4h1v2h-1v4h1v2h-1v4h1v2h-2v-2H6v2H4zm3-4h10v-2H7v2zm0-6h10V9H7v2zm0-6h10V5H7v2z" />
+    </svg>
+  );
+}
+
 export default function PBRMaterialStudioModal() {
   const {
     modalPBRStudioAbierto,
@@ -40,6 +53,8 @@ export default function PBRMaterialStudioModal() {
     materialEnCalibracion,
     setMaterialEnCalibracion,
     materialesPBR,
+    capas,
+    materialSeleccionadoId,
     actualizarMaterialPBR,
     crearMaterialPBR,
     aplicarMaterialAMuebleActivo,
@@ -92,23 +107,33 @@ export default function PBRMaterialStudioModal() {
     }));
   };
 
-  // Sincronizar con el material enviado a calibración
+  // Sincronizar con el material activo del mueble o catálogo al abrir el estudio
   useEffect(() => {
     if (modalPBRStudioAbierto) {
       let targetMat = materialEnCalibracion;
       if (!targetMat) {
-        // Priorizar Duna o Marfil sobre metales
+        // 1. Buscar si hay una capa activa con material asignado (ej: capa_tono)
+        const capaActiva = capas.find((c) => c.activa) || capas.find((c) => c.id === "capa_tono");
+        const matCapa = capaActiva ? materialesPBR.find((m) => m.id === capaActiva.materialId) : null;
+        
+        // 2. O el materialSeleccionadoId
+        const matSel = materialSeleccionadoId ? materialesPBR.find((m) => m.id === materialSeleccionadoId) : null;
+
+        // 3. O priorizar materiales con textura como Duna o Marfil
         targetMat =
+          matCapa ||
+          matSel ||
           materialesPBR.find((m) => m.id === "mat_duna") ||
           materialesPBR.find((m) => m.id === "mat_marfil") ||
-          materialesPBR.find((m) => m.tipo === "Melamina" || m.tipo === "Madera") ||
+          materialesPBR.find((m) => m.texturaUrl) ||
           materialesPBR[0];
       }
+
       if (targetMat) {
         const matCopia: MaterialPBRDef = JSON.parse(JSON.stringify(targetMat));
         setMatLocal(matCopia);
 
-        // Si tiene textura difusa pero no tiene mapas normales calculados, auto-generarlos al instante
+        // Si tiene textura pero le faltan normales/rugosidad, auto-generar de inmediato para vestir el 3D
         if (matCopia.texturaUrl && (!matCopia.normalMapUrl || !matCopia.roughnessMapUrl)) {
           autoGenerarSetPBRCompleto(matCopia.texturaUrl, matCopia.tipo as any).then((pbrSet) => {
             setMatLocal((prev) =>
@@ -126,7 +151,7 @@ export default function PBRMaterialStudioModal() {
         }
       }
     }
-  }, [modalPBRStudioAbierto, materialEnCalibracion, materialesPBR]);
+  }, [modalPBRStudioAbierto, materialEnCalibracion, materialesPBR, capas, materialSeleccionadoId]);
 
   const handleSeleccionarMaterialCatalogo = (id: string) => {
     const found = materialesPBR.find((m) => m.id === id);
@@ -269,7 +294,7 @@ export default function PBRMaterialStudioModal() {
     }
   };
 
-  // Guardar en catálogo persistente
+  // Guardar en catálogo persistente y aplicar automáticamente al mueble activo
   const handleGuardarMaterial = () => {
     if (!matLocal) return;
     const existe = materialesPBR.find((m) => m.id === matLocal.id);
@@ -278,17 +303,9 @@ export default function PBRMaterialStudioModal() {
     } else {
       crearMaterialPBR(matLocal);
     }
+    aplicarMaterialAMuebleActivo(matLocal.id);
     setGuardadoExito(true);
     setTimeout(() => setGuardadoExito(false), 2000);
-  };
-
-  // Aplicar al mueble 3D activo
-  const handleAplicarAlMueble = () => {
-    if (!matLocal) return;
-    handleGuardarMaterial();
-    aplicarMaterialAMuebleActivo(matLocal.id);
-    setAplicadoExito(true);
-    setTimeout(() => setAplicadoExito(false), 2000);
   };
 
   // Disparar Render AI con la calibración activa
@@ -344,45 +361,25 @@ export default function PBRMaterialStudioModal() {
           }}
         >
           <div className="flex items-center gap-2.5">
-            <div 
-              className="p-1.5 rounded-lg text-white shadow-xs"
-              style={{ backgroundColor: coloresApariencia?.botonActivo || "#0891b2" }}
-            >
-              <Sparkles className="w-4 h-4" />
-            </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <h2 className="font-extrabold text-sm sm:text-base tracking-tight" style={{ color: coloresApariencia?.textoPrincipal }}>
-                  3BF PBR Material Studio
-                </h2>
-                <span 
-                  className="px-2 py-0.5 rounded-full text-[10px] font-extrabold border"
-                  style={{
-                    backgroundColor: tema === "obsidian" ? "rgba(99, 102, 241, 0.18)" : "#EEF2FF",
-                    color: tema === "obsidian" ? "#A5B4FC" : "#4338CA",
-                    borderColor: tema === "obsidian" ? "rgba(99, 102, 241, 0.35)" : "#C7D2FE"
-                  }}
-                >
-                  Calibrador Físico 3D & IBL
-                </span>
-              </div>
-            </div>
+            <h2 className="font-extrabold text-sm sm:text-base tracking-tight" style={{ color: coloresApariencia?.textoPrincipal }}>
+              3BF Material Studio
+            </h2>
           </div>
 
           <div className="flex items-center gap-2">
             {/* Selector de Material del Catálogo */}
             <div 
-              className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg border shadow-2xs"
+              className="flex items-center gap-1.5 px-3 py-1 rounded-full border shadow-2xs"
               style={{
                 backgroundColor: coloresApariencia?.fondoAplicacion,
                 borderColor: coloresApariencia?.bordePaneles,
               }}
             >
-              <span className="text-[11px] font-bold opacity-75" style={{ color: coloresApariencia?.textoSecundario }}>Material:</span>
+              <span className="text-[11px] font-semibold opacity-75" style={{ color: coloresApariencia?.textoSecundario }}>Material:</span>
               <select
                 value={matLocal.id}
                 onChange={(e) => handleSeleccionarMaterialCatalogo(e.target.value)}
-                className="bg-transparent text-xs font-extrabold outline-none cursor-pointer"
+                className="bg-transparent text-xs font-semibold outline-none cursor-pointer"
                 style={{ color: coloresApariencia?.textoPrincipal }}
               >
                 {materialesPBR.map((m) => (
@@ -403,7 +400,7 @@ export default function PBRMaterialStudioModal() {
             {/* Alternar Pantalla Completa */}
             <button
               onClick={() => setPantallaCompleta(!pantallaCompleta)}
-              className="p-1.5 rounded-lg border transition cursor-pointer hover:opacity-80"
+              className="p-1.5 rounded-full border transition cursor-pointer hover:opacity-80"
               style={{
                 backgroundColor: coloresApariencia?.fondoAplicacion,
                 borderColor: coloresApariencia?.bordePaneles,
@@ -416,7 +413,7 @@ export default function PBRMaterialStudioModal() {
 
             <button
               onClick={() => setModalPBRStudioAbierto(false)}
-              className="p-1.5 rounded-lg border transition cursor-pointer hover:opacity-80"
+              className="p-1.5 rounded-full border transition cursor-pointer hover:opacity-80"
               style={{
                 backgroundColor: coloresApariencia?.fondoAplicacion,
                 borderColor: coloresApariencia?.bordePaneles,
@@ -442,13 +439,14 @@ export default function PBRMaterialStudioModal() {
           >
             {/* Cabecera de Canales & Botón de Subida */}
             <div className="flex items-center justify-between">
-              <span className="font-extrabold text-xs flex items-center gap-1.5">
-                <Layers className="w-3.5 h-3.5 text-indigo-600" />
+              <span className="font-semibold text-xs flex items-center gap-1.5" style={{ color: coloresApariencia?.textoPrincipal }}>
+                <Layers className="w-3.5 h-3.5" style={{ color: coloresApariencia?.botonActivo || "#0891b2" }} />
                 <span>1. Canales PBR Físicos</span>
               </span>
               <button
                 onClick={() => fileInputRef.current?.click()}
-                className="px-2.5 py-1 rounded text-[11px] font-bold bg-indigo-600 hover:bg-indigo-700 text-white shadow-xs flex items-center gap-1 transition cursor-pointer"
+                className="px-3 py-1 rounded-full text-[11px] font-semibold text-white shadow-xs flex items-center gap-1.5 transition cursor-pointer hover:opacity-90"
+                style={{ backgroundColor: coloresApariencia?.botonActivo || "#0891b2" }}
               >
                 <Upload className="w-3 h-3" />
                 <span>Cargar Foto</span>
@@ -462,61 +460,73 @@ export default function PBRMaterialStudioModal() {
               />
             </div>
 
-            {/* Botón Mágico: Auto-Calcular PBR */}
+            {/* Botón: Auto-Calcular PBR */}
             <button
               onClick={handleAutoCalcularPBR}
               disabled={procesandoPBR || !matLocal.texturaUrl}
-              className="w-full py-2 px-3 rounded-lg font-bold text-xs flex items-center justify-center gap-1.5 transition shadow-xs bg-gradient-to-r from-indigo-600 to-cyan-600 hover:from-indigo-700 hover:to-cyan-700 text-white disabled:opacity-50 cursor-pointer"
+              className="w-full py-2 px-3 rounded-full font-semibold text-xs flex items-center justify-center transition shadow-xs text-white disabled:opacity-50 cursor-pointer hover:opacity-90"
+              style={{ backgroundColor: coloresApariencia?.botonActivo || "#0891b2" }}
             >
               {procesandoPBR ? (
-                <>
-                  <RefreshCw className="w-3.5 h-3.5 animate-spin" />
-                  <span>Calculando Normales & Rugosidad...</span>
-                </>
+                <span>Calculando Normales & Rugosidad...</span>
               ) : (
-                <>
-                  <Sparkles className="w-3.5 h-3.5" />
-                  <span>✨ Auto-Generar Canales PBR (0.1s)</span>
-                </>
+                <span>Auto-Generar Canales PBR (0.1s)</span>
               )}
             </button>
 
-            {/* Miniaturas de los 4 Canales PBR */}
+            {/* Miniaturas de los 4 Canales PBR Cuadrados */}
             <div className="grid grid-cols-2 gap-2">
               {/* Canal 1: Diffuse / Albedo */}
-              <div className="p-2 rounded-lg border flex flex-col gap-1.5 shadow-2xs" style={{ borderColor: coloresApariencia?.bordePaneles }}>
+              <div className="p-2 rounded-lg border flex flex-col gap-1.5 shadow-2xs" style={{ borderColor: coloresApariencia?.bordePaneles, backgroundColor: coloresApariencia?.fondoAplicacion }}>
                 <div className="flex items-center justify-between text-[11px]">
-                  <span className="font-bold text-slate-700 dark:text-slate-200">1. Diffuse</span>
+                  <span className="font-semibold" style={{ color: coloresApariencia?.textoPrincipal }}>1. Diffuse</span>
                   <div className="flex items-center gap-1">
                     <input
                       type="color"
                       value={matLocal.colorBase || "#FFFFFF"}
                       onChange={(e) => setMatLocal({ ...matLocal, colorBase: e.target.value })}
-                      className="w-4 h-4 rounded border cursor-pointer"
+                      className="w-4 h-4 rounded cursor-pointer border-0 bg-transparent"
                       title="Tinte de color"
                     />
                   </div>
                 </div>
-                <div className="w-full h-16 rounded border overflow-hidden bg-slate-200 dark:bg-slate-800 flex items-center justify-center">
+                <div className="w-full aspect-square rounded-lg border overflow-hidden flex items-center justify-center relative" style={{ borderColor: coloresApariencia?.bordePaneles, backgroundColor: tema === "obsidian" ? "#161B22" : "#F8FAFC" }}>
                   {matLocal.texturaUrl ? (
                     <img src={matLocal.texturaUrl} alt="Diffuse" className="w-full h-full object-cover" />
                   ) : (
-                    <div className="w-full h-full" style={{ backgroundColor: matLocal.colorBase }} />
+                    <div 
+                      onClick={() => fileInputRef.current?.click()}
+                      className="w-full h-full flex flex-col items-center justify-center gap-1.5 cursor-pointer transition hover:opacity-80 p-2 text-center"
+                    >
+                      <Upload className="w-4 h-4 opacity-60" style={{ color: coloresApariencia?.botonActivo || "#0891B2" }} />
+                      <span className="text-[10px] font-semibold opacity-70 leading-tight" style={{ color: coloresApariencia?.textoPrincipal }}>
+                        Adjuntar Foto
+                      </span>
+                    </div>
                   )}
                 </div>
               </div>
 
               {/* Canal 2: Normal Map */}
-              <div className="p-2 rounded-lg border flex flex-col gap-1.5 shadow-2xs" style={{ borderColor: coloresApariencia?.bordePaneles }}>
+              <div className="p-2 rounded-lg border flex flex-col gap-1.5 shadow-2xs" style={{ borderColor: coloresApariencia?.bordePaneles, backgroundColor: coloresApariencia?.fondoAplicacion }}>
                 <div className="flex items-center justify-between text-[11px]">
-                  <span className="font-bold text-indigo-600 dark:text-indigo-400">2. Normal</span>
-                  <span className="text-[10px] font-mono">{(matLocal.normalScale ?? 1.2).toFixed(1)}x</span>
+                  <span className="font-semibold" style={{ color: coloresApariencia?.textoPrincipal }}>2. Normal</span>
+                  <div 
+                    className="px-1.5 py-0.5 text-right text-[10px] font-mono font-bold border rounded shadow-2xs"
+                    style={{
+                      borderColor: coloresApariencia?.bordePaneles,
+                      backgroundColor: coloresApariencia?.fondoPaneles,
+                      color: coloresApariencia?.botonActivo || "#0891B2"
+                    }}
+                  >
+                    {(matLocal.normalScale ?? 1.2).toFixed(1)}x
+                  </div>
                 </div>
-                <div className="w-full h-16 rounded border overflow-hidden bg-indigo-950 flex items-center justify-center">
+                <div className="w-full aspect-square rounded-lg border overflow-hidden flex items-center justify-center" style={{ borderColor: coloresApariencia?.bordePaneles, backgroundColor: tema === "obsidian" ? "#161B22" : "#F8FAFC" }}>
                   {matLocal.normalMapUrl ? (
                     <img src={matLocal.normalMapUrl} alt="Normal" className="w-full h-full object-cover" />
                   ) : (
-                    <span className="text-[9px] text-indigo-300 font-mono">Sin Normal</span>
+                    <span className="text-[10px] font-mono opacity-40" style={{ color: coloresApariencia?.textoSecundario }}>Sin Normal</span>
                   )}
                 </div>
                 <input
@@ -526,21 +536,31 @@ export default function PBRMaterialStudioModal() {
                   step="0.1"
                   value={matLocal.normalScale ?? 1.2}
                   onChange={(e) => handleCambiarNormalScale(parseFloat(e.target.value))}
-                  className="w-full h-1 bg-slate-300 dark:bg-slate-700 rounded appearance-none cursor-pointer accent-indigo-600"
+                  className="w-full cursor-pointer"
+                  style={{ accentColor: coloresApariencia?.botonActivo || "#0891b2" }}
                 />
               </div>
 
               {/* Canal 3: Roughness Map */}
-              <div className="p-2 rounded-lg border flex flex-col gap-1.5 shadow-2xs" style={{ borderColor: coloresApariencia?.bordePaneles }}>
+              <div className="p-2 rounded-lg border flex flex-col gap-1.5 shadow-2xs" style={{ borderColor: coloresApariencia?.bordePaneles, backgroundColor: coloresApariencia?.fondoAplicacion }}>
                 <div className="flex items-center justify-between text-[11px]">
-                  <span className="font-bold text-amber-600 dark:text-amber-400">3. Roughness</span>
-                  <span className="text-[10px] font-mono">{(matLocal.rugosidad ?? 0.5).toFixed(2)}</span>
+                  <span className="font-semibold" style={{ color: coloresApariencia?.textoPrincipal }}>3. Roughness</span>
+                  <div 
+                    className="px-1.5 py-0.5 text-right text-[10px] font-mono font-bold border rounded shadow-2xs"
+                    style={{
+                      borderColor: coloresApariencia?.bordePaneles,
+                      backgroundColor: coloresApariencia?.fondoPaneles,
+                      color: coloresApariencia?.botonActivo || "#0891B2"
+                    }}
+                  >
+                    {(matLocal.rugosidad ?? 0.5).toFixed(2)}
+                  </div>
                 </div>
-                <div className="w-full h-16 rounded border overflow-hidden bg-slate-900 flex items-center justify-center">
+                <div className="w-full aspect-square rounded-lg border overflow-hidden flex items-center justify-center" style={{ borderColor: coloresApariencia?.bordePaneles, backgroundColor: tema === "obsidian" ? "#161B22" : "#F8FAFC" }}>
                   {matLocal.roughnessMapUrl ? (
                     <img src={matLocal.roughnessMapUrl} alt="Roughness" className="w-full h-full object-cover" />
                   ) : (
-                    <span className="text-[9px] text-slate-400 font-mono">Sin Mapa</span>
+                    <span className="text-[10px] font-mono opacity-40" style={{ color: coloresApariencia?.textoSecundario }}>Sin Roughness</span>
                   )}
                 </div>
                 <input
@@ -550,21 +570,31 @@ export default function PBRMaterialStudioModal() {
                   step="0.05"
                   value={matLocal.rugosidad ?? 0.5}
                   onChange={(e) => handleCambiarRugosidadBase(parseFloat(e.target.value))}
-                  className="w-full h-1 bg-slate-300 dark:bg-slate-700 rounded appearance-none cursor-pointer accent-amber-600"
+                  className="w-full cursor-pointer"
+                  style={{ accentColor: coloresApariencia?.botonActivo || "#0891b2" }}
                 />
               </div>
 
               {/* Canal 4: AO */}
-              <div className="p-2 rounded-lg border flex flex-col gap-1.5 shadow-2xs" style={{ borderColor: coloresApariencia?.bordePaneles }}>
+              <div className="p-2 rounded-lg border flex flex-col gap-1.5 shadow-2xs" style={{ borderColor: coloresApariencia?.bordePaneles, backgroundColor: coloresApariencia?.fondoAplicacion }}>
                 <div className="flex items-center justify-between text-[11px]">
-                  <span className="font-bold text-slate-600 dark:text-slate-300">4. AO Poro</span>
-                  <span className="text-[10px] font-mono">{(matLocal.aoIntensity ?? 1.0).toFixed(1)}x</span>
+                  <span className="font-semibold" style={{ color: coloresApariencia?.textoPrincipal }}>4. AO Poro</span>
+                  <div 
+                    className="px-1.5 py-0.5 text-right text-[10px] font-mono font-bold border rounded shadow-2xs"
+                    style={{
+                      borderColor: coloresApariencia?.bordePaneles,
+                      backgroundColor: coloresApariencia?.fondoPaneles,
+                      color: coloresApariencia?.botonActivo || "#0891B2"
+                    }}
+                  >
+                    {(matLocal.aoIntensity ?? 1.0).toFixed(1)}x
+                  </div>
                 </div>
-                <div className="w-full h-16 rounded border overflow-hidden bg-slate-900 flex items-center justify-center">
+                <div className="w-full aspect-square rounded-lg border overflow-hidden flex items-center justify-center" style={{ borderColor: coloresApariencia?.bordePaneles, backgroundColor: tema === "obsidian" ? "#161B22" : "#F8FAFC" }}>
                   {matLocal.aoMapUrl ? (
                     <img src={matLocal.aoMapUrl} alt="AO" className="w-full h-full object-cover" />
                   ) : (
-                    <span className="text-[9px] text-slate-400 font-mono">Sin AO</span>
+                    <span className="text-[10px] font-mono opacity-40" style={{ color: coloresApariencia?.textoSecundario }}>Sin AO</span>
                   )}
                 </div>
                 <input
@@ -574,27 +604,28 @@ export default function PBRMaterialStudioModal() {
                   step="0.1"
                   value={matLocal.aoIntensity ?? 1.0}
                   onChange={(e) => setMatLocal({ ...matLocal, aoIntensity: parseFloat(e.target.value) })}
-                  className="w-full h-1 bg-slate-300 dark:bg-slate-700 rounded appearance-none cursor-pointer accent-slate-600"
+                  className="w-full cursor-pointer"
+                  style={{ accentColor: coloresApariencia?.botonActivo || "#0891b2" }}
                 />
               </div>
             </div>
 
             {/* SECCIÓN 2: PROPIEDADES PRINCIPLED BSDF */}
             <div className="pt-2 border-t flex flex-col gap-2.5" style={{ borderColor: coloresApariencia?.bordePaneles }}>
-              <span className="font-extrabold text-xs flex items-center gap-1.5">
-                <Sliders className="w-3.5 h-3.5 text-indigo-600" />
+              <span className="font-semibold text-xs flex items-center gap-1.5" style={{ color: coloresApariencia?.textoPrincipal }}>
+                <Sliders className="w-3.5 h-3.5" style={{ color: coloresApariencia?.botonActivo || "#0891b2" }} />
                 <span>2. Parámetros Físicos Principled BSDF</span>
               </span>
 
-              {/* Nombre y Tipo */}
-              <div className="grid grid-cols-2 gap-2">
+              {/* Nombre & Tipo */}
+              <div className="grid grid-cols-2 gap-2 text-xs">
                 <div className="flex flex-col gap-1">
-                  <label className="font-bold text-[10px] opacity-70">Nombre:</label>
+                  <label className="font-semibold text-[10px]" style={{ color: coloresApariencia?.textoSecundario }}>Nombre:</label>
                   <input
                     type="text"
                     value={matLocal.nombre}
                     onChange={(e) => setMatLocal({ ...matLocal, nombre: e.target.value })}
-                    className="px-2 py-1 rounded border text-xs font-bold outline-none"
+                    className="px-2 py-1 rounded-md border text-xs font-semibold outline-none"
                     style={{
                       backgroundColor: coloresApariencia?.fondoAplicacion,
                       borderColor: coloresApariencia?.bordePaneles,
@@ -603,11 +634,11 @@ export default function PBRMaterialStudioModal() {
                   />
                 </div>
                 <div className="flex flex-col gap-1">
-                  <label className="font-bold text-[10px] opacity-70">Tipo:</label>
+                  <label className="font-semibold text-[10px]" style={{ color: coloresApariencia?.textoSecundario }}>Tipo:</label>
                   <select
                     value={matLocal.tipo}
                     onChange={(e) => setMatLocal({ ...matLocal, tipo: e.target.value as any })}
-                    className="px-2 py-1 rounded border text-xs font-bold outline-none"
+                    className="px-2 py-1 rounded-md border text-xs font-semibold outline-none cursor-pointer"
                     style={{
                       backgroundColor: coloresApariencia?.fondoAplicacion,
                       borderColor: coloresApariencia?.bordePaneles,
@@ -624,15 +655,28 @@ export default function PBRMaterialStudioModal() {
                 </div>
               </div>
 
-              {/* Sliders Principled Apilados Verticalmente a Ancho Completo */}
-              <div className="flex flex-col gap-2.5 pt-1">
+              {/* Sliders Principled en Tarjetas Idénticas al Menú de Componentes */}
+              <div className="flex flex-col gap-2 pt-1">
                 {/* 1. Metálico */}
-                <div className="flex flex-col gap-1 text-[11px]">
+                <div 
+                  className="flex flex-col gap-1.5 p-2 rounded-lg border shadow-2xs text-xs"
+                  style={{ 
+                    backgroundColor: coloresApariencia?.fondoPaneles, 
+                    borderColor: coloresApariencia?.bordePaneles 
+                  }}
+                >
                   <div className="flex justify-between items-center">
-                    <span className="font-bold opacity-75">Metálico (Metallic):</span>
-                    <span className="font-mono font-extrabold text-cyan-600 dark:text-cyan-400">
+                    <label className="font-semibold" style={{ color: coloresApariencia?.textoPrincipal }}>Metálico (Metallic)</label>
+                    <div 
+                      className="px-2 py-0.5 text-right text-xs font-mono font-bold border rounded shadow-2xs min-w-[54px]"
+                      style={{
+                        borderColor: coloresApariencia?.bordePaneles,
+                        backgroundColor: coloresApariencia?.fondoAplicacion,
+                        color: coloresApariencia?.botonActivo || "#0891B2"
+                      }}
+                    >
                       {(matLocal.metalico ?? 0).toFixed(2)}
-                    </span>
+                    </div>
                   </div>
                   <input
                     type="range"
@@ -641,17 +685,31 @@ export default function PBRMaterialStudioModal() {
                     step="0.01"
                     value={matLocal.metalico ?? 0}
                     onChange={(e) => setMatLocal({ ...matLocal, metalico: parseFloat(e.target.value) })}
-                    className="w-full h-1.5 bg-slate-300 dark:bg-slate-700 rounded-lg appearance-none cursor-pointer accent-cyan-600"
+                    className="w-full cursor-pointer"
+                    style={{ accentColor: coloresApariencia?.botonActivo || "#0891b2" }}
                   />
                 </div>
 
-                {/* 2. Resina / Barniz (Clearcoat) - Alta Sensibilidad */}
-                <div className="flex flex-col gap-1 text-[11px]">
+                {/* 2. Resina / Barniz (Clearcoat) */}
+                <div 
+                  className="flex flex-col gap-1.5 p-2 rounded-lg border shadow-2xs text-xs"
+                  style={{ 
+                    backgroundColor: coloresApariencia?.fondoPaneles, 
+                    borderColor: coloresApariencia?.bordePaneles 
+                  }}
+                >
                   <div className="flex justify-between items-center">
-                    <span className="font-bold opacity-75">Resina / Barniz (Clearcoat):</span>
-                    <span className="font-mono font-extrabold text-indigo-600 dark:text-indigo-400">
+                    <label className="font-semibold" style={{ color: coloresApariencia?.textoPrincipal }}>Resina / Barniz (Clearcoat)</label>
+                    <div 
+                      className="px-2 py-0.5 text-right text-xs font-mono font-bold border rounded shadow-2xs min-w-[54px]"
+                      style={{
+                        borderColor: coloresApariencia?.bordePaneles,
+                        backgroundColor: coloresApariencia?.fondoAplicacion,
+                        color: coloresApariencia?.botonActivo || "#0891B2"
+                      }}
+                    >
                       {(matLocal.clearcoat ?? 0).toFixed(3)}
-                    </span>
+                    </div>
                   </div>
                   <input
                     type="range"
@@ -660,17 +718,31 @@ export default function PBRMaterialStudioModal() {
                     step="0.005"
                     value={matLocal.clearcoat ?? 0}
                     onChange={(e) => setMatLocal({ ...matLocal, clearcoat: parseFloat(e.target.value) })}
-                    className="w-full h-1.5 bg-slate-300 dark:bg-slate-700 rounded-lg appearance-none cursor-pointer accent-indigo-600"
+                    className="w-full cursor-pointer"
+                    style={{ accentColor: coloresApariencia?.botonActivo || "#0891b2" }}
                   />
                 </div>
 
                 {/* 3. Difusión del Brillo (Clearcoat Roughness) */}
-                <div className="flex flex-col gap-1 text-[11px]">
+                <div 
+                  className="flex flex-col gap-1.5 p-2 rounded-lg border shadow-2xs text-xs"
+                  style={{ 
+                    backgroundColor: coloresApariencia?.fondoPaneles, 
+                    borderColor: coloresApariencia?.bordePaneles 
+                  }}
+                >
                   <div className="flex justify-between items-center">
-                    <span className="font-bold opacity-75">Difusión del Brillo (Satinado):</span>
-                    <span className="font-mono font-extrabold text-purple-600 dark:text-purple-400">
+                    <label className="font-semibold" style={{ color: coloresApariencia?.textoPrincipal }}>Difusión del Brillo (Satinado)</label>
+                    <div 
+                      className="px-2 py-0.5 text-right text-xs font-mono font-bold border rounded shadow-2xs min-w-[54px]"
+                      style={{
+                        borderColor: coloresApariencia?.bordePaneles,
+                        backgroundColor: coloresApariencia?.fondoAplicacion,
+                        color: coloresApariencia?.botonActivo || "#0891B2"
+                      }}
+                    >
                       {(matLocal.clearcoatRoughness ?? 0.35).toFixed(2)}
-                    </span>
+                    </div>
                   </div>
                   <input
                     type="range"
@@ -679,17 +751,31 @@ export default function PBRMaterialStudioModal() {
                     step="0.01"
                     value={matLocal.clearcoatRoughness ?? 0.35}
                     onChange={(e) => setMatLocal({ ...matLocal, clearcoatRoughness: parseFloat(e.target.value) })}
-                    className="w-full h-1.5 bg-slate-300 dark:bg-slate-700 rounded-lg appearance-none cursor-pointer accent-purple-600"
+                    className="w-full cursor-pointer"
+                    style={{ accentColor: coloresApariencia?.botonActivo || "#0891b2" }}
                   />
                 </div>
 
                 {/* 4. Índice de Refracción (IOR) */}
-                <div className="flex flex-col gap-1 text-[11px]">
+                <div 
+                  className="flex flex-col gap-1.5 p-2 rounded-lg border shadow-2xs text-xs"
+                  style={{ 
+                    backgroundColor: coloresApariencia?.fondoPaneles, 
+                    borderColor: coloresApariencia?.bordePaneles 
+                  }}
+                >
                   <div className="flex justify-between items-center">
-                    <span className="font-bold opacity-75">Índice de Refracción (IOR):</span>
-                    <span className="font-mono font-extrabold" style={{ color: coloresApariencia?.textoPrincipal }}>
+                    <label className="font-semibold" style={{ color: coloresApariencia?.textoPrincipal }}>Índice de Refracción (IOR)</label>
+                    <div 
+                      className="px-2 py-0.5 text-right text-xs font-mono font-bold border rounded shadow-2xs min-w-[54px]"
+                      style={{
+                        borderColor: coloresApariencia?.bordePaneles,
+                        backgroundColor: coloresApariencia?.fondoAplicacion,
+                        color: coloresApariencia?.botonActivo || "#0891B2"
+                      }}
+                    >
                       {(matLocal.ior ?? 1.5).toFixed(2)}
-                    </span>
+                    </div>
                   </div>
                   <input
                     type="range"
@@ -698,7 +784,8 @@ export default function PBRMaterialStudioModal() {
                     step="0.01"
                     value={matLocal.ior ?? 1.5}
                     onChange={(e) => setMatLocal({ ...matLocal, ior: parseFloat(e.target.value) })}
-                    className="w-full h-1.5 bg-slate-300 dark:bg-slate-700 rounded-lg appearance-none cursor-pointer accent-slate-600"
+                    className="w-full cursor-pointer"
+                    style={{ accentColor: coloresApariencia?.botonActivo || "#0891b2" }}
                   />
                 </div>
               </div>
@@ -714,7 +801,7 @@ export default function PBRMaterialStudioModal() {
             >
               <div className="flex items-center justify-between">
                 <span className="font-extrabold text-xs flex items-center gap-1.5" style={{ color: coloresApariencia?.textoPrincipal }}>
-                  <span>📐 3. Control de Aristas & Contornos</span>
+                  <span>3. Control de Aristas & Contornos</span>
                 </span>
                 <label className="flex items-center gap-1.5 cursor-pointer select-none font-bold text-[11px]">
                   <input
@@ -747,12 +834,25 @@ export default function PBRMaterialStudioModal() {
                   </div>
 
                   {/* Opacidad de Arista */}
-                  <div className="flex flex-col gap-1 text-[11px]">
+                  <div 
+                    className="flex flex-col gap-1.5 p-2 rounded-lg border shadow-2xs text-xs"
+                    style={{ 
+                      backgroundColor: coloresApariencia?.fondoPaneles, 
+                      borderColor: coloresApariencia?.bordePaneles 
+                    }}
+                  >
                     <div className="flex justify-between items-center">
-                      <span className="font-bold opacity-75" style={{ color: coloresApariencia?.textoSecundario }}>Opacidad de Aristas:</span>
-                      <span className="font-mono font-extrabold" style={{ color: coloresApariencia?.textoPrincipal }}>
+                      <label className="font-semibold" style={{ color: coloresApariencia?.textoPrincipal }}>Opacidad de Aristas</label>
+                      <div 
+                        className="px-2 py-0.5 text-right text-xs font-mono font-bold border rounded shadow-2xs min-w-[54px]"
+                        style={{
+                          borderColor: coloresApariencia?.bordePaneles,
+                          backgroundColor: coloresApariencia?.fondoAplicacion,
+                          color: coloresApariencia?.botonActivo || "#0891B2"
+                        }}
+                      >
                         {Math.round((calibracion.opacidadAristas ?? 0.75) * 100)}%
-                      </span>
+                      </div>
                     </div>
                     <input
                       type="range"
@@ -761,18 +861,31 @@ export default function PBRMaterialStudioModal() {
                       step="0.05"
                       value={calibracion.opacidadAristas ?? 0.75}
                       onChange={(e) => setCalibracion("opacidadAristas", parseFloat(e.target.value))}
-                      className="w-full h-1.5 rounded-lg appearance-none cursor-pointer"
+                      className="w-full cursor-pointer"
                       style={{ accentColor: coloresApariencia?.botonActivo || "#0891b2" }}
                     />
                   </div>
 
                   {/* Ángulo Umbral (Threshold) */}
-                  <div className="flex flex-col gap-1 text-[11px]">
+                  <div 
+                    className="flex flex-col gap-1.5 p-2 rounded-lg border shadow-2xs text-xs"
+                    style={{ 
+                      backgroundColor: coloresApariencia?.fondoPaneles, 
+                      borderColor: coloresApariencia?.bordePaneles 
+                    }}
+                  >
                     <div className="flex justify-between items-center">
-                      <span className="font-bold opacity-75" style={{ color: coloresApariencia?.textoSecundario }}>Ángulo de Delineado:</span>
-                      <span className="font-mono font-extrabold" style={{ color: coloresApariencia?.textoPrincipal }}>
+                      <label className="font-semibold" style={{ color: coloresApariencia?.textoPrincipal }}>Ángulo de Delineado</label>
+                      <div 
+                        className="px-2 py-0.5 text-right text-xs font-mono font-bold border rounded shadow-2xs min-w-[54px]"
+                        style={{
+                          borderColor: coloresApariencia?.bordePaneles,
+                          backgroundColor: coloresApariencia?.fondoAplicacion,
+                          color: coloresApariencia?.botonActivo || "#0891B2"
+                        }}
+                      >
                         {calibracion.thresholdAristas ?? 25}°
-                      </span>
+                      </div>
                     </div>
                     <input
                       type="range"
@@ -781,7 +894,7 @@ export default function PBRMaterialStudioModal() {
                       step="1"
                       value={calibracion.thresholdAristas ?? 25}
                       onChange={(e) => setCalibracion("thresholdAristas", parseInt(e.target.value))}
-                      className="w-full h-1.5 rounded-lg appearance-none cursor-pointer"
+                      className="w-full cursor-pointer"
                       style={{ accentColor: coloresApariencia?.botonActivo || "#0891b2" }}
                     />
                   </div>
@@ -789,56 +902,24 @@ export default function PBRMaterialStudioModal() {
               )}
             </div>
 
-            {/* BOTONES DE ACCIÓN */}
+            {/* BOTONES DE ACCIÓN UNIFICADOS */}
             <div className="mt-auto pt-3 border-t flex flex-col gap-2" style={{ borderColor: coloresApariencia?.bordePaneles }}>
               <button
                 onClick={handleGuardarMaterial}
-                className="w-full py-2 px-3 rounded-lg font-bold text-xs flex items-center justify-center gap-1.5 border transition cursor-pointer hover:opacity-90 shadow-2xs"
-                style={{
-                  backgroundColor: coloresApariencia?.fondoPaneles,
-                  borderColor: coloresApariencia?.bordePaneles,
-                  color: coloresApariencia?.textoPrincipal
-                }}
-              >
-                {guardadoExito ? (
-                  <>
-                    <Check className="w-3.5 h-3.5 text-emerald-500" />
-                    <span>¡Guardado en Catálogo!</span>
-                  </>
-                ) : (
-                  <>
-                    <Save className="w-3.5 h-3.5" />
-                    <span>Guardar en Catálogo PBR</span>
-                  </>
-                )}
-              </button>
-
-              <button
-                onClick={handleAplicarAlMueble}
-                className="w-full py-2 px-3 rounded-lg font-extrabold text-xs flex items-center justify-center gap-1.5 text-white shadow-xs transition cursor-pointer hover:opacity-90"
+                className="w-full py-2.5 px-4 rounded-full font-semibold text-xs flex items-center justify-center text-white shadow-xs transition cursor-pointer hover:opacity-90"
                 style={{ backgroundColor: coloresApariencia?.botonActivo || "#0891b2" }}
               >
-                {aplicadoExito ? (
-                  <>
-                    <CheckCircle2 className="w-3.5 h-3.5 text-emerald-300" />
-                    <span>¡Aplicado al Mueble 3D!</span>
-                  </>
-                ) : (
-                  <>
-                    <Palette className="w-3.5 h-3.5" />
-                    <span>🎯 Aplicar al Mueble 3D Activo</span>
-                  </>
-                )}
+                <span>{guardadoExito ? "¡Guardado en Catálogo!" : "Guardar en Catálogo PBR"}</span>
               </button>
 
               {/* Botón Destacado: Lanzar Render AI con esta calibración */}
               <button
                 onClick={handleLanzarRenderIA}
-                className="w-full py-2.5 px-4 rounded-lg font-extrabold text-xs flex items-center justify-center gap-2 bg-gradient-to-r from-purple-600 via-indigo-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white shadow-md transition transform hover:scale-[1.01] cursor-pointer"
+                className="w-full py-2.5 px-4 rounded-full font-semibold text-xs flex items-center justify-center text-white shadow-xs transition cursor-pointer hover:opacity-90"
+                style={{ backgroundColor: coloresApariencia?.botonActivo || "#0891b2" }}
                 title="Aplicar este material y abrir el estudio de Render Fotorrealista con IA"
               >
-                <Sparkles className="w-4 h-4 text-amber-300" />
-                <span>✨ Lanzar Render AI con este Material</span>
+                <span>Lanzar Render AI con este Material</span>
               </button>
             </div>
           </div>
@@ -850,7 +931,7 @@ export default function PBRMaterialStudioModal() {
           >
             {/* Barra Flotante Superior: Selector de Forma y Controles de Aristas */}
             <div className="flex items-center justify-between px-1 flex-wrap gap-2">
-              <span className="font-extrabold text-xs flex items-center gap-1.5" style={{ color: coloresApariencia?.textoPrincipal }}>
+              <span className="font-semibold text-xs flex items-center gap-1.5" style={{ color: coloresApariencia?.textoPrincipal }}>
                 <Eye className="w-3.5 h-3.5" style={{ color: coloresApariencia?.botonActivo || "#0891b2" }} />
                 <span>Shader Ball 3D Interactivo (Rotar con el Mouse 360°)</span>
               </span>
@@ -858,21 +939,21 @@ export default function PBRMaterialStudioModal() {
               <div className="flex items-center gap-3 flex-wrap">
                 {/* Control de Aristas y Contornos */}
                 <div 
-                  className="flex items-center gap-2 px-2.5 py-1 rounded-lg text-xs border shadow-xs"
+                  className="flex items-center gap-2 px-3 py-1 rounded-full text-xs border shadow-xs"
                   style={{
                     backgroundColor: coloresApariencia?.fondoPaneles,
                     borderColor: coloresApariencia?.bordePaneles,
                     color: coloresApariencia?.textoPrincipal
                   }}
                 >
-                  <label className="flex items-center gap-1.5 cursor-pointer select-none font-bold text-[11px]">
+                  <label className="flex items-center gap-1.5 cursor-pointer select-none font-semibold text-[11px]">
                     <input
                       type="checkbox"
                       checked={calibracion.mostrarAristas !== false}
                       onChange={(e) => setCalibracion("mostrarAristas", e.target.checked)}
                       className="rounded cursor-pointer"
                     />
-                    <span style={{ color: coloresApariencia?.textoPrincipal }}>📐 Aristas</span>
+                    <span style={{ color: coloresApariencia?.textoPrincipal }}>Aristas</span>
                   </label>
 
                   {calibracion.mostrarAristas !== false && (
@@ -892,9 +973,10 @@ export default function PBRMaterialStudioModal() {
                         value={calibracion.opacidadAristas ?? 0.75}
                         onChange={(e) => setCalibracion("opacidadAristas", parseFloat(e.target.value))}
                         className="w-14 h-1 rounded appearance-none cursor-pointer"
+                        style={{ accentColor: coloresApariencia?.botonActivo || "#0891b2" }}
                         title="Opacidad de las aristas"
                       />
-                      <span className="font-mono text-[10px] font-bold opacity-80" style={{ color: coloresApariencia?.textoPrincipal }}>
+                      <span className="font-mono text-[10px] font-semibold opacity-80" style={{ color: coloresApariencia?.textoPrincipal }}>
                         {Math.round((calibracion.opacidadAristas ?? 0.75) * 100)}%
                       </span>
                     </div>
@@ -903,7 +985,7 @@ export default function PBRMaterialStudioModal() {
 
                 {/* Selector de Geometría de prueba */}
                 <div 
-                  className="flex items-center gap-1 p-0.5 rounded-lg border shadow-xs"
+                  className="flex items-center gap-1 p-0.5 rounded-full border shadow-xs"
                   style={{
                     backgroundColor: coloresApariencia?.fondoPaneles,
                     borderColor: coloresApariencia?.bordePaneles
@@ -911,51 +993,51 @@ export default function PBRMaterialStudioModal() {
                 >
                   <button
                     onClick={() => setFormaVisor("esfera")}
-                    className="flex items-center gap-1 px-2.5 py-1 rounded text-xs transition cursor-pointer font-bold"
+                    className="flex items-center gap-1 px-3 py-1 rounded-full text-xs transition cursor-pointer font-semibold"
                     style={{
                       backgroundColor: formaVisor === "esfera" ? (coloresApariencia?.botonActivo || "#0891b2") : "transparent",
                       color: formaVisor === "esfera" ? "#FFFFFF" : coloresApariencia?.textoSecundario
                     }}
                     title="Shader Ball Esférica"
                   >
-                    <Circle className="w-3.5 h-3.5" />
+                    <Circle className="w-3 h-3" />
                     <span>Esfera</span>
                   </button>
                   <button
                     onClick={() => setFormaVisor("tablero")}
-                    className="flex items-center gap-1 px-2.5 py-1 rounded text-xs transition cursor-pointer font-bold"
+                    className="flex items-center gap-1 px-3 py-1 rounded-full text-xs transition cursor-pointer font-semibold"
                     style={{
                       backgroundColor: formaVisor === "tablero" ? (coloresApariencia?.botonActivo || "#0891b2") : "transparent",
                       color: formaVisor === "tablero" ? "#FFFFFF" : coloresApariencia?.textoSecundario
                     }}
                     title="Tablero Plano de Melamina con Canto"
                   >
-                    <Square className="w-3.5 h-3.5" />
+                    <Square className="w-3 h-3" />
                     <span>Tablero Melamina</span>
                   </button>
                   <button
                     onClick={() => setFormaVisor("cubo")}
-                    className="flex items-center gap-1 px-2.5 py-1 rounded text-xs transition cursor-pointer font-bold"
+                    className="flex items-center gap-1 px-3 py-1 rounded-full text-xs transition cursor-pointer font-semibold"
                     style={{
                       backgroundColor: formaVisor === "cubo" ? (coloresApariencia?.botonActivo || "#0891b2") : "transparent",
                       color: formaVisor === "cubo" ? "#FFFFFF" : coloresApariencia?.textoSecundario
                     }}
                     title="Cubo Biselado"
                   >
-                    <Box className="w-3.5 h-3.5" />
+                    <Box className="w-3 h-3" />
                     <span>Cubo</span>
                   </button>
                   <button
                     onClick={() => setFormaVisor("mueble")}
-                    className="flex items-center gap-1 px-2.5 py-1 rounded text-xs transition cursor-pointer font-bold"
+                    className="flex items-center gap-1.5 px-3 py-1 rounded-full text-xs transition cursor-pointer font-semibold"
                     style={{
                       backgroundColor: formaVisor === "mueble" ? (coloresApariencia?.botonActivo || "#0891b2") : "transparent",
                       color: formaVisor === "mueble" ? "#FFFFFF" : coloresApariencia?.textoSecundario
                     }}
                     title="Previsualizar en el Mueble Real Completo"
                   >
-                    <Layers className="w-3.5 h-3.5" />
-                    <span>🪑 Mueble Real</span>
+                    <DresserIcon className="w-3.5 h-3.5" />
+                    <span>Mueble Real</span>
                   </button>
                 </div>
               </div>
@@ -980,7 +1062,7 @@ export default function PBRMaterialStudioModal() {
             >
               {/* Selector HDRI */}
               <div className="flex items-center gap-2">
-                <span className="text-xs font-bold text-amber-600 dark:text-amber-400 flex items-center gap-1">
+                <span className="text-xs font-semibold flex items-center gap-1" style={{ color: coloresApariencia?.botonActivo || "#0891B2" }}>
                   <Sun className="w-3.5 h-3.5" />
                   <span>Entorno HDRI:</span>
                 </span>
@@ -994,7 +1076,7 @@ export default function PBRMaterialStudioModal() {
                       setHdriConfig({ ...hdriConfig, tipo: val });
                     }
                   }}
-                  className="px-2.5 py-1 rounded-lg border text-xs font-extrabold outline-none cursor-pointer"
+                  className="px-3 py-1 rounded-full border text-xs font-semibold outline-none cursor-pointer"
                   style={{
                     backgroundColor: coloresApariencia?.fondoAplicacion,
                     borderColor: coloresApariencia?.bordePaneles,
@@ -1021,36 +1103,56 @@ export default function PBRMaterialStudioModal() {
               <div className="flex items-center gap-3 flex-1 min-w-[340px] justify-end flex-wrap">
                 {/* Intensidad de Luz */}
                 <div className="flex items-center gap-1.5 text-xs">
-                  <span className="text-[11px] opacity-70">Luz:</span>
+                  <span className="text-[11px] font-semibold" style={{ color: coloresApariencia?.textoPrincipal }}>Luz:</span>
                   <input
                     type="range"
-                    min="0.1"
-                    max="3.0"
-                    step="0.1"
+                    min="0.2"
+                    max="2.0"
+                    step="0.05"
                     value={hdriConfig.intensidad}
                     onChange={(e) => setHdriConfig({ ...hdriConfig, intensidad: parseFloat(e.target.value) })}
-                    className="w-16 h-1 bg-slate-300 dark:bg-slate-700 rounded appearance-none cursor-pointer accent-amber-500"
+                    className="w-16 cursor-pointer"
+                    style={{ accentColor: coloresApariencia?.botonActivo || "#0891b2" }}
                   />
-                  <span className="font-mono text-[10px] font-bold w-6">{hdriConfig.intensidad.toFixed(1)}x</span>
+                  <div 
+                    className="px-1.5 py-0.5 text-center text-[10px] font-mono font-bold border rounded shadow-2xs min-w-[38px]"
+                    style={{
+                      borderColor: coloresApariencia?.bordePaneles,
+                      backgroundColor: coloresApariencia?.fondoAplicacion,
+                      color: coloresApariencia?.botonActivo || "#0891B2"
+                    }}
+                  >
+                    {hdriConfig.intensidad.toFixed(1)}x
+                  </div>
                 </div>
 
                 {/* Rotación HDRI */}
                 <div className="flex items-center gap-1.5 text-xs">
-                  <span className="text-[11px] opacity-70">Giro:</span>
+                  <span className="text-[11px] font-semibold" style={{ color: coloresApariencia?.textoPrincipal }}>Giro:</span>
                   <input
                     type="range"
                     min="0"
                     max="360"
                     value={hdriConfig.rotacion}
                     onChange={(e) => setHdriConfig({ ...hdriConfig, rotacion: parseInt(e.target.value) })}
-                    className="w-16 h-1 bg-slate-300 dark:bg-slate-700 rounded appearance-none cursor-pointer accent-cyan-600"
+                    className="w-16 cursor-pointer"
+                    style={{ accentColor: coloresApariencia?.botonActivo || "#0891b2" }}
                   />
-                  <span className="font-mono text-[10px] font-bold w-7">{hdriConfig.rotacion}°</span>
+                  <div 
+                    className="px-1.5 py-0.5 text-center text-[10px] font-mono font-bold border rounded shadow-2xs min-w-[38px]"
+                    style={{
+                      borderColor: coloresApariencia?.bordePaneles,
+                      backgroundColor: coloresApariencia?.fondoAplicacion,
+                      color: coloresApariencia?.botonActivo || "#0891B2"
+                    }}
+                  >
+                    {hdriConfig.rotacion}°
+                  </div>
                 </div>
 
                 {/* Opacidad / Oscuridad de la Sombra */}
                 <div className="flex items-center gap-1.5 text-xs">
-                  <span className="text-[11px] font-bold text-indigo-600 dark:text-indigo-400">Sombra:</span>
+                  <span className="text-[11px] font-semibold" style={{ color: coloresApariencia?.textoPrincipal }}>Sombra:</span>
                   <input
                     type="range"
                     min="0.0"
@@ -1058,26 +1160,46 @@ export default function PBRMaterialStudioModal() {
                     step="0.02"
                     value={hdriConfig.sombraOpacidad}
                     onChange={(e) => setHdriConfig({ ...hdriConfig, sombraOpacidad: parseFloat(e.target.value) })}
-                    className="w-16 h-1 bg-slate-300 dark:bg-slate-700 rounded appearance-none cursor-pointer accent-indigo-600"
+                    className="w-16 cursor-pointer"
+                    style={{ accentColor: coloresApariencia?.botonActivo || "#0891b2" }}
                     title="Controlar qué tan oscura o suave es la sombra de contacto"
                   />
-                  <span className="font-mono text-[10px] font-bold w-7">{Math.round(hdriConfig.sombraOpacidad * 100)}%</span>
+                  <div 
+                    className="px-1.5 py-0.5 text-center text-[10px] font-mono font-bold border rounded shadow-2xs min-w-[38px]"
+                    style={{
+                      borderColor: coloresApariencia?.bordePaneles,
+                      backgroundColor: coloresApariencia?.fondoAplicacion,
+                      color: coloresApariencia?.botonActivo || "#0891B2"
+                    }}
+                  >
+                    {Math.round(hdriConfig.sombraOpacidad * 100)}%
+                  </div>
                 </div>
 
                 {/* Difuminado / Suavidad de la Sombra */}
                 <div className="flex items-center gap-1.5 text-xs">
-                  <span className="text-[11px] opacity-70">Difusión:</span>
+                  <span className="text-[11px] font-semibold" style={{ color: coloresApariencia?.textoPrincipal }}>Difusión:</span>
                   <input
                     type="range"
                     min="0.5"
-                    max="5.0"
-                    step="0.1"
+                    max="8.0"
+                    step="0.2"
                     value={hdriConfig.sombraDifuminado}
                     onChange={(e) => setHdriConfig({ ...hdriConfig, sombraDifuminado: parseFloat(e.target.value) })}
-                    className="w-16 h-1 bg-slate-300 dark:bg-slate-700 rounded appearance-none cursor-pointer accent-purple-600"
-                    title="Controlar el difuminado suave del borde de la sombra"
+                    className="w-16 cursor-pointer"
+                    style={{ accentColor: coloresApariencia?.botonActivo || "#0891b2" }}
+                    title="Difuminado y dispersión de la sombra en el piso"
                   />
-                  <span className="font-mono text-[10px] font-bold w-6">{hdriConfig.sombraDifuminado.toFixed(1)}x</span>
+                  <div 
+                    className="px-1.5 py-0.5 text-center text-[10px] font-mono font-bold border rounded shadow-2xs min-w-[38px]"
+                    style={{
+                      borderColor: coloresApariencia?.bordePaneles,
+                      backgroundColor: coloresApariencia?.fondoAplicacion,
+                      color: coloresApariencia?.botonActivo || "#0891B2"
+                    }}
+                  >
+                    {hdriConfig.sombraDifuminado.toFixed(1)}
+                  </div>
                 </div>
               </div>
             </div>

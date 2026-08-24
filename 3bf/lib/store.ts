@@ -1377,6 +1377,7 @@ export const use3BFStore = create<State3BF>((set, get) => ({
       [parteKey]: {
         ...actual,
         capaId,
+        materialId: "por_capa", // 💡 Heredar inmediatamente el material de la nueva capa asignada
         nombreVisible: nombreVisible || actual.nombreVisible,
       },
     };
@@ -3020,21 +3021,42 @@ export const use3BFStore = create<State3BF>((set, get) => ({
     const mat = state.materialesPBR.find((m) => m.id === materialId);
     if (!mat) return;
 
-    // Asignar a la capa activa o a todas las partes principales del mueble
+    // 1. Asignar el material a la capa Tono y Capa Madera para que todas las piezas por defecto lo adopten
+    const capasActualizadas = state.capas.map((c) => {
+      if (c.id === "capa_tono" || c.nombre.toLowerCase().includes("tono") || c.id === "capa_madera") {
+        return { ...c, materialId: mat.id };
+      }
+      return c;
+    });
+
+    // 2. Extraer todas las partes conocidas del modelo activo
+    const res = state.resultado;
+    const salidas = res?.declared_outputs || [];
+    const mallas = (res?.real_meshes || []).map((m: any) => m.name);
+    const todasLasPartes = Array.from(new Set([...Object.keys(state.asignacionesPartes), ...salidas, ...mallas])).filter(Boolean);
+
     const nuevasAsignaciones = { ...state.asignacionesPartes };
-    Object.keys(nuevasAsignaciones).forEach((k) => {
-      if (nuevasAsignaciones[k]) {
-        nuevasAsignaciones[k] = {
-          ...nuevasAsignaciones[k],
-          materialId: mat.id,
+    todasLasPartes.forEach((parteKey) => {
+      const kLow = parteKey.toLowerCase();
+      const isHardware = kLow.includes("perno") || kLow.includes("caja") || kLow.includes("tarugo") || kLow.includes("tornillo") || kLow.includes("maquinado");
+      if (!isHardware) {
+        nuevasAsignaciones[parteKey] = {
+          ...(nuevasAsignaciones[parteKey] || {
+            parteKey,
+            nombreVisible: parteKey.replace(/^RH_OUT:/, ""),
+            visible: true,
+          }),
+          capaId: "capa_tono",
+          materialId: "por_capa",
         };
       }
     });
 
     if (typeof window !== "undefined" && window.localStorage) {
       localStorage.setItem("3bf_asignaciones_partes_v1", JSON.stringify(nuevasAsignaciones));
+      localStorage.setItem("3bf_capas_v1", JSON.stringify(capasActualizadas));
     }
-    set({ asignacionesPartes: nuevasAsignaciones, materialSeleccionadoId: mat.id });
+    set({ asignacionesPartes: nuevasAsignaciones, capas: capasActualizadas, materialSeleccionadoId: mat.id });
   },
 
   cargarDefinicion: async (item: { id: string; archivo?: string; nombre?: string }) => {

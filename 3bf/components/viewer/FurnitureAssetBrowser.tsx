@@ -260,7 +260,7 @@ export default function FurnitureAssetBrowser() {
             backgroundColor: coloresApariencia?.botonActivo || "#0891b2",
             color: "#FFFFFF",
           }}
-          className="px-2.5 py-1.5 rounded-xl font-bold text-xs flex items-center gap-1.5 shadow-sm transition hover:opacity-90 cursor-pointer shrink-0"
+          className="px-3.5 py-1.5 rounded-full font-semibold text-xs flex items-center gap-1.5 shadow-xs transition hover:opacity-90 cursor-pointer shrink-0"
         >
           <Save className="w-3.5 h-3.5" />
           <span>{esUltraCompacto ? "Guardar" : "Guardar como"}</span>

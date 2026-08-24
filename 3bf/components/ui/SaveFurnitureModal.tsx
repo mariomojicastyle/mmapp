@@ -209,7 +209,7 @@ export default function SaveFurnitureModal() {
                     type="button"
                     key={tip}
                     onClick={() => setTipologiaSeleccionada(tip)}
-                    className={`px-3 py-1.5 rounded-lg border text-xs font-semibold transition cursor-pointer flex items-center gap-1.5 ${
+                    className={`px-3 py-1 rounded-full border text-xs font-semibold transition cursor-pointer flex items-center gap-1.5 ${
                       isSelected
                         ? "bg-cyan-600/15 border-cyan-500 text-cyan-700 dark:text-cyan-300 font-bold shadow-xs"
                         : "bg-slate-100 dark:bg-[#0B0F17]/60 text-slate-600 dark:text-slate-400 border-slate-200 dark:border-slate-800 hover:bg-slate-200"
@@ -241,26 +241,26 @@ export default function SaveFurnitureModal() {
             <button
               type="button"
               onClick={() => setModalGuardarComoAbierto(false)}
-              className="px-4 py-2 rounded-xl text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 font-semibold transition cursor-pointer"
+              className="px-4 py-2 rounded-full text-xs text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 font-semibold transition cursor-pointer"
             >
               Cancelar
             </button>
             <button
               type="submit"
               disabled={guardandoMueble || !nombreMueble.trim()}
-              className="px-5 py-2 rounded-xl bg-gradient-to-r from-cyan-600 to-teal-500 hover:from-cyan-500 hover:to-teal-400 text-white font-bold transition flex items-center gap-2 shadow-md cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+              className="px-5 py-2 rounded-full bg-cyan-600 hover:bg-cyan-700 text-white text-xs font-semibold transition flex items-center gap-2 shadow-xs cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {guardandoMueble ? (
                 <>
-                  <Loader2 className="w-4 h-4 animate-spin" /> Guardando...
+                  <Loader2 className="w-3.5 h-3.5 animate-spin" /> Guardando...
                 </>
               ) : mensajeExito ? (
                 <>
-                  <Check className="w-4 h-4 text-white" /> ¡Guardado con Éxito!
+                  <Check className="w-3.5 h-3.5 text-white" /> ¡Guardado con Éxito!
                 </>
               ) : (
                 <>
-                  <Save className="w-4 h-4" /> Guardar Mueble
+                  <Save className="w-3.5 h-3.5" /> Guardar Mueble
                 </>
               )}
             </button>

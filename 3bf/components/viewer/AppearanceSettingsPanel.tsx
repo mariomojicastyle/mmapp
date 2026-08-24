@@ -670,7 +670,7 @@ export default function AppearanceSettingsPanel() {
             backgroundColor: coloresApariencia?.botonActivo || "#0891b2",
             color: "#FFFFFF",
           }}
-          className="w-full py-2 px-3 rounded-lg font-bold text-xs hover:opacity-90 transition flex items-center justify-center gap-1.5 cursor-pointer shadow-md"
+          className="w-full py-2.5 px-4 rounded-full font-semibold text-xs hover:opacity-90 transition flex items-center justify-center gap-1.5 cursor-pointer shadow-xs"
         >
           {guardadoFeedback ? (
             <>
@@ -692,7 +692,7 @@ export default function AppearanceSettingsPanel() {
             backgroundColor: coloresApariencia?.botonActivo || "#0891b2",
             color: "#FFFFFF",
           }}
-          className="w-full py-2 px-3 rounded-lg font-bold text-xs hover:opacity-90 transition flex items-center justify-center gap-1.5 cursor-pointer shadow-md"
+          className="w-full py-2.5 px-4 rounded-full font-semibold text-xs hover:opacity-90 transition flex items-center justify-center gap-1.5 cursor-pointer shadow-xs"
           title={`Restaura los valores de fábrica originales para el perfil ${esquemaColor === "claro" ? "Claro" : "Oscuro"}`}
         >
           <RotateCcw className="w-3.5 h-3.5" />

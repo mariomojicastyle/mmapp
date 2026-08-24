@@ -111,37 +111,30 @@ export function generarEntornoEquirectangularLocal(tipo: string, rotacion = 0): 
   return texture;
 }
 
-function createConfiguredTexture(imgSrc: string, isColor = false, repeat = 1.5): Promise<THREE.Texture> {
+function createConfiguredTexture(imgSrc: string, isColor = false, repeat = 1.0): Promise<THREE.Texture> {
   return new Promise((resolve) => {
-    const img = new Image();
-    img.crossOrigin = "anonymous";
-    img.onload = () => {
-      const tex = new THREE.Texture(img);
-      tex.wrapS = THREE.RepeatWrapping;
-      tex.wrapT = THREE.RepeatWrapping;
-      tex.repeat.set(repeat, repeat);
-      if (isColor) tex.colorSpace = THREE.SRGBColorSpace;
-      tex.needsUpdate = true;
-      resolve(tex);
-    };
-    img.onerror = () => {
-      const loader = new THREE.TextureLoader();
-      loader.setCrossOrigin("anonymous");
-      loader.load(
-        imgSrc,
-        (t) => {
-          t.wrapS = THREE.RepeatWrapping;
-          t.wrapT = THREE.RepeatWrapping;
-          t.repeat.set(repeat, repeat);
-          if (isColor) t.colorSpace = THREE.SRGBColorSpace;
-          t.needsUpdate = true;
-          resolve(t);
-        },
-        undefined,
-        () => resolve(new THREE.Texture())
-      );
-    };
-    img.src = imgSrc;
+    if (!imgSrc) {
+      resolve(new THREE.Texture());
+      return;
+    }
+    const loader = new THREE.TextureLoader();
+    loader.setCrossOrigin("anonymous");
+    loader.load(
+      imgSrc,
+      (tex) => {
+        tex.wrapS = THREE.RepeatWrapping;
+        tex.wrapT = THREE.RepeatWrapping;
+        tex.repeat.set(repeat, repeat);
+        if (isColor) tex.colorSpace = THREE.SRGBColorSpace;
+        tex.needsUpdate = true;
+        resolve(tex);
+      },
+      undefined,
+      (err) => {
+        console.warn("[ShaderBall] Error cargando textura:", imgSrc, err);
+        resolve(new THREE.Texture());
+      }
+    );
   });
 }
 
@@ -170,6 +163,7 @@ function SinglePieceBoardRenderer({
         const nonIndexed = geo.toNonIndexed();
         const pos = nonIndexed.attributes.position;
         const uvs = new Float32Array(pos.count * 2);
+        const UV_SCALE = 1.0 / 0.60; // 600mm x 600mm (0.60m) norma física real
         for (let i = 0; i < pos.count; i += 3) {
           const pA = new THREE.Vector3(pos.getX(i), pos.getY(i), pos.getZ(i));
           const pB = new THREE.Vector3(pos.getX(i + 1), pos.getY(i + 1), pos.getZ(i + 1));
@@ -185,14 +179,14 @@ function SinglePieceBoardRenderer({
             const y = pos.getY(idx);
             const z = pos.getZ(idx);
             if (absY >= absX && absY >= absZ) {
-              uvs[idx * 2] = x * 1.5;
-              uvs[idx * 2 + 1] = z * 1.5;
+              uvs[idx * 2] = x * UV_SCALE;
+              uvs[idx * 2 + 1] = z * UV_SCALE;
             } else if (absX >= absY && absX >= absZ) {
-              uvs[idx * 2] = z * 1.5;
-              uvs[idx * 2 + 1] = y * 1.5;
+              uvs[idx * 2] = z * UV_SCALE;
+              uvs[idx * 2 + 1] = y * UV_SCALE;
             } else {
-              uvs[idx * 2] = x * 1.5;
-              uvs[idx * 2 + 1] = y * 1.5;
+              uvs[idx * 2] = x * UV_SCALE;
+              uvs[idx * 2 + 1] = y * UV_SCALE;
             }
           }
         }
@@ -381,7 +375,7 @@ function MaterialMeshInstance({
 
       if (materialDef.texturaUrl) {
         promises.push(
-          createConfiguredTexture(materialDef.texturaUrl, true, 1.8).then((t) => ({ key: "diffuse", tex: t }))
+          createConfiguredTexture(materialDef.texturaUrl, true, 1.0).then((t) => ({ key: "diffuse", tex: t }))
         );
       } else {
         promises.push(Promise.resolve({ key: "diffuse", tex: null }));
@@ -389,7 +383,7 @@ function MaterialMeshInstance({
 
       if (materialDef.normalMapUrl) {
         promises.push(
-          createConfiguredTexture(materialDef.normalMapUrl, false, 1.8).then((t) => ({ key: "normal", tex: t }))
+          createConfiguredTexture(materialDef.normalMapUrl, false, 1.0).then((t) => ({ key: "normal", tex: t }))
         );
       } else {
         promises.push(Promise.resolve({ key: "normal", tex: null }));
@@ -397,7 +391,7 @@ function MaterialMeshInstance({
 
       if (materialDef.roughnessMapUrl) {
         promises.push(
-          createConfiguredTexture(materialDef.roughnessMapUrl, false, 1.8).then((t) => ({ key: "roughness", tex: t }))
+          createConfiguredTexture(materialDef.roughnessMapUrl, false, 1.0).then((t) => ({ key: "roughness", tex: t }))
         );
       } else {
         promises.push(Promise.resolve({ key: "roughness", tex: null }));
@@ -405,7 +399,7 @@ function MaterialMeshInstance({
 
       if (materialDef.aoMapUrl) {
         promises.push(
-          createConfiguredTexture(materialDef.aoMapUrl, false, 1.8).then((t) => ({ key: "ao", tex: t }))
+          createConfiguredTexture(materialDef.aoMapUrl, false, 1.0).then((t) => ({ key: "ao", tex: t }))
         );
       } else {
         promises.push(Promise.resolve({ key: "ao", tex: null }));
@@ -446,7 +440,7 @@ function MaterialMeshInstance({
   const sharedMaterial = useMemo(() => {
     return (
       <meshPhysicalMaterial
-        key={`${materialDef.id}-${materialDef.texturaUrl || "no-tex"}-${materialDef.normalMapUrl || "no-norm"}-${roughnessVal}-${metalnessVal}-${forma}`}
+        key={`${materialDef.id}-${textures.diffuse?.uuid || "sin-diff"}-${textures.normal?.uuid || "sin-norm"}-${textures.roughness?.uuid || "sin-rough"}-${roughnessVal}-${metalnessVal}-${forma}`}
         color={baseColorFinal}
         map={textures.diffuse}
         normalMap={textures.normal}
@@ -457,7 +451,7 @@ function MaterialMeshInstance({
         aoMap={textures.ao}
         aoMapIntensity={materialDef.aoIntensity ?? 1.0}
         envMap={envMap}
-        envMapIntensity={0.8}
+        envMapIntensity={0.35}
         clearcoat={materialDef.clearcoat ?? 0.0}
         clearcoatRoughness={materialDef.clearcoatRoughness ?? 0.35}
         ior={materialDef.ior ?? 1.5}
@@ -638,10 +632,10 @@ function StudioLighting({
 
   return (
     <>
-      <ambientLight intensity={0.95 * intensidad} color="#FFFFFF" />
+      <ambientLight intensity={0.25 * intensidad} color="#FFFFFF" />
       <directionalLight
         position={[lx, 4.0, lz]}
-        intensity={0.6 * intensidad}
+        intensity={0.45 * intensidad}
         color="#FFFDF8"
         castShadow
         shadow-mapSize={[2048, 2048]}
@@ -649,7 +643,7 @@ function StudioLighting({
         shadow-radius={Math.max(1, sombraDifuminado * 1.5)}
       />
       <hemisphereLight
-        args={["#FFFFFF", "#E2E8F0", 0.75 * intensidad]}
+        args={["#FFFFFF", "#CBD5E1", 0.25 * intensidad]}
       />
     </>
   );

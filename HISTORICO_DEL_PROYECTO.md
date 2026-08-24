@@ -1729,6 +1729,26 @@ Con esta batería de arreglos y la validación en caliente, la V20 se establece 
 - **Coherencia Visual Total con "Apariencia"**:
   * Adaptabilidad completa de todos los modales, barras, botones, selectores y cajas de alertas al sistema de temas (`tema === "obsidian"` y `coloresApariencia`), garantizando legibilidad y alto contraste tanto en tema claro ("Tech Ethos") como oscuro ("Obsidian").
 
+---
+
+### 🔹 Hito 3BF_Render_AI_UI_Estandarizacion — Estandarización Universal de Botones Píldora, Depuración Visual de Estudio Render IA & Reordenamiento de Franja N-Panel (24 de Agosto, 2026)
+
+- **Estandarización Universal de Botones Estilo Píldora (`rounded-full`) en Todo el Ecosistema 3BF**:
+  * Se auditaron y unificaron todos los botones y acciones en todos los paneles y modales (`LayerManagerPanel.tsx`, `ControlPanel.tsx`, `FurnitureAssetBrowser.tsx`, `SaveFurnitureModal.tsx`, `AIRenderStudioModal.tsx`, `PromptLibraryManager.tsx`, `AppearanceSettingsPanel.tsx`, `DespieceView.tsx`, `DatabaseView.tsx`), reemplazando las esquinas rectangulares por el formato de píldora estándar del sistema (`rounded-full`), con tipografía consistente (`font-semibold text-xs`), color corporativo `botonActivo` y sombras sutiles (`shadow-xs`), logrando una coherencia estética 100% homogénea y minimalista.
+- **Depuración Visual y Simplificación en Estudio de Render IA (`AIRenderStudioModal.tsx`)**:
+  * **Cabecera Minimalista**: Se eliminaron los iconos de destello (`Sparkles`), insignias decorativas y el subtítulo redundante, dejando única y exclusivamente el título limpio **`3BF AI Render Studio`**.
+  * **Testigo de Estado de API**: Reemplazo del botón de llave por un testigo minimalista con punto circular verde esmeralda (`bg-emerald-500`) y texto conciso **`Api AI Conectada`**, idéntico al testigo de estado `LOD200`.
+  * **Limpieza de Motor IA**: Eliminados los emojis (`👑`, `🆓`) y el prefijo de proveedor en el selector, dejando los textos limpios: **`Google Nano Banana PRO (Recomendado)`** y **`FLUX.1 Libre (Sin Claves)`**.
+  * **Upscaling y Comparación 1:1**: Botón de realce simplificado a **`Mejorar 2K`** con estilo de píldora azul sólido corporativo. Homogeneización de los botones de comparación (**Render IA Fotorrealista** y **Captura 3D Original**) con el mismo fondo de panel, borde y tipografía que la barra de acciones inferior (**Copiar**, **Usar Miniatura**, **Descargar HD**).
+  * **Sección de Prompts y Presets**: Botones **`Guardar Preset`** y **`Biblioteca`** estandarizados en formato píldora limpia con formulario de guardado integrado.
+- **Reordenamiento Estricto de Pestañas Verticales en N-Panel & Estados Reactivos (`NPanel.tsx`)**:
+  * Reorganizada la franja lateral en la secuencia solicitada: (1) **Componentes**, (2) **Muebles**, (3) **Partes**, (4) **Capas**, (5) **Materiales**, (6) **Render IA**, seguido de la línea divisoria y los ajustes de visor (7) **Apariencia** y (8) **Calibrar**.
+  * El botón **`Render IA`** ahora maneja dinámicamente los estados inactivo (color neutro de texto) y activo (azul sólido `botonActivo` con icono/texto blanco) idéntico a las demás pestañas, utilizando un icono de cámara fotográfica 3D limpio (`Camera`).
+- **Calibración Óptica de Iluminación y Aristas en PBR Studio (`ShaderBallViewer.tsx` & `PBRMaterialStudioModal.tsx`)**:
+  * Calibradas las intensidades base de luces de estudio y mapa HDRI para que el punto medio del slider ($1.0\text{x}$) ofrezca la visualización fotorrealista ideal.
+  * Eliminados los iconos de regla (`📐`) de los controles de aristas.
+
+
 
 
 

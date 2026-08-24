@@ -1,7 +1,7 @@
 "use client"
 
 import React, { useState, useEffect, useRef, useCallback } from "react"
-import { BrainCircuit, Loader2, RefreshCw, Flame, ShieldAlert, GripVertical } from "lucide-react"
+import { BrainCircuit, Loader2, RefreshCw, Flame, ShieldAlert, GripVertical, HelpCircle } from "lucide-react"
 import { VentasProspecto, VentasInteraccion, TemperaturaLead } from "@/lib/types/ventas-ram"
 import {
   getVentasProspectos,
@@ -17,6 +17,7 @@ import { CopilotoWorkspace } from "@/components/ventas-ram/copiloto-workspace"
 import { ProspectoModal } from "@/components/ventas-ram/prospecto-modal"
 import { EliminarModal } from "@/components/ventas-ram/eliminar-modal"
 import { RadarTactico } from "@/components/ventas-ram/radar-tactico"
+import { GuiaUsoModal } from "@/components/ventas-ram/guia-uso-modal"
 
 export default function VentasRamPage() {
   const [prospectos, setProspectos] = useState<VentasProspecto[]>([])
@@ -83,6 +84,9 @@ export default function VentasRamPage() {
   // Modal Prospecto (Crear / Editar)
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [editingProspecto, setEditingProspecto] = useState<VentasProspecto | null>(null)
+
+  // Modal de Guía de Uso / Instructivo
+  const [isGuiaOpen, setIsGuiaOpen] = useState(false)
 
   // Modal de Confirmación de Eliminación
   const [prospectoAEliminar, setProspectoAEliminar] = useState<VentasProspecto | null>(null)
@@ -244,6 +248,16 @@ export default function VentasRamPage() {
             onSelectProspecto={handleSelectProspecto}
           />
 
+          {/* Botón de Guía de Uso / Instructivo */}
+          <button
+            onClick={() => setIsGuiaOpen(true)}
+            className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-primary/10 hover:bg-primary/15 border border-primary/30 text-xs font-bold text-primary transition-all cursor-pointer shadow-2xs hover:shadow-xs"
+            title="Manual de Operación & Mejores Prácticas del RAM de Ventas"
+          >
+            <HelpCircle className="h-4 w-4" />
+            <span className="hidden sm:inline">Guía de Uso</span>
+          </button>
+
           <button
             onClick={() => fetchProspectos()}
             disabled={loading}
@@ -347,6 +361,12 @@ export default function VentasRamPage() {
         prospecto={prospectoAEliminar}
         onClose={() => setProspectoAEliminar(null)}
         onConfirm={handleConfirmDelete}
+      />
+
+      {/* Modal de Guía de Uso & Mejores Prácticas */}
+      <GuiaUsoModal
+        isOpen={isGuiaOpen}
+        onClose={() => setIsGuiaOpen(false)}
       />
     </div>
   )

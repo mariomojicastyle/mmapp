@@ -76,8 +76,15 @@ Para guardar avances intermedios de trabajo sin disparar despliegues completos:
 - Fusionar en local con `main`.
 - Crear y cambiar a `[PROXIMA_RAMA]`.
 
-### 3. Disparador CRM / Leads
-- Cada vez que el usuario suba capturas de LinkedIn o diga *"Agrega estos leads"* o *"Mete estos contactos al CRM"*, se activa el procesamiento y mapeo automatizado hacia Baserow / CRM B2B.
+### 3. Disparador CRM / RAM de Ventas en Tiempo Real (< 60s)
+- **Extracción de Leads:** Cada vez que el usuario suba capturas de LinkedIn o diga *"Agrega estos leads"* o *"Mete estos contactos al CRM"*, se activa el procesamiento y mapeo automatizado hacia Baserow / CRM B2B.
+- **Copiloto de Conversación en Vivo (< 60s):** Cuando el usuario pegue una captura de WhatsApp/LinkedIn, texto o pregunte *"Qué le respondo a [Nombre/Empresa]"*, el agente DEBE:
+  1. Identificar de inmediato al prospecto en `RAM_de_ventas.md`.
+  2. Recuperar el **contexto profundo** (padrino B2B, dolores técnicos, acuerdos previos, precios, propuestas enviadas; **prohibido resumir o empobrecer el contexto**).
+  3. Generar la respuesta de inmediato en **dos bloques de código separados en el chat**:
+     - **Bloque 1 (1 Clic):** Mensaje en *Português do Brasil* natural, empático y persuasivo.
+     - **Bloque 2:** Traducción exacta en *Español* para auditoría rápida.
+  4. Inyectar silenciosamente el nuevo hito en `data/ventas_ram_storage.json`, Supabase PostgreSQL y `RAM_de_ventas.md`.
 
 ---
 

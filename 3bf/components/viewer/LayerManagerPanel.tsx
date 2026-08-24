@@ -113,9 +113,9 @@ export default function LayerManagerPanel() {
             <button
               onClick={handleCrearCapa}
               style={{ backgroundColor: coloresApariencia?.botonActivo || "#0891B2" }}
-              className="flex items-center gap-1 px-2.5 py-1 text-white rounded text-[11px] font-medium transition shadow-2xs hover:opacity-90 cursor-pointer"
+              className="flex items-center gap-1.5 px-3 py-1 text-white rounded-full text-xs font-semibold transition shadow-xs hover:opacity-90 cursor-pointer"
             >
-              <Plus className="w-3 h-3" /> Nueva Capa
+              <Plus className="w-3.5 h-3.5" /> Nueva Capa
             </button>
             <button
               onClick={resetCapasYMateriales}

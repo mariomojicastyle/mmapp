@@ -630,7 +630,7 @@ export default function ControlPanel() {
                 backgroundColor: coloresApariencia?.botonActivo || "#0891B2",
                 color: "#FFFFFF"
               }}
-              className="mt-1 px-4 py-2 rounded-xl text-xs font-extrabold shadow-sm hover:opacity-90 active:scale-95 transition cursor-pointer"
+              className="mt-1 px-4 py-2 rounded-full text-xs font-semibold shadow-xs hover:opacity-90 active:scale-95 transition cursor-pointer"
             >
               Seleccionar {listaInstancias[0].nombreVisible}
             </button>

@@ -153,7 +153,7 @@ export default function PromptLibraryManager({
         <div className="flex items-center gap-1.5">
           <button
             onClick={restaurarPromptsDefecto}
-            className="flex items-center gap-1 px-2 py-1 rounded border text-[11px] font-semibold transition cursor-pointer hover:opacity-80"
+            className="flex items-center gap-1 px-3 py-1 rounded-full border text-xs font-semibold transition cursor-pointer hover:opacity-80 shadow-2xs"
             style={{
               backgroundColor: coloresApariencia?.fondoPaneles,
               borderColor: coloresApariencia?.bordePaneles,
@@ -161,13 +161,13 @@ export default function PromptLibraryManager({
             }}
             title="Restaurar presets de fábrica si fueron modificados"
           >
-            <RotateCcw className="w-3 h-3" />
+            <RotateCcw className="w-3.5 h-3.5" />
             <span>Restaurar Fábrica</span>
           </button>
 
           <button
             onClick={iniciarCreacion}
-            className="flex items-center gap-1 px-2.5 py-1 rounded font-bold transition shadow-sm text-white cursor-pointer hover:opacity-90"
+            className="flex items-center gap-1 px-3.5 py-1 rounded-full font-semibold text-xs transition shadow-xs text-white cursor-pointer hover:opacity-90"
             style={{ backgroundColor: coloresApariencia?.botonActivo || "#0891b2" }}
             title="Crear nueva plantilla de prompt"
           >
@@ -325,14 +325,14 @@ export default function PromptLibraryManager({
             <button
               type="button"
               onClick={() => setModoCrear(false)}
-              className="px-3 py-1 rounded border font-semibold hover:opacity-80 cursor-pointer"
+              className="px-3.5 py-1 rounded-full border text-xs font-semibold hover:opacity-80 cursor-pointer shadow-2xs"
               style={{ borderColor: coloresApariencia?.bordePaneles, color: coloresApariencia?.textoSecundario }}
             >
               Cancelar
             </button>
             <button
               type="submit"
-              className="px-3 py-1 rounded font-bold text-white shadow-sm flex items-center gap-1 cursor-pointer hover:opacity-90"
+              className="px-4 py-1.5 rounded-full font-semibold text-xs text-white shadow-xs flex items-center gap-1 cursor-pointer hover:opacity-90"
               style={{ backgroundColor: coloresApariencia?.botonActivo || "#0891b2" }}
             >
               <Check className="w-3.5 h-3.5" />
@@ -444,10 +444,10 @@ export default function PromptLibraryManager({
                   </span>
                   <button
                     onClick={() => onSelectPrompt(item.prompt, item)}
-                    className="flex items-center gap-1 px-2.5 py-1 rounded font-bold text-xs text-white shadow-xs transition cursor-pointer hover:opacity-90"
+                    className="flex items-center gap-1.5 px-3 py-1 rounded-full font-semibold text-xs text-white shadow-xs transition cursor-pointer hover:opacity-90"
                     style={{ backgroundColor: coloresApariencia?.botonActivo || "#0891b2" }}
                   >
-                    <Sparkles className="w-3 h-3" />
+                    <Sparkles className="w-3.5 h-3.5" />
                     <span>Cargar en Render</span>
                   </button>
                 </div>

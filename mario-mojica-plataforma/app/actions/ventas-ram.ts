@@ -564,11 +564,24 @@ export async function getVentasProspectoById(id: string): Promise<{
       .order("created_at", { ascending: false })
 
     if (!iError && Array.isArray(interacciones)) {
+      const diskInteracciones = disk.interacciones[id] || disk.interacciones[prospecto.id] || []
+      const mapById = new Map<string, VentasInteraccion>()
+      for (const item of interacciones) {
+        mapById.set(item.id, item)
+      }
+      for (const item of diskInteracciones) {
+        if (!mapById.has(item.id)) {
+          mapById.set(item.id, item)
+        }
+      }
+      const mergedList = Array.from(mapById.values()).sort(
+        (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+      )
       return {
         success: true,
         data: {
           prospecto,
-          interacciones: interacciones,
+          interacciones: mergedList,
         },
       }
     }
@@ -716,10 +729,11 @@ export async function saveVentasInteraccion(
       return { success: true, data: newI }
     }
 
-    // 1. Guardar o actualizar interacción en Supabase
+    // 1. Guardar o actualizar interacción en Supabase (filtrando solo columnas de la tabla)
+    const { contactos_referidos, proxima_accion_sugerida, ...cleanI } = newI as any
     const { data, error } = await supabase
       .from("ventas_interacciones")
-      .upsert([newI], { onConflict: "id" })
+      .upsert([cleanI], { onConflict: "id" })
       .select()
       .single()
 
