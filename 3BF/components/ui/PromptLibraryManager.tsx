@@ -152,20 +152,6 @@ export default function PromptLibraryManager({
 
         <div className="flex items-center gap-1.5">
           <button
-            onClick={restaurarPromptsDefecto}
-            className="flex items-center gap-1 px-3 py-1 rounded-full border text-xs font-semibold transition cursor-pointer hover:opacity-80 shadow-2xs"
-            style={{
-              backgroundColor: coloresApariencia?.fondoPaneles,
-              borderColor: coloresApariencia?.bordePaneles,
-              color: coloresApariencia?.textoSecundario
-            }}
-            title="Restaurar presets de fábrica si fueron modificados"
-          >
-            <RotateCcw className="w-3.5 h-3.5" />
-            <span>Restaurar Fábrica</span>
-          </button>
-
-          <button
             onClick={iniciarCreacion}
             className="flex items-center gap-1 px-3.5 py-1 rounded-full font-semibold text-xs transition shadow-xs text-white cursor-pointer hover:opacity-90"
             style={{ backgroundColor: coloresApariencia?.botonActivo || "#0891b2" }}
@@ -366,11 +352,14 @@ export default function PromptLibraryManager({
               >
                 <div className="flex items-center justify-between gap-2">
                   <div className="flex items-center gap-1.5 flex-wrap">
-                    <span className="font-extrabold text-xs" style={{ color: coloresApariencia?.textoPrincipal }}>
+                    <span 
+                      className="font-bold text-sm"
+                      style={{ color: coloresApariencia?.textoPrincipal }}
+                    >
                       {item.titulo}
                     </span>
                     <span 
-                      className="px-1.5 py-0.2 text-[9px] font-bold rounded border"
+                      className="px-2 py-0.5 text-[11px] font-bold rounded-md border select-none"
                       style={{
                         backgroundColor: coloresApariencia?.fondoAplicacion,
                         borderColor: coloresApariencia?.bordePaneles,
@@ -379,56 +368,51 @@ export default function PromptLibraryManager({
                     >
                       {item.categoria}
                     </span>
-                    {item.esPresetSistema && (
-                      <span 
-                        className="px-1.5 py-0.2 text-[9px] font-bold rounded border"
-                        style={{
-                          backgroundColor: tema === "obsidian" ? "rgba(16, 185, 129, 0.15)" : "#DCFCE7",
-                          color: tema === "obsidian" ? "#6EE7B7" : "#166534",
-                          borderColor: tema === "obsidian" ? "rgba(16, 185, 129, 0.3)" : "#BBF7D0"
-                        }}
-                      >
-                        Fábrica
-                      </span>
-                    )}
                   </div>
 
-                  <div className="flex items-center gap-1">
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => onSelectPrompt(item.prompt, item)}
+                      className="flex items-center px-3 py-1.5 rounded-full font-semibold text-xs text-white shadow-xs transition cursor-pointer hover:opacity-90 whitespace-nowrap"
+                      style={{ backgroundColor: coloresApariencia?.botonActivo || "#0891b2" }}
+                    >
+                      <span>Cargar Prompt</span>
+                    </button>
                     <button
                       onClick={() => toggleFavoritoPrompt(item.id)}
-                      className="p-1 rounded transition hover:opacity-80 cursor-pointer"
+                      className="p-1.5 rounded transition hover:opacity-80 cursor-pointer"
                       title={item.esFavorito ? "Quitar de favoritos" : "Marcar como favorito"}
                     >
-                      <Star className={`w-3.5 h-3.5 ${item.esFavorito ? "text-amber-500 fill-amber-500" : "text-slate-400"}`} />
+                      <Star className={`w-4 h-4 ${item.esFavorito ? "text-amber-500 fill-amber-500" : "text-slate-400"}`} />
                     </button>
                     <button
                       onClick={() => iniciarEdicion(item)}
-                      className="p-1 rounded transition hover:opacity-80 cursor-pointer"
+                      className="p-1.5 rounded transition hover:opacity-80 cursor-pointer"
                       style={{ color: coloresApariencia?.textoSecundario }}
                       title="Editar plantilla"
                     >
-                      <Edit3 className="w-3.5 h-3.5" />
+                      <Edit3 className="w-4 h-4" />
                     </button>
                     {!item.esPresetSistema && (
                       <button
                         onClick={() => eliminarPrompt(item.id)}
-                        className="p-1 rounded text-red-500 transition hover:opacity-80 cursor-pointer"
+                        className="p-1.5 rounded text-red-500 transition hover:opacity-80 cursor-pointer"
                         title="Eliminar plantilla"
                       >
-                        <Trash2 className="w-3.5 h-3.5" />
+                        <Trash2 className="w-4 h-4" />
                       </button>
                     )}
                   </div>
                 </div>
 
                 {item.descripcion && (
-                  <p className="text-[11px] leading-tight" style={{ color: coloresApariencia?.textoSecundario }}>
+                  <p className="text-[12.5px] leading-tight" style={{ color: coloresApariencia?.textoSecundario }}>
                     {item.descripcion}
                   </p>
                 )}
 
                 <p 
-                  className="text-[11px] font-mono line-clamp-2 p-2 rounded border leading-relaxed"
+                  className="text-[13.5px] font-mono line-clamp-3 p-2.5 rounded border leading-relaxed"
                   style={{
                     backgroundColor: coloresApariencia?.fondoAplicacion,
                     borderColor: coloresApariencia?.bordePaneles,
@@ -437,20 +421,6 @@ export default function PromptLibraryManager({
                 >
                   {item.prompt}
                 </p>
-
-                <div className="flex items-center justify-between pt-1 mt-0.5 border-t border-dashed" style={{ borderColor: coloresApariencia?.bordePaneles }}>
-                  <span className="text-[10px] font-mono opacity-70" style={{ color: coloresApariencia?.textoSecundario }}>
-                    Aspecto sugerido: {item.aspectRatio || "1:1"}
-                  </span>
-                  <button
-                    onClick={() => onSelectPrompt(item.prompt, item)}
-                    className="flex items-center gap-1.5 px-3 py-1 rounded-full font-semibold text-xs text-white shadow-xs transition cursor-pointer hover:opacity-90"
-                    style={{ backgroundColor: coloresApariencia?.botonActivo || "#0891b2" }}
-                  >
-                    <Sparkles className="w-3.5 h-3.5" />
-                    <span>Cargar en Render</span>
-                  </button>
-                </div>
               </div>
             );
           })

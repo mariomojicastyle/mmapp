@@ -15,6 +15,8 @@ export interface HDRIConfig {
   mostrarFondo: boolean;
   blurFondo: number;
   sombraOpacidad?: number;
+  sombraSolOpacidad?: number;
+  sombraContactoOpacidad?: number;
   sombraDifuminado?: number;
 }
 
@@ -286,37 +288,32 @@ function RealFurnitureSceneRenderer({
   }, [instancias, resultado, parametros]);
 
   if (listaInstancias.length === 0) {
-    // Fallback elegante si no hay mallas calculadas aún
+    // Fallback elegante si no hay mallas calculadas aún:
+    // Mueble modular de diseño posicionado descansando exactamente sobre el suelo (y = 0)
+    const piezasFallback = [
+      { size: [0.04, 0.90, 0.40], pos: [-0.90, 0.45, 0] },
+      { size: [0.04, 0.90, 0.40], pos: [0.90, 0.45, 0] },
+      { size: [1.76, 0.04, 0.40], pos: [0, 0.02, 0] },
+      { size: [1.84, 0.04, 0.42], pos: [0, 0.90, 0] },
+      { size: [0.036, 0.84, 0.38], pos: [-0.30, 0.45, 0] },
+      { size: [0.036, 0.84, 0.38], pos: [0.30, 0.45, 0] },
+      { size: [1.76, 0.036, 0.38], pos: [0, 0.45, 0] },
+    ];
+
     return (
-      <group position={[0, -0.4, 0]}>
-        <mesh position={[-0.9, 0.45, 0]} castShadow receiveShadow>
-          <boxGeometry args={[0.04, 0.9, 0.4]} />
-          {sharedMaterial}
-        </mesh>
-        <mesh position={[0.9, 0.45, 0]} castShadow receiveShadow>
-          <boxGeometry args={[0.04, 0.9, 0.4]} />
-          {sharedMaterial}
-        </mesh>
-        <mesh position={[0, 0.02, 0]} castShadow receiveShadow>
-          <boxGeometry args={[1.76, 0.04, 0.4]} />
-          {sharedMaterial}
-        </mesh>
-        <mesh position={[0, 0.9, 0]} castShadow receiveShadow>
-          <boxGeometry args={[1.84, 0.04, 0.42]} />
-          {sharedMaterial}
-        </mesh>
-        <mesh position={[-0.3, 0.45, 0]} castShadow receiveShadow>
-          <boxGeometry args={[0.036, 0.84, 0.38]} />
-          {sharedMaterial}
-        </mesh>
-        <mesh position={[0.3, 0.45, 0]} castShadow receiveShadow>
-          <boxGeometry args={[0.036, 0.84, 0.38]} />
-          {sharedMaterial}
-        </mesh>
-        <mesh position={[0, 0.45, 0]} castShadow receiveShadow>
-          <boxGeometry args={[1.76, 0.036, 0.38]} />
-          {sharedMaterial}
-        </mesh>
+      <group position={[0, 0, 0]}>
+        {piezasFallback.map((p, idx) => (
+          <SinglePieceBoardRenderer
+            key={`fallback-piece-${idx}`}
+            meshData={{
+              name: `Pieza_Estructura_${idx + 1}`,
+              size: p.size,
+              position: p.pos,
+            }}
+            sharedMaterial={sharedMaterial}
+            hardwareMaterial={hardwareMaterial}
+          />
+        ))}
       </group>
     );
   }
@@ -617,12 +614,12 @@ function BlenderNavigationController({ controlsRef }: { controlsRef: React.RefOb
 function StudioLighting({
   rotacionLuz = 45,
   intensidad = 1.0,
-  sombraOpacidad = 0.22,
+  sombraSolOpacidad = 0.15,
   sombraDifuminado = 2.4,
 }: {
   rotacionLuz?: number;
   intensidad?: number;
-  sombraOpacidad?: number;
+  sombraSolOpacidad?: number;
   sombraDifuminado?: number;
 }) {
   const rad = (rotacionLuz * Math.PI) / 180;
@@ -637,10 +634,10 @@ function StudioLighting({
         position={[lx, 4.0, lz]}
         intensity={0.45 * intensidad}
         color="#FFFDF8"
-        castShadow
+        castShadow={sombraSolOpacidad > 0.005}
         shadow-mapSize={[2048, 2048]}
         shadow-bias={-0.0001}
-        shadow-radius={Math.max(1, sombraDifuminado * 1.5)}
+        shadow-radius={Math.max(1, sombraDifuminado * 2.0)}
       />
       <hemisphereLight
         args={["#FFFFFF", "#CBD5E1", 0.25 * intensidad]}
@@ -677,6 +674,8 @@ export default function ShaderBallViewer({
     mostrarFondo: true,
     blurFondo: 0.5,
     sombraOpacidad: 0.22,
+    sombraSolOpacidad: 0.15,
+    sombraContactoOpacidad: 0.25,
     sombraDifuminado: 2.4,
   },
   mostrarSuelo = true,
@@ -685,6 +684,8 @@ export default function ShaderBallViewer({
   const [customHdrTexture, setCustomHdrTexture] = useState<THREE.DataTexture | null>(null);
 
   const sombraOpacidad = hdriConfig.sombraOpacidad ?? 0.22;
+  const sombraSolOpacidad = hdriConfig.sombraSolOpacidad ?? (sombraOpacidad * 0.5);
+  const sombraContactoOpacidad = hdriConfig.sombraContactoOpacidad ?? sombraOpacidad;
   const sombraDifuminado = hdriConfig.sombraDifuminado ?? 2.4;
 
   useEffect(() => {
@@ -730,22 +731,26 @@ export default function ShaderBallViewer({
     return generarEntornoEquirectangularLocal(hdriConfig.tipo, hdriConfig.rotacion);
   }, [hdriConfig.tipo, hdriConfig.rotacion, customHdrTexture]);
 
-  const cameraPos: [number, number, number] = forma === "mueble" ? [1.8, 1.3, 2.2] : [0, 0, 2.5];
-  const targetPos: [number, number, number] = forma === "mueble" ? [0, 0.4, 0] : [0, 0, 0];
-  const sueloY = forma === "mueble" ? -0.01 : -0.92;
+  const cameraPos: [number, number, number] = forma === "mueble" ? [2.0, 1.25, 2.3] : [0, 0, 2.5];
+  const targetPos: [number, number, number] = forma === "mueble" ? [0, 0.46, 0] : [0, 0, 0];
+  const sueloY = forma === "mueble" ? 0.0 : -0.92;
 
   return (
     <div className="w-full h-full relative rounded-lg overflow-hidden bg-gradient-to-b from-slate-50 via-slate-100 to-slate-200 dark:from-slate-900 dark:via-slate-900 dark:to-slate-950 shadow-inner">
       <Canvas
         camera={{ position: cameraPos, fov: 45 }}
-        shadows
+        shadows="soft"
         gl={{ antialias: true, alpha: true, preserveDrawingBuffer: true, toneMapping: THREE.ACESFilmicToneMapping }}
+        onCreated={({ gl }) => {
+          gl.shadowMap.enabled = true;
+          gl.shadowMap.type = THREE.PCFSoftShadowMap;
+        }}
       >
         <ShaderBallSnapshotExposer />
         <StudioLighting
           rotacionLuz={hdriConfig.rotacion}
           intensidad={hdriConfig.intensidad}
-          sombraOpacidad={sombraOpacidad}
+          sombraSolOpacidad={sombraSolOpacidad}
           sombraDifuminado={sombraDifuminado}
         />
 
@@ -756,11 +761,11 @@ export default function ShaderBallViewer({
           <>
             <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, sueloY, 0]} receiveShadow>
               <planeGeometry args={[25, 25]} />
-              <shadowMaterial opacity={sombraOpacidad * 0.5} />
+              <shadowMaterial opacity={sombraSolOpacidad} />
             </mesh>
             <ContactShadows
               position={[0, sueloY + 0.005, 0]}
-              opacity={sombraOpacidad}
+              opacity={sombraContactoOpacidad}
               scale={forma === "mueble" ? 6.5 : 3.5}
               blur={sombraDifuminado}
               far={3.0}

@@ -31,6 +31,19 @@ export async function POST(req: NextRequest) {
       process.env.GOOGLE_AI_KEY ||
       "";
 
+    const byteplusKey =
+      body.byteplusKey ||
+      body.byteplusApiKey ||
+      body.arkApiKey ||
+      process.env.BYTEPLUS_API_KEY ||
+      process.env.ARK_API_KEY ||
+      "";
+
+    const byteplusModel =
+      body.byteplusModel ||
+      process.env.BYTEPLUS_MODEL ||
+      "seedream-4-5-251128";
+
     let finalImageUrl = "";
     let motorEfectivo = motor;
     let errorDetalle = "";
@@ -119,9 +132,171 @@ export async function POST(req: NextRequest) {
     }
 
     // =========================================================================
-    // 1. MOTOR NANO BANANA PRO & NANO BANANA EDIT (Google Gemini Pro Image en fal.ai)
+    // 1. MOTOR BYTEPLUS SEEDREAM 5.0 (ByteDance ModelArk - 2K Ultra HD)
     // =========================================================================
-    if ((motor.startsWith("fal_nano_banana") || motor.startsWith("fal_")) && falKey) {
+    if ((motor === "byteplus_seedream" || motor === "byteplus" || (!finalImageUrl && byteplusKey && motor !== "google_gemini_imagen3")) && byteplusKey) {
+      try {
+        let sizeFormatted = "2K";
+        if (aspectRatio === "16:9") sizeFormatted = "2K";
+        else if (aspectRatio === "9:16") sizeFormatted = "2K";
+        else sizeFormatted = "2K";
+
+        const esFondoBlanco = /fondo blanco|white background|cyclorama|aislado|estudio blanco|catalogo blanco|isolated on pure white/i.test(cleanPrompt);
+        
+        let promptByteplus = "";
+        if (esFondoBlanco) {
+          promptByteplus = `Commercial high-end product catalog photography of the exact 3D furniture piece provided in the reference image (image_urls[0]), isolated and perfectly centered on a seamless pure white studio cyclorama background (#FFFFFF). STRICT REQUIREMENT: Maintain 100% of the exact geometry, shape, proportions, parts, cushions, drawers, handles, and material tone from the input reference image without adding, deleting or altering any furniture parts. Refined tactile physical materials, realistic softbox studio lighting with soft diffuse natural contact shadows under the base and legs. 8k Herman Miller / Vitra catalog photograph. Instructions: ${cleanPrompt}`;
+        } else {
+          promptByteplus = `Editorial architectural photography shot on 35mm lens, f/2.8 aperture. High-end catalog photograph of the attached custom furniture piece from the reference image (image_urls[0]), preserving 100% of its exact geometry, proportion, drawer structure, handles, and material finish. Place it seamlessly in: ${cleanPrompt}. Soft natural daylight from a side window, subtle atmospheric reflections, tangible tactile matte wood/paint texture, soft natural floor contact shadows, Architectural Digest quality, perfectly realistic.`;
+        }
+
+        const bpPayload: any = {
+          model: byteplusModel,
+          prompt: promptByteplus,
+          response_format: "url",
+          size: sizeFormatted,
+          stream: false,
+          watermark: false
+        };
+
+        if (imageBase64 && typeof imageBase64 === "string" && imageBase64.startsWith("data:image")) {
+          bpPayload.image_urls = [imageBase64];
+        }
+
+        const bpRes = await fetch("https://ark.ap-southeast.bytepluses.com/api/v3/images/generations", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${byteplusKey}`
+          },
+          body: JSON.stringify(bpPayload)
+        });
+
+        if (bpRes.ok) {
+          const bpData = await bpRes.json();
+          const remoteUrl = bpData?.data?.[0]?.url || bpData?.data?.[0]?.image_url || bpData?.data?.[0]?.b64_json;
+          if (remoteUrl) {
+            finalImageUrl = remoteUrl.startsWith("http") ? remoteUrl : `data:image/jpeg;base64,${remoteUrl}`;
+            motorEfectivo = "byteplus_seedream";
+            console.log("[3BF Render IA] BytePlus URL generada con éxito:", remoteUrl.substring(0, 100));
+          } else {
+            errorDetalle = "BytePlus no devolvió una URL válida de imagen.";
+          }
+        } else {
+          const bpErrText = await bpRes.text();
+          console.warn("[3BF Render IA BytePlus Error]:", bpErrText);
+          errorDetalle = `BytePlus ModelArk (${bpRes.status}): ${bpErrText}`;
+        }
+      } catch (bpErr: any) {
+        console.error("[3BF Render IA BytePlus Exception]:", bpErr);
+        errorDetalle = bpErr?.message || "Fallo en BytePlus ModelArk";
+      }
+    }
+
+    // =========================================================================
+    // 2. MOTOR GOOGLE GEMINI 1.5 PRO / FLASH + IMAGEN 3 (Google AI Studio Nativo)
+    // =========================================================================
+    if (!finalImageUrl && (motor === "google_gemini_imagen3" || motor === "google_gemini" || (!falKey && geminiKey)) && geminiKey) {
+      try {
+        // Formato para Imagen 3 en Google AI Studio (1:1, 16:9, 4:3, 9:16)
+        let imagen3Ratio = "1:1";
+        if (aspectRatio === "16:9") imagen3Ratio = "16:9";
+        else if (aspectRatio === "9:16") imagen3Ratio = "9:16";
+        else if (aspectRatio === "4:3") imagen3Ratio = "4:3";
+
+        // Paso A: Análisis Multimodal con Gemini 1.5 Flash para extraer detalles del mueble
+        let promptEnriquecido = cleanPrompt;
+        if (imageBase64 && typeof imageBase64 === "string" && imageBase64.includes("base64,")) {
+          const rawBase64 = imageBase64.split("base64,")[1];
+          const mimeType = imageBase64.split(";")[0].split(":")[1] || "image/png";
+
+          try {
+            const geminiAnalisisRes = await fetch(
+              `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${geminiKey}`,
+              {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                  contents: [
+                    {
+                      parts: [
+                        {
+                          text: `You are an expert architectural and commercial furniture photographer. Analyze the 3D furniture piece in this reference image (exact geometric shape, wood species/color, drawer layout, handles, proportions). Create a concise, hyper-realistic, high-end photography prompt in English for Imagen 3 that places EXACTLY this custom furniture piece in the scene: "${cleanPrompt}". STRICT REQUIREMENT: Maintain 100% of the furniture's exact geometry and materials, photorealistic studio/ambient lighting, soft contact shadows on the floor, 8k resolution, Architectural Digest aesthetic.`
+                        },
+                        {
+                          inline_data: {
+                            mime_type: mimeType,
+                            data: rawBase64
+                          }
+                        }
+                      ]
+                    }
+                  ],
+                  generationConfig: {
+                    temperature: 0.4,
+                    maxOutputTokens: 300
+                  }
+                })
+              }
+            );
+
+            if (geminiAnalisisRes.ok) {
+              const gData = await geminiAnalisisRes.json();
+              const visionPrompt = gData?.candidates?.[0]?.content?.parts?.[0]?.text;
+              if (visionPrompt && visionPrompt.length > 20) {
+                promptEnriquecido = visionPrompt.trim();
+              }
+            }
+          } catch (gErr) {
+            console.warn("[3BF Render IA] Advertencia en visión Gemini:", gErr);
+          }
+        }
+
+        // Paso B: Generación Fotorrealista con Google Imagen 3 (imagen-3.0-generate-002)
+        const imagen3Res = await fetch(
+          `https://generativelanguage.googleapis.com/v1beta/models/imagen-3.0-generate-002:predict?key=${geminiKey}`,
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              instances: [
+                {
+                  prompt: promptEnriquecido
+                }
+              ],
+              parameters: {
+                sampleCount: 1,
+                aspectRatio: imagen3Ratio,
+                personGeneration: "ALLOW_ADULT",
+                safetySetting: "BLOCK_MEDIUM_AND_ABOVE"
+              }
+            })
+          }
+        );
+
+        if (imagen3Res.ok) {
+          const img3Data = await imagen3Res.json();
+          const b64Pred = img3Data?.predictions?.[0]?.bytesBase64Encoded;
+          const mimeTypeOut = img3Data?.predictions?.[0]?.mimeType || "image/jpeg";
+          if (b64Pred) {
+            finalImageUrl = `data:${mimeTypeOut};base64,${b64Pred}`;
+            motorEfectivo = "google_gemini_imagen3";
+          }
+        } else {
+          const img3ErrText = await imagen3Res.text();
+          console.warn("[3BF Render IA] Imagen 3 error, intentando respaldo con Fal/Pollinations:", img3ErrText);
+          errorDetalle = `Google Imagen 3: ${img3ErrText}`;
+        }
+      } catch (geminiMainErr: any) {
+        console.error("[3BF Render IA Gemini Exception]:", geminiMainErr);
+        errorDetalle = geminiMainErr?.message || "Fallo en Google Gemini / Imagen 3";
+      }
+    }
+
+    // =========================================================================
+    // 2. MOTOR NANO BANANA PRO & NANO BANANA EDIT (fal.ai FLUX / Nano Banana)
+    // =========================================================================
+    if (!finalImageUrl && (motor.startsWith("fal_nano_banana") || motor.startsWith("fal_")) && falKey) {
       if (!imageBase64 || typeof imageBase64 !== "string" || !imageBase64.startsWith("data:image")) {
         return NextResponse.json(
           { error: "Se requiere la captura 3D del mueble para ubicarlo en la escena." },
@@ -174,48 +349,11 @@ export async function POST(req: NextRequest) {
           }
         } else {
           const nanoErr = await nanoRes.text();
-          console.warn("[3BF Render IA] Error en endpoint principal, intentando fallback:", nanoErr);
-          
-          if (isPro) {
-            const fallbackRes = await fetch("https://fal.run/fal-ai/nano-banana/edit", {
-              method: "POST",
-              headers: {
-                "Content-Type": "application/json",
-                "Authorization": `Key ${falKey}`,
-              },
-              body: JSON.stringify({
-                prompt: promptNano,
-                image_urls: [imageBase64],
-                aspect_ratio: falRatio,
-                num_images: 1,
-              }),
-            });
-            if (fallbackRes.ok) {
-              const fbData = await fallbackRes.json();
-              const fbUrl = fbData?.images?.[0]?.url;
-              if (fbUrl) {
-                const imgFetch = await fetch(fbUrl);
-                if (imgFetch.ok) {
-                  const buf = await imgFetch.arrayBuffer();
-                  finalImageUrl = `data:image/jpeg;base64,${Buffer.from(buf).toString("base64")}`;
-                } else {
-                  finalImageUrl = fbUrl;
-                }
-                motorEfectivo = "fal_nano_banana";
-              }
-            }
-          }
-          if (!finalImageUrl) errorDetalle = `Nano Banana error: ${nanoErr}`;
+          console.warn("[3BF Render IA] Error en endpoint fal.ai:", nanoErr);
+          errorDetalle = `Nano Banana error: ${nanoErr}`;
         }
       } catch (nErr: any) {
-        errorDetalle = nErr?.message || "Fallo en Nano Banana Edit";
-      }
-
-      if (!finalImageUrl && motor.startsWith("fal_")) {
-        return NextResponse.json(
-          { error: `Error en fal.ai: ${errorDetalle || "No se pudo generar el render."}` },
-          { status: 400 }
-        );
+        errorDetalle = nErr?.message || "Fallo en fal.ai Nano Banana Edit";
       }
     }
 
@@ -247,7 +385,7 @@ export async function POST(req: NextRequest) {
 
     if (!finalImageUrl) {
       return NextResponse.json(
-        { error: `No fue posible generar la imagen: ${errorDetalle || "Verifica las credenciales de fal.ai."}` },
+        { error: `No fue posible generar la imagen: ${errorDetalle || "Verifica la conexión con el motor de IA o intenta nuevamente."}` },
         { status: 500 }
       );
     }

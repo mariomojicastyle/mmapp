@@ -313,9 +313,6 @@ export default function MaterialManagerPanel() {
                     className="absolute top-1 left-1.5 w-3 h-2 rounded-full bg-white/70 blur-[0.5px] pointer-events-none"
                     style={{ opacity: 1 - mat.rugosidad }}
                   />
-                  {mat.metalico > 0.5 && (
-                    <Sparkles className="w-3 h-3 text-white/80 absolute bottom-1 right-1 pointer-events-none" />
-                  )}
                 </div>
                 <span 
                   style={{ color: coloresApariencia?.textoPrincipal }}

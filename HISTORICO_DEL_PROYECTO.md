@@ -1748,21 +1748,26 @@ Con esta batería de arreglos y la validación en caliente, la V20 se establece 
   * Calibradas las intensidades base de luces de estudio y mapa HDRI para que el punto medio del slider ($1.0\text{x}$) ofrezca la visualización fotorrealista ideal.
   * Eliminados los iconos de regla (`📐`) de los controles de aristas.
 
+---
 
+### 🔹 Hito 3BF_MaterialStudio_PBRMapLoadersAndShadowDecoupling — Carga Directa de Mapas PBR, Control de Sombras Sol/Contacto, Ajuste Responsive Móvil de AI Render Studio, Integración de BytePlus Seedream 4.5 e Identidad Visual (24 de Agosto, 2026)
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+- **Adaptación Proporcional de AI Render Studio para Móviles (`AIRenderStudioModal.tsx`)**:
+  * Reestructuración del layout a 2 columnas responsivas (`grid-cols-1 sm:grid-cols-12`) permitiendo que en teléfonos celulares y tablets apaisadas se mantenga la proporción idéntica a PC (Columna Izquierda 5/12 con miniatura 3D contenida de `h-24 sm:h-28 md:h-36`, selectores de motor/ratio compactos, textarea y botón de disparo siempre visibles; Columna Derecha 7/12 con pestañas táctiles horizontales y lienzo de render flexible `min-h-[220px] sm:min-h-[320px] md:min-h-[450px]`).
+- **Integración de BytePlus ModelArk Seedream 4.5 (ByteDance - 200 Renders Gratis) (`app/api/render-ia/route.ts` & `AIRenderStudioModal.tsx`)**:
+  * Conexión con la API de generación de imágenes de ByteDance (`seedream-4-5-251128`) en resolución nativa 2K con 200 imágenes de cuota gratuita y paso directo de `image_urls: [imageBase64]`.
+  * Optimización de entrega directa de URL remota evitando cuellos de botella de red en servidor de desarrollo.
+- **Homologación de Título "Modificador de Componentes" (`ControlPanel.tsx`)**:
+  * Ajuste del encabezado principal del panel superior en singular/plural estricto a **`Modificador de Componentes`** sin iconos decorativos, con tipografía minimalista y sobria.
+- **Restauración de Drag & Drop Nativo y Scroll Limpio en "Biblioteca de Componentes" (`NPanel.tsx`)**:
+  * Se restauró `draggable` al 100% sin condiciones en las tarjetas de componentes y se eliminaron los bloqueos de eventos en `<aside>`, devolviendo la funcionalidad de arrastrar muebles al lienzo 3D en PC. Se estructuró el scroll vertical dentro del contenedor de miniaturas (`flex-1 overflow-y-auto custom-scrollbar touch-pan-y`).
+- **Restauración del Centrado de Menú de Vistas en PC (`app/page.tsx`)**:
+  * Se reestableció el centrado exacto original en pantallas de escritorio (`md:absolute md:left-1/2 md:-translate-x-1/2`) para las pestañas `Visor 3D`, `Despiece & Costos` y `Base de Datos`, manteniendo la eliminación del botón Render IA en la barra superior.
+- **Testigo de Estado en Móvil (`md:hidden`)**:
+  * Sustituido por un **simple círculo verde esmeralda `🟢`** cuando está online, y **círculo rojo `🔴` pulsante** cuando está desconectado/fallback, sin cajas ni textos adicionales.
+- **Carga de Archivos de Mapas Externos para Normal, Roughness y AO Poro (`PBRMaterialStudioModal.tsx`)**:
+  * Se integraron botones dedicados de subida de archivo (`+ Cargar Normal`, `+ Cargar Rugosidad`, `+ Cargar AO`) con inputs ocultos independientes, permitiendo importar mapas descargados de fuentes externas para crear materiales completos con texturas reales.
+- **Corrección de Persistencia al Guardar Modificaciones (`PBRMaterialStudioModal.tsx` & `store.ts`)**:
+  * Se desacopló el `useEffect` de inicialización para depender estrictamente de la apertura del modal (`[modalPBRStudioAbierto]`), eliminando el bug donde guardar o editar un material provocaba que el estado local se sobreescribiera con la versión original.
+- **Desacoplamiento y Control de Sombras Físicas Sol/Contacto (`ShaderBallViewer.tsx` & `PBRMaterialStudioModal.tsx`)**:
+  * Se integró `PCFSoftShadowMap` en el Canvas de Three.js y se desglosó el control inferior en **`Sombra Sol:`**, **`Contacto:`** y **`Difusión:`**.

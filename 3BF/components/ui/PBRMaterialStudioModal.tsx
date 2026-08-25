@@ -81,6 +81,8 @@ export default function PBRMaterialStudioModal() {
     mostrarFondo: boolean;
     blurFondo: number;
     sombraOpacidad: number;
+    sombraSolOpacidad: number;
+    sombraContactoOpacidad: number;
     sombraDifuminado: number;
   }>({
     tipo: "alps_field_sol",
@@ -89,11 +91,16 @@ export default function PBRMaterialStudioModal() {
     mostrarFondo: true,
     blurFondo: 0.5,
     sombraOpacidad: 0.22,
+    sombraSolOpacidad: 0.15,
+    sombraContactoOpacidad: 0.25,
     sombraDifuminado: 2.4,
     customHdrUrl: null,
   });
 
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const normalFileInputRef = useRef<HTMLInputElement>(null);
+  const roughnessFileInputRef = useRef<HTMLInputElement>(null);
+  const aoFileInputRef = useRef<HTMLInputElement>(null);
   const hdrFileInputRef = useRef<HTMLInputElement>(null);
 
   const handleSubirHdrPersonalizado = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -105,6 +112,51 @@ export default function PBRMaterialStudioModal() {
       tipo: "personalizado",
       customHdrUrl: url,
     }));
+  };
+
+  // Subir mapa de normales personalizado
+  const handleSubirNormalMap = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const dataUrl = event.target?.result as string;
+      if (dataUrl) {
+        setMatLocal((prev) => (prev ? { ...prev, normalMapUrl: dataUrl } : null));
+      }
+    };
+    reader.readAsDataURL(file);
+    if (normalFileInputRef.current) normalFileInputRef.current.value = "";
+  };
+
+  // Subir mapa de rugosidad personalizado
+  const handleSubirRoughnessMap = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const dataUrl = event.target?.result as string;
+      if (dataUrl) {
+        setMatLocal((prev) => (prev ? { ...prev, roughnessMapUrl: dataUrl } : null));
+      }
+    };
+    reader.readAsDataURL(file);
+    if (roughnessFileInputRef.current) roughnessFileInputRef.current.value = "";
+  };
+
+  // Subir mapa de AO personalizado
+  const handleSubirAOMap = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const dataUrl = event.target?.result as string;
+      if (dataUrl) {
+        setMatLocal((prev) => (prev ? { ...prev, aoMapUrl: dataUrl } : null));
+      }
+    };
+    reader.readAsDataURL(file);
+    if (aoFileInputRef.current) aoFileInputRef.current.value = "";
   };
 
   // Sincronizar con el material activo del mueble o catálogo al abrir el estudio
@@ -137,13 +189,13 @@ export default function PBRMaterialStudioModal() {
         if (matCopia.texturaUrl && (!matCopia.normalMapUrl || !matCopia.roughnessMapUrl)) {
           autoGenerarSetPBRCompleto(matCopia.texturaUrl, matCopia.tipo as any).then((pbrSet) => {
             setMatLocal((prev) =>
-              prev && prev.id === matCopia.id
+              prev && prev.id === matCopia.id && prev.texturaUrl === matCopia.texturaUrl
                 ? {
                     ...prev,
-                    normalMapUrl: pbrSet.normalUrl,
-                    roughnessMapUrl: pbrSet.roughnessUrl,
-                    aoMapUrl: pbrSet.aoUrl,
-                    colorBase: "#FFFFFF",
+                    normalMapUrl: prev.normalMapUrl || pbrSet.normalUrl,
+                    roughnessMapUrl: prev.roughnessMapUrl || pbrSet.roughnessUrl,
+                    aoMapUrl: prev.aoMapUrl || pbrSet.aoUrl,
+                    colorBase: prev.colorBase || "#FFFFFF",
                   }
                 : prev
             );
@@ -151,13 +203,14 @@ export default function PBRMaterialStudioModal() {
         }
       }
     }
-  }, [modalPBRStudioAbierto, materialEnCalibracion, materialesPBR, capas, materialSeleccionadoId]);
+  }, [modalPBRStudioAbierto]);
 
   const handleSeleccionarMaterialCatalogo = (id: string) => {
     const found = materialesPBR.find((m) => m.id === id);
     if (!found) return;
     const matCopia: MaterialPBRDef = JSON.parse(JSON.stringify(found));
     setMatLocal(matCopia);
+    setMaterialEnCalibracion(matCopia);
     setMaterialEnCalibracion(matCopia);
 
     if (matCopia.texturaUrl && (!matCopia.normalMapUrl || !matCopia.roughnessMapUrl)) {
@@ -480,28 +533,83 @@ export default function PBRMaterialStudioModal() {
               <div className="p-2 rounded-lg border flex flex-col gap-1.5 shadow-2xs" style={{ borderColor: coloresApariencia?.bordePaneles, backgroundColor: coloresApariencia?.fondoAplicacion }}>
                 <div className="flex items-center justify-between text-[11px]">
                   <span className="font-semibold" style={{ color: coloresApariencia?.textoPrincipal }}>1. Diffuse</span>
-                  <div className="flex items-center gap-1">
-                    <input
-                      type="color"
-                      value={matLocal.colorBase || "#FFFFFF"}
-                      onChange={(e) => setMatLocal({ ...matLocal, colorBase: e.target.value })}
-                      className="w-4 h-4 rounded cursor-pointer border-0 bg-transparent"
-                      title="Tinte de color"
-                    />
-                  </div>
+                  {!matLocal.texturaUrl && (
+                    <span className="text-[10px] font-bold" style={{ color: coloresApariencia?.botonActivo || "#0891B2" }}>
+                      Color Plano
+                    </span>
+                  )}
                 </div>
-                <div className="w-full aspect-square rounded-lg border overflow-hidden flex items-center justify-center relative" style={{ borderColor: coloresApariencia?.bordePaneles, backgroundColor: tema === "obsidian" ? "#161B22" : "#F8FAFC" }}>
+
+                <div 
+                  className="w-full aspect-square rounded-lg border overflow-hidden flex items-center justify-center relative group" 
+                  style={{ 
+                    borderColor: coloresApariencia?.bordePaneles, 
+                    backgroundColor: matLocal.texturaUrl ? (tema === "obsidian" ? "#161B22" : "#F8FAFC") : (matLocal.colorBase || "#CCCCCC")
+                  }}
+                >
                   {matLocal.texturaUrl ? (
-                    <img src={matLocal.texturaUrl} alt="Diffuse" className="w-full h-full object-cover" />
+                    <>
+                      <img src={matLocal.texturaUrl} alt="Diffuse" className="w-full h-full object-cover" />
+                      {/* Botón flotante X para eliminar la imagen diffuse */}
+                      <button
+                        onClick={() =>
+                          setMatLocal({
+                            ...matLocal,
+                            texturaUrl: undefined,
+                            tipo: matLocal.tipo === "Melamina" || matLocal.tipo === "Madera" ? "Plastico" : matLocal.tipo,
+                            colorBase: matLocal.colorBase || "#CCCCCC",
+                          })
+                        }
+                        className="absolute top-1.5 right-1.5 w-5 h-5 rounded-full bg-black/75 hover:bg-red-600 text-white flex items-center justify-center shadow-md transition cursor-pointer"
+                        title="Eliminar mapa diffuse"
+                      >
+                        <X className="w-3.5 h-3.5" />
+                      </button>
+                    </>
                   ) : (
-                    <div 
-                      onClick={() => fileInputRef.current?.click()}
-                      className="w-full h-full flex flex-col items-center justify-center gap-1.5 cursor-pointer transition hover:opacity-80 p-2 text-center"
-                    >
-                      <Upload className="w-4 h-4 opacity-60" style={{ color: coloresApariencia?.botonActivo || "#0891B2" }} />
-                      <span className="text-[10px] font-semibold opacity-70 leading-tight" style={{ color: coloresApariencia?.textoPrincipal }}>
-                        Adjuntar Foto
-                      </span>
+                    /* 🎨 Selector de Color Plano para Material de Plástico */
+                    <div className="w-full h-full flex flex-col items-center justify-between p-2 text-center select-none">
+                      <div className="flex-1 flex flex-col items-center justify-center gap-1.5 w-full">
+                        <label 
+                          htmlFor="diffuse-color-input"
+                          className="w-11 h-11 rounded-full border-2 border-white shadow-md cursor-pointer hover:scale-105 transition flex items-center justify-center overflow-hidden relative"
+                          style={{ backgroundColor: matLocal.colorBase || "#CCCCCC" }}
+                          title="Clic para elegir color plano de plástico"
+                        >
+                          <input
+                            id="diffuse-color-input"
+                            type="color"
+                            value={matLocal.colorBase || "#CCCCCC"}
+                            onChange={(e) => setMatLocal({ ...matLocal, colorBase: e.target.value })}
+                            className="opacity-0 w-full h-full cursor-pointer absolute inset-0"
+                          />
+                        </label>
+                        <span 
+                          className="text-[11px] font-mono font-bold px-2 py-0.5 rounded shadow-2xs border backdrop-blur-xs"
+                          style={{ 
+                            backgroundColor: tema === "obsidian" ? "rgba(0,0,0,0.65)" : "rgba(255,255,255,0.9)",
+                            color: tema === "obsidian" ? "#FFFFFF" : "#0F172A",
+                            borderColor: coloresApariencia?.bordePaneles
+                          }}
+                        >
+                          {(matLocal.colorBase || "#CCCCCC").toUpperCase()}
+                        </span>
+                      </div>
+
+                      {/* Botón para volver a cargar foto/textura si se desea */}
+                      <button
+                        onClick={() => fileInputRef.current?.click()}
+                        className="w-full py-1 px-1.5 rounded text-[10px] font-semibold border transition hover:opacity-90 flex items-center justify-center gap-1 cursor-pointer shadow-2xs"
+                        style={{
+                          backgroundColor: coloresApariencia?.fondoPaneles,
+                          borderColor: coloresApariencia?.bordePaneles,
+                          color: coloresApariencia?.botonActivo || "#0891B2"
+                        }}
+                        title="Adjuntar una imagen de textura para este material"
+                      >
+                        <Upload className="w-3 h-3" />
+                        <span>Cargar Textura</span>
+                      </button>
                     </div>
                   )}
                 </div>
@@ -522,11 +630,68 @@ export default function PBRMaterialStudioModal() {
                     {(matLocal.normalScale ?? 1.2).toFixed(1)}x
                   </div>
                 </div>
-                <div className="w-full aspect-square rounded-lg border overflow-hidden flex items-center justify-center" style={{ borderColor: coloresApariencia?.bordePaneles, backgroundColor: tema === "obsidian" ? "#161B22" : "#F8FAFC" }}>
+                <div 
+                  className="w-full aspect-square rounded-lg border overflow-hidden flex items-center justify-center relative group" 
+                  style={{ 
+                    borderColor: coloresApariencia?.bordePaneles, 
+                    backgroundColor: matLocal.normalMapUrl ? (tema === "obsidian" ? "#161B22" : "#F8FAFC") : (tema === "obsidian" ? "#131822" : "#EEF2F6") 
+                  }}
+                >
                   {matLocal.normalMapUrl ? (
-                    <img src={matLocal.normalMapUrl} alt="Normal" className="w-full h-full object-cover" />
+                    <>
+                      <img src={matLocal.normalMapUrl} alt="Normal" className="w-full h-full object-cover" />
+                      {/* Botón flotante X para eliminar mapa normal */}
+                      <button
+                        onClick={() => setMatLocal({ ...matLocal, normalMapUrl: undefined })}
+                        className="absolute top-1.5 right-1.5 w-5 h-5 rounded-full bg-black/75 hover:bg-red-600 text-white flex items-center justify-center shadow-md transition cursor-pointer"
+                        title="Eliminar mapa normal"
+                      >
+                        <X className="w-3.5 h-3.5" />
+                      </button>
+                    </>
                   ) : (
-                    <span className="text-[10px] font-mono opacity-40" style={{ color: coloresApariencia?.textoSecundario }}>Sin Normal</span>
+                    <div className="w-full h-full flex flex-col items-center justify-between p-2 text-center select-none gap-1">
+                      <div className="flex-1 flex flex-col items-center justify-center">
+                        <span className="text-[10px] font-semibold opacity-60" style={{ color: coloresApariencia?.textoPrincipal }}>
+                          Superficie Lisa
+                        </span>
+                        {matLocal.texturaUrl && (
+                          <button
+                            onClick={async () => {
+                              if (!matLocal.texturaUrl) return;
+                              const norm = await generarNormalMap(matLocal.texturaUrl, {
+                                normalStrength: matLocal.normalScale ?? 1.2,
+                                normalInvertY: matLocal.ajustesTextura?.normalInvertY ?? false,
+                              });
+                              setMatLocal({ ...matLocal, normalMapUrl: norm });
+                            }}
+                            className="mt-1 px-2 py-0.5 rounded text-[9px] font-semibold border transition hover:opacity-90 cursor-pointer shadow-2xs"
+                            style={{
+                              backgroundColor: coloresApariencia?.fondoPaneles,
+                              borderColor: coloresApariencia?.bordePaneles,
+                              color: coloresApariencia?.botonActivo || "#0891B2"
+                            }}
+                          >
+                            Auto-Generar
+                          </button>
+                        )}
+                      </div>
+
+                      {/* Botón para cargar archivo de mapa de normales externo */}
+                      <button
+                        onClick={() => normalFileInputRef.current?.click()}
+                        className="w-full py-1 px-1.5 rounded text-[10px] font-semibold border transition hover:opacity-90 flex items-center justify-center gap-1 cursor-pointer shadow-2xs"
+                        style={{
+                          backgroundColor: coloresApariencia?.fondoPaneles,
+                          borderColor: coloresApariencia?.bordePaneles,
+                          color: coloresApariencia?.botonActivo || "#0891B2"
+                        }}
+                        title="Subir archivo de mapa de normales (RGB Normal Map)"
+                      >
+                        <Upload className="w-3 h-3" />
+                        <span>Cargar Normal</span>
+                      </button>
+                    </div>
                   )}
                 </div>
                 <input
@@ -556,11 +721,77 @@ export default function PBRMaterialStudioModal() {
                     {(matLocal.rugosidad ?? 0.5).toFixed(2)}
                   </div>
                 </div>
-                <div className="w-full aspect-square rounded-lg border overflow-hidden flex items-center justify-center" style={{ borderColor: coloresApariencia?.bordePaneles, backgroundColor: tema === "obsidian" ? "#161B22" : "#F8FAFC" }}>
+                <div 
+                  className="w-full aspect-square rounded-lg border overflow-hidden flex items-center justify-center relative group" 
+                  style={{ 
+                    borderColor: coloresApariencia?.bordePaneles, 
+                    backgroundColor: matLocal.roughnessMapUrl 
+                      ? (tema === "obsidian" ? "#161B22" : "#F8FAFC") 
+                      : `rgb(${Math.round((matLocal.rugosidad ?? 0.5) * 230)}, ${Math.round((matLocal.rugosidad ?? 0.5) * 230)}, ${Math.round((matLocal.rugosidad ?? 0.5) * 230)})`
+                  }}
+                >
                   {matLocal.roughnessMapUrl ? (
-                    <img src={matLocal.roughnessMapUrl} alt="Roughness" className="w-full h-full object-cover" />
+                    <>
+                      <img src={matLocal.roughnessMapUrl} alt="Roughness" className="w-full h-full object-cover" />
+                      {/* Botón flotante X para eliminar mapa de rugosidad */}
+                      <button
+                        onClick={() => setMatLocal({ ...matLocal, roughnessMapUrl: undefined })}
+                        className="absolute top-1.5 right-1.5 w-5 h-5 rounded-full bg-black/75 hover:bg-red-600 text-white flex items-center justify-center shadow-md transition cursor-pointer"
+                        title="Eliminar mapa de rugosidad"
+                      >
+                        <X className="w-3.5 h-3.5" />
+                      </button>
+                    </>
                   ) : (
-                    <span className="text-[10px] font-mono opacity-40" style={{ color: coloresApariencia?.textoSecundario }}>Sin Roughness</span>
+                    <div className="w-full h-full flex flex-col items-center justify-between p-2 text-center select-none gap-1">
+                      <div className="flex-1 flex flex-col items-center justify-center">
+                        <span 
+                          className="text-[10px] font-bold px-2 py-0.5 rounded shadow-2xs border backdrop-blur-xs"
+                          style={{
+                            backgroundColor: (matLocal.rugosidad ?? 0.5) > 0.5 ? "rgba(0,0,0,0.6)" : "rgba(255,255,255,0.85)",
+                            color: (matLocal.rugosidad ?? 0.5) > 0.5 ? "#FFFFFF" : "#0F172A",
+                            borderColor: coloresApariencia?.bordePaneles
+                          }}
+                        >
+                          {(matLocal.rugosidad ?? 0.5) < 0.2 ? "Brillante" : (matLocal.rugosidad ?? 0.5) > 0.7 ? "Mate" : "Satinado"}
+                        </span>
+                        {matLocal.texturaUrl && (
+                          <button
+                            onClick={async () => {
+                              if (!matLocal.texturaUrl) return;
+                              const rough = await generarRoughnessMap(matLocal.texturaUrl, {
+                                roughnessBase: matLocal.rugosidad ?? 0.5,
+                                roughnessInvert: matLocal.ajustesTextura?.roughnessInvert ?? false,
+                              });
+                              setMatLocal({ ...matLocal, roughnessMapUrl: rough });
+                            }}
+                            className="mt-1 px-2 py-0.5 rounded text-[9px] font-semibold border transition hover:opacity-90 cursor-pointer shadow-2xs"
+                            style={{
+                              backgroundColor: coloresApariencia?.fondoPaneles,
+                              borderColor: coloresApariencia?.bordePaneles,
+                              color: coloresApariencia?.botonActivo || "#0891B2"
+                            }}
+                          >
+                            Auto-Generar
+                          </button>
+                        )}
+                      </div>
+
+                      {/* Botón para cargar archivo de mapa de rugosidad externo */}
+                      <button
+                        onClick={() => roughnessFileInputRef.current?.click()}
+                        className="w-full py-1 px-1.5 rounded text-[10px] font-semibold border transition hover:opacity-90 flex items-center justify-center gap-1 cursor-pointer shadow-2xs"
+                        style={{
+                          backgroundColor: coloresApariencia?.fondoPaneles,
+                          borderColor: coloresApariencia?.bordePaneles,
+                          color: coloresApariencia?.botonActivo || "#0891B2"
+                        }}
+                        title="Subir archivo de mapa de rugosidad (Roughness Map B&N)"
+                      >
+                        <Upload className="w-3 h-3" />
+                        <span>Cargar Rugosidad</span>
+                      </button>
+                    </div>
                   )}
                 </div>
                 <input
@@ -590,11 +821,67 @@ export default function PBRMaterialStudioModal() {
                     {(matLocal.aoIntensity ?? 1.0).toFixed(1)}x
                   </div>
                 </div>
-                <div className="w-full aspect-square rounded-lg border overflow-hidden flex items-center justify-center" style={{ borderColor: coloresApariencia?.bordePaneles, backgroundColor: tema === "obsidian" ? "#161B22" : "#F8FAFC" }}>
+                <div 
+                  className="w-full aspect-square rounded-lg border overflow-hidden flex items-center justify-center relative group" 
+                  style={{ 
+                    borderColor: coloresApariencia?.bordePaneles, 
+                    backgroundColor: matLocal.aoMapUrl ? (tema === "obsidian" ? "#161B22" : "#F8FAFC") : (tema === "obsidian" ? "#131822" : "#FFFFFF") 
+                  }}
+                >
                   {matLocal.aoMapUrl ? (
-                    <img src={matLocal.aoMapUrl} alt="AO" className="w-full h-full object-cover" />
+                    <>
+                      <img src={matLocal.aoMapUrl} alt="AO" className="w-full h-full object-cover" />
+                      {/* Botón flotante X para eliminar mapa AO */}
+                      <button
+                        onClick={() => setMatLocal({ ...matLocal, aoMapUrl: undefined })}
+                        className="absolute top-1.5 right-1.5 w-5 h-5 rounded-full bg-black/75 hover:bg-red-600 text-white flex items-center justify-center shadow-md transition cursor-pointer"
+                        title="Eliminar mapa AO"
+                      >
+                        <X className="w-3.5 h-3.5" />
+                      </button>
+                    </>
                   ) : (
-                    <span className="text-[10px] font-mono opacity-40" style={{ color: coloresApariencia?.textoSecundario }}>Sin AO</span>
+                    <div className="w-full h-full flex flex-col items-center justify-between p-2 text-center select-none gap-1">
+                      <div className="flex-1 flex flex-col items-center justify-center">
+                        <span className="text-[10px] font-semibold opacity-60" style={{ color: coloresApariencia?.textoPrincipal }}>
+                          Sin Oclusión
+                        </span>
+                        {matLocal.texturaUrl && (
+                          <button
+                            onClick={async () => {
+                              if (!matLocal.texturaUrl) return;
+                              const ao = await generarAOMap(matLocal.texturaUrl, {
+                                aoStrength: matLocal.aoIntensity ?? 1.0,
+                              });
+                              setMatLocal({ ...matLocal, aoMapUrl: ao });
+                            }}
+                            className="mt-1 px-2 py-0.5 rounded text-[9px] font-semibold border transition hover:opacity-90 cursor-pointer shadow-2xs"
+                            style={{
+                              backgroundColor: coloresApariencia?.fondoPaneles,
+                              borderColor: coloresApariencia?.bordePaneles,
+                              color: coloresApariencia?.botonActivo || "#0891B2"
+                            }}
+                          >
+                            Auto-Generar
+                          </button>
+                        )}
+                      </div>
+
+                      {/* Botón para cargar archivo de mapa de AO externo */}
+                      <button
+                        onClick={() => aoFileInputRef.current?.click()}
+                        className="w-full py-1 px-1.5 rounded text-[10px] font-semibold border transition hover:opacity-90 flex items-center justify-center gap-1 cursor-pointer shadow-2xs"
+                        style={{
+                          backgroundColor: coloresApariencia?.fondoPaneles,
+                          borderColor: coloresApariencia?.bordePaneles,
+                          color: coloresApariencia?.botonActivo || "#0891B2"
+                        }}
+                        title="Subir archivo de mapa de oclusión ambiental (Ambient Occlusion B&N)"
+                      >
+                        <Upload className="w-3 h-3" />
+                        <span>Cargar AO</span>
+                      </button>
+                    </div>
                   )}
                 </div>
                 <input
@@ -930,12 +1217,7 @@ export default function PBRMaterialStudioModal() {
             style={{ backgroundColor: coloresApariencia?.fondoAplicacion }}
           >
             {/* Barra Flotante Superior: Selector de Forma y Controles de Aristas */}
-            <div className="flex items-center justify-between px-1 flex-wrap gap-2">
-              <span className="font-semibold text-xs flex items-center gap-1.5" style={{ color: coloresApariencia?.textoPrincipal }}>
-                <Eye className="w-3.5 h-3.5" style={{ color: coloresApariencia?.botonActivo || "#0891b2" }} />
-                <span>Shader Ball 3D Interactivo (Rotar con el Mouse 360°)</span>
-              </span>
-
+            <div className="flex items-center justify-end px-1 flex-wrap gap-2">
               <div className="flex items-center gap-3 flex-wrap">
                 {/* Control de Aristas y Contornos */}
                 <div 
@@ -1150,29 +1432,55 @@ export default function PBRMaterialStudioModal() {
                   </div>
                 </div>
 
-                {/* Opacidad / Oscuridad de la Sombra */}
+                {/* Opacidad de la Sombra Direccional (Sol / Luz) */}
                 <div className="flex items-center gap-1.5 text-xs">
-                  <span className="text-[11px] font-semibold" style={{ color: coloresApariencia?.textoPrincipal }}>Sombra:</span>
+                  <span className="text-[11px] font-semibold" style={{ color: coloresApariencia?.textoPrincipal }}>Sombra Sol:</span>
                   <input
                     type="range"
                     min="0.0"
                     max="1.0"
                     step="0.02"
-                    value={hdriConfig.sombraOpacidad}
-                    onChange={(e) => setHdriConfig({ ...hdriConfig, sombraOpacidad: parseFloat(e.target.value) })}
-                    className="w-16 cursor-pointer"
+                    value={hdriConfig.sombraSolOpacidad}
+                    onChange={(e) => setHdriConfig({ ...hdriConfig, sombraSolOpacidad: parseFloat(e.target.value) })}
+                    className="w-14 cursor-pointer"
                     style={{ accentColor: coloresApariencia?.botonActivo || "#0891b2" }}
-                    title="Controlar qué tan oscura o suave es la sombra de contacto"
+                    title="Controlar la intensidad de la sombra direccional proyectada por la luz/sol (0% = sin sombra dura)"
                   />
                   <div 
-                    className="px-1.5 py-0.5 text-center text-[10px] font-mono font-bold border rounded shadow-2xs min-w-[38px]"
+                    className="px-1.5 py-0.5 text-center text-[10px] font-mono font-bold border rounded shadow-2xs min-w-[34px]"
                     style={{
                       borderColor: coloresApariencia?.bordePaneles,
                       backgroundColor: coloresApariencia?.fondoAplicacion,
                       color: coloresApariencia?.botonActivo || "#0891B2"
                     }}
                   >
-                    {Math.round(hdriConfig.sombraOpacidad * 100)}%
+                    {Math.round(hdriConfig.sombraSolOpacidad * 100)}%
+                  </div>
+                </div>
+
+                {/* Opacidad de la Sombra de Contacto Suave (Ambiente) */}
+                <div className="flex items-center gap-1.5 text-xs">
+                  <span className="text-[11px] font-semibold" style={{ color: coloresApariencia?.textoPrincipal }}>Contacto:</span>
+                  <input
+                    type="range"
+                    min="0.0"
+                    max="1.0"
+                    step="0.02"
+                    value={hdriConfig.sombraContactoOpacidad}
+                    onChange={(e) => setHdriConfig({ ...hdriConfig, sombraContactoOpacidad: parseFloat(e.target.value) })}
+                    className="w-14 cursor-pointer"
+                    style={{ accentColor: coloresApariencia?.botonActivo || "#0891b2" }}
+                    title="Controlar la sombra difusa de contacto bajo el objeto"
+                  />
+                  <div 
+                    className="px-1.5 py-0.5 text-center text-[10px] font-mono font-bold border rounded shadow-2xs min-w-[34px]"
+                    style={{
+                      borderColor: coloresApariencia?.bordePaneles,
+                      backgroundColor: coloresApariencia?.fondoAplicacion,
+                      color: coloresApariencia?.botonActivo || "#0891B2"
+                    }}
+                  >
+                    {Math.round(hdriConfig.sombraContactoOpacidad * 100)}%
                   </div>
                 </div>
 
@@ -1186,12 +1494,12 @@ export default function PBRMaterialStudioModal() {
                     step="0.2"
                     value={hdriConfig.sombraDifuminado}
                     onChange={(e) => setHdriConfig({ ...hdriConfig, sombraDifuminado: parseFloat(e.target.value) })}
-                    className="w-16 cursor-pointer"
+                    className="w-14 cursor-pointer"
                     style={{ accentColor: coloresApariencia?.botonActivo || "#0891b2" }}
-                    title="Difuminado y dispersión de la sombra en el piso"
+                    title="Difuminado y dispersión de las sombras en el piso"
                   />
                   <div 
-                    className="px-1.5 py-0.5 text-center text-[10px] font-mono font-bold border rounded shadow-2xs min-w-[38px]"
+                    className="px-1.5 py-0.5 text-center text-[10px] font-mono font-bold border rounded shadow-2xs min-w-[34px]"
                     style={{
                       borderColor: coloresApariencia?.bordePaneles,
                       backgroundColor: coloresApariencia?.fondoAplicacion,

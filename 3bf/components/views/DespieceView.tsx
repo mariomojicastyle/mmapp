@@ -166,7 +166,7 @@ export default function DespieceView() {
     limpiarPerforaciones,
   } = use3BFStore();
 
-  const trm = negociacionNovopan?.trmNovopan || 4000;
+  const trm = negociacionNovopan?.trmNovopan || 3000;
 
   const [descargando, setDescargando] = useState(false);
   const [guardando, setGuardando] = useState(false);
@@ -314,11 +314,11 @@ export default function DespieceView() {
     }
 
     // Determinar material de canto por calibre
-    let codigoCanto = "0002788"; // CANTO PVC CENIZA 19MM N ($194,26 COP/ml)
+    let codigoCanto = "948201"; // CANTO PVC MARFIL 19MM N ($194,26 COP/ml)
     if (espesor >= 24) {
-      codigoCanto = "000361"; // Canto PVC Rígido Ceniza 33x2.0mm
+      codigoCanto = "720195"; // Canto PVC Rígido Marfil 33x2.0mm
     } else if (n.includes("cubierta") || n.includes("tapa") || n.includes("frente")) {
-      codigoCanto = "000360"; // Canto PVC Rígido Ceniza 22x2.0mm
+      codigoCanto = "720194"; // Canto PVC Rígido Marfil 22x2.0mm
     }
 
     // 1. Cubierta / Tapa Superior: Lectura directa de los selectores de borde 3D
@@ -1604,7 +1604,7 @@ export default function DespieceView() {
                 }}
                 className="font-bold border-b whitespace-nowrap transition-colors"
               >
-                <th className="p-2.5 w-36">Herraje (GHX)</th>
+                <th className="p-2.5 w-36">Herraje</th>
                 <th className="p-2.5">Descripción Comercial</th>
                 <th className="p-2.5 w-16 text-center">UM</th>
                 <th className="p-2.5 w-20 text-center">Cantidad</th>

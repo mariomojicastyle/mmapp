@@ -258,9 +258,6 @@ export default function LayerManagerPanel() {
                           className="absolute top-[2px] left-[3px] w-2 h-1.5 rounded-full bg-white/80 blur-[0.3px] pointer-events-none"
                           style={{ opacity: 1 - (materialAsignado?.rugosidad ?? 0.4) }}
                         />
-                        {materialAsignado && materialAsignado.metalico > 0.5 && (
-                          <Sparkles className="w-2.5 h-2.5 text-white/90 absolute bottom-0.5 right-0.5 pointer-events-none" />
-                        )}
                       </button>
 
                       <select

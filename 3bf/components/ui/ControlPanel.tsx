@@ -557,7 +557,14 @@ export default function ControlPanel() {
   const listaInstancias = Object.values(instancias || {});
 
   return (
-    <div className="p-4 flex flex-col gap-5 h-full overflow-y-auto no-scrollbar">
+    <div className="p-4 flex flex-col gap-4 h-full overflow-y-auto no-scrollbar">
+      {/* 🏷️ TÍTULO PRINCIPAL DEL PANEL */}
+      <div className="flex items-center justify-between pb-2 border-b" style={{ borderColor: coloresApariencia?.bordePaneles }}>
+        <h3 className="font-bold text-sm" style={{ color: coloresApariencia?.textoPrincipal }}>
+          Modificador de Componentes
+        </h3>
+      </div>
+
       {/* 🏷️ CABECERA: OBJETO ACTIVO EN EL ESCENARIO (Multi-Instancia) */}
       {instanciaActiva ? (
         <>

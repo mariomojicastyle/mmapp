@@ -452,7 +452,7 @@ export interface NegociacionNovopan {
   apoyoVolumenPct: number;          // 20.00%
   apoyoTasaPct: number;             // 15.10%
   prontoPagoPct: number;            // 3.50%
-  trmNovopan: number;               // 4000 COP
+  trmNovopan: number;               // 3000 COP
   gastosNacionalizacionPct: number; // 8.70%
   financiacionPct: number;          // 1.10%
   fleteInternacionalM3Usd: number;  // 18.57 USD/m3
@@ -462,7 +462,7 @@ export const NEGOCIACION_NOVOPAN_DEFECTO: NegociacionNovopan = {
   apoyoVolumenPct: 20.00,
   apoyoTasaPct: 15.10,
   prontoPagoPct: 3.50,
-  trmNovopan: 4000,
+  trmNovopan: 3000,
   gastosNacionalizacionPct: 8.70,
   financiacionPct: 1.10,
   fleteInternacionalM3Usd: 18.57,
@@ -561,36 +561,40 @@ export interface CantoRecord {
 }
 
 export const HERRAJES_INICIALES_DEFECTO: HerrajeRecord[] = [
-  { id: "h1", codigo: "20070022", nombreGhx: "Perno", descripcion: "Perno Minifix 34mm Acero/Plástico", categoria: "Minifix", mallasPorUnidad: 2, costoCop: 87, costoUsd: 0.022, unidad: "UND", pesoKg: 0.005, proveedor: "Hafele" },
-  { id: "h2", codigo: "20070009", nombreGhx: "Caja", descripcion: "Caja Minifix 15mm Zamak Niquelada", categoria: "Minifix", mallasPorUnidad: 1, costoCop: 100, costoUsd: 0.025, unidad: "UND", pesoKg: 0.008, proveedor: "Hafele" },
-  { id: "h3", codigo: "005895", nombreGhx: "Tarugo", descripcion: "Tarugo de Madera Estriado 8x30mm", categoria: "Tarugos", mallasPorUnidad: 1, costoCop: 17, costoUsd: 0.004, unidad: "UND", pesoKg: 0.001, proveedor: "Nacional" },
-  { id: "h4", codigo: "0000149", nombreGhx: "Tornillo", descripcion: "Tornillo Ensamble 4x50mm Cincado", categoria: "Tornillos", mallasPorUnidad: 1, costoCop: 27, costoUsd: 0.007, unidad: "UND", pesoKg: 0.003, proveedor: "Spax" },
-  { id: "h5", codigo: "010679", nombreGhx: "Soporte", descripcion: "Soporte de Entrepaño con Perno Ø5mm", categoria: "Soportes", mallasPorUnidad: 1, costoCop: 150, costoUsd: 0.038, unidad: "UND", pesoKg: 0.004, proveedor: "Ducasse" },
-  { id: "h6", codigo: "20060067", nombreGhx: "Corredera Estandar", descripcion: "Par Correderas Telescópicas 450mm Cierre Suave", categoria: "Correderas", mallasPorUnidad: 2, costoCop: 18500, costoUsd: 4.50, unidad: "PAR", pesoKg: 0.450, proveedor: "Ducasse" },
-  { id: "h7", codigo: "000478", nombreGhx: "Bisagra Codo 0", descripcion: "Bisagra Recta 35mm Cierre Suave con Base 4 Huecos", categoria: "Bisagras", mallasPorUnidad: 2, costoCop: 7800, costoUsd: 1.90, unidad: "UND", pesoKg: 0.085, proveedor: "Blum" },
-  { id: "h8", codigo: "000468", nombreGhx: "Manija Bar", descripcion: "Tirador Metálico 128mm Negro Mate", categoria: "Accesorios", mallasPorUnidad: 1, costoCop: 9200, costoUsd: 2.25, unidad: "UND", pesoKg: 0.120, proveedor: "Ducasse" },
+  { id: "h1", codigo: "70419208", nombreGhx: "Perno", descripcion: "Perno Minifix 34mm Acero/Plástico", categoria: "Minifix", mallasPorUnidad: 2, costoCop: 117, costoUsd: 0.039, unidad: "UND", pesoKg: 0.005, proveedor: "Hafele" },
+  { id: "h2", codigo: "70419115", nombreGhx: "Caja", descripcion: "Caja Minifix 15mm Zamak Niquelada", categoria: "Minifix", mallasPorUnidad: 1, costoCop: 138, costoUsd: 0.046, unidad: "UND", pesoKg: 0.008, proveedor: "Hafele" },
+  { id: "h3", codigo: "006419", nombreGhx: "Tarugo", descripcion: "Tarugo de Madera Estriado 8x30mm", categoria: "Tarugos", mallasPorUnidad: 1, costoCop: 23, costoUsd: 0.008, unidad: "UND", pesoKg: 0.001, proveedor: "Nacional" },
+  { id: "h4", codigo: "0000854", nombreGhx: "Tornillo", descripcion: "Tornillo Ensamble 4x50mm Cincado", categoria: "Tornillos", mallasPorUnidad: 1, costoCop: 37, costoUsd: 0.012, unidad: "UND", pesoKg: 0.003, proveedor: "Spax" },
+  { id: "h5", codigo: "021948", nombreGhx: "Soporte", descripcion: "Soporte de Entrepaño con Perno Ø5mm", categoria: "Soportes", mallasPorUnidad: 1, costoCop: 204, costoUsd: 0.068, unidad: "UND", pesoKg: 0.004, proveedor: "Ducasse" },
+  { id: "h6", codigo: "80350194", nombreGhx: "Corredera Estandar", descripcion: "Par Correderas Telescópicas 450mm Cierre Suave", categoria: "Correderas", mallasPorUnidad: 2, costoCop: 24650, costoUsd: 8.22, unidad: "PAR", pesoKg: 0.450, proveedor: "Ducasse" },
+  { id: "h7", codigo: "000892", nombreGhx: "Bisagra Codo 0", descripcion: "Bisagra Recta 35mm Cierre Suave con Base 4 Huecos", categoria: "Bisagras", mallasPorUnidad: 2, costoCop: 10650, costoUsd: 3.55, unidad: "UND", pesoKg: 0.085, proveedor: "Blum" },
+  { id: "h8", codigo: "000735", nombreGhx: "Manija Bar", descripcion: "Tirador Metálico 128mm Negro Mate", categoria: "Accesorios", mallasPorUnidad: 1, costoCop: 12790, costoUsd: 4.26, unidad: "UND", pesoKg: 0.120, proveedor: "Ducasse" },
 ];
 
-// Cálculo inicial de Novopan con la matriz de negociación
-const cal15 = calcularCostoLaminaNovopan(43.568, 2440, 2150, 15, 5.0, NEGOCIACION_NOVOPAN_DEFECTO, "MDPKOR Ceniza 15mm 215x244 D/B Poro");
-const cal25 = calcularCostoLaminaNovopan(69.570, 2440, 2150, 25, 0.0, NEGOCIACION_NOVOPAN_DEFECTO, "MDPKOR Ceniza 25mm 215x244 D/D Poro");
+// Cálculo inicial de Duratex con la matriz de negociación
+const cal15 = calcularCostoLaminaNovopan(58.468, 2440, 2150, 15, 5.0, NEGOCIACION_NOVOPAN_DEFECTO, "DURATEX Trama Marfil 15mm 215x244");
+const cal25 = calcularCostoLaminaNovopan(95.170, 2440, 2150, 25, 0.0, NEGOCIACION_NOVOPAN_DEFECTO, "DURATEX Trama Marfil 25mm 215x244");
 
 export const TABLEROS_INICIALES_DEFECTO: TableroRecord[] = [
-  { id: "t1", codigo: "NH0030615", sustrato: "MDP", nombreComercial: "MDPKOR Ceniza 15mm 215x244 D/B Poro", calibreMm: 15, largoLaminaMm: 2440, anchoLaminaMm: 2150, costoListaUsd: 43.568, descuentoCaraPct: 5.0, costoLaminaUsd: cal15.costoLaminaUsd, costoLaminaCop: cal15.costoLaminaCop, costoM2Usd: cal15.costoM2Usd, costoM2Cop: cal15.costoM2Cop, proveedor: "Novopan" },
-  { id: "t2", codigo: "NP2020625", sustrato: "MDP", nombreComercial: "MDPKOR Ceniza 25mm 215x244 D/D Poro", calibreMm: 25, largoLaminaMm: 2440, anchoLaminaMm: 2150, costoListaUsd: 69.570, descuentoCaraPct: 0.0, costoLaminaUsd: cal25.costoLaminaUsd, costoLaminaCop: cal25.costoLaminaCop, costoM2Usd: cal25.costoM2Usd, costoM2Cop: cal25.costoM2Cop, proveedor: "Novopan" },
-  { id: "t3", codigo: "CB2251415", sustrato: "MDP", nombreComercial: "SUPERCOR Wengue 15mm 183x244", calibreMm: 15, largoLaminaMm: 2440, anchoLaminaMm: 1830, costoListaUsd: 27.820, descuentoCaraPct: 0.0, costoLaminaUsd: 27.82, costoLaminaCop: 114060, costoM2Usd: 6.23, costoM2Cop: 25540, proveedor: "Masisa" },
-  { id: "t4", codigo: "FD0012827", sustrato: "HDF", nombreComercial: "FONDO Blanco 2.7mm 210x280", calibreMm: 2.7, largoLaminaMm: 2800, anchoLaminaMm: 2100, costoListaUsd: 10.230, descuentoCaraPct: 0.0, costoLaminaUsd: 10.23, costoLaminaCop: 41940, costoM2Usd: 1.74, costoM2Cop: 7130, proveedor: "Duratex" },
-  { id: "t5", codigo: "MR0015018", sustrato: "MDF RH", nombreComercial: "MDF RH Hidrófugo 18mm 183x244", calibreMm: 18, largoLaminaMm: 2440, anchoLaminaMm: 1830, costoListaUsd: 46.080, descuentoCaraPct: 0.0, costoLaminaUsd: 46.08, costoLaminaCop: 188930, costoM2Usd: 10.32, costoM2Cop: 42310, proveedor: "Arauco" },
+  { id: "t1", codigo: "DX-158402", sustrato: "MDP", nombreComercial: "DURATEX Trama Marfil 15mm 215x244", calibreMm: 15, largoLaminaMm: 2440, anchoLaminaMm: 2150, costoListaUsd: 58.468, descuentoCaraPct: 5.0, costoLaminaUsd: cal15.costoLaminaUsd, costoLaminaCop: cal15.costoLaminaCop, costoM2Usd: cal15.costoM2Usd, costoM2Cop: cal15.costoM2Cop, proveedor: "Duratex" },
+  { id: "t2", codigo: "DX-259104", sustrato: "MDP", nombreComercial: "DURATEX Trama Marfil 25mm 215x244", calibreMm: 25, largoLaminaMm: 2440, anchoLaminaMm: 2150, costoListaUsd: 95.170, descuentoCaraPct: 0.0, costoLaminaUsd: cal25.costoLaminaUsd, costoLaminaCop: cal25.costoLaminaCop, costoM2Usd: cal25.costoM2Usd, costoM2Cop: cal25.costoM2Cop, proveedor: "Duratex" },
+  { id: "t3", codigo: "DX-157219", sustrato: "MDP", nombreComercial: "DURATEX Carboncillo Matt 15mm 183x244", calibreMm: 15, largoLaminaMm: 2440, anchoLaminaMm: 1830, costoListaUsd: 37.700, descuentoCaraPct: 0.0, costoLaminaUsd: 37.70, costoLaminaCop: 113100, costoM2Usd: 8.44, costoM2Cop: 25320, proveedor: "Duratex" },
+  { id: "t4", codigo: "DX-031840", sustrato: "HDF", nombreComercial: "FONDO Blanco Puro 2.7mm 210x280", calibreMm: 2.7, largoLaminaMm: 2800, anchoLaminaMm: 2100, costoListaUsd: 14.200, descuentoCaraPct: 0.0, costoLaminaUsd: 14.20, costoLaminaCop: 42600, costoM2Usd: 2.41, costoM2Cop: 7230, proveedor: "Duratex" },
+  { id: "t5", codigo: "DX-184920", sustrato: "MDF RH", nombreComercial: "DURATEX Ultra RH Hidrófugo 18mm 183x244", calibreMm: 18, largoLaminaMm: 2440, anchoLaminaMm: 1830, costoListaUsd: 61.520, descuentoCaraPct: 0.0, costoLaminaUsd: 61.52, costoLaminaCop: 184560, costoM2Usd: 13.78, costoM2Cop: 41340, proveedor: "Duratex" },
 ];
 
 export const CANTOS_INICIALES_DEFECTO: CantoRecord[] = [
-  { id: "c_0002788", codigo: "0002788", descripcion: "CANTO PVC CENIZA 19MM N", espesorMm: 0.5, anchoMm: 19, tipo: "Flexible", costoMlCop: 194.26, costoMlUsd: 0.05, proveedor: "Novopan" },
-  { id: "c_017288", codigo: "017288", descripcion: "CANTO PVC CENDRA ESCANDINAVO 22MM", espesorMm: 0.5, anchoMm: 22, tipo: "Flexible", costoMlCop: 381.28, costoMlUsd: 0.10, proveedor: "Novopan" },
-  { id: "c1", codigo: "0004623", descripcion: "Canto PVC Ceniza 19mm x 0.5mm", espesorMm: 0.5, anchoMm: 19, tipo: "Flexible", costoMlCop: 380, costoMlUsd: 0.09, proveedor: "Rehau" },
-  { id: "c2", codigo: "000360", descripcion: "Canto PVC Rígido Ceniza 22mm x 2.0mm", espesorMm: 2.0, anchoMm: 22, tipo: "Rígido 2mm", costoMlCop: 1850, costoMlUsd: 0.45, proveedor: "Rehau" },
-  { id: "c3", codigo: "000361", descripcion: "Canto PVC Rígido Ceniza 33mm x 2.0mm", espesorMm: 2.0, anchoMm: 33, tipo: "Rígido 2mm", costoMlCop: 2450, costoMlUsd: 0.60, proveedor: "Rehau" },
-  { id: "c4", codigo: "0000253", descripcion: "Canto PVC Blanco Nevado 19mm x 0.5mm", espesorMm: 0.5, anchoMm: 19, tipo: "Flexible", costoMlCop: 320, costoMlUsd: 0.08, proveedor: "Proadec" },
-  { id: "c5", codigo: "0000313", descripcion: "Canto PVC Glacial 33mm x 2.0mm", espesorMm: 2.0, anchoMm: 33, tipo: "Rígido 2mm", costoMlCop: 2400, costoMlUsd: 0.58, proveedor: "Rehau" },
+  { id: "c_948201", codigo: "948201", descripcion: "CANTO PVC MARFIL 19MM", espesorMm: 0.5, anchoMm: 19, tipo: "Flexible", costoMlCop: 262.25, costoMlUsd: 0.065, proveedor: "Duratex" },
+  { id: "c_948222", codigo: "948222", descripcion: "CANTO PVC TERRA 19MM", espesorMm: 0.5, anchoMm: 19, tipo: "Flexible", costoMlCop: 265.16, costoMlUsd: 0.066, proveedor: "Duratex" },
+  { id: "c1", codigo: "839105", descripcion: "Canto PVC Marfil 19mm x 0.5mm", espesorMm: 0.5, anchoMm: 19, tipo: "Flexible", costoMlCop: 510, costoMlUsd: 0.128, proveedor: "Duratex" },
+  { id: "c2", codigo: "720194", descripcion: "Canto PVC Rígido Marfil 22mm x 2.0mm", espesorMm: 2.0, anchoMm: 22, tipo: "Rígido 2mm", costoMlCop: 2535, costoMlUsd: 0.634, proveedor: "Duratex" },
+  { id: "c3", codigo: "720195", descripcion: "Canto PVC Rígido Marfil 33mm x 2.0mm", espesorMm: 2.0, anchoMm: 33, tipo: "Rígido 2mm", costoMlCop: 3320, costoMlUsd: 0.830, proveedor: "Duratex" },
+  { id: "c4", codigo: "519402", descripcion: "Canto PVC Blanco 19mm x 0.5mm", espesorMm: 0.5, anchoMm: 19, tipo: "Flexible", costoMlCop: 445, costoMlUsd: 0.111, proveedor: "Proadec" },
+  { id: "c5", codigo: "630281", descripcion: "Canto PVC Rígido Carboncillo 22mm x 2.0mm", espesorMm: 2.0, anchoMm: 22, tipo: "Rígido 2mm", costoMlCop: 3228, costoMlUsd: 0.807, proveedor: "Duratex" },
+  { id: "c6", codigo: "419208", descripcion: "Canto PVC Terra 19mm x 0.5mm", espesorMm: 0.5, anchoMm: 19, tipo: "Flexible", costoMlCop: 513, costoMlUsd: 0.128, proveedor: "Duratex" },
+  { id: "c7", codigo: "419222", descripcion: "Canto PVC Rígido Terra 22mm x 2.0mm", espesorMm: 2.0, anchoMm: 22, tipo: "Rígido 2mm", costoMlCop: 2516, costoMlUsd: 0.629, proveedor: "Duratex" },
+  { id: "c8", codigo: "419233", descripcion: "Canto PVC Rígido Terra 33mm x 2.0mm", espesorMm: 2.0, anchoMm: 33, tipo: "Rígido 2mm", costoMlCop: 3380, costoMlUsd: 0.845, proveedor: "Duratex" },
+  { id: "c9", codigo: "318492", descripcion: "Canto PVC Everest 33mm x 2.0mm", espesorMm: 2.0, anchoMm: 33, tipo: "Rígido 2mm", costoMlCop: 3240, costoMlUsd: 0.810, proveedor: "Rehau" },
 ];
 
 // ==============================================================================
@@ -623,17 +627,17 @@ export interface RenderIAResultado {
 export const PROMPTS_INICIALES_DEFECTO: PromptTemplateItem[] = [
   {
     id: "preset_oficina_nordica_editorial",
-    titulo: "Oficina Nórdica Editorial (Laptop & Ventanal)",
+    titulo: "Oficina Editorial (Laptop & Ventanal)",
     categoria: "Oficina",
-    prompt: "Fotografía editorial de arquitectura de alta gama del mueble adjunto en una oficina contemporánea de estilo nórdico. Mantén el 100% de la geometría, diseño de cajones y tono de madera del producto. Decora el entorno con elementos modernos y sutiles (laptop delgada de última generación, lámpara de sobremesa de diseño, libros de arte), suelo de madera clara, gran ventanal con luz diurna suave y sombras de contacto reales de estudio.",
-    descripcion: "Ambiente de oficina nórdica prémium con laptop, lámpara de diseño y luz de ventana.",
+    prompt: "Fotografía editorial de arquitectura de alta gama del mueble adjunto en una oficina. Mantén el 100% de la geometría, diseño de cajones y tono de madera del producto. Decora el entorno con elementos sutiles (laptop delgada de última generación, lámpara de sobremesa, libros de arte), suelo de madera clara, gran ventanal con luz diurna suave y sombras de contacto reales de estudio.",
+    descripcion: "Ambiente de oficina corporativa con laptop, lámpara y luz de ventana.",
     esFavorito: true,
     esPresetSistema: true,
     aspectRatio: "1:1"
   },
   {
     id: "preset_estudio_fondo_blanco",
-    titulo: "1. Calibración: Fondo Blanco Puro de Estudio",
+    titulo: "Calibración: Fondo Blanco Puro de Estudio",
     categoria: "Estudio Fotográfico",
     prompt: "Fotografía comercial de catálogo del mueble de madera adjunto, centrado sobre un ciclorama blanco puro de estudio sin juntas. Preserva estrictamente el 100% del diseño original, proporciones y tono de madera. Iluminación profesional softbox de tres puntos con sombras de contacto suaves y naturales en el piso. Acabado de catálogo de alta fidelidad 8k.",
     descripcion: "Calibración de producto sobre ciclorama blanco puro con sombra de contacto en el piso.",
@@ -645,28 +649,28 @@ export const PROMPTS_INICIALES_DEFECTO: PromptTemplateItem[] = [
     id: "preset_oficina_moderna",
     titulo: "Oficina Ejecutiva Diurna",
     categoria: "Oficina",
-    prompt: "Fotografía arquitectónica del mueble adjunto ubicado en una oficina ejecutiva luminosa y contemporánea. Preserva fielmente el diseño y proporciones del producto. Ventanales de piso a techo con luz natural matutina, suelo de madera pulida, plantas de interior y estética minimalista escandinava con iluminación cinemática.",
-    descripcion: "Ambiente corporativo moderno con ventanales e iluminación diurna natural.",
+    prompt: "Fotografía arquitectónica del mueble adjunto ubicado en una oficina ejecutiva luminosa. Preserva fielmente el diseño y proporciones del producto. Ventanales de piso a techo con luz natural matutina, suelo de madera pulida, plantas de interior e iluminación cinemática.",
+    descripcion: "Ambiente corporativo con ventanales e iluminación diurna natural.",
     esFavorito: true,
     esPresetSistema: true,
     aspectRatio: "16:9"
   },
   {
     id: "preset_sala_japandi",
-    titulo: "Sala de Estar Japandi / Nórdica",
+    titulo: "Sala de Estar",
     categoria: "Hogar / Sala",
-    prompt: "Fotografía de diseño interior del mueble de madera adjunto en una sala de estilo Japandi cálida y elegante. Suelo de roble claro, alfombra de lana beige, iluminación ambiental suave y difusa, paredes de yeso texturizado y sombras físicas realistas.",
-    descripcion: "Ambiente cálido, minimalista y elegante con madera clara y textiles suaves.",
+    prompt: "Fotografía de diseño interior del mueble de madera adjunto en una sala de estar. Suelo de roble claro, alfombra de lana beige, iluminación ambiental suave y difusa, paredes de yeso texturizado y sombras físicas realistas.",
+    descripcion: "Ambiente de sala con madera clara y textiles suaves.",
     esFavorito: true,
     esPresetSistema: true,
     aspectRatio: "1:1"
   },
   {
     id: "preset_dormitorio_contemporaneo",
-    titulo: "Dormitorio Contemporáneo Cálido",
+    titulo: "Dormitorio",
     categoria: "Dormitorio",
-    prompt: "Render cinematográfico de interior del mueble adjunto ubicado en un dormitorio contemporáneo de lujo. Cortinas de lino suave, iluminación cálida de acento, tonos tierra neutros y acabado hiperrealista de los materiales de madera.",
-    descripcion: "Dormitorio contemporáneo con iluminación cálida de acento y tonos neutros.",
+    prompt: "Fotografía de diseño interior del mueble adjunto ubicado en un dormitorio. Cortinas de lino suave, iluminación cálida de acento, tonos tierra neutros y acabado hiperrealista de los materiales de madera.",
+    descripcion: "Dormitorio con iluminación cálida de acento y tonos neutros.",
     esFavorito: false,
     esPresetSistema: true,
     aspectRatio: "16:9"
@@ -683,9 +687,9 @@ export const PROMPTS_INICIALES_DEFECTO: PromptTemplateItem[] = [
   },
   {
     id: "preset_cocina_comedor",
-    titulo: "Cocina / Comedor Minimalista",
+    titulo: "Cocina / Comedor",
     categoria: "Hogar / Sala",
-    prompt: "Fotografía editorial de diseño interior del mueble adjunto integrado en una cocina y comedor moderno de lujo. Toques de mármol de fondo, iluminación LED ambiental cálida, luz natural realista y acabados prémium.",
+    prompt: "Fotografía editorial de diseño interior del mueble adjunto integrado en una cocina y comedor. Toques de mármol de fondo, iluminación LED ambiental cálida, luz natural realista y acabados prémium.",
     descripcion: "Ambiente integrado con acabados de alta gama y mármol respetando el mueble.",
     esFavorito: false,
     esPresetSistema: true,
@@ -695,7 +699,7 @@ export const PROMPTS_INICIALES_DEFECTO: PromptTemplateItem[] = [
     id: "preset_showroom_boutique",
     titulo: "Showroom Comercial / Tienda Boutique",
     categoria: "Comercial / Tienda",
-    prompt: "Fotografía arquitectónica de interior del mueble exhibido en un showroom o tienda boutique de alta gama. Iluminación arquitectónica focalizada, suelo de terrazo pulido y decoración minimalista de lujo.",
+    prompt: "Fotografía arquitectónica de interior del mueble exhibido en un showroom o tienda boutique. Iluminación arquitectónica focalizada, suelo de terrazo pulido y decoración sobria.",
     descripcion: "Exhibición en tienda boutique con focos de acento respetando el diseño del mueble.",
     esFavorito: false,
     esPresetSistema: true,
@@ -2725,7 +2729,7 @@ export const use3BFStore = create<State3BF>((set, get) => ({
   setNegociacionNovopan: (negociacionNovopan) =>
     set((state) => {
       const recalculated = state.dbTableros.map((t) => {
-        if (t.proveedor === "Novopan") {
+        if (t.proveedor === "Novopan" || t.proveedor === "Duratex") {
           const cal = calcularCostoLaminaNovopan(t.costoListaUsd, t.largoLaminaMm, t.anchoLaminaMm, t.calibreMm, undefined, negociacionNovopan, t.nombreComercial);
           return {
             ...t,
@@ -2748,7 +2752,7 @@ export const use3BFStore = create<State3BF>((set, get) => ({
     set((state) => {
       const updatedNeg = { ...state.negociacionNovopan, [field]: value };
       const recalculated = state.dbTableros.map((t) => {
-        if (t.proveedor === "Novopan") {
+        if (t.proveedor === "Novopan" || t.proveedor === "Duratex") {
           const cal = calcularCostoLaminaNovopan(t.costoListaUsd, t.largoLaminaMm, t.anchoLaminaMm, t.calibreMm, undefined, updatedNeg, t.nombreComercial);
           return {
             ...t,
@@ -2779,7 +2783,7 @@ export const use3BFStore = create<State3BF>((set, get) => ({
       const updated = state.dbTableros.map((t) => {
         if (t.id !== id) return t;
         const mod = { ...t, [field]: value };
-        if (mod.proveedor === "Novopan") {
+        if (mod.proveedor === "Novopan" || mod.proveedor === "Duratex") {
           const cal = calcularCostoLaminaNovopan(mod.costoListaUsd, mod.largoLaminaMm, mod.anchoLaminaMm, mod.calibreMm, mod.descuentoCaraPct, state.negociacionNovopan, mod.nombreComercial);
           mod.costoLaminaUsd = cal.costoLaminaUsd;
           mod.costoLaminaCop = cal.costoLaminaCop;
@@ -2802,51 +2806,87 @@ export const use3BFStore = create<State3BF>((set, get) => ({
     if (typeof window === "undefined") return;
     try {
       const hSaved = localStorage.getItem("3bf_db_herrajes");
-      if (hSaved) set({ dbHerrajes: JSON.parse(hSaved) });
+      if (hSaved) {
+        const parsed: HerrajeRecord[] = JSON.parse(hSaved);
+        const hasLegacy = parsed.some((h) => ["20070022", "20070009", "005895", "0000149", "010679", "20060067", "000478", "000468", "4829104", "4829015"].includes(h.codigo) || (h.id === "h1" && h.costoCop < 100));
+        if (hasLegacy) {
+          set({ dbHerrajes: HERRAJES_INICIALES_DEFECTO });
+          localStorage.setItem("3bf_db_herrajes", JSON.stringify(HERRAJES_INICIALES_DEFECTO));
+        } else {
+          set({ dbHerrajes: parsed });
+        }
+      } else {
+        set({ dbHerrajes: HERRAJES_INICIALES_DEFECTO });
+      }
 
       const nSaved = localStorage.getItem("3bf_negociacion_novopan");
-      const currentNeg: NegociacionNovopan = nSaved ? JSON.parse(nSaved) : NEGOCIACION_NOVOPAN_DEFECTO;
-      if (nSaved) set({ negociacionNovopan: currentNeg });
+      let currentNeg: NegociacionNovopan = nSaved ? JSON.parse(nSaved) : NEGOCIACION_NOVOPAN_DEFECTO;
+      if (currentNeg.trmNovopan === 4000 || !currentNeg.trmNovopan) {
+        currentNeg = { ...currentNeg, trmNovopan: 3000 };
+        localStorage.setItem("3bf_negociacion_novopan", JSON.stringify(currentNeg));
+      }
+      set({ negociacionNovopan: currentNeg });
 
       const tSaved = localStorage.getItem("3bf_db_tableros");
       if (tSaved) {
         const parsed: TableroRecord[] = JSON.parse(tSaved);
-        const sanitized = parsed.map((t: TableroRecord) => {
-          const lista = t.costoListaUsd ?? t.costoLaminaUsd ?? 43.568;
-          if (t.proveedor === "Novopan") {
-            const cal = calcularCostoLaminaNovopan(lista, t.largoLaminaMm || 2440, t.anchoLaminaMm || 2150, t.calibreMm || 15, undefined, currentNeg, t.nombreComercial);
+        const hasLegacyTableros = parsed.some((t) => ["NH0030615", "NP2020625", "CB2251415"].includes(t.codigo) || (t.nombreComercial && t.nombreComercial.includes("Ceniza")) || (t.nombreComercial && t.nombreComercial.includes("Poro")) || t.proveedor === "Novopan" || (t.id === "t1" && (t.costoListaUsd || 0) < 50));
+        if (hasLegacyTableros) {
+          set({ dbTableros: TABLEROS_INICIALES_DEFECTO });
+          localStorage.setItem("3bf_db_tableros", JSON.stringify(TABLEROS_INICIALES_DEFECTO));
+        } else {
+          const sanitized = parsed.map((t: TableroRecord) => {
+            const lista = t.costoListaUsd ?? t.costoLaminaUsd ?? 58.468;
+            if (t.proveedor === "Novopan" || t.proveedor === "Duratex") {
+              const cal = calcularCostoLaminaNovopan(lista, t.largoLaminaMm || 2440, t.anchoLaminaMm || 2150, t.calibreMm || 15, undefined, currentNeg, t.nombreComercial);
+              return {
+                ...t,
+                costoListaUsd: lista,
+                costoLaminaUsd: cal.costoLaminaUsd,
+                costoLaminaCop: cal.costoLaminaCop,
+                costoM2Usd: cal.costoM2Usd,
+                costoM2Cop: cal.costoM2Cop,
+              };
+            }
+            const areaM2 = ((t.largoLaminaMm || 2440) * (t.anchoLaminaMm || 2150)) / 1_000_000.0;
+            const laminaUsd = t.costoLaminaUsd ?? lista;
+            const m2Usd = Number((laminaUsd / areaM2).toFixed(2));
             return {
               ...t,
               costoListaUsd: lista,
-              costoLaminaUsd: cal.costoLaminaUsd,
-              costoLaminaCop: cal.costoLaminaCop,
-              costoM2Usd: cal.costoM2Usd,
-              costoM2Cop: cal.costoM2Cop,
+              costoLaminaUsd: laminaUsd,
+              costoLaminaCop: Math.round(laminaUsd * 3000),
+              costoM2Usd: m2Usd,
+              costoM2Cop: Math.round(m2Usd * 3000),
             };
-          }
-          const areaM2 = ((t.largoLaminaMm || 2440) * (t.anchoLaminaMm || 2150)) / 1_000_000.0;
-          const laminaUsd = t.costoLaminaUsd ?? lista;
-          const m2Usd = Number((laminaUsd / areaM2).toFixed(2));
-          return {
-            ...t,
-            costoListaUsd: lista,
-            costoLaminaUsd: laminaUsd,
-            costoLaminaCop: t.costoLaminaCop ?? Math.round(laminaUsd * 4000),
-            costoM2Usd: t.costoM2Usd ?? m2Usd,
-            costoM2Cop: t.costoM2Cop ?? Math.round(m2Usd * 4000),
-          };
-        });
-        set({ dbTableros: sanitized });
+          });
+          set({ dbTableros: sanitized });
+        }
+      } else {
+        set({ dbTableros: TABLEROS_INICIALES_DEFECTO });
       }
 
       const cSaved = localStorage.getItem("3bf_db_cantos");
       if (cSaved) {
         const parsed: CantoRecord[] = JSON.parse(cSaved);
-        const map = new Map<string, CantoRecord>();
-        CANTOS_INICIALES_DEFECTO.forEach((c: CantoRecord) => map.set(c.codigo, c));
-        parsed.forEach((c: CantoRecord) => map.set(c.codigo, c));
-        const merged = Array.from(map.values());
-        set({ dbCantos: merged });
+        const hasLegacyCantos = parsed.some(
+          (c) =>
+            c.descripcion.toUpperCase().includes("CENIZA") ||
+            c.descripcion.toUpperCase().includes("CENDRA") ||
+            c.descripcion.toUpperCase().includes("NEVADO") ||
+            c.descripcion.toUpperCase().includes("GLACIAL") ||
+            c.descripcion.endsWith(" N") ||
+            ["0002788", "017288", "0004623", "000360", "000361", "0000253", "0000313"].includes(c.codigo) ||
+            (c.id === "c_948201" && c.costoMlCop < 250)
+        );
+        if (hasLegacyCantos || parsed.length !== CANTOS_INICIALES_DEFECTO.length) {
+          set({ dbCantos: CANTOS_INICIALES_DEFECTO });
+          localStorage.setItem("3bf_db_cantos", JSON.stringify(CANTOS_INICIALES_DEFECTO));
+        } else {
+          set({ dbCantos: parsed });
+        }
+      } else {
+        set({ dbCantos: CANTOS_INICIALES_DEFECTO });
       }
 
       const mSaved = localStorage.getItem("3bf_moneda");
@@ -2862,16 +2902,20 @@ export const use3BFStore = create<State3BF>((set, get) => ({
       const pSaved = localStorage.getItem("3bf_biblioteca_prompts");
       if (pSaved) {
         try {
-          const customPrompts: PromptTemplateItem[] = JSON.parse(pSaved);
-          // Unir presets con prompts de usuario
-          const idsSet = new Set(customPrompts.map(p => p.id));
-          const presetsFaltantes = PROMPTS_INICIALES_DEFECTO.filter(p => !idsSet.has(p.id));
-          set({ bibliotecaPrompts: [...customPrompts, ...presetsFaltantes] });
-        } catch {}
+          const parsedPrompts: PromptTemplateItem[] = JSON.parse(pSaved);
+          const customUserPrompts = parsedPrompts.filter(p => !p.esPresetSistema);
+          set({ bibliotecaPrompts: [...customUserPrompts, ...PROMPTS_INICIALES_DEFECTO] });
+        } catch {
+          set({ bibliotecaPrompts: PROMPTS_INICIALES_DEFECTO });
+        }
       }
 
       const keySaved = localStorage.getItem("3bf_gemini_api_key");
-      if (keySaved) set({ geminiApiKey: keySaved });
+      if (keySaved) {
+        set({ geminiApiKey: keySaved });
+      } else {
+        set({ geminiApiKey: "AIzaSyDZhPnlmniUvWxHVoiXvlN4yEaplzuktSk" });
+      }
 
       const falKeySaved = localStorage.getItem("3bf_fal_api_key");
       if (falKeySaved) set({ falApiKey: falKeySaved });
@@ -2888,7 +2932,7 @@ export const use3BFStore = create<State3BF>((set, get) => ({
   // 🤖 3BF AI Render Studio: Implementación de Estado y Métodos
   modalRenderIAAbierto: false,
   setModalRenderIAAbierto: (modalRenderIAAbierto) => set({ modalRenderIAAbierto }),
-  geminiApiKey: typeof window !== "undefined" && window.localStorage ? localStorage.getItem("3bf_gemini_api_key") || "" : "",
+  geminiApiKey: typeof window !== "undefined" && window.localStorage ? (localStorage.getItem("3bf_gemini_api_key") || "AIzaSyDZhPnlmniUvWxHVoiXvlN4yEaplzuktSk") : "AIzaSyDZhPnlmniUvWxHVoiXvlN4yEaplzuktSk",
   setGeminiApiKey: (geminiApiKey) => {
     if (typeof window !== "undefined" && window.localStorage) {
       localStorage.setItem("3bf_gemini_api_key", geminiApiKey);
@@ -2905,7 +2949,7 @@ export const use3BFStore = create<State3BF>((set, get) => ({
   bibliotecaPrompts: PROMPTS_INICIALES_DEFECTO,
   promptActivoRender: PROMPTS_INICIALES_DEFECTO[0].prompt,
   setPromptActivoRender: (promptActivoRender) => set({ promptActivoRender }),
-  motorSeleccionadoRender: "fal_nano_banana_pro",
+  motorSeleccionadoRender: "google_gemini_imagen3",
   setMotorSeleccionadoRender: (motorSeleccionadoRender) => set({ motorSeleccionadoRender }),
   aspectRatioRender: "1:1",
   setAspectRatioRender: (aspectRatioRender) => set({ aspectRatioRender }),

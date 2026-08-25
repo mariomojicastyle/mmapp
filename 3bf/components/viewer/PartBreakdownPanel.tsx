@@ -123,7 +123,7 @@ export default function PartBreakdownPanel() {
       {/* 🔍 Buscador Superior */}
       <div 
         style={{ borderColor: coloresApariencia?.bordePaneles }}
-        className="p-2.5 border-b shrink-0"
+        className="p-2.5 border-b shrink-0 flex flex-col gap-2"
       >
         <div className="relative">
           <Search 
@@ -142,6 +142,31 @@ export default function PartBreakdownPanel() {
             }}
             className="w-full pl-8 pr-3 py-1.5 border rounded text-xs focus:outline-none focus:ring-1 focus:ring-cyan-500 placeholder:opacity-60 transition-colors"
           />
+        </div>
+
+        <div className="flex items-center justify-between">
+          <span 
+            style={{ color: coloresApariencia?.textoSecundario }}
+            className="text-[10px] font-semibold uppercase tracking-wider"
+          >
+            Componentes del Modelo ({partesFiltradas.length})
+          </span>
+        </div>
+      </div>
+
+      {/* 🏷️ Franja Gris de Títulos de Columnas (Estilo Ficha de Capas) */}
+      <div 
+        style={{
+          backgroundColor: coloresApariencia?.fondoAplicacion,
+          color: coloresApariencia?.textoSecundario,
+          borderColor: coloresApariencia?.bordePaneles
+        }}
+        className="flex items-center justify-between py-2 px-3 border-b text-[10px] uppercase font-semibold tracking-wider shrink-0 select-none z-10"
+      >
+        <span className="pl-1 flex-1">Componente</span>
+        <div className="flex items-center gap-2 shrink-0 pr-1">
+          <span className="w-6 text-center" title="Visibilidad">Vis</span>
+          <span className="w-[130px] text-left pl-1">Capa</span>
         </div>
       </div>
 
@@ -164,12 +189,6 @@ export default function PartBreakdownPanel() {
             )}
             <Box style={{ color: coloresApariencia?.botonActivo || "#0891B2" }} className="w-4 h-4 shrink-0" />
             <span className="truncate text-[12px]">{nombreObjetoPadre}</span>
-            <span 
-              style={{ color: coloresApariencia?.textoSecundario }}
-              className="ml-auto text-[10px] font-mono font-normal"
-            >
-              ({partesFiltradas.length})
-            </span>
           </div>
 
           {/* Lista de Componentes y Herrajes con Selector Directo de Capa */}
@@ -203,7 +222,7 @@ export default function PartBreakdownPanel() {
                       className="group flex items-center justify-between py-1 px-1.5 rounded border transition-all hover:opacity-90"
                     >
                       {/* Lado Izquierdo: Muestra de Color + Nombre del Componente */}
-                      <div className="flex items-center gap-1.5 min-w-0 pr-2">
+                      <div className="flex items-center gap-1.5 min-w-0 pr-2 flex-1">
                         {/* Bloque de Color de la Capa */}
                         <div 
                           className="w-3.5 h-3.5 rounded shrink-0 border shadow-xs"
@@ -230,8 +249,25 @@ export default function PartBreakdownPanel() {
                         )}
                       </div>
 
-                      {/* Lado Derecho: Selector Desplegable Exclusivo de Capas Maestras */}
-                      <div className="flex items-center gap-1 shrink-0" onClick={(e) => e.stopPropagation()}>
+                      {/* Lado Derecho: Visibilidad a la izquierda + Selector Desplegable de Capas Maestras */}
+                      <div className="flex items-center gap-1.5 shrink-0" onClick={(e) => e.stopPropagation()}>
+                        {/* Toggle de Visibilidad Rápido (Ubicado a la izquierda de la capa) */}
+                        <button
+                          onClick={() => toggleVisibilidadParte(parte.parteKey)}
+                          title={parte.visible ? "Ocultar componente" : "Mostrar componente"}
+                          style={{
+                            color: parte.visible 
+                              ? (coloresApariencia?.objetosSeleccionados || "#FF9500") 
+                              : (coloresApariencia?.textoSecundario || "#64748B"),
+                          }}
+                          className={`p-1 rounded transition hover:scale-110 cursor-pointer w-6 flex items-center justify-center ${
+                            !parte.visible ? "opacity-40" : "opacity-100"
+                          }`}
+                        >
+                          {parte.visible ? <Lightbulb className="w-3.5 h-3.5 fill-current" /> : <LightbulbOff className="w-3.5 h-3.5" />}
+                        </button>
+
+                        {/* Selector Desplegable de Capa */}
                         <select
                           value={capaEfectivaId}
                           onChange={(e) => asignarParteACapa(parte.parteKey, e.target.value, parte.nombreLimpio)}
@@ -240,7 +276,7 @@ export default function PartBreakdownPanel() {
                             borderColor: coloresApariencia?.bordePaneles,
                             color: coloresApariencia?.textoPrincipal
                           }}
-                          className="py-1 px-2 pr-6 border rounded-md text-[11px] font-semibold focus:outline-none focus:ring-1 focus:ring-cyan-500 cursor-pointer transition shadow-2xs max-w-[130px] truncate"
+                          className="py-1 px-2 pr-6 border rounded-md text-[11px] font-semibold focus:outline-none focus:ring-1 focus:ring-cyan-500 cursor-pointer transition shadow-2xs w-[130px] max-w-[130px] truncate"
                           title={`Asignar capa a ${parte.nombreLimpio}`}
                         >
                           {capas.map((capa) => (
@@ -256,22 +292,6 @@ export default function PartBreakdownPanel() {
                             </option>
                           ))}
                         </select>
-
-                        {/* Toggle de Visibilidad Rápido */}
-                        <button
-                          onClick={() => toggleVisibilidadParte(parte.parteKey)}
-                          title={parte.visible ? "Ocultar componente" : "Mostrar componente"}
-                          style={{
-                            color: parte.visible 
-                              ? (coloresApariencia?.objetosSeleccionados || "#FF9500") 
-                              : (coloresApariencia?.textoSecundario || "#64748B"),
-                          }}
-                          className={`p-1 rounded transition hover:scale-110 cursor-pointer ${
-                            !parte.visible ? "opacity-40" : "opacity-100"
-                          }`}
-                        >
-                          {parte.visible ? <Lightbulb className="w-3.5 h-3.5 fill-current" /> : <LightbulbOff className="w-3.5 h-3.5" />}
-                        </button>
                       </div>
                     </div>
                   );

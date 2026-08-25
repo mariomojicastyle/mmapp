@@ -37,33 +37,27 @@ export default function Home3BF() {
   const [guardandoFoto, setGuardandoFoto] = React.useState(false);
   const [fotoCapturada, setFotoCapturada] = React.useState(false);
   const [isResizingPanel, setIsResizingPanel] = React.useState(false);
-
-  const handleMouseDownResize = (e: React.MouseEvent) => {
-    e.preventDefault();
+  const handleStartResizePanel = (e: React.MouseEvent | React.TouchEvent) => {
     setIsResizingPanel(true);
-  };
-
-  useEffect(() => {
-    if (!isResizingPanel) return;
-
-    const handleMouseMove = (e: MouseEvent) => {
-      // 12px de padding en el contenedor derecho
-      const nuevoAncho = window.innerWidth - e.clientX - 12;
-      setAnchoPanelDerecho(nuevoAncho);
+    const onMove = (moveEvent: MouseEvent | TouchEvent) => {
+      const clientX = "touches" in moveEvent ? moveEvent.touches[0].clientX : moveEvent.clientX;
+      const nuevoAncho = window.innerWidth - clientX - 12;
+      setAnchoPanelDerecho(Math.max(220, Math.min(800, nuevoAncho)));
     };
 
-    const handleMouseUp = () => {
+    const onEnd = () => {
       setIsResizingPanel(false);
+      window.removeEventListener("mousemove", onMove);
+      window.removeEventListener("mouseup", onEnd);
+      window.removeEventListener("touchmove", onMove);
+      window.removeEventListener("touchend", onEnd);
     };
 
-    window.addEventListener("mousemove", handleMouseMove);
-    window.addEventListener("mouseup", handleMouseUp);
-
-    return () => {
-      window.removeEventListener("mousemove", handleMouseMove);
-      window.removeEventListener("mouseup", handleMouseUp);
-    };
-  }, [isResizingPanel, setAnchoPanelDerecho]);
+    window.addEventListener("mousemove", onMove);
+    window.addEventListener("mouseup", onEnd);
+    window.addEventListener("touchmove", onMove, { passive: false });
+    window.addEventListener("touchend", onEnd);
+  };
 
   const capturarMiniatura = async () => {
     try {
@@ -228,15 +222,15 @@ export default function Home3BF() {
           borderColor: coloresApariencia?.bordePaneles,
           color: coloresApariencia?.textoPrincipal 
         }}
-        className="h-14 px-3 flex items-center justify-between border-b glass-panel z-10 relative transition-colors"
+        className="h-14 px-2 md:px-3 flex items-center justify-between border-b glass-panel z-10 relative transition-colors gap-1 md:gap-2"
       >
         {/* Logotipo Vectorial Completo 3BF (Alineado con precisión milimétrica al visor y sin recortes) */}
-        <div className="flex items-center">
+        <div className="flex items-center shrink-0">
           <svg
             viewBox="6.73 15.276 235 59.448"
             fill="none"
             xmlns="http://www.w3.org/2000/svg"
-            className="h-9 w-auto select-none overflow-visible"
+            className="h-7 sm:h-8 md:h-9 w-auto select-none overflow-visible"
             role="img"
             aria-label="3dBimFab — Powered by MARIO MOJICA"
           >
@@ -292,13 +286,13 @@ export default function Home3BF() {
           </svg>
         </div>
 
-        {/* Pestañas de Vista (Centradas con Fondo Cápsula) */}
+        {/* Pestañas de Vista (En móvil cerca al logo, en PC centradas exactamente como en el diseño original) */}
         <div 
           style={{ 
             borderColor: coloresApariencia?.insigniaFondo || coloresApariencia?.bordePaneles,
             backgroundColor: coloresApariencia?.panelContenedor || "#E2E8F0"
           }}
-          className="absolute left-1/2 -translate-x-1/2 flex items-center p-1 rounded-full border text-xs shadow-inner backdrop-blur-md gap-1 h-9"
+          className="relative md:absolute md:left-1/2 md:-translate-x-1/2 flex items-center p-0.5 md:p-1 rounded-full border text-xs shadow-inner backdrop-blur-md gap-0.5 md:gap-1 h-8 md:h-9 shrink-0"
         >
           <button
             onClick={() => setPestanaActiva("3d")}
@@ -307,13 +301,13 @@ export default function Home3BF() {
                 ? { backgroundColor: coloresApariencia?.botonActivo || "#0891b2", borderColor: coloresApariencia?.colorMarca || "#0891b2" }
                 : { backgroundColor: coloresApariencia?.botonInactivo || "#E2E8F0", borderColor: coloresApariencia?.bordeBotonInactivo || "#CBD5E1", color: coloresApariencia?.textoPrincipal || "#0F172A" }
             }
-            className={`px-4 h-7 rounded-full transition flex items-center gap-1.5 font-bold cursor-pointer ${
+            className={`px-2 sm:px-3 md:px-4 h-6 md:h-7 rounded-full transition flex items-center gap-1 font-bold cursor-pointer text-[11px] md:text-xs ${
               pestanaActiva === "3d"
                 ? "text-white shadow-md border"
                 : "hover:opacity-90 border backdrop-blur-sm"
             }`}
           >
-            <Box className="w-3.5 h-3.5" /> Visor 3D
+            <Box className="w-3 md:w-3.5 h-3 md:h-3.5" /> <span><span className="hidden sm:inline">Visor </span>3D</span>
           </button>
           <button
             onClick={() => setPestanaActiva("despiece")}
@@ -322,13 +316,13 @@ export default function Home3BF() {
                 ? { backgroundColor: coloresApariencia?.botonActivo || "#0891b2", borderColor: coloresApariencia?.colorMarca || "#0891b2" }
                 : { backgroundColor: coloresApariencia?.botonInactivo || "#E2E8F0", borderColor: coloresApariencia?.bordeBotonInactivo || "#CBD5E1", color: coloresApariencia?.textoPrincipal || "#0F172A" }
             }
-            className={`px-4 h-7 rounded-full transition flex items-center gap-1.5 font-bold cursor-pointer ${
+            className={`px-2 sm:px-3 md:px-4 h-6 md:h-7 rounded-full transition flex items-center gap-1 font-bold cursor-pointer text-[11px] md:text-xs ${
               pestanaActiva === "despiece"
                 ? "text-white shadow-md border"
                 : "hover:opacity-90 border backdrop-blur-sm"
             }`}
           >
-            <Layers className="w-3.5 h-3.5" /> Despiece & Costos
+            <Layers className="w-3 md:w-3.5 h-3 md:h-3.5" /> <span>Despiece<span className="hidden sm:inline"> & Costos</span></span>
           </button>
           <button
             onClick={() => setPestanaActiva("basedatos")}
@@ -337,25 +331,25 @@ export default function Home3BF() {
                 ? { backgroundColor: coloresApariencia?.botonActivo || "#0891b2", borderColor: coloresApariencia?.colorMarca || "#0891b2" }
                 : { backgroundColor: coloresApariencia?.botonInactivo || "#E2E8F0", borderColor: coloresApariencia?.bordeBotonInactivo || "#CBD5E1", color: coloresApariencia?.textoPrincipal || "#0F172A" }
             }
-            className={`px-4 h-7 rounded-full transition flex items-center gap-1.5 font-bold cursor-pointer ${
+            className={`px-2 sm:px-3 md:px-4 h-6 md:h-7 rounded-full transition flex items-center gap-1 font-bold cursor-pointer text-[11px] md:text-xs ${
               pestanaActiva === "basedatos"
                 ? "text-white shadow-md border"
                 : "hover:opacity-90 border backdrop-blur-sm"
             }`}
           >
-            <Database className="w-3.5 h-3.5" /> Base de Datos
+            <Database className="w-3 md:w-3.5 h-3 md:h-3.5" /> <span><span className="hidden sm:inline">Base de </span>Datos</span>
           </button>
         </div>
 
         {/* Lado Derecho: Modos 3D + Botón Foto + Switch Tema Light/Dark + Estado del Worker */}
-        <div className="flex items-center gap-2">
+        <div className="ml-auto flex items-center gap-1.5 sm:gap-2 md:gap-3 shrink-0">
           {/* 1. Botonera de 4 Modos 3D (Cápsula rounded-full) */}
           <div 
             style={{ 
               borderColor: coloresApariencia?.insigniaFondo || coloresApariencia?.bordePaneles,
               backgroundColor: coloresApariencia?.panelContenedor || "#E2E8F0"
             }}
-            className="flex items-center p-1 rounded-full border gap-1 shadow-inner h-9 shrink-0"
+            className="flex items-center p-0.5 md:p-1 rounded-full border gap-0.5 md:gap-1 shadow-inner h-8 md:h-9 shrink-0"
           >
             {/* 1. Líneas (Wireframe) */}
             <button
@@ -366,11 +360,11 @@ export default function Home3BF() {
                   ? { backgroundColor: coloresApariencia?.botonActivo || "#0891b2", borderColor: coloresApariencia?.colorMarca || "#0891b2" }
                   : { backgroundColor: coloresApariencia?.botonInactivo || "#E2E8F0", borderColor: coloresApariencia?.bordeBotonInactivo || "#CBD5E1", color: coloresApariencia?.textoPrincipal || "#0F172A" }
               }
-              className={`w-7 h-7 rounded-full flex items-center justify-center cursor-pointer transition ${
+              className={`w-6 md:w-7 h-6 md:h-7 rounded-full flex items-center justify-center cursor-pointer transition ${
                 modoVisual === "lineas" ? "text-white shadow-md border" : "hover:opacity-90 border backdrop-blur-sm"
               }`}
             >
-              <IconModoLineas className="w-4 h-4" />
+              <IconModoLineas className="w-3.5 md:w-4 h-3.5 md:h-4" />
             </button>
 
             {/* 2. Cristal (Semitransparente / Glass) */}
@@ -382,11 +376,11 @@ export default function Home3BF() {
                   ? { backgroundColor: coloresApariencia?.botonActivo || "#0891b2", borderColor: coloresApariencia?.colorMarca || "#0891b2" }
                   : { backgroundColor: coloresApariencia?.botonInactivo || "#E2E8F0", borderColor: coloresApariencia?.bordeBotonInactivo || "#CBD5E1", color: coloresApariencia?.textoPrincipal || "#0F172A" }
               }
-              className={`w-7 h-7 rounded-full flex items-center justify-center cursor-pointer transition ${
+              className={`w-6 md:w-7 h-6 md:h-7 rounded-full flex items-center justify-center cursor-pointer transition ${
                 modoVisual === "semitransparente" ? "text-white shadow-md border" : "hover:opacity-90 border backdrop-blur-sm"
               }`}
             >
-              <IconModoCristal className="w-4 h-4" isActivo={modoVisual === "semitransparente"} />
+              <IconModoCristal className="w-3.5 md:w-4 h-3.5 md:h-4" isActivo={modoVisual === "semitransparente"} />
             </button>
 
             {/* 3. Sólido (Solid) */}
@@ -398,11 +392,11 @@ export default function Home3BF() {
                   ? { backgroundColor: coloresApariencia?.botonActivo || "#0891b2", borderColor: coloresApariencia?.colorMarca || "#0891b2" }
                   : { backgroundColor: coloresApariencia?.botonInactivo || "#E2E8F0", borderColor: coloresApariencia?.bordeBotonInactivo || "#CBD5E1", color: coloresApariencia?.textoPrincipal || "#0F172A" }
               }
-              className={`w-7 h-7 rounded-full flex items-center justify-center cursor-pointer transition ${
+              className={`w-6 md:w-7 h-6 md:h-7 rounded-full flex items-center justify-center cursor-pointer transition ${
                 modoVisual === "solido" ? "text-white shadow-md border" : "hover:opacity-90 border backdrop-blur-sm"
               }`}
             >
-              <IconModoSolido className="w-4 h-4" />
+              <IconModoSolido className="w-3.5 md:w-4 h-3.5 md:h-4" />
             </button>
 
             {/* 4. Renderizado (Render / Specular) */}
@@ -414,11 +408,11 @@ export default function Home3BF() {
                   ? { backgroundColor: coloresApariencia?.botonActivo || "#0891b2", borderColor: coloresApariencia?.colorMarca || "#0891b2" }
                   : { backgroundColor: coloresApariencia?.botonInactivo || "#E2E8F0", borderColor: coloresApariencia?.bordeBotonInactivo || "#CBD5E1", color: coloresApariencia?.textoPrincipal || "#0F172A" }
               }
-              className={`w-7 h-7 rounded-full flex items-center justify-center cursor-pointer transition ${
+              className={`w-6 md:w-7 h-6 md:h-7 rounded-full flex items-center justify-center cursor-pointer transition ${
                 modoVisual === "renderizado" ? "text-white shadow-md border" : "hover:opacity-90 border backdrop-blur-sm"
               }`}
             >
-              <IconModoRender className="w-4 h-4" />
+              <IconModoRender className="w-3.5 md:w-4 h-3.5 md:h-4" />
             </button>
           </div>
 
@@ -428,7 +422,7 @@ export default function Home3BF() {
               borderColor: coloresApariencia?.insigniaFondo || coloresApariencia?.bordePaneles,
               backgroundColor: coloresApariencia?.panelContenedor || "#E2E8F0"
             }}
-            className="p-1 rounded-full border shadow-inner h-9 shrink-0 flex items-center justify-center"
+            className="p-0.5 md:p-1 rounded-full border shadow-inner h-8 md:h-9 shrink-0 flex items-center justify-center"
           >
             <button
               onClick={capturarMiniatura}
@@ -445,51 +439,28 @@ export default function Home3BF() {
                   ? { backgroundColor: "#10B98125", borderColor: "#10B981", color: "#10B981" }
                   : { backgroundColor: coloresApariencia?.botonInactivo || "#E2E8F0", borderColor: coloresApariencia?.bordeBotonInactivo || "#CBD5E1", color: coloresApariencia?.textoPrincipal || "#0F172A" }
               }
-              className={`w-7 h-7 rounded-full border flex items-center justify-center transition cursor-pointer ${
+              className={`w-6 md:w-7 h-6 md:h-7 rounded-full border flex items-center justify-center transition cursor-pointer ${
                 fotoCapturada ? "shadow-md" : "hover:opacity-90 backdrop-blur-sm"
               } ${guardandoFoto ? "opacity-50 cursor-not-allowed" : ""}`}
             >
               {fotoCapturada ? (
-                <Check className="w-4 h-4 text-emerald-500 shrink-0" />
+                <Check className="w-3.5 md:w-4 h-3.5 md:h-4 text-emerald-500 shrink-0" />
               ) : (
                 <Camera 
                   style={{ color: coloresApariencia?.botonActivo || "#0891b2" }} 
-                  className="w-4 h-4 shrink-0" 
+                  className="w-3.5 md:w-4 h-3.5 md:h-4 shrink-0" 
                 />
               )}
             </button>
           </div>
 
-          {/* 3. Botón Render IA Fotorrealista (Google Gemini / Imagen 3) */}
-          <div
-            style={{ 
-              borderColor: coloresApariencia?.insigniaFondo || coloresApariencia?.bordePaneles,
-              backgroundColor: coloresApariencia?.panelContenedor || "#E2E8F0"
-            }}
-            className="p-1 rounded-full border shadow-inner h-9 shrink-0 flex items-center justify-center"
-          >
-            <button
-              onClick={() => setModalRenderIAAbierto(true)}
-              title="3BF AI Render Studio: Generar render fotorrealista con IA"
-              style={{
-                backgroundColor: coloresApariencia?.botonInactivo || "#E2E8F0",
-                borderColor: coloresApariencia?.bordeBotonInactivo || "#CBD5E1",
-                color: coloresApariencia?.textoPrincipal || "#0F172A"
-              }}
-              className="px-3 h-7 rounded-full border flex items-center gap-1.5 transition cursor-pointer hover:opacity-90 backdrop-blur-sm font-bold text-xs"
-            >
-              <Sparkles className="w-3.5 h-3.5 text-cyan-600 shrink-0" />
-              <span>Render IA</span>
-            </button>
-          </div>
-
-          {/* 4. Switch de Tema (Light / Dark) */}
+          {/* 3. Switch de Tema (Light / Dark) */}
           <div 
             style={{ 
               borderColor: coloresApariencia?.insigniaFondo || coloresApariencia?.bordePaneles,
               backgroundColor: coloresApariencia?.panelContenedor || "#E2E8F0"
             }}
-            className="flex items-center p-1 rounded-full border gap-1 shadow-inner h-9 shrink-0"
+            className="flex items-center p-0.5 md:p-1 rounded-full border gap-0.5 md:gap-1 shadow-inner h-8 md:h-9 shrink-0"
           >
             <button
               onClick={() => setEsquemaColor("claro")}
@@ -498,7 +469,7 @@ export default function Home3BF() {
                   ? { backgroundColor: coloresApariencia?.botonActivo || "#0891b2", borderColor: coloresApariencia?.colorMarca || "#0891b2" }
                   : { backgroundColor: coloresApariencia?.botonInactivo || "#E2E8F0", borderColor: coloresApariencia?.bordeBotonInactivo || "#CBD5E1", color: coloresApariencia?.textoPrincipal || "#0F172A" }
               }
-              className={`px-3.5 h-7 rounded-full transition cursor-pointer text-xs font-bold flex items-center justify-center ${
+              className={`px-2.5 md:px-3.5 h-6 md:h-7 rounded-full transition cursor-pointer text-[11px] md:text-xs font-bold flex items-center justify-center ${
                 esquemaColor === "claro" ? "text-white shadow-md border" : "hover:opacity-90 border backdrop-blur-sm"
               }`}
             >
@@ -511,7 +482,7 @@ export default function Home3BF() {
                   ? { backgroundColor: coloresApariencia?.botonActivo || "#0891b2", borderColor: coloresApariencia?.colorMarca || "#0891b2" }
                   : { backgroundColor: coloresApariencia?.botonInactivo || "#E2E8F0", borderColor: coloresApariencia?.bordeBotonInactivo || "#CBD5E1", color: coloresApariencia?.textoPrincipal || "#0F172A" }
               }
-              className={`px-3.5 h-7 rounded-full transition cursor-pointer text-xs font-bold flex items-center justify-center ${
+              className={`px-2.5 md:px-3.5 h-6 md:h-7 rounded-full transition cursor-pointer text-[11px] md:text-xs font-bold flex items-center justify-center ${
                 esquemaColor === "oscuro" ? "text-white shadow-md border" : "hover:opacity-90 border backdrop-blur-sm"
               }`}
             >
@@ -519,13 +490,32 @@ export default function Home3BF() {
             </button>
           </div>
 
-          {/* 4. Versión del Software y Estado de Conexión */}
+          {/* 5. Versión del Software y Estado de Conexión:
+                 - En Móviles (md:hidden): Simple círculo verde (online) o rojo (offline)
+                 - En Escritorio (hidden md:flex): Badge completo con texto vBeta 0.1 Online
+          */}
+          {/* MÓVIL (md:hidden): Simple Círculo Verde / Rojo */}
+          <button
+            onClick={verificarWorker}
+            title={`${APP_VERSION} - Estado: ${workerStatus === "online" ? "Online" : "Desconectado / Offline"} (Clic para comprobar)`}
+            className="md:hidden flex items-center justify-center p-1.5 transition cursor-pointer hover:scale-110 active:scale-95 shrink-0"
+          >
+            <span 
+              className={`w-3.5 h-3.5 rounded-full border-2 ${
+                workerStatus === "online" 
+                  ? "bg-emerald-500 border-emerald-300 shadow-[0_0_10px_rgba(16,185,129,0.9)]" 
+                  : "bg-rose-600 border-rose-400 shadow-[0_0_10px_rgba(225,29,72,0.9)] animate-pulse"
+              }`}
+            />
+          </button>
+
+          {/* ESCRITORIO (hidden md:flex): Badge Completo Original */}
           <div 
             style={{ 
               borderColor: coloresApariencia?.insigniaFondo || coloresApariencia?.bordePaneles,
               backgroundColor: coloresApariencia?.panelContenedor || "#E2E8F0"
             }}
-            className="flex items-center p-1 rounded-full border shadow-inner h-9 shrink-0"
+            className="hidden md:flex items-center p-1 rounded-full border shadow-inner h-9 shrink-0"
           >
             <button
               onClick={verificarWorker}
@@ -567,11 +557,12 @@ export default function Home3BF() {
           )}
         </div>
 
-        {/* Separador / Handler de Redimensión Ergonómico entre Panel Izquierdo y Derecho */}
+        {/* Separador / Handler de Redimensión Ergonómico entre Panel Izquierdo y Derecho (Mouse + Touch) */}
         <div
-          onMouseDown={handleMouseDownResize}
+          onMouseDown={handleStartResizePanel}
+          onTouchStart={handleStartResizePanel}
           title="Arrastra para ajustar el ancho del panel derecho"
-          className="w-3.5 h-full cursor-ew-resize flex items-center justify-center group shrink-0 z-30 select-none hover:bg-cyan-500/10 transition-colors"
+          className="w-3.5 h-full cursor-ew-resize flex items-center justify-center group shrink-0 z-30 select-none hover:bg-cyan-500/10 transition-colors touch-none"
         >
           <div 
             className={`w-1 rounded-full transition-all ${

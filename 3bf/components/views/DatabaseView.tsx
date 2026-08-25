@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useMemo, useEffect } from "react";
-import { use3BFStore, HerrajeRecord, TableroRecord, CantoRecord, NegociacionNovopan, calcularCostoLaminaNovopan, NEGOCIACION_NOVOPAN_DEFECTO, CANTOS_INICIALES_DEFECTO } from "@/lib/store";
+import { use3BFStore, HerrajeRecord, TableroRecord, CantoRecord, NegociacionNovopan, calcularCostoLaminaNovopan, NEGOCIACION_NOVOPAN_DEFECTO, CANTOS_INICIALES_DEFECTO, HERRAJES_INICIALES_DEFECTO, TABLEROS_INICIALES_DEFECTO } from "@/lib/store";
 import { 
   Database, 
   Search, 
@@ -138,10 +138,10 @@ export default function DatabaseView() {
 
   // Estado para acordeón de proveedores desplegables (Novopan abierto por defecto)
   const [proveedoresAbiertos, setProveedoresAbiertos] = useState<Record<string, boolean>>({
-    Novopan: true,
+    Duratex: true,
     Arauco: false,
-    Duratex: false,
     Masisa: false,
+    Rehau: false,
   });
 
   const toggleProveedor = (nombre: string) => {
@@ -155,52 +155,85 @@ export default function DatabaseView() {
   useEffect(() => {
     try {
       const hSaved = localStorage.getItem("3bf_db_herrajes");
-      if (hSaved) setDbHerrajes(JSON.parse(hSaved));
+      if (hSaved) {
+        const parsed: HerrajeRecord[] = JSON.parse(hSaved);
+        const hasLegacy = parsed.some((h) => ["20070022", "20070009", "005895", "0000149", "010679", "20060067", "000478", "000468", "4829104", "4829015"].includes(h.codigo) || (h.id === "h1" && h.costoCop < 100));
+        if (hasLegacy) {
+          setDbHerrajes(HERRAJES_INICIALES_DEFECTO);
+          localStorage.setItem("3bf_db_herrajes", JSON.stringify(HERRAJES_INICIALES_DEFECTO));
+        } else {
+          setDbHerrajes(parsed);
+        }
+      } else {
+        setDbHerrajes(HERRAJES_INICIALES_DEFECTO);
+      }
 
       const nSaved = localStorage.getItem("3bf_negociacion_novopan");
-      const currentNeg: NegociacionNovopan = nSaved ? JSON.parse(nSaved) : NEGOCIACION_NOVOPAN_DEFECTO;
-      if (nSaved) setNegociacionNovopan(currentNeg);
+      let currentNeg: NegociacionNovopan = nSaved ? JSON.parse(nSaved) : NEGOCIACION_NOVOPAN_DEFECTO;
+      if (currentNeg.trmNovopan === 4000 || !currentNeg.trmNovopan) {
+        currentNeg = { ...currentNeg, trmNovopan: 3000 };
+        localStorage.setItem("3bf_negociacion_novopan", JSON.stringify(currentNeg));
+      }
+      setNegociacionNovopan(currentNeg);
 
       const tSaved = localStorage.getItem("3bf_db_tableros");
       if (tSaved) {
         const parsed: TableroRecord[] = JSON.parse(tSaved);
-        const sanitized = parsed.map((t: TableroRecord) => {
-          const lista = t.costoListaUsd ?? t.costoLaminaUsd ?? 43.568;
-          if (t.proveedor === "Novopan") {
-            const cal = calcularCostoLaminaNovopan(lista, t.largoLaminaMm || 2440, t.anchoLaminaMm || 2150, t.calibreMm || 15, undefined, currentNeg, t.nombreComercial);
+        const hasLegacyTableros = parsed.some((t) => ["NH0030615", "NP2020625", "CB2251415"].includes(t.codigo) || (t.nombreComercial && t.nombreComercial.includes("Ceniza")) || (t.nombreComercial && t.nombreComercial.includes("Poro")) || t.proveedor === "Novopan" || (t.id === "t1" && (t.costoListaUsd || 0) < 50));
+        if (hasLegacyTableros) {
+          setDbTableros(TABLEROS_INICIALES_DEFECTO);
+          localStorage.setItem("3bf_db_tableros", JSON.stringify(TABLEROS_INICIALES_DEFECTO));
+        } else {
+          const sanitized = parsed.map((t: TableroRecord) => {
+            const lista = t.costoListaUsd ?? t.costoLaminaUsd ?? 58.468;
+            if (t.proveedor === "Novopan" || t.proveedor === "Duratex") {
+              const cal = calcularCostoLaminaNovopan(lista, t.largoLaminaMm || 2440, t.anchoLaminaMm || 2150, t.calibreMm || 15, undefined, currentNeg, t.nombreComercial);
+              return {
+                ...t,
+                costoListaUsd: lista,
+                costoLaminaUsd: cal.costoLaminaUsd,
+                costoLaminaCop: cal.costoLaminaCop,
+                costoM2Usd: cal.costoM2Usd,
+                costoM2Cop: cal.costoM2Cop,
+              };
+            }
+            const areaM2 = ((t.largoLaminaMm || 2440) * (t.anchoLaminaMm || 2150)) / 1_000_000.0;
+            const laminaUsd = t.costoLaminaUsd ?? lista;
+            const m2Usd = Number((laminaUsd / areaM2).toFixed(2));
             return {
               ...t,
               costoListaUsd: lista,
-              costoLaminaUsd: cal.costoLaminaUsd,
-              costoLaminaCop: cal.costoLaminaCop,
-              costoM2Usd: cal.costoM2Usd,
-              costoM2Cop: cal.costoM2Cop,
+              costoLaminaUsd: laminaUsd,
+              costoLaminaCop: t.costoLaminaCop ?? Math.round(laminaUsd * 3000),
+              costoM2Usd: t.costoM2Usd ?? m2Usd,
+              costoM2Cop: t.costoM2Cop ?? Math.round(m2Usd * 3000),
             };
-          }
-          const areaM2 = ((t.largoLaminaMm || 2440) * (t.anchoLaminaMm || 2150)) / 1_000_000.0;
-          const laminaUsd = t.costoLaminaUsd ?? lista;
-          const m2Usd = Number((laminaUsd / areaM2).toFixed(2));
-          return {
-            ...t,
-            costoListaUsd: lista,
-            costoLaminaUsd: laminaUsd,
-            costoLaminaCop: t.costoLaminaCop ?? Math.round(laminaUsd * 4000),
-            costoM2Usd: t.costoM2Usd ?? m2Usd,
-            costoM2Cop: t.costoM2Cop ?? Math.round(m2Usd * 4000),
-          };
-        });
-        setDbTableros(sanitized);
+          });
+          setDbTableros(sanitized);
+        }
+      } else {
+        setDbTableros(TABLEROS_INICIALES_DEFECTO);
       }
 
       const cSaved = localStorage.getItem("3bf_db_cantos");
       if (cSaved) {
         const parsed: CantoRecord[] = JSON.parse(cSaved);
-        const map = new Map<string, CantoRecord>();
-        CANTOS_INICIALES_DEFECTO.forEach((c: CantoRecord) => map.set(c.codigo, c));
-        parsed.forEach((c: CantoRecord) => map.set(c.codigo, c));
-        const merged = Array.from(map.values());
-        setDbCantos(merged);
-        localStorage.setItem("3bf_db_cantos", JSON.stringify(merged));
+        const hasLegacyCantos = parsed.some(
+          (c) =>
+            c.descripcion.toUpperCase().includes("CENIZA") ||
+            c.descripcion.toUpperCase().includes("CENDRA") ||
+            c.descripcion.toUpperCase().includes("NEVADO") ||
+            c.descripcion.toUpperCase().includes("GLACIAL") ||
+            c.descripcion.endsWith(" N") ||
+            ["0002788", "017288", "0004623", "000360", "000361", "0000253", "0000313"].includes(c.codigo) ||
+            (c.id === "c_948201" && c.costoMlCop < 250)
+        );
+        if (hasLegacyCantos || parsed.length !== CANTOS_INICIALES_DEFECTO.length) {
+          setDbCantos(CANTOS_INICIALES_DEFECTO);
+          localStorage.setItem("3bf_db_cantos", JSON.stringify(CANTOS_INICIALES_DEFECTO));
+        } else {
+          setDbCantos(parsed);
+        }
       } else {
         setDbCantos(CANTOS_INICIALES_DEFECTO);
       }
@@ -780,7 +813,7 @@ export default function DatabaseView() {
 
                     {/* DESCUENTO POR ACABADO DE CARA */}
                     <td className="p-2.5 text-center">
-                      {t.proveedor === "Novopan" ? (
+                      {(t.proveedor === "Novopan" || t.proveedor === "Duratex") ? (
                         <select
                           value={descCara}
                           onChange={(e) => handleUpdateTablero(t.id, "descuentoCaraPct", Number(e.target.value))}
@@ -1013,7 +1046,7 @@ export default function DatabaseView() {
                 </div>
                 <div className="flex items-center gap-4">
                   <span style={{ color: coloresApariencia?.textoSecundario }} className="text-[11px] font-mono">
-                    TRM: <strong style={{ color: coloresApariencia?.textoPrincipal }}>$4.100 COP</strong>
+                    TRM: <strong style={{ color: coloresApariencia?.textoPrincipal }}>$3.000 COP</strong>
                   </span>
                   <span style={{ color: coloresApariencia?.textoSecundario }} className="text-[11px] font-mono">
                     Tableros: <strong style={{ color: coloresApariencia?.botonActivo }}>1 referencia</strong>
@@ -1048,7 +1081,7 @@ export default function DatabaseView() {
                       <div className="flex items-center gap-1 font-mono font-bold text-xs">
                         <span style={{ color: coloresApariencia?.textoSecundario }}>$</span>
                         <DecimalInput 
-                          value={4100} 
+                          value={3000} 
                           decimals={0} 
                           onChange={() => {}} 
                           style={{
@@ -1109,7 +1142,7 @@ export default function DatabaseView() {
             </div>
 
             {/* ------------------------------------------------------------- */}
-            {/* 2. DURATEX                                                    */}
+            {/* 2. REHAU & PROADEC (CANTOS & POLÍMEROS)                       */}
             {/* ------------------------------------------------------------- */}
             <div 
               style={{ 
@@ -1119,7 +1152,7 @@ export default function DatabaseView() {
               className="rounded-xl border shadow-sm overflow-hidden transition-colors"
             >
               <button
-                onClick={() => toggleProveedor("Duratex")}
+                onClick={() => toggleProveedor("Rehau")}
                 style={{ 
                   backgroundColor: coloresApariencia?.tablaFilaFondo || coloresApariencia?.fondoPaneles,
                   color: coloresApariencia?.textoPrincipal
@@ -1131,28 +1164,28 @@ export default function DatabaseView() {
                     style={{ backgroundColor: coloresApariencia?.botonActivo || "#0891b2", color: "#FFFFFF" }}
                     className="w-8 h-8 rounded-lg flex items-center justify-center font-bold text-xs shadow"
                   >
-                    DU
+                    RH
                   </div>
                   <div>
                     <span 
                       style={{ color: coloresApariencia?.textoPrincipal }}
                       className="font-extrabold text-xs flex items-center gap-2"
                     >
-                      Duratex
+                      Rehau / Proadec
                     </span>
                     <span style={{ color: coloresApariencia?.textoSecundario }} className="text-[11px]">
-                      Tableros delgados para fondos de cajón y traseras
+                      Cantos PVC rígidos y flexibles de alta fidelidad tonal
                     </span>
                   </div>
                 </div>
                 <div className="flex items-center gap-4">
                   <span style={{ color: coloresApariencia?.textoSecundario }} className="text-[11px] font-mono">
-                    TRM: <strong style={{ color: coloresApariencia?.textoPrincipal }}>$4.100 COP</strong>
+                    TRM: <strong style={{ color: coloresApariencia?.textoPrincipal }}>$3.000 COP</strong>
                   </span>
                   <span style={{ color: coloresApariencia?.textoSecundario }} className="text-[11px] font-mono">
-                    Tableros: <strong style={{ color: coloresApariencia?.botonActivo }}>1 referencia</strong>
+                    Cantos: <strong style={{ color: coloresApariencia?.botonActivo }}>7 referencias</strong>
                   </span>
-                  {proveedoresAbiertos["Duratex"] ? (
+                  {proveedoresAbiertos["Rehau"] ? (
                     <ChevronUp style={{ color: coloresApariencia?.textoSecundario }} className="w-4 h-4" />
                   ) : (
                     <ChevronDown style={{ color: coloresApariencia?.textoSecundario }} className="w-4 h-4" />
@@ -1160,7 +1193,7 @@ export default function DatabaseView() {
                 </div>
               </button>
 
-              {proveedoresAbiertos["Duratex"] && (
+              {proveedoresAbiertos["Rehau"] && (
                 <div 
                   style={{ 
                     borderColor: coloresApariencia?.bordePaneles, 
@@ -1182,7 +1215,7 @@ export default function DatabaseView() {
                       <div className="flex items-center gap-1 font-mono font-bold text-xs">
                         <span style={{ color: coloresApariencia?.textoSecundario }}>$</span>
                         <DecimalInput 
-                          value={4100} 
+                          value={3000} 
                           decimals={0} 
                           onChange={() => {}} 
                           style={{
@@ -1231,12 +1264,12 @@ export default function DatabaseView() {
                         Especialidad
                       </span>
                       <span style={{ color: coloresApariencia?.textoPrincipal }} className="font-bold text-xs">
-                        Fondos HDF 2.7mm a 3mm
+                        Cantos PVC 0.5mm, 2.0mm y perfiles termoplásticos
                       </span>
                     </div>
                   </div>
                   <div style={{ color: coloresApariencia?.textoSecundario }} className="text-[11px] italic">
-                    ℹ️ Para configurar una fórmula de liquidación personalizada para Duratex, puedes suministrar la matriz o tabla de Excel correspondiente.
+                    ℹ️ Para configurar una fórmula de liquidación personalizada para Rehau / Proadec, puedes suministrar la matriz o tabla de Excel correspondiente.
                   </div>
                 </div>
               )}
@@ -1281,7 +1314,7 @@ export default function DatabaseView() {
                 </div>
                 <div className="flex items-center gap-4">
                   <span style={{ color: coloresApariencia?.textoSecundario }} className="text-[11px] font-mono">
-                    TRM: <strong style={{ color: coloresApariencia?.textoPrincipal }}>$4.100 COP</strong>
+                    TRM: <strong style={{ color: coloresApariencia?.textoPrincipal }}>$3.000 COP</strong>
                   </span>
                   <span style={{ color: coloresApariencia?.textoSecundario }} className="text-[11px] font-mono">
                     Tableros: <strong style={{ color: coloresApariencia?.botonActivo }}>1 referencia</strong>
@@ -1316,7 +1349,7 @@ export default function DatabaseView() {
                       <div className="flex items-center gap-1 font-mono font-bold text-xs">
                         <span style={{ color: coloresApariencia?.textoSecundario }}>$</span>
                         <DecimalInput 
-                          value={4100} 
+                          value={3000} 
                           decimals={0} 
                           onChange={() => {}} 
                           style={{
@@ -1377,7 +1410,7 @@ export default function DatabaseView() {
             </div>
 
             {/* ------------------------------------------------------------- */}
-            {/* 4. NOVOPAN DEL ECUADOR S.A. (MATRIZ VIVA)                     */}
+            {/* 4. DURATEX S.A. (PROVEEDOR ESTRATÉGICO PRINCIPAL - MATRIZ VIVA)*/}
             {/* ------------------------------------------------------------- */}
             <div 
               style={{ 
@@ -1387,7 +1420,7 @@ export default function DatabaseView() {
               className="rounded-xl border shadow-sm overflow-hidden transition-colors"
             >
               <button
-                onClick={() => toggleProveedor("Novopan")}
+                onClick={() => toggleProveedor("Duratex")}
                 style={{ 
                   backgroundColor: coloresApariencia?.tablaFilaFondo || coloresApariencia?.fondoPaneles,
                   color: coloresApariencia?.textoPrincipal
@@ -1399,28 +1432,28 @@ export default function DatabaseView() {
                     style={{ backgroundColor: coloresApariencia?.botonActivo || "#0891b2", color: "#FFFFFF" }}
                     className="w-8 h-8 rounded-lg flex items-center justify-center font-bold text-xs shadow"
                   >
-                    NV
+                    DX
                   </div>
                   <div>
                     <span 
                       style={{ color: coloresApariencia?.textoPrincipal }}
                       className="font-extrabold text-xs flex items-center gap-2"
                     >
-                      Novopan del Ecuador S.A.
+                      Duratex S.A.
                     </span>
                     <span style={{ color: coloresApariencia?.textoSecundario }} className="text-[11px]">
-                      Proveedor Estratégico con matriz industrial de importación y descuentos
+                      Proveedor Estratégico Principal con matriz industrial de importación y descuentos
                     </span>
                   </div>
                 </div>
                 <div className="flex items-center gap-4">
                   <span style={{ color: coloresApariencia?.textoSecundario }} className="text-[11px] font-mono">
-                    TRM Novopan: <strong style={{ color: coloresApariencia?.textoPrincipal }}>${negociacionNovopan.trmNovopan.toLocaleString("es-CO")} COP</strong>
+                    TRM Duratex: <strong style={{ color: coloresApariencia?.textoPrincipal }}>${negociacionNovopan.trmNovopan.toLocaleString("es-CO")} COP</strong>
                   </span>
                   <span style={{ color: coloresApariencia?.textoSecundario }} className="text-[11px] font-mono">
-                    Tableros: <strong style={{ color: coloresApariencia?.botonActivo }}>2 referencias</strong>
+                    Tableros: <strong style={{ color: coloresApariencia?.botonActivo }}>5 referencias</strong>
                   </span>
-                  {proveedoresAbiertos["Novopan"] ? (
+                  {proveedoresAbiertos["Duratex"] ? (
                     <ChevronUp style={{ color: coloresApariencia?.textoSecundario }} className="w-4 h-4" />
                   ) : (
                     <ChevronDown style={{ color: coloresApariencia?.textoSecundario }} className="w-4 h-4" />
@@ -1428,7 +1461,7 @@ export default function DatabaseView() {
                 </div>
               </button>
 
-              {proveedoresAbiertos["Novopan"] && (
+              {proveedoresAbiertos["Duratex"] && (
                 <div 
                   style={{ 
                     borderColor: coloresApariencia?.bordePaneles, 
@@ -1452,7 +1485,7 @@ export default function DatabaseView() {
                       >
                         <Percent style={{ color: coloresApariencia?.botonActivo }} className="w-4 h-4" />
                         <span style={{ color: coloresApariencia?.textoPrincipal }} className="font-extrabold">
-                          Descuentos & Apoyos Comerciales Novopan
+                          Descuentos & Apoyos Comerciales Duratex
                         </span>
                       </div>
 
@@ -1501,7 +1534,7 @@ export default function DatabaseView() {
                               Apoyo en Tasa (Subsidio TRM)
                             </span>
                             <span style={{ color: coloresApariencia?.textoSecundario }} className="text-[10px]">
-                              Subsidio cambiario pactado con Novopan Ecuador
+                              Subsidio cambiario pactado con Duratex
                             </span>
                           </div>
                           <div className="flex items-center gap-1">
@@ -1571,7 +1604,7 @@ export default function DatabaseView() {
                       </div>
 
                       <div className="flex flex-col gap-2">
-                        {/* TRM Novopan */}
+                        {/* TRM Duratex */}
                         <div 
                           style={{ 
                             backgroundColor: coloresApariencia?.fondoAplicacion, 
@@ -1581,7 +1614,7 @@ export default function DatabaseView() {
                         >
                           <div>
                             <span style={{ color: coloresApariencia?.textoPrincipal }} className="font-extrabold block">
-                              TRM Pactada Novopan
+                              TRM Pactada Duratex
                             </span>
                             <span style={{ color: coloresApariencia?.textoSecundario }} className="text-[10px]">
                               Tasa de cambio fijada en el acuerdo
@@ -1617,7 +1650,7 @@ export default function DatabaseView() {
                               Flete Internacional (x m³)
                             </span>
                             <span style={{ color: coloresApariencia?.textoSecundario }} className="text-[10px]">
-                              Transporte Ecuador ➔ Planta
+                              Transporte Internacional ➔ Planta
                             </span>
                           </div>
                           <div className="flex items-center gap-1">

@@ -288,27 +288,32 @@ export default function NPanel() {
     return () => window.removeEventListener("3bf-thumbnail-updated", handleThumbUpdated);
   }, []);
 
-  // Redimensionador de ancho en el borde izquierdo (Estilo Blender)
-  const handleMouseDownResize = (e: React.MouseEvent) => {
-    e.preventDefault();
+  // Redimensionador de ancho en el borde izquierdo (Mouse + Touch en Celulares/Móviles)
+  const handleStartResize = (e: React.MouseEvent | React.TouchEvent) => {
+    const clientX = "touches" in e ? e.touches[0].clientX : e.clientX;
     setIsResizing(true);
-    const startX = e.clientX;
+    const startX = clientX;
     const startWidth = ancho;
 
-    const onMouseMove = (moveEvent: MouseEvent) => {
-      const deltaX = startX - moveEvent.clientX; // Mover a la izquierda ensancha
+    const onMove = (moveEvent: MouseEvent | TouchEvent) => {
+      const currentX = "touches" in moveEvent ? moveEvent.touches[0].clientX : moveEvent.clientX;
+      const deltaX = startX - currentX; // Mover a la izquierda ensancha
       const newWidth = Math.max(140, Math.min(800, startWidth + deltaX));
       setAnchoNPanel(newWidth);
     };
 
-    const onMouseUp = () => {
+    const onEnd = () => {
       setIsResizing(false);
-      window.removeEventListener("mousemove", onMouseMove);
-      window.removeEventListener("mouseup", onMouseUp);
+      window.removeEventListener("mousemove", onMove);
+      window.removeEventListener("mouseup", onEnd);
+      window.removeEventListener("touchmove", onMove);
+      window.removeEventListener("touchend", onEnd);
     };
 
-    window.addEventListener("mousemove", onMouseMove);
-    window.addEventListener("mouseup", onMouseUp);
+    window.addEventListener("mousemove", onMove);
+    window.addEventListener("mouseup", onEnd);
+    window.addEventListener("touchmove", onMove, { passive: false });
+    window.addEventListener("touchend", onEnd);
   };
 
   // Estado de captura de miniatura individual para componentes
@@ -477,9 +482,10 @@ export default function NPanel() {
         {/* ========================================================================= */}
         {pestanaActiva === "3d" && (
           <div
-            onMouseDown={handleMouseDownResize}
+            onMouseDown={handleStartResize}
+            onTouchStart={handleStartResize}
             title="Arrastrar para redimensionar el ancho (Blender style)"
-            className="absolute top-0 bottom-0 left-0 w-3 -translate-x-1.5 cursor-ew-resize z-40 group flex items-center justify-center hover:bg-cyan-500/10 transition-colors"
+            className="absolute top-0 bottom-0 left-0 w-4 -translate-x-2 cursor-ew-resize z-40 group flex items-center justify-center hover:bg-cyan-500/10 transition-colors touch-none"
           >
             <div 
               className={`w-0.5 h-16 rounded-full transition-all ${
@@ -496,7 +502,7 @@ export default function NPanel() {
         {/* ========================================================================= */}
         <div 
           style={{ borderColor: coloresApariencia?.bordePaneles }}
-          className="flex-1 min-w-0 flex flex-col overflow-hidden border-r"
+          className="flex-1 min-w-0 flex flex-col h-full overflow-hidden border-r"
         >
           
           {/* Cabecera del Panel */}
@@ -606,8 +612,8 @@ export default function NPanel() {
                 })}
               </div>
 
-              {/* Grid de Miniaturas Blender Style (Thumbnail + Nombre) */}
-              <div className="flex-1 overflow-y-auto p-2.5 custom-scrollbar">
+              {/* Grid de Miniaturas Blender Style (Thumbnail + Nombre) con Scroll Vertical Directo */}
+              <div className="flex-1 overflow-y-auto p-2.5 custom-scrollbar touch-pan-y">
                 <div className="text-[10px] text-slate-400 font-semibold px-1 mb-2">
                   <span>COMPONENTES ({mueblesFiltrados.length})</span>
                 </div>
@@ -1260,7 +1266,7 @@ export default function NPanel() {
             backgroundColor: coloresApariencia?.fondoPaneles, 
             borderColor: coloresApariencia?.bordePaneles 
           }}
-          className="w-9 shrink-0 flex flex-col py-3 px-1 items-center gap-1.5 border-l select-none"
+          className="w-9 shrink-0 flex flex-col py-2 px-1 items-center gap-1.5 border-l select-none overflow-y-auto no-scrollbar touch-pan-y overscroll-contain"
         >
             
             {/* Pestaña Vertical 1: Componentes */}
