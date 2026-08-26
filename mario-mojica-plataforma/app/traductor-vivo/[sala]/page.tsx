@@ -212,7 +212,7 @@ export default function SalaBilingueMasterPage() {
 
   return (
     <div className="h-screen bg-slate-100 text-slate-900 font-sans p-2 sm:p-3 flex flex-col justify-between gap-2 overflow-hidden">
-      {/* Header Adaptativo Móvil & Escritorio */}
+      {/* Header Adaptativo */}
       <header className="bg-white border border-slate-200 rounded-xl sm:rounded-2xl px-3 sm:px-4 py-2 shadow-sm flex items-center justify-between gap-2 shrink-0 select-none">
         <div className="flex items-center gap-2 sm:gap-3 min-w-0">
           <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-cyan-600 text-white flex items-center justify-center font-extrabold text-xs sm:text-sm shadow-sm shrink-0">
@@ -281,12 +281,12 @@ export default function SalaBilingueMasterPage() {
         </div>
       </header>
 
-      {/* Pestañas de Navegación Exclusivas para Móvil (Ocultas en Desktop) */}
+      {/* Pestañas de Navegación para Móvil (Ocultas en Desktop) */}
       <div className="flex lg:hidden bg-white border border-slate-200 rounded-xl p-1 shadow-sm justify-around text-xs font-bold shrink-0 select-none">
         <button
           onClick={() => setMobileActiveView("subtitulos")}
-          className={`flex items-center gap-1 px-2.5 py-1 rounded-lg transition ${
-            mobileActiveView === "subtitulos" ? "bg-cyan-50 text-cyan-800 border border-cyan-200" : "text-slate-600"
+          className={`flex items-center gap-1 px-3 py-1 rounded-lg transition ${
+            mobileActiveView === "subtitulos" ? "bg-cyan-50 text-cyan-800 border border-cyan-200 shadow-sm" : "text-slate-600"
           }`}
         >
           <MessageSquare className="w-3.5 h-3.5 text-cyan-600" />
@@ -295,8 +295,8 @@ export default function SalaBilingueMasterPage() {
 
         <button
           onClick={() => setMobileActiveView("cotizador")}
-          className={`flex items-center gap-1 px-2.5 py-1 rounded-lg transition ${
-            mobileActiveView === "cotizador" ? "bg-cyan-50 text-cyan-800 border border-cyan-200" : "text-slate-600"
+          className={`flex items-center gap-1 px-3 py-1 rounded-lg transition ${
+            mobileActiveView === "cotizador" ? "bg-cyan-50 text-cyan-800 border border-cyan-200 shadow-sm" : "text-slate-600"
           }`}
         >
           <Calculator className="w-3.5 h-3.5 text-cyan-600" />
@@ -305,8 +305,8 @@ export default function SalaBilingueMasterPage() {
 
         <button
           onClick={() => setMobileActiveView("documento")}
-          className={`flex items-center gap-1 px-2.5 py-1 rounded-lg transition ${
-            mobileActiveView === "documento" ? "bg-cyan-50 text-cyan-800 border border-cyan-200" : "text-slate-600"
+          className={`flex items-center gap-1 px-3 py-1 rounded-lg transition ${
+            mobileActiveView === "documento" ? "bg-cyan-50 text-cyan-800 border border-cyan-200 shadow-sm" : "text-slate-600"
           }`}
         >
           <FileText className="w-3.5 h-3.5 text-slate-600" />
@@ -315,8 +315,8 @@ export default function SalaBilingueMasterPage() {
 
         <button
           onClick={() => setMobileActiveView("config")}
-          className={`flex items-center gap-1 px-2.5 py-1 rounded-lg transition ${
-            mobileActiveView === "config" ? "bg-cyan-50 text-cyan-800 border border-cyan-200" : "text-slate-600"
+          className={`flex items-center gap-1 px-3 py-1 rounded-lg transition ${
+            mobileActiveView === "config" ? "bg-cyan-50 text-cyan-800 border border-cyan-200 shadow-sm" : "text-slate-600"
           }`}
         >
           <Settings className="w-3.5 h-3.5 text-slate-600" />
@@ -369,7 +369,7 @@ export default function SalaBilingueMasterPage() {
         {/* PANEL DERECHO: Pestañas Intercambiables */}
         <div
           style={{ width: `${100 - leftWidthPct}%` }}
-          className={`flex flex-col h-full min-w-0 lg:min-w-[360px] overflow-hidden bg-white border border-slate-200 rounded-2xl shadow-sm ${
+          className={`flex flex-col h-full min-w-0 lg:min-w-[360px] overflow-hidden bg-white border border-slate-200 rounded-xl sm:rounded-2xl shadow-sm ${
             mobileActiveView !== "subtitulos" ? "flex" : "hidden lg:flex"
           }`}
         >
@@ -419,7 +419,7 @@ export default function SalaBilingueMasterPage() {
           </div>
 
           {/* CONTENIDO SEGÚN LA PESTAÑA */}
-          <div className="flex-1 overflow-y-auto p-1 sm:p-2">
+          <div className="flex-1 overflow-y-auto p-2 sm:p-3">
             {((activeRightTab === "cotizador" && typeof window !== "undefined" && window.innerWidth >= 1024) || mobileActiveView === "cotizador") && (
               <HennOperationCostEngine uiLang={uiLang} onSummaryChange={setSummaryData} />
             )}
