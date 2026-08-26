@@ -8,8 +8,8 @@ import { SplitBilingualFeed } from "@/components/copiloto/SplitBilingualFeed";
 import { ModalConfiguracionSala, RoomConfigData } from "@/components/copiloto/ModalConfiguracionSala";
 import { ModalHistorialActas } from "@/components/copiloto/ModalHistorialActas";
 import {
-  Mic,
-  MicOff,
+  Play,
+  Square,
   Save,
   Check,
   GripVertical,
@@ -77,11 +77,11 @@ export default function SalaBilingueMasterPage() {
   const containerRef = useRef<HTMLDivElement>(null);
 
   const {
-    isListening,
+    isMeetingActive,
     interimText,
     messages,
     isTranslating,
-    toggleListening,
+    toggleMeeting,
     submitCurrentDictation
   } = useLiveTranslator({
     sala,
@@ -413,16 +413,16 @@ export default function SalaBilingueMasterPage() {
           </div>
         </div>
 
-        {/* Acciones y Micrófono */}
+        {/* Acciones y Botón Maestro Iniciar Reunión */}
         <div className="flex items-center gap-1 sm:gap-1.5 shrink-0">
-          {/* Selector de Voz */}
+          {/* Selector de Idioma de Escucha */}
           <div className="flex items-center bg-slate-100 p-0.5 rounded-lg border border-slate-200 text-[9px] sm:text-[10px] font-bold">
             <button
               onClick={() => { setMyVoiceLang("es"); setUiLang("es"); }}
               className={`px-1.5 py-0.5 rounded transition ${
                 myVoiceLang === "es" ? "bg-white text-cyan-700 shadow-sm" : "text-slate-600 hover:text-slate-900"
               }`}
-              title="Mi micrófono escucha en Español"
+              title="Escuchar en Español y traducir a Portugués"
             >
               ES
             </button>
@@ -431,24 +431,24 @@ export default function SalaBilingueMasterPage() {
               className={`px-1.5 py-0.5 rounded transition ${
                 myVoiceLang === "pt" ? "bg-white text-emerald-700 shadow-sm" : "text-slate-600 hover:text-slate-900"
               }`}
-              title="Meu microfone escuta em Português"
+              title="Escuchar en Português y traducir a Español"
             >
               PT
             </button>
           </div>
 
-          {/* Botón Principal de Micrófono con Toggle Fiable */}
+          {/* BOTÓN MAESTRO: INICIAR REUNIÓN / FINALIZAR REUNIÓN */}
           <button
-            onClick={toggleListening}
-            className={`px-2.5 sm:px-3.5 py-1 rounded-xl font-extrabold text-[10px] sm:text-xs flex items-center gap-1.5 transition shadow-sm ${
-              isListening
-                ? "bg-red-500 hover:bg-red-600 text-white animate-pulse"
-                : "bg-cyan-600 hover:bg-cyan-700 text-white"
+            onClick={toggleMeeting}
+            className={`px-3 sm:px-4 py-1.5 rounded-xl font-extrabold text-[11px] sm:text-xs flex items-center gap-1.5 transition shadow-sm ${
+              isMeetingActive
+                ? "bg-red-600 hover:bg-red-700 text-white animate-pulse"
+                : "bg-emerald-600 hover:bg-emerald-700 text-white"
             }`}
-            title={isListening ? "Toca para detener y enviar" : "Toca para hablar"}
+            title={isMeetingActive ? "Finalizar captura de reunión" : "Iniciar captura continua de la reunión"}
           >
-            {isListening ? <MicOff className="w-3.5 h-3.5" /> : <Mic className="w-3.5 h-3.5" />}
-            <span>{isListening ? (isPt ? "Parar / Enviar" : "Parar / Enviar") : (isPt ? "Falar" : "Hablar")}</span>
+            {isMeetingActive ? <Square className="w-3.5 h-3.5 fill-current" /> : <Play className="w-3.5 h-3.5 fill-current" />}
+            <span>{isMeetingActive ? "Finalizar Reunión" : "Iniciar Reunión"}</span>
           </button>
 
           {/* Botón Ver Actas */}

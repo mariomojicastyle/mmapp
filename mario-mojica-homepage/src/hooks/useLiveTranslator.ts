@@ -13,7 +13,7 @@ export interface ChatMessage {
   timestamp: number;
 }
 
-// Extracción de texto
+// Extracción inteligente
 function extractTranscriptFromEvent(eventResults: any): string {
   if (!eventResults || eventResults.length === 0) return "";
 
@@ -76,16 +76,14 @@ export function useLiveTranslator({
   myLang?: string;
   targetLang?: string;
 }) {
-  const [isListening, setIsListening] = useState(false);
+  const [isMeetingActive, setIsMeetingActive] = useState(false);
   const [interimText, setInterimText] = useState("");
   const [messages, setMessages] = useState<ChatMessage[]>([]);
-  const [isTTSEnabled, setIsTTSEnabled] = useState(true);
-  const [ttsVolume, setTtsVolume] = useState(0.9);
   const [isConnected, setIsConnected] = useState(true);
   const [isTranslating, setIsTranslating] = useState(false);
 
   const recognitionRef = useRef<any>(null);
-  const isListeningRef = useRef<boolean>(false);
+  const isMeetingActiveRef = useRef<boolean>(false);
   const manualStopRef = useRef<boolean>(false);
 
   const myLangRef = useRef<string>(myLang);
@@ -104,27 +102,6 @@ export function useLiveTranslator({
     salaRef.current = sala;
   }, [myLang, targetLang, role, sala]);
 
-  // Reproducir Text-to-Speech (TTS)
-  const speakText = useCallback((textToSpeak: string, langCode: string) => {
-    if (typeof window === "undefined" || !isTTSEnabled || !textToSpeak) return;
-
-    try {
-      window.speechSynthesis.cancel();
-      const utterance = new SpeechSynthesisUtterance(textToSpeak);
-      utterance.lang = langCode === "pt" ? "pt-BR" : langCode === "en" ? "en-US" : "es-ES";
-      utterance.volume = ttsVolume;
-      utterance.rate = 1.05;
-
-      const voices = window.speechSynthesis.getVoices();
-      const matchingVoice = voices.find(v => v.lang.startsWith(utterance.lang));
-      if (matchingVoice) utterance.voice = matchingVoice;
-
-      window.speechSynthesis.speak(utterance);
-    } catch (e) {
-      console.warn("TTS Error:", e);
-    }
-  }, [isTTSEnabled, ttsVolume]);
-
   // Consultar mensajes del servidor
   const fetchRoomMessages = useCallback(async () => {
     try {
@@ -142,9 +119,6 @@ export function useLiveTranslator({
               if (!existingMap.has(incoming.id)) {
                 existingMap.set(incoming.id, incoming);
                 hasNew = true;
-                if (incoming.speaker !== roleRef.current) {
-                  speakText(incoming.translatedText, myLangRef.current);
-                }
               }
             });
 
@@ -157,9 +131,9 @@ export function useLiveTranslator({
     } catch (e) {
       setIsConnected(false);
     }
-  }, [speakText]);
+  }, []);
 
-  // Traducir el bloque completo y enviarlo a Supabase
+  // Traducir y enviar bloque
   const translateAndCommitBlock = async (rawBlockText: string) => {
     const cleanedText = cleanAggressiveDuplicates(rawBlockText);
     if (!cleanedText || cleanedText.length < 2 || isTranslatingRef.current) {
@@ -177,7 +151,6 @@ export function useLiveTranslator({
     const currentSala = salaRef.current;
 
     try {
-      // 1. Traducir el bloque limpio
       const resTrans = await fetch("/api/copiloto/traducir", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -202,10 +175,8 @@ export function useLiveTranslator({
         timestamp: Date.now()
       };
 
-      // 2. Insertar inmediatamente en la vista local
       setMessages(prev => [...prev, newMsg]);
 
-      // 3. Persistir en Supabase Cloud
       await fetch("/api/copiloto/sesion", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -216,7 +187,6 @@ export function useLiveTranslator({
         })
       });
 
-      // 4. Forzar sincronización inmediata
       setTimeout(() => fetchRoomMessages(), 300);
 
     } catch (err) {
@@ -245,8 +215,8 @@ export function useLiveTranslator({
     recognition.lang = myLang === "es" ? "es-CO" : myLang === "pt" ? "pt-BR" : "en-US";
 
     recognition.onstart = () => {
-      setIsListening(true);
-      isListeningRef.current = true;
+      setIsMeetingActive(true);
+      isMeetingActiveRef.current = true;
       manualStopRef.current = false;
     };
 
@@ -257,39 +227,43 @@ export function useLiveTranslator({
       currentDictationTextRef.current = cleaned;
       setInterimText(cleaned);
 
-      // Esperar 2.5s de silencio antes de traducir y enviar
+      // Auto-commit tras 1.8 segundos de pausa natural
       if (silenceTimerRef.current) clearTimeout(silenceTimerRef.current);
       silenceTimerRef.current = setTimeout(() => {
-        if (currentDictationTextRef.current && isListeningRef.current) {
-          toggleListening();
+        if (currentDictationTextRef.current && isMeetingActiveRef.current) {
+          const textToCommit = currentDictationTextRef.current;
+          currentDictationTextRef.current = "";
+          setInterimText("");
+          translateAndCommitBlock(textToCommit);
         }
-      }, 2500);
+      }, 1800);
     };
 
     recognition.onerror = (event: any) => {
       console.warn("Speech error:", event.error);
       if (event.error === "not-allowed" || event.error === "service-not-allowed") {
-        setIsListening(false);
-        isListeningRef.current = false;
+        setIsMeetingActive(false);
+        isMeetingActiveRef.current = false;
         manualStopRef.current = true;
       }
     };
 
+    // Auto-reinicio para grabación continua sin interrupciones
     recognition.onend = () => {
-      if (isListeningRef.current && !manualStopRef.current) {
+      if (isMeetingActiveRef.current && !manualStopRef.current) {
         try {
           recognition.start();
         } catch (e) {}
       } else {
-        setIsListening(false);
-        isListeningRef.current = false;
+        setIsMeetingActive(false);
+        isMeetingActiveRef.current = false;
       }
     };
 
     recognitionRef.current = recognition;
 
     return () => {
-      isListeningRef.current = false;
+      isMeetingActiveRef.current = false;
       manualStopRef.current = true;
       if (silenceTimerRef.current) clearTimeout(silenceTimerRef.current);
       try {
@@ -298,21 +272,21 @@ export function useLiveTranslator({
     };
   }, [myLang]);
 
-  // Polling Realtime a Supabase Cloud cada 800ms
+  // Polling de mensajes cada 800ms
   useEffect(() => {
     fetchRoomMessages();
     const pollInterval = setInterval(fetchRoomMessages, 800);
     return () => clearInterval(pollInterval);
   }, [fetchRoomMessages]);
 
-  // Control manual del micrófono
-  const toggleListening = () => {
+  // Iniciar / Finalizar Reunión Maestro
+  const toggleMeeting = () => {
     if (!recognitionRef.current) return;
 
-    if (isListeningRef.current) {
+    if (isMeetingActiveRef.current) {
       manualStopRef.current = true;
-      isListeningRef.current = false;
-      setIsListening(false);
+      isMeetingActiveRef.current = false;
+      setIsMeetingActive(false);
       if (silenceTimerRef.current) clearTimeout(silenceTimerRef.current);
 
       try {
@@ -327,8 +301,8 @@ export function useLiveTranslator({
       currentDictationTextRef.current = "";
       setInterimText("");
       manualStopRef.current = false;
-      isListeningRef.current = true;
-      setIsListening(true);
+      isMeetingActiveRef.current = true;
+      setIsMeetingActive(true);
       try {
         recognitionRef.current.start();
       } catch (err) {
@@ -339,21 +313,22 @@ export function useLiveTranslator({
 
   const submitCurrentDictation = () => {
     if (currentDictationTextRef.current) {
-      toggleListening();
+      const textToCommit = currentDictationTextRef.current;
+      currentDictationTextRef.current = "";
+      setInterimText("");
+      translateAndCommitBlock(textToCommit);
     }
   };
 
   return {
-    isListening,
+    isMeetingActive,
+    isListening: isMeetingActive,
     interimText,
     messages,
-    isTTSEnabled,
-    setIsTTSEnabled,
-    ttsVolume,
-    setTtsVolume,
     isConnected,
     isTranslating,
-    toggleListening,
+    toggleMeeting,
+    toggleListening: toggleMeeting,
     submitCurrentDictation
   };
 }

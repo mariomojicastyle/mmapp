@@ -24,71 +24,129 @@ import {
 } from "lucide-react";
 import { ModalConfiguracionSala, RoomConfigData } from "@/components/copiloto/ModalConfiguracionSala";
 
+const defaultStaticRooms = [
+  {
+    slug: "henn",
+    empresa: "Móveis Henn",
+    titulo: "Mesa de Trabajo Bilingüe Móveis Henn",
+    participantes1: ["Mario Mojica"],
+    participantes2: ["Marcos Unnass", "Alexia", "Jonas"],
+    estado: "activa",
+    volumen: "200 manuales/año",
+    ahorro: "+R$ 49.254/año"
+  },
+  {
+    slug: "politorno",
+    empresa: "Politorno Móveis",
+    titulo: "Mesa de Trabajo Bilingüe Politorno",
+    participantes1: ["Mario Mojica"],
+    participantes2: ["Everton", "Equipo P&D"],
+    estado: "preparada",
+    volumen: "150 manuales/año",
+    ahorro: "+R$ 38.000/año"
+  },
+  {
+    slug: "kappesberg",
+    empresa: "Kappesberg Móveis",
+    titulo: "Mesa de Trabajo Bilingüe Kappesberg",
+    participantes1: ["Mario Mojica"],
+    participantes2: ["Dirección de Ingeniería"],
+    estado: "preparada",
+    volumen: "300 manuales/año",
+    ahorro: "+R$ 72.000/año"
+  }
+];
+
 export default function MesaBilingueHubPage() {
   const [isConfigModalOpen, setIsConfigModalOpen] = useState(false);
-  const [savedRooms, setSavedRooms] = useState<any[]>([]);
+  const [allRooms, setAllRooms] = useState<any[]>(defaultStaticRooms);
+  const [savedActas, setSavedActas] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [actionNotice, setActionNotice] = useState<string | null>(null);
 
-  // Salas de Negociación
-  const [rooms, setRooms] = useState([
-    {
-      slug: "henn",
-      empresa: "Móveis Henn",
-      titulo: "Mesa de Trabajo Bilingüe Móveis Henn",
-      participantes1: ["Mario Mojica"],
-      participantes2: ["Marcos Unnass", "Alexia", "Jonas"],
-      estado: "activa",
-      volumen: "200 manuales/año",
-      ahorro: "+R$ 49.254/año",
-      doc: "Integracao_TOTVS_Datasul_Moveis_Henn_PT.pdf"
-    },
-    {
-      slug: "politorno",
-      empresa: "Politorno Móveis",
-      titulo: "Mesa de Trabajo Bilingüe Politorno",
-      participantes1: ["Mario Mojica"],
-      participantes2: ["Everton", "Equipo P&D"],
-      estado: "preparada",
-      volumen: "150 manuales/año",
-      ahorro: "+R$ 38.000/año",
-      doc: "Manuales_Interativos_3D_B2B.pdf"
-    },
-    {
-      slug: "kappesberg",
-      empresa: "Kappesberg Móveis",
-      titulo: "Mesa de Trabajo Bilingüe Kappesberg",
-      participantes1: ["Mario Mojica"],
-      participantes2: ["Dirección de Ingeniería"],
-      estado: "preparada",
-      volumen: "300 manuales/año",
-      ahorro: "+R$ 72.000/año",
-      doc: "Propuesta_Comercial_3dBimFab.pdf"
-    }
-  ]);
+  // Cargar salas de Supabase y actas
+  const loadAllData = async () => {
+    try {
+      // 1. Cargar salas personalizadas
+      const resRooms = await fetch("/api/copiloto/sesion", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "list_configured_rooms" })
+      });
+      const dataRooms = await resRooms.json();
+      const customRooms = dataRooms.rooms || [];
 
-  const loadSavedActas = () => {
-    fetch("/api/copiloto/sesion", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ action: "list_saved_sessions" })
-    })
-      .then(res => res.json())
-      .then(data => {
-        setSavedRooms(data.actas || []);
-        setLoading(false);
-      })
-      .catch(() => setLoading(false));
+      // Combinar estáticas con personalizadas
+      const roomMap = new Map();
+      defaultStaticRooms.forEach(r => roomMap.set(r.slug, r));
+      customRooms.forEach((r: any) => roomMap.set(r.slug, r));
+      setAllRooms(Array.from(roomMap.values()));
+
+      // 2. Cargar actas
+      const resActas = await fetch("/api/copiloto/sesion", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "list_saved_sessions" })
+      });
+      const dataActas = await resActas.json();
+      setSavedActas(dataActas.actas || []);
+
+    } catch (e) {
+      console.error("Error cargando salas:", e);
+    } finally {
+      setLoading(false);
+    }
   };
 
   useEffect(() => {
-    loadSavedActas();
+    loadAllData();
   }, []);
 
-  const handleLaunchNewRoom = (config: RoomConfigData) => {
+  // Botón: Solo Crear Mesa (Se queda en el panel y añade la tarjeta)
+  const handleCreateRoomOnly = async (config: RoomConfigData) => {
     const slug = config.empresa.toLowerCase().replace(/[^a-z0-9]/g, "-").replace(/-+/g, "-") || "sala-nueva";
     
-    fetch("/api/copiloto/sesion", {
+    try {
+      await fetch("/api/copiloto/sesion", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "configure_room",
+          sala: slug,
+          roomConfig: config
+        })
+      });
+
+      const newRoom = {
+        slug,
+        empresa: config.empresa,
+        titulo: config.titulo,
+        participantes1: config.participantes1,
+        participantes2: config.participantes2,
+        estado: "preparada",
+        volumen: "Personalizado",
+        ahorro: "Calibración en Vivo"
+      };
+
+      setAllRooms(prev => {
+        const filtered = prev.filter(r => r.slug !== slug);
+        return [...filtered, newRoom];
+      });
+
+      setIsConfigModalOpen(false);
+      setActionNotice(`¡Mesa de trabajo "${config.empresa}" creada y agregada al directorio con éxito!`);
+      setTimeout(() => setActionNotice(null), 4500);
+
+    } catch (e) {
+      alert("Error al crear la mesa de trabajo");
+    }
+  };
+
+  // Botón: Crear y Entrar Inmediatamente
+  const handleLaunchNewRoom = async (config: RoomConfigData) => {
+    const slug = config.empresa.toLowerCase().replace(/[^a-z0-9]/g, "-").replace(/-+/g, "-") || "sala-nueva";
+    
+    await fetch("/api/copiloto/sesion", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -96,9 +154,9 @@ export default function MesaBilingueHubPage() {
         sala: slug,
         roomConfig: config
       })
-    }).then(() => {
-      window.location.href = `/traductor-vivo/${slug}`;
     });
+
+    window.location.href = `/traductor-vivo/${slug}`;
   };
 
   // Borrar Acta del Histórico
@@ -116,7 +174,7 @@ export default function MesaBilingueHubPage() {
       });
 
       if (res.ok) {
-        setSavedRooms(prev => prev.filter(a => a.id !== actaId));
+        setSavedActas(prev => prev.filter(a => a.id !== actaId));
         setActionNotice("Acta eliminada del historial con éxito.");
         setTimeout(() => setActionNotice(null), 3500);
       }
@@ -125,34 +183,48 @@ export default function MesaBilingueHubPage() {
     }
   };
 
-  // Limpiar / Reiniciar Mensajes de una Sala
-  const handleClearRoomMessages = async (slug: string, empresa: string) => {
-    if (!confirm(`¿Deseas reiniciar la sala "${empresa}" y borrar todos sus mensajes previos de prueba?`)) return;
+  // Borrar Mesa de Trabajo del Directorio
+  const handleDeleteRoom = async (slug: string, empresa: string) => {
+    if (!confirm(`¿Deseas eliminar la mesa de trabajo "${empresa}" y todos sus datos asociados?`)) return;
 
     try {
-      const res = await fetch("/api/copiloto/sesion", {
+      await fetch("/api/copiloto/sesion", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          action: "clear_room_data",
+          action: "delete_room_data",
           sala: slug
         })
       });
 
-      if (res.ok) {
-        setActionNotice(`Sala "${empresa}" reiniciada y limpia con éxito.`);
-        setTimeout(() => setActionNotice(null), 3500);
-      }
+      setAllRooms(prev => prev.filter(r => r.slug !== slug));
+      setActionNotice(`Mesa de trabajo "${empresa}" eliminada con éxito.`);
+      setTimeout(() => setActionNotice(null), 3500);
+
     } catch (e) {
-      alert("Error al reiniciar sala");
+      alert("Error al eliminar mesa de trabajo");
     }
   };
 
-  // Eliminar Tarjeta de Sala del Directorio
-  const handleDeleteRoomCard = (slug: string, empresa: string) => {
-    if (!confirm(`¿Deseas eliminar la tarjeta de la sala "${empresa}" del directorio?`)) return;
-    setRooms(prev => prev.filter(r => r.slug !== slug));
-    handleClearRoomMessages(slug, empresa);
+  // Reiniciar Mensajes de una Sala
+  const handleClearRoomMessages = async (slug: string, empresa: string) => {
+    if (!confirm(`¿Deseas reiniciar la sala "${empresa}" y borrar todos los mensajes previos?`)) return;
+
+    try {
+      await fetch("/api/copiloto/sesion", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "delete_room_data",
+          sala: slug
+        })
+      });
+
+      setActionNotice(`Sala "${empresa}" reiniciada y limpia con éxito.`);
+      setTimeout(() => setActionNotice(null), 3500);
+    } catch (e) {
+      alert("Error al reiniciar sala");
+    }
   };
 
   return (
@@ -169,6 +241,7 @@ export default function MesaBilingueHubPage() {
           participantes2: ["Interlocutor"]
         }}
         onSave={handleLaunchNewRoom}
+        onCreateOnly={handleCreateRoomOnly}
         onClose={() => setIsConfigModalOpen(false)}
       />
 
@@ -218,18 +291,18 @@ export default function MesaBilingueHubPage() {
             <Building2 className="w-4 h-4 text-cyan-600" />
             <span>Salas de Negociación en Vivo (Directorio de Fábricas RTA)</span>
           </h2>
-          <span className="text-xs text-slate-400 font-semibold">{rooms.length} salas configuradas</span>
+          <span className="text-xs text-slate-400 font-semibold">{allRooms.length} salas registradas</span>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          {rooms.map((room) => (
+          {allRooms.map((room) => (
             <div
               key={room.slug}
               className="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm flex flex-col justify-between gap-3 hover:border-cyan-500 transition group"
             >
               <div>
                 <div className="flex items-center justify-between border-b border-slate-100 pb-2 mb-2.5">
-                  <span className="font-extrabold text-sm text-slate-900 group-hover:text-cyan-800 transition">
+                  <span className="font-extrabold text-sm text-slate-900 group-hover:text-cyan-800 transition truncate">
                     {room.empresa}
                   </span>
                   <div className="flex items-center gap-1.5">
@@ -242,31 +315,31 @@ export default function MesaBilingueHubPage() {
                     </span>
                     {/* Botón Borrar Sala */}
                     <button
-                      onClick={() => handleDeleteRoomCard(room.slug, room.empresa)}
+                      onClick={() => handleDeleteRoom(room.slug, room.empresa)}
                       className="text-slate-300 hover:text-red-500 p-1 rounded transition"
-                      title="Eliminar sala"
+                      title="Eliminar mesa de trabajo"
                     >
                       <Trash2 className="w-3.5 h-3.5" />
                     </button>
                   </div>
                 </div>
 
-                <p className="text-xs font-semibold text-slate-700 leading-snug mb-2">
+                <p className="text-xs font-semibold text-slate-700 leading-snug mb-2 truncate">
                   {room.titulo}
                 </p>
 
                 <div className="space-y-1.5 text-[11px] text-slate-600 bg-slate-50 p-2.5 rounded-xl border border-slate-200">
                   <div className="flex items-center gap-1.5 truncate">
                     <span className="w-2 h-2 rounded-full bg-cyan-500 shrink-0" />
-                    <span className="truncate"><strong>ES:</strong> {room.participantes1.join(", ")}</span>
+                    <span className="truncate"><strong>ES:</strong> {room.participantes1?.join(", ") || "Mario"}</span>
                   </div>
                   <div className="flex items-center gap-1.5 truncate">
                     <span className="w-2 h-2 rounded-full bg-emerald-500 shrink-0" />
-                    <span className="truncate"><strong>PT:</strong> {room.participantes2.join(", ")}</span>
+                    <span className="truncate"><strong>PT:</strong> {room.participantes2?.join(", ") || "Interlocutor"}</span>
                   </div>
                   <div className="flex items-center justify-between text-[10px] text-slate-500 pt-1 border-t border-slate-200/60">
-                    <span>Volumen: {room.volumen}</span>
-                    <span className="font-bold text-emerald-700">{room.ahorro}</span>
+                    <span>{room.volumen || "En vivo"}</span>
+                    <span className="font-bold text-emerald-700">{room.ahorro || "Calibrado"}</span>
                   </div>
                 </div>
               </div>
@@ -312,7 +385,7 @@ export default function MesaBilingueHubPage() {
         <div className="space-y-2 text-xs">
           {loading && <div className="py-6 text-center text-slate-400">Cargando actas registradas...</div>}
 
-          {!loading && savedRooms.length === 0 && (
+          {!loading && savedActas.length === 0 && (
             <div className="py-8 text-center text-slate-400 bg-slate-50 rounded-xl border border-dashed border-slate-200">
               <FileText className="w-8 h-8 mx-auto mb-2 text-slate-300" />
               <p className="font-bold text-slate-700">No hay actas archivadas aún.</p>
@@ -322,7 +395,7 @@ export default function MesaBilingueHubPage() {
             </div>
           )}
 
-          {savedRooms.map((acta) => {
+          {savedActas.map((acta) => {
             let info: any = {};
             try {
               info = JSON.parse(acta.resumen_es || "{}");

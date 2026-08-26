@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { Plus, Trash2, Users, Globe, Building2, FileText, ArrowRight, X } from "lucide-react";
+import { Plus, Trash2, Users, Globe, Building2, FileText, ArrowRight, X, Check, BookmarkPlus } from "lucide-react";
 
 export interface RoomConfigData {
   empresa: string;
@@ -16,15 +16,17 @@ export function ModalConfiguracionSala({
   isOpen,
   initialData,
   onSave,
+  onCreateOnly,
   onClose
 }: {
   isOpen: boolean;
   initialData: RoomConfigData;
   onSave: (config: RoomConfigData) => void;
+  onCreateOnly?: (config: RoomConfigData) => void;
   onClose: () => void;
 }) {
-  const [empresa, setEmpresa] = useState(initialData.empresa || "Móveis Henn");
-  const [titulo, setTitulo] = useState(initialData.titulo || "Mesa de Trabajo Bilingüe Móveis Henn");
+  const [empresa, setEmpresa] = useState(initialData.empresa || "");
+  const [titulo, setTitulo] = useState(initialData.titulo || "Mesa de Trabajo Bilingüe B2B");
   const [idioma1, setIdioma1] = useState(initialData.idioma1 || "es");
   const [idioma2, setIdioma2] = useState(initialData.idioma2 || "pt");
 
@@ -36,7 +38,7 @@ export function ModalConfiguracionSala({
   const [participantes2, setParticipantes2] = useState<string[]>(
     initialData.participantes2 && initialData.participantes2.length > 0
       ? initialData.participantes2
-      : ["Marcos Unnass"]
+      : ["Interlocutor"]
   );
 
   const [newPart1, setNewPart1] = useState("");
@@ -78,19 +80,34 @@ export function ModalConfiguracionSala({
     }
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
+  const getConfigPayload = (): RoomConfigData => {
     const validP1 = participantes1.map(p => p.trim()).filter(Boolean);
     const validP2 = participantes2.map(p => p.trim()).filter(Boolean);
+    const finalEmpresa = empresa.trim() || "Cliente B2B";
 
-    onSave({
-      empresa,
-      titulo,
+    return {
+      empresa: finalEmpresa,
+      titulo: titulo.trim() || `Mesa de Trabajo Bilingüe ${finalEmpresa}`,
       idioma1,
       idioma2,
       participantes1: validP1.length > 0 ? validP1 : ["Mario Mojica"],
       participantes2: validP2.length > 0 ? validP2 : ["Interlocutor"]
-    });
+    };
+  };
+
+  const handleCreateOnlySubmit = (e: React.MouseEvent) => {
+    e.preventDefault();
+    const config = getConfigPayload();
+    if (onCreateOnly) {
+      onCreateOnly(config);
+    } else {
+      onSave(config);
+    }
+  };
+
+  const handleEnterSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    onSave(getConfigPayload());
   };
 
   return (
@@ -120,7 +137,7 @@ export function ModalConfiguracionSala({
         </div>
 
         {/* Formulario */}
-        <form onSubmit={handleSubmit} className="p-4 sm:p-5 space-y-4 text-xs">
+        <form onSubmit={handleEnterSubmit} className="p-4 sm:p-5 space-y-4 text-xs">
           {/* 1. Empresa y Título */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div className="space-y-1">
@@ -288,22 +305,36 @@ export function ModalConfiguracionSala({
             </div>
           </div>
 
-          {/* Botón de Lanzamiento */}
-          <div className="pt-3 border-t border-slate-100 flex items-center justify-end gap-2">
+          {/* Botones de Acción */}
+          <div className="pt-3 border-t border-slate-100 flex flex-wrap items-center justify-between gap-2">
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 rounded-xl text-slate-600 hover:bg-slate-100 font-bold transition"
+              className="px-3.5 py-2 rounded-xl text-slate-600 hover:bg-slate-100 font-bold transition"
             >
               Cancelar
             </button>
-            <button
-              type="submit"
-              className="bg-cyan-700 hover:bg-cyan-800 text-white font-extrabold px-5 py-2.5 rounded-xl flex items-center gap-2 shadow-lg shadow-cyan-900/10 transition"
-            >
-              <span>Entrar a la Mesa de Trabajo</span>
-              <ArrowRight className="w-4 h-4" />
-            </button>
+
+            <div className="flex items-center gap-2">
+              {/* Botón 1: Solo Crear Ficha y Cerrar */}
+              <button
+                type="button"
+                onClick={handleCreateOnlySubmit}
+                className="bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold px-4 py-2.5 rounded-xl flex items-center gap-1.5 border border-slate-300 transition"
+              >
+                <BookmarkPlus className="w-4 h-4 text-slate-600" />
+                <span>Crear Mesa de Trabajo</span>
+              </button>
+
+              {/* Botón 2: Crear y Entrar Inmediatamente */}
+              <button
+                type="submit"
+                className="bg-cyan-700 hover:bg-cyan-800 text-white font-extrabold px-5 py-2.5 rounded-xl flex items-center gap-2 shadow-lg shadow-cyan-900/10 transition"
+              >
+                <span>Entrar a la Mesa de Trabajo</span>
+                <ArrowRight className="w-4 h-4" />
+              </button>
+            </div>
           </div>
         </form>
       </div>

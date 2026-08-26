@@ -20,7 +20,7 @@ export async function GET(request: NextRequest) {
       .eq("canal", "Mesa_Bilingue")
       .eq("prospecto_id", `p-${sala}`)
       .order("created_at", { ascending: true })
-      .limit(250);
+      .limit(300);
 
     const messages: any[] = [];
     let roomConfig: any = null;
@@ -161,7 +161,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: true });
     }
 
-    // 4. Configurar Sala
+    // 4. Configurar / Guardar Sala
     if (action === "configure_room" && roomConfig) {
       await supabase
         .from("ventas_interacciones")
@@ -170,19 +170,54 @@ export async function POST(request: NextRequest) {
         .eq("prospecto_id", `p-${sala}`)
         .eq("tipo_entrada", "config_sala");
 
-      await supabase.from("ventas_interacciones").insert({
+      const { error: insErr } = await supabase.from("ventas_interacciones").insert({
         id: `config_${sala}_${Date.now()}`,
         prospecto_id: `p-${sala}`,
         canal: "Mesa_Bilingue",
         tipo_entrada: "config_sala",
-        resumen_es: JSON.stringify(roomConfig),
+        resumen_es: JSON.stringify({ ...roomConfig, slug: sala }),
         mensaje_final_enviado: `Configuración sala: ${roomConfig.empresa}`,
         created_at: new Date().toISOString()
       });
-      return NextResponse.json({ success: true });
+
+      if (insErr) throw insErr;
+      return NextResponse.json({ success: true, roomConfig, sala });
     }
 
-    // 5. Guardar Acta
+    // 5. Listar Salas Configuradas
+    if (action === "list_configured_rooms") {
+      const { data: configs } = await supabase
+        .from("ventas_interacciones")
+        .select("*")
+        .eq("canal", "Mesa_Bilingue")
+        .eq("tipo_entrada", "config_sala")
+        .order("created_at", { ascending: false });
+
+      const rooms = (configs || []).map(row => {
+        try {
+          const parsed = JSON.parse(row.resumen_es);
+          return {
+            slug: parsed.slug || row.prospecto_id.replace(/^p-/, ''),
+            empresa: parsed.empresa,
+            titulo: parsed.titulo,
+            participantes1: parsed.participantes1 || ["Mario Mojica"],
+            participantes2: parsed.participantes2 || ["Interlocutor"],
+            idioma1: parsed.idioma1 || "es",
+            idioma2: parsed.idioma2 || "pt",
+            estado: "preparada",
+            volumen: "Personalizado",
+            ahorro: "Calibración en Vivo",
+            createdAt: row.created_at
+          };
+        } catch (e) {
+          return null;
+        }
+      }).filter(Boolean);
+
+      return NextResponse.json({ rooms });
+    }
+
+    // 6. Guardar Acta
     if (action === "save_session") {
       const now = new Date();
       const dateStr = now.toISOString().split("T")[0];
@@ -216,7 +251,7 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    // 6. Listar Sesiones Guardadas
+    // 7. Listar Sesiones Guardadas
     if (action === "list_saved_sessions") {
       const { data: actas } = await supabase
         .from("ventas_interacciones")
@@ -228,7 +263,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ actas: actas || [] });
     }
 
-    // 7. Borrar Acta Específica
+    // 8. Borrar Acta Específica
     if (action === "delete_saved_session" && id) {
       const { error: delErr } = await supabase
         .from("ventas_interacciones")
@@ -239,8 +274,8 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: true, deletedId: id });
     }
 
-    // 8. Borrar Todos los Datos / Mensajes de una Sala
-    if (action === "clear_room_data") {
+    // 9. Borrar Todos los Datos / Mensajes / Configuración de una Sala
+    if (action === "delete_room_data") {
       const { error: clearErr } = await supabase
         .from("ventas_interacciones")
         .delete()
