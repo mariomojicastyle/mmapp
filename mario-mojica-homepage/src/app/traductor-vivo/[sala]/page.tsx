@@ -78,7 +78,9 @@ export default function SalaBilingueMasterPage() {
     isListening,
     interimText,
     messages,
-    toggleListening
+    isTranslating,
+    toggleListening,
+    submitCurrentDictation
   } = useLiveTranslator({
     sala,
     role: myVoiceLang === "es" ? "mario" : "cliente",
@@ -88,7 +90,7 @@ export default function SalaBilingueMasterPage() {
 
   const isPt = uiLang === "pt";
 
-  // Polling colaborativo en tiempo real a Supabase
+  // Polling a Supabase
   useEffect(() => {
     const interval = setInterval(async () => {
       try {
@@ -414,18 +416,18 @@ export default function SalaBilingueMasterPage() {
             </button>
           </div>
 
-          {/* Botón Principal de Micrófono */}
+          {/* Botón Principal de Micrófono con Toggle Fiable */}
           <button
             onClick={toggleListening}
-            className={`px-2 sm:px-3 py-1 rounded-xl font-bold text-[10px] sm:text-xs flex items-center gap-1 transition shadow-sm ${
+            className={`px-2.5 sm:px-3.5 py-1 rounded-xl font-extrabold text-[10px] sm:text-xs flex items-center gap-1.5 transition shadow-sm ${
               isListening
                 ? "bg-red-500 hover:bg-red-600 text-white animate-pulse"
                 : "bg-cyan-600 hover:bg-cyan-700 text-white"
             }`}
-            title={isListening ? "Pausar micrófono" : "Toca para hablar"}
+            title={isListening ? "Toca para detener y enviar" : "Toca para hablar"}
           >
-            {isListening ? <MicOff className="w-3 h-3" /> : <Mic className="w-3 h-3" />}
-            <span>{isListening ? (isPt ? "Ouvindo..." : "Grabando...") : (isPt ? "Falar" : "Hablar")}</span>
+            {isListening ? <MicOff className="w-3.5 h-3.5" /> : <Mic className="w-3.5 h-3.5" />}
+            <span>{isListening ? (isPt ? "Parar / Enviar" : "Parar / Enviar") : (isPt ? "Falar" : "Hablar")}</span>
           </button>
 
           {/* Botón Ver Actas */}
@@ -515,12 +517,14 @@ export default function SalaBilingueMasterPage() {
           <SplitBilingualFeed
             messages={messages}
             interimText={interimText}
+            isTranslating={isTranslating}
             clienteNombre={clienteNombre}
             participanteCliente={participantes2.join(", ")}
             participanteMario={participantes1.join(", ")}
             uiLang={uiLang}
             onDownloadBoth={handleDownloadBothForMario}
             onDownloadPtPdf={handleDownloadPdfForCliente}
+            onSubmitDictation={submitCurrentDictation}
           />
         </div>
 
@@ -587,9 +591,9 @@ export default function SalaBilingueMasterPage() {
             </span>
           </div>
 
-          {/* CONTENIDO SEGÚN LA PESTAÑA CON SCROLL INTERNO */}
+          {/* CONTENIDO SEGÚN LA PESTAÑA */}
           <div className="flex-1 overflow-y-auto p-1.5 sm:p-2.5 min-h-0">
-            {/* 1. COTIZADOR DE COSTOS COLABORATIVO */}
+            {/* 1. COTIZADOR DE COSTOS ESTABLE */}
             {(activeRightTab === "cotizador" || mobileActiveView === "cotizador") && (
               <div className={`h-full ${mobileActiveView === "cotizador" ? "block" : "hidden lg:block"}`}>
                 <HennOperationCostEngine
@@ -690,16 +694,6 @@ export default function SalaBilingueMasterPage() {
                     <span className="font-bold text-emerald-800 block text-[10px]">Participantes (Português):</span>
                     <span className="font-semibold text-xs text-slate-800">{participantes2.join(", ")}</span>
                   </div>
-                </div>
-
-                <div className="bg-cyan-50 border border-cyan-200 rounded-xl p-2.5 text-slate-700 text-[11px] sm:text-xs">
-                  <p className="font-bold text-cyan-900 mb-1">💡 Enlaces de Acceso:</p>
-                  <p className="mb-0.5">
-                    • <strong>Local (PC):</strong> <code className="bg-white px-1 py-0.2 rounded text-cyan-800 font-mono font-bold">http://localhost:3003/traductor-vivo/{sala}</code>
-                  </p>
-                  <p>
-                    • <strong>Web Oficial:</strong> <code className="bg-white px-1 py-0.2 rounded text-cyan-800 font-mono font-bold">https://mariomojica.com/traductor-vivo/{sala}</code>
-                  </p>
                 </div>
               </div>
             )}

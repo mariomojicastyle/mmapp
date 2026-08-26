@@ -8,13 +8,13 @@ import {
   TrendingDown,
   RotateCcw,
   Sparkles,
-  ShieldCheck,
-  CheckCircle2,
-  Clock,
   Layers,
   CircleDollarSign,
   Laptop,
-  Headphones
+  Headphones,
+  Send,
+  CheckCircle2,
+  AlertCircle
 } from "lucide-react";
 
 export interface CostParameters {
@@ -47,9 +47,9 @@ export function HennOperationCostEngine({
   const [personasPed, setPersonasPed] = useState<number>(initialParams?.personasPed ?? 2.0);
   const [salarioCltMes, setSalarioCltMes] = useState<number>(initialParams?.salarioCltMes ?? 6000);
 
-  // Strings para permitir escritura fluida sin bloqueo de decimales/comas
-  const [personasPedStr, setPersonasPedStr] = useState<string>(String(initialParams?.personasPed ?? 2.0));
+  // Strings para edición fluida
   const [manualesAnoStr, setManualesAnoStr] = useState<string>(String(initialParams?.manualesAno ?? 200));
+  const [personasPedStr, setPersonasPedStr] = useState<string>(String(initialParams?.personasPed ?? 2.0));
   const [salarioCltMesStr, setSalarioCltMesStr] = useState<string>(String(initialParams?.salarioCltMes ?? 6000));
 
   // Licencias
@@ -60,19 +60,19 @@ export function HennOperationCostEngine({
   // Ahorro
   const [ahorroPct, setAhorroPct] = useState<number>(initialParams?.ahorroPct ?? 30);
 
-  // SAC / Soporte Postventa
+  // SAC / Soporte
   const [horasSacMes, setHorasSacMes] = useState<number>(initialParams?.horasSacMes ?? 20);
 
-  // Complejidades
-  const [horasPequeno, setHorasPequeno] = useState<number>(initialParams?.horasPequeno ?? 8);
-  const [horasMediano, setHorasMediano] = useState<number>(initialParams?.horasMediano ?? 12);
-  const [horasGrande, setHorasGrande] = useState<number>(initialParams?.horasGrande ?? 16);
+  // Estado de sincronización local vs servidor
+  const [hasPendingChanges, setHasPendingChanges] = useState<boolean>(false);
+  const [syncStatusMsg, setSyncStatusMsg] = useState<string | null>(null);
 
   const isPt = uiLang === "pt";
 
-  // Sincronizar si cambian las props iniciales desde Supabase (solo si no está enfocado)
+  // Cargar parámetros iniciales SOLO la primera vez para no interrumpir la edición activa
+  const isInitializedRef = React.useRef(false);
   useEffect(() => {
-    if (initialParams) {
+    if (!isInitializedRef.current && initialParams) {
       if (initialParams.manualesAno !== undefined) {
         setManualesAno(initialParams.manualesAno);
         setManualesAnoStr(String(initialParams.manualesAno));
@@ -90,28 +90,9 @@ export function HennOperationCostEngine({
       if (initialParams.licenciaOtrosAno !== undefined) setLicenciaOtrosAno(initialParams.licenciaOtrosAno);
       if (initialParams.ahorroPct !== undefined) setAhorroPct(initialParams.ahorroPct);
       if (initialParams.horasSacMes !== undefined) setHorasSacMes(initialParams.horasSacMes);
-      if (initialParams.horasPequeno !== undefined) setHorasPequeno(initialParams.horasPequeno);
-      if (initialParams.horasMediano !== undefined) setHorasMediano(initialParams.horasMediano);
-      if (initialParams.horasGrande !== undefined) setHorasGrande(initialParams.horasGrande);
+      isInitializedRef.current = true;
     }
   }, [initialParams]);
-
-  const notifyChange = (updated: Partial<CostParameters>) => {
-    const current: CostParameters = {
-      manualesAno: updated.manualesAno ?? manualesAno,
-      personasPed: updated.personasPed ?? personasPed,
-      salarioCltMes: updated.salarioCltMes ?? salarioCltMes,
-      licenciaSketchUpAno: updated.licenciaSketchUpAno ?? licenciaSketchUpAno,
-      licenciaAdobeAno: updated.licenciaAdobeAno ?? licenciaAdobeAno,
-      licenciaOtrosAno: updated.licenciaOtrosAno ?? licenciaOtrosAno,
-      ahorroPct: updated.ahorroPct ?? ahorroPct,
-      horasPequeno: updated.horasPequeno ?? horasPequeno,
-      horasMediano: updated.horasMediano ?? horasMediano,
-      horasGrande: updated.horasGrande ?? horasGrande,
-      horasSacMes: updated.horasSacMes ?? horasSacMes
-    };
-    onParamChange?.(current);
-  };
 
   // --- CÁLCULOS MATEMÁTICOS DE LA OPERACIÓN ANUAL ---
   const totalSalariosAno = personasPed * salarioCltMes * 12;
@@ -167,6 +148,27 @@ export function HennOperationCostEngine({
     onSummaryChange
   ]);
 
+  // Botón explícito para sincronizar con la sala
+  const handleSyncToRoom = () => {
+    const current: CostParameters = {
+      manualesAno,
+      personasPed,
+      salarioCltMes,
+      licenciaSketchUpAno,
+      licenciaAdobeAno,
+      licenciaOtrosAno,
+      ahorroPct,
+      horasPequeno: 8,
+      horasMediano: 12,
+      horasGrande: 16,
+      horasSacMes
+    };
+    onParamChange?.(current);
+    setHasPendingChanges(false);
+    setSyncStatusMsg(isPt ? "Sincronizado com a sala!" : "¡Sincronizado con la sala!");
+    setTimeout(() => setSyncStatusMsg(null), 3000);
+  };
+
   const resetDefault = () => {
     setManualesAno(200);
     setManualesAnoStr("200");
@@ -179,23 +181,7 @@ export function HennOperationCostEngine({
     setLicenciaOtrosAno(0);
     setAhorroPct(30);
     setHorasSacMes(20);
-    setHorasPequeno(8);
-    setHorasMediano(12);
-    setHorasGrande(16);
-
-    notifyChange({
-      manualesAno: 200,
-      personasPed: 2.0,
-      salarioCltMes: 6000,
-      licenciaSketchUpAno: 2400,
-      licenciaAdobeAno: 3600,
-      licenciaOtrosAno: 0,
-      ahorroPct: 30,
-      horasSacMes: 20,
-      horasPequeno: 8,
-      horasMediano: 12,
-      horasGrande: 16
-    });
+    setHasPendingChanges(true);
   };
 
   const handleInputFocus = (e: React.FocusEvent<HTMLInputElement>) => {
@@ -205,34 +191,71 @@ export function HennOperationCostEngine({
   return (
     <div className="flex flex-col gap-3 font-sans text-xs pb-24 select-text">
       {/* Cabecera del Cotizador */}
-      <div className="flex items-center justify-between border-b border-slate-200 pb-2 bg-slate-50 p-2.5 rounded-xl border">
-        <div className="flex items-center gap-2">
-          <div className="p-1.5 bg-cyan-100 text-cyan-800 rounded-lg">
+      <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-200 pb-2 bg-slate-50 p-2.5 rounded-xl border">
+        <div className="flex items-center gap-2 min-w-0">
+          <div className="p-1.5 bg-cyan-100 text-cyan-800 rounded-lg shrink-0">
             <Calculator className="w-4 h-4" />
           </div>
-          <div>
-            <h2 className="font-extrabold text-xs sm:text-sm text-slate-900 leading-tight">
+          <div className="min-w-0">
+            <h2 className="font-extrabold text-xs sm:text-sm text-slate-900 leading-tight truncate">
               {isPt
                 ? "Cotizador da Operação Anual de P&D | Móveis Henn"
                 : "Cotizador de la Operación Anual de P&D | Móveis Henn"}
             </h2>
             <p className="text-[10px] sm:text-[11px] text-slate-500">
               {isPt
-                ? "Edição colaborativa em tempo real com Marcos Unnass."
-                : "Edición colaborativa en tiempo real con Marcos Unnass."}
+                ? "Edite os parâmetros e clique em Sincronizar para atualizar a sala."
+                : "Edita los parámetros y haz clic en Sincronizar para actualizar la sala."}
             </p>
           </div>
         </div>
 
-        <button
-          onClick={resetDefault}
-          className="text-[10px] text-slate-500 hover:text-slate-800 flex items-center gap-1 px-2 py-1 rounded border border-slate-200 hover:bg-slate-50 transition shrink-0"
-          title={isPt ? "Restaurar valores de referência" : "Restablecer valores de referencia"}
-        >
-          <RotateCcw className="w-3 h-3" />
-          <span className="hidden xs:inline">{isPt ? "Restaurar" : "Restablecer"}</span>
-        </button>
+        <div className="flex items-center gap-1.5 shrink-0">
+          <button
+            onClick={resetDefault}
+            className="text-[10px] text-slate-500 hover:text-slate-800 flex items-center gap-1 px-2 py-1 rounded border border-slate-200 hover:bg-slate-50 transition"
+            title={isPt ? "Restaurar valores de referência" : "Restablecer valores de referencia"}
+          >
+            <RotateCcw className="w-3 h-3" />
+            <span className="hidden xs:inline">{isPt ? "Restaurar" : "Restablecer"}</span>
+          </button>
+
+          {/* Botón Principal de Sincronización */}
+          <button
+            onClick={handleSyncToRoom}
+            className={`px-3 py-1.5 rounded-xl font-extrabold text-xs flex items-center gap-1.5 transition shadow-sm ${
+              hasPendingChanges
+                ? "bg-cyan-700 hover:bg-cyan-800 text-white animate-pulse"
+                : "bg-slate-800 hover:bg-slate-900 text-white"
+            }`}
+          >
+            <Send className="w-3.5 h-3.5" />
+            <span>{isPt ? "Sincronizar Sala" : "Sincronizar Sala"}</span>
+          </button>
+        </div>
       </div>
+
+      {syncStatusMsg && (
+        <div className="bg-emerald-50 border border-emerald-200 text-emerald-800 text-[11px] font-bold px-3 py-1 rounded-lg flex items-center gap-1.5 shadow-sm">
+          <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+          <span>{syncStatusMsg}</span>
+        </div>
+      )}
+
+      {hasPendingChanges && !syncStatusMsg && (
+        <div className="bg-amber-50 border border-amber-200 text-amber-900 text-[10px] sm:text-[11px] font-semibold px-2.5 py-1 rounded-lg flex items-center justify-between gap-2 shadow-sm">
+          <span className="flex items-center gap-1">
+            <AlertCircle className="w-3.5 h-3.5 text-amber-600 shrink-0" />
+            <span>{isPt ? "Você tem alterações locais não sincronizadas." : "Tienes cambios locales no sincronizados con la otra pantalla."}</span>
+          </span>
+          <button
+            onClick={handleSyncToRoom}
+            className="text-[10px] bg-amber-600 hover:bg-amber-700 text-white px-2 py-0.5 rounded font-bold transition shrink-0"
+          >
+            {isPt ? "Aplicar Agora" : "Aplicar Ahora"}
+          </button>
+        </div>
+      )}
 
       {/* KPI CARDS: Cifras Consolidadas */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 bg-slate-50 p-2 sm:p-2.5 rounded-xl border border-slate-200 shrink-0">
@@ -292,8 +315,8 @@ export function HennOperationCostEngine({
         <h3 className="font-extrabold text-xs text-slate-900 flex items-center gap-1.5 border-b border-slate-100 pb-1.5">
           <Layers className="w-3.5 h-3.5 text-cyan-600" />
           {isPt
-            ? "1. Parâmetros da Operação Anual da Henn (Sincronizado ao Vivo)"
-            : "1. Parámetros de la Operación Anual de Henn (Sincronizado en Vivo)"}
+            ? "1. Parâmetros da Operação Anual da Henn"
+            : "1. Parámetros de la Operación Anual de Henn"}
         </h3>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
@@ -314,17 +337,11 @@ export function HennOperationCostEngine({
               onChange={e => {
                 const text = e.target.value;
                 setManualesAnoStr(text);
+                setHasPendingChanges(true);
                 const num = parseFloat(text.replace(',', '.'));
                 if (!isNaN(num) && num > 0) {
                   setManualesAno(num);
-                  notifyChange({ manualesAno: num });
                 }
-              }}
-              onBlur={() => {
-                const num = parseFloat(manualesAnoStr.replace(',', '.')) || 200;
-                setManualesAno(num);
-                setManualesAnoStr(String(num));
-                notifyChange({ manualesAno: num });
               }}
               className="w-full font-extrabold text-sm sm:text-base text-slate-900 bg-white border border-slate-300 rounded px-2 py-1 outline-none focus:border-cyan-500 text-center"
             />
@@ -347,17 +364,11 @@ export function HennOperationCostEngine({
               onChange={e => {
                 const text = e.target.value;
                 setPersonasPedStr(text);
+                setHasPendingChanges(true);
                 const num = parseFloat(text.replace(',', '.'));
                 if (!isNaN(num) && num > 0) {
                   setPersonasPed(num);
-                  notifyChange({ personasPed: num });
                 }
-              }}
-              onBlur={() => {
-                const num = parseFloat(personasPedStr.replace(',', '.')) || 2.0;
-                setPersonasPed(num);
-                setPersonasPedStr(String(num));
-                notifyChange({ personasPed: num });
               }}
               className="w-full font-extrabold text-sm sm:text-base text-slate-900 bg-white border border-slate-300 rounded px-2 py-1 outline-none focus:border-cyan-500 text-center"
             />
@@ -380,17 +391,11 @@ export function HennOperationCostEngine({
               onChange={e => {
                 const text = e.target.value;
                 setSalarioCltMesStr(text);
+                setHasPendingChanges(true);
                 const num = parseFloat(text.replace(',', '.'));
                 if (!isNaN(num) && num > 0) {
                   setSalarioCltMes(num);
-                  notifyChange({ salarioCltMes: num });
                 }
-              }}
-              onBlur={() => {
-                const num = parseFloat(salarioCltMesStr.replace(',', '.')) || 6000;
-                setSalarioCltMes(num);
-                setSalarioCltMesStr(String(num));
-                notifyChange({ salarioCltMes: num });
               }}
               className="w-full font-extrabold text-sm sm:text-base text-slate-900 bg-white border border-slate-300 rounded px-2 py-1 outline-none focus:border-cyan-500 text-center"
             />
@@ -431,9 +436,8 @@ export function HennOperationCostEngine({
                   value={licenciaSketchUpAno}
                   onFocus={handleInputFocus}
                   onChange={e => {
-                    const val = Number(e.target.value);
-                    setLicenciaSketchUpAno(val);
-                    notifyChange({ licenciaSketchUpAno: val });
+                    setLicenciaSketchUpAno(Number(e.target.value));
+                    setHasPendingChanges(true);
                   }}
                   className="w-full text-xs font-bold text-slate-800 outline-none"
                 />
@@ -451,9 +455,8 @@ export function HennOperationCostEngine({
                   value={licenciaAdobeAno}
                   onFocus={handleInputFocus}
                   onChange={e => {
-                    const val = Number(e.target.value);
-                    setLicenciaAdobeAno(val);
-                    notifyChange({ licenciaAdobeAno: val });
+                    setLicenciaAdobeAno(Number(e.target.value));
+                    setHasPendingChanges(true);
                   }}
                   className="w-full text-xs font-bold text-slate-800 outline-none"
                 />
@@ -471,9 +474,8 @@ export function HennOperationCostEngine({
                   value={licenciaOtrosAno}
                   onFocus={handleInputFocus}
                   onChange={e => {
-                    const val = Number(e.target.value);
-                    setLicenciaOtrosAno(val);
-                    notifyChange({ licenciaOtrosAno: val });
+                    setLicenciaOtrosAno(Number(e.target.value));
+                    setHasPendingChanges(true);
                   }}
                   className="w-full text-xs font-bold text-slate-800 outline-none"
                 />
@@ -503,9 +505,8 @@ export function HennOperationCostEngine({
               value={horasSacMes}
               onFocus={handleInputFocus}
               onChange={e => {
-                const val = Number(e.target.value);
-                setHorasSacMes(val);
-                notifyChange({ horasSacMes: val });
+                setHorasSacMes(Number(e.target.value));
+                setHasPendingChanges(true);
               }}
               className="w-16 bg-white border border-slate-300 rounded px-2 py-0.5 text-xs font-bold text-center outline-none focus:border-cyan-500"
             />
@@ -541,9 +542,8 @@ export function HennOperationCostEngine({
             step={1}
             value={ahorroPct}
             onChange={e => {
-              const val = Number(e.target.value);
-              setAhorroPct(val);
-              notifyChange({ ahorroPct: val });
+              setAhorroPct(Number(e.target.value));
+              setHasPendingChanges(true);
             }}
             className="w-full accent-cyan-600 cursor-pointer"
           />

@@ -1,27 +1,31 @@
 "use client";
 
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef } from "react";
 import { ChatMessage } from "@/hooks/useLiveTranslator";
-import { Download } from "lucide-react";
+import { Download, Mic, ArrowRight, Loader2 } from "lucide-react";
 
 export function SplitBilingualFeed({
   messages,
   interimText,
+  isTranslating = false,
   clienteNombre = "Móveis Henn",
   participanteCliente = "Marcos Unnass",
   participanteMario = "Mario Mojica",
   uiLang = "es",
   onDownloadBoth,
-  onDownloadPtPdf
+  onDownloadPtPdf,
+  onSubmitDictation
 }: {
   messages: ChatMessage[];
   interimText: string;
+  isTranslating?: boolean;
   clienteNombre?: string;
   participanteCliente?: string;
   participanteMario?: string;
   uiLang?: "es" | "pt";
   onDownloadBoth?: () => void;
   onDownloadPtPdf?: () => void;
+  onSubmitDictation?: () => void;
 }) {
   const bottomRefPt = useRef<HTMLDivElement>(null);
   const bottomRefEs = useRef<HTMLDivElement>(null);
@@ -35,7 +39,7 @@ export function SplitBilingualFeed({
 
   return (
     <div className="bg-white border border-slate-200 rounded-xl sm:rounded-2xl shadow-sm flex flex-col h-full overflow-hidden select-text">
-      {/* Encabezados de las Dos Franjas (50% / 50% limpio en móvil y desktop) */}
+      {/* Encabezados de las Dos Franjas (50% / 50%) */}
       <div className="grid grid-cols-2 border-b border-slate-200 bg-slate-50 text-slate-800 text-[11px] sm:text-xs font-bold divide-x divide-slate-200 select-none shrink-0">
         <div className="px-2.5 sm:px-4 py-2 sm:py-2.5 flex items-center justify-between min-w-0">
           <span className="flex items-center gap-1.5 sm:gap-2 truncate">
@@ -53,16 +57,16 @@ export function SplitBilingualFeed({
         </div>
       </div>
 
-      {/* Cajas de Texto Fluido Continuo (2 Columnas en Paralelo) */}
+      {/* Cajas de Diálogo Paralelo */}
       <div className="grid grid-cols-2 divide-x divide-slate-200 flex-1 overflow-hidden select-text cursor-text min-h-0">
         {/* COLUMNA 1: PORTUGUÊS */}
         <div className="flex flex-col justify-between bg-white h-full overflow-hidden select-text">
           <div className="flex-1 overflow-y-auto p-2.5 sm:p-4 space-y-2 sm:space-y-2.5 font-sans text-xs sm:text-sm text-slate-800 leading-relaxed select-text">
-            {messages.length === 0 && !interimText && (
+            {messages.length === 0 && (
               <div className="h-full flex flex-col items-center justify-center text-center text-slate-400 py-12 px-2 sm:px-4 select-none">
                 <p className="font-semibold text-[11px] sm:text-xs text-slate-600">Transcrição em Português</p>
                 <p className="text-[10px] sm:text-[11px] text-slate-400 mt-1 max-w-[200px]">
-                  O diálogo fluirá aqui continuamente. Você pode selecionar qualquer texto para copiar.
+                  O diálogo fluirá aqui continuamente após a fala ser traduzida.
                 </p>
               </div>
             )}
@@ -87,11 +91,6 @@ export function SplitBilingualFeed({
               );
             })}
 
-            {interimText && (
-              <div className="text-[11px] sm:text-xs text-cyan-800 italic bg-cyan-50/70 p-1.5 sm:p-2 rounded border-l-2 border-cyan-500 animate-pulse select-none">
-                Escutando: "{interimText}"
-              </div>
-            )}
             <div ref={bottomRefPt} />
           </div>
 
@@ -100,7 +99,6 @@ export function SplitBilingualFeed({
             <button
               onClick={onDownloadPtPdf}
               className="w-full bg-slate-800 hover:bg-slate-900 text-white font-bold text-[10px] sm:text-xs py-1.5 sm:py-2 px-2 sm:px-3 rounded-lg sm:rounded-xl flex items-center justify-center gap-1 sm:gap-1.5 transition shadow-sm"
-              title="Baixar as notas e matriz de custos em PDF para o cliente"
             >
               <Download className="w-3 sm:w-3.5 h-3 sm:h-3.5 text-cyan-400 shrink-0" />
               <span className="truncate">Baixar Notas da Reunião (PT .pdf)</span>
@@ -111,11 +109,11 @@ export function SplitBilingualFeed({
         {/* COLUMNA 2: ESPAÑOL */}
         <div className="flex flex-col justify-between bg-slate-50/30 h-full overflow-hidden select-text">
           <div className="flex-1 overflow-y-auto p-2.5 sm:p-4 space-y-2 sm:space-y-2.5 font-sans text-xs sm:text-sm text-slate-800 leading-relaxed select-text">
-            {messages.length === 0 && !interimText && (
+            {messages.length === 0 && (
               <div className="h-full flex flex-col items-center justify-center text-center text-slate-400 py-12 px-2 sm:px-4 select-none">
                 <p className="font-semibold text-[11px] sm:text-xs text-slate-600">Transcripción en Español</p>
                 <p className="text-[10px] sm:text-[11px] text-slate-400 mt-1 max-w-[200px]">
-                  El diálogo traducido y tus respuestas aparecerán aquí. Puedes seleccionar cualquier texto para copiar.
+                  El diálogo traducido y tus respuestas aparecerán aquí.
                 </p>
               </div>
             )}
@@ -140,27 +138,52 @@ export function SplitBilingualFeed({
               );
             })}
 
-            {interimText && (
-              <div className="text-[11px] sm:text-xs text-cyan-800 italic bg-cyan-50/70 p-1.5 sm:p-2 rounded border-l-2 border-cyan-500 animate-pulse select-none">
-                Escuchando: "{interimText}"
-              </div>
-            )}
             <div ref={bottomRefEs} />
           </div>
 
-          {/* Botón Descargar MD + PDF Mario */}
+          {/* Botón Descargar Notas ES Mario */}
           <div className="p-1.5 sm:p-2.5 bg-slate-50 border-t border-slate-200 select-none shrink-0">
             <button
               onClick={onDownloadBoth}
               className="w-full bg-cyan-700 hover:bg-cyan-800 text-white font-bold text-[10px] sm:text-xs py-1.5 sm:py-2 px-2 sm:px-3 rounded-lg sm:rounded-xl flex items-center justify-center gap-1 sm:gap-1.5 transition shadow-sm"
-              title="Descarga automáticamente ambos archivos: el .md para tu control y el .pdf con el logo de Mario Mojica"
             >
-              <Download className="w-3 sm:w-3.5 h-3 sm:h-3.5 text-cyan-200 shrink-0" />
+              <Download className="w-3 sm:w-3.5 h-3 sm:h-3.5 text-white shrink-0" />
               <span className="truncate">Descargar Notas (ES .md + .pdf)</span>
             </button>
           </div>
         </div>
       </div>
+
+      {/* BANNER DE DICTADO ACTIVO (Estilo WhatsApp) */}
+      {(interimText || isTranslating) && (
+        <div className="bg-cyan-900 text-white p-2.5 sm:p-3 border-t border-cyan-800 flex items-center justify-between gap-2 shadow-lg shrink-0 animate-in fade-in slide-in-from-bottom-2 duration-200">
+          <div className="flex items-center gap-2 min-w-0">
+            {isTranslating ? (
+              <Loader2 className="w-4 h-4 text-cyan-300 animate-spin shrink-0" />
+            ) : (
+              <Mic className="w-4 h-4 text-red-400 animate-pulse shrink-0" />
+            )}
+            <div className="min-w-0">
+              <span className="text-[10px] text-cyan-300 font-bold block uppercase tracking-wider">
+                {isTranslating ? "Traduciendo y enviando a la sala..." : "Dictando nota en vivo:"}
+              </span>
+              <p className="text-xs sm:text-sm font-medium text-white truncate max-w-xl">
+                "{interimText || "..."}"
+              </p>
+            </div>
+          </div>
+
+          {!isTranslating && (
+            <button
+              onClick={onSubmitDictation}
+              className="bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-extrabold text-xs px-3 py-1.5 rounded-lg flex items-center gap-1 shrink-0 transition shadow"
+            >
+              <span>Enviar</span>
+              <ArrowRight className="w-3.5 h-3.5" />
+            </button>
+          )}
+        </div>
+      )}
     </div>
   );
 }

@@ -13,35 +13,6 @@ export interface ChatMessage {
   timestamp: number;
 }
 
-// Filtro inteligente para colapsar repeticiones accidentales del motor de voz móvil
-function cleanRepeatedPhrases(text: string): string {
-  if (!text) return "";
-  const words = text.trim().split(/\s+/);
-  if (words.length < 2) return text.trim();
-
-  // 1. Eliminar repetición inmediata de palabras idénticas
-  const step1: string[] = [];
-  for (let i = 0; i < words.length; i++) {
-    if (i === 0 || words[i].toLowerCase() !== words[i - 1].toLowerCase()) {
-      step1.push(words[i]);
-    }
-  }
-
-  // 2. Colapsar bloques de frases repetidas
-  let cleaned = [...step1];
-  for (let blockSize = Math.floor(cleaned.length / 2); blockSize >= 2; blockSize--) {
-    for (let i = 0; i <= cleaned.length - 2 * blockSize; i++) {
-      const b1 = cleaned.slice(i, i + blockSize).join(" ");
-      const b2 = cleaned.slice(i + blockSize, i + 2 * blockSize).join(" ");
-      if (b1.toLowerCase() === b2.toLowerCase()) {
-        cleaned.splice(i + blockSize, blockSize);
-        i--;
-      }
-    }
-  }
-  return cleaned.join(" ");
-}
-
 export function useLiveTranslator({
   sala = "henn",
   role = "mario",
@@ -59,18 +30,20 @@ export function useLiveTranslator({
   const [isTTSEnabled, setIsTTSEnabled] = useState(true);
   const [ttsVolume, setTtsVolume] = useState(0.9);
   const [isConnected, setIsConnected] = useState(true);
+  const [isTranslating, setIsTranslating] = useState(false);
 
   const recognitionRef = useRef<any>(null);
   const isListeningRef = useRef<boolean>(false);
+  const manualStopRef = useRef<boolean>(false);
+
   const myLangRef = useRef<string>(myLang);
   const targetLangRef = useRef<string>(targetLang);
   const roleRef = useRef<string>(role);
   const salaRef = useRef<string>(sala);
 
-  const currentSpeechDraftRef = useRef<string>("");
-  const lastSentSentenceRef = useRef<string>("");
-  const isSendingRef = useRef<boolean>(false);
+  const currentDictationTextRef = useRef<string>("");
   const silenceTimerRef = useRef<any>(null);
+  const isTranslatingRef = useRef<boolean>(false);
 
   useEffect(() => {
     myLangRef.current = myLang;
@@ -100,16 +73,16 @@ export function useLiveTranslator({
     }
   }, [isTTSEnabled, ttsVolume]);
 
-  // Fijar y transmitir la frase completa única a Supabase
-  const commitAndSend = async (rawText: string) => {
-    const cleaned = cleanRepeatedPhrases(rawText);
-    if (!cleaned || cleaned.length < 2 || cleaned === lastSentSentenceRef.current || isSendingRef.current) {
+  // Traducir el bloque completo de dictado y enviarlo a Supabase
+  const translateAndCommitBlock = async (rawBlockText: string) => {
+    const textToTranslate = rawBlockText.trim();
+    if (!textToTranslate || textToTranslate.length < 2 || isTranslatingRef.current) {
       return;
     }
 
-    isSendingRef.current = true;
-    lastSentSentenceRef.current = cleaned;
-    currentSpeechDraftRef.current = "";
+    isTranslatingRef.current = true;
+    setIsTranslating(true);
+    currentDictationTextRef.current = "";
     setInterimText("");
 
     const currentRole = roleRef.current;
@@ -118,38 +91,35 @@ export function useLiveTranslator({
     const currentSala = salaRef.current;
 
     try {
-      // 1. Traducir frase con API ultra rápida
+      // 1. Traducir el bloque completo
       const resTrans = await fetch("/api/copiloto/traducir", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          text: cleaned,
+          text: textToTranslate,
           fromLang: currentMyLang,
           toLang: currentTargetLang
         })
       });
 
       const transData = await resTrans.json();
-      const translated = cleanRepeatedPhrases(transData.translation || cleaned);
+      const translated = transData.translation || textToTranslate;
 
       const newMsg: ChatMessage = {
         id: `msg_${currentSala}_${Date.now()}_${Math.random().toString(36).substr(2, 4)}`,
         speaker: currentRole as any,
         speakerName: currentRole === "mario" ? "Mario Mojica" : "Marcos Unnass",
-        originalText: cleaned,
+        originalText: textToTranslate,
         translatedText: translated,
         fromLang: currentMyLang,
         toLang: currentTargetLang,
         timestamp: Date.now()
       };
 
-      // 2. Fijar inmediatamente en la UI local
-      setMessages(prev => {
-        const exists = prev.some(m => m.id === newMsg.id || (m.originalText === cleaned && Math.abs(m.timestamp - newMsg.timestamp) < 4000));
-        return exists ? prev : [...prev, newMsg];
-      });
+      // 2. Insertar inmediatamente en la vista local
+      setMessages(prev => [...prev, newMsg]);
 
-      // 3. Persistir en Supabase Cloud para que aparezca en el otro dispositivo en < 500ms
+      // 3. Persistir en Supabase Cloud
       await fetch("/api/copiloto/sesion", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -161,9 +131,10 @@ export function useLiveTranslator({
       });
 
     } catch (err) {
-      console.error("Error fijando frase:", err);
+      console.error("Error al traducir y enviar bloque:", err);
     } finally {
-      isSendingRef.current = false;
+      isTranslatingRef.current = false;
+      setIsTranslating(false);
     }
   };
 
@@ -187,53 +158,46 @@ export function useLiveTranslator({
     recognition.onstart = () => {
       setIsListening(true);
       isListeningRef.current = true;
+      manualStopRef.current = false;
     };
 
     recognition.onresult = (event: any) => {
-      // Reconstrucción limpia SIN concatenación acumulativa bucle
-      let sentenceAccumulator = "";
-      let hasFinal = false;
-
+      let fullTranscript = "";
       for (let i = 0; i < event.results.length; ++i) {
-        const chunk = event.results[i][0].transcript;
-        sentenceAccumulator += chunk;
-        if (event.results[i].isFinal) {
-          hasFinal = true;
-        }
+        fullTranscript += event.results[i][0].transcript + " ";
       }
 
-      const fullDraft = sentenceAccumulator.trim();
-      currentSpeechDraftRef.current = fullDraft;
-      setInterimText(fullDraft);
+      const text = fullTranscript.trim();
+      currentDictationTextRef.current = text;
+      setInterimText(text);
 
-      // Auto-Fijar: 800ms de pausa o flag isFinal fija la oración de inmediato
+      // Esperar 2.5 segundos de silencio natural tras terminar de hablar antes de traducir el bloque
       if (silenceTimerRef.current) clearTimeout(silenceTimerRef.current);
       silenceTimerRef.current = setTimeout(() => {
-        if (currentSpeechDraftRef.current) {
-          commitAndSend(currentSpeechDraftRef.current);
+        if (currentDictationTextRef.current && isListeningRef.current) {
+          // Detener dictado y traducir el bloque completo
+          toggleListening();
         }
-      }, hasFinal ? 400 : 800);
+      }, 2500);
     };
 
     recognition.onerror = (event: any) => {
+      console.warn("Speech error:", event.error);
       if (event.error === "not-allowed" || event.error === "service-not-allowed") {
         setIsListening(false);
         isListeningRef.current = false;
+        manualStopRef.current = true;
       }
     };
 
     recognition.onend = () => {
-      // Si quedan palabras sin fijar, fijarlas antes de cerrar
-      if (currentSpeechDraftRef.current) {
-        commitAndSend(currentSpeechDraftRef.current);
-      }
-
-      if (isListeningRef.current) {
+      if (isListeningRef.current && !manualStopRef.current) {
         try {
           recognition.start();
         } catch (e) {}
       } else {
         setIsListening(false);
+        isListeningRef.current = false;
       }
     };
 
@@ -241,9 +205,10 @@ export function useLiveTranslator({
 
     return () => {
       isListeningRef.current = false;
+      manualStopRef.current = true;
       if (silenceTimerRef.current) clearTimeout(silenceTimerRef.current);
       try {
-        recognition.stop();
+        recognition.abort();
       } catch (e) {}
     };
   }, [myLang]);
@@ -283,26 +248,31 @@ export function useLiveTranslator({
     return () => clearInterval(pollInterval);
   }, [sala, speakText]);
 
-  // Control manual del micrófono
+  // Encender / Apagar Micrófono con 1 Clic
   const toggleListening = () => {
     if (!recognitionRef.current) return;
 
     if (isListeningRef.current) {
-      // Apagar y fijar inmediatamente lo que haya
+      // 1. APAGAR INMEDIATAMENTE
+      manualStopRef.current = true;
       isListeningRef.current = false;
       setIsListening(false);
       if (silenceTimerRef.current) clearTimeout(silenceTimerRef.current);
-      if (currentSpeechDraftRef.current) {
-        commitAndSend(currentSpeechDraftRef.current);
-      }
+
       try {
-        recognitionRef.current.stop();
+        recognitionRef.current.abort();
       } catch (e) {}
+
+      // 2. Si había texto dictado, traducirlo y publicarlo
+      const textToCommit = currentDictationTextRef.current;
+      if (textToCommit) {
+        translateAndCommitBlock(textToCommit);
+      }
     } else {
-      // Encender micrófono
-      currentSpeechDraftRef.current = "";
-      lastSentSentenceRef.current = "";
+      // 1. ENCENDER
+      currentDictationTextRef.current = "";
       setInterimText("");
+      manualStopRef.current = false;
       isListeningRef.current = true;
       setIsListening(true);
       try {
@@ -313,21 +283,11 @@ export function useLiveTranslator({
     }
   };
 
-  // Función para limpiar la sala de pruebas anteriores
-  const clearRoomMessages = async () => {
-    setMessages([]);
-    setInterimText("");
-    currentSpeechDraftRef.current = "";
-    try {
-      await fetch("/api/copiloto/sesion", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          action: "clear_messages",
-          sala
-        })
-      });
-    } catch (e) {}
+  // Función para forzar envío del dictado
+  const submitCurrentDictation = () => {
+    if (currentDictationTextRef.current) {
+      toggleListening();
+    }
   };
 
   return {
@@ -339,7 +299,8 @@ export function useLiveTranslator({
     ttsVolume,
     setTtsVolume,
     isConnected,
+    isTranslating,
     toggleListening,
-    clearRoomMessages
+    submitCurrentDictation
   };
 }
