@@ -132,64 +132,70 @@ export async function POST(req: NextRequest) {
     }
 
     // =========================================================================
-    // 1. MOTOR BYTEPLUS SEEDREAM 5.0 (ByteDance ModelArk - 2K Ultra HD)
+    // 1. MOTOR FAL.AI NANO BANANA 2 EDIT (Google State-of-the-Art - Recomendado)
     // =========================================================================
-    if ((motor === "byteplus_seedream" || motor === "byteplus" || (!finalImageUrl && byteplusKey && motor !== "google_gemini_imagen3")) && byteplusKey) {
+    if (!finalImageUrl && (motor.startsWith("fal_nano_banana") || motor === "fal_nano_banana_2" || motor.startsWith("fal_") || (!finalImageUrl && falKey)) && falKey) {
+      if (!imageBase64 || typeof imageBase64 !== "string" || !imageBase64.startsWith("data:image")) {
+        return NextResponse.json(
+          { error: "Se requiere la captura 3D del mueble para ubicarlo en la escena." },
+          { status: 400 }
+        );
+      }
+
       try {
-        let sizeFormatted = "2K";
-        if (aspectRatio === "16:9") sizeFormatted = "2K";
-        else if (aspectRatio === "9:16") sizeFormatted = "2K";
-        else sizeFormatted = "2K";
+        let nanoEndpoint = "https://fal.run/fal-ai/nano-banana-2/edit";
+        if (motor === "fal_nano_banana_pro") {
+          nanoEndpoint = "https://fal.run/fal-ai/nano-banana-pro/edit";
+        } else if (motor === "fal_nano_banana") {
+          nanoEndpoint = "https://fal.run/fal-ai/nano-banana/edit";
+        }
 
+        // Detección de intención: ¿Fondo Blanco de Estudio o Ambientación en Habitación?
         const esFondoBlanco = /fondo blanco|white background|cyclorama|aislado|estudio blanco|catalogo blanco|isolated on pure white/i.test(cleanPrompt);
-        
-        let promptByteplus = "";
+
+        let promptNano = "";
         if (esFondoBlanco) {
-          promptByteplus = `Commercial high-end product catalog photography of the exact 3D furniture piece provided in the reference image (image_urls[0]), isolated and perfectly centered on a seamless pure white studio cyclorama background (#FFFFFF). STRICT REQUIREMENT: Maintain 100% of the exact geometry, shape, proportions, parts, cushions, drawers, handles, and material tone from the input reference image without adding, deleting or altering any furniture parts. Refined tactile physical materials, realistic softbox studio lighting with soft diffuse natural contact shadows under the base and legs. 8k Herman Miller / Vitra catalog photograph. Instructions: ${cleanPrompt}`;
+          promptNano = `Commercial high-end product catalog photography of the attached 3D furniture piece, isolated and perfectly centered on a seamless pure white studio cyclorama background (#FFFFFF). STRICT 1:1 GEOMETRY AND MATERIAL FIDELITY: Preserve 100% of the exact shape, proportions, parts, cushions/drawers, and wood color tone from the reference image without adding, removing, or altering any geometry. Realistic tactile physical materials (matte satin natural wood grain, refined fabric upholstery with clean piping, subtle PBR reflections). Professional three-point studio softbox lighting with soft, diffuse, natural contact shadows on the floor under the legs and base. Razor-sharp 8k catalog shot, Herman Miller / IKEA catalog quality, no harsh digital noise. User instructions: ${cleanPrompt}`;
         } else {
-          promptByteplus = `Editorial architectural photography shot on 35mm lens, f/2.8 aperture. High-end catalog photograph of the attached custom furniture piece from the reference image (image_urls[0]), preserving 100% of its exact geometry, proportion, drawer structure, handles, and material finish. Place it seamlessly in: ${cleanPrompt}. Soft natural daylight from a side window, subtle atmospheric reflections, tangible tactile matte wood/paint texture, soft natural floor contact shadows, Architectural Digest quality, perfectly realistic.`;
+          promptNano = `Editorial architectural photography shot on 35mm lens, f/2.8 aperture. High-end catalog photograph of the attached custom furniture piece, preserving 100% of its exact geometry, proportion, drawer structure, and wood tone from the reference image. Place it seamlessly in: ${cleanPrompt}. Soft natural daylight from a side window, subtle atmospheric reflections, tangible tactile matte wood grain texture, soft natural floor contact shadows, Architectural Digest quality, perfectly realistic.`;
         }
 
-        const bpPayload: any = {
-          model: byteplusModel,
-          prompt: promptByteplus,
-          response_format: "url",
-          size: sizeFormatted,
-          stream: false,
-          watermark: false
-        };
+        console.log(`[3BF Render IA] Invocando ${nanoEndpoint}...`);
 
-        if (imageBase64 && typeof imageBase64 === "string" && imageBase64.startsWith("data:image")) {
-          bpPayload.image_urls = [imageBase64];
-        }
-
-        const bpRes = await fetch("https://ark.ap-southeast.bytepluses.com/api/v3/images/generations", {
+        const nanoRes = await fetch(nanoEndpoint, {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
-            "Authorization": `Bearer ${byteplusKey}`
+            "Authorization": `Key ${falKey}`,
           },
-          body: JSON.stringify(bpPayload)
+          body: JSON.stringify({
+            prompt: promptNano,
+            image_urls: [imageBase64],
+            aspect_ratio: falRatio,
+            num_images: 1,
+          }),
         });
 
-        if (bpRes.ok) {
-          const bpData = await bpRes.json();
-          const remoteUrl = bpData?.data?.[0]?.url || bpData?.data?.[0]?.image_url || bpData?.data?.[0]?.b64_json;
+        if (nanoRes.ok) {
+          const nanoData = await nanoRes.json();
+          const remoteUrl = nanoData?.images?.[0]?.url;
           if (remoteUrl) {
-            finalImageUrl = remoteUrl.startsWith("http") ? remoteUrl : `data:image/jpeg;base64,${remoteUrl}`;
-            motorEfectivo = "byteplus_seedream";
-            console.log("[3BF Render IA] BytePlus URL generada con éxito:", remoteUrl.substring(0, 100));
-          } else {
-            errorDetalle = "BytePlus no devolvió una URL válida de imagen.";
+            const imgFetch = await fetch(remoteUrl);
+            if (imgFetch.ok) {
+              const buf = await imgFetch.arrayBuffer();
+              finalImageUrl = `data:image/jpeg;base64,${Buffer.from(buf).toString("base64")}`;
+            } else {
+              finalImageUrl = remoteUrl;
+            }
+            motorEfectivo = motor === "fal_nano_banana_pro" ? "fal_nano_banana_pro" : "fal_nano_banana_2";
           }
         } else {
-          const bpErrText = await bpRes.text();
-          console.warn("[3BF Render IA BytePlus Error]:", bpErrText);
-          errorDetalle = `BytePlus ModelArk (${bpRes.status}): ${bpErrText}`;
+          const nanoErr = await nanoRes.text();
+          console.warn("[3BF Render IA] Error en endpoint fal.ai:", nanoErr);
+          errorDetalle = `Nano Banana error (${nanoRes.status}): ${nanoErr}`;
         }
-      } catch (bpErr: any) {
-        console.error("[3BF Render IA BytePlus Exception]:", bpErr);
-        errorDetalle = bpErr?.message || "Fallo en BytePlus ModelArk";
+      } catch (nErr: any) {
+        errorDetalle = nErr?.message || "Fallo en fal.ai Nano Banana 2 Edit";
       }
     }
 
@@ -293,69 +299,6 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // =========================================================================
-    // 2. MOTOR NANO BANANA PRO & NANO BANANA EDIT (fal.ai FLUX / Nano Banana)
-    // =========================================================================
-    if (!finalImageUrl && (motor.startsWith("fal_nano_banana") || motor.startsWith("fal_")) && falKey) {
-      if (!imageBase64 || typeof imageBase64 !== "string" || !imageBase64.startsWith("data:image")) {
-        return NextResponse.json(
-          { error: "Se requiere la captura 3D del mueble para ubicarlo en la escena." },
-          { status: 400 }
-        );
-      }
-
-      try {
-        const isPro = motor === "fal_nano_banana_pro";
-        const nanoEndpoint = isPro
-          ? "https://fal.run/fal-ai/nano-banana-pro/edit"
-          : "https://fal.run/fal-ai/nano-banana/edit";
-
-        // Detección de intención: ¿Fondo Blanco de Estudio o Ambientación en Habitación?
-        const esFondoBlanco = /fondo blanco|white background|cyclorama|aislado|estudio blanco|catalogo blanco|isolated on pure white/i.test(cleanPrompt);
-
-        let promptNano = "";
-        if (esFondoBlanco) {
-          promptNano = `Commercial high-end product catalog photography of the attached 3D furniture piece, isolated and perfectly centered on a seamless pure white studio cyclorama background (#FFFFFF). STRICT 1:1 GEOMETRY AND MATERIAL FIDELITY: Preserve 100% of the exact shape, proportions, parts, cushions/drawers, and wood color tone from the reference image without adding, removing, or altering any geometry. Realistic tactile physical materials (matte satin natural wood grain, refined fabric upholstery with clean piping, subtle PBR reflections). Professional three-point studio softbox lighting with soft, diffuse, natural contact shadows on the floor under the legs and base. Razor-sharp 8k catalog shot, Herman Miller / IKEA catalog quality, no harsh digital noise. User instructions: ${cleanPrompt}`;
-        } else {
-          promptNano = `Editorial architectural photography shot on 35mm lens, f/2.8 aperture. High-end catalog photograph of the attached custom furniture piece, preserving 100% of its exact geometry, proportion, drawer structure, and wood tone from the reference image. Place it seamlessly in: ${cleanPrompt}. Soft natural daylight from a side window, subtle atmospheric reflections, tangible tactile matte wood grain texture, soft natural floor contact shadows, Architectural Digest quality, perfectly realistic.`;
-        }
-
-        const nanoRes = await fetch(nanoEndpoint, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "Authorization": `Key ${falKey}`,
-          },
-          body: JSON.stringify({
-            prompt: promptNano,
-            image_urls: [imageBase64],
-            aspect_ratio: falRatio,
-            num_images: 1,
-          }),
-        });
-
-        if (nanoRes.ok) {
-          const nanoData = await nanoRes.json();
-          const remoteUrl = nanoData?.images?.[0]?.url;
-          if (remoteUrl) {
-            const imgFetch = await fetch(remoteUrl);
-            if (imgFetch.ok) {
-              const buf = await imgFetch.arrayBuffer();
-              finalImageUrl = `data:image/jpeg;base64,${Buffer.from(buf).toString("base64")}`;
-            } else {
-              finalImageUrl = remoteUrl;
-            }
-            motorEfectivo = isPro ? "fal_nano_banana_pro" : "fal_nano_banana";
-          }
-        } else {
-          const nanoErr = await nanoRes.text();
-          console.warn("[3BF Render IA] Error en endpoint fal.ai:", nanoErr);
-          errorDetalle = `Nano Banana error: ${nanoErr}`;
-        }
-      } catch (nErr: any) {
-        errorDetalle = nErr?.message || "Fallo en fal.ai Nano Banana Edit";
-      }
-    }
 
     // =========================================================================
     // 2. MOTOR FLUX.1 LIBRE (Gratuito de Respaldo)

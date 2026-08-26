@@ -239,8 +239,7 @@ export default function AIRenderStudioModal() {
           motor: motorSeleccionadoRender,
           aspectRatio: aspectRatioRender,
           falKey: falApiKey || undefined,
-          byteplusKey: undefined,
-          byteplusModel: "seedream-4-5-251128",
+          apiKey: geminiApiKey || undefined,
         }),
       });
 
@@ -587,9 +586,10 @@ export default function AIRenderStudioModal() {
                     color: coloresApariencia?.textoPrincipal
                   }}
                 >
-                  <option value="byteplus_seedream">BytePlus Seedream 4.5 (ByteDance - 200 Renders Gratis)</option>
-                  <option value="fal_nano_banana_pro">fal.ai Nano Banana PRO (ControlNet)</option>
-                  <option value="flux_schnell_free">FLUX.1 Libre (Sin Claves)</option>
+                  <option value="fal_nano_banana_2">fal.ai Nano Banana 2 Edit (Google State-of-the-Art - Recomendado)</option>
+                  <option value="fal_nano_banana_pro">fal.ai Nano Banana PRO Edit</option>
+                  <option value="google_gemini_imagen3">Google AI Studio (Gemini 1.5 + Imagen 3)</option>
+                  <option value="flux_schnell_free">FLUX.1 Libre (Sin Claves / Fallback)</option>
                 </select>
               </div>
 

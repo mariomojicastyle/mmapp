@@ -1001,8 +1001,8 @@ export interface State3BF {
   bibliotecaPrompts: PromptTemplateItem[];
   promptActivoRender: string;
   setPromptActivoRender: (prompt: string) => void;
-  motorSeleccionadoRender: "fal_nano_banana_pro" | "fal_nano_banana" | "fal_bria_product_shot" | "fal_flux_dev" | "fal_flux_schnell" | "google_gemini_imagen3" | "flux_schnell_free" | "pollinations";
-  setMotorSeleccionadoRender: (motor: "fal_nano_banana_pro" | "fal_nano_banana" | "fal_bria_product_shot" | "fal_flux_dev" | "fal_flux_schnell" | "google_gemini_imagen3" | "flux_schnell_free" | "pollinations") => void;
+  motorSeleccionadoRender: "fal_nano_banana_2" | "fal_nano_banana_pro" | "fal_nano_banana" | "fal_bria_product_shot" | "fal_flux_dev" | "fal_flux_schnell" | "google_gemini_imagen3" | "flux_schnell_free" | "pollinations";
+  setMotorSeleccionadoRender: (motor: "fal_nano_banana_2" | "fal_nano_banana_pro" | "fal_nano_banana" | "fal_bria_product_shot" | "fal_flux_dev" | "fal_flux_schnell" | "google_gemini_imagen3" | "flux_schnell_free" | "pollinations") => void;
   aspectRatioRender: "1:1" | "16:9" | "4:3" | "9:16";
   setAspectRatioRender: (ratio: "1:1" | "16:9" | "4:3" | "9:16") => void;
   guardarNuevoPrompt: (item: Omit<PromptTemplateItem, "id">) => string;
@@ -2953,7 +2953,7 @@ export const use3BFStore = create<State3BF>((set, get) => ({
   bibliotecaPrompts: PROMPTS_INICIALES_DEFECTO,
   promptActivoRender: PROMPTS_INICIALES_DEFECTO[0].prompt,
   setPromptActivoRender: (promptActivoRender) => set({ promptActivoRender }),
-  motorSeleccionadoRender: "google_gemini_imagen3",
+  motorSeleccionadoRender: "fal_nano_banana_2",
   setMotorSeleccionadoRender: (motorSeleccionadoRender) => set({ motorSeleccionadoRender }),
   aspectRatioRender: "1:1",
   setAspectRatioRender: (aspectRatioRender) => set({ aspectRatioRender }),
