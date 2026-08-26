@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Calculator,
   Users,
@@ -13,8 +13,7 @@ import {
   Laptop,
   Headphones,
   Send,
-  CheckCircle2,
-  AlertCircle
+  CheckCircle2
 } from "lucide-react";
 
 export interface CostParameters {
@@ -63,32 +62,29 @@ export function HennOperationCostEngine({
   // SAC / Soporte
   const [horasSacMes, setHorasSacMes] = useState<number>(initialParams?.horasSacMes ?? 20);
 
-  // Control de Cambios Pendientes
-  const [hasPendingChanges, setHasPendingChanges] = useState<boolean>(false);
   const [syncStatusMsg, setSyncStatusMsg] = useState<string | null>(null);
-  const isEditingLocallyRef = useRef<boolean>(false);
 
   const isPt = uiLang === "pt";
 
-  // Reaccionar a cambios sincronizados desde la otra pantalla cuando no se está editando activamente
+  // Reaccionar a cambios sincronizados desde la base de datos
   useEffect(() => {
-    if (initialParams && !isEditingLocallyRef.current) {
-      if (initialParams.manualesAno !== undefined && initialParams.manualesAno !== manualesAno) {
+    if (initialParams) {
+      if (initialParams.manualesAno !== undefined) {
         setManualesAno(initialParams.manualesAno);
         setManualesAnoStr(String(initialParams.manualesAno));
       }
-      if (initialParams.personasPed !== undefined && initialParams.personasPed !== personasPed) {
+      if (initialParams.personasPed !== undefined) {
         setPersonasPed(initialParams.personasPed);
         setPersonasPedStr(String(initialParams.personasPed));
       }
-      if (initialParams.salarioCltMes !== undefined && initialParams.salarioCltMes !== salarioCltMes) {
+      if (initialParams.salarioCltMes !== undefined) {
         setSalarioCltMes(initialParams.salarioCltMes);
         setSalarioCltMesStr(String(initialParams.salarioCltMes));
       }
       if (initialParams.licenciaSketchUpAno !== undefined) setLicenciaSketchUpAno(initialParams.licenciaSketchUpAno);
       if (initialParams.licenciaAdobeAno !== undefined) setLicenciaAdobeAno(initialParams.licenciaAdobeAno);
       if (initialParams.licenciaOtrosAno !== undefined) setLicenciaOtrosAno(initialParams.licenciaOtrosAno);
-      if (initialParams.ahorroPct !== undefined && initialParams.ahorroPct !== ahorroPct) setAhorroPct(initialParams.ahorroPct);
+      if (initialParams.ahorroPct !== undefined) setAhorroPct(initialParams.ahorroPct);
       if (initialParams.horasSacMes !== undefined) setHorasSacMes(initialParams.horasSacMes);
     }
   }, [initialParams]);
@@ -147,9 +143,8 @@ export function HennOperationCostEngine({
     onSummaryChange
   ]);
 
-  // Sincronizar hacia Supabase para que la otra pantalla reciba los números
+  // Sincronizar inmediatamente con la sala y base de datos
   const handleSyncToRoom = () => {
-    isEditingLocallyRef.current = false;
     const current: CostParameters = {
       manualesAno,
       personasPed,
@@ -164,9 +159,8 @@ export function HennOperationCostEngine({
       horasSacMes
     };
     onParamChange?.(current);
-    setHasPendingChanges(false);
-    setSyncStatusMsg(isPt ? "Matriz sincronizada com a sala!" : "¡Matriz sincronizada con la sala!");
-    setTimeout(() => setSyncStatusMsg(null), 3500);
+    setSyncStatusMsg(isPt ? "Matriz sincronizada com sucesso!" : "¡Matriz sincronizada con éxito!");
+    setTimeout(() => setSyncStatusMsg(null), 3000);
   };
 
   const resetDefault = () => {
@@ -181,12 +175,24 @@ export function HennOperationCostEngine({
     setLicenciaOtrosAno(0);
     setAhorroPct(30);
     setHorasSacMes(20);
-    isEditingLocallyRef.current = true;
-    setHasPendingChanges(true);
+
+    const defaultParams: CostParameters = {
+      manualesAno: 200,
+      personasPed: 2.0,
+      salarioCltMes: 6000,
+      licenciaSketchUpAno: 2400,
+      licenciaAdobeAno: 3600,
+      licenciaOtrosAno: 0,
+      ahorroPct: 30,
+      horasPequeno: 8,
+      horasMediano: 12,
+      horasGrande: 16,
+      horasSacMes: 20
+    };
+    onParamChange?.(defaultParams);
   };
 
   const handleInputFocus = (e: React.FocusEvent<HTMLInputElement>) => {
-    isEditingLocallyRef.current = true;
     e.target.scrollIntoView({ behavior: "smooth", block: "center" });
   };
 
@@ -206,8 +212,8 @@ export function HennOperationCostEngine({
             </h2>
             <p className="text-[10px] sm:text-[11px] text-slate-500">
               {isPt
-                ? "Edite os valores e clique em Sincronizar para atualizar todas as telas."
-                : "Edita los valores y haz clic en Sincronizar para actualizar todas las pantallas."}
+                ? "Edite os valores e clique em Sincronizar Sala para atualizar todos."
+                : "Edita los valores y haz clic en Sincronizar Sala para actualizar a todos."}
             </p>
           </div>
         </div>
@@ -222,14 +228,10 @@ export function HennOperationCostEngine({
             <span className="hidden xs:inline">{isPt ? "Restaurar" : "Restablecer"}</span>
           </button>
 
-          {/* Botón Principal de Sincronización */}
+          {/* Botón Principal y Único de Sincronización */}
           <button
             onClick={handleSyncToRoom}
-            className={`px-3 py-1.5 rounded-xl font-extrabold text-xs flex items-center gap-1.5 transition shadow-sm ${
-              hasPendingChanges
-                ? "bg-cyan-700 hover:bg-cyan-800 text-white animate-pulse"
-                : "bg-slate-800 hover:bg-slate-900 text-white"
-            }`}
+            className="bg-cyan-700 hover:bg-cyan-800 text-white px-3.5 py-1.5 rounded-xl font-extrabold text-xs flex items-center gap-1.5 transition shadow-sm"
           >
             <Send className="w-3.5 h-3.5 text-cyan-300" />
             <span>{isPt ? "Sincronizar Sala" : "Sincronizar Sala"}</span>
@@ -241,21 +243,6 @@ export function HennOperationCostEngine({
         <div className="bg-emerald-50 border border-emerald-200 text-emerald-800 text-[11px] font-bold px-3 py-1 rounded-lg flex items-center gap-1.5 shadow-sm animate-in fade-in duration-200">
           <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
           <span>{syncStatusMsg}</span>
-        </div>
-      )}
-
-      {hasPendingChanges && !syncStatusMsg && (
-        <div className="bg-amber-50 border border-amber-200 text-amber-900 text-[10px] sm:text-[11px] font-semibold px-2.5 py-1 rounded-lg flex items-center justify-between gap-2 shadow-sm">
-          <span className="flex items-center gap-1">
-            <AlertCircle className="w-3.5 h-3.5 text-amber-600 shrink-0" />
-            <span>{isPt ? "Alterações locais prontas para enviar." : "Cambios locales listos para enviar a la otra pantalla."}</span>
-          </span>
-          <button
-            onClick={handleSyncToRoom}
-            className="text-[10px] bg-amber-600 hover:bg-amber-700 text-white px-2.5 py-0.5 rounded font-bold transition shrink-0"
-          >
-            {isPt ? "Enviar Agora" : "Enviar Ahora"}
-          </button>
         </div>
       )}
 
@@ -337,10 +324,8 @@ export function HennOperationCostEngine({
               value={manualesAnoStr}
               onFocus={handleInputFocus}
               onChange={e => {
-                isEditingLocallyRef.current = true;
                 const text = e.target.value;
                 setManualesAnoStr(text);
-                setHasPendingChanges(true);
                 const num = parseFloat(text.replace(',', '.'));
                 if (!isNaN(num) && num > 0) {
                   setManualesAno(num);
@@ -365,10 +350,8 @@ export function HennOperationCostEngine({
               value={personasPedStr}
               onFocus={handleInputFocus}
               onChange={e => {
-                isEditingLocallyRef.current = true;
                 const text = e.target.value;
                 setPersonasPedStr(text);
-                setHasPendingChanges(true);
                 const num = parseFloat(text.replace(',', '.'));
                 if (!isNaN(num) && num > 0) {
                   setPersonasPed(num);
@@ -393,10 +376,8 @@ export function HennOperationCostEngine({
               value={salarioCltMesStr}
               onFocus={handleInputFocus}
               onChange={e => {
-                isEditingLocallyRef.current = true;
                 const text = e.target.value;
                 setSalarioCltMesStr(text);
-                setHasPendingChanges(true);
                 const num = parseFloat(text.replace(',', '.'));
                 if (!isNaN(num) && num > 0) {
                   setSalarioCltMes(num);
@@ -441,9 +422,7 @@ export function HennOperationCostEngine({
                   value={licenciaSketchUpAno}
                   onFocus={handleInputFocus}
                   onChange={e => {
-                    isEditingLocallyRef.current = true;
                     setLicenciaSketchUpAno(Number(e.target.value));
-                    setHasPendingChanges(true);
                   }}
                   className="w-full text-xs font-bold text-slate-800 outline-none"
                 />
@@ -461,9 +440,7 @@ export function HennOperationCostEngine({
                   value={licenciaAdobeAno}
                   onFocus={handleInputFocus}
                   onChange={e => {
-                    isEditingLocallyRef.current = true;
                     setLicenciaAdobeAno(Number(e.target.value));
-                    setHasPendingChanges(true);
                   }}
                   className="w-full text-xs font-bold text-slate-800 outline-none"
                 />
@@ -481,9 +458,7 @@ export function HennOperationCostEngine({
                   value={licenciaOtrosAno}
                   onFocus={handleInputFocus}
                   onChange={e => {
-                    isEditingLocallyRef.current = true;
                     setLicenciaOtrosAno(Number(e.target.value));
-                    setHasPendingChanges(true);
                   }}
                   className="w-full text-xs font-bold text-slate-800 outline-none"
                 />
@@ -513,9 +488,7 @@ export function HennOperationCostEngine({
               value={horasSacMes}
               onFocus={handleInputFocus}
               onChange={e => {
-                isEditingLocallyRef.current = true;
                 setHorasSacMes(Number(e.target.value));
-                setHasPendingChanges(true);
               }}
               className="w-16 bg-white border border-slate-300 rounded px-2 py-0.5 text-xs font-bold text-center outline-none focus:border-cyan-500"
             />
@@ -551,9 +524,7 @@ export function HennOperationCostEngine({
             step={1}
             value={ahorroPct}
             onChange={e => {
-              isEditingLocallyRef.current = true;
               setAhorroPct(Number(e.target.value));
-              setHasPendingChanges(true);
             }}
             className="w-full accent-cyan-600 cursor-pointer"
           />

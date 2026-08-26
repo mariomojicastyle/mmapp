@@ -44,6 +44,16 @@ export function ModalConfiguracionSala({
 
   if (!isOpen) return null;
 
+  const handleUpdatePart1 = (index: number, val: string) => {
+    const updated = [...participantes1];
+    updated[index] = val;
+    setParticipantes1(updated);
+  };
+
+  const handleRemovePart1 = (index: number) => {
+    setParticipantes1(participantes1.filter((_, i) => i !== index));
+  };
+
   const handleAddPart1 = () => {
     if (newPart1.trim()) {
       setParticipantes1([...participantes1, newPart1.trim()]);
@@ -51,8 +61,14 @@ export function ModalConfiguracionSala({
     }
   };
 
-  const handleRemovePart1 = (index: number) => {
-    setParticipantes1(participantes1.filter((_, i) => i !== index));
+  const handleUpdatePart2 = (index: number, val: string) => {
+    const updated = [...participantes2];
+    updated[index] = val;
+    setParticipantes2(updated);
+  };
+
+  const handleRemovePart2 = (index: number) => {
+    setParticipantes2(participantes2.filter((_, i) => i !== index));
   };
 
   const handleAddPart2 = () => {
@@ -62,19 +78,18 @@ export function ModalConfiguracionSala({
     }
   };
 
-  const handleRemovePart2 = (index: number) => {
-    setParticipantes2(participantes2.filter((_, i) => i !== index));
-  };
-
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    const validP1 = participantes1.map(p => p.trim()).filter(Boolean);
+    const validP2 = participantes2.map(p => p.trim()).filter(Boolean);
+
     onSave({
       empresa,
       titulo,
       idioma1,
       idioma2,
-      participantes1: participantes1.length > 0 ? participantes1 : ["Mario Mojica"],
-      participantes2: participantes2.length > 0 ? participantes2 : ["Interlocutor"]
+      participantes1: validP1.length > 0 ? validP1 : ["Mario Mojica"],
+      participantes2: validP2.length > 0 ? validP2 : ["Interlocutor"]
     });
   };
 
@@ -92,7 +107,7 @@ export function ModalConfiguracionSala({
                 Configurar Mesa de Trabajo Bilingüe B2B
               </h2>
               <p className="text-[11px] text-slate-300">
-                Define la empresa, el título y los participantes antes de iniciar la sesión.
+                Define la empresa, el título y los nombres de las personas en cada lado.
               </p>
             </div>
           </div>
@@ -142,7 +157,7 @@ export function ModalConfiguracionSala({
             </div>
           </div>
 
-          {/* 2. Columnas Bilingües: Idioma 1 vs Idioma 2 */}
+          {/* 2. Columnas Bilingües con Edición Libre de Nombres */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
             {/* LADO 1: Tu Lado (Español) */}
             <div className="bg-slate-50 border border-slate-200 rounded-xl p-3 space-y-2.5">
@@ -162,38 +177,47 @@ export function ModalConfiguracionSala({
                 </select>
               </div>
 
-              {/* Lista de Participantes Lado 1 */}
+              {/* Lista de Participantes Editables Lado 1 */}
               <div className="space-y-1.5">
-                <label className="font-bold text-[11px] text-slate-600">Participantes:</label>
-                <div className="space-y-1 max-h-24 overflow-y-auto">
+                <label className="font-bold text-[11px] text-slate-600">Participantes (Toca para editar):</label>
+                <div className="space-y-1.5 max-h-28 overflow-y-auto">
                   {participantes1.map((p, idx) => (
-                    <div key={idx} className="flex items-center justify-between bg-white px-2 py-1 rounded-lg border border-slate-200 text-xs">
-                      <span className="font-semibold text-slate-800">{p}</span>
-                      {participantes1.length > 1 && (
-                        <button type="button" onClick={() => handleRemovePart1(idx)} className="text-slate-400 hover:text-red-500">
-                          <Trash2 className="w-3 h-3" />
-                        </button>
-                      )}
+                    <div key={idx} className="flex items-center gap-1.5 bg-white p-1 rounded-lg border border-slate-200">
+                      <input
+                        type="text"
+                        value={p}
+                        onChange={e => handleUpdatePart1(idx, e.target.value)}
+                        placeholder="Nombre de la persona..."
+                        className="flex-1 font-semibold text-slate-800 text-xs px-1.5 py-0.5 outline-none bg-transparent"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => handleRemovePart1(idx)}
+                        className="text-slate-400 hover:text-red-500 p-1 transition"
+                        title="Eliminar participante"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
                     </div>
                   ))}
                 </div>
 
-                {/* Input agregar participante 1 */}
+                {/* Input agregar nuevo */}
                 <div className="flex gap-1 pt-1">
                   <input
                     type="text"
                     value={newPart1}
                     onChange={e => setNewPart1(e.target.value)}
                     onKeyDown={e => { if (e.key === "Enter") { e.preventDefault(); handleAddPart1(); } }}
-                    placeholder="Nombre..."
+                    placeholder="+ Agregar otro nombre..."
                     className="flex-1 bg-white border border-slate-300 rounded px-2 py-1 text-xs outline-none"
                   />
                   <button
                     type="button"
                     onClick={handleAddPart1}
-                    className="bg-slate-800 hover:bg-slate-900 text-white px-2 py-1 rounded font-bold text-xs flex items-center gap-1"
+                    className="bg-slate-800 hover:bg-slate-900 text-white px-2.5 py-1 rounded font-bold text-xs flex items-center gap-1"
                   >
-                    <Plus className="w-3 h-3" />
+                    <Plus className="w-3.5 h-3.5" />
                   </button>
                 </div>
               </div>
@@ -217,38 +241,47 @@ export function ModalConfiguracionSala({
                 </select>
               </div>
 
-              {/* Lista de Participantes Lado 2 */}
+              {/* Lista de Participantes Editables Lado 2 */}
               <div className="space-y-1.5">
-                <label className="font-bold text-[11px] text-slate-600">Participantes del Cliente:</label>
-                <div className="space-y-1 max-h-24 overflow-y-auto">
+                <label className="font-bold text-[11px] text-slate-600">Participantes del Cliente (Toca para editar):</label>
+                <div className="space-y-1.5 max-h-28 overflow-y-auto">
                   {participantes2.map((p, idx) => (
-                    <div key={idx} className="flex items-center justify-between bg-white px-2 py-1 rounded-lg border border-slate-200 text-xs">
-                      <span className="font-semibold text-slate-800">{p}</span>
-                      {participantes2.length > 1 && (
-                        <button type="button" onClick={() => handleRemovePart2(idx)} className="text-slate-400 hover:text-red-500">
-                          <Trash2 className="w-3 h-3" />
-                        </button>
-                      )}
+                    <div key={idx} className="flex items-center gap-1.5 bg-white p-1 rounded-lg border border-slate-200">
+                      <input
+                        type="text"
+                        value={p}
+                        onChange={e => handleUpdatePart2(idx, e.target.value)}
+                        placeholder="Ej. Juan Carlos, Everton, Alexia..."
+                        className="flex-1 font-semibold text-slate-800 text-xs px-1.5 py-0.5 outline-none bg-transparent"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => handleRemovePart2(idx)}
+                        className="text-slate-400 hover:text-red-500 p-1 transition"
+                        title="Eliminar participante"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
                     </div>
                   ))}
                 </div>
 
-                {/* Input agregar participante 2 */}
+                {/* Input agregar nuevo */}
                 <div className="flex gap-1 pt-1">
                   <input
                     type="text"
                     value={newPart2}
                     onChange={e => setNewPart2(e.target.value)}
                     onKeyDown={e => { if (e.key === "Enter") { e.preventDefault(); handleAddPart2(); } }}
-                    placeholder="Ej. Marcos, Alexia, Jonas..."
+                    placeholder="+ Agregar interlocutor..."
                     className="flex-1 bg-white border border-slate-300 rounded px-2 py-1 text-xs outline-none"
                   />
                   <button
                     type="button"
                     onClick={handleAddPart2}
-                    className="bg-slate-800 hover:bg-slate-900 text-white px-2 py-1 rounded font-bold text-xs flex items-center gap-1"
+                    className="bg-slate-800 hover:bg-slate-900 text-white px-2.5 py-1 rounded font-bold text-xs flex items-center gap-1"
                   >
-                    <Plus className="w-3 h-3" />
+                    <Plus className="w-3.5 h-3.5" />
                   </button>
                 </div>
               </div>
