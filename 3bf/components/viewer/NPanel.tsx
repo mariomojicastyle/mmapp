@@ -521,7 +521,7 @@ export default function NPanel() {
                 {pestanaNPanel === "componentes" ? "Biblioteca de Componentes"
                   : pestanaNPanel === "muebles" ? "Biblioteca de Muebles"
                   : pestanaNPanel === "capas" ? "Gestor de Capas"
-                  : pestanaNPanel === "partes" ? "Desglose de Partes GHX"
+                  : pestanaNPanel === "partes" ? "Desglose de Partes"
                   : pestanaNPanel === "materiales" ? "Editor de Materiales PBR"
                   : pestanaNPanel === "calibrar" ? "Calibración 3D"
                   : pestanaActiva === "despiece" ? "Apariencia - Despiece & Costos"
@@ -1337,7 +1337,7 @@ export default function NPanel() {
                   ? { backgroundColor: coloresApariencia?.botonActivo || "#0891b2", color: "#FFFFFF" }
                   : { color: coloresApariencia?.textoPrincipal }
               }
-              title="Biblioteca de Componentes (Definiciones GHX)"
+              title="Biblioteca de Componentes"
               className={`w-7 py-2.5 px-1 rounded-full flex flex-col items-center justify-center gap-1.5 transition-all cursor-pointer ${
                 pestanaNPanel === "componentes"
                   ? "shadow-md font-bold"
@@ -1385,7 +1385,7 @@ export default function NPanel() {
                   ? { backgroundColor: coloresApariencia?.botonActivo || "#0891b2", color: "#FFFFFF" }
                   : { color: coloresApariencia?.textoPrincipal }
               }
-              title="Desglose de Partes y Mallas GHX"
+              title="Desglose de Partes y Mallas"
               className={`w-7 py-2.5 px-1 rounded-full flex flex-col items-center justify-center gap-1.5 transition-all cursor-pointer ${
                 pestanaNPanel === "partes"
                   ? "shadow-md font-bold"
