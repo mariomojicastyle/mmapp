@@ -469,7 +469,7 @@ export default function AIRenderStudioModal() {
             <div className="flex flex-col gap-1">
               <div className="flex items-center justify-between">
                 <span className="font-bold flex items-center gap-1 text-emerald-600 dark:text-emerald-400">
-                  <span>⚡ fal.ai API Key (Google Nano Banana 2 Edit & Phota Enhance 4K):</span>
+                  <span>⚡ API Key (Nano Banana 2 & Phota Enhance 4K):</span>
                 </span>
                 <a
                   href="https://fal.ai/dashboard/keys"
@@ -477,7 +477,7 @@ export default function AIRenderStudioModal() {
                   rel="noreferrer"
                   className="text-cyan-600 hover:underline text-[11px] flex items-center gap-0.5"
                 >
-                  <span>Obtener Key en fal.ai</span>
+                  <span>Obtener Key</span>
                   <ExternalLink className="w-3 h-3" />
                 </a>
               </div>
@@ -485,7 +485,7 @@ export default function AIRenderStudioModal() {
                 type="password"
                 value={tempFalKey}
                 onChange={(e) => setTempFalKey(e.target.value)}
-                placeholder="Pega aquí tu clave de fal.ai..."
+                placeholder="Pega aquí tu clave de API..."
                 className="w-full px-3 py-2 rounded border text-xs font-mono outline-none"
                 style={{
                   backgroundColor: coloresApariencia?.fondoAplicacion,
@@ -553,8 +553,8 @@ export default function AIRenderStudioModal() {
                     color: coloresApariencia?.textoPrincipal
                   }}
                 >
-                  <option value="fal_nano_banana_2">fal.ai Nano Banana 2 Edit (Google State-of-the-Art)</option>
-                  <option value="fal_nano_banana_pro">fal.ai Nano Banana PRO Edit</option>
+                  <option value="fal_nano_banana_2">Nano Banana 2 Edit (Google State-of-the-Art)</option>
+                  <option value="fal_nano_banana_pro">Nano Banana PRO Edit</option>
                 </select>
               </div>
 
@@ -974,17 +974,19 @@ export default function AIRenderStudioModal() {
                           <span className="w-2 h-2 rounded-full bg-cyan-400 animate-pulse" />
                           <span className="font-bold">
                             Motor: {
-                              renderActual.motorUsado === "fal_nano_banana_pro"
-                                ? "Google Nano Banana PRO"
+                              renderActual.motorUsado === "fal_nano_banana_2"
+                                ? "Nano Banana 2"
+                                : renderActual.motorUsado === "fal_nano_banana_pro"
+                                ? "Nano Banana PRO"
                                 : renderActual.motorUsado === "fal_nano_banana"
-                                ? "Google Nano Banana"
+                                ? "Nano Banana"
                                 : renderActual.motorUsado === "fal_phota_enhance"
                                 ? "Phota Enhance 4K"
                                 : renderActual.motorUsado === "flux_schnell_free"
                                 ? "FLUX.1 Libre"
                                 : renderActual.motorUsado === "google_gemini_imagen3"
                                 ? "Google Imagen 3"
-                                : renderActual.motorUsado
+                                : "Nano Banana 2"
                             }
                           </span>
                           <span className="opacity-50">•</span>

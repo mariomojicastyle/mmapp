@@ -621,7 +621,7 @@ export interface RenderIAResultado {
   promptUsado: string;
   imageUrl: string;
   imageBase64Original?: string;
-  motorUsado: "fal_nano_banana_pro" | "fal_nano_banana" | "fal_phota_enhance" | "fal_bria_product_shot" | "fal_flux_dev" | "fal_flux_schnell" | "google_gemini_imagen3" | "flux_schnell_free" | "pollinations";
+  motorUsado: "fal_nano_banana_2" | "fal_nano_banana_pro" | "fal_nano_banana" | "fal_phota_enhance" | "fal_bria_product_shot" | "fal_flux_dev" | "fal_flux_schnell" | "google_gemini_imagen3" | "flux_schnell_free" | "pollinations";
   fecha: string;
   aspectRatio: string;
 }
