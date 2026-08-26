@@ -5,7 +5,22 @@ import { useParams } from "next/navigation";
 import { useLiveTranslator } from "@/hooks/useLiveTranslator";
 import { HennOperationCostEngine } from "@/components/copiloto/HennOperationCostEngine";
 import { SplitBilingualFeed } from "@/components/copiloto/SplitBilingualFeed";
-import { Mic, MicOff, Save, Check, GripVertical, Calculator, FileText, Settings, Radio, MessageSquare } from "lucide-react";
+import {
+  Mic,
+  MicOff,
+  Save,
+  Check,
+  GripVertical,
+  Calculator,
+  FileText,
+  Settings,
+  Radio,
+  MessageSquare,
+  Upload,
+  FileUp,
+  X,
+  ExternalLink
+} from "lucide-react";
 
 export default function SalaBilingueMasterPage() {
   const params = useParams();
@@ -25,7 +40,11 @@ export default function SalaBilingueMasterPage() {
 
   // Pestañas del Panel Derecho en Escritorio
   const [activeRightTab, setActiveRightTab] = useState<"cotizador" | "documento" | "config">("cotizador");
-  const [documentoUrl, setDocumentoUrl] = useState("/docs/MANIFIESTO_NEGOCIO.md");
+
+  // Documento PDF Proyectado
+  const [pdfUrl, setPdfUrl] = useState<string | null>("/Clientes/Henn/Integracao_TOTVS_Datasul_Moveis_Henn_PT.pdf");
+  const [pdfNombre, setPdfNombre] = useState("Integracao_TOTVS_Datasul_Moveis_Henn_PT.pdf");
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Divisor de ancho de paneles en escritorio
   const [leftWidthPct, setLeftWidthPct] = useState(48);
@@ -46,7 +65,17 @@ export default function SalaBilingueMasterPage() {
 
   const isPt = uiLang === "pt";
 
-  // Manejo del divisor arrastrable
+  // Manejador para cargar archivo PDF local
+  const handlePdfUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file && file.type === "application/pdf") {
+      const url = URL.createObjectURL(file);
+      setPdfUrl(url);
+      setPdfNombre(file.name);
+    }
+  };
+
+  // Manejo del divisor arrastrable (Escritorio)
   const handleMouseDown = (e: React.MouseEvent) => {
     e.preventDefault();
     isDraggingRef.current = true;
@@ -85,6 +114,7 @@ export default function SalaBilingueMasterPage() {
         body: JSON.stringify({
           lang: "es",
           cliente: clienteNombre,
+          documentoAdjunto: pdfNombre,
           summaryData: {
             costoHennMes: summaryData?.costoTotalOperacionHennMes || 6272.72,
             propuestaMarioMes: summaryData?.propuestaMarioTotalMes || 4390.90,
@@ -120,6 +150,7 @@ export default function SalaBilingueMasterPage() {
         body: JSON.stringify({
           lang: "es",
           cliente: clienteNombre,
+          documentoAdjunto: pdfNombre,
           summaryData: {
             costoHennMes: summaryData?.costoTotalOperacionHennMes || 6272.72,
             propuestaMarioMes: summaryData?.propuestaMarioTotalMes || 4390.90,
@@ -158,6 +189,7 @@ export default function SalaBilingueMasterPage() {
         body: JSON.stringify({
           lang: "pt",
           cliente: clienteNombre,
+          documentoAdjunto: pdfNombre,
           summaryData: {
             costoHennMes: summaryData?.costoTotalOperacionHennMes || 6272.72,
             propuestaMarioMes: summaryData?.propuestaMarioTotalMes || 4390.90,
@@ -211,9 +243,9 @@ export default function SalaBilingueMasterPage() {
   };
 
   return (
-    <div className="h-screen bg-slate-100 text-slate-900 font-sans p-2 sm:p-3 flex flex-col justify-between gap-2 overflow-hidden">
+    <div className="h-screen w-full bg-slate-100 text-slate-900 font-sans p-2 sm:p-3 flex flex-col justify-between gap-2 overflow-hidden">
       {/* Header Adaptativo */}
-      <header className="bg-white border border-slate-200 rounded-xl sm:rounded-2xl px-3 sm:px-4 py-2 shadow-sm flex items-center justify-between gap-2 shrink-0 select-none">
+      <header className="bg-white border border-slate-200 rounded-xl sm:rounded-2xl px-3 sm:px-4 py-2 shadow-sm flex items-center justify-between gap-2 shrink-0 select-none w-full">
         <div className="flex items-center gap-2 sm:gap-3 min-w-0">
           <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-cyan-600 text-white flex items-center justify-center font-extrabold text-xs sm:text-sm shadow-sm shrink-0">
             MM
@@ -281,11 +313,11 @@ export default function SalaBilingueMasterPage() {
         </div>
       </header>
 
-      {/* Pestañas de Navegación para Móvil (Ocultas en Desktop) */}
-      <div className="flex lg:hidden bg-white border border-slate-200 rounded-xl p-1 shadow-sm justify-around text-xs font-bold shrink-0 select-none">
+      {/* Pestañas de Navegación Móvil y Tablet (100% Ancho) */}
+      <div className="flex lg:hidden bg-white border border-slate-200 rounded-xl p-1 shadow-sm justify-between text-xs font-bold shrink-0 select-none w-full">
         <button
           onClick={() => setMobileActiveView("subtitulos")}
-          className={`flex items-center gap-1 px-3 py-1 rounded-lg transition ${
+          className={`flex-1 flex items-center justify-center gap-1 py-1.5 rounded-lg transition ${
             mobileActiveView === "subtitulos" ? "bg-cyan-50 text-cyan-800 border border-cyan-200 shadow-sm" : "text-slate-600"
           }`}
         >
@@ -295,7 +327,7 @@ export default function SalaBilingueMasterPage() {
 
         <button
           onClick={() => setMobileActiveView("cotizador")}
-          className={`flex items-center gap-1 px-3 py-1 rounded-lg transition ${
+          className={`flex-1 flex items-center justify-center gap-1 py-1.5 rounded-lg transition ${
             mobileActiveView === "cotizador" ? "bg-cyan-50 text-cyan-800 border border-cyan-200 shadow-sm" : "text-slate-600"
           }`}
         >
@@ -305,7 +337,7 @@ export default function SalaBilingueMasterPage() {
 
         <button
           onClick={() => setMobileActiveView("documento")}
-          className={`flex items-center gap-1 px-3 py-1 rounded-lg transition ${
+          className={`flex-1 flex items-center justify-center gap-1 py-1.5 rounded-lg transition ${
             mobileActiveView === "documento" ? "bg-cyan-50 text-cyan-800 border border-cyan-200 shadow-sm" : "text-slate-600"
           }`}
         >
@@ -315,7 +347,7 @@ export default function SalaBilingueMasterPage() {
 
         <button
           onClick={() => setMobileActiveView("config")}
-          className={`flex items-center gap-1 px-3 py-1 rounded-lg transition ${
+          className={`flex-1 flex items-center justify-center gap-1 py-1.5 rounded-lg transition ${
             mobileActiveView === "config" ? "bg-cyan-50 text-cyan-800 border border-cyan-200 shadow-sm" : "text-slate-600"
           }`}
         >
@@ -325,7 +357,7 @@ export default function SalaBilingueMasterPage() {
       </div>
 
       {saveStatus && (
-        <div className="bg-emerald-50 border border-emerald-200 text-emerald-800 text-[11px] px-3 py-1 rounded-xl flex items-center gap-1.5 shadow-sm shrink-0 select-none">
+        <div className="bg-emerald-50 border border-emerald-200 text-emerald-800 text-[11px] px-3 py-1 rounded-xl flex items-center gap-1.5 shadow-sm shrink-0 select-none w-full">
           <Check className="w-3.5 h-3.5 text-emerald-600" />
           <span>{saveStatus}</span>
         </div>
@@ -334,12 +366,12 @@ export default function SalaBilingueMasterPage() {
       {/* CONTENEDOR PRINCIPAL */}
       <main
         ref={containerRef}
-        className="flex-1 flex flex-col lg:flex-row items-stretch gap-0 relative overflow-hidden min-h-0"
+        className="flex-1 flex flex-col lg:flex-row items-stretch gap-0 relative overflow-hidden min-h-0 w-full"
       >
-        {/* PANEL IZQUIERDO: Subtítulos Bilingües */}
+        {/* PANEL IZQUIERDO: Subtítulos Bilingües (100% en móvil, % configurable en desktop) */}
         <div
-          style={{ width: `${leftWidthPct}%` }}
-          className={`flex flex-col h-full min-w-0 lg:min-w-[320px] overflow-hidden select-text ${
+          style={{ width: typeof window !== "undefined" && window.innerWidth >= 1024 ? `${leftWidthPct}%` : "100%" }}
+          className={`flex flex-col h-full overflow-hidden select-text w-full lg:w-auto ${
             mobileActiveView === "subtitulos" ? "flex" : "hidden lg:flex"
           }`}
         >
@@ -366,10 +398,10 @@ export default function SalaBilingueMasterPage() {
           </div>
         </div>
 
-        {/* PANEL DERECHO: Pestañas Intercambiables */}
+        {/* PANEL DERECHO: Pestañas Intercambiables (100% en móvil cuando no es subtítulos) */}
         <div
-          style={{ width: `${100 - leftWidthPct}%` }}
-          className={`flex flex-col h-full min-w-0 lg:min-w-[360px] overflow-hidden bg-white border border-slate-200 rounded-xl sm:rounded-2xl shadow-sm ${
+          style={{ width: typeof window !== "undefined" && window.innerWidth >= 1024 ? `${100 - leftWidthPct}%` : "100%" }}
+          className={`flex flex-col h-full overflow-hidden bg-white border border-slate-200 rounded-xl sm:rounded-2xl shadow-sm w-full lg:w-auto ${
             mobileActiveView !== "subtitulos" ? "flex" : "hidden lg:flex"
           }`}
         >
@@ -419,35 +451,75 @@ export default function SalaBilingueMasterPage() {
           </div>
 
           {/* CONTENIDO SEGÚN LA PESTAÑA */}
-          <div className="flex-1 overflow-y-auto p-2 sm:p-3">
-            {((activeRightTab === "cotizador" && typeof window !== "undefined" && window.innerWidth >= 1024) || mobileActiveView === "cotizador") && (
-              <HennOperationCostEngine uiLang={uiLang} onSummaryChange={setSummaryData} />
+          <div className="flex-1 overflow-y-auto p-2 sm:p-3 min-h-0">
+            {/* 1. COTIZADOR DE COSTOS */}
+            {(activeRightTab === "cotizador" || mobileActiveView === "cotizador") && (
+              <div className={`h-full ${mobileActiveView === "cotizador" ? "block" : "hidden lg:block"}`}>
+                <HennOperationCostEngine uiLang={uiLang} onSummaryChange={setSummaryData} />
+              </div>
             )}
 
-            {((activeRightTab === "documento" && typeof window !== "undefined" && window.innerWidth >= 1024) || mobileActiveView === "documento") && (
-              <div className="h-full flex flex-col p-2 sm:p-3 gap-2">
-                <div className="flex items-center justify-between border-b border-slate-100 pb-1.5">
-                  <span className="font-bold text-xs text-slate-800">Proyección de Documento / PDF</span>
-                  <input
-                    type="text"
-                    value={documentoUrl}
-                    onChange={e => setDocumentoUrl(e.target.value)}
-                    placeholder="URL del PDF..."
-                    className="text-[11px] bg-slate-50 border border-slate-200 rounded px-2 py-0.5 w-40 sm:w-64 outline-none"
-                  />
+            {/* 2. PRESENTACIÓN / VISOR DE PDF NATIVO */}
+            {(activeRightTab === "documento" || mobileActiveView === "documento") && (
+              <div className={`h-full flex flex-col gap-2.5 ${mobileActiveView === "documento" ? "flex" : "hidden lg:flex"}`}>
+                {/* Cabecera del Visor de PDF y Botón de Subida */}
+                <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 pb-2 bg-slate-50 p-2.5 rounded-xl border border-slate-200">
+                  <div className="flex items-center gap-2 min-w-0">
+                    <div className="p-1.5 bg-cyan-100 text-cyan-800 rounded-lg shrink-0">
+                      <FileText className="w-4 h-4" />
+                    </div>
+                    <div className="min-w-0">
+                      <span className="font-extrabold text-xs text-slate-900 block truncate">
+                        {pdfNombre}
+                      </span>
+                      <span className="text-[10px] text-slate-500">
+                        {isPt ? "Documento em exibição sincronizada para a reunião" : "Documento en proyección sincronizada para la reunión"}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-1.5">
+                    <input
+                      type="file"
+                      ref={fileInputRef}
+                      onChange={handlePdfUpload}
+                      accept="application/pdf"
+                      className="hidden"
+                    />
+                    <button
+                      onClick={() => fileInputRef.current?.click()}
+                      className="bg-cyan-700 hover:bg-cyan-800 text-white font-bold text-xs px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition shadow-sm"
+                    >
+                      <FileUp className="w-3.5 h-3.5" />
+                      <span>{isPt ? "Carregar PDF" : "Cargar PDF"}</span>
+                    </button>
+                  </div>
                 </div>
-                <div className="flex-1 bg-slate-100 rounded-xl border border-slate-200 overflow-hidden flex items-center justify-center p-2">
-                  <iframe
-                    src={documentoUrl}
-                    className="w-full h-full rounded-lg border border-slate-300 shadow-sm bg-white"
-                    title="Visor de Documento"
-                  />
+
+                {/* Lienzo del PDF */}
+                <div className="flex-1 bg-slate-200 rounded-xl border border-slate-300 overflow-hidden flex items-center justify-center min-h-[300px]">
+                  {pdfUrl ? (
+                    <iframe
+                      src={pdfUrl}
+                      className="w-full h-full rounded-lg bg-white"
+                      title="Visor PDF Oficial"
+                    />
+                  ) : (
+                    <div className="text-center text-slate-500 p-8">
+                      <FileUp className="w-10 h-10 mx-auto text-slate-400 mb-2" />
+                      <p className="font-bold text-sm text-slate-700">Ningún documento PDF cargado</p>
+                      <p className="text-xs text-slate-500 mt-1 max-w-sm">
+                        Haz clic en "Cargar PDF" para proyectar una propuesta comercial, catálogo técnico o plano para la reunión.
+                      </p>
+                    </div>
+                  )}
                 </div>
               </div>
             )}
 
-            {((activeRightTab === "config" && typeof window !== "undefined" && window.innerWidth >= 1024) || mobileActiveView === "config") && (
-              <div className="p-3 sm:p-4 space-y-3 text-xs">
+            {/* 3. CONFIGURACIÓN DE SALA */}
+            {(activeRightTab === "config" || mobileActiveView === "config") && (
+              <div className={`p-3 sm:p-4 space-y-3 text-xs ${mobileActiveView === "config" ? "block" : "hidden lg:block"}`}>
                 <h3 className="font-extrabold text-xs sm:text-sm text-slate-900 border-b border-slate-100 pb-2">
                   {isPt ? "Configuração da Sala de Reunião B2B" : "Configuración de la Sala de Reunión B2B"}
                 </h3>
