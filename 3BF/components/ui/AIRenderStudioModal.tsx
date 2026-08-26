@@ -239,7 +239,7 @@ export default function AIRenderStudioModal() {
           motor: motorSeleccionadoRender,
           aspectRatio: aspectRatioRender,
           falKey: falApiKey || undefined,
-          byteplusKey: "ark-6de73332-6d8b-4d5a-936e-3d545cc53635-42029",
+          byteplusKey: undefined,
           byteplusModel: "seedream-4-5-251128",
         }),
       });
