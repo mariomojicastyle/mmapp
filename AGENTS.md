@@ -202,3 +202,7 @@ Default values cause runtime failures.
 ## Estilo de Diseño Estándar
 - **Estilo de Diseño Primario:** El estilo estándar para diseñar gráficos, diagramas, interfaces de usuario y componentes visuales en este proyecto es el tema claro **"Tech Ethos"** (Light Theme) como estética predeterminada. Evita el uso del estilo oscuro "Obsidian Teal" a menos que sea explícitamente solicitado por el usuario o se trate de un modo de visualización nocturna secundario.
 
+## 🏷️ Regla Global de Nomenclatura de Marca: `3dBimFab`
+- **Escritura Canónica Obligatoria:** El motor paramétrico, suite tecnológica y marca se debe escribir **SIEMPRE Y SIN EXCEPCIÓN** como **`3dBimFab`** (número `3`, letra `d` minúscula, `B` mayúscula, `im` minúsculas, `F` mayúscula, `ab` minúsculas).
+- **Prohibido:** Queda estrictamente prohibido escribir variantes como *3D Binfab*, *3DBimFab*, *3D BIM FAB*, *3D BinFab*, *3dbimfab*, etc. en cualquier documento, resumen, mensaje, chat o archivo de código.
+

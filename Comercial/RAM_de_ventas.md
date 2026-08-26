@@ -104,7 +104,7 @@ Para evitar respuestas genéricas, el RAM de ventas almacena y cruza 5 dimension
 | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
 | **Mobille / AKEO Partner** | Luiz Atilio Barse | Diretor & Super-Conector B2B | Conexión estratégica, apadrinamiento con fábricas en RS | 🔥 Aliado Estratégico (Padrino B2B) | 10 Ago 2026 - Conexión directa a Marcelo Novo (Politorno) con aval de Sr. Pedro | Mantenerlo informado de avances con Politorno |
 | **Politorno Móveis** | Marcelo Novo | Diretor / Líder P&D | Manuales 3D interactivos, revisión de propuesta económica y suite 3DBimFab | 🔥 Caliente (Vacaciones / Retoma Lun 31 Ago) | 24 Ago 2026 - Marcelo avisó que está de vacaciones esta semana. Receptivo a retomar la próxima | Contactar el lunes 31 de agosto para fijar la reunión |
-| **Móveis Henn** | Marcos & Jonas Borck | Coordenador P&D & Analista Engenharia | Manuales interactivos 3D, reducción de garantías en RTA, demo Cômoda Ravenna D737 | 🔥 Cita Confirmada (Mié 26 Ago, 10:00 BRT) | 20 Ago 2026 - Link de Meet compartido. Asistirán juntos en sala de juntas | Enviar recordatorio 9:30 BRT el miércoles y presentar demo + pincelada 3DBimFab |
+| **Móveis Henn** | Marcos Unnass & Jonas Borck | Coordenador P&D & Analista Engenharia | Manuales interactivos 3D, 3dBimFab, ERP TOTVS Datasul, ahorro 30% | 🔥 Negociación Avanzada (Llamada Jue 27 Ago, 9:00 AM) | 26 Ago 2026 - Demo 1h 37m. Jonas dio su WhatsApp (+55 49 9982-75012) validando la grandeza del software. Enviado PDF PT 4 págs. | Llamar a Marcos el Jueves 27 a las 9:00 AM para revisar la tabla de costos (Pág 4) |
 | **Grupo K1 (Kappesberg)** | Julio Santos | Especialista IA & Automação / Mkt | Costos de P&D de manuales, modelo suscripción ($1 USD/mes), IA aplicada | 🔥 En Evaluación / Cotización Enviada | 17 Ago 2026 - Solicitó valores e insumos. Enviada calculadora 30% ahorro | Esperar feedback de reunión interna con su gerente |
 | **Kit's Paraná** | Marcos Benedito & Jamylle Duarte | Directivos P&D / Marketing | Costos de asistencia técnica, manuales en papel, telemetría | 🟡 Referenciado / Email Preparado | 17 Ago 2026 - Andre Luis facilitó sus correos | Enviar correo corporativo formal a Marcos y Jamylle |
 | **MADECENTRO** | Dimas Tobón | Gerente General | Manuales interactivos 3D, módulos de cocina/closets, telemetría y software | 🔥 Contacto Directo / Caliente | 18 Ago 2026 - Respondió en LinkedIn | Responder para agendar reunión o demo 3D personalizada |
@@ -144,14 +144,30 @@ Para evitar respuestas genéricas, el RAM de ventas almacena y cruza 5 dimension
 
 ### 🟢 2. Móveis Henn (Mondaí, SC)
 - **Contactos Clave:**
-  * **Marcos** (Coordenador de Engenharia e P&D - Tomador de decisión): WhatsApp `+55 49 8807-4325`, Email `engenharia1@henn.com.br`.
-  * **Jonas Borck** (Analista de Engenharia de Produtos - Padrino y Promotor interno en LinkedIn).
+  * **Marcos Unnass** (Coordenador de Engenharia e P&D - Tomador de decisión): WhatsApp `+55 49 8807-4325`, Email `engenharia1@henn.com.br`.
+  * **Jonas Borck** (Analista de Engenharia de Produtos - Padrino B2B y Promotor interno): WhatsApp Personal `+55 49 9982-75012`, LinkedIn Activo.
+  * **Cintia** (Diseñadora P&D - Modelado en SketchUp y manuales).
   * **Rudgeri Henkel** (Gerente de Planejamento e Materiais - WhatsApp `+55 49 9883-16920`).
 - **Historial Completo:**
   * *03 Agosto 2026:* Rudgeri Henkel entregó su WhatsApp por LinkedIn para recibir la demo.
   * *19 Agosto 2026:* Contacto con Jonas Borck. Jonas aclaró que él no diseña manuales, pero tras conocer la trayectoria de Mario (15 años en Maderkit) y recibir la calculadora con 30% de ahorro para la *Cômoda Ravenna D737*, se convirtió en promotor interno y entregó el contacto directo de su jefe Marcos.
-  * *20 Agosto 2026:* Mario contactó a Marcos por WhatsApp referenciado por Jonas. Marcos aceptó de inmediato agendar videollamada para el **Miércoles 26 de Agosto a las 10:00 BRT (8:00 COL)**. Jonas confirmó que ambos estarán en la sala de juntas proyectando la pantalla de Marcos en la TV. Jonas recomendó que Mario hable pausado en español y dé un pincelazo de 3DBimFab.
-- **Objetivo Estratégico:** Demostración en vivo de la Cômoda Ravenna D737 en 3D, presentación de la calculadora de ahorro y oferta de piloto 3D gratuito para 1 producto.
+  * *20 Agosto 2026:* Mario contactó a Marcos por WhatsApp referenciado por Jonas. Marcos aceptó de inmediato agendar videollamada para el **Miércoles 26 de Agosto a las 10:00 BRT (8:00 COL)**. Jonas confirmó que ambos estarán en la sala de juntas proyectando la pantalla de Marcos en la TV. Jonas recomendó que Mario hable pausado en español y dé un pincelazo de 3dBimFab.
+  * *26 Agosto 2026 (09:25 BRT):* Envío de mensaje recordatorio 30 minutos antes de la reunión a Jonas Borck confirmando que todo está preparado del lado de Mario para la sesión de las 10:00 BRT (8:00 COL) con Marcos y él en la sala de juntas.
+  * *26 Agosto 2026 (10:00 - 11:37 BRT):* **HITO HISTÓRICO - Reunión de Presentación Técnica (1h 37min):**
+    - **Asistentes:** Mario Mojica, Marcos Unnass y Jonas Borck.
+    - **Puntos Tratados:**
+      1. *Contexto & Dolor:* Desconexión de flujos actuales (SketchUp, Illustrator, InDesign aislados) frente a la suite integrada de Mario.
+      2. *Manual 3D Interactivo:* Demostración de navegación 3D, asistencia por voz, multilenguaje (PT/EN/ES), realidad aumentada, reducción de garantías/SAC en 45-60% y telemetría de usuario final.
+      3. *3dBimFab (Motor Paramétrico):* Presentación de RhinoCompute en la nube, interoperabilidad DWG/DXF a algorítmico, orientación automática de vetas, costeo y despiece en tiempo real, render IA de catálogo y asistente de empaque.
+      4. *Integración ERP:* Marcos consultó viabilidad técnica con el ERP TOTVS Datasul de Henn. Mario ratificó que la integración vía APIs es directa, flexible y gradual.
+      5. *Propuesta Piloto:* Mario propuso vincularse 3 meses como diseñador / partner tecnológico junto a Jonas para lograr victorias tempranas con productos reales de Henn.
+    - **Acuerdos & Próximos Pasos Inmediatos:**
+      1. Mario enviará el enlace de la demo 3D para que el equipo de Henn lo pruebe en dispositivos móviles.
+      2. **Llamada de Levantamiento de Costos:** Agendada para el **Jueves 27 de agosto a las 9:00 AM (BRT)** entre Mario y Marcos para relevar tiempos, herramientas y costos actuales del proceso y proyectar el ahorro garantizado de al menos 30%.
+      3. Marcos estructurará la presentación de costos y viabilidad para los directivos de Henn con la propuesta del proyecto piloto de 3 meses.
+  * *26 Agosto 2026 (10:18 BRT):* **Respaldo Directo de Jonas Borck:** Mario envió un mensaje cálido de agradecimiento personal de colega a colega a Jonas. Jonas respondió: *"Boa tarde Mario! Tudo bem sim, e ai, como estas? Legal, foi uma apresentação bem interessante, deu para entender a grandeza do seu software. Sigo a disposição aqui, ou pode me chamar no WhatsApp 5549998275012, para qualquer dúvida. Em horário comercial dificilmente eu acesso meu celular, mas quando da eu te respondo. Valeuu! Abraço"*. Con esto, Jonas habilitó su WhatsApp personal `+55 49 9982-75012` y consolidó su rol de Padrino B2B interno.
+  * *26 Agosto 2026 (11:20 BRT):* **Envío de Memoria Técnica Oficial a Marcos Unnass:** Se remitió por WhatsApp a Marcos el informe oficial en Portugués (`Integracao_TOTVS_Datasul_Moveis_Henn_PT.pdf` de 4 páginas) con la minuta proactiva, la diferenciación de los dos pilotos (Piloto 1 SketchUp vs Piloto 2 3dBimFab), y recomendándole revisar la **Página 4 (Tabla de Costos y Tiempos de P&D)** como base de trabajo para la llamada de mañana a las 09:00 BRT.
+- **Objetivo Estratégico:** Llamada telefónica mañana a las 9:00 AM BRT (7:00 AM COL) con Marcos para validar la matriz de costos y cerrar el inicio del piloto de 3 meses en P&D.
 
 ---
 

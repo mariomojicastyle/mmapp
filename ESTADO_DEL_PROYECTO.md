@@ -3,11 +3,13 @@
 Este archivo es la "Memoria RAM" para Antigravity. Contiene el contexto de lo que estamos trabajando justo ahora, los objetivos pendientes y los bloqueos.
 
 > **Contacto Oficial Mario Mojica:** WhatsApp: **`+57 311 764 6907`** (3117646907) | Email: **`mariomojica.style@gmail.com`** | Demo: **`https://mariomojica.com/demo`**
+> 
+> 🏷️ **REGLA GLOBAL DE NOMENCLATURA DE MARCA:** La suite y motor paramétrico se escribe **SIEMPRE Y SIN EXCEPCIÓN** como **`3dBimFab`** (d minúscula, B mayúscula, F mayúscula: `3` + `d` + `Bim` + `Fab`). Prohibido escribir *3D Binfab*, *3DBimFab*, *3D BIM FAB*, *3D BinFab*, etc.
 
 ---
 
-## 🏗️ 1. Plataforma B2B & 3DBimFab (Foco Actual)
-**Estado:** Integración Supabase avanzada, Identidad Visual estandarizada e Hito Fundacional de **3DBimFab (3BF)** completado.
+## 🏗️ 1. Plataforma B2B & 3dBimFab (Foco Actual)
+**Estado:** Integración Supabase avanzada, Identidad Visual estandarizada e Hito Fundacional de **3dBimFab (3BF)** completado.
 
 ### 🧠 RAM de Ventas B2B & CRM Relacional Multimodal (`/ventas-ram`) — Estado: IMPLEMENTADO Y VALIDADO
 - [x] **Módulo Completo de RAM de Ventas (`/ventas-ram`)**: Implementado en la plataforma Next.js con permisos de rol (`VENTAS_RAM`), navegación con ícono `BrainCircuit`, diseño Tech Ethos / Obsidian Teal, márgenes de contenedor estándar (`p-6 space-y-6`) homologados con Proyectos y **divisor redimensionable (Splitter interactivo)** para ajustar el ancho entre el Directorio y la Ficha con persistencia local.
@@ -18,6 +20,13 @@ Este archivo es la "Memoria RAM" para Antigravity. Contiene el contexto de lo qu
   - **Pestaña 2 (`💬 Hilo de Conversación Completo`)**: Muestra la bitácora cronológica con citas reales del chat, banner proactivo de **Próxima Jugada Táctica** y botón protagónico **`⚡ Activar Antigravity: Redactar Mensaje`** para generar respuestas bajo demanda en **Português Brasileño + Traducción en Español** con refinamiento interactivo.
 - [x] **Persistencia Reactiva & Memoria Local**: Indexación inmediata y sincronización fluida entre Supabase, memoria local y la memoria activa `.agent/skills/b2b-sales-closer/ventas_ram.md`.
 - [x] **Protocolo Antigravity de Fluidez Bilingüe (2 Bloques de Código en 1 Clic)**: Respuestas en el chat entregadas siempre en 2 bloques de código markdown separados (Bloque 1 en Português do Brasil para copiar en 1 clic + Bloque 2 en Español para auditoría rápida), inyectando ambos idiomas en la base de datos de Supabase y en `ventas_ram_storage.json` para mantener el historial vivo.
+
+- [x] **[NUEVO - 26 de Agosto, 2026] Hito Copiloto_Reunion_Bilingue_B2B_Henn (Suite de Reuniones en Vivo Bilingüe PT ⇄ ES, Cotizador Dinámico de P&D, Desglose Estándar de Manuales, Exportación PDF con Branding y Despliegue Global)**:
+  - **Suite de Reuniones B2B (`/traductor-vivo/[sala]`)**: Espacio multipantalla interactivo con subtítulos y transcripción en texto continuo y seleccionable con el mouse, divisor central arrastrable (`GripVertical`) y selector global de idioma (`[ES | PT]`).
+  - **Cotizador Dinámico de P&D**: Matriz editable en vivo para calibrar total de manuales al año (ej. 200), diseñadores CLT y licencias de software discriminadas (SketchUp Pro + Adobe CC), determinando el costo estándar por manual y la garantía de 30% de ahorro directo (+R$ 46.800/año para la directiva de Henn).
+  - **Pestañas Dinámicas del Panel Derecho**: Pestaña *Cotizador*, *Presentación / Visor de PDF* con scroll sincronizado, y *Configuración de Sala* multi-cliente.
+  - **Descargas Ejecutivas**: Descarga simultánea en 1 clic para Mario (`.md` + `.pdf` con logo e identidad de Mario Mojica) y descarga en PDF para el cliente (`.pdf`).
+  - **Sincronización CRM & RAM de Ventas**: Indexación de contactos de Jonas Borck y Marcos Unnass en `RAM_de_ventas.md` y `ventas_ram_storage.json`.
 
 - [x] **[NUEVO - 25 de Agosto, 2026] Hito Audios_y_3BF_Render (Blindaje Total del Pipeline TTS/Traducción, Eliminación de Repeticiones y Desincronización en Portugués, y Despliegue Global)**:
   - **Eliminación de Repeticiones en Locución TTS (`api/tts/route.ts`)**: Migración a procesamiento secuencial en síntesis de fragmentos con pausas `[pausa: X]`, resolviendo la colisión de WebSockets contra Microsoft Edge TTS y alineando las tramas MP3 para erradicar tartamudeos y saltos de audio en el reproductor.

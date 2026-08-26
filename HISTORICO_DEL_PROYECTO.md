@@ -1789,3 +1789,24 @@ Con esta batería de arreglos y la validación en caliente, la V20 se establece 
   * Desactivación del almacenamiento estático en memoria (`global.audioCache`) para la categoría de sonidos en el proxy de Vite, permitiendo que cualquier nuevo audio generado en Supabase Storage se escuche de forma inmediata en el visor 3D local sin requerir reinicios del servidor.
 - **Validación y Pruebas Unitarias de Síntesis**:
   * Verificada la generación limpia y continua de locuciones en español, inglés y portugués (`pt-BR-AntonioNeural`) en pasos con múltiples pausas intermedias.
+
+---
+
+### 🔹 Hito Copiloto_Reunion_Bilingue_B2B_Henn — Suite de Reuniones en Vivo Bilingüe (PT ⇄ ES), Cotizador Dinámico de P&D, Desglose Estándar de Manuales, Exportación PDF con Branding y Despliegue Global (26 de Agosto, 2026)
+
+- **Desarrollo de la Suite de Reuniones en Vivo B2B (`/traductor-vivo/[sala]`)**:
+  * Creación de espacio interactivo multipantalla diseñado para compartir pestaña en Google Meet durante llamadas comerciales internacionales.
+  * Panel izquierdo con transcripción y subtítulos bilingües simultáneos (`🇧🇷 Português` y `🇪🇸 Español`) en texto fluido, continuo y 100% seleccionable con el mouse para copiar y pegar.
+  * Divisor central arrastrable (`GripVertical`) que permite calibrar el ancho de los paneles en tiempo real según la necesidad de la presentación.
+- **Cotizador de Operación Anual de P&D y Costo Estándar de Manuales (`components/copiloto/HennOperationCostEngine.tsx`)**:
+  * Modelo financiero 100% editable en vivo: total de lanzamientos/manuales al año, diseñadores en P&D, salarios CLT y licencias de software discriminadas (SketchUp Pro R$ 2.400/año + Adobe CC R$ 3.600/año).
+  * Algoritmo de cálculo del **Costo Estándar por Manual** ($C_{estandar} = \text{Costo Total Anual} / \text{Manuales al Año}$) con desglose por tamaño de mueble (pequeño, mediano, grande) y garantía de ahorro directo del 30% (+R$ 46.800/año para la directiva de Henn).
+- **Arquitectura Dinámica Multi-Pestaña y Multi-Cliente**:
+  * Soporte de salas dinámicas por URL (`/traductor-vivo/henn`, `/traductor-vivo/todeschini`, etc.).
+  * Pestañas intercambiables en panel derecho: *Cotizador de Costos*, *Presentación / Visor de PDF* con scroll sincronizado, y *Configuración de Sala* para personalizar participantes.
+- **Exportación Ejecutiva en 1 Clic (Markdown `.md` + PDF Oficial con Branding Mario Mojica)**:
+  * Generación y descarga simultánea en español para Mario (`.md` y `.pdf`).
+  * Generación de PDF en portugués (`.pdf`) con isotipo corporativo `MM`, tipografía Tech Ethos y tabla de costos para entrega inmediata por WhatsApp al cliente.
+- **Sincronización de CRM y RAM de Ventas**:
+  * Actualización de `Comercial/RAM_de_ventas.md` y `data/ventas_ram_storage.json` con el contacto directo de WhatsApp de Jonas Borck (`+55 49 9982-75012`), acuerdos previos y la preparación de la reunión técnica con Marcos Unnass a las 09:00 AM BRT.
+
