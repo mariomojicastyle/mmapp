@@ -8,19 +8,15 @@ import { SplitBilingualFeed } from "@/components/copiloto/SplitBilingualFeed";
 import { ModalConfiguracionSala, RoomConfigData } from "@/components/copiloto/ModalConfiguracionSala";
 import { ModalHistorialActas } from "@/components/copiloto/ModalHistorialActas";
 import {
-  Play,
-  Square,
   Save,
   Check,
   GripVertical,
   Calculator,
   FileText,
   Settings,
-  Radio,
   MessageSquare,
   FileUp,
   FolderOpen,
-  Share2,
   Copy
 } from "lucide-react";
 
@@ -60,7 +56,7 @@ export default function SalaBilingueMasterPage() {
     horasSacMes: 20
   });
 
-  // Vista activa en móvil: "subtitulos" | "cotizador" | "documento" | "config"
+  // Vista activa en móvil
   const [mobileActiveView, setMobileActiveView] = useState<"subtitulos" | "cotizador" | "documento" | "config">("subtitulos");
 
   // Pestañas del Panel Derecho en Escritorio
@@ -81,8 +77,7 @@ export default function SalaBilingueMasterPage() {
     interimText,
     messages,
     isTranslating,
-    toggleMeeting,
-    submitCurrentDictation
+    toggleMeeting
   } = useLiveTranslator({
     sala,
     role: myVoiceLang === "es" ? "mario" : "cliente",
@@ -379,96 +374,93 @@ export default function SalaBilingueMasterPage() {
         onClose={() => setIsHistorialModalOpen(false)}
       />
 
-      {/* 1. Header Compacto Fijo */}
-      <header className="bg-white border border-slate-200 rounded-xl sm:rounded-2xl px-2 sm:px-3.5 py-1 sm:py-1.5 shadow-sm flex items-center justify-between gap-1.5 sm:gap-2 shrink-0 select-none w-full z-30">
-        <div className="flex items-center gap-1.5 sm:gap-2.5 min-w-0">
-          <div className="w-6 h-6 sm:w-7 sm:h-7 rounded-lg bg-cyan-600 text-white flex items-center justify-center font-extrabold text-[11px] sm:text-xs shadow-sm shrink-0">
+      {/* 1. Header Compacto Fijo con Botones Alineados a la Marca */}
+      <header className="bg-white border border-slate-200 rounded-xl sm:rounded-2xl px-2.5 sm:px-4 py-1.5 shadow-sm flex items-center justify-between gap-2 shrink-0 select-none w-full z-30">
+        <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+          <div className="w-7 h-7 rounded-lg bg-cyan-700 text-white flex items-center justify-center font-extrabold text-xs shadow-sm shrink-0">
             MM
           </div>
           <div className="min-w-0">
-            <div className="flex items-center gap-1">
-              <h1 className="font-extrabold text-[11px] sm:text-xs text-slate-900 leading-tight truncate">
+            <div className="flex items-center gap-1.5">
+              <h1 className="font-extrabold text-xs sm:text-sm text-slate-900 leading-tight truncate">
                 {clienteNombre}
               </h1>
               <button
                 onClick={() => setIsConfigModalOpen(true)}
-                className="text-[9px] text-cyan-700 bg-cyan-50 hover:bg-cyan-100 border border-cyan-200 px-1.5 py-0.2 rounded font-bold transition shrink-0"
+                className="text-[10px] text-cyan-700 bg-cyan-50 hover:bg-cyan-100 border border-cyan-200 px-1.5 py-0.5 rounded font-bold transition shrink-0"
                 title="Configurar empresa y participantes"
               >
                 Configurar
               </button>
-              {/* Botón Copiar Enlace Directo */}
               <button
                 onClick={handleCopyLink}
-                className="text-[9px] text-slate-600 bg-slate-100 hover:bg-slate-200 border border-slate-300 px-1.5 py-0.2 rounded font-bold flex items-center gap-1 transition shrink-0"
-                title="Copiar enlace para el otro dispositivo"
+                className="text-[10px] text-slate-600 bg-slate-100 hover:bg-slate-200 border border-slate-300 px-1.5 py-0.5 rounded font-bold flex items-center gap-1 transition shrink-0"
+                title="Copiar enlace directo"
               >
-                {copyLinkStatus ? <Check className="w-2.5 h-2.5 text-emerald-600" /> : <Copy className="w-2.5 h-2.5 text-slate-500" />}
+                {copyLinkStatus ? <Check className="w-3 h-3 text-emerald-600" /> : <Copy className="w-3 h-3 text-slate-500" />}
                 <span>{copyLinkStatus ? "Copiado!" : "Copiar Link"}</span>
               </button>
             </div>
-            <p className="text-[9px] sm:text-[10px] text-slate-500 truncate hidden xs:block">
+            <p className="text-[10px] text-slate-500 truncate hidden xs:block">
               {participantes1.join(", ")} & {participantes2.join(", ")}
             </p>
           </div>
         </div>
 
-        {/* Acciones y Botón Maestro Iniciar Reunión */}
-        <div className="flex items-center gap-1 sm:gap-1.5 shrink-0">
+        {/* Acciones de la Marca */}
+        <div className="flex items-center gap-2 shrink-0">
           {/* Selector de Idioma de Escucha */}
-          <div className="flex items-center bg-slate-100 p-0.5 rounded-lg border border-slate-200 text-[9px] sm:text-[10px] font-bold">
+          <div className="flex items-center bg-slate-100 p-0.5 rounded-xl border border-slate-200 text-[10px] sm:text-xs font-bold">
             <button
               onClick={() => { setMyVoiceLang("es"); setUiLang("es"); }}
-              className={`px-1.5 py-0.5 rounded transition ${
+              className={`px-2 py-1 rounded-lg transition ${
                 myVoiceLang === "es" ? "bg-white text-cyan-700 shadow-sm" : "text-slate-600 hover:text-slate-900"
               }`}
-              title="Escuchar en Español y traducir a Portugués"
+              title="Escuchar en Español"
             >
               ES
             </button>
             <button
               onClick={() => { setMyVoiceLang("pt"); setUiLang("pt"); }}
-              className={`px-1.5 py-0.5 rounded transition ${
-                myVoiceLang === "pt" ? "bg-white text-emerald-700 shadow-sm" : "text-slate-600 hover:text-slate-900"
+              className={`px-2 py-1 rounded-lg transition ${
+                myVoiceLang === "pt" ? "bg-white text-cyan-700 shadow-sm" : "text-slate-600 hover:text-slate-900"
               }`}
-              title="Escuchar en Português y traducir a Español"
+              title="Escuchar en Português"
             >
               PT
             </button>
           </div>
 
-          {/* BOTÓN MAESTRO: INICIAR REUNIÓN / FINALIZAR REUNIÓN */}
+          {/* BOTÓN MAESTRO: INICIAR REUNIÓN (Estilo Marca Cyan-700 / Sin Icono) */}
           <button
             onClick={toggleMeeting}
-            className={`px-3 sm:px-4 py-1.5 rounded-xl font-extrabold text-[11px] sm:text-xs flex items-center gap-1.5 transition shadow-sm ${
+            className={`px-4 py-1.5 rounded-xl font-extrabold text-xs transition shadow-sm ${
               isMeetingActive
                 ? "bg-red-600 hover:bg-red-700 text-white animate-pulse"
-                : "bg-emerald-600 hover:bg-emerald-700 text-white"
+                : "bg-cyan-700 hover:bg-cyan-800 text-white"
             }`}
             title={isMeetingActive ? "Finalizar captura de reunión" : "Iniciar captura continua de la reunión"}
           >
-            {isMeetingActive ? <Square className="w-3.5 h-3.5 fill-current" /> : <Play className="w-3.5 h-3.5 fill-current" />}
             <span>{isMeetingActive ? "Finalizar Reunión" : "Iniciar Reunión"}</span>
           </button>
 
-          {/* Botón Ver Actas */}
+          {/* BOTÓN ACTAS (Sin Icono) */}
           <button
             onClick={() => setIsHistorialModalOpen(true)}
-            className="bg-slate-100 hover:bg-slate-200 text-slate-700 text-[10px] sm:text-xs font-semibold px-2 py-1 rounded-xl flex items-center gap-1 border border-slate-300 transition shadow-sm"
+            className="bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold px-3 py-1.5 rounded-xl border border-slate-300 transition shadow-sm"
             title="Ver actas y notas guardadas"
           >
-            <FolderOpen className="w-3 h-3 text-slate-600" />
-            <span className="hidden md:inline">Actas</span>
+            <span>Actas</span>
           </button>
 
-          {/* Botón Guardar */}
+          {/* BOTÓN GUARDAR (Estilo Marca Cyan-700 + Único Icono) */}
           <button
             onClick={handleSaveToWorkspace}
-            className="bg-slate-800 hover:bg-slate-900 text-white text-[10px] sm:text-xs font-semibold px-2 py-1 rounded-xl flex items-center gap-1 transition shadow-sm"
+            className="bg-cyan-700 hover:bg-cyan-800 text-white text-xs font-extrabold px-3.5 py-1.5 rounded-xl flex items-center gap-1.5 transition shadow-sm"
             title="Guardar notas en el histórico"
           >
-            <Save className="w-3 h-3 text-cyan-400" />
-            <span className="hidden md:inline">{isPt ? "Salvar" : "Guardar"}</span>
+            <Save className="w-3.5 h-3.5 text-cyan-300" />
+            <span>{isPt ? "Salvar" : "Guardar"}</span>
           </button>
         </div>
       </header>
@@ -545,7 +537,6 @@ export default function SalaBilingueMasterPage() {
             uiLang={uiLang}
             onDownloadBoth={handleDownloadBothForMario}
             onDownloadPtPdf={handleDownloadPdfForCliente}
-            onSubmitDictation={submitCurrentDictation}
           />
         </div>
 

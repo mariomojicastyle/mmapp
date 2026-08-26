@@ -13,42 +13,23 @@ export interface ChatMessage {
   timestamp: number;
 }
 
-// Extracción inteligente
-function extractTranscriptFromEvent(eventResults: any): string {
-  if (!eventResults || eventResults.length === 0) return "";
-
-  const lastText = eventResults[eventResults.length - 1][0]?.transcript?.trim() || "";
-  const firstText = eventResults[0][0]?.transcript?.trim() || "";
-
-  if (eventResults.length > 1 && lastText.toLowerCase().includes(firstText.toLowerCase())) {
-    return lastText;
-  }
-
-  let combined = "";
-  for (let i = 0; i < eventResults.length; i++) {
-    const chunk = eventResults[i][0]?.transcript?.trim() || "";
-    if (chunk && !combined.includes(chunk)) {
-      combined += " " + chunk;
-    }
-  }
-  return (combined || lastText).trim();
-}
-
-// Limpiador NLP
+// Limpiador NLP de frases y palabras duplicadas
 function cleanAggressiveDuplicates(text: string): string {
   if (!text) return "";
   let str = text.trim();
 
+  // 1. Eliminar palabras repetidas consecutivas
   str = str.replace(/\b(\w+)(?:\s+\1\b)+/gi, "$1");
 
+  // 2. Eliminar n-gramas repetidos (de 2 a 12 palabras)
   let words = str.split(/\s+/);
   let changed = true;
   let iterations = 0;
 
-  while (changed && iterations < 10) {
+  while (changed && iterations < 8) {
     changed = false;
     iterations++;
-    for (let len = Math.min(12, Math.floor(words.length / 2)); len >= 2; len--) {
+    for (let len = Math.min(10, Math.floor(words.length / 2)); len >= 2; len--) {
       for (let i = 0; i <= words.length - 2 * len; i++) {
         const phrase1 = words.slice(i, i + len).join(" ").toLowerCase();
         const phrase2 = words.slice(i + len, i + 2 * len).join(" ").toLowerCase();
@@ -91,9 +72,8 @@ export function useLiveTranslator({
   const roleRef = useRef<string>(role);
   const salaRef = useRef<string>(sala);
 
-  const currentDictationTextRef = useRef<string>("");
   const silenceTimerRef = useRef<any>(null);
-  const isTranslatingRef = useRef<boolean>(false);
+  const lastProcessedTextRef = useRef<string>("");
 
   useEffect(() => {
     myLangRef.current = myLang;
@@ -133,16 +113,15 @@ export function useLiveTranslator({
     }
   }, []);
 
-  // Traducir y enviar bloque
-  const translateAndCommitBlock = async (rawBlockText: string) => {
-    const cleanedText = cleanAggressiveDuplicates(rawBlockText);
-    if (!cleanedText || cleanedText.length < 2 || isTranslatingRef.current) {
+  // Traducir y emitir de inmediato en tiempo real
+  const translateAndCommit = async (rawText: string) => {
+    const cleanedText = cleanAggressiveDuplicates(rawText);
+    if (!cleanedText || cleanedText.length < 2 || cleanedText === lastProcessedTextRef.current) {
       return;
     }
 
-    isTranslatingRef.current = true;
+    lastProcessedTextRef.current = cleanedText;
     setIsTranslating(true);
-    currentDictationTextRef.current = "";
     setInterimText("");
 
     const currentRole = roleRef.current;
@@ -187,17 +166,14 @@ export function useLiveTranslator({
         })
       });
 
-      setTimeout(() => fetchRoomMessages(), 300);
-
     } catch (err) {
-      console.error("Error al traducir y enviar bloque:", err);
+      console.error("Error en traducción tiempo real:", err);
     } finally {
-      isTranslatingRef.current = false;
       setIsTranslating(false);
     }
   };
 
-  // Inicializar Web Speech Recognition
+  // Inicializar Web Speech Recognition Fluido
   useEffect(() => {
     if (typeof window === "undefined") return;
 
@@ -221,22 +197,36 @@ export function useLiveTranslator({
     };
 
     recognition.onresult = (event: any) => {
-      const extracted = extractTranscriptFromEvent(event.results);
-      const cleaned = cleanAggressiveDuplicates(extracted);
+      let finalTranscript = "";
+      let currentInterim = "";
 
-      currentDictationTextRef.current = cleaned;
-      setInterimText(cleaned);
-
-      // Auto-commit tras 1.8 segundos de pausa natural
-      if (silenceTimerRef.current) clearTimeout(silenceTimerRef.current);
-      silenceTimerRef.current = setTimeout(() => {
-        if (currentDictationTextRef.current && isMeetingActiveRef.current) {
-          const textToCommit = currentDictationTextRef.current;
-          currentDictationTextRef.current = "";
-          setInterimText("");
-          translateAndCommitBlock(textToCommit);
+      for (let i = event.resultIndex; i < event.results.length; ++i) {
+        const transcriptChunk = event.results[i][0].transcript;
+        if (event.results[i].isFinal) {
+          finalTranscript += transcriptChunk;
+        } else {
+          currentInterim += transcriptChunk;
         }
-      }, 1800);
+      }
+
+      const cleanedInterim = cleanAggressiveDuplicates(currentInterim);
+      if (cleanedInterim) {
+        setInterimText(cleanedInterim);
+      }
+
+      // Si tenemos un segmento final reconocido por el PC
+      if (finalTranscript.trim()) {
+        if (silenceTimerRef.current) clearTimeout(silenceTimerRef.current);
+        translateAndCommit(finalTranscript.trim());
+      } else if (currentInterim.trim()) {
+        // Pausa rápida de 1.0s para procesar en tiempo real sin demoras
+        if (silenceTimerRef.current) clearTimeout(silenceTimerRef.current);
+        silenceTimerRef.current = setTimeout(() => {
+          if (currentInterim.trim() && isMeetingActiveRef.current) {
+            translateAndCommit(currentInterim.trim());
+          }
+        }, 1000);
+      }
     };
 
     recognition.onerror = (event: any) => {
@@ -248,7 +238,7 @@ export function useLiveTranslator({
       }
     };
 
-    // Auto-reinicio para grabación continua sin interrupciones
+    // Auto-reinicio para sesión continua
     recognition.onend = () => {
       if (isMeetingActiveRef.current && !manualStopRef.current) {
         try {
@@ -272,14 +262,13 @@ export function useLiveTranslator({
     };
   }, [myLang]);
 
-  // Polling de mensajes cada 800ms
+  // Polling de sincronización cada 1s
   useEffect(() => {
     fetchRoomMessages();
-    const pollInterval = setInterval(fetchRoomMessages, 800);
+    const pollInterval = setInterval(fetchRoomMessages, 1000);
     return () => clearInterval(pollInterval);
   }, [fetchRoomMessages]);
 
-  // Iniciar / Finalizar Reunión Maestro
   const toggleMeeting = () => {
     if (!recognitionRef.current) return;
 
@@ -293,13 +282,12 @@ export function useLiveTranslator({
         recognitionRef.current.abort();
       } catch (e) {}
 
-      const textToCommit = currentDictationTextRef.current;
-      if (textToCommit) {
-        translateAndCommitBlock(textToCommit);
+      if (interimText) {
+        translateAndCommit(interimText);
       }
     } else {
-      currentDictationTextRef.current = "";
       setInterimText("");
+      lastProcessedTextRef.current = "";
       manualStopRef.current = false;
       isMeetingActiveRef.current = true;
       setIsMeetingActive(true);
@@ -311,15 +299,6 @@ export function useLiveTranslator({
     }
   };
 
-  const submitCurrentDictation = () => {
-    if (currentDictationTextRef.current) {
-      const textToCommit = currentDictationTextRef.current;
-      currentDictationTextRef.current = "";
-      setInterimText("");
-      translateAndCommitBlock(textToCommit);
-    }
-  };
-
   return {
     isMeetingActive,
     isListening: isMeetingActive,
@@ -328,7 +307,6 @@ export function useLiveTranslator({
     isConnected,
     isTranslating,
     toggleMeeting,
-    toggleListening: toggleMeeting,
-    submitCurrentDictation
+    toggleListening: toggleMeeting
   };
 }
