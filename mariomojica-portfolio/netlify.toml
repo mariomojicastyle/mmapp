@@ -14,6 +14,14 @@
   status = 200
 
 [[redirects]]
+  from = "/mesa-bilingue"
+  status = 200
+
+[[redirects]]
+  from = "/mesa-bilingue/*"
+  status = 200
+
+[[redirects]]
   from = "/embed/armado/assets/herrajes_compartidos/*"
   to = "https://dezaisaunoumhqpssols.supabase.co/storage/v1/object/public/insumos_manuales/_herrajes_compartidos/:splat"
   status = 200

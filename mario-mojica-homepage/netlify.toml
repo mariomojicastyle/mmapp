@@ -24,6 +24,14 @@
   status = 200
 
 [[redirects]]
+  from = "/mesa-bilingue"
+  status = 200
+
+[[redirects]]
+  from = "/mesa-bilingue/*"
+  status = 200
+
+[[redirects]]
   from = "/demo"
   to = "/embed/armado/M00001"
   status = 302

@@ -5,6 +5,8 @@ import { useParams } from "next/navigation";
 import { useLiveTranslator } from "@/hooks/useLiveTranslator";
 import { HennOperationCostEngine, CostParameters } from "@/components/copiloto/HennOperationCostEngine";
 import { SplitBilingualFeed } from "@/components/copiloto/SplitBilingualFeed";
+import { ModalConfiguracionSala, RoomConfigData } from "@/components/copiloto/ModalConfiguracionSala";
+import { ModalHistorialActas } from "@/components/copiloto/ModalHistorialActas";
 import {
   Mic,
   MicOff,
@@ -16,18 +18,30 @@ import {
   Settings,
   Radio,
   MessageSquare,
-  FileUp
+  FileUp,
+  FolderOpen,
+  Users
 } from "lucide-react";
 
 export default function SalaBilingueMasterPage() {
   const params = useParams();
   const sala = (params?.sala as string) || "henn";
 
+  // Modales
+  const [isConfigModalOpen, setIsConfigModalOpen] = useState(false);
+  const [isHistorialModalOpen, setIsHistorialModalOpen] = useState(false);
+
   // Idioma de la voz y de la interfaz
   const [myVoiceLang, setMyVoiceLang] = useState<"es" | "pt">("es");
   const [uiLang, setUiLang] = useState<"es" | "pt">("es");
   const [summaryData, setSummaryData] = useState<any>(null);
   const [saveStatus, setSaveStatus] = useState<string | null>(null);
+
+  // Parámetros de la Sala
+  const [clienteNombre, setClienteNombre] = useState(sala === "henn" ? "Móveis Henn" : "Cliente B2B");
+  const [tituloReunion, setTituloReunion] = useState(`Mesa de Trabajo Bilingüe (${sala === "henn" ? "Móveis Henn" : "Cliente B2B"})`);
+  const [participantes1, setParticipantes1] = useState<string[]>(["Mario Mojica"]);
+  const [participantes2, setParticipantes2] = useState<string[]>(["Marcos Unnass"]);
 
   // Parámetros de Costos Colaborativos
   const [sharedCostParams, setSharedCostParams] = useState<CostParameters>({
@@ -43,11 +57,6 @@ export default function SalaBilingueMasterPage() {
     horasGrande: 16,
     horasSacMes: 20
   });
-
-  // Parámetros Dinámicos de la Sala
-  const [clienteNombre, setClienteNombre] = useState(sala === "henn" ? "Móveis Henn" : "Cliente B2B");
-  const [participanteCliente, setParticipanteCliente] = useState(sala === "henn" ? "Marcos Unnass" : "Interlocutor");
-  const [participanteMario, setParticipanteMario] = useState("Mario Mojica");
 
   // Vista activa en móvil: "subtitulos" | "cotizador" | "documento" | "config"
   const [mobileActiveView, setMobileActiveView] = useState<"subtitulos" | "cotizador" | "documento" | "config">("subtitulos");
@@ -79,18 +88,22 @@ export default function SalaBilingueMasterPage() {
 
   const isPt = uiLang === "pt";
 
-  // Polling colaborativo en tiempo real para sincronizar costos y PDFs modificados
+  // Polling colaborativo en tiempo real a Supabase
   useEffect(() => {
     const interval = setInterval(async () => {
       try {
         const res = await fetch(`/api/copiloto/sesion?sala=${sala}`);
         if (res.ok) {
           const data = await res.json();
+          if (data.empresa && data.empresa !== clienteNombre) setClienteNombre(data.empresa);
+          if (data.titulo && data.titulo !== tituloReunion) setTituloReunion(data.titulo);
+          if (data.participantes1) setParticipantes1(data.participantes1);
+          if (data.participantes2) setParticipantes2(data.participantes2);
+
           if (data.costParams) {
             setSharedCostParams(prev => {
-              // Solo actualizar si cambiaron para evitar loops
-              const isDifferent = JSON.stringify(prev) !== JSON.stringify(data.costParams);
-              return isDifferent ? data.costParams : prev;
+              const isDiff = JSON.stringify(prev) !== JSON.stringify(data.costParams);
+              return isDiff ? data.costParams : prev;
             });
           }
           if (data.activePdf && data.activePdf.nombre !== pdfNombre) {
@@ -98,15 +111,36 @@ export default function SalaBilingueMasterPage() {
             if (data.activePdf.url) setPdfUrl(data.activePdf.url);
           }
         }
-      } catch (err) {
-        // Silencioso
-      }
+      } catch (err) {}
     }, 1200);
 
     return () => clearInterval(interval);
-  }, [sala, pdfNombre]);
+  }, [sala, clienteNombre, tituloReunion, pdfNombre]);
 
-  // Cuando el usuario local cambia un número en el cotizador, hace broadcast al servidor
+  // Guardar configuración desde el modal
+  const handleSaveModalConfig = async (config: RoomConfigData) => {
+    setClienteNombre(config.empresa);
+    setTituloReunion(config.titulo);
+    setParticipantes1(config.participantes1);
+    setParticipantes2(config.participantes2);
+    setIsConfigModalOpen(false);
+
+    try {
+      await fetch("/api/copiloto/sesion", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "configure_room",
+          sala,
+          roomConfig: config
+        })
+      });
+    } catch (e) {
+      console.error("Error guardando config en Supabase:", e);
+    }
+  };
+
+  // Broadcast cambio de costos
   const handleCostParamChange = async (newParams: CostParameters) => {
     setSharedCostParams(newParams);
     try {
@@ -119,12 +153,10 @@ export default function SalaBilingueMasterPage() {
           costParams: newParams
         })
       });
-    } catch (e) {
-      console.error("Error transmitiendo cambio de costos:", e);
-    }
+    } catch (e) {}
   };
 
-  // Manejador para cargar archivo PDF local y sincronizar
+  // Broadcast PDF cargado
   const handlePdfUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file && file.type === "application/pdf") {
@@ -142,13 +174,11 @@ export default function SalaBilingueMasterPage() {
             activePdf: { nombre: file.name, url }
           })
         });
-      } catch (err) {
-        console.error("Error transmitiendo PDF:", err);
-      }
+      } catch (err) {}
     }
   };
 
-  // Manejo del divisor arrastrable (Escritorio)
+  // Divisor arrastrable (Desktop)
   const handleMouseDown = (e: React.MouseEvent) => {
     e.preventDefault();
     isDraggingRef.current = true;
@@ -178,7 +208,7 @@ export default function SalaBilingueMasterPage() {
     };
   }, []);
 
-  // Descarga simultánea de MD + PDF en español para Mario
+  // Descargas MD + PDF Mario
   const handleDownloadBothForMario = async () => {
     try {
       const resMd = await fetch("/api/copiloto/exportar-acta", {
@@ -212,9 +242,7 @@ export default function SalaBilingueMasterPage() {
         a.click();
         a.remove();
       }
-    } catch (e) {
-      console.error("Error descargando MD:", e);
-    }
+    } catch (e) {}
 
     try {
       const resPdf = await fetch("/api/copiloto/exportar-pdf", {
@@ -248,12 +276,10 @@ export default function SalaBilingueMasterPage() {
         a.click();
         a.remove();
       }
-    } catch (e) {
-      console.error("Error descargando PDF:", e);
-    }
+    } catch (e) {}
   };
 
-  // Descarga en PDF para el cliente en portugués
+  // Descarga PDF Cliente
   const handleDownloadPdfForCliente = async () => {
     try {
       const resPdf = await fetch("/api/copiloto/exportar-pdf", {
@@ -287,9 +313,7 @@ export default function SalaBilingueMasterPage() {
         a.click();
         a.remove();
       }
-    } catch (e) {
-      console.error("Error descargando PDF PT:", e);
-    }
+    } catch (e) {}
   };
 
   const handleSaveToWorkspace = async () => {
@@ -306,7 +330,7 @@ export default function SalaBilingueMasterPage() {
       });
       const data = await res.json();
       if (data.success) {
-        setSaveStatus(`Guardado en Clientes/${sala}/reuniones/${data.savedFile}`);
+        setSaveStatus(`Guardado en ${data.storagePath}`);
         setTimeout(() => setSaveStatus(null), 5000);
       }
     } catch (e) {
@@ -320,7 +344,28 @@ export default function SalaBilingueMasterPage() {
       style={{ height: "100dvh", maxHeight: "100dvh", minHeight: "100dvh" }}
       className="w-full bg-slate-100 text-slate-900 font-sans p-1 sm:p-2.5 flex flex-col justify-between gap-1 sm:gap-2 overflow-hidden fixed inset-0"
     >
-      {/* 1. Header Compacto Fijo (Siempre visible en Vertical y Horizontal) */}
+      {/* Modales */}
+      <ModalConfiguracionSala
+        isOpen={isConfigModalOpen}
+        initialData={{
+          empresa: clienteNombre,
+          titulo: tituloReunion,
+          idioma1: "es",
+          idioma2: "pt",
+          participantes1,
+          participantes2
+        }}
+        onSave={handleSaveModalConfig}
+        onClose={() => setIsConfigModalOpen(false)}
+      />
+
+      <ModalHistorialActas
+        isOpen={isHistorialModalOpen}
+        sala={sala}
+        onClose={() => setIsHistorialModalOpen(false)}
+      />
+
+      {/* 1. Header Compacto Fijo */}
       <header className="bg-white border border-slate-200 rounded-xl sm:rounded-2xl px-2 sm:px-3.5 py-1 sm:py-1.5 shadow-sm flex items-center justify-between gap-1.5 sm:gap-2 shrink-0 select-none w-full z-30">
         <div className="flex items-center gap-1.5 sm:gap-2.5 min-w-0">
           <div className="w-6 h-6 sm:w-7 sm:h-7 rounded-lg bg-cyan-600 text-white flex items-center justify-center font-extrabold text-[11px] sm:text-xs shadow-sm shrink-0">
@@ -331,13 +376,16 @@ export default function SalaBilingueMasterPage() {
               <h1 className="font-extrabold text-[11px] sm:text-xs text-slate-900 leading-tight truncate">
                 {clienteNombre}
               </h1>
-              <span className="hidden xs:inline-flex bg-emerald-50 text-emerald-800 text-[9px] sm:text-[10px] font-bold px-1.5 py-0.2 rounded-full border border-emerald-200 items-center gap-1">
-                <Radio className="w-2 h-2 text-emerald-600 animate-pulse" />
-                <span>{isPt ? "Ao Vivo" : "En Vivo"}</span>
-              </span>
+              <button
+                onClick={() => setIsConfigModalOpen(true)}
+                className="text-[9px] text-cyan-700 bg-cyan-50 hover:bg-cyan-100 border border-cyan-200 px-1.5 py-0.2 rounded font-bold transition shrink-0"
+                title="Configurar empresa y participantes"
+              >
+                Configurar
+              </button>
             </div>
             <p className="text-[9px] sm:text-[10px] text-slate-500 truncate hidden xs:block">
-              {participanteMario} & {participanteCliente}
+              {participantes1.join(", ")} & {participantes2.join(", ")}
             </p>
           </div>
         </div>
@@ -351,18 +399,18 @@ export default function SalaBilingueMasterPage() {
               className={`px-1.5 py-0.5 rounded transition ${
                 myVoiceLang === "es" ? "bg-white text-cyan-700 shadow-sm" : "text-slate-600 hover:text-slate-900"
               }`}
-              title="Mi micrófono escucha en Español (Mario)"
+              title="Mi micrófono escucha en Español"
             >
-              Mario (ES)
+              ES
             </button>
             <button
               onClick={() => { setMyVoiceLang("pt"); setUiLang("pt"); }}
               className={`px-1.5 py-0.5 rounded transition ${
                 myVoiceLang === "pt" ? "bg-white text-emerald-700 shadow-sm" : "text-slate-600 hover:text-slate-900"
               }`}
-              title="Meu microfone escuta em Português (Marcos)"
+              title="Meu microfone escuta em Português"
             >
-              Henn (PT)
+              PT
             </button>
           </div>
 
@@ -374,10 +422,20 @@ export default function SalaBilingueMasterPage() {
                 ? "bg-red-500 hover:bg-red-600 text-white animate-pulse"
                 : "bg-cyan-600 hover:bg-cyan-700 text-white"
             }`}
-            title={isListening ? "Pausar captura de voz" : "Toca para hablar por el micrófono"}
+            title={isListening ? "Pausar micrófono" : "Toca para hablar"}
           >
             {isListening ? <MicOff className="w-3 h-3" /> : <Mic className="w-3 h-3" />}
             <span>{isListening ? (isPt ? "Ouvindo..." : "Grabando...") : (isPt ? "Falar" : "Hablar")}</span>
+          </button>
+
+          {/* Botón Ver Actas */}
+          <button
+            onClick={() => setIsHistorialModalOpen(true)}
+            className="bg-slate-100 hover:bg-slate-200 text-slate-700 text-[10px] sm:text-xs font-semibold px-2 py-1 rounded-xl flex items-center gap-1 border border-slate-300 transition shadow-sm"
+            title="Ver actas y notas guardadas"
+          >
+            <FolderOpen className="w-3 h-3 text-slate-600" />
+            <span className="hidden md:inline">Actas</span>
           </button>
 
           {/* Botón Guardar */}
@@ -392,7 +450,7 @@ export default function SalaBilingueMasterPage() {
         </div>
       </header>
 
-      {/* 2. Pestañas Móvil y Tablet (100% Ancho, Compactas y Fijas) */}
+      {/* 2. Pestañas Móvil y Tablet */}
       <div className="flex lg:hidden bg-white border border-slate-200 rounded-xl p-0.5 shadow-sm justify-between text-[11px] font-bold shrink-0 select-none w-full z-20">
         <button
           onClick={() => setMobileActiveView("subtitulos")}
@@ -442,7 +500,7 @@ export default function SalaBilingueMasterPage() {
         </div>
       )}
 
-      {/* 3. CONTENEDOR PRINCIPAL: Scroll interno independiente */}
+      {/* 3. CONTENEDOR PRINCIPAL */}
       <main
         ref={containerRef}
         className="flex-1 flex flex-col lg:flex-row items-stretch gap-0 relative overflow-hidden min-h-0 w-full"
@@ -458,8 +516,8 @@ export default function SalaBilingueMasterPage() {
             messages={messages}
             interimText={interimText}
             clienteNombre={clienteNombre}
-            participanteCliente={participanteCliente}
-            participanteMario={participanteMario}
+            participanteCliente={participantes2.join(", ")}
+            participanteMario={participantes1.join(", ")}
             uiLang={uiLang}
             onDownloadBoth={handleDownloadBothForMario}
             onDownloadPtPdf={handleDownloadPdfForCliente}
@@ -598,51 +656,50 @@ export default function SalaBilingueMasterPage() {
 
             {/* 3. CONFIGURACIÓN DE SALA */}
             {(activeRightTab === "config" || mobileActiveView === "config") && (
-              <div className={`p-2.5 sm:p-3 space-y-2.5 text-xs pb-20 ${mobileActiveView === "config" ? "block" : "hidden lg:block"}`}>
-                <h3 className="font-extrabold text-xs text-slate-900 border-b border-slate-100 pb-1.5">
-                  {isPt ? "Configuração da Sala de Reunião B2B" : "Configuración de la Sala de Reunión B2B"}
-                </h3>
+              <div className={`p-2.5 sm:p-3 space-y-3 text-xs pb-20 ${mobileActiveView === "config" ? "block" : "hidden lg:block"}`}>
+                <div className="flex items-center justify-between border-b border-slate-100 pb-1.5">
+                  <h3 className="font-extrabold text-xs sm:text-sm text-slate-900">
+                    {isPt ? "Configuração da Sala de Reunião B2B" : "Configuración de la Sala de Reunión B2B"}
+                  </h3>
+                  <button
+                    onClick={() => setIsConfigModalOpen(true)}
+                    className="bg-cyan-700 hover:bg-cyan-800 text-white font-bold px-2.5 py-1 rounded-lg flex items-center gap-1 transition shadow-sm"
+                  >
+                    <Settings className="w-3 h-3" />
+                    <span>Editar en Modal</span>
+                  </button>
+                </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                  <div className="space-y-0.5">
-                    <label className="font-bold text-slate-700 block text-[11px]">Empresa / Cliente:</label>
-                    <input
-                      type="text"
-                      value={clienteNombre}
-                      onChange={e => setClienteNombre(e.target.value)}
-                      className="w-full bg-slate-50 border border-slate-300 rounded-lg p-1.5 text-xs font-semibold outline-none focus:border-cyan-500"
-                    />
+                  <div className="bg-slate-50 p-2 rounded-lg border border-slate-200">
+                    <span className="font-bold text-slate-600 block text-[10px]">Empresa / Cliente:</span>
+                    <span className="font-extrabold text-sm text-slate-900">{clienteNombre}</span>
                   </div>
 
-                  <div className="space-y-0.5">
-                    <label className="font-bold text-slate-700 block text-[11px]">Interlocutor (Cliente):</label>
-                    <input
-                      type="text"
-                      value={participanteCliente}
-                      onChange={e => setParticipanteCliente(e.target.value)}
-                      className="w-full bg-slate-50 border border-slate-300 rounded-lg p-1.5 text-xs font-semibold outline-none focus:border-cyan-500"
-                    />
+                  <div className="bg-slate-50 p-2 rounded-lg border border-slate-200">
+                    <span className="font-bold text-slate-600 block text-[10px]">Título de la Sesión:</span>
+                    <span className="font-extrabold text-xs text-slate-900 truncate block">{tituloReunion}</span>
                   </div>
 
-                  <div className="space-y-0.5">
-                    <label className="font-bold text-slate-700 block text-[11px]">Tu Nombre / Empresa:</label>
-                    <input
-                      type="text"
-                      value={participanteMario}
-                      onChange={e => setParticipanteMario(e.target.value)}
-                      className="w-full bg-slate-50 border border-slate-300 rounded-lg p-1.5 text-xs font-semibold outline-none focus:border-cyan-500"
-                    />
+                  <div className="bg-slate-50 p-2 rounded-lg border border-slate-200">
+                    <span className="font-bold text-cyan-800 block text-[10px]">Participantes (Español):</span>
+                    <span className="font-semibold text-xs text-slate-800">{participantes1.join(", ")}</span>
                   </div>
 
-                  <div className="space-y-0.5">
-                    <label className="font-bold text-slate-700 block text-[11px]">Identificador de Sala (URL):</label>
-                    <input
-                      type="text"
-                      disabled
-                      value={sala}
-                      className="w-full bg-slate-100 border border-slate-200 rounded-lg p-1.5 text-xs font-semibold text-slate-500"
-                    />
+                  <div className="bg-slate-50 p-2 rounded-lg border border-slate-200">
+                    <span className="font-bold text-emerald-800 block text-[10px]">Participantes (Português):</span>
+                    <span className="font-semibold text-xs text-slate-800">{participantes2.join(", ")}</span>
                   </div>
+                </div>
+
+                <div className="bg-cyan-50 border border-cyan-200 rounded-xl p-2.5 text-slate-700 text-[11px] sm:text-xs">
+                  <p className="font-bold text-cyan-900 mb-1">💡 Enlaces de Acceso:</p>
+                  <p className="mb-0.5">
+                    • <strong>Local (PC):</strong> <code className="bg-white px-1 py-0.2 rounded text-cyan-800 font-mono font-bold">http://localhost:3003/traductor-vivo/{sala}</code>
+                  </p>
+                  <p>
+                    • <strong>Web Oficial:</strong> <code className="bg-white px-1 py-0.2 rounded text-cyan-800 font-mono font-bold">https://mariomojica.com/traductor-vivo/{sala}</code>
+                  </p>
                 </div>
               </div>
             )}
