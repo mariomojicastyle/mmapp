@@ -20,7 +20,8 @@ import {
   MessageSquare,
   FileUp,
   FolderOpen,
-  Users
+  Share2,
+  Copy
 } from "lucide-react";
 
 export default function SalaBilingueMasterPage() {
@@ -36,6 +37,7 @@ export default function SalaBilingueMasterPage() {
   const [uiLang, setUiLang] = useState<"es" | "pt">("es");
   const [summaryData, setSummaryData] = useState<any>(null);
   const [saveStatus, setSaveStatus] = useState<string | null>(null);
+  const [copyLinkStatus, setCopyLinkStatus] = useState(false);
 
   // Parámetros de la Sala
   const [clienteNombre, setClienteNombre] = useState(sala === "henn" ? "Móveis Henn" : "Cliente B2B");
@@ -90,7 +92,7 @@ export default function SalaBilingueMasterPage() {
 
   const isPt = uiLang === "pt";
 
-  // Polling a Supabase
+  // Polling a Supabase para Configuración y Costos
   useEffect(() => {
     const interval = setInterval(async () => {
       try {
@@ -114,7 +116,7 @@ export default function SalaBilingueMasterPage() {
           }
         }
       } catch (err) {}
-    }, 1200);
+    }, 1000);
 
     return () => clearInterval(interval);
   }, [sala, clienteNombre, tituloReunion, pdfNombre]);
@@ -177,6 +179,16 @@ export default function SalaBilingueMasterPage() {
           })
         });
       } catch (err) {}
+    }
+  };
+
+  // Copiar Enlace Directo
+  const handleCopyLink = () => {
+    if (typeof window !== "undefined") {
+      const fullUrl = `https://mariomojica.com/traductor-vivo/${sala}`;
+      navigator.clipboard.writeText(fullUrl);
+      setCopyLinkStatus(true);
+      setTimeout(() => setCopyLinkStatus(false), 3000);
     }
   };
 
@@ -384,6 +396,15 @@ export default function SalaBilingueMasterPage() {
                 title="Configurar empresa y participantes"
               >
                 Configurar
+              </button>
+              {/* Botón Copiar Enlace Directo */}
+              <button
+                onClick={handleCopyLink}
+                className="text-[9px] text-slate-600 bg-slate-100 hover:bg-slate-200 border border-slate-300 px-1.5 py-0.2 rounded font-bold flex items-center gap-1 transition shrink-0"
+                title="Copiar enlace para el otro dispositivo"
+              >
+                {copyLinkStatus ? <Check className="w-2.5 h-2.5 text-emerald-600" /> : <Copy className="w-2.5 h-2.5 text-slate-500" />}
+                <span>{copyLinkStatus ? "Copiado!" : "Copiar Link"}</span>
               </button>
             </div>
             <p className="text-[9px] sm:text-[10px] text-slate-500 truncate hidden xs:block">

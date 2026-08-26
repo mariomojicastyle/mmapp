@@ -18,7 +18,9 @@ import {
   CheckCircle2,
   ExternalLink,
   ShieldCheck,
-  Globe
+  Globe,
+  Trash2,
+  RotateCcw
 } from "lucide-react";
 import { ModalConfiguracionSala, RoomConfigData } from "@/components/copiloto/ModalConfiguracionSala";
 
@@ -26,9 +28,10 @@ export default function MesaBilingueHubPage() {
   const [isConfigModalOpen, setIsConfigModalOpen] = useState(false);
   const [savedRooms, setSavedRooms] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [actionNotice, setActionNotice] = useState<string | null>(null);
 
-  // Salas Rápidas Pre-configuradas de Fábricas RTA
-  const defaultRooms = [
+  // Salas de Negociación
+  const [rooms, setRooms] = useState([
     {
       slug: "henn",
       empresa: "Móveis Henn",
@@ -38,8 +41,7 @@ export default function MesaBilingueHubPage() {
       estado: "activa",
       volumen: "200 manuales/año",
       ahorro: "+R$ 49.254/año",
-      doc: "Integracao_TOTVS_Datasul_Moveis_Henn_PT.pdf",
-      fecha: "En Vivo / Hoy"
+      doc: "Integracao_TOTVS_Datasul_Moveis_Henn_PT.pdf"
     },
     {
       slug: "politorno",
@@ -50,8 +52,7 @@ export default function MesaBilingueHubPage() {
       estado: "preparada",
       volumen: "150 manuales/año",
       ahorro: "+R$ 38.000/año",
-      doc: "Manuales_Interativos_3D_B2B.pdf",
-      fecha: "Pendiente"
+      doc: "Manuales_Interativos_3D_B2B.pdf"
     },
     {
       slug: "kappesberg",
@@ -62,12 +63,11 @@ export default function MesaBilingueHubPage() {
       estado: "preparada",
       volumen: "300 manuales/año",
       ahorro: "+R$ 72.000/año",
-      doc: "Propuesta_Comercial_3dBimFab.pdf",
-      fecha: "Pendiente"
+      doc: "Propuesta_Comercial_3dBimFab.pdf"
     }
-  ];
+  ]);
 
-  useEffect(() => {
+  const loadSavedActas = () => {
     fetch("/api/copiloto/sesion", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -79,6 +79,10 @@ export default function MesaBilingueHubPage() {
         setLoading(false);
       })
       .catch(() => setLoading(false));
+  };
+
+  useEffect(() => {
+    loadSavedActas();
   }, []);
 
   const handleLaunchNewRoom = (config: RoomConfigData) => {
@@ -97,6 +101,60 @@ export default function MesaBilingueHubPage() {
     });
   };
 
+  // Borrar Acta del Histórico
+  const handleDeleteActa = async (actaId: string, empresa: string) => {
+    if (!confirm(`¿Estás seguro de que deseas eliminar el acta de "${empresa}"?`)) return;
+
+    try {
+      const res = await fetch("/api/copiloto/sesion", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "delete_saved_session",
+          id: actaId
+        })
+      });
+
+      if (res.ok) {
+        setSavedRooms(prev => prev.filter(a => a.id !== actaId));
+        setActionNotice("Acta eliminada del historial con éxito.");
+        setTimeout(() => setActionNotice(null), 3500);
+      }
+    } catch (e) {
+      alert("Error al eliminar acta");
+    }
+  };
+
+  // Limpiar / Reiniciar Mensajes de una Sala
+  const handleClearRoomMessages = async (slug: string, empresa: string) => {
+    if (!confirm(`¿Deseas reiniciar la sala "${empresa}" y borrar todos sus mensajes previos de prueba?`)) return;
+
+    try {
+      const res = await fetch("/api/copiloto/sesion", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "clear_room_data",
+          sala: slug
+        })
+      });
+
+      if (res.ok) {
+        setActionNotice(`Sala "${empresa}" reiniciada y limpia con éxito.`);
+        setTimeout(() => setActionNotice(null), 3500);
+      }
+    } catch (e) {
+      alert("Error al reiniciar sala");
+    }
+  };
+
+  // Eliminar Tarjeta de Sala del Directorio
+  const handleDeleteRoomCard = (slug: string, empresa: string) => {
+    if (!confirm(`¿Deseas eliminar la tarjeta de la sala "${empresa}" del directorio?`)) return;
+    setRooms(prev => prev.filter(r => r.slug !== slug));
+    handleClearRoomMessages(slug, empresa);
+  };
+
   return (
     <div className="p-4 sm:p-6 max-w-7xl mx-auto space-y-6 text-slate-800 font-sans">
       {/* Modal de Configuración Inicial */}
@@ -108,7 +166,7 @@ export default function MesaBilingueHubPage() {
           idioma1: "es",
           idioma2: "pt",
           participantes1: ["Mario Mojica"],
-          participantes2: ["Marcos Unnass"]
+          participantes2: ["Interlocutor"]
         }}
         onSave={handleLaunchNewRoom}
         onClose={() => setIsConfigModalOpen(false)}
@@ -146,6 +204,13 @@ export default function MesaBilingueHubPage() {
         </button>
       </div>
 
+      {actionNotice && (
+        <div className="bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-bold p-3 rounded-xl flex items-center gap-2 shadow-sm animate-in fade-in duration-200">
+          <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+          <span>{actionNotice}</span>
+        </div>
+      )}
+
       {/* 2. Sección: Salas Activas y de Negociación */}
       <div className="space-y-3">
         <div className="flex items-center justify-between">
@@ -153,11 +218,11 @@ export default function MesaBilingueHubPage() {
             <Building2 className="w-4 h-4 text-cyan-600" />
             <span>Salas de Negociación en Vivo (Directorio de Fábricas RTA)</span>
           </h2>
-          <span className="text-xs text-slate-400 font-semibold">{defaultRooms.length} salas disponibles</span>
+          <span className="text-xs text-slate-400 font-semibold">{rooms.length} salas configuradas</span>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          {defaultRooms.map((room) => (
+          {rooms.map((room) => (
             <div
               key={room.slug}
               className="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm flex flex-col justify-between gap-3 hover:border-cyan-500 transition group"
@@ -167,13 +232,23 @@ export default function MesaBilingueHubPage() {
                   <span className="font-extrabold text-sm text-slate-900 group-hover:text-cyan-800 transition">
                     {room.empresa}
                   </span>
-                  <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${
-                    room.estado === "activa"
-                      ? "bg-emerald-50 text-emerald-800 border-emerald-200"
-                      : "bg-slate-100 text-slate-600 border-slate-200"
-                  }`}>
-                    {room.estado === "activa" ? "🟢 En Vivo / Hoy" : "⚪ Preparada"}
-                  </span>
+                  <div className="flex items-center gap-1.5">
+                    <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${
+                      room.estado === "activa"
+                        ? "bg-emerald-50 text-emerald-800 border-emerald-200"
+                        : "bg-slate-100 text-slate-600 border-slate-200"
+                    }`}>
+                      {room.estado === "activa" ? "🟢 En Vivo" : "⚪ Preparada"}
+                    </span>
+                    {/* Botón Borrar Sala */}
+                    <button
+                      onClick={() => handleDeleteRoomCard(room.slug, room.empresa)}
+                      className="text-slate-300 hover:text-red-500 p-1 rounded transition"
+                      title="Eliminar sala"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
                 </div>
 
                 <p className="text-xs font-semibold text-slate-700 leading-snug mb-2">
@@ -196,14 +271,23 @@ export default function MesaBilingueHubPage() {
                 </div>
               </div>
 
-              {/* Botón Ir a la Sala */}
-              <Link
-                href={`/traductor-vivo/${room.slug}`}
-                className="w-full bg-slate-900 hover:bg-cyan-700 text-white font-bold text-xs py-2 px-3 rounded-xl flex items-center justify-center gap-1.5 transition shadow-sm"
-              >
-                <span>Ir a la Sala de la Reunión</span>
-                <ArrowRight className="w-3.5 h-3.5" />
-              </Link>
+              {/* Acciones de la Sala */}
+              <div className="flex items-center gap-2 pt-1">
+                <Link
+                  href={`/traductor-vivo/${room.slug}`}
+                  className="flex-1 bg-slate-900 hover:bg-cyan-700 text-white font-bold text-xs py-2 px-3 rounded-xl flex items-center justify-center gap-1.5 transition shadow-sm"
+                >
+                  <span>Ir a la Sala</span>
+                  <ArrowRight className="w-3.5 h-3.5" />
+                </Link>
+                <button
+                  onClick={() => handleClearRoomMessages(room.slug, room.empresa)}
+                  className="bg-slate-100 hover:bg-red-50 hover:text-red-700 border border-slate-200 text-slate-500 p-2 rounded-xl transition"
+                  title="Reiniciar y limpiar mensajes de esta sala"
+                >
+                  <RotateCcw className="w-3.5 h-3.5" />
+                </button>
+              </div>
             </div>
           ))}
         </div>
@@ -238,18 +322,21 @@ export default function MesaBilingueHubPage() {
             </div>
           )}
 
-          {savedRooms.map((acta, idx) => {
+          {savedRooms.map((acta) => {
             let info: any = {};
             try {
               info = JSON.parse(acta.resumen_es || "{}");
             } catch (e) {}
 
+            const empresaTitle = info.titulo || info.empresa || "Mesa de Trabajo";
+            const salaSlug = info.empresa?.toLowerCase().includes("henn") ? "henn" : "henn";
+
             return (
-              <div key={idx} className="bg-slate-50 hover:bg-slate-100/70 border border-slate-200 p-3 rounded-xl flex items-center justify-between gap-3 transition">
+              <div key={acta.id} className="bg-slate-50 hover:bg-slate-100/70 border border-slate-200 p-3 rounded-xl flex items-center justify-between gap-3 transition">
                 <div className="min-w-0">
                   <div className="flex items-center gap-2">
                     <span className="font-extrabold text-xs text-slate-900">
-                      {info.titulo || info.empresa || "Mesa de Trabajo"}
+                      {empresaTitle}
                     </span>
                     <span className="text-[10px] bg-emerald-50 text-emerald-800 border border-emerald-200 px-1.5 py-0.2 rounded font-bold">
                       Archivada
@@ -264,21 +351,28 @@ export default function MesaBilingueHubPage() {
                       <Clock className="w-3 h-3 text-slate-400" />
                       <span>{new Date(acta.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</span>
                     </span>
-                    <span>• {info.totalMessages || 0} frases registradas</span>
                   </div>
-                  <p className="text-[10px] text-slate-400 font-mono mt-0.5">
+                  <p className="text-[10px] text-slate-400 font-mono mt-0.5 truncate">
                     {info.filename || "reunion.json"}
                   </p>
                 </div>
 
                 <div className="flex items-center gap-1.5 shrink-0">
                   <Link
-                    href={`/traductor-vivo/${info.empresa?.toLowerCase().includes("henn") ? "henn" : "henn"}`}
+                    href={`/traductor-vivo/${salaSlug}`}
                     className="bg-white hover:bg-slate-200 text-slate-800 border border-slate-300 font-bold text-[11px] px-3 py-1.5 rounded-lg flex items-center gap-1 transition"
                   >
                     <ExternalLink className="w-3 h-3 text-cyan-600" />
                     <span>Ver Sala</span>
                   </Link>
+                  {/* Botón Borrar Acta */}
+                  <button
+                    onClick={() => handleDeleteActa(acta.id, empresaTitle)}
+                    className="bg-white hover:bg-red-50 text-slate-400 hover:text-red-600 border border-slate-300 p-1.5 rounded-lg transition"
+                    title="Eliminar acta"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                  </button>
                 </div>
               </div>
             );

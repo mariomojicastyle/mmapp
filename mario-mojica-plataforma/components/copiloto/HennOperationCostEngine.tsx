@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   Calculator,
   Users,
@@ -13,7 +13,8 @@ import {
   Laptop,
   Headphones,
   Send,
-  CheckCircle2
+  CheckCircle2,
+  Share2
 } from "lucide-react";
 
 export interface CostParameters {
@@ -62,13 +63,15 @@ export function HennOperationCostEngine({
   // SAC / Soporte
   const [horasSacMes, setHorasSacMes] = useState<number>(initialParams?.horasSacMes ?? 20);
 
+  // Bandera de edición local (impide que el polling borre lo que el usuario está escribiendo)
+  const isDirtyRef = useRef<boolean>(false);
   const [syncStatusMsg, setSyncStatusMsg] = useState<string | null>(null);
 
   const isPt = uiLang === "pt";
 
-  // Reaccionar a cambios sincronizados desde la base de datos
+  // Sincronizar desde el servidor SOLO cuando el usuario NO tiene cambios locales sin guardar
   useEffect(() => {
-    if (initialParams) {
+    if (initialParams && !isDirtyRef.current) {
       if (initialParams.manualesAno !== undefined) {
         setManualesAno(initialParams.manualesAno);
         setManualesAnoStr(String(initialParams.manualesAno));
@@ -143,8 +146,9 @@ export function HennOperationCostEngine({
     onSummaryChange
   ]);
 
-  // Sincronizar inmediatamente con la sala y base de datos
+  // Sincronizar inmediatamente con Supabase
   const handleSyncToRoom = () => {
+    isDirtyRef.current = false;
     const current: CostParameters = {
       manualesAno,
       personasPed,
@@ -159,11 +163,12 @@ export function HennOperationCostEngine({
       horasSacMes
     };
     onParamChange?.(current);
-    setSyncStatusMsg(isPt ? "Matriz sincronizada com sucesso!" : "¡Matriz sincronizada con éxito!");
-    setTimeout(() => setSyncStatusMsg(null), 3000);
+    setSyncStatusMsg(isPt ? "Matriz gravada na nuvem e sincronizada!" : "¡Matriz guardada en la nube y sincronizada!");
+    setTimeout(() => setSyncStatusMsg(null), 3500);
   };
 
   const resetDefault = () => {
+    isDirtyRef.current = false;
     setManualesAno(200);
     setManualesAnoStr("200");
     setPersonasPed(2.0);
@@ -193,6 +198,7 @@ export function HennOperationCostEngine({
   };
 
   const handleInputFocus = (e: React.FocusEvent<HTMLInputElement>) => {
+    isDirtyRef.current = true;
     e.target.scrollIntoView({ behavior: "smooth", block: "center" });
   };
 
@@ -212,8 +218,8 @@ export function HennOperationCostEngine({
             </h2>
             <p className="text-[10px] sm:text-[11px] text-slate-500">
               {isPt
-                ? "Edite os valores e clique em Sincronizar Sala para atualizar todos."
-                : "Edita los valores y haz clic en Sincronizar Sala para actualizar a todos."}
+                ? "Edite os números e clique em Sincronizar Sala para gravar na nuvem."
+                : "Edita los números y haz clic en Sincronizar Sala para guardar en la nube."}
             </p>
           </div>
         </div>
@@ -228,7 +234,7 @@ export function HennOperationCostEngine({
             <span className="hidden xs:inline">{isPt ? "Restaurar" : "Restablecer"}</span>
           </button>
 
-          {/* Botón Principal y Único de Sincronización */}
+          {/* Botón Maestro de Sincronización */}
           <button
             onClick={handleSyncToRoom}
             className="bg-cyan-700 hover:bg-cyan-800 text-white px-3.5 py-1.5 rounded-xl font-extrabold text-xs flex items-center gap-1.5 transition shadow-sm"
@@ -324,6 +330,7 @@ export function HennOperationCostEngine({
               value={manualesAnoStr}
               onFocus={handleInputFocus}
               onChange={e => {
+                isDirtyRef.current = true;
                 const text = e.target.value;
                 setManualesAnoStr(text);
                 const num = parseFloat(text.replace(',', '.'));
@@ -350,6 +357,7 @@ export function HennOperationCostEngine({
               value={personasPedStr}
               onFocus={handleInputFocus}
               onChange={e => {
+                isDirtyRef.current = true;
                 const text = e.target.value;
                 setPersonasPedStr(text);
                 const num = parseFloat(text.replace(',', '.'));
@@ -376,6 +384,7 @@ export function HennOperationCostEngine({
               value={salarioCltMesStr}
               onFocus={handleInputFocus}
               onChange={e => {
+                isDirtyRef.current = true;
                 const text = e.target.value;
                 setSalarioCltMesStr(text);
                 const num = parseFloat(text.replace(',', '.'));
@@ -422,6 +431,7 @@ export function HennOperationCostEngine({
                   value={licenciaSketchUpAno}
                   onFocus={handleInputFocus}
                   onChange={e => {
+                    isDirtyRef.current = true;
                     setLicenciaSketchUpAno(Number(e.target.value));
                   }}
                   className="w-full text-xs font-bold text-slate-800 outline-none"
@@ -440,6 +450,7 @@ export function HennOperationCostEngine({
                   value={licenciaAdobeAno}
                   onFocus={handleInputFocus}
                   onChange={e => {
+                    isDirtyRef.current = true;
                     setLicenciaAdobeAno(Number(e.target.value));
                   }}
                   className="w-full text-xs font-bold text-slate-800 outline-none"
@@ -458,6 +469,7 @@ export function HennOperationCostEngine({
                   value={licenciaOtrosAno}
                   onFocus={handleInputFocus}
                   onChange={e => {
+                    isDirtyRef.current = true;
                     setLicenciaOtrosAno(Number(e.target.value));
                   }}
                   className="w-full text-xs font-bold text-slate-800 outline-none"
@@ -488,6 +500,7 @@ export function HennOperationCostEngine({
               value={horasSacMes}
               onFocus={handleInputFocus}
               onChange={e => {
+                isDirtyRef.current = true;
                 setHorasSacMes(Number(e.target.value));
               }}
               className="w-16 bg-white border border-slate-300 rounded px-2 py-0.5 text-xs font-bold text-center outline-none focus:border-cyan-500"
@@ -524,6 +537,7 @@ export function HennOperationCostEngine({
             step={1}
             value={ahorroPct}
             onChange={e => {
+              isDirtyRef.current = true;
               setAhorroPct(Number(e.target.value));
             }}
             className="w-full accent-cyan-600 cursor-pointer"

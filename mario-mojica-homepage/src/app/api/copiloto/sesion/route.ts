@@ -10,17 +10,17 @@ const supabase = createClient(supabaseUrl, serviceKey);
 
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
-  const sala = searchParams.get("sala") || "henn";
+  const rawSala = searchParams.get("sala") || "henn";
+  const sala = rawSala.toLowerCase().trim();
 
   try {
-    // 1. Obtener mensajes y configuraciones
     const { data: rows, error } = await supabase
       .from("ventas_interacciones")
       .select("*")
       .eq("canal", "Mesa_Bilingue")
       .eq("prospecto_id", `p-${sala}`)
       .order("created_at", { ascending: true })
-      .limit(200);
+      .limit(250);
 
     const messages: any[] = [];
     let roomConfig: any = null;
@@ -92,7 +92,8 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { action, sala = "henn", message, costParams, activePdf, roomConfig, cliente = "Henn" } = body;
+    const { action, sala: rawSala = "henn", message, costParams, activePdf, roomConfig, cliente = "Henn", id } = body;
+    const sala = String(rawSala).toLowerCase().trim();
 
     // 1. Agregar Mensaje de Voz
     if (action === "add_message" && message) {
@@ -116,9 +117,8 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: true, id: msgId });
     }
 
-    // 2. Sincronizar Cotizador de Costos (Elimina el previo e inserta el nuevo para lectura instantánea)
+    // 2. Sincronizar Cotizador de Costos
     if (action === "update_cost_params" && costParams) {
-      // Eliminar registros anteriores de costos para esta sala
       await supabase
         .from("ventas_interacciones")
         .delete()
@@ -182,7 +182,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: true });
     }
 
-    // 5. Guardar Acta en Disco y Supabase
+    // 5. Guardar Acta
     if (action === "save_session") {
       const now = new Date();
       const dateStr = now.toISOString().split("T")[0];
@@ -214,6 +214,41 @@ export async function POST(request: NextRequest) {
         savedFile: filename,
         storagePath: `Clientes/${cliente}/reuniones/${filename}`
       });
+    }
+
+    // 6. Listar Sesiones Guardadas
+    if (action === "list_saved_sessions") {
+      const { data: actas } = await supabase
+        .from("ventas_interacciones")
+        .select("*")
+        .eq("canal", "Mesa_Bilingue")
+        .eq("tipo_entrada", "acta_guardada")
+        .order("created_at", { ascending: false });
+
+      return NextResponse.json({ actas: actas || [] });
+    }
+
+    // 7. Borrar Acta Específica
+    if (action === "delete_saved_session" && id) {
+      const { error: delErr } = await supabase
+        .from("ventas_interacciones")
+        .delete()
+        .eq("id", id);
+
+      if (delErr) throw delErr;
+      return NextResponse.json({ success: true, deletedId: id });
+    }
+
+    // 8. Borrar Todos los Datos / Mensajes de una Sala
+    if (action === "clear_room_data") {
+      const { error: clearErr } = await supabase
+        .from("ventas_interacciones")
+        .delete()
+        .eq("canal", "Mesa_Bilingue")
+        .eq("prospecto_id", `p-${sala}`);
+
+      if (clearErr) throw clearErr;
+      return NextResponse.json({ success: true, clearedSala: sala });
     }
 
     return NextResponse.json({ error: "Acción no reconocida" }, { status: 400 });

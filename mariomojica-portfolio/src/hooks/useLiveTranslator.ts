@@ -13,19 +13,17 @@ export interface ChatMessage {
   timestamp: number;
 }
 
-// Extracción inteligente para Android Chrome y Desktop
+// Extracción de texto
 function extractTranscriptFromEvent(eventResults: any): string {
   if (!eventResults || eventResults.length === 0) return "";
 
   const lastText = eventResults[eventResults.length - 1][0]?.transcript?.trim() || "";
   const firstText = eventResults[0][0]?.transcript?.trim() || "";
 
-  // Si el último elemento contiene el primero, Android está enviando texto acumulativo
   if (eventResults.length > 1 && lastText.toLowerCase().includes(firstText.toLowerCase())) {
     return lastText;
   }
 
-  // De lo contrario, concatenar segmentos únicos
   let combined = "";
   for (let i = 0; i < eventResults.length; i++) {
     const chunk = eventResults[i][0]?.transcript?.trim() || "";
@@ -36,15 +34,13 @@ function extractTranscriptFromEvent(eventResults: any): string {
   return (combined || lastText).trim();
 }
 
-// Limpiador NLP de frases y palabras duplicadas por el motor de voz
+// Limpiador NLP
 function cleanAggressiveDuplicates(text: string): string {
   if (!text) return "";
   let str = text.trim();
 
-  // 1. Eliminar repetición inmediata de palabras ("hablando hablando" -> "hablando")
   str = str.replace(/\b(\w+)(?:\s+\1\b)+/gi, "$1");
 
-  // 2. Eliminar n-gramas repetidos (de 2 a 12 palabras)
   let words = str.split(/\s+/);
   let changed = true;
   let iterations = 0;
@@ -129,7 +125,41 @@ export function useLiveTranslator({
     }
   }, [isTTSEnabled, ttsVolume]);
 
-  // Traducir el bloque completo limpio y publicarlo
+  // Consultar mensajes del servidor
+  const fetchRoomMessages = useCallback(async () => {
+    try {
+      const currentSala = salaRef.current;
+      const res = await fetch(`/api/copiloto/sesion?sala=${currentSala}`);
+      if (res.ok) {
+        const data = await res.json();
+        setIsConnected(true);
+        if (data.allMessages && Array.isArray(data.allMessages)) {
+          setMessages(prev => {
+            const existingMap = new Map(prev.map(m => [m.id, m]));
+            let hasNew = false;
+
+            data.allMessages.forEach((incoming: ChatMessage) => {
+              if (!existingMap.has(incoming.id)) {
+                existingMap.set(incoming.id, incoming);
+                hasNew = true;
+                if (incoming.speaker !== roleRef.current) {
+                  speakText(incoming.translatedText, myLangRef.current);
+                }
+              }
+            });
+
+            return hasNew
+              ? Array.from(existingMap.values()).sort((a, b) => a.timestamp - b.timestamp)
+              : prev;
+          });
+        }
+      }
+    } catch (e) {
+      setIsConnected(false);
+    }
+  }, [speakText]);
+
+  // Traducir el bloque completo y enviarlo a Supabase
   const translateAndCommitBlock = async (rawBlockText: string) => {
     const cleanedText = cleanAggressiveDuplicates(rawBlockText);
     if (!cleanedText || cleanedText.length < 2 || isTranslatingRef.current) {
@@ -186,6 +216,9 @@ export function useLiveTranslator({
         })
       });
 
+      // 4. Forzar sincronización inmediata
+      setTimeout(() => fetchRoomMessages(), 300);
+
     } catch (err) {
       console.error("Error al traducir y enviar bloque:", err);
     } finally {
@@ -224,7 +257,7 @@ export function useLiveTranslator({
       currentDictationTextRef.current = cleaned;
       setInterimText(cleaned);
 
-      // Esperar 2.5 segundos de silencio antes de traducir y enviar
+      // Esperar 2.5s de silencio antes de traducir y enviar
       if (silenceTimerRef.current) clearTimeout(silenceTimerRef.current);
       silenceTimerRef.current = setTimeout(() => {
         if (currentDictationTextRef.current && isListeningRef.current) {
@@ -265,40 +298,12 @@ export function useLiveTranslator({
     };
   }, [myLang]);
 
-  // Polling Realtime a Supabase Cloud cada 1s
+  // Polling Realtime a Supabase Cloud cada 800ms
   useEffect(() => {
-    const pollInterval = setInterval(async () => {
-      try {
-        const res = await fetch(`/api/copiloto/sesion?sala=${sala}`);
-        if (res.ok) {
-          const data = await res.json();
-          setIsConnected(true);
-          if (data.allMessages && Array.isArray(data.allMessages)) {
-            setMessages(prev => {
-              const existingMap = new Map(prev.map(m => [m.id, m]));
-              let hasNewFromOther = false;
-
-              data.allMessages.forEach((incoming: ChatMessage) => {
-                if (!existingMap.has(incoming.id)) {
-                  existingMap.set(incoming.id, incoming);
-                  if (incoming.speaker !== roleRef.current) {
-                    hasNewFromOther = true;
-                    speakText(incoming.translatedText, myLangRef.current);
-                  }
-                }
-              });
-
-              return Array.from(existingMap.values()).sort((a, b) => a.timestamp - b.timestamp);
-            });
-          }
-        }
-      } catch (e) {
-        setIsConnected(false);
-      }
-    }, 1000);
-
+    fetchRoomMessages();
+    const pollInterval = setInterval(fetchRoomMessages, 800);
     return () => clearInterval(pollInterval);
-  }, [sala, speakText]);
+  }, [fetchRoomMessages]);
 
   // Control manual del micrófono
   const toggleListening = () => {
