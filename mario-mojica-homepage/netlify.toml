@@ -14,9 +14,13 @@
     X-Content-Type-Options = "nosniff"
     X-XSS-Protection = "1; mode=block"
 
-# Excepción para las API Routes internas (no reescribir a armado)
+# Excepción para las API Routes internas y Traductor Vivo
 [[redirects]]
   from = "/api/*"
+  status = 200
+
+[[redirects]]
+  from = "/traductor-vivo/*"
   status = 200
 
 [[redirects]]
