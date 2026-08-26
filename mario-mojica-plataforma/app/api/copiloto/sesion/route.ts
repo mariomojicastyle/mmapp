@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import fs from "fs";
 import path from "path";
 
-// Almacén en memoria volátil de salas activas para sync bilateral
+// Almacén en memoria volátil de salas activas para sincronización bilateral en tiempo real
 const memoryRooms: Record<string, {
   messages: Array<{
     id: string;
@@ -13,6 +13,23 @@ const memoryRooms: Record<string, {
     toLang: string;
     timestamp: number;
   }>;
+  costParams: {
+    manualesAno: number;
+    personasPed: number;
+    salarioCltMes: number;
+    licenciaSketchUpAno: number;
+    licenciaAdobeAno: number;
+    licenciaOtrosAno: number;
+    ahorroPct: number;
+    horasPequeno: number;
+    horasMediano: number;
+    horasGrande: number;
+    horasSacMes: number;
+  };
+  activePdf?: {
+    url: string;
+    nombre: string;
+  };
   lastUpdated: number;
 }> = {};
 
@@ -21,12 +38,35 @@ export async function GET(request: NextRequest) {
   const sala = searchParams.get("sala") || "henn";
   const since = parseInt(searchParams.get("since") || "0", 10);
 
-  const room = memoryRooms[sala] || { messages: [], lastUpdated: Date.now() };
-  const newMessages = room.messages.filter(m => m.timestamp > since);
+  if (!memoryRooms[sala]) {
+    memoryRooms[sala] = {
+      messages: [],
+      costParams: {
+        manualesAno: 200,
+        personasPed: 2.0,
+        salarioCltMes: 6000,
+        licenciaSketchUpAno: 2400,
+        licenciaAdobeAno: 3600,
+        licenciaOtrosAno: 0,
+        ahorroPct: 30,
+        horasPequeno: 8,
+        horasMediano: 12,
+        horasGrande: 16,
+        horasSacMes: 20
+      },
+      lastUpdated: Date.now()
+    };
+  }
+
+  const room = memoryRooms[sala];
+  const newMessages = since > 0 ? room.messages.filter(m => m.timestamp > since) : room.messages;
 
   return NextResponse.json({
     sala,
     messages: newMessages,
+    allMessages: room.messages,
+    costParams: room.costParams,
+    activePdf: room.activePdf,
     totalCount: room.messages.length,
     lastUpdated: room.lastUpdated
   });
@@ -35,12 +75,29 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { action, sala = "henn", message, cliente = "Henn" } = body;
+    const { action, sala = "henn", message, costParams, activePdf, cliente = "Henn" } = body;
 
     if (!memoryRooms[sala]) {
-      memoryRooms[sala] = { messages: [], lastUpdated: Date.now() };
+      memoryRooms[sala] = {
+        messages: [],
+        costParams: {
+          manualesAno: 200,
+          personasPed: 2.0,
+          salarioCltMes: 6000,
+          licenciaSketchUpAno: 2400,
+          licenciaAdobeAno: 3600,
+          licenciaOtrosAno: 0,
+          ahorroPct: 30,
+          horasPequeno: 8,
+          horasMediano: 12,
+          horasGrande: 16,
+          horasSacMes: 20
+        },
+        lastUpdated: Date.now()
+      };
     }
 
+    // 1. Agregar nuevo mensaje hablado
     if (action === "add_message" && message) {
       const msgItem = {
         id: message.id || `msg-${Date.now()}-${Math.random().toString(36).substr(2, 4)}`,
@@ -58,59 +115,48 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: true, message: msgItem });
     }
 
+    // 2. Sincronizar parámetros de costos en tiempo real
+    if (action === "update_cost_params" && costParams) {
+      memoryRooms[sala].costParams = {
+        ...memoryRooms[sala].costParams,
+        ...costParams
+      };
+      memoryRooms[sala].lastUpdated = Date.now();
+      return NextResponse.json({ success: true, costParams: memoryRooms[sala].costParams });
+    }
+
+    // 3. Sincronizar documento PDF
+    if (action === "update_pdf" && activePdf) {
+      memoryRooms[sala].activePdf = activePdf;
+      memoryRooms[sala].lastUpdated = Date.now();
+      return NextResponse.json({ success: true, activePdf: memoryRooms[sala].activePdf });
+    }
+
+    // 4. Guardar acta en disco
     if (action === "save_session") {
       const room = memoryRooms[sala];
       const now = new Date();
       const dateStr = now.toISOString().split("T")[0];
-      const timeStr = now.toTimeString().split(" ")[0];
+      const timeStr = now.toTimeString().split(" ")[0].replace(/:/g, "-");
+      const filename = `reunion_${sala}_${dateStr}_${timeStr}.json`;
 
-      // Formatear Markdown
-      const mdLines = [
-        `# 🎙️ Registro de Sesión en Vivo: ${cliente.toUpperCase()} (${dateStr})`,
-        ``,
-        `> **Fecha:** ${dateStr} ${timeStr} | **Sala:** ${sala}`,
-        `> **Total de Mensajes Transcritos:** ${room?.messages.length || 0}`,
-        ``,
-        `---`,
-        ``,
-        `## 📝 Transcripción Bilingüe en Cascada`,
-        ``
-      ];
-
-      if (room && room.messages.length > 0) {
-        room.messages.forEach(m => {
-          const speakerName = m.speaker === "mario" ? "Mario (Español)" : `${cliente} (Português/Inglés)`;
-          const timeFormatted = new Date(m.timestamp).toLocaleTimeString();
-          mdLines.push(`* **[${timeFormatted}] ${speakerName}:**`);
-          mdLines.push(`  * *Original (${m.fromLang.toUpperCase()}):* "${m.originalText}"`);
-          mdLines.push(`  * *Traducción (${m.toLang.toUpperCase()}):* "${m.translatedText}"`);
-          mdLines.push(``);
-        });
-      } else {
-        mdLines.push(`*No se registraron mensajes durante esta sesión.*`);
+      const targetDir = path.resolve(process.cwd(), "Clientes", cliente, "reuniones");
+      if (!fs.existsSync(targetDir)) {
+        fs.mkdirSync(targetDir, { recursive: true });
       }
 
-      // Guardar archivo físico en Clientes/Henn/reuniones/
-      const reuniFolder = path.resolve('c:/Desarrollo/mmapp/Clientes/Henn/reuniones');
-      if (!fs.existsSync(reuniFolder)) {
-        fs.mkdirSync(reuniFolder, { recursive: true });
-      }
-
-      const fileName = `${dateStr}_Reunion_EnVivo_${sala}_${Date.now().toString().slice(-4)}.md`;
-      const fullFilePath = path.join(reuniFolder, fileName);
-      fs.writeFileSync(fullFilePath, mdLines.join("\n"), "utf8");
+      const filePath = path.join(targetDir, filename);
+      fs.writeFileSync(filePath, JSON.stringify(room, null, 2), "utf8");
 
       return NextResponse.json({
         success: true,
-        savedFile: fileName,
-        path: fullFilePath,
-        messageCount: room?.messages.length || 0
+        savedFile: filename,
+        totalMessages: room.messages.length
       });
     }
 
-    return NextResponse.json({ success: true });
-  } catch (err) {
-    console.error("Error en /api/copiloto/sesion:", err);
-    return NextResponse.json({ error: "Error procesando sesión" }, { status: 500 });
+    return NextResponse.json({ error: "Acción no reconocida" }, { status: 400 });
+  } catch (error: any) {
+    return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }

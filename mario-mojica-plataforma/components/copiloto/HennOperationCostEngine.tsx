@@ -1,75 +1,110 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
-import { Calculator, TrendingDown, Layers, Laptop, DollarSign, ShieldCheck, Plus, Trash2, RotateCcw, Wrench } from "lucide-react";
+import React, { useState, useEffect, useRef } from "react";
+import {
+  Calculator,
+  Layers,
+  Laptop,
+  RotateCcw,
+  Users,
+  Package,
+  CircleDollarSign,
+  TrendingDown
+} from "lucide-react";
+
+export interface CostParameters {
+  manualesAno: number;
+  personasPed: number;
+  salarioCltMes: number;
+  licenciaSketchUpAno: number;
+  licenciaAdobeAno: number;
+  licenciaOtrosAno: number;
+  ahorroPct: number;
+  horasPequeno: number;
+  horasMediano: number;
+  horasGrande: number;
+  horasSacMes: number;
+}
 
 export function HennOperationCostEngine({
   uiLang = "es",
+  initialParams,
+  onParamChange,
   onSummaryChange
 }: {
   uiLang?: "es" | "pt";
+  initialParams?: Partial<CostParameters>;
+  onParamChange?: (newParams: CostParameters) => void;
   onSummaryChange?: (data: any) => void;
 }) {
   const isPt = uiLang === "pt";
 
-  // 1. MACRO OPERACIÓN ANUAL DE HENN (100% EDITABLE)
-  const [manualesAno, setManualesAno] = useState(200); // Volumen anual total de manuales
-  const [personasPed, setPersonasPed] = useState(2.0); // Personas en P&D dedicadas a manuales
-  const [salarioCltMes, setSalarioCltMes] = useState(6000); // Salario CLT + Cargas Sociales
+  // 1. Parámetros Editables Colaborativos
+  const [manualesAno, setManualesAno] = useState(initialParams?.manualesAno ?? 200);
+  const [personasPed, setPersonasPed] = useState(initialParams?.personasPed ?? 2.0);
+  const [salarioCltMes, setSalarioCltMes] = useState(initialParams?.salarioCltMes ?? 6000);
 
-  // Licencias Separadas al Año por Estación de Trabajo
-  const [licenciaSketchUpAno, setLicenciaSketchUpAno] = useState(2400); // SketchUp Studio/Pro
-  const [licenciaAdobeAno, setLicenciaAdobeAno] = useState(3600); // Adobe Creative Cloud (InDesign + Illustrator)
-  const [licenciaOtrosAno, setLicenciaOtrosAno] = useState(0); // Otros software CAD/Render
+  const [licenciaSketchUpAno, setLicenciaSketchUpAno] = useState(initialParams?.licenciaSketchUpAno ?? 2400);
+  const [licenciaAdobeAno, setLicenciaAdobeAno] = useState(initialParams?.licenciaAdobeAno ?? 3600);
+  const [licenciaOtrosAno, setLicenciaOtrosAno] = useState(initialParams?.licenciaOtrosAno ?? 0);
 
-  // Porcentaje de Ahorro Garantizado de Mario
-  const [ahorroPct, setAhorroPct] = useState(30);
+  const [ahorroPct, setAhorroPct] = useState(initialParams?.ahorroPct ?? 30);
+  const [horasPequeno, setHorasPequeno] = useState(initialParams?.horasPequeno ?? 8);
+  const [horasMediano, setHorasMediano] = useState(initialParams?.horasMediano ?? 12);
+  const [horasGrande, setHorasGrande] = useState(initialParams?.horasGrande ?? 16);
+  const [horasSacMes, setHorasSacMes] = useState(initialParams?.horasSacMes ?? 20);
 
-  // Desglose por Complejidad de Muebles (Pesos Relativos / Horas)
-  const [horasPequeno, setHorasPequeno] = useState(8);   // < 10 piezas (1 día)
-  const [horasMediano, setHorasMediano] = useState(12);  // 11 a 25 piezas (1.5 días)
-  const [horasGrande, setHorasGrande] = useState(16);    // 26 a 40 piezas (2 días)
+  // Sincronizar cuando lleguen cambios remotos desde otro usuario
+  useEffect(() => {
+    if (initialParams) {
+      if (initialParams.manualesAno !== undefined && initialParams.manualesAno !== manualesAno) setManualesAno(initialParams.manualesAno);
+      if (initialParams.personasPed !== undefined && initialParams.personasPed !== personasPed) setPersonasPed(initialParams.personasPed);
+      if (initialParams.salarioCltMes !== undefined && initialParams.salarioCltMes !== salarioCltMes) setSalarioCltMes(initialParams.salarioCltMes);
+      if (initialParams.licenciaSketchUpAno !== undefined && initialParams.licenciaSketchUpAno !== licenciaSketchUpAno) setLicenciaSketchUpAno(initialParams.licenciaSketchUpAno);
+      if (initialParams.licenciaAdobeAno !== undefined && initialParams.licenciaAdobeAno !== licenciaAdobeAno) setLicenciaAdobeAno(initialParams.licenciaAdobeAno);
+      if (initialParams.licenciaOtrosAno !== undefined && initialParams.licenciaOtrosAno !== licenciaOtrosAno) setLicenciaOtrosAno(initialParams.licenciaOtrosAno);
+      if (initialParams.ahorroPct !== undefined && initialParams.ahorroPct !== ahorroPct) setAhorroPct(initialParams.ahorroPct);
+    }
+  }, [initialParams]);
 
-  // Costo de Asistencia Técnica y Garantías (Horas dedicadas a soporte por fallas de ensamble)
-  const [horasSacMes, setHorasSacMes] = useState(20);
+  // Notificar al padre para broadcast en tiempo real
+  const notifyChange = (updated: Partial<CostParameters>) => {
+    const current: CostParameters = {
+      manualesAno: updated.manualesAno ?? manualesAno,
+      personasPed: updated.personasPed ?? personasPed,
+      salarioCltMes: updated.salarioCltMes ?? salarioCltMes,
+      licenciaSketchUpAno: updated.licenciaSketchUpAno ?? licenciaSketchUpAno,
+      licenciaAdobeAno: updated.licenciaAdobeAno ?? licenciaAdobeAno,
+      licenciaOtrosAno: updated.licenciaOtrosAno ?? licenciaOtrosAno,
+      ahorroPct: updated.ahorroPct ?? ahorroPct,
+      horasPequeno: updated.horasPequeno ?? horasPequeno,
+      horasMediano: updated.horasMediano ?? horasMediano,
+      horasGrande: updated.horasGrande ?? horasGrande,
+      horasSacMes: updated.horasSacMes ?? horasSacMes
+    };
+    onParamChange?.(current);
+  };
 
   // --- CÁLCULOS MATEMÁTICOS DE LA OPERACIÓN ANUAL ---
   const totalSalariosAno = personasPed * salarioCltMes * 12;
   const totalLicenciasPorPersonaAno = licenciaSketchUpAno + licenciaAdobeAno + licenciaOtrosAno;
   const totalLicenciasAno = Math.ceil(personasPed) * totalLicenciasPorPersonaAno;
 
-  // Costo por hora base
   const costoHoraClt = salarioCltMes / 176;
   const costoSacAno = horasSacMes * costoHoraClt * 12;
 
-  // Costo Operativo Total Anual de Henn
   const costoTotalOperacionHennAno = totalSalariosAno + totalLicenciasAno + costoSacAno;
   const costoTotalOperacionHennMes = costoTotalOperacionHennAno / 12;
 
-  // COSTO ESTÁNDAR PROMEDIO POR MANUAL (HENN)
   const costoEstandarManualHenn = manualesAno > 0 ? costoTotalOperacionHennAno / manualesAno : 0;
 
-  // DESGLOSE UNITARIO POR TAMAÑO DE MUEBLE (Horas ponderadas sobre promedio 12h)
-  const ratioPequeno = horasPequeno / 12;
-  const ratioMediano = horasMediano / 12;
-  const ratioGrande = horasGrande / 12;
-
-  const costoManualPequenoHenn = costoEstandarManualHenn * ratioPequeno;
-  const costoManualMedianoHenn = costoEstandarManualHenn * ratioMediano;
-  const costoManualGrandeHenn = costoEstandarManualHenn * ratioGrande;
-
-  // PROPUESTA MARIO MOJICA (-30% AHORRO)
-  const costoEstandarManualMario = costoEstandarManualHenn * ((100 - ahorroPct) / 100);
-  const costoManualPequenoMario = costoManualPequenoHenn * ((100 - ahorroPct) / 100);
-  const costoManualMedianoMario = costoManualMedianoHenn * ((100 - ahorroPct) / 100);
-  const costoManualGrandeMario = costoManualGrandeHenn * ((100 - ahorroPct) / 100);
-
-  const propuestaMarioTotalAno = costoTotalOperacionHennAno * ((100 - ahorroPct) / 100);
+  const factorMario = (100 - ahorroPct) / 100;
+  const propuestaMarioTotalAno = costoTotalOperacionHennAno * factorMario;
   const propuestaMarioTotalMes = propuestaMarioTotalAno / 12;
 
-  // Ahorros Consolidados
+  const costoEstandarManualMario = costoEstandarManualHenn * factorMario;
   const ahorroNetoTotalAno = costoTotalOperacionHennAno - propuestaMarioTotalAno;
-  const ahorroNetoTotalMes = ahorroNetoTotalAno / 12;
+  const ahorroNetoTotalMes = costoTotalOperacionHennMes - propuestaMarioTotalMes;
 
   useEffect(() => {
     if (onSummaryChange) {
@@ -105,59 +140,75 @@ export function HennOperationCostEngine({
   ]);
 
   const resetDefault = () => {
-    setManualesAno(200);
-    setPersonasPed(2.0);
-    setSalarioCltMes(6000);
-    setLicenciaSketchUpAno(2400);
-    setLicenciaAdobeAno(3600);
-    setLicenciaOtrosAno(0);
-    setAhorroPct(30);
-    setHorasPequeno(8);
-    setHorasMediano(12);
-    setHorasGrande(16);
-    setHorasSacMes(20);
+    const def = {
+      manualesAno: 200,
+      personasPed: 2.0,
+      salarioCltMes: 6000,
+      licenciaSketchUpAno: 2400,
+      licenciaAdobeAno: 3600,
+      licenciaOtrosAno: 0,
+      ahorroPct: 30,
+      horasPequeno: 8,
+      horasMediano: 12,
+      horasGrande: 16,
+      horasSacMes: 20
+    };
+    setManualesAno(def.manualesAno);
+    setPersonasPed(def.personasPed);
+    setSalarioCltMes(def.salarioCltMes);
+    setLicenciaSketchUpAno(def.licenciaSketchUpAno);
+    setLicenciaAdobeAno(def.licenciaAdobeAno);
+    setLicenciaOtrosAno(def.licenciaOtrosAno);
+    setAhorroPct(def.ahorroPct);
+    notifyChange(def);
+  };
+
+  const handleInputFocus = (e: React.FocusEvent<HTMLInputElement>) => {
+    setTimeout(() => {
+      e.target.scrollIntoView({ behavior: "smooth", block: "center" });
+    }, 150);
   };
 
   return (
-    <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm flex flex-col gap-3.5 text-slate-800 text-xs h-full overflow-y-auto">
-      {/* Header del Cotizador */}
-      <div className="flex items-center justify-between border-b border-slate-100 pb-2.5">
+    <div className="bg-white border border-slate-200 rounded-xl sm:rounded-2xl p-3 sm:p-4 shadow-sm flex flex-col gap-3 text-slate-800 text-xs h-full overflow-y-auto pb-24">
+      {/* Header del Cotizador con Indicador de Sincronización */}
+      <div className="flex items-center justify-between border-b border-slate-100 pb-2 shrink-0">
         <div className="flex items-center gap-2">
-          <div className="p-1.5 bg-cyan-100 text-cyan-800 rounded-lg font-bold">
+          <div className="p-1.5 bg-cyan-100 text-cyan-800 rounded-lg font-bold shrink-0">
             <Calculator className="w-4 h-4" />
           </div>
           <div>
-            <h2 className="font-extrabold text-sm text-slate-900 leading-tight">
+            <h2 className="font-extrabold text-xs sm:text-sm text-slate-900 leading-tight">
               {isPt
                 ? "Cotizador da Operação Anual de P&D | Móveis Henn"
                 : "Cotizador de la Operación Anual de P&D | Móveis Henn"}
             </h2>
-            <p className="text-[11px] text-slate-500">
+            <p className="text-[10px] sm:text-[11px] text-slate-500">
               {isPt
-                ? "Validação técnica com Marcos Unnass para determinar o custo padrão por manual e calibrar o 30% de economia."
-                : "Validación técnica con Marcos Unnass para determinar el costo estándar por manual y calibrar el 30% de ahorro."}
+                ? "Edição colaborativa em tempo real com Marcos Unnass."
+                : "Edición colaborativa en tiempo real con Marcos Unnass."}
             </p>
           </div>
         </div>
 
         <button
           onClick={resetDefault}
-          className="text-[10px] text-slate-500 hover:text-slate-800 flex items-center gap-1 px-2 py-1 rounded border border-slate-200 hover:bg-slate-50 transition"
+          className="text-[10px] text-slate-500 hover:text-slate-800 flex items-center gap-1 px-2 py-1 rounded border border-slate-200 hover:bg-slate-50 transition shrink-0"
           title={isPt ? "Restaurar valores de referência" : "Restablecer valores de referencia"}
         >
           <RotateCcw className="w-3 h-3" />
-          <span>{isPt ? "Restaurar" : "Restablecer"}</span>
+          <span className="hidden xs:inline">{isPt ? "Restaurar" : "Restablecer"}</span>
         </button>
       </div>
 
       {/* KPI CARDS: Cifras Consolidadas */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 bg-slate-50 p-2.5 rounded-xl border border-slate-200">
-        <div className="bg-white p-2.5 rounded-lg border border-slate-200 flex flex-col justify-between">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 bg-slate-50 p-2 sm:p-2.5 rounded-xl border border-slate-200 shrink-0">
+        <div className="bg-white p-2 sm:p-2.5 rounded-lg border border-slate-200 flex flex-col justify-between">
           <span className="text-[10px] font-semibold text-slate-500">
             {isPt ? "Custo Operação Henn:" : "Costo Operación Henn:"}
           </span>
           <div>
-            <span className="text-base font-extrabold text-slate-900 block">
+            <span className="text-sm sm:text-base font-extrabold text-slate-900 block">
               R$ {costoTotalOperacionHennAno.toLocaleString("pt-BR", { minimumFractionDigits: 0 })}
               <span className="text-[9px] font-normal text-slate-500"> {isPt ? "/ano" : "/año"}</span>
             </span>
@@ -167,7 +218,7 @@ export function HennOperationCostEngine({
           </div>
         </div>
 
-        <div className="bg-cyan-50/70 p-2.5 rounded-lg border border-cyan-200 flex flex-col justify-between">
+        <div className="bg-cyan-50/70 p-2 sm:p-2.5 rounded-lg border border-cyan-200 flex flex-col justify-between">
           <div className="flex items-center justify-between">
             <span className="text-[10px] font-bold text-cyan-900">
               {isPt ? "Proposta Mario:" : "Propuesta Mario:"}
@@ -177,7 +228,7 @@ export function HennOperationCostEngine({
             </span>
           </div>
           <div>
-            <span className="text-base font-extrabold text-cyan-700 block">
+            <span className="text-sm sm:text-base font-extrabold text-cyan-700 block">
               R$ {propuestaMarioTotalAno.toLocaleString("pt-BR", { minimumFractionDigits: 0 })}
               <span className="text-[9px] font-normal text-cyan-800"> {isPt ? "/ano" : "/año"}</span>
             </span>
@@ -187,12 +238,12 @@ export function HennOperationCostEngine({
           </div>
         </div>
 
-        <div className="bg-emerald-50 p-2.5 rounded-lg border border-emerald-200 flex flex-col justify-between">
+        <div className="bg-emerald-50 p-2 sm:p-2.5 rounded-lg border border-emerald-200 flex flex-col justify-between">
           <span className="text-[10px] font-bold text-emerald-800">
             {isPt ? "Economia Líquida Anual:" : "Ahorro Neto Anual:"}
           </span>
           <div>
-            <span className="text-base font-extrabold text-emerald-600 block">
+            <span className="text-sm sm:text-base font-extrabold text-emerald-600 block">
               +R$ {ahorroNetoTotalAno.toLocaleString("pt-BR", { minimumFractionDigits: 0 })}
             </span>
             <span className="text-[10px] text-emerald-700 font-bold">
@@ -203,63 +254,93 @@ export function HennOperationCostEngine({
       </div>
 
       {/* SECCIÓN 1: MACRO OPERACIÓN ANUAL DE HENN */}
-      <div className="border border-slate-200 rounded-xl p-3 bg-white space-y-2.5">
+      <div className="border border-slate-200 rounded-xl p-2.5 sm:p-3 bg-white space-y-2.5">
         <h3 className="font-extrabold text-xs text-slate-900 flex items-center gap-1.5 border-b border-slate-100 pb-1.5">
           <Layers className="w-3.5 h-3.5 text-cyan-600" />
           {isPt
-            ? "1. Parâmetros da Operação Anual da Henn (Valores a Validar com Marcos)"
-            : "1. Parámetros de la Operación Anual de Henn (Valores a Validar con Marcos)"}
+            ? "1. Parâmetros da Operação Anual da Henn (Sincronizado ao Vivo)"
+            : "1. Parámetros de la Operación Anual de Henn (Sincronizado en Vivo)"}
         </h3>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
           {/* Volumen Anual */}
           <div className="bg-slate-50 p-2 rounded-lg border border-slate-200 flex flex-col gap-1">
             <div className="flex justify-between items-center text-[11px]">
-              <span className="font-bold text-slate-700">{isPt ? "📦 Total Manuais / Lançamentos ao Ano:" : "📦 Total Manuales / Lanzamientos al Año:"}</span>
+              <span className="font-bold text-slate-700 flex items-center gap-1">
+                <Package className="w-3 h-3 text-slate-500" />
+                {isPt ? "Total Manuais / Lançamentos ao Ano:" : "Total Manuales / Lanzamientos al Año:"}
+              </span>
               <span className="text-[10px] text-slate-500 font-normal">(~{(manualesAno/12).toFixed(1)}{isPt ? "/mês" : "/mes"})</span>
             </div>
             <input
               type="number"
+              inputMode="numeric"
               value={manualesAno}
-              onChange={e => setManualesAno(Math.max(1, Number(e.target.value)))}
-              className="w-full font-extrabold text-base text-slate-900 bg-white border border-slate-300 rounded px-2 py-0.5 outline-none focus:border-cyan-500 text-center"
+              onFocus={handleInputFocus}
+              onChange={e => {
+                const val = Math.max(1, Number(e.target.value));
+                setManualesAno(val);
+                notifyChange({ manualesAno: val });
+              }}
+              className="w-full font-extrabold text-sm sm:text-base text-slate-900 bg-white border border-slate-300 rounded px-2 py-1 outline-none focus:border-cyan-500 text-center"
             />
           </div>
 
           {/* Personas en P&D */}
           <div className="bg-slate-50 p-2 rounded-lg border border-slate-200 flex flex-col gap-1">
             <div className="flex justify-between items-center text-[11px]">
-              <span className="font-bold text-slate-700">{isPt ? "👥 Pessoas em P&D dedicadas a manuais:" : "👥 Personas en P&D dedicadas a manuales:"}</span>
+              <span className="font-bold text-slate-700 flex items-center gap-1">
+                <Users className="w-3 h-3 text-slate-500" />
+                {isPt ? "Pessoas em P&D dedicadas a manuais:" : "Personas en P&D dedicadas a manuales:"}
+              </span>
               <span className="text-[10px] text-slate-500 font-normal">{isPt ? "designers" : "diseñadores"}</span>
             </div>
             <input
               type="number"
+              inputMode="decimal"
               step="0.5"
               value={personasPed}
-              onChange={e => setPersonasPed(Math.max(0.5, Number(e.target.value)))}
-              className="w-full font-extrabold text-base text-slate-900 bg-white border border-slate-300 rounded px-2 py-0.5 outline-none focus:border-cyan-500 text-center"
+              onFocus={handleInputFocus}
+              onChange={e => {
+                const val = Math.max(0.5, Number(e.target.value));
+                setPersonasPed(val);
+                notifyChange({ personasPed: val });
+              }}
+              className="w-full font-extrabold text-sm sm:text-base text-slate-900 bg-white border border-slate-300 rounded px-2 py-1 outline-none focus:border-cyan-500 text-center"
             />
           </div>
 
           {/* Salario CLT */}
           <div className="bg-slate-50 p-2 rounded-lg border border-slate-200 flex flex-col gap-1">
             <div className="flex justify-between items-center text-[11px]">
-              <span className="font-bold text-slate-700">{isPt ? "💵 Salário Médio CLT + Encargos Sociais:" : "💵 Salario Promedio CLT + Cargas Sociales:"}</span>
+              <span className="font-bold text-slate-700 flex items-center gap-1">
+                <CircleDollarSign className="w-3 h-3 text-slate-500" />
+                {isPt ? "Salário Médio CLT + Encargos Sociais:" : "Salario Promedio CLT + Cargas Sociales:"}
+              </span>
               <span className="text-[10px] text-slate-500 font-normal">R$/mês/pessoa</span>
             </div>
             <input
               type="number"
+              inputMode="numeric"
               step="500"
               value={salarioCltMes}
-              onChange={e => setSalarioCltMes(Number(e.target.value))}
-              className="w-full font-extrabold text-base text-slate-900 bg-white border border-slate-300 rounded px-2 py-0.5 outline-none focus:border-cyan-500 text-center"
+              onFocus={handleInputFocus}
+              onChange={e => {
+                const val = Number(e.target.value);
+                setSalarioCltMes(val);
+                notifyChange({ salarioCltMes: val });
+              }}
+              className="w-full font-extrabold text-sm sm:text-base text-slate-900 bg-white border border-slate-300 rounded px-2 py-1 outline-none focus:border-cyan-500 text-center"
             />
           </div>
 
           {/* Total Salarios Año */}
           <div className="bg-slate-50 p-2 rounded-lg border border-slate-200 flex flex-col justify-between">
-            <span className="font-bold text-slate-700 text-[11px]">{isPt ? "💰 Folha Salarial P&D ao Ano:" : "💰 Masa Salarial P&D al Año:"}</span>
-            <span className="font-extrabold text-base text-slate-900 text-center py-0.5">
+            <span className="font-bold text-slate-700 text-[11px] flex items-center gap-1">
+              <TrendingDown className="w-3 h-3 text-slate-500" />
+              {isPt ? "Folha Salarial P&D ao Ano:" : "Masa Salarial P&D al Año:"}
+            </span>
+            <span className="font-extrabold text-sm sm:text-base text-slate-900 text-center py-1">
               R$ {totalSalariosAno.toLocaleString("pt-BR", { minimumFractionDigits: 0 })} {isPt ? "/ ano" : "/ año"}
             </span>
           </div>
@@ -280,12 +361,18 @@ export function HennOperationCostEngine({
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
             <div>
               <label className="text-[10px] text-slate-500 font-medium block">SketchUp Pro / Studio:</label>
-              <div className="flex items-center gap-1 bg-white border border-slate-200 rounded px-1.5 py-0.5">
+              <div className="flex items-center gap-1 bg-white border border-slate-200 rounded px-1.5 py-1">
                 <span className="text-[10px] text-slate-400">R$</span>
                 <input
                   type="number"
+                  inputMode="numeric"
                   value={licenciaSketchUpAno}
-                  onChange={e => setLicenciaSketchUpAno(Number(e.target.value))}
+                  onFocus={handleInputFocus}
+                  onChange={e => {
+                    const val = Number(e.target.value);
+                    setLicenciaSketchUpAno(val);
+                    notifyChange({ licenciaSketchUpAno: val });
+                  }}
                   className="w-full text-xs font-bold text-slate-800 outline-none"
                 />
                 <span className="text-[9px] text-slate-400">{isPt ? "/ano" : "/año"}</span>
@@ -294,12 +381,18 @@ export function HennOperationCostEngine({
 
             <div>
               <label className="text-[10px] text-slate-500 font-medium block">Adobe CC (InDesign/Illustrator):</label>
-              <div className="flex items-center gap-1 bg-white border border-slate-200 rounded px-1.5 py-0.5">
+              <div className="flex items-center gap-1 bg-white border border-slate-200 rounded px-1.5 py-1">
                 <span className="text-[10px] text-slate-400">R$</span>
                 <input
                   type="number"
+                  inputMode="numeric"
                   value={licenciaAdobeAno}
-                  onChange={e => setLicenciaAdobeAno(Number(e.target.value))}
+                  onFocus={handleInputFocus}
+                  onChange={e => {
+                    const val = Number(e.target.value);
+                    setLicenciaAdobeAno(val);
+                    notifyChange({ licenciaAdobeAno: val });
+                  }}
                   className="w-full text-xs font-bold text-slate-800 outline-none"
                 />
                 <span className="text-[9px] text-slate-400">{isPt ? "/ano" : "/año"}</span>
@@ -307,138 +400,25 @@ export function HennOperationCostEngine({
             </div>
 
             <div>
-              <label className="text-[10px] text-slate-500 font-medium block">{isPt ? "Outros Softwares (CAD/Render):" : "Otros Software (CAD/Render):"}</label>
-              <div className="flex items-center gap-1 bg-white border border-slate-200 rounded px-1.5 py-0.5">
+              <label className="text-[10px] text-slate-500 font-medium block">Outros Software (CAD/Render):</label>
+              <div className="flex items-center gap-1 bg-white border border-slate-200 rounded px-1.5 py-1">
                 <span className="text-[10px] text-slate-400">R$</span>
                 <input
                   type="number"
+                  inputMode="numeric"
                   value={licenciaOtrosAno}
-                  onChange={e => setLicenciaOtrosAno(Number(e.target.value))}
+                  onFocus={handleInputFocus}
+                  onChange={e => {
+                    const val = Number(e.target.value);
+                    setLicenciaOtrosAno(val);
+                    notifyChange({ licenciaOtrosAno: val });
+                  }}
                   className="w-full text-xs font-bold text-slate-800 outline-none"
                 />
                 <span className="text-[9px] text-slate-400">{isPt ? "/ano" : "/año"}</span>
               </div>
             </div>
           </div>
-        </div>
-      </div>
-
-      {/* SECCIÓN 2: COSTO ESTÁNDAR Y DESGLOSE POR COMPLEJIDAD */}
-      <div className="border border-slate-200 rounded-xl p-3 bg-white space-y-2.5">
-        <div className="flex justify-between items-center border-b border-slate-100 pb-1.5">
-          <h3 className="font-extrabold text-xs text-slate-900 flex items-center gap-1.5">
-            <DollarSign className="w-3.5 h-3.5 text-emerald-600" />
-            {isPt ? "2. Custo Padrão e Desdobramento por Tamanho do Móvel" : "2. Costo Estándar y Desglose por Tamaño de Mueble"}
-          </h3>
-          <span className="bg-emerald-100 text-emerald-900 text-[10px] font-extrabold px-2 py-0.5 rounded">
-            {isPt
-              ? `Méd. Henn: R$ ${costoEstandarManualHenn.toFixed(2)} ➔ Mario: R$ ${costoEstandarManualMario.toFixed(2)}`
-              : `Prom. Henn: R$ ${costoEstandarManualHenn.toFixed(2)} ➔ Mario: R$ ${costoEstandarManualMario.toFixed(2)}`}
-          </span>
-        </div>
-
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-          {/* Mueble Pequeño */}
-          <div className="bg-slate-50 p-2.5 rounded-lg border border-slate-200 flex flex-col justify-between">
-            <div>
-              <div className="flex justify-between items-center text-[10px] font-bold text-slate-700">
-                <span>{isPt ? "Manual Pequeno (< 10 peças)" : "Manual Pequeño (< 10 piezas)"}</span>
-                <span className="text-slate-400">~{horasPequeno}h</span>
-              </div>
-              <p className="text-[9px] text-slate-500 mt-0.5">{isPt ? "Mesas de cabeceira, nichos, gaveteiros." : "Mesas de noche, repisas, cajoneras."}</p>
-            </div>
-            <div className="mt-2 pt-1 border-t border-slate-200">
-              <div className="flex justify-between text-[11px]">
-                <span className="text-slate-500">{isPt ? "Custo Henn:" : "Costo Henn:"}</span>
-                <span className="font-bold text-slate-900">R$ {costoManualPequenoHenn.toFixed(2)}</span>
-              </div>
-              <div className="flex justify-between text-[11px] font-bold text-cyan-700">
-                <span>Mario (-30%):</span>
-                <span>R$ {costoManualPequenoMario.toFixed(2)}</span>
-              </div>
-            </div>
-          </div>
-
-          {/* Mueble Mediano */}
-          <div className="bg-slate-50 p-2.5 rounded-lg border border-slate-200 flex flex-col justify-between">
-            <div>
-              <div className="flex justify-between items-center text-[10px] font-bold text-slate-700">
-                <span>{isPt ? "Manual Médio (11 a 25 peças)" : "Manual Mediano (11 a 25 piezas)"}</span>
-                <span className="text-slate-400">~{horasMediano}h</span>
-              </div>
-              <p className="text-[9px] text-slate-500 mt-0.5">{isPt ? "Cômodas, racks de TV, escrivaninhas." : "Cómodas, racks de TV, escritorios."}</p>
-            </div>
-            <div className="mt-2 pt-1 border-t border-slate-200">
-              <div className="flex justify-between text-[11px]">
-                <span className="text-slate-500">{isPt ? "Custo Henn:" : "Costo Henn:"}</span>
-                <span className="font-bold text-slate-900">R$ {costoManualMedianoHenn.toFixed(2)}</span>
-              </div>
-              <div className="flex justify-between text-[11px] font-bold text-cyan-700">
-                <span>Mario (-30%):</span>
-                <span>R$ {costoManualMedianoMario.toFixed(2)}</span>
-              </div>
-            </div>
-          </div>
-
-          {/* Mueble Grande */}
-          <div className="bg-slate-50 p-2.5 rounded-lg border border-slate-200 flex flex-col justify-between">
-            <div>
-              <div className="flex justify-between items-center text-[10px] font-bold text-slate-700">
-                <span>{isPt ? "Manual Grande (26 a 40+ peças)" : "Manual Grande (26 a 40+ piezas)"}</span>
-                <span className="text-slate-400">~{horasGrande}h</span>
-              </div>
-              <p className="text-[9px] text-slate-500 mt-0.5">{isPt ? "Roupeiros, cozinhas moduladas, closets." : "Roperos, cocinas moduladas, clósets."}</p>
-            </div>
-            <div className="mt-2 pt-1 border-t border-slate-200">
-              <div className="flex justify-between text-[11px]">
-                <span className="text-slate-500">{isPt ? "Custo Henn:" : "Costo Henn:"}</span>
-                <span className="font-bold text-slate-900">R$ {costoManualGrandeHenn.toFixed(2)}</span>
-              </div>
-              <div className="flex justify-between text-[11px] font-bold text-cyan-700">
-                <span>Mario (-30%):</span>
-                <span>R$ {costoManualGrandeMario.toFixed(2)}</span>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* SECCIÓN 3: CONTROL DE AHORRO Y ARGUMENTO COMERCIAL */}
-      <div className="bg-cyan-50/60 border border-cyan-200 rounded-xl p-3 space-y-2">
-        <div className="flex flex-wrap items-center justify-between gap-2">
-          <span className="font-bold text-cyan-950 text-xs">
-            {isPt ? "Percentual de Economia Garantida:" : "Porcentaje de Ahorro Garantizado:"}
-          </span>
-          <div className="flex items-center gap-1">
-            {[20, 25, 30, 35, 40].map(pct => (
-              <button
-                key={pct}
-                onClick={() => setAhorroPct(pct)}
-                className={`px-2 py-0.5 rounded font-bold text-xs transition ${
-                  ahorroPct === pct
-                    ? "bg-cyan-700 text-white shadow-sm"
-                    : "bg-white text-slate-700 border border-cyan-200 hover:bg-cyan-100"
-                }`}
-              >
-                {pct}%
-              </button>
-            ))}
-          </div>
-        </div>
-
-        <div className="text-[11px] text-slate-700 flex items-center gap-1.5 pt-1 border-t border-cyan-200">
-          <ShieldCheck className="w-4 h-4 text-cyan-700 shrink-0" />
-          <span>
-            {isPt ? (
-              <>
-                <strong>Argumento para a Diretoria da Henn:</strong> Cotamos a operação anual de P&D em <strong>R$ {costoTotalOperacionHennAno.toLocaleString("pt-BR", { minimumFractionDigits: 0 })}/ano</strong> e garantimos uma economia direta de <strong>+R$ {ahorroNetoTotalAno.toLocaleString("pt-BR", { minimumFractionDigits: 0 })}/ano</strong> com os manuais interativos 3D.
-              </>
-            ) : (
-              <>
-                <strong>Argumento para Marcos:</strong> Cotizamos la operación anual de Henn en <strong>R$ {costoTotalOperacionHennAno.toLocaleString("pt-BR", { minimumFractionDigits: 0 })}/año</strong> y garantizamos un ahorro directo de <strong>+R$ {ahorroNetoTotalAno.toLocaleString("pt-BR", { minimumFractionDigits: 0 })}/año</strong> para presentar a la Junta Directiva.
-              </>
-            )}
-          </span>
         </div>
       </div>
     </div>

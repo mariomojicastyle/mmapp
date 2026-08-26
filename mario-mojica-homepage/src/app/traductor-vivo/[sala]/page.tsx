@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useParams } from "next/navigation";
 import { useLiveTranslator } from "@/hooks/useLiveTranslator";
-import { HennOperationCostEngine } from "@/components/copiloto/HennOperationCostEngine";
+import { HennOperationCostEngine, CostParameters } from "@/components/copiloto/HennOperationCostEngine";
 import { SplitBilingualFeed } from "@/components/copiloto/SplitBilingualFeed";
 import {
   Mic,
@@ -16,19 +16,33 @@ import {
   Settings,
   Radio,
   MessageSquare,
-  FileUp,
-  UserCheck
+  FileUp
 } from "lucide-react";
 
 export default function SalaBilingueMasterPage() {
   const params = useParams();
   const sala = (params?.sala as string) || "henn";
 
-  // Idioma de la interfaz y de la voz del usuario local
+  // Idioma de la voz y de la interfaz
   const [myVoiceLang, setMyVoiceLang] = useState<"es" | "pt">("es");
   const [uiLang, setUiLang] = useState<"es" | "pt">("es");
   const [summaryData, setSummaryData] = useState<any>(null);
   const [saveStatus, setSaveStatus] = useState<string | null>(null);
+
+  // Parámetros de Costos Colaborativos
+  const [sharedCostParams, setSharedCostParams] = useState<CostParameters>({
+    manualesAno: 200,
+    personasPed: 2.0,
+    salarioCltMes: 6000,
+    licenciaSketchUpAno: 2400,
+    licenciaAdobeAno: 3600,
+    licenciaOtrosAno: 0,
+    ahorroPct: 30,
+    horasPequeno: 8,
+    horasMediano: 12,
+    horasGrande: 16,
+    horasSacMes: 20
+  });
 
   // Parámetros Dinámicos de la Sala
   const [clienteNombre, setClienteNombre] = useState(sala === "henn" ? "Móveis Henn" : "Cliente B2B");
@@ -65,13 +79,72 @@ export default function SalaBilingueMasterPage() {
 
   const isPt = uiLang === "pt";
 
-  // Manejador para cargar archivo PDF local
-  const handlePdfUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  // Polling colaborativo en tiempo real para sincronizar costos y PDFs modificados
+  useEffect(() => {
+    const interval = setInterval(async () => {
+      try {
+        const res = await fetch(`/api/copiloto/sesion?sala=${sala}`);
+        if (res.ok) {
+          const data = await res.json();
+          if (data.costParams) {
+            setSharedCostParams(prev => {
+              // Solo actualizar si cambiaron para evitar loops
+              const isDifferent = JSON.stringify(prev) !== JSON.stringify(data.costParams);
+              return isDifferent ? data.costParams : prev;
+            });
+          }
+          if (data.activePdf && data.activePdf.nombre !== pdfNombre) {
+            setPdfNombre(data.activePdf.nombre);
+            if (data.activePdf.url) setPdfUrl(data.activePdf.url);
+          }
+        }
+      } catch (err) {
+        // Silencioso
+      }
+    }, 1200);
+
+    return () => clearInterval(interval);
+  }, [sala, pdfNombre]);
+
+  // Cuando el usuario local cambia un número en el cotizador, hace broadcast al servidor
+  const handleCostParamChange = async (newParams: CostParameters) => {
+    setSharedCostParams(newParams);
+    try {
+      await fetch("/api/copiloto/sesion", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "update_cost_params",
+          sala,
+          costParams: newParams
+        })
+      });
+    } catch (e) {
+      console.error("Error transmitiendo cambio de costos:", e);
+    }
+  };
+
+  // Manejador para cargar archivo PDF local y sincronizar
+  const handlePdfUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file && file.type === "application/pdf") {
       const url = URL.createObjectURL(file);
       setPdfUrl(url);
       setPdfNombre(file.name);
+
+      try {
+        await fetch("/api/copiloto/sesion", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            action: "update_pdf",
+            sala,
+            activePdf: { nombre: file.name, url }
+          })
+        });
+      } catch (err) {
+        console.error("Error transmitiendo PDF:", err);
+      }
     }
   };
 
@@ -243,36 +316,39 @@ export default function SalaBilingueMasterPage() {
   };
 
   return (
-    <div className="h-screen w-full bg-slate-100 text-slate-900 font-sans p-2 sm:p-3 flex flex-col justify-between gap-1.5 sm:gap-2 overflow-hidden">
-      {/* Header Sticky Siempre Visible con Controles Principales */}
-      <header className="bg-white border border-slate-200 rounded-xl sm:rounded-2xl px-2.5 sm:px-4 py-1.5 sm:py-2 shadow-sm flex items-center justify-between gap-2 shrink-0 select-none w-full z-20">
-        <div className="flex items-center gap-2 sm:gap-3 min-w-0">
-          <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-cyan-600 text-white flex items-center justify-center font-extrabold text-xs sm:text-sm shadow-sm shrink-0">
+    <div
+      style={{ height: "100dvh", maxHeight: "100dvh", minHeight: "100dvh" }}
+      className="w-full bg-slate-100 text-slate-900 font-sans p-1 sm:p-2.5 flex flex-col justify-between gap-1 sm:gap-2 overflow-hidden fixed inset-0"
+    >
+      {/* 1. Header Compacto Fijo (Siempre visible en Vertical y Horizontal) */}
+      <header className="bg-white border border-slate-200 rounded-xl sm:rounded-2xl px-2 sm:px-3.5 py-1 sm:py-1.5 shadow-sm flex items-center justify-between gap-1.5 sm:gap-2 shrink-0 select-none w-full z-30">
+        <div className="flex items-center gap-1.5 sm:gap-2.5 min-w-0">
+          <div className="w-6 h-6 sm:w-7 sm:h-7 rounded-lg bg-cyan-600 text-white flex items-center justify-center font-extrabold text-[11px] sm:text-xs shadow-sm shrink-0">
             MM
           </div>
           <div className="min-w-0">
-            <div className="flex items-center gap-1.5">
-              <h1 className="font-extrabold text-xs sm:text-sm text-slate-900 leading-tight truncate">
+            <div className="flex items-center gap-1">
+              <h1 className="font-extrabold text-[11px] sm:text-xs text-slate-900 leading-tight truncate">
                 {clienteNombre}
               </h1>
-              <span className="hidden sm:inline-flex bg-emerald-50 text-emerald-800 text-[10px] font-bold px-2 py-0.2 rounded-full border border-emerald-200 items-center gap-1">
+              <span className="hidden xs:inline-flex bg-emerald-50 text-emerald-800 text-[9px] sm:text-[10px] font-bold px-1.5 py-0.2 rounded-full border border-emerald-200 items-center gap-1">
                 <Radio className="w-2 h-2 text-emerald-600 animate-pulse" />
                 <span>{isPt ? "Ao Vivo" : "En Vivo"}</span>
               </span>
             </div>
-            <p className="text-[10px] sm:text-[11px] text-slate-500 truncate">
+            <p className="text-[9px] sm:text-[10px] text-slate-500 truncate hidden xs:block">
               {participanteMario} & {participanteCliente}
             </p>
           </div>
         </div>
 
-        {/* Barra de Acciones y Micrófono */}
-        <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
-          {/* Selector de Mi Idioma de Voz (¿Quién habla en este dispositivo?) */}
-          <div className="flex items-center bg-slate-100 p-0.5 rounded-lg border border-slate-200 text-[10px] sm:text-[11px] font-bold">
+        {/* Acciones y Micrófono */}
+        <div className="flex items-center gap-1 sm:gap-1.5 shrink-0">
+          {/* Selector de Voz */}
+          <div className="flex items-center bg-slate-100 p-0.5 rounded-lg border border-slate-200 text-[9px] sm:text-[10px] font-bold">
             <button
               onClick={() => { setMyVoiceLang("es"); setUiLang("es"); }}
-              className={`px-1.5 sm:px-2 py-0.5 rounded transition ${
+              className={`px-1.5 py-0.5 rounded transition ${
                 myVoiceLang === "es" ? "bg-white text-cyan-700 shadow-sm" : "text-slate-600 hover:text-slate-900"
               }`}
               title="Mi micrófono escucha en Español (Mario)"
@@ -281,7 +357,7 @@ export default function SalaBilingueMasterPage() {
             </button>
             <button
               onClick={() => { setMyVoiceLang("pt"); setUiLang("pt"); }}
-              className={`px-1.5 sm:px-2 py-0.5 rounded transition ${
+              className={`px-1.5 py-0.5 rounded transition ${
                 myVoiceLang === "pt" ? "bg-white text-emerald-700 shadow-sm" : "text-slate-600 hover:text-slate-900"
               }`}
               title="Meu microfone escuta em Português (Marcos)"
@@ -293,88 +369,88 @@ export default function SalaBilingueMasterPage() {
           {/* Botón Principal de Micrófono */}
           <button
             onClick={toggleListening}
-            className={`px-2.5 sm:px-3.5 py-1 sm:py-1.5 rounded-xl font-bold text-[11px] sm:text-xs flex items-center gap-1 sm:gap-1.5 transition shadow-sm ${
+            className={`px-2 sm:px-3 py-1 rounded-xl font-bold text-[10px] sm:text-xs flex items-center gap-1 transition shadow-sm ${
               isListening
                 ? "bg-red-500 hover:bg-red-600 text-white animate-pulse"
                 : "bg-cyan-600 hover:bg-cyan-700 text-white"
             }`}
             title={isListening ? "Pausar captura de voz" : "Toca para hablar por el micrófono"}
           >
-            {isListening ? <MicOff className="w-3.5 h-3.5" /> : <Mic className="w-3.5 h-3.5" />}
+            {isListening ? <MicOff className="w-3 h-3" /> : <Mic className="w-3 h-3" />}
             <span>{isListening ? (isPt ? "Ouvindo..." : "Grabando...") : (isPt ? "Falar" : "Hablar")}</span>
           </button>
 
           {/* Botón Guardar */}
           <button
             onClick={handleSaveToWorkspace}
-            className="bg-slate-800 hover:bg-slate-900 text-white text-[11px] sm:text-xs font-semibold px-2 sm:px-2.5 py-1 sm:py-1.5 rounded-xl flex items-center gap-1 transition shadow-sm"
-            title="Guardar acta en el histórico"
+            className="bg-slate-800 hover:bg-slate-900 text-white text-[10px] sm:text-xs font-semibold px-2 py-1 rounded-xl flex items-center gap-1 transition shadow-sm"
+            title="Guardar notas en el histórico"
           >
-            <Save className="w-3.5 h-3.5 text-cyan-400" />
+            <Save className="w-3 h-3 text-cyan-400" />
             <span className="hidden md:inline">{isPt ? "Salvar" : "Guardar"}</span>
           </button>
         </div>
       </header>
 
-      {/* Pestañas de Navegación Móvil y Tablet (100% Ancho) */}
-      <div className="flex lg:hidden bg-white border border-slate-200 rounded-xl p-1 shadow-sm justify-between text-xs font-bold shrink-0 select-none w-full">
+      {/* 2. Pestañas Móvil y Tablet (100% Ancho, Compactas y Fijas) */}
+      <div className="flex lg:hidden bg-white border border-slate-200 rounded-xl p-0.5 shadow-sm justify-between text-[11px] font-bold shrink-0 select-none w-full z-20">
         <button
           onClick={() => setMobileActiveView("subtitulos")}
-          className={`flex-1 flex items-center justify-center gap-1 py-1.5 rounded-lg transition ${
+          className={`flex-1 flex items-center justify-center gap-1 py-1 rounded-lg transition ${
             mobileActiveView === "subtitulos" ? "bg-cyan-50 text-cyan-800 border border-cyan-200 shadow-sm" : "text-slate-600"
           }`}
         >
-          <MessageSquare className="w-3.5 h-3.5 text-cyan-600" />
+          <MessageSquare className="w-3 h-3 text-cyan-600" />
           <span>Subtítulos</span>
         </button>
 
         <button
           onClick={() => setMobileActiveView("cotizador")}
-          className={`flex-1 flex items-center justify-center gap-1 py-1.5 rounded-lg transition ${
+          className={`flex-1 flex items-center justify-center gap-1 py-1 rounded-lg transition ${
             mobileActiveView === "cotizador" ? "bg-cyan-50 text-cyan-800 border border-cyan-200 shadow-sm" : "text-slate-600"
           }`}
         >
-          <Calculator className="w-3.5 h-3.5 text-cyan-600" />
+          <Calculator className="w-3 h-3 text-cyan-600" />
           <span>Costos</span>
         </button>
 
         <button
           onClick={() => setMobileActiveView("documento")}
-          className={`flex-1 flex items-center justify-center gap-1 py-1.5 rounded-lg transition ${
+          className={`flex-1 flex items-center justify-center gap-1 py-1 rounded-lg transition ${
             mobileActiveView === "documento" ? "bg-cyan-50 text-cyan-800 border border-cyan-200 shadow-sm" : "text-slate-600"
           }`}
         >
-          <FileText className="w-3.5 h-3.5 text-slate-600" />
+          <FileText className="w-3 h-3 text-slate-600" />
           <span>Doc</span>
         </button>
 
         <button
           onClick={() => setMobileActiveView("config")}
-          className={`flex-1 flex items-center justify-center gap-1 py-1.5 rounded-lg transition ${
+          className={`flex-1 flex items-center justify-center gap-1 py-1 rounded-lg transition ${
             mobileActiveView === "config" ? "bg-cyan-50 text-cyan-800 border border-cyan-200 shadow-sm" : "text-slate-600"
           }`}
         >
-          <Settings className="w-3.5 h-3.5 text-slate-600" />
+          <Settings className="w-3 h-3 text-slate-600" />
           <span>Sala</span>
         </button>
       </div>
 
       {saveStatus && (
-        <div className="bg-emerald-50 border border-emerald-200 text-emerald-800 text-[11px] px-3 py-1 rounded-xl flex items-center gap-1.5 shadow-sm shrink-0 select-none w-full">
-          <Check className="w-3.5 h-3.5 text-emerald-600" />
-          <span>{saveStatus}</span>
+        <div className="bg-emerald-50 border border-emerald-200 text-emerald-800 text-[10px] sm:text-[11px] px-2.5 py-0.5 rounded-lg flex items-center gap-1 shadow-sm shrink-0 select-none w-full">
+          <Check className="w-3 h-3 text-emerald-600" />
+          <span className="truncate">{saveStatus}</span>
         </div>
       )}
 
-      {/* CONTENEDOR PRINCIPAL */}
+      {/* 3. CONTENEDOR PRINCIPAL: Scroll interno independiente */}
       <main
         ref={containerRef}
         className="flex-1 flex flex-col lg:flex-row items-stretch gap-0 relative overflow-hidden min-h-0 w-full"
       >
-        {/* PANEL IZQUIERDO: Subtítulos Bilingües (100% en móvil, % configurable en desktop) */}
+        {/* PANEL IZQUIERDO: Subtítulos Bilingües */}
         <div
           style={{ width: typeof window !== "undefined" && window.innerWidth >= 1024 ? `${leftWidthPct}%` : "100%" }}
-          className={`flex flex-col h-full overflow-hidden select-text w-full lg:w-auto ${
+          className={`flex flex-col h-full overflow-hidden select-text w-full lg:w-auto min-h-0 ${
             mobileActiveView === "subtitulos" ? "flex" : "hidden lg:flex"
           }`}
         >
@@ -401,19 +477,19 @@ export default function SalaBilingueMasterPage() {
           </div>
         </div>
 
-        {/* PANEL DERECHO: Pestañas Intercambiables (100% en móvil cuando no es subtítulos) */}
+        {/* PANEL DERECHO: Pestañas Intercambiables */}
         <div
           style={{ width: typeof window !== "undefined" && window.innerWidth >= 1024 ? `${100 - leftWidthPct}%` : "100%" }}
-          className={`flex flex-col h-full overflow-hidden bg-white border border-slate-200 rounded-xl sm:rounded-2xl shadow-sm w-full lg:w-auto ${
+          className={`flex flex-col h-full overflow-hidden bg-white border border-slate-200 rounded-xl sm:rounded-2xl shadow-sm w-full lg:w-auto min-h-0 ${
             mobileActiveView !== "subtitulos" ? "flex" : "hidden lg:flex"
           }`}
         >
           {/* Barra de Pestañas en Desktop */}
-          <div className="hidden lg:flex items-center justify-between border-b border-slate-200 px-3 py-2 bg-slate-50 shrink-0 select-none">
+          <div className="hidden lg:flex items-center justify-between border-b border-slate-200 px-3 py-1.5 bg-slate-50 shrink-0 select-none">
             <div className="flex items-center gap-1">
               <button
                 onClick={() => setActiveRightTab("cotizador")}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition ${
+                className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-bold transition ${
                   activeRightTab === "cotizador"
                     ? "bg-white text-cyan-800 shadow-sm border border-slate-200"
                     : "text-slate-600 hover:text-slate-900 hover:bg-slate-100"
@@ -425,7 +501,7 @@ export default function SalaBilingueMasterPage() {
 
               <button
                 onClick={() => setActiveRightTab("documento")}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition ${
+                className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-bold transition ${
                   activeRightTab === "documento"
                     ? "bg-white text-cyan-800 shadow-sm border border-slate-200"
                     : "text-slate-600 hover:text-slate-900 hover:bg-slate-100"
@@ -437,7 +513,7 @@ export default function SalaBilingueMasterPage() {
 
               <button
                 onClick={() => setActiveRightTab("config")}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition ${
+                className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-bold transition ${
                   activeRightTab === "config"
                     ? "bg-white text-cyan-800 shadow-sm border border-slate-200"
                     : "text-slate-600 hover:text-slate-900 hover:bg-slate-100"
@@ -453,34 +529,39 @@ export default function SalaBilingueMasterPage() {
             </span>
           </div>
 
-          {/* CONTENIDO SEGÚN LA PESTAÑA */}
-          <div className="flex-1 overflow-y-auto p-2 sm:p-3 min-h-0">
-            {/* 1. COTIZADOR DE COSTOS */}
+          {/* CONTENIDO SEGÚN LA PESTAÑA CON SCROLL INTERNO */}
+          <div className="flex-1 overflow-y-auto p-1.5 sm:p-2.5 min-h-0">
+            {/* 1. COTIZADOR DE COSTOS COLABORATIVO */}
             {(activeRightTab === "cotizador" || mobileActiveView === "cotizador") && (
               <div className={`h-full ${mobileActiveView === "cotizador" ? "block" : "hidden lg:block"}`}>
-                <HennOperationCostEngine uiLang={uiLang} onSummaryChange={setSummaryData} />
+                <HennOperationCostEngine
+                  uiLang={uiLang}
+                  initialParams={sharedCostParams}
+                  onParamChange={handleCostParamChange}
+                  onSummaryChange={setSummaryData}
+                />
               </div>
             )}
 
             {/* 2. PRESENTACIÓN / VISOR DE PDF NATIVO */}
             {(activeRightTab === "documento" || mobileActiveView === "documento") && (
-              <div className={`h-full flex flex-col gap-2.5 ${mobileActiveView === "documento" ? "flex" : "hidden lg:flex"}`}>
-                <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 pb-2 bg-slate-50 p-2.5 rounded-xl border border-slate-200">
-                  <div className="flex items-center gap-2 min-w-0">
-                    <div className="p-1.5 bg-cyan-100 text-cyan-800 rounded-lg shrink-0">
-                      <FileText className="w-4 h-4" />
+              <div className={`h-full flex flex-col gap-2 ${mobileActiveView === "documento" ? "flex" : "hidden lg:flex"}`}>
+                <div className="flex flex-wrap items-center justify-between gap-1.5 border-b border-slate-100 pb-1.5 bg-slate-50 p-2 rounded-xl border border-slate-200 shrink-0">
+                  <div className="flex items-center gap-1.5 min-w-0">
+                    <div className="p-1 bg-cyan-100 text-cyan-800 rounded-lg shrink-0">
+                      <FileText className="w-3.5 h-3.5" />
                     </div>
                     <div className="min-w-0">
-                      <span className="font-extrabold text-xs text-slate-900 block truncate">
+                      <span className="font-extrabold text-[11px] sm:text-xs text-slate-900 block truncate">
                         {pdfNombre}
                       </span>
-                      <span className="text-[10px] text-slate-500">
-                        {isPt ? "Documento em exibição sincronizada para a reunião" : "Documento en proyección sincronizada para la reunión"}
+                      <span className="text-[9px] text-slate-500">
+                        {isPt ? "Documento sincronizado na reunião" : "Documento sincronizado en la reunión"}
                       </span>
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-1.5">
+                  <div className="flex items-center gap-1">
                     <input
                       type="file"
                       ref={fileInputRef}
@@ -490,15 +571,15 @@ export default function SalaBilingueMasterPage() {
                     />
                     <button
                       onClick={() => fileInputRef.current?.click()}
-                      className="bg-cyan-700 hover:bg-cyan-800 text-white font-bold text-xs px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition shadow-sm"
+                      className="bg-cyan-700 hover:bg-cyan-800 text-white font-bold text-[11px] px-2.5 py-1 rounded-lg flex items-center gap-1 transition shadow-sm"
                     >
-                      <FileUp className="w-3.5 h-3.5" />
+                      <FileUp className="w-3 h-3" />
                       <span>{isPt ? "Carregar PDF" : "Cargar PDF"}</span>
                     </button>
                   </div>
                 </div>
 
-                <div className="flex-1 bg-slate-200 rounded-xl border border-slate-300 overflow-hidden flex items-center justify-center min-h-[300px]">
+                <div className="flex-1 bg-slate-200 rounded-xl border border-slate-300 overflow-hidden flex items-center justify-center min-h-[220px]">
                   {pdfUrl ? (
                     <iframe
                       src={pdfUrl}
@@ -506,12 +587,9 @@ export default function SalaBilingueMasterPage() {
                       title="Visor PDF Oficial"
                     />
                   ) : (
-                    <div className="text-center text-slate-500 p-8">
-                      <FileUp className="w-10 h-10 mx-auto text-slate-400 mb-2" />
-                      <p className="font-bold text-sm text-slate-700">Ningún documento PDF cargado</p>
-                      <p className="text-xs text-slate-500 mt-1 max-w-sm">
-                        Haz clic en "Cargar PDF" para proyectar una propuesta comercial, catálogo técnico o plano para la reunión.
-                      </p>
+                    <div className="text-center text-slate-500 p-6">
+                      <FileUp className="w-8 h-8 mx-auto text-slate-400 mb-1" />
+                      <p className="font-bold text-xs text-slate-700">Ningún documento cargado</p>
                     </div>
                   )}
                 </div>
@@ -520,61 +598,51 @@ export default function SalaBilingueMasterPage() {
 
             {/* 3. CONFIGURACIÓN DE SALA */}
             {(activeRightTab === "config" || mobileActiveView === "config") && (
-              <div className={`p-3 sm:p-4 space-y-3 text-xs ${mobileActiveView === "config" ? "block" : "hidden lg:block"}`}>
-                <h3 className="font-extrabold text-xs sm:text-sm text-slate-900 border-b border-slate-100 pb-2">
+              <div className={`p-2.5 sm:p-3 space-y-2.5 text-xs pb-20 ${mobileActiveView === "config" ? "block" : "hidden lg:block"}`}>
+                <h3 className="font-extrabold text-xs text-slate-900 border-b border-slate-100 pb-1.5">
                   {isPt ? "Configuração da Sala de Reunião B2B" : "Configuración de la Sala de Reunión B2B"}
                 </h3>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 sm:gap-3">
-                  <div className="space-y-1">
-                    <label className="font-bold text-slate-700 block">Nombre de la Empresa / Cliente:</label>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  <div className="space-y-0.5">
+                    <label className="font-bold text-slate-700 block text-[11px]">Empresa / Cliente:</label>
                     <input
                       type="text"
                       value={clienteNombre}
                       onChange={e => setClienteNombre(e.target.value)}
-                      className="w-full bg-slate-50 border border-slate-300 rounded-lg p-2 text-xs font-semibold outline-none focus:border-cyan-500"
+                      className="w-full bg-slate-50 border border-slate-300 rounded-lg p-1.5 text-xs font-semibold outline-none focus:border-cyan-500"
                     />
                   </div>
 
-                  <div className="space-y-1">
-                    <label className="font-bold text-slate-700 block">Nombre del Interlocutor (Cliente):</label>
+                  <div className="space-y-0.5">
+                    <label className="font-bold text-slate-700 block text-[11px]">Interlocutor (Cliente):</label>
                     <input
                       type="text"
                       value={participanteCliente}
                       onChange={e => setParticipanteCliente(e.target.value)}
-                      className="w-full bg-slate-50 border border-slate-300 rounded-lg p-2 text-xs font-semibold outline-none focus:border-cyan-500"
+                      className="w-full bg-slate-50 border border-slate-300 rounded-lg p-1.5 text-xs font-semibold outline-none focus:border-cyan-500"
                     />
                   </div>
 
-                  <div className="space-y-1">
-                    <label className="font-bold text-slate-700 block">Tu Nombre / Empresa:</label>
+                  <div className="space-y-0.5">
+                    <label className="font-bold text-slate-700 block text-[11px]">Tu Nombre / Empresa:</label>
                     <input
                       type="text"
                       value={participanteMario}
                       onChange={e => setParticipanteMario(e.target.value)}
-                      className="w-full bg-slate-50 border border-slate-300 rounded-lg p-2 text-xs font-semibold outline-none focus:border-cyan-500"
+                      className="w-full bg-slate-50 border border-slate-300 rounded-lg p-1.5 text-xs font-semibold outline-none focus:border-cyan-500"
                     />
                   </div>
 
-                  <div className="space-y-1">
-                    <label className="font-bold text-slate-700 block">Identificador de Sala (URL):</label>
+                  <div className="space-y-0.5">
+                    <label className="font-bold text-slate-700 block text-[11px]">Identificador de Sala (URL):</label>
                     <input
                       type="text"
                       disabled
                       value={sala}
-                      className="w-full bg-slate-100 border border-slate-200 rounded-lg p-2 text-xs font-semibold text-slate-500"
+                      className="w-full bg-slate-100 border border-slate-200 rounded-lg p-1.5 text-xs font-semibold text-slate-500"
                     />
                   </div>
-                </div>
-
-                <div className="bg-cyan-50 border border-cyan-200 rounded-xl p-2.5 text-slate-700 text-[11px] sm:text-xs">
-                  <p className="font-bold text-cyan-900 mb-1">💡 Enlaces de Acceso:</p>
-                  <p className="mb-0.5">
-                    • <strong>Local (PC):</strong> <code className="bg-white px-1 py-0.2 rounded text-cyan-800 font-mono font-bold">http://localhost:3003/traductor-vivo/{sala}</code>
-                  </p>
-                  <p>
-                    • <strong>Web Oficial:</strong> <code className="bg-white px-1 py-0.2 rounded text-cyan-800 font-mono font-bold">https://mariomojica.com/traductor-vivo/{sala}</code>
-                  </p>
                 </div>
               </div>
             )}
