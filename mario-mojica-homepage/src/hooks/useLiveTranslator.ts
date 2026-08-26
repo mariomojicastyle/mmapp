@@ -32,12 +32,26 @@ export function useLiveTranslator({
   const [isConnected, setIsConnected] = useState(true);
 
   const recognitionRef = useRef<any>(null);
-  const speechBufferRef = useRef<string>("");
-  const silenceTimerRef = useRef<any>(null);
-  const lastProcessedSentenceRef = useRef<string>("");
-  const isProcessingRef = useRef<boolean>(false);
+  const isListeningRef = useRef<boolean>(false);
+  const myLangRef = useRef<string>(myLang);
+  const targetLangRef = useRef<string>(targetLang);
+  const roleRef = useRef<string>(role);
+  const salaRef = useRef<string>(sala);
 
-  // Reproducir Text-to-Speech (TTS) para el receptor
+  const lastSentSentenceRef = useRef<string>("");
+  const isSendingRef = useRef<boolean>(false);
+  const accumulatedFinalRef = useRef<string>("");
+  const silenceTimerRef = useRef<any>(null);
+
+  // Mantener refs sincronizados para evitar re-renders destructivos
+  useEffect(() => {
+    myLangRef.current = myLang;
+    targetLangRef.current = targetLang;
+    roleRef.current = role;
+    salaRef.current = sala;
+  }, [myLang, targetLang, role, sala]);
+
+  // Reproducir Text-to-Speech (TTS)
   const speakText = useCallback((textToSpeak: string, langCode: string) => {
     if (typeof window === "undefined" || !isTTSEnabled || !textToSpeak) return;
 
@@ -58,17 +72,22 @@ export function useLiveTranslator({
     }
   }, [isTTSEnabled, ttsVolume]);
 
-  // Enviar y traducir una frase completa única
-  const commitCompleteSentence = async (fullSentence: string) => {
-    const trimmed = fullSentence.trim();
-    if (!trimmed || trimmed.length < 2 || trimmed === lastProcessedSentenceRef.current || isProcessingRef.current) {
+  // Enviar y traducir una frase completa a Supabase
+  const sendFinalSentence = async (rawText: string) => {
+    const text = rawText.trim();
+    if (!text || text.length < 2 || text === lastSentSentenceRef.current || isSendingRef.current) {
       return;
     }
 
-    isProcessingRef.current = true;
-    lastProcessedSentenceRef.current = trimmed;
-    speechBufferRef.current = "";
+    isSendingRef.current = true;
+    lastSentSentenceRef.current = text;
+    accumulatedFinalRef.current = "";
     setInterimText("");
+
+    const currentRole = roleRef.current;
+    const currentMyLang = myLangRef.current;
+    const currentTargetLang = targetLangRef.current;
+    const currentSala = salaRef.current;
 
     try {
       // 1. Traducir frase
@@ -76,29 +95,29 @@ export function useLiveTranslator({
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          text: trimmed,
-          fromLang: myLang,
-          toLang: targetLang
+          text,
+          fromLang: currentMyLang,
+          toLang: currentTargetLang
         })
       });
 
       const transData = await resTrans.json();
-      const translated = transData.translation || trimmed;
+      const translated = transData.translation || text;
 
       const newMsg: ChatMessage = {
-        id: `msg_${sala}_${Date.now()}_${Math.random().toString(36).substr(2, 4)}`,
-        speaker: role,
-        speakerName: role === "mario" ? "Mario Mojica" : "Marcos Unnass",
-        originalText: trimmed,
+        id: `msg_${currentSala}_${Date.now()}_${Math.random().toString(36).substr(2, 4)}`,
+        speaker: currentRole as any,
+        speakerName: currentRole === "mario" ? "Mario Mojica" : "Marcos Unnass",
+        originalText: text,
         translatedText: translated,
-        fromLang: myLang,
-        toLang: targetLang,
+        fromLang: currentMyLang,
+        toLang: currentTargetLang,
         timestamp: Date.now()
       };
 
-      // 2. Guardar en estado local inmediatamente
+      // 2. Guardar en estado local
       setMessages(prev => {
-        const exists = prev.some(m => m.id === newMsg.id || (m.originalText === trimmed && Math.abs(m.timestamp - newMsg.timestamp) < 3000));
+        const exists = prev.some(m => m.id === newMsg.id || (m.originalText === text && Math.abs(m.timestamp - newMsg.timestamp) < 4000));
         return exists ? prev : [...prev, newMsg];
       });
 
@@ -108,7 +127,7 @@ export function useLiveTranslator({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           action: "add_message",
-          sala,
+          sala: currentSala,
           message: newMsg
         })
       });
@@ -116,11 +135,11 @@ export function useLiveTranslator({
     } catch (err) {
       console.error("Error transmitiendo frase:", err);
     } finally {
-      isProcessingRef.current = false;
+      isSendingRef.current = false;
     }
   };
 
-  // Inicializar Web Speech Recognition con Acumulación Inteligente y Detección de Silencio
+  // Inicializar Recognition una sola vez
   useEffect(() => {
     if (typeof window === "undefined") return;
 
@@ -137,54 +156,67 @@ export function useLiveTranslator({
     recognition.interimResults = true;
     recognition.lang = myLang === "es" ? "es-CO" : myLang === "pt" ? "pt-BR" : "en-US";
 
+    recognition.onstart = () => {
+      setIsListening(true);
+      isListeningRef.current = true;
+    };
+
     recognition.onresult = (event: any) => {
-      let liveTranscript = "";
+      let interim = "";
       for (let i = event.resultIndex; i < event.results.length; ++i) {
-        const text = event.results[i][0].transcript;
-        if (event.results[i].isFinal) {
-          speechBufferRef.current = (speechBufferRef.current + " " + text).trim();
+        const item = event.results[i];
+        const transcriptText = item[0].transcript;
+        if (item.isFinal) {
+          accumulatedFinalRef.current = (accumulatedFinalRef.current + " " + transcriptText).trim();
         } else {
-          liveTranscript += text;
+          interim += transcriptText;
         }
       }
 
-      const currentDraft = (speechBufferRef.current + " " + liveTranscript).trim();
-      setInterimText(currentDraft);
+      const fullDraft = (accumulatedFinalRef.current + " " + interim).trim();
+      setInterimText(fullDraft);
 
-      // Reiniciar temporizador de silencio (1.2s después de callar la voz, se consolida la frase)
+      // Detección de Silencio (1.2 segundos tras callar la voz consolida la frase)
       if (silenceTimerRef.current) clearTimeout(silenceTimerRef.current);
       silenceTimerRef.current = setTimeout(() => {
-        const sentenceToCommit = (speechBufferRef.current + " " + liveTranscript).trim();
+        const sentenceToCommit = (accumulatedFinalRef.current + " " + interim).trim();
         if (sentenceToCommit) {
-          commitCompleteSentence(sentenceToCommit);
+          sendFinalSentence(sentenceToCommit);
         }
       }, 1200);
     };
 
     recognition.onerror = (event: any) => {
-      if (event.error === "no-speech") return;
-      if (event.error === "not-allowed") {
+      console.warn("Speech recognition error:", event.error);
+      if (event.error === "not-allowed" || event.error === "service-not-allowed") {
         setIsListening(false);
+        isListeningRef.current = false;
       }
     };
 
     recognition.onend = () => {
-      if (isListening) {
+      // Si el usuario no lo apagó manualmente, reiniciar suavemente
+      if (isListeningRef.current) {
         try {
           recognition.start();
         } catch (e) {}
+      } else {
+        setIsListening(false);
       }
     };
 
     recognitionRef.current = recognition;
 
     return () => {
+      isListeningRef.current = false;
       if (silenceTimerRef.current) clearTimeout(silenceTimerRef.current);
-      if (recognitionRef.current) recognitionRef.current.stop();
+      try {
+        recognition.stop();
+      } catch (e) {}
     };
-  }, [myLang, isListening, targetLang, role, sala]);
+  }, [myLang]);
 
-  // Polling Realtime a Supabase Cloud (Consulta mensajes de la sala)
+  // Polling Realtime a Supabase Cloud (Consulta mensajes de la sala cada 1 segundo)
   useEffect(() => {
     const pollInterval = setInterval(async () => {
       try {
@@ -200,9 +232,9 @@ export function useLiveTranslator({
               data.allMessages.forEach((incoming: ChatMessage) => {
                 if (!existingMap.has(incoming.id)) {
                   existingMap.set(incoming.id, incoming);
-                  if (incoming.speaker !== role) {
+                  if (incoming.speaker !== roleRef.current) {
                     hasNewFromOther = true;
-                    speakText(incoming.translatedText, myLang);
+                    speakText(incoming.translatedText, myLangRef.current);
                   }
                 }
               });
@@ -217,27 +249,36 @@ export function useLiveTranslator({
     }, 1000);
 
     return () => clearInterval(pollInterval);
-  }, [sala, role, myLang, speakText]);
+  }, [sala, speakText]);
 
-  // Control de inicio/parada manual del micrófono
+  // Control manual del micrófono (Garantizado con evento de usuario directo)
   const toggleListening = () => {
     if (!recognitionRef.current) return;
 
-    if (isListening) {
-      recognitionRef.current.stop();
+    if (isListeningRef.current) {
+      // Apagar micrófono
+      isListeningRef.current = false;
       setIsListening(false);
-      // Consolidar lo que quede en el buffer inmediatamente
-      if (speechBufferRef.current) {
-        commitCompleteSentence(speechBufferRef.current);
+      if (silenceTimerRef.current) clearTimeout(silenceTimerRef.current);
+      try {
+        recognitionRef.current.stop();
+      } catch (e) {}
+
+      // Consolidar lo que quede en el buffer
+      if (accumulatedFinalRef.current) {
+        sendFinalSentence(accumulatedFinalRef.current);
       }
     } else {
-      speechBufferRef.current = "";
-      lastProcessedSentenceRef.current = "";
+      // Encender micrófono
+      accumulatedFinalRef.current = "";
+      lastSentSentenceRef.current = "";
+      setInterimText("");
+      isListeningRef.current = true;
+      setIsListening(true);
       try {
         recognitionRef.current.start();
-        setIsListening(true);
       } catch (err) {
-        console.error("Error al iniciar micrófono:", err);
+        console.error("Error iniciando micrófono:", err);
       }
     }
   };
