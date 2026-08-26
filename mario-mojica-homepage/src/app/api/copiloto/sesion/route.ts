@@ -13,14 +13,13 @@ export async function GET(request: NextRequest) {
   const sala = searchParams.get("sala") || "henn";
 
   try {
-    // 1. Obtener todos los mensajes de la sala desde Supabase
     const { data: rows, error } = await supabase
       .from("ventas_interacciones")
       .select("*")
       .eq("canal", "Mesa_Bilingue")
       .eq("prospecto_id", `p-${sala}`)
       .order("created_at", { ascending: true })
-      .limit(100);
+      .limit(150);
 
     const messages: any[] = [];
     let roomConfig: any = null;
@@ -94,7 +93,7 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const { action, sala = "henn", message, costParams, activePdf, roomConfig, cliente = "Henn" } = body;
 
-    // 1. Agregar Mensaje de Voz a Supabase
+    // 1. Agregar Mensaje de Voz
     if (action === "add_message" && message) {
       const msgId = message.id || `msg_${sala}_${Date.now()}_${Math.random().toString(36).substr(2, 4)}`;
       
@@ -116,7 +115,19 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: true, id: msgId });
     }
 
-    // 2. Sincronizar Cotizador de Costos en Supabase
+    // 2. Limpiar Mensajes Anteriores de la Sala
+    if (action === "clear_messages") {
+      await supabase
+        .from("ventas_interacciones")
+        .delete()
+        .eq("canal", "Mesa_Bilingue")
+        .eq("prospecto_id", `p-${sala}`)
+        .eq("tipo_entrada", "mensaje_voz");
+
+      return NextResponse.json({ success: true });
+    }
+
+    // 3. Sincronizar Cotizador de Costos
     if (action === "update_cost_params" && costParams) {
       await supabase.from("ventas_interacciones").insert({
         id: `cost_${sala}_${Date.now()}`,
@@ -130,7 +141,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: true });
     }
 
-    // 3. Sincronizar PDF
+    // 4. Sincronizar PDF
     if (action === "update_pdf" && activePdf) {
       await supabase.from("ventas_interacciones").insert({
         id: `pdf_${sala}_${Date.now()}`,
@@ -144,7 +155,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: true });
     }
 
-    // 4. Configurar Sala
+    // 5. Configurar Sala
     if (action === "configure_room" && roomConfig) {
       await supabase.from("ventas_interacciones").insert({
         id: `config_${sala}_${Date.now()}`,
@@ -158,7 +169,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: true });
     }
 
-    // 5. Guardar Acta en Disco y Supabase
+    // 6. Guardar Acta en Disco y Supabase
     if (action === "save_session") {
       const now = new Date();
       const dateStr = now.toISOString().split("T")[0];

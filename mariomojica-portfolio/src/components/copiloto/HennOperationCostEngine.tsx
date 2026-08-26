@@ -1,15 +1,20 @@
 "use client";
 
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Calculator,
-  Layers,
-  Laptop,
-  RotateCcw,
   Users,
   Package,
+  TrendingDown,
+  RotateCcw,
+  Sparkles,
+  ShieldCheck,
+  CheckCircle2,
+  Clock,
+  Layers,
   CircleDollarSign,
-  TrendingDown
+  Laptop,
+  Headphones
 } from "lucide-react";
 
 export interface CostParameters {
@@ -34,40 +39,63 @@ export function HennOperationCostEngine({
 }: {
   uiLang?: "es" | "pt";
   initialParams?: Partial<CostParameters>;
-  onParamChange?: (newParams: CostParameters) => void;
-  onSummaryChange?: (data: any) => void;
+  onParamChange?: (params: CostParameters) => void;
+  onSummaryChange?: (summary: any) => void;
 }) {
+  // Parámetros Principales
+  const [manualesAno, setManualesAno] = useState<number>(initialParams?.manualesAno ?? 200);
+  const [personasPed, setPersonasPed] = useState<number>(initialParams?.personasPed ?? 2.0);
+  const [salarioCltMes, setSalarioCltMes] = useState<number>(initialParams?.salarioCltMes ?? 6000);
+
+  // Strings para permitir escritura fluida sin bloqueo de decimales/comas
+  const [personasPedStr, setPersonasPedStr] = useState<string>(String(initialParams?.personasPed ?? 2.0));
+  const [manualesAnoStr, setManualesAnoStr] = useState<string>(String(initialParams?.manualesAno ?? 200));
+  const [salarioCltMesStr, setSalarioCltMesStr] = useState<string>(String(initialParams?.salarioCltMes ?? 6000));
+
+  // Licencias
+  const [licenciaSketchUpAno, setLicenciaSketchUpAno] = useState<number>(initialParams?.licenciaSketchUpAno ?? 2400);
+  const [licenciaAdobeAno, setLicenciaAdobeAno] = useState<number>(initialParams?.licenciaAdobeAno ?? 3600);
+  const [licenciaOtrosAno, setLicenciaOtrosAno] = useState<number>(initialParams?.licenciaOtrosAno ?? 0);
+
+  // Ahorro
+  const [ahorroPct, setAhorroPct] = useState<number>(initialParams?.ahorroPct ?? 30);
+
+  // SAC / Soporte Postventa
+  const [horasSacMes, setHorasSacMes] = useState<number>(initialParams?.horasSacMes ?? 20);
+
+  // Complejidades
+  const [horasPequeno, setHorasPequeno] = useState<number>(initialParams?.horasPequeno ?? 8);
+  const [horasMediano, setHorasMediano] = useState<number>(initialParams?.horasMediano ?? 12);
+  const [horasGrande, setHorasGrande] = useState<number>(initialParams?.horasGrande ?? 16);
+
   const isPt = uiLang === "pt";
 
-  // 1. Parámetros Editables Colaborativos
-  const [manualesAno, setManualesAno] = useState(initialParams?.manualesAno ?? 200);
-  const [personasPed, setPersonasPed] = useState(initialParams?.personasPed ?? 2.0);
-  const [salarioCltMes, setSalarioCltMes] = useState(initialParams?.salarioCltMes ?? 6000);
-
-  const [licenciaSketchUpAno, setLicenciaSketchUpAno] = useState(initialParams?.licenciaSketchUpAno ?? 2400);
-  const [licenciaAdobeAno, setLicenciaAdobeAno] = useState(initialParams?.licenciaAdobeAno ?? 3600);
-  const [licenciaOtrosAno, setLicenciaOtrosAno] = useState(initialParams?.licenciaOtrosAno ?? 0);
-
-  const [ahorroPct, setAhorroPct] = useState(initialParams?.ahorroPct ?? 30);
-  const [horasPequeno, setHorasPequeno] = useState(initialParams?.horasPequeno ?? 8);
-  const [horasMediano, setHorasMediano] = useState(initialParams?.horasMediano ?? 12);
-  const [horasGrande, setHorasGrande] = useState(initialParams?.horasGrande ?? 16);
-  const [horasSacMes, setHorasSacMes] = useState(initialParams?.horasSacMes ?? 20);
-
-  // Sincronizar cuando lleguen cambios remotos desde otro usuario
+  // Sincronizar si cambian las props iniciales desde Supabase (solo si no está enfocado)
   useEffect(() => {
     if (initialParams) {
-      if (initialParams.manualesAno !== undefined && initialParams.manualesAno !== manualesAno) setManualesAno(initialParams.manualesAno);
-      if (initialParams.personasPed !== undefined && initialParams.personasPed !== personasPed) setPersonasPed(initialParams.personasPed);
-      if (initialParams.salarioCltMes !== undefined && initialParams.salarioCltMes !== salarioCltMes) setSalarioCltMes(initialParams.salarioCltMes);
-      if (initialParams.licenciaSketchUpAno !== undefined && initialParams.licenciaSketchUpAno !== licenciaSketchUpAno) setLicenciaSketchUpAno(initialParams.licenciaSketchUpAno);
-      if (initialParams.licenciaAdobeAno !== undefined && initialParams.licenciaAdobeAno !== licenciaAdobeAno) setLicenciaAdobeAno(initialParams.licenciaAdobeAno);
-      if (initialParams.licenciaOtrosAno !== undefined && initialParams.licenciaOtrosAno !== licenciaOtrosAno) setLicenciaOtrosAno(initialParams.licenciaOtrosAno);
-      if (initialParams.ahorroPct !== undefined && initialParams.ahorroPct !== ahorroPct) setAhorroPct(initialParams.ahorroPct);
+      if (initialParams.manualesAno !== undefined) {
+        setManualesAno(initialParams.manualesAno);
+        setManualesAnoStr(String(initialParams.manualesAno));
+      }
+      if (initialParams.personasPed !== undefined) {
+        setPersonasPed(initialParams.personasPed);
+        setPersonasPedStr(String(initialParams.personasPed));
+      }
+      if (initialParams.salarioCltMes !== undefined) {
+        setSalarioCltMes(initialParams.salarioCltMes);
+        setSalarioCltMesStr(String(initialParams.salarioCltMes));
+      }
+      if (initialParams.licenciaSketchUpAno !== undefined) setLicenciaSketchUpAno(initialParams.licenciaSketchUpAno);
+      if (initialParams.licenciaAdobeAno !== undefined) setLicenciaAdobeAno(initialParams.licenciaAdobeAno);
+      if (initialParams.licenciaOtrosAno !== undefined) setLicenciaOtrosAno(initialParams.licenciaOtrosAno);
+      if (initialParams.ahorroPct !== undefined) setAhorroPct(initialParams.ahorroPct);
+      if (initialParams.horasSacMes !== undefined) setHorasSacMes(initialParams.horasSacMes);
+      if (initialParams.horasPequeno !== undefined) setHorasPequeno(initialParams.horasPequeno);
+      if (initialParams.horasMediano !== undefined) setHorasMediano(initialParams.horasMediano);
+      if (initialParams.horasGrande !== undefined) setHorasGrande(initialParams.horasGrande);
     }
   }, [initialParams]);
 
-  // Notificar al padre para broadcast en tiempo real
   const notifyChange = (updated: Partial<CostParameters>) => {
     const current: CostParameters = {
       manualesAno: updated.manualesAno ?? manualesAno,
@@ -140,7 +168,22 @@ export function HennOperationCostEngine({
   ]);
 
   const resetDefault = () => {
-    const def = {
+    setManualesAno(200);
+    setManualesAnoStr("200");
+    setPersonasPed(2.0);
+    setPersonasPedStr("2.0");
+    setSalarioCltMes(6000);
+    setSalarioCltMesStr("6000");
+    setLicenciaSketchUpAno(2400);
+    setLicenciaAdobeAno(3600);
+    setLicenciaOtrosAno(0);
+    setAhorroPct(30);
+    setHorasSacMes(20);
+    setHorasPequeno(8);
+    setHorasMediano(12);
+    setHorasGrande(16);
+
+    notifyChange({
       manualesAno: 200,
       personasPed: 2.0,
       salarioCltMes: 6000,
@@ -148,33 +191,23 @@ export function HennOperationCostEngine({
       licenciaAdobeAno: 3600,
       licenciaOtrosAno: 0,
       ahorroPct: 30,
+      horasSacMes: 20,
       horasPequeno: 8,
       horasMediano: 12,
-      horasGrande: 16,
-      horasSacMes: 20
-    };
-    setManualesAno(def.manualesAno);
-    setPersonasPed(def.personasPed);
-    setSalarioCltMes(def.salarioCltMes);
-    setLicenciaSketchUpAno(def.licenciaSketchUpAno);
-    setLicenciaAdobeAno(def.licenciaAdobeAno);
-    setLicenciaOtrosAno(def.licenciaOtrosAno);
-    setAhorroPct(def.ahorroPct);
-    notifyChange(def);
+      horasGrande: 16
+    });
   };
 
   const handleInputFocus = (e: React.FocusEvent<HTMLInputElement>) => {
-    setTimeout(() => {
-      e.target.scrollIntoView({ behavior: "smooth", block: "center" });
-    }, 150);
+    e.target.scrollIntoView({ behavior: "smooth", block: "center" });
   };
 
   return (
-    <div className="bg-white border border-slate-200 rounded-xl sm:rounded-2xl p-3 sm:p-4 shadow-sm flex flex-col gap-3 text-slate-800 text-xs h-full overflow-y-auto pb-24">
-      {/* Header del Cotizador con Indicador de Sincronización */}
-      <div className="flex items-center justify-between border-b border-slate-100 pb-2 shrink-0">
+    <div className="flex flex-col gap-3 font-sans text-xs pb-24 select-text">
+      {/* Cabecera del Cotizador */}
+      <div className="flex items-center justify-between border-b border-slate-200 pb-2 bg-slate-50 p-2.5 rounded-xl border">
         <div className="flex items-center gap-2">
-          <div className="p-1.5 bg-cyan-100 text-cyan-800 rounded-lg font-bold shrink-0">
+          <div className="p-1.5 bg-cyan-100 text-cyan-800 rounded-lg">
             <Calculator className="w-4 h-4" />
           </div>
           <div>
@@ -238,15 +271,16 @@ export function HennOperationCostEngine({
           </div>
         </div>
 
-        <div className="bg-emerald-50 p-2 sm:p-2.5 rounded-lg border border-emerald-200 flex flex-col justify-between">
-          <span className="text-[10px] font-bold text-emerald-800">
-            {isPt ? "Economia Líquida Anual:" : "Ahorro Neto Anual:"}
+        <div className="bg-emerald-50/80 p-2 sm:p-2.5 rounded-lg border border-emerald-200 flex flex-col justify-between">
+          <span className="text-[10px] font-bold text-emerald-900">
+            {isPt ? "Economia Líquida para a Henn:" : "Ahorro Neto para Henn:"}
           </span>
           <div>
-            <span className="text-sm sm:text-base font-extrabold text-emerald-600 block">
+            <span className="text-sm sm:text-base font-extrabold text-emerald-700 block">
               +R$ {ahorroNetoTotalAno.toLocaleString("pt-BR", { minimumFractionDigits: 0 })}
+              <span className="text-[9px] font-normal text-emerald-800"> {isPt ? "/ano" : "/año"}</span>
             </span>
-            <span className="text-[10px] text-emerald-700 font-bold">
+            <span className="text-[10px] font-bold text-emerald-800">
               +R$ {(costoEstandarManualHenn - costoEstandarManualMario).toLocaleString("pt-BR", { minimumFractionDigits: 2 })} <span className="font-normal text-emerald-600">{isPt ? "economia/manual" : "ahorro/manual"}</span>
             </span>
           </div>
@@ -273,14 +307,24 @@ export function HennOperationCostEngine({
               <span className="text-[10px] text-slate-500 font-normal">(~{(manualesAno/12).toFixed(1)}{isPt ? "/mês" : "/mes"})</span>
             </div>
             <input
-              type="number"
+              type="text"
               inputMode="numeric"
-              value={manualesAno}
+              value={manualesAnoStr}
               onFocus={handleInputFocus}
               onChange={e => {
-                const val = Math.max(1, Number(e.target.value));
-                setManualesAno(val);
-                notifyChange({ manualesAno: val });
+                const text = e.target.value;
+                setManualesAnoStr(text);
+                const num = parseFloat(text.replace(',', '.'));
+                if (!isNaN(num) && num > 0) {
+                  setManualesAno(num);
+                  notifyChange({ manualesAno: num });
+                }
+              }}
+              onBlur={() => {
+                const num = parseFloat(manualesAnoStr.replace(',', '.')) || 200;
+                setManualesAno(num);
+                setManualesAnoStr(String(num));
+                notifyChange({ manualesAno: num });
               }}
               className="w-full font-extrabold text-sm sm:text-base text-slate-900 bg-white border border-slate-300 rounded px-2 py-1 outline-none focus:border-cyan-500 text-center"
             />
@@ -296,15 +340,24 @@ export function HennOperationCostEngine({
               <span className="text-[10px] text-slate-500 font-normal">{isPt ? "designers" : "diseñadores"}</span>
             </div>
             <input
-              type="number"
+              type="text"
               inputMode="decimal"
-              step="0.5"
-              value={personasPed}
+              value={personasPedStr}
               onFocus={handleInputFocus}
               onChange={e => {
-                const val = Math.max(0.5, Number(e.target.value));
-                setPersonasPed(val);
-                notifyChange({ personasPed: val });
+                const text = e.target.value;
+                setPersonasPedStr(text);
+                const num = parseFloat(text.replace(',', '.'));
+                if (!isNaN(num) && num > 0) {
+                  setPersonasPed(num);
+                  notifyChange({ personasPed: num });
+                }
+              }}
+              onBlur={() => {
+                const num = parseFloat(personasPedStr.replace(',', '.')) || 2.0;
+                setPersonasPed(num);
+                setPersonasPedStr(String(num));
+                notifyChange({ personasPed: num });
               }}
               className="w-full font-extrabold text-sm sm:text-base text-slate-900 bg-white border border-slate-300 rounded px-2 py-1 outline-none focus:border-cyan-500 text-center"
             />
@@ -320,15 +373,24 @@ export function HennOperationCostEngine({
               <span className="text-[10px] text-slate-500 font-normal">R$/mês/pessoa</span>
             </div>
             <input
-              type="number"
+              type="text"
               inputMode="numeric"
-              step="500"
-              value={salarioCltMes}
+              value={salarioCltMesStr}
               onFocus={handleInputFocus}
               onChange={e => {
-                const val = Number(e.target.value);
-                setSalarioCltMes(val);
-                notifyChange({ salarioCltMes: val });
+                const text = e.target.value;
+                setSalarioCltMesStr(text);
+                const num = parseFloat(text.replace(',', '.'));
+                if (!isNaN(num) && num > 0) {
+                  setSalarioCltMes(num);
+                  notifyChange({ salarioCltMes: num });
+                }
+              }}
+              onBlur={() => {
+                const num = parseFloat(salarioCltMesStr.replace(',', '.')) || 6000;
+                setSalarioCltMes(num);
+                setSalarioCltMesStr(String(num));
+                notifyChange({ salarioCltMes: num });
               }}
               className="w-full font-extrabold text-sm sm:text-base text-slate-900 bg-white border border-slate-300 rounded px-2 py-1 outline-none focus:border-cyan-500 text-center"
             />
@@ -380,7 +442,7 @@ export function HennOperationCostEngine({
             </div>
 
             <div>
-              <label className="text-[10px] text-slate-500 font-medium block">Adobe CC (InDesign/Illustrator):</label>
+              <label className="text-[10px] text-slate-500 font-medium block">Adobe InDesign / CC:</label>
               <div className="flex items-center gap-1 bg-white border border-slate-200 rounded px-1.5 py-1">
                 <span className="text-[10px] text-slate-400">R$</span>
                 <input
@@ -400,7 +462,7 @@ export function HennOperationCostEngine({
             </div>
 
             <div>
-              <label className="text-[10px] text-slate-500 font-medium block">Outros Software (CAD/Render):</label>
+              <label className="text-[10px] text-slate-500 font-medium block">Plugins / Outros:</label>
               <div className="flex items-center gap-1 bg-white border border-slate-200 rounded px-1.5 py-1">
                 <span className="text-[10px] text-slate-400">R$</span>
                 <input
@@ -418,6 +480,77 @@ export function HennOperationCostEngine({
                 <span className="text-[9px] text-slate-400">{isPt ? "/ano" : "/año"}</span>
               </div>
             </div>
+          </div>
+        </div>
+
+        {/* Costo SAC / Soporte de Montaje */}
+        <div className="bg-slate-50/80 p-2.5 rounded-lg border border-slate-200 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
+          <div className="flex items-center gap-2">
+            <Headphones className="w-3.5 h-3.5 text-slate-500 shrink-0" />
+            <div>
+              <span className="text-[11px] font-bold text-slate-800 block">
+                {isPt ? "Horas de Suporte P&D / SAC Gastas em Dúvidas de Montagem:" : "Horas de Soporte P&D / SAC Gastas en Dudas de Montaje:"}
+              </span>
+              <span className="text-[10px] text-slate-500">
+                {isPt ? "Custo estimado do tempo da equipe atendendo dúvidas de montadores." : "Costo estimado del tiempo del equipo atendiendo dudas de montadores."}
+              </span>
+            </div>
+          </div>
+          <div className="flex items-center gap-1.5 shrink-0 self-end sm:self-center">
+            <input
+              type="number"
+              inputMode="numeric"
+              value={horasSacMes}
+              onFocus={handleInputFocus}
+              onChange={e => {
+                const val = Number(e.target.value);
+                setHorasSacMes(val);
+                notifyChange({ horasSacMes: val });
+              }}
+              className="w-16 bg-white border border-slate-300 rounded px-2 py-0.5 text-xs font-bold text-center outline-none focus:border-cyan-500"
+            />
+            <span className="text-[10px] text-slate-500">{isPt ? "horas/mês" : "horas/mes"}</span>
+            <span className="text-[10px] font-bold text-slate-700 ml-1">
+              (R$ {costoSacAno.toLocaleString("pt-BR", { minimumFractionDigits: 0 })}{isPt ? "/ano" : "/año"})
+            </span>
+          </div>
+        </div>
+      </div>
+
+      {/* SECCIÓN 2: CALIBRACIÓN DEL AHORRO OFRECIDO */}
+      <div className="border border-slate-200 rounded-xl p-2.5 sm:p-3 bg-white space-y-2.5">
+        <div className="flex justify-between items-center border-b border-slate-100 pb-1.5">
+          <h3 className="font-extrabold text-xs text-slate-900 flex items-center gap-1.5">
+            <Sparkles className="w-3.5 h-3.5 text-cyan-600" />
+            {isPt ? "2. Margem de Economia Proposta por Mario Mojica" : "2. Margen de Ahorro Propuesto por Mario Mojica"}
+          </h3>
+          <span className="bg-cyan-100 text-cyan-800 text-[10px] font-extrabold px-2 py-0.5 rounded-full">
+            {ahorroPct}% {isPt ? "de Economia" : "de Ahorro"}
+          </span>
+        </div>
+
+        <div className="space-y-1.5">
+          <div className="flex justify-between text-[11px] font-bold text-slate-700">
+            <span>{isPt ? "Porcentagem de Redução Direta de Custos:" : "Porcentaje de Reducción Directa de Costos:"}</span>
+            <span className="text-cyan-700 font-extrabold text-xs">{ahorroPct}%</span>
+          </div>
+          <input
+            type="range"
+            min={10}
+            max={50}
+            step={1}
+            value={ahorroPct}
+            onChange={e => {
+              const val = Number(e.target.value);
+              setAhorroPct(val);
+              notifyChange({ ahorroPct: val });
+            }}
+            className="w-full accent-cyan-600 cursor-pointer"
+          />
+          <div className="flex justify-between text-[9px] text-slate-400 font-semibold">
+            <span>10% (Conservador)</span>
+            <span>30% (Recomendado)</span>
+            <span>50% (Agressivo)</span>
           </div>
         </div>
       </div>

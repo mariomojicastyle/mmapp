@@ -13,6 +13,35 @@ export interface ChatMessage {
   timestamp: number;
 }
 
+// Filtro inteligente para colapsar repeticiones accidentales del motor de voz móvil
+function cleanRepeatedPhrases(text: string): string {
+  if (!text) return "";
+  const words = text.trim().split(/\s+/);
+  if (words.length < 2) return text.trim();
+
+  // 1. Eliminar repetición inmediata de palabras idénticas
+  const step1: string[] = [];
+  for (let i = 0; i < words.length; i++) {
+    if (i === 0 || words[i].toLowerCase() !== words[i - 1].toLowerCase()) {
+      step1.push(words[i]);
+    }
+  }
+
+  // 2. Colapsar bloques de frases repetidas
+  let cleaned = [...step1];
+  for (let blockSize = Math.floor(cleaned.length / 2); blockSize >= 2; blockSize--) {
+    for (let i = 0; i <= cleaned.length - 2 * blockSize; i++) {
+      const b1 = cleaned.slice(i, i + blockSize).join(" ");
+      const b2 = cleaned.slice(i + blockSize, i + 2 * blockSize).join(" ");
+      if (b1.toLowerCase() === b2.toLowerCase()) {
+        cleaned.splice(i + blockSize, blockSize);
+        i--;
+      }
+    }
+  }
+  return cleaned.join(" ");
+}
+
 export function useLiveTranslator({
   sala = "henn",
   role = "mario",
@@ -38,12 +67,11 @@ export function useLiveTranslator({
   const roleRef = useRef<string>(role);
   const salaRef = useRef<string>(sala);
 
+  const currentSpeechDraftRef = useRef<string>("");
   const lastSentSentenceRef = useRef<string>("");
   const isSendingRef = useRef<boolean>(false);
-  const accumulatedFinalRef = useRef<string>("");
   const silenceTimerRef = useRef<any>(null);
 
-  // Mantener refs sincronizados para evitar re-renders destructivos
   useEffect(() => {
     myLangRef.current = myLang;
     targetLangRef.current = targetLang;
@@ -72,16 +100,16 @@ export function useLiveTranslator({
     }
   }, [isTTSEnabled, ttsVolume]);
 
-  // Enviar y traducir una frase completa a Supabase
-  const sendFinalSentence = async (rawText: string) => {
-    const text = rawText.trim();
-    if (!text || text.length < 2 || text === lastSentSentenceRef.current || isSendingRef.current) {
+  // Fijar y transmitir la frase completa única a Supabase
+  const commitAndSend = async (rawText: string) => {
+    const cleaned = cleanRepeatedPhrases(rawText);
+    if (!cleaned || cleaned.length < 2 || cleaned === lastSentSentenceRef.current || isSendingRef.current) {
       return;
     }
 
     isSendingRef.current = true;
-    lastSentSentenceRef.current = text;
-    accumulatedFinalRef.current = "";
+    lastSentSentenceRef.current = cleaned;
+    currentSpeechDraftRef.current = "";
     setInterimText("");
 
     const currentRole = roleRef.current;
@@ -90,38 +118,38 @@ export function useLiveTranslator({
     const currentSala = salaRef.current;
 
     try {
-      // 1. Traducir frase
+      // 1. Traducir frase con API ultra rápida
       const resTrans = await fetch("/api/copiloto/traducir", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          text,
+          text: cleaned,
           fromLang: currentMyLang,
           toLang: currentTargetLang
         })
       });
 
       const transData = await resTrans.json();
-      const translated = transData.translation || text;
+      const translated = cleanRepeatedPhrases(transData.translation || cleaned);
 
       const newMsg: ChatMessage = {
         id: `msg_${currentSala}_${Date.now()}_${Math.random().toString(36).substr(2, 4)}`,
         speaker: currentRole as any,
         speakerName: currentRole === "mario" ? "Mario Mojica" : "Marcos Unnass",
-        originalText: text,
+        originalText: cleaned,
         translatedText: translated,
         fromLang: currentMyLang,
         toLang: currentTargetLang,
         timestamp: Date.now()
       };
 
-      // 2. Guardar en estado local
+      // 2. Fijar inmediatamente en la UI local
       setMessages(prev => {
-        const exists = prev.some(m => m.id === newMsg.id || (m.originalText === text && Math.abs(m.timestamp - newMsg.timestamp) < 4000));
+        const exists = prev.some(m => m.id === newMsg.id || (m.originalText === cleaned && Math.abs(m.timestamp - newMsg.timestamp) < 4000));
         return exists ? prev : [...prev, newMsg];
       });
 
-      // 3. Enviar a Supabase Cloud
+      // 3. Persistir en Supabase Cloud para que aparezca en el otro dispositivo en < 500ms
       await fetch("/api/copiloto/sesion", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -133,13 +161,13 @@ export function useLiveTranslator({
       });
 
     } catch (err) {
-      console.error("Error transmitiendo frase:", err);
+      console.error("Error fijando frase:", err);
     } finally {
       isSendingRef.current = false;
     }
   };
 
-  // Inicializar Recognition una sola vez
+  // Inicializar Web Speech Recognition
   useEffect(() => {
     if (typeof window === "undefined") return;
 
@@ -162,32 +190,32 @@ export function useLiveTranslator({
     };
 
     recognition.onresult = (event: any) => {
-      let interim = "";
-      for (let i = event.resultIndex; i < event.results.length; ++i) {
-        const item = event.results[i];
-        const transcriptText = item[0].transcript;
-        if (item.isFinal) {
-          accumulatedFinalRef.current = (accumulatedFinalRef.current + " " + transcriptText).trim();
-        } else {
-          interim += transcriptText;
+      // Reconstrucción limpia SIN concatenación acumulativa bucle
+      let sentenceAccumulator = "";
+      let hasFinal = false;
+
+      for (let i = 0; i < event.results.length; ++i) {
+        const chunk = event.results[i][0].transcript;
+        sentenceAccumulator += chunk;
+        if (event.results[i].isFinal) {
+          hasFinal = true;
         }
       }
 
-      const fullDraft = (accumulatedFinalRef.current + " " + interim).trim();
+      const fullDraft = sentenceAccumulator.trim();
+      currentSpeechDraftRef.current = fullDraft;
       setInterimText(fullDraft);
 
-      // Detección de Silencio (1.2 segundos tras callar la voz consolida la frase)
+      // Auto-Fijar: 800ms de pausa o flag isFinal fija la oración de inmediato
       if (silenceTimerRef.current) clearTimeout(silenceTimerRef.current);
       silenceTimerRef.current = setTimeout(() => {
-        const sentenceToCommit = (accumulatedFinalRef.current + " " + interim).trim();
-        if (sentenceToCommit) {
-          sendFinalSentence(sentenceToCommit);
+        if (currentSpeechDraftRef.current) {
+          commitAndSend(currentSpeechDraftRef.current);
         }
-      }, 1200);
+      }, hasFinal ? 400 : 800);
     };
 
     recognition.onerror = (event: any) => {
-      console.warn("Speech recognition error:", event.error);
       if (event.error === "not-allowed" || event.error === "service-not-allowed") {
         setIsListening(false);
         isListeningRef.current = false;
@@ -195,7 +223,11 @@ export function useLiveTranslator({
     };
 
     recognition.onend = () => {
-      // Si el usuario no lo apagó manualmente, reiniciar suavemente
+      // Si quedan palabras sin fijar, fijarlas antes de cerrar
+      if (currentSpeechDraftRef.current) {
+        commitAndSend(currentSpeechDraftRef.current);
+      }
+
       if (isListeningRef.current) {
         try {
           recognition.start();
@@ -216,7 +248,7 @@ export function useLiveTranslator({
     };
   }, [myLang]);
 
-  // Polling Realtime a Supabase Cloud (Consulta mensajes de la sala cada 1 segundo)
+  // Polling Realtime a Supabase Cloud cada 1s
   useEffect(() => {
     const pollInterval = setInterval(async () => {
       try {
@@ -251,26 +283,24 @@ export function useLiveTranslator({
     return () => clearInterval(pollInterval);
   }, [sala, speakText]);
 
-  // Control manual del micrófono (Garantizado con evento de usuario directo)
+  // Control manual del micrófono
   const toggleListening = () => {
     if (!recognitionRef.current) return;
 
     if (isListeningRef.current) {
-      // Apagar micrófono
+      // Apagar y fijar inmediatamente lo que haya
       isListeningRef.current = false;
       setIsListening(false);
       if (silenceTimerRef.current) clearTimeout(silenceTimerRef.current);
+      if (currentSpeechDraftRef.current) {
+        commitAndSend(currentSpeechDraftRef.current);
+      }
       try {
         recognitionRef.current.stop();
       } catch (e) {}
-
-      // Consolidar lo que quede en el buffer
-      if (accumulatedFinalRef.current) {
-        sendFinalSentence(accumulatedFinalRef.current);
-      }
     } else {
       // Encender micrófono
-      accumulatedFinalRef.current = "";
+      currentSpeechDraftRef.current = "";
       lastSentSentenceRef.current = "";
       setInterimText("");
       isListeningRef.current = true;
@@ -283,6 +313,23 @@ export function useLiveTranslator({
     }
   };
 
+  // Función para limpiar la sala de pruebas anteriores
+  const clearRoomMessages = async () => {
+    setMessages([]);
+    setInterimText("");
+    currentSpeechDraftRef.current = "";
+    try {
+      await fetch("/api/copiloto/sesion", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "clear_messages",
+          sala
+        })
+      });
+    } catch (e) {}
+  };
+
   return {
     isListening,
     interimText,
@@ -292,6 +339,7 @@ export function useLiveTranslator({
     ttsVolume,
     setTtsVolume,
     isConnected,
-    toggleListening
+    toggleListening,
+    clearRoomMessages
   };
 }
