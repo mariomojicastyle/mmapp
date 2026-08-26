@@ -259,7 +259,7 @@ function GroundInfiniteAxes() {
             [0, 0, 0],
             [halfExtent, 0, 0],
           ]}
-          color={coloresApariencia.ejeX || calibracion.colorEjeX || "#ef4444"}
+          color={coloresApariencia.ejeX || calibracion.colorEjeX || "#0891B2"}
           lineWidth={axisWidth}
           toneMapped={false}
           renderOrder={100}
@@ -274,7 +274,7 @@ function GroundInfiniteAxes() {
             [0, 0, 0],
             [0, 0, -halfExtent],
           ]}
-          color={coloresApariencia.ejeY || calibracion.colorEjeY || "#22c55e"}
+          color={coloresApariencia.ejeY || calibracion.colorEjeY || "#B91C1C"}
           lineWidth={axisWidth}
           toneMapped={false}
           renderOrder={100}
@@ -2846,14 +2846,14 @@ export default function Viewer3D() {
                 y1="34"
                 x2={34 + rhinoAxes.x.x}
                 y2={34 + rhinoAxes.x.y}
-                stroke={coloresApariencia.iconoPlanoUniversalX || (tema === "obsidian" ? "#94a3b8" : "#475569")}
+                stroke={coloresApariencia.iconoPlanoUniversalX || coloresApariencia.ejeX || (tema === "obsidian" ? "#06B6D4" : "#0891B2")}
                 strokeWidth="1.6"
                 strokeLinecap="round"
               />
               <text
                 x={34 + rhinoAxes.x.x * 1.3}
                 y={34 + rhinoAxes.x.y * 1.3 + 4}
-                fill={coloresApariencia.textoPrincipal || (tema === "obsidian" ? "#cbd5e1" : "#334155")}
+                fill={coloresApariencia.iconoPlanoUniversalX || coloresApariencia.ejeX || (tema === "obsidian" ? "#06B6D4" : "#0891B2")}
                 fontSize="11"
                 fontFamily="Inter, -apple-system, sans-serif"
                 fontWeight="700"
@@ -2866,14 +2866,14 @@ export default function Viewer3D() {
                 y1="34"
                 x2={34 + rhinoAxes.y.x}
                 y2={34 + rhinoAxes.y.y}
-                stroke={coloresApariencia.iconoPlanoUniversalY || (tema === "obsidian" ? "#94a3b8" : "#475569")}
+                stroke={coloresApariencia.iconoPlanoUniversalY || coloresApariencia.ejeY || (tema === "obsidian" ? "#F87171" : "#B91C1C")}
                 strokeWidth="1.6"
                 strokeLinecap="round"
               />
               <text
                 x={34 + rhinoAxes.y.x * 1.3}
                 y={34 + rhinoAxes.y.y * 1.3 + 4}
-                fill={coloresApariencia.textoPrincipal || (tema === "obsidian" ? "#cbd5e1" : "#334155")}
+                fill={coloresApariencia.iconoPlanoUniversalY || coloresApariencia.ejeY || (tema === "obsidian" ? "#F87171" : "#B91C1C")}
                 fontSize="11"
                 fontFamily="Inter, -apple-system, sans-serif"
                 fontWeight="700"
@@ -2886,14 +2886,14 @@ export default function Viewer3D() {
                 y1="34"
                 x2={34 + rhinoAxes.z.x}
                 y2={34 + rhinoAxes.z.y}
-                stroke={coloresApariencia.iconoPlanoUniversalZ || (tema === "obsidian" ? "#94a3b8" : "#475569")}
+                stroke={coloresApariencia.iconoPlanoUniversalZ || coloresApariencia.ejeZ || (tema === "obsidian" ? "#94A3B8" : "#334155")}
                 strokeWidth="1.6"
                 strokeLinecap="round"
               />
               <text
                 x={34 + rhinoAxes.z.x * 1.3}
                 y={34 + rhinoAxes.z.y * 1.3 + 4}
-                fill={coloresApariencia.textoPrincipal || (tema === "obsidian" ? "#cbd5e1" : "#334155")}
+                fill={coloresApariencia.iconoPlanoUniversalZ || coloresApariencia.ejeZ || (tema === "obsidian" ? "#94A3B8" : "#334155")}
                 fontSize="11"
                 fontFamily="Inter, -apple-system, sans-serif"
                 fontWeight="700"
