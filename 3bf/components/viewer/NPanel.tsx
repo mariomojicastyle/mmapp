@@ -1037,7 +1037,7 @@ export default function NPanel() {
                   <span style={{ color: coloresApariencia?.textoPrincipal }}>Iluminación de Estudio</span>
                 </div>
 
-                {/* Luz Directa */}
+                {/* Luz Directa Principal */}
                 <div 
                   style={{ 
                     backgroundColor: coloresApariencia?.fondoPaneles, 
@@ -1046,9 +1046,9 @@ export default function NPanel() {
                   className="flex flex-col gap-1.5 p-2 rounded-lg border shadow-xs text-xs"
                 >
                   <div className="flex justify-between font-medium items-center">
-                    <label style={{ color: coloresApariencia?.textoPrincipal }} className="font-bold">Luz Directa Principal</label>
+                    <label style={{ color: coloresApariencia?.textoPrincipal }} className="font-bold">Luz Directa Principal (Sol)</label>
                     <DirectNumberInput
-                      value={Number(calibracion.intensidadLuzDirecta.toFixed(1))}
+                      value={Number((calibracion.intensidadLuzDirecta ?? 1.5).toFixed(1))}
                       min={0}
                       max={5}
                       unit="x"
@@ -1060,14 +1060,44 @@ export default function NPanel() {
                     min="0"
                     max="3"
                     step="0.05"
-                    value={calibracion.intensidadLuzDirecta}
+                    value={calibracion.intensidadLuzDirecta ?? 1.5}
                     onChange={(e) => setCalibracion("intensidadLuzDirecta", parseFloat(e.target.value))}
                     style={{ accentColor: coloresApariencia?.botonActivo || "#0891b2" }}
                     className="w-full h-1.5 bg-slate-200 dark:bg-slate-700 rounded-lg appearance-none cursor-pointer"
                   />
                 </div>
 
-                {/* Luz Ambiental */}
+                {/* Luz de Entorno HDRI (Reflejos / IBL) */}
+                <div 
+                  style={{ 
+                    backgroundColor: coloresApariencia?.fondoPaneles, 
+                    borderColor: coloresApariencia?.bordePaneles || "#CBD5E1" 
+                  }}
+                  className="flex flex-col gap-1.5 p-2 rounded-lg border shadow-xs text-xs"
+                >
+                  <div className="flex justify-between font-medium items-center">
+                    <label style={{ color: coloresApariencia?.textoPrincipal }} className="font-bold">Luz de Entorno HDRI (Reflejos/IBL)</label>
+                    <DirectNumberInput
+                      value={Number((calibracion.intensidadLuzEntorno ?? 1.0).toFixed(1))}
+                      min={0}
+                      max={5}
+                      unit="x"
+                      onChange={(val) => setCalibracion("intensidadLuzEntorno", val)}
+                    />
+                  </div>
+                  <input
+                    type="range"
+                    min="0"
+                    max="3"
+                    step="0.05"
+                    value={calibracion.intensidadLuzEntorno ?? 1.0}
+                    onChange={(e) => setCalibracion("intensidadLuzEntorno", parseFloat(e.target.value))}
+                    style={{ accentColor: coloresApariencia?.botonActivo || "#0891b2" }}
+                    className="w-full h-1.5 bg-slate-200 dark:bg-slate-700 rounded-lg appearance-none cursor-pointer"
+                  />
+                </div>
+
+                {/* Luz Ambiental Global */}
                 <div 
                   style={{ 
                     backgroundColor: coloresApariencia?.fondoPaneles, 
@@ -1078,7 +1108,7 @@ export default function NPanel() {
                   <div className="flex justify-between font-medium items-center">
                     <label style={{ color: coloresApariencia?.textoPrincipal }} className="font-bold">Luz Ambiental Global</label>
                     <DirectNumberInput
-                      value={Number(calibracion.intensidadLuzAmbiental.toFixed(1))}
+                      value={Number((calibracion.intensidadLuzAmbiental ?? 0.8).toFixed(1))}
                       min={0}
                       max={3}
                       unit="x"
@@ -1090,8 +1120,38 @@ export default function NPanel() {
                     min="0"
                     max="2"
                     step="0.05"
-                    value={calibracion.intensidadLuzAmbiental}
+                    value={calibracion.intensidadLuzAmbiental ?? 0.8}
                     onChange={(e) => setCalibracion("intensidadLuzAmbiental", parseFloat(e.target.value))}
+                    style={{ accentColor: coloresApariencia?.botonActivo || "#0891b2" }}
+                    className="w-full h-1.5 bg-slate-200 dark:bg-slate-700 rounded-lg appearance-none cursor-pointer"
+                  />
+                </div>
+
+                {/* Luz de Relleno (Fill Light) */}
+                <div 
+                  style={{ 
+                    backgroundColor: coloresApariencia?.fondoPaneles, 
+                    borderColor: coloresApariencia?.bordePaneles || "#CBD5E1" 
+                  }}
+                  className="flex flex-col gap-1.5 p-2 rounded-lg border shadow-xs text-xs"
+                >
+                  <div className="flex justify-between font-medium items-center">
+                    <label style={{ color: coloresApariencia?.textoPrincipal }} className="font-bold">Luz de Relleno (Fill Light)</label>
+                    <DirectNumberInput
+                      value={Number((calibracion.intensidadLuzRelleno ?? 0.4).toFixed(1))}
+                      min={0}
+                      max={3}
+                      unit="x"
+                      onChange={(val) => setCalibracion("intensidadLuzRelleno", val)}
+                    />
+                  </div>
+                  <input
+                    type="range"
+                    min="0"
+                    max="2"
+                    step="0.05"
+                    value={calibracion.intensidadLuzRelleno ?? 0.4}
+                    onChange={(e) => setCalibracion("intensidadLuzRelleno", parseFloat(e.target.value))}
                     style={{ accentColor: coloresApariencia?.botonActivo || "#0891b2" }}
                     className="w-full h-1.5 bg-slate-200 dark:bg-slate-700 rounded-lg appearance-none cursor-pointer"
                   />

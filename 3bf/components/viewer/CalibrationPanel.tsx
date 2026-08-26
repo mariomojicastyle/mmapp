@@ -242,21 +242,40 @@ export default function CalibrationPanel() {
               <span>Iluminación de Estudio</span>
             </div>
 
-            {/* Luz Directa */}
+            {/* Luz Directa Principal */}
             <div>
               <div className="flex justify-between text-gray-600 dark:text-gray-400 mb-1">
-                <span>Luz Directa Principal</span>
+                <span>Luz Directa Principal (Sol)</span>
                 <span className="font-mono font-bold text-amber-600 dark:text-amber-400">
-                  {calibracion.intensidadLuzDirecta.toFixed(1)}x
+                  {(calibracion.intensidadLuzDirecta ?? 1.5).toFixed(1)}x
                 </span>
               </div>
               <input
                 type="range"
                 min="0"
                 max="3"
-                step="0.1"
-                value={calibracion.intensidadLuzDirecta}
+                step="0.05"
+                value={calibracion.intensidadLuzDirecta ?? 1.5}
                 onChange={(e) => setCalibracion("intensidadLuzDirecta", parseFloat(e.target.value))}
+                className="w-full h-1.5 bg-gray-200 dark:bg-gray-700 rounded-lg appearance-none cursor-pointer accent-amber-500"
+              />
+            </div>
+
+            {/* Luz de Entorno HDRI */}
+            <div>
+              <div className="flex justify-between text-gray-600 dark:text-gray-400 mb-1">
+                <span>Luz de Entorno HDRI (Reflejos/IBL)</span>
+                <span className="font-mono font-bold text-amber-600 dark:text-amber-400">
+                  {(calibracion.intensidadLuzEntorno ?? 1.0).toFixed(1)}x
+                </span>
+              </div>
+              <input
+                type="range"
+                min="0"
+                max="3"
+                step="0.05"
+                value={calibracion.intensidadLuzEntorno ?? 1.0}
+                onChange={(e) => setCalibracion("intensidadLuzEntorno", parseFloat(e.target.value))}
                 className="w-full h-1.5 bg-gray-200 dark:bg-gray-700 rounded-lg appearance-none cursor-pointer accent-amber-500"
               />
             </div>
@@ -266,16 +285,35 @@ export default function CalibrationPanel() {
               <div className="flex justify-between text-gray-600 dark:text-gray-400 mb-1">
                 <span>Luz Ambiental Global</span>
                 <span className="font-mono font-bold text-amber-600 dark:text-amber-400">
-                  {calibracion.intensidadLuzAmbiental.toFixed(1)}x
+                  {(calibracion.intensidadLuzAmbiental ?? 0.8).toFixed(1)}x
                 </span>
               </div>
               <input
                 type="range"
                 min="0"
                 max="2"
-                step="0.1"
-                value={calibracion.intensidadLuzAmbiental}
+                step="0.05"
+                value={calibracion.intensidadLuzAmbiental ?? 0.8}
                 onChange={(e) => setCalibracion("intensidadLuzAmbiental", parseFloat(e.target.value))}
+                className="w-full h-1.5 bg-gray-200 dark:bg-gray-700 rounded-lg appearance-none cursor-pointer accent-amber-500"
+              />
+            </div>
+
+            {/* Luz de Relleno */}
+            <div>
+              <div className="flex justify-between text-gray-600 dark:text-gray-400 mb-1">
+                <span>Luz de Relleno (Fill Light)</span>
+                <span className="font-mono font-bold text-amber-600 dark:text-amber-400">
+                  {(calibracion.intensidadLuzRelleno ?? 0.4).toFixed(1)}x
+                </span>
+              </div>
+              <input
+                type="range"
+                min="0"
+                max="2"
+                step="0.05"
+                value={calibracion.intensidadLuzRelleno ?? 0.4}
+                onChange={(e) => setCalibracion("intensidadLuzRelleno", parseFloat(e.target.value))}
                 className="w-full h-1.5 bg-gray-200 dark:bg-gray-700 rounded-lg appearance-none cursor-pointer accent-amber-500"
               />
             </div>

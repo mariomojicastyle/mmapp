@@ -427,52 +427,42 @@ export default defineConfig({
                 let buffer
                 let contentType
 
-                if (global.audioCache.has(urlToFetch)) {
-                  const cached = global.audioCache.get(urlToFetch)
-                  buffer = cached.buffer
-                  contentType = cached.contentType
-                } else {
-                  const response = await fetch(urlToFetch)
-                  if (!response.ok) {
-                    // Fallback de audios legados
-                    if (!isFallbackAttempt && isSoundsCategory) {
-                      let fallbackRest = null
-                      if (rest.match(/^\d+\.mp3$/)) {
-                        const step = rest.split('.')[0]
-                        fallbackRest = `es/${step}_es.mp3`
-                      } else if (rest === '01_Ayuda.mp3') {
-                        fallbackRest = `es/01_Ayuda_es.mp3`
-                      }
-                      if (fallbackRest) {
-                        const fallbackUrl = `${supabaseUrl}/storage/v1/object/public/insumos_manuales/${manualId}/sounds/${fallbackRest}`
-                        return fetchFromSupabase(fallbackUrl, true)
-                      }
+                const response = await fetch(urlToFetch, { cache: 'no-store' })
+                if (!response.ok) {
+                  // Fallback de audios legados
+                  if (!isFallbackAttempt && isSoundsCategory) {
+                    let fallbackRest = null
+                    if (rest.match(/^\d+\.mp3$/)) {
+                      const step = rest.split('.')[0]
+                      fallbackRest = `es/${step}_es.mp3`
+                    } else if (rest === '01_Ayuda.mp3') {
+                      fallbackRest = `es/01_Ayuda_es.mp3`
                     }
-                    
-                    // Fallback de herrajes: buscar en carpeta compartida
-                    if (!isFallbackAttempt && isHerrajesCategory) {
-                      const sharedUrl = `${supabaseUrl}/storage/v1/object/public/insumos_manuales/_herrajes_compartidos/${rest}`
-                      return fetchFromSupabase(sharedUrl, true)
+                    if (fallbackRest) {
+                      const fallbackUrl = `${supabaseUrl}/storage/v1/object/public/insumos_manuales/${manualId}/sounds/${fallbackRest}`
+                      return fetchFromSupabase(fallbackUrl, true)
                     }
-                    
-                    if (serveLocalFile()) return
-                    // Para herrajes no encontrados: responder 204 silencioso
-                    // (el panel muestra el nombre sin imagen, sin contaminar consola)
-                    if (isHerrajesCategory) {
-                      res.statusCode = 204
-                      return res.end()
-                    }
-                    res.statusCode = response.status
+                  }
+                  
+                  // Fallback de herrajes: buscar en carpeta compartida
+                  if (!isFallbackAttempt && isHerrajesCategory) {
+                    const sharedUrl = `${supabaseUrl}/storage/v1/object/public/insumos_manuales/_herrajes_compartidos/${rest}`
+                    return fetchFromSupabase(sharedUrl, true)
+                  }
+                  
+                  if (serveLocalFile()) return
+                  // Para herrajes no encontrados: responder 204 silencioso
+                  // (el panel muestra el nombre sin imagen, sin contaminar consola)
+                  if (isHerrajesCategory) {
+                    res.statusCode = 204
                     return res.end()
                   }
-                  contentType = response.headers.get('content-type')
-                  const arrayBuffer = await response.arrayBuffer()
-                  buffer = Buffer.from(arrayBuffer)
-                  
-                  if (isSoundsCategory) {
-                    global.audioCache.set(urlToFetch, { buffer, contentType })
-                  }
+                  res.statusCode = response.status
+                  return res.end()
                 }
+                contentType = response.headers.get('content-type')
+                const arrayBuffer = await response.arrayBuffer()
+                buffer = Buffer.from(arrayBuffer)
 
                 // Manejar peticiones Range (vital para Chrome <audio>)
                 if (req.headers.range) {

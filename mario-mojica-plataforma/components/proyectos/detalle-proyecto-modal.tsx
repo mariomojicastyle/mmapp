@@ -908,6 +908,7 @@ export function DetalleProyectoModal({ isOpen, onClose, proyecto, onUpdate }: De
         else { successCount++ }
       } catch (err) { console.error(`Error generando ${storagePath}:`, err) }
       setGenerationProgress({ current: i + 1, total: tasks.length })
+      await new Promise(r => setTimeout(r, 150))
     }
     setGeneratingAll(false)
     setSuccessMsg(`¡${successCount}/${tasks.length} audios generados y subidos a Storage exitosamente!`)

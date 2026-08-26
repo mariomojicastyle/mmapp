@@ -53,15 +53,20 @@ function replacePausesWithPlaceholders(text: string): { processedText: string; p
 function restorePausesFromPlaceholders(translatedText: string, pauseMap: PausePlaceholder[]): string {
   let result = translatedText
   
-  for (const item of pauseMap) {
-    const regex = new RegExp(item.placeholder, "gi")
-    if (regex.test(result)) {
-      result = result.replace(regex, item.tag)
-    } else {
-      // Fallback seguro: si el marcador se perdió en la traducción, se añade al final de la línea/texto
-      result = result.trim() + " " + item.tag
+  if (pauseMap.length > 0) {
+    for (const item of pauseMap) {
+      const regex = new RegExp(item.placeholder, "gi")
+      if (regex.test(result)) {
+        result = result.replace(regex, item.tag)
+      } else {
+        // Fallback seguro: si el marcador se perdió en la traducción, se añade al final de la línea/texto
+        result = result.trim() + " " + item.tag
+      }
     }
   }
+
+  // Eliminar cualquier marcador residual o alucinado por la IA que no corresponda
+  result = result.replace(/__PAU_[^_\s]+__/gi, "").replace(/\s{2,}/g, " ").trim()
 
   return result
 }
@@ -213,6 +218,10 @@ export async function POST(request: NextRequest) {
 
     const targetName = targetLang === "pt" ? "portugués de Brasil" : "inglés"
 
+    const pauseInstruction = pauseMap.length > 0
+      ? `\nREGLA CRÍTICA DE PAUSAS: El texto contiene marcadores de pausa (${pauseMap.map(p => p.placeholder).join(", ")}). Debes colocar cada marcador SIEMPRE AL FINAL de la oración o cláusula correspondiente (exactamente en la misma posición relativa que en el texto en español), NUNCA al inicio de una oración ni suelto en una línea nueva. No agregues marcadores nuevos, no los traduzcas y no los modifiques.\n`
+      : ""
+
     const geminiApiKey = process.env.GEMINI_API_KEY
 
     if (geminiApiKey) {
@@ -224,8 +233,7 @@ export async function POST(request: NextRequest) {
                 text: `Traduce el siguiente texto de un manual de armado de muebles del español al ${targetName}.
 La traducción debe ser natural, fluida y sonar como si una persona nativa la hubiese escrito.
 MUY IMPORTANTE: La duración del audio en ${targetName} al ser leído debe ser muy similar a la duración del audio en español original, ya que ambos audios comparten la misma animación 3D.
-Por favor, asegúrate de que el texto en ${targetName} tenga una longitud y número de palabras/sílabas comparable para que tome un tiempo de lectura muy similar al español. Evita redundancias o frases largas que extiendan el audio innecesariamente.
-IMPORTANTE: El texto contiene marcadores especiales de pausa como __PAU_0__, __PAU_1__, etc. Debes mantener estos marcadores EXACTAMENTE en la misma posición semántica en el texto traducido (normalmente al final de la oración o cláusula correspondiente). No los traduzcas, no los elimines y no los modifiques.
+Por favor, asegúrate de que el texto en ${targetName} tenga una longitud y número de palabras/sílabas comparable para que tome un tiempo de lectura muy similar al español. Evita redundancias o frases largas que extiendan el audio innecesariamente.${pauseInstruction}
 Retorna únicamente el texto traducido al ${targetName}, sin explicaciones, sin introducciones y sin comillas adicionales.
 ${buildGlossaryPromptBlock(glossary, targetLang || "en")}
 Texto a traducir:
@@ -332,7 +340,7 @@ Texto a traducir:
     }
 
     const response = await fetch(
-      `https://translate.googleapis.com/translate_a/single?client=gtx&sl=es&tl=${target}&dt=t&q=${encodeURIComponent(
+      `https://clients5.google.com/translate_a/t?client=dict-chrome-ex&sl=es&tl=${target}&q=${encodeURIComponent(
         processedText
       )}`
     )
@@ -345,7 +353,7 @@ Texto a traducir:
     }
 
     const data = await response.json()
-    let translation = data[0]?.map((x: [string, ...unknown[]]) => x[0]).join("") || ""
+    let translation = Array.isArray(data) ? data.join("") : String(data || "")
     
     // Restaurar los placeholders con las traducciones oficiales
     if (placeholders.length > 0) {

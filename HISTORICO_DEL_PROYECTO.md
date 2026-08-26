@@ -1771,3 +1771,21 @@ Con esta batería de arreglos y la validación en caliente, la V20 se establece 
   * Se desacopló el `useEffect` de inicialización para depender estrictamente de la apertura del modal (`[modalPBRStudioAbierto]`), eliminando el bug donde guardar o editar un material provocaba que el estado local se sobreescribiera con la versión original.
 - **Desacoplamiento y Control de Sombras Físicas Sol/Contacto (`ShaderBallViewer.tsx` & `PBRMaterialStudioModal.tsx`)**:
   * Se integró `PCFSoftShadowMap` en el Canvas de Three.js y se desglosó el control inferior en **`Sombra Sol:`**, **`Contacto:`** y **`Difusión:`**.
+
+---
+
+### 🔹 Hito Audios_y_3BF_Render — Blindaje Total del Pipeline TTS/Traducción, Eliminación de Repeticiones y Desincronización en Portugués, y Despliegue Global (25 de Agosto, 2026)
+
+- **Eliminación Definitiva de Repeticiones y Tartamudeo en Locución TTS (`api/tts/route.ts`)**:
+  * Sustitución del procesamiento concurrente descontrolado (`Promise.all`) por un ciclo secuencial estricto en la síntesis de fragmentos con pausas `[pausa: X]`.
+  * Eliminación de saturación de conexiones WebSockets simultáneas contra Microsoft Edge TTS y alineación perfecta de tramas de *Bit Reservoir* en el códec MP3, erradicando repeticiones de tramas, chasquidos y saltos de audio en el reproductor del aplicativo de armado.
+- **Erradicación de Alucinaciones de Etiquetas `__PAU_` en Traducción Automática (`api/translate/route.ts`)**:
+  * Inyección dinámica y condicional de la regla de pausas en el prompt de Gemini, activándola única y exclusivamente cuando el texto en español contiene etiquetas de pausa reales.
+  * Implementación de un filtro automático de higienización en `restorePausesFromPlaceholders` que elimina cualquier marcador `__PAU_` residual o alucinado antes de entregar el texto a la interfaz.
+  * Actualización del motor de respaldo al endpoint seguro de Google Chrome Translation (`clients5.google.com`) con preservación íntegra de glosario y pausas.
+- **Persistencia en Supabase Storage & Prevención de Errores de Permisos (RLS)**:
+  * Inyección de `SUPABASE_SERVICE_ROLE_KEY` en `.env.local` y blindaje con fallback en `/api/tts`, garantizando que la subida individual o en lote persista de inmediato en el bucket `insumos_manuales` sin rechazos de seguridad.
+- **Bypass de Caché Estática en Proxy de Desarrollo (`legacy-aplicativo-armado/vite.config.js`)**:
+  * Desactivación del almacenamiento estático en memoria (`global.audioCache`) para la categoría de sonidos en el proxy de Vite, permitiendo que cualquier nuevo audio generado en Supabase Storage se escuche de forma inmediata en el visor 3D local sin requerir reinicios del servidor.
+- **Validación y Pruebas Unitarias de Síntesis**:
+  * Verificada la generación limpia y continua de locuciones en español, inglés y portugués (`pt-BR-AntonioNeural`) en pasos con múltiples pausas intermedias.

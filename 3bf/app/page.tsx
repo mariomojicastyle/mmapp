@@ -215,16 +215,16 @@ export default function Home3BF() {
       {/* Modal Global Guardar Como Mueble (Google Drive / Marcas) */}
       <SaveFurnitureModal />
 
-      {/* TopNav Barra Superior */}
+      {/* TopNav Barra Superior (Elementos distribuidos equidistantes y balanceados) */}
       <header 
         style={{ 
           backgroundColor: coloresApariencia?.fondoTopNav || coloresApariencia?.fondoPaneles, 
           borderColor: coloresApariencia?.bordePaneles,
           color: coloresApariencia?.textoPrincipal 
         }}
-        className="h-14 px-2 md:px-3 flex items-center justify-between border-b glass-panel z-10 relative transition-colors gap-1 md:gap-2"
+        className="h-14 px-2 sm:px-3 md:px-4 flex items-center justify-between border-b glass-panel z-10 relative transition-colors gap-2 sm:gap-2.5 md:gap-3 lg:gap-4 overflow-x-auto custom-scrollbar"
       >
-        {/* Logotipo Vectorial Completo 3BF (Alineado con precisión milimétrica al visor y sin recortes) */}
+        {/* Logotipo Vectorial Completo 3BF */}
         <div className="flex items-center shrink-0">
           <svg
             viewBox="6.73 15.276 235 59.448"
@@ -286,64 +286,66 @@ export default function Home3BF() {
           </svg>
         </div>
 
-        {/* Pestañas de Vista (En móvil cerca al logo, en PC centradas exactamente como en el diseño original) */}
-        <div 
-          style={{ 
-            borderColor: coloresApariencia?.insigniaFondo || coloresApariencia?.bordePaneles,
-            backgroundColor: coloresApariencia?.panelContenedor || "#E2E8F0"
-          }}
-          className="relative md:absolute md:left-1/2 md:-translate-x-1/2 flex items-center p-0.5 md:p-1 rounded-full border text-xs shadow-inner backdrop-blur-md gap-0.5 md:gap-1 h-8 md:h-9 shrink-0"
-        >
-          <button
-            onClick={() => setPestanaActiva("3d")}
-            style={
-              pestanaActiva === "3d"
-                ? { backgroundColor: coloresApariencia?.botonActivo || "#0891b2", borderColor: coloresApariencia?.colorMarca || "#0891b2" }
-                : { backgroundColor: coloresApariencia?.botonInactivo || "#E2E8F0", borderColor: coloresApariencia?.bordeBotonInactivo || "#CBD5E1", color: coloresApariencia?.textoPrincipal || "#0F172A" }
-            }
-            className={`px-2 sm:px-3 md:px-4 h-6 md:h-7 rounded-full transition flex items-center gap-1 font-bold cursor-pointer text-[11px] md:text-xs ${
-              pestanaActiva === "3d"
-                ? "text-white shadow-md border"
-                : "hover:opacity-90 border backdrop-blur-sm"
-            }`}
+        {/* 2. Pestañas de Vista Principales (Centradas en el Header) */}
+        <div className="flex items-center justify-center flex-1 min-w-0">
+          <div 
+            style={{ 
+              borderColor: coloresApariencia?.insigniaFondo || coloresApariencia?.bordePaneles,
+              backgroundColor: coloresApariencia?.panelContenedor || "#E2E8F0"
+            }}
+            className="flex items-center p-0.5 md:p-1 rounded-full border text-xs shadow-inner backdrop-blur-md gap-0.5 md:gap-1 h-8 md:h-9 shrink-0"
           >
-            <Box className="w-3 md:w-3.5 h-3 md:h-3.5" /> <span><span className="hidden sm:inline">Visor </span>3D</span>
-          </button>
-          <button
-            onClick={() => setPestanaActiva("despiece")}
-            style={
-              pestanaActiva === "despiece"
-                ? { backgroundColor: coloresApariencia?.botonActivo || "#0891b2", borderColor: coloresApariencia?.colorMarca || "#0891b2" }
-                : { backgroundColor: coloresApariencia?.botonInactivo || "#E2E8F0", borderColor: coloresApariencia?.bordeBotonInactivo || "#CBD5E1", color: coloresApariencia?.textoPrincipal || "#0F172A" }
-            }
-            className={`px-2 sm:px-3 md:px-4 h-6 md:h-7 rounded-full transition flex items-center gap-1 font-bold cursor-pointer text-[11px] md:text-xs ${
-              pestanaActiva === "despiece"
-                ? "text-white shadow-md border"
-                : "hover:opacity-90 border backdrop-blur-sm"
-            }`}
-          >
-            <Layers className="w-3 md:w-3.5 h-3 md:h-3.5" /> <span>Despiece<span className="hidden sm:inline"> & Costos</span></span>
-          </button>
-          <button
-            onClick={() => setPestanaActiva("basedatos")}
-            style={
-              pestanaActiva === "basedatos"
-                ? { backgroundColor: coloresApariencia?.botonActivo || "#0891b2", borderColor: coloresApariencia?.colorMarca || "#0891b2" }
-                : { backgroundColor: coloresApariencia?.botonInactivo || "#E2E8F0", borderColor: coloresApariencia?.bordeBotonInactivo || "#CBD5E1", color: coloresApariencia?.textoPrincipal || "#0F172A" }
-            }
-            className={`px-2 sm:px-3 md:px-4 h-6 md:h-7 rounded-full transition flex items-center gap-1 font-bold cursor-pointer text-[11px] md:text-xs ${
-              pestanaActiva === "basedatos"
-                ? "text-white shadow-md border"
-                : "hover:opacity-90 border backdrop-blur-sm"
-            }`}
-          >
-            <Database className="w-3 md:w-3.5 h-3 md:h-3.5" /> <span><span className="hidden sm:inline">Base de </span>Datos</span>
-          </button>
+            <button
+              onClick={() => setPestanaActiva("3d")}
+              style={
+                pestanaActiva === "3d"
+                  ? { backgroundColor: coloresApariencia?.botonActivo || "#0891b2", borderColor: coloresApariencia?.colorMarca || "#0891b2" }
+                  : { backgroundColor: coloresApariencia?.botonInactivo || "#E2E8F0", borderColor: coloresApariencia?.bordeBotonInactivo || "#CBD5E1", color: coloresApariencia?.textoPrincipal || "#0F172A" }
+              }
+              className={`px-2 sm:px-3 md:px-4 h-6 md:h-7 rounded-full transition flex items-center gap-1 font-bold cursor-pointer text-[11px] md:text-xs ${
+                pestanaActiva === "3d"
+                  ? "text-white shadow-md border"
+                  : "hover:opacity-90 border backdrop-blur-sm"
+              }`}
+            >
+              <Box className="w-3 md:w-3.5 h-3 md:h-3.5" /> <span><span className="hidden sm:inline">Visor </span>3D</span>
+            </button>
+            <button
+              onClick={() => setPestanaActiva("despiece")}
+              style={
+                pestanaActiva === "despiece"
+                  ? { backgroundColor: coloresApariencia?.botonActivo || "#0891b2", borderColor: coloresApariencia?.colorMarca || "#0891b2" }
+                  : { backgroundColor: coloresApariencia?.botonInactivo || "#E2E8F0", borderColor: coloresApariencia?.bordeBotonInactivo || "#CBD5E1", color: coloresApariencia?.textoPrincipal || "#0F172A" }
+              }
+              className={`px-2 sm:px-3 md:px-4 h-6 md:h-7 rounded-full transition flex items-center gap-1 font-bold cursor-pointer text-[11px] md:text-xs ${
+                pestanaActiva === "despiece"
+                  ? "text-white shadow-md border"
+                  : "hover:opacity-90 border backdrop-blur-sm"
+              }`}
+            >
+              <Layers className="w-3 md:w-3.5 h-3 md:h-3.5" /> <span>Despiece<span className="hidden sm:inline"> & Costos</span></span>
+            </button>
+            <button
+              onClick={() => setPestanaActiva("basedatos")}
+              style={
+                pestanaActiva === "basedatos"
+                  ? { backgroundColor: coloresApariencia?.botonActivo || "#0891b2", borderColor: coloresApariencia?.colorMarca || "#0891b2" }
+                  : { backgroundColor: coloresApariencia?.botonInactivo || "#E2E8F0", borderColor: coloresApariencia?.bordeBotonInactivo || "#CBD5E1", color: coloresApariencia?.textoPrincipal || "#0F172A" }
+              }
+              className={`px-2 sm:px-3 md:px-4 h-6 md:h-7 rounded-full transition flex items-center gap-1 font-bold cursor-pointer text-[11px] md:text-xs ${
+                pestanaActiva === "basedatos"
+                  ? "text-white shadow-md border"
+                  : "hover:opacity-90 border backdrop-blur-sm"
+              }`}
+            >
+              <Database className="w-3 md:w-3.5 h-3 md:h-3.5" /> <span><span className="hidden sm:inline">Base de </span>Datos</span>
+            </button>
+          </div>
         </div>
 
-        {/* Lado Derecho: Modos 3D + Botón Foto + Switch Tema Light/Dark + Estado del Worker */}
-        <div className="ml-auto flex items-center gap-1.5 sm:gap-2 md:gap-3 shrink-0">
-          {/* 1. Botonera de 4 Modos 3D (Cápsula rounded-full) */}
+        {/* 3. Bloque de Herramientas y Controles Visuales a la Derecha */}
+        <div className="flex items-center gap-1.5 sm:gap-2 md:gap-2.5 lg:gap-3 shrink-0">
+          {/* Botonera de 4 Modos 3D */}
           <div 
             style={{ 
               borderColor: coloresApariencia?.insigniaFondo || coloresApariencia?.bordePaneles,
@@ -487,58 +489,6 @@ export default function Home3BF() {
               }`}
             >
               Dark
-            </button>
-          </div>
-
-          {/* 5. Versión del Software y Estado de Conexión:
-                 - En Móviles (md:hidden): Simple círculo verde (online) o rojo (offline)
-                 - En Escritorio (hidden md:flex): Badge completo con texto vBeta 0.1 Online
-          */}
-          {/* MÓVIL (md:hidden): Simple Círculo Verde / Rojo */}
-          <button
-            onClick={verificarWorker}
-            title={`${APP_VERSION} - Estado: ${workerStatus === "online" ? "Online" : "Desconectado / Offline"} (Clic para comprobar)`}
-            className="md:hidden flex items-center justify-center p-1.5 transition cursor-pointer hover:scale-110 active:scale-95 shrink-0"
-          >
-            <span 
-              className={`w-3.5 h-3.5 rounded-full border-2 ${
-                workerStatus === "online" 
-                  ? "bg-emerald-500 border-emerald-300 shadow-[0_0_10px_rgba(16,185,129,0.9)]" 
-                  : "bg-rose-600 border-rose-400 shadow-[0_0_10px_rgba(225,29,72,0.9)] animate-pulse"
-              }`}
-            />
-          </button>
-
-          {/* ESCRITORIO (hidden md:flex): Badge Completo Original */}
-          <div 
-            style={{ 
-              borderColor: coloresApariencia?.insigniaFondo || coloresApariencia?.bordePaneles,
-              backgroundColor: coloresApariencia?.panelContenedor || "#E2E8F0"
-            }}
-            className="hidden md:flex items-center p-1 rounded-full border shadow-inner h-9 shrink-0"
-          >
-            <button
-              onClick={verificarWorker}
-              title="Haz clic para comprobar la conexión con el Worker Python"
-              style={{
-                backgroundColor: coloresApariencia?.botonInactivo || "#E2E8F0",
-                borderColor: coloresApariencia?.bordeBotonInactivo || "#CBD5E1",
-                color: coloresApariencia?.textoPrincipal || "#0F172A",
-              }}
-              className="flex items-center gap-1.5 text-xs px-3 h-7 rounded-full border backdrop-blur-sm transition cursor-pointer shadow-xs font-bold hover:opacity-90"
-            >
-              <span style={{ color: coloresApariencia?.textoPrincipal || "#0F172A" }} className="font-bold">
-                {APP_VERSION}
-              </span>
-              {workerStatus === "online" ? (
-                <span style={{ color: coloresApariencia?.estadoActivo || "#10B981" }} className="font-bold flex items-center gap-1">
-                  <CheckCircle2 style={{ color: coloresApariencia?.estadoActivo || "#10B981" }} className="w-3 h-3" /> Online
-                </span>
-              ) : (
-                <span className="text-amber-700 dark:text-amber-400 font-bold flex items-center gap-1">
-                  <AlertCircle className="w-3 h-3 text-amber-600 dark:text-amber-400" /> API Fallback
-                </span>
-              )}
             </button>
           </div>
         </div>

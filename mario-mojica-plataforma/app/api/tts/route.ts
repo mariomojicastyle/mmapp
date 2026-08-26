@@ -134,17 +134,15 @@ async function synthesizeTtsWithPauses(text: string, voice: string): Promise<Buf
     const silenceBuffer = Buffer.from(SILENT_MP3_BASE64, "base64")
     const cleanSilenceBuffer = stripLameHeader(silenceBuffer)
     
-    const renderedSegments = await Promise.all(
-      segments.map(async (segment) => {
-        if (segment.type === "text" && typeof segment.value === "string") {
-          const buf = await synthesizeTts(segment.value, voice)
-          return stripLameHeader(buf)
-        } else if (segment.type === "pause" && typeof segment.value === "number") {
-          return Buffer.concat(Array(segment.value).fill(cleanSilenceBuffer))
-        }
-        return Buffer.alloc(0)
-      })
-    )
+    const renderedSegments: Buffer[] = []
+    for (const segment of segments) {
+      if (segment.type === "text" && typeof segment.value === "string") {
+        const buf = await synthesizeTts(segment.value, voice)
+        renderedSegments.push(stripLameHeader(buf))
+      } else if (segment.type === "pause" && typeof segment.value === "number") {
+        renderedSegments.push(Buffer.concat(Array(segment.value).fill(cleanSilenceBuffer)))
+      }
+    }
     return Buffer.concat(renderedSegments)
   } else {
     return await synthesizeTts(text, voice)
@@ -174,17 +172,17 @@ export async function POST(request: NextRequest) {
 
     // Si se solicita subir a Storage de Supabase
     if (codigoManual && storagePath) {
-      const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
-      const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY
+      const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || "https://dezaisaunoumhqpssols.supabase.co"
+      const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "sb_publishable_HyhWSanS2mhByF476p_EzA_6oq2bQOT"
 
-      if (!supabaseUrl || !serviceRoleKey) {
+      if (!supabaseUrl || !supabaseKey) {
         return NextResponse.json(
-          { error: "No se ha configurado SUPABASE_SERVICE_ROLE_KEY en el servidor." },
+          { error: "No se ha configurado la clave de Supabase en el servidor." },
           { status: 500 }
         )
       }
 
-      const supabaseAdmin = createClient(supabaseUrl, serviceRoleKey, {
+      const supabaseAdmin = createClient(supabaseUrl, supabaseKey, {
         auth: { autoRefreshToken: false, persistSession: false }
       })
 

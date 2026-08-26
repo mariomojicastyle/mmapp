@@ -406,6 +406,8 @@ export interface CalibracionVisual {
   thresholdAristas: number;      // 1 a 89 grados
   intensidadLuzDirecta: number;  // 0.0 a 3.0
   intensidadLuzAmbiental: number;// 0.0 a 2.0
+  intensidadLuzEntorno: number;  // 0.0 a 3.0 (Luz de Entorno HDRI / IBL)
+  intensidadLuzRelleno: number;  // 0.0 a 2.0 (Luz de Relleno / Fill Light)
   mostrarAristas: boolean;       // true/false
   mostrarPanelCalibracion: boolean; // Toggle flotante
   // Configuración de la Malla del Escenario (Grid / Ground Plane)
@@ -1082,6 +1084,8 @@ export const defaultCalibracion: CalibracionVisual = {
   thresholdAristas: 40,
   intensidadLuzDirecta: 1.5,
   intensidadLuzAmbiental: 0.8,
+  intensidadLuzEntorno: 1.0,
+  intensidadLuzRelleno: 0.4,
   mostrarAristas: true,
   mostrarPanelCalibracion: false,
   // Configuración de Malla del Escenario

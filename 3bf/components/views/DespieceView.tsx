@@ -1266,34 +1266,6 @@ export default function DespieceView() {
                 <span style={{ color: coloresApariencia?.textoSecundario }} className="font-mono font-bold text-xs">%</span>
               </div>
             </div>
-
-            {/* Control Global de Despunte Técnico de Cantos */}
-            <div 
-              style={{ 
-                backgroundColor: coloresApariencia?.fondoAplicacion, 
-                borderColor: coloresApariencia?.bordePaneles 
-              }}
-              className="flex items-center gap-2 border px-3 py-1 rounded-md shadow-xs transition-colors"
-              title="Despunte técnico por borde para canteadora en milímetros (Estándar de fábrica: 100 mm = 10 cm)"
-            >
-              <span style={{ color: coloresApariencia?.textoPrincipal }} className="text-[11px] font-bold">
-                Despunte Canto:
-              </span>
-              <div className="flex items-center gap-1">
-                <DecimalInput
-                  value={despunteCantoGlobalMm}
-                  decimals={0}
-                  onChange={handleDespunteCantoGlobalChange}
-                  style={{
-                    backgroundColor: coloresApariencia?.fondoPaneles,
-                    borderColor: coloresApariencia?.bordePaneles,
-                    color: coloresApariencia?.textoPrincipal,
-                  }}
-                  className="w-14 text-center font-mono font-extrabold text-xs border rounded px-1 py-0.5 outline-none shadow-xs"
-                />
-                <span style={{ color: coloresApariencia?.textoSecundario }} className="font-mono font-bold text-xs">mm</span>
-              </div>
-            </div>
           </div>
         </div>
 
@@ -1592,7 +1564,7 @@ export default function DespieceView() {
             backgroundColor: coloresApariencia?.tablaFilaFondo || coloresApariencia?.fondoPaneles, 
             borderColor: coloresApariencia?.tablaBorde || coloresApariencia?.bordePaneles 
           }}
-          className="overflow-hidden rounded-lg border shadow-sm transition-colors"
+          className="overflow-x-auto rounded-lg border shadow-sm transition-colors"
         >
           <table className="w-full text-left border-collapse text-xs">
             <thead>
@@ -1712,12 +1684,44 @@ export default function DespieceView() {
             backgroundColor: coloresApariencia?.fondoPaneles, 
             borderColor: coloresApariencia?.bordePaneles 
           }}
-          className="flex justify-between items-center p-2.5 rounded-lg border shadow-sm transition-colors"
+          className="flex flex-wrap justify-between items-center p-2.5 rounded-lg border gap-2 shadow-sm transition-colors"
         >
-          <h3 style={{ color: coloresApariencia?.textoPrincipal }} className="text-xs font-bold flex items-center gap-1.5">
+          <div className="flex items-center gap-2">
             <Ruler style={{ color: coloresApariencia?.botonActivo }} className="w-4 h-4" />
-            3. Metros lineales de canto
-          </h3>
+            <h3 style={{ color: coloresApariencia?.textoPrincipal }} className="text-xs font-bold">
+              3. Metros lineales de canto
+            </h3>
+          </div>
+
+          <div className="flex items-center gap-2 flex-wrap">
+            {/* Control Global de Despunte Técnico de Cantos */}
+            <div 
+              style={{ 
+                backgroundColor: coloresApariencia?.fondoAplicacion, 
+                borderColor: coloresApariencia?.bordePaneles 
+              }}
+              className="flex items-center gap-2 border px-3 py-1 rounded-md shadow-xs transition-colors"
+              title="Despunte técnico por borde para canteadora en milímetros (Estándar de fábrica: 100 mm = 10 cm)"
+            >
+              <span style={{ color: coloresApariencia?.textoPrincipal }} className="text-[11px] font-bold">
+                Despunte Canto:
+              </span>
+              <div className="flex items-center gap-1">
+                <DecimalInput
+                  value={despunteCantoGlobalMm}
+                  decimals={0}
+                  onChange={handleDespunteCantoGlobalChange}
+                  style={{
+                    backgroundColor: coloresApariencia?.fondoPaneles,
+                    borderColor: coloresApariencia?.bordePaneles,
+                    color: coloresApariencia?.textoPrincipal,
+                  }}
+                  className="w-14 text-center font-mono font-extrabold text-xs border rounded px-1 py-0.5 outline-none shadow-xs"
+                />
+                <span style={{ color: coloresApariencia?.textoSecundario }} className="font-mono font-bold text-xs">mm</span>
+              </div>
+            </div>
+          </div>
         </div>
 
         <div 
@@ -1725,7 +1729,7 @@ export default function DespieceView() {
             backgroundColor: coloresApariencia?.tablaFilaFondo || coloresApariencia?.fondoPaneles, 
             borderColor: coloresApariencia?.tablaBorde || coloresApariencia?.bordePaneles 
           }}
-          className="overflow-hidden rounded-lg border shadow-sm transition-colors"
+          className="overflow-x-auto rounded-lg border shadow-sm transition-colors"
         >
           <table className="w-full text-left border-collapse text-xs">
             <thead>
@@ -2397,14 +2401,12 @@ export default function DespieceView() {
               }}
               disabled={mecanizadoEnProgreso}
               style={{
-                backgroundColor: coloresApariencia?.fondoAplicacion || "#F1F5F9",
-                borderColor: coloresApariencia?.bordePaneles || "#CBD5E1",
-                color: coloresApariencia?.textoPrincipal || "#0F172A",
+                backgroundColor: coloresApariencia?.botonActivo || "#0891b2",
+                color: "#FFFFFF",
               }}
-              className="py-1.5 px-4 rounded-full border font-semibold text-xs shadow-xs transition flex items-center justify-center gap-1.5 disabled:opacity-50 cursor-pointer hover:border-cyan-500 hover:text-cyan-600 active:scale-95"
+              className="py-1.5 px-4 rounded-full font-semibold text-xs shadow-xs transition flex items-center justify-center gap-2 disabled:opacity-50 cursor-pointer hover:opacity-90 active:scale-95"
               title="Detectar contacto entre piezas y transferir perforaciones NURBS al DXF"
             >
-              <Zap className={`w-3.5 h-3.5 ${mecanizadoEnProgreso ? "animate-spin text-amber-500" : "text-amber-500"}`} />
               <span>{mecanizadoEnProgreso ? "Perforando..." : "Perforar Mueble"}</span>
             </button>
 
