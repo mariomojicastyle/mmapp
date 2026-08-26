@@ -16,16 +16,16 @@ import {
   Settings,
   Radio,
   MessageSquare,
-  Upload,
   FileUp,
-  X,
-  ExternalLink
+  UserCheck
 } from "lucide-react";
 
 export default function SalaBilingueMasterPage() {
   const params = useParams();
   const sala = (params?.sala as string) || "henn";
 
+  // Idioma de la interfaz y de la voz del usuario local
+  const [myVoiceLang, setMyVoiceLang] = useState<"es" | "pt">("es");
   const [uiLang, setUiLang] = useState<"es" | "pt">("es");
   const [summaryData, setSummaryData] = useState<any>(null);
   const [saveStatus, setSaveStatus] = useState<string | null>(null);
@@ -58,9 +58,9 @@ export default function SalaBilingueMasterPage() {
     toggleListening
   } = useLiveTranslator({
     sala,
-    role: "mario",
-    myLang: "es",
-    targetLang: "pt"
+    role: myVoiceLang === "es" ? "mario" : "cliente",
+    myLang: myVoiceLang,
+    targetLang: myVoiceLang === "es" ? "pt" : "es"
   });
 
   const isPt = uiLang === "pt";
@@ -243,9 +243,9 @@ export default function SalaBilingueMasterPage() {
   };
 
   return (
-    <div className="h-screen w-full bg-slate-100 text-slate-900 font-sans p-2 sm:p-3 flex flex-col justify-between gap-2 overflow-hidden">
-      {/* Header Adaptativo */}
-      <header className="bg-white border border-slate-200 rounded-xl sm:rounded-2xl px-3 sm:px-4 py-2 shadow-sm flex items-center justify-between gap-2 shrink-0 select-none w-full">
+    <div className="h-screen w-full bg-slate-100 text-slate-900 font-sans p-2 sm:p-3 flex flex-col justify-between gap-1.5 sm:gap-2 overflow-hidden">
+      {/* Header Sticky Siempre Visible con Controles Principales */}
+      <header className="bg-white border border-slate-200 rounded-xl sm:rounded-2xl px-2.5 sm:px-4 py-1.5 sm:py-2 shadow-sm flex items-center justify-between gap-2 shrink-0 select-none w-full z-20">
         <div className="flex items-center gap-2 sm:gap-3 min-w-0">
           <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-cyan-600 text-white flex items-center justify-center font-extrabold text-xs sm:text-sm shadow-sm shrink-0">
             MM
@@ -266,29 +266,31 @@ export default function SalaBilingueMasterPage() {
           </div>
         </div>
 
-        {/* Controles de Cabecera */}
+        {/* Barra de Acciones y Micrófono */}
         <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
-          {/* Selector de Idioma */}
-          <div className="flex items-center bg-slate-100 p-0.5 rounded-lg border border-slate-200 text-[11px] font-bold">
+          {/* Selector de Mi Idioma de Voz (¿Quién habla en este dispositivo?) */}
+          <div className="flex items-center bg-slate-100 p-0.5 rounded-lg border border-slate-200 text-[10px] sm:text-[11px] font-bold">
             <button
-              onClick={() => setUiLang("es")}
-              className={`px-2 py-0.5 rounded transition ${
-                !isPt ? "bg-white text-cyan-700 shadow-sm" : "text-slate-600 hover:text-slate-900"
+              onClick={() => { setMyVoiceLang("es"); setUiLang("es"); }}
+              className={`px-1.5 sm:px-2 py-0.5 rounded transition ${
+                myVoiceLang === "es" ? "bg-white text-cyan-700 shadow-sm" : "text-slate-600 hover:text-slate-900"
               }`}
+              title="Mi micrófono escucha en Español (Mario)"
             >
-              ES
+              Mario (ES)
             </button>
             <button
-              onClick={() => setUiLang("pt")}
-              className={`px-2 py-0.5 rounded transition ${
-                isPt ? "bg-white text-cyan-700 shadow-sm" : "text-slate-600 hover:text-slate-900"
+              onClick={() => { setMyVoiceLang("pt"); setUiLang("pt"); }}
+              className={`px-1.5 sm:px-2 py-0.5 rounded transition ${
+                myVoiceLang === "pt" ? "bg-white text-emerald-700 shadow-sm" : "text-slate-600 hover:text-slate-900"
               }`}
+              title="Meu microfone escuta em Português (Marcos)"
             >
-              PT
+              Henn (PT)
             </button>
           </div>
 
-          {/* Botón Micrófono */}
+          {/* Botón Principal de Micrófono */}
           <button
             onClick={toggleListening}
             className={`px-2.5 sm:px-3.5 py-1 sm:py-1.5 rounded-xl font-bold text-[11px] sm:text-xs flex items-center gap-1 sm:gap-1.5 transition shadow-sm ${
@@ -296,19 +298,20 @@ export default function SalaBilingueMasterPage() {
                 ? "bg-red-500 hover:bg-red-600 text-white animate-pulse"
                 : "bg-cyan-600 hover:bg-cyan-700 text-white"
             }`}
-            title={isListening ? "Pausar micrófono" : "Activar micrófono"}
+            title={isListening ? "Pausar captura de voz" : "Toca para hablar por el micrófono"}
           >
             {isListening ? <MicOff className="w-3.5 h-3.5" /> : <Mic className="w-3.5 h-3.5" />}
-            <span className="hidden xs:inline">{isListening ? (isPt ? "Gravando" : "Grabando") : (isPt ? "Áudio" : "Audio")}</span>
+            <span>{isListening ? (isPt ? "Ouvindo..." : "Grabando...") : (isPt ? "Falar" : "Hablar")}</span>
           </button>
 
           {/* Botón Guardar */}
           <button
             onClick={handleSaveToWorkspace}
-            className="bg-slate-800 hover:bg-slate-900 text-white text-[11px] sm:text-xs font-semibold px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-xl flex items-center gap-1 transition shadow-sm"
+            className="bg-slate-800 hover:bg-slate-900 text-white text-[11px] sm:text-xs font-semibold px-2 sm:px-2.5 py-1 sm:py-1.5 rounded-xl flex items-center gap-1 transition shadow-sm"
+            title="Guardar acta en el histórico"
           >
             <Save className="w-3.5 h-3.5 text-cyan-400" />
-            <span className="hidden sm:inline">{isPt ? "Salvar" : "Guardar"}</span>
+            <span className="hidden md:inline">{isPt ? "Salvar" : "Guardar"}</span>
           </button>
         </div>
       </header>
@@ -462,7 +465,6 @@ export default function SalaBilingueMasterPage() {
             {/* 2. PRESENTACIÓN / VISOR DE PDF NATIVO */}
             {(activeRightTab === "documento" || mobileActiveView === "documento") && (
               <div className={`h-full flex flex-col gap-2.5 ${mobileActiveView === "documento" ? "flex" : "hidden lg:flex"}`}>
-                {/* Cabecera del Visor de PDF y Botón de Subida */}
                 <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 pb-2 bg-slate-50 p-2.5 rounded-xl border border-slate-200">
                   <div className="flex items-center gap-2 min-w-0">
                     <div className="p-1.5 bg-cyan-100 text-cyan-800 rounded-lg shrink-0">
@@ -496,7 +498,6 @@ export default function SalaBilingueMasterPage() {
                   </div>
                 </div>
 
-                {/* Lienzo del PDF */}
                 <div className="flex-1 bg-slate-200 rounded-xl border border-slate-300 overflow-hidden flex items-center justify-center min-h-[300px]">
                   {pdfUrl ? (
                     <iframe
