@@ -457,7 +457,7 @@ export default function AIRenderStudioModal() {
           </div>
         </div>
 
-        {/* Modal Desplegable de Configuración de API Keys (fal.ai + Google) */}
+        {/* Modal Desplegable de Configuración de API Key (fal.ai Nano Banana 2) */}
         {mostrarConfigKey && (
           <div 
             className="p-4 border-b flex flex-col gap-3 text-xs shadow-inner animate-in slide-in-from-top-2"
@@ -466,66 +466,33 @@ export default function AIRenderStudioModal() {
               borderColor: coloresApariencia?.bordePaneles 
             }}
           >
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {/* 1. fal.ai API Key */}
-              <div className="flex flex-col gap-1">
-                <div className="flex items-center justify-between">
-                  <span className="font-bold flex items-center gap-1 text-emerald-600 dark:text-emerald-400">
-                    <span>⚡ fal.ai API Key (FLUX.1 Dev & Schnell):</span>
-                  </span>
-                  <a
-                    href="https://fal.ai/dashboard/keys"
-                    target="_blank"
-                    rel="noreferrer"
-                    className="text-cyan-600 hover:underline text-[11px] flex items-center gap-0.5"
-                  >
-                    <span>Obtener Key en fal.ai</span>
-                    <ExternalLink className="w-3 h-3" />
-                  </a>
-                </div>
-                <input
-                  type="password"
-                  value={tempFalKey}
-                  onChange={(e) => setTempFalKey(e.target.value)}
-                  placeholder="Pega aquí tu clave de fal.ai..."
-                  className="w-full px-3 py-1.5 rounded border text-xs font-mono outline-none"
-                  style={{
-                    backgroundColor: coloresApariencia?.fondoAplicacion,
-                    borderColor: coloresApariencia?.bordePaneles,
-                    color: coloresApariencia?.textoPrincipal
-                  }}
-                />
+            <div className="flex flex-col gap-1">
+              <div className="flex items-center justify-between">
+                <span className="font-bold flex items-center gap-1 text-emerald-600 dark:text-emerald-400">
+                  <span>⚡ fal.ai API Key (Google Nano Banana 2 Edit & Phota Enhance 4K):</span>
+                </span>
+                <a
+                  href="https://fal.ai/dashboard/keys"
+                  target="_blank"
+                  rel="noreferrer"
+                  className="text-cyan-600 hover:underline text-[11px] flex items-center gap-0.5"
+                >
+                  <span>Obtener Key en fal.ai</span>
+                  <ExternalLink className="w-3 h-3" />
+                </a>
               </div>
-
-              {/* 2. Google AI Studio Key */}
-              <div className="flex flex-col gap-1">
-                <div className="flex items-center justify-between">
-                  <span className="font-bold flex items-center gap-1 text-cyan-600 dark:text-cyan-400">
-                    <span>🌐 Google AI Studio API Key (Gemini / Imagen 3):</span>
-                  </span>
-                  <a
-                    href="https://aistudio.google.com/app/apikey"
-                    target="_blank"
-                    rel="noreferrer"
-                    className="text-cyan-600 hover:underline text-[11px] flex items-center gap-0.5"
-                  >
-                    <span>Google AI Studio</span>
-                    <ExternalLink className="w-3 h-3" />
-                  </a>
-                </div>
-                <input
-                  type="password"
-                  value={tempApiKey}
-                  onChange={(e) => setTempApiKey(e.target.value)}
-                  placeholder="Pega aquí tu clave de Google AI..."
-                  className="w-full px-3 py-1.5 rounded border text-xs font-mono outline-none"
-                  style={{
-                    backgroundColor: coloresApariencia?.fondoAplicacion,
-                    borderColor: coloresApariencia?.bordePaneles,
-                    color: coloresApariencia?.textoPrincipal
-                  }}
-                />
-              </div>
+              <input
+                type="password"
+                value={tempFalKey}
+                onChange={(e) => setTempFalKey(e.target.value)}
+                placeholder="Pega aquí tu clave de fal.ai..."
+                className="w-full px-3 py-2 rounded border text-xs font-mono outline-none"
+                style={{
+                  backgroundColor: coloresApariencia?.fondoAplicacion,
+                  borderColor: coloresApariencia?.bordePaneles,
+                  color: coloresApariencia?.textoPrincipal
+                }}
+              />
             </div>
 
             <div className="flex items-center justify-end gap-2 pt-1 border-t border-slate-200 dark:border-slate-800">
@@ -586,10 +553,8 @@ export default function AIRenderStudioModal() {
                     color: coloresApariencia?.textoPrincipal
                   }}
                 >
-                  <option value="fal_nano_banana_2">fal.ai Nano Banana 2 Edit (Google State-of-the-Art - Recomendado)</option>
+                  <option value="fal_nano_banana_2">fal.ai Nano Banana 2 Edit (Google State-of-the-Art)</option>
                   <option value="fal_nano_banana_pro">fal.ai Nano Banana PRO Edit</option>
-                  <option value="google_gemini_imagen3">Google AI Studio (Gemini 1.5 + Imagen 3)</option>
-                  <option value="flux_schnell_free">FLUX.1 Libre (Sin Claves / Fallback)</option>
                 </select>
               </div>
 
