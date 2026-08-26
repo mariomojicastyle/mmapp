@@ -2918,7 +2918,7 @@ export const use3BFStore = create<State3BF>((set, get) => ({
       if (keySaved) {
         set({ geminiApiKey: keySaved });
       } else {
-        set({ geminiApiKey: "AIzaSyDZhPnlmniUvWxHVoiXvlN4yEaplzuktSk" });
+        set({ geminiApiKey: "" });
       }
 
       const falKeySaved = localStorage.getItem("3bf_fal_api_key");
@@ -2936,7 +2936,7 @@ export const use3BFStore = create<State3BF>((set, get) => ({
   // 🤖 3BF AI Render Studio: Implementación de Estado y Métodos
   modalRenderIAAbierto: false,
   setModalRenderIAAbierto: (modalRenderIAAbierto) => set({ modalRenderIAAbierto }),
-  geminiApiKey: typeof window !== "undefined" && window.localStorage ? (localStorage.getItem("3bf_gemini_api_key") || "AIzaSyDZhPnlmniUvWxHVoiXvlN4yEaplzuktSk") : "AIzaSyDZhPnlmniUvWxHVoiXvlN4yEaplzuktSk",
+  geminiApiKey: typeof window !== "undefined" && window.localStorage ? (localStorage.getItem("3bf_gemini_api_key") || "") : "",
   setGeminiApiKey: (geminiApiKey) => {
     if (typeof window !== "undefined" && window.localStorage) {
       localStorage.setItem("3bf_gemini_api_key", geminiApiKey);

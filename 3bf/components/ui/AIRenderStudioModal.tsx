@@ -488,7 +488,7 @@ export default function AIRenderStudioModal() {
                   type="password"
                   value={tempFalKey}
                   onChange={(e) => setTempFalKey(e.target.value)}
-                  placeholder="Pega aquí tu clave fal_key_... o key de fal.ai"
+                  placeholder="Pega aquí tu clave de fal.ai..."
                   className="w-full px-3 py-1.5 rounded border text-xs font-mono outline-none"
                   style={{
                     backgroundColor: coloresApariencia?.fondoAplicacion,
@@ -518,7 +518,7 @@ export default function AIRenderStudioModal() {
                   type="password"
                   value={tempApiKey}
                   onChange={(e) => setTempApiKey(e.target.value)}
-                  placeholder="Pega aquí tu clave AIzaSy..."
+                  placeholder="Pega aquí tu clave de Google AI..."
                   className="w-full px-3 py-1.5 rounded border text-xs font-mono outline-none"
                   style={{
                     backgroundColor: coloresApariencia?.fondoAplicacion,
