@@ -13,13 +13,14 @@ export async function GET(request: NextRequest) {
   const sala = searchParams.get("sala") || "henn";
 
   try {
+    // 1. Obtener mensajes y configuraciones
     const { data: rows, error } = await supabase
       .from("ventas_interacciones")
       .select("*")
       .eq("canal", "Mesa_Bilingue")
       .eq("prospecto_id", `p-${sala}`)
       .order("created_at", { ascending: true })
-      .limit(150);
+      .limit(200);
 
     const messages: any[] = [];
     let roomConfig: any = null;
@@ -115,34 +116,39 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: true, id: msgId });
     }
 
-    // 2. Limpiar Mensajes Anteriores de la Sala
-    if (action === "clear_messages") {
+    // 2. Sincronizar Cotizador de Costos (Elimina el previo e inserta el nuevo para lectura instantánea)
+    if (action === "update_cost_params" && costParams) {
+      // Eliminar registros anteriores de costos para esta sala
       await supabase
         .from("ventas_interacciones")
         .delete()
         .eq("canal", "Mesa_Bilingue")
         .eq("prospecto_id", `p-${sala}`)
-        .eq("tipo_entrada", "mensaje_voz");
+        .eq("tipo_entrada", "cost_params");
 
-      return NextResponse.json({ success: true });
-    }
-
-    // 3. Sincronizar Cotizador de Costos
-    if (action === "update_cost_params" && costParams) {
-      await supabase.from("ventas_interacciones").insert({
+      const { error: insErr } = await supabase.from("ventas_interacciones").insert({
         id: `cost_${sala}_${Date.now()}`,
         prospecto_id: `p-${sala}`,
         canal: "Mesa_Bilingue",
         tipo_entrada: "cost_params",
         resumen_es: JSON.stringify(costParams),
-        mensaje_final_enviado: "Actualización de costos",
+        mensaje_final_enviado: "Actualización de costos sincronizada",
         created_at: new Date().toISOString()
       });
-      return NextResponse.json({ success: true });
+
+      if (insErr) throw insErr;
+      return NextResponse.json({ success: true, costParams });
     }
 
-    // 4. Sincronizar PDF
+    // 3. Sincronizar PDF
     if (action === "update_pdf" && activePdf) {
+      await supabase
+        .from("ventas_interacciones")
+        .delete()
+        .eq("canal", "Mesa_Bilingue")
+        .eq("prospecto_id", `p-${sala}`)
+        .eq("tipo_entrada", "active_pdf");
+
       await supabase.from("ventas_interacciones").insert({
         id: `pdf_${sala}_${Date.now()}`,
         prospecto_id: `p-${sala}`,
@@ -155,8 +161,15 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: true });
     }
 
-    // 5. Configurar Sala
+    // 4. Configurar Sala
     if (action === "configure_room" && roomConfig) {
+      await supabase
+        .from("ventas_interacciones")
+        .delete()
+        .eq("canal", "Mesa_Bilingue")
+        .eq("prospecto_id", `p-${sala}`)
+        .eq("tipo_entrada", "config_sala");
+
       await supabase.from("ventas_interacciones").insert({
         id: `config_${sala}_${Date.now()}`,
         prospecto_id: `p-${sala}`,
@@ -169,7 +182,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: true });
     }
 
-    // 6. Guardar Acta en Disco y Supabase
+    // 5. Guardar Acta en Disco y Supabase
     if (action === "save_session") {
       const now = new Date();
       const dateStr = now.toISOString().split("T")[0];

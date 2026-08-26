@@ -39,7 +39,7 @@ export function SplitBilingualFeed({
 
   return (
     <div className="bg-white border border-slate-200 rounded-xl sm:rounded-2xl shadow-sm flex flex-col h-full overflow-hidden select-text">
-      {/* Encabezados de las Dos Franjas (50% / 50%) */}
+      {/* Encabezados de las Dos Franjas */}
       <div className="grid grid-cols-2 border-b border-slate-200 bg-slate-50 text-slate-800 text-[11px] sm:text-xs font-bold divide-x divide-slate-200 select-none shrink-0">
         <div className="px-2.5 sm:px-4 py-2 sm:py-2.5 flex items-center justify-between min-w-0">
           <span className="flex items-center gap-1.5 sm:gap-2 truncate">
@@ -154,20 +154,29 @@ export function SplitBilingualFeed({
         </div>
       </div>
 
-      {/* BANNER DE DICTADO ACTIVO (Estilo WhatsApp) */}
+      {/* BANNER DE DICTADO ACTIVO CON VISUALIZACIÓN AMPLIA MULTILÍNEA */}
       {(interimText || isTranslating) && (
-        <div className="bg-cyan-900 text-white p-2.5 sm:p-3 border-t border-cyan-800 flex items-center justify-between gap-2 shadow-lg shrink-0 animate-in fade-in slide-in-from-bottom-2 duration-200">
-          <div className="flex items-center gap-2 min-w-0">
+        <div className="bg-slate-900 text-white p-3 sm:p-3.5 border-t border-cyan-500/50 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2.5 shadow-2xl shrink-0 z-20 animate-in fade-in slide-in-from-bottom-2 duration-200 max-h-36 overflow-y-auto">
+          <div className="flex items-start gap-2.5 min-w-0 flex-1">
             {isTranslating ? (
-              <Loader2 className="w-4 h-4 text-cyan-300 animate-spin shrink-0" />
+              <Loader2 className="w-5 h-5 text-cyan-400 animate-spin shrink-0 mt-0.5" />
             ) : (
-              <Mic className="w-4 h-4 text-red-400 animate-pulse shrink-0" />
+              <div className="p-1.5 bg-red-500/20 text-red-400 rounded-lg shrink-0 animate-pulse mt-0.5">
+                <Mic className="w-4 h-4" />
+              </div>
             )}
-            <div className="min-w-0">
-              <span className="text-[10px] text-cyan-300 font-bold block uppercase tracking-wider">
-                {isTranslating ? "Traduciendo y enviando a la sala..." : "Dictando nota en vivo:"}
-              </span>
-              <p className="text-xs sm:text-sm font-medium text-white truncate max-w-xl">
+            <div className="min-w-0 flex-1">
+              <div className="flex items-center gap-2 mb-0.5">
+                <span className="text-[10px] text-cyan-300 font-extrabold uppercase tracking-wider">
+                  {isTranslating ? "Traduciendo y sincronizando en vivo..." : "Tomando dictado de voz:"}
+                </span>
+                {!isTranslating && (
+                  <span className="text-[9px] text-slate-400 font-medium hidden xs:inline">
+                    (Pausa 2.5s o pulsa Enviar para publicar)
+                  </span>
+                )}
+              </div>
+              <p className="text-xs sm:text-sm font-medium text-white leading-relaxed whitespace-pre-wrap break-words">
                 "{interimText || "..."}"
               </p>
             </div>
@@ -176,7 +185,7 @@ export function SplitBilingualFeed({
           {!isTranslating && (
             <button
               onClick={onSubmitDictation}
-              className="bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-extrabold text-xs px-3 py-1.5 rounded-lg flex items-center gap-1 shrink-0 transition shadow"
+              className="bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-extrabold text-xs px-4 py-2 rounded-xl flex items-center gap-1.5 shrink-0 self-end sm:self-center transition shadow-lg shadow-cyan-500/20"
             >
               <span>Enviar</span>
               <ArrowRight className="w-3.5 h-3.5" />

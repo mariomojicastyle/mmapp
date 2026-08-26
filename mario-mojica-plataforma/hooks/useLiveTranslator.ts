@@ -13,6 +13,62 @@ export interface ChatMessage {
   timestamp: number;
 }
 
+// Extracción inteligente para Android Chrome y Desktop
+function extractTranscriptFromEvent(eventResults: any): string {
+  if (!eventResults || eventResults.length === 0) return "";
+
+  const lastText = eventResults[eventResults.length - 1][0]?.transcript?.trim() || "";
+  const firstText = eventResults[0][0]?.transcript?.trim() || "";
+
+  // Si el último elemento contiene el primero, Android está enviando texto acumulativo
+  if (eventResults.length > 1 && lastText.toLowerCase().includes(firstText.toLowerCase())) {
+    return lastText;
+  }
+
+  // De lo contrario, concatenar segmentos únicos
+  let combined = "";
+  for (let i = 0; i < eventResults.length; i++) {
+    const chunk = eventResults[i][0]?.transcript?.trim() || "";
+    if (chunk && !combined.includes(chunk)) {
+      combined += " " + chunk;
+    }
+  }
+  return (combined || lastText).trim();
+}
+
+// Limpiador NLP de frases y palabras duplicadas por el motor de voz
+function cleanAggressiveDuplicates(text: string): string {
+  if (!text) return "";
+  let str = text.trim();
+
+  // 1. Eliminar repetición inmediata de palabras ("hablando hablando" -> "hablando")
+  str = str.replace(/\b(\w+)(?:\s+\1\b)+/gi, "$1");
+
+  // 2. Eliminar n-gramas repetidos (de 2 a 12 palabras)
+  let words = str.split(/\s+/);
+  let changed = true;
+  let iterations = 0;
+
+  while (changed && iterations < 10) {
+    changed = false;
+    iterations++;
+    for (let len = Math.min(12, Math.floor(words.length / 2)); len >= 2; len--) {
+      for (let i = 0; i <= words.length - 2 * len; i++) {
+        const phrase1 = words.slice(i, i + len).join(" ").toLowerCase();
+        const phrase2 = words.slice(i + len, i + 2 * len).join(" ").toLowerCase();
+        if (phrase1 === phrase2) {
+          words.splice(i + len, len);
+          changed = true;
+          break;
+        }
+      }
+      if (changed) break;
+    }
+  }
+
+  return words.join(" ").trim();
+}
+
 export function useLiveTranslator({
   sala = "henn",
   role = "mario",
@@ -73,10 +129,10 @@ export function useLiveTranslator({
     }
   }, [isTTSEnabled, ttsVolume]);
 
-  // Traducir el bloque completo de dictado y enviarlo a Supabase
+  // Traducir el bloque completo limpio y publicarlo
   const translateAndCommitBlock = async (rawBlockText: string) => {
-    const textToTranslate = rawBlockText.trim();
-    if (!textToTranslate || textToTranslate.length < 2 || isTranslatingRef.current) {
+    const cleanedText = cleanAggressiveDuplicates(rawBlockText);
+    if (!cleanedText || cleanedText.length < 2 || isTranslatingRef.current) {
       return;
     }
 
@@ -91,25 +147,25 @@ export function useLiveTranslator({
     const currentSala = salaRef.current;
 
     try {
-      // 1. Traducir el bloque completo
+      // 1. Traducir el bloque limpio
       const resTrans = await fetch("/api/copiloto/traducir", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          text: textToTranslate,
+          text: cleanedText,
           fromLang: currentMyLang,
           toLang: currentTargetLang
         })
       });
 
       const transData = await resTrans.json();
-      const translated = transData.translation || textToTranslate;
+      const translated = cleanAggressiveDuplicates(transData.translation || cleanedText);
 
       const newMsg: ChatMessage = {
         id: `msg_${currentSala}_${Date.now()}_${Math.random().toString(36).substr(2, 4)}`,
         speaker: currentRole as any,
         speakerName: currentRole === "mario" ? "Mario Mojica" : "Marcos Unnass",
-        originalText: textToTranslate,
+        originalText: cleanedText,
         translatedText: translated,
         fromLang: currentMyLang,
         toLang: currentTargetLang,
@@ -162,20 +218,16 @@ export function useLiveTranslator({
     };
 
     recognition.onresult = (event: any) => {
-      let fullTranscript = "";
-      for (let i = 0; i < event.results.length; ++i) {
-        fullTranscript += event.results[i][0].transcript + " ";
-      }
+      const extracted = extractTranscriptFromEvent(event.results);
+      const cleaned = cleanAggressiveDuplicates(extracted);
 
-      const text = fullTranscript.trim();
-      currentDictationTextRef.current = text;
-      setInterimText(text);
+      currentDictationTextRef.current = cleaned;
+      setInterimText(cleaned);
 
-      // Esperar 2.5 segundos de silencio natural tras terminar de hablar antes de traducir el bloque
+      // Esperar 2.5 segundos de silencio antes de traducir y enviar
       if (silenceTimerRef.current) clearTimeout(silenceTimerRef.current);
       silenceTimerRef.current = setTimeout(() => {
         if (currentDictationTextRef.current && isListeningRef.current) {
-          // Detener dictado y traducir el bloque completo
           toggleListening();
         }
       }, 2500);
@@ -248,12 +300,11 @@ export function useLiveTranslator({
     return () => clearInterval(pollInterval);
   }, [sala, speakText]);
 
-  // Encender / Apagar Micrófono con 1 Clic
+  // Control manual del micrófono
   const toggleListening = () => {
     if (!recognitionRef.current) return;
 
     if (isListeningRef.current) {
-      // 1. APAGAR INMEDIATAMENTE
       manualStopRef.current = true;
       isListeningRef.current = false;
       setIsListening(false);
@@ -263,13 +314,11 @@ export function useLiveTranslator({
         recognitionRef.current.abort();
       } catch (e) {}
 
-      // 2. Si había texto dictado, traducirlo y publicarlo
       const textToCommit = currentDictationTextRef.current;
       if (textToCommit) {
         translateAndCommitBlock(textToCommit);
       }
     } else {
-      // 1. ENCENDER
       currentDictationTextRef.current = "";
       setInterimText("");
       manualStopRef.current = false;
@@ -283,7 +332,6 @@ export function useLiveTranslator({
     }
   };
 
-  // Función para forzar envío del dictado
   const submitCurrentDictation = () => {
     if (currentDictationTextRef.current) {
       toggleListening();
