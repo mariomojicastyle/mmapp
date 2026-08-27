@@ -1810,3 +1810,22 @@ Con esta batería de arreglos y la validación en caliente, la V20 se establece 
 - **Sincronización de CRM y RAM de Ventas**:
   * Actualización de `Comercial/RAM_de_ventas.md` y `data/ventas_ram_storage.json` con el contacto directo de WhatsApp de Jonas Borck (`+55 49 9982-75012`), acuerdos previos y la preparación de la reunión técnica con Marcos Unnass a las 09:00 AM BRT.
 
+---
+
+### 🔹 Hito Henn_2da_reu — Libro Financiero Multidivisa Dinámico (BRL / USD / COP), Alineación Simétrica 1:1, Calibración Ponderada por Rango de Piezas y Extensión Chrome Meet (27 de Agosto, 2026)
+
+- **Libro Financiero y Cotizador Maestro Multi-Pestaña (`temporal/Cotizador_Costos_Moveis_Henn_Mario_Mojica.xlsx`)**:
+  * **Pestaña 1: `1. Cotizador Henn (BRL)`**: 100% en Português do Brasil y Reais (`R$`), orientada a la directiva de Móveis Henn (Jonas Borck y Marcos Unnass), con parámetros editables de volumen anual (200 manuales), diseñadores en planta, salario CLT + cargas, licencias de software (SketchUp + InDesign) y horas de soporte SAC.
+  * **Pestaña 2: `2. Cotizador Henn (USD)`**: Pestaña internacional en Dólares (`$ USD`), con celda de control TRM BRL/USD (`D5 = 5.14`) vinculada en tiempo real a la pestaña master en Reais.
+  * **Pestaña 3: `3. Cotizador Henn (COP)`**: Pestaña de conversión nacional en Pesos Colombianos (`$ COP`), con celda de control TRM USD/COP (`D5 = $ 3.000`) vinculada en tiempo real.
+  * **Pestaña 4: `4. Rentabilidad Mario (COP)`**: Matriz financiera de negocio personal con liquidación de facturación anual, flujo mensual, costos de servidores VPS/Supabase, deducción de comisión Swift/bancaria (4%), margen neto de rentabilidad y simulación de escala B2B en Brasil de 1 a 10 fabricantes.
+- **Alineación Simétrica Estricta 1:1 de Celdas**:
+  * Homologación celda por celda en las 4 pestañas para facilitar la lectura inmediata (`D5` TRM, `D7` Propuesta Mario Anual, `F7` Ahorro Anual, `D11` Total Manuales, `D12` Diseñadores, `D13` Salario CLT, `D18` Costo Total Operación, `D22` % Descuento, filas 25-29 Escenarios, filas 34-36 Complejidad de Mueble).
+- **Modelo Matemático Ponderado por Rango de Piezas y Tiempos de Fabricación RTA**:
+  * **Pequeño (Hasta 10 piezas / ~1 día de trabajo - Factor `0.65x`)**: Costo Interno Henn $607.349 COP / Propuesta Mario $425.144 COP (Ahorro $182.205 COP) para mesas de luz, nichos, paneles simples y repisas.
+  * **Mediano (11 a 24 piezas / ~1.5 días de trabajo - Factor `1.00x` - Promedio Henn ~20 piezas)**: Costo Interno Henn $934.383 COP / Propuesta Mario $654.068 COP (Ahorro $280.315 COP) coincidiendo al centavo con el precio estándar recomendado del 30% de ahorro.
+  * **Grande / Complejo (25 a 40 piezas / ~2 días de trabajo - Factor `1.35x`)**: Costo Interno Henn $1.261.417 COP / Propuesta Mario $882.992 COP (Ahorro $378.425 COP) para roperos de 6 puertas y cocinas moduladas.
+- **Desarrollo de Extensión Chrome Universal Google Meet (`mario-mojica-meet-extension/`)**:
+  * Creación del paquete de extensión de navegador Chrome Manifest V3 con Background Service Worker, Content Script e inyección de subtítulos en vivo en Google Meet para capturar audio/texto y sincronizar en tiempo real con el copiloto bilingüe.
+
+
