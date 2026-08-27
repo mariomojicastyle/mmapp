@@ -18,7 +18,6 @@ import {
   FileUp,
   FolderOpen,
   Copy,
-  Volume2,
   Trash2
 } from "lucide-react";
 
@@ -30,6 +29,8 @@ export default function SalaBilingueMasterPage() {
   const [isConfigModalOpen, setIsConfigModalOpen] = useState(false);
   const [isHistorialModalOpen, setIsHistorialModalOpen] = useState(false);
 
+  // Selector de Idioma de Escucha: "es" (Mario en Español) | "pt" (Cliente/YouTube en Portugués)
+  const [activeVoiceLang, setActiveVoiceLang] = useState<"es" | "pt">("es");
   const [uiLang, setUiLang] = useState<"es" | "pt">("es");
   const [summaryData, setSummaryData] = useState<any>(null);
   const [saveStatus, setSaveStatus] = useState<string | null>(null);
@@ -74,8 +75,6 @@ export default function SalaBilingueMasterPage() {
 
   const {
     isMeetingActive,
-    isSystemAudioActive,
-    enableSystemAudioCapture,
     interimText,
     messages,
     isTranslating,
@@ -83,6 +82,7 @@ export default function SalaBilingueMasterPage() {
     clearMessages
   } = useLiveTranslator({
     sala,
+    activeLang: activeVoiceLang,
     participanteCliente: participantes2[0] || "Marcos Unnass",
     participanteMario: participantes1[0] || "Mario Mojica"
   });
@@ -426,19 +426,31 @@ export default function SalaBilingueMasterPage() {
 
         {/* Acciones de la Marca */}
         <div className="flex items-center gap-2 shrink-0">
-          {/* BOTÓN CAPTURAR AUDIO DE LA TARJETA DE SONIDO / MEET */}
-          <button
-            onClick={enableSystemAudioCapture}
-            className={`px-3 py-1.5 rounded-xl font-bold text-xs flex items-center gap-1.5 transition border ${
-              isSystemAudioActive
-                ? "bg-emerald-50 text-emerald-800 border-emerald-300 shadow-sm"
-                : "bg-slate-100 hover:bg-slate-200 text-slate-700 border-slate-300"
-            }`}
-            title="Capturar audio digital de Google Meet, Zoom o tarjeta de sonido"
-          >
-            <Volume2 className={`w-3.5 h-3.5 ${isSystemAudioActive ? "text-emerald-600 animate-pulse" : "text-slate-500"}`} />
-            <span className="hidden sm:inline">{isSystemAudioActive ? "Audio Tarjeta Activo" : "Capturar Audio Tarjeta"}</span>
-          </button>
+          {/* SELECTOR RÁPIDO DE IDIOMA DE ESCUCHA (ES: Mario / PT: YouTube o Cliente) */}
+          <div className="flex items-center bg-slate-100 p-0.5 rounded-xl border border-slate-300 text-[10px] sm:text-xs font-extrabold shadow-inner">
+            <button
+              onClick={() => { setActiveVoiceLang("es"); setUiLang("es"); }}
+              className={`px-2.5 py-1 rounded-lg transition ${
+                activeVoiceLang === "es"
+                  ? "bg-white text-cyan-800 shadow-sm border border-slate-200 font-black"
+                  : "text-slate-500 hover:text-slate-900"
+              }`}
+              title="Escuchar en Español (Mi voz) y traducir a Portugués"
+            >
+              ES
+            </button>
+            <button
+              onClick={() => { setActiveVoiceLang("pt"); setUiLang("pt"); }}
+              className={`px-2.5 py-1 rounded-lg transition ${
+                activeVoiceLang === "pt"
+                  ? "bg-white text-emerald-700 shadow-sm border border-slate-200 font-black"
+                  : "text-slate-500 hover:text-slate-900"
+              }`}
+              title="Escuchar en Português (Cliente / YouTube) y traducir a Español"
+            >
+              PT
+            </button>
+          </div>
 
           {/* BOTÓN MAESTRO: INICIAR REUNIÓN (Estilo Marca Cyan-700 / Sin Icono) */}
           <button

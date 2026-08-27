@@ -44,78 +44,18 @@ function cleanAggressiveDuplicates(text: string): string {
   return words.join(" ").trim();
 }
 
-// Clasificador Heurístico Automático de Idioma e Interlocutor (Español / Português)
-function detectLanguageAndSpeaker(
-  text: string,
-  clientName = "Marcos Unnass",
-  hostName = "Mario Mojica"
-): { fromLang: "es" | "pt"; toLang: "es" | "pt"; speaker: "mario" | "cliente"; speakerName: string } {
-  if (!text) return { fromLang: "es", toLang: "pt", speaker: "mario", speakerName: hostName };
-
-  const lower = text.toLowerCase();
-
-  const ptPatterns = [
-    /\b(voc[eê]|voces|vocês)\b/i,
-    /\b(n[aã]o|n[aã]o [eé]|n[aã]o est[aá]|n[aã]o temos)\b/i,
-    /\b(obrigad[oa]|valeu|beleza|tchau|obrigado|obrigada)\b/i,
-    /\b(tudo bem|bom dia|boa tarde|boa noite)\b/i,
-    /\b(fala|falar|falando|falou)\b/i,
-    /\b(ent[aã]o|tamb[eé]m|al[eé]m|est[aá]|est[aã]o)\b/i,
-    /\b(pra|pro|pras|pros|dum|duma|pelo|pela|pelos|pelas)\b/i,
-    /\b(reuni[aã]o|inova[cç][aã]o|f[aá]brica|m[oó]veis|produ[cç][aã]o)\b/i,
-    /\b(custos|desenvolvimento|engenharia|montagem|manual)\b/i,
-    /\b(com certeza|t[aá] bom|fechado|isso mesmo)\b/i,
-    /\b(legal|bacana|otimo|[oó]timo|perfeito)\b/i
-  ];
-
-  const esPatterns = [
-    /\b(usted|ustedes|nosotros|vosotros)\b/i,
-    /\b(gracias|muchas gracias|de nada|hola)\b/i,
-    /\b(buenos d[ií]as|buenas tardes|buenas noches)\b/i,
-    /\b(estamos|estoy|estaba|tenemos|podemos|vamos)\b/i,
-    /\b(entonces|tambi[eé]n|adem[aá]s|despu[eé]s)\b/i,
-    /\b(por el|por la|para el|para la|del)\b/i,
-    /\b(reuni[oó]n|f[aá]brica|muebles|producci[oó]n|ahorro)\b/i,
-    /\b(claro que s[ií]|de acuerdo|perfecto|listo)\b/i
-  ];
-
-  let ptScore = 0;
-  let esScore = 0;
-
-  ptPatterns.forEach(p => { if (p.test(lower)) ptScore += 2; });
-  esPatterns.forEach(p => { if (p.test(lower)) esScore += 2; });
-
-  if (/[çãõê]/i.test(lower)) ptScore += 3;
-  if (/[ñ¿¡]/i.test(lower)) esScore += 3;
-
-  if (ptScore > esScore) {
-    return {
-      fromLang: "pt",
-      toLang: "es",
-      speaker: "cliente",
-      speakerName: clientName
-    };
-  }
-
-  return {
-    fromLang: "es",
-    toLang: "pt",
-    speaker: "mario",
-    speakerName: hostName
-  };
-}
-
 export function useLiveTranslator({
   sala = "henn",
+  activeLang = "es",
   participanteCliente = "Marcos Unnass",
   participanteMario = "Mario Mojica"
 }: {
   sala?: string;
+  activeLang?: "es" | "pt";
   participanteCliente?: string;
   participanteMario?: string;
 }) {
   const [isMeetingActive, setIsMeetingActive] = useState(false);
-  const [isSystemAudioActive, setIsSystemAudioActive] = useState(false);
   const [interimText, setInterimText] = useState("");
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [isConnected, setIsConnected] = useState(true);
@@ -124,9 +64,9 @@ export function useLiveTranslator({
   const recognitionRef = useRef<any>(null);
   const isMeetingActiveRef = useRef<boolean>(false);
   const manualStopRef = useRef<boolean>(false);
-  const systemMediaStreamRef = useRef<MediaStream | null>(null);
 
   const salaRef = useRef<string>(sala);
+  const activeLangRef = useRef<string>(activeLang);
   const clientNameRef = useRef<string>(participanteCliente);
   const hostNameRef = useRef<string>(participanteMario);
 
@@ -135,9 +75,14 @@ export function useLiveTranslator({
 
   useEffect(() => {
     salaRef.current = sala;
+    activeLangRef.current = activeLang;
     clientNameRef.current = participanteCliente;
     hostNameRef.current = participanteMario;
-  }, [sala, participanteCliente, participanteMario]);
+
+    if (recognitionRef.current && isMeetingActiveRef.current) {
+      recognitionRef.current.lang = activeLang === "pt" ? "pt-BR" : "es-CO";
+    }
+  }, [sala, activeLang, participanteCliente, participanteMario]);
 
   // Consultar mensajes del servidor
   const fetchRoomMessages = useCallback(async () => {
@@ -173,7 +118,7 @@ export function useLiveTranslator({
     } catch (e) {}
   };
 
-  // Traducir y emitir de inmediato con Auto-Detección de Idioma e Interlocutor
+  // Traducir y emitir de inmediato
   const translateAndCommit = async (rawText: string) => {
     const cleanedText = cleanAggressiveDuplicates(rawText);
     if (!cleanedText || cleanedText.length < 2 || cleanedText === lastProcessedTextRef.current) {
@@ -184,12 +129,12 @@ export function useLiveTranslator({
     setIsTranslating(true);
     setInterimText("");
 
-    const detected = detectLanguageAndSpeaker(
-      cleanedText,
-      clientNameRef.current,
-      hostNameRef.current
-    );
-
+    const currentLang = activeLangRef.current;
+    const isPtSource = currentLang === "pt";
+    const fromLang = isPtSource ? "pt" : "es";
+    const toLang = isPtSource ? "es" : "pt";
+    const speaker = isPtSource ? "cliente" : "mario";
+    const speakerName = isPtSource ? clientNameRef.current : hostNameRef.current;
     const currentSala = salaRef.current;
 
     try {
@@ -198,8 +143,8 @@ export function useLiveTranslator({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           text: cleanedText,
-          fromLang: detected.fromLang,
-          toLang: detected.toLang
+          fromLang,
+          toLang
         })
       });
 
@@ -208,12 +153,12 @@ export function useLiveTranslator({
 
       const newMsg: ChatMessage = {
         id: `msg_${currentSala}_${Date.now()}_${Math.random().toString(36).substr(2, 4)}`,
-        speaker: detected.speaker,
-        speakerName: detected.speakerName,
+        speaker,
+        speakerName,
         originalText: cleanedText,
         translatedText: translated,
-        fromLang: detected.fromLang,
-        toLang: detected.toLang,
+        fromLang,
+        toLang,
         timestamp: Date.now()
       };
 
@@ -236,33 +181,7 @@ export function useLiveTranslator({
     }
   };
 
-  // Capturar Audio Digital de Tarjeta de Sonido / Pestaña de Meet / Teams
-  const enableSystemAudioCapture = async () => {
-    try {
-      if (!navigator.mediaDevices?.getDisplayMedia) {
-        alert("Tu navegador no soporta captura de audio de pantalla/sistema.");
-        return;
-      }
-
-      const stream = await navigator.mediaDevices.getDisplayMedia({
-        video: true,
-        audio: true
-      });
-
-      systemMediaStreamRef.current = stream;
-      setIsSystemAudioActive(true);
-
-      stream.getVideoTracks()[0].onended = () => {
-        setIsSystemAudioActive(false);
-        systemMediaStreamRef.current = null;
-      };
-
-    } catch (err) {
-      console.warn("Captura de audio de sistema cancelada:", err);
-    }
-  };
-
-  // Inicializar Web Speech Recognition Fluido
+  // Inicializar Web Speech Recognition con el micrófono del portátil
   useEffect(() => {
     if (typeof window === "undefined") return;
 
@@ -277,7 +196,7 @@ export function useLiveTranslator({
     const recognition = new SpeechRecognition();
     recognition.continuous = true;
     recognition.interimResults = true;
-    recognition.lang = "es-CO";
+    recognition.lang = activeLang === "pt" ? "pt-BR" : "es-CO";
 
     recognition.onstart = () => {
       setIsMeetingActive(true);
@@ -345,11 +264,8 @@ export function useLiveTranslator({
       try {
         recognition.abort();
       } catch (e) {}
-      if (systemMediaStreamRef.current) {
-        systemMediaStreamRef.current.getTracks().forEach(t => t.stop());
-      }
     };
-  }, []);
+  }, [activeLang]);
 
   // Polling de sincronización cada 1s
   useEffect(() => {
@@ -391,8 +307,6 @@ export function useLiveTranslator({
   return {
     isMeetingActive,
     isListening: isMeetingActive,
-    isSystemAudioActive,
-    enableSystemAudioCapture,
     interimText,
     messages,
     isConnected,
