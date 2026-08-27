@@ -18,7 +18,8 @@ import {
   FileUp,
   FolderOpen,
   Copy,
-  Volume2
+  Volume2,
+  Trash2
 } from "lucide-react";
 
 export default function SalaBilingueMasterPage() {
@@ -78,7 +79,8 @@ export default function SalaBilingueMasterPage() {
     interimText,
     messages,
     isTranslating,
-    toggleMeeting
+    toggleMeeting,
+    clearMessages
   } = useLiveTranslator({
     sala,
     participanteCliente: participantes2[0] || "Marcos Unnass",
@@ -184,6 +186,15 @@ export default function SalaBilingueMasterPage() {
       navigator.clipboard.writeText(fullUrl);
       setCopyLinkStatus(true);
       setTimeout(() => setCopyLinkStatus(false), 3000);
+    }
+  };
+
+  // Limpiar Diálogo de la Sala
+  const handleClearDialog = () => {
+    if (confirm("¿Deseas limpiar todos los mensajes del diálogo de esta sala?")) {
+      clearMessages();
+      setSaveStatus("Diálogo limpiado con éxito.");
+      setTimeout(() => setSaveStatus(null), 3000);
     }
   };
 
@@ -399,6 +410,15 @@ export default function SalaBilingueMasterPage() {
               >
                 {copyLinkStatus ? <Check className="w-3 h-3 text-emerald-600" /> : <Copy className="w-3 h-3 text-slate-500" />}
                 <span>{copyLinkStatus ? "Copiado!" : "Copiar Link"}</span>
+              </button>
+              {/* Botón Limpiar Diálogo */}
+              <button
+                onClick={handleClearDialog}
+                className="text-[10px] text-slate-500 hover:text-red-600 bg-slate-50 hover:bg-red-50 border border-slate-200 hover:border-red-200 px-1.5 py-0.5 rounded font-bold flex items-center gap-1 transition shrink-0"
+                title="Limpiar diálogo de prueba"
+              >
+                <Trash2 className="w-3 h-3" />
+                <span>Limpiar</span>
               </button>
             </div>
           </div>

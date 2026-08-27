@@ -148,27 +148,30 @@ export function useLiveTranslator({
         const data = await res.json();
         setIsConnected(true);
         if (data.allMessages && Array.isArray(data.allMessages)) {
-          setMessages(prev => {
-            const existingMap = new Map(prev.map(m => [m.id, m]));
-            let hasNew = false;
-
-            data.allMessages.forEach((incoming: ChatMessage) => {
-              if (!existingMap.has(incoming.id)) {
-                existingMap.set(incoming.id, incoming);
-                hasNew = true;
-              }
-            });
-
-            return hasNew
-              ? Array.from(existingMap.values()).sort((a, b) => a.timestamp - b.timestamp)
-              : prev;
-          });
+          setMessages(data.allMessages);
         }
       }
     } catch (e) {
       setIsConnected(false);
     }
   }, []);
+
+  // Limpiar mensajes locales y de la base de datos
+  const clearMessages = async () => {
+    setMessages([]);
+    setInterimText("");
+    lastProcessedTextRef.current = "";
+    try {
+      await fetch("/api/copiloto/sesion", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "delete_room_data",
+          sala: salaRef.current
+        })
+      });
+    } catch (e) {}
+  };
 
   // Traducir y emitir de inmediato con Auto-Detección de Idioma e Interlocutor
   const translateAndCommit = async (rawText: string) => {
@@ -181,7 +184,6 @@ export function useLiveTranslator({
     setIsTranslating(true);
     setInterimText("");
 
-    // Auto-detectar si quien habló fue Mario (ES) o el Cliente (PT)
     const detected = detectLanguageAndSpeaker(
       cleanedText,
       clientNameRef.current,
@@ -242,7 +244,6 @@ export function useLiveTranslator({
         return;
       }
 
-      // Solicitar captura de la pestaña con audio
       const stream = await navigator.mediaDevices.getDisplayMedia({
         video: true,
         audio: true
@@ -251,14 +252,13 @@ export function useLiveTranslator({
       systemMediaStreamRef.current = stream;
       setIsSystemAudioActive(true);
 
-      // Si el usuario deja de compartir la pantalla
       stream.getVideoTracks()[0].onended = () => {
         setIsSystemAudioActive(false);
         systemMediaStreamRef.current = null;
       };
 
     } catch (err) {
-      console.warn("Captura de audio de sistema cancelada o no permitida:", err);
+      console.warn("Captura de audio de sistema cancelada:", err);
     }
   };
 
@@ -277,7 +277,6 @@ export function useLiveTranslator({
     const recognition = new SpeechRecognition();
     recognition.continuous = true;
     recognition.interimResults = true;
-    // Reconocimiento bilingüe / español latino con auto-detección
     recognition.lang = "es-CO";
 
     recognition.onstart = () => {
@@ -399,6 +398,7 @@ export function useLiveTranslator({
     isConnected,
     isTranslating,
     toggleMeeting,
-    toggleListening: toggleMeeting
+    toggleListening: toggleMeeting,
+    clearMessages
   };
 }
