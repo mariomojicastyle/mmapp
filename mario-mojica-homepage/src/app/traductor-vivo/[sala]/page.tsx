@@ -7,6 +7,7 @@ import { HennOperationCostEngine, CostParameters } from "@/components/copiloto/H
 import { SplitBilingualFeed } from "@/components/copiloto/SplitBilingualFeed";
 import { ModalConfiguracionSala, RoomConfigData } from "@/components/copiloto/ModalConfiguracionSala";
 import { ModalHistorialActas } from "@/components/copiloto/ModalHistorialActas";
+import { ModalConectarMeet } from "@/components/copiloto/ModalConectarMeet";
 import {
   Save,
   Check,
@@ -18,7 +19,8 @@ import {
   FileUp,
   FolderOpen,
   Copy,
-  Trash2
+  Trash2,
+  Video
 } from "lucide-react";
 
 export default function SalaBilingueMasterPage() {
@@ -28,6 +30,7 @@ export default function SalaBilingueMasterPage() {
   // Modales
   const [isConfigModalOpen, setIsConfigModalOpen] = useState(false);
   const [isHistorialModalOpen, setIsHistorialModalOpen] = useState(false);
+  const [isMeetModalOpen, setIsMeetModalOpen] = useState(false);
 
   // Selector de Idioma de Escucha: "es" (Mario en Español) | "pt" (Cliente/YouTube en Portugués)
   const [activeVoiceLang, setActiveVoiceLang] = useState<"es" | "pt">("es");
@@ -385,6 +388,12 @@ export default function SalaBilingueMasterPage() {
         onClose={() => setIsHistorialModalOpen(false)}
       />
 
+      <ModalConectarMeet
+        isOpen={isMeetModalOpen}
+        sala={sala}
+        onClose={() => setIsMeetModalOpen(false)}
+      />
+
       {/* 1. Header Compacto Fijo con Botones Alineados a la Marca */}
       <header className="bg-white border border-slate-200 rounded-xl sm:rounded-2xl px-2.5 sm:px-4 py-1.5 shadow-sm flex items-center justify-between gap-2 shrink-0 select-none w-full z-30">
         <div className="flex items-center gap-2 sm:gap-3 min-w-0">
@@ -426,7 +435,17 @@ export default function SalaBilingueMasterPage() {
 
         {/* Acciones de la Marca */}
         <div className="flex items-center gap-2 shrink-0">
-          {/* SELECTOR RÁPIDO DE IDIOMA DE ESCUCHA (ES: Mario / PT: YouTube o Cliente) */}
+          {/* BOTÓN CONECTAR GOOGLE MEET DIRECTO */}
+          <button
+            onClick={() => setIsMeetModalOpen(true)}
+            className="bg-cyan-50 hover:bg-cyan-100 text-cyan-800 border border-cyan-300 text-xs font-extrabold px-3 py-1.5 rounded-xl flex items-center gap-1.5 transition shadow-sm"
+            title="Conectar los subtítulos de Google Meet directamente a la pantalla"
+          >
+            <Video className="w-3.5 h-3.5 text-cyan-600" />
+            <span className="hidden sm:inline">Conectar Meet</span>
+          </button>
+
+          {/* SELECTOR RÁPIDO DE IDIOMA DE ESCUCHA (ES / PT) */}
           <div className="flex items-center bg-slate-100 p-0.5 rounded-xl border border-slate-300 text-[10px] sm:text-xs font-extrabold shadow-inner">
             <button
               onClick={() => { setActiveVoiceLang("es"); setUiLang("es"); }}
@@ -452,7 +471,7 @@ export default function SalaBilingueMasterPage() {
             </button>
           </div>
 
-          {/* BOTÓN MAESTRO: INICIAR REUNIÓN (Estilo Marca Cyan-700 / Sin Icono) */}
+          {/* BOTÓN MAESTRO: INICIAR REUNIÓN */}
           <button
             onClick={toggleMeeting}
             className={`px-4 py-1.5 rounded-xl font-extrabold text-xs transition shadow-sm ${
@@ -465,7 +484,7 @@ export default function SalaBilingueMasterPage() {
             <span>{isMeetingActive ? "Finalizar Reunión" : "Iniciar Reunión"}</span>
           </button>
 
-          {/* BOTÓN ACTAS (Sin Icono) */}
+          {/* BOTÓN ACTAS */}
           <button
             onClick={() => setIsHistorialModalOpen(true)}
             className="bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold px-3 py-1.5 rounded-xl border border-slate-300 transition shadow-sm"
@@ -474,7 +493,7 @@ export default function SalaBilingueMasterPage() {
             <span>Actas</span>
           </button>
 
-          {/* BOTÓN GUARDAR (Estilo Marca Cyan-700 + Único Icono) */}
+          {/* BOTÓN GUARDAR */}
           <button
             onClick={handleSaveToWorkspace}
             className="bg-cyan-700 hover:bg-cyan-800 text-white text-xs font-extrabold px-3.5 py-1.5 rounded-xl flex items-center gap-1.5 transition shadow-sm"
