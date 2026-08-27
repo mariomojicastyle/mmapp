@@ -2,7 +2,7 @@
 
 import React, { useEffect, useRef } from "react";
 import { ChatMessage } from "@/hooks/useLiveTranslator";
-import { Download, Mic, ArrowRight, Loader2 } from "lucide-react";
+import { Download, Loader2 } from "lucide-react";
 
 export function SplitBilingualFeed({
   messages,
@@ -13,8 +13,7 @@ export function SplitBilingualFeed({
   participanteMario = "Mario Mojica",
   uiLang = "es",
   onDownloadBoth,
-  onDownloadPtPdf,
-  onSubmitDictation
+  onDownloadPtPdf
 }: {
   messages: ChatMessage[];
   interimText: string;
@@ -25,7 +24,6 @@ export function SplitBilingualFeed({
   uiLang?: "es" | "pt";
   onDownloadBoth?: () => void;
   onDownloadPtPdf?: () => void;
-  onSubmitDictation?: () => void;
 }) {
   const bottomRefPt = useRef<HTMLDivElement>(null);
   const bottomRefEs = useRef<HTMLDivElement>(null);
@@ -35,56 +33,87 @@ export function SplitBilingualFeed({
     bottomRefEs.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, interimText]);
 
-  const isPt = uiLang === "pt";
-
   return (
     <div className="bg-white border border-slate-200 rounded-xl sm:rounded-2xl shadow-sm flex flex-col h-full overflow-hidden select-text">
-      {/* Encabezados de las Dos Franjas */}
-      <div className="grid grid-cols-2 border-b border-slate-200 bg-slate-50 text-slate-800 text-[11px] sm:text-xs font-bold divide-x divide-slate-200 select-none shrink-0">
-        <div className="px-2.5 sm:px-4 py-2 sm:py-2.5 flex items-center justify-between min-w-0">
-          <span className="flex items-center gap-1.5 sm:gap-2 truncate">
-            <span className="w-2 sm:w-2.5 h-2 sm:h-2.5 rounded-full bg-emerald-500 shrink-0" />
+      {/* 1. LEYENDA SUPERIOR DE INTERLOCUTORES CON BOLITAS DE COLOR */}
+      <div className="border-b border-slate-200 bg-slate-50 px-3 py-1.5 flex flex-wrap items-center justify-between gap-2 text-[11px] font-bold select-none shrink-0">
+        <div className="flex items-center gap-3">
+          {/* Bolita Cian: Mario */}
+          <span className="flex items-center gap-1.5 text-slate-800">
+            <span className="w-2.5 h-2.5 rounded-full bg-cyan-500 shadow-sm shrink-0" />
+            <span>{participanteMario}</span>
+            <span className="text-[9px] text-slate-400 font-normal">(Español - Negrilla)</span>
+          </span>
+
+          {/* Bolita Esmeralda: Cliente */}
+          <span className="flex items-center gap-1.5 text-slate-800">
+            <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 shadow-sm shrink-0" />
+            <span>{participanteCliente}</span>
+            <span className="text-[9px] text-slate-400 font-normal">(Português - Tono Grafito)</span>
+          </span>
+        </div>
+
+        <span className="text-[10px] text-slate-400 font-semibold hidden md:inline">
+          Transcripción Simultánea B2B
+        </span>
+      </div>
+
+      {/* 2. Encabezados de las Dos Columnas */}
+      <div className="grid grid-cols-2 border-b border-slate-200 bg-white text-slate-900 text-xs font-extrabold divide-x divide-slate-200 select-none shrink-0">
+        <div className="px-3 py-2 flex items-center justify-between">
+          <span className="flex items-center gap-1.5 truncate">
+            <span className="w-2 h-2 rounded-full bg-emerald-500 shrink-0" />
             <span className="truncate">Português ({clienteNombre})</span>
           </span>
-          <span className="text-[9px] sm:text-[10px] text-slate-400 font-normal hidden xs:inline shrink-0">{participanteCliente}</span>
         </div>
-        <div className="px-2.5 sm:px-4 py-2 sm:py-2.5 flex items-center justify-between min-w-0">
-          <span className="flex items-center gap-1.5 sm:gap-2 truncate">
-            <span className="w-2 sm:w-2.5 h-2 sm:h-2.5 rounded-full bg-cyan-500 shrink-0" />
+        <div className="px-3 py-2 flex items-center justify-between">
+          <span className="flex items-center gap-1.5 truncate">
+            <span className="w-2 h-2 rounded-full bg-cyan-500 shrink-0" />
             <span className="truncate">Español (Mario)</span>
           </span>
-          <span className="text-[9px] sm:text-[10px] text-slate-400 font-normal hidden xs:inline shrink-0">{participanteMario}</span>
         </div>
       </div>
 
-      {/* Cajas de Diálogo Paralelo */}
+      {/* 3. Cajas de Diálogo Paralelo Minimalistas */}
       <div className="grid grid-cols-2 divide-x divide-slate-200 flex-1 overflow-hidden select-text cursor-text min-h-0">
         {/* COLUMNA 1: PORTUGUÊS */}
         <div className="flex flex-col justify-between bg-white h-full overflow-hidden select-text">
-          <div className="flex-1 overflow-y-auto p-2.5 sm:p-4 space-y-2 sm:space-y-2.5 font-sans text-xs sm:text-sm text-slate-800 leading-relaxed select-text">
+          <div className="flex-1 overflow-y-auto p-3 sm:p-4 space-y-2 font-sans text-xs sm:text-sm leading-relaxed select-text">
             {messages.length === 0 && (
-              <div className="h-full flex flex-col items-center justify-center text-center text-slate-400 py-12 px-2 sm:px-4 select-none">
-                <p className="font-semibold text-[11px] sm:text-xs text-slate-600">Transcrição em Português</p>
-                <p className="text-[10px] sm:text-[11px] text-slate-400 mt-1 max-w-[200px]">
-                  O diálogo fluirá aqui continuamente após a fala ser traduzida.
+              <div className="h-full flex flex-col items-center justify-center text-center text-slate-400 py-12 px-3 select-none">
+                <p className="font-semibold text-xs text-slate-600">Transcrição em Português</p>
+                <p className="text-[11px] text-slate-400 mt-1 max-w-[220px]">
+                  O diálogo fluirá aqui de forma contínua durante a reunião.
                 </p>
               </div>
             )}
 
-            {messages.map((msg) => {
+            {messages.map((msg, idx) => {
               const ptText = msg.fromLang === "pt" ? msg.originalText : msg.translatedText;
-              const isHenn = msg.fromLang === "pt" || msg.speaker === "cliente";
-              const time = new Date(msg.timestamp).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+              const isCliente = msg.speaker === "cliente" || msg.fromLang === "pt";
+              const isFirstOrChanged = idx === 0 || messages[idx - 1].speaker !== msg.speaker;
 
               return (
-                <div key={`pt-${msg.id}`} className="border-b border-slate-100 pb-2 last:border-0 select-text">
-                  <div className="text-[10px] sm:text-[11px] font-bold text-slate-500 mb-0.5 flex items-center gap-1 sm:gap-1.5 select-none">
-                    <span className={`${isHenn ? "text-slate-900 font-extrabold" : "text-cyan-700"}`}>
-                      {isHenn ? `${participanteCliente}:` : `${participanteMario}:`}
-                    </span>
-                    <span className="text-[9px] sm:text-[10px] text-slate-400 font-normal">[{time}]</span>
-                  </div>
-                  <p className="text-slate-900 font-medium text-[11.5px] sm:text-sm pl-0.5 sm:pl-1 select-text">
+                <div
+                  key={`pt-${msg.id}`}
+                  className={`pl-2.5 border-l-2 ${
+                    isCliente ? "border-emerald-500" : "border-cyan-400"
+                  } ${isFirstOrChanged ? "pt-1.5" : "pt-0.5"}`}
+                >
+                  {isFirstOrChanged && (
+                    <div className="flex items-center gap-1.5 mb-0.5 select-none">
+                      <span className={`w-1.5 h-1.5 rounded-full ${isCliente ? "bg-emerald-500" : "bg-cyan-500"}`} />
+                      <span className={`text-[10px] font-bold ${isCliente ? "text-emerald-800" : "text-cyan-800"}`}>
+                        {isCliente ? participanteCliente : participanteMario}
+                      </span>
+                    </div>
+                  )}
+                  {/* Diferenciación de Tono: Mario en negro/slate-900 y Cliente en gris grafito elegante */}
+                  <p className={`text-xs sm:text-[13px] leading-relaxed select-text ${
+                    isCliente
+                      ? "text-slate-700 font-normal"
+                      : "text-slate-900 font-bold"
+                  }`}>
                     {ptText}
                   </p>
                 </div>
@@ -95,43 +124,55 @@ export function SplitBilingualFeed({
           </div>
 
           {/* Botón Descargar Notas PDF Cliente */}
-          <div className="p-1.5 sm:p-2.5 bg-slate-50 border-t border-slate-200 select-none shrink-0">
+          <div className="p-2 bg-slate-50 border-t border-slate-200 select-none shrink-0">
             <button
               onClick={onDownloadPtPdf}
-              className="w-full bg-slate-800 hover:bg-slate-900 text-white font-bold text-[10px] sm:text-xs py-1.5 sm:py-2 px-2 sm:px-3 rounded-lg sm:rounded-xl flex items-center justify-center gap-1 sm:gap-1.5 transition shadow-sm"
+              className="w-full bg-slate-800 hover:bg-slate-900 text-white font-bold text-[11px] py-1.5 px-2.5 rounded-xl flex items-center justify-center gap-1.5 transition shadow-sm"
             >
-              <Download className="w-3 sm:w-3.5 h-3 sm:h-3.5 text-cyan-400 shrink-0" />
+              <Download className="w-3.5 h-3.5 text-cyan-400 shrink-0" />
               <span className="truncate">Baixar Notas da Reunião (PT .pdf)</span>
             </button>
           </div>
         </div>
 
         {/* COLUMNA 2: ESPAÑOL */}
-        <div className="flex flex-col justify-between bg-slate-50/30 h-full overflow-hidden select-text">
-          <div className="flex-1 overflow-y-auto p-2.5 sm:p-4 space-y-2 sm:space-y-2.5 font-sans text-xs sm:text-sm text-slate-800 leading-relaxed select-text">
+        <div className="flex flex-col justify-between bg-slate-50/20 h-full overflow-hidden select-text">
+          <div className="flex-1 overflow-y-auto p-3 sm:p-4 space-y-2 font-sans text-xs sm:text-sm leading-relaxed select-text">
             {messages.length === 0 && (
-              <div className="h-full flex flex-col items-center justify-center text-center text-slate-400 py-12 px-2 sm:px-4 select-none">
-                <p className="font-semibold text-[11px] sm:text-xs text-slate-600">Transcripción en Español</p>
-                <p className="text-[10px] sm:text-[11px] text-slate-400 mt-1 max-w-[200px]">
-                  El diálogo traducido y tus respuestas aparecerán aquí.
+              <div className="h-full flex flex-col items-center justify-center text-center text-slate-400 py-12 px-3 select-none">
+                <p className="font-semibold text-xs text-slate-600">Transcripción en Español</p>
+                <p className="text-[11px] text-slate-400 mt-1 max-w-[220px]">
+                  El diálogo traducido aparecerá aquí en tiempo real.
                 </p>
               </div>
             )}
 
-            {messages.map((msg) => {
+            {messages.map((msg, idx) => {
               const esText = msg.fromLang === "es" ? msg.originalText : msg.translatedText;
-              const isMario = msg.fromLang === "es" || msg.speaker === "mario";
-              const time = new Date(msg.timestamp).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+              const isCliente = msg.speaker === "cliente" || msg.fromLang === "pt";
+              const isFirstOrChanged = idx === 0 || messages[idx - 1].speaker !== msg.speaker;
 
               return (
-                <div key={`es-${msg.id}`} className="border-b border-slate-100 pb-2 last:border-0 select-text">
-                  <div className="text-[10px] sm:text-[11px] font-bold text-slate-500 mb-0.5 flex items-center gap-1 sm:gap-1.5 select-none">
-                    <span className={`${isMario ? "text-cyan-800 font-extrabold" : "text-slate-900"}`}>
-                      {isMario ? `${participanteMario}:` : `${participanteCliente}:`}
-                    </span>
-                    <span className="text-[9px] sm:text-[10px] text-slate-400 font-normal">[{time}]</span>
-                  </div>
-                  <p className="text-slate-900 font-medium text-[11.5px] sm:text-sm pl-0.5 sm:pl-1 select-text">
+                <div
+                  key={`es-${msg.id}`}
+                  className={`pl-2.5 border-l-2 ${
+                    isCliente ? "border-emerald-500" : "border-cyan-400"
+                  } ${isFirstOrChanged ? "pt-1.5" : "pt-0.5"}`}
+                >
+                  {isFirstOrChanged && (
+                    <div className="flex items-center gap-1.5 mb-0.5 select-none">
+                      <span className={`w-1.5 h-1.5 rounded-full ${isCliente ? "bg-emerald-500" : "bg-cyan-500"}`} />
+                      <span className={`text-[10px] font-bold ${isCliente ? "text-emerald-800" : "text-cyan-800"}`}>
+                        {isCliente ? participanteCliente : participanteMario}
+                      </span>
+                    </div>
+                  )}
+                  {/* Diferenciación de Tono: Mario en negro negrilla y Cliente en grafito */}
+                  <p className={`text-xs sm:text-[13px] leading-relaxed select-text ${
+                    isCliente
+                      ? "text-slate-700 font-normal"
+                      : "text-slate-900 font-bold"
+                  }`}>
                     {esText}
                   </p>
                 </div>
@@ -142,55 +183,32 @@ export function SplitBilingualFeed({
           </div>
 
           {/* Botón Descargar Notas ES Mario */}
-          <div className="p-1.5 sm:p-2.5 bg-slate-50 border-t border-slate-200 select-none shrink-0">
+          <div className="p-2 bg-slate-50 border-t border-slate-200 select-none shrink-0">
             <button
               onClick={onDownloadBoth}
-              className="w-full bg-cyan-700 hover:bg-cyan-800 text-white font-bold text-[10px] sm:text-xs py-1.5 sm:py-2 px-2 sm:px-3 rounded-lg sm:rounded-xl flex items-center justify-center gap-1 sm:gap-1.5 transition shadow-sm"
+              className="w-full bg-cyan-700 hover:bg-cyan-800 text-white font-bold text-[11px] py-1.5 px-2.5 rounded-xl flex items-center justify-center gap-1.5 transition shadow-sm"
             >
-              <Download className="w-3 sm:w-3.5 h-3 sm:h-3.5 text-white shrink-0" />
+              <Download className="w-3.5 h-3.5 text-white shrink-0" />
               <span className="truncate">Descargar Notas (ES .md + .pdf)</span>
             </button>
           </div>
         </div>
       </div>
 
-      {/* BANNER DE DICTADO ACTIVO CON VISUALIZACIÓN AMPLIA MULTILÍNEA */}
+      {/* Indicador de Transcripción Activa en Vivo */}
       {(interimText || isTranslating) && (
-        <div className="bg-slate-900 text-white p-3 sm:p-3.5 border-t border-cyan-500/50 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2.5 shadow-2xl shrink-0 z-20 animate-in fade-in slide-in-from-bottom-2 duration-200 max-h-36 overflow-y-auto">
-          <div className="flex items-start gap-2.5 min-w-0 flex-1">
+        <div className="bg-slate-900 text-white px-3.5 py-2 border-t border-cyan-500/40 flex items-center justify-between gap-2 shrink-0 z-20 animate-in fade-in duration-150">
+          <div className="flex items-center gap-2 min-w-0 flex-1">
             {isTranslating ? (
-              <Loader2 className="w-5 h-5 text-cyan-400 animate-spin shrink-0 mt-0.5" />
+              <Loader2 className="w-3.5 h-3.5 text-cyan-400 animate-spin shrink-0" />
             ) : (
-              <div className="p-1.5 bg-red-500/20 text-red-400 rounded-lg shrink-0 animate-pulse mt-0.5">
-                <Mic className="w-4 h-4" />
-              </div>
+              <span className="w-2 h-2 rounded-full bg-cyan-400 animate-ping shrink-0" />
             )}
-            <div className="min-w-0 flex-1">
-              <div className="flex items-center gap-2 mb-0.5">
-                <span className="text-[10px] text-cyan-300 font-extrabold uppercase tracking-wider">
-                  {isTranslating ? "Traduciendo y sincronizando en vivo..." : "Tomando dictado de voz:"}
-                </span>
-                {!isTranslating && (
-                  <span className="text-[9px] text-slate-400 font-medium hidden xs:inline">
-                    (Pausa 2.5s o pulsa Enviar para publicar)
-                  </span>
-                )}
-              </div>
-              <p className="text-xs sm:text-sm font-medium text-white leading-relaxed whitespace-pre-wrap break-words">
-                "{interimText || "..."}"
-              </p>
-            </div>
+            <p className="text-xs text-cyan-200 font-medium truncate">
+              "{interimText || "..."}"
+            </p>
           </div>
-
-          {!isTranslating && (
-            <button
-              onClick={onSubmitDictation}
-              className="bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-extrabold text-xs px-4 py-2 rounded-xl flex items-center gap-1.5 shrink-0 self-end sm:self-center transition shadow-lg shadow-cyan-500/20"
-            >
-              <span>Enviar</span>
-              <ArrowRight className="w-3.5 h-3.5" />
-            </button>
-          )}
+          <span className="text-[10px] text-slate-400 shrink-0">Escuchando reunión...</span>
         </div>
       )}
     </div>

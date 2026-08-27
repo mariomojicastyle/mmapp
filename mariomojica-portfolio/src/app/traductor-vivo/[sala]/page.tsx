@@ -17,7 +17,8 @@ import {
   MessageSquare,
   FileUp,
   FolderOpen,
-  Copy
+  Copy,
+  Volume2
 } from "lucide-react";
 
 export default function SalaBilingueMasterPage() {
@@ -28,8 +29,6 @@ export default function SalaBilingueMasterPage() {
   const [isConfigModalOpen, setIsConfigModalOpen] = useState(false);
   const [isHistorialModalOpen, setIsHistorialModalOpen] = useState(false);
 
-  // Idioma de la voz y de la interfaz
-  const [myVoiceLang, setMyVoiceLang] = useState<"es" | "pt">("es");
   const [uiLang, setUiLang] = useState<"es" | "pt">("es");
   const [summaryData, setSummaryData] = useState<any>(null);
   const [saveStatus, setSaveStatus] = useState<string | null>(null);
@@ -74,15 +73,16 @@ export default function SalaBilingueMasterPage() {
 
   const {
     isMeetingActive,
+    isSystemAudioActive,
+    enableSystemAudioCapture,
     interimText,
     messages,
     isTranslating,
     toggleMeeting
   } = useLiveTranslator({
     sala,
-    role: myVoiceLang === "es" ? "mario" : "cliente",
-    myLang: myVoiceLang,
-    targetLang: myVoiceLang === "es" ? "pt" : "es"
+    participanteCliente: participantes2[0] || "Marcos Unnass",
+    participanteMario: participantes1[0] || "Mario Mojica"
   });
 
   const isPt = uiLang === "pt";
@@ -401,35 +401,24 @@ export default function SalaBilingueMasterPage() {
                 <span>{copyLinkStatus ? "Copiado!" : "Copiar Link"}</span>
               </button>
             </div>
-            <p className="text-[10px] text-slate-500 truncate hidden xs:block">
-              {participantes1.join(", ")} & {participantes2.join(", ")}
-            </p>
           </div>
         </div>
 
         {/* Acciones de la Marca */}
         <div className="flex items-center gap-2 shrink-0">
-          {/* Selector de Idioma de Escucha */}
-          <div className="flex items-center bg-slate-100 p-0.5 rounded-xl border border-slate-200 text-[10px] sm:text-xs font-bold">
-            <button
-              onClick={() => { setMyVoiceLang("es"); setUiLang("es"); }}
-              className={`px-2 py-1 rounded-lg transition ${
-                myVoiceLang === "es" ? "bg-white text-cyan-700 shadow-sm" : "text-slate-600 hover:text-slate-900"
-              }`}
-              title="Escuchar en Español"
-            >
-              ES
-            </button>
-            <button
-              onClick={() => { setMyVoiceLang("pt"); setUiLang("pt"); }}
-              className={`px-2 py-1 rounded-lg transition ${
-                myVoiceLang === "pt" ? "bg-white text-cyan-700 shadow-sm" : "text-slate-600 hover:text-slate-900"
-              }`}
-              title="Escuchar en Português"
-            >
-              PT
-            </button>
-          </div>
+          {/* BOTÓN CAPTURAR AUDIO DE LA TARJETA DE SONIDO / MEET */}
+          <button
+            onClick={enableSystemAudioCapture}
+            className={`px-3 py-1.5 rounded-xl font-bold text-xs flex items-center gap-1.5 transition border ${
+              isSystemAudioActive
+                ? "bg-emerald-50 text-emerald-800 border-emerald-300 shadow-sm"
+                : "bg-slate-100 hover:bg-slate-200 text-slate-700 border-slate-300"
+            }`}
+            title="Capturar audio digital de Google Meet, Zoom o tarjeta de sonido"
+          >
+            <Volume2 className={`w-3.5 h-3.5 ${isSystemAudioActive ? "text-emerald-600 animate-pulse" : "text-slate-500"}`} />
+            <span className="hidden sm:inline">{isSystemAudioActive ? "Audio Tarjeta Activo" : "Capturar Audio Tarjeta"}</span>
+          </button>
 
           {/* BOTÓN MAESTRO: INICIAR REUNIÓN (Estilo Marca Cyan-700 / Sin Icono) */}
           <button
