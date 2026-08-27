@@ -308,7 +308,7 @@ export function HennOperationCostEngine({
       {/* SECCIÓN 1: MACRO OPERACIÓN ANUAL DE HENN */}
       <div className="border border-slate-200 rounded-xl p-2.5 sm:p-3 bg-white space-y-2.5">
         <h3 className="font-extrabold text-xs text-slate-900 flex items-center gap-1.5 border-b border-slate-100 pb-1.5">
-          <Layers className="w-3.5 h-3.5 text-cyan-600" />
+          
           {isPt
             ? "1. Parâmetros da Operação Anual da Henn"
             : "1. Parámetros de la Operación Anual de Henn"}
@@ -517,7 +517,7 @@ export function HennOperationCostEngine({
       <div className="border border-slate-200 rounded-xl p-2.5 sm:p-3 bg-white space-y-2.5">
         <div className="flex justify-between items-center border-b border-slate-100 pb-1.5">
           <h3 className="font-extrabold text-xs text-slate-900 flex items-center gap-1.5">
-            <Sparkles className="w-3.5 h-3.5 text-cyan-600" />
+            
             {isPt ? "2. Margem de Economia Proposta por Mario Mojica" : "2. Margen de Ahorro Propuesto por Mario Mojica"}
           </h3>
           <span className="bg-cyan-100 text-cyan-800 text-[10px] font-extrabold px-2 py-0.5 rounded-full">
