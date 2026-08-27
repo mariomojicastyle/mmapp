@@ -1,11 +1,28 @@
 import { NextRequest, NextResponse } from "next/server";
 
+export async function OPTIONS() {
+  return new NextResponse(null, {
+    status: 200,
+    headers: {
+      "Access-Control-Allow-Origin": "*",
+      "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+      "Access-Control-Allow-Headers": "Content-Type, Authorization, X-Requested-With"
+    }
+  });
+}
+
 export async function POST(request: NextRequest) {
+  const corsHeaders = {
+    "Access-Control-Allow-Origin": "*",
+    "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+    "Access-Control-Allow-Headers": "Content-Type, Authorization, X-Requested-With"
+  };
+
   try {
     const { text, fromLang = "auto", toLang = "es" } = await request.json();
 
     if (!text || !text.trim()) {
-      return NextResponse.json({ error: "Texto requerido" }, { status: 400 });
+      return NextResponse.json({ error: "Texto requerido" }, { status: 400, headers: corsHeaders });
     }
 
     const cleanText = text.trim();
@@ -27,7 +44,7 @@ export async function POST(request: NextRequest) {
             toLang,
             engine: "fast-stream",
             timestamp: Date.now()
-          });
+          }, { headers: corsHeaders });
         }
       }
     } catch (gErr) {
@@ -66,7 +83,7 @@ Texto: "${cleanText}"`;
             toLang,
             engine: "gemini-flash",
             timestamp: Date.now()
-          });
+          }, { headers: corsHeaders });
         }
       }
     }
@@ -78,13 +95,13 @@ Texto: "${cleanText}"`;
       toLang,
       engine: "passthrough",
       timestamp: Date.now()
-    });
+    }, { headers: corsHeaders });
 
   } catch (error) {
     console.error("Error en /api/copiloto/traducir:", error);
     return NextResponse.json(
       { error: error instanceof Error ? error.message : "Error interno" },
-      { status: 500 }
+      { status: 500, headers: corsHeaders }
     );
   }
 }

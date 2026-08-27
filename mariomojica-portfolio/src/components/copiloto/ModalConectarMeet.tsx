@@ -18,55 +18,76 @@ export function ModalConectarMeet({
   if (!isOpen) return null;
 
   const rawScript = `(function(){
-  console.log("%c[Meet Bridge Activo]%c Conectando con mariomojica.com/traductor-vivo/${sala}", "color:#06b6d4;font-weight:bold;", "color:#333;");
-  let lastText = "";
-  const observer = new MutationObserver(async () => {
-    const nodes = document.querySelectorAll('.iTTPOb, div[jsname="tga37d"], div[aria-live="polite"] span, div[class*="caption"]');
-    if (!nodes || nodes.length === 0) return;
-    const lastNode = nodes[nodes.length - 1];
-    const text = (lastNode.innerText || lastNode.textContent || "").trim();
-    if (text.length > 2 && text !== lastText) {
-      lastText = text;
-      const parent = lastNode.closest('div[class*="T4LgNb"]') || lastNode.parentElement;
-      const speakerNode = parent ? parent.querySelector('.zs75Ib, .FwR7Pc, div[class*="speaker"]') : null;
-      const speakerName = speakerNode ? speakerNode.textContent.trim() : "Participante";
-      
-      try {
-        const transRes = await fetch("https://mariomojica.com/api/copiloto/traducir", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ text, fromLang: "auto", toLang: "es" })
-        });
-        const transData = await transRes.json();
-        const translated = transData.translation || text;
-        const fromLang = transData.fromLang || "pt";
-        const isClient = fromLang === "pt" || !speakerName.toLowerCase().includes("mario");
+  console.log("%c[Meet Bridge Activo]%c Sincronizando subtítulos con https://mariomojica.com/traductor-vivo/` + sala + `", "color:#06b6d4;font-weight:bold;font-size:14px;", "color:#333;font-size:13px;");
+  
+  let lastCapturedText = "";
+  let debounceTimer = null;
 
-        await fetch("https://mariomojica.com/api/copiloto/sesion", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            action: "add_message",
-            sala: "${sala}",
-            message: {
-              id: "msg_meet_" + Date.now() + "_" + Math.random().toString(36).substr(2, 4),
-              speaker: isClient ? "cliente" : "mario",
-              speakerName: speakerName || (isClient ? "Marcos Unnass" : "Mario Mojica"),
-              originalText: text,
-              translatedText: translated,
-              fromLang: fromLang,
-              toLang: fromLang === "pt" ? "es" : "pt",
-              timestamp: Date.now()
-            }
-          })
-        });
-      } catch (err) {
-        console.error("[Meet Bridge Error]", err);
+  function captureAndSend(text, speakerName) {
+    const cleanText = text.trim();
+    if (!cleanText || cleanText.length < 2 || cleanText === lastCapturedText) return;
+    lastCapturedText = cleanText;
+
+    console.log("%c[Meet Bridge Capturado] %c" + (speakerName || "Participante") + ": " + cleanText, "color:#10b981;font-weight:bold;", "color:#000;");
+
+    fetch("https://mariomojica.com/api/copiloto/traducir", {
+      method: "POST",
+      mode: "cors",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ text: cleanText, fromLang: "auto", toLang: "es" })
+    })
+    .then(function(r) { return r.json(); })
+    .then(function(transData) {
+      const translated = transData.translation || cleanText;
+      const fromLang = transData.fromLang || "pt";
+      const isClient = fromLang === "pt" || !(speakerName || "").toLowerCase().includes("mario");
+
+      return fetch("https://mariomojica.com/api/copiloto/sesion", {
+        method: "POST",
+        mode: "cors",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "add_message",
+          sala: "` + sala + `",
+          message: {
+            id: "msg_meet_" + Date.now() + "_" + Math.random().toString(36).substr(2, 4),
+            speaker: isClient ? "cliente" : "mario",
+            speakerName: speakerName || (isClient ? "Marcos Unnass" : "Mario Mojica"),
+            originalText: cleanText,
+            translatedText: translated,
+            fromLang: fromLang,
+            toLang: fromLang === "pt" ? "es" : "pt",
+            timestamp: Date.now()
+          }
+        })
+      });
+    })
+    .catch(function(err) { console.error("[Meet Bridge Error]", err); });
+  }
+
+  // Observador continuo de subtítulos de Google Meet
+  const observer = new MutationObserver(function() {
+    const captionContainers = document.querySelectorAll('div[jsname="YSxPdn"], div.iTTPOb, span.yg15Mc, span.CNusmb, div.bh44bd, div[aria-live="polite"]');
+    
+    if (captionContainers && captionContainers.length > 0) {
+      const lastContainer = captionContainers[captionContainers.length - 1];
+      const text = (lastContainer.innerText || lastContainer.textContent || "").trim();
+      
+      const parent = lastContainer.closest('div[class*="T4LgNb"], div[class*="nMx0wf"]') || lastContainer.parentElement;
+      const speakerEl = parent ? parent.querySelector('.zs75Ib, .FwR7Pc, div[class*="speaker"], span[class*="speaker"]') : null;
+      const speaker = speakerEl ? speakerEl.textContent.trim() : "";
+
+      if (text && text !== lastCapturedText) {
+        if (debounceTimer) clearTimeout(debounceTimer);
+        debounceTimer = setTimeout(function() {
+          captureAndSend(text, speaker);
+        }, 600);
       }
     }
   });
+
   observer.observe(document.body, { childList: true, subtree: true, characterData: true });
-  alert("✅ ¡Google Meet Conectado con la Plataforma! Los subtítulos aparecerán en tiempo real en tu sala.");
+  alert("✅ ¡Google Meet Conectado con Éxito! Los subtítulos aparecerán en tiempo real traducidos en tu sala.");
 })();`;
 
   const bookmarkletCode = `javascript:${encodeURIComponent(rawScript)}`;
