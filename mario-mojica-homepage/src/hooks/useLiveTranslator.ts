@@ -142,6 +142,7 @@ export function useLiveTranslator({
 
   const silenceTimerRef = useRef<any>(null);
   const lastProcessedTextRef = useRef<string>("");
+  const pendingInterimTextRef = useRef<string>("");
 
   // Reiniciar reconocedor si cambia el idioma activo en caliente
   useEffect(() => {
@@ -175,7 +176,27 @@ export function useLiveTranslator({
         const data = await res.json();
         setIsConnected(true);
         if (data.allMessages && Array.isArray(data.allMessages)) {
-          setMessages(data.allMessages);
+          setMessages(prev => {
+            const existingMap = new Map(prev.map(m => [m.id, m]));
+            let changed = false;
+
+            data.allMessages.forEach((incoming: ChatMessage) => {
+              if (!existingMap.has(incoming.id)) {
+                existingMap.set(incoming.id, incoming);
+                changed = true;
+              } else {
+                const existing = existingMap.get(incoming.id)!;
+                if (existing.translatedText !== incoming.translatedText) {
+                  existingMap.set(incoming.id, incoming);
+                  changed = true;
+                }
+              }
+            });
+
+            return changed
+              ? Array.from(existingMap.values()).sort((a, b) => a.timestamp - b.timestamp)
+              : prev;
+          });
         }
       }
     } catch (e) {
@@ -188,6 +209,7 @@ export function useLiveTranslator({
     setMessages([]);
     setInterimText("");
     lastProcessedTextRef.current = "";
+    pendingInterimTextRef.current = "";
     try {
       await fetch("/api/copiloto/sesion", {
         method: "POST",
@@ -200,15 +222,19 @@ export function useLiveTranslator({
     } catch (e) {}
   };
 
-  // Traducir y emitir de inmediato con clasificación automática
+  // Guardar y traducir con COMPROMISO OPTIMISTA INSTANTÁNEO (0ms de pérdida)
   const translateAndCommit = async (rawText: string) => {
     const cleanedText = cleanAggressiveDuplicates(rawText);
-    if (!cleanedText || cleanedText.length < 2 || cleanedText === lastProcessedTextRef.current) {
+    if (!cleanedText || cleanedText.length < 2) {
+      return;
+    }
+
+    if (cleanedText === lastProcessedTextRef.current) {
       return;
     }
 
     lastProcessedTextRef.current = cleanedText;
-    setIsTranslating(true);
+    pendingInterimTextRef.current = "";
     setInterimText("");
 
     const detected = detectLanguageAndSpeaker(
@@ -219,8 +245,25 @@ export function useLiveTranslator({
     );
 
     const currentSala = salaRef.current;
+    const msgId = `msg_${currentSala}_${Date.now()}_${Math.random().toString(36).substr(2, 4)}`;
+
+    // 1. COMPROMISO LOCAL INMEDIATO (El texto se fija en pantalla al instante, NUNCA se borra)
+    const initialMsg: ChatMessage = {
+      id: msgId,
+      speaker: detected.speaker,
+      speakerName: detected.speakerName,
+      originalText: cleanedText,
+      translatedText: cleanedText, // Temporalmente muestra el texto original mientras traduce
+      fromLang: detected.fromLang,
+      toLang: detected.toLang,
+      timestamp: Date.now()
+    };
+
+    setMessages(prev => [...prev, initialMsg]);
+    setIsTranslating(true);
 
     try {
+      // 2. Traducción asíncrona de alta velocidad
       const resTrans = await fetch("/api/copiloto/traducir", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -232,28 +275,24 @@ export function useLiveTranslator({
       });
 
       const transData = await resTrans.json();
-      const translated = cleanAggressiveDuplicates(transData.translation || cleanedText);
+      const finalTranslation = cleanAggressiveDuplicates(transData.translation || cleanedText);
 
-      const newMsg: ChatMessage = {
-        id: `msg_${currentSala}_${Date.now()}_${Math.random().toString(36).substr(2, 4)}`,
-        speaker: detected.speaker,
-        speakerName: detected.speakerName,
-        originalText: cleanedText,
-        translatedText: translated,
-        fromLang: detected.fromLang,
-        toLang: detected.toLang,
-        timestamp: Date.now()
+      // 3. Actualizar el mensaje con la traducción final
+      const finalizedMsg: ChatMessage = {
+        ...initialMsg,
+        translatedText: finalTranslation
       };
 
-      setMessages(prev => [...prev, newMsg]);
+      setMessages(prev => prev.map(m => m.id === msgId ? finalizedMsg : m));
 
+      // 4. Persistir en la base de datos de Supabase
       await fetch("/api/copiloto/sesion", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           action: "add_message",
           sala: currentSala,
-          message: newMsg
+          message: finalizedMsg
         })
       });
 
@@ -264,7 +303,7 @@ export function useLiveTranslator({
     }
   };
 
-  // Inicializar Web Speech Recognition
+  // Inicializar Web Speech Recognition con captura continua
   useEffect(() => {
     if (typeof window === "undefined") return;
 
@@ -302,6 +341,7 @@ export function useLiveTranslator({
 
       const cleanedInterim = cleanAggressiveDuplicates(currentInterim);
       if (cleanedInterim) {
+        pendingInterimTextRef.current = cleanedInterim;
         setInterimText(cleanedInterim);
       }
 
@@ -311,15 +351,15 @@ export function useLiveTranslator({
       } else if (currentInterim.trim()) {
         if (silenceTimerRef.current) clearTimeout(silenceTimerRef.current);
         silenceTimerRef.current = setTimeout(() => {
-          if (currentInterim.trim() && isMeetingActiveRef.current) {
-            translateAndCommit(currentInterim.trim());
+          if (pendingInterimTextRef.current.trim() && isMeetingActiveRef.current) {
+            translateAndCommit(pendingInterimTextRef.current.trim());
           }
-        }, 900);
+        }, 750);
       }
     };
 
     recognition.onerror = (event: any) => {
-      console.warn("Speech error:", event.error);
+      console.warn("Speech recognition error:", event.error);
       if (event.error === "not-allowed" || event.error === "service-not-allowed") {
         setIsMeetingActive(false);
         isMeetingActiveRef.current = false;
@@ -328,6 +368,11 @@ export function useLiveTranslator({
     };
 
     recognition.onend = () => {
+      // Si quedó algún texto en el buffer provisional antes de pausar, fijarlo de inmediato
+      if (pendingInterimTextRef.current.trim() && isMeetingActiveRef.current) {
+        translateAndCommit(pendingInterimTextRef.current.trim());
+      }
+
       if (isMeetingActiveRef.current && !manualStopRef.current) {
         try {
           recognition.lang = activeLangRef.current === "pt" ? "pt-BR" : "es-CO";
@@ -367,15 +412,16 @@ export function useLiveTranslator({
       setIsMeetingActive(false);
       if (silenceTimerRef.current) clearTimeout(silenceTimerRef.current);
 
+      if (pendingInterimTextRef.current.trim()) {
+        translateAndCommit(pendingInterimTextRef.current.trim());
+      }
+
       try {
         recognitionRef.current.abort();
       } catch (e) {}
-
-      if (interimText) {
-        translateAndCommit(interimText);
-      }
     } else {
       setInterimText("");
+      pendingInterimTextRef.current = "";
       lastProcessedTextRef.current = "";
       manualStopRef.current = false;
       isMeetingActiveRef.current = true;
