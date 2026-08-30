@@ -206,3 +206,12 @@ Default values cause runtime failures.
 - **Escritura Canónica Obligatoria:** El motor paramétrico, suite tecnológica y marca se debe escribir **SIEMPRE Y SIN EXCEPCIÓN** como **`3dBimFab`** (número `3`, letra `d` minúscula, `B` mayúscula, `im` minúsculas, `F` mayúscula, `ab` minúsculas).
 - **Prohibido:** Queda estrictamente prohibido escribir variantes como *3D Binfab*, *3DBimFab*, *3D BIM FAB*, *3D BinFab*, *3dbimfab*, etc. en cualquier documento, resumen, mensaje, chat o archivo de código.
 
+## 🎨 Repositorio Canónico de Identidad Gráfica y Logotipos (`/publicidad`)
+- **Ubicación Central:** Todos los activos vectoriales SVG originales de la marca están disponibles de forma permanente en **`c:\Desarrollo\mmapp\publicidad\`**:
+  - `Logo_MM_en.svg`: Logotipo maestro oficial de Mario Mojica (Isotipo MM + tipografía + *FORM & FUTURE*).
+  - `Logo_3BF.svg`: Logotipo oficial de `3dBimFab` para fondos claros (Badge rojo `#bb0f0f` con `3BF`, texto `3dBimFab` y *'Powered by MARIO MOJICA'*).
+  - `Logo_3BF_Dark.svg`: Logotipo oficial de `3dBimFab` para fondos oscuros.
+  - `Icon_3BF.ico`, `Icon_3DBimFab.ico`: Íconos de aplicación.
+- **Mandato de Uso:** En la generación de PDFs, actas, minutas, reportes, diagramas o cabeceras web, **se deben consumir DIRECTAMENTE estos archivos SVG** de `/publicidad` para garantizar 100% de consistencia de marca.
+
+

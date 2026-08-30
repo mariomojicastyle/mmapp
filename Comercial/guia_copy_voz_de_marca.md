@@ -30,6 +30,19 @@ Este documento es el "alma" comunicativa de la marca **Mario Mojica**. Cada post
 * **Correo Electrónico Oficial:** **`mariomojica.style@gmail.com`**
 * **Sitio Web & Demo:** **`https://mariomojica.com`** / **`https://mariomojica.com/demo`**
 
+### 1.5 El Eslogan Oficial y el ADN de Marca: "Forma y Futuro"
+* **Eslogan Institucional Oficial:** 
+  > **"El futuro se construye desde hoy."** (ES)  
+  > **"O futuro se constrói a partir de hoje."** (PT)  
+  > **"Building the future, starting today."** (EN)
+* **El Significado y Fundamento Psicológico:**
+  * **La palabra *"Construye"*:** En la industria del mueble y la manufactura, los líderes industriales no "inventan" ni teorizan: **construyen**. Habla el lenguaje del oficio, de la estructura física y de la ingeniería tangible.
+  * **El concepto *"Desde hoy"*:** Establece un punto de inflexión inmediato. La transformación digital no es una promesa abstracta a 5 años; es una ventaja competitiva medible que la fábrica activa hoy.
+* **El ADN del Isotipo / Logo ("Forma y Futuro"):**
+  * **Forma:** El mundo físico, el mobiliario, el despiece milimétrico DfMA, los tableros de madera (MDP/MDF), la precisión de herrajes y la maquinaria CNC en planta.
+  * **Futuro:** La nube, el modelado paramétrico de **3dBimFab**, los manuales 3D interactivos por voz y la telemetría viva de postventa.
+  * **La Síntesis:** La unión inseparable entre la excelencia del mueble físico (**Forma**) y la vanguardia del software (**Futuro**), impulsando al fabricante a dar el paso ahora.
+
 ---
 
 ## 🗣️ 2. El Tono de Voz (Brand Persona)

@@ -21,7 +21,32 @@ Este archivo es la "Memoria RAM" para Antigravity. Contiene el contexto de lo qu
 - [x] **Persistencia Reactiva & Memoria Local**: Indexación inmediata y sincronización fluida entre Supabase, memoria local y la memoria activa `.agent/skills/b2b-sales-closer/ventas_ram.md`.
 - [x] **Protocolo Antigravity de Fluidez Bilingüe (2 Bloques de Código en 1 Clic)**: Respuestas en el chat entregadas siempre en 2 bloques de código markdown separados (Bloque 1 en Português do Brasil para copiar en 1 clic + Bloque 2 en Español para auditoría rápida), inyectando ambos idiomas en la base de datos de Supabase y en `ventas_ram_storage.json` para mantener el historial vivo.
 
-- [x] **[NUEVO - 27 de Agosto, 2026] Hito Henn_2da_reu (Libro Financiero Multidivisa Dinámico BRL/USD/COP, Alineación Simétrica 1:1, Calibración Ponderada por Rango de Piezas y Extensión Chrome Meet)**:
+- [x] **[NUEVO - 29 de Agosto, 2026] Hito Repositorio_Identidad_Grafica_Publicidad (Centralización de Activos Vectoriales SVG en /publicidad y Estandarización de Formatos Oficiales)**:
+  - **Repositorio Maestro en `/publicidad`**: Centralización de los archivos vectoriales SVG oficiales de la empresa (`publicidad/Logo_MM_en.svg`) y del producto (`publicidad/Logo_3BF.svg`, `publicidad/Logo_3BF_Dark.svg`, `Icon_3BF.ico`, `Icon_3DBimFab.ico`).
+  - **Regla en Protocolo de Arranque y Habilidades**: Documentado en `AGENTS.md`, `GEMINI.md`, `Comercial/activos_digitales_y_redes.md` y `.agent/skills/brand-guidelines/SKILL.md` como mandato canónico para la generación de PDFs, actas, minutas y cabeceras web consumiendo directamente los SVGs de `/publicidad`.
+  - **Estandarización de Actas y Minutas B2B (`Clientes/Henn/reuniones/`)**: Generación de actas ejecutivas en PDF (`2026-08-28_Reunion_02_Levantamiento_Costos_Moveis_Henn_PT.pdf` y `_ES.pdf`) con pureza lingüística 100% independiente, diseño Tech Ethos y cabecera dual de marca.
+
+- [x] **[28 de Agosto, 2026] Hito Arquitectura_Costeo_Dual_Snapshots_Inmutables (Bases de Datos ERP/Excel/JSON & Trazabilidad Histórica en 3dBimFab)**:
+  - **Especificación de Ingeniería Financiera (`3BF/3BF_Proceso.md`)**: Definición del paradigma dual: sincronización viva de tarifas maestras (tableros, herrajes, cantos) vía ERP/Excel/JSON vs. generación de *snapshots* inmutables por versión de producto (`v1.0`), garantizando auditoría contable y simulación de impacto inflacionario en 1 solo clic.
+
+- [x] **[27 de Agosto, 2026] Hito Storyboard_Maestro_v4_Trilingue (Master Audiovisual con Guion Completo ES | PT | EN & Prompts Cinemáticos IA)**:
+  - **Storyboard Maestro v4 (`Comercial/Videos/storyboard_3dBimFab_v4.md`)**: Estandarización de los 24 segmentos de video con locuciones sincronizadas en Español, Português do Brasil e Inglés, overlays para CapCut y prompts cinemáticos 8K calibrados bajo la habilidad `generador-prompts-video-ia` para 1-shot success.
+  - **Sincronización de Identidad de Marca y Eslogan**: Integración del cierre narrativo *"El futuro se construye desde hoy"* / *"O futuro se constrói a partir de hoje"* / *"Building the future, starting today"*.
+
+- [x] **[27 de Agosto, 2026] Hito Eslogan_Oficial_Forma_y_Futuro (Adopción de "El futuro se construye desde hoy" en Guía de Voz de Marca)**:
+  - **Eslogan Institucional Oficial (`Comercial/guia_copy_voz_de_marca.md`)**: Formalizado el eslogan trilingüe (*"El futuro se construye desde hoy"* / *"O futuro se constrói a partir de hoje"* / *"Building the future, starting today"*).
+  - **ADN del Isotipo ("Forma y Futuro")**: Integración conceptual entre la ingeniería física y el mueble (*Forma*) con la computación paramétrica y la nube de **3dBimFab** (*Futuro*).
+
+- [x] **[27 de Agosto, 2026] Hito Exportacion_DXF_Carpeta_Unica_1Clic (File System Access API Nativo & Paquete ZIP Fallback)**:
+  - **Exportación Masiva a Carpeta Única (1 Solo Diálogo)**: Integración con la File System Access API (`window.showDirectoryPicker`) para solicitar al usuario la carpeta de destino una sola vez. Todos los archivos DXF se escriben secuencial y directamente dentro de la carpeta elegida en el explorador de Windows, eliminando los 12 molestos diálogos repetitivos de "Guardar como".
+  - **Indicador de Progreso en Vivo**: El botón principal de exportación refleja en tiempo real el estado (`Seleccionando Carpeta...`, `Guardando 1/12 (Lateral_Izq.dxf)...`, `✓ ¡12 DXFs Guardados!`).
+  - **Fallback Universal con JSZip**: Empaquetado automático en archivo `.zip` único para navegadores sin soporte de Directory Picker o entornos restringidos.
+
+- [x] **[27 de Agosto, 2026] Hito Generador_Prompts_Video_IA (Estandarización de Dirección de Arte Cinematográfica para Videos IA & 1-Shot Success)**:
+  - **Habilidad Permanente (`.agent/skills/generador-prompts-video-ia/SKILL.md`)**: Creada y registrada la habilidad oficial que codifica las 7 reglas de oro de prompting cinemático (óptica anamórfica 35mm/50mm, encuadres *headless* sin rostros, física de materiales PBR, luz volumétrica *Tech Ethos*, desintegración/remolino cuántico de planos en hologramas 3D de muebles RTA y separación de textos complejos a overlays en CapCut).
+  - **Optimización de Costos y Cero Desperdicio de Tokens**: Formato estructurado en bloques de storyboard que garantiza clips hiperrealistas y de impacto comercial B2B a la primera generación (1-shot) en Google Omni Flash, Veo, Sora, Kling y Runway.
+
+- [x] **[27 de Agosto, 2026] Hito Henn_2da_reu (Libro Financiero Multidivisa Dinámico BRL/USD/COP, Alineación Simétrica 1:1, Calibración Ponderada por Rango de Piezas y Extensión Chrome Meet)**:
   - **Libro Financiero Maestro (`temporal/Cotizador_Costos_Moveis_Henn_Mario_Mojica.xlsx`)**: 4 pestañas interconectadas (`1. Cotizador Henn (BRL)`, `2. Cotizador Henn (USD)`, `3. Cotizador Henn (COP)`, `4. Rentabilidad Mario (COP)`) con TRMs dinámicas (`5.14 BRL/USD` y `$3.000 COP/USD`), matriz de 5 escenarios de reducción y escala multicliente en Brasil (1 a 10 fábricas).
   - **Alineación Simétrica 1:1 de Celdas**: Estructura homologada fila por fila en todas las pestañas (`D5`, `D7`, `F7`, `D11`, `D12`, `D13`, `D18`, `D22`, filas 25-29, filas 34-36) para lectura inmediata.
   - **Calibración Ponderada por Complejidad RTA**: Piezas Pequeñas hasta 10 piezas (~1 día, `0.65x`), Muebles Medianos de 11 a 24 piezas (~1.5 días, `1.00x` promedio Henn ~20 piezas coincidiendo con el precio estándar recomendado del 30%), y Muebles Grandes de 25 a 40 piezas (~2 días, `1.35x`).

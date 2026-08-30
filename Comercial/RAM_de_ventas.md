@@ -104,7 +104,7 @@ Para evitar respuestas genéricas, el RAM de ventas almacena y cruza 5 dimension
 | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
 | **Mobille / AKEO Partner** | Luiz Atilio Barse | Diretor & Super-Conector B2B | Conexión estratégica, apadrinamiento con fábricas en RS | 🔥 Aliado Estratégico (Padrino B2B) | 10 Ago 2026 - Conexión directa a Marcelo Novo (Politorno) con aval de Sr. Pedro | Mantenerlo informado de avances con Politorno |
 | **Politorno Móveis** | Marcelo Novo | Diretor / Líder P&D | Manuales 3D interactivos, revisión de propuesta económica y suite 3DBimFab | 🔥 Caliente (Vacaciones / Retoma Lun 31 Ago) | 24 Ago 2026 - Marcelo avisó que está de vacaciones esta semana. Receptivo a retomar la próxima | Contactar el lunes 31 de agosto para fijar la reunión |
-| **Móveis Henn** | Marcos Unnass & Jonas Borck | Coordenador P&D & Analista Engenharia | Manuales interactivos 3D, 3dBimFab, ERP TOTVS Datasul, ahorro 30% | 🔥 Negociación Avanzada (Llamada Jue 27 Ago, 9:00 AM) | 26 Ago 2026 - Demo 1h 37m. Jonas dio su WhatsApp (+55 49 9982-75012) validando la grandeza del software. Enviado PDF PT 4 págs. | Llamar a Marcos el Jueves 27 a las 9:00 AM para revisar la tabla de costos (Pág 4) |
+| **Móveis Henn** | Marcos Unnass & Jonas Borck | Coordenador P&D & Analista Engenharia | Manuales interactivos 3D, 3dBimFab, ERP TOTVS Datasul, ahorro 30% | 🔥 Negociación Avanzada / Demostración Ravena | 28 Ago 2026 - Levantamiento de Costos completado (80 manuales/año, R$ 1.926 vs R$ 1.348 Mario, ahorro +R$ 46.227 BRL). Marcos enviará archivos Cómoda Ravena. Vacaciones 3-11 Sep. | Recibir archivos de Cómoda Ravena, modelar en 3dBimFab y agendar demo en vivo con Marcos y Jonas para después del 15 de Sep |
 | **Grupo K1 (Kappesberg)** | Julio Santos | Especialista IA & Automação / Mkt | Costos de P&D de manuales, modelo suscripción ($1 USD/mes), IA aplicada | 🔥 En Evaluación / Cotización Enviada | 17 Ago 2026 - Solicitó valores e insumos. Enviada calculadora 30% ahorro | Esperar feedback de reunión interna con su gerente |
 | **Kit's Paraná** | Marcos Benedito & Jamylle Duarte | Directivos P&D / Marketing | Costos de asistencia técnica, manuales en papel, telemetría | 🟡 Referenciado / Email Preparado | 17 Ago 2026 - Andre Luis facilitó sus correos | Enviar correo corporativo formal a Marcos y Jamylle |
 | **MADECENTRO** | Dimas Tobón | Gerente General | Manuales interactivos 3D, módulos de cocina/closets, telemetría y software | 🔥 Contacto Directo / Caliente | 18 Ago 2026 - Respondió en LinkedIn | Responder para agendar reunión o demo 3D personalizada |
@@ -166,8 +166,25 @@ Para evitar respuestas genéricas, el RAM de ventas almacena y cruza 5 dimension
       2. **Llamada de Levantamiento de Costos:** Agendada para el **Jueves 27 de agosto a las 9:00 AM (BRT)** entre Mario y Marcos para relevar tiempos, herramientas y costos actuales del proceso y proyectar el ahorro garantizado de al menos 30%.
       3. Marcos estructurará la presentación de costos y viabilidad para los directivos de Henn con la propuesta del proyecto piloto de 3 meses.
   * *26 Agosto 2026 (10:18 BRT):* **Respaldo Directo de Jonas Borck:** Mario envió un mensaje cálido de agradecimiento personal de colega a colega a Jonas. Jonas respondió: *"Boa tarde Mario! Tudo bem sim, e ai, como estas? Legal, foi uma apresentação bem interessante, deu para entender a grandeza do seu software. Sigo a disposição aqui, ou pode me chamar no WhatsApp 5549998275012, para qualquer dúvida. Em horário comercial dificilmente eu acesso meu celular, mas quando da eu te respondo. Valeuu! Abraço"*. Con esto, Jonas habilitó su WhatsApp personal `+55 49 9982-75012` y consolidó su rol de Padrino B2B interno.
-  * *26 Agosto 2026 (11:20 BRT):* **Envío de Memoria Técnica Oficial a Marcos Unnass:** Se remitió por WhatsApp a Marcos el informe oficial en Portugués (`Integracao_TOTVS_Datasul_Moveis_Henn_PT.pdf` de 4 páginas) con la minuta proactiva, la diferenciación de los dos pilotos (Piloto 1 SketchUp vs Piloto 2 3dBimFab), y recomendándole revisar la **Página 4 (Tabla de Costos y Tiempos de P&D)** como base de trabajo para la llamada de mañana a las 09:00 BRT.
-- **Objetivo Estratégico:** Llamada telefónica mañana a las 9:00 AM BRT (7:00 AM COL) con Marcos para validar la matriz de costos y cerrar el inicio del piloto de 3 meses en P&D.
+  * *26 Agosto 2026 (11:20 BRT):* **Envío de Memoria Técnica Oficial a Marcos Unnass:** Se remitió por WhatsApp a Marcos el informe oficial en Portugués (`Integracao_TOTVS_Datasul_Moveis_Henn_PT.pdf` de 4 páginas) con la minuta proactiva, la diferenciación de los dos pilotos (Piloto 1 SketchUp vs Piloto 2 3dBimFab), y recomendándole revisar la **Página 4 (Tabla de Costos y Tiempos de P&D)** como base de trabajo para la llamada de costos.
+  * *28 Agosto 2026 (08:00 - 08:53 BRT):* **HITO HISTÓRICO - Reunión de Levantamiento de Costos Reales de P&D (53 min):**
+    - **Participantes:** Mario Mojica y Marcos Unnass (Coordenador P&D Henn).
+    - **Validación del Libro Financiero Maestro (`Cotizador_Costos_Moveis_Henn_Mario_Mojica.xlsx`):**
+      1. *Volumen Real de Henn:* **80 manuales únicos/año** (sobre 150-200 lanzamientos anuales con colores; 330 productos/mes en planta).
+      2. *Costos Internos Actuales:* 2 proyectistas CLT (R$ 6.000/mes c/u con cargas = R$ 144.000/año) + Licencias SketchUp (R$ 2.400/año) + Adobe CC (R$ 3.600/año) + 10h/mes soporte/retrabajo = **R$ 154.090,91 BRL/año** (**R$ 1.926,14 BRL / manual**).
+      3. *Propuesta Mario (30% Ahorro Garantizado):* **R$ 1.348,30 BRL / manual** (R$ 107.863,64 BRL/año) = **Ahorro Neto de +R$ 46.227,27 BRL/año** para la directiva de Henn.
+      4. *Calibración por Complejidad:* Pequeños hasta 10 piezas (R$ 876,39 BRL / $170,50 USD), Medianos 11-24 piezas (~20 piezas promedio Henn: R$ 1.348,30 BRL / $262,31 USD), Grandes 25-40 piezas (R$ 1.820,20 BRL / $354,12 USD).
+    - **Descubrimiento del Gran Dolor Técnico ("La Brecha de Datos de Promob"):**
+      - Promob se satura y se ralentiza si insertan herrajes pequeños; por eso en fábrica omiten hasta un 15% de herrajes (cantoneras, esquineras, puntillas de espaldar).
+      - Como Promob no tiene esos herrajes, el conteo en InDesign se hace a mano, provocando constantes errores en la BOM y quejas de clientes por piezas faltantes.
+      - Mario demostró que con `3dBimFab` el conteo es paramétrico 100% automático por instancias y no pesa en el navegador, eliminando el error humano.
+    - **Acuerdos & Próximos Pasos (Demostración Cómoda Ravena):**
+      1. Marcos enviará los archivos de la **Cómoda Ravena** (DWG de Promob, SketchUp con explosiones de Cyntia, e InDesign/Illustrator).
+      2. Mario preparará el Gemelo Digital en `3dBimFab` y el Manual 3D interactivo.
+      3. Marcos sale a vacaciones del 3 al 11 de septiembre.
+      4. **Próxima Reunión (Post 15 de Septiembre):** Demostración en vivo de la Cómoda Ravena con Marcos, Jonas Borck y el área de Sistemas/TI de Henn para iniciar el piloto de 3-5 productos.
+      5. Marcos coordinará con Marketing y con el gerente de planificación **Rudgeri Henkel** la alineación con los videos de montaje.
+- **Objetivo Estratégico:** Modelar la Cómoda Ravena en `3dBimFab` y agendar la demo en vivo para después del 15 de septiembre.
 
 ---
 

@@ -61,4 +61,7 @@ La reunión presentó una solución tecnológica para optimizar instructivos de 
 * **[01:27:22] - [01:37:17] Siguientes pasos y análisis de viabilidad:** Marcos Unnass indica que la propuesta requiere ser madurada y presentada a los directivos para evaluar los costos, la viabilidad de la integración y el cambio de paradigmas en los procesos actuales. Como siguiente paso, se acordó que Mario Mojica y Marcos Unnass mantendrán una llamada telefónica para analizar los datos del proceso actual, incluyendo tiempos, herramientas y costos, con el fin de proyectar un ahorro garantizado de al menos el 30%. Esta reunión fue programada para el día siguiente a las 9:00 AM (27 de agosto).
 
 ---
-> 📂 **Ruta de Almacenamiento:** `c:\Desarrollo\mmapp\Clientes\Henn\reuniones\2026-08-26_Reunion_01_Presentacion_Manual3D_Henn.md`
+> 📂 **Ruta de Almacenamiento:** `c:\Desarrollo\mmapp\Clientes\Henn\reuniones\2026-08-26_Reunion_01_Presentacion_Manual3D_Henn.md`  
+> 📄 **Documentos Asociados en PDF:**  
+> - 🇧🇷 Portugués: [`2026-08-26_Reunion_01_Presentacion_Manual3D_Henn_PT.pdf`](file:///c:/Desarrollo/mmapp/Clientes/Henn/reuniones/2026-08-26_Reunion_01_Presentacion_Manual3D_Henn_PT.pdf)  
+> - 🇪🇸 Español: [`2026-08-26_Reunion_01_Presentacion_Manual3D_Henn_ES.pdf`](file:///c:/Desarrollo/mmapp/Clientes/Henn/reuniones/2026-08-26_Reunion_01_Presentacion_Manual3D_Henn_ES.pdf)

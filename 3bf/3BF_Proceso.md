@@ -640,12 +640,36 @@ Al construir muebles modulares combinando múltiples componentes paramétricos i
 
 ---
 
+---
+
+## 💎 Arquitectura Futura de Costeo y Sincronización de Materiales (Estructura Dual: Costo Vivo vs. Snapshots Inmutables)
+
+Para garantizar la precisión de ingeniería financiera en entornos de manufactura industrial a gran escala, la plataforma **3dBimFab** define el estándar de gestión de materiales y costeo:
+
+### 1. Sincronización Multicanal de Bases de Datos Maestras
+* **Matrices Soportadas:** Tableros/Láminas (MDF/MDP/Aglomerado), Herrajes (Minifix, Tarugos, Bisagras, Correderas, Tornillos) y Cantos (PVC, Melamínicos, ABS).
+* **Fuentes de Ingesta y Sincronización:**
+  * **Conexión API con ERPs Corporativos:** Integración bidireccional con SAP, TOTVS, Promob, Siigo, etc.
+  * **Hojas de Cálculo (Excel / CSV):** Importación y exportación masiva para actualización rápida de listas de proveedores.
+  * **Esquemas JSON Estructurados:** Ingesta ligera y automatizada en la nube.
+
+### 2. El Paradigma de Costeo Dual (Costo Vivo vs. Snapshots Inmutables)
+* **Modo Costo Vivo (*Live Costing*):** Evalúa el mueble en tiempo real utilizando las tarifas maestras actualizadas del día para diseño y nuevos presupuestos.
+* **Snapshots Inmutables por Versión de Producto (*Frozen State*):**
+  * Al aprobar un diseño o cerrar una cotización (ej. `v1.0 - Lanzamiento 2026`), la plataforma genera una **fotografía sellada e inmutable** de la estructura de costos (precios unitarios de tableros, cantos, herrajes y tiempos de mecanizado de ese momento exacto).
+  * **Garantía Financiera:** Evita que actualizaciones de precios del ERP alteren retroactivamente órdenes de compra históricas, contratos firmados o auditorías contables.
+* **Simulador de Impacto Inflacionario (Recálculo en 1 Clic):**
+  * Permite comparar el snapshot histórico contra los costos vivos actuales en una sola pantalla (*"Costo Histórico v1.0 vs. Costo Proyectado Actual"*), permitiendo generar una nueva versión `v2.0` sin sobreescribir ni destruir el registro original.
+
+---
+
 ## 🔄 Estado Final del Ecosistema 3BF
 
 - **3BF Worker Python (`3bf_worker.py`)**: Corriendo en `http://localhost:8005` (FastAPI con endpoints `/compute`, `/mecanizar-intercomponentes` y `/export-dxf`).
 - **RhinoCompute 8 (`rhino.compute.exe`)**: Corriendo en `http://localhost:5000` (Rhino 8 Engine).
 - **Aplicación Web Next.js 3BF**: Corriendo en `http://localhost:3005`.
 - **Google Drive Storage**: Sincronizado en `G:\Mi unidad\Muebles`.
+
 
 
 

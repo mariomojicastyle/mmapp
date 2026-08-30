@@ -23,8 +23,10 @@ import {
   Database,
   FileCode2,
   Zap,
-  Trash2
+  Trash2,
+  FolderOpen
 } from "lucide-react";
+import JSZip from "jszip";
 
 /**
  * Componente de entrada numérica inteligente con formato latino/español:
@@ -169,6 +171,7 @@ export default function DespieceView() {
   const trm = negociacionNovopan?.trmNovopan || 3000;
 
   const [descargando, setDescargando] = useState(false);
+  const [progresoExportacion, setProgresoExportacion] = useState<{ actual: number; total: number; nombre?: string } | null>(null);
   const [guardando, setGuardando] = useState(false);
   const modelKey = parametros.model_id || parametros.custom_filename || "Cubierta";
 
@@ -944,53 +947,59 @@ export default function DespieceView() {
     }
   };
 
+  // Obtener el contenido DXF y filename de una pieza desde el endpoint /api/export
+  const fetchDXFContenido = async (pieza: any, idx?: number) => {
+    const piezaNombre = pieza.descripcion || pieza.nombre || `Pieza_${(idx ?? 0) + 1}`;
+    const instanciaId = (pieza as any).instanciaId;
+
+    // Filtrar los mecanizados cruzados correspondientes a esta pieza
+    let mecanizadosParaPieza: any[] = [];
+    if (instanciaId && mecanizadosCruzados[instanciaId]) {
+      mecanizadosParaPieza = mecanizadosCruzados[instanciaId];
+    } else if (mecanizadosCruzados[piezaNombre]) {
+      mecanizadosParaPieza = mecanizadosCruzados[piezaNombre];
+    } else {
+      const todos = Object.values(mecanizadosCruzados || {}).flat();
+      mecanizadosParaPieza = todos.filter((m: any) => 
+        m.tablero_destino?.toLowerCase() === piezaNombre.toLowerCase() ||
+        m.origen_instancia_id === instanciaId
+      );
+      if (mecanizadosParaPieza.length === 0 && Object.keys(mecanizadosCruzados || {}).length > 0) {
+        mecanizadosParaPieza = todos;
+      }
+    }
+
+    // Obtener los parámetros reales y perforaciones OpenNURBS de la instancia
+    const inst = instanciaId ? instancias[instanciaId] : null;
+    const paramsPieza = inst?.parametros || parametros;
+    const perfsNurbsPieza = inst?.resultado?.perforaciones_nurbs || resultado?.perforaciones_nurbs || [];
+
+    const res = await fetch("/api/export", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ 
+        model_id: piezaNombre, 
+        parameters: paramsPieza,
+        pieza: {
+          nombre: pieza.nombre || "Cubierta",
+          descripcion: piezaNombre,
+          largo: pieza.largo,
+          ancho: pieza.ancho,
+          espesor: pieza.espesor,
+          perforaciones_nurbs: perfsNurbsPieza,
+        },
+        perforaciones_nurbs: perfsNurbsPieza,
+        version: versionActual,
+        mecanizados_cruzados: mecanizadosParaPieza
+      }),
+    });
+    return await res.json();
+  };
+
   const descargarDXFPieza = async (pieza: any, idx?: number) => {
     try {
       const piezaNombre = pieza.descripcion || pieza.nombre || `Pieza_${(idx ?? 0) + 1}`;
-      const instanciaId = (pieza as any).instanciaId;
-
-      // Filtrar los mecanizados cruzados correspondientes a esta pieza
-      let mecanizadosParaPieza: any[] = [];
-      if (instanciaId && mecanizadosCruzados[instanciaId]) {
-        mecanizadosParaPieza = mecanizadosCruzados[instanciaId];
-      } else if (mecanizadosCruzados[piezaNombre]) {
-        mecanizadosParaPieza = mecanizadosCruzados[piezaNombre];
-      } else {
-        const todos = Object.values(mecanizadosCruzados || {}).flat();
-        mecanizadosParaPieza = todos.filter((m: any) => 
-          m.tablero_destino?.toLowerCase() === piezaNombre.toLowerCase() ||
-          m.origen_instancia_id === instanciaId
-        );
-        if (mecanizadosParaPieza.length === 0 && Object.keys(mecanizadosCruzados || {}).length > 0) {
-          mecanizadosParaPieza = todos;
-        }
-      }
-
-      // Obtener los parámetros reales y perforaciones OpenNURBS de la instancia
-      const inst = instanciaId ? instancias[instanciaId] : null;
-      const paramsPieza = inst?.parametros || parametros;
-      const perfsNurbsPieza = inst?.resultado?.perforaciones_nurbs || resultado?.perforaciones_nurbs || [];
-
-      const res = await fetch("/api/export", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ 
-          model_id: piezaNombre, 
-          parameters: paramsPieza,
-          pieza: {
-            nombre: pieza.nombre || "Cubierta",
-            descripcion: piezaNombre,
-            largo: pieza.largo,
-            ancho: pieza.ancho,
-            espesor: pieza.espesor,
-            perforaciones_nurbs: perfsNurbsPieza,
-          },
-          perforaciones_nurbs: perfsNurbsPieza,
-          version: versionActual,
-          mecanizados_cruzados: mecanizadosParaPieza
-        }),
-      });
-      const data = await res.json();
+      const data = await fetchDXFContenido(pieza, idx);
       if (data.dxf_content) {
         const blob = new Blob([data.dxf_content], { type: "application/dxf" });
         const url = URL.createObjectURL(blob);
@@ -998,6 +1007,7 @@ export default function DespieceView() {
         a.href = url;
         a.download = data.filename || `${piezaNombre}_CAM_${versionActual}.dxf`;
         a.click();
+        URL.revokeObjectURL(url);
       }
     } catch (e) {
       console.error(`Error al exportar DXF para ${pieza.descripcion || pieza.nombre}:`, e);
@@ -1006,27 +1016,90 @@ export default function DespieceView() {
 
   const descargarDXF = async () => {
     setDescargando(true);
-    try {
-      if (piezasActivas && piezasActivas.length > 0) {
-        for (let i = 0; i < piezasActivas.length; i++) {
-          const p = piezasActivas[i];
-          await descargarDXFPieza(p, i);
-          // Breve pausa para que el navegador procese cada descarga limpiamente
-          if (i < piezasActivas.length - 1) {
-            await new Promise((resolve) => setTimeout(resolve, 350));
-          }
-        }
-      } else {
-        await descargarDXFPieza({
+    setProgresoExportacion(null);
+
+    const listaPiezas = (piezasActivas && piezasActivas.length > 0)
+      ? piezasActivas
+      : [{
           nombre: parametros.model_id || "Cubierta",
           descripcion: parametros.model_id || "Cubierta",
           largo: Number((parametros as any)["RH_IN:01.1 Ancho"] ?? 498),
           ancho: Number((parametros as any)["RH_IN:01.2 Profundidad"] ?? 480),
           espesor: 15
-        }, 0);
+        }];
+
+    const total = listaPiezas.length;
+
+    // 1. MÉTODO NATIVO: File System Access API (Pide carpeta 1 SOLA VEZ y guarda todos los DXFs allí directamente)
+    if (typeof window !== "undefined" && "showDirectoryPicker" in window) {
+      try {
+        const dirHandle = await (window as any).showDirectoryPicker({
+          mode: "readwrite",
+          startIn: "downloads"
+        });
+
+        for (let i = 0; i < total; i++) {
+          const p: any = listaPiezas[i];
+          const piezaNombre = p.descripcion || p.nombre || `Pieza_${i + 1}`;
+          setProgresoExportacion({ actual: i + 1, total, nombre: piezaNombre });
+
+          const data = await fetchDXFContenido(p, i);
+          if (data?.dxf_content) {
+            const filename = data.filename || `${piezaNombre}_CAM_${versionActual}.dxf`;
+            const fileHandle = await dirHandle.getFileHandle(filename, { create: true });
+            const writable = await fileHandle.createWritable();
+            await writable.write(data.dxf_content);
+            await writable.close();
+          }
+        }
+
+        setProgresoExportacion({ actual: total, total, nombre: "Completado" });
+        setTimeout(() => {
+          setProgresoExportacion(null);
+          setDescargando(false);
+        }, 2000);
+        return;
+      } catch (err: any) {
+        // Si el usuario canceló la selección de carpeta, salimos limpiamente
+        if (err.name === "AbortError") {
+          setDescargando(false);
+          setProgresoExportacion(null);
+          return;
+        }
+        console.warn("showDirectoryPicker no disponible o denegado, utilizando fallback de paquete ZIP...", err);
       }
+    }
+
+    // 2. MÉTODO FALLBACK UNIVERSAL (ZIP): Empaqueta todos los DXFs en un único archivo descargable
+    try {
+      const zip = new JSZip();
+      for (let i = 0; i < total; i++) {
+        const p: any = listaPiezas[i];
+        const piezaNombre = p.descripcion || p.nombre || `Pieza_${i + 1}`;
+        setProgresoExportacion({ actual: i + 1, total, nombre: piezaNombre });
+
+        const data = await fetchDXFContenido(p, i);
+        if (data?.dxf_content) {
+          const filename = data.filename || `${piezaNombre}_CAM_${versionActual}.dxf`;
+          zip.file(filename, data.dxf_content);
+        }
+      }
+
+      setProgresoExportacion({ actual: total, total, nombre: "Empaquetando ZIP..." });
+      const zipContent = await zip.generateAsync({ type: "blob" });
+      const url = URL.createObjectURL(zipContent);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `3dBimFab_DXFs_${modelKey}_${versionActual}.zip`;
+      a.click();
+      URL.revokeObjectURL(url);
+
+      setProgresoExportacion({ actual: total, total, nombre: "Completado" });
+      setTimeout(() => {
+        setProgresoExportacion(null);
+      }, 2000);
     } catch (e) {
-      console.error("Error al exportar DXF:", e);
+      console.error("Error al exportar archivos DXF:", e);
     } finally {
       setDescargando(false);
     }
@@ -2432,18 +2505,29 @@ export default function DespieceView() {
               onClick={descargarDXF}
               disabled={descargando}
               style={{
-                backgroundColor: coloresApariencia?.botonActivo || "#0891b2",
+                backgroundColor: progresoExportacion?.nombre === "Completado" 
+                  ? "#10B981" 
+                  : (coloresApariencia?.botonActivo || "#0891b2"),
                 color: "#FFFFFF",
               }}
               className="py-1.5 px-4 rounded-full font-semibold text-xs shadow-xs transition flex items-center justify-center gap-2 disabled:opacity-50 cursor-pointer hover:opacity-90 active:scale-95"
+              title="Selecciona la carpeta de destino una sola vez y guarda todos los archivos DXF"
             >
-              <Download className="w-3.5 h-3.5" />
+              {progresoExportacion?.nombre === "Completado" ? (
+                <Check className="w-3.5 h-3.5" />
+              ) : (
+                <FolderOpen className="w-3.5 h-3.5" />
+              )}
               <span>
-                {descargando 
-                  ? "Generando DXFs..." 
-                  : (piezasActivas.length > 1 
-                      ? `Exportar ${piezasActivas.length} DXFs CNC` 
-                      : "Exportar DXF Seccionadora CNC")}
+                {progresoExportacion
+                  ? (progresoExportacion.nombre === "Completado"
+                      ? `✓ ¡${progresoExportacion.total} DXFs Guardados!`
+                      : `Guardando ${progresoExportacion.actual}/${progresoExportacion.total}...`)
+                  : (descargando
+                      ? "Seleccionando Carpeta..."
+                      : (piezasActivas.length > 1 
+                          ? `Exportar ${piezasActivas.length} DXFs CNC` 
+                          : "Exportar DXF Seccionadora CNC"))}
               </span>
             </button>
           </div>

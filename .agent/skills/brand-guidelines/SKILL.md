@@ -62,7 +62,14 @@ The platform was originally designed with **"Tech Ethos"** (Light Theme) as the 
 ## 4. Component Rules
 - **No-Divider Mandate:** Do not use 1px horizontal lines to separate lists. Use vertical whitespace (gap) or alternating subtle background tints (`surface-container-lowest`).
 - **Ambient Shadows (Dark Mode):** Avoid black drop-shadows. Use colored shadows (e.g., `primary` with 8% opacity and 24px blur) for a monitor glow effect.
-- **Ghost Borders:** If an outline is absolutely required for accessibility, use 15%-20% opacity borders.
+## 5. Official Vector Assets & Logos (`/publicidad`)
+Official source vector files (SVGs and ICOs) are maintained in the root **`publicidad/`** directory:
+- **`Logo_MM_en.svg`**: Master Mario Mojica logo (Double-M glyph in `#0088aa`, wordmark & "FORM & FUTURE").
+- **`Logo_3BF.svg`**: Official `3dBimFab` logo for light backgrounds (`#bb0f0f` red badge + black text).
+- **`Logo_3BF_Dark.svg`**: Official `3dBimFab` logo for dark backgrounds.
+- **`Icon_3BF.ico`** / **`Icon_3DBimFab.ico`**: Application and browser icons.
+
+**MANDATE:** When rendering headers, PDF templates, and official documents, always embed or reference the SVG files directly from `/publicidad/` to guarantee 100% brand fidelity.
 
 ## Implementation Workflow
 1. **Always use CSS Variables:** Define `--bg-primary`, `--surface`, `--text-main`, etc.

@@ -1828,4 +1828,89 @@ Con esta batería de arreglos y la validación en caliente, la V20 se establece 
 - **Desarrollo de Extensión Chrome Universal Google Meet (`mario-mojica-meet-extension/`)**:
   * Creación del paquete de extensión de navegador Chrome Manifest V3 con Background Service Worker, Content Script e inyección de subtítulos en vivo en Google Meet para capturar audio/texto y sincronizar en tiempo real con el copiloto bilingüe.
 
+---
+
+### 🔹 Hito Generador_Prompts_Video_IA — Estandarización de Dirección de Arte Cinematográfica para Videos IA & 1-Shot Success (27 de Agosto, 2026)
+
+- **Creación de Habilidad Permanente (`.agent/skills/generador-prompts-video-ia/SKILL.md`)**:
+  * Se codificó y estructuró la nueva habilidad oficial en el repositorio para la redacción de prompts de video de ultra-alta fidelidad cinemática, orientada a modelos generativos de video (Google Omni Flash, Veo, Sora, Kling y Runway Gen-3).
+  * **Las 7 Reglas de Oro Cinematográficas Integradas**:
+    1. *Óptica y Cámara:* Lentes anamórficos 35mm/50mm, relaciones 16:9 / 9:16, tracking continuo, rack focus y profundidad de campo real.
+    2. *Encuadre Headless Anti-Glitch:* Bloqueo explícito de rostros cuando no sean necesarios (`strictly no visible human faces`, plano a la altura del pecho y mesa de trabajo) para erradicar rostros deformados.
+    3. *Materialidad PBR Real:* Madera de roble escandinavo con vetas visibles, titanio aeroespacial cepillado, cristal óptico esmerilado con cáusticas raytraced y aluminio anodizado.
+    4. *Iluminación Tech Ethos:* Luz solar dorada volumétrica con haces de polvo y sombras ambientales frías y limpias.
+    5. *VFX y Metamorfosis 3D:* Disolución y remolino cuántico de planos/manuales de papel convirtiéndose en modelos 3D de muebles RTA (armarios, cómodas, mesas de noche) y dashboards de telemetría en vivo con la paleta cian/ámbar/roja de `3dBimFab`.
+    6. *Separación de Textos:* Cero intento de renderizado de tipografías pequeñas por IA; los textos, URLs y botones se trasladan al guion como overlays vectoriales para CapCut.
+    7. *Parámetros de Estabilidad:* Render 8K, 24fps, grading comercial de alta gama y física sólida.
+- **Impacto Económico y Operativo**:
+  * Eliminación del desperdicio de tokens por reintentos fallidos, garantizando la generación de clips impecables al primer intento (1-shot success) en storyboards, videos de producto y campañas B2B.
+
+---
+
+### 🔹 Hito Exportacion_DXF_Carpeta_Unica_1Clic — Exportación Directa de Archivos DXF a Carpeta Única y Fallback ZIP (27 de Agosto, 2026)
+
+- **Integración de File System Access API (`window.showDirectoryPicker`) en `3bf/components/views/DespieceView.tsx`**:
+  * Se eliminó la apertura repetitiva del menú "Guardar como" del navegador para cada archivo DXF individual.
+  * Ahora el usuario hace clic en el botón de exportación, **elige la carpeta de destino una sola vez** mediante el selector nativo del sistema operativo, y la plataforma escribe automáticamente cada archivo DXF (`.dxf`) de forma directa y secuencial en dicha carpeta.
+  * Los archivos van apareciendo en tiempo real dentro del explorador de archivos de Windows a medida que se procesan los mecanizados Biesse Skipper.
+- **Indicador Dinámico de Progreso en Vivo**:
+  * El botón principal de exportación se actualiza en tiempo real mostrando el estado exacto: `Seleccionando Carpeta...` ➔ `Guardando 1/12...` ➔ `Guardando 2/12...` ➔ `✓ ¡12 DXFs Guardados!`.
+- **Fallback Universal con Empaquetado ZIP (`JSZip`)**:
+  * En navegadores o entornos donde `showDirectoryPicker` no esté disponible o sea restringido, la plataforma agrupa automáticamente todos los archivos DXF en un único paquete `.zip` (`3dBimFab_DXFs_[Modelo]_[Version].zip`), garantizando siempre una descarga limpia en 1 solo clic.
+
+---
+
+### 🔹 Hito Eslogan_Oficial_Forma_y_Futuro — Formalización de "El futuro se construye desde hoy" y ADN de Marca (27 de Agosto, 2026)
+
+- **Formalización de Eslogan Institucional Trilingüe (`Comercial/guia_copy_voz_de_marca.md`)**:
+  * **Español (ES)**: *"El futuro se construye desde hoy."*
+  * **Português (PT)**: *"O futuro se constrói a partir de hoje."*
+  * **Inglés (EN)**: *"Building the future, starting today."*
+- **Fundamento Psicológico y Conexión con el Isotipo ("Forma y Futuro")**:
+  * *Forma:* La ingeniería física, el mueble, el despiece milimétrico DfMA, los tableros MDP/MDF y la maquinaria CNC de taller.
+  * *Futuro:* La computación paramétrica, la nube de **3dBimFab**, los manuales 3D interactivos y la transformación digital que no espera.
+  * *Construye:* Habla el lenguaje del fabricante industrial (en la madera no se teoriza, se construye).
+
+---
+
+### 🔹 Hito Storyboard_Maestro_v4_Trilingue — Master Audiovisual con Guion Completo (ES | PT | EN) y Prompts Cinemáticos IA (27 de Agosto, 2026)
+
+- **Creación de `Comercial/Videos/storyboard_3dBimFab_v4.md` y Actualización de `storyboard_3dBimFab_v3.md`**:
+  * **24 Segmentos de Video Estandarizados**: Cobertura completa de la narrativa del fundador en 5 bloques cronológicos (~3:10 min).
+  * **Guion Trilingüe Integral**: Cada segmento contiene la locución exacta sincronizada en **Español (ES)**, **Português do Brasil (PT)** e **Inglés (EN)** con prosodia y tono ejecutivo natural.
+  * **Dirección de Arte Cinematográfica & 1-Shot Success**: Prompts en inglés calibrados bajo la habilidad `generador-prompts-video-ia` (lentes anamórficos 35mm/50mm, encuadres *headless* sin deformaciones faciales, física PBR en roble nórdico/titanio/cristal, remolinos cuánticos de partículas y paleta *Tech Ethos*).
+  * **Textos para CapCut (Overlays) & Diseño Sonoro (Foley)**: Especificación de títulos limpios para edición y efectos acústicos reales sin música intrusiva.
+
+---
+
+### 🔹 Hito Arquitectura_Costeo_Dual_Snapshots_Inmutables — Bases de Datos ERP/Excel/JSON & Trazabilidad Histórica en 3dBimFab (28 de Agosto, 2026)
+
+- **Formalización de la Arquitectura Financiera en `3BF/3BF_Proceso.md`**:
+  * **Sincronización Multicanal de Materiales**: Gestión dinámica de tableros (MDP/MDF), herrajes (Minifix, bisagras, correderas) y cantos (PVC/ABS) alimentados e integrados vía API de ERP (SAP, TOTVS, Promob, Siigo), hojas de cálculo (Excel/CSV) y JSON.
+  * **El Paradigma Dual de Costeo**:
+    1. *Costo Vivo (Live Costing)*: Liquidación en tiempo real con las listas de precios vigentes del día para nuevos desarrollos.
+    2. *Snapshots Inmutables de Versión (Frozen State)*: Fotografías selladas por versión de producto (`v1.0`) que preservan los costos y tiempos exactos del momento de cotización/lanzamiento, blindando contratos y auditorías pasadas ante futuras alzas de precios.
+  * **Simulador de Impacto Inflacionario**: Comparativa en 1 solo clic entre el registro histórico y las tarifas actuales para crear una versión `v2.0` sin alterar el pasado.
+
+---
+
+### 🔹 Hito Repositorio_Identidad_Grafica_Publicidad — Creación de Carpeta `/publicidad`, Centralización de Logotipos SVG y Estandarización de Actas B2B (29 de Agosto, 2026)
+
+- **Creación y Centralización de Activos Vectoriales en `/publicidad`**:
+  * Creación de la carpeta raíz oficial [`publicidad/`](file:///c:/Desarrollo/mmapp/publicidad/) para alojar los logotipos fuente vectoriales de la empresa y los productos de software.
+  * **[`Logo_MM_en.svg`](file:///c:/Desarrollo/mmapp/publicidad/Logo_MM_en.svg)**: Logotipo corporativo de Mario Mojica con el isotipo MM en Cyan `#0088aa`, tipografía corporativa y el lema *FORM & FUTURE*.
+  * **[`Logo_3BF.svg`](file:///c:/Desarrollo/mmapp/publicidad/Logo_3BF.svg)**: Logotipo de `3dBimFab` en fondo claro con el badge rojo `#bb0f0f` (`3BF`), texto `3dBimFab` y *'Powered by MARIO MOJICA'*.
+  * **[`Logo_3BF_Dark.svg`](file:///c:/Desarrollo/mmapp/publicidad/Logo_3BF_Dark.svg)**: Variante del logotipo de `3dBimFab` para fondos oscuros.
+  * **`Icon_3BF.ico`** / **`Icon_3DBimFab.ico`**: Íconos empaquetados para ejecutables y navegadores.
+- **Blindaje en Protocolos de Arranque y Habilidades**:
+  * Actualizado [`AGENTS.md`](file:///c:/Desarrollo/mmapp/AGENTS.md), [`GEMINI.md`](file:///c:/Desarrollo/mmapp/GEMINI.md), [`Comercial/activos_digitales_y_redes.md`](file:///c:/Desarrollo/mmapp/Comercial/activos_digitales_y_redes.md) y [`.agent/skills/brand-guidelines/SKILL.md`](file:///c:/Desarrollo/mmapp/.agent/skills/brand-guidelines/SKILL.md) estableciendo el mandato obligatorio de consumir **directamente los archivos SVG de `/publicidad`** en la generación de cualquier acta, memoria técnica, PDF o interfaz.
+- **Estandarización y Organización de `Clientes/Henn/reuniones/`**:
+  * Organización de la carpeta de minutas y actas de reuniones con nomenclatura simétrica y cronológica (`2026-08-26_Reunion_01_...` y `2026-08-28_Reunion_02_...`).
+  * Generación y validación de los PDFs ejecutivos oficiales de la Reunión 02 (`2026-08-28_Reunion_02_Levantamiento_Costos_Moveis_Henn_PT.pdf` y `_ES.pdf`) con pureza de idioma estricta, corrección del directivo **Rudgeri Henkel** y cabecera dual de marca renderizada directamente desde los SVGs de `/publicidad`.
+
+
+
+
+
+
 
