@@ -1,4 +1,4 @@
-﻿# 🎬 Storyboard y Guion Definitivo — 3dBimFab (Trilingüe: ES | PT | EN)
+# 🎬 Storyboard y Guion Definitivo — 3dBimFab (Trilingüe: ES | PT | EN)
 ## Video Oficial de Presentación: `3dBimFab_presentacion.mp4`
 
 > 🏷️ **REGLA GLOBAL DE NOMENCLATURA:** La suite y motor paramétrico se escribe **SIEMPRE** como **3dBimFab**.  
@@ -114,3 +114,140 @@ Esta tabla mapea cada línea de locución con la acción visual en pantalla y lo
   * **ES:** es-CO-GonzaloNeural / es-ES-AlvaroNeural (Barítono profesional, tono pausado y seguro).
   * **PT:** pt-BR-AntonioNeural / pt-BR-FabioNeural (Português do Brasil corporativo, cálido y técnico).
   * **EN:** en-US-AndrewNeural / en-US-ChristopherNeural (Inglés corporativo internacional).
+
+---
+
+## 📱 4. Copy para Redes Sociales (Post Oficial de LinkedIn + Primer Comentario)
+
+### 🇪🇸 Versión en Español (Publicado Oficial)
+
+**Texto del Post (LinkedIn):**
+```text
+En la industria del mueble, el diseño y la manufactura siempre han vivido desconectados.
+
+Para lanzar un solo producto, una fábrica debe saltar entre múltiples procesos aislados: el CAD 3D, el cálculo de costos, los planos, la optimización de corte, el desarrollo de empaque, la creación de instructivos de ensamble y la programación de las máquinas CNC.
+
+Cada salto significa pérdida de tiempo, errores humanos y reprocesos en planta.
+
+Por eso creamos 3dBimFab. 🚀
+
+No es un software genérico de dibujo. Es una plataforma en la nube diseñada para unificar todo el universo de desarrollo de producto en un solo ecosistema:
+
+🔹 Componentes Inteligentes Paramétricos: Módulos vivos que no son piezas inertes; integran herrajes, reglas de mecanizado, límites dimensionales y asistencia de ensamble magnético para el diseñador.
+🔹 Geometría 3D Optimizada (Web-Ready): Resuelve el gran dolor de los CAD tradicionales generando modelos ligeros, con mapeo UV y materiales asignados, listos para animar en manuales de armado 3D interactivos.
+🔹 Inteligencia Artificial Aplicada: Conexión directa con tus IAs generativas favoritas para crear renders fotorrealistas y videos comerciales de catálogo en segundos.
+🔹 Ficha Financiera 100% Viva & Trazabilidad: Sincronización de tableros, cantos, herrajes, mano de obra y CIF (vía ERP o Excel), permitiendo cotizar con costos vivos o congelar versiones cronológicas para blindar tus márgenes.
+🔹 Fabricación Directa: Generación y descarga masiva de archivos DXF listos para tus centros de mecanizado CNC.
+
+Es Industria 4.0 fraguada desde el corazón propio de la manufactura.
+
+🎥 Te invito a ver este video de 1 minuto y conocer cómo se conecta el diseño con la fábrica del futuro.
+
+¿Cuál de estos subprocesos es el que más fricción genera hoy en tu empresa? Te leo en los comentarios. 👇
+
+#Industria40 #ManufacturaDigital #DisenoDeMobiliario #3dBimFab #RTA #OptimizacionIndustrial #MarioMojica
+```
+
+**Primer Comentario (LinkedIn):**
+```text
+3dBimFab se encuentra actualmente en su fase de Programa Piloto y Beta Privada para fábricas de manufactura. 🔒
+
+No está abierto al público general, ya que estamos realizando sesiones ejecutivas y demostraciones técnicas personalizadas directamente con directivos y equipos de ingeniería interesados en liderar la transformación digital de sus plantas.
+
+Si tu compañía quiere conocer la plataforma en acción y explorar una alianza de co-innovación:
+
+📲 Escríbeme directamente por WhatsApp: +573117646907
+📩 O déjame un mensaje directo por aquí por LinkedIn.
+
+El futuro se construye desde hoy. ✨
+```
+
+---
+
+### 🇧🇷 Versão em Português / Brasil (Mercado Brasileiro)
+
+**Texto do Post (LinkedIn):**
+```text
+Na indústria moveleira, o design e a manufatura sempre viveram desconectados.
+
+Para lançar um único produto, uma fábrica precisa saltar entre múltiplos processos isolados: o CAD 3D, o cálculo de custos, os desenhos técnicos, a otimização de corte, o desenvolvimento de embalagens, a criação de manuais de montagem e a programação das máquinas CNC.
+
+Cada salto significa perda de tempo, erros humanos e retrabalho na fábrica.
+
+Por isso criamos o 3dBimFab. 🚀
+
+Não é um software genérico de desenho. É uma plataforma na nuvem projetada para unificar todo o universo de desenvolvimento de produtos em um único ecossistema:
+
+🔹 Componentes Inteligentes Paramétricos: Módulos vivos que não são peças inertes; integram ferragens, regras de usinagem, limites dimensionais e assistência de encaixe magnético para o projetista.
+🔹 Geometria 3D Otimizada (Web-Ready): Resolve a grande dor dos CADs tradicionais gerando modelos leves, com mapeamento UV e materiais atribuídos, prontos para animar em manuais de montagem 3D interativos.
+🔹 Inteligência Artificial Aplicada: Conexão direta com suas IAs generativas favoritas para criar renders fotorrealistas e vídeos comerciais de catálogo em segundos.
+🔹 Ficha Financeira 100% Viva & Rastreabilidade: Sincronização de painéis, fitas de borda, ferragens, mão de obra e CIF (via ERP ou Excel), permitindo orçar com custos em tempo real ou congelar versões cronológicas para blindar suas margens.
+🔹 Fabricação Direta: Geração e download massivo de arquivos DXF prontos para seus centros de usinagem CNC.
+
+É Indústria 4.0 forjada a partir do próprio coração da manufatura.
+
+🎥 Convido você a assistir a este vídeo de 1 minuto e conhecer como se conecta o design com a fábrica do futuro.
+
+Qual desses subprocessos é o que mais gera atrito hoje na sua empresa? Conte para mim nos comentários. 👇
+
+#Industria40 #ManufaturaDigital #DesignDeMobiliario #3dBimFab #RTA #OtimizacaoIndustrial #MarioMojica
+```
+
+**Primeiro Comentário (LinkedIn):**
+```text
+O 3dBimFab encontra-se atualmente em sua fase de Programa Piloto e Beta Privado para indústrias de manufatura. 🔒
+
+Não está aberto ao público geral, pois estamos realizando sessões executivas e demonstrações técnicas personalizadas diretamente com diretores e equipes de engenharia interessados em liderar a transformação digital de suas fábricas.
+
+Se a sua empresa deseja conhecer a plataforma em ação e explorar uma parceria de co-inovação:
+
+📲 Fale comigo diretamente pelo WhatsApp: +573117646907
+📩 Ou me envie uma mensagem direta por aqui pelo LinkedIn.
+
+O futuro se constrói a partir de hoje. ✨
+```
+
+---
+
+### 🇺🇸 English Version (Global Industry)
+
+**Post Text (LinkedIn):**
+```text
+In the furniture industry, design and manufacturing have always lived disconnected.
+
+To launch a single product, a factory has to juggle multiple isolated processes: 3D CAD, cost estimation, technical drawings, nesting optimization, packaging engineering, assembly manual creation, and CNC machine programming.
+
+Every gap between these steps means lost time, human error, and costly shop-floor rework.
+
+That is why we built 3dBimFab. 🚀
+
+This is not generic drafting software. It is a cloud-native platform engineered to unify the entire product development lifecycle into a single, cohesive ecosystem:
+
+🔹 Parametric Smart Components: Living modules that are far more than inert geometry; they embed hardware rules, machining logic, dimensional limits, and magnetic snap-assembly assistance for the designer.
+🔹 Optimized 3D Geometry (Web-Ready): Solves the chronic bottleneck of traditional CAD by generating ultra-lightweight models with UV mapping and assigned materials, ready to animate in voice-guided interactive 3D assembly manuals.
+🔹 Applied Artificial Intelligence: Direct connection with your favorite generative AIs to create photorealistic renders and commercial catalog video assets in seconds.
+🔹 100% Live Financial BOM & Traceability: Real-time synchronization of panels, edge banding, hardware, labor, and overheads (via ERP or Excel), empowering you to quote with live costs or lock version snapshots to protect your profit margins.
+🔹 Direct-to-Machine CAM: Instant bulk generation and download of machine-ready DXF files for your CNC machining centers.
+
+This is Industry 4.0 forged from the very heart of manufacturing.
+
+🎥 I invite you to watch this 1-minute video and discover how design connects directly with the factory of the future.
+
+Which of these sub-processes causes the most friction in your company today? Let me know in the comments below. 👇
+
+#Industry40 #DigitalManufacturing #FurnitureDesign #3dBimFab #RTA #IndustrialOptimization #MarioMojica
+```
+
+**First Comment (LinkedIn):**
+```text
+3dBimFab is currently in its Pilot Program and Private Beta stage for manufacturing plants. 🔒
+
+It is not open to the general public, as we are conducting tailored executive sessions and technical walkthroughs directly with leadership and engineering teams dedicated to driving the digital transformation of their factories.
+
+If your company would like to see the platform in action and explore a co-innovation partnership:
+
+📲 Message me directly on WhatsApp: +573117646907
+📩 Or send me a direct message right here on LinkedIn.
+
+Building the future, starting today. ✨
+```

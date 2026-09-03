@@ -84,12 +84,25 @@ function useMaterialPBRMaps(materialPBR?: MaterialPBRDef | null, fallbackUrl?: s
 }
 
 function obtenerNombreUnificadoPieza(obj: THREE.Object3D): string {
-  const meshName = (obj.name || "").replace("RH_OUT:", "").trim();
+  const meshName = (obj.name || "").replace(/^RH_OUT:/i, "").trim();
   const parentName = obj.parent ? obj.parent.name : "";
   const meshNameLower = meshName.toLowerCase();
   const parentNameLower = parentName.toLowerCase();
 
-  // 1. Si es un tablero / cubierta
+  // 1. Detección de Peça X (ej. Peça 6, Peça 6 B, Peça 7 B -> "Peça 6", "Peça 7")
+  const matchPeca = meshName.match(/^(pe[cç]a\s*\d+)/i);
+  if (matchPeca) {
+    const num = matchPeca[1].replace(/pe[cç]a\s*/i, "").trim();
+    return `Peça ${num}`;
+  }
+
+  const matchPK = meshName.match(/^(pk\s*\d+)/i);
+  if (matchPK) {
+    const num = matchPK[1].replace(/pk\s*/i, "").trim();
+    return `Peça ${num}`;
+  }
+
+  // 2. Si es un tablero / cubierta
   if (parentNameLower === "cubierta" || meshNameLower.includes("cubierta")) {
     return "Cubierta";
   }
@@ -99,25 +112,35 @@ function obtenerNombreUnificadoPieza(obj: THREE.Object3D): string {
   if (meshNameLower.includes("lateral")) {
     return "Lateral";
   }
+  if (meshNameLower.startsWith("mdp")) {
+    return "MDP";
+  }
+  if (meshNameLower.startsWith("mdf")) {
+    return "MDF";
+  }
 
-  // 2. Herrajes
+  // 3. Herrajes
   if (meshNameLower.includes("caja")) {
     return "Caja Minifix";
   }
   if (meshNameLower.includes("perno")) {
     return "Perno Minifix";
   }
-  if (meshNameLower.includes("tarugo")) {
+  if (meshNameLower.includes("tarugo") || meshNameLower.includes("cavilha") || meshNameLower.includes("clavilha")) {
     return "Tarugo";
   }
-  if (meshNameLower.includes("tornillo")) {
+  if (meshNameLower.includes("tornillo") || meshNameLower.includes("parafuso")) {
     return "Tornillo";
+  }
+  if (meshNameLower.includes("pes") || meshNameLower.includes("pata")) {
+    return "Pata";
   }
   if (meshNameLower.includes("maquinado")) {
     return "Maquinado CNC";
   }
 
-  return meshName.replace(/\.\d+$/, "").replace(/\d+$/, "").trim();
+  // Limpiar sufijos B o índices secundarios
+  return meshName.replace(/\s*[_\-]?\s*[bB]$/, "").replace(/\.\d+$/, "").trim();
 }
 
 function HoverRaycastTracker({ furnitureGroup }: { furnitureGroup: THREE.Group | null }) {
@@ -402,24 +425,28 @@ function BoardMesh({
   }, [customGeometry, size, calibracion.thresholdAristas]);
 
   const cleanName = name.replace(/^RH_OUT:/i, "").trim();
-  const baseCleanName = cleanName.replace(/2$/, "").replace(/_Color$|_MDP$|_Balance$/i, "").trim();
-  const normalizeKey = (k: string) => k.replace(/^RH_OUT:/i, "").replace(/2$/, "").replace(/[_\s]+/g, " ").trim().toLowerCase();
+  const normalizeKey = (k: string) => k.replace(/^RH_OUT:/i, "").replace(/[_\s]+/g, " ").trim().toLowerCase();
   const normName = normalizeKey(name);
-  const normBase = normalizeKey(baseCleanName);
 
-  // 💡 1. Resolver Asignación de Parte con tolerancia a guiones bajos / espacios y sufijos
+  // 💡 1. Resolver Asignación de Parte: Búsqueda EXACTA y estricta (distingue longitud de caracteres y sufijos como PK7 vs PK7B)
   let asignacion = asignacionesPartes[name] || 
                    asignacionesPartes[cleanName] || 
-                   asignacionesPartes[`RH_OUT:${cleanName}`] ||
-                   asignacionesPartes[baseCleanName] ||
-                   asignacionesPartes[`RH_OUT:${baseCleanName}`];
+                   asignacionesPartes[`RH_OUT:${cleanName}`];
 
   if (!asignacion) {
-    const matchedKey = Object.keys(asignacionesPartes).find((k) => {
-      const nK = normalizeKey(k);
-      return nK === normName || nK === normBase || normName.startsWith(nK) || nK.startsWith(normName);
-    });
-    if (matchedKey) asignacion = asignacionesPartes[matchedKey];
+    // 1.1 Match exacto normalizado (mismo texto exacto, insensible a mayúsculas/espacios/guiones)
+    const exactMatchedKey = Object.keys(asignacionesPartes).find((k) => normalizeKey(k) === normName);
+    if (exactMatchedKey) {
+      asignacion = asignacionesPartes[exactMatchedKey];
+    } else {
+      // 1.2 Fallback seguro solo para sufijos técnicos explícitos (_Color, _MDP, _Balance) si y solo si existe la base exacta
+      const baseCleanName = cleanName.replace(/2$/, "").replace(/_Color$|_MDP$|_Balance$/i, "").trim();
+      const normBase = baseCleanName ? normalizeKey(baseCleanName) : "";
+      if (normBase && normBase !== normName) {
+        const baseMatchedKey = Object.keys(asignacionesPartes).find((k) => normalizeKey(k) === normBase);
+        if (baseMatchedKey) asignacion = asignacionesPartes[baseMatchedKey];
+      }
+    }
   }
 
   const isWireframe = modoVisual === "lineas";
@@ -429,6 +456,20 @@ function BoardMesh({
   const isHardwareTarugo = normName.includes("tarugo") || normName.includes("soporte");
   const isMachining = normName.includes("maquinado") || normName.includes("perforado");
   const isWoodBoardPiece = !isHardwarePerno && !isHardwareCaja && !isHardwareTarugo && !isMachining;
+
+  // 🪵 Detector Universal de Cara de Balance / Reverso (ej. Peça 6 B, Peça 7 B, Peça 10 B, PK6B, Balance, Back, Equilibrio)
+  const isBalance = (
+    normName.includes("balance") ||
+    normName.includes("back") ||
+    normName.includes("espaldar") ||
+    normName.includes("equilibrio") ||
+    normName.includes("reverso") ||
+    normName.endsWith(" b") ||
+    normName.endsWith("_b") ||
+    normName.endsWith("-b") ||
+    /pe[cç]a\s*\d+\s*b$/i.test(normName) ||
+    /pk\s*\d+\s*b$/i.test(normName)
+  );
 
   // 💡 2. Resolver Capa Asignada (Blindaje: Piezas de madera NUNCA caen en capa_acero)
   let capaAsignada: any = null;
@@ -443,14 +484,14 @@ function BoardMesh({
       capaAsignada = capas.find((c) => c.id === "capa_madera" || c.nombre.toLowerCase().includes("madera"));
     } else if (isMachining) {
       capaAsignada = capas.find((c) => c.id === "capa_perforados" || c.nombre.toLowerCase().includes("perforad"));
-    } else if (normName.includes("balance") || normName.includes("back")) {
-      capaAsignada = capas.find((c) => c.id === "capa_back" || c.id === "capa_espaldar" || c.nombre.toLowerCase().includes("back"));
+    } else if (isBalance) {
+      capaAsignada = capas.find((c) => c.id === "capa_back" || c.id === "capa_espaldar" || c.nombre.toLowerCase().includes("back") || c.nombre.toLowerCase().includes("balance"));
     } else if (normName.includes("mdp")) {
       capaAsignada = capas.find((c) => c.id === "capa_mdp" || c.nombre.toLowerCase() === "mdp");
     } else if (normName.includes("mdf")) {
       capaAsignada = capas.find((c) => c.id === "capa_mdf" || c.nombre.toLowerCase() === "mdf");
     } else {
-      // Pieza principal de madera/tablero (Cubierta, Lateral, Frente, Tapa, Cajón, Tapaluz, etc.) -> Capa Tono
+      // Pieza principal de madera/tablero (Cubierta, Lateral, Frente, Tapa, Peça 6, Peça 7, Peça 10, etc.) -> Capa Tono
       capaAsignada = capas.find((c) => c.id === "capa_tono" || c.nombre.toLowerCase() === "tono" || c.nombre.toLowerCase().includes("tono")) || capas.find(c => c.id !== "capa_acero") || capas[0];
     }
   }
@@ -473,9 +514,8 @@ function BoardMesh({
   const isRenderedMode = modoVisual === "renderizado";
   const isWoodBoard = !isHardwarePerno && !isHardwareCaja && !isHardwareTarugo && !isMachining;
 
-  const isMdpExpuesto = name.includes("MDP");
-  const isBalance = name.includes("Balance");
-  const isMelaminaCara = name.includes("Color") || (!isMdpExpuesto && !isBalance);
+  const isMdpExpuesto = normName.includes("mdp");
+  const isMelaminaCara = (normName.includes("color") || !isBalance) && !isMdpExpuesto;
 
   // 💡 4. Determinar Textura Objetivo (targetTextureUrl)
   let targetTextureUrl: string | null = null;
@@ -1521,13 +1561,7 @@ function SingleFurnitureInstanceMesh({
   const parentBoardGroupName = isModelCubierta ? "Cubierta" : "Tableros";
   const mainColor = inst.parametros.color_acabado || "#0088aa";
 
-  const namesWith2 = new Set(inst.resultado.real_meshes.filter((m: any) => m.name.endsWith("2")).map((m: any) => m.name.slice(0, -1)));
-  const cleanRealMeshes = inst.resultado.real_meshes.filter((m: any) => {
-    if (!m.name.endsWith("2") && namesWith2.has(m.name)) {
-      return false;
-    }
-    return true;
-  });
+  const cleanRealMeshes = inst.resultado.real_meshes;
 
   const hasTexturedMeshes = cleanRealMeshes.some((m: any) => {
     const n = m.name.toLowerCase();
@@ -1553,7 +1587,17 @@ function SingleFurnitureInstanceMesh({
       n.includes("madera") ||
       n.includes("board") ||
       n.includes("panel") ||
-      n.includes("tablero")
+      n.includes("tablero") ||
+      n.includes("peça") ||
+      n.includes("peca") ||
+      n.includes("pk") ||
+      n.includes("puerta") ||
+      n.includes("porta") ||
+      n.includes("division") ||
+      n.includes("divisao") ||
+      n.includes("costado") ||
+      n.includes("fondo") ||
+      n.includes("fundo")
     );
   });
 

@@ -61,10 +61,23 @@ export default function PartBreakdownPanel() {
     }
     if (kLow.includes("mdp")) return capas.find((c) => c.nombre.toLowerCase() === "mdp" || c.id === "capa_mdp")?.id || capas[0]?.id;
     if (kLow.includes("mdf")) return capas.find((c) => c.nombre.toLowerCase() === "mdf" || c.id === "capa_mdf")?.id || capas[0]?.id;
-    if (kLow.includes("balance") || kLow.includes("back")) {
-      return capas.find((c) => c.id === "capa_back" || c.id === "capa_espaldar" || c.nombre.toLowerCase().includes("back"))?.id || capas[0]?.id;
+    const isBalance = (
+      kLow.includes("balance") ||
+      kLow.includes("back") ||
+      kLow.includes("espaldar") ||
+      kLow.includes("equilibrio") ||
+      kLow.includes("reverso") ||
+      kLow.endsWith(" b") ||
+      kLow.endsWith("_b") ||
+      kLow.endsWith("-b") ||
+      /pe[cç]a\s*\d+\s*b$/i.test(kLow) ||
+      /pk\s*\d+\s*b$/i.test(kLow)
+    );
+
+    if (isBalance) {
+      return capas.find((c) => c.id === "capa_back" || c.id === "capa_espaldar" || c.nombre.toLowerCase().includes("back") || c.nombre.toLowerCase().includes("balance"))?.id || capas[0]?.id;
     }
-    // 🪵 Para cualquier lámina / tablero (Cubierta, Lateral, Frente, Tapa, Cajón, etc.), asignar Capa Tono por defecto
+    // 🪵 Para cualquier lámina / tablero (Cubierta, Lateral, Frente, Tapa, Peça 6, Peça 7, etc.), asignar Capa Tono por defecto
     const capaTono = capas.find((c) => c.id === "capa_tono" || c.nombre.toLowerCase() === "tono" || c.nombre.toLowerCase().includes("tono"));
     return capaTono?.id || capas[0]?.id || "capa_tono";
   };
@@ -79,9 +92,26 @@ export default function PartBreakdownPanel() {
     let categoria = "Estructura";
     if (kLow.includes("maquinado") || kLow.includes("perforado")) {
       categoria = "Mecanizados";
-    } else if (kLow.includes("perno") || kLow.includes("caja") || kLow.includes("tarugo") || kLow.includes("tornillo") || kLow.includes("soporte") || kLow.includes("corredera") || kLow.includes("pata")) {
+    } else if (kLow.includes("perno") || kLow.includes("caja") || kLow.includes("tarugo") || kLow.includes("tornillo") || kLow.includes("soporte") || kLow.includes("corredera") || kLow.includes("pata") || kLow.includes("pes") || kLow.includes("clavilha")) {
       categoria = "Herrajes";
-    } else if (kLow.includes("cubierta") || kLow.includes("mdp") || kLow.includes("mdf") || kLow.includes("cajon") || kLow.includes("cajón") || kLow.includes("lateral") || kLow.includes("entrepaño") || kLow.includes("color") || kLow.includes("balance") || kLow.includes("division")) {
+    } else if (
+      kLow.includes("cubierta") ||
+      kLow.includes("mdp") ||
+      kLow.includes("mdf") ||
+      kLow.includes("cajon") ||
+      kLow.includes("cajón") ||
+      kLow.includes("lateral") ||
+      kLow.includes("entrepaño") ||
+      kLow.includes("color") ||
+      kLow.includes("balance") ||
+      kLow.includes("division") ||
+      kLow.includes("peça") ||
+      kLow.includes("peca") ||
+      kLow.includes("pk") ||
+      kLow.includes("tapa") ||
+      kLow.includes("fondo") ||
+      kLow.includes("costado")
+    ) {
       categoria = "Tableros";
     }
 

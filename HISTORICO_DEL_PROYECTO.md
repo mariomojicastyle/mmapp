@@ -1908,6 +1908,27 @@ Con esta batería de arreglos y la validación en caliente, la V20 se establece 
   * Organización de la carpeta de minutas y actas de reuniones con nomenclatura simétrica y cronológica (`2026-08-26_Reunion_01_...` y `2026-08-28_Reunion_02_...`).
   * Generación y validación de los PDFs ejecutivos oficiales de la Reunión 02 (`2026-08-28_Reunion_02_Levantamiento_Costos_Moveis_Henn_PT.pdf` y `_ES.pdf`) con pureza de idioma estricta, corrección del directivo **Rudgeri Henkel** y cabecera dual de marca renderizada directamente desde los SVGs de `/publicidad`.
 
+---
+
+### 🔹 Hito 3BF_ParametricBalance_ValueList_Tooltips_and_MDP_Fix — Detección Universal de Balance/Tono, Inyección Dinámica de ValueLists en Worker, Renderizado MDP y Tooltips Limpios (02 de Septiembre, 2026)
+
+- **Detección Universal de Caras de Balance y Reverso (`Viewer3D.tsx` & `PartBreakdownPanel.tsx`)**:
+  * Implementación de detector universal para clasificar automáticamente cualquier tablero con sufijos `... B`, `..._B`, `PK*B`, `Peça * B`, `Equilíbrio`, `Balance`, `Back` o `Espaldar`.
+  * Asignación por defecto de la cara principal a **Capa Tono** (Melamina/Madera) y la contracara a **Capa Back/Balance** (Blanco `#F9FAFB`), manteniendo total independencia de edición y asignación en el panel de *Desglose de Partes*.
+- **Inyección Dinámica de Listas Desplegables (Value Lists) en Python Worker (`worker/3bf_worker.py`)**:
+  * Actualización en caliente de las opciones seleccionadas (`Selected="true"`) en los componentes *Value List* del árbol XML de Grasshopper antes de enviar el algoritmo a **RhinoCompute**.
+  * Eliminación de colisiones parciales en `find_user_param_value` mediante coincidencia normalizada exacta, evitando que selectores como `Equilíbrio Peça 6` sobreescriban a `Equilíbrio Peça 10`.
+  * Soporte completo para parámetros `System.String` en la serialización de `payload_values`.
+  * Validación física y geométrica del cambio de normales y planos entre `Lado 1` ($X = +0.887\text{ m}$) y `Lado 2` ($X = +0.875\text{ m}$).
+- **Restauración y Desbloqueo de Mallas de Cantos `RH_OUT:MDP` (`Viewer3D.tsx`)**:
+  * Eliminación definitiva del filtro residual destructivo `namesWith2` que descartaba en memoria todas las mallas `RH_OUT:MDP` ante la presencia de nodos `RH_OUT:MDP2`.
+  * Renderizado inmediato y texturizado PBR continuo en todos los cantos expuestos.
+- **Formato Limpio y Preciso en Tooltips de Visor 3D (`Viewer3D.tsx`)**:
+  * Corrección de la función `obtenerNombreUnificadoPieza`: preservación estricta del número de pieza (`Peça 6`, `Peça 7`, `Peça 10`, `Peça 16`, `Peça 17`, `Peça 18`) eliminando truncamientos y suprimiendo sufijos de cara (` B`, `_B`, ` Balance`) para entregar etiquetas 100% claras y homogéneas al pasar el cursor.
+- **Actualizaciones de CRM y Memoria RAM de Ventas (`Comercial/RAM_de_ventas.md`)**:
+  * Registro de la confirmación de reunión técnica y comercial con **Marcelo Piriz (Politorno Móveis)** para el Jueves 03 de Septiembre a las 11:00 BRT (09:00 COL).
+  * Preparación de los puntos estratégicos de la sesión: Planilla dinámica de costos de P&D (meta 30% de ahorro) y demostración en vivo de **`3dBimFab`**.
+
 
 
 

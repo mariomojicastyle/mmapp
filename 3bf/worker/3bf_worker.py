@@ -148,31 +148,17 @@ def find_user_param_value(p_dict: dict, nick: str, default_val):
         return combined[nick]
         
     clean_target = re.sub(r'^RH_IN:\s*[\d.]*[_\s]*', '', nick).strip().lower().replace(' ', '_')
-    
-    # Priorizar claves exactas RH_IN: antes que fallbacks genéricos como ancho: 1200
-    best_val = None
-    best_priority = -1
+    if clean_target in combined and combined[clean_target] is not None:
+        return combined[clean_target]
 
+    # Priorizar coincidencia EXACTA normalizada (evita que Equilíbrio Peça 6 coincida con Equilíbrio Peça 10)
     for k, v in combined.items():
         if not isinstance(k, str) or v is None or k == "parameters":
             continue
         clean_k = re.sub(r'^RH_IN:\s*[\d.]*[_\s]*', '', k).strip().lower().replace(' ', '_')
-        if clean_k and (clean_k == clean_target or clean_k in clean_target or clean_target in clean_k):
-            priority = 0
-            if k == nick:
-                priority = 3
-            elif k.startswith("RH_IN:"):
-                priority = 2
-            elif clean_k == clean_target:
-                priority = 1
+        if clean_k == clean_target:
+            return v
             
-            if priority > best_priority:
-                best_priority = priority
-                best_val = v
-                
-    if best_val is not None:
-        return best_val
-        
     return default_val
 
 def extract_parameter_groups(root, default_values):
@@ -678,65 +664,60 @@ async def compute_model(request: Request):
                                     except:
                                         val_item.text = str(user_v)
 
-            # 2. Actualizar Value Lists en caliente en el XML con preservación estricta de signos negativos
+            # 2. Actualizar Value Lists en caliente en el XML con preservación estricta de opciones
             for chunk in root.iter("chunk"):
-                if chunk.attrib.get("name") == "Container":
-                    nick = ""
-                    for it in chunk.findall("items/item"):
-                        if it.attrib.get("name") == "NickName":
-                            nick = it.text or ""
-                    
-                    if nick.startswith("RH_IN:"):
-                        def_v = default_values.get(nick, "")
-                        user_v = find_user_param_value(p, nick, def_v)
-                        target_val = str(user_v).strip()
-                        
-                        list_items = [sub for sub in chunk.iter("chunk") if sub.attrib.get("name") == "ListItem"]
-                        matched_index = None
-
-                        # 1. Coincidencia exacta de string o número (conservando signo -)
-                        for idx, sub in enumerate(list_items):
-                            name_item = sub.find("items/item[@name='Name']")
-                            expr_item = sub.find("items/item[@name='Expression']")
-                            item_name = (name_item.text if name_item is not None else "").strip()
-                            item_expr = (expr_item.text if expr_item is not None else "").strip()
+                if chunk.attrib.get("name") == "Object":
+                    container = chunk.find("chunks/chunk[@name='Container']")
+                    if container is not None:
+                        nick_item = container.find("items/item[@name='NickName']")
+                        nick = nick_item.text or "" if nick_item is not None else ""
+                        if nick.startswith("RH_IN:"):
+                            def_v = default_values.get(nick, "")
+                            user_v = find_user_param_value(p, nick, def_v)
+                            target_val = str(user_v).strip()
                             
-                            if target_val.lower() == item_name.lower() or target_val.lower() == item_expr.lower():
-                                matched_index = idx
-                                break
-                            try:
-                                if float(target_val) == float(item_name) or float(target_val) == float(item_expr):
-                                    matched_index = idx
-                                    break
-                            except (ValueError, TypeError):
-                                pass
+                            list_items = [sub for sub in chunk.iter("chunk") if sub.attrib.get("name") == "ListItem"]
+                            if list_items:
+                                matched_index = None
 
-                        # 2. Si no hubo match directo, coincidencia semántica sin destruir signos negativos
-                        if matched_index is None:
-                            tv_norm = re.sub(r'[^a-z0-9\-]', '', target_val.lower())
-                            for idx, sub in enumerate(list_items):
-                                name_item = sub.find("items/item[@name='Name']")
-                                expr_item = sub.find("items/item[@name='Expression']")
-                                item_name = (name_item.text if name_item is not None else "").strip()
-                                item_expr = (expr_item.text if expr_item is not None else "").strip()
-                                in_norm = re.sub(r'[^a-z0-9\-]', '', item_name.lower())
-                                expr_norm = re.sub(r'[^a-z0-9\-]', '', item_expr.lower())
-                                
-                                if tv_norm and (tv_norm == in_norm or tv_norm == expr_norm):
-                                    matched_index = idx
-                                    break
-                                elif ("tornillo" in tv_norm and "tarugo" in tv_norm and "tornillo" in in_norm and "tarugo" in in_norm):
-                                    matched_index = idx
-                                    break
-                                elif (tv_norm == "minifix" and "minifix" in in_norm):
-                                    matched_index = idx
-                                    break
+                                # 1. Coincidencia exacta de string o número
+                                for idx, sub in enumerate(list_items):
+                                    name_item = sub.find("items/item[@name='Name']")
+                                    expr_item = sub.find("items/item[@name='Expression']")
+                                    item_name = (name_item.text if name_item is not None else "").strip()
+                                    item_expr = (expr_item.text if expr_item is not None else "").strip()
+                                    
+                                    if target_val.lower() == item_name.lower() or target_val.lower() == item_expr.lower():
+                                        matched_index = idx
+                                        break
+                                    try:
+                                        if float(target_val) == float(item_name) or float(target_val) == float(item_expr):
+                                            matched_index = idx
+                                            break
+                                    except (ValueError, TypeError):
+                                        pass
 
-                        # Aplicar exactamente al único ítem seleccionado
-                        for idx, sub in enumerate(list_items):
-                            sel_item = sub.find("items/item[@name='Selected']")
-                            if sel_item is not None:
-                                sel_item.text = "true" if idx == matched_index else "false"
+                                # 2. Si no hubo match directo, coincidencia semántica
+                                if matched_index is None:
+                                    tv_norm = re.sub(r'[^a-z0-9\-]', '', target_val.lower())
+                                    for idx, sub in enumerate(list_items):
+                                        name_item = sub.find("items/item[@name='Name']")
+                                        expr_item = sub.find("items/item[@name='Expression']")
+                                        item_name = (name_item.text if name_item is not None else "").strip()
+                                        item_expr = (expr_item.text if expr_item is not None else "").strip()
+                                        in_norm = re.sub(r'[^a-z0-9\-]', '', item_name.lower())
+                                        expr_norm = re.sub(r'[^a-z0-9\-]', '', item_expr.lower())
+                                        
+                                        if tv_norm and (tv_norm == in_norm or tv_norm == expr_norm):
+                                            matched_index = idx
+                                            break
+
+                                # Aplicar exactamente al único ítem seleccionado
+                                if matched_index is not None:
+                                    for idx, sub in enumerate(list_items):
+                                        for it in sub.findall("items/item"):
+                                            if it.attrib.get("name") == "Selected":
+                                                it.text = "true" if idx == matched_index else "false"
 
             xml_bytes = ET.tostring(root, encoding="utf-8")
             xml_str = xml_bytes.decode("utf-8") + f"\n<!-- 3BF_CACHE_BUST: {int(time.time() * 1000)} -->"
@@ -747,10 +728,9 @@ async def compute_model(request: Request):
             
             reactivador_ping = (int(time.time() * 1000) % 2) * 0.0001
 
-            # Armar payload_values 100% DINÁMICO para Sliders en RhinoCompute
+            # Armar payload_values 100% DINÁMICO para Sliders y Parámetros en RhinoCompute
             payload_values = []
             for nick, def_val in default_values.items():
-                # Si es un Number Slider o numérico, inyectar el valor Double
                 user_val = find_user_param_value(p, nick, def_val)
                 if isinstance(def_val, (int, float)):
                     try:
@@ -763,6 +743,11 @@ async def compute_model(request: Request):
                         })
                     except:
                         pass
+                elif isinstance(def_val, str) and user_val:
+                    payload_values.append({
+                        "ParamName": nick,
+                        "InnerTree": {"{0}": [{"type": "System.String", "data": str(user_val)}]}
+                    })
 
             payload_rc = {
                 "algo": b64_algo,

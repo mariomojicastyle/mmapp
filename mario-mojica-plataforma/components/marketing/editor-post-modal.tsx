@@ -539,14 +539,14 @@ export function EditorPostModal({ isOpen, onClose, onSuccess, onDelete, initialD
               {/* Primer Comentario */}
               <div>
                 <label className="text-xs font-bold uppercase tracking-wider text-on-surface-variant mb-1.5 block">
-                  Primer Comentario (Truco Enlace `/demo`)
+                  Primer Comentario (Truco Enlace `/demo` & Conversión)
                 </label>
-                <input
-                  type="text"
-                  placeholder="Texto del primer comentario..."
+                <textarea
+                  rows={4}
+                  placeholder="Texto del primer comentario (enlaces a demos, WhatsApp, llamados a la acción, notas, etc.)..."
                   value={primerComentario}
                   onChange={(e) => setPrimerComentario(e.target.value)}
-                  className="w-full rounded-xl bg-surface-container border border-outline-variant/20 px-3.5 py-2 text-sm text-on-surface placeholder:text-on-surface-variant/50 focus:outline-none focus:border-primary text-xs"
+                  className="w-full rounded-xl bg-surface-container border border-outline-variant/20 p-3.5 text-sm text-on-surface placeholder:text-on-surface-variant/50 focus:outline-none focus:border-primary resize-y min-h-[110px] max-h-[250px] leading-relaxed"
                 />
               </div>
 
@@ -889,9 +889,12 @@ export function EditorPostModal({ isOpen, onClose, onSuccess, onDelete, initialD
                         {contenidoBase || "Vista previa del texto de Instagram..."}
                       </p>
                       {primerComentario && (
-                        <p className="text-[11px] text-on-surface-variant pt-1 border-t border-outline-variant/15">
-                          💬 <span className="font-semibold">Primer comentario:</span> {primerComentario}
-                        </p>
+                        <div className="text-[11px] text-on-surface-variant pt-1.5 border-t border-outline-variant/15">
+                          <span className="font-semibold text-on-surface">💬 Primer comentario:</span>
+                          <p className="mt-1 whitespace-pre-line text-on-surface-variant/90 leading-relaxed max-h-28 overflow-y-auto pr-1">
+                            {primerComentario}
+                          </p>
+                        </div>
                       )}
                     </div>
                   </div>
@@ -967,6 +970,14 @@ export function EditorPostModal({ isOpen, onClose, onSuccess, onDelete, initialD
                         )}
                       </div>
                     )}
+                    {primerComentario && (
+                      <div className="pt-2 border-t border-outline-variant/15 text-[11px] text-on-surface-variant">
+                        <span className="font-semibold text-on-surface">💬 Primer comentario:</span>
+                        <p className="mt-1 whitespace-pre-line text-on-surface-variant/90 leading-relaxed max-h-28 overflow-y-auto pr-1">
+                          {primerComentario}
+                        </p>
+                      </div>
+                    )}
                   </div>
                 )}
 
@@ -1039,6 +1050,14 @@ export function EditorPostModal({ isOpen, onClose, onSuccess, onDelete, initialD
                             </div>
                           </>
                         )}
+                      </div>
+                    )}
+                    {primerComentario && (
+                      <div className="pt-2 border-t border-outline-variant/15 text-[11px] text-on-surface-variant">
+                        <span className="font-semibold text-on-surface">💬 Primer comentario:</span>
+                        <p className="mt-1 whitespace-pre-line text-on-surface-variant/90 leading-relaxed max-h-28 overflow-y-auto pr-1">
+                          {primerComentario}
+                        </p>
                       </div>
                     )}
                   </div>

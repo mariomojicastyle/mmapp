@@ -103,7 +103,7 @@ Para evitar respuestas genéricas, el RAM de ventas almacena y cruza 5 dimension
 | Empresa | Contacto | Cargo | Dolores / Oportunidad | Estado / Temperatura | Último Hito | Próxima Jugada Táctica |
 | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
 | **Mobille / AKEO Partner** | Luiz Atilio Barse | Diretor & Super-Conector B2B | Conexión estratégica, apadrinamiento con fábricas en RS | 🔥 Aliado Estratégico (Padrino B2B) | 10 Ago 2026 - Conexión directa a Marcelo Novo (Politorno) con aval de Sr. Pedro | Mantenerlo informado de avances con Politorno |
-| **Politorno Móveis** | Marcelo Novo | Diretor / Líder P&D | Manuales 3D interactivos, revisión de propuesta económica y suite 3DBimFab | 🔥 Caliente (Vacaciones / Retoma Lun 31 Ago) | 24 Ago 2026 - Marcelo avisó que está de vacaciones esta semana. Receptivo a retomar la próxima | Contactar el lunes 31 de agosto para fijar la reunión |
+| **Politorno Móveis** | Marcelo Novo | Diretor / Líder P&D | Manuales 3D interactivos, revisión de propuesta económica y suite 3dBimFab | 🔥 Reunión Agendada (Jueves 03 Sep, 11h BRT) | 31 Ago 2026 - Marcelo confirmó reunión para el Jueves 03/09 a las 11:00 BRT | Preparar planilla de costos y demo de 3dBimFab para la sesión |
 | **Móveis Henn** | Marcos Unnass & Jonas Borck | Coordenador P&D & Analista Engenharia | Manuales interactivos 3D, 3dBimFab, ERP TOTVS Datasul, ahorro 30% | 🔥 Negociación Avanzada / Demostración Ravena | 28 Ago 2026 - Levantamiento de Costos completado (80 manuales/año, R$ 1.926 vs R$ 1.348 Mario, ahorro +R$ 46.227 BRL). Marcos enviará archivos Cómoda Ravena. Vacaciones 3-11 Sep. | Recibir archivos de Cómoda Ravena, modelar en 3dBimFab y agendar demo en vivo con Marcos y Jonas para después del 15 de Sep |
 | **Grupo K1 (Kappesberg)** | Julio Santos | Especialista IA & Automação / Mkt | Costos de P&D de manuales, modelo suscripción ($1 USD/mes), IA aplicada | 🔥 En Evaluación / Cotización Enviada | 17 Ago 2026 - Solicitó valores e insumos. Enviada calculadora 30% ahorro | Esperar feedback de reunión interna con su gerente |
 | **Kit's Paraná** | Marcos Benedito & Jamylle Duarte | Directivos P&D / Marketing | Costos de asistencia técnica, manuales en papel, telemetría | 🟡 Referenciado / Email Preparado | 17 Ago 2026 - Andre Luis facilitó sus correos | Enviar correo corporativo formal a Marcos y Jamylle |
@@ -138,7 +138,9 @@ Para evitar respuestas genéricas, el RAM de ventas almacena y cruza 5 dimension
   * *24 Agosto 2026 (08:38):* Mario envió mensaje de seguimiento post-Movelsul por WhatsApp solicitando 25-30 min para: 1) Revisar la propuesta económica de manuales 3D y arrancar el desarrollo con productos piloto, y 2) Presentar en primicia el software paramétrico 3DBimFab (`3bf.mariomojica.com`).
   * *24 Agosto 2026 (08:42):* Marcelo respondió inmediatamente en 4 minutos: *"Bom dia Mário. Tudo certo. Nesta semana não vou conseguir. Estou de férias e retorno só na próxima semana. Falamos na outra semana. Abraço!"*.
   * *24 Agosto 2026 (08:44):* Mario respondió deseándole merecidas vacaciones y acordando escribirle el lunes 31 de agosto para coordinar la llamada a su regreso.
-- **Objetivo Estratégico:** Contactar a Marcelo el lunes 31 de agosto de 2026 al regreso de sus vacaciones para cerrar la fecha de la videollamada.
+  * *31 Agosto 2026 (08:53 BRT):* Mario envió mensaje de seguimiento enfocado en la metodología de levantamiento de costos de P&D (vía planilla de costos Politorno) y demo de 3dBimFab, proponiendo miércoles o jueves.
+  * *31 Agosto 2026 (10:09 BRT):* **¡REUNIÓN AGENDADA!** Marcelo respondió en WhatsApp: *"Bom dia Mário... Tudo certo por aqui sim. Podemos fazer na quinta 11h 👍"*. Reunión confirmada para el **Jueves 3 de Septiembre a las 11:00 BRT (09:00 COL)**.
+- **Objetivo Estratégico:** Preparar la planilla de costos calibrada para Politorno y la demo interactiva en vivo de 3dBimFab y Manual 3D para el Jueves 03/09 a las 11:00 BRT.
 
 ---
 
@@ -178,13 +180,20 @@ Para evitar respuestas genéricas, el RAM de ventas almacena y cruza 5 dimension
       - Promob se satura y se ralentiza si insertan herrajes pequeños; por eso en fábrica omiten hasta un 15% de herrajes (cantoneras, esquineras, puntillas de espaldar).
       - Como Promob no tiene esos herrajes, el conteo en InDesign se hace a mano, provocando constantes errores en la BOM y quejas de clientes por piezas faltantes.
       - Mario demostró que con `3dBimFab` el conteo es paramétrico 100% automático por instancias y no pesa en el navegador, eliminando el error humano.
+  * *31 Agosto 2026 (12:42 BRT):* Mario envió el acta de la reunión 02 en PDF por WhatsApp y correo.
+  * *31 Agosto 2026 (13:58 - 14:00 BRT):* **¡ARCHIVOS RECIBIDOS DE CÓMODA RAVENA!** Marcos envió por WhatsApp los 3 archivos fuente completos:
+    1. `D737_Comoda_Ravena_6Gavetas.DWG` (5 MB - Modelo 3D Promob para test de manuales en video y presentación interna).
+    2. `D737-Comoda_Ravenna_6Gav (lista de ferragens).xlsx` (10 kB - Lista de herrajes completa).
+    3. `D737- Comoda Ravenna 6Pts.indd` (21 MB - Manual técnico en InDesign).
+  * *01 Septiembre 2026 (05:43 BRT):* Marcos confirmó disponibilidad: *"Pode me contatar que estarei com o telefone junto. Sobre as ferragens, vale olhar o que sai hoje no desenho do construct..."*. Mario agradeció y confirmó que cruzará el DWG con InDesign/Excel en 3dBimFab.
+  * *01 Septiembre 2026 (13:27 BRT):* Marcos cerró de forma ágil y positiva: *"Boa tarde. Isso blza, precisar me chama"*. Canal abierto y alineado al 100% para el modelado de la Cómoda Ravena.
+- **Objetivo Estratégico:** Modelar la *Cómoda Ravena D737* en `3dBimFab` (RhinoCompute) cruzando la geometría del DWG con el Construct/InDesign y la lista Excel para completar el 100% de herrajes en el Gemelo Digital y estructurar el Manual 3D interactivo con asistencia de voz, preparando la gran demo con directivos y TI después del 15 de septiembre.
     - **Acuerdos & Próximos Pasos (Demostración Cómoda Ravena):**
-      1. Marcos enviará los archivos de la **Cómoda Ravena** (DWG de Promob, SketchUp con explosiones de Cyntia, e InDesign/Illustrator).
-      2. Mario preparará el Gemelo Digital en `3dBimFab` y el Manual 3D interactivo.
-      3. Marcos sale a vacaciones del 3 al 11 de septiembre.
+      1. Mario cruza la geometría del DWG contra el manual del Construct/InDesign y la lista de herrajes en Excel.
+      2. Mario prepara el Gemelo Digital en `3dBimFab` y el Manual 3D interactivo.
+      3. Marcos en vacaciones del 3 al 11 de septiembre (pero atento al teléfono para dudas puntuales).
       4. **Próxima Reunión (Post 15 de Septiembre):** Demostración en vivo de la Cómoda Ravena con Marcos, Jonas Borck y el área de Sistemas/TI de Henn para iniciar el piloto de 3-5 productos.
       5. Marcos coordinará con Marketing y con el gerente de planificación **Rudgeri Henkel** la alineación con los videos de montaje.
-- **Objetivo Estratégico:** Modelar la Cómoda Ravena en `3dBimFab` y agendar la demo en vivo para después del 15 de septiembre.
 
 ---
 
