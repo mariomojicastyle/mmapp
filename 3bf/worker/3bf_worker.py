@@ -755,7 +755,7 @@ async def compute_model(request: Request):
                 "values": payload_values
             }
             
-            res_rc = requests.post("http://127.0.0.1:5000/grasshopper", json=payload_rc, timeout=10)
+            res_rc = requests.post("http://127.0.0.1:5000/grasshopper", json=payload_rc, timeout=30)
             if res_rc.status_code == 200:
                 rhino_compute_success = True
                 data_rc = res_rc.json()
@@ -927,20 +927,27 @@ async def compute_model(request: Request):
     # =========================================================================
     # 🔩 CÓMPUTO DINÁMICO DE HERRAJES 100% FIEL AL GHX
     # =========================================================================
-    PALABRAS_CLAVE_HERRAJES = ["perno", "caja", "tarugo", "tornillo", "soporte", "corredera", "bisagra", "pata", "manija", "tirador", "nivelador", "acople", "tuerca", "arandela", "minifix"]
+    def es_nombre_tablero(name_str: str) -> bool:
+        nl = name_str.lower()
+        if re.search(r"pe.{0,2}a\s*\d+|pk\s*\d+", nl):
+            return True
+        for kw in ["cubierta", "tapa", "entrepa", "lateral", "paral", "fondo", "puerta", "frente", "zocalo", "tablero", "costado", "divisor", "repisa", "techo", "piso", "estante"]:
+            if kw in nl:
+                return True
+        return False
+
+    def es_nombre_herraje(name_str: str) -> bool:
+        nl = name_str.lower()
+        if es_nombre_tablero(name_str):
+            return False
+        if "maquinado" in nl or "perforad" in nl or "mdp" in nl or "balance" in nl:
+            return False
+        return True
     
     conteo_mallas_herrajes = {}
     for m in real_meshes:
         raw_name = m.get("name", "").strip()
-        name_lower = raw_name.lower()
-        
-        # Descartar maquinados o geometrías de sustracción
-        if "maquinado" in name_lower:
-            continue
-            
-        # Detectar si es un herraje por palabras clave
-        es_herraje = any(k in name_lower for k in PALABRAS_CLAVE_HERRAJES)
-        if es_herraje:
+        if es_nombre_herraje(raw_name):
             # Respetar 100% el nombre definido por el usuario/diseñador en Grasshopper (limpiando solo el prefijo RH_OUT:)
             nombre_herraje_ghx = raw_name.replace("RH_OUT:", "").strip()
             if nombre_herraje_ghx:
@@ -950,18 +957,40 @@ async def compute_model(request: Request):
     costo_herrajes_calc = 0.0
 
     for nombre_ghx, m_count in conteo_mallas_herrajes.items():
+        nh_l = nombre_ghx.lower()
         # Regla DfMA para herrajes compuestos (ej: Perno Minifix taquete + espiga = 2 mallas / unidad)
-        mallas_por_herraje = 2 if "perno" in nombre_ghx.lower() else 1
+        mallas_por_herraje = 2 if "perno" in nh_l else 1
         cant_real = math.ceil(m_count / mallas_por_herraje)
         
-        # Costeo paramétrico base (se conectará a Supabase por nombre/referencia)
-        costo_unit = 0.35 if "caja" in nombre_ghx.lower() else (0.28 if "perno" in nombre_ghx.lower() else 0.08)
+        # Costeo paramétrico base
+        if "pes" in nh_l or "pata" in nh_l or "pie" in nh_l or "sapata" in nh_l:
+            costo_unit = 0.85 # Pata plástica RTA inyectada ~$0.85 USD
+            unidad_str = "piezas"
+        elif "caja" in nh_l or "minifix" in nh_l:
+            costo_unit = 0.35
+            unidad_str = "piezas"
+        elif "perno" in nh_l:
+            costo_unit = 0.28
+            unidad_str = "piezas"
+        elif "corredera" in nh_l or "corrediça" in nh_l:
+            costo_unit = 4.50
+            unidad_str = "pares"
+        elif "bisagra" in nh_l or "dobradiça" in nh_l:
+            costo_unit = 1.20
+            unidad_str = "piezas"
+        elif "puxador" in nh_l or "tirador" in nh_l or "manija" in nh_l:
+            costo_unit = 1.50
+            unidad_str = "piezas"
+        else:
+            costo_unit = 0.08
+            unidad_str = "piezas"
+
         costo_herrajes_calc += cant_real * costo_unit
         
         herrajes_final.append({
             "nombre": nombre_ghx,
             "cantidad": cant_real,
-            "unidad": "pares" if "corredera" in nombre_ghx.lower() else "piezas"
+            "unidad": unidad_str
         })
 
     # Fallback si es un modelo sin mallas explícitas de herrajes
@@ -981,8 +1010,19 @@ async def compute_model(request: Request):
     # =========================================================================
     tableros_consolidados = []
     for m in real_meshes:
-        name_lower = m.get("name", "").lower()
-        if any(h in name_lower for h in ["perno", "caja", "tarugo", "tornillo", "soporte", "corredera", "maquinado"]):
+        raw_name = m.get("name", "").strip()
+        name_lower = raw_name.lower()
+        
+        # 1. Solo incluir elementos que califiquen estrictamente como tablero
+        if not es_nombre_tablero(raw_name):
+            continue
+            
+        # 2. Descartar canales de acabado secundarios (MDP es solo mecanizado/cantos, nunca un tablero independiente)
+        if "mdp" in name_lower:
+            continue
+        # 3. Descartar mallas secundarias de Balance (ej: "Peça 17 B", "Peça 16 B", "balance", "_b")
+        # En Grasshopper y DfMA, las láminas secundarias de balance tienen sufijo " B", "_b" o palabra "balance"
+        if re.search(r'[\s_]b$|balance', name_lower):
             continue
             
         size = m.get("size", [0, 0, 0])
@@ -1010,22 +1050,35 @@ async def compute_model(request: Request):
                 for prefix in ["MDP ", "Color ", "Balance ", "Nurbs ", "Brep ", "MDP", "Color", "Balance"]:
                     if nombre_limpio.startswith(prefix):
                         nombre_limpio = nombre_limpio[len(prefix):].strip()
+                nombre_limpio = re.sub(r'[\s_]b$', '', nombre_limpio, flags=re.IGNORECASE).strip()
                 nombre_limpio = nombre_limpio.capitalize()
                 if not nombre_limpio or nombre_limpio in ["Cubierta2", "Entrepaño2", "Pieza", "Mdp", "Tablero"]:
                     nombre_limpio = "Cubierta" if "cubierta" in name_lower else ("Entrepaño" if "entrepaño" in name_lower else "Tablero")
 
-            # Buscar si ya existe un tablero en la misma zona espacial (Tolerancia 60mm en centros X/Y/Z) y con dimensiones compatibles
+            # COHESIÓN ESPACIAL MADERKIT V54 (Fase 2 + Fase 3):
+            # Absorción de parches, ranuras y caras divididas pertenecientes a la misma pieza física
             encontrado = False
             for t in tableros_consolidados:
                 dist_x = abs(t["pos"][0] - pos[0]) * 1000.0
                 dist_y = abs(t["pos"][1] - pos[1]) * 1000.0
                 dist_z = abs(t["pos"][2] - pos[2]) * 1000.0
                 diff_lar = abs(t["largo"] - lar_malla)
-                diff_anc = abs(t["ancho"] - anc_malla)
                 
-                if dist_x < 60.0 and dist_y < 60.0 and dist_z < 60.0 and diff_lar < 15.0 and diff_anc < 15.0:
+                # Criterio Maderkit: Mismo plano de tablero (X y Z coincidentes a < 35mm) y misma longitud de pieza (< 25mm)
+                if dist_x < 35.0 and dist_z < 35.0 and diff_lar < 25.0:
+                    if dist_y < 85.0: # Absorber ranura o recorte dentro de la misma pieza física
+                        encontrado = True
+                        y_min = min(t["pos"][1]*1000 - t["ancho"]/2, pos[1]*1000 - anc_malla/2)
+                        y_max = max(t["pos"][1]*1000 + t["ancho"]/2, pos[1]*1000 + anc_malla/2)
+                        t["ancho"] = round(y_max - y_min, 1)
+                        t["largo"] = max(t["largo"], lar_malla)
+                        t["espesor"] = max(t["espesor"], esp_malla)
+                        t["pos"][1] = (y_min + y_max) / 2000.0
+                        if t["nombre"] in ["Tablero", "Mdp", "Balance"] and nombre_limpio not in ["Tablero", "Mdp", "Balance"]:
+                            t["nombre"] = nombre_limpio
+                        break
+                elif dist_x < 50.0 and dist_y < 50.0 and dist_z < 50.0 and diff_lar < 25.0:
                     encontrado = True
-                    # Consolidar tomando la cota máxima del tablero físico real y el nombre más específico
                     t["largo"] = max(t["largo"], lar_malla)
                     t["ancho"] = max(t["ancho"], anc_malla)
                     t["espesor"] = max(t["espesor"], esp_malla)

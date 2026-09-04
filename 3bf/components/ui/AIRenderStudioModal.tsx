@@ -120,16 +120,22 @@ export default function AIRenderStudioModal() {
         .replace(new RegExp(`${f}\\.?`, "gi"), "");
     });
 
-    limpio = limpio.replace(/\s{2,}/g, " ").trim();
+    // Limpiar espacios horizontales dobles pero RESPETAR estrictamente los saltos de línea (\n)
+    limpio = limpio
+      .split("\n")
+      .map((linea) => linea.replace(/[ \t]{2,}/g, " ").trim())
+      .join("\n")
+      .trim();
+
     // Quitar comas o puntos residuales al final
     limpio = limpio.replace(/[,;.]+\s*$/, "").trim();
 
     if (!idEstilo) {
-      return limpio ? `${limpio}.` : "";
+      return limpio;
     }
 
     const objEstilo = PRESETS_ESTILOS_DISENO.find((e) => e.id === idEstilo);
-    if (!objEstilo) return limpio ? `${limpio}.` : "";
+    if (!objEstilo) return limpio;
 
     if (!limpio) {
       return `Fotografía editorial de arquitectura de alta gama del mueble adjunto, ${objEstilo.palabraEstilo}, iluminación diurna difusa y sombras de contacto reales. Mantén el 100% de la geometría y acabados del producto.`;
@@ -180,9 +186,6 @@ export default function AIRenderStudioModal() {
       if (historialRendersIA.length > 0 && !renderActual) {
         setRenderActual(historialRendersIA[0]);
       }
-      if (promptActivoRender) {
-        setPromptActivoRender(aplicarEstiloATexto(promptActivoRender, estiloActivoId || "nordico"));
-      }
     }
   }, [modalRenderIAAbierto, geminiApiKey, falApiKey]);
 
@@ -190,8 +193,9 @@ export default function AIRenderStudioModal() {
 
   const handleSelectPrompt = (promptText: string, item: PromptTemplateItem) => {
     setPlantillaActivaId(item.id);
-    const promptConEstilo = aplicarEstiloATexto(promptText, estiloActivoId);
-    setPromptActivoRender(promptConEstilo);
+    // Cargar el prompt EXACTO y fiel, preservando 100% de saltos de línea, modularidad y estructura
+    const promptExacto = item.prompt || promptText;
+    setPromptActivoRender(promptExacto);
     if (item.aspectRatio) {
       setAspectRatioRender(item.aspectRatio);
     }
@@ -512,7 +516,7 @@ export default function AIRenderStudioModal() {
         <div className="flex-1 grid grid-cols-1 sm:grid-cols-12 gap-0 overflow-hidden">
           {/* 👈 COLUMNA IZQUIERDA: CONTROLES DE DISPARO Y CAPTURA 3D (5 Cols) */}
           <div 
-            className="sm:col-span-5 flex flex-col gap-2.5 p-2.5 sm:p-3 md:p-4 border-b sm:border-b-0 sm:border-r overflow-y-auto custom-scrollbar touch-pan-y"
+            className="sm:col-span-5 flex flex-col h-full gap-2.5 p-2.5 sm:p-3 md:p-4 border-b sm:border-b-0 sm:border-r overflow-y-auto custom-scrollbar touch-pan-y"
             style={{ 
               backgroundColor: coloresApariencia?.fondoPaneles, 
               borderColor: coloresApariencia?.bordePaneles 
@@ -579,11 +583,23 @@ export default function AIRenderStudioModal() {
             </div>
 
             {/* Editor de Prompt Activo */}
-            <div className="flex flex-col gap-1.5 flex-1">
+            <div className="flex flex-col gap-1.5 flex-1 min-h-0">
               <div className="flex items-center justify-between">
-                <label className="font-bold text-[11px]" style={{ color: coloresApariencia?.textoSecundario }}>
-                  Prompt Activo (En Español):
-                </label>
+                <div className="flex items-center gap-2 flex-wrap">
+                  <label className="font-bold text-[11px]" style={{ color: coloresApariencia?.textoPrincipal }}>
+                    Prompt del Render:
+                  </label>
+                  <span 
+                    className="text-[10px] px-2 py-0.5 rounded-full font-semibold border transition"
+                    style={{
+                      backgroundColor: coloresApariencia?.botonActivo ? `${coloresApariencia.botonActivo}15` : "rgba(8, 145, 178, 0.1)",
+                      color: coloresApariencia?.botonActivo || "#0891b2",
+                      borderColor: coloresApariencia?.botonActivo ? `${coloresApariencia.botonActivo}30` : "rgba(8, 145, 178, 0.25)"
+                    }}
+                  >
+                    Inglés recomendado para máxima fidelidad
+                  </span>
+                </div>
                 <div className="flex items-center gap-1.5">
                   <button
                     onClick={() => setMostrarGuardarPreset(!mostrarGuardarPreset)}
@@ -693,11 +709,10 @@ export default function AIRenderStudioModal() {
               )}
 
               <textarea
-                rows={5}
                 value={promptActivoRender}
                 onChange={(e) => setPromptActivoRender(e.target.value)}
-                placeholder="Describe la iluminación, la habitación o el estilo decorativo deseado en español..."
-                className="w-full p-2.5 rounded-lg border text-xs font-mono leading-relaxed outline-none transition resize-none shadow-inner"
+                placeholder="Describe el ambiente, materiales y staging. Se recomienda redactar en inglés para máxima fidelidad..."
+                className="w-full flex-1 min-h-[220px] p-3 rounded-xl border text-xs font-mono leading-relaxed outline-none transition shadow-inner custom-scrollbar"
                 style={{
                   backgroundColor: coloresApariencia?.fondoAplicacion,
                   borderColor: coloresApariencia?.bordePaneles,
@@ -707,7 +722,7 @@ export default function AIRenderStudioModal() {
             </div>
 
             {/* 🎨 Modificadores de Estilo Estético en 1 Clic */}
-            <div className="flex flex-col gap-1.5 p-2 rounded-xl border shadow-2xs" style={{ backgroundColor: coloresApariencia?.fondoPaneles, borderColor: coloresApariencia?.bordePaneles }}>
+            <div className="flex flex-col gap-1.5 p-2 rounded-xl border shadow-2xs shrink-0" style={{ backgroundColor: coloresApariencia?.fondoPaneles, borderColor: coloresApariencia?.bordePaneles }}>
               <div className="flex items-center justify-between">
                 <span className="text-[11px] font-bold" style={{ color: coloresApariencia?.textoPrincipal }}>
                   Estilos de Diseño:
@@ -784,7 +799,7 @@ export default function AIRenderStudioModal() {
             <button
               onClick={handleGenerarRender}
               disabled={generando || !promptActivoRender.trim()}
-              className="w-full py-2.5 px-4 rounded-full font-semibold text-xs flex items-center justify-center gap-2 transition shadow-xs text-white disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer hover:opacity-90"
+              className="w-full shrink-0 py-2.5 px-4 rounded-full font-semibold text-xs flex items-center justify-center gap-2 transition shadow-xs text-white disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer hover:opacity-90"
               style={{ backgroundColor: coloresApariencia?.botonActivo || "#0891b2" }}
             >
               {generando ? (

@@ -1935,3 +1935,17 @@ Con esta batería de arreglos y la validación en caliente, la V20 se establece 
 
 
 
+
+---
+
+### 🔹 Hito 3BF_Cohesion_Espacial_Despiece_y_Canalizacion_Mapeo — Cohesión Espacial en Worker (DfMA Maderkit v54), Consolidación de Ranuras/Cantos, Depuración en Despiece & Costos y Arquitectura de Canales en Grasshopper (04 de Septiembre, 2026)
+
+- **Cohesión Espacial y Consolidación de Piezas en Worker Python (`worker/3bf_worker.py`)**:
+  * Integración exitosa del algoritmo de cohesión espacial basado en `script_cohesion_Maderkit_v54.py` para fusionar y consolidar geometrías fragmentadas por ranuras o mecanizados (absorbiendo submallas de ranuras como en frentes y laterales de cajón).
+  * Filtro automático para depurar contracaras secundarias de balance con espesor 0 (` B`, `_b`, `balance`), evitando su contabilización como piezas independientes en la lista de corte.
+  * Consolidación geométrica y dimensional exacta de laterales de cajón (`Peça 17` a 350 x 110 x 12 mm, cantidad 12) y frentes de cajón (`Peça 19` a 426.5 x 221 x 15 mm, cantidad 6), con costo y metraje 100% precisos en la API del worker.
+- **Depuración y Homologación en Vista de Despiece & Costos (`DespieceView.tsx`)**:
+  * Actualización en el renderizado de la tabla de corte para suprimir capas internas secundarias o fantasmas y reflejar fielmente las 19 piezas reales del mueble.
+- **Arquitectura de Canales y Separación Topológica en Grasshopper (`Comoda Ravenna.ghx`)**:
+  * Implementación de nodos `Split Tree` con máscara `{*;0}` aguas abajo de `3BF Materializer` (`NURBS_Color`, `NURBS_Balance`, `NURBS_MDP`) para desacoplar los canales de los cajones izquierdos y derechos antes de `Mesh Brep` y `Mesh Join`.
+  * Avance en el diagnóstico y refinamiento del componente `Box Mapping` (`M B`) para proyectar coordenadas de textura (U, V) respetando la unidad sólida generada por `Mesh Join`.

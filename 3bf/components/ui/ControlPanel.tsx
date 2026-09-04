@@ -519,8 +519,13 @@ export default function ControlPanel() {
     }
   };
 
-  // Función para re-calcular cuando cambian los parámetros
+  // Función para re-calcular cuando cambian los parámetros (Solo modo legacy mono-modelo)
   const ejecutarComputo = async () => {
+    const s = use3BFStore.getState();
+    // Si hay instancias activas en el escenario, el cómputo lo gestiona exclusivamente recomputarInstancia en store.ts
+    if (s.objetoActivoId && s.instancias[s.objetoActivoId]) {
+      return;
+    }
     if (!parametros.model_id) {
       setResultado(null);
       return;

@@ -89,17 +89,15 @@ function obtenerNombreUnificadoPieza(obj: THREE.Object3D): string {
   const meshNameLower = meshName.toLowerCase();
   const parentNameLower = parentName.toLowerCase();
 
-  // 1. Detección de Peça X (ej. Peça 6, Peça 6 B, Peça 7 B -> "Peça 6", "Peça 7")
-  const matchPeca = meshName.match(/^(pe[cç]a\s*\d+)/i);
-  if (matchPeca) {
-    const num = matchPeca[1].replace(/pe[cç]a\s*/i, "").trim();
-    return `Peça ${num}`;
+  // 1. Detección de Peça X o PK X (ej. Peça 6, Peça 6 B, MDP Peça 10, Color Peça 10 -> "Peça 10" o "PK10")
+  const matchPK = meshName.match(/pk\s*(\d+)/i);
+  if (matchPK) {
+    return `PK${matchPK[1]}`;
   }
 
-  const matchPK = meshName.match(/^(pk\s*\d+)/i);
-  if (matchPK) {
-    const num = matchPK[1].replace(/pk\s*/i, "").trim();
-    return `Peça ${num}`;
+  const matchPeca = meshName.match(/pe[cç]a\s*(\d+)/i);
+  if (matchPeca) {
+    return `Peça ${matchPeca[1]}`;
   }
 
   // 2. Si es un tablero / cubierta
@@ -451,11 +449,13 @@ function BoardMesh({
 
   const isWireframe = modoVisual === "lineas";
   const isTransparent = modoVisual === "semitransparente";
-  const isHardwarePerno = normName.includes("perno") || normName.includes("tornillo");
-  const isHardwareCaja = (normName.includes("caja") && !normName.includes("cajon") && !normName.includes("cajón")) || normName === "caja";
-  const isHardwareTarugo = normName.includes("tarugo") || normName.includes("soporte");
+  const isHardwarePerno = normName.includes("perno") || normName.includes("tornillo") || normName.includes("parafuso");
+  const isHardwareCaja = (normName.includes("caja") && !normName.includes("cajon") && !normName.includes("cajón")) || normName === "caja" || normName.includes("minifix");
+  const isHardwareTarugo = normName.includes("tarugo") || normName.includes("soporte") || normName.includes("cavilha") || normName.includes("clavilha");
+  const isHardwarePata = normName.includes("pes") || normName.includes("pés") || normName.includes("pata") || normName.includes("pie") || normName.includes("sapata") || normName.includes("deslizador") || normName.includes("nivelador");
+  const isHardware = isHardwarePerno || isHardwareCaja || isHardwareTarugo || isHardwarePata || normName.includes("corredera") || normName.includes("corrediça") || normName.includes("bisagra") || normName.includes("dobradiça") || normName.includes("puxador") || normName.includes("manija");
   const isMachining = normName.includes("maquinado") || normName.includes("perforado");
-  const isWoodBoardPiece = !isHardwarePerno && !isHardwareCaja && !isHardwareTarugo && !isMachining;
+  const isWoodBoardPiece = !isHardware && !isMachining;
 
   // 🪵 Detector Universal de Cara de Balance / Reverso (ej. Peça 6 B, Peça 7 B, Peça 10 B, PK6B, Balance, Back, Equilibrio)
   const isBalance = (
@@ -476,7 +476,10 @@ function BoardMesh({
   if (asignacion && asignacion.capaId && asignacion.capaId !== "por_defecto" && !(isWoodBoardPiece && asignacion.capaId === "capa_acero")) {
     capaAsignada = capas.find((c) => c.id === asignacion.capaId);
   } else {
-    if (isHardwarePerno) {
+    if (isHardwarePata) {
+      // 🦶 Patas / Pies (Pes) -> Capa Plastico_1 (mat_pnegro, Plástico inyectado negro)
+      capaAsignada = capas.find((c) => c.id === "capa_plastico_1" || c.id === "capa_plastico_2" || c.nombre.toLowerCase().includes("plastico")) || capas.find((c) => c.id === "capa_herrajes") || capas[0];
+    } else if (isHardwarePerno) {
       capaAsignada = capas.find((c) => c.id === "capa_herrajes" || c.id === "capa_acero" || c.nombre.toLowerCase().includes("acero") || c.nombre.toLowerCase().includes("herraje"));
     } else if (isHardwareCaja) {
       capaAsignada = capas.find((c) => c.id === "capa_zincado" || c.id === "capa_zinc" || c.nombre.toLowerCase().includes("zinc"));
@@ -512,7 +515,7 @@ function BoardMesh({
 
   const isSolidOrRendered = modoVisual === "solido" || modoVisual === "renderizado";
   const isRenderedMode = modoVisual === "renderizado";
-  const isWoodBoard = !isHardwarePerno && !isHardwareCaja && !isHardwareTarugo && !isMachining;
+  const isWoodBoard = !isHardware && !isMachining;
 
   const isMdpExpuesto = normName.includes("mdp");
   const isMelaminaCara = (normName.includes("color") || !isBalance) && !isMdpExpuesto;

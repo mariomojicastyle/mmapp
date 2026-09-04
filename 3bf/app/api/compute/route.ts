@@ -8,10 +8,10 @@ export async function POST(req: Request) {
     const host = req.headers.get("host") || "";
     const isLocalOrEngine = host.includes("engine.mariomojica.com") || host.includes("localhost") || host.includes("127.0.0.1");
 
-    // Intentar conectar con el 3BF Worker Python local primero, o el túnel si estamos en Netlify
+    // Intentar conectar con el 3BF Worker Python local primero (127.0.0.1 para evitar demoras IPv6 en Windows)
     const workerUrls = [
-      "http://localhost:8005",
       "http://127.0.0.1:8005",
+      "http://localhost:8005",
       !isLocalOrEngine ? "https://engine.mariomojica.com/api/compute" : null,
       process.env.NEXT_PUBLIC_3BF_WORKER_URL,
     ].filter(Boolean) as string[];
@@ -23,6 +23,7 @@ export async function POST(req: Request) {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(body),
+          signal: AbortSignal.timeout(25000),
         });
 
         if (workerRes.ok) {

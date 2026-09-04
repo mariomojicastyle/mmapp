@@ -324,70 +324,50 @@ export default function DespieceView() {
       codigoCanto = "720194"; // Canto PVC Rígido Marfil 22x2.0mm
     }
 
-    // 1. Cubierta / Tapa Superior: Lectura directa de los selectores de borde 3D
-    if (n.includes("cubierta") || n.includes("tapa")) {
+    // 1. Cubierta / Entrepaño / Tapa / Repisa: Lectura dinámica 100% fiel de los 4 cantos del 3D
+    if (n.includes("cubierta") || n.includes("tapa") || n.includes("entrepaño") || n.includes("repisa")) {
       const p = params || {};
-      
-      const obtenerValorBorde = (tipo: "izquierdo" | "derecho") => {
-        const claves = tipo === "izquierdo"
-          ? [
-              "RH_IN:03.4 Borde izquierdo",
-              "RH_IN:Borde izquierdo",
-              "borde_izquierdo",
-              "03.4_borde_izquierdo"
-            ]
-          : [
-              "RH_IN:03.3 Borde derecho",
-              "RH_IN:Borde derecho",
-              "borde_derecho",
-              "03.3_borde_derecho"
-            ];
+      const esEntrepanio = n.includes("entrepaño") || n.includes("repisa");
 
-        // 1. Prioridad: Buscar valores explícitamente definidos en las claves exactas
-        for (const clave of claves) {
-          const val = p[clave];
-          if (val !== undefined && val !== null && String(val).trim() !== "") {
-            return String(val);
-          }
-        }
-
-        // 2. Buscar cualquier propiedad en el objeto que coincida
+      const leerCantoLado = (lado: "frontal" | "trasero" | "izquierdo" | "derecho") => {
+        // Buscar claves como RH_IN:03.2 Canto Frontal, RH_IN:04.2 Canto Frontal, etc.
         for (const [k, v] of Object.entries(p)) {
-          const kl = k.toLowerCase();
-          if (kl.includes("borde") && (tipo === "izquierdo" ? (kl.includes("izquierdo") || kl.includes("izq")) : (kl.includes("derecho") || kl.includes("der")))) {
-            if (v !== undefined && v !== null && String(v).trim() !== "") {
+          const kl = k.toLowerCase().replace(/[\s_]+/g, "");
+          if (kl.includes("canto") && kl.includes(lado)) {
+            if (esEntrepanio && (kl.includes("04") || kl.includes("entrepaño"))) {
+              return String(v);
+            }
+            if (!esEntrepanio && (kl.includes("03") || kl.includes("cubierta") || !kl.includes("04"))) {
               return String(v);
             }
           }
         }
-
-        // 3. Revisar en los límites por defecto del resultado de Grasshopper
-        const limits = (resultado as any)?.slider_limits || {};
-        for (const clave of claves) {
-          if (limits[clave]?.default !== undefined) {
-            return String(limits[clave].default);
+        // Fallback genérico por nombre de lado
+        for (const [k, v] of Object.entries(p)) {
+          const kl = k.toLowerCase().replace(/[\s_]+/g, "");
+          if (kl.includes("canto") && kl.includes(lado)) {
+            return String(v);
           }
         }
-
-        return "MDP";
+        return "Canto";
       };
 
-      const valIzq = obtenerValorBorde("izquierdo").toLowerCase();
-      const valDer = obtenerValorBorde("derecho").toLowerCase();
+      const tieneCanto = (val: string) => {
+        const v = val.toLowerCase().trim();
+        return v.includes("canto") || v === "0" || v === "true" || v === "si";
+      };
 
-      // En Grasshopper / UI: 'Canto' = Lleva Canto (1), 'MDP' = Sin Canto (0)
-      const izqTieneCanto = valIzq.includes("canto") || valIzq === "0";
-      const derTieneCanto = valDer.includes("canto") || valDer === "0";
+      const frontal = tieneCanto(leerCantoLado("frontal"));
+      const trasero = tieneCanto(leerCantoLado("trasero"));
+      const izquierdo = tieneCanto(leerCantoLado("izquierdo"));
+      const derecho = tieneCanto(leerCantoLado("derecho"));
 
-      const cantosAncho = (izqTieneCanto ? 1 : 0) + (derTieneCanto ? 1 : 0);
-      const cantosLargo = 1; // El frente visto de la cubierta siempre lleva canto
+      // Frontal y Trasero corren a lo LARGO (eje X)
+      const cantosLargo = (frontal ? 1 : 0) + (trasero ? 1 : 0);
+      // Izquierdo y Derecho corren a lo ANCHO (eje Y)
+      const cantosAncho = (izquierdo ? 1 : 0) + (derecho ? 1 : 0);
 
       return { cantosAncho, cantosLargo, cantoCodigo: codigoCanto };
-    }
-
-    // 2. Entrepaño / Repisa: Solo el borde frontal visto
-    if (n.includes("entrepaño") || n.includes("repisa")) {
-      return { cantosAncho: 0, cantosLargo: 1, cantoCodigo: codigoCanto };
     }
 
     // 3. Puertas y Frentes de Cajón: Los 4 lados canteados
