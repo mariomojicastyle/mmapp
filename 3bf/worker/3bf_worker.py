@@ -1,5 +1,9 @@
 import os
 import sys
+try:
+    sys.stdout.reconfigure(encoding='utf-8', errors='replace')
+except Exception:
+    pass
 import json
 import re
 import base64
@@ -8,6 +12,8 @@ import math
 import requests
 import uvicorn
 import rhino3dm
+import hashlib
+import copy
 import xml.etree.ElementTree as ET
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
@@ -144,18 +150,40 @@ def find_user_param_value(p_dict: dict, nick: str, default_val):
         sub_p = {}
         
     combined = {**p_dict, **sub_p}
+    # 1. Coincidencia exacta (ej. "RH_IN:08.1 Lado balance")
     if nick in combined and combined[nick] is not None:
         return combined[nick]
         
-    clean_target = re.sub(r'^RH_IN:\s*[\d.]*[_\s]*', '', nick).strip().lower().replace(' ', '_')
+    # 2. Coincidencia normalizada conservando el identificador numérico (ej. "08.1_lado_balance")
+    clean_with_num = nick.replace("RH_IN:", "").strip().lower().replace(' ', '_')
+    if clean_with_num in combined and combined[clean_with_num] is not None:
+        return combined[clean_with_num]
+
+    # Verificar si el parámetro pertenece a una pieza numerada específica (ej. "08.1", "11.1", "Peça 8")
+    num_match = re.search(r'(\d+[\.\d]*)', nick)
+    if num_match:
+        piece_id = num_match.group(1).lower()
+        # Solo permitir coincidencia con claves que contengan explícitamente el mismo número de pieza
+        for k, v in combined.items():
+            if not isinstance(k, str) or v is None or k == "parameters":
+                continue
+            k_lower = k.lower()
+            if piece_id in k_lower:
+                clean_k = k.replace("RH_IN:", "").strip().lower().replace(' ', '_')
+                if clean_k == clean_with_num:
+                    return v
+        # Si no viene un valor específico para esta pieza numerada, NUNCA caer en claves genéricas contaminadas
+        return default_val
+
+    # 3. Solo para parámetros globales sin número de pieza (ej. Ancho, Alto, Profundidad, Apertura)
+    clean_target = re.sub(r'^RH_IN:\s*', '', nick).strip().lower().replace(' ', '_')
     if clean_target in combined and combined[clean_target] is not None:
         return combined[clean_target]
 
-    # Priorizar coincidencia EXACTA normalizada (evita que Equilíbrio Peça 6 coincida con Equilíbrio Peça 10)
     for k, v in combined.items():
         if not isinstance(k, str) or v is None or k == "parameters":
             continue
-        clean_k = re.sub(r'^RH_IN:\s*[\d.]*[_\s]*', '', k).strip().lower().replace(' ', '_')
+        clean_k = re.sub(r'^RH_IN:\s*', '', k).strip().lower().replace(' ', '_')
         if clean_k == clean_target:
             return v
             
@@ -515,6 +543,383 @@ def health_check():
         "rhino_active_children": active_children
     }
 
+# =============================================================================
+# ⚡ 3BF MEMORY BYPASS & GEOMETRY STATE CACHE (Sub-Second Execution Engine)
+# =============================================================================
+_GEOMETRY_CACHE = {}      # Por model_key: guarda estado estructural + fondos desglosados
+_FULL_RESPONSE_CACHE = {} # Por hash exacto de todos los parámetros: respuesta instantánea (0 ms)
+
+def extract_tris_from_mesh(mesh):
+    verts = mesh.get("vertices", [])
+    indices = mesh.get("indices", [])
+    uvs = mesh.get("uvs", [])
+    pos = mesh.get("position", [0.0, 0.0, 0.0])
+    px, py, pz = float(pos[0]), float(pos[1]), float(pos[2])
+    
+    tris = []
+    has_uv = (len(uvs) == len(verts) * 2 // 3)
+    for t in range(0, len(indices), 3):
+        if t + 2 >= len(indices):
+            break
+        i0, i1, i2 = indices[t], indices[t+1], indices[t+2]
+        p0 = (verts[i0*3] + px, verts[i0*3+1] + py, verts[i0*3+2] + pz)
+        p1 = (verts[i1*3] + px, verts[i1*3+1] + py, verts[i1*3+2] + pz)
+        p2 = (verts[i2*3] + px, verts[i2*3+1] + py, verts[i2*3+2] + pz)
+        
+        uv0 = (uvs[i0*2], uvs[i0*2+1]) if has_uv else (0.0, 0.0)
+        uv1 = (uvs[i1*2], uvs[i1*2+1]) if has_uv else (0.0, 0.0)
+        uv2 = (uvs[i2*2], uvs[i2*2+1]) if has_uv else (0.0, 0.0)
+
+        v1 = (p1[0]-p0[0], p1[1]-p0[1], p1[2]-p0[2])
+        v2 = (p2[0]-p0[0], p2[1]-p0[1], p2[2]-p0[2])
+        nx = v1[1]*v2[2] - v1[2]*v2[1]
+        ny = v1[2]*v2[0] - v1[0]*v2[2]
+        nz = v1[0]*v2[1] - v1[1]*v2[0]
+        l = (nx**2 + ny**2 + nz**2)**0.5
+        if l > 0:
+            nx, ny, nz = nx/l, ny/l, nz/l
+            
+        cx = (p0[0] + p1[0] + p2[0]) / 3.0
+        cy = (p0[1] + p1[1] + p2[1]) / 3.0
+        cz = (p0[2] + p1[2] + p2[2]) / 3.0
+            
+        tris.append({
+            "p0": p0, "p1": p1, "p2": p2,
+            "uv0": uv0, "uv1": uv1, "uv2": uv2,
+            "normal": (nx, ny, nz),
+            "ny": ny,
+            "n": (nx, ny, nz),
+            "c": (cx, cy, cz)
+        })
+    return tris
+
+def build_mesh_from_tris(name, template_mesh_or_tris, tris=None):
+    # Soporta tanto firma build_mesh_from_tris(name, tris) como legacy (name, tmpl, tris)
+    if tris is None and isinstance(template_mesh_or_tris, list):
+        target_tris = template_mesh_or_tris
+    else:
+        target_tris = tris if tris is not None else []
+        
+    if not target_tris:
+        return None
+        
+    all_pts = []
+    for tri in target_tris:
+        all_pts.append(tri["p0"])
+        all_pts.append(tri["p1"])
+        all_pts.append(tri["p2"])
+        
+    xs = [p[0] for p in all_pts]
+    ys = [p[1] for p in all_pts]
+    zs = [p[2] for p in all_pts]
+    
+    min_x, max_x = min(xs), max(xs)
+    min_y, max_y = min(ys), max(ys)
+    min_z, max_z = min(zs), max(zs)
+    
+    center_x = (min_x + max_x) / 2.0
+    center_y = (min_y + max_y) / 2.0
+    center_z = (min_z + max_z) / 2.0
+    
+    size_x = max(0.0001, max_x - min_x)
+    size_y = max(0.0001, max_y - min_y)
+    size_z = max(0.0001, max_z - min_z)
+    
+    new_verts = []
+    new_indices = []
+    new_uvs = []
+    
+    idx = 0
+    for tri in target_tris:
+        for p_world, uv in [(tri["p0"], tri["uv0"]), (tri["p1"], tri["uv1"]), (tri["p2"], tri["uv2"])]:
+            lx = round(p_world[0] - center_x, 4)
+            ly = round(p_world[1] - center_y, 4)
+            lz = round(p_world[2] - center_z, 4)
+            new_verts.extend([lx, ly, lz])
+            new_uvs.extend([round(uv[0], 4), round(uv[1], 4)])
+        new_indices.extend([idx, idx + 1, idx + 2])
+        idx += 3
+        
+    return {
+        "name": name,
+        "size": [round(size_x, 4), round(size_y, 4), round(size_z, 4)],
+        "position": [round(center_x, 4), round(center_y, 4), round(center_z, 4)],
+        "vertices": new_verts,
+        "indices": new_indices,
+        "uvs": new_uvs
+    }
+
+def rebuild_fondos_meshes(fondos_data_list, lado_color="Cara A", sustrato="MDF 1 Cara"):
+    new_p18_list = []
+    new_mdf18_list = []
+    
+    lc_norm = str(lado_color).strip().lower()
+    es_cara_b = ("cara b" in lc_norm or "lado 2" in lc_norm or "inferior" in lc_norm)
+    sust_norm = str(sustrato).strip().lower()
+    
+    for item in fondos_data_list:
+        cara_a = item["cara_a"]
+        cara_b = item["cara_b"]
+        cantos = item["cantos"]
+        
+        color_tris = []
+        mdf_tris = []
+        
+        if "crudo" in sust_norm:
+            color_tris = []
+            mdf_tris = cara_a + cara_b + cantos
+        elif "dd" in sust_norm:
+            color_tris = cara_a + cara_b
+            mdf_tris = cantos
+        else: # "MDF 1 Cara", "MDF", "Balance"
+            if es_cara_b:
+                color_tris = cara_b
+                mdf_tris = cara_a + cantos
+            else:
+                color_tris = cara_a
+                mdf_tris = cara_b + cantos
+                
+        p18_mesh = build_mesh_from_tris("RH_OUT:Peça 18", color_tris)
+        mdf18_mesh = build_mesh_from_tris("RH_OUT:MDF Peça 18", mdf_tris)
+        
+        if p18_mesh:
+            new_p18_list.append(p18_mesh)
+        if mdf18_mesh:
+            new_mdf18_list.append(mdf18_mesh)
+            
+    return new_p18_list, new_mdf18_list
+
+def is_structural_param_name(k: str) -> bool:
+    kl = str(k).lower()
+    # Si contiene palabras de acabados, cantos, balances, texturas, fondos -> NO es estructural
+    if any(w in kl for w in ["canto", "balance", "lado", "color", "sustrato", "mapeado", "borde", "textura", "acabado"]):
+        return False
+    # Si contiene palabras de dimensiones físicas o componentes estructurales -> SI es estructural
+    return any(w in kl for w in [
+        "ancho", "largura", "width",
+        "alto", "altura", "height",
+        "profundidad", "profundidade", "depth",
+        "zocalo", "rodapé", "rodape",
+        "ritmo",
+        "posicion pata", "posiçao pé", "posicao pe",
+        "abrir", "apertura", "abertura",
+        "cant_cajones", "cajon", "cajones", "gaveta", "gavetas",
+        "espessor", "espesor", "thickness"
+    ])
+
+def classify_instance_tris(all_tris: list):
+    if not all_tris:
+        return None
+    xs = [t["c"][0] for t in all_tris]
+    ys = [t["c"][1] for t in all_tris]
+    zs = [t["c"][2] for t in all_tris]
+    x0, x1 = min(xs), max(xs)
+    y0, y1 = min(ys), max(ys)
+    z0, z1 = min(zs), max(zs)
+    sx = max(0.001, x1 - x0)
+    sy = max(0.001, y1 - y0)
+    sz = max(0.001, z1 - z0)
+    min_dim = min(sx, sy, sz)
+    tol = max(0.001, min_dim * 0.35)
+    
+    ca, cb = [], []
+    cantos = {1: [], 2: [], 3: [], 4: []}
+    mec = []
+    
+    for t in all_tris:
+        nx, ny, nz = t["n"]
+        cx, cy, cz = t["c"]
+        if min_dim == sy: # Horizontal (Cubierta / Base / Entrepaño / Fondos cajón)
+            # Caras principales: normal vertical (Y en Three.js)
+            if ny > 0.6 and abs(cy - y1) < tol:
+                ca.append(t)
+            elif ny < -0.6 and abs(cy - y0) < tol:
+                cb.append(t)
+            # Cantos perimetrales
+            elif nz > 0.6 and abs(cz - z1) < tol:
+                cantos[1].append(t) # Canto 1: Frontal (+Z hacia usuario)
+            elif nz < -0.6 and abs(cz - z0) < tol:
+                cantos[2].append(t) # Canto 2: Trasero (-Z hacia pared)
+            elif nx < -0.6 and abs(cx - x0) < tol:
+                cantos[3].append(t) # Canto 3: Izquierdo (-X)
+            elif nx > 0.6 and abs(cx - x1) < tol:
+                cantos[4].append(t) # Canto 4: Derecho (+X)
+            else:
+                mec.append(t)
+        elif min_dim == sx: # Vertical Lateral (Costados / Divisiones verticales)
+            # Caras principales: normal transversal (X en Three.js)
+            if nx > 0.6 and abs(cx - x1) < tol:
+                ca.append(t) # Cara A (Exterior / Derecha)
+            elif nx < -0.6 and abs(cx - x0) < tol:
+                cb.append(t) # Cara B (Interior / Izquierda)
+            # Cantos perimetrales
+            elif nz > 0.6 and abs(cz - z1) < tol:
+                cantos[1].append(t) # Canto 1: Frontal (+Z)
+            elif nz < -0.6 and abs(cz - z0) < tol:
+                cantos[2].append(t) # Canto 2: Trasero (-Z)
+            elif ny > 0.6 and abs(cy - y1) < tol:
+                cantos[3].append(t) # Canto 3: Superior / Arriba (+Y)
+            elif ny < -0.6 and abs(cy - y0) < tol:
+                cantos[4].append(t) # Canto 4: Inferior / Abajo (-Y)
+            else:
+                mec.append(t)
+        else: # min_dim == sz: Vertical Frontal (Frentes cajón / Puertas / Zócalos / Travesaños)
+            # Caras principales: normal frontal (Z en Three.js)
+            if nz > 0.6 and abs(cz - z1) < tol:
+                ca.append(t) # Cara A (Frontal hacia usuario)
+            elif nz < -0.6 and abs(cz - z0) < tol:
+                cb.append(t) # Cara B (Posterior hacia interior)
+            # Cantos perimetrales
+            elif ny > 0.6 and abs(cy - y1) < tol:
+                cantos[1].append(t) # Canto 1: Superior (+Y)
+            elif ny < -0.6 and abs(cy - y0) < tol:
+                cantos[2].append(t) # Canto 2: Inferior (-Y)
+            elif nx < -0.6 and abs(cx - x0) < tol:
+                cantos[3].append(t) # Canto 3: Izquierdo (-X)
+            elif nx > 0.6 and abs(cx - x1) < tol:
+                cantos[4].append(t) # Canto 4: Derecho (+X)
+            else:
+                mec.append(t)
+            
+    return {"ca": ca, "cb": cb, "cantos": cantos, "mec": mec}
+
+def rebuild_piece_meshes(inst_list: list, p_num: int, lado_balance="Cara B", c1="Canto", c2="Canto", c3="Canto", c4="Canto"):
+    bal_s = str(lado_balance).lower().strip().replace('"', '').replace("'", "")
+    if bal_s in ["6", "d/d", "dyd", "doble", "ninguno", "ambas"] or "d/d" in bal_s or "dyd" in bal_s:
+        modo_b = "DD"
+    elif bal_s in ["5", "cara a", "a"] or (bal_s.startswith("a") and len(bal_s) <= 6):
+        modo_b = "A"
+    elif bal_s in ["4", "cara b", "b"] or (bal_s.startswith("b") and len(bal_s) <= 6):
+        modo_b = "B"
+    else:
+        modo_b = "B"
+
+    def is_canto_wood(val):
+        s = str(val).lower().strip().replace('"', '').replace("'", "")
+        if s in ["0", "0.0", "canto", "true", "si", "con canto"] or ("canto" in s and "sin" not in s):
+            return True
+        return False
+
+    c_flags = {
+        1: is_canto_wood(c1),
+        2: is_canto_wood(c2),
+        3: is_canto_wood(c3),
+        4: is_canto_wood(c4),
+    }
+
+    new_col, new_bal, new_mdp = [], [], []
+
+    for inst in inst_list:
+        ca = inst["ca"]
+        cb = inst["cb"]
+        cantos = inst["cantos"]
+        mec = inst["mec"]
+
+        color_tris = []
+        balance_tris = []
+        mdp_tris = list(mec) # Mecanizados siempre a MDP
+
+        if modo_b == "DD":
+            color_tris.extend(ca)
+            color_tris.extend(cb)
+        elif modo_b == "A":
+            balance_tris.extend(ca)
+            color_tris.extend(cb)
+        elif modo_b == "B":
+            color_tris.extend(ca)
+            balance_tris.extend(cb)
+        else:
+            balance_tris.extend(ca)
+            balance_tris.extend(cb)
+
+        for c_idx in range(1, 5):
+            if c_flags[c_idx]:
+                color_tris.extend(cantos[c_idx])
+            else:
+                mdp_tris.extend(cantos[c_idx])
+
+        m_c = build_mesh_from_tris(f"RH_OUT:Peça {p_num}", color_tris)
+        m_b = build_mesh_from_tris(f"RH_OUT:Peça {p_num} B", balance_tris)
+        m_m = build_mesh_from_tris(f"RH_OUT:MDP Peça {p_num}", mdp_tris)
+
+        if m_c: new_col.append(m_c)
+        if m_b: new_bal.append(m_b)
+        if m_m: new_mdp.append(m_m)
+
+    return new_col, new_bal, new_mdp
+
+def extract_ghx_aesthetic_mapping(ghx_path: str) -> dict:
+    mapping = {}
+    if not os.path.exists(ghx_path):
+        return mapping
+    try:
+        tree = ET.parse(ghx_path)
+        root = tree.getroot()
+        guid_to_nick = {}
+        for chunk in root.iter("chunk"):
+            if chunk.attrib.get("name") == "Object":
+                container = chunk.find("chunks/chunk[@name='Container']")
+                if container is not None:
+                    nick = container.find("items/item[@name='NickName']")
+                    if nick is not None and nick.text and nick.text.startswith("RH_IN:"):
+                        for item in chunk.iter("item"):
+                            if item.text and len(item.text) == 36 and item.text.count("-") == 4:
+                                guid_to_nick[item.text] = nick.text
+                                
+        gh_group_titles = {}
+        for chunk in root.iter("chunk"):
+            if chunk.attrib.get("name") == "Object":
+                name_item = chunk.find("items/item[@name='Name']")
+                if name_item is not None and "Group" in str(name_item.text):
+                    container = chunk.find("chunks/chunk[@name='Container']")
+                    if container is not None:
+                        g_nick = container.find("items/item[@name='NickName']")
+                        g_title = g_nick.text if g_nick is not None and g_nick.text else ""
+                        for item in container.iter("item"):
+                            if item.text in guid_to_nick:
+                                gh_group_titles[guid_to_nick[item.text]] = g_title
+
+        for nick, g_title in gh_group_titles.items():
+            match = re.search(r'Pe[çc\ufffd\?a]*\s+(\d+)', g_title, re.IGNORECASE) or re.search(r'Pe[çc\ufffd\?a]*\s+(\d+)', nick, re.IGNORECASE)
+            if not match:
+                continue
+            p_num = int(match.group(1))
+            nl = nick.lower()
+            if "balance" in nl:
+                mapping[nick] = (p_num, "balance")
+            elif "frontal" in nl:
+                mapping[nick] = (p_num, "canto_1")
+            elif "trasero" in nl:
+                mapping[nick] = (p_num, "canto_2")
+            elif any(w in nl for w in ["izquierdo", "arriba", "superior"]):
+                mapping[nick] = (p_num, "canto_3")
+            elif any(w in nl for w in ["derecho", "abajo", "inferior"]):
+                mapping[nick] = (p_num, "canto_4")
+            elif "lado color" in nl:
+                mapping[nick] = (p_num, "fondo_color")
+            elif "sustrato" in nl:
+                mapping[nick] = (p_num, "fondo_sustrato")
+    except Exception as e:
+        print(f"[3BF Worker] Error extrayendo mapeo estético GHX: {e}", flush=True)
+    return mapping
+
+def extract_all_user_params_flat(p: dict) -> dict:
+    flat = {}
+    if not isinstance(p, dict):
+        return flat
+    for k, v in p.items():
+        if k in ["parameters", "timestamp", "client_time", "last_mtime", "ghx_content"]:
+            continue
+        if isinstance(v, (str, int, float, bool)):
+            flat[str(k)] = str(v).strip()
+            
+    sub_p = p.get("parameters") or {}
+    if isinstance(sub_p, dict):
+        for k, v in sub_p.items():
+            if isinstance(v, (str, int, float, bool)):
+                flat[str(k)] = str(v).strip()
+    return flat
+
 from fastapi import FastAPI, HTTPException, Request
 
 @app.post("/compute")
@@ -522,6 +927,23 @@ async def compute_model(request: Request):
     start_time = time.time()
     
     p = await request.json()
+    model_id = str(p.get("model_id", "Cajon_Experimento_Viktor"))
+    custom_filename = str(p.get("custom_filename", ""))
+    ghx_file_path = find_ghx_in_system(model_id, custom_filename)
+    ghx_mtime = int(os.path.getmtime(ghx_file_path)) if (ghx_file_path and os.path.exists(ghx_file_path)) else 0
+    ghx_hash = hashlib.md5(p["ghx_content"].encode("utf-8")).hexdigest()[:8] if p.get("ghx_content") else ""
+    model_key = f"{model_id}_{custom_filename}_{ghx_mtime}_{ghx_hash}"
+
+    # 1. ⚡ Chequeo de Caché Total Exacto (0 ms)
+    hash_p = {k: v for k, v in p.items() if k not in ["timestamp", "client_time", "last_mtime"]}
+    full_cache_key = f"{model_key}_" + hashlib.md5(json.dumps(hash_p, sort_keys=True, default=str).encode("utf-8")).hexdigest()
+    if full_cache_key in _FULL_RESPONSE_CACHE:
+        cached_resp = dict(_FULL_RESPONSE_CACHE[full_cache_key])
+        exec_ms = round((time.time() - start_time) * 1000, 2)
+        cached_resp["execution_time_ms"] = exec_ms
+        print(f"[3BF Worker] [CACHE] CACHE TOTAL EXACTO ACTIVADO: Recalculo en {exec_ms} ms", flush=True)
+        return cached_resp
+
     ancho = float(find_user_param_value(p, "RH_IN:Ancho", find_user_param_value(p, "ancho", 1200.0)))
     alto = float(find_user_param_value(p, "RH_IN:Alto", find_user_param_value(p, "alto", 800.0)))
     prof = float(find_user_param_value(p, "RH_IN:Profundidad", find_user_param_value(p, "profundidad", 400.0)))
@@ -531,7 +953,105 @@ async def compute_model(request: Request):
     alt_lat_cajon_param = float(p.get("altura_lateral_cajon", 102.0))
     dist_bajo_lat_param = float(p.get("distancia_bajo_laterales", 30.0))
     tipo_cajon_param = str(p.get("tipo_cajon", "Corredera Estandar"))
+
+    # 2. Chequeo de Bypass Estructural (Sub-Second Memory Bypass)
+    structural_params = {
+        "ancho": ancho,
+        "alto": alto,
+        "prof": prof,
+        "cant_cajones": cant_cajones,
+        "apertura_mm": apertura_mm,
+        "prof_cajon_param": prof_cajon_param,
+        "alt_lat_cajon_param": alt_lat_cajon_param,
+        "dist_bajo_lat_param": dist_bajo_lat_param,
+        "tipo_cajon_param": tipo_cajon_param,
+    }
+    user_p_dict = p.get("parameters") or {}
+    for k, v in user_p_dict.items():
+        if is_structural_param_name(k):
+            structural_params[k] = v
+            
+    structural_hash = hashlib.md5(json.dumps(structural_params, sort_keys=True, default=str).encode("utf-8")).hexdigest()
+
+    current_flat_params = extract_all_user_params_flat(p)
+
+    if model_key in _GEOMETRY_CACHE:
+        cached_geom = _GEOMETRY_CACHE[model_key]
+        last_flat_params = cached_geom.get("user_params_snapshot", {})
+        
+        all_keys = set(current_flat_params.keys()) | set(last_flat_params.keys())
+        changed_keys = {
+            k for k in all_keys 
+            if current_flat_params.get(k, "") != last_flat_params.get(k, "")
+            and k not in ["timestamp", "client_time", "last_mtime"]
+        }
+        
+        # ¿Solo cambiaron parámetros estéticos (cantos, balances, acabados, fondos)?
+        only_aesthetic_changed = len(changed_keys) > 0 and not any(is_structural_param_name(k) for k in changed_keys)
+        no_params_changed = (len(changed_keys) == 0)
+
+        if cached_geom.get("structural_hash") == structural_hash and (only_aesthetic_changed or no_params_changed):
+            # 🚀 BYPASS GENERALIZADO ESTÉTICO EN MEMORIA RAM (< 2 ms)
+            rebuilt_real_meshes = list(cached_geom.get("static_other_meshes", []))
+            
+            # 1. Reconstruir Fondos (Peça 18)
+            if cached_geom.get("fondos_data_list"):
+                lado_color = find_user_param_value(p, "RH_IN:21.1 Lado Color", find_user_param_value(p, "lado_color", "Cara A"))
+                sustrato = find_user_param_value(p, "RH_IN:21.2 Sustrato", find_user_param_value(p, "sustrato", "MDF 1 Cara"))
+                new_p18, new_mdf18 = rebuild_fondos_meshes(cached_geom["fondos_data_list"], lado_color, sustrato)
+                rebuilt_real_meshes.extend(new_p18)
+                rebuilt_real_meshes.extend(new_mdf18)
+
+            # 2. Reconstruir Piezas Tablero Granularmente (Solo piezas modificadas)
+            aes_map = cached_geom.get("aesthetic_mapping", {})
+            pieces_classified = cached_geom.get("pieces_classified", {})
+            pieces_current_meshes = cached_geom.setdefault("pieces_current_meshes", {})
+            
+            # Invertir mapeo para obtener nicks por pieza
+            p_to_params = {}
+            for nick, (p_n, p_type) in aes_map.items():
+                if p_n not in p_to_params:
+                    p_to_params[p_n] = {}
+                p_to_params[p_n][p_type] = nick
+
+            for p_n, inst_list in pieces_classified.items():
+                types_dict = p_to_params.get(p_n, {})
+                piece_nicks = set(types_dict.values())
+                piece_has_changes = any(k in changed_keys for k in piece_nicks) or (p_n not in pieces_current_meshes)
+
+                if piece_has_changes:
+                    nick_bal = types_dict.get("balance")
+                    nick_c1 = types_dict.get("canto_1")
+                    nick_c2 = types_dict.get("canto_2")
+                    nick_c3 = types_dict.get("canto_3")
+                    nick_c4 = types_dict.get("canto_4")
+
+                    val_bal = find_user_param_value(p, nick_bal, "Cara B") if nick_bal else "Cara B"
+                    val_c1 = find_user_param_value(p, nick_c1, "Canto") if nick_c1 else "Canto"
+                    val_c2 = find_user_param_value(p, nick_c2, "Canto") if nick_c2 else "Canto"
+                    val_c3 = find_user_param_value(p, nick_c3, "Canto") if nick_c3 else "Canto"
+                    val_c4 = find_user_param_value(p, nick_c4, "Canto") if nick_c4 else "Canto"
+
+                    new_col, new_bal, new_mdp = rebuild_piece_meshes(inst_list, p_n, val_bal, val_c1, val_c2, val_c3, val_c4)
+                    piece_m = new_col + new_bal + new_mdp
+                    pieces_current_meshes[p_n] = piece_m
+                
+                rebuilt_real_meshes.extend(pieces_current_meshes.get(p_n, []))
+
+            exec_ms = round((time.time() - start_time) * 1000, 2)
+            resp = dict(cached_geom["base_response"])
+            resp["real_meshes"] = rebuilt_real_meshes
+            resp["execution_time_ms"] = exec_ms
+            
+            cached_geom["user_params_snapshot"] = dict(current_flat_params)
+            _FULL_RESPONSE_CACHE[full_cache_key] = resp
+            print(f"[3BF Worker] [BYPASS GENERALIZADO] BYPASS ESTÉTICO COMPLETO EN MEMORIA: Recalculo en {exec_ms} ms (Cambiaron parámetros estéticos: {changed_keys})", flush=True)
+            return resp
+        elif not no_params_changed:
+            print(f"[3BF Worker] [BYPASS] DESVÍO A RHINOCOMPUTE: Cambiaron parámetros estructurales: {changed_keys}", flush=True)
+
     print(f"[3BF Worker v1.1] Parámetros extraídos -> Ancho:{ancho}, Alto:{alto}, Profundidad:{prof}, Cajones:{cant_cajones}, Apertura:{apertura_mm}, ProfCajon:{prof_cajon_param}, AltLatCajon:{alt_lat_cajon_param}, DistBajoLat:{dist_bajo_lat_param}, TipoCajon:{tipo_cajon_param}", flush=True)
+
     
     esp = 15.0  # Espesor estándar MDP 15mm
     
@@ -720,13 +1240,8 @@ async def compute_model(request: Request):
                                                 it.text = "true" if idx == matched_index else "false"
 
             xml_bytes = ET.tostring(root, encoding="utf-8")
-            xml_str = xml_bytes.decode("utf-8") + f"\n<!-- 3BF_CACHE_BUST: {int(time.time() * 1000)} -->"
-            xml_bytes = xml_str.encode("utf-8")
-            
             b64_algo = base64.b64encode(xml_bytes).decode("utf-8")
-            print(f"[3BF Worker] Solucionando modelo {model_id} ({ghx_file}) en RhinoCompute (Bust Cache Activo)", flush=True)
-            
-            reactivador_ping = (int(time.time() * 1000) % 2) * 0.0001
+            print(f"[3BF Worker] Solucionando modelo {model_id} ({ghx_file}) en RhinoCompute (Grafo Optimizado)", flush=True)
 
             # Armar payload_values 100% DINÁMICO para Sliders y Parámetros en RhinoCompute
             payload_values = []
@@ -735,8 +1250,6 @@ async def compute_model(request: Request):
                 if isinstance(def_val, (int, float)):
                     try:
                         num_v = float(user_val)
-                        if "ancho" in nick.lower():
-                            num_v += reactivador_ping
                         payload_values.append({
                             "ParamName": nick,
                             "InnerTree": {"{0}": [{"type": "System.Double", "data": str(num_v)}]}
@@ -1168,7 +1681,7 @@ async def compute_model(request: Request):
                         if nick_t not in declared_outputs:
                             declared_outputs.append(nick_t)
 
-    return {
+    response_payload = {
         "status": "success",
         "model_id": model_id,
         "source_gh": ghx_file,
@@ -1194,6 +1707,91 @@ async def compute_model(request: Request):
         "despiece": piezas_madera_final,
         "herrajes": herrajes_final
     }
+
+    # 💾 Guardar en memoria RAM para Bypasses ultrarrápidos (< 2 ms)
+    if rhino_compute_success and len(real_meshes) > 0:
+        try:
+            # 1. Mapeo estético de parámetros dinámicos del GHX
+            aes_map = extract_ghx_aesthetic_mapping(ghx_file) if ghx_file and os.path.exists(ghx_file) else {}
+
+            # 2. Fondos Peça 18
+            fondos_data_list = []
+            p18_items = [m for m in real_meshes if m.get("name") == "RH_OUT:Peça 18"]
+            mdf18_items = [m for m in real_meshes if m.get("name") == "RH_OUT:MDF Peça 18"]
+            if p18_items and mdf18_items:
+                for idx in range(min(len(p18_items), len(mdf18_items))):
+                    all_t = extract_tris_from_mesh(p18_items[idx]) + extract_tris_from_mesh(mdf18_items[idx])
+                    cara_a = [t for t in all_t if t["ny"] > 0.7]
+                    cara_b = [t for t in all_t if t["ny"] < -0.7]
+                    cantos = [t for t in all_t if abs(t["ny"]) <= 0.7]
+                    if cara_a and cara_b:
+                        fondos_data_list.append({
+                            "cara_a": cara_a,
+                            "cara_b": cara_b,
+                            "cantos": cantos,
+                            "template": p18_items[idx]
+                        })
+
+            # 3. Clasificación Universal de Piezas Tablero (1, 2, 4, 5, 6, 7, 8, 10, 11, 13, 16, 17, 19)
+            from collections import defaultdict
+            piece_items = defaultdict(lambda: {"col": [], "bal": [], "mdp": []})
+            static_other_meshes = []
+
+            for m in real_meshes:
+                m_name = m.get("name", "")
+                match = re.search(r'Pe[çc\ufffd\?a]*\s+(\d+)', m_name, re.IGNORECASE)
+                if match:
+                    p_num = int(match.group(1))
+                    if p_num == 18:
+                        continue # Ya procesado en fondos_data_list
+                    nl = m_name.lower()
+                    if "mdp" in nl or "mdf" in nl:
+                        piece_items[p_num]["mdp"].append(m)
+                    elif " b" in nl or "_b" in nl or "balance" in nl:
+                        piece_items[p_num]["bal"].append(m)
+                    else:
+                        piece_items[p_num]["col"].append(m)
+                else:
+                    static_other_meshes.append(m)
+
+            pieces_classified = {}
+            for p_num in sorted(piece_items.keys()):
+                cols = piece_items[p_num]["col"]
+                bals = piece_items[p_num]["bal"]
+                mdps = piece_items[p_num]["mdp"]
+                n_inst = max(len(cols), len(bals), len(mdps))
+                inst_list = []
+                for idx in range(n_inst):
+                    inst_tris = []
+                    if idx < len(cols):
+                        inst_tris.extend(extract_tris_from_mesh(cols[idx]))
+                    if idx < len(bals):
+                        inst_tris.extend(extract_tris_from_mesh(bals[idx]))
+                    if idx < len(mdps):
+                        inst_tris.extend(extract_tris_from_mesh(mdps[idx]))
+                    
+                    if inst_tris:
+                        c_res = classify_instance_tris(inst_tris)
+                        if c_res:
+                            inst_list.append(c_res)
+                if inst_list:
+                    pieces_classified[p_num] = inst_list
+
+            _GEOMETRY_CACHE[model_key] = {
+                "structural_hash": structural_hash,
+                "fondos_data_list": fondos_data_list,
+                "pieces_classified": pieces_classified,
+                "static_other_meshes": static_other_meshes,
+                "aesthetic_mapping": aes_map,
+                "base_response": dict(response_payload),
+                "user_params_snapshot": dict(current_flat_params)
+            }
+            _FULL_RESPONSE_CACHE[full_cache_key] = dict(response_payload)
+            print(f"[3BF Worker] [RAM CACHE] Estado generalizado guardado en RAM: {len(pieces_classified)} piezas clasificadas + {len(static_other_meshes)} mallas estáticas + {len(fondos_data_list)} fondos", flush=True)
+        except Exception as cache_err:
+            print(f"[3BF Worker Cache Warning]: {cache_err}", flush=True)
+
+    return response_payload
 
 
 # =============================================================================

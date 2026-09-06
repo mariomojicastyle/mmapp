@@ -1971,3 +1971,38 @@ Con esta batería de arreglos y la validación en caliente, la V20 se establece 
 - **Diseño Arquitectónico del Bypass de Rendimiento (Selective Branch Evaluation)**:
   * Formulación de la estrategia de optimización por bypass mediante memoria RAM persistente (`scriptcontext.sticky` en Python) para congelar la geometría estructural ante cambios cosméticos de acabados/fondos, reduciendo tiempos de recálculo de ~13s a <0.3s.
 
+---
+
+### 🔹 Hito 3BF_Bypass_World_Coords_and_Balance_Collision_Shield — Bypass Ultrarrápido a 0.96 ms, Corrección Milimétrica de Pieza 13 y Blindaje Anti-Colisión de Balances (06 de Septiembre, 2026)
+
+- **Bypass Estético en Memoria RAM (< 1 ms)**:
+  * Implementación y perfeccionamiento del bypass de recálculo granular en `worker/3bf_worker.py` (`rebuild_piece_meshes`).
+  * Extracción del sub-mallado y reconstrucción en espacio de coordenadas mundiales reales Three.js ($X, Y, Z$) eliminando el desfase posicional observado en la cubierta superior (`Peça 13`) y sus mallas de canto MDP al alternar balances.
+  * Tiempos de respuesta reducidos de ~13.5 segundos a **0.96 ms** en modificaciones cosméticas.
+- **Blindaje Anti-Colisión de Claves en Worker (`find_user_param_value`)**:
+  * Reescriptura del algoritmo de coincidencia de parámetros en `worker/3bf_worker.py`.
+  * Restricción estricta para que parámetros con identificador numérico de pieza (ej. `RH_IN:08.1 Lado balance`, `RH_IN:11.1 Lado balance`) únicamente coincidan con claves que contengan explícitamente su número de pieza (`08.1_lado_balance`, `RH_IN:08.1...`).
+  * Prohibición absoluta de fallback a claves genéricas como `lado_balance`, impidiendo que selecciones de `Cara A` en tapaluces o piezas secundarias sobreescriban e inviertan los frentes de cajón al alterar medidas estructurales como el Ancho.
+- **Corrección de Orientación y Normalización Cara A/B en Piezas Frontales (`Comoda Ravenna.ghx`)**:
+  * **Causa Raíz Identificada**: Los 18 scripts de Python en la definición Grasshopper clasificaban `Vertical Frontal (Espesor en Y)` asumiendo erróneamente que $+Y$ era la cara delantera (`faces_A`) y $-Y$ la trasera (`faces_B`). En el sistema de coordenadas real del mueble, $-Y$ ($y0 \approx 5.0\text{ mm}$) es el frente exterior que da al usuario/cámara y $+Y$ ($y1 \approx 20.0\text{ mm}$) es la contracara interior que toca las cajas de los cajones.
+  * **Corrección Topológica Aplicada**: Se corrigieron los 18 scripts (NURBS y Mesh) invirtiendo la asignación para que **Cara A** sea la cara delantera visible (menor $Y$, normal $n.Y < -0.8$) y **Cara B** la contracara interior (mayor $Y$, normal $n.Y > 0.8$).
+  * **Estandarización Universal de Balances a Cara B**: Todas las listas desplegables (*Value Lists*) de balance (`RH_IN:22.1`, `RH_IN:19.1`, `RH_IN:14.1`, `RH_IN:11.1`, `RH_IN:08.1`, `RH_IN:12.2`, `RH_IN:15.2`, etc.) quedaron configuradas con `Cara B` seleccionada por defecto.
+  * **Comprobación Física en RhinoCompute**: Al solicitar `Lado balance: Cara B`, `RH_OUT:Peça 19` (frentes) queda orientado al frente en $Y = 5.0\text{ mm}$ con acabado **Color Melamina Madera**, y `RH_OUT:Peça 19 B` (balance) se proyecta al plano posterior en $Y = 20.0\text{ mm}$ en **Blanco (oculto en el interior)**, tanto a 1 columna como a 2 columnas.
+
+
+---
+
+### 🚀 Hito 3BF_Universal_Face_Orientation_and_Single_Column_Fix — Estandarización Universal de 26 Scripts de Despiece (1 Columna y 2 Columnas), Solución de Inversión de Balances y Rendimiento Validado (06 de Septiembre, 2026)
+
+- **Diagnóstico y Estandarización de los 26 Scripts de Despiece (`Comoda Ravenna.ghx`)**:
+  * Detección de la discrepancia geométrica entre la versión de 1 columna (`Peça 8` frentes, `Peça 11` cenefa/tapaluces, `Peça 9` y `Peça 12` refuerzos posteriores) y la versión de 2 columnas (`Peça 19`).
+  * En los componentes de 1 columna, los scripts clasificaban $+Y$ como `faces_A` y $-Y$ como `faces_B`, lo que provocaba que al reducir el ancho a 400 mm el balance blanco (`Cara B`) se proyectara hacia el frente exterior ($Z = -0.0049$) tapando la melamina madera.
+  * Se auditaron y corrigieron sistemáticamente los **26 scripts de Python de despiece** en el archivo XML de Grasshopper:
+    - **Cara A (Melamina Madera exterior)**: Asignada canónicamente a la cara exterior frontal ($-Y$, normal $n.Y < -0.8$).
+    - **Cara B (Balance Blanco interior)**: Asignada a la contracara interior posterior ($+Y$, normal $n.Y > 0.8$).
+- **Verificación Física y Espacial con RhinoCompute 8**:
+  * Comprobación en **Ancho = 400 mm (1 columna)**: `RH_OUT:Peça 19 B` se desplaza con precisión milimétrica de $Z = -0.0049$ (delantera) a **$Z = -0.0199$ (interior)**, quedando la melamina madera en el frente exterior y el balance blanco oculto adentro del mueble.
+  * Comprobación en **Ancho = 1295 mm (2 columnas)**: `RH_OUT:Peça 19 B` permanece en $Z = -0.0199$ y los 6 fondos de cajón de ambas columnas (`Peça 18`) se mantienen alineados y completos.
+- **Validación de Rendimiento y Código**:
+  * Compilación TypeScript `npx tsc --noEmit` en `3bf/`: 0 errores.
+  * Confirmación en vivo por el usuario de una experiencia más veloz, fluida y con la orientación de texturas perfecta.
