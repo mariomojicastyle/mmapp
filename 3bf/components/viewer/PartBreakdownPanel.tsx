@@ -77,8 +77,12 @@ export default function PartBreakdownPanel() {
     if (isBalance) {
       return capas.find((c) => c.id === "capa_back" || c.id === "capa_espaldar" || c.nombre.toLowerCase().includes("back") || c.nombre.toLowerCase().includes("balance"))?.id || capas[0]?.id;
     }
+    const isFondo = kLow.includes("fondo") || kLow.includes("fundo") || kLow.includes("peça 18") || kLow.includes("peca 18") || kLow.includes("pk18") || kLow.includes("costa") || kLow.includes("trasera");
+    if (isFondo && !kLow.includes("mdf") && !kLow.includes("mdp")) {
+      return capas.find((c) => c.id === "capa_tono_fondo" || c.nombre.toLowerCase().includes("fondo"))?.id || "capa_tono_fondo";
+    }
     // 🪵 Para cualquier lámina / tablero (Cubierta, Lateral, Frente, Tapa, Peça 6, Peça 7, etc.), asignar Capa Tono por defecto
-    const capaTono = capas.find((c) => c.id === "capa_tono" || c.nombre.toLowerCase() === "tono" || c.nombre.toLowerCase().includes("tono"));
+    const capaTono = capas.find((c) => c.id === "capa_tono" || (c.nombre.toLowerCase().includes("tono") && !c.nombre.toLowerCase().includes("fondo")));
     return capaTono?.id || capas[0]?.id || "capa_tono";
   };
 
@@ -116,8 +120,15 @@ export default function PartBreakdownPanel() {
     }
 
     const isBoard = categoria === "Tableros";
+    const isMdf = kLow.includes("mdf");
     const rawCapaId = asignacion?.capaId;
-    const cleanCapaId = (isBoard && rawCapaId === "capa_acero") ? "por_defecto" : (rawCapaId || "por_defecto");
+    const isInvalidLayer = ["capa_acero", "capa_aluminio", "capa_cromo", "capa_zinc", "capa_plastico_1", "capa_plastico_2"].includes(rawCapaId || "");
+    let cleanCapaId = rawCapaId || "por_defecto";
+    if (isMdf && cleanCapaId !== "capa_mdf") {
+      cleanCapaId = "capa_mdf";
+    } else if (isBoard && isInvalidLayer) {
+      cleanCapaId = "por_defecto";
+    }
 
     return {
       parteKey,

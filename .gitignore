@@ -36,6 +36,11 @@ Temporales/
 Publicaciones/
 temporal/
 temporal
+*.bak
+*.bak_*
+3bf/scratch/
+3BF/scratch/
+
 
 # Upwork local directory
 docs/Upwork/

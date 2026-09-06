@@ -1,0 +1,8 @@
+﻿ID;Categoria;Componente_Grasshopper;Cantidad;Tiempo_Unitario_Estimado_ms;Tiempo_Total_Estimado_ms;Porcentaje_Impacto;Nivel_Critico;Causa_Tecnica;Estrategia_Optimizacion
+1;Booleanas NURBS;Solid Difference (Result);12;240;7200;55.4%;CRITICO;Intersección y recorte analítico NURBS en 30 mecanizados repetitivos;Convertir herrajes a Malla directa o usar Split Mesh en vez de booleanas NURBS
+2;Tessellation / Mallado;Mesh Brep (Conversión a Malla);80;35;2590;19.9%;ALTO;Cálculo de curvatura y poligonización de Breps en tiempo de ejecución;Generar primitivas paramétricas en Mesh nativo desde el origen (Mesh.CreateBox)
+3;Scripts de Automatización;Python Scripts (Box Mapping / Separator);45;45;1485;11.4%;MEDIO;Inicialización de CPython 3 / IronPython por cada componente individual;Consolidar los 33 scripts en 1 o 2 componentes Python maestros para todo el mueble
+4;Deserialización XML;RhinoCompute XML Parser (Headless);1;1200;1200;9.2%;MEDIO;RhinoCompute lee y reconstruye 6.8 MB de XML en cada petición stateless;Reutilizar definición vía apuntador de memoria (pointer / hops worker cache)
+5;Transformaciones 3D;Transform / Move / Linear Array;129;3;387;3.0%;BAJO;Multiplicación de matrices de transformación en cajones y herrajes;Agrupar operaciones afines mediante instanciación de matrices (Compound Transform)
+6;Parámetros y Datos;Sliders, Panels, Value Lists;229;0.5;100;0.8%;DESPRECIABLE;Paso de parámetros numéricos y cadenas;Ninguna (muy eficiente)
+7;Geometría Básica;Vectors, Points, Planes, Lengths;440;0.2;40;0.3%;DESPRECIABLE;Operaciones aritméticas y trigonométricas estándar;Ninguna

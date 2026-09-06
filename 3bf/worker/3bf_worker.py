@@ -1064,8 +1064,8 @@ async def compute_model(request: Request):
                 dist_z = abs(t["pos"][2] - pos[2]) * 1000.0
                 diff_lar = abs(t["largo"] - lar_malla)
                 
-                # Criterio Maderkit: Mismo plano de tablero (X y Z coincidentes a < 35mm) y misma longitud de pieza (< 25mm)
-                if dist_x < 35.0 and dist_z < 35.0 and diff_lar < 25.0:
+                # Criterio Maderkit: Mismo plano de tablero (X y Z coincidentes a < 15mm) y misma longitud de pieza (< 15mm)
+                if dist_x < 15.0 and dist_z < 15.0 and diff_lar < 15.0:
                     if dist_y < 85.0: # Absorber ranura o recorte dentro de la misma pieza física
                         encontrado = True
                         y_min = min(t["pos"][1]*1000 - t["ancho"]/2, pos[1]*1000 - anc_malla/2)
@@ -1077,7 +1077,7 @@ async def compute_model(request: Request):
                         if t["nombre"] in ["Tablero", "Mdp", "Balance"] and nombre_limpio not in ["Tablero", "Mdp", "Balance"]:
                             t["nombre"] = nombre_limpio
                         break
-                elif dist_x < 50.0 and dist_y < 50.0 and dist_z < 50.0 and diff_lar < 25.0:
+                elif dist_x < 15.0 and dist_y < 15.0 and dist_z < 15.0 and diff_lar < 15.0:
                     encontrado = True
                     t["largo"] = max(t["largo"], lar_malla)
                     t["ancho"] = max(t["ancho"], anc_malla)

@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { use3BFStore, defaultCalibracion, APP_VERSION } from "@/lib/store";
+import { use3BFStore, defaultCalibracion, APP_VERSION, PRESETS_ILUMINACION } from "@/lib/store";
 import FurnitureAssetBrowser from "./FurnitureAssetBrowser";
 import AppearanceSettingsPanel from "./AppearanceSettingsPanel";
 import LayerManagerPanel from "./LayerManagerPanel";
@@ -32,7 +32,9 @@ import {
   Focus,
   ListTree,
   Wrench,
-  Sparkles
+  Sparkles,
+  Lamp,
+  Power
 } from "lucide-react";
 
 interface DefinicionItem {
@@ -228,6 +230,10 @@ export default function NPanel() {
     setAnchoNPanel,
     modalRenderIAAbierto,
     setModalRenderIAAbierto,
+    setLuzPropiedad,
+    seleccionarLuzEstudio,
+    toggleGizmosLuces,
+    aplicarPresetIluminacion,
   } = use3BFStore();
 
   const ancho = anchoNPanel || 380;
@@ -1027,134 +1033,129 @@ export default function NPanel() {
                   borderColor: coloresApariencia?.bordePaneles,
                   backgroundColor: coloresApariencia?.fondoPaneles 
                 }}
-                className="space-y-2.5 p-3 rounded-xl border transition-colors shadow-2xs"
+                className="space-y-3 p-3 rounded-xl border transition-colors shadow-2xs"
               >
                 <div 
                   style={{ borderColor: coloresApariencia?.bordePaneles }}
-                  className="flex items-center gap-1.5 font-bold border-b pb-1.5"
+                  className="flex items-center justify-between font-bold border-b pb-1.5"
                 >
-                  <Sun style={{ color: coloresApariencia?.botonActivo }} className="w-3.5 h-3.5" />
-                  <span style={{ color: coloresApariencia?.textoPrincipal }}>Iluminación de Estudio</span>
+                  <div className="flex items-center gap-1.5">
+                    <Sun style={{ color: coloresApariencia?.botonActivo }} className="w-3.5 h-3.5 text-amber-500" />
+                    <span style={{ color: coloresApariencia?.textoPrincipal }}>Iluminación de Estudio</span>
+                  </div>
+                  {/* Toggle Gizmos 3D */}
+                  <button
+                    onClick={() => toggleGizmosLuces()}
+                    title="Ver o esconder iconos 3D de las lámparas en el visor"
+                    className={`flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold border transition-all ${
+                      calibracion.mostrarGizmosLuces
+                        ? "bg-[#0891B2] text-white border-cyan-400 shadow-xs"
+                        : "bg-slate-100 dark:bg-slate-800 text-slate-500 border-slate-300 dark:border-slate-700"
+                    }`}
+                  >
+                    <Eye className="w-3 h-3" />
+                    <span>Gizmos 3D</span>
+                  </button>
                 </div>
 
-                {/* Luz Directa Principal */}
-                <div 
-                  style={{ 
-                    backgroundColor: coloresApariencia?.fondoPaneles, 
-                    borderColor: coloresApariencia?.bordePaneles || "#CBD5E1" 
-                  }}
-                  className="flex flex-col gap-1.5 p-2 rounded-lg border shadow-xs text-xs"
-                >
-                  <div className="flex justify-between font-medium items-center">
-                    <label style={{ color: coloresApariencia?.textoPrincipal }} className="font-bold">Luz Directa Principal (Sol)</label>
-                    <DirectNumberInput
-                      value={Number((calibracion.intensidadLuzDirecta ?? 1.5).toFixed(1))}
-                      min={0}
-                      max={5}
-                      unit="x"
-                      onChange={(val) => setCalibracion("intensidadLuzDirecta", val)}
-                    />
+                {/* 🌟 PRESETS RÁPIDOS DE ESTUDIO */}
+                <div className="space-y-1">
+                  <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
+                    Presets de Iluminación
+                  </label>
+                  <div className="grid grid-cols-2 gap-1">
+                    {Object.entries(PRESETS_ILUMINACION).map(([key, p]) => (
+                      <button
+                        key={key}
+                        onClick={() => aplicarPresetIluminacion(key)}
+                        className={`px-2 py-1 rounded-md text-[10px] font-semibold border text-left transition-all truncate ${
+                          calibracion.presetIluminacion === key
+                            ? "bg-[#0891B2]/10 border-[#0891B2] text-[#0891B2] font-bold shadow-2xs"
+                            : "bg-slate-50 dark:bg-slate-800/50 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:border-slate-400"
+                        }`}
+                        title={p.descripcion}
+                      >
+                        {p.nombre.replace(" (Recomendado)", "")}
+                      </button>
+                    ))}
                   </div>
-                  <input
-                    type="range"
-                    min="0"
-                    max="3"
-                    step="0.05"
-                    value={calibracion.intensidadLuzDirecta ?? 1.5}
-                    onChange={(e) => setCalibracion("intensidadLuzDirecta", parseFloat(e.target.value))}
-                    style={{ accentColor: coloresApariencia?.botonActivo || "#0891b2" }}
-                    className="w-full h-1.5 bg-slate-200 dark:bg-slate-700 rounded-lg appearance-none cursor-pointer"
-                  />
                 </div>
 
-                {/* Luz de Entorno HDRI (Reflejos / IBL) */}
-                <div 
-                  style={{ 
-                    backgroundColor: coloresApariencia?.fondoPaneles, 
-                    borderColor: coloresApariencia?.bordePaneles || "#CBD5E1" 
-                  }}
-                  className="flex flex-col gap-1.5 p-2 rounded-lg border shadow-xs text-xs"
-                >
-                  <div className="flex justify-between font-medium items-center">
-                    <label style={{ color: coloresApariencia?.textoPrincipal }} className="font-bold">Luz de Entorno HDRI (Reflejos/IBL)</label>
-                    <DirectNumberInput
-                      value={Number((calibracion.intensidadLuzEntorno ?? 1.0).toFixed(1))}
-                      min={0}
-                      max={5}
-                      unit="x"
-                      onChange={(val) => setCalibracion("intensidadLuzEntorno", val)}
-                    />
-                  </div>
-                  <input
-                    type="range"
-                    min="0"
-                    max="3"
-                    step="0.05"
-                    value={calibracion.intensidadLuzEntorno ?? 1.0}
-                    onChange={(e) => setCalibracion("intensidadLuzEntorno", parseFloat(e.target.value))}
-                    style={{ accentColor: coloresApariencia?.botonActivo || "#0891b2" }}
-                    className="w-full h-1.5 bg-slate-200 dark:bg-slate-700 rounded-lg appearance-none cursor-pointer"
-                  />
-                </div>
+                {/* 💡 MEZCLADOR DE LUCES (ENV LIGHT MIXER) */}
+                <div className="space-y-2 pt-1">
+                  <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
+                    Mezclador de Lámparas (Env Light Mixer)
+                  </label>
 
-                {/* Luz Ambiental Global */}
-                <div 
-                  style={{ 
-                    backgroundColor: coloresApariencia?.fondoPaneles, 
-                    borderColor: coloresApariencia?.bordePaneles || "#CBD5E1" 
-                  }}
-                  className="flex flex-col gap-1.5 p-2 rounded-lg border shadow-xs text-xs"
-                >
-                  <div className="flex justify-between font-medium items-center">
-                    <label style={{ color: coloresApariencia?.textoPrincipal }} className="font-bold">Luz Ambiental Global</label>
-                    <DirectNumberInput
-                      value={Number((calibracion.intensidadLuzAmbiental ?? 0.8).toFixed(1))}
-                      min={0}
-                      max={3}
-                      unit="x"
-                      onChange={(val) => setCalibracion("intensidadLuzAmbiental", val)}
-                    />
-                  </div>
-                  <input
-                    type="range"
-                    min="0"
-                    max="2"
-                    step="0.05"
-                    value={calibracion.intensidadLuzAmbiental ?? 0.8}
-                    onChange={(e) => setCalibracion("intensidadLuzAmbiental", parseFloat(e.target.value))}
-                    style={{ accentColor: coloresApariencia?.botonActivo || "#0891b2" }}
-                    className="w-full h-1.5 bg-slate-200 dark:bg-slate-700 rounded-lg appearance-none cursor-pointer"
-                  />
-                </div>
+                  {Object.values(calibracion.lucesEstudio || {}).map((luz) => {
+                    const isSelected = calibracion.luzSeleccionadaId === luz.id;
+                    return (
+                      <div
+                        key={luz.id}
+                        style={{
+                          backgroundColor: isSelected ? "rgba(8, 145, 178, 0.06)" : (coloresApariencia?.fondoPaneles || undefined),
+                          borderColor: isSelected ? "#0891B2" : (coloresApariencia?.bordePaneles || "#CBD5E1"),
+                        }}
+                        className={`flex flex-col gap-1.5 p-2 rounded-lg border shadow-xs text-xs transition-all ${
+                          isSelected ? "ring-1 ring-[#0891B2]" : ""
+                        }`}
+                      >
+                        <div className="flex justify-between font-medium items-center">
+                          <div className="flex items-center gap-1.5">
+                            {/* Switch On/Off */}
+                            <button
+                              onClick={() => setLuzPropiedad(luz.id, "activa", !luz.activa)}
+                              className={`p-1 rounded transition-colors ${
+                                luz.activa ? "text-emerald-500 hover:text-emerald-600" : "text-slate-400 hover:text-slate-600"
+                              }`}
+                              title={luz.activa ? "Apagar luz" : "Encender luz"}
+                            >
+                              <Power className="w-3 h-3" />
+                            </button>
 
-                {/* Luz de Relleno (Fill Light) */}
-                <div 
-                  style={{ 
-                    backgroundColor: coloresApariencia?.fondoPaneles, 
-                    borderColor: coloresApariencia?.bordePaneles || "#CBD5E1" 
-                  }}
-                  className="flex flex-col gap-1.5 p-2 rounded-lg border shadow-xs text-xs"
-                >
-                  <div className="flex justify-between font-medium items-center">
-                    <label style={{ color: coloresApariencia?.textoPrincipal }} className="font-bold">Luz de Relleno (Fill Light)</label>
-                    <DirectNumberInput
-                      value={Number((calibracion.intensidadLuzRelleno ?? 0.4).toFixed(1))}
-                      min={0}
-                      max={3}
-                      unit="x"
-                      onChange={(val) => setCalibracion("intensidadLuzRelleno", val)}
-                    />
-                  </div>
-                  <input
-                    type="range"
-                    min="0"
-                    max="2"
-                    step="0.05"
-                    value={calibracion.intensidadLuzRelleno ?? 0.4}
-                    onChange={(e) => setCalibracion("intensidadLuzRelleno", parseFloat(e.target.value))}
-                    style={{ accentColor: coloresApariencia?.botonActivo || "#0891b2" }}
-                    className="w-full h-1.5 bg-slate-200 dark:bg-slate-700 rounded-lg appearance-none cursor-pointer"
-                  />
+                            {/* Nombre y Selección 3D */}
+                            <button
+                              onClick={() => seleccionarLuzEstudio(isSelected ? null : luz.id)}
+                              className="font-bold text-left hover:text-[#0891B2] transition-colors truncate max-w-[140px]"
+                              style={{ color: coloresApariencia?.textoPrincipal }}
+                              title="Clic para seleccionar y ver en 3D"
+                            >
+                              {luz.nombre}
+                            </button>
+                          </div>
+
+                          <div className="flex items-center gap-1.5">
+                            {/* Muestra de color/temperatura */}
+                            <div
+                              className="w-3 h-3 rounded-full border border-slate-300 shadow-2xs"
+                              style={{ backgroundColor: luz.color }}
+                              title={`${luz.temperaturaKelvin} K`}
+                            />
+                            <DirectNumberInput
+                              value={Number(luz.intensidad.toFixed(1))}
+                              min={0}
+                              max={5}
+                              unit="x"
+                              onChange={(val) => setLuzPropiedad(luz.id, "intensidad", val)}
+                            />
+                          </div>
+                        </div>
+
+                        {/* Slider de Intensidad de cada luz */}
+                        <input
+                          type="range"
+                          min="0"
+                          max="3"
+                          step="0.05"
+                          disabled={!luz.activa}
+                          value={luz.intensidad}
+                          onChange={(e) => setLuzPropiedad(luz.id, "intensidad", parseFloat(e.target.value))}
+                          style={{ accentColor: coloresApariencia?.botonActivo || "#0891b2" }}
+                          className="w-full h-1.5 bg-slate-200 dark:bg-slate-700 rounded-lg appearance-none cursor-pointer disabled:opacity-40"
+                        />
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
 

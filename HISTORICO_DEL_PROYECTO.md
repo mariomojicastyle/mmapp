@@ -1949,3 +1949,25 @@ Con esta batería de arreglos y la validación en caliente, la V20 se establece 
 - **Arquitectura de Canales y Separación Topológica en Grasshopper (`Comoda Ravenna.ghx`)**:
   * Implementación de nodos `Split Tree` con máscara `{*;0}` aguas abajo de `3BF Materializer` (`NURBS_Color`, `NURBS_Balance`, `NURBS_MDP`) para desacoplar los canales de los cajones izquierdos y derechos antes de `Mesh Brep` y `Mesh Join`.
   * Avance en el diagnóstico y refinamiento del componente `Box Mapping` (`M B`) para proyectar coordenadas de textura (U, V) respetando la unidad sólida generada por `Mesh Join`.
+
+---
+
+### 🔹 Hito 3BF_Fondos_MDF_Channel_Separator_and_Performance_Audit — Separador de Fondos v2.4 (Cara A/B & Canales MDF), Blindaje de Capas en Web y Auditoría Integral de Rendimiento (05 de Septiembre, 2026)
+
+- **3BF Mesh Channel Separator v2.4 Fondos (`Comoda Ravenna.ghx`)**:
+  * Implementación y calibración del componente en Python para la división topológica de mallas de fondos de cajón (`Peça 18`).
+  * Normalización de orientación física de caras: **Cara A** calibrada estrictamente como la cara superior útil e interior del cajón ($Z = 687.0\text{ mm}$), y **Cara B** como la contracara inferior/reverso del fondo ($Z = 684.0\text{ mm}$).
+  * Algoritmo de sub-mallado (`crear_submalla_uv`) que preserva vértices, normales y mapeo UV íntegro sin desvirtuar la textura.
+  * Emisión desacoplada de canales de salida:
+    - `RH_OUT:Peça 18`: Cara decorativa superior conectada a `Tono Fondo` (`capa_tono_fondo`).
+    - `RH_OUT:MDF Peça 18`: Contracara y cantos perimetrales crudos enrutados a `MDF` (`capa_mdf`).
+- **Blindaje y Sanitización en la Web App (`3bf/`)**:
+  * `3bf/lib/store.ts`: Sanitización reactiva en `asignacionesPartes` para forzar que cualquier pieza que contenga `mdf` en su identificador se vincule de forma obligatoria a `capa_mdf`.
+  * `3bf/components/viewer/Viewer3D.tsx` y `PartBreakdownPanel.tsx`: Blindaje de asignación para que `MDF Peça 18` se renderice y liste con `capa_mdf`, y la cara decorativa con `capa_tono_fondo`.
+- **Auditoría Exhaustiva de Rendimiento en Grasshopper (`Comoda Ravenna.ghx`)**:
+  * Diagnóstico sistemático de los 1,008 componentes de la definición mediante evaluación con RhinoCompute 8.
+  * Detección del cuello de botella principal: 30 operaciones booleanas NURBS (`Solid Difference`) que consumen el 55.4% del tiempo total (~7.2s).
+  * Generación del informe técnico en CSV ([`Comoda_Ravenna_Profiler_Auditoria.csv`](file:///c:/Desarrollo/mmapp/Comoda_Ravenna_Profiler_Auditoria.csv)) y en hoja de cálculo corporativa ([`Comoda_Ravenna_Profiler_Auditoria.xlsx`](file:///c:/Desarrollo/mmapp/Comoda_Ravenna_Profiler_Auditoria.xlsx)) compatible con Google Sheets / Excel, formateada bajo el estándar visual *Tech Ethos* con semáforo de criticidad y fórmulas automáticas.
+- **Diseño Arquitectónico del Bypass de Rendimiento (Selective Branch Evaluation)**:
+  * Formulación de la estrategia de optimización por bypass mediante memoria RAM persistente (`scriptcontext.sticky` en Python) para congelar la geometría estructural ante cambios cosméticos de acabados/fondos, reduciendo tiempos de recálculo de ~13s a <0.3s.
+

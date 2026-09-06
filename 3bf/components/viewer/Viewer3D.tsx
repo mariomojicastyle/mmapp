@@ -7,10 +7,12 @@ import { use3BFStore, ObjetoInstancia3BF, MaterialPBRDef } from "@/lib/store";
 import * as THREE from "three";
 import * as BufferGeometryUtils from "three/examples/jsm/utils/BufferGeometryUtils.js";
 import { RGBELoader } from "three/examples/jsm/loaders/RGBELoader.js";
-import { Download, Save, Zap, Trash2, CheckCircle2, AlertCircle, Loader2 } from "lucide-react";
+import { Download, Save, Zap, Trash2, CheckCircle2, AlertCircle, Loader2, Sun, Lamp } from "lucide-react";
 import NPanel from "./NPanel";
 import { GHXAutoWatcher } from "./GHXAutoWatcher";
 import { generarEntornoEquirectangularLocal } from "./ShaderBallViewer";
+import StudioLightGizmos from "./StudioLightGizmos";
+import LightInspectorModal from "./LightInspectorModal";
 
 function useMaterialPBRMaps(materialPBR?: MaterialPBRDef | null, fallbackUrl?: string | null, tipoMapeado?: string) {
   const [maps, setMaps] = React.useState<{
@@ -471,9 +473,24 @@ function BoardMesh({
     /pk\s*\d+\s*b$/i.test(normName)
   );
 
-  // 💡 2. Resolver Capa Asignada (Blindaje: Piezas de madera NUNCA caen en capa_acero)
+  const isFondoBoard = (
+    normName.includes("fondo") ||
+    normName.includes("fundo") ||
+    normName.includes("tono fondo") ||
+    normName.includes("peça 18") ||
+    normName.includes("peca 18") ||
+    normName.includes("pk18") ||
+    normName.includes("costa") ||
+    normName.includes("trasera")
+  ) && !normName.includes("mdf") && !normName.includes("mdp") && !isBalance;
+
+  // 💡 2. Resolver Capa Asignada (Blindaje: Piezas de madera NUNCA caen en acero, aluminio o plástico)
+  const isInvalidLayerForBoard = (layerId?: string) => {
+    return ["capa_acero", "capa_aluminio", "capa_cromo", "capa_zinc", "capa_plastico_1", "capa_plastico_2"].includes(layerId || "");
+  };
+
   let capaAsignada: any = null;
-  if (asignacion && asignacion.capaId && asignacion.capaId !== "por_defecto" && !(isWoodBoardPiece && asignacion.capaId === "capa_acero")) {
+  if (asignacion && asignacion.capaId && asignacion.capaId !== "por_defecto" && !(isWoodBoardPiece && isInvalidLayerForBoard(asignacion.capaId)) && !(normName.includes("mdf") && asignacion.capaId !== "capa_mdf")) {
     capaAsignada = capas.find((c) => c.id === asignacion.capaId);
   } else {
     if (isHardwarePata) {
@@ -489,20 +506,31 @@ function BoardMesh({
       capaAsignada = capas.find((c) => c.id === "capa_perforados" || c.nombre.toLowerCase().includes("perforad"));
     } else if (isBalance) {
       capaAsignada = capas.find((c) => c.id === "capa_back" || c.id === "capa_espaldar" || c.nombre.toLowerCase().includes("back") || c.nombre.toLowerCase().includes("balance"));
-    } else if (normName.includes("mdp")) {
-      capaAsignada = capas.find((c) => c.id === "capa_mdp" || c.nombre.toLowerCase() === "mdp");
     } else if (normName.includes("mdf")) {
       capaAsignada = capas.find((c) => c.id === "capa_mdf" || c.nombre.toLowerCase() === "mdf");
+    } else if (normName.includes("mdp")) {
+      capaAsignada = capas.find((c) => c.id === "capa_mdp" || c.nombre.toLowerCase() === "mdp");
+    } else if (isFondoBoard) {
+      // 🪵 Fondo de cajón o trasera -> Capa Tono Fondo
+      capaAsignada = capas.find((c) => c.id === "capa_tono_fondo" || c.nombre.toLowerCase() === "tono fondo" || (c.nombre.toLowerCase().includes("fondo") && !c.nombre.toLowerCase().includes("mdf"))) || capas.find((c) => c.id === "capa_tono") || capas[0];
     } else {
       // Pieza principal de madera/tablero (Cubierta, Lateral, Frente, Tapa, Peça 6, Peça 7, Peça 10, etc.) -> Capa Tono
-      capaAsignada = capas.find((c) => c.id === "capa_tono" || c.nombre.toLowerCase() === "tono" || c.nombre.toLowerCase().includes("tono")) || capas.find(c => c.id !== "capa_acero") || capas[0];
+      capaAsignada = capas.find((c) => c.id === "capa_tono" || (c.nombre.toLowerCase().includes("tono") && !c.nombre.toLowerCase().includes("fondo"))) || capas.find(c => c.id !== "capa_acero") || capas[0];
     }
   }
   if (!capaAsignada && capas.length > 0) {
     capaAsignada = capas[0];
   }
-  if (isWoodBoardPiece && capaAsignada?.id === "capa_acero") {
-    capaAsignada = capas.find((c) => c.id === "capa_tono" || c.nombre.toLowerCase().includes("tono")) || capaAsignada;
+  if (isWoodBoardPiece && isInvalidLayerForBoard(capaAsignada?.id)) {
+    if (normName.includes("mdf")) {
+      capaAsignada = capas.find((c) => c.id === "capa_mdf" || c.nombre.toLowerCase() === "mdf") || capaAsignada;
+    } else if (isFondoBoard) {
+      capaAsignada = capas.find((c) => c.id === "capa_tono_fondo" || c.nombre.toLowerCase().includes("fondo")) || capaAsignada;
+    } else if (isBalance) {
+      capaAsignada = capas.find((c) => c.id === "capa_back" || c.nombre.toLowerCase().includes("back")) || capaAsignada;
+    } else {
+      capaAsignada = capas.find((c) => c.id === "capa_tono" || c.nombre.toLowerCase().includes("tono")) || capaAsignada;
+    }
   }
 
   // 💡 3. Resolver Material PBR Asignado
@@ -2139,6 +2167,7 @@ export default function Viewer3D() {
     guardandoMueble,
     recargarDefinicionInstancia,
     workerStatus,
+    toggleGizmosLuces,
   } = use3BFStore();
 
   const [furnitureGroup, setFurnitureGroup] = React.useState<THREE.Group | null>(null);
@@ -2666,6 +2695,21 @@ export default function Viewer3D() {
               <Trash2 className="w-3 h-3" />
             </button>
           )}
+
+          {/* 💡 Botón Toggle de Luces de Estudio 3D (Estilo Unreal) */}
+          <button
+            onClick={() => toggleGizmosLuces()}
+            title={calibracion.mostrarGizmosLuces ? "Ocultar gizmos 3D de luces" : "Ver lámparas y luces en el escenario 3D (Estilo Unreal)"}
+            style={{
+              backgroundColor: calibracion.mostrarGizmosLuces ? (coloresApariencia?.botonActivo || "#0891b2") : (coloresApariencia?.fondoPaneles || "#FFFFFF"),
+              borderColor: calibracion.mostrarGizmosLuces ? (coloresApariencia?.colorMarca || "#0891b2") : (coloresApariencia?.bordePaneles || "#CBD5E1"),
+              color: calibracion.mostrarGizmosLuces ? "#FFFFFF" : (coloresApariencia?.textoPrincipal || "#0F172A"),
+            }}
+            className="px-2.5 h-6 rounded-full shadow-md border flex items-center gap-1.5 text-xs font-bold hover:opacity-90 active:scale-95 transition-all cursor-pointer select-none"
+          >
+            <Sun className={`w-3.5 h-3.5 ${calibracion.mostrarGizmosLuces ? "text-amber-300" : "text-amber-500"}`} />
+            <span>Luces</span>
+          </button>
         </div>
 
         {/* Nivel 2: Contador de Componentes (N) y Listado Jerárquico */}
@@ -2824,14 +2868,8 @@ export default function Viewer3D() {
         <ThumbnailCapturer />
         <SceneEnvironment modoVisual={modoVisual} />
         <HoverRaycastTracker furnitureGroup={furnitureGroup} />
-        <ambientLight intensity={calibracion.intensidadLuzAmbiental ?? 0.8} />
-        <directionalLight 
-          position={[5, 8, 5]} 
-          intensity={calibracion.intensidadLuzDirecta ?? 1.5} 
-          castShadow 
-          shadow-mapSize={[1024, 1024]} 
-        />
-        <directionalLight position={[-5, 5, -5]} intensity={(calibracion.intensidadLuzDirecta ?? 1.5) * 0.25} />
+        {/* 💡 Sistema Dinámico de Iluminación y Gizmos 3D Interactivos (Estilo Unreal) */}
+        <StudioLightGizmos />
         
         {!escenarioLimpio && (
           <>
@@ -2985,6 +3023,9 @@ export default function Viewer3D() {
           </>
         )}
       </button>
+      {/* 💡 Inspector Flotante de Lámparas 3D (Estilo Unreal Engine) */}
+      <LightInspectorModal />
+
       {/* ⚡ Observador Automático de Archivos GHX en Caliente (Auto Hot-Reload) */}
       <GHXAutoWatcher />
     </div>

@@ -434,7 +434,113 @@ export interface CalibracionVisual {
   zoomMinimoMetros: number;             // Distancia mínima de acercamiento (e.g. 0.02 = 2cm)
   zoomMaximoMetros: number;             // Distancia máxima de alejamiento (e.g. 30m)
   campoDeVisionFov: number;             // Lente / FOV en grados (e.g. 45°)
+
+  // 💡 Iluminación de Estudio Interactiva (Estilo Unreal Engine)
+  mostrarGizmosLuces: boolean;          // Ver iconos 3D de las lámparas en el visor
+  luzSeleccionadaId: string | null;      // ID de la lámpara seleccionada en 3D
+  presetIluminacion: string;            // Key del preset activo (estudio_suave, sol_natural, etc.)
+  lucesEstudio: Record<string, StudioLightConfig>; // Configuración individual de cada luz
 }
+
+export interface StudioLightConfig {
+  id: string;
+  nombre: string;
+  tipo: "directional" | "point" | "ambient";
+  activa: boolean;
+  intensidad: number;
+  color: string;
+  temperaturaKelvin: number; // 2500K a 8000K
+  azimut: number;            // 0° a 360° en torno al mueble
+  elevacion: number;         // 5° a 85° de altura
+  distancia: number;         // Distancia radial en metros
+  proyectarSombras: boolean;
+  tamanoIcono?: number;
+
+  // 🎯 Punto Objetivo (Target) y Visualizadores Volumétricos Alámbricos (Estilo Unreal)
+  target: [number, number, number];        // Coordenadas [X, Y, Z] hacia donde apunta la luz
+  anguloCono: number;                      // Ángulo de apertura del cono en grados (15° a 80°)
+  radioAlcance: number;                    // Radio de influencia en metros para luz esférica (bombillo 360°)
+  modoGizmo: "luz" | "target" | "ninguno"; // Control de anclaje de flechas de transformación 3D
+}
+
+export function kelvinToHex(kelvin: number): string {
+  const temp = Math.max(1000, Math.min(40000, kelvin)) / 100;
+  let r: number, g: number, b: number;
+
+  if (temp <= 66) {
+    r = 255;
+  } else {
+    r = temp - 60;
+    r = 329.698727446 * Math.pow(r, -0.1332047592);
+    r = Math.max(0, Math.min(255, r));
+  }
+
+  if (temp <= 66) {
+    g = temp;
+    g = 99.4708025861 * Math.log(g) - 161.1195681661;
+    g = Math.max(0, Math.min(255, g));
+  } else {
+    g = temp - 60;
+    g = 288.1221695283 * Math.pow(g, -0.0755148492);
+    g = Math.max(0, Math.min(255, g));
+  }
+
+  if (temp >= 66) {
+    b = 255;
+  } else if (temp <= 19) {
+    b = 0;
+  } else {
+    b = temp - 10;
+    b = 138.5177312231 * Math.log(b) - 305.0447927307;
+    b = Math.max(0, Math.min(255, b));
+  }
+
+  const toHex = (n: number) => Math.round(n).toString(16).padStart(2, "0");
+  return `#${toHex(r)}${toHex(g)}${toHex(b)}`;
+}
+
+export const PRESETS_ILUMINACION: Record<string, { nombre: string; descripcion: string; luces: Record<string, Partial<StudioLightConfig>> }> = {
+  estudio_suave: {
+    nombre: "Estudio Suave (Recomendado)",
+    descripcion: "Equilibrio suave anti-quemado, destaca vetas de madera sin sobreexposición",
+    luces: {
+      key_sun: { activa: true, intensidad: 0.9, temperaturaKelvin: 5400, color: "#fff9f2", azimut: 45, elevacion: 50, distancia: 4.5, proyectarSombras: true },
+      fill_light: { activa: true, intensidad: 0.6, temperaturaKelvin: 6000, color: "#f2f6ff", azimut: 225, elevacion: 40, distancia: 4.0, proyectarSombras: false },
+      rim_light: { activa: true, intensidad: 0.35, temperaturaKelvin: 5500, color: "#ffffff", azimut: 315, elevacion: 55, distancia: 4.2, proyectarSombras: false },
+      ambient_light: { activa: true, intensidad: 0.45, temperaturaKelvin: 5500, color: "#ffffff", azimut: 0, elevacion: 90, distancia: 0, proyectarSombras: false }
+    }
+  },
+  sol_natural: {
+    nombre: "Luz Solar Natural",
+    descripcion: "Sol cálido directo con relleno de cielo suave",
+    luces: {
+      key_sun: { activa: true, intensidad: 1.15, temperaturaKelvin: 4600, color: "#ffe6cc", azimut: 55, elevacion: 55, distancia: 4.5, proyectarSombras: true },
+      fill_light: { activa: true, intensidad: 0.4, temperaturaKelvin: 6800, color: "#e3edff", azimut: 235, elevacion: 35, distancia: 4.0, proyectarSombras: false },
+      rim_light: { activa: true, intensidad: 0.3, temperaturaKelvin: 5000, color: "#fff5eb", azimut: 300, elevacion: 50, distancia: 4.0, proyectarSombras: false },
+      ambient_light: { activa: true, intensidad: 0.4, temperaturaKelvin: 5500, color: "#ffffff", azimut: 0, elevacion: 90, distancia: 0, proyectarSombras: false }
+    }
+  },
+  showroom: {
+    nombre: "Showroom Comercial",
+    descripcion: "Iluminación de catálogo 360° homogénea y cristalina",
+    luces: {
+      key_sun: { activa: true, intensidad: 0.95, temperaturaKelvin: 5500, color: "#ffffff", azimut: 40, elevacion: 60, distancia: 4.5, proyectarSombras: true },
+      fill_light: { activa: true, intensidad: 0.7, temperaturaKelvin: 5500, color: "#ffffff", azimut: 220, elevacion: 45, distancia: 4.0, proyectarSombras: false },
+      rim_light: { activa: true, intensidad: 0.5, temperaturaKelvin: 6000, color: "#f2f6ff", azimut: 320, elevacion: 65, distancia: 4.2, proyectarSombras: false },
+      ambient_light: { activa: true, intensidad: 0.55, temperaturaKelvin: 5500, color: "#ffffff", azimut: 0, elevacion: 90, distancia: 0, proyectarSombras: false }
+    }
+  },
+  alto_contraste: {
+    nombre: "Contraste Escultórico",
+    descripcion: "Sombras profundas y relieve arquitectónico marcado",
+    luces: {
+      key_sun: { activa: true, intensidad: 1.35, temperaturaKelvin: 5200, color: "#fff4e6", azimut: 35, elevacion: 42, distancia: 4.5, proyectarSombras: true },
+      fill_light: { activa: true, intensidad: 0.25, temperaturaKelvin: 6200, color: "#edf2fa", azimut: 215, elevacion: 28, distancia: 4.0, proyectarSombras: false },
+      rim_light: { activa: true, intensidad: 0.45, temperaturaKelvin: 5000, color: "#ffffff", azimut: 310, elevacion: 60, distancia: 4.0, proyectarSombras: false },
+      ambient_light: { activa: true, intensidad: 0.25, temperaturaKelvin: 5500, color: "#ffffff", azimut: 0, elevacion: 90, distancia: 0, proyectarSombras: false }
+    }
+  }
+};
 
 export interface HerrajeRecord {
   id: string;
@@ -792,6 +898,7 @@ export const PRESET_CAPAS: CapaDef[] = [
   { id: "capa_acero", nombre: "Acero", activa: false, visible: true, bloqueada: false, color: "#8A9EA7", materialId: "mat_acero" },
   { id: "capa_aluminio", nombre: "Aluminio", activa: true, visible: true, bloqueada: false, color: "#CBD5E1", materialId: "mat_aluminio" },
   { id: "capa_tono", nombre: "Tono", activa: false, visible: true, bloqueada: false, color: "#EAB308", materialId: "mat_marfil" },
+  { id: "capa_tono_fondo", nombre: "Tono Fondo", activa: false, visible: true, bloqueada: false, color: "#F59E0B", materialId: "mat_blanco" },
   { id: "capa_back", nombre: "Back", activa: false, visible: true, bloqueada: false, color: "#D97706", materialId: "mat_fresno" },
   { id: "capa_cromo", nombre: "Cromo", activa: false, visible: true, bloqueada: false, color: "#93C5FD", materialId: "mat_cromo" },
   { id: "capa_espaldar", nombre: "Espaldar", activa: false, visible: true, bloqueada: false, color: "#64748B", materialId: "mat_blanco" },
@@ -843,6 +950,15 @@ export interface State3BF {
   calibracion: CalibracionVisual;
   setCalibracion: <K extends keyof CalibracionVisual>(key: K, value: CalibracionVisual[K]) => void;
   resetCalibracion: () => void;
+
+  // 💡 Iluminación de Estudio Interactiva
+  setLuzPropiedad: (luzId: string, prop: keyof StudioLightConfig, valor: any) => void;
+  setLuzTarget: (luzId: string, target: [number, number, number]) => void;
+  setLuzPosicionCartesiana: (luzId: string, pos: [number, number, number]) => void;
+  enfocarLuzACentro: (luzId: string) => void;
+  seleccionarLuzEstudio: (luzId: string | null) => void;
+  toggleGizmosLuces: (mostrar?: boolean) => void;
+  aplicarPresetIluminacion: (presetKey: string) => void;
 
   // Interacción de piezas
   hoveredPiece: string | null;
@@ -1073,6 +1189,77 @@ export const COSTOS_CONVERSION_DEFECTO: CostosConversionConfig = {
   costoEmpaqueCop: 0.0,
 };
 
+export const defaultLucesEstudio: Record<string, StudioLightConfig> = {
+  key_sun: {
+    id: "key_sun",
+    nombre: "Sol Directo Principal (Key)",
+    tipo: "directional",
+    activa: true,
+    intensidad: 0.9,
+    color: "#fff9f2",
+    temperaturaKelvin: 5400,
+    azimut: 45,
+    elevacion: 50,
+    distancia: 4.5,
+    proyectarSombras: true,
+    target: [0, 0.45, 0],
+    anguloCono: 42,
+    radioAlcance: 4.5,
+    modoGizmo: "luz",
+  },
+  fill_light: {
+    id: "fill_light",
+    nombre: "Luz de Relleno (Fill Light)",
+    tipo: "directional",
+    activa: true,
+    intensidad: 0.6,
+    color: "#f2f6ff",
+    temperaturaKelvin: 6000,
+    azimut: 225,
+    elevacion: 40,
+    distancia: 4.0,
+    proyectarSombras: false,
+    target: [0, 0.45, 0],
+    anguloCono: 50,
+    radioAlcance: 4.0,
+    modoGizmo: "luz",
+  },
+  rim_light: {
+    id: "rim_light",
+    nombre: "Luz de Realce (Rim Light)",
+    tipo: "directional",
+    activa: true,
+    intensidad: 0.35,
+    color: "#ffffff",
+    temperaturaKelvin: 5500,
+    azimut: 315,
+    elevacion: 55,
+    distancia: 4.2,
+    proyectarSombras: false,
+    target: [0, 0.45, 0],
+    anguloCono: 45,
+    radioAlcance: 4.2,
+    modoGizmo: "luz",
+  },
+  ambient_light: {
+    id: "ambient_light",
+    nombre: "Luz Ambiental Global",
+    tipo: "ambient",
+    activa: true,
+    intensidad: 0.45,
+    color: "#ffffff",
+    temperaturaKelvin: 5500,
+    azimut: 0,
+    elevacion: 90,
+    distancia: 0,
+    proyectarSombras: false,
+    target: [0, 0.45, 0],
+    anguloCono: 90,
+    radioAlcance: 5.0,
+    modoGizmo: "ninguno",
+  },
+};
+
 export const defaultCalibracion: CalibracionVisual = {
   opacidadMadera: 1.0,
   rugosidadMadera: 0.4,
@@ -1082,10 +1269,10 @@ export const defaultCalibracion: CalibracionVisual = {
   opacidadAristas: 0.75,
   colorAristas: "#111827",
   thresholdAristas: 40,
-  intensidadLuzDirecta: 1.5,
-  intensidadLuzAmbiental: 0.8,
+  intensidadLuzDirecta: 0.9,
+  intensidadLuzAmbiental: 0.45,
   intensidadLuzEntorno: 1.0,
-  intensidadLuzRelleno: 0.4,
+  intensidadLuzRelleno: 0.6,
   mostrarAristas: true,
   mostrarPanelCalibracion: false,
   // Configuración de Malla del Escenario
@@ -1112,6 +1299,12 @@ export const defaultCalibracion: CalibracionVisual = {
   zoomMinimoMetros: 0.02,
   zoomMaximoMetros: 30,
   campoDeVisionFov: 45,
+
+  // 💡 Iluminación de Estudio Interactiva
+  mostrarGizmosLuces: false,
+  luzSeleccionadaId: null,
+  presetIluminacion: "estudio_suave",
+  lucesEstudio: defaultLucesEstudio,
 };
 
 export const use3BFStore = create<State3BF>((set, get) => ({
@@ -1183,6 +1376,131 @@ export const use3BFStore = create<State3BF>((set, get) => ({
     })),
   resetCalibracion: () => set({ calibracion: defaultCalibracion }),
 
+  // 💡 Iluminación de Estudio Interactiva
+  setLuzPropiedad: (luzId, prop, valor) =>
+    set((state) => {
+      const luzActual = state.calibracion.lucesEstudio?.[luzId];
+      if (!luzActual) return state;
+
+      const luzActualizada: StudioLightConfig = {
+        ...luzActual,
+        [prop]: valor,
+      };
+
+      // Si cambia temperatura Kelvin, actualizar también el color Hex
+      if (prop === "temperaturaKelvin") {
+        luzActualizada.color = kelvinToHex(Number(valor));
+      }
+
+      // Sincronización retrocompatible de intensidades
+      const extraSync: Partial<CalibracionVisual> = {};
+      if (prop === "intensidad") {
+        if (luzId === "key_sun") extraSync.intensidadLuzDirecta = Number(valor);
+        if (luzId === "fill_light") extraSync.intensidadLuzRelleno = Number(valor);
+        if (luzId === "ambient_light") extraSync.intensidadLuzAmbiental = Number(valor);
+      }
+
+      return {
+        calibracion: {
+          ...state.calibracion,
+          ...extraSync,
+          lucesEstudio: {
+            ...state.calibracion.lucesEstudio,
+            [luzId]: luzActualizada,
+          },
+        },
+      };
+    }),
+
+  setLuzTarget: (luzId, target) =>
+    set((state) => {
+      const luz = state.calibracion.lucesEstudio?.[luzId];
+      if (!luz) return state;
+      return {
+        calibracion: {
+          ...state.calibracion,
+          lucesEstudio: {
+            ...state.calibracion.lucesEstudio,
+            [luzId]: { ...luz, target },
+          },
+        },
+      };
+    }),
+
+  setLuzPosicionCartesiana: (luzId, pos) =>
+    set((state) => {
+      const luz = state.calibracion.lucesEstudio?.[luzId];
+      if (!luz) return state;
+      const [x, y, z] = pos;
+      const distancia = Math.max(0.5, Math.sqrt(x * x + y * y + z * z));
+      const elevacion = Math.max(5, Math.min(85, Math.round((Math.asin(Math.max(-1, Math.min(1, y / distancia))) * 180) / Math.PI)));
+      let azimut = Math.round((Math.atan2(x, z) * 180) / Math.PI);
+      if (azimut < 0) azimut += 360;
+
+      return {
+        calibracion: {
+          ...state.calibracion,
+          lucesEstudio: {
+            ...state.calibracion.lucesEstudio,
+            [luzId]: {
+              ...luz,
+              distancia: Number(distancia.toFixed(2)),
+              elevacion,
+              azimut,
+            },
+          },
+        },
+      };
+    }),
+
+  enfocarLuzACentro: (luzId) => {
+    get().setLuzTarget(luzId, [0, 0.45, 0]);
+  },
+
+  seleccionarLuzEstudio: (luzId) =>
+    set((state) => ({
+      calibracion: {
+        ...state.calibracion,
+        luzSeleccionadaId: luzId,
+      },
+    })),
+
+  toggleGizmosLuces: (mostrar) =>
+    set((state) => ({
+      calibracion: {
+        ...state.calibracion,
+        mostrarGizmosLuces: mostrar !== undefined ? mostrar : !state.calibracion.mostrarGizmosLuces,
+      },
+    })),
+
+  aplicarPresetIluminacion: (presetKey) =>
+    set((state) => {
+      const preset = PRESETS_ILUMINACION[presetKey];
+      if (!preset) return state;
+
+      const lucesActuales = { ...(state.calibracion.lucesEstudio || defaultLucesEstudio) };
+      Object.entries(preset.luces).forEach(([lId, cambios]) => {
+        if (lucesActuales[lId]) {
+          lucesActuales[lId] = {
+            ...lucesActuales[lId],
+            ...cambios,
+            color: cambios.temperaturaKelvin ? kelvinToHex(cambios.temperaturaKelvin) : (cambios.color || lucesActuales[lId].color),
+          };
+        }
+      });
+
+      return {
+        calibracion: {
+          ...state.calibracion,
+          presetIluminacion: presetKey,
+          intensidadLuzDirecta: lucesActuales["key_sun"]?.intensidad ?? state.calibracion.intensidadLuzDirecta,
+          intensidadLuzRelleno: lucesActuales["fill_light"]?.intensidad ?? state.calibracion.intensidadLuzRelleno,
+          intensidadLuzAmbiental: lucesActuales["ambient_light"]?.intensidad ?? state.calibracion.intensidadLuzAmbiental,
+          lucesEstudio: lucesActuales,
+        },
+      };
+    }),
+
   hoveredPiece: null,
   setHoveredPiece: (hoveredPiece) => set({ hoveredPiece }),
 
@@ -1217,7 +1535,16 @@ export const use3BFStore = create<State3BF>((set, get) => ({
 
   // 🎨 Estado e Implementación de Capas, Materiales PBR y Partes GHX (Siempre 100% visibles por defecto)
   capas: (typeof window !== "undefined" && window.localStorage && localStorage.getItem("3bf_capas_v1")
-    ? (JSON.parse(localStorage.getItem("3bf_capas_v1")!) as CapaDef[])
+    ? (() => {
+        try {
+          const stored = JSON.parse(localStorage.getItem("3bf_capas_v1")!) as CapaDef[];
+          const storedIds = new Set(stored.map((c) => c.id));
+          const missing = PRESET_CAPAS.filter((p) => !storedIds.has(p.id));
+          return [...stored, ...missing];
+        } catch {
+          return PRESET_CAPAS;
+        }
+      })()
     : PRESET_CAPAS).map((c) => ({ ...c, visible: true })),
   materialesPBR: typeof window !== "undefined" && window.localStorage && localStorage.getItem("3bf_materiales_pbr_v1")
     ? JSON.parse(localStorage.getItem("3bf_materiales_pbr_v1")!)
@@ -1227,8 +1554,18 @@ export const use3BFStore = create<State3BF>((set, get) => ({
     ? Object.fromEntries(
         Object.entries(JSON.parse(localStorage.getItem("3bf_asignaciones_partes_v1")!) as Record<string, AsignacionParteDef>).map(([k, v]) => {
           const kLow = k.toLowerCase();
-          const isBoard = kLow.includes("lateral") || kLow.includes("cubierta") || kLow.includes("frente") || kLow.includes("tapa") || kLow.includes("cajon") || kLow.includes("cajón") || kLow.includes("entrepaño");
-          const safeCapaId = (isBoard && v.capaId === "capa_acero") ? "capa_tono" : v.capaId;
+          const isHardware = kLow.includes("perno") || kLow.includes("caja") || kLow.includes("tarugo") || kLow.includes("tornillo") || kLow.includes("soporte") || kLow.includes("corredera") || kLow.includes("pata") || kLow.includes("pes") || kLow.includes("clavilha");
+          const isBoard = !isHardware;
+          const isInvalidLayer = ["capa_acero", "capa_aluminio", "capa_cromo", "capa_zinc", "capa_plastico_1", "capa_plastico_2"].includes(v.capaId);
+          
+          let safeCapaId = v.capaId;
+          if (kLow.includes("mdf")) {
+            safeCapaId = "capa_mdf";
+          } else if (isBoard && isInvalidLayer) {
+            if (kLow.includes("balance") || kLow.includes("back") || kLow.endsWith(" b") || /pe[cç]a\s*\d+\s*b$/i.test(kLow)) safeCapaId = "capa_back";
+            else if (kLow.includes("fondo") || kLow.includes("fundo") || kLow.includes("peça 18") || kLow.includes("peca 18")) safeCapaId = "capa_tono_fondo";
+            else safeCapaId = "capa_tono";
+          }
           return [k, { ...v, capaId: safeCapaId, visible: true }];
         })
       )
@@ -3069,9 +3406,9 @@ export const use3BFStore = create<State3BF>((set, get) => ({
     const mat = state.materialesPBR.find((m) => m.id === materialId);
     if (!mat) return;
 
-    // 1. Asignar el material a la capa Tono y Capa Madera para que todas las piezas por defecto lo adopten
+    // 1. Asignar el material a la capa Tono y Capa Madera para que todas las piezas por defecto lo adopten (excluyendo Tono Fondo)
     const capasActualizadas = state.capas.map((c) => {
-      if (c.id === "capa_tono" || c.nombre.toLowerCase().includes("tono") || c.id === "capa_madera") {
+      if (c.id === "capa_tono" || (c.nombre.toLowerCase().includes("tono") && !c.id.includes("fondo") && !c.nombre.toLowerCase().includes("fondo")) || c.id === "capa_madera") {
         return { ...c, materialId: mat.id };
       }
       return c;
@@ -3087,14 +3424,16 @@ export const use3BFStore = create<State3BF>((set, get) => ({
     todasLasPartes.forEach((parteKey) => {
       const kLow = parteKey.toLowerCase();
       const isHardware = kLow.includes("perno") || kLow.includes("caja") || kLow.includes("tarugo") || kLow.includes("tornillo") || kLow.includes("maquinado");
-      if (!isHardware) {
+      const isMdfMdp = kLow.includes("mdf") || kLow.includes("mdp");
+      const isFondo = (kLow.includes("fondo") || kLow.includes("fundo") || kLow.includes("peça 18") || kLow.includes("peca 18") || kLow.includes("pk18") || kLow.includes("costa") || kLow.includes("trasera")) && !isMdfMdp;
+      if (!isHardware && !isMdfMdp) {
         nuevasAsignaciones[parteKey] = {
           ...(nuevasAsignaciones[parteKey] || {
             parteKey,
             nombreVisible: parteKey.replace(/^RH_OUT:/, ""),
             visible: true,
           }),
-          capaId: "capa_tono",
+          capaId: isFondo ? "capa_tono_fondo" : "capa_tono",
           materialId: "por_capa",
         };
       }

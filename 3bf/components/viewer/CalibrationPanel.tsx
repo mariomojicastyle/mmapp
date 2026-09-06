@@ -1,11 +1,20 @@
 "use client";
 
 import React from "react";
-import { use3BFStore, defaultCalibracion } from "@/lib/store";
-import { Sliders, RotateCcw, Eye, Sun, Layers, Sparkles, X } from "lucide-react";
+import { use3BFStore, defaultCalibracion, PRESETS_ILUMINACION } from "@/lib/store";
+import { Sliders, RotateCcw, Eye, Sun, Layers, Sparkles, X, Power, Lamp } from "lucide-react";
 
 export default function CalibrationPanel() {
-  const { calibracion, setCalibracion, resetCalibracion, setModoVisual } = use3BFStore();
+  const { 
+    calibracion, 
+    setCalibracion, 
+    resetCalibracion, 
+    setModoVisual,
+    setLuzPropiedad,
+    seleccionarLuzEstudio,
+    toggleGizmosLuces,
+    aplicarPresetIluminacion
+  } = use3BFStore();
 
   const isOpen = calibracion.mostrarPanelCalibracion;
 
@@ -237,85 +246,102 @@ export default function CalibrationPanel() {
 
           {/* Sección 3: Iluminación de Estudio */}
           <div className="space-y-2.5">
-            <div className="flex items-center gap-1.5 text-gray-800 dark:text-gray-200 font-semibold border-b border-gray-100 dark:border-gray-800/60 pb-1">
-              <Sun className="w-3.5 h-3.5 text-amber-500" />
-              <span>Iluminación de Estudio</span>
+            <div className="flex items-center justify-between text-gray-800 dark:text-gray-200 font-semibold border-b border-gray-100 dark:border-gray-800/60 pb-1">
+              <div className="flex items-center gap-1.5">
+                <Sun className="w-3.5 h-3.5 text-amber-500" />
+                <span>Iluminación de Estudio</span>
+              </div>
+              <button
+                onClick={() => toggleGizmosLuces()}
+                title="Ver o esconder iconos 3D de las lámparas en el visor"
+                className={`flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold border transition-all ${
+                  calibracion.mostrarGizmosLuces
+                    ? "bg-cyan-600 text-white border-cyan-400 shadow-xs"
+                    : "bg-gray-100 dark:bg-gray-800 text-gray-500 border-gray-300 dark:border-gray-700"
+                }`}
+              >
+                <Eye className="w-3 h-3" />
+                <span>Gizmos 3D</span>
+              </button>
             </div>
 
-            {/* Luz Directa Principal */}
-            <div>
-              <div className="flex justify-between text-gray-600 dark:text-gray-400 mb-1">
-                <span>Luz Directa Principal (Sol)</span>
-                <span className="font-mono font-bold text-amber-600 dark:text-amber-400">
-                  {(calibracion.intensidadLuzDirecta ?? 1.5).toFixed(1)}x
-                </span>
+            {/* Presets Rápidos */}
+            <div className="space-y-1">
+              <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block">
+                Presets de Estudio
+              </label>
+              <div className="grid grid-cols-2 gap-1">
+                {Object.entries(PRESETS_ILUMINACION).map(([key, p]) => (
+                  <button
+                    key={key}
+                    onClick={() => aplicarPresetIluminacion(key)}
+                    className={`px-2 py-1 rounded-md text-[10px] font-semibold border text-left transition-all truncate ${
+                      calibracion.presetIluminacion === key
+                        ? "bg-cyan-50 dark:bg-cyan-950/40 border-cyan-500 text-cyan-700 dark:text-cyan-300 font-bold"
+                        : "bg-gray-50 dark:bg-gray-800/40 border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-300 hover:border-gray-400"
+                    }`}
+                  >
+                    {p.nombre.replace(" (Recomendado)", "")}
+                  </button>
+                ))}
               </div>
-              <input
-                type="range"
-                min="0"
-                max="3"
-                step="0.05"
-                value={calibracion.intensidadLuzDirecta ?? 1.5}
-                onChange={(e) => setCalibracion("intensidadLuzDirecta", parseFloat(e.target.value))}
-                className="w-full h-1.5 bg-gray-200 dark:bg-gray-700 rounded-lg appearance-none cursor-pointer accent-amber-500"
-              />
             </div>
 
-            {/* Luz de Entorno HDRI */}
-            <div>
-              <div className="flex justify-between text-gray-600 dark:text-gray-400 mb-1">
-                <span>Luz de Entorno HDRI (Reflejos/IBL)</span>
-                <span className="font-mono font-bold text-amber-600 dark:text-amber-400">
-                  {(calibracion.intensidadLuzEntorno ?? 1.0).toFixed(1)}x
-                </span>
-              </div>
-              <input
-                type="range"
-                min="0"
-                max="3"
-                step="0.05"
-                value={calibracion.intensidadLuzEntorno ?? 1.0}
-                onChange={(e) => setCalibracion("intensidadLuzEntorno", parseFloat(e.target.value))}
-                className="w-full h-1.5 bg-gray-200 dark:bg-gray-700 rounded-lg appearance-none cursor-pointer accent-amber-500"
-              />
-            </div>
+            {/* Lista de Luces */}
+            <div className="space-y-2 pt-1">
+              {Object.values(calibracion.lucesEstudio || {}).map((luz) => {
+                const isSelected = calibracion.luzSeleccionadaId === luz.id;
+                return (
+                  <div
+                    key={luz.id}
+                    className={`p-2 rounded-lg border text-xs transition-all ${
+                      isSelected
+                        ? "bg-cyan-50/50 dark:bg-cyan-950/20 border-cyan-500 ring-1 ring-cyan-500"
+                        : "bg-gray-50/70 dark:bg-gray-800/40 border-gray-200 dark:border-gray-700"
+                    }`}
+                  >
+                    <div className="flex justify-between items-center mb-1">
+                      <div className="flex items-center gap-1.5">
+                        <button
+                          onClick={() => setLuzPropiedad(luz.id, "activa", !luz.activa)}
+                          className={`p-0.5 rounded ${
+                            luz.activa ? "text-emerald-500" : "text-gray-400"
+                          }`}
+                        >
+                          <Power className="w-3 h-3" />
+                        </button>
+                        <button
+                          onClick={() => seleccionarLuzEstudio(isSelected ? null : luz.id)}
+                          className="font-semibold text-gray-700 dark:text-gray-200 hover:text-cyan-600 transition truncate max-w-[130px]"
+                        >
+                          {luz.nombre}
+                        </button>
+                      </div>
 
-            {/* Luz Ambiental */}
-            <div>
-              <div className="flex justify-between text-gray-600 dark:text-gray-400 mb-1">
-                <span>Luz Ambiental Global</span>
-                <span className="font-mono font-bold text-amber-600 dark:text-amber-400">
-                  {(calibracion.intensidadLuzAmbiental ?? 0.8).toFixed(1)}x
-                </span>
-              </div>
-              <input
-                type="range"
-                min="0"
-                max="2"
-                step="0.05"
-                value={calibracion.intensidadLuzAmbiental ?? 0.8}
-                onChange={(e) => setCalibracion("intensidadLuzAmbiental", parseFloat(e.target.value))}
-                className="w-full h-1.5 bg-gray-200 dark:bg-gray-700 rounded-lg appearance-none cursor-pointer accent-amber-500"
-              />
-            </div>
+                      <div className="flex items-center gap-1.5">
+                        <div
+                          className="w-3 h-3 rounded-full border border-gray-300 shadow-2xs"
+                          style={{ backgroundColor: luz.color }}
+                        />
+                        <span className="font-mono font-bold text-cyan-600 dark:text-cyan-400 text-[10px]">
+                          {luz.intensidad.toFixed(1)}x
+                        </span>
+                      </div>
+                    </div>
 
-            {/* Luz de Relleno */}
-            <div>
-              <div className="flex justify-between text-gray-600 dark:text-gray-400 mb-1">
-                <span>Luz de Relleno (Fill Light)</span>
-                <span className="font-mono font-bold text-amber-600 dark:text-amber-400">
-                  {(calibracion.intensidadLuzRelleno ?? 0.4).toFixed(1)}x
-                </span>
-              </div>
-              <input
-                type="range"
-                min="0"
-                max="2"
-                step="0.05"
-                value={calibracion.intensidadLuzRelleno ?? 0.4}
-                onChange={(e) => setCalibracion("intensidadLuzRelleno", parseFloat(e.target.value))}
-                className="w-full h-1.5 bg-gray-200 dark:bg-gray-700 rounded-lg appearance-none cursor-pointer accent-amber-500"
-              />
+                    <input
+                      type="range"
+                      min="0"
+                      max="3"
+                      step="0.05"
+                      disabled={!luz.activa}
+                      value={luz.intensidad}
+                      onChange={(e) => setLuzPropiedad(luz.id, "intensidad", parseFloat(e.target.value))}
+                      className="w-full h-1.5 bg-gray-200 dark:bg-gray-700 rounded-lg appearance-none cursor-pointer accent-cyan-600 disabled:opacity-40"
+                    />
+                  </div>
+                );
+              })}
             </div>
           </div>
 
