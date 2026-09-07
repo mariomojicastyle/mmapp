@@ -2144,4 +2144,30 @@ Con esta batería de arreglos y la validación en caliente, la V20 se establece 
   * `npx tsc --noEmit` completado exitosamente con 0 errores.
   * Worker Python de `3dBimFab` reiniciado y respondiendo con $15.0\text{ mm}$.
 
+---
+
+### 🚀 Hito Estudio_Fotorealismo — Publicación Privada del Estudio Comparativo Visual Politorno Móveis (Línea Tijuca), PDFs Bilingües y Lanzamiento de Nuevo Servicio de Fotorrealismo IA (07 de Septiembre, 2026)
+
+- **Creación y Publicación de la Experiencia Web Interactiva Bilingüe**:
+  * Implementación del visor comparativo visual en **`mario-mojica-homepage/public/estudio-corporativo-politorno.html`** (y alias `estudio-comparativo-politorno.html`) con selector de idioma en caliente (`🇪🇸 Español` / `🇧🇷 Português`), modo de vista dual (*Lado a Lado* con cards de diagnóstico y *Slider Interactivo* con efecto de recorte `clip-path` y arrastre ultra fluido).
+  * Enlace a los 10 pares de escenas de la Línea Tijuca (Mesa / Escritorio Multiuso refs 1-93-833, 834, 836) comparando los renders de catálogo legado (750x750) contra la renovación en alta definición (2048x2048).
+  * Botón directo para la descarga del paquete completo de imágenes en HD: `Politorno_Imagens_HD_Mario_Mojica.zip` (~21.5 MB).
+  * **Acceso Privado Exclusivo**: La página queda accesible únicamente mediante enlace directo (`https://mariomojica.com/estudio-corporativo-politorno.html`), sin vínculos públicos en la barra de navegación ni en la portada de la homepage, permitiendo compartirlo confidencialmente con Marcelo Novo (Liderazgo de I+D de Politorno Móveis) y solicitar su autorización antes de incorporarlo como caso de estudio visible.
+
+- **Generación y Maquetación de Documentos PDF Oficiales**:
+  * **Eliminación de la Franja Azul Oscuro Superior**: Se removió el bloque superior de 12 pt que colisionaba con el encabezado de página, otorgando 22 pt de margen superior blanco perimetral limpio para que el isotipo `MM` y el logotipo de Mario Mojica respiren con total nitidez.
+  * **Contención Milimétrica de Textos en Recuadros**: Implementación de algoritmo dinámico de ajuste de línea (`wrap_text`) con medición real de ancho tipográfico (`canvas.stringWidth`). En la Página 12 (Pilares Estratégicos), las viñetas de los Pilares 01, 02 y 03 respetan un margen interno de 16 pt y quedan 100% contenidas dentro de sus tarjetas visuales sin desbordes.
+  * **Incorporación del Nuevo Servicio B2B (Fotorrealismo IA)**:
+    * Se erradicó cualquier tecnicismo 3D como *"PBR"*, reemplazándolo por terminología comercial clara de fotorrealismo mediante Inteligencia Artificial.
+    * Bloque institucional en portada: **"RENOVACIÓN MASIVA DE RENDERS CON INTELIGENCIA ARTIFICIAL"**, destacando actualización rápida y masiva, máxima eficiencia de costos y calidad fotográfica actual, ejemplificado con la renovación del catálogo de Politorno.
+  * **Archivos PDF Publicados en Servidor**:
+    1. `Estudio_Comparativo_Visual_Politorno_Mario_Mojica_Web_ES.pdf` (Español optimizado para web/WhatsApp, ~2.5 MB).
+    2. `Estudo_Comparativo_Visual_Politorno_Mario_Mojica.pdf` (Português Master en alta definición 300 DPI, ~28.2 MB).
+    3. `Estudo_Comparativo_Visual_Politorno_Mario_Mojica_WhatsApp.pdf` (Português liviano para envío instantáneo por mensajería, ~2.5 MB).
+
+- **Validación Técnica y Despliegue CI/CD**:
+  * Compilación Next.js validada con éxito (`Compiled successfully`, 16/16 páginas estáticas).
+  * Sincronización a `main` y despliegue global automático en Netlify CDN para `mariomojica.com`.
+
+
 

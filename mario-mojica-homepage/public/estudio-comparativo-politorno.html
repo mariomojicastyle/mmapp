@@ -1,0 +1,1047 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Estudio Comparativo 3D — Politorno Móveis | Mario Mojica</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-main: #f8fafc;
+      --bg-card: #ffffff;
+      --text-primary: #0f172a;
+      --text-secondary: #334155;
+      --text-muted: #64748b;
+      --border-color: #e2e8f0;
+      --accent-blue: #0284c7;
+      --accent-blue-bg: #e0f2fe;
+      --accent-green: #15803d;
+      --accent-green-bg: #dcfce7;
+      --accent-gray-bg: #f1f5f9;
+      --slider-pos: 50%;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+      background-color: var(--bg-main);
+      color: var(--text-primary);
+      line-height: 1.5;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* Header */
+    header {
+      background: #ffffff;
+      border-bottom: 1px solid var(--border-color);
+      padding: 12px 32px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.03);
+    }
+
+    .brand-group {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .brand-logo-mm {
+      height: 40px;
+      width: auto;
+      object-fit: contain;
+    }
+
+    .brand-divider {
+      height: 28px;
+      width: 1px;
+      background: var(--border-color);
+    }
+
+    .brand-logo-3bf {
+      height: 28px;
+      width: auto;
+      object-fit: contain;
+    }
+
+    .badge-header {
+      background: var(--accent-blue-bg);
+      color: #0369a1;
+      font-size: 11px;
+      font-weight: 700;
+      padding: 4px 10px;
+      border-radius: 999px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    /* Switch de Idiomas */
+    .lang-switcher {
+      display: flex;
+      background: var(--accent-gray-bg);
+      padding: 3px;
+      border-radius: 8px;
+      border: 1px solid var(--border-color);
+    }
+
+    .lang-btn {
+      padding: 6px 12px;
+      font-size: 12px;
+      font-weight: 600;
+      background: transparent;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      color: var(--text-muted);
+      transition: all 0.2s ease;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .lang-btn.active {
+      background: #ffffff;
+      color: var(--text-primary);
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+      font-weight: 700;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 16px;
+      border-radius: 6px;
+      font-size: 13px;
+      font-weight: 600;
+      text-decoration: none;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      border: 1px solid transparent;
+    }
+
+    .btn-primary {
+      background: var(--text-primary);
+      color: #ffffff;
+    }
+    .btn-primary:hover {
+      background: #1e293b;
+    }
+
+    .btn-secondary {
+      background: #ffffff;
+      color: var(--text-primary);
+      border-color: var(--border-color);
+    }
+    .btn-secondary:hover {
+      background: var(--bg-main);
+    }
+
+    /* Layout */
+    .app-container {
+      max-width: 1560px;
+      margin: 0 auto;
+      padding: 24px 32px 60px;
+      display: grid;
+      grid-template-columns: 320px 1fr;
+      gap: 32px;
+    }
+
+    /* Sidebar */
+    .sidebar {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      padding: 20px;
+      height: fit-content;
+      position: sticky;
+      top: 85px;
+    }
+
+    .sidebar-title {
+      font-size: 12px;
+      font-weight: 700;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      letter-spacing: 0.5px;
+      margin-bottom: 12px;
+    }
+
+    .scene-list {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .scene-item {
+      padding: 10px 14px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--text-secondary);
+      transition: all 0.15s ease;
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      border: 1px solid transparent;
+    }
+
+    .scene-item:hover {
+      background: var(--bg-main);
+      color: var(--text-primary);
+    }
+
+    .scene-item.active {
+      background: #f0fdf4;
+      border-color: #bbf7d0;
+      color: #166534;
+      font-weight: 700;
+    }
+
+    .scene-item .item-sub {
+      font-size: 11px;
+      color: var(--text-muted);
+      font-weight: 400;
+    }
+    .scene-item.active .item-sub {
+      color: #15803d;
+    }
+
+    /* Área Central */
+    .viewer-area {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    .scene-header-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      padding: 20px 24px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .scene-header-info h2 {
+      font-size: 18px;
+      font-weight: 700;
+      color: var(--text-primary);
+    }
+
+    .scene-header-info p {
+      font-size: 13px;
+      color: var(--text-muted);
+      margin-top: 4px;
+    }
+
+    .view-mode-toggle {
+      display: flex;
+      background: var(--bg-main);
+      padding: 3px;
+      border-radius: 8px;
+      border: 1px solid var(--border-color);
+    }
+
+    .view-mode-btn {
+      padding: 6px 14px;
+      font-size: 12px;
+      font-weight: 600;
+      background: transparent;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      color: var(--text-muted);
+      transition: all 0.2s;
+    }
+
+    .view-mode-btn.active {
+      background: #ffffff;
+      color: var(--text-primary);
+      box-shadow: 0 1px 2px rgba(0,0,0,0.08);
+    }
+
+    /* Modo Lado a Lado */
+    .comparison-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 24px;
+    }
+
+    .compare-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+    }
+
+    .card-top-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .badge-status {
+      font-size: 11px;
+      font-weight: 700;
+      padding: 4px 10px;
+      border-radius: 6px;
+    }
+
+    .badge-org {
+      background: var(--accent-gray-bg);
+      color: #475569;
+    }
+
+    .badge-new {
+      background: var(--accent-green-bg);
+      color: var(--accent-green);
+    }
+
+    .img-wrapper {
+      width: 100%;
+      height: 480px;
+      background: #f1f5f9;
+      border-radius: 8px;
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border: 1px solid var(--border-color);
+    }
+
+    .img-wrapper img {
+      max-width: 100%;
+      max-height: 100%;
+      object-fit: contain;
+      transition: transform 0.2s ease;
+    }
+    .img-wrapper img:hover {
+      transform: scale(1.02);
+    }
+
+    .desc-box {
+      border-radius: 8px;
+      padding: 12px 16px;
+      font-size: 12px;
+    }
+
+    .desc-box.org {
+      background: #f8fafc;
+      border: 1px solid var(--border-color);
+    }
+    .desc-box.new {
+      background: #f0fdf4;
+      border: 1px solid #bbf7d0;
+    }
+
+    .desc-title {
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      margin-bottom: 4px;
+    }
+    .desc-box.org .desc-title { color: #64748b; }
+    .desc-box.new .desc-title { color: #15803d; }
+
+    .desc-content {
+      color: var(--text-secondary);
+      line-height: 1.45;
+    }
+
+    /* MODO SLIDER INTERACTIVO BLINDADO CON CLIP-PATH */
+    .slider-comparison-card {
+      display: none;
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      padding: 20px;
+      position: relative;
+    }
+
+    .compare-container {
+      position: relative;
+      width: 100%;
+      height: 600px;
+      background: #f1f5f9;
+      border-radius: 8px;
+      overflow: hidden;
+      border: 1px solid var(--border-color);
+      user-select: none;
+    }
+
+    /* Ambas imágenes ocupan exactamente las mismas dimensiones absolutas */
+    .compare-img {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      object-position: center;
+      pointer-events: none;
+    }
+
+    /* Capa inferior (Mejorada) */
+    .compare-img-base {
+      z-index: 1;
+    }
+
+    /* Capa superior (Original) recortada con clip-path */
+    .compare-img-overlay {
+      z-index: 2;
+      clip-path: polygon(0 0, var(--slider-pos, 50%) 0, var(--slider-pos, 50%) 100%, 0 100%);
+      -webkit-clip-path: polygon(0 0, var(--slider-pos, 50%) 0, var(--slider-pos, 50%) 100%, 0 100%);
+    }
+
+    /* Línea divisoria y manija */
+    .compare-divider {
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      left: var(--slider-pos, 50%);
+      width: 2px;
+      background: #ffffff;
+      box-shadow: 0 0 10px rgba(0,0,0,0.4);
+      z-index: 5;
+      transform: translateX(-50%);
+      pointer-events: none;
+    }
+
+    .compare-handle {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 44px;
+      height: 44px;
+      background: #ffffff;
+      border: 2px solid var(--accent-blue);
+      border-radius: 50%;
+      box-shadow: 0 4px 14px rgba(0,0,0,0.25);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 16px;
+      font-weight: 800;
+      color: var(--accent-blue);
+    }
+
+    /* Input Range transparente que cubre todo para un arrastre infalible */
+    .compare-range-input {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      opacity: 0;
+      cursor: ew-resize;
+      z-index: 10;
+      margin: 0;
+    }
+
+    /* Badges flotantes en el slider */
+    .slider-tag {
+      position: absolute;
+      top: 14px;
+      z-index: 4;
+      font-size: 11px;
+      font-weight: 700;
+      padding: 6px 12px;
+      border-radius: 6px;
+      pointer-events: none;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+    }
+    .slider-tag-left {
+      left: 14px;
+      background: rgba(241, 245, 249, 0.92);
+      color: #334155;
+      backdrop-filter: blur(4px);
+    }
+    .slider-tag-right {
+      right: 14px;
+      background: rgba(220, 252, 231, 0.92);
+      color: #15803d;
+      backdrop-filter: blur(4px);
+    }
+
+    /* Barra Inferior del Slider */
+    .slider-controls-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: 14px;
+      font-size: 12px;
+      font-weight: 600;
+    }
+
+    /* Banner Informativo */
+    .summary-card {
+      background: #0f172a;
+      color: #ffffff;
+      border-radius: 12px;
+      padding: 24px 32px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: 10px;
+    }
+
+    .summary-text h3 {
+      font-size: 16px;
+      font-weight: 700;
+      margin-bottom: 6px;
+    }
+
+    .summary-text p {
+      font-size: 13px;
+      color: #94a3b8;
+      max-width: 700px;
+    }
+
+    @media (max-width: 1080px) {
+      .app-container {
+        grid-template-columns: 1fr;
+      }
+      .sidebar {
+        position: static;
+      }
+      .comparison-grid {
+        grid-template-columns: 1fr;
+      }
+      .img-wrapper {
+        height: 360px;
+      }
+      .compare-container {
+        height: 420px;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Header con logos oficiales enlazados directamente -->
+  <header>
+    <div class="brand-group">
+      <img src="publicidad/Logo_MM_en_v2.png" alt="Mario Mojica - Form & Future" class="brand-logo-mm">
+      <div class="brand-divider"></div>
+      <img src="publicidad/Logo_3BF.svg" alt="3dBimFab" class="brand-logo-3bf">
+      <span class="badge-header" id="txtBadgeHeader">Estudio de Fotorrealismo 3D</span>
+    </div>
+
+    <div class="header-actions">
+      <!-- Selector de Idioma de la interfaz -->
+      <div class="lang-switcher">
+        <button class="lang-btn active" id="btnLangES" onclick="setLanguage('es')">
+          <span>🇪🇸</span> Español
+        </button>
+        <button class="lang-btn" id="btnLangPT" onclick="setLanguage('pt')">
+          <span>🇧🇷</span> Português
+        </button>
+      </div>
+
+      <!-- Descargar paquete de imágenes en HD -->
+      <a id="btnDownloadHd" href="Politorno_Imagens_HD_Mario_Mojica.zip" download class="btn btn-primary" title="Descargar las 10 imágenes en alta definición (2048x2048)">
+        📦 <span id="txtBtnHd">Descargar imágenes en HD</span>
+      </a>
+
+      <!-- Botón PDF Español -->
+      <a id="btnPdfES" href="Estudio_Comparativo_Visual_Politorno_Mario_Mojica_Web_ES.pdf" target="_blank" class="btn btn-secondary" title="Abrir y descargar PDF en Español">
+        📄 <span>PDF en Español</span>
+      </a>
+
+      <!-- Botón PDF Português -->
+      <a id="btnPdfPT" href="Estudo_Comparativo_Visual_Politorno_Mario_Mojica.pdf" target="_blank" class="btn btn-secondary" title="Abrir e baixar PDF em Português">
+        📄 <span>PDF em Português</span>
+      </a>
+    </div>
+  </header>
+
+  <div class="app-container">
+
+    <!-- Menú Lateral -->
+    <aside class="sidebar">
+      <div class="sidebar-title" id="txtSidebarTitle">Escenas de la Línea Tijuca (10)</div>
+      <ul class="scene-list" id="sceneList"></ul>
+    </aside>
+
+    <!-- Visor Central -->
+    <main class="viewer-area">
+
+      <div class="scene-header-card">
+        <div class="scene-header-info">
+          <h2 id="sceneTitle">Cargando...</h2>
+          <p id="sceneSubtitle">...</p>
+        </div>
+        <div class="view-mode-toggle">
+          <button class="view-mode-btn active" id="btnSideBySide" onclick="setViewMode('side')">Lado a Lado</button>
+          <button class="view-mode-btn" id="btnSlider" onclick="setViewMode('slider')">Slider Interactivo</button>
+        </div>
+      </div>
+
+      <!-- 1. VISTA LADO A LADO -->
+      <div class="comparison-grid" id="sideBySideView">
+        
+        <div class="compare-card">
+          <div class="card-top-bar">
+            <span class="badge-status badge-org" id="badgeOrgLabel">ORIGINAL POLITORNO</span>
+            <span style="font-size: 11px; color: var(--text-muted);" id="orgMeta">750 × 750 px</span>
+          </div>
+          <div class="img-wrapper">
+            <img id="imgOrg" src="" alt="Original Politorno">
+          </div>
+          <div class="desc-box org">
+            <div class="desc-title" id="txtDiagTitle">Diagnóstico de la Imagen Anterior</div>
+            <div class="desc-content" id="descOrg">...</div>
+          </div>
+        </div>
+
+        <div class="compare-card">
+          <div class="card-top-bar">
+            <span class="badge-status badge-new" id="badgeNewLabel">RENDER MEJORADO (MARIO MOJICA)</span>
+            <span style="font-size: 11px; color: var(--accent-green); font-weight: 700;" id="newMeta">2048 × 2048 px (Fotorrealismo IA)</span>
+          </div>
+          <div class="img-wrapper">
+            <img id="imgNew" src="" alt="Render Mejorado Mario Mojica">
+          </div>
+          <div class="desc-box new">
+            <div class="desc-title" id="txtBenefTitle">Beneficios de la Mejora 3D</div>
+            <div class="desc-content" id="descNew">...</div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- 2. VISTA SLIDER INTERACTIVO (100% FUNCIONAL Y FLUIDO) -->
+      <div class="slider-comparison-card" id="sliderView">
+        <div class="compare-container" id="compareBox">
+          <!-- Badges sobre la imagen -->
+          <div class="slider-tag slider-tag-left" id="sliderTagLeft">ORIGINAL POLITORNO</div>
+          <div class="slider-tag slider-tag-right" id="sliderTagRight">RENDER MEJORADO (3D MM)</div>
+
+          <!-- Capa Base: Render Mejorado -->
+          <img id="sliderImgBase" class="compare-img compare-img-base" src="" alt="Render Mejorado">
+
+          <!-- Capa Superpuesta: Original (recortada dinámicamente) -->
+          <img id="sliderImgOverlay" class="compare-img compare-img-overlay" src="" alt="Original">
+
+          <!-- Línea y Manija divisoria -->
+          <div class="compare-divider" id="compareDivider">
+            <div class="compare-handle">↔</div>
+          </div>
+
+          <!-- Input Range transparente nativo para arrastre ultra fluido -->
+          <input type="range" min="0" max="100" value="50" class="compare-range-input" id="compareRangeInput">
+        </div>
+
+        <div class="slider-controls-bar">
+          <span style="color: var(--text-muted);" id="txtSliderLeftHint">◀ Desliza a la izquierda para ver el Original</span>
+          <span style="color: var(--accent-green);" id="txtSliderRightHint">Desliza a la derecha para ver la Mejora 3D ▶</span>
+        </div>
+      </div>
+
+      <!-- Banner de Cierre -->
+      <div class="summary-card">
+        <div class="summary-text" style="max-width: 100%;">
+          <h3 id="txtSummaryTitle">Ecosistema Integrado: Catálogo Digital + Manuales 3D + 3dBimFab</h3>
+          <p id="txtSummaryBody">Un mismo activo digital tridimensional genera renders comerciales de máxima conversión, alimenta los manuales de armado interactivos en el móvil del cliente y se conecta con la ingeniería paramétrica de fábrica.</p>
+        </div>
+      </div>
+
+    </main>
+
+  </div>
+
+  <script>
+    // DICCIONARIOS Y CONTENIDO BILINGÜE
+    const I18N = {
+      es: {
+        badgeHeader: "Estudio de Fotorrealismo 3D",
+        downloadPackBtn: "📦 Descargar paquete de imágenes en HD",
+        downloadPackUrl: "Politorno_Imagens_HD_Mario_Mojica.zip",
+        pdfBtn: "📄 Abrir PDF Completo",
+        sidebarTitle: "Escenas de la Línea Tijuca (10)",
+        btnSide: "Lado a Lado",
+        btnSlider: "Slider Interactivo",
+        badgeOrg: "ORIGINAL POLITORNO",
+        badgeNew: "RENDER MEJORADO (MARIO MOJICA)",
+        diagTitle: "Diagnóstico de la Imagen Anterior",
+        benefTitle: "Beneficios de la Mejora 3D",
+        sliderLeftTag: "ORIGINAL POLITORNO",
+        sliderRightTag: "RENDER MEJORADO (3D MM)",
+        sliderLeftHint: "◀ Desliza a la izquierda para ver el Original",
+        sliderRightHint: "Desliza a la derecha para ver la Mejora 3D ▶",
+        summaryTitle: "Ecosistema Integrado: Catálogo Digital + Manuales 3D + 3dBimFab",
+        summaryBody: "Un mismo activo digital tridimensional genera renders comerciales de máxima conversión, alimenta los manuales de armado interactivos en el móvil del cliente y se conecta con la ingeniería paramétrica de fábrica.",
+        summaryBtn: "Abrir PDF Completo"
+      },
+      pt: {
+        badgeHeader: "Estudo de Fotorrealismo 3D",
+        downloadPackBtn: "📦 Baixar pacote de imagens em HD",
+        downloadPackUrl: "Politorno_Imagens_HD_Mario_Mojica.zip",
+        pdfBtn: "📄 Abrir PDF Completo",
+        sidebarTitle: "Cenas da Linha Tijuca (10)",
+        btnSide: "Lado a Lado",
+        btnSlider: "Slider Interativo",
+        badgeOrg: "ORIGINAL POLITORNO",
+        badgeNew: "RENDER APRIMORADO (MARIO MOJICA)",
+        diagTitle: "Diagnóstico da Imagem Anterior",
+        benefTitle: "Benefícios do Aprimoramento 3D",
+        sliderLeftTag: "ORIGINAL POLITORNO",
+        sliderRightTag: "RENDER APRIMORADO (3D MM)",
+        sliderLeftHint: "◀ Arraste para a esquerda para ver o Original",
+        sliderRightHint: "Arraste para a direita para ver a Melhoria 3D ▶",
+        summaryTitle: "Ecossistema Integrado: Catálogo Digital + Manuais 3D + 3dBimFab",
+        summaryBody: "O mesmo ativo digital tridimensional gera renders comerciais de alta conversão, alimenta manuais de montagem 3D interativos no smartphone e integra-se à engenharia paramétrica 3dBimFab.",
+        summaryBtn: "Abrir Estudo Completo"
+      }
+    };
+
+    const SCENES = [
+      {
+        id: "01",
+        org: "Imagens da reforma do Politorno/01_1-93-833org.jpg",
+        new: "Imagens da reforma do Politorno/01_1-93-833_new.jpeg",
+        orgMeta: "750 × 750 px (Catálogo Legado)",
+        newMeta: "2048 × 2048 px (Fotorrealismo IA)",
+        es: {
+          title: "Escena 01 — Sala Residencial e Iluminación Natural",
+          subtitle: "De entorno genérico con luz artificial a sala clásica parisina con boiserie y parquet.",
+          orgDesc: "Render legado con iluminación artificial plana, sombras desreguladas y ambientación con elementos decorativos simplificados.",
+          newDesc: "Iluminación física diurna (HDRI + luz de ventana), textura fotorrealista de melamina mate optimizada con IA, piso de espina de pescado con brillo especular y sillón contemporáneo."
+        },
+        pt: {
+          title: "Cena 01 — Living Residencial & Iluminação Natural",
+          subtitle: "De um ambiente genérico com luz dura para um living clássico parisiense com boiserie e parquet.",
+          orgDesc: "Render legado com iluminação artificial plana, sombras desreguladas e ambientação com elementos simplificados.",
+          newDesc: "Iluminação física diurna (HDRI + luz de janela), textura fotorrealista de melamina fosca aprimorada com IA, piso de espinha de peixe com brilho especular e poltrona contemporânea."
+        }
+      },
+      {
+        id: "01B",
+        org: "Imagens da reforma do Politorno/01_1-93-833org.jpg",
+        new: "Imagens da reforma do Politorno/01_1-93-833__new.jpeg",
+        orgMeta: "750 × 750 px (Catálogo Legado)",
+        newMeta: "2048 × 2048 px (Fotorrealismo IA)",
+        es: {
+          title: "Escena 01B — Perspectiva con Persiana y Luz Filtrada",
+          subtitle: "Exploración volumétrica con luz solar rasante, generando sombras suaves y textura realista.",
+          orgDesc: "Paredes planas en tono pastel sin volumetría, falta de profundidad de campo y sombreado básico.",
+          newDesc: "Ventana clásica con persianas de madera, luz filtrada creando patrones de sombra y contraste realista sobre la cubierta de la mesa."
+        },
+        pt: {
+          title: "Cena 01B — Perspectiva com Persiana & Luz Filtrada",
+          subtitle: "Exploração volumétrica com luz solar rasante, gerando sombras suaves e valorizando o móvel.",
+          orgDesc: "Paredes chapadas em tom pastel sem volumetria, falta de profundidade de campo e sombreamento básico.",
+          newDesc: "Janela clássica com persianas de madeira, luz filtrada criando padrões de sombra e contraste realista sobre o tampo da mesa."
+        }
+      },
+      {
+        id: "02",
+        org: "Imagens da reforma do Politorno/02_1-93-834org.jpg",
+        new: "Imagens da reforma do Politorno/02_1-93-834new.jpeg",
+        orgMeta: "750 × 750 px",
+        newMeta: "2048 × 2048 px",
+        es: {
+          title: "Escena 02 — Home Office con Boiserie y Luz Solar",
+          subtitle: "Atmósfera de trabajo moderna que amplifica el deseo de compra en el público de mayor ticket.",
+          orgDesc: "Paredes sin detalle arquitectónico, silla simplificada e iluminación que pierde los límites volumétricos del mueble.",
+          newDesc: "Paredes con molduras refinadas, vista exterior a arquitectura urbana, alfombra texturizada de alta resolución y luz solar natural lateral."
+        },
+        pt: {
+          title: "Cena 02 — Home Office com Boiserie & Luz Solar Direta",
+          subtitle: "Atmosfera de trabalho moderna e sofisticada que amplia o desejo de compra no público de maior valor agregado.",
+          orgDesc: "Paredes sem detalhe arquitetônico, cadeira simplificada e iluminação que perde os limites volumétricos do móvel.",
+          newDesc: "Paredes com boiserie refinada, vista exterior para arquitetura urbana, tapete felpudo de alta resolução e luz solar natural entrando pela lateral."
+        }
+      },
+      {
+        id: "03",
+        org: "Imagens da reforma do Politorno/03_1-93-836org.jpg",
+        new: "Imagens da reforma do Politorno/03_1-93-836new.jpeg",
+        orgMeta: "750 × 750 px",
+        newMeta: "2048 × 2048 px",
+        es: {
+          title: "Escena 03 — Espacio Creativo con Panel de Corcho",
+          subtitle: "Sensación de calidez y autenticidad para oficinas en casa juveniles y estaciones de estudio.",
+          orgDesc: "Escena con temperatura de color fría, textura de corcho plana y sombra excesivamente dura bajo el mueble.",
+          newDesc: "Temperatura de color equilibrada, textura táctil de corcho con microrrelieve (bump map), piso vinílico amaderado y sombras de contacto suaves."
+        },
+        pt: {
+          title: "Cena 03 — Espaço Criativo com Painel de Cortiça",
+          subtitle: "Sensação de aconchego e autenticidade para home offices juvenis e estações de estudo.",
+          orgDesc: "Cena com temperatura de cor fria, textura de cortiça plana e sombra excessivamente dura sob o móvel.",
+          newDesc: "Temperatura de cor balanceada, textura tátil de cortiça com micro-relevo (bump map), piso vinílico amadeirado e sombras de contato suaves."
+        }
+      },
+      {
+        id: "04",
+        org: "Imagens da reforma do Politorno/04_1-93-837org.jpg",
+        new: "Imagens da reforma do Politorno/04_1-93-837new.jpeg",
+        orgMeta: "750 × 750 px",
+        newMeta: "2048 × 2048 px",
+        es: {
+          title: "Escena 04 — Fondo Infinito E-commerce (Cajones Abiertos)",
+          subtitle: "Estándar de fotografía técnica de estudio para marketplaces: limpieza sin quemar bordes blancos.",
+          orgDesc: "Fondo gris opaco sin reflejo en el suelo, ausencia de oclusión de contacto en los cajones e iluminación sobreexpuesta.",
+          newDesc: "Estudio fotográfico con difusor softbox suave, lámpara minimalista en metal cepillado y destaque tridimensional de ambos cajones abiertos."
+        },
+        pt: {
+          title: "Cena 04 — Fundo Infinito de E-commerce (Gavetas Abertas)",
+          subtitle: "Padrão de fotografia técnica de estúdio para marketplaces: limpidez absoluta sem queimar as bordas brancas.",
+          orgDesc: "Fundo cinza opaco sem reflexo no chão, ausência de oclusão de contato nas gavetas e iluminação excessivamente saturada.",
+          newDesc: "Estúdio fotográfico com softbox de difusão suave, luminária minimalista em metal escovado e destaque tridimensional dos dois compartimentos abertos."
+        }
+      },
+      {
+        id: "05",
+        org: "Imagens da reforma do Politorno/05_1-93-838org.jpg",
+        new: "Imagens da reforma do Politorno/05_1-93-838new.jpeg",
+        orgMeta: "750 × 750 px",
+        newMeta: "2048 × 2048 px",
+        es: {
+          title: "Escena 05 — Macro Constructivo: Corredera Telescópica",
+          subtitle: "Comunicación visual de ingeniería: valorizando la calidad de los herrajes y la durabilidad.",
+          orgDesc: "Acero de la corredera sin tratamiento de reflexión metálica, ausencia de biseles o chaflán en los bordes de los tableros.",
+          newDesc: "Reflejos cromados realistas en las esferas y rieles de la corredera telescópica, cubrecanto definido con chaflán sutil de fabricación y profundidad de campo."
+        },
+        pt: {
+          title: "Cena 05 — Macro Construtivo: Corrediça Telescópica",
+          subtitle: "Comunicação visual de engenharia: valorizando a qualidade das ferragens e a durabilidade do produto.",
+          orgDesc: "Aço da corrediça sem tratamento de reflexão metálica, ausência de chanfros de borda nos painéis de MDF/MDP.",
+          newDesc: "Reflexos cromados realistas nas esferas e trilhos da corrediça telescópica, fita de borda definida com chanfro sutil de fabricação e profundidade de campo."
+        }
+      },
+      {
+        id: "06",
+        org: "Imagens da reforma do Politorno/06_1-93-839org.jpg",
+        new: "Imagens da reforma do Politorno/06_1-93-839new.jpeg",
+        orgMeta: "750 × 750 px",
+        newMeta: "2048 × 2048 px",
+        es: {
+          title: "Escena 06 — Ergonomía y Capacidad de Cajones",
+          subtitle: "Visión cenital útil: demostrando capacidad real para laptops, tablets, libretas y accesorios.",
+          orgDesc: "Objetos internos con aspecto artificial y falta de sombras proyectadas entre los compartimentos del cajón.",
+          newDesc: "Acabado de cuero en la carpeta ejecutiva, pantalla de tablet con reflejo controlado, bolígrafos y cuadernos con oclusión ambiental de alta precisión."
+        },
+        pt: {
+          title: "Cena 06 — Ergonomia & Capacidade Interna das Gavetas",
+          subtitle: "Visão funcional em ângulo cenital: provando a utilidade no dia a dia para notebooks, tablets e cadernos.",
+          orgDesc: "Objetos internos com aspecto artificial e falta de sombras projetadas entre os compartimentos da gaveta.",
+          newDesc: "Acabamento de couro na pasta executiva, tela de tablet com reflexo controlado, canetas e cadernos com oclusão ambiental de alta precisão."
+        }
+      },
+      {
+        id: "07",
+        org: "Imagens da reforma do Politorno/07_1-93-841org.jpg",
+        new: "Imagens da reforma do Politorno/07_1-93-841new.jpeg",
+        orgMeta: "750 × 750 px",
+        newMeta: "2048 × 2048 px",
+        es: {
+          title: "Escena 07 — Foto de Portada Marketplace (Mueble Cerrado)",
+          subtitle: "La imagen principal de clic: elegancia, proporción perfecta y máxima conversión visual.",
+          orgDesc: "Bordes que se funden con el fondo por falta de luz de contorno, iluminación estática sin degradado suave.",
+          newDesc: "Luz de contorno lateral que define la silueta, sombras suaves en el suelo que anclan el mueble con solidez e iluminación de realce en accesorios."
+        },
+        pt: {
+          title: "Cena 07 — Imagem de Capa para Marketplaces (Móvel Fechado)",
+          subtitle: "A imagem principal de clique: elegância, proporção perfeita e máxima conversão visual para o consumidor online.",
+          orgDesc: "Bordes que se fundem ao fundo por falta de luz de recorte, iluminação estática sem gradiente suave.",
+          newDesc: "Luz de recorte nas laterais definindo a silhueta, sombras suaves no solo que ancoram o móvel com solidez e iluminação de destaque nos acessórios."
+        }
+      },
+      {
+        id: "08",
+        org: "Imagens da reforma do Politorno/08_1-93-833__org.jpg",
+        new: "Imagens da reforma do Politorno/08_1-93-833__new.jpeg",
+        orgMeta: "679 × 452 px (Paisaje)",
+        newMeta: "2400 × 1792 px (Paisaje)",
+        es: {
+          title: "Escena 08 — Ambientación Loft Industrial Completo",
+          subtitle: "Encuadre cinematográfico para marketing, campañas institucionales y portadas de catálogo.",
+          orgDesc: "Paredes de ladrillo sin relieve táctil, luz difusa sin dirección dramática y elementos decorativos poco armónicos.",
+          newDesc: "Ladrillos blancos a la vista con mapa de normales detallado, iluminación escénica focal y luz de ventana, alfombra artesanal y cuadro botánico de autor."
+        },
+        pt: {
+          title: "Cena 08 — Ambientação Loft Industrial (Cenário Completo)",
+          subtitle: "Enquadramento cinematográfico de ambiente completo para campanhas de marketing, redes sociais e catálogos impressos.",
+          orgDesc: "Paredes de tijolos sem relevo tátil, luz difusa sem direção dramática e elementos decorativos com saturação desarmônica.",
+          newDesc: "Tijolos brancos aparentes com normal map detalhado, iluminação de holofote cênica e luz de janela, tapete de estamparia artesanal e quadro botânico de autor."
+        }
+      },
+      {
+        id: "09",
+        org: "Imagens da reforma do Politorno/04_1-93-837org.jpg",
+        new: "Imagens da reforma do Politorno/04_1-93-833___new.jpeg",
+        orgMeta: "750 × 750 px (Catálogo)",
+        newMeta: "2048 × 2048 px",
+        es: {
+          title: "Escena Complementaria — Funcionalidad en Loft",
+          subtitle: "Demostración de estabilidad y apertura total de cajones bajo abundante luz natural.",
+          orgDesc: "Perspectiva estándar de catálogo en fondo blanco sin contexto de escala ni integración residencial.",
+          newDesc: "Integración del mueble en un loft con ventilación de luz natural y piso de madera noble, realzando la estabilidad estructural con los cajones abiertos."
+        },
+        pt: {
+          title: "Cena Complementar — Funcionalidade em Loft Panorâmico",
+          subtitle: "Demonstração de versatilidade e estabilidade da mesa com ambas as gavetas estendidas sob luz natural abundante.",
+          orgDesc: "Perspectiva padrão de catálogo em fundo branco sem contexto de escala ou integração residencial.",
+          newDesc: "Integração do móvel em um loft com ventilação de luz natural e piso de madeira nobre, realçando a estabilidade estrutural das gavetas totalmente abertas."
+        }
+      }
+    ];
+
+    let currentLang = 'es';
+    let currentSceneIndex = 0;
+    let currentMode = 'side'; // 'side' | 'slider'
+
+    function setLanguage(lang) {
+      currentLang = lang;
+      document.getElementById('btnLangES').classList.toggle('active', lang === 'es');
+      document.getElementById('btnLangPT').classList.toggle('active', lang === 'pt');
+
+      const dict = I18N[lang];
+      document.getElementById('txtBadgeHeader').textContent = dict.badgeHeader;
+      document.getElementById('txtBtnHd').textContent = lang === 'pt' ? 'Baixar imagens em HD' : 'Descargar imágenes en HD';
+      // Resaltar sutilmente el botón de PDF correspondiente al idioma seleccionado
+      if (lang === 'pt') {
+        document.getElementById('btnPdfPT').style.borderColor = '#15803d';
+        document.getElementById('btnPdfPT').style.background = '#f0fdf4';
+        document.getElementById('btnPdfES').style.borderColor = 'var(--border-color)';
+        document.getElementById('btnPdfES').style.background = '#ffffff';
+      } else {
+        document.getElementById('btnPdfES').style.borderColor = '#0284c7';
+        document.getElementById('btnPdfES').style.background = '#f0f9ff';
+        document.getElementById('btnPdfPT').style.borderColor = 'var(--border-color)';
+        document.getElementById('btnPdfPT').style.background = '#ffffff';
+      }
+      document.getElementById('txtSidebarTitle').textContent = dict.sidebarTitle;
+      document.getElementById('btnSideBySide').textContent = dict.btnSide;
+      document.getElementById('btnSlider').textContent = dict.btnSlider;
+      document.getElementById('badgeOrgLabel').textContent = dict.badgeOrg;
+      document.getElementById('badgeNewLabel').textContent = dict.badgeNew;
+      document.getElementById('txtDiagTitle').textContent = dict.diagTitle;
+      document.getElementById('txtBenefTitle').textContent = dict.benefTitle;
+      document.getElementById('sliderTagLeft').textContent = dict.sliderLeftTag;
+      document.getElementById('sliderTagRight').textContent = dict.sliderRightTag;
+      document.getElementById('txtSliderLeftHint').textContent = dict.sliderLeftHint;
+      document.getElementById('txtSliderRightHint').textContent = dict.sliderRightHint;
+      document.getElementById('txtSummaryTitle').textContent = dict.summaryTitle;
+      document.getElementById('txtSummaryBody').textContent = dict.summaryBody;
+            
+      renderSidebar();
+      updateSceneDetails();
+    }
+
+    function renderSidebar() {
+      const list = document.getElementById('sceneList');
+      list.innerHTML = '';
+      SCENES.forEach((s, idx) => {
+        const textData = s[currentLang];
+        const li = document.createElement('li');
+        li.className = `scene-item ${idx === currentSceneIndex ? 'active' : ''}`;
+        li.onclick = () => selectScene(idx);
+        li.innerHTML = `
+          <span>${textData.title}</span>
+          <span class="item-sub">${textData.subtitle.substring(0, 48)}...</span>
+        `;
+        list.appendChild(li);
+      });
+    }
+
+    function selectScene(index) {
+      currentSceneIndex = index;
+      updateSceneDetails();
+      renderSidebar();
+    }
+
+    function updateSceneDetails() {
+      const s = SCENES[currentSceneIndex];
+      const textData = s[currentLang];
+
+      document.getElementById('sceneTitle').textContent = textData.title;
+      document.getElementById('sceneSubtitle').textContent = textData.subtitle;
+
+      // Lado a Lado
+      document.getElementById('imgOrg').src = s.org;
+      document.getElementById('imgNew').src = s.new;
+      document.getElementById('orgMeta').textContent = s.orgMeta;
+      document.getElementById('newMeta').textContent = s.newMeta;
+      document.getElementById('descOrg').textContent = textData.orgDesc;
+      document.getElementById('descNew').textContent = textData.newDesc;
+
+      // Slider Interactivo
+      document.getElementById('sliderImgBase').src = s.new;
+      document.getElementById('sliderImgOverlay').src = s.org;
+
+      // Resetear posición del slider al 50%
+      setSliderPosition(50);
+      document.getElementById('compareRangeInput').value = 50;
+    }
+
+    function setViewMode(mode) {
+      currentMode = mode;
+      const sideView = document.getElementById('sideBySideView');
+      const sliderView = document.getElementById('sliderView');
+      const btnSide = document.getElementById('btnSideBySide');
+      const btnSlider = document.getElementById('btnSlider');
+
+      if (mode === 'side') {
+        sideView.style.display = 'grid';
+        sliderView.style.display = 'none';
+        btnSide.classList.add('active');
+        btnSlider.classList.remove('active');
+      } else {
+        sideView.style.display = 'none';
+        sliderView.style.display = 'block';
+        btnSide.classList.remove('active');
+        btnSlider.classList.add('active');
+        setSliderPosition(50);
+      }
+    }
+
+    // CONTROL DEL SLIDER INTERACTIVO
+    const compareBox = document.getElementById('compareBox');
+    const rangeInput = document.getElementById('compareRangeInput');
+
+    function setSliderPosition(val) {
+      compareBox.style.setProperty('--slider-pos', val + '%');
+    }
+
+    rangeInput.addEventListener('input', (e) => {
+      setSliderPosition(e.target.value);
+    });
+
+    // Soporte táctil y cursor suave
+    rangeInput.addEventListener('change', (e) => {
+      setSliderPosition(e.target.value);
+    });
+
+    // Iniciar con Español
+    setLanguage('es');
+  </script>
+</body>
+</html>
