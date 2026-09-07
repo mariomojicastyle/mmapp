@@ -1224,49 +1224,80 @@
     let currentSceneIndex = 0;
     let currentMode = 'side'; // 'side' | 'slider'
 
-    function setLanguage(lang) {
+        function setLanguage(lang) {
       currentLang = lang;
-      document.getElementById('btnLangES').classList.toggle('active', lang === 'es');
+      
+      const btnES = document.getElementById('btnLangES');
+      const btnPT = document.getElementById('btnLangPT');
+      if (btnES) btnES.classList.toggle('active', lang === 'es');
+      if (btnPT) btnPT.classList.toggle('active', lang === 'pt');
+      
       const btnESMob = document.getElementById('btnLangES_mob');
       const btnPTMob = document.getElementById('btnLangPT_mob');
       if (btnESMob) btnESMob.classList.toggle('active', lang === 'es');
       if (btnPTMob) btnPTMob.classList.toggle('active', lang === 'pt');
+      
       const txtDrawerZip = document.getElementById('txtDrawerZip');
       if (txtDrawerZip) txtDrawerZip.textContent = lang === 'pt' ? 'Baixar pacote de imagens em HD' : 'Descargar imágenes en HD';
       const txtDrawerDownloadsTitle = document.getElementById('txtDrawerDownloadsTitle');
       if (txtDrawerDownloadsTitle) txtDrawerDownloadsTitle.textContent = lang === 'pt' ? 'Downloads & Documentos' : 'Descargas & Documentos';
       const txtDrawerScenesTitle = document.getElementById('txtDrawerScenesTitle');
       if (txtDrawerScenesTitle) txtDrawerScenesTitle.textContent = lang === 'pt' ? 'Cenas Linha Tijuca' : 'Escenas Línea Tijuca';
-      document.getElementById('btnLangPT').classList.toggle('active', lang === 'pt');
 
       const dict = I18N[lang];
-      document.getElementById('txtBadgeHeader').textContent = dict.badgeHeader;
-      document.getElementById('txtBtnHd').textContent = lang === 'pt' ? 'Baixar imagens em HD' : 'Descargar imágenes en HD';
-      // Resaltar sutilmente el botón de PDF correspondiente al idioma seleccionado
-      if (lang === 'pt') {
-        document.getElementById('btnPdfPT').style.borderColor = '#15803d';
-        document.getElementById('btnPdfPT').style.background = '#f0fdf4';
-        document.getElementById('btnPdfES').style.borderColor = 'var(--border-color)';
-        document.getElementById('btnPdfES').style.background = '#ffffff';
-      } else {
-        document.getElementById('btnPdfES').style.borderColor = '#0284c7';
-        document.getElementById('btnPdfES').style.background = '#f0f9ff';
-        document.getElementById('btnPdfPT').style.borderColor = 'var(--border-color)';
-        document.getElementById('btnPdfPT').style.background = '#ffffff';
+      
+      const txtBadge = document.getElementById('txtBadgeHeader');
+      if (txtBadge) txtBadge.textContent = dict.badgeHeader;
+      
+      const txtBtnHd = document.getElementById('txtBtnHd');
+      if (txtBtnHd) txtBtnHd.textContent = lang === 'pt' ? 'Baixar imagens em HD' : 'Descargar imágenes en HD';
+      
+      const btnPdfPT = document.getElementById('btnPdfPT');
+      const btnPdfES = document.getElementById('btnPdfES');
+      if (btnPdfPT && btnPdfES) {
+        if (lang === 'pt') {
+          btnPdfPT.style.background = '#ffffff';
+          btnPdfPT.style.color = '#0088AA';
+          btnPdfPT.style.borderColor = '#ffffff';
+          btnPdfES.style.background = 'rgba(255, 255, 255, 0.15)';
+          btnPdfES.style.color = '#ffffff';
+          btnPdfES.style.borderColor = 'rgba(255, 255, 255, 0.3)';
+        } else {
+          btnPdfES.style.background = '#ffffff';
+          btnPdfES.style.color = '#0088AA';
+          btnPdfES.style.borderColor = '#ffffff';
+          btnPdfPT.style.background = 'rgba(255, 255, 255, 0.15)';
+          btnPdfPT.style.color = '#ffffff';
+          btnPdfPT.style.borderColor = 'rgba(255, 255, 255, 0.3)';
+        }
       }
-      document.getElementById('txtSidebarTitle').textContent = dict.sidebarTitle;
-      document.getElementById('btnSideBySide').textContent = dict.btnSide;
-      document.getElementById('btnSlider').textContent = dict.btnSlider;
-      document.getElementById('badgeOrgLabel').textContent = dict.badgeOrg;
-      document.getElementById('badgeNewLabel').textContent = dict.badgeNew;
-      document.getElementById('txtDiagTitle').textContent = dict.diagTitle;
-      document.getElementById('txtBenefTitle').textContent = dict.benefTitle;
-      document.getElementById('sliderTagLeft').textContent = dict.sliderLeftTag;
-      document.getElementById('sliderTagRight').textContent = dict.sliderRightTag;
-      document.getElementById('txtSliderLeftHint').textContent = dict.sliderLeftHint;
-      document.getElementById('txtSliderRightHint').textContent = dict.sliderRightHint;
-      document.getElementById('txtSummaryTitle').textContent = dict.summaryTitle;
-      document.getElementById('txtSummaryBody').textContent = dict.summaryBody;
+      
+      const txtSidebarTitle = document.getElementById('txtSidebarTitle');
+      if (txtSidebarTitle) txtSidebarTitle.textContent = dict.sidebarTitle;
+      const btnSideBySide = document.getElementById('btnSideBySide');
+      if (btnSideBySide) btnSideBySide.textContent = dict.btnSide;
+      const btnSlider = document.getElementById('btnSlider');
+      if (btnSlider) btnSlider.textContent = dict.btnSlider;
+      const badgeOrgLabel = document.getElementById('badgeOrgLabel');
+      if (badgeOrgLabel) badgeOrgLabel.textContent = dict.badgeOrg;
+      const badgeNewLabel = document.getElementById('badgeNewLabel');
+      if (badgeNewLabel) badgeNewLabel.textContent = dict.badgeNew;
+      const txtDiagTitle = document.getElementById('txtDiagTitle');
+      if (txtDiagTitle) txtDiagTitle.textContent = dict.diagTitle;
+      const txtBenefTitle = document.getElementById('txtBenefTitle');
+      if (txtBenefTitle) txtBenefTitle.textContent = dict.benefTitle;
+      const sliderTagLeft = document.getElementById('sliderTagLeft');
+      if (sliderTagLeft) sliderTagLeft.textContent = dict.sliderLeftTag;
+      const sliderTagRight = document.getElementById('sliderTagRight');
+      if (sliderTagRight) sliderTagRight.textContent = dict.sliderRightTag;
+      const txtSliderLeftHint = document.getElementById('txtSliderLeftHint');
+      if (txtSliderLeftHint) txtSliderLeftHint.textContent = dict.sliderLeftHint;
+      const txtSliderRightHint = document.getElementById('txtSliderRightHint');
+      if (txtSliderRightHint) txtSliderRightHint.textContent = dict.sliderRightHint;
+      const txtSummaryTitle = document.getElementById('txtSummaryTitle');
+      if (txtSummaryTitle) txtSummaryTitle.textContent = dict.summaryTitle;
+      const txtSummaryBody = document.getElementById('txtSummaryBody');
+      if (txtSummaryBody) txtSummaryBody.textContent = dict.summaryBody;
             
       renderSidebar();
       updateSceneDetails();
@@ -1274,18 +1305,39 @@
 
     function renderSidebar() {
       const list = document.getElementById('sceneList');
-      list.innerHTML = '';
-      SCENES.forEach((s, idx) => {
-        const textData = s[currentLang];
-        const li = document.createElement('li');
-        li.className = `scene-item ${idx === currentSceneIndex ? 'active' : ''}`;
-        li.onclick = () => selectScene(idx);
-        li.innerHTML = `
-          <span>${textData.title}</span>
-          <span class="item-sub">${textData.subtitle.substring(0, 48)}...</span>
-        `;
-        list.appendChild(li);
-      });
+      if (list) {
+        list.innerHTML = '';
+        SCENES.forEach((s, idx) => {
+          const textData = s[currentLang];
+          const li = document.createElement('li');
+          li.className = `scene-item ${idx === currentSceneIndex ? 'active' : ''}`;
+          li.onclick = () => selectScene(idx);
+          li.innerHTML = `
+            <span>${textData.title}</span>
+            <span class="item-sub">${textData.subtitle.substring(0, 48)}...</span>
+          `;
+          list.appendChild(li);
+        });
+      }
+
+      const drawerList = document.getElementById('drawerSceneList');
+      if (drawerList) {
+        drawerList.innerHTML = '';
+        SCENES.forEach((s, idx) => {
+          const textData = s[currentLang];
+          const li = document.createElement('li');
+          li.className = `drawer-scene-item ${idx === currentSceneIndex ? 'active' : ''}`;
+          li.onclick = () => {
+            selectScene(idx);
+            toggleDrawer(false);
+          };
+          li.innerHTML = `
+            <span style="font-weight: 600;">${textData.title}</span>
+            <span style="font-size: 11px; opacity: 0.8;">${textData.subtitle.substring(0, 42)}...</span>
+          `;
+          drawerList.appendChild(li);
+        });
+      }
     }
 
     function selectScene(index) {
@@ -1298,24 +1350,36 @@
       const s = SCENES[currentSceneIndex];
       const textData = s[currentLang];
 
-      document.getElementById('sceneTitle').textContent = textData.title;
-      document.getElementById('sceneSubtitle').textContent = textData.subtitle;
+      const sceneTitle = document.getElementById('sceneTitle');
+      if (sceneTitle) sceneTitle.textContent = textData.title;
+      const sceneSubtitle = document.getElementById('sceneSubtitle');
+      if (sceneSubtitle) sceneSubtitle.textContent = textData.subtitle;
 
       // Lado a Lado
-      document.getElementById('imgOrg').src = s.org;
-      document.getElementById('imgNew').src = s.new;
-      document.getElementById('orgMeta').textContent = s.orgMeta;
-      document.getElementById('newMeta').textContent = s.newMeta;
-      document.getElementById('descOrg').textContent = textData.orgDesc;
-      document.getElementById('descNew').textContent = textData.newDesc;
+      const imgOrg = document.getElementById('imgOrg');
+      if (imgOrg) imgOrg.src = encodeURI(s.org);
+      const imgNew = document.getElementById('imgNew');
+      if (imgNew) imgNew.src = encodeURI(s.new);
+
+      const orgMeta = document.getElementById('orgMeta');
+      if (orgMeta) orgMeta.textContent = s.orgMeta;
+      const newMeta = document.getElementById('newMeta');
+      if (newMeta) newMeta.textContent = s.newMeta;
+      const descOrg = document.getElementById('descOrg');
+      if (descOrg) descOrg.textContent = textData.orgDesc;
+      const descNew = document.getElementById('descNew');
+      if (descNew) descNew.textContent = textData.newDesc;
 
       // Slider Interactivo
-      document.getElementById('sliderImgBase').src = s.new;
-      document.getElementById('sliderImgOverlay').src = s.org;
+      const sliderImgBase = document.getElementById('sliderImgBase');
+      if (sliderImgBase) sliderImgBase.src = encodeURI(s.new);
+      const sliderImgOverlay = document.getElementById('sliderImgOverlay');
+      if (sliderImgOverlay) sliderImgOverlay.src = encodeURI(s.org);
 
       // Resetear posición del slider al 50%
       setSliderPosition(50);
-      document.getElementById('compareRangeInput').value = 50;
+      const rangeInput = document.getElementById('compareRangeInput');
+      if (rangeInput) rangeInput.value = 50;
     }
 
     function setViewMode(mode) {
