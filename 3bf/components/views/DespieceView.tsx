@@ -248,8 +248,10 @@ export default function DespieceView() {
 
   const piezasGlobales = useMemo(() => {
     const list = getDespieceGlobal();
-    if (list.length > 0) return list;
-    return resultado?.despiece || [];
+    const base = list.length > 0 ? list : (resultado?.despiece || []);
+    return [...base].sort((a, b) =>
+      (a.nombre || "").localeCompare(b.nombre || "", undefined, { numeric: true, sensitivity: "base" })
+    );
   }, [instancias, resultado?.despiece, getDespieceGlobal]);
 
   useEffect(() => {
@@ -282,11 +284,14 @@ export default function DespieceView() {
   };
 
   // Función para obtener el material asignado a cada tablero desde dbTableros
-  const getMaterialParaPieza = (idx: number, espesor: number): TableroRecord => {
+  const getMaterialParaPieza = (idx: number, espesor: number, nombre?: string): TableroRecord => {
     const cod = materialesPorPieza[idx];
     if (cod) {
       const found = dbTableros.find((t: TableroRecord) => t.codigo === cod);
-      if (found) return found;
+      // Blindaje DfMA: Si el material guardado era fondo (< 5mm) debido al bug previo de espesor 0,
+      // pero la pieza ahora tiene calibre estructural (>= 12mm) y no es un fondo real, reasignar al tablero correcto
+      const esFondoInvalido = found && found.calibreMm < 5 && espesor >= 12 && !nombre?.toLowerCase().includes("fondo");
+      if (found && !esFondoInvalido) return found;
     }
     // Detección automática por calibre de la pieza
     if (espesor >= 24) {
@@ -370,8 +375,8 @@ export default function DespieceView() {
       return { cantosAncho, cantosLargo, cantoCodigo: codigoCanto };
     }
 
-    // 3. Puertas y Frentes de Cajón: Los 4 lados canteados
-    if (n.includes("puerta") || n.includes("frente")) {
+    // 3. Puertas y Frentes de Cajón: Los 4 lados canteados (2 Largos + 2 Anchos)
+    if (n.includes("puerta") || n.includes("frente") || n.includes("peça 5") || n.includes("peca 5") || n.includes("peça 19") || n.includes("peca 19")) {
       return { cantosAncho: 2, cantosLargo: 2, cantoCodigo: codigoCanto };
     }
 
@@ -389,14 +394,18 @@ export default function DespieceView() {
   };
 
   // Obtener la configuración activa de cantos para una pieza (Leída 100% automáticamente del 3D)
-  const getCantoPieza = (idx: number, nombre: string, espesor: number) => {
-    const config3D = getCantoConfigDefecto(nombre, espesor, parametros);
+  const getCantoPieza = (idx: number, nombre: string, espesor: number, descOficial?: string) => {
+    // Evaluar con el nombre técnico o con la descripción asignada por el usuario (ej: "Frente de Cajon")
+    const nombreEval = (descOficial && (descOficial.toLowerCase().includes("frente") || descOficial.toLowerCase().includes("puerta"))) 
+      ? descOficial 
+      : nombre;
+    const config3D = getCantoConfigDefecto(nombreEval, espesor, parametros);
     // El material de canto asignado por el usuario o el detectado por defecto
     const materialAsignado = cantosPorPieza[idx]?.cantoCodigo || config3D.cantoCodigo;
 
     return {
-      cantosAncho: config3D.cantosAncho,
-      cantosLargo: config3D.cantosLargo,
+      cantosAncho: cantosPorPieza[idx]?.cantosAncho !== undefined ? cantosPorPieza[idx].cantosAncho : config3D.cantosAncho,
+      cantosLargo: cantosPorPieza[idx]?.cantosLargo !== undefined ? cantosPorPieza[idx].cantosLargo : config3D.cantosLargo,
       cantoCodigo: materialAsignado
     };
   };
@@ -419,7 +428,8 @@ export default function DespieceView() {
     setCantosPorPieza((prev) => {
       const updated = { ...prev };
       piezasActivas.forEach((p: any, idx: number) => {
-        const cConfig = getCantoPieza(idx, p.nombre, p.espesor);
+        const descOficial = descripcionesPersonalizadas[idx] || p.descripcion || p.instanciaNombre || p.nombre;
+        const cConfig = getCantoPieza(idx, p.nombre, p.espesor, descOficial);
         if (!codigoViejo || cConfig.cantoCodigo === codigoViejo) {
           updated[idx] = {
             ...(updated[idx] || {}),
@@ -460,12 +470,11 @@ export default function DespieceView() {
     let totalMaderaUsd = 0;
 
     const items = piezasActivas.map((p: any, idx: number) => {
-      const mat = getMaterialParaPieza(idx, p.espesor);
-      const areaM2 = (p.largo * p.ancho * p.cantidad) / 1_000_000.0;
-      areaTotalM2 += areaM2;
-
       // Nombre de descripción oficial asignado por el diseñador
       const descOficial = descripcionesPersonalizadas[idx] || p.descripcion || p.instanciaNombre || p.nombre;
+      const mat = getMaterialParaPieza(idx, p.espesor, descOficial || p.nombre);
+      const areaM2 = (p.largo * p.ancho * p.cantidad) / 1_000_000.0;
+      areaTotalM2 += areaM2;
 
       // Desperdicio de esta pieza (o el global si no se ha sobreescrito)
       const despPct = desperdicioPorPieza[idx] !== undefined ? desperdicioPorPieza[idx] : desperdicioGlobalPct;
@@ -485,7 +494,7 @@ export default function DespieceView() {
       totalMaderaUsd += costoUsd;
 
       // Configuración de Canto de esta pieza
-      const cConfig = getCantoPieza(idx, p.nombre, p.espesor);
+      const cConfig = getCantoPieza(idx, p.nombre, p.espesor, descOficial);
       const cantoMat = dbCantos.find((c: CantoRecord) => c.codigo === cConfig.cantoCodigo);
       
       // Fórmula oficial de fábrica Excel EDP (+despunte técnico por borde para canteadora):

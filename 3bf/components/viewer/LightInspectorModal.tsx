@@ -401,8 +401,8 @@ export default function LightInspectorModal() {
           <input
             type="range"
             min="0"
-            max="3"
-            step="0.05"
+            max={luz.id === "fill_light" ? "1" : "5"}
+            step={luz.id === "fill_light" ? "0.02" : "0.05"}
             value={luz.intensidad}
             onChange={(e) => setLuzPropiedad(luz.id, "intensidad", parseFloat(e.target.value))}
             className="w-full h-1.5 rounded-lg appearance-none cursor-pointer accent-[#0891B2]"

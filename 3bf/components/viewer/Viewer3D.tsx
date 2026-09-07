@@ -3,7 +3,7 @@
 import React, { useRef, useEffect } from "react";
 import { Canvas, useThree, useFrame } from "@react-three/fiber";
 import { OrbitControls, Grid, Stage, Edges, Line, Html } from "@react-three/drei";
-import { use3BFStore, ObjetoInstancia3BF, MaterialPBRDef } from "@/lib/store";
+import { use3BFStore, ObjetoInstancia3BF, MaterialPBRDef, DEFAULT_HDRI_CONFIG } from "@/lib/store";
 import * as THREE from "three";
 import * as BufferGeometryUtils from "three/examples/jsm/utils/BufferGeometryUtils.js";
 import { RGBELoader } from "three/examples/jsm/loaders/RGBELoader.js";
@@ -677,6 +677,12 @@ function BoardMesh({
 
   const debeMostrarAristas = calibracion.mostrarAristas !== false && isWoodBoard && modoVisual !== "lineas";
 
+  // 💡 Intensidad dinámica de luz de entorno (IBL)
+  const luzEntornoConfig = calibracion.lucesEstudio?.["env_hdri"];
+  const envMapIntensityEfectivo = (modoVisual === "renderizado" && (luzEntornoConfig ? luzEntornoConfig.activa : true))
+    ? (luzEntornoConfig?.intensidad ?? calibracion.intensidadLuzEntorno ?? 0.55)
+    : 0.0;
+
   if (customGeometry) {
     return (
       <mesh 
@@ -695,7 +701,7 @@ function BoardMesh({
           roughnessMap={activeRoughness}
           aoMap={activeAO}
           aoMapIntensity={materialPBR?.aoIntensity ?? 1.0}
-          envMapIntensity={modoVisual === "renderizado" ? 1.0 : 0.0}
+          envMapIntensity={envMapIntensityEfectivo}
           transparent={transparent}
           opacity={opacity}
           roughness={roughness}
@@ -746,7 +752,7 @@ function BoardMesh({
         roughnessMap={activeRoughness}
         aoMap={activeAO}
         aoMapIntensity={materialPBR?.aoIntensity ?? 1.0}
-        envMapIntensity={modoVisual === "renderizado" ? 1.0 : 0.0}
+        envMapIntensity={envMapIntensityEfectivo}
         transparent={transparent}
         opacity={opacity}
         roughness={roughness}
@@ -2078,43 +2084,159 @@ function CameraViewController({
   return null;
 }
 
+function generarThumbnailDesdeDataTexture(tex: THREE.DataTexture): string | null {
+  try {
+    const data = tex.image.data;
+    const w = tex.image.width;
+    const h = tex.image.height;
+    if (!data || !w || !h) return null;
+    const canvas = document.createElement("canvas");
+    const tw = 160;
+    const th = 80;
+    canvas.width = tw;
+    canvas.height = th;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return null;
+    const imgData = ctx.createImageData(tw, th);
+    for (let ty = 0; ty < th; ty++) {
+      const sy = Math.floor((ty / th) * h);
+      for (let tx = 0; tx < tw; tx++) {
+        const sx = Math.floor((tx / tw) * w);
+        const srcIdx = (sy * w + sx) * 4;
+        const dstIdx = (ty * tw + tx) * 4;
+        const r = Number(data[srcIdx] || 0);
+        const g = Number(data[srcIdx + 1] || 0);
+        const b = Number(data[srcIdx + 2] || 0);
+        const r_tm = Math.min(255, Math.max(0, Math.round(Math.pow(1.0 - Math.exp(-r * 0.8), 1 / 2.2) * 255)));
+        const g_tm = Math.min(255, Math.max(0, Math.round(Math.pow(1.0 - Math.exp(-g * 0.8), 1 / 2.2) * 255)));
+        const b_tm = Math.min(255, Math.max(0, Math.round(Math.pow(1.0 - Math.exp(-b * 0.8), 1 / 2.2) * 255)));
+        imgData.data[dstIdx] = r_tm;
+        imgData.data[dstIdx + 1] = g_tm;
+        imgData.data[dstIdx + 2] = b_tm;
+        imgData.data[dstIdx + 3] = 255;
+      }
+    }
+    ctx.putImageData(imgData, 0, 0);
+    return canvas.toDataURL("image/jpeg", 0.85);
+  } catch {
+    return null;
+  }
+}
+
 function SceneEnvironment({ modoVisual }: { modoVisual: string }) {
   const { scene } = useThree();
+  const calibracion = use3BFStore((s) => s.calibracion);
+  const setLuzPropiedad = use3BFStore((s) => s.setLuzPropiedad);
+  const luzEntorno = calibracion.lucesEstudio?.["env_hdri"];
+  const activa = luzEntorno ? luzEntorno.activa : true;
+  const intensidad = activa ? (luzEntorno?.intensidad ?? calibracion.intensidadLuzEntorno ?? 0.55) : 0.0;
+  const azimut = luzEntorno?.azimut ?? 45;
+  const hdriUrl = luzEntorno?.hdriUrl || DEFAULT_HDRI_CONFIG.url;
 
   useEffect(() => {
-    if (modoVisual !== "renderizado") {
+    if (modoVisual !== "renderizado" || !activa || intensidad <= 0.001) {
       scene.environment = null;
+      if ("environmentIntensity" in scene) {
+        (scene as any).environmentIntensity = 0;
+      }
       return;
     }
 
+    if ("environmentIntensity" in scene) {
+      (scene as any).environmentIntensity = intensidad;
+    }
+    if ("environmentRotation" in scene && (scene as any).environmentRotation) {
+      (scene as any).environmentRotation.set(0, THREE.MathUtils.degToRad(azimut), 0);
+    }
+
     let active = true;
-    try {
-      const loader = new RGBELoader();
+    const lowerUrl = hdriUrl.toLowerCase();
+    const isImage = lowerUrl.endsWith(".jpg") || lowerUrl.endsWith(".jpeg") || lowerUrl.endsWith(".png") || lowerUrl.endsWith(".webp") || lowerUrl.startsWith("data:image/");
+
+    if (isImage) {
+      const loader = new THREE.TextureLoader();
       loader.load(
-        "/textures/hdri/modern_bathroom_1k.hdr",
+        hdriUrl,
         (tex) => {
           if (!active) return;
           tex.mapping = THREE.EquirectangularReflectionMapping;
+          tex.colorSpace = THREE.SRGBColorSpace;
+          tex.needsUpdate = true;
           scene.environment = tex;
+          if ("environmentIntensity" in scene) {
+            (scene as any).environmentIntensity = intensidad;
+          }
         },
         undefined,
-        () => {
+        (err) => {
+          console.warn("Error cargando imagen panorámica de entorno:", err);
           if (!active) return;
-          const fallbackEnv = generarEntornoEquirectangularLocal("alps_field_sol", 45);
+          const fallbackEnv = generarEntornoEquirectangularLocal("alps_field_sol", azimut);
           scene.environment = fallbackEnv;
+          if ("environmentIntensity" in scene) {
+            (scene as any).environmentIntensity = intensidad;
+          }
         }
       );
-    } catch {
-      if (active) {
-        const fallbackEnv = generarEntornoEquirectangularLocal("alps_field_sol", 45);
-        scene.environment = fallbackEnv;
+    } else {
+      try {
+        const loader = new RGBELoader();
+        loader.load(
+          hdriUrl,
+          (tex) => {
+            if (!active) return;
+            tex.mapping = THREE.EquirectangularReflectionMapping;
+            scene.environment = tex;
+            if ("environmentIntensity" in scene) {
+              (scene as any).environmentIntensity = intensidad;
+            }
+
+            // Si es un archivo personalizado y aún no tiene miniatura, la generamos
+            if (!luzEntorno?.hdriThumbnailUrl && tex.image?.data) {
+              const thumbDataUrl = generarThumbnailDesdeDataTexture(tex);
+              if (thumbDataUrl) {
+                setLuzPropiedad("env_hdri", "hdriThumbnailUrl", thumbDataUrl);
+              }
+            }
+          },
+          undefined,
+          () => {
+            if (!active) return;
+            const fallbackEnv = generarEntornoEquirectangularLocal("alps_field_sol", azimut);
+            scene.environment = fallbackEnv;
+            if ("environmentIntensity" in scene) {
+              (scene as any).environmentIntensity = intensidad;
+            }
+          }
+        );
+      } catch {
+        if (active) {
+          const fallbackEnv = generarEntornoEquirectangularLocal("alps_field_sol", azimut);
+          scene.environment = fallbackEnv;
+          if ("environmentIntensity" in scene) {
+            (scene as any).environmentIntensity = intensidad;
+          }
+        }
       }
     }
+
     return () => {
       active = false;
-      scene.environment = null;
     };
-  }, [scene, modoVisual]);
+  }, [scene, modoVisual, activa, hdriUrl]);
+
+  // Actualización inmediata de intensidad y rotación a 60 FPS sin recargar textura HDRI
+  useEffect(() => {
+    if (scene.environment) {
+      if ("environmentIntensity" in scene) {
+        (scene as any).environmentIntensity = (modoVisual === "renderizado" && activa) ? intensidad : 0;
+      }
+      if ("environmentRotation" in scene && (scene as any).environmentRotation) {
+        (scene as any).environmentRotation.set(0, THREE.MathUtils.degToRad(azimut), 0);
+      }
+    }
+  }, [scene, modoVisual, activa, intensidad, azimut]);
+
   return null;
 }
 
@@ -2700,14 +2822,16 @@ export default function Viewer3D() {
           <button
             onClick={() => toggleGizmosLuces()}
             title={calibracion.mostrarGizmosLuces ? "Ocultar gizmos 3D de luces" : "Ver lámparas y luces en el escenario 3D (Estilo Unreal)"}
-            style={{
-              backgroundColor: calibracion.mostrarGizmosLuces ? (coloresApariencia?.botonActivo || "#0891b2") : (coloresApariencia?.fondoPaneles || "#FFFFFF"),
-              borderColor: calibracion.mostrarGizmosLuces ? (coloresApariencia?.colorMarca || "#0891b2") : (coloresApariencia?.bordePaneles || "#CBD5E1"),
-              color: calibracion.mostrarGizmosLuces ? "#FFFFFF" : (coloresApariencia?.textoPrincipal || "#0F172A"),
-            }}
-            className="px-2.5 h-6 rounded-full shadow-md border flex items-center gap-1.5 text-xs font-bold hover:opacity-90 active:scale-95 transition-all cursor-pointer select-none"
+            style={
+              calibracion.mostrarGizmosLuces
+                ? { backgroundColor: coloresApariencia?.botonActivo || "#0891b2", borderColor: coloresApariencia?.colorMarca || "#0891b2", color: "#FFFFFF" }
+                : { backgroundColor: coloresApariencia?.botonInactivo || "#1E293B", borderColor: coloresApariencia?.bordeBotonInactivo || "#334155", color: coloresApariencia?.textoPrincipal || "#F8FAFC" }
+            }
+            className={`px-3 h-6 rounded-full border flex items-center gap-1.5 text-xs font-bold transition-all cursor-pointer select-none ${
+              calibracion.mostrarGizmosLuces ? "text-white shadow-md" : "hover:opacity-90 backdrop-blur-sm"
+            }`}
           >
-            <Sun className={`w-3.5 h-3.5 ${calibracion.mostrarGizmosLuces ? "text-amber-300" : "text-amber-500"}`} />
+            <Sun className={`w-3.5 h-3.5 shrink-0 ${calibracion.mostrarGizmosLuces ? "text-amber-300" : "text-amber-500"}`} />
             <span>Luces</span>
           </button>
         </div>

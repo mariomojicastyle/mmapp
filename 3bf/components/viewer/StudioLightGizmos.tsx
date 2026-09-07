@@ -389,11 +389,14 @@ export default function StudioLightGizmos() {
         if (!luz.activa) return null;
 
         if (luz.tipo === "ambient") {
+          // La luz env_hdri controla el mapa de entorno IBL en SceneEnvironment, no un ambientLight plano
+          if (luz.id === "env_hdri") return null;
+
           return (
             <ambientLight
               key={luz.id}
               color={luz.color || "#ffffff"}
-              intensity={luz.intensidad ?? 0.45}
+              intensity={(luz.intensidad ?? 0.45) * 2.0}
             />
           );
         }
@@ -405,6 +408,9 @@ export default function StudioLightGizmos() {
           const targetObj = new THREE.Object3D();
           targetObj.position.set(...targetPos);
 
+          // Escala física: fill_light usa 1.0x suave para no quemar el mueble; key_sun usa 3.0x
+          const mult = luz.id === "fill_light" ? 1.0 : 3.0;
+
           return (
             <group key={luz.id}>
               <primitive object={targetObj} />
@@ -412,7 +418,7 @@ export default function StudioLightGizmos() {
                 position={pos}
                 target={targetObj}
                 color={luz.color || "#ffffff"}
-                intensity={luz.intensidad ?? 1.0}
+                intensity={(luz.intensidad ?? 1.0) * mult}
                 castShadow={luz.proyectarSombras}
                 shadow-mapSize={[1024, 1024]}
                 shadow-bias={-0.0001}
@@ -427,7 +433,7 @@ export default function StudioLightGizmos() {
               key={luz.id}
               position={pos}
               color={luz.color || "#ffffff"}
-              intensity={luz.intensidad ?? 1.0}
+              intensity={(luz.intensidad ?? 1.0) * 3.5}
               distance={(luz.radioAlcance || 4.0) * 1.5}
               decay={2}
             />

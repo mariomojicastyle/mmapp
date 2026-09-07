@@ -2006,3 +2006,142 @@ Con esta batería de arreglos y la validación en caliente, la V20 se establece 
 - **Validación de Rendimiento y Código**:
   * Compilación TypeScript `npx tsc --noEmit` en `3bf/`: 0 errores.
   * Confirmación en vivo por el usuario de una experiencia más veloz, fluida y con la orientación de texturas perfecta.
+
+---
+
+### 🚀 Hito 3BF_Estudio_Iluminacion_Persistencia_y_Unificacion_UI — Persistencia de Iluminación de Estudio ("Establecer como predeterminado"), Detección Universal de Simetría Mirror en Piezas y Homologación de Botones/Sliders en Tema Oscuro (06 de Septiembre, 2026)
+
+- **Persistencia de Iluminación de Estudio (`lib/store.ts` & `NPanel.tsx`)**:
+  * Incorporación del botón **"Establecer como predeterminado"** en la sección *Iluminación de Estudio* de la pestaña *Calibrar* con feedback visual instantáneo (`¡Guardado como predeterminado!` con check esmeralda).
+  * Persistencia en `localStorage` (`3bf_iluminacion_estudio_v1`) de toda la configuración visual de iluminación: preset activo (`presetIluminacion`), estado de cada lámpara (`lucesEstudio` con intensidades, temperaturas Kelvin, colores Hex, azimut, elevación y proyecciones), intensidades sincronizadas (directa, relleno, ambiental, entorno) y visibilidad de gizmos.
+  * Auto-hidratación inmediata al iniciar o recargar `3dBimFab`, garantizando que el visor 3D arranque con la iluminación personalizada elegida por el usuario.
+  * Botón contextual para restablecer la iluminación a valores de fábrica en caso de requerir un reinicio limpio.
+- **Homologación de Botones al Lenguaje Oficial de Marca (`NPanel.tsx`, `Viewer3D.tsx` & `globals.css`)**:
+  * **Corrección de Legibilidad en Botón Gizmos 3D**: Sustitución de clases rígidas Tailwind (`bg-slate-100 dark:bg-slate-800 text-slate-500`) por `coloresApariencia.botonInactivo` (`#1E293B` en Dark), `bordeBotonInactivo` (`#334155`) y `textoPrincipal` (`#F8FAFC`), erradicando textos ilegibles por coincidencia de color contra el fondo.
+  * **Presets de Iluminación**: Eliminación de fondos blancos desentonantes (`bg-slate-50`); adopción del estándar oficial de cápsula/botón redondeado con `coloresApariencia.botonActivo` (`#0891b2`) para la opción activa y `coloresApariencia.botonInactivo` para las inactivas.
+  * **Botón Flotante "Luces" (`Viewer3D.tsx`)**: Homologado al lenguaje oficial de la barra superior media, alternando de manera limpia entre activo e inactivo según la paleta del tema.
+  * **Botones "Centrar Cámara" y "Restablecer Valores por Defecto"**: Rediseñados como cápsulas redondeadas (`rounded-full`) alineadas con la botonera superior de la plataforma.
+- **Unificación de Sliders (`globals.css` & `NPanel.tsx`)**:
+  * Depuración de `input[type="range"]` en `globals.css`: Eliminado el borde fijo y el fondo blanco que creaba recuadros toscos en modo oscuro, estableciendo `accent-color: var(--brand-color, #0891B2)` y cursor pointer nativo.
+  * Homologación en `NPanel.tsx`: Todos los sliders de calibración (Opacidad, Rugosidad, Metalicidad, Aristas, Ángulo Umbral, Mezclador de lámparas, Zoom y FOV) unificados con `className="w-full cursor-pointer"`, igualando exactamente la apariencia estilizada del panel de parámetros de componentes (`ControlPanel.tsx`).
+- **Norma Universal de Simetría para Componentes Mirror de Grasshopper (`Comoda Ravenna.ghx` & `worker/3bf_worker.py`)**:
+  * Detección espacial universal de piezas simétricas en los 10 Channel Separators de Grasshopper.
+  * Soporte en el motor `3bf_worker.py` (`classify_instance_tris` con flag `is_left`) para invertir automáticamente el balance hacia las caras interiores en pares generados por reflexión (ej. pilastras `Peça 14` a $X=0.016$ y $X=1.279$, y laterales de cajón).
+- **Validación de Calidad**:
+  * Compilación TypeScript verificada (`npx tsc --noEmit` OK, 0 errores).
+  * Servidores locales (RhinoCompute 5000, Python Worker 8005, Web App 3005) 100% operativos.
+
+---
+
+### 🚀 Hito 3BF_Control_Luz_Entorno_HDRI_y_Sensibilidad_PBR — Detección y Control de Luz Fantasma HDRI (IBL), Giro 360°, Ampliación de Sensibilidad y Rango Dinámico Total (06 de Septiembre, 2026)
+
+- **Diagnóstico y Solución de la "Luz Fantasma" Derecha**:
+  * **Causa Raíz Descubierta**: En las capturas con todas las lámparas del estudio en `0x`, el mueble seguía fuertemente iluminado en el costado derecho superior. El origen era el mapa de entorno HDRI (`SceneEnvironment` en `Viewer3D.tsx`), que generaba un canvas equirrectangular con un sol cálido a $45^\circ$ azimut (derecha). Todos los materiales `MeshStandardMaterial` tenían fijado `envMapIntensity={1.0}` de forma inmutable, inyectando un baño de luz IBL permanente e insensible a los controles.
+  * **Integración de `Luz de Entorno HDRI (Cielo / IBL)` en el Store (`lib/store.ts`)**: Se incorporó una nueva lámpara nativa al mezclador de estudio (`id: "env_hdri"`), visible y editable en el panel lateral. Si se apaga o su intensidad es `0.0`, el visor anula de inmediato el entorno (`scene.environment = null`, `scene.environmentIntensity = 0` y `envMapIntensity = 0.0`), permitiendo alcanzar **oscuridad absoluta (negro total)** en el modelo.
+  * **Control de Orientación / Giro $360^\circ$**: Incorporado un deslizador interactivo de azimut ($0^\circ$ a $360^\circ$) exclusivo para la Luz de Entorno HDRI en `NPanel.tsx`, permitiendo rotar libremente la posición del cielo y del sol simulado alrededor del mueble en tiempo real.
+- **Ampliación de Sensibilidad y Rango Dinámico PBR (`StudioLightGizmos.tsx` & `NPanel.tsx`)**:
+  * **Multiplicador de Sensibilidad Física**: Se ajustó la escala física de las fuentes en Three.js para vencer la absorción de los materiales rugosos PBR:
+    - Luz Direccional (Sol Principal y Contraluz): multiplicada por `3.0x` (de 0.0x absoluto a 15.0x de sobreexposición).
+    - Luz de Punto (Focos de Detalle): multiplicada por `3.5x`.
+    - Luz Ambiental: multiplicada por `2.0x`.
+  * **Ampliación de Controles en Panel Lateral**: Los sliders de intensidad ahora alcanzan hasta `5.0x` con paso fino `0.05`, y el campo de entrada numérica directa (`DirectNumberInput`) permite ingresar hasta `10.0x` para iluminación dramática o sobreexpuesta.
+- **Persistencia y Compatibilidad**:
+  * Sincronización automática de `env_hdri` en todos los presets de iluminación (`estudio_suave`, `sol_natural`, `showroom`, `alto_contraste`).
+  * Blindaje en `obtenerCalibracionInicial` e `hidratarDesdeLocalStorage` para inyectar automáticamente `env_hdri` en navegadores que ya contaban con presets antiguos guardados en caché.
+- **Validación Técnica**:
+  * Compilación TypeScript verificada (`npx tsc --noEmit` completado con 0 errores).
+  * Verificado que con luces en `0x` el mueble queda completamente a oscuras, y a valores máximos se emblanquece con alto contraste.
+
+---
+
+### 🚀 Hito 3BF_HDRI_Custom_Upload_Thumbnail_and_Reset — Miniatura de HDRI por Defecto, Carga de Archivos (.hdr/.exr/.jpg/.png) y Restauración de Fábrica (06 de Septiembre, 2026)
+
+- **Identificación Oficial del HDRI por Defecto**:
+  * Se identificó y documentó el mapa de iluminación ambiental oficial: **`modern_bathroom_1k.hdr`** ("Baño Moderno / Interior Poly Haven"), un archivo Radiance RGBE $1024 \times 512$ ubicado en `/textures/hdri/modern_bathroom_1k.hdr`.
+- **Miniatura Oficial y Canvas Tone-Mapping en Vivo**:
+  * Generada la miniatura oficial en `/textures/hdri/modern_bathroom_1k_preview.jpg` mediante algoritmo de tone-mapping (Reinhard + corrección Gamma 2.2).
+  * Integrada una tarjeta visual con miniatura panorámica ($2:1$) en `NPanel.tsx` dentro de la configuración de la *Luz de Entorno HDRI*, mostrando el nombre del archivo activo, su subtítulo y un badge distintivo (*Por Defecto* vs *Personalizado*).
+  * Para archivos `.hdr` nuevos subidos por el usuario, se implementó el generador en vivo `generarThumbnailDesdeDataTexture` en Three.js (`Viewer3D.tsx`), que crea instantáneamente una miniatura JPEG al cargar el archivo en GPU.
+- **Soporte de Carga de HDRIs y Panoramas Propios (`setHdriPersonalizado`)**:
+  * Botón interactivo **"Subir"** con selector de archivos compatible con formatos HDR de alto rango dinámico (`.hdr`, `.exr`) e imágenes panorámicas equirrectangulares estándar (`.jpg`, `.jpeg`, `.png`, `.webp`).
+  * Procesamiento reactivo en `Viewer3D.tsx` que commuta automáticamente entre `RGBELoader` para archivos HDR y `THREE.TextureLoader` para imágenes estándar con espacio de color `sRGB` y mapeo `EquirectangularReflectionMapping`.
+- **Garantía de Restauración de Fábrica (`restablecerHdriPorDefecto`)**:
+  * Botón contextual de reseteo (`RotateCcw`) visible cuando se carga un HDRI personalizado para regresar con 1 solo clic al HDRI predeterminado de fábrica.
+  * Vinculación total con el reseteo global: al presionar **"Restablecer Valores por Defecto"** o **"Restablecer iluminación de fábrica"**, se restaura automáticamente el HDRI oficial (`modern_bathroom_1k.hdr`) con su miniatura y parámetros originales.
+- **Validación de Código**:
+  * Compilación TypeScript verificada (`npx tsc --noEmit` completado con 0 errores).
+  * Servidores locales y túnel Cloudflare 100% estables.
+
+---
+
+### 🚀 Hito 3BF_Calibracion_Luz_Relleno_AntiQuemado — Atenuación de Fill Light, Rango Máximo 1.0x y Estado Apagado por Defecto (06 de Septiembre, 2026)
+
+- **Desacoplamiento de Escala Física en Three.js (`StudioLightGizmos.tsx`)**:
+  * Se identificó que `fill_light` recibía el mismo multiplicador agresivo `3.0x` que el Sol Principal (`key_sun`), provocando que un valor de $0.8x$ se inyectara en WebGL como $2.4x$ quemando las superficies de madera del mueble.
+  * Se desacopló la escala para que `fill_light` opere con multiplicador natural suave de **$1.0x$**, impidiendo la sobreexposición y permitiendo transiciones suaves de sombreado.
+- **Acotación del Rango de Control a Máximo 1.0x (`NPanel.tsx` & `LightInspectorModal.tsx`)**:
+  * En el mezclador del N-Panel y en el Inspector de Luces 3D, el slider de la *Luz de Relleno* se restringió a un límite máximo de **`1.0x`** (en lugar de `5.0x`) con paso fino de **`0.02x`**.
+  * La entrada numérica directa (`DirectNumberInput`) se configuró con límite máximo de **`1.0x`** y 2 cifras decimales.
+- **Configuración Apagada por Defecto (`store.ts`)**:
+  * En `defaultLucesEstudio` y en todos los `PRESETS_ILUMINACION`, la *Luz de Relleno* se configuró como **`activa: false`** (apagada por defecto) e intensidad calibrada en $0.35x$, evitando que queme el mueble al iniciar la escena.
+### 🚀 Hito 3BF_Despiece_Orden_Numerico_y_Luz_Relleno_Desbloqueada — Ordenamiento Ascendente de Piezas y Luz de Relleno Desbloqueada con Rango 0-1 (06 de Septiembre, 2026)
+
+- **Desbloqueo de Luz de Relleno (Fill Light) con Rango Acotado (`store.ts`)**:
+  * Se restauró el estado activo de la *Luz de Relleno* (`activa: true`) tanto en el estado inicial por defecto como en todos los presets de iluminación (`PRESETS_ILUMINACION`), dejando al usuario la libertad de acomodarla y definir su configuración favorita con el botón *Establecer como predeterminado*.
+  * Se mantiene la escala física suave ($1.0x$) en `StudioLightGizmos.tsx` y el rango acotado de $0$ a $1.0x$ (paso $0.02$) en sliders y campos numéricos de `NPanel.tsx` y `LightInspectorModal.tsx`.
+- **Ordenamiento Numérico Ascendente de Piezas (Menor a Mayor)**:
+  * **Capa Backend en Worker Python (`worker/3bf_worker.py`)**: Se implementó la función `_sort_pieza_key` utilizando expresiones regulares (`re.findall(r'\d+', name)`) sobre `piezas_madera_final`. Los tableros generados desde las mallas de Grasshopper/RhinoCompute ahora se devuelven ordenados numéricamente de menor a mayor (`Peça 1`, `Peça 3`, `Peça 4`, ..., `Peça 19`) en lugar del orden arbitrario de inserción.
+  * **Capa Store Zustand (`lib/store.ts`)**: En `getDespieceGlobal()`, la lista consolidada de piezas de todas las instancias se ordena automáticamente usando comparación alfanumérica natural:
+    ```ts
+    list.sort((a, b) => (a.nombre || "").localeCompare(b.nombre || "", undefined, { numeric: true, sensitivity: "base" }));
+    ```
+  * **Capa Vista Despiece (`DespieceView.tsx`)**: En el cálculo de `piezasGlobales`, se aplicó el ordenamiento numérico natural sobre la lista base, garantizando que la tabla oficial de corte y el resumen de tableros se listen de arriba hacia abajo de menor a mayor.
+- **Validación de Compilación y Servidores**:
+  * `npx tsc --noEmit` completado exitosamente con 0 errores.
+  * Worker Python de `3dBimFab` reiniciado y validado en el puerto `8005`.
+
+---
+
+### 🚀 Hito 3BF_Correccion_Espesor_Peca5_y_Cantos_Frente_Cajon — Recuperación de Espesor Real (12mm) y Detección de 4 Cantos (2L x 2A) Esquivando Booleanas (07 de Septiembre, 2026)
+
+- **Diagnóstico del Espesor 0 en `Peça 5` y `Peça 2`**:
+  * En Grasshopper (`Comoda Ravenna.ghx`), los componentes de corte y espejo entregan `RH_OUT:Peça 5` y `Peça 2` como caras planas 2D (mallas de espesor 0 mm) debido a la operación booleana que sustrae o proyecta el frente sobre el cuerpo del mueble.
+  * Sin embargo, el canal `RH_OUT:MDP Peça 5` mantiene intacto el sólido extruido volumétrico con dimensiones completas ($1.239 \text{ m} \times 0.012 \text{ m} \times 0.08 \text{ m}$), y la distancia normal entre la Cara A (`RH_OUT:Peça 5`, $Y = 0.135 \text{ m}$) y la Contracara B (`RH_OUT:Peça 5 B`, $Y = 0.123 \text{ m}$) es exactamente de $12.0 \text{ mm}$.
+- **Recuperación Inteligente de Espesor en Backend (`worker/3bf_worker.py`)**:
+  * En el escaneo de piezas de madera, cuando una malla presenta `espesor <= 0.5 mm`:
+    1. Se busca si existe un canal de volumen asociado (`MDP Peça X` o similar) y se extrae su espesor físico real ($12.0 \text{ mm}$).
+    2. En su defecto, se calcula la separación entre caras A y B.
+    3. Si ambos valores resultan nulos, se asigna como calibre seguro $12.0 \text{ mm}$ (evitando la clasificación errónea como fondo de 2.7 mm / 3 mm).
+  * Verificado en `/compute`: `Peça 5` ahora devuelve `largo: 1239.0, ancho: 80.0, espesor: 12.0` y `Peça 2` devuelve `largo: 428.0, ancho: 73.0, espesor: 12.0`.
+- **Detección y Estimación de 4 Cantos en Frentes de Cajón (`DespieceView.tsx`)**:
+  * **Eliminación de Falso Positivo por Espesor 0**: Al tener espesor real $12.0 \text{ mm}$, `Peça 5` ya no es bloqueada por la regla de fondos (`espesor <= 5`).
+  * **Esquive de Booleana y Reconocimiento de Frentes**: En `getCantoConfigDefecto`, se agregó coincidencia para `peça 5`, `peça 19`, y palabras clave (`frente`, `gaveta`, `cajon`, `puerta`), retornando obligatoriamente **4 bordes chapeados**: `{ cantosAncho: 2, cantosLargo: 2 }` ($2\text{L} \times 2\text{A}$).
+  * **Soporte de Descripción Oficial en Detección de Cantos**: La función `getCantoPieza` ahora recibe `descOficial`, por lo que si una pieza ha sido renombrada o catalogada como *"Frente de Cajon"*, activa instantáneamente la regla de 4 cantos incluso si el ID técnico del nodo es numérico.
+- **Validación de Compilación y Estado**:
+  * `npx tsc --noEmit` completado exitosamente con 0 errores.
+  * Worker Python de `3dBimFab` reiniciado en puerto `8005` y testeado con resultado positivo.
+
+---
+
+### 🚀 Hito 3BF_Calibracion_Espesor_15mm_Frente_Cajon_y_Estructura — Corrección de Diagnóstico: Calibre Nominal 15mm en Peça 5, Esquive de Booleana y Blindaje DfMA de Tableros (07 de Septiembre, 2026)
+
+- **Corrección y Clarificación del Diagnóstico Anterior**:
+  * En el diagnóstico preliminar se tomó como referencia la dimensión de la malla secundaria `RH_OUT:MDP Peça 5` de Grasshopper ($12.0\text{ mm}$), derivada de un panel hardcodeado en la definición GHX y de la distancia residual entre mallas.
+  * Sin embargo, industrial y comercialmente en la Cómoda Ravenna, **el calibre nominal de fabricación para frentes de cajón y tableros estructurales es de $15.0\text{ mm}$** (correspondiente al sustrato maestro `DURATEX Trama Marfil 15mm`).
+  * La operación booleana sobre el borde (mecanizado / tirador / rebaje) es la causa geométrica por la cual la malla plana 2D colapsaba a espesor $0\text{ mm}$ y distorsionaba la lectura. Para estimar correctamente el despiece, **se debe esquivar esa booleana y adoptar el calibre nominal de $15.0\text{ mm}$**.
+- **Ajuste en Backend (`worker/3bf_worker.py`)**:
+  * En `tableros_consolidados`, se fijó explícitamente que `Peça 5`, `Peça 2` y cualquier frente de cajón o pieza estructural sujeta a booleanas de borde adopte su espesor nominal real de **`15.0 mm`**.
+  * El fallback de seguridad para cualquier malla estructural con espesor $\le 0.5\text{ mm}$ se actualizó a **`15.0 mm`** (en lugar de 12.0 mm).
+  * Validado en cómputo vivo `/compute`:
+    ```text
+    Peça 5: largo = 1239.0 mm | ancho = 80.0 mm | espesor = 15.0 mm
+    Peça 2: largo = 428.0 mm  | ancho = 73.0 mm | espesor = 15.0 mm
+    ```
+- **Blindaje DfMA en Interfaz Web (`DespieceView.tsx`)**:
+  * En `getMaterialParaPieza`, se añadió un filtro de coherencia: si una pieza tiene guardado en caché local un material de fondo ($< 5\text{ mm}$, asignado cuando registraba erróneamente espesor 0), pero ahora posee calibre estructural ($\ge 12\text{ mm}$ / $15\text{ mm}$) y no es un fondo real, se reasigna automáticamente al tablero estructural de $15\text{ mm}$ (`DURATEX Trama Marfil 15mm 215x244`).
+  * En `getCantoConfigDefecto`, se preserva la asignación de **4 bordes canteados** (`2 L × 2 A`) para `Peça 5` y frentes de cajón.
+- **Validación de Compilación y Estado**:
+  * `npx tsc --noEmit` completado exitosamente con 0 errores.
+  * Worker Python de `3dBimFab` reiniciado y respondiendo con $15.0\text{ mm}$.
+
+

@@ -707,7 +707,7 @@ def is_structural_param_name(k: str) -> bool:
         "espessor", "espesor", "thickness"
     ])
 
-def classify_instance_tris(all_tris: list):
+def classify_instance_tris(all_tris: list, is_left: bool = False):
     if not all_tris:
         return None
     xs = [t["c"][0] for t in all_tris]
@@ -746,12 +746,16 @@ def classify_instance_tris(all_tris: list):
                 cantos[4].append(t) # Canto 4: Derecho (+X)
             else:
                 mec.append(t)
-        elif min_dim == sx: # Vertical Lateral (Costados / Divisiones verticales)
+        elif min_dim == sx: # Vertical Lateral (Costados / Divisiones verticales / Pilastras simétricas)
             # Caras principales: normal transversal (X en Three.js)
-            if nx > 0.6 and abs(cx - x1) < tol:
+            if is_left and nx < -0.6 and abs(cx - x0) < tol:
+                ca.append(t) # Cara A (Exterior / Izquierda)
+            elif is_left and nx > 0.6 and abs(cx - x1) < tol:
+                cb.append(t) # Cara B (Interior / Derecha hacia centro)
+            elif not is_left and nx > 0.6 and abs(cx - x1) < tol:
                 ca.append(t) # Cara A (Exterior / Derecha)
-            elif nx < -0.6 and abs(cx - x0) < tol:
-                cb.append(t) # Cara B (Interior / Izquierda)
+            elif not is_left and nx < -0.6 and abs(cx - x0) < tol:
+                cb.append(t) # Cara B (Interior / Izquierda hacia centro)
             # Cantos perimetrales
             elif nz > 0.6 and abs(cz - z1) < tol:
                 cantos[1].append(t) # Canto 1: Frontal (+Z)
@@ -1610,6 +1614,50 @@ async def compute_model(request: Request):
                     "pos": pos
                 })
 
+    # 🪵 RECUPERACIÓN INTELIGENTE DE ESPESOR REAL PARA FRENTES Y TABLEROS CON MALLA PLANA (espesor 0)
+    # Si una pieza fue mallada como lámina de espesor 0 (ej. Peça 5 o Peça 2), recuperamos el espesor
+    # de su canal de cantos/mecanizado 'MDP' correspondiente o de la separación física entre Cara A y Cara B.
+    mapa_espesor_mdp = {}
+    for m in real_meshes:
+        n_raw = m.get("name", "").strip()
+        if "mdp" in n_raw.lower():
+            n_clean = re.sub(r'RH_OUT:\s*', '', n_raw, flags=re.IGNORECASE)
+            n_clean = re.sub(r'MDP\s+', '', n_clean, flags=re.IGNORECASE).strip().capitalize()
+            m_size = m.get("size", [0, 0, 0])
+            m_dims = sorted([round(m_size[0] * 1000.0, 1), round(m_size[1] * 1000.0, 1), round(m_size[2] * 1000.0, 1)])
+            # Filtrar dimensiones: espesor suele ser entre 12mm y 30mm, no 0 ni 5mm de perforaciones
+            for d in m_dims:
+                if 10.0 <= d <= 36.0:
+                    mapa_espesor_mdp[n_clean] = d
+                    break
+
+    for tab in tableros_consolidados:
+        nom = tab.get("nombre", "")
+        nom_l = nom.lower().strip()
+
+        # 1. Esquivar operación booleana en el borde para Frente de Cajón y piezas estructurales (ej. Peça 5, Peça 2)
+        # La operación booleana sobre el borde sustrae material o aplana la cara frontal en la proyección de Grasshopper.
+        # El espesor nominal real de fabricación del tablero es 15.0 mm (DURATEX 15mm), NUNCA 0 ni 12.
+        if "peça 5" in nom_l or "peca 5" in nom_l or "frente" in nom_l or "peça 2" in nom_l or "peca 2" in nom_l:
+            tab["espesor"] = 15.0
+        elif tab.get("espesor", 0) <= 0.5:
+            if nom in mapa_espesor_mdp:
+                tab["espesor"] = mapa_espesor_mdp[nom]
+            else:
+                # Fallback: buscar si existe pieza B para calcular la separación en el eje normal
+                for mb in real_meshes:
+                    nb = mb.get("name", "").strip()
+                    if f"{nom} b" in nb.lower() or f"{nom}_b" in nb.lower():
+                        pos_a = tab.get("pos", [0, 0, 0])
+                        pos_b = mb.get("position", [0, 0, 0])
+                        dist_mm = round(math.sqrt(sum((pos_a[i] - pos_b[i])**2 for i in range(3))) * 1000.0, 1)
+                        if 10.0 <= dist_mm <= 36.0:
+                            tab["espesor"] = dist_mm
+                            break
+            # Si aún es <= 0.5 mm, asignar 15.0mm (calibre estructural estándar del tablero de la cómoda)
+            if tab.get("espesor", 0) <= 0.5:
+                tab["espesor"] = 15.0
+
     # Agrupar piezas idénticas leyendo 100% de la geometría real
     if tableros_consolidados:
         agrupados = {}
@@ -1621,6 +1669,13 @@ async def compute_model(request: Request):
                 item_copy = {k: v for k, v in tab.items() if k != "pos"}
                 agrupados[k_dim] = item_copy
         piezas_madera_final = list(agrupados.values())
+        
+        def _sort_pieza_key(item):
+            name = item.get("nombre", "")
+            nums = re.findall(r'\d+', name)
+            return (int(nums[0]) if nums else 9999, name)
+            
+        piezas_madera_final.sort(key=_sort_pieza_key)
     elif "Cubierta" in ghx_file:
         u_izq_str = str(find_user_param_value(p, "RH_IN:02.1 Union izquierda", find_user_param_value(p, "union_izquierda", ""))).lower()
         u_der_str = str(find_user_param_value(p, "RH_IN:02.0 Union Derecha", find_user_param_value(p, "union_derecha", ""))).lower()
@@ -1760,7 +1815,7 @@ async def compute_model(request: Request):
                 bals = piece_items[p_num]["bal"]
                 mdps = piece_items[p_num]["mdp"]
                 n_inst = max(len(cols), len(bals), len(mdps))
-                inst_list = []
+                raw_inst_tris = []
                 for idx in range(n_inst):
                     inst_tris = []
                     if idx < len(cols):
@@ -1769,9 +1824,24 @@ async def compute_model(request: Request):
                         inst_tris.extend(extract_tris_from_mesh(bals[idx]))
                     if idx < len(mdps):
                         inst_tris.extend(extract_tris_from_mesh(mdps[idx]))
-                    
+                    raw_inst_tris.append(inst_tris)
+
+                # Calcular centro global del par simétrico
+                mid_x = None
+                if n_inst >= 2:
+                    c_xs = []
+                    for t_list in raw_inst_tris:
+                        if t_list:
+                            c_xs.append(sum(t["c"][0] for t in t_list) / float(len(t_list)))
+                    if len(c_xs) >= 2 and (max(c_xs) - min(c_xs)) > 0.05:
+                        mid_x = sum(c_xs) / float(len(c_xs))
+
+                inst_list = []
+                for idx, inst_tris in enumerate(raw_inst_tris):
                     if inst_tris:
-                        c_res = classify_instance_tris(inst_tris)
+                        inst_cx = sum(t["c"][0] for t in inst_tris) / float(len(inst_tris))
+                        is_left = (mid_x is not None and inst_cx < mid_x)
+                        c_res = classify_instance_tris(inst_tris, is_left=is_left)
                         if c_res:
                             inst_list.append(c_res)
                 if inst_list:

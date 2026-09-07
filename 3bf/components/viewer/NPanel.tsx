@@ -34,7 +34,8 @@ import {
   Wrench,
   Sparkles,
   Lamp,
-  Power
+  Power,
+  Bookmark
 } from "lucide-react";
 
 interface DefinicionItem {
@@ -234,11 +235,17 @@ export default function NPanel() {
     seleccionarLuzEstudio,
     toggleGizmosLuces,
     aplicarPresetIluminacion,
+    guardarIluminacionPredeterminada,
+    restaurarIluminacionPredeterminada,
+    tieneIluminacionPredeterminada,
+    setHdriPersonalizado,
+    restablecerHdriPorDefecto,
   } = use3BFStore();
 
   const ancho = anchoNPanel || 380;
   const [isResizing, setIsResizing] = useState(false);
   const [busqueda, setBusqueda] = useState("");
+  const [guardadoDefaultFeedback, setGuardadoDefaultFeedback] = useState(false);
   const [categoriaMueble, setCategoriaMueble] = useState<string>("Todos");
   const [draggedItemId, setDraggedItemId] = useState<string | null>(null);
 
@@ -838,7 +845,7 @@ export default function NPanel() {
                     value={calibracion.opacidadMadera}
                     onChange={(e) => setCalibracion("opacidadMadera", parseFloat(e.target.value))}
                     style={{ accentColor: coloresApariencia?.botonActivo || "#0891b2" }}
-                    className="w-full h-1.5 bg-slate-200 dark:bg-slate-700 rounded-lg appearance-none cursor-pointer"
+                    className="w-full cursor-pointer"
                   />
                 </div>
 
@@ -868,7 +875,7 @@ export default function NPanel() {
                     value={calibracion.rugosidadMadera}
                     onChange={(e) => setCalibracion("rugosidadMadera", parseFloat(e.target.value))}
                     style={{ accentColor: coloresApariencia?.botonActivo || "#0891b2" }}
-                    className="w-full h-1.5 bg-slate-200 dark:bg-slate-700 rounded-lg appearance-none cursor-pointer"
+                    className="w-full cursor-pointer"
                   />
                 </div>
 
@@ -898,7 +905,7 @@ export default function NPanel() {
                     value={calibracion.metalicidadMadera}
                     onChange={(e) => setCalibracion("metalicidadMadera", parseFloat(e.target.value))}
                     style={{ accentColor: coloresApariencia?.botonActivo || "#0891b2" }}
-                    className="w-full h-1.5 bg-slate-200 dark:bg-slate-700 rounded-lg appearance-none cursor-pointer"
+                    className="w-full cursor-pointer"
                   />
                 </div>
               </div>
@@ -990,7 +997,7 @@ export default function NPanel() {
                         value={calibracion.opacidadAristas}
                         onChange={(e) => setCalibracion("opacidadAristas", parseFloat(e.target.value))}
                         style={{ accentColor: coloresApariencia?.botonActivo || "#0891b2" }}
-                        className="w-full h-1.5 bg-slate-200 dark:bg-slate-700 rounded-lg appearance-none cursor-pointer"
+                        className="w-full cursor-pointer"
                       />
                     </div>
 
@@ -1020,7 +1027,7 @@ export default function NPanel() {
                         value={calibracion.thresholdAristas}
                         onChange={(e) => setCalibracion("thresholdAristas", parseInt(e.target.value))}
                         style={{ accentColor: coloresApariencia?.botonActivo || "#0891b2" }}
-                        className="w-full h-1.5 bg-slate-200 dark:bg-slate-700 rounded-lg appearance-none cursor-pointer"
+                        className="w-full cursor-pointer"
                       />
                     </div>
                   </>
@@ -1047,37 +1054,93 @@ export default function NPanel() {
                   <button
                     onClick={() => toggleGizmosLuces()}
                     title="Ver o esconder iconos 3D de las lámparas en el visor"
-                    className={`flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold border transition-all ${
+                    style={
                       calibracion.mostrarGizmosLuces
-                        ? "bg-[#0891B2] text-white border-cyan-400 shadow-xs"
-                        : "bg-slate-100 dark:bg-slate-800 text-slate-500 border-slate-300 dark:border-slate-700"
+                        ? { backgroundColor: coloresApariencia?.botonActivo || "#0891b2", borderColor: coloresApariencia?.colorMarca || "#0891b2", color: "#FFFFFF" }
+                        : { backgroundColor: coloresApariencia?.botonInactivo || "#1E293B", borderColor: coloresApariencia?.bordeBotonInactivo || "#334155", color: coloresApariencia?.textoPrincipal || "#F8FAFC" }
+                    }
+                    className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-bold border transition cursor-pointer select-none ${
+                      calibracion.mostrarGizmosLuces ? "text-white shadow-md" : "hover:opacity-90 backdrop-blur-sm"
                     }`}
                   >
-                    <Eye className="w-3 h-3" />
+                    <Eye className="w-3.5 h-3.5 shrink-0" />
                     <span>Gizmos 3D</span>
                   </button>
                 </div>
 
                 {/* 🌟 PRESETS RÁPIDOS DE ESTUDIO */}
-                <div className="space-y-1">
+                <div className="space-y-1.5">
                   <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
                     Presets de Iluminación
                   </label>
-                  <div className="grid grid-cols-2 gap-1">
-                    {Object.entries(PRESETS_ILUMINACION).map(([key, p]) => (
+                  <div className="grid grid-cols-2 gap-1.5">
+                    {Object.entries(PRESETS_ILUMINACION).map(([key, p]) => {
+                      const isActivo = calibracion.presetIluminacion === key;
+                      return (
+                        <button
+                          key={key}
+                          onClick={() => aplicarPresetIluminacion(key)}
+                          style={
+                            isActivo
+                              ? { backgroundColor: coloresApariencia?.botonActivo || "#0891b2", borderColor: coloresApariencia?.colorMarca || "#0891b2", color: "#FFFFFF" }
+                              : { backgroundColor: coloresApariencia?.botonInactivo || "#1E293B", borderColor: coloresApariencia?.bordeBotonInactivo || "#334155", color: coloresApariencia?.textoPrincipal || "#F8FAFC" }
+                          }
+                          className={`px-2.5 py-1.5 rounded-lg text-[10px] font-bold border text-left transition-all truncate cursor-pointer ${
+                            isActivo ? "text-white shadow-md" : "hover:opacity-90 backdrop-blur-sm"
+                          }`}
+                          title={p.descripcion}
+                        >
+                          {p.nombre.replace(" (Recomendado)", "")}
+                        </button>
+                      );
+                    })}
+                  </div>
+
+                  {/* 💾 Botón Establecer como Predeterminado */}
+                  <div className="pt-1 flex items-center gap-1.5">
+                    <button
+                      onClick={() => {
+                        guardarIluminacionPredeterminada();
+                        setGuardadoDefaultFeedback(true);
+                        setTimeout(() => setGuardadoDefaultFeedback(false), 2200);
+                      }}
+                      style={
+                        guardadoDefaultFeedback
+                          ? { backgroundColor: "#10B98125", borderColor: "#10B981", color: "#10B981" }
+                          : { backgroundColor: coloresApariencia?.botonInactivo || "#1E293B", borderColor: coloresApariencia?.bordeBotonInactivo || "#334155", color: coloresApariencia?.textoPrincipal || "#F8FAFC" }
+                      }
+                      className="flex-1 py-1.5 px-3 rounded-full border flex items-center justify-center gap-1.5 font-bold text-[11px] shadow-xs transition cursor-pointer hover:opacity-90 active:scale-95 select-none"
+                      title="Guardar la configuración actual de lámparas, intensidades y colores para que se cargue automáticamente cada vez que inicies 3dBimFab"
+                    >
+                      {guardadoDefaultFeedback ? (
+                        <>
+                          <Check className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
+                          <span className="text-emerald-500 font-bold">¡Guardado como predeterminado!</span>
+                        </>
+                      ) : (
+                        <>
+                          <Bookmark style={{ color: coloresApariencia?.botonActivo || "#0891b2" }} className="w-3.5 h-3.5 shrink-0" />
+                          <span>Establecer como predeterminado</span>
+                        </>
+                      )}
+                    </button>
+
+                    {tieneIluminacionPredeterminada && (
                       <button
-                        key={key}
-                        onClick={() => aplicarPresetIluminacion(key)}
-                        className={`px-2 py-1 rounded-md text-[10px] font-semibold border text-left transition-all truncate ${
-                          calibracion.presetIluminacion === key
-                            ? "bg-[#0891B2]/10 border-[#0891B2] text-[#0891B2] font-bold shadow-2xs"
-                            : "bg-slate-50 dark:bg-slate-800/50 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:border-slate-400"
-                        }`}
-                        title={p.descripcion}
+                        onClick={() => {
+                          restaurarIluminacionPredeterminada();
+                        }}
+                        style={{
+                          backgroundColor: coloresApariencia?.botonInactivo || "#1E293B",
+                          borderColor: coloresApariencia?.bordeBotonInactivo || "#334155",
+                          color: coloresApariencia?.textoSecundario || "#94A3B8",
+                        }}
+                        className="py-1.5 px-2.5 rounded-full border flex items-center justify-center text-[10px] font-semibold transition cursor-pointer hover:text-red-400 hover:border-red-400 select-none"
+                        title="Restablecer iluminación de fábrica y borrar ajuste predeterminado"
                       >
-                        {p.nombre.replace(" (Recomendado)", "")}
+                        <RotateCcw className="w-3 h-3" />
                       </button>
-                    ))}
+                    )}
                   </div>
                 </div>
 
@@ -1132,27 +1195,148 @@ export default function NPanel() {
                               title={`${luz.temperaturaKelvin} K`}
                             />
                             <DirectNumberInput
-                              value={Number(luz.intensidad.toFixed(1))}
+                              value={Number(luz.intensidad.toFixed(luz.id === "fill_light" ? 2 : 1))}
                               min={0}
-                              max={5}
+                              max={luz.id === "fill_light" ? 1.0 : 10}
                               unit="x"
                               onChange={(val) => setLuzPropiedad(luz.id, "intensidad", val)}
                             />
                           </div>
                         </div>
 
-                        {/* Slider de Intensidad de cada luz */}
+                        {/* Slider de Intensidad de cada luz con rango adaptativo (fill_light máx 1.0) */}
                         <input
                           type="range"
                           min="0"
-                          max="3"
-                          step="0.05"
+                          max={luz.id === "fill_light" ? "1" : "5"}
+                          step={luz.id === "fill_light" ? "0.02" : "0.05"}
                           disabled={!luz.activa}
                           value={luz.intensidad}
                           onChange={(e) => setLuzPropiedad(luz.id, "intensidad", parseFloat(e.target.value))}
                           style={{ accentColor: coloresApariencia?.botonActivo || "#0891b2" }}
-                          className="w-full h-1.5 bg-slate-200 dark:bg-slate-700 rounded-lg appearance-none cursor-pointer disabled:opacity-40"
+                          className="w-full cursor-pointer disabled:opacity-40"
                         />
+
+                        {/* 🖼️ Configuración e Imagen HDRI exclusiva para Luz de Entorno */}
+                        {luz.id === "env_hdri" && (
+                          <div className="space-y-2 pt-1 border-t border-slate-200/40 dark:border-slate-700/40 text-[10px]">
+                            {/* Cabecera HDRI con estado */}
+                            <div className="flex items-center justify-between">
+                              <span style={{ color: coloresApariencia?.textoSecundario }} className="font-semibold">
+                                Mapa HDRI Activo:
+                              </span>
+                              <span className={`px-1.5 py-0.5 rounded text-[9px] font-bold ${
+                                luz.esHdriPorDefecto !== false
+                                  ? "bg-slate-200/60 dark:bg-slate-700/70 text-slate-600 dark:text-slate-300"
+                                  : "bg-cyan-500/15 text-cyan-600 dark:text-cyan-400 border border-cyan-500/30"
+                              }`}>
+                                {luz.esHdriPorDefecto !== false ? "Por Defecto" : "Personalizado"}
+                              </span>
+                            </div>
+
+                            {/* Tarjeta Visual: Miniatura + Nombre + Botón Subir */}
+                            <div 
+                              style={{ 
+                                backgroundColor: coloresApariencia?.fondoAplicacion || "#F8FAFC",
+                                borderColor: coloresApariencia?.bordePaneles || "#CBD5E1" 
+                              }}
+                              className="p-1.5 rounded-lg border flex items-center gap-2"
+                            >
+                              {/* Miniatura 2:1 */}
+                              <div className="w-16 h-8 rounded border border-slate-300/60 dark:border-slate-700 overflow-hidden relative bg-slate-900 shrink-0 shadow-2xs">
+                                <img
+                                  src={luz.hdriThumbnailUrl || "/textures/hdri/modern_bathroom_1k_preview.jpg"}
+                                  alt={luz.hdriNombre || "HDRI"}
+                                  className="w-full h-full object-cover"
+                                  onError={(e) => {
+                                    (e.target as HTMLImageElement).src = "/textures/hdri/modern_bathroom_1k_preview.jpg";
+                                  }}
+                                />
+                              </div>
+
+                              {/* Nombre del Archivo y Subtítulo */}
+                              <div className="flex-1 min-w-0 flex flex-col justify-center">
+                                <span 
+                                  style={{ color: coloresApariencia?.textoPrincipal }}
+                                  className="font-mono text-[10px] font-bold truncate block"
+                                  title={luz.hdriNombre || "modern_bathroom_1k.hdr"}
+                                >
+                                  {luz.hdriNombre || "modern_bathroom_1k.hdr"}
+                                </span>
+                                <span style={{ color: coloresApariencia?.textoSecundario }} className="text-[9px] truncate">
+                                  {luz.esHdriPorDefecto !== false ? "Baño Moderno 1K (Poly Haven)" : "Archivo cargado por usuario"}
+                                </span>
+                              </div>
+
+                              {/* Acciones: Subir HDRI y Restaurar por Defecto */}
+                              <div className="flex items-center gap-1 shrink-0">
+                                <input
+                                  type="file"
+                                  id="hdri-file-upload-input"
+                                  accept=".hdr,.exr,.jpg,.jpeg,.png,.webp"
+                                  className="hidden"
+                                  onChange={(e) => {
+                                    const f = e.target.files?.[0];
+                                    if (f) {
+                                      setHdriPersonalizado(f);
+                                      e.target.value = "";
+                                    }
+                                  }}
+                                />
+                                <button
+                                  onClick={() => document.getElementById("hdri-file-upload-input")?.click()}
+                                  style={{
+                                    backgroundColor: coloresApariencia?.botonInactivo || "#1E293B",
+                                    borderColor: coloresApariencia?.bordeBotonInactivo || "#334155",
+                                    color: coloresApariencia?.textoPrincipal || "#F8FAFC",
+                                  }}
+                                  className="px-2 py-1 rounded-full border flex items-center gap-1 font-bold text-[9px] hover:border-[#0891b2] transition cursor-pointer active:scale-95"
+                                  title="Cargar un nuevo archivo HDRI (.hdr, .exr) o panorama equirrectangular (.jpg, .png)"
+                                >
+                                  <Upload className="w-2.5 h-2.5 text-[#0891b2]" />
+                                  <span>Subir</span>
+                                </button>
+
+                                {luz.esHdriPorDefecto === false && (
+                                  <button
+                                    onClick={() => restablecerHdriPorDefecto()}
+                                    style={{
+                                      backgroundColor: coloresApariencia?.botonInactivo || "#1E293B",
+                                      borderColor: coloresApariencia?.bordeBotonInactivo || "#334155",
+                                      color: coloresApariencia?.textoSecundario || "#94A3B8",
+                                    }}
+                                    className="p-1 rounded-full border hover:text-red-400 hover:border-red-400 transition cursor-pointer active:scale-95"
+                                    title="Restablecer HDRI por defecto (modern_bathroom_1k.hdr)"
+                                  >
+                                    <RotateCcw className="w-2.5 h-2.5" />
+                                  </button>
+                                )}
+                              </div>
+                            </div>
+
+                            {/* Control de Orientación / Giro 360° */}
+                            <div className="flex items-center justify-between pt-0.5 text-[10px]">
+                              <span style={{ color: coloresApariencia?.textoSecundario }} className="font-semibold">Orientación / Giro 360°:</span>
+                              <div className="flex items-center gap-1.5">
+                                <input
+                                  type="range"
+                                  min="0"
+                                  max="360"
+                                  step="5"
+                                  disabled={!luz.activa}
+                                  value={luz.azimut}
+                                  onChange={(e) => setLuzPropiedad(luz.id, "azimut", parseInt(e.target.value))}
+                                  style={{ accentColor: coloresApariencia?.botonActivo || "#0891b2" }}
+                                  className="w-24 cursor-pointer disabled:opacity-40"
+                                  title="Gira de dónde proviene la luz del entorno HDRI"
+                                />
+                                <span style={{ color: coloresApariencia?.textoPrincipal }} className="font-mono font-bold w-7 text-right">
+                                  {luz.azimut}°
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+                        )}
                       </div>
                     );
                   })}
@@ -1180,10 +1364,10 @@ export default function NPanel() {
                   onClick={() => centrarCamara()}
                   style={{
                     backgroundColor: coloresApariencia?.botonActivo || "#0891b2",
-                    borderColor: coloresApariencia?.bordePaneles,
+                    borderColor: coloresApariencia?.colorMarca || "#0891b2",
                     color: "#FFFFFF",
                   }}
-                  className="w-full py-2 px-3 rounded-xl border flex items-center justify-center gap-2 font-bold text-xs shadow-md transition-all cursor-pointer hover:opacity-90 active:scale-95"
+                  className="w-full py-2 px-3 rounded-full border flex items-center justify-center gap-2 font-bold text-xs shadow-md transition-all cursor-pointer hover:opacity-90 active:scale-95"
                 >
                   <Focus className="w-4 h-4" />
                   <span>Centrar Cámara en Escenario</span>
@@ -1215,7 +1399,7 @@ export default function NPanel() {
                     value={calibracion.zoomMinimoMetros ?? 0.02}
                     onChange={(e) => setCalibracion("zoomMinimoMetros", parseFloat(e.target.value))}
                     style={{ accentColor: coloresApariencia?.botonActivo || "#0891b2" }}
-                    className="w-full h-1.5 bg-slate-200 dark:bg-slate-700 rounded-lg appearance-none cursor-pointer"
+                    className="w-full cursor-pointer"
                   />
                 </div>
 
@@ -1245,7 +1429,7 @@ export default function NPanel() {
                     value={calibracion.zoomMaximoMetros ?? 30}
                     onChange={(e) => setCalibracion("zoomMaximoMetros", parseFloat(e.target.value))}
                     style={{ accentColor: coloresApariencia?.botonActivo || "#0891b2" }}
-                    className="w-full h-1.5 bg-slate-200 dark:bg-slate-700 rounded-lg appearance-none cursor-pointer"
+                    className="w-full cursor-pointer"
                   />
                 </div>
 
@@ -1275,7 +1459,7 @@ export default function NPanel() {
                     value={calibracion.campoDeVisionFov ?? 45}
                     onChange={(e) => setCalibracion("campoDeVisionFov", parseInt(e.target.value))}
                     style={{ accentColor: coloresApariencia?.botonActivo || "#0891b2" }}
-                    className="w-full h-1.5 bg-slate-200 dark:bg-slate-700 rounded-lg appearance-none cursor-pointer"
+                    className="w-full cursor-pointer"
                   />
                 </div>
               </div>
@@ -1285,11 +1469,11 @@ export default function NPanel() {
                 <button
                   onClick={resetCalibracion}
                   style={{
-                    backgroundColor: coloresApariencia?.fondoAplicacion,
-                    borderColor: coloresApariencia?.bordePaneles,
-                    color: coloresApariencia?.textoPrincipal,
+                    backgroundColor: coloresApariencia?.botonInactivo || "#1E293B",
+                    borderColor: coloresApariencia?.bordeBotonInactivo || "#334155",
+                    color: coloresApariencia?.textoPrincipal || "#F8FAFC",
                   }}
-                  className="w-full py-2 px-3 rounded-xl border flex items-center justify-center gap-1.5 font-bold transition-all shadow-xs cursor-pointer hover:opacity-90"
+                  className="w-full py-2 px-3 rounded-full border flex items-center justify-center gap-1.5 font-bold text-xs transition cursor-pointer hover:opacity-90 active:scale-95 shadow-xs"
                 >
                   <RotateCcw style={{ color: coloresApariencia?.botonActivo }} className="w-3.5 h-3.5" />
                   <span>Restablecer Valores por Defecto</span>

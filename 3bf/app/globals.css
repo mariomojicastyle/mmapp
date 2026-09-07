@@ -121,8 +121,8 @@ select,
 }
 
 input[type="range"] {
-  border: 1px solid var(--control-border, #CBD5E1);
-  background-color: var(--bg-surface, #FFFFFF);
+  accent-color: var(--brand-color, #0891B2);
+  cursor: pointer;
 }
 
 select option,

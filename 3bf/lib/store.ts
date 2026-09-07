@@ -461,7 +461,21 @@ export interface StudioLightConfig {
   anguloCono: number;                      // Ángulo de apertura del cono en grados (15° a 80°)
   radioAlcance: number;                    // Radio de influencia en metros para luz esférica (bombillo 360°)
   modoGizmo: "luz" | "target" | "ninguno"; // Control de anclaje de flechas de transformación 3D
+
+  // 🖼️ Configuración HDRI (Cielo / IBL)
+  hdriUrl?: string;                        // URL o Blob URL del archivo HDRI activo
+  hdriNombre?: string;                     // Nombre del archivo (ej: "modern_bathroom_1k.hdr")
+  hdriThumbnailUrl?: string;               // URL de la miniatura para la interfaz
+  esHdriPorDefecto?: boolean;              // True si es el HDRI oficial de fábrica
 }
+
+export const DEFAULT_HDRI_CONFIG = {
+  url: "/textures/hdri/modern_bathroom_1k.hdr",
+  nombre: "modern_bathroom_1k.hdr",
+  titulo: "Baño Moderno 1K (Poly Haven)",
+  thumbnailUrl: "/textures/hdri/modern_bathroom_1k_preview.jpg",
+  esPorDefecto: true,
+};
 
 export function kelvinToHex(kelvin: number): string {
   const temp = Math.max(1000, Math.min(40000, kelvin)) / 100;
@@ -505,9 +519,10 @@ export const PRESETS_ILUMINACION: Record<string, { nombre: string; descripcion: 
     descripcion: "Equilibrio suave anti-quemado, destaca vetas de madera sin sobreexposición",
     luces: {
       key_sun: { activa: true, intensidad: 0.9, temperaturaKelvin: 5400, color: "#fff9f2", azimut: 45, elevacion: 50, distancia: 4.5, proyectarSombras: true },
-      fill_light: { activa: true, intensidad: 0.6, temperaturaKelvin: 6000, color: "#f2f6ff", azimut: 225, elevacion: 40, distancia: 4.0, proyectarSombras: false },
+      fill_light: { activa: true, intensidad: 0.35, temperaturaKelvin: 6000, color: "#f2f6ff", azimut: 225, elevacion: 40, distancia: 4.0, proyectarSombras: false },
       rim_light: { activa: true, intensidad: 0.35, temperaturaKelvin: 5500, color: "#ffffff", azimut: 315, elevacion: 55, distancia: 4.2, proyectarSombras: false },
-      ambient_light: { activa: true, intensidad: 0.45, temperaturaKelvin: 5500, color: "#ffffff", azimut: 0, elevacion: 90, distancia: 0, proyectarSombras: false }
+      ambient_light: { activa: true, intensidad: 0.45, temperaturaKelvin: 5500, color: "#ffffff", azimut: 0, elevacion: 90, distancia: 0, proyectarSombras: false },
+      env_hdri: { activa: true, intensidad: 0.55, temperaturaKelvin: 6500, color: "#ffffff", azimut: 45 }
     }
   },
   sol_natural: {
@@ -515,9 +530,10 @@ export const PRESETS_ILUMINACION: Record<string, { nombre: string; descripcion: 
     descripcion: "Sol cálido directo con relleno de cielo suave",
     luces: {
       key_sun: { activa: true, intensidad: 1.15, temperaturaKelvin: 4600, color: "#ffe6cc", azimut: 55, elevacion: 55, distancia: 4.5, proyectarSombras: true },
-      fill_light: { activa: true, intensidad: 0.4, temperaturaKelvin: 6800, color: "#e3edff", azimut: 235, elevacion: 35, distancia: 4.0, proyectarSombras: false },
+      fill_light: { activa: true, intensidad: 0.25, temperaturaKelvin: 6800, color: "#e3edff", azimut: 235, elevacion: 35, distancia: 4.0, proyectarSombras: false },
       rim_light: { activa: true, intensidad: 0.3, temperaturaKelvin: 5000, color: "#fff5eb", azimut: 300, elevacion: 50, distancia: 4.0, proyectarSombras: false },
-      ambient_light: { activa: true, intensidad: 0.4, temperaturaKelvin: 5500, color: "#ffffff", azimut: 0, elevacion: 90, distancia: 0, proyectarSombras: false }
+      ambient_light: { activa: true, intensidad: 0.4, temperaturaKelvin: 5500, color: "#ffffff", azimut: 0, elevacion: 90, distancia: 0, proyectarSombras: false },
+      env_hdri: { activa: true, intensidad: 0.75, temperaturaKelvin: 6000, color: "#ffffff", azimut: 55 }
     }
   },
   showroom: {
@@ -525,9 +541,10 @@ export const PRESETS_ILUMINACION: Record<string, { nombre: string; descripcion: 
     descripcion: "Iluminación de catálogo 360° homogénea y cristalina",
     luces: {
       key_sun: { activa: true, intensidad: 0.95, temperaturaKelvin: 5500, color: "#ffffff", azimut: 40, elevacion: 60, distancia: 4.5, proyectarSombras: true },
-      fill_light: { activa: true, intensidad: 0.7, temperaturaKelvin: 5500, color: "#ffffff", azimut: 220, elevacion: 45, distancia: 4.0, proyectarSombras: false },
+      fill_light: { activa: true, intensidad: 0.35, temperaturaKelvin: 5500, color: "#ffffff", azimut: 220, elevacion: 45, distancia: 4.0, proyectarSombras: false },
       rim_light: { activa: true, intensidad: 0.5, temperaturaKelvin: 6000, color: "#f2f6ff", azimut: 320, elevacion: 65, distancia: 4.2, proyectarSombras: false },
-      ambient_light: { activa: true, intensidad: 0.55, temperaturaKelvin: 5500, color: "#ffffff", azimut: 0, elevacion: 90, distancia: 0, proyectarSombras: false }
+      ambient_light: { activa: true, intensidad: 0.55, temperaturaKelvin: 5500, color: "#ffffff", azimut: 0, elevacion: 90, distancia: 0, proyectarSombras: false },
+      env_hdri: { activa: true, intensidad: 0.65, temperaturaKelvin: 6500, color: "#ffffff", azimut: 90 }
     }
   },
   alto_contraste: {
@@ -535,9 +552,10 @@ export const PRESETS_ILUMINACION: Record<string, { nombre: string; descripcion: 
     descripcion: "Sombras profundas y relieve arquitectónico marcado",
     luces: {
       key_sun: { activa: true, intensidad: 1.35, temperaturaKelvin: 5200, color: "#fff4e6", azimut: 35, elevacion: 42, distancia: 4.5, proyectarSombras: true },
-      fill_light: { activa: true, intensidad: 0.25, temperaturaKelvin: 6200, color: "#edf2fa", azimut: 215, elevacion: 28, distancia: 4.0, proyectarSombras: false },
+      fill_light: { activa: true, intensidad: 0.15, temperaturaKelvin: 6200, color: "#edf2fa", azimut: 215, elevacion: 28, distancia: 4.0, proyectarSombras: false },
       rim_light: { activa: true, intensidad: 0.45, temperaturaKelvin: 5000, color: "#ffffff", azimut: 310, elevacion: 60, distancia: 4.0, proyectarSombras: false },
-      ambient_light: { activa: true, intensidad: 0.25, temperaturaKelvin: 5500, color: "#ffffff", azimut: 0, elevacion: 90, distancia: 0, proyectarSombras: false }
+      ambient_light: { activa: true, intensidad: 0.25, temperaturaKelvin: 5500, color: "#ffffff", azimut: 0, elevacion: 90, distancia: 0, proyectarSombras: false },
+      env_hdri: { activa: true, intensidad: 0.15, temperaturaKelvin: 7000, color: "#ffffff", azimut: 35 }
     }
   }
 };
@@ -959,6 +977,11 @@ export interface State3BF {
   seleccionarLuzEstudio: (luzId: string | null) => void;
   toggleGizmosLuces: (mostrar?: boolean) => void;
   aplicarPresetIluminacion: (presetKey: string) => void;
+  guardarIluminacionPredeterminada: () => void;
+  restaurarIluminacionPredeterminada: () => void;
+  tieneIluminacionPredeterminada: boolean;
+  setHdriPersonalizado: (file: File) => void;
+  restablecerHdriPorDefecto: () => void;
 
   // Interacción de piezas
   hoveredPiece: string | null;
@@ -1212,7 +1235,7 @@ export const defaultLucesEstudio: Record<string, StudioLightConfig> = {
     nombre: "Luz de Relleno (Fill Light)",
     tipo: "directional",
     activa: true,
-    intensidad: 0.6,
+    intensidad: 0.35,
     color: "#f2f6ff",
     temperaturaKelvin: 6000,
     azimut: 225,
@@ -1258,6 +1281,27 @@ export const defaultLucesEstudio: Record<string, StudioLightConfig> = {
     radioAlcance: 5.0,
     modoGizmo: "ninguno",
   },
+  env_hdri: {
+    id: "env_hdri",
+    nombre: "Luz de Entorno HDRI (Cielo / IBL)",
+    tipo: "ambient",
+    activa: true,
+    intensidad: 0.55,
+    color: "#ffffff",
+    temperaturaKelvin: 6500,
+    azimut: 45,
+    elevacion: 45,
+    distancia: 0,
+    proyectarSombras: false,
+    target: [0, 0.45, 0],
+    anguloCono: 90,
+    radioAlcance: 10.0,
+    modoGizmo: "ninguno",
+    hdriUrl: DEFAULT_HDRI_CONFIG.url,
+    hdriNombre: DEFAULT_HDRI_CONFIG.nombre,
+    hdriThumbnailUrl: DEFAULT_HDRI_CONFIG.thumbnailUrl,
+    esHdriPorDefecto: true,
+  },
 };
 
 export const defaultCalibracion: CalibracionVisual = {
@@ -1271,7 +1315,7 @@ export const defaultCalibracion: CalibracionVisual = {
   thresholdAristas: 40,
   intensidadLuzDirecta: 0.9,
   intensidadLuzAmbiental: 0.45,
-  intensidadLuzEntorno: 1.0,
+  intensidadLuzEntorno: 0.55,
   intensidadLuzRelleno: 0.6,
   mostrarAristas: true,
   mostrarPanelCalibracion: false,
@@ -1306,6 +1350,34 @@ export const defaultCalibracion: CalibracionVisual = {
   presetIluminacion: "estudio_suave",
   lucesEstudio: defaultLucesEstudio,
 };
+
+export const STORAGE_KEY_ILUMINACION = "3bf_iluminacion_estudio_v1";
+
+export function obtenerCalibracionInicial(): CalibracionVisual {
+  if (typeof window !== "undefined" && window.localStorage) {
+    try {
+      const guardado = localStorage.getItem(STORAGE_KEY_ILUMINACION);
+      if (guardado) {
+        const parsed = JSON.parse(guardado);
+        const parsedLuces = parsed.lucesEstudio || {};
+        return {
+          ...defaultCalibracion,
+          ...parsed,
+          lucesEstudio: {
+            ...defaultLucesEstudio,
+            ...parsedLuces,
+            env_hdri: parsedLuces["env_hdri"]
+              ? { ...defaultLucesEstudio.env_hdri, ...parsedLuces["env_hdri"] }
+              : defaultLucesEstudio.env_hdri,
+          },
+        };
+      }
+    } catch (e) {
+      console.warn("Error al cargar iluminación predeterminada desde localStorage:", e);
+    }
+  }
+  return defaultCalibracion;
+}
 
 export const use3BFStore = create<State3BF>((set, get) => ({
   centrarCamaraTrigger: 0,
@@ -1369,7 +1441,8 @@ export const use3BFStore = create<State3BF>((set, get) => ({
   escenarioLimpio: false,
   setEscenarioLimpio: (escenarioLimpio) => set({ escenarioLimpio }),
  
-  calibracion: defaultCalibracion,
+  calibracion: obtenerCalibracionInicial(),
+  tieneIluminacionPredeterminada: typeof window !== "undefined" && window.localStorage ? Boolean(localStorage.getItem(STORAGE_KEY_ILUMINACION)) : false,
   setCalibracion: (key, value) =>
     set((state) => ({
       calibracion: { ...state.calibracion, [key]: value },
@@ -1398,6 +1471,7 @@ export const use3BFStore = create<State3BF>((set, get) => ({
         if (luzId === "key_sun") extraSync.intensidadLuzDirecta = Number(valor);
         if (luzId === "fill_light") extraSync.intensidadLuzRelleno = Number(valor);
         if (luzId === "ambient_light") extraSync.intensidadLuzAmbiental = Number(valor);
+        if (luzId === "env_hdri") extraSync.intensidadLuzEntorno = Number(valor);
       }
 
       return {
@@ -1500,6 +1574,93 @@ export const use3BFStore = create<State3BF>((set, get) => ({
         },
       };
     }),
+
+  guardarIluminacionPredeterminada: () => {
+    const { calibracion } = get();
+    if (typeof window !== "undefined" && window.localStorage) {
+      const configAGuardar = {
+        presetIluminacion: calibracion.presetIluminacion,
+        lucesEstudio: calibracion.lucesEstudio,
+        intensidadLuzDirecta: calibracion.intensidadLuzDirecta,
+        intensidadLuzAmbiental: calibracion.intensidadLuzAmbiental,
+        intensidadLuzEntorno: calibracion.intensidadLuzEntorno,
+        intensidadLuzRelleno: calibracion.intensidadLuzRelleno,
+        mostrarGizmosLuces: calibracion.mostrarGizmosLuces,
+      };
+      try {
+        localStorage.setItem(STORAGE_KEY_ILUMINACION, JSON.stringify(configAGuardar));
+      } catch (e) {
+        console.error("Error guardando iluminación predeterminada:", e);
+      }
+      set({ tieneIluminacionPredeterminada: true });
+    }
+  },
+
+  restaurarIluminacionPredeterminada: () => {
+    if (typeof window !== "undefined" && window.localStorage) {
+      localStorage.removeItem(STORAGE_KEY_ILUMINACION);
+    }
+    set((state) => ({
+      tieneIluminacionPredeterminada: false,
+      calibracion: {
+        ...state.calibracion,
+        presetIluminacion: "estudio_suave",
+        lucesEstudio: defaultLucesEstudio,
+        intensidadLuzDirecta: 0.9,
+        intensidadLuzAmbiental: 0.45,
+        intensidadLuzEntorno: 1.0,
+        intensidadLuzRelleno: 0.6,
+      },
+    }));
+  },
+
+  setHdriPersonalizado: (file: File) => {
+    const ext = file.name.split(".").pop()?.toLowerCase() || "";
+    const isImage = ["jpg", "jpeg", "png", "webp"].includes(ext);
+    const blobUrl = URL.createObjectURL(file);
+
+    set((state) => {
+      const lucesActuales = { ...(state.calibracion.lucesEstudio || defaultLucesEstudio) };
+      const envHdriActual = lucesActuales["env_hdri"] || defaultLucesEstudio.env_hdri;
+
+      lucesActuales["env_hdri"] = {
+        ...envHdriActual,
+        hdriUrl: blobUrl,
+        hdriNombre: file.name,
+        hdriThumbnailUrl: isImage ? blobUrl : undefined,
+        esHdriPorDefecto: false,
+      };
+
+      return {
+        calibracion: {
+          ...state.calibracion,
+          lucesEstudio: lucesActuales,
+        },
+      };
+    });
+  },
+
+  restablecerHdriPorDefecto: () => {
+    set((state) => {
+      const lucesActuales = { ...(state.calibracion.lucesEstudio || defaultLucesEstudio) };
+      const envHdriActual = lucesActuales["env_hdri"] || defaultLucesEstudio.env_hdri;
+
+      lucesActuales["env_hdri"] = {
+        ...envHdriActual,
+        hdriUrl: DEFAULT_HDRI_CONFIG.url,
+        hdriNombre: DEFAULT_HDRI_CONFIG.nombre,
+        hdriThumbnailUrl: DEFAULT_HDRI_CONFIG.thumbnailUrl,
+        esHdriPorDefecto: true,
+      };
+
+      return {
+        calibracion: {
+          ...state.calibracion,
+          lucesEstudio: lucesActuales,
+        },
+      };
+    });
+  },
 
   hoveredPiece: null,
   setHoveredPiece: (hoveredPiece) => set({ hoveredPiece }),
@@ -2679,7 +2840,9 @@ export const use3BFStore = create<State3BF>((set, get) => ({
         });
       }
     });
-    return list;
+    return list.sort((a, b) =>
+      (a.nombre || "").localeCompare(b.nombre || "", undefined, { numeric: true, sensitivity: "base" })
+    );
   },
 
   getHerrajesGlobal: () => {
@@ -3264,6 +3427,28 @@ export const use3BFStore = create<State3BF>((set, get) => ({
       const hRendersSaved = localStorage.getItem("3bf_historial_renders");
       if (hRendersSaved) {
         try { set({ historialRendersIA: JSON.parse(hRendersSaved) }); } catch {}
+      }
+
+      const luzPred = localStorage.getItem(STORAGE_KEY_ILUMINACION);
+      if (luzPred) {
+        try {
+          const parsedLuz = JSON.parse(luzPred);
+          const parsedLuces = parsedLuz.lucesEstudio || {};
+          set((state) => ({
+            tieneIluminacionPredeterminada: true,
+            calibracion: {
+              ...state.calibracion,
+              ...parsedLuz,
+              lucesEstudio: {
+                ...defaultLucesEstudio,
+                ...parsedLuces,
+                env_hdri: parsedLuces["env_hdri"]
+                  ? { ...defaultLucesEstudio.env_hdri, ...parsedLuces["env_hdri"] }
+                  : defaultLucesEstudio.env_hdri,
+              },
+            },
+          }));
+        } catch {}
       }
     } catch (e) {
       console.error("Error hidratando base de datos desde localStorage:", e);
