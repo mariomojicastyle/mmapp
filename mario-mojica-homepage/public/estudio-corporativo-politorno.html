@@ -689,29 +689,60 @@
       backdrop-filter: blur(4px);
     }
 
-    /* Barra Inferior del Slider: Botón Único Centrado '◀ Deslizar ▶' */
-    .slider-controls-bar {
+        /* Navegación Circular de Escenas (1A, 1B, 2, 3...) */
+    .slider-controls-bar, .side-controls-bar {
       display: flex;
       justify-content: center;
       align-items: center;
       margin-top: 14px;
       width: 100%;
     }
-    .slider-action-hint {
+
+    .scene-circle-nav {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 7px;
+      flex-wrap: wrap;
+      width: 100%;
+      padding: 4px 0;
+    }
+
+    .scene-circle-btn {
+      width: 34px;
+      height: 34px;
+      min-width: 34px;
+      border-radius: 50%;
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      gap: 6px;
-      font-size: 13px;
+      font-size: 12px;
       font-weight: 700;
-      color: #0088AA;
-      background: #e0f2fe;
-      border: 1px solid #7dd3fc;
-      padding: 6px 18px;
-      border-radius: 999px;
-      letter-spacing: 0.5px;
-      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+      background: #ffffff;
+      color: #334155;
+      border: 1.5px solid #cbd5e1;
+      cursor: pointer;
+      transition: all 0.15s ease;
       user-select: none;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+      padding: 0;
+      line-height: 1;
+    }
+
+    .scene-circle-btn:hover {
+      background: #f1f5f9;
+      border-color: #94a3b8;
+      color: #0f172a;
+      transform: translateY(-1px);
+    }
+
+    .scene-circle-btn.active {
+      background: #0088AA !important;
+      border-color: #0088AA !important;
+      color: #ffffff !important;
+      font-weight: 800;
+      box-shadow: 0 2px 8px rgba(0, 136, 170, 0.4);
+      transform: scale(1.08);
     }
 
     /* Banner Informativo */
@@ -833,6 +864,15 @@
       .slider-tag-right {
         bottom: 8px !important;
         right: 8px !important;
+      }
+      .scene-circle-btn {
+        width: 31px !important;
+        height: 31px !important;
+        min-width: 31px !important;
+        font-size: 11px !important;
+      }
+      .scene-circle-nav {
+        gap: 5px !important;
       }
       .summary-card {
         padding: 18px 16px !important;
@@ -977,6 +1017,10 @@
           </div>
         </div>
 
+        <div class="side-controls-bar" style="grid-column: 1 / -1; display: flex; justify-content: center; margin-top: 14px;">
+          <div class="scene-circle-nav" id="sideSceneCircleNav"></div>
+        </div>
+
       </div>
 
       <!-- 2. VISTA SLIDER INTERACTIVO (100% FUNCIONAL Y FLUIDO) -->
@@ -1002,7 +1046,7 @@
         </div>
 
         <div class="slider-controls-bar">
-          <span class="slider-action-hint" id="txtSliderHint">◀ Deslizar ▶</span>
+          <div class="scene-circle-nav" id="sceneCircleNav"></div>
         </div>
       </div>
 
@@ -1277,7 +1321,36 @@
     let currentSceneIndex = 0;
     let currentMode = 'slider'; // 'side' | 'slider'
 
-        function getShortSceneName(s, lang) {
+            const CIRCLE_LABELS = ["1A", "1B", "2", "3", "4", "5", "6", "7", "8", "9"];
+
+    function getShortSceneName(s, lang, idx) {
+      const prefix = lang === 'pt' ? 'Cena' : 'Escena';
+      const label = (idx !== undefined && CIRCLE_LABELS[idx]) ? CIRCLE_LABELS[idx] : s.id.replace(/^0+/, '');
+      return `${prefix} ${label}`;
+    }
+
+    function renderCircleNav() {
+      const navContainers = [
+        document.getElementById('sceneCircleNav'),
+        document.getElementById('sideSceneCircleNav')
+      ];
+      navContainers.forEach(container => {
+        if (!container) return;
+        container.innerHTML = '';
+        CIRCLE_LABELS.forEach((label, idx) => {
+          const btn = document.createElement('button');
+          btn.type = 'button';
+          btn.className = `scene-circle-btn ${idx === currentSceneIndex ? 'active' : ''}`;
+          btn.textContent = label;
+          btn.title = `Escena ${label}`;
+          btn.setAttribute('aria-label', `Ir a escena ${label}`);
+          btn.onclick = () => selectScene(idx);
+          container.appendChild(btn);
+        });
+      });
+    }
+
+    function _orig_getShortSceneName(s, lang) {
       const prefix = lang === 'pt' ? 'Cena' : 'Escena';
       const num = s.id.replace(/^0+/, '');
       return `${prefix} ${num}`;
@@ -1349,8 +1422,6 @@
       if (sliderTagLeft) sliderTagLeft.textContent = dict.sliderLeftTag;
       const sliderTagRight = document.getElementById('sliderTagRight');
       if (sliderTagRight) sliderTagRight.textContent = dict.sliderRightTag;
-      const txtSliderHint = document.getElementById('txtSliderHint');
-      if (txtSliderHint) txtSliderHint.textContent = dict.sliderHint;
       const txtSummaryTitle = document.getElementById('txtSummaryTitle');
       if (txtSummaryTitle) txtSummaryTitle.textContent = dict.summaryTitle;
       const txtSummaryBody = document.getElementById('txtSummaryBody');
@@ -1358,6 +1429,7 @@
             
       renderSidebar();
       updateSceneDetails();
+      renderCircleNav();
     }
 
     function renderSidebar() {
@@ -1381,7 +1453,7 @@
       if (drawerList) {
         drawerList.innerHTML = '';
         SCENES.forEach((s, idx) => {
-          const shortName = getShortSceneName(s, currentLang);
+          const shortName = getShortSceneName(s, currentLang, idx);
           const li = document.createElement('li');
           li.className = `drawer-scene-item ${idx === currentSceneIndex ? 'active' : ''}`;
           li.onclick = () => {
@@ -1398,6 +1470,7 @@
       currentSceneIndex = index;
       updateSceneDetails();
       renderSidebar();
+      renderCircleNav();
     }
 
     function updateSceneDetails() {
@@ -1477,6 +1550,7 @@
     // Iniciar con Español
     setLanguage('es');
     setViewMode('slider');
+    renderCircleNav();
     if (window.location.search.indexOf('mode=side') !== -1) { setViewMode('side'); }
     if (window.location.search.indexOf('drawer=open') !== -1) { toggleDrawer(true); }
   </script>
