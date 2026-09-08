@@ -1,28 +1,42 @@
 import { NextResponse } from "next/server";
 
-export async function GET() {
+export async function GET(req: Request) {
   let workerOk = false;
   let rhinoOk = false;
   let rhinoChildren = 0;
   let workerDetails: any = null;
 
-  const workerUrls = [
-    process.env.NEXT_PUBLIC_3BF_WORKER_URL,
-    "http://localhost:8005",
-    "http://127.0.0.1:8005"
-  ].filter(Boolean) as string[];
+  const host = req.headers.get("host") || "";
+  const isLocalOrEngine = host.includes("engine.mariomojica.com") || host.includes("localhost") || host.includes("127.0.0.1");
 
-  // 1. Probar 3BF Python Worker
+  // Si estamos en Netlify (3bf.mariomojica.com), consultar primero el túnel de alta velocidad
+  const workerUrls = isLocalOrEngine
+    ? [
+        process.env.NEXT_PUBLIC_3BF_WORKER_URL,
+        "http://127.0.0.1:8005",
+        "http://localhost:8005",
+      ].filter(Boolean) as string[]
+    : [
+        "https://engine.mariomojica.com/api",
+        "https://engine.mariomojica.com",
+        process.env.NEXT_PUBLIC_3BF_WORKER_URL,
+      ].filter(Boolean) as string[];
+
+  // 1. Probar 3BF Python Worker o API Remota del Túnel
   for (const url of workerUrls) {
     try {
-      const resWorker = await fetch(`${url}/health`, {
+      const endpoint = url.endsWith("/health") ? url : `${url}/health`;
+      const resWorker = await fetch(endpoint, {
         method: "GET",
         signal: AbortSignal.timeout(3500),
       });
       if (resWorker.ok) {
         workerDetails = await resWorker.json();
-        workerOk = workerDetails?.status === "ok" || workerDetails?.status === "degraded";
-        if (workerDetails?.rhino_ok !== undefined) {
+        workerOk = workerDetails?.status === "online" || workerDetails?.status === "ok" || workerDetails?.status === "degraded" || Boolean(workerDetails?.worker);
+        if (workerDetails?.rhino_compute !== undefined) {
+          rhinoOk = Boolean(workerDetails.rhino_compute);
+          rhinoChildren = workerDetails.rhino_active_children || 0;
+        } else if (workerDetails?.rhino_ok !== undefined) {
           rhinoOk = Boolean(workerDetails.rhino_ok);
           rhinoChildren = workerDetails.rhino_active_children || 0;
         }

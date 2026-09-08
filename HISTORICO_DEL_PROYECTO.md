@@ -2371,3 +2371,28 @@ Con esta batería de arreglos y la validación en caliente, la V20 se establece 
 
 - **Validación de Calidad**:
   * Compilación TypeScript verificada (`npx tsc --noEmit`) con 0 errores.
+
+---
+
+### 🚀 Hito 3BF_Blindaje_AR_Túnel_y_Recálculo_Móvil — Enlace Permanente de Cómputo Móvil Netlify ➔ Cloudflare Tunnel y Unificación 1:1 de Almacenamiento AR para Google Scene Viewer (08 de Septiembre, 2026)
+
+- **Cómputo en Móvil Restaurado (Netlify ➔ `engine.mariomojica.com`)**:
+  * **Causa Raíz Diagnosticada**: En `health/route.ts` y `compute/route.ts`, Netlify intentaba conectarse primero a `http://127.0.0.1:8005` y `http://localhost:8005` (inexistentes en las Lambdas de AWS), provocando retardos de conexión, respuestas `503 Service Unavailable` y fallbacks estáticos sin geometría recalculada.
+  * **Solución Implementada**:
+    * En `app/api/health/route.ts`: Detección condicional del host. Si la petición proviene de `3bf.mariomojica.com` (Netlify), consulta prioritariamente el endpoint del túnel `https://engine.mariomojica.com/api/health`, reportando de inmediato `status: "online"`, `worker: true` y `rhino_compute: true`.
+    * En `app/api/compute/route.ts`: Enrutamiento directo hacia `https://engine.mariomojica.com/api/compute` sin demoras en red local. Los sliders y parámetros modificados en el smartphone viajan instantáneamente hacia RhinoCompute 8 en la máquina local.
+
+- **Blindaje Total de Google Scene Viewer (Solución a Suspensión de Pantalla en AR)**:
+  * **Causa Raíz Diagnosticada**: El mensaje *"Apunte el teléfono hacia un espacio vacío y muévalo lentamente"* pertenece al tracking de piso de ARCore de Google. Al estar navegando en `3bf.mariomojica.com`, el móvil subía el archivo GLB a una instancia serverless efímera de Netlify que no compartía memoria con la petición GET subsecuente de Scene Viewer, respondiendo `404 Not Found`. Sin binario 3D que proyectar, Scene Viewer permanecía en bucle buscando el piso.
+  * **Solución Arquitectónica Homologada**:
+    * En `Viewer3D.tsx` (`abrirRealidadAumentada`): La subida del binario GLB se dirige directamente a `https://engine.mariomojica.com/api/compress-glb?mode=ar`, guardando el archivo en la memoria y disco permanente del backend local.
+    * En `app/ar/page.tsx`: La resolución de URLs con `modelId` (`ar_...`) apunta canónicamente a `https://engine.mariomojica.com/api/ar-model/${modelId}.glb`.
+    * En `app/api/compress-glb/route.ts`: Añadido handler `OPTIONS` y cabeceras universales CORS (`Access-Control-Allow-Origin: *`) para permitir peticiones preflight desde cualquier origen.
+    * Con esto, la experiencia móvil es 100% idéntica a la del código QR de PC: Google Scene Viewer descarga el GLB de forma instantánea a través del túnel y coloca el mueble a escala 1:1 en el suelo.
+
+- **Diseño Móvil Limpio y Natural**:
+  * Sin letreros intrusivos ni overlays que obliguen a girar el celular; la interfaz se presenta de forma fluida y permite el giro natural a horizontal por parte del usuario.
+
+- **Validación de Calidad**:
+  * Compilación TypeScript verificada (`npx tsc --noEmit`) con 0 errores.
+  * Verificación funcional en vivo de endpoints por túnel (`POST /api/compress-glb` y `GET /api/ar-model/[id].glb`) exitosa.

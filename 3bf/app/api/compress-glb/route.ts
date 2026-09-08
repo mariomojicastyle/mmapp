@@ -52,6 +52,17 @@ async function getDracoIO(): Promise<NodeIO | null> {
   }
 }
 
+export async function OPTIONS() {
+  return new Response(null, {
+    status: 204,
+    headers: {
+      "Access-Control-Allow-Origin": "*",
+      "Access-Control-Allow-Methods": "POST, GET, OPTIONS",
+      "Access-Control-Allow-Headers": "*",
+    },
+  });
+}
+
 export async function POST(req: Request) {
   try {
     const url = new URL(req.url);
@@ -125,13 +136,21 @@ export async function POST(req: Request) {
         }
       });
 
-      return NextResponse.json({
-        status: "success",
-        id: arId,
-        sizeBefore,
-        sizeAfter,
-        name: modelName,
-      });
+      return NextResponse.json(
+        {
+          status: "success",
+          id: arId,
+          sizeBefore,
+          sizeAfter,
+          name: modelName,
+        },
+        {
+          headers: {
+            "Access-Control-Allow-Origin": "*",
+            "Access-Control-Allow-Methods": "POST, GET, OPTIONS",
+          },
+        }
+      );
     }
 
     // Modo descarga directa del archivo

@@ -72,10 +72,8 @@ function ARContent() {
     async function resolverModelo() {
       // 1. Si viene con ID de modelo (escaneo de QR o móvil con ID persistente)
       if (modelId) {
-        let base = window.location.origin;
-        if (typeof window !== "undefined" && window.location.protocol !== "https:") {
-          base = "https://engine.mariomojica.com";
-        }
+        // Enlace canónico seguro: el engine permanente aloja los binarios de Scene Viewer sin pérdida
+        const base = "https://engine.mariomojica.com";
         const fullHttpsUrl = `${base}/api/ar-model/${modelId}.glb`;
         if (!isCancelled) {
           setModelUrl(fullHttpsUrl);

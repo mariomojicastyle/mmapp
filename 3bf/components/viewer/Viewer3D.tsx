@@ -2961,6 +2961,19 @@ export default function Viewer3D() {
         console.warn("No se pudo guardar la sesión de retorno AR:", e);
       }
 
+      // Endpoint permanente para AR (elude la memoria efímera y timeouts de Lambdas de Netlify)
+      const arHost = "https://engine.mariomojica.com";
+      const arUploadUrl =
+        typeof window !== "undefined" &&
+        (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1")
+          ? "/api/compress-glb"
+          : `${arHost}/api/compress-glb`;
+      const arRedirectBase =
+        typeof window !== "undefined" &&
+        (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1")
+          ? ""
+          : arHost;
+
       if (esDispositivoMovil) {
         // En móvil: Guardar en IndexedDB para disponibilidad inmediata
         try {
@@ -2970,12 +2983,12 @@ export default function Viewer3D() {
           console.warn("[3dBimFab AR] IndexedDB no disponible:", storageErr);
         }
 
-        // Subir a API serverless con timeout estricto de 10s para registrar el ID persistente
+        // Subir al backend persistente con timeout de 10s para registrar el ID de Scene Viewer
         const abortCtrl = new AbortController();
         const timeoutId = setTimeout(() => abortCtrl.abort(), 10000);
 
         try {
-          const res = await fetch(`/api/compress-glb?mode=ar&name=${encodeURIComponent(modelName)}`, {
+          const res = await fetch(`${arUploadUrl}?mode=ar&name=${encodeURIComponent(modelName)}`, {
             method: "POST",
             headers: { "Content-Type": "application/octet-stream" },
             body: glbData.arrayBuffer,
@@ -2987,8 +3000,8 @@ export default function Viewer3D() {
             const data = await res.json();
             if (data?.id) {
               setGenerandoAR(false);
-              // Navegar exactamente con la misma estructura de URL que el código QR de PC
-              window.location.href = `/ar?id=${data.id}&name=${encodeURIComponent(modelName)}`;
+              // Navegar exactamente a la misma URL pública que descarga Google Scene Viewer en el QR de PC
+              window.location.href = `${arRedirectBase}/ar?id=${data.id}&name=${encodeURIComponent(modelName)}`;
               return;
             }
           }
@@ -3004,7 +3017,7 @@ export default function Viewer3D() {
       }
 
       // En PC: Preparar modelo en API para generar el ID del QR
-      const res = await fetch(`/api/compress-glb?mode=ar&name=${encodeURIComponent(modelName)}`, {
+      const res = await fetch(`${arUploadUrl}?mode=ar&name=${encodeURIComponent(modelName)}`, {
         method: "POST",
         headers: { "Content-Type": "application/octet-stream" },
         body: glbData.arrayBuffer,
