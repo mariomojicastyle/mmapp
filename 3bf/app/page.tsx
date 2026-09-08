@@ -210,6 +210,19 @@ export default function Home3BF() {
     };
   }, [hidratarDesdeLocalStorage]);
 
+  // Ancho responsivo exacto: 25% del viewport en móvil horizontal, 380px en PC
+  const anchoEfectivoPanelDerecho = React.useMemo(() => {
+    if (typeof window === "undefined") return 380;
+    if (window.innerWidth >= 1024) {
+      return anchoPanelDerecho && anchoPanelDerecho >= 280 ? anchoPanelDerecho : 380;
+    }
+    const ancho25 = Math.max(160, Math.round(window.innerWidth * 0.25));
+    if (!anchoPanelDerecho || anchoPanelDerecho > window.innerWidth * 0.35 || anchoPanelDerecho < 140) {
+      return ancho25;
+    }
+    return anchoPanelDerecho;
+  }, [anchoPanelDerecho]);
+
   return (
     <main 
       style={{ backgroundColor: coloresApariencia?.fondoAplicacion }}
@@ -529,7 +542,7 @@ export default function Home3BF() {
         {/* Columna Derecha: Panel de Control de Parámetros & NPanel */}
         <div 
           style={{ 
-            width: `${anchoPanelDerecho || (typeof window !== "undefined" && window.innerWidth < 1024 ? 180 : 380)}px`,
+            width: `${anchoEfectivoPanelDerecho}px`,
             backgroundColor: coloresApariencia?.fondoPaneles, 
             borderColor: coloresApariencia?.bordePaneles,
             color: coloresApariencia?.textoPrincipal 

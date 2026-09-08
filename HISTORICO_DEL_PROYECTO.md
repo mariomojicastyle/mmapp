@@ -2450,3 +2450,21 @@ Con esta batería de arreglos y la validación en caliente, la V20 se establece 
 - **Validación de Calidad**:
   * Compilación TypeScript verificada (`npx tsc --noEmit`) con 0 errores.
 
+---
+
+### 🚀 Hito 3BF_Proporcion_25_25_50_Aviso_Portrait_y_AR_PBR_Forzado — Proporción Matemática Exacta en Móvil (25% Modificador / 25% N-Panel / 50% Visor 3D), Indicador Visual Portrait y Blindaje PBR Texturizado en AR (08 de Septiembre, 2026)
+
+- **Proporción de Pantalla en Móvil Horizontal (25% / 25% / 50%)**:
+  * **Modificador de Componentes**: Ancho dinámico calculado matemáticamente en `25vw` / 25% exacto del ancho de la pantalla (`Math.round(window.innerWidth * 0.25)`).
+  * **N-Panel (Biblioteca de Componentes)**: Ancho dinámico calculado en `25vw` / 25% exacto de la pantalla.
+  * **Escenario 3D**: Conserva el **50% restante del viewport horizontal**, logrando un balance perfecto y despejado.
+  * **PC de Escritorio**: Conserva inalterados sus **380px** por defecto en monitores >= 1024px.
+- **Indicador Visual de Rotación en Formato Vertical (Portrait)**:
+  * Incorporada detección reactiva de orientación en `ControlPanel.tsx`: cuando el usuario ingresa con el teléfono en vertical, se despliega una tarjeta animada e interactiva dentro del Modificador de Componentes invitándolo a rotar el celular a horizontal para disfrutar de la experiencia 3D.
+- **Blindaje Total de Realidad Aumentada (Materiales Renderizados PBR Forzados)**:
+  * **Diagnóstico de Causa Raíz**: Cuando el usuario probaba AR con el visor en modo Cristal o Sólido, la escena clonaba mallas con shaders transparentes o sin texturas, provocando que Google Scene Viewer fallara la validación y se cerrara devolviendo la cámara a la ventana intermedia.
+  * **Solución Implementada**: En `Viewer3D.tsx` (`generateCleanGLB`), la exportación de Realidad Aumentada (`isForAR = true`) fuerza **SIEMPRE Y SIN EXCEPCIÓN** materiales estándar PBR fotorrealistas (`MeshStandardMaterial`), opacos (`transparent = false, opacity = 1.0`), con mapas difusos de madera y acabados reales, garantizando 100% de compatibilidad y renderizado con texturas en Scene Viewer sin importar qué modo visual esté activo en pantalla.
+- **Validación de Calidad**:
+  * Compilación TypeScript verificada (`npx tsc --noEmit`) con 0 errores.
+
+

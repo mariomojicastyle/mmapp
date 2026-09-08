@@ -561,6 +561,25 @@ export default function ControlPanel() {
   const instanciaActiva = objetoActivoId ? instancias[objetoActivoId] : null;
   const listaInstancias = Object.values(instancias || {});
 
+  const [isPortrait, setIsPortrait] = React.useState(false);
+
+  useEffect(() => {
+    const checkOrientation = () => {
+      const portrait = typeof window !== "undefined" && (
+        window.innerHeight > window.innerWidth ||
+        (window.screen?.orientation && window.screen.orientation.type.includes("portrait"))
+      ) && window.innerWidth < 1024;
+      setIsPortrait(portrait);
+    };
+    checkOrientation();
+    window.addEventListener("resize", checkOrientation);
+    window.addEventListener("orientationchange", checkOrientation);
+    return () => {
+      window.removeEventListener("resize", checkOrientation);
+      window.removeEventListener("orientationchange", checkOrientation);
+    };
+  }, []);
+
   return (
     <div className="p-2 lg:p-4 flex flex-col gap-2 lg:gap-4 h-full overflow-y-auto no-scrollbar">
       {/* 🏷️ TÍTULO PRINCIPAL DEL PANEL */}
@@ -569,6 +588,26 @@ export default function ControlPanel() {
           Modificador de Componentes
         </h3>
       </div>
+
+      {/* 📱 AVISO DE ROTACIÓN EXCLUSIVO EN MODO VERTICAL (PORTRAIT) */}
+      {isPortrait && (
+        <div 
+          style={{ 
+            backgroundColor: coloresApariencia?.insigniaFondo || "#FEF3C7", 
+            borderColor: coloresApariencia?.colorMarca || "#F59E0B",
+            color: coloresApariencia?.textoPrincipal || "#92400E" 
+          }}
+          className="p-2.5 rounded-xl border flex flex-col items-center text-center gap-1.5 shadow-xs shrink-0 my-1 bg-amber-50 dark:bg-amber-950/40 border-amber-300 dark:border-amber-700"
+        >
+          <div className="flex items-center gap-1.5 text-amber-600 dark:text-amber-400 font-extrabold text-[11px]">
+            <RotateCw className="w-4 h-4 animate-spin shrink-0" />
+            <span>Gira tu teléfono</span>
+          </div>
+          <p className="text-[9.5px] leading-tight text-slate-600 dark:text-slate-300 font-medium">
+            Coloca el celular en <strong>horizontal</strong> para disfrutar del escenario 3D completo a pantalla ancha.
+          </p>
+        </div>
+      )}
 
       {/* 🏷️ CABECERA: OBJETO ACTIVO EN EL ESCENARIO (Multi-Instancia) */}
       {instanciaActiva ? (

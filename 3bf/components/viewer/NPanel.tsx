@@ -242,7 +242,18 @@ export default function NPanel() {
     restablecerHdriPorDefecto,
   } = use3BFStore();
 
-  const ancho = anchoNPanel || (typeof window !== "undefined" && window.innerWidth < 1024 ? 175 : 380);
+  const anchoEfectivoNPanel = React.useMemo(() => {
+    if (typeof window === "undefined") return 380;
+    if (window.innerWidth >= 1024) {
+      return anchoNPanel && anchoNPanel >= 280 ? anchoNPanel : 380;
+    }
+    const ancho25 = Math.max(160, Math.round(window.innerWidth * 0.25));
+    if (!anchoNPanel || anchoNPanel > window.innerWidth * 0.35 || anchoNPanel < 140) {
+      return ancho25;
+    }
+    return anchoNPanel;
+  }, [anchoNPanel]);
+  const ancho = anchoEfectivoNPanel;
   const [isResizing, setIsResizing] = useState(false);
   const [busqueda, setBusqueda] = useState("");
   const [guardadoDefaultFeedback, setGuardadoDefaultFeedback] = useState(false);

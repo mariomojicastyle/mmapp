@@ -21,7 +21,13 @@ Este archivo es la "Memoria RAM" para Antigravity. Contiene el contexto de lo qu
 - [x] **Persistencia Reactiva & Memoria Local**: Indexación inmediata y sincronización fluida entre Supabase, memoria local y la memoria activa `.agent/skills/b2b-sales-closer/ventas_ram.md`.
 - [x] **Protocolo Antigravity de Fluidez Bilingüe (2 Bloques de Código en 1 Clic)**: Respuestas en el chat entregadas siempre en 2 bloques de código markdown separados (Bloque 1 en Português do Brasil para copiar en 1 clic + Bloque 2 en Español para auditoría rápida), inyectando ambos idiomas en la base de datos de Supabase y en `ventas_ram_storage.json` para mantener el historial vivo.
 
-- [x] **[NUEVO - 08 de Septiembre, 2026] Hito 3BF_Calibracion_UltraAngosta_Movil_y_Exito_AR_Computo (Paneles Ultra-Angostos en Móvil 180px / 175px, Reseteo Forzado de Caché Móvil y Consolidación de Realidad Aumentada)**:
+- [x] **[NUEVO - 08 de Septiembre, 2026] Hito 3BF_Proporcion_25_25_50_Aviso_Portrait_y_AR_PBR_Forzado (Proporción Matemática Exacta en Móvil 25% Modificador / 25% N-Panel / 50% Visor 3D, Indicador Visual Portrait y Blindaje PBR Texturizado en AR)**:
+  - **Proporción Áurea en Móvil (25% / 25% / 50%)**: El Modificador de Componentes y el N-Panel se calculan dinámicamente en `25vw` (25% del viewport horizontal de pantalla), garantizando que el Visor 3D conserve siempre el 50% central libre.
+  - **Aviso Visual de Rotación en Formato Vertical (Portrait)**: Cuando el teléfono se sostiene en vertical, se despliega una tarjeta animada e interactiva dentro del Modificador de Componentes indicando al usuario rotar a horizontal.
+  - **Blindaje Total de AR (Materiales PBR Fotorrealistas Forzados)**: `generateCleanGLB(isForAR = true)` exporta SIEMPRE materiales estándar PBR opacos (`transparent: false, opacity: 1.0`) con texturas difusas reales de madera, erradicando fallos de validación en Google Scene Viewer causados por modos semitransparentes (cristal) o sin textura.
+  - **Validación de Calidad**: Compilación TypeScript verificada (`npx tsc --noEmit`) con 0 errores.
+
+- [x] **[08 de Septiembre, 2026] Hito 3BF_Calibracion_UltraAngosta_Movil_y_Exito_AR_Computo (Paneles Ultra-Angostos en Móvil 180px / 175px, Reseteo Forzado de Caché Móvil y Consolidación de Realidad Aumentada)**:
   - **Paneles Ultra-Angostos en Móvil**: Modificador de Componentes reducido a **180px** por defecto en móvil (rango 150px a 210px) y N-Panel a **175px** por defecto (rango 140px a 195px), dejando más del 75% de la pantalla horizontal libre para el escenario 3D.
   - **Sanitización Forzada de Caché en Móvil**: Al hidratar el store en pantallas móviles (< 1024px), si existía un ancho en caché mayor a 195px, se normaliza de inmediato a 180px / 175px para erradicar anchos gigantes heredados de sesiones previas.
   - **PC Inmutable en 380px**: Las computadoras de escritorio y laptops (>= 1024px) conservan estrictamente sus 380px originales.

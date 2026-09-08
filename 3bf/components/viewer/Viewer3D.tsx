@@ -751,7 +751,22 @@ function BoardMesh({
         position={position}
         name={cleanName}
         geometry={customGeometry}
-        userData={{ instanciaId }}
+        userData={{ 
+          instanciaId,
+          pbrDiffuse: pbrMaps.diffuse,
+          materialPBR,
+          nombreMaterialEfectivo,
+          isWoodBoard,
+          isHardware,
+          isHardwareCorredera,
+          isHardwareCantoneira,
+          isHardwarePata,
+          isHardwarePorca,
+          isHardwarePerno,
+          isHardwareCaja,
+          isBalance,
+          isMdpExpuesto
+        }}
       >
         <meshStandardMaterial
           key={`${activeMap ? (activeMap as any).uuid : "no-map"}-${modoVisual}-${nombreMaterialEfectivo}-${finalMeshColor}-${opacity}-${roughness}-${metalness}`}
@@ -801,7 +816,22 @@ function BoardMesh({
     <mesh
       position={position}
       name={cleanName}
-      userData={{ instanciaId }}
+      userData={{ 
+        instanciaId,
+        pbrDiffuse: pbrMaps.diffuse,
+        materialPBR,
+        nombreMaterialEfectivo,
+        isWoodBoard,
+        isHardware,
+        isHardwareCorredera,
+        isHardwareCantoneira,
+        isHardwarePata,
+        isHardwarePorca,
+        isHardwarePerno,
+        isHardwareCaja,
+        isBalance,
+        isMdpExpuesto
+      }}
     >
       <boxGeometry args={size} />
       <meshStandardMaterial
@@ -2759,7 +2789,7 @@ export default function Viewer3D() {
       // 3. Resolución y deduplicación de material con bitmap 512x512
       let cleanMat: THREE.MeshStandardMaterial;
 
-      if (isExportSolid) {
+      if (isExportSolid && !isForAR) {
         const solidKey = "mat_solido_global";
         if (!materialOptimizedCache.has(solidKey)) {
           materialOptimizedCache.set(
@@ -2779,28 +2809,33 @@ export default function Viewer3D() {
         cleanMat = materialOptimizedCache.get(solidKey)!;
       } else {
         const srcMat = Array.isArray(mesh.material) ? mesh.material[0] : mesh.material;
-        const srcTexture: THREE.Texture | null = (srcMat as any)?.map || null;
+        
+        // 🚀 En AR: Forzar siempre la textura diffuse real PBR de la pieza (aunque el visor esté en modo cristal o sólido)
+        const srcTexture: THREE.Texture | null = (mesh.userData?.pbrDiffuse) || ((srcMat as any)?.map) || null;
 
         let optTexture: THREE.Texture | null = null;
         if (srcTexture) {
           optTexture = getOptimized512Texture(srcTexture);
         }
 
-        const baseMatName = srcMat?.name || "PBR_Material";
-        const colHex = (srcMat as any)?.color ? (srcMat as any).color.getHexString() : "CBD5E1";
-        const roughVal = ((srcMat as any)?.roughness ?? 0.4).toFixed(2);
-        const metalVal = ((srcMat as any)?.metalness ?? 0.1).toFixed(2);
+        const baseMatName = mesh.userData?.nombreMaterialEfectivo || srcMat?.name || "PBR_Material";
+        const isHw = mesh.userData?.isHardware;
+        const colHex = optTexture ? "FFFFFF" : ((mesh.userData?.materialPBR?.colorBase) ? mesh.userData.materialPBR.colorBase.replace("#", "") : ((srcMat as any)?.color ? (srcMat as any).color.getHexString() : "CBD5E1"));
+        const roughVal = isHw ? "0.25" : ((mesh.userData?.materialPBR?.rugosidad ?? 0.45)).toFixed(2);
+        const metalVal = isHw ? "0.85" : ((mesh.userData?.materialPBR?.metalico ?? 0.05)).toFixed(2);
         const texKey = srcTexture ? ((srcTexture.image as any)?.src || srcTexture.uuid || "tex") : "no_tex";
-        const matCacheKey = `${baseMatName}_${colHex}_${roughVal}_${metalVal}_${texKey}`;
+        const matCacheKey = `${baseMatName}_${colHex}_${roughVal}_${metalVal}_${texKey}_${isForAR ? "ar" : "std"}`;
 
         if (!materialOptimizedCache.has(matCacheKey)) {
           materialOptimizedCache.set(
             matCacheKey,
             new THREE.MeshStandardMaterial({
               name: baseMatName,
-              color: (srcMat as any)?.color || new THREE.Color("#CBD5E1"),
-              roughness: (srcMat as any)?.roughness ?? 0.4,
-              metalness: (srcMat as any)?.metalness ?? 0.1,
+              color: optTexture 
+                ? new THREE.Color("#FFFFFF") 
+                : (mesh.userData?.materialPBR?.colorBase ? new THREE.Color(mesh.userData.materialPBR.colorBase) : ((srcMat as any)?.color || new THREE.Color("#CBD5E1"))),
+              roughness: isHw ? 0.25 : (mesh.userData?.materialPBR?.rugosidad ?? 0.45),
+              metalness: isHw ? 0.85 : (mesh.userData?.materialPBR?.metalico ?? 0.05),
               map: optTexture,
               transparent: false,
               opacity: 1.0,
