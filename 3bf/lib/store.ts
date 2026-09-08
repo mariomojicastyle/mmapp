@@ -1680,7 +1680,7 @@ export const use3BFStore = create<State3BF>((set, get) => ({
   setPestanaNPanel: (pestanaNPanel) => set({ pestanaNPanel: pestanaNPanel as any }),
   anchoNPanel: typeof window !== "undefined" && window.localStorage && localStorage.getItem("3bf_ancho_npanel")
     ? Math.max(140, Math.min(800, Number(localStorage.getItem("3bf_ancho_npanel"))))
-    : 380,
+    : 210,
   setAnchoNPanel: (ancho) => {
     const normalizado = Math.max(140, Math.min(800, ancho));
     if (typeof window !== "undefined" && window.localStorage) {
@@ -1689,10 +1689,10 @@ export const use3BFStore = create<State3BF>((set, get) => ({
     set({ anchoNPanel: normalizado });
   },
   anchoPanelDerecho: typeof window !== "undefined" && window.localStorage && localStorage.getItem("3bf_ancho_panel_derecho")
-    ? Math.max(280, Math.min(800, Number(localStorage.getItem("3bf_ancho_panel_derecho"))))
-    : 380,
+    ? Math.max(200, Math.min(800, Number(localStorage.getItem("3bf_ancho_panel_derecho"))))
+    : 240,
   setAnchoPanelDerecho: (ancho) => {
-    const normalizado = Math.max(280, Math.min(800, ancho));
+    const normalizado = Math.max(200, Math.min(800, ancho));
     if (typeof window !== "undefined" && window.localStorage) {
       localStorage.setItem("3bf_ancho_panel_derecho", String(normalizado));
     }

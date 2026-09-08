@@ -2396,3 +2396,26 @@ Con esta batería de arreglos y la validación en caliente, la V20 se establece 
 - **Validación de Calidad**:
   * Compilación TypeScript verificada (`npx tsc --noEmit`) con 0 errores.
   * Verificación funcional en vivo de endpoints por túnel (`POST /api/compress-glb` y `GET /api/ar-model/[id].glb`) exitosa.
+
+---
+
+### 🚀 Hito 3BF_Calibracion_Horizontal_y_Paneles_Ajustados — Desacople de Breakpoint Móvil Horizontal (`lg:` vs `md:`), Paneles Ultra-Ajustados por Defecto (240px / 210px) y Auto-Carga de Componente Activo (08 de Septiembre, 2026)
+
+- **Desacople de Breakpoints Responsive (`lg:` >= 1024px vs `md:` >= 768px)**:
+  * **Diagnóstico de Causa Raíz**: Al girar un smartphone a orientación horizontal (*Landscape*), su ancho de pantalla de ~850px superaba el breakpoint `md:` (768px), provocando que Tailwind aplicara las clases de escritorio completo (`md:h-14`, `md:text-sm`, `md:p-4`) sobre un viewport con solo ~380px de altura disponible.
+  * **Aislamiento Desktop vs Móvil Horizontal**: Se migraron todos los modificadores de escala responsive a `lg:` (>= 1024px). De esta forma:
+    * En monitores de PC y laptops reales (>= 1024px), se preserva intacta la visualización generosa y espaciosa original.
+    * En celulares en posición horizontal, la interfaz mantiene la escala ultra-compacta (`h-9`, `text-[10.5px]`, `p-1.5`, inputs `w-14`), maximizando el área visible para el escenario 3D.
+
+- **Modificador de Componentes y N-Panel Ultra-Ajustados por Defecto**:
+  * En `lib/store.ts` y `app/page.tsx`:
+    * El ancho por defecto del panel derecho (`anchoPanelDerecho`) se redujo de 380px a **240px**, con límite mínimo reducido de 280px a **200px** para dejar el máximo espacio posible al visor 3D.
+    * El ancho por defecto del N-Panel (`anchoNPanel`) se redujo de 380px a **210px**, con límite mínimo en **140px**.
+
+- **Garantía de Escenario Activo y Modificabilidad en Móvil**:
+  * Implementada auto-carga reactiva de `Comoda Ravenna` en el ciclo de hidratación inicial si el escenario se encuentra vacío (`instancias` vacío y no escenario limpio intencional).
+  * Erradica el estado huérfano de `(0) Componentes: (Escenario vacío)`, asegurando que al entrar desde el móvil siempre existan piezas 3D y sliders activos para manipular el mueble en tiempo real.
+
+- **Validación y Calidad**:
+  * Compilación TypeScript verificada (`npx tsc --noEmit`) con 0 errores.
+  * Verificación de persistencia en local storage y compatibilidad en ambos temas (Tech Ethos y Obsidian).

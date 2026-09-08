@@ -3186,9 +3186,9 @@ export default function Viewer3D() {
               backgroundColor: coloresApariencia?.botonActivo || "#0891b2",
               borderColor: coloresApariencia?.colorMarca || "#0891b2",
             }}
-            className="px-1.5 md:px-2.5 h-4 md:h-5.5 rounded-full text-white shadow-md border flex items-center gap-1 text-[8.5px] md:text-[11px] font-bold hover:opacity-90 active:scale-95 transition-all cursor-pointer disabled:opacity-50"
+            className="px-1.5 lg:px-2.5 h-4 lg:h-5.5 rounded-full text-white shadow-md border flex items-center gap-1 text-[8.5px] lg:text-[11px] font-bold hover:opacity-90 active:scale-95 transition-all cursor-pointer disabled:opacity-50"
           >
-            <Save className={`w-2 md:w-2.5 h-2 md:h-2.5 text-white ${guardandoMueble ? "animate-spin" : ""}`} />
+            <Save className={`w-2 lg:w-2.5 h-2 lg:h-2.5 text-white ${guardandoMueble ? "animate-spin" : ""}`} />
             <span>{guardandoMueble ? "Guardando..." : "Guardar"}</span>
           </button>
 
@@ -3203,7 +3203,7 @@ export default function Viewer3D() {
               style={{ 
                 color: coloresApariencia?.textoPrincipal || (tema === "obsidian" ? "#F8FAFC" : "#0F172A"),
               }}
-              className="flex items-center gap-1 text-[10px] md:text-xs font-bold hover:text-cyan-500 transition-colors cursor-pointer group max-w-[130px] truncate"
+              className="flex items-center gap-1 text-[10px] lg:text-xs font-bold hover:text-cyan-500 transition-colors cursor-pointer group max-w-[130px] truncate"
             >
               <span className="underline decoration-dotted underline-offset-2 group-hover:decoration-solid truncate">
                 {muebleActivoGuardado.nombre}
@@ -3222,7 +3222,7 @@ export default function Viewer3D() {
               backgroundColor: coloresApariencia?.botonActivo || "#0891b2",
               borderColor: coloresApariencia?.colorMarca || "#0891b2",
             }}
-            className="px-1.5 md:px-2.5 h-4 md:h-5.5 rounded-full text-white shadow-md border flex items-center gap-1 text-[8.5px] md:text-[11px] font-bold hover:opacity-90 active:scale-95 transition-all cursor-pointer disabled:opacity-50"
+            className="px-1.5 lg:px-2.5 h-4 lg:h-5.5 rounded-full text-white shadow-md border flex items-center gap-1 text-[8.5px] lg:text-[11px] font-bold hover:opacity-90 active:scale-95 transition-all cursor-pointer disabled:opacity-50"
           >
             <span>
               {mecanizadoEnProgreso 
@@ -3242,9 +3242,9 @@ export default function Viewer3D() {
                 backgroundColor: coloresApariencia?.fondoPaneles || "#FFFFFF",
                 borderColor: coloresApariencia?.bordePaneles || "#CBD5E1",
               }}
-              className="w-4 md:w-5.5 h-4 md:h-5.5 rounded-full shadow-md border flex items-center justify-center text-red-500 hover:bg-red-50 hover:border-red-400 active:scale-95 transition-all cursor-pointer"
+              className="w-4 lg:w-5.5 h-4 lg:h-5.5 rounded-full shadow-md border flex items-center justify-center text-red-500 hover:bg-red-50 hover:border-red-400 active:scale-95 transition-all cursor-pointer"
             >
-              <Trash2 className="w-2 md:w-2.5 h-2 md:h-2.5" />
+              <Trash2 className="w-2 lg:w-2.5 h-2 lg:h-2.5" />
             </button>
           )}
 
@@ -3257,11 +3257,11 @@ export default function Viewer3D() {
                 ? { backgroundColor: coloresApariencia?.botonActivo || "#0891b2", borderColor: coloresApariencia?.colorMarca || "#0891b2", color: "#FFFFFF" }
                 : { backgroundColor: coloresApariencia?.botonInactivo || "#1E293B", borderColor: coloresApariencia?.bordeBotonInactivo || "#334155", color: coloresApariencia?.textoPrincipal || "#F8FAFC" }
             }
-            className={`px-1.5 md:px-2.5 h-4 md:h-5.5 rounded-full border flex items-center gap-1 text-[8.5px] md:text-[11px] font-bold transition-all cursor-pointer select-none ${
+            className={`px-1.5 lg:px-2.5 h-4 lg:h-5.5 rounded-full border flex items-center gap-1 text-[8.5px] lg:text-[11px] font-bold transition-all cursor-pointer select-none ${
               calibracion.mostrarGizmosLuces ? "text-white shadow-md" : "hover:opacity-90 backdrop-blur-sm"
             }`}
           >
-            <Sun className={`w-2 md:w-3 h-2 md:h-3 shrink-0 ${calibracion.mostrarGizmosLuces ? "text-amber-300" : "text-amber-500"}`} />
+            <Sun className={`w-2 lg:w-3 h-2 lg:h-3 shrink-0 ${calibracion.mostrarGizmosLuces ? "text-amber-300" : "text-amber-500"}`} />
             <span>Luces</span>
           </button>
         </div>
