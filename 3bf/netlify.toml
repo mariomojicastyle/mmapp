@@ -5,6 +5,9 @@
 [[plugins]]
   package = "@netlify/plugin-nextjs"
 
+[functions]
+  included_files = ["node_modules/draco3d/*.wasm"]
+
 [[headers]]
   for = "/*"
   [headers.values]

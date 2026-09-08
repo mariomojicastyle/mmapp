@@ -34,23 +34,71 @@ declare global {
   }
 }
 
+import { getLocalARModel } from "@/lib/arStorage";
+
 function ARContent() {
   const searchParams = useSearchParams();
   const modelId = searchParams.get("id");
+  const source = searchParams.get("source");
   const modelName = searchParams.get("name") || "Mueble 3dBimFab";
   const [modelUrl, setModelUrl] = useState<string | null>(null);
   const [cargando, setCargando] = useState(true);
+  const [sinModelo, setSinModelo] = useState(false);
   const viewerRef = React.useRef<HTMLElement | null>(null);
 
   useEffect(() => {
-    if (modelId) {
-      setModelUrl(`/api/ar-model/${modelId}`);
+    let objectUrlRevoke: string | null = null;
+
+    async function resolverModelo() {
+      // 1. Si es modo local (móvil directo), leer de IndexedDB
+      if (source === "local") {
+        try {
+          const local = await getLocalARModel();
+          if (local && local.blob) {
+            const blobUrl = URL.createObjectURL(local.blob);
+            objectUrlRevoke = blobUrl;
+            setModelUrl(blobUrl);
+            return;
+          }
+        } catch (e) {
+          console.warn("Fallo leyendo IndexedDB local:", e);
+        }
+      }
+
+      // 2. Si viene con ID de modelo (escaneo de QR o enlace web)
+      if (modelId) {
+        setModelUrl(`/api/ar-model/${modelId}`);
+        return;
+      }
+
+      // 3. Fallback: Intentar leer IndexedDB de todos modos
+      try {
+        const localFallback = await getLocalARModel();
+        if (localFallback && localFallback.blob) {
+          const blobUrl = URL.createObjectURL(localFallback.blob);
+          objectUrlRevoke = blobUrl;
+          setModelUrl(blobUrl);
+          return;
+        }
+      } catch (e) {}
+
+      // Si no hay ninguna fuente válida
+      setSinModelo(true);
+      setCargando(false);
     }
-  }, [modelId]);
+
+    resolverModelo();
+
+    return () => {
+      if (objectUrlRevoke) {
+        URL.revokeObjectURL(objectUrlRevoke);
+      }
+    };
+  }, [modelId, source]);
 
   useEffect(() => {
     const el = viewerRef.current;
-    if (!el) return;
+    if (!el || !modelUrl) return;
 
     const onLoad = () => {
       setCargando(false);
@@ -65,10 +113,10 @@ function ARContent() {
     el.addEventListener("load", onLoad);
     el.addEventListener("progress", onProgress);
 
-    // Timeout de seguridad: Si en 2 segundos el modelo ya está en GPU, quitar overlay
+    // Timeout de seguridad: Si en 2.5 segundos el modelo ya está en GPU, quitar overlay
     const timer = setTimeout(() => {
       setCargando(false);
-    }, 2000);
+    }, 2500);
 
     return () => {
       el.removeEventListener("load", onLoad);
@@ -77,7 +125,7 @@ function ARContent() {
     };
   }, [modelUrl]);
 
-  if (!modelId) {
+  if (sinModelo || (!modelId && !modelUrl && !cargando)) {
     return (
       <div className="min-h-screen bg-[#131B2E] flex flex-col items-center justify-center p-6 text-center text-[#F8FAFC]">
         <div className="w-16 h-16 bg-[#1368AA]/20 border border-[#1368AA]/40 rounded-full flex items-center justify-center mb-4 text-[#1368AA]">
@@ -85,7 +133,7 @@ function ARContent() {
         </div>
         <h1 className="text-xl font-bold text-white mb-2">No se especificó un modelo</h1>
         <p className="text-sm text-slate-400 max-w-md mb-6">
-          Para ver un mueble en tu espacio, abre el configurador 3D y pulsa en "Ver en tu espacio" para escanear el código QR.
+          Para ver un mueble en tu espacio, abre el configurador 3D y pulsa en "Ver en tu espacio" para proyectarlo o escanear el código QR.
         </p>
         <Link
           href="/"
