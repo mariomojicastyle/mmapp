@@ -37,6 +37,42 @@ export default function Home3BF() {
   const [guardandoFoto, setGuardandoFoto] = React.useState(false);
   const [fotoCapturada, setFotoCapturada] = React.useState(false);
   const [isResizingPanel, setIsResizingPanel] = React.useState(false);
+
+  // 📱 Modo Escritorio Adaptativo en Móvil: Para 3dBimFab establecemos 1280px para que el usuario
+  // disfrute de la interfaz completa de PC automáticamente en su teléfono sin requerir el menú de Chrome.
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    const isTouch =
+      "ontouchstart" in window ||
+      (navigator && navigator.maxTouchPoints > 0) ||
+      (window.matchMedia && window.matchMedia("(pointer: coarse)").matches);
+
+    const isSmallScreen = window.screen.width < 1024;
+
+    let meta = document.querySelector('meta[name="viewport"]');
+    if (!meta) {
+      meta = document.createElement("meta");
+      meta.setAttribute("name", "viewport");
+      document.head.appendChild(meta);
+    }
+
+    if (isTouch && isSmallScreen) {
+      const calculatedScale = Math.max(0.25, Math.min(1.0, window.screen.width / 1280));
+      meta.setAttribute(
+        "content",
+        `width=1280, initial-scale=${calculatedScale.toFixed(2)}, maximum-scale=2.5, user-scalable=yes`
+      );
+      console.log(`[3dBimFab] Modo Escritorio activo para móvil (ancho: 1280px, escala: ${calculatedScale.toFixed(2)})`);
+    } else {
+      meta.setAttribute("content", "width=device-width, initial-scale=1.0");
+    }
+
+    return () => {
+      // Restablecer viewport al salir (ej. navegación a /ar)
+      meta?.setAttribute("content", "width=device-width, initial-scale=1.0");
+    };
+  }, []);
   const handleStartResizePanel = (e: React.MouseEvent | React.TouchEvent) => {
     setIsResizingPanel(true);
     const onMove = (moveEvent: MouseEvent | TouchEvent) => {

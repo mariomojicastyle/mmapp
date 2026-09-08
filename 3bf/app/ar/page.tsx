@@ -46,6 +46,25 @@ function ARContent() {
   const [sinModelo, setSinModelo] = useState(false);
   const viewerRef = React.useRef<HTMLElement | null>(null);
 
+  // 📱 Forzar viewport nativo móvil para que los controles táctiles y el botón de AR sean perfectos
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    let meta = document.querySelector('meta[name="viewport"]');
+    if (!meta) {
+      meta = document.createElement("meta");
+      meta.setAttribute("name", "viewport");
+      document.head.appendChild(meta);
+    }
+    const originalContent = meta.getAttribute("content");
+    meta.setAttribute("content", "width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no");
+
+    return () => {
+      if (originalContent) {
+        meta.setAttribute("content", originalContent);
+      }
+    };
+  }, []);
+
   useEffect(() => {
     let objectUrlRevoke: string | null = null;
     let isCancelled = false;
@@ -172,7 +191,7 @@ function ARContent() {
   }
 
   return (
-    <div className="relative w-full h-screen bg-[#131B2E] overflow-hidden flex flex-col select-none">
+    <div className="relative w-full h-[100dvh] bg-[#131B2E] overflow-hidden flex flex-col select-none">
       {/* Script oficial de Google <model-viewer> para Realidad Aumentada universal */}
       <Script
         type="module"
@@ -239,9 +258,9 @@ function ARContent() {
               aria-label="Experiencia AR"
               title="Experiencia AR"
               style={{ backgroundColor: "#1368AA", borderColor: "#1368AA" }}
-              className="absolute bottom-[70px] left-1/2 -translate-x-1/2 z-30 flex items-center justify-center w-14 h-14 rounded-full text-white shadow-lg border border-white/20 hover:scale-105 active:scale-95 transition-all cursor-pointer"
+              className="absolute bottom-20 left-1/2 -translate-x-1/2 z-30 flex items-center justify-center w-16 h-16 sm:w-14 sm:h-14 rounded-full text-white shadow-xl border border-white/20 hover:scale-105 active:scale-95 transition-all cursor-pointer touch-manipulation"
             >
-              <ViewInArIcon className="w-7 h-7 text-white" />
+              <ViewInArIcon className="w-8 h-8 sm:w-7 sm:h-7 text-white" />
             </button>
           </model-viewer>
         )}

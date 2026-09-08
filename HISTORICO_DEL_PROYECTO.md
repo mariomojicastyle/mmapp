@@ -2245,4 +2245,26 @@ Con esta batería de arreglos y la validación en caliente, la V20 se establece 
   * Compilación TypeScript validada en `3bf` (`npx tsc --noEmit`) con 0 errores.
   * Pruebas de endpoint HTTP `GET`, `HEAD` y `OPTIONS` en `https://engine.mariomojica.com/api/ar-model/[id].glb` respondiendo con `HTTP 200 OK`.
 
+---
+
+### 📱 Hito 3BF_ModoEscritorio_Movil_y_Blindaje_AR — Modo Escritorio Automático para Móviles en 3dBimFab, Detección Táctil Universal y Viewport AR 100dvh (08 de Septiembre, 2026)
+
+- **Modo Escritorio Adaptativo en Dispositivos Móviles (`app/page.tsx`)**:
+  * Implementación de inyección dinámica del `<meta name="viewport">` para calibrar la visualización de `3dBimFab` en smartphones a un ancho de **$1280\text{ px}$** con escala proporcional exacta (`initial-scale = window.screen.width / 1280`) y soporte para zoom gestual (`user-scalable=yes`).
+  * El usuario disfruta de la suite completa de escritorio (visor 3D + panel de control lateral a dos columnas) de forma automática y nativa en su teléfono móvil, sin tener que acordarse de marcar manualmente "Sitio para computadoras" en el menú de Chrome.
+
+- **Detección Táctil Universal Inmune a "Sitio para computadoras" (`Viewer3D.tsx`)**:
+  * Desacoplamiento de la detección móvil del User-Agent engañoso o de `window.innerWidth`. Ahora se interroga directamente el hardware capacitivo mediante `navigator.maxTouchPoints > 0` y la media query `(pointer: coarse)`.
+  * Aunque el usuario tenga marcado "Sitio para computadoras" en Chrome (donde el navegador falsea el ancho a 1280px y el SO a Linux x86_64), `Viewer3D` reconoce con 100% de precisión que está en un smartphone o tablet.
+  * **Erradicación del Modal QR en el mismo móvil**: El botón de Realidad Aumentada siempre conduce directamente a la experiencia AR (`/ar`), impidiendo que el teléfono intente mostrar un código QR que no puede escanearse sobre la propia pantalla.
+
+- **Blindaje del Visor de Realidad Aumentada (`app/ar/page.tsx`)**:
+  * Al saltar a `/ar`, el hook de montaje fuerza inmediatamente el viewport nativo móvil estándar (`width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no`), regresando la pantalla al tamaño físico 1:1.
+  * Transición de layout a altura dinámica `h-[100dvh]` para evitar que la barra de direcciones de Chrome oculte los controles inferiores.
+  * Botón de Realidad Aumentada ampliado a `w-16 h-16` (64px) a `bottom-20` (80px del suelo) con propiedad `touch-manipulation` para eliminación del retraso de toque (300ms tap delay).
+
+- **Validación Técnica y Calidad de Código**:
+  * Compilación TypeScript validada en `3bf` (`npx tsc --noEmit`) con 0 errores.
+
+
 

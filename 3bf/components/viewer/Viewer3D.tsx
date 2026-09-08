@@ -2401,8 +2401,12 @@ export default function Viewer3D() {
       if (typeof window === "undefined") return;
       const ua = navigator.userAgent || navigator.vendor || (window as any).opera || "";
       const isMobileUA = /android|webos|iphone|ipad|ipod|blackberry|iemobile|opera mini/i.test(ua);
-      const isTouch = "ontouchstart" in window || (navigator && navigator.maxTouchPoints > 0);
-      setIsMobile(isMobileUA || (isTouch && window.innerWidth <= 1024));
+      const isTouch =
+        "ontouchstart" in window ||
+        (navigator && (navigator.maxTouchPoints > 0 || (navigator as any).msMaxTouchPoints > 0)) ||
+        (window.matchMedia && window.matchMedia("(pointer: coarse)").matches);
+      // Es móvil/táctil si tiene pantalla táctil o UserAgent móvil, inmune a si Chrome tiene activado "Sitio para computadoras"
+      setIsMobile(isMobileUA || isTouch);
     };
     checkMobile();
     window.addEventListener("resize", checkMobile);
@@ -2903,12 +2907,16 @@ export default function Viewer3D() {
 
       const modelName = parametros.model_id || "Cubierta";
 
-      // 📱 Detección inteligente de dispositivo móvil o tablet:
+      // 📱 Detección universal de dispositivo móvil o tablet (inmune a "Sitio para computadoras"):
       const ua = typeof navigator !== "undefined" ? navigator.userAgent || navigator.vendor || (window as any).opera || "" : "";
       const isMobileUA = /android|webos|iphone|ipad|ipod|blackberry|iemobile|opera mini/i.test(ua);
       const isIPad = /macintosh/i.test(ua) && typeof navigator !== "undefined" && navigator.maxTouchPoints > 1;
-      const isSmallTouch = typeof window !== "undefined" && ("ontouchstart" in window || (navigator && navigator.maxTouchPoints > 0)) && window.innerWidth <= 1024;
-      const esDispositivoMovil = isMobileUA || isIPad || isSmallTouch;
+      const isTouch =
+        typeof window !== "undefined" &&
+        ("ontouchstart" in window ||
+          (navigator && (navigator.maxTouchPoints > 0 || (navigator as any).msMaxTouchPoints > 0)) ||
+          (window.matchMedia && window.matchMedia("(pointer: coarse)").matches));
+      const esDispositivoMovil = isMobileUA || isIPad || isTouch;
 
       // 💾 Guardar snapshot de sesión activa para que al volver de AR no se pierda ninguna personalización
       try {
@@ -3515,14 +3523,14 @@ export default function Viewer3D() {
             backgroundColor: coloresApariencia?.botonActivo || "#1368AA",
             borderColor: coloresApariencia?.colorMarca || "#1368AA",
           }}
-          className="w-10 h-10 sm:w-8 sm:h-8 rounded-full text-white shadow-lg border flex items-center justify-center hover:opacity-90 active:scale-95 transition-all cursor-pointer disabled:opacity-50 box-border"
+          className="w-12 h-12 md:w-10 md:h-10 rounded-full text-white shadow-lg border flex items-center justify-center hover:opacity-90 active:scale-95 transition-all cursor-pointer disabled:opacity-50 box-border"
           title="Experiencia AR (Realidad Aumentada 1:1)"
           aria-label="Experiencia AR"
         >
           {generandoAR ? (
-            <Loader2 className="w-5 h-5 sm:w-4 sm:h-4 text-white animate-spin" />
+            <Loader2 className="w-6 h-6 md:w-5 md:h-5 text-white animate-spin" />
           ) : (
-            <ViewInArIcon className="w-6 h-6 sm:w-4.5 sm:h-4.5 text-white" />
+            <ViewInArIcon className="w-7 h-7 md:w-5 md:h-5 text-white" />
           )}
         </button>
 
