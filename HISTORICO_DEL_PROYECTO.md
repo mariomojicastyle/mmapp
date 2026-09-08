@@ -2311,6 +2311,41 @@ Con esta batería de arreglos y la validación en caliente, la V20 se establece 
 - **Validación de Calidad**:
   * Compilación TypeScript verificada (`npx tsc --noEmit`) con 0 errores.
 
+---
+
+### 🚀 Hito 3BF_Calibracion_Cuerpo_30_Icono_Pestana — Calibración del Cuerpo Inferior (-30%), Header (-10% Adicional) y Estandarización de Ícono de Pestaña Chrome Móvil (08 de Septiembre, 2026)
+
+- **Estandarización del Ícono de Pestaña en Móvil (`site.webmanifest`, `layout.tsx`)**:
+  * **Problema Resuelto**: En Google Chrome para Android, al carecer de un `manifest.json` y de los tags explícitos de `apple-touch-icon` y `icon` con atributos `sizes`, el navegador mostraba un ícono genérico o globo terráqueo en la barra de pestañas.
+  * **Solución Aplicada**:
+    * Generados íconos PWA estándar de alta definición `icon-192.png` y `icon-512.png` a partir del SVG/PNG oficial de marca `3BF` (`#bb0f0f`).
+    * Creado el manifiesto web canónico `site.webmanifest` en `public/` con `name: 3dBimFab`, `theme_color: #bb0f0f` y las especificaciones para Chrome móvil.
+    * Vinculados en `app/layout.tsx` los tags `<link rel="manifest">`, `<link rel="icon" sizes="...">`, `<link rel="apple-touch-icon">` y `<meta name="theme-color" content="#bb0f0f">`. Ahora Chrome Android despliega de inmediato el distintivo cuadro rojo `3BF` en la barra de pestañas superior exactamente igual que en PC.
+
+- **Calibración del Header con Reducción Adicional del -10% (`app/page.tsx`)**:
+  * **Altura del Header**: Ajustada de $44\text{ px}$ (`h-11`) a $40\text{ px}$ (`h-10 md:h-10`).
+  * **Logotipo 3dBimFab**: Calibrado a `h-5 sm:h-[22px] md:h-6`.
+  * **Pestañas Centrales**: Contenedor en `h-[25px] md:h-[26px]`, botones internos de `h-[20px] md:h-[21px]` y tipografía `text-[9.5px] sm:text-[10px] md:text-[10.5px]`.
+  * **Botonera Modos 3D, Fotografía y Tema**: Botones circulares calibrados a `w-[20px] h-[20px]` en contenedores de `25px`.
+
+- **Reducción Integral del -30% en el Cuerpo Inferior (`app/page.tsx`, `ControlPanel.tsx`, `NPanel.tsx`, `Viewer3D.tsx`)**:
+  * **Contenedor Principal**: Padding exterior reducido de `p-3` a `p-2`.
+  * **Modificador de Componentes (`ControlPanel.tsx`)**:
+    * Padding del panel reducido de `p-4` a `p-2.5`.
+    * Título reducido a `text-xs font-bold`.
+    * Estado inactivo "Ningún componente seleccionado": padding a `p-4`, contenedor del cursor a `w-8 h-8` con icono de $16\text{ px}$, título en `text-xs` y texto de ayuda en `text-[10px]`.
+    * Controles de sliders y grupos de parámetros: reducidos a `p-1.5`, inputs numéricos `DirectNumberInput` ajustados a `w-14` con tipografía `text-[12px] sm:text-[11px]`, etiquetas a `text-[10.5px]` y grosor de barra a `h-1`.
+  * **Biblioteca de Componentes & N-Panel (`NPanel.tsx`)**:
+    * Miniaturas cuadradas reducidas de $74\text{ px}$ a **$56\text{ px}$** (`w-[56px] h-[56px]`), con tarjeta envolvente de $60\text{ px}$.
+    * Barra de búsqueda reducida a `py-1 text-[11px]` con icono de $12\text{ px}$.
+    * Tira vertical de pestañas Blender reducida de `w-9` a **`w-7`**, con botones circulares de `w-5.5` y tipografía vertical de `8px`.
+  * **HUD Canvas 3D (`Viewer3D.tsx`)**:
+    * Botones `Guardar`, `Perforar` y `Luces` reducidos a `h-[18px] sm:h-5` con texto `text-[9.5px] sm:text-[10px]`.
+
+- **Validación de Calidad**:
+  * Compilación TypeScript verificada (`npx tsc --noEmit`) con 0 errores.
+
+
 
 
 

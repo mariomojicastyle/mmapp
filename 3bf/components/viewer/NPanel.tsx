@@ -578,12 +578,12 @@ export default function NPanel() {
           {pestanaNPanel === "componentes" && (
             <div className="flex-1 min-w-0 flex flex-col overflow-hidden">
               
-              {/* Buscador */}
-              <div className="p-2.5 pb-1 shrink-0">
+              {/* Buscador (Reducción 30%) */}
+              <div className="p-1.5 pb-1 shrink-0">
                 <div className="relative flex items-center">
                   <Search 
                     style={{ color: coloresApariencia?.textoSecundario }} 
-                    className="w-3.5 h-3.5 absolute left-2.5 pointer-events-none opacity-60" 
+                    className="w-3 h-3 absolute left-2 pointer-events-none opacity-60" 
                   />
                   <input
                     type="text"
@@ -595,13 +595,13 @@ export default function NPanel() {
                       borderColor: coloresApariencia?.bordePaneles,
                       color: coloresApariencia?.textoPrincipal,
                     }}
-                    className="w-full pl-8 pr-3 py-1.5 text-xs rounded-xl border focus:outline-none focus:ring-1 focus:ring-cyan-500 transition-colors"
+                    className="w-full pl-6.5 pr-2.5 py-1 text-[11px] rounded-lg border focus:outline-none focus:ring-1 focus:ring-cyan-500 transition-colors"
                   />
                 </div>
               </div>
 
               {/* Botones de Categorías Dinámicas (Estilo y colores idénticos al TopNav) */}
-              <div className="flex items-center gap-1.5 px-2.5 py-1.5 overflow-x-auto text-[10px] no-scrollbar shrink-0">
+              <div className="flex items-center gap-1 px-1.5 py-1 overflow-x-auto text-[9px] no-scrollbar shrink-0">
                 {["Todos", ...categorias].map((cat) => {
                   const isSelected = categoriaMueble.toLowerCase() === cat.toLowerCase();
                   return (
@@ -613,9 +613,9 @@ export default function NPanel() {
                           ? { backgroundColor: coloresApariencia?.botonActivo || "#0891b2", borderColor: coloresApariencia?.bordePaneles || "#0891b2", color: "#FFFFFF" }
                           : { backgroundColor: coloresApariencia?.botonInactivo || "#E2E8F0", borderColor: coloresApariencia?.bordeBotonInactivo || "#CBD5E1", color: coloresApariencia?.textoPrincipal || "#0F172A" }
                       }
-                      className={`px-3 py-1 rounded-full font-bold whitespace-nowrap transition cursor-pointer border text-[10px] ${
+                      className={`px-2.5 py-0.5 rounded-full font-bold whitespace-nowrap transition cursor-pointer border text-[9.5px] ${
                         isSelected
-                          ? "shadow-sm text-white"
+                          ? "shadow-2xs text-white"
                           : "hover:opacity-90 backdrop-blur-sm"
                       }`}
                     >
@@ -626,12 +626,12 @@ export default function NPanel() {
               </div>
 
               {/* Grid de Miniaturas Blender Style (Thumbnail + Nombre) con Scroll Vertical Directo */}
-              <div className="flex-1 overflow-y-auto p-2.5 custom-scrollbar touch-pan-y">
-                <div className="text-[10px] text-slate-400 font-semibold px-1 mb-2">
+              <div className="flex-1 overflow-y-auto p-1.5 custom-scrollbar touch-pan-y">
+                <div className="text-[9px] text-slate-400 font-semibold px-1 mb-1.5">
                   <span>COMPONENTES ({mueblesFiltrados.length})</span>
                 </div>
 
-                <div className="flex flex-wrap gap-2 p-1 content-start items-start">
+                <div className="flex flex-wrap gap-1.5 p-0.5 content-start items-start">
                   {mueblesFiltrados.map((item) => {
                     return (
                       <div
@@ -642,17 +642,17 @@ export default function NPanel() {
                         onClick={() => use3BFStore.getState().cargarDefinicion(item)}
                         onDoubleClick={() => use3BFStore.getState().cargarDefinicion(item)}
                         title={`${item.nombre} (${item.archivo}) - Haz doble clic o arrastra al visor 3D`}
-                        className={`group flex flex-col items-center cursor-grab active:cursor-grabbing p-0.5 rounded-xl hover:bg-slate-100/80 dark:hover:bg-slate-800/50 transition-all select-none relative w-[78px] shrink-0 ${
+                        className={`group flex flex-col items-center cursor-grab active:cursor-grabbing p-0.5 rounded-lg hover:bg-slate-100/80 dark:hover:bg-slate-800/50 transition-all select-none relative w-[60px] shrink-0 ${
                           draggedItemId === item.id ? "opacity-40 scale-95" : ""
                         }`}
                       >
-                        {/* Miniatura Cuadrada Estilo Blender (Tamaño constante y uniforme sin sobresaltos) */}
+                        {/* Miniatura Cuadrada Estilo Blender (Reducida 30% a 56px) */}
                         <div 
                           style={{
                             backgroundColor: coloresApariencia?.fondoAplicacion || "#F1F5F9",
                             borderColor: coloresApariencia?.fondoAplicacion || coloresApariencia?.bordePaneles || "#E2E8F0",
                           }}
-                          className="w-[74px] h-[74px] aspect-square rounded-xl overflow-hidden border shadow-2xs group-hover:border-cyan-500/80 group-hover:shadow-md transition-all relative flex items-center justify-center p-0 shrink-0"
+                          className="w-[56px] h-[56px] aspect-square rounded-lg overflow-hidden border shadow-2xs group-hover:border-cyan-500/80 group-hover:shadow-md transition-all relative flex items-center justify-center p-0 shrink-0"
                         >
                           {item.thumbnail ? (
                             <img 
@@ -663,7 +663,7 @@ export default function NPanel() {
                           ) : (
                             <Box 
                               style={{ color: coloresApariencia?.botonActivo || "#0891b2" }} 
-                              className="w-8 h-8 opacity-70" 
+                              className="w-6 h-6 opacity-70" 
                             />
                           )}
 
@@ -671,23 +671,23 @@ export default function NPanel() {
                           <button
                             onClick={(e) => handleCapturarMiniaturaComponente(item, e)}
                             title={`Capturar vista 3D actual como miniatura para ${item.nombre}`}
-                            className={`absolute top-1 right-1 p-1 rounded-md transition-all cursor-pointer shadow-xs z-10 ${
+                            className={`absolute top-0.5 right-0.5 p-0.5 rounded transition-all cursor-pointer shadow-xs z-10 ${
                               capturaExitosaId === item.id
                                 ? "opacity-100 bg-emerald-600 text-white"
                                 : "opacity-0 group-hover:opacity-100 bg-black/65 hover:bg-cyan-600 text-white"
                             }`}
                           >
                             {capturaExitosaId === item.id ? (
-                              <Check className="w-2.5 h-2.5 text-white" />
+                              <Check className="w-2 h-2 text-white" />
                             ) : (
-                              <Camera className={`w-2.5 h-2.5 ${capturandoCompId === item.id ? "animate-pulse" : ""}`} />
+                              <Camera className={`w-2 h-2 ${capturandoCompId === item.id ? "animate-pulse" : ""}`} />
                             )}
                           </button>
                         </div>
 
                         {/* Nombre Limpio Estilo Blender (Sin rebordes) */}
-                        <div className="w-full mt-1.5 px-0.5 text-center">
-                          <p className="text-xs font-semibold text-slate-700 dark:text-slate-200 truncate group-hover:text-cyan-600 dark:group-hover:text-cyan-400 transition-colors">
+                        <div className="w-full mt-1 px-0.5 text-center">
+                          <p className="text-[10px] font-semibold text-slate-700 dark:text-slate-200 truncate group-hover:text-cyan-600 dark:group-hover:text-cyan-400 transition-colors">
                             {item.nombre}
                           </p>
                         </div>
@@ -1494,24 +1494,24 @@ export default function NPanel() {
               borderColor: coloresApariencia?.bordePaneles,
               color: coloresApariencia?.textoSecundario
             }}
-            className="p-2 border-t text-[10px] flex items-center justify-between px-3 shrink-0"
+            className="p-1.5 border-t text-[9px] flex items-center justify-between px-2.5 shrink-0"
           >
             <span className="flex items-center gap-1">
-              <Info className="w-3 h-3" /> 3dBimFab {APP_VERSION}
+              <Info className="w-2.5 h-2.5" /> 3dBimFab {APP_VERSION}
             </span>
-            <span className="font-mono text-[9px]">Atajo: [ N ]</span>
+            <span className="font-mono text-[8.5px]">Atajo: [ N ]</span>
           </div>
         </div>
 
         {/* ========================================================================= */}
-        {/* 🏷️ TIRA DE PESTAÑAS VERTICALES ESTILO BLENDER                              */}
+        {/* 🏷️ TIRA DE PESTAÑAS VERTICALES ESTILO BLENDER (Reducción 30%)               */}
         {/* ========================================================================= */}
         <div 
           style={{ 
             backgroundColor: coloresApariencia?.fondoPaneles, 
             borderColor: coloresApariencia?.bordePaneles 
           }}
-          className="w-9 shrink-0 flex flex-col py-2 px-1 items-center gap-1.5 border-l select-none overflow-y-auto no-scrollbar touch-pan-y overscroll-contain"
+          className="w-7 shrink-0 flex flex-col py-1.5 px-0.5 items-center gap-1 border-l select-none overflow-y-auto no-scrollbar touch-pan-y overscroll-contain"
         >
             
             {/* Pestaña Vertical 1: Componentes */}
@@ -1523,16 +1523,16 @@ export default function NPanel() {
                   : { color: coloresApariencia?.textoPrincipal }
               }
               title="Biblioteca de Componentes"
-              className={`w-7 py-2.5 px-1 rounded-full flex flex-col items-center justify-center gap-1.5 transition-all cursor-pointer ${
+              className={`w-5.5 py-2 px-0.5 rounded-full flex flex-col items-center justify-center gap-1 transition-all cursor-pointer ${
                 pestanaNPanel === "componentes"
-                  ? "shadow-md font-bold"
+                  ? "shadow-sm font-bold"
                   : "hover:opacity-80"
               }`}
             >
-              <Boxes className="w-3.5 h-3.5 shrink-0" />
+              <Boxes className="w-3 h-3 shrink-0" />
               <span 
                 style={{ writingMode: "vertical-rl" }}
-                className="text-[9px] tracking-wide font-sans leading-none font-semibold"
+                className="text-[8px] tracking-wide font-sans leading-none font-semibold"
               >
                 Componentes
               </span>
@@ -1547,16 +1547,16 @@ export default function NPanel() {
                   : { color: coloresApariencia?.textoPrincipal }
               }
               title="Biblioteca de Muebles (Catálogos por Marca)"
-              className={`w-7 py-2.5 px-1 rounded-full flex flex-col items-center justify-center gap-1.5 transition-all cursor-pointer ${
+              className={`w-5.5 py-2 px-0.5 rounded-full flex flex-col items-center justify-center gap-1 transition-all cursor-pointer ${
                 pestanaNPanel === "muebles"
-                  ? "shadow-md font-bold"
+                  ? "shadow-sm font-bold"
                   : "hover:opacity-80"
               }`}
             >
-              <Package className="w-3.5 h-3.5 shrink-0" />
+              <Package className="w-3 h-3 shrink-0" />
               <span 
                 style={{ writingMode: "vertical-rl" }}
-                className="text-[9px] tracking-wide font-sans leading-none font-semibold"
+                className="text-[8px] tracking-wide font-sans leading-none font-semibold"
               >
                 Muebles
               </span>
@@ -1571,16 +1571,16 @@ export default function NPanel() {
                   : { color: coloresApariencia?.textoPrincipal }
               }
               title="Desglose de Partes y Mallas"
-              className={`w-7 py-2.5 px-1 rounded-full flex flex-col items-center justify-center gap-1.5 transition-all cursor-pointer ${
+              className={`w-5.5 py-2 px-0.5 rounded-full flex flex-col items-center justify-center gap-1 transition-all cursor-pointer ${
                 pestanaNPanel === "partes"
-                  ? "shadow-md font-bold"
+                  ? "shadow-sm font-bold"
                   : "hover:opacity-80"
               }`}
             >
-              <ListTree className="w-3.5 h-3.5 shrink-0" />
+              <ListTree className="w-3 h-3 shrink-0" />
               <span 
                 style={{ writingMode: "vertical-rl" }}
-                className="text-[9px] tracking-wide font-sans leading-none font-semibold"
+                className="text-[8px] tracking-wide font-sans leading-none font-semibold"
               >
                 Partes
               </span>
@@ -1595,16 +1595,16 @@ export default function NPanel() {
                   : { color: coloresApariencia?.textoPrincipal }
               }
               title="Gestor de Capas y Materiales Asignados"
-              className={`w-7 py-2.5 px-1 rounded-full flex flex-col items-center justify-center gap-1.5 transition-all cursor-pointer ${
+              className={`w-5.5 py-2 px-0.5 rounded-full flex flex-col items-center justify-center gap-1 transition-all cursor-pointer ${
                 pestanaNPanel === "capas"
-                  ? "shadow-md font-bold"
+                  ? "shadow-sm font-bold"
                   : "hover:opacity-80"
               }`}
             >
-              <Layers className="w-3.5 h-3.5 shrink-0" />
+              <Layers className="w-3 h-3 shrink-0" />
               <span 
                 style={{ writingMode: "vertical-rl" }}
-                className="text-[9px] tracking-wide font-sans leading-none font-semibold"
+                className="text-[8px] tracking-wide font-sans leading-none font-semibold"
               >
                 Capas
               </span>
@@ -1619,16 +1619,16 @@ export default function NPanel() {
                   : { color: coloresApariencia?.textoPrincipal }
               }
               title="Paleta de Materiales PBR"
-              className={`w-7 py-2.5 px-1 rounded-full flex flex-col items-center justify-center gap-1.5 transition-all cursor-pointer ${
+              className={`w-5.5 py-2 px-0.5 rounded-full flex flex-col items-center justify-center gap-1 transition-all cursor-pointer ${
                 pestanaNPanel === "materiales"
-                  ? "shadow-md font-bold"
+                  ? "shadow-sm font-bold"
                   : "hover:opacity-80"
               }`}
             >
-              <Palette className="w-3.5 h-3.5 shrink-0" />
+              <Palette className="w-3 h-3 shrink-0" />
               <span 
                 style={{ writingMode: "vertical-rl" }}
-                className="text-[9px] tracking-wide font-sans leading-none font-semibold"
+                className="text-[8px] tracking-wide font-sans leading-none font-semibold"
               >
                 Materiales
               </span>
@@ -1643,23 +1643,23 @@ export default function NPanel() {
                   : { color: coloresApariencia?.textoPrincipal }
               }
               title="3BF AI Render Studio: Generar render fotorrealista con IA"
-              className={`w-7 py-2.5 px-1 rounded-full flex flex-col items-center justify-center gap-1.5 transition-all cursor-pointer ${
+              className={`w-5.5 py-2 px-0.5 rounded-full flex flex-col items-center justify-center gap-1 transition-all cursor-pointer ${
                 modalRenderIAAbierto
-                  ? "shadow-md font-bold"
+                  ? "shadow-sm font-bold"
                   : "hover:opacity-80"
               }`}
             >
-              <Camera className="w-3.5 h-3.5 shrink-0" />
+              <Camera className="w-3 h-3 shrink-0" />
               <span 
                 style={{ writingMode: "vertical-rl" }}
-                className="text-[9px] tracking-wide font-sans leading-none font-semibold"
+                className="text-[8px] tracking-wide font-sans leading-none font-semibold"
               >
                 Render IA
               </span>
             </button>
 
             {/* Separador sutil */}
-            <div className="w-4 h-px bg-slate-200 dark:bg-slate-700 my-0.5" />
+            <div className="w-3 h-px bg-slate-200 dark:bg-slate-700 my-0.5" />
 
             {/* Pestaña Vertical 7: Apariencia */}
             <button
@@ -1670,16 +1670,16 @@ export default function NPanel() {
                   : { color: coloresApariencia?.textoPrincipal }
               }
               title="Personalización de Apariencia y Colores (Estilo Rhinoceros 8)"
-              className={`w-7 py-2.5 px-1 rounded-full flex flex-col items-center justify-center gap-1.5 transition-all cursor-pointer ${
+              className={`w-5.5 py-2 px-0.5 rounded-full flex flex-col items-center justify-center gap-1 transition-all cursor-pointer ${
                 pestanaNPanel === "apariencia"
-                  ? "shadow-md font-bold"
+                  ? "shadow-sm font-bold"
                   : "hover:opacity-80"
               }`}
             >
-              <Paintbrush className="w-3.5 h-3.5 shrink-0" />
+              <Paintbrush className="w-3 h-3 shrink-0" />
               <span 
                 style={{ writingMode: "vertical-rl" }}
-                className="text-[9px] tracking-wide font-sans leading-none font-semibold"
+                className="text-[8px] tracking-wide font-sans leading-none font-semibold"
               >
                 Apariencia
               </span>
@@ -1694,16 +1694,16 @@ export default function NPanel() {
                   : { color: coloresApariencia?.textoPrincipal }
               }
               title="Calibración de Renderizado 3D"
-              className={`w-7 py-2.5 px-1 rounded-full flex flex-col items-center justify-center gap-1.5 transition-all cursor-pointer ${
+              className={`w-5.5 py-2 px-0.5 rounded-full flex flex-col items-center justify-center gap-1 transition-all cursor-pointer ${
                 pestanaNPanel === "calibrar"
-                  ? "shadow-md font-bold"
+                  ? "shadow-sm font-bold"
                   : "hover:opacity-80"
               }`}
             >
-              <Sliders className="w-3.5 h-3.5 shrink-0" />
+              <Sliders className="w-3 h-3 shrink-0" />
               <span 
                 style={{ writingMode: "vertical-rl" }}
-                className="text-[9px] tracking-wide font-sans leading-none font-semibold"
+                className="text-[8px] tracking-wide font-sans leading-none font-semibold"
               >
                 Calibrar
               </span>

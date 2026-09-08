@@ -135,7 +135,7 @@ const DirectNumberInput = ({
   };
 
   return (
-    <div className="flex items-center gap-1">
+    <div className="flex items-center gap-0.5">
       <input
         type="text"
         inputMode="decimal"
@@ -153,9 +153,9 @@ const DirectNumberInput = ({
           backgroundColor: coloresApariencia?.fondoAplicacion,
           color: coloresApariencia?.botonActivo
         }}
-        className={`w-18 px-1.5 py-0.5 text-right text-[16px] sm:text-xs font-mono font-bold border rounded outline-none shadow-xs transition touch-manipulation ${className}`}
+        className={`w-14 px-1 py-0.5 text-right text-[12px] sm:text-[11px] font-mono font-bold border rounded outline-none shadow-2xs transition touch-manipulation ${className}`}
       />
-      <span style={{ color: coloresApariencia?.textoSecundario }} className="text-[11px] font-mono font-semibold">{unit}</span>
+      <span style={{ color: coloresApariencia?.textoSecundario }} className="text-[9.5px] font-mono font-semibold">{unit}</span>
     </div>
   );
 };
@@ -209,10 +209,10 @@ function RenderParamControl({ paramKey }: { paramKey: string }) {
           backgroundColor: coloresApariencia?.fondoPaneles, 
           borderColor: coloresApariencia?.bordePaneles || "#CBD5E1" 
         }}
-        className="flex flex-col gap-1.5 p-2 rounded-lg border shadow-xs text-xs"
+        className="flex flex-col gap-1 p-1.5 rounded-lg border shadow-2xs text-[11px]"
       >
         <div className="flex justify-between font-medium items-center">
-          <label style={{ color: coloresApariencia?.textoPrincipal }} className="font-bold">{label}</label>
+          <label style={{ color: coloresApariencia?.textoPrincipal }} className="font-bold text-[10.5px]">{label}</label>
           <DirectNumberInput
             value={numVal}
             min={minVal}
@@ -240,7 +240,7 @@ function RenderParamControl({ paramKey }: { paramKey: string }) {
             guardarEstadoHistorial();
           }}
           style={{ accentColor: coloresApariencia?.botonActivo || "#0891B2" }}
-          className="w-full cursor-pointer"
+          className="w-full cursor-pointer h-1"
         />
       </div>
     );
@@ -312,9 +312,9 @@ function RenderParamControl({ paramKey }: { paramKey: string }) {
         backgroundColor: coloresApariencia?.fondoPaneles, 
         borderColor: coloresApariencia?.bordePaneles || "#CBD5E1" 
       }}
-      className="flex justify-between items-center p-2 rounded-lg border text-xs shadow-sm"
+      className="flex justify-between items-center p-1.5 rounded-lg border text-[11px] shadow-2xs"
     >
-      <span style={{ color: coloresApariencia?.textoPrincipal }} className="font-bold text-[11px]">{label}:</span>
+      <span style={{ color: coloresApariencia?.textoPrincipal }} className="font-bold text-[10.5px]">{label}:</span>
       <select
         value={selectedValue}
         onChange={(e) => handleSelectChange(e.target.value)}
@@ -323,7 +323,7 @@ function RenderParamControl({ paramKey }: { paramKey: string }) {
           backgroundColor: coloresApariencia?.fondoAplicacion,
           color: coloresApariencia?.textoPrincipal
         }}
-        className="text-xs p-1 rounded-lg border font-bold outline-none cursor-pointer"
+        className="text-[10.5px] p-0.5 px-1.5 rounded border font-bold outline-none cursor-pointer"
       >
         {options.map((opt) => (
           <option key={opt} value={opt}>
@@ -351,7 +351,7 @@ function ParametrosPanel() {
   const groups = currentResult.parameter_groups;
 
   return (
-    <div className="flex flex-col gap-3.5">
+    <div className="flex flex-col gap-2.5">
       {groups.map((grp: { title: string; parameters: string[] }, idx: number) => (
         <div 
           key={`group-${idx}`} 
@@ -359,23 +359,23 @@ function ParametrosPanel() {
             borderColor: coloresApariencia?.insigniaFondo || coloresApariencia?.bordePaneles,
             backgroundColor: coloresApariencia?.fondoPaneles ? `${coloresApariencia.fondoPaneles}80` : undefined
           }}
-          className="flex flex-col gap-3 p-3 rounded-xl border shadow-sm"
+          className="flex flex-col gap-2 p-2 rounded-xl border shadow-2xs"
         >
           <div 
             style={{ 
               borderColor: coloresApariencia?.insigniaFondo || coloresApariencia?.bordePaneles,
               color: coloresApariencia?.textoPrincipal 
             }}
-            className="text-xs font-extrabold flex items-center gap-1.5 pb-1.5 border-b"
+            className="text-[10.5px] font-extrabold flex items-center gap-1.5 pb-1 border-b"
           >
             <Box 
               style={{ color: coloresApariencia?.botonActivo || "#0891b2" }} 
-              className="w-4 h-4 shrink-0" 
+              className="w-3.5 h-3.5 shrink-0" 
             />
             <span>{grp.title}</span>
           </div>
 
-          <div className="flex flex-col gap-2">
+          <div className="flex flex-col gap-1.5">
             {grp.parameters.map((pKey: string) => (
               <RenderParamControl key={pKey} paramKey={pKey} />
             ))}
@@ -562,10 +562,10 @@ export default function ControlPanel() {
   const listaInstancias = Object.values(instancias || {});
 
   return (
-    <div className="p-4 flex flex-col gap-4 h-full overflow-y-auto no-scrollbar">
-      {/* 🏷️ TÍTULO PRINCIPAL DEL PANEL */}
-      <div className="flex items-center justify-between pb-2 border-b" style={{ borderColor: coloresApariencia?.bordePaneles }}>
-        <h3 className="font-bold text-sm" style={{ color: coloresApariencia?.textoPrincipal }}>
+    <div className="p-2.5 flex flex-col gap-2.5 h-full overflow-y-auto no-scrollbar">
+      {/* 🏷️ TÍTULO PRINCIPAL DEL PANEL (Reducción 30%) */}
+      <div className="flex items-center justify-between pb-1.5 border-b" style={{ borderColor: coloresApariencia?.bordePaneles }}>
+        <h3 className="font-bold text-xs" style={{ color: coloresApariencia?.textoPrincipal }}>
           Modificador de Componentes
         </h3>
       </div>
@@ -578,17 +578,17 @@ export default function ControlPanel() {
               borderColor: coloresApariencia?.insigniaFondo || coloresApariencia?.bordePaneles,
               backgroundColor: coloresApariencia?.fondoPaneles ? `${coloresApariencia.fondoPaneles}80` : undefined
             }}
-            className="flex flex-col gap-2 p-3 rounded-xl border shadow-sm"
+            className="flex flex-col gap-1.5 p-2 rounded-xl border shadow-xs"
           >
-            <div className="flex items-center justify-between gap-2">
-              <div className="flex items-center gap-2 min-w-0">
+            <div className="flex items-center justify-between gap-1.5">
+              <div className="flex items-center gap-1.5 min-w-0">
                 <span 
                   style={{ backgroundColor: coloresApariencia?.estadoActivo || "#10B981" }} 
-                  className={`w-2.5 h-2.5 rounded-full shrink-0 ${instanciaActiva.cargando ? "animate-spin bg-cyan-500" : "animate-pulse"}`} 
+                  className={`w-2 h-2 rounded-full shrink-0 ${instanciaActiva.cargando ? "animate-spin bg-cyan-500" : "animate-pulse"}`} 
                 />
                 <span 
                   style={{ color: coloresApariencia?.textoPrincipal }} 
-                  className="font-extrabold text-sm leading-none truncate"
+                  className="font-extrabold text-xs leading-none truncate"
                   title={instanciaActiva.nombreVisible}
                 >
                   {instanciaActiva.nombreVisible}
@@ -596,7 +596,7 @@ export default function ControlPanel() {
               </div>
 
               {instanciaActiva.cargando && (
-                <span className="text-[10px] font-bold text-cyan-500 animate-pulse shrink-0">
+                <span className="text-[9px] font-bold text-cyan-500 animate-pulse shrink-0">
                   Sincronizando...
                 </span>
               )}
@@ -607,30 +607,30 @@ export default function ControlPanel() {
           <ParametrosPanel />
         </>
       ) : (
-        /* 💤 ESTADO INACTIVO: NINGÚN COMPONENTE SELECCIONADO */
+        /* 💤 ESTADO INACTIVO: NINGÚN COMPONENTE SELECCIONADO (Reducción 30%) */
         <div 
           style={{ 
             borderColor: coloresApariencia?.bordePaneles || "#CBD5E1",
             backgroundColor: coloresApariencia?.fondoPaneles ? `${coloresApariencia.fondoPaneles}60` : undefined,
             color: coloresApariencia?.textoSecundario 
           }}
-          className="p-6 flex flex-col items-center justify-center text-center gap-3.5 border border-dashed rounded-2xl my-auto shadow-xs"
+          className="p-4 flex flex-col items-center justify-center text-center gap-2.5 border border-dashed rounded-xl my-auto shadow-xs"
         >
           <div 
             style={{ 
               backgroundColor: coloresApariencia?.insigniaFondo || "#CFFAFE", 
               color: coloresApariencia?.insigniaTexto || "#0891B2" 
             }}
-            className="w-12 h-12 rounded-full flex items-center justify-center shadow-xs"
+            className="w-8 h-8 rounded-full flex items-center justify-center shadow-xs"
           >
-            <MousePointerClick className="w-6 h-6" />
+            <MousePointerClick className="w-4 h-4" />
           </div>
 
-          <div className="flex flex-col gap-1">
-            <h4 style={{ color: coloresApariencia?.textoPrincipal }} className="font-extrabold text-sm">
+          <div className="flex flex-col gap-0.5">
+            <h4 style={{ color: coloresApariencia?.textoPrincipal }} className="font-extrabold text-xs">
               Ningún componente seleccionado
             </h4>
-            <p className="text-[11px] leading-relaxed max-w-[220px]">
+            <p className="text-[10px] leading-relaxed max-w-[200px]">
               Haz clic sobre el mueble en el visor 3D para activar sus parámetros y la orientación de vetas.
             </p>
           </div>
@@ -642,7 +642,7 @@ export default function ControlPanel() {
                 backgroundColor: coloresApariencia?.botonActivo || "#0891B2",
                 color: "#FFFFFF"
               }}
-              className="mt-1 px-4 py-2 rounded-full text-xs font-semibold shadow-xs hover:opacity-90 active:scale-95 transition cursor-pointer"
+              className="mt-0.5 px-3 py-1.5 rounded-full text-[11px] font-semibold shadow-xs hover:opacity-90 active:scale-95 transition cursor-pointer"
             >
               Seleccionar {listaInstancias[0].nombreVisible}
             </button>
