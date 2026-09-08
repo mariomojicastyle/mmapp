@@ -302,13 +302,13 @@ export default function Home3BF() {
                   ? { backgroundColor: coloresApariencia?.botonActivo || "#0891b2", borderColor: coloresApariencia?.colorMarca || "#0891b2" }
                   : { backgroundColor: coloresApariencia?.botonInactivo || "#E2E8F0", borderColor: coloresApariencia?.bordeBotonInactivo || "#CBD5E1", color: coloresApariencia?.textoPrincipal || "#0F172A" }
               }
-              className={`px-3 sm:px-4 md:px-5 h-8 md:h-9 rounded-full transition flex items-center gap-1.5 font-bold cursor-pointer text-xs md:text-sm ${
+              className={`px-2 sm:px-3 md:px-4 h-6 md:h-7 rounded-full transition flex items-center gap-1 font-bold cursor-pointer text-[11px] md:text-xs ${
                 pestanaActiva === "3d"
                   ? "text-white shadow-md border"
                   : "hover:opacity-90 border backdrop-blur-sm"
               }`}
             >
-              <Box className="w-4 md:w-4.5 h-4 md:h-4.5" /> <span><span className="hidden sm:inline">Visor </span>3D</span>
+              <Box className="w-3 md:w-3.5 h-3 md:h-3.5" /> <span><span className="hidden sm:inline">Visor </span>3D</span>
             </button>
             <button
               onClick={() => setPestanaActiva("despiece")}
@@ -317,13 +317,13 @@ export default function Home3BF() {
                   ? { backgroundColor: coloresApariencia?.botonActivo || "#0891b2", borderColor: coloresApariencia?.colorMarca || "#0891b2" }
                   : { backgroundColor: coloresApariencia?.botonInactivo || "#E2E8F0", borderColor: coloresApariencia?.bordeBotonInactivo || "#CBD5E1", color: coloresApariencia?.textoPrincipal || "#0F172A" }
               }
-              className={`px-3 sm:px-4 md:px-5 h-8 md:h-9 rounded-full transition flex items-center gap-1.5 font-bold cursor-pointer text-xs md:text-sm ${
+              className={`px-2 sm:px-3 md:px-4 h-6 md:h-7 rounded-full transition flex items-center gap-1 font-bold cursor-pointer text-[11px] md:text-xs ${
                 pestanaActiva === "despiece"
                   ? "text-white shadow-md border"
                   : "hover:opacity-90 border backdrop-blur-sm"
               }`}
             >
-              <Layers className="w-4 md:w-4.5 h-4 md:h-4.5" /> <span>Despiece<span className="hidden sm:inline"> & Costos</span></span>
+              <Layers className="w-3 md:w-3.5 h-3 md:h-3.5" /> <span>Despiece<span className="hidden sm:inline"> & Costos</span></span>
             </button>
             <button
               onClick={() => setPestanaActiva("basedatos")}
@@ -332,26 +332,26 @@ export default function Home3BF() {
                   ? { backgroundColor: coloresApariencia?.botonActivo || "#0891b2", borderColor: coloresApariencia?.colorMarca || "#0891b2" }
                   : { backgroundColor: coloresApariencia?.botonInactivo || "#E2E8F0", borderColor: coloresApariencia?.bordeBotonInactivo || "#CBD5E1", color: coloresApariencia?.textoPrincipal || "#0F172A" }
               }
-              className={`px-3 sm:px-4 md:px-5 h-8 md:h-9 rounded-full transition flex items-center gap-1.5 font-bold cursor-pointer text-xs md:text-sm ${
+              className={`px-2 sm:px-3 md:px-4 h-6 md:h-7 rounded-full transition flex items-center gap-1 font-bold cursor-pointer text-[11px] md:text-xs ${
                 pestanaActiva === "basedatos"
                   ? "text-white shadow-md border"
                   : "hover:opacity-90 border backdrop-blur-sm"
               }`}
             >
-              <Database className="w-4 md:w-4.5 h-4 md:h-4.5" /> <span><span className="hidden sm:inline">Base de </span>Datos</span>
+              <Database className="w-3 md:w-3.5 h-3 md:h-3.5" /> <span><span className="hidden sm:inline">Base de </span>Datos</span>
             </button>
           </div>
         </div>
 
         {/* 3. Bloque de Herramientas y Controles Visuales a la Derecha */}
         <div className="flex items-center gap-1.5 sm:gap-2 md:gap-2.5 lg:gap-3 shrink-0">
-          {/* Botonera de 4 Modos 3D (+50% de tamaño táctil) */}
+          {/* Botonera de 4 Modos 3D (Cápsula rounded-full) */}
           <div 
             style={{ 
               borderColor: coloresApariencia?.insigniaFondo || coloresApariencia?.bordePaneles,
               backgroundColor: coloresApariencia?.panelContenedor || "#E2E8F0"
             }}
-            className="flex items-center p-1 rounded-full border gap-1 shadow-inner h-9 md:h-10 shrink-0"
+            className="flex items-center p-0.5 md:p-1 rounded-full border gap-0.5 md:gap-1 shadow-inner h-8 md:h-9 shrink-0"
           >
             {/* 1. Líneas (Wireframe) */}
             <button
@@ -362,11 +362,11 @@ export default function Home3BF() {
                   ? { backgroundColor: coloresApariencia?.botonActivo || "#0891b2", borderColor: coloresApariencia?.colorMarca || "#0891b2" }
                   : { backgroundColor: coloresApariencia?.botonInactivo || "#E2E8F0", borderColor: coloresApariencia?.bordeBotonInactivo || "#CBD5E1", color: coloresApariencia?.textoPrincipal || "#0F172A" }
               }
-              className={`w-7 sm:w-8 md:w-9 h-7 sm:h-8 md:h-9 rounded-full flex items-center justify-center cursor-pointer transition ${
+              className={`w-6 md:w-7 h-6 md:h-7 rounded-full flex items-center justify-center cursor-pointer transition ${
                 modoVisual === "lineas" ? "text-white shadow-md border" : "hover:opacity-90 border backdrop-blur-sm"
               }`}
             >
-              <IconModoLineas className="w-4 md:w-5 h-4 md:h-5" />
+              <IconModoLineas className="w-3.5 md:w-4 h-3.5 md:h-4" />
             </button>
 
             {/* 2. Cristal (Semitransparente / Glass) */}
@@ -378,11 +378,11 @@ export default function Home3BF() {
                   ? { backgroundColor: coloresApariencia?.botonActivo || "#0891b2", borderColor: coloresApariencia?.colorMarca || "#0891b2" }
                   : { backgroundColor: coloresApariencia?.botonInactivo || "#E2E8F0", borderColor: coloresApariencia?.bordeBotonInactivo || "#CBD5E1", color: coloresApariencia?.textoPrincipal || "#0F172A" }
               }
-              className={`w-7 sm:w-8 md:w-9 h-7 sm:h-8 md:h-9 rounded-full flex items-center justify-center cursor-pointer transition ${
+              className={`w-6 md:w-7 h-6 md:h-7 rounded-full flex items-center justify-center cursor-pointer transition ${
                 modoVisual === "semitransparente" ? "text-white shadow-md border" : "hover:opacity-90 border backdrop-blur-sm"
               }`}
             >
-              <IconModoCristal className="w-4 md:w-5 h-4 md:h-5" isActivo={modoVisual === "semitransparente"} />
+              <IconModoCristal className="w-3.5 md:w-4 h-3.5 md:h-4" isActivo={modoVisual === "semitransparente"} />
             </button>
 
             {/* 3. Sólido (Solid) */}
@@ -394,11 +394,11 @@ export default function Home3BF() {
                   ? { backgroundColor: coloresApariencia?.botonActivo || "#0891b2", borderColor: coloresApariencia?.colorMarca || "#0891b2" }
                   : { backgroundColor: coloresApariencia?.botonInactivo || "#E2E8F0", borderColor: coloresApariencia?.bordeBotonInactivo || "#CBD5E1", color: coloresApariencia?.textoPrincipal || "#0F172A" }
               }
-              className={`w-7 sm:w-8 md:w-9 h-7 sm:h-8 md:h-9 rounded-full flex items-center justify-center cursor-pointer transition ${
+              className={`w-6 md:w-7 h-6 md:h-7 rounded-full flex items-center justify-center cursor-pointer transition ${
                 modoVisual === "solido" ? "text-white shadow-md border" : "hover:opacity-90 border backdrop-blur-sm"
               }`}
             >
-              <IconModoSolido className="w-4 md:w-5 h-4 md:h-5" />
+              <IconModoSolido className="w-3.5 md:w-4 h-3.5 md:h-4" />
             </button>
 
             {/* 4. Renderizado (Render / Specular) */}
@@ -410,21 +410,21 @@ export default function Home3BF() {
                   ? { backgroundColor: coloresApariencia?.botonActivo || "#0891b2", borderColor: coloresApariencia?.colorMarca || "#0891b2" }
                   : { backgroundColor: coloresApariencia?.botonInactivo || "#E2E8F0", borderColor: coloresApariencia?.bordeBotonInactivo || "#CBD5E1", color: coloresApariencia?.textoPrincipal || "#0F172A" }
               }
-              className={`w-7 sm:w-8 md:w-9 h-7 sm:h-8 md:h-9 rounded-full flex items-center justify-center cursor-pointer transition ${
+              className={`w-6 md:w-7 h-6 md:h-7 rounded-full flex items-center justify-center cursor-pointer transition ${
                 modoVisual === "renderizado" ? "text-white shadow-md border" : "hover:opacity-90 border backdrop-blur-sm"
               }`}
             >
-              <IconModoRender className="w-4 md:w-5 h-4 md:h-5" />
+              <IconModoRender className="w-3.5 md:w-4 h-3.5 md:h-4" />
             </button>
           </div>
 
-          {/* 2. Botón de Fotografía (+50% de tamaño táctil) */}
+          {/* 2. Botón de Fotografía (Cápsula rounded-full) */}
           <div
             style={{ 
               borderColor: coloresApariencia?.insigniaFondo || coloresApariencia?.bordePaneles,
               backgroundColor: coloresApariencia?.panelContenedor || "#E2E8F0"
             }}
-            className="p-1 rounded-full border shadow-inner h-9 md:h-10 shrink-0 flex items-center justify-center"
+            className="p-0.5 md:p-1 rounded-full border shadow-inner h-8 md:h-9 shrink-0 flex items-center justify-center"
           >
             <button
               onClick={capturarMiniatura}
@@ -441,28 +441,28 @@ export default function Home3BF() {
                   ? { backgroundColor: "#10B98125", borderColor: "#10B981", color: "#10B981" }
                   : { backgroundColor: coloresApariencia?.botonInactivo || "#E2E8F0", borderColor: coloresApariencia?.bordeBotonInactivo || "#CBD5E1", color: coloresApariencia?.textoPrincipal || "#0F172A" }
               }
-              className={`w-7 sm:w-8 md:w-9 h-7 sm:h-8 md:h-9 rounded-full border flex items-center justify-center transition cursor-pointer ${
+              className={`w-6 md:w-7 h-6 md:h-7 rounded-full border flex items-center justify-center transition cursor-pointer ${
                 fotoCapturada ? "shadow-md" : "hover:opacity-90 backdrop-blur-sm"
               } ${guardandoFoto ? "opacity-50 cursor-not-allowed" : ""}`}
             >
               {fotoCapturada ? (
-                <Check className="w-4 md:w-5 h-4 md:h-5 text-emerald-500 shrink-0" />
+                <Check className="w-3.5 md:w-4 h-3.5 md:h-4 text-emerald-500 shrink-0" />
               ) : (
                 <Camera 
                   style={{ color: coloresApariencia?.botonActivo || "#0891b2" }} 
-                  className="w-4 md:w-5 h-4 md:h-5 shrink-0" 
+                  className="w-3.5 md:w-4 h-3.5 md:h-4 shrink-0" 
                 />
               )}
             </button>
           </div>
 
-          {/* 3. Switch de Tema Light / Dark (+50% de tamaño táctil) */}
+          {/* 3. Switch de Tema (Light / Dark) */}
           <div 
             style={{ 
               borderColor: coloresApariencia?.insigniaFondo || coloresApariencia?.bordePaneles,
               backgroundColor: coloresApariencia?.panelContenedor || "#E2E8F0"
             }}
-            className="flex items-center p-1 rounded-full border gap-1 shadow-inner h-9 md:h-10 shrink-0"
+            className="flex items-center p-0.5 md:p-1 rounded-full border gap-0.5 md:gap-1 shadow-inner h-8 md:h-9 shrink-0"
           >
             <button
               onClick={() => setEsquemaColor("claro")}
@@ -471,7 +471,7 @@ export default function Home3BF() {
                   ? { backgroundColor: coloresApariencia?.botonActivo || "#0891b2", borderColor: coloresApariencia?.colorMarca || "#0891b2" }
                   : { backgroundColor: coloresApariencia?.botonInactivo || "#E2E8F0", borderColor: coloresApariencia?.bordeBotonInactivo || "#CBD5E1", color: coloresApariencia?.textoPrincipal || "#0F172A" }
               }
-              className={`px-3 md:px-4 h-7 md:h-8 rounded-full transition cursor-pointer text-xs md:text-sm font-bold flex items-center justify-center ${
+              className={`px-2.5 md:px-3.5 h-6 md:h-7 rounded-full transition cursor-pointer text-[11px] md:text-xs font-bold flex items-center justify-center ${
                 esquemaColor === "claro" ? "text-white shadow-md border" : "hover:opacity-90 border backdrop-blur-sm"
               }`}
             >
@@ -484,7 +484,7 @@ export default function Home3BF() {
                   ? { backgroundColor: coloresApariencia?.botonActivo || "#0891b2", borderColor: coloresApariencia?.colorMarca || "#0891b2" }
                   : { backgroundColor: coloresApariencia?.botonInactivo || "#E2E8F0", borderColor: coloresApariencia?.bordeBotonInactivo || "#CBD5E1", color: coloresApariencia?.textoPrincipal || "#0F172A" }
               }
-              className={`px-3 md:px-4 h-7 md:h-8 rounded-full transition cursor-pointer text-xs md:text-sm font-bold flex items-center justify-center ${
+              className={`px-2.5 md:px-3.5 h-6 md:h-7 rounded-full transition cursor-pointer text-[11px] md:text-xs font-bold flex items-center justify-center ${
                 esquemaColor === "oscuro" ? "text-white shadow-md border" : "hover:opacity-90 border backdrop-blur-sm"
               }`}
             >
