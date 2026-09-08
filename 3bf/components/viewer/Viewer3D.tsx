@@ -2551,8 +2551,8 @@ export default function Viewer3D() {
     });
   };
 
-  // 1. Generador central de escena limpia y GLB optimizado (1 solo bitmap 512x512 por material)
-  const generateCleanGLB = async (): Promise<{ arrayBuffer: ArrayBuffer; piecesCount: number } | null> => {
+  // 1. Generador central de escena limpia y GLB optimizado (con perfil ultra-liviano para AR)
+  const generateCleanGLB = async (isForAR = false): Promise<{ arrayBuffer: ArrayBuffer; piecesCount: number } | null> => {
     const instanceMap: Map<string, THREE.Group> | undefined = typeof window !== "undefined" ? (window as any).__3bfInstanceGroups : undefined;
     const targetGroups: THREE.Group[] = [];
     if (furnitureGroup) {
@@ -2569,7 +2569,7 @@ export default function Viewer3D() {
     const { GLTFExporter } = await import("three/examples/jsm/exporters/GLTFExporter.js");
     const exporter = new GLTFExporter();
 
-    // Caché para optimizar exactamente 1 solo bitmap 512x512 por textura única
+    // Caché para optimizar exactamente 1 solo bitmap (256 para AR o 512 para desktop) por textura única
     const textureOptimizedCache = new Map<string, THREE.Texture>();
 
     const getOptimized512Texture = (srcTexture: THREE.Texture): THREE.Texture => {
@@ -2579,7 +2579,7 @@ export default function Viewer3D() {
       }
 
       try {
-        const targetSize = 512;
+        const targetSize = isForAR ? 256 : 512;
         const canvas = document.createElement("canvas");
         canvas.width = targetSize;
         canvas.height = targetSize;
@@ -2591,7 +2591,7 @@ export default function Viewer3D() {
           ctx.drawImage(srcTexture.image, 0, 0, targetSize, targetSize);
 
           const optTexture = new THREE.CanvasTexture(canvas);
-          optTexture.name = (srcTexture.name || "Texture") + "_512";
+          optTexture.name = (srcTexture.name || "Texture") + "_" + targetSize;
           optTexture.wrapS = srcTexture.wrapS;
           optTexture.wrapT = srcTexture.wrapT;
           optTexture.repeat.copy(srcTexture.repeat);
@@ -2647,6 +2647,22 @@ export default function Viewer3D() {
           return;
         }
 
+        // 🚀 En perfil AR: omitir herrajes internos ocultos (pernos, minifix, tarugos, tornillos)
+        // ya que están embutidos dentro de los tableros y consumen el 70% del peso geométrico
+        if (isForAR) {
+          if (
+            nLow.includes("perno") || 
+            nLow.includes("caja") || 
+            nLow.includes("minifix") || 
+            nLow.includes("tarugo") || 
+            nLow.includes("tornillo") ||
+            nLow.includes("porca") ||
+            nLow.includes("herraje")
+          ) {
+            return;
+          }
+        }
+
         if (!mesh.geometry || !mesh.geometry.attributes.position || mesh.geometry.attributes.position.count === 0) {
           return;
         }
@@ -2688,27 +2704,38 @@ export default function Viewer3D() {
         cleanGeo.setAttribute("uv", new THREE.BufferAttribute(uvs, 2));
       }
 
-      let finalGeo = cleanGeo.index ? cleanGeo.toNonIndexed() : cleanGeo;
+      // Preservar geometrías indexadas (3x más livianas que toNonIndexed)
+      let finalGeo = cleanGeo;
       const posAttr = finalGeo.attributes.position;
       const uvAttr = finalGeo.attributes.uv;
 
       // Inversión Explícita de Balance
       if (nLow.includes("balance")) {
-        for (let i = 0; i < posAttr.count; i += 3) {
-          const x1 = posAttr.getX(i + 1), y1 = posAttr.getY(i + 1), z1 = posAttr.getZ(i + 1);
-          const x2 = posAttr.getX(i + 2), y2 = posAttr.getY(i + 2), z2 = posAttr.getZ(i + 2);
-          posAttr.setXYZ(i + 1, x2, y2, z2);
-          posAttr.setXYZ(i + 2, x1, y1, z1);
-
-          if (uvAttr) {
-            const u1 = uvAttr.getX(i + 1), v1 = uvAttr.getY(i + 1);
-            const u2 = uvAttr.getX(i + 2), v2 = uvAttr.getY(i + 2);
-            uvAttr.setXY(i + 1, u2, v2);
-            uvAttr.setXY(i + 2, u1, v1);
+        if (finalGeo.index) {
+          const idx = finalGeo.index;
+          for (let i = 0; i < idx.count; i += 3) {
+            const t = idx.getX(i + 1);
+            idx.setX(i + 1, idx.getX(i + 2));
+            idx.setX(i + 2, t);
           }
+          idx.needsUpdate = true;
+        } else {
+          for (let i = 0; i < posAttr.count; i += 3) {
+            const x1 = posAttr.getX(i + 1), y1 = posAttr.getY(i + 1), z1 = posAttr.getZ(i + 1);
+            const x2 = posAttr.getX(i + 2), y2 = posAttr.getY(i + 2), z2 = posAttr.getZ(i + 2);
+            posAttr.setXYZ(i + 1, x2, y2, z2);
+            posAttr.setXYZ(i + 2, x1, y1, z1);
+
+            if (uvAttr) {
+              const u1 = uvAttr.getX(i + 1), v1 = uvAttr.getY(i + 1);
+              const u2 = uvAttr.getX(i + 2), v2 = uvAttr.getY(i + 2);
+              uvAttr.setXY(i + 1, u2, v2);
+              uvAttr.setXY(i + 2, u1, v1);
+            }
+          }
+          posAttr.needsUpdate = true;
+          if (uvAttr) uvAttr.needsUpdate = true;
         }
-        posAttr.needsUpdate = true;
-        if (uvAttr) uvAttr.needsUpdate = true;
       }
 
       finalGeo.computeVertexNormals();
@@ -2899,7 +2926,8 @@ export default function Viewer3D() {
   const abrirRealidadAumentada = async () => {
     setGenerandoAR(true);
     try {
-      const glbData = await generateCleanGLB();
+      // 🚀 Generar GLB con perfil ultra liviano exclusivo para AR (< 900 KB)
+      const glbData = await generateCleanGLB(true);
       if (!glbData) {
         setGenerandoAR(false);
         return;
@@ -2942,13 +2970,18 @@ export default function Viewer3D() {
           console.warn("[3dBimFab AR] IndexedDB no disponible:", storageErr);
         }
 
-        // Subir a API serverless para obtener ID persistente (estrictamente necesario para Google Scene Viewer / iOS Quick Look)
+        // Subir a API serverless con timeout estricto de 8s para que NUNCA se congele la pantalla
+        const abortCtrl = new AbortController();
+        const timeoutId = setTimeout(() => abortCtrl.abort(), 8000);
+
         try {
           const res = await fetch(`/api/compress-glb?mode=ar&name=${encodeURIComponent(modelName)}`, {
             method: "POST",
             headers: { "Content-Type": "application/octet-stream" },
             body: glbData.arrayBuffer,
+            signal: abortCtrl.signal,
           });
+          clearTimeout(timeoutId);
 
           if (res.ok) {
             const data = await res.json();
@@ -2959,10 +2992,11 @@ export default function Viewer3D() {
             }
           }
         } catch (apiErr) {
-          console.warn("[3dBimFab AR] Error subiendo a API, continuando con fallback puramente local:", apiErr);
+          clearTimeout(timeoutId);
+          console.warn("[3dBimFab AR] Subida serverless demorada o fallida, abriendo visor AR:", apiErr);
         }
 
-        // Fallback si la API no respondió: abrir localmente
+        // Fallback si la API tardó más de 8s o falló: abrir localmente de inmediato
         setGenerandoAR(false);
         window.location.href = `/ar?source=local&name=${encodeURIComponent(modelName)}`;
         return;

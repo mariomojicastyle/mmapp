@@ -130,3 +130,15 @@ select option,
   background-color: var(--bg-surface, #FFFFFF) !important;
   color: var(--text-main, #0F172A) !important;
 }
+
+/* 📱 Prevenir auto-zoom molesto en inputs al enfocar en teléfonos móviles */
+@media screen and (max-width: 1024px) {
+  input[type="text"],
+  input[type="number"],
+  input[type="search"],
+  textarea,
+  select {
+    font-size: 16px !important;
+  }
+}
+

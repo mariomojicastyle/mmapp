@@ -153,7 +153,7 @@ const DirectNumberInput = ({
           backgroundColor: coloresApariencia?.fondoAplicacion,
           color: coloresApariencia?.botonActivo
         }}
-        className={`w-16 px-1.5 py-0.5 text-right text-xs font-mono font-bold border rounded outline-none shadow-xs transition ${className}`}
+        className={`w-18 px-1.5 py-0.5 text-right text-[16px] sm:text-xs font-mono font-bold border rounded outline-none shadow-xs transition touch-manipulation ${className}`}
       />
       <span style={{ color: coloresApariencia?.textoSecundario }} className="text-[11px] font-mono font-semibold">{unit}</span>
     </div>

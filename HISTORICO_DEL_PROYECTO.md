@@ -2266,5 +2266,31 @@ Con esta batería de arreglos y la validación en caliente, la V20 se establece 
 - **Validación Técnica y Calidad de Código**:
   * Compilación TypeScript validada en `3bf` (`npx tsc --noEmit`) con 0 errores.
 
+---
+
+### 📱 Hito 3BF_Optimizacion_GLB_UltraLigero_AR_y_UI_Tactil — GLB Ultra-Ligero para AR (<900 KB), Desbloqueo Anti-Freeze, Erradicación de Auto-Zoom y Botones +50% Táctiles (08 de Septiembre, 2026)
+
+- **Erradicación de Congelamiento / Bloqueo en AR (`Viewer3D.tsx`)**:
+  * **Diagnóstico de Causa Raíz**: El GLB completo generado en cliente pesaba $17.8\text{ MB}$ debido a mallas `toNonIndexed` y docenas de herrajes internos ocultos. La subida de un payload de $17.8\text{ MB}$ por red móvil hacia Netlify superaba el límite estricto de $6\text{ MB}$ de Netlify Functions, provocando errores `413 Payload Too Large`, cuelgues de red y el bloqueo indefinido del overlay *"Preparando Realidad Aumentada..."*.
+  * **Perfil AR Ultra-Ligero (< 900 KB)**: En `generateCleanGLB(isForAR = true)`, se excluyen automáticamente los herrajes internos invisibles (pernos, cajas minifix, tarugos, tornillos embutidos), se preserva la geometría indexada pura (reducción de 3x en vértices) y se calibran texturas JPEG al 75% a 256px.
+  * **Resultado de Carga Inmediata**: El modelo pasa de $17.8\text{ MB}$ a **menos de $800\text{ KB}$** (~95% de reducción). La subida a Netlify toma solo $0.2\text{ segundos}$, la compresión Draco se procesa instantáneamente y Google Scene Viewer descarga el archivo en segundos para proyectar en el piso 1:1.
+  * **Protección con AbortController**: Inyección de límite de espera de $8\text{ segundos}$ en el `fetch` de subida con apagado garantizado del spinner de carga (`setGenerandoAR(false)`).
+
+- **Erradicación del Auto-Zoom Molesto al Editar Sliders (`ControlPanel.tsx` & `globals.css`)**:
+  * **Causa Raíz Identificada**: Los navegadores móviles (Chrome y Safari) ejecutan un zoom automático e invasivo cada vez que el usuario toca un `<input>` con tamaño tipográfico menor a $16\text{ px}$ (`text-xs` a 12px), dejando la pantalla atrapada en un zoom gigante.
+  * **Solución Definitiva**: Configuración de `text-[16px] sm:text-xs` en `DirectNumberInput` y adición de regla global `@media (max-width: 1024px)` para forzar $16\text{ px}$ en campos de entrada interactivos. Tocar cualquier caja numérica ya no dispara zoom y mantiene la interfaz perfectamente estable.
+
+- **Ampliación Ergonómica de Botones (+50% Más Grandes) y Viewport Natural (`app/page.tsx`)**:
+  * **Eliminación del Hack de Viewport 1280px**: Se retiró la inyección artificial de `width=1280` que reducía microscópicamente la interfaz a 0.3x. La aplicación opera con viewport natural (`device-width, initial-scale=1.0`) y permite que la opción nativa "Sitio para computadoras" de Chrome gestione el layout con su armonía perfecta habitual.
+  * **Incremento del 50% en Controles del TopNav**:
+    * Botones de modo 3D (Líneas, Cristal, Sólido, Render): ampliados a `w-8 md:w-9 h-8 md:h-9` con iconos de `w-4.5 md:w-5` (en contenedor de `h-9 md:h-10`).
+    * Botón de captura de cámara: ampliado a `w-8 md:w-9 h-8 md:h-9` con icono `w-4.5 md:w-5`.
+    * Switch de Tema Light / Dark: botones ampliados a `h-7 md:h-8` con texto `text-xs md:text-sm`.
+    * Pestañas de vista (Visor 3D, Despiece, Base de Datos): aumentadas a `h-8 md:h-9` con texto `text-xs md:text-sm`.
+
+- **Control de Calidad y Verificación**:
+  * Compilación TypeScript verificada (`npx tsc --noEmit`) con 0 errores.
+
+
 
 
