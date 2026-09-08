@@ -6,9 +6,56 @@ declare global {
   var __3bf_ar_models: Map<string, { buffer: Buffer; createdAt: number; name: string }> | undefined;
 }
 
+export async function OPTIONS() {
+  return new Response(null, {
+    status: 204,
+    headers: {
+      "Access-Control-Allow-Origin": "*",
+      "Access-Control-Allow-Methods": "GET, HEAD, OPTIONS",
+      "Access-Control-Allow-Headers": "*",
+    },
+  });
+}
+
+export async function HEAD(req: Request, { params }: { params: { id: string } }) {
+  try {
+    const rawId = params.id;
+    const id = rawId.replace(/\.glb$/i, "");
+    let bufferLength = 0;
+
+    const model = global.__3bf_ar_models?.get(id);
+    if (model && model.buffer) {
+      bufferLength = model.buffer.length;
+    } else {
+      const tmpDir = process.env.TMPDIR || process.env.TEMP || "/tmp";
+      const tmpFile = path.join(tmpDir, `3bf_${id}.glb`);
+      if (fs.existsSync(tmpFile)) {
+        bufferLength = fs.statSync(tmpFile).size;
+      }
+    }
+
+    if (!bufferLength) {
+      return new Response(null, { status: 404 });
+    }
+
+    return new Response(null, {
+      status: 200,
+      headers: {
+        "Content-Type": "model/gltf-binary",
+        "Content-Length": bufferLength.toString(),
+        "Access-Control-Allow-Origin": "*",
+        "Cache-Control": "public, max-age=7200",
+      },
+    });
+  } catch {
+    return new Response(null, { status: 500 });
+  }
+}
+
 export async function GET(req: Request, { params }: { params: { id: string } }) {
   try {
-    const id = params.id;
+    const rawId = params.id;
+    const id = rawId.replace(/\.glb$/i, "");
     let buffer: Buffer | null = null;
     let modelName = "modelo";
 
@@ -40,6 +87,7 @@ export async function GET(req: Request, { params }: { params: { id: string } }) 
         "Content-Disposition": `inline; filename="${modelName}.glb"`,
         "Content-Length": buffer.length.toString(),
         "Access-Control-Allow-Origin": "*",
+        "Access-Control-Allow-Methods": "GET, HEAD, OPTIONS",
         "Cache-Control": "public, max-age=7200",
       },
     });

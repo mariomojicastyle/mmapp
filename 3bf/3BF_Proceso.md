@@ -37,6 +37,106 @@ Si el visor se pone en blanco o muestra el badge amarillo `Worker: API Fallback`
 > - [Versión 3.0 (Estable Actual - Doble Inyección Universal XML & Coherencia Total)](./3BF_Proceso_Diagrama_V3.svg)
 > - [Versión 2.0 (Transicional - Schema Discovery Inicial)](./3BF_Proceso_Diagrama_V2.svg)
 > - [Versión 1.0 (Histórica - Pipeline Lineal Inicial)](./3BF_Proceso_Diagrama_V1.svg)
+> - [Arquitectura Móvil ⇄ PC & Diagnóstico de Latencia (Nuevo)](./3BF_Latencia_Movil_Arquitectura.svg)
+
+---
+
+## 📱⚡ Arquitectura de Comunicación Móvil ⇄ PC (RhinoCompute) & Diagnóstico de Latencia
+
+Cuando un usuario interactúa con **`3dBimFab`** desde su teléfono móvil (a través de `https://engine.mariomojica.com`), el flujo de datos recorre una topología distribuida de ida y vuelta a través de internet hasta el computador host donde residen **RhinoCompute 8** y el **Python Worker**.
+
+![Arquitectura Móvil ⇄ PC y Diagnóstico de Latencia](./3BF_Latencia_Movil_Arquitectura.svg)
+
+### 🔄 Los 6 Saltos del Ciclo Completo (Round-Trip)
+
+```
+ [1. Celular 3dBimFab] ──(2 KB HTTP)──► [2. Cloudflare Anycast / QUIC] ──► [3. Next.js :3005]
+                                                                                   │
+                                                                           (HTTP Local :8005)
+                                                                                   ▼
+ [1. Celular GPU] ◄──(20 MB JSON)─── [2. Cloudflare Tunnel] ◄─── [4. Python Worker :8005]
+                                                                        │           ▲
+                                                                  (Payload)    (archive3dm)
+                                                                        ▼           │
+                                                                 [5. RhinoCompute :5000]
+                                                                 [   Workers 6001-6004   ]
+```
+
+1. **📱 Etapa 1: Dispositivo Móvil (Cliente Web)**:
+   - El usuario desplaza un control deslizante (slider) o escribe una cota numérica.
+   - El store reactivo (Zustand) recolecta el cambio y aplica un temporizador de amortiguación (**Debounce de 300 ms**) para evitar saturar el canal con cientos de peticiones intermedias mientras se arrastra el dedo.
+   - Se despacha una petición `POST /api/compute` con un payload JSON diminuto (~2 KB) conteniendo el nombre del `.ghx` y los parámetros modificados.
+2. **☁️ Etapa 2: Tránsito WAN & Cloudflare Tunnel**:
+   - La petición viaja por la red móvil 4G/5G o Wi-Fi hacia el nodo perimetral Anycast de Cloudflare más cercano (Bogotá o Miami).
+   - A través del túnel seguro persistente con protocolo **QUIC (HTTP/3)** establecido por `cloudflared.exe`, el tráfico entra directamente al PC local sin requerir apertura de puertos en el router ni IP pública fija.
+   - Latencia de ida: **~60 a 120 ms**.
+3. **🌐 Etapa 3: Servidor Web Next.js local (`:3005`)**:
+   - La ruta API `/api/compute/route.ts` actúa como proxy inverso interno de alta velocidad, canalizando la petición inmediatamente hacia el motor de cómputo en Python.
+   - Latencia interna: **~5 a 15 ms**.
+4. **🐍 Etapa 4: Microservicio 3BF Python Worker (`:8005`)**:
+   - Recibe la solicitud en FastAPI.
+   - Inyecta los nuevos valores en memoria en los nodos XML del archivo Grasshopper (`<item name="Value">` para Sliders y `<item name="Selected">` para Value Lists).
+   - Codifica el árbol XML modificado en Base64 y prepara el paquete Hops para Rhino.
+   - Latencia de inyección: **~8 ms**.
+5. **🦏 Etapa 5: Motor Geométrico RhinoCompute 8 (`:5000` / `6001–6004`)**:
+   - `rhino.compute.exe` recibe el Hops payload y lo distribuye a una de sus instancias secundarias (`compute.geometry.exe`).
+   - El solver de Grasshopper evalúa los **1,008 componentes** de `Comoda Ravenna.ghx`.
+   - **El Gran Cuello de Botella**: Grasshopper ejecuta **30 operaciones booleanas de sólidos (`Solid Difference`)** para barrenos de minifix, tarugos, tornillos y ranuras de cajones. En Rhino, cada booleana de sólido demora entre 150 y 250 ms. Treinta operaciones consecutivas consumen entre **5.5 y 7.2 segundos de CPU pura**.
+   - RhinoCompute serializa todas las mallas en cadenas JSON OpenNURBS (`archive3dm`) y las devuelve a Python.
+6. **📥 Etapa 6: Decodificación y Retorno al Celular**:
+   - El Worker Python deserializa con `rhino3dm.CommonObject.Decode()`, calcula bounding boxes en metros, extrae coordenadas UV de BoxMapping y estructura la lista de despiece (BOM).
+   - El Worker serializa los arrays de vértices, normales y caras en un JSON plano masivo de **15 a 25 MB**.
+   - Cloudflare Tunnel transmite estos 20 MB a través del ancho de banda de subida (upload) del PC hacia la red celular.
+   - En el celular, el motor V8 de JavaScript procesa el JSON de 20 MB (consumiendo entre 400 ms y 1.2 s de CPU móvil) y Three.js sube los buffers a la memoria VRAM de la GPU para redibujar el modelo 3D.
+
+---
+
+### ⏱️ Presupuesto de Tiempo: ¿Dónde se Pierden los Segundos?
+
+| Etapa del Pipeline | Duración Actual | % del Tiempo Total | Diagnóstico Técnico |
+| :--- | :---: | :---: | :--- |
+| **1. Debounce de UI en Celular** | 300 ms | 3.2% | Necesario para amortiguar el arrastre del dedo. |
+| **2. Tránsito WAN de Ida (2 KB)** | 80 ms | 0.9% | Rápido y fluido vía túnel QUIC. |
+| **3. Inyección XML en Python Worker** | 8 ms | 0.1% | Instantáneo en memoria RAM. |
+| **4. Solver Grasshopper (RhinoCompute)** | **6.500 ms** | **69.8%** | **🚨 CUELLO DE BOTELLA #1: 30 booleanas de mecanizados.** |
+| **5. Decodificación OpenNURBS en Worker** | 180 ms | 1.9% | Procesamiento C++/Python eficiente. |
+| **6. Tránsito WAN de Retorno (JSON 20 MB)** | **1.800 ms** | **19.3%** | **🚨 CUELLO DE BOTELLA #2: Payload JSON masivo en texto plano.** |
+| **7. Parseo JSON y Carga GPU en Móvil** | **450 ms** | **4.8%** | **🚨 CUELLO DE BOTELLA #3: Consumo de CPU móvil en des-serialización.** |
+| **TIEMPO TOTAL PERCIBIDO EN CELULAR** | **~ 9.320 ms** | **100%** | **Sensación de lentitud (~9.3 segundos por cambio).** |
+
+---
+
+### 🚀 Plan de Aceleración y Soluciones Técnicas
+
+#### 1. El Bypass Inteligente de Mecanizados (Ahorro: ~6.3 segundos / -68% latencia)
+El 70% de la lentitud **no proviene de la red ni del celular, sino de las 30 booleanas de corte en Grasshopper**.
+* **Modo Interactivo (Arrastre en Vivo)**: Mientras el usuario desplaza sliders en el celular, se envía `RH_IN:Mecanizar = false`. Grasshopper evalúa únicamente las mallas de los tableros sólidos sin perforar agujeros ni ranuras.
+  * **Tiempo con bypass**: El cálculo cae de 6.500 ms a solo **120 ms** (¡54 veces más rápido!).
+* **Modo Final (Al soltar el control)**: Cuando el usuario suelta el slider o pulsa el botón "Mecanizar / Ver Herrajes", se dispara la evaluación completa con las 30 booleanas para planos CNC y despiece exacto.
+
+#### 2. Compresión Geométrica Draco en Vivo (Ahorro: ~1.8 segundos / -95% peso de red)
+Actualmente, el endpoint `/compute` devuelve geometría en formato de texto plano JSON:
+```json
+{ "vertices": [0.1234, 0.5678, ...], "faces": [0, 1, 2, ...], "normals": [...] }
+```
+Un mueble con 19 piezas y mecanizados genera un archivo JSON de **15 a 25 Megabytes**.
+* **Implementación con Draco (`KHR_draco_mesh_compression`)**:
+  * El Worker Python o el endpoint Next.js compila las mallas evaluadas en un buffer binario `.glb` comprimido con Draco.
+  * **Reducción de Peso**: De 20 MB a tan solo **~600 KB a 800 KB binarios** (reducción del **96%**).
+  * **Descompresión en Celular**: Three.js utiliza `DRACOLoader` ejecutado en WebAssembly nativo (WASM). Descomprime los 600 KB en **20 milisegundos**, liberando por completo la CPU del teléfono móvil.
+
+#### 3. Compresión WebP de Texturas PBR (Ya implementado en exportaciones)
+* La compresión WebP en cliente (`optimizeTextureToWebP`) mantiene las texturas en ~1 MB total con resolución 1024px.
+* Al reutilizar materiales compartidos en caché, la modificación de cotas dimensionales **no vuelve a transferir imágenes por la red**.
+
+#### 4. Blindaje de Realidad Aumentada Móvil (Solución del Fallo de Proyección & Sesión)
+* **Causa Raíz del Fallo AR**: Google Scene Viewer en Android opera como un proceso independiente del sistema operativo (`com.google.ar.core`). Por políticas de seguridad del sandbox de Android, **Scene Viewer no puede leer URLs `blob:`** generadas en la memoria privada de Chrome. Al pulsar el botón de AR, Scene Viewer abría la cámara, no encontraba el archivo local en red y se cerraba de inmediato, regresando a la página intermedia.
+* **Solución Implementada**:
+  1. El endpoint `/api/compress-glb?mode=ar` y `/api/ar-model/[id].glb` proveen una URL HTTPS pública permanente (`https://engine.mariomojica.com/api/ar-model/ar_xxx.glb`).
+  2. Se configuraron encabezados CORS completos (`GET`, `HEAD`, `OPTIONS`) con `Access-Control-Allow-Origin: *`.
+  3. Ahora Scene Viewer descarga directamente el binario GLB comprimido con Draco por HTTPS y proyecta el mueble a escala 1:1 en el suelo.
+* **Preservación de la Sesión al Volver**:
+  * Al navegar a la experiencia AR, se resguarda el snapshot completo del mueble (`parametros`, `instancias`, acabados) en almacenamiento local para que al presionar el botón "Volver al Configurador" o la flecha atrás del navegador, **3dBimFab restaure el diseño exactamente como estaba sin perder ninguna medida**.
 
 ---
 

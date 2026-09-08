@@ -2220,3 +2220,29 @@ Con esta batería de arreglos y la validación en caliente, la V20 se establece 
 - **Validación Técnica y Calidad de Código**:
   * Compilación TypeScript estricta (`npx tsc --noEmit`) en `3bf` finalizada con código 0 limpio sin advertencias ni errores.
 
+---
+
+### 📱 Hito AR_Movil_SceneViewer_HTTP_y_Preservacion_Sesion — Unificación de Protocolo HTTPS para Google Scene Viewer en Móviles, Preservación de Sesión y Diagrama de Latencia (08 de Septiembre, 2026)
+
+- **Causa Raíz Resuelta (Rebote de Google Scene Viewer en 100% Móvil)**:
+  * **Diagnóstico de Sandbox de Android (`com.google.ar.core`)**: En el flujo previo 100% móvil, se cargaba el modelo desde la memoria privada de Chrome usando `URL.createObjectURL(blob)` (`blob:https://...`). Al abrir Scene Viewer como aplicación externa del sistema operativo, el Sandbox de seguridad de Android impedía la lectura de la memoria RAM de otra app, provocando que la cámara se cerrara al segundo de iniciarse y rebotara a la pantalla intermedia.
+  * **Cruce con el Flujo de PC (QR)**: El flujo de PC funcionaba al 100% porque subía el modelo al servidor y entregaba a `<model-viewer>` una URL HTTPS pública real (`/api/ar-model/[id].glb`) que Scene Viewer descargaba mediante peticiones estándar de red.
+
+- **Unificación de Flujo Móvil y Backend Robusto (`Viewer3D.tsx`, `page.tsx`, `route.ts`)**:
+  * **Subida Automática a Endpoint HTTPS en Móviles**: Al pulsar el botón de Realidad Aumentada en el teléfono, `Viewer3D.tsx` sube el buffer compilado a `/api/compress-glb?mode=ar` y redirige con un identificador único persistente (`/ar?id=ar_xxxx.glb`).
+  * **Soporte de Extensiones y Cabeceras CORS**: El endpoint `/api/ar-model/[id]` fue dotado de saneamiento con expresión regular (`.replace(/\.glb$/i, "")`) para admitir URLs terminadas en `.glb` (requeridas por Google Scene Viewer) y cabeceras `Access-Control-Allow-Origin: *` con soporte completo para verbos `GET`, `HEAD` y `OPTIONS` (204).
+  * **Fallback Dinámico de Modos AR**: En `app/ar/page.tsx`, si la URL es HTTPS se prioriza `scene-viewer webxr quick-look` para máxima fidelidad 1:1; si es local/blob se recurre a `webxr scene-viewer quick-look`.
+
+- **Preservación Automática de Sesión de Personalización (`sessionStorage`)**:
+  * Justo antes de navegar a la experiencia AR, `Viewer3D.tsx` congela el estado completo de la escena en `sessionStorage` (`3bf_ar_return_session`), guardando dimensiones, parámetros de piezas, instancia activa y materiales.
+  * Al volver de la Realidad Aumentada hacia `3dBimFab`, el visor recupera el snapshot y restaura milimétricamente todas las medidas personalizadas, eliminando la pérdida de cambios o el reseteo al mueble de fábrica.
+
+- **Diagrama Vectorial y Documentación de Arquitectura de Latencia**:
+  * Creación del plano técnico vectorial [`3BF_Latencia_Movil_Arquitectura.svg`](file:///c:/Desarrollo/mmapp/3BF/3BF_Latencia_Movil_Arquitectura.svg) en estética clara *Tech Ethos*, ilustrando el ciclo completo de 6 etapas entre el móvil, Cloudflare Tunnel, FastAPI, RhinoCompute 8 y el retorno de la malla.
+  * Documentación en [`3BF_Proceso.md`](file:///c:/Desarrollo/mmapp/3BF/3BF_Proceso.md) con el desglose cuantitativo de latencia y los 3 pilares de optimización (compresión Draco en cliente, reducción de mallas y canalización segura).
+
+- **Validación y Control de Calidad**:
+  * Compilación TypeScript validada en `3bf` (`npx tsc --noEmit`) con 0 errores.
+  * Pruebas de endpoint HTTP `GET`, `HEAD` y `OPTIONS` en `https://engine.mariomojica.com/api/ar-model/[id].glb` respondiendo con `HTTP 200 OK`.
+
+

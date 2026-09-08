@@ -48,16 +48,44 @@ function ARContent() {
 
   useEffect(() => {
     let objectUrlRevoke: string | null = null;
+    let isCancelled = false;
 
     async function resolverModelo() {
-      // 1. Si es modo local (móvil directo), leer de IndexedDB
+      // 1. Si viene con ID de modelo (escaneo de QR o móvil con ID persistente)
+      if (modelId) {
+        const fullHttpsUrl = `${window.location.origin}/api/ar-model/${modelId}.glb`;
+        if (!isCancelled) {
+          setModelUrl(fullHttpsUrl);
+        }
+        return;
+      }
+
+      // 2. Si es modo local (móvil directo sin ID), leer de IndexedDB para carga inmediata
       if (source === "local") {
         try {
           const local = await getLocalARModel();
-          if (local && local.blob) {
+          if (local && local.blob && !isCancelled) {
             const blobUrl = URL.createObjectURL(local.blob);
             objectUrlRevoke = blobUrl;
             setModelUrl(blobUrl);
+
+            // Subir en segundo plano a la API para obtener URL HTTPS real requerida por Google Scene Viewer
+            try {
+              const res = await fetch(`/api/compress-glb?mode=ar&name=${encodeURIComponent(modelName)}`, {
+                method: "POST",
+                headers: { "Content-Type": "application/octet-stream" },
+                body: local.blob,
+              });
+              if (res.ok) {
+                const data = await res.json();
+                if (data?.id && !isCancelled) {
+                  const httpsUrl = `${window.location.origin}/api/ar-model/${data.id}.glb`;
+                  setModelUrl(httpsUrl);
+                }
+              }
+            } catch (bgUploadErr) {
+              console.warn("[3dBimFab AR] Subida en segundo plano falló:", bgUploadErr);
+            }
             return;
           }
         } catch (e) {
@@ -65,16 +93,10 @@ function ARContent() {
         }
       }
 
-      // 2. Si viene con ID de modelo (escaneo de QR o enlace web)
-      if (modelId) {
-        setModelUrl(`/api/ar-model/${modelId}`);
-        return;
-      }
-
       // 3. Fallback: Intentar leer IndexedDB de todos modos
       try {
         const localFallback = await getLocalARModel();
-        if (localFallback && localFallback.blob) {
+        if (localFallback && localFallback.blob && !isCancelled) {
           const blobUrl = URL.createObjectURL(localFallback.blob);
           objectUrlRevoke = blobUrl;
           setModelUrl(blobUrl);
@@ -83,18 +105,21 @@ function ARContent() {
       } catch (e) {}
 
       // Si no hay ninguna fuente válida
-      setSinModelo(true);
-      setCargando(false);
+      if (!isCancelled) {
+        setSinModelo(true);
+        setCargando(false);
+      }
     }
 
     resolverModelo();
 
     return () => {
+      isCancelled = true;
       if (objectUrlRevoke) {
         URL.revokeObjectURL(objectUrlRevoke);
       }
     };
-  }, [modelId, source]);
+  }, [modelId, source, modelName]);
 
   useEffect(() => {
     const el = viewerRef.current;
@@ -195,7 +220,7 @@ function ARContent() {
             ref={viewerRef}
             src={modelUrl}
             ar
-            ar-modes="scene-viewer webxr quick-look"
+            ar-modes={modelUrl?.startsWith("blob:") ? "webxr scene-viewer quick-look" : "scene-viewer webxr quick-look"}
             ar-scale="auto"
             ar-placement="floor"
             quick-look-browsers="safari chrome"

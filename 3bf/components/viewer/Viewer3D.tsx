@@ -2409,6 +2409,30 @@ export default function Viewer3D() {
     return () => window.removeEventListener("resize", checkMobile);
   }, []);
 
+  // 🔄 Restaurar automáticamente sesión de diseño tras regresar de Realidad Aumentada
+  useEffect(() => {
+    try {
+      if (typeof window === "undefined") return;
+      const savedSession = sessionStorage.getItem("3bf_ar_return_session");
+      if (savedSession) {
+        const data = JSON.parse(savedSession);
+        // Si la sesión guardada es reciente (< 2 horas)
+        if (data && data.timestamp && Date.now() - data.timestamp < 7200000) {
+          if (data.parametros && Object.keys(data.parametros).length > 0) {
+            use3BFStore.setState((state) => ({
+              parametros: { ...state.parametros, ...data.parametros },
+              instancias: data.instancias && Object.keys(data.instancias).length > 0 ? data.instancias : state.instancias,
+            }));
+            console.log("[3dBimFab AR] Sesión de mueble restaurada automáticamente tras regresar de Realidad Aumentada.");
+          }
+        }
+        sessionStorage.removeItem("3bf_ar_return_session");
+      }
+    } catch (err) {
+      console.warn("No se pudo restaurar la sesión AR:", err);
+    }
+  }, []);
+
   React.useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       const target = e.target as HTMLElement | null;
@@ -2886,21 +2910,57 @@ export default function Viewer3D() {
       const isSmallTouch = typeof window !== "undefined" && ("ontouchstart" in window || (navigator && navigator.maxTouchPoints > 0)) && window.innerWidth <= 1024;
       const esDispositivoMovil = isMobileUA || isIPad || isSmallTouch;
 
+      // 💾 Guardar snapshot de sesión activa para que al volver de AR no se pierda ninguna personalización
+      try {
+        if (typeof window !== "undefined") {
+          const snapshot = {
+            parametros,
+            instancias,
+            modelName,
+            timestamp: Date.now(),
+          };
+          sessionStorage.setItem("3bf_ar_return_session", JSON.stringify(snapshot));
+        }
+      } catch (e) {
+        console.warn("No se pudo guardar la sesión de retorno AR:", e);
+      }
+
       if (esDispositivoMovil) {
-        // En móvil: Guardar directamente en almacenamiento local IndexedDB
-        // Cero espera de subida/descarga de red, velocidad instantánea (<50ms) y 100% inmune a errores de servidor
+        // En móvil: Guardar en IndexedDB para disponibilidad inmediata
         try {
           const glbBlob = new Blob([glbData.arrayBuffer], { type: "model/gltf-binary" });
           await saveLocalARModel(glbBlob, modelName);
-          setGenerandoAR(false);
-          window.location.href = `/ar?source=local&name=${encodeURIComponent(modelName)}`;
-          return;
         } catch (storageErr) {
-          console.warn("[3dBimFab AR] IndexedDB no disponible, continuando con API serverless:", storageErr);
+          console.warn("[3dBimFab AR] IndexedDB no disponible:", storageErr);
         }
+
+        // Subir a API serverless para obtener ID persistente (estrictamente necesario para Google Scene Viewer / iOS Quick Look)
+        try {
+          const res = await fetch(`/api/compress-glb?mode=ar&name=${encodeURIComponent(modelName)}`, {
+            method: "POST",
+            headers: { "Content-Type": "application/octet-stream" },
+            body: glbData.arrayBuffer,
+          });
+
+          if (res.ok) {
+            const data = await res.json();
+            if (data?.id) {
+              setGenerandoAR(false);
+              window.location.href = `/ar?id=${data.id}&source=local&name=${encodeURIComponent(modelName)}`;
+              return;
+            }
+          }
+        } catch (apiErr) {
+          console.warn("[3dBimFab AR] Error subiendo a API, continuando con fallback puramente local:", apiErr);
+        }
+
+        // Fallback si la API no respondió: abrir localmente
+        setGenerandoAR(false);
+        window.location.href = `/ar?source=local&name=${encodeURIComponent(modelName)}`;
+        return;
       }
 
-      // En PC (o fallback de móvil sin IndexedDB): Preparar modelo en API para generar el ID del QR
+      // En PC: Preparar modelo en API para generar el ID del QR
       const res = await fetch(`/api/compress-glb?mode=ar&name=${encodeURIComponent(modelName)}`, {
         method: "POST",
         headers: { "Content-Type": "application/octet-stream" },
@@ -2912,12 +2972,6 @@ export default function Viewer3D() {
       }
 
       const data = await res.json();
-
-      if (esDispositivoMovil) {
-        setGenerandoAR(false);
-        window.location.href = `/ar?id=${data.id}&name=${encodeURIComponent(modelName)}`;
-        return;
-      }
 
       setArData({
         id: data.id,
