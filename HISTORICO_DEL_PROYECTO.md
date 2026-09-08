@@ -2345,8 +2345,29 @@ Con esta batería de arreglos y la validación en caliente, la V20 se establece 
 - **Validación de Calidad**:
   * Compilación TypeScript verificada (`npx tsc --noEmit`) con 0 errores.
 
+---
 
+### 🚀 Hito 3BF_Restauracion_PC_y_Calibracion_Movil_Responsiva — Restauración al 100% de Proporciones Originales de Escritorio PC & Calibración Compacta Móvil Responsiva (08 de Septiembre, 2026)
 
+- **Restauración Estricta de Escritorio / PC (100% Fiel a Versión Original)**:
+  * **Causa Raíz Resuelta**: Las reducciones sucesivas previas de botones y cuerpo inferior modificaron clases utilitarias globales de Tailwind sin selectores responsivos, reduciendo involuntariamente la escala en computadoras de escritorio.
+  * **Solución Arquitectónica Responsiva**: Se implementó una separación limpia mediante la estrategia *mobile-first*: los estilos base aplican exclusivamente a pantallas móviles/tablets, mientras que los modificadores `md:` restablecen exactamente las dimensiones originales previas en monitores y computadoras:
+    * **Header TopNav (`app/page.tsx`)**: Restaurado a $56\text{ px}$ (`md:h-14`) con padding horizontal amplio y logotipo a `md:h-8` ($32\text{ px}$).
+    * **Pestañas Centrales**: Contenedor en `md:h-9` ($36\text{ px}$) con padding `md:p-1`, botones interiores en `md:h-7 px-3.5` ($28\text{ px}$) y tipografía estándar `md:text-xs`.
+    * **Botonera de Modos 3D**: Contenedor en `md:h-9` con cápsulas circulares en `md:w-7 md:h-7` ($28\text{ px}$) e iconos completos.
+    * **Botón de Cámara y Switch Light/Dark**: Restaurados a `md:w-7 md:h-7` y `md:h-7 px-3 text-xs` respectivamente.
+    * **Panel de Control (`ControlPanel.tsx`)**: Padding restaurado a `md:p-4`, título a `md:text-sm`, estado inactivo con contenedor del cursor a `md:w-12 md:h-12` e icono de `md:w-6 md:h-6`, título en `md:text-sm` y texto secundario en `md:text-[11px]`. Sliders en `md:p-2 text-xs` e inputs numéricos `DirectNumberInput` a `md:w-18 text-xs`.
+    * **HUD del Canvas 3D (`Viewer3D.tsx`)**: Botones `Guardar`, `Perforar` y `Luces` a `md:h-5.5 px-2.5 text-[11px]`, botón papelera a `md:w-5.5 md:h-5.5`, e indicador `vBeta 0.1` a `md:text-[11px] md:w-3 md:h-3`.
+    * **Botón Toggle NPanel (`NPanel.tsx`)**: Restaurado a `md:w-7 md:h-7` con flecha `md:w-4 md:h-4`.
 
+- **Calibración Compacta de la Experiencia Móvil (Fiel a Imagen de Referencia)**:
+  * Las clases base aplican de manera compacta en teléfonos móviles sin comprometer la vista de PC:
+    * **Header**: `h-9` ($36\text{ px}$) con logotipo a `h-[18px] sm:h-5`.
+    * **Pestañas Centrales**: `h-[22px]` con botones de `h-[18px] px-1.5` y texto `text-[8.5px] sm:text-[9.5px]`.
+    * **Modos 3D**: Cápsulas circulares compactas de `w-[18px] h-[18px]`.
+    * **Cuerpo Inferior**: Padding general `p-2`, panel de control con padding `p-2`, sliders compactos en `p-1.5 text-[11px]` e inputs numéricos en `w-14 text-[11px]`.
+    * **Estado Inactivo Ultra-Compacto**: Contenedor del cursor en `w-6.5 h-6.5` con icono de $14\text{ px}$, título `text-[10.5px]` y texto en `text-[9px]`.
+    * **HUD Canvas**: Botones flotantes en `h-4 px-1.5 text-[8.5px]` y papelera en `w-4 h-4`.
 
-
+- **Validación de Calidad**:
+  * Compilación TypeScript verificada (`npx tsc --noEmit`) con 0 errores.

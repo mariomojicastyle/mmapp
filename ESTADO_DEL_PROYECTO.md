@@ -21,7 +21,23 @@ Este archivo es la "Memoria RAM" para Antigravity. Contiene el contexto de lo qu
 - [x] **Persistencia Reactiva & Memoria Local**: Indexación inmediata y sincronización fluida entre Supabase, memoria local y la memoria activa `.agent/skills/b2b-sales-closer/ventas_ram.md`.
 - [x] **Protocolo Antigravity de Fluidez Bilingüe (2 Bloques de Código en 1 Clic)**: Respuestas en el chat entregadas siempre en 2 bloques de código markdown separados (Bloque 1 en Português do Brasil para copiar en 1 clic + Bloque 2 en Español para auditoría rápida), inyectando ambos idiomas en la base de datos de Supabase y en `ventas_ram_storage.json` para mantener el historial vivo.
 
-- [x] **[NUEVO - 08 de Septiembre, 2026] Hito 3BF_Calibracion_Cuerpo_30_Icono_Pestana (Calibración del Cuerpo Inferior -30%, Header -10% Adicional y Favicon PWA para Pestaña de Chrome Móvil)**:
+- [x] **[NUEVO - 08 de Septiembre, 2026] Hito 3BF_Restauracion_PC_y_Calibracion_Movil_Responsiva (Restauración al 100% de Proporciones Originales de Escritorio PC & Calibración Compacta Móvil Responsiva)**:
+  - **Restauración Estricta de Escritorio / PC (100% Fiel a Versión Original)**: Se corrigió la reducción global accidental que había encogido la interfaz de escritorio en PC. Mediante la aplicación sistemática de prefijos de Tailwind `md:` en `app/page.tsx`, `ControlPanel.tsx`, `Viewer3D.tsx` y `NPanel.tsx`, la vista en computadoras de escritorio recuperó de forma íntegra sus dimensiones originales generosas:
+    - **Header TopNav**: `md:h-14` (56px) con logotipo a `md:h-8` (32px).
+    - **Pestañas Centrales**: Contenedor en `md:h-9` con padding `md:p-1`, botones en `md:h-7 px-3.5` y tipografía `md:text-xs`.
+    - **Botoneras y Switches**: Modos 3D en `md:w-7 md:h-7` (28px), botón de captura de cámara en `md:w-7 md:h-7`, switch de tema en `md:h-7 px-3 text-xs`.
+    - **Panel de Control**: Padding original `md:p-4`, título en `md:text-sm`, estado vacío con contenedor de cursor `md:w-12 md:h-12` (ícono `md:w-6 md:h-6`), título `md:text-sm` y descripción `md:text-[11px]`, sliders en `md:p-2 text-xs` y `DirectNumberInput` en `md:w-18 text-xs`.
+    - **HUD y Botones 3D**: Botones `Guardar`, `Perforar`, `Luces` en `md:h-5.5 px-2.5 text-[11px]`, papelera en `md:w-5.5 md:h-5.5`, indicador `vBeta 0.1` en `md:text-[11px]` con icono `md:w-3 md:h-3`, y botón chevron del NPanel en `md:w-7 md:h-7` (ícono `md:w-4 md:h-4`).
+  - **Calibración Móvil Compacta Fiel a Imagen 1**: Las clases base (móvil) quedaron optimizadas de forma concéntrica para igualar la esbeltez de la imagen de referencia:
+    - **Header**: `h-9` (36px) con logo en `h-[18px] sm:h-5`.
+    - **Pestañas Centrales**: `h-[22px]` con botones `h-[18px] px-1.5` y texto `text-[8.5px] sm:text-[9.5px]`.
+    - **Modos 3D**: Cápsulas circulares compactas `w-[18px] h-[18px]`.
+    - **Cuerpo Inferior**: Padding de pantalla `p-2`, panel de control en `p-2` con sliders en `p-1.5 text-[11px]`, inputs numéricos `w-14 text-[11px]`, estado inactivo ultra-compacto (`p-3 mx-1`, cursor `w-6.5 h-6.5` e icono `w-3.5 h-3.5`, título `text-[10.5px]` y texto `text-[9px]`).
+    - **HUD Canvas**: Botones flotantes en `h-4 px-1.5 text-[8.5px]`, papelera en `w-4 h-4`, botón de despliegue de NPanel en `w-5.5 h-5.5` con chevron de `w-3 h-3`.
+  - **Validación de Calidad**:
+    - Compilación TypeScript verificada (`npx tsc --noEmit`) con 0 errores.
+
+- [x] **[08 de Septiembre, 2026] Hito 3BF_Calibracion_Cuerpo_30_Icono_Pestana (Calibración del Cuerpo Inferior -30%, Header -10% Adicional y Favicon PWA para Pestaña de Chrome Móvil)**:
   - **Ícono de Pestaña en Chrome Móvil (`site.webmanifest` & `layout.tsx`)**: Creado manifiesto PWA canónico con íconos de alta definición (`icon-192.png`, `icon-512.png`) y tags `<link rel="manifest">`, `<link rel="apple-touch-icon">` y `<meta name="theme-color" content="#bb0f0f">`. Chrome Android despliega ahora el logotipo rojo oficial `3BF` en la barra de pestañas tal como en PC.
   - **Header (-10% adicional)**: Reducido a `h-10` (40px) con logotipo a `h-5/h-6`, pestañas en `h-[25px]` y botones a `20x20px`.
   - **Cuerpo Inferior (-30%)**: Reducción global en `ControlPanel` (título en `text-xs`, estado vacío compacto con cursor `w-8 h-8`, sliders en `p-1.5`, `DirectNumberInput` en `w-14` y `text-[11px]`), `NPanel` (miniaturas cuadradas a `56x56px`, buscador `py-1`, tira vertical de pestañas a `w-7` con botones de `w-5.5`) y `Viewer3D` (botones de HUD canvas en `h-[18px] sm:h-5` y `text-[9.5-10px]`).

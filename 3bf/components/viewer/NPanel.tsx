@@ -452,11 +452,11 @@ export default function NPanel() {
               backgroundColor: coloresApariencia?.fondoPaneles || "#FFFFFF",
               borderColor: coloresApariencia?.bordePaneles || "#CBD5E1",
             }}
-            className="flex items-center justify-center w-7 h-7 rounded-full border shadow-lg backdrop-blur-md transition-all cursor-pointer group hover:scale-105"
+            className="flex items-center justify-center w-5.5 h-5.5 md:w-7 md:h-7 rounded-full border shadow-lg backdrop-blur-md transition-all cursor-pointer group hover:scale-105"
           >
             <ChevronLeft 
               style={{ color: coloresApariencia?.colorMarca || "#0891b2" }}
-              className="w-4 h-4 group-hover:-translate-x-0.5 transition-transform" 
+              className="w-3 h-3 md:w-4 md:h-4 group-hover:-translate-x-0.5 transition-transform" 
             />
           </button>
         </div>
