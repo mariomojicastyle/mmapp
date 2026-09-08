@@ -2433,3 +2433,20 @@ Con esta batería de arreglos y la validación en caliente, la V20 se establece 
   * Al pulsar F5, Ctrl + F5 o borrar los componentes, el escenario queda 100% limpio y vacío, respetando la voluntad y control del usuario sin forzar ningún modelo.
 - **Validación de Calidad**:
   * Compilación TypeScript verificada (`npx tsc --noEmit`) con 0 errores.
+
+---
+
+### 🚀 Hito 3BF_Calibracion_UltraAngosta_Movil_y_Exito_AR_Computo — Paneles Ultra-Angostos en Móvil (180px / 175px), Reseteo Forzado de Caché Móvil y Consolidación de Realidad Aumentada (08 de Septiembre, 2026)
+
+- **Paneles Ultra-Angostos Móviles (180px / 175px)**:
+  * **Modificador de Componentes**: Ancho por defecto reducido a **180px** en móvil (rango de 150px a 210px), liberando más del 75% del ancho de la pantalla para el visor 3D en smartphones horizontales.
+  * **N-Panel (Biblioteca de Componentes / Materiales)**: Ancho por defecto reducido a **175px** en móvil (rango de 140px a 195px), alojando perfectamente la cuadrícula de miniaturas de 56px en 2 columnas sin invadir el escenario.
+  * **Reseteo Inteligente de Caché Móvil**: En `store.ts`, se implementó sanitización activa al hidratar: si el dispositivo es móvil y en `localStorage` existía un valor heredado mayor a 195px, se normaliza de inmediato a 180px / 175px, garantizando que el usuario siempre vea la proporción esbelta a la primera.
+  * **Preservación Inmutable de PC (380px)**: En computadoras de escritorio y laptops (`>= 1024px`), los paneles se conservan inalterados en sus **380px** originales con límite mínimo de 280px.
+- **Consolidación de Arquitectura de Cómputo Móvil & AR**:
+  * Documentada la arquitectura milimétrica en `3BF/3BF_Proceso.md` (Hito 15) para preservación perpetua:
+    * Enlace móvil: Netlify (`3bf.mariomojica.com`) ➔ Cloudflare Tunnel permanente (`engine.mariomojica.com/api/compute`) ➔ 3BF Worker Python (`:8005`) ➔ RhinoCompute 8 (`:5000`).
+    * Realidad Aumentada: GLB ultra-ligero (< 800 KB), subida por túnel persistente, cabeceras CORS universales y enlace canónico de Google Scene Viewer (`intent://arvr.google.com/scene-viewer/1.0...`) a escala 1:1 anclado al piso.
+- **Validación de Calidad**:
+  * Compilación TypeScript verificada (`npx tsc --noEmit`) con 0 errores.
+

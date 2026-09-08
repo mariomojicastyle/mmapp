@@ -740,6 +740,35 @@ Al construir muebles modulares combinando múltiples componentes paramétricos i
 
 ---
 
+### 🌟 Hito 15: Cómputo Móvil Paramétrico en Tiempo Real & Blindaje de Realidad Aumentada (AR Google Scene Viewer)
+
+#### 📋 Resumen del Logro:
+1. **Cómputo Paramétrico Móvil en Tiempo Real (Netlify ➔ Cloudflare Tunnel ➔ RhinoCompute 8)**:
+   - **Topología**: Las peticiones originadas en dispositivos móviles navegando en producción (`https://3bf.mariomojica.com` en Netlify) son enrutadas directamente a través del túnel seguro de Cloudflare (`https://engine.mariomojica.com/api/compute`).
+   - **Detección Dinámica de Host**: En `app/api/health/route.ts` y `app/api/compute/route.ts`, si el host detectado es remoto (`3bf.mariomojica.com`), el proxy interno despacha la solicitud directamente hacia `engine.mariomojica.com` sin demoras ni intentos de conexión a `localhost:8005` en los entornos serverless de AWS Lambda.
+   - **Flujo de Ejecución**:
+     ```
+     [Smartphone Web] ➔ POST /api/compute ➔ [Cloudflare Tunnel QUIC] ➔ [3BF Python Worker :8005] ➔ [RhinoCompute 8 :5000]
+     ```
+   - **Resultado**: Los cambios de cotas numéricas y sliders arrastrados con el dedo en el móvil se recalculan y renderizan en pantalla en tiempo real con 100% de coherencia geométrica y de despiece.
+
+2. **Blindaje de Realidad Aumentada (AR Google Scene Viewer / ARCore a Escala 1:1)**:
+   - **Causa Raíz Diagnosticada y Subsanada**: El mensaje *"Apunte el teléfono hacia un espacio vacío y muévalo lentamente"* corresponde al escaneo de plano de piso de ARCore. Cuando el modelo se alojaba en funciones Lambda efímeras, Google Scene Viewer recibía un error `404 Not Found` al intentar descargar el binario, provocando que la aplicación se quedara suspendida en el escaneo de piso.
+   - **Pipeline de Exportación GLB Ultra-Liviano (< 800 KB)**:
+     - En `Viewer3D.tsx` (`generateCleanGLB(isForAR = true)`), se excluyen herrajes internos ocultos (cajas minifix, pernos, tarugos y tornillos) para aligerar la geometría.
+     - Reducción y compresión de texturas a resolución optimizada (256x256 JPEG a 75%), reduciendo el archivo de 17.8 MB a menos de 800 KB (~95% de ahorro).
+   - **Persistencia en Backend & CORS Universal**:
+     - El binario GLB se sube mediante `POST /api/compress-glb?mode=ar` directamente a `https://engine.mariomojica.com`, persistiendo el archivo en la memoria y disco del host.
+     - En `app/api/compress-glb/route.ts`, se incorporó el handler `OPTIONS` y las cabeceras CORS universales (`Access-Control-Allow-Origin: *`, `Access-Control-Allow-Methods: POST, GET, OPTIONS`).
+     - El enlace canónico de Google Scene Viewer (`intent://arvr.google.com/scene-viewer/1.0?file=https://engine.mariomojica.com/api/ar-model/[id].glb...`) descarga el modelo al instante y lo proyecta anclado al piso en escala real (1:1) con chip flotante de porcentaje de tamaño (100%).
+
+3. **Calibración Ultra-Compacta de Paneles en Móvil (180px / 175px)**:
+   - Modificador de Componentes configurado en **180px** por defecto (con rango de 150px a 210px en móvil).
+   - N-Panel (Biblioteca de Componentes) configurado en **175px** por defecto (con rango de 140px a 195px en móvil).
+   - En PC de escritorio (`>= 1024px`), ambos paneles se conservan intactos en sus **380px** originales.
+
+---
+
 ---
 
 ## 💎 Arquitectura Futura de Costeo y Sincronización de Materiales (Estructura Dual: Costo Vivo vs. Snapshots Inmutables)

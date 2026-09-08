@@ -1682,14 +1682,20 @@ export const use3BFStore = create<State3BF>((set, get) => ({
     ? (() => {
         const val = Number(localStorage.getItem("3bf_ancho_npanel"));
         const esMovil = typeof window !== "undefined" && window.innerWidth < 1024;
-        if (!esMovil && val < 280) return 380; // En PC restaurar a 380 si venía con escala mínima de móvil
-        return Math.max(esMovil ? 140 : 280, Math.min(800, val || (esMovil ? 210 : 380)));
+        if (esMovil) {
+          // En móvil forzar siempre escala ultra-angosta (175px por defecto, max 195px)
+          if (!val || val > 195 || val < 130) return 175;
+          return Math.max(140, Math.min(195, val));
+        }
+        if (!val || val < 280) return 380; // En PC restaurar a 380
+        return Math.max(280, Math.min(800, val));
       })()
-    : (typeof window !== "undefined" && window.innerWidth < 1024 ? 210 : 380),
+    : (typeof window !== "undefined" && window.innerWidth < 1024 ? 175 : 380),
   setAnchoNPanel: (ancho) => {
     const esMovil = typeof window !== "undefined" && window.innerWidth < 1024;
     const minW = esMovil ? 140 : 280;
-    const normalizado = Math.max(minW, Math.min(800, ancho));
+    const maxW = esMovil ? 210 : 800;
+    const normalizado = Math.max(minW, Math.min(maxW, ancho));
     if (typeof window !== "undefined" && window.localStorage) {
       localStorage.setItem("3bf_ancho_npanel", String(normalizado));
     }
@@ -1699,14 +1705,20 @@ export const use3BFStore = create<State3BF>((set, get) => ({
     ? (() => {
         const val = Number(localStorage.getItem("3bf_ancho_panel_derecho"));
         const esMovil = typeof window !== "undefined" && window.innerWidth < 1024;
-        if (!esMovil && val < 280) return 380; // En PC restaurar a 380 si venía con escala mínima de móvil
-        return Math.max(esMovil ? 200 : 280, Math.min(800, val || (esMovil ? 240 : 380)));
+        if (esMovil) {
+          // En móvil forzar siempre escala ultra-angosta (180px por defecto, max 210px)
+          if (!val || val > 210 || val < 150) return 180;
+          return Math.max(150, Math.min(210, val));
+        }
+        if (!val || val < 280) return 380; // En PC restaurar a 380
+        return Math.max(280, Math.min(800, val));
       })()
-    : (typeof window !== "undefined" && window.innerWidth < 1024 ? 240 : 380),
+    : (typeof window !== "undefined" && window.innerWidth < 1024 ? 180 : 380),
   setAnchoPanelDerecho: (ancho) => {
     const esMovil = typeof window !== "undefined" && window.innerWidth < 1024;
-    const minW = esMovil ? 200 : 280;
-    const normalizado = Math.max(minW, Math.min(800, ancho));
+    const minW = esMovil ? 150 : 280;
+    const maxW = esMovil ? 220 : 800;
+    const normalizado = Math.max(minW, Math.min(maxW, ancho));
     if (typeof window !== "undefined" && window.localStorage) {
       localStorage.setItem("3bf_ancho_panel_derecho", String(normalizado));
     }

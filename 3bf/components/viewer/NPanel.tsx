@@ -242,7 +242,7 @@ export default function NPanel() {
     restablecerHdriPorDefecto,
   } = use3BFStore();
 
-  const ancho = anchoNPanel || 380;
+  const ancho = anchoNPanel || (typeof window !== "undefined" && window.innerWidth < 1024 ? 175 : 380);
   const [isResizing, setIsResizing] = useState(false);
   const [busqueda, setBusqueda] = useState("");
   const [guardadoDefaultFeedback, setGuardadoDefaultFeedback] = useState(false);
@@ -313,7 +313,8 @@ export default function NPanel() {
       const deltaX = startX - currentX; // Mover a la izquierda ensancha
       const esMovil = typeof window !== "undefined" && window.innerWidth < 1024;
       const minW = esMovil ? 140 : 280;
-      const newWidth = Math.max(minW, Math.min(800, startWidth + deltaX));
+      const maxW = esMovil ? 210 : 800;
+      const newWidth = Math.max(minW, Math.min(maxW, startWidth + deltaX));
       setAnchoNPanel(newWidth);
     };
 

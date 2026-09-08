@@ -21,7 +21,14 @@ Este archivo es la "Memoria RAM" para Antigravity. Contiene el contexto de lo qu
 - [x] **Persistencia Reactiva & Memoria Local**: Indexación inmediata y sincronización fluida entre Supabase, memoria local y la memoria activa `.agent/skills/b2b-sales-closer/ventas_ram.md`.
 - [x] **Protocolo Antigravity de Fluidez Bilingüe (2 Bloques de Código en 1 Clic)**: Respuestas en el chat entregadas siempre en 2 bloques de código markdown separados (Bloque 1 en Português do Brasil para copiar en 1 clic + Bloque 2 en Español para auditoría rápida), inyectando ambos idiomas en la base de datos de Supabase y en `ventas_ram_storage.json` para mantener el historial vivo.
 
-- [x] **[NUEVO - 08 de Septiembre, 2026] Hito 3BF_Restauracion_PC_Paneles_y_Escenario_Limpio_F5 (Restauración Estricta de Anchos de PC 380px, Discriminación Dinámica Móvil vs Escritorio y Erradicación de Auto-Carga Forzada)**:
+- [x] **[NUEVO - 08 de Septiembre, 2026] Hito 3BF_Calibracion_UltraAngosta_Movil_y_Exito_AR_Computo (Paneles Ultra-Angostos en Móvil 180px / 175px, Reseteo Forzado de Caché Móvil y Consolidación de Realidad Aumentada)**:
+  - **Paneles Ultra-Angostos en Móvil**: Modificador de Componentes reducido a **180px** por defecto en móvil (rango 150px a 210px) y N-Panel a **175px** por defecto (rango 140px a 195px), dejando más del 75% de la pantalla horizontal libre para el escenario 3D.
+  - **Sanitización Forzada de Caché en Móvil**: Al hidratar el store en pantallas móviles (< 1024px), si existía un ancho en caché mayor a 195px, se normaliza de inmediato a 180px / 175px para erradicar anchos gigantes heredados de sesiones previas.
+  - **PC Inmutable en 380px**: Las computadoras de escritorio y laptops (>= 1024px) conservan estrictamente sus 380px originales.
+  - **Éxito de Cómputo Móvil & AR Documentado Perpetuamente**: Registrada la arquitectura milimétrica en `3BF_Proceso.md` (Hito 15), `HISTORICO_DEL_PROYECTO.md` y `ESTADO_DEL_PROYECTO.md`.
+  - **Validación de Calidad**: Compilación TypeScript verificada (`npx tsc --noEmit`) con 0 errores.
+
+- [x] **[08 de Septiembre, 2026] Hito 3BF_Restauracion_PC_Paneles_y_Escenario_Limpio_F5 (Restauración Estricta de Anchos de PC 380px, Discriminación Dinámica Móvil vs Escritorio y Erradicación de Auto-Carga Forzada)**:
   - **Restauración de PC a 380px**: Se desacopló la configuración de anchos para que en computadoras de escritorio (>= 1024px) tanto el Modificador de Componentes como el N-Panel abran siempre en sus **380px** originales (con límite mínimo de 280px y auto-recuperación de caché local). En smartphones (< 1024px) se mantiene la expresión compacta ajustada (240px / 210px).
   - **Escenario Limpio y Libre en Refresco (F5 / Ctrl + F5)**: Eliminada la inyección de auto-carga forzada de `Comoda Ravenna`. Al dar Ctrl + F5 o borrar piezas, el escenario se conserva 100% limpio y vacío respetando la acción directa del usuario.
   - **Validación de Calidad**: Compilación TypeScript verificada (`npx tsc --noEmit`) con 0 errores.

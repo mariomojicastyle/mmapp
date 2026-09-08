@@ -42,8 +42,10 @@ export default function Home3BF() {
     const onMove = (moveEvent: MouseEvent | TouchEvent) => {
       const clientX = "touches" in moveEvent ? moveEvent.touches[0].clientX : moveEvent.clientX;
       const nuevoAncho = window.innerWidth - clientX - 12;
-      const minW = typeof window !== "undefined" && window.innerWidth < 1024 ? 200 : 280;
-      setAnchoPanelDerecho(Math.max(minW, Math.min(800, nuevoAncho)));
+      const esMovil = typeof window !== "undefined" && window.innerWidth < 1024;
+      const minW = esMovil ? 150 : 280;
+      const maxW = esMovil ? 220 : 800;
+      setAnchoPanelDerecho(Math.max(minW, Math.min(maxW, nuevoAncho)));
     };
 
     const onEnd = () => {
@@ -527,7 +529,7 @@ export default function Home3BF() {
         {/* Columna Derecha: Panel de Control de Parámetros & NPanel */}
         <div 
           style={{ 
-            width: `${anchoPanelDerecho || (typeof window !== "undefined" && window.innerWidth < 1024 ? 240 : 380)}px`,
+            width: `${anchoPanelDerecho || (typeof window !== "undefined" && window.innerWidth < 1024 ? 180 : 380)}px`,
             backgroundColor: coloresApariencia?.fondoPaneles, 
             borderColor: coloresApariencia?.bordePaneles,
             color: coloresApariencia?.textoPrincipal 
