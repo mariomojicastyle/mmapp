@@ -2291,6 +2291,27 @@ Con esta batería de arreglos y la validación en caliente, la V20 se establece 
 - **Control de Calidad y Verificación**:
   * Compilación TypeScript verificada (`npx tsc --noEmit`) con 0 errores.
 
+---
+
+### 🎨 Hito 3BF_Calibracion_Compacta_20_Porciento — Calibración Compacta de Botones (-20%) y Réplica de Estética de Sitio para Computadoras (08 de Septiembre, 2026)
+
+- **Calibración Compacta de la Barra Superior TopNav (`app/page.tsx`)**:
+  * **Problema Resuelto**: En vista móvil horizontal (landscape), el exceso de ancho de las pestañas centrales provocaba que "Base de Datos" chocara y se solapara con la botonera de modos 3D.
+  * **Reducción Proporcional del ~20%**:
+    * **Header**: Reducido de $56\text{ px}$ (`h-14`) a $44\text{ px}$ (`h-11 md:h-11`), eliminando grosor innecesario y replicando la esbeltez de la vista "Sitio para computadoras".
+    * **Logotipo 3dBimFab**: Escala compacta calibrada a `h-6 sm:h-[26px] md:h-7`.
+    * **Pestañas Centrales (`Visor 3D`, `Despiece`, `Base de Datos`)**: Contenedor exterior estilizado a `h-[28px] md:h-[30px]` con padding `p-0.5`. Botones interiores en `h-[22px] md:h-[24px]` con padding `px-2 sm:px-2.5 md:px-3`, iconos de $12\text{-}14\text{ px}$ y tipografía concéntrica `text-[10px] sm:text-[10.5px] md:text-[11px]`. El ancho total del bloque central se redujo en más de $110\text{ px}$, eliminando todo riesgo de colisión o solapamiento horizontal.
+    * **Botonera de 4 Modos 3D**: Cápsulas circulares compactas de `w-[22px] md:w-[24px] h-[22px] md:h-[24px]` en contenedor de `28-30px`, con iconos de $12\text{-}14\text{ px}$.
+    * **Botón de Cámara y Switch de Tema**: Botones en `h-[22px] md:h-[24px]` con padding y texto micro-calibrados.
+
+- **Calibración de Botones Flotantes del Visor 3D (`Viewer3D.tsx`)**:
+  * Botones `Guardar`, `Perforar` y `Luces` reducidos de $24\text{ px}$ a `h-5 sm:h-5.5` ($20\text{-}22\text{ px}$) con padding `px-2.5` y texto `text-[10.5px] sm:text-[11px]`.
+  * Botón de papelera (`Trash2`) reducido a $20\text{-}22\text{ px}$ concéntrico.
+
+- **Validación de Calidad**:
+  * Compilación TypeScript verificada (`npx tsc --noEmit`) con 0 errores.
+
+
 
 
 

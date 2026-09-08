@@ -72,7 +72,11 @@ function ARContent() {
     async function resolverModelo() {
       // 1. Si viene con ID de modelo (escaneo de QR o móvil con ID persistente)
       if (modelId) {
-        const fullHttpsUrl = `${window.location.origin}/api/ar-model/${modelId}.glb`;
+        let base = window.location.origin;
+        if (typeof window !== "undefined" && window.location.protocol !== "https:") {
+          base = "https://engine.mariomojica.com";
+        }
+        const fullHttpsUrl = `${base}/api/ar-model/${modelId}.glb`;
         if (!isCancelled) {
           setModelUrl(fullHttpsUrl);
         }
@@ -239,7 +243,7 @@ function ARContent() {
             ref={viewerRef}
             src={modelUrl}
             ar
-            ar-modes={modelUrl?.startsWith("blob:") ? "webxr scene-viewer quick-look" : "scene-viewer webxr quick-look"}
+            ar-modes="scene-viewer webxr quick-look"
             ar-scale="auto"
             ar-placement="floor"
             quick-look-browsers="safari chrome"
