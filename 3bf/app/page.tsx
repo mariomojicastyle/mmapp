@@ -42,7 +42,8 @@ export default function Home3BF() {
     const onMove = (moveEvent: MouseEvent | TouchEvent) => {
       const clientX = "touches" in moveEvent ? moveEvent.touches[0].clientX : moveEvent.clientX;
       const nuevoAncho = window.innerWidth - clientX - 12;
-      setAnchoPanelDerecho(Math.max(220, Math.min(800, nuevoAncho)));
+      const minW = typeof window !== "undefined" && window.innerWidth < 1024 ? 200 : 280;
+      setAnchoPanelDerecho(Math.max(minW, Math.min(800, nuevoAncho)));
     };
 
     const onEnd = () => {
@@ -152,18 +153,6 @@ export default function Home3BF() {
     // Hidratar inmediatamente toda la base de datos de materias primas y costos
     hidratarDesdeLocalStorage();
     verificarWorker();
-
-    // 🚀 Auto-cargar Cómoda Ravenna si no hay componentes en el escenario al iniciar
-    setTimeout(() => {
-      const currentInst = Object.keys(use3BFStore.getState().instancias || {});
-      if (currentInst.length === 0 && !use3BFStore.getState().escenarioLimpio) {
-        use3BFStore.getState().agregarInstanciaGHX({
-          id: "Comoda Ravenna",
-          archivo: "Comodas/Comoda Ravenna.ghx",
-          nombre: "Comoda Ravenna",
-        });
-      }
-    }, 150);
 
     // Heartbeat cada 8 segundos y al reactivar la pantalla / regresar de hibernación
     const interval = setInterval(verificarWorker, 8000);
@@ -538,7 +527,7 @@ export default function Home3BF() {
         {/* Columna Derecha: Panel de Control de Parámetros & NPanel */}
         <div 
           style={{ 
-            width: `${anchoPanelDerecho || 240}px`,
+            width: `${anchoPanelDerecho || (typeof window !== "undefined" && window.innerWidth < 1024 ? 240 : 380)}px`,
             backgroundColor: coloresApariencia?.fondoPaneles, 
             borderColor: coloresApariencia?.bordePaneles,
             color: coloresApariencia?.textoPrincipal 

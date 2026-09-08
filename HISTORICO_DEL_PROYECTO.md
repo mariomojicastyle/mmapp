@@ -2419,3 +2419,17 @@ Con esta batería de arreglos y la validación en caliente, la V20 se establece 
 - **Validación y Calidad**:
   * Compilación TypeScript verificada (`npx tsc --noEmit`) con 0 errores.
   * Verificación de persistencia en local storage y compatibilidad en ambos temas (Tech Ethos y Obsidian).
+
+---
+
+### 🚀 Hito 3BF_Restauracion_PC_Paneles_y_Escenario_Limpio_F5 — Restauración Estricta de Anchos de PC (380px), Discriminación Dinámica Móvil vs Escritorio y Erradicación de Auto-Carga Forzada (08 de Septiembre, 2026)
+
+- **Restauración Estricta de Paneles en PC (380px)**:
+  * **Aislamiento PC vs Móvil**: Se desacopló completamente la lógica de anchos por defecto y límites de redimensión en `store.ts`, `app/page.tsx` y `NPanel.tsx`:
+    * **En PC (>= 1024px)**: Tanto el Modificador de Componentes (`anchoPanelDerecho`) como el N-Panel (`anchoNPanel`) inician en su ancho amplio original de **380px** (límite mínimo de 280px). Se implementó auto-recuperación que restablece automáticamente a 380px si en el navegador del usuario había quedado guardado un valor comprimido proveniente de pruebas móviles anteriores.
+    * **En Móvil (< 1024px)**: Se preserva la expresión mínima solicitada (panel derecho en **240px** con mínimo de 200px, N-panel en **210px** con mínimo de 140px).
+- **Escenario Limpio y Libre al Refrescar (F5 / Ctrl + F5)**:
+  * Se eliminó definitivamente el bloque de auto-carga forzada de `Comoda Ravenna` del `useEffect` de `app/page.tsx`.
+  * Al pulsar F5, Ctrl + F5 o borrar los componentes, el escenario queda 100% limpio y vacío, respetando la voluntad y control del usuario sin forzar ningún modelo.
+- **Validación de Calidad**:
+  * Compilación TypeScript verificada (`npx tsc --noEmit`) con 0 errores.

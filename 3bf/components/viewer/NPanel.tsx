@@ -311,7 +311,9 @@ export default function NPanel() {
     const onMove = (moveEvent: MouseEvent | TouchEvent) => {
       const currentX = "touches" in moveEvent ? moveEvent.touches[0].clientX : moveEvent.clientX;
       const deltaX = startX - currentX; // Mover a la izquierda ensancha
-      const newWidth = Math.max(140, Math.min(800, startWidth + deltaX));
+      const esMovil = typeof window !== "undefined" && window.innerWidth < 1024;
+      const minW = esMovil ? 140 : 280;
+      const newWidth = Math.max(minW, Math.min(800, startWidth + deltaX));
       setAnchoNPanel(newWidth);
     };
 

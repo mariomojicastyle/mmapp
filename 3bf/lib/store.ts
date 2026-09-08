@@ -1679,20 +1679,34 @@ export const use3BFStore = create<State3BF>((set, get) => ({
   pestanaNPanel: "componentes",
   setPestanaNPanel: (pestanaNPanel) => set({ pestanaNPanel: pestanaNPanel as any }),
   anchoNPanel: typeof window !== "undefined" && window.localStorage && localStorage.getItem("3bf_ancho_npanel")
-    ? Math.max(140, Math.min(800, Number(localStorage.getItem("3bf_ancho_npanel"))))
-    : 210,
+    ? (() => {
+        const val = Number(localStorage.getItem("3bf_ancho_npanel"));
+        const esMovil = typeof window !== "undefined" && window.innerWidth < 1024;
+        if (!esMovil && val < 280) return 380; // En PC restaurar a 380 si venía con escala mínima de móvil
+        return Math.max(esMovil ? 140 : 280, Math.min(800, val || (esMovil ? 210 : 380)));
+      })()
+    : (typeof window !== "undefined" && window.innerWidth < 1024 ? 210 : 380),
   setAnchoNPanel: (ancho) => {
-    const normalizado = Math.max(140, Math.min(800, ancho));
+    const esMovil = typeof window !== "undefined" && window.innerWidth < 1024;
+    const minW = esMovil ? 140 : 280;
+    const normalizado = Math.max(minW, Math.min(800, ancho));
     if (typeof window !== "undefined" && window.localStorage) {
       localStorage.setItem("3bf_ancho_npanel", String(normalizado));
     }
     set({ anchoNPanel: normalizado });
   },
   anchoPanelDerecho: typeof window !== "undefined" && window.localStorage && localStorage.getItem("3bf_ancho_panel_derecho")
-    ? Math.max(200, Math.min(800, Number(localStorage.getItem("3bf_ancho_panel_derecho"))))
-    : 240,
+    ? (() => {
+        const val = Number(localStorage.getItem("3bf_ancho_panel_derecho"));
+        const esMovil = typeof window !== "undefined" && window.innerWidth < 1024;
+        if (!esMovil && val < 280) return 380; // En PC restaurar a 380 si venía con escala mínima de móvil
+        return Math.max(esMovil ? 200 : 280, Math.min(800, val || (esMovil ? 240 : 380)));
+      })()
+    : (typeof window !== "undefined" && window.innerWidth < 1024 ? 240 : 380),
   setAnchoPanelDerecho: (ancho) => {
-    const normalizado = Math.max(200, Math.min(800, ancho));
+    const esMovil = typeof window !== "undefined" && window.innerWidth < 1024;
+    const minW = esMovil ? 200 : 280;
+    const normalizado = Math.max(minW, Math.min(800, ancho));
     if (typeof window !== "undefined" && window.localStorage) {
       localStorage.setItem("3bf_ancho_panel_derecho", String(normalizado));
     }
