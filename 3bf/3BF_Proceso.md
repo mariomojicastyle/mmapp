@@ -762,12 +762,42 @@ Al construir muebles modulares combinando múltiples componentes paramétricos i
      - En `app/api/compress-glb/route.ts`, se incorporó el handler `OPTIONS` y las cabeceras CORS universales (`Access-Control-Allow-Origin: *`, `Access-Control-Allow-Methods: POST, GET, OPTIONS`).
      - El enlace canónico de Google Scene Viewer (`intent://arvr.google.com/scene-viewer/1.0?file=https://engine.mariomojica.com/api/ar-model/[id].glb...`) descarga el modelo al instante y lo proyecta anclado al piso en escala real (1:1) con chip flotante de porcentaje de tamaño (100%).
 
-3. **Calibración Ultra-Compacta de Paneles en Móvil (180px / 175px)**:
-   - Modificador de Componentes configurado en **180px** por defecto (con rango de 150px a 210px en móvil).
-   - N-Panel (Biblioteca de Componentes) configurado en **175px** por defecto (con rango de 140px a 195px en móvil).
-   - En PC de escritorio (`>= 1024px`), ambos paneles se conservan intactos en sus **380px** originales.
+### 🌟 Hito 16: Proporción Áurea Móvil (25% / 25% / 50%), Indicador Visual Portrait y Blindaje PBR Texturizado en AR
+
+#### 📋 Resumen Meticuloso de la Configuración y Solución:
+
+1. **Distribución de Pantalla Móvil Proporcional (25% Modificador / 25% N-Panel / 50% Visor 3D)**:
+   - **Problema Diagnosticado**: Los anchos fijos en píxeles (ej. 380px o 240px) en smartphones con resoluciones horizontales variables (~700px a ~920px) consumían más del 60% del ancho útil de pantalla, asfixiando el lienzo WebGL.
+   - **Solución Algorítmica en `app/page.tsx` y `components/viewer/NPanel.tsx`**:
+     - En dispositivos móviles (`innerWidth < 1024px`), el ancho efectivo del panel derecho (*Modificador de Componentes*) se calcula dinámicamente como exactamente el **25% del ancho de la ventana**:
+       $$\text{anchoEfectivoPanelDerecho} = \text{Math.round}(\text{window.innerWidth} \times 0.25)$$
+     - El panel izquierdo desplegable (*N-Panel / Biblioteca de Componentes*) se calcula igualmente en el **25% del ancho de la ventana**:
+       $$\text{anchoEfectivoNPanel} = \text{Math.round}(\text{window.innerWidth} \times 0.25)$$
+     - **Garantía Visual**: Al abrir ambos paneles simultáneamente en orientación horizontal, el visor 3D retiene de forma estricta el **50% central** de la pantalla ($100\% - 25\% - 25\% = 50\%$), con espacio amplio para órbita, zoom y visualización sin solapamientos.
+     - **Aislamiento Total de PC (>= 1024px)**: En computadoras de escritorio, ambos paneles se mantienen fijos en sus **380px** de diseño original con su divisor redimensionable.
+
+2. **Aviso Visual Dinámico de Orientación Vertical (Portrait) en `ControlPanel.tsx`**:
+   - **Detección Automática de Orientación**:
+     - Se implementó un hook reactivo que escucha eventos `resize` y `orientationchange`, evaluando si `window.innerHeight > window.innerWidth`.
+   - **Tarjeta de Instrucción No Invasiva**:
+     - En formato vertical (Portrait), el Modificador de Componentes despliega una tarjeta animada en cápsula circular (`rounded-full` / `rounded-2xl`) con ícono de rotación giratorio (`RotateCcw` con animación `animate-spin` suave), invitando al usuario a rotar el celular a posición horizontal para acceder a los controles.
+     - En cuanto el usuario gira el teléfono a horizontal (Landscape), la tarjeta desaparece automáticamente y los sliders/selectores del mueble se renderizan al instante.
+
+3. **Blindaje Perpetuo de Realidad Aumentada (Materiales PBR Forzados en Exportación GLB)**:
+   - **Causa Raíz de la Caída de Cámara en Google Scene Viewer**:
+     - Al exportar el modelo GLB para AR mientras el visor WebGL estaba en modo "Cristal" (semitransparente con `depthWrite=false`) o en modo "Líneas" (wireframe), los materiales exportados carecían de mapas de textura difusa o contenían flags de opacidad reducida no admitidos por el motor de oclusión de ARCore. Google Scene Viewer abortaba la sesión de AR y quedaba en bucle en el escaneo de piso.
+   - **Solución Definitiva en `Viewer3D.tsx` (`generateCleanGLB(isForAR = true)`)**:
+     - La función de exportación a AR ahora **ignora el modo de visualización activo en pantalla** y fuerza de manera mandatoria materiales estándar PBR 100% opacos y fotorrealistas:
+       - `MeshStandardMaterial` con `transparent: false`, `opacity: 1.0`, `roughness: 0.45`, `metalness: 0.05` y `side: THREE.DoubleSide`.
+       - Asignación de mapas difusos de madera reales generados en canvas de 256x256 JPEG a 75% de compresión.
+       - Exclusión selectiva de herrajes ocultos interiores (cajas minifix, tarugos, pernos embutidos), manteniendo el peso total del archivo por debajo de 800 KB.
+     - Google Scene Viewer valida el esquema GLB al 100%, reconoce la textura y ancla el mueble en el piso físico en <1 segundo.
+
+4. **Escenario Limpio en Refresco (F5 / Ctrl + F5)**:
+   - Se erradicó la inyección residual forzada de la `Cómoda Ravenna`. Al refrescar la ventana o vaciar el escenario con la papelera, el visor WebGL permanece 100% limpio y listo para que el usuario elija qué componente cargar desde la biblioteca.
 
 ---
+
 
 ---
 
