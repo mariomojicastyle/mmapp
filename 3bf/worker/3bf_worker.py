@@ -1475,8 +1475,18 @@ async def compute_model(request: Request):
 
     for nombre_ghx, m_count in conteo_mallas_herrajes.items():
         nh_l = nombre_ghx.lower()
-        # Regla DfMA para herrajes compuestos (ej: Perno Minifix taquete + espiga = 2 mallas / unidad)
-        mallas_por_herraje = 2 if "perno" in nh_l else 1
+        # Regla DfMA para herrajes compuestos (ej: 42 mallas para 6 cajones = 7 mallas por par de correderas)
+        if "corredi" in nh_l or "corredera" in nh_l:
+            mallas_por_herraje = 7  # 7 mallas por cajón (par de correderas telescópicas)
+            unidad_str = "pares"
+            costo_unit = 8.22 # ~$8.22 USD por par (~$24.650 COP)
+        elif "perno" in nh_l or "bisagra" in nh_l or "dobradi" in nh_l:
+            mallas_por_herraje = 2
+            unidad_str = "piezas"
+            costo_unit = 0.28 if "perno" in nh_l else 1.20
+        else:
+            mallas_por_herraje = 1
+            unidad_str = "piezas"
         cant_real = math.ceil(m_count / mallas_por_herraje)
         
         # Costeo paramétrico base
@@ -1489,11 +1499,19 @@ async def compute_model(request: Request):
         elif "perno" in nh_l:
             costo_unit = 0.28
             unidad_str = "piezas"
-        elif "corredera" in nh_l or "corrediça" in nh_l:
-            costo_unit = 4.50
-            unidad_str = "pares"
-        elif "bisagra" in nh_l or "dobradiça" in nh_l:
+        elif "corredi" in nh_l or "corredera" in nh_l:
+            pass # Ya asignado arriba
+        elif "bisagra" in nh_l or "dobradi" in nh_l:
             costo_unit = 1.20
+            unidad_str = "piezas"
+        elif "cantoneira" in nh_l or "angulo" in nh_l or "escuadra" in nh_l:
+            costo_unit = 0.15 # Escuadra de fijación metálica
+            unidad_str = "piezas"
+        elif "cavilha" in nh_l or "tarugo" in nh_l:
+            costo_unit = 0.03
+            unidad_str = "piezas"
+        elif "parafuso" in nh_l or "tornillo" in nh_l:
+            costo_unit = 0.05
             unidad_str = "piezas"
         elif "puxador" in nh_l or "tirador" in nh_l or "manija" in nh_l:
             costo_unit = 1.50
@@ -1507,6 +1525,7 @@ async def compute_model(request: Request):
         herrajes_final.append({
             "nombre": nombre_ghx,
             "cantidad": cant_real,
+            "mallas_count": m_count,
             "unidad": unidad_str
         })
 

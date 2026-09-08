@@ -50,13 +50,16 @@ export default function PartBreakdownPanel() {
     if (kLow.includes("maquinado") || kLow.includes("perforado")) {
       return capas.find((c) => c.nombre.toLowerCase().includes("perforad") || c.id === "capa_perforados")?.id || capas[0]?.id;
     }
-    if (categoria === "Herrajes" || kLow.includes("perno") || kLow.includes("tornillo") || kLow.includes("corredera")) {
-      return capas.find((c) => c.nombre.toLowerCase().includes("herraje") || c.id === "capa_herrajes" || c.id === "capa_acero")?.id || capas[0]?.id;
+    if (kLow.includes("corredi") || kLow.includes("corredera") || kLow.includes("cantoneira")) {
+      return capas.find((c) => c.id === "capa_zinc" || c.nombre.toLowerCase() === "zinc")?.id || capas.find((c) => c.id === "capa_zincado")?.id || capas[0]?.id;
+    }
+    if (categoria === "Herrajes" || kLow.includes("perno") || kLow.includes("tornillo") || kLow.includes("parafuso")) {
+      return capas.find((c) => c.id === "capa_zinc" || c.id === "capa_herrajes" || c.id === "capa_zincado" || c.id === "capa_acero")?.id || capas[0]?.id;
     }
     if (kLow.includes("caja")) {
-      return capas.find((c) => c.id === "capa_zincado" || c.id === "capa_zinc" || c.nombre.toLowerCase().includes("zinc"))?.id || capas[0]?.id;
+      return capas.find((c) => c.id === "capa_zinc" || c.id === "capa_zincado" || c.nombre.toLowerCase().includes("zinc"))?.id || capas[0]?.id;
     }
-    if (kLow.includes("tarugo") || kLow.includes("soporte")) {
+    if (kLow.includes("tarugo") || kLow.includes("cavilha") || kLow.includes("clavilha") || kLow.includes("soporte")) {
       return capas.find((c) => c.id === "capa_madera" || c.nombre.toLowerCase().includes("madera"))?.id || capas[0]?.id;
     }
     if (kLow.includes("mdp")) return capas.find((c) => c.nombre.toLowerCase() === "mdp" || c.id === "capa_mdp")?.id || capas[0]?.id;
@@ -96,7 +99,26 @@ export default function PartBreakdownPanel() {
     let categoria = "Estructura";
     if (kLow.includes("maquinado") || kLow.includes("perforado")) {
       categoria = "Mecanizados";
-    } else if (kLow.includes("perno") || kLow.includes("caja") || kLow.includes("tarugo") || kLow.includes("tornillo") || kLow.includes("soporte") || kLow.includes("corredera") || kLow.includes("pata") || kLow.includes("pes") || kLow.includes("clavilha")) {
+    } else if (
+      kLow.includes("perno") ||
+      kLow.includes("caja") ||
+      kLow.includes("tarugo") ||
+      kLow.includes("cavilha") ||
+      kLow.includes("tornillo") ||
+      kLow.includes("parafuso") ||
+      kLow.includes("soporte") ||
+      kLow.includes("corredi") ||
+      kLow.includes("corredera") ||
+      kLow.includes("cantoneira") ||
+      kLow.includes("angulo") ||
+      kLow.includes("pata") ||
+      kLow.includes("pes") ||
+      kLow.includes("clavilha") ||
+      kLow.includes("bisagra") ||
+      kLow.includes("dobradi") ||
+      kLow.includes("porca") ||
+      kLow.includes("tuerca")
+    ) {
       categoria = "Herrajes";
     } else if (
       kLow.includes("cubierta") ||

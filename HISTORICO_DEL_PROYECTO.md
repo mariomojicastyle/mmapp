@@ -2169,5 +2169,28 @@ Con esta batería de arreglos y la validación en caliente, la V20 se establece 
   * Compilación Next.js validada con éxito (`Compiled successfully`, 16/16 páginas estáticas).
   * Sincronización a `main` y despliegue global automático en Netlify CDN para `mariomojica.com`.
 
+---
 
+### 📱 Hito AR_Implementada — Realidad Aumentada Universal (Escala 1:1), Compresión Draco en Servidor, Bypass Inteligente de QR en Móviles y Estandarización de Cápsulas UI y Azul Dark Oficial (07 de Septiembre, 2026)
 
+- **Motor de Realidad Aumentada Universal (AR 1:1) en `3dBimFab`**:
+  * Implementación de la experiencia AR nativa multiplataforma mediante Google `<model-viewer>` v3.5.0 en `/ar`, con soporte priorizado para Google Scene Viewer (Android), Quick Look USDZ (iOS Safari) y WebXR.
+  * Microservicio de compresión y optimización de modelos 3D (`/api/compress-glb`) con biblioteca `draco3d` y centrado milimétrico de suelo ($Y=0$, $X=0$, $Z=0$).
+  * Reducción geométrica drástica del archivo exportado de $17.8\text{ MB}$ a solo $2.1\text{ MB}$ (reducción de más del $88\%$), permitiendo streaming ultrarrápido y sin lag en dispositivos móviles con anclaje magnético al piso real a escala real 1:1.
+  * Endpoint de servicio de modelos temporales (`/api/ar-model/[id]`) con caché en memoria volátil para entrega inmediata a visores AR.
+
+- **Detección Móvil Automática & Bypass Inteligente de QR**:
+  * Integración de detección reactiva y programática de dispositivos móviles (`isMobileUA || isIPad || isTouchScreen`).
+  * **En computadoras de escritorio (PC/Laptop)**: Abre el modal `ARViewerModal` con código QR generado en alta definición para apuntar y escanear desde la cámara del smartphone.
+  * **En teléfonos móviles y tabletas**: Detecta la navegación móvil y omite por completo el modal QR, redirigiendo de inmediato a la pantalla de Realidad Aumentada (`/ar?id=...&name=...`) con overlay de progreso en tiempo real (*"Preparando Realidad Aumentada... Optimizando geometría para tu dispositivo móvil"*).
+  * **Ocultamiento de "Descargar GLB" en Móviles**: El botón *"Descargar GLB"* queda estrictamente deshabilitado y oculto en teléfonos móviles y tabletas (`!isMobile` + `hidden lg:flex`), reservado exclusivamente para estaciones de trabajo y laptops.
+  * **Botón Circular de AR Ergonómico**: Botón circular táctil prominente (`40px` / `w-10 h-10` en móvil, `28px` / `w-7 h-7` en desktop) ubicado en la esquina inferior derecha con capa `z-20` para fácil pulsación con el pulgar.
+
+- **Estandarización de Normas UI (Cápsulas Obligatorias y Azul Oficial Dark)**:
+  * **Regla Global de Formas UI**: Prohibición terminante de rectángulos con esquinas redondeadas (`rounded-lg`, `rounded-xl`, etc.) en botones, badges e interactivos. Adopción estricta de **cápsulas puras con terminaciones semicirculares** (`rounded-full` / `border-radius: 9999px`) formalizada en `AGENTS.md` y `GEMINI.md`.
+  * **Azul Oficial Dark (Obsidian)**: Fijado canónicamente en **`#1368AA`** (RGB: 19, 104, 170). Prohibición absoluta de efectos fluorescentes, neón o sombras incandescentes; uso de sombras mate sobrias y limpias (`shadow-md`).
+  * **Pantalla de Realidad Aumentada Móvil Depurada (`/ar`)**: Logotipo oficial `Logo_3BF_Dark.svg` calibrado a `42px` (`h-[42px]`), eliminación de subtítulos distractores, alineación perfecta del título y botón de retorno con memoria de navegación `window.history.back()`.
+
+- **Control de Calidad y Despliegue CI/CD**:
+  * Verificación rigurosa de TypeScript (`npx tsc --noEmit`) con 0 errores.
+  * Fusión a rama principal `main` y despliegue global activado para Netlify.

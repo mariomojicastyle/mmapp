@@ -21,7 +21,14 @@ Este archivo es la "Memoria RAM" para Antigravity. Contiene el contexto de lo qu
 - [x] **Persistencia Reactiva & Memoria Local**: Indexación inmediata y sincronización fluida entre Supabase, memoria local y la memoria activa `.agent/skills/b2b-sales-closer/ventas_ram.md`.
 - [x] **Protocolo Antigravity de Fluidez Bilingüe (2 Bloques de Código en 1 Clic)**: Respuestas en el chat entregadas siempre en 2 bloques de código markdown separados (Bloque 1 en Português do Brasil para copiar en 1 clic + Bloque 2 en Español para auditoría rápida), inyectando ambos idiomas en la base de datos de Supabase y en `ventas_ram_storage.json` para mantener el historial vivo.
 
-- [x] **[NUEVO - 07 de Septiembre, 2026] Hito Estudio_Fotorealismo (Estudio Comparativo Politorno Móveis, Visor Interactivo Bilingüe, PDFs Oficiales y Despliegue Privado en Netlify)**:
+- [x] **[NUEVO - 07 de Septiembre, 2026] Hito AR_Implementada (Realidad Aumentada Universal 1:1, Compresión Draco en Servidor, Bypass Inteligente de QR en Móviles, Estandarización de Cápsulas UI y Azul Dark Oficial #1368AA)**:
+  - **Experiencia de Realidad Aumentada Universal (`/ar`)**: Integración con Google `<model-viewer>` v3.5.0 priorizando Google Scene Viewer en Android, Quick Look en iOS Safari y WebXR. Muebles proyectados a escala real (1:1) con anclaje a suelo e interacción táctil nativa.
+  - **Compresión Draco en Tiempo Real (`/api/compress-glb`)**: Reducción de 17.8 MB a ~2.1 MB (-88%) con centrado de piso a $Y=0$, permitiendo streaming ultrarrápido a móviles.
+  - **Detección Móvil Automática & Bypass de QR**: Los teléfonos móviles y tablets omiten el modal del código QR y entran de inmediato a la experiencia AR personalizada con overlay de carga reactivo.
+  - **Ocultamiento de "Descargar GLB" en Móviles**: El botón de descarga GLB queda reservado estrictamente para computadoras de escritorio (`hidden lg:flex` y `!isMobile`). En móviles solo figura el botón circular de Realidad Aumentada de 40px en la esquina inferior derecha.
+  - **Estandarización de Normas UI**: Cápsulas puras obligatorias (`rounded-full`) y adopción del azul oficial de la versión Dark **`#1368AA`** sin incandescencias en todos los presets de `store.ts` y componentes.
+
+- [x] **[07 de Septiembre, 2026] Hito Estudio_Fotorealismo (Estudio Comparativo Politorno Móveis, Visor Interactivo Bilingüe, PDFs Oficiales y Despliegue Privado en Netlify)**:
   - **Experiencia Web Interactiva (`mariomojica.com/estudio-corporativo-politorno.html`)**: Visor bilingüe en caliente (ES/PT) con vista dual (*Lado a Lado* y *Slider Interactivo* con `clip-path`), descarga de paquete de imágenes HD en ZIP y apertura de PDFs. Desplegado de forma privada y no enlazado en la homepage para compartir confidencialmente con Marcelo Novo.
   - **Maquetación PDF Corregida**: Eliminada la franja azul superior para dar respiro al logo MM de Mario Mojica, contención milimétrica de textos dentro de recuadros con `wrap_text` y reemplazo de tecnicismos 3D por terminología comercial de Fotorrealismo IA.
   - **3 Documentos PDF Publicados**: Español Web (`~2.5 MB`), Português Master HD (`~28.2 MB`) y Português WhatsApp (`~2.5 MB`).

@@ -181,26 +181,26 @@ export const PRESET_COLORES_OSCURO: ColoresApariencia = {
   textoSecundario: "#F8FAFC",
   textoLogotipo: "#F8FAFC",
   color3BF: "#FFFFFF",
-  colorMarca: "#0891B2",
-  botonActivo: "#0891B2",
+  colorMarca: "#1368AA",
+  botonActivo: "#1368AA",
   botonInactivo: "#1E293B",
   bordeBotonInactivo: "#334155",
   bordeControles: "#334155",
   panelContenedor: "#131B2E",
   fondoTopNav: "#131B2E",
   insigniaFondo: "#083344",
-  insigniaTexto: "#0891B2",
+  insigniaTexto: "#1368AA",
   estadoActivo: "#10B981",
-  iconosFijos: "#0891B2",
+  iconosFijos: "#1368AA",
 
   tablaEncabezadoFondo: "#1E293B",
   tablaEncabezadoTexto: "#F8FAFC",
   tablaFilaFondo: "#131B2E",
   tablaBorde: "#233044",
   tablaTotalFondo: "#0B0F17",
-  tablaTotalTexto: "#0891B2",
+  tablaTotalTexto: "#1368AA",
   kpiTarjetaFondo: "#131B2E",
-  kpiTarjetaTexto: "#0891B2",
+  kpiTarjetaTexto: "#1368AA",
 
   widgetEjeU: "#EF4444",
   widgetEjeV: "#22C55E",
@@ -695,6 +695,11 @@ export const HERRAJES_INICIALES_DEFECTO: HerrajeRecord[] = [
   { id: "h6", codigo: "80350194", nombreGhx: "Corredera Estandar", descripcion: "Par Correderas Telescópicas 450mm Cierre Suave", categoria: "Correderas", mallasPorUnidad: 2, costoCop: 24650, costoUsd: 8.22, unidad: "PAR", pesoKg: 0.450, proveedor: "Ducasse" },
   { id: "h7", codigo: "000892", nombreGhx: "Bisagra Codo 0", descripcion: "Bisagra Recta 35mm Cierre Suave con Base 4 Huecos", categoria: "Bisagras", mallasPorUnidad: 2, costoCop: 10650, costoUsd: 3.55, unidad: "UND", pesoKg: 0.085, proveedor: "Blum" },
   { id: "h8", codigo: "000735", nombreGhx: "Manija Bar", descripcion: "Tirador Metálico 128mm Negro Mate", categoria: "Accesorios", mallasPorUnidad: 1, costoCop: 12790, costoUsd: 4.26, unidad: "UND", pesoKg: 0.120, proveedor: "Ducasse" },
+  { id: "h9", codigo: "80350195", nombreGhx: "Corrediça", descripcion: "Par Correderas Telescópicas Full Extension 350mm Cincadas", categoria: "Correderas", mallasPorUnidad: 7, costoCop: 24650, costoUsd: 8.22, unidad: "PAR", pesoKg: 0.450, proveedor: "Ducasse" },
+  { id: "h10", codigo: "501920", nombreGhx: "Cantoneira", descripcion: "Cantonera de Unión Metálica Zamak / Acero 2 Huecos", categoria: "Accesorios", mallasPorUnidad: 1, costoCop: 450, costoUsd: 0.150, unidad: "UND", pesoKg: 0.015, proveedor: "Nacional" },
+  { id: "h11", codigo: "006420", nombreGhx: "Cavilha", descripcion: "Tarugo Estriado de Madera 8x30mm", categoria: "Tarugos", mallasPorUnidad: 1, costoCop: 23, costoUsd: 0.008, unidad: "UND", pesoKg: 0.001, proveedor: "Nacional" },
+  { id: "h12", codigo: "0000855", nombreGhx: "Parafuso E", descripcion: "Tornillo de Ensamble Autorroscante Cincado", categoria: "Tornillos", mallasPorUnidad: 1, costoCop: 37, costoUsd: 0.012, unidad: "UND", pesoKg: 0.003, proveedor: "Spax" },
+  { id: "h13", codigo: "901230", nombreGhx: "Pes", descripcion: "Pata Plástica Estructural Cómoda Ravenna", categoria: "Accesorios", mallasPorUnidad: 1, costoCop: 2500, costoUsd: 0.850, unidad: "UND", pesoKg: 0.040, proveedor: "Nacional" },
 ];
 
 // Cálculo inicial de Duratex con la matriz de negociación
@@ -1715,9 +1720,9 @@ export const use3BFStore = create<State3BF>((set, get) => ({
     ? Object.fromEntries(
         Object.entries(JSON.parse(localStorage.getItem("3bf_asignaciones_partes_v1")!) as Record<string, AsignacionParteDef>).map(([k, v]) => {
           const kLow = k.toLowerCase();
-          const isHardware = kLow.includes("perno") || kLow.includes("caja") || kLow.includes("tarugo") || kLow.includes("tornillo") || kLow.includes("soporte") || kLow.includes("corredera") || kLow.includes("pata") || kLow.includes("pes") || kLow.includes("clavilha");
+          const isHardware = kLow.includes("perno") || kLow.includes("caja") || kLow.includes("tarugo") || kLow.includes("cavilha") || kLow.includes("tornillo") || kLow.includes("parafuso") || kLow.includes("soporte") || kLow.includes("corredera") || kLow.includes("corredi") || kLow.includes("cantoneira") || kLow.includes("angulo") || kLow.includes("pata") || kLow.includes("pes") || kLow.includes("clavilha") || kLow.includes("porca") || kLow.includes("tuerca");
           const isBoard = !isHardware;
-          const isInvalidLayer = ["capa_acero", "capa_aluminio", "capa_cromo", "capa_zinc", "capa_plastico_1", "capa_plastico_2"].includes(v.capaId);
+          const isInvalidLayer = ["capa_acero", "capa_aluminio", "capa_cromo", "capa_zinc", "capa_zincado", "capa_herrajes", "capa_plastico_1", "capa_plastico_2"].includes(v.capaId);
           
           let safeCapaId = v.capaId;
           if (kLow.includes("mdf")) {
@@ -3608,7 +3613,7 @@ export const use3BFStore = create<State3BF>((set, get) => ({
     const nuevasAsignaciones = { ...state.asignacionesPartes };
     todasLasPartes.forEach((parteKey) => {
       const kLow = parteKey.toLowerCase();
-      const isHardware = kLow.includes("perno") || kLow.includes("caja") || kLow.includes("tarugo") || kLow.includes("tornillo") || kLow.includes("maquinado");
+      const isHardware = kLow.includes("perno") || kLow.includes("caja") || kLow.includes("tarugo") || kLow.includes("cavilha") || kLow.includes("tornillo") || kLow.includes("parafuso") || kLow.includes("soporte") || kLow.includes("corredi") || kLow.includes("corredera") || kLow.includes("cantoneira") || kLow.includes("angulo") || kLow.includes("pes") || kLow.includes("pata") || kLow.includes("maquinado") || kLow.includes("porca") || kLow.includes("tuerca");
       const isMdfMdp = kLow.includes("mdf") || kLow.includes("mdp");
       const isFondo = (kLow.includes("fondo") || kLow.includes("fundo") || kLow.includes("peça 18") || kLow.includes("peca 18") || kLow.includes("pk18") || kLow.includes("costa") || kLow.includes("trasera")) && !isMdfMdp;
       if (!isHardware && !isMdfMdp) {

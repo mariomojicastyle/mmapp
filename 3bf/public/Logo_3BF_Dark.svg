@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg
+   width="220mm"
+   height="90mm"
+   viewBox="0 0 220 90"
+   version="1.1"
+   id="svg1"
+   xml:space="preserve"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg">
+  <defs id="defs1" />
+  <g id="layer1">
+    <g id="g4" transform="translate(0.54747356,0.5)">
+      <g id="g5" transform="translate(0.64469146)">
+        <!-- Cuadro Rojo 3BF -->
+        <rect
+           style="fill:#bb0f0f;fill-opacity:1;stroke:none;"
+           id="rect-3bf"
+           width="59.447781"
+           height="59.447781"
+           x="5.5378542"
+           y="14.77611" />
+        <!-- Texto 3BF Blanco -->
+        <text
+           xml:space="preserve"
+           style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:29.9861px;font-family:Prompt, 'Prompt', sans-serif;fill:#ffffff;fill-opacity:1;"
+           x="8.3642311"
+           y="54.980133"
+           id="text-3bf"><tspan
+             id="tspan-3bf"
+             style="fill:#ffffff;fill-opacity:1;"
+             x="8.3642311"
+             y="54.980133">3BF</tspan></text>
+        <!-- Texto 3dBimFab Blanco -->
+        <text
+           xml:space="preserve"
+           style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:29.9861px;font-family:Prompt, 'Prompt', sans-serif;fill:#ffffff;fill-opacity:1;"
+           x="73.092186"
+           y="54.980133"
+           id="text-3dbimfab"><tspan
+             id="tspan-3dbimfab"
+             style="fill:#ffffff;fill-opacity:1;"
+             x="73.092186"
+             y="54.980133">3dBimFab</tspan></text>
+        <!-- Texto Powered by MARIO MOJICA Blanco -->
+        <text
+           xml:space="preserve"
+           style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:10.415px;font-family:Prompt, 'Prompt', sans-serif;fill:#ffffff;fill-opacity:1;"
+           x="73.50573"
+           y="67.131699"
+           id="text-powered"><tspan
+             id="tspan-powered"
+             x="73.50573"
+             y="67.131699"
+             style="fill:#ffffff;fill-opacity:1;">Powered by MARIO MOJICA</tspan></text>
+      </g>
+    </g>
+  </g>
+</svg>

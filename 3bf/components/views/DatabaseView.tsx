@@ -162,10 +162,27 @@ export default function DatabaseView() {
           setDbHerrajes(HERRAJES_INICIALES_DEFECTO);
           localStorage.setItem("3bf_db_herrajes", JSON.stringify(HERRAJES_INICIALES_DEFECTO));
         } else {
-          setDbHerrajes(parsed);
+          // 🔄 Merge inteligente: inyectar herrajes nuevos del catálogo oficial (Cómoda, etc.) si no existen
+          const existingCodes = new Set(parsed.map((h) => (h.codigo || "").trim()));
+          const existingNames = new Set(parsed.map((h) => (h.nombreGhx || "").toLowerCase().trim()));
+          const missingDefaults = HERRAJES_INICIALES_DEFECTO.filter(
+            (d) => !existingCodes.has((d.codigo || "").trim()) && !existingNames.has((d.nombreGhx || "").toLowerCase().trim())
+          );
+          
+          let merged = [...parsed, ...missingDefaults];
+          // 🛡️ Si Corrediça estaba en 1 (debido al select anterior que solo admitía hasta 4), corregir a 7
+          merged = merged.map((h) => {
+            if (h.nombreGhx.toLowerCase().includes("corredi") && (h.mallasPorUnidad === 1 || !h.mallasPorUnidad)) {
+              return { ...h, mallasPorUnidad: 7 };
+            }
+            return h;
+          });
+          setDbHerrajes(merged);
+          localStorage.setItem("3bf_db_herrajes", JSON.stringify(merged));
         }
       } else {
         setDbHerrajes(HERRAJES_INICIALES_DEFECTO);
+        localStorage.setItem("3bf_db_herrajes", JSON.stringify(HERRAJES_INICIALES_DEFECTO));
       }
 
       const nSaved = localStorage.getItem("3bf_negociacion_novopan");
@@ -628,21 +645,24 @@ export default function DatabaseView() {
                   </td>
                   {/* Mallas por Unidad (Regla DfMA) */}
                   <td className="p-2.5 text-center">
-                    <select
-                      value={h.mallasPorUnidad}
-                      onChange={(e) => handleUpdateHerraje(h.id, "mallasPorUnidad", Number(e.target.value))}
+                    <input
+                      type="number"
+                      min={1}
+                      max={100}
+                      value={h.mallasPorUnidad ?? 1}
+                      onChange={(e) => {
+                        const val = Math.max(1, parseInt(e.target.value, 10) || 1);
+                        handleUpdateHerraje(h.id, "mallasPorUnidad", val);
+                      }}
+                      onFocus={(e) => e.target.select()}
                       style={{
                         backgroundColor: coloresApariencia?.fondoPaneles,
                         borderColor: coloresApariencia?.bordePaneles,
                         color: coloresApariencia?.textoPrincipal
                       }}
-                      className="text-xs font-bold px-2 py-0.5 rounded border outline-none cursor-pointer text-center shadow-xs"
-                    >
-                      <option value={1}>1</option>
-                      <option value={2}>2</option>
-                      <option value={3}>3</option>
-                      <option value={4}>4</option>
-                    </select>
+                      className="w-14 text-xs font-bold px-1.5 py-0.5 rounded border outline-none text-center shadow-xs focus:ring-1 focus:ring-cyan-500 font-mono"
+                      title="Cantidad de submallas que representan 1 unidad física en el modelo 3D"
+                    />
                   </td>
                   {/* Unidad */}
                   <td 

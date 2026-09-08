@@ -640,7 +640,20 @@ export default function DespieceView() {
       // Costos unitarios exactos
       const unitCop = match ? match.costoCop : Math.round(0.20 * trm);
       const unitUsd = match ? match.costoUsd : 0.20;
-      const cant = Number(h.cantidad) || 0;
+      // 📐 Conteo Real de Mallas generado por Grasshopper
+      let mallasBrutas = Number(h.mallas_count);
+      if (!mallasBrutas || isNaN(mallasBrutas)) {
+        const allMeshes = Object.values(instancias).flatMap((inst) => inst.resultado?.real_meshes || []).concat(resultado?.real_meshes || []);
+        const meshesMatch = allMeshes.filter((m: any) => {
+          const mClean = (m.name || "").replace(/^RH_OUT:/i, "").trim().toLowerCase();
+          return mClean === nameLower || mClean.includes(nameLower) || nameLower.includes(mClean);
+        });
+        mallasBrutas = meshesMatch.length > 0 ? meshesMatch.length : (Number(h.cantidad) || 1);
+      }
+
+      // ⚙️ Regla Paramétrica Universal DfMA: Cantidad = Total Mallas / Mallas por Unidad (Controlable por el usuario)
+      const divisorMallas = (match && match.mallasPorUnidad && match.mallasPorUnidad >= 1) ? match.mallasPorUnidad : 1;
+      const cant = Math.ceil(mallasBrutas / divisorMallas);
 
       if (!mapaHerrajes.has(key)) {
         mapaHerrajes.set(key, {

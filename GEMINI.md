@@ -214,4 +214,11 @@ Default values cause runtime failures.
   - `Icon_3BF.ico`, `Icon_3DBimFab.ico`: Íconos de aplicación.
 - **Mandato de Uso:** En la generación de PDFs, actas, minutas, reportes, diagramas o cabeceras web, **se deben consumir DIRECTAMENTE estos archivos SVG** de `/publicidad` para garantizar 100% de consistencia de marca.
 
+## 🔘 Regla Estricta de Formas de UI: Cápsulas Obligatorias (Terminaciones Circulares)
+- **Prohibición de Rectángulos Redondeados:** Queda ESTRICTAMENTE PROHIBIDO el uso de rectángulos con esquinas redondeadas (`rounded-lg`, `rounded-xl`, `rounded-2xl`, etc.) en botones, badges, píldoras, chips, selectores y elementos de acción interactivos.
+- **Uso Obligatorio de Cápsulas:** Todos los botones, badges e interactivos deben utilizar **cápsulas puras con terminaciones circulares** (`rounded-full` en Tailwind CSS / `border-radius: 9999px`). Los botones de ícono único deben ser estrictamente circulares (`w-X h-X rounded-full`).
 
+## 🌌 Color Oficial de la Versión Dark (Obsidian): Azul `#1368AA` Sin Incandescencias
+- **Azul Oficial Dark:** El color primario de botones activos, acentos y llamadas a la acción en la versión Dark es **`#1368AA`** (RGB: 19, 104, 170).
+- **Prohibición Absoluta de Incandescencias:** Queda estrictamente PROHIBIDO aplicar efectos incandescentes, resplandores neón fluorescentes (`shadow-[...rgba(...)]`) o tonos turquesa/cyan brillantes (`#0891B2`, `#06B6D4`, `#00FFFF`, etc.) a los botones y badges oscuros. Los botones deben ser mate, sobrios, con sombras limpias y sutiles estándar (`shadow-md`).
+- **Fondo Dark Oficial:** El fondo de paneles y modales oscuros es **`#131B2E`** y el fondo profundo es **`#0B0F17`**.
