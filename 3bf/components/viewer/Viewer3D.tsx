@@ -2706,11 +2706,190 @@ export default function Viewer3D() {
       return null;
     }
 
-    // 2. Crear nodo raíz limpio y purgado para Blender / visores 3D
-    const exportRoot = new THREE.Group();
-    exportRoot.name = parametros.model_id || "Mueble_3BF";
+    const { mergeGeometries } = await import("three/examples/jsm/utils/BufferGeometryUtils.js");
+
+    // 2. Crear escena de exportación plana sin emparentamientos hacia (0,0,0)
+    const exportScene = new THREE.Scene();
+    exportScene.name = "Scene";
 
     const isExportSolid = modoVisual === "solido";
+
+    // 🏷️ Funciones de clasificación y nombres
+    const isHardwareMesh = (name: string, isHwData?: boolean): boolean => {
+      if (isHwData) return true;
+      const n = name.toLowerCase();
+      return (
+        n.includes("perno") ||
+        n.includes("caja") ||
+        n.includes("minifix") ||
+        n.includes("tarugo") ||
+        n.includes("cavilha") ||
+        n.includes("clavilha") ||
+        n.includes("tornillo") ||
+        n.includes("parafuso") ||
+        n.includes("porca") ||
+        n.includes("tuerca") ||
+        n.includes("corredera") ||
+        n.includes("corredi") ||
+        n.includes("cantoneira") ||
+        n.includes("soporte") ||
+        n.includes("pata") ||
+        n.includes("pes") ||
+        n.includes("pés") ||
+        n.includes("bisagra") ||
+        n.includes("dobradiça") ||
+        n.includes("puxador") ||
+        n.includes("manija")
+      ) && !n.includes("cajon") && !n.includes("cajón");
+    };
+
+    const getCleanPieceBaseName = (rawName: string): string => {
+      let clean = rawName
+        .replace(/^RH_OUT:/i, "")
+        .trim();
+
+      // 1. Quitar prefijos de material, sustrato o capas
+      clean = clean
+        .replace(/^(MDP|MDF|HDF|Compensado|Aglomerado|Melamina|Tablero|Madera|Fondo|Fundo|Canto|Borde)\s+/i, "")
+        .replace(/^(Color|Balance|Back|Cara|Reverso|Nucleo|Sustrato)\s+/i, "")
+        .trim();
+
+      // 2. Quitar sufijos técnicos de capas y duplicaciones
+      clean = clean
+        .replace(/(_Color|_MDP|_MDF|_Balance|_Back|_Cara|_Nucleo|_B|-Color|-MDP|-MDF|-Balance|-Back|-B)$/i, "")
+        .replace(/(\s+Color|\s+MDP|\s+MDF|\s+Balance|\s+Back|\s+B)$/i, "")
+        .trim();
+
+      // 3. Normalizar números de 1 dígito a 2 dígitos para consistencia (ej. "Peça 1" -> "Peça 01", "PK1" -> "PK01")
+      clean = clean.replace(/^(Pe[cç]a\s*)(\d)$/i, (_, prefix, num) => `${prefix}0${num}`);
+      clean = clean.replace(/^(PK\s*)(\d)$/i, (_, prefix, num) => `PK${String(num).padStart(2, "0")}`);
+      clean = clean.replace(/^(P\s*)(\d)$/i, (_, prefix, num) => `P${String(num).padStart(2, "0")}`);
+
+      // 4. Fallback de seguridad si el nombre quedó vacío (ej. era solo "RH_OUT:MDP")
+      if (!clean) {
+        clean = parametros.model_id ? `PK01_${parametros.model_id}` : "PK01";
+      }
+
+      return clean;
+    };
+
+    // Separador de islas disjuntas en geometrías no continuas (para Linear Arrays / Mirrors de Grasshopper)
+    const splitDisconnectedIslands = (geo: THREE.BufferGeometry): THREE.BufferGeometry[] => {
+      const nonIdx = geo.index ? geo.toNonIndexed() : geo.clone();
+      const pos = nonIdx.attributes.position;
+      const norm = nonIdx.attributes.normal;
+      const uv = nonIdx.attributes.uv;
+      if (!pos || pos.count === 0) return [geo];
+
+      const triCount = Math.floor(pos.count / 3);
+      if (triCount <= 1) return [nonIdx];
+
+      // 1. Mapear cada vértice a una clave espacial (cuantizada a 1.0 mm para tolerar imprecisiones flotantes)
+      const vertToTris = new Map<string, number[]>();
+      const getVertKey = (idx: number) => {
+        const x = Math.round(pos.getX(idx) * 1000);
+        const y = Math.round(pos.getY(idx) * 1000);
+        const z = Math.round(pos.getZ(idx) * 1000);
+        return `${x}_${y}_${z}`;
+      };
+
+      for (let t = 0; t < triCount; t++) {
+        for (let v = 0; v < 3; v++) {
+          const k = getVertKey(t * 3 + v);
+          if (!vertToTris.has(k)) vertToTris.set(k, []);
+          vertToTris.get(k)!.push(t);
+        }
+      }
+
+      // 2. Grafo de adyacencia de triángulos por inundación (BFS)
+      const triVisited = new Uint8Array(triCount);
+      const islands: number[][] = [];
+
+      for (let t = 0; t < triCount; t++) {
+        if (triVisited[t]) continue;
+        const currentIsland: number[] = [];
+        const queue: number[] = [t];
+        triVisited[t] = 1;
+
+        while (queue.length > 0) {
+          const cur = queue.pop()!;
+          currentIsland.push(cur);
+
+          for (let v = 0; v < 3; v++) {
+            const k = getVertKey(cur * 3 + v);
+            const neighbors = vertToTris.get(k);
+            if (neighbors) {
+              for (let i = 0; i < neighbors.length; i++) {
+                const n = neighbors[i];
+                if (!triVisited[n]) {
+                  triVisited[n] = 1;
+                  queue.push(n);
+                }
+              }
+            }
+          }
+        }
+
+        islands.push(currentIsland);
+      }
+
+      if (islands.length <= 1) {
+        return [nonIdx];
+      }
+
+      // 3. Crear una BufferGeometry independiente para cada isla detectada
+      const resultGeos: THREE.BufferGeometry[] = [];
+      for (const island of islands) {
+        const islandTriCount = island.length;
+        const newPos = new Float32Array(islandTriCount * 9);
+        const newNorm = norm ? new Float32Array(islandTriCount * 9) : null;
+        const newUv = uv ? new Float32Array(islandTriCount * 6) : null;
+
+        let dstVert = 0;
+        for (const triIdx of island) {
+          const srcVert = triIdx * 3;
+          for (let v = 0; v < 3; v++) {
+            const src = srcVert + v;
+            newPos[dstVert * 3] = pos.getX(src);
+            newPos[dstVert * 3 + 1] = pos.getY(src);
+            newPos[dstVert * 3 + 2] = pos.getZ(src);
+
+            if (newNorm && norm) {
+              newNorm[dstVert * 3] = norm.getX(src);
+              newNorm[dstVert * 3 + 1] = norm.getY(src);
+              newNorm[dstVert * 3 + 2] = norm.getZ(src);
+            }
+
+            if (newUv && uv) {
+              newUv[dstVert * 2] = uv.getX(src);
+              newUv[dstVert * 2 + 1] = uv.getY(src);
+            }
+
+            dstVert++;
+          }
+        }
+
+        const islandGeo = new THREE.BufferGeometry();
+        islandGeo.setAttribute("position", new THREE.BufferAttribute(newPos, 3));
+        if (newNorm) islandGeo.setAttribute("normal", new THREE.BufferAttribute(newNorm, 3));
+        if (newUv) islandGeo.setAttribute("uv", new THREE.BufferAttribute(newUv, 2));
+        islandGeo.computeBoundingBox();
+        resultGeos.push(islandGeo);
+      }
+
+      return resultGeos;
+    };
+
+    // 3. Agrupar las mallas candidatas por entidad lógica (Pieza de Madera o Herraje Individual)
+    interface PreparedSubMesh {
+      geo: THREE.BufferGeometry;
+      mat: THREE.MeshStandardMaterial;
+      box: THREE.Box3;
+      center: THREE.Vector3;
+    }
+
+    const rawBoardSubMeshes = new Map<string, PreparedSubMesh[]>();
+    const hardwareItems: Array<{ baseName: string; sub: PreparedSubMesh }> = [];
 
     for (const { mesh, groupWorldPos } of candidateMeshes) {
       const meshName = (mesh.name || "").trim();
@@ -2734,7 +2913,7 @@ export default function Viewer3D() {
         cleanGeo.setAttribute("uv", new THREE.BufferAttribute(uvs, 2));
       }
 
-      // Preservar geometrías indexadas (3x más livianas que toNonIndexed)
+      // Preservar geometrías indexadas (3x más livianas)
       let finalGeo = cleanGeo;
       const posAttr = finalGeo.attributes.position;
       const uvAttr = finalGeo.attributes.uv;
@@ -2786,9 +2965,20 @@ export default function Viewer3D() {
 
       finalGeo.clearGroups();
 
-      // 3. Resolución y deduplicación de material con bitmap 512x512
-      let cleanMat: THREE.MeshStandardMaterial;
+      // Transformar los vértices al espacio local del mueble (aplicando groupWorldPos)
+      const meshWorldPos = new THREE.Vector3();
+      const meshWorldQuat = new THREE.Quaternion();
+      const meshWorldScale = new THREE.Vector3();
+      mesh.getWorldPosition(meshWorldPos);
+      mesh.getWorldQuaternion(meshWorldQuat);
+      mesh.getWorldScale(meshWorldScale);
 
+      const localOffset = new THREE.Vector3().subVectors(meshWorldPos, groupWorldPos);
+      const transformMatrix = new THREE.Matrix4().compose(localOffset, meshWorldQuat, meshWorldScale);
+      finalGeo.applyMatrix4(transformMatrix);
+
+      // Resolución de material
+      let cleanMat: THREE.MeshStandardMaterial;
       if (isExportSolid && !isForAR) {
         const solidKey = "mat_solido_global";
         if (!materialOptimizedCache.has(solidKey)) {
@@ -2809,8 +2999,6 @@ export default function Viewer3D() {
         cleanMat = materialOptimizedCache.get(solidKey)!;
       } else {
         const srcMat = Array.isArray(mesh.material) ? mesh.material[0] : mesh.material;
-        
-        // 🚀 En AR: Forzar siempre la textura diffuse real PBR de la pieza (aunque el visor esté en modo cristal o sólido)
         const srcTexture: THREE.Texture | null = (mesh.userData?.pbrDiffuse) || ((srcMat as any)?.map) || null;
 
         let optTexture: THREE.Texture | null = null;
@@ -2818,8 +3006,22 @@ export default function Viewer3D() {
           optTexture = getOptimized512Texture(srcTexture);
         }
 
-        const baseMatName = mesh.userData?.nombreMaterialEfectivo || srcMat?.name || "PBR_Material";
-        const isHw = mesh.userData?.isHardware;
+        const isHw = isHardwareMesh(meshName, mesh.userData?.isHardware);
+        let baseMatName = mesh.userData?.nombreMaterialEfectivo || srcMat?.name;
+        if (!baseMatName || baseMatName === "PBR_Material") {
+          if (nLow.includes("mdf")) {
+            baseMatName = "MDF";
+          } else if (nLow.includes("mdp")) {
+            baseMatName = "MDP";
+          } else if (nLow.includes("balance")) {
+            baseMatName = "Balance";
+          } else if (isHw) {
+            baseMatName = "Herraje_Mat";
+          } else {
+            baseMatName = "M_Acabado";
+          }
+        }
+
         const colHex = optTexture ? "FFFFFF" : ((mesh.userData?.materialPBR?.colorBase) ? mesh.userData.materialPBR.colorBase.replace("#", "") : ((srcMat as any)?.color ? (srcMat as any).color.getHexString() : "CBD5E1"));
         const roughVal = isHw ? "0.25" : ((mesh.userData?.materialPBR?.rugosidad ?? 0.45)).toFixed(2);
         const metalVal = isHw ? "0.85" : ((mesh.userData?.materialPBR?.metalico ?? 0.05)).toFixed(2);
@@ -2846,50 +3048,205 @@ export default function Viewer3D() {
         cleanMat = materialOptimizedCache.get(matCacheKey)!;
       }
 
-      const newMesh = new THREE.Mesh(finalGeo, cleanMat);
-      newMesh.name = meshName || "Pieza_3BF";
-      newMesh.children = [];
+      const isHw = isHardwareMesh(meshName, mesh.userData?.isHardware);
+      const cleanPieceKey = getCleanPieceBaseName(meshName);
 
-      // Posicionar en espacio local del mueble
-      const worldPos = new THREE.Vector3();
-      const worldQuat = new THREE.Quaternion();
-      const worldScale = new THREE.Vector3();
-      mesh.getWorldPosition(worldPos);
-      mesh.getWorldQuaternion(worldQuat);
-      mesh.getWorldScale(worldScale);
+      // 🔍 Separar mallas compuestas en islas físicas independientes (arrays, mirrors)
+      const discreteIslands = splitDisconnectedIslands(finalGeo);
 
-      newMesh.position.subVectors(worldPos, groupWorldPos);
-      newMesh.quaternion.copy(worldQuat);
-      newMesh.scale.copy(worldScale);
+      for (const islandGeo of discreteIslands) {
+        const box = new THREE.Box3().setFromBufferAttribute(islandGeo.attributes.position as THREE.BufferAttribute);
+        const center = new THREE.Vector3();
+        box.getCenter(center);
 
-      exportRoot.add(newMesh);
+        const subItem: PreparedSubMesh = { geo: islandGeo, mat: cleanMat, box, center };
+
+        if (isHw) {
+          hardwareItems.push({
+            baseName: cleanPieceKey,
+            sub: subItem
+          });
+        } else {
+          if (!rawBoardSubMeshes.has(cleanPieceKey)) {
+            rawBoardSubMeshes.set(cleanPieceKey, []);
+          }
+          rawBoardSubMeshes.get(cleanPieceKey)!.push(subItem);
+        }
+      }
     }
 
-    // 4. Centrar el mueble en X y Z (origen de rotación/colocación) y asentar su base exactamente en Y = 0 (el suelo físico)
-    exportRoot.updateMatrixWorld(true);
-    const totalBox = new THREE.Box3().setFromObject(exportRoot);
+    // 4. Agrupación Espacial Inteligente por Pieza Física (Cohesión de MDP + Color + Balance por instancia)
+    interface PhysicalPieceUnit {
+      subMeshes: PreparedSubMesh[];
+      box: THREE.Box3;
+      center: THREE.Vector3;
+    }
+
+    rawBoardSubMeshes.forEach((subMeshesList, pieceBaseName) => {
+      const pieceUnits: PhysicalPieceUnit[] = [];
+
+      // Conectividad espacial BFS por Bounding Box Overlap con tolerancia estricta de 0.5 mm (0.0005 m)
+      // Esta tolerancia de 0.5 mm conecta con 100% de precisión todas las partes en contacto directo de la misma pieza
+      // (MDP, caras de melamina, contrabalances, cantos y listones de engruese),
+      // mientras que piezas separadas (como los frentes de cajón con holguras de 2mm a 4mm) permanecen perfectamente aisladas.
+      const pendientes = [...subMeshesList];
+      while (pendientes.length > 0) {
+        const actual = pendientes.pop()!;
+        const cluster: PreparedSubMesh[] = [actual];
+        const frontier: PreparedSubMesh[] = [actual];
+
+        while (frontier.length > 0) {
+          const ref = frontier.pop()!;
+          const refBoxExpanded = ref.box.clone().expandByScalar(0.0005); // Tolerancia exacta de 0.5 mm
+
+          for (let i = pendientes.length - 1; i >= 0; i--) {
+            const candidate = pendientes[i];
+            if (refBoxExpanded.intersectsBox(candidate.box)) {
+              cluster.push(candidate);
+              frontier.push(candidate);
+              pendientes.splice(i, 1);
+            }
+          }
+        }
+
+        const unitBox = new THREE.Box3();
+        cluster.forEach((s) => unitBox.union(s.box));
+        const unitCenter = new THREE.Vector3();
+        unitBox.getCenter(unitCenter);
+
+        pieceUnits.push({
+          subMeshes: cluster,
+          box: unitBox,
+          center: unitCenter
+        });
+      }
+
+      // Ordenar unidades físicamente (de arriba hacia abajo o de izquierda a derecha)
+      pieceUnits.sort((a, b) => {
+        if (Math.abs(a.center.y - b.center.y) > 0.01) {
+          return b.center.y - a.center.y; // Z/Y descendente (top-down)
+        }
+        if (Math.abs(a.center.x - b.center.x) > 0.01) {
+          return a.center.x - b.center.x; // X ascendente (left-to-right)
+        }
+        return a.center.z - b.center.z;
+      });
+
+      // Construir cada pieza física independiente con su Pivote en el Centro de Masa
+      pieceUnits.forEach((unit, unitIdx) => {
+        // Formato Canónico Blender: 1ra pieza -> 'Peça 19', 2da pieza -> 'Peça 19.001', 3ra pieza -> 'Peça 19.002'
+        const instanceParentName = unitIdx === 0 ? pieceBaseName : `${pieceBaseName}.${String(unitIdx).padStart(3, "0")}`;
+        const instanceMeshName = `${instanceParentName}_Mesh`;
+
+        let finalPieceGeo: THREE.BufferGeometry;
+        let finalPieceMat: THREE.Material | THREE.Material[];
+
+        if (unit.subMeshes.length === 1) {
+          finalPieceGeo = unit.subMeshes[0].geo.clone();
+          finalPieceMat = unit.subMeshes[0].mat;
+        } else {
+          // Fusionar las capas de la pieza en una sola geometría multi-material
+          const nonIndexedGeos: THREE.BufferGeometry[] = [];
+          const matsToMerge: THREE.MeshStandardMaterial[] = [];
+
+          unit.subMeshes.forEach((s) => {
+            const nonIdx = s.geo.index ? s.geo.toNonIndexed() : s.geo.clone();
+            nonIndexedGeos.push(nonIdx);
+            matsToMerge.push(s.mat);
+          });
+
+          const merged = mergeGeometries(nonIndexedGeos, true);
+          if (merged) {
+            finalPieceGeo = merged;
+            finalPieceMat = matsToMerge;
+          } else {
+            finalPieceGeo = unit.subMeshes[0].geo.clone();
+            finalPieceMat = unit.subMeshes[0].mat;
+          }
+        }
+
+        // 🎯 PIVOTE EN EL CENTRO DE MASA:
+        // Calculamos el centroide de la geometría, trasladamos los vértices a (0,0,0) local
+        // y colocamos el grupo contenedor en la posición del centro de masa en el mundo.
+        finalPieceGeo.computeBoundingBox();
+        const centerOfMass = new THREE.Vector3();
+        if (finalPieceGeo.boundingBox) {
+          finalPieceGeo.boundingBox.getCenter(centerOfMass);
+        }
+        finalPieceGeo.translate(-centerOfMass.x, -centerOfMass.y, -centerOfMass.z);
+        finalPieceGeo.computeVertexNormals();
+
+        const pieceMesh = new THREE.Mesh(finalPieceGeo, finalPieceMat);
+        pieceMesh.name = instanceParentName;
+        pieceMesh.geometry.name = instanceMeshName;
+        pieceMesh.position.copy(centerOfMass);
+
+        exportScene.add(pieceMesh);
+      });
+    });
+
+    // 5. Construcción de Herrajes Discretos Jerárquicos con Pivote en Centro de Masa (Sin emparentamientos a 0,0,0)
+    const hardwareSequenceCounters = new Map<string, number>();
+
+    // Ordenar herrajes por posición espacial para numeración estable
+    hardwareItems.sort((a, b) => {
+      if (Math.abs(a.sub.center.y - b.sub.center.y) > 0.01) {
+        return b.sub.center.y - a.sub.center.y;
+      }
+      return a.sub.center.x - b.sub.center.x;
+    });
+
+    hardwareItems.forEach(({ baseName, sub }) => {
+      const count = (hardwareSequenceCounters.get(baseName) || 0) + 1;
+      hardwareSequenceCounters.set(baseName, count);
+
+      // Formato Padre e Hijo: 1ro -> Cavilha, 2do -> Cavilha.001, 3ro -> Cavilha.002
+      const hwName = count === 1 ? baseName : `${baseName}.${String(count - 1).padStart(3, "0")}`;
+      const hwMeshName = `${hwName}_Mesh`;
+
+      const hwGeo = sub.geo.clone();
+      hwGeo.computeBoundingBox();
+      const hwCenter = new THREE.Vector3();
+      if (hwGeo.boundingBox) {
+        hwGeo.boundingBox.getCenter(hwCenter);
+      }
+      // 🎯 Pivote en centro de masa del herraje
+      hwGeo.translate(-hwCenter.x, -hwCenter.y, -hwCenter.z);
+      hwGeo.computeVertexNormals();
+
+      const hwMesh = new THREE.Mesh(hwGeo, sub.mat);
+      hwMesh.name = hwName;
+      hwMesh.geometry.name = hwMeshName;
+      hwMesh.position.copy(hwCenter);
+
+      exportScene.add(hwMesh);
+    });
+
+    // 6. Centrar el mueble en X y Z (origen de rotación/colocación) y asentar su base exactamente en Y = 0 (el suelo físico)
+    exportScene.updateMatrixWorld(true);
+    const totalBox = new THREE.Box3().setFromObject(exportScene);
     if (!totalBox.isEmpty()) {
       const center = new THREE.Vector3();
       totalBox.getCenter(center);
       const minY = totalBox.min.y;
 
-      // Desplazar cada pieza para que el centro horizontal esté en (0, 0) y el piso físico en Y = 0
-      exportRoot.children.forEach((child) => {
+      // Desplazar cada pieza/herraje para que el centro horizontal esté en (0, 0) y el piso físico en Y = 0
+      exportScene.children.forEach((child) => {
         child.position.x -= center.x;
         child.position.z -= center.z;
         child.position.y -= minY;
       });
-      exportRoot.updateMatrixWorld(true);
+      exportScene.updateMatrixWorld(true);
       console.log(
-        `[3dBimFab GLB Centering] Mueble centrado en X/Z=0 y asentado en Y=0 (Base original minY: ${minY.toFixed(4)} m)`
+        `[3dBimFab GLB Cohesion] Mueble cohesionado con éxito: ${rawBoardSubMeshes.size} familias de piezas de madera y ${hardwareItems.length} herrajes.`
       );
     }
 
     return new Promise((resolve, reject) => {
       exporter.parse(
-        exportRoot,
+        exportScene,
         (gltf) => {
-          resolve({ arrayBuffer: gltf as ArrayBuffer, piecesCount: exportRoot.children.length });
+          resolve({ arrayBuffer: gltf as ArrayBuffer, piecesCount: exportScene.children.length });
         },
         (error) => {
           reject(error);
@@ -3221,9 +3578,9 @@ export default function Viewer3D() {
               backgroundColor: coloresApariencia?.botonActivo || "#0891b2",
               borderColor: coloresApariencia?.colorMarca || "#0891b2",
             }}
-            className="px-1.5 lg:px-2.5 h-4 lg:h-5.5 rounded-full text-white shadow-md border flex items-center gap-1 text-[8.5px] lg:text-[11px] font-bold hover:opacity-90 active:scale-95 transition-all cursor-pointer disabled:opacity-50"
+            className="px-2.5 lg:px-3 h-5.5 lg:h-7 rounded-full text-white shadow-md border flex items-center gap-1.5 text-[10px] lg:text-xs font-bold leading-none hover:opacity-90 active:scale-95 transition-all cursor-pointer disabled:opacity-50 box-border"
           >
-            <Save className={`w-2 lg:w-2.5 h-2 lg:h-2.5 text-white ${guardandoMueble ? "animate-spin" : ""}`} />
+            <Save className={`w-2.5 lg:w-3.5 h-2.5 lg:h-3.5 text-white ${guardandoMueble ? "animate-spin" : ""}`} />
             <span>{guardandoMueble ? "Guardando..." : "Guardar"}</span>
           </button>
 
@@ -3257,7 +3614,7 @@ export default function Viewer3D() {
               backgroundColor: coloresApariencia?.botonActivo || "#0891b2",
               borderColor: coloresApariencia?.colorMarca || "#0891b2",
             }}
-            className="px-1.5 lg:px-2.5 h-4 lg:h-5.5 rounded-full text-white shadow-md border flex items-center gap-1 text-[8.5px] lg:text-[11px] font-bold hover:opacity-90 active:scale-95 transition-all cursor-pointer disabled:opacity-50"
+            className="px-2.5 lg:px-3 h-5.5 lg:h-7 rounded-full text-white shadow-md border flex items-center gap-1.5 text-[10px] lg:text-xs font-bold leading-none hover:opacity-90 active:scale-95 transition-all cursor-pointer disabled:opacity-50 box-border"
           >
             <span>
               {mecanizadoEnProgreso 
@@ -3277,27 +3634,26 @@ export default function Viewer3D() {
                 backgroundColor: coloresApariencia?.fondoPaneles || "#FFFFFF",
                 borderColor: coloresApariencia?.bordePaneles || "#CBD5E1",
               }}
-              className="w-4 lg:w-5.5 h-4 lg:h-5.5 rounded-full shadow-md border flex items-center justify-center text-red-500 hover:bg-red-50 hover:border-red-400 active:scale-95 transition-all cursor-pointer"
+              className="w-5.5 lg:w-7 h-5.5 lg:h-7 rounded-full shadow-md border flex items-center justify-center text-red-500 hover:bg-red-50 hover:border-red-400 active:scale-95 transition-all cursor-pointer box-border shrink-0"
             >
-              <Trash2 className="w-2 lg:w-2.5 h-2 lg:h-2.5" />
+              <Trash2 className="w-2.5 lg:w-3.5 h-2.5 lg:h-3.5" />
             </button>
           )}
 
-          {/* 💡 Botón Toggle de Luces de Estudio 3D (Estilo Unreal) */}
+          {/* 💡 Botón Toggle de Luces de Estudio 3D (Circular, fondo cian, ícono blanco) */}
           <button
             onClick={() => toggleGizmosLuces()}
             title={calibracion.mostrarGizmosLuces ? "Ocultar gizmos 3D de luces" : "Ver lámparas y luces en el escenario 3D (Estilo Unreal)"}
-            style={
-              calibracion.mostrarGizmosLuces
-                ? { backgroundColor: coloresApariencia?.botonActivo || "#0891b2", borderColor: coloresApariencia?.colorMarca || "#0891b2", color: "#FFFFFF" }
-                : { backgroundColor: coloresApariencia?.botonInactivo || "#1E293B", borderColor: coloresApariencia?.bordeBotonInactivo || "#334155", color: coloresApariencia?.textoPrincipal || "#F8FAFC" }
-            }
-            className={`px-1.5 lg:px-2.5 h-4 lg:h-5.5 rounded-full border flex items-center gap-1 text-[8.5px] lg:text-[11px] font-bold transition-all cursor-pointer select-none ${
-              calibracion.mostrarGizmosLuces ? "text-white shadow-md" : "hover:opacity-90 backdrop-blur-sm"
-            }`}
+            style={{
+              backgroundColor: coloresApariencia?.botonActivo || "#0891b2",
+              borderColor: coloresApariencia?.colorMarca || "#0891b2",
+            }}
+            className="w-5.5 lg:w-7 h-5.5 lg:h-7 rounded-full text-white shadow-md border flex items-center justify-center hover:opacity-90 active:scale-95 transition-all cursor-pointer box-border shrink-0"
           >
-            <Sun className={`w-2 lg:w-3 h-2 lg:h-3 shrink-0 ${calibracion.mostrarGizmosLuces ? "text-amber-300" : "text-amber-500"}`} />
-            <span>Luces</span>
+            <Sun 
+              strokeWidth={2.8}
+              className={`w-3 lg:w-4 h-3 lg:h-4 text-white shrink-0 ${calibracion.mostrarGizmosLuces ? "opacity-100" : "opacity-90"}`} 
+            />
           </button>
         </div>
 
@@ -3598,22 +3954,22 @@ export default function Viewer3D() {
 
       {/* 📱 Esquina Inferior Derecha: Botones de Acción (AR en móviles, AR + Descargar GLB en desktop) */}
       <div className="absolute bottom-3 right-3 z-20 flex flex-col items-end gap-2 md:gap-2.5 pointer-events-auto">
-        {/* 📱 Botón Circular de Realidad Aumentada (Prominente y fácil de pulsar en móvil) */}
+        {/* 📱 Botón Circular de Realidad Aumentada (Homologado con altura de Chevron / 28px) */}
         <button
           onClick={abrirRealidadAumentada}
           disabled={generandoAR || exportandoGLB}
           style={{
-            backgroundColor: coloresApariencia?.botonActivo || "#1368AA",
-            borderColor: coloresApariencia?.colorMarca || "#1368AA",
+            backgroundColor: coloresApariencia?.botonActivo || "#0891b2",
+            borderColor: coloresApariencia?.colorMarca || "#0891b2",
           }}
-          className="w-9 h-9 md:w-10 md:h-10 rounded-full text-white shadow-lg border flex items-center justify-center hover:opacity-90 active:scale-95 transition-all cursor-pointer disabled:opacity-50 box-border"
+          className="w-5.5 lg:w-7 h-5.5 lg:h-7 rounded-full text-white shadow-md border flex items-center justify-center hover:opacity-90 active:scale-95 transition-all cursor-pointer disabled:opacity-50 box-border shrink-0"
           title="Experiencia AR (Realidad Aumentada 1:1)"
           aria-label="Experiencia AR"
         >
           {generandoAR ? (
-            <Loader2 className="w-4 h-4 md:w-5 md:h-5 text-white animate-spin" />
+            <Loader2 className="w-3 lg:w-3.5 h-3 lg:h-3.5 text-white animate-spin" />
           ) : (
-            <ViewInArIcon className="w-5 h-5 md:w-5 md:h-5 text-white" />
+            <ViewInArIcon className="w-3.5 lg:w-4 h-3.5 lg:h-4 text-white" />
           )}
         </button>
 
@@ -3623,8 +3979,8 @@ export default function Viewer3D() {
             onClick={() => exportToGLB(true)}
             disabled={exportandoGLB || generandoAR}
             style={{
-              backgroundColor: coloresApariencia?.botonActivo || "#1368AA",
-              borderColor: coloresApariencia?.colorMarca || "#1368AA",
+              backgroundColor: coloresApariencia?.botonActivo || "#0891b2",
+              borderColor: coloresApariencia?.colorMarca || "#0891b2",
             }}
             className="hidden lg:flex px-3 h-7 rounded-full text-white shadow-md border items-center gap-1.5 text-xs font-bold leading-none hover:opacity-90 active:scale-95 transition-all cursor-pointer disabled:opacity-50 box-border"
             title="Descargar archivo 3D GLB con compresión Draco (~2.1 MB)"
