@@ -13,6 +13,93 @@ import { use3BFStore, APP_VERSION } from "@/lib/store";
 import { Box, Layers, Cpu, CheckCircle2, AlertCircle, Database, Camera, Check, Sparkles } from "lucide-react";
 import { IconModoLineas, IconModoCristal, IconModoSolido, IconModoRender } from "@/components/ui/ControlPanel";
 
+function DocumentTitleEditor() {
+  const { 
+    muebleActivoGuardado, 
+    renombrarMuebleGuardado, 
+    parametros, 
+    setParametro, 
+    coloresApariencia, 
+    setMostrarNPanel,
+    setPestanaNPanel
+  } = use3BFStore();
+
+  const nombreActual = muebleActivoGuardado?.nombre || parametros?.model_id || "Documento sin título";
+  const [texto, setTexto] = React.useState(nombreActual);
+  const [editando, setEditando] = React.useState(false);
+
+  React.useEffect(() => {
+    setTexto(nombreActual);
+  }, [nombreActual]);
+
+  const handleGuardar = () => {
+    setEditando(false);
+    const limpio = texto.trim();
+    if (!limpio || limpio === nombreActual) {
+      setTexto(nombreActual);
+      return;
+    }
+    if (muebleActivoGuardado) {
+      renombrarMuebleGuardado(muebleActivoGuardado.id, limpio);
+    } else {
+      setParametro("model_id", limpio);
+    }
+  };
+
+  return (
+    <div className="flex items-center gap-1 min-w-0">
+      {editando ? (
+        <input
+          type="text"
+          autoFocus
+          value={texto}
+          onChange={(e) => setTexto(e.target.value)}
+          onBlur={handleGuardar}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") handleGuardar();
+            if (e.key === "Escape") {
+              setTexto(nombreActual);
+              setEditando(false);
+            }
+          }}
+          className="px-2 py-0.5 text-xs lg:text-sm font-semibold rounded-md border outline-none font-sans min-w-[120px] max-w-[220px]"
+          style={{
+            backgroundColor: coloresApariencia?.fondoAplicacion || "#FFFFFF",
+            borderColor: coloresApariencia?.botonActivo || "#0891b2",
+            color: coloresApariencia?.textoPrincipal || "#0F172A",
+          }}
+        />
+      ) : (
+        <button
+          type="button"
+          onClick={() => setEditando(true)}
+          title="Clic para renombrar este mueble (Estilo Google Sheets)"
+          className="flex items-center gap-1 px-2 py-0.5 rounded-md text-xs lg:text-sm font-semibold border border-transparent hover:border-slate-300/40 hover:bg-black/5 dark:hover:bg-white/5 transition-all text-left cursor-text truncate max-w-[120px] sm:max-w-[180px] lg:max-w-[240px]"
+          style={{
+            color: coloresApariencia?.textoPrincipal || "currentColor",
+          }}
+        >
+          <span className="truncate">{nombreActual}</span>
+        </button>
+      )}
+
+      {muebleActivoGuardado && (
+        <button
+          type="button"
+          onClick={() => {
+            setMostrarNPanel(true);
+            setPestanaNPanel("muebles");
+          }}
+          title={`Guardado en Catálogo como "${muebleActivoGuardado.nombre}" (Clic para abrir en Catálogo)`}
+          className="flex items-center justify-center p-0.5 rounded-full hover:bg-black/5 dark:hover:bg-white/5 transition text-emerald-500 shrink-0"
+        >
+          <CheckCircle2 className="w-3.5 h-3.5" />
+        </button>
+      )}
+    </div>
+  );
+}
+
 export default function Home3BF() {
   const { 
     pestanaActiva, 
@@ -300,6 +387,11 @@ export default function Home3BF() {
               </g>
             </g>
           </svg>
+        </div>
+
+        {/* 📝 Título del Mueble / Archivo Activo Editable (Estilo Google Sheets / Docs) */}
+        <div className="flex items-center shrink min-w-0 mr-auto ml-1 sm:ml-2 lg:ml-3">
+          <DocumentTitleEditor />
         </div>
 
         {/* 2. Pestañas de Vista Principales (Centradas en el Header) */}

@@ -16,7 +16,8 @@ import {
   Sliders,
   Image as ImageIcon,
   Upload,
-  X
+  X,
+  Pipette
 } from "lucide-react";
 
 export default function MaterialManagerPanel() {
@@ -81,6 +82,25 @@ export default function MaterialManagerPanel() {
     window.addEventListener("mousemove", onMouseMove);
     window.addEventListener("mouseup", onMouseUp);
   }, [alturaGaleria]);
+
+  // 💧 Cuentagotas Universal Multipantalla para el panel lateral
+  const abrirCuentagotasPanel = async (matId: string) => {
+    if (typeof window !== "undefined" && "EyeDropper" in window) {
+      try {
+        const eyeDropper = new (window as any).EyeDropper();
+        const result = await eyeDropper.open();
+        if (result?.sRGBHex) {
+          actualizarMaterialPBR(matId, { colorBase: result.sRGBHex.toUpperCase() });
+        }
+      } catch (err: any) {
+        if (err.name !== "AbortError") {
+          console.warn("Cuentagotas cancelado o no disponible:", err);
+        }
+      }
+    } else {
+      alert("El Cuentagotas Universal requiere Google Chrome, Microsoft Edge, Opera o Brave.");
+    }
+  };
 
   const toggleAcordeon = (key: keyof typeof acordeonAbierto) => {
     setAcordeonAbierto((prev) => ({ ...prev, [key]: !prev[key] }));
@@ -401,7 +421,7 @@ export default function MaterialManagerPanel() {
                       borderColor: coloresApariencia?.bordePaneles,
                       color: coloresApariencia?.textoPrincipal
                     }}
-                    className="w-full px-2.5 py-1.5 border rounded font-mono text-xs focus:ring-1 focus:ring-cyan-500 focus:outline-none"
+                    className="w-full px-3 py-1.5 border rounded-full font-mono text-xs focus:ring-1 focus:ring-cyan-500 focus:outline-none"
                   />
                   <span 
                     style={{ color: coloresApariencia?.textoSecundario }}
@@ -426,7 +446,7 @@ export default function MaterialManagerPanel() {
                       borderColor: coloresApariencia?.bordePaneles,
                       color: coloresApariencia?.textoPrincipal
                     }}
-                    className="w-full px-2.5 py-1.5 border rounded text-xs focus:ring-1 focus:ring-cyan-500 focus:outline-none cursor-pointer"
+                    className="w-full px-3 py-1.5 border rounded-full text-xs focus:ring-1 focus:ring-cyan-500 focus:outline-none cursor-pointer"
                   >
                     <option value="PBR">PBR Físico Estándar</option>
                     <option value="Melamina">Melamina / Tablero Laminado</option>
@@ -435,6 +455,61 @@ export default function MaterialManagerPanel() {
                     <option value="Plastico">Plástico Inyectado / Polímero</option>
                     <option value="Pintura">Pintura Electrostática</option>
                   </select>
+                </div>
+
+                {/* Selector de Color Base / Tono */}
+                <div>
+                  <label 
+                    style={{ color: coloresApariencia?.textoSecundario }}
+                    className="block text-[10px] font-medium mb-1"
+                  >
+                    Color Base / Tono
+                  </label>
+                  <div className="flex items-center gap-2">
+                    <label
+                      className="w-8 h-8 rounded-full border-2 border-white shadow-xs cursor-pointer hover:scale-110 transition flex items-center justify-center relative overflow-hidden shrink-0"
+                      style={{ backgroundColor: materialActivo.colorBase || "#CCCCCC" }}
+                      title="Clic para cambiar color base"
+                    >
+                      <Palette className="w-3.5 h-3.5 text-white drop-shadow opacity-75 hover:opacity-100 transition" />
+                      <input
+                        type="color"
+                        value={materialActivo.colorBase?.startsWith("#") && materialActivo.colorBase.length === 7 ? materialActivo.colorBase : "#CCCCCC"}
+                        onChange={(e) => actualizarMaterialPBR(materialActivo.id, { colorBase: e.target.value })}
+                        className="opacity-0 absolute inset-0 w-full h-full cursor-pointer"
+                      />
+                    </label>
+                    <input
+                      type="text"
+                      maxLength={7}
+                      value={materialActivo.colorBase || "#CCCCCC"}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        if (/^#[0-9a-fA-F]{6}$/.test(val)) {
+                          actualizarMaterialPBR(materialActivo.id, { colorBase: val });
+                        }
+                      }}
+                      style={{
+                        backgroundColor: coloresApariencia?.fondoAplicacion,
+                        borderColor: coloresApariencia?.bordePaneles,
+                        color: coloresApariencia?.textoPrincipal
+                      }}
+                      className="flex-1 px-3 py-1.5 border rounded-full font-mono text-xs uppercase focus:ring-1 focus:ring-cyan-500 focus:outline-none"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => abrirCuentagotasPanel(materialActivo.id)}
+                      className="w-8 h-8 rounded-full border shadow-xs flex items-center justify-center cursor-pointer hover:scale-110 transition group shrink-0"
+                      style={{
+                        backgroundColor: coloresApariencia?.fondoAplicacion,
+                        borderColor: coloresApariencia?.bordePaneles,
+                        color: coloresApariencia?.botonActivo || "#0891b2"
+                      }}
+                      title="Cuentagotas: Captura cualquier color de la pantalla u otra aplicación"
+                    >
+                      <Pipette className="w-3.5 h-3.5 group-hover:rotate-12 transition-transform" />
+                    </button>
+                  </div>
                 </div>
               </div>
             )}

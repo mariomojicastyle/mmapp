@@ -7,7 +7,7 @@ import { use3BFStore, ObjetoInstancia3BF, MaterialPBRDef, DEFAULT_HDRI_CONFIG } 
 import * as THREE from "three";
 import * as BufferGeometryUtils from "three/examples/jsm/utils/BufferGeometryUtils.js";
 import { RGBELoader } from "three/examples/jsm/loaders/RGBELoader.js";
-import { Download, Save, Zap, Trash2, CheckCircle2, AlertCircle, Loader2, Sun, Lamp, Sparkles, Smartphone } from "lucide-react";
+import { Download, Save, Zap, Trash2, CheckCircle2, AlertCircle, Loader2, Sun, Lamp, Sparkles, Smartphone, Square } from "lucide-react";
 import NPanel from "./NPanel";
 import { GHXAutoWatcher } from "./GHXAutoWatcher";
 import { generarEntornoEquirectangularLocal } from "./ShaderBallViewer";
@@ -496,15 +496,13 @@ function BoardMesh({
     normName.includes("trasera")
   ) && !normName.includes("mdf") && !normName.includes("mdp") && !isBalance;
 
-  // 💡 2. Resolver Capa Asignada (Blindaje: Piezas de madera NUNCA caen en acero, aluminio o plástico)
-  const isInvalidLayerForBoard = (layerId?: string) => {
-    return ["capa_acero", "capa_aluminio", "capa_cromo", "capa_zinc", "capa_plastico_1", "capa_plastico_2"].includes(layerId || "");
-  };
-
+  // 💡 2. Resolver Capa Asignada
   let capaAsignada: any = null;
-  if (asignacion && asignacion.capaId && asignacion.capaId !== "por_defecto" && !(isWoodBoardPiece && isInvalidLayerForBoard(asignacion.capaId)) && !(normName.includes("mdf") && asignacion.capaId !== "capa_mdf")) {
-    capaAsignada = capas.find((c) => c.id === asignacion.capaId);
-  } else {
+  if (asignacion && asignacion.capaId && asignacion.capaId !== "por_defecto") {
+    capaAsignada = capas.find((c) => c.id === asignacion.capaId) || null;
+  }
+  
+  if (!capaAsignada) {
     if (isHardwareCorredera || isHardwareCantoneira) {
       // 🔩 Correderas telescópicas y cantoneras -> Capa Zincado / Acero
       capaAsignada = capas.find((c) => c.id === "capa_zincado" || c.id === "capa_zinc" || c.id === "capa_acero" || c.nombre.toLowerCase().includes("zinc") || c.nombre.toLowerCase().includes("acero")) || capas.find((c) => c.id === "capa_herrajes") || capas[0];
@@ -538,17 +536,6 @@ function BoardMesh({
   }
   if (!capaAsignada && capas.length > 0) {
     capaAsignada = capas[0];
-  }
-  if (isWoodBoardPiece && isInvalidLayerForBoard(capaAsignada?.id)) {
-    if (normName.includes("mdf")) {
-      capaAsignada = capas.find((c) => c.id === "capa_mdf" || c.nombre.toLowerCase() === "mdf") || capaAsignada;
-    } else if (isFondoBoard) {
-      capaAsignada = capas.find((c) => c.id === "capa_tono_fondo" || c.nombre.toLowerCase().includes("fondo")) || capaAsignada;
-    } else if (isBalance) {
-      capaAsignada = capas.find((c) => c.id === "capa_back" || c.nombre.toLowerCase().includes("back")) || capaAsignada;
-    } else {
-      capaAsignada = capas.find((c) => c.id === "capa_tono" || c.nombre.toLowerCase().includes("tono")) || capaAsignada;
-    }
   }
 
   // 💡 3. Resolver Material PBR Asignado
@@ -788,25 +775,15 @@ function BoardMesh({
           side={THREE.DoubleSide}
         />
         {debeMostrarAristas && (
-          edgesGeometry ? (
-            <lineSegments geometry={edgesGeometry} renderOrder={10}>
-              <lineBasicMaterial 
-                color={calibracion.colorAristas || "#111827"} 
-                transparent={(calibracion.opacidadAristas ?? 1.0) < 0.99}
-                opacity={calibracion.opacidadAristas ?? 1.0}
-                depthTest={true} 
-              />
-            </lineSegments>
-          ) : (
-            <Edges
-              threshold={calibracion.thresholdAristas || 25}
-              color={calibracion.colorAristas || "#111827"}
-              opacity={calibracion.opacidadAristas ?? 1.0}
-              transparent={(calibracion.opacidadAristas ?? 1.0) < 0.99}
-              lineWidth={1}
-              renderOrder={10}
-            />
-          )
+          <Edges
+            geometry={customGeometry || undefined}
+            threshold={calibracion.thresholdAristas || 25}
+            color={calibracion.colorAristas || "#111827"}
+            opacity={calibracion.opacidadAristas ?? 1.0}
+            transparent={(calibracion.opacidadAristas ?? 1.0) < 0.99}
+            lineWidth={Math.max(1, ((calibracion.calibreAristas ?? 100) / 100) * 1.5)}
+            renderOrder={10}
+          />
         )}
       </mesh>
     );
@@ -853,25 +830,14 @@ function BoardMesh({
         depthWrite={depthWrite}
       />
       {debeMostrarAristas && (
-        boxEdgesGeometry ? (
-          <lineSegments geometry={boxEdgesGeometry} renderOrder={10}>
-            <lineBasicMaterial 
-              color={calibracion.colorAristas || "#111827"} 
-              transparent={(calibracion.opacidadAristas ?? 1.0) < 0.99}
-              opacity={calibracion.opacidadAristas ?? 1.0}
-              depthTest={true} 
-            />
-          </lineSegments>
-        ) : (
-          <Edges
-            threshold={calibracion.thresholdAristas || 25}
-            color={calibracion.colorAristas || "#111827"}
-            opacity={calibracion.opacidadAristas ?? 1.0}
-            transparent={(calibracion.opacidadAristas ?? 1.0) < 0.99}
-            lineWidth={1}
-            renderOrder={10}
-          />
-        )
+        <Edges
+          threshold={calibracion.thresholdAristas || 25}
+          color={calibracion.colorAristas || "#111827"}
+          opacity={calibracion.opacidadAristas ?? 1.0}
+          transparent={(calibracion.opacidadAristas ?? 1.0) < 0.99}
+          lineWidth={Math.max(1, ((calibracion.calibreAristas ?? 100) / 100) * 1.5)}
+          renderOrder={10}
+        />
       )}
     </mesh>
   );
@@ -932,6 +898,15 @@ function getFurnitureGroupBoardBox(furnitureGroup: THREE.Group): THREE.Box3 {
 
   if (box.isEmpty()) {
     box.setFromObject(furnitureGroup);
+  }
+  if (typeof window !== "undefined" && !box.isEmpty()) {
+    const s = new THREE.Vector3();
+    box.getSize(s);
+    (window as any).__3bfRealBBox = {
+      anchoMm: Math.round(s.x * 1000),
+      altoMm: Math.round(s.y * 1000),
+      profMm: Math.round(s.z * 1000),
+    };
   }
   return box;
 }
@@ -2064,11 +2039,10 @@ function ThumbnailCapturer() {
             n.includes("axes") ||
             n.includes("ground") ||
             n.includes("silhouette") ||
-            obj.type === "LineSegments" ||
+            n.includes("gizmo") ||
+            n.includes("transform") ||
             obj.type === "GridHelper" ||
             obj.type === "AxesHelper" ||
-            obj.type === "Line2" ||
-            (obj as any).isLine ||
             (obj.type === "Mesh" && (obj.position.y <= 0 && obj.position.y >= -0.01) && !(obj as any).geometry?.attributes?.position?.count);
 
           if (isHelper) {
@@ -2404,6 +2378,8 @@ export default function Viewer3D() {
     recargarDefinicionInstancia,
     workerStatus,
     toggleGizmosLuces,
+    mostrarMarcoEncuadre,
+    toggleMarcoEncuadre,
   } = use3BFStore();
 
   const [furnitureGroup, setFurnitureGroup] = React.useState<THREE.Group | null>(null);
@@ -2915,52 +2891,10 @@ export default function Viewer3D() {
 
       // Preservar geometrías indexadas (3x más livianas)
       let finalGeo = cleanGeo;
-      const posAttr = finalGeo.attributes.position;
-      const uvAttr = finalGeo.attributes.uv;
 
-      // Inversión Explícita de Balance
-      if (nLow.includes("balance")) {
-        if (finalGeo.index) {
-          const idx = finalGeo.index;
-          for (let i = 0; i < idx.count; i += 3) {
-            const t = idx.getX(i + 1);
-            idx.setX(i + 1, idx.getX(i + 2));
-            idx.setX(i + 2, t);
-          }
-          idx.needsUpdate = true;
-        } else {
-          for (let i = 0; i < posAttr.count; i += 3) {
-            const x1 = posAttr.getX(i + 1), y1 = posAttr.getY(i + 1), z1 = posAttr.getZ(i + 1);
-            const x2 = posAttr.getX(i + 2), y2 = posAttr.getY(i + 2), z2 = posAttr.getZ(i + 2);
-            posAttr.setXYZ(i + 1, x2, y2, z2);
-            posAttr.setXYZ(i + 2, x1, y1, z1);
-
-            if (uvAttr) {
-              const u1 = uvAttr.getX(i + 1), v1 = uvAttr.getY(i + 1);
-              const u2 = uvAttr.getX(i + 2), v2 = uvAttr.getY(i + 2);
-              uvAttr.setXY(i + 1, u2, v2);
-              uvAttr.setXY(i + 2, u1, v1);
-            }
-          }
-          posAttr.needsUpdate = true;
-          if (uvAttr) uvAttr.needsUpdate = true;
-        }
-      }
-
-      finalGeo.computeVertexNormals();
-
-      if (nLow.includes("balance") && finalGeo.attributes.normal) {
-        const normAttr = finalGeo.attributes.normal;
-        for (let idx = 0; idx < normAttr.count; idx++) {
-          normAttr.setXYZ(idx, 0, -1, 0);
-        }
-        normAttr.needsUpdate = true;
-      } else if (nLow.includes("color") && finalGeo.attributes.normal) {
-        const normAttr = finalGeo.attributes.normal;
-        for (let idx = 0; idx < normAttr.count; idx++) {
-          normAttr.setXYZ(idx, 0, 1, 0);
-        }
-        normAttr.needsUpdate = true;
+      // Calcular normales geométricas naturales si la malla no las incluye
+      if (!finalGeo.attributes.normal) {
+        finalGeo.computeVertexNormals();
       }
 
       finalGeo.clearGroups();
@@ -3009,11 +2943,12 @@ export default function Viewer3D() {
         const isHw = isHardwareMesh(meshName, mesh.userData?.isHardware);
         let baseMatName = mesh.userData?.nombreMaterialEfectivo || srcMat?.name;
         if (!baseMatName || baseMatName === "PBR_Material") {
+          const isBalanceMesh = mesh.userData?.isBalance || nLow.includes("balance") || nLow.endsWith(" b") || nLow.endsWith("_b") || /pe[cç]a\s*\d+\s*b$/i.test(nLow);
           if (nLow.includes("mdf")) {
             baseMatName = "MDF";
           } else if (nLow.includes("mdp")) {
             baseMatName = "MDP";
-          } else if (nLow.includes("balance")) {
+          } else if (isBalanceMesh) {
             baseMatName = "Balance";
           } else if (isHw) {
             baseMatName = "Herraje_Mat";
@@ -3557,9 +3492,33 @@ export default function Viewer3D() {
         </div>
       )}
 
-      {/* 🧭 HUD SUPERIOR IZQUIERDO: JERARQUÍA NOMBRE DE ARCHIVO + (N) COMPONENTES + LISTA DE PIEZAS */}
+      {/* 🔲 OVERLAY CAMERA FRAME 1:1 (ESTILO BLENDER CAMERA TO VIEW / PASSEPARTOUT) */}
+      {mostrarMarcoEncuadre && (
+        <div className="absolute inset-0 z-10 pointer-events-none flex items-center justify-center overflow-hidden">
+          {/* El marco 1:1 cuadrado centrado con sombreado exterior estilo Blender */}
+          <div 
+            className="relative aspect-square max-w-[85vh] max-h-[85vh] w-[80vmin] h-[80vmin] border-2 shadow-[0_0_0_9999px_rgba(11,15,23,0.55)] flex items-center justify-center transition-all"
+            style={{
+              borderColor: coloresApariencia?.botonActivo || "#0891b2",
+            }}
+          >
+            {/* Esquinas estilizadas estilo Blender Camera */}
+            <div className="absolute -top-0.5 -left-0.5 w-3.5 h-3.5 border-t-2 border-l-2 border-amber-400" />
+            <div className="absolute -top-0.5 -right-0.5 w-3.5 h-3.5 border-t-2 border-r-2 border-amber-400" />
+            <div className="absolute -bottom-0.5 -left-0.5 w-3.5 h-3.5 border-b-2 border-l-2 border-amber-400" />
+            <div className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 border-b-2 border-r-2 border-amber-400" />
+
+            {/* Badge indicador discreto */}
+            <div className="absolute top-2 left-2 px-2 py-0.5 rounded-full bg-slate-950/80 text-amber-400 border border-amber-500/30 text-[9px] font-mono tracking-wider font-bold uppercase backdrop-blur-xs shadow-xs">
+              1:1 Camera Frame
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 🧭 HUD SUPERIOR IZQUIERDO: JERARQUÍA BOTONES + (N) COMPONENTES + LISTA DE PIEZAS */}
       <div className="absolute top-3.5 left-4 z-20 flex flex-col items-start gap-1 select-none pointer-events-auto max-w-[260px]">
-        {/* Nivel 1: Barra de Acciones Superior (Guardar + Nombre / Perforar Mueble) */}
+        {/* Nivel 1: Barra de Acciones Superior (Guardar + Perforar + Luz + Marco 1:1) */}
         <div className="flex items-center gap-1.5 flex-wrap">
           {/* Botón Guardar (Guardar nuevo o Guardar Cambios en caliente) */}
           <button
@@ -3583,25 +3542,6 @@ export default function Viewer3D() {
             <Save className={`w-2.5 lg:w-3.5 h-2.5 lg:h-3.5 text-white ${guardandoMueble ? "animate-spin" : ""}`} />
             <span>{guardandoMueble ? "Guardando..." : "Guardar"}</span>
           </button>
-
-          {/* Nombre del mueble activo (si ya está guardado en catálogo) */}
-          {muebleActivoGuardado && (
-            <button
-              onClick={() => {
-                setMostrarNPanel(true);
-                setPestanaNPanel("muebles");
-              }}
-              title="Mueble activo en catálogo (Haz clic para ver en Biblioteca de Muebles)"
-              style={{ 
-                color: coloresApariencia?.textoPrincipal || (tema === "obsidian" ? "#F8FAFC" : "#0F172A"),
-              }}
-              className="flex items-center gap-1 text-[10px] lg:text-xs font-bold hover:text-cyan-500 transition-colors cursor-pointer group max-w-[130px] truncate"
-            >
-              <span className="underline decoration-dotted underline-offset-2 group-hover:decoration-solid truncate">
-                {muebleActivoGuardado.nombre}
-              </span>
-            </button>
-          )}
 
           {/* Botón Perforar Mueble */}
           <button
@@ -3653,6 +3593,22 @@ export default function Viewer3D() {
             <Sun 
               strokeWidth={2.8}
               className={`w-3 lg:w-4 h-3 lg:h-4 text-white shrink-0 ${calibracion.mostrarGizmosLuces ? "opacity-100" : "opacity-90"}`} 
+            />
+          </button>
+
+          {/* 🔲 Botón Toggle de Marco de Encuadre 1:1 (Camera to View - Estilo Blender) */}
+          <button
+            onClick={() => toggleMarcoEncuadre()}
+            title={mostrarMarcoEncuadre ? "Ocultar marco de encuadre 1:1" : "Activar marco de encuadre 1:1 para render (Estilo Blender Camera to View)"}
+            style={{
+              backgroundColor: coloresApariencia?.botonActivo || "#0891b2",
+              borderColor: coloresApariencia?.colorMarca || "#0891b2",
+            }}
+            className="w-5.5 lg:w-7 h-5.5 lg:h-7 rounded-full text-white shadow-md border flex items-center justify-center hover:opacity-90 active:scale-95 transition-all cursor-pointer box-border shrink-0"
+          >
+            <Square 
+              strokeWidth={2.8}
+              className={`w-3 lg:w-4 h-3 lg:h-4 text-white shrink-0 ${mostrarMarcoEncuadre ? "opacity-100 fill-white/25" : "opacity-90"}`} 
             />
           </button>
         </div>

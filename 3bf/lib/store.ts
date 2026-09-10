@@ -404,6 +404,7 @@ export interface CalibracionVisual {
   opacidadAristas: number;       // 0.0 a 1.0
   colorAristas: string;          // Hex (#111827)
   thresholdAristas: number;      // 1 a 89 grados
+  calibreAristas: number;        // 50 a 200 (%) calibre/grosor visual de aristas
   intensidadLuzDirecta: number;  // 0.0 a 3.0
   intensidadLuzAmbiental: number;// 0.0 a 2.0
   intensidadLuzEntorno: number;  // 0.0 a 3.0 (Luz de Entorno HDRI / IBL)
@@ -757,6 +758,29 @@ export interface RenderIAResultado {
 
 export const PROMPTS_INICIALES_DEFECTO: PromptTemplateItem[] = [
   {
+    id: "preset_architectural_digest_editorial",
+    titulo: "Editorial Arquitectura (Architectural Digest)",
+    categoria: "Hogar / Sala",
+    prompt: `Editorial-style interior architecture photograph (Architectural Digest style) featuring the exact piece of furniture shown in the reference image.
+
+STRICT PRODUCT LOCK (CRITICAL): Maintain 100% of the design, geometry, components, colors, and finishes of the furniture piece from the image without any alteration. Do not change, add, or invent details on the chest of drawers.
+
+@Description
+
+SET DESIGN AND ENVIRONMENT:
+- Bright, high-design room, captured in daylight.
+- Background wall finished in light ivory/off-white plaster with fine neoclassical moldings (boiserie).
+- Soft grey polished micro-cement flooring with elegant, diffused reflections. In the foreground, the edge of a textured ivory/ecru bouclé wool rug.
+- Lighting: Clear, enveloping natural light generously illuminating the space and the furniture without harsh, blocked-up shadows; complemented by a soft geometric shadow from a French window frame cast across the wall and floor.
+- Styling on the furniture: A sculptural smoked-glass lamp emitting a soft warm glow, a minimalist art book, and a small organic ceramic vase. To the side, a contemporary sculptural chair in dark leather.
+
+CAMERA: Professional product photography; 50mm lens positioned at the mid-height of the furniture; straight-on perspective; sharp focus; free of aberrations.`,
+    descripcion: "Estilo editorial Architectural Digest con boiserie, microcemento, luz de ventanal francés y etiqueta @Description.",
+    esFavorito: true,
+    esPresetSistema: true,
+    aspectRatio: "1:1"
+  },
+  {
     id: "preset_oficina_nordica_editorial",
     titulo: "Oficina Editorial (Laptop & Ventanal)",
     categoria: "Oficina",
@@ -981,6 +1005,9 @@ export interface State3BF {
   enfocarLuzACentro: (luzId: string) => void;
   seleccionarLuzEstudio: (luzId: string | null) => void;
   toggleGizmosLuces: (mostrar?: boolean) => void;
+  mostrarMarcoEncuadre: boolean;
+  setMostrarMarcoEncuadre: (mostrar: boolean) => void;
+  toggleMarcoEncuadre: () => void;
   aplicarPresetIluminacion: (presetKey: string) => void;
   guardarIluminacionPredeterminada: () => void;
   restaurarIluminacionPredeterminada: () => void;
@@ -1318,6 +1345,7 @@ export const defaultCalibracion: CalibracionVisual = {
   opacidadAristas: 0.75,
   colorAristas: "#111827",
   thresholdAristas: 40,
+  calibreAristas: 100,
   intensidadLuzDirecta: 0.9,
   intensidadLuzAmbiental: 0.45,
   intensidadLuzEntorno: 0.55,
@@ -1552,6 +1580,10 @@ export const use3BFStore = create<State3BF>((set, get) => ({
       },
     })),
 
+  mostrarMarcoEncuadre: false,
+  setMostrarMarcoEncuadre: (mostrar) => set({ mostrarMarcoEncuadre: mostrar }),
+  toggleMarcoEncuadre: () => set((s) => ({ mostrarMarcoEncuadre: !s.mostrarMarcoEncuadre })),
+
   aplicarPresetIluminacion: (presetKey) =>
     set((state) => {
       const preset = PRESETS_ILUMINACION[presetKey];
@@ -1732,7 +1764,20 @@ export const use3BFStore = create<State3BF>((set, get) => ({
           const stored = JSON.parse(localStorage.getItem("3bf_capas_v1")!) as CapaDef[];
           const storedIds = new Set(stored.map((c) => c.id));
           const missing = PRESET_CAPAS.filter((p) => !storedIds.has(p.id));
-          return [...stored, ...missing];
+          const allCapas = [...stored, ...missing];
+          // 🛡️ Blindaje de Capa Tono: Si fue sobreescrita accidentalmente con un material de plástico o metal, restaurar mat_marfil
+          const allMats = typeof window !== "undefined" && window.localStorage && localStorage.getItem("3bf_materiales_pbr_v1")
+            ? JSON.parse(localStorage.getItem("3bf_materiales_pbr_v1")!)
+            : PRESET_MATERIALES_PBR;
+          return allCapas.map((c) => {
+            if (c.id === "capa_tono") {
+              const matActual = allMats.find((m: any) => m.id === c.materialId);
+              if (matActual && (matActual.tipo === "Plastico" || matActual.tipo === "Metal" || matActual.nombre?.toLowerCase().includes("beige"))) {
+                return { ...c, materialId: "mat_marfil" };
+              }
+            }
+            return c;
+          });
         } catch {
           return PRESET_CAPAS;
         }

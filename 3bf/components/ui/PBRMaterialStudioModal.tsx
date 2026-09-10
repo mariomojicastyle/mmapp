@@ -29,6 +29,7 @@ import {
   Check,
   Maximize2,
   Minimize2,
+  Pipette,
 } from "lucide-react";
 
 // Icono Oficial Dresser (Material Symbols - Cómoda / Mueble con Cajones)
@@ -43,6 +44,22 @@ function DresserIcon({ className = "w-3.5 h-3.5" }: { className?: string }) {
     </svg>
   );
 }
+
+// 🎨 Paleta de Tonos PBR Rápidos para selección inmediata con un solo clic
+const PRESET_TONOS_PBR = [
+  { nombre: "Rojo Bermellón", hex: "#DC2626" },
+  { nombre: "Azul MM", hex: "#1368AA" },
+  { nombre: "Verde Esmeralda", hex: "#16A34A" },
+  { nombre: "Amarillo Mostaza", hex: "#EAB308" },
+  { nombre: "Naranja Ámbar", hex: "#EA580C" },
+  { nombre: "Blanco Puro", hex: "#FFFFFF" },
+  { nombre: "Negro Mate", hex: "#1A1A1A" },
+  { nombre: "Nogal Café", hex: "#5C4033" },
+  { nombre: "Marfil / Beige", hex: "#C5B39A" },
+  { nombre: "Fresno / Madera", hex: "#C2A67E" },
+  { nombre: "Gris Acero", hex: "#8A9EA7" },
+  { nombre: "Grafito Carbón", hex: "#334155" },
+];
 
 export default function PBRMaterialStudioModal() {
   const {
@@ -71,6 +88,7 @@ export default function PBRMaterialStudioModal() {
   const [procesandoPBR, setProcesandoPBR] = useState<boolean>(false);
   const [guardadoExito, setGuardadoExito] = useState<boolean>(false);
   const [aplicadoExito, setAplicadoExito] = useState<boolean>(false);
+  const [ocultoPorCuentagotas, setOcultoPorCuentagotas] = useState<boolean>(false);
 
   // Configuración de Iluminación HDRI (Poly Haven Alps Field + Custom)
   const [hdriConfig, setHdriConfig] = useState<{
@@ -347,6 +365,45 @@ export default function PBRMaterialStudioModal() {
     }
   };
 
+  // 🎨 Ajustar Color / Tono Base en vivo (sincroniza en tiempo real con 3D ShaderBall y catálogo)
+  const handleCambiarColorBase = (nuevoColor: string) => {
+    setMatLocal((prev) => {
+      if (!prev) return null;
+      const actualizado = { ...prev, colorBase: nuevoColor };
+      actualizarMaterialPBR(actualizado.id, actualizado);
+      return actualizado;
+    });
+  };
+
+  // 💧 Cuentagotas Universal Multipantalla (EyeDropper API nativo de Chromium)
+  // Oculta temporalmente el modal para revelar el fondo y permite tomar muestras en cualquier pantalla o app
+  const abrirCuentagotasPantalla = async () => {
+    if (typeof window === "undefined" || !("EyeDropper" in window)) {
+      alert("El Cuentagotas Multipantalla requiere Google Chrome, Microsoft Edge, Opera o Brave para capturar píxeles en cualquier monitor o aplicación.");
+      return;
+    }
+
+    try {
+      // 1. Ocultar el modal instantáneamente para ver completamente el fondo
+      setOcultoPorCuentagotas(true);
+      // Esperar brevemente para asegurar que el navegador renderice la transparencia
+      await new Promise((resolve) => setTimeout(resolve, 90));
+
+      const eyeDropper = new (window as any).EyeDropper();
+      const result = await eyeDropper.open();
+      if (result?.sRGBHex) {
+        handleCambiarColorBase(result.sRGBHex.toUpperCase());
+      }
+    } catch (err: any) {
+      if (err.name !== "AbortError") {
+        console.warn("Cuentagotas cancelado o error:", err);
+      }
+    } finally {
+      // 2. Reaparecer el modal de inmediato con el nuevo tono muestreado
+      setOcultoPorCuentagotas(false);
+    }
+  };
+
   // Guardar en catálogo persistente y aplicar automáticamente al mueble activo
   const handleGuardarMaterial = () => {
     if (!matLocal) return;
@@ -356,7 +413,9 @@ export default function PBRMaterialStudioModal() {
     } else {
       crearMaterialPBR(matLocal);
     }
-    aplicarMaterialAMuebleActivo(matLocal.id);
+    // 💡 Solo se actualiza la definición del material en el catálogo PBR.
+    // No se sobreescribe indiscriminadamente todo el mueble; únicamente las piezas
+    // y capas que utilicen este material se actualizarán de forma reactiva.
     setGuardadoExito(true);
     setTimeout(() => setGuardadoExito(false), 2000);
   };
@@ -365,7 +424,6 @@ export default function PBRMaterialStudioModal() {
   const handleLanzarRenderIA = () => {
     if (matLocal) {
       handleGuardarMaterial();
-      aplicarMaterialAMuebleActivo(matLocal.id);
     }
     if (typeof window !== "undefined") {
       let snap = "";
@@ -394,7 +452,14 @@ export default function PBRMaterialStudioModal() {
     : "w-[98vw] max-w-[1700px] h-[95vh] max-h-[1020px] rounded-xl border flex flex-col shadow-2xl overflow-hidden";
 
   return (
-    <div className={modalClasses}>
+    <div 
+      className={modalClasses}
+      style={{
+        opacity: ocultoPorCuentagotas ? 0 : 1,
+        pointerEvents: ocultoPorCuentagotas ? "none" : "auto",
+        transition: "opacity 0.08s ease"
+      }}
+    >
       <div
         className={containerClasses}
         style={{
@@ -567,39 +632,59 @@ export default function PBRMaterialStudioModal() {
                       </button>
                     </>
                   ) : (
-                    /* 🎨 Selector de Color Plano para Material de Plástico */
-                    <div className="w-full h-full flex flex-col items-center justify-between p-2 text-center select-none">
+                    /* 🎨 Selector de Color Plano para Material sin Textura (Tono Base) */
+                    <div className="w-full h-full flex flex-col items-center justify-between p-2 text-center select-none gap-1">
                       <div className="flex-1 flex flex-col items-center justify-center gap-1.5 w-full">
-                        <label 
-                          htmlFor="diffuse-color-input"
-                          className="w-11 h-11 rounded-full border-2 border-white shadow-md cursor-pointer hover:scale-105 transition flex items-center justify-center overflow-hidden relative"
-                          style={{ backgroundColor: matLocal.colorBase || "#CCCCCC" }}
-                          title="Clic para elegir color plano de plástico"
-                        >
-                          <input
-                            id="diffuse-color-input"
-                            type="color"
-                            value={matLocal.colorBase || "#CCCCCC"}
-                            onChange={(e) => setMatLocal({ ...matLocal, colorBase: e.target.value })}
-                            className="opacity-0 w-full h-full cursor-pointer absolute inset-0"
-                          />
-                        </label>
-                        <span 
-                          className="text-[11px] font-mono font-bold px-2 py-0.5 rounded shadow-2xs border backdrop-blur-xs"
-                          style={{ 
-                            backgroundColor: tema === "obsidian" ? "rgba(0,0,0,0.65)" : "rgba(255,255,255,0.9)",
-                            color: tema === "obsidian" ? "#FFFFFF" : "#0F172A",
-                            borderColor: coloresApariencia?.bordePaneles
-                          }}
-                        >
-                          {(matLocal.colorBase || "#CCCCCC").toUpperCase()}
-                        </span>
+                        <div className="flex items-center gap-1.5">
+                          <label 
+                            htmlFor="diffuse-color-input"
+                            className="w-11 h-11 rounded-full border-2 border-white shadow-md cursor-pointer hover:scale-110 transition flex items-center justify-center overflow-hidden relative group shrink-0"
+                            style={{ backgroundColor: matLocal.colorBase || "#CCCCCC" }}
+                            title="Clic para cambiar el tono de color"
+                          >
+                            <Palette className="w-3.5 h-3.5 text-white drop-shadow opacity-75 group-hover:opacity-100 transition" />
+                            <input
+                              id="diffuse-color-input"
+                              type="color"
+                              value={matLocal.colorBase?.startsWith("#") && matLocal.colorBase.length === 7 ? matLocal.colorBase : "#CCCCCC"}
+                              onChange={(e) => handleCambiarColorBase(e.target.value)}
+                              className="opacity-0 w-full h-full cursor-pointer absolute inset-0"
+                            />
+                          </label>
+
+                          {/* 💧 Cuentagotas de pantalla en Diffuse */}
+                          <button
+                            type="button"
+                            onClick={abrirCuentagotasPantalla}
+                            className="w-7 h-7 rounded-full border shadow-xs flex items-center justify-center cursor-pointer hover:scale-110 transition group"
+                            style={{
+                              backgroundColor: coloresApariencia?.fondoPaneles,
+                              borderColor: coloresApariencia?.bordePaneles,
+                              color: coloresApariencia?.botonActivo || "#0891b2"
+                            }}
+                            title="Cuentagotas Multipantalla: Oculta el modal y captura color de cualquier aplicación o pantalla"
+                          >
+                            <Pipette className="w-3.5 h-3.5 group-hover:rotate-12 transition-transform" />
+                          </button>
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <span 
+                            className="text-[11px] font-mono font-bold px-2.5 py-0.5 rounded-full shadow-2xs border backdrop-blur-xs"
+                            style={{ 
+                              backgroundColor: tema === "obsidian" ? "rgba(0,0,0,0.65)" : "rgba(255,255,255,0.9)",
+                              color: tema === "obsidian" ? "#FFFFFF" : "#0F172A",
+                              borderColor: coloresApariencia?.bordePaneles
+                            }}
+                          >
+                            {(matLocal.colorBase || "#CCCCCC").toUpperCase()}
+                          </span>
+                        </div>
                       </div>
 
                       {/* Botón para volver a cargar foto/textura si se desea */}
                       <button
                         onClick={() => fileInputRef.current?.click()}
-                        className="w-full py-1 px-1.5 rounded text-[10px] font-semibold border transition hover:opacity-90 flex items-center justify-center gap-1 cursor-pointer shadow-2xs"
+                        className="w-full py-1.5 px-2 rounded-full text-[10px] font-semibold border transition hover:opacity-90 flex items-center justify-center gap-1 cursor-pointer shadow-2xs"
                         style={{
                           backgroundColor: coloresApariencia?.fondoPaneles,
                           borderColor: coloresApariencia?.bordePaneles,
@@ -912,7 +997,7 @@ export default function PBRMaterialStudioModal() {
                     type="text"
                     value={matLocal.nombre}
                     onChange={(e) => setMatLocal({ ...matLocal, nombre: e.target.value })}
-                    className="px-2 py-1 rounded-md border text-xs font-semibold outline-none"
+                    className="px-2.5 py-1 rounded-full border text-xs font-semibold outline-none"
                     style={{
                       backgroundColor: coloresApariencia?.fondoAplicacion,
                       borderColor: coloresApariencia?.bordePaneles,
@@ -925,7 +1010,7 @@ export default function PBRMaterialStudioModal() {
                   <select
                     value={matLocal.tipo}
                     onChange={(e) => setMatLocal({ ...matLocal, tipo: e.target.value as any })}
-                    className="px-2 py-1 rounded-md border text-xs font-semibold outline-none cursor-pointer"
+                    className="px-2.5 py-1 rounded-full border text-xs font-semibold outline-none cursor-pointer"
                     style={{
                       backgroundColor: coloresApariencia?.fondoAplicacion,
                       borderColor: coloresApariencia?.bordePaneles,
@@ -939,6 +1024,166 @@ export default function PBRMaterialStudioModal() {
                     <option value="Pintura">Pintura / Laca</option>
                     <option value="PBR">PBR Genérico</option>
                   </select>
+                </div>
+              </div>
+
+              {/* 🎨 Parámetro 1: Color Base / Tono (Base Color / Albedo) */}
+              <div 
+                className="flex flex-col gap-2 p-2.5 rounded-xl border shadow-2xs text-xs"
+                style={{ 
+                  backgroundColor: coloresApariencia?.fondoAplicacion,
+                  borderColor: coloresApariencia?.bordePaneles 
+                }}
+              >
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-1.5">
+                    <Palette className="w-3.5 h-3.5" style={{ color: coloresApariencia?.botonActivo || "#0891b2" }} />
+                    <span className="font-semibold text-[11px]" style={{ color: coloresApariencia?.textoPrincipal }}>
+                      Color Base / Tono (Albedo)
+                    </span>
+                  </div>
+                  {matLocal.texturaUrl ? (
+                    <span 
+                      className="text-[9px] px-2 py-0.5 rounded-full font-semibold border opacity-80"
+                      style={{
+                        backgroundColor: coloresApariencia?.fondoPaneles,
+                        borderColor: coloresApariencia?.bordePaneles,
+                        color: coloresApariencia?.textoSecundario
+                      }}
+                    >
+                      Textura Activa
+                    </span>
+                  ) : (
+                    <span 
+                      className="text-[9px] px-2 py-0.5 rounded-full font-semibold border"
+                      style={{
+                        backgroundColor: coloresApariencia?.fondoPaneles,
+                        borderColor: coloresApariencia?.bordePaneles,
+                        color: coloresApariencia?.botonActivo || "#0891b2"
+                      }}
+                    >
+                      Tono Puro
+                    </span>
+                  )}
+                </div>
+
+                {/* Fila Interactiva: Swatch Grande + Input HEX + Botón Selector */}
+                <div className="flex items-center gap-2">
+                  {/* Swatch Circular Clickable con input color integrado */}
+                  <label 
+                    htmlFor="principled-base-color-input"
+                    className="w-8 h-8 rounded-full border-2 border-white shadow-md cursor-pointer hover:scale-110 transition flex items-center justify-center shrink-0 relative overflow-hidden group"
+                    style={{ backgroundColor: matLocal.colorBase || "#CCCCCC" }}
+                    title="Clic para abrir el selector de color"
+                  >
+                    <Palette className="w-3.5 h-3.5 text-white drop-shadow opacity-75 group-hover:opacity-100 transition" />
+                    <input
+                      id="principled-base-color-input"
+                      type="color"
+                      value={matLocal.colorBase?.startsWith("#") && matLocal.colorBase.length === 7 ? matLocal.colorBase : "#CCCCCC"}
+                      onChange={(e) => handleCambiarColorBase(e.target.value)}
+                      className="opacity-0 absolute inset-0 w-full h-full cursor-pointer"
+                    />
+                  </label>
+
+                  {/* Input de Texto HEX editable para escribir o pegar colores directamente */}
+                  <div className="flex items-center gap-1.5 flex-1">
+                    <div 
+                      className="flex items-center gap-1 px-2.5 py-1 rounded-full border shadow-2xs w-full"
+                      style={{
+                        backgroundColor: coloresApariencia?.fondoPaneles,
+                        borderColor: coloresApariencia?.bordePaneles
+                      }}
+                    >
+                      <span className="text-[11px] font-mono font-bold opacity-60" style={{ color: coloresApariencia?.textoSecundario }}>#</span>
+                      <input
+                        type="text"
+                        maxLength={7}
+                        value={(matLocal.colorBase || "#CCCCCC").replace(/^#/, "")}
+                        onChange={(e) => {
+                          const val = e.target.value.replace(/[^0-9a-fA-F]/g, "").slice(0, 6);
+                          if (val.length === 6) {
+                            handleCambiarColorBase(`#${val}`);
+                          } else {
+                            setMatLocal((prev) => (prev ? { ...prev, colorBase: `#${val}` } : null));
+                          }
+                        }}
+                        onBlur={(e) => {
+                          let val = e.target.value.replace(/[^0-9a-fA-F]/g, "");
+                          if (val.length === 3) {
+                            val = val.split("").map(c => c + c).join("");
+                          }
+                          if (val.length === 6) {
+                            handleCambiarColorBase(`#${val}`);
+                          } else if (!matLocal.colorBase || matLocal.colorBase.length < 7) {
+                            handleCambiarColorBase("#CCCCCC");
+                          }
+                        }}
+                        className="w-full bg-transparent font-mono font-bold text-xs uppercase outline-none"
+                        style={{ color: coloresApariencia?.textoPrincipal }}
+                        placeholder="CCCCCC"
+                        title="Código hexadecimal de color"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Botón rápido para abrir el color picker */}
+                  <label
+                    htmlFor="principled-base-color-input"
+                    className="px-2.5 py-1 rounded-full text-[11px] font-semibold border shadow-xs cursor-pointer hover:opacity-90 flex items-center gap-1 shrink-0 transition"
+                    style={{
+                      backgroundColor: coloresApariencia?.fondoPaneles,
+                      borderColor: coloresApariencia?.bordePaneles,
+                      color: coloresApariencia?.botonActivo || "#0891b2"
+                    }}
+                    title="Abrir selector de color del sistema"
+                  >
+                    <Palette className="w-3 h-3" />
+                    <span>Elegir</span>
+                  </label>
+
+                  {/* 💧 Botón Cuentagotas Universal Multipantalla */}
+                  <button
+                    type="button"
+                    onClick={abrirCuentagotasPantalla}
+                    className="px-2.5 py-1 rounded-full text-[11px] font-semibold border shadow-xs cursor-pointer hover:opacity-90 flex items-center gap-1 shrink-0 transition group"
+                    style={{
+                      backgroundColor: coloresApariencia?.fondoPaneles,
+                      borderColor: coloresApariencia?.bordePaneles,
+                      color: coloresApariencia?.botonActivo || "#0891b2"
+                    }}
+                    title="Cuentagotas Multipantalla: Oculta temporalmente el modal y captura cualquier color de la pantalla, escritorio u otra aplicación"
+                  >
+                    <Pipette className="w-3.5 h-3.5 group-hover:rotate-12 transition-transform" />
+                    <span className="hidden sm:inline">Cuentagotas</span>
+                  </button>
+                </div>
+
+                {/* Paleta de Tonos Rápidos de un Clic */}
+                <div className="flex flex-col gap-1 pt-1">
+                  <span className="text-[9px] font-semibold uppercase tracking-wider opacity-70" style={{ color: coloresApariencia?.textoSecundario }}>
+                    Tonos Rápidos Recomendados
+                  </span>
+                  <div className="flex items-center gap-1.5 flex-wrap">
+                    {PRESET_TONOS_PBR.map((preset) => {
+                      const isSelected = (matLocal.colorBase || "").toLowerCase() === preset.hex.toLowerCase();
+                      return (
+                        <button
+                          key={preset.hex}
+                          type="button"
+                          onClick={() => handleCambiarColorBase(preset.hex)}
+                          title={`${preset.nombre} (${preset.hex})`}
+                          className={`w-5 h-5 rounded-full border shadow-2xs transition-transform hover:scale-125 cursor-pointer shrink-0 ${
+                            isSelected ? "ring-2 ring-cyan-500 scale-110" : ""
+                          }`}
+                          style={{
+                            backgroundColor: preset.hex,
+                            borderColor: tema === "obsidian" ? "rgba(255,255,255,0.25)" : "rgba(0,0,0,0.2)"
+                          }}
+                        />
+                      );
+                    })}
+                  </div>
                 </div>
               </div>
 

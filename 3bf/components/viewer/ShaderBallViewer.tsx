@@ -437,7 +437,7 @@ function MaterialMeshInstance({
   const sharedMaterial = useMemo(() => {
     return (
       <meshPhysicalMaterial
-        key={`${materialDef.id}-${textures.diffuse?.uuid || "sin-diff"}-${textures.normal?.uuid || "sin-norm"}-${textures.roughness?.uuid || "sin-rough"}-${roughnessVal}-${metalnessVal}-${forma}`}
+        key={`${materialDef.id}-${baseColorFinal}-${textures.diffuse?.uuid || "sin-diff"}-${textures.normal?.uuid || "sin-norm"}-${textures.roughness?.uuid || "sin-rough"}-${roughnessVal}-${metalnessVal}-${forma}`}
         color={baseColorFinal}
         map={textures.diffuse}
         normalMap={textures.normal}

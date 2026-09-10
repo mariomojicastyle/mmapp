@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from "react";
-import { use3BFStore, RenderIAResultado, PromptTemplateItem } from "@/lib/store";
+import { use3BFStore, RenderIAResultado, PromptTemplateItem, MaterialPBRDef } from "@/lib/store";
 import PromptLibraryManager from "./PromptLibraryManager";
 import { 
   Sparkles, 
@@ -24,7 +24,8 @@ import {
   AlertCircle,
   CheckCircle2,
   PlusCircle,
-  Save
+  Save,
+  ScanText
 } from "lucide-react";
 
 interface PresetEstiloDiseno {
@@ -84,7 +85,11 @@ export default function AIRenderStudioModal() {
     muebleActivoGuardado,
     objetoActivoId,
     instancias,
-    actualizarThumbnailMueble
+    actualizarThumbnailMueble,
+    parametros,
+    asignacionesPartes,
+    capas,
+    materialesPBR
   } = use3BFStore();
 
   const [captura3DBase64, setCaptura3DBase64] = useState<string>("");
@@ -100,7 +105,7 @@ export default function AIRenderStudioModal() {
   const [nuevoPresetCategoria, setNuevoPresetCategoria] = useState<any>("Oficina");
   const [presetGuardadoExito, setPresetGuardadoExito] = useState<boolean>(false);
   const [actualizadoExito, setActualizadoExito] = useState<boolean>(false);
-  const [plantillaActivaId, setPlantillaActivaId] = useState<string | null>("preset_oficina_nordica_editorial");
+  const [plantillaActivaId, setPlantillaActivaId] = useState<string | null>("preset_architectural_digest_editorial");
   const [tempApiKey, setTempApiKey] = useState<string>("");
   const [tempFalKey, setTempFalKey] = useState<string>("");
   const [copiado, setCopiado] = useState<boolean>(false);
@@ -108,6 +113,7 @@ export default function AIRenderStudioModal() {
   const [compararModo, setCompararModo] = useState<"render" | "original" | "split">("render");
   const [mejorandoPhota, setMejorandoPhota] = useState<boolean>(false);
   const [estiloActivoId, setEstiloActivoId] = useState<string | null>("nordico");
+  const [inyectadoExito, setInyectadoExito] = useState<boolean>(false);
 
   const aplicarEstiloATexto = (textoBase: string, idEstilo: string | null): string => {
     let limpio = (textoBase || "").trim();
@@ -377,6 +383,148 @@ export default function AIRenderStudioModal() {
     }
   };
 
+  const handleEliminarRenderActual = () => {
+    if (!renderActual) return;
+    const idABorrar = renderActual.id;
+    eliminarRenderHistorial(idABorrar);
+    const restantes = historialRendersIA.filter((h) => h.id !== idABorrar);
+    setRenderActual(restantes.length > 0 ? restantes[0] : null);
+  };
+
+  const generarPromptProducto3D = () => {
+    // 1. Obtener la instancia activa o primera disponible en el visor
+    const instanciaActiva = objetoActivoId ? instancias[objetoActivoId] : Object.values(instancias || {})[0];
+    const params = instanciaActiva?.parametros || (parametros as any) || {};
+    const res = instanciaActiva?.resultado;
+
+    // 2. Extraer nombre del mueble
+    let nombre = muebleActivoGuardado?.nombre || instanciaActiva?.nombreVisible || instanciaActiva?.definitionId || params?.model_id || "Cómoda Ravenna";
+    nombre = nombre.replace(/\.(gh|ghx)$/i, "").trim();
+
+    // 3. Dimensiones reales en milímetros (Prioridad: Bounding Box Three.js > Sliders GHX)
+    let ancho = 1295;
+    let alto = 930;
+    let prof = 475;
+    let zocalo = 73;
+
+    // Leer BBox en vivo de la escena 3D WebGL
+    if (typeof window !== "undefined" && (window as any).__3bfRealBBox) {
+      const b = (window as any).__3bfRealBBox;
+      if (b.anchoMm > 150 && b.altoMm > 150) {
+        ancho = b.anchoMm;
+        alto = b.altoMm;
+        prof = b.profMm;
+      }
+    }
+
+    // Comprobar si hay parámetros explícitos de sliders GHX en la instancia
+    if (params) {
+      for (const [k, v] of Object.entries(params)) {
+        const kLow = k.toLowerCase();
+        const numVal = typeof v === "number" ? v : parseFloat(String(v));
+        if (isNaN(numVal) || numVal <= 0) continue;
+
+        if (kLow.includes("ancho") || kLow.includes("largura") || (kLow.includes("width") && !kLow.includes("stroke"))) {
+          ancho = Math.round(numVal);
+        } else if (kLow.includes("altura") || (kLow.includes("alto") && !kLow.includes("zocalo")) || kLow.includes("height")) {
+          alto = Math.round(numVal);
+        } else if (kLow.includes("profundidad") || kLow.includes("profundidade") || kLow.includes("depth")) {
+          prof = Math.round(numVal);
+        } else if (kLow.includes("zocalo") || kLow.includes("rodapé") || kLow.includes("rodape")) {
+          zocalo = Math.round(numVal);
+        }
+      }
+    }
+
+    // 4. Conteo y configuración anatómica de cajones / gavetas
+    const meshes = res?.real_meshes || [];
+    const despiece = res?.despiece || [];
+    let cantCajones = 0;
+
+    meshes.forEach((m: any) => {
+      const n = (m.name || "").toLowerCase();
+      if ((n.includes("peça 5") || n.includes("peca 5") || n.includes("frente caj") || n.includes("frente de caj") || n.includes("frente gaveta")) 
+          && !n.endsWith(" b") && !n.endsWith("_b") && !n.includes("mdp")) {
+        cantCajones++;
+      }
+    });
+
+    if (cantCajones === 0) {
+      despiece.forEach((p: any) => {
+        const n = (p.nombre || "").toLowerCase();
+        if (n.includes("peça 5") || n.includes("peca 5") || n.includes("frente") || n.includes("cajon") || n.includes("gaveta")) {
+          cantCajones += (p.cantidad || 1);
+        }
+      });
+    }
+
+    // Si el mueble es la Cómoda Ravenna (o familia de cómodas de 6 cajones) y no hay conteo, el valor nativo exacto es 6
+    if (cantCajones === 0 || nombre.toLowerCase().includes("ravenna")) {
+      cantCajones = 6;
+    }
+
+    let descripcionCajones = "Minimalist drawer layout with horizontal handleless reveal gaps and integrated dust strips / tapaluces";
+    if (cantCajones === 6) {
+      descripcionCajones = "Exactly 6 front drawers arranged in 2 columns of 3 drawers each (2x3 symmetric grid). Completely flat, smooth, minimalist drawer faces without external knobs, handles, or pulls (handleless design with integrated horizontal gola finger-pull reveal gaps and dust strips / tapaluces, separated by a central vertical divider)";
+    } else if (cantCajones > 0) {
+      descripcionCajones = `Exactly ${cantCajones} front drawers arranged in a clean geometric grid. Completely flat, smooth, minimalist drawer faces without external knobs, handles, or pulls (handleless design with integrated horizontal gola finger-pull reveal gaps and dust strips / tapaluces)`;
+    }
+
+    // 5. Materiales asignados
+    const nombresMateriales = new Set<string>();
+    Object.values(asignacionesPartes || {}).forEach((ap: any) => {
+      let mDef: MaterialPBRDef | undefined;
+      if (ap.materialId && ap.materialId !== "por_capa") {
+        mDef = materialesPBR?.find((m) => m.id === ap.materialId);
+      } else if (ap.capaId) {
+        const c = capas?.find((x) => x.id === ap.capaId);
+        if (c) mDef = materialesPBR?.find((m) => m.id === c.materialId);
+      }
+      if (mDef) {
+        nombresMateriales.add(`${mDef.nombre} (${mDef.tipo || "PBR"}, tono ${mDef.colorBase})`);
+      }
+    });
+
+    const listaMateriales = nombresMateriales.size > 0 
+      ? Array.from(nombresMateriales).join(", ")
+      : "natural warm wood grain finish on the outer carcass/frame (top, side panels, and base) and smooth ultra-matte pure white melamine on all front drawer faces";
+
+    return `PRODUCT IDENTIFICATION & SPECIFICATIONS (3dBimFab Parametric Model):
+- FURNITURE TYPE: Chest of Drawers (${nombre}).
+- OVERALL DIMENSIONS: ${ancho}mm (width/ancho) x ${alto}mm (height/alto) x ${prof}mm (depth/profundidad); lower recessed plinth/base of ${zocalo}mm with structural support feet.
+- COMPARTMENTS & FAÇADE: ${descripcionCajones}.
+- MATERIALS & FINISHES: Authentic dual-tone specifications: ${listaMateriales}.
+- TECHNICAL CONTOUR NOTE: Black line contours in the input preview are technical CAD guide edges showing panel seams and drawer reveals; the final rendered furniture must be smooth and photorealistic without drawn wireframe lines.`;
+  };
+
+  const handleAutoDescribirMueble = () => {
+    const bloqueProducto = generarPromptProducto3D();
+    
+    // 🎯 REGLA DE ORO: Si el usuario incluyó la etiqueta @description o @Description, reemplazarla exactamente allí
+    const regexEtiqueta = /@description/i;
+    
+    if (regexEtiqueta.test(promptActivoRender)) {
+      setPromptActivoRender(promptActivoRender.replace(regexEtiqueta, bloqueProducto));
+    } else if (promptActivoRender.includes("PRODUCT IDENTIFICATION & SPECIFICATIONS") || promptActivoRender.includes("STRICT PRODUCT IDENTITY LOCK")) {
+      // Reemplazar bloque descriptivo anterior
+      const regexBloquePrevio = /(PRODUCT IDENTIFICATION & SPECIFICATIONS|STRICT PRODUCT IDENTITY LOCK)[\s\S]*?(?=\n\n[A-Z_ ]+:|\n\nSET DESIGN|\n\nCAMERA|\n\n$|$)/i;
+      if (regexBloquePrevio.test(promptActivoRender)) {
+        setPromptActivoRender(promptActivoRender.replace(regexBloquePrevio, bloqueProducto));
+      } else {
+        setPromptActivoRender(`${bloqueProducto}\n\n${promptActivoRender.trim()}`.trim());
+      }
+    } else if (/STRICT PRODUCT LOCK[^\n]*\n/i.test(promptActivoRender)) {
+      // Si existe un encabezado STRICT PRODUCT LOCK, insertar la descripción del producto justo a continuación
+      setPromptActivoRender(promptActivoRender.replace(/(STRICT PRODUCT LOCK[^\n]*\n(?:[^\n]+\n)*)/i, `$1\n${bloqueProducto}\n`));
+    } else {
+      // Concatenar arriba del prompt de escena
+      setPromptActivoRender(`${bloqueProducto}\n\n${promptActivoRender.trim()}`.trim());
+    }
+
+    setInyectadoExito(true);
+    setTimeout(() => setInyectadoExito(false), 2500);
+  };
+
   const modalOuterClasses = pantallaCompleta
     ? "fixed inset-0 z-50 flex flex-col bg-slate-950/85 backdrop-blur-sm"
     : "fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-3 bg-slate-950/75 backdrop-blur-sm";
@@ -600,8 +748,21 @@ export default function AIRenderStudioModal() {
                     Inglés recomendado para máxima fidelidad
                   </span>
                 </div>
-                <div className="flex items-center gap-1.5">
+                <div className="flex items-center gap-1.5 flex-wrap">
                   <button
+                    type="button"
+                    onClick={handleAutoDescribirMueble}
+                    style={{ 
+                      backgroundColor: inyectadoExito ? "#10B981" : (coloresApariencia?.botonActivo || "#0891b2") 
+                    }}
+                    className="px-3 py-1 rounded-full text-xs font-semibold text-white shadow-xs transition cursor-pointer hover:opacity-90 flex items-center gap-1 active:scale-95 shrink-0"
+                    title="Inspecciona el modelo 3D activo e inyecta su descripción técnica en la etiqueta @description o al inicio del prompt"
+                  >
+                    {inyectadoExito ? <Check className="w-3.5 h-3.5 animate-in zoom-in" /> : <ScanText className="w-3.5 h-3.5" />}
+                    <span>{inyectadoExito ? "¡Descripción Inyectada!" : "Auto-Describir 3D"}</span>
+                  </button>
+                  <button
+                    type="button"
                     onClick={() => setMostrarGuardarPreset(!mostrarGuardarPreset)}
                     style={{ backgroundColor: coloresApariencia?.botonActivo || "#0891b2" }}
                     className="px-3 py-1 rounded-full text-xs font-semibold text-white shadow-xs transition cursor-pointer hover:opacity-90 flex items-center justify-center"
@@ -975,6 +1136,20 @@ export default function AIRenderStudioModal() {
                             <Download className="w-3.5 h-3.5" />
                             <span>Descargar HD</span>
                           </button>
+
+                          <button
+                            type="button"
+                            onClick={handleEliminarRenderActual}
+                            className="flex items-center gap-1 px-3 py-1 rounded-full text-xs font-semibold border transition cursor-pointer hover:bg-red-500/10 hover:border-red-500 text-red-500 shadow-2xs"
+                            style={{ 
+                              borderColor: coloresApariencia?.bordePaneles,
+                              backgroundColor: coloresApariencia?.fondoPaneles 
+                            }}
+                            title="Eliminar este render y retirarlo del historial"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                            <span>Borrar</span>
+                          </button>
                         </div>
                       </div>
 
@@ -1055,6 +1230,10 @@ export default function AIRenderStudioModal() {
                               onClick={(e) => {
                                 e.stopPropagation();
                                 eliminarRenderHistorial(item.id);
+                                if (renderActual?.id === item.id) {
+                                  const restantes = historialRendersIA.filter((h) => h.id !== item.id);
+                                  setRenderActual(restantes.length > 0 ? restantes[0] : null);
+                                }
                               }}
                               className="self-end p-1 rounded bg-red-600/80 text-white hover:bg-red-700 transition"
                               title="Eliminar de historial"

@@ -141,16 +141,8 @@ export default function PartBreakdownPanel() {
       categoria = "Tableros";
     }
 
-    const isBoard = categoria === "Tableros";
-    const isMdf = kLow.includes("mdf");
     const rawCapaId = asignacion?.capaId;
-    const isInvalidLayer = ["capa_acero", "capa_aluminio", "capa_cromo", "capa_zinc", "capa_plastico_1", "capa_plastico_2"].includes(rawCapaId || "");
-    let cleanCapaId = rawCapaId || "por_defecto";
-    if (isMdf && cleanCapaId !== "capa_mdf") {
-      cleanCapaId = "capa_mdf";
-    } else if (isBoard && isInvalidLayer) {
-      cleanCapaId = "por_defecto";
-    }
+    const cleanCapaId = rawCapaId || "por_defecto";
 
     return {
       parteKey,
@@ -203,7 +195,7 @@ export default function PartBreakdownPanel() {
               borderColor: coloresApariencia?.bordePaneles,
               color: coloresApariencia?.textoPrincipal
             }}
-            className="w-full pl-8 pr-3 py-1.5 border rounded text-xs focus:outline-none focus:ring-1 focus:ring-cyan-500 placeholder:opacity-60 transition-colors"
+            className="w-full pl-8 pr-3 py-1.5 border rounded-full text-xs focus:outline-none focus:ring-1 focus:ring-cyan-500 placeholder:opacity-60 transition-colors"
           />
         </div>
 
@@ -243,7 +235,7 @@ export default function PartBreakdownPanel() {
           <div 
             onClick={() => setNodoPadreAbierto(!nodoPadreAbierto)}
             style={{ color: coloresApariencia?.textoPrincipal }}
-            className="flex items-center gap-1.5 py-1.5 px-2 rounded hover:opacity-80 transition cursor-pointer font-bold text-xs"
+            className="flex items-center gap-1.5 py-1.5 px-2 rounded-full hover:opacity-80 transition cursor-pointer font-bold text-xs"
           >
             {nodoPadreAbierto ? (
               <ChevronDown style={{ color: coloresApariencia?.textoSecundario }} className="w-3.5 h-3.5 shrink-0" />
@@ -282,13 +274,13 @@ export default function PartBreakdownPanel() {
                       } : {
                         borderColor: "transparent",
                       }}
-                      className="group flex items-center justify-between py-1 px-1.5 rounded border transition-all hover:opacity-90"
+                      className="group flex items-center justify-between py-1 px-2 rounded-full border transition-all hover:opacity-90"
                     >
                       {/* Lado Izquierdo: Muestra de Color + Nombre del Componente */}
                       <div className="flex items-center gap-1.5 min-w-0 pr-2 flex-1">
                         {/* Bloque de Color de la Capa */}
                         <div 
-                          className="w-3.5 h-3.5 rounded shrink-0 border shadow-xs"
+                          className="w-3.5 h-3.5 rounded-full shrink-0 border shadow-xs"
                           style={{ 
                             backgroundColor: capaItem?.color || "#8A9EA7",
                             borderColor: coloresApariencia?.bordePaneles || "#475569"
@@ -323,7 +315,7 @@ export default function PartBreakdownPanel() {
                               ? (coloresApariencia?.objetosSeleccionados || "#FF9500") 
                               : (coloresApariencia?.textoSecundario || "#64748B"),
                           }}
-                          className={`p-1 rounded transition hover:scale-110 cursor-pointer w-6 flex items-center justify-center ${
+                          className={`p-1 rounded-full transition hover:scale-110 cursor-pointer w-6 h-6 flex items-center justify-center ${
                             !parte.visible ? "opacity-40" : "opacity-100"
                           }`}
                         >
@@ -339,7 +331,7 @@ export default function PartBreakdownPanel() {
                             borderColor: coloresApariencia?.bordePaneles,
                             color: coloresApariencia?.textoPrincipal
                           }}
-                          className="py-1 px-2 pr-6 border rounded-md text-[11px] font-semibold focus:outline-none focus:ring-1 focus:ring-cyan-500 cursor-pointer transition shadow-2xs w-[130px] max-w-[130px] truncate"
+                          className="py-1 px-2.5 pr-6 border rounded-full text-[11px] font-semibold focus:outline-none focus:ring-1 focus:ring-cyan-500 cursor-pointer transition shadow-2xs w-[130px] max-w-[130px] truncate"
                           title={`Asignar capa a ${parte.nombreLimpio}`}
                         >
                           {capas.map((capa) => (

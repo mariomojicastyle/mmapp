@@ -222,6 +222,25 @@ export default function CalibrationPanel() {
                   />
                 </div>
 
+                {/* Calibre de Aristas */}
+                <div>
+                  <div className="flex justify-between text-gray-600 dark:text-gray-400 mb-1">
+                    <span>Calibre de Aristas</span>
+                    <span className="font-mono font-bold text-cyan-600 dark:text-cyan-400">
+                      {calibracion.calibreAristas ?? 100}%
+                    </span>
+                  </div>
+                  <input
+                    type="range"
+                    min="50"
+                    max="200"
+                    step="5"
+                    value={calibracion.calibreAristas ?? 100}
+                    onChange={(e) => setCalibracion("calibreAristas", parseInt(e.target.value))}
+                    className="w-full h-1.5 bg-gray-200 dark:bg-gray-700 rounded-lg appearance-none cursor-pointer accent-cyan-600"
+                  />
+                </div>
+
                 {/* Ángulo Umbral de Aristas */}
                 <div>
                   <div className="flex justify-between text-gray-600 dark:text-gray-400 mb-1">

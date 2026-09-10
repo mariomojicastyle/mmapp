@@ -1015,6 +1015,36 @@ export default function NPanel() {
                       />
                     </div>
 
+                    {/* Calibre de Aristas (Grosor hasta 200%) */}
+                    <div 
+                      style={{ 
+                        backgroundColor: coloresApariencia?.fondoPaneles, 
+                        borderColor: coloresApariencia?.bordePaneles || "#CBD5E1" 
+                      }}
+                      className="flex flex-col gap-1.5 p-2 rounded-lg border shadow-xs text-xs"
+                    >
+                      <div className="flex justify-between font-medium items-center">
+                        <label style={{ color: coloresApariencia?.textoPrincipal }} className="font-bold">Calibre de Aristas</label>
+                        <DirectNumberInput
+                          value={calibracion.calibreAristas ?? 100}
+                          min={50}
+                          max={200}
+                          unit="%"
+                          onChange={(val) => setCalibracion("calibreAristas", Math.round(val))}
+                        />
+                      </div>
+                      <input
+                        type="range"
+                        min="50"
+                        max="200"
+                        step="5"
+                        value={calibracion.calibreAristas ?? 100}
+                        onChange={(e) => setCalibracion("calibreAristas", parseInt(e.target.value))}
+                        style={{ accentColor: coloresApariencia?.botonActivo || "#0891b2" }}
+                        className="w-full cursor-pointer"
+                      />
+                    </div>
+
                     {/* Ángulo Umbral de Aristas */}
                     <div 
                       style={{ 

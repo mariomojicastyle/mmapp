@@ -798,6 +798,83 @@ Al construir muebles modulares combinando múltiples componentes paramétricos i
 
 ---
 
+### 🌟 Hito 17: Generador Paramétrico de Fondos y Costas Traseras (`3BF Costas v0.1`) — Jerarquía de Bordes, Sincronización Automática Grapa + Puntilla y Extrusión Analítica de Mallas Limpias en Grasshopper / Rhino API
+
+#### 📋 Resumen del Logro y Hallazgos de Ingeniería Geométrica:
+
+1. **Jerarquía y Nomenclatura Espacial de Bordes Perimetrales**:
+   - **Propósito**: Automatización de la fijación de fondos y traseras de muebles RTA con flexibilidad total por perímetro.
+   - **Estructuración de Entradas**:
+     - `Borde_X`: Borde Superior horizontal.
+     - `Borde_Y`: Borde Inferior horizontal.
+     - `Borde_A`: Borde vertical lateral izquierdo.
+     - `Borde_B`: Primer borde vertical interior (lado izquierdo de perfil H o división).
+     - `Borde_C`: Borde vertical interior central (si aplica).
+     - `Borde_D`: Borde vertical interior derecho (lado derecho de perfil H o división).
+     - `Borde_E`: Borde vertical lateral derecho final.
+     - `Fijacion_H`: Tipo de fijación específica para el perfil plástico H (`nada`, `prego`, `parafuso`, `grampo`).
+   - Cada borde admite de forma paramétrica: `"nada"`, `"prego"` (puntilla), `"parafuso"` (tornillo) o `"grampo"` (grapa plástica/metálica con fijación).
+
+2. **Distribución Matemática de Fijaciones de Esquina a Esquina ($100 \pm 20\text{ mm}$)**:
+   - **Tolerancia Industrial**: En lugar de pasos fijos ciegos, el algoritmo calcula el paso óptimo $p$ dentro del rango estricto de **$80\text{ mm}$ a $120\text{ mm}$** ($100 \pm 20\text{ mm}$):
+     $$N = \max\left(1, \text{round}\left(\frac{L}{100}\right)\right), \quad p = \frac{L}{N}$$
+   - **Desfases (Offsets) Perimetrales según Herraje**:
+     - `prego` (Puntilla): Desfase de **$3.0\text{ mm}$** hacia el interior del tablero.
+     - `parafuso` (Tornillo): Desfase de **$7.5\text{ mm}$** hacia el interior (centrado en tableros estructurales de $15\text{ mm}$).
+   - **Puntos de Esquina Garantizados**: Los extremos del tramo ($t = 0$ y $t = L$) siempre reciben herraje, asegurando fijación estructural inamovible en los vértices del mueble.
+
+3. **Sincronización Automática Grapa + Puntilla (`Grampo + Prego`)**:
+   - **Automatización de Montaje**: Al seleccionar `grampo`, el componente orienta y posiciona la grapa por el puerto `Grampo`, y **automáticamente inyecta una puntilla asociada** por el puerto `Prego`.
+   - **Calibración Milimétrica del Eje $Y$ ($+0.7\text{ mm}$)**:
+     - La puntilla se desplaza exactamente $+0.7\text{ mm}$ en la dirección de profundidad ($Y_0 \rightarrow Y_1$) para alinearse de manera concéntrica con el agujero troquelado de la grapa, evitando colisiones geométricas y reflejando el ensamble real en fábrica.
+
+4. **Recorte Paramétrico de Perfiles H (`Perfil_H_Sup` / `Perfil_H_Inf`)**:
+   - Soporte para descontar distancias superiores e inferiores en el perfil plástico H. Esto permite que el perfil no colisione con ranuras de zócalos, cubiertas solapadas o fondos embutidos, calculando la longitud neta de extrusión:
+     $$H_{\text{perfil}} = Z_{\text{fondo}} - \text{Perfil\_H\_Sup} - \text{Perfil\_H\_Inf}$$
+   - Rotación paramétrica (`Perfil_H_Rotacion` a $0^\circ$ o $180^\circ$) para invertir la pestaña del perfil si la cara visible lo requiere.
+
+5. **Resolución del Misterio de las "Mallas Sucias" en Rhino / Grasshopper**:
+   - **Diagnóstico del Fallo de Superficie NURBS**:
+     - Al usar `rg.Surface.CreateExtrusion(curva, vector)`, Rhino crea una superficie reglada generalizada con múltiples spans de knot vectors en longitudes grandes ($>600\text{ mm}$).
+     - Al convertir a Brep para enviar a Grasshopper, se generan isocurvas que el componente `Mesh Brep` subdivide de forma agresiva.
+   - **El Mito de los Sliders en `Settings (Custom)`**:
+     - El parámetro `Min Count` por defecto en Rhino es **6** (`MinimumInitialGridQuads`), dividiendo la cara plana en 6 bandas horizontales.
+     - Al reducir `Min Count = 1`, la cara aún se subdividía en **5 partes** debido al parámetro `MaximumEdgeLength` interno, el cual fragmentaba tramos largos cada $\sim 130.8\text{ mm}$ ($654\text{ mm} / 5$).
+   - **La Solución Canónica Definitiva con `rg.Extrusion` y Mallas Analíticas**:
+     - Reemplazar la superficie NURBS genérica por la clase especializada de Rhino:
+       ```python
+       # Equivalente analítico exacto de: _ExtrudeCrv Sólido=Sí
+       solido = rg.Extrusion.Create(curva_pos, vector_altura, True)
+       solido_brep = solido.ToBrep()
+       ```
+     - Convertir internamente a Malla (`Mesh`) dentro del código Python configurando `rg.MeshingParameters`:
+       ```python
+       mp = rg.MeshingParameters()
+       mp.SimplePlanes = True       # Preserva planos sin subdividir
+       mp.RefineGrid = False        # No refina mallas en caras planas
+       mp.GridMinCount = 1          # Mínimo absoluto
+       mp.GridMaxCount = 0          # Sin límite artificial
+       mp.GridAspectRatio = 0.0     # Ignora relación de aspecto en planos
+       mp.MinimumEdgeLength = 0.0
+       mp.MaximumEdgeLength = 0.0   # Elimina la partición por longitud de borde
+       mallas = rg.Mesh.CreateFromBrep(solido_brep, mp)
+       ```
+     - **Resultado Obtenido**: Malla ultra-limpia con exactamente **14 caras en total** (12 rectángulos continuos de punta a punta + 2 tapas poligonales en los extremos), con 0 aristas espurias ni vértices redundantes.
+
+6. **Unificación de Salidas de Herrajes a Malla Directa (`Mesh`)**:
+   - Se eliminaron del lienzo de Grasshopper los componentes `Brep`, `Settings (Custom)` y `Mesh Brep`, conectando directamente el receptor de visualización.
+   - Puertos de salida:
+     - `Prego`: Mallas directas de puntillas posicionadas.
+     - `Parafuso`: Mallas directas de tornillos posicionados.
+     - `Grampo`: Mallas directas de grapas posicionadas.
+     - `Perfil`: Mallas directas del perfil H extruido.
+     - `Fondos`: Sólidos NURBS `Brep` de 3 mm de espesor a cota completa para la seccionadora / corte CNC.
+
+7. **Blindaje del Motor de Instanciación de Herrajes (`v0.1.1`)**:
+   - **Tolerancia a Comillas y Plurales de Value Lists**: Grasshopper transmite cadenas literales con comillas (ej. `'"Parafuso"'`, `'"Grampo"'`). El parser ahora remueve comillas simples/dobles, tolera plurales (`parafusos`, `grampos`, `pregos`) y mapea índices enteros automáticos (`1`, `2`, `3`, `4`).
+   - **Filtro Anti-Deriva Espacial de `Point3d.Unset`**: Si un parámetro de punto de origen está desconectado o no referenciado en Rhino, puede transmitir `Point3d.Unset` (coordenadas $-1.23 \times 10^{308}\text{ mm}$). El algoritmo valida rigurosamente la finitud del punto y, si es inválido, calcula automáticamente el centroide exacto del `BoundingBox` de la geometría base.
+   - **Desempaquetado Universal de Geometría (`GH_Goo` y Listas Compuestas)**: Soporte nativo para herrajes compuestos de múltiples piezas (listas de mallas para cabezas y vástagos de tornillos o grapas) y desenvolvimiento de tipos `.Value`.
+   - **Auditoría Proactiva en Salida `out`**: Notificación instantánea en el panel de texto con el desglose de bordes configurados, puntos calculados por tipo y alertas explícitas si una entrada de malla está desconectada.
 
 ---
 

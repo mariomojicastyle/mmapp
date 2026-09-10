@@ -461,3 +461,27 @@ Cada vez que el usuario solicite "agregar" o "ingresar" a un prospecto o empresa
    * `Estado CRM`: `4021` (Prospecto)
    * `Canal Preferido`: `4037` (LinkedIn)
    * `Actividad en Redes`: `4045` (Inactivo)
+
+---
+
+## 🤖 16. Saga Audiovisual: "El Diseñador del Futuro" (Mario Mojica + Gamma IA)
+
+Esta saga de videos cortos (< 30-45 segundos) tiene como objetivo posicionar a **Mario Mojica** como uno de los diseñadores industriales más avanzados y vanguardistas de la industria del mueble, exponiendo su nuevo paradigma de trabajo apoyado en su agente de inteligencia artificial **Gamma** y la plataforma **`3dBimFab`**.
+
+### 16.1 El Núcleo de la Tensión Narrativa (Tradición vs. Vanguardia)
+* **La Formación y los 15 Años Tradicionales:** Mario se formó en la Universidad Nacional de Colombia (graduado en 2006) y trabajó durante 15 años en la manufactura tradicional, viviendo en carne propia la fragmentación: bocetos que no tenían medidas definitivas, dibujantes en SolidWorks que tardaban 3 días en aterrizar piezas, costos en hojas de Excel aisladas y manuales estáticos en cartilla.
+* **La Ruptura Tecnológica (2020 ➔ 2026):** En lugar de seguir usando herramientas desconectadas, Mario desarrolló una convicción profunda: unificar el ciclo completo desde el diseño paramétrico hasta la planta CNC.
+* **El Salto Cuántico con Gamma & `3dBimFab`:** 
+  1. **Componentes Inteligentes Vivos:** Las piezas ya nacen con herrajes, tolerancias DfMA, ranuras y límites físicos.
+  2. **Diseñador-Vendedor Multidispositivo:** Se puede diseñar, alterar dimensiones y proyectar en Realidad Aumentada desde un celular o tablet (en un semáforo o en plena junta de negocios).
+  3. **Costo Financiero en Vivo:** Mientras el cliente o el diseñador mueven una cota, el costo real de fábrica (materia prima, mano de obra, CIF) se recalcula al instante.
+  4. **Directo a Producción CNC:** Del cambio en el modelo a los archivos DXF y la orden de producción sin intermediarios ni demoras de semanas.
+
+### 16.2 Identidad de la Agente: **Gamma**
+* **Rol:** Agente de Inteligencia Artificial, copiloto técnica y compañera de desarrollo paramétrico y negocio de Mario Mojica.
+* **Nombre Oficial:** **Gamma** (escrito siempre con doble M).
+* **Tono en la Narrativa:** Complementariidad perfecta entre la maestría humana del diseño industrial (15 años de fábrica física) y el poder de computación, optimización y automatización de la inteligencia artificial.
+
+### 16.3 Efecto Buscado en la Audiencia B2B
+El mensaje no busca ser egocéntrico, sino despertar fascinación y necesidad:
+> *"¿Cómo es que este profesional diseña así? Nadie en nuestro equipo ni en el mercado diseña de esta manera. Necesitamos a Mario y a su tecnología para transformar nuestros productos y ganar ventaja competitiva."*

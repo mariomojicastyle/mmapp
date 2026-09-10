@@ -2499,5 +2499,27 @@ Con esta batería de arreglos y la validación en caliente, la V20 se establece 
 - **Validación de Calidad**:
   * Compilación TypeScript verificada (`npx tsc --noEmit`) en `3bf` y `mario-mojica-plataforma` con 0 errores.
 
+---
+
+### 🚀 Hito 3BF_super_AIRender — Marco de Encuadre 1:1 (Camera to View), Auto-Descripción 3D con Etiqueta @Description, Calibración de Aristas y Título Editable en TopNav (09 de Septiembre, 2026)
+
+- **Marco de Encuadre 1:1 de Cámara (Estilo Blender Camera to View / Passepartout)**:
+  * Implementación de overlay de encuadre fotográfico cuadrado 1:1 en `Viewer3D.tsx` con máscara de oscurecimiento exterior (`shadow-[0_0_0_9999px_rgba(11,15,23,0.55)]`), esquinas de referencia doradas (`border-amber-400`) y badge indicador discreto `1:1 Camera Frame`.
+  * Botón toggle circular en la barra de herramientas del HUD 3D con estilo visual idéntico (`rounded-full`, color activo `#0891b2`, trazo nítido y relleno sutil `fill-white/25` al activarse).
+- **Auto-Descripción Paramétrica de Producto 3D & Inyección con Etiqueta `@Description`**:
+  * **Botón Técnico Sobrio**: Eliminados los iconos de estrellas (`Sparkles`) y emojis; reemplazados por el ícono técnico `<ScanText />` y el texto sobrio `"Auto-Describir 3D"`.
+  * **Inyección Precisa con Etiqueta `@description` / `@Description`**: Al pulsar el botón, el generador localiza la etiqueta `@description` o `@Description` dentro del prompt activo y la sustituye en su posición exacta, conservando íntegros los textos anteriores y posteriores (ambientación boiserie, microcemento, iluminación y parámetros de cámara).
+  * **Fidelidad Paramétrica y Anatómica Real**: Se eliminó el mock heredado de 1200x800x400 y 3 cajones. El motor ahora extrae las cotas reales del Bounding Box 3D (`window.__3bfRealBBox`) y sliders de Grasshopper (**1295 mm ancho × 930 mm alto × 475 mm profundidad**, zócalo de **73 mm**) y la configuración anatómica exacta de **6 cajones frontales en cuadrícula simétrica de 2×3** (sin tiradores externos / perfil gola con tapaluces horizontales y parante central).
+  * **Nuevo Preset Maestro en la Biblioteca**: Incorporado el preset `"Editorial Arquitectura (Architectural Digest)"` como preset prioritario con la etiqueta `@Description`.
+- **Calibre Visual de Aristas Ampliado hasta 200% (`CalibrationPanel.tsx` & `Viewer3D.tsx`)**:
+  * Incorporado un nuevo slider interactivo de **Calibre de Aristas** (rango 50% a 200%) en el panel de Calibración 3D, permitiendo engrosar las líneas de contorno para mayor definición en miniaturas y vistas técnicas.
+  * Captura 3D para render de IA adaptada para exhibir las aristas en la miniatura de entrada, con directiva explícita a la IA de que las aristas son guías descriptivas CAD que no deben plasmarse como alambres en el render.
+- **Gestión de Historial en AI Render Studio**:
+  * Habilitado botón de eliminación (`[Borrar]`) para descartar el render actual generado en caliente y mantener el historial sincronizado.
+- **Título de Archivo / Mueble Editable en el Header Principal (`DocumentTitleEditor`)**:
+  * Traslado del nombre del mueble guardado desde el HUD flotante inferior hacia la barra superior (`TopNav` en `app/page.tsx`), ubicado junto al logotipo oficial de `3dBimFab` al estilo Google Docs / Google Sheets (clic para editar el nombre en línea con guardado inmediato en catálogo).
+- **Validación de Calidad**:
+  * Compilación TypeScript verificada (`npx tsc --noEmit`) con 0 errores.
+
 
 
