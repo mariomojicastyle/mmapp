@@ -334,7 +334,7 @@ export default function PartBreakdownPanel() {
                           className="py-1 px-2.5 pr-6 border rounded-full text-[11px] font-semibold focus:outline-none focus:ring-1 focus:ring-cyan-500 cursor-pointer transition shadow-2xs w-[130px] max-w-[130px] truncate"
                           title={`Asignar capa a ${parte.nombreLimpio}`}
                         >
-                          {capas.map((capa) => (
+                          {[...capas].sort((a, b) => a.nombre.localeCompare(b.nombre, "es", { sensitivity: "base" })).map((capa) => (
                             <option 
                               key={capa.id} 
                               value={capa.id}

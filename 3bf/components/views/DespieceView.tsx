@@ -685,6 +685,9 @@ export default function DespieceView() {
       };
     });
 
+    // Orden alfabético estricto de la A a la Z por nombre del herraje
+    items.sort((a, b) => a.nombreGhx.localeCompare(b.nombreGhx, "es", { sensitivity: "base" }));
+
     return {
       items,
       costoTotalHerrajesCop: Math.round(totalCop),
@@ -1652,9 +1655,9 @@ export default function DespieceView() {
                 className="font-bold border-b whitespace-nowrap transition-colors"
               >
                 <th className="p-2.5 w-36">Herraje</th>
+                <th className="p-2.5 w-20 text-center">Cantidad</th>
                 <th className="p-2.5">Descripción Comercial</th>
                 <th className="p-2.5 w-16 text-center">UM</th>
-                <th className="p-2.5 w-20 text-center">Cantidad</th>
                 <th className="p-2.5 w-28 text-right">Costo Unitario</th>
                 <th className="p-2.5 w-28 text-right">Costo Total</th>
               </tr>
@@ -1677,15 +1680,7 @@ export default function DespieceView() {
                   <td style={{ color: coloresApariencia?.botonActivo }} className="p-2.5 font-bold font-mono">
                     {h.nombreGhx}
                   </td>
-                  {/* Descripción Comercial */}
-                  <td style={{ color: coloresApariencia?.textoPrincipal }} className="p-2.5 font-medium">
-                    {h.descripcion}
-                  </td>
-                  {/* Unidad de Medida */}
-                  <td style={{ color: coloresApariencia?.textoSecundario }} className="p-2.5 text-center font-mono text-[10px]">
-                    {h.unidad}
-                  </td>
-                  {/* Cantidad */}
+                  {/* Cantidad (Inmediatamente después del Nombre) */}
                   <td className="p-2.5 text-center font-mono font-extrabold">
                     <span 
                       style={{ 
@@ -1693,10 +1688,18 @@ export default function DespieceView() {
                         borderColor: coloresApariencia?.bordePaneles,
                         color: coloresApariencia?.botonActivo 
                       }}
-                      className="px-2.5 py-0.5 rounded border font-mono font-bold"
+                      className="px-2.5 py-0.5 rounded-full border font-mono font-bold inline-block"
                     >
                       {h.cantidad}
                     </span>
+                  </td>
+                  {/* Descripción Comercial */}
+                  <td style={{ color: coloresApariencia?.textoPrincipal }} className="p-2.5 font-medium">
+                    {h.descripcion}
+                  </td>
+                  {/* Unidad de Medida */}
+                  <td style={{ color: coloresApariencia?.textoSecundario }} className="p-2.5 text-center font-mono text-[10px]">
+                    {h.unidad}
                   </td>
                   {/* Costo Unitario Nativo */}
                   <td style={{ color: coloresApariencia?.textoSecundario }} className="p-2.5 text-right font-mono">
@@ -1720,9 +1723,8 @@ export default function DespieceView() {
                 className="border-t-2 font-bold whitespace-nowrap transition-colors"
               >
                 <td 
-                  colSpan={3} 
                   style={{ color: coloresApariencia?.botonActivo }}
-                  className="p-2.5 text-right uppercase text-[10px] tracking-wider"
+                  className="p-2.5 text-right uppercase text-[10px] tracking-wider font-bold"
                 >
                   Total Herrajes:
                 </td>
@@ -1733,6 +1735,7 @@ export default function DespieceView() {
                   {resumenHerrajes.cantTotalHerrajes} u
                 </td>
                 <td 
+                  colSpan={3}
                   style={{ color: coloresApariencia?.textoSecundario }}
                   className="p-2.5 text-right font-mono text-[10px]"
                 >

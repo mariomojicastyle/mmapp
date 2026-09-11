@@ -194,12 +194,8 @@ function RenderParamControl({ paramKey }: { paramKey: string }) {
     const handleNumChange = (val: number, debounceMs: number = 180) => {
       if (objetoActivoId) {
         setParametroInstancia(objetoActivoId, storeKey, val, debounceMs);
-        if (rawKeyClean !== storeKey) setParametroInstancia(objetoActivoId, rawKeyClean, val, debounceMs);
-        if (legacyKey) setParametroInstancia(objetoActivoId, legacyKey, val, debounceMs);
       } else {
         setParametro(storeKey as any, val);
-        if (rawKeyClean !== storeKey) setParametro(rawKeyClean as any, val);
-        if (legacyKey) setParametro(legacyKey as any, val);
       }
     };
 
@@ -272,36 +268,8 @@ function RenderParamControl({ paramKey }: { paramKey: string }) {
   const handleSelectChange = (newVal: string) => {
     if (objetoActivoId) {
       setParametroInstancia(objetoActivoId, storeKey, newVal, 0);
-      setParametroInstancia(objetoActivoId, rawKeyClean, newVal, 0);
-      if (legacyKey) setParametroInstancia(objetoActivoId, legacyKey, newVal, 0);
-
-      const pkl = paramKey.toLowerCase();
-      if (pkl.includes("izquierdo") || pkl.includes("izq")) {
-        setParametroInstancia(objetoActivoId, "borde_izquierdo", newVal, 0);
-        setParametroInstancia(objetoActivoId, "RH_IN:Borde izquierdo", newVal, 0);
-        setParametroInstancia(objetoActivoId, "RH_IN:03.4 Borde izquierdo", newVal, 0);
-      }
-      if (pkl.includes("derecho") || pkl.includes("der")) {
-        setParametroInstancia(objetoActivoId, "borde_derecho", newVal, 0);
-        setParametroInstancia(objetoActivoId, "RH_IN:Borde derecho", newVal, 0);
-        setParametroInstancia(objetoActivoId, "RH_IN:03.3 Borde derecho", newVal, 0);
-      }
     } else {
       setParametro(storeKey as any, newVal);
-      setParametro(rawKeyClean as any, newVal);
-      if (legacyKey) setParametro(legacyKey as any, newVal);
-      
-      const pkl = paramKey.toLowerCase();
-      if (pkl.includes("izquierdo") || pkl.includes("izq")) {
-        setParametro("borde_izquierdo" as any, newVal);
-        setParametro("RH_IN:Borde izquierdo" as any, newVal);
-        setParametro("RH_IN:03.4 Borde izquierdo" as any, newVal);
-      }
-      if (pkl.includes("derecho") || pkl.includes("der")) {
-        setParametro("borde_derecho" as any, newVal);
-        setParametro("RH_IN:Borde derecho" as any, newVal);
-        setParametro("RH_IN:03.3 Borde derecho" as any, newVal);
-      }
     }
     guardarEstadoHistorial();
   };
@@ -612,36 +580,6 @@ export default function ControlPanel() {
       {/* 🏷️ CABECERA: OBJETO ACTIVO EN EL ESCENARIO (Multi-Instancia) */}
       {instanciaActiva ? (
         <>
-          <div 
-            style={{ 
-              borderColor: coloresApariencia?.insigniaFondo || coloresApariencia?.bordePaneles,
-              backgroundColor: coloresApariencia?.fondoPaneles ? `${coloresApariencia.fondoPaneles}80` : undefined
-            }}
-            className="flex flex-col gap-1.5 lg:gap-2 p-2 lg:p-3 rounded-xl border shadow-xs lg:shadow-sm"
-          >
-            <div className="flex items-center justify-between gap-1.5 lg:gap-2">
-              <div className="flex items-center gap-1.5 lg:gap-2 min-w-0">
-                <span 
-                  style={{ backgroundColor: coloresApariencia?.estadoActivo || "#10B981" }} 
-                  className={`w-2 lg:w-2.5 h-2 lg:h-2.5 rounded-full shrink-0 ${instanciaActiva.cargando ? "animate-spin bg-cyan-500" : "animate-pulse"}`} 
-                />
-                <span 
-                  style={{ color: coloresApariencia?.textoPrincipal }} 
-                  className="font-extrabold text-xs lg:text-sm leading-none truncate"
-                  title={instanciaActiva.nombreVisible}
-                >
-                  {instanciaActiva.nombreVisible}
-                </span>
-              </div>
-
-              {instanciaActiva.cargando && (
-                <span className="text-[9px] lg:text-[10px] font-bold text-cyan-500 animate-pulse shrink-0">
-                  Sincronizando...
-                </span>
-              )}
-            </div>
-          </div>
-
           {/* Panel de Parámetros Dinámico Activo */}
           <ParametrosPanel />
         </>

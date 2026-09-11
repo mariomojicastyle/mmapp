@@ -114,7 +114,7 @@ Para evitar respuestas genéricas, el RAM de ventas almacena y cruza 5 dimension
 | **Madesa Móveis** | Douglas Guth | Líder DHO & Formação / P&D | Costos de P&D en manuales, e-commerce, reducción de garantías | 🔥 Caliente / En Evaluación Técnica | 18 Ago 2026 - Reenvió demo al sector técnico. Elogió la propuesta | Enviar comparativa de costos + prototipo 3D gratuito |
 | **Del Alba / ex-Maderkit** | Andrés Felipe Moncaleano Campo | Gerente Supply Chain | Reconexión profesional, empaque, compras y manuales 3D | 🔥 Padrino B2B Activo | 18 Ago 2026 - Conectó con Juan Carlos Londoño (CEO Inval) | Mantenerlo informado de los avances con Inval |
 | **Inval S.A.** | Juan Carlos Londoño | Presidente & CEO | Manuales interactivos 3D para muebles RTA, reducción de garantías | 🔥 Caliente / Vía Andrés Moncaleano | 18 Ago 2026 - Andrés facilitó su WhatsApp directo | Contactar por WhatsApp con el saludo y aval de Andrés Moncaleano |
-| **RTA Design S.A.S** | Juan Carlos Pérez Londoño | Gerente Administrativo y Financiero | Búsqueda de vacantes en diseño y optimización de producto | 🟡 Contactado - Correo Listo | 13 Ago 2026 - Solicitó hoja de vida por correo | Enviar hoja de vida a `juan.perez@rta.com.co` |
+| **RTA Design S.A.S** | Juan Carlos Pérez Londoño | Gerente Administrativo y Financiero | Entrevista realizada con Paola y Viviana (GH). Sin vacante tradicional; propuesta de Piloto de Diseño con Agente de IA | 🔥 Caliente / Propuesta Piloto Enviada | 10 Sep 2026 - Entrevista realizada con GH. Envío de mensaje de agradecimiento y propuesta de proyecto piloto con video 3dBimFab | Enviar mensaje en LinkedIn y evaluar respuesta para definir ambiente piloto |
 | **Ternova** | Julio Sanchez | Ingeniería / Automatización | Manuales para maquinaria, limitaciones de Fusion 360 | 🟡 Puerta Abierta / Seguimiento Suave | 18 Ago 2026 - Mencionó avance en Fusion 360. Dejar relación abierta | Enviar tip de exportación web sin presión en 15 días |
 | **Móveis Henn (Planejamento)** | Rudgeri Henkel | Gerente Planejamento e Materiais | Costos de asistencia técnica, errores de ensamble en RTA | 🟡 Mensaje de WhatsApp Listo | 03 Ago 2026 - Dio su WhatsApp directo en LinkedIn | Integrar al hilo de la reunión con Marcos y Jonas |
 | **Bartira** | Hermes Rodrigues de Oliveira | Operador Logística / Planta | Conexión interna hacia el líder de Producto / Ingeniería | 🔥 Puente Interno Activo / Caliente | 18 Ago 2026 - Pasó perfil de Denis (ya salió). Pedir líder actual | Agradecer y pedir contacto del actual líder de P&D |
@@ -252,6 +252,18 @@ Para evitar respuestas genéricas, el RAM de ventas almacena y cruza 5 dimension
 - **Historial Completo:**
   * Dimas respondió al contacto en LinkedIn de Mario.
 - **Estrategia Activa:** Agendar demo de 15 minutos enfocada en módulos de cocina, closets y muebles RTA para su red nacional de tiendas y clientes finales.
+
+---
+
+### 🟢 9. RTA Design S.A.S (Medellín, Colombia)
+- **Contacto:** Juan Carlos Pérez Londoño (Gerente Administrativo y Financiero).
+- **Conector / Referido:** Andrés Felipe Moncaleano Campo (ex-Maderkit) en común.
+- **Historial Completo:**
+  * *13 Agosto 2026:* Contacto inicial con Juan Carlos por LinkedIn. Solicitó el envío de la hoja de vida al correo `juan.perez@rta.com.co`.
+  * *03 Septiembre 2026:* Entrevista con Paola y Viviana del departamento de Gestión Humana de RTA Design (referenciada por Juan Carlos). Mario compartió su trayectoria de 15 años en diseño industrial y manufactura de muebles RTA, y les presentó el motor paramétrico `3dBimFab` en funcionamiento.
+  * *Conclusión de la Entrevista:* Paola y Viviana indicaron que la reunión se llevó a cabo por indicación de Juan Carlos, pero que actualmente en la empresa no tienen una vacante abierta formal ni presupuesto asignado para nuevas contrataciones tradicionales este año. El objetivo era elaborar un informe interno para Juan Carlos.
+  * *10 Septiembre 2026:* Envío de mensaje directo a Juan Carlos Pérez vía LinkedIn junto con el video de demostración de `3dBimFab`. Se agradece el tiempo de la entrevista con Gestión Humana, se asume con total comprensión la inexistencia de vacantes laborales tradicionales, y se le plantea la oportunidad de colaborar mediante un **Proyecto Piloto de Diseño Asistido por Agente de IA** (ej. un ambiente de dormitorio u oficina) entregando toda la ingeniería lista para fabricación (planos, despiece DfMA, CNC/DXF, costeo paramétrico) para evaluar en la práctica el desempeño y potencial de escalamiento de esta nueva metodología de trabajo.
+- **Objetivo Estratégico:** Abrir una vía de colaboración ágil B2B como partner tecnológico/diseñador aumentado con IA para un producto o ambiente específico de RTA Design, sin la fricción de un proceso de nómina tradicional.
 
 ---
 

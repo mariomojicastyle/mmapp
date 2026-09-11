@@ -105,14 +105,14 @@ export default function AIRenderStudioModal() {
   const [nuevoPresetCategoria, setNuevoPresetCategoria] = useState<any>("Oficina");
   const [presetGuardadoExito, setPresetGuardadoExito] = useState<boolean>(false);
   const [actualizadoExito, setActualizadoExito] = useState<boolean>(false);
-  const [plantillaActivaId, setPlantillaActivaId] = useState<string | null>("preset_architectural_digest_editorial");
+  const [plantillaActivaId, setPlantillaActivaId] = useState<string | null>(null);
   const [tempApiKey, setTempApiKey] = useState<string>("");
   const [tempFalKey, setTempFalKey] = useState<string>("");
   const [copiado, setCopiado] = useState<boolean>(false);
   const [guardadoMiniatura, setGuardadoMiniatura] = useState<boolean>(false);
   const [compararModo, setCompararModo] = useState<"render" | "original" | "split">("render");
   const [mejorandoPhota, setMejorandoPhota] = useState<boolean>(false);
-  const [estiloActivoId, setEstiloActivoId] = useState<string | null>("nordico");
+  const [estiloActivoId, setEstiloActivoId] = useState<string | null>(null);
   const [inyectadoExito, setInyectadoExito] = useState<boolean>(false);
 
   const aplicarEstiloATexto = (textoBase: string, idEstilo: string | null): string => {
@@ -401,37 +401,50 @@ export default function AIRenderStudioModal() {
     let nombre = muebleActivoGuardado?.nombre || instanciaActiva?.nombreVisible || instanciaActiva?.definitionId || params?.model_id || "Cómoda Ravenna";
     nombre = nombre.replace(/\.(gh|ghx)$/i, "").trim();
 
-    // 3. Dimensiones reales en milímetros (Prioridad: Bounding Box Three.js > Sliders GHX)
+    // 3. Dimensiones reales en milímetros (Prioridad: Sliders GHX explícitos > Bounding Box Three.js)
     let ancho = 1295;
     let alto = 930;
     let prof = 475;
     let zocalo = 73;
 
-    // Leer BBox en vivo de la escena 3D WebGL
-    if (typeof window !== "undefined" && (window as any).__3bfRealBBox) {
-      const b = (window as any).__3bfRealBBox;
-      if (b.anchoMm > 150 && b.altoMm > 150) {
-        ancho = b.anchoMm;
-        alto = b.altoMm;
-        prof = b.profMm;
-      }
-    }
+    let anchoSlider: number | null = null;
+    let altoSlider: number | null = null;
+    let profSlider: number | null = null;
+    let zocaloSlider: number | null = null;
 
-    // Comprobar si hay parámetros explícitos de sliders GHX en la instancia
     if (params) {
+      // Buscar primero en sliders reales activos de Grasshopper (prefijo RH_IN:)
       for (const [k, v] of Object.entries(params)) {
+        if (!k.startsWith("RH_IN:")) continue;
         const kLow = k.toLowerCase();
         const numVal = typeof v === "number" ? v : parseFloat(String(v));
         if (isNaN(numVal) || numVal <= 0) continue;
 
         if (kLow.includes("ancho") || kLow.includes("largura") || (kLow.includes("width") && !kLow.includes("stroke"))) {
-          ancho = Math.round(numVal);
+          anchoSlider = Math.round(numVal);
         } else if (kLow.includes("altura") || (kLow.includes("alto") && !kLow.includes("zocalo")) || kLow.includes("height")) {
-          alto = Math.round(numVal);
+          altoSlider = Math.round(numVal);
         } else if (kLow.includes("profundidad") || kLow.includes("profundidade") || kLow.includes("depth")) {
-          prof = Math.round(numVal);
+          profSlider = Math.round(numVal);
         } else if (kLow.includes("zocalo") || kLow.includes("rodapé") || kLow.includes("rodape")) {
-          zocalo = Math.round(numVal);
+          zocaloSlider = Math.round(numVal);
+        }
+      }
+    }
+
+    if (anchoSlider !== null) ancho = anchoSlider;
+    if (altoSlider !== null) alto = altoSlider;
+    if (profSlider !== null) prof = profSlider;
+    if (zocaloSlider !== null) zocalo = zocaloSlider;
+
+    // Si no hubo slider explícito, consultar BBox en vivo de la escena 3D Three.js
+    if (anchoSlider === null || altoSlider === null || profSlider === null) {
+      if (typeof window !== "undefined" && (window as any).__3bfRealBBox) {
+        const b = (window as any).__3bfRealBBox;
+        if (b.anchoMm > 150 && b.altoMm > 150) {
+          if (anchoSlider === null) ancho = b.anchoMm;
+          if (altoSlider === null) alto = b.altoMm;
+          if (profSlider === null) prof = b.profMm;
         }
       }
     }
@@ -732,40 +745,41 @@ export default function AIRenderStudioModal() {
 
             {/* Editor de Prompt Activo */}
             <div className="flex flex-col gap-1.5 flex-1 min-h-0">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2 flex-wrap">
-                  <label className="font-bold text-[11px]" style={{ color: coloresApariencia?.textoPrincipal }}>
+              <div className="flex items-center justify-between gap-1.5 w-full flex-nowrap">
+                <div className="flex items-center gap-1.5 shrink-0">
+                  <label className="font-bold text-[11px] whitespace-nowrap" style={{ color: coloresApariencia?.textoPrincipal }}>
                     Prompt del Render:
                   </label>
                   <span 
-                    className="text-[10px] px-2 py-0.5 rounded-full font-semibold border transition"
+                    title="Se recomienda redactar en inglés para máxima fidelidad"
+                    className="text-[9px] px-1.5 py-0.5 rounded-full font-semibold border transition shrink-0 hidden md:inline-block"
                     style={{
                       backgroundColor: coloresApariencia?.botonActivo ? `${coloresApariencia.botonActivo}15` : "rgba(8, 145, 178, 0.1)",
                       color: coloresApariencia?.botonActivo || "#0891b2",
                       borderColor: coloresApariencia?.botonActivo ? `${coloresApariencia.botonActivo}30` : "rgba(8, 145, 178, 0.25)"
                     }}
                   >
-                    Inglés recomendado para máxima fidelidad
+                    EN
                   </span>
                 </div>
-                <div className="flex items-center gap-1.5 flex-wrap">
+                <div className="flex items-center gap-1.5 flex-nowrap shrink-0">
                   <button
                     type="button"
                     onClick={handleAutoDescribirMueble}
                     style={{ 
                       backgroundColor: inyectadoExito ? "#10B981" : (coloresApariencia?.botonActivo || "#0891b2") 
                     }}
-                    className="px-3 py-1 rounded-full text-xs font-semibold text-white shadow-xs transition cursor-pointer hover:opacity-90 flex items-center gap-1 active:scale-95 shrink-0"
+                    className="px-2.5 py-1 rounded-full text-[11px] font-semibold text-white shadow-xs transition cursor-pointer hover:opacity-90 flex items-center gap-1 active:scale-95 shrink-0 whitespace-nowrap"
                     title="Inspecciona el modelo 3D activo e inyecta su descripción técnica en la etiqueta @description o al inicio del prompt"
                   >
                     {inyectadoExito ? <Check className="w-3.5 h-3.5 animate-in zoom-in" /> : <ScanText className="w-3.5 h-3.5" />}
-                    <span>{inyectadoExito ? "¡Descripción Inyectada!" : "Auto-Describir 3D"}</span>
+                    <span>{inyectadoExito ? "¡Inyectado!" : "Auto-Describir 3D"}</span>
                   </button>
                   <button
                     type="button"
                     onClick={() => setMostrarGuardarPreset(!mostrarGuardarPreset)}
                     style={{ backgroundColor: coloresApariencia?.botonActivo || "#0891b2" }}
-                    className="px-3 py-1 rounded-full text-xs font-semibold text-white shadow-xs transition cursor-pointer hover:opacity-90 flex items-center justify-center"
+                    className="px-2.5 py-1 rounded-full text-[11px] font-semibold text-white shadow-xs transition cursor-pointer hover:opacity-90 flex items-center justify-center shrink-0 whitespace-nowrap"
                     title="Guardar este prompt como un nuevo preset en la biblioteca"
                   >
                     <span>Guardar Preset</span>
@@ -773,7 +787,7 @@ export default function AIRenderStudioModal() {
                   <button
                     onClick={handleActualizarPromptEnBiblioteca}
                     style={{ backgroundColor: coloresApariencia?.botonActivo || "#0891b2" }}
-                    className="w-6.5 h-6.5 rounded-full text-white shadow-xs transition cursor-pointer hover:opacity-90 flex items-center justify-center relative active:scale-90"
+                    className="w-6 h-6 rounded-full text-white shadow-xs transition cursor-pointer hover:opacity-90 flex items-center justify-center relative active:scale-90 shrink-0"
                     title="Actualizar y sobrescribir la plantilla en la biblioteca con las modificaciones del prompt"
                   >
                     {actualizadoExito ? (
@@ -783,13 +797,11 @@ export default function AIRenderStudioModal() {
                     )}
                   </button>
                   <button
-                    onClick={() => setPestanaLateral("biblioteca")}
-                    style={{
-                      backgroundColor: pestanaLateral === "biblioteca" ? (coloresApariencia?.botonActivo || "#0891b2") : "transparent",
-                      borderColor: pestanaLateral === "biblioteca" ? (coloresApariencia?.botonActivo || "#0891b2") : (coloresApariencia?.bordePaneles || "#CBD5E1"),
-                      color: pestanaLateral === "biblioteca" ? "#FFFFFF" : (coloresApariencia?.textoPrincipal || "#0F172A"),
-                    }}
-                    className="px-3 py-1 rounded-full text-xs font-semibold border transition cursor-pointer hover:opacity-90 shadow-2xs flex items-center justify-center"
+                    type="button"
+                    onClick={() => setPestanaLateral(pestanaLateral === "biblioteca" ? "resultado" : "biblioteca")}
+                    style={{ backgroundColor: coloresApariencia?.botonActivo || "#0891b2" }}
+                    className="px-2.5 py-1 rounded-full text-[11px] font-semibold text-white shadow-xs transition cursor-pointer hover:opacity-90 flex items-center justify-center shrink-0 whitespace-nowrap active:scale-95"
+                    title="Ver biblioteca de presets de prompts"
                   >
                     <span>Biblioteca</span>
                   </button>

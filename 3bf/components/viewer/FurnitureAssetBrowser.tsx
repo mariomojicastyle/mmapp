@@ -21,7 +21,8 @@ import {
   Clock,
   Tag,
   RefreshCw,
-  Check
+  Check,
+  Copy
 } from "lucide-react";
 
 function getMuebleThumbnail(mueble: MuebleGuardadoItem): string {
@@ -55,6 +56,7 @@ export default function FurnitureAssetBrowser() {
     crearCarpetaMueble,
     renombrarMuebleGuardado,
     eliminarMuebleGuardado,
+    duplicarMuebleGuardado,
     urlGoogleDrive,
     coloresApariencia,
     anchoNPanel,
@@ -170,6 +172,11 @@ export default function FurnitureAssetBrowser() {
     if (confirm("¿Estás seguro de eliminar este mueble del catálogo?")) {
       await eliminarMuebleGuardado(id);
     }
+  };
+
+  const handleDuplicarMueble = async (id: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    await duplicarMuebleGuardado(id);
   };
 
   const handleSincronizarDrive = async () => {
@@ -669,11 +676,20 @@ export default function FurnitureAssetBrowser() {
                       </div>
                     )}
 
+                    {/* Botón de Duplicar en Hover (Esquina Opuesta a la Papelera) */}
+                    <button
+                      onClick={(e) => handleDuplicarMueble(mueble.id, e)}
+                      title="Duplicar este mueble (_Copia)"
+                      className="absolute top-1.5 left-1.5 p-1 rounded-full bg-black/60 hover:bg-cyan-600 text-white opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer shadow-xs z-10 flex items-center justify-center"
+                    >
+                      <Copy className="w-3 h-3" />
+                    </button>
+
                     {/* Botón de Eliminar en Hover */}
                     <button
                       onClick={(e) => handleEliminarMueble(mueble.id, e)}
                       title="Eliminar este mueble del catálogo"
-                      className="absolute top-1.5 right-1.5 p-1 rounded-md bg-black/60 hover:bg-red-600 text-white opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer shadow-xs z-10"
+                      className="absolute top-1.5 right-1.5 p-1 rounded-full bg-black/60 hover:bg-red-600 text-white opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer shadow-xs z-10 flex items-center justify-center"
                     >
                       <Trash2 className="w-3 h-3" />
                     </button>

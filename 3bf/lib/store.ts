@@ -352,6 +352,7 @@ export interface ComputoResultado {
     vertices?: number[];
     indices?: number[];
     uvs?: number[];
+    es_duplicado_ghx?: boolean;
   }>;
   perforaciones_nurbs?: Array<{
     name: string;
@@ -378,6 +379,7 @@ export interface ComputoResultado {
     gh_file?: string;
     ezdxf?: boolean;
   };
+  mallas_duplicadas_detectadas?: Record<string, number>;
 }
 
 export interface PerforacionCruzadaItem {
@@ -944,23 +946,23 @@ export const PRESET_MATERIALES_PBR: MaterialPBRDef[] = [
 export const PRESET_CAPAS: CapaDef[] = [
   { id: "capa_acero", nombre: "Acero", activa: false, visible: true, bloqueada: false, color: "#8A9EA7", materialId: "mat_acero" },
   { id: "capa_aluminio", nombre: "Aluminio", activa: true, visible: true, bloqueada: false, color: "#CBD5E1", materialId: "mat_aluminio" },
-  { id: "capa_tono", nombre: "Tono", activa: false, visible: true, bloqueada: false, color: "#EAB308", materialId: "mat_marfil" },
-  { id: "capa_tono_fondo", nombre: "Tono Fondo", activa: false, visible: true, bloqueada: false, color: "#F59E0B", materialId: "mat_blanco" },
   { id: "capa_back", nombre: "Back", activa: false, visible: true, bloqueada: false, color: "#D97706", materialId: "mat_fresno" },
+  { id: "capa_bim", nombre: "BIM", activa: false, visible: true, bloqueada: false, color: "#06B6D4", materialId: "mat_bim" },
   { id: "capa_cromo", nombre: "Cromo", activa: false, visible: true, bloqueada: false, color: "#93C5FD", materialId: "mat_cromo" },
   { id: "capa_espaldar", nombre: "Espaldar", activa: false, visible: true, bloqueada: false, color: "#64748B", materialId: "mat_blanco" },
+  { id: "capa_herrajes", nombre: "Herrajes", activa: false, visible: true, bloqueada: false, color: "#27272A", materialId: "mat_acero" },
+  { id: "capa_madera", nombre: "Madera", activa: false, visible: true, bloqueada: false, color: "#854D0E", materialId: "mat_fresno" },
   { id: "capa_mdf", nombre: "MDF", activa: false, visible: true, bloqueada: false, color: "#0D9488", materialId: "mat_mdf" },
   { id: "capa_mdp", nombre: "MDP", activa: false, visible: true, bloqueada: false, color: "#B45309", materialId: "mat_mdp" },
   { id: "capa_nurbs", nombre: "Nurbs", activa: false, visible: true, bloqueada: false, color: "#A855F7", materialId: "mat_nurbs" },
+  { id: "capa_perforados", nombre: "Perforados", activa: false, visible: true, bloqueada: false, color: "#EF4444", materialId: "mat_perforados" },
+  { id: "capa_pintura_met_b", nombre: "Pintura_Met_B", activa: false, visible: true, bloqueada: false, color: "#F4F4F5", materialId: "mat_pintura_bla" },
+  { id: "capa_pintura_met_n", nombre: "Pintura_Met_N", activa: false, visible: true, bloqueada: false, color: "#09090B", materialId: "mat_pintura_neg" },
   { id: "capa_plastico_1", nombre: "Plastico_1", activa: false, visible: true, bloqueada: false, color: "#18181B", materialId: "mat_pnegro" },
   { id: "capa_plastico_2", nombre: "Plastico_2", activa: false, visible: true, bloqueada: false, color: "#FFFFFF", materialId: "mat_pblanco" },
-  { id: "capa_madera", nombre: "Madera", activa: false, visible: true, bloqueada: false, color: "#854D0E", materialId: "mat_fresno" },
-  { id: "capa_pintura_met_n", nombre: "Pintura_Met_N", activa: false, visible: true, bloqueada: false, color: "#09090B", materialId: "mat_pintura_neg" },
-  { id: "capa_pintura_met_b", nombre: "Pintura_Met_B", activa: false, visible: true, bloqueada: false, color: "#F4F4F5", materialId: "mat_pintura_bla" },
+  { id: "capa_tono", nombre: "Tono", activa: false, visible: true, bloqueada: false, color: "#EAB308", materialId: "mat_marfil" },
+  { id: "capa_tono_fondo", nombre: "Tono Fondo", activa: false, visible: true, bloqueada: false, color: "#F59E0B", materialId: "mat_blanco" },
   { id: "capa_zinc", nombre: "Zinc", activa: false, visible: true, bloqueada: false, color: "#10B981", materialId: "mat_zinc" },
-  { id: "capa_perforados", nombre: "Perforados", activa: false, visible: true, bloqueada: false, color: "#EF4444", materialId: "mat_perforados" },
-  { id: "capa_bim", nombre: "BIM", activa: false, visible: true, bloqueada: false, color: "#06B6D4", materialId: "mat_bim" },
-  { id: "capa_herrajes", nombre: "Herrajes", activa: false, visible: true, bloqueada: false, color: "#27272A", materialId: "mat_acero" },
   { id: "capa_zincado", nombre: "Zincado", activa: false, visible: true, bloqueada: false, color: "#E4E4E7", materialId: "mat_zincado" },
 ];
 
@@ -1078,6 +1080,7 @@ export interface State3BF {
   renombrarMuebleGuardado: (id: string, nuevoNombre: string) => Promise<boolean>;
   actualizarThumbnailMueble: (id: string, thumbnail: string) => Promise<boolean>;
   eliminarMuebleGuardado: (id: string) => Promise<boolean>;
+  duplicarMuebleGuardado: (id: string) => Promise<string | null>;
   abrirMueble: (mueble: MuebleGuardadoItem) => Promise<void>;
 
   // Multi-Instancia GHX en Escenario 3D
@@ -2425,6 +2428,65 @@ export const use3BFStore = create<State3BF>((set, get) => ({
     return true;
   },
 
+  duplicarMuebleGuardado: async (id: string) => {
+    const state = get();
+    const original = state.mueblesGuardados.find((m) => m.id === id);
+    if (!original) return null;
+
+    // Generar nombre único agregando _Copia
+    const baseNombre = original.nombre.replace(/_Copia(\s*\d+)?$/, "");
+    let nuevoNombre = `${original.nombre}_Copia`;
+    
+    // Si ya existe un mueble con ese nombre, calcular correlativo _Copia 2, _Copia 3, etc.
+    const nombresExistentes = new Set(state.mueblesGuardados.map((m) => m.nombre));
+    if (nombresExistentes.has(nuevoNombre)) {
+      let index = 2;
+      while (nombresExistentes.has(`${baseNombre}_Copia ${index}`)) {
+        index++;
+      }
+      nuevoNombre = `${baseNombre}_Copia ${index}`;
+    }
+
+    const nuevoId = `mueble_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
+    
+    // Clonar instancias en profundidad
+    const rawInst = original.instancias || {};
+    const clonInstancias: Record<string, ObjetoInstancia3BF> = {};
+    for (const [k, v] of Object.entries(rawInst)) {
+      clonInstancias[k] = {
+        ...v,
+        posicion: Array.isArray(v.posicion) ? [...v.posicion] : [0, 0, 0],
+        rotacion: Array.isArray(v.rotacion) ? [...v.rotacion] : [0, 0, 0],
+        parametros: { ...(v.parametros || {}) },
+      };
+    }
+
+    const muebleDuplicado: MuebleGuardadoItem = {
+      ...original,
+      id: nuevoId,
+      nombre: nuevoNombre,
+      fechaGuardado: new Date().toISOString(),
+      instancias: clonInstancias,
+      fichaConfig: original.fichaConfig ? JSON.parse(JSON.stringify(original.fichaConfig)) : undefined,
+    };
+
+    set((s) => ({
+      mueblesGuardados: [muebleDuplicado, ...s.mueblesGuardados],
+    }));
+
+    try {
+      await fetch("/api/drive/muebles", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "save_furniture", furniture: muebleDuplicado }),
+      });
+    } catch (err) {
+      console.warn("Mueble duplicado persistido en local:", err);
+    }
+
+    return nuevoId;
+  },
+
   abrirMueble: async (mueble: MuebleGuardadoItem) => {
     if (!mueble || !mueble.instancias) return;
 
@@ -3549,7 +3611,7 @@ export const use3BFStore = create<State3BF>((set, get) => ({
     set({ falApiKey });
   },
   bibliotecaPrompts: PROMPTS_INICIALES_DEFECTO,
-  promptActivoRender: PROMPTS_INICIALES_DEFECTO[0].prompt,
+  promptActivoRender: "",
   setPromptActivoRender: (promptActivoRender) => set({ promptActivoRender }),
   motorSeleccionadoRender: "fal_nano_banana_2",
   setMotorSeleccionadoRender: (motorSeleccionadoRender) => set({ motorSeleccionadoRender }),

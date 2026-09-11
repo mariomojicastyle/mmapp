@@ -7,7 +7,7 @@ import { use3BFStore, ObjetoInstancia3BF, MaterialPBRDef, DEFAULT_HDRI_CONFIG } 
 import * as THREE from "three";
 import * as BufferGeometryUtils from "three/examples/jsm/utils/BufferGeometryUtils.js";
 import { RGBELoader } from "three/examples/jsm/loaders/RGBELoader.js";
-import { Download, Save, Zap, Trash2, CheckCircle2, AlertCircle, Loader2, Sun, Lamp, Sparkles, Smartphone, Square } from "lucide-react";
+import { Download, Save, Zap, Trash2, CheckCircle2, AlertCircle, AlertTriangle, X, Loader2, Sun, Lamp, Sparkles, Smartphone, Square, Eye, EyeOff } from "lucide-react";
 import NPanel from "./NPanel";
 import { GHXAutoWatcher } from "./GHXAutoWatcher";
 import { generarEntornoEquirectangularLocal } from "./ShaderBallViewer";
@@ -89,10 +89,48 @@ function useMaterialPBRMaps(materialPBR?: MaterialPBRDef | null, fallbackUrl?: s
 }
 
 function obtenerNombreUnificadoPieza(obj: THREE.Object3D): string {
-  const meshName = (obj.name || "").replace(/^RH_OUT:/i, "").trim();
+  const rawMeshName = (obj as any).userData?.cleanName || (obj as any).userData?.rawName || obj.name || "";
+  const meshName = rawMeshName.replace(/^RH_OUT:/i, "").trim();
   const parentName = obj.parent ? obj.parent.name : "";
   const meshNameLower = meshName.toLowerCase();
   const parentNameLower = parentName.toLowerCase();
+
+  // 0. Si es un herraje (o hijo del grupo Herrajes), conservar íntegramente el nombre original de Grasshopper
+  const isHardware = 
+    Boolean((obj as any).userData?.isHardware) ||
+    parentNameLower === "herrajes" ||
+    parentNameLower.includes("herraje") ||
+    ((
+      meshNameLower.includes("perno") ||
+      meshNameLower.includes("caja") ||
+      meshNameLower.includes("tarugo") ||
+      meshNameLower.includes("cavilha") ||
+      meshNameLower.includes("clavilha") ||
+      meshNameLower.includes("tornillo") ||
+      meshNameLower.includes("parafuso") ||
+      meshNameLower.includes("soporte") ||
+      meshNameLower.includes("corredera") ||
+      meshNameLower.includes("corredi") ||
+      meshNameLower.includes("cantoneira") ||
+      meshNameLower.includes("angulo") ||
+      meshNameLower.includes("esquinero") ||
+      meshNameLower.includes("bisagra") ||
+      meshNameLower.includes("dobradiça") ||
+      meshNameLower.includes("dobradi") ||
+      meshNameLower.includes("puxador") ||
+      meshNameLower.includes("manija") ||
+      meshNameLower.includes("pes") ||
+      meshNameLower.includes("pés") ||
+      meshNameLower.includes("pata") ||
+      meshNameLower.includes("pie") ||
+      meshNameLower.includes("porca") ||
+      meshNameLower.includes("tuerca")
+    ) && !meshNameLower.includes("cajon") && !meshNameLower.includes("cajón"));
+
+  if (isHardware && meshName) {
+    // 🔩 Retornar exactamente el nombre que viene de Grasshopper (ej. "Parafuso A", "Parafuso B", "Corrediça")
+    return meshName;
+  }
 
   // 1. Detección de Peça X o PK X (ej. Peça 6, Peça 6 B, MDP Peça 10, Color Peça 10 -> "Peça 10" o "PK10")
   const matchPK = meshName.match(/pk\s*(\d+)/i);
@@ -122,33 +160,11 @@ function obtenerNombreUnificadoPieza(obj: THREE.Object3D): string {
     return "MDF";
   }
 
-  // 3. Herrajes
-  if (meshNameLower.includes("caja")) {
-    return "Caja Minifix";
-  }
-  if (meshNameLower.includes("perno")) {
-    return "Perno Minifix";
-  }
-  if (meshNameLower.includes("tarugo") || meshNameLower.includes("cavilha") || meshNameLower.includes("clavilha")) {
-    return "Tarugo";
-  }
-  if (meshNameLower.includes("tornillo") || meshNameLower.includes("parafuso")) {
-    return "Tornillo";
-  }
-  if (meshNameLower.includes("pes") || meshNameLower.includes("pata")) {
-    return "Pata";
-  }
-  if (meshNameLower.includes("corredi") || meshNameLower.includes("corredera")) {
-    return "Corredera Telescópica";
-  }
-  if (meshNameLower.includes("cantoneira") || meshNameLower.includes("angulo") || meshNameLower.includes("esquinero")) {
-    return "Cantonera Metálica";
-  }
   if (meshNameLower.includes("maquinado")) {
     return "Maquinado CNC";
   }
 
-  // Limpiar sufijos B o índices secundarios
+  // Limpiar sufijos B o índices secundarios solo para tableros
   return meshName.replace(/\s*[_\-]?\s*[bB]$/, "").replace(/\.\d+$/, "").trim();
 }
 
@@ -330,6 +346,7 @@ function BoardMesh({
   uvs: grasshopperUvs,
   tipoMapeado,
   instanciaId,
+  esDuplicado = false,
 }: {
   position: [number, number, number];
   size: [number, number, number];
@@ -341,6 +358,7 @@ function BoardMesh({
   uvs?: number[];
   tipoMapeado?: string;
   instanciaId?: string;
+  esDuplicado?: boolean;
 }) {
   const { calibracion, objetoSeleccionado, setHoveredPiece, coloresApariencia, capas, materialesPBR, asignacionesPartes } = use3BFStore();
 
@@ -591,7 +609,15 @@ function BoardMesh({
   let transparent = isTransparent || opacity < 0.99;
   let depthWrite = !transparent || opacity >= 0.95;
 
-  if (isHardwareCorredera) {
+  if (esDuplicado) {
+    // 🔴 Malla duplicada detectada: resplandor rojo intenso para diagnóstico visual
+    meshColor = "#EF4444";
+    metalness = 0.3;
+    roughness = 0.25;
+    opacity = 0.95;
+    transparent = false;
+    depthWrite = true;
+  } else if (isHardwareCorredera) {
     meshColor = coloresApariencia.colorHerrajes || "#E2E8F0";
     metalness = 0.92;
     roughness = 0.18;
@@ -736,6 +762,8 @@ function BoardMesh({
     return (
       <mesh 
         position={position}
+        scale={esDuplicado ? [1.06, 1.06, 1.06] : undefined}
+        renderOrder={esDuplicado ? 20 : undefined}
         name={cleanName}
         geometry={customGeometry}
         userData={{ 
@@ -752,13 +780,18 @@ function BoardMesh({
           isHardwarePerno,
           isHardwareCaja,
           isBalance,
-          isMdpExpuesto
+          isMdpExpuesto,
+          esDuplicado,
+          cleanName,
+          rawName: name
         }}
       >
         <meshStandardMaterial
-          key={`${activeMap ? (activeMap as any).uuid : "no-map"}-${modoVisual}-${nombreMaterialEfectivo}-${finalMeshColor}-${opacity}-${roughness}-${metalness}`}
-          name={nombreMaterialEfectivo}
-          color={finalMeshColor}
+          key={`${activeMap ? (activeMap as any).uuid : "no-map"}-${modoVisual}-${nombreMaterialEfectivo}-${finalMeshColor}-${opacity}-${roughness}-${metalness}-${esDuplicado}`}
+          name={esDuplicado ? "Material_Duplicado_Alerta" : nombreMaterialEfectivo}
+          color={esDuplicado ? "#EF4444" : finalMeshColor}
+          emissive={esDuplicado ? new THREE.Color("#DC2626") : undefined}
+          emissiveIntensity={esDuplicado ? 0.45 : 0}
           map={activeMap}
           normalMap={activeNormal}
           normalScale={activeNormal ? new THREE.Vector2(normalScaleVal, normalScaleVal) : undefined}
@@ -778,11 +811,11 @@ function BoardMesh({
           <Edges
             geometry={customGeometry || undefined}
             threshold={calibracion.thresholdAristas || 25}
-            color={calibracion.colorAristas || "#111827"}
+            color={esDuplicado ? "#991B1B" : (calibracion.colorAristas || "#111827")}
             opacity={calibracion.opacidadAristas ?? 1.0}
             transparent={(calibracion.opacidadAristas ?? 1.0) < 0.99}
-            lineWidth={Math.max(1, ((calibracion.calibreAristas ?? 100) / 100) * 1.5)}
-            renderOrder={10}
+            lineWidth={esDuplicado ? 2.5 : Math.max(1, ((calibracion.calibreAristas ?? 100) / 100) * 1.5)}
+            renderOrder={esDuplicado ? 25 : 10}
           />
         )}
       </mesh>
@@ -792,6 +825,8 @@ function BoardMesh({
   return (
     <mesh
       position={position}
+      scale={esDuplicado ? [1.06, 1.06, 1.06] : undefined}
+      renderOrder={esDuplicado ? 20 : undefined}
       name={cleanName}
       userData={{ 
         instanciaId,
@@ -807,14 +842,19 @@ function BoardMesh({
         isHardwarePerno,
         isHardwareCaja,
         isBalance,
-        isMdpExpuesto
+        isMdpExpuesto,
+        esDuplicado,
+        cleanName,
+        rawName: name
       }}
     >
       <boxGeometry args={size} />
       <meshStandardMaterial
-        key={`${activeMap ? (activeMap as any).uuid : "no-map"}-${modoVisual}-${nombreMaterialEfectivo}-${finalMeshColor}-${opacity}-${roughness}-${metalness}`}
-        name={nombreMaterialEfectivo}
-        color={finalMeshColor}
+        key={`${activeMap ? (activeMap as any).uuid : "no-map"}-${modoVisual}-${nombreMaterialEfectivo}-${finalMeshColor}-${opacity}-${roughness}-${metalness}-${esDuplicado}`}
+        name={esDuplicado ? "Material_Duplicado_Alerta" : nombreMaterialEfectivo}
+        color={esDuplicado ? "#EF4444" : finalMeshColor}
+        emissive={esDuplicado ? new THREE.Color("#DC2626") : undefined}
+        emissiveIntensity={esDuplicado ? 0.45 : 0}
         map={activeMap}
         normalMap={activeNormal}
         normalScale={activeNormal ? new THREE.Vector2(normalScaleVal, normalScaleVal) : undefined}
@@ -832,11 +872,11 @@ function BoardMesh({
       {debeMostrarAristas && (
         <Edges
           threshold={calibracion.thresholdAristas || 25}
-          color={calibracion.colorAristas || "#111827"}
+          color={esDuplicado ? "#991B1B" : (calibracion.colorAristas || "#111827")}
           opacity={calibracion.opacidadAristas ?? 1.0}
           transparent={(calibracion.opacidadAristas ?? 1.0) < 0.99}
-          lineWidth={Math.max(1, ((calibracion.calibreAristas ?? 100) / 100) * 1.5)}
-          renderOrder={10}
+          lineWidth={esDuplicado ? 2.5 : Math.max(1, ((calibracion.calibreAristas ?? 100) / 100) * 1.5)}
+          renderOrder={esDuplicado ? 25 : 10}
         />
       )}
     </mesh>
@@ -1627,11 +1667,13 @@ function TransformSnappingController() {
 function SingleFurnitureInstanceMesh({ 
   inst, 
   isSelected, 
-  setFurnitureGroup 
+  setFurnitureGroup,
+  mostrarDuplicadosRojos = true,
 }: { 
   inst: ObjetoInstancia3BF; 
   isSelected: boolean; 
   setFurnitureGroup?: (g: THREE.Group | null) => void;
+  mostrarDuplicadosRojos?: boolean;
 }) {
   const { modoVisual, posicionObjeto, modoTransformacion } = use3BFStore();
   const meshRef = useRef<THREE.Group>(null);
@@ -1665,7 +1707,43 @@ function SingleFurnitureInstanceMesh({
   const parentBoardGroupName = isModelCubierta ? "Cubierta" : "Tableros";
   const mainColor = inst.parametros.color_acabado || "#0088aa";
 
-  const cleanRealMeshes = inst.resultado.real_meshes;
+  // 🛡️ Deduplicador espacial defensivo en visor (Three.js): marca duplicados para resaltado en rojo
+  const rawMeshes = inst.resultado.real_meshes;
+  const cleanRealMeshes: any[] = [];
+  if (rawMeshes.length <= 1) {
+    cleanRealMeshes.push(...rawMeshes);
+  } else {
+    for (const m of rawMeshes) {
+      if (m.es_duplicado_ghx) {
+        if (mostrarDuplicadosRojos) {
+          cleanRealMeshes.push(m);
+        }
+        continue;
+      }
+      const mName = (m.name || "").replace(/^RH_OUT:/i, "").trim().toLowerCase();
+      const mPos = m.position || [0, 0, 0];
+      const mSize = m.size || [0, 0, 0];
+
+      const isDup = cleanRealMeshes.some((u) => {
+        const uName = (u.name || "").replace(/^RH_OUT:/i, "").trim().toLowerCase();
+        if (mName !== uName) return false;
+        const uPos = u.position || [0, 0, 0];
+        const uSize = u.size || [0, 0, 0];
+
+        const dPos = Math.hypot(mPos[0] - uPos[0], mPos[1] - uPos[1], mPos[2] - uPos[2]);
+        const dSize = Math.hypot(mSize[0] - uSize[0], mSize[1] - uSize[1], mSize[2] - uSize[2]);
+        return dPos < 0.0005 && dSize < 0.0005;
+      });
+
+      if (isDup) {
+        if (mostrarDuplicadosRojos) {
+          cleanRealMeshes.push({ ...m, es_duplicado_ghx: true });
+        }
+      } else {
+        cleanRealMeshes.push(m);
+      }
+    }
+  }
 
   const hasTexturedMeshes = cleanRealMeshes.some((m: any) => {
     const n = m.name.toLowerCase();
@@ -1763,6 +1841,7 @@ function SingleFurnitureInstanceMesh({
               indices={m.indices}
               uvs={m.uvs}
               tipoMapeado={m.name.includes("Cubierta") ? inst.parametros.tipo_mapeado_cubierta : inst.parametros.tipo_mapeado_entrepanio}
+              esDuplicado={Boolean(m.es_duplicado_ghx)}
             />
           ))}
         </group>
@@ -1783,6 +1862,7 @@ function SingleFurnitureInstanceMesh({
               indices={m.indices}
               uvs={m.uvs}
               tipoMapeado={m.name.includes("Cubierta") ? inst.parametros.tipo_mapeado_cubierta : inst.parametros.tipo_mapeado_entrepanio}
+              esDuplicado={Boolean(m.es_duplicado_ghx)}
             />
           ))}
         </group>
@@ -1803,6 +1883,7 @@ function SingleFurnitureInstanceMesh({
               indices={m.indices}
               uvs={m.uvs}
               tipoMapeado={m.name.includes("Cubierta") ? inst.parametros.tipo_mapeado_cubierta : inst.parametros.tipo_mapeado_entrepanio}
+              esDuplicado={Boolean(m.es_duplicado_ghx)}
             />
           ))}
         </group>
@@ -1823,6 +1904,7 @@ function SingleFurnitureInstanceMesh({
               indices={m.indices}
               uvs={m.uvs}
               tipoMapeado={m.name.includes("Cubierta") ? inst.parametros.tipo_mapeado_cubierta : inst.parametros.tipo_mapeado_entrepanio}
+              esDuplicado={Boolean(m.es_duplicado_ghx)}
             />
           ))}
         </group>
@@ -1831,7 +1913,13 @@ function SingleFurnitureInstanceMesh({
   );
 }
 
-function ParametricFurnitureMesh({ setFurnitureGroup }: { setFurnitureGroup: (g: THREE.Group | null) => void }) {
+function ParametricFurnitureMesh({ 
+  setFurnitureGroup,
+  mostrarDuplicadosRojos = true,
+}: { 
+  setFurnitureGroup: (g: THREE.Group | null) => void;
+  mostrarDuplicadosRojos?: boolean;
+}) {
   const { instancias, objetoActivoId, parametros, resultado } = use3BFStore();
 
   const listaInstancias = Object.values(instancias);
@@ -1845,6 +1933,7 @@ function ParametricFurnitureMesh({ setFurnitureGroup }: { setFurnitureGroup: (g:
             inst={inst}
             isSelected={inst.id === objetoActivoId}
             setFurnitureGroup={inst.id === objetoActivoId ? setFurnitureGroup : undefined}
+            mostrarDuplicadosRojos={mostrarDuplicadosRojos}
           />
         ))}
       </>
@@ -1873,6 +1962,7 @@ function ParametricFurnitureMesh({ setFurnitureGroup }: { setFurnitureGroup: (g:
       inst={legacyInst}
       isSelected={true}
       setFurnitureGroup={setFurnitureGroup}
+      mostrarDuplicadosRojos={mostrarDuplicadosRojos}
     />
   );
 }
@@ -2377,10 +2467,13 @@ export default function Viewer3D() {
     guardandoMueble,
     recargarDefinicionInstancia,
     workerStatus,
+    cargando,
     toggleGizmosLuces,
     mostrarMarcoEncuadre,
     toggleMarcoEncuadre,
   } = use3BFStore();
+
+  const estaSincronizando = Boolean(cargando || (objetoActivoId && instancias[objetoActivoId]?.cargando));
 
   const [furnitureGroup, setFurnitureGroup] = React.useState<THREE.Group | null>(null);
   const [exportandoGLB, setExportandoGLB] = React.useState(false);
@@ -2401,6 +2494,23 @@ export default function Viewer3D() {
   });
   const containerRef = useRef<HTMLDivElement>(null);
   const [isMobile, setIsMobile] = React.useState(false);
+  const [alertaDuplicadosDescartada, setAlertaDuplicadosDescartada] = React.useState(false);
+  const [mostrarDuplicadosRojos, setMostrarDuplicadosRojos] = React.useState(true);
+
+  const resultadoEfectivo = (objetoActivoId && instancias[objetoActivoId]?.resultado) || resultado;
+
+  // Reiniciar estado de alerta y visualización roja cuando llegue un nuevo cómputo con duplicados
+  React.useEffect(() => {
+    if (resultadoEfectivo?.mallas_duplicadas_detectadas && Object.keys(resultadoEfectivo.mallas_duplicadas_detectadas).length > 0) {
+      setAlertaDuplicadosDescartada(false);
+      setMostrarDuplicadosRojos(true);
+    }
+  }, [resultadoEfectivo]);
+
+  const mallasDuplicadasWorker = resultadoEfectivo?.mallas_duplicadas_detectadas;
+  const tieneDuplicadosWorker = Boolean(
+    mallasDuplicadasWorker && Object.keys(mallasDuplicadasWorker).length > 0
+  );
 
   React.useEffect(() => {
     const checkMobile = () => {
@@ -2669,6 +2779,11 @@ export default function Viewer3D() {
           }
         }
 
+        // 🛡️ Omitir mallas duplicadas de Grasshopper marcadas para inspección visual
+        if (mesh.userData?.esDuplicado) {
+          return;
+        }
+
         if (!mesh.geometry || !mesh.geometry.attributes.position || mesh.geometry.attributes.position.count === 0) {
           return;
         }
@@ -2724,13 +2839,18 @@ export default function Viewer3D() {
         .replace(/^RH_OUT:/i, "")
         .trim();
 
+      // Si es un herraje (tornillo, parafuso, cavilha, etc.), conservar su nombre íntegro original de Grasshopper
+      if (isHardwareMesh(clean)) {
+        return clean;
+      }
+
       // 1. Quitar prefijos de material, sustrato o capas
       clean = clean
         .replace(/^(MDP|MDF|HDF|Compensado|Aglomerado|Melamina|Tablero|Madera|Fondo|Fundo|Canto|Borde)\s+/i, "")
         .replace(/^(Color|Balance|Back|Cara|Reverso|Nucleo|Sustrato)\s+/i, "")
         .trim();
 
-      // 2. Quitar sufijos técnicos de capas y duplicaciones
+      // 2. Quitar sufijos técnicos de capas y duplicaciones de piezas
       clean = clean
         .replace(/(_Color|_MDP|_MDF|_Balance|_Back|_Cara|_Nucleo|_B|-Color|-MDP|-MDF|-Balance|-Back|-B)$/i, "")
         .replace(/(\s+Color|\s+MDP|\s+MDF|\s+Balance|\s+Back|\s+B)$/i, "")
@@ -2997,6 +3117,29 @@ export default function Viewer3D() {
         const subItem: PreparedSubMesh = { geo: islandGeo, mat: cleanMat, box, center };
 
         if (isHw) {
+          // 🛡️ Deduplicador espacial de herrajes: Evita clones superpuestos al 100% de Grasshopper
+          const curSize = new THREE.Vector3();
+          box.getSize(curSize);
+
+          const isDuplicateHw = hardwareItems.some((existing) => {
+            if (existing.baseName !== cleanPieceKey) return false;
+            if (existing.sub.center.distanceTo(center) > 0.0005) return false;
+            const exSize = new THREE.Vector3();
+            existing.sub.box.getSize(exSize);
+            return (
+              Math.abs(exSize.x - curSize.x) < 0.0005 &&
+              Math.abs(exSize.y - curSize.y) < 0.0005 &&
+              Math.abs(exSize.z - curSize.z) < 0.0005
+            );
+          });
+
+          if (isDuplicateHw) {
+            console.warn(
+              `[3dBimFab Deduplicador] 🛡️ Herraje duplicado descartado para GLB: '${cleanPieceKey}' en (${center.x.toFixed(4)}, ${center.y.toFixed(4)}, ${center.z.toFixed(4)})`
+            );
+            continue;
+          }
+
           hardwareItems.push({
             baseName: cleanPieceKey,
             sub: subItem
@@ -3005,7 +3148,31 @@ export default function Viewer3D() {
           if (!rawBoardSubMeshes.has(cleanPieceKey)) {
             rawBoardSubMeshes.set(cleanPieceKey, []);
           }
-          rawBoardSubMeshes.get(cleanPieceKey)!.push(subItem);
+          const existingList = rawBoardSubMeshes.get(cleanPieceKey)!;
+
+          // 🛡️ Deduplicador de sub-mallas de tablero superpuestas idénticas
+          const curSize = new THREE.Vector3();
+          box.getSize(curSize);
+          const isDuplicateBoard = existingList.some((existing) => {
+            if (existing.center.distanceTo(center) > 0.0005) return false;
+            const exSize = new THREE.Vector3();
+            existing.box.getSize(exSize);
+            const sameBox = (
+              Math.abs(exSize.x - curSize.x) < 0.0005 &&
+              Math.abs(exSize.y - curSize.y) < 0.0005 &&
+              Math.abs(exSize.z - curSize.z) < 0.0005
+            );
+            return sameBox && existing.mat === cleanMat;
+          });
+
+          if (isDuplicateBoard) {
+            console.warn(
+              `[3dBimFab Deduplicador] 🛡️ Capa de tablero duplicada descartada para GLB: '${cleanPieceKey}'`
+            );
+            continue;
+          }
+
+          existingList.push(subItem);
         }
       }
     }
@@ -3486,7 +3653,7 @@ export default function Viewer3D() {
             top: `${mousePos.y + 15}px`,
             borderColor: parametros.color_acabado || "#0088aa"
           }}
-          className="absolute border-2 bg-slate-900/80 dark:bg-[#0D1117]/80 backdrop-blur-md text-white text-xs px-4 py-1.5 rounded-xl font-sans font-bold shadow-lg z-20 pointer-events-none transition-all duration-75 text-center min-w-[80px]"
+          className="absolute border-2 bg-slate-900/90 dark:bg-[#131B2E]/95 backdrop-blur-md text-white text-xs px-3.5 py-1 rounded-full font-sans font-bold shadow-lg z-20 pointer-events-none transition-all duration-75 text-center min-w-[70px] select-none"
         >
           {hoveredPiece}
         </div>
@@ -3517,7 +3684,7 @@ export default function Viewer3D() {
       )}
 
       {/* 🧭 HUD SUPERIOR IZQUIERDO: JERARQUÍA BOTONES + (N) COMPONENTES + LISTA DE PIEZAS */}
-      <div className="absolute top-3.5 left-4 z-20 flex flex-col items-start gap-1 select-none pointer-events-auto max-w-[260px]">
+      <div className="absolute top-3.5 left-4 z-20 flex flex-col items-start gap-1 select-none pointer-events-auto max-w-[calc(100vw-32px)] lg:max-w-[260px]">
         {/* Nivel 1: Barra de Acciones Superior (Guardar + Perforar + Luz + Marco 1:1) */}
         <div className="flex items-center gap-1.5 flex-wrap">
           {/* Botón Guardar (Guardar nuevo o Guardar Cambios en caliente) */}
@@ -3537,9 +3704,9 @@ export default function Viewer3D() {
               backgroundColor: coloresApariencia?.botonActivo || "#0891b2",
               borderColor: coloresApariencia?.colorMarca || "#0891b2",
             }}
-            className="px-2.5 lg:px-3 h-5.5 lg:h-7 rounded-full text-white shadow-md border flex items-center gap-1.5 text-[10px] lg:text-xs font-bold leading-none hover:opacity-90 active:scale-95 transition-all cursor-pointer disabled:opacity-50 box-border"
+            className="px-3.5 lg:px-3 h-8 lg:h-7 rounded-full text-white shadow-md border flex items-center gap-1.5 text-xs lg:text-xs font-bold leading-none hover:opacity-90 active:scale-95 transition-all cursor-pointer disabled:opacity-50 box-border"
           >
-            <Save className={`w-2.5 lg:w-3.5 h-2.5 lg:h-3.5 text-white ${guardandoMueble ? "animate-spin" : ""}`} />
+            <Save className={`w-3.5 lg:w-3.5 h-3.5 lg:h-3.5 text-white ${guardandoMueble ? "animate-spin" : ""}`} />
             <span>{guardandoMueble ? "Guardando..." : "Guardar"}</span>
           </button>
 
@@ -3554,7 +3721,7 @@ export default function Viewer3D() {
               backgroundColor: coloresApariencia?.botonActivo || "#0891b2",
               borderColor: coloresApariencia?.colorMarca || "#0891b2",
             }}
-            className="px-2.5 lg:px-3 h-5.5 lg:h-7 rounded-full text-white shadow-md border flex items-center gap-1.5 text-[10px] lg:text-xs font-bold leading-none hover:opacity-90 active:scale-95 transition-all cursor-pointer disabled:opacity-50 box-border"
+            className="px-3.5 lg:px-3 h-8 lg:h-7 rounded-full text-white shadow-md border flex items-center gap-1.5 text-xs lg:text-xs font-bold leading-none hover:opacity-90 active:scale-95 transition-all cursor-pointer disabled:opacity-50 box-border"
           >
             <span>
               {mecanizadoEnProgreso 
@@ -3574,9 +3741,9 @@ export default function Viewer3D() {
                 backgroundColor: coloresApariencia?.fondoPaneles || "#FFFFFF",
                 borderColor: coloresApariencia?.bordePaneles || "#CBD5E1",
               }}
-              className="w-5.5 lg:w-7 h-5.5 lg:h-7 rounded-full shadow-md border flex items-center justify-center text-red-500 hover:bg-red-50 hover:border-red-400 active:scale-95 transition-all cursor-pointer box-border shrink-0"
+              className="w-8 lg:w-7 h-8 lg:h-7 rounded-full shadow-md border flex items-center justify-center text-red-500 hover:bg-red-50 hover:border-red-400 active:scale-95 transition-all cursor-pointer box-border shrink-0"
             >
-              <Trash2 className="w-2.5 lg:w-3.5 h-2.5 lg:h-3.5" />
+              <Trash2 className="w-3.5 lg:w-3.5 h-3.5 lg:h-3.5" />
             </button>
           )}
 
@@ -3588,11 +3755,11 @@ export default function Viewer3D() {
               backgroundColor: coloresApariencia?.botonActivo || "#0891b2",
               borderColor: coloresApariencia?.colorMarca || "#0891b2",
             }}
-            className="w-5.5 lg:w-7 h-5.5 lg:h-7 rounded-full text-white shadow-md border flex items-center justify-center hover:opacity-90 active:scale-95 transition-all cursor-pointer box-border shrink-0"
+            className="w-8 lg:w-7 h-8 lg:h-7 rounded-full text-white shadow-md border flex items-center justify-center hover:opacity-90 active:scale-95 transition-all cursor-pointer box-border shrink-0"
           >
             <Sun 
-              strokeWidth={2.8}
-              className={`w-3 lg:w-4 h-3 lg:h-4 text-white shrink-0 ${calibracion.mostrarGizmosLuces ? "opacity-100" : "opacity-90"}`} 
+              strokeWidth={2}
+              className={`w-4 lg:w-4 h-4 lg:h-4 text-white shrink-0 ${calibracion.mostrarGizmosLuces ? "opacity-100" : "opacity-90"}`} 
             />
           </button>
 
@@ -3604,11 +3771,11 @@ export default function Viewer3D() {
               backgroundColor: coloresApariencia?.botonActivo || "#0891b2",
               borderColor: coloresApariencia?.colorMarca || "#0891b2",
             }}
-            className="w-5.5 lg:w-7 h-5.5 lg:h-7 rounded-full text-white shadow-md border flex items-center justify-center hover:opacity-90 active:scale-95 transition-all cursor-pointer box-border shrink-0"
+            className="w-8 lg:w-7 h-8 lg:h-7 rounded-full text-white shadow-md border flex items-center justify-center hover:opacity-90 active:scale-95 transition-all cursor-pointer box-border shrink-0"
           >
             <Square 
-              strokeWidth={2.8}
-              className={`w-3 lg:w-4 h-3 lg:h-4 text-white shrink-0 ${mostrarMarcoEncuadre ? "opacity-100 fill-white/25" : "opacity-90"}`} 
+              strokeWidth={2}
+              className={`w-3.5 lg:w-4 h-3.5 lg:h-4 text-white shrink-0 ${mostrarMarcoEncuadre ? "opacity-100 fill-white/25" : "opacity-90"}`} 
             />
           </button>
         </div>
@@ -3753,6 +3920,114 @@ export default function Viewer3D() {
         </div>
       </div>
 
+      {/* 🛡️ Alerta DfMA Shield: Detección, Resaltado en Rojo y Purga de Mallas Duplicadas en GHX */}
+      {!alertaDuplicadosDescartada && tieneDuplicadosWorker && mallasDuplicadasWorker && (() => {
+        const isDark = tema === "obsidian";
+        return (
+          <div className="absolute top-3.5 left-1/2 -translate-x-1/2 z-30 pointer-events-auto max-w-[94vw] sm:max-w-2xl animate-in fade-in slide-in-from-top-3 duration-300">
+            <div 
+              style={{
+                backgroundColor: isDark ? "#131B2E" : "#FFFFFF",
+                borderColor: isDark ? "rgba(239, 68, 68, 0.55)" : "rgba(239, 68, 68, 0.45)",
+                boxShadow: isDark 
+                  ? "0 10px 25px -5px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(239, 68, 68, 0.25)"
+                  : "0 10px 25px -5px rgba(0, 0, 0, 0.08), 0 0 0 1px rgba(239, 68, 68, 0.2)",
+              }}
+              className="flex items-center gap-2 sm:gap-3 px-3.5 py-1.5 sm:px-4 sm:py-2 rounded-full border select-none"
+            >
+              <div className="flex items-center justify-center w-6 h-6 rounded-full bg-red-500/20 text-red-500 shrink-0">
+                <AlertTriangle className="w-3.5 h-3.5 animate-pulse" />
+              </div>
+
+              <div className="text-[11px] leading-tight flex-1 min-w-0">
+                <span 
+                  style={{ color: isDark ? "#F87171" : "#DC2626" }}
+                  className="font-bold mr-1.5 whitespace-nowrap"
+                >
+                  [DfMA Shield] Duplicados detectados:
+                </span>
+                <span 
+                  style={{ color: isDark ? "#F8FAFC" : "#0F172A" }}
+                  className="font-mono font-bold tracking-tight"
+                >
+                  {Object.entries(mallasDuplicadasWorker)
+                    .map(([nombre, cant]) => `${nombre} (×${cant})`)
+                    .join(", ")}
+                </span>
+                <span 
+                  style={{ color: isDark ? "#94A3B8" : "#64748B" }}
+                  className="hidden md:inline ml-2 text-[10px]"
+                >
+                  — {mostrarDuplicadosRojos ? "Resaltados en rojo en el visor 3D." : "Ocultados del visor 3D."}
+                </span>
+              </div>
+
+              {/* Botón Píldora: Alternar visualización roja */}
+              <button
+                type="button"
+                onClick={() => setMostrarDuplicadosRojos(!mostrarDuplicadosRojos)}
+                style={{
+                  backgroundColor: mostrarDuplicadosRojos 
+                    ? (isDark ? "rgba(239, 68, 68, 0.25)" : "#FEE2E2")
+                    : (isDark ? "rgba(255, 255, 255, 0.08)" : "#F1F5F9"),
+                  color: mostrarDuplicadosRojos
+                    ? (isDark ? "#FCA5A5" : "#B91C1C")
+                    : (isDark ? "#94A3B8" : "#64748B"),
+                  borderColor: mostrarDuplicadosRojos
+                    ? (isDark ? "rgba(239, 68, 68, 0.5)" : "rgba(239, 68, 68, 0.35)")
+                    : (isDark ? "rgba(255, 255, 255, 0.15)" : "rgba(0, 0, 0, 0.1)"),
+                }}
+                className="px-2.5 py-1 rounded-full text-[10px] font-bold border flex items-center gap-1.5 transition-all hover:scale-105 cursor-pointer shrink-0"
+                title={mostrarDuplicadosRojos ? "Ocultar mallas duplicadas en el visor 3D" : "Mostrar mallas duplicadas en rojo para inspección"}
+              >
+                {mostrarDuplicadosRojos ? (
+                  <>
+                    <EyeOff className="w-3 h-3 text-red-500" />
+                    <span>Ocultar</span>
+                  </>
+                ) : (
+                  <>
+                    <Eye className="w-3 h-3" />
+                    <span>Ver en Rojo</span>
+                  </>
+                )}
+              </button>
+
+              {/* Botón Píldora: Purgar y cerrar */}
+              <button
+                type="button"
+                onClick={() => {
+                  setMostrarDuplicadosRojos(false);
+                  setAlertaDuplicadosDescartada(true);
+                }}
+                style={{
+                  backgroundColor: isDark ? "rgba(19, 104, 170, 0.25)" : "#E0F2FE",
+                  color: isDark ? "#93C5FD" : "#0369A1",
+                  borderColor: isDark ? "rgba(19, 104, 170, 0.45)" : "rgba(19, 104, 170, 0.3)",
+                }}
+                className="px-2.5 py-1 rounded-full text-[10px] font-bold border flex items-center gap-1 transition-all hover:scale-105 cursor-pointer shrink-0"
+                title="Purgar duplicados del visor y cerrar advertencia"
+              >
+                <span>Purgar</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setAlertaDuplicadosDescartada(true)}
+                style={{
+                  color: isDark ? "#94A3B8" : "#64748B",
+                }}
+                className="w-6 h-6 rounded-full flex items-center justify-center hover:bg-black/10 dark:hover:bg-white/10 transition-colors shrink-0 cursor-pointer"
+                title="Cerrar aviso"
+                aria-label="Cerrar aviso"
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
+            </div>
+          </div>
+        );
+      })()}
+
       <Canvas
         camera={{ position: [0.6, 0.9, 1.1], fov: 45, near: 0.005, far: 100 }}
         shadows
@@ -3774,7 +4049,10 @@ export default function Viewer3D() {
         
         {!escenarioLimpio && (
           <>
-            <ParametricFurnitureMesh setFurnitureGroup={setFurnitureGroup} />
+            <ParametricFurnitureMesh 
+              setFurnitureGroup={setFurnitureGroup} 
+              mostrarDuplicadosRojos={mostrarDuplicadosRojos} 
+            />
             <SnapPointMarkers furnitureGroup={furnitureGroup} />
             <GuidelineAxes />
             <TransformSnappingController />
@@ -3891,6 +4169,14 @@ export default function Viewer3D() {
           </div>
         )}
 
+        {/* ⚡ Testigo de Sincronización con intensidad de iluminación parpadeante (justo encima de Online) */}
+        {estaSincronizando && (
+          <div className="flex items-center gap-1.5 text-[9px] md:text-[10.5px] font-bold text-cyan-500 dark:text-cyan-400 animate-pulse pointer-events-auto tracking-wide">
+            <span className="w-1.5 h-1.5 rounded-full bg-cyan-500 dark:bg-cyan-400 shadow-[0_0_6px_rgba(6,182,212,0.8)] shrink-0" />
+            <span>Sincronizando...</span>
+          </div>
+        )}
+
         {/* Texto limpio del testigo alineado a la izquierda con el botón Guardar */}
         <div className="flex items-center gap-1 md:gap-1.5 text-[9px] md:text-[11px] font-semibold tracking-wide pointer-events-auto">
           <span style={{ color: coloresApariencia?.textoSecundario || (tema === "obsidian" ? "#94a3b8" : "#64748b") }}>
@@ -3910,7 +4196,7 @@ export default function Viewer3D() {
 
       {/* 📱 Esquina Inferior Derecha: Botones de Acción (AR en móviles, AR + Descargar GLB en desktop) */}
       <div className="absolute bottom-3 right-3 z-20 flex flex-col items-end gap-2 md:gap-2.5 pointer-events-auto">
-        {/* 📱 Botón Circular de Realidad Aumentada (Homologado con altura de Chevron / 28px) */}
+        {/* 📱 Botón Circular de Realidad Aumentada (Homologado con altura de Chevron / 28px en PC, 32px en Móvil) */}
         <button
           onClick={abrirRealidadAumentada}
           disabled={generandoAR || exportandoGLB}
@@ -3918,14 +4204,14 @@ export default function Viewer3D() {
             backgroundColor: coloresApariencia?.botonActivo || "#0891b2",
             borderColor: coloresApariencia?.colorMarca || "#0891b2",
           }}
-          className="w-5.5 lg:w-7 h-5.5 lg:h-7 rounded-full text-white shadow-md border flex items-center justify-center hover:opacity-90 active:scale-95 transition-all cursor-pointer disabled:opacity-50 box-border shrink-0"
+          className="w-8 lg:w-7 h-8 lg:h-7 rounded-full text-white shadow-md border flex items-center justify-center hover:opacity-90 active:scale-95 transition-all cursor-pointer disabled:opacity-50 box-border shrink-0"
           title="Experiencia AR (Realidad Aumentada 1:1)"
           aria-label="Experiencia AR"
         >
           {generandoAR ? (
-            <Loader2 className="w-3 lg:w-3.5 h-3 lg:h-3.5 text-white animate-spin" />
+            <Loader2 className="w-3.5 lg:w-3.5 h-3.5 lg:h-3.5 text-white animate-spin" />
           ) : (
-            <ViewInArIcon className="w-3.5 lg:w-4 h-3.5 lg:h-4 text-white" />
+            <ViewInArIcon className="w-4 lg:w-4 h-4 lg:h-4 text-white" />
           )}
         </button>
 

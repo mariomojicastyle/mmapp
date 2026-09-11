@@ -36,9 +36,9 @@ export default function LayerManagerPanel() {
   const [capaEnEdicionId, setCapaEnEdicionId] = useState<string | null>(null);
   const [nombreTemp, setNombreTemp] = useState("");
 
-  const capasFiltradas = capas.filter((c) => 
-    c.nombre.toLowerCase().includes(busqueda.toLowerCase())
-  );
+  const capasFiltradas = capas
+    .filter((c) => c.nombre.toLowerCase().includes(busqueda.toLowerCase()))
+    .sort((a, b) => a.nombre.localeCompare(b.nombre, "es", { sensitivity: "base" }));
 
   const handleCrearCapa = () => {
     const defaultMat = materialesPBR[0]?.id || "mat_acero";

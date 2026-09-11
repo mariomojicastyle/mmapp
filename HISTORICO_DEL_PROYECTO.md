@@ -2521,5 +2521,77 @@ Con esta batería de arreglos y la validación en caliente, la V20 se establece 
 - **Validación de Calidad**:
   * Compilación TypeScript verificada (`npx tsc --noEmit`) con 0 errores.
 
+---
+
+### 🚀 Hito 3BF_Fondos_y_Herrajes_Estables — Fijación Perimetral de Herrajes sobre Cara Trasera, Orientación DfMA de Malla MDF vs Color y Closed Breps 6 Caras en Materializer (09 de Septiembre, 2026)
+
+- **Corrección Geométrica de Herrajes Perimetrales (`3BF Costas v0.4`)**:
+  - Se detectó que las instancias de herrajes (`Prego`, `Parafuso E`, `Grampo`) se ubicaban en el plano medio interior del fondo ($Y = y_{plano}$), quedando sumergidas y ocluidas dentro de los 3 mm del tablero.
+  - Se ajustó el anclaje tridimensional desplazando los puntos de inserción hacia la cara exterior posterior del fondo ($Y = y_{min}$), asegurando que las cabezas de puntillas y tornillos reposen limpias y visibles en la vista trasera del mueble en WebGL.
+- **Closed Breps Sólidos de 6 Caras en `Materializer`**:
+  - Se garantizó que cada fondo emita un sólido cerrado de 6 caras independientes (`Pieza_1` a `Pieza_4`), evitando pérdidas de caras en los cortes y manteniendo intactos los mecanizados.
+- **Separador de Canales DfMA (`3BF Mesh Channel Separator v2.6 Fondos`)**:
+  - Orientación canónica de normales y coordenadas: se invirtió la asignación de caras en el eje de espesor $Y$ para que la cara frontal interior hacia el vano ($y_1$) corresponda al canal decorativo **`Color` (`Peça 15`)** y la cara posterior exterior hacia la pared ($y_0$) se asigne a **`MDF` (`MDF Peça 15`)**.
+  - Se eliminó la salida no utilizada `Balance` del componente Python para una interfaz de nodo 100% limpia.
+- **Sincronización Total en Visualizador WebGL**:
+  - Verificada la presencia y reactividad de los 4 fondos, 32 puntillas, 49 tornillos, 6 grapas y 2 perfiles H tanto en el desglose de capas como en el renderizado 3D en tiempo real.
+- **Orden Alfabético Canónico de Capas**:
+  - Se implementó ordenamiento alfabético estricto (`localeCompare` en español) tanto en el **Gestor de Capas** (`LayerManagerPanel.tsx`), en el selector de capas del **Desglose de Partes** (`PartBreakdownPanel.tsx`) y en la definición de `PRESET_CAPAS`, garantizando una lista perfectamente organizada de la A a la Z sin importar el orden de creación o carga.
+- **Optimización de Espacio en Modificador de Componentes (`ControlPanel.tsx`)**:
+  - Se eliminó la tarjeta redundante del nombre del componente (`instanciaActiva.nombreVisible`) que ocupaba altura en el panel lateral, ya que el nombre del mueble/archivo se visualiza y edita de forma estelar en el Header superior (`TopNav`) junto al logotipo de `3dBimFab`.
+  - Se trasladó el indicador `Sincronizando...` directamente a la barra de título del panel, otorgando más espacio vertical libre a los sliders y parámetros.
+- **Validación de Calidad**:
+  - Compilación TypeScript verificada (`npx tsc --noEmit`) con 0 errores.
+
+---
+
+### 🚀 Hito 3BF_Normalizacion_Botones_Movil_40pct — Calibración Proporcional de Botones Móviles (+40% Tamaño / 32px), Desahogo Visual de Íconos y Blindaje Inmutable de PC (10 de Septiembre, 2026)
+
+- **Calibración y Aumento de Tamaño (+40% / 32px) Exclusivo para Móviles (`Viewer3D.tsx`)**:
+  - **Botones Cápsula (`Guardar` y `Perforar`)**: Pasaron de la altura compacta móvil de 22px (`h-5.5`) a 32px (`h-8`), con padding horizontal generoso `px-3.5`, tipografía legible `text-xs` e íconos equilibrados de 14px (`w-3.5 h-3.5`).
+  - **Botones Circulares (`Luces`, `Encuadre 1:1`, `Limpiar Perforaciones` y `AR`)**: Normalizados a 32px de diámetro (`w-8 h-8 rounded-full`), incrementando su área táctil y ergonomía en pantallas táctiles.
+- **Normalización Proporcional de Íconos (Eliminación de Sensación de Desborde)**:
+  - **Botón Luces (`Sun`)**: Reducción del grosor de trazo excesivo (`strokeWidth={2}` en lugar de 2.8) con ícono de 16px (`w-4 h-4`), garantizando 8px de margen perimetral limpio y armónico sin que los rayos solares rocen el borde del círculo.
+  - **Botón Encuadre 1:1 (`Square`)**: Calibración de proporción geométrica (`w-3.5 h-3.5` / 14px con `strokeWidth={2}`), dejando holgura suficiente para que las esquinas a 45° no toquen la circunferencia exterior.
+  - **Botón de Realidad Aumentada (`AR` / `ViewInArIcon`)**: Ícono de cubo isométrico calibrado a 16px (`w-4 h-4`) dentro de la cápsula circular de 32px, eliminando el apiñamiento previo donde el ícono de 14px en círculo de 22px parecía desbordarse. Loader de espera ajustado a `w-3.5 h-3.5`.
+  - **Contenedor Responsivo HUD**: `max-w-[calc(100vw-32px)] lg:max-w-[260px]` para asegurar que los botones fluyan y se acomoden sin truncarse en smartphones de cualquier resolución.
+- **Blindaje Total e Inmutable de Interfaz de PC (Desktop)**:
+  - Todos los estilos y dimensiones de escritorio (prefijos `lg:`) se conservan 100% inalterados (`lg:h-7`, `lg:w-7`, `lg:px-3`, `lg:text-xs`, `lg:max-w-[260px]`).
+- **Validación de Calidad**:
+  - Compilación TypeScript verificada (`npx tsc --noEmit`) con 0 errores.
+
+---
+
+### 🚀 Hito 3BF_Mecanizador_v07_ListAccess_Porca_ParafusoA — Erradicación de Duplicación de Tornillos y Soporte Multi-Cilindro de Maquinado en Grasshopper (11 de Septiembre, 2026)
+
+- **Causa Raíz Diagnosticada**:
+  - En la definición `Comoda Ravenna.ghx`, el grupo `Porca Parafuso A x0,X1` contenía componentes `3BF Mecanizador` (índices `1224`, `1291` y `1885`) con la versión de script `v0.6` y el parámetro de entrada `Mecanizado_Nurbs` configurado con **Item Access** (`ScriptParamAccess = 0`).
+  - Al recibir una lista de 2 cilindros NURBS (brocas/fresados combinados), Grasshopper ejecutaba el componente completo 2 veces consecutivas, duplicando los 8 tornillos `Parafuso A` y las 8 tuercas `Porca` (generando 16 de cada uno).
+  - Al cambiar manualmente a **List Access** (`ScriptParamAccess = 1`), el script v0.6 solo tomaba `Mecanizado_Nurbs[idx]` (un único cilindro), perdiéndose el segundo maquinado por cada punto de inserción.
+- **Actualización a Motor v0.7 y Configuración List Access**:
+  - En `Comoda Ravenna.ghx`, se actualizaron los componentes `1224`, `1291` y `1885` cambiando `ScriptParamAccess = 1` (**List Access**) en el pin `Mecanizado_Nurbs`.
+  - Se inyectó en Base64 el script optimizado **v0.7 (Multi-Tornillería & Ensamble Completo)**, el cual normaliza `lista_mec` e itera sobre todos los cilindros presentes para cada punto de inserción (`for geom_mec in lista_mec:`), clonando la tuerca y el tornillo exactamente 1 vez por punto.
+  - Copia de respaldo de seguridad preservada en `Comoda Ravenna_pre_v07_mecanizado.ghx`.
+- **Validación de Cómputo Paramétrico en RhinoCompute 8**:
+  - Cómputo ejecutado directamente en `http://127.0.0.1:5000/grasshopper` con resolución exitosa (HTTP 200 en 20.76s).
+  - Verificación cuantitativa de salidas:
+    * `RH_OUT:Parafuso A` ➔ Exactamente **8 items** (erradicada la duplicación a 16).
+    * `RH_OUT:Porca` ➔ Exactamente **8 items** (erradicada la duplicación a 16).
+    * Mecanizados de doble cilindro procesados íntegramente por punto de inserción.
+    * 73 salidas geométricas generadas con 0 errores en el grafo de Grasshopper.
+
+---
+
+### 🚀 Hito 3BF_Despiece_Herrajes_Orden_Alfabetico_y_Cantidad — Orden Alfabético Estricto A-Z y Reubicación de Cantidad Inmediata al Nombre del Herraje (11 de Septiembre, 2026)
+
+- **Orden Alfabético Canónico A-Z en Herrajes (`DespieceView.tsx`)**:
+  - En la función `useMemo` de `resumenHerrajes`, se aplicó ordenamiento alfabético estricto (`items.sort((a, b) => a.nombreGhx.localeCompare(b.nombreGhx, "es", { sensitivity: "base" }))`).
+  - La tabla de inventario industrial ahora lista los herrajes en orden alfabético perfecto (desde `Cantoneira`, `Cavilha`, `Clavo H`, `Corrediça` hasta `Prego`, `Suporte` y `Tampa`).
+- **Reubicación de Columna de Cantidad (`DespieceView.tsx`)**:
+  - En la tabla `2. Lista de herrajes`, se trasladó la columna **`Cantidad`** para posicionarse inmediatamente después de la columna **`Herraje`** (`Herraje` ➔ `Cantidad` ➔ `Descripción Comercial` ➔ `UM` ➔ `Costo Unitario` ➔ `Costo Total`).
+  - En el `tbody`, el badge de cantidad fue actualizado al estándar canónico de **cápsula pura** (`rounded-full` con terminación circular).
+  - En el `tfoot`, se alineó de forma simétrica el total de herrajes (`Total Herrajes:` en Col 1, conteo en Col 2, `Sumatoria:` con `colSpan={3}` y el total en Col 6).
+- **Validación de Calidad**:
+  - Compilación TypeScript verificada (`npx tsc --noEmit`) en `3bf` con 0 errores.
 
 

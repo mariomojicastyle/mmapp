@@ -924,6 +924,65 @@ def extract_all_user_params_flat(p: dict) -> dict:
                 flat[str(k)] = str(v).strip()
     return flat
 
+def deduplicate_real_meshes(meshes: list) -> tuple[list, list, dict]:
+    """
+    🛡️ DETECTOR Y PURGADOR DE MALLAS DUPLICADAS (3dBimFab DfMA Shield)
+    Identifica y marca mallas que tengan el mismo nombre (normalizado) y ocupen
+    exactamente el mismo espacio 3D (centro y dimensiones idénticas dentro de una tolerancia de 0.5 mm = 0.0005 m).
+    Retorna:
+      - unique_meshes: lista limpia sin duplicados (para BOM e inventario de costos).
+      - all_annotated_meshes: lista completa donde los duplicados tienen 'es_duplicado_ghx': True (para visualizarlos en rojo).
+      - discarded_summary: conteo de duplicados por nombre.
+    """
+    if not meshes or len(meshes) <= 1:
+        return meshes, meshes, {}
+
+    unique_meshes = []
+    all_annotated_meshes = []
+    duplicates_count = 0
+    discarded_summary = {}
+
+    for m in meshes:
+        raw_n = m.get("name", "").strip()
+        m_name = raw_n.lower().replace("rh_out:", "").strip()
+        m_pos = m.get("position", [0, 0, 0])
+        m_size = m.get("size", [0, 0, 0])
+        m_verts_count = len(m.get("vertices", []))
+
+        is_dup = False
+        for u in unique_meshes:
+            u_raw = u.get("name", "").strip()
+            u_name = u_raw.lower().replace("rh_out:", "").strip()
+            if m_name == u_name:
+                u_pos = u.get("position", [0, 0, 0])
+                u_size = u.get("size", [0, 0, 0])
+                u_verts_count = len(u.get("vertices", []))
+
+                # Tolerancia espacial estricta de 0.5 mm (0.0005 m)
+                dist_pos = math.sqrt(sum((float(a) - float(b)) ** 2 for a, b in zip(m_pos, u_pos)))
+                dist_size = math.sqrt(sum((float(a) - float(b)) ** 2 for a, b in zip(m_size, u_size)))
+
+                if dist_pos < 0.0005 and dist_size < 0.0005:
+                    if m_verts_count == 0 or u_verts_count == 0 or m_verts_count == u_verts_count:
+                        is_dup = True
+                        duplicates_count += 1
+                        display_name = raw_n.replace("RH_OUT:", "").strip()
+                        discarded_summary[display_name] = discarded_summary.get(display_name, 0) + 1
+                        break
+
+        if is_dup:
+            m_dup = dict(m)
+            m_dup["es_duplicado_ghx"] = True
+            all_annotated_meshes.append(m_dup)
+        else:
+            unique_meshes.append(m)
+            all_annotated_meshes.append(m)
+
+    if duplicates_count > 0:
+        print(f"[3BF Worker Deduplicador] 🛡️ Se detectaron y marcaron {duplicates_count} mallas duplicadas en Grasshopper que ocupaban el mismo espacio 3D: {discarded_summary}", flush=True)
+
+    return unique_meshes, all_annotated_meshes, discarded_summary
+
 from fastapi import FastAPI, HTTPException, Request
 
 @app.post("/compute")
@@ -970,7 +1029,7 @@ async def compute_model(request: Request):
         "dist_bajo_lat_param": dist_bajo_lat_param,
         "tipo_cajon_param": tipo_cajon_param,
     }
-    user_p_dict = p.get("parameters") or {}
+    user_p_dict = {**p, **(p.get("parameters") or {})}
     for k, v in user_p_dict.items():
         if is_structural_param_name(k):
             structural_params[k] = v
@@ -1124,6 +1183,8 @@ async def compute_model(request: Request):
         ghx_file = find_ghx_in_system(model_id, custom_filename)
 
     real_meshes = []
+    mallas_duplicadas_detectadas = {}
+    perforaciones_nurbs = []
     default_values = {}
     rhino_compute_success = False
     rhino_outputs_count = 0
@@ -1272,7 +1333,7 @@ async def compute_model(request: Request):
                 "values": payload_values
             }
             
-            res_rc = requests.post("http://127.0.0.1:5000/grasshopper", json=payload_rc, timeout=30)
+            res_rc = requests.post("http://127.0.0.1:5000/grasshopper", json=payload_rc, timeout=60)
             if res_rc.status_code == 200:
                 rhino_compute_success = True
                 data_rc = res_rc.json()
@@ -1431,7 +1492,13 @@ async def compute_model(request: Request):
                             "position": [0, 0.0075, 0]
                         })
 
+                # 🛡️ Aplicar Deduplicador DfMA de Mallas (marca duplicados para resaltado en rojo y limpia BOM)
+                unique_meshes, all_annotated_meshes, mallas_duplicadas_detectadas = deduplicate_real_meshes(real_meshes)
+                real_meshes = all_annotated_meshes
+
                 print(f"[3BF Worker] RhinoCompute respondió HTTP 200 | Mallas: {len(real_meshes)} | Perforaciones NURBS: {len(perforaciones_nurbs)}", flush=True)
+            else:
+                print(f"[3BF Worker Error] RhinoCompute respondió HTTP {res_rc.status_code}: {res_rc.text[:300]}", flush=True)
     except Exception as err:
         print(f"[RhinoCompute Notice]: {err}", flush=True)
         
@@ -1463,6 +1530,8 @@ async def compute_model(request: Request):
     
     conteo_mallas_herrajes = {}
     for m in real_meshes:
+        if m.get("es_duplicado_ghx"):
+            continue
         raw_name = m.get("name", "").strip()
         if es_nombre_herraje(raw_name):
             # Respetar 100% el nombre definido por el usuario/diseñador en Grasshopper (limpiando solo el prefijo RH_OUT:)
@@ -1779,7 +1848,8 @@ async def compute_model(request: Request):
             "piezas_totales": sum(p["cantidad"] for p in piezas_madera_final)
         },
         "despiece": piezas_madera_final,
-        "herrajes": herrajes_final
+        "herrajes": herrajes_final,
+        "mallas_duplicadas_detectadas": mallas_duplicadas_detectadas
     }
 
     # 💾 Guardar en memoria RAM para Bypasses ultrarrápidos (< 2 ms)
@@ -1812,6 +1882,8 @@ async def compute_model(request: Request):
             static_other_meshes = []
 
             for m in real_meshes:
+                if m.get("es_duplicado_ghx"):
+                    continue
                 m_name = m.get("name", "")
                 match = re.search(r'Pe[çc\ufffd\?a]*\s+(\d+)', m_name, re.IGNORECASE)
                 if match:
