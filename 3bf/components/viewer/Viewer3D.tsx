@@ -7,7 +7,7 @@ import { use3BFStore, ObjetoInstancia3BF, MaterialPBRDef, DEFAULT_HDRI_CONFIG } 
 import * as THREE from "three";
 import * as BufferGeometryUtils from "three/examples/jsm/utils/BufferGeometryUtils.js";
 import { RGBELoader } from "three/examples/jsm/loaders/RGBELoader.js";
-import { Download, Save, Zap, Trash2, CheckCircle2, AlertCircle, AlertTriangle, X, Loader2, Sun, Lamp, Sparkles, Smartphone, Square, Eye, EyeOff } from "lucide-react";
+import { Download, Save, Zap, Trash2, CheckCircle2, AlertCircle, AlertTriangle, X, Loader2, Sun, Lamp, Sparkles, Smartphone, Square, Eye, EyeOff, Pipette, Check } from "lucide-react";
 import NPanel from "./NPanel";
 import { GHXAutoWatcher } from "./GHXAutoWatcher";
 import { generarEntornoEquirectangularLocal } from "./ShaderBallViewer";
@@ -16,6 +16,10 @@ import LightInspectorModal from "./LightInspectorModal";
 import ARViewerModal from "./ARViewerModal";
 import ViewInArIcon from "@/components/icons/ViewInArIcon";
 import { saveLocalARModel } from "@/lib/arStorage";
+import TimelineScrubber from "@/components/manual/TimelineScrubber";
+import { compilarAnimacionPaso, KinematicEngineResult } from "@/lib/manualAnimationEngine";
+import { extraerPiezaMadre, anotarInstanciasFisicas } from "@/lib/piezaMadreUtils";
+import { exportarGlbPasoManual, descargarBufferComoArchivo } from "@/lib/exportManualGlb";
 
 function useMaterialPBRMaps(materialPBR?: MaterialPBRDef | null, fallbackUrl?: string | null, tipoMapeado?: string) {
   const [maps, setMaps] = React.useState<{
@@ -346,6 +350,7 @@ function BoardMesh({
   uvs: grasshopperUvs,
   tipoMapeado,
   instanciaId,
+  instanciaKey,
   esDuplicado = false,
 }: {
   position: [number, number, number];
@@ -358,9 +363,22 @@ function BoardMesh({
   uvs?: number[];
   tipoMapeado?: string;
   instanciaId?: string;
+  instanciaKey?: string;
   esDuplicado?: boolean;
 }) {
-  const { calibracion, objetoSeleccionado, setHoveredPiece, coloresApariencia, capas, materialesPBR, asignacionesPartes } = use3BFStore();
+  const { 
+    calibracion, 
+    objetoSeleccionado, 
+    setHoveredPiece, 
+    coloresApariencia, 
+    capas, 
+    materialesPBR, 
+    asignacionesPartes,
+    modoPickingManual,
+    togglePiezaEnPickingManual,
+    pasosManual,
+    pasoActivoManualId
+  } = use3BFStore();
 
   const { customGeometry, edgesGeometry } = React.useMemo(() => {
     if (vertices && indices && vertices.length > 0 && indices.length > 0) {
@@ -452,6 +470,13 @@ function BoardMesh({
   }, [customGeometry, size, calibracion.thresholdAristas]);
 
   const cleanName = name.replace(/^RH_OUT:/i, "").trim();
+  const piezaMadre = instanciaKey || extraerPiezaMadre(cleanName || name);
+  const estaSeleccionadaEnPicking = Boolean(
+    modoPickingManual.activo && 
+    piezaMadre && 
+    modoPickingManual.piezasTemporalmenteSeleccionadas.includes(piezaMadre)
+  );
+
   const normalizeKey = (k: string) => k.replace(/^RH_OUT:/i, "").replace(/[_\s]+/g, " ").trim().toLowerCase();
   const normName = normalizeKey(name);
 
@@ -489,11 +514,9 @@ function BoardMesh({
   const isMachining = normName.includes("maquinado") || normName.includes("perforado");
   const isWoodBoardPiece = !isHardware && !isMachining;
 
-  // 🪵 Detector Universal de Cara de Balance / Reverso (ej. Peça 6 B, Peça 7 B, Peça 10 B, PK6B, Balance, Back, Equilibrio)
+  // 🪵 Detector Universal de Cara de Balance / Reverso (ej. Peça 6 B, Peça 7 B, Peça 10 B, PK6B, Balance, Equilibrio)
   const isBalance = (
     normName.includes("balance") ||
-    normName.includes("back") ||
-    normName.includes("espaldar") ||
     normName.includes("equilibrio") ||
     normName.includes("reverso") ||
     normName.endsWith(" b") ||
@@ -503,16 +526,24 @@ function BoardMesh({
     /pk\s*\d+\s*b$/i.test(normName)
   );
 
+  // 🪵 Detector Universal de Fondos y Piezas de 3 mm (Fondos Traseros, Fondos de Cajón, Costas, Espaldares, Peça 15, Peça 18)
   const isFondoBoard = (
     normName.includes("fondo") ||
     normName.includes("fundo") ||
     normName.includes("tono fondo") ||
+    normName.includes("costa") ||
+    normName.includes("costas") ||
+    normName.includes("espaldar") ||
+    normName.includes("trasera") ||
+    normName.includes("back") ||
+    normName.includes("peça 15") ||
+    normName.includes("peca 15") ||
+    normName.includes("pk15") ||
     normName.includes("peça 18") ||
     normName.includes("peca 18") ||
     normName.includes("pk18") ||
-    normName.includes("costa") ||
-    normName.includes("trasera")
-  ) && !normName.includes("mdf") && !normName.includes("mdp") && !isBalance;
+    (isWoodBoardPiece && size && size.length === 3 && Math.min(size[0], size[1], size[2]) <= 0.005 && Math.min(size[0], size[1], size[2]) >= 0.001)
+  ) && !normName.includes("mdf") && !normName.includes("mdp");
 
   // 💡 2. Resolver Capa Asignada
   let capaAsignada: any = null;
@@ -520,7 +551,22 @@ function BoardMesh({
     capaAsignada = capas.find((c) => c.id === asignacion.capaId) || null;
   }
   
-  if (!capaAsignada) {
+  // 🛡️ REGLA ORO B2B: Alineación obligatoria de piezas de 3 mm y Fondos
+  if (normName.includes("mdf")) {
+    // La cara MDF siempre pertenece a la capa MDF (mat_mdf)
+    capaAsignada = capas.find((c) => c.id === "capa_mdf" || c.nombre.toLowerCase() === "mdf") || capas[0];
+  } else if (isFondoBoard) {
+    // La cara con color de todas las piezas de 3 mm / fondos siempre se vincula a la capa Tono Fondo
+    const capaInvalidaFondo = !capaAsignada || 
+                              capaAsignada.id === "capa_tono" || 
+                              capaAsignada.id === "capa_espaldar" || 
+                              capaAsignada.id === "capa_back" ||
+                              capaAsignada.id === "capa_acero" ||
+                              capaAsignada.id === "capa_aluminio";
+    if (capaInvalidaFondo) {
+      capaAsignada = capas.find((c) => c.id === "capa_tono_fondo" || c.nombre.toLowerCase() === "tono fondo" || (c.nombre.toLowerCase().includes("fondo") && !c.nombre.toLowerCase().includes("mdf"))) || capas.find((c) => c.id === "capa_tono") || capas[0];
+    }
+  } else if (!capaAsignada) {
     if (isHardwareCorredera || isHardwareCantoneira) {
       // 🔩 Correderas telescópicas y cantoneras -> Capa Zincado / Acero
       capaAsignada = capas.find((c) => c.id === "capa_zincado" || c.id === "capa_zinc" || c.id === "capa_acero" || c.nombre.toLowerCase().includes("zinc") || c.nombre.toLowerCase().includes("acero")) || capas.find((c) => c.id === "capa_herrajes") || capas[0];
@@ -540,13 +586,8 @@ function BoardMesh({
       capaAsignada = capas.find((c) => c.id === "capa_perforados" || c.nombre.toLowerCase().includes("perforad"));
     } else if (isBalance) {
       capaAsignada = capas.find((c) => c.id === "capa_back" || c.id === "capa_espaldar" || c.nombre.toLowerCase().includes("back") || c.nombre.toLowerCase().includes("balance"));
-    } else if (normName.includes("mdf")) {
-      capaAsignada = capas.find((c) => c.id === "capa_mdf" || c.nombre.toLowerCase() === "mdf");
     } else if (normName.includes("mdp")) {
       capaAsignada = capas.find((c) => c.id === "capa_mdp" || c.nombre.toLowerCase() === "mdp");
-    } else if (isFondoBoard) {
-      // 🪵 Fondo de cajón o trasera -> Capa Tono Fondo
-      capaAsignada = capas.find((c) => c.id === "capa_tono_fondo" || c.nombre.toLowerCase() === "tono fondo" || (c.nombre.toLowerCase().includes("fondo") && !c.nombre.toLowerCase().includes("mdf"))) || capas.find((c) => c.id === "capa_tono") || capas[0];
     } else {
       // Pieza principal de madera/tablero (Cubierta, Lateral, Frente, Tapa, Peça 6, Peça 7, Peça 10, etc.) -> Capa Tono
       capaAsignada = capas.find((c) => c.id === "capa_tono" || (c.nombre.toLowerCase().includes("tono") && !c.nombre.toLowerCase().includes("fondo"))) || capas.find(c => c.id !== "capa_acero") || capas[0];
@@ -588,10 +629,30 @@ function BoardMesh({
   // ⚠️ LLAMADO INCONDICIONAL DE HOOK: antes de cualquier return temprano (Reglas de React Hooks)
   const pbrMaps = useMaterialPBRMaps(materialPBR, targetTextureUrl, tipoMapeado);
 
-  // 💡 5. Verificar Visibilidad (Capa o Parte apagada) - DESPUÉS DE TODOS LOS HOOKS
+  // 💡 Verificar si el cajón/grupo cinemático al que pertenece esta pieza está apagado (Bombillito / Ojito)
+  const pasoActivoManual = React.useMemo(() => {
+    return pasosManual.find((p) => p.id === pasoActivoManualId);
+  }, [pasosManual, pasoActivoManualId]);
+
+  const estaOcultaPorGrupoCinematico = React.useMemo(() => {
+    if (!pasoActivoManual?.showcase?.gruposCinematicos) return false;
+    return pasoActivoManual.showcase.gruposCinematicos.some(
+      (g) =>
+        g.oculto &&
+        g.piezas.some(
+          (pz) =>
+            pz === piezaMadre ||
+            pz === cleanName ||
+            (instanciaKey && pz === instanciaKey) ||
+            extraerPiezaMadre(pz) === piezaMadre
+        )
+    );
+  }, [pasoActivoManual, piezaMadre, cleanName, instanciaKey]);
+
+  // 💡 5. Verificar Visibilidad (Capa, Parte o Grupo Cinemático apagado) - DESPUÉS DE TODOS LOS HOOKS
   const esParteOculta = asignacion && asignacion.visible === false;
   const esCapaOculta = capaAsignada && capaAsignada.visible === false;
-  if (esParteOculta || esCapaOculta) {
+  if (esParteOculta || esCapaOculta || estaOcultaPorGrupoCinematico) {
     return null;
   }
 
@@ -683,8 +744,9 @@ function BoardMesh({
   // Aplicar propiedades físicas del material PBR
   if (materialPBR && modoVisual !== "semitransparente") {
     meshColor = materialPBR.colorBase;
-    metalness = calibracion.metalicidadMadera ?? materialPBR.metalico;
-    roughness = calibracion.rugosidadMadera ?? materialPBR.rugosidad;
+    const esMetalico = materialPBR.tipo === "Metal" || (materialPBR.metalico ?? 0) >= 0.5;
+    metalness = esMetalico ? materialPBR.metalico : (calibracion.metalicidadMadera ?? materialPBR.metalico);
+    roughness = esMetalico ? materialPBR.rugosidad : (calibracion.rugosidadMadera ?? materialPBR.rugosidad);
     if (materialPBR.opacidad < 1.0 || (calibracion.opacidadMadera ?? 1.0) < 0.99) {
       opacity = Math.min(materialPBR.opacidad, calibracion.opacidadMadera ?? 1.0);
       transparent = true;
@@ -739,8 +801,9 @@ function BoardMesh({
       finalMeshColor = calibracion.colorSolido || "#CBD5E1";
     }
     if (isWoodBoard) {
-      roughness = calibracion.rugosidadMadera ?? 0.58;
-      metalness = calibracion.metalicidadMadera ?? 0.20;
+      const esMetalico = materialPBR?.tipo === "Metal" || (materialPBR?.metalico ?? 0) >= 0.5;
+      roughness = esMetalico ? materialPBR!.rugosidad : (materialPBR ? materialPBR.rugosidad : (calibracion.rugosidadMadera ?? 0.58));
+      metalness = esMetalico ? materialPBR!.metalico : (materialPBR ? materialPBR.metalico : (calibracion.metalicidadMadera ?? 0.20));
       opacity = calibracion.opacidadMadera ?? 1.0;
       transparent = opacity < 0.99;
       depthWrite = opacity >= 0.95;
@@ -754,20 +817,44 @@ function BoardMesh({
 
   // 💡 Intensidad dinámica de luz de entorno (IBL)
   const luzEntornoConfig = calibracion.lucesEstudio?.["env_hdri"];
-  const envMapIntensityEfectivo = (modoVisual === "renderizado" && (luzEntornoConfig ? luzEntornoConfig.activa : true))
+  const baseEnvIntensity = (modoVisual === "renderizado" && (luzEntornoConfig ? luzEntornoConfig.activa : true))
     ? (luzEntornoConfig?.intensidad ?? calibracion.intensidadLuzEntorno ?? 0.55)
     : 0.0;
+  // 🔩 Para herrajes y piezas metálicas, aumentamos el IBL para reflejos definidos de estudio
+  const esPiezaMetalica = isHardware || metalness >= 0.5 || materialPBR?.tipo === "Metal";
+  const envMapIntensityEfectivo = esPiezaMetalica
+    ? Math.max(baseEnvIntensity * 1.5, 1.15)
+    : baseEnvIntensity;
 
   if (customGeometry) {
     return (
       <mesh 
         position={position}
-        scale={esDuplicado ? [1.06, 1.06, 1.06] : undefined}
-        renderOrder={esDuplicado ? 20 : undefined}
-        name={cleanName}
+        scale={esDuplicado ? [1.06, 1.06, 1.06] : (estaSeleccionadaEnPicking ? [1.015, 1.015, 1.015] : undefined)}
+        renderOrder={esDuplicado ? 20 : (estaSeleccionadaEnPicking ? 22 : undefined)}
+        name={instanciaKey ? `${instanciaKey}::${cleanName}` : cleanName}
         geometry={customGeometry}
+        onClick={(e) => {
+          if (modoPickingManual.activo) {
+            e.stopPropagation();
+            togglePiezaEnPickingManual(piezaMadre);
+          }
+        }}
+        onPointerOver={(e) => {
+          if (modoPickingManual.activo) {
+            e.stopPropagation();
+            document.body.style.cursor = "pointer";
+          }
+        }}
+        onPointerOut={() => {
+          if (modoPickingManual.activo) {
+            document.body.style.cursor = "auto";
+          }
+        }}
         userData={{ 
+          initialPosition: new THREE.Vector3(position[0], position[1], position[2]),
           instanciaId,
+          instanciaKey: piezaMadre,
           pbrDiffuse: pbrMaps.diffuse,
           materialPBR,
           nombreMaterialEfectivo,
@@ -783,15 +870,16 @@ function BoardMesh({
           isMdpExpuesto,
           esDuplicado,
           cleanName,
-          rawName: name
+          rawName: name,
+          piezaMadre
         }}
       >
         <meshStandardMaterial
-          key={`${activeMap ? (activeMap as any).uuid : "no-map"}-${modoVisual}-${nombreMaterialEfectivo}-${finalMeshColor}-${opacity}-${roughness}-${metalness}-${esDuplicado}`}
+          key={`${activeMap ? (activeMap as any).uuid : "no-map"}-${modoVisual}-${nombreMaterialEfectivo}-${finalMeshColor}-${opacity}-${roughness}-${metalness}-${esDuplicado}-${estaSeleccionadaEnPicking}`}
           name={esDuplicado ? "Material_Duplicado_Alerta" : nombreMaterialEfectivo}
           color={esDuplicado ? "#EF4444" : finalMeshColor}
-          emissive={esDuplicado ? new THREE.Color("#DC2626") : undefined}
-          emissiveIntensity={esDuplicado ? 0.45 : 0}
+          emissive={estaSeleccionadaEnPicking ? new THREE.Color("#0891B2") : (esDuplicado ? new THREE.Color("#DC2626") : undefined)}
+          emissiveIntensity={estaSeleccionadaEnPicking ? 0.65 : (esDuplicado ? 0.45 : 0)}
           map={activeMap}
           normalMap={activeNormal}
           normalScale={activeNormal ? new THREE.Vector2(normalScaleVal, normalScaleVal) : undefined}
@@ -807,15 +895,15 @@ function BoardMesh({
           depthWrite={depthWrite}
           side={THREE.DoubleSide}
         />
-        {debeMostrarAristas && (
+        {(debeMostrarAristas || estaSeleccionadaEnPicking) && (
           <Edges
             geometry={customGeometry || undefined}
             threshold={calibracion.thresholdAristas || 25}
-            color={esDuplicado ? "#991B1B" : (calibracion.colorAristas || "#111827")}
-            opacity={calibracion.opacidadAristas ?? 1.0}
-            transparent={(calibracion.opacidadAristas ?? 1.0) < 0.99}
-            lineWidth={esDuplicado ? 2.5 : Math.max(1, ((calibracion.calibreAristas ?? 100) / 100) * 1.5)}
-            renderOrder={esDuplicado ? 25 : 10}
+            color={estaSeleccionadaEnPicking ? "#0891B2" : (esDuplicado ? "#991B1B" : (calibracion.colorAristas || "#111827"))}
+            opacity={estaSeleccionadaEnPicking ? 1.0 : (calibracion.opacidadAristas ?? 1.0)}
+            transparent={(calibracion.opacidadAristas ?? 1.0) < 0.99 && !estaSeleccionadaEnPicking}
+            lineWidth={estaSeleccionadaEnPicking ? 3.0 : (esDuplicado ? 2.5 : Math.max(1, ((calibracion.calibreAristas ?? 100) / 100) * 1.5))}
+            renderOrder={estaSeleccionadaEnPicking ? 35 : (esDuplicado ? 25 : 10)}
           />
         )}
       </mesh>
@@ -825,9 +913,26 @@ function BoardMesh({
   return (
     <mesh
       position={position}
-      scale={esDuplicado ? [1.06, 1.06, 1.06] : undefined}
-      renderOrder={esDuplicado ? 20 : undefined}
+      scale={esDuplicado ? [1.06, 1.06, 1.06] : (estaSeleccionadaEnPicking ? [1.015, 1.015, 1.015] : undefined)}
+      renderOrder={esDuplicado ? 20 : (estaSeleccionadaEnPicking ? 22 : undefined)}
       name={cleanName}
+      onClick={(e) => {
+        if (modoPickingManual.activo) {
+          e.stopPropagation();
+          togglePiezaEnPickingManual(piezaMadre);
+        }
+      }}
+      onPointerOver={(e) => {
+        if (modoPickingManual.activo) {
+          e.stopPropagation();
+          document.body.style.cursor = "pointer";
+        }
+      }}
+      onPointerOut={() => {
+        if (modoPickingManual.activo) {
+          document.body.style.cursor = "auto";
+        }
+      }}
       userData={{ 
         instanciaId,
         pbrDiffuse: pbrMaps.diffuse,
@@ -845,16 +950,17 @@ function BoardMesh({
         isMdpExpuesto,
         esDuplicado,
         cleanName,
-        rawName: name
+        rawName: name,
+        piezaMadre
       }}
     >
       <boxGeometry args={size} />
       <meshStandardMaterial
-        key={`${activeMap ? (activeMap as any).uuid : "no-map"}-${modoVisual}-${nombreMaterialEfectivo}-${finalMeshColor}-${opacity}-${roughness}-${metalness}-${esDuplicado}`}
+        key={`${activeMap ? (activeMap as any).uuid : "no-map"}-${modoVisual}-${nombreMaterialEfectivo}-${finalMeshColor}-${opacity}-${roughness}-${metalness}-${esDuplicado}-${estaSeleccionadaEnPicking}`}
         name={esDuplicado ? "Material_Duplicado_Alerta" : nombreMaterialEfectivo}
         color={esDuplicado ? "#EF4444" : finalMeshColor}
-        emissive={esDuplicado ? new THREE.Color("#DC2626") : undefined}
-        emissiveIntensity={esDuplicado ? 0.45 : 0}
+        emissive={estaSeleccionadaEnPicking ? new THREE.Color("#0891B2") : (esDuplicado ? new THREE.Color("#DC2626") : undefined)}
+        emissiveIntensity={estaSeleccionadaEnPicking ? 0.65 : (esDuplicado ? 0.45 : 0)}
         map={activeMap}
         normalMap={activeNormal}
         normalScale={activeNormal ? new THREE.Vector2(normalScaleVal, normalScaleVal) : undefined}
@@ -868,15 +974,16 @@ function BoardMesh({
         metalness={metalness}
         wireframe={isWireframe}
         depthWrite={depthWrite}
+        side={THREE.DoubleSide}
       />
-      {debeMostrarAristas && (
+      {(debeMostrarAristas || estaSeleccionadaEnPicking) && (
         <Edges
           threshold={calibracion.thresholdAristas || 25}
-          color={esDuplicado ? "#991B1B" : (calibracion.colorAristas || "#111827")}
-          opacity={calibracion.opacidadAristas ?? 1.0}
-          transparent={(calibracion.opacidadAristas ?? 1.0) < 0.99}
-          lineWidth={esDuplicado ? 2.5 : Math.max(1, ((calibracion.calibreAristas ?? 100) / 100) * 1.5)}
-          renderOrder={esDuplicado ? 25 : 10}
+          color={estaSeleccionadaEnPicking ? "#0891B2" : (esDuplicado ? "#991B1B" : (calibracion.colorAristas || "#111827"))}
+          opacity={estaSeleccionadaEnPicking ? 1.0 : (calibracion.opacidadAristas ?? 1.0)}
+          transparent={(calibracion.opacidadAristas ?? 1.0) < 0.99 && !estaSeleccionadaEnPicking}
+          lineWidth={estaSeleccionadaEnPicking ? 3.0 : (esDuplicado ? 2.5 : Math.max(1, ((calibracion.calibreAristas ?? 100) / 100) * 1.5))}
+          renderOrder={estaSeleccionadaEnPicking ? 35 : (esDuplicado ? 25 : 10)}
         />
       )}
     </mesh>
@@ -1098,6 +1205,12 @@ function SelectionController() {
     const domElement = gl.domElement;
 
     const handlePointerDown = (e: PointerEvent) => {
+      const state = use3BFStore.getState();
+      // 🛡️ BLINDAJE ESTRICTO: En modo Manual 3D o con Picking activo, PROHIBIDO deseleccionar o alterar instancias
+      if (state.pestanaActiva === "manual" || state.modoPickingManual.activo) {
+        return;
+      }
+
       // 🎯 CLIC DERECHO INSTANTÁNEO (0ms de latencia en la primera pulsación)
       if (e.button === 2) {
         if (modoTransformacion === "grab") {
@@ -1106,10 +1219,10 @@ function SelectionController() {
         }
 
         const hoveredInstId = typeof window !== "undefined" ? (window as any).__hoveredInstanceId : null;
-        if (hoveredInstId && use3BFStore.getState().instancias[hoveredInstId]) {
+        if (hoveredInstId && state.instancias[hoveredInstId]) {
           seleccionarInstancia(hoveredInstId);
         } else {
-          const currentHover = use3BFStore.getState().hoveredPiece;
+          const currentHover = state.hoveredPiece;
           if (currentHover !== null) {
             setObjetoSeleccionado(true);
           } else {
@@ -1120,10 +1233,10 @@ function SelectionController() {
         // 🎯 CLIC IZQUIERDO
         if (modoTransformacion === "none") {
           const hoveredInstId = typeof window !== "undefined" ? (window as any).__hoveredInstanceId : null;
-          if (hoveredInstId && use3BFStore.getState().instancias[hoveredInstId]) {
+          if (hoveredInstId && state.instancias[hoveredInstId]) {
             seleccionarInstancia(hoveredInstId);
           } else {
-            const currentHover = use3BFStore.getState().hoveredPiece;
+            const currentHover = state.hoveredPiece;
             if (currentHover !== null) {
               setObjetoSeleccionado(true);
             } else {
@@ -1132,7 +1245,7 @@ function SelectionController() {
           }
         } else if (modoTransformacion === "grab") {
           // ⚠️ Si está eligiendo punto de snap (B), NO confirmar ni deseleccionar
-          if (use3BFStore.getState().snapPicking) return;
+          if (state.snapPicking) return;
           if (typeof window !== "undefined" && (window as any).__lastSnapSelectTime) {
             if (Date.now() - (window as any).__lastSnapSelectTime < 400) return;
           }
@@ -1144,17 +1257,22 @@ function SelectionController() {
     const handleContextMenu = (e: MouseEvent) => {
       e.preventDefault(); // Prevenir menú nativo del navegador
 
+      const state = use3BFStore.getState();
+      if (state.pestanaActiva === "manual" || state.modoPickingManual.activo) {
+        return;
+      }
+
       if (modoTransformacion === "grab") {
-        if (use3BFStore.getState().snapPicking) return;
+        if (state.snapPicking) return;
         cancelarGrab();
         return;
       }
 
       const hoveredInstId = typeof window !== "undefined" ? (window as any).__hoveredInstanceId : null;
-      if (hoveredInstId && use3BFStore.getState().instancias[hoveredInstId]) {
+      if (hoveredInstId && state.instancias[hoveredInstId]) {
         seleccionarInstancia(hoveredInstId);
       } else {
-        const currentHover = use3BFStore.getState().hoveredPiece;
+        const currentHover = state.hoveredPiece;
         if (currentHover !== null) {
           setObjetoSeleccionado(true);
         } else {
@@ -1699,7 +1817,51 @@ function SingleFurnitureInstanceMesh({
     };
   }, [inst.id, inst.resultado]);
 
-  if (!inst.resultado?.real_meshes || inst.resultado.real_meshes.length === 0) {
+  // 🛡️ Deduplicador espacial defensivo y anotación física (incondicional antes de cualquier return)
+  const annotatedMeshes = React.useMemo(() => {
+    const rawMeshes = inst.resultado?.real_meshes || [];
+    if (rawMeshes.length === 0) return [];
+
+    const cleanRealMeshes: any[] = [];
+    if (rawMeshes.length <= 1) {
+      cleanRealMeshes.push(...rawMeshes);
+    } else {
+      for (const m of rawMeshes) {
+        if (m.es_duplicado_ghx) {
+          if (mostrarDuplicadosRojos) {
+            cleanRealMeshes.push(m);
+          }
+          continue;
+        }
+        const mName = (m.name || "").replace(/^RH_OUT:/i, "").trim().toLowerCase();
+        const mPos = m.position || [0, 0, 0];
+        const mSize = m.size || [0, 0, 0];
+
+        const isDup = cleanRealMeshes.some((u) => {
+          const uName = (u.name || "").replace(/^RH_OUT:/i, "").trim().toLowerCase();
+          if (mName !== uName) return false;
+          const uPos = u.position || [0, 0, 0];
+          const uSize = u.size || [0, 0, 0];
+
+          const dPos = Math.hypot(mPos[0] - uPos[0], mPos[1] - uPos[1], mPos[2] - uPos[2]);
+          const dSize = Math.hypot(mSize[0] - uSize[0], mSize[1] - uSize[1], mSize[2] - uSize[2]);
+          return dPos < 0.0005 && dSize < 0.0005;
+        });
+
+        if (isDup) {
+          if (mostrarDuplicadosRojos) {
+            cleanRealMeshes.push({ ...m, es_duplicado_ghx: true });
+          }
+        } else {
+          cleanRealMeshes.push(m);
+        }
+      }
+    }
+
+    return anotarInstanciasFisicas(cleanRealMeshes);
+  }, [inst.resultado?.real_meshes, mostrarDuplicadosRojos]);
+
+  if (!inst.resultado?.real_meshes || inst.resultado.real_meshes.length === 0 || annotatedMeshes.length === 0) {
     return null;
   }
 
@@ -1707,50 +1869,12 @@ function SingleFurnitureInstanceMesh({
   const parentBoardGroupName = isModelCubierta ? "Cubierta" : "Tableros";
   const mainColor = inst.parametros.color_acabado || "#0088aa";
 
-  // 🛡️ Deduplicador espacial defensivo en visor (Three.js): marca duplicados para resaltado en rojo
-  const rawMeshes = inst.resultado.real_meshes;
-  const cleanRealMeshes: any[] = [];
-  if (rawMeshes.length <= 1) {
-    cleanRealMeshes.push(...rawMeshes);
-  } else {
-    for (const m of rawMeshes) {
-      if (m.es_duplicado_ghx) {
-        if (mostrarDuplicadosRojos) {
-          cleanRealMeshes.push(m);
-        }
-        continue;
-      }
-      const mName = (m.name || "").replace(/^RH_OUT:/i, "").trim().toLowerCase();
-      const mPos = m.position || [0, 0, 0];
-      const mSize = m.size || [0, 0, 0];
-
-      const isDup = cleanRealMeshes.some((u) => {
-        const uName = (u.name || "").replace(/^RH_OUT:/i, "").trim().toLowerCase();
-        if (mName !== uName) return false;
-        const uPos = u.position || [0, 0, 0];
-        const uSize = u.size || [0, 0, 0];
-
-        const dPos = Math.hypot(mPos[0] - uPos[0], mPos[1] - uPos[1], mPos[2] - uPos[2]);
-        const dSize = Math.hypot(mSize[0] - uSize[0], mSize[1] - uSize[1], mSize[2] - uSize[2]);
-        return dPos < 0.0005 && dSize < 0.0005;
-      });
-
-      if (isDup) {
-        if (mostrarDuplicadosRojos) {
-          cleanRealMeshes.push({ ...m, es_duplicado_ghx: true });
-        }
-      } else {
-        cleanRealMeshes.push(m);
-      }
-    }
-  }
-
-  const hasTexturedMeshes = cleanRealMeshes.some((m: any) => {
+  const hasTexturedMeshes = annotatedMeshes.some((m: any) => {
     const n = m.name.toLowerCase();
     return n.includes("color") || n.includes("balance") || (n.includes("mdp") && !n.includes("nurbs"));
   });
 
-  const boardMeshes = cleanRealMeshes.filter((m: any) => {
+  const boardMeshes = annotatedMeshes.filter((m: any) => {
     const n = m.name.toLowerCase();
     if (hasTexturedMeshes && (n.includes("nurbs") || m.is_nurbs_solid)) {
       return false;
@@ -1783,7 +1907,7 @@ function SingleFurnitureInstanceMesh({
     );
   });
 
-  const hardwareMeshes = cleanRealMeshes.filter((m: any) => {
+  const hardwareMeshes = annotatedMeshes.filter((m: any) => {
     const n = m.name.toLowerCase();
     return (
       n.includes("perno") ||
@@ -1810,11 +1934,11 @@ function SingleFurnitureInstanceMesh({
     ) && !n.includes("cajon") && !n.includes("cajón");
   });
 
-  const machiningMeshes = cleanRealMeshes.filter((m: any) => 
+  const machiningMeshes = annotatedMeshes.filter((m: any) => 
     m.name.toLowerCase().includes("maquinados") || m.name.toLowerCase().includes("machining")
   );
 
-  const otherMeshes = cleanRealMeshes.filter((m: any) => 
+  const otherMeshes = annotatedMeshes.filter((m: any) => 
     !boardMeshes.includes(m) && !hardwareMeshes.includes(m) && !machiningMeshes.includes(m)
   );
 
@@ -1832,6 +1956,7 @@ function SingleFurnitureInstanceMesh({
             <BoardMesh
               key={`board-${idx}`}
               instanciaId={inst.id}
+              instanciaKey={m.instanciaKey}
               position={m.position}
               size={m.size}
               name={m.name}
@@ -1853,6 +1978,7 @@ function SingleFurnitureInstanceMesh({
             <BoardMesh
               key={`hardware-${idx}`}
               instanciaId={inst.id}
+              instanciaKey={m.instanciaKey}
               position={m.position}
               size={m.size}
               name={m.name}
@@ -1874,6 +2000,7 @@ function SingleFurnitureInstanceMesh({
             <BoardMesh
               key={`machining-${idx}`}
               instanciaId={inst.id}
+              instanciaKey={m.instanciaKey}
               position={m.position}
               size={m.size}
               name={m.name}
@@ -1895,6 +2022,7 @@ function SingleFurnitureInstanceMesh({
             <BoardMesh
               key={`other-${idx}`}
               instanciaId={inst.id}
+              instanciaKey={m.instanciaKey}
               position={m.position}
               size={m.size}
               name={m.name}
@@ -1925,14 +2053,18 @@ function ParametricFurnitureMesh({
   const listaInstancias = Object.values(instancias);
 
   if (listaInstancias.length > 0) {
+    const targetInstId = (objetoActivoId && instancias[objetoActivoId])
+      ? objetoActivoId
+      : listaInstancias[0].id;
+
     return (
       <>
         {listaInstancias.map((inst) => (
           <SingleFurnitureInstanceMesh
             key={inst.id}
             inst={inst}
-            isSelected={inst.id === objetoActivoId}
-            setFurnitureGroup={inst.id === objetoActivoId ? setFurnitureGroup : undefined}
+            isSelected={inst.id === targetInstId}
+            setFurnitureGroup={inst.id === targetInstId ? setFurnitureGroup : undefined}
             mostrarDuplicadosRojos={mostrarDuplicadosRojos}
           />
         ))}
@@ -2418,6 +2550,93 @@ function SceneEnvironment({ modoVisual }: { modoVisual: string }) {
   return null;
 }
 
+function AssemblyAnimationController({ furnitureGroup }: { furnitureGroup: THREE.Group | null }) {
+  const {
+    pestanaActiva,
+    pasosManual,
+    pasoActivoManualId,
+    timelineCurrentTime,
+    objetoActivoId,
+    instancias,
+  } = use3BFStore();
+
+  const activeStep = pasosManual.find((p) => p.id === pasoActivoManualId) || pasosManual[0];
+  const engineRef = useRef<KinematicEngineResult | null>(null);
+
+  // Obtener el grupo de muebles efectivo (prop directa o fallback dinámico a mapa de instancias o escena)
+  const effectiveGroup = React.useMemo(() => {
+    if (furnitureGroup) return furnitureGroup;
+    if (typeof window !== "undefined") {
+      const groupsMap = (window as any).__3bfInstanceGroups as Map<string, THREE.Group> | undefined;
+      if (groupsMap && groupsMap.size > 0) {
+        if (objetoActivoId && groupsMap.has(objetoActivoId)) {
+          return groupsMap.get(objetoActivoId)!;
+        }
+        return groupsMap.values().next().value || null;
+      }
+      if ((window as any).__threeScene3BF) {
+        return (window as any).__threeScene3BF;
+      }
+    }
+    return null;
+  }, [furnitureGroup, objetoActivoId, instancias]);
+
+  useEffect(() => {
+    if (pestanaActiva !== "manual" || !effectiveGroup || !activeStep) {
+      if (engineRef.current) {
+        engineRef.current.detener();
+        engineRef.current = null;
+      }
+      return;
+    }
+
+    if (typeof window !== "undefined") {
+      (window as any).__threeScene3BF = effectiveGroup;
+    }
+
+    try {
+      const res = compilarAnimacionPaso(effectiveGroup, activeStep);
+      engineRef.current = res;
+      if (typeof window !== "undefined") {
+        (window as any).__3bfManualEngine = res;
+      }
+      res.actualizarTiempo(timelineCurrentTime);
+    } catch (e) {
+      console.warn("[AssemblyAnimationController] Error al compilar animación:", e);
+    }
+
+    return () => {
+      if (typeof window !== "undefined" && (window as any).__3bfManualEngine === engineRef.current) {
+        (window as any).__3bfManualEngine = null;
+      }
+      if (engineRef.current) {
+        engineRef.current.detener();
+        engineRef.current = null;
+      }
+    };
+  }, [
+    pestanaActiva,
+    effectiveGroup,
+    activeStep?.id,
+    activeStep?.duracionTotal,
+    activeStep?.secuencia,
+    activeStep?.showcase?.coreografia,
+    activeStep?.showcase?.distanciaAperturaMm,
+    activeStep?.showcase?.ejeGlobal,
+    activeStep?.showcase?.abrirCajones,
+    activeStep?.showcase?.abrirPuertas,
+    activeStep?.showcase?.gruposCinematicos,
+  ]);
+
+  useEffect(() => {
+    if (engineRef.current && pestanaActiva === "manual") {
+      engineRef.current.actualizarTiempo(timelineCurrentTime);
+    }
+  }, [timelineCurrentTime, pestanaActiva]);
+
+  return null;
+}
+
 // =========================================================================
 // VISOR 3D PRINCIPAL (VIEWPORT)
 // =========================================================================
@@ -2427,6 +2646,7 @@ export default function Viewer3D() {
   const cameraRef = useRef<THREE.Camera | null>(null);
   const {
     tema,
+    pestanaActiva,
     resultado,
     modoVisual,
     calibracion,
@@ -2471,7 +2691,17 @@ export default function Viewer3D() {
     toggleGizmosLuces,
     mostrarMarcoEncuadre,
     toggleMarcoEncuadre,
+    modoPickingManual,
+    limpiarPickingManual,
+    confirmarPickingManual,
+    pasosManual,
+    purgarMallasDuplicadas,
+    guardarManualProyecto,
+    guardandoManual,
+    manualActivoGuardado,
   } = use3BFStore();
+
+  const [guardadoManualReciente, setGuardadoManualReciente] = React.useState(false);
 
   const estaSincronizando = Boolean(cargando || (objetoActivoId && instancias[objetoActivoId]?.cargando));
 
@@ -2583,9 +2813,14 @@ export default function Viewer3D() {
         return;
       }
 
-      // 🔄 Atajo Shift+R: Actualizar Algoritmo / Hot-Reload GHX
+      // 🔄 Atajo Shift+R: Actualizar Algoritmo / Hot-Reload GHX (Solo en modo 3D paramétrico)
       if (e.shiftKey && (e.key === "r" || e.key === "R") && !e.ctrlKey && !e.altKey && !e.metaKey) {
         e.preventDefault();
+        const state = use3BFStore.getState();
+        if (state.pestanaActiva !== "3d" || state.modoPickingManual.activo) {
+          console.warn("[3BF Shield] Atajo Shift+R bloqueado: Modo Manual 3D activo.");
+          return;
+        }
         if (objetoActivoId) {
           recargarDefinicionInstancia(objetoActivoId);
         }
@@ -2668,7 +2903,12 @@ export default function Viewer3D() {
   };
 
   // 1. Generador central de escena limpia y GLB optimizado (con perfil ultra-liviano para AR)
-  const generateCleanGLB = async (isForAR = false): Promise<{ arrayBuffer: ArrayBuffer; piecesCount: number } | null> => {
+  // Por defecto, includeEdges = false para descargas limpias sin mallas de aristas duplicadas.
+  // Se conserva toda la definición matemática de aristas para AR o cuando se active explícitamente.
+  const generateCleanGLB = async (
+    isForAR = false,
+    includeEdges = false
+  ): Promise<{ arrayBuffer: ArrayBuffer; piecesCount: number } | null> => {
     const instanceMap: Map<string, THREE.Group> | undefined = typeof window !== "undefined" ? (window as any).__3bfInstanceGroups : undefined;
     const targetGroups: THREE.Group[] = [];
     if (furnitureGroup) {
@@ -2797,7 +3037,7 @@ export default function Viewer3D() {
       return null;
     }
 
-    const { mergeGeometries } = await import("three/examples/jsm/utils/BufferGeometryUtils.js");
+    const { mergeGeometries, mergeVertices } = await import("three/examples/jsm/utils/BufferGeometryUtils.js");
 
     // 2. Crear escena de exportación plana sin emparentamientos hacia (0,0,0)
     const exportScene = new THREE.Scene();
@@ -3237,8 +3477,9 @@ export default function Viewer3D() {
       // Construir cada pieza física independiente con su Pivote en el Centro de Masa
       pieceUnits.forEach((unit, unitIdx) => {
         // Formato Canónico Blender: 1ra pieza -> 'Peça 19', 2da pieza -> 'Peça 19.001', 3ra pieza -> 'Peça 19.002'
+        // El objeto padre (Node) y la malla hija (Mesh Data) tienen exactamente el mismo nombre canónico
         const instanceParentName = unitIdx === 0 ? pieceBaseName : `${pieceBaseName}.${String(unitIdx).padStart(3, "0")}`;
-        const instanceMeshName = `${instanceParentName}_Mesh`;
+        const instanceMeshName = instanceParentName;
 
         let finalPieceGeo: THREE.BufferGeometry;
         let finalPieceMat: THREE.Material | THREE.Material[];
@@ -3284,6 +3525,72 @@ export default function Viewer3D() {
         pieceMesh.position.copy(centerOfMass);
 
         exportScene.add(pieceMesh);
+
+        // 📐 Aristas CAD suavizadas y anti-aliasing geométrico (EdgesGeometry):
+        // Se generan ÚNICAMENTE si includeEdges === true (ej. previsualización técnica o cuando se active explícitamente).
+        // En descargas GLB estándar se omiten por completo para entregar el mueble limpio y sin duplicar peso.
+        if (includeEdges) {
+          try {
+            const weldedForEdges = mergeVertices(finalPieceGeo.clone(), 0.001);
+            const edgeThreshold = isForAR ? 32 : (calibracion?.thresholdAristas || 25);
+            const edgesGeo = new THREE.EdgesGeometry(weldedForEdges, edgeThreshold);
+            if (edgesGeo.attributes.position && edgesGeo.attributes.position.count > 0) {
+              // Desplazar los vértices de la arista 0.2 mm hacia afuera del centro de masa
+              // para evitar que queden coplanares con la superficie del tablero (elimina Z-fighting y líneas cortadas)
+              const linePos = edgesGeo.attributes.position;
+              for (let i = 0; i < linePos.count; i++) {
+                const vx = linePos.getX(i);
+                const vy = linePos.getY(i);
+                const vz = linePos.getZ(i);
+                const len = Math.sqrt(vx * vx + vy * vy + vz * vz);
+                if (len > 0.001) {
+                  linePos.setXYZ(i, vx + (vx / len) * 0.0002, vy + (vy / len) * 0.0002, vz + (vz / len) * 0.0002);
+                }
+              }
+              linePos.needsUpdate = true;
+
+              // En AR: Cálculo adaptativo del tono de la arista según el color del material de la pieza:
+              // - Para materiales claros/blancos (luminancia > 0.65): Gris suave (#94A3B8) que luce como sombra tenue.
+              // - Para materiales de madera/oscuros (luminancia <= 0.65): Tono sombra oscurecido del propio color (multiplicador 0.42)
+              //   que simula el bisel/quiebre de luz físico real del borde del tablero (#4D3320 en Cinamomo) sin verse blancuzco ni tiza.
+              let edgeColorHex: string;
+              if (isForAR) {
+                let refColor: THREE.Color | null = null;
+                if (Array.isArray(finalPieceMat)) {
+                  refColor = (finalPieceMat[0] as THREE.MeshStandardMaterial)?.color || null;
+                } else if (finalPieceMat) {
+                  refColor = (finalPieceMat as THREE.MeshStandardMaterial)?.color || null;
+                }
+
+                if (refColor) {
+                  const lum = 0.299 * refColor.r + 0.587 * refColor.g + 0.114 * refColor.b;
+                  if (lum > 0.65) {
+                    edgeColorHex = "#94A3B8";
+                  } else {
+                    // Sombra del propio color de la madera / melamina (quiebre de bisel físico realista)
+                    const darkened = refColor.clone().multiplyScalar(0.42);
+                    edgeColorHex = `#${darkened.getHexString()}`;
+                  }
+                } else {
+                  edgeColorHex = "#94A3B8";
+                }
+              } else {
+                edgeColorHex = calibracion?.colorAristas || "#334155";
+              }
+
+              const edgeMat = new THREE.LineBasicMaterial({
+                color: new THREE.Color(edgeColorHex),
+                linewidth: 1,
+              });
+              const lineMesh = new THREE.LineSegments(edgesGeo, edgeMat);
+              lineMesh.name = `${instanceParentName}_Edges`;
+              lineMesh.position.copy(centerOfMass);
+              exportScene.add(lineMesh);
+            }
+          } catch (edgeErr) {
+            console.warn("[3dBimFab GLB] Error generando aristas para pieza:", edgeErr);
+          }
+        }
       });
     });
 
@@ -3303,8 +3610,9 @@ export default function Viewer3D() {
       hardwareSequenceCounters.set(baseName, count);
 
       // Formato Padre e Hijo: 1ro -> Cavilha, 2do -> Cavilha.001, 3ro -> Cavilha.002
+      // El objeto padre (Node) y la malla interna (Mesh) llevan exactamente el mismo nombre
       const hwName = count === 1 ? baseName : `${baseName}.${String(count - 1).padStart(3, "0")}`;
-      const hwMeshName = `${hwName}_Mesh`;
+      const hwMeshName = hwName;
 
       const hwGeo = sub.geo.clone();
       hwGeo.computeBoundingBox();
@@ -3416,18 +3724,104 @@ export default function Viewer3D() {
     }
   };
 
+  // 🚀 Descargar GLB unificado según la pestaña activa (Estático en 3D / Animado en Manual 3D)
+  const descargarGlbSegunModo = async () => {
+    if (pestanaActiva === "manual") {
+      const state = use3BFStore.getState();
+      const pasos = state.pasosManual;
+      const activeId = state.pasoActivoManualId;
+      const pasoActivo = pasos.find((p) => p.id === activeId) || pasos[0];
+      if (!pasoActivo) {
+        exportToGLB(true);
+        return;
+      }
+      try {
+        setExportandoGLB(true);
+        // 1. Pausar y llevar el timeline estrictamente a t = 0 para garantizar mallas 100% cerradas
+        const prevTime = use3BFStore.getState().timelineCurrentTime;
+        const prevPlaying = use3BFStore.getState().isTimelinePlaying;
+        use3BFStore.setState({ isTimelinePlaying: false, timelineCurrentTime: 0 });
+
+        if (typeof window !== "undefined" && (window as any).__3bfManualEngine) {
+          (window as any).__3bfManualEngine.detener();
+        }
+
+        await new Promise((resolve) => setTimeout(resolve, 80));
+
+        const scene = (window as any).__threeScene3BF || furnitureGroup || new THREE.Scene();
+        const { buffer, filename, sizeMb } = await exportarGlbPasoManual(scene, pasoActivo);
+
+        descargarBufferComoArchivo(buffer, filename);
+        console.log(`[3dBimFab Manual] 🚀 GLB animado exportado: ${filename} (${sizeMb} MB)`);
+
+        if (typeof window !== "undefined" && (window as any).__3bfManualEngine) {
+          (window as any).__3bfManualEngine.actualizarTiempo(prevTime);
+        }
+        use3BFStore.setState({ timelineCurrentTime: prevTime, isTimelinePlaying: prevPlaying });
+      } catch (err: any) {
+        console.error("[3dBimFab Manual] Error al exportar paso animado:", err);
+        alert(`Error al exportar paso animado: ${err.message}`);
+      } finally {
+        setExportandoGLB(false);
+      }
+    } else {
+      exportToGLB(true);
+    }
+  };
+
   // ✨ Abrir Realidad Aumentada "Ver en tu espacio"
   const abrirRealidadAumentada = async () => {
     setGenerandoAR(true);
     try {
-      // 🚀 Generar GLB con perfil ultra liviano exclusivo para AR (< 900 KB)
-      const glbData = await generateCleanGLB(true);
-      if (!glbData) {
-        setGenerandoAR(false);
-        return;
-      }
+      let glbBuffer: ArrayBuffer;
+      let rawSize = 0;
+      let modelName = parametros.model_id || "Cubierta";
 
-      const modelName = parametros.model_id || "Cubierta";
+      if (pestanaActiva === "manual") {
+        const state = use3BFStore.getState();
+        const pasoActivo = state.pasosManual.find((p) => p.id === state.pasoActivoManualId) || state.pasosManual[0];
+        if (pasoActivo) {
+          modelName = `${modelName}_${pasoActivo.id}`;
+          // 1. Pausar y resetear timeline a 0 para que la animación empiece limpia desde reposo absoluto
+          const prevTime = state.timelineCurrentTime;
+          const prevPlaying = state.isTimelinePlaying;
+          use3BFStore.setState({ isTimelinePlaying: false, timelineCurrentTime: 0 });
+
+          if (typeof window !== "undefined" && (window as any).__3bfManualEngine) {
+            (window as any).__3bfManualEngine.detener();
+          }
+
+          await new Promise((resolve) => setTimeout(resolve, 80));
+
+          const scene = (window as any).__threeScene3BF || furnitureGroup || new THREE.Scene();
+          const { buffer, sizeMb } = await exportarGlbPasoManual(scene, pasoActivo);
+          glbBuffer = buffer;
+          rawSize = buffer.byteLength;
+          console.log(`[3dBimFab AR] 🎬 Paso animado preparado para AR: ${modelName} (${sizeMb} MB)`);
+
+          if (typeof window !== "undefined" && (window as any).__3bfManualEngine) {
+            (window as any).__3bfManualEngine.actualizarTiempo(prevTime);
+          }
+          use3BFStore.setState({ timelineCurrentTime: prevTime, isTimelinePlaying: prevPlaying });
+        } else {
+          const glbData = await generateCleanGLB(true);
+          if (!glbData) {
+            setGenerandoAR(false);
+            return;
+          }
+          glbBuffer = glbData.arrayBuffer;
+          rawSize = glbData.arrayBuffer.byteLength;
+        }
+      } else {
+        // 🚀 Generar GLB con perfil ultra liviano exclusivo para AR (< 900 KB)
+        const glbData = await generateCleanGLB(true);
+        if (!glbData) {
+          setGenerandoAR(false);
+          return;
+        }
+        glbBuffer = glbData.arrayBuffer;
+        rawSize = glbData.arrayBuffer.byteLength;
+      }
 
       // 📱 Detección universal de dispositivo móvil o tablet (inmune a "Sitio para computadoras"):
       const ua = typeof navigator !== "undefined" ? navigator.userAgent || navigator.vendor || (window as any).opera || "" : "";
@@ -3471,7 +3865,7 @@ export default function Viewer3D() {
       if (esDispositivoMovil) {
         // En móvil: Guardar en IndexedDB para disponibilidad inmediata
         try {
-          const glbBlob = new Blob([glbData.arrayBuffer], { type: "model/gltf-binary" });
+          const glbBlob = new Blob([glbBuffer], { type: "model/gltf-binary" });
           await saveLocalARModel(glbBlob, modelName);
         } catch (storageErr) {
           console.warn("[3dBimFab AR] IndexedDB no disponible:", storageErr);
@@ -3485,7 +3879,7 @@ export default function Viewer3D() {
           const res = await fetch(`${arUploadUrl}?mode=ar&name=${encodeURIComponent(modelName)}`, {
             method: "POST",
             headers: { "Content-Type": "application/octet-stream" },
-            body: glbData.arrayBuffer,
+            body: glbBuffer,
             signal: abortCtrl.signal,
           });
           clearTimeout(timeoutId);
@@ -3514,7 +3908,7 @@ export default function Viewer3D() {
       const res = await fetch(`${arUploadUrl}?mode=ar&name=${encodeURIComponent(modelName)}`, {
         method: "POST",
         headers: { "Content-Type": "application/octet-stream" },
-        body: glbData.arrayBuffer,
+        body: glbBuffer,
       });
 
       if (!res.ok) {
@@ -3632,7 +4026,7 @@ export default function Viewer3D() {
       }}
       className="w-full h-full relative rounded-xl overflow-hidden shadow-inner border border-gray-200 dark:border-cyan-900/50 glass-panel"
     >
-      <NPanel />
+      {pestanaActiva === "3d" && <NPanel />}
 
       {/* Indicador visual de Zona de Suelta (Drop Zone) */}
       {isDraggingOver && (
@@ -3683,31 +4077,69 @@ export default function Viewer3D() {
         </div>
       )}
 
-      {/* 🧭 HUD SUPERIOR IZQUIERDO: JERARQUÍA BOTONES + (N) COMPONENTES + LISTA DE PIEZAS */}
-      <div className="absolute top-3.5 left-4 z-20 flex flex-col items-start gap-1 select-none pointer-events-auto max-w-[calc(100vw-32px)] lg:max-w-[260px]">
-        {/* Nivel 1: Barra de Acciones Superior (Guardar + Perforar + Luz + Marco 1:1) */}
-        <div className="flex items-center gap-1.5 flex-wrap">
-          {/* Botón Guardar (Guardar nuevo o Guardar Cambios en caliente) */}
+      {/* 🧭 HUD SUPERIOR IZQUIERDO: JERARQUÍA BOTONES + (N) COMPONENTES + LISTA DE PIEZAS (Visor 3D y Manual 3D) */}
+      {(pestanaActiva === "3d" || pestanaActiva === "manual") && (
+        <div className="absolute top-3.5 left-4 z-20 flex flex-col items-start gap-1 select-none pointer-events-auto max-w-[calc(100vw-32px)] lg:max-w-[260px]">
+          {/* Nivel 1: Barra de Acciones Superior (Guardar + Perforar + Luz + Marco 1:1) */}
+          <div className="flex items-center gap-1.5 flex-wrap">
+          {/* Botón Guardar (Guardar nuevo o Guardar Cambios en caliente / Guardar .3bm en modo manual sin preguntas) */}
           <button
             onClick={async () => {
-              if (muebleActivoGuardado) {
-                await guardarCambiosMueble();
+              if (pestanaActiva === "manual") {
+                // 💾 Modo Manual: Guardar .3bm directamente sin preguntas en cualquier momento
+                await guardarManualProyecto();
+                if (muebleActivoGuardado) {
+                  await guardarCambiosMueble();
+                }
+                setGuardadoManualReciente(true);
+                setTimeout(() => setGuardadoManualReciente(false), 2500);
               } else {
-                setMostrarNPanel(true);
-                setPestanaNPanel("muebles");
-                setModalGuardarComoAbierto(true);
+                if (muebleActivoGuardado) {
+                  await guardarCambiosMueble();
+                } else {
+                  setMostrarNPanel(true);
+                  setPestanaNPanel("muebles");
+                  setModalGuardarComoAbierto(true);
+                }
               }
             }}
-            disabled={guardandoMueble}
-            title={muebleActivoGuardado ? `Guardar cambios en "${muebleActivoGuardado.nombre}"` : "Guardar nuevo mueble en el catálogo"}
+            disabled={pestanaActiva === "manual" ? guardandoManual : guardandoMueble}
+            title={
+              pestanaActiva === "manual"
+                ? "Guardar proyecto de manual 3D (.3bm) en cualquier momento sin preguntas"
+                : muebleActivoGuardado
+                ? `Guardar cambios en "${muebleActivoGuardado.nombre}"`
+                : "Guardar nuevo mueble en el catálogo"
+            }
             style={{
               backgroundColor: coloresApariencia?.botonActivo || "#0891b2",
               borderColor: coloresApariencia?.colorMarca || "#0891b2",
             }}
             className="px-3.5 lg:px-3 h-8 lg:h-7 rounded-full text-white shadow-md border flex items-center gap-1.5 text-xs lg:text-xs font-bold leading-none hover:opacity-90 active:scale-95 transition-all cursor-pointer disabled:opacity-50 box-border"
           >
-            <Save className={`w-3.5 lg:w-3.5 h-3.5 lg:h-3.5 text-white ${guardandoMueble ? "animate-spin" : ""}`} />
-            <span>{guardandoMueble ? "Guardando..." : "Guardar"}</span>
+            {pestanaActiva === "manual" ? (
+              guardandoManual ? (
+                <>
+                  <Loader2 className="w-3.5 lg:w-3.5 h-3.5 lg:h-3.5 text-white animate-spin" />
+                  <span>Guardando...</span>
+                </>
+              ) : guardadoManualReciente ? (
+                <>
+                  <Check className="w-3.5 lg:w-3.5 h-3.5 lg:h-3.5 text-white" />
+                  <span>¡Guardado!</span>
+                </>
+              ) : (
+                <>
+                  <Save className="w-3.5 lg:w-3.5 h-3.5 lg:h-3.5 text-white" />
+                  <span>Guardar</span>
+                </>
+              )
+            ) : (
+              <>
+                <Save className={`w-3.5 lg:w-3.5 h-3.5 lg:h-3.5 text-white ${guardandoMueble ? "animate-spin" : ""}`} />
+                <span>{guardandoMueble ? "Guardando..." : "Guardar"}</span>
+              </>
+            )}
           </button>
 
           {/* Botón Perforar Mueble */}
@@ -3917,8 +4349,9 @@ export default function Viewer3D() {
               </>
             );
           })()}
+          </div>
         </div>
-      </div>
+      )}
 
       {/* 🛡️ Alerta DfMA Shield: Detección, Resaltado en Rojo y Purga de Mallas Duplicadas en GHX */}
       {!alertaDuplicadosDescartada && tieneDuplicadosWorker && mallasDuplicadasWorker && (() => {
@@ -3997,6 +4430,7 @@ export default function Viewer3D() {
               <button
                 type="button"
                 onClick={() => {
+                  purgarMallasDuplicadas();
                   setMostrarDuplicadosRojos(false);
                   setAlertaDuplicadosDescartada(true);
                 }}
@@ -4058,6 +4492,7 @@ export default function Viewer3D() {
             <TransformSnappingController />
             <SelectionController />
             <BoardSilhouetteOutline furnitureGroup={furnitureGroup} />
+            <AssemblyAnimationController furnitureGroup={furnitureGroup} />
           </>
         )}
 
@@ -4194,51 +4629,57 @@ export default function Viewer3D() {
         </div>
       </div>
 
-      {/* 📱 Esquina Inferior Derecha: Botones de Acción (AR en móviles, AR + Descargar GLB en desktop) */}
-      <div className="absolute bottom-3 right-3 z-20 flex flex-col items-end gap-2 md:gap-2.5 pointer-events-auto">
-        {/* 📱 Botón Circular de Realidad Aumentada (Homologado con altura de Chevron / 28px en PC, 32px en Móvil) */}
-        <button
-          onClick={abrirRealidadAumentada}
-          disabled={generandoAR || exportandoGLB}
-          style={{
-            backgroundColor: coloresApariencia?.botonActivo || "#0891b2",
-            borderColor: coloresApariencia?.colorMarca || "#0891b2",
-          }}
-          className="w-8 lg:w-7 h-8 lg:h-7 rounded-full text-white shadow-md border flex items-center justify-center hover:opacity-90 active:scale-95 transition-all cursor-pointer disabled:opacity-50 box-border shrink-0"
-          title="Experiencia AR (Realidad Aumentada 1:1)"
-          aria-label="Experiencia AR"
-        >
-          {generandoAR ? (
-            <Loader2 className="w-3.5 lg:w-3.5 h-3.5 lg:h-3.5 text-white animate-spin" />
-          ) : (
-            <ViewInArIcon className="w-4 lg:w-4 h-4 lg:h-4 text-white" />
-          )}
-        </button>
-
-        {/* 📥 Botón Descargar GLB (ESTRICTAMENTE OCULTO EN MÓVILES, solo visible en computadoras de escritorio) */}
-        {!isMobile && (
+      {/* 📱 Esquina Inferior Derecha: Botones de Acción (AR en móviles, AR + Descargar GLB en desktop) (Visor 3D y Manual 3D) */}
+      {(pestanaActiva === "3d" || pestanaActiva === "manual") && (
+        <div className="absolute bottom-3 right-3 z-20 flex flex-col items-end gap-2 md:gap-2.5 pointer-events-auto">
+          {/* 📱 Botón Circular de Realidad Aumentada (Homologado con altura de Chevron / 28px en PC, 32px en Móvil) */}
           <button
-            onClick={() => exportToGLB(true)}
-            disabled={exportandoGLB || generandoAR}
+            onClick={abrirRealidadAumentada}
+            disabled={generandoAR || exportandoGLB}
             style={{
               backgroundColor: coloresApariencia?.botonActivo || "#0891b2",
               borderColor: coloresApariencia?.colorMarca || "#0891b2",
             }}
-            className="hidden lg:flex px-3 h-7 rounded-full text-white shadow-md border items-center gap-1.5 text-xs font-bold leading-none hover:opacity-90 active:scale-95 transition-all cursor-pointer disabled:opacity-50 box-border"
-            title="Descargar archivo 3D GLB con compresión Draco (~2.1 MB)"
+            className="w-8 lg:w-7 h-8 lg:h-7 rounded-full text-white shadow-md border flex items-center justify-center hover:opacity-90 active:scale-95 transition-all cursor-pointer disabled:opacity-50 box-border shrink-0"
+            title="Experiencia AR (Realidad Aumentada 1:1)"
+            aria-label="Experiencia AR"
           >
-            {exportandoGLB ? (
-              <>
-                <Loader2 className="w-3 h-3 text-white animate-spin" /> Descargando...
-              </>
+            {generandoAR ? (
+              <Loader2 className="w-3.5 lg:w-3.5 h-3.5 lg:h-3.5 text-white animate-spin" />
             ) : (
-              <>
-                <Download className="w-3 h-3 text-white" /> Descargar GLB
-              </>
+              <ViewInArIcon className="w-4 lg:w-4 h-4 lg:h-4 text-white" />
             )}
           </button>
-        )}
-      </div>
+
+          {/* 📥 Botón Descargar GLB (ESTRICTAMENTE OCULTO EN MÓVILES, solo visible en computadoras de escritorio) */}
+          {!isMobile && (
+            <button
+              onClick={descargarGlbSegunModo}
+              disabled={exportandoGLB || generandoAR}
+              style={{
+                backgroundColor: coloresApariencia?.botonActivo || "#0891b2",
+                borderColor: coloresApariencia?.colorMarca || "#0891b2",
+              }}
+              className="hidden lg:flex px-3 h-7 rounded-full text-white shadow-md border items-center gap-1.5 text-xs font-bold leading-none hover:opacity-90 active:scale-95 transition-all cursor-pointer disabled:opacity-50 box-border"
+              title={
+                pestanaActiva === "manual"
+                  ? "Descargar paso animado del manual en GLB con compresión Draco (< 1 MB)"
+                  : "Descargar archivo 3D GLB con compresión Draco (~2.1 MB)"
+              }
+            >
+              {exportandoGLB ? (
+                <>
+                  <Loader2 className="w-3 h-3 text-white animate-spin" /> Descargando...
+                </>
+              ) : (
+                <>
+                  <Download className="w-3 h-3 text-white" /> Descargar GLB
+                </>
+              )}
+            </button>
+          )}
+        </div>
+      )}
 
       {/* 📱 Modal de Realidad Aumentada con Código QR */}
       <ARViewerModal
@@ -4256,6 +4697,59 @@ export default function Viewer3D() {
 
       {/* ⚡ Observador Automático de Archivos GHX en Caliente (Auto Hot-Reload) */}
       <GHXAutoWatcher />
+
+      {/* 🎬 Barra Flotante de Reproducción y Scrubber para Modo Manual */}
+      {pestanaActiva === "manual" && <TimelineScrubber />}
+
+      {/* 🎯 Barra Flotante de Selección 3D (Modo Cuentagotas / Picking de Pieza Madre) */}
+      {modoPickingManual.activo && (
+        <div className="absolute top-4 left-1/2 -translate-x-1/2 z-40 flex items-center gap-3 px-5 py-2.5 rounded-full bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border border-cyan-500/50 shadow-2xl animate-in fade-in slide-in-from-top-4 duration-200">
+          <div className="flex items-center gap-2.5">
+            <span className="w-8 h-8 rounded-full bg-cyan-500/15 border border-cyan-500/40 flex items-center justify-center text-cyan-600 dark:text-cyan-400 shrink-0">
+              <Pipette className="w-4 h-4 animate-bounce" />
+            </span>
+            <div className="flex flex-col text-left">
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-black text-slate-800 dark:text-slate-100">
+                  {(() => {
+                    const paso = pasosManual.find((p) => p.id === modoPickingManual.pasoId);
+                    const grupo = paso?.showcase?.gruposCinematicos.find((g) => g.id === modoPickingManual.grupoId);
+                    return grupo ? `Seleccionando para: ${grupo.nombre}` : "Selección 3D de Piezas Madre";
+                  })()}
+                </span>
+                <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-cyan-500/10 text-cyan-700 dark:text-cyan-300 border border-cyan-500/30">
+                  {modoPickingManual.piezasTemporalmenteSeleccionadas.length} piezas
+                </span>
+              </div>
+              <span className="text-[10.5px] text-slate-500 dark:text-slate-400">
+                Toca cualquier cara, canto o reverso del tablero para seleccionarlo como Pieza Madre (toggle).
+              </span>
+            </div>
+          </div>
+
+          <div className="h-6 w-px bg-slate-200 dark:bg-slate-700 mx-1" />
+
+          {/* Botones de Acción en Cápsula Circular */}
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={confirmarPickingManual}
+              style={{ backgroundColor: coloresApariencia?.botonActivo || "#0891b2" }}
+              className="px-4 py-1.5 rounded-full text-white font-bold text-xs shadow-md flex items-center gap-1.5 hover:opacity-90 active:scale-95 transition cursor-pointer"
+            >
+              <CheckCircle2 className="w-3.5 h-3.5" />
+              <span>Guardar ({modoPickingManual.piezasTemporalmenteSeleccionadas.length})</span>
+            </button>
+            <button
+              type="button"
+              onClick={limpiarPickingManual}
+              className="px-3 py-1.5 rounded-full bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 font-semibold text-xs border border-slate-300 dark:border-slate-700 active:scale-95 transition cursor-pointer"
+            >
+              Cancelar
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* 📱 Overlay de Preparación para Realidad Aumentada */}
       {generandoAR && (

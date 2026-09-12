@@ -16,7 +16,8 @@ Cada vez que el usuario escriba **'arranque'**, **'protocolo de arranque'** o in
 4. c:\Desarrollo\mmapp\3BF\3BF.md - 3DBimFab: Motor de Manufactura Digital Parametrica (Grasshopper -> Web).
 5. c:\Desarrollo\mmapp\3BF\3BF_Proceso.md - Flujo parametrico, comandos de arranque /Arranque3BF e hitos 3BF.
 6. c:\Desarrollo\mmapp\3BF\WORKER.md - Memoria Tecnica y Estandar de Comunicacion GHX -> Web (FastAPI/Three.js).
-7. c:\Desarrollo\mmapp\Arquitectura\Arquitectura.md - Topologia del Ecosistema B2B, Hetzner VPS y Google Drive.
+7. c:\Desarrollo\mmapp\Manuales\manuales_proceso.md - Matriz de Coherencia Fisica, Protocolo y Proceso de Manuales de Armado 3D.
+8. c:\Desarrollo\mmapp\Arquitectura\Arquitectura.md - Topologia del Ecosistema B2B, Hetzner VPS y Google Drive.
 8. c:\Desarrollo\mmapp\Arquitectura\METRICAS.md - Ecosistema de Metricas y Analiticas B2B (Umami/Supabase).
 9. c:\Desarrollo\mmapp\Comercial\CRM.md - Diseno Relacional B2B y Arbol de Clientes (Baserow).
 10. c:\Desarrollo\mmapp\Comercial\RAM_de_ventas.md - CRM Inteligente de Prospeccion B2B & Outreach Copilot.

@@ -1,0 +1,4797 @@
+[
+  {
+    "name": "Corredi\u00e7a 350.004",
+    "chain": [
+      "Rotate Instances.002",
+      "Translate Instances.002",
+      "Scale Instances.002",
+      "Join Geometry.001"
+    ],
+    "rot_default": [
+      0.0,
+      0.0,
+      0.0
+    ],
+    "trans_default": [
+      0.0,
+      0.0,
+      0.0
+    ],
+    "scale_default": [
+      1.0,
+      1.0,
+      1.0
+    ],
+    "rot_anim": {},
+    "trans_anim": {
+      "0": [
+        [
+          0.0,
+          0.19999998807907104,
+          "BEZIER"
+        ],
+        [
+          4.0,
+          0.19999998807907104,
+          "BEZIER"
+        ],
+        [
+          6.0,
+          0.19999998807907104,
+          "BEZIER"
+        ],
+        [
+          9.0,
+          0.0,
+          "BEZIER"
+        ]
+      ],
+      "1": [
+        [
+          0.0,
+          0.0,
+          "BEZIER"
+        ],
+        [
+          4.0,
+          0.0,
+          "BEZIER"
+        ],
+        [
+          6.0,
+          0.0,
+          "BEZIER"
+        ]
+      ],
+      "2": [
+        [
+          0.0,
+          0.0,
+          "BEZIER"
+        ],
+        [
+          4.0,
+          0.0,
+          "BEZIER"
+        ],
+        [
+          6.0,
+          0.0,
+          "BEZIER"
+        ]
+      ]
+    },
+    "scale_anim": {
+      "0": [
+        [
+          0.0,
+          0.0,
+          "BEZIER"
+        ],
+        [
+          4.0,
+          0.0,
+          "BEZIER"
+        ],
+        [
+          6.0,
+          1.0,
+          "BEZIER"
+        ]
+      ],
+      "1": [
+        [
+          0.0,
+          0.0,
+          "BEZIER"
+        ],
+        [
+          4.0,
+          0.0,
+          "BEZIER"
+        ],
+        [
+          6.0,
+          1.0,
+          "BEZIER"
+        ]
+      ],
+      "2": [
+        [
+          0.0,
+          0.0,
+          "BEZIER"
+        ],
+        [
+          4.0,
+          0.0,
+          "BEZIER"
+        ],
+        [
+          6.0,
+          1.0,
+          "BEZIER"
+        ]
+      ]
+    }
+  },
+  {
+    "name": "Parafuso chato especial.009",
+    "chain": [
+      "Rotate Instances.003",
+      "Translate Instances.003",
+      "Scale Instances.003",
+      "Join Geometry.001"
+    ],
+    "rot_default": [
+      0.0,
+      0.0,
+      0.0
+    ],
+    "trans_default": [
+      0.0,
+      0.0,
+      0.0
+    ],
+    "scale_default": [
+      1.0,
+      1.0,
+      1.0
+    ],
+    "rot_anim": {},
+    "trans_anim": {
+      "0": [
+        [
+          0.0,
+          0.29999998211860657,
+          "BEZIER"
+        ],
+        [
+          8.0,
+          0.29999998211860657,
+          "BEZIER"
+        ],
+        [
+          10.0,
+          0.0,
+          "BEZIER"
+        ]
+      ],
+      "1": [
+        [
+          0.0,
+          0.0,
+          "BEZIER"
+        ],
+        [
+          8.0,
+          0.0,
+          "BEZIER"
+        ]
+      ],
+      "2": [
+        [
+          0.0,
+          0.0,
+          "BEZIER"
+        ],
+        [
+          8.0,
+          0.0,
+          "BEZIER"
+        ]
+      ]
+    },
+    "scale_anim": {
+      "0": [
+        [
+          0.0,
+          0.0,
+          "BEZIER"
+        ],
+        [
+          6.0,
+          0.0,
+          "BEZIER"
+        ],
+        [
+          7.0,
+          2.0,
+          "BEZIER"
+        ],
+        [
+          8.0,
+          1.0,
+          "BEZIER"
+        ]
+      ],
+      "1": [
+        [
+          0.0,
+          0.0,
+          "BEZIER"
+        ],
+        [
+          6.0,
+          0.0,
+          "BEZIER"
+        ],
+        [
+          7.0,
+          2.0,
+          "BEZIER"
+        ],
+        [
+          8.0,
+          1.0,
+          "BEZIER"
+        ]
+      ],
+      "2": [
+        [
+          0.0,
+          0.0,
+          "BEZIER"
+        ],
+        [
+          6.0,
+          0.0,
+          "BEZIER"
+        ],
+        [
+          7.0,
+          2.0,
+          "BEZIER"
+        ],
+        [
+          8.0,
+          1.0,
+          "BEZIER"
+        ]
+      ]
+    }
+  },
+  {
+    "name": "Parafuso chato especial.008",
+    "chain": [
+      "Rotate Instances.004",
+      "Translate Instances.004",
+      "Scale Instances.004",
+      "Join Geometry.001"
+    ],
+    "rot_default": [
+      0.0,
+      0.0,
+      0.0
+    ],
+    "trans_default": [
+      0.0,
+      0.0,
+      0.0
+    ],
+    "scale_default": [
+      1.0,
+      1.0,
+      1.0
+    ],
+    "rot_anim": {},
+    "trans_anim": {
+      "0": [
+        [
+          0.0,
+          0.29999998211860657,
+          "BEZIER"
+        ],
+        [
+          9.0,
+          0.29999998211860657,
+          "BEZIER"
+        ],
+        [
+          11.0,
+          0.0,
+          "BEZIER"
+        ]
+      ],
+      "1": [
+        [
+          0.0,
+          0.0,
+          "BEZIER"
+        ],
+        [
+          9.0,
+          0.0,
+          "BEZIER"
+        ],
+        [
+          11.0,
+          0.0,
+          "BEZIER"
+        ]
+      ],
+      "2": [
+        [
+          0.0,
+          0.0,
+          "BEZIER"
+        ],
+        [
+          9.0,
+          0.0,
+          "BEZIER"
+        ],
+        [
+          11.0,
+          0.0,
+          "BEZIER"
+        ]
+      ]
+    },
+    "scale_anim": {
+      "0": [
+        [
+          0.0,
+          0.0,
+          "BEZIER"
+        ],
+        [
+          7.0,
+          0.0,
+          "BEZIER"
+        ],
+        [
+          8.0,
+          2.0,
+          "BEZIER"
+        ],
+        [
+          9.0,
+          1.0,
+          "BEZIER"
+        ]
+      ],
+      "1": [
+        [
+          0.0,
+          0.0,
+          "BEZIER"
+        ],
+        [
+          7.0,
+          0.0,
+          "BEZIER"
+        ],
+        [
+          8.0,
+          2.0,
+          "BEZIER"
+        ],
+        [
+          9.0,
+          1.0,
+          "BEZIER"
+        ]
+      ],
+      "2": [
+        [
+          0.0,
+          0.0,
+          "BEZIER"
+        ],
+        [
+          7.0,
+          0.0,
+          "BEZIER"
+        ],
+        [
+          8.0,
+          2.0,
+          "BEZIER"
+        ],
+        [
+          9.0,
+          1.0,
+          "BEZIER"
+        ]
+      ]
+    }
+  },
+  {
+    "name": "Corredi\u00e7a 350",
+    "chain": [
+      "Rotate Instances.006",
+      "Translate Instances.006",
+      "Scale Instances.006",
+      "Join Geometry"
+    ],
+    "rot_default": [
+      0.0,
+      0.0,
+      0.0
+    ],
+    "trans_default": [
+      0.0,
+      0.0,
+      0.0
+    ],
+    "scale_default": [
+      1.0,
+      1.0,
+      1.0
+    ],
+    "rot_anim": {},
+    "trans_anim": {
+      "0": [
+        [
+          0.0,
+          -0.19999998807907104,
+          "BEZIER"
+        ],
+        [
+          9.0,
+          -0.19999998807907104,
+          "BEZIER"
+        ],
+        [
+          11.0,
+          0.0,
+          "BEZIER"
+        ]
+      ],
+      "1": [
+        [
+          0.0,
+          0.0,
+          "BEZIER"
+        ],
+        [
+          9.0,
+          0.0,
+          "BEZIER"
+        ]
+      ],
+      "2": [
+        [
+          0.0,
+          0.0,
+          "BEZIER"
+        ],
+        [
+          9.0,
+          0.0,
+          "BEZIER"
+        ]
+      ]
+    },
+    "scale_anim": {
+      "0": [
+        [
+          6.0,
+          0.0,
+          "BEZIER"
+        ],
+        [
+          7.0,
+          1.0,
+          "BEZIER"
+        ],
+        [
+          8.0,
+          1.0,
+          "BEZIER"
+        ]
+      ],
+      "1": [
+        [
+          6.0,
+          0.0,
+          "BEZIER"
+        ],
+        [
+          7.0,
+          1.0,
+          "BEZIER"
+        ],
+        [
+          8.0,
+          1.0,
+          "BEZIER"
+        ]
+      ],
+      "2": [
+        [
+          6.0,
+          0.0,
+          "BEZIER"
+        ],
+        [
+          7.0,
+          1.0,
+          "BEZIER"
+        ],
+        [
+          8.0,
+          1.0,
+          "BEZIER"
+        ]
+      ]
+    }
+  },
+  {
+    "name": "Parafuso chato especial.003",
+    "chain": [
+      "Rotate Instances.007",
+      "Translate Instances.007",
+      "Scale Instances.007",
+      "Join Geometry"
+    ],
+    "rot_default": [
+      0.0,
+      0.0,
+      0.0
+    ],
+    "trans_default": [
+      0.0,
+      0.0,
+      0.0
+    ],
+    "scale_default": [
+      1.0,
+      1.0,
+      1.0
+    ],
+    "rot_anim": {},
+    "trans_anim": {
+      "0": [
+        [
+          0.0,
+          -0.29999998211860657,
+          "BEZIER"
+        ],
+        [
+          11.0,
+          -0.29999998211860657,
+          "BEZIER"
+        ],
+        [
+          13.0,
+          0.0,
+          "BEZIER"
+        ]
+      ],
+      "1": [
+        [
+          0.0,
+          0.0,
+          "BEZIER"
+        ],
+        [
+          11.0,
+          0.0,
+          "BEZIER"
+        ]
+      ],
+      "2": [
+        [
+          0.0,
+          0.0,
+          "BEZIER"
+        ],
+        [
+          11.0,
+          0.0,
+          "BEZIER"
+        ]
+      ]
+    },
+    "scale_anim": {
+      "0": [
+        [
+          9.0,
+          0.0,
+          "BEZIER"
+        ],
+        [
+          10.0,
+          2.0,
+          "BEZIER"
+        ],
+        [
+          11.0,
+          1.0,
+          "BEZIER"
+        ]
+      ],
+      "1": [
+        [
+          9.0,
+          0.0,
+          "BEZIER"
+        ],
+        [
+          10.0,
+          2.0,
+          "BEZIER"
+        ],
+        [
+          11.0,
+          1.0,
+          "BEZIER"
+        ]
+      ],
+      "2": [
+        [
+          9.0,
+          0.0,
+          "BEZIER"
+        ],
+        [
+          10.0,
+          2.0,
+          "BEZIER"
+        ],
+        [
+          11.0,
+          1.0,
+          "BEZIER"
+        ]
+      ]
+    }
+  },
+  {
+    "name": "Parafuso chato especial.002",
+    "chain": [
+      "Rotate Instances.008",
+      "Translate Instances.008",
+      "Scale Instances.008",
+      "Join Geometry"
+    ],
+    "rot_default": [
+      0.0,
+      0.0,
+      0.0
+    ],
+    "trans_default": [
+      0.0,
+      0.0,
+      0.0
+    ],
+    "scale_default": [
+      1.0,
+      1.0,
+      1.0
+    ],
+    "rot_anim": {},
+    "trans_anim": {
+      "0": [
+        [
+          0.0,
+          -0.29999998211860657,
+          "BEZIER"
+        ],
+        [
+          13.0,
+          -0.29999998211860657,
+          "BEZIER"
+        ],
+        [
+          14.0,
+          0.0,
+          "BEZIER"
+        ],
+        [
+          16.0,
+          0.0,
+          "BEZIER"
+        ]
+      ],
+      "1": [
+        [
+          0.0,
+          0.0,
+          "BEZIER"
+        ],
+        [
+          13.0,
+          0.0,
+          "BEZIER"
+        ],
+        [
+          14.0,
+          0.0,
+          "BEZIER"
+        ]
+      ],
+      "2": [
+        [
+          0.0,
+          0.0,
+          "BEZIER"
+        ],
+        [
+          13.0,
+          0.0,
+          "BEZIER"
+        ],
+        [
+          14.0,
+          0.0,
+          "BEZIER"
+        ]
+      ]
+    },
+    "scale_anim": {
+      "0": [
+        [
+          11.0,
+          0.0,
+          "BEZIER"
+        ],
+        [
+          12.0,
+          2.0,
+          "BEZIER"
+        ],
+        [
+          13.0,
+          1.0,
+          "BEZIER"
+        ]
+      ],
+      "1": [
+        [
+          11.0,
+          0.0,
+          "BEZIER"
+        ],
+        [
+          12.0,
+          2.0,
+          "BEZIER"
+        ],
+        [
+          13.0,
+          1.0,
+          "BEZIER"
+        ]
+      ],
+      "2": [
+        [
+          11.0,
+          0.0,
+          "BEZIER"
+        ],
+        [
+          12.0,
+          2.0,
+          "BEZIER"
+        ],
+        [
+          13.0,
+          1.0,
+          "BEZIER"
+        ]
+      ]
+    }
+  },
+  {
+    "name": "Cavilha.013",
+    "chain": [
+      "Rotate Instances.009",
+      "Translate Instances.009",
+      "Scale Instances.009",
+      "Join Geometry"
+    ],
+    "rot_default": [
+      0.0,
+      0.0,
+      0.0
+    ],
+    "trans_default": [
+      0.0,
+      0.0,
+      0.0
+    ],
+    "scale_default": [
+      1.0,
+      1.0,
+      1.0
+    ],
+    "rot_anim": {},
+    "trans_anim": {
+      "0": [
+        [
+          31.0,
+          0.19999998807907104,
+          "BEZIER"
+        ],
+        [
+          33.0,
+          0.0,
+          "BEZIER"
+        ]
+      ],
+      "1": [
+        [
+          31.0,
+          0.0,
+          "BEZIER"
+        ]
+      ],
+      "2": [
+        [
+          31.0,
+          0.0,
+          "BEZIER"
+        ]
+      ]
+    },
+    "scale_anim": {
+      "0": [
+        [
+          0.0,
+          0.0,
+          "BEZIER"
+        ],
+        [
+          28.0,
+          0.0,
+          "BEZIER"
+        ],
+        [
+          29.0,
+          0.0,
+          "BEZIER"
+        ],
+        [
+          30.0,
+          2.0,
+          "BEZIER"
+        ],
+        [
+          31.0,
+          1.0,
+          "BEZIER"
+        ]
+      ],
+      "1": [
+        [
+          0.0,
+          0.0,
+          "BEZIER"
+        ],
+        [
+          28.0,
+          0.0,
+          "BEZIER"
+        ],
+        [
+          29.0,
+          0.0,
+          "BEZIER"
+        ],
+        [
+          30.0,
+          2.0,
+          "BEZIER"
+        ],
+        [
+          31.0,
+          1.0,
+          "BEZIER"
+        ]
+      ],
+      "2": [
+        [
+          0.0,
+          0.0,
+          "BEZIER"
+        ],
+        [
+          28.0,
+          0.0,
+          "BEZIER"
+        ],
+        [
+          29.0,
+          0.0,
+          "BEZIER"
+        ],
+        [
+          30.0,
+          2.0,
+          "BEZIER"
+        ],
+        [
+          31.0,
+          1.0,
+          "BEZIER"
+        ]
+      ]
+    }
+  },
+  {
+    "name": "Cavilha.012",
+    "chain": [
+      "Rotate Instances.010",
+      "Translate Instances.010",
+      "Scale Instances.010",
+      "Join Geometry"
+    ],
+    "rot_default": [
+      0.0,
+      0.0,
+      0.0
+    ],
+    "trans_default": [
+      0.0,
+      0.0,
+      0.0
+    ],
+    "scale_default": [
+      1.0,
+      1.0,
+      1.0
+    ],
+    "rot_anim": {},
+    "trans_anim": {
+      "0": [
+        [
+          33.0,
+          0.19999998807907104,
+          "BEZIER"
+        ],
+        [
+          35.0,
+          0.0,
+          "BEZIER"
+        ]
+      ],
+      "1": [
+        [
+          33.0,
+          0.0,
+          "BEZIER"
+        ]
+      ],
+      "2": [
+        [
+          33.0,
+          0.0,
+          "BEZIER"
+        ]
+      ]
+    },
+    "scale_anim": {
+      "0": [
+        [
+          0.0,
+          0.0,
+          "BEZIER"
+        ],
+        [
+          31.0,
+          0.0,
+          "BEZIER"
+        ],
+        [
+          32.0,
+          2.0,
+          "BEZIER"
+        ],
+        [
+          33.0,
+          1.0,
+          "BEZIER"
+        ]
+      ],
+      "1": [
+        [
+          0.0,
+          0.0,
+          "BEZIER"
+        ],
+        [
+          31.0,
+          0.0,
+          "BEZIER"
+        ],
+        [
+          32.0,
+          2.0,
+          "BEZIER"
+        ],
+        [
+          33.0,
+          1.0,
+          "BEZIER"
+        ]
+      ],
+      "2": [
+        [
+          0.0,
+          0.0,
+          "BEZIER"
+        ],
+        [
+          31.0,
+          0.0,
+          "BEZIER"
+        ],
+        [
+          32.0,
+          2.0,
+          "BEZIER"
+        ],
+        [
+          33.0,
+          1.0,
+          "BEZIER"
+        ]
+      ]
+    }
+  },
+  {
+    "name": "Cavilha.015",
+    "chain": [
+      "Rotate Instances.011",
+      "Translate Instances.011",
+      "Scale Instances.011",
+      "Join Geometry"
+    ],
+    "rot_default": [
+      0.0,
+      0.0,
+      0.0
+    ],
+    "trans_default": [
+      0.0,
+      0.0,
+      0.0
+    ],
+    "scale_default": [
+      1.0,
+      1.0,
+      1.0
+    ],
+    "rot_anim": {},
+    "trans_anim": {
+      "0": [
+        [
+          28.0,
+          -0.19999998807907104,
+          "BEZIER"
+        ],
+        [
+          30.0,
+          0.0,
+          "BEZIER"
+        ]
+      ],
+      "1": [
+        [
+          28.0,
+          0.0,
+          "BEZIER"
+        ]
+      ],
+      "2": [
+        [
+          28.0,
+          0.0,
+          "BEZIER"
+        ]
+      ]
+    },
+    "scale_anim": {
+      "0": [
+        [
+          0.0,
+          0.0,
+          "BEZIER"
+        ],
+        [
+          26.0,
+          0.0,
+          "BEZIER"
+        ],
+        [
+          27.0,
+          2.0,
+          "BEZIER"
+        ],
+        [
+          28.0,
+          1.0,
+          "BEZIER"
+        ]
+      ],
+      "1": [
+        [
+          0.0,
+          0.0,
+          "BEZIER"
+        ],
+        [
+          26.0,
+          0.0,
+          "BEZIER"
+        ],
+        [
+          27.0,
+          2.0,
+          "BEZIER"
+        ],
+        [
+          28.0,
+          1.0,
+          "BEZIER"
+        ]
+      ],
+      "2": [
+        [
+          0.0,
+          0.0,
+          "BEZIER"
+        ],
+        [
+          26.0,
+          0.0,
+          "BEZIER"
+        ],
+        [
+          27.0,
+          2.0,
+          "BEZIER"
+        ],
+        [
+          28.0,
+          1.0,
+          "BEZIER"
+        ]
+      ]
+    }
+  },
+  {
+    "name": "Cavilha.014",
+    "chain": [
+      "Rotate Instances.012",
+      "Translate Instances.012",
+      "Scale Instances.012",
+      "Join Geometry"
+    ],
+    "rot_default": [
+      0.0,
+      0.0,
+      0.0
+    ],
+    "trans_default": [
+      0.0,
+      0.0,
+      0.0
+    ],
+    "scale_default": [
+      1.0,
+      1.0,
+      1.0
+    ],
+    "rot_anim": {},
+    "trans_anim": {
+      "0": [
+        [
+          29.0,
+          -0.19999998807907104,
+          "BEZIER"
+        ],
+        [
+          31.0,
+          0.0,
+          "BEZIER"
+        ]
+      ],
+      "1": [
+        [
+          29.0,
+          0.0,
+          "BEZIER"
+        ]
+      ],
+      "2": [
+        [
+          29.0,
+          0.0,
+          "BEZIER"
+        ]
+      ]
+    },
+    "scale_anim": {
+      "0": [
+        [
+          0.0,
+          0.0,
+          "BEZIER"
+        ],
+        [
+          27.0,
+          0.0,
+          "BEZIER"
+        ],
+        [
+          28.0,
+          2.0,
+          "BEZIER"
+        ],
+        [
+          29.0,
+          1.0,
+          "BEZIER"
+        ]
+      ],
+      "1": [
+        [
+          0.0,
+          0.0,
+          "BEZIER"
+        ],
+        [
+          27.0,
+          0.0,
+          "BEZIER"
+        ],
+        [
+          28.0,
+          2.0,
+          "BEZIER"
+        ],
+        [
+          29.0,
+          1.0,
+          "BEZIER"
+        ]
+      ],
+      "2": [
+        [
+          0.0,
+          0.0,
+          "BEZIER"
+        ],
+        [
+          27.0,
+          0.0,
+          "BEZIER"
+        ],
+        [
+          28.0,
+          2.0,
+          "BEZIER"
+        ],
+        [
+          29.0,
+          1.0,
+          "BEZIER"
+        ]
+      ]
+    }
+  },
+  {
+    "name": "Parafuso estrutural.002",
+    "chain": [
+      "Rotate Instances.013",
+      "Translate Instances.013",
+      "Scale Instances.013",
+      "Join Geometry"
+    ],
+    "rot_default": [
+      0.0,
+      0.0,
+      0.0
+    ],
+    "trans_default": [
+      0.0,
+      0.0,
+      0.0
+    ],
+    "scale_default": [
+      1.0,
+      1.0,
+      1.0
+    ],
+    "rot_anim": {},
+    "trans_anim": {
+      "0": [
+        [
+          40.0,
+          -0.19999998807907104,
+          "BEZIER"
+        ],
+        [
+          44.0,
+          0.0,
+          "BEZIER"
+        ]
+      ],
+      "1": [
+        [
+          40.0,
+          0.0,
+          "BEZIER"
+        ]
+      ],
+      "2": [
+        [
+          40.0,
+          0.0,
+          "BEZIER"
+        ]
+      ]
+    },
+    "scale_anim": {
+      "0": [
+        [
+          40.0,
+          0.0,
+          "BEZIER"
+        ],
+        [
+          41.0,
+          2.0,
+          "BEZIER"
+        ],
+        [
+          42.0,
+          1.0,
+          "BEZIER"
+        ]
+      ],
+      "1": [
+        [
+          40.0,
+          0.0,
+          "BEZIER"
+        ],
+        [
+          41.0,
+          2.0,
+          "BEZIER"
+        ],
+        [
+          42.0,
+          1.0,
+          "BEZIER"
+        ]
+      ],
+      "2": [
+        [
+          40.0,
+          0.0,
+          "BEZIER"
+        ],
+        [
+          41.0,
+          2.0,
+          "BEZIER"
+        ],
+        [
+          42.0,
+          1.0,
+          "BEZIER"
+        ]
+      ]
+    }
+  },
+  {
+    "name": "Parafuso estrutural",
+    "chain": [
+      "Rotate Instances.014",
+      "Translate Instances.014",
+      "Scale Instances.014",
+      "Join Geometry"
+    ],
+    "rot_default": [
+      6.2831854820251465,
+      0.0,
+      0.0
+    ],
+    "trans_default": [
+      -0.010300000198185444,
+      0.0,
+      0.0
+    ],
+    "scale_default": [
+      1.0,
+      1.0,
+      1.0
+    ],
+    "rot_anim": {
+      "0": [
+        [
+          42.0,
+          0.0,
+          "BEZIER"
+        ],
+        [
+          43.0,
+          1.5707963705062866,
+          "BEZIER"
+        ],
+        [
+          44.0,
+          3.1415927410125732,
+          "BEZIER"
+        ],
+        [
+          45.0,
+          4.71238899230957,
+          "BEZIER"
+        ],
+        [
+          47.0,
+          6.2831854820251465,
+          "BEZIER"
+        ]
+      ],
+      "1": [
+        [
+          42.0,
+          0.0,
+          "BEZIER"
+        ]
+      ],
+      "2": [
+        [
+          42.0,
+          0.0,
+          "BEZIER"
+        ]
+      ]
+    },
+    "trans_anim": {
+      "0": [
+        [
+          41.0,
+          -0.19999998807907104,
+          "BEZIER"
+        ],
+        [
+          43.0,
+          -0.03125,
+          "BEZIER"
+        ],
+        [
+          44.0,
+          -0.010300000198185444,
+          "BEZIER"
+        ],
+        [
+          45.0,
+          -0.010300000198185444,
+          "BEZIER"
+        ],
+        [
+          46.0,
+          -0.010300000198185444,
+          "BEZIER"
+        ],
+        [
+          47.0,
+          -0.010300000198185444,
+          "BEZIER"
+        ],
+        [
+          49.0,
+          -0.010300000198185444,
+          "BEZIER"
+        ],
+        [
+          50.0,
+          -0.010300000198185444,
+          "BEZIER"
+        ]
+      ],
+      "1": [
+        [
+          41.0,
+          0.0,
+          "BEZIER"
+        ]
+      ],
+      "2": [
+        [
+          41.0,
+          0.0,
+          "BEZIER"
+        ]
+      ]
+    },
+    "scale_anim": {
+      "0": [
+        [
+          39.0,
+          0.0,
+          "BEZIER"
+        ],
+        [
+          40.0,
+          2.0,
+          "BEZIER"
+        ],
+        [
+          41.0,
+          1.0,
+          "BEZIER"
+        ],
+        [
+          49.0,
+          1.0,
+          "BEZIER"
+        ],
+        [
+          50.0,
+          1.0,
+          "BEZIER"
+        ],
+        [
+          51.0,
+          1.0,
+          "BEZIER"
+        ]
+      ],
+      "1": [
+        [
+          39.0,
+          0.0,
+          "BEZIER"
+        ],
+        [
+          40.0,
+          2.0,
+          "BEZIER"
+        ],
+        [
+          41.0,
+          1.0,
+          "BEZIER"
+        ],
+        [
+          49.0,
+          1.0,
+          "BEZIER"
+        ],
+        [
+          50.0,
+          1.0,
+          "BEZIER"
+        ],
+        [
+          51.0,
+          1.0,
+          "BEZIER"
+        ]
+      ],
+      "2": [
+        [
+          39.0,
+          0.0,
+          "BEZIER"
+        ],
+        [
+          40.0,
+          2.0,
+          "BEZIER"
+        ],
+        [
+          41.0,
+          1.0,
+          "BEZIER"
+        ],
+        [
+          49.0,
+          1.0,
+          "BEZIER"
+        ],
+        [
+          50.0,
+          1.0,
+          "BEZIER"
+        ],
+        [
+          51.0,
+          1.0,
+          "BEZIER"
+        ]
+      ]
+    }
+  },
+  {
+    "name": "Chave allen",
+    "chain": [
+      "Rotate Instances.015",
+      "Translate Instances.015",
+      "Scale Instances.015",
+      "Join Geometry"
+    ],
+    "rot_default": [
+      6.2831854820251465,
+      0.0,
+      0.0
+    ],
+    "trans_default": [
+      0.0,
+      0.0,
+      0.0
+    ],
+    "scale_default": [
+      0.0,
+      0.0,
+      0.0
+    ],
+    "rot_anim": {
+      "0": [
+        [
+          42.0,
+          0.0,
+          "BEZIER"
+        ],
+        [
+          43.0,
+          1.5707963705062866,
+          "BEZIER"
+        ],
+        [
+          44.0,
+          3.1415927410125732,
+          "BEZIER"
+        ],
+        [
+          45.0,
+          4.71238899230957,
+          "BEZIER"
+        ],
+        [
+          47.0,
+          6.2831854820251465,
+          "BEZIER"
+        ]
+      ],
+      "1": [
+        [
+          42.0,
+          0.0,
+          "BEZIER"
+        ]
+      ],
+      "2": [
+        [
+          42.0,
+          0.0,
+          "BEZIER"
+        ]
+      ]
+    },
+    "trans_anim": {
+      "0": [
+        [
+          42.0,
+          -0.1899999976158142,
+          "BEZIER"
+        ],
+        [
+          43.0,
+          -0.09999999403953552,
+          "BEZIER"
+        ],
+        [
+          44.0,
+          -0.009999999776482582,
+          "BEZIER"
+        ],
+        [
+          45.0,
+          0.0,
+          "BEZIER"
+        ]
+      ],
+      "1": [
+        [
+          44.0,
+          0.0,
+          "BEZIER"
+        ]
+      ],
+      "2": [
+        [
+          44.0,
+          0.0,
+          "BEZIER"
+        ]
+      ]
+    },
+    "scale_anim": {
+      "0": [
+        [
+          41.0,
+          0.0,
+          "BEZIER"
+        ],
+        [
+          42.0,
+          1.0,
+          "BEZIER"
+        ],
+        [
+          44.0,
+          1.0,
+          "BEZIER"
+        ],
+        [
+          48.0,
+          1.0,
+          "BEZIER"
+        ],
+        [
+          49.0,
+          0.0,
+          "BEZIER"
+        ]
+      ],
+      "1": [
+        [
+          41.0,
+          0.0,
+          "BEZIER"
+        ],
+        [
+          42.0,
+          1.0,
+          "BEZIER"
+        ],
+        [
+          44.0,
+          1.0,
+          "BEZIER"
+        ],
+        [
+          48.0,
+          1.0,
+          "BEZIER"
+        ],
+        [
+          49.0,
+          0.0,
+          "BEZIER"
+        ]
+      ],
+      "2": [
+        [
+          41.0,
+          0.0,
+          "BEZIER"
+        ],
+        [
+          42.0,
+          1.0,
+          "BEZIER"
+        ],
+        [
+          44.0,
+          1.0,
+          "BEZIER"
+        ],
+        [
+          48.0,
+          1.0,
+          "BEZIER"
+        ],
+        [
+          49.0,
+          0.0,
+          "BEZIER"
+        ]
+      ]
+    }
+  },
+  {
+    "name": "Parafuso estrutural.003",
+    "chain": [
+      "Rotate Instances.016",
+      "Translate Instances.016",
+      "Scale Instances.016",
+      "Join Geometry"
+    ],
+    "rot_default": [
+      -0.5515239834785461,
+      0.0,
+      0.0
+    ],
+    "trans_default": [
+      0.0,
+      0.0,
+      0.0
+    ],
+    "scale_default": [
+      1.0,
+      1.0,
+      1.0
+    ],
+    "rot_anim": {},
+    "trans_anim": {
+      "0": [
+        [
+          53.0,
+          0.19999998807907104,
+          "BEZIER"
+        ],
+        [
+          55.0,
+          0.19999998807907104,
+          "BEZIER"
+        ],
+        [
+          57.0,
+          0.0,
+          "BEZIER"
+        ]
+      ],
+      "1": [
+        [
+          53.0,
+          0.0,
+          "BEZIER"
+        ],
+        [
+          55.0,
+          0.0,
+          "BEZIER"
+        ],
+        [
+          57.0,
+          0.0,
+          "BEZIER"
+        ]
+      ],
+      "2": [
+        [
+          53.0,
+          0.0,
+          "BEZIER"
+        ],
+        [
+          55.0,
+          0.0,
+          "BEZIER"
+        ],
+        [
+          57.0,
+          0.0,
+          "BEZIER"
+        ]
+      ]
+    },
+    "scale_anim": {
+      "0": [
+        [
+          53.0,
+          0.0,
+          "BEZIER"
+        ],
+        [
+          54.0,
+          2.0,
+          "BEZIER"
+        ],
+        [
+          55.0,
+          1.0,
+          "BEZIER"
+        ]
+      ],
+      "1": [
+        [
+          53.0,
+          0.0,
+          "BEZIER"
+        ],
+        [
+          54.0,
+          2.0,
+          "BEZIER"
+        ],
+        [
+          55.0,
+          1.0,
+          "BEZIER"
+        ]
+      ],
+      "2": [
+        [
+          53.0,
+          0.0,
+          "BEZIER"
+        ],
+        [
+          54.0,
+          2.0,
+          "BEZIER"
+        ],
+        [
+          55.0,
+          1.0,
+          "BEZIER"
+        ]
+      ]
+    }
+  },
+  {
+    "name": "Parafuso estrutural.001",
+    "chain": [
+      "Rotate Instances.017",
+      "Translate Instances.017",
+      "Scale Instances.017",
+      "Join Geometry"
+    ],
+    "rot_default": [
+      0.0,
+      0.0,
+      0.0
+    ],
+    "trans_default": [
+      0.0,
+      0.0,
+      0.0
+    ],
+    "scale_default": [
+      1.0,
+      1.0,
+      1.0
+    ],
+    "rot_anim": {},
+    "trans_anim": {
+      "0": [
+        [
+          54.0,
+          0.19999998807907104,
+          "BEZIER"
+        ],
+        [
+          56.0,
+          0.19999998807907104,
+          "BEZIER"
+        ],
+        [
+          58.0,
+          0.0,
+          "BEZIER"
+        ]
+      ],
+      "1": [
+        [
+          54.0,
+          0.0,
+          "BEZIER"
+        ],
+        [
+          56.0,
+          0.0,
+          "BEZIER"
+        ]
+      ],
+      "2": [
+        [
+          54.0,
+          0.0,
+          "BEZIER"
+        ],
+        [
+          56.0,
+          0.0,
+          "BEZIER"
+        ]
+      ]
+    },
+    "scale_anim": {
+      "0": [
+        [
+          54.0,
+          0.0,
+          "BEZIER"
+        ],
+        [
+          55.0,
+          2.0,
+          "BEZIER"
+        ],
+        [
+          56.0,
+          1.0,
+          "BEZIER"
+        ]
+      ],
+      "1": [
+        [
+          54.0,
+          0.0,
+          "BEZIER"
+        ],
+        [
+          55.0,
+          2.0,
+          "BEZIER"
+        ],
+        [
+          56.0,
+          1.0,
+          "BEZIER"
+        ]
+      ],
+      "2": [
+        [
+          54.0,
+          0.0,
+          "BEZIER"
+        ],
+        [
+          55.0,
+          2.0,
+          "BEZIER"
+        ],
+        [
+          56.0,
+          1.0,
+          "BEZIER"
+        ]
+      ]
+    }
+  },
+  {
+    "name": "Tampa parafuso estrutural.001",
+    "chain": [
+      "Rotate Instances.018",
+      "Translate Instances.018",
+      "Scale Instances.018",
+      "Join Geometry"
+    ],
+    "rot_default": [
+      0.0,
+      0.0,
+      0.0
+    ],
+    "trans_default": [
+      0.0,
+      0.0,
+      0.0
+    ],
+    "scale_default": [
+      1.0,
+      1.0,
+      1.0
+    ],
+    "rot_anim": {},
+    "trans_anim": {
+      "0": [
+        [
+          58.0,
+          0.09999999403953552,
+          "BEZIER"
+        ],
+        [
+          62.0,
+          0.09999999403953552,
+          "BEZIER"
+        ],
+        [
+          63.0,
+          0.0,
+          "BEZIER"
+        ]
+      ],
+      "1": [
+        [
+          58.0,
+          0.0,
+          "BEZIER"
+        ],
+        [
+          62.0,
+          0.0,
+          "BEZIER"
+        ]
+      ],
+      "2": [
+        [
+          58.0,
+          0.0,
+          "BEZIER"
+        ],
+        [
+          62.0,
+          0.0,
+          "BEZIER"
+        ]
+      ]
+    },
+    "scale_anim": {
+      "0": [
+        [
+          60.0,
+          0.0,
+          "BEZIER"
+        ],
+        [
+          61.0,
+          4.0,
+          "BEZIER"
+        ],
+        [
+          62.0,
+          1.0,
+          "BEZIER"
+        ]
+      ],
+      "1": [
+        [
+          60.0,
+          0.0,
+          "BEZIER"
+        ],
+        [
+          61.0,
+          4.0,
+          "BEZIER"
+        ],
+        [
+          62.0,
+          1.0,
+          "BEZIER"
+        ]
+      ],
+      "2": [
+        [
+          60.0,
+          0.0,
+          "BEZIER"
+        ],
+        [
+          61.0,
+          4.0,
+          "BEZIER"
+        ],
+        [
+          62.0,
+          1.0,
+          "BEZIER"
+        ]
+      ]
+    }
+  },
+  {
+    "name": "Tampa parafuso estrutural",
+    "chain": [
+      "Rotate Instances.019",
+      "Translate Instances.019",
+      "Scale Instances.019",
+      "Join Geometry"
+    ],
+    "rot_default": [
+      0.0,
+      0.0,
+      0.0
+    ],
+    "trans_default": [
+      0.0,
+      0.0,
+      0.0
+    ],
+    "scale_default": [
+      1.0,
+      1.0,
+      1.0
+    ],
+    "rot_anim": {},
+    "trans_anim": {
+      "0": [
+        [
+          58.0,
+          0.09999999403953552,
+          "BEZIER"
+        ],
+        [
+          63.0,
+          0.09999999403953552,
+          "BEZIER"
+        ],
+        [
+          64.0,
+          0.0,
+          "BEZIER"
+        ]
+      ],
+      "1": [
+        [
+          58.0,
+          0.0,
+          "BEZIER"
+        ],
+        [
+          63.0,
+          0.0,
+          "BEZIER"
+        ]
+      ],
+      "2": [
+        [
+          58.0,
+          0.0,
+          "BEZIER"
+        ],
+        [
+          63.0,
+          0.0,
+          "BEZIER"
+        ]
+      ]
+    },
+    "scale_anim": {
+      "0": [
+        [
+          61.0,
+          0.0,
+          "BEZIER"
+        ],
+        [
+          62.0,
+          4.0,
+          "BEZIER"
+        ],
+        [
+          63.0,
+          1.0,
+          "BEZIER"
+        ]
+      ],
+      "1": [
+        [
+          61.0,
+          0.0,
+          "BEZIER"
+        ],
+        [
+          62.0,
+          4.0,
+          "BEZIER"
+        ],
+        [
+          63.0,
+          1.0,
+          "BEZIER"
+        ]
+      ],
+      "2": [
+        [
+          61.0,
+          0.0,
+          "BEZIER"
+        ],
+        [
+          62.0,
+          4.0,
+          "BEZIER"
+        ],
+        [
+          63.0,
+          1.0,
+          "BEZIER"
+        ]
+      ]
+    }
+  },
+  {
+    "name": "Tampa parafuso estrutural.003",
+    "chain": [
+      "Rotate Instances.020",
+      "Translate Instances.020",
+      "Scale Instances.020",
+      "Join Geometry"
+    ],
+    "rot_default": [
+      0.0,
+      0.0,
+      0.0
+    ],
+    "trans_default": [
+      0.0,
+      0.0,
+      0.0
+    ],
+    "scale_default": [
+      1.0,
+      1.0,
+      1.0
+    ],
+    "rot_anim": {},
+    "trans_anim": {
+      "0": [
+        [
+          58.0,
+          -0.09999999403953552,
+          "BEZIER"
+        ],
+        [
+          60.0,
+          -0.09999999403953552,
+          "BEZIER"
+        ],
+        [
+          62.0,
+          0.0,
+          "BEZIER"
+        ]
+      ],
+      "1": [
+        [
+          58.0,
+          0.0,
+          "BEZIER"
+        ],
+        [
+          60.0,
+          0.0,
+          "BEZIER"
+        ]
+      ],
+      "2": [
+        [
+          58.0,
+          0.0,
+          "BEZIER"
+        ],
+        [
+          60.0,
+          0.0,
+          "BEZIER"
+        ]
+      ]
+    },
+    "scale_anim": {
+      "0": [
+        [
+          58.0,
+          0.0,
+          "BEZIER"
+        ],
+        [
+          59.0,
+          4.0,
+          "BEZIER"
+        ],
+        [
+          60.0,
+          1.0,
+          "BEZIER"
+        ]
+      ],
+      "1": [
+        [
+          58.0,
+          0.0,
+          "BEZIER"
+        ],
+        [
+          59.0,
+          4.0,
+          "BEZIER"
+        ],
+        [
+          60.0,
+          1.0,
+          "BEZIER"
+        ]
+      ],
+      "2": [
+        [
+          58.0,
+          0.0,
+          "BEZIER"
+        ],
+        [
+          59.0,
+          4.0,
+          "BEZIER"
+        ],
+        [
+          60.0,
+          1.0,
+          "BEZIER"
+        ]
+      ]
+    }
+  },
+  {
+    "name": "Tapa furo pl\u00e1stico.001",
+    "chain": [
+      "Rotate Instances.021",
+      "Translate Instances.021",
+      "Scale Instances.021",
+      "Join Geometry"
+    ],
+    "rot_default": [
+      0.0,
+      0.0,
+      0.0
+    ],
+    "trans_default": [
+      0.0,
+      0.0,
+      0.0
+    ],
+    "scale_default": [
+      1.0,
+      1.0,
+      1.0
+    ],
+    "rot_anim": {},
+    "trans_anim": {
+      "0": [
+        [
+          64.0,
+          0.09999999403953552,
+          "BEZIER"
+        ],
+        [
+          68.0,
+          0.09999999403953552,
+          "BEZIER"
+        ],
+        [
+          71.0,
+          0.0,
+          "BEZIER"
+        ]
+      ],
+      "1": [
+        [
+          64.0,
+          0.0,
+          "BEZIER"
+        ],
+        [
+          68.0,
+          0.0,
+          "BEZIER"
+        ]
+      ],
+      "2": [
+        [
+          64.0,
+          0.0,
+          "BEZIER"
+        ],
+        [
+          68.0,
+          0.0,
+          "BEZIER"
+        ]
+      ]
+    },
+    "scale_anim": {
+      "0": [
+        [
+          66.0,
+          0.0,
+          "BEZIER"
+        ],
+        [
+          67.0,
+          4.0,
+          "BEZIER"
+        ],
+        [
+          68.0,
+          1.0,
+          "BEZIER"
+        ]
+      ],
+      "1": [
+        [
+          66.0,
+          0.0,
+          "BEZIER"
+        ],
+        [
+          67.0,
+          4.0,
+          "BEZIER"
+        ],
+        [
+          68.0,
+          1.0,
+          "BEZIER"
+        ]
+      ],
+      "2": [
+        [
+          66.0,
+          0.0,
+          "BEZIER"
+        ],
+        [
+          67.0,
+          4.0,
+          "BEZIER"
+        ],
+        [
+          68.0,
+          1.0,
+          "BEZIER"
+        ]
+      ]
+    }
+  },
+  {
+    "name": "Tapa furo pl\u00e1stico",
+    "chain": [
+      "Rotate Instances.022",
+      "Translate Instances.022",
+      "Scale Instances.022",
+      "Join Geometry"
+    ],
+    "rot_default": [
+      0.0,
+      0.0,
+      0.0
+    ],
+    "trans_default": [
+      0.0,
+      0.0,
+      0.0
+    ],
+    "scale_default": [
+      1.0,
+      1.0,
+      1.0
+    ],
+    "rot_anim": {},
+    "trans_anim": {
+      "0": [
+        [
+          64.0,
+          0.09999999403953552,
+          "BEZIER"
+        ],
+        [
+          69.0,
+          0.09999999403953552,
+          "BEZIER"
+        ],
+        [
+          71.0,
+          0.0,
+          "BEZIER"
+        ]
+      ],
+      "1": [
+        [
+          64.0,
+          0.0,
+          "BEZIER"
+        ],
+        [
+          69.0,
+          0.0,
+          "BEZIER"
+        ]
+      ],
+      "2": [
+        [
+          64.0,
+          0.0,
+          "BEZIER"
+        ],
+        [
+          69.0,
+          0.0,
+          "BEZIER"
+        ]
+      ]
+    },
+    "scale_anim": {
+      "0": [
+        [
+          67.0,
+          0.0,
+          "BEZIER"
+        ],
+        [
+          68.0,
+          4.0,
+          "BEZIER"
+        ],
+        [
+          69.0,
+          1.0,
+          "BEZIER"
+        ]
+      ],
+      "1": [
+        [
+          67.0,
+          0.0,
+          "BEZIER"
+        ],
+        [
+          68.0,
+          4.0,
+          "BEZIER"
+        ],
+        [
+          69.0,
+          1.0,
+          "BEZIER"
+        ]
+      ],
+      "2": [
+        [
+          67.0,
+          0.0,
+          "BEZIER"
+        ],
+        [
+          68.0,
+          4.0,
+          "BEZIER"
+        ],
+        [
+          69.0,
+          1.0,
+          "BEZIER"
+        ]
+      ]
+    }
+  },
+  {
+    "name": "Tapa furo pl\u00e1stico.003",
+    "chain": [
+      "Rotate Instances.023",
+      "Translate Instances.023",
+      "Scale Instances.023",
+      "Join Geometry"
+    ],
+    "rot_default": [
+      0.0,
+      0.0,
+      0.0
+    ],
+    "trans_default": [
+      0.0,
+      0.0,
+      0.0
+    ],
+    "scale_default": [
+      1.0,
+      1.0,
+      1.0
+    ],
+    "rot_anim": {},
+    "trans_anim": {
+      "0": [
+        [
+          64.0,
+          -0.09999999403953552,
+          "BEZIER"
+        ],
+        [
+          66.0,
+          -0.09999999403953552,
+          "BEZIER"
+        ],
+        [
+          68.0,
+          0.0,
+          "BEZIER"
+        ]
+      ],
+      "1": [
+        [
+          64.0,
+          0.0,
+          "BEZIER"
+        ],
+        [
+          66.0,
+          0.0,
+          "BEZIER"
+        ]
+      ],
+      "2": [
+        [
+          64.0,
+          0.0,
+          "BEZIER"
+        ],
+        [
+          66.0,
+          0.0,
+          "BEZIER"
+        ]
+      ]
+    },
+    "scale_anim": {
+      "0": [
+        [
+          64.0,
+          0.0,
+          "BEZIER"
+        ],
+        [
+          65.0,
+          4.0,
+          "BEZIER"
+        ],
+        [
+          66.0,
+          1.0,
+          "BEZIER"
+        ]
+      ],
+      "1": [
+        [
+          64.0,
+          0.0,
+          "BEZIER"
+        ],
+        [
+          65.0,
+          4.0,
+          "BEZIER"
+        ],
+        [
+          66.0,
+          1.0,
+          "BEZIER"
+        ]
+      ],
+      "2": [
+        [
+          64.0,
+          0.0,
+          "BEZIER"
+        ],
+        [
+          65.0,
+          4.0,
+          "BEZIER"
+        ],
+        [
+          66.0,
+          1.0,
+          "BEZIER"
+        ]
+      ]
+    }
+  },
+  {
+    "name": "Tapa furo pl\u00e1stico.002",
+    "chain": [
+      "Rotate Instances.024",
+      "Translate Instances.024",
+      "Scale Instances.024",
+      "Join Geometry"
+    ],
+    "rot_default": [
+      0.0,
+      0.0,
+      0.0
+    ],
+    "trans_default": [
+      0.0,
+      0.0,
+      0.0
+    ],
+    "scale_default": [
+      1.0,
+      1.0,
+      1.0
+    ],
+    "rot_anim": {},
+    "trans_anim": {
+      "0": [
+        [
+          64.0,
+          -0.09999999403953552,
+          "BEZIER"
+        ],
+        [
+          67.0,
+          -0.09999999403953552,
+          "BEZIER"
+        ],
+        [
+          69.0,
+          0.0,
+          "BEZIER"
+        ]
+      ],
+      "1": [
+        [
+          64.0,
+          0.0,
+          "BEZIER"
+        ],
+        [
+          67.0,
+          0.0,
+          "BEZIER"
+        ]
+      ],
+      "2": [
+        [
+          64.0,
+          0.0,
+          "BEZIER"
+        ],
+        [
+          67.0,
+          0.0,
+          "BEZIER"
+        ]
+      ]
+    },
+    "scale_anim": {
+      "0": [
+        [
+          65.0,
+          0.0,
+          "BEZIER"
+        ],
+        [
+          66.0,
+          4.0,
+          "BEZIER"
+        ],
+        [
+          67.0,
+          1.0,
+          "BEZIER"
+        ]
+      ],
+      "1": [
+        [
+          65.0,
+          0.0,
+          "BEZIER"
+        ],
+        [
+          66.0,
+          4.0,
+          "BEZIER"
+        ],
+        [
+          67.0,
+          1.0,
+          "BEZIER"
+        ]
+      ],
+      "2": [
+        [
+          65.0,
+          0.0,
+          "BEZIER"
+        ],
+        [
+          66.0,
+          4.0,
+          "BEZIER"
+        ],
+        [
+          67.0,
+          1.0,
+          "BEZIER"
+        ]
+      ]
+    }
+  },
+  {
+    "name": "Cavilha.016",
+    "chain": [
+      "Rotate Instances.025",
+      "Translate Instances.025",
+      "Scale Instances.025",
+      "Join Geometry.001"
+    ],
+    "rot_default": [
+      0.0,
+      0.0,
+      0.0
+    ],
+    "trans_default": [
+      0.0,
+      0.0,
+      0.0
+    ],
+    "scale_default": [
+      1.0,
+      1.0,
+      1.0
+    ],
+    "rot_anim": {},
+    "trans_anim": {
+      "0": [
+        [
+          0.0,
+          0.0,
+          "BEZIER"
+        ],
+        [
+          15.0,
+          0.0,
+          "BEZIER"
+        ]
+      ],
+      "1": [
+        [
+          0.0,
+          0.0,
+          "BEZIER"
+        ],
+        [
+          15.0,
+          0.0,
+          "BEZIER"
+        ]
+      ],
+      "2": [
+        [
+          0.0,
+          0.19999998807907104,
+          "BEZIER"
+        ],
+        [
+          15.0,
+          0.19999998807907104,
+          "BEZIER"
+        ],
+        [
+          17.0,
+          0.0,
+          "BEZIER"
+        ]
+      ]
+    },
+    "scale_anim": {
+      "0": [
+        [
+          0.0,
+          0.0,
+          "BEZIER"
+        ],
+        [
+          12.0,
+          0.0,
+          "BEZIER"
+        ],
+        [
+          13.0,
+          2.0,
+          "BEZIER"
+        ],
+        [
+          14.0,
+          1.0,
+          "BEZIER"
+        ]
+      ],
+      "1": [
+        [
+          0.0,
+          0.0,
+          "BEZIER"
+        ],
+        [
+          12.0,
+          0.0,
+          "BEZIER"
+        ],
+        [
+          13.0,
+          2.0,
+          "BEZIER"
+        ],
+        [
+          14.0,
+          1.0,
+          "BEZIER"
+        ]
+      ],
+      "2": [
+        [
+          0.0,
+          0.0,
+          "BEZIER"
+        ],
+        [
+          12.0,
+          0.0,
+          "BEZIER"
+        ],
+        [
+          13.0,
+          2.0,
+          "BEZIER"
+        ],
+        [
+          14.0,
+          1.0,
+          "BEZIER"
+        ]
+      ]
+    }
+  },
+  {
+    "name": "Cavilha.017",
+    "chain": [
+      "Rotate Instances.026",
+      "Translate Instances.026",
+      "Scale Instances.026",
+      "Join Geometry.001"
+    ],
+    "rot_default": [
+      0.0,
+      0.0,
+      0.0
+    ],
+    "trans_default": [
+      0.0,
+      0.0,
+      0.0
+    ],
+    "scale_default": [
+      1.0,
+      1.0,
+      1.0
+    ],
+    "rot_anim": {},
+    "trans_anim": {
+      "0": [
+        [
+          0.0,
+          0.0,
+          "BEZIER"
+        ],
+        [
+          17.0,
+          0.0,
+          "BEZIER"
+        ]
+      ],
+      "1": [
+        [
+          0.0,
+          0.0,
+          "BEZIER"
+        ],
+        [
+          17.0,
+          0.0,
+          "BEZIER"
+        ]
+      ],
+      "2": [
+        [
+          0.0,
+          0.19999998807907104,
+          "BEZIER"
+        ],
+        [
+          17.0,
+          0.19999998807907104,
+          "BEZIER"
+        ],
+        [
+          19.0,
+          0.0,
+          "BEZIER"
+        ]
+      ]
+    },
+    "scale_anim": {
+      "0": [
+        [
+          0.0,
+          0.0,
+          "BEZIER"
+        ],
+        [
+          12.0,
+          0.0,
+          "BEZIER"
+        ],
+        [
+          14.0,
+          2.0,
+          "BEZIER"
+        ],
+        [
+          15.0,
+          1.0,
+          "BEZIER"
+        ]
+      ],
+      "1": [
+        [
+          0.0,
+          0.0,
+          "BEZIER"
+        ],
+        [
+          12.0,
+          0.0,
+          "BEZIER"
+        ],
+        [
+          14.0,
+          2.0,
+          "BEZIER"
+        ],
+        [
+          15.0,
+          1.0,
+          "BEZIER"
+        ]
+      ],
+      "2": [
+        [
+          0.0,
+          0.0,
+          "BEZIER"
+        ],
+        [
+          12.0,
+          0.0,
+          "BEZIER"
+        ],
+        [
+          14.0,
+          2.0,
+          "BEZIER"
+        ],
+        [
+          15.0,
+          1.0,
+          "BEZIER"
+        ]
+      ]
+    }
+  },
+  {
+    "name": "Cavilha.008",
+    "chain": [
+      "Rotate Instances.028",
+      "Translate Instances.028",
+      "Scale Instances.028",
+      "Join Geometry.001"
+    ],
+    "rot_default": [
+      0.0,
+      0.0,
+      0.0
+    ],
+    "trans_default": [
+      0.0,
+      0.0,
+      0.0
+    ],
+    "scale_default": [
+      1.0,
+      1.0,
+      1.0
+    ],
+    "rot_anim": {},
+    "trans_anim": {
+      "0": [
+        [
+          0.0,
+          0.0,
+          "BEZIER"
+        ],
+        [
+          18.0,
+          0.0,
+          "BEZIER"
+        ]
+      ],
+      "1": [
+        [
+          0.0,
+          0.0,
+          "BEZIER"
+        ],
+        [
+          18.0,
+          0.0,
+          "BEZIER"
+        ]
+      ],
+      "2": [
+        [
+          0.0,
+          0.19999998807907104,
+          "BEZIER"
+        ],
+        [
+          18.0,
+          0.19999998807907104,
+          "BEZIER"
+        ],
+        [
+          20.0,
+          0.0,
+          "BEZIER"
+        ]
+      ]
+    },
+    "scale_anim": {
+      "0": [
+        [
+          0.0,
+          0.0,
+          "BEZIER"
+        ],
+        [
+          15.0,
+          0.0,
+          "BEZIER"
+        ],
+        [
+          16.0,
+          2.0,
+          "BEZIER"
+        ],
+        [
+          17.0,
+          1.0,
+          "BEZIER"
+        ]
+      ],
+      "1": [
+        [
+          0.0,
+          0.0,
+          "BEZIER"
+        ],
+        [
+          15.0,
+          0.0,
+          "BEZIER"
+        ],
+        [
+          16.0,
+          2.0,
+          "BEZIER"
+        ],
+        [
+          17.0,
+          1.0,
+          "BEZIER"
+        ]
+      ],
+      "2": [
+        [
+          0.0,
+          0.0,
+          "BEZIER"
+        ],
+        [
+          15.0,
+          0.0,
+          "BEZIER"
+        ],
+        [
+          16.0,
+          2.0,
+          "BEZIER"
+        ],
+        [
+          17.0,
+          1.0,
+          "BEZIER"
+        ]
+      ]
+    }
+  },
+  {
+    "name": "Cavilha.009",
+    "chain": [
+      "Rotate Instances.029",
+      "Translate Instances.029",
+      "Scale Instances.029",
+      "Join Geometry.001"
+    ],
+    "rot_default": [
+      0.0,
+      0.0,
+      0.0
+    ],
+    "trans_default": [
+      0.0,
+      0.0,
+      0.0
+    ],
+    "scale_default": [
+      1.0,
+      1.0,
+      1.0
+    ],
+    "rot_anim": {},
+    "trans_anim": {
+      "0": [
+        [
+          0.0,
+          0.0,
+          "BEZIER"
+        ],
+        [
+          19.0,
+          0.0,
+          "BEZIER"
+        ]
+      ],
+      "1": [
+        [
+          0.0,
+          0.0,
+          "BEZIER"
+        ],
+        [
+          19.0,
+          0.0,
+          "BEZIER"
+        ]
+      ],
+      "2": [
+        [
+          0.0,
+          0.19999998807907104,
+          "BEZIER"
+        ],
+        [
+          19.0,
+          0.19999998807907104,
+          "BEZIER"
+        ],
+        [
+          21.0,
+          0.0,
+          "BEZIER"
+        ]
+      ]
+    },
+    "scale_anim": {
+      "0": [
+        [
+          0.0,
+          0.0,
+          "BEZIER"
+        ],
+        [
+          16.0,
+          0.0,
+          "BEZIER"
+        ],
+        [
+          17.0,
+          2.0,
+          "BEZIER"
+        ],
+        [
+          18.0,
+          1.0,
+          "BEZIER"
+        ]
+      ],
+      "1": [
+        [
+          0.0,
+          0.0,
+          "BEZIER"
+        ],
+        [
+          16.0,
+          0.0,
+          "BEZIER"
+        ],
+        [
+          17.0,
+          2.0,
+          "BEZIER"
+        ],
+        [
+          18.0,
+          1.0,
+          "BEZIER"
+        ]
+      ],
+      "2": [
+        [
+          0.0,
+          0.0,
+          "BEZIER"
+        ],
+        [
+          16.0,
+          0.0,
+          "BEZIER"
+        ],
+        [
+          17.0,
+          2.0,
+          "BEZIER"
+        ],
+        [
+          18.0,
+          1.0,
+          "BEZIER"
+        ]
+      ]
+    }
+  },
+  {
+    "name": "Tampa parafuso estrutural.002",
+    "chain": [
+      "Rotate Instances.027",
+      "Translate Instances.027",
+      "Scale Instances.027",
+      "Join Geometry"
+    ],
+    "rot_default": [
+      0.0,
+      0.0,
+      0.0
+    ],
+    "trans_default": [
+      0.0,
+      0.0,
+      0.0
+    ],
+    "scale_default": [
+      1.0,
+      1.0,
+      1.0
+    ],
+    "rot_anim": {},
+    "trans_anim": {
+      "0": [
+        [
+          58.0,
+          -0.09999999403953552,
+          "BEZIER"
+        ],
+        [
+          61.0,
+          -0.09999999403953552,
+          "BEZIER"
+        ],
+        [
+          62.0,
+          0.0,
+          "BEZIER"
+        ]
+      ],
+      "1": [
+        [
+          58.0,
+          0.0,
+          "BEZIER"
+        ],
+        [
+          61.0,
+          0.0,
+          "BEZIER"
+        ]
+      ],
+      "2": [
+        [
+          58.0,
+          0.0,
+          "BEZIER"
+        ],
+        [
+          61.0,
+          0.0,
+          "BEZIER"
+        ]
+      ]
+    },
+    "scale_anim": {
+      "0": [
+        [
+          59.0,
+          0.0,
+          "BEZIER"
+        ],
+        [
+          60.0,
+          4.0,
+          "BEZIER"
+        ],
+        [
+          61.0,
+          1.0,
+          "BEZIER"
+        ]
+      ],
+      "1": [
+        [
+          59.0,
+          0.0,
+          "BEZIER"
+        ],
+        [
+          60.0,
+          4.0,
+          "BEZIER"
+        ],
+        [
+          61.0,
+          1.0,
+          "BEZIER"
+        ]
+      ],
+      "2": [
+        [
+          59.0,
+          0.0,
+          "BEZIER"
+        ],
+        [
+          60.0,
+          4.0,
+          "BEZIER"
+        ],
+        [
+          61.0,
+          1.0,
+          "BEZIER"
+        ]
+      ]
+    }
+  },
+  {
+    "name": "Sapata redonda.001",
+    "chain": [
+      "Rotate Instances.034",
+      "Translate Instances.034",
+      "Scale Instances.034",
+      "Join Geometry"
+    ],
+    "rot_default": [
+      0.0,
+      0.0,
+      0.0
+    ],
+    "trans_default": [
+      0.0,
+      0.0,
+      0.0
+    ],
+    "scale_default": [
+      1.0,
+      1.0,
+      1.0
+    ],
+    "rot_anim": {},
+    "trans_anim": {
+      "0": [
+        [
+          72.0,
+          0.0,
+          "BEZIER"
+        ],
+        [
+          91.0,
+          0.0,
+          "BEZIER"
+        ]
+      ],
+      "1": [
+        [
+          72.0,
+          0.0,
+          "BEZIER"
+        ],
+        [
+          91.0,
+          0.0,
+          "BEZIER"
+        ]
+      ],
+      "2": [
+        [
+          72.0,
+          -0.09999999403953552,
+          "BEZIER"
+        ],
+        [
+          75.0,
+          0.0,
+          "BEZIER"
+        ],
+        [
+          91.0,
+          0.0,
+          "BEZIER"
+        ]
+      ]
+    },
+    "scale_anim": {
+      "0": [
+        [
+          70.0,
+          0.0,
+          "BEZIER"
+        ],
+        [
+          71.0,
+          2.0,
+          "BEZIER"
+        ],
+        [
+          72.0,
+          1.0,
+          "BEZIER"
+        ]
+      ],
+      "1": [
+        [
+          70.0,
+          0.0,
+          "BEZIER"
+        ],
+        [
+          71.0,
+          2.0,
+          "BEZIER"
+        ],
+        [
+          72.0,
+          1.0,
+          "BEZIER"
+        ]
+      ],
+      "2": [
+        [
+          70.0,
+          0.0,
+          "BEZIER"
+        ],
+        [
+          71.0,
+          2.0,
+          "BEZIER"
+        ],
+        [
+          72.0,
+          1.0,
+          "BEZIER"
+        ]
+      ]
+    }
+  },
+  {
+    "name": "Sapata redonda",
+    "chain": [
+      "Rotate Instances.035",
+      "Translate Instances.035",
+      "Scale Instances.035",
+      "Join Geometry"
+    ],
+    "rot_default": [
+      0.0,
+      0.0,
+      0.0
+    ],
+    "trans_default": [
+      0.0,
+      0.0,
+      0.0
+    ],
+    "scale_default": [
+      1.0,
+      1.0,
+      1.0
+    ],
+    "rot_anim": {},
+    "trans_anim": {
+      "0": [
+        [
+          84.0,
+          0.0,
+          "BEZIER"
+        ],
+        [
+          85.0,
+          0.0,
+          "BEZIER"
+        ]
+      ],
+      "1": [
+        [
+          84.0,
+          0.0,
+          "BEZIER"
+        ],
+        [
+          85.0,
+          0.0,
+          "BEZIER"
+        ]
+      ],
+      "2": [
+        [
+          84.0,
+          -0.09999999403953552,
+          "BEZIER"
+        ],
+        [
+          85.0,
+          -0.09999999403953552,
+          "BEZIER"
+        ],
+        [
+          86.0,
+          -0.09999999403953552,
+          "BEZIER"
+        ],
+        [
+          87.0,
+          0.0,
+          "BEZIER"
+        ]
+      ]
+    },
+    "scale_anim": {
+      "0": [
+        [
+          84.0,
+          0.0,
+          "BEZIER"
+        ],
+        [
+          85.0,
+          2.0,
+          "BEZIER"
+        ],
+        [
+          86.0,
+          1.0,
+          "BEZIER"
+        ]
+      ],
+      "1": [
+        [
+          84.0,
+          0.0,
+          "BEZIER"
+        ],
+        [
+          85.0,
+          2.0,
+          "BEZIER"
+        ],
+        [
+          86.0,
+          1.0,
+          "BEZIER"
+        ]
+      ],
+      "2": [
+        [
+          84.0,
+          0.0,
+          "BEZIER"
+        ],
+        [
+          85.0,
+          2.0,
+          "BEZIER"
+        ],
+        [
+          86.0,
+          1.0,
+          "BEZIER"
+        ]
+      ]
+    }
+  },
+  {
+    "name": "Prego.002",
+    "chain": [
+      "Rotate Instances.030",
+      "Translate Instances.030",
+      "Scale Instances.030",
+      "Join Geometry"
+    ],
+    "rot_default": [
+      0.0,
+      0.0,
+      0.0
+    ],
+    "trans_default": [
+      0.0,
+      0.0,
+      0.0
+    ],
+    "scale_default": [
+      1.0,
+      1.0,
+      1.0
+    ],
+    "rot_anim": {},
+    "trans_anim": {
+      "0": [
+        [
+          78.0,
+          0.0,
+          "BEZIER"
+        ]
+      ],
+      "1": [
+        [
+          78.0,
+          0.0,
+          "BEZIER"
+        ]
+      ],
+      "2": [
+        [
+          78.0,
+          -0.09999999403953552,
+          "BEZIER"
+        ],
+        [
+          80.0,
+          -0.017999999225139618,
+          "BEZIER"
+        ],
+        [
+          81.0,
+          -0.009999999776482582,
+          "BEZIER"
+        ],
+        [
+          82.0,
+          -0.009999999776482582,
+          "BEZIER"
+        ],
+        [
+          83.0,
+          -0.009499999694526196,
+          "BEZIER"
+        ],
+        [
+          84.0,
+          -0.009499999694526196,
+          "BEZIER"
+        ],
+        [
+          85.0,
+          0.0,
+          "BEZIER"
+        ]
+      ]
+    },
+    "scale_anim": {
+      "0": [
+        [
+          76.0,
+          0.0,
+          "BEZIER"
+        ],
+        [
+          77.0,
+          3.0,
+          "BEZIER"
+        ],
+        [
+          78.0,
+          1.0,
+          "BEZIER"
+        ]
+      ],
+      "1": [
+        [
+          76.0,
+          0.0,
+          "BEZIER"
+        ],
+        [
+          77.0,
+          3.0,
+          "BEZIER"
+        ],
+        [
+          78.0,
+          1.0,
+          "BEZIER"
+        ]
+      ],
+      "2": [
+        [
+          76.0,
+          0.0,
+          "BEZIER"
+        ],
+        [
+          77.0,
+          3.0,
+          "BEZIER"
+        ],
+        [
+          78.0,
+          1.0,
+          "BEZIER"
+        ]
+      ]
+    }
+  },
+  {
+    "name": "Prego.001",
+    "chain": [
+      "Rotate Instances.031",
+      "Translate Instances.031",
+      "Scale Instances.031",
+      "Join Geometry"
+    ],
+    "rot_default": [
+      0.0,
+      0.0,
+      0.0
+    ],
+    "trans_default": [
+      0.0,
+      0.0,
+      0.0
+    ],
+    "scale_default": [
+      1.0,
+      1.0,
+      1.0
+    ],
+    "rot_anim": {},
+    "trans_anim": {
+      "0": [
+        [
+          88.0,
+          0.0,
+          "BEZIER"
+        ]
+      ],
+      "1": [
+        [
+          88.0,
+          0.0,
+          "BEZIER"
+        ]
+      ],
+      "2": [
+        [
+          88.0,
+          -0.09999999403953552,
+          "BEZIER"
+        ],
+        [
+          89.0,
+          0.0,
+          "BEZIER"
+        ]
+      ]
+    },
+    "scale_anim": {
+      "0": [
+        [
+          86.0,
+          0.0,
+          "BEZIER"
+        ],
+        [
+          87.0,
+          3.0,
+          "BEZIER"
+        ],
+        [
+          88.0,
+          1.0,
+          "BEZIER"
+        ]
+      ],
+      "1": [
+        [
+          86.0,
+          0.0,
+          "BEZIER"
+        ],
+        [
+          87.0,
+          3.0,
+          "BEZIER"
+        ],
+        [
+          88.0,
+          1.0,
+          "BEZIER"
+        ]
+      ],
+      "2": [
+        [
+          86.0,
+          0.0,
+          "BEZIER"
+        ],
+        [
+          87.0,
+          3.0,
+          "BEZIER"
+        ],
+        [
+          88.0,
+          1.0,
+          "BEZIER"
+        ]
+      ]
+    }
+  },
+  {
+    "name": "Sapata redonda.003",
+    "chain": [
+      "Rotate Instances.036",
+      "Translate Instances.036",
+      "Scale Instances.036",
+      "Join Geometry"
+    ],
+    "rot_default": [
+      0.0,
+      0.0,
+      0.0
+    ],
+    "trans_default": [
+      0.0,
+      0.0,
+      0.0
+    ],
+    "scale_default": [
+      1.0,
+      1.0,
+      1.0
+    ],
+    "rot_anim": {},
+    "trans_anim": {
+      "0": [
+        [
+          85.0,
+          0.0,
+          "BEZIER"
+        ],
+        [
+          86.0,
+          0.0,
+          "BEZIER"
+        ]
+      ],
+      "1": [
+        [
+          85.0,
+          0.0,
+          "BEZIER"
+        ],
+        [
+          86.0,
+          0.0,
+          "BEZIER"
+        ]
+      ],
+      "2": [
+        [
+          85.0,
+          -0.09999999403953552,
+          "BEZIER"
+        ],
+        [
+          86.0,
+          -0.09999999403953552,
+          "BEZIER"
+        ],
+        [
+          87.0,
+          0.0,
+          "BEZIER"
+        ]
+      ]
+    },
+    "scale_anim": {
+      "0": [
+        [
+          84.0,
+          0.0,
+          "BEZIER"
+        ],
+        [
+          85.0,
+          2.0,
+          "BEZIER"
+        ],
+        [
+          86.0,
+          1.0,
+          "BEZIER"
+        ]
+      ],
+      "1": [
+        [
+          84.0,
+          0.0,
+          "BEZIER"
+        ],
+        [
+          85.0,
+          2.0,
+          "BEZIER"
+        ],
+        [
+          86.0,
+          1.0,
+          "BEZIER"
+        ]
+      ],
+      "2": [
+        [
+          84.0,
+          0.0,
+          "BEZIER"
+        ],
+        [
+          85.0,
+          2.0,
+          "BEZIER"
+        ],
+        [
+          86.0,
+          1.0,
+          "BEZIER"
+        ]
+      ]
+    }
+  },
+  {
+    "name": "Sapata redonda.002",
+    "chain": [
+      "Rotate Instances.037",
+      "Translate Instances.037",
+      "Scale Instances.037",
+      "Join Geometry"
+    ],
+    "rot_default": [
+      0.0,
+      0.0,
+      0.0
+    ],
+    "trans_default": [
+      0.0,
+      0.0,
+      0.0
+    ],
+    "scale_default": [
+      1.0,
+      1.0,
+      1.0
+    ],
+    "rot_anim": {},
+    "trans_anim": {
+      "0": [
+        [
+          86.0,
+          0.0,
+          "BEZIER"
+        ],
+        [
+          87.0,
+          0.0,
+          "BEZIER"
+        ]
+      ],
+      "1": [
+        [
+          86.0,
+          0.0,
+          "BEZIER"
+        ],
+        [
+          87.0,
+          0.0,
+          "BEZIER"
+        ]
+      ],
+      "2": [
+        [
+          86.0,
+          -0.09999999403953552,
+          "BEZIER"
+        ],
+        [
+          87.0,
+          0.0,
+          "BEZIER"
+        ]
+      ]
+    },
+    "scale_anim": {
+      "0": [
+        [
+          84.0,
+          0.0,
+          "BEZIER"
+        ],
+        [
+          85.0,
+          2.0,
+          "BEZIER"
+        ],
+        [
+          86.0,
+          1.0,
+          "BEZIER"
+        ]
+      ],
+      "1": [
+        [
+          84.0,
+          0.0,
+          "BEZIER"
+        ],
+        [
+          85.0,
+          2.0,
+          "BEZIER"
+        ],
+        [
+          86.0,
+          1.0,
+          "BEZIER"
+        ]
+      ],
+      "2": [
+        [
+          84.0,
+          0.0,
+          "BEZIER"
+        ],
+        [
+          85.0,
+          2.0,
+          "BEZIER"
+        ],
+        [
+          86.0,
+          1.0,
+          "BEZIER"
+        ]
+      ]
+    }
+  },
+  {
+    "name": "Prego",
+    "chain": [
+      "Rotate Instances.032",
+      "Translate Instances.032",
+      "Scale Instances.032",
+      "Join Geometry"
+    ],
+    "rot_default": [
+      0.0,
+      0.0,
+      0.0
+    ],
+    "trans_default": [
+      0.0,
+      0.0,
+      0.0
+    ],
+    "scale_default": [
+      1.0,
+      1.0,
+      1.0
+    ],
+    "rot_anim": {},
+    "trans_anim": {
+      "0": [
+        [
+          88.0,
+          0.0,
+          "BEZIER"
+        ]
+      ],
+      "1": [
+        [
+          88.0,
+          0.0,
+          "BEZIER"
+        ]
+      ],
+      "2": [
+        [
+          88.0,
+          -0.09999999403953552,
+          "BEZIER"
+        ],
+        [
+          89.0,
+          0.0,
+          "BEZIER"
+        ]
+      ]
+    },
+    "scale_anim": {
+      "0": [
+        [
+          86.0,
+          0.0,
+          "BEZIER"
+        ],
+        [
+          87.0,
+          3.0,
+          "BEZIER"
+        ],
+        [
+          88.0,
+          1.0,
+          "BEZIER"
+        ]
+      ],
+      "1": [
+        [
+          86.0,
+          0.0,
+          "BEZIER"
+        ],
+        [
+          87.0,
+          3.0,
+          "BEZIER"
+        ],
+        [
+          88.0,
+          1.0,
+          "BEZIER"
+        ]
+      ],
+      "2": [
+        [
+          86.0,
+          0.0,
+          "BEZIER"
+        ],
+        [
+          87.0,
+          3.0,
+          "BEZIER"
+        ],
+        [
+          88.0,
+          1.0,
+          "BEZIER"
+        ]
+      ]
+    }
+  },
+  {
+    "name": "Prego.003",
+    "chain": [
+      "Rotate Instances.033",
+      "Translate Instances.033",
+      "Scale Instances.033",
+      "Join Geometry"
+    ],
+    "rot_default": [
+      0.0,
+      0.0,
+      0.0
+    ],
+    "trans_default": [
+      0.0,
+      0.0,
+      0.0
+    ],
+    "scale_default": [
+      1.0,
+      1.0,
+      1.0
+    ],
+    "rot_anim": {},
+    "trans_anim": {
+      "0": [
+        [
+          88.0,
+          0.0,
+          "BEZIER"
+        ]
+      ],
+      "1": [
+        [
+          88.0,
+          0.0,
+          "BEZIER"
+        ]
+      ],
+      "2": [
+        [
+          88.0,
+          -0.09999999403953552,
+          "BEZIER"
+        ],
+        [
+          89.0,
+          0.0,
+          "BEZIER"
+        ]
+      ]
+    },
+    "scale_anim": {
+      "0": [
+        [
+          86.0,
+          0.0,
+          "BEZIER"
+        ],
+        [
+          87.0,
+          3.0,
+          "BEZIER"
+        ],
+        [
+          88.0,
+          1.0,
+          "BEZIER"
+        ]
+      ],
+      "1": [
+        [
+          86.0,
+          0.0,
+          "BEZIER"
+        ],
+        [
+          87.0,
+          3.0,
+          "BEZIER"
+        ],
+        [
+          88.0,
+          1.0,
+          "BEZIER"
+        ]
+      ],
+      "2": [
+        [
+          86.0,
+          0.0,
+          "BEZIER"
+        ],
+        [
+          87.0,
+          3.0,
+          "BEZIER"
+        ],
+        [
+          88.0,
+          1.0,
+          "BEZIER"
+        ]
+      ]
+    }
+  },
+  {
+    "name": "Martillo",
+    "chain": [
+      "Rotate Instances.038",
+      "Translate Instances.038",
+      "Scale Instances.038",
+      "Join Geometry"
+    ],
+    "rot_default": [
+      0.0,
+      0.0,
+      0.0
+    ],
+    "trans_default": [
+      -0.017999999225139618,
+      0.0,
+      0.0
+    ],
+    "scale_default": [
+      0.0,
+      0.0,
+      0.0
+    ],
+    "rot_anim": {
+      "0": [
+        [
+          81.0,
+          0.0,
+          "BEZIER"
+        ]
+      ],
+      "1": [
+        [
+          81.0,
+          0.0,
+          "LINEAR"
+        ],
+        [
+          82.0,
+          0.12217304855585098,
+          "LINEAR"
+        ],
+        [
+          83.0,
+          0.0,
+          "LINEAR"
+        ],
+        [
+          84.0,
+          0.12217304855585098,
+          "LINEAR"
+        ],
+        [
+          85.0,
+          0.0,
+          "LINEAR"
+        ]
+      ],
+      "2": [
+        [
+          81.0,
+          0.0,
+          "BEZIER"
+        ]
+      ]
+    },
+    "trans_anim": {
+      "0": [
+        [
+          83.0,
+          -0.00800000037997961,
+          "BEZIER"
+        ],
+        [
+          85.0,
+          -0.017999999225139618,
+          "BEZIER"
+        ],
+        [
+          87.0,
+          -0.017999999225139618,
+          "BEZIER"
+        ]
+      ],
+      "1": [
+        [
+          83.0,
+          0.0,
+          "BEZIER"
+        ]
+      ],
+      "2": [
+        [
+          83.0,
+          0.0,
+          "BEZIER"
+        ]
+      ]
+    },
+    "scale_anim": {
+      "0": [
+        [
+          80.0,
+          0.0,
+          "BEZIER"
+        ],
+        [
+          81.0,
+          1.0,
+          "BEZIER"
+        ],
+        [
+          85.0,
+          1.0,
+          "BEZIER"
+        ],
+        [
+          86.0,
+          0.0,
+          "BEZIER"
+        ]
+      ],
+      "1": [
+        [
+          80.0,
+          0.0,
+          "BEZIER"
+        ],
+        [
+          81.0,
+          1.0,
+          "BEZIER"
+        ],
+        [
+          85.0,
+          1.0,
+          "BEZIER"
+        ],
+        [
+          86.0,
+          0.0,
+          "BEZIER"
+        ]
+      ],
+      "2": [
+        [
+          80.0,
+          0.0,
+          "BEZIER"
+        ],
+        [
+          81.0,
+          1.0,
+          "BEZIER"
+        ],
+        [
+          85.0,
+          1.0,
+          "BEZIER"
+        ],
+        [
+          86.0,
+          0.0,
+          "BEZIER"
+        ]
+      ]
+    }
+  },
+  {
+    "name": "Pe\u00e7a 03",
+    "chain": [
+      "Rotate Instances",
+      "Translate Instances",
+      "Scale Instances",
+      "Join Geometry.001"
+    ],
+    "rot_default": [
+      0.0,
+      0.0,
+      0.0
+    ],
+    "trans_default": [
+      0.0,
+      0.0,
+      0.0
+    ],
+    "scale_default": [
+      1.0,
+      1.0,
+      1.0
+    ],
+    "rot_anim": {},
+    "trans_anim": {},
+    "scale_anim": {}
+  },
+  {
+    "name": "Pe\u00e7a 04",
+    "chain": [
+      "Rotate Instances.001",
+      "Translate Instances.001",
+      "Scale Instances.001",
+      "Join Geometry"
+    ],
+    "rot_default": [
+      0.0,
+      0.0,
+      0.0
+    ],
+    "trans_default": [
+      0.0,
+      0.0,
+      0.0
+    ],
+    "scale_default": [
+      1.0,
+      1.0,
+      1.0
+    ],
+    "rot_anim": {},
+    "trans_anim": {},
+    "scale_anim": {}
+  },
+  {
+    "name": "Pe\u00e7a 02",
+    "chain": [
+      "Rotate Instances.005",
+      "Translate Instances.005",
+      "Scale Instances.005",
+      "Join Geometry"
+    ],
+    "rot_default": [
+      0.0,
+      0.0,
+      0.0
+    ],
+    "trans_default": [
+      0.0,
+      0.0,
+      0.0
+    ],
+    "scale_default": [
+      1.0,
+      1.0,
+      1.0
+    ],
+    "rot_anim": {},
+    "trans_anim": {},
+    "scale_anim": {
+      "0": [
+        [
+          23.0,
+          0.0,
+          "BEZIER"
+        ],
+        [
+          25.0,
+          1.0,
+          "BEZIER"
+        ]
+      ],
+      "1": [
+        [
+          23.0,
+          0.0,
+          "BEZIER"
+        ],
+        [
+          25.0,
+          1.0,
+          "BEZIER"
+        ]
+      ],
+      "2": [
+        [
+          23.0,
+          0.0,
+          "BEZIER"
+        ],
+        [
+          25.0,
+          1.0,
+          "BEZIER"
+        ]
+      ]
+    }
+  }
+]

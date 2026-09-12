@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { use3BFStore, CarpetaMuebleNode } from "@/lib/store";
+import { use3BFStore } from "@/lib/store";
 import { 
   Folder, 
   FolderPlus, 
@@ -10,9 +10,6 @@ import {
   Check, 
   Layers, 
   Package, 
-  ChevronRight, 
-  ChevronDown, 
-  Sparkles,
   Loader2
 } from "lucide-react";
 
@@ -26,7 +23,12 @@ export default function SaveFurnitureModal() {
     guardandoMueble,
     instancias,
     getDespieceGlobal,
+    esquemaColor,
+    coloresApariencia,
   } = use3BFStore();
+
+  const esOscuro = esquemaColor === "oscuro";
+  const colorBotonActivo = esOscuro ? "#1368AA" : (coloresApariencia?.botonActivo || "#0891B2");
 
   const [nombreMueble, setNombreMueble] = useState("");
   const [marcaSeleccionada, setMarcaSeleccionada] = useState("RTA Design");
@@ -78,29 +80,52 @@ export default function SaveFurnitureModal() {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 animate-in fade-in duration-200">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 animate-in fade-in duration-200 select-none">
       <div 
-        className="w-full max-w-lg bg-white dark:bg-[#111827] rounded-2xl shadow-2xl border border-slate-200 dark:border-cyan-900/60 overflow-hidden flex flex-col"
+        style={{
+          backgroundColor: esOscuro ? "#131B2E" : "#FFFFFF",
+          borderColor: esOscuro ? "#1E293B" : "#CBD5E1",
+          color: esOscuro ? "#F8FAFC" : "#0F172A",
+        }}
+        className="w-full max-w-lg rounded-2xl shadow-2xl border overflow-hidden flex flex-col transition-colors"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Cabecera del Modal */}
-        <div className="px-5 py-4 bg-slate-50 dark:bg-[#0B0F17]/70 border-b border-slate-200 dark:border-cyan-900/40 flex items-center justify-between">
+        <div 
+          style={{
+            backgroundColor: esOscuro ? "#0B0F17" : "#F8FAFC",
+            borderColor: esOscuro ? "#1E293B" : "#E2E8F0",
+          }}
+          className="px-5 py-4 border-b flex items-center justify-between"
+        >
           <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-xl bg-cyan-600/10 text-cyan-600 dark:text-cyan-400 flex items-center justify-center font-bold">
+            <div 
+              style={{ backgroundColor: colorBotonActivo }}
+              className="w-8 h-8 rounded-full text-white flex items-center justify-center font-bold shadow-xs shrink-0"
+            >
               <Save className="w-4 h-4" />
             </div>
             <div>
-              <h3 className="text-sm font-bold text-slate-900 dark:text-white leading-tight">
+              <h3 
+                style={{ color: esOscuro ? "#F8FAFC" : "#0F172A" }}
+                className="text-sm font-bold leading-tight"
+              >
                 Guardar como Mueble
               </h3>
-              <p className="text-[11px] text-slate-500 dark:text-slate-400">
+              <p 
+                style={{ color: esOscuro ? "#94A3B8" : "#64748B" }}
+                className="text-[11px] mt-0.5"
+              >
                 Guardar en Google Drive & Catálogo de Marcas
               </p>
             </div>
           </div>
           <button
             onClick={() => setModalGuardarComoAbierto(false)}
-            className="p-1 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-400 hover:text-slate-700 dark:hover:text-white transition cursor-pointer"
+            style={{
+              color: esOscuro ? "#94A3B8" : "#64748B",
+            }}
+            className="w-7 h-7 rounded-full flex items-center justify-center hover:opacity-80 transition cursor-pointer"
           >
             <X className="w-4 h-4" />
           </button>
@@ -111,23 +136,34 @@ export default function SaveFurnitureModal() {
           
           {/* Nombre del Mueble */}
           <div className="flex flex-col gap-1.5">
-            <label className="font-bold text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
+            <label 
+              style={{ color: esOscuro ? "#CBD5E1" : "#334155" }}
+              className="font-bold flex items-center gap-1.5"
+            >
               <Package className="w-3.5 h-3.5 text-cyan-600 dark:text-cyan-400" />
               Nombre Oficial del Mueble *
             </label>
             <input
               type="text"
               required
-              placeholder="Ej: Escritorio Gamer X1, Mesa de Noche Nórdica..."
+              placeholder="Ej: Comoda Ravenna, Escritorio Gamer X1..."
               value={nombreMueble}
               onChange={(e) => setNombreMueble(e.target.value)}
-              className="w-full px-3 py-2 rounded-xl bg-slate-100 dark:bg-[#090D14] border border-slate-300 dark:border-cyan-900/50 text-slate-900 dark:text-white text-xs font-semibold focus:outline-none focus:border-cyan-500 transition shadow-inner"
+              style={{
+                backgroundColor: esOscuro ? "#0B0F17" : "#F8FAFC",
+                borderColor: esOscuro ? "#1E293B" : "#CBD5E1",
+                color: esOscuro ? "#F8FAFC" : "#0F172A",
+              }}
+              className="w-full px-3.5 py-2 rounded-full border text-xs font-semibold focus:outline-none transition"
             />
           </div>
 
           {/* Selección de Marca Primaria */}
           <div className="flex flex-col gap-1.5">
-            <label className="font-bold text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
+            <label 
+              style={{ color: esOscuro ? "#CBD5E1" : "#334155" }}
+              className="font-bold flex items-center gap-1.5"
+            >
               <Folder className="w-3.5 h-3.5 text-amber-500" />
               Marca / Catálogo Primario
             </label>
@@ -143,11 +179,18 @@ export default function SaveFurnitureModal() {
                       const sub = marca.subcarpetas?.[0]?.nombre || "General";
                       setTipologiaSeleccionada(sub);
                     }}
-                    className={`py-2 px-2.5 rounded-xl border text-center font-bold transition flex flex-col items-center gap-1 cursor-pointer ${
-                      isSelected
-                        ? "bg-cyan-600 text-white border-cyan-500 shadow-sm"
-                        : "bg-slate-50 dark:bg-[#131B2E]/60 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-cyan-900/40 hover:border-cyan-400"
-                    }`}
+                    style={{
+                      backgroundColor: isSelected 
+                        ? colorBotonActivo 
+                        : (esOscuro ? "#0B0F17" : "#F1F5F9"),
+                      borderColor: isSelected 
+                        ? colorBotonActivo 
+                        : (esOscuro ? "#1E293B" : "#CBD5E1"),
+                      color: isSelected 
+                        ? "#FFFFFF" 
+                        : (esOscuro ? "#CBD5E1" : "#334155"),
+                    }}
+                    className="py-1.5 px-3 rounded-full border text-center font-bold text-xs transition flex items-center justify-center cursor-pointer shadow-xs hover:opacity-90"
                   >
                     <span className="text-[11px] truncate w-full">{marca.nombre}</span>
                   </button>
@@ -159,7 +202,10 @@ export default function SaveFurnitureModal() {
           {/* Selección de Tipología / Subcarpeta */}
           <div className="flex flex-col gap-1.5">
             <div className="flex items-center justify-between">
-              <label className="font-bold text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
+              <label 
+                style={{ color: esOscuro ? "#CBD5E1" : "#334155" }}
+                className="font-bold flex items-center gap-1.5"
+              >
                 <Folder className="w-3.5 h-3.5 text-cyan-600 dark:text-cyan-400" />
                 Tipología / Subcarpeta de {marcaSeleccionada}
               </label>
@@ -167,34 +213,48 @@ export default function SaveFurnitureModal() {
                 <button
                   type="button"
                   onClick={() => setCreandoNuevaCarpeta(true)}
-                  className="text-[10px] text-cyan-600 dark:text-cyan-400 hover:underline flex items-center gap-1 font-semibold cursor-pointer"
+                  style={{ color: colorBotonActivo }}
+                  className="text-[11px] hover:underline flex items-center gap-1 font-bold cursor-pointer"
                 >
-                  <FolderPlus className="w-3 h-3" /> + Nueva Carpeta
+                  <FolderPlus className="w-3.5 h-3.5" /> + Nueva Carpeta
                 </button>
               )}
             </div>
 
             {/* Input para crear nueva carpeta inline */}
             {creandoNuevaCarpeta && (
-              <div className="flex items-center gap-1.5 p-1.5 bg-cyan-50/60 dark:bg-cyan-950/30 rounded-xl border border-cyan-300 dark:border-cyan-800">
+              <div 
+                style={{
+                  backgroundColor: esOscuro ? "#0B0F17" : "#F8FAFC",
+                  borderColor: esOscuro ? "#1E293B" : "#CBD5E1",
+                }}
+                className="flex items-center gap-1.5 p-1.5 rounded-full border"
+              >
                 <input
                   type="text"
                   placeholder="Nombre de la nueva carpeta..."
                   value={nombreNuevaCarpeta}
                   onChange={(e) => setNombreNuevaCarpeta(e.target.value)}
-                  className="flex-1 px-2.5 py-1 text-xs rounded-lg bg-white dark:bg-[#0B0F17] border border-cyan-400 text-slate-800 dark:text-white focus:outline-none"
+                  style={{
+                    backgroundColor: esOscuro ? "#131B2E" : "#FFFFFF",
+                    borderColor: esOscuro ? "#334155" : "#E2E8F0",
+                    color: esOscuro ? "#F8FAFC" : "#0F172A",
+                  }}
+                  className="flex-1 px-3 py-1 text-xs rounded-full border focus:outline-none"
                 />
                 <button
                   type="button"
                   onClick={handleCrearSubcarpeta}
-                  className="px-2.5 py-1 bg-cyan-600 text-white rounded-lg font-bold text-[10px] hover:bg-cyan-500 cursor-pointer"
+                  style={{ backgroundColor: colorBotonActivo }}
+                  className="px-3 py-1 text-white rounded-full font-bold text-[10.5px] cursor-pointer hover:opacity-90 transition"
                 >
                   Crear
                 </button>
                 <button
                   type="button"
                   onClick={() => setCreandoNuevaCarpeta(false)}
-                  className="px-2 py-1 text-slate-500 hover:text-slate-800 text-[10px] cursor-pointer"
+                  style={{ color: esOscuro ? "#94A3B8" : "#64748B" }}
+                  className="px-2 py-1 text-[10.5px] cursor-pointer hover:opacity-80 transition"
                 >
                   Cancelar
                 </button>
@@ -209,14 +269,21 @@ export default function SaveFurnitureModal() {
                     type="button"
                     key={tip}
                     onClick={() => setTipologiaSeleccionada(tip)}
-                    className={`px-3 py-1 rounded-full border text-xs font-semibold transition cursor-pointer flex items-center gap-1.5 ${
-                      isSelected
-                        ? "bg-cyan-600/15 border-cyan-500 text-cyan-700 dark:text-cyan-300 font-bold shadow-xs"
-                        : "bg-slate-100 dark:bg-[#0B0F17]/60 text-slate-600 dark:text-slate-400 border-slate-200 dark:border-slate-800 hover:bg-slate-200"
-                    }`}
+                    style={{
+                      backgroundColor: isSelected 
+                        ? colorBotonActivo 
+                        : (esOscuro ? "#0B0F17" : "#F1F5F9"),
+                      borderColor: isSelected 
+                        ? colorBotonActivo 
+                        : (esOscuro ? "#1E293B" : "#CBD5E1"),
+                      color: isSelected 
+                        ? "#FFFFFF" 
+                        : (esOscuro ? "#94A3B8" : "#475569"),
+                    }}
+                    className="px-3 py-1 rounded-full border text-xs font-semibold transition cursor-pointer flex items-center gap-1.5 shadow-xs hover:opacity-90"
                   >
-                    <Folder className={`w-3 h-3 ${isSelected ? "text-cyan-600 fill-cyan-600" : "text-slate-400"}`} />
-                    {tip}
+                    <Folder className={`w-3 h-3 ${isSelected ? "text-white fill-white" : "text-slate-400"}`} />
+                    <span>{tip}</span>
                   </button>
                 );
               })}
@@ -224,31 +291,42 @@ export default function SaveFurnitureModal() {
           </div>
 
           {/* Resumen del Contenido a Guardar */}
-          <div className="p-3 rounded-xl bg-slate-50 dark:bg-[#0B0F17]/60 border border-slate-200 dark:border-cyan-900/30 flex items-center justify-between text-[11px]">
+          <div 
+            style={{
+              backgroundColor: esOscuro ? "#0B0F17" : "#F8FAFC",
+              borderColor: esOscuro ? "#1E293B" : "#E2E8F0",
+            }}
+            className="p-3 rounded-2xl border flex items-center justify-between text-[11px]"
+          >
             <div className="flex items-center gap-2">
-              <Layers className="w-4 h-4 text-cyan-600" />
-              <span className="text-slate-600 dark:text-slate-400">
-                <strong className="text-slate-900 dark:text-white font-mono">{totalInstancias}</strong> objetos 3D en escena
+              <Layers className="w-4 h-4 text-cyan-600 dark:text-cyan-400" />
+              <span style={{ color: esOscuro ? "#94A3B8" : "#64748B" }}>
+                <strong style={{ color: esOscuro ? "#F8FAFC" : "#0F172A" }} className="font-mono">{totalInstancias}</strong> objetos 3D en escena
               </span>
             </div>
-            <div className="text-slate-500 font-mono">
-              Total Tableros: <strong className="text-cyan-700 dark:text-cyan-300">{totalPiezas} u</strong>
+            <div style={{ color: esOscuro ? "#94A3B8" : "#64748B" }} className="font-mono">
+              Total Tableros: <strong style={{ color: colorBotonActivo }}>{totalPiezas} u</strong>
             </div>
           </div>
 
           {/* Botones de Acción */}
-          <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-200 dark:border-cyan-900/40">
+          <div 
+            style={{ borderColor: esOscuro ? "#1E293B" : "#E2E8F0" }}
+            className="flex items-center justify-end gap-2 pt-2 border-t"
+          >
             <button
               type="button"
               onClick={() => setModalGuardarComoAbierto(false)}
-              className="px-4 py-2 rounded-full text-xs text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 font-semibold transition cursor-pointer"
+              style={{ color: esOscuro ? "#94A3B8" : "#64748B" }}
+              className="px-4 py-2 rounded-full text-xs font-semibold hover:opacity-80 transition cursor-pointer"
             >
               Cancelar
             </button>
             <button
               type="submit"
               disabled={guardandoMueble || !nombreMueble.trim()}
-              className="px-5 py-2 rounded-full bg-cyan-600 hover:bg-cyan-700 text-white text-xs font-semibold transition flex items-center gap-2 shadow-xs cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+              style={{ backgroundColor: colorBotonActivo }}
+              className="px-5 py-2 rounded-full text-white text-xs font-bold transition flex items-center gap-2 shadow-md cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed hover:opacity-90 active:scale-95"
             >
               {guardandoMueble ? (
                 <>

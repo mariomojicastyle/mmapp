@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { Document, NodeIO } from "@gltf-transform/core";
 import { KHRDracoMeshCompression } from "@gltf-transform/extensions";
-import { draco } from "@gltf-transform/functions";
+import { draco, dedup, resample, prune } from "@gltf-transform/functions";
 import draco3d from "draco3d";
 
 import fs from "fs";
@@ -79,12 +79,32 @@ export async function POST(req: Request) {
     let outputBuffer = inputBuffer;
     let fueComprimido = false;
 
-    // Intentar compresión Draco de forma segura con fallback automático
-    try {
-      const io = await getDracoIO();
-      if (io) {
-        const doc = await io.readBinary(new Uint8Array(inputBuffer));
+    // Si el binario ya contiene la extensión KHR_draco_mesh_compression, omitir re-compresión para preservar animaciones
+    const yaTieneDraco = inputBuffer.includes(Buffer.from("KHR_draco_mesh_compression"));
+
+    if (yaTieneDraco) {
+      console.log(`[3dBimFab Compressor] ${modelName}: Ya cuenta con compresión Draco oficial (${(sizeBefore / (1024 * 1024)).toFixed(2)} MB), omitiendo re-compresión.`);
+    } else {
+      // Intentar compresión Draco de forma segura con fallback automático
+      try {
+        const io = await getDracoIO();
+        if (io) {
+          const doc = await io.readBinary(new Uint8Array(inputBuffer));
+
+        // 🏷️ Sincronizar nombres canónicos: Asegurar que cada malla interna (Mesh data)
+        // lleve exactamente el mismo nombre que su nodo padre ('Peça 19.001', etc.)
+        for (const node of doc.getRoot().listNodes()) {
+          const mesh = node.getMesh();
+          const nodeName = node.getName();
+          if (mesh && nodeName) {
+            mesh.setName(nodeName);
+          }
+        }
+
         await doc.transform(
+          dedup(),
+          resample(),
+          prune(),
           draco({
             method: "edgebreaker",
             quantizePosition: 14,
@@ -98,9 +118,10 @@ export async function POST(req: Request) {
         outputBuffer = Buffer.from(compressedUint8);
         fueComprimido = true;
       }
-    } catch (dracoErr) {
-      console.warn("[3dBimFab Draco Fallback] Ocurrió un error en compresión Draco, usando GLB original sin comprimir:", dracoErr);
-      outputBuffer = inputBuffer;
+      } catch (dracoErr) {
+        console.warn("[3dBimFab Draco Fallback] Ocurrió un error en compresión Draco, usando GLB original sin comprimir:", dracoErr);
+        outputBuffer = inputBuffer;
+      }
     }
 
     const sizeAfter = outputBuffer.length;

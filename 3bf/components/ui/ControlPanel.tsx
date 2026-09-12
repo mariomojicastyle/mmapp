@@ -490,7 +490,10 @@ export default function ControlPanel() {
   // Función para re-calcular cuando cambian los parámetros (Solo modo legacy mono-modelo)
   const ejecutarComputo = async () => {
     const s = use3BFStore.getState();
-    // Si hay instancias activas en el escenario, el cómputo lo gestiona exclusivamente recomputarInstancia en store.ts
+    // 🛡️ BLINDAJE TOTAL: Si hay instancias cargadas, o la pestaña no es 3D puro, o hay picking activo, PROHIBIDO computar
+    if (Object.keys(s.instancias || {}).length > 0 || s.pestanaActiva !== "3d" || s.modoPickingManual?.activo) {
+      return;
+    }
     if (s.objetoActivoId && s.instancias[s.objetoActivoId]) {
       return;
     }

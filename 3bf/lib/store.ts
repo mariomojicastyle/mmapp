@@ -1,4 +1,5 @@
 import { create } from "zustand";
+import { extraerPiezaMadre, perteneceAPiezaMadre, agruparMallasEnPiezasMadre } from "./piezaMadreUtils";
 
 export const APP_VERSION = "vBeta 0.1";
 
@@ -313,10 +314,12 @@ export interface MuebleGuardadoItem {
   descripcionComercial?: string;
   instancias: Record<string, ObjetoInstancia3BF>;
   fichaConfig?: FichaCostosConfig;
+  fichaProducto?: FichaProductoDef;
   dimensionesEnvolventes?: { ancho: number; alto: number; profundidad: number };
   totalPiezas?: number;
   costoEstimadoCop?: number;
   costoEstimadoUsd?: number;
+  pasosManual?: PasoManualStudio[]; // Persistencia de pasos del manual 3D
 }
 
 export interface PiezaDespiece {
@@ -596,6 +599,160 @@ export const NEGOCIACION_NOVOPAN_DEFECTO: NegociacionNovopan = {
   financiacionPct: 1.10,
   fleteInternacionalM3Usd: 18.57,
 };
+
+// ==========================================
+// 🛠️ TIPOS PARA MODO MANUAL / MANUAL STUDIO
+// ==========================================
+
+export type IdiomaManual = "es" | "pt" | "en";
+
+export type CoreografiaShowcase = "secuencial" | "cascada" | "simultaneo";
+export type EjeAperturaShowcase = "+Z" | "-Z" | "+Y" | "-Y" | "+X" | "-X";
+
+export interface GrupoCinematicoShowcase {
+  id: string; // e.g. "cajon_1", "puerta_1"
+  nombre: string; // e.g. "Cajón 1 (Superior)", "Puerta Izquierda"
+  tipo: "cajon" | "puerta";
+  piezas: string[]; // e.g. ["Peça 6", "Peça 8", "Peça 9", "Peça 10", "Peça 11"]
+  ejeApertura: EjeAperturaShowcase;
+  distanciaMm: number; // e.g. 300
+  anguloRotacionDeg?: number; // Para puertas e.g. 90
+  ladoBisagra?: "izquierda" | "derecha"; // Para puertas: lado de giro del pivote
+  pivoteOffsetMm?: number; // Ajuste fino del pivote en milímetros
+  oculto?: boolean; // 💡 Apagar bloque como capa para ver herrajes y piezas interiores
+}
+
+export interface ModoPickingManualState {
+  activo: boolean;
+  grupoId: string | null;
+  pasoId: string | null;
+  piezasTemporalmenteSeleccionadas: string[];
+}
+
+export interface ElementoSecuenciaCinematica {
+  id: string;
+  nombreNodo: string; // e.g. "Lateral_Izquierda", "Cavilha.001", "Parafuso estrutural.001"
+  tipo: "pieza" | "herraje" | "subensamble";
+  tiempoInicio: number; // en segundos (e.g. 1.0)
+  duracionMovimiento: number; // segundos (e.g. 2.5)
+  popIn: boolean; // escala inicial 2.0 -> 1.0 para llamar la atención visual
+  distanciaAproximacion: number; // metros (offset colineal e.g. 0.15m)
+  rotacionGrados?: number; // e.g. 720 para tornillos (2 vueltas), 180 para tambor minifix
+  herramienta?: "ninguna" | "martillo" | "llave_allen" | "destornillador";
+  impactosHerramienta?: number; // e.g. 3 golpes para martillo con 0mm de separación tangencial
+}
+
+export interface PasoManualStudio {
+  id: string; // "P00", "P01", "P02"...
+  numero: number;
+  tipo: "showcase" | "ensamble";
+  titulo: string;
+  descripcion: string;
+  duracionTotal: number; // segundos
+  
+  // Configuración Showcase (Paso 00)
+  showcase?: {
+    abrirCajones: boolean;
+    distanciaAperturaMm: number;
+    abrirPuertas: boolean;
+    anguloPuertasDeg: number;
+    giroPresentacion360: boolean;
+    coreografia: CoreografiaShowcase;
+    ejeGlobal: EjeAperturaShowcase;
+    gruposCinematicos: GrupoCinematicoShowcase[];
+    sincronizarCarreraCajones?: boolean; // Unificar carrera de apertura idéntica en todos los cajones
+  };
+  
+  // Configuración Ensamble (P01+)
+  piezaMaster?: string; // Nombre del nodo base que apoya en banco
+  orientacionBanco?: {
+    rotacion: [number, number, number]; // Radianes Euler
+    apoyoEnPiso: boolean;
+  };
+  piezasAsignadas: string[];
+  herrajesAsignados: string[];
+  secuencia: ElementoSecuenciaCinematica[];
+  
+  // Locución TTS Multilingüe (Español, Português, Inglés)
+  guionEs: string;
+  guionPt: string;
+  guionEn: string;
+  vozEs: string;
+  vozPt: string;
+  vozEn: string;
+  audioUrlEs?: string;
+  audioUrlPt?: string;
+  audioUrlEn?: string;
+  duracionAudioSegundos: number;
+}
+
+export interface Manual3BMProyecto {
+  id: string; // e.g. "manual_comoda_ravenna"
+  muebleOrigenId?: string;
+  nombre: string;
+  marca: string;
+  tipologia: string;
+  fechaModificacion: string;
+  parametrosMueble?: Record<string, any>;
+  pasos: PasoManualStudio[];
+  thumbnail?: string;
+}
+
+export function generarPasosManualesPorDefecto(): PasoManualStudio[] {
+  return [
+    {
+      id: "P00",
+      numero: 0,
+      tipo: "showcase",
+      titulo: "Paso 00: Showcase Funcional",
+      descripcion: "Demostración del mueble completo en operación interactiva.",
+      duracionTotal: 8.0,
+      showcase: {
+        abrirCajones: true,
+        distanciaAperturaMm: 300,
+        abrirPuertas: true,
+        anguloPuertasDeg: 90,
+        giroPresentacion360: true,
+        coreografia: "secuencial",
+        ejeGlobal: "+Z",
+        gruposCinematicos: [],
+      },
+      piezasAsignadas: [],
+      herrajesAsignados: [],
+      secuencia: [],
+      guionEs: "Antes de comenzar el ensamble, observa cómo luce tu mueble completamente armado y en funcionamiento.",
+      guionPt: "Antes de começar a montagem, veja como seu móvel fica totalmente montado e funcionando.",
+      guionEn: "Before starting assembly, take a look at your furniture fully assembled and functioning.",
+      vozEs: "es-MX-DaliaNeural",
+      vozPt: "pt-BR-FranciscaNeural",
+      vozEn: "en-US-JennyNeural",
+      duracionAudioSegundos: 8.0,
+    },
+    {
+      id: "P01",
+      numero: 1,
+      tipo: "ensamble",
+      titulo: "Paso 01: Estructura Base y Tarugos",
+      descripcion: "Colocación de la pieza base en el banco de trabajo e inserción de herrajes.",
+      duracionTotal: 12.0,
+      piezaMaster: "",
+      orientacionBanco: {
+        rotacion: [0, 0, 0],
+        apoyoEnPiso: true,
+      },
+      piezasAsignadas: [],
+      herrajesAsignados: [],
+      secuencia: [],
+      guionEs: "Paso 1: Coloca la pieza base en el banco de trabajo y fija los tarugos de madera con golpes suaves del martillo de goma.",
+      guionPt: "Passo 1: Coloque a peça base na bancada de trabalho e fixe as cavilhas de madeira com batidas suaves do martelo de borracha.",
+      guionEn: "Step 1: Place the base piece on the workbench and secure the wooden dowels with gentle taps of the rubber hammer.",
+      vozEs: "es-MX-DaliaNeural",
+      vozPt: "pt-BR-FranciscaNeural",
+      vozEn: "en-US-JennyNeural",
+      duracionAudioSegundos: 12.0,
+    },
+  ];
+}
 
 export function detectarDescuentoCara(nombreComercial: string): number {
   const n = (nombreComercial || "").toUpperCase();
@@ -897,6 +1054,7 @@ export interface MaterialPBRDef {
     saturacion?: number;
     normalInvertY?: boolean;
     roughnessInvert?: boolean;
+    repeat?: number;
   };
 
   marcaProveedor?: string; // "Pelíkano", "Arauco", "Finsa", "Novopan", etc.
@@ -923,12 +1081,12 @@ export interface AsignacionParteDef {
 }
 
 export const PRESET_MATERIALES_PBR: MaterialPBRDef[] = [
-  { id: "mat_acero", nombre: "Acero", tipo: "Metal", colorBase: "#8A9EA7", metalico: 0.90, rugosidad: 0.20, especularidad: 0.90, opacidad: 1.0, ior: 1.50, notas: "Acero pulido para herrajes y pernos" },
-  { id: "mat_aluminio", nombre: "Aluminio", tipo: "Metal", colorBase: "#CBD5E1", metalico: 0.85, rugosidad: 0.30, especularidad: 0.80, opacidad: 1.0, ior: 1.50, notas: "Aluminio anodizado natural" },
+  { id: "mat_acero", nombre: "Acero", tipo: "Metal", colorBase: "#CBD5E1", metalico: 0.92, rugosidad: 0.32, especularidad: 0.90, opacidad: 1.0, ior: 1.50, notas: "Acero pulido para herrajes y pernos" },
+  { id: "mat_aluminio", nombre: "Aluminio", tipo: "Metal", colorBase: "#E2E8F0", metalico: 0.88, rugosidad: 0.42, especularidad: 0.85, opacidad: 1.0, ior: 1.50, notas: "Aluminio anodizado natural" },
   { id: "mat_marfil", nombre: "M_Marfil", tipo: "Melamina", colorBase: "#C5B39A", texturaUrl: "/textures/Marfil_diffuse.jpg", metalico: 0.05, rugosidad: 0.65, especularidad: 0.50, opacidad: 1.0, ior: 1.50, notas: "Melamina Novopan MDPKOR Marfil" },
   { id: "mat_duna", nombre: "Duna", tipo: "Melamina", colorBase: "#D2B48C", texturaUrl: "/textures/wood_melamine.jpg", metalico: 0.05, rugosidad: 0.60, especularidad: 0.50, opacidad: 1.0, ior: 1.50, notas: "Melamina Duna tono madera cálida" },
   { id: "mat_fresno", nombre: "M_Fresno", tipo: "Madera", colorBase: "#C2A67E", metalico: 0.02, rugosidad: 0.55, especularidad: 0.50, opacidad: 1.0, ior: 1.50, notas: "Madera Fresno poro abierto" },
-  { id: "mat_cromo", nombre: "Cromo", tipo: "Metal", colorBase: "#E2E8F0", metalico: 1.00, rugosidad: 0.05, especularidad: 1.00, opacidad: 1.0, ior: 1.50, notas: "Cromado brillante tipo espejo" },
+  { id: "mat_cromo", nombre: "Cromo", tipo: "Metal", colorBase: "#FAFAFA", metalico: 1.00, rugosidad: 0.04, especularidad: 1.00, opacidad: 1.0, ior: 1.50, notas: "Cromado brillante tipo espejo" },
   { id: "mat_blanco", nombre: "M_Blanco", tipo: "Melamina", colorBase: "#FFFFFF", metalico: 0.05, rugosidad: 0.70, especularidad: 0.50, opacidad: 1.0, ior: 1.50, notas: "Melamina Blanco Glacial mate" },
   { id: "mat_mdf", nombre: "MDF", tipo: "Madera", colorBase: "#BDB088", metalico: 0.00, rugosidad: 0.85, especularidad: 0.30, opacidad: 1.0, ior: 1.50, notas: "Sustrato MDF crudo fibroso" },
   { id: "mat_mdp", nombre: "MDP", tipo: "Madera", colorBase: "#D5B88A", metalico: 0.00, rugosidad: 0.80, especularidad: 0.30, opacidad: 1.0, ior: 1.50, notas: "Sustrato MDP aglomerado canto expuesto" },
@@ -937,11 +1095,88 @@ export const PRESET_MATERIALES_PBR: MaterialPBRDef[] = [
   { id: "mat_pblanco", nombre: "P_Blanco", tipo: "Plastico", colorBase: "#F1F5F9", metalico: 0.10, rugosidad: 0.40, especularidad: 0.50, opacidad: 1.0, ior: 1.50, notas: "Plástico inyectado blanco" },
   { id: "mat_pintura_neg", nombre: "Pintura_Negra", tipo: "Pintura", colorBase: "#0F172A", metalico: 0.30, rugosidad: 0.35, especularidad: 0.60, opacidad: 1.0, ior: 1.50, notas: "Pintura electrostática negra mate" },
   { id: "mat_pintura_bla", nombre: "Pintura_Blanca", tipo: "Pintura", colorBase: "#F8FAFC", metalico: 0.30, rugosidad: 0.35, especularidad: 0.60, opacidad: 1.0, ior: 1.50, notas: "Pintura electrostática blanca satinada" },
-  { id: "mat_zinc", nombre: "Zinc", tipo: "Metal", colorBase: "#94A3B8", metalico: 0.80, rugosidad: 0.35, especularidad: 0.70, opacidad: 1.0, ior: 1.50, notas: "Zincado plateado anticorrosivo" },
+  { id: "mat_zinc", nombre: "Zinc", tipo: "Metal", colorBase: "#D1D5DB", metalico: 0.95, rugosidad: 0.26, especularidad: 0.90, opacidad: 1.0, ior: 1.50, notas: "Zincado plateado satinado anticorrosivo" },
+  { id: "mat_cinamomo", nombre: "Cinamomo", tipo: "Melamina", colorBase: "#B87B4C", texturaUrl: "/textures/cinamomo_diffuse.jpg", metalico: 0.04, rugosidad: 0.60, especularidad: 0.50, opacidad: 1.0, ior: 1.50, notas: "Melamina Cinamomo Henn calibrada cálida" },
+  { id: "mat_offwhite", nombre: "Off White", tipo: "Melamina", colorBase: "#F5F2EB", metalico: 0.05, rugosidad: 0.65, especularidad: 0.50, opacidad: 1.0, ior: 1.50, notas: "Melamina Off White Henn satinada" },
   { id: "mat_perforados", nombre: "Perforados", tipo: "PBR", colorBase: "#EF4444", metalico: 0.00, rugosidad: 0.50, especularidad: 0.50, opacidad: 1.0, ior: 1.50, notas: "Guías de maquinado CNC y perforaciones" },
   { id: "mat_bim", nombre: "BIM", tipo: "PBR", colorBase: "#06B6D4", metalico: 0.20, rugosidad: 0.30, especularidad: 0.70, opacidad: 0.75, ior: 1.50, notas: "Ejes y metadatos constructivos BIM" },
-  { id: "mat_zincado", nombre: "Zincado", tipo: "Metal", colorBase: "#A1A1AA", metalico: 0.85, rugosidad: 0.25, especularidad: 0.75, opacidad: 1.0, ior: 1.50, notas: "Herrajes zincados brillantes" },
+  { id: "mat_zincado", nombre: "Zincado", tipo: "Metal", colorBase: "#E2E8F0", metalico: 0.95, rugosidad: 0.22, especularidad: 0.95, opacidad: 1.0, ior: 1.50, notas: "Herrajes zincados brillantes" },
+  { id: "mat_laton", nombre: "Latón", tipo: "Metal", colorBase: "#F5D061", metalico: 0.95, rugosidad: 0.20, especularidad: 0.95, opacidad: 1.0, ior: 1.50, notas: "Latón / Dorado pulido decorativo" },
 ];
+
+export interface RecetaColorSwatch {
+  tipo: "solido" | "bicolor";
+  colorPrimario: string;    // Hex para el swatch visual (ej: "#B87B4C" Cinamomo)
+  colorSecundario?: string;  // Hex secundario para división diagonal (ej: "#F5F2EB" Off White)
+}
+
+export interface RecetaColorMueble {
+  id: string;               // ej: "receta_cinamomo_offwhite"
+  nombre: string;           // "Cinamomo / Off White"
+  referenciaSku: string;    // "Ref. D737-221"
+  swatch: RecetaColorSwatch;
+  asignacionesCapaMaterial: Record<string, string>; // Mapeo de TODAS las capas -> materialId
+  asignacionesPartes?: Record<string, { capaId: string; materialId: string }>; // Mapeo de piezas/mallas individuales
+  parametros?: Record<string, any>; // 🛡️ Estado paramétrico de piezas, lados de balance (Cara A/B) y sustratos (D/B, D/D)
+}
+
+export interface FichaProductoDef {
+  muebleId: string;                 // "Comoda Ravenna"
+  titulo: string;                   // "Cômoda Ravenna 06 Gavetas"
+  descripcionCorta: string;         // Frase aspiracional
+  descripcionLarga: string;         // Párrafo de estilo IKEA
+  recetaColorActivaId: string;      // ID de la receta actualmente aplicada
+  recetasColor: RecetaColorMueble[];// Colección de recetas disponibles
+  destacadosClave: string[];        // ["Cajones con correderas telescópicas", "Patas en ABS"]
+  materialesCuidados: string;       // Texto de limpieza y especificaciones
+  montajeNotas: string;             // Información de ensamblaje
+  dimensionesManuales?: {
+    alto?: number;
+    ancho?: number;
+    profundidad?: number;
+  };
+}
+
+/**
+ * Generador de Ficha Estándar en Blanco para Componentes Inteligentes.
+ * Por arquitectura y regla de negocio: Los componentes inteligentes de biblioteca
+ * NUNCA traen múltiples colores comerciales precargados; inician SIEMPRE con una ficha
+ * estándar básica y únicamente el acabado por defecto activo.
+ * Las variantes comerciales y recetas de color se crean cuando el diseñador modifica y
+ * archiva el mueble en una carpeta de catálogo.
+ */
+export function crearFichaEstandarLimpia(muebleId: string, titulo?: string): FichaProductoDef {
+  const nombreLimpio = (titulo || muebleId).replace(/\.(gh|ghx)$/i, "").trim();
+  return {
+    muebleId: nombreLimpio,
+    titulo: nombreLimpio || "Componente Estándar",
+    descripcionCorta: "Componente inteligente paramétrico listo para configuración y ensamble.",
+    descripcionLarga: "Estructura estándar personalizable. Configure las dimensiones, agregue los acabados y defina las variantes de color para este proyecto al guardarlo en su carpeta de catálogo.",
+    recetaColorActivaId: "receta_default",
+    recetasColor: [
+      {
+        id: "receta_default",
+        nombre: "Color por defecto",
+        referenciaSku: "Ref. Estándar",
+        swatch: { tipo: "solido", colorPrimario: "#CBD5E1" },
+        asignacionesCapaMaterial: {
+          capa_tono: "mat_marfil",
+          capa_tono_fondo: "mat_marfil",
+          capa_madera: "mat_fresno",
+        }
+      }
+    ],
+    destacadosClave: [
+      "Estructura paramétrica modular DfMA",
+      "Herrajes estándar RTA configurables",
+      "Optimizado para manufactura y ensamble rápido"
+    ],
+    materialesCuidados: "Limpiar con un paño suave ligeramente humedecido con agua y jabón neutro. Evitar solventes, abrasivos o exceso de humedad.",
+    montajeNotas: "Manual de ensamble interactivo 3D disponible al definir y guardar el mueble."
+  };
+}
+
+export const FICHA_DEFAULT_COMODA_RAVENNA: FichaProductoDef = crearFichaEstandarLimpia("Comoda Ravenna", "Cômoda Ravenna");
 
 export const PRESET_CAPAS: CapaDef[] = [
   { id: "capa_acero", nombre: "Acero", activa: false, visible: true, bloqueada: false, color: "#8A9EA7", materialId: "mat_acero" },
@@ -980,8 +1215,60 @@ export interface State3BF {
   setTema: (tema: "tech" | "obsidian") => void;
   
   // Pestaña Activa
-  pestanaActiva: "3d" | "despiece" | "basedatos" | "costos" | "dxf";
-  setPestanaActiva: (pestana: "3d" | "despiece" | "basedatos" | "costos" | "dxf") => void;
+  pestanaActiva: "3d" | "despiece" | "basedatos" | "costos" | "dxf" | "manual";
+  setPestanaActiva: (pestana: "3d" | "despiece" | "basedatos" | "costos" | "dxf" | "manual") => void;
+
+  // 🎬 Manual Studio State & Acciones
+  pasosManual: PasoManualStudio[];
+  pasoActivoManualId: string;
+  isTimelinePlaying: boolean;
+  timelineCurrentTime: number;
+  timelineVelocidad: number;
+  idiomaVozManual: IdiomaManual;
+  audioMutedManual: boolean;
+
+  setPasosManual: (pasos: PasoManualStudio[]) => void;
+  seleccionarPasoManualActivo: (pasoId: string) => void;
+  crearPasoManual: (tipo?: "showcase" | "ensamble") => void;
+  eliminarPasoManual: (pasoId: string) => void;
+  actualizarPasoManual: (pasoId: string, data: Partial<PasoManualStudio>) => void;
+  reordenarSecuenciaPaso: (pasoId: string, nuevaSecuencia: ElementoSecuenciaCinematica[]) => void;
+  asignarPiezaAPasoManual: (pasoId: string, nombrePieza: string) => void;
+  desasignarPiezaDePasoManual: (pasoId: string, nombrePieza: string) => void;
+  asignarHerrajeAPasoManual: (pasoId: string, nombreHerraje: string) => void;
+  desasignarHerrajeDePasoManual: (pasoId: string, nombreHerraje: string) => void;
+  autoGenerarSecuenciaPaso: (pasoId: string) => void;
+  autoDetectarGruposCinematicos: (pasoId: string) => void;
+  agregarGrupoCinematico: (pasoId: string, grupo: GrupoCinematicoShowcase) => void;
+  actualizarGrupoCinematico: (pasoId: string, grupoId: string, data: Partial<GrupoCinematicoShowcase>) => void;
+  eliminarGrupoCinematico: (pasoId: string, grupoId: string) => void;
+  asignarPiezaAGrupoCinematico: (pasoId: string, grupoId: string, nombrePieza: string) => void;
+  desasignarPiezaDeGrupoCinematico: (pasoId: string, grupoId: string, nombrePieza: string) => void;
+  conmutarVisibilidadGrupoCinematico: (pasoId: string, grupoId: string) => void;
+  
+  // 🎯 Modo Picking 3D / Cuentagotas para Asignación de Piezas
+  modoPickingManual: ModoPickingManualState;
+  iniciarPickingManual: (pasoId: string, grupoId?: string | null) => void;
+  togglePiezaEnPickingManual: (piezaMadre: string) => void;
+  limpiarPickingManual: () => void;
+  confirmarPickingManual: () => void;
+  setIsTimelinePlaying: (playing: boolean) => void;
+  setTimelineCurrentTime: (time: number) => void;
+  setTimelineVelocidad: (velocidad: number) => void;
+  setIdiomaVozManual: (idioma: IdiomaManual) => void;
+  setAudioMutedManual: (muted: boolean) => void;
+
+  // 📦 Persistencia de Manuales en Google Drive (.3bm.json)
+  manualActivoGuardado: Manual3BMProyecto | null;
+  manualesDrive: Manual3BMProyecto[];
+  modalBibliotecaManualesAbierto: boolean;
+  guardandoManual: boolean;
+
+  cargarManualesDesdeDrive: () => Promise<void>;
+  cargarManualProyecto: (manual: Manual3BMProyecto) => void;
+  guardarManualProyecto: (nombre?: string, marca?: string, tipologia?: string) => Promise<void>;
+  eliminarManualProyecto: (manualId: string) => Promise<void>;
+  setModalBibliotecaManualesAbierto: (abierto: boolean) => void;
   
   // Worker Python Status
   workerStatus: "checking" | "online" | "offline";
@@ -1024,12 +1311,24 @@ export interface State3BF {
   // Blender N-Panel (Sidebar Multifuncional con tecla N)
   mostrarNPanel: boolean;
   setMostrarNPanel: (mostrar: boolean | ((prev: boolean) => boolean)) => void;
-  pestanaNPanel: "componentes" | "muebles" | "capas" | "partes" | "materiales" | "calibrar" | "apariencia";
-  setPestanaNPanel: (pestana: "componentes" | "muebles" | "capas" | "partes" | "materiales" | "calibrar" | "apariencia") => void;
+  pestanaNPanel: "componentes" | "muebles" | "capas" | "partes" | "materiales" | "calibrar" | "apariencia" | "ficha";
+  setPestanaNPanel: (pestana: "componentes" | "muebles" | "capas" | "partes" | "materiales" | "calibrar" | "apariencia" | "ficha") => void;
   anchoNPanel: number;
   setAnchoNPanel: (ancho: number) => void;
   anchoPanelDerecho: number;
   setAnchoPanelDerecho: (ancho: number) => void;
+
+  // 🏷️ Ficha de Producto Comercial & Color Recipe Engine (Henn + IKEA)
+  fichasProducto: Record<string, FichaProductoDef>;
+  recetaEnEdicion: { muebleId: string; recetaId: string } | null;
+  getFichaProductoActivo: () => FichaProductoDef;
+  actualizarFichaProducto: (muebleId: string, cambios: Partial<FichaProductoDef>) => void;
+  aplicarRecetaColor: (muebleId: string, recetaId: string) => void;
+  guardarNuevaRecetaColor: (muebleId: string, receta: RecetaColorMueble) => void;
+  eliminarRecetaColor: (muebleId: string, recetaId: string) => void;
+  iniciarEdicionReceta: (muebleId: string, recetaId: string) => void;
+  cancelarEdicionReceta: () => void;
+  guardarEstadoActualEnReceta: () => void;
 
   // 🎨 Sistema de Capas, Materiales PBR y Partes GHX
   capas: CapaDef[];
@@ -1082,6 +1381,7 @@ export interface State3BF {
   eliminarMuebleGuardado: (id: string) => Promise<boolean>;
   duplicarMuebleGuardado: (id: string) => Promise<string | null>;
   abrirMueble: (mueble: MuebleGuardadoItem) => Promise<void>;
+  purgarMallasDuplicadas: () => void;
 
   // Multi-Instancia GHX en Escenario 3D
   instancias: Record<string, ObjetoInstancia3BF>;
@@ -1415,6 +1715,45 @@ export function obtenerCalibracionInicial(): CalibracionVisual {
   return defaultCalibracion;
 }
 
+/**
+ * 🛡️ DfMA Shield: Purga matemática definitiva de mallas duplicadas en el resultado 3D.
+ * Elimina duplicados geométricos por coincidencia espacial (<0.5mm) y mallas marcadas como es_duplicado_ghx.
+ */
+export function purgarResultadoGeometria(res: any) {
+  if (!res || !res.real_meshes || !Array.isArray(res.real_meshes)) return res;
+  const raw = res.real_meshes;
+  const unicas: any[] = [];
+
+  for (const m of raw) {
+    if (m.es_duplicado_ghx) continue;
+    const mName = (m.name || "").replace(/^RH_OUT:/i, "").trim().toLowerCase();
+    const mPos = m.position || [0, 0, 0];
+    const mSize = m.size || [0, 0, 0];
+
+    const isDup = unicas.some((u) => {
+      const uName = (u.name || "").replace(/^RH_OUT:/i, "").trim().toLowerCase();
+      if (mName !== uName) return false;
+      const uPos = u.position || [0, 0, 0];
+      const uSize = u.size || [0, 0, 0];
+
+      const dPos = Math.hypot(mPos[0] - uPos[0], mPos[1] - uPos[1], mPos[2] - uPos[2]);
+      const dSize = Math.hypot(mSize[0] - uSize[0], mSize[1] - uSize[1], mSize[2] - uSize[2]);
+      return dPos < 0.0005 && dSize < 0.0005;
+    });
+
+    if (!isDup) {
+      unicas.push(m);
+    }
+  }
+
+  return {
+    ...res,
+    real_meshes: unicas,
+    mallas_duplicadas_detectadas: {},
+    mallas_duplicadas_info: [],
+  };
+}
+
 export const use3BFStore = create<State3BF>((set, get) => ({
   centrarCamaraTrigger: 0,
   centrarCamara: () => set((s) => ({ centrarCamaraTrigger: (s.centrarCamaraTrigger || 0) + 1 })),
@@ -1467,6 +1806,655 @@ export const use3BFStore = create<State3BF>((set, get) => ({
   
   pestanaActiva: "3d",
   setPestanaActiva: (pestanaActiva) => set({ pestanaActiva }),
+
+  // 🎬 Manual Studio State & Implementación
+  pasosManual: generarPasosManualesPorDefecto(),
+  pasoActivoManualId: "P00",
+  isTimelinePlaying: false,
+  timelineCurrentTime: 0,
+  timelineVelocidad: 1.0,
+  idiomaVozManual: "es",
+  audioMutedManual: false,
+
+  setPasosManual: (pasosManual) => set({ pasosManual }),
+  seleccionarPasoManualActivo: (pasoActivoManualId) => set({ pasoActivoManualId, timelineCurrentTime: 0, isTimelinePlaying: false }),
+  crearPasoManual: (tipo = "ensamble") => {
+    const state = get();
+    const count = state.pasosManual.length;
+    const num = count;
+    const nuevoId = `P${String(num).padStart(2, "0")}`;
+    const nuevoPaso: PasoManualStudio = {
+      id: nuevoId,
+      numero: num,
+      tipo,
+      titulo: tipo === "showcase" ? `${nuevoId}: Showcase` : `Paso ${String(num).padStart(2, "0")}: Ensamble`,
+      descripcion: "Nuevo paso de ensamble",
+      duracionTotal: 10.0,
+      piezaMaster: "",
+      orientacionBanco: { rotacion: [0, 0, 0], apoyoEnPiso: true },
+      piezasAsignadas: [],
+      herrajesAsignados: [],
+      secuencia: [],
+      guionEs: `Paso ${num}: Ensambla los componentes correspondientes a esta etapa.`,
+      guionPt: `Passo ${num}: Monte os componentes correspondentes a esta etapa.`,
+      guionEn: `Step ${num}: Assemble the corresponding components for this stage.`,
+      vozEs: "es-MX-DaliaNeural",
+      vozPt: "pt-BR-FranciscaNeural",
+      vozEn: "en-US-JennyNeural",
+      duracionAudioSegundos: 10.0,
+    };
+    const nuevosPasos = [...state.pasosManual, nuevoPaso];
+    set({ pasosManual: nuevosPasos, pasoActivoManualId: nuevoId, timelineCurrentTime: 0, isTimelinePlaying: false });
+  },
+  eliminarPasoManual: (pasoId) => {
+    const state = get();
+    if (state.pasosManual.length <= 1) return;
+    const filtrados = state.pasosManual.filter((p) => p.id !== pasoId);
+    const siguienteActivo = filtrados[0]?.id || "P00";
+    set({ pasosManual: filtrados, pasoActivoManualId: siguienteActivo, timelineCurrentTime: 0, isTimelinePlaying: false });
+  },
+  actualizarPasoManual: (pasoId, data) => {
+    const state = get();
+    const actualizados = state.pasosManual.map((p) => (p.id === pasoId ? { ...p, ...data } : p));
+    set({ pasosManual: actualizados });
+  },
+  reordenarSecuenciaPaso: (pasoId, nuevaSecuencia) => {
+    const state = get();
+    const actualizados = state.pasosManual.map((p) => (p.id === pasoId ? { ...p, secuencia: nuevaSecuencia } : p));
+    set({ pasosManual: actualizados });
+  },
+  asignarPiezaAPasoManual: (pasoId, nombrePieza) => {
+    const state = get();
+    const actualizados = state.pasosManual.map((p) => {
+      if (p.id !== pasoId) return p;
+      if (p.piezasAsignadas.includes(nombrePieza)) return p;
+      const nuevasPiezas = [...p.piezasAsignadas, nombrePieza];
+      return { ...p, piezasAsignadas: nuevasPiezas };
+    });
+    set({ pasosManual: actualizados });
+    get().autoGenerarSecuenciaPaso(pasoId);
+  },
+  desasignarPiezaDePasoManual: (pasoId, nombrePieza) => {
+    const state = get();
+    const actualizados = state.pasosManual.map((p) => {
+      if (p.id !== pasoId) return p;
+      return {
+        ...p,
+        piezasAsignadas: p.piezasAsignadas.filter((nom) => nom !== nombrePieza),
+        secuencia: p.secuencia.filter((s) => s.nombreNodo !== nombrePieza),
+      };
+    });
+    set({ pasosManual: actualizados });
+  },
+  asignarHerrajeAPasoManual: (pasoId, nombreHerraje) => {
+    const state = get();
+    const actualizados = state.pasosManual.map((p) => {
+      if (p.id !== pasoId) return p;
+      if (p.herrajesAsignados.includes(nombreHerraje)) return p;
+      const nuevosHerrajes = [...p.herrajesAsignados, nombreHerraje];
+      return { ...p, herrajesAsignados: nuevosHerrajes };
+    });
+    set({ pasosManual: actualizados });
+    get().autoGenerarSecuenciaPaso(pasoId);
+  },
+  desasignarHerrajeDePasoManual: (pasoId, nombreHerraje) => {
+    const state = get();
+    const actualizados = state.pasosManual.map((p) => {
+      if (p.id !== pasoId) return p;
+      return {
+        ...p,
+        herrajesAsignados: p.herrajesAsignados.filter((nom) => nom !== nombreHerraje),
+        secuencia: p.secuencia.filter((s) => s.nombreNodo !== nombreHerraje),
+      };
+    });
+    set({ pasosManual: actualizados });
+  },
+  autoGenerarSecuenciaPaso: (pasoId) => {
+    const state = get();
+    const paso = state.pasosManual.find((p) => p.id === pasoId);
+    if (!paso) return;
+    if (paso.tipo === "showcase") return;
+
+    let t = 0.5;
+    const nuevaSecuencia: ElementoSecuenciaCinematica[] = [];
+
+    // 1. Tarugos entran primero con martillo de goma
+    paso.herrajesAsignados
+      .filter((h) => h.toLowerCase().includes("tarugo") || h.toLowerCase().includes("cavilha"))
+      .forEach((tarugo, idx) => {
+        nuevaSecuencia.push({
+          id: `seq_${tarugo}_${idx}`,
+          nombreNodo: tarugo,
+          tipo: "herraje",
+          tiempoInicio: Number(t.toFixed(1)),
+          duracionMovimiento: 2.0,
+          popIn: true,
+          distanciaAproximacion: 0.12,
+          herramienta: "martillo",
+          impactosHerramienta: 3,
+        });
+        t += 1.8;
+      });
+
+    // 2. Pernos / Minifix con destornillador
+    paso.herrajesAsignados
+      .filter((h) => (h.toLowerCase().includes("minifix") || h.toLowerCase().includes("perno")) && !h.toLowerCase().includes("tarugo"))
+      .forEach((perno, idx) => {
+        nuevaSecuencia.push({
+          id: `seq_${perno}_${idx}`,
+          nombreNodo: perno,
+          tipo: "herraje",
+          tiempoInicio: Number(t.toFixed(1)),
+          duracionMovimiento: 2.0,
+          popIn: true,
+          distanciaAproximacion: 0.15,
+          rotacionGrados: 180,
+          herramienta: "destornillador",
+        });
+        t += 1.8;
+      });
+
+    // 3. Piezas de madera que se acoplan (distintas de la piezaMaster)
+    paso.piezasAsignadas
+      .filter((p) => p !== paso.piezaMaster)
+      .forEach((pieza, idx) => {
+        nuevaSecuencia.push({
+          id: `seq_${pieza}_${idx}`,
+          nombreNodo: pieza,
+          tipo: "pieza",
+          tiempoInicio: Number(t.toFixed(1)),
+          duracionMovimiento: 2.5,
+          popIn: true,
+          distanciaAproximacion: 0.25,
+          herramienta: "ninguna",
+        });
+        t += 2.8;
+      });
+
+    // 4. Tornillos estructurales con Llave Allen (720 deg)
+    paso.herrajesAsignados
+      .filter((h) => h.toLowerCase().includes("tornillo") || h.toLowerCase().includes("parafuso"))
+      .forEach((tornillo, idx) => {
+        nuevaSecuencia.push({
+          id: `seq_${tornillo}_${idx}`,
+          nombreNodo: tornillo,
+          tipo: "herraje",
+          tiempoInicio: Number(t.toFixed(1)),
+          duracionMovimiento: 2.5,
+          popIn: true,
+          distanciaAproximacion: 0.15,
+          rotacionGrados: 720,
+          herramienta: "llave_allen",
+        });
+        t += 2.2;
+      });
+
+    const duracionFinal = Math.max(paso.duracionAudioSegundos || 8.0, Number((t + 1.0).toFixed(1)));
+
+    const actualizados = state.pasosManual.map((p) =>
+      p.id === pasoId ? { ...p, secuencia: nuevaSecuencia, duracionTotal: duracionFinal } : p
+    );
+    set({ pasosManual: actualizados });
+  },
+
+  autoDetectarGruposCinematicos: (pasoId) => {
+    const state = get();
+    const paso = state.pasosManual.find((p) => p.id === pasoId);
+    if (!paso || paso.tipo !== "showcase") return;
+
+    // Obtener todos los nombres de piezas disponibles agrupados como Piezas Madre
+    const rawMeshes = state.resultado?.real_meshes || [];
+    const declaredOutputs = state.resultado?.declared_outputs || [];
+    const partesAsignadas = Object.keys(state.asignacionesPartes || {});
+    const rawNombres = [
+      ...rawMeshes.map((m: any) => (m.name || "").replace(/^RH_OUT:/i, "").trim()),
+      ...declaredOutputs.map((d: string) => d.replace(/^RH_OUT:/i, "").trim()),
+      ...partesAsignadas.map((p: string) => p.replace(/^RH_OUT:/i, "").trim()),
+    ].filter(Boolean);
+
+    const todasPiezasMadre = agruparMallasEnPiezasMadre(rawNombres);
+
+    // 1. Si el mueble es Cómoda Ravenna o similar con numeración Peça 6..15
+    const tieneRavenna = todasPiezasMadre.some((p) => p === "Peça 6" || p === "Peça 7");
+    // Distancia uniforme configurada en el paso (ej: 300 o 350 mm)
+    const distGlobal = paso.showcase?.distanciaAperturaMm || 300;
+    // Iniciar con cajones limpios y vacíos para que el usuario seleccione con cuentagotas con precisión
+    const gruposDetectados: GrupoCinematicoShowcase[] = [
+      {
+        id: "cajon_1",
+        nombre: "Cajón 1 (Superior)",
+        tipo: "cajon",
+        piezas: [],
+        ejeApertura: paso.showcase?.ejeGlobal || "+Z",
+        distanciaMm: distGlobal,
+        oculto: false,
+      },
+      {
+        id: "cajon_2",
+        nombre: "Cajón 2 (Inferior)",
+        tipo: "cajon",
+        piezas: [],
+        ejeApertura: paso.showcase?.ejeGlobal || "+Z",
+        distanciaMm: distGlobal,
+        oculto: false,
+      },
+    ];
+
+    const actualizados = state.pasosManual.map((p) => {
+      if (p.id !== pasoId) return p;
+      return {
+        ...p,
+        showcase: {
+          ...(p.showcase || {
+            abrirCajones: true,
+            distanciaAperturaMm: 300,
+            abrirPuertas: true,
+            anguloPuertasDeg: 90,
+            giroPresentacion360: true,
+          }),
+          distanciaAperturaMm: distGlobal,
+          sincronizarCarreraCajones: true,
+          coreografia: (p.showcase?.coreografia || "secuencial") as CoreografiaShowcase,
+          ejeGlobal: (p.showcase?.ejeGlobal || "+Z") as EjeAperturaShowcase,
+          gruposCinematicos: gruposDetectados,
+        },
+      };
+    });
+
+    set({ pasosManual: actualizados, timelineCurrentTime: 0, isTimelinePlaying: false });
+  },
+
+  agregarGrupoCinematico: (pasoId, grupo) => {
+    const state = get();
+    const actualizados = state.pasosManual.map((p) => {
+      if (p.id !== pasoId || !p.showcase) return p;
+      const actuales = p.showcase.gruposCinematicos || [];
+      return {
+        ...p,
+        showcase: {
+          ...p.showcase,
+          gruposCinematicos: [...actuales, grupo],
+        },
+      };
+    });
+    set({ pasosManual: actualizados });
+  },
+
+  actualizarGrupoCinematico: (pasoId, grupoId, data) => {
+    const state = get();
+    const actualizados = state.pasosManual.map((p) => {
+      if (p.id !== pasoId || !p.showcase) return p;
+      const modificados = (p.showcase.gruposCinematicos || []).map((g) =>
+        g.id === grupoId ? { ...g, ...data } : g
+      );
+      return {
+        ...p,
+        showcase: {
+          ...p.showcase,
+          gruposCinematicos: modificados,
+        },
+      };
+    });
+    set({ pasosManual: actualizados });
+  },
+
+  eliminarGrupoCinematico: (pasoId, grupoId) => {
+    const state = get();
+    const actualizados = state.pasosManual.map((p) => {
+      if (p.id !== pasoId || !p.showcase) return p;
+      return {
+        ...p,
+        showcase: {
+          ...p.showcase,
+          gruposCinematicos: (p.showcase.gruposCinematicos || []).filter((g) => g.id !== grupoId),
+        },
+      };
+    });
+
+    let nuevoPicking = state.modoPickingManual;
+    if (state.modoPickingManual.activo && state.modoPickingManual.grupoId === grupoId) {
+      nuevoPicking = {
+        activo: false,
+        grupoId: null,
+        pasoId: null,
+        piezasTemporalmenteSeleccionadas: [],
+      };
+    }
+
+    set({ 
+      pasosManual: actualizados,
+      modoPickingManual: nuevoPicking,
+    });
+  },
+
+  asignarPiezaAGrupoCinematico: (pasoId, grupoId, nombrePieza) => {
+    const state = get();
+    const piezaKey = (nombrePieza || "").trim();
+    if (!piezaKey) return;
+
+    const actualizados = state.pasosManual.map((p) => {
+      if (p.id !== pasoId || !p.showcase) return p;
+      const modificados = (p.showcase.gruposCinematicos || []).map((g) => {
+        if (g.id !== grupoId) return g;
+        if (g.piezas.includes(piezaKey)) return g;
+        return { ...g, piezas: [...g.piezas, piezaKey] };
+      });
+      return {
+        ...p,
+        showcase: {
+          ...p.showcase,
+          gruposCinematicos: modificados,
+        },
+      };
+    });
+
+    let nuevoPicking = state.modoPickingManual;
+    if (state.modoPickingManual.activo && state.modoPickingManual.grupoId === grupoId) {
+      if (!state.modoPickingManual.piezasTemporalmenteSeleccionadas.includes(piezaKey)) {
+        nuevoPicking = {
+          ...state.modoPickingManual,
+          piezasTemporalmenteSeleccionadas: [...state.modoPickingManual.piezasTemporalmenteSeleccionadas, piezaKey],
+        };
+      }
+    }
+
+    set({ 
+      pasosManual: actualizados,
+      modoPickingManual: nuevoPicking,
+    });
+  },
+
+  desasignarPiezaDeGrupoCinematico: (pasoId, grupoId, nombrePieza) => {
+    const state = get();
+    const piezaKey = (nombrePieza || "").trim();
+    const pmKey = extraerPiezaMadre(piezaKey);
+    const actualizados = state.pasosManual.map((p) => {
+      if (p.id !== pasoId || !p.showcase) return p;
+      const modificados = (p.showcase.gruposCinematicos || []).map((g) => {
+        if (g.id !== grupoId) return g;
+        return { 
+          ...g, 
+          piezas: g.piezas.filter((pz) => pz !== piezaKey && pz !== nombrePieza && pz !== pmKey && extraerPiezaMadre(pz) !== pmKey) 
+        };
+      });
+      return {
+        ...p,
+        showcase: {
+          ...p.showcase,
+          gruposCinematicos: modificados,
+        },
+      };
+    });
+
+    let nuevoPicking = state.modoPickingManual;
+    if (state.modoPickingManual.activo && (!state.modoPickingManual.grupoId || state.modoPickingManual.grupoId === grupoId)) {
+      nuevoPicking = {
+        ...state.modoPickingManual,
+        piezasTemporalmenteSeleccionadas: state.modoPickingManual.piezasTemporalmenteSeleccionadas.filter(
+          (p) => p !== piezaKey && p !== nombrePieza && p !== pmKey && extraerPiezaMadre(p) !== pmKey
+        ),
+      };
+    }
+
+    set({ 
+      pasosManual: actualizados,
+      modoPickingManual: nuevoPicking,
+    });
+  },
+
+  conmutarVisibilidadGrupoCinematico: (pasoId, grupoId) => {
+    const state = get();
+    const actualizados = state.pasosManual.map((p) => {
+      if (p.id !== pasoId || !p.showcase) return p;
+      const modificados = (p.showcase.gruposCinematicos || []).map((g) => {
+        if (g.id !== grupoId) return g;
+        return { ...g, oculto: !g.oculto };
+      });
+      return {
+        ...p,
+        showcase: {
+          ...p.showcase,
+          gruposCinematicos: modificados,
+        },
+      };
+    });
+    set({ pasosManual: actualizados });
+  },
+
+  // 🎯 Modo Picking 3D / Cuentagotas para Asignación de Piezas
+  modoPickingManual: {
+    activo: false,
+    grupoId: null,
+    pasoId: null,
+    piezasTemporalmenteSeleccionadas: [],
+  },
+
+  iniciarPickingManual: (pasoId, grupoId = null) => {
+    const state = get();
+    const paso = state.pasosManual.find((p) => p.id === pasoId);
+    let piezasIniciales: string[] = [];
+    if (paso && paso.showcase && grupoId) {
+      const grupo = (paso.showcase.gruposCinematicos || []).find((g) => g.id === grupoId);
+      if (grupo) {
+        piezasIniciales = [...grupo.piezas];
+      }
+    }
+    set({
+      modoPickingManual: {
+        activo: true,
+        grupoId: grupoId || null,
+        pasoId,
+        piezasTemporalmenteSeleccionadas: piezasIniciales,
+      },
+    });
+  },
+
+  togglePiezaEnPickingManual: (piezaMadre) => {
+    const pm = extraerPiezaMadre(piezaMadre);
+    if (!pm) return;
+    const { modoPickingManual, pasosManual } = get();
+    if (!modoPickingManual.activo) return;
+
+    // Sincronizar con el grupo activo si existe para que siempre sea la fuente de verdad
+    let listaBase = modoPickingManual.piezasTemporalmenteSeleccionadas;
+    if (modoPickingManual.pasoId && modoPickingManual.grupoId) {
+      const paso = pasosManual.find((p) => p.id === modoPickingManual.pasoId);
+      const grupo = (paso?.showcase?.gruposCinematicos || []).find((g) => g.id === modoPickingManual.grupoId);
+      if (grupo) {
+        listaBase = grupo.piezas;
+      }
+    }
+
+    const existe = listaBase.some((p) => p === pm || extraerPiezaMadre(p) === pm);
+    const nuevas = existe
+      ? listaBase.filter((p) => p !== pm && extraerPiezaMadre(p) !== pm)
+      : [...listaBase, pm];
+
+    // Sincronización reactiva en tiempo real si hay un grupo de cajón activo
+    let pasosActualizados = pasosManual;
+    if (modoPickingManual.pasoId && modoPickingManual.grupoId) {
+      pasosActualizados = pasosManual.map((p) => {
+        if (p.id !== modoPickingManual.pasoId || !p.showcase) return p;
+        const modificados = (p.showcase.gruposCinematicos || []).map((g) => {
+          if (g.id !== modoPickingManual.grupoId) return g;
+          return { ...g, piezas: nuevas };
+        });
+        return {
+          ...p,
+          showcase: {
+            ...p.showcase,
+            gruposCinematicos: modificados,
+          },
+        };
+      });
+    }
+
+    set({
+      pasosManual: pasosActualizados,
+      modoPickingManual: {
+        ...modoPickingManual,
+        piezasTemporalmenteSeleccionadas: nuevas,
+      },
+    });
+  },
+
+  limpiarPickingManual: () => {
+    set({
+      modoPickingManual: {
+        activo: false,
+        grupoId: null,
+        pasoId: null,
+        piezasTemporalmenteSeleccionadas: [],
+      },
+    });
+  },
+
+  confirmarPickingManual: () => {
+    const { modoPickingManual, pasosManual } = get();
+    if (!modoPickingManual.activo || !modoPickingManual.pasoId) {
+      set({
+        modoPickingManual: {
+          activo: false,
+          grupoId: null,
+          pasoId: null,
+          piezasTemporalmenteSeleccionadas: [],
+        },
+      });
+      return;
+    }
+
+    if (modoPickingManual.grupoId) {
+      const actualizados = pasosManual.map((p) => {
+        if (p.id !== modoPickingManual.pasoId || !p.showcase) return p;
+        const modificados = (p.showcase.gruposCinematicos || []).map((g) => {
+          if (g.id !== modoPickingManual.grupoId) return g;
+          return {
+            ...g,
+            piezas: modoPickingManual.piezasTemporalmenteSeleccionadas,
+          };
+        });
+        return {
+          ...p,
+          showcase: {
+            ...p.showcase,
+            gruposCinematicos: modificados,
+          },
+        };
+      });
+      set({
+        pasosManual: actualizados,
+        modoPickingManual: {
+          activo: false,
+          grupoId: null,
+          pasoId: null,
+          piezasTemporalmenteSeleccionadas: [],
+        },
+      });
+    } else {
+      set({
+        modoPickingManual: {
+          activo: false,
+          grupoId: null,
+          pasoId: null,
+          piezasTemporalmenteSeleccionadas: [],
+        },
+      });
+    }
+  },
+
+  setIsTimelinePlaying: (isTimelinePlaying) => set({ isTimelinePlaying }),
+  setTimelineCurrentTime: (timelineCurrentTime) => set({ timelineCurrentTime }),
+  setTimelineVelocidad: (timelineVelocidad) => set({ timelineVelocidad }),
+  setIdiomaVozManual: (idiomaVozManual) => set({ idiomaVozManual }),
+  setAudioMutedManual: (audioMutedManual) => set({ audioMutedManual }),
+
+  // 📦 Persistencia de Manuales en Google Drive (.3bm.json)
+  manualActivoGuardado: null,
+  manualesDrive: [],
+  modalBibliotecaManualesAbierto: false,
+  guardandoManual: false,
+
+  setModalBibliotecaManualesAbierto: (modalBibliotecaManualesAbierto) => set({ modalBibliotecaManualesAbierto }),
+
+  cargarManualesDesdeDrive: async () => {
+    try {
+      const res = await fetch("/api/drive/manuales", { method: "GET" });
+      if (res.ok) {
+        const data = await res.json();
+        if (data.manuales) {
+          set({ manualesDrive: data.manuales });
+        }
+      }
+    } catch (e) {
+      console.warn("[3dBimFab Drive] Error cargando manuales:", e);
+    }
+  },
+
+  cargarManualProyecto: (manual) => {
+    set({
+      manualActivoGuardado: manual,
+      pasosManual: manual.pasos && manual.pasos.length > 0 ? manual.pasos : generarPasosManualesPorDefecto(),
+      pasoActivoManualId: manual.pasos && manual.pasos.length > 0 ? manual.pasos[0].id : "P00",
+      timelineCurrentTime: 0,
+      isTimelinePlaying: false,
+      modalBibliotecaManualesAbierto: false,
+    });
+  },
+
+  guardarManualProyecto: async (nombre, marca = "RTA Design", tipologia = "Manuales 3D") => {
+    const state = get();
+    set({ guardandoManual: true });
+
+    try {
+      const currentNombre = nombre || state.manualActivoGuardado?.nombre || state.muebleActivoGuardado?.nombre || state.parametros?.model_id || "Manual 3D";
+      const manualId = state.manualActivoGuardado?.id || `manual_${currentNombre.toLowerCase().replace(/[^a-z0-9]/gi, "_")}`;
+
+      const payload: Manual3BMProyecto = {
+        id: manualId,
+        muebleOrigenId: state.muebleActivoGuardado?.id || state.parametros?.model_id || "mueble_base",
+        nombre: currentNombre,
+        marca: marca || state.manualActivoGuardado?.marca || "RTA Design",
+        tipologia: tipologia || state.manualActivoGuardado?.tipologia || "Manuales 3D",
+        fechaModificacion: new Date().toISOString(),
+        parametrosMueble: { ...state.parametros },
+        pasos: state.pasosManual,
+      };
+
+      const res = await fetch("/api/drive/manuales", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "save_manual", manual: payload }),
+      });
+
+      if (res.ok) {
+        set({ manualActivoGuardado: payload });
+        await get().cargarManualesDesdeDrive();
+      }
+    } catch (e) {
+      console.error("[3dBimFab Drive] Error guardando manual:", e);
+    } finally {
+      set({ guardandoManual: false });
+    }
+  },
+
+  eliminarManualProyecto: async (manualId) => {
+    try {
+      const res = await fetch("/api/drive/manuales", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "delete_manual", id: manualId }),
+      });
+      if (res.ok) {
+        const state = get();
+        if (state.manualActivoGuardado?.id === manualId) {
+          set({ manualActivoGuardado: null });
+        }
+        await get().cargarManualesDesdeDrive();
+      }
+    } catch (e) {
+      console.error("[3dBimFab Drive] Error eliminando manual:", e);
+    }
+  },
   
   workerStatus: "checking",
   setWorkerStatus: (workerStatus) => set({ workerStatus }),
@@ -1760,6 +2748,336 @@ export const use3BFStore = create<State3BF>((set, get) => ({
     set({ anchoPanelDerecho: normalizado });
   },
 
+  // 🏷️ Ficha de Producto Comercial & Color Recipe Engine (Henn + IKEA)
+  fichasProducto: (typeof window !== "undefined" && window.localStorage && localStorage.getItem("3bf_fichas_v2"))
+    ? (() => {
+        try {
+          return JSON.parse(localStorage.getItem("3bf_fichas_v2")!);
+        } catch {
+          return {};
+        }
+      })()
+    : {},
+
+  getFichaProductoActivo: () => {
+    const state = get();
+    // 1. Si hay un mueble guardado activo en carpeta, prioridad absoluta a su ficha técnica personalizada
+    if (state.muebleActivoGuardado) {
+      if (state.muebleActivoGuardado.fichaProducto) {
+        return state.muebleActivoGuardado.fichaProducto;
+      }
+      const idKey = state.muebleActivoGuardado.id;
+      const nombreKey = state.muebleActivoGuardado.nombre.trim();
+      if (state.fichasProducto[idKey]) return state.fichasProducto[idKey];
+      if (state.fichasProducto[nombreKey]) return state.fichasProducto[nombreKey];
+    }
+
+    // 2. Si estamos en un componente inteligente de biblioteca:
+    const objetoActivo = state.objetoActivoId ? state.instancias[state.objetoActivoId] : null;
+    const muebleId = objetoActivo?.definitionId || "Componente Inteligente";
+    const limpiaKey = muebleId.replace(/\.(gh|ghx)$/i, "").trim();
+
+    // Si ya tiene una ficha personalizada modificada en esta sesión:
+    if (state.fichasProducto[limpiaKey]) {
+      return state.fichasProducto[limpiaKey];
+    }
+
+    // 3. De lo contrario, generar SIEMPRE la ficha estándar básica limpia con 1 solo color por defecto
+    const capaTono = state.capas.find((c) => c.id === "capa_tono");
+    const matTono = state.materialesPBR.find((m) => m.id === capaTono?.materialId);
+    const colorPrimario = matTono?.colorBase || "#CBD5E1";
+
+    const nuevaFicha = crearFichaEstandarLimpia(limpiaKey, objetoActivo?.nombreVisible || limpiaKey);
+    if (nuevaFicha.recetasColor[0]) {
+      nuevaFicha.recetasColor[0].swatch.colorPrimario = colorPrimario;
+
+      // 🛡️ Capturar el 100% de las capas actuales del modelo en el color por defecto
+      const todasLasCapas: Record<string, string> = {};
+      state.capas.forEach((c) => {
+        todasLasCapas[c.id] = c.materialId;
+      });
+      nuevaFicha.recetasColor[0].asignacionesCapaMaterial = todasLasCapas;
+
+      // 🛡️ Capturar el 100% de las asignaciones de partes actuales en el color por defecto
+      const todasLasPartes: Record<string, { capaId: string; materialId: string }> = {};
+      Object.entries(state.asignacionesPartes).forEach(([k, v]) => {
+        todasLasPartes[k] = { capaId: v.capaId, materialId: v.materialId };
+      });
+      nuevaFicha.recetasColor[0].asignacionesPartes = todasLasPartes;
+
+      // 🛡️ Capturar el 100% de los parámetros de piezas actuales en el color por defecto
+      nuevaFicha.recetasColor[0].parametros = { ...(objetoActivo?.parametros || state.parametros || {}) };
+    }
+    return nuevaFicha;
+  },
+
+  actualizarFichaProducto: (muebleId, cambios) => {
+    set((state) => {
+      const limpiaKey = muebleId.replace(/\.(gh|ghx)$/i, "").trim();
+      const actual = state.fichasProducto[limpiaKey] || state.getFichaProductoActivo();
+      const actualizada = { ...actual, ...cambios };
+      const nuevasFichas = { ...state.fichasProducto, [limpiaKey]: actualizada };
+      if (typeof window !== "undefined" && window.localStorage) {
+        localStorage.setItem("3bf_fichas_v2", JSON.stringify(nuevasFichas));
+      }
+
+      // Si hay un mueble guardado activo, mantenerlo sincronizado
+      let muebleActualizado = state.muebleActivoGuardado;
+      if (muebleActualizado && (muebleActualizado.id === muebleId || muebleActualizado.nombre === muebleId || muebleActualizado.id === state.muebleActivoGuardado?.id)) {
+        muebleActualizado = { ...muebleActualizado, fichaProducto: actualizada };
+      }
+
+      return { 
+        fichasProducto: nuevasFichas,
+        muebleActivoGuardado: muebleActualizado
+      };
+    });
+  },
+
+  aplicarRecetaColor: (muebleId, recetaId) => {
+    const state = get();
+    const limpiaKey = muebleId.replace(/\.(gh|ghx)$/i, "").trim();
+    const ficha = state.fichasProducto[limpiaKey] || state.getFichaProductoActivo();
+
+    // 💡 AUTO-GUARDADO REACTIVO: Guardar estado actual de capas, partes y parámetros en la receta saliente antes de conmutar
+    const recetaSalienteId = ficha.recetaColorActivaId;
+    let recetasActualizadas = [...ficha.recetasColor];
+    if (recetaSalienteId && recetaSalienteId !== recetaId) {
+      const asignacionesCapaMaterialSaliente: Record<string, string> = {};
+      state.capas.forEach((c) => {
+        asignacionesCapaMaterialSaliente[c.id] = c.materialId;
+      });
+      const asignacionesPartesSaliente: Record<string, { capaId: string; materialId: string }> = {};
+      Object.entries(state.asignacionesPartes).forEach(([k, v]) => {
+        asignacionesPartesSaliente[k] = { capaId: v.capaId, materialId: v.materialId };
+      });
+      const objetoActivo = state.objetoActivoId ? state.instancias[state.objetoActivoId] : null;
+      const parametrosSaliente = { ...(objetoActivo?.parametros || state.parametros || {}) };
+
+      const matPrincipal = state.materialesPBR.find((m) => m.id === state.capas.find((c) => c.id === "capa_tono")?.materialId);
+      recetasActualizadas = recetasActualizadas.map((r) => {
+        if (r.id === recetaSalienteId) {
+          const swatchActualizado = {
+            ...r.swatch,
+            ...(r.swatch.tipo === "solido" && matPrincipal?.colorBase ? { colorPrimario: matPrincipal.colorBase } : {})
+          };
+          return {
+            ...r,
+            swatch: swatchActualizado,
+            asignacionesCapaMaterial: asignacionesCapaMaterialSaliente,
+            asignacionesPartes: asignacionesPartesSaliente,
+            parametros: parametrosSaliente
+          };
+        }
+        return r;
+      });
+    }
+
+    const recetaEntrante = recetasActualizadas.find((r) => r.id === recetaId);
+    if (!recetaEntrante) return;
+
+    state.actualizarFichaProducto(limpiaKey, {
+      recetasColor: recetasActualizadas,
+      recetaColorActivaId: recetaId
+    });
+
+    // 1. Restaurar TODAS las capas guardadas en la receta entrante
+    if (recetaEntrante.asignacionesCapaMaterial) {
+      Object.entries(recetaEntrante.asignacionesCapaMaterial).forEach(([capaId, materialId]) => {
+        state.actualizarCapa(capaId, { materialId });
+      });
+    }
+
+    // 2. Restaurar TODAS las asignaciones de partes guardadas en la receta entrante
+    if (recetaEntrante.asignacionesPartes) {
+      const prevPartes = { ...state.asignacionesPartes };
+      Object.entries(recetaEntrante.asignacionesPartes).forEach(([parteKey, def]) => {
+        if (prevPartes[parteKey]) {
+          prevPartes[parteKey] = {
+            ...prevPartes[parteKey],
+            capaId: def.capaId,
+            materialId: def.materialId
+          };
+        } else {
+          prevPartes[parteKey] = {
+            parteKey,
+            nombreVisible: parteKey.replace(/^RH_OUT:/, ""),
+            capaId: def.capaId,
+            materialId: def.materialId,
+            visible: true
+          };
+        }
+      });
+      if (typeof window !== "undefined" && window.localStorage) {
+        localStorage.setItem("3bf_asignaciones_partes_v1", JSON.stringify(prevPartes));
+      }
+      set({ asignacionesPartes: prevPartes });
+    }
+
+    // 3. 🪵 Restaurar parámetros paramétricos de piezas, lados de balance (Cara A / Cara B) y sustratos (D/B, D/D)
+    if (recetaEntrante.parametros && Object.keys(recetaEntrante.parametros).length > 0) {
+      const objetoActivoId = state.objetoActivoId;
+      const paramsEntrantes = recetaEntrante.parametros;
+      const paramsActuales = (objetoActivoId && state.instancias[objetoActivoId])
+        ? state.instancias[objetoActivoId].parametros
+        : state.parametros;
+
+      let hayCambiosParametricos = false;
+      for (const [k, v] of Object.entries(paramsEntrantes)) {
+        if (paramsActuales && (paramsActuales as Record<string, any>)[k] !== v) {
+          hayCambiosParametricos = true;
+          break;
+        }
+      }
+
+      if (hayCambiosParametricos) {
+        if (objetoActivoId && state.instancias[objetoActivoId]) {
+          const nextParams = { ...state.instancias[objetoActivoId].parametros, ...paramsEntrantes };
+          set((s) => ({
+            instancias: {
+              ...s.instancias,
+              [objetoActivoId]: {
+                ...s.instancias[objetoActivoId],
+                parametros: nextParams
+              }
+            },
+            parametros: nextParams as any
+          }));
+          // Recomputar Grasshopper para regenerar caras de balance A/B y geometrías
+          get().recomputarInstancia(objetoActivoId);
+        } else {
+          set((s) => ({
+            parametros: { ...s.parametros, ...paramsEntrantes } as any
+          }));
+        }
+      }
+    }
+  },
+
+  guardarNuevaRecetaColor: (muebleId, nuevaReceta) => {
+    const state = get();
+    const limpiaKey = muebleId.replace(/\.(gh|ghx)$/i, "").trim();
+    const ficha = state.fichasProducto[limpiaKey] || state.getFichaProductoActivo();
+
+    // 💡 Auto-guardar receta saliente antes de añadir la nueva
+    const recetaSalienteId = ficha.recetaColorActivaId;
+    let recetasBase = [...ficha.recetasColor];
+    if (recetaSalienteId && recetaSalienteId !== nuevaReceta.id) {
+      const asignacionesCapaMaterialSaliente: Record<string, string> = {};
+      state.capas.forEach((c) => {
+        asignacionesCapaMaterialSaliente[c.id] = c.materialId;
+      });
+      const asignacionesPartesSaliente: Record<string, { capaId: string; materialId: string }> = {};
+      Object.entries(state.asignacionesPartes).forEach(([k, v]) => {
+        asignacionesPartesSaliente[k] = { capaId: v.capaId, materialId: v.materialId };
+      });
+      const objetoActivo = state.objetoActivoId ? state.instancias[state.objetoActivoId] : null;
+      const parametrosSaliente = { ...(objetoActivo?.parametros || state.parametros || {}) };
+
+      const matPrincipal = state.materialesPBR.find((m) => m.id === state.capas.find((c) => c.id === "capa_tono")?.materialId);
+      recetasBase = recetasBase.map((r) => {
+        if (r.id === recetaSalienteId) {
+          const swatchActualizado = {
+            ...r.swatch,
+            ...(r.swatch.tipo === "solido" && matPrincipal?.colorBase ? { colorPrimario: matPrincipal.colorBase } : {})
+          };
+          return {
+            ...r,
+            swatch: swatchActualizado,
+            asignacionesCapaMaterial: asignacionesCapaMaterialSaliente,
+            asignacionesPartes: asignacionesPartesSaliente,
+            parametros: parametrosSaliente
+          };
+        }
+        return r;
+      });
+    }
+
+    const objetoActivo = state.objetoActivoId ? state.instancias[state.objetoActivoId] : null;
+    const recetaConParametros: RecetaColorMueble = {
+      ...nuevaReceta,
+      parametros: nuevaReceta.parametros || { ...(objetoActivo?.parametros || state.parametros || {}) }
+    };
+
+    const recetasActualizadas = [...recetasBase.filter((r) => r.id !== nuevaReceta.id), recetaConParametros];
+    state.actualizarFichaProducto(limpiaKey, {
+      recetasColor: recetasActualizadas,
+      recetaColorActivaId: nuevaReceta.id
+    });
+  },
+
+  eliminarRecetaColor: (muebleId, recetaId) => {
+    const state = get();
+    const limpiaKey = muebleId.replace(/\.(gh|ghx)$/i, "").trim();
+    const ficha = state.fichasProducto[limpiaKey] || state.getFichaProductoActivo();
+    if (ficha.recetasColor.length <= 1) return;
+    const filtradas = ficha.recetasColor.filter((r) => r.id !== recetaId);
+    state.actualizarFichaProducto(limpiaKey, {
+      recetasColor: filtradas,
+      recetaColorActivaId: ficha.recetaColorActivaId === recetaId ? filtradas[0].id : ficha.recetaColorActivaId
+    });
+  },
+
+  recetaEnEdicion: null,
+  iniciarEdicionReceta: (muebleId, recetaId) => {
+    const limpiaKey = muebleId.replace(/\.(gh|ghx)$/i, "").trim();
+    set({ recetaEnEdicion: { muebleId: limpiaKey, recetaId } });
+  },
+  cancelarEdicionReceta: () => set({ recetaEnEdicion: null }),
+  guardarEstadoActualEnReceta: () => {
+    const state = get();
+    if (!state.recetaEnEdicion) return;
+    const { muebleId, recetaId } = state.recetaEnEdicion;
+    const limpiaKey = muebleId.replace(/\.(gh|ghx)$/i, "").trim();
+    const ficha = state.fichasProducto[limpiaKey] || state.getFichaProductoActivo();
+    const receta = ficha.recetasColor.find((r) => r.id === recetaId);
+    if (!receta) {
+      set({ recetaEnEdicion: null });
+      return;
+    }
+
+    // Capturar el 100% de las capas actuales del modelo
+    const asignacionesCapaMaterial: Record<string, string> = {};
+    state.capas.forEach((c) => {
+      asignacionesCapaMaterial[c.id] = c.materialId;
+    });
+
+    // Capturar el 100% de las asignaciones de partes actuales
+    const asignacionesPartesMap: Record<string, { capaId: string; materialId: string }> = {};
+    Object.entries(state.asignacionesPartes).forEach(([k, v]) => {
+      asignacionesPartesMap[k] = { capaId: v.capaId, materialId: v.materialId };
+    });
+
+    // Capturar el 100% de los parámetros paramétricos de piezas, caras de balance y sustratos
+    const objetoActivo = state.objetoActivoId ? state.instancias[state.objetoActivoId] : null;
+    const parametrosActuales = { ...(objetoActivo?.parametros || state.parametros || {}) };
+
+    const matPrincipal = state.materialesPBR.find((m) => m.id === state.capas.find((c) => c.id === "capa_tono")?.materialId);
+    const swatchActualizado: RecetaColorSwatch = {
+      ...receta.swatch,
+      ...(receta.swatch.tipo === "solido" && matPrincipal?.colorBase ? { colorPrimario: matPrincipal.colorBase } : {})
+    };
+
+    const recetaActualizada: RecetaColorMueble = {
+      ...receta,
+      swatch: swatchActualizado,
+      asignacionesCapaMaterial,
+      asignacionesPartes: asignacionesPartesMap,
+      parametros: parametrosActuales
+    };
+
+    const recetasNuevas = ficha.recetasColor.map((r) =>
+      r.id === recetaId ? recetaActualizada : r
+    );
+
+    state.actualizarFichaProducto(limpiaKey, {
+      recetasColor: recetasNuevas,
+      recetaColorActivaId: recetaId
+    });
+
+    set({ recetaEnEdicion: null });
+  },
+
   // 🎨 Estado e Implementación de Capas, Materiales PBR y Partes GHX (Siempre 100% visibles por defecto)
   capas: (typeof window !== "undefined" && window.localStorage && localStorage.getItem("3bf_capas_v1")
     ? (() => {
@@ -1779,6 +3097,12 @@ export const use3BFStore = create<State3BF>((set, get) => ({
                 return { ...c, materialId: "mat_marfil" };
               }
             }
+            if (c.id === "capa_tono_fondo") {
+              const matActual = allMats.find((m: any) => m.id === c.materialId);
+              if (!matActual || matActual.tipo === "Metal" || c.materialId === "mat_zinc" || c.materialId === "mat_acero") {
+                return { ...c, materialId: "mat_offwhite" };
+              }
+            }
             return c;
           });
         } catch {
@@ -1787,7 +3111,16 @@ export const use3BFStore = create<State3BF>((set, get) => ({
       })()
     : PRESET_CAPAS).map((c) => ({ ...c, visible: true })),
   materialesPBR: typeof window !== "undefined" && window.localStorage && localStorage.getItem("3bf_materiales_pbr_v1")
-    ? JSON.parse(localStorage.getItem("3bf_materiales_pbr_v1")!)
+    ? (() => {
+        try {
+          const stored = JSON.parse(localStorage.getItem("3bf_materiales_pbr_v1")!) as MaterialPBRDef[];
+          const storedIds = new Set(stored.map((m) => m.id));
+          const missing = PRESET_MATERIALES_PBR.filter((p) => !storedIds.has(p.id));
+          return [...stored, ...missing];
+        } catch {
+          return PRESET_MATERIALES_PBR;
+        }
+      })()
     : PRESET_MATERIALES_PBR,
   materialSeleccionadoId: "mat_acero",
   asignacionesPartes: typeof window !== "undefined" && window.localStorage && localStorage.getItem("3bf_asignaciones_partes_v1")
@@ -1798,12 +3131,30 @@ export const use3BFStore = create<State3BF>((set, get) => ({
           const isBoard = !isHardware;
           const isInvalidLayer = ["capa_acero", "capa_aluminio", "capa_cromo", "capa_zinc", "capa_zincado", "capa_herrajes", "capa_plastico_1", "capa_plastico_2"].includes(v.capaId);
           
+          const isFondo = (
+            kLow.includes("fondo") ||
+            kLow.includes("fundo") ||
+            kLow.includes("tono fondo") ||
+            kLow.includes("costa") ||
+            kLow.includes("costas") ||
+            kLow.includes("espaldar") ||
+            kLow.includes("trasera") ||
+            kLow.includes("back") ||
+            kLow.includes("peça 15") ||
+            kLow.includes("peca 15") ||
+            kLow.includes("pk15") ||
+            kLow.includes("peça 18") ||
+            kLow.includes("peca 18") ||
+            kLow.includes("pk18")
+          );
+
           let safeCapaId = v.capaId;
           if (kLow.includes("mdf")) {
             safeCapaId = "capa_mdf";
+          } else if (isFondo && !kLow.includes("mdp")) {
+            safeCapaId = "capa_tono_fondo";
           } else if (isBoard && isInvalidLayer) {
-            if (kLow.includes("balance") || kLow.includes("back") || kLow.endsWith(" b") || /pe[cç]a\s*\d+\s*b$/i.test(kLow)) safeCapaId = "capa_back";
-            else if (kLow.includes("fondo") || kLow.includes("fundo") || kLow.includes("peça 18") || kLow.includes("peca 18")) safeCapaId = "capa_tono_fondo";
+            if (kLow.includes("balance") || kLow.endsWith(" b") || /pe[cç]a\s*\d+\s*b$/i.test(kLow)) safeCapaId = "capa_back";
             else safeCapaId = "capa_tono";
           }
           return [k, { ...v, capaId: safeCapaId, visible: true }];
@@ -2255,6 +3606,27 @@ export const use3BFStore = create<State3BF>((set, get) => ({
         thumbnail = (window as any).__capturarThumbnail3BF() || undefined;
       }
 
+      // Capturar ficha técnica y variantes de color del producto
+      const fichaActual = state.getFichaProductoActivo();
+      const fichaGuardada: FichaProductoDef = {
+        ...fichaActual,
+        muebleId: datos.nombre,
+        titulo: datos.nombre,
+        descripcionCorta: datos.descripcion || fichaActual.descripcionCorta,
+      };
+
+      const rawInst = state.instancias || {};
+      const sanitizedInst: Record<string, ObjetoInstancia3BF> = {};
+      for (const [k, v] of Object.entries(rawInst)) {
+        sanitizedInst[k] = {
+          ...v,
+          posicion: Array.isArray(v.posicion) ? [...v.posicion] : [0, 0, 0],
+          rotacion: Array.isArray(v.rotacion) ? [...v.rotacion] : [0, 0, 0],
+          parametros: { ...(v.parametros || {}) },
+          resultado: v.resultado ? purgarResultadoGeometria(v.resultado) : undefined,
+        };
+      }
+
       const nuevoMueble: MuebleGuardadoItem = {
         id,
         nombre: datos.nombre,
@@ -2264,12 +3636,17 @@ export const use3BFStore = create<State3BF>((set, get) => ({
         fechaGuardado: new Date().toISOString(),
         thumbnail,
         descripcionComercial: datos.descripcion || `Mueble diseñado en 3BF (${datos.marca})`,
-        instancias: JSON.parse(JSON.stringify(state.instancias)),
+        instancias: sanitizedInst,
         fichaConfig,
+        fichaProducto: fichaGuardada,
         totalPiezas: despieceGlobal.reduce((acc, p) => acc + (p.cantidad || 1), 0),
+        pasosManual: state.pasosManual,
       };
 
       // Guardar en Store y localStorage
+      state.actualizarFichaProducto(datos.nombre, fichaGuardada);
+      state.actualizarFichaProducto(id, fichaGuardada);
+
       set((s) => ({
         mueblesGuardados: [nuevoMueble, ...s.mueblesGuardados.filter((m) => m.id !== id)],
         muebleActivoGuardado: nuevoMueble,
@@ -2315,7 +3692,7 @@ export const use3BFStore = create<State3BF>((set, get) => ({
         if (nuevoThumb) thumbnail = nuevoThumb;
       }
 
-      // Sanitizar instancias
+      // Sanitizar instancias y purgar duplicados geométricos
       const rawInst = state.instancias || {};
       const sanitizedInst: Record<string, ObjetoInstancia3BF> = {};
       for (const [k, v] of Object.entries(rawInst)) {
@@ -2324,21 +3701,30 @@ export const use3BFStore = create<State3BF>((set, get) => ({
           posicion: Array.isArray(v.posicion) ? [...v.posicion] : [0, 0, 0],
           rotacion: Array.isArray(v.rotacion) ? [...v.rotacion] : [0, 0, 0],
           parametros: { ...(v.parametros || {}) },
+          resultado: v.resultado ? purgarResultadoGeometria(v.resultado) : undefined,
         };
       }
 
+      const fichaActual = state.getFichaProductoActivo();
       const muebleActualizado: MuebleGuardadoItem = {
         ...state.muebleActivoGuardado,
         fechaGuardado: new Date().toISOString(),
         thumbnail,
         instancias: sanitizedInst,
         fichaConfig,
+        fichaProducto: fichaActual,
         totalPiezas: despieceGlobal.reduce((acc, p) => acc + (p.cantidad || 1), 0),
+        pasosManual: state.pasosManual,
       };
+
+      state.actualizarFichaProducto(state.muebleActivoGuardado.nombre, fichaActual);
+      state.actualizarFichaProducto(id, fichaActual);
 
       set((s) => ({
         mueblesGuardados: s.mueblesGuardados.map((m) => (m.id === id ? muebleActualizado : m)),
         muebleActivoGuardado: muebleActualizado,
+        instancias: sanitizedInst,
+        resultado: purgarResultadoGeometria(s.resultado),
         guardandoMueble: false,
       }));
 
@@ -2490,7 +3876,7 @@ export const use3BFStore = create<State3BF>((set, get) => ({
   abrirMueble: async (mueble: MuebleGuardadoItem) => {
     if (!mueble || !mueble.instancias) return;
 
-    // 1. Restaurar y sanitizar instancias en el Store
+    // 1. Restaurar y sanitizar instancias en el Store (purgando cualquier duplicado persistente)
     const rawInst = mueble.instancias || {};
     const restoredInstancias: Record<string, ObjetoInstancia3BF> = {};
     for (const [k, v] of Object.entries(rawInst)) {
@@ -2499,27 +3885,101 @@ export const use3BFStore = create<State3BF>((set, get) => ({
         posicion: Array.isArray(v.posicion) ? [...v.posicion] : [0, 0, 0],
         rotacion: Array.isArray(v.rotacion) ? [...v.rotacion] : [0, 0, 0],
         parametros: { ...(v.parametros || {}) },
+        resultado: v.resultado ? purgarResultadoGeometria(v.resultado) : undefined,
       };
     }
     const firstKey = Object.keys(restoredInstancias)[0] || null;
 
-    // 2. Restaurar ficha técnica si existe
+    // 2. Restaurar ficha técnica y comercial si existe
     if (mueble.fichaConfig) {
       const modelKey = get().parametros.model_id || "Cubierta";
       get().setFichaConfig(modelKey, mueble.fichaConfig);
     }
+    if (mueble.fichaProducto) {
+      const limpiaKey = mueble.nombre.trim();
+      const idKey = mueble.id;
+      set((s) => ({
+        fichasProducto: {
+          ...s.fichasProducto,
+          [limpiaKey]: mueble.fichaProducto!,
+          [idKey]: mueble.fichaProducto!
+        }
+      }));
+    }
+
+    const firstInst = firstKey ? restoredInstancias[firstKey] : null;
 
     set({
       instancias: restoredInstancias,
       objetoActivoId: firstKey,
       objetoSeleccionado: !!firstKey,
-      muebleActivoGuardado: mueble,
+      muebleActivoGuardado: {
+        ...mueble,
+        instancias: restoredInstancias,
+      },
       escenarioLimpio: false,
       pestanaActiva: "3d",
+      resultado: firstInst?.resultado ? purgarResultadoGeometria(firstInst.resultado) : null,
+      parametros: firstInst?.parametros ? (firstInst.parametros as any) : get().parametros,
     });
 
-    // 3. Recomputar todas las instancias con Grasshopper
-    await get().recomputarTodas();
+    // Si la ficha guardada tiene una receta activa, aplicarla
+    if (mueble.fichaProducto?.recetaColorActivaId) {
+      get().aplicarRecetaColor(mueble.nombre.trim(), mueble.fichaProducto.recetaColorActivaId);
+    }
+
+    // 2.2 Restaurar pasos de manual 3D si están presentes en el mueble guardado
+    if (mueble.pasosManual && mueble.pasosManual.length > 0) {
+      set({
+        pasosManual: mueble.pasosManual,
+        pasoActivoManualId: mueble.pasosManual[0].id,
+      });
+    }
+
+    // 3. Recomputar SOLO si alguna instancia no tiene geometría 3D guardada
+    const requiereComputo = Object.values(restoredInstancias).some(
+      (inst) => !inst.resultado || !inst.resultado.real_meshes || inst.resultado.real_meshes.length === 0
+    );
+
+    if (requiereComputo) {
+      await get().recomputarTodas();
+    }
+    get().guardarEstadoHistorial();
+  },
+
+  purgarMallasDuplicadas: () => {
+    const state = get();
+    const nuevoResultado = purgarResultadoGeometria(state.resultado);
+
+    const nuevasInstancias: Record<string, ObjetoInstancia3BF> = {};
+    Object.entries(state.instancias).forEach(([id, inst]) => {
+      nuevasInstancias[id] = {
+        ...inst,
+        resultado: purgarResultadoGeometria(inst.resultado),
+      };
+    });
+
+    let nuevoMuebleActivo = state.muebleActivoGuardado;
+    if (nuevoMuebleActivo && nuevoMuebleActivo.instancias) {
+      const instanciasMueble: Record<string, ObjetoInstancia3BF> = {};
+      Object.entries(nuevoMuebleActivo.instancias).forEach(([id, inst]) => {
+        instanciasMueble[id] = {
+          ...inst,
+          resultado: purgarResultadoGeometria(inst.resultado),
+        };
+      });
+      nuevoMuebleActivo = {
+        ...nuevoMuebleActivo,
+        instancias: instanciasMueble,
+      };
+    }
+
+    set({
+      resultado: nuevoResultado,
+      instancias: nuevasInstancias,
+      muebleActivoGuardado: nuevoMuebleActivo,
+    });
+
     get().guardarEstadoHistorial();
   },
 
@@ -2709,7 +4169,12 @@ export const use3BFStore = create<State3BF>((set, get) => ({
   },
 
   seleccionarInstancia: (id: string | null) => {
+    const state = get();
     if (!id) {
+      // 🛡️ BLINDAJE: En pestaña manual o durante picking, NUNCA deseleccionar la instancia activa ni dejar objetoActivoId nulo
+      if (state.pestanaActiva === "manual" || state.modoPickingManual.activo) {
+        return;
+      }
       set({ objetoActivoId: null, objetoSeleccionado: false });
       return;
     }
@@ -2743,6 +4208,26 @@ export const use3BFStore = create<State3BF>((set, get) => ({
     const legacyKey = (MAPA_PARAMETROS as any)[key];
     if (legacyKey) nextParams[legacyKey] = value;
 
+    // 🔄 Sincronización bidireccional de parámetros: asegura que si cambia "ancho_1295" se actualice "RH_IN:01.0 Ancho 1295" y viceversa
+    const normTarget = (pureKey || cleanKey).replace(/^[\d.]+[_\s]*/, "").replace(/[_\s]+/g, "_").trim();
+    Object.keys(inst.parametros || {}).forEach((existingKey) => {
+      const normExisting = existingKey.replace(/^RH_IN:\s*/i, "").replace(/^[\d.]+[_\s]*/, "").toLowerCase().replace(/[_\s]+/g, "_").trim();
+      if (normTarget && normExisting === normTarget) {
+        nextParams[existingKey] = value;
+      }
+    });
+
+    // 📏 Sincronización de dimensiones globales canónicas (ancho, alto, profundidad)
+    if (normTarget.includes("ancho")) {
+      nextParams["ancho"] = typeof value === "number" ? value : (Number(value) || value);
+    }
+    if (normTarget.includes("alto") || normTarget.includes("altura")) {
+      nextParams["alto"] = typeof value === "number" ? value : (Number(value) || value);
+    }
+    if (normTarget.includes("profundidad") || normTarget.includes("prof")) {
+      nextParams["profundidad"] = typeof value === "number" ? value : (Number(value) || value);
+    }
+
     // Actualización inmediata del estado local (UI a 60 FPS ultra fluida)
     set((s) => ({
       instancias: {
@@ -2751,6 +4236,11 @@ export const use3BFStore = create<State3BF>((set, get) => ({
       },
       parametros: s.objetoActivoId === id ? (nextParams as any) : s.parametros,
     }));
+
+    // 🛡️ BLINDAJE ESTRICTO: Si el usuario está en Manual 3D o Picking activo, PROHIBIDO recomputar geometría
+    if (state.pestanaActiva === "manual" || state.modoPickingManual.activo) {
+      return;
+    }
 
     // Debounce inteligente para cálculos pesados en RhinoCompute
     if ((globalThis as any).__3bf_debounce_timers?.[id]) {
@@ -2792,7 +4282,13 @@ export const use3BFStore = create<State3BF>((set, get) => ({
   },
 
   recomputarInstancia: async (id: string) => {
-    const inst = get().instancias[id];
+    const state = get();
+    // 🛡️ BLINDAJE ESTRICTO: Prohibido recomputar geometría en modo Manual 3D o con Picking activo
+    if (state.pestanaActiva === "manual" || state.modoPickingManual.activo) {
+      console.warn(`[3BF Shield] 🛡️ Recomputo bloqueado para ${id}: En modo Manual 3D o Picking activo.`);
+      return;
+    }
+    const inst = state.instancias[id];
     if (!inst) return;
 
     // Cancelar cualquier petición anterior en vuelo para evitar saltos o respuestas desordenadas
@@ -2875,7 +4371,13 @@ export const use3BFStore = create<State3BF>((set, get) => ({
   },
 
   recargarDefinicionInstancia: async (id: string) => {
-    const inst = get().instancias[id];
+    const state = get();
+    // 🛡️ BLINDAJE ESTRICTO: Prohibido recargar definición en Manual 3D o con Picking activo
+    if (state.pestanaActiva === "manual" || state.modoPickingManual.activo) {
+      console.warn(`[3BF Shield] 🛡️ Recarga de definición bloqueada para ${id}: En modo Manual 3D o Picking activo.`);
+      return false;
+    }
+    const inst = state.instancias[id];
     if (!inst) return false;
 
     // 1. Activar estado de carga en la instancia
@@ -2908,18 +4410,22 @@ export const use3BFStore = create<State3BF>((set, get) => ({
           parameterGroups = meta.parameter_groups || [];
           sliderLimits = meta.slider_limits || {};
 
-          // Conservar valores que el usuario ya modificó, y agregar los nuevos parámetros
+          // Conservar valores que el usuario ya modificó, y agregar ÚNICAMENTE los nuevos parámetros que no existían
           Object.entries(meta.default_values).forEach(([k, v]) => {
-            if (!(k in updatedParams)) {
-              updatedParams[k] = v;
-            }
             const cleanKey = k.replace("RH_IN:", "").toLowerCase().replace(/\s+/g, "_");
-            if (!(cleanKey in updatedParams)) {
-              updatedParams[cleanKey] = v;
-            }
+            const pureKey = k.replace(/^RH_IN:\s*/i, "").replace(/^[\d.]+[_\s]*/, "").toLowerCase().replace(/\s+/g, "_");
             const legacyKey = (MAPA_PARAMETROS as any)[k];
-            if (legacyKey && !(legacyKey in updatedParams)) {
-              updatedParams[legacyKey] = v;
+
+            const yaExiste = (k in updatedParams) || 
+                             (cleanKey in updatedParams) || 
+                             (pureKey && pureKey in updatedParams) || 
+                             (legacyKey && legacyKey in updatedParams);
+
+            if (!yaExiste) {
+              updatedParams[k] = v;
+              updatedParams[cleanKey] = v;
+              if (pureKey) updatedParams[pureKey] = v;
+              if (legacyKey) updatedParams[legacyKey] = v;
             }
           });
         }
@@ -2959,7 +4465,13 @@ export const use3BFStore = create<State3BF>((set, get) => ({
   },
 
   recomputarTodas: async () => {
-    const ids = Object.keys(get().instancias);
+    const state = get();
+    // 🛡️ BLINDAJE ESTRICTO: Prohibido recomputo masivo en Manual 3D o con Picking activo
+    if (state.pestanaActiva === "manual" || state.modoPickingManual.activo) {
+      console.warn("[3BF Shield] 🛡️ Recomputo masivo bloqueado: En modo Manual 3D o Picking activo.");
+      return;
+    }
+    const ids = Object.keys(state.instancias);
     await Promise.all(ids.map((id) => get().recomputarInstancia(id)));
   },
 
@@ -3748,7 +5260,21 @@ export const use3BFStore = create<State3BF>((set, get) => ({
       const kLow = parteKey.toLowerCase();
       const isHardware = kLow.includes("perno") || kLow.includes("caja") || kLow.includes("tarugo") || kLow.includes("cavilha") || kLow.includes("tornillo") || kLow.includes("parafuso") || kLow.includes("soporte") || kLow.includes("corredi") || kLow.includes("corredera") || kLow.includes("cantoneira") || kLow.includes("angulo") || kLow.includes("pes") || kLow.includes("pata") || kLow.includes("maquinado") || kLow.includes("porca") || kLow.includes("tuerca");
       const isMdfMdp = kLow.includes("mdf") || kLow.includes("mdp");
-      const isFondo = (kLow.includes("fondo") || kLow.includes("fundo") || kLow.includes("peça 18") || kLow.includes("peca 18") || kLow.includes("pk18") || kLow.includes("costa") || kLow.includes("trasera")) && !isMdfMdp;
+      const isFondo = (
+        kLow.includes("fondo") ||
+        kLow.includes("fundo") ||
+        kLow.includes("costa") ||
+        kLow.includes("costas") ||
+        kLow.includes("espaldar") ||
+        kLow.includes("trasera") ||
+        kLow.includes("back") ||
+        kLow.includes("peça 15") ||
+        kLow.includes("peca 15") ||
+        kLow.includes("pk15") ||
+        kLow.includes("peça 18") ||
+        kLow.includes("peca 18") ||
+        kLow.includes("pk18")
+      ) && !isMdfMdp;
       if (!isHardware && !isMdfMdp) {
         nuevasAsignaciones[parteKey] = {
           ...(nuevasAsignaciones[parteKey] || {

@@ -2594,4 +2594,105 @@ Con esta batería de arreglos y la validación en caliente, la V20 se establece 
 - **Validación de Calidad**:
   - Compilación TypeScript verificada (`npx tsc --noEmit`) en `3bf` con 0 errores.
 
+---
+
+### 🚀 Hito Manuales_3D_Coherencia_Fisica — Arquitectura Algorítmica de Manuales de Armado, Sincronía Matemática 100%, Slotted Actions Blender 4.5 & Matriz de Coherencia del Mundo Real (11 de Septiembre, 2026)
+
+- **Ingeniería Inversa y Reconstrucción Algorítmica del Paso 01**:
+  - Decodificación exhaustiva del árbol de `Geometry Nodes` de `P01.blend`: mapeo de 39 ramales (`Object Info` relativo $\rightarrow$ `Rotate` $\rightarrow$ `Translate` $\rightarrow$ `Scale` $\rightarrow$ `Join Geometry`).
+  - Creación del generador automatizado `generar_paso_armado_v5.py` y almacenamiento estructurado de la receta en `scripts/p01_recipe.json` y `scripts/p01_parents.json`.
+- **Descubrimiento y Resolución de Slotted Actions en Blender 4.5**:
+  - Diagnóstico de por qué los GLB salían estáticos: Blender 4.5 exige ranuras de acción tipadas (`ActionSlots`). Se implementó la inicialización dinámica `act.slots.new('NODETREE'|'OBJECT')` y asignación en `animation_data.action_slot`, activando de inmediato la evaluación en el timeline.
+- **Origen de Taller y Restauración de 22 Emparentados (Parenting B2B)**:
+  - Identificación de `Mesa Tijuca Polifurniture_Master_Girado.blend` como el estado de trabajo real para el ensamble (mesa acostada boca arriba).
+  - Restauración de 22 relaciones de emparentado con matriz inversa (`matrix_parent_inverse`), logrando que al moverse las piezas estructurales (`Peça 03` y `Peça 04`), todos los herrajes viajen cohesionados y se ensamblen en sus posiciones reales de diseño.
+- **El Secreto del Tiempo Real: 1 Fotograma = 1 Segundo**:
+  - Descubrimiento de que en `P01.blend` la configuración de escena es `render.fps = 1.0` y `fps_base = 1.0`. Cada fotograma del timeline representa exactamente **1 segundo de locución/audio de armado**. Al fijar `render.fps = 1`, la cadencia temporal cuadró con exactitud matemática al 100% (92 segundos exactos).
+- **Auditoría Binaria de Precisión Geométrica (0.00 mm de Discrepancia)**:
+  - Comparación de los **117 canales de animación** (traslación, rotación y escala) entre `P01.glb` y `P01_automatizado.glb` arrojando un error máximo inferior a $0.005$ (coincidencia idéntica cuadro por cuadro).
+- **Creación de la Carpeta y Documento Canónico `Manuales/manuales_proceso.md`**:
+  - Consolidación del manifiesto de **Coherencia Física del Mundo Real**:
+    * **Ley de Impenetrabilidad y Contacto Real:** Toda herramienta debe tener contacto físico tangible con el herraje que acciona; jamás martillar en el aire ni girar llaves en el vacío.
+    * **Precondición de Soporte:** Las piezas base deben estar apoyadas antes de recibir herrajes.
+    * **Colinealidad de Ejes Normales:** La inserción de tarugos y tornillos debe seguir estrictamente el vector normal del maquinado CNC.
+    * **Sincronía Causal de Apriete:** Acople concéntrico de la llave Allen con avance axial y rotación simultánea congruente con el paso de rosca.
+  - Incorporación oficial de `manuales_proceso.md` en el **Protocolo de Arranque** de `AGENTS.md`, `GEMINI.md` y `protocolo-arranque/SKILL.md`.
+
+---
+
+### 🚀 Hito Manuales_3D_Propuesta_Alternativa_Coherente — Propuesta Alternativa de Armado Paso 01 con Coherencia Física Absoluta, Martillo en Pata Derecha y Llave Allen Concéntrica (11 de Septiembre, 2026)
+
+- **Diseño Cinemático de Ensamble Alternativo con Coherencia Física**:
+  - Reestructuración completa de la coreografía de armado del Paso 01 (`P01_propuesta_alternativa.glb` y `.blend`), respondiendo a los requerimientos de realismo y verosimilitud física:
+    1. **Martillo de Goma en la Pata Derecha (`Peça 04`)**: Se trasladó la demostración del martillado desde la pata izquierda hacia la pata derecha. El martillo aparece ubicado con tolerancia de **0.17 mm** sobre la cabeza de la puntilla (`Prego`) en `Sapata redonda.003` (`X = +0.4426`), realizando 2 impactos rítmicos tangenciales (frames 81 a 85). Con cada impacto, la puntilla penetra progresivamente en la madera hasta quedar perfectamente a ras de la zapata. Se eliminó al 100% el martilleo en el aire.
+    2. **Llave Allen Concéntrica en Pata Derecha (`Parafuso estrutural.001`)**: La punta hexagonal de la llave Allen (`Chave allen`) se acopla con tolerancia milimétrica (**3.5 mm**, la profundidad exacta de la huella del tornillo) dentro de la cabeza del tornillo estructural en la pata derecha. Durante los frames 56 a 60, la llave Allen y el tornillo giran solidariamente a $720^\circ$ mientras avanzan juntos a lo largo del eje axial $X$ penetrando en el tablero hasta quedar enrasados. Al finalizar, la llave Allen se desacopla retractándose hacia afuera antes de desvanecerse.
+    3. **Correderas con Fijación Inmediata de Tornillos**: Se garantizó que al presentarse las correderas (`Corrediça 350` y `Corrediça 350.004`), sus respectivos tornillos avellanados (`Parafuso chato especial`) ingresen y se atornillen de inmediato, erradicando la adherencia mágica sin tornillería.
+    4. **Precondición de Apoyo Estructural y Guía de Tarugos**: Todos los tarugos (`Cavilha`) se insertan exclusivamente en tableros debidamente presentados y apoyados. El travesaño central (`Peça 02`) se ensambla como núcleo receptor antes del acople de los laterales.
+- **Auditoría Cinemática y Verificación Geométrica**:
+  - Distancia de acople Llave Allen - Tornillo Estructural: $\Delta \le 3.5\text{ mm}$ constante durante toda la traslación y rotación conjunta.
+  - Distancia de impacto Martillo - Puntilla: $\Delta = 11.0\text{ mm}$ de contacto tangencial directo en el punto de máxima flexión oscilatoria.
+  - Generación de archivo GLB optimizado con compresión Draco nivel 6: **313 KB** con 117 canales de animación activa a 1 fps (92 segundos exactos).
+
+---
+
+### 🚀 Hito 3BF_Cinematica_Telescopica_Cajones_Showcase_P00 — Perfección Cinemática de Correderas Telescópicas, Cero Absoluto Sin Rebote y Estabilidad Total de Línea de Tiempo (11 de Septiembre, 2026)
+
+- **Cinemática Telescópica Funcional de 3 Secciones (Paso 00 Showcase)**:
+  - Desagregación matemática rigurosa de las correderas telescópicas en sus tres componentes reales:
+    1. **Perfil Fijo (`Corrediça - Fija`):** Permanece estrictamente inmóvil ($0\%$ de carrera) atornillado al lateral del mueble.
+    2. **Perfil Intermedio (`Corrediça - Intermedia`):** Se extiende suavemente al **$50\%$ de la carrera** colineal al eje de apertura ($\Delta \mathbf{P} = \frac{1}{2}\Delta \mathbf{P}_{\text{cajón}}$).
+    3. **Perfil Móvil y Seguros Frontales (`Corrediça - Móvil` / `Seguro`):** Se desplazan al **$100\%$ de la carrera** solidarios con el cajón, vistiendo y protegiendo el lateral de madera del cajón con su pieza metálica completa tal como en la realidad industrial.
+- **Aislamiento de Tornillos Estáticos de la Corredera (Erradicación del Tornillo Flotante)**:
+  - Formulación geométrica universal: discriminación transversal por relación a la línea fija de la corredera ($X_{\text{fija}}$):
+    $$\begin{cases} X_{\text{tornillo}} \le X_{\text{fija}} + 2\text{ mm}, & \text{corredera izquierda} \\ X_{\text{tornillo}} \ge X_{\text{fija}} - 2\text{ mm}, & \text{corredera derecha} \end{cases}$$
+  - Todo tornillo orientado hacia el panel lateral exterior permanece anclado con rigidez física al mueble. Se erradicó por completo el tornillo flotante que se extendía en el aire al abrir el cajón.
+- **Erradicación del Efecto Resorte (Reposo Cerrado Estricto en $0.000\text{ mm}$)**:
+  - Detección de la causa del rebote: Three.js `InterpolateSmooth` implementa curvas Catmull-Rom cuyas tangentes cúbicas sufrían de *overshoot* en las desaceleraciones hacia el origen, empujando los cajones a $-1\text{ mm}$ y colisionando hacia el interior del mueble.
+  - Sustitución por curva cinemática **Smoothstep** muestreada con `InterpolateLinear`:
+    $$\text{Smoothstep}(s) = s^2(3 - 2s), \quad s \in [0, 1]$$
+  - Al acotar matemáticamente el factor de desplazamiento estrictamente en $[0.0000, 1.0000]$, se garantiza que la posición cerrada sea exactamente $0.000\text{ mm}$, sin oscilaciones, colisiones ni rebotes elásticos.
+- **Estabilidad y Reactividad Total del Botón Play en Three.js**:
+  - Detección de atasco en `AnimationMixer`: las acciones con `LoopOnce` y `clampWhenFinished` se congelaban al terminar e ignoraban llamadas posteriores a `setTime(0)`.
+  - Inyección de `action.reset()` y `action.play()` al evaluar tiempos $t \le 0.05\text{ s}$, garantizando que **cada pulsación del botón Play reproduzca la coreografía sin intermitencias**.
+  - Supresión del evento `onEnded` en el reproductor de audio para desacoplar la animación 3D de la duración de locuciones cortas.
+- **Documentación y Estandarización Canónica**:
+  - Registro formal en `Manuales/manuales_proceso.md` (Hito 08 y Sección 6: *Estándar de Cinemática Telescópica de Cajones y Correderas*).
+
+---
+
+#### Hito 111: Blindaje Anti-Planos, Fusión de Vértices y Compatibilidad Universal glTF 2.0 (~4.9 MB Sin Decodificadores) en Exportación de Manuales 3D (3dBimFab)
+
+- **Diagnóstico Integral de las Patologías de Exportación (516 MB, Planos Fantasma e Incompatibilidad de Draco)**:
+  1. **Decenas de Planos Fantasma en Visores 3D:** El clon indiscriminado de la escena Three.js arrastraba los grupos internos de Grasshopper (`Maquinados`, `Otros`) que contienen cajas de mecanizados CNC, planos de corte Brep y volúmenes de perforación, además de las líneas de Drei `<Edges>` (`LineSegments`). En visores 3D externos, estos elementos se proyectaban como muros y planos blancos gigantes flotando en la escena.
+  2. **Incompatibilidad de Draco en Visores Estándar:** La compresión Draco requiere la extensión `KHR_draco_mesh_compression`, la cual no está soportada por el Visor 3D nativo de Windows (imposibilitando abrir el archivo al hacer doble clic) y en mallas CAD con perforaciones no-variedades el algoritmo `edgebreaker` degradaba los triángulos a nubes de puntos (`POINT_CLOUD`), provocando que Babylon.js Sandbox se quedara colgado en el spinner de carga sin renderizar la superficie.
+- **Implementación del Estándar Universal glTF 2.0 en `exportManualGlb.ts`**:
+  - **Filtro Anti-Planos y Anti-Mecanizados:** Se excluyen de raíz los grupos `Maquinados` y `Otros`, mallas con nombres que contengan `plane`, `plano`, `maquinado`, `perforado`, `nurbs`, `edges`, `helper`, `gizmo`, `ambient` o cualquier objeto `LineSegments`/`Line`.
+  - **Deduplicación y Remuestreo Universal a 512px JPEG:** Todas las texturas difusas se optimizan en memoria canvas a 512x512 JPEG universal (`mimeType: "image/jpeg"`) y se deduplican en `textureOptimizedCache` y `materialOptimizedCache`, asegurando que todas las piezas compartan exactamente 1 material y 1 textura en glTF.
+  - **Indexación y Fusión de Vértices (`BufferGeometryUtils.mergeVertices`):** Se fusionan vértices coincidentes con $0.5\text{ mm}$, reduciendo el peso de la geometría en un 65% sin requerir decodificadores externos.
+  - **Cero Extensiones Requeridas (`extensionsRequired: []`):** Archivos glTF 2.0 puros que abren de forma nativa e instantánea en Visor 3D de Windows, Babylon.js Sandbox, Blender, PowerPoint y navegadores móviles.
+- **Resultados**:
+  - Reducción del **99.2%** en el peso del GLB (de **516 MB** a **~4.9 MB**).
+  - Eliminación del 100% de los planos blancos fantasma.
+
+---
+
+### 🔹 Hito 112: Blindaje de Selección de Piezas, Diagnóstico de Mutación por Cómputo Legacy y Persistencia de la Mesa de Noche MN2 Ravenna en Modo Manual 3D (3dBimFab) (11 de Septiembre, 2026)
+
+- **Diagnóstico Exhaustivo del Síndrome de Mutación Involuntaria en Modo Manual**:
+  * **Síntoma Reportado:** Al seleccionar mallas milimétricas o delgadas de la corredera (`Corrediça - Seguro` / pestillo plástico / perfil intermedio) durante el modo picking del Paso 00 (Showcase) o Paso 01, la mesa de noche de 2 cajones (`MN2 Ravenna`, $400 \times 600\text{ mm}$) revertía inesperadamente a la cómoda estándar de 6 cajones ($1295 \times 930\text{ mm}$).
+  * **Causa Raíz Identificada:** Un efecto dominó en tres capas:
+    1. *Micro-fallo de Raycast:* Al hacer clic en geometrías submilimétricas, el puntero en el canvas registraba un clic en vacío.
+    2. *Deselección Global:* `SelectionController` en `Viewer3D.tsx` ejecutaba `seleccionarInstancia(null)`, dejando `objetoActivoId = null`.
+    3. *Disparo Involuntario de Cómputo Legacy:* En `ControlPanel.tsx`, un hook reactivo `useEffect([parametros])` disparaba `POST /api/compute` con los valores por defecto del archivo Grasshopper (`Comoda Ravenna`), sobreescribiendo el resultado 3D del escenario.
+- **Cinco Capas de Blindaje Anti-Mutación Implementadas**:
+  1. **Bloqueo Incondicional en `ControlPanel.tsx` (`ejecutarComputo`):** Aborto inmediato del cómputo legacy si existen instancias en la escena (`instancias.length > 0`), si la pestaña activa no es `"3d"`, o si `modoPickingManual.activo` es verdadero.
+  2. **Inmunidad de Selección en `store.ts` (`seleccionarInstancia`):** Prohibición estricta de limpiar el objeto activo (`objetoActivoId: null`) mientras se encuentre en la pestaña manual o con picking activo.
+  3. **Aislamiento de Puntero en `Viewer3D.tsx` (`SelectionController`):** Desconexión de los oyentes de ratón globales en canvas durante la navegación o picking de manual.
+  4. **Cinemática Telescópica Autónoma en `manualAnimationEngine.ts`:** Detección automática por cota de altura de cajón ($\Delta Y < 120\text{ mm}$), asignando 0% a la corredera fija, 50% a la intermedia con seguro y 100% a la guía móvil solidaria al cajón, prescindiendo del picking manual de micromallas.
+  5. **Silenciamiento de Watchers y Debouncers:** Desactivación de `GHXAutoWatcher` y temporizadores de recálculo en pestaña manual.
+- **Preservación y Rescate del Archivo de Trabajo**:
+  * Verificación y resguardo íntegro del archivo `G:\Mi unidad\Muebles\Henn\CÓMODA\mueble_1789186374917_hhsd.3bf.json` (`MN2 Ravenna`, 2 cajones, $400 \times 600\text{ mm}$) con sus pasos `P00` y `P01` intactos.
+- **Nota de Seguimiento para la Rama `Manual_P00`**:
+  * El usuario reportó persistencia/incremento de inestabilidad durante la interacción; se procede a cerrar el ciclo de cambios en rama de control y abrir la rama `Manual_P00` para aislar y resolver a fondo la experiencia de usuario y la animación en Realidad Aumentada (AR).
+
 

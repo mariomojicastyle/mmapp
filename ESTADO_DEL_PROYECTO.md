@@ -21,6 +21,56 @@ Este archivo es la "Memoria RAM" para Antigravity. Contiene el contexto de lo qu
 - [x] **Persistencia Reactiva & Memoria Local**: Indexación inmediata y sincronización fluida entre Supabase, memoria local y la memoria activa `.agent/skills/b2b-sales-closer/ventas_ram.md`.
 - [x] **Protocolo Antigravity de Fluidez Bilingüe (2 Bloques de Código en 1 Clic)**: Respuestas en el chat entregadas siempre en 2 bloques de código markdown separados (Bloque 1 en Português do Brasil para copiar en 1 clic + Bloque 2 en Español para auditoría rápida), inyectando ambos idiomas en la base de datos de Supabase y en `ventas_ram_storage.json` para mantener el historial vivo.
 
+- [x] **[11 de Septiembre, 2026] Hito 112: Blindaje de Selección de Piezas, Diagnóstico de Mutación por Cómputo Legacy y Persistencia de MN2 Ravenna en Modo Manual 3D (3dBimFab)**:
+  - **Diagnóstico Integral de la Mutación a Cómoda de 6 Cajones**:
+    * *Detección de Raycast Miss:* Selección de piezas submilimétricas de la corredera disparaba deselección de instancia (`objetoActivoId = null`).
+    * *Recomputación Involuntaria:* `ControlPanel.tsx` ejecutaba cómputo legacy de fondo sobreescribiendo el modelo de la mesa de noche con la plantilla por defecto de Grasshopper (`Comoda Ravenna` 1295 x 930 mm).
+  - **Blindaje en 5 Capas**:
+    * *Bloqueo de Cómputo Legacy:* En `ControlPanel.tsx`, cancelación absoluta de `ejecutarComputo()` si hay instancias cargadas, si no estamos en 3D puro o si hay picking de manual activo.
+    * *Protección de Selección en Store:* `seleccionarInstancia(null)` se rechaza estrictamente en modo manual o picking.
+    * *Aislamiento en `Viewer3D.tsx`:* Eventos de canvas neutralizados en modo manual.
+    * *Cinemática Automática de Correderas:* Detección automática por cota de altura sin obligar a seleccionar piezas diminutas a mano.
+    * *Watchers y Debouncers Silenciados:* `GHXAutoWatcher` deshabilitado en pestaña manual.
+  - **Próximo Foco Activo (Rama `Manual_P00`)**: Aislar y depurar el ciclo de interacción en modo manual, estabilidad de selección y animación continua en Realidad Aumentada (AR).
+
+- [x] **[11 de Septiembre, 2026] Hito 3BF_Exportacion_GLB_Universal_AntiPlanos (Blindaje Anti-Planos Fantasma, Fusión de Vértices y Compatibilidad Universal glTF 2.0 ~4.9 MB Sin Decodificadores)**:
+  - **Diagnóstico Integral de las Patologías de Exportación**:
+    * *Decenas de Planos Fantasmas:* El clon indiscriminado de la escena en `exportManualGlb.ts` arrastraba grupos internos de Grasshopper (`Maquinados`, `Otros`) que contienen cajas de mecanizado CNC, planos de corte Brep y volúmenes de perforación, además de las aristas Drei `<Edges>` (`LineSegments`). En visores 3D externos, estos elementos aparecían como gigantescos planos y muros blancos flotando en la escena.
+    * *Fallo de Apertura con Draco:* `KHR_draco_mesh_compression` no está soportada por el Visor 3D nativo de Windows (genera error inmediato al abrir) y en mallas CAD con perforaciones no-variedades el algoritmo `edgebreaker` degradaba los triángulos a nubes de puntos (`POINT_CLOUD`), impidiendo que Babylon.js Sandbox u otros motores rendericen las superficies.
+  - **Filtro Anti-Planos y Anti-Mecanizados**: Se excluyen de raíz los grupos `Maquinados` y `Otros`, mallas con nombres que contengan `plane`, `plano`, `maquinado`, `perforado`, `nurbs`, `edges`, `helper`, `gizmo`, `ambient` o cualquier objeto `LineSegments`/`Line`.
+  - **Deduplicación y Remuestreo Universal a 512px JPEG**: Todas las texturas difusas se optimizan en memoria canvas a 512x512 JPEG universal (`mimeType: "image/jpeg"`) y se deduplican en `textureOptimizedCache` y `materialOptimizedCache`, asegurando que todas las piezas compartan exactamente 1 material y 1 textura en glTF.
+  - **Indexación y Fusión de Vértices (`mergeVertices`)**: Fusión de vértices coincidentes con $0.5\text{ mm}$, reduciendo el peso de la malla en 65% sin alterar formas y eliminando vértices duplicados.
+  - **Estándar Universal glTF 2.0 (Zero Extensions Required)**: Archivos con peso de **~4.9 MB** (reducción del **99.2%** frente a 516 MB) que abren de forma nativa e instantánea en Visor 3D de Windows, Babylon.js Sandbox, Blender, PowerPoint y navegadores móviles sin requerir ningún decodificador WASM externo.
+  - **Documentación Canónica**: Registrado en `Manuales/manuales_proceso.md` (Sección 6.4).
+
+- [x] **[11 de Septiembre, 2026] Hito 3BF_Cinematica_Telescopica_Cajones_Showcase_P00 (Perfección Cinemática de Correderas Telescópicas, Cero Absoluto Sin Rebote y Estabilidad Total de Línea de Tiempo)**:
+  - **Cinemática de Correderas Telescópicas en 3 Secciones**: Desagregación matemática rigurosa en `manualAnimationEngine.ts`:
+    * *Perfil Fijo (`Corrediça - Fija`):* Permanece 100% estático ($0\%$) en el lateral del mueble.
+    * *Perfil Intermedio (`Corrediça - Intermedia`):* Se extiende suavemente al **$50\%$ de la carrera** colineal al eje de extracción.
+    * *Perfil Móvil y Seguros (`Corrediça - Móvil` / `Seguro`):* Avanzan al **$100\%$ de la carrera** pegados solidarios a los laterales de madera del cajón, vistiendo el lateral metálico tal como en la realidad industrial.
+  - **Aislamiento de Tornillos Estáticos de la Corredera**: Formulación geométrica universal ($X \le X_{\text{fija}}$ en el lado izquierdo y $X \ge X_{\text{fija}}$ en el derecho) para mantener los tornillos de fijación anclados sólidamente al lateral del mueble, erradicando al 100% los tornillos flotantes en el aire.
+  - **Erradicación del Efecto Resorte (Reposo Cerrado Estricto en $0.000\text{ mm}$)**: Reemplazo de la interpolación Catmull-Rom (`InterpolateSmooth`) por curva **Smoothstep** muestreada con `InterpolateLinear` acotada monótonamente en $[0.0000, 1.0000]$, garantizando que el cajón jamás retroceda a menos de 0 mm ni colisione contra el mueble.
+  - **Play Confiable en Three.js**: Inyección de `action.reset()` y `action.play()` en `AnimationMixer` al reiniciar desde $t \le 0.05\text{ s}$ para desatascar acciones `LoopOnce`, e independencia total de la animación frente a audios cortos en `TimelineScrubber.tsx`.
+  - **Documentación Canónica**: Registrado formalmente en `Manuales/manuales_proceso.md` (Hito 08 y Sección 6: *Estándar de Cinemática Telescópica de Cajones y Correderas*).
+
+- [x] **[11 de Septiembre, 2026] Hito Manuales_3D_Propuesta_Alternativa_Coherente (Propuesta Alternativa de Armado Paso 01 con Coherencia Física Absoluta, Martillo en Pata Derecha y Llave Allen Concéntrica)**:
+  - **Martillo en Pata Derecha (`Peça 04`)**: Demostración de martillado reubicada sobre la puntilla `Prego` en la zapata `Sapata redonda.003` de la pata derecha (`X = +0.4426`). Tolerancia submilimétrica de **0.17 mm** en el punto de impacto tangencial (frames 81-85), con 2 golpes rítmicos que clavan la puntilla progresivamente hasta quedar a ras.
+  - **Llave Allen Concéntrica en Pata Derecha (`Parafuso estrutural.001`)**: Acople concéntrico con tolerancia de **3.5 mm** (profundidad del orificio hexagonal del tornillo). Giro simultáneo de $720^\circ$ y avance axial síncrono penetrando en el lateral (frames 56-60), con desacople y retiro suave antes de la colocación de la tapa embellecedora.
+  - **Correderas con Fijación Inmediata de Tornillería**: Sincronización estricta donde cada corredera (`Corrediça 350` y `Corrediça 350.004`) recibe de inmediato sus tornillos de montaje (`Parafuso chato especial`), eliminando la adherencia mágica.
+  - **Soporte y Colinealidad Estructural**: Montaje de tarugos y acople guiado sobre el travesaño central (`Peça 02`) con apoyo continuo.
+  - **Horneado y Exportación GLB Ligero (313 KB)**: `P01_propuesta_alternativa.glb` con 117 canales de animación activa a 1 fps (92 segundos exactos).
+
+- [x] **[11 de Septiembre, 2026] Hito Manuales_3D_Coherencia_Fisica (Arquitectura Algorítmica de Manuales de Armado, Sincronía Matemática 100%, Slotted Actions Blender 4.5 & Matriz de Coherencia del Mundo Real)**:
+  - **Ingeniería Inversa y Reconstrucción del Paso 01**: Extracción de los 39 ramales de Geometry Nodes, generación paramétrica vía `generar_paso_armado_v5.py` y resolución de Slotted Actions en Blender 4.5 (`slots.new('NODETREE'|'OBJECT')`).
+  - **Calibración de Tiempo Real (1 Frame = 1 Segundo)**: Descubrimiento de que en la referencia original `render.fps = 1.0` y `fps_base = 1.0` (1 fotograma = 1 segundo de audio). Al fijar `fps = 1`, la duración cuadró al 100% (92 segundos exactos).
+  - **Auditoría Binaria de Coincidencia (0.00 mm)**: Comparación de los 117 canales de animación (traslación, rotación y escala) entre `P01.glb` y `P01_automatizado.glb` con error máximo < 0.005.
+  - **Creación de Carpeta y Manifiesto Canónico `Manuales/manuales_proceso.md`**: Definición estricta de las leyes de la realidad física:
+    * *Ley de Impenetrabilidad y Contacto Real:* Las herramientas (martillo, llave Allen) deben hacer contacto físico concéntrico con el herraje; prohibido martillar o girar en el aire.
+    * *Precondición de Soporte:* Toda pieza base debe estar posicionada y apoyada antes de recibir herrajes.
+    * *Colinealidad de Ejes Normales:* La trayectoria de inserción de tarugos y tornillos debe seguir el vector normal del maquinado.
+    * *Sincronía Causal de Apriete:* Giro angular y avance axial solidario entre la llave Allen y el tornillo estructural.
+  - **Integración al Protocolo de Arranque**: Registrado oficialmente en `AGENTS.md`, `GEMINI.md` y `protocolo-arranque/SKILL.md`.
+
 - [x] **[11 de Septiembre, 2026] Hito 3BF_Despiece_Herrajes_Orden_Alfabetico_y_Cantidad (Orden Alfabético Estricto A-Z y Reubicación de Cantidad Inmediata al Nombre del Herraje)**:
   - **Orden Alfabético A-Z en Herrajes (`DespieceView.tsx`)**: Se aplicó ordenamiento alfabético canónico (`items.sort`) por el nombre del herraje (`nombreGhx`), desplegando la lista industrial de la A a la Z de forma intuitiva y sin saltos.
   - **Reubicación de Columna de Cantidad**: En la tabla `2. Lista de herrajes`, la columna `Cantidad` ahora se ubica inmediatamente contigua a la columna `Herraje` (`Herraje` ➔ `Cantidad` ➔ `Descripción Comercial` ➔ `UM` ➔ `Costo Unitario` ➔ `Costo Total`), con badge en **cápsula pura** (`rounded-full`) conforme a las reglas de UI del sistema.

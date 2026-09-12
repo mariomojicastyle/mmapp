@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import React, { useEffect, useRef } from "react";
 import { use3BFStore } from "@/lib/store";
@@ -22,7 +22,12 @@ export function GHXAutoWatcher() {
 
     const checkFileChanges = async () => {
       if (isCheckingRef.current) return;
-      const currentInstancias = Object.values(use3BFStore.getState().instancias || {});
+      const state = use3BFStore.getState();
+      // 🛡️ BLINDAJE ESTRICTO: Prohibido hot-reload en modo Manual 3D, Despiece o Picking activo
+      if (state.pestanaActiva !== "3d" || state.modoPickingManual.activo) {
+        return;
+      }
+      const currentInstancias = Object.values(state.instancias || {});
       if (currentInstancias.length === 0) return;
 
       const items = currentInstancias.map((inst) => ({

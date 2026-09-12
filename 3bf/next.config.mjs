@@ -16,6 +16,7 @@ const nextConfig = {
     ];
   },
   experimental: {
+    serverComponentsExternalPackages: ["msedge-tts", "ws"],
     serverActions: {
       bodySizeLimit: "25mb",
     },

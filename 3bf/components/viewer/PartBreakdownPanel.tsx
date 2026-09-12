@@ -62,12 +62,32 @@ export default function PartBreakdownPanel() {
     if (kLow.includes("tarugo") || kLow.includes("cavilha") || kLow.includes("clavilha") || kLow.includes("soporte")) {
       return capas.find((c) => c.id === "capa_madera" || c.nombre.toLowerCase().includes("madera"))?.id || capas[0]?.id;
     }
-    if (kLow.includes("mdp")) return capas.find((c) => c.nombre.toLowerCase() === "mdp" || c.id === "capa_mdp")?.id || capas[0]?.id;
     if (kLow.includes("mdf")) return capas.find((c) => c.nombre.toLowerCase() === "mdf" || c.id === "capa_mdf")?.id || capas[0]?.id;
+    if (kLow.includes("mdp")) return capas.find((c) => c.nombre.toLowerCase() === "mdp" || c.id === "capa_mdp")?.id || capas[0]?.id;
+
+    // 🪵 Fondos y piezas de 3 mm con cara de color -> Capa Tono Fondo
+    const isFondo = (
+      kLow.includes("fondo") ||
+      kLow.includes("fundo") ||
+      kLow.includes("tono fondo") ||
+      kLow.includes("costa") ||
+      kLow.includes("costas") ||
+      kLow.includes("espaldar") ||
+      kLow.includes("trasera") ||
+      kLow.includes("back") ||
+      kLow.includes("peça 15") ||
+      kLow.includes("peca 15") ||
+      kLow.includes("pk15") ||
+      kLow.includes("peça 18") ||
+      kLow.includes("peca 18") ||
+      kLow.includes("pk18")
+    );
+    if (isFondo) {
+      return capas.find((c) => c.id === "capa_tono_fondo" || c.nombre.toLowerCase().includes("fondo"))?.id || "capa_tono_fondo";
+    }
+
     const isBalance = (
       kLow.includes("balance") ||
-      kLow.includes("back") ||
-      kLow.includes("espaldar") ||
       kLow.includes("equilibrio") ||
       kLow.includes("reverso") ||
       kLow.endsWith(" b") ||
@@ -76,14 +96,10 @@ export default function PartBreakdownPanel() {
       /pe[cç]a\s*\d+\s*b$/i.test(kLow) ||
       /pk\s*\d+\s*b$/i.test(kLow)
     );
-
     if (isBalance) {
-      return capas.find((c) => c.id === "capa_back" || c.id === "capa_espaldar" || c.nombre.toLowerCase().includes("back") || c.nombre.toLowerCase().includes("balance"))?.id || capas[0]?.id;
+      return capas.find((c) => c.id === "capa_back" || c.nombre.toLowerCase().includes("back") || c.nombre.toLowerCase().includes("balance"))?.id || capas[0]?.id;
     }
-    const isFondo = kLow.includes("fondo") || kLow.includes("fundo") || kLow.includes("peça 18") || kLow.includes("peca 18") || kLow.includes("pk18") || kLow.includes("costa") || kLow.includes("trasera");
-    if (isFondo && !kLow.includes("mdf") && !kLow.includes("mdp")) {
-      return capas.find((c) => c.id === "capa_tono_fondo" || c.nombre.toLowerCase().includes("fondo"))?.id || "capa_tono_fondo";
-    }
+
     // 🪵 Para cualquier lámina / tablero (Cubierta, Lateral, Frente, Tapa, Peça 6, Peça 7, etc.), asignar Capa Tono por defecto
     const capaTono = capas.find((c) => c.id === "capa_tono" || (c.nombre.toLowerCase().includes("tono") && !c.nombre.toLowerCase().includes("fondo")));
     return capaTono?.id || capas[0]?.id || "capa_tono";

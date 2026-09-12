@@ -1,4 +1,4 @@
-﻿/**
+/**
  * 3BF PBR Map Generator — Motor Algorítmico en Canvas 2D
  * Generación instantánea de Normal Map (Sobel), Roughness Map y AO Map desde cualquier textura Diffuse.
  */
@@ -338,5 +338,73 @@ export async function autoGenerarSetPBRCompleto(
     roughnessBase: baseRoughness,
     metallicBase: baseMetallic,
     clearcoat: baseClearcoat,
+  };
+}
+
+/**
+ * Generador Procedural Instantáneo de Acabado Metálico Cepillado / Zincado (Brushed Metal)
+ * Crea mapas de normales y rugosidad con micro-ranuras de pulido mecánico industrial.
+ */
+export function generarTexturasMetalProcedural(
+  tipoAcabado: "cepillado" | "zinc_galvanizado" = "cepillado"
+): {
+  normalUrl: string;
+  roughnessUrl: string;
+} {
+  const size = 512;
+  const canvasNorm = document.createElement("canvas");
+  canvasNorm.width = size;
+  canvasNorm.height = size;
+  const ctxNorm = canvasNorm.getContext("2d")!;
+  const imgDataNorm = ctxNorm.createImageData(size, size);
+  const dataNorm = imgDataNorm.data;
+
+  const canvasRough = document.createElement("canvas");
+  canvasRough.width = size;
+  canvasRough.height = size;
+  const ctxRough = canvasRough.getContext("2d")!;
+  const imgDataRough = ctxRough.createImageData(size, size);
+  const dataRough = imgDataRough.data;
+
+  // Generar perfil 1D de micro-rayas horizontales
+  const lineNoise = new Float32Array(size);
+  let prev = 0.5;
+  for (let y = 0; y < size; y++) {
+    // Ruido aleatorio suavizado para generar bandas y finas estrías paralelas
+    const r = Math.random();
+    prev = prev * 0.75 + r * 0.25;
+    lineNoise[y] = prev;
+  }
+
+  for (let y = 0; y < size; y++) {
+    const bandVal = lineNoise[y];
+    for (let x = 0; x < size; x++) {
+      const idx = (y * size + x) * 4;
+      const microX = (Math.random() - 0.5) * 0.08;
+      const microY = (bandVal - 0.5) * (tipoAcabado === "cepillado" ? 0.35 : 0.20);
+
+      // Normal Map Tangente (R=X, G=Y, B=Z)
+      // Base plana es (128, 128, 255)
+      dataNorm[idx] = Math.max(0, Math.min(255, Math.round(128 + microX * 255)));
+      dataNorm[idx + 1] = Math.max(0, Math.min(255, Math.round(128 + microY * 255)));
+      dataNorm[idx + 2] = 255;
+      dataNorm[idx + 3] = 255;
+
+      // Roughness Map (Gris con sutiles variaciones en las estrías de pulido)
+      const baseRoughByte = tipoAcabado === "cepillado" ? 70 : 65; // ~0.26 a 0.28 de rugosidad
+      const roughByte = Math.max(0, Math.min(255, Math.round(baseRoughByte + (bandVal - 0.5) * 45)));
+      dataRough[idx] = roughByte;
+      dataRough[idx + 1] = roughByte;
+      dataRough[idx + 2] = roughByte;
+      dataRough[idx + 3] = 255;
+    }
+  }
+
+  ctxNorm.putImageData(imgDataNorm, 0, 0);
+  ctxRough.putImageData(imgDataRough, 0, 0);
+
+  return {
+    normalUrl: canvasNorm.toDataURL("image/png"),
+    roughnessUrl: canvasRough.toDataURL("image/png"),
   };
 }

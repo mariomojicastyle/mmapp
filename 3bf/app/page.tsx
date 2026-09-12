@@ -5,12 +5,14 @@ import Viewer3D from "@/components/viewer/Viewer3D";
 import ControlPanel from "@/components/ui/ControlPanel";
 import DespieceView from "@/components/views/DespieceView";
 import DatabaseView from "@/components/views/DatabaseView";
+import ManualStudioView from "@/components/views/ManualStudioView";
+import ManualControlPanel from "@/components/manual/ManualControlPanel";
 import SaveFurnitureModal from "@/components/ui/SaveFurnitureModal";
 import AIRenderStudioModal from "@/components/ui/AIRenderStudioModal";
 import PBRMaterialStudioModal from "@/components/ui/PBRMaterialStudioModal";
 import NPanel from "@/components/viewer/NPanel";
 import { use3BFStore, APP_VERSION } from "@/lib/store";
-import { Box, Layers, Cpu, CheckCircle2, AlertCircle, Database, Camera, Check, Sparkles } from "lucide-react";
+import { Box, Layers, Cpu, CheckCircle2, AlertCircle, Database, Camera, Check, Sparkles, BookOpen } from "lucide-react";
 import { IconModoLineas, IconModoCristal, IconModoSolido, IconModoRender } from "@/components/ui/ControlPanel";
 
 function DocumentTitleEditor() {
@@ -297,9 +299,13 @@ export default function Home3BF() {
     };
   }, [hidratarDesdeLocalStorage]);
 
-  // Ancho responsivo exacto: 25% del viewport en móvil horizontal, 380px en PC
+  // Ancho responsivo exacto: 380px en PC/Modo Manual, o 25% del viewport en diseño móvil
   const anchoEfectivoPanelDerecho = React.useMemo(() => {
     if (typeof window === "undefined") return 380;
+    if (pestanaActiva === "manual") {
+      if (window.innerWidth >= 1280) return Math.max(380, anchoPanelDerecho || 380);
+      return Math.max(340, anchoPanelDerecho || 350);
+    }
     if (window.innerWidth >= 1024) {
       return anchoPanelDerecho && anchoPanelDerecho >= 280 ? anchoPanelDerecho : 380;
     }
@@ -308,7 +314,7 @@ export default function Home3BF() {
       return ancho25;
     }
     return anchoPanelDerecho;
-  }, [anchoPanelDerecho]);
+  }, [anchoPanelDerecho, pestanaActiva]);
 
   return (
     <main 
@@ -404,7 +410,16 @@ export default function Home3BF() {
             className="flex items-center p-0.5 lg:p-1 rounded-full border shadow-inner backdrop-blur-md gap-0.5 lg:gap-1 h-[22px] lg:h-9 shrink-0"
           >
             <button
-              onClick={() => setPestanaActiva("3d")}
+              onClick={() => {
+                setPestanaActiva("3d");
+                const s = use3BFStore.getState();
+                if (!s.objetoActivoId) {
+                  const instKeys = Object.keys(s.instancias);
+                  if (instKeys.length > 0) {
+                    s.seleccionarInstancia(instKeys[0]);
+                  }
+                }
+              }}
               style={
                 pestanaActiva === "3d"
                   ? { backgroundColor: coloresApariencia?.botonActivo || "#0891b2", borderColor: coloresApariencia?.colorMarca || "#0891b2" }
@@ -447,6 +462,31 @@ export default function Home3BF() {
               }`}
             >
               <Database className="w-2.5 lg:w-4 h-2.5 lg:h-4" /> <span><span className="hidden sm:inline">Base de </span>Datos</span>
+            </button>
+            <button
+              onClick={() => {
+                setPestanaActiva("manual");
+                setMostrarNPanel(false);
+                const s = use3BFStore.getState();
+                if (!s.objetoActivoId) {
+                  const instKeys = Object.keys(s.instancias);
+                  if (instKeys.length > 0) {
+                    s.seleccionarInstancia(instKeys[0]);
+                  }
+                }
+              }}
+              style={
+                pestanaActiva === "manual"
+                  ? { backgroundColor: coloresApariencia?.botonActivo || "#0891b2", borderColor: coloresApariencia?.colorMarca || "#0891b2" }
+                  : { backgroundColor: coloresApariencia?.botonInactivo || "#E2E8F0", borderColor: coloresApariencia?.bordeBotonInactivo || "#CBD5E1", color: coloresApariencia?.textoPrincipal || "#0F172A" }
+              }
+              className={`px-1.5 sm:px-2 lg:px-3.5 h-[18px] lg:h-7 rounded-full transition flex items-center gap-1 font-bold cursor-pointer text-[8.5px] sm:text-[9.5px] lg:text-xs ${
+                pestanaActiva === "manual"
+                  ? "text-white shadow-md border"
+                  : "hover:opacity-90 border backdrop-blur-sm"
+              }`}
+            >
+              <BookOpen className="w-2.5 lg:w-4 h-2.5 lg:h-4" /> <span>Manual<span className="hidden sm:inline"> 3D</span></span>
             </button>
           </div>
         </div>
@@ -606,7 +646,7 @@ export default function Home3BF() {
       <div className={`flex-1 flex overflow-hidden p-1.5 lg:p-3 gap-0 relative ${isResizingPanel ? "select-none cursor-ew-resize" : ""}`}>
         {/* Columna Izquierda: Visor 3D o Tablas de Datos */}
         <div className="flex-1 h-full flex flex-col relative overflow-hidden">
-          {pestanaActiva === "3d" ? (
+          {pestanaActiva === "3d" || pestanaActiva === "manual" ? (
             <Viewer3D />
           ) : pestanaActiva === "despiece" ? (
             <DespieceView />
@@ -631,7 +671,7 @@ export default function Home3BF() {
           />
         </div>
 
-        {/* Columna Derecha: Panel de Control de Parámetros & NPanel */}
+        {/* Columna Derecha: Panel de Control de Parámetros & NPanel o Estudio de Manual */}
         <div 
           style={{ 
             width: `${anchoEfectivoPanelDerecho}px`,
@@ -643,8 +683,12 @@ export default function Home3BF() {
             isResizingPanel ? "transition-none" : "transition-all"
           }`}
         >
-          <ControlPanel />
-          {pestanaActiva !== "3d" && <NPanel />}
+          {pestanaActiva === "manual" ? (
+            <ManualControlPanel />
+          ) : (
+            <ControlPanel />
+          )}
+          {pestanaActiva !== "3d" && pestanaActiva !== "manual" && <NPanel />}
         </div>
       </div>
 

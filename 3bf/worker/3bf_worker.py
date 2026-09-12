@@ -159,9 +159,27 @@ def find_user_param_value(p_dict: dict, nick: str, default_val):
     if clean_with_num in combined and combined[clean_with_num] is not None:
         return combined[clean_with_num]
 
+    # 🌟 PARÁMETROS GLOBALES ESTRUCTURALES (Ancho, Alto, Profundidad, Zócalo, Ritmo, Apertura):
+    # Aunque comiencen con "01.0", "01.1", etc. para orden en Grasshopper, son globales y deben aceptar fallbacks
+    nick_lower = nick.lower()
+    is_global_structural = any(w in nick_lower for w in ["ancho", "alto", "altura", "profundidad", "prof", "zocalo", "ritmo", "apertur"])
+    if is_global_structural:
+        # Priorizar búsqueda por clave parcial en combined
+        pure_name = re.sub(r'^RH_IN:\s*', '', nick, flags=re.I)
+        pure_name = re.sub(r'^[\d.]+[_\s]*', '', pure_name).strip().lower().replace(' ', '_')
+        if pure_name in combined and combined[pure_name] is not None:
+            return combined[pure_name]
+        for k, v in combined.items():
+            if not isinstance(k, str) or v is None or k == "parameters":
+                continue
+            k_pure = re.sub(r'^RH_IN:\s*', '', k, flags=re.I)
+            k_pure = re.sub(r'^[\d.]+[_\s]*', '', k_pure).strip().lower().replace(' ', '_')
+            if pure_name and k_pure == pure_name:
+                return v
+
     # Verificar si el parámetro pertenece a una pieza numerada específica (ej. "08.1", "11.1", "Peça 8")
     num_match = re.search(r'(\d+[\.\d]*)', nick)
-    if num_match:
+    if num_match and not is_global_structural:
         piece_id = num_match.group(1).lower()
         # Solo permitir coincidencia con claves que contengan explícitamente el mismo número de pieza
         for k, v in combined.items():
@@ -924,6 +942,30 @@ def extract_all_user_params_flat(p: dict) -> dict:
                 flat[str(k)] = str(v).strip()
     return flat
 
+def extract_dimension_smart(p_dict: dict, keywords: list, fallback: float) -> float:
+    flat = extract_all_user_params_flat(p_dict)
+    # 1. Buscar coincidencia con clave explícita de dimensión específica del usuario (priorizar claves con prefijo numérico como '01.0_ancho_1295' o 'ancho_1295' sobre la genérica)
+    for k, v in flat.items():
+        k_lower = k.lower()
+        if any(kw in k_lower for kw in keywords) and any(c.isdigit() for c in k):
+            try:
+                val = float(v)
+                if val > 0:
+                    return val
+            except (ValueError, TypeError):
+                pass
+    # 2. Buscar coincidencia estándar (ej. 'ancho', 'rh_in:ancho')
+    for kw in keywords:
+        val = find_user_param_value(p_dict, f"RH_IN:{kw.capitalize()}", find_user_param_value(p_dict, kw, None))
+        if val is not None:
+            try:
+                f_val = float(val)
+                if f_val > 0:
+                    return f_val
+            except (ValueError, TypeError):
+                pass
+    return float(fallback)
+
 def deduplicate_real_meshes(meshes: list) -> tuple[list, list, dict]:
     """
     🛡️ DETECTOR Y PURGADOR DE MALLAS DUPLICADAS (3dBimFab DfMA Shield)
@@ -1007,9 +1049,9 @@ async def compute_model(request: Request):
         print(f"[3BF Worker] [CACHE] CACHE TOTAL EXACTO ACTIVADO: Recalculo en {exec_ms} ms", flush=True)
         return cached_resp
 
-    ancho = float(find_user_param_value(p, "RH_IN:Ancho", find_user_param_value(p, "ancho", 1200.0)))
-    alto = float(find_user_param_value(p, "RH_IN:Alto", find_user_param_value(p, "alto", 800.0)))
-    prof = float(find_user_param_value(p, "RH_IN:Profundidad", find_user_param_value(p, "profundidad", 400.0)))
+    ancho = extract_dimension_smart(p, ["ancho"], 1200.0)
+    alto = extract_dimension_smart(p, ["alto", "altura"], 800.0)
+    prof = extract_dimension_smart(p, ["profundidad", "prof"], 400.0)
     cant_cajones = int(p.get("cant_cajones", 3))
     apertura_mm = float(find_user_param_value(p, "RH_IN:02.5 Abrir Cajones", find_user_param_value(p, "RH_IN:Abrir Cajones", find_user_param_value(p, "abrir_cajones", find_user_param_value(p, "apertura_cajones", find_user_param_value(p, "apertura_mm", 0.0))))))
     prof_cajon_param = float(p.get("profundidad_cajon", 351.0))

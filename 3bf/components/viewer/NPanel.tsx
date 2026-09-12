@@ -7,6 +7,7 @@ import AppearanceSettingsPanel from "./AppearanceSettingsPanel";
 import LayerManagerPanel from "./LayerManagerPanel";
 import MaterialManagerPanel from "./MaterialManagerPanel";
 import PartBreakdownPanel from "./PartBreakdownPanel";
+import ProductSheetPanel from "./ProductSheetPanel";
 import { 
   ChevronLeft, 
   ChevronRight, 
@@ -35,7 +36,9 @@ import {
   Sparkles,
   Lamp,
   Power,
-  Bookmark
+  Bookmark,
+  Tag,
+  Save
 } from "lucide-react";
 
 interface DefinicionItem {
@@ -240,7 +243,21 @@ export default function NPanel() {
     tieneIluminacionPredeterminada,
     setHdriPersonalizado,
     restablecerHdriPorDefecto,
+    recetaEnEdicion,
+    guardarEstadoActualEnReceta,
+    getFichaProductoActivo,
+    esquemaColor,
   } = use3BFStore();
+
+  const esOscuro = esquemaColor === "oscuro";
+  const colorBotonActivo = esOscuro ? "#1368AA" : (coloresApariencia?.botonActivo || "#0891B2");
+
+  const recetaEditandoInfo = React.useMemo(() => {
+    if (!recetaEnEdicion) return null;
+    const ficha = getFichaProductoActivo();
+    const r = ficha?.recetasColor?.find((rec) => rec.id === recetaEnEdicion.recetaId);
+    return r?.nombre || "Receta";
+  }, [recetaEnEdicion, getFichaProductoActivo]);
 
   const anchoEfectivoNPanel = React.useMemo(() => {
     if (typeof window === "undefined") return 380;
@@ -540,7 +557,7 @@ export default function NPanel() {
             }}
             className="p-2.5 lg:p-3.5 pb-2 lg:pb-3 border-b flex items-center justify-between shrink-0"
           >
-            <div className="min-w-0">
+            <div className="min-w-0 flex items-center gap-2">
               <h2 
                 style={{ color: coloresApariencia?.textoPrincipal }}
                 className="text-xs lg:text-sm font-bold leading-tight truncate"
@@ -550,11 +567,24 @@ export default function NPanel() {
                   : pestanaNPanel === "capas" ? "Gestor de Capas"
                   : pestanaNPanel === "partes" ? "Desglose de Partes"
                   : pestanaNPanel === "materiales" ? "Editor de Materiales PBR"
+                  : pestanaNPanel === "ficha" ? "Ficha de Producto (PDP)"
                   : pestanaNPanel === "calibrar" ? "Calibración 3D"
                   : pestanaActiva === "despiece" ? "Apariencia - Despiece & Costos"
                   : pestanaActiva === "basedatos" ? "Apariencia - Base de Datos"
                   : "Apariencia & Colores"}
               </h2>
+
+              {/* 💾 Testigo Circular Titilante: Guardar Configuración en Receta de Color */}
+              {recetaEnEdicion && (
+                <button
+                  onClick={() => guardarEstadoActualEnReceta()}
+                  title={`Guardar cambios de capas y materiales en la receta "${recetaEditandoInfo}"`}
+                  style={{ backgroundColor: colorBotonActivo }}
+                  className="w-6 h-6 lg:w-7 lg:h-7 rounded-full text-white flex items-center justify-center animate-pulse shadow-md hover:scale-110 active:scale-95 transition cursor-pointer shrink-0"
+                >
+                  <Save className="w-3 lg:w-3.5 h-3 lg:h-3.5" />
+                </button>
+              )}
             </div>
 
             <button
@@ -585,6 +615,11 @@ export default function NPanel() {
           {/* VISTA 4: PESTAÑA MATERIALES (Editor PBR Físico Estilo Rhino 8)            */}
           {/* ========================================================================= */}
           {pestanaNPanel === "materiales" && <MaterialManagerPanel />}
+
+          {/* ========================================================================= */}
+          {/* VISTA 4B: PESTAÑA FICHA (Ficha Comercial & Color Recipe Engine PDP)       */}
+          {/* ========================================================================= */}
+          {pestanaNPanel === "ficha" && <ProductSheetPanel />}
 
           {/* ========================================================================= */}
           {/* VISTA 5: PESTAÑA COMPONENTES (Definiciones GHX en Crudo)                  */}
@@ -1699,6 +1734,30 @@ export default function NPanel() {
                 className="text-[8px] lg:text-[9px] tracking-wide font-sans leading-none font-semibold"
               >
                 Render IA
+              </span>
+            </button>
+
+            {/* Pestaña Vertical 6B: Ficha (PDP & Color Recipe Engine) */}
+            <button
+              onClick={() => setPestanaNPanel("ficha")}
+              style={
+                pestanaNPanel === "ficha"
+                  ? { backgroundColor: coloresApariencia?.botonActivo || "#0891b2", color: "#FFFFFF" }
+                  : { color: coloresApariencia?.textoPrincipal }
+              }
+              title="Ficha de Producto (PDP) & Color Recipe Engine"
+              className={`w-5.5 lg:w-7 py-2 lg:py-2.5 px-0.5 lg:px-1 rounded-full flex flex-col items-center justify-center gap-1 lg:gap-1.5 transition-all cursor-pointer ${
+                pestanaNPanel === "ficha"
+                  ? "shadow-sm font-bold"
+                  : "hover:opacity-80"
+              }`}
+            >
+              <Tag className="w-3 lg:w-3.5 h-3 lg:h-3.5 shrink-0" />
+              <span 
+                style={{ writingMode: "vertical-rl" }}
+                className="text-[8px] lg:text-[9px] tracking-wide font-sans leading-none font-semibold"
+              >
+                Ficha
               </span>
             </button>
 

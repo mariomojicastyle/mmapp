@@ -2,7 +2,7 @@
 
 import React, { useRef, useState, useEffect, useMemo } from "react";
 import { Canvas, useThree } from "@react-three/fiber";
-import { OrbitControls, ContactShadows } from "@react-three/drei";
+import { OrbitControls, ContactShadows, RoundedBox } from "@react-three/drei";
 import * as THREE from "three";
 import { RGBELoader } from "three/examples/jsm/loaders/RGBELoader.js";
 import { MaterialPBRDef, use3BFStore, ObjetoInstancia3BF } from "@/lib/store";
@@ -25,6 +25,7 @@ interface ShaderBallViewerProps {
   forma?: "esfera" | "tablero" | "cubo" | "mueble";
   hdriConfig?: HDRIConfig;
   mostrarSuelo?: boolean;
+  redondeoCubo?: number;
 }
 
 /**
@@ -41,74 +42,139 @@ export function generarEntornoEquirectangularLocal(tipo: string, rotacion = 0): 
 
   if (tipo === "alps_field_sol") {
     const skyGrad = ctx.createLinearGradient(0, 0, 0, height);
-    skyGrad.addColorStop(0, "#F0F9FF");
-    skyGrad.addColorStop(0.48, "#FFFFFF");
-    skyGrad.addColorStop(0.52, "#F1F5F9");
-    skyGrad.addColorStop(1, "#E2E8F0");
+    skyGrad.addColorStop(0, "#BAE6FD");
+    skyGrad.addColorStop(0.48, "#F0F9FF");
+    skyGrad.addColorStop(0.50, "#94A3B8");
+    skyGrad.addColorStop(0.53, "#475569");
+    skyGrad.addColorStop(1, "#1E293B");
     ctx.fillStyle = skyGrad;
     ctx.fillRect(0, 0, width, height);
 
     const sunX = ((rotacion % 360) / 360) * width;
-    const sunY = height * 0.30;
-    const sunGrad = ctx.createRadialGradient(sunX, sunY, 5, sunX, sunY, 160);
+    const sunY = height * 0.25;
+    const sunGrad = ctx.createRadialGradient(sunX, sunY, 5, sunX, sunY, 180);
     sunGrad.addColorStop(0, "rgba(255, 255, 255, 1.0)");
-    sunGrad.addColorStop(0.3, "rgba(254, 249, 195, 0.5)");
-    sunGrad.addColorStop(0.7, "rgba(254, 240, 138, 0.1)");
+    sunGrad.addColorStop(0.2, "rgba(255, 255, 240, 0.9)");
+    sunGrad.addColorStop(0.5, "rgba(254, 240, 138, 0.25)");
     sunGrad.addColorStop(1, "rgba(254, 240, 138, 0)");
     ctx.fillStyle = sunGrad;
     ctx.fillRect(0, 0, width, height);
   } else if (tipo === "apartamento_calido") {
     const grad = ctx.createLinearGradient(0, 0, 0, height);
     grad.addColorStop(0, "#FAF8F5");
-    grad.addColorStop(0.5, "#F1ECE5");
-    grad.addColorStop(0.52, "#E5DDD0");
-    grad.addColorStop(1, "#D6C7B2");
+    grad.addColorStop(0.48, "#F1ECE5");
+    grad.addColorStop(0.50, "#64748B");
+    grad.addColorStop(0.52, "#334155");
+    grad.addColorStop(1, "#1E293B");
     ctx.fillStyle = grad;
     ctx.fillRect(0, 0, width, height);
 
     const winX = ((rotacion % 360) / 360) * width;
-    ctx.fillStyle = "rgba(255, 253, 248, 0.85)";
-    ctx.fillRect(winX - 100, height * 0.15, 200, height * 0.35);
+    ctx.fillStyle = "rgba(255, 253, 248, 0.95)";
+    ctx.fillRect(winX - 120, height * 0.12, 240, height * 0.36);
   } else if (tipo === "showroom_moderno") {
     const grad = ctx.createLinearGradient(0, 0, 0, height);
     grad.addColorStop(0, "#334155");
-    grad.addColorStop(0.5, "#475569");
-    grad.addColorStop(0.52, "#1E293B");
-    grad.addColorStop(1, "#0F172A");
+    grad.addColorStop(0.48, "#475569");
+    grad.addColorStop(0.50, "#1E293B");
+    grad.addColorStop(1, "#0B0F17");
     ctx.fillStyle = grad;
     ctx.fillRect(0, 0, width, height);
 
     for (let i = 0; i < 4; i++) {
       const spotX = ((i * 256 + rotacion * 2) % width);
-      const spotGrad = ctx.createRadialGradient(spotX, 80, 5, spotX, 80, 90);
-      spotGrad.addColorStop(0, "rgba(255, 255, 255, 0.95)");
-      spotGrad.addColorStop(0.5, "rgba(241, 245, 249, 0.35)");
+      const spotGrad = ctx.createRadialGradient(spotX, 80, 5, spotX, 80, 110);
+      spotGrad.addColorStop(0, "rgba(255, 255, 255, 1.0)");
+      spotGrad.addColorStop(0.3, "rgba(255, 255, 255, 0.8)");
+      spotGrad.addColorStop(0.6, "rgba(241, 245, 249, 0.25)");
       spotGrad.addColorStop(1, "rgba(241, 245, 249, 0)");
       ctx.fillStyle = spotGrad;
       ctx.fillRect(0, 0, width, height);
     }
   } else {
-    // Estudio fotográfico neutral
+    // 📸 Estudio Fotográfico Profesional con Softboxes de Alto Contraste (Estilo Blender / Studio World)
+    // Fondo de ciclorama de estudio neutro con horizonte fotográfico
     const grad = ctx.createLinearGradient(0, 0, 0, height);
-    grad.addColorStop(0, "#FFFFFF");
-    grad.addColorStop(0.5, "#F8FAFC");
-    grad.addColorStop(0.52, "#F1F5F9");
-    grad.addColorStop(1, "#E2E8F0");
+    grad.addColorStop(0, "#222B38");      // Cenit superior de estudio
+    grad.addColorStop(0.35, "#334155");   // Bóveda intermedia
+    grad.addColorStop(0.48, "#475569");   // Pared de fondo ciclorama
+    grad.addColorStop(0.50, "#1E293B");   // Horizonte de suelo de estudio
+    grad.addColorStop(0.70, "#111827");   // Suelo reflectante
+    grad.addColorStop(1, "#0A0E17");      // Base inferior
     ctx.fillStyle = grad;
     ctx.fillRect(0, 0, width, height);
 
-    const sb1X = ((rotacion % 360) / 360) * width;
-    const sb1Grad = ctx.createRadialGradient(sb1X, height * 0.3, 10, sb1X, height * 0.3, 160);
-    sb1Grad.addColorStop(0, "rgba(255, 255, 255, 1.0)");
-    sb1Grad.addColorStop(0.5, "rgba(248, 250, 252, 0.5)");
-    sb1Grad.addColorStop(1, "rgba(248, 250, 252, 0)");
-    ctx.fillStyle = sb1Grad;
-    ctx.fillRect(0, 0, width, height);
+    // 1. Softbox Principal (Key Light) - Gran panel difusor rectangular luminoso
+    const rotNorm = ((rotacion % 360) + 360) % 360;
+    const sb1X = (rotNorm / 360) * width;
+    const sb1Y = height * 0.26;
+    const sb1W = width * 0.22;
+    const sb1H = height * 0.32;
+
+    // Resplandor difuso del softbox principal
+    const sb1Glow = ctx.createRadialGradient(sb1X, sb1Y, 10, sb1X, sb1Y, sb1W * 0.85);
+    sb1Glow.addColorStop(0, "rgba(255, 255, 255, 1.0)");
+    sb1Glow.addColorStop(0.35, "rgba(255, 255, 255, 0.85)");
+    sb1Glow.addColorStop(0.7, "rgba(240, 246, 255, 0.25)");
+    sb1Glow.addColorStop(1, "rgba(240, 246, 255, 0)");
+    ctx.fillStyle = sb1Glow;
+    ctx.fillRect(sb1X - sb1W, sb1Y - sb1H, sb1W * 2, sb1H * 2);
+
+    // Panel rectangular con esquinas suavizadas (Softbox de estudio fotográfico)
+    ctx.save();
+    ctx.fillStyle = "rgba(255, 255, 255, 0.98)";
+    ctx.shadowColor = "#FFFFFF";
+    ctx.shadowBlur = 25;
+    ctx.beginPath();
+    if (typeof (ctx as any).roundRect === "function") {
+      (ctx as any).roundRect(sb1X - sb1W * 0.45, sb1Y - sb1H * 0.4, sb1W * 0.9, sb1H * 0.8, 12);
+    } else {
+      ctx.rect(sb1X - sb1W * 0.45, sb1Y - sb1H * 0.4, sb1W * 0.9, sb1H * 0.8);
+    }
+    ctx.fill();
+    ctx.restore();
+
+    // 2. Softbox Lateral (Rim / Kicker Light) a 140° - Luz de recorte para silueta metálica definida
+    const sb2X = (((rotNorm + 140) % 360) / 360) * width;
+    const sb2Y = height * 0.30;
+    const sb2W = width * 0.12;
+    const sb2H = height * 0.36;
+
+    const sb2Glow = ctx.createRadialGradient(sb2X, sb2Y, 5, sb2X, sb2Y, sb2W * 0.8);
+    sb2Glow.addColorStop(0, "rgba(255, 255, 255, 0.95)");
+    sb2Glow.addColorStop(0.4, "rgba(224, 238, 255, 0.6)");
+    sb2Glow.addColorStop(1, "rgba(224, 238, 255, 0)");
+    ctx.fillStyle = sb2Glow;
+    ctx.fillRect(sb2X - sb2W, sb2Y - sb2H, sb2W * 2, sb2H * 2);
+
+    ctx.save();
+    ctx.fillStyle = "rgba(255, 255, 255, 0.92)";
+    ctx.shadowColor = "#FFFFFF";
+    ctx.shadowBlur = 18;
+    ctx.beginPath();
+    if (typeof (ctx as any).roundRect === "function") {
+      (ctx as any).roundRect(sb2X - sb2W * 0.35, sb2Y - sb2H * 0.45, sb2W * 0.7, sb2H * 0.9, 8);
+    } else {
+      ctx.rect(sb2X - sb2W * 0.35, sb2Y - sb2H * 0.45, sb2W * 0.7, sb2H * 0.9);
+    }
+    ctx.fill();
+    ctx.restore();
+
+    // 3. Luz Cenital (Top Overhead Reflector) - Reflejo superior suave
+    const topY = height * 0.08;
+    const topGlow = ctx.createRadialGradient(sb1X, topY, 5, sb1X, topY, width * 0.16);
+    topGlow.addColorStop(0, "rgba(255, 255, 255, 0.75)");
+    topGlow.addColorStop(0.5, "rgba(240, 246, 255, 0.25)");
+    topGlow.addColorStop(1, "rgba(240, 246, 255, 0)");
+    ctx.fillStyle = topGlow;
+    ctx.fillRect(sb1X - width * 0.2, 0, width * 0.4, height * 0.25);
   }
 
   const texture = new THREE.CanvasTexture(canvas);
   texture.mapping = THREE.EquirectangularReflectionMapping;
   texture.colorSpace = THREE.SRGBColorSpace;
+  texture.generateMipmaps = true;
+  texture.minFilter = THREE.LinearMipmapLinearFilter;
   texture.needsUpdate = true;
   return texture;
 }
@@ -351,10 +417,14 @@ function MaterialMeshInstance({
   materialDef,
   forma = "esfera",
   envMap,
+  hdriIntensidad = 1.0,
+  redondeoCubo = 0.0,
 }: {
   materialDef: MaterialPBRDef;
   forma: "esfera" | "tablero" | "cubo" | "mueble";
   envMap: THREE.Texture | null;
+  hdriIntensidad?: number;
+  redondeoCubo?: number;
 }) {
   const [textures, setTextures] = useState<{
     diffuse: THREE.Texture | null;
@@ -368,45 +438,40 @@ function MaterialMeshInstance({
     let activo = true;
 
     async function cargarTodas() {
-      const promises: Promise<any>[] = [];
+      const rep = materialDef.ajustesTextura?.repeat ?? 1.0;
+      const promesas: Promise<{ key: string; tex: THREE.Texture } | null>[] = [];
 
       if (materialDef.texturaUrl) {
-        promises.push(
-          createConfiguredTexture(materialDef.texturaUrl, true, 1.0).then((t) => ({ key: "diffuse", tex: t }))
+        promesas.push(
+          createConfiguredTexture(materialDef.texturaUrl, true, rep).then((tex) => ({ key: "diffuse", tex }))
         );
-      } else {
-        promises.push(Promise.resolve({ key: "diffuse", tex: null }));
       }
-
       if (materialDef.normalMapUrl) {
-        promises.push(
-          createConfiguredTexture(materialDef.normalMapUrl, false, 1.0).then((t) => ({ key: "normal", tex: t }))
+        promesas.push(
+          createConfiguredTexture(materialDef.normalMapUrl, false, rep).then((tex) => ({ key: "normal", tex }))
         );
-      } else {
-        promises.push(Promise.resolve({ key: "normal", tex: null }));
       }
-
       if (materialDef.roughnessMapUrl) {
-        promises.push(
-          createConfiguredTexture(materialDef.roughnessMapUrl, false, 1.0).then((t) => ({ key: "roughness", tex: t }))
+        promesas.push(
+          createConfiguredTexture(materialDef.roughnessMapUrl, false, rep).then((tex) => ({ key: "roughness", tex }))
         );
-      } else {
-        promises.push(Promise.resolve({ key: "roughness", tex: null }));
       }
-
+      if (materialDef.metallicMapUrl) {
+        promesas.push(
+          createConfiguredTexture(materialDef.metallicMapUrl, false, rep).then((tex) => ({ key: "metallic", tex }))
+        );
+      }
       if (materialDef.aoMapUrl) {
-        promises.push(
-          createConfiguredTexture(materialDef.aoMapUrl, false, 1.0).then((t) => ({ key: "ao", tex: t }))
+        promesas.push(
+          createConfiguredTexture(materialDef.aoMapUrl, false, rep).then((tex) => ({ key: "ao", tex }))
         );
-      } else {
-        promises.push(Promise.resolve({ key: "ao", tex: null }));
       }
 
-      const results = await Promise.all(promises);
+      const resultados = await Promise.all(promesas);
       if (!activo) return;
 
       const newMap: any = { diffuse: null, normal: null, roughness: null, metallic: null, ao: null };
-      results.forEach((r) => {
+      resultados.forEach((r) => {
         if (r && r.key) newMap[r.key] = r.tex;
       });
       setTextures(newMap);
@@ -423,6 +488,7 @@ function MaterialMeshInstance({
     materialDef.roughnessMapUrl,
     materialDef.metallicMapUrl,
     materialDef.aoMapUrl,
+    materialDef.ajustesTextura?.repeat,
   ]);
 
   const normalScaleVal = materialDef.normalScale ?? 1.2;
@@ -434,10 +500,17 @@ function MaterialMeshInstance({
   const roughnessVal = materialDef.rugosidad ?? (isWoodOrMelamine ? 0.55 : 0.25);
   const metalnessVal = materialDef.metalico ?? (isWoodOrMelamine ? 0.05 : 0.85);
 
+  const isMetal = materialDef.tipo === "Metal" || metalnessVal > 0.45;
+  // 💡 Dinámica PBR: los metales dependen 100% de la reflexión de entorno. 
+  // Para metales, escalamos la intensidad de 1.2x a 1.6x para lograr contrastes nítidos como en Blender.
+  const dynamicEnvIntensity = isMetal
+    ? hdriIntensidad * (1.15 + metalnessVal * 0.45)
+    : hdriIntensidad * (0.45 + (1.0 - roughnessVal) * 0.35);
+
   const sharedMaterial = useMemo(() => {
     return (
       <meshPhysicalMaterial
-        key={`${materialDef.id}-${baseColorFinal}-${textures.diffuse?.uuid || "sin-diff"}-${textures.normal?.uuid || "sin-norm"}-${textures.roughness?.uuid || "sin-rough"}-${roughnessVal}-${metalnessVal}-${forma}`}
+        key={`${materialDef.id}-${baseColorFinal}-${textures.diffuse?.uuid || "sin-diff"}-${textures.normal?.uuid || "sin-norm"}-${textures.roughness?.uuid || "sin-rough"}-${roughnessVal}-${metalnessVal}-${dynamicEnvIntensity.toFixed(2)}-${forma}`}
         color={baseColorFinal}
         map={textures.diffuse}
         normalMap={textures.normal}
@@ -448,7 +521,7 @@ function MaterialMeshInstance({
         aoMap={textures.ao}
         aoMapIntensity={materialDef.aoIntensity ?? 1.0}
         envMap={envMap}
-        envMapIntensity={0.35}
+        envMapIntensity={dynamicEnvIntensity}
         clearcoat={materialDef.clearcoat ?? 0.0}
         clearcoatRoughness={materialDef.clearcoatRoughness ?? 0.35}
         ior={materialDef.ior ?? 1.5}
@@ -471,6 +544,7 @@ function MaterialMeshInstance({
     normalScaleVal,
     roughnessVal,
     metalnessVal,
+    dynamicEnvIntensity,
     envMap,
     forma,
   ]);
@@ -478,13 +552,14 @@ function MaterialMeshInstance({
   const hardwareMaterial = useMemo(() => {
     return (
       <meshStandardMaterial
-        color="#8A9EA7"
-        metalness={0.9}
-        roughness={0.25}
+        color="#E2E8F0"
+        metalness={0.92}
+        roughness={0.22}
         envMap={envMap}
+        envMapIntensity={hdriIntensidad * 1.35}
       />
     );
-  }, [envMap]);
+  }, [envMap, hdriIntensidad]);
 
   if (forma === "mueble") {
     return <RealFurnitureSceneRenderer sharedMaterial={sharedMaterial} hardwareMaterial={hardwareMaterial} />;
@@ -500,11 +575,27 @@ function MaterialMeshInstance({
   }
 
   if (forma === "cubo") {
+    if (!redondeoCubo || redondeoCubo <= 0.002) {
+      return (
+        <mesh position={[0, 0, 0]} castShadow receiveShadow>
+          <boxGeometry args={[1.15, 1.15, 1.15, 16, 16, 16]} />
+          {sharedMaterial}
+        </mesh>
+      );
+    }
     return (
-      <mesh position={[0, 0, 0]} castShadow receiveShadow>
-        <boxGeometry args={[1.15, 1.15, 1.15, 16, 16, 16]} />
+      <RoundedBox
+        args={[1.15, 1.15, 1.15]}
+        radius={redondeoCubo}
+        smoothness={6}
+        bevelSegments={6}
+        creaseAngle={0.4}
+        position={[0, 0, 0]}
+        castShadow
+        receiveShadow
+      >
         {sharedMaterial}
-      </mesh>
+      </RoundedBox>
     );
   }
 
@@ -629,18 +720,24 @@ function StudioLighting({
 
   return (
     <>
-      <ambientLight intensity={0.25 * intensidad} color="#FFFFFF" />
+      <ambientLight intensity={0.30 * intensidad} color="#FFFFFF" />
       <directionalLight
         position={[lx, 4.0, lz]}
-        intensity={0.45 * intensidad}
+        intensity={0.80 * intensidad}
         color="#FFFDF8"
         castShadow={sombraSolOpacidad > 0.005}
         shadow-mapSize={[2048, 2048]}
         shadow-bias={-0.0001}
         shadow-radius={Math.max(1, sombraDifuminado * 2.0)}
       />
+      {/* Luz de relleno secundaria (Fill Light) para reflejos equilibrados en 360° */}
+      <directionalLight
+        position={[-lx * 0.7, 2.5, -lz * 0.7]}
+        intensity={0.35 * intensidad}
+        color="#E2E8F0"
+      />
       <hemisphereLight
-        args={["#FFFFFF", "#CBD5E1", 0.25 * intensidad]}
+        args={["#FFFFFF", "#475569", 0.30 * intensidad]}
       />
     </>
   );
@@ -664,21 +761,69 @@ function ShaderBallSnapshotExposer() {
   return null;
 }
 
+// Controlador del Fondo de la Escena (Fondo Blanco de Estudio vs HDRI Nítido Estilo Unreal Engine)
+function SceneBackgroundController({
+  envMap,
+  mostrarFondo,
+  blurFondo = 0.0,
+  intensidad = 1.0,
+}: {
+  envMap: THREE.Texture | null;
+  mostrarFondo: boolean;
+  blurFondo?: number;
+  intensidad?: number;
+}) {
+  const { scene } = useThree();
+
+  useEffect(() => {
+    if (!scene) return;
+
+    if (mostrarFondo && envMap) {
+      scene.background = envMap;
+      scene.environment = envMap;
+      if ("backgroundBlurriness" in scene) {
+        (scene as any).backgroundBlurriness = blurFondo || 0.0;
+      }
+      if ("backgroundIntensity" in scene) {
+        (scene as any).backgroundIntensity = intensidad;
+      }
+    } else {
+      scene.background = new THREE.Color("#FFFFFF");
+      if (envMap) {
+        scene.environment = envMap;
+      }
+      if ("backgroundBlurriness" in scene) {
+        (scene as any).backgroundBlurriness = 0;
+      }
+      if ("backgroundIntensity" in scene) {
+        (scene as any).backgroundIntensity = 1.0;
+      }
+    }
+
+    return () => {
+      scene.background = null;
+    };
+  }, [scene, envMap, mostrarFondo, blurFondo, intensidad]);
+
+  return null;
+}
+
 export default function ShaderBallViewer({
   materialDef,
   forma = "esfera",
   hdriConfig = {
-    tipo: "alps_field_sol",
+    tipo: "modern_bathroom",
     intensidad: 1.0,
     rotacion: 45,
     mostrarFondo: true,
-    blurFondo: 0.5,
+    blurFondo: 0.0,
     sombraOpacidad: 0.22,
     sombraSolOpacidad: 0.15,
     sombraContactoOpacidad: 0.25,
     sombraDifuminado: 2.4,
   },
   mostrarSuelo = true,
+  redondeoCubo = 0.0,
 }: ShaderBallViewerProps) {
   const controlsRef = useRef<any>(null);
   const [customHdrTexture, setCustomHdrTexture] = useState<THREE.DataTexture | null>(null);
@@ -689,32 +834,34 @@ export default function ShaderBallViewer({
   const sombraDifuminado = hdriConfig.sombraDifuminado ?? 2.4;
 
   useEffect(() => {
+    let hdrUrl: string | null = null;
     if (hdriConfig.tipo === "modern_bathroom") {
-      try {
-        const loader = new RGBELoader();
-        loader.load(
-          "/textures/hdri/modern_bathroom_1k.hdr",
-          (tex) => {
-            tex.mapping = THREE.EquirectangularReflectionMapping;
-            setCustomHdrTexture(tex);
-          },
-          undefined,
-          (err) => console.warn("Error cargando HDR modern_bathroom:", err)
-        );
-      } catch (e) {
-        console.warn("Excepción RGBELoader:", e);
-      }
+      hdrUrl = "/textures/hdri/modern_bathroom_1k.hdr";
+    } else if (hdriConfig.tipo === "estudio_suave") {
+      hdrUrl = "/textures/hdri/studio_small_08_1k.hdr";
+    } else if (hdriConfig.tipo === "alps_field_sol") {
+      hdrUrl = "/textures/hdri/spruit_sunrise_1k.hdr";
+    } else if (hdriConfig.tipo === "showroom_moderno") {
+      hdrUrl = "/textures/hdri/aerodynamics_workshop_1k.hdr";
     } else if (hdriConfig.tipo === "personalizado" && hdriConfig.customHdrUrl) {
+      hdrUrl = hdriConfig.customHdrUrl;
+    }
+
+    if (hdrUrl) {
       try {
         const loader = new RGBELoader();
         loader.load(
-          hdriConfig.customHdrUrl,
+          hdrUrl,
           (tex) => {
             tex.mapping = THREE.EquirectangularReflectionMapping;
+            tex.minFilter = THREE.LinearFilter;
+            tex.magFilter = THREE.LinearFilter;
+            tex.generateMipmaps = false;
+            tex.needsUpdate = true;
             setCustomHdrTexture(tex);
           },
           undefined,
-          (err) => console.warn("Error cargando HDR custom:", err)
+          (err) => console.warn("Error cargando HDR:", hdrUrl, err)
         );
       } catch (e) {
         console.warn("Excepción RGBELoader:", e);
@@ -725,7 +872,7 @@ export default function ShaderBallViewer({
   }, [hdriConfig.tipo, hdriConfig.customHdrUrl]);
 
   const envMap = useMemo(() => {
-    if ((hdriConfig.tipo === "personalizado" || hdriConfig.tipo === "modern_bathroom") && customHdrTexture) {
+    if (customHdrTexture) {
       return customHdrTexture;
     }
     return generarEntornoEquirectangularLocal(hdriConfig.tipo, hdriConfig.rotacion);
@@ -736,7 +883,7 @@ export default function ShaderBallViewer({
   const sueloY = forma === "mueble" ? 0.0 : -0.92;
 
   return (
-    <div className="w-full h-full relative rounded-lg overflow-hidden bg-gradient-to-b from-slate-50 via-slate-100 to-slate-200 dark:from-slate-900 dark:via-slate-900 dark:to-slate-950 shadow-inner">
+    <div className="w-full h-full relative rounded-lg overflow-hidden bg-white dark:bg-slate-950 shadow-inner">
       <Canvas
         camera={{ position: cameraPos, fov: 45 }}
         shadows="soft"
@@ -747,6 +894,12 @@ export default function ShaderBallViewer({
         }}
       >
         <ShaderBallSnapshotExposer />
+        <SceneBackgroundController
+          envMap={envMap}
+          mostrarFondo={hdriConfig.mostrarFondo}
+          blurFondo={hdriConfig.blurFondo}
+          intensidad={hdriConfig.intensidad}
+        />
         <StudioLighting
           rotacionLuz={hdriConfig.rotacion}
           intensidad={hdriConfig.intensidad}
@@ -754,7 +907,7 @@ export default function ShaderBallViewer({
           sombraDifuminado={sombraDifuminado}
         />
 
-        <MaterialMeshInstance materialDef={materialDef} forma={forma} envMap={envMap} />
+        <MaterialMeshInstance materialDef={materialDef} forma={forma} envMap={envMap} hdriIntensidad={hdriConfig.intensidad ?? 1.0} redondeoCubo={redondeoCubo} />
 
         {/* Suelo Ciclorama Blanco con Sombras Físicas de Contacto Calibradas */}
         {mostrarSuelo && (
