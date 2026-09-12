@@ -215,7 +215,7 @@ export function calcularBBoxMalla(m: { position?: [number, number, number]; vert
 export function bboxesSeTocan(
   b1: [number, number, number, number, number, number],
   b2: [number, number, number, number, number, number],
-  tol: number = 0.03
+  tol: number = 0.002
 ): boolean {
   const overlapX = !(b1[1] < b2[0] - tol || b1[0] > b2[1] + tol);
   const overlapY = !(b1[3] < b2[2] - tol || b1[2] > b2[3] + tol);
@@ -270,7 +270,7 @@ export function anotarInstanciasFisicas<T extends { name: string; position?: [nu
       items.forEach((it) => {
         const szY = obtenerSizeYMalla(it.mesh as any);
         const part: SlidePart = { ...it, sizeY: szY };
-        if (szY > 0.040) {
+        if (szY >= 0.035) {
           fijas.push(part);
         } else if (szY > 0.024) {
           intermedias.push(part);
@@ -401,7 +401,7 @@ export function anotarInstanciasFisicas<T extends { name: string; position?: [nu
       const matchedIndices: number[] = [];
 
       clusters.forEach((cl, idx) => {
-        if (bboxesSeTocan(mBBox, cl.bbox, 0.03)) {
+        if (bboxesSeTocan(mBBox, cl.bbox, 0.002)) {
           matchedIndices.push(idx);
         }
       });

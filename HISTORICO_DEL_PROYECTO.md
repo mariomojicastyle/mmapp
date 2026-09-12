@@ -2695,4 +2695,59 @@ Con esta batería de arreglos y la validación en caliente, la V20 se establece 
 - **Nota de Seguimiento para la Rama `Manual_P00`**:
   * El usuario reportó persistencia/incremento de inestabilidad durante la interacción; se procede a cerrar el ciclo de cambios en rama de control y abrir la rama `Manual_P00` para aislar y resolver a fondo la experiencia de usuario y la animación en Realidad Aumentada (AR).
 
+---
+
+### 🔹 Hito 113: Cinemática Telescópica Canónica de Correderas (Mallas 1 a 4), Blindaje de Bahía Fisiomecánica y Persistencia LocalStorage en Modo Manual 3D (3dBimFab) (12 de Septiembre, 2026)
+
+- **Diagnóstico Integral y Resolución de la Cinemática de Correderas**:
+  * **Problema 1 (Malla Intermedia Congelada):** La Malla 2 (guía intermedia telescópica) en los cajones impares del lateral izquierdo permanecía inmóvil debido a filtros restrictivos que exigían correspondencia por índice de pieza explícito (`indicesCorrederasEnGrupo`), impidiendo que el motor animara el riel si el usuario solo había seleccionado la madera con el cuentagotas.
+  * **Problema 2 (Invasión de Corredera Vecina):** Al abrir el Cajón 1 (columna izquierda), se observaba en el lateral derecho una corredera adicional desplegada hacia adelante en el aire. Se determinó matemáticamente que una holgura grosera de $\pm 50\text{ mm}$ en $X$ sobrepasaba el montante divisorio central ($X = 0.6475\text{ m}$, espesor $15\text{ mm}$), capturando el riel izquierdo del Cajón 2 ($X = 0.6580\text{ m}$, ubicado a solo $21\text{ mm}$ de distancia).
+  * **Problema 3 (Falso Cálculo de Eje Central en Versión Previa):** El intento previo de discriminación por cuadrante promediaba las posiciones de todos los tornillos y herrajes de la escena (`sumX / countX = 0.635\text{ m}`), sesgando el eje hacia la izquierda y congelando erróneamente el riel derecho del Cajón 1 ($X = 0.6362\text{ m}$).
+- **Implementación Canónica en `manualAnimationEngine.ts`**:
+  1. **Eje Central Fisiomecánico Real (`centroXMueble = 0.6475\text{ m}`):**  
+     Calculado a partir de la envolvente geométrica real del mueble:
+     $$\text{centroXMueble} = \frac{\text{minXMueble} + \text{maxXMueble}}{2}$$
+     garantizando coincidencia exacta con el plano de simetría de la cómoda.
+  2. **Blindaje de Bahía Fisiomecánica:**  
+     Discriminación estricta por columna:
+     $$\text{cajonEnBahiaIzquierda} = \text{centroXCajon} < \text{centroXMueble} \implies \text{SOLO correderas con } X < \text{centroXMueble}$$
+     Excluyendo al 100% cualquier corredera del cajón vecino.
+  3. **Holgura Calibrada de Columna:**  
+     Reducción de la tolerancia de $50\text{ mm}$ a $15\text{ mm}$ ($\pm 0.015\text{ m}$), respetando el gap físico entre columnas.
+  4. **Cinemática Telescópica 4-Mallas Canónica:**
+     * **Malla 1 (Fija):** $0\%$ de carrera (anclada al mueble).
+     * **Malla 2 (Intermedia):** $50\%$ de carrera telescópica suave (S-Curve Smoothstep).
+     * **Malla 3 (Móvil) + Malla 4 (Seguro Plástico):** $100\%$ de carrera solidaria al cajón.
+- **Persistencia Blindada en `store.ts` (`localStorage`):**  
+  Los 6 cajones y grupos cinemáticos del Showcase quedan protegidos ante cualquier refresco de página (`F5`).
+- **Validación:**  
+  Simulación matemática en 48 mallas de correderas confirmando exactamente 6 piezas por cajón (3 en riel izquierdo y 3 en riel derecho) con 0 mallas del vecino, y compilación limpia con `npx tsc --noEmit` (**0 errores**).
+
+---
+
+### 🔹 Hito 114: Versión Estable v1.0 — Vinculación Inteligente Mueble ⇄ Manual (.3bf / .3bm), Guardado Espejo Bidireccional y Persistencia Inmune a F5 en Manual 3D Studio (3dBimFab) (12 de Septiembre, 2026)
+
+- **Diagnóstico Integral y Resolución de la Discrepancia de Guardado en Manual 3D Studio**:
+  * **Causa Raíz 1 (Duplicidad Fantasma de Manuales en Drive):** Coexistencia de dos archivos en Google Drive para el mismo mueble (`manual_mn_ravenna.3bm.json` heredado de pruebas anteriores y `manual_1_comoda_ravenna.3bm.json`). Al pulsar "Guardar", el sistema escribía los cambios en `manual_mn_ravenna`, pero la recarga forzaba la lectura de `manual_1_comoda_ravenna`, provocando la ilusión de pérdida de datos.
+  * **Causa Raíz 2 (Condición de Carrera en `cargarManualesDesdeDrive`):** La validación de auto-restauración exigía que los bloques tuvieran piezas asignadas (`piezas.length > 0`); al crear un bloque nuevo vacío y recargar con F5, la rutina lo consideraba "estado vacío" y descargaba el manual viejo de Drive, destruyendo el bloque.
+  * **Causa Raíz 3 (Asimetría en Guardado y Desconexión `.3bf` ⇄ `.3bm`):** Al abrir un mueble desde el catálogo (`abrirMueble`), se cargaban las mallas pero no se vinculaba el proyecto `.3bm` hermano, dejando huérfana la metadata y rompiendo la persistencia bidireccional.
+- **Implementación de la Arquitectura de Vinculación Inteligente Canónica**:
+  1. **Hermanamiento Espejo `.3bf` ⇄ `.3bm`:**
+     * **En `guardarManualProyecto`:** Al guardar el manual `.3bm`, se sincroniza de forma inmediata y automática el archivo `.3bf` del mueble activo (`muebleActualizado.pasosManual = state.pasosManual`) y se guarda en Drive.
+     * **En `guardarCambiosMueble`:** Al guardar el mueble `.3bf` (desde el HUD del Visor 3D o panel N), se sincroniza y escribe simultáneamente el archivo `.3bm` correspondiente en Google Drive.
+     * **En `abrirMueble`:** Al abrir cualquier mueble `.3bf` en el catálogo, la app identifica automáticamente su manual `.3bm` vinculado (`manualVinculadoId` / `muebleOrigenId`), enlaza los pasos más recientes y activa `manualActivoGuardado` en memoria y `localStorage`.
+  2. **Persistencia Inmune a Recargas (`F5`):**
+     * `guardarPasosEnCacheLocal` blindado para escribir siempre `3bf_pasos_manual_cache`, `3bf_manual_activo_cache` y `3bf_last_manual_id`.
+     * `cargarManualesDesdeDrive` blindado con regla de no-sobreescritura: si existen bloques configurados en `P00` (con o sin piezas asignadas), **está terminantemente prohibido llamar a `cargarManualProyecto`** a espaldas del usuario.
+     * `hidratarDesdeLocalStorage` en `app/page.tsx` enriquecido para hidratar el Manual 3D Studio en el milisegundo cero del montaje en cliente.
+     * `cargarArbolMuebles` incorporado al ciclo de vida inicial de la página para restaurar el último mueble activo (`3bf_ultimo_mueble_id`).
+  3. **Saneamiento y Canonicidad en Google Drive:**
+     * Eliminación del archivo obsoleto `manual_mn_ravenna.3bm.json`.
+     * Resguardo e inyección de la última modificación del usuario (6 cajones, con Cajón 6 en 34 piezas) en `manual_1_comoda_ravenna.3bm.json` y en `mueble_1789226875940_xq2sn.3bf.json`.
+- **Validación y Calidad**:
+  * Verificación de persistencia total ante F5 con bloques vacíos y con piezas.
+  * Compilación TypeScript verificada (`npx tsc --noEmit`) con **0 errores**.
+
+
+
 

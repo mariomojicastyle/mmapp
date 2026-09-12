@@ -320,6 +320,7 @@ export interface MuebleGuardadoItem {
   costoEstimadoCop?: number;
   costoEstimadoUsd?: number;
   pasosManual?: PasoManualStudio[]; // Persistencia de pasos del manual 3D
+  manualVinculadoId?: string; // 🔗 Vinculación inteligente con el manual .3bm
 }
 
 export interface PiezaDespiece {
@@ -1266,7 +1267,7 @@ export interface State3BF {
 
   cargarManualesDesdeDrive: () => Promise<void>;
   cargarManualProyecto: (manual: Manual3BMProyecto) => void;
-  guardarManualProyecto: (nombre?: string, marca?: string, tipologia?: string) => Promise<void>;
+  guardarManualProyecto: (nombre?: string, marca?: string, tipologia?: string) => Promise<boolean>;
   eliminarManualProyecto: (manualId: string) => Promise<void>;
   setModalBibliotecaManualesAbierto: (abierto: boolean) => void;
   
@@ -1393,8 +1394,9 @@ export interface State3BF {
   seleccionarInstancia: (id: string | null) => void;
   setParametroInstancia: (id: string, key: string, value: any, debounceMs?: number) => void;
   setPosicionInstancia: (id: string, pos: [number, number, number]) => void;
-  recomputarInstancia: (id: string) => Promise<void>;
-  recargarDefinicionInstancia: (id: string) => Promise<boolean>;
+  recomputarInstancia: (id: string, forceReload?: boolean) => Promise<void>;
+  recargarDefinicionInstancia: (id: string, force?: boolean) => Promise<boolean>;
+  forzarRecargaDesdeGHX: (id?: string) => Promise<boolean>;
   recomputarTodas: () => Promise<void>;
   
   // Despiece & Herrajes Globales Multiobjeto (BOM Escenario Completo)
@@ -1754,6 +1756,92 @@ export function purgarResultadoGeometria(res: any) {
   };
 }
 
+export const STORAGE_KEY_MANUAL_ACTIVO = "3bf_manual_activo_cache";
+export const STORAGE_KEY_PASOS_MANUAL = "3bf_pasos_manual_cache";
+export const STORAGE_KEY_LAST_MANUAL_ID = "3bf_last_manual_id";
+
+export function getCachedManualData(): { manual: Manual3BMProyecto | null; pasos: PasoManualStudio[] } {
+  if (typeof window === "undefined" || !window.localStorage) {
+    return { manual: null, pasos: generarPasosManualesPorDefecto() };
+  }
+  try {
+    let cachedPasos: PasoManualStudio[] | null = null;
+    let cachedManual: Manual3BMProyecto | null = null;
+
+    // 1. Leer pasos en caché directa (es la fuente más fresca de mutaciones del usuario)
+    const rawPasos = localStorage.getItem(STORAGE_KEY_PASOS_MANUAL);
+    if (rawPasos) {
+      try {
+        const parsedPasos = JSON.parse(rawPasos);
+        if (Array.isArray(parsedPasos) && parsedPasos.length > 0) {
+          cachedPasos = parsedPasos;
+        }
+      } catch {}
+    }
+
+    // 2. Leer proyecto de manual activo en caché
+    const rawManual = localStorage.getItem(STORAGE_KEY_MANUAL_ACTIVO);
+    if (rawManual) {
+      try {
+        const parsed = JSON.parse(rawManual);
+        if (parsed && typeof parsed === "object") {
+          cachedManual = parsed;
+          if (!cachedPasos && Array.isArray(parsed.pasos) && parsed.pasos.length > 0) {
+            cachedPasos = parsed.pasos;
+          }
+        }
+      } catch {}
+    }
+
+    // Sincronizar pasos más recientes dentro del manual
+    if (cachedManual && cachedPasos) {
+      cachedManual.pasos = cachedPasos;
+    }
+
+    if (cachedPasos && cachedPasos.length > 0) {
+      return { manual: cachedManual, pasos: cachedPasos };
+    }
+  } catch (err) {
+    console.warn("[3dBimFab] Error leyendo caché de manual:", err);
+  }
+  return { manual: null, pasos: generarPasosManualesPorDefecto() };
+}
+
+export function guardarPasosEnCacheLocal(nuevosPasos: PasoManualStudio[], manualActual?: Manual3BMProyecto | null) {
+  if (typeof window === "undefined" || !window.localStorage) return;
+  try {
+    localStorage.setItem(STORAGE_KEY_PASOS_MANUAL, JSON.stringify(nuevosPasos));
+
+    let manualBase = manualActual;
+    if (!manualBase) {
+      const prev = localStorage.getItem(STORAGE_KEY_MANUAL_ACTIVO);
+      if (prev) {
+        try {
+          manualBase = JSON.parse(prev);
+        } catch {}
+      }
+    }
+
+    const manualActualizado: Manual3BMProyecto = {
+      id: manualBase?.id || "manual_1_comoda_ravenna",
+      muebleOrigenId: manualBase?.muebleOrigenId || "mueble_1789226875940_xq2sn",
+      nombre: manualBase?.nombre || "1_Comoda Ravenna",
+      marca: manualBase?.marca || "RTA Design",
+      tipologia: manualBase?.tipologia || "Manuales 3D",
+      fechaModificacion: new Date().toISOString(),
+      parametrosMueble: manualBase?.parametrosMueble || {},
+      pasos: nuevosPasos,
+    };
+
+    localStorage.setItem(STORAGE_KEY_MANUAL_ACTIVO, JSON.stringify(manualActualizado));
+    localStorage.setItem(STORAGE_KEY_LAST_MANUAL_ID, manualActualizado.id);
+  } catch (err) {
+    console.warn("[3dBimFab] Error guardando pasos en caché local:", err);
+  }
+}
+
+const initialCachedManual = getCachedManualData();
+
 export const use3BFStore = create<State3BF>((set, get) => ({
   centrarCamaraTrigger: 0,
   centrarCamara: () => set((s) => ({ centrarCamaraTrigger: (s.centrarCamaraTrigger || 0) + 1 })),
@@ -1808,15 +1896,18 @@ export const use3BFStore = create<State3BF>((set, get) => ({
   setPestanaActiva: (pestanaActiva) => set({ pestanaActiva }),
 
   // 🎬 Manual Studio State & Implementación
-  pasosManual: generarPasosManualesPorDefecto(),
-  pasoActivoManualId: "P00",
+  pasosManual: initialCachedManual.pasos,
+  pasoActivoManualId: initialCachedManual.pasos[0]?.id || "P00",
   isTimelinePlaying: false,
   timelineCurrentTime: 0,
   timelineVelocidad: 1.0,
   idiomaVozManual: "es",
   audioMutedManual: false,
 
-  setPasosManual: (pasosManual) => set({ pasosManual }),
+  setPasosManual: (pasosManual) => {
+    set({ pasosManual });
+    guardarPasosEnCacheLocal(pasosManual, get().manualActivoGuardado);
+  },
   seleccionarPasoManualActivo: (pasoActivoManualId) => set({ pasoActivoManualId, timelineCurrentTime: 0, isTimelinePlaying: false }),
   crearPasoManual: (tipo = "ensamble") => {
     const state = get();
@@ -1845,6 +1936,7 @@ export const use3BFStore = create<State3BF>((set, get) => ({
     };
     const nuevosPasos = [...state.pasosManual, nuevoPaso];
     set({ pasosManual: nuevosPasos, pasoActivoManualId: nuevoId, timelineCurrentTime: 0, isTimelinePlaying: false });
+    guardarPasosEnCacheLocal(nuevosPasos, state.manualActivoGuardado);
   },
   eliminarPasoManual: (pasoId) => {
     const state = get();
@@ -1852,16 +1944,19 @@ export const use3BFStore = create<State3BF>((set, get) => ({
     const filtrados = state.pasosManual.filter((p) => p.id !== pasoId);
     const siguienteActivo = filtrados[0]?.id || "P00";
     set({ pasosManual: filtrados, pasoActivoManualId: siguienteActivo, timelineCurrentTime: 0, isTimelinePlaying: false });
+    guardarPasosEnCacheLocal(filtrados, state.manualActivoGuardado);
   },
   actualizarPasoManual: (pasoId, data) => {
     const state = get();
     const actualizados = state.pasosManual.map((p) => (p.id === pasoId ? { ...p, ...data } : p));
     set({ pasosManual: actualizados });
+    guardarPasosEnCacheLocal(actualizados, state.manualActivoGuardado);
   },
   reordenarSecuenciaPaso: (pasoId, nuevaSecuencia) => {
     const state = get();
     const actualizados = state.pasosManual.map((p) => (p.id === pasoId ? { ...p, secuencia: nuevaSecuencia } : p));
     set({ pasosManual: actualizados });
+    guardarPasosEnCacheLocal(actualizados, state.manualActivoGuardado);
   },
   asignarPiezaAPasoManual: (pasoId, nombrePieza) => {
     const state = get();
@@ -1872,6 +1967,7 @@ export const use3BFStore = create<State3BF>((set, get) => ({
       return { ...p, piezasAsignadas: nuevasPiezas };
     });
     set({ pasosManual: actualizados });
+    guardarPasosEnCacheLocal(actualizados, state.manualActivoGuardado);
     get().autoGenerarSecuenciaPaso(pasoId);
   },
   desasignarPiezaDePasoManual: (pasoId, nombrePieza) => {
@@ -1885,6 +1981,7 @@ export const use3BFStore = create<State3BF>((set, get) => ({
       };
     });
     set({ pasosManual: actualizados });
+    guardarPasosEnCacheLocal(actualizados, state.manualActivoGuardado);
   },
   asignarHerrajeAPasoManual: (pasoId, nombreHerraje) => {
     const state = get();
@@ -1895,6 +1992,7 @@ export const use3BFStore = create<State3BF>((set, get) => ({
       return { ...p, herrajesAsignados: nuevosHerrajes };
     });
     set({ pasosManual: actualizados });
+    guardarPasosEnCacheLocal(actualizados, state.manualActivoGuardado);
     get().autoGenerarSecuenciaPaso(pasoId);
   },
   desasignarHerrajeDePasoManual: (pasoId, nombreHerraje) => {
@@ -1908,6 +2006,7 @@ export const use3BFStore = create<State3BF>((set, get) => ({
       };
     });
     set({ pasosManual: actualizados });
+    guardarPasosEnCacheLocal(actualizados, state.manualActivoGuardado);
   },
   autoGenerarSecuenciaPaso: (pasoId) => {
     const state = get();
@@ -1995,6 +2094,7 @@ export const use3BFStore = create<State3BF>((set, get) => ({
       p.id === pasoId ? { ...p, secuencia: nuevaSecuencia, duracionTotal: duracionFinal } : p
     );
     set({ pasosManual: actualizados });
+    guardarPasosEnCacheLocal(actualizados, state.manualActivoGuardado);
   },
 
   autoDetectarGruposCinematicos: (pasoId) => {
@@ -2015,30 +2115,34 @@ export const use3BFStore = create<State3BF>((set, get) => ({
     const todasPiezasMadre = agruparMallasEnPiezasMadre(rawNombres);
 
     // 1. Si el mueble es Cómoda Ravenna o similar con numeración Peça 6..15
-    const tieneRavenna = todasPiezasMadre.some((p) => p === "Peça 6" || p === "Peça 7");
+    const tieneRavenna = todasPiezasMadre.some((p) => p === "Peça 6" || p === "Peça 7") || (state.parametros?.model_id || "").toLowerCase().includes("ravenna");
     // Distancia uniforme configurada en el paso (ej: 300 o 350 mm)
-    const distGlobal = paso.showcase?.distanciaAperturaMm || 300;
-    // Iniciar con cajones limpios y vacíos para que el usuario seleccione con cuentagotas con precisión
-    const gruposDetectados: GrupoCinematicoShowcase[] = [
-      {
-        id: "cajon_1",
-        nombre: "Cajón 1 (Superior)",
-        tipo: "cajon",
-        piezas: [],
-        ejeApertura: paso.showcase?.ejeGlobal || "+Z",
-        distanciaMm: distGlobal,
-        oculto: false,
-      },
-      {
-        id: "cajon_2",
-        nombre: "Cajón 2 (Inferior)",
-        tipo: "cajon",
-        piezas: [],
-        ejeApertura: paso.showcase?.ejeGlobal || "+Z",
-        distanciaMm: distGlobal,
-        oculto: false,
-      },
-    ];
+    const distGlobal = paso.showcase?.distanciaAperturaMm || 350;
+
+    // 🛡️ REGLA DE ORO: Si ya existen grupos cinemáticos configurados con piezas, PRESERVARLOS intactos
+    const existentes = paso.showcase?.gruposCinematicos || [];
+    const tieneGruposConfigurados = existentes.some((g) => g.piezas && g.piezas.length > 0);
+
+    let gruposDetectados: GrupoCinematicoShowcase[] = [];
+
+    if (tieneGruposConfigurados) {
+      gruposDetectados = existentes;
+    } else if (tieneRavenna) {
+      // Cómoda Ravenna: 6 cajones organizados físicamente (3 a la izquierda, 3 a la derecha)
+      gruposDetectados = [
+        { id: "cajon_1", nombre: "Cajón 1 (Superior Izq)", tipo: "cajon", piezas: [], ejeApertura: paso.showcase?.ejeGlobal || "+Z", distanciaMm: distGlobal, oculto: false },
+        { id: "cajon_2", nombre: "Cajón 2 (Superior Der)", tipo: "cajon", piezas: [], ejeApertura: paso.showcase?.ejeGlobal || "+Z", distanciaMm: distGlobal, oculto: false },
+        { id: "cajon_3", nombre: "Cajón 3 (Medio Izq)", tipo: "cajon", piezas: [], ejeApertura: paso.showcase?.ejeGlobal || "+Z", distanciaMm: distGlobal, oculto: false },
+        { id: "cajon_4", nombre: "Cajón 4 (Medio Der)", tipo: "cajon", piezas: [], ejeApertura: paso.showcase?.ejeGlobal || "+Z", distanciaMm: distGlobal, oculto: false },
+        { id: "cajon_5", nombre: "Cajón 5 (Inferior Izq)", tipo: "cajon", piezas: [], ejeApertura: paso.showcase?.ejeGlobal || "+Z", distanciaMm: distGlobal, oculto: false },
+        { id: "cajon_6", nombre: "Cajón 6 (Inferior Der)", tipo: "cajon", piezas: [], ejeApertura: paso.showcase?.ejeGlobal || "+Z", distanciaMm: distGlobal, oculto: false },
+      ];
+    } else {
+      gruposDetectados = [
+        { id: "cajon_1", nombre: "Cajón 1 (Superior)", tipo: "cajon", piezas: [], ejeApertura: paso.showcase?.ejeGlobal || "+Z", distanciaMm: distGlobal, oculto: false },
+        { id: "cajon_2", nombre: "Cajón 2 (Inferior)", tipo: "cajon", piezas: [], ejeApertura: paso.showcase?.ejeGlobal || "+Z", distanciaMm: distGlobal, oculto: false },
+      ];
+    }
 
     const actualizados = state.pasosManual.map((p) => {
       if (p.id !== pasoId) return p;
@@ -2062,22 +2166,34 @@ export const use3BFStore = create<State3BF>((set, get) => ({
     });
 
     set({ pasosManual: actualizados, timelineCurrentTime: 0, isTimelinePlaying: false });
+    guardarPasosEnCacheLocal(actualizados, state.manualActivoGuardado);
   },
 
   agregarGrupoCinematico: (pasoId, grupo) => {
     const state = get();
     const actualizados = state.pasosManual.map((p) => {
-      if (p.id !== pasoId || !p.showcase) return p;
-      const actuales = p.showcase.gruposCinematicos || [];
+      if (p.id !== pasoId) return p;
+      const showcaseActual = p.showcase || {
+        abrirCajones: true,
+        distanciaAperturaMm: 300,
+        abrirPuertas: true,
+        anguloPuertasDeg: 90,
+        giroPresentacion360: true,
+        coreografia: "secuencial" as CoreografiaShowcase,
+        ejeGlobal: "+Z" as EjeAperturaShowcase,
+        gruposCinematicos: [],
+      };
+      const actuales = showcaseActual.gruposCinematicos || [];
       return {
         ...p,
         showcase: {
-          ...p.showcase,
+          ...showcaseActual,
           gruposCinematicos: [...actuales, grupo],
         },
       };
     });
     set({ pasosManual: actualizados });
+    guardarPasosEnCacheLocal(actualizados, state.manualActivoGuardado);
   },
 
   actualizarGrupoCinematico: (pasoId, grupoId, data) => {
@@ -2096,6 +2212,7 @@ export const use3BFStore = create<State3BF>((set, get) => ({
       };
     });
     set({ pasosManual: actualizados });
+    guardarPasosEnCacheLocal(actualizados, state.manualActivoGuardado);
   },
 
   eliminarGrupoCinematico: (pasoId, grupoId) => {
@@ -2121,10 +2238,8 @@ export const use3BFStore = create<State3BF>((set, get) => ({
       };
     }
 
-    set({ 
-      pasosManual: actualizados,
-      modoPickingManual: nuevoPicking,
-    });
+    set({ pasosManual: actualizados, modoPickingManual: nuevoPicking });
+    guardarPasosEnCacheLocal(actualizados, state.manualActivoGuardado);
   },
 
   asignarPiezaAGrupoCinematico: (pasoId, grupoId, nombrePieza) => {
@@ -2162,6 +2277,7 @@ export const use3BFStore = create<State3BF>((set, get) => ({
       pasosManual: actualizados,
       modoPickingManual: nuevoPicking,
     });
+    guardarPasosEnCacheLocal(actualizados, state.manualActivoGuardado);
   },
 
   desasignarPiezaDeGrupoCinematico: (pasoId, grupoId, nombrePieza) => {
@@ -2200,6 +2316,7 @@ export const use3BFStore = create<State3BF>((set, get) => ({
       pasosManual: actualizados,
       modoPickingManual: nuevoPicking,
     });
+    guardarPasosEnCacheLocal(actualizados, state.manualActivoGuardado);
   },
 
   conmutarVisibilidadGrupoCinematico: (pasoId, grupoId) => {
@@ -2219,6 +2336,7 @@ export const use3BFStore = create<State3BF>((set, get) => ({
       };
     });
     set({ pasosManual: actualizados });
+    guardarPasosEnCacheLocal(actualizados, state.manualActivoGuardado);
   },
 
   // 🎯 Modo Picking 3D / Cuentagotas para Asignación de Piezas
@@ -2296,6 +2414,8 @@ export const use3BFStore = create<State3BF>((set, get) => ({
         piezasTemporalmenteSeleccionadas: nuevas,
       },
     });
+    const st = get();
+    guardarPasosEnCacheLocal(pasosActualizados, st.manualActivoGuardado);
   },
 
   limpiarPickingManual: () => {
@@ -2350,6 +2470,8 @@ export const use3BFStore = create<State3BF>((set, get) => ({
           piezasTemporalmenteSeleccionadas: [],
         },
       });
+      const st = get();
+      guardarPasosEnCacheLocal(actualizados, st.manualActivoGuardado);
     } else {
       set({
         modoPickingManual: {
@@ -2368,8 +2490,8 @@ export const use3BFStore = create<State3BF>((set, get) => ({
   setIdiomaVozManual: (idiomaVozManual) => set({ idiomaVozManual }),
   setAudioMutedManual: (audioMutedManual) => set({ audioMutedManual }),
 
-  // 📦 Persistencia de Manuales en Google Drive (.3bm.json)
-  manualActivoGuardado: null,
+  // 📦 Persistencia de Manuales en Google Drive (.3bm.json) y Caché Local
+  manualActivoGuardado: initialCachedManual.manual,
   manualesDrive: [],
   modalBibliotecaManualesAbierto: false,
   guardandoManual: false,
@@ -2383,6 +2505,35 @@ export const use3BFStore = create<State3BF>((set, get) => ({
         const data = await res.json();
         if (data.manuales) {
           set({ manualesDrive: data.manuales });
+
+          // 🛡️ Auto-restauración en recarga (F5):
+          // REGLA SUPREMA: NUNCA sobreescribir pasos si el usuario ya tiene grupos cinemáticos o piezas locales
+          const state = get();
+          const p00 = (state.pasosManual || []).find((p) => p.id === "P00");
+          const tieneGruposConfigurados = (p00?.showcase?.gruposCinematicos?.length || 0) > 0;
+          const tienePiezasAsignadas = (state.pasosManual || []).some(
+            (p) => (p.piezasAsignadas && p.piezasAsignadas.length > 0) || (p.herrajesAsignados && p.herrajesAsignados.length > 0)
+          );
+          const tieneTrabajoLocal = tieneGruposConfigurados || tienePiezasAsignadas;
+
+          // Seleccionar target canónico (preferir siempre 1_Comoda Ravenna con sus 6 cajones)
+          const target = data.manuales.find((m: any) => m.id === "manual_1_comoda_ravenna") || data.manuales[0];
+
+          if (tieneTrabajoLocal) {
+            // El usuario ya tiene trabajo activo en memoria/local: Preservar sus pasos 100% intactos
+            if (!state.manualActivoGuardado && target) {
+              const manualEnlazado: Manual3BMProyecto = {
+                ...target,
+                pasos: state.pasosManual,
+                fechaModificacion: new Date().toISOString(),
+              };
+              set({ manualActivoGuardado: manualEnlazado });
+              guardarPasosEnCacheLocal(state.pasosManual, manualEnlazado);
+            }
+          } else if (!state.manualActivoGuardado && target) {
+            // Carga fría inicial sin trabajo previo: Cargar el target de Drive
+            get().cargarManualProyecto(target);
+          }
         }
       }
     } catch (e) {
@@ -2391,14 +2542,16 @@ export const use3BFStore = create<State3BF>((set, get) => ({
   },
 
   cargarManualProyecto: (manual) => {
+    const pasos = manual.pasos && manual.pasos.length > 0 ? manual.pasos : generarPasosManualesPorDefecto();
     set({
       manualActivoGuardado: manual,
-      pasosManual: manual.pasos && manual.pasos.length > 0 ? manual.pasos : generarPasosManualesPorDefecto(),
-      pasoActivoManualId: manual.pasos && manual.pasos.length > 0 ? manual.pasos[0].id : "P00",
+      pasosManual: pasos,
+      pasoActivoManualId: pasos[0]?.id || "P00",
       timelineCurrentTime: 0,
       isTimelinePlaying: false,
       modalBibliotecaManualesAbierto: false,
     });
+    guardarPasosEnCacheLocal(pasos, manual);
   },
 
   guardarManualProyecto: async (nombre, marca = "RTA Design", tipologia = "Manuales 3D") => {
@@ -2406,12 +2559,16 @@ export const use3BFStore = create<State3BF>((set, get) => ({
     set({ guardandoManual: true });
 
     try {
-      const currentNombre = nombre || state.manualActivoGuardado?.nombre || state.muebleActivoGuardado?.nombre || state.parametros?.model_id || "Manual 3D";
-      const manualId = state.manualActivoGuardado?.id || `manual_${currentNombre.toLowerCase().replace(/[^a-z0-9]/gi, "_")}`;
+      const currentNombre = nombre || state.manualActivoGuardado?.nombre || state.muebleActivoGuardado?.nombre || "1_Comoda Ravenna";
+      // Asegurar id canónico sin cruzar con mn_ravenna
+      let manualId = state.manualActivoGuardado?.id;
+      if (!manualId || (manualId === "manual_mn_ravenna" && currentNombre.toLowerCase().includes("comoda"))) {
+        manualId = `manual_${currentNombre.toLowerCase().replace(/[^a-z0-9]/gi, "_")}`;
+      }
 
       const payload: Manual3BMProyecto = {
         id: manualId,
-        muebleOrigenId: state.muebleActivoGuardado?.id || state.parametros?.model_id || "mueble_base",
+        muebleOrigenId: state.muebleActivoGuardado?.id || state.parametros?.model_id || "1_Comoda Ravenna",
         nombre: currentNombre,
         marca: marca || state.manualActivoGuardado?.marca || "RTA Design",
         tipologia: tipologia || state.manualActivoGuardado?.tipologia || "Manuales 3D",
@@ -2428,10 +2585,46 @@ export const use3BFStore = create<State3BF>((set, get) => ({
 
       if (res.ok) {
         set({ manualActivoGuardado: payload });
-        await get().cargarManualesDesdeDrive();
+        guardarPasosEnCacheLocal(payload.pasos, payload);
+
+        // 🔗 Sincronización Inteligente: Guardar pasos también en el archivo .3bf del mueble activo
+        if (state.muebleActivoGuardado) {
+          const muebleSincronizado: MuebleGuardadoItem = {
+            ...state.muebleActivoGuardado,
+            pasosManual: payload.pasos,
+            manualVinculadoId: payload.id,
+            fechaGuardado: new Date().toISOString(),
+          };
+          set({ muebleActivoGuardado: muebleSincronizado });
+          try {
+            await fetch("/api/drive/muebles", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ action: "save_furniture", furniture: muebleSincronizado }),
+            });
+            if (typeof window !== "undefined" && window.localStorage) {
+              localStorage.setItem("3bf_ultimo_mueble_id", muebleSincronizado.id);
+            }
+          } catch (eMueble) {
+            console.warn("Mueble vinculado actualizado en local:", eMueble);
+          }
+        }
+
+        try {
+          const resList = await fetch("/api/drive/manuales", { method: "GET" });
+          if (resList.ok) {
+            const data = await resList.json();
+            if (data.manuales) {
+              set({ manualesDrive: data.manuales });
+            }
+          }
+        } catch {}
+        return true;
       }
+      return false;
     } catch (e) {
       console.error("[3dBimFab Drive] Error guardando manual:", e);
+      return false;
     } finally {
       set({ guardandoManual: false });
     }
@@ -2448,6 +2641,10 @@ export const use3BFStore = create<State3BF>((set, get) => ({
         const state = get();
         if (state.manualActivoGuardado?.id === manualId) {
           set({ manualActivoGuardado: null });
+          if (typeof window !== "undefined" && window.localStorage) {
+            localStorage.removeItem(STORAGE_KEY_MANUAL_ACTIVO);
+            localStorage.removeItem(STORAGE_KEY_LAST_MANUAL_ID);
+          }
         }
         await get().cargarManualesDesdeDrive();
       }
@@ -3538,6 +3735,16 @@ export const use3BFStore = create<State3BF>((set, get) => ({
         }
         if (data.muebles) {
           set({ mueblesGuardados: data.muebles });
+          const state = get();
+          if (!state.muebleActivoGuardado && typeof window !== "undefined" && window.localStorage) {
+            const ultimoId = localStorage.getItem("3bf_ultimo_mueble_id");
+            const targetMueble = (data.muebles as MuebleGuardadoItem[]).find(
+              (m) => (ultimoId && m.id === ultimoId) || m.nombre === "1_Comoda Ravenna"
+            );
+            if (targetMueble) {
+              set({ muebleActivoGuardado: targetMueble });
+            }
+          }
         }
         if (data.driveUrl) {
           set({ urlGoogleDrive: data.driveUrl });
@@ -3734,8 +3941,35 @@ export const use3BFStore = create<State3BF>((set, get) => ({
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ action: "save_furniture", furniture: muebleActualizado }),
         });
+        if (typeof window !== "undefined" && window.localStorage) {
+          localStorage.setItem("3bf_ultimo_mueble_id", muebleActualizado.id);
+        }
       } catch (err) {
         console.warn("Mueble actualizado en local:", err);
+      }
+
+      // 🔗 Sincronización Hermana: Guardar también el .3bm del manual
+      try {
+        const manualVinculadoId = muebleActualizado.manualVinculadoId || `manual_${muebleActualizado.nombre.toLowerCase().replace(/[^a-z0-9]/gi, "_")}`;
+        const manualPayload: Manual3BMProyecto = {
+          id: manualVinculadoId,
+          muebleOrigenId: id,
+          nombre: muebleActualizado.nombre,
+          marca: muebleActualizado.marca,
+          tipologia: muebleActualizado.tipologia,
+          fechaModificacion: new Date().toISOString(),
+          parametrosMueble: { ...state.parametros },
+          pasos: state.pasosManual,
+        };
+        await fetch("/api/drive/manuales", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ action: "save_manual", manual: manualPayload }),
+        });
+        set({ manualActivoGuardado: manualPayload });
+        guardarPasosEnCacheLocal(state.pasosManual, manualPayload);
+      } catch (errManual) {
+        console.warn("Manual .3bm sincronizado en caché local:", errManual);
       }
 
       return true;
@@ -3928,12 +4162,51 @@ export const use3BFStore = create<State3BF>((set, get) => ({
       get().aplicarRecetaColor(mueble.nombre.trim(), mueble.fichaProducto.recetaColorActivaId);
     }
 
-    // 2.2 Restaurar pasos de manual 3D si están presentes en el mueble guardado
-    if (mueble.pasosManual && mueble.pasosManual.length > 0) {
-      set({
-        pasosManual: mueble.pasosManual,
-        pasoActivoManualId: mueble.pasosManual[0].id,
-      });
+    // 2.2 Vinculación Inteligente con el Manual 3D (.3bm)
+    const cleanNombre = mueble.nombre.trim();
+    const manualVinculadoId = mueble.manualVinculadoId || `manual_${cleanNombre.toLowerCase().replace(/[^a-z0-9]/gi, "_")}`;
+    const manualesList = get().manualesDrive || [];
+    const manualEnDrive = manualesList.find(
+      (m) =>
+        m.id === manualVinculadoId ||
+        m.muebleOrigenId === mueble.id ||
+        m.nombre.toLowerCase() === cleanNombre.toLowerCase() ||
+        (cleanNombre.toLowerCase().includes("comoda") && m.id === "manual_1_comoda_ravenna")
+    );
+
+    let pasosFinales = mueble.pasosManual && mueble.pasosManual.length > 0 ? mueble.pasosManual : (manualEnDrive?.pasos || generarPasosManualesPorDefecto());
+
+    // Si el archivo en Drive tiene más grupos configurados o es más reciente, priorizarlo
+    if (manualEnDrive?.pasos && manualEnDrive.pasos.length > 0) {
+      const p00Drive = manualEnDrive.pasos.find((p) => p.id === "P00");
+      const p00Mueble = pasosFinales.find((p) => p.id === "P00");
+      const gruposDrive = p00Drive?.showcase?.gruposCinematicos?.length || 0;
+      const gruposMueble = p00Mueble?.showcase?.gruposCinematicos?.length || 0;
+      if (gruposDrive >= gruposMueble) {
+        pasosFinales = manualEnDrive.pasos;
+      }
+    }
+
+    const manualActivo: Manual3BMProyecto = {
+      id: manualEnDrive?.id || manualVinculadoId,
+      muebleOrigenId: mueble.id,
+      nombre: cleanNombre,
+      marca: mueble.marca || "RTA Design",
+      tipologia: mueble.tipologia || "Manuales 3D",
+      fechaModificacion: new Date().toISOString(),
+      parametrosMueble: { ...get().parametros },
+      pasos: pasosFinales,
+    };
+
+    set({
+      pasosManual: pasosFinales,
+      pasoActivoManualId: pasosFinales[0]?.id || "P00",
+      manualActivoGuardado: manualActivo,
+    });
+
+    guardarPasosEnCacheLocal(pasosFinales, manualActivo);
+    if (typeof window !== "undefined" && window.localStorage) {
+      localStorage.setItem("3bf_ultimo_mueble_id", mueble.id);
     }
 
     // 3. Recomputar SOLO si alguna instancia no tiene geometría 3D guardada
@@ -4281,11 +4554,11 @@ export const use3BFStore = create<State3BF>((set, get) => ({
     get().guardarEstadoHistorial();
   },
 
-  recomputarInstancia: async (id: string) => {
+  recomputarInstancia: async (id: string, forceReload: boolean = false) => {
     const state = get();
-    // 🛡️ BLINDAJE ESTRICTO: Prohibido recomputar geometría en modo Manual 3D o con Picking activo
-    if (state.pestanaActiva === "manual" || state.modoPickingManual.activo) {
-      console.warn(`[3BF Shield] 🛡️ Recomputo bloqueado para ${id}: En modo Manual 3D o Picking activo.`);
+    // 🛡️ BLINDAJE ESTRICTO: Prohibido recomputar automáticamente en modo Manual 3D o con Picking activo (a menos que sea forzado por el usuario)
+    if (!forceReload && (state.pestanaActiva === "manual" || state.modoPickingManual.activo)) {
+      console.warn(`[3BF Shield] 🛡️ Recomputo automático bloqueado para ${id}: En modo Manual 3D o Picking activo.`);
       return;
     }
     const inst = state.instancias[id];
@@ -4322,6 +4595,8 @@ export const use3BFStore = create<State3BF>((set, get) => ({
           model_id: inst.definitionId,
           custom_filename: inst.archivo,
           ghx_content: inst.ghxContent,
+          force_reload: forceReload,
+          timestamp: Date.now(),
         }),
       });
 
@@ -4370,11 +4645,11 @@ export const use3BFStore = create<State3BF>((set, get) => ({
     }
   },
 
-  recargarDefinicionInstancia: async (id: string) => {
+  recargarDefinicionInstancia: async (id: string, force: boolean = false) => {
     const state = get();
-    // 🛡️ BLINDAJE ESTRICTO: Prohibido recargar definición en Manual 3D o con Picking activo
-    if (state.pestanaActiva === "manual" || state.modoPickingManual.activo) {
-      console.warn(`[3BF Shield] 🛡️ Recarga de definición bloqueada para ${id}: En modo Manual 3D o Picking activo.`);
+    // 🛡️ BLINDAJE ESTRICTO: Prohibido hot-reload automático en Manual 3D o con Picking activo (a menos que el usuario lo fuerce explícitamente con el botón)
+    if (!force && (state.pestanaActiva === "manual" || state.modoPickingManual.activo)) {
+      console.warn(`[3BF Shield] 🛡️ Recarga automática omitida para ${id}: En modo Manual 3D o Picking activo.`);
       return false;
     }
     const inst = state.instancias[id];
@@ -4448,8 +4723,8 @@ export const use3BFStore = create<State3BF>((set, get) => ({
         parametros: s.objetoActivoId === id ? (updatedParams as any) : s.parametros,
       }));
 
-      // 3. Recomputar geometría 3D con Grasshopper / RhinoCompute
-      await get().recomputarInstancia(id);
+      // 3. Recomputar geometría 3D con Grasshopper / RhinoCompute (forzando bypass de caché en RAM si force=true)
+      await get().recomputarInstancia(id, force);
       get().guardarEstadoHistorial();
       return true;
     } catch (err) {
@@ -4462,6 +4737,13 @@ export const use3BFStore = create<State3BF>((set, get) => ({
       }));
       return false;
     }
+  },
+
+  forzarRecargaDesdeGHX: async (id?: string) => {
+    const s = get();
+    const targetId = id || s.objetoActivoId || Object.keys(s.instancias || {})[0];
+    if (!targetId) return false;
+    return await s.recargarDefinicionInstancia(targetId, true);
   },
 
   recomputarTodas: async () => {
@@ -5099,6 +5381,20 @@ export const use3BFStore = create<State3BF>((set, get) => ({
             },
           }));
         } catch {}
+      }
+      // Hidratar Manual 3D Studio (Pasos, Bloques Cinemáticos y Proyecto Activo)
+      const cachedManual = getCachedManualData();
+      if (cachedManual && cachedManual.pasos && cachedManual.pasos.length > 0) {
+        const p00Cached = cachedManual.pasos.find((p) => p.id === "P00");
+        const tieneGrupos = (p00Cached?.showcase?.gruposCinematicos?.length || 0) > 0;
+        const tienePiezas = cachedManual.pasos.some((p) => p.piezasAsignadas && p.piezasAsignadas.length > 0);
+        if (tieneGrupos || tienePiezas) {
+          set({
+            pasosManual: cachedManual.pasos,
+            manualActivoGuardado: cachedManual.manual,
+            pasoActivoManualId: cachedManual.pasos[0]?.id || "P00",
+          });
+        }
       }
     } catch (e) {
       console.error("Error hidratando base de datos desde localStorage:", e);

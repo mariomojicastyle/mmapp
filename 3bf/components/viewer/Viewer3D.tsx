@@ -508,6 +508,11 @@ function BoardMesh({
   const isHardwareTarugo = normName.includes("tarugo") || normName.includes("soporte") || normName.includes("cavilha") || normName.includes("clavilha");
   const isHardwarePata = normName.includes("pes") || normName.includes("pés") || normName.includes("pata") || normName.includes("pie") || normName.includes("sapata") || normName.includes("deslizador") || normName.includes("nivelador");
   const isHardwareCorredera = normName.includes("corredera") || normName.includes("corredi");
+  const isHardwareCorrederaSeguro =
+    (instanciaKey && (instanciaKey.toLowerCase().includes("segur") || instanciaKey.toLowerCase().includes("gatill"))) ||
+    normName.includes("segur") ||
+    normName.includes("gatill") ||
+    (isHardwareCorredera && (size && size.length === 3 && Math.min(size[0], size[1], size[2]) < 0.005 && size[1] < 0.015));
   const isHardwareCantoneira = normName.includes("cantoneira") || normName.includes("angulo") || normName.includes("esquinero");
   const isHardwarePorca = normName.includes("porca") || normName.includes("tuerca") || normName.includes("bucha");
   const isHardware = isHardwarePerno || isHardwareCaja || isHardwareTarugo || isHardwarePata || isHardwareCorredera || isHardwareCantoneira || isHardwarePorca || normName.includes("bisagra") || normName.includes("dobradiça") || normName.includes("puxador") || normName.includes("manija");
@@ -567,7 +572,10 @@ function BoardMesh({
       capaAsignada = capas.find((c) => c.id === "capa_tono_fondo" || c.nombre.toLowerCase() === "tono fondo" || (c.nombre.toLowerCase().includes("fondo") && !c.nombre.toLowerCase().includes("mdf"))) || capas.find((c) => c.id === "capa_tono") || capas[0];
     }
   } else if (!capaAsignada) {
-    if (isHardwareCorredera || isHardwareCantoneira) {
+    if (isHardwareCorrederaSeguro) {
+      // 🖤 Gatillo / seguro plástico de desacople -> Capa Plastico Negro
+      capaAsignada = capas.find((c) => c.id === "capa_plastico_1" || c.id === "capa_plastico" || c.nombre.toLowerCase().includes("negro") || c.nombre.toLowerCase().includes("plastico")) || capas.find((c) => c.id === "capa_herrajes") || capas[0];
+    } else if (isHardwareCorredera || isHardwareCantoneira) {
       // 🔩 Correderas telescópicas y cantoneras -> Capa Zincado / Acero
       capaAsignada = capas.find((c) => c.id === "capa_zincado" || c.id === "capa_zinc" || c.id === "capa_acero" || c.nombre.toLowerCase().includes("zinc") || c.nombre.toLowerCase().includes("acero")) || capas.find((c) => c.id === "capa_herrajes") || capas[0];
     } else if (isHardwarePata) {
@@ -676,6 +684,14 @@ function BoardMesh({
     metalness = 0.3;
     roughness = 0.25;
     opacity = 0.95;
+    transparent = false;
+    depthWrite = true;
+  } else if (isHardwareCorrederaSeguro) {
+    // 🖤 Gatillo / seguro plástico de desacople de corredera (negro carbón mate DTC)
+    meshColor = "#1E293B";
+    metalness = 0.05;
+    roughness = 0.65;
+    opacity = 1.0;
     transparent = false;
     depthWrite = true;
   } else if (isHardwareCorredera) {

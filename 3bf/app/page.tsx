@@ -121,6 +121,7 @@ export default function Home3BF() {
     anchoPanelDerecho,
     setAnchoPanelDerecho,
     setModalRenderIAAbierto,
+    cargarArbolMuebles,
   } = use3BFStore();
 
   const [guardandoFoto, setGuardandoFoto] = React.useState(false);
@@ -243,6 +244,7 @@ export default function Home3BF() {
   useEffect(() => {
     // Hidratar inmediatamente toda la base de datos de materias primas y costos
     hidratarDesdeLocalStorage();
+    cargarArbolMuebles();
     verificarWorker();
 
     // Heartbeat cada 8 segundos y al reactivar la pantalla / regresar de hibernación

@@ -1039,15 +1039,26 @@ async def compute_model(request: Request):
     ghx_hash = hashlib.md5(p["ghx_content"].encode("utf-8")).hexdigest()[:8] if p.get("ghx_content") else ""
     model_key = f"{model_id}_{custom_filename}_{ghx_mtime}_{ghx_hash}"
 
+    force_reload = bool(p.get("force_reload", False))
+    if force_reload:
+        for k in list(_FULL_RESPONSE_CACHE.keys()):
+            if model_id in k:
+                _FULL_RESPONSE_CACHE.pop(k, None)
+        for k in list(_GEOMETRY_CACHE.keys()):
+            if model_id in k:
+                _GEOMETRY_CACHE.pop(k, None)
+        print(f"[3BF Worker] [FORCE RELOAD] Caché purgada para '{model_id}'. Recomputando directamente en RhinoCompute...", flush=True)
+
     # 1. ⚡ Chequeo de Caché Total Exacto (0 ms)
-    hash_p = {k: v for k, v in p.items() if k not in ["timestamp", "client_time", "last_mtime"]}
-    full_cache_key = f"{model_key}_" + hashlib.md5(json.dumps(hash_p, sort_keys=True, default=str).encode("utf-8")).hexdigest()
-    if full_cache_key in _FULL_RESPONSE_CACHE:
-        cached_resp = dict(_FULL_RESPONSE_CACHE[full_cache_key])
-        exec_ms = round((time.time() - start_time) * 1000, 2)
-        cached_resp["execution_time_ms"] = exec_ms
-        print(f"[3BF Worker] [CACHE] CACHE TOTAL EXACTO ACTIVADO: Recalculo en {exec_ms} ms", flush=True)
-        return cached_resp
+    if not force_reload:
+        hash_p = {k: v for k, v in p.items() if k not in ["timestamp", "client_time", "last_mtime"]}
+        full_cache_key = f"{model_key}_" + hashlib.md5(json.dumps(hash_p, sort_keys=True, default=str).encode("utf-8")).hexdigest()
+        if full_cache_key in _FULL_RESPONSE_CACHE:
+            cached_resp = dict(_FULL_RESPONSE_CACHE[full_cache_key])
+            exec_ms = round((time.time() - start_time) * 1000, 2)
+            cached_resp["execution_time_ms"] = exec_ms
+            print(f"[3BF Worker] [CACHE] CACHE TOTAL EXACTO ACTIVADO: Recalculo en {exec_ms} ms", flush=True)
+            return cached_resp
 
     ancho = extract_dimension_smart(p, ["ancho"], 1200.0)
     alto = extract_dimension_smart(p, ["alto", "altura"], 800.0)
@@ -1080,7 +1091,7 @@ async def compute_model(request: Request):
 
     current_flat_params = extract_all_user_params_flat(p)
 
-    if model_key in _GEOMETRY_CACHE:
+    if not force_reload and model_key in _GEOMETRY_CACHE:
         cached_geom = _GEOMETRY_CACHE[model_key]
         last_flat_params = cached_geom.get("user_params_snapshot", {})
         

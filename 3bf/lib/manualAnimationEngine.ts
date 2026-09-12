@@ -1,4 +1,35 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
+/**
+ * ============================================================================
+ * MOTOR CINEMÁTICO 3dBimFab - MANUAL ANIMATION ENGINE
+ * ============================================================================
+ * Versión: 2.1.2 (Edición Oficial Estable: Bahía Fisiomecánica y Cinemática Telescópica Pura)
+ * Estado: Versión Oficial Consagrada / Producción Estable
+ * Descripción:
+ *   Motor matemático y cinemático puro para la compilación de pistas de animación
+ *   (AnimationClip, VectorKeyframeTrack, QuaternionKeyframeTrack) en Three.js.
+ *   Gobierna la apertura/cierre de cajones, curvas de desaceleración S-Curve (Smoothstep),
+ *   cinemática telescópica de correderas (mallas 1 a 4), blindaje de bahía fisiomecánica
+ *   y ensamblaje de piezas.
+ * 
+ * NOMENCLATURA CANÓNICA DE MALLAS DE CORREDERA TELESCÓPICA:
+ *   - Malla 1 (Fija):       Perfil exterior metálico atornillado a la carcasa / lateral
+ *                           del mueble. Se mantiene estática (desplazamiento 0%).
+ *   - Malla 2 (Intermedia): Perfil telescópico central con rodamientos a bolas. Se desplaza
+ *                           a media carrera telescópica (desplazamiento 50%).
+ *   - Malla 3 (Móvil):      Perfil interior metálico atornillado directamente al costado
+ *                           de madera del cajón. Acompaña íntegramente al cajón (desplazamiento 100%).
+ *   - Malla 4 (Seguro):     Gatillo / pin plástico negro de retención y desacople.
+ *                           Solidario a la guía móvil y al cajón de madera (desplazamiento 100%).
+ * 
+ * NOTA DE ARQUITECTURA OFICIAL:
+ *   - Blindaje de Bahía Fisiomecánica: el eje central del mueble (centroXMueble = 0.6475 m)
+ *     se calcula de la envolvente geométrica real. Cada cajón anima única y estrictamente
+ *     las correderas de su propia columna, erradicando invasiones cruzadas.
+ *   - Eliminadas todas las restricciones por índice numérico de pieza: la Malla 2 y Malla 3
+ *     abren en perfecta sincronía bilateral en todos los cajones (pares e impares).
+ * ============================================================================
+ */
 import * as THREE from "three";
 import { PasoManualStudio, ElementoSecuenciaCinematica } from "./store";
 import { extraerPiezaMadre } from "./piezaMadreUtils";
@@ -309,10 +340,12 @@ export function compilarAnimacionPaso(
           // 🗄️ MODO CAJÓN: Extracción lineal colineal con correderas telescópicas
           // 1. Identificar todas las correderas fijas de la escena para aislar con precisión sus tornillos de anclaje al lateral
           const correderasFijas: { x: number; y: number; z: number }[] = [];
-          let sumX = 0;
-          let countX = 0;
+          let minXMueble = Infinity;
+          let maxXMueble = -Infinity;
           let sumYGrupo = 0;
           let countYGrupo = 0;
+          let minXGrupo = Infinity;
+          let maxXGrupo = -Infinity;
 
           sceneMeshes.forEach((obj) => {
             const ik = ((obj.userData?.instanciaKey || "") as string).toLowerCase();
@@ -320,8 +353,8 @@ export function compilarAnimacionPaso(
             const nm = (obj.name || "").toLowerCase();
             const p = getSafeRestPosition(obj);
             if (p) {
-              sumX += p.x;
-              countX++;
+              if (p.x < minXMueble) minXMueble = p.x;
+              if (p.x > maxXMueble) maxXMueble = p.x;
               if (ik.includes("fija") || cn.includes("fija") || nm.includes("fija")) {
                 correderasFijas.push({ x: p.x, y: p.y, z: p.z });
               }
@@ -332,10 +365,17 @@ export function compilarAnimacionPaso(
               if (coincideConGrupo) {
                 sumYGrupo += p.y;
                 countYGrupo++;
+                if (p.x < minXGrupo) minXGrupo = p.x;
+                if (p.x > maxXGrupo) maxXGrupo = p.x;
               }
             }
           });
-          const centroX = countX > 0 ? sumX / countX : 0.20;
+          const centroXMueble = (minXMueble !== Infinity && maxXMueble !== -Infinity)
+            ? (minXMueble + maxXMueble) / 2
+            : 0.6475;
+          const centroXCajon = (minXGrupo !== Infinity && maxXGrupo !== -Infinity)
+            ? (minXGrupo + maxXGrupo) / 2
+            : null;
           const yCajon = countYGrupo > 0 ? sumYGrupo / countYGrupo : null;
 
           // Función de curva cinemática suave (Smoothstep) garantizada estrictamente entre 0.0 y 1.0 (cero rebotes)
@@ -407,8 +447,8 @@ export function compilarAnimacionPaso(
                   const dy = Math.abs(initPos.y - fija.y);
                   const dz = Math.abs(initPos.z - fija.z);
                   if (dy < 0.035 && dz < 0.28) {
-                    if (fija.x < centroX && initPos.x <= fija.x + 0.002) return true;
-                    if (fija.x >= centroX && initPos.x >= fija.x - 0.002) return true;
+                    if (fija.x < centroXMueble && initPos.x <= fija.x + 0.002) return true;
+                    if (fija.x >= centroXMueble && initPos.x >= fija.x - 0.002) return true;
                   }
                   return false;
                 });
@@ -426,18 +466,16 @@ export function compilarAnimacionPaso(
 
               if (coincide && !animatedMeshUuids.has(obj.uuid)) {
                 animatedMeshUuids.add(obj.uuid);
-                const isIntermediaOSeguro =
-                  instKey.includes("intermedia") || cleanName.includes("intermedia") || nodeName.includes("intermedia") ||
-                  instKey.includes("segur") || cleanName.includes("segur") || nodeName.includes("segur") ||
-                  instKey.includes("gatill") || cleanName.includes("gatill") || nodeName.includes("gatill");
-                const effectiveOffset = isIntermediaOSeguro ? offset.clone().multiplyScalar(0.5) : offset;
+                const isIntermedia =
+                  instKey.includes("intermedia") || cleanName.includes("intermedia") || nodeName.includes("intermedia");
+                const effectiveOffset = isIntermedia ? offset.clone().multiplyScalar(0.5) : offset;
                 tracks.push(generarPistasCajon(obj.uuid, initPos, effectiveOffset));
               }
             });
           });
 
-          // 🔩 Cinemática Telescópica: Garantizar que la parte metálica móvil atornillada al lateral del cajón avance al 100%
-          // y la guía intermedia con su seguro/gatillo al 50%, manteniendo la fija estática
+          // 🔩 Cinemática Telescópica Canónica: Garantizar que la parte metálica móvil atornillada al lateral del cajón avance al 100%
+          // y la guía intermedia al 50%, manteniendo la fija estática
           if (yCajon !== null) {
             sceneMeshes.forEach((obj) => {
               const instKey = ((obj.userData?.instanciaKey || "") as string).toLowerCase().trim();
@@ -447,21 +485,33 @@ export function compilarAnimacionPaso(
 
               if (esCorredera && !animatedMeshUuids.has(obj.uuid)) {
                 const initPos = getSafeRestPosition(obj);
-                // Coincidencia con la altura de este cajón específico (tolerancia a 120 mm para capturar seguros y perfiles)
-                if (Math.abs(initPos.y - yCajon) < 0.12) {
+                // Coincidencia con la altura de este cajón específico (tolerancia vertical de 100 mm)
+                if (Math.abs(initPos.y - yCajon) < 0.10) {
+                  // 🛑 Blindaje de Bahía Fisiomecánica: En muebles con múltiples columnas (ej. Cómoda Ravenna),
+                  // un cajón de la columna izquierda jamás puede arrastrar correderas de la columna derecha, y viceversa
+                  if (centroXCajon !== null && Math.abs(centroXCajon - centroXMueble) > 0.05) {
+                    const cajonEnBahiaIzquierda = centroXCajon < centroXMueble;
+                    const correderaEnBahiaIzquierda = initPos.x < centroXMueble;
+                    if (cajonEnBahiaIzquierda !== correderaEnBahiaIzquierda) return;
+                  }
+
+                  // Tolerancia en X dentro de su propia columna (holgura milimétrica de 15 mm)
+                  if (minXGrupo !== Infinity && maxXGrupo !== -Infinity) {
+                    const enMismaColumna = initPos.x >= minXGrupo - 0.015 && initPos.x <= maxXGrupo + 0.015;
+                    if (!enMismaColumna) return;
+                  }
+
                   const esFija = instKey.includes("fija") || cleanName.includes("fija") || nodeName.includes("fija");
                   if (esFija) return; // 🛑 La corredera fija al mueble jamás se mueve
 
                   animatedMeshUuids.add(obj.uuid);
-                  const esIntermediaOSeguro =
-                    instKey.includes("intermedia") || cleanName.includes("intermedia") || nodeName.includes("intermedia") ||
-                    instKey.includes("segur") || cleanName.includes("segur") || nodeName.includes("segur") ||
-                    instKey.includes("gatill") || cleanName.includes("gatill") || nodeName.includes("gatill");
-                  if (esIntermediaOSeguro) {
-                    // Guía intermedia telescópica y seguro plástico frontal al 50%
+                  const esIntermedia =
+                    instKey.includes("intermedia") || cleanName.includes("intermedia") || nodeName.includes("intermedia");
+                  if (esIntermedia) {
+                    // Guía intermedia telescópica (Malla 2) al 50% de la carrera diferencial
                     tracks.push(generarPistasCajon(obj.uuid, initPos, offset.clone().multiplyScalar(0.5)));
                   } else {
-                    // Guía móvil metálica interior atornillada al lateral del cajón al 100%
+                    // Guía móvil metálica interior (Malla 3) y gatillo plástico negro (Malla 4) al 100% (solidarios al cajón de madera)
                     tracks.push(generarPistasCajon(obj.uuid, initPos, offset));
                   }
                 }

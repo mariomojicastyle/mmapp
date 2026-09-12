@@ -21,6 +21,18 @@ Este archivo es la "Memoria RAM" para Antigravity. Contiene el contexto de lo qu
 - [x] **Persistencia Reactiva & Memoria Local**: Indexación inmediata y sincronización fluida entre Supabase, memoria local y la memoria activa `.agent/skills/b2b-sales-closer/ventas_ram.md`.
 - [x] **Protocolo Antigravity de Fluidez Bilingüe (2 Bloques de Código en 1 Clic)**: Respuestas en el chat entregadas siempre en 2 bloques de código markdown separados (Bloque 1 en Português do Brasil para copiar en 1 clic + Bloque 2 en Español para auditoría rápida), inyectando ambos idiomas en la base de datos de Supabase y en `ventas_ram_storage.json` para mantener el historial vivo.
 
+- [x] **[12 de Septiembre, 2026] Hito 114: Versión Estable v1.0 — Vinculación Inteligente Mueble ⇄ Manual (.3bf / .3bm), Guardado Espejo Bidireccional y Persistencia Inmune a F5 en Manual 3D Studio (3dBimFab)**:
+  - **Diagnóstico y Eliminación de Duplicidad Fantasma**: Saneamiento de Drive eliminando `manual_mn_ravenna.3bm.json` y unificando el manual canónico `manual_1_comoda_ravenna.3bm.json` con los 6 cajones y la última modificación del usuario (Cajón 6 con 34 piezas).
+  - **Arquitectura de Sincronización Espejo (.3bf ⇄ .3bm)**: Hermanamiento automático bidireccional entre el archivo `.3bf` del mueble (`mueble_1789226875940_xq2sn.3bf.json`) y el manual `.3bm`. Todo guardado (sea desde el HUD del visor 3D o el panel de manual) escribe y actualiza simultáneamente ambos archivos en Drive y en `localStorage`.
+  - **Vinculación Inteligente al Abrir Muebles (`abrirMueble`)**: Al cargar cualquier mueble `.3bf` desde el catálogo, la app enlaza automáticamente su proyecto `.3bm` correspondiente, prioriza la versión más fresca y preserva el estado de trabajo.
+  - **Inmunidad Total ante F5**: `guardarPasosEnCacheLocal` y `hidratarDesdeLocalStorage` aseguran persistencia en el milisegundo cero del cliente, con bloqueo estricto en `cargarManualesDesdeDrive` que prohíbe sobreescribir bloques locales configurados.
+
+- [x] **[12 de Septiembre, 2026] Hito 113: Cinemática Telescópica Canónica de Correderas (Mallas 1 a 4), Blindaje de Bahía Fisiomecánica y Persistencia LocalStorage en Modo Manual 3D (3dBimFab)**:
+  - **Diagnóstico y Corrección de Malla Congelada**: Eliminación definitiva de filtros restrictivos por índice numérico (`indicesCorrederasEnGrupo`) que impedían que la Malla 2 (guía intermedia telescópica) en los cajones impares del lateral izquierdo se animara al 50%.
+  - **Blindaje de Bahía Fisiomecánica contra Invasión Cruzada**: Corrección de la holgura de columna en $X$ (de $50\text{ mm}$ a $15\text{ mm}$) y cálculo exacto del plano de simetría del mueble ($\text{centroXMueble} = 0.6475\text{ m}$) a partir de la envolvente geométrica real, erradicando por completo el bug donde el Cajón 1 animaba la corredera vecina del Cajón 2 (a solo $21\text{ mm}$ de distancia).
+  - **Cinemática Canónica Oficial Validada**: Malla 1 Fija (0%), Malla 2 Intermedia (50% Smoothstep), Malla 3 Móvil (100%) y Malla 4 Seguro (100% solidario al cuerpo del cajón).
+  - **Persistencia en LocalStorage**: Estabilidad total ante refrescos de página (`F5`), garantizando que la parametrización de los 6 cajones del Showcase permanezca blindada.
+
 - [x] **[11 de Septiembre, 2026] Hito 112: Blindaje de Selección de Piezas, Diagnóstico de Mutación por Cómputo Legacy y Persistencia de MN2 Ravenna en Modo Manual 3D (3dBimFab)**:
   - **Diagnóstico Integral de la Mutación a Cómoda de 6 Cajones**:
     * *Detección de Raycast Miss:* Selección de piezas submilimétricas de la corredera disparaba deselección de instancia (`objetoActivoId = null`).
