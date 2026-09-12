@@ -1,7 +1,17 @@
+/**
+ * =========================================================================================
+ * 🚀 3dBimFab Core Store — VERSIÓN 1.0.0 (Estable Oficial)
+ * Hito 114: Vinculación Inteligente Mueble ⇄ Manual (.3bf / .3bm), Guardado Espejo Bidireccional
+ * y Persistencia Inmune a F5 en Manual 3D Studio.
+ * Fecha de Certificación: 12 de Septiembre, 2026
+ * =========================================================================================
+ */
+
 import { create } from "zustand";
 import { extraerPiezaMadre, perteneceAPiezaMadre, agruparMallasEnPiezasMadre } from "./piezaMadreUtils";
 
-export const APP_VERSION = "vBeta 0.1";
+// 🏷️ Versión canónica del sistema y store
+export const APP_VERSION = "v1.0.0";
 
 export interface ObjetoInstancia3BF {
   id: string;                       // e.g. "inst_Cubierta_12345"
