@@ -1,8 +1,8 @@
 /**
  * =========================================================================================
- * 🚀 3dBimFab Core Store — VERSIÓN 1.0.0 (Estable Oficial)
- * Hito 114: Vinculación Inteligente Mueble ⇄ Manual (.3bf / .3bm), Guardado Espejo Bidireccional
- * y Persistencia Inmune a F5 en Manual 3D Studio.
+ * 🚀 3dBimFab Core Store — VERSIÓN 1.0.1 (Estable Oficial)
+ * Hito 114: Cierre del Círculo de Vinculación Total GHX ⇄ Mueble (.3bf) ⇄ Manual (.3bm)
+ * Persistencia en espejo y actualización automática tras recargar definición de Grasshopper.
  * Fecha de Certificación: 12 de Septiembre, 2026
  * =========================================================================================
  */
@@ -11,7 +11,7 @@ import { create } from "zustand";
 import { extraerPiezaMadre, perteneceAPiezaMadre, agruparMallasEnPiezasMadre } from "./piezaMadreUtils";
 
 // 🏷️ Versión canónica del sistema y store
-export const APP_VERSION = "v1.0.0";
+export const APP_VERSION = "v1.0.1";
 
 export interface ObjetoInstancia3BF {
   id: string;                       // e.g. "inst_Cubierta_12345"
@@ -2597,10 +2597,31 @@ export const use3BFStore = create<State3BF>((set, get) => ({
         set({ manualActivoGuardado: payload });
         guardarPasosEnCacheLocal(payload.pasos, payload);
 
-        // 🔗 Sincronización Inteligente: Guardar pasos también en el archivo .3bf del mueble activo
-        if (state.muebleActivoGuardado) {
+        // 🔗 Sincronización Inteligente: Guardar pasos y geometría fresca también en el archivo .3bf del mueble
+        let muebleTarget = state.muebleActivoGuardado;
+        if (!muebleTarget && state.mueblesGuardados.length > 0) {
+          muebleTarget = state.mueblesGuardados.find(
+            (m) => m.nombre.toLowerCase() === currentNombre.toLowerCase() || m.id === "mueble_1789226875940_xq2sn"
+          ) || null;
+        }
+
+        if (muebleTarget) {
+          // Sanitizar instancias y purgar geometría duplicada para persistir el GHX fresco en .3bf
+          const rawInst = state.instancias || {};
+          const sanitizedInst: Record<string, ObjetoInstancia3BF> = {};
+          for (const [k, v] of Object.entries(rawInst)) {
+            sanitizedInst[k] = {
+              ...v,
+              posicion: Array.isArray(v.posicion) ? [...v.posicion] : [0, 0, 0],
+              rotacion: Array.isArray(v.rotacion) ? [...v.rotacion] : [0, 0, 0],
+              parametros: { ...(v.parametros || {}) },
+              resultado: v.resultado ? purgarResultadoGeometria(v.resultado) : undefined,
+            };
+          }
+
           const muebleSincronizado: MuebleGuardadoItem = {
-            ...state.muebleActivoGuardado,
+            ...muebleTarget,
+            instancias: Object.keys(sanitizedInst).length > 0 ? sanitizedInst : muebleTarget.instancias,
             pasosManual: payload.pasos,
             manualVinculadoId: payload.id,
             fechaGuardado: new Date().toISOString(),
@@ -4620,8 +4641,17 @@ export const use3BFStore = create<State3BF>((set, get) => ({
             resultado: data,
             cargando: false,
           };
+          const nuevasInstancias = { ...s.instancias, [id]: updatedInst };
+          let nuevoMueble = s.muebleActivoGuardado;
+          if (nuevoMueble) {
+            nuevoMueble = {
+              ...nuevoMueble,
+              instancias: nuevasInstancias,
+            };
+          }
           return {
-            instancias: { ...s.instancias, [id]: updatedInst },
+            instancias: nuevasInstancias,
+            muebleActivoGuardado: nuevoMueble,
             resultado: s.objetoActivoId === id ? data : s.resultado,
             workerStatus: "online",
           };
@@ -4753,7 +4783,17 @@ export const use3BFStore = create<State3BF>((set, get) => ({
     const s = get();
     const targetId = id || s.objetoActivoId || Object.keys(s.instancias || {})[0];
     if (!targetId) return false;
-    return await s.recargarDefinicionInstancia(targetId, true);
+    const ok = await s.recargarDefinicionInstancia(targetId, true);
+    if (ok) {
+      // 🔗 Cerrar el círculo: Persistir de inmediato la geometría fresca del GHX en el .3bf y .3bm
+      const freshState = get();
+      if (freshState.muebleActivoGuardado) {
+        await freshState.guardarCambiosMueble();
+      } else {
+        await freshState.guardarManualProyecto();
+      }
+    }
+    return ok;
   },
 
   recomputarTodas: async () => {

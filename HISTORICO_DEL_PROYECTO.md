@@ -2744,8 +2744,11 @@ Con esta batería de arreglos y la validación en caliente, la V20 se establece 
   3. **Saneamiento y Canonicidad en Google Drive:**
      * Eliminación del archivo obsoleto `manual_mn_ravenna.3bm.json`.
      * Resguardo e inyección de la última modificación del usuario (6 cajones, con Cajón 6 en 34 piezas) en `manual_1_comoda_ravenna.3bm.json` y en `mueble_1789226875940_xq2sn.3bf.json`.
+  4. **Cierre del Círculo GHX ⇄ .3bf ⇄ .3bm (`forzarRecargaDesdeGHX` y `recomputarInstancia`):**
+     * Al pulsar **"Actualizar GHX"**, tras recomputar la geometría con RhinoCompute, el sistema inyecta de forma inmediata las nuevas mallas en `muebleActivoGuardado` y dispara el guardado automático en Drive del `.3bf`.
+     * En `guardarManualProyecto`, el mueble activo se actualiza tomando siempre las instancias vivas recién computadas de Grasshopper, garantizando que cualquier pieza modificada o movida en el `.ghx` permanezca en su nueva posición 3D de forma inmutable tras dar F5.
 - **Validación y Calidad**:
-  * Verificación de persistencia total ante F5 con bloques vacíos y con piezas.
+  * Verificación de persistencia total ante F5 con bloques vacíos, con piezas y con mallas recomputadas desde Grasshopper.
   * Compilación TypeScript verificada (`npx tsc --noEmit`) con **0 errores**.
 
 
