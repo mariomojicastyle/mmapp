@@ -134,34 +134,49 @@ export async function registrarAlertaSeguridad(evento: Omit<ShieldAlertEvent, "i
     });
   }
 
-  // 5. Despacho directo a Telegram Bot si está configurado
-  const tgToken = process.env.TELEGRAM_BOT_TOKEN;
-  const tgChat = process.env.TELEGRAM_CHAT_ID;
-  if (tgToken && tgChat) {
-    const textoMensaje = esIntrusion
-      ? `🚨 *ALERTA DE SEGURIDAD 3dBimFab*\n\n` +
-        `⚠️ *Intento de Intrusión Detectado*\n` +
-        `• *Tipo:* ${alertaCompleta.tipo}\n` +
-        `• *IP:* \`${alertaCompleta.ip}\`\n` +
-        `• *Hora (CO):* ${alertaCompleta.fechaColombia}\n` +
-        `• *Ruta:* \`${alertaCompleta.ruta}\`\n` +
-        (alertaCompleta.claveIntentada ? `• *Clave intentada:* \`${alertaCompleta.claveIntentada}\`\n` : "") +
-        `• *Dispositivo:* ${alertaCompleta.userAgent.substring(0, 80)}`
-      : `🛡️ *ACCESO AUTORIZADO 3dBimFab*\n\n` +
-        `• *Nivel:* ${alertaCompleta.tipo}\n` +
-        `• *IP:* \`${alertaCompleta.ip}\`\n` +
-        `• *Hora (CO):* ${alertaCompleta.fechaColombia}\n` +
-        `• *Ruta:* \`${alertaCompleta.ruta}\``;
+  // 5. Despacho directo por Email (vía Resend API o Webhook Email)
+  const resendApiKey = process.env.RESEND_API_KEY;
+  const emailDestino = process.env.SHIELD_ALERT_EMAIL || "mariomojica.style@gmail.com";
+  if (resendApiKey) {
+    const asunto = esIntrusion
+      ? `🚨 ALERTA DE SEGURIDAD 3dBimFab: Intento de Intrusión (IP ${alertaCompleta.ip})`
+      : `🛡️ Acceso Autorizado 3dBimFab (${alertaCompleta.tipo})`;
 
-    fetch(`https://api.telegram.org/bot${tgToken}/sendMessage`, {
+    const cuerpoHtml = `
+      <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 16px; overflow: hidden;">
+        <div style="background: ${esIntrusion ? '#e11d48' : '#0284c7'}; padding: 20px; text-align: center; color: #ffffff;">
+          <h2 style="margin: 0; font-size: 18px; font-weight: 700;">${esIntrusion ? '🚨 Intento de Intrusión Detectado' : '🛡️ Acceso Autorizado a 3dBimFab'}</h2>
+          <p style="margin: 6px 0 0 0; font-size: 13px; opacity: 0.9;">3dBimFab Shield - Sistema de Detección en Tiempo Real</p>
+        </div>
+        <div style="padding: 24px; color: #334155; font-size: 14px; line-height: 1.6;">
+          <table style="width: 100%; border-collapse: collapse;">
+            <tr><td style="padding: 8px 0; color: #64748b; font-weight: 600; width: 140px;">Evento:</td><td style="padding: 8px 0; font-weight: 700; color: ${esIntrusion ? '#e11d48' : '#059669'};">${alertaCompleta.tipo}</td></tr>
+            <tr><td style="padding: 8px 0; color: #64748b; font-weight: 600;">Dirección IP:</td><td style="padding: 8px 0; font-family: monospace; font-size: 14px;"><strong>${alertaCompleta.ip}</strong></td></tr>
+            <tr><td style="padding: 8px 0; color: #64748b; font-weight: 600;">Hora (Colombia):</td><td style="padding: 8px 0;">${alertaCompleta.fechaColombia}</td></tr>
+            <tr><td style="padding: 8px 0; color: #64748b; font-weight: 600;">Ruta solicitada:</td><td style="padding: 8px 0; font-family: monospace;">${alertaCompleta.ruta}</td></tr>
+            ${alertaCompleta.claveIntentada ? `<tr><td style="padding: 8px 0; color: #64748b; font-weight: 600;">Clave probada:</td><td style="padding: 8px 0; font-family: monospace; color: #e11d48;"><strong>${alertaCompleta.claveIntentada}</strong></td></tr>` : ''}
+            <tr><td style="padding: 8px 0; color: #64748b; font-weight: 600;">Dispositivo:</td><td style="padding: 8px 0; font-size: 12px; color: #475569;">${alertaCompleta.userAgent}</td></tr>
+          </table>
+          <div style="margin-top: 24px; text-align: center;">
+            <a href="https://3bf.mariomojica.com/api/access/logs" style="display: inline-block; padding: 10px 24px; background: #0f172a; color: #ffffff; text-decoration: none; border-radius: 9999px; font-weight: 600; font-size: 13px;">Auditar Logs en Vivo</a>
+          </div>
+        </div>
+      </div>
+    `;
+
+    fetch("https://api.resend.com/emails", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        Authorization: `Bearer ${resendApiKey}`,
+        "Content-Type": "application/json",
+      },
       body: JSON.stringify({
-        chat_id: tgChat,
-        text: textoMensaje,
-        parse_mode: "Markdown",
+        from: "3dBimFab Shield <onboarding@resend.dev>",
+        to: [emailDestino],
+        subject: asunto,
+        html: cuerpoHtml,
       }),
-      signal: AbortSignal.timeout(3500),
+      signal: AbortSignal.timeout(4000),
     }).catch(() => {});
   }
 
