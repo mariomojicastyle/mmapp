@@ -377,29 +377,16 @@ function BoardMesh({
     modoPickingManual,
     togglePiezaEnPickingManual,
     pasosManual,
-    pasoActivoManualId
+    pasoActivoManualId,
+    pestanaActiva,
   } = use3BFStore();
 
-  const { customGeometry, edgesGeometry } = React.useMemo(() => {
+  const customGeometry = React.useMemo(() => {
     if (vertices && indices && vertices.length > 0 && indices.length > 0) {
       const indexedGeo = new THREE.BufferGeometry();
       indexedGeo.setAttribute("position", new THREE.Float32BufferAttribute(vertices, 3));
       indexedGeo.setIndex(indices);
       indexedGeo.computeVertexNormals();
-
-      let edges: THREE.EdgesGeometry | null = null;
-      try {
-        // 🛠️ Unificar vértices coincidentes (welding) para eliminar líneas de triangulación en caras coplanas
-        const weldedGeo = BufferGeometryUtils.mergeVertices(indexedGeo, 0.001);
-        weldedGeo.computeVertexNormals();
-        edges = new THREE.EdgesGeometry(weldedGeo, calibracion.thresholdAristas || 25);
-      } catch {
-        try {
-          edges = new THREE.EdgesGeometry(indexedGeo, calibracion.thresholdAristas || 25);
-        } catch {
-          edges = null;
-        }
-      }
 
       if (grasshopperUvs && grasshopperUvs.length > 0) {
         indexedGeo.setAttribute("uv", new THREE.Float32BufferAttribute(grasshopperUvs, 2));
@@ -407,7 +394,7 @@ function BoardMesh({
         geo.computeVertexNormals();
         geo.computeBoundingBox();
         geo.computeBoundingSphere();
-        return { customGeometry: geo, edgesGeometry: edges };
+        return geo;
       }
 
       const geo = indexedGeo.toNonIndexed();
@@ -418,6 +405,7 @@ function BoardMesh({
       const posAttr = geo.attributes.position;
       const uvs = new Float32Array(posAttr.count * 2);
 
+      const UV_SCALE = 1.0 / 0.60; // 600mm x 600mm (0.60m) norma física real
       for (let i = 0; i < posAttr.count; i += 3) {
         const pA = new THREE.Vector3(posAttr.getX(i), posAttr.getY(i), posAttr.getZ(i));
         const pB = new THREE.Vector3(posAttr.getX(i + 1), posAttr.getY(i + 1), posAttr.getZ(i + 1));
@@ -431,7 +419,6 @@ function BoardMesh({
         const absY = Math.abs(normal.y);
         const absZ = Math.abs(normal.z);
 
-        const UV_SCALE = 1.0 / 0.60; // 600mm x 600mm (0.60m) norma física real
         for (let j = 0; j < 3; j++) {
           const idx = i + j;
           const x = posAttr.getX(idx);
@@ -452,10 +439,10 @@ function BoardMesh({
       }
 
       geo.setAttribute("uv", new THREE.BufferAttribute(uvs, 2));
-      return { customGeometry: geo, edgesGeometry: edges };
+      return geo;
     }
-    return { customGeometry: null, edgesGeometry: null };
-  }, [vertices, indices, grasshopperUvs, calibracion.thresholdAristas]);
+    return null;
+  }, [vertices, indices, grasshopperUvs]);
 
   const boxEdgesGeometry = React.useMemo(() => {
     if (!customGeometry && size && size.length === 3) {
@@ -643,8 +630,17 @@ function BoardMesh({
   }, [pasosManual, pasoActivoManualId]);
 
   const estaOcultaPorGrupoCinematico = React.useMemo(() => {
-    if (!pasoActivoManual?.showcase?.gruposCinematicos) return false;
-    return pasoActivoManual.showcase.gruposCinematicos.some(
+    // 🛡️ REGLA SUPREMA: En el Visor 3D ("visor") NUNCA se ocultan piezas por cinemáticas del Manual 3D.
+    // Las reglas de visibilidad del Manual 3D SOLO aplican si pestanaActiva === "manual".
+    if (pestanaActiva !== "manual") return false;
+
+    const pasoConGrupos = (pasoActivoManual?.showcase?.gruposCinematicos && pasoActivoManual.showcase.gruposCinematicos.length > 0)
+      ? pasoActivoManual
+      : pasosManual.find((p) => p.id === "P00" || p.tipo === "showcase");
+
+    if (!pasoConGrupos?.showcase?.gruposCinematicos) return false;
+
+    return pasoConGrupos.showcase.gruposCinematicos.some(
       (g) =>
         g.oculto &&
         g.piezas.some(
@@ -652,10 +648,11 @@ function BoardMesh({
             pz === piezaMadre ||
             pz === cleanName ||
             (instanciaKey && pz === instanciaKey) ||
-            extraerPiezaMadre(pz) === piezaMadre
+            extraerPiezaMadre(pz) === piezaMadre ||
+            (instanciaKey && extraerPiezaMadre(pz) === instanciaKey)
         )
     );
-  }, [pasoActivoManual, piezaMadre, cleanName, instanciaKey]);
+  }, [pestanaActiva, pasoActivoManual, pasosManual, piezaMadre, cleanName, instanciaKey]);
 
   // 💡 5. Verificar Visibilidad (Capa, Parte o Grupo Cinemático apagado) - DESPUÉS DE TODOS LOS HOOKS
   const esParteOculta = asignacion && asignacion.visible === false;

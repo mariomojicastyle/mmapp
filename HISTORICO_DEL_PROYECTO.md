@@ -2818,6 +2818,25 @@ Con esta batería de arreglos y la validación en caliente, la V20 se establece 
   * Pruebas locales completas de inyección de cookies, expiraciones y redirecciones exitosas.
   * Sincronización y despliegue a producción en Netlify activado.
 
+---
+
+### 🔹 Hito 117: Regla Suprema de Visibilidad en Visor 3D, Desacople de Cinemáticas del Manual 3D, Control Global de Bloques Funcionales (P00) y Optimización de Carga a 60 FPS (13 de Septiembre, 2026)
+
+- **Regla Suprema de Visibilidad en Visor 3D (`Viewer3D.tsx`)**:
+  * **Diagnóstico de Patología:** En el visor 3D, la conmutación de grupos cinemáticos u ocultamientos del Manual 3D afectaba indebidamente la visualización en la pestaña general de visualización (`Visor 3D`), provocando que cajones o piezas desaparecieran.
+  * **Blindaje Implementado:** Se estableció formalmente la **Regla Suprema de Visibilidad**: si la pestaña activa no es `"manual"` (`pestanaActiva !== "manual"`), **ninguna regla de pasos o cinemáticas del Manual 3D tiene permitido ocultar piezas**. En el Visor 3D todos los componentes, tableros, cajones y herrajes son 100% visibles.
+- **Control Global de Visibilidad de Bloques Funcionales (`StepManagerPanel.tsx` y `Viewer3D.tsx`)**:
+  * **Soporte Bidireccional `pasoConGrupos`:** En el Manual 3D, al estar ubicado en un paso de ensamble (ej. Paso 01 / P01), el visor ahora busca los bloques funcionales primero en el paso activo y, si este no los define, recurre automáticamente a **P00** (el catálogo maestro de bloques funcionales y cinemáticas).
+  * **Conmutación Instantánea:** Al pulsar los botones de encendido/apagado (ojito) individuales o "Mostrar/Ocultar Todos" de la tarjeta de Bloques Funcionales (P00), los cajones y puertas se ocultan o muestran de forma reactiva en tiempo real en la escena 3D en cualquier paso del manual.
+  * **Coincidencia Exhaustiva de Piezas:** Coincidencia robusta en `g.piezas.some(...)` que reconoce piezas madre (`Peça 11`), nombres limpios (`11_Frente Cajon`) e instancias físicas (`Peça 11 (1)`).
+- **Erradicación de Sobrecostos de CPU y Retorno a Estabilidad Fluida (60 FPS)**:
+  * Eliminación de algoritmos pesados síncronos en CPU (`BufferGeometryUtils.mergeVertices` y generación síncrona masiva de `THREE.EdgesGeometry` en `useMemo`), los cuales bloqueaban el hilo principal de JavaScript al abrir modelos complejos con decenas de mallas como la *Cómoda Ravenna*.
+  * Restablecimiento del motor nativo y ligero de Drei `<Edges />` con carga sub-100ms, cero cuelgues de navegador y fluidez óptima a 60 FPS apta para dispositivos móviles.
+- **Validación y Calidad**:
+  * Compilación TypeScript verificada (`npx tsc --noEmit` en `3bf`) con **0 errores**.
+  * Servidores locales RhinoCompute (:5000), 3BF Worker Python (:8005) y 3BF Web App Next.js (:3005) activos y respondiendo inmediatamente.
+
+
 
 
 

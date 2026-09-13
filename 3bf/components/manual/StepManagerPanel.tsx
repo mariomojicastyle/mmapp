@@ -2,8 +2,8 @@
 
 import React, { useMemo } from "react";
 import { use3BFStore, PasoManualStudio, CoreografiaShowcase, EjeAperturaShowcase } from "@/lib/store";
-import { Plus, Trash2, Box, Layers, Hammer, Sparkles, Check, CheckCircle2, ChevronRight, ChevronDown, Sliders, Wand2, PlayCircle, X, FolderPlus, Pipette, Eye, EyeOff, Link2, Unlink } from "lucide-react";
-import { agruparMallasEnPiezasMadre, extraerPiezaMadre, anotarInstanciasFisicas } from "@/lib/piezaMadreUtils";
+import { Plus, Trash2, Box, Layers, Hammer, Sparkles, Check, CheckCircle2, ChevronRight, ChevronDown, Sliders, Wand2, PlayCircle, X, FolderPlus, Pipette, Eraser, Eye, EyeOff, Link2, Unlink, RotateCw, RotateCcw } from "lucide-react";
+import { agruparMallasEnPiezasMadre, extraerPiezaMadre, anotarInstanciasFisicas, esHerrajeNombre } from "@/lib/piezaMadreUtils";
 
 export default function StepManagerPanel() {
   const [mostrarMenuAnadirBloque, setMostrarMenuAnadirBloque] = React.useState(false);
@@ -14,15 +14,16 @@ export default function StepManagerPanel() {
     crearPasoManual,
     eliminarPasoManual,
     actualizarPasoManual,
-    asignarPiezaAPasoManual,
     desasignarPiezaDePasoManual,
-    asignarHerrajeAPasoManual,
     desasignarHerrajeDePasoManual,
     autoDetectarGruposCinematicos,
     agregarGrupoCinematico,
     actualizarGrupoCinematico,
     eliminarGrupoCinematico,
     conmutarVisibilidadGrupoCinematico,
+    conmutarVisibilidadTodosGruposCinematicos,
+    conmutarVisibilidadPiezasPaso,
+    conmutarOcultarNoAsignadasPaso,
     asignarPiezaAGrupoCinematico,
     desasignarPiezaDeGrupoCinematico,
     modoPickingManual,
@@ -91,102 +92,20 @@ export default function StepManagerPanel() {
     });
   };
 
-  // Extraer todas las piezas de madera y herrajes disponibles en el escenario
-  const { piezasMadera, herrajesDisponibles } = useMemo(() => {
-    const maderas: string[] = [];
-    const herrajes: string[] = [];
+  // 🪵 Tableros asignados exclusivamente a este paso (excluyendo cualquier herraje)
+  const tablerosPasoActivo = useMemo(() => {
+    if (!pasoActivo || pasoActivo.tipo === "showcase") return [];
+    return (pasoActivo.piezasAsignadas || []).filter((p) => !esHerrajeNombre(p));
+  }, [pasoActivo]);
 
-    // Del resultado de Grasshopper
-    const meshNames = (resultado?.real_meshes || []).map((m: any) => m.name);
-    const declaredOutputs = resultado?.declared_outputs || [];
-    const partesAsignadas = Object.keys(asignacionesPartes);
-
-    const todas = Array.from(new Set([...meshNames, ...declaredOutputs, ...partesAsignadas])).filter(Boolean);
-
-    todas.forEach((nombre) => {
-      const nLow = nombre.toLowerCase();
-      const esHerraje =
-        nLow.includes("perno") ||
-        nLow.includes("caja") ||
-        nLow.includes("minifix") ||
-        nLow.includes("tarugo") ||
-        nLow.includes("cavilha") ||
-        nLow.includes("tornillo") ||
-        nLow.includes("parafuso") ||
-        nLow.includes("soporte") ||
-        nLow.includes("corredera") ||
-        nLow.includes("corredi") ||
-        nLow.includes("cantoneira") ||
-        nLow.includes("angulo") ||
-        nLow.includes("bisagra") ||
-        nLow.includes("dobradi") ||
-        nLow.includes("puxador") ||
-        nLow.includes("tirador");
-
-      const esAuxiliar =
-        nLow.includes("grid") ||
-        nLow.includes("helper") ||
-        nLow.includes("perforado") ||
-        nLow.includes("maquinado");
-
-      if (esAuxiliar) return;
-
-      if (esHerraje) {
-        if (!herrajes.includes(nombre)) herrajes.push(nombre);
-      } else {
-        if (!maderas.includes(nombre)) maderas.push(nombre);
+  // Sincronización automática de Pieza Master si la actual no pertenece a las asignadas del paso
+  React.useEffect(() => {
+    if (pasoActivo && pasoActivo.tipo !== "showcase" && tablerosPasoActivo.length > 0) {
+      if (!pasoActivo.piezaMaster || !tablerosPasoActivo.includes(pasoActivo.piezaMaster)) {
+        actualizarPasoManual(pasoActivo.id, { piezaMaster: tablerosPasoActivo[0] });
       }
-    });
-
-    // Agrupar maderas bajo sus entidades físicas unívocas o Pieza Madre canónicas
-    let maderasUnicas: string[] = [];
-    if (resultado?.real_meshes && resultado.real_meshes.length > 0) {
-      const anotadas = anotarInstanciasFisicas(resultado.real_meshes);
-      const setInstancias = new Set<string>();
-      anotadas.forEach((m) => {
-        const nLow = m.name.toLowerCase();
-        const esHerraje =
-          nLow.includes("perno") ||
-          nLow.includes("caja") ||
-          nLow.includes("tarugo") ||
-          nLow.includes("cavilha") ||
-          nLow.includes("tornillo") ||
-          nLow.includes("parafuso") ||
-          nLow.includes("soporte") ||
-          nLow.includes("corredera") ||
-          nLow.includes("corredi") ||
-          nLow.includes("cantoneira") ||
-          nLow.includes("bisagra") ||
-          nLow.includes("dobradi") ||
-          nLow.includes("puxador") ||
-          nLow.includes("pes") ||
-          nLow.includes("pés") ||
-          nLow.includes("pata") ||
-          nLow.includes("pie") ||
-          nLow.includes("porca");
-        const isCorrederaPart = nLow.includes("corredi") || nLow.includes("corredera");
-        if ((!esHerraje || isCorrederaPart) && m.instanciaKey) {
-          setInstancias.add(m.instanciaKey);
-        }
-      });
-      maderasUnicas = Array.from(setInstancias).sort((a, b) =>
-        a.localeCompare(b, undefined, { numeric: true, sensitivity: "base" })
-      );
     }
-
-    if (maderasUnicas.length === 0) {
-      maderasUnicas = agruparMallasEnPiezasMadre(maderas);
-    }
-
-    return { 
-      piezasMadera: maderasUnicas.length > 0 ? maderasUnicas : [
-        "Peça 1", "Peça 2", "Peça 3", "Peça 4", "Peça 5", "Peça 6", "Peça 7", "Peça 8", "Peça 9", "Peça 10", "Peça 11", "Peça 12", "Peça 13", "Peça 14", "Peça 15", "Peça 16", "Peça 17", "Peça 18", "Peça 19"
-      ], 
-      herrajesDisponibles: herrajes.length > 0 ? herrajes : [
-        "Cavilha 8x30", "Parafuso estrutural 7.0x50", "Tambor Minifix 15mm"
-      ] 
-    };
-  }, [resultado, asignacionesPartes]);
+  }, [pasoActivo?.id, pasoActivo?.tipo, tablerosPasoActivo, pasoActivo?.piezaMaster, actualizarPasoManual]);
 
   return (
     <div className="flex flex-col gap-4 text-xs">
@@ -441,9 +360,25 @@ export default function StepManagerPanel() {
             {/* Listado de Grupos Cinemáticos: Bloques Funcionales (Cajones o Puertas) */}
             <div className="flex flex-col gap-2.5">
               <div className="flex items-center justify-between">
-                <span className="font-bold text-[10.5px] uppercase tracking-wide opacity-75">
-                  Bloques Configurados ({pasoActivo.showcase?.gruposCinematicos?.length || 0})
-                </span>
+                <div className="flex items-center gap-1.5">
+                  <span className="font-bold text-[10.5px] uppercase tracking-wide opacity-75">
+                    Bloques Funcionales ({pasoActivo.showcase?.gruposCinematicos?.length || 0})
+                  </span>
+                  {(pasoActivo.showcase?.gruposCinematicos?.length || 0) > 0 && (
+                    <button
+                      type="button"
+                      onClick={() => conmutarVisibilidadTodosGruposCinematicos(pasoActivo.id)}
+                      title="Ocultar o mostrar todos los bloques funcionales en 3D"
+                      className="p-1 rounded-full text-slate-400 hover:text-amber-500 hover:bg-black/5 dark:hover:bg-white/5 transition cursor-pointer"
+                    >
+                      {pasoActivo.showcase?.gruposCinematicos?.some((g) => g.oculto) ? (
+                        <EyeOff className="w-3.5 h-3.5 text-amber-500" />
+                      ) : (
+                        <Eye className="w-3.5 h-3.5" />
+                      )}
+                    </button>
+                  )}
+                </div>
 
                 {/* Botón con Menú Desplegable: Cajón o Puerta */}
                 <div className="relative">
@@ -821,10 +756,271 @@ export default function StepManagerPanel() {
         ) : (
           /* ── MODO ENSAMBLE (PASO 01+) ─────────────────────────────────── */
           <div className="flex flex-col gap-3">
+            {/* 🎯 TARJETA DE PIEZAS CONFIGURADAS DEL PASO (Inspirado en la lógica de Bloques Funcionales de P00) */}
+            <div className="flex flex-col gap-2.5 p-3 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/60 shadow-sm">
+              {/* Cabecera del Paso Ensamble */}
+              <div className="flex items-center justify-between gap-2 w-full">
+                <div className="flex items-center gap-1.5 min-w-0 flex-1">
+                  <span
+                    style={{ backgroundColor: botonActivoColor }}
+                    className="text-white text-[10px] font-bold px-2 py-0.5 rounded-full shrink-0"
+                  >
+                    {pasoActivo.id}
+                  </span>
+                  <span className="font-bold text-xs text-slate-800 dark:text-slate-100 truncate">
+                    Piezas del Paso ({(pasoActivo.piezasAsignadas || []).length + (pasoActivo.herrajesAsignados || []).length})
+                  </span>
+                </div>
+
+                <div className="flex items-center gap-1.5 shrink-0">
+                  {/* Botón Cuentagotas / Selección Visual 3D para el Paso */}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (modoPickingManual.activo && modoPickingManual.pasoId === pasoActivo.id && !modoPickingManual.grupoId && modoPickingManual.modo === "agregar") {
+                        limpiarPickingManual();
+                      } else {
+                        iniciarPickingManual(pasoActivo.id, null, "agregar");
+                      }
+                    }}
+                    title="Seleccionar piezas y herrajes de este paso directamente tocándolas en el 3D"
+                    className={`px-3 py-1 rounded-full transition flex items-center gap-1.5 font-bold text-[9.5px] border cursor-pointer ${
+                      modoPickingManual.activo && modoPickingManual.pasoId === pasoActivo.id && !modoPickingManual.grupoId && modoPickingManual.modo === "agregar"
+                        ? "bg-cyan-500 text-white border-cyan-400 shadow-sm animate-pulse"
+                        : "bg-cyan-500/10 text-cyan-700 dark:text-cyan-300 border-cyan-500/30 hover:bg-cyan-500/20"
+                    }`}
+                  >
+                    <Pipette className="w-3 h-3" />
+                    <span>
+                      {modoPickingManual.activo && modoPickingManual.pasoId === pasoActivo.id && !modoPickingManual.grupoId && modoPickingManual.modo === "agregar" ? "Tocando 3D..." : "Tocar en 3D"}
+                    </span>
+                  </button>
+
+                  {/* 🧹 Botón Retirar / Desasignación Visual 3D */}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (modoPickingManual.activo && modoPickingManual.pasoId === pasoActivo.id && !modoPickingManual.grupoId && modoPickingManual.modo === "retirar") {
+                        limpiarPickingManual();
+                      } else {
+                        iniciarPickingManual(pasoActivo.id, null, "retirar");
+                      }
+                    }}
+                    title="Retirar piezas o herrajes tocándolos directamente en la vista 3D"
+                    className={`px-3 py-1 rounded-full transition flex items-center gap-1.5 font-bold text-[9.5px] border cursor-pointer ${
+                      modoPickingManual.activo && modoPickingManual.pasoId === pasoActivo.id && !modoPickingManual.grupoId && modoPickingManual.modo === "retirar"
+                        ? "bg-rose-600 text-white border-rose-500 shadow-md ring-2 ring-rose-400/40 animate-pulse"
+                        : "bg-rose-500/10 text-rose-700 dark:text-rose-300 border-rose-500/30 hover:bg-rose-500/20"
+                    }`}
+                  >
+                    <Eraser className="w-3 h-3" />
+                    <span>
+                      {modoPickingManual.activo && modoPickingManual.pasoId === pasoActivo.id && !modoPickingManual.grupoId && modoPickingManual.modo === "retirar" ? "Retirando 3D..." : "Retirar"}
+                    </span>
+                  </button>
+
+                  {/* 💡 Botón Bombillito / Ojito para Apagar/Encender Piezas del Paso en 3D */}
+                  <button
+                    type="button"
+                    onClick={() => conmutarVisibilidadPiezasPaso(pasoActivo.id)}
+                    title={pasoActivo.piezasOcultas ? "Mostrar piezas de este paso en 3D" : "Apagar piezas de este paso en 3D (para inspeccionar uniones interiores)"}
+                    className={`p-1.5 rounded-full transition shrink-0 cursor-pointer border ${
+                      pasoActivo.piezasOcultas
+                        ? "bg-amber-500/20 text-amber-500 border-amber-500/40"
+                        : "bg-slate-100 dark:bg-slate-800 text-slate-400 hover:text-amber-500 border-slate-200 dark:border-slate-700"
+                    }`}
+                  >
+                    {pasoActivo.piezasOcultas ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                  </button>
+
+                  {/* 🎯 Botón Invert Hide (Ocultar lo visible no seleccionado para dejar únicamente presentes las piezas del paso) */}
+                  <button
+                    type="button"
+                    onClick={() => conmutarOcultarNoAsignadasPaso(pasoActivo.id)}
+                    title={
+                      pasoActivo.ocultarNoAsignadas
+                        ? "Invert Hide Activo: Piezas no seleccionadas ocultas. Clic para mostrar todo el mueble."
+                        : "Invert Hide: Ocultar todo lo visible no seleccionado para que queden únicamente presentes los tableros y herrajes de este paso."
+                    }
+                    className={`px-3 py-1 rounded-full text-[9.5px] font-bold border transition flex items-center gap-1.5 cursor-pointer shrink-0 ${
+                      pasoActivo.ocultarNoAsignadas
+                        ? "bg-indigo-600 text-white border-indigo-500 shadow-md ring-2 ring-indigo-400/40"
+                        : "bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 border-slate-300 dark:border-slate-700 shadow-sm"
+                    }`}
+                  >
+                    {pasoActivo.ocultarNoAsignadas ? (
+                      <EyeOff className="w-3.5 h-3.5 text-white" />
+                    ) : (
+                      <Eye className="w-3.5 h-3.5 text-indigo-500" />
+                    )}
+                    <span>{pasoActivo.ocultarNoAsignadas ? "Invert Hide (Solo P01)" : "Invert Hide"}</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* Piezas Asignadas (Chips en Cápsula de Pieza Madre) */}
+              {((pasoActivo.piezasAsignadas || []).length > 0 || (pasoActivo.herrajesAsignados || []).length > 0) ? (
+                <div className="flex flex-col gap-2 pt-1 border-t border-slate-200/50 dark:border-slate-800/50">
+                  {/* Tableros de Madera */}
+                  {(pasoActivo.piezasAsignadas || []).length > 0 && (
+                    <div className="flex flex-col gap-1">
+                      <span className="text-[9px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 flex items-center gap-1">
+                        <Layers className="w-2.5 h-2.5 text-amber-600" /> Tableros ({pasoActivo.piezasAsignadas.length})
+                      </span>
+                      <div className="flex flex-wrap gap-1">
+                        {pasoActivo.piezasAsignadas.map((pz) => {
+                          const pmLimpia = extraerPiezaMadre(pz);
+                          return (
+                            <span
+                              key={pz}
+                              style={{ borderColor: botonActivoColor }}
+                              className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[9.5px] font-semibold bg-cyan-500/10 text-cyan-800 dark:text-cyan-200 border"
+                            >
+                              <span className="truncate max-w-[140px]">{pmLimpia}</span>
+                              <button
+                                type="button"
+                                onClick={() => desasignarPiezaDePasoManual(pasoActivo.id, pz)}
+                                className="hover:text-rose-500 transition cursor-pointer ml-0.5"
+                                title="Quitar de este paso"
+                              >
+                                <X className="w-2.5 h-2.5" />
+                              </button>
+                            </span>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Herrajes */}
+                  {(pasoActivo.herrajesAsignados || []).length > 0 && (
+                    <div className="flex flex-col gap-1">
+                      <span className="text-[9px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 flex items-center gap-1">
+                        <Hammer className="w-2.5 h-2.5 text-slate-500" /> Herrajes ({pasoActivo.herrajesAsignados.length})
+                      </span>
+                      <div className="flex flex-wrap gap-1">
+                        {pasoActivo.herrajesAsignados.map((h) => {
+                          const hLimpio = extraerPiezaMadre(h);
+                          return (
+                            <span
+                              key={h}
+                              className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[9.5px] font-semibold bg-slate-200/70 dark:bg-slate-800 text-slate-700 dark:text-slate-200 border border-slate-300 dark:border-slate-700"
+                            >
+                              <span className="truncate max-w-[140px]">{hLimpio}</span>
+                              <button
+                                type="button"
+                                onClick={() => desasignarHerrajeDePasoManual(pasoActivo.id, h)}
+                                className="hover:text-rose-500 transition cursor-pointer ml-0.5"
+                                title="Quitar de este paso"
+                              >
+                                <X className="w-2.5 h-2.5" />
+                              </button>
+                            </span>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <div className="py-2.5 px-3 text-center rounded-xl bg-slate-500/5 border border-dashed border-slate-200 dark:border-slate-800 text-[10px] text-slate-500 dark:text-slate-400 flex flex-col items-center gap-1">
+                  <span>Ninguna pieza asignada a este paso todavía.</span>
+                  <span className="text-[9px] font-medium text-cyan-600 dark:text-cyan-400">
+                    Usa <strong>&quot;Tocar en 3D&quot;</strong> para sumarlas o <strong>&quot;Retirar&quot;</strong> para quitarlas tocándolas en 3D.
+                  </span>
+                </div>
+              )}
+            </div>
+
+            {/* 🗄️ CONTROL DE VISIBILIDAD DE BLOQUES FUNCIONALES (P00) EN PASO DE ENSAMBLE */}
+            {(() => {
+              const pasoP00 = pasosManual.find((p) => p.id === "P00" || p.tipo === "showcase");
+              const bloques = pasoP00?.showcase?.gruposCinematicos || [];
+              if (bloques.length === 0) return null;
+
+              const algunOculto = bloques.some((g) => g.oculto);
+
+              return (
+                <div className="flex flex-col gap-2 p-3 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/60 shadow-sm">
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-1.5 min-w-0">
+                      <span className="text-xs">🗄️</span>
+                      <span className="font-bold text-xs text-slate-800 dark:text-slate-100 truncate">
+                        Bloques Funcionales ({bloques.length})
+                      </span>
+                      <span className="text-[9px] font-semibold px-2 py-0.2 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 border border-slate-200 dark:border-slate-700 shrink-0">
+                        P00
+                      </span>
+                    </div>
+
+                    {/* Botón Maestro: Ocultar / Mostrar Todos */}
+                    <button
+                      type="button"
+                      onClick={() => pasoP00 && conmutarVisibilidadTodosGruposCinematicos(pasoP00.id, !algunOculto)}
+                      className={`px-2.5 py-1 rounded-full text-[9.5px] font-bold border transition flex items-center gap-1 cursor-pointer shrink-0 ${
+                        algunOculto
+                          ? "bg-amber-500/10 text-amber-700 dark:text-amber-300 border-amber-500/30 hover:bg-amber-500/20"
+                          : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:bg-slate-200"
+                      }`}
+                      title={algunOculto ? "Mostrar todos los bloques funcionales en 3D" : "Ocultar todos los bloques funcionales en 3D para despejar el ensamble"}
+                    >
+                      {algunOculto ? <Eye className="w-3 h-3" /> : <EyeOff className="w-3 h-3" />}
+                      <span>{algunOculto ? "Mostrar Todos" : "Ocultar Todos"}</span>
+                    </button>
+                  </div>
+
+                  {/* Lista de Bloques Funcionales con su Ojito individual */}
+                  <div className="flex flex-col gap-1.5 pt-1 border-t border-slate-200/50 dark:border-slate-800/50 max-h-48 overflow-y-auto pr-0.5">
+                    {bloques.map((grupo) => {
+                      const esPuerta = grupo.tipo === "puerta";
+                      const estaOculto = Boolean(grupo.oculto);
+
+                      return (
+                        <div
+                          key={grupo.id}
+                          className={`flex items-center justify-between gap-2 px-2.5 py-1.5 rounded-full border transition ${
+                            estaOculto
+                              ? "bg-amber-500/5 border-amber-500/30 opacity-70"
+                              : "bg-slate-50 dark:bg-slate-800/50 border-slate-200/80 dark:border-slate-800"
+                          }`}
+                        >
+                          <div className="flex items-center gap-1.5 min-w-0 flex-1">
+                            <span className="text-xs shrink-0 select-none">
+                              {esPuerta ? "🚪" : "🗄️"}
+                            </span>
+                            <span className="font-semibold text-[10.5px] text-slate-800 dark:text-slate-100 truncate">
+                              {grupo.nombre}
+                            </span>
+                            <span className="text-[9px] opacity-60 shrink-0 font-mono">
+                              ({grupo.piezas.length} pzas)
+                            </span>
+                          </div>
+
+                          {/* Botón Bombillito / Ojito por bloque */}
+                          <button
+                            type="button"
+                            onClick={() => pasoP00 && conmutarVisibilidadGrupoCinematico(pasoP00.id, grupo.id)}
+                            title={estaOculto ? "Mostrar este bloque en 3D" : "Ocultar este bloque en 3D"}
+                            className={`p-1 rounded-full transition shrink-0 cursor-pointer border ${
+                              estaOculto
+                                ? "bg-amber-500/20 text-amber-500 border-amber-500/40 hover:bg-amber-500/30"
+                                : "bg-white dark:bg-slate-900 text-slate-400 hover:text-amber-500 border-slate-200 dark:border-slate-700"
+                            }`}
+                          >
+                            {estaOculto ? <EyeOff className="w-3 h-3" /> : <Eye className="w-3 h-3" />}
+                          </button>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              );
+            })()}
+
             {/* Pieza Master / Base de Banco */}
-            <div className="flex flex-col gap-1.5 p-2.5 rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-500/5">
+            <div className="flex flex-col gap-1.5 p-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-500/5">
               <div className="flex items-center justify-between">
-                <span className="font-bold flex items-center gap-1">
+                <span className="font-bold flex items-center gap-1 text-xs">
                   <Box className="w-3.5 h-3.5 text-cyan-600" /> Pieza Master (Banco de Trabajo)
                 </span>
                 <span className="text-[10px] opacity-60">Apoyada fija</span>
@@ -833,15 +1029,143 @@ export default function StepManagerPanel() {
               <select
                 value={pasoActivo.piezaMaster || ""}
                 onChange={(e) => actualizarPasoManual(pasoActivo.id, { piezaMaster: e.target.value })}
-                className="w-full px-2 py-1 rounded-full border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-xs font-semibold outline-none"
+                className="w-full px-3 py-1.5 rounded-full border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-xs font-semibold outline-none cursor-pointer"
               >
-                <option value="">-- Selecciona la pieza base de apoyo --</option>
-                {piezasMadera.map((p) => (
-                  <option key={p} value={p}>
-                    {p}
-                  </option>
-                ))}
+                <option value="">
+                  {tablerosPasoActivo.length > 0
+                    ? "-- Selecciona la pieza base de apoyo --"
+                    : "-- Primero selecciona piezas de madera para este paso --"}
+                </option>
+                {tablerosPasoActivo.map((p) => {
+                  const nombreLimpio = extraerPiezaMadre(p);
+                  return (
+                    <option key={p} value={p}>
+                      {nombreLimpio} {p !== nombreLimpio ? `(${p})` : ""}
+                    </option>
+                  );
+                })}
               </select>
+
+              {/* Botonera de Orientación Banco de Trabajo (Giro X / Y) */}
+              {(() => {
+                const rotacionBanco = pasoActivo.orientacionBanco?.rotacion || [0, 0, 0];
+                const rotX = rotacionBanco[0] || 0;
+                const rotY = rotacionBanco[1] || 0;
+                const rotZ = rotacionBanco[2] || 0;
+
+                const isXPosActive = rotX === 90;
+                const isXNegActive = rotX === -90;
+                const isYPosActive = rotY === 90;
+                const isYNegActive = rotY === -90;
+
+                const toggleRotacionBanco = (eje: "X" | "Y", anguloObjetivo: 90 | -90) => {
+                  const anguloActual = eje === "X" ? rotX : rotY;
+                  const nuevoAngulo = anguloActual === anguloObjetivo ? 0 : anguloObjetivo;
+                  const nuevoX = eje === "X" ? nuevoAngulo : rotX;
+                  const nuevoY = eje === "Y" ? nuevoAngulo : rotY;
+
+                  actualizarPasoManual(pasoActivo.id, {
+                    orientacionBanco: {
+                      rotacion: [nuevoX, nuevoY, rotZ],
+                      apoyoEnPiso: pasoActivo.orientacionBanco?.apoyoEnPiso ?? true,
+                    },
+                  });
+                };
+
+                return (
+                  <div className="flex flex-col gap-1.5 pt-1.5 border-t border-slate-200/60 dark:border-slate-800/60">
+                    <div className="flex items-center justify-between text-[11px]">
+                      <span className="font-semibold text-slate-600 dark:text-slate-300">
+                        Giro Banco de Trabajo:
+                      </span>
+                      <div className="flex items-center gap-1.5">
+                        <span className="px-2.5 py-0.5 rounded-full bg-slate-200/80 dark:bg-slate-800 text-[10px] font-mono font-bold text-cyan-600 dark:text-cyan-400">
+                          X: {rotX}° | Y: {rotY}°
+                        </span>
+                        {(rotX !== 0 || rotY !== 0) && (
+                          <button
+                            type="button"
+                            onClick={() =>
+                              actualizarPasoManual(pasoActivo.id, {
+                                orientacionBanco: {
+                                  rotacion: [0, 0, 0],
+                                  apoyoEnPiso: pasoActivo.orientacionBanco?.apoyoEnPiso ?? true,
+                                },
+                              })
+                            }
+                            title="Restablecer giro a 0°"
+                            className="px-2 py-0.5 rounded-full bg-red-100 hover:bg-red-200 dark:bg-red-950/50 dark:hover:bg-red-900/50 text-red-600 dark:text-red-400 text-[10px] font-semibold transition-colors cursor-pointer"
+                          >
+                            0°
+                          </button>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-1.5">
+                      <button
+                        type="button"
+                        onClick={() => toggleRotacionBanco("X", 90)}
+                        title={isXPosActive ? "Desactivar giro X +90° (volver a 0°)" : "Activar giro X +90°"}
+                        style={isXPosActive ? { backgroundColor: botonActivoColor, borderColor: botonActivoColor } : undefined}
+                        className={`flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-full border text-xs font-semibold shadow-xs active:scale-95 transition-all cursor-pointer ${
+                          isXPosActive
+                            ? "text-white shadow-sm"
+                            : "border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:border-cyan-500 hover:text-cyan-600 dark:hover:text-cyan-400"
+                        }`}
+                      >
+                        <RotateCw className={`w-3.5 h-3.5 ${isXPosActive ? "text-white" : "text-cyan-600 dark:text-cyan-400"}`} />
+                        <span>Giro X +90°</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => toggleRotacionBanco("X", -90)}
+                        title={isXNegActive ? "Desactivar giro X -90° (volver a 0°)" : "Activar giro X -90°"}
+                        style={isXNegActive ? { backgroundColor: botonActivoColor, borderColor: botonActivoColor } : undefined}
+                        className={`flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-full border text-xs font-semibold shadow-xs active:scale-95 transition-all cursor-pointer ${
+                          isXNegActive
+                            ? "text-white shadow-sm"
+                            : "border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:border-cyan-500 hover:text-cyan-600 dark:hover:text-cyan-400"
+                        }`}
+                      >
+                        <RotateCcw className={`w-3.5 h-3.5 ${isXNegActive ? "text-white" : "text-cyan-600 dark:text-cyan-400"}`} />
+                        <span>Giro X -90°</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => toggleRotacionBanco("Y", 90)}
+                        title={isYPosActive ? "Desactivar giro Y +90° (volver a 0°)" : "Activar giro Y +90°"}
+                        style={isYPosActive ? { backgroundColor: botonActivoColor, borderColor: botonActivoColor } : undefined}
+                        className={`flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-full border text-xs font-semibold shadow-xs active:scale-95 transition-all cursor-pointer ${
+                          isYPosActive
+                            ? "text-white shadow-sm"
+                            : "border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:border-cyan-500 hover:text-cyan-600 dark:hover:text-cyan-400"
+                        }`}
+                      >
+                        <RotateCw className={`w-3.5 h-3.5 ${isYPosActive ? "text-white" : "text-cyan-600 dark:text-cyan-400"}`} />
+                        <span>Giro Y +90°</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => toggleRotacionBanco("Y", -90)}
+                        title={isYNegActive ? "Desactivar giro Y -90° (volver a 0°)" : "Activar giro Y -90°"}
+                        style={isYNegActive ? { backgroundColor: botonActivoColor, borderColor: botonActivoColor } : undefined}
+                        className={`flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-full border text-xs font-semibold shadow-xs active:scale-95 transition-all cursor-pointer ${
+                          isYNegActive
+                            ? "text-white shadow-sm"
+                            : "border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:border-cyan-500 hover:text-cyan-600 dark:hover:text-cyan-400"
+                        }`}
+                      >
+                        <RotateCcw className={`w-3.5 h-3.5 ${isYNegActive ? "text-white" : "text-cyan-600 dark:text-cyan-400"}`} />
+                        <span>Giro Y -90°</span>
+                      </button>
+                    </div>
+                  </div>
+                );
+              })()}
 
               <div className="flex items-center justify-between pt-1 text-[11px]">
                 <label className="flex items-center gap-1.5 cursor-pointer">
@@ -860,80 +1184,6 @@ export default function StepManagerPanel() {
                   />
                   <span>Apoyar en ras del suelo (Y = 0)</span>
                 </label>
-              </div>
-            </div>
-
-            {/* Asignación de Piezas de Madera */}
-            <div className="flex flex-col gap-1.5">
-              <span className="font-bold tracking-wide uppercase opacity-70 text-[10px] flex items-center gap-1">
-                <Layers className="w-3 h-3 text-amber-600" /> Piezas de Madera Participantes
-              </span>
-
-              <div className="flex flex-wrap gap-1.5 max-h-36 overflow-y-auto p-1 border border-slate-200 dark:border-slate-800 rounded-lg">
-                {piezasMadera.map((pieza) => {
-                  const asignada = pasoActivo.piezasAsignadas.includes(pieza);
-                  return (
-                    <button
-                      key={pieza}
-                      type="button"
-                      onClick={() =>
-                        asignada
-                          ? desasignarPiezaDePasoManual(pasoActivo.id, pieza)
-                          : asignarPiezaAPasoManual(pasoActivo.id, pieza)
-                      }
-                      style={
-                        asignada
-                          ? { backgroundColor: botonActivoColor, color: "#ffffff", borderColor: botonActivoColor }
-                          : {}
-                      }
-                      className={`px-2.5 py-1 rounded-full text-[10px] font-semibold border transition flex items-center gap-1 ${
-                        asignada
-                          ? "shadow-sm"
-                          : "border-slate-300 dark:border-slate-700 opacity-70 hover:opacity-100"
-                      }`}
-                    >
-                      {asignada && <Check className="w-2.5 h-2.5" />}
-                      <span className="truncate max-w-[140px]">{pieza}</span>
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-
-            {/* Asignación de Herrajes */}
-            <div className="flex flex-col gap-1.5">
-              <span className="font-bold tracking-wide uppercase opacity-70 text-[10px] flex items-center gap-1">
-                <Hammer className="w-3 h-3 text-slate-500" /> Herrajes Participantes
-              </span>
-
-              <div className="flex flex-wrap gap-1.5 max-h-36 overflow-y-auto p-1 border border-slate-200 dark:border-slate-800 rounded-lg">
-                {herrajesDisponibles.map((herraje) => {
-                  const asignado = pasoActivo.herrajesAsignados.includes(herraje);
-                  return (
-                    <button
-                      key={herraje}
-                      type="button"
-                      onClick={() =>
-                        asignado
-                          ? desasignarHerrajeDePasoManual(pasoActivo.id, herraje)
-                          : asignarHerrajeAPasoManual(pasoActivo.id, herraje)
-                      }
-                      style={
-                        asignado
-                          ? { backgroundColor: botonActivoColor, color: "#ffffff", borderColor: botonActivoColor }
-                          : {}
-                      }
-                      className={`px-2.5 py-1 rounded-full text-[10px] font-semibold border transition flex items-center gap-1 ${
-                        asignado
-                          ? "shadow-sm"
-                          : "border-slate-300 dark:border-slate-700 opacity-70 hover:opacity-100"
-                      }`}
-                    >
-                      {asignado && <Check className="w-2.5 h-2.5" />}
-                      <span className="truncate max-w-[140px]">{herraje}</span>
-                    </button>
-                  );
-                })}
               </div>
             </div>
           </div>

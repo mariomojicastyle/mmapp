@@ -8,7 +8,7 @@
  */
 
 import { create } from "zustand";
-import { extraerPiezaMadre, perteneceAPiezaMadre, agruparMallasEnPiezasMadre } from "./piezaMadreUtils";
+import { extraerPiezaMadre, perteneceAPiezaMadre, agruparMallasEnPiezasMadre, esHerrajeNombre, anotarInstanciasFisicas } from "./piezaMadreUtils";
 
 // 🏷️ Versión canónica del sistema y store
 export const APP_VERSION = "v1.0.1";
@@ -635,6 +635,7 @@ export interface GrupoCinematicoShowcase {
 
 export interface ModoPickingManualState {
   activo: boolean;
+  modo?: "agregar" | "retirar";
   grupoId: string | null;
   pasoId: string | null;
   piezasTemporalmenteSeleccionadas: string[];
@@ -682,6 +683,8 @@ export interface PasoManualStudio {
   };
   piezasAsignadas: string[];
   herrajesAsignados: string[];
+  piezasOcultas?: boolean; // 💡 Apagar / Prender piezas de este paso en el 3D
+  ocultarNoAsignadas?: boolean; // 💡 Apagar piezas y herrajes que no pertenecen a este paso (Aislar Paso)
   secuencia: ElementoSecuenciaCinematica[];
   
   // Locución TTS Multilingüe (Español, Português, Inglés)
@@ -1256,11 +1259,15 @@ export interface State3BF {
   asignarPiezaAGrupoCinematico: (pasoId: string, grupoId: string, nombrePieza: string) => void;
   desasignarPiezaDeGrupoCinematico: (pasoId: string, grupoId: string, nombrePieza: string) => void;
   conmutarVisibilidadGrupoCinematico: (pasoId: string, grupoId: string) => void;
+  conmutarVisibilidadTodosGruposCinematicos: (pasoId?: string, forzarOcultar?: boolean) => void;
+  conmutarVisibilidadPiezasPaso: (pasoId: string) => void;
+  conmutarOcultarNoAsignadasPaso: (pasoId: string) => void;
   
   // 🎯 Modo Picking 3D / Cuentagotas para Asignación de Piezas
   modoPickingManual: ModoPickingManualState;
-  iniciarPickingManual: (pasoId: string, grupoId?: string | null) => void;
+  iniciarPickingManual: (pasoId: string, grupoId?: string | null, modo?: "agregar" | "retirar") => void;
   togglePiezaEnPickingManual: (piezaMadre: string) => void;
+  retirarComponenteManual3D: (meshTargetKey: string, pasoId?: string) => void;
   limpiarPickingManual: () => void;
   confirmarPickingManual: () => void;
   setIsTimelinePlaying: (playing: boolean) => void;
@@ -1982,15 +1989,25 @@ export const use3BFStore = create<State3BF>((set, get) => ({
   },
   desasignarPiezaDePasoManual: (pasoId, nombrePieza) => {
     const state = get();
+    const pm = extraerPiezaMadre(nombrePieza);
     const actualizados = state.pasosManual.map((p) => {
       if (p.id !== pasoId) return p;
       return {
         ...p,
-        piezasAsignadas: p.piezasAsignadas.filter((nom) => nom !== nombrePieza),
-        secuencia: p.secuencia.filter((s) => s.nombreNodo !== nombrePieza),
+        piezasAsignadas: p.piezasAsignadas.filter((nom) => nom !== nombrePieza && extraerPiezaMadre(nom) !== pm),
+        secuencia: p.secuencia.filter((s) => s.nombreNodo !== nombrePieza && extraerPiezaMadre(s.nombreNodo) !== pm),
       };
     });
-    set({ pasosManual: actualizados });
+    let nuevoPicking = state.modoPickingManual;
+    if (state.modoPickingManual.activo && state.modoPickingManual.pasoId === pasoId) {
+      nuevoPicking = {
+        ...state.modoPickingManual,
+        piezasTemporalmenteSeleccionadas: state.modoPickingManual.piezasTemporalmenteSeleccionadas.filter(
+          (nom) => nom !== nombrePieza && extraerPiezaMadre(nom) !== pm
+        ),
+      };
+    }
+    set({ pasosManual: actualizados, modoPickingManual: nuevoPicking });
     guardarPasosEnCacheLocal(actualizados, state.manualActivoGuardado);
   },
   asignarHerrajeAPasoManual: (pasoId, nombreHerraje) => {
@@ -2007,15 +2024,25 @@ export const use3BFStore = create<State3BF>((set, get) => ({
   },
   desasignarHerrajeDePasoManual: (pasoId, nombreHerraje) => {
     const state = get();
+    const pm = extraerPiezaMadre(nombreHerraje);
     const actualizados = state.pasosManual.map((p) => {
       if (p.id !== pasoId) return p;
       return {
         ...p,
-        herrajesAsignados: p.herrajesAsignados.filter((nom) => nom !== nombreHerraje),
-        secuencia: p.secuencia.filter((s) => s.nombreNodo !== nombreHerraje),
+        herrajesAsignados: p.herrajesAsignados.filter((nom) => nom !== nombreHerraje && extraerPiezaMadre(nom) !== pm),
+        secuencia: p.secuencia.filter((s) => s.nombreNodo !== nombreHerraje && extraerPiezaMadre(s.nombreNodo) !== pm),
       };
     });
-    set({ pasosManual: actualizados });
+    let nuevoPicking = state.modoPickingManual;
+    if (state.modoPickingManual.activo && state.modoPickingManual.pasoId === pasoId) {
+      nuevoPicking = {
+        ...state.modoPickingManual,
+        piezasTemporalmenteSeleccionadas: state.modoPickingManual.piezasTemporalmenteSeleccionadas.filter(
+          (nom) => nom !== nombreHerraje && extraerPiezaMadre(nom) !== pm
+        ),
+      };
+    }
+    set({ pasosManual: actualizados, modoPickingManual: nuevoPicking });
     guardarPasosEnCacheLocal(actualizados, state.manualActivoGuardado);
   },
   autoGenerarSecuenciaPaso: (pasoId) => {
@@ -2349,15 +2376,56 @@ export const use3BFStore = create<State3BF>((set, get) => ({
     guardarPasosEnCacheLocal(actualizados, state.manualActivoGuardado);
   },
 
+  conmutarVisibilidadTodosGruposCinematicos: (pasoId = "P00", forzarOcultar) => {
+    const state = get();
+    const actualizados = state.pasosManual.map((p) => {
+      if ((p.id !== pasoId && p.tipo !== "showcase") || !p.showcase) return p;
+      const grupos = p.showcase.gruposCinematicos || [];
+      const algunVisible = grupos.some((g) => !g.oculto);
+      const nuevoEstado = forzarOcultar !== undefined ? forzarOcultar : algunVisible;
+      const modificados = grupos.map((g) => ({ ...g, oculto: nuevoEstado }));
+      return {
+        ...p,
+        showcase: {
+          ...p.showcase,
+          gruposCinematicos: modificados,
+        },
+      };
+    });
+    set({ pasosManual: actualizados });
+    guardarPasosEnCacheLocal(actualizados, state.manualActivoGuardado);
+  },
+
+  conmutarVisibilidadPiezasPaso: (pasoId) => {
+    const state = get();
+    const actualizados = state.pasosManual.map((p) => {
+      if (p.id !== pasoId) return p;
+      return { ...p, piezasOcultas: !p.piezasOcultas };
+    });
+    set({ pasosManual: actualizados });
+    guardarPasosEnCacheLocal(actualizados, state.manualActivoGuardado);
+  },
+
+  conmutarOcultarNoAsignadasPaso: (pasoId) => {
+    const state = get();
+    const actualizados = state.pasosManual.map((p) => {
+      if (p.id !== pasoId) return p;
+      return { ...p, ocultarNoAsignadas: !p.ocultarNoAsignadas };
+    });
+    set({ pasosManual: actualizados });
+    guardarPasosEnCacheLocal(actualizados, state.manualActivoGuardado);
+  },
+
   // 🎯 Modo Picking 3D / Cuentagotas para Asignación de Piezas
   modoPickingManual: {
     activo: false,
+    modo: "agregar",
     grupoId: null,
     pasoId: null,
     piezasTemporalmenteSeleccionadas: [],
   },
 
-  iniciarPickingManual: (pasoId, grupoId = null) => {
+  iniciarPickingManual: (pasoId, grupoId = null, modo = "agregar") => {
     const state = get();
     const paso = state.pasosManual.find((p) => p.id === pasoId);
     let piezasIniciales: string[] = [];
@@ -2366,15 +2434,143 @@ export const use3BFStore = create<State3BF>((set, get) => ({
       if (grupo) {
         piezasIniciales = [...grupo.piezas];
       }
+    } else if (paso) {
+      // 🧩 Modo Ensamble (Paso 01+): piezas de madera y herrajes asignados al paso
+      piezasIniciales = Array.from(new Set([...(paso.piezasAsignadas || []), ...(paso.herrajesAsignados || [])]));
     }
     set({
       modoPickingManual: {
         activo: true,
+        modo,
         grupoId: grupoId || null,
         pasoId,
         piezasTemporalmenteSeleccionadas: piezasIniciales,
       },
     });
+  },
+
+  retirarComponenteManual3D: (meshTargetKey, pasoId) => {
+    const state = get();
+    const targetPasoId = pasoId || state.pasoActivoManualId;
+    const paso = state.pasosManual.find((p) => p.id === targetPasoId);
+    if (!paso) return;
+
+    const targetClean = meshTargetKey.replace(/^RH_OUT:\s*/i, "").trim();
+    const targetBase = targetClean.replace(/\s*\(\d+\)$/, "").trim();
+    const targetPM = extraerPiezaMadre(targetClean);
+
+    const coincideConTarget = (entry: string) => {
+      if (!entry) return false;
+      const entryClean = entry.replace(/^RH_OUT:\s*/i, "").trim();
+      if (entryClean === targetClean || entry === meshTargetKey) return true;
+      const entryPM = extraerPiezaMadre(entryClean);
+      if (entryPM === targetPM || entryPM === targetClean) return true;
+      return false;
+    };
+
+    let nuevosHerrajes = [...paso.herrajesAsignados];
+    let nuevasPiezas = [...paso.piezasAsignadas];
+
+    // Verificar si en herrajes hay una entrada genérica que abarca este herraje
+    const tieneGenericoEnHerrajes = nuevosHerrajes.some((h) => {
+      const hClean = h.replace(/^RH_OUT:\s*/i, "").trim();
+      return (hClean === targetBase || extraerPiezaMadre(hClean) === targetBase) && !hClean.includes("(");
+    });
+
+    if (tieneGenericoEnHerrajes && targetClean !== targetBase) {
+      // Si existía entrada genérica (ej. "Cavilha"), expandirla a todas las instancias físicas excepto la retirada
+      const realMeshes: any[] = [];
+      Object.values(state.instancias).forEach((inst) => {
+        if (inst.resultado?.real_meshes) {
+          realMeshes.push(...inst.resultado.real_meshes);
+        }
+      });
+      const anotadas = anotarInstanciasFisicas(realMeshes);
+      const instanciasDeEsteTipo = anotadas
+        .filter((m) => {
+          const mClean = (m.name || "").replace(/^RH_OUT:\s*/i, "").trim();
+          return mClean === targetBase || extraerPiezaMadre(mClean).replace(/\s*\(\d+\)$/, "").trim() === targetBase;
+        })
+        .map((m) => m.instanciaKey)
+        .filter(Boolean);
+
+      const instanciasUnicas = Array.from(new Set(instanciasDeEsteTipo));
+      if (instanciasUnicas.length > 0) {
+        nuevosHerrajes = nuevosHerrajes.filter((h) => {
+          const hClean = h.replace(/^RH_OUT:\s*/i, "").trim();
+          return hClean !== targetBase && extraerPiezaMadre(hClean) !== targetBase;
+        });
+        const restantes = instanciasUnicas.filter((instKey) => !coincideConTarget(instKey));
+        nuevosHerrajes = Array.from(new Set([...nuevosHerrajes, ...restantes]));
+      } else {
+        nuevosHerrajes = nuevosHerrajes.filter((h) => !coincideConTarget(h));
+      }
+    } else {
+      nuevosHerrajes = nuevosHerrajes.filter((h) => !coincideConTarget(h));
+    }
+
+    // Mismo tratamiento por si hubiera tableros con entrada genérica
+    const tieneGenericoEnPiezas = nuevasPiezas.some((p) => {
+      const pClean = p.replace(/^RH_OUT:\s*/i, "").trim();
+      return (pClean === targetBase || extraerPiezaMadre(pClean) === targetBase) && !pClean.includes("(");
+    });
+
+    if (tieneGenericoEnPiezas && targetClean !== targetBase) {
+      const realMeshes: any[] = [];
+      Object.values(state.instancias).forEach((inst) => {
+        if (inst.resultado?.real_meshes) {
+          realMeshes.push(...inst.resultado.real_meshes);
+        }
+      });
+      const anotadas = anotarInstanciasFisicas(realMeshes);
+      const instanciasDeEsteTipo = anotadas
+        .filter((m) => {
+          const mClean = (m.name || "").replace(/^RH_OUT:\s*/i, "").trim();
+          return mClean === targetBase || extraerPiezaMadre(mClean).replace(/\s*\(\d+\)$/, "").trim() === targetBase;
+        })
+        .map((m) => m.instanciaKey)
+        .filter(Boolean);
+
+      const instanciasUnicas = Array.from(new Set(instanciasDeEsteTipo));
+      if (instanciasUnicas.length > 0) {
+        nuevasPiezas = nuevasPiezas.filter((p) => {
+          const pClean = p.replace(/^RH_OUT:\s*/i, "").trim();
+          return pClean !== targetBase && extraerPiezaMadre(pClean) !== targetBase;
+        });
+        const restantes = instanciasUnicas.filter((instKey) => !coincideConTarget(instKey));
+        nuevasPiezas = Array.from(new Set([...nuevasPiezas, ...restantes]));
+      } else {
+        nuevasPiezas = nuevasPiezas.filter((p) => !coincideConTarget(p));
+      }
+    } else {
+      nuevasPiezas = nuevasPiezas.filter((p) => !coincideConTarget(p));
+    }
+
+    const nuevaSecuencia = (paso.secuencia || []).filter((s) => !coincideConTarget(s.nombreNodo));
+
+    const actualizados = state.pasosManual.map((p) => {
+      if (p.id !== targetPasoId) return p;
+      return {
+        ...p,
+        piezasAsignadas: nuevasPiezas,
+        herrajesAsignados: nuevosHerrajes,
+        secuencia: nuevaSecuencia,
+      };
+    });
+
+    let nuevoPicking = state.modoPickingManual;
+    if (state.modoPickingManual.activo && state.modoPickingManual.pasoId === targetPasoId) {
+      nuevoPicking = {
+        ...state.modoPickingManual,
+        piezasTemporalmenteSeleccionadas: Array.from(new Set([...nuevasPiezas, ...nuevosHerrajes])),
+      };
+    }
+
+    set({
+      pasosManual: actualizados,
+      modoPickingManual: nuevoPicking,
+    });
+    guardarPasosEnCacheLocal(actualizados, state.manualActivoGuardado);
   },
 
   togglePiezaEnPickingManual: (piezaMadre) => {
@@ -2391,6 +2587,11 @@ export const use3BFStore = create<State3BF>((set, get) => ({
       if (grupo) {
         listaBase = grupo.piezas;
       }
+    } else if (modoPickingManual.pasoId) {
+      const paso = pasosManual.find((p) => p.id === modoPickingManual.pasoId);
+      if (paso) {
+        listaBase = Array.from(new Set([...(paso.piezasAsignadas || []), ...(paso.herrajesAsignados || [])]));
+      }
     }
 
     const existe = listaBase.some((p) => p === pm || extraerPiezaMadre(p) === pm);
@@ -2398,7 +2599,7 @@ export const use3BFStore = create<State3BF>((set, get) => ({
       ? listaBase.filter((p) => p !== pm && extraerPiezaMadre(p) !== pm)
       : [...listaBase, pm];
 
-    // Sincronización reactiva en tiempo real si hay un grupo de cajón activo
+    // Sincronización reactiva en tiempo real si hay un grupo de cajón activo O paso de ensamble
     let pasosActualizados = pasosManual;
     if (modoPickingManual.pasoId && modoPickingManual.grupoId) {
       pasosActualizados = pasosManual.map((p) => {
@@ -2413,6 +2614,15 @@ export const use3BFStore = create<State3BF>((set, get) => ({
             ...p.showcase,
             gruposCinematicos: modificados,
           },
+        };
+      });
+    } else if (modoPickingManual.pasoId) {
+      pasosActualizados = pasosManual.map((p) => {
+        if (p.id !== modoPickingManual.pasoId) return p;
+        return {
+          ...p,
+          piezasAsignadas: nuevas.filter((pz) => !esHerrajeNombre(pz)),
+          herrajesAsignados: nuevas.filter((pz) => esHerrajeNombre(pz)),
         };
       });
     }
@@ -2432,6 +2642,7 @@ export const use3BFStore = create<State3BF>((set, get) => ({
     set({
       modoPickingManual: {
         activo: false,
+        modo: "agregar",
         grupoId: null,
         pasoId: null,
         piezasTemporalmenteSeleccionadas: [],
@@ -2445,6 +2656,7 @@ export const use3BFStore = create<State3BF>((set, get) => ({
       set({
         modoPickingManual: {
           activo: false,
+          modo: "agregar",
           grupoId: null,
           pasoId: null,
           piezasTemporalmenteSeleccionadas: [],
@@ -2483,14 +2695,27 @@ export const use3BFStore = create<State3BF>((set, get) => ({
       const st = get();
       guardarPasosEnCacheLocal(actualizados, st.manualActivoGuardado);
     } else {
+      const actualizados = pasosManual.map((p) => {
+        if (p.id !== modoPickingManual.pasoId) return p;
+        const nuevas = modoPickingManual.piezasTemporalmenteSeleccionadas;
+        return {
+          ...p,
+          piezasAsignadas: nuevas.filter((pz) => !esHerrajeNombre(pz)),
+          herrajesAsignados: nuevas.filter((pz) => esHerrajeNombre(pz)),
+        };
+      });
       set({
+        pasosManual: actualizados,
         modoPickingManual: {
           activo: false,
+          modo: "agregar",
           grupoId: null,
           pasoId: null,
           piezasTemporalmenteSeleccionadas: [],
         },
       });
+      const st = get();
+      guardarPasosEnCacheLocal(actualizados, st.manualActivoGuardado);
     }
   },
 

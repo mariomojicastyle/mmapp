@@ -22,25 +22,13 @@
  * - "RH_OUT:Parafuso A" -> "Parafuso A"
  * - "RH_OUT:Cavilha" -> "Cavilha"
  */
-export function extraerPiezaMadre(rawName?: string | null): string {
-  if (!rawName) return "";
-
-  // 1. Quitar prefijo RH_OUT: o RH_IN:
-  let clean = rawName.replace(/^RH_(?:OUT|IN):\s*/i, "").trim();
-
-  // 2. Descartar sufijos de clonación Three.js (.001, .002, etc.) al resolver pieza madre
-  clean = clean.replace(/\.\d{3}$/, "").trim();
-
-  // Detectar y preservar sufijo de instancia física si existe (ej. "(1)", "(2)")
-  const matchInstancia = clean.match(/\s*\(\d+\)$/);
-  const sufijoInstancia = matchInstancia ? matchInstancia[0] : "";
-  if (sufijoInstancia) {
-    clean = clean.slice(0, clean.length - sufijoInstancia.length).trim();
-  }
-
-  // 3. Detectar si es un herraje conocido (no debe ser agrupado como madera)
-  const cleanLower = clean.toLowerCase();
-  const esHerraje =
+/**
+ * Determina si una pieza o malla corresponde a un herraje/accesorio de ensamble.
+ */
+export function esHerrajeNombre(name?: string | null): boolean {
+  if (!name) return false;
+  const cleanLower = name.toLowerCase().replace(/^rh_(?:out|in):\s*/i, "").trim();
+  return (
     cleanLower.includes("perno") ||
     cleanLower.includes("caja") ||
     cleanLower.includes("tarugo") ||
@@ -68,8 +56,29 @@ export function extraerPiezaMadre(rawName?: string | null): string {
     cleanLower.includes("clavo") ||
     cleanLower.includes("grampo") ||
     cleanLower.includes("prego") ||
-    cleanLower.includes("tampa");
+    cleanLower.includes("tampa")
+  ) && !cleanLower.includes("cajon") && !cleanLower.includes("gaveta");
+}
 
+export function extraerPiezaMadre(rawName?: string | null): string {
+  if (!rawName) return "";
+
+  // 1. Quitar prefijo RH_OUT: o RH_IN:
+  let clean = rawName.replace(/^RH_(?:OUT|IN):\s*/i, "").trim();
+
+  // 2. Descartar sufijos de clonación Three.js (.001, .002, etc.) al resolver pieza madre
+  clean = clean.replace(/\.\d{3}$/, "").trim();
+
+  // Detectar y preservar sufijo de instancia física si existe (ej. "(1)", "(2)")
+  const matchInstancia = clean.match(/\s*\(\d+\)$/);
+  const sufijoInstancia = matchInstancia ? matchInstancia[0] : "";
+  if (sufijoInstancia) {
+    clean = clean.slice(0, clean.length - sufijoInstancia.length).trim();
+  }
+
+  const esHerraje = esHerrajeNombre(clean);
+
+  const cleanLower = clean.toLowerCase();
   if (esHerraje && !cleanLower.includes("cajon") && !cleanLower.includes("gaveta")) {
     return clean + sufijoInstancia;
   }
