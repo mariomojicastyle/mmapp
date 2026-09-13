@@ -21,6 +21,13 @@ Este archivo es la "Memoria RAM" para Antigravity. Contiene el contexto de lo qu
 - [x] **Persistencia Reactiva & Memoria Local**: Indexación inmediata y sincronización fluida entre Supabase, memoria local y la memoria activa `.agent/skills/b2b-sales-closer/ventas_ram.md`.
 - [x] **Protocolo Antigravity de Fluidez Bilingüe (2 Bloques de Código en 1 Clic)**: Respuestas en el chat entregadas siempre en 2 bloques de código markdown separados (Bloque 1 en Português do Brasil para copiar en 1 clic + Bloque 2 en Español para auditoría rápida), inyectando ambos idiomas en la base de datos de Supabase y en `ventas_ram_storage.json` para mantener el historial vivo.
 
+- [x] **[12 de Septiembre, 2026] Hito 115: Resolución de Posición de Seguro Plástico en GHX, Diagnóstico de Índices de Tornillería y Acoplamiento Cinemático Automático de Herrajes de Cajón (Parafuso F, Parafuso E & Suporte) en Manual 3D Studio (3dBimFab)**:
+  - **Resolución de Malla 4 en Grasshopper (GHX)**: La posición del seguro plástico de la corredera se reubicó y corrigió directamente en el archivo `Comoda Ravenna.ghx`. Tras sincronizar con 'Actualizar GHX' y persistir en el archivo de mueble, la pieza plástica se renderiza en la posición geométrica frontal correcta sin trucos de inversión en código.
+  - **Diagnóstico Integral de Tornillería (Parafuso F y Parafuso E)**: Con 97 tornillos `Parafuso E` y 12 `Parafuso F`, la selección manual de índices numéricos en la interfaz era propensa a asignar tornillos de otros niveles o columnas. En el Cajón 3 se identificaron las ternas de tornillos de corredera móvil en $Z = -0.048, -0.176, -0.340\text{ m}$ ($X = 0.0420$ a la izquierda y $X = 0.6275$ a la derecha).
+  - **Acoplamiento Cinemático Automático de Bahía Fisiomecánica (`manualAnimationEngine.ts`)**: Inferencia espacial automática para tornillos `Parafuso F`, `Parafuso E` y `Suporte`: si su centro vertical coincide con el cajón ($|\Delta Y| < 80\text{ mm}$) y están dentro de la columna en $X$, se animan solidariamente al 100% con el cajón sin requerir asignación manual de sub-índices.
+  - **Discriminación Milimétrica Fijo vs Móvil y Blindaje Z de Fondos**: Los tornillos pegados a la estructura del mueble ($\text{distMin} < 25\text{ mm}$, $\text{distMax} < 25\text{ mm}$, $\text{distCentro} < 10\text{ mm}$) o ubicados en la pared trasera del mueble ($Z < -0.400\text{ m}$, como los 13 tornillos de los fondos `Peça 15`) permanecen 100% estáticos en el mueble, mientras que los atornillados al cuerpo del cajón se desplazan colinealmente.
+  - **Recompilación Reactiva en `Viewer3D.tsx`**: Inyección reactiva de cambios en `gruposCinematicos` para recompilar la animación Three.js al instante.
+
 - [x] **[12 de Septiembre, 2026] Hito 114: Versión Estable v1.0 — Vinculación Inteligente Mueble ⇄ Manual (.3bf / .3bm), Guardado Espejo Bidireccional y Persistencia Inmune a F5 en Manual 3D Studio (3dBimFab)**:
   - **Diagnóstico y Eliminación de Duplicidad Fantasma**: Saneamiento de Drive eliminando `manual_mn_ravenna.3bm.json` y unificando el manual canónico `manual_1_comoda_ravenna.3bm.json` con los 6 cajones y la última modificación del usuario (Cajón 6 con 34 piezas).
   - **Arquitectura de Sincronización Espejo (.3bf ⇄ .3bm)**: Hermanamiento automático bidireccional entre el archivo `.3bf` del mueble (`mueble_1789226875940_xq2sn.3bf.json`) y el manual `.3bm`. Todo guardado (sea desde el HUD del visor 3D o el panel de manual) escribe y actualiza simultáneamente ambos archivos en Drive y en `localStorage`.
@@ -44,7 +51,7 @@ Este archivo es la "Memoria RAM" para Antigravity. Contiene el contexto de lo qu
     * *Aislamiento en `Viewer3D.tsx`:* Eventos de canvas neutralizados en modo manual.
     * *Cinemática Automática de Correderas:* Detección automática por cota de altura sin obligar a seleccionar piezas diminutas a mano.
     * *Watchers y Debouncers Silenciados:* `GHXAutoWatcher` deshabilitado en pestaña manual.
-  - **Próximo Foco Activo (Rama `Manual_P00`)**: Aislar y depurar el ciclo de interacción en modo manual, estabilidad de selección y animación continua en Realidad Aumentada (AR).
+  - **Próximo Foco Activo (Rama `3BF_P00_Cajones_ok`)**: Consolidación y refinamiento de pasos siguientes del Manual 3D (Paso 01 en adelante) y optimización de interacción.
 
 - [x] **[11 de Septiembre, 2026] Hito 3BF_Exportacion_GLB_Universal_AntiPlanos (Blindaje Anti-Planos Fantasma, Fusión de Vértices y Compatibilidad Universal glTF 2.0 ~4.9 MB Sin Decodificadores)**:
   - **Diagnóstico Integral de las Patologías de Exportación**:

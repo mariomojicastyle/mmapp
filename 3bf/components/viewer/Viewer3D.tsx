@@ -2641,7 +2641,7 @@ function AssemblyAnimationController({ furnitureGroup }: { furnitureGroup: THREE
     activeStep?.showcase?.ejeGlobal,
     activeStep?.showcase?.abrirCajones,
     activeStep?.showcase?.abrirPuertas,
-    activeStep?.showcase?.gruposCinematicos,
+    JSON.stringify(activeStep?.showcase?.gruposCinematicos),
   ]);
 
   useEffect(() => {

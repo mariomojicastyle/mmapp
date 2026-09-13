@@ -363,13 +363,36 @@ export function compilarAnimacionPaso(
                 return pLow === ik || pLow === cn || ik.startsWith(pLow) || cn.startsWith(pLow);
               });
               if (coincideConGrupo) {
+                // Priorizar piezas estructurales de madera para calcular el centro real del cajón
+                // y evitar distorsiones si se incluyeron accidentalmente tornillos de otras bahías
+                const esHerrajeAux = ik.includes("parafuso") || cn.includes("parafuso") || ik.includes("corredi") || cn.includes("corredi");
+                if (!esHerrajeAux) {
+                  sumYGrupo += p.y;
+                  countYGrupo++;
+                  if (p.x < minXGrupo) minXGrupo = p.x;
+                  if (p.x > maxXGrupo) maxXGrupo = p.x;
+                }
+              }
+            }
+          });
+
+          // Fallback a todas las piezas si el grupo no tenía maderas explícitas
+          if (countYGrupo === 0) {
+            sceneMeshes.forEach((obj) => {
+              const ik = ((obj.userData?.instanciaKey || "") as string).toLowerCase();
+              const cn = ((obj.userData?.cleanName || "") as string).toLowerCase();
+              const p = getSafeRestPosition(obj);
+              if (p && grupo.piezas.some((pz) => {
+                const pLow = pz.toLowerCase().trim();
+                return pLow === ik || pLow === cn || ik.startsWith(pLow) || cn.startsWith(pLow);
+              })) {
                 sumYGrupo += p.y;
                 countYGrupo++;
                 if (p.x < minXGrupo) minXGrupo = p.x;
                 if (p.x > maxXGrupo) maxXGrupo = p.x;
               }
-            }
-          });
+            });
+          }
           const centroXMueble = (minXMueble !== Infinity && maxXMueble !== -Infinity)
             ? (minXMueble + maxXMueble) / 2
             : 0.6475;
@@ -438,23 +461,34 @@ export function compilarAnimacionPaso(
               const esFija = instKey.includes("fija") || cleanName.includes("fija") || nodeName.includes("fija");
               if (esFija) return;
 
-              // 🛡️ REGLA FÍSICA: Tornillos fijados a la corredera fija (hacia el lateral estático del mueble)
+              // 🛡️ REGLA FÍSICA: Tornillos fijados a la corredera fija o a la pared trasera del mueble
               // NOTA: Debe aplicar EXCLUSIVAMENTE a tornillos/parafusos, jamás a las correderas metálicas
               const initPos = getSafeRestPosition(obj);
               const esTornillo = pmObj.includes("parafuso") || pmObj.includes("tornillo") || cleanName.includes("parafuso") || instKey.includes("parafuso");
-              if (esTornillo && correderasFijas.length > 0) {
-                const unidoACorrederaFija = correderasFijas.some((fija) => {
-                  const dy = Math.abs(initPos.y - fija.y);
-                  const dz = Math.abs(initPos.z - fija.z);
-                  if (dy < 0.035 && dz < 0.28) {
-                    if (fija.x < centroXMueble && initPos.x <= fija.x + 0.002) return true;
-                    if (fija.x >= centroXMueble && initPos.x >= fija.x - 0.002) return true;
+              if (esTornillo) {
+                // 🛑 Si el tornillo está en la pared trasera del mueble (Z < -0.40 m, fondos/espalda Peça 15), JAMÁS se mueve con un cajón
+                if (initPos.z < -0.40) return;
+
+                // 🛑 Si el tornillo está pegado al lateral exterior del mueble o al montante divisorio central, es fijo
+                const distMin = initPos.x - minXMueble;
+                const distMax = maxXMueble - initPos.x;
+                const distCentro = Math.abs(initPos.x - centroXMueble);
+                if (distMin < 0.025 || distMax < 0.025 || distCentro < 0.010) return;
+
+                if (correderasFijas.length > 0) {
+                  const unidoACorrederaFija = correderasFijas.some((fija) => {
+                    const dy = Math.abs(initPos.y - fija.y);
+                    const dz = Math.abs(initPos.z - fija.z);
+                    if (dy < 0.035 && dz < 0.28) {
+                      if (fija.x < centroXMueble && initPos.x <= fija.x + 0.002) return true;
+                      if (fija.x >= centroXMueble && initPos.x >= fija.x - 0.002) return true;
+                    }
+                    return false;
+                  });
+                  if (unidoACorrederaFija) {
+                    // 🛑 Este tornillo fija la corredera al lateral del mueble: DEBE PERMANECER FIJO
+                    return;
                   }
-                  return false;
-                });
-                if (unidoACorrederaFija) {
-                  // 🛑 Este tornillo fija la corredera al lateral del mueble: DEBE PERMANECER FIJO
-                  return;
                 }
               }
 
@@ -514,6 +548,75 @@ export function compilarAnimacionPaso(
                     // Guía móvil metálica interior (Malla 3) y gatillo plástico negro (Malla 4) al 100% (solidarios al cajón de madera)
                     tracks.push(generarPistasCajon(obj.uuid, initPos, offset));
                   }
+                }
+              }
+            });
+
+            // 🔩 Blindaje Fisiomecánico de Herrajes del Cajón:
+            // Garantiza que cualquier soporte (Suporte), tornillo de fondo (Parafuso F)
+            // o tornillos de fijación de corredera móvil y frente (Parafuso E)
+            // ubicados en la bahía física de este cajón específico viajen automáticamente al 100% con él
+            sceneMeshes.forEach((obj) => {
+              if (animatedMeshUuids.has(obj.uuid)) return;
+
+              const instKey = ((obj.userData?.instanciaKey || "") as string).toLowerCase().trim();
+              const cleanName = ((obj.userData?.cleanName || "") as string).toLowerCase().trim();
+              const nodeName = (obj.name || "").toLowerCase().trim();
+              const pmObj = extraerPiezaMadre(instKey || cleanName || nodeName).toLowerCase().trim();
+
+              const esHerrajeCajon =
+                pmObj.includes("suporte") ||
+                cleanName.includes("suporte") ||
+                instKey.includes("suporte") ||
+                pmObj.includes("parafuso f") ||
+                cleanName.includes("parafuso f") ||
+                instKey.includes("parafuso f") ||
+                pmObj.includes("parafuso e") ||
+                cleanName.includes("parafuso e") ||
+                instKey.includes("parafuso e");
+
+              if (esHerrajeCajon) {
+                const initPos = getSafeRestPosition(obj);
+
+                // 🛑 REGLA FÍSICA ABSOLUTA: Cualquier tornillo en la pared trasera del mueble
+                // (Z < -0.40 m, como los tornillos y clavos de los fondos Peça 15) es 100% estático
+                if (initPos.z < -0.40) return;
+
+                // Coincidencia con la altura de este cajón específico (tolerancia vertical de 80 mm)
+                if (Math.abs(initPos.y - yCajon) < 0.08) {
+                  // 🛑 Blindaje de Bahía Fisiomecánica: Evitar cruces entre columna izquierda y derecha
+                  if (centroXCajon !== null && Math.abs(centroXCajon - centroXMueble) > 0.05) {
+                    const cajonEnBahiaIzquierda = centroXCajon < centroXMueble;
+                    const herrajeEnBahiaIzquierda = initPos.x < centroXMueble;
+                    if (cajonEnBahiaIzquierda !== herrajeEnBahiaIzquierda) return;
+                  }
+
+                  // 🛑 REGLA FÍSICA PARA TORNILLOS DE CORREDERA (Parafuso E):
+                  // Si el tornillo está atornillando el riel exterior al lateral del mueble o al montante divisorio,
+                  // DEBE PERMANECER 100% FIJO. Solo se mueven los tornillos atornillados al cuerpo del cajón.
+                  const esTornilloCorredera =
+                    pmObj.includes("parafuso e") ||
+                    cleanName.includes("parafuso e") ||
+                    instKey.includes("parafuso e");
+
+                  if (esTornilloCorredera) {
+                    const distMin = initPos.x - minXMueble;
+                    const distMax = maxXMueble - initPos.x;
+                    const distCentro = Math.abs(initPos.x - centroXMueble);
+                    // Si está a < 25 mm del borde del mueble o a < 10 mm del centro, es un tornillo de riel fijo
+                    const esFijoAlMueble = distMin < 0.025 || distMax < 0.025 || distCentro < 0.010;
+                    if (esFijoAlMueble) return;
+                  } else {
+                    // Para Suporte y Parafuso F: tolerancia en X dentro de su propia columna
+                    if (minXGrupo !== Infinity && maxXGrupo !== -Infinity) {
+                      const enMismaColumna = initPos.x >= minXGrupo - 0.025 && initPos.x <= maxXGrupo + 0.025;
+                      if (!enMismaColumna) return;
+                    }
+                  }
+
+                  // ✅ Acoplamiento canónico al 100% de la apertura del cajón
+                  animatedMeshUuids.add(obj.uuid);
+                  tracks.push(generarPistasCajon(obj.uuid, initPos, offset));
                 }
               }
             });

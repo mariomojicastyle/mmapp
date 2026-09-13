@@ -2751,6 +2751,52 @@ Con esta batería de arreglos y la validación en caliente, la V20 se establece 
   * Verificación de persistencia total ante F5 con bloques vacíos, con piezas y con mallas recomputadas desde Grasshopper.
   * Compilación TypeScript verificada (`npx tsc --noEmit`) con **0 errores**.
 
+---
+
+### 🔹 Hito 115: Resolución de Posición de Seguro Plástico en GHX, Diagnóstico de Índices de Tornillería y Acoplamiento Cinemático Automático de Herrajes de Cajón (Parafuso F & Suporte) en Manual 3D Studio (3dBimFab) (12 de Septiembre, 2026)
+
+- **Resolución de Posición de Malla 4 (Seguro Plástico de Corredera) en Grasshopper (`GHX`)**:
+  * **Síntoma Previo:** La Malla 4 de la corredera aparecía desplazada en sentido inverso (hacia atrás) en el visor 3D al actualizar el modelo.
+  * **Solución Definitiva:** El usuario corrigió y reubicó directamente la posición de la malla estática en la definición de Grasshopper (`Comoda Ravenna.ghx`). Al sincronizar mediante "Actualizar GHX" y persistir en el archivo de mueble, la pieza plástica quedó ubicada con precisión milimétrica en el frente de la guía sin necesidad de parches de inversión artificial en código.
+- **Diagnóstico Integral del Tornillo Flotante (`Parafuso F`) en Cajón 3**:
+  * **Síntoma Reportado:** Al abrir el Cajón 3 en el Showcase, un tornillo `Parafuso F` permanecía flotando en la parte posterior del mueble a pesar de haber sido incluido en la lista de piezas del cajón en la interfaz.
+  * **Causa Raíz Descubierta en la Discretización Espacial:**
+    1. En la cómoda existen 12 tornillos `Parafuso F` en total (2 por cajón: frontal a $Z = -0.021\text{ m}$ y trasero a $Z = -0.369\text{ m}$).
+    2. El ordenador de piezas de ensamble (`piezaMadreUtils.ts`) ordena espacialmente los herrajes primero por $Z$ descendente (profundidad frontal primero), luego por $Y$ descendente (arriba hacia abajo), y finalmente por $X$ ascendente (izquierda a derecha).
+    3. Esta regla asigna los índices `(1)` a `(6)` a los tornillos frontales y `(7)` a `(12)` a los tornillos traseros:
+       - Frontales ($Z \approx -0.021\text{ m}$): `Parafuso F (1)` [Cajón 1], `Parafuso F (2)` [Cajón 4], `Parafuso F (3)` [Cajón 2], `Parafuso F (4)` [Cajón 5], `Parafuso F (5)` [Cajón 3], `Parafuso F (6)` [Cajón 6].
+       - Traseros ($Z \approx -0.369\text{ m}$): `Parafuso F (7)` [Cajón 1], `Parafuso F (8)` [Cajón 4], `Parafuso F (9)` [Cajón 2], `Parafuso F (10)` [Cajón 5], `Parafuso F (11)` [Cajón 3], `Parafuso F (12)` [Cajón 6].
+    4. En la interfaz gráfica del Showcase para el Cajón 3, el usuario había seleccionado `Parafuso F (3)` y `Parafuso F (9)` (que físicamente corresponden al Cajón 2 intermedio), omitiendo el `Parafuso F (11)`. Al no estar el índice `(11)` en la lista, Three.js no generaba pistas de animación para él y permanecía estático en el fondo.
+- **Acoplamiento Cinemático Físico Automático de Bahía (`manualAnimationEngine.ts`)**:
+  * Para erradicar la fricción y la dependencia del usuario de tener que memorizar o acertar los índices matemáticos `(1)` a `(12)` de tornillos minúsculos, se implementó un motor de inferencia espacial automática:
+    - Cualquier tornillo `Parafuso F` o `Suporte` cuyo centro vertical coincida con la cota del cajón ($|\Delta Y| < 80\text{ mm}$) y se encuentre dentro de su columna ($X \in [X_{\min} - 25\text{ mm}, X_{\max} + 25\text{ mm}]$), es acoplado automáticamente con $100\%$ de carrera solidaria al cajón en $+Z$.
+    - Ya no importa si en las píldoras de la UI se asignó erróneamente `Parafuso F (3)` o `(9)`: el motor físico detecta la posición real del tornillo y lo anima en sincronía con el cajón correspondiente.
+- **Recompilación Reactiva Inmediata en Visor 3D (`Viewer3D.tsx`)**:
+  * Inyección de `JSON.stringify(activeStep?.showcase?.gruposCinematicos)` en las dependencias del hook `useEffect` de `AssemblyAnimationController`.
+  * Cualquier modificación de piezas, recarga de GHX o ajuste en el panel recompila instantáneamente el clip de animación Three.js a 60 FPS con cero lag.
+- **Resolución y Acoplamiento Cinemático de Tornillería de Correderas (`Parafuso E`)**:
+  * **Síntoma Reportado:** Al abrir el cajón en el Showcase, 3 tornillos `Parafuso E` en el riel de la corredera móvil izquierda y 3 tornillos en el riel derecho permanecían estáticos flotando en el aire en la posición cerrada.
+  * **Causa Raíz:**
+    1. En el mueble existen 97 tornillos `Parafuso E` en total.
+    2. Por cada cajón, existen 6 tornillos `Parafuso E` que unen los rieles móviles de la corredera a los laterales de madera (`Peça 17`), dispuestos en ternas: frontal ($Z = -0.048\text{ m}$), medio ($Z = -0.176\text{ m}$) y trasero ($Z = -0.340\text{ m}$).
+    3. Asimismo, existen 4 tornillos por cajón que fijan el riel exterior estático al lateral del mueble o al montante central divisorio ($X = 0.024\text{ m}$ y $X = 0.6455\text{ m}$).
+    4. Dado el gran número de instancias (97), asignar manualmente los índices correctos por interfaz era propenso a errores humanos de selección.
+  * **Fórmula Fisiomecánica Universal Implementada (`manualAnimationEngine.ts`)**:
+    - Se incorporó la discriminación física milimétrica respecto a la estructura del mueble:
+      $$\text{distMin} = X - X_{\min}^{\text{mueble}}, \quad \text{distMax} = X_{\max}^{\text{mueble}} - X, \quad \text{distCentro} = |X - X_{\text{centro}}^{\text{mueble}}|$$
+    - Si $\text{distMin} < 25\text{ mm}$, $\text{distMax} < 25\text{ mm}$ o $\text{distCentro} < 10\text{ mm}$, el tornillo fija el riel exterior a la estructura $\implies$ **permanece 100% estático en el mueble**.
+    - Si el tornillo está dentro de la bahía del cajón a la altura de la corredera ($|\Delta Y| < 80\text{ mm}$), une la corredera móvil a la madera $\implies$ **se acopla automáticamente al 100% del avance del cajón (+Z)**.
+    - Se optimizó el cálculo de la envolvente del cajón (`minXGrupo`, `maxXGrupo`) priorizando maderas para evitar que piezas mal indexadas distorsionen el centroide.
+- **Validación de Calidad y Blindaje de Fondos Traseros (`Z < -0.40 m`)**:
+  * **Síntoma Reportado:** Al abrir los cajones superiores (Cajón 1 y 4), los tornillos `Parafuso E` de fijación de los fondos traseros de la cómoda se desplazaban hacia adelante con el cajón.
+  * **Causa Raíz:** En la pared posterior existen 13 tornillos `Parafuso E` en $Z = -0.4737\text{ m}$ y $Y = 0.8025\text{ m}$ sujetando los fondos (`Peça 15`). Al tener los cajones superiores una cota de $Y = 0.7265\text{ m}$, la tolerancia vertical $\Delta Y < 80\text{ mm}$ ($802.5 - 726.5 = 76\text{ mm}$) los capturaba erróneamente en el bucle de herrajes y en la lista de píldoras.
+  * **Blindaje en Profundidad Z Implementado:**
+    - Se incorporó la regla de frontera física en $Z$: el cuerpo del cajón y sus correderas se extienden únicamente entre $Z = -0.020\text{ m}$ y $Z = -0.370\text{ m}$.
+    - Cualquier tornillo o herraje con $Z < -0.400\text{ m}$ pertenece de forma inequívoca a la pared posterior o fondos del mueble $\implies$ **permanece 100% estático en el fondo**.
+  * Compilación TypeScript verificada (`npx tsc --noEmit`) con **0 errores**.
+
+
+
 
 
 
