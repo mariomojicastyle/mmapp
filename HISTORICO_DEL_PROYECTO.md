@@ -2795,6 +2795,30 @@ Con esta batería de arreglos y la validación en caliente, la V20 se establece 
     - Cualquier tornillo o herraje con $Z < -0.400\text{ m}$ pertenece de forma inequívoca a la pared posterior o fondos del mueble $\implies$ **permanece 100% estático en el fondo**.
   * Compilación TypeScript verificada (`npx tsc --noEmit`) con **0 errores**.
 
+---
+
+### 🔹 Hito 116: Blindaje de Acceso Dual 3dBimFab Shield (Edge Middleware, Passkeys Propietario/Invitado 24h, Radar de Intrusiones en Tiempo Real y Despliegue en Netlify) (12 de Septiembre, 2026)
+
+- **Arquitectura de Blindaje de Propiedad Intelectual (3dBimFab Shield)**:
+  * **Intercepción Edge Middleware (`middleware.ts`)**: Toda solicitud web o llamada API hacia `https://3bf.mariomojica.com` es interceptada en el borde (Edge Network). Peticiones no autorizadas son redirigidas a la pantalla de bienvenida `/access` y llamadas API sin token son rechazadas con `HTTP 401 Unauthorized`.
+  * **Exenciones Técnicas Específicas**: Assets estáticos (`/_next`, logos SVG, favicons, iconos), endpoints de comprobación de salud (`/api/health`) y rutas de Realidad Aumentada nativa (`/api/ar-model/*`).
+- **Sistema de Claves Dual Criptográfico (Dual-Tier Passkeys)**:
+  * **Nivel Propietario (Mario Mojica)**: Clave maestra con cookie autorizada por **365 días (1 año permanente y renovable)** (`maxAge: 31536000`). Enlace rápido de 1 clic: `https://3bf.mariomojica.com/?key=mario3bf2026`.
+  * **Nivel Invitado / Demo (Fabricantes RTA y Prospectos)**: Clave temporal con cookie autorizada por **24 horas exactas** (`maxAge: 86400`). Enlace rápido de 1 clic: `https://3bf.mariomojica.com/?key=invitado3bf24h`. Al expirar el plazo, el acceso se cierra de forma instantánea exigiendo nueva validación.
+  * **Limpieza de URL en 1 Clic**: Al acceder vía enlace con parámetro `?key=...`, el middleware autentica el dispositivo, fija la cookie criptográfica y reescribe la barra de navegación limpiando cualquier rastro en el historial del explorador.
+- **Seguridad por Oscuridad y Máxima Discreción en UI (`/access`)**:
+  * **Logotipo Oficial Vectorial Canónico**: Integración directa del archivo SVG maestro `/Logo_3BF.svg` (badge oficial `#bb0f0f` de `3dBimFab` y *"Powered by MARIO MOJICA"*).
+  * **Eliminación Total de Pistas para Atacantes**: Erradicación de leyendas o menciones a "365 días", "permanente" o "tiers" en la interfaz gráfica. Pantalla austera y sobria diseñada en *Tech Ethos* con botones en cápsula pura (`rounded-full`).
+  * **Ofuscación de Tokens en Cookies**: Emisión de tokens de sesión opacos (`TOKEN_OWNER`, `TOKEN_GUEST`), evitando filtrar nombres de roles o duraciones en las herramientas de desarrollo del navegador.
+- **Radar de Intrusiones y Alertas en Tiempo Real (`shieldAlerts.ts`)**:
+  * **Captura Forense Automática**: Registro inmediato de IP pública real (Cloudflare `cf-connecting-ip` / proxy), User-Agent, fecha/hora oficial de Colombia (UTC-5), ruta intentada y contraseña errónea ingresada por el atacante.
+  * **Despacho Multicanal**: Integración con webhook n8n (`https://n8n.mariomojica.com/webhook/3bf-security-alert`), soporte directo para alertas vía bot de Telegram a smartphone, logs formateados en consola de servidor `🚨 [INTRUSIÓN]` y persistencia de auditoría en `data/shield_alerts.json` accesible mediante `/api/access/logs`.
+- **Validación y Despliegue**:
+  * Compilación TypeScript verificada (`npx tsc --noEmit`) con **0 errores**.
+  * Pruebas locales completas de inyección de cookies, expiraciones y redirecciones exitosas.
+  * Sincronización y despliegue a producción en Netlify activado.
+
+
 
 
 

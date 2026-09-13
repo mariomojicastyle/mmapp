@@ -89,8 +89,46 @@ Para garantizar la inmunidad total del dominio `mariomojica.com` frente a bloque
 
 ---
 
+## 🛡️ 6. Blindaje de Dispositivos Autorizados: 3dBimFab Shield (Dual-Tier + Alertas en Vivo)
+
+Para blindar la plataforma web (`3bf.mariomojica.com`) e impedir que cualquier usuario no autorizado, competidor o bot acceda al código fuente, modelos 3D o interfaces paramétricas:
+
+### A. Niveles de Acceso y Llaves Criptográficas (Dual-Tier)
+1. **👑 Nivel Propietario (Mario Mojica) — Acceso Permanente (365 Días):**
+   - **Claves oficiales:** `mario3bf2026` | `MM3BF7646907`
+   - **Vigencia de Cookie:** 365 días (`maxAge: 31536000`), renovable automáticamente.
+   - **Token emitido:** `3bf_token_owner_permanent`
+   - **Uso:** En equipos de desarrollo personales (PC de escritorio, portátil, teléfono personal).
+2. **⏱️ Nivel Invitado / Demo (Fabricantes RTA y Prospectos) — Acceso 24 Horas:**
+   - **Claves oficiales:** `invitado3bf24h` | `demo24h_3bf` | `3bf24h`
+   - **Vigencia de Cookie:** 24 horas exactas (`maxAge: 86400`). Al vencer, el acceso se cierra de inmediato requiriendo nueva clave.
+   - **Token emitido:** `3bf_token_guest_24h`
+   - **Uso:** Demostraciones comerciales con directores de ingeniería o plantas de RTA en Brasil.
+
+### B. Métodos de Desbloqueo
+1. **Método 1 — Enlace Secreto de Autorización en 1 Clic (Passkey URL):**
+   - El propietario o invitado abre una única vez el enlace con la clave en URL:
+     - Propietario: `https://3bf.mariomojica.com/?key=mario3bf2026`
+     - Invitado 24h: `https://3bf.mariomojica.com/?key=invitado3bf24h`
+   - El middleware valida el tier, emite la cookie con la vigencia respectiva, y limpia automáticamente la URL en la barra de navegación para no dejar rastros en el historial.
+2. **Método 2 — Pantalla de Bienvenida Tech Ethos (`/access`):**
+   - Incorpora el **logotipo oficial vectorial canónico** (`Logo_3BF.svg`), botones e inputs en cápsula pura (`rounded-full`), e informa las dos modalidades de acceso.
+
+### C. 🚨 Sistema de Detección de Intrusiones y Alertas en Tiempo Real
+El motor de seguridad vigila cada interacción y reporta:
+1. **Detección de Intrusión:** Cuando un intruso introduce una clave errónea o intenta tantear contraseñas en `/access` o vía `?key=...`.
+2. **Datos Capturados:** IP pública real (vía Cloudflare / Proxies), User-Agent (navegador/dispositivo), hora exacta de Colombia (UTC-5), ruta solicitada y clave intentada.
+3. **Canales de Notificación Inmediata:**
+   - **Webhook n8n:** Envío automático de evento JSON a `https://n8n.mariomojica.com/webhook/3bf-security-alert` (configurable en `SHIELD_ALERT_WEBHOOK_URL`).
+   - **Telegram Bot:** Despacho de alerta directa al smartphone del propietario si están definidos `TELEGRAM_BOT_TOKEN` y `TELEGRAM_CHAT_ID`.
+   - **Auditoría Interna:** Persistencia en `data/shield_alerts.json` y consulta segura mediante el endpoint `/api/access/logs`.
+   - **Consola del Servidor:** Registro formateado con marcadores emoji `🚨 [INTRUSIÓN]`.
+
+---
+
 ## 📁 ¿Es visible este archivo en internet?
 **No. Este documento de seguridad NO es público ni accesible desde internet:**
 * El repositorio de GitHub es **privado**. Solo los desarrolladores con acceso pueden leerlo.
 * Las carpetas `/docs` o `/Comercial` en la raíz del repositorio **no se compilan ni se exponen** en la carpeta de distribución pública (`/public` o `/dist`) del servidor web (Netlify/Next.js). Solo el código y los assets declarados formalmente se suben a la web de producción.
+
 
