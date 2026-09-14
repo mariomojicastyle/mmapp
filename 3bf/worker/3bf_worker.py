@@ -1,3 +1,47 @@
+"""
+============================================================================
+ARCHIVO: 3bf_worker.py
+UBICACIÓN: c:/Desarrollo/mmapp/3BF/worker/3bf_worker.py
+VERSIÓN: v2.5.0 (Hito 119 - Suite 3dBimFab)
+AUTOR: Mario Mojica (3dBimFab Digital Manufacturing Engine)
+============================================================================
+DESCRIPCIÓN & FUNCIONALIDAD:
+
+Microservicio backend desarrollado sobre FastAPI que actúa como motor de
+manufactura digital paramétrica e intermediario de alta velocidad entre
+RhinoCompute 8 (Hops/Grasshopper C++) y la plataforma Web 3dBimFab (Next.js / Three.js).
+
+RESPONSABILIDADES CLAVE:
+1. ORQUESTACIÓN PARAMÉTRICA & RHINOCOMPUTE:
+   - Recibe parámetros dimensionales (ancho, alto, profundidad, configuraciones de cajones,
+     acabados, espesores de melamina) y los inyecta en árboles GHX de Grasshopper.
+   - Ejecuta el solver en RhinoCompute 8 (puerto 5000), gestiona pools de reintentos,
+     cacheo inteligente de geometrías estáticas y normalización de esquemas.
+
+2. PROCESAMIENTO Y NORMALIZACIÓN DE GEOMETRÍAS B2B:
+   - Convierte el sistema de coordenadas de Rhino (Z-Up, milímetros) al estándar
+     gráfico de Three.js (Y-Up, metros con inversión de profundidad).
+   - Extrae mallas poligonales nativas (rhino3dm.Mesh) y decodifica sólidos Brep OpenNURBS.
+   - Identificación analítica de mecanizados y herrajes (tarugos d8, minifix d15, guías d5,
+     bisagras d35) con posición, orientación vectorial, diámetro y profundidad exacta.
+
+3. OPTIMIZACIÓN Y SOLDADURA TOPOLÓGICA DE MALLAS CAD:
+   - Aplica unificación de vértices coincidentes (`Vertices.CombineIdentical(True, True)`),
+     eliminación de caras degeneradas (`Faces.CullDegenerateFaces`), compactación de índices
+     y recálculo de normales analíticas (`Normals.ComputeNormals`).
+   - Elimina las costuras abiertas de corte de puente (bridge seams) generadas por la
+     teselación de superficies planas con perforaciones, permitiendo un renderizado
+     de aristas limpio en Three.js sin rayas falsas coplanares.
+
+4. SISTEMA DE DESPIECE, CAPAS & COSTOS:
+   - Reconstruye y segrega mallas de tableros según su cara (Cara A Color, Cara B Balance,
+     cantos de PVC/melamina en los 4 bordes y canto MDF/MDP expuesto).
+   - Detección automática y purga de piezas duplicadas de Grasshopper (`deduplicate_real_meshes`).
+   - Provisión de endpoints de salud (`/health`), mecanizado analítico (`/mecanizar`)
+     y metadata técnica paramétrica.
+============================================================================
+"""
+
 import os
 import sys
 try:
@@ -20,7 +64,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, ConfigDict
 
-app = FastAPI(title="3BF Worker Python Engine", version="1.0.0")
+app = FastAPI(title="3BF Worker Python Engine", version="2.5.0")
 
 def parse_ghx_slider_limits(ghx_path):
     limits = {}

@@ -1,5 +1,52 @@
 "use client";
 
+/**
+ * ============================================================================
+ * ARCHIVO: Viewer3D.tsx
+ * VERSIÓN: v2.5.1 (Hito 120 - Suite 3dBimFab)
+ * AUTOR: Mario Mojica (3dBimFab Engine)
+ * ============================================================================
+ * DESCRIPCIÓN & FUNCIONALIDAD:
+ * 
+ * Viewport 3D maestro y motor de renderizado interactivo para la suite 3dBimFab,
+ * desarrollado sobre React Three Fiber (R3F), Drei y Three.js.
+ * 
+ * RESPONSABILIDADES CLAVE:
+ * 1. RENDERIZADO PARAMÉTRICO B2B:
+ *    - Renderiza geometrías de manufactura generadas en Grasshopper / RhinoCompute.
+ *    - Soporta tanto mallas individuales (`SingleFurnitureInstanceMesh`) como
+ *      ensambles multi-instancia optimizados (`InstancedFurnitureMesh`).
+ * 
+ * 2. SHADING & MATERIALES PBR:
+ *    - Soporte multi-modo: Sólido (Clay/CAD), Ghosted (Rayos X con transparencia
+ *      e interior visible) y Renderizado PBR completo (Albedo, Normal, Roughness, AO).
+ *    - Entornos HDRI dinámicos, iluminación de estudio con gizmos de manipulación
+ *      y sombras de contacto suaves (`ContactShadows` / `AccumulativeShadows`).
+ * 
+ * 3. MOTOR DE CINEMÁTICA Y MANUAL DE ARMADO 3D:
+ *    - Integración en tiempo real con `manualAnimationEngine` para reproducir
+ *      la animación cinemática de ensamblaje en cada paso (P00, P01, P02...).
+ *    - Aislamiento visual por paso (`Invert Hide`): Oculta selectivamente piezas
+ *      que no pertenecen al paso activo para foco absoluto del armador.
+ *    - Transformación de Orientación en Banco de Trabajo (`orientacionBanco`):
+ *      Aplica matrices de rotación en 3 ejes (X, Y, Z) con auto-centrado y
+ *      alineación de apoyo a nivel de piso (min.y = 0) para emular la mesa física de taller.
+ * 
+ * 4. ALGORITMO DE DETECCIÓN Y REPRESENTACIÓN DE ARISTAS (CAD WIREFRAME - OPCIÓN 2):
+ *    - Para tableros de madera (`isWoodBoard`), genera el wireframe perimetral puro (12 aristas exteriores)
+ *      a partir de las dimensiones del prisma CAD (`boxMeshGeometry`), suprimiendo por completo
+ *      costuras internas de partición de superficies, líneas de empalme y cortes de triangulación.
+ *    - Suprime aristas duplicadas en capas superpuestas (Balance / MDP) evitando líneas engrosadas.
+ *    - Para herrajes y mecanizados (`isHardware` / `isMachining`), preserva la silueta 3D técnica original
+ *      con filtrado diédrico angular ajustable mediante `thresholdAristas`.
+ * 
+ * 5. HERRAMIENTAS DE EXPORTACIÓN & INTERACCIÓN:
+ *    - Generación automática de miniaturas (thumbnails) de cámara para los pasos del manual.
+ *    - Exportación directa a modelos GLB y Realidad Aumentada (WebXR / QuickLook).
+ *    - Sistema de selección, snapping e inspección dimensional con feedback visual instantáneo.
+ * ============================================================================
+ */
+
 import React, { useRef, useEffect } from "react";
 import { Canvas, useThree, useFrame } from "@react-three/fiber";
 import { OrbitControls, Grid, Stage, Edges, Line, Html } from "@react-three/drei";
@@ -21,7 +68,12 @@ import { compilarAnimacionPaso, KinematicEngineResult } from "@/lib/manualAnimat
 import { extraerPiezaMadre, anotarInstanciasFisicas } from "@/lib/piezaMadreUtils";
 import { exportarGlbPasoManual, descargarBufferComoArchivo } from "@/lib/exportManualGlb";
 
-function useMaterialPBRMaps(materialPBR?: MaterialPBRDef | null, fallbackUrl?: string | null, tipoMapeado?: string) {
+function useMaterialPBRMaps(
+  materialPBR?: MaterialPBRDef | null, 
+  fallbackUrl?: string | null, 
+  tipoMapeado?: string, 
+  hasGrasshopperUvs?: boolean
+) {
   const [maps, setMaps] = React.useState<{
     diffuse: THREE.Texture | null;
     normal: THREE.Texture | null;
@@ -29,7 +81,11 @@ function useMaterialPBRMaps(materialPBR?: MaterialPBRDef | null, fallbackUrl?: s
     ao: THREE.Texture | null;
   }>({ diffuse: null, normal: null, roughness: null, ao: null });
 
-  const isTraversada = tipoMapeado === "Cubierta Atravesada" || tipoMapeado === "Entrepaño Atravesado";
+  // 🛡️ REGLA DfMA CANÓNICA: Si la pieza ya trae UVs calculadas por Grasshopper (hasGrasshopperUvs),
+  // tex.rotation SIEMPRE debe ser 0. En Three.js tex.rotation rota TODA la textura indiscriminadamente
+  // (tanto caras como cantos), destruyendo los cantos (tapacanto PVC) que siempre deben correr a lo largo.
+  // Grasshopper ya resuelve la orientación física en sus coordenadas UV.
+  const isTraversada = !hasGrasshopperUvs && (tipoMapeado === "Cubierta Atravesada" || tipoMapeado === "Entrepaño Atravesado");
   const targetDiffuse = materialPBR?.texturaUrl || fallbackUrl;
   const targetNormal = materialPBR?.normalMapUrl || null;
   const targetRoughness = materialPBR?.roughnessMapUrl || null;
@@ -426,14 +482,37 @@ function BoardMesh({
           const z = posAttr.getZ(idx);
 
           if (absY >= absX && absY >= absZ) {
-            uvs[idx * 2] = x * UV_SCALE;
-            uvs[idx * 2 + 1] = z * UV_SCALE;
+            // Cara horizontal (superior / inferior)
+            if (tipoMapeado === "Cubierta Atravesada" || tipoMapeado === "Entrepaño Atravesado") {
+              uvs[idx * 2] = z * UV_SCALE;
+              uvs[idx * 2 + 1] = x * UV_SCALE;
+            } else {
+              uvs[idx * 2] = x * UV_SCALE;
+              uvs[idx * 2 + 1] = z * UV_SCALE;
+            }
           } else if (absX >= absY && absX >= absZ) {
-            uvs[idx * 2] = z * UV_SCALE;
-            uvs[idx * 2 + 1] = y * UV_SCALE;
+            // Cara vertical lateral (normal X): laterales, parantes verticales (Peça 14), cantos laterales
+            // 🛡️ REGLA DfMA: En un lateral o parante vertical, la altura Y es la dimensión dominante.
+            // Para que la veta corra a lo largo de Y (vertical), como la textura tiene veta en U:
+            if (size && size[1] >= size[2]) {
+              uvs[idx * 2] = y * UV_SCALE;
+              uvs[idx * 2 + 1] = z * UV_SCALE;
+            } else {
+              uvs[idx * 2] = z * UV_SCALE;
+              uvs[idx * 2 + 1] = y * UV_SCALE;
+            }
           } else {
-            uvs[idx * 2] = x * UV_SCALE;
-            uvs[idx * 2 + 1] = y * UV_SCALE;
+            // Cara vertical frontal / trasera (normal Z): frentes, espaldares, cantos frontales
+            // 🛡️ REGLA DfMA: En parantes o pilastras verticales (Peça 14) o cantos de piezas verticales,
+            // la altura Y es mayor que el ancho X (size[1] > size[0]).
+            // La veta y el canto SIEMPRE corren a lo largo de la altura Y (vertical):
+            if (size && size[1] > size[0]) {
+              uvs[idx * 2] = y * UV_SCALE;
+              uvs[idx * 2 + 1] = x * UV_SCALE;
+            } else {
+              uvs[idx * 2] = x * UV_SCALE;
+              uvs[idx * 2 + 1] = y * UV_SCALE;
+            }
           }
         }
       }
@@ -442,19 +521,25 @@ function BoardMesh({
       return geo;
     }
     return null;
-  }, [vertices, indices, grasshopperUvs]);
+  }, [vertices, indices, grasshopperUvs, size?.[0], size?.[1], size?.[2], tipoMapeado]);
 
-  const boxEdgesGeometry = React.useMemo(() => {
-    if (!customGeometry && size && size.length === 3) {
+  // 🪵 Geometría de caja limpia para el trazado de aristas perimetrales CAD en tableros de madera
+  const boxMeshGeometry = React.useMemo(() => {
+    if (size && size.length === 3 && size[0] > 0 && size[1] > 0 && size[2] > 0) {
       try {
-        const boxGeo = new THREE.BoxGeometry(size[0], size[1], size[2]);
-        return new THREE.EdgesGeometry(boxGeo, calibracion.thresholdAristas);
+        return new THREE.BoxGeometry(size[0], size[1], size[2]);
       } catch {
         return null;
       }
     }
     return null;
-  }, [customGeometry, size, calibracion.thresholdAristas]);
+  }, [size?.[0], size?.[1], size?.[2]]);
+
+  React.useEffect(() => {
+    return () => {
+      boxMeshGeometry?.dispose();
+    };
+  }, [boxMeshGeometry]);
 
   const cleanName = name.replace(/^RH_OUT:/i, "").trim();
   const piezaMadre = instanciaKey || extraerPiezaMadre(cleanName || name);
@@ -488,8 +573,8 @@ function BoardMesh({
     }
   }
 
-  const isWireframe = modoVisual === "lineas";
-  const isTransparent = modoVisual === "semitransparente";
+  const isWireframe = false;
+  const isTransparent = modoVisual === "semitransparente" || modoVisual === "lineas";
   const isHardwarePerno = normName.includes("perno") || normName.includes("tornillo") || normName.includes("parafuso");
   const isHardwareCaja = (normName.includes("caja") && !normName.includes("cajon") && !normName.includes("cajón")) || normName === "caja" || normName.includes("minifix");
   const isHardwareTarugo = normName.includes("tarugo") || normName.includes("soporte") || normName.includes("cavilha") || normName.includes("clavilha");
@@ -502,7 +587,8 @@ function BoardMesh({
     (isHardwareCorredera && (size && size.length === 3 && Math.min(size[0], size[1], size[2]) < 0.005 && size[1] < 0.015));
   const isHardwareCantoneira = normName.includes("cantoneira") || normName.includes("angulo") || normName.includes("esquinero");
   const isHardwarePorca = normName.includes("porca") || normName.includes("tuerca") || normName.includes("bucha");
-  const isHardware = isHardwarePerno || isHardwareCaja || isHardwareTarugo || isHardwarePata || isHardwareCorredera || isHardwareCantoneira || isHardwarePorca || normName.includes("bisagra") || normName.includes("dobradiça") || normName.includes("puxador") || normName.includes("manija");
+  const isHardwareTampa = normName.includes("tampa") || normName.includes("tapa") || normName.includes("adesivo") || normName.includes("tapon") || normName.includes("tapón");
+  const isHardware = isHardwarePerno || isHardwareCaja || isHardwareTarugo || isHardwarePata || isHardwareCorredera || isHardwareCantoneira || isHardwarePorca || isHardwareTampa || normName.includes("bisagra") || normName.includes("dobradiça") || normName.includes("puxador") || normName.includes("manija");
   const isMachining = normName.includes("maquinado") || normName.includes("perforado");
   const isWoodBoardPiece = !isHardware && !isMachining;
 
@@ -568,8 +654,8 @@ function BoardMesh({
     } else if (isHardwarePata) {
       // 🦶 Patas / Pies (Pes) -> Capa Plastico_1 (mat_pnegro, Plástico inyectado negro)
       capaAsignada = capas.find((c) => c.id === "capa_plastico_1" || c.id === "capa_plastico_2" || c.nombre.toLowerCase().includes("plastico")) || capas.find((c) => c.id === "capa_herrajes") || capas[0];
-    } else if (isHardwarePorca) {
-      // 🔩 Tuerca / Porca cilíndrica de fijación -> Capa Plastico_2 (mat_pblanco) o Herrajes
+    } else if (isHardwarePorca || isHardwareTampa) {
+      // 🔩 Tuerca / Porca cilíndrica de fijación o Tapa adhesiva -> Capa Plastico_2 (mat_pblanco) o Herrajes
       capaAsignada = capas.find((c) => c.id === "capa_plastico_2" || c.id === "capa_plastico_1" || c.nombre.toLowerCase().includes("plastico")) || capas.find((c) => c.id === "capa_herrajes") || capas[0];
     } else if (isHardwarePerno) {
       capaAsignada = capas.find((c) => c.id === "capa_herrajes" || c.id === "capa_acero" || c.nombre.toLowerCase().includes("acero") || c.nombre.toLowerCase().includes("herraje"));
@@ -622,7 +708,7 @@ function BoardMesh({
   }
 
   // ⚠️ LLAMADO INCONDICIONAL DE HOOK: antes de cualquier return temprano (Reglas de React Hooks)
-  const pbrMaps = useMaterialPBRMaps(materialPBR, targetTextureUrl, tipoMapeado);
+  const pbrMaps = useMaterialPBRMaps(materialPBR, targetTextureUrl, tipoMapeado, Boolean(grasshopperUvs && grasshopperUvs.length > 0));
 
   // 💡 Verificar si el cajón/grupo cinemático al que pertenece esta pieza está apagado (Bombillito / Ojito)
   const pasoActivoManual = React.useMemo(() => {
@@ -654,10 +740,89 @@ function BoardMesh({
     );
   }, [pestanaActiva, pasoActivoManual, pasosManual, piezaMadre, cleanName, instanciaKey]);
 
-  // 💡 5. Verificar Visibilidad (Capa, Parte o Grupo Cinemático apagado) - DESPUÉS DE TODOS LOS HOOKS
+  // 💡 4.1 Verificar si esta pieza pertenece a las piezas o herrajes asignados del paso activo
+  const perteneceAlPasoActivo = React.useMemo(() => {
+    if (pestanaActiva !== "manual" || !pasoActivoManual || pasoActivoManual.tipo === "showcase") {
+      return false;
+    }
+    const asignadas = [
+      ...(pasoActivoManual.piezasAsignadas || []),
+      ...(pasoActivoManual.herrajesAsignados || []),
+    ];
+    if (asignadas.length === 0) return false;
+
+    const rawClean = name ? name.replace(/^RH_(?:OUT|IN):\s*/i, "").trim() : "";
+
+    return asignadas.some((pz) => {
+      if (!pz) return false;
+
+      // 1. Coincidencia directa con instanciaKey o piezaMadre (ej. "Peça 8 (1)" === "Peça 8 (1)")
+      if (instanciaKey && (pz === instanciaKey || pz.toLowerCase() === instanciaKey.toLowerCase())) {
+        return true;
+      }
+      if (piezaMadre && (pz === piezaMadre || pz.toLowerCase() === piezaMadre.toLowerCase())) {
+        return true;
+      }
+
+      // 2. Discriminación estricta de instancias numeradas:
+      // Si pz tiene "(N)" y el mesh también tiene "(M)", y no fueron iguales arriba, NO coinciden.
+      const tieneInstanciaPz = Boolean(pz.match(/\s*\(\d+\)$/));
+      const tieneInstanciaMesh = Boolean((instanciaKey || piezaMadre || "").match(/\s*\(\d+\)$/));
+
+      if (tieneInstanciaPz && tieneInstanciaMesh) {
+        return false;
+      }
+
+      // 3. Coincidencia por nombre limpio (para piezas no numeradas como "Peça 7" o "Cubierta")
+      if (cleanName && (pz === cleanName || pz.toLowerCase() === cleanName.toLowerCase())) {
+        return true;
+      }
+      if (rawClean && (pz === rawClean || pz.toLowerCase() === rawClean.toLowerCase())) {
+        return true;
+      }
+
+      // 4. Coincidencia canónica de Pieza Madre
+      const pmPz = extraerPiezaMadre(pz);
+      const pmMesh = piezaMadre || (instanciaKey ? extraerPiezaMadre(instanciaKey) : extraerPiezaMadre(cleanName || rawClean));
+      if (pmPz && pmMesh && pmPz.toLowerCase() === pmMesh.toLowerCase()) {
+        if (!tieneInstanciaPz && !tieneInstanciaMesh) return true;
+      }
+
+      return false;
+    });
+  }, [pestanaActiva, pasoActivoManual, instanciaKey, piezaMadre, cleanName, name]);
+
+  // 💡 4.2 Reglas de Aislamiento y Visibilidad del Paso (Invert Hide & Piezas Ocultas)
+  const estaOcultaPorReglasPaso = React.useMemo(() => {
+    if (pestanaActiva !== "manual" || !pasoActivoManual || pasoActivoManual.tipo === "showcase") {
+      return false;
+    }
+
+    const totalAsignadas = (pasoActivoManual.piezasAsignadas?.length || 0) + (pasoActivoManual.herrajesAsignados?.length || 0);
+
+    // 1. Invert Hide (Aislar Paso): Ocultar cualquier pieza que NO pertenezca a este paso
+    // (A menos que esté en modo picking agregar activo, para permitir tocar piezas nuevas)
+    const enModoAgregarPicking = modoPickingManual.activo && modoPickingManual.modo === "agregar";
+    if (pasoActivoManual.ocultarNoAsignadas && totalAsignadas > 0 && !enModoAgregarPicking) {
+      if (!perteneceAlPasoActivo) {
+        return true;
+      }
+    }
+
+    // 2. Piezas Ocultas (Ojito del paso): Apagar las piezas asignadas a este paso
+    if (pasoActivoManual.piezasOcultas) {
+      if (perteneceAlPasoActivo) {
+        return true;
+      }
+    }
+
+    return false;
+  }, [pestanaActiva, pasoActivoManual, modoPickingManual.activo, modoPickingManual.modo, perteneceAlPasoActivo]);
+
+  // 💡 5. Verificar Visibilidad (Capa, Parte, Grupo Cinemático o Reglas de Paso) - DESPUÉS DE TODOS LOS HOOKS
   const esParteOculta = asignacion && asignacion.visible === false;
   const esCapaOculta = capaAsignada && capaAsignada.visible === false;
-  if (esParteOculta || esCapaOculta || estaOcultaPorGrupoCinematico) {
+  if (esParteOculta || esCapaOculta || estaOcultaPorGrupoCinematico || estaOcultaPorReglasPaso) {
     return null;
   }
 
@@ -733,7 +898,7 @@ function BoardMesh({
     opacity = 1.0;
     transparent = false;
     depthWrite = true;
-  } else if (isHardwarePorca) {
+  } else if (isHardwarePorca || isHardwareTampa) {
     meshColor = "#F4F4F5";
     metalness = 0.05;
     roughness = 0.35;
@@ -775,7 +940,7 @@ function BoardMesh({
       // contrastando nítidamente contra el cuerpo azul translúcido del mueble.
       finalMeshColor = isHardwareCorredera 
         ? "#F8FAFC" 
-        : (isHardwareCantoneira ? "#E2E8F0" : (isHardwarePata ? "#1E293B" : (isHardwarePorca ? "#F4F4F5" : (coloresApariencia.colorHerrajes || "#CBD5E1"))));
+        : (isHardwareCantoneira ? "#E2E8F0" : (isHardwarePata ? "#1E293B" : (isHardwarePorca || isHardwareTampa ? "#F4F4F5" : (coloresApariencia.colorHerrajes || "#CBD5E1"))));
       opacity = 1.0;
       roughness = (isHardwarePata || isHardwarePorca) ? 0.4 : 0.18;
       metalness = (isHardwarePata || isHardwarePorca) ? 0.05 : 0.92;
@@ -786,6 +951,29 @@ function BoardMesh({
       // Translúcidos para permitir ver las correderas y herrajes interiores
       finalMeshColor = coloresApariencia.mallasCristal || "#0284C7";
       opacity = 0.52;
+      roughness = 0.75;
+      metalness = 0.0;
+      transparent = true;
+      depthWrite = false;
+    }
+  } else if (modoVisual === "lineas") {
+    // 📐 Transparencia de las piezas del modo sólido sobre la malla pura (Tableros y Herrajes)
+    if (isHardware) {
+      finalMeshColor = isHardwareCorredera 
+        ? "#334155" 
+        : (isHardwarePata 
+            ? "#334155" 
+            : (isHardwareCantoneira 
+                ? "#64748B" 
+                : (isHardwarePorca || isHardwareTampa ? "#E2E8F0" : (coloresApariencia.colorHerrajes || "#64748B"))));
+      opacity = 0.35;
+      roughness = 0.5;
+      metalness = 0.2;
+      transparent = true;
+      depthWrite = false;
+    } else {
+      finalMeshColor = capaAsignada?.color || (materialPBR ? materialPBR.colorBase : (coloresApariencia.materialPorDefecto || calibracion.colorSolido || "#CBD5E1"));
+      opacity = 0.35;
       roughness = 0.75;
       metalness = 0.0;
       transparent = true;
@@ -823,10 +1011,34 @@ function BoardMesh({
     }
   }
 
-  const nombreMaterialEfectivo = materialPBR ? materialPBR.nombre : (isWoodBoard ? "M_Marfil" : (isHardwarePata || isHardwarePorca ? "P_Blanco" : (isHardwarePerno ? "Acero" : (isHardwareCaja ? "Zinc" : "PBR_Default"))));
+  const nombreMaterialEfectivo = materialPBR ? materialPBR.nombre : (isWoodBoard ? "M_Marfil" : (isHardwarePata || isHardwarePorca || isHardwareTampa ? "P_Blanco" : (isHardwarePerno ? "Acero" : (isHardwareCaja ? "Zinc" : "PBR_Default"))));
   const normalScaleVal = materialPBR?.normalScale ?? 1.0;
 
-  const debeMostrarAristas = calibracion.mostrarAristas !== false && (isWoodBoard || isHardware) && modoVisual !== "lineas";
+  const debeMostrarAristas = calibracion.mostrarAristas !== false && (isWoodBoard || isHardware);
+
+  // 🪵 Detector de piezas paralelepípedo (caja rectangular pura):
+  // Se excluyen explícitamente accesorios, tapas (ej. Tampa / tapones circulares), herrajes o piezas curvas/irregulares.
+  const noEsParalelepipedo = isHardware || isMachining || isHardwareTampa || 
+    normName.includes("tampa") || 
+    normName.includes("curv") || 
+    normName.includes("arco") || 
+    normName.includes("cilindr") || 
+    normName.includes("redond") || 
+    normName.includes("chaflan") || 
+    normName.includes("angulo");
+
+  const esParalelepipedo = isWoodBoard && !noEsParalelepipedo;
+
+  // 🪵 Opción 2: Para tableros de madera que son paralelepípedos puros, utilizamos la geometría de caja perimetral (boxMeshGeometry)
+  // para trazar exclusivamente las 12 aristas exteriores limpias, suprimiendo costuras de corte, empalmes y diagonales de triangulación.
+  // Para piezas como Tampa, herrajes, mecanizados o piezas no prismáticas,
+  // se preserva customGeometry para dibujar fielmente sus contornos y curvaturas originales.
+  // ⚠️ NOTA: Asignación directa sin hook para cumplir con las reglas de React Hooks ante retornos tempranos.
+  const edgeGeometryToUse = (esParalelepipedo && boxMeshGeometry) ? boxMeshGeometry : (customGeometry || undefined);
+
+  // Suprimir aristas duplicadas en capas superpuestas (Balance / MDP). Solo la cara principal del tablero traza las aristas.
+  const debeOmitirAristasPorDuplicidadCapa = isWoodBoard && (isBalance || isMdpExpuesto);
+  const mostrarAristasEnEsteMesh = (debeMostrarAristas && !debeOmitirAristasPorDuplicidadCapa) || estaSeleccionadaEnPicking;
 
   // 💡 Intensidad dinámica de luz de entorno (IBL)
   const luzEntornoConfig = calibracion.lucesEstudio?.["env_hdri"];
@@ -877,6 +1089,7 @@ function BoardMesh({
           isHardwareCantoneira,
           isHardwarePata,
           isHardwarePorca,
+          isHardwareTampa,
           isHardwarePerno,
           isHardwareCaja,
           isBalance,
@@ -908,9 +1121,21 @@ function BoardMesh({
           depthWrite={depthWrite}
           side={THREE.DoubleSide}
         />
-        {(debeMostrarAristas || estaSeleccionadaEnPicking) && (
+        {/* 📐 Malla pura (wireframe de la geometría real) sobre la superficie sólida translúcida */}
+        {modoVisual === "lineas" && (
+          <mesh geometry={customGeometry || undefined}>
+            <meshBasicMaterial
+              wireframe={true}
+              color={calibracion.colorAristas || "#1E293B"}
+              transparent={true}
+              opacity={0.45}
+              depthWrite={false}
+            />
+          </mesh>
+        )}
+        {mostrarAristasEnEsteMesh && (
           <Edges
-            geometry={customGeometry || undefined}
+            geometry={edgeGeometryToUse}
             threshold={calibracion.thresholdAristas || 25}
             color={estaSeleccionadaEnPicking ? "#0891B2" : (esDuplicado ? "#991B1B" : (calibracion.colorAristas || "#111827"))}
             opacity={estaSeleccionadaEnPicking ? 1.0 : (calibracion.opacidadAristas ?? 1.0)}
@@ -957,6 +1182,7 @@ function BoardMesh({
         isHardwareCantoneira,
         isHardwarePata,
         isHardwarePorca,
+        isHardwareTampa,
         isHardwarePerno,
         isHardwareCaja,
         isBalance,
@@ -989,7 +1215,20 @@ function BoardMesh({
         depthWrite={depthWrite}
         side={THREE.DoubleSide}
       />
-      {(debeMostrarAristas || estaSeleccionadaEnPicking) && (
+      {/* 📐 Malla pura (wireframe de la geometría real) sobre la superficie sólida translúcida */}
+      {modoVisual === "lineas" && (
+        <mesh>
+          <boxGeometry args={size} />
+          <meshBasicMaterial
+            wireframe={true}
+            color={calibracion.colorAristas || "#1E293B"}
+            transparent={true}
+            opacity={0.45}
+            depthWrite={false}
+          />
+        </mesh>
+      )}
+      {mostrarAristasEnEsteMesh && (
         <Edges
           threshold={calibracion.thresholdAristas || 25}
           color={estaSeleccionadaEnPicking ? "#0891B2" : (esDuplicado ? "#991B1B" : (calibracion.colorAristas || "#111827"))}
@@ -1806,8 +2045,26 @@ function SingleFurnitureInstanceMesh({
   setFurnitureGroup?: (g: THREE.Group | null) => void;
   mostrarDuplicadosRojos?: boolean;
 }) {
-  const { modoVisual, posicionObjeto, modoTransformacion } = use3BFStore();
+  const { 
+    modoVisual, 
+    posicionObjeto, 
+    modoTransformacion,
+    pestanaActiva,
+    pasosManual,
+    pasoActivoManualId,
+  } = use3BFStore();
   const meshRef = useRef<THREE.Group>(null);
+
+  const pasoActivoManual = React.useMemo(() => {
+    return pasosManual.find((p) => p.id === pasoActivoManualId);
+  }, [pasosManual, pasoActivoManualId]);
+
+  const orientacionBanco = React.useMemo(() => {
+    if (pestanaActiva !== "manual" || !pasoActivoManual || pasoActivoManual.tipo === "showcase") {
+      return null;
+    }
+    return pasoActivoManual.orientacionBanco || null;
+  }, [pestanaActiva, pasoActivoManual]);
 
   React.useEffect(() => {
     if (isSelected && meshRef.current && setFurnitureGroup) {
@@ -1955,12 +2212,151 @@ function SingleFurnitureInstanceMesh({
     !boardMeshes.includes(m) && !hardwareMeshes.includes(m) && !machiningMeshes.includes(m)
   );
 
-  const currentPos = isSelected && modoTransformacion === "grab" ? posicionObjeto : inst.posicion;
+  // 📐 Cálculo de Orientación en Banco de Trabajo y Apoyo Físico en Suelo (Y = 0)
+  const { rotacionEfectiva, posicionEfectiva } = React.useMemo(() => {
+    const basePos: [number, number, number] = isSelected && modoTransformacion === "grab" 
+      ? posicionObjeto 
+      : (inst.posicion || [0, 0, 0]);
+
+    if (!orientacionBanco) {
+      const defaultRot: [number, number, number] = (inst.rotacion as any) || [0, 0, 0];
+      return {
+        rotacionEfectiva: defaultRot,
+        posicionEfectiva: basePos,
+      };
+    }
+
+    const rotX = orientacionBanco.rotacion?.[0] || 0;
+    const rotY = orientacionBanco.rotacion?.[1] || 0;
+    const rotZ = orientacionBanco.rotacion?.[2] || 0;
+    const apoyoEnPiso = orientacionBanco.apoyoEnPiso ?? true;
+
+    if (rotX === 0 && rotY === 0 && rotZ === 0) {
+      return {
+        rotacionEfectiva: [0, 0, 0] as [number, number, number],
+        posicionEfectiva: basePos,
+      };
+    }
+
+    const radX = THREE.MathUtils.degToRad(rotX);
+    const radY = THREE.MathUtils.degToRad(rotY);
+    const radZ = THREE.MathUtils.degToRad(rotZ);
+    const euler = new THREE.Euler(radX, radY, radZ, "XYZ");
+    const rotMat = new THREE.Matrix4().makeRotationFromEuler(euler);
+
+    if (!apoyoEnPiso || annotatedMeshes.length === 0) {
+      return {
+        rotacionEfectiva: [radX, radY, radZ] as [number, number, number],
+        posicionEfectiva: basePos,
+      };
+    }
+
+    // 🎯 CÁLCULO PRECISO DEL APOYO EN SUELO (Y = 0) Y CENTRADO EN BANCO
+    // Si Invert Hide está activo, tomamos prioritariamente las piezas de este paso
+    const piezasTarget = (pasoActivoManual?.ocultarNoAsignadas && (pasoActivoManual.piezasAsignadas?.length || 0) > 0)
+      ? annotatedMeshes.filter((m: any) => {
+          const ik = (m.instanciaKey || "").toLowerCase();
+          const cn = (m.name || "").replace(/^RH_OUT:/i, "").trim().toLowerCase();
+          const asignadas = [...(pasoActivoManual.piezasAsignadas || []), ...(pasoActivoManual.herrajesAsignados || [])];
+          return asignadas.some((p) => {
+            const pLow = p.toLowerCase();
+            return pLow === ik || pLow === cn || ik.startsWith(pLow);
+          });
+        })
+      : annotatedMeshes;
+
+    const meshesParaBox = piezasTarget.length > 0 ? piezasTarget : annotatedMeshes;
+
+    const localBox = new THREE.Box3();
+    for (const m of meshesParaBox) {
+      if (m.vertices && m.vertices.length >= 3) {
+        for (let i = 0; i < m.vertices.length; i += 3) {
+          localBox.expandByPoint(new THREE.Vector3(m.vertices[i], m.vertices[i + 1], m.vertices[i + 2]));
+        }
+      } else if (m.position && m.size) {
+        localBox.expandByPoint(new THREE.Vector3(
+          m.position[0] - m.size[0] / 2,
+          m.position[1] - m.size[1] / 2,
+          m.position[2] - m.size[2] / 2
+        ));
+        localBox.expandByPoint(new THREE.Vector3(
+          m.position[0] + m.size[0] / 2,
+          m.position[1] + m.size[1] / 2,
+          m.position[2] + m.size[2] / 2
+        ));
+      }
+    }
+
+    if (localBox.isEmpty()) {
+      return {
+        rotacionEfectiva: [radX, radY, radZ] as [number, number, number],
+        posicionEfectiva: basePos,
+      };
+    }
+
+    const unrotatedCenter = new THREE.Vector3();
+    localBox.getCenter(unrotatedCenter);
+
+    const corners: THREE.Vector3[] = [
+      new THREE.Vector3(localBox.min.x, localBox.min.y, localBox.min.z),
+      new THREE.Vector3(localBox.min.x, localBox.min.y, localBox.max.z),
+      new THREE.Vector3(localBox.min.x, localBox.max.y, localBox.min.z),
+      new THREE.Vector3(localBox.min.x, localBox.max.y, localBox.max.z),
+      new THREE.Vector3(localBox.max.x, localBox.min.y, localBox.min.z),
+      new THREE.Vector3(localBox.max.x, localBox.min.y, localBox.max.z),
+      new THREE.Vector3(localBox.max.x, localBox.max.y, localBox.min.z),
+      new THREE.Vector3(localBox.max.x, localBox.max.y, localBox.max.z),
+    ];
+
+    let minYRotado = Infinity;
+    for (const c of corners) {
+      const cRot = c.clone().applyMatrix4(rotMat);
+      if (cRot.y < minYRotado) {
+        minYRotado = cRot.y;
+      }
+    }
+
+    const rotatedCenter = unrotatedCenter.clone().applyMatrix4(rotMat);
+
+    const offsetY = -minYRotado;
+    const offsetX = unrotatedCenter.x - rotatedCenter.x;
+    const offsetZ = unrotatedCenter.z - rotatedCenter.z;
+
+    const finalX = basePos[0] + offsetX;
+    const finalY = basePos[1] + offsetY;
+    const finalZ = basePos[2] + offsetZ;
+
+    return {
+      rotacionEfectiva: [radX, radY, radZ] as [number, number, number],
+      posicionEfectiva: [finalX, finalY, finalZ] as [number, number, number],
+    };
+  }, [
+    isSelected,
+    modoTransformacion,
+    posicionObjeto,
+    inst.posicion,
+    inst.rotacion,
+    orientacionBanco,
+    pasoActivoManual,
+    annotatedMeshes,
+  ]);
+
+  const resolverTipoMapeado = React.useCallback((meshName: string) => {
+    const norm = (meshName || "").toLowerCase();
+    if (norm.includes("cubierta") || norm.includes("tapa")) {
+      return inst.parametros?.tipo_mapeado_cubierta || "Longitudinal";
+    }
+    if (norm.includes("entrepanio") || norm.includes("entrepaño") || norm.includes("estante") || norm.includes("prateleira")) {
+      return inst.parametros?.tipo_mapeado_entrepanio || "Longitudinal";
+    }
+    return "Longitudinal";
+  }, [inst.parametros?.tipo_mapeado_cubierta, inst.parametros?.tipo_mapeado_entrepanio]);
 
   return (
     <group 
       ref={meshRef} 
-      position={currentPos} 
+      position={posicionEfectiva} 
+      rotation={rotacionEfectiva}
       name={inst.nombreVisible}
     >
       {boardMeshes.length > 0 && (
@@ -1978,7 +2374,7 @@ function SingleFurnitureInstanceMesh({
               vertices={m.vertices}
               indices={m.indices}
               uvs={m.uvs}
-              tipoMapeado={m.name.includes("Cubierta") ? inst.parametros.tipo_mapeado_cubierta : inst.parametros.tipo_mapeado_entrepanio}
+              tipoMapeado={resolverTipoMapeado(m.name)}
               esDuplicado={Boolean(m.es_duplicado_ghx)}
             />
           ))}
@@ -2000,7 +2396,7 @@ function SingleFurnitureInstanceMesh({
               vertices={m.vertices}
               indices={m.indices}
               uvs={m.uvs}
-              tipoMapeado={m.name.includes("Cubierta") ? inst.parametros.tipo_mapeado_cubierta : inst.parametros.tipo_mapeado_entrepanio}
+              tipoMapeado={resolverTipoMapeado(m.name)}
               esDuplicado={Boolean(m.es_duplicado_ghx)}
             />
           ))}
@@ -2022,7 +2418,7 @@ function SingleFurnitureInstanceMesh({
               vertices={m.vertices}
               indices={m.indices}
               uvs={m.uvs}
-              tipoMapeado={m.name.includes("Cubierta") ? inst.parametros.tipo_mapeado_cubierta : inst.parametros.tipo_mapeado_entrepanio}
+              tipoMapeado={resolverTipoMapeado(m.name)}
               esDuplicado={Boolean(m.es_duplicado_ghx)}
             />
           ))}
@@ -2044,7 +2440,7 @@ function SingleFurnitureInstanceMesh({
               vertices={m.vertices}
               indices={m.indices}
               uvs={m.uvs}
-              tipoMapeado={m.name.includes("Cubierta") ? inst.parametros.tipo_mapeado_cubierta : inst.parametros.tipo_mapeado_entrepanio}
+              tipoMapeado={resolverTipoMapeado(m.name)}
               esDuplicado={Boolean(m.es_duplicado_ghx)}
             />
           ))}
@@ -2639,6 +3035,7 @@ function AssemblyAnimationController({ furnitureGroup }: { furnitureGroup: THREE
     activeStep?.showcase?.abrirCajones,
     activeStep?.showcase?.abrirPuertas,
     JSON.stringify(activeStep?.showcase?.gruposCinematicos),
+    JSON.stringify(activeStep?.orientacionBanco),
   ]);
 
   useEffect(() => {
@@ -2708,11 +3105,17 @@ export default function Viewer3D() {
     limpiarPickingManual,
     confirmarPickingManual,
     pasosManual,
+    pasoActivoManualId,
+    conmutarOcultarNoAsignadasPaso,
     purgarMallasDuplicadas,
     guardarManualProyecto,
     guardandoManual,
     manualActivoGuardado,
   } = use3BFStore();
+
+  const pasoActivoManual = React.useMemo(() => {
+    return pasosManual.find((p) => p.id === pasoActivoManualId);
+  }, [pasosManual, pasoActivoManualId]);
 
   const [guardadoManualReciente, setGuardadoManualReciente] = React.useState(false);
 
@@ -4713,6 +5116,21 @@ export default function Viewer3D() {
 
       {/* 🎬 Barra Flotante de Reproducción y Scrubber para Modo Manual */}
       {pestanaActiva === "manual" && <TimelineScrubber />}
+
+      {/* 🛡️ Badge Testigo de Invert Hide Activo en Modo Manual */}
+      {pestanaActiva === "manual" && pasoActivoManual && pasoActivoManual.tipo !== "showcase" && pasoActivoManual.ocultarNoAsignadas && (
+        <div className="absolute top-4 right-4 z-30 flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#1368AA] text-white text-[11px] font-bold shadow-lg backdrop-blur-sm border border-blue-400/40 animate-in fade-in duration-200">
+          <EyeOff className="w-3.5 h-3.5" />
+          <span>Invert Hide: Solo {pasoActivoManual.id} ({((pasoActivoManual.piezasAsignadas || []).length + (pasoActivoManual.herrajesAsignados || []).length)} piezas)</span>
+          <button
+            type="button"
+            onClick={() => conmutarOcultarNoAsignadasPaso(pasoActivoManual.id)}
+            className="ml-1 px-2.5 py-0.5 rounded-full bg-white/20 hover:bg-white/30 text-white text-[10px] font-semibold transition cursor-pointer"
+          >
+            Mostrar Todo
+          </button>
+        </div>
+      )}
 
       {/* 🎯 Barra Flotante de Selección 3D (Modo Cuentagotas / Picking de Pieza Madre) */}
       {modoPickingManual.activo && (

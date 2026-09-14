@@ -2836,6 +2836,28 @@ Con esta batería de arreglos y la validación en caliente, la V20 se establece 
   * Compilación TypeScript verificada (`npx tsc --noEmit` en `3bf`) con **0 errores**.
   * Servidores locales RhinoCompute (:5000), 3BF Worker Python (:8005) y 3BF Web App Next.js (:3005) activos y respondiendo inmediatamente.
 
+---
+
+### 🔹 Hito 118: Corrección DfMA de Mapeado de Veta en Tableros y Tapacantos en 3dBimFab (Auditoría GHX, Blindaje de UVs en Three.js y Contención Anti-FOUC en Logotipo) (14 de Septiembre, 2026)
+
+- **Auditoría GHX / RhinoCompute (`Comoda Ravenna.ghx`)**:
+  * Se auditó la definición nativa de Grasshopper y la respuesta del solver RhinoCompute 8 vía FastAPI (`/compute`).
+  * Se confirmó que para `Peça 14` (pilastra/parante vertical de $15 \times 865 \times 80\text{ mm}$), Grasshopper calculaba y devolvía sus UVs correctas: la altura $Y$ ($865\text{ mm}$) mapeada al eje $U$ ($[0.0, 1.4417]$), y los cantos frontal y trasero también con $Y$ mapeado a $U$.
+  * Dado que la textura patrón `Marfil_diffuse.jpg` tiene sus fibras de madera corriendo horizontalmente a lo largo del eje $U$, el cálculo de Grasshopper proyecta la veta vertical en las caras y continua longitudinalmente a lo largo de los cantos perimetrales.
+- **Causa Raíz en Visor Three.js (`Viewer3D.tsx`)**:
+  * En `SingleFurnitureInstanceMesh`, a toda pieza que no fuera "Cubierta" se le inyectaba ciegamente `inst.parametros.tipo_mapeado_entrepanio` (`"Entrepaño Atravesado"`).
+  * En `useMaterialPBRMaps`, `"Entrepaño Atravesado"` activaba `tex.rotation = Math.PI / 2`, girando la textura $90^\circ$ sobre todo el material compartido. Esto sobreescribía el cálculo nativo de Grasshopper, dejando la veta de `Peça 14` horizontal y provocando que el tapacanto quedara atravesado a través de los $15\text{ mm}$.
+- **Blindaje DfMA Implementado**:
+  * **Blindaje de UVs de Grasshopper (`useMaterialPBRMaps`)**: Si la pieza ya trae UVs calculadas por Grasshopper (`hasGrasshopperUvs`), `tex.rotation` se mantiene estrictamente en `0`.
+  * **Discriminación Precisa de Mapeado**: Se implementó `resolverTipoMapeado(meshName)` para que solo cubiertas y entrepaños reales consuman sus selectores específicos, manteniendo parantes, laterales y pilastras en su orientación longitudinal natural.
+  * **Proyección Triplanar de Fallback DfMA**: En `customGeometry`, las caras verticales y laterales orientan la dimensión dominante ($Y$ en piezas verticales) al eje $U$ de la veta, garantizando que los cantos perimetrales **NUNCA** queden atravesados.
+- **Blindaje Anti-FOUC en Logotipo SVG (`app/page.tsx`)**:
+  * Se añadió contención inline estricta `style={{ maxHeight: "32px", width: "auto", height: "auto" }}` al SVG maestro de `3dBimFab` para prevenir cualquier desbordamiento visual ante retardos de hidratación de estilos CSS.
+- **Validación de Calidad**:
+  * `next build` en `3bf` completado con 0 errores de TypeScript y empaquetado exitoso de 23 páginas estáticas y dinámicas.
+  * Servidores RhinoCompute (:5000), 3BF Worker (:8005) y 3BF Web App (:3005) operativos.
+
+
 
 
 

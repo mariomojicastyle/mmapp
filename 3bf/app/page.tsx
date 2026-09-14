@@ -342,6 +342,7 @@ export default function Home3BF() {
             fill="none"
             xmlns="http://www.w3.org/2000/svg"
             className="h-[18px] sm:h-5 lg:h-8 w-auto select-none overflow-visible"
+            style={{ maxHeight: "32px", width: "auto", height: "auto" }}
             role="img"
             aria-label="3dBimFab — Powered by MARIO MOJICA"
           >

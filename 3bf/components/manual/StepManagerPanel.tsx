@@ -844,16 +844,16 @@ export default function StepManagerPanel() {
                     }
                     className={`px-3 py-1 rounded-full text-[9.5px] font-bold border transition flex items-center gap-1.5 cursor-pointer shrink-0 ${
                       pasoActivo.ocultarNoAsignadas
-                        ? "bg-indigo-600 text-white border-indigo-500 shadow-md ring-2 ring-indigo-400/40"
+                        ? "bg-[#1368AA] text-white border-[#1368AA] shadow-sm ring-2 ring-[#1368AA]/30"
                         : "bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 border-slate-300 dark:border-slate-700 shadow-sm"
                     }`}
                   >
                     {pasoActivo.ocultarNoAsignadas ? (
                       <EyeOff className="w-3.5 h-3.5 text-white" />
                     ) : (
-                      <Eye className="w-3.5 h-3.5 text-indigo-500" />
+                      <Eye className="w-3.5 h-3.5 text-[#1368AA]" />
                     )}
-                    <span>{pasoActivo.ocultarNoAsignadas ? "Invert Hide (Solo P01)" : "Invert Hide"}</span>
+                    <span>{pasoActivo.ocultarNoAsignadas ? `Invert Hide (Solo ${pasoActivo.id})` : "Invert Hide"}</span>
                   </button>
                 </div>
               </div>
@@ -1046,7 +1046,7 @@ export default function StepManagerPanel() {
                 })}
               </select>
 
-              {/* Botonera de Orientación Banco de Trabajo (Giro X / Y) */}
+              {/* Botonera de Orientación Banco de Trabajo (Giro X / Y / Z) */}
               {(() => {
                 const rotacionBanco = pasoActivo.orientacionBanco?.rotacion || [0, 0, 0];
                 const rotX = rotacionBanco[0] || 0;
@@ -1057,16 +1057,19 @@ export default function StepManagerPanel() {
                 const isXNegActive = rotX === -90;
                 const isYPosActive = rotY === 90;
                 const isYNegActive = rotY === -90;
+                const isZPosActive = rotZ === 90;
+                const isZNegActive = rotZ === -90;
 
-                const toggleRotacionBanco = (eje: "X" | "Y", anguloObjetivo: 90 | -90) => {
-                  const anguloActual = eje === "X" ? rotX : rotY;
+                const toggleRotacionBanco = (eje: "X" | "Y" | "Z", anguloObjetivo: 90 | -90) => {
+                  const anguloActual = eje === "X" ? rotX : eje === "Y" ? rotY : rotZ;
                   const nuevoAngulo = anguloActual === anguloObjetivo ? 0 : anguloObjetivo;
                   const nuevoX = eje === "X" ? nuevoAngulo : rotX;
                   const nuevoY = eje === "Y" ? nuevoAngulo : rotY;
+                  const nuevoZ = eje === "Z" ? nuevoAngulo : rotZ;
 
                   actualizarPasoManual(pasoActivo.id, {
                     orientacionBanco: {
-                      rotacion: [nuevoX, nuevoY, rotZ],
+                      rotacion: [nuevoX, nuevoY, nuevoZ],
                       apoyoEnPiso: pasoActivo.orientacionBanco?.apoyoEnPiso ?? true,
                     },
                   });
@@ -1079,10 +1082,10 @@ export default function StepManagerPanel() {
                         Giro Banco de Trabajo:
                       </span>
                       <div className="flex items-center gap-1.5">
-                        <span className="px-2.5 py-0.5 rounded-full bg-slate-200/80 dark:bg-slate-800 text-[10px] font-mono font-bold text-cyan-600 dark:text-cyan-400">
-                          X: {rotX}° | Y: {rotY}°
+                        <span className="px-2.5 py-0.5 rounded-full bg-slate-200/80 dark:bg-slate-800 text-[10px] font-mono font-bold text-[#1368AA] dark:text-blue-400">
+                          X: {rotX}° | Y: {rotY}° | Z: {rotZ}°
                         </span>
-                        {(rotX !== 0 || rotY !== 0) && (
+                        {(rotX !== 0 || rotY !== 0 || rotZ !== 0) && (
                           <button
                             type="button"
                             onClick={() =>
@@ -1107,14 +1110,13 @@ export default function StepManagerPanel() {
                         type="button"
                         onClick={() => toggleRotacionBanco("X", 90)}
                         title={isXPosActive ? "Desactivar giro X +90° (volver a 0°)" : "Activar giro X +90°"}
-                        style={isXPosActive ? { backgroundColor: botonActivoColor, borderColor: botonActivoColor } : undefined}
                         className={`flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-full border text-xs font-semibold shadow-xs active:scale-95 transition-all cursor-pointer ${
                           isXPosActive
-                            ? "text-white shadow-sm"
-                            : "border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:border-cyan-500 hover:text-cyan-600 dark:hover:text-cyan-400"
+                            ? "bg-[#1368AA] text-white border-[#1368AA] shadow-sm"
+                            : "border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:border-[#1368AA] hover:text-[#1368AA] dark:hover:text-blue-400"
                         }`}
                       >
-                        <RotateCw className={`w-3.5 h-3.5 ${isXPosActive ? "text-white" : "text-cyan-600 dark:text-cyan-400"}`} />
+                        <RotateCw className={`w-3.5 h-3.5 ${isXPosActive ? "text-white" : "text-[#1368AA] dark:text-blue-400"}`} />
                         <span>Giro X +90°</span>
                       </button>
 
@@ -1122,14 +1124,13 @@ export default function StepManagerPanel() {
                         type="button"
                         onClick={() => toggleRotacionBanco("X", -90)}
                         title={isXNegActive ? "Desactivar giro X -90° (volver a 0°)" : "Activar giro X -90°"}
-                        style={isXNegActive ? { backgroundColor: botonActivoColor, borderColor: botonActivoColor } : undefined}
                         className={`flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-full border text-xs font-semibold shadow-xs active:scale-95 transition-all cursor-pointer ${
                           isXNegActive
-                            ? "text-white shadow-sm"
-                            : "border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:border-cyan-500 hover:text-cyan-600 dark:hover:text-cyan-400"
+                            ? "bg-[#1368AA] text-white border-[#1368AA] shadow-sm"
+                            : "border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:border-[#1368AA] hover:text-[#1368AA] dark:hover:text-blue-400"
                         }`}
                       >
-                        <RotateCcw className={`w-3.5 h-3.5 ${isXNegActive ? "text-white" : "text-cyan-600 dark:text-cyan-400"}`} />
+                        <RotateCcw className={`w-3.5 h-3.5 ${isXNegActive ? "text-white" : "text-[#1368AA] dark:text-blue-400"}`} />
                         <span>Giro X -90°</span>
                       </button>
 
@@ -1137,14 +1138,13 @@ export default function StepManagerPanel() {
                         type="button"
                         onClick={() => toggleRotacionBanco("Y", 90)}
                         title={isYPosActive ? "Desactivar giro Y +90° (volver a 0°)" : "Activar giro Y +90°"}
-                        style={isYPosActive ? { backgroundColor: botonActivoColor, borderColor: botonActivoColor } : undefined}
                         className={`flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-full border text-xs font-semibold shadow-xs active:scale-95 transition-all cursor-pointer ${
                           isYPosActive
-                            ? "text-white shadow-sm"
-                            : "border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:border-cyan-500 hover:text-cyan-600 dark:hover:text-cyan-400"
+                            ? "bg-[#1368AA] text-white border-[#1368AA] shadow-sm"
+                            : "border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:border-[#1368AA] hover:text-[#1368AA] dark:hover:text-blue-400"
                         }`}
                       >
-                        <RotateCw className={`w-3.5 h-3.5 ${isYPosActive ? "text-white" : "text-cyan-600 dark:text-cyan-400"}`} />
+                        <RotateCw className={`w-3.5 h-3.5 ${isYPosActive ? "text-white" : "text-[#1368AA] dark:text-blue-400"}`} />
                         <span>Giro Y +90°</span>
                       </button>
 
@@ -1152,15 +1152,42 @@ export default function StepManagerPanel() {
                         type="button"
                         onClick={() => toggleRotacionBanco("Y", -90)}
                         title={isYNegActive ? "Desactivar giro Y -90° (volver a 0°)" : "Activar giro Y -90°"}
-                        style={isYNegActive ? { backgroundColor: botonActivoColor, borderColor: botonActivoColor } : undefined}
                         className={`flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-full border text-xs font-semibold shadow-xs active:scale-95 transition-all cursor-pointer ${
                           isYNegActive
-                            ? "text-white shadow-sm"
-                            : "border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:border-cyan-500 hover:text-cyan-600 dark:hover:text-cyan-400"
+                            ? "bg-[#1368AA] text-white border-[#1368AA] shadow-sm"
+                            : "border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:border-[#1368AA] hover:text-[#1368AA] dark:hover:text-blue-400"
                         }`}
                       >
-                        <RotateCcw className={`w-3.5 h-3.5 ${isYNegActive ? "text-white" : "text-cyan-600 dark:text-cyan-400"}`} />
+                        <RotateCcw className={`w-3.5 h-3.5 ${isYNegActive ? "text-white" : "text-[#1368AA] dark:text-blue-400"}`} />
                         <span>Giro Y -90°</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => toggleRotacionBanco("Z", 90)}
+                        title={isZPosActive ? "Desactivar giro Z +90° (volver a 0°)" : "Activar giro Z +90°"}
+                        className={`flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-full border text-xs font-semibold shadow-xs active:scale-95 transition-all cursor-pointer ${
+                          isZPosActive
+                            ? "bg-[#1368AA] text-white border-[#1368AA] shadow-sm"
+                            : "border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:border-[#1368AA] hover:text-[#1368AA] dark:hover:text-blue-400"
+                        }`}
+                      >
+                        <RotateCw className={`w-3.5 h-3.5 ${isZPosActive ? "text-white" : "text-[#1368AA] dark:text-blue-400"}`} />
+                        <span>Giro Z +90°</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => toggleRotacionBanco("Z", -90)}
+                        title={isZNegActive ? "Desactivar giro Z -90° (volver a 0°)" : "Activar giro Z -90°"}
+                        className={`flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-full border text-xs font-semibold shadow-xs active:scale-95 transition-all cursor-pointer ${
+                          isZNegActive
+                            ? "bg-[#1368AA] text-white border-[#1368AA] shadow-sm"
+                            : "border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:border-[#1368AA] hover:text-[#1368AA] dark:hover:text-blue-400"
+                        }`}
+                      >
+                        <RotateCcw className={`w-3.5 h-3.5 ${isZNegActive ? "text-white" : "text-[#1368AA] dark:text-blue-400"}`} />
+                        <span>Giro Z -90°</span>
                       </button>
                     </div>
                   </div>
