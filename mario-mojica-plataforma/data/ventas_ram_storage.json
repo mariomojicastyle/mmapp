@@ -534,6 +534,30 @@
       "created_at": "2026-08-20T15:35:55.755306+00:00",
       "updated_at": "2026-08-20T15:35:55.755306+00:00",
       "interacciones_count": 0
+    },
+    {
+      "id": "p-edipo-lima",
+      "nombre": "?dipo Lima",
+      "empresa": "NODERE Pessoas & Neg?cios",
+      "cargo": "Consultor Comercial e Novos Neg?cios",
+      "pais": "Brasil",
+      "ciudad": "Caxias do Sul",
+      "estado_embudo": "Contacto Inicial",
+      "temperatura": "Tibio",
+      "canal_preferido": "LinkedIn",
+      "linkedin": "https://www.linkedin.com/in/edipolima/",
+      "whatsapp": null,
+      "email": null,
+      "tier": "Tier 3",
+      "segmento": "Consultor?a Comercial & Headhunting B2B",
+      "potencial_mensual_usd": 0,
+      "notas_estrategicas": "Contacto en Caxias do Sul (polo mueblero de Serra Ga?cha). Consultor en NODERE. M?s de 15 contactos en com?n. Se envi? mensaje de bienvenida (~600 caracteres) destacando experiencia en muebles RTA, conocimiento de Caxias do Sul, el proyecto 3dBimFab y apertura para colaborar con empresas de la regi?n.",
+      "referido_por_id": null,
+      "referido_por_nombre": null,
+      "tipo_relacion": "Conexi?n LinkedIn (Caxias do Sul)",
+      "created_at": "2026-09-15T11:18:32.913199",
+      "updated_at": "2026-09-15T11:18:32.913199",
+      "interacciones_count": 1
     }
   ],
   "interacciones": {
@@ -1526,6 +1550,21 @@
         "contactos_referidos": [],
         "proxima_accion_sugerida": "Responder mensaje en LinkedIn o WhatsApp para agendar videollamada de 20 minutos y presentar 3dBimFab en vivo.",
         "created_at": "2026-08-14T15:00:00.000Z"
+      }
+    ],
+    "p-edipo-lima": [
+      {
+        "id": "int_afca297efce1",
+        "prospecto_id": "p-edipo-lima",
+        "prospecto_nombre": "?dipo Lima",
+        "empresa": "NODERE Pessoas & Neg?cios",
+        "tipo": "Mensaje LinkedIn",
+        "canal": "LinkedIn",
+        "fecha": "2026-09-15T11:18:32.913199",
+        "resumen": "Mensaje de bienvenida y presentaci?n (600 caracteres) enfocado en Caxias do Sul, muebles RTA y 3dBimFab.",
+        "detalle": "Ol?, ?dipo, tudo bem? Obrigado pela conex?o no LinkedIn! ? sempre uma satisfa??o falar com profissionais de Caxias do Sul...",
+        "resultado": "Enviado / En espera de respuesta",
+        "created_at": "2026-09-15T11:18:32.913199"
       }
     ]
   }

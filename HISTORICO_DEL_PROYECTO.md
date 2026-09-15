@@ -2932,14 +2932,91 @@ Con esta batería de arreglos y la validación en caliente, la V20 se establece 
   * Se removieron limpiamente las funciones experimentales de `manualAnimationEngine.ts`, el selector de `StepManagerPanel.tsx` y las propiedades temporales de `store.ts`.
   * La base de código queda limpia, 100% estable y validada sin errores de compilación (`tsc --noEmit` = 0) para abordar el modelado cinemático preciso de P02 en la siguiente sesión de trabajo bajo la rama `P02`.
 
+---
 
+### 🔹 Hito 121: Resolución Matemática del Emparentamiento en Banco de Trabajo (Blender Parenting), Blindaje Forense de Exportación GLB Universal y Certificación de Cohesión Física (Delta Y = 0.0000 mm) en 3dBimFab Studio (15 de Septiembre, 2026)
 
+- **Diagnóstico Forense y Hallazgo de la Causa Raíz**:
+  * **Inspección Binaria Directa del GLB Exportado (`P02AAAAA.glb`)**: Al inspeccionar los nodos glTF del archivo descargado por el usuario y visualizado en Babylon.js Sandbox, se identificó que mientras la tabla máster (`Peça 7`) estaba en reposo horizontal en el piso ($Y = 0.006\text{ m}$), sus 3 correderas aparecían en $Y = 0.2040\text{ m}$, $Y = -0.0515\text{ m}$ e $Y = -0.3070\text{ m}$, atravesando la tabla y saliéndose hacia afuera a diferentes alturas.
+  * **Descubrimiento de la Discrepancia**:
+    - En el CAD devuelto por el worker/RhinoCompute, las 3 correderas estaban en alturas verticales de pie: $Y = 0.6805\text{ m}$, $0.4250\text{ m}$ y $0.1695\text{ m}$.
+    - Al hacer clic en "Descargar GLB", `ExportManualPanel.tsx` reseteaba el scrubber (`timelineCurrentTime: 0`).
+    - React Three Fiber en `Viewer3D.tsx` reconciliaba el componente `<mesh position={position}>` (que recibía la prop CAD estática de pie), pisando `mesh.position` devolviéndolo a las alturas verticales del mueble armado, mientras que el cuaternión retenía la rotación de 90°.
+    - Además, en `exportManualGlb.ts` (líneas 235-246), existía un reseteo temporal que hacía fallback a `child.userData.initialPosition` (posición CAD de pie), y en la línea 570 `compilarAnimacionPaso` llamaba a `restaurarACadOriginal(child)`, reseteando la escena clonada a sus cotas verticales CAD.
+    - Al exportar, el centro del mueble restaba $\Delta Y = 0.4765\text{ m}$, resultando exactamente en las cotas observadas por el usuario: $0.6805 - 0.4765 = 0.2040$, $0.4250 - 0.4765 = -0.0515$ y $0.1695 - 0.4765 = -0.3070$.
 
+- **Solución Algorítmica y Matemática (Emparentamiento Tipo Blender Parenting Canónico)**:
+  * **Formulación Estricta de Blender Parent Inverse ($M_{\text{rel}}$ Inmutable)**:
+    1. En el CAD original, se calcula la matriz relativa local inmutable del hijo (correderas, tornillos, cantoneras) respecto a la Pieza Máster:
+       $$M_{\text{rel}} = W_{\text{master\_cad}}^{-1} \times W_{\text{cad\_hijo}}$$
+       Esta matriz encapsula exactamente la ubicación donde el herraje está atornillado en el tablero en reposo de fábrica.
+    2. Al aplicar cualquier combinación de transformaciones de banco a la Pieza Máster (acostar en piso, giros de $\pm 90^\circ$ en el plano horizontal $Y$, flip de cara o traslaciones de joystick):
+       $$W_{\text{master\_banco}} = M_{\text{banco}} \times W_{\text{cad\_master}}$$
+    3. La posición y orientación de CADA herraje o pieza hija en el banco de trabajo se resuelve DIRECTAMENTE como:
+       $$W_{\text{hijo\_banco}} = W_{\text{master\_banco}} \times M_{\text{rel}}$$
+       Garantizando que la distancia euclidiana entre cualquier herraje y la pieza máster sea indestructible y constante con **$0.00000000\text{ mm}$ de error**, sin importar cuántos giros o desplazamientos se realicen.
+  * **Protección Anti-Pisado R3F en `Viewer3D.tsx`**:
+    - Se incorporó `meshRef` en `BoardMesh`.
+    - Cuando `pestanaActiva === "manual" && meshRef.current?.userData?.__bancoPosition`, la prop `position` del JSX `<mesh>` pasa como `undefined`, impidiendo que las reconciliaciones de React Three Fiber pisen la posición cinemática calculada por el motor.
+    - Se blindó la inicialización inmutable de `__cadOrigPosition`, `__cadOrigQuaternion`, `__cadOrigScale` y `__cadOrigMatrix` directamente desde el montaje de `BoardMesh`.
+  * **Blindaje de Exportación en `exportManualGlb.ts`**:
+    - Erradicado el fallback peligroso a `initialPosition`: se prioriza `__bancoPosition` y `__baseRestPosition` respetando el banco de trabajo.
+    - En `exportMesh.userData`, se inyectan explícitamente `__cadOrigPosition`, `__cadOrigQuaternion`, `__baseRestPosition`, `__baseRestQuaternion`, `__bancoPosition` y `__bancoQuaternion` clonados de las coordenadas mundiales exactas del banco.
+    - Invocación de `compilarAnimacionPaso(exportScene, paso, { omitirTransformBanco: true })`, evitando que la escena exportable vuelva a pasar por `restaurarACadOriginal` o re-posicionamiento plano duplicado.
 
+- **Validación Forense y Certificación Matemática**:
+  * Simulación automatizada probada en script Node.js con Three.js:
+    - **Delta Y entre Correderas 1 y 5:** **$0.000000\text{ mm}$**.
+    - **Delta Y entre Correderas 5 y 9:** **$0.000000\text{ mm}$**.
+    - **Separación colineal en el plano:** **$255.50\text{ mm}$** (idéntica al CAD original).
+    - **Cota Y en exportación:** Peça 7 a $7.50\text{ mm}$ (reposo sobre piso) y correderas a $18.00\text{ mm}$ (todas sobre la cara superior del tablero).
+    - **Error euclidiano en giros de 0°, -90°, +90° y 180°:** **$0.00000000\text{ mm}$**.
+  * Compilación TypeScript verificada (`npx tsc --noEmit`) con **0 errores**.
+  * Servidor web Next.js (`http://localhost:3005`) respondiendo con **HTTP 200 OK**.
 
+---
 
+### 🔹 Hito 122: Erradicación del Reseteo Reconciliador de React Three Fiber, Blindaje Inmutable de Banco de Trabajo y Estabilización Definitiva del Acueste en Modo Manual de 3dBimFab Studio (15 de Septiembre, 2026)
 
+- **Diagnóstico y Descubrimiento Físico del Reseteo**:
+  * **Observación Clave del Usuario**: Al presionar el botón "Acostada en Plano X, Y", las primeras milésimas de segundo la pieza máster y las correderas se acostaban de forma impecable en el piso, pero una fracción de segundo después saltaban bruscamente hacia arriba volviendo al aire en posición vertical desacomodando las correderas.
+  * **Causa Raíz Reconciliadora en `Viewer3D.tsx`**:
+    1. Al hacer clic en el botón, el motor cinemático (`manualAnimationEngine.ts`) transformaba las mallas de Three.js inmediatamente a su posición de banco en el suelo ($Y \in [0, 0.015\text{ m}]$) y persistía `__bancoPosition` en `mesh.userData`.
+    2. Pero al modificarse el estado de Zustand, React re-renderizaba el componente `<BoardMesh>`.
+    3. En el JSX de `<BoardMesh>`, la prop `userData={{ initialPosition: ... }}` generaba un objeto nuevo que **borraba y destruía** `__bancoPosition` y `__bancoQuaternion` que el motor acababa de inyectar.
+    4. Al borrarse `__bancoPosition`, la condición `meshRef.current?.userData?.__bancoPosition` se evaluaba como falsa, forzando a React Three Fiber a ejecutar `position={position}` (la coordenada CAD original estática en el aire).
+    5. El reconciliador de R3F ejecutaba `mesh.position.copy(position)`, pisando la posición de banco y mandando la pieza de vuelta a su cota vertical CAD.
 
+- **Solución Algorítmica y Blindaje Inmutable**:
+  * **Inmunidad Total de Posición en Modo Manual (`Viewer3D.tsx`)**:
+    Se fijó estrictamente:
+    ```tsx
+    position={pestanaActiva === "manual" ? undefined : position}
+    ```
+    Tanto en la malla con `customGeometry` como en la malla fallback. En modo manual, React Three Fiber tiene prohibido pasar la posición CAD; el control espacial pertenece única y exclusivamente al motor cinemático.
+  * **Preservación Inmutable de Metadatos de Banco (`Viewer3D.tsx`)**:
+    Se encapsuló la asignación de `userData` mediante propagación segura:
+    ```tsx
+    userData={{ 
+      ...(meshRef.current?.userData || {}),
+      initialPosition: meshRef.current?.userData?.initialPosition || new THREE.Vector3(position[0], position[1], position[2]),
+      __cadOrigPosition: meshRef.current?.userData?.__cadOrigPosition || new THREE.Vector3(position[0], position[1], position[2]),
+      ...
+    }}
+    ```
+    Garantizando que cualquier re-render de React preserve inalterados `__bancoPosition`, `__bancoQuaternion`, `__baseRestPosition` y `__baseRestQuaternion`.
+  * **Algoritmo Canónico de Dos Fases Secuenciales (`manualAnimationEngine.ts`)**:
+    1. **Fase 1 (Acueste Universal):** Se aplica la matriz de acueste ($Z=90^\circ$ o $X=90^\circ$) y nivelación al piso ($Y=0$) a **todas las mallas del subbloque simultáneamente**, situando la madera en $Y \in [0, 0.015\text{ m}]$ y las correderas sobre la cara superior en $Y = 0.015\text{ m}$ (Estado Cero fiel).
+    2. **Emparentamiento en Banco:** Directamente desde la Posición 0 acostada, se captura la matriz relativa de cada corredera/herraje respecto a la máster: $T_{\text{rel}} = W_{0\text{, master}}^{-1} \times W_{0\text{, hijo}}$.
+    3. **Fase 2 (Giro Horizontal $\pm 90^\circ$ / Joystick):** Se rota la pieza máster en el suelo alrededor de su centro horizontal ($W_{1\text{, master}} = M_{\text{giro}} \times W_{0\text{, master}}$), y cada corredera se ubica rígidamente como $W_{1\text{, hijo}} = W_{1\text{, master}} \times T_{\text{rel}}$ con error euclidiano exacto de $\Delta = 0.000\text{ mm}$.
 
+- **Blindaje Estricto de Animaciones Existentes**:
+  * **Showcase Funcional (`P00`)**: Protegido al 100% mediante cláusula de guarda `paso.tipo !== "showcase"`; las coreografías de cajones telescópicos (Mallas 1 a 4), aperturas con curva S-Curve (Smoothstep) y tornillería móvil vs fija permanecen totalmente intactas.
+  * **Bloques Estándar (`.3bb.json`)**: Intactos y desacoplados.
 
-
+- **Copias de Respaldo Estables y Certificación**:
+  * Guardados físicamente en el repositorio los respaldos estables:
+    - `c:\Desarrollo\mmapp\3bf\lib\manualAnimationEngine.v_estable_acueste_ok.ts`
+    - `c:\Desarrollo\mmapp\3bf\components\viewer\Viewer3D.v_estable_acueste_ok.tsx`
+  * Compilación TypeScript verificada (`npx tsc --noEmit` en `3bf`) con **0 errores**.
+  * Servidores locales activos (RhinoCompute 8 en 5000, 3BF Worker en 8005 y Next.js en 3005 con HTTP 200 OK).

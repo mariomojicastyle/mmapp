@@ -335,7 +335,7 @@ export default function Home3BF() {
         }}
         className="h-9 lg:h-14 px-2 sm:px-3 lg:px-4 flex items-center justify-between border-b glass-panel z-10 relative transition-colors gap-1 sm:gap-2 lg:gap-3 overflow-x-auto custom-scrollbar"
       >
-        {/* Logotipo Vectorial Completo 3dBimFab */}
+        {/* Logotipo Vectorial Completo 3dBimFab (v2 Oficial) */}
         <div className="flex items-center shrink-0">
           <svg
             viewBox="6.73 15.276 235 59.448"
@@ -347,21 +347,24 @@ export default function Home3BF() {
           >
             <g transform="translate(0.54747356,0.5)">
               <g transform="translate(0.64469146)">
-                {/* Cuadro Rojo 3BF del SVG Oficial */}
+                {/* Cuadro Rojo 3BF del SVG Oficial v2 con esquinas redondeadas suaves */}
                 <rect
                   x="5.5378542"
                   y="14.77611"
                   width="59.447781"
                   height="59.447781"
+                  rx="9"
+                  ry="9"
                   fill="#bb0f0f"
                 />
-                {/* Texto 3BF */}
+                {/* Texto 3BF con calibre robusto (Prompt Bold v2) */}
                 <text
                   x="8.3642311"
                   y="54.980133"
                   style={{
                     fontFamily: "var(--font-prompt), 'Prompt', sans-serif",
                     fontSize: "29.9861px",
+                    fontWeight: "bold",
                     fill: coloresApariencia?.color3BF || "#ffffff",
                   }}
                 >

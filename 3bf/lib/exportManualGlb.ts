@@ -227,25 +227,24 @@ export async function exportarGlbPasoManual(
 
   const materialOptimizedCache = new Map<string, THREE.MeshStandardMaterial>();
 
-  // 1.1. Resetear temporalmente las mallas a su posición de reposo absoluto (__baseRestPosition)
-  // para garantizar que la exportación extraiga la geometría en reposo (cajones 100% cerrados a 0.0 mm),
-  // evitando que una posición del scrubber en la app desfase o desincronice el origen del GLB.
+  // 1.1. Asegurar que las mallas estén en su posición de reposo del banco de trabajo
+  // (cajones cerrados a 0.0 mm y sin desfase de scrubber), preservando rigurosamente
+  // las coordenadas del banco de trabajo (__bancoPosition / __baseRestPosition).
   const animatedStates = new Map<THREE.Object3D, { pos: THREE.Vector3; quat: THREE.Quaternion; scale: THREE.Vector3 }>();
   scene.traverse((child) => {
-    const rawInit = child.userData?.initialPosition;
-    if (rawInit || child.userData?.__baseRestPosition) {
+    if (child.userData?.__bancoPosition || child.userData?.__baseRestPosition) {
       animatedStates.set(child, {
         pos: child.position.clone(),
         quat: child.quaternion.clone(),
         scale: child.scale.clone(),
       });
-      if (child.userData.__baseRestPosition) {
-        child.position.copy(child.userData.__baseRestPosition);
-      } else if (rawInit) {
-        child.position.set(rawInit.x, rawInit.y, rawInit.z);
+      const restPos = child.userData.__bancoPosition || child.userData.__baseRestPosition;
+      const restQuat = child.userData.__bancoQuaternion || child.userData.__baseRestQuaternion;
+      if (restPos) {
+        child.position.copy(restPos);
       }
-      if (child.userData.__baseRestQuaternion) {
-        child.quaternion.copy(child.userData.__baseRestQuaternion);
+      if (restQuat) {
+        child.quaternion.copy(restQuat);
       }
       if (child.userData.__baseRestScale) {
         child.scale.copy(child.userData.__baseRestScale);
@@ -344,15 +343,18 @@ export async function exportarGlbPasoManual(
     const piezaMadre = mesh.userData?.piezaMadre || extraerPiezaMadre(cleanName);
 
     // Detección semántica de tipos de herraje y componentes
-    const isHwCorredera = Boolean(mesh.userData?.isHardwareCorredera || nLow.includes("corredera") || nLow.includes("corredi"));
-    const isHwCantoneira = Boolean(mesh.userData?.isHardwareCantoneira || nLow.includes("cantoneira") || nLow.includes("esquinero"));
+    const isHwCorredera = Boolean(mesh.userData?.isHardwareCorredera || nLow.includes("corredera") || nLow.includes("corredi") || nLow.includes("trilho"));
+    const isHwCantoneira = Boolean(mesh.userData?.isHardwareCantoneira || nLow.includes("cantoneira") || nLow.includes("cantonera") || nLow.includes("esquinero"));
     const isHwPerno = Boolean(mesh.userData?.isHardwarePerno || nLow.includes("perno") || nLow.includes("tornillo") || nLow.includes("parafuso"));
-    const isHwCaja = Boolean(mesh.userData?.isHardwareCaja || ((nLow.includes("caja") || nLow.includes("minifix")) && !nLow.includes("cajon") && !nLow.includes("cajón") && !nLow.includes("gaveta")));
-    const isHwTarugo = Boolean(mesh.userData?.isHardwareTarugo || nLow.includes("tarugo") || nLow.includes("cavilha") || nLow.includes("clavilha"));
+    const isHwPrego = Boolean(mesh.userData?.isHardwarePrego || nLow.includes("prego") || nLow.includes("puntilla") || nLow.includes("clavo") || nLow.includes("tachuela"));
+    const isHwSuporte = Boolean(mesh.userData?.isHardwareSuporte || nLow.includes("suporte") || nLow.includes("soporte") || nLow.includes("esquadro"));
+    const isHwCaja = Boolean(mesh.userData?.isHardwareCaja || ((nLow.includes("caja") || nLow.includes("minifix") || nLow.includes("girofix") || nLow.includes("tambor")) && !nLow.includes("cajon") && !nLow.includes("cajón") && !nLow.includes("gaveta")));
+    const isHwTarugo = Boolean(mesh.userData?.isHardwareTarugo || nLow.includes("tarugo") || nLow.includes("cavilha") || nLow.includes("clavilha") || nLow.includes("espiga"));
     const isHwPata = Boolean(mesh.userData?.isHardwarePata || nLow.includes("pes") || nLow.includes("pés") || nLow.includes("pata") || nLow.includes("pie") || nLow.includes("sapata") || nLow.includes("deslizador") || nLow.includes("nivelador"));
     const isHwPorca = Boolean(mesh.userData?.isHardwarePorca || nLow.includes("porca") || nLow.includes("tuerca") || nLow.includes("bucha"));
-    const isHwPuxador = Boolean(nLow.includes("puxador") || nLow.includes("manija") || nLow.includes("tirador"));
-    const isHw = Boolean(mesh.userData?.isHardware || isHwCorredera || isHwCantoneira || isHwPerno || isHwCaja || isHwTarugo || isHwPata || isHwPorca || isHwPuxador || nLow.includes("bisagra"));
+    const isHwTampa = Boolean(mesh.userData?.isHardwareTampa || nLow.includes("tampa") || nLow.includes("tapa") || nLow.includes("adesivo"));
+    const isHwPuxador = Boolean(nLow.includes("puxador") || nLow.includes("manija") || nLow.includes("tirador") || nLow.includes("jaladera"));
+    const isHw = Boolean(mesh.userData?.isHardware || isHwCorredera || isHwCantoneira || isHwPerno || isHwPrego || isHwSuporte || isHwCaja || isHwTarugo || isHwPata || isHwPorca || isHwTampa || isHwPuxador || nLow.includes("bisagra") || nLow.includes("dobradiça") || nLow.includes("dobradi"));
 
     // Detección de tableros de fondo de 3 mm (costas, traseras, fondos de cajón, Peça 15, Peça 18)
     const isFondoBoard = Boolean(
@@ -538,9 +540,15 @@ export async function exportarGlbPasoManual(
     exportMesh.userData = {
       ...mesh.userData,
       initialPosition: exportMesh.position.clone(),
+      __cadOrigPosition: exportMesh.position.clone(),
+      __cadOrigQuaternion: exportMesh.quaternion.clone(),
+      __cadOrigScale: exportMesh.scale.clone(),
+      __cadOrigMatrix: exportMesh.matrix.clone(),
       __baseRestPosition: exportMesh.position.clone(),
       __baseRestQuaternion: exportMesh.quaternion.clone(),
       __baseRestScale: exportMesh.scale.clone(),
+      __bancoPosition: exportMesh.position.clone(),
+      __bancoQuaternion: exportMesh.quaternion.clone(),
       instanciaKey: mesh.userData?.instanciaKey,
       cleanName: mesh.userData?.cleanName || mesh.name,
       piezaMadre: mesh.userData?.piezaMadre,

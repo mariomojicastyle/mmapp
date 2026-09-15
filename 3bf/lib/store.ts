@@ -698,6 +698,39 @@ export interface BloqueEstandarRef {
   animacionTracks?: any[];
 }
 
+export interface SubBloqueTransformBanco {
+  acostado: boolean;          // Lay Flat activo contra plano horizontal
+  rotacionYDeg: number;       // 0, 90, 180, 270 grados
+  rotacion: [number, number, number]; // [rotX, rotY, rotZ] en grados
+  rotacionPlano?: number;     // 0, 90, 180, 270 grados en el plano acostado
+  flipCara: boolean;          // Inversión 180° de cara
+  offsetX: number;            // Desplazamiento X en metros
+  offsetZ: number;            // Desplazamiento Z en metros
+  apoyoEnPiso: boolean;       // Apoyar cara inferior de la pieza máster en ras de piso
+}
+
+export interface SubBloqueAnimacionTrack {
+  tiempoInicio: number;       // Segundo de inicio en el timeline global
+  duracion: number;           // Duración en segundos de este subbloque
+}
+
+export interface SubBloqueArmado {
+  id: string; // ej. "sub_P02_A_1234"
+  codigo?: string; // ej. "P02A", "P02B"
+  letra: string; // "A", "B", "C", "D"...
+  nombre: string; // "Sub-Bloque P02-A", "Sub-Bloque P02-B"...
+  piezaMaster?: string; // 🎯 Pieza máster independiente de este subbloque
+  piezas: string[]; // tableros asignados a este subbloque
+  herrajes: string[]; // herrajes asignados a este subbloque
+  oculto?: boolean; // visibilidad apagada/prendida en 3D
+  orientacionBanco?: {
+    rotacion: [number, number, number];
+    apoyoEnPiso: boolean;
+  };
+  transformBanco?: SubBloqueTransformBanco;
+  trackAnimacion?: SubBloqueAnimacionTrack;
+}
+
 export interface PasoManualStudio {
   id: string; // "P00", "P01", "P02"...
   numero: number;
@@ -727,6 +760,7 @@ export interface PasoManualStudio {
   };
   piezasAsignadas: string[];
   herrajesAsignados: string[];
+  subbloques?: SubBloqueArmado[]; // 🧩 Sub-etapas de armado (Subbloque A, B, C...)
   piezasOcultas?: boolean; // 💡 Apagar / Prender piezas de este paso en el 3D
   ocultarNoAsignadas?: boolean; // 💡 Apagar piezas y herrajes que no pertenecen a este paso (Aislar Paso)
   secuencia: ElementoSecuenciaCinematica[];
@@ -1388,6 +1422,19 @@ export interface State3BF {
   conmutarVisibilidadTodosGruposCinematicos: (pasoId?: string, forzarOcultar?: boolean) => void;
   conmutarVisibilidadPiezasPaso: (pasoId: string) => void;
   conmutarOcultarNoAsignadasPaso: (pasoId: string) => void;
+  
+  // 🧩 Subbloques de Armado en Pasos de Ensamble
+  agregarSubBloqueArmado: (pasoId: string, nombre?: string) => void;
+  actualizarSubBloqueArmado: (pasoId: string, subbloqueId: string, data: Partial<SubBloqueArmado>) => void;
+  eliminarSubBloqueArmado: (pasoId: string, subbloqueId: string) => void;
+  asignarPiezaASubBloque: (pasoId: string, subbloqueId: string, nombrePieza: string) => void;
+  desasignarPiezaDeSubBloque: (pasoId: string, subbloqueId: string, nombrePieza: string) => void;
+  conmutarVisibilidadSubBloqueArmado: (pasoId: string, subbloqueId: string) => void;
+  subbloqueSoloId: string | null;
+  setSubbloqueSolo: (subbloqueId: string | null) => void;
+  actualizarTransformBancoSubBloque: (pasoId: string, subbloqueId: string, transform: Partial<SubBloqueTransformBanco>) => void;
+  resetTransformBancoSubBloque: (pasoId: string, subbloqueId: string) => void;
+  actualizarTrackSubBloque: (pasoId: string, subbloqueId: string, track: Partial<SubBloqueAnimacionTrack>) => void;
   
   // 🎯 Modo Picking 3D / Cuentagotas para Asignación de Piezas
   modoPickingManual: ModoPickingManualState;
@@ -2124,7 +2171,7 @@ export const use3BFStore = create<State3BF>((set, get) => ({
       id: nuevoId,
       numero: num,
       tipo,
-      titulo: tipo === "showcase" ? `${nuevoId}: Showcase` : `Paso ${String(num).padStart(2, "0")}: Ensamble`,
+      titulo: tipo === "showcase" ? `${nuevoId}: Showcase` : `Bloque de armado ${nuevoId}`,
       descripcion: "Nuevo paso de ensamble",
       duracionTotal: 10.0,
       piezaMaster: "",
@@ -2621,6 +2668,262 @@ export const use3BFStore = create<State3BF>((set, get) => ({
     guardarPasosEnCacheLocal(actualizados, state.manualActivoGuardado);
   },
 
+  // 🧩 Subbloques de Armado en Pasos de Ensamble
+  agregarSubBloqueArmado: (pasoId, nombre) => {
+    const state = get();
+    const actualizados = state.pasosManual.map((p) => {
+      if (p.id !== pasoId) return p;
+      const subbloquesActuales = p.subbloques || [];
+      const sIdx = subbloquesActuales.length;
+      const letra = String.fromCharCode(65 + sIdx); // A, B, C...
+      const codigo = `${pasoId}${letra}`; // ej. "P02A"
+      const idNuevo = `sub_${pasoId}_${letra}_${Date.now().toString().slice(-4)}`;
+      const nuevoSub: SubBloqueArmado = {
+        id: idNuevo,
+        codigo,
+        letra,
+        nombre: nombre || `Sub-Bloque ${pasoId}-${letra}`,
+        piezas: [],
+        herrajes: [],
+        oculto: false,
+        transformBanco: {
+          acostado: false,
+          rotacionYDeg: 0,
+          rotacion: [0, 0, 0] as [number, number, number],
+          flipCara: false,
+          offsetX: 0,
+          offsetZ: 0,
+          apoyoEnPiso: true,
+        },
+        trackAnimacion: {
+          tiempoInicio: 0,
+          duracion: Math.max(p.duracionTotal || 5.0, 1.0),
+        },
+      };
+      return {
+        ...p,
+        subbloques: [...subbloquesActuales, nuevoSub],
+      };
+    });
+    set({ pasosManual: actualizados });
+    guardarPasosEnCacheLocal(actualizados, state.manualActivoGuardado);
+  },
+
+  actualizarSubBloqueArmado: (pasoId, subbloqueId, data) => {
+    const state = get();
+    const actualizados = state.pasosManual.map((p) => {
+      if (p.id !== pasoId || !p.subbloques) return p;
+      const modificados = p.subbloques.map((s) =>
+        s.id === subbloqueId ? { ...s, ...data } : s
+      );
+      return { ...p, subbloques: modificados };
+    });
+    set({ pasosManual: actualizados });
+    guardarPasosEnCacheLocal(actualizados, state.manualActivoGuardado);
+  },
+
+  eliminarSubBloqueArmado: (pasoId, subbloqueId) => {
+    const state = get();
+    const actualizados = state.pasosManual.map((p) => {
+      if (p.id !== pasoId || !p.subbloques) return p;
+      return {
+        ...p,
+        subbloques: p.subbloques.filter((s) => s.id !== subbloqueId),
+      };
+    });
+
+    let nuevoPicking = state.modoPickingManual;
+    if (state.modoPickingManual.activo && state.modoPickingManual.grupoId === subbloqueId) {
+      nuevoPicking = {
+        activo: false,
+        modo: "agregar",
+        grupoId: null,
+        pasoId: null,
+        piezasTemporalmenteSeleccionadas: [],
+      };
+    }
+
+    set({ pasosManual: actualizados, modoPickingManual: nuevoPicking });
+    guardarPasosEnCacheLocal(actualizados, state.manualActivoGuardado);
+  },
+
+  asignarPiezaASubBloque: (pasoId, subbloqueId, nombrePieza) => {
+    const state = get();
+    const piezaKey = (nombrePieza || "").trim();
+    if (!piezaKey) return;
+    const esHerraje = esHerrajeNombre(piezaKey);
+
+    const actualizados = state.pasosManual.map((p) => {
+      if (p.id !== pasoId || !p.subbloques) return p;
+      const modificados = p.subbloques.map((s) => {
+        if (s.id !== subbloqueId) return s;
+        if (esHerraje) {
+          if (s.herrajes.includes(piezaKey)) return s;
+          return { ...s, herrajes: [...s.herrajes, piezaKey] };
+        } else {
+          if (s.piezas.includes(piezaKey)) return s;
+          return { ...s, piezas: [...s.piezas, piezaKey] };
+        }
+      });
+      const todasPz = esHerraje ? p.piezasAsignadas : Array.from(new Set([...p.piezasAsignadas, piezaKey]));
+      const todosHr = esHerraje ? Array.from(new Set([...p.herrajesAsignados, piezaKey])) : p.herrajesAsignados;
+
+      return {
+        ...p,
+        piezasAsignadas: todasPz,
+        herrajesAsignados: todosHr,
+        subbloques: modificados,
+      };
+    });
+
+    let nuevoPicking = state.modoPickingManual;
+    if (state.modoPickingManual.activo && state.modoPickingManual.grupoId === subbloqueId) {
+      if (!state.modoPickingManual.piezasTemporalmenteSeleccionadas.includes(piezaKey)) {
+        nuevoPicking = {
+          ...state.modoPickingManual,
+          piezasTemporalmenteSeleccionadas: [...state.modoPickingManual.piezasTemporalmenteSeleccionadas, piezaKey],
+        };
+      }
+    }
+
+    set({ pasosManual: actualizados, modoPickingManual: nuevoPicking });
+    guardarPasosEnCacheLocal(actualizados, state.manualActivoGuardado);
+  },
+
+  desasignarPiezaDeSubBloque: (pasoId, subbloqueId, nombrePieza) => {
+    const state = get();
+    const piezaKey = (nombrePieza || "").trim();
+    const pmKey = extraerPiezaMadre(piezaKey);
+
+    const actualizados = state.pasosManual.map((p) => {
+      if (p.id !== pasoId || !p.subbloques) return p;
+      const modificados = p.subbloques.map((s) => {
+        if (s.id !== subbloqueId) return s;
+        return {
+          ...s,
+          piezas: s.piezas.filter((pz) => pz !== piezaKey && pz !== nombrePieza && pz !== pmKey && extraerPiezaMadre(pz) !== pmKey),
+          herrajes: s.herrajes.filter((hr) => hr !== piezaKey && hr !== nombrePieza && hr !== pmKey && extraerPiezaMadre(hr) !== pmKey),
+        };
+      });
+      return { ...p, subbloques: modificados };
+    });
+
+    let nuevoPicking = state.modoPickingManual;
+    if (state.modoPickingManual.activo && (!state.modoPickingManual.grupoId || state.modoPickingManual.grupoId === subbloqueId)) {
+      nuevoPicking = {
+        ...state.modoPickingManual,
+        piezasTemporalmenteSeleccionadas: state.modoPickingManual.piezasTemporalmenteSeleccionadas.filter(
+          (p) => p !== piezaKey && p !== nombrePieza && p !== pmKey && extraerPiezaMadre(p) !== pmKey
+        ),
+      };
+    }
+
+    set({ pasosManual: actualizados, modoPickingManual: nuevoPicking });
+    guardarPasosEnCacheLocal(actualizados, state.manualActivoGuardado);
+  },
+
+  conmutarVisibilidadSubBloqueArmado: (pasoId, subbloqueId) => {
+    const state = get();
+    let nuevoPicking = state.modoPickingManual;
+    const actualizados = state.pasosManual.map((p) => {
+      if (p.id !== pasoId || !p.subbloques) return p;
+      const modificados = p.subbloques.map((s) => {
+        if (s.id !== subbloqueId) return s;
+        const nuevoOculto = !s.oculto;
+        if (nuevoOculto && state.modoPickingManual.activo && state.modoPickingManual.grupoId === subbloqueId) {
+          nuevoPicking = {
+            activo: false,
+            modo: "agregar",
+            grupoId: null,
+            pasoId: null,
+            piezasTemporalmenteSeleccionadas: [],
+          };
+        }
+        return { ...s, oculto: nuevoOculto };
+      });
+      return { ...p, subbloques: modificados };
+    });
+    set({ pasosManual: actualizados, modoPickingManual: nuevoPicking });
+    guardarPasosEnCacheLocal(actualizados, state.manualActivoGuardado);
+  },
+
+  subbloqueSoloId: null,
+  setSubbloqueSolo: (subbloqueSoloId) => set({ subbloqueSoloId }),
+
+  actualizarTransformBancoSubBloque: (pasoId, subbloqueId, transform) => {
+    const state = get();
+    const actualizados = state.pasosManual.map((p) => {
+      if (p.id !== pasoId || !p.subbloques) return p;
+      const modificados = p.subbloques.map((s) => {
+        if (s.id !== subbloqueId) return s;
+        const actual = s.transformBanco || {
+          acostado: false,
+          rotacionYDeg: 0,
+          rotacion: [0, 0, 0] as [number, number, number],
+          rotacionPlano: 0,
+          flipCara: false,
+          offsetX: 0,
+          offsetZ: 0,
+          apoyoEnPiso: true,
+        };
+        return {
+          ...s,
+          transformBanco: { ...actual, ...transform },
+        };
+      });
+      return { ...p, subbloques: modificados };
+    });
+    set({ pasosManual: actualizados });
+    guardarPasosEnCacheLocal(actualizados, state.manualActivoGuardado);
+  },
+
+  resetTransformBancoSubBloque: (pasoId, subbloqueId) => {
+    const state = get();
+    const actualizados = state.pasosManual.map((p) => {
+      if (p.id !== pasoId || !p.subbloques) return p;
+      const modificados = p.subbloques.map((s) => {
+        if (s.id !== subbloqueId) return s;
+        return {
+          ...s,
+          transformBanco: {
+            acostado: false,
+            rotacionYDeg: 0,
+            rotacion: [0, 0, 0] as [number, number, number],
+            rotacionPlano: 0,
+            flipCara: false,
+            offsetX: 0,
+            offsetZ: 0,
+            apoyoEnPiso: true,
+          },
+        };
+      });
+      return { ...p, subbloques: modificados };
+    });
+    set({ pasosManual: actualizados });
+    guardarPasosEnCacheLocal(actualizados, state.manualActivoGuardado);
+  },
+
+  actualizarTrackSubBloque: (pasoId, subbloqueId, track) => {
+    const state = get();
+    const actualizados = state.pasosManual.map((p) => {
+      if (p.id !== pasoId || !p.subbloques) return p;
+      const modificados = p.subbloques.map((s) => {
+        if (s.id !== subbloqueId) return s;
+        const actual = s.trackAnimacion || {
+          tiempoInicio: 0,
+          duracion: Math.max(p.duracionTotal || 5.0, 1.0),
+        };
+        return {
+          ...s,
+          trackAnimacion: { ...actual, ...track },
+        };
+      });
+      return { ...p, subbloques: modificados };
+    });
+    set({ pasosManual: actualizados });
+    guardarPasosEnCacheLocal(actualizados, state.manualActivoGuardado);
+  },
+
   // 🎯 Modo Picking 3D / Cuentagotas para Asignación de Piezas
   modoPickingManual: {
     activo: false,
@@ -2639,11 +2942,27 @@ export const use3BFStore = create<State3BF>((set, get) => ({
       if (grupo) {
         piezasIniciales = [...grupo.piezas];
       }
+    } else if (paso && paso.subbloques && grupoId) {
+      const sub = paso.subbloques.find((s) => s.id === grupoId);
+      if (sub) {
+        piezasIniciales = Array.from(new Set([...(sub.piezas || []), ...(sub.herrajes || [])]));
+      }
     } else if (paso) {
       // 🧩 Modo Ensamble (Paso 01+): piezas de madera y herrajes asignados al paso
       piezasIniciales = Array.from(new Set([...(paso.piezasAsignadas || []), ...(paso.herrajesAsignados || [])]));
     }
+
+    // 👁️ REGLA: Al seleccionar el cuentagotas, activar simultáneamente por defecto el botón de apagar piezas (primer ojito)
+    let pasosActualizados = state.pasosManual;
+    if (paso && paso.tipo !== "showcase" && !paso.piezasOcultas) {
+      pasosActualizados = state.pasosManual.map((p) =>
+        p.id === pasoId ? { ...p, piezasOcultas: true } : p
+      );
+      guardarPasosEnCacheLocal(pasosActualizados, state.manualActivoGuardado);
+    }
+
     set({
+      pasosManual: pasosActualizados,
       modoPickingManual: {
         activo: true,
         modo,
@@ -2788,9 +3107,16 @@ export const use3BFStore = create<State3BF>((set, get) => ({
     let listaBase = modoPickingManual.piezasTemporalmenteSeleccionadas;
     if (modoPickingManual.pasoId && modoPickingManual.grupoId) {
       const paso = pasosManual.find((p) => p.id === modoPickingManual.pasoId);
-      const grupo = (paso?.showcase?.gruposCinematicos || []).find((g) => g.id === modoPickingManual.grupoId);
-      if (grupo) {
-        listaBase = grupo.piezas;
+      if (paso?.tipo === "showcase") {
+        const grupo = (paso?.showcase?.gruposCinematicos || []).find((g) => g.id === modoPickingManual.grupoId);
+        if (grupo) {
+          listaBase = grupo.piezas;
+        }
+      } else if (paso?.subbloques) {
+        const sub = paso.subbloques.find((s) => s.id === modoPickingManual.grupoId);
+        if (sub) {
+          listaBase = Array.from(new Set([...(sub.piezas || []), ...(sub.herrajes || [])]));
+        }
       }
     } else if (modoPickingManual.pasoId) {
       const paso = pasosManual.find((p) => p.id === modoPickingManual.pasoId);
@@ -2800,26 +3126,58 @@ export const use3BFStore = create<State3BF>((set, get) => ({
     }
 
     const existe = listaBase.some((p) => p === pm || extraerPiezaMadre(p) === pm);
-    const nuevas = existe
-      ? listaBase.filter((p) => p !== pm && extraerPiezaMadre(p) !== pm)
-      : [...listaBase, pm];
+    let nuevas: string[];
+    if (modoPickingManual.modo === "retirar") {
+      nuevas = listaBase.filter((p) => p !== pm && extraerPiezaMadre(p) !== pm);
+    } else {
+      nuevas = existe
+        ? listaBase.filter((p) => p !== pm && extraerPiezaMadre(p) !== pm)
+        : [...listaBase, pm];
+    }
 
-    // Sincronización reactiva en tiempo real si hay un grupo de cajón activo O paso de ensamble
+    // Sincronización reactiva en tiempo real si hay un grupo de cajón activo O subbloque O paso de ensamble
     let pasosActualizados = pasosManual;
     if (modoPickingManual.pasoId && modoPickingManual.grupoId) {
       pasosActualizados = pasosManual.map((p) => {
-        if (p.id !== modoPickingManual.pasoId || !p.showcase) return p;
-        const modificados = (p.showcase.gruposCinematicos || []).map((g) => {
-          if (g.id !== modoPickingManual.grupoId) return g;
-          return { ...g, piezas: nuevas };
-        });
-        return {
-          ...p,
-          showcase: {
-            ...p.showcase,
-            gruposCinematicos: modificados,
-          },
-        };
+        if (p.id !== modoPickingManual.pasoId) return p;
+        if (p.tipo === "showcase" && p.showcase) {
+          const modificados = (p.showcase.gruposCinematicos || []).map((g) => {
+            if (g.id !== modoPickingManual.grupoId) return g;
+            return { ...g, piezas: nuevas };
+          });
+          return {
+            ...p,
+            showcase: {
+              ...p.showcase,
+              gruposCinematicos: modificados,
+            },
+          };
+        } else if (p.subbloques) {
+          const modificados = p.subbloques.map((s) => {
+            if (s.id !== modoPickingManual.grupoId) return s;
+            return {
+              ...s,
+              piezas: nuevas.filter((pz) => !esHerrajeNombre(pz)),
+              herrajes: nuevas.filter((pz) => esHerrajeNombre(pz)),
+            };
+          });
+          const nuevasPz = nuevas.filter((pz) => !esHerrajeNombre(pz));
+          const nuevosHr = nuevas.filter((pz) => esHerrajeNombre(pz));
+          const todasPz = modoPickingManual.modo === "agregar"
+            ? Array.from(new Set([...p.piezasAsignadas, ...nuevasPz]))
+            : p.piezasAsignadas;
+          const todosHr = modoPickingManual.modo === "agregar"
+            ? Array.from(new Set([...p.herrajesAsignados, ...nuevosHr]))
+            : p.herrajesAsignados;
+
+          return {
+            ...p,
+            piezasAsignadas: todasPz,
+            herrajesAsignados: todosHr,
+            subbloques: modificados,
+          };
+        }
+        return p;
       });
     } else if (modoPickingManual.pasoId) {
       pasosActualizados = pasosManual.map((p) => {
@@ -2872,21 +3230,38 @@ export const use3BFStore = create<State3BF>((set, get) => ({
 
     if (modoPickingManual.grupoId) {
       const actualizados = pasosManual.map((p) => {
-        if (p.id !== modoPickingManual.pasoId || !p.showcase) return p;
-        const modificados = (p.showcase.gruposCinematicos || []).map((g) => {
-          if (g.id !== modoPickingManual.grupoId) return g;
+        if (p.id !== modoPickingManual.pasoId) return p;
+        if (p.showcase) {
+          const modificados = (p.showcase.gruposCinematicos || []).map((g) => {
+            if (g.id !== modoPickingManual.grupoId) return g;
+            return {
+              ...g,
+              piezas: modoPickingManual.piezasTemporalmenteSeleccionadas,
+            };
+          });
           return {
-            ...g,
-            piezas: modoPickingManual.piezasTemporalmenteSeleccionadas,
+            ...p,
+            showcase: {
+              ...p.showcase,
+              gruposCinematicos: modificados,
+            },
           };
-        });
-        return {
-          ...p,
-          showcase: {
-            ...p.showcase,
-            gruposCinematicos: modificados,
-          },
-        };
+        } else if (p.subbloques) {
+          const nuevas = modoPickingManual.piezasTemporalmenteSeleccionadas;
+          const modificados = p.subbloques.map((s) => {
+            if (s.id !== modoPickingManual.grupoId) return s;
+            return {
+              ...s,
+              piezas: nuevas.filter((pz) => !esHerrajeNombre(pz)),
+              herrajes: nuevas.filter((pz) => esHerrajeNombre(pz)),
+            };
+          });
+          return {
+            ...p,
+            subbloques: modificados,
+          };
+        }
+        return p;
       });
       set({
         pasosManual: actualizados,
@@ -4067,7 +4442,7 @@ export const use3BFStore = create<State3BF>((set, get) => ({
     ? Object.fromEntries(
         Object.entries(JSON.parse(localStorage.getItem("3bf_asignaciones_partes_v1")!) as Record<string, AsignacionParteDef>).map(([k, v]) => {
           const kLow = k.toLowerCase();
-          const isHardware = kLow.includes("perno") || kLow.includes("caja") || kLow.includes("tarugo") || kLow.includes("cavilha") || kLow.includes("tornillo") || kLow.includes("parafuso") || kLow.includes("soporte") || kLow.includes("corredera") || kLow.includes("corredi") || kLow.includes("cantoneira") || kLow.includes("angulo") || kLow.includes("pata") || kLow.includes("pes") || kLow.includes("clavilha") || kLow.includes("porca") || kLow.includes("tuerca");
+          const isHardware = kLow.includes("perno") || kLow.includes("caja") || kLow.includes("tarugo") || kLow.includes("cavilha") || kLow.includes("tornillo") || kLow.includes("parafuso") || kLow.includes("prego") || kLow.includes("puntilla") || kLow.includes("clavo") || kLow.includes("soporte") || kLow.includes("suporte") || kLow.includes("corredera") || kLow.includes("corredi") || kLow.includes("trilho") || kLow.includes("cantoneira") || kLow.includes("angulo") || kLow.includes("pata") || kLow.includes("pes") || kLow.includes("clavilha") || kLow.includes("porca") || kLow.includes("tuerca") || kLow.includes("tampa") || kLow.includes("tapa") || kLow.includes("adesivo");
           const isBoard = !isHardware;
           const isInvalidLayer = ["capa_acero", "capa_aluminio", "capa_cromo", "capa_zinc", "capa_zincado", "capa_herrajes", "capa_plastico_1", "capa_plastico_2"].includes(v.capaId);
           
@@ -6319,7 +6694,7 @@ export const use3BFStore = create<State3BF>((set, get) => ({
     const nuevasAsignaciones = { ...state.asignacionesPartes };
     todasLasPartes.forEach((parteKey) => {
       const kLow = parteKey.toLowerCase();
-      const isHardware = kLow.includes("perno") || kLow.includes("caja") || kLow.includes("tarugo") || kLow.includes("cavilha") || kLow.includes("tornillo") || kLow.includes("parafuso") || kLow.includes("soporte") || kLow.includes("corredi") || kLow.includes("corredera") || kLow.includes("cantoneira") || kLow.includes("angulo") || kLow.includes("pes") || kLow.includes("pata") || kLow.includes("maquinado") || kLow.includes("porca") || kLow.includes("tuerca");
+      const isHardware = kLow.includes("perno") || kLow.includes("caja") || kLow.includes("tarugo") || kLow.includes("cavilha") || kLow.includes("tornillo") || kLow.includes("parafuso") || kLow.includes("prego") || kLow.includes("puntilla") || kLow.includes("clavo") || kLow.includes("soporte") || kLow.includes("suporte") || kLow.includes("corredi") || kLow.includes("corredera") || kLow.includes("trilho") || kLow.includes("cantoneira") || kLow.includes("angulo") || kLow.includes("pes") || kLow.includes("pata") || kLow.includes("maquinado") || kLow.includes("porca") || kLow.includes("tuerca") || kLow.includes("tampa") || kLow.includes("tapa") || kLow.includes("adesivo");
       const isMdfMdp = kLow.includes("mdf") || kLow.includes("mdp");
       const isFondo = (
         kLow.includes("fondo") ||

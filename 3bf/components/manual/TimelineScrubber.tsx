@@ -1,8 +1,9 @@
 "use client";
 
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { use3BFStore } from "@/lib/store";
-import { Play, Pause, RotateCcw, Volume2, VolumeX, SkipBack, SkipForward, ChevronDown } from "lucide-react";
+import { Play, Pause, RotateCcw, Volume2, VolumeX, SkipBack, SkipForward, ChevronDown, ChevronUp, Sliders, Layers, Sparkles } from "lucide-react";
+import { obtenerColorSubbloque } from "./StepManagerPanel";
 
 export default function TimelineScrubber() {
   const {
@@ -21,6 +22,9 @@ export default function TimelineScrubber() {
     audioMutedManual,
     setAudioMutedManual,
     coloresApariencia,
+    subbloqueSoloId,
+    setSubbloqueSolo,
+    actualizarTrackSubBloque,
   } = use3BFStore();
 
   const pasoActivo = pasosManual.find((p) => p.id === pasoActivoManualId) || pasosManual[0];
@@ -125,6 +129,39 @@ export default function TimelineScrubber() {
 
   const botonActivoColor = coloresApariencia?.botonActivo || "#0891b2";
 
+  // 🧩 Lógica de Sub-Bloques y Mezclador Multipista
+  const subbloques = (pasoActivo?.subbloques || []).filter(Boolean);
+  const tieneSubbloques = subbloques.length > 0;
+  const [mezcladorAbierto, setMezcladorAbierto] = useState(false);
+
+  const escalonarCascadaSubbloques = () => {
+    if (!pasoActivo || subbloques.length === 0) return;
+    const durPorSub = Number((duracionTotal / subbloques.length).toFixed(1));
+    subbloques.forEach((sub, idx) => {
+      const inicio = Number((idx * durPorSub).toFixed(1));
+      actualizarTrackSubBloque(pasoActivo.id, sub.id, {
+        tiempoInicio: inicio,
+        duracion: durPorSub,
+      });
+    });
+  };
+
+  const reproducirSoloSubbloque = (subId: string) => {
+    const sub = subbloques.find((s) => s.id === subId);
+    if (!sub) return;
+    const inicio = sub.trackAnimacion?.tiempoInicio ?? 0;
+    setTimelineCurrentTime(inicio);
+    if (audioRef.current) {
+      audioRef.current.currentTime = inicio;
+    }
+    if (subbloqueSoloId === subId) {
+      setSubbloqueSolo(null);
+    } else {
+      setSubbloqueSolo(subId);
+      setIsTimelinePlaying(true);
+    }
+  };
+
   return (
     <div className="absolute bottom-3 left-3 right-3 z-20 flex flex-col gap-1.5 pointer-events-none select-none">
       {/* Elemento de Audio Oculto para Sincronización (no detiene la animación 3D al terminar el audio) */}
@@ -133,6 +170,188 @@ export default function TimelineScrubber() {
           ref={audioRef}
           src={currentAudioUrl}
         />
+      )}
+
+      {/* 🎛️ MEZCLADOR MULTIPISTA DE SUB-BLOQUES (SUB-TRACK MIXER) */}
+      {tieneSubbloques && mezcladorAbierto && (
+        <div
+          style={{
+            backgroundColor: coloresApariencia?.fondoPaneles || "rgba(255, 255, 255, 0.94)",
+            borderColor: coloresApariencia?.bordePaneles || "rgba(203, 213, 225, 0.8)",
+            color: coloresApariencia?.textoPrincipal || "#0F172A",
+          }}
+          className="pointer-events-auto backdrop-blur-md rounded-3xl p-3 border shadow-2xl flex flex-col gap-2 max-w-4xl mx-auto w-full transition-all animate-in fade-in slide-in-from-bottom-2 duration-200"
+        >
+          {/* Header del Mezclador */}
+          <div className="flex items-center justify-between border-b border-slate-200/70 dark:border-slate-800/70 pb-1.5">
+            <div className="flex items-center gap-2">
+              <span className="font-extrabold text-[11px] uppercase tracking-wider text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
+                <Layers className="w-3.5 h-3.5 text-cyan-600 dark:text-cyan-400" />
+                Mezclador Multipista de Sub-Bloques ({subbloques.length})
+              </span>
+              {subbloqueSoloId && (
+                <span className="px-2 py-0.5 rounded-full bg-amber-500 text-white font-bold text-[9px] animate-pulse">
+                  Modo Solo Activo
+                </span>
+              )}
+            </div>
+
+            <div className="flex items-center gap-1.5">
+              {/* Escalonar en Cascada */}
+              <button
+                type="button"
+                onClick={escalonarCascadaSubbloques}
+                title="Distribuir tiempos de armado equitativamente en cascada continua"
+                className="px-2.5 py-1 rounded-full text-[9px] font-bold bg-cyan-500/10 text-cyan-700 dark:text-cyan-300 border border-cyan-500/30 hover:bg-cyan-500/20 transition flex items-center gap-1 cursor-pointer"
+              >
+                <Sparkles className="w-3 h-3" />
+                <span>Escalonar Cascada</span>
+              </button>
+
+              {/* Botón Cerrar / Plegar */}
+              <button
+                type="button"
+                onClick={() => setMezcladorAbierto(false)}
+                title="Plegar pistas de sub-bloques"
+                className="w-6 h-6 rounded-full flex items-center justify-center border border-slate-200 dark:border-slate-700 hover:bg-black/5 dark:hover:bg-white/5 transition text-slate-500 cursor-pointer"
+              >
+                <ChevronDown className="w-3.5 h-3.5" />
+              </button>
+            </div>
+          </div>
+
+          {/* Listado de Pistas Horizontales por Sub-Bloque */}
+          <div className="flex flex-col gap-1.5 max-h-48 overflow-y-auto pr-1">
+            {subbloques.map((sub, sIdx) => {
+              const colorSub = obtenerColorSubbloque(sIdx);
+              const codigoSub = sub.codigo || `${pasoActivo.id}${sub.letra || String.fromCharCode(65 + sIdx)}`;
+              const nombreSub = sub.nombre || `Sub-Bloque ${pasoActivo.id}-${sub.letra || String.fromCharCode(65 + sIdx)}`;
+              const esSolo = subbloqueSoloId === sub.id;
+
+              const tInicio = sub.trackAnimacion?.tiempoInicio ?? 0;
+              const tDur = sub.trackAnimacion?.duracion ?? Math.max(1, Number((duracionTotal / subbloques.length).toFixed(1)));
+              const tFin = Math.min(duracionTotal, tInicio + tDur);
+
+              const leftPct = Math.max(0, Math.min(100, (tInicio / duracionTotal) * 100));
+              const widthPct = Math.max(2, Math.min(100 - leftPct, (tDur / duracionTotal) * 100));
+              const playheadPct = Math.max(0, Math.min(100, (timelineCurrentTime / duracionTotal) * 100));
+
+              return (
+                <div
+                  key={sub.id}
+                  className={`flex items-center gap-2 px-2.5 py-1.5 rounded-full border transition ${
+                    esSolo
+                      ? "bg-amber-500/10 border-amber-500/50 ring-2 ring-amber-400/40 shadow-xs"
+                      : "bg-slate-50/80 dark:bg-slate-900/60 border-slate-200/70 dark:border-slate-800/70"
+                  }`}
+                >
+                  {/* Badge Identificador y Nombre */}
+                  <div className="flex items-center gap-1.5 w-32 shrink-0">
+                    <span
+                      className="px-2 py-0.5 rounded-full text-white font-black text-[9.5px] shrink-0"
+                      style={{ backgroundColor: colorSub.bg }}
+                    >
+                      {codigoSub}
+                    </span>
+                    <span className="text-[10px] font-semibold text-slate-700 dark:text-slate-300 truncate" title={nombreSub}>
+                      {nombreSub}
+                    </span>
+                  </div>
+
+                  {/* Botón Cápsula [▶ Solo] */}
+                  <button
+                    type="button"
+                    onClick={() => reproducirSoloSubbloque(sub.id)}
+                    title={esSolo ? "Desactivar modo Solo" : `Previsualizar exclusivamente armado de ${codigoSub}`}
+                    className={`px-2 py-0.5 rounded-full text-[9px] font-extrabold border transition flex items-center gap-1 cursor-pointer shrink-0 select-none ${
+                      esSolo
+                        ? "bg-amber-500 text-white border-amber-400 shadow-xs animate-pulse"
+                        : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border-slate-300 dark:border-slate-700 hover:bg-slate-200"
+                    }`}
+                  >
+                    <Play className="w-2.5 h-2.5 fill-current" />
+                    <span>Solo</span>
+                  </button>
+
+                  {/* Barra Visual de Pista con Rango de Tiempo y Aguja de Playhead */}
+                  <div className="relative flex-1 h-5 bg-slate-200/80 dark:bg-slate-800/80 rounded-full overflow-hidden flex items-center">
+                    {/* Segmento Activo del Sub-Bloque */}
+                    <div
+                      className="absolute top-0.5 bottom-0.5 rounded-full opacity-90 shadow-xs flex items-center justify-between px-2 text-white font-bold text-[8.5px]"
+                      style={{
+                        left: `${leftPct}%`,
+                        width: `${widthPct}%`,
+                        backgroundColor: colorSub.bg,
+                      }}
+                    >
+                      <span className="truncate">{tInicio.toFixed(1)}s</span>
+                      <span className="truncate">{tFin.toFixed(1)}s</span>
+                    </div>
+
+                    {/* Aguja Playhead Vertical Global */}
+                    <div
+                      className="absolute top-0 bottom-0 w-0.5 bg-red-500 z-10 shadow-xs pointer-events-none"
+                      style={{ left: `${playheadPct}%` }}
+                    />
+                  </div>
+
+                  {/* Controles de Tiempo Fino (Inicio y Duración) */}
+                  <div className="flex items-center gap-1 shrink-0 text-[9px]">
+                    <div className="flex items-center gap-0.5 px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700">
+                      <span className="text-slate-400 font-medium">Ini:</span>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const n = Math.max(0, Number((tInicio - 0.5).toFixed(1)));
+                          actualizarTrackSubBloque(pasoActivo.id, sub.id, { tiempoInicio: n });
+                        }}
+                        className="font-bold px-1 rounded-full hover:bg-slate-200 dark:hover:bg-slate-700"
+                      >
+                        -
+                      </button>
+                      <span className="font-mono font-bold min-w-[22px] text-center">{tInicio.toFixed(1)}s</span>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const n = Math.min(duracionTotal - 0.5, Number((tInicio + 0.5).toFixed(1)));
+                          actualizarTrackSubBloque(pasoActivo.id, sub.id, { tiempoInicio: n });
+                        }}
+                        className="font-bold px-1 rounded-full hover:bg-slate-200 dark:hover:bg-slate-700"
+                      >
+                        +
+                      </button>
+                    </div>
+
+                    <div className="flex items-center gap-0.5 px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700">
+                      <span className="text-slate-400 font-medium">Dur:</span>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const n = Math.max(0.5, Number((tDur - 0.5).toFixed(1)));
+                          actualizarTrackSubBloque(pasoActivo.id, sub.id, { duracion: n });
+                        }}
+                        className="font-bold px-1 rounded-full hover:bg-slate-200 dark:hover:bg-slate-700"
+                      >
+                        -
+                      </button>
+                      <span className="font-mono font-bold min-w-[22px] text-center">{tDur.toFixed(1)}s</span>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const n = Math.min(duracionTotal, Number((tDur + 0.5).toFixed(1)));
+                          actualizarTrackSubBloque(pasoActivo.id, sub.id, { duracion: n });
+                        }}
+                        className="font-bold px-1 rounded-full hover:bg-slate-200 dark:hover:bg-slate-700"
+                      >
+                        +
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
       )}
 
       {/* Barra de Control Principal (Cápsula Flotante Glass) */}
@@ -238,6 +457,24 @@ export default function TimelineScrubber() {
             className="w-full h-1.5 bg-slate-200 dark:bg-slate-700 rounded-full appearance-none cursor-pointer accent-cyan-600 dark:accent-cyan-400"
           />
         </div>
+
+        {/* Botón Pistas / Mezclador de Sub-Bloques en Cápsula */}
+        {tieneSubbloques && (
+          <button
+            type="button"
+            onClick={() => setMezcladorAbierto(!mezcladorAbierto)}
+            title={mezcladorAbierto ? "Plegar pistas de sub-bloques" : "Abrir mezclador multipista de sub-bloques"}
+            className={`px-2.5 py-1 rounded-full text-[10px] font-bold border transition flex items-center gap-1.5 cursor-pointer shrink-0 select-none ${
+              mezcladorAbierto || subbloqueSoloId
+                ? "bg-cyan-600 text-white border-cyan-500 shadow-xs"
+                : "bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300"
+            }`}
+          >
+            <Layers className="w-3 h-3" />
+            <span>Pistas ({subbloques.length})</span>
+            {mezcladorAbierto ? <ChevronDown className="w-3 h-3" /> : <ChevronUp className="w-3 h-3" />}
+          </button>
+        )}
 
         {/* Selector de Idioma de Audio (ES / PT / EN) */}
         <div className="flex items-center p-0.5 bg-slate-100 dark:bg-slate-800 rounded-full border border-slate-200 dark:border-slate-700 shrink-0">

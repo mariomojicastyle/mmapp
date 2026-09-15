@@ -254,7 +254,7 @@ export function aplicarTransformacionesBancoSubbloques(sceneMeshes: THREE.Mesh[]
     }
 
     // =========================================================================
-    // FASE 1: ACOSTAR Y NIVELAR EN EL SUELO (Y = 0) A TODAS LAS MALLAS DEL SUBBLOQUE
+    // FASE 1: MATRIZ DE ACOSTAR LA PIEZA EN EL PLANO HORIZONTAL Y NIVELAR (Y = 0)
     // =========================================================================
     masterMesh.updateMatrixWorld(true);
     const origBox = new THREE.Box3().setFromObject(masterMesh);
@@ -290,73 +290,98 @@ export function aplicarTransformacionesBancoSubbloques(sceneMeshes: THREE.Mesh[]
       }
     }
 
-    // Aplicar Fase 1 a todas las mallas del subbloque para llegar a Posición 0 acostada
+    // =========================================================================
+    // FASE 2: MATRIZ DE GIRO HORIZONTAL (EJE Y) ±90° Y JOYSTICK 2D
+    // =========================================================================
+    let M_banco = mFase1.clone();
+    if (rotPlano !== 0 || offsetX !== 0 || offsetZ !== 0) {
+      const boxPiso = origBox.clone().applyMatrix4(mFase1);
+      const centroPiso = new THREE.Vector3();
+      boxPiso.getCenter(centroPiso);
+
+      // Centro 3D exacto de rotación sobre el piso horizontal (X, Y, Z completos)
+      const mToCentro = new THREE.Matrix4().makeTranslation(-centroPiso.x, -centroPiso.y, -centroPiso.z);
+      const mRotY = new THREE.Matrix4();
+      if (rotPlano !== 0) {
+        mRotY.makeRotationY(THREE.MathUtils.degToRad(rotPlano));
+      }
+      const mFromCentro = new THREE.Matrix4().makeTranslation(centroPiso.x + offsetX, centroPiso.y, centroPiso.z + offsetZ);
+      const mGiroYOffset = new THREE.Matrix4().multiply(mFromCentro).multiply(mRotY).multiply(mToCentro);
+
+      M_banco = mGiroYOffset.clone().multiply(mFase1);
+    }
+
+    // =========================================================================
+    // FASE 3: APLICACIÓN RIGUROSA DE BLENDER PARENTING CANÓNICO
+    // 1. W_master_banco = M_banco * W_cad_master
+    // 2. M_rel = W_cad_master^-1 * W_cad_hijo (Matriz local inmutable de herrajes en el tablero)
+    // 3. W_hijo_banco = W_master_banco * M_rel (Solidaridad física indestructible con Delta = 0.00000000)
+    // =========================================================================
+
+    // 3.1. Transformar primero la Pieza Máster
+    asegurarCadOriginal(masterMesh);
+    const cadWorldMaster = new THREE.Matrix4().compose(
+      masterMesh.userData.__cadOrigPosition,
+      masterMesh.userData.__cadOrigQuaternion,
+      masterMesh.userData.__cadOrigScale || new THREE.Vector3(1, 1, 1)
+    );
+    let W_cad_master = cadWorldMaster;
+    if (masterMesh.parent) {
+      masterMesh.parent.updateMatrixWorld(true);
+      W_cad_master = masterMesh.parent.matrixWorld.clone().multiply(cadWorldMaster);
+    }
+
+    const W_master_final = M_banco.clone().multiply(W_cad_master);
+    if (masterMesh.parent) {
+      const parentInv = masterMesh.parent.matrixWorld.clone().invert();
+      const localMaster = parentInv.multiply(W_master_final);
+      localMaster.decompose(masterMesh.position, masterMesh.quaternion, masterMesh.scale);
+    } else {
+      W_master_final.decompose(masterMesh.position, masterMesh.quaternion, masterMesh.scale);
+    }
+    masterMesh.updateMatrix();
+    masterMesh.updateMatrixWorld(true);
+
+    masterMesh.userData.__baseRestPosition = masterMesh.position.clone();
+    masterMesh.userData.__baseRestQuaternion = masterMesh.quaternion.clone();
+    masterMesh.userData.__bancoPosition = masterMesh.position.clone();
+    masterMesh.userData.__bancoQuaternion = masterMesh.quaternion.clone();
+
+    // Matriz inversa inmutable de la máster en CAD
+    const invW_cad_master = W_cad_master.clone().invert();
+
+    // 3.2. Emparentar de forma rígida cada una de las demás piezas y herrajes a la Pieza Máster
     mallas.forEach((m) => {
+      if (m === masterMesh) return;
+
       asegurarCadOriginal(m);
-      const cadWorld = new THREE.Matrix4().compose(
+      const cadWorldHijo = new THREE.Matrix4().compose(
         m.userData.__cadOrigPosition,
         m.userData.__cadOrigQuaternion,
         m.userData.__cadOrigScale || new THREE.Vector3(1, 1, 1)
       );
-      const worldAcostado = mFase1.clone().multiply(cadWorld);
-      worldAcostado.decompose(m.position, m.quaternion, m.scale);
+      let W_cad_hijo = cadWorldHijo;
+      if (m.parent) {
+        m.parent.updateMatrixWorld(true);
+        W_cad_hijo = m.parent.matrixWorld.clone().multiply(cadWorldHijo);
+      }
+
+      // Matriz relativa inmutable del hijo respecto a la máster en CAD (Blender Parent Inverse)
+      const M_rel = invW_cad_master.clone().multiply(W_cad_hijo);
+
+      // Posición mundial exacta en banco: W_hijo = W_master_final * M_rel
+      const W_hijo_final = masterMesh.matrixWorld.clone().multiply(M_rel);
+
+      if (m.parent) {
+        const parentInv = m.parent.matrixWorld.clone().invert();
+        const localMat = parentInv.multiply(W_hijo_final);
+        localMat.decompose(m.position, m.quaternion, m.scale);
+      } else {
+        W_hijo_final.decompose(m.position, m.quaternion, m.scale);
+      }
       m.updateMatrix();
       m.updateMatrixWorld(true);
-    });
 
-    // =========================================================================
-    // FASE 2: EMPARENTAMIENTO BLENDER DESDE POSICIÓN 0 (ACOSTADA)
-    // =========================================================================
-    masterMesh.updateMatrixWorld(true);
-    const W0_master = masterMesh.matrixWorld.clone();
-    const W0_master_inv = W0_master.clone().invert();
-
-    const matricesRelativas = new Map<THREE.Mesh, THREE.Matrix4>();
-    mallas.forEach((m) => {
-      if (m !== masterMesh) {
-        m.updateMatrixWorld(true);
-        const W0_hijo = m.matrixWorld.clone();
-        const T_rel = W0_master_inv.clone().multiply(W0_hijo);
-        matricesRelativas.set(m, T_rel);
-      }
-    });
-
-    // Si hay rotación en el plano horizontal (±90°, 180°) o desplazamiento joystick 2D
-    if (rotPlano !== 0 || offsetX !== 0 || offsetZ !== 0) {
-      const boxPiso = new THREE.Box3().setFromObject(masterMesh);
-      const centroPiso = new THREE.Vector3();
-      boxPiso.getCenter(centroPiso);
-
-      const mToCentro = new THREE.Matrix4().makeTranslation(-centroPiso.x, -centroPiso.y, -centroPiso.z);
-      const mRotPiso = new THREE.Matrix4();
-      if (rotPlano !== 0) {
-        mRotPiso.makeRotationY(THREE.MathUtils.degToRad(rotPlano));
-      }
-      const mFromCentro = new THREE.Matrix4().makeTranslation(centroPiso.x + offsetX, centroPiso.y, centroPiso.z + offsetZ);
-      const mGiro = new THREE.Matrix4().multiply(mFromCentro).multiply(mRotPiso).multiply(mToCentro);
-
-      // 1. Transformar Pieza Máster
-      const W1_master = mGiro.clone().multiply(W0_master);
-      W1_master.decompose(masterMesh.position, masterMesh.quaternion, masterMesh.scale);
-      masterMesh.updateMatrix();
-      masterMesh.updateMatrixWorld(true);
-
-      // 2. Transformar solidariamente cada corredera / herraje: W1_hijo = W1_master * T_rel
-      mallas.forEach((m) => {
-        if (m !== masterMesh) {
-          const T_rel = matricesRelativas.get(m);
-          if (T_rel) {
-            const W1_hijo = W1_master.clone().multiply(T_rel);
-            W1_hijo.decompose(m.position, m.quaternion, m.scale);
-            m.updateMatrix();
-            m.updateMatrixWorld(true);
-          }
-        }
-      });
-    }
-
-    // Persistir estado de banco final en todas las mallas del subbloque
-    mallas.forEach((m) => {
       m.userData.__baseRestPosition = m.position.clone();
       m.userData.__baseRestQuaternion = m.quaternion.clone();
       m.userData.__bancoPosition = m.position.clone();

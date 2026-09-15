@@ -398,6 +398,30 @@ export function anotarInstanciasFisicas<T extends { name: string; position?: [nu
       return;
     }
 
+    // ── HERRAJES UNITARIOS (Tornillos, Tarugos, Pernos, Clavos, etc.): Desagregación Atómica 1:1 ──
+    // Cada tornillo o herraje es una entidad física discreta e independiente. Nunca deben soldarse/fusionarse
+    // en pares aunque sus cajas delimitadoras estén muy próximas (ej. tornillos opuestos en divisor central).
+    if (esHerrajeNombre(baseName)) {
+      const ordenados = [...items].sort((a, b) => {
+        const cZa = a.center[2];
+        const cZb = b.center[2];
+        if (Math.abs(cZb - cZa) > 0.01) return cZb - cZa;
+        const cYa = a.center[1];
+        const cYb = b.center[1];
+        if (Math.abs(cYb - cYa) > 0.01) return cYb - cYa;
+        return a.center[0] - b.center[0];
+      });
+
+      const tieneMultiples = ordenados.length > 1;
+      ordenados.forEach((it, idx) => {
+        resultado.push({
+          ...it.mesh,
+          instanciaKey: tieneMultiples ? `${baseName} (${idx + 1})` : baseName,
+        });
+      });
+      return;
+    }
+
     // ── PIEZAS MADERA Y OTROS HERRAJES (Clusterizado por solapamiento geométrico de cajas AABB) ──
     interface MeshCluster {
       bbox: [number, number, number, number, number, number];

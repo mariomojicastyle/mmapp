@@ -283,6 +283,15 @@ Para evitar respuestas genéricas, el RAM de ventas almacena y cruza 5 dimension
 
 ---
 
+### 🟢 11. NODERE Pessoas & Negócios (Caxias do Sul, RS)
+- **Contacto:** Édipo Lima (Consultor Comercial e Novos Negócios | Vendas Consultivas B2B | Executive Search). Perfil: `linkedin.com/in/edipolima/`.
+- **Conexión:** Solicitud / conexión en LinkedIn. Más de 15 contactos en común (Alex Jonas, Daniel, etc.).
+- **Historial:**
+  * *15 Septiembre 2026:* Contacto inicial generado para LinkedIn. Mensaje de bienvenida (~600 caracteres) destacando el vínculo con Caxias do Sul, la trayectoria en mobiliario RTA, el propósito de transformación digital con `3dBimFab` y apertura para colaborar con NODERE en iniciativas y proyectos del polo mueblero de la Serra Gaúcha.
+- **Objetivo Estratégico:** Construir relación como referente tecnológico de muebles RTA en Caxias do Sul y explorar sinergias o proyectos con empresas cliente de NODERE.
+
+---
+
 ## 🔒 POLÍTICA DE RESGUARDO Y REGLA DE ORO
 
 1. **PROHIBIDO BORRAR U OMITIR HISTORIAL:** Cada nueva interacción se añade al final de su respectivo prospecto. Si hay correcciones, se agrega una nota explicativa.

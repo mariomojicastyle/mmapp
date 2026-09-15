@@ -70,14 +70,15 @@ Para maximizar la efectividad del modelo de ventas corporativo B2B y Account-Bas
 
 ## 🎨 3. Repositorio Maestro de Identidad Gráfica y Logotipos (`/publicidad`)
 
-Para garantizar la consistencia visual en todas las actas, propuestas técnicas, PDFs, presentaciones y plataformas web, los archivos vectoriales SVG oficiales están centralizados y disponibles de forma permanente en la carpeta **[`publicidad/`](file:///c:/Desarrollo/mmapp/publicidad/)**:
+Para garantizar la consistencia visual en todas las actas, propuestas técnicas, PDFs, presentaciones y plataformas web, los archivos vectoriales SVG oficiales están centralizados y disponibles de forma permanente en la carpeta **[`publicidad/`](file:///c:/Desarrollo/mmapp/publicidad/)**. Consulta el mapa completo de distribución en **[`REPOSITORIO_IDENTIDAD_VISUAL.md`](file:///c:/Desarrollo/mmapp/Publicidad/REPOSITORIO_IDENTIDAD_VISUAL.md)**.
 
 | Archivo en `/publicidad` | Descripción y Uso Canónico | Especificaciones Técnicas |
 | :--- | :--- | :--- |
 | **[`Logo_MM_en.svg`](file:///c:/Desarrollo/mmapp/publicidad/Logo_MM_en.svg)** | **Logotipo Maestro Mario Mojica** | Isotipo geométrico doble M en Cyan `#0088aa` / `#0891b2`, tipografía corporativa y lema *FORM & FUTURE*. Uso obligatorio en cabeceras de documentos y sitios web. |
-| **[`Logo_3BF.svg`](file:///c:/Desarrollo/mmapp/publicidad/Logo_3BF.svg)** | **Logotipo Oficial 3dBimFab (Fondo Claro)** | Badge rojo `#bb0f0f` con `3BF`, texto `3dBimFab` y *'Powered by MARIO MOJICA'*. Uso en documentos corporativos, actas y cotizaciones. |
-| **[`Logo_3BF_Dark.svg`](file:///c:/Desarrollo/mmapp/publicidad/Logo_3BF_Dark.svg)** | **Logotipo Oficial 3dBimFab (Fondo Oscuro)** | Variante de alto contraste para interfaces nocturnas o fondos oscuros. |
-| **`Icon_3BF.ico`** / **`Icon_3DBimFab.ico`** | **Favicons e Íconos de Aplicación** | Íconos empaquetados para navegadores, aplicaciones de escritorio y ejecutables. |
+| **[`Logo_3BF.svg`](file:///c:/Desarrollo/mmapp/publicidad/Logo_3BF.svg)** | **Logotipo Oficial 3dBimFab (Fondo Claro v2)** | Badge rojo `#bb0f0f` con `3BF` en `Prompt Bold`, texto `3dBimFab` negro y *'Powered by MARIO MOJICA'*. Uso en documentos corporativos, actas y cotizaciones. |
+| **[`Logo_3BF_Dark.svg`](file:///c:/Desarrollo/mmapp/publicidad/Logo_3BF_Dark.svg)** | **Logotipo Oficial 3dBimFab (Fondo Oscuro v2)** | Variante de alto contraste con tipografía blanca para interfaces nocturnas o fondos oscuros. |
+| **[`Icon_3BF.svg`](file:///c:/Desarrollo/mmapp/publicidad/Icon_3BF.svg)** | **Ícono Maestro 3BF v2** | Badge rojo con esquinas suaves y `3BF` en `Prompt Bold`. Favicon vectorial nativo. |
+| **`Icon_3BF.ico`** / **`Icon_3DBimFab.ico`** | **Favicons e Íconos de Aplicación** | Íconos multirresolución (16px a 256px) para navegadores, PWA y ejecutables. |
 
 > 📌 **Regla de Uso Permanente:** Cualquier agente, copiloto o generador de documentos que requiera colocar logotipos o identidades gráficas debe consumir **directamente los archivos SVG de esta carpeta (`/publicidad`)** para evitar discrepancias tipográficas o visuales.
 
