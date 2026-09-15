@@ -9,20 +9,27 @@ import {
 export function middleware(request: NextRequest) {
   const { pathname, searchParams } = request.nextUrl;
 
-  // 1. Rutas públicas excluidas de autenticación (Assets estáticos, SVG logos, health check, AR nativo)
+  // 1. Rutas públicas excluidas de autenticación (Assets estáticos, 3D, WASM, Draco, SVG logos, health check, AR nativo)
   const esRutaPublica =
     pathname.startsWith("/_next") ||
     pathname.startsWith("/favicon.ico") ||
     pathname.startsWith("/site.webmanifest") ||
     pathname.startsWith("/icon-") ||
     pathname.startsWith("/publicidad") ||
+    pathname.startsWith("/draco") ||
+    pathname.startsWith("/library") ||
     pathname.endsWith(".svg") ||
     pathname.endsWith(".png") ||
     pathname.endsWith(".ico") ||
     pathname.endsWith(".jpg") ||
     pathname.endsWith(".webp") ||
+    pathname.endsWith(".glb") ||
+    pathname.endsWith(".gltf") ||
+    pathname.endsWith(".wasm") ||
+    pathname.endsWith(".bin") ||
     pathname.startsWith("/api/health") ||
     pathname.startsWith("/api/ar-model") ||
+    pathname.startsWith("/api/bloques") ||
     pathname === "/access" ||
     pathname === "/api/access";
 

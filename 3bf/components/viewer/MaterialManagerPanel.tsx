@@ -8,16 +8,16 @@ import {
   Trash2, 
   Copy, 
   RotateCcw, 
-  ChevronDown, 
-  ChevronRight, 
   Palette, 
   Sparkles, 
-  Info,
-  Sliders,
-  Image as ImageIcon,
-  Upload,
-  X,
-  Pipette
+  Pipette,
+  LayoutGrid,
+  List,
+  SlidersHorizontal,
+  ChevronUp,
+  ChevronDown,
+  Check,
+  Camera
 } from "lucide-react";
 
 export default function MaterialManagerPanel() {
@@ -36,52 +36,57 @@ export default function MaterialManagerPanel() {
 
   const [busqueda, setBusqueda] = useState("");
   const [filtroTipo, setFiltroTipo] = useState<string>("todos");
-  const [acordeonAbierto, setAcordeonAbierto] = useState({
-    nombreTipo: true,
-    colorFisico: true,
-    especularidad: false,
-    opacidad: false,
-    notas: false,
-  });
 
-  const fileInputRef = useRef<HTMLInputElement>(null);
-
-  // Redimensión interactiva vertical de la galería de esferas de materiales
-  const [alturaGaleria, setAlturaGaleria] = useState<number>(() => {
+  // 📐 Modo de Vista: Cuadrícula (Rhino 8) o Lista (Blender)
+  const [vistaModo, setVistaModo] = useState<"cuadricula" | "lista">(() => {
     if (typeof window !== "undefined" && window.localStorage) {
-      const saved = localStorage.getItem("3bf_altura_galeria_materiales");
-      if (saved) return Number(saved) || 160;
+      const saved = localStorage.getItem("3bf_modo_vista_materiales");
+      if (saved === "cuadricula" || saved === "lista") return saved;
     }
-    return 160;
+    return "cuadricula";
   });
 
-  const [isResizing, setIsResizing] = useState(false);
+  // 🎚️ Tamaño Dinámico de Miniaturas (Slider estilo barra inferior Rhino 8)
+  const [tamanoEsfera, setTamanoEsfera] = useState<number>(() => {
+    if (typeof window !== "undefined" && window.localStorage) {
+      const saved = localStorage.getItem("3bf_tamano_esferas_materiales");
+      if (saved) return Math.min(150, Math.max(70, Number(saved) || 96));
+    }
+    return 96;
+  });
 
-  const startResizing = React.useCallback((mouseDownEvent: React.MouseEvent) => {
-    mouseDownEvent.preventDefault();
-    setIsResizing(true);
+  // 🛠️ Mini-Inspector de Propiedades Rápidas (Colapsado por defecto para máxima altura del catálogo)
+  const [inspectorAbierto, setInspectorAbierto] = useState<boolean>(() => {
+    if (typeof window !== "undefined" && window.localStorage) {
+      const saved = localStorage.getItem("3bf_inspector_material_abierto");
+      if (saved !== null) return saved === "true";
+    }
+    return false;
+  });
 
-    const startY = mouseDownEvent.clientY;
-    const startHeight = alturaGaleria;
+  const cambiarModoVista = (modo: "cuadricula" | "lista") => {
+    setVistaModo(modo);
+    if (typeof window !== "undefined" && window.localStorage) {
+      localStorage.setItem("3bf_modo_vista_materiales", modo);
+    }
+  };
 
-    const onMouseMove = (moveEvent: MouseEvent) => {
-      const deltaY = moveEvent.clientY - startY;
-      const newHeight = Math.max(75, Math.min(600, startHeight + deltaY));
-      setAlturaGaleria(newHeight);
+  const cambiarTamanoEsfera = (tamano: number) => {
+    setTamanoEsfera(tamano);
+    if (typeof window !== "undefined" && window.localStorage) {
+      localStorage.setItem("3bf_tamano_esferas_materiales", String(tamano));
+    }
+  };
+
+  const toggleInspector = () => {
+    setInspectorAbierto((prev) => {
+      const nuevo = !prev;
       if (typeof window !== "undefined" && window.localStorage) {
-        localStorage.setItem("3bf_altura_galeria_materiales", String(newHeight));
+        localStorage.setItem("3bf_inspector_material_abierto", String(nuevo));
       }
-    };
-
-    const onMouseUp = () => {
-      setIsResizing(false);
-      window.removeEventListener("mousemove", onMouseMove);
-      window.removeEventListener("mouseup", onMouseUp);
-    };
-
-    window.addEventListener("mousemove", onMouseMove);
-    window.addEventListener("mouseup", onMouseUp);
-  }, [alturaGaleria]);
+      return nuevo;
+    });
+  };
 
   // 💧 Cuentagotas Universal Multipantalla para el panel lateral
   const abrirCuentagotasPanel = async (matId: string) => {
@@ -99,27 +104,6 @@ export default function MaterialManagerPanel() {
       }
     } else {
       alert("El Cuentagotas Universal requiere Google Chrome, Microsoft Edge, Opera o Brave.");
-    }
-  };
-
-  const toggleAcordeon = (key: keyof typeof acordeonAbierto) => {
-    setAcordeonAbierto((prev) => ({ ...prev, [key]: !prev[key] }));
-  };
-
-  const handleSubirTextura = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file || !materialActivo) return;
-
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      const dataUrl = event.target?.result as string;
-      if (dataUrl) {
-        actualizarMaterialPBR(materialActivo.id, { texturaUrl: dataUrl });
-      }
-    };
-    reader.readAsDataURL(file);
-    if (fileInputRef.current) {
-      fileInputRef.current.value = "";
     }
   };
 
@@ -164,18 +148,21 @@ export default function MaterialManagerPanel() {
     }
   };
 
+  // Color de acento según modo (Dark `#1368AA` / Light `#0891B2`)
+  const colorAcento = esquemaColor === "oscuro" ? "#1368AA" : (coloresApariencia?.botonActivo || "#0891B2");
+
   return (
     <div 
       style={{
         backgroundColor: coloresApariencia?.fondoPaneles,
         color: coloresApariencia?.textoPrincipal
       }}
-      className="flex flex-col h-full text-xs select-none"
+      className="flex flex-col h-full text-xs select-none min-h-0"
     >
-      {/* 🔍 Barra de Búsqueda y Acciones Rápidas */}
+      {/* 🔍 BARRA SUPERIOR: Búsqueda, Filtros en Cápsulas y Acciones Rápidas */}
       <div 
         style={{ borderColor: coloresApariencia?.bordePaneles }}
-        className="p-3 border-b space-y-2 shrink-0"
+        className="p-2.5 lg:p-3 border-b space-y-2 shrink-0"
       >
         <div className="relative">
           <Search 
@@ -192,12 +179,13 @@ export default function MaterialManagerPanel() {
               borderColor: coloresApariencia?.bordePaneles,
               color: coloresApariencia?.textoPrincipal
             }}
-            className="w-full pl-8 pr-3 py-1.5 border rounded-md text-xs focus:outline-none focus:ring-1 focus:ring-cyan-500 placeholder:opacity-60 transition-colors"
+            className="w-full pl-8 pr-3 py-1.5 border rounded-full text-xs focus:outline-none focus:ring-1 focus:ring-cyan-500 placeholder:opacity-60 transition-colors"
           />
         </div>
 
         <div className="flex items-center justify-between gap-1.5 flex-wrap">
-          <div className="flex gap-1.5 overflow-x-auto py-0.5 no-scrollbar">
+          {/* Categorías en Cápsulas Circulares */}
+          <div className="flex gap-1 overflow-x-auto py-0.5 no-scrollbar">
             {[
               { id: "todos", label: "Todos" },
               { id: "Melamina", label: "Melamina" },
@@ -212,14 +200,12 @@ export default function MaterialManagerPanel() {
                   key={t.id}
                   onClick={() => setFiltroTipo(t.id)}
                   style={{
-                    backgroundColor: activo 
-                      ? (coloresApariencia?.botonActivo || "#0891B2") 
-                      : "transparent",
+                    backgroundColor: activo ? colorAcento : "transparent",
                     color: activo ? "#FFFFFF" : (coloresApariencia?.textoSecundario || "#64748B"),
-                    borderColor: activo ? (coloresApariencia?.botonActivo || "#0891B2") : (coloresApariencia?.bordePaneles || "#CBD5E1")
+                    borderColor: activo ? colorAcento : (coloresApariencia?.bordePaneles || "#CBD5E1")
                   }}
-                  className={`px-3 py-1 rounded-full text-xs transition-colors border shadow-2xs font-semibold cursor-pointer ${
-                    activo ? "opacity-100" : "opacity-80 hover:opacity-100"
+                  className={`px-2.5 py-1 rounded-full text-[11px] transition-colors border shadow-2xs font-medium cursor-pointer ${
+                    activo ? "opacity-100 font-semibold" : "opacity-80 hover:opacity-100"
                   }`}
                 >
                   {t.label}
@@ -228,22 +214,27 @@ export default function MaterialManagerPanel() {
             })}
           </div>
 
-          <div className="flex items-center gap-1.5 shrink-0">
+          {/* Acciones Rápidas en Cápsulas */}
+          <div className="flex items-center gap-1 shrink-0">
             <button
               onClick={handleCrearNuevo}
               title="Crear Nuevo Material"
-              style={{ backgroundColor: coloresApariencia?.botonActivo || "#0891B2" }}
+              style={{ backgroundColor: colorAcento }}
               className="p-1.5 text-white rounded-full hover:opacity-90 transition shadow-xs cursor-pointer"
             >
               <Plus className="w-3.5 h-3.5" />
             </button>
             <button
               onClick={() => abrirPBRStudioParaMaterial(materialActivo?.id)}
-              title="Abrir 3BF Material Studio"
-              style={{ backgroundColor: coloresApariencia?.botonActivo || "#0891B2" }}
-              className="px-3 py-1 text-white rounded-full text-xs font-semibold transition shadow-xs cursor-pointer hover:opacity-90 flex items-center justify-center"
+              title="Abrir 3dBimFab Material Studio para fotografiar o calibrar este material"
+              style={{
+                backgroundColor: coloresApariencia?.fondoAplicacion,
+                borderColor: coloresApariencia?.bordePaneles,
+                color: colorAcento
+              }}
+              className="p-1.5 border rounded-full hover:scale-105 transition shadow-xs cursor-pointer"
             >
-              <span>Editar</span>
+              <Camera className="w-3.5 h-3.5" />
             </button>
             <button
               onClick={handleDuplicar}
@@ -270,270 +261,454 @@ export default function MaterialManagerPanel() {
             >
               <Trash2 className="w-3.5 h-3.5" />
             </button>
+            <button
+              onClick={resetCapasYMateriales}
+              title="Restablecer Catálogo por Defecto"
+              style={{
+                backgroundColor: coloresApariencia?.fondoAplicacion,
+                borderColor: coloresApariencia?.bordePaneles,
+                color: coloresApariencia?.textoSecundario
+              }}
+              className="p-1.5 border rounded-full hover:opacity-100 transition shadow-xs cursor-pointer"
+            >
+              <RotateCcw className="w-3.5 h-3.5" />
+            </button>
           </div>
         </div>
       </div>
 
-      {/* 🌐 Galería Superior de Miniaturas / Esferas PBR (Estilo Rhino) */}
+      {/* 🌟 CATÁLOGO DE MATERIALES (ÁREA PROTAGONISTA EN SU MÁXIMA EXPRESIÓN VERTICAL) */}
+      <div className="flex-1 min-h-0 overflow-y-auto p-2.5 lg:p-3 custom-scrollbar">
+        {materialesFiltrados.length === 0 ? (
+          <div 
+            style={{ color: coloresApariencia?.textoSecundario }}
+            className="h-full flex items-center justify-center italic text-center p-6"
+          >
+            No se encontraron materiales que coincidan con la búsqueda.
+          </div>
+        ) : vistaModo === "cuadricula" ? (
+          /* ========================================================================= */
+          /* MODO CUADRÍCULA (Estilo Rhino 8: Esferas Protagonistas y Solo Nombre)     */
+          /* ========================================================================= */
+          <div 
+            style={{
+              display: "grid",
+              gridTemplateColumns: `repeat(auto-fill, minmax(${tamanoEsfera}px, 1fr))`,
+              gap: "8px"
+            }}
+          >
+            {materialesFiltrados.map((mat) => {
+              const isSel = mat.id === materialActivo?.id;
+              // Diámetro de la esfera proporcional al tamaño de la celda
+              const sphereSize = Math.max(38, Math.round(tamanoEsfera * 0.58));
+
+              return (
+                <button
+                  key={mat.id}
+                  onClick={() => setMaterialSeleccionadoId(mat.id)}
+                  style={isSel ? {
+                    backgroundColor: esquemaColor === "oscuro" ? "rgba(19, 104, 170, 0.22)" : "rgba(8, 145, 178, 0.12)",
+                    borderColor: colorAcento,
+                  } : {
+                    backgroundColor: coloresApariencia?.fondoAplicacion,
+                    borderColor: coloresApariencia?.bordePaneles,
+                  }}
+                  className={`group relative flex flex-col items-center justify-between p-2 rounded-xl border transition-all cursor-pointer shadow-xs ${
+                    isSel ? "ring-2 ring-cyan-500/80 shadow-sm" : "hover:border-slate-400 dark:hover:border-slate-600 hover:shadow-xs"
+                  }`}
+                >
+                  {/* Contenedor de la Esfera Shader Ball */}
+                  <div 
+                    className="w-full flex items-center justify-center py-1 relative"
+                    style={{ minHeight: `${sphereSize + 8}px` }}
+                  >
+                    {/* Sombra de contacto inferior realista estilo estudio de Rhino */}
+                    <div 
+                      className="absolute bottom-1 w-3/4 h-2 rounded-full bg-black/25 blur-[2.5px] pointer-events-none"
+                    />
+
+                    {/* Esfera PBR: Fotografía Real del Visor 3D o Simulación Fotorrealista Fallback */}
+                    {mat.thumbnailReal ? (
+                      <div
+                        className="rounded-full shadow-md relative overflow-hidden border border-black/20 dark:border-white/20 shrink-0 transition-transform duration-150 group-hover:scale-105 flex items-center justify-center bg-transparent"
+                        style={{
+                          width: `${sphereSize}px`,
+                          height: `${sphereSize}px`,
+                        }}
+                      >
+                        <img
+                          src={mat.thumbnailReal}
+                          alt={mat.nombre}
+                          className="w-full h-full object-cover rounded-full pointer-events-none scale-[1.24] origin-center"
+                        />
+                      </div>
+                    ) : (
+                      <div
+                        className="rounded-full shadow-md relative overflow-hidden border border-black/25 flex items-center justify-center shrink-0 transition-transform duration-150 group-hover:scale-105"
+                        style={{
+                          width: `${sphereSize}px`,
+                          height: `${sphereSize}px`,
+                          backgroundColor: mat.colorBase,
+                          backgroundImage: mat.texturaUrl
+                            ? `url(${mat.texturaUrl})`
+                            : `radial-gradient(circle at 35% 30%, rgba(255,255,255,${0.85 * (1 - (mat.rugosidad ?? 0.45))}), rgba(0,0,0,${0.65 * (1 - (mat.rugosidad ?? 0.45))}) 78%)`,
+                          backgroundSize: "cover",
+                          backgroundPosition: "center"
+                        }}
+                      >
+                        {/* Brillo especular físico */}
+                        <div 
+                          className="absolute top-1 left-1.5 rounded-full bg-white/80 blur-[0.6px] pointer-events-none"
+                          style={{ 
+                            width: `${Math.max(6, sphereSize * 0.28)}px`,
+                            height: `${Math.max(4, sphereSize * 0.20)}px`,
+                            opacity: Math.max(0.2, 1 - (mat.rugosidad ?? 0.45)) 
+                          }}
+                        />
+                      </div>
+                    )}
+
+                    {/* Check de selección sutil */}
+                    {isSel && (
+                      <div 
+                        style={{ backgroundColor: colorAcento }}
+                        className="absolute top-0 right-0 w-4 h-4 rounded-full text-white flex items-center justify-center shadow-xs z-10"
+                      >
+                        <Check className="w-2.5 h-2.5 stroke-[3]" />
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Solo Nombre del Material (Estilo Rhino 8, sin tipo ni categoría) */}
+                  <div 
+                    style={{
+                      backgroundColor: isSel 
+                        ? (esquemaColor === "oscuro" ? "rgba(19, 104, 170, 0.35)" : "rgba(8, 145, 178, 0.18)")
+                        : (esquemaColor === "oscuro" ? "rgba(0,0,0,0.25)" : "rgba(255,255,255,0.7)"),
+                      borderColor: isSel ? colorAcento : "transparent"
+                    }}
+                    className="w-full mt-1.5 py-0.5 px-1 rounded-md text-center border"
+                  >
+                    <span 
+                      style={{ color: coloresApariencia?.textoPrincipal }}
+                      className="text-[11px] font-semibold truncate block w-full leading-tight"
+                      title={mat.nombre}
+                    >
+                      {mat.nombre}
+                    </span>
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+        ) : (
+          /* ========================================================================= */
+          /* MODO LISTA (Estilo Blender: Navegación Vertical Rápida y Compacta)         */
+          /* ========================================================================= */
+          <div className="flex flex-col gap-1">
+            {materialesFiltrados.map((mat) => {
+              const isSel = mat.id === materialActivo?.id;
+              return (
+                <button
+                  key={mat.id}
+                  onClick={() => setMaterialSeleccionadoId(mat.id)}
+                  style={isSel ? {
+                    backgroundColor: esquemaColor === "oscuro" ? "rgba(19, 104, 170, 0.25)" : "rgba(8, 145, 178, 0.12)",
+                    borderColor: colorAcento,
+                    color: coloresApariencia?.textoPrincipal
+                  } : {
+                    backgroundColor: "transparent",
+                    borderColor: "transparent",
+                    color: coloresApariencia?.textoPrincipal
+                  }}
+                  className={`flex items-center justify-between px-3 py-1.5 rounded-full border transition-all cursor-pointer text-left ${
+                    isSel ? "font-semibold shadow-2xs" : "hover:bg-slate-500/10 opacity-85 hover:opacity-100"
+                  }`}
+                >
+                  <div className="flex items-center gap-2.5 min-w-0">
+                    {/* Miniatura de Esfera estilo Blender: Foto Real o Fallback */}
+                    {mat.thumbnailReal ? (
+                      <div className="w-5 h-5 rounded-full overflow-hidden shadow-inner shrink-0 border border-black/25 flex items-center justify-center">
+                        <img
+                          src={mat.thumbnailReal}
+                          alt={mat.nombre}
+                          className="w-full h-full object-cover rounded-full pointer-events-none scale-[1.24] origin-center"
+                        />
+                      </div>
+                    ) : (
+                      <div
+                        className="w-5 h-5 rounded-full shadow-inner relative overflow-hidden border border-black/25 shrink-0 flex items-center justify-center"
+                        style={{
+                          backgroundColor: mat.colorBase,
+                          backgroundImage: mat.texturaUrl
+                            ? `url(${mat.texturaUrl})`
+                            : `radial-gradient(circle at 35% 30%, rgba(255,255,255,${0.85 * (1 - (mat.rugosidad ?? 0.45))}), rgba(0,0,0,${0.65 * (1 - (mat.rugosidad ?? 0.45))}) 75%)`,
+                          backgroundSize: "cover",
+                        }}
+                      >
+                        <div 
+                          className="absolute top-0.5 left-1 w-1.5 h-1 rounded-full bg-white/75 blur-[0.4px] pointer-events-none"
+                          style={{ opacity: 1 - (mat.rugosidad ?? 0.45) }}
+                        />
+                      </div>
+                    )}
+
+                    {/* Nombre del Material */}
+                    <span className="text-xs truncate">
+                      {mat.nombre}
+                    </span>
+                  </div>
+
+                  {/* Indicador de Tipo Discreto */}
+                  <div className="flex items-center gap-2 shrink-0">
+                    <span 
+                      style={{ 
+                        color: coloresApariencia?.textoSecundario,
+                        backgroundColor: esquemaColor === "oscuro" ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.05)"
+                      }}
+                      className="text-[9px] px-2 py-0.5 rounded-full uppercase tracking-wider font-mono"
+                    >
+                      {mat.tipo}
+                    </span>
+                    {isSel && (
+                      <Check style={{ color: colorAcento }} className="w-3.5 h-3.5 stroke-[2.5]" />
+                    )}
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+        )}
+      </div>
+
+      {/* 🎛️ DOCK DE VISUALIZACIÓN INFERIOR (Estilo Barra Inferior de Rhino 8) */}
       <div 
         style={{
           backgroundColor: coloresApariencia?.fondoAplicacion,
           borderColor: coloresApariencia?.bordePaneles
         }}
-        className="p-3 border-b"
+        className="px-3 py-1.5 border-t flex items-center justify-between gap-3 shrink-0"
       >
-        <div className="text-[10px] font-semibold uppercase tracking-wider mb-2 flex items-center justify-between">
-          <span style={{ color: coloresApariencia?.textoSecundario }}>
-            Catálogo de Materiales ({materialesFiltrados.length})
-          </span>
-          <button
-            onClick={resetCapasYMateriales}
-            title="Restablecer Materiales por Defecto"
+        {/* Slider de Tamaño de Miniaturas (Rhino 8) */}
+        <div className="flex items-center gap-2 flex-1 max-w-[210px]">
+          <span 
             style={{ color: coloresApariencia?.textoSecundario }}
-            className="hover:opacity-100 flex items-center gap-1 text-[10px] transition cursor-pointer"
+            className="text-[10px] font-medium shrink-0"
+            title="Ajustar escala de las esferas de materiales"
           >
-            <RotateCcw className="w-2.5 h-2.5" /> Reset
+            Escala:
+          </span>
+          <input
+            type="range"
+            min={70}
+            max={140}
+            step={5}
+            value={tamanoEsfera}
+            onChange={(e) => cambiarTamanoEsfera(Number(e.target.value))}
+            className="w-full h-1.5 bg-slate-300 dark:bg-slate-700 rounded-full appearance-none cursor-pointer accent-cyan-600"
+            title={`Tamaño de miniatura: ${tamanoEsfera}px`}
+          />
+        </div>
+
+        {/* Toggles de Vista & Propiedades Rápidas en Cápsulas */}
+        <div className="flex items-center gap-1 shrink-0">
+          {/* Botón Vista Cuadrícula (Rhino 8) */}
+          <button
+            onClick={() => cambiarModoVista("cuadricula")}
+            title="Vista Cuadrícula de Esferas (Estilo Rhino 8)"
+            style={{
+              backgroundColor: vistaModo === "cuadricula" ? colorAcento : "transparent",
+              color: vistaModo === "cuadricula" ? "#FFFFFF" : (coloresApariencia?.textoSecundario || "#64748B"),
+              borderColor: vistaModo === "cuadricula" ? colorAcento : (coloresApariencia?.bordePaneles || "#CBD5E1")
+            }}
+            className="p-1.5 rounded-full border transition cursor-pointer shadow-2xs hover:opacity-100"
+          >
+            <LayoutGrid className="w-3.5 h-3.5" />
+          </button>
+
+          {/* Botón Vista Lista (Blender) */}
+          <button
+            onClick={() => cambiarModoVista("lista")}
+            title="Vista Lista Compacta (Estilo Blender)"
+            style={{
+              backgroundColor: vistaModo === "lista" ? colorAcento : "transparent",
+              color: vistaModo === "lista" ? "#FFFFFF" : (coloresApariencia?.textoSecundario || "#64748B"),
+              borderColor: vistaModo === "lista" ? colorAcento : (coloresApariencia?.bordePaneles || "#CBD5E1")
+            }}
+            className="p-1.5 rounded-full border transition cursor-pointer shadow-2xs hover:opacity-100"
+          >
+            <List className="w-3.5 h-3.5" />
+          </button>
+
+          <div 
+            style={{ backgroundColor: coloresApariencia?.bordePaneles }}
+            className="w-[1px] h-4 mx-0.5 opacity-50"
+          />
+
+          {/* Botón Propiedades Rápidas (Colapsable) */}
+          <button
+            onClick={toggleInspector}
+            title={inspectorAbierto ? "Ocultar propiedades rápidas" : "Mostrar propiedades rápidas del material seleccionado"}
+            style={{
+              backgroundColor: inspectorAbierto 
+                ? (esquemaColor === "oscuro" ? "rgba(19, 104, 170, 0.25)" : "rgba(8, 145, 178, 0.15)") 
+                : "transparent",
+              color: inspectorAbierto ? colorAcento : (coloresApariencia?.textoSecundario || "#64748B"),
+              borderColor: inspectorAbierto ? colorAcento : (coloresApariencia?.bordePaneles || "#CBD5E1")
+            }}
+            className="p-1.5 rounded-full border transition cursor-pointer shadow-2xs hover:opacity-100 flex items-center gap-1"
+          >
+            <SlidersHorizontal className="w-3.5 h-3.5" />
+            {inspectorAbierto ? (
+              <ChevronDown className="w-3 h-3 opacity-70" />
+            ) : (
+              <ChevronUp className="w-3 h-3 opacity-70" />
+            )}
           </button>
         </div>
-
-        <div 
-          style={{ height: `${alturaGaleria}px` }}
-          className="grid grid-cols-4 sm:grid-cols-5 gap-2 overflow-y-auto pr-1 custom-scrollbar"
-        >
-          {materialesFiltrados.map((mat) => {
-            const isSel = mat.id === materialActivo?.id;
-            return (
-              <button
-                key={mat.id}
-                onClick={() => setMaterialSeleccionadoId(mat.id)}
-                style={isSel ? {
-                  backgroundColor: esquemaColor === "oscuro" ? "rgba(8, 145, 178, 0.25)" : "rgba(8, 145, 178, 0.12)",
-                  borderColor: coloresApariencia?.botonActivo || "#0891B2",
-                } : {
-                  backgroundColor: coloresApariencia?.fondoPaneles,
-                  borderColor: coloresApariencia?.bordePaneles,
-                }}
-                className={`flex flex-col items-center p-1.5 rounded-lg border transition-all cursor-pointer shadow-xs ${
-                  isSel ? "ring-1 ring-cyan-500" : "hover:opacity-90"
-                }`}
-              >
-                {/* Esfera PBR simulada con gradiente radial y reflejos */}
-                <div
-                  className="w-9 h-9 rounded-full shadow-inner relative overflow-hidden border border-black/20 flex items-center justify-center shrink-0"
-                  style={{
-                    backgroundColor: mat.colorBase,
-                    backgroundImage: mat.texturaUrl
-                      ? `url(${mat.texturaUrl})`
-                      : `radial-gradient(circle at 35% 30%, rgba(255,255,255,${0.85 * (1 - mat.rugosidad)}), rgba(0,0,0,${0.6 * (1 - mat.rugosidad)}) 75%)`,
-                    backgroundSize: "cover",
-                  }}
-                >
-                  {/* Brillo especular */}
-                  <div 
-                    className="absolute top-1 left-1.5 w-3 h-2 rounded-full bg-white/70 blur-[0.5px] pointer-events-none"
-                    style={{ opacity: 1 - mat.rugosidad }}
-                  />
-                </div>
-                <span 
-                  style={{ color: coloresApariencia?.textoPrincipal }}
-                  className="mt-1 text-[10px] font-medium truncate w-full text-center"
-                >
-                  {mat.nombre}
-                </span>
-                <span 
-                  style={{ color: coloresApariencia?.textoSecundario }}
-                  className="text-[8px] truncate max-w-full opacity-80"
-                >
-                  {mat.tipo}
-                </span>
-              </button>
-            );
-          })}
-        </div>
       </div>
 
-      {/* ↔️ Divisor Interactivo de Redimensión Vertical */}
-      <div
-        onMouseDown={startResizing}
-        title="Arrastra para redimensionar el espacio de esferas de materiales"
-        style={{
-          backgroundColor: coloresApariencia?.fondoAplicacion,
-          borderColor: coloresApariencia?.bordePaneles
-        }}
-        className={`h-2 border-y hover:bg-cyan-500/80 cursor-row-resize flex items-center justify-center transition-colors group select-none shrink-0 ${
-          isResizing ? "bg-cyan-500!" : ""
-        }`}
-      >
+      {/* 🛠️ MINI-INSPECTOR DE PROPIEDADES RÁPIDAS (Desplegable a demanda) */}
+      {inspectorAbierto && materialActivo && (
         <div 
-          style={{ backgroundColor: coloresApariencia?.bordePaneles || "#94A3B8" }}
-          className="w-8 h-1 rounded-full group-hover:bg-white transition-colors" 
-        />
-      </div>
-
-      {/* 🛠️ Inspector Detallado de Propiedades Físicas PBR (Estilo Rhino) */}
-      {materialActivo ? (
-        <div 
-          style={{ backgroundColor: coloresApariencia?.fondoPaneles }}
-          className="flex-1 overflow-y-auto p-3 space-y-2.5 custom-scrollbar"
+          style={{
+            backgroundColor: coloresApariencia?.fondoPaneles,
+            borderColor: coloresApariencia?.bordePaneles
+          }}
+          className="p-3 border-t space-y-2 shrink-0 animate-in slide-in-from-bottom duration-150"
         >
-          {/* Acordeón 1: Nombre y Tipo */}
-          <div 
-            style={{ borderColor: coloresApariencia?.bordePaneles }}
-            className="border rounded-lg overflow-hidden shadow-xs"
-          >
-            <button
-              onClick={() => toggleAcordeon("nombreTipo")}
-              style={{
-                backgroundColor: coloresApariencia?.fondoAplicacion,
-                color: coloresApariencia?.textoPrincipal
-              }}
-              className="w-full flex items-center justify-between p-2.5 font-semibold cursor-pointer"
+          <div className="flex items-center justify-between mb-1">
+            <span 
+              style={{ color: coloresApariencia?.textoSecundario }}
+              className="text-[10px] font-semibold uppercase tracking-wider flex items-center gap-1.5"
             >
-              <div className="flex items-center gap-1.5">
-                <Palette style={{ color: coloresApariencia?.botonActivo || "#0891B2" }} className="w-3.5 h-3.5" />
-                <span>Nombre y Tipo</span>
-              </div>
-              {acordeonAbierto.nombreTipo ? (
-                <ChevronDown style={{ color: coloresApariencia?.textoSecundario }} className="w-3.5 h-3.5" />
-              ) : (
-                <ChevronRight style={{ color: coloresApariencia?.textoSecundario }} className="w-3.5 h-3.5" />
-              )}
-            </button>
-
-            {acordeonAbierto.nombreTipo && (
-              <div 
-                style={{ backgroundColor: coloresApariencia?.fondoPaneles }}
-                className="p-3 space-y-2.5"
-              >
-                <div>
-                  <label 
-                    style={{ color: coloresApariencia?.textoSecundario }}
-                    className="block text-[10px] font-medium mb-1"
-                  >
-                    Nombre Técnico del Material (Blender / Rhino)
-                  </label>
-                  <input
-                    type="text"
-                    value={materialActivo.nombre}
-                    onChange={(e) => actualizarMaterialPBR(materialActivo.id, { nombre: e.target.value })}
-                    style={{
-                      backgroundColor: coloresApariencia?.fondoAplicacion,
-                      borderColor: coloresApariencia?.bordePaneles,
-                      color: coloresApariencia?.textoPrincipal
-                    }}
-                    className="w-full px-3 py-1.5 border rounded-full font-mono text-xs focus:ring-1 focus:ring-cyan-500 focus:outline-none"
-                  />
-                  <span 
-                    style={{ color: coloresApariencia?.textoSecundario }}
-                    className="text-[9px] mt-0.5 block opacity-80"
-                  >
-                    Este nombre exacto es el que vinculará la plantilla HD de Blender en el GLB.
-                  </span>
-                </div>
-
-                <div>
-                  <label 
-                    style={{ color: coloresApariencia?.textoSecundario }}
-                    className="block text-[10px] font-medium mb-1"
-                  >
-                    Tipo de Material
-                  </label>
-                  <select
-                    value={materialActivo.tipo}
-                    onChange={(e) => actualizarMaterialPBR(materialActivo.id, { tipo: e.target.value as any })}
-                    style={{
-                      backgroundColor: coloresApariencia?.fondoAplicacion,
-                      borderColor: coloresApariencia?.bordePaneles,
-                      color: coloresApariencia?.textoPrincipal
-                    }}
-                    className="w-full px-3 py-1.5 border rounded-full text-xs focus:ring-1 focus:ring-cyan-500 focus:outline-none cursor-pointer"
-                  >
-                    <option value="PBR">PBR Físico Estándar</option>
-                    <option value="Melamina">Melamina / Tablero Laminado</option>
-                    <option value="Madera">Madera Natural / Poro Abierto</option>
-                    <option value="Metal">Metal / Acero / Aluminio</option>
-                    <option value="Plastico">Plástico Inyectado / Polímero</option>
-                    <option value="Pintura">Pintura Electrostática</option>
-                  </select>
-                </div>
-
-                {/* Selector de Color Base / Tono */}
-                <div>
-                  <label 
-                    style={{ color: coloresApariencia?.textoSecundario }}
-                    className="block text-[10px] font-medium mb-1"
-                  >
-                    Color Base / Tono
-                  </label>
-                  <div className="flex items-center gap-2">
-                    <label
-                      className="w-8 h-8 rounded-full border-2 border-white shadow-xs cursor-pointer hover:scale-110 transition flex items-center justify-center relative overflow-hidden shrink-0"
-                      style={{ backgroundColor: materialActivo.colorBase || "#CCCCCC" }}
-                      title="Clic para cambiar color base"
-                    >
-                      <Palette className="w-3.5 h-3.5 text-white drop-shadow opacity-75 hover:opacity-100 transition" />
-                      <input
-                        type="color"
-                        value={materialActivo.colorBase?.startsWith("#") && materialActivo.colorBase.length === 7 ? materialActivo.colorBase : "#CCCCCC"}
-                        onChange={(e) => actualizarMaterialPBR(materialActivo.id, { colorBase: e.target.value })}
-                        className="opacity-0 absolute inset-0 w-full h-full cursor-pointer"
-                      />
-                    </label>
-                    <input
-                      type="text"
-                      maxLength={7}
-                      value={materialActivo.colorBase || "#CCCCCC"}
-                      onChange={(e) => {
-                        const val = e.target.value;
-                        if (/^#[0-9a-fA-F]{6}$/.test(val)) {
-                          actualizarMaterialPBR(materialActivo.id, { colorBase: val });
-                        }
-                      }}
-                      style={{
-                        backgroundColor: coloresApariencia?.fondoAplicacion,
-                        borderColor: coloresApariencia?.bordePaneles,
-                        color: coloresApariencia?.textoPrincipal
-                      }}
-                      className="flex-1 px-3 py-1.5 border rounded-full font-mono text-xs uppercase focus:ring-1 focus:ring-cyan-500 focus:outline-none"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => abrirCuentagotasPanel(materialActivo.id)}
-                      className="w-8 h-8 rounded-full border shadow-xs flex items-center justify-center cursor-pointer hover:scale-110 transition group shrink-0"
-                      style={{
-                        backgroundColor: coloresApariencia?.fondoAplicacion,
-                        borderColor: coloresApariencia?.bordePaneles,
-                        color: coloresApariencia?.botonActivo || "#0891b2"
-                      }}
-                      title="Cuentagotas: Captura cualquier color de la pantalla u otra aplicación"
-                    >
-                      <Pipette className="w-3.5 h-3.5 group-hover:rotate-12 transition-transform" />
-                    </button>
-                  </div>
-                </div>
-              </div>
-            )}
+              <Palette style={{ color: colorAcento }} className="w-3.5 h-3.5" />
+              Propiedades Rápidas: {materialActivo.nombre}
+            </span>
           </div>
 
-          {/* Botón Principal: Editar en 3BF Material Studio */}
-          <button
-            onClick={() => abrirPBRStudioParaMaterial(materialActivo.id)}
-            style={{
-              backgroundColor: coloresApariencia?.botonActivo || "#0891b2",
-            }}
-            className="w-full py-2.5 px-4 rounded-full font-semibold text-xs text-white shadow-xs transition cursor-pointer hover:opacity-90 flex items-center justify-center text-center"
-          >
-            <span>Editar en 3BF Material Studio</span>
-          </button>
-        </div>
-      ) : (
-        <div 
-          style={{ color: coloresApariencia?.textoSecundario }}
-          className="flex-1 flex items-center justify-center p-4 text-center italic"
-        >
-          Selecciona o crea un material PBR para editar sus propiedades.
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+            {/* Nombre */}
+            <div>
+              <label 
+                style={{ color: coloresApariencia?.textoSecundario }}
+                className="block text-[9.5px] font-medium mb-1"
+              >
+                Nombre Técnico
+              </label>
+              <input
+                type="text"
+                value={materialActivo.nombre}
+                onChange={(e) => actualizarMaterialPBR(materialActivo.id, { nombre: e.target.value })}
+                style={{
+                  backgroundColor: coloresApariencia?.fondoAplicacion,
+                  borderColor: coloresApariencia?.bordePaneles,
+                  color: coloresApariencia?.textoPrincipal
+                }}
+                className="w-full px-2.5 py-1 border rounded-full font-mono text-xs focus:ring-1 focus:ring-cyan-500 focus:outline-none"
+              />
+            </div>
+
+            {/* Tipo */}
+            <div>
+              <label 
+                style={{ color: coloresApariencia?.textoSecundario }}
+                className="block text-[9.5px] font-medium mb-1"
+              >
+                Tipo de Material
+              </label>
+              <select
+                value={materialActivo.tipo}
+                onChange={(e) => actualizarMaterialPBR(materialActivo.id, { tipo: e.target.value as any })}
+                style={{
+                  backgroundColor: coloresApariencia?.fondoAplicacion,
+                  borderColor: coloresApariencia?.bordePaneles,
+                  color: coloresApariencia?.textoPrincipal
+                }}
+                className="w-full px-2.5 py-1 border rounded-full text-xs focus:ring-1 focus:ring-cyan-500 focus:outline-none cursor-pointer"
+              >
+                <option value="PBR">PBR Físico</option>
+                <option value="Melamina">Melamina</option>
+                <option value="Madera">Madera Natural</option>
+                <option value="Metal">Metal / Acero</option>
+                <option value="Plastico">Plástico</option>
+                <option value="Pintura">Pintura</option>
+              </select>
+            </div>
+
+            {/* Color Base y Cuentagotas */}
+            <div>
+              <label 
+                style={{ color: coloresApariencia?.textoSecundario }}
+                className="block text-[9.5px] font-medium mb-1"
+              >
+                Color Base / Tono
+              </label>
+              <div className="flex items-center gap-1.5">
+                <label
+                  className="w-6 h-6 rounded-full border shadow-xs cursor-pointer hover:scale-105 transition flex items-center justify-center relative overflow-hidden shrink-0"
+                  style={{ backgroundColor: materialActivo.colorBase || "#CCCCCC" }}
+                  title="Cambiar color base"
+                >
+                  <input
+                    type="color"
+                    value={materialActivo.colorBase?.startsWith("#") && materialActivo.colorBase.length === 7 ? materialActivo.colorBase : "#CCCCCC"}
+                    onChange={(e) => actualizarMaterialPBR(materialActivo.id, { colorBase: e.target.value })}
+                    className="opacity-0 absolute inset-0 w-full h-full cursor-pointer"
+                  />
+                </label>
+                <input
+                  type="text"
+                  maxLength={7}
+                  value={materialActivo.colorBase || "#CCCCCC"}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    if (/^#[0-9a-fA-F]{6}$/.test(val)) {
+                      actualizarMaterialPBR(materialActivo.id, { colorBase: val });
+                    }
+                  }}
+                  style={{
+                    backgroundColor: coloresApariencia?.fondoAplicacion,
+                    borderColor: coloresApariencia?.bordePaneles,
+                    color: coloresApariencia?.textoPrincipal
+                  }}
+                  className="w-full px-2 py-1 border rounded-full font-mono text-xs uppercase focus:ring-1 focus:ring-cyan-500 focus:outline-none"
+                />
+                <button
+                  type="button"
+                  onClick={() => abrirCuentagotasPanel(materialActivo.id)}
+                  className="p-1 rounded-full border shadow-xs flex items-center justify-center cursor-pointer hover:scale-105 transition shrink-0"
+                  style={{
+                    backgroundColor: coloresApariencia?.fondoAplicacion,
+                    borderColor: coloresApariencia?.bordePaneles,
+                    color: colorAcento
+                  }}
+                  title="Cuentagotas de pantalla"
+                >
+                  <Pipette className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            </div>
+          </div>
         </div>
       )}
+
+      {/* 🚀 BOTÓN PRINCIPAL AL LÍMITE INFERIOR: Editar en 3dBimFab Material Studio */}
+      <div 
+        style={{
+          backgroundColor: coloresApariencia?.fondoPaneles,
+          borderColor: coloresApariencia?.bordePaneles
+        }}
+        className="p-2.5 lg:p-3 border-t shrink-0"
+      >
+        <button
+          onClick={() => abrirPBRStudioParaMaterial(materialActivo?.id)}
+          style={{ backgroundColor: colorAcento }}
+          className="w-full py-2.5 px-4 rounded-full font-semibold text-xs text-white shadow-xs transition cursor-pointer hover:opacity-90 flex items-center justify-center text-center"
+        >
+          <span>Editar en 3dBimFab Material Studio</span>
+        </button>
+      </div>
     </div>
   );
 }

@@ -8,6 +8,7 @@ import LayerManagerPanel from "./LayerManagerPanel";
 import MaterialManagerPanel from "./MaterialManagerPanel";
 import PartBreakdownPanel from "./PartBreakdownPanel";
 import ProductSheetPanel from "./ProductSheetPanel";
+import BloquesEstandarAssetBrowser from "@/components/manual/BloquesEstandarAssetBrowser";
 import { 
   ChevronLeft, 
   ChevronRight, 
@@ -341,7 +342,7 @@ export default function NPanel() {
       const deltaX = startX - currentX; // Mover a la izquierda ensancha
       const esMovil = typeof window !== "undefined" && window.innerWidth < 1024;
       const minW = esMovil ? 140 : 280;
-      const maxW = esMovil ? 210 : 800;
+      const maxW = esMovil ? 360 : (typeof window !== "undefined" ? Math.max(1400, window.innerWidth - 60) : 1400);
       const newWidth = Math.max(minW, Math.min(maxW, startWidth + deltaX));
       setAnchoNPanel(newWidth);
     };
@@ -466,9 +467,9 @@ export default function NPanel() {
   return (
     <>
       {/* ========================================================================= */}
-      {/* 🔘 BOTÓN PESTAÑA CHEVRON ESTILO BLENDER (<) EN ESQUINA SUPERIOR DERECHA (Solo en Visor 3D) */}
+      {/* 🔘 BOTÓN PESTAÑA CHEVRON ESTILO BLENDER (<) EN ESQUINA SUPERIOR DERECHA (Visor 3D y Manual 3D) */}
       {/* ========================================================================= */}
-      {pestanaActiva === "3d" && (
+      {(pestanaActiva === "3d" || pestanaActiva === "manual") && (
         <div 
           className={`absolute top-3 right-3 z-30 transition-all duration-200 ${
             mostrarNPanel 
@@ -497,7 +498,7 @@ export default function NPanel() {
       {/* 🗂️ SIDEBAR N-PANEL REDIMENSIONABLE (Borde Izquierdo + Pestañas Verticales)   */}
       {/* ========================================================================= */}
       <aside
-        style={pestanaActiva === "3d" ? { 
+        style={(pestanaActiva === "3d" || pestanaActiva === "manual") ? { 
           width: `${ancho}px`,
           backgroundColor: coloresApariencia?.fondoPaneles,
           borderColor: coloresApariencia?.bordePaneles,
@@ -506,7 +507,7 @@ export default function NPanel() {
           backgroundColor: coloresApariencia?.fondoPaneles,
           color: coloresApariencia?.textoPrincipal
         }}
-        className={pestanaActiva === "3d" 
+        className={(pestanaActiva === "3d" || pestanaActiva === "manual") 
           ? `absolute top-3 bottom-3 right-3 z-40 rounded-2xl glass-panel border shadow-2xl flex flex-row overflow-hidden transition-transform ${
               isResizing ? "transition-none select-none" : "duration-300 ease-in-out"
             } ${
@@ -522,22 +523,24 @@ export default function NPanel() {
         }
       >
         {/* ========================================================================= */}
-        {/* ↔️ CONTROLADOR DE REDIMENSIÓN EN BORDE IZQUIERDO (Solo en Visor 3D)         */}
+        {/* ↔️ CONTROLADOR DE REDIMENSIÓN EN BORDE IZQUIERDO (Visor 3D y Manual 3D)     */}
         {/* ========================================================================= */}
-        {pestanaActiva === "3d" && (
+        {(pestanaActiva === "3d" || pestanaActiva === "manual") && (
           <div
             onMouseDown={handleStartResize}
             onTouchStart={handleStartResize}
-            title="Arrastrar para redimensionar el ancho (Blender style)"
-            className="absolute top-0 bottom-0 left-0 w-4 -translate-x-2 cursor-ew-resize z-40 group flex items-center justify-center hover:bg-cyan-500/10 transition-colors touch-none"
+            title="Arrastrar hacia la izquierda para ensanchar el panel (Atajo: N)"
+            className="absolute top-0 bottom-0 left-0 w-6 -translate-x-3 cursor-ew-resize z-50 group flex items-center justify-center hover:bg-cyan-500/15 transition-colors touch-none"
           >
             <div 
-              className={`w-0.5 h-16 rounded-full transition-all ${
+              className={`w-1 h-20 rounded-full transition-all flex items-center justify-center shadow-xs ${
                 isResizing 
-                  ? "bg-cyan-500 shadow-md shadow-cyan-500/60 w-1" 
-                  : "bg-transparent group-hover:bg-cyan-500/80"
+                  ? "bg-cyan-500 shadow-lg shadow-cyan-500/60 w-1.5 h-32" 
+                  : "bg-slate-300 dark:bg-slate-600 group-hover:bg-cyan-500/90 group-hover:h-24"
               }`} 
-            />
+            >
+              <div className="w-0.5 h-6 bg-white/70 rounded-full" />
+            </div>
           </div>
         )}
 
@@ -562,7 +565,8 @@ export default function NPanel() {
                 style={{ color: coloresApariencia?.textoPrincipal }}
                 className="text-xs lg:text-sm font-bold leading-tight truncate"
               >
-                {pestanaNPanel === "componentes" ? "Biblioteca de Componentes"
+                {pestanaActiva === "manual" || pestanaNPanel === "bloques_estandar" ? "Bloques Estándar de Armado"
+                  : pestanaNPanel === "componentes" ? "Biblioteca de Componentes"
                   : pestanaNPanel === "muebles" ? "Biblioteca de Muebles"
                   : pestanaNPanel === "capas" ? "Gestor de Capas"
                   : pestanaNPanel === "partes" ? "Desglose de Partes"
@@ -590,41 +594,48 @@ export default function NPanel() {
             <button
               onClick={() => setMostrarNPanel(false)}
               title="Cerrar panel lateral (N)"
-              className="p-1 lg:p-1.5 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-400 hover:text-slate-700 dark:hover:text-white transition cursor-pointer shrink-0 ml-1"
+              className="p-1 lg:p-1.5 rounded-full hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-400 hover:text-slate-700 dark:hover:text-white transition cursor-pointer shrink-0 ml-1"
             >
               <ChevronRight className="w-4 h-4" />
             </button>
           </div>
 
           {/* ========================================================================= */}
+          {/* VISTA 0: PESTAÑA BLOQUES ESTÁNDAR (Exclusiva en Modo Manual 3D)           */}
+          {/* ========================================================================= */}
+          {(pestanaActiva === "manual" || pestanaNPanel === "bloques_estandar") && (
+            <BloquesEstandarAssetBrowser />
+          )}
+
+          {/* ========================================================================= */}
           {/* VISTA 1: PESTAÑA MUEBLES (Asset Browser Catálogos por Marca / Drive)       */}
           {/* ========================================================================= */}
-          {pestanaNPanel === "muebles" && <FurnitureAssetBrowser />}
+          {pestanaActiva !== "manual" && pestanaNPanel === "muebles" && <FurnitureAssetBrowser />}
 
           {/* ========================================================================= */}
           {/* VISTA 2: PESTAÑA CAPAS (Sistema de Capas Estilo Rhino 8)                   */}
           {/* ========================================================================= */}
-          {pestanaNPanel === "capas" && <LayerManagerPanel />}
+          {pestanaActiva !== "manual" && pestanaNPanel === "capas" && <LayerManagerPanel />}
 
           {/* ========================================================================= */}
           {/* VISTA 3: PESTAÑA PARTES (Desglose de Partes & Mallas GHX)                 */}
           {/* ========================================================================= */}
-          {pestanaNPanel === "partes" && <PartBreakdownPanel />}
+          {pestanaActiva !== "manual" && pestanaNPanel === "partes" && <PartBreakdownPanel />}
 
           {/* ========================================================================= */}
           {/* VISTA 4: PESTAÑA MATERIALES (Editor PBR Físico Estilo Rhino 8)            */}
           {/* ========================================================================= */}
-          {pestanaNPanel === "materiales" && <MaterialManagerPanel />}
+          {pestanaActiva !== "manual" && pestanaNPanel === "materiales" && <MaterialManagerPanel />}
 
           {/* ========================================================================= */}
           {/* VISTA 4B: PESTAÑA FICHA (Ficha Comercial & Color Recipe Engine PDP)       */}
           {/* ========================================================================= */}
-          {pestanaNPanel === "ficha" && <ProductSheetPanel />}
+          {pestanaActiva !== "manual" && pestanaNPanel === "ficha" && <ProductSheetPanel />}
 
           {/* ========================================================================= */}
           {/* VISTA 5: PESTAÑA COMPONENTES (Definiciones GHX en Crudo)                  */}
           {/* ========================================================================= */}
-          {pestanaNPanel === "componentes" && (
+          {pestanaActiva !== "manual" && pestanaNPanel === "componentes" && (
             <div className="flex-1 min-w-0 flex flex-col overflow-hidden">
               
               {/* Buscador */}
@@ -759,7 +770,7 @@ export default function NPanel() {
           {/* ========================================================================= */}
           {/* VISTA 3: PESTAÑA CALIBRAR (Integración Completa del Calibrador 3D)         */}
           {/* ========================================================================= */}
-          {pestanaNPanel === "calibrar" && (
+          {pestanaActiva !== "manual" && pestanaNPanel === "calibrar" && (
             <div className="flex-1 min-w-0 overflow-y-auto p-3 space-y-4 custom-scrollbar text-xs">
               
               {/* Sección 1: Material del Tablero */}
@@ -1564,7 +1575,7 @@ export default function NPanel() {
           {/* ========================================================================= */}
           {/* VISTA 6: PESTAÑA APARIENCIA (Personalización de Colores Rhino 8 Style)    */}
           {/* ========================================================================= */}
-          {pestanaNPanel === "apariencia" && <AppearanceSettingsPanel />}
+          {pestanaActiva !== "manual" && pestanaNPanel === "apariencia" && <AppearanceSettingsPanel />}
 
           {/* Pie de Panel Informativo */}
           <div 
@@ -1592,7 +1603,27 @@ export default function NPanel() {
           }}
           className="w-7 lg:w-9 shrink-0 flex flex-col py-1.5 lg:py-2.5 px-0.5 lg:px-1 items-center gap-1 lg:gap-1.5 border-l select-none overflow-y-auto no-scrollbar touch-pan-y overscroll-contain"
         >
-            
+          {pestanaActiva === "manual" ? (
+            /* ── EN MODO MANUAL 3D: EXCLUSIVAMENTE LA PESTAÑA BLOQUES ESTÁNDAR ── */
+            <button
+              onClick={() => setPestanaNPanel("bloques_estandar")}
+              style={{
+                backgroundColor: coloresApariencia?.botonActivo || "#0284c7",
+                color: "#FFFFFF",
+              }}
+              title="Biblioteca de Bloques Estándar de Armado"
+              className="w-5.5 lg:w-7 py-2.5 px-0.5 lg:px-1 rounded-full flex flex-col items-center justify-center gap-1.5 transition-all cursor-pointer shadow-sm font-bold"
+            >
+              <Boxes className="w-3.5 lg:w-4 h-3.5 lg:h-4 shrink-0 text-white" />
+              <span
+                style={{ writingMode: "vertical-rl" }}
+                className="text-[8.5px] lg:text-[9.5px] tracking-wider font-sans leading-none font-bold text-white uppercase"
+              >
+                Bloques Estándar
+              </span>
+            </button>
+          ) : (
+            <>
             {/* Pestaña Vertical 1: Componentes */}
             <button
               onClick={() => setPestanaNPanel("componentes")}
@@ -1811,6 +1842,8 @@ export default function NPanel() {
                 Calibrar
               </span>
             </button>
+            </>
+          )}
           </div>
       </aside>
     </>

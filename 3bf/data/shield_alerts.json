@@ -1,1 +1,12 @@
-[]
+[
+  {
+    "id": "alt_1789413631009_yuph9",
+    "fechaIso": "2026-09-14T19:20:31.003Z",
+    "fechaColombia": "14/09/2026, 02:20:31 p. m.",
+    "tipo": "ACCESO_EXITOSO_PROPIETARIO",
+    "ip": "127.0.0.1",
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/153.0.0.0 Safari/537.36",
+    "ruta": "/access",
+    "detalles": "Dispositivo autorizado bajo modalidad: Acceso Propietario (Permanente)"
+  }
+]

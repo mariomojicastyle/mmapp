@@ -1,0 +1,32 @@
+{
+  "id": "ensamble_minifix_perno_tambor",
+  "nombre": "Ensamble Perno y Tambor Minifix",
+  "categoriaMarca": "Universales",
+  "subcategoria": "Minifix",
+  "descripcion": "Alineación e inserción del tambor de leva excéntrica sobre el perno de unión, realizando giro de 180° con destornillador Phillips.",
+  "archivo": "ensamble_minifix_perno_tambor.3bb.json",
+  "thumbnail": "/thumbnails/bloque_minifix.svg",
+  "duracion": 7.0,
+  "guionEs": "Inserta el perno minifix en el lateral. Coloca el tambor con la flecha apuntando hacia el perno y gira media vuelta hasta trabar firmemente.",
+  "guionPt": "Insira o pino minifix na lateral. Posicione o tambor com a seta apontando para o pino e gire meia volta até travar com firmeza.",
+  "guionEn": "Insert the minifix bolt into the panel. Place the cam lock with arrow facing the bolt and rotate 180 degrees until firmly locked.",
+  "animacionTracks": [
+    {
+      "fase": "insercion_perno",
+      "duracion": 2.0,
+      "accion": "aproximar_perno"
+    },
+    {
+      "fase": "insercion_tambor",
+      "duracion": 2.0,
+      "accion": "encajar_tambor_con_flecha"
+    },
+    {
+      "fase": "giro_cierre",
+      "duracion": 2.5,
+      "accion": "rotacion_destornillador",
+      "anguloDeg": 180
+    }
+  ],
+  "fechaCreacion": "2026-09-14T10:00:00.000Z"
+}

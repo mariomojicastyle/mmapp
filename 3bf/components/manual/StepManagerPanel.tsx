@@ -1,12 +1,24 @@
 "use client";
 
 import React, { useMemo } from "react";
-import { use3BFStore, PasoManualStudio, CoreografiaShowcase, EjeAperturaShowcase } from "@/lib/store";
-import { Plus, Trash2, Box, Layers, Hammer, Sparkles, Check, CheckCircle2, ChevronRight, ChevronDown, Sliders, Wand2, PlayCircle, X, FolderPlus, Pipette, Eraser, Eye, EyeOff, Link2, Unlink, RotateCw, RotateCcw } from "lucide-react";
+import { use3BFStore, PasoManualStudio, CoreografiaShowcase, EjeAperturaShowcase, sanitizarPasosManuales } from "@/lib/store";
+import { Plus, Trash2, Box, Boxes, Layers, Hammer, Sparkles, Check, CheckCircle2, ChevronRight, ChevronDown, Sliders, Wand2, PlayCircle, X, FolderPlus, Pipette, Eraser, Eye, EyeOff, Link2, Unlink, RotateCw, RotateCcw, GripVertical, Volume2, Clock, Loader2, Upload } from "lucide-react";
 import { agruparMallasEnPiezasMadre, extraerPiezaMadre, anotarInstanciasFisicas, esHerrajeNombre } from "@/lib/piezaMadreUtils";
+
+const MARCAS_DISPONIBLES = [
+  { id: "Universales", nombre: "Universales / Genéricos" },
+  { id: "Móveis Henn", nombre: "Móveis Henn" },
+  { id: "Politorno", nombre: "Politorno Móveis" },
+  { id: "RTA Design", nombre: "RTA Design" },
+];
 
 export default function StepManagerPanel() {
   const [mostrarMenuAnadirBloque, setMostrarMenuAnadirBloque] = React.useState(false);
+  const [draggedIndex, setDraggedIndex] = React.useState<number | null>(null);
+  const [dragOverIndex, setDragOverIndex] = React.useState<number | null>(null);
+  const [guardandoBloque, setGuardandoBloque] = React.useState(false);
+  const [mensajeBloque, setMensajeBloque] = React.useState<string | null>(null);
+
   const {
     pasosManual,
     pasoActivoManualId,
@@ -14,6 +26,7 @@ export default function StepManagerPanel() {
     crearPasoManual,
     eliminarPasoManual,
     actualizarPasoManual,
+    reordenarPasosManual,
     desasignarPiezaDePasoManual,
     desasignarHerrajeDePasoManual,
     autoDetectarGruposCinematicos,
@@ -32,12 +45,232 @@ export default function StepManagerPanel() {
     resultado,
     asignacionesPartes,
     coloresApariencia,
+    bloqueEstandarEnEdicion,
+    setBloqueEstandarEnEdicion,
   } = use3BFStore();
+
+  // Estados locales para el formulario de Editar Bloque Estándar
+  const [editNombre, setEditNombre] = React.useState("");
+  const [editMarca, setEditMarca] = React.useState("Universales");
+  const [editDuracion, setEditDuracion] = React.useState(8.0);
+  const [editDesc, setEditDesc] = React.useState("");
+  const [editGuionEs, setEditGuionEs] = React.useState("");
+  const [editGuionPt, setEditGuionPt] = React.useState("");
+  const [editGuionEn, setEditGuionEn] = React.useState("");
+  const [editArchivosGlb, setEditArchivosGlb] = React.useState<File[]>([]);
+  const [traduciendoEditGuion, setTraduciendoEditGuion] = React.useState(false);
+  const [guardandoEdicionBloque, setGuardandoEdicionBloque] = React.useState(false);
+  const [mensajeEdicionBloque, setMensajeEdicionBloque] = React.useState<string | null>(null);
+
+  // Sincronizar formulario cada vez que se carga un bloque para edición
+  React.useEffect(() => {
+    if (bloqueEstandarEnEdicion) {
+      setEditNombre(bloqueEstandarEnEdicion.nombre || "");
+      setEditMarca(bloqueEstandarEnEdicion.categoriaMarca || "Universales");
+      setEditDuracion(bloqueEstandarEnEdicion.duracion || 8.0);
+      setEditDesc(bloqueEstandarEnEdicion.descripcion || "");
+      setEditGuionEs(bloqueEstandarEnEdicion.guionEs || "");
+      setEditGuionPt(bloqueEstandarEnEdicion.guionPt || "");
+      setEditGuionEn(bloqueEstandarEnEdicion.guionEn || "");
+      setEditArchivosGlb([]);
+      setMensajeEdicionBloque(null);
+    }
+  }, [bloqueEstandarEnEdicion]);
+
+  // 🛡️ Blindaje y Autocuración: Garantizar que P00 siempre esté presente y sincronizar versión de Drive si está vacío
+  React.useEffect(() => {
+    if (!pasosManual || pasosManual.length === 0 || !pasosManual.some((p) => p.id === "P00" || p.tipo === "showcase")) {
+      const curados = sanitizarPasosManuales(pasosManual || []);
+      use3BFStore.getState().setPasosManual(curados);
+      return;
+    }
+
+    // Si P00 no tiene grupos cinemáticos asignados, consultar Drive para recuperar versión guardada con animaciones
+    const p00 = pasosManual.find((p) => p.id === "P00");
+    if (!p00?.showcase?.gruposCinematicos || p00.showcase.gruposCinematicos.length === 0) {
+      use3BFStore.getState().cargarManualesDesdeDrive();
+    }
+  }, [pasosManual]);
 
   const pasoActivo = pasosManual.find((p) => p.id === pasoActivoManualId) || pasosManual[0];
   const botonActivoColor = coloresApariencia?.botonActivo || "#0891b2";
 
-  // 📏 Control unificado de carrera de cajones
+  const handleGuardarBloqueDisco = async () => {
+    if (!pasoActivo || !pasoActivo.bloqueEstandar) return;
+    setGuardandoBloque(true);
+    try {
+      const bloqueActualizado = {
+        ...pasoActivo.bloqueEstandar,
+        nombre: pasoActivo.titulo,
+        duracion: pasoActivo.duracionTotal,
+        descripcion: pasoActivo.descripcion,
+        guionEs: pasoActivo.guionEs,
+        guionPt: pasoActivo.guionPt,
+        guionEn: pasoActivo.guionEn,
+      };
+      const res = await fetch("/api/bloques", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(bloqueActualizado),
+      });
+      if (res.ok) {
+        setMensajeBloque("¡Guardado en disco!");
+        use3BFStore.getState().cargarBloquesEstandar();
+      } else {
+        setMensajeBloque("Error al guardar");
+      }
+    } catch {
+      setMensajeBloque("Error conexión");
+    } finally {
+      setGuardandoBloque(false);
+      setTimeout(() => setMensajeBloque(null), 3500);
+    }
+  };
+
+  // Traducir guiones en formulario de edición
+  const handleTraducirEditGuion = async () => {
+    if (!editGuionEs.trim()) return;
+    setTraduciendoEditGuion(true);
+    try {
+      // Português
+      const resPt = await fetch("/api/translate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text: editGuionEs.trim(), targetLang: "pt" }),
+      });
+      if (resPt.ok) {
+        const dataPt = await resPt.json();
+        if (dataPt.translation) setEditGuionPt(dataPt.translation);
+      }
+
+      // Inglés
+      const resEn = await fetch("/api/translate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text: editGuionEs.trim(), targetLang: "en" }),
+      });
+      if (resEn.ok) {
+        const dataEn = await resEn.json();
+        if (dataEn.translation) setEditGuionEn(dataEn.translation);
+      }
+    } catch (err) {
+      console.error("Error traduciendo guiones en edición de bloque:", err);
+    } finally {
+      setTraduciendoEditGuion(false);
+    }
+  };
+
+  // Guardar formulario inferior de Edición de Bloque (.3bb.json)
+  const handleGuardarEdicionBloque = async () => {
+    if (!bloqueEstandarEnEdicion || !editNombre.trim()) return;
+    setGuardandoEdicionBloque(true);
+    try {
+      let partesGlbSubidas = bloqueEstandarEnEdicion.partesGlb || [];
+      let carpetaModelosRuta = bloqueEstandarEnEdicion.carpetaModelos || "";
+
+      // Subir nuevos archivos GLB si el usuario seleccionó alguno
+      if (editArchivosGlb.length > 0) {
+        const slug = editNombre
+          .toLowerCase()
+          .normalize("NFD")
+          .replace(/[\u0300-\u036f]/g, "")
+          .replace(/[^a-z0-9]+/g, "_")
+          .replace(/^_+|_+$/g, "");
+
+        const fd = new FormData();
+        fd.append("carpeta", slug || bloqueEstandarEnEdicion.id);
+        editArchivosGlb.forEach((f) => fd.append("files", f));
+
+        try {
+          const uploadRes = await fetch("/api/bloques/upload", {
+            method: "POST",
+            body: fd,
+          });
+          if (uploadRes.ok) {
+            const uploadData = await uploadRes.json();
+            if (uploadData.success && uploadData.archivos) {
+              carpetaModelosRuta = uploadData.carpetaModelos;
+              partesGlbSubidas = uploadData.archivos.map((a: any) => ({
+                id: a.nombre.replace(/\.glb$/i, "").toLowerCase(),
+                nombre: a.nombre.replace(/\.glb$/i, ""),
+                archivo: a.ruta,
+              }));
+            }
+          }
+        } catch (uploadErr) {
+          console.warn("[3dBimFab] Error subiendo modelos GLB en edición:", uploadErr);
+        }
+      }
+
+      const bloqueActualizado = {
+        ...bloqueEstandarEnEdicion,
+        nombre: editNombre.trim(),
+        categoriaMarca: editMarca,
+        duracion: Number(editDuracion) || 8.0,
+        descripcion: editDesc.trim(),
+        guionEs: editGuionEs.trim(),
+        guionPt: editGuionPt.trim(),
+        guionEn: editGuionEn.trim(),
+        carpetaModelos: carpetaModelosRuta || undefined,
+        partesGlb: partesGlbSubidas.length > 0 ? partesGlbSubidas : undefined,
+        fechaModificacion: new Date().toISOString(),
+      };
+
+      // 1. Guardar en disco vía API
+      const res = await fetch("/api/bloques", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(bloqueActualizado),
+      });
+
+      if (res.ok) {
+        // 2. Si el manual padre previo contiene este bloque estándar en alguno de sus pasos, sincronizarlo
+        const padre = use3BFStore.getState().manualPadrePrevioEdicionBloque;
+        if (padre) {
+          const pasosActualizados = padre.pasos.map((p) => {
+            if (p.tipo === "bloque_estandar" && (p.bloqueEstandar?.id === bloqueActualizado.id || p.titulo === bloqueActualizado.nombre)) {
+              return {
+                ...p,
+                titulo: editNombre.trim(),
+                duracionTotal: Number(editDuracion) || 8.0,
+                duracionAudioSegundos: Number(editDuracion) || 8.0,
+                descripcion: editDesc.trim(),
+                guionEs: editGuionEs.trim(),
+                guionPt: editGuionPt.trim(),
+                guionEn: editGuionEn.trim(),
+                bloqueEstandar: {
+                  ...(p.bloqueEstandar || {}),
+                  ...bloqueActualizado,
+                },
+              };
+            }
+            return p;
+          });
+          use3BFStore.setState({
+            manualPadrePrevioEdicionBloque: {
+              ...padre,
+              pasos: pasosActualizados,
+            },
+          });
+        }
+
+        // 3. Recargar biblioteca de bloques
+        use3BFStore.getState().cargarBloquesEstandar();
+
+        // 4. El formulario desaparece automáticamente tras guardar con éxito
+        setBloqueEstandarEnEdicion(null);
+      } else {
+        setMensajeEdicionBloque("Error al guardar cambios");
+        setTimeout(() => setMensajeEdicionBloque(null), 3500);
+      }
+    } catch (err) {
+      console.error("Error guardando edición de bloque estándar:", err);
+      setMensajeEdicionBloque("Error de conexión");
+      setTimeout(() => setMensajeEdicionBloque(null), 3500);
+    } finally {
+      setGuardandoEdicionBloque(false);
+    }
+  };
   const handleCambioDistanciaGlobal = (nuevaDist: number) => {
     if (!pasoActivo) return;
     const sinc = pasoActivo.showcase?.sincronizarCarreraCajones !== false;
@@ -126,30 +359,76 @@ export default function StepManagerPanel() {
         </div>
 
         <div className="flex items-center gap-1.5 overflow-x-auto py-1 custom-scrollbar">
-          {pasosManual.map((paso) => {
+          {pasosManual.map((paso, index) => {
             const esActivo = paso.id === pasoActivoManualId;
+            const esP00 = paso.id === "P00" || paso.tipo === "showcase";
+            const esDragOver = dragOverIndex === index;
+
             return (
               <button
-                key={paso.id}
+                key={`${paso.id}_${index}`}
                 type="button"
+                draggable={!esP00}
+                onDragStart={(e) => {
+                  if (esP00) return;
+                  setDraggedIndex(index);
+                  e.dataTransfer.setData("text/plain", index.toString());
+                  e.dataTransfer.effectAllowed = "move";
+                }}
+                onDragOver={(e) => {
+                  if (esP00) return;
+                  e.preventDefault();
+                  e.dataTransfer.dropEffect = "move";
+                  if (dragOverIndex !== index) {
+                    setDragOverIndex(index);
+                  }
+                }}
+                onDragLeave={() => {
+                  if (dragOverIndex === index) {
+                    setDragOverIndex(null);
+                  }
+                }}
+                onDrop={(e) => {
+                  if (esP00) return;
+                  e.preventDefault();
+                  setDragOverIndex(null);
+                  setDraggedIndex(null);
+                  const origenIdxStr = e.dataTransfer.getData("text/plain");
+                  const origenIdx = parseInt(origenIdxStr, 10);
+                  if (!isNaN(origenIdx) && origenIdx !== index && origenIdx > 0 && index > 0) {
+                    reordenarPasosManual(origenIdx, index);
+                  }
+                }}
+                onDragEnd={() => {
+                  setDraggedIndex(null);
+                  setDragOverIndex(null);
+                }}
                 onClick={() => seleccionarPasoManualActivo(paso.id)}
                 style={
                   esActivo
                     ? { backgroundColor: botonActivoColor, color: "#ffffff", borderColor: botonActivoColor }
                     : {}
                 }
-                className={`px-3 py-1 rounded-full border text-[11px] font-bold shrink-0 transition flex items-center gap-1.5 ${
+                title={esP00 ? "Paso 00 Showcase (Fijo)" : `Arrastra para reordenar paso ${paso.id}`}
+                className={`px-3 py-1 rounded-full border text-[11px] font-bold shrink-0 transition flex items-center gap-1.5 select-none ${
+                  esP00
+                    ? "cursor-default"
+                    : "cursor-grab active:cursor-grabbing hover:border-cyan-400"
+                } ${
+                  esDragOver ? "ring-2 ring-cyan-500 scale-105" : ""
+                } ${
                   esActivo
                     ? "shadow-sm"
                     : "border-slate-300 dark:border-slate-700 hover:bg-black/5 dark:hover:bg-white/5"
                 }`}
               >
+                {!esP00 && <GripVertical className="w-2.5 h-2.5 opacity-40 hover:opacity-100 shrink-0" />}
                 <span>{paso.id}</span>
-                {paso.tipo === "showcase" ? (
-                  <Sparkles className="w-3 h-3 opacity-80" />
+                {paso.tipo === "showcase" ? null : paso.tipo === "bloque_estandar" ? (
+                  <Boxes className="w-3 h-3 text-cyan-400 shrink-0" />
                 ) : (
                   <span className="opacity-70 font-normal text-[10px]">
-                    ({paso.piezasAsignadas.length + paso.herrajesAsignados.length})
+                    ({(paso.piezasAsignadas || []).length + (paso.herrajesAsignados || []).length})
                   </span>
                 )}
               </button>
@@ -177,7 +456,7 @@ export default function StepManagerPanel() {
             />
           </div>
 
-          {pasosManual.length > 1 && (
+          {pasosManual.length > 1 && pasoActivo.id !== "P00" && (
             <button
               type="button"
               onClick={() => eliminarPasoManual(pasoActivo.id)}
@@ -192,83 +471,88 @@ export default function StepManagerPanel() {
         {/* ── MODO SHOWCASE (PASO 00): CINEMÁTICA DE COMPONENTES ─────────────────── */}
         {pasoActivo.tipo === "showcase" ? (
           <div className="flex flex-col gap-3">
-            {/* Tarjeta de Información */}
-            <div className="flex items-center gap-2 p-2.5 rounded-xl bg-cyan-500/10 border border-cyan-500/20 text-cyan-800 dark:text-cyan-200">
-              <Sparkles className="w-4 h-4 shrink-0 text-cyan-600 dark:text-cyan-400" />
-              <p className="text-[11px] leading-tight">
-                <strong>Showcase Funcional:</strong> Demuestra el mueble operando (apertura suave secuencial de cajones y puertas) antes del armado.
-              </p>
-            </div>
-
-            {/* 🪄 BOTÓN MÉTODO 2: AUTO-DETECCIÓN INTELIGENTE EN 1 CLIC */}
-            <button
-              type="button"
-              onClick={() => autoDetectarGruposCinematicos(pasoActivo.id)}
-              style={{ backgroundColor: botonActivoColor }}
-              className="w-full py-2 px-3 rounded-full text-white font-bold flex items-center justify-center gap-2 shadow-sm hover:opacity-90 active:scale-95 transition text-xs select-none"
-            >
-              <Wand2 className="w-3.5 h-3.5" />
-              <span>🪄 Auto-detectar Cajones (Método 2 en 1 Clic)</span>
-            </button>
-
-            {/* Selector de Coreografía de Apertura en Cápsulas Puras */}
-            <div className="flex flex-col gap-1.5 p-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-black/[0.02] dark:bg-white/[0.02]">
-              <span className="font-bold text-[11px] opacity-80 flex items-center gap-1.5">
-                <PlayCircle className="w-3.5 h-3.5 text-cyan-600" /> Coreografía de Movimiento:
-              </span>
-
-              <div className="flex items-center p-0.5 bg-slate-100 dark:bg-slate-800/80 rounded-full border border-slate-200 dark:border-slate-700/80 gap-0.5 w-full">
-                {(["secuencial", "cascada", "simultaneo"] as const).map((modo) => {
-                  const activo = (pasoActivo.showcase?.coreografia || "secuencial") === modo;
-                  const labels = {
-                    secuencial: "Secuencial (1 a 1)",
-                    cascada: "Cascada",
-                    simultaneo: "Simultáneo",
-                  };
-                  return (
-                    <button
-                      key={modo}
-                      type="button"
-                      onClick={() =>
-                        actualizarPasoManual(pasoActivo.id, {
-                          showcase: {
-                            ...(pasoActivo.showcase || {
-                              abrirCajones: true,
-                              distanciaAperturaMm: 300,
-                              abrirPuertas: true,
-                              anguloPuertasDeg: 90,
-                              giroPresentacion360: true,
-                              ejeGlobal: "+Z",
-                              gruposCinematicos: [],
-                            }),
-                            coreografia: modo as CoreografiaShowcase,
-                          },
-                        })
-                      }
-                      style={activo ? { backgroundColor: botonActivoColor, color: "#ffffff" } : {}}
-                      className={`flex-1 py-1 px-1 rounded-full text-[10px] font-bold transition flex items-center justify-center cursor-pointer ${
-                        activo ? "shadow-sm" : "opacity-70 hover:opacity-100"
-                      }`}
-                    >
-                      {labels[modo]}
-                    </button>
-                  );
-                })}
+            {/* 🗄️ Bloque de Cajones (Contenedor Único Integrado) */}
+            <div className="flex flex-col gap-3 p-3 rounded-2xl border border-slate-200 dark:border-slate-800 bg-black/[0.02] dark:bg-white/[0.02] shadow-xs">
+              {/* Título Principal */}
+              <div className="flex items-center justify-between">
+                <span className="font-bold text-xs text-slate-800 dark:text-slate-100 tracking-wide">
+                  Bloque de Cajones
+                </span>
+                {/* Píldora de Sincronización */}
+                <button
+                  type="button"
+                  onClick={toggleSincronizacionCajones}
+                  className={`px-2 py-0.5 rounded-full text-[9px] font-bold border transition flex items-center gap-1 cursor-pointer ${
+                    pasoActivo.showcase?.sincronizarCarreraCajones !== false
+                      ? "bg-cyan-500/15 text-cyan-700 dark:text-cyan-300 border-cyan-500/30"
+                      : "bg-slate-100 dark:bg-slate-800 text-slate-500 border-slate-300 dark:border-slate-700"
+                  }`}
+                  title="Sincronizar carrera de cajones"
+                >
+                  {pasoActivo.showcase?.sincronizarCarreraCajones !== false ? (
+                    <>
+                      <Link2 className="w-2.5 h-2.5 text-cyan-600" />
+                      <span>Sincronizados</span>
+                    </>
+                  ) : (
+                    <>
+                      <Unlink className="w-2.5 h-2.5 text-slate-400" />
+                      <span>Independientes</span>
+                    </>
+                  )}
+                </button>
               </div>
-              <p className="text-[10px] opacity-60 italic">
-                {(pasoActivo.showcase?.coreografia || "secuencial") === "secuencial"
-                  ? "• Abre Cajón 1 suavemente, pausa, se cierra; luego abre Cajón 2 suavemente y se cierra."
-                  : (pasoActivo.showcase?.coreografia || "secuencial") === "cascada"
-                  ? "• Abre Cajón 1, luego Cajón 2, pausan ambos abiertos, y cierran en orden inverso."
-                  : "• Todos los cajones abren al unísono y se cierran al mismo tiempo."}
-              </p>
-            </div>
 
-            {/* Parámetros Globales: Eje y Distancia de Apertura */}
-            <div className="grid grid-cols-2 gap-2 p-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-black/[0.02] dark:bg-white/[0.02] text-[11px]">
-              {/* Eje de Extracción */}
+              {/* Subtítulo: Coreografía de Movimiento */}
+              <div className="flex flex-col gap-1.5">
+                <span className="font-semibold text-[10.5px] opacity-75">
+                  Coreografía de Movimiento
+                </span>
+
+                {/* Botones de Coreografía */}
+                <div className="flex items-center p-0.5 bg-slate-100 dark:bg-slate-800/80 rounded-full border border-slate-200 dark:border-slate-700/80 gap-0.5 w-full">
+                  {(["secuencial", "cascada", "simultaneo"] as const).map((modo) => {
+                    const activo = (pasoActivo.showcase?.coreografia || "secuencial") === modo;
+                    const labels = {
+                      secuencial: "Secuencial (1 a 1)",
+                      cascada: "Cascada",
+                      simultaneo: "Simultáneo",
+                    };
+                    return (
+                      <button
+                        key={modo}
+                        type="button"
+                        onClick={() =>
+                          actualizarPasoManual(pasoActivo.id, {
+                            showcase: {
+                              ...(pasoActivo.showcase || {
+                                abrirCajones: true,
+                                distanciaAperturaMm: 300,
+                                abrirPuertas: true,
+                                anguloPuertasDeg: 90,
+                                giroPresentacion360: true,
+                                ejeGlobal: "+Z",
+                                gruposCinematicos: [],
+                              }),
+                              coreografia: modo as CoreografiaShowcase,
+                            },
+                          })
+                        }
+                        style={activo ? { backgroundColor: botonActivoColor, color: "#ffffff" } : {}}
+                        className={`flex-1 py-1 px-1 rounded-full text-[10px] font-bold transition flex items-center justify-center cursor-pointer ${
+                          activo ? "shadow-sm" : "opacity-70 hover:opacity-100"
+                        }`}
+                      >
+                        {labels[modo]}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Eje de apertura y abajo el desplegable de los ejes */}
               <div className="flex flex-col gap-1">
-                <span className="font-semibold opacity-70 text-[10px]">Eje de Apertura:</span>
+                <span className="font-semibold opacity-70 text-[10.5px]">Eje de apertura</span>
                 <select
                   value={pasoActivo.showcase?.ejeGlobal || "+Z"}
                   onChange={(e) =>
@@ -287,7 +571,7 @@ export default function StepManagerPanel() {
                       },
                     })
                   }
-                  className="w-full px-2 py-1 rounded-full border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-[10.5px] font-semibold outline-none"
+                  className="w-full px-2.5 py-1.5 rounded-full border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-[10.5px] font-semibold outline-none cursor-pointer"
                 >
                   <option value="+Z">+Z (Hacia el frente / Cámara)</option>
                   <option value="-Z">-Z (Hacia atrás)</option>
@@ -298,10 +582,10 @@ export default function StepManagerPanel() {
                 </select>
               </div>
 
-              {/* Distancia de Apertura Global y Sincronización */}
+              {/* Slider Distancia de apertura */}
               <div className="flex flex-col gap-1.5">
-                <div className="flex items-center justify-between opacity-70 text-[10px]">
-                  <span className="font-semibold">Distancia Global:</span>
+                <div className="flex items-center justify-between opacity-70 text-[10.5px]">
+                  <span className="font-semibold">Distancia de apertura</span>
                   <div className="flex items-center gap-1">
                     <input
                       type="number"
@@ -325,35 +609,34 @@ export default function StepManagerPanel() {
                   step={10}
                   value={pasoActivo.showcase?.distanciaAperturaMm || 300}
                   onChange={(e) => handleCambioDistanciaGlobal(parseInt(e.target.value, 10))}
-                  className="accent-cyan-600 h-1.5 mt-1 cursor-pointer"
+                  className="accent-cyan-600 h-1.5 cursor-pointer w-full"
                 />
+              </div>
 
-                {/* Cápsula de Sincronización de Carrera de Cajones */}
-                <div className="flex items-center justify-between pt-1 border-t border-slate-200/50 dark:border-slate-800/50">
-                  <span className="text-[9.5px] opacity-60">Apertura uniforme:</span>
-                  <button
-                    type="button"
-                    onClick={toggleSincronizacionCajones}
-                    className={`px-2 py-0.5 rounded-full text-[9px] font-bold border transition flex items-center gap-1 cursor-pointer ${
-                      pasoActivo.showcase?.sincronizarCarreraCajones !== false
-                        ? "bg-cyan-500/15 text-cyan-700 dark:text-cyan-300 border-cyan-500/30"
-                        : "bg-slate-100 dark:bg-slate-800 text-slate-500 border-slate-300 dark:border-slate-700"
-                    }`}
-                    title="Garantiza que todos los cajones lleguen exactamente al mismo punto de apertura hacia adelante"
-                  >
-                    {pasoActivo.showcase?.sincronizarCarreraCajones !== false ? (
-                      <>
-                        <Link2 className="w-2.5 h-2.5 text-cyan-600" />
-                        <span>Cajones Sincronizados</span>
-                      </>
-                    ) : (
-                      <>
-                        <Unlink className="w-2.5 h-2.5 text-slate-400" />
-                        <span>Carrera Independiente</span>
-                      </>
-                    )}
-                  </button>
-                </div>
+              {/* Botones uno junto al otro: Apertura 1 y Apertura 2 */}
+              <div className="grid grid-cols-2 gap-2 pt-1">
+                <button
+                  type="button"
+                  onClick={() => {
+                    const durTotal = Math.max(pasoActivo.duracionTotal || 10, 1);
+                    use3BFStore.getState().setTimelineCurrentTime(durTotal * 0.28);
+                  }}
+                  className="py-1.5 px-3 rounded-full text-[11px] font-semibold border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 hover:bg-cyan-500 hover:text-white hover:border-cyan-500 dark:hover:bg-cyan-600 transition-all cursor-pointer shadow-xs flex items-center justify-center gap-1 active:scale-95"
+                  title="Previsualizar Apertura 1 (Cajón 1)"
+                >
+                  <span>Apertura 1</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const durTotal = Math.max(pasoActivo.duracionTotal || 10, 1);
+                    use3BFStore.getState().setTimelineCurrentTime(durTotal * 0.65);
+                  }}
+                  className="py-1.5 px-3 rounded-full text-[11px] font-semibold border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 hover:bg-cyan-500 hover:text-white hover:border-cyan-500 dark:hover:bg-cyan-600 transition-all cursor-pointer shadow-xs flex items-center justify-center gap-1 active:scale-95"
+                  title="Previsualizar Apertura 2 (Cajón 2)"
+                >
+                  <span>Apertura 2</span>
+                </button>
               </div>
             </div>
 
@@ -460,11 +743,31 @@ export default function StepManagerPanel() {
               </div>
 
               {(!pasoActivo.showcase?.gruposCinematicos || pasoActivo.showcase.gruposCinematicos.length === 0) ? (
-                <div className="p-4 rounded-2xl border border-dashed border-slate-300 dark:border-slate-700 text-center flex flex-col items-center gap-1.5 text-xs opacity-75 bg-slate-500/5">
+                <div className="p-4 rounded-2xl border border-dashed border-slate-300 dark:border-slate-700 text-center flex flex-col items-center gap-2 text-xs opacity-90 bg-slate-500/5">
                   <p className="font-semibold text-[11px]">No hay bloques funcionales cinemáticos asignados aún.</p>
-                  <p className="text-[10px] opacity-60">
-                    Haz clic en <strong>"+ Bloque Funcional"</strong> para añadir cajones o puertas, o en <strong>"🪄 Auto-detectar Cajones"</strong> para agrupar automáticamente.
+                  <p className="text-[10px] opacity-60 max-w-xs">
+                    Haz clic en <strong>"+ Bloque Funcional"</strong> para añadir cajones o puertas, o recupera la versión completa guardada.
                   </p>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      fetch("/api/drive/manuales")
+                        .then((r) => r.json())
+                        .then((data) => {
+                          const target = (data.manuales || []).find((m: any) => {
+                            const p00m = (m.pasos || []).find((p: any) => p.id === "P00");
+                            return (p00m?.showcase?.gruposCinematicos?.length || 0) > 0;
+                          });
+                          if (target) {
+                            use3BFStore.getState().cargarManualProyecto(target);
+                          }
+                        });
+                    }}
+                    className="mt-1 flex items-center gap-1.5 px-3 py-1.5 rounded-full text-white font-bold text-[11px] shadow-sm hover:opacity-90 active:scale-95 transition"
+                    style={{ backgroundColor: botonActivoColor }}
+                  >
+                    <span>📂 Restaurar 6 Cajones Animados (Versión Guardada)</span>
+                  </button>
                 </div>
               ) : (
                 /* Flujo continuo natural sin barra de scroll interna */
@@ -751,6 +1054,185 @@ export default function StepManagerPanel() {
                   })}
                 </div>
               )}
+            </div>
+          </div>
+        ) : pasoActivo.tipo === "bloque_estandar" ? (
+          /* ── MODO BLOQUE ESTÁNDAR REUTILIZABLE ─────────────────────── */
+          <div className="flex flex-col gap-3">
+            {/* Tarjeta de Información y Configuración del Bloque Estándar */}
+            <div className="flex flex-col gap-3 p-3.5 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/60 shadow-sm">
+              {/* Encabezado con Insignia de Bloque Estándar */}
+              <div className="flex items-center justify-between gap-2">
+                <div className="flex items-center gap-1.5 flex-wrap">
+                  <span
+                    style={{ backgroundColor: botonActivoColor }}
+                    className="text-white text-[10px] font-bold px-2 py-0.5 rounded-full shrink-0"
+                  >
+                    {pasoActivo.id}
+                  </span>
+                  <span className="text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-cyan-500/10 text-cyan-700 dark:text-cyan-300 border border-cyan-500/20 flex items-center gap-1">
+                    <Boxes className="w-3 h-3 text-cyan-500 shrink-0" />
+                    <span>Bloque Estándar Reutilizable</span>
+                  </span>
+                  {pasoActivo.bloqueEstandar?.categoriaMarca && (
+                    <span className="text-[9.5px] font-medium px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300">
+                      {pasoActivo.bloqueEstandar.categoriaMarca}
+                    </span>
+                  )}
+                </div>
+
+                <div className="flex items-center gap-1">
+                  <span className="text-[10px] font-mono opacity-60 flex items-center gap-1">
+                    <Clock className="w-3 h-3" />
+                    {pasoActivo.duracionTotal}s
+                  </span>
+                </div>
+              </div>
+
+              {/* Título y Descripción del Bloque */}
+              <div className="flex items-start gap-3 pt-1">
+                {pasoActivo.bloqueEstandar?.thumbnail && (
+                  <div className="w-16 h-16 rounded-xl overflow-hidden bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shrink-0 p-1 flex items-center justify-center shadow-inner">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={pasoActivo.bloqueEstandar.thumbnail}
+                      alt={pasoActivo.titulo}
+                      className="w-full h-full object-contain"
+                    />
+                  </div>
+                )}
+                <div className="flex-1 min-w-0 flex flex-col gap-1">
+                  <span className="font-bold text-xs text-slate-800 dark:text-slate-100">
+                    {pasoActivo.titulo}
+                  </span>
+                  <p className="text-[10.5px] text-slate-500 dark:text-slate-400 leading-relaxed">
+                    {pasoActivo.descripcion || pasoActivo.bloqueEstandar?.descripcion}
+                  </p>
+                </div>
+              </div>
+
+              {/* Control de Duración en Segundos */}
+              <div className="flex flex-col gap-1.5 p-2.5 rounded-xl border border-slate-200/70 dark:border-slate-800/70 bg-black/[0.02] dark:bg-white/[0.02]">
+                <div className="flex items-center justify-between">
+                  <span className="font-semibold text-slate-700 dark:text-slate-300 text-[10.5px] flex items-center gap-1.5">
+                    <Clock className="w-3 h-3 text-cyan-600 dark:text-cyan-400" /> Duración del Paso:
+                  </span>
+                  <div className="flex items-center gap-1">
+                    <input
+                      type="number"
+                      min={2}
+                      max={300}
+                      step={0.5}
+                      value={pasoActivo.duracionTotal}
+                      onChange={(e) => {
+                        const val = parseFloat(e.target.value);
+                        actualizarPasoManual(pasoActivo.id, {
+                          duracionTotal: isNaN(val) ? 8.0 : val,
+                          duracionAudioSegundos: isNaN(val) ? 8.0 : val,
+                        });
+                      }}
+                      className="w-14 px-1.5 py-0.5 rounded-full border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 font-mono font-bold text-cyan-600 dark:text-cyan-400 text-right text-[10.5px] outline-none focus:border-cyan-500 shadow-inner"
+                    />
+                    <span className="font-mono text-[10px] opacity-60">seg</span>
+                  </div>
+                </div>
+                <input
+                  type="range"
+                  min={3}
+                  max={Math.max(120, Math.ceil((pasoActivo.duracionTotal || 60) * 1.2))}
+                  step={0.5}
+                  value={pasoActivo.duracionTotal}
+                  onChange={(e) => {
+                    const val = parseFloat(e.target.value);
+                    actualizarPasoManual(pasoActivo.id, {
+                      duracionTotal: val,
+                      duracionAudioSegundos: val,
+                    });
+                  }}
+                  className="accent-cyan-600 h-1.5 cursor-pointer w-full"
+                />
+              </div>
+
+              {/* Guiones de Locución Multilingüe TTS */}
+              <div className="flex flex-col gap-2 p-2.5 rounded-xl border border-slate-200/70 dark:border-slate-800/70 bg-black/[0.02] dark:bg-white/[0.02]">
+                <span className="font-bold text-[10px] uppercase tracking-wider text-slate-400 flex items-center gap-1">
+                  <Volume2 className="w-3 h-3 text-cyan-600" /> Locución TTS Multilingüe
+                </span>
+
+                <div className="flex flex-col gap-1">
+                  <span className="text-[10px] font-semibold text-slate-600 dark:text-slate-300">
+                    Español (ES):
+                  </span>
+                  <input
+                    type="text"
+                    value={pasoActivo.guionEs || ""}
+                    onChange={(e) => actualizarPasoManual(pasoActivo.id, { guionEs: e.target.value })}
+                    className="px-2.5 py-1 rounded-full border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-[10.5px] outline-none focus:border-cyan-500 shadow-inner"
+                  />
+                </div>
+
+                <div className="flex flex-col gap-1">
+                  <span className="text-[10px] font-semibold text-slate-600 dark:text-slate-300">
+                    Português (PT-BR):
+                  </span>
+                  <input
+                    type="text"
+                    value={pasoActivo.guionPt || ""}
+                    onChange={(e) => actualizarPasoManual(pasoActivo.id, { guionPt: e.target.value })}
+                    className="px-2.5 py-1 rounded-full border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-[10.5px] outline-none focus:border-cyan-500 shadow-inner"
+                  />
+                </div>
+
+                <div className="flex flex-col gap-1">
+                  <span className="text-[10px] font-semibold text-slate-600 dark:text-slate-300">
+                    English (EN):
+                  </span>
+                  <input
+                    type="text"
+                    value={pasoActivo.guionEn || ""}
+                    onChange={(e) => actualizarPasoManual(pasoActivo.id, { guionEn: e.target.value })}
+                    className="px-2.5 py-1 rounded-full border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-[10.5px] outline-none focus:border-cyan-500 shadow-inner"
+                  />
+                </div>
+              </div>
+
+              {/* Partes GLB 3D del Bloque */}
+              <div className="flex flex-col gap-1.5 p-2.5 rounded-xl border border-slate-200/70 dark:border-slate-800/70 bg-black/[0.02] dark:bg-white/[0.02]">
+                <span className="font-bold text-[10px] uppercase tracking-wider text-slate-400 flex items-center gap-1">
+                  <Boxes className="w-3 h-3 text-cyan-600" /> Partes 3D GLB ({pasoActivo.bloqueEstandar?.partesGlb?.length || 0})
+                </span>
+                <div className="grid grid-cols-2 gap-1.5 pt-1">
+                  {(pasoActivo.bloqueEstandar?.partesGlb || []).map((parte) => (
+                    <div
+                      key={parte.id}
+                      className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-[10px]"
+                    >
+                      <CheckCircle2 className="w-3 h-3 text-emerald-500 shrink-0" />
+                      <span className="font-semibold truncate">{parte.nombre || parte.id}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Botón Guardar Cambios en Bloque (.3bb.json) */}
+              <button
+                type="button"
+                disabled={guardandoBloque}
+                onClick={handleGuardarBloqueDisco}
+                style={{ backgroundColor: botonActivoColor }}
+                className="w-full py-2 px-3 rounded-full text-white font-bold flex items-center justify-center gap-2 shadow-sm hover:opacity-90 active:scale-95 transition text-xs select-none cursor-pointer disabled:opacity-50"
+              >
+                {guardandoBloque ? (
+                  <span>Guardando en disco...</span>
+                ) : (
+                  <>
+                    <Boxes className="w-3.5 h-3.5" />
+                    <span>{mensajeBloque || "Guardar Cambios en Bloque (.3bb.json)"}</span>
+                  </>
+                )}
+              </button>
+
+
             </div>
           </div>
         ) : (
@@ -1216,6 +1698,280 @@ export default function StepManagerPanel() {
           </div>
         )}
       </div>
+
+      {/* 📦 FORMULARIO INFERIOR: EDITAR BLOQUE ESTÁNDAR (.3bb.json) */}
+      {bloqueEstandarEnEdicion && (
+        <div className="flex flex-col gap-3 p-3.5 rounded-2xl border border-cyan-500/40 bg-white dark:bg-slate-900 shadow-md animate-in fade-in slide-in-from-bottom-2 duration-200">
+          {/* Cabecera del Formulario de Edición */}
+          <div className="flex items-center justify-between pb-2 border-b border-slate-200 dark:border-slate-800">
+            <div className="flex items-center gap-2">
+              <span
+                style={{ backgroundColor: botonActivoColor }}
+                className="w-6 h-6 rounded-full text-white flex items-center justify-center shrink-0"
+              >
+                <Sliders className="w-3.5 h-3.5" />
+              </span>
+              <div className="flex items-center">
+                <h3 className="font-bold text-xs text-slate-800 dark:text-slate-100">
+                  Editar Bloque Estándar
+                </h3>
+              </div>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => setBloqueEstandarEnEdicion(null)}
+              className="p-1 rounded-full text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition cursor-pointer"
+              title="Cerrar editor de bloque estándar"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+
+          <div className="flex flex-col gap-3 text-xs">
+            {/* 1. Título del Bloque */}
+            <div className="flex flex-col gap-1">
+              <label className="font-semibold text-slate-700 dark:text-slate-300 text-[11px]">
+                Título del Bloque *
+              </label>
+              <input
+                type="text"
+                required
+                value={editNombre}
+                onChange={(e) => setEditNombre(e.target.value)}
+                placeholder="Ej. Desacople de Corredera Telescópica"
+                className="px-3 py-1.5 rounded-full border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 outline-none focus:border-cyan-500 font-medium text-xs"
+              />
+            </div>
+
+            {/* 2. Marca / Carpeta y Duración */}
+            <div className="grid grid-cols-2 gap-2">
+              <div className="flex flex-col gap-1">
+                <label className="font-semibold text-slate-700 dark:text-slate-300 text-[11px]">
+                  Marca / Carpeta
+                </label>
+                <select
+                  value={editMarca}
+                  onChange={(e) => setEditMarca(e.target.value)}
+                  className="px-2.5 py-1.5 rounded-full border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 outline-none focus:border-cyan-500 text-[11px] cursor-pointer"
+                >
+                  {MARCAS_DISPONIBLES.map((m) => (
+                    <option key={m.id} value={m.id}>
+                      {m.nombre}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="flex flex-col gap-1">
+                <label className="font-semibold text-slate-700 dark:text-slate-300 text-[11px]">
+                  Duración (segundos)
+                </label>
+                <input
+                  type="number"
+                  min={3}
+                  max={300}
+                  step={0.5}
+                  value={editDuracion}
+                  onChange={(e) => setEditDuracion(parseFloat(e.target.value) || 8.0)}
+                  className="px-3 py-1.5 rounded-full border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 outline-none focus:border-cyan-500 text-center font-mono text-xs"
+                />
+              </div>
+            </div>
+
+            {/* 3. Descripción Técnica Pedagógica */}
+            <div className="flex flex-col gap-1">
+              <label className="font-semibold text-slate-700 dark:text-slate-300 text-[11px]">
+                Descripción Técnica Pedagógica
+              </label>
+              <textarea
+                rows={2}
+                value={editDesc}
+                onChange={(e) => setEditDesc(e.target.value)}
+                placeholder="Detalla la acción didáctica (separación de guías, accionamiento de clips, etc.)."
+                className="px-3 py-2 rounded-2xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 outline-none focus:border-cyan-500 resize-none text-[11px]"
+              />
+            </div>
+
+            {/* 4. Modelos 3D del Bloque (.GLB) */}
+            <div className="flex flex-col gap-1.5 p-3 rounded-2xl bg-cyan-50/50 dark:bg-cyan-950/30 border border-dashed border-cyan-500/40">
+              <div className="flex items-center justify-between">
+                <span className="font-bold text-slate-700 dark:text-slate-200 text-[11px] flex items-center gap-1.5">
+                  <Boxes className="w-3.5 h-3.5 text-cyan-600 dark:text-cyan-400" />
+                  Modelos 3D del Bloque (.GLB)
+                </span>
+                <span className="text-[10px] text-slate-400">
+                  {bloqueEstandarEnEdicion.partesGlb?.length || 0} cargados
+                </span>
+              </div>
+
+              {/* Lista actual de piezas GLB registradas */}
+              {(bloqueEstandarEnEdicion.partesGlb || []).length > 0 && (
+                <div className="flex flex-wrap gap-1.5">
+                  {bloqueEstandarEnEdicion.partesGlb!.map((parte) => (
+                    <div
+                      key={parte.id}
+                      className="flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-cyan-100/70 dark:bg-cyan-900/40 text-cyan-800 dark:text-cyan-200 text-[10px] font-medium border border-cyan-300 dark:border-cyan-700"
+                    >
+                      <CheckCircle2 className="w-3 h-3 text-emerald-500" />
+                      <span>{parte.nombre || parte.id}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              <p className="text-[10.5px] text-slate-500 dark:text-slate-400 leading-tight">
+                Selecciona nuevos archivos .GLB si deseas reemplazar o actualizar las piezas en disco.
+              </p>
+
+              <label className="flex items-center justify-center gap-2 px-3 py-2 rounded-full border border-cyan-500/50 bg-white dark:bg-slate-800 hover:bg-cyan-50 dark:hover:bg-cyan-900/30 text-cyan-700 dark:text-cyan-300 font-bold text-[11px] cursor-pointer shadow-xs transition active:scale-95">
+                <Upload className="w-3.5 h-3.5" />
+                <span>Reemplazar / Seleccionar archivos .GLB</span>
+                <input
+                  type="file"
+                  multiple
+                  accept=".glb"
+                  className="hidden"
+                  onChange={(e) => {
+                    if (e.target.files) {
+                      const seleccionados = Array.from(e.target.files).filter((f) =>
+                        f.name.toLowerCase().endsWith(".glb")
+                      );
+                      setEditArchivosGlb((prev) => [...prev, ...seleccionados]);
+                    }
+                  }}
+                />
+              </label>
+
+              {/* Archivos nuevos seleccionados pendientes de subida */}
+              {editArchivosGlb.length > 0 && (
+                <div className="flex flex-wrap gap-1.5 mt-1">
+                  {editArchivosGlb.map((file, idx) => (
+                    <div
+                      key={`${file.name}_${idx}`}
+                      className="flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-amber-100 dark:bg-amber-900/50 text-amber-800 dark:text-amber-200 text-[10px] font-medium border border-amber-300 dark:border-amber-700"
+                    >
+                      <span>{file.name} ({(file.size / 1024).toFixed(1)} KB)</span>
+                      <button
+                        type="button"
+                        onClick={() => setEditArchivosGlb(editArchivosGlb.filter((_, i) => i !== idx))}
+                        className="hover:text-rose-500 text-slate-400 ml-0.5 cursor-pointer"
+                      >
+                        <X className="w-3 h-3" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* 5. Guiones de Locución TTS con Botón Traducir Automáticamente */}
+            <div className="flex flex-col gap-1.5 pt-1 border-t border-slate-200 dark:border-slate-800">
+              <div className="flex items-center justify-between">
+                <span className="font-bold text-[10.5px] uppercase tracking-wider text-slate-400">
+                  Guiones de Locución TTS
+                </span>
+                <button
+                  type="button"
+                  disabled={traduciendoEditGuion || !editGuionEs.trim()}
+                  onClick={handleTraducirEditGuion}
+                  style={{ borderColor: botonActivoColor, color: botonActivoColor }}
+                  className="flex items-center gap-1 px-2.5 py-0.5 rounded-full border bg-cyan-500/10 hover:bg-cyan-500/20 text-[10px] font-bold transition cursor-pointer disabled:opacity-40"
+                  title="Traducir automáticamente de Español a Portugués e Inglés"
+                >
+                  {traduciendoEditGuion ? (
+                    <>
+                      <Loader2 className="w-3 h-3 animate-spin" />
+                      <span>Traduciendo...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Sparkles className="w-3 h-3" />
+                      <span>Traducir Automáticamente</span>
+                    </>
+                  )}
+                </button>
+              </div>
+
+              <div className="flex flex-col gap-1">
+                <span className="text-[10px] font-semibold text-slate-600 dark:text-slate-300">
+                  Español (ES)
+                </span>
+                <input
+                  type="text"
+                  placeholder="Instrucción en voz en off para armador hispano..."
+                  value={editGuionEs}
+                  onChange={(e) => setEditGuionEs(e.target.value)}
+                  className="px-3 py-1.5 rounded-full border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-[10.5px] outline-none focus:border-cyan-500"
+                />
+              </div>
+
+              <div className="flex flex-col gap-1">
+                <span className="text-[10px] font-semibold text-slate-600 dark:text-slate-300">
+                  Português (PT-BR)
+                </span>
+                <input
+                  type="text"
+                  placeholder="Instrução em voz em off para montador brasileiro..."
+                  value={editGuionPt}
+                  onChange={(e) => setEditGuionPt(e.target.value)}
+                  className="px-3 py-1.5 rounded-full border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-[10.5px] outline-none focus:border-cyan-500"
+                />
+              </div>
+
+              <div className="flex flex-col gap-1">
+                <span className="text-[10px] font-semibold text-slate-600 dark:text-slate-300">
+                  English (EN)
+                </span>
+                <input
+                  type="text"
+                  placeholder="Voice-over instruction for English assembler..."
+                  value={editGuionEn}
+                  onChange={(e) => setEditGuionEn(e.target.value)}
+                  className="px-3 py-1.5 rounded-full border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-[10.5px] outline-none focus:border-cyan-500"
+                />
+              </div>
+            </div>
+
+            {/* Mensaje de feedback si hubo error */}
+            {mensajeEdicionBloque && (
+              <div className="p-2 rounded-xl bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900 text-rose-600 dark:text-rose-400 text-[10.5px] font-medium text-center">
+                {mensajeEdicionBloque}
+              </div>
+            )}
+
+            {/* Botones de Acción al Final del Formulario */}
+            <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-200 dark:border-slate-800">
+              <button
+                type="button"
+                onClick={() => setBloqueEstandarEnEdicion(null)}
+                className="px-4 py-1.5 rounded-full border border-slate-300 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 font-medium text-[11px] transition cursor-pointer"
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                disabled={guardandoEdicionBloque || !editNombre.trim()}
+                onClick={handleGuardarEdicionBloque}
+                style={{ backgroundColor: botonActivoColor }}
+                className="px-5 py-1.5 rounded-full text-white font-bold text-[11px] shadow-sm hover:opacity-90 active:scale-95 transition disabled:opacity-50 flex items-center gap-1.5 cursor-pointer"
+              >
+                {guardandoEdicionBloque ? (
+                  <>
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                    <span>Guardando Cambios...</span>
+                  </>
+                ) : (
+                  <>
+                    <Check className="w-3.5 h-3.5" />
+                    <span>Guardar Cambios</span>
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

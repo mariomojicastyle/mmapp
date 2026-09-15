@@ -54,7 +54,7 @@ import { use3BFStore, ObjetoInstancia3BF, MaterialPBRDef, DEFAULT_HDRI_CONFIG } 
 import * as THREE from "three";
 import * as BufferGeometryUtils from "three/examples/jsm/utils/BufferGeometryUtils.js";
 import { RGBELoader } from "three/examples/jsm/loaders/RGBELoader.js";
-import { Download, Save, Zap, Trash2, CheckCircle2, AlertCircle, AlertTriangle, X, Loader2, Sun, Lamp, Sparkles, Smartphone, Square, Eye, EyeOff, Pipette, Check } from "lucide-react";
+import { Download, Save, Zap, Trash2, CheckCircle2, AlertCircle, AlertTriangle, X, Loader2, Sun, Lamp, Sparkles, Smartphone, Square, Eye, EyeOff, Pipette, Check, Boxes, RefreshCw, Camera } from "lucide-react";
 import NPanel from "./NPanel";
 import { GHXAutoWatcher } from "./GHXAutoWatcher";
 import { generarEntornoEquirectangularLocal } from "./ShaderBallViewer";
@@ -67,6 +67,7 @@ import TimelineScrubber from "@/components/manual/TimelineScrubber";
 import { compilarAnimacionPaso, KinematicEngineResult } from "@/lib/manualAnimationEngine";
 import { extraerPiezaMadre, anotarInstanciasFisicas } from "@/lib/piezaMadreUtils";
 import { exportarGlbPasoManual, descargarBufferComoArchivo } from "@/lib/exportManualGlb";
+import BloqueEstandar3DScene from "./BloqueEstandar3DScene";
 
 function useMaterialPBRMaps(
   materialPBR?: MaterialPBRDef | null, 
@@ -796,6 +797,11 @@ function BoardMesh({
   const estaOcultaPorReglasPaso = React.useMemo(() => {
     if (pestanaActiva !== "manual" || !pasoActivoManual || pasoActivoManual.tipo === "showcase") {
       return false;
+    }
+
+    // 0. 🔍 Aislamiento Macro de Bloque Estándar: Ocultar todo el mueble principal para foco macro en el bloque
+    if (pasoActivoManual.tipo === "bloque_estandar") {
+      return true;
     }
 
     const totalAsignadas = (pasoActivoManual.piezasAsignadas?.length || 0) + (pasoActivoManual.herrajesAsignados?.length || 0);
@@ -2800,6 +2806,32 @@ function CameraViewController({
     }
   }, [centrarCamaraTrigger, furnitureGroup, controlsRef, camera]);
 
+  const pasoActivoManualId = use3BFStore((s) => s.pasoActivoManualId);
+  const pestanaActiva = use3BFStore((s) => s.pestanaActiva);
+  const ultimoPasoBloqueConfiguradoRef = React.useRef<string | null>(null);
+
+  React.useEffect(() => {
+    if (pestanaActiva === "manual" && controlsRef.current && camera) {
+      const pasos = use3BFStore.getState().pasosManual;
+      const p = pasos.find((step) => step.id === pasoActivoManualId);
+      if (p?.tipo === "bloque_estandar") {
+        // Solo encuadrar la cámara al ENTRAR por primera vez a este bloque estándar,
+        // permitiendo que el usuario mueva libremente la cámara sin que se reinicie al guardar el thumbnail
+        if (ultimoPasoBloqueConfiguradoRef.current !== pasoActivoManualId) {
+          ultimoPasoBloqueConfiguradoRef.current = pasoActivoManualId;
+          controlsRef.current.target.set(0, 0.1, 0);
+          camera.position.set(0.32, 0.28, 0.38);
+          camera.lookAt(0, 0.1, 0);
+          controlsRef.current.update();
+        }
+      } else {
+        ultimoPasoBloqueConfiguradoRef.current = null;
+      }
+    } else {
+      ultimoPasoBloqueConfiguradoRef.current = null;
+    }
+  }, [pestanaActiva, pasoActivoManualId, controlsRef, camera]);
+
   return null;
 }
 
@@ -3111,6 +3143,8 @@ export default function Viewer3D() {
     guardarManualProyecto,
     guardandoManual,
     manualActivoGuardado,
+    timelineCurrentTime,
+    forzarRecargaDesdeGHX,
   } = use3BFStore();
 
   const pasoActivoManual = React.useMemo(() => {
@@ -3118,6 +3152,7 @@ export default function Viewer3D() {
   }, [pasosManual, pasoActivoManualId]);
 
   const [guardadoManualReciente, setGuardadoManualReciente] = React.useState(false);
+  const [recargandoGHX, setRecargandoGHX] = React.useState(false);
 
   const estaSincronizando = Boolean(cargando || (objetoActivoId && instancias[objetoActivoId]?.cargando));
 
@@ -3142,6 +3177,8 @@ export default function Viewer3D() {
   const [isMobile, setIsMobile] = React.useState(false);
   const [alertaDuplicadosDescartada, setAlertaDuplicadosDescartada] = React.useState(false);
   const [mostrarDuplicadosRojos, setMostrarDuplicadosRojos] = React.useState(true);
+  const [capturandoFotoBloque, setCapturandoFotoBloque] = React.useState(false);
+  const [fotoBloqueExito, setFotoBloqueExito] = React.useState(false);
 
   const resultadoEfectivo = (objetoActivoId && instancias[objetoActivoId]?.resultado) || resultado;
 
@@ -4442,7 +4479,7 @@ export default function Viewer3D() {
       }}
       className="w-full h-full relative rounded-xl overflow-hidden shadow-inner border border-gray-200 dark:border-cyan-900/50 glass-panel"
     >
-      {pestanaActiva === "3d" && <NPanel />}
+      {(pestanaActiva === "3d" || pestanaActiva === "manual") && <NPanel />}
 
       {/* Indicador visual de Zona de Suelta (Drop Zone) */}
       {isDraggingOver && (
@@ -4489,6 +4526,97 @@ export default function Viewer3D() {
             <div className="absolute top-2 left-2 px-2 py-0.5 rounded-full bg-slate-950/80 text-amber-400 border border-amber-500/30 text-[9px] font-mono tracking-wider font-bold uppercase backdrop-blur-xs shadow-xs">
               1:1 Camera Frame
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* 📦 OVERLAY MACRO DE BLOQUE ESTÁNDAR (Modo Manual 3D) */}
+      {pestanaActiva === "manual" && pasoActivoManual?.tipo === "bloque_estandar" && (
+        <div className="absolute top-4 left-1/2 -translate-x-1/2 z-10 pointer-events-none flex flex-col items-center max-w-lg w-[90vw] select-none">
+          <div className="w-full bg-white/95 dark:bg-slate-900/95 backdrop-blur-md rounded-2xl border border-cyan-500/30 shadow-xl p-3 flex flex-col gap-1.5 pointer-events-auto">
+            <div className="flex items-center justify-between gap-2">
+              <div className="flex items-center gap-1.5">
+                <div className="flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-cyan-500/10 text-cyan-700 dark:text-cyan-300 border border-cyan-500/30 text-[10px] font-bold">
+                  <Boxes className="w-3 h-3 text-cyan-500 shrink-0" />
+                  <span>{pasoActivoManual.bloqueEstandar?.categoriaMarca || "Universales"} • {pasoActivoManual.id}</span>
+                </div>
+                <h3 className="font-bold text-xs text-slate-800 dark:text-slate-100 truncate">
+                  {pasoActivoManual.titulo}
+                </h3>
+              </div>
+              <div className="flex items-center gap-1.5 shrink-0">
+                <button
+                  type="button"
+                  title="Tomar captura de miniatura 3D para este bloque estándar"
+                  disabled={capturandoFotoBloque}
+                  onClick={async () => {
+                    if (!pasoActivoManual?.bloqueEstandar) return;
+                    setCapturandoFotoBloque(true);
+                    try {
+                      const capturarFn = (window as any).__capturarThumbnail3BF;
+                      const dataUrl = capturarFn ? capturarFn() : null;
+                      if (!dataUrl) {
+                        alert("No se pudo capturar la vista 3D. Inténtalo de nuevo.");
+                        return;
+                      }
+
+                      // Actualizar en el bloque estándar del paso activo y persistir
+                      const bloqueActualizado = {
+                        ...pasoActivoManual.bloqueEstandar,
+                        thumbnail: dataUrl,
+                        nombre: pasoActivoManual.titulo,
+                        duracion: pasoActivoManual.duracionTotal,
+                        descripcion: pasoActivoManual.descripcion,
+                        guionEs: pasoActivoManual.guionEs,
+                      };
+
+                      // 1. Guardar en disco vía API
+                      await fetch("/api/bloques", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify(bloqueActualizado),
+                      });
+
+                      // 2. Actualizar estado en store y recargar biblioteca
+                      use3BFStore.getState().actualizarPasoManual(pasoActivoManual.id, {
+                        bloqueEstandar: bloqueActualizado,
+                      });
+                      use3BFStore.getState().cargarBloquesEstandar();
+
+                      setFotoBloqueExito(true);
+                      setTimeout(() => setFotoBloqueExito(false), 2500);
+                    } catch (err) {
+                      console.error("Error guardando thumbnail de bloque:", err);
+                    } finally {
+                      setCapturandoFotoBloque(false);
+                    }
+                  }}
+                  style={{
+                    backgroundColor: fotoBloqueExito ? "#10b981" : (coloresApariencia?.botonActivo || "#0891b2"),
+                  }}
+                  className="w-7 h-7 rounded-full text-white flex items-center justify-center shadow-md hover:scale-105 active:scale-95 transition disabled:opacity-50 cursor-pointer"
+                >
+                  {capturandoFotoBloque ? (
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                  ) : fotoBloqueExito ? (
+                    <Check className="w-3.5 h-3.5" />
+                  ) : (
+                    <Camera className="w-3.5 h-3.5" />
+                  )}
+                </button>
+              </div>
+            </div>
+
+            <p className="text-[11px] text-slate-500 dark:text-slate-400 leading-tight">
+              {pasoActivoManual.descripcion || pasoActivoManual.bloqueEstandar?.descripcion}
+            </p>
+
+            {/* Guion de Locución Actual */}
+            {pasoActivoManual.guionEs && (
+              <div className="w-full px-2.5 py-1 rounded-xl bg-cyan-50/80 dark:bg-cyan-950/40 border border-cyan-500/20 text-[10.5px] text-cyan-900 dark:text-cyan-200 italic">
+                “{pasoActivoManual.guionEs}”
+              </div>
+            )}
           </div>
         </div>
       )}
@@ -4547,7 +4675,7 @@ export default function Viewer3D() {
               ) : (
                 <>
                   <Save className="w-3.5 lg:w-3.5 h-3.5 lg:h-3.5 text-white" />
-                  <span>Guardar</span>
+                  <span>Guardar Manual</span>
                 </>
               )
             ) : (
@@ -4558,27 +4686,52 @@ export default function Viewer3D() {
             )}
           </button>
 
-          {/* Botón Perforar Mueble */}
-          <button
-            onClick={async () => {
-              await perforarMueble();
-            }}
-            disabled={mecanizadoEnProgreso}
-            title="Detectar contacto entre piezas y transferir perforaciones al DXF"
-            style={{
-              backgroundColor: coloresApariencia?.botonActivo || "#0891b2",
-              borderColor: coloresApariencia?.colorMarca || "#0891b2",
-            }}
-            className="px-3.5 lg:px-3 h-8 lg:h-7 rounded-full text-white shadow-md border flex items-center gap-1.5 text-xs lg:text-xs font-bold leading-none hover:opacity-90 active:scale-95 transition-all cursor-pointer disabled:opacity-50 box-border"
-          >
-            <span>
-              {mecanizadoEnProgreso 
-                ? "Perforando..." 
-                : (Object.keys(mecanizadosCruzados || {}).length > 0 
-                    ? `Perforado (${Object.values(mecanizadosCruzados).flat().length})` 
-                    : "Perforar")}
-            </span>
-          </button>
+          {/* En Modo Manual: Botón Circular Actualizar GHX (flechas circulares) */}
+          {/* En Modo 3D: Botón Perforar Mueble */}
+          {pestanaActiva === "manual" ? (
+            <button
+              onClick={async () => {
+                setRecargandoGHX(true);
+                try {
+                  await forzarRecargaDesdeGHX();
+                } catch (e) {
+                  console.error("Error al actualizar GHX:", e);
+                } finally {
+                  setRecargandoGHX(false);
+                }
+              }}
+              disabled={recargandoGHX}
+              title="Actualizar / recalcular geometría fresca desde Grasshopper (.ghx)"
+              style={{
+                backgroundColor: coloresApariencia?.botonActivo || "#0891b2",
+                borderColor: coloresApariencia?.colorMarca || "#0891b2",
+              }}
+              className="w-8 lg:w-7 h-8 lg:h-7 rounded-full text-white shadow-md border flex items-center justify-center hover:opacity-90 active:scale-95 transition-all cursor-pointer disabled:opacity-50 box-border shrink-0"
+            >
+              <RefreshCw className={`w-3.5 h-3.5 ${recargandoGHX ? "animate-spin" : ""}`} />
+            </button>
+          ) : (
+            <button
+              onClick={async () => {
+                await perforarMueble();
+              }}
+              disabled={mecanizadoEnProgreso}
+              title="Detectar contacto entre piezas y transferir perforaciones al DXF"
+              style={{
+                backgroundColor: coloresApariencia?.botonActivo || "#0891b2",
+                borderColor: coloresApariencia?.colorMarca || "#0891b2",
+              }}
+              className="px-3.5 lg:px-3 h-8 lg:h-7 rounded-full text-white shadow-md border flex items-center gap-1.5 text-xs lg:text-xs font-bold leading-none hover:opacity-90 active:scale-95 transition-all cursor-pointer disabled:opacity-50 box-border"
+            >
+              <span>
+                {mecanizadoEnProgreso 
+                  ? "Perforando..." 
+                  : (Object.keys(mecanizadosCruzados || {}).length > 0 
+                      ? `Perforado (${Object.values(mecanizadosCruzados).flat().length})` 
+                      : "Perforar")}
+              </span>
+            </button>
+          )}
 
           {/* Botón Limpiar Perforaciones */}
           {Object.keys(mecanizadosCruzados || {}).length > 0 && (
@@ -4622,8 +4775,8 @@ export default function Viewer3D() {
             className="w-8 lg:w-7 h-8 lg:h-7 rounded-full text-white shadow-md border flex items-center justify-center hover:opacity-90 active:scale-95 transition-all cursor-pointer box-border shrink-0"
           >
             <Square 
-              strokeWidth={2}
-              className={`w-3.5 lg:w-4 h-3.5 lg:h-4 text-white shrink-0 ${mostrarMarcoEncuadre ? "opacity-100 fill-white/25" : "opacity-90"}`} 
+              strokeWidth={1.65}
+              className={`w-3.5 lg:w-3.5 h-3.5 lg:h-3.5 text-white shrink-0 ${mostrarMarcoEncuadre ? "opacity-100 fill-white/20" : "opacity-90"}`} 
             />
           </button>
         </div>
@@ -4899,16 +5052,25 @@ export default function Viewer3D() {
         
         {!escenarioLimpio && (
           <>
-            <ParametricFurnitureMesh 
-              setFurnitureGroup={setFurnitureGroup} 
-              mostrarDuplicadosRojos={mostrarDuplicadosRojos} 
-            />
-            <SnapPointMarkers furnitureGroup={furnitureGroup} />
-            <GuidelineAxes />
-            <TransformSnappingController />
-            <SelectionController />
-            <BoardSilhouetteOutline furnitureGroup={furnitureGroup} />
-            <AssemblyAnimationController furnitureGroup={furnitureGroup} />
+            {pestanaActiva === "manual" && pasoActivoManual?.tipo === "bloque_estandar" ? (
+              <BloqueEstandar3DScene
+                paso={pasoActivoManual}
+                timelineTime={timelineCurrentTime}
+              />
+            ) : (Object.keys(instancias || {}).length > 0 || resultado || muebleActivoGuardado) ? (
+              <>
+                <ParametricFurnitureMesh 
+                  setFurnitureGroup={setFurnitureGroup} 
+                  mostrarDuplicadosRojos={mostrarDuplicadosRojos} 
+                />
+                <SnapPointMarkers furnitureGroup={furnitureGroup} />
+                <GuidelineAxes />
+                <TransformSnappingController />
+                <SelectionController />
+                <BoardSilhouetteOutline furnitureGroup={furnitureGroup} />
+                <AssemblyAnimationController furnitureGroup={furnitureGroup} />
+              </>
+            ) : null}
           </>
         )}
 
@@ -4936,7 +5098,7 @@ export default function Viewer3D() {
           ref={controlsRef}
           makeDefault 
           enabled={modoTransformacion !== "grab"} 
-          target={[0.25, 0, -0.24]} 
+          target={pasoActivoManual?.tipo === "bloque_estandar" ? [0, 0.1, 0] : [0.25, 0, -0.24]} 
           minDistance={calibracion.zoomMinimoMetros ?? 0.02} 
           maxDistance={calibracion.zoomMaximoMetros ?? 30} 
           enableDamping

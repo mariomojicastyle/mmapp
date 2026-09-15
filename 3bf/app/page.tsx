@@ -335,14 +335,13 @@ export default function Home3BF() {
         }}
         className="h-9 lg:h-14 px-2 sm:px-3 lg:px-4 flex items-center justify-between border-b glass-panel z-10 relative transition-colors gap-1 sm:gap-2 lg:gap-3 overflow-x-auto custom-scrollbar"
       >
-        {/* Logotipo Vectorial Completo 3BF */}
+        {/* Logotipo Vectorial Completo 3dBimFab */}
         <div className="flex items-center shrink-0">
           <svg
             viewBox="6.73 15.276 235 59.448"
             fill="none"
             xmlns="http://www.w3.org/2000/svg"
-            className="h-[18px] sm:h-5 lg:h-8 w-auto select-none overflow-visible"
-            style={{ maxHeight: "32px", width: "auto", height: "auto" }}
+            className="h-5 sm:h-6 lg:h-8 w-auto select-none shrink-0"
             role="img"
             aria-label="3dBimFab — Powered by MARIO MOJICA"
           >
@@ -469,7 +468,6 @@ export default function Home3BF() {
             <button
               onClick={() => {
                 setPestanaActiva("manual");
-                setMostrarNPanel(false);
                 const s = use3BFStore.getState();
                 if (!s.objetoActivoId) {
                   const instKeys = Object.keys(s.instancias);

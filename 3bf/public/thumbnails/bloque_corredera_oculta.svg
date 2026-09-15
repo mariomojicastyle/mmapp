@@ -1,0 +1,39 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300" width="100%" height="100%">
+  <defs>
+    <linearGradient id="bgOculta" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#f8fafc"/>
+      <stop offset="100%" stop-color="#f1f5f9"/>
+    </linearGradient>
+  </defs>
+  <rect width="400" height="300" fill="url(#bgOculta)" rx="16"/>
+
+  <!-- Drawer Bottom View (Fondo de Cajón) -->
+  <rect x="60" y="70" width="280" height="150" rx="8" fill="#e2e8f0" stroke="#cbd5e1" stroke-width="2"/>
+  <text x="200" y="110" font-family="system-ui, sans-serif" font-size="11" font-weight="bold" fill="#94a3b8" text-anchor="middle">FONDO DE CAJÓN (VISTA INFERIOR)</text>
+
+  <!-- Left Release Clip (Gatillo Izquierdo) -->
+  <g transform="translate(80, 150)">
+    <rect x="0" y="0" width="50" height="45" rx="6" fill="#0284c7" stroke="#0369a1" stroke-width="2"/>
+    <circle cx="25" cy="22" r="8" fill="#ffffff"/>
+    <!-- Squeeze arrow -->
+    <path d="M 25 55 L 25 35" stroke="#ef4444" stroke-width="3" stroke-linecap="round"/>
+    <polygon points="20,35 30,35 25,27" fill="#ef4444"/>
+  </g>
+
+  <!-- Right Release Clip (Gatillo Derecho) -->
+  <g transform="translate(270, 150)">
+    <rect x="0" y="0" width="50" height="45" rx="6" fill="#0284c7" stroke="#0369a1" stroke-width="2"/>
+    <circle cx="25" cy="22" r="8" fill="#ffffff"/>
+    <!-- Squeeze arrow -->
+    <path d="M 25 55 L 25 35" stroke="#ef4444" stroke-width="3" stroke-linecap="round"/>
+    <polygon points="20,35 30,35 25,27" fill="#ef4444"/>
+  </g>
+
+  <text x="200" y="180" font-family="system-ui, sans-serif" font-size="11" font-weight="bold" fill="#ef4444" text-anchor="middle">PRESIONAR AMBOS GATILLOS</text>
+
+  <!-- Badge -->
+  <rect x="20" y="20" width="150" height="24" rx="12" fill="#0284c7" fill-opacity="0.1" stroke="#0284c7" stroke-width="1"/>
+  <text x="95" y="36" font-family="system-ui, sans-serif" font-size="10" font-weight="bold" fill="#0284c7" text-anchor="middle">CORREDERA OCULTA</text>
+
+  <text x="200" y="270" font-family="system-ui, sans-serif" font-size="12" font-weight="bold" fill="#334155" text-anchor="middle">Desacople con Gatillos Frontales</text>
+</svg>

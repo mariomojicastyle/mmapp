@@ -19,6 +19,167 @@ export async function exportarGlbPasoManual(
   const { GLTFExporter } = await import("three/examples/jsm/exporters/GLTFExporter.js");
   const exporter = new GLTFExporter();
 
+  // 📦 SOPORTE NATIVO PARA BLOQUES ESTÁNDAR (Ej: Corredera Telescópica 350 desacoplable)
+  if (paso.tipo === "bloque_estandar") {
+    let bloqueGroup: THREE.Object3D | null = null;
+    if (typeof window !== "undefined" && (window as any).__bloqueEstandarGroup) {
+      bloqueGroup = (window as any).__bloqueEstandarGroup;
+    } else {
+      scene.traverse((child) => {
+        if (child.name === "Guia_Fija" || child.name === "Guia_Intermedia" || child.name === "Guia_Movil") {
+          bloqueGroup = child.parent || child;
+        }
+      });
+    }
+
+    if (!bloqueGroup) {
+      throw new Error("El modelo 3D del bloque estándar aún no ha terminado de cargar en el visor.");
+    }
+
+    // Clonar la jerarquía limpia del bloque estándar
+    const exportBloqueScene = new THREE.Scene();
+    exportBloqueScene.name = "Scene";
+    const clonBloque = bloqueGroup.clone(true);
+    exportBloqueScene.add(clonBloque);
+
+    // Identificar los nodos clave para animación por nombre
+    let nodeFija: THREE.Object3D | null = null;
+    let nodeIntermedia: THREE.Object3D | null = null;
+    let nodeMovil: THREE.Object3D | null = null;
+    let nodeSeguroGroup: THREE.Object3D | null = null;
+    let nodeSeguroPivot: THREE.Object3D | null = null;
+
+    clonBloque.traverse((child) => {
+      if (child.name === "Guia_Fija") nodeFija = child;
+      if (child.name === "Guia_Intermedia") nodeIntermedia = child;
+      if (child.name === "Guia_Movil") nodeMovil = child;
+      if (child.name === "Seguro_Group") nodeSeguroGroup = child;
+      if (child.name === "Seguro_Pivot") nodeSeguroPivot = child;
+    });
+
+    const duracion = Math.max(paso.duracionTotal || 8.0, 1.0);
+    const centroZOffset = 0.175;
+    const PIVOTE_SEGURO: [number, number, number] = [0.001, 0.0016, -0.159];
+
+    // Fases temporales proporcionales a la duración del paso:
+    const durExt = duracion * 0.35;
+    const startGiro = duracion * 0.35;
+    const durGiro = duracion * 0.15;
+    const startSep = duracion * 0.50;
+    const durSep = duracion * 0.30;
+    const startRetorno = duracion * 0.78;
+    const durRetorno = duracion * 0.11;
+
+    // Resamplear 81 keyframes a lo largo de la duración total del paso usando la cinemática física exacta
+    const easeInOutCubic = (x: number) => (x < 0.5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2);
+    const times: number[] = [];
+    const posIntermediaVals: number[] = [];
+    const posMovilVals: number[] = [];
+    const rotSeguroVals: number[] = [];
+
+    const numSamples = 81;
+    for (let i = 0; i < numSamples; i++) {
+      const curT = (i / (numSamples - 1)) * duracion;
+      times.push(curT);
+
+      // Fase 1: Extensión total (0% a 35%)
+      const tExt = Math.min(durExt, curT);
+      const pExt = easeInOutCubic(durExt > 0 ? tExt / durExt : 1);
+      const despIntermedia = pExt * 0.145;
+      const despMovilFase1 = pExt * 0.275;
+
+      // Fase 2 & 4: Rotación de palanca (35% a 50% giro, 78% a 89% retorno)
+      let rotSeguroY = 0;
+      if (curT > startGiro && curT <= startRetorno) {
+        const tGiro = Math.min(durGiro, curT - startGiro);
+        const pGiro = easeInOutCubic(durGiro > 0 ? tGiro / durGiro : 1);
+        rotSeguroY = -pGiro * ((10.0 * Math.PI) / 180);
+      } else if (curT > startRetorno) {
+        const tRetorno = Math.min(durRetorno, curT - startRetorno);
+        const pRetorno = easeInOutCubic(durRetorno > 0 ? tRetorno / durRetorno : 1);
+        rotSeguroY = -(1 - pRetorno) * ((10.0 * Math.PI) / 180);
+      }
+
+      // Fase 3: Desacople recto (50% a 80%)
+      let despSeparacionZ = 0;
+      if (curT > startSep) {
+        const tSep = Math.min(durSep, curT - startSep);
+        const pSep = easeInOutCubic(durSep > 0 ? tSep / durSep : 1);
+        despSeparacionZ = pSep * 0.32;
+      }
+
+      const posTotalMovilZ = centroZOffset + despMovilFase1 + despSeparacionZ;
+
+      // Posición de Intermedia
+      posIntermediaVals.push(0, 0, centroZOffset + despIntermedia);
+
+      // Posición de Móvil y Grupo Seguro
+      posMovilVals.push(0, 0, posTotalMovilZ);
+
+      // Cuaternión de Rotación de Seguro en su eje Y
+      const qSeguro = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), rotSeguroY);
+      rotSeguroVals.push(qSeguro.x, qSeguro.y, qSeguro.z, qSeguro.w);
+    }
+
+    const bloqueTracks: THREE.KeyframeTrack[] = [];
+    if (nodeIntermedia) {
+      bloqueTracks.push(new THREE.VectorKeyframeTrack(`${(nodeIntermedia as any).uuid}.position`, times, posIntermediaVals));
+    }
+    if (nodeMovil) {
+      bloqueTracks.push(new THREE.VectorKeyframeTrack(`${(nodeMovil as any).uuid}.position`, times, posMovilVals));
+    }
+    if (nodeSeguroGroup) {
+      bloqueTracks.push(new THREE.VectorKeyframeTrack(`${(nodeSeguroGroup as any).uuid}.position`, times, posMovilVals));
+    }
+    if (nodeSeguroPivot) {
+      bloqueTracks.push(new THREE.QuaternionKeyframeTrack(`${(nodeSeguroPivot as any).uuid}.quaternion`, times, rotSeguroVals));
+    }
+
+    const bloqueClip = new THREE.AnimationClip("default", duracion, bloqueTracks);
+
+    // Parsear con GLTFExporter
+    const rawBuffer = await new Promise<ArrayBuffer>((resolve, reject) => {
+      exporter.parse(
+        exportBloqueScene,
+        (gltf) => resolve(gltf as ArrayBuffer),
+        (error) => {
+          console.error("[ExportManualGLB] Error al parsear bloque estándar glTF:", error);
+          reject(error);
+        },
+        {
+          binary: true,
+          animations: [bloqueClip],
+          maxTextureSize: 512,
+          includeCustomExtensions: false,
+        }
+      );
+    });
+
+    let finalBuffer: ArrayBuffer = rawBuffer;
+    try {
+      const res = await fetch(`/api/compress-glb?mode=download&name=${encodeURIComponent(paso.id)}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/octet-stream" },
+        body: rawBuffer,
+      });
+      if (res.ok) {
+        finalBuffer = await res.arrayBuffer();
+      }
+    } catch (compErr) {
+      console.warn("[ExportManualGLB] Fallback compresión bloque estándar:", compErr);
+    }
+
+    const filename = `${paso.id}.glb`;
+    const sizeMb = (finalBuffer.byteLength / (1024 * 1024)).toFixed(2);
+    console.log(`[ExportManualGLB] 🚀 Bloque estándar ${filename}: ${sizeMb} MB`);
+
+    return {
+      buffer: finalBuffer,
+      filename,
+      sizeMb,
+    };
+  }
+
   // 1. Crear escena de exportación limpia y aislada
   const exportScene = new THREE.Scene();
   exportScene.name = "Scene";

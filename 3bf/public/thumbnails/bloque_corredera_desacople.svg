@@ -1,0 +1,65 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300" width="100%" height="100%">
+  <defs>
+    <linearGradient id="bgGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#f8fafc"/>
+      <stop offset="100%" stop-color="#f1f5f9"/>
+    </linearGradient>
+    <linearGradient id="metalOuter" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#94a3b8"/>
+      <stop offset="50%" stop-color="#cbd5e1"/>
+      <stop offset="100%" stop-color="#64748b"/>
+    </linearGradient>
+    <linearGradient id="metalInner" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#38bdf8"/>
+      <stop offset="50%" stop-color="#7dd3fc"/>
+      <stop offset="100%" stop-color="#0284c7"/>
+    </linearGradient>
+  </defs>
+  <!-- Background -->
+  <rect width="400" height="300" fill="url(#bgGrad)" rx="16"/>
+  
+  <!-- Subtle Grid -->
+  <g opacity="0.3" stroke="#cbd5e1" stroke-width="1">
+    <line x1="40" y1="50" x2="360" y2="50" stroke-dasharray="4,4"/>
+    <line x1="40" y1="150" x2="360" y2="150" stroke-dasharray="4,4"/>
+    <line x1="40" y1="250" x2="360" y2="250" stroke-dasharray="4,4"/>
+  </g>
+
+  <!-- Outer Rail (Cuerpo Corredera Mueble) -->
+  <rect x="50" y="110" width="170" height="60" rx="4" fill="url(#metalOuter)" stroke="#475569" stroke-width="2"/>
+  <circle cx="80" cy="140" r="6" fill="#f8fafc" stroke="#475569" stroke-width="1.5"/>
+  <circle cx="160" cy="140" r="6" fill="#f8fafc" stroke="#475569" stroke-width="1.5"/>
+
+  <!-- Ball Bearings (Rodamientos Intermedios) -->
+  <circle cx="195" cy="130" r="5" fill="#e2e8f0" stroke="#334155" stroke-width="1"/>
+  <circle cx="210" cy="130" r="5" fill="#e2e8f0" stroke="#334155" stroke-width="1"/>
+  <circle cx="195" cy="150" r="5" fill="#e2e8f0" stroke="#334155" stroke-width="1"/>
+  <circle cx="210" cy="150" r="5" fill="#e2e8f0" stroke="#334155" stroke-width="1"/>
+
+  <!-- Inner Runner (Riel Interior Extraíble del Cajón) -->
+  <g transform="translate(45, -5)">
+    <rect x="180" y="120" width="140" height="50" rx="3" fill="url(#metalInner)" stroke="#0369a1" stroke-width="2"/>
+    <circle cx="280" cy="145" r="5" fill="#ffffff" stroke="#0369a1" stroke-width="1.5"/>
+    <circle cx="230" cy="145" r="5" fill="#ffffff" stroke="#0369a1" stroke-width="1.5"/>
+
+    <!-- Plastic Release Lever (Gatillo de Nylon) -->
+    <path d="M 195 145 L 225 145 L 210 162 Z" fill="#0f172a" stroke="#38bdf8" stroke-width="1.5"/>
+    
+    <!-- Finger Push Indicator (Flecha de Presión hacia abajo) -->
+    <path d="M 210 120 L 210 138" stroke="#ef4444" stroke-width="3" stroke-linecap="round"/>
+    <polygon points="205,138 215,138 210,145" fill="#ef4444"/>
+  </g>
+
+  <!-- Separation / Extraction Arrow -->
+  <g transform="translate(290, 85)">
+    <path d="M 10 30 L 70 30" stroke="#0284c7" stroke-width="3.5" stroke-linecap="round"/>
+    <polygon points="65,22 82,30 65,38" fill="#0284c7"/>
+    <text x="35" y="18" font-family="system-ui, sans-serif" font-size="11" font-weight="bold" fill="#0284c7" text-anchor="middle">DESACOPLE</text>
+  </g>
+
+  <!-- Badge / Technical Label -->
+  <rect x="20" y="20" width="130" height="24" rx="12" fill="#0284c7" fill-opacity="0.1" stroke="#0284c7" stroke-width="1"/>
+  <text x="85" y="36" font-family="system-ui, sans-serif" font-size="10" font-weight="bold" fill="#0284c7" text-anchor="middle">CORREDERA H45</text>
+  
+  <text x="200" y="270" font-family="system-ui, sans-serif" font-size="12" font-weight="bold" fill="#334155" text-anchor="middle">Desacople de Guía Telescópica</text>
+</svg>

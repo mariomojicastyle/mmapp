@@ -354,16 +354,23 @@ function RealFurnitureSceneRenderer({
   }, [instancias, resultado, parametros]);
 
   if (listaInstancias.length === 0) {
-    // Fallback elegante si no hay mallas calculadas aún:
-    // Mueble modular de diseño posicionado descansando exactamente sobre el suelo (y = 0)
+    // Mueble modular de diseño 100% simétrico: Cubierta superior e inferior idénticas (1.76m x 0.04m x 0.40m)
     const piezasFallback = [
+      // Costados exteriores simétricos (h: 0.90m, de y = 0.00 a y = 0.90)
       { size: [0.04, 0.90, 0.40], pos: [-0.90, 0.45, 0] },
       { size: [0.04, 0.90, 0.40], pos: [0.90, 0.45, 0] },
+      // Cubierta inferior / Base (encajada entre costados, de y = 0.00 a y = 0.04)
       { size: [1.76, 0.04, 0.40], pos: [0, 0.02, 0] },
-      { size: [1.84, 0.04, 0.42], pos: [0, 0.90, 0] },
-      { size: [0.036, 0.84, 0.38], pos: [-0.30, 0.45, 0] },
-      { size: [0.036, 0.84, 0.38], pos: [0.30, 0.45, 0] },
-      { size: [1.76, 0.036, 0.38], pos: [0, 0.45, 0] },
+      // Cubierta superior (idéntica a la inferior, encajada entre costados, de y = 0.86 a y = 0.90)
+      { size: [1.76, 0.04, 0.40], pos: [0, 0.88, 0] },
+      // Divisores verticales interiores continuos (de base y = 0.04 a cara inferior de cubierta y = 0.86, h: 0.82m)
+      // Centro en y = 0.45, extremo superior en y = 0.86 tocando exactamente la cubierta superior
+      { size: [0.036, 0.82, 0.38], pos: [-0.30, 0.45, 0] },
+      { size: [0.036, 0.82, 0.38], pos: [0.30, 0.45, 0] },
+      // Repisas intermedias a media altura simétrica (y = 0.45)
+      { size: [0.564, 0.036, 0.38], pos: [-0.60, 0.45, 0] },
+      { size: [0.564, 0.036, 0.38], pos: [0.00, 0.45, 0] },
+      { size: [0.564, 0.036, 0.38], pos: [0.60, 0.45, 0] },
     ];
 
     return (

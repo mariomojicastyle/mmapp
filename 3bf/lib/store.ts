@@ -654,10 +654,54 @@ export interface ElementoSecuenciaCinematica {
   impactosHerramienta?: number; // e.g. 3 golpes para martillo con 0mm de separación tangencial
 }
 
+export interface ParteGlbBloque {
+  id: string;
+  nombre: string;
+  archivo: string;
+  rol?: string;
+}
+
+export interface BloqueEstandarDef {
+  id: string; // e.g. "desacople_corredera_telescopica"
+  nombre: string;
+  categoriaMarca: string; // e.g. "Universales", "Móveis Henn", "Politorno", "RTA Design"
+  subcategoria?: string; // e.g. "Correderas", "Minifix", "Bisagras"
+  descripcion: string;
+  archivo: string; // e.g. "desacople_corredera_telescopica.3bb.json"
+  thumbnail?: string;
+  duracion: number; // segundos (e.g. 8.0)
+  guionEs: string;
+  guionPt: string;
+  guionEn: string;
+  carpetaModelos?: string;
+  partesGlb?: ParteGlbBloque[];
+  mallas?: string[];
+  animacionTracks?: any[];
+  rutaFisica?: string;
+  fechaCreacion?: string;
+}
+
+export interface BloqueEstandarRef {
+  id: string;
+  nombre: string;
+  categoriaMarca: string;
+  subcategoria?: string;
+  descripcion?: string;
+  archivo?: string;
+  thumbnail?: string;
+  duracion: number;
+  guionEs?: string;
+  guionPt?: string;
+  guionEn?: string;
+  carpetaModelos?: string;
+  partesGlb?: ParteGlbBloque[];
+  animacionTracks?: any[];
+}
+
 export interface PasoManualStudio {
   id: string; // "P00", "P01", "P02"...
   numero: number;
-  tipo: "showcase" | "ensamble";
+  tipo: "showcase" | "ensamble" | "bloque_estandar";
   titulo: string;
   descripcion: string;
   duracionTotal: number; // segundos
@@ -686,6 +730,9 @@ export interface PasoManualStudio {
   piezasOcultas?: boolean; // 💡 Apagar / Prender piezas de este paso en el 3D
   ocultarNoAsignadas?: boolean; // 💡 Apagar piezas y herrajes que no pertenecen a este paso (Aislar Paso)
   secuencia: ElementoSecuenciaCinematica[];
+
+  // 📦 Configuración Bloque Estándar Reutilizable (.3bb.json)
+  bloqueEstandar?: BloqueEstandarRef;
   
   // Locución TTS Multilingüe (Español, Português, Inglés)
   guionEs: string;
@@ -711,6 +758,107 @@ export interface Manual3BMProyecto {
   pasos: PasoManualStudio[];
   thumbnail?: string;
 }
+
+export const BLOQUES_ESTANDAR_DEFAULT: BloqueEstandarDef[] = [
+  {
+    id: "corredera_telescopica_350",
+    nombre: "Corredera Telescópica 350",
+    categoriaMarca: "Universales",
+    subcategoria: "Herrajes",
+    descripcion: "Corredera telescópica universal de extensión total de 350 mm.",
+    archivo: "corredera_telescopica_350.3bb.json",
+    thumbnail: "/thumbnails/bloque_corredera_desacople.svg",
+    duracion: 8.0,
+    guionEs: "Paso: Corredera Telescópica 350.",
+    guionPt: "Passo: Corrediça Telescópica 350.",
+    guionEn: "Step: Telescopic Slide 350.",
+    carpetaModelos: "/library/bloques/modelos/corredera_telescopica_350",
+    partesGlb: [
+      { id: "fija", nombre: "Fija", archivo: "/library/bloques/modelos/corredera_telescopica_350/Fija.glb" },
+      { id: "intermedia", nombre: "Intermedia", archivo: "/library/bloques/modelos/corredera_telescopica_350/Intermedia.glb" },
+      { id: "movil", nombre: "Movil", archivo: "/library/bloques/modelos/corredera_telescopica_350/Movil.glb" },
+      { id: "seguro", nombre: "Seguro", archivo: "/library/bloques/modelos/corredera_telescopica_350/Seguro.glb" },
+    ],
+    fechaCreacion: "2026-09-14T15:27:50.200Z",
+  },
+  {
+    id: "desacople_corredera_telescopica",
+    nombre: "Desacople de Corredera Telescópica (Full Extension)",
+    categoriaMarca: "Universales",
+    subcategoria: "Correderas",
+    descripcion: "Procedimiento universal para separar la guía interior (lado cajón) de la guía exterior (lado mueble) presionando la palanca o gatillo de nylon negro hacia abajo.",
+    archivo: "desacople_corredera_telescopica.3bb.json",
+    thumbnail: "/thumbnails/bloque_corredera_desacople.svg",
+    duracion: 8.0,
+    guionEs: "Antes de armar, extiende la corredera telescópica. Presiona la palanca plástica negra hacia abajo y desliza la guía interna hacia afuera para separarla del riel.",
+    guionPt: "Antes de montar, estenda a corrediça telescópica. Pressione a trava plástica preta para baixo e puxe o trilho interno para desacoplar a peça.",
+    guionEn: "Before assembly, extend the telescopic slide. Push down the black plastic release lever and pull the inner runner out to separate it.",
+    carpetaModelos: "/library/bloques/modelos/corredera_telescopica_350",
+    partesGlb: [
+      { id: "fija", nombre: "Guía Fija (Lateral Mueble)", archivo: "/library/bloques/modelos/corredera_telescopica_350/Fija.glb", rol: "fija_mueble" },
+      { id: "intermedia", nombre: "Guía Intermedia", archivo: "/library/bloques/modelos/corredera_telescopica_350/Intermedia.glb", rol: "guia_intermedia" },
+      { id: "movil", nombre: "Guía Móvil (Lateral Cajón)", archivo: "/library/bloques/modelos/corredera_telescopica_350/Movil.glb", rol: "movil_cajon" },
+      { id: "seguro", nombre: "Gatillo / Seguro de Nylon", archivo: "/library/bloques/modelos/corredera_telescopica_350/Seguro.glb", rol: "palanca_seguro" },
+    ],
+    fechaCreacion: "2026-09-14T10:00:00.000Z",
+  },
+  {
+    id: "ensamble_minifix_perno_tambor",
+    nombre: "Ensamble Perno y Tambor Minifix",
+    categoriaMarca: "Universales",
+    subcategoria: "Minifix",
+    descripcion: "Alineación e inserción del tambor de leva excéntrica sobre el perno de unión, realizando giro de 180° con destornillador Phillips.",
+    archivo: "ensamble_minifix_perno_tambor.3bb.json",
+    thumbnail: "/thumbnails/bloque_minifix.svg",
+    duracion: 7.0,
+    guionEs: "Inserta el perno minifix en el lateral. Coloca el tambor con la flecha apuntando hacia el perno y gira media vuelta hasta trabar firmemente.",
+    guionPt: "Insira o pino minifix na lateral. Posicione o tambor com a seta apontando para o pino e gire meia volta até travar com firmeza.",
+    guionEn: "Insert the minifix bolt into the panel. Place the cam lock with arrow facing the bolt and rotate 180 degrees until firmly locked.",
+    fechaCreacion: "2026-09-14T10:00:00.000Z",
+  },
+  {
+    id: "regulacion_bisagra_cazoleta",
+    nombre: "Regulación 3D de Bisagra Cazoleta",
+    categoriaMarca: "Universales",
+    subcategoria: "Bisagras",
+    descripcion: "Ajuste de los tres tornillos de regulación (profundidad, altura vertical y alineación lateral) para cuadrar la luz perimetral de puertas.",
+    archivo: "regulacion_bisagra_cazoleta.3bb.json",
+    thumbnail: "/thumbnails/bloque_bisagra.svg",
+    duracion: 9.0,
+    guionEs: "Para calibrar la puerta, ajusta el tornillo frontal para corregir la separación lateral, y el tornillo trasero para nivelar la profundidad.",
+    guionPt: "Para alinhar a porta, regule o parafuso frontal para ajustar o espaço lateral e o parafuso traseiro para profundidade.",
+    guionEn: "To calibrate the door, adjust the front screw to correct lateral gap and the rear screw to level door depth.",
+    fechaCreacion: "2026-09-14T10:00:00.000Z",
+  },
+  {
+    id: "desacople_corredera_oculta_clip",
+    nombre: "Desacople de Corredera Oculta con Gatillo Clip",
+    categoriaMarca: "Universales",
+    subcategoria: "Correderas Ocultas",
+    descripcion: "Liberación rápida de cajón montado sobre correderas ocultas (Under-mount) presionando los gatillos frontales ergonómicos bajo el fondo.",
+    archivo: "desacople_corredera_oculta_clip.3bb.json",
+    thumbnail: "/thumbnails/bloque_corredera_oculta.svg",
+    duracion: 8.0,
+    guionEs: "Presiona los gatillos plásticos situados bajo el fondo del cajón al mismo tiempo y levanta ligeramente para desenganchar las correderas ocultas.",
+    guionPt: "Pressione as travas plásticas sob o fundo da gaveta simultaneamente e levante suavemente para desencaixar das corrediças ocultas.",
+    guionEn: "Squeeze the plastic release clips under the drawer bottom simultaneously and lift gently to disengage from hidden runners.",
+    fechaCreacion: "2026-09-14T10:00:00.000Z",
+  },
+  {
+    id: "fijacion_corredera_lateral_henn",
+    nombre: "Fijación de Correderas en Lateral (Patrón Henn)",
+    categoriaMarca: "Móveis Henn",
+    subcategoria: "Correderas",
+    descripcion: "Atornillado de la corredera exterior respetando los agujeros guía del lateral y el retroceso de 2 mm desde el borde frontal.",
+    archivo: "fijacion_corredera_lateral_henn.3bb.json",
+    thumbnail: "/thumbnails/bloque_corredera_desacople.svg",
+    duracion: 8.5,
+    guionEs: "Ubica la guía exterior sobre las marcas del lateral dejando dos milímetros de retroceso desde el frente y fija con tornillos cabeza plana.",
+    guionPt: "Posicione o trilho externo nas marcações da lateral com dois milímetros de recuo frontal e fixe com os parafusos.",
+    guionEn: "Place the outer runner on the side panel markings with 2 mm setback from front edge and secure with flat head screws.",
+    fechaCreacion: "2026-09-14T10:00:00.000Z",
+  },
+];
 
 export function generarPasosManualesPorDefecto(): PasoManualStudio[] {
   return [
@@ -741,29 +889,6 @@ export function generarPasosManualesPorDefecto(): PasoManualStudio[] {
       vozPt: "pt-BR-FranciscaNeural",
       vozEn: "en-US-JennyNeural",
       duracionAudioSegundos: 8.0,
-    },
-    {
-      id: "P01",
-      numero: 1,
-      tipo: "ensamble",
-      titulo: "Paso 01: Estructura Base y Tarugos",
-      descripcion: "Colocación de la pieza base en el banco de trabajo e inserción de herrajes.",
-      duracionTotal: 12.0,
-      piezaMaster: "",
-      orientacionBanco: {
-        rotacion: [0, 0, 0],
-        apoyoEnPiso: true,
-      },
-      piezasAsignadas: [],
-      herrajesAsignados: [],
-      secuencia: [],
-      guionEs: "Paso 1: Coloca la pieza base en el banco de trabajo y fija los tarugos de madera con golpes suaves del martillo de goma.",
-      guionPt: "Passo 1: Coloque a peça base na bancada de trabalho e fixe as cavilhas de madeira com batidas suaves do martelo de borracha.",
-      guionEn: "Step 1: Place the base piece on the workbench and secure the wooden dowels with gentle taps of the rubber hammer.",
-      vozEs: "es-MX-DaliaNeural",
-      vozPt: "pt-BR-FranciscaNeural",
-      vozEn: "en-US-JennyNeural",
-      duracionAudioSegundos: 12.0,
     },
   ];
 }
@@ -1044,6 +1169,7 @@ export interface MaterialPBRDef {
   nombre: string;         // ej: "Acero", "Duna", "M_Marfil", "MDF", "MDP", "Cromo", "P_Negro"
   tipo: "PBR" | "Melamina" | "Madera" | "Metal" | "Plastico" | "Pintura" | "Textil" | "Vidrio";
   colorBase: string;      // Hex "#C5B39A", "#8A9EA7"
+  thumbnailReal?: string; // Fotografía real capturada desde el visor 3D de ShaderBall
   texturaUrl?: string;    // Albedo / Diffuse Map ("/textures/Marfil_diffuse.jpg" o DataURL)
   normalMapUrl?: string;  // Normal Map Tangente RGB (DataURL o ruta)
   roughnessMapUrl?: string; // Roughness Map B&N (DataURL o ruta)
@@ -1322,6 +1448,20 @@ export interface State3BF {
   setHdriPersonalizado: (file: File) => void;
   restablecerHdriPorDefecto: () => void;
 
+  // 📦 Bloques Estándar de Armado (.3bb.json)
+  bloquesEstandar: BloqueEstandarDef[];
+  carpetaBloquesSeleccionada: string;
+  setCarpetaBloquesSeleccionada: (carpeta: string) => void;
+  cargarBloquesEstandar: () => Promise<void>;
+  insertarBloqueEstandarComoPaso: (bloque: BloqueEstandarDef, indiceInsercion?: number) => void;
+  bloqueEstandarEnEdicion: BloqueEstandarDef | null;
+  manualPadrePrevioEdicionBloque: { manual: Manual3BMProyecto | null; pasos: PasoManualStudio[]; pasoActivoId: string } | null;
+  setBloqueEstandarEnEdicion: (bloque: BloqueEstandarDef | null) => void;
+  cargarBloqueEstandarParaEdicion: (bloque: BloqueEstandarDef) => void;
+  reordenarPasosManual: (origenIndex: number, destinoIndex: number) => void;
+  guardarNuevoBloqueEstandar: (bloque: BloqueEstandarDef) => Promise<boolean>;
+  eliminarBloqueEstandar: (id: string, categoriaMarca?: string, archivo?: string) => Promise<boolean>;
+
   // Interacción de piezas
   hoveredPiece: string | null;
   setHoveredPiece: (name: string | null) => void;
@@ -1329,8 +1469,8 @@ export interface State3BF {
   // Blender N-Panel (Sidebar Multifuncional con tecla N)
   mostrarNPanel: boolean;
   setMostrarNPanel: (mostrar: boolean | ((prev: boolean) => boolean)) => void;
-  pestanaNPanel: "componentes" | "muebles" | "capas" | "partes" | "materiales" | "calibrar" | "apariencia" | "ficha";
-  setPestanaNPanel: (pestana: "componentes" | "muebles" | "capas" | "partes" | "materiales" | "calibrar" | "apariencia" | "ficha") => void;
+  pestanaNPanel: "componentes" | "muebles" | "capas" | "partes" | "materiales" | "calibrar" | "apariencia" | "ficha" | "bloques_estandar";
+  setPestanaNPanel: (pestana: "componentes" | "muebles" | "capas" | "partes" | "materiales" | "calibrar" | "apariencia" | "ficha" | "bloques_estandar") => void;
   anchoNPanel: number;
   setAnchoNPanel: (ancho: number) => void;
   anchoPanelDerecho: number;
@@ -1777,50 +1917,98 @@ export const STORAGE_KEY_MANUAL_ACTIVO = "3bf_manual_activo_cache";
 export const STORAGE_KEY_PASOS_MANUAL = "3bf_pasos_manual_cache";
 export const STORAGE_KEY_LAST_MANUAL_ID = "3bf_last_manual_id";
 
+/**
+ * 🔢 Encuentra el número entero positivo más bajo disponible (>= 1) para un paso de ensamble.
+ * Garantiza que nunca se generen IDs duplicados y llena los huecos dejados por pasos eliminados.
+ * Ej: Si existen P00 y P02, devolverá P01. Si existen P00, P01, P02, devolverá P03.
+ */
+export function encontrarSiguienteIdPasoDisponible(pasos: PasoManualStudio[]): { id: string; numero: number } {
+  const idsOcupados = new Set(pasos.map((p) => p.id));
+  const numerosOcupados = new Set<number>();
+
+  for (const paso of pasos) {
+    const match = paso.id.match(/^P(\d+)$/i);
+    if (match) {
+      numerosOcupados.add(parseInt(match[1], 10));
+    } else if (typeof paso.numero === "number" && paso.numero >= 0) {
+      numerosOcupados.add(paso.numero);
+    }
+  }
+
+  let menorDisponible = 1;
+  while (numerosOcupados.has(menorDisponible) || idsOcupados.has(`P${String(menorDisponible).padStart(2, "0")}`)) {
+    menorDisponible++;
+  }
+
+  return {
+    id: `P${String(menorDisponible).padStart(2, "0")}`,
+    numero: menorDisponible,
+  };
+}
+
+/**
+ * 🛡️ Sanea la lista de pasos para garantizar unicidad absoluta de IDs, presencia de P00 y orden consistente.
+ * Cura duplicados existentes en caché local (ej: dos P02) reasignándolos al menor ID faltante.
+ */
+export function sanitizarPasosManuales(pasos: PasoManualStudio[]): PasoManualStudio[] {
+  if (!pasos || pasos.length === 0) return generarPasosManualesPorDefecto();
+
+  // 🛡️ REGLA SUPREMA: P00 (Showcase Funcional) es estrictamente OBLIGATORIO e INVIOLABLE en el índice 0
+  const defaultP00 = generarPasosManualesPorDefecto()[0];
+
+  // 1. Localizar si existe algún paso P00 o de tipo showcase
+  const p00Index = pasos.findIndex((p) => p.id === "P00" || p.tipo === "showcase");
+  let paso00: PasoManualStudio;
+
+  if (p00Index >= 0) {
+    paso00 = {
+      ...pasos[p00Index],
+      id: "P00",
+      numero: 0,
+      tipo: "showcase",
+      titulo: pasos[p00Index].titulo || "Paso 00: Showcase Funcional",
+    };
+  } else {
+    // Si no venía P00, inyectar el P00 oficial canónico
+    paso00 = { ...defaultP00 };
+  }
+
+  const resultado: PasoManualStudio[] = [paso00];
+  const idsVistos = new Set<string>(["P00"]);
+
+  // 2. Procesar el resto de pasos (excluyendo el que se tomó como P00)
+  const otrosPasos = pasos.filter((_, idx) => idx !== p00Index);
+
+  otrosPasos.forEach((pOriginal, idx) => {
+    const p = { ...pOriginal };
+    const numConsecutivo = idx + 1;
+    const consecutivoId = `P${String(numConsecutivo).padStart(2, "0")}`;
+
+    p.numero = numConsecutivo;
+    p.id = consecutivoId;
+
+    if (p.tipo === "ensamble" && (p.titulo.startsWith("Paso ") || /^P\d+:?/i.test(p.titulo))) {
+      p.titulo = `Paso ${String(p.numero).padStart(2, "0")}: Ensamble`;
+    }
+
+    idsVistos.add(p.id);
+    resultado.push(p);
+  });
+
+  return resultado;
+}
+
 export function getCachedManualData(): { manual: Manual3BMProyecto | null; pasos: PasoManualStudio[] } {
-  if (typeof window === "undefined" || !window.localStorage) {
-    return { manual: null, pasos: generarPasosManualesPorDefecto() };
+  if (typeof window !== "undefined" && window.localStorage) {
+    try {
+      localStorage.removeItem(STORAGE_KEY_PASOS_MANUAL);
+      localStorage.removeItem(STORAGE_KEY_MANUAL_ACTIVO);
+      localStorage.removeItem("3bf_ultimo_mueble_id");
+    } catch (err) {
+      console.warn("[3dBimFab] Error limpiando caché local:", err);
+    }
   }
-  try {
-    let cachedPasos: PasoManualStudio[] | null = null;
-    let cachedManual: Manual3BMProyecto | null = null;
-
-    // 1. Leer pasos en caché directa (es la fuente más fresca de mutaciones del usuario)
-    const rawPasos = localStorage.getItem(STORAGE_KEY_PASOS_MANUAL);
-    if (rawPasos) {
-      try {
-        const parsedPasos = JSON.parse(rawPasos);
-        if (Array.isArray(parsedPasos) && parsedPasos.length > 0) {
-          cachedPasos = parsedPasos;
-        }
-      } catch {}
-    }
-
-    // 2. Leer proyecto de manual activo en caché
-    const rawManual = localStorage.getItem(STORAGE_KEY_MANUAL_ACTIVO);
-    if (rawManual) {
-      try {
-        const parsed = JSON.parse(rawManual);
-        if (parsed && typeof parsed === "object") {
-          cachedManual = parsed;
-          if (!cachedPasos && Array.isArray(parsed.pasos) && parsed.pasos.length > 0) {
-            cachedPasos = parsed.pasos;
-          }
-        }
-      } catch {}
-    }
-
-    // Sincronizar pasos más recientes dentro del manual
-    if (cachedManual && cachedPasos) {
-      cachedManual.pasos = cachedPasos;
-    }
-
-    if (cachedPasos && cachedPasos.length > 0) {
-      return { manual: cachedManual, pasos: cachedPasos };
-    }
-  } catch (err) {
-    console.warn("[3dBimFab] Error leyendo caché de manual:", err);
-  }
+  // 🛡️ REGLA SUPREMA: En recarga (F5) el sistema siempre arranca 100% limpio (como recién abrir un programa CAD)
   return { manual: null, pasos: generarPasosManualesPorDefecto() };
 }
 
@@ -1840,10 +2028,10 @@ export function guardarPasosEnCacheLocal(nuevosPasos: PasoManualStudio[], manual
     }
 
     const manualActualizado: Manual3BMProyecto = {
-      id: manualBase?.id || "manual_1_comoda_ravenna",
-      muebleOrigenId: manualBase?.muebleOrigenId || "mueble_1789226875940_xq2sn",
-      nombre: manualBase?.nombre || "1_Comoda Ravenna",
-      marca: manualBase?.marca || "RTA Design",
+      id: manualBase?.id || (nuevosPasos[0]?.tipo === "bloque_estandar" ? `bloque_${nuevosPasos[0].id}` : "manual_estudio"),
+      muebleOrigenId: manualBase?.muebleOrigenId || "",
+      nombre: manualBase?.nombre || (nuevosPasos[0]?.tipo === "bloque_estandar" ? `Bloque: ${nuevosPasos[0].titulo}` : "Manual de Estudio"),
+      marca: manualBase?.marca || "Universales",
       tipologia: manualBase?.tipologia || "Manuales 3D",
       fechaModificacion: new Date().toISOString(),
       parametrosMueble: manualBase?.parametrosMueble || {},
@@ -1922,15 +2110,16 @@ export const use3BFStore = create<State3BF>((set, get) => ({
   audioMutedManual: false,
 
   setPasosManual: (pasosManual) => {
-    set({ pasosManual });
-    guardarPasosEnCacheLocal(pasosManual, get().manualActivoGuardado);
+    const sanitizados = sanitizarPasosManuales(pasosManual);
+    set({ pasosManual: sanitizados });
+    guardarPasosEnCacheLocal(sanitizados, get().manualActivoGuardado);
   },
   seleccionarPasoManualActivo: (pasoActivoManualId) => set({ pasoActivoManualId, timelineCurrentTime: 0, isTimelinePlaying: false }),
   crearPasoManual: (tipo = "ensamble") => {
     const state = get();
-    const count = state.pasosManual.length;
-    const num = count;
-    const nuevoId = `P${String(num).padStart(2, "0")}`;
+    // 1. Encontrar el menor paso faltante disponible (gap-filling inteligente, sin duplicados)
+    const { id: nuevoId, numero: num } = encontrarSiguienteIdPasoDisponible(state.pasosManual);
+
     const nuevoPaso: PasoManualStudio = {
       id: nuevoId,
       numero: num,
@@ -1951,17 +2140,33 @@ export const use3BFStore = create<State3BF>((set, get) => ({
       vozEn: "en-US-JennyNeural",
       duracionAudioSegundos: 10.0,
     };
-    const nuevosPasos = [...state.pasosManual, nuevoPaso];
+
+    // 2. Insertar en su posición secuencial natural según el número de paso
+    const nuevosPasos = [...state.pasosManual];
+    const indiceInsercion = nuevosPasos.findIndex((p) => (p.numero ?? 0) > num);
+    if (indiceInsercion >= 0) {
+      nuevosPasos.splice(indiceInsercion, 0, nuevoPaso);
+    } else {
+      nuevosPasos.push(nuevoPaso);
+    }
+
     set({ pasosManual: nuevosPasos, pasoActivoManualId: nuevoId, timelineCurrentTime: 0, isTimelinePlaying: false });
     guardarPasosEnCacheLocal(nuevosPasos, state.manualActivoGuardado);
   },
   eliminarPasoManual: (pasoId) => {
     const state = get();
-    if (state.pasosManual.length <= 1) return;
+    // P00 está protegido permanentemente de eliminación
+    if (pasoId === "P00" || state.pasosManual.length <= 1) return;
     const filtrados = state.pasosManual.filter((p) => p.id !== pasoId);
-    const siguienteActivo = filtrados[0]?.id || "P00";
-    set({ pasosManual: filtrados, pasoActivoManualId: siguienteActivo, timelineCurrentTime: 0, isTimelinePlaying: false });
-    guardarPasosEnCacheLocal(filtrados, state.manualActivoGuardado);
+    const sanitizados = sanitizarPasosManuales(filtrados);
+    let siguienteActivo = state.pasoActivoManualId;
+    if (state.pasoActivoManualId === pasoId) {
+      const idxEliminado = state.pasosManual.findIndex((p) => p.id === pasoId);
+      const prevIdx = Math.max(0, idxEliminado - 1);
+      siguienteActivo = sanitizados[prevIdx]?.id || sanitizados[0]?.id || "P00";
+    }
+    set({ pasosManual: sanitizados, pasoActivoManualId: siguienteActivo, timelineCurrentTime: 0, isTimelinePlaying: false });
+    guardarPasosEnCacheLocal(sanitizados, state.manualActivoGuardado);
   },
   actualizarPasoManual: (pasoId, data) => {
     const state = get();
@@ -2725,6 +2930,262 @@ export const use3BFStore = create<State3BF>((set, get) => ({
   setIdiomaVozManual: (idiomaVozManual) => set({ idiomaVozManual }),
   setAudioMutedManual: (audioMutedManual) => set({ audioMutedManual }),
 
+  // 📦 Bloques Estándar de Armado (.3bb.json)
+  bloquesEstandar: BLOQUES_ESTANDAR_DEFAULT,
+  carpetaBloquesSeleccionada: "Universales",
+  setCarpetaBloquesSeleccionada: (carpetaBloquesSeleccionada) => set({ carpetaBloquesSeleccionada }),
+  bloqueEstandarEnEdicion: null,
+  manualPadrePrevioEdicionBloque: null,
+  setBloqueEstandarEnEdicion: (bloqueEstandarEnEdicion) => {
+    const state = get();
+    if (bloqueEstandarEnEdicion === null && state.manualPadrePrevioEdicionBloque) {
+      // 🛡️ BLINDAJE TOTAL: Al salir o cancelar la edición del bloque,
+      // restaurar inmediatamente el manual completo del mueble (ej. Cómoda Ravenna con sus 6 cajones)
+      const padre = state.manualPadrePrevioEdicionBloque;
+      set({
+        bloqueEstandarEnEdicion: null,
+        manualPadrePrevioEdicionBloque: null,
+        manualActivoGuardado: padre.manual,
+        pasosManual: padre.pasos,
+        pasoActivoManualId: padre.pasoActivoId,
+        timelineCurrentTime: 0,
+        isTimelinePlaying: false,
+      });
+      guardarPasosEnCacheLocal(padre.pasos, padre.manual);
+      return;
+    }
+    set({ bloqueEstandarEnEdicion });
+  },
+
+  cargarBloquesEstandar: async () => {
+    try {
+      const res = await fetch("/api/bloques");
+      if (res.ok) {
+        const data = await res.json();
+        if (data && Array.isArray(data.bloques) && data.bloques.length > 0) {
+          set({ bloquesEstandar: data.bloques });
+          return;
+        }
+      }
+    } catch (err) {
+      console.warn("[3dBimFab] Error cargando bloques estándar de API:", err);
+    }
+    set({ bloquesEstandar: BLOQUES_ESTANDAR_DEFAULT });
+  },
+
+  insertarBloqueEstandarComoPaso: (bloque: BloqueEstandarDef, indiceInsercion?: number) => {
+    const state = get();
+    const pasosActuales = sanitizarPasosManuales(state.pasosManual);
+    const pasoActivoIdx = pasosActuales.findIndex((p) => p.id === state.pasoActivoManualId);
+    // P00 (índice 0) está reservado para Showcase, nunca insertar antes del 1
+    const pos = Math.max(1, indiceInsercion !== undefined ? indiceInsercion : (pasoActivoIdx >= 0 ? pasoActivoIdx + 1 : pasosActuales.length));
+
+    const ref: BloqueEstandarRef = {
+      id: bloque.id,
+      nombre: bloque.nombre,
+      categoriaMarca: bloque.categoriaMarca,
+      subcategoria: bloque.subcategoria,
+      descripcion: bloque.descripcion,
+      archivo: bloque.archivo,
+      thumbnail: bloque.thumbnail,
+      duracion: bloque.duracion || 8.0,
+      guionEs: bloque.guionEs,
+      guionPt: bloque.guionPt,
+      guionEn: bloque.guionEn,
+      carpetaModelos: bloque.carpetaModelos,
+      partesGlb: bloque.partesGlb,
+      animacionTracks: bloque.animacionTracks,
+    };
+
+    const nuevoPaso: PasoManualStudio = {
+      id: "TEMP",
+      numero: 1,
+      tipo: "bloque_estandar",
+      titulo: bloque.nombre,
+      descripcion: bloque.descripcion,
+      duracionTotal: bloque.duracion || 8.0,
+      piezaMaster: "",
+      orientacionBanco: { rotacion: [0, 0, 0], apoyoEnPiso: true },
+      piezasAsignadas: [],
+      herrajesAsignados: [],
+      secuencia: [],
+      bloqueEstandar: ref,
+      guionEs: bloque.guionEs || `Paso: ${bloque.nombre}. Sigue las instrucciones del bloque estándar.`,
+      guionPt: bloque.guionPt || `Passo: ${bloque.nombre}. Siga as instruções do bloco padrão.`,
+      guionEn: bloque.guionEn || `Step: ${bloque.nombre}. Follow the standard block instructions.`,
+      vozEs: "es-MX-DaliaNeural",
+      vozPt: "pt-BR-FranciscaNeural",
+      vozEn: "en-US-JennyNeural",
+      duracionAudioSegundos: bloque.duracion || 8.0,
+    };
+
+    const lista = [...pasosActuales];
+    lista.splice(pos, 0, nuevoPaso);
+    const reindexados = sanitizarPasosManuales(lista);
+    const pasoInsertado = reindexados[pos] || reindexados[reindexados.length - 1];
+
+    set({
+      pasosManual: reindexados,
+      pasoActivoManualId: pasoInsertado?.id || state.pasoActivoManualId,
+      timelineCurrentTime: 0,
+      isTimelinePlaying: false,
+    });
+    guardarPasosEnCacheLocal(reindexados, state.manualActivoGuardado);
+  },
+
+  cargarBloqueEstandarParaEdicion: (bloque: BloqueEstandarDef) => {
+    const ref: BloqueEstandarRef = {
+      id: bloque.id,
+      nombre: bloque.nombre,
+      categoriaMarca: bloque.categoriaMarca,
+      subcategoria: bloque.subcategoria,
+      descripcion: bloque.descripcion,
+      archivo: bloque.archivo,
+      thumbnail: bloque.thumbnail,
+      duracion: bloque.duracion || 8.0,
+      guionEs: bloque.guionEs,
+      guionPt: bloque.guionPt,
+      guionEn: bloque.guionEn,
+      carpetaModelos: bloque.carpetaModelos,
+      partesGlb: bloque.partesGlb,
+      animacionTracks: bloque.animacionTracks,
+    };
+
+    const pasoEdicion: PasoManualStudio = {
+      id: "P01",
+      numero: 1,
+      tipo: "bloque_estandar",
+      titulo: bloque.nombre,
+      descripcion: bloque.descripcion,
+      duracionTotal: bloque.duracion || 8.0,
+      piezaMaster: "",
+      orientacionBanco: { rotacion: [0, 0, 0], apoyoEnPiso: true },
+      piezasAsignadas: [],
+      herrajesAsignados: [],
+      secuencia: [],
+      bloqueEstandar: ref,
+      guionEs: bloque.guionEs || `Paso: ${bloque.nombre}. Sigue las instrucciones del bloque estándar.`,
+      guionPt: bloque.guionPt || `Passo: ${bloque.nombre}. Siga as instruções do bloco padrão.`,
+      guionEn: bloque.guionEn || `Step: ${bloque.nombre}. Follow the standard block instructions.`,
+      vozEs: "es-MX-DaliaNeural",
+      vozPt: "pt-BR-FranciscaNeural",
+      vozEn: "en-US-JennyNeural",
+      duracionAudioSegundos: bloque.duracion || 8.0,
+    };
+
+    // 🛡️ AISLAMIENTO DE SEGURIDAD TOTAL:
+    // Si estamos en un manual de mueble (ej. Cómoda Ravenna), salvaguardar todo su estado para restaurarlo intacto al salir
+    const state = get();
+    let respaldo = state.manualPadrePrevioEdicionBloque;
+    if (!respaldo && state.manualActivoGuardado && !state.manualActivoGuardado.id.startsWith("bloque_")) {
+      respaldo = {
+        manual: state.manualActivoGuardado,
+        pasos: state.pasosManual,
+        pasoActivoId: state.pasoActivoManualId,
+      };
+    }
+
+    // Siempre garantizar P00 al inicio en la vista previa del bloque estándar
+    const pasosSanitizados = sanitizarPasosManuales([pasoEdicion]);
+
+    const manualBloque: Manual3BMProyecto = {
+      id: `bloque_${bloque.id}`,
+      muebleOrigenId: bloque.id,
+      nombre: `Bloque: ${bloque.nombre}`,
+      marca: bloque.categoriaMarca || "Universales",
+      tipologia: "Bloques Estándar",
+      fechaModificacion: new Date().toISOString(),
+      parametrosMueble: {},
+      pasos: pasosSanitizados,
+    };
+
+    set({
+      manualPadrePrevioEdicionBloque: respaldo,
+      bloqueEstandarEnEdicion: bloque,
+      manualActivoGuardado: manualBloque,
+      pasosManual: pasosSanitizados,
+      pasoActivoManualId: "P01",
+      timelineCurrentTime: 0,
+      isTimelinePlaying: false,
+      mostrarNPanel: false, // Cerrar panel lateral para ver inmediatamente el 3D
+    });
+    // NOTA: NO llamamos a guardarPasosEnCacheLocal aquí para no sobreescribir la memoria persistente del mueble padre
+  },
+
+  reordenarPasosManual: (origenIndex: number, destinoIndex: number) => {
+    const state = get();
+    if (origenIndex <= 0 || destinoIndex <= 0) return; // P00 está fijo y protegido
+    if (origenIndex === destinoIndex) return;
+    if (origenIndex >= state.pasosManual.length || destinoIndex >= state.pasosManual.length) return;
+
+    const lista = [...state.pasosManual];
+    const [removido] = lista.splice(origenIndex, 1);
+    lista.splice(destinoIndex, 0, removido);
+
+    const idActivoAnterior = state.pasoActivoManualId;
+    let nuevoIdActivo = idActivoAnterior;
+
+    const reindexados = lista.map((p, idx) => {
+      if (idx === 0) return p; // P00 inalterado
+      const nuevoId = `P${String(idx).padStart(2, "0")}`;
+      if (p.id === idActivoAnterior) {
+        nuevoIdActivo = nuevoId;
+      }
+      return {
+        ...p,
+        id: nuevoId,
+        numero: idx,
+      };
+    });
+
+    set({
+      pasosManual: reindexados,
+      pasoActivoManualId: nuevoIdActivo,
+    });
+    guardarPasosEnCacheLocal(reindexados, state.manualActivoGuardado);
+  },
+
+  guardarNuevoBloqueEstandar: async (bloque: BloqueEstandarDef) => {
+    try {
+      const res = await fetch("/api/bloques", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(bloque),
+      });
+      if (res.ok) {
+        const state = get();
+        const existe = state.bloquesEstandar.some((b) => b.id === bloque.id);
+        const actualizados = existe
+          ? state.bloquesEstandar.map((b) => (b.id === bloque.id ? bloque : b))
+          : [...state.bloquesEstandar, bloque];
+        set({ bloquesEstandar: actualizados });
+        return true;
+      }
+    } catch (err) {
+      console.error("[3dBimFab] Error guardando bloque estándar:", err);
+    }
+    return false;
+  },
+
+  eliminarBloqueEstandar: async (id: string, categoriaMarca?: string, archivo?: string) => {
+    try {
+      const res = await fetch("/api/bloques", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id, categoriaMarca, archivo }),
+      });
+      if (res.ok) {
+        set((state) => ({
+          bloquesEstandar: state.bloquesEstandar.filter((b) => b.id !== id),
+        }));
+        return true;
+      }
+    } catch (err) {
+      console.error("[3dBimFab] Error eliminando bloque estándar:", err);
+    }
+    return false;
+  },
+
   // 📦 Persistencia de Manuales en Google Drive (.3bm.json) y Caché Local
   manualActivoGuardado: initialCachedManual.manual,
   manualesDrive: [],
@@ -2751,23 +3212,43 @@ export const use3BFStore = create<State3BF>((set, get) => ({
           );
           const tieneTrabajoLocal = tieneGruposConfigurados || tienePiezasAsignadas;
 
-          // Seleccionar target canónico (preferir siempre 1_Comoda Ravenna con sus 6 cajones)
-          const target = data.manuales.find((m: any) => m.id === "manual_1_comoda_ravenna") || data.manuales[0];
+          // 1. Intentar vincular por muebleActivoGuardado
+          const muebleActivoId = state.muebleActivoGuardado?.id;
+          const muebleActivoNombre = state.muebleActivoGuardado?.nombre;
+          let target = null;
+          if (muebleActivoId || muebleActivoNombre) {
+            target = data.manuales.find(
+              (m: any) =>
+                (muebleActivoId && m.muebleOrigenId === muebleActivoId) ||
+                (muebleActivoNombre && m.nombre.toLowerCase().includes(muebleActivoNombre.toLowerCase()))
+            );
+          }
 
-          if (tieneTrabajoLocal) {
-            // El usuario ya tiene trabajo activo en memoria/local: Preservar sus pasos 100% intactos
-            if (!state.manualActivoGuardado && target) {
-              const manualEnlazado: Manual3BMProyecto = {
-                ...target,
-                pasos: state.pasosManual,
-                fechaModificacion: new Date().toISOString(),
-              };
-              set({ manualActivoGuardado: manualEnlazado });
-              guardarPasosEnCacheLocal(state.pasosManual, manualEnlazado);
+          // 2. Si no hay target específico por ID pero el manual actual local no tiene grupos cinemáticos,
+          // buscar el manual guardado en Drive que sí tenga grupos cinemáticos en P00 (ej: Cómoda Ravenna con 6 cajones)
+          if (!target && !tieneTrabajoLocal) {
+            target = data.manuales.find((m: any) => {
+              const p00m = (m.pasos || []).find((p: any) => p.id === "P00");
+              return (p00m?.showcase?.gruposCinematicos?.length || 0) > 0;
+            });
+          }
+
+          if (target) {
+            if (tieneTrabajoLocal) {
+              if (!state.manualActivoGuardado) {
+                const manualEnlazado: Manual3BMProyecto = {
+                  ...target,
+                  pasos: state.pasosManual,
+                  fechaModificacion: new Date().toISOString(),
+                };
+                set({ manualActivoGuardado: manualEnlazado });
+                guardarPasosEnCacheLocal(state.pasosManual, manualEnlazado);
+              }
+            } else {
+              // Restaurar automáticamente la versión completa guardada con animaciones
+              console.log("[3dBimFab] Auto-cargando manual guardado con animaciones:", target.nombre);
+              get().cargarManualProyecto(target);
             }
-          } else if (!state.manualActivoGuardado && target) {
-            // Carga fría inicial sin trabajo previo: Cargar el target de Drive
-            get().cargarManualProyecto(target);
           }
         }
       }
@@ -2777,7 +3258,8 @@ export const use3BFStore = create<State3BF>((set, get) => ({
   },
 
   cargarManualProyecto: (manual) => {
-    const pasos = manual.pasos && manual.pasos.length > 0 ? manual.pasos : generarPasosManualesPorDefecto();
+    const pasosCrudos = manual.pasos && manual.pasos.length > 0 ? manual.pasos : generarPasosManualesPorDefecto();
+    const pasos = sanitizarPasosManuales(pasosCrudos);
     set({
       manualActivoGuardado: manual,
       pasosManual: pasos,
@@ -3147,11 +3629,15 @@ export const use3BFStore = create<State3BF>((set, get) => ({
   setHoveredPiece: (hoveredPiece) => set({ hoveredPiece }),
 
   // Blender N-Panel (Sidebar)
-  mostrarNPanel: false,
+  mostrarNPanel: typeof window !== "undefined" && window.localStorage && localStorage.getItem("3bf_mostrar_npanel") === "true",
   setMostrarNPanel: (mostrar) =>
-    set((state) => ({
-      mostrarNPanel: typeof mostrar === "function" ? mostrar(state.mostrarNPanel) : mostrar,
-    })),
+    set((state) => {
+      const nuevo = typeof mostrar === "function" ? mostrar(state.mostrarNPanel) : mostrar;
+      if (typeof window !== "undefined" && window.localStorage) {
+        localStorage.setItem("3bf_mostrar_npanel", String(nuevo));
+      }
+      return { mostrarNPanel: nuevo };
+    }),
   pestanaNPanel: "componentes",
   setPestanaNPanel: (pestanaNPanel) => set({ pestanaNPanel: pestanaNPanel as any }),
   anchoNPanel: typeof window !== "undefined" && window.localStorage && localStorage.getItem("3bf_ancho_npanel")
@@ -3164,13 +3650,14 @@ export const use3BFStore = create<State3BF>((set, get) => ({
           return Math.max(140, Math.min(195, val));
         }
         if (!val || val < 280) return 380; // En PC restaurar a 380
-        return Math.max(280, Math.min(800, val));
+        const maxLimit = typeof window !== "undefined" ? Math.max(1400, window.innerWidth - 60) : 1400;
+        return Math.max(280, Math.min(maxLimit, val));
       })()
     : (typeof window !== "undefined" && window.innerWidth < 1024 ? 175 : 380),
   setAnchoNPanel: (ancho) => {
     const esMovil = typeof window !== "undefined" && window.innerWidth < 1024;
     const minW = esMovil ? 140 : 280;
-    const maxW = esMovil ? 210 : 800;
+    const maxW = esMovil ? 360 : (typeof window !== "undefined" ? Math.max(1400, window.innerWidth - 60) : 1400);
     const normalizado = Math.max(minW, Math.min(maxW, ancho));
     if (typeof window !== "undefined" && window.localStorage) {
       localStorage.setItem("3bf_ancho_npanel", String(normalizado));
@@ -3992,13 +4479,16 @@ export const use3BFStore = create<State3BF>((set, get) => ({
         if (data.muebles) {
           set({ mueblesGuardados: data.muebles });
           const state = get();
-          if (!state.muebleActivoGuardado && typeof window !== "undefined" && window.localStorage) {
+          const tieneInstancias3D = Object.keys(state.instancias).length > 0;
+          if (!state.muebleActivoGuardado && tieneInstancias3D && typeof window !== "undefined" && window.localStorage) {
             const ultimoId = localStorage.getItem("3bf_ultimo_mueble_id");
-            const targetMueble = (data.muebles as MuebleGuardadoItem[]).find(
-              (m) => (ultimoId && m.id === ultimoId) || m.nombre === "1_Comoda Ravenna"
-            );
-            if (targetMueble) {
-              set({ muebleActivoGuardado: targetMueble });
+            if (ultimoId) {
+              const targetMueble = (data.muebles as MuebleGuardadoItem[]).find(
+                (m) => m.id === ultimoId
+              );
+              if (targetMueble) {
+                set({ muebleActivoGuardado: targetMueble });
+              }
             }
           }
         }

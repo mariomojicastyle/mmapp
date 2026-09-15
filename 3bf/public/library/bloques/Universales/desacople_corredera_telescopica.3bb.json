@@ -1,0 +1,41 @@
+{
+  "id": "desacople_corredera_telescopica",
+  "nombre": "Desacople de Corredera Telescópica (Full Extension)",
+  "categoriaMarca": "Universales",
+  "subcategoria": "Correderas",
+  "descripcion": "Procedimiento universal para separar la guía interior (lado cajón) de la guía exterior (lado mueble) presionando la palanca o gatillo de nylon negro hacia abajo.",
+  "archivo": "desacople_corredera_telescopica.3bb.json",
+  "thumbnail": "/thumbnails/bloque_corredera_desacople.svg",
+  "duracion": 8.0,
+  "guionEs": "Antes de armar, extiende la corredera telescópica. Presiona la palanca plástica negra hacia abajo y desliza la guía interna hacia afuera para separarla del riel.",
+  "guionPt": "Antes de montar, estenda a corrediça telescópica. Pressione a trava plástica preta para baixo e puxe o trilho interno para desacoplar a peça.",
+  "guionEn": "Before assembly, extend the telescopic slide. Push down the black plastic release lever and pull the inner runner out to separate it.",
+  "animacionTracks": [
+    {
+      "fase": "extension",
+      "duracion": 2.5,
+      "accion": "deslizar_guia_media",
+      "distanciaMm": 250
+    },
+    {
+      "fase": "presionar_gatillo",
+      "duracion": 1.5,
+      "accion": "pulsar_palanca_nylon",
+      "deformacionMm": -4
+    },
+    {
+      "fase": "extraccion_completa",
+      "duracion": 3.0,
+      "accion": "desacople_guia_interior",
+      "distanciaMm": 350
+    }
+  ],
+  "carpetaModelos": "/library/bloques/modelos/corredera_telescopica_350",
+  "partesGlb": [
+    { "id": "fija", "nombre": "Guía Fija (Lateral Mueble)", "archivo": "/library/bloques/modelos/corredera_telescopica_350/Fija.glb", "rol": "fija_mueble" },
+    { "id": "intermedia", "nombre": "Guía Intermedia", "archivo": "/library/bloques/modelos/corredera_telescopica_350/Intermedia.glb", "rol": "guia_intermedia" },
+    { "id": "movil", "nombre": "Guía Móvil (Lateral Cajón)", "archivo": "/library/bloques/modelos/corredera_telescopica_350/Movil.glb", "rol": "movil_cajon" },
+    { "id": "seguro", "nombre": "Gatillo / Seguro de Nylon", "archivo": "/library/bloques/modelos/corredera_telescopica_350/Seguro.glb", "rol": "palanca_seguro" }
+  ],
+  "fechaCreacion": "2026-09-14T10:00:00.000Z"
+}

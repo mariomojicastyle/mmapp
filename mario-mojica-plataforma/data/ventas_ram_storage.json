@@ -1,6 +1,29 @@
 {
   "prospectos": [
     {
+      "id": "p-muebles-jamar-omar-delahoz",
+      "empresa": "Muebles Jamar Colombia",
+      "contacto_nombre": "Omar DeLaHoz Rocha",
+      "contacto_cargo": "VP de Logística e Industria",
+      "contacto_telefono": null,
+      "contacto_email": null,
+      "perfil_url": "https://www.linkedin.com/in/omar-delahoz-rocha-39b69aa/",
+      "canal_preferido": "LinkedIn",
+      "pais": "Colombia (Barranquilla / CILA)",
+      "temperatura": "caliente",
+      "ultima_interaccion_at": "2026-09-14T17:39:45.801Z",
+      "proxima_accion_at": "2026-09-15T15:00:00.000Z",
+      "proxima_accion_descripcion": "Responder a su comentario de LinkedIn (\\u0022Excelente. Cuando hablamos\\u0022) retomando el dolor de costo objetivo y mostrando 3dBimFab para los kits del CILA",
+      "avatar_url": "data:image/jpeg;base64,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",
+      "notas_estrategicas": "Omar DeLaHoz Rocha es el VP de Logística e Industria en Muebles Jamar Colombia. Cuenta con 19 años de experiencia previa como Gerente de Informática y TI en Carulla (perfil de sistemas, datos, logística y eficiencia de procesos). Lidera el clúster CILA (Centro de Innovación y Logística del Atlántico), donde una red de fábricas y talleres locales produce el 95% de los muebles de Jamar.\\n\\nEquipo clave: Juan Carlos Goez Zapata (Ingeniería / Planta), quien participó activamente en la reunión demostrativa del 24 de Enero de 2026.\\n\\nDolor central y oportunidad: En la reunión del 24 de Enero se reveló que Jamar está estructurando un modelo donde un proveedor central en CILA procesa el secado y mecanizado para entregar kits de piezas listos a los talleres para que solo ensamblen. Su dolor número uno es el CONTROL DEL COSTO EN EL DISEÑO (Design to Cost) y el alto desperdicio de madera por falta de ingeniería algorítmica. Hace unos meses Mario le presentó los manuales 3D, pero no despertaron su interés ya que su prioridad no es la posventa al usuario final sino la ingeniería de planta y los costos de los kits.\\n\\nHace 1 mes Omar comentó directamente en una publicación de Mario en LinkedIn: \\u0022Excelente. Cuando hablamos\\u0022. La jugada estratégica consiste en responderle reconectando con el dolor de costos en tiempo real y presentándole los avances de 3dBimFab como software Web-BIM para la red del CILA.",
+      "referido_por_id": null,
+      "referido_por_nombre": null,
+      "tipo_relacion": "Relación histórica directa (ex-diseñador para Jamar en Maderkit)",
+      "created_at": "2026-01-20T10:00:00.000Z",
+      "updated_at": "2026-09-14T12:00:00.000Z",
+      "interacciones_count": 3
+    },
+    {
       "id": "p-rta-design-juan-carlos-perez",
       "empresa": "RTA Design S.A.S",
       "contacto_nombre": "Juan Carlos Pérez Londoño",
@@ -1448,6 +1471,61 @@
         "proxima_accion_sugerida": "1. Esperar al timing sugerido (o realizar un follow-up suave si ya han pasado semanas desde el mensaje inicial). 2. Enviar un mensaje de seguimiento corto resaltando un caso de éxito rápido o recordando el beneficio del piloto sin costo en un solo mueble de su catálogo.",
         "id": "i-1787156596527",
         "created_at": "2026-08-19T16:23:16.527Z"
+      }
+    ],
+    "p-muebles-jamar-omar-delahoz": [
+      {
+        "id": "int-jamar-001",
+        "prospecto_id": "p-muebles-jamar-omar-delahoz",
+        "canal": "Google Meet",
+        "tipo_entrada": "texto",
+        "imagen_url": null,
+        "resumen_es": "Reunión demostrativa de 48 minutos con Omar DeLaHoz (VP Industria) y Juan Carlos Goez Zapata. Mario presentó el prototipo de Cajonera Modular en Rhino/Grasshopper con despiece, nesting de lámina 122x244 y costeo instantáneo (.000 COP con margen 35%), además del visor 3D de manuales. Juan Carlos y Omar detallaron el proyecto del CILA para maquilar kits de piezas mecanizadas para la red de artesanos de Jamar, enfatizando que su gran reto es lograr que los diseños tengan costo objetivo y desperdicio mínimo.",
+        "intencion_detectada": "Interés prioritario en optimización de costos de ingeniería, estandarización de kits de corte y asesoría en automatización de maquinaria para los talleres del CILA.",
+        "termometro": "caliente",
+        "borrador_pt": "",
+        "traduccion_es": "Reunión inicial de diagnóstico de planta y demostración de costeo paramétrico.",
+        "mensaje_final_enviado": "Reunión ejecutada con éxito el 24/01/2026.",
+        "contactos_referidos": [
+          {
+            "nombre": "Juan Carlos Goez Zapata",
+            "cargo": "Ingeniería / Operaciones Jamar CILA"
+          }
+        ],
+        "proxima_accion_sugerida": "Enviar propuesta técnica de costeo y desarrollo de piezas piloto.",
+        "created_at": "2026-01-24T14:00:00.000Z"
+      },
+      {
+        "id": "int-jamar-002",
+        "prospecto_id": "p-muebles-jamar-omar-delahoz",
+        "canal": "WhatsApp",
+        "tipo_entrada": "texto",
+        "imagen_url": null,
+        "resumen_es": "Envío de propuesta enfocada en manuales de armado 3D interactivos por voz. Omar no mostró interés en la propuesta de manuales, evidenciando que la prioridad estratégica de su área es la ingeniería de fabricación, estandarización y costos de producción del CILA, no el ensamblaje de posventa B2C.",
+        "intencion_detectada": "Desinterés en manuales 3D; foco estricto en costos, procesos y manufactura de producto.",
+        "termometro": "tibio",
+        "borrador_pt": "",
+        "traduccion_es": "Propuesta de manuales descartada amablemente.",
+        "mensaje_final_enviado": "Propuesta de manuales compartida sin avance comercial.",
+        "contactos_referidos": [],
+        "proxima_accion_sugerida": "Reenfocar la oferta en la suite paramétrica 3dBimFab y control de costos.",
+        "created_at": "2026-05-15T15:00:00.000Z"
+      },
+      {
+        "id": "int-jamar-003",
+        "prospecto_id": "p-muebles-jamar-omar-delahoz",
+        "canal": "LinkedIn",
+        "tipo_entrada": "screenshot",
+        "imagen_url": null,
+        "resumen_es": "Omar comenta públicamente en una publicación de logros de Mario en LinkedIn: \\u0022Excelente. Cuando hablamos\\u0022. Invitación directa y abierta a retomar la conversación.",
+        "intencion_detectada": "Señal de compra / Apertura proactiva para reanudar diálogo.",
+        "termometro": "caliente",
+        "borrador_pt": "",
+        "traduccion_es": "Omar: \\u0022Excelente. Cuando hablamos\\u0022",
+        "mensaje_final_enviado": null,
+        "contactos_referidos": [],
+        "proxima_accion_sugerida": "Responder mensaje en LinkedIn o WhatsApp para agendar videollamada de 20 minutos y presentar 3dBimFab en vivo.",
+        "created_at": "2026-08-14T15:00:00.000Z"
       }
     ]
   }

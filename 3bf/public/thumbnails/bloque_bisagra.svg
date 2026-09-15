@@ -1,0 +1,57 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300" width="100%" height="100%">
+  <defs>
+    <linearGradient id="bgBisagra" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#f8fafc"/>
+      <stop offset="100%" stop-color="#f1f5f9"/>
+    </linearGradient>
+    <linearGradient id="metalHinge" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#e2e8f0"/>
+      <stop offset="50%" stop-color="#94a3b8"/>
+      <stop offset="100%" stop-color="#475569"/>
+    </linearGradient>
+  </defs>
+  <rect width="400" height="300" fill="url(#bgBisagra)" rx="16"/>
+
+  <!-- Hinge Cup (Cazoleta 35mm en puerta) -->
+  <rect x="50" y="80" width="80" height="140" rx="6" fill="#cbd5e1" stroke="#94a3b8" stroke-width="2"/>
+  <circle cx="90" cy="150" r="28" fill="#475569" stroke="#334155" stroke-width="2"/>
+  <rect x="75" y="145" width="30" height="10" rx="3" fill="#e2e8f0"/>
+
+  <!-- Hinge Arm (Brazo articulado) -->
+  <path d="M 115 130 L 260 115 L 280 185 L 115 170 Z" fill="url(#metalHinge)" stroke="#334155" stroke-width="2"/>
+
+  <!-- 3 Adjustment Screws (Regulaciones 3D) -->
+  <!-- 1. Tornillo Lateral (Frontal) -->
+  <circle cx="170" cy="142" r="9" fill="#0284c7" stroke="#0369a1" stroke-width="2"/>
+  <line x1="165" y1="142" x2="175" y2="142" stroke="#ffffff" stroke-width="2"/>
+
+  <!-- 2. Tornillo de Profundidad (Trasero) -->
+  <circle cx="235" cy="148" r="9" fill="#0284c7" stroke="#0369a1" stroke-width="2"/>
+  <line x1="230" y1="148" x2="240" y2="148" stroke="#ffffff" stroke-width="2"/>
+
+  <!-- 3. Tornillo de Altura (Base) -->
+  <circle cx="205" cy="180" r="7" fill="#64748b" stroke="#334155" stroke-width="1.5"/>
+
+  <!-- 3D Adjustment Arrows -->
+  <g transform="translate(170, 75)">
+    <!-- Lateral arrows (<->) -->
+    <path d="M -20 0 L 20 0" stroke="#0284c7" stroke-width="2.5"/>
+    <polygon points="-20,-4 -28,0 -20,4" fill="#0284c7"/>
+    <polygon points="20,-4 28,0 20,4" fill="#0284c7"/>
+    <text x="0" y="-8" font-family="system-ui, sans-serif" font-size="9" font-weight="bold" fill="#0284c7" text-anchor="middle">LATERAL</text>
+  </g>
+
+  <g transform="translate(235, 75)">
+    <!-- Depth arrows -->
+    <path d="M 0 -15 L 0 15" stroke="#ef4444" stroke-width="2.5"/>
+    <polygon points="-4,-15 0,-23 4,-15" fill="#ef4444"/>
+    <polygon points="-4,15 0,23 4,15" fill="#ef4444"/>
+    <text x="0" y="-27" font-family="system-ui, sans-serif" font-size="9" font-weight="bold" fill="#ef4444" text-anchor="middle">PROFUNDIDAD</text>
+  </g>
+
+  <!-- Badge -->
+  <rect x="20" y="20" width="130" height="24" rx="12" fill="#0284c7" fill-opacity="0.1" stroke="#0284c7" stroke-width="1"/>
+  <text x="85" y="36" font-family="system-ui, sans-serif" font-size="10" font-weight="bold" fill="#0284c7" text-anchor="middle">BISAGRA 35 MM</text>
+
+  <text x="200" y="270" font-family="system-ui, sans-serif" font-size="12" font-weight="bold" fill="#334155" text-anchor="middle">Regulación 3D de Bisagra Cazoleta</text>
+</svg>

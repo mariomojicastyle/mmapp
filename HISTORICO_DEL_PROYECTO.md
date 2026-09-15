@@ -2857,6 +2857,84 @@ Con esta batería de arreglos y la validación en caliente, la V20 se establece 
   * `next build` en `3bf` completado con 0 errores de TypeScript y empaquetado exitoso de 23 páginas estáticas y dinámicas.
   * Servidores RhinoCompute (:5000), 3BF Worker (:8005) y 3BF Web App (:3005) operativos.
 
+---
+
+### 🔹 Hito 119: Sistema de Bloques Estándar Reutilizables (.3bb.json), Navegador Exclusivo en Riel [ N ], Reordenamiento Drag & Drop de Pasos y Aislamiento Macro en 3dBimFab Studio (14 de Septiembre, 2026)
+
+- **Concepto y Arquitectura de Bloques Estándar (`.3bb.json`)**:
+  * **Definición DfMA Independiente:** Implementación del formato `.3bb.json` (*3dBimFab Block*) para pasos pedagógicos reutilizables (desacople de correderas telescópicas, fijación con perno y tambor minifix, regulación 3D de bisagras, correderas ocultas con clip).
+  * **Independencia Total de Despiece y Costos:** Conforme a la directriz arquitectónica, los bloques estándar son puramente visuales/educativos; **no descuentan piezas del despiece, no alteran el corte de tableros ni afectan los costos ni el BOM del mueble principal**.
+  * **Biblioteca Inicial en Disco (`public/library/bloques/`):**
+    - `desacople_corredera_telescopica.3bb.json` (Liberación de guía interna con pestaña de nylon).
+    - `ensamble_minifix_perno_tambor.3bb.json` (Alineación e inserción con giro de leva a 180°).
+    - `regulacion_bisagra_cazoleta.3bb.json` (Calibración 3D de profundidad y luz lateral de puertas).
+    - `desacople_corredera_oculta_clip.3bb.json` (Desenganche rápido con gatillos inferiores under-mount).
+    - `fijacion_corredera_lateral_henn.3bb.json` (Patrón de tornillería para laterales Henn).
+  * **API Backend Dinámica (`/api/bloques`)**: Endpoint Next.js en `3bf/app/api/bloques/route.ts` que escanea recursivamente las carpetas de marca en `public/library/bloques/` y permite guardar nuevos bloques estándar en caliente.
+
+- **Navegador Exclusivo en Riel Derecho `[ N ]` en Modo Manual 3D (`BloquesEstandarAssetBrowser.tsx` & `NPanel.tsx`)**:
+  * **Aislamiento de Contexto Estricto:** Cuando el usuario ingresa al Estudio de Manuales 3D (`pestanaActiva === "manual"`), el riel vertical `[ N ]` **oculta las 8 pestañas CAD de modelado** y expone **única y exclusivamente la pestaña vertical `Bloques Estándar`**.
+  * **Árbol de Marcas y Catálogos:** Árbol lateral redimensionable con carpetas de fabricante (`Universales / Genéricos`, `Móveis Henn`, `Politorno`, `RTA Design`) y conteo dinámico de bloques.
+  * **Tarjetas Didácticas en Cápsula Pura:** Cada bloque cuenta con miniatura vectorial SVG original de alta definición (`/thumbnails/bloque_*.svg`), tiempo de animación en segundos, preview de locución TTS y botón interactivo `+ Insertar en Paso` (en cápsula pura `rounded-full`).
+  * **Modal `+ Crear Bloque Estándar`:** Interfaz integrada para registrar, configurar y persistir nuevos bloques en disco en segundos.
+
+- **Reordenamiento Nativo Drag & Drop en Línea de Pasos (`StepManagerPanel.tsx`)**:
+  * **Línea de Tiempo Interactiva:** Las cápsulas de pasos (`P01`, `P02`, `P03`...) ahora soportan arrastrar y soltar (HTML5 Drag & Drop) directamente sobre la barra horizontal.
+  * **Blindaje de P00:** El paso `P00` (Showcase Funcional) se mantiene **estrictamente fijo y protegido** en el índice 0, impidiendo que sea desplazado o que otros pasos se suelten antes de él.
+  * **Renumeración Automática Coherente:** La acción `reordenarPasosManual(origenIdx, destinoIdx)` en `store.ts` reorganiza el arreglo, renumera automáticamente las etiquetas (`P01`, `P02`, `P03`...) sin saltos numéricos y sincroniza la selección activa.
+  * **Vista de Detalle para Bloques Estándar:** Cuando un paso es de tipo `bloque_estandar`, el panel muestra una tarjeta dedicada con control de duración, edición de guiones TTS multilingües (Español, Português, Inglés) y aclaración sobre la no afectación del BOM.
+
+- **Aislamiento Macro en Visor 3D (`Viewer3D.tsx`)**:
+  * **Ocultamiento del Mueble Principal:** Cuando el paso activo es `tipo === "bloque_estandar"`, la regla `estaOcultaPorReglasPaso` oculta automáticamente todas las piezas del mueble principal, evitando obstrucciones visuales.
+  * **Enfoque Macro Didáctico:** Se despliega un overlay central con el diagrama técnico del bloque, título pedagógico e indicación de locución TTS.
+
+- **Validación de Calidad y Rendimiento**:
+  * Compilación TypeScript (`npx tsc --noEmit` en `3bf`) verificada con **0 errores**.
+  * Endpoint API `/api/bloques` probado con respuesta `HTTP 200` y 5 bloques estándar reconocidos dinámicamente.
+  * Los 4 daemons de segundo plano (`RhinoCompute 8`, `3BF Worker Python`, `3BF Web App Next.js`, `Cloudflare Tunnel`) continúan ejecutándose de forma ininterrumpida.
+
+---
+
+### 🔹 Hito 120: Suite de Coreografías de Armado para Premontaje de Correderas (P02), Selector de Cápsula en StepManagerPanel, Volteo Cinemático de 180° de Peça 6 y Blindaje de Bloques Estándar en 3dBimFab Studio (14 de Septiembre, 2026)
+
+- **Blindaje Estructural de P00 y Aislamiento de Edición de Bloques Estándar**:
+  * **Causa Raíz Resuelta:** Al editar un archivo de bloque estándar `.3bb.json`, se cargaba en memoria su lista simplificada de pasos (solo P01), sobreescribiendo el manual activo del mueble completo en `manualActivo3D` si no se separaba el contexto.
+  * **Aislamiento en `store.ts`:** Se introdujo la propiedad `manualPadrePrevioEdicionBloque` para retener en memoria segura el manual íntegro de la Cómoda Ravenna. Al finalizar o cancelar la edición del bloque, se restaura reactivamente el manual padre intacto.
+  * **Autocuración en `StepManagerPanel.tsx`:** Hook reactivo que detecta si `P00` perdiera sus 6 cajones y lo auto-restaura silenciosamente desde el guardado canónico de Drive/LocalStorage, acompañado de un botón de rescate de 1 clic en el HUD.
+
+- **Modelo y Selector de Coreografías de Armado en `StepManagerPanel.tsx`**:
+  * **Tipo Canónico:** `CoreografiaEnsamble = "paralelo" | "focal"` en `store.ts`.
+  * **Tarjeta de Selección en Cápsula Pura (`rounded-full`):** Integrada sobre el selector de Pieza Master en pasos de ensamble que requieren premontaje de correderas (`P02`):
+    - `[ 🏢 Estación Paralela ]`: Modo simultáneo/industrial donde las 3 tablas se arman en fila sobre el banco.
+    - `[ 🔍 Enfoque Focal ]`: Modo didáctico progresivo en 3 actos enfocado en el centro del campo de visión.
+  * **Acción Zustand:** `actualizarCoreografiaEnsamble(pasoId, coreografia)` con sincronización y persistencia automática en el `.3bm.json`.
+
+- **Motor Cinemático Three.js (`compilarCoreografiaPremontajeCorrederas` en `manualAnimationEngine.ts`)**:
+  * **Detección Geométrica Fisiomecánica:** Reconocimiento robusto de `Peça 7` (Lateral Izq), `Peça 6` (División Central) y `Peça 10` (Lateral Der) y clasificación automática de los 12 conjuntos de correderas fijas, intermedias y tornillos Parafuso E según su proximidad espacial en reposo.
+  * **Discriminación de Caras A y B en Peça 6:** Identificación de la cara izquierda (Cara A, inicialmente expuesta hacia el cenit) y la cara derecha (Cara B, opuesta contra el suelo).
+  * **Modo Estación Paralela (`"paralelo"`):**
+    - Las 3 tablas se disponen acostadas horizontalmente sobre el suelo ($Y = 0.015\text{ m}$, separadas en $X = -0.55, 0.00, +0.55\text{ m}$).
+    - **Fase 1 (0% a 38%):** Instalación de correderas exteriores con Pop-In 200% y descenso colineal en -Y hacia `Peça 7`, `Peça 10` y la Cara A de `Peça 6`, con atornillado de 720° para Parafusos E.
+    - **Fase 2 (44% a 64%): ¡El Volteo Físico de 180° de Peça 6!:** `Peça 6` se despega del suelo con elevación parabólica de arco cenital ($+0.08\text{ m}$) y rota $180^\circ$ ($\pi$ rad) en su eje longitudinal. **Las correderas y tornillos ya instalados en la Cara A acompañan el volteo de forma solidaria** en 10 subpasos sin separarse ni penetrar el piso.
+    - **Fase 3 (68% a 90%):** Con la Cara B ahora orientada hacia arriba, entran las 3 correderas fijas restantes con Pop-In 200%, descienden colinealmente y se fijan con 720° de giro.
+    - **Fase 4 (90% a 100%):** Reposo final de las 3 piezas completas en la estación de trabajo.
+  * **Modo Enfoque Focal (`"focal"`):**
+    - **Acto 1 (0% a 28%):** Foco didáctico en `Peça 7` en el centro ($X = 0$). Montaje de sus 3 correderas y desplazamiento a la izquierda ($X = -0.55\text{ m}$).
+    - **Acto 2 (28% a 72%):** `Peça 6` se traslada al centro ($X = 0$). Montaje de Cara A, volteo de 180° con elevación parabólica en el centro del escenario, y montaje de Cara B.
+    - **Acto 3 (72% a 100%):** `Peça 10` se presenta en su estación derecha ($X = +0.55\text{ m}$), montaje de sus correderas y reposo final de las 3 tablas alineadas.
+
+- **Validación de Calidad y Compilación**:
+  * Compilación TypeScript (`npx tsc --noEmit` en `3bf`) completada con **0 errores**.
+  * Cumplimiento estricto de las directrices de UI: botones en cápsula pura `rounded-full`, tema claro Tech Ethos y nomenclatura oficial `3dBimFab`.
+
+- **Nota de Control y Depuración Post-Evaluación**:
+  * Evaluada la prueba de cinemática procedural preliminar en el visor 3D, el usuario solicitó eliminar este enfoque de coreografías automáticas.
+  * Se removieron limpiamente las funciones experimentales de `manualAnimationEngine.ts`, el selector de `StepManagerPanel.tsx` y las propiedades temporales de `store.ts`.
+  * La base de código queda limpia, 100% estable y validada sin errores de compilación (`tsc --noEmit` = 0) para abordar el modelado cinemático preciso de P02 en la siguiente sesión de trabajo bajo la rama `P02`.
+
+
+
+
 
 
 

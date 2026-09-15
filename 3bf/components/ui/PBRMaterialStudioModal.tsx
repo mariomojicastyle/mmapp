@@ -31,6 +31,7 @@ import {
   Maximize2,
   Minimize2,
   Pipette,
+  Camera,
 } from "lucide-react";
 
 // Icono Oficial Dresser (Material Symbols - Cómoda / Mueble con Cajones)
@@ -90,6 +91,7 @@ export default function PBRMaterialStudioModal() {
   const [procesandoPBR, setProcesandoPBR] = useState<boolean>(false);
   const [guardadoExito, setGuardadoExito] = useState<boolean>(false);
   const [aplicadoExito, setAplicadoExito] = useState<boolean>(false);
+  const [fotoCapturadaExito, setFotoCapturadaExito] = useState<boolean>(false);
   const [ocultoPorCuentagotas, setOcultoPorCuentagotas] = useState<boolean>(false);
 
   // Configuración de Iluminación HDRI (Poly Haven Alps Field + Custom)
@@ -422,6 +424,23 @@ export default function PBRMaterialStudioModal() {
     });
   };
 
+  // 🧼 Quitar Texturas para Acabado Metálico Liso
+  const handleQuitarTexturasLiso = () => {
+    setMatLocal((prev) => {
+      if (!prev) return null;
+      const actualizado: MaterialPBRDef = {
+        ...prev,
+        texturaUrl: undefined,
+        normalMapUrl: undefined,
+        roughnessMapUrl: undefined,
+        aoMapUrl: undefined,
+        normalScale: 1.0,
+      };
+      actualizarMaterialPBR(actualizado.id, actualizado);
+      return actualizado;
+    });
+  };
+
   // 💧 Cuentagotas Universal Multipantalla (EyeDropper API nativo de Chromium)
   // Oculta temporalmente el modal para revelar el fondo y permite tomar muestras en cualquier pantalla o app
   const abrirCuentagotasPantalla = async () => {
@@ -451,18 +470,68 @@ export default function PBRMaterialStudioModal() {
     }
   };
 
+  // 📸 Capturar Fotografía Real del Visor 3D y Establecer como Miniatura Oficial
+  const handleTomarFotoMiniatura = () => {
+    if (typeof window === "undefined" || !matLocal) return;
+    const getSnapshot = (window as any).__capturarShaderBallSnapshot;
+    if (!getSnapshot) {
+      alert("El visor 3D aún está cargando la escena.");
+      return;
+    }
+    const fullDataUrl = getSnapshot();
+    if (!fullDataUrl) return;
+
+    // Recortar centrado exactamente en la esfera física (eliminando rebordes de fondo blanco y suelo)
+    const img = new Image();
+    img.onload = () => {
+      const size = Math.min(img.width, img.height);
+      // La esfera física ocupa el 81% de la vista vertical (radio 0.85, dist 2.5, fov 45).
+      // Un recorte de factor 0.81 encuadra la esfera de borde a borde al 100%.
+      const sphereCropSize = size * 0.81;
+      const cropX = (img.width - sphereCropSize) / 2;
+      const cropY = (img.height - sphereCropSize) / 2;
+
+      const canvas = document.createElement("canvas");
+      canvas.width = 256;
+      canvas.height = 256;
+      const ctx = canvas.getContext("2d");
+      if (!ctx) return;
+
+      ctx.drawImage(img, cropX, cropY, sphereCropSize, sphereCropSize, 0, 0, 256, 256);
+      const croppedWebp = canvas.toDataURL("image/webp", 0.95);
+
+      const matActualizado: MaterialPBRDef = { ...matLocal, thumbnailReal: croppedWebp };
+      setMatLocal(matActualizado);
+      actualizarMaterialPBR(matLocal.id, { thumbnailReal: croppedWebp });
+
+      setFotoCapturadaExito(true);
+      setTimeout(() => setFotoCapturadaExito(false), 2500);
+    };
+    img.src = fullDataUrl;
+  };
+
   // Guardar en catálogo persistente y aplicar automáticamente al mueble activo
   const handleGuardarMaterial = () => {
     if (!matLocal) return;
-    const existe = materialesPBR.find((m) => m.id === matLocal.id);
-    if (existe) {
-      actualizarMaterialPBR(matLocal.id, matLocal);
-    } else {
-      crearMaterialPBR(matLocal);
+
+    let matAGuardar = matLocal;
+    // Si aún no tiene foto tomada, capturamos una automáticamente del visor
+    if (!matLocal.thumbnailReal && typeof window !== "undefined") {
+      const getSnapshot = (window as any).__capturarShaderBallSnapshot;
+      if (getSnapshot) {
+        const fullDataUrl = getSnapshot();
+        if (fullDataUrl) {
+          matAGuardar = { ...matLocal, thumbnailReal: fullDataUrl };
+        }
+      }
     }
-    // 💡 Solo se actualiza la definición del material en el catálogo PBR.
-    // No se sobreescribe indiscriminadamente todo el mueble; únicamente las piezas
-    // y capas que utilicen este material se actualizarán de forma reactiva.
+
+    const existe = materialesPBR.find((m) => m.id === matAGuardar.id);
+    if (existe) {
+      actualizarMaterialPBR(matAGuardar.id, matAGuardar);
+    } else {
+      crearMaterialPBR(matAGuardar);
+    }
     setGuardadoExito(true);
     setTimeout(() => setGuardadoExito(false), 2000);
   };
@@ -1083,13 +1152,10 @@ export default function PBRMaterialStudioModal() {
                 }}
               >
                 <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-1.5">
-                    <Palette className="w-3.5 h-3.5" style={{ color: coloresApariencia?.botonActivo || "#0891b2" }} />
-                    <span className="font-semibold text-[11px]" style={{ color: coloresApariencia?.textoPrincipal }}>
-                      Color Base / Tono (Albedo)
-                    </span>
-                  </div>
-                  {matLocal.texturaUrl ? (
+                  <span className="font-semibold text-[11px]" style={{ color: coloresApariencia?.textoPrincipal }}>
+                    Color Base / Tono (Albedo)
+                  </span>
+                  {matLocal.texturaUrl && (
                     <span 
                       className="text-[9px] px-2 py-0.5 rounded-full font-semibold border opacity-80"
                       style={{
@@ -1100,38 +1166,19 @@ export default function PBRMaterialStudioModal() {
                     >
                       Textura Activa
                     </span>
-                  ) : (
-                    <span 
-                      className="text-[9px] px-2 py-0.5 rounded-full font-semibold border"
-                      style={{
-                        backgroundColor: coloresApariencia?.fondoPaneles,
-                        borderColor: coloresApariencia?.bordePaneles,
-                        color: coloresApariencia?.botonActivo || "#0891b2"
-                      }}
-                    >
-                      Tono Puro
-                    </span>
                   )}
                 </div>
 
-                {/* Fila Interactiva: Swatch Grande + Input HEX + Botón Selector */}
+                {/* Fila Interactiva: Input HEX + Botón Elegir + Botón Cuentagotas */}
                 <div className="flex items-center gap-2">
-                  {/* Swatch Circular Clickable con input color integrado */}
-                  <label 
-                    htmlFor="principled-base-color-input"
-                    className="w-8 h-8 rounded-full border-2 border-white shadow-md cursor-pointer hover:scale-110 transition flex items-center justify-center shrink-0 relative overflow-hidden group"
-                    style={{ backgroundColor: matLocal.colorBase || "#CCCCCC" }}
-                    title="Clic para abrir el selector de color"
-                  >
-                    <Palette className="w-3.5 h-3.5 text-white drop-shadow opacity-75 group-hover:opacity-100 transition" />
-                    <input
-                      id="principled-base-color-input"
-                      type="color"
-                      value={matLocal.colorBase?.startsWith("#") && matLocal.colorBase.length === 7 ? matLocal.colorBase : "#CCCCCC"}
-                      onChange={(e) => handleCambiarColorBase(e.target.value)}
-                      className="opacity-0 absolute inset-0 w-full h-full cursor-pointer"
-                    />
-                  </label>
+                  {/* Input color invisible accesible para el selector */}
+                  <input
+                    id="principled-base-color-input"
+                    type="color"
+                    value={matLocal.colorBase?.startsWith("#") && matLocal.colorBase.length === 7 ? matLocal.colorBase : "#CCCCCC"}
+                    onChange={(e) => handleCambiarColorBase(e.target.value)}
+                    className="opacity-0 absolute w-0 h-0 pointer-events-none"
+                  />
 
                   {/* Input de Texto HEX editable para escribir o pegar colores directamente */}
                   <div className="flex items-center gap-1.5 flex-1">
@@ -1174,43 +1221,38 @@ export default function PBRMaterialStudioModal() {
                     </div>
                   </div>
 
-                  {/* Botón rápido para abrir el color picker */}
+                  {/* Botón rápido para abrir el color picker (Estilo azul oficial) */}
                   <label
                     htmlFor="principled-base-color-input"
-                    className="px-2.5 py-1 rounded-full text-[11px] font-semibold border shadow-xs cursor-pointer hover:opacity-90 flex items-center gap-1 shrink-0 transition"
+                    className="px-3 py-1 rounded-full text-[11px] font-semibold text-white shadow-2xs cursor-pointer hover:opacity-90 active:scale-95 transition flex items-center gap-1 shrink-0 border border-transparent"
                     style={{
-                      backgroundColor: coloresApariencia?.fondoPaneles,
-                      borderColor: coloresApariencia?.bordePaneles,
-                      color: coloresApariencia?.botonActivo || "#0891b2"
+                      backgroundColor: coloresApariencia?.botonActivo || "#0891b2",
+                      color: "#FFFFFF",
                     }}
                     title="Abrir selector de color del sistema"
                   >
-                    <Palette className="w-3 h-3" />
+                    <Palette className="w-3.5 h-3.5 text-white" />
                     <span>Elegir</span>
                   </label>
 
-                  {/* 💧 Botón Cuentagotas Universal Multipantalla */}
+                  {/* 💧 Botón Cuentagotas Universal Multipantalla (Estilo azul oficial) */}
                   <button
                     type="button"
                     onClick={abrirCuentagotasPantalla}
-                    className="px-2.5 py-1 rounded-full text-[11px] font-semibold border shadow-xs cursor-pointer hover:opacity-90 flex items-center gap-1 shrink-0 transition group"
+                    className="px-3 py-1 rounded-full text-[11px] font-semibold text-white shadow-2xs cursor-pointer hover:opacity-90 active:scale-95 transition flex items-center gap-1 shrink-0 border border-transparent"
                     style={{
-                      backgroundColor: coloresApariencia?.fondoPaneles,
-                      borderColor: coloresApariencia?.bordePaneles,
-                      color: coloresApariencia?.botonActivo || "#0891b2"
+                      backgroundColor: coloresApariencia?.botonActivo || "#0891b2",
+                      color: "#FFFFFF",
                     }}
                     title="Cuentagotas Multipantalla: Oculta temporalmente el modal y captura cualquier color de la pantalla, escritorio u otra aplicación"
                   >
-                    <Pipette className="w-3.5 h-3.5 group-hover:rotate-12 transition-transform" />
+                    <Pipette className="w-3.5 h-3.5 text-white" />
                     <span className="hidden sm:inline">Cuentagotas</span>
                   </button>
                 </div>
 
                 {/* Paleta de Tonos Rápidos de un Clic */}
-                <div className="flex flex-col gap-1 pt-1">
-                  <span className="text-[9px] font-semibold uppercase tracking-wider opacity-70" style={{ color: coloresApariencia?.textoSecundario }}>
-                    Tonos Rápidos Recomendados
-                  </span>
+                <div className="flex flex-col gap-1 pt-0.5">
                   <div className="flex items-center gap-1.5 flex-wrap">
                     {PRESET_TONOS_PBR.map((preset) => {
                       const isSelected = (matLocal.colorBase || "").toLowerCase() === preset.hex.toLowerCase();
@@ -1234,7 +1276,7 @@ export default function PBRMaterialStudioModal() {
                 </div>
               </div>
 
-              {/* Presets Rápidos de Acabados Metálicos Calibrados (PBR Espejo, Zinc, Acero, Latón) */}
+              {/* Presets Rápidos de Acabados Metálicos (Estilo de Acabado) */}
               {matLocal.tipo === "Metal" && (
                 <div 
                   className="flex flex-col gap-2 p-2.5 rounded-xl border shadow-2xs text-xs"
@@ -1244,123 +1286,112 @@ export default function PBRMaterialStudioModal() {
                   }}
                 >
                   <div className="flex items-center justify-between">
-                    <span className="font-semibold text-[11px] flex items-center gap-1.5" style={{ color: coloresApariencia?.textoPrincipal }}>
-                      <Sparkles className="w-3.5 h-3.5" style={{ color: coloresApariencia?.botonActivo || "#0891b2" }} />
-                      <span>Acabados Metálicos Calibrados</span>
-                    </span>
-                    <span className="text-[9px] font-mono opacity-60" style={{ color: coloresApariencia?.textoSecundario }}>
-                      Estilo Blender PBR
+                    <span className="font-semibold text-[11px]" style={{ color: coloresApariencia?.textoPrincipal }}>
+                      Tipo Metal
                     </span>
                   </div>
 
-                  {/* Botones Cápsula de Presets Rápidos */}
+                  {/* Botones Cápsula Oficiales Unificados (Azul con Texto Blanco) */}
                   <div className="flex flex-wrap gap-1.5">
                     <button
                       type="button"
                       onClick={() => handleAplicarPresetMetal({ colorBase: "#FFFFFF", metalico: 1.0, rugosidad: 0.03, clearcoat: 0.05, clearcoatRoughness: 0.1 })}
-                      className="px-2.5 py-1 rounded-full text-[11px] font-semibold border shadow-2xs hover:scale-105 transition cursor-pointer flex items-center gap-1"
+                      className="px-3 py-1 rounded-full text-[11px] font-semibold text-white shadow-2xs hover:opacity-90 active:scale-95 transition cursor-pointer flex items-center justify-center border border-transparent"
                       style={{
-                        backgroundColor: coloresApariencia?.fondoPaneles,
-                        borderColor: coloresApariencia?.bordePaneles,
-                        color: coloresApariencia?.textoPrincipal,
+                        backgroundColor: coloresApariencia?.botonActivo || "#0891b2",
+                        color: "#FFFFFF",
                       }}
                       title="Cromo brillante tipo espejo (Reflejo 100%)"
                     >
-                      <span>🪞</span>
                       <span>Cromo Espejo</span>
                     </button>
 
                     <button
                       type="button"
                       onClick={() => handleAplicarPresetMetal({ colorBase: "#E2E8F0", metalico: 0.95, rugosidad: 0.26, clearcoat: 0.0, clearcoatRoughness: 0.3 })}
-                      className="px-2.5 py-1 rounded-full text-[11px] font-semibold border shadow-2xs hover:scale-105 transition cursor-pointer flex items-center gap-1"
+                      className="px-3 py-1 rounded-full text-[11px] font-semibold text-white shadow-2xs hover:opacity-90 active:scale-95 transition cursor-pointer flex items-center justify-center border border-transparent"
                       style={{
-                        backgroundColor: coloresApariencia?.fondoPaneles,
-                        borderColor: coloresApariencia?.bordePaneles,
-                        color: coloresApariencia?.botonActivo || "#0891b2",
+                        backgroundColor: coloresApariencia?.botonActivo || "#0891b2",
+                        color: "#FFFFFF",
                       }}
-                      title="Zincado satinado anticorrosivo (Exacto al modelo de Blender)"
+                      title="Zincado satinado anticorrosivo"
                     >
-                      <span>🔩</span>
-                      <span>Zincado (Blender)</span>
+                      <span>Zincado</span>
                     </button>
 
                     <button
                       type="button"
                       onClick={() => handleAplicarPresetMetal({ colorBase: "#CBD5E1", metalico: 0.92, rugosidad: 0.35, clearcoat: 0.0, clearcoatRoughness: 0.35 })}
-                      className="px-2.5 py-1 rounded-full text-[11px] font-semibold border shadow-2xs hover:scale-105 transition cursor-pointer flex items-center gap-1"
+                      className="px-3 py-1 rounded-full text-[11px] font-semibold text-white shadow-2xs hover:opacity-90 active:scale-95 transition cursor-pointer flex items-center justify-center border border-transparent"
                       style={{
-                        backgroundColor: coloresApariencia?.fondoPaneles,
-                        borderColor: coloresApariencia?.bordePaneles,
-                        color: coloresApariencia?.textoPrincipal,
+                        backgroundColor: coloresApariencia?.botonActivo || "#0891b2",
+                        color: "#FFFFFF",
                       }}
                       title="Acero inoxidable pulido satinado"
                     >
-                      <span>⚙️</span>
                       <span>Acero Inox</span>
                     </button>
 
                     <button
                       type="button"
                       onClick={() => handleAplicarPresetMetal({ colorBase: "#F1F5F9", metalico: 0.88, rugosidad: 0.45, clearcoat: 0.0, clearcoatRoughness: 0.45 })}
-                      className="px-2.5 py-1 rounded-full text-[11px] font-semibold border shadow-2xs hover:scale-105 transition cursor-pointer flex items-center gap-1"
+                      className="px-3 py-1 rounded-full text-[11px] font-semibold text-white shadow-2xs hover:opacity-90 active:scale-95 transition cursor-pointer flex items-center justify-center border border-transparent"
                       style={{
-                        backgroundColor: coloresApariencia?.fondoPaneles,
-                        borderColor: coloresApariencia?.bordePaneles,
-                        color: coloresApariencia?.textoPrincipal,
+                        backgroundColor: coloresApariencia?.botonActivo || "#0891b2",
+                        color: "#FFFFFF",
                       }}
                       title="Aluminio anodizado natural mate"
                     >
-                      <span>🛡️</span>
                       <span>Aluminio</span>
                     </button>
 
                     <button
                       type="button"
                       onClick={() => handleAplicarPresetMetal({ colorBase: "#F5D061", metalico: 0.95, rugosidad: 0.20, clearcoat: 0.02, clearcoatRoughness: 0.2 })}
-                      className="px-2.5 py-1 rounded-full text-[11px] font-semibold border shadow-2xs hover:scale-105 transition cursor-pointer flex items-center gap-1"
+                      className="px-3 py-1 rounded-full text-[11px] font-semibold text-white shadow-2xs hover:opacity-90 active:scale-95 transition cursor-pointer flex items-center justify-center border border-transparent"
                       style={{
-                        backgroundColor: coloresApariencia?.fondoPaneles,
-                        borderColor: coloresApariencia?.bordePaneles,
-                        color: "#D97706",
+                        backgroundColor: coloresApariencia?.botonActivo || "#0891b2",
+                        color: "#FFFFFF",
                       }}
                       title="Latón / Dorado pulido para herrajes decorativos"
                     >
-                      <span>🪙</span>
                       <span>Latón / Dorado</span>
                     </button>
                   </div>
 
-                  {/* Acciones de Micro-Texturas Procedurales */}
-                  <div className="pt-1 flex items-center gap-2">
+                  {/* Subtítulo: Acabado Superficial */}
+                  <div className="pt-2 flex items-center justify-between border-t border-slate-200/50 dark:border-slate-700/50">
+                    <span className="font-semibold text-[11px]" style={{ color: coloresApariencia?.textoPrincipal }}>
+                      Acabado Superficial
+                    </span>
+                  </div>
+
+                  {/* Acciones de Acabado Superficial: Liso y Satinado (Estilo Azul Oficial) */}
+                  <div className="flex flex-wrap gap-1.5">
                     <button
                       type="button"
-                      onClick={() => handleGenerarMicroTexturaMetal("zinc_galvanizado")}
-                      className="px-3 py-1 rounded-full text-[10px] font-semibold border shadow-xs hover:opacity-90 transition cursor-pointer flex items-center gap-1.5"
+                      onClick={handleQuitarTexturasLiso}
+                      className="px-3 py-1 rounded-full text-[11px] font-semibold text-white shadow-2xs hover:opacity-90 active:scale-95 transition cursor-pointer flex items-center justify-center border border-transparent"
                       style={{
-                        backgroundColor: coloresApariencia?.fondoPaneles,
-                        borderColor: coloresApariencia?.bordePaneles,
-                        color: coloresApariencia?.botonActivo || "#0891b2",
+                        backgroundColor: coloresApariencia?.botonActivo || "#0891b2",
+                        color: "#FFFFFF",
                       }}
-                      title="Genera micro-vetas sutiles de zinc galvanizado anticorrosivo"
+                      title="Elimina cualquier textura o estría para dejar el metal completamente liso y uniforme"
                     >
-                      <Sparkles className="w-3 h-3" />
-                      <span>Micro-Textura Zincado</span>
+                      <span>Liso</span>
                     </button>
 
                     <button
                       type="button"
                       onClick={() => handleGenerarMicroTexturaMetal("cepillado")}
-                      className="px-3 py-1 rounded-full text-[10px] font-semibold border shadow-xs hover:opacity-90 transition cursor-pointer flex items-center gap-1.5"
+                      className="px-3 py-1 rounded-full text-[11px] font-semibold text-white shadow-2xs hover:opacity-90 active:scale-95 transition cursor-pointer flex items-center justify-center border border-transparent"
                       style={{
-                        backgroundColor: coloresApariencia?.fondoPaneles,
-                        borderColor: coloresApariencia?.bordePaneles,
-                        color: coloresApariencia?.textoPrincipal,
+                        backgroundColor: coloresApariencia?.botonActivo || "#0891b2",
+                        color: "#FFFFFF",
                       }}
-                      title="Genera estrías direccionales de metal cepillado mecánico (Brushed Metal)"
+                      title="Genera estrías direccionales de metal satinado"
                     >
-                      <Layers className="w-3 h-3" />
-                      <span>Metal Cepillado (Brushed)</span>
+                      <span>Satinado</span>
                     </button>
                   </div>
                 </div>
@@ -1660,16 +1691,6 @@ export default function PBRMaterialStudioModal() {
               >
                 <span>{guardadoExito ? "¡Guardado en Catálogo!" : "Guardar en Catálogo PBR"}</span>
               </button>
-
-              {/* Botón Destacado: Lanzar Render AI con esta calibración */}
-              <button
-                onClick={handleLanzarRenderIA}
-                className="w-full py-2.5 px-4 rounded-full font-semibold text-xs flex items-center justify-center text-white shadow-xs transition cursor-pointer hover:opacity-90"
-                style={{ backgroundColor: coloresApariencia?.botonActivo || "#0891b2" }}
-                title="Aplicar este material y abrir el estudio de Render Fotorrealista con IA"
-              >
-                <span>Lanzar Render AI con este Material</span>
-              </button>
             </div>
           </div>
 
@@ -1792,6 +1813,22 @@ export default function PBRMaterialStudioModal() {
                 >
                   <span>{hdriConfig.mostrarFondo ? "🖼️ Fondo HDRI" : "⚪ Fondo Blanco"}</span>
                 </button>
+
+                {/* 📸 Botón Destacado para Capturar Foto del Material para el Catálogo */}
+                <button
+                  type="button"
+                  onClick={handleTomarFotoMiniatura}
+                  className="px-3.5 py-1 rounded-full text-xs font-semibold shadow-xs border transition-all cursor-pointer flex items-center gap-1.5 hover:scale-105 active:scale-95"
+                  style={{
+                    backgroundColor: fotoCapturadaExito ? "#10B981" : (coloresApariencia?.botonActivo || "#0891B2"),
+                    borderColor: coloresApariencia?.bordePaneles,
+                    color: "#FFFFFF",
+                  }}
+                  title="Captura el fotograma 3D actual de la esfera y lo establece como la imagen real del material en el catálogo"
+                >
+                  <Camera className="w-3.5 h-3.5" />
+                  <span>{fotoCapturadaExito ? "¡Foto Guardada!" : "Capturar Foto Catálogo"}</span>
+                </button>
               </div>
             </div>
 
@@ -1838,7 +1875,7 @@ export default function PBRMaterialStudioModal() {
                 >
                   <option value="modern_bathroom">🛁 Baño Moderno (Poly Haven HDR)</option>
                   <option value="estudio_suave">📸 Estudio Softbox (Poly Haven Studio HDR)</option>
-                  <option value="alps_field_sol">🌳 Exterior Soleado (Estilo Unreal Engine HDR)</option>
+                  <option value="alps_field_sol">🌳 Exterior Soleado (Poly Haven HDR)</option>
                   <option value="showroom_moderno">🏭 Taller / Showroom (Poly Haven Workshop HDR)</option>
                   <option value="personalizado">📂 Cargar .HDR Propio...</option>
                 </select>
@@ -1880,10 +1917,10 @@ export default function PBRMaterialStudioModal() {
                       backgroundColor: hdriConfig.mostrarFondo ? (coloresApariencia?.botonActivo || "#0891b2") : "transparent",
                       color: hdriConfig.mostrarFondo ? "#FFFFFF" : coloresApariencia?.textoSecundario,
                     }}
-                    title="Fondo HDRI con desenfoque cinematográfico (Estilo Unreal Engine)"
+                    title="Fondo HDRI con desenfoque cinematográfico"
                   >
                     <span>🖼️</span>
-                    <span>HDRI Unreal</span>
+                    <span>HDRI</span>
                   </button>
                 </div>
               </div>
