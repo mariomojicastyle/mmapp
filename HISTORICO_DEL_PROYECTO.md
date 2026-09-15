@@ -3047,3 +3047,41 @@ Con esta batería de arreglos y la validación en caliente, la V20 se establece 
   * **Respaldo Físico Generado**: Guardado en disco `c:\Desarrollo\mmapp\3bf\lib\exportManualGlb.v_estable_glb_ok.ts`.
   * **Validación de Tipado**: Ejecutado `npx tsc --noEmit` en `3bf` finalizando con **0 errores**.
   * **Certificación de Usuario**: Verificada la descarga del GLB por parte del usuario, confirmando que la exportación es ahora **100% idéntica a la vista en pantalla (Gemelo Digital Estable)**.
+
+---
+
+### 🌟 Hito 124: Nivelación Física Milimétrica de Piso ($Y = 0.000000\text{ mm}$), Erradicación de Cotas Negativas y Certificación de Banco de Trabajo Estable en 3dBimFab Studio (15 de Septiembre, 2026)
+
+- **Diagnóstico del Hundimiento bajo el Piso**:
+  * **Problema Visual**: Al presionar "Acostar Pieza en Plano X, Y", la tabla `P02A` (`Peça 7`) quedaba sumergida bajo la cuadrícula del piso en cotas negativas ($Y \in [-0.140, -0.128\text{ m}]$), siendo atravesada visualmente por la rejilla horizontal.
+  * **Causa Raíz**: Las fórmulas previas de Fase 1 aproximaban la nivelación proyectando una caja envolvente teórica (`Box3.applyMatrix4`), la cual no contemplaba la envolvente de los vértices reales de la malla rotada ni recalculaba la cota de contacto tras la Fase 2 (giro horizontal en el plano $\pm 90^\circ$ o desfases joystick 2D).
+
+- **Corrección Geométrica Universal de Contacto Tangencial a Ras de Piso (`manualAnimationEngine.ts`)**:
+  * Implementado cálculo de contacto definitivo una vez finalizadas todas las transformaciones de banco (acueste, rotación y traslación):
+    ```typescript
+    // 🛡️ CORRECCIÓN MATEMÁTICA DEFINITIVA DE PISO (Y = 0.0000):
+    // Garantiza que la superficie inferior de la Pieza Máster (su cara con cota Y más baja)
+    // quede EXACTAMENTE en el plano del piso Y = 0.0000 (sin valores negativos),
+    // elevando o descendiendo solidariamente a todo el conjunto (máster, correderas y herrajes).
+    if (apoyoEnPiso && masterMesh) {
+      masterMesh.updateMatrixWorld(true);
+      const boxReal = new THREE.Box3().setFromObject(masterMesh);
+      const deltaYReal = -boxReal.min.y;
+      if (Math.abs(deltaYReal) > 0.00001) {
+        mallas.forEach((m) => {
+          m.position.y += deltaYReal;
+          m.updateMatrix();
+          m.updateMatrixWorld(true);
+        });
+      }
+    }
+    ```
+  * **Comportamiento Físico Cuantitativo**:
+    - Superficie inferior de la tabla: $Y_{\text{min}} = \mathbf{0.000000\text{ m}}$ (contacto tangencial exacto sobre la rejilla sin sumergimiento).
+    - Espesor de la madera: $Y \in [0.000, 0.012\text{ m}]$ en positivo hacia arriba.
+    - Correderas telescópicas y herrajes: $Y \in [0.012, 0.022\text{ m}]$ sólidamente montados sobre la cara superior.
+
+- **Blindaje, Respaldo Físico y Validación**:
+  * **Respaldo Físico**: Guardado en disco `c:\Desarrollo\mmapp\3bf\lib\manualAnimationEngine.v_estable_piso_cero_ok.ts`.
+  * **Validación TypeScript**: `npx tsc --noEmit` completado con **0 errores**.
+  * **Certificación de Usuario**: Confirmación explícita del usuario: *"Perfecto!!!! Version mas estable!!!"*.
