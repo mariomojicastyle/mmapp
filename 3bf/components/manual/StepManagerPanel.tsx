@@ -1665,6 +1665,7 @@ export default function StepManagerPanel() {
                             const offsetX = sub.transformBanco?.offsetX || 0;
                             const offsetZ = sub.transformBanco?.offsetZ || 0;
                             const acostado = sub.transformBanco?.acostado || false;
+                            const direccionAcostar = sub.transformBanco?.direccionAcostar || "izquierda";
 
                             // 🔄 Giro único en el plano: Izquierda (-90°) o Derecha (+90°)
                             const girarPlano = (delta: number) => {
@@ -1730,25 +1731,72 @@ export default function StepManagerPanel() {
                                   </select>
                                 </div>
 
-                                {/* Botón Acostar en el Plano X, Y */}
-                                <button
-                                  type="button"
-                                  onClick={() => {
-                                    actualizarTransformBancoSubBloque(pasoActivo.id, sub.id, {
-                                      acostado: !acostado,
-                                      apoyoEnPiso: true,
-                                    });
-                                  }}
-                                  title={acostado ? "Pieza acostada en plano horizontal. Clic para restaurar posición original" : "Acostar la pieza máster sobre el plano X, Y con la menor rotación posible"}
-                                  className={`w-full py-1.5 px-3 rounded-full border text-xs font-bold shadow-xs flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
-                                    acostado
-                                      ? "bg-emerald-600 text-white border-emerald-500 shadow-sm"
-                                      : "border-emerald-600/40 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-500/20"
-                                  }`}
-                                >
-                                  <Layers className="w-3.5 h-3.5" />
-                                  <span>{acostado ? "Acostada en Plano X, Y (Activo)" : "Acostar Pieza en Plano X, Y"}</span>
-                                </button>
+                                {/* 🛏️ Botones Acostar en el Plano X, Y: Izquierda vs Derecha */}
+                                <div className="flex flex-col gap-1">
+                                  <div className="flex items-center justify-between text-[11px]">
+                                    <span className="font-semibold text-slate-600 dark:text-slate-300 flex items-center gap-1">
+                                      <Layers className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+                                      <span>Acostar en Plano:</span>
+                                    </span>
+                                    {acostado && (
+                                      <span className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full">
+                                        {direccionAcostar === "derecha" ? "Hacia Derecha" : "Hacia Izquierda"}
+                                      </span>
+                                    )}
+                                  </div>
+
+                                  <div className="grid grid-cols-2 gap-1.5">
+                                    <button
+                                      type="button"
+                                      onClick={() => {
+                                        const estaActivoIzquierda = acostado && direccionAcostar !== "derecha";
+                                        actualizarTransformBancoSubBloque(pasoActivo.id, sub.id, {
+                                          acostado: !estaActivoIzquierda,
+                                          direccionAcostar: "izquierda",
+                                          apoyoEnPiso: true,
+                                        });
+                                      }}
+                                      title={
+                                        acostado && direccionAcostar !== "derecha"
+                                          ? "Acostada hacia la izquierda (Activo). Clic para poner de pie"
+                                          : "Acostar pieza hacia la izquierda (giro +90° en Z/X)"
+                                      }
+                                      className={`py-1.5 px-2 rounded-full border text-[11px] font-bold shadow-xs flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
+                                        acostado && direccionAcostar !== "derecha"
+                                          ? "bg-emerald-600 text-white border-emerald-500 shadow-sm"
+                                          : "border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-emerald-500/10 hover:border-emerald-500/40"
+                                      }`}
+                                    >
+                                      <RotateCcw className="w-3.5 h-3.5" />
+                                      <span>{acostado && direccionAcostar !== "derecha" ? "Acostada Izq." : "Acostar Izq."}</span>
+                                    </button>
+
+                                    <button
+                                      type="button"
+                                      onClick={() => {
+                                        const estaActivoDerecha = acostado && direccionAcostar === "derecha";
+                                        actualizarTransformBancoSubBloque(pasoActivo.id, sub.id, {
+                                          acostado: !estaActivoDerecha,
+                                          direccionAcostar: "derecha",
+                                          apoyoEnPiso: true,
+                                        });
+                                      }}
+                                      title={
+                                        acostado && direccionAcostar === "derecha"
+                                          ? "Acostada hacia la derecha (Activo). Clic para poner de pie"
+                                          : "Acostar pieza hacia la derecha (giro -90°, deja herrajes internos hacia arriba)"
+                                      }
+                                      className={`py-1.5 px-2 rounded-full border text-[11px] font-bold shadow-xs flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
+                                        acostado && direccionAcostar === "derecha"
+                                          ? "bg-emerald-600 text-white border-emerald-500 shadow-sm"
+                                          : "border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-emerald-500/10 hover:border-emerald-500/40"
+                                      }`}
+                                    >
+                                      <RotateCw className="w-3.5 h-3.5" />
+                                      <span>{acostado && direccionAcostar === "derecha" ? "Acostada Der." : "Acostar Der."}</span>
+                                    </button>
+                                  </div>
+                                </div>
 
                                 {/* 🔄 Sección Giro en Plano (Solo 2 opciones: Izquierda o Derecha) */}
                                 <div className="flex flex-col gap-1.5 pt-1.5 border-t border-slate-200/60 dark:border-slate-800/60">

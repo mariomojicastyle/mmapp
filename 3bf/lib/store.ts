@@ -700,6 +700,7 @@ export interface BloqueEstandarRef {
 
 export interface SubBloqueTransformBanco {
   acostado: boolean;          // Lay Flat activo contra plano horizontal
+  direccionAcostar?: "izquierda" | "derecha"; // Dirección hacia la cual acostar la pieza (default "izquierda")
   rotacionYDeg: number;       // 0, 90, 180, 270 grados
   rotacion: [number, number, number]; // [rotX, rotY, rotZ] en grados
   rotacionPlano?: number;     // 0, 90, 180, 270 grados en el plano acostado
@@ -761,6 +762,7 @@ export interface PasoManualStudio {
   piezasAsignadas: string[];
   herrajesAsignados: string[];
   subbloques?: SubBloqueArmado[]; // 🧩 Sub-etapas de armado (Subbloque A, B, C...)
+  coreografiaSubbloques?: 1 | 2; // 🎭 1 = Secuencial por corredera, 2 = Simultánea en bloque
   piezasOcultas?: boolean; // 💡 Apagar / Prender piezas de este paso en el 3D
   ocultarNoAsignadas?: boolean; // 💡 Apagar piezas y herrajes que no pertenecen a este paso (Aislar Paso)
   secuencia: ElementoSecuenciaCinematica[];
@@ -1435,6 +1437,7 @@ export interface State3BF {
   actualizarTransformBancoSubBloque: (pasoId: string, subbloqueId: string, transform: Partial<SubBloqueTransformBanco>) => void;
   resetTransformBancoSubBloque: (pasoId: string, subbloqueId: string) => void;
   actualizarTrackSubBloque: (pasoId: string, subbloqueId: string, track: Partial<SubBloqueAnimacionTrack>) => void;
+  setCoreografiaSubbloques: (pasoId: string, coreografia: 1 | 2) => void;
   
   // 🎯 Modo Picking 3D / Cuentagotas para Asignación de Piezas
   modoPickingManual: ModoPickingManualState;
@@ -2688,6 +2691,7 @@ export const use3BFStore = create<State3BF>((set, get) => ({
         oculto: false,
         transformBanco: {
           acostado: false,
+          direccionAcostar: "izquierda",
           rotacionYDeg: 0,
           rotacion: [0, 0, 0] as [number, number, number],
           flipCara: false,
@@ -2919,6 +2923,16 @@ export const use3BFStore = create<State3BF>((set, get) => ({
         };
       });
       return { ...p, subbloques: modificados };
+    });
+    set({ pasosManual: actualizados });
+    guardarPasosEnCacheLocal(actualizados, state.manualActivoGuardado);
+  },
+
+  setCoreografiaSubbloques: (pasoId, coreografia) => {
+    const state = get();
+    const actualizados = state.pasosManual.map((p) => {
+      if (p.id !== pasoId) return p;
+      return { ...p, coreografiaSubbloques: coreografia };
     });
     set({ pasosManual: actualizados });
     guardarPasosEnCacheLocal(actualizados, state.manualActivoGuardado);

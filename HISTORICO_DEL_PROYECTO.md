@@ -3085,3 +3085,42 @@ Con esta batería de arreglos y la validación en caliente, la V20 se establece 
   * **Respaldo Físico**: Guardado en disco `c:\Desarrollo\mmapp\3bf\lib\manualAnimationEngine.v_estable_piso_cero_ok.ts`.
   * **Validación TypeScript**: `npx tsc --noEmit` completado con **0 errores**.
   * **Certificación de Usuario**: Confirmación explícita del usuario: *"Perfecto!!!! Version mas estable!!!"*.
+
+---
+
+### 🌟 Hito 125: Motor Cinemático por Subbloques, Control Dual de Acueste (Izq/Der), Coreografías 1 & 2 y Cinemática Fisiomecánica de Correderas y Tornillos en 3dBimFab Studio (15 de Septiembre, 2026)
+
+- **Control Dual de Acueste (Acostar a la Izquierda vs Derecha)**:
+  * **Diagnóstico de Necesidad Física**: En muebles RTA simétricos (como la Cómoda Ravenna), el lateral izquierdo (`P02A`) al acostarse rotando a la izquierda queda con sus correderas mirando hacia arriba (+Y). Sin embargo, el lateral derecho (`P02C`), al aplicar la misma rotación, quedaba con las correderas boca abajo contra el piso.
+  * **Solución Implementada**:
+    - Extendida la interfaz `SubBloqueTransformBanco` en `store.ts` con la propiedad `direccionAcostar?: "izquierda" | "derecha"`.
+    - En `StepManagerPanel.tsx`, se rediseñó el control de acueste con dos botones cápsula pura `rounded-full`: **"Acostar Izq."** (rotación antihoraria $+90^\circ$) y **"Acostar Der."** (rotación horaria $-90^\circ$).
+    - En `manualAnimationEngine.ts`, el motor invierte matemáticamente el signo del ángulo de giro horizontal según la dirección elegida, garantizando que tanto el lateral izquierdo como el derecho queden siempre con su cara mecanizada y sus herrajes orientados hacia arriba listos para armado.
+
+- **Cinemática Fisiomecánica de Herrajes (Correderas vs Tornillos)**:
+  * **Correderas Telescópicas (Rieles Metálicos)**:
+    - Conservan en todo momento su escala natural al 100% (`scale = [1, 1, 1]`) sin sufrir crecimientos irreales.
+    - Descienden colinealmente en vertical ($+Y$) desde una altura de aproximación de $+180\text{ mm}$ hasta encajar en sus perforaciones guía sobre el tablero.
+  * **Herrajes Pequeños (Tornillos `Parafuso E`)**:
+    - **Nacimiento Flotante**: Inician invisibles (`scale = [0, 0, 0]`) suspendidos a $+120\text{ mm}$ en vertical sobre la corredera.
+    - **Efecto Pop-In 200%**: Al comenzar su tiempo de ensamblaje, emergen con un Pop-In de escala $2.0$ ($200\%$) para enfatizar visualmente ante el usuario la pieza que entra.
+    - **Transición y Descenso Solidario**: En los siguientes 0.35 s se normalizan al 100% de escala e inician su descenso axial vertical.
+    - **Traspaso de la Guía Intermedia**: Atraviesan limpiamente la pieza intermedia de la corredera (ignorándola sin interferencias físicas, reproduciendo las perforaciones pasantes reales) hasta su cota final exacta en la madera (`__baseRestPosition`).
+    - **Atornillado Axial 720°**: Ejecutan simultáneamente una rotación axial suave de $720^\circ$ (2 vueltas completas continuas) sobre su eje vertical concéntrico.
+
+- **Selector y Generador de Coreografías de Ensamble (1 vs 2)**:
+  * En `store.ts`, se agregó `coreografiaSubbloques?: 1 | 2` y la acción reactiva `setCoreografiaSubbloques`.
+  * En `TimelineScrubber.tsx`, se integró en el encabezado de "Pistas de Sub-Bloques" un botón circular interactivo (`w-5 h-5 rounded-full`) con el número activo:
+    - **Coreografía 1 (Secuencial por Corredera)**: Entra corredera 1 $\rightarrow$ entran y se atornillan sus tornillos; luego entra corredera 2 $\rightarrow$ tornillos 2; finalmente corredera 3 $\rightarrow$ tornillos 3.
+    - **Coreografía 2 (Simultánea en Bloque)**: Entran todas las correderas juntas; a continuación descienden y se atornillan todos los tornillos simultáneamente.
+  * Al hacer clic sobre el botón, conmuta instantáneamente entre ambas coreografías y regenera el clip de animación Three.js en caliente.
+
+- **Blindaje Estricto de Pasos Existentes**:
+  * **Paso 00 (Showcase Funcional)**: Totalmente blindado e inmune a las transformaciones de ensamble; conserva intacta su apertura telescópica de cajones y rotación angular de puertas.
+  * **Pasos Estándar sin Subbloques**: Preservado el pipeline cinemático clásico mediante fallback condicional robusto.
+
+- **Respaldos Físicos y Validación**:
+  * Archivo de respaldo guardado en disco: `c:\Desarrollo\mmapp\3bf\lib\manualAnimationEngine.v_estable_cinematica_subbloques_ok.ts`.
+  * Validación estricta de tipado con `npx tsc --noEmit`: **0 errores**.
+  * Servidores activos: RhinoCompute 8 (puerto 5000), 3BF Worker Python (puerto 8005) y 3BF Next.js Web App (puerto 3005).
+
