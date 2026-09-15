@@ -3020,3 +3020,30 @@ Con esta batería de arreglos y la validación en caliente, la V20 se establece 
     - `c:\Desarrollo\mmapp\3bf\components\viewer\Viewer3D.v_estable_acueste_ok.tsx`
   * Compilación TypeScript verificada (`npx tsc --noEmit` en `3bf`) con **0 errores**.
   * Servidores locales activos (RhinoCompute 8 en 5000, 3BF Worker en 8005 y Next.js en 3005 con HTTP 200 OK).
+
+---
+
+### 🌟 Hito 123: Paridad Absoluta Pantalla = GLB en 3dBimFab Studio, Erradicación de la Doble Transformación en Exportación y Certificación Estable del Gemelo Digital 3D (15 de Septiembre, 2026)
+
+- **Diagnóstico Forense de la Discrepancia Pantalla vs GLB**:
+  * **Problema Detectado**: En el visor 3D interactivo de `3dBimFab`, la pieza máster `P02A` (`Peça 7`) aparecía acostada a la izquierda del escenario, correctamente separada de la base central `P02B`. Sin embargo, al pulsar el botón "Exportar GLB" y abrir el archivo descargado (`P02AAAAA.glb`) en Babylon.js Sandbox / Visor 3D de Windows, la tabla se desplazaba en $+X$ hacia el centro, incrustándose sobre la base de `P02B`.
+  * **Causa Raíz Descubierta en `exportManualGlb.ts`**:
+    1. Durante la clonación de la escena para exportar (`exportScene`), `mesh.getWorldPosition(exportMesh.position)` capturaba fielmente las coordenadas de la escena viva (la cual ya tenía aplicada la transformación del banco de trabajo con las piezas acostadas en el piso).
+    2. En el Paso 6 del pipeline de exportación, se invocaba `const { clip } = compilarAnimacionPaso(exportScene, paso);` sin proveer la opción `{ omitirTransformBanco: true }`.
+    3. Al no recibir esta bandera, `compilarAnimacionPaso` (en `manualAnimationEngine.ts`) ejecutaba nuevamente `aplicarTransformacionesBancoSubbloques(sceneMeshes, paso.subbloques)` por **segunda vez** (doble transformación de banco).
+    4. Esta segunda ejecución calculaba de nuevo el centro y bounding box sobre una malla que ya estaba rotada y acostada, duplicando los pivotes y los offsets espaciales en $+X$, arrastrando la tabla hacia el centro y colisionando contra `P02B`.
+
+- **Solución Quirúrgica de Paridad 1:1 (`exportManualGlb.ts`)**:
+  * Se inyectó explícitamente la bandera de blindaje en la compilación del clip glTF:
+    ```typescript
+    // 6. Compilar el clip de animación glTF a partir de la escena limpia en reposo
+    // 🛡️ Omitir re-aplicar transformaciones de banco ya que exportScene fue clonada directamente con las posiciones del banco
+    const { clip } = compilarAnimacionPaso(exportScene, paso, { omitirTransformBanco: true });
+    clip.name = "default";
+    ```
+  * Con esta bandera activa, el motor cinemático respeta fielmente las coordenadas `__baseRestPosition` de la escena clonada, no altera los pivotes mundiales de banco y hornea las trayectorias de animación relativas a su estado actual en reposo.
+
+- **Blindaje, Respaldo Físico y Validación**:
+  * **Respaldo Físico Generado**: Guardado en disco `c:\Desarrollo\mmapp\3bf\lib\exportManualGlb.v_estable_glb_ok.ts`.
+  * **Validación de Tipado**: Ejecutado `npx tsc --noEmit` en `3bf` finalizando con **0 errores**.
+  * **Certificación de Usuario**: Verificada la descarga del GLB por parte del usuario, confirmando que la exportación es ahora **100% idéntica a la vista en pantalla (Gemelo Digital Estable)**.
