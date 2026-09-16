@@ -28,8 +28,95 @@ export function obtenerColorSubbloque(indice: number) {
   return COLORES_SUBBLOQUES[indice % COLORES_SUBBLOQUES.length];
 }
 
+// 🔄 Íconos SVG oficiales de la marca para Girar / Acostar Pieza en Banco de Trabajo
+function IconGirarIzquierda({ className = "w-4 h-4" }: { className?: string }) {
+  return (
+    <svg
+      viewBox="0 -960 960 960"
+      className={className}
+      fill="currentColor"
+    >
+      <path
+        d="m 160,-120 v -80 h 94 c -41.33333,-33.33333 -74,-74.16667 -98,-122.5 -24,-48.33333 -36,-100.83333 -36,-157.5 0,-50 9.5,-96.83333 28.5,-140.5 19,-43.66667 44.66667,-81.66667 77,-114 32.33333,-32.33333 70.33333,-58 114,-77 43.66667,-19 90.5,-28.5 140.5,-28.5 86,0 161.5,26.5 226.5,79.5 65,53 106.5,119.83333 124.5,200.5 h -83 c -17.33333,-58.66667 -50.33333,-106.66667 -99,-144 -48.66667,-37.33333 -105,-56 -169,-56 -78,0 -144.16667,27.16667 -198.5,81.5 -54.33333,54.33333 -81.5,120.5 -81.5,198.5 0,48 10.83333,92 32.5,132 21.66667,40 50.83333,72.66667 87.5,98 v -110 h 80 v 240 z"
+      />
+      <rect
+        style={{ fill: "none", stroke: "currentColor", strokeWidth: 75.5904 }}
+        width="110.80532"
+        height="446.57901"
+        x="646.39978"
+        y="-43.005001"
+        transform="rotate(-45.134824)"
+      />
+    </svg>
+  );
+}
+
+function IconGirarDerecha({ className = "w-4 h-4" }: { className?: string }) {
+  return (
+    <svg
+      viewBox="0 -960 960 960"
+      className={className}
+      fill="currentColor"
+    >
+      <g transform="matrix(-1,0,0,1,976.82722,-1.7558784e-6)">
+        <path
+          d="m 160,-120 v -80 h 94 c -41.33333,-33.33333 -74,-74.16667 -98,-122.5 -24,-48.33333 -36,-100.83333 -36,-157.5 0,-50 9.5,-96.83333 28.5,-140.5 19,-43.66667 44.66667,-81.66667 77,-114 32.33333,-32.33333 70.33333,-58 114,-77 43.66667,-19 90.5,-28.5 140.5,-28.5 86,0 161.5,26.5 226.5,79.5 65,53 106.5,119.83333 124.5,200.5 h -83 c -17.33333,-58.66667 -50.33333,-106.66667 -99,-144 -48.66667,-37.33333 -105,-56 -169,-56 -78,0 -144.16667,27.16667 -198.5,81.5 -54.33333,54.33333 -81.5,120.5 -81.5,198.5 0,48 10.83333,92 32.5,132 21.66667,40 50.83333,72.66667 87.5,98 v -110 h 80 v 240 z"
+        />
+        <rect
+          style={{ fill: "none", stroke: "currentColor", strokeWidth: 75.5904 }}
+          width="110.80532"
+          height="446.57901"
+          x="646.39978"
+          y="-43.005001"
+          transform="rotate(-45.134824)"
+        />
+      </g>
+    </svg>
+  );
+}
+
+// 🔄 Íconos SVG oficiales de Giro en Plano (-90° y +90°)
+function IconGiroMenos90({ className = "w-4 h-4" }: { className?: string }) {
+  return (
+    <svg
+      viewBox="0 -960 960 960"
+      className={className}
+      fill="currentColor"
+    >
+      <g transform="matrix(-1,0,0,1,1847.1126,-712.8031)">
+        <path
+          d="m 1127.1126,592.8031 c -22,0 -40.8333,-7.83333 -56.5,-23.5 -15.6667,-15.66667 -23.5,-34.5 -23.5,-56.5 V -47.196897 c 0,-22 7.8333,-40.83333 23.5,-56.500003 15.6667,-15.66667 34.5,-23.5 56.5,-23.5 h 480 c 22,0 40.8333,7.83333 56.5,23.5 15.6667,15.666673 23.5,34.500003 23.5,56.500003 V 512.8031 c 0,22 -7.8333,40.83333 -23.5,56.5 -15.6667,15.66667 -34.5,23.5 -56.5,23.5 z m 0,-80 h 480 V -47.196897 h -480 z m 480,0 h -480 z"
+        />
+        <path
+          d="m 1155.6039,329.74457 h 70.5029 c 0,-34.66391 12.6317,-63.89324 37.8953,-87.68796 25.2636,-23.79472 55.521,-35.69208 90.7725,-35.69208 21.1509,0 40.8329,4.84707 59.0462,14.54122 18.2132,9.69414 33.1951,22.47279 44.9456,38.33594 h -56.4023 v 70.50288 h 176.2572 V 153.48736 h -70.5029 v 54.63974 c -18.8008,-22.32591 -41.2736,-39.95163 -67.4184,-52.87717 -26.1449,-12.92553 -54.7867,-19.38829 -85.9254,-19.38829 -55.8148,0 -102.9636,18.80077 -141.4464,56.40231 -38.4829,37.60154 -57.7243,83.42842 -57.7243,137.48062 z"
+        />
+      </g>
+    </svg>
+  );
+}
+
+function IconGiroMas90({ className = "w-4 h-4" }: { className?: string }) {
+  return (
+    <svg
+      viewBox="0 -960 960 960"
+      className={className}
+      fill="currentColor"
+    >
+      <path
+        d="m 240,-120 c -22,0 -40.83333,-7.83333 -56.5,-23.5 C 167.83333,-159.16667 160,-178 160,-200 v -560 c 0,-22 7.83333,-40.83333 23.5,-56.5 15.66667,-15.66667 34.5,-23.5 56.5,-23.5 h 480 c 22,0 40.83333,7.83333 56.5,23.5 15.66667,15.66667 23.5,34.5 23.5,56.5 v 560 c 0,22 -7.83333,40.83333 -23.5,56.5 -15.66667,15.66667 -34.5,23.5 -56.5,23.5 z m 0,-80 H 720 V -760 H 240 Z m 480,0 H 240 Z"
+      />
+      <path
+        d="m 268.49134,-383.05853 h 70.50289 c 0,-34.66391 12.63173,-63.89324 37.8953,-87.68796 25.26356,-23.79472 55.52102,-35.69208 90.77246,-35.69208 21.15087,0 40.83289,4.84707 59.04617,14.54122 18.21327,9.69414 33.19515,22.47279 44.9456,38.33594 h -56.40231 v 70.50288 h 176.2572 v -176.25721 h -70.50288 v 54.63974 c -18.80074,-22.32591 -41.27354,-39.95163 -67.41839,-52.87717 -26.14485,-12.92553 -54.78664,-19.38829 -85.92539,-19.38829 -55.81475,0 -102.96356,18.80077 -141.44641,56.40231 -38.48286,37.60154 -57.72424,83.42842 -57.72424,137.48062 z"
+      />
+    </svg>
+  );
+}
+
 export default function StepManagerPanel() {
   const [mostrarMenuAnadirBloque, setMostrarMenuAnadirBloque] = React.useState(false);
+  const [seccionPiezasColapsada, setSeccionPiezasColapsada] = React.useState(false);
+  const [subbloquesColapsados, setSubbloquesColapsados] = React.useState<Record<string, boolean>>({});
+  const [gruposCinematicosColapsados, setGruposCinematicosColapsados] = React.useState<Record<string, boolean>>({});
   const [draggedIndex, setDraggedIndex] = React.useState<number | null>(null);
   const [dragOverIndex, setDragOverIndex] = React.useState<number | null>(null);
   const [guardandoBloque, setGuardandoBloque] = React.useState(false);
@@ -638,10 +725,14 @@ export default function StepManagerPanel() {
                         ? "Mostrar todos los bloques funcionales en 3D"
                         : "Ocultar todos los bloques funcionales en 3D"
                     }
-                    className="p-1.5 rounded-full text-slate-500 hover:text-amber-500 hover:bg-black/5 dark:hover:bg-white/5 transition cursor-pointer border border-slate-200 dark:border-slate-700/80 shrink-0"
+                    className={`p-1.5 rounded-full transition cursor-pointer border shrink-0 ${
+                      pasoActivo.showcase?.gruposCinematicos?.some((g) => g.oculto)
+                        ? "bg-[#1368AA] text-white border-[#1368AA] shadow-xs"
+                        : "bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-400 hover:text-cyan-500 border-slate-200 dark:border-slate-700"
+                    }`}
                   >
                     {pasoActivo.showcase?.gruposCinematicos?.some((g) => g.oculto) ? (
-                      <EyeOff className="w-3.5 h-3.5 text-amber-500" />
+                      <EyeOff className="w-3.5 h-3.5" />
                     ) : (
                       <Eye className="w-3.5 h-3.5" />
                     )}
@@ -740,23 +831,45 @@ export default function StepManagerPanel() {
                 <div className="flex flex-col gap-3">
                   {pasoActivo.showcase.gruposCinematicos.map((grupo, gIdx) => {
                     const esPuerta = grupo.tipo === "puerta";
+                    const estaColapsado = !!gruposCinematicosColapsados[grupo.id];
+
+                    const toggleColapsoGrupo = () => {
+                      setGruposCinematicosColapsados((prev) => ({
+                        ...prev,
+                        [grupo.id]: !prev[grupo.id],
+                      }));
+                    };
+
                     return (
                       <div
                         key={grupo.id}
                         className={`p-3 rounded-2xl border transition flex flex-col gap-2.5 shadow-sm ${
-                          grupo.oculto
-                            ? "border-amber-500/40 bg-amber-500/5 opacity-80"
-                            : esPuerta
+                          esPuerta
                             ? "border-indigo-200 dark:border-indigo-900/50 bg-indigo-50/20 dark:bg-indigo-950/10"
                             : "border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/70"
-                        }`}
+                        } ${grupo.oculto ? "opacity-75" : ""}`}
                       >
-                        {/* Cabecera del Bloque Funcional */}
+                        {/* Cabecera del Bloque Funcional: Ícono de Retracción circular interactivo */}
                         <div className="flex items-center justify-between gap-2 w-full">
                           <div className="flex items-center gap-1.5 min-w-0 flex-1">
-                            <span className="w-5 h-5 rounded-full bg-slate-200 dark:bg-slate-800 flex items-center justify-center font-mono font-bold text-[10px] shrink-0">
-                              {gIdx + 1}
-                            </span>
+                            {/* Círculo con flechita que rota 180° reemplazando al número */}
+                            <button
+                              type="button"
+                              onClick={toggleColapsoGrupo}
+                              title={estaColapsado ? `Expandir ${grupo.nombre}` : `Retraer ${grupo.nombre}`}
+                              className={`w-5 h-5 rounded-full flex items-center justify-center shrink-0 transition-all duration-300 hover:scale-110 shadow-2xs cursor-pointer border ${
+                                esPuerta
+                                  ? "border-indigo-500/40 bg-indigo-500/10 text-indigo-700 dark:text-indigo-300"
+                                  : "border-cyan-500/40 bg-cyan-500/10 text-cyan-700 dark:text-cyan-300"
+                              }`}
+                            >
+                              <ChevronDown
+                                className={`w-3.5 h-3.5 transition-transform duration-300 ${
+                                  estaColapsado ? "-rotate-180" : "rotate-0"
+                                }`}
+                              />
+                            </button>
+
                             <span
                               className="text-xs shrink-0 select-none"
                               title={esPuerta ? "Bloque tipo Puerta" : "Bloque tipo Cajón"}
@@ -797,15 +910,15 @@ export default function StepManagerPanel() {
                               </span>
                             </button>
 
-                            {/* 💡 Botón Bombillito / Ojito para Apagar/Encender Bloque en 3D */}
+                            {/* 💡 Botón Bombillito / Ojito para Apagar/Encender Bloque en 3D (Estilo Neutro / #1368AA) */}
                             <button
                               type="button"
                               onClick={() => conmutarVisibilidadGrupoCinematico(pasoActivo.id, grupo.id)}
                               title={grupo.oculto ? "Mostrar bloque en 3D" : "Apagar bloque en 3D (para ver herrajes interiores)"}
                               className={`p-1.5 rounded-full transition shrink-0 cursor-pointer border ${
                                 grupo.oculto
-                                  ? "bg-amber-500/20 text-amber-500 border-amber-500/40"
-                                  : "bg-slate-100 dark:bg-slate-800 text-slate-400 hover:text-amber-500 border-slate-200 dark:border-slate-700"
+                                  ? "bg-[#1368AA] text-white border-[#1368AA] shadow-xs"
+                                  : "bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-400 hover:text-cyan-500 border-slate-200 dark:border-slate-700"
                               }`}
                             >
                               {grupo.oculto ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
@@ -822,8 +935,11 @@ export default function StepManagerPanel() {
                           </div>
                         </div>
 
-                        {/* Parámetros Específicos según Tipo de Componente */}
-                        {esPuerta ? (
+                        {/* Contenido Retráctil del Bloque Funcional (Cajón / Puerta) */}
+                        {!estaColapsado && (
+                          <>
+                            {/* Parámetros Específicos según Tipo de Componente */}
+                            {esPuerta ? (
                           /* 🚪 Parámetros de Puerta: Ángulo de Giro, Lado de Bisagra y Ajuste de Pivote */
                           <div className="flex flex-col gap-2 p-2 rounded-xl bg-black/[0.02] dark:bg-white/[0.02] border border-slate-200/70 dark:border-slate-800/70 text-[10px]">
                             {/* Slider y Entrada Numérica de Ángulo de Giro */}
@@ -1022,9 +1138,11 @@ export default function StepManagerPanel() {
                             Toca las piezas en el 3D con el cuentagotas para asignarlas
                           </div>
                         )}
-                      </div>
-                    );
-                  })}
+                      </>
+                    )}
+                  </div>
+                );
+              })}
                 </div>
               )}
             </div>
@@ -1213,263 +1331,283 @@ export default function StepManagerPanel() {
           <div className="flex flex-col gap-3">
             {/* 🎯 TARJETA DE PIEZAS CONFIGURADAS DEL PASO (Inspirado en la lógica de Bloques Funcionales de P00) */}
             <div className="flex flex-col gap-2.5 p-3 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/60 shadow-sm">
-              {/* Cabecera del Paso Ensamble: Bloque de armado PXX */}
+              {/* Cabecera del Paso Ensamble: Bloque de armado PXX (Con botón circular colapsable que rota 180°) */}
               {(() => {
                 const idPasoLimpio = pasoActivo.id.startsWith("P") ? pasoActivo.id : `P${String(pasoActivo.numero ?? "").padStart(2, "0")}`;
-                const tituloPorDefecto = `Bloque de armado ${idPasoLimpio}`;
-                const tituloMostrar = !pasoActivo.titulo || pasoActivo.titulo.startsWith("Paso ") || pasoActivo.titulo.startsWith("Bloque de armado 0") || pasoActivo.titulo.startsWith("Bloque de armado 1")
-                  ? tituloPorDefecto
-                  : pasoActivo.titulo;
+                const tituloFijo = `Bloque de armado ${idPasoLimpio}`;
+                const totalComponentes = (pasoActivo.piezasAsignadas || []).length + (pasoActivo.herrajesAsignados || []).length;
 
                 return (
-                  <div className="flex flex-col gap-2 w-full">
-                    {/* Fila 1: Título completo del Bloque de Armado */}
-                    <div className="flex items-center justify-between w-full">
-                      <input
-                        type="text"
-                        value={tituloMostrar}
-                        onChange={(e) => actualizarPasoManual(pasoActivo.id, { titulo: e.target.value })}
-                        className="font-bold text-xs bg-transparent border-b border-transparent hover:border-slate-300 focus:border-cyan-500 outline-none w-full text-slate-800 dark:text-slate-100"
-                      />
-                    </div>
-
-                    {/* Fila 2: Botones de Acción (Tocar en 3D, Retirar, Ojito, Invert y Tarrito de Basura) */}
-                    <div className="flex items-center gap-1.5 w-full flex-wrap">
-                      {/* 1. Botón Cápsula Tocar en 3D */}
-                      <button
-                        type="button"
-                        onClick={() => {
-                          if (
-                            modoPickingManual.activo &&
-                            modoPickingManual.pasoId === pasoActivo.id &&
-                            !modoPickingManual.grupoId &&
-                            modoPickingManual.modo === "agregar"
-                          ) {
-                            limpiarPickingManual();
-                          } else {
-                            if (!pasoActivo.piezasOcultas) {
-                              conmutarVisibilidadPiezasPaso(pasoActivo.id);
-                            }
-                            iniciarPickingManual(pasoActivo.id, null, "agregar");
-                          }
-                        }}
-                        title="Seleccionar piezas y herrajes tocándolas directamente en el 3D"
-                        className={`px-2.5 py-1 rounded-full transition flex items-center gap-1 font-bold text-[9.5px] border cursor-pointer ${
-                          modoPickingManual.activo &&
-                          modoPickingManual.pasoId === pasoActivo.id &&
-                          !modoPickingManual.grupoId &&
-                          modoPickingManual.modo === "agregar"
-                            ? "bg-cyan-500 text-white border-cyan-400 shadow-sm animate-pulse"
-                            : "bg-cyan-500/10 text-cyan-700 dark:text-cyan-300 border-cyan-500/30 hover:bg-cyan-500/20"
-                        }`}
-                      >
-                        <Pipette className="w-3 h-3" />
-                        <span>
-                          {modoPickingManual.activo &&
-                          modoPickingManual.pasoId === pasoActivo.id &&
-                          !modoPickingManual.grupoId &&
-                          modoPickingManual.modo === "agregar"
-                            ? "Tocando 3D..."
-                            : "Tocar en 3D"}
+                  <div className="flex flex-col gap-2.5 w-full">
+                    {/* Fila 1: Título con botón circular interactivo que rota 180° para retraer todo el bloque de armado */}
+                    <div
+                      onClick={() => setSeccionPiezasColapsada(!seccionPiezasColapsada)}
+                      className="flex items-center justify-between w-full cursor-pointer select-none group py-0.5"
+                      title={seccionPiezasColapsada ? "Expandir Bloque de armado" : "Retraer Bloque de armado"}
+                    >
+                      <div className="flex items-center gap-2">
+                        {/* Círculo con flechita que rota 180° */}
+                        <div className="w-5 h-5 rounded-full border border-cyan-500/40 dark:border-cyan-400/40 bg-cyan-500/10 dark:bg-cyan-500/20 text-cyan-700 dark:text-cyan-300 flex items-center justify-center transition-all duration-300 group-hover:scale-110 group-hover:bg-cyan-500/20 shadow-2xs">
+                          <ChevronDown
+                            className={`w-3.5 h-3.5 transition-transform duration-300 ${
+                              seccionPiezasColapsada ? "-rotate-180" : "rotate-0"
+                            }`}
+                          />
+                        </div>
+                        <span className="font-bold text-xs text-slate-800 dark:text-slate-100 group-hover:text-cyan-700 dark:group-hover:text-cyan-300 transition-colors">
+                          {tituloFijo}
                         </span>
-                      </button>
+                      </div>
 
-                      {/* 2. Botón Cápsula Retirar (Inmediatamente a la derecha de Tocar en 3D) */}
-                      <button
-                        type="button"
-                        onClick={() => {
-                          if (
-                            modoPickingManual.activo &&
-                            modoPickingManual.pasoId === pasoActivo.id &&
-                            !modoPickingManual.grupoId &&
-                            modoPickingManual.modo === "retirar"
-                          ) {
-                            limpiarPickingManual();
-                          } else {
-                            iniciarPickingManual(pasoActivo.id, null, "retirar");
-                          }
-                        }}
-                        title="Retirar piezas o herrajes tocándolos directamente en la vista 3D"
-                        className={`px-2.5 py-1 rounded-full transition flex items-center gap-1 font-bold text-[9.5px] border cursor-pointer ${
-                          modoPickingManual.activo &&
-                          modoPickingManual.pasoId === pasoActivo.id &&
-                          !modoPickingManual.grupoId &&
-                          modoPickingManual.modo === "retirar"
-                            ? "bg-rose-600 text-white border-rose-500 shadow-md ring-2 ring-rose-400/40 animate-pulse"
-                            : "bg-rose-500/10 text-rose-700 dark:text-rose-300 border-rose-500/30 hover:bg-rose-500/20"
-                        }`}
-                      >
-                        <Eraser className="w-3 h-3" />
-                        <span>
-                          {modoPickingManual.activo &&
-                          modoPickingManual.pasoId === pasoActivo.id &&
-                          !modoPickingManual.grupoId &&
-                          modoPickingManual.modo === "retirar"
-                            ? "Retirando 3D..."
-                            : "Retirar"}
+                      {totalComponentes > 0 && (
+                        <span className="text-[9px] font-semibold text-slate-400 dark:text-slate-500 font-mono">
+                          {totalComponentes} {totalComponentes === 1 ? "comp." : "comps."}
                         </span>
-                      </button>
-
-                      {/* 3. Botón Circular Apagar/Prender Piezas en 3D (Ojito) */}
-                      <button
-                        type="button"
-                        onClick={() => conmutarVisibilidadPiezasPaso(pasoActivo.id)}
-                        title={
-                          pasoActivo.piezasOcultas
-                            ? "Mostrar piezas de este bloque de armado en 3D"
-                            : "Apagar piezas de este bloque de armado en 3D"
-                        }
-                        className={`p-1.5 rounded-full transition shrink-0 cursor-pointer border ${
-                          pasoActivo.piezasOcultas
-                            ? "bg-amber-500/20 text-amber-500 border-amber-500/40"
-                            : "bg-slate-100 dark:bg-slate-800 text-slate-400 hover:text-amber-500 border-slate-200 dark:border-slate-700"
-                        }`}
-                      >
-                        {pasoActivo.piezasOcultas ? (
-                          <EyeOff className="w-3.5 h-3.5 text-amber-500" />
-                        ) : (
-                          <Eye className="w-3.5 h-3.5" />
-                        )}
-                      </button>
-
-                      {/* 4. Botón Circular Invert (Ojo con la diagonal, sin texto, mismo tamaño) */}
-                      <button
-                        type="button"
-                        onClick={() => conmutarOcultarNoAsignadasPaso(pasoActivo.id)}
-                        title={
-                          pasoActivo.ocultarNoAsignadas
-                            ? "Invert Hide Activo: Piezas no asignadas ocultas. Clic para mostrar todo el mueble."
-                            : "Invert Hide: Aislar este bloque de armado ocultando el resto del mueble."
-                        }
-                        className={`p-1.5 rounded-full transition shrink-0 cursor-pointer border ${
-                          pasoActivo.ocultarNoAsignadas
-                            ? "bg-[#1368AA] text-white border-[#1368AA] shadow-sm ring-2 ring-[#1368AA]/30"
-                            : "bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-400 hover:text-cyan-500 border-slate-200 dark:border-slate-700"
-                        }`}
-                      >
-                        <EyeOff className="w-3.5 h-3.5" />
-                      </button>
-
-                      {/* 5. Tarrito de Basura al Final */}
-                      {pasosManual.length > 1 && pasoActivo.id !== "P00" && (
-                        <button
-                          type="button"
-                          onClick={() => eliminarPasoManual(pasoActivo.id)}
-                          title="Eliminar este bloque de armado"
-                          className="p-1.5 rounded-full text-rose-500 hover:bg-rose-500/10 transition shrink-0 cursor-pointer ml-auto"
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </button>
                       )}
                     </div>
+
+                    {/* Contenido Retráctil: Botones de Acción + Tableros y Herrajes */}
+                    {!seccionPiezasColapsada && (
+                      <div className="flex flex-col gap-2.5 pt-0.5">
+                        {/* Fila 2: Botones de Acción (Tocar en 3D, Retirar, Ojito, Invert y Tarrito de Basura) */}
+                        <div className="flex items-center gap-1.5 w-full flex-wrap">
+                          {/* 1. Botón Cápsula Tocar en 3D */}
+                          <button
+                            type="button"
+                            onClick={() => {
+                              if (
+                                modoPickingManual.activo &&
+                                modoPickingManual.pasoId === pasoActivo.id &&
+                                !modoPickingManual.grupoId &&
+                                modoPickingManual.modo === "agregar"
+                              ) {
+                                limpiarPickingManual();
+                              } else {
+                                if (!pasoActivo.piezasOcultas) {
+                                  conmutarVisibilidadPiezasPaso(pasoActivo.id);
+                                }
+                                iniciarPickingManual(pasoActivo.id, null, "agregar");
+                              }
+                            }}
+                            title="Seleccionar piezas y herrajes tocándolas directamente en el 3D"
+                            className={`px-2.5 py-1 rounded-full transition flex items-center gap-1 font-bold text-[9.5px] border cursor-pointer ${
+                              modoPickingManual.activo &&
+                              modoPickingManual.pasoId === pasoActivo.id &&
+                              !modoPickingManual.grupoId &&
+                              modoPickingManual.modo === "agregar"
+                                ? "bg-cyan-500 text-white border-cyan-400 shadow-sm animate-pulse"
+                                : "bg-cyan-500/10 text-cyan-700 dark:text-cyan-300 border-cyan-500/30 hover:bg-cyan-500/20"
+                            }`}
+                          >
+                            <Pipette className="w-3 h-3" />
+                            <span>
+                              {modoPickingManual.activo &&
+                              modoPickingManual.pasoId === pasoActivo.id &&
+                              !modoPickingManual.grupoId &&
+                              modoPickingManual.modo === "agregar"
+                                ? "Tocando 3D..."
+                                : "Tocar en 3D"}
+                            </span>
+                          </button>
+
+                          {/* 2. Botón Cápsula Retirar (Inmediatamente a la derecha de Tocar en 3D) */}
+                          <button
+                            type="button"
+                            onClick={() => {
+                              if (
+                                modoPickingManual.activo &&
+                                modoPickingManual.pasoId === pasoActivo.id &&
+                                !modoPickingManual.grupoId &&
+                                modoPickingManual.modo === "retirar"
+                              ) {
+                                limpiarPickingManual();
+                              } else {
+                                iniciarPickingManual(pasoActivo.id, null, "retirar");
+                              }
+                            }}
+                            title="Retirar piezas o herrajes tocándolos directamente en la vista 3D"
+                            className={`px-2.5 py-1 rounded-full transition flex items-center gap-1 font-bold text-[9.5px] border cursor-pointer ${
+                              modoPickingManual.activo &&
+                              modoPickingManual.pasoId === pasoActivo.id &&
+                              !modoPickingManual.grupoId &&
+                              modoPickingManual.modo === "retirar"
+                                ? "bg-rose-600 text-white border-rose-500 shadow-md ring-2 ring-rose-400/40 animate-pulse"
+                                : "bg-rose-500/10 text-rose-700 dark:text-rose-300 border-rose-500/30 hover:bg-rose-500/20"
+                            }`}
+                          >
+                            <Eraser className="w-3 h-3" />
+                            <span>
+                              {modoPickingManual.activo &&
+                              modoPickingManual.pasoId === pasoActivo.id &&
+                              !modoPickingManual.grupoId &&
+                              modoPickingManual.modo === "retirar"
+                                ? "Retirando 3D..."
+                                : "Retirar"}
+                            </span>
+                          </button>
+
+                          {/* 3. Botón Circular Apagar/Prender Piezas en 3D (Ojito) */}
+                          <button
+                            type="button"
+                            onClick={() => conmutarVisibilidadPiezasPaso(pasoActivo.id)}
+                            title={
+                              pasoActivo.piezasOcultas
+                                ? "Mostrar piezas de este bloque de armado en 3D"
+                                : "Apagar piezas de este bloque de armado en 3D"
+                            }
+                            className={`p-1.5 rounded-full transition shrink-0 cursor-pointer border ${
+                              pasoActivo.piezasOcultas
+                                ? "bg-amber-500/20 text-amber-500 border-amber-500/40"
+                                : "bg-slate-100 dark:bg-slate-800 text-slate-400 hover:text-amber-500 border-slate-200 dark:border-slate-700"
+                            }`}
+                          >
+                            {pasoActivo.piezasOcultas ? (
+                              <EyeOff className="w-3.5 h-3.5 text-amber-500" />
+                            ) : (
+                              <Eye className="w-3.5 h-3.5" />
+                            )}
+                          </button>
+
+                          {/* 4. Botón Circular Invert (Ojo con la diagonal, sin texto, mismo tamaño) */}
+                          <button
+                            type="button"
+                            onClick={() => conmutarOcultarNoAsignadasPaso(pasoActivo.id)}
+                            title={
+                              pasoActivo.ocultarNoAsignadas
+                                ? "Invert Hide Activo: Piezas no asignadas ocultas. Clic para mostrar todo el mueble."
+                                : "Invert Hide: Aislar este bloque de armado ocultando el resto del mueble."
+                            }
+                            className={`p-1.5 rounded-full transition shrink-0 cursor-pointer border ${
+                              pasoActivo.ocultarNoAsignadas
+                                ? "bg-[#1368AA] text-white border-[#1368AA] shadow-sm ring-2 ring-[#1368AA]/30"
+                                : "bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-400 hover:text-cyan-500 border-slate-200 dark:border-slate-700"
+                            }`}
+                          >
+                            <EyeOff className="w-3.5 h-3.5" />
+                          </button>
+
+                          {/* 5. Tarrito de Basura al Final */}
+                          {pasosManual.length > 1 && pasoActivo.id !== "P00" && (
+                            <button
+                              type="button"
+                              onClick={() => eliminarPasoManual(pasoActivo.id)}
+                              title="Eliminar este bloque de armado"
+                              className="p-1.5 rounded-full text-rose-500 hover:bg-rose-500/10 transition shrink-0 cursor-pointer ml-auto"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          )}
+                        </div>
+
+                        {/* Piezas Asignadas (Tableros y Herrajes limpios sin cabecera redundante) */}
+                        {((pasoActivo.piezasAsignadas || []).length > 0 || (pasoActivo.herrajesAsignados || []).length > 0) ? (
+                          <div className="flex flex-col gap-2 pt-2 border-t border-slate-200/50 dark:border-slate-800/50">
+                            {/* Tableros de Madera */}
+                            {(pasoActivo.piezasAsignadas || []).length > 0 && (
+                              <div className="flex flex-col gap-1">
+                                <span className="text-[9px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 flex items-center gap-1">
+                                  <Layers className="w-2.5 h-2.5 text-amber-600" /> Tableros ({pasoActivo.piezasAsignadas.length})
+                                </span>
+                                <div className="flex flex-wrap gap-1">
+                                  {pasoActivo.piezasAsignadas.map((pz) => {
+                                    const pmLimpia = extraerPiezaMadre(pz);
+                                    const subAsignado = (pasoActivo.subbloques || []).find((s) =>
+                                      s.piezas.some((sp) => sp === pz || extraerPiezaMadre(sp) === pmLimpia)
+                                    );
+                                    return (
+                                      <span
+                                        key={pz}
+                                        style={{ borderColor: botonActivoColor }}
+                                        className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[9.5px] font-semibold bg-cyan-500/10 text-cyan-800 dark:text-cyan-200 border"
+                                      >
+                                        <span className="truncate max-w-[140px]">{pmLimpia}</span>
+                                        {subAsignado && (() => {
+                                          const sIdx = (pasoActivo.subbloques || []).findIndex((s) => s.id === subAsignado.id);
+                                          const colorSub = obtenerColorSubbloque(sIdx >= 0 ? sIdx : 0);
+                                          return (
+                                            <span
+                                              className="px-1.5 py-0.5 rounded-full text-white font-black text-[8px] flex items-center justify-center shrink-0 shadow-xs"
+                                              style={{ backgroundColor: colorSub.bg }}
+                                              title={`Asignado a ${subAsignado.nombre}`}
+                                            >
+                                              {subAsignado.codigo || `${pasoActivo.id}${subAsignado.letra}`}
+                                            </span>
+                                          );
+                                        })()}
+                                        <button
+                                          type="button"
+                                          onClick={() => desasignarPiezaDePasoManual(pasoActivo.id, pz)}
+                                          className="hover:text-rose-500 transition cursor-pointer ml-0.5"
+                                          title="Quitar de este paso"
+                                        >
+                                          <X className="w-2.5 h-2.5" />
+                                        </button>
+                                      </span>
+                                    );
+                                  })}
+                                </div>
+                              </div>
+                            )}
+
+                            {/* Herrajes */}
+                            {(pasoActivo.herrajesAsignados || []).length > 0 && (
+                              <div className="flex flex-col gap-1">
+                                <span className="text-[9px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 flex items-center gap-1">
+                                  <Hammer className="w-2.5 h-2.5 text-slate-500" /> Herrajes ({pasoActivo.herrajesAsignados.length})
+                                </span>
+                                <div className="flex flex-wrap gap-1">
+                                  {pasoActivo.herrajesAsignados.map((h) => {
+                                    const hLimpio = extraerPiezaMadre(h);
+                                    const subAsignadoH = (pasoActivo.subbloques || []).find((s) =>
+                                      s.herrajes.some((sh) => sh === h || extraerPiezaMadre(sh) === hLimpio)
+                                    );
+                                    return (
+                                      <span
+                                        key={h}
+                                        className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[9.5px] font-semibold bg-slate-200/70 dark:bg-slate-800 text-slate-700 dark:text-slate-200 border border-slate-300 dark:border-slate-700"
+                                      >
+                                        <span className="truncate max-w-[140px]">{hLimpio}</span>
+                                        {subAsignadoH && (() => {
+                                          const sIdx = (pasoActivo.subbloques || []).findIndex((s) => s.id === subAsignadoH.id);
+                                          const colorSub = obtenerColorSubbloque(sIdx >= 0 ? sIdx : 0);
+                                          return (
+                                            <span
+                                              className="px-1.5 py-0.5 rounded-full text-white font-black text-[8px] flex items-center justify-center shrink-0 shadow-xs"
+                                              style={{ backgroundColor: colorSub.bg }}
+                                              title={`Asignado a ${subAsignadoH.nombre}`}
+                                            >
+                                              {subAsignadoH.codigo || `${pasoActivo.id}${subAsignadoH.letra}`}
+                                            </span>
+                                          );
+                                        })()}
+                                        <button
+                                          type="button"
+                                          onClick={() => desasignarHerrajeDePasoManual(pasoActivo.id, h)}
+                                          className="hover:text-rose-500 transition cursor-pointer ml-0.5"
+                                          title="Quitar de este paso"
+                                        >
+                                          <X className="w-2.5 h-2.5" />
+                                        </button>
+                                      </span>
+                                    );
+                                  })}
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        ) : (
+                          <div className="py-2.5 px-3 text-center rounded-xl bg-slate-500/5 border border-dashed border-slate-200 dark:border-slate-800 text-[10px] text-slate-500 dark:text-slate-400 flex flex-col items-center gap-1">
+                            <span>Ninguna pieza asignada a este paso todavía.</span>
+                            <span className="text-[9px] font-medium text-cyan-600 dark:text-cyan-400">
+                              Usa <strong>&quot;Tocar en 3D&quot;</strong> para sumarlas o <strong>&quot;Retirar&quot;</strong> para quitarlas tocándolas en 3D.
+                            </span>
+                          </div>
+                        )}
+                      </div>
+                    )}
                   </div>
                 );
               })()}
-
-              {/* Piezas Asignadas (Chips en Cápsula de Pieza Madre) */}
-              {((pasoActivo.piezasAsignadas || []).length > 0 || (pasoActivo.herrajesAsignados || []).length > 0) ? (
-                <div className="flex flex-col gap-2 pt-1 border-t border-slate-200/50 dark:border-slate-800/50">
-                  {/* Tableros de Madera */}
-                  {(pasoActivo.piezasAsignadas || []).length > 0 && (
-                    <div className="flex flex-col gap-1">
-                      <span className="text-[9px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 flex items-center gap-1">
-                        <Layers className="w-2.5 h-2.5 text-amber-600" /> Tableros ({pasoActivo.piezasAsignadas.length})
-                      </span>
-                      <div className="flex flex-wrap gap-1">
-                        {pasoActivo.piezasAsignadas.map((pz) => {
-                          const pmLimpia = extraerPiezaMadre(pz);
-                          const subAsignado = (pasoActivo.subbloques || []).find((s) =>
-                            s.piezas.some((sp) => sp === pz || extraerPiezaMadre(sp) === pmLimpia)
-                          );
-                          return (
-                            <span
-                              key={pz}
-                              style={{ borderColor: botonActivoColor }}
-                              className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[9.5px] font-semibold bg-cyan-500/10 text-cyan-800 dark:text-cyan-200 border"
-                            >
-                              <span className="truncate max-w-[140px]">{pmLimpia}</span>
-                              {subAsignado && (() => {
-                                const sIdx = (pasoActivo.subbloques || []).findIndex((s) => s.id === subAsignado.id);
-                                const colorSub = obtenerColorSubbloque(sIdx >= 0 ? sIdx : 0);
-                                return (
-                                  <span
-                                    className="px-1.5 py-0.5 rounded-full text-white font-black text-[8px] flex items-center justify-center shrink-0 shadow-xs"
-                                    style={{ backgroundColor: colorSub.bg }}
-                                    title={`Asignado a ${subAsignado.nombre}`}
-                                  >
-                                    {subAsignado.codigo || `${pasoActivo.id}${subAsignado.letra}`}
-                                  </span>
-                                );
-                              })()}
-                              <button
-                                type="button"
-                                onClick={() => desasignarPiezaDePasoManual(pasoActivo.id, pz)}
-                                className="hover:text-rose-500 transition cursor-pointer ml-0.5"
-                                title="Quitar de este paso"
-                              >
-                                <X className="w-2.5 h-2.5" />
-                              </button>
-                            </span>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Herrajes */}
-                  {(pasoActivo.herrajesAsignados || []).length > 0 && (
-                    <div className="flex flex-col gap-1">
-                      <span className="text-[9px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 flex items-center gap-1">
-                        <Hammer className="w-2.5 h-2.5 text-slate-500" /> Herrajes ({pasoActivo.herrajesAsignados.length})
-                      </span>
-                      <div className="flex flex-wrap gap-1">
-                        {pasoActivo.herrajesAsignados.map((h) => {
-                          const hLimpio = extraerPiezaMadre(h);
-                          const subAsignadoH = (pasoActivo.subbloques || []).find((s) =>
-                            s.herrajes.some((sh) => sh === h || extraerPiezaMadre(sh) === hLimpio)
-                          );
-                          return (
-                            <span
-                              key={h}
-                              className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[9.5px] font-semibold bg-slate-200/70 dark:bg-slate-800 text-slate-700 dark:text-slate-200 border border-slate-300 dark:border-slate-700"
-                            >
-                              <span className="truncate max-w-[140px]">{hLimpio}</span>
-                              {subAsignadoH && (() => {
-                                const sIdx = (pasoActivo.subbloques || []).findIndex((s) => s.id === subAsignadoH.id);
-                                const colorSub = obtenerColorSubbloque(sIdx >= 0 ? sIdx : 0);
-                                return (
-                                  <span
-                                    className="px-1.5 py-0.5 rounded-full text-white font-black text-[8px] flex items-center justify-center shrink-0 shadow-xs"
-                                    style={{ backgroundColor: colorSub.bg }}
-                                    title={`Asignado a ${subAsignadoH.nombre}`}
-                                  >
-                                    {subAsignadoH.codigo || `${pasoActivo.id}${subAsignadoH.letra}`}
-                                  </span>
-                                );
-                              })()}
-                              <button
-                                type="button"
-                                onClick={() => desasignarHerrajeDePasoManual(pasoActivo.id, h)}
-                                className="hover:text-rose-500 transition cursor-pointer ml-0.5"
-                                title="Quitar de este paso"
-                              >
-                                <X className="w-2.5 h-2.5" />
-                              </button>
-                            </span>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  )}
-                </div>
-              ) : (
-                <div className="py-2.5 px-3 text-center rounded-xl bg-slate-500/5 border border-dashed border-slate-200 dark:border-slate-800 text-[10px] text-slate-500 dark:text-slate-400 flex flex-col items-center gap-1">
-                  <span>Ninguna pieza asignada a este paso todavía.</span>
-                  <span className="text-[9px] font-medium text-cyan-600 dark:text-cyan-400">
-                    Usa <strong>&quot;Tocar en 3D&quot;</strong> para sumarlas o <strong>&quot;Retirar&quot;</strong> para quitarlas tocándolas en 3D.
-                  </span>
-                </div>
-              )}
 
               {/* 🧩 SECCIÓN DE SUBBLOQUES DE ARMADO (A partir de la línea roja) */}
               <div className="flex flex-col gap-2.5 pt-2.5 border-t border-slate-200 dark:border-slate-800">
@@ -1513,6 +1651,15 @@ export default function StepManagerPanel() {
                         : sub.nombre;
 
                       const colorSub = obtenerColorSubbloque(sIdx);
+                      const estaColapsado = !!subbloquesColapsados[sub.id];
+                      const totalCompSub = (sub.piezas || []).length + (sub.herrajes || []).length;
+
+                      const toggleColapsoSub = () => {
+                        setSubbloquesColapsados((prev) => ({
+                          ...prev,
+                          [sub.id]: !prev[sub.id],
+                        }));
+                      };
 
                       return (
                         <div
@@ -1520,26 +1667,56 @@ export default function StepManagerPanel() {
                           className="p-2.5 rounded-2xl border bg-black/[0.02] dark:bg-white/[0.02] flex flex-col gap-2 shadow-xs transition-colors"
                           style={{ borderColor: `${colorSub.bg}45` }}
                         >
-                          {/* Fila 1: Título editable del Subbloque con nomenclatura oficial (ej. P02A / Sub-Bloque P02-A) y color coordinado */}
-                          <div className="flex items-center gap-2 w-full">
-                            <span 
-                              className="px-2.5 py-0.5 rounded-full text-white flex items-center justify-center font-black text-[10.5px] shrink-0 shadow-xs"
-                              style={{ backgroundColor: colorSub.bg }}
-                            >
-                              {codigoSub}
-                            </span>
-                            <input
-                              type="text"
-                              value={nombreSub}
-                              onChange={(e) =>
-                                actualizarSubBloqueArmado(pasoActivo.id, sub.id, { nombre: e.target.value })
-                              }
-                              className="font-bold text-xs bg-transparent border-b border-transparent hover:border-slate-300 focus:border-cyan-500 outline-none w-full text-slate-800 dark:text-slate-100 truncate"
-                            />
+                          {/* Fila 1: Cabecera con botón circular de retracción (180°), badge de código y título */}
+                          <div className="flex items-center justify-between gap-2 w-full">
+                            <div className="flex items-center gap-2 flex-1 min-w-0">
+                              {/* Círculo con flechita que rota 180° coordinado con el color del subbloque */}
+                              <button
+                                type="button"
+                                onClick={toggleColapsoSub}
+                                title={estaColapsado ? `Expandir ${nombreSub}` : `Retraer ${nombreSub}`}
+                                className="w-5 h-5 rounded-full flex items-center justify-center shrink-0 transition-all duration-300 hover:scale-110 shadow-2xs cursor-pointer border"
+                                style={{
+                                  backgroundColor: `${colorSub.bg}15`,
+                                  borderColor: `${colorSub.bg}40`,
+                                  color: colorSub.bg,
+                                }}
+                              >
+                                <ChevronDown
+                                  className={`w-3.5 h-3.5 transition-transform duration-300 ${
+                                    estaColapsado ? "-rotate-180" : "rotate-0"
+                                  }`}
+                                />
+                              </button>
+
+                              <span 
+                                className="px-2.5 py-0.5 rounded-full text-white flex items-center justify-center font-black text-[10.5px] shrink-0 shadow-xs"
+                                style={{ backgroundColor: colorSub.bg }}
+                              >
+                                {codigoSub}
+                              </span>
+                              <input
+                                type="text"
+                                value={nombreSub}
+                                onChange={(e) =>
+                                  actualizarSubBloqueArmado(pasoActivo.id, sub.id, { nombre: e.target.value })
+                                }
+                                className="font-bold text-xs bg-transparent border-b border-transparent hover:border-slate-300 focus:border-cyan-500 outline-none w-full text-slate-800 dark:text-slate-100 truncate"
+                              />
+                            </div>
+
+                            {totalCompSub > 0 && (
+                              <span className="text-[9px] font-semibold text-slate-400 dark:text-slate-500 font-mono shrink-0">
+                                {totalCompSub} {totalCompSub === 1 ? "comp." : "comps."}
+                              </span>
+                            )}
                           </div>
 
-                          {/* Fila 2: Herramientas dedicadas del Subbloque (Tocar en 3D, Retirar, Ocultar/Ver y Tarrito de Basura) */}
-                          <div className="flex items-center gap-1.5 w-full flex-wrap">
+                          {/* Contenido Retráctil del Sub-Bloque */}
+                          {!estaColapsado && (
+                            <>
+                              {/* Fila 2: Herramientas dedicadas del Subbloque (Tocar en 3D, Retirar, Ocultar/Ver y Tarrito de Basura) */}
+                              <div className="flex items-center gap-1.5 w-full flex-wrap">
                             {/* Tocar en 3D */}
                             <button
                               type="button"
@@ -1705,9 +1882,8 @@ export default function StepManagerPanel() {
                                   <div className="flex items-center justify-between">
                                     <span className="font-bold flex items-center gap-1.5 text-xs text-slate-800 dark:text-slate-100">
                                       <Box className="w-3.5 h-3.5 text-cyan-600 dark:text-cyan-400" />
-                                      <span>Pieza Master (Banco de Trabajo)</span>
+                                      <span>Pieza Master</span>
                                     </span>
-                                    <span className="text-[10px] opacity-60 font-medium">Apoyada fija</span>
                                   </div>
 
                                   <select
@@ -1731,146 +1907,89 @@ export default function StepManagerPanel() {
                                   </select>
                                 </div>
 
-                                {/* 🛏️ Botones Acostar en el Plano X, Y: Izquierda vs Derecha */}
-                                <div className="flex flex-col gap-1">
-                                  <div className="flex items-center justify-between text-[11px]">
-                                    <span className="font-semibold text-slate-600 dark:text-slate-300 flex items-center gap-1">
-                                      <Layers className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
-                                      <span>Acostar en Plano:</span>
-                                    </span>
-                                    {acostado && (
-                                      <span className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full">
-                                        {direccionAcostar === "derecha" ? "Hacia Derecha" : "Hacia Izquierda"}
-                                      </span>
-                                    )}
-                                  </div>
-
-                                  <div className="grid grid-cols-2 gap-1.5">
-                                    <button
-                                      type="button"
-                                      onClick={() => {
-                                        const estaActivoIzquierda = acostado && direccionAcostar !== "derecha";
-                                        actualizarTransformBancoSubBloque(pasoActivo.id, sub.id, {
-                                          acostado: !estaActivoIzquierda,
-                                          direccionAcostar: "izquierda",
-                                          apoyoEnPiso: true,
-                                        });
-                                      }}
-                                      title={
-                                        acostado && direccionAcostar !== "derecha"
-                                          ? "Acostada hacia la izquierda (Activo). Clic para poner de pie"
-                                          : "Acostar pieza hacia la izquierda (giro +90° en Z/X)"
-                                      }
-                                      className={`py-1.5 px-2 rounded-full border text-[11px] font-bold shadow-xs flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
-                                        acostado && direccionAcostar !== "derecha"
-                                          ? "bg-emerald-600 text-white border-emerald-500 shadow-sm"
-                                          : "border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-emerald-500/10 hover:border-emerald-500/40"
-                                      }`}
-                                    >
-                                      <RotateCcw className="w-3.5 h-3.5" />
-                                      <span>{acostado && direccionAcostar !== "derecha" ? "Acostada Izq." : "Acostar Izq."}</span>
-                                    </button>
-
-                                    <button
-                                      type="button"
-                                      onClick={() => {
-                                        const estaActivoDerecha = acostado && direccionAcostar === "derecha";
-                                        actualizarTransformBancoSubBloque(pasoActivo.id, sub.id, {
-                                          acostado: !estaActivoDerecha,
-                                          direccionAcostar: "derecha",
-                                          apoyoEnPiso: true,
-                                        });
-                                      }}
-                                      title={
-                                        acostado && direccionAcostar === "derecha"
-                                          ? "Acostada hacia la derecha (Activo). Clic para poner de pie"
-                                          : "Acostar pieza hacia la derecha (giro -90°, deja herrajes internos hacia arriba)"
-                                      }
-                                      className={`py-1.5 px-2 rounded-full border text-[11px] font-bold shadow-xs flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
-                                        acostado && direccionAcostar === "derecha"
-                                          ? "bg-emerald-600 text-white border-emerald-500 shadow-sm"
-                                          : "border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-emerald-500/10 hover:border-emerald-500/40"
-                                      }`}
-                                    >
-                                      <RotateCw className="w-3.5 h-3.5" />
-                                      <span>{acostado && direccionAcostar === "derecha" ? "Acostada Der." : "Acostar Der."}</span>
-                                    </button>
-                                  </div>
-                                </div>
-
-                                {/* 🔄 Sección Giro en Plano (Solo 2 opciones: Izquierda o Derecha) */}
-                                <div className="flex flex-col gap-1.5 pt-1.5 border-t border-slate-200/60 dark:border-slate-800/60">
-                                  <div className="flex items-center justify-between text-[11px]">
-                                    <span className="font-semibold text-slate-600 dark:text-slate-300">
-                                      Giro en Plano:
-                                    </span>
-                                    <div className="flex items-center gap-1.5">
-                                      <span className="px-2.5 py-0.5 rounded-full bg-slate-200/80 dark:bg-slate-800 text-[10px] font-mono font-bold text-[#1368AA] dark:text-blue-400">
-                                        {rotPlano}°
-                                      </span>
-                                      {(rotPlano !== 0 || acostado) && (
+                                  {/* 🔄 Segmented Pill Bar: Contenedor unificado de Acostar y Giro en Plano */}
+                                  <div className="flex flex-col gap-1.5 pt-1.5 border-t border-slate-200/60 dark:border-slate-800/60">
+                                    {/* Barra Cápsula Unificada (Pill Container) */}
+                                    <div className="flex items-center justify-center py-1">
+                                      <div className="inline-flex items-center p-1.5 rounded-full bg-slate-100/90 dark:bg-slate-800/80 border border-slate-200/80 dark:border-slate-700/60 shadow-inner gap-1.5">
+                                        {/* 1. Girar / Acostar Izquierda */}
                                         <button
                                           type="button"
-                                          onClick={() => resetTransformBancoSubBloque(pasoActivo.id, sub.id)}
-                                          title="Restablecer giro y posición a 0°"
-                                          className="px-2 py-0.5 rounded-full bg-red-100 hover:bg-red-200 dark:bg-red-950/50 dark:hover:bg-red-900/50 text-red-600 dark:text-red-400 text-[10px] font-semibold transition-colors cursor-pointer"
+                                          onClick={() => {
+                                            const estaActivoIzquierda = acostado && direccionAcostar !== "derecha";
+                                            actualizarTransformBancoSubBloque(pasoActivo.id, sub.id, {
+                                              acostado: !estaActivoIzquierda,
+                                              direccionAcostar: "izquierda",
+                                              apoyoEnPiso: true,
+                                            });
+                                          }}
+                                          title={
+                                            acostado && direccionAcostar !== "derecha"
+                                              ? "Acostada hacia la izquierda (Activo). Clic para poner de pie"
+                                              : "Girar / Acostar hacia la izquierda"
+                                          }
+                                          className={`w-[33px] h-[33px] rounded-full flex items-center justify-center transition-all cursor-pointer ${
+                                            acostado && direccionAcostar !== "derecha"
+                                              ? "bg-[#0891b2] text-white shadow-sm border border-[#0891b2] scale-105"
+                                              : "bg-transparent border border-slate-300/80 dark:border-slate-600/60 text-slate-700 dark:text-slate-200 hover:border-slate-400 dark:hover:border-slate-500 hover:bg-slate-200/40 dark:hover:bg-slate-700/40"
+                                          }`}
                                         >
-                                          0°
+                                          <IconGirarIzquierda className="w-[20.5px] h-[20.5px]" />
                                         </button>
-                                      )}
+
+                                        {/* 2. Girar / Acostar Derecha */}
+                                        <button
+                                          type="button"
+                                          onClick={() => {
+                                            const estaActivoDerecha = acostado && direccionAcostar === "derecha";
+                                            actualizarTransformBancoSubBloque(pasoActivo.id, sub.id, {
+                                              acostado: !estaActivoDerecha,
+                                              direccionAcostar: "derecha",
+                                              apoyoEnPiso: true,
+                                            });
+                                          }}
+                                          title={
+                                            acostado && direccionAcostar === "derecha"
+                                              ? "Acostada hacia la derecha (Activo). Clic para poner de pie"
+                                              : "Girar / Acostar hacia la derecha"
+                                          }
+                                          className={`w-[33px] h-[33px] rounded-full flex items-center justify-center transition-all cursor-pointer ${
+                                            acostado && direccionAcostar === "derecha"
+                                              ? "bg-[#0891b2] text-white shadow-sm border border-[#0891b2] scale-105"
+                                              : "bg-transparent border border-slate-300/80 dark:border-slate-600/60 text-slate-700 dark:text-slate-200 hover:border-slate-400 dark:hover:border-slate-500 hover:bg-slate-200/40 dark:hover:bg-slate-700/40"
+                                          }`}
+                                        >
+                                          <IconGirarDerecha className="w-[20.5px] h-[20.5px]" />
+                                        </button>
+
+                                        {/* Separador sutil */}
+                                        <div className="w-px h-4.5 bg-slate-300/80 dark:bg-slate-700 mx-0.5" />
+
+                                        {/* 3. Giro -90° (Antihorario) */}
+                                        <button
+                                          type="button"
+                                          onClick={() => girarPlano(-90)}
+                                          title="Girar 90° hacia la izquierda (antihorario)"
+                                          className="w-[33px] h-[33px] rounded-full bg-transparent border border-slate-300/80 dark:border-slate-600/60 text-slate-700 dark:text-slate-200 hover:border-[#1368AA] hover:text-[#1368AA] dark:hover:border-blue-400 dark:hover:text-blue-400 hover:bg-slate-200/40 dark:hover:bg-slate-700/40 flex items-center justify-center transition-all active:scale-95 cursor-pointer"
+                                        >
+                                          <IconGiroMenos90 className="w-[22px] h-[22px]" />
+                                        </button>
+
+                                        {/* 4. Giro +90° (Horario) */}
+                                        <button
+                                          type="button"
+                                          onClick={() => girarPlano(90)}
+                                          title="Girar 90° hacia la derecha (horario)"
+                                          className="w-[33px] h-[33px] rounded-full bg-transparent border border-slate-300/80 dark:border-slate-600/60 text-slate-700 dark:text-slate-200 hover:border-[#1368AA] hover:text-[#1368AA] dark:hover:border-blue-400 dark:hover:text-blue-400 hover:bg-slate-200/40 dark:hover:bg-slate-700/40 flex items-center justify-center transition-all active:scale-95 cursor-pointer"
+                                        >
+                                          <IconGiroMas90 className="w-[22px] h-[22px]" />
+                                        </button>
+                                      </div>
                                     </div>
                                   </div>
 
-                                  {/* Solo 2 botones de giro (Cápsulas puras rounded-full) */}
-                                  <div className="grid grid-cols-2 gap-1.5">
-                                    {/* Girar Izquierda (-90°) */}
-                                    <button
-                                      type="button"
-                                      onClick={() => girarPlano(-90)}
-                                      title="Girar 90° hacia la izquierda (antihorario)"
-                                      className="flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-full border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:border-[#1368AA] hover:text-[#1368AA] dark:hover:text-blue-400 text-xs font-semibold shadow-xs active:scale-95 transition-all cursor-pointer"
-                                    >
-                                      <RotateCcw className="w-3.5 h-3.5 text-[#1368AA] dark:text-blue-400" />
-                                      <span>Giro Izquierda (-90°)</span>
-                                    </button>
-
-                                    {/* Girar Derecha (+90°) */}
-                                    <button
-                                      type="button"
-                                      onClick={() => girarPlano(90)}
-                                      title="Girar 90° hacia la derecha (horario)"
-                                      className="flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-full border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:border-[#1368AA] hover:text-[#1368AA] dark:hover:text-blue-400 text-xs font-semibold shadow-xs active:scale-95 transition-all cursor-pointer"
-                                    >
-                                      <RotateCw className="w-3.5 h-3.5 text-[#1368AA] dark:text-blue-400" />
-                                      <span>Giro Derecha (+90°)</span>
-                                    </button>
-                                  </div>
-                                </div>
-
-                                {/* 🕹️ Control Tipo Joystick / Cruceta D-Pad (Subir, Bajar, Izquierda, Derecha) */}
+                                {/* 🕹️ Control Tipo Joystick / Cruceta D-Pad */}
                                 <div className="flex flex-col gap-2 pt-2 border-t border-slate-200/60 dark:border-slate-800/60">
-                                  <div className="flex items-center justify-between text-[11px]">
-                                    <span className="font-semibold text-slate-600 dark:text-slate-300 flex items-center gap-1">
-                                      <Move className="w-3 h-3 text-[#1368AA] dark:text-blue-400" />
-                                      <span>Desplazamiento en Plano:</span>
-                                    </span>
-                                    <div className="flex items-center gap-1.5">
-                                      <span className="px-2.5 py-0.5 rounded-full bg-slate-200/80 dark:bg-slate-800 text-[10px] font-mono font-bold text-[#1368AA] dark:text-blue-400">
-                                        X: {Math.round(offsetX * 1000)} mm | Y: {-Math.round(offsetZ * 1000)} mm
-                                      </span>
-                                      {(offsetX !== 0 || offsetZ !== 0) && (
-                                        <button
-                                          type="button"
-                                          onClick={resetOffsets}
-                                          title="Volver a posición de origen (0, 0)"
-                                          className="px-2 py-0.5 rounded-full bg-amber-100 hover:bg-amber-200 dark:bg-amber-950/50 dark:hover:bg-amber-900/50 text-amber-700 dark:text-amber-400 text-[10px] font-semibold transition-colors cursor-pointer"
-                                        >
-                                          (0, 0)
-                                        </button>
-                                      )}
-                                    </div>
-                                  </div>
-
                                   {/* Cruceta Joystick D-Pad centrada */}
                                   <div className="flex flex-col items-center justify-center py-1 select-none">
                                     {/* Fila Arriba: Subir */}
@@ -1925,18 +2044,16 @@ export default function StepManagerPanel() {
                                     >
                                       <ArrowDown className="w-4 h-4" />
                                     </button>
-
-                                    <span className="text-[9px] text-slate-400 dark:text-slate-500 font-medium mt-1">
-                                      Paso: ±50 mm • Plano 2D (X, Y)
-                                    </span>
                                   </div>
                                 </div>
                               </div>
                             );
                           })()}
-                        </div>
-                      );
-                    })}
+                        </>
+                      )}
+                    </div>
+                  );
+                })}
                   </div>
                 )}
               </div>
@@ -1969,7 +2086,7 @@ export default function StepManagerPanel() {
                       onClick={() => pasoP00 && conmutarVisibilidadTodosGruposCinematicos(pasoP00.id, !algunOculto)}
                       className={`px-2.5 py-1 rounded-full text-[9.5px] font-bold border transition flex items-center gap-1 cursor-pointer shrink-0 ${
                         algunOculto
-                          ? "bg-amber-500/10 text-amber-700 dark:text-amber-300 border-amber-500/30 hover:bg-amber-500/20"
+                          ? "bg-[#1368AA] text-white border-[#1368AA] shadow-xs"
                           : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:bg-slate-200"
                       }`}
                       title={algunOculto ? "Mostrar todos los bloques funcionales en 3D" : "Ocultar todos los bloques funcionales en 3D para despejar el ensamble"}
@@ -2013,8 +2130,8 @@ export default function StepManagerPanel() {
                             title={estaOculto ? "Mostrar este bloque en 3D" : "Ocultar este bloque en 3D"}
                             className={`p-1 rounded-full transition shrink-0 cursor-pointer border ${
                               estaOculto
-                                ? "bg-amber-500/20 text-amber-500 border-amber-500/40 hover:bg-amber-500/30"
-                                : "bg-white dark:bg-slate-900 text-slate-400 hover:text-amber-500 border-slate-200 dark:border-slate-700"
+                                ? "bg-[#1368AA] text-white border-[#1368AA] shadow-xs"
+                                : "bg-white dark:bg-slate-900 text-slate-400 hover:text-cyan-500 border-slate-200 dark:border-slate-700"
                             }`}
                           >
                             {estaOculto ? <EyeOff className="w-3 h-3" /> : <Eye className="w-3 h-3" />}
@@ -2031,11 +2148,11 @@ export default function StepManagerPanel() {
             {(!pasoActivo.subbloques || pasoActivo.subbloques.length === 0) && (
               <div className="flex flex-col gap-1.5 p-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-500/5">
                 <div className="flex items-center justify-between">
-                  <span className="font-bold flex items-center gap-1 text-xs">
-                    <Box className="w-3.5 h-3.5 text-cyan-600" /> Pieza Master (Banco de Trabajo)
+                  <span className="font-bold flex items-center gap-1.5 text-xs text-slate-800 dark:text-slate-100">
+                    <Box className="w-3.5 h-3.5 text-cyan-600 dark:text-cyan-400" />
+                    <span>Pieza Master</span>
                   </span>
-                <span className="text-[10px] opacity-60">Apoyada fija</span>
-              </div>
+                </div>
 
               <select
                 value={pasoActivo.piezaMaster || ""}

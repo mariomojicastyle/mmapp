@@ -29,8 +29,7 @@ export default function TimelineScrubber() {
   } = use3BFStore();
 
   const pasoActivo = pasosManual.find((p) => p.id === pasoActivoManualId) || pasosManual[0];
-  const esMultiSub3 = Boolean(pasoActivo?.subbloques && pasoActivo.subbloques.length >= 3);
-  const duracionTotal = Math.max(pasoActivo?.duracionTotal || 10.0, esMultiSub3 ? 11.4 : 1.0);
+  const duracionTotal = pasoActivo?.duracionTotal || 10.0;
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
   // Determinar URL de audio según el idioma seleccionado
@@ -148,17 +147,16 @@ export default function TimelineScrubber() {
 
       if (tiene3Sub) {
         if (idx === 0) {
-          // P02A: 0.0s -> 2.4s
           inicio = 0.0;
-          dur = 2.4;
+          dur = durSlot;
         } else if (idx === 1) {
-          // P02B: abarca desde 2.4s (Cara A) hasta el final (Giro en 7.3s y Cara B hasta 11.4s)
-          inicio = 2.4;
-          dur = Number((duracionTotal - 2.4).toFixed(1));
+          // P02B abarca desde slot 1 (Cara A) hasta el final (Cara B)
+          inicio = durSlot;
+          dur = Number((duracionTotal - durSlot).toFixed(1));
         } else if (idx === 2) {
-          // P02C: corre inmediatamente tras Cara A de P02B [4.8s -> 7.3s]
-          inicio = 4.8;
-          dur = 2.5;
+          // P02C corre en slot 2 [2*durSlot -> 3*durSlot]
+          inicio = Number((2 * durSlot).toFixed(1));
+          dur = durSlot;
         }
       } else {
         inicio = Number((idx * durSlot).toFixed(1));

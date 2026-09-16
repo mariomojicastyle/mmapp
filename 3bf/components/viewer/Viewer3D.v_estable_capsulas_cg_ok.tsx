@@ -2653,21 +2653,20 @@ function SubbloqueSingleTooltip({
   const letraSub = sub.letra || String.fromCharCode(65 + sIdx);
   const codigoSub = sub.codigo || `${pasoId}${letraSub}`;
 
-  // useFrame para actualizar dinámicamente la posición en tiempo real anclada al centro de gravedad de la MADERA
+  // useFrame para actualizar dinámicamente la posición en tiempo real siguiendo el centro de gravedad
   useFrame(() => {
-    // 🪵 FILTRADO ESTRICTO: Para evitar que las cápsulas oscilen cuando las correderas o tornillos se mueven,
-    // el centro de gravedad debe calcularse EXCLUSIVAMENTE a partir de la pieza de madera (tablero estructural).
-    const piezasMaderaDelSub = [
+    const piezasDelSub = [
       sub.piezaMaster,
-      ...(sub.piezas || [])
+      ...(sub.piezas || []),
+      ...(sub.herrajes || [])
     ].filter(Boolean) as string[];
 
-    if (piezasMaderaDelSub.length === 0) {
+    if (piezasDelSub.length === 0) {
       if (centerPos !== null) setCenterPos(null);
       return;
     }
 
-    const boxMadera = new THREE.Box3();
+    const box = new THREE.Box3();
     const boxMaster = new THREE.Box3();
     let count = 0;
     let tieneMaster = false;
@@ -2680,31 +2679,13 @@ function SubbloqueSingleTooltip({
         const pm = u?.piezaMadre || extraerPiezaMadre(cleanName);
         const rawName = u?.rawName || "";
         const instKey = u?.instanciaKey || "";
-        const cnLow = cleanName.toLowerCase();
-        const rnLow = rawName.toLowerCase();
-        const nLow = (obj.name || "").toLowerCase();
 
-        // 🛡️ REGLA: Excluir explícitamente cualquier herraje o corredera del cálculo del centro de la cápsula
-        const esHerraje = (
-          u?.isHardware ||
-          u?.isMachining ||
-          cnLow.includes("corredi") ||
-          cnLow.includes("trilho") ||
-          cnLow.includes("parafuso") ||
-          cnLow.includes("tornillo") ||
-          cnLow.includes("perno") ||
-          rnLow.includes("corredi") ||
-          rnLow.includes("trilho") ||
-          rnLow.includes("parafuso") ||
-          nLow.includes("corredi") ||
-          nLow.includes("trilho")
-        );
-        if (esHerraje) return;
-
-        const match = piezasMaderaDelSub.some((target) => {
+        const match = piezasDelSub.some((target) => {
           if (!target) return false;
           const tClean = target.replace(/^RH_OUT:\s*/i, "").replace(/^RH_IN:\s*/i, "").trim().toLowerCase();
           const tPM = extraerPiezaMadre(tClean).toLowerCase();
+          const cnLow = cleanName.toLowerCase();
+          const rnLow = rawName.toLowerCase();
           const ikLow = instKey.toLowerCase();
           const pmLow = pm.toLowerCase();
 
@@ -2720,13 +2701,13 @@ function SubbloqueSingleTooltip({
 
         if (match) {
           const esMaster = pMasterTarget && (
-            cnLow.includes(pMasterTarget) ||
+            cleanName.toLowerCase().includes(pMasterTarget) ||
             pm.toLowerCase().includes(pMasterTarget) ||
             instKey.toLowerCase().includes(pMasterTarget) ||
-            rnLow.includes(pMasterTarget)
+            rawName.toLowerCase().includes(pMasterTarget)
           );
 
-          // Si es pieza master o si tiene escala válida, expandir la caja de madera
+          // Si es pieza master o si tiene escala válida, expandir la caja
           if (esMaster) {
             obj.updateWorldMatrix(true, false);
             boxMaster.expandByObject(obj);
@@ -2734,16 +2715,16 @@ function SubbloqueSingleTooltip({
             count++;
           } else if (obj.visible && Math.abs(obj.scale.x) > 0.01) {
             obj.updateWorldMatrix(true, false);
-            boxMadera.expandByObject(obj);
+            box.expandByObject(obj);
             count++;
           }
         }
       }
     });
 
-    if (count > 0 && (!boxMaster.isEmpty() || !boxMadera.isEmpty())) {
+    if (count > 0 && (!boxMaster.isEmpty() || !box.isEmpty())) {
       const c = new THREE.Vector3();
-      const targetBox = (tieneMaster && !boxMaster.isEmpty()) ? boxMaster : boxMadera;
+      const targetBox = (tieneMaster && !boxMaster.isEmpty()) ? boxMaster : box;
       targetBox.getCenter(c);
       c.y = targetBox.max.y + 0.04;
 

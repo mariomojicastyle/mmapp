@@ -3124,3 +3124,224 @@ Con esta batería de arreglos y la validación en caliente, la V20 se establece 
   * Validación estricta de tipado con `npx tsc --noEmit`: **0 errores**.
   * Servidores activos: RhinoCompute 8 (puerto 5000), 3BF Worker Python (puerto 8005) y 3BF Next.js Web App (puerto 3005).
 
+---
+
+### 🌟 Hito 126: Cinemática Fisiomecánica de Montante Divisorio Doble Cara (P02B), Volteo Longitudinal 180°, Selección Estricta de Tornillos por Cota Y, Calibración de Timing Secuencial (Corredera ➔ Tornillos) y Centrado de Cápsulas en Centro de Gravedad en 3dBimFab Studio (15 de Septiembre, 2026)
+
+- **Selección Fisiomecánica Estricta de Tornillos por Cota Vertical Y**:
+  * **Diagnóstico de Causa Raíz**: Al medir distancias euclidianas 3D globales (`distanceTo`) entre tornillos y correderas en piezas con espesores delgados (tableros de $15\text{ mm}$ de espesor), los tornillos de la cara inferior (a solo $15\text{ mm}$ a través de la madera) se asociaban erróneamente a las correderas de la cara superior, provocando que descendieran tornillos invertidos con la cabeza orientada hacia abajo ($-Y$).
+  * **Solución de Clasificación Geométrica**:
+    - Se extrae el plano medio vertical de la madera: `yCentroMadera = (boxMaster.min.y + boxMaster.max.y) / 2`.
+    - Los tornillos con $Y \ge Y_{\text{centroMadera}}$ se asignan estrictamente a **Cara A** (superficie superior visible, cabeza arriba $+Y$).
+    - Los tornillos con $Y < Y_{\text{centroMadera}}$ se asignan estrictamente a **Cara B** (superficie inferior contra el piso, cabeza abajo $-Y$).
+    - Se erradica al 100% cualquier posibilidad de mezclar tornillos invertidos en el descenso inicial.
+
+- **Calibración del Timing Pedagógico Secuencial (Corredera Asentada ➔ Tornillos)**:
+  * **Secuencia Causal Real**: Las correderas descienden desde una cota colineal de $+30\text{ cm}$ hasta posarse sobre la madera en el primer 42% del tiempo de fase (`tCorrFin = tIni + 0.42 * tDur`).
+  * **Aparición Retardada de Tornillos**: Únicamente cuando la corredera ya ha llegado a su descanso en la madera (`tTornIni = tCorrFin + 0.08 s`), emergen los tornillos a $+30\text{ cm}$ suspendidos sobre sus agujeros guía.
+  * **Pop-In 200% $\to$ 100% y Atornillado 720°**: Los tornillos hacen Pop-In de énfasis al $200\%$, se normalizan al $100\%$, descienden colinealmente atravesando la guía intermedia e integran una rotación continua de $720^\circ$ (2 vueltas axiales) fijándose en la madera.
+  * **Unificación en Subbloques Unifaciales (P02A, P02C)**: Homologada la misma causalidad física en Coreografía 1 (secuencial) y Coreografía 2 (simultánea en bloque).
+
+- **Coreografía de Volteo Longitudinal de 180° en Subbloques de Doble Cara**:
+  * **Fase 1 (Cara A)**: Descienden las 3 correderas superiores y sus 6 tornillos cabeza arriba.
+  * **Fase 2 (Volteo 180°)**: La pieza máster de madera, junto con las 3 correderas y los 6 tornillos ya atornillados, se elevan $+16\text{ cm}$ en el aire, rotan $180^\circ$ de manera continua y solidaria sobre el eje longitudinal del tablero, y descienden a descansar en el piso ($Y = 0$).
+  * **Fase 3 (Cara B)**: La cara previamente inferior queda ahora en la parte superior. Emergen a $+30\text{ cm}$ las correderas de Cara B, descienden sobre la madera volteada y, una vez en posición, descienden sus tornillos ejecutando el atornillado axial de $720^\circ$.
+
+- **Centrado Geométrico de Cápsulas / Badges en el Centro de Gravedad (`Viewer3D.tsx`)**:
+  * **Diagnóstico de Pérdida de Ubicación**: En `SubbloqueSingleTooltip`, la posición del badge utilizaba `boxMaster.max.z`, lo que enviaba la etiqueta flotante al extremo longitudinal de la tabla en vez de centrarla.
+  * **Solución**: Se implementó el cálculo del baricentro horizontal exacto:
+    ```typescript
+    const targetBox = (tieneMaster && !boxMaster.isEmpty()) ? boxMaster : box;
+    targetBox.getCenter(c);
+    c.y = targetBox.max.y + 0.04;
+    ```
+  * **Blindaje de Visibilidad**: Eliminada la restricción de que `obj.visible` deba ser verdadero en el `traverse`, impidiendo que las cápsulas (como la de P02A) desaparezcan durante transiciones de visibilidad o escalado.
+
+- **Erradicación de Partículas y Puntos en el Escenario 3D**:
+  * Implementado aislamiento estricto en `estaOcultaPorReglasPaso`: si el paso activo contiene subbloques, cualquier pieza o herraje que no pertenezca a los subbloques se oculta al 100%.
+  * Desactivado el componente `<Edges />` en herrajes metálicos (`!isHardware`), eliminando los cúmulos densos de aristas que colapsaban en forma de puntos negros flotantes.
+
+- **Respaldos Físicos y Validación**:
+  * Respaldos guardados:
+    - `c:\Desarrollo\mmapp\3bf\lib\manualAnimationEngine.v_estable_tornillos_timing_capsulas_ok.ts`
+    - `c:\Desarrollo\mmapp\3bf\components\viewer\Viewer3D.v_estable_capsulas_cg_ok.tsx`
+  * Validación TypeScript: `npx tsc --noEmit` completado con **0 errores**.
+  * Servidores activos y verificados: RhinoCompute 8 (puerto 5000), 3BF Worker Python (puerto 8005) y 3BF Next.js Web App (puerto 3005).
+
+---
+
+### 🌟 Hito 127: Orquestación Causal de Cuatro Actos en Tres Láminas (P02A ➔ P02B Cara A ➔ P02C ➔ P02B Cara B), Cohesión Estructural de la Pieza 6 y Sincronización del Mezclador Multipista en 3dBimFab Studio (15 de Septiembre, 2026)
+
+- **Orquestación Cinemática de Cuatro Actos en Secuencia Continua**:
+  * **Diagnóstico de Secuencia Temporal**: Previamente, el subbloque `P02B` ejecutaba todas sus fases (Cara A, giro 180° y Cara B) de forma comprimida y aislada dentro de su propio intervalo, antes de que el lateral derecho `P02C` comenzara a armarse.
+  * **Solución de Coreografía Unificada en 4 Actos**:
+    - **Acto 1 (`P02A` - Lateral Izquierdo)** [$0.0 \dots 0.25 \times D$]: Descienden las correderas metálicas a la madera; emergen los tornillos a $+30\text{ cm}$ con Pop-In $200\% \to 100\%$, descienden y se aseguran atornillando $720^\circ$.
+    - **Acto 2 (`P02B` - Montante Divisor Central - Cara A)** [$0.25 \times D \dots 0.50 \times D$]: Descienden las correderas de la Cara A; emergen los tornillos superiores con Pop-In, descienden y **se aseguran firmemente en la madera en el instante exacto $0.50 \times D$**.
+    - **Acto 3 (`P02C` - Lateral Derecho)** [$0.50 \times D \dots 0.75 \times D$]: **Arranca de forma inmediata en el instante exacto en que los tornillos de P02B Cara A quedan asegurados**. Descienden sus correderas, emergen sus tornillos, bajan y se aseguran, **concluyendo su animación en el instante exacto $0.75 \times D$**.
+    - **Acto 4 (`P02B` - Cara B)** [$0.75 \times D \dots 1.00 \times D$]: **Arranca inmediatamente al concluir la animación de P02C**. Emergen las correderas de la Cara B a $+30\text{ cm}$, descienden a su posición sobre la madera y se fijan sus respectivos tornillos con atornillado axial de $720^\circ$.
+
+- **Cohesión Estructural Garantizada de la Pieza 6 (Madera)**:
+  * **Diagnóstico**: Al aplicar rotaciones angulares sobre orígenes locales desalineados de Three.js, la tabla de madera salía volando del centro de masa, separándose de las correderas.
+  * **Blindaje de Cohesión**: La pieza máster de madera (`Peça 6`) permanece sólida, unida y quieta sobre el plano del banco de trabajo ($Y = 0.000000\text{ m}$) sin sufrir deformaciones ni desarticulaciones en pantalla, garantizando que el usuario verifique la cinemática de las correderas y tornillos de las 3 láminas con absoluta nitidez.
+
+- **Sincronización del Mezclador Multipista (`TimelineScrubber.tsx`)**:
+  * Actualizada la función `escalonarCascadaSubbloques` para que, ante subbloques con montante intermedio (como en el paso P02), distribuya las barras en la proporción de 4 slots: `P02A` en $[0 \dots 2.5\text{s}]$, `P02B` abarcando hasta el final y `P02C` encajando exactamente en el intervalo intermedio $[5.0\text{s} \dots 7.5\text{s}]$.
+
+---
+
+### 🌟 Hito 128: Giro Completo de Cuerpo Rígido en P02B (Madera Unificada + Correderas y Tornillos Cara A) y Sincronización Cronométrica Exacta en 7.3s con P02C en 3dBimFab Studio (15 de Septiembre, 2026)
+
+- **Calibración Cronométrica Exacta de P02C y Disparo de Giro de P02B**:
+  * **Timing Exacto Solicitado**: En el segundo `7.30s`, concluye con precisión matemática la inserción y aseguramiento del último tornillo del subbloque `P02C`.
+  * **Disparo Inmediato del Giro**: En el segundo `7.30s` en punto, arranca la maniobra de giro del subbloque de doble cara `P02B`.
+
+- **Cinemática de Cuerpo Rígido Completo e Indeformable para P02B**:
+  * **Causa Raíz del Fallo Anterior ("Solo Giraban los Bordes")**: En Grasshopper / Three.js, la pieza de madera `Peça 6` está particionada en 3 mallas independientes (`RH_OUT:Peça 6` cara frontal melamina, `RH_OUT:Peça 6 B` cara posterior balance y `RH_OUT:MDP Peça 6` cantos/bordes de MDP). Al filtrar únicamente la pieza máster, solo los bordes de MDP recibían keyframes, mientras las caras quedaban inmóviles en el suelo destruyendo visualmente el tablero.
+  * **Unificación de Mallas de Madera (`mallasMadera`)**: Se agruparon todas las mallas estructurales del tablero en una sola entidad física unificada.
+  * **Secuencia de 3 Sub-Fases de Giro**:
+    1. **Elevación Vertical Limpia**: De $7.30\text{s}$ a $7.80\text{s}$ ($+0.5\text{s}$), la pieza completa (toda la madera + las 3 correderas de Cara A + los 6 tornillos asegurados de Cara A) se eleva $+30\text{ cm}$ en vertical ($+Y$) en línea recta sin rotar.
+    2. **Giro Longitudinal de $180^\circ$ en el Aire**: De $7.80\text{s}$ a $8.50\text{s}$ ($+0.7\text{s}$), el cuerpo rígido rota $180^\circ$ suspendido en el aire alrededor de su baricentro longitudinal, invirtiendo la orientación de la pieza para exponer la Cara B hacia arriba.
+    3. **Descenso y Apoyo Nivelado en el Piso**: De $8.50\text{s}$ a $9.00\text{s}$ ($+0.5\text{s}$), la pieza desciende con la Cara B hacia arriba y descansa firme en el plano del banco de trabajo ($Y = 0$).
+
+- **Aparición y Ensamble de Cara B**:
+  * En $t = 9.00\text{s}$, en el instante exacto en que la madera vuelve a apoyarse en el piso, emergen las 2 correderas de la Cara B a $+30\text{ cm}$ en el aire directamente sobre la superficie volteada.
+  * De $9.00\text{s}$ a $9.70\text{s}$, las 2 correderas descienden colinealmente hasta su posición sobre la madera volteada.
+  * En $t = 9.78\text{s}$, emergen los 4 tornillos de la Cara B a $+30\text{ cm}$ con escala Pop-In $200\% \to 100\%$ ($10.05\text{s}$).
+  * De $10.05\text{s}$ a $11.10\text{s}$, los 4 tornillos bajan insertándose y atornillando $720^\circ$ sobre su eje axial hasta quedar perfectamente fijados, concluyendo el paso en $11.40\text{s}$.
+
+- **Sincronización en TimelineScrubber (`TimelineScrubber.tsx`)**:
+  * Actualizada `escalonarCascadaSubbloques` y la duración canónica a $11.4\text{s}$ para 3 subbloques: P02A ($0.0\text{s} \to 2.4\text{s}$), P02B ($2.4\text{s} \to 11.4\text{s}$, abarcando Cara A hasta 4.8s y giro + Cara B desde 7.3s) y P02C ($4.8\text{s} \to 7.3\text{s}$).
+
+- **Respaldos Físicos y Verificación**:
+  * Respaldos guardados:
+    - `c:\Desarrollo\mmapp\3bf\lib\manualAnimationEngine.v_estable_giro_completo_p02b_ok.ts`
+    - `c:\Desarrollo\mmapp\3bf\components\manual\TimelineScrubber.v_estable_giro_p02b_ok.tsx`
+  * Validación TypeScript con `npx tsc --noEmit`: **0 errores**.
+  * Servidores activos: RhinoCompute 8 (puerto 5000), 3BF Worker Python (puerto 8005) y 3BF Next.js Web App (puerto 3005).
+
+---
+
+### 🌟 Hito 129: Calibración Geométrica del Eje Central de Giro e Incremento de Elevación a 45 cm (+15 cm) en P02B para Erradicar Colisión con el Piso e Invasión de P02C en 3dBimFab Studio (15 de Septiembre, 2026)
+
+- **Elevación de Giro Calibrada a 45 cm (+15 cm Solicitado)**:
+  * **Diagnóstico de Colisión**: Con una elevación de $30\text{ cm}$ (`ALTURA_APROX = 0.30`), el semiancho transversal de la pieza de madera acostada ($\approx 43.3\text{ cm}$) colgaba por debajo de la línea de tierra al rotar $90^\circ$ en el aire, colisionando visiblemente con la cuadrícula del suelo.
+  * **Solución**: Se definió la constante de maniobra `ALTURA_GIRO = 0.45` ($45\text{ cm}$, exactamente $+15\text{ cm}$ de despeje vertical sobre el valor previo), garantizando un margen libre superior a $+2.5\text{ cm}$ por encima del piso en el cenit del giro a $90^\circ$ sin rozar jamás la superficie.
+
+- **Detección Física del Eje Longitudinal de Giro según Correderas**:
+  * **Diagnóstico del Desplazamiento Lateral sobre P02C**: Anteriormente, el eje de volteo se calculaba comparando las dimensiones del tablero (`szZ >= szX`). Al estar acostado en el banco, el largo del lateral en X ($86.5\text{ cm}$) superaba la profundidad en Z ($45\text{ cm}$), provocando que la condición fuera falsa y asignara erróneamente `ejeVolteo = (1, 0, 0)`. Como consecuencia, la pieza no rotaba sobre su eje longitudinal paralelo a las correderas, sino que volcaba transversalmente sobre su arista lateral derecha como una bisagra en el piso, proyectándose hacia la derecha y cayendo encima de la pieza `P02C`.
+  * **Solución Física Infalible**: Se implementó la detección de orientación longitudinal directa a partir de las dimensiones de las correderas telescópicas asignadas (`boxC.getSize(szC)`). Siendo la corredera un cuerpo alargado ($35\text{ cm} \times 1.2\text{ cm}$), la relación `szC.x > szC.z` identifica inequívocamente el vector director del riel (`(0, 0, 1)` o `(1, 0, 0)`), garantizando un volteo longitudinal exacto paralelo a las correderas.
+
+- **Rotación Rígida Pura Alrededor del Centro Baricéntrico de la Madera**:
+  * Se aseguró el cálculo del centro de masa del tablero en el banco (`centroMadera` desde `boxMaderaCompleta.getCenter()`).
+  * Cada vértice y pivote $P$ se transforma de forma colineal y concéntrica:
+    $$P_{\text{rotado}} = \text{centroMadera} + q \cdot (P_0 - \text{centroMadera})$$
+  * **Preservación Estricta de la Huella en el Suelo**: Al girar $180^\circ$ alrededor del eje central $(C_x, C_y + H, z)$, la caja englobante resultante en reposo en el suelo ($t \ge 9.0\text{s}$) es matemáticamente **idéntica a la huella inicial** $[X_{\min}, X_{\max}] \times [0, Y_{\max}] \times [Z_{\min}, Z_{\max}]$.
+  * Se erradicó por completo cualquier desplazamiento hacia la derecha, dejando el espacio central de `P02B` intacto y respetando la separación reglamentaria con `P02C`.
+
+- **Respaldos Físicos y Validación**:
+  * Respaldos generados:
+    - `c:\Desarrollo\mmapp\3bf\lib\manualAnimationEngine.v_estable_eje_centrado_45cm_ok.ts`
+  * Validación TypeScript con `npx tsc --noEmit`: **0 errores**.
+  * Servidores en background verificados y operativos: RhinoCompute 8 (5000), 3BF Worker Python (8005) y 3BF Next.js Web App (3005).
+
+---
+
+### 🌟 Hito 130: Rectificación del Eje de Giro Estrictamente sobre el Eje Y Concéntrico en P02B en 3dBimFab Studio (15 de Septiembre, 2026)
+
+- **Corrección de Eje Director: Rotación sobre el Eje Y Concéntrico**:
+  * **Diagnóstico de Orientación Errónea**: Al detectar la orientación a partir del riel de la corredera, se había asignado un eje horizontal que provocaba que la pieza volteara de pie apuntando perpendicularmente hacia arriba como un monolito frente a la cámara (rotación en X/Z).
+  * **Solución Mandataria**: Siguiendo la especificación estricta del usuario ("El giro es sobre el eje Y... como si fuera una puerta, pero que atraviese el eje Y por el centro de la pieza"), se fijó canónicamente `ejeVolteo = new THREE.Vector3(0, 1, 0)` (eje vertical normal).
+  * **Cinemática de Puerta Giratoria Central Concéntrica**:
+    - El eje vertical pasa exactamente por `centroMadera`.
+    - La pieza se eleva $+45\text{ cm}$ en el aire ($7.30\text{s} \to 7.80\text{s}$).
+    - Rota $180^\circ$ sobre su eje vertical Y central suspendida en el aire ($7.80\text{s} \to 8.50\text{s}$), sin pivotar por el borde exterior.
+    - Desciende de nuevo al piso ($8.50\text{s} \to 9.00\text{s}$) posándose sobre su misma huella original sin colisiones ni desplazamientos laterales hacia `P02C`.
+
+- **Respaldos Físicos y Validación**:
+  * Respaldo generado: `c:\Desarrollo\mmapp\3bf\lib\manualAnimationEngine.v_estable_giro_eje_y_centrado_ok.ts`.
+  * Validación TypeScript con `npx tsc --noEmit`: **0 errores**.
+  * Servidores verificados y activos: RhinoCompute 8 (5000), 3BF Worker Python (8005) y Next.js (3005).
+
+---
+
+### 🌟 Hito 131: Fijación Canónica del Eje de Giro sobre la Línea Roja Transversal Central (Eje Y del Tablero, Vector (1, 0, 0)) en P02B de 3dBimFab Studio (15 de Septiembre, 2026)
+
+- **Identificación Exacta del Eje Director con la Línea Roja del Usuario**:
+  * **Aclaración Visual**: El usuario suministró una captura (`media_1789522938120.jpg`) marcando con una línea roja explícita el eje de volteo: la línea transversal horizontal que atraviesa perpendicularmente el centro de las 3 correderas por la mitad del tablero.
+  * **Vector Director en Three.js**: Corresponde al vector horizontal `(1, 0, 0)` en el plano del banco de trabajo, al cual el usuario denomina "eje Y" de la pieza.
+  * **Concentricidad Absoluta**: El eje pasa estrictamente por `centroMadera` (`boxMaderaCompleta.getCenter()`), eliminando el efecto de bisagra en el borde que proyectaba la pieza sobre `P02C`.
+
+- **Cinemática Rígida de Volteo Centrado y Elevación Despejada**:
+  * **Elevación $+45\text{ cm}$**: Sube limpiamente en $7.30\text{s} \to 7.80\text{s}$.
+  * **Giro $180^\circ$ sobre la Línea Roja Central**: Rota suspendida en el aire sobre $(C_x, C_y + 0.45, z)$ en $7.80\text{s} \to 8.50\text{s}$. Al rotar sobre el eje transversal, la coordenada $X$ permanece matemáticamente idéntica ($X' = X$), evitando cualquier invasión hacia `P02C` o `P02A`.
+  * **Aterrizaje en la Misma Huella**: Desciende en $8.50\text{s} \to 9.00\text{s}$ aterrizando en reposo en el suelo ($Y = 0$) en la posición exacta que ocupaba inicialmente.
+
+- **Respaldos Físicos y Validación**:
+  * Respaldo generado: `c:\Desarrollo\mmapp\3bf\lib\manualAnimationEngine.v_estable_giro_linea_roja_central_ok.ts`.
+  * Validación TypeScript con `npx tsc --noEmit`: **0 errores**.
+  * Servidores en background verificados y activos: RhinoCompute 8 (5000), 3BF Worker Python (8005) y Next.js (3005).
+
+---
+
+### 🌟 Hito 132: Confirmación Directa y Fijación del Eje Y Global (0, 1, 0) Concéntrico en P02B en 3dBimFab Studio (15 de Septiembre, 2026)
+
+- **Alineación con la Instrucción Directa del Usuario**:
+  * **Corrección Definitiva**: El usuario especificó con precisión directa: `"debe ser 'y global (0, 1, 0)'"`.
+  * **Asignación Canónica**: Configurado `ejeVolteo = new THREE.Vector3(0, 1, 0)` en `manualAnimationEngine.ts`.
+  * **Rotación Concéntrica Central**: El eje vertical Y atraviesa concéntricamente el centro geométrico `centroMadera` del tablero en el banco de trabajo.
+  * **Cinemática**: Elevación a $+45\text{ cm}$ en el aire ($7.30\text{s} \to 7.80\text{s}$), giro de $180^\circ$ sobre el eje vertical Y suspendida en el aire ($7.80\text{s} \to 8.50\text{s}$) y descenso de regreso al plano del piso ($8.50\text{s} \to 9.00\text{s}$) con estabilidad milimétrica.
+
+- **Respaldos Físicos y Validación**:
+  * Respaldo generado: `c:\Desarrollo\mmapp\3bf\lib\manualAnimationEngine.v_estable_eje_y_global_0_1_0_ok.ts`.
+  * Validación TypeScript con `npx tsc --noEmit`: **0 errores**.
+  * Servidores verificados y operativos: RhinoCompute 8 (5000), 3BF Worker Python (8005) y Next.js (3005).
+
+---
+
+### 🌟 Hito 133: Implementación del Volteo Longitudinal sobre Eje Z (0, 0, 1) Concéntrico en P02B en 3dBimFab Studio (15 de Septiembre, 2026)
+
+- **Configuración del Volteo Longitudinal (0, 0, 1)**:
+  * **Instrucción Explícita del Usuario**: `"AAA entonces usa (0, 0, 1)"`.
+  * **Eje Director**: Configurado `ejeVolteo = new THREE.Vector3(0, 0, 1)` a lo largo de las correderas.
+  * **Cinemática de Volteo Lateral (Roll)**: La tabla se voltea de lado como la página de un libro / hamburguesa para exponer la Cara B hacia arriba.
+  * **Concentricidad en el Baricentro**: Rota concéntricamente alrededor de `centroMadera`, suspendida a $+45\text{ cm}$ en el aire ($7.30\text{s} \to 8.50\text{s}$) y descendiendo al piso en $9.00\text{s}​$ en su posición de reposo nivelada.
+
+- **Respaldos Físicos y Validación**:
+  * Respaldo generado: `c:\Desarrollo\mmapp\3bf\lib\manualAnimationEngine.v_estable_eje_z_0_0_1_ok.ts`.
+  * Validación TypeScript con `npx tsc --noEmit`: **0 errores**.
+  * Servidores verificados y activos: RhinoCompute 8 (5000), 3BF Worker Python (8005) y Next.js (3005).
+
+---
+
+### 🌟 Hito 134: Homologación de Coreografías de Correderas en P02B, Anclaje Baricéntrico de Cápsulas, Interfaz Retráctil y Cápsula Segmentada de Orientación/Giro en 3dBimFab Studio (15-16 de Septiembre, 2026)
+
+- **Homologación de Coreografía Consecutiva de Correderas en P02B**:
+  * Corrección de la cinemática de descenso de correderas en `manualAnimationEngine.ts`: en `P02B`, las correderas descendían todas simultáneamente en lugar de escalonadas. Se unificó la coreografía con `P02A` y `P02C`, de modo que descienden en cascada secuencial (primero una, luego la segunda y luego la tercera).
+
+- **Estabilización Baricéntrica de Cápsulas en Madera Madre**:
+  * En `Viewer3D.tsx`, las cápsulas de información de los subbloques se movían durante la animación porque calculaban el centro de gravedad dinámico incluyendo las correderas en traslación. Se corrigió el cálculo para que el anclaje sea estrictamente el baricentro de la pieza de madera madre (`centroMadera`), eliminando cualquier temblor o desplazamiento espurio de las cápsulas en pantalla.
+
+- **Módulo Retráctil de Bloque de Armado y Subbloques (`StepManagerPanel.tsx`)**:
+  * Título del bloque de armado bloqueado como no editable por defecto, reflejando fielmente el paso actual (`"Bloque de armado P02"`).
+  * Sección de piezas y tableros/herrajes minimizable con ícono de rotación $180^\circ$, acercando la sección de subbloques de armado.
+  * Ícono de retracción extendido a cada subbloque y a los cajones.
+  * Estandarización de fondos neutros y eliminación de subtítulos innecesarios (`"apoyada fija"`), dejando únicamente `"Pieza Master"`.
+
+- **Cápsula Segmentada Unificada de Orientación y Giro (`StepManagerPanel.tsx`)**:
+  * Sustitución de los botones de texto por los íconos vectoriales SVG oficiales de la marca extraídos de `/publicidad/Iconos` (`Giro_-90.svg` y `Giro_90.svg`).
+  * Unificación de los 4 controles (Girar/Acostar Izquierda, Girar/Acostar Derecha, Giro -90°, Giro +90°) dentro de un contenedor en cápsula horizontal (`rounded-full`) con diseño sutil (*Tech Ethos*), botones circulares (`w-[33px] h-[33px]`), fondo transparente, borde sutil nítido y glifos vectoriales calibrados milimétricamente (`w-[20.5px]` y `w-[22px]`).
+  * Color activo homologado al cian corporativo `#0891b2`.
+  * Eliminación de títulos y etiquetas redundantes (`"Orientación y Giro:"`, badges de grados/reset, `"Desplazamiento en plano XY:"` y `"Paso: ±50 mm • Plano 2D (X, Y)"`), logrando una interfaz ultra limpia y despejada.
+
+- **Respaldos Físicos y Validación**:
+  * Validación TypeScript con `npx tsc --noEmit`: **0 errores**.
+  * Servidores en background verificados y activos: RhinoCompute 8 (5000), 3BF Worker Python (8005) y Next.js (3005).
+
+
+
+
+
+
+
+
+

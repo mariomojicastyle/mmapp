@@ -1143,27 +1143,18 @@ export function compilarAnimacionPaso(
           mallasMadera.push(masterMesh);
         }
 
-        // 4. Envolvente geométrica y centro baricéntrico EXACTO (Línea Verde Central)
-        // Si masterMesh existe, su centro es la referencia canónica de simetría de la tabla
+        // 4. Envolvente geométrica y centro de gravedad baricéntrico de la madera completa
         const boxMaderaCompleta = new THREE.Box3();
-        if (masterMesh) {
-          masterMesh.updateWorldMatrix(true, false);
-          boxMaderaCompleta.setFromObject(masterMesh);
-        }
         mallasMadera.forEach((m) => {
           m.updateWorldMatrix(true, false);
           boxMaderaCompleta.expandByObject(m);
         });
+        if (boxMaderaCompleta.isEmpty() && masterMesh) {
+          masterMesh.updateWorldMatrix(true, false);
+          boxMaderaCompleta.setFromObject(masterMesh);
+        }
         const centroMadera = new THREE.Vector3();
         boxMaderaCompleta.getCenter(centroMadera);
-        if (masterMesh) {
-          const boxMaster = new THREE.Box3().setFromObject(masterMesh);
-          const cMaster = new THREE.Vector3();
-          boxMaster.getCenter(cMaster);
-          centroMadera.x = cMaster.x;
-        }
-        // 🎯 Ajuste explícito de cota de eje X solicitado por el usuario (750 mm = 0.750 m)
-        centroMadera.x = 0.730;
         const yCentroMadera = centroMadera.y;
         const ALTURA_APROX = 0.30; // 📏 30 cm para elevación de pop y descenso de herrajes
         const ALTURA_GIRO = 0.45;  // 📏 45 cm (+15 cm) para evitar colisión con el piso durante el giro 180°
@@ -1202,8 +1193,20 @@ export function compilarAnimacionPaso(
           const tCaraAIni = T_ACTO2_INI;
           const tCaraAFin = T_ACTO2_FIN;
 
-          // 📏 Parámetros de Giro 180° Longitudinal sobre Eje Z (0, 0, 1) concéntrico en centroMadera
-          const ejeVolteo = new THREE.Vector3(0, 0, 1);
+          // Parámetros de Giro Longitudinal 180° en el aire (Cuerpo Rígido Indeformable)
+          // 📏 Detección física rigurosa del eje longitudinal de giro a lo largo de las correderas:
+          // Las correderas telescópicas son largas (~350mm) y delgadas (~12mm).
+          // La dimensión dominante de la corredera define con 100% de certeza física si corre en X o en Z.
+          let ejeVolteo = new THREE.Vector3(0, 0, 1);
+          const refCorr = correderasCaraA[0] || correderasCaraB[0] || correderas[0];
+          if (refCorr) {
+            refCorr.updateWorldMatrix(true, false);
+            const boxC = new THREE.Box3().setFromObject(refCorr);
+            const szC = new THREE.Vector3();
+            boxC.getSize(szC);
+            ejeVolteo = szC.x > szC.z ? new THREE.Vector3(1, 0, 0) : new THREE.Vector3(0, 0, 1);
+          }
+
           const qRot90 = new THREE.Quaternion().setFromAxisAngle(ejeVolteo, Math.PI * 0.5);
           const qRot180 = new THREE.Quaternion().setFromAxisAngle(ejeVolteo, Math.PI);
 
@@ -1252,325 +1255,220 @@ export function compilarAnimacionPaso(
             tracks.push(new THREE.QuaternionKeyframeTrack(`${maderaObj.uuid}.quaternion`, rotTimes, rotValues, THREE.InterpolateLinear));
           });
 
-          // ── AGRUPACIÓN POR NIVELES PARA CARA A Y CARA B (SOPORTE COREOGRAFÍAS 1 Y 2) ──
-          correderasCaraA.sort((a, b) => {
-            const pA = getSafeRestPosition(a);
-            const pB = getSafeRestPosition(b);
-            return (pA.z - pB.z) || (pA.x - pB.x);
+          // ── 2. CARA A: CORREDERAS (Descienden en Acto 2, reposan, y luego giran solidariamente con la madera) ──
+          const tCorrAFin = tCaraAIni + (tCaraAFin - tCaraAIni) * 0.42;
+          correderasCaraA.forEach((obj) => {
+            const pRestA = getSafeRestPosition(obj);
+            const qRestA = getSafeRestQuaternion(obj);
+            const pPopA = pRestA.clone().add(new THREE.Vector3(0, ALTURA_APROX, 0));
+
+            const pSubidaA = pRestA.clone().add(new THREE.Vector3(0, ALTURA_GIRO, 0));
+            const pMidRotA = rotarPunto(pRestA, qRot90).add(new THREE.Vector3(0, ALTURA_GIRO, 0));
+            const pFinRotA = rotarPunto(pRestA, qRot180).add(new THREE.Vector3(0, ALTURA_GIRO, 0));
+            const pPisoVolteadaA = rotarPunto(pRestA, qRot180);
+
+            const qMidRotA = qRot90.clone().multiply(qRestA);
+            const qFinRotA = qRot180.clone().multiply(qRestA);
+
+            // Escala: oculta antes de tCaraAIni, visible a partir de tCaraAIni
+            const scaleTimes = tCaraAIni > 0.04
+              ? [0, tCaraAIni - 0.01, tCaraAIni, T_PASO_TOTAL]
+              : [0, T_PASO_TOTAL];
+            const scaleValues = tCaraAIni > 0.04
+              ? [0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1]
+              : [1, 1, 1, 1, 1, 1];
+            tracks.push(new THREE.VectorKeyframeTrack(`${obj.uuid}.scale`, scaleTimes, scaleValues, THREE.InterpolateLinear));
+
+            // Posición: desciende en Acto 2, reposa sobre la madera, y en 7.3s sube, gira en el aire y baja con la madera
+            const posTimes = [
+              0, tCaraAIni, tCorrAFin,
+              T_GIRO_INI, T_GIRO_SUBIDA, T_GIRO_ROTMID, T_GIRO_ROTFIN, T_GIRO_PISO, T_PASO_TOTAL
+            ];
+            const posValues = [
+              pPopA.x, pPopA.y, pPopA.z,
+              pPopA.x, pPopA.y, pPopA.z,
+              pRestA.x, pRestA.y, pRestA.z,
+              pRestA.x, pRestA.y, pRestA.z,
+              pSubidaA.x, pSubidaA.y, pSubidaA.z,
+              pMidRotA.x, pMidRotA.y, pMidRotA.z,
+              pFinRotA.x, pFinRotA.y, pFinRotA.z,
+              pPisoVolteadaA.x, pPisoVolteadaA.y, pPisoVolteadaA.z,
+              pPisoVolteadaA.x, pPisoVolteadaA.y, pPisoVolteadaA.z,
+            ];
+            tracks.push(new THREE.VectorKeyframeTrack(`${obj.uuid}.position`, posTimes, posValues, THREE.InterpolateLinear));
+
+            // Rotación: en reposo durante Acto 2, y en 7.3s gira con la madera
+            const rotTimes = [
+              0, tCaraAFin, T_GIRO_INI, T_GIRO_SUBIDA, T_GIRO_ROTMID, T_GIRO_ROTFIN, T_GIRO_PISO, T_PASO_TOTAL
+            ];
+            const rotValues = [
+              qRestA.x, qRestA.y, qRestA.z, qRestA.w,
+              qRestA.x, qRestA.y, qRestA.z, qRestA.w,
+              qRestA.x, qRestA.y, qRestA.z, qRestA.w,
+              qRestA.x, qRestA.y, qRestA.z, qRestA.w,
+              qMidRotA.x, qMidRotA.y, qMidRotA.z, qMidRotA.w,
+              qFinRotA.x, qFinRotA.y, qFinRotA.z, qFinRotA.w,
+              qFinRotA.x, qFinRotA.y, qFinRotA.z, qFinRotA.w,
+              qFinRotA.x, qFinRotA.y, qFinRotA.z, qFinRotA.w,
+            ];
+            tracks.push(new THREE.QuaternionKeyframeTrack(`${obj.uuid}.quaternion`, rotTimes, rotValues, THREE.InterpolateLinear));
           });
 
-          const gruposCaraA: Array<{ correderas: THREE.Mesh[]; tornillos: THREE.Mesh[] }> = [];
-          correderasCaraA.forEach((c) => {
-            const pC = getSafeRestPosition(c);
-            let g = gruposCaraA.find((grp) => {
-              const ref = getSafeRestPosition(grp.correderas[0]);
-              return Math.abs(ref.z - pC.z) < 0.04 && Math.abs(ref.x - pC.x) < 0.04;
-            });
-            if (!g) {
-              g = { correderas: [], tornillos: [] };
-              gruposCaraA.push(g);
-            }
-            g.correderas.push(c);
+          // ── 3. CARA A: TORNILLOS (Emergen, bajan y SE ASEGURAN en Acto 2; luego giran solidariamente con la madera) ──
+          const tTornAIni = tCorrAFin + 0.08;
+          const tTornAPop = Math.min(tTornAIni + 0.22, tCaraAFin - 0.15);
+          const tTornAFin = tCaraAFin - 0.02;
+
+          tornillosCaraA.forEach((tObj) => {
+            const pRestT = getSafeRestPosition(tObj);
+            const qRestT = getSafeRestQuaternion(tObj);
+            const pPopT = pRestT.clone().add(new THREE.Vector3(0, ALTURA_APROX, 0));
+
+            // Rotación de atornillado axial en Acto 2
+            const rotAxis = new THREE.Vector3(0, 1, 0);
+            const totalAngle = Math.PI * 4;
+            const qAtornilladoA = qRestT.clone().multiply(new THREE.Quaternion().setFromAxisAngle(rotAxis, totalAngle));
+
+            const pSubidaT = pRestT.clone().add(new THREE.Vector3(0, ALTURA_GIRO, 0));
+            const pMidRotT = rotarPunto(pRestT, qRot90).add(new THREE.Vector3(0, ALTURA_GIRO, 0));
+            const pFinRotT = rotarPunto(pRestT, qRot180).add(new THREE.Vector3(0, ALTURA_GIRO, 0));
+            const pPisoVolteadaT = rotarPunto(pRestT, qRot180);
+
+            const qMidRotT = qRot90.clone().multiply(qAtornilladoA);
+            const qFinRotT = qRot180.clone().multiply(qAtornilladoA);
+
+            // Escala: oculta antes de tTornAIni, Pop-In 200% -> 100%
+            const scaleTimes = [0, Math.max(0, tTornAIni - 0.01), tTornAIni, tTornAPop, T_PASO_TOTAL];
+            const scaleValues = [
+              0, 0, 0,
+              0, 0, 0,
+              2.0, 2.0, 2.0,
+              1.0, 1.0, 1.0,
+              1.0, 1.0, 1.0,
+            ];
+            tracks.push(new THREE.VectorKeyframeTrack(`${tObj.uuid}.scale`, scaleTimes, scaleValues, THREE.InterpolateLinear));
+
+            // Posición: baja a la corredera en Acto 2, reposa asegurado, y en 7.3s sube, gira en el aire y baja con la madera
+            const posTimes = [
+              0, tTornAIni, tTornAPop, tTornAFin,
+              T_GIRO_INI, T_GIRO_SUBIDA, T_GIRO_ROTMID, T_GIRO_ROTFIN, T_GIRO_PISO, T_PASO_TOTAL
+            ];
+            const posValues = [
+              pPopT.x, pPopT.y, pPopT.z,
+              pPopT.x, pPopT.y, pPopT.z,
+              pPopT.x, pPopT.y, pPopT.z,
+              pRestT.x, pRestT.y, pRestT.z,
+              pRestT.x, pRestT.y, pRestT.z,
+              pSubidaT.x, pSubidaT.y, pSubidaT.z,
+              pMidRotT.x, pMidRotT.y, pMidRotT.z,
+              pFinRotT.x, pFinRotT.y, pFinRotT.z,
+              pPisoVolteadaT.x, pPisoVolteadaT.y, pPisoVolteadaT.z,
+              pPisoVolteadaT.x, pPisoVolteadaT.y, pPisoVolteadaT.z,
+            ];
+            tracks.push(new THREE.VectorKeyframeTrack(`${tObj.uuid}.position`, posTimes, posValues, THREE.InterpolateLinear));
+
+            // Rotación: atornillado axial 720° en Acto 2, reposa asegurado, y en 7.3s gira con la madera
+            const rotTimes = [
+              0, tTornAPop, tTornAFin,
+              T_GIRO_INI, T_GIRO_SUBIDA, T_GIRO_ROTMID, T_GIRO_ROTFIN, T_GIRO_PISO, T_PASO_TOTAL
+            ];
+            const rotValues = [
+              qRestT.x, qRestT.y, qRestT.z, qRestT.w,
+              qRestT.x, qRestT.y, qRestT.z, qRestT.w,
+              qAtornilladoA.x, qAtornilladoA.y, qAtornilladoA.z, qAtornilladoA.w,
+              qAtornilladoA.x, qAtornilladoA.y, qAtornilladoA.z, qAtornilladoA.w,
+              qAtornilladoA.x, qAtornilladoA.y, qAtornilladoA.z, qAtornilladoA.w,
+              qMidRotT.x, qMidRotT.y, qMidRotT.z, qMidRotT.w,
+              qFinRotT.x, qFinRotT.y, qFinRotT.z, qFinRotT.w,
+              qFinRotT.x, qFinRotT.y, qFinRotT.z, qFinRotT.w,
+              qFinRotT.x, qFinRotT.y, qFinRotT.z, qFinRotT.w,
+            ];
+            tracks.push(new THREE.QuaternionKeyframeTrack(`${tObj.uuid}.quaternion`, rotTimes, rotValues, THREE.InterpolateLinear));
           });
 
-          if (gruposCaraA.length === 0 && tornillosCaraA.length > 0) {
-            gruposCaraA.push({ correderas: [], tornillos: tornillosCaraA });
-          } else {
-            tornillosCaraA.forEach((t) => {
-              const pT = getSafeRestPosition(t);
-              let mejorGrupo = gruposCaraA[0];
-              let mejorDist = Infinity;
-              gruposCaraA.forEach((grp) => {
-                grp.correderas.forEach((c) => {
-                  const dist = pT.distanceTo(getSafeRestPosition(c));
-                  if (dist < mejorDist) {
-                    mejorDist = dist;
-                    mejorGrupo = grp;
-                  }
-                });
-              });
-              if (mejorGrupo) {
-                mejorGrupo.tornillos.push(t);
-              }
-            });
-          }
+          // ── 4. CARA B: CORREDERAS (Ocultas hasta t = 9.00s; aparecen en el aire a +30 cm y descienden a la madera volteada) ──
+          correderasCaraB.forEach((obj) => {
+            const pRestB_orig = getSafeRestPosition(obj);
+            const qRestB_orig = getSafeRestQuaternion(obj);
 
-          correderasCaraB.sort((a, b) => {
-            const pA = getSafeRestPosition(a);
-            const pB = getSafeRestPosition(b);
-            return (pA.z - pB.z) || (pA.x - pB.x);
+            // Posición y rotación de destino sobre la madera volteada (boca arriba)
+            const pDestinoB = rotarPunto(pRestB_orig, qRot180);
+            const qDestinoB = qRot180.clone().multiply(qRestB_orig);
+            const pPopB = pDestinoB.clone().add(new THREE.Vector3(0, ALTURA_APROX, 0));
+
+            // Escala: estrictamente OCULTA hasta T_CORRB_INI (9.00s)
+            const scaleTimes = [0, T_CORRB_INI - 0.01, T_CORRB_INI, T_PASO_TOTAL];
+            const scaleValues = [0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1];
+            tracks.push(new THREE.VectorKeyframeTrack(`${obj.uuid}.scale`, scaleTimes, scaleValues, THREE.InterpolateLinear));
+
+            // Posición: aparece arriba a 30 cm sobre la cara superior volteada y desciende
+            const posTimes = [0, T_CORRB_INI, T_CORRB_FIN, T_PASO_TOTAL];
+            const posValues = [
+              pPopB.x, pPopB.y, pPopB.z,
+              pPopB.x, pPopB.y, pPopB.z,
+              pDestinoB.x, pDestinoB.y, pDestinoB.z,
+              pDestinoB.x, pDestinoB.y, pDestinoB.z,
+            ];
+            tracks.push(new THREE.VectorKeyframeTrack(`${obj.uuid}.position`, posTimes, posValues, THREE.InterpolateLinear));
+
+            // Rotación: orientada boca arriba en la cara volteada
+            const rotTimes = [0, T_CORRB_INI, T_PASO_TOTAL];
+            const rotValues = [
+              qDestinoB.x, qDestinoB.y, qDestinoB.z, qDestinoB.w,
+              qDestinoB.x, qDestinoB.y, qDestinoB.z, qDestinoB.w,
+              qDestinoB.x, qDestinoB.y, qDestinoB.z, qDestinoB.w,
+            ];
+            tracks.push(new THREE.QuaternionKeyframeTrack(`${obj.uuid}.quaternion`, rotTimes, rotValues, THREE.InterpolateLinear));
           });
 
-          const gruposCaraB: Array<{ correderas: THREE.Mesh[]; tornillos: THREE.Mesh[] }> = [];
-          correderasCaraB.forEach((c) => {
-            const pC = getSafeRestPosition(c);
-            let g = gruposCaraB.find((grp) => {
-              const ref = getSafeRestPosition(grp.correderas[0]);
-              return Math.abs(ref.z - pC.z) < 0.04 && Math.abs(ref.x - pC.x) < 0.04;
-            });
-            if (!g) {
-              g = { correderas: [], tornillos: [] };
-              gruposCaraB.push(g);
-            }
-            g.correderas.push(c);
-          });
+          // ── 5. CARA B: TORNILLOS (Ocultos hasta t = 9.78s; emergen a +30 cm, Pop-In 200% -> 100%, bajan y se atornillan) ──
+          tornillosCaraB.forEach((tObj) => {
+            const pRestT_orig = getSafeRestPosition(tObj);
+            const qRestT_orig = getSafeRestQuaternion(tObj);
 
-          if (gruposCaraB.length === 0 && tornillosCaraB.length > 0) {
-            gruposCaraB.push({ correderas: [], tornillos: tornillosCaraB });
-          } else {
-            tornillosCaraB.forEach((t) => {
-              const pT = getSafeRestPosition(t);
-              let mejorGrupo = gruposCaraB[0];
-              let mejorDist = Infinity;
-              gruposCaraB.forEach((grp) => {
-                grp.correderas.forEach((c) => {
-                  const dist = pT.distanceTo(getSafeRestPosition(c));
-                  if (dist < mejorDist) {
-                    mejorDist = dist;
-                    mejorGrupo = grp;
-                  }
-                });
-              });
-              if (mejorGrupo) {
-                mejorGrupo.tornillos.push(t);
-              }
-            });
-          }
+            // Posición y orientación de destino sobre la corredera volteada
+            const pDestinoTB = rotarPunto(pRestT_orig, qRot180);
+            const qBaseTB = qRot180.clone().multiply(qRestT_orig);
+            const pPopTB = pDestinoTB.clone().add(new THREE.Vector3(0, ALTURA_APROX, 0));
 
-          // ── 2 y 3. CARA A: CORREDERAS Y TORNILLOS (Coreografía 1 Secuencial vs Coreografía 2 Simultánea) ──
-          const KA = Math.max(1, gruposCaraA.length);
-          const dtCaraA = (tCaraAFin - tCaraAIni) / (coreoPaso === 1 ? KA : 1);
+            // Escala: estrictamente OCULTA hasta T_TORNB_INI, Pop-In 200% -> 100%
+            const scaleTimes = [0, Math.max(0, T_TORNB_INI - 0.01), T_TORNB_INI, T_TORNB_POP, T_PASO_TOTAL];
+            const scaleValues = [
+              0, 0, 0,
+              0, 0, 0,
+              2.0, 2.0, 2.0,
+              1.0, 1.0, 1.0,
+              1.0, 1.0, 1.0,
+            ];
+            tracks.push(new THREE.VectorKeyframeTrack(`${tObj.uuid}.scale`, scaleTimes, scaleValues, THREE.InterpolateLinear));
 
-          gruposCaraA.forEach((grp, k) => {
-            const tNivelIni = coreoPaso === 1 ? tCaraAIni + k * dtCaraA : tCaraAIni;
-            const tNivelFin = coreoPaso === 1 ? tNivelIni + dtCaraA : tCaraAFin;
-            const tCorrIni = tNivelIni;
-            const tCorrFin = tNivelIni + (tNivelFin - tNivelIni) * 0.42;
-            const tTornIni = tCorrFin + 0.08;
-            const tTornPop = Math.min(tTornIni + 0.22, tNivelFin - 0.22);
-            const tTornFin = tNivelFin - 0.03;
+            // Posición: arriba a 30cm -> desciende colinealmente hasta pDestinoTB
+            const posTimes = [0, T_TORNB_INI, T_TORNB_POP, T_TORNB_FIN, T_PASO_TOTAL];
+            const posValues = [
+              pPopTB.x, pPopTB.y, pPopTB.z,
+              pPopTB.x, pPopTB.y, pPopTB.z,
+              pPopTB.x, pPopTB.y, pPopTB.z,
+              pDestinoTB.x, pDestinoTB.y, pDestinoTB.z,
+              pDestinoTB.x, pDestinoTB.y, pDestinoTB.z,
+            ];
+            tracks.push(new THREE.VectorKeyframeTrack(`${tObj.uuid}.position`, posTimes, posValues, THREE.InterpolateLinear));
 
-            grp.correderas.forEach((obj) => {
-              const pRestA = getSafeRestPosition(obj);
-              const qRestA = getSafeRestQuaternion(obj);
-              const pPopA = pRestA.clone().add(new THREE.Vector3(0, ALTURA_APROX, 0));
+            // Rotación: atornillado axial continuo de 720° (2 vueltas) sobre el eje local del tornillo
+            const rotAxis = new THREE.Vector3(0, 1, 0);
+            const totalAngle = Math.PI * 4;
+            const qRotAtornillado = new THREE.Quaternion().setFromAxisAngle(rotAxis, totalAngle);
+            const qAtornilladoTB = qBaseTB.clone().multiply(qRotAtornillado);
+            const tMid = T_TORNB_POP + (T_TORNB_FIN - T_TORNB_POP) * 0.5;
 
-              const pSubidaA = pRestA.clone().add(new THREE.Vector3(0, ALTURA_GIRO, 0));
-              const pMidRotA = rotarPunto(pRestA, qRot90).add(new THREE.Vector3(0, ALTURA_GIRO, 0));
-              const pFinRotA = rotarPunto(pRestA, qRot180).add(new THREE.Vector3(0, ALTURA_GIRO, 0));
-              const pPisoVolteadaA = rotarPunto(pRestA, qRot180);
-
-              const qMidRotA = qRot90.clone().multiply(qRestA);
-              const qFinRotA = qRot180.clone().multiply(qRestA);
-
-              // Escala: oculta antes de su tCorrIni
-              const scaleTimes = tCorrIni > 0.04
-                ? [0, tCorrIni - 0.01, tCorrIni, T_PASO_TOTAL]
-                : [0, T_PASO_TOTAL];
-              const scaleValues = tCorrIni > 0.04
-                ? [0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1]
-                : [1, 1, 1, 1, 1, 1];
-              tracks.push(new THREE.VectorKeyframeTrack(`${obj.uuid}.scale`, scaleTimes, scaleValues, THREE.InterpolateLinear));
-
-              // Posición: desciende en su turno, reposa en la madera, y en 7.3s gira con la madera
-              const posTimes = [
-                0, tCorrIni, tCorrFin,
-                T_GIRO_INI, T_GIRO_SUBIDA, T_GIRO_ROTMID, T_GIRO_ROTFIN, T_GIRO_PISO, T_PASO_TOTAL
-              ];
-              const posValues = [
-                pPopA.x, pPopA.y, pPopA.z,
-                pPopA.x, pPopA.y, pPopA.z,
-                pRestA.x, pRestA.y, pRestA.z,
-                pRestA.x, pRestA.y, pRestA.z,
-                pSubidaA.x, pSubidaA.y, pSubidaA.z,
-                pMidRotA.x, pMidRotA.y, pMidRotA.z,
-                pFinRotA.x, pFinRotA.y, pFinRotA.z,
-                pPisoVolteadaA.x, pPisoVolteadaA.y, pPisoVolteadaA.z,
-                pPisoVolteadaA.x, pPisoVolteadaA.y, pPisoVolteadaA.z,
-              ];
-              tracks.push(new THREE.VectorKeyframeTrack(`${obj.uuid}.position`, posTimes, posValues, THREE.InterpolateLinear));
-
-              // Rotación: en reposo hasta giro 7.3s
-              const rotTimes = [
-                0, tCaraAFin, T_GIRO_INI, T_GIRO_SUBIDA, T_GIRO_ROTMID, T_GIRO_ROTFIN, T_GIRO_PISO, T_PASO_TOTAL
-              ];
-              const rotValues = [
-                qRestA.x, qRestA.y, qRestA.z, qRestA.w,
-                qRestA.x, qRestA.y, qRestA.z, qRestA.w,
-                qRestA.x, qRestA.y, qRestA.z, qRestA.w,
-                qRestA.x, qRestA.y, qRestA.z, qRestA.w,
-                qMidRotA.x, qMidRotA.y, qMidRotA.z, qMidRotA.w,
-                qFinRotA.x, qFinRotA.y, qFinRotA.z, qFinRotA.w,
-                qFinRotA.x, qFinRotA.y, qFinRotA.z, qFinRotA.w,
-                qFinRotA.x, qFinRotA.y, qFinRotA.z, qFinRotA.w,
-              ];
-              tracks.push(new THREE.QuaternionKeyframeTrack(`${obj.uuid}.quaternion`, rotTimes, rotValues, THREE.InterpolateLinear));
-            });
-
-            grp.tornillos.forEach((tObj) => {
-              const pRestT = getSafeRestPosition(tObj);
-              const qRestT = getSafeRestQuaternion(tObj);
-              const pPopT = pRestT.clone().add(new THREE.Vector3(0, ALTURA_APROX, 0));
-
-              // Rotación de atornillado axial
-              const rotAxis = new THREE.Vector3(0, 1, 0);
-              const totalAngle = Math.PI * 4;
-              const qAtornilladoA = qRestT.clone().multiply(new THREE.Quaternion().setFromAxisAngle(rotAxis, totalAngle));
-
-              const pSubidaT = pRestT.clone().add(new THREE.Vector3(0, ALTURA_GIRO, 0));
-              const pMidRotT = rotarPunto(pRestT, qRot90).add(new THREE.Vector3(0, ALTURA_GIRO, 0));
-              const pFinRotT = rotarPunto(pRestT, qRot180).add(new THREE.Vector3(0, ALTURA_GIRO, 0));
-              const pPisoVolteadaT = rotarPunto(pRestT, qRot180);
-
-              const qMidRotT = qRot90.clone().multiply(qAtornilladoA);
-              const qFinRotT = qRot180.clone().multiply(qAtornilladoA);
-
-              // Escala: oculta antes de su tTornIni, Pop-In 200% -> 100%
-              const scaleTimes = [0, Math.max(0, tTornIni - 0.01), tTornIni, tTornPop, T_PASO_TOTAL];
-              const scaleValues = [
-                0, 0, 0,
-                0, 0, 0,
-                2.0, 2.0, 2.0,
-                1.0, 1.0, 1.0,
-                1.0, 1.0, 1.0,
-              ];
-              tracks.push(new THREE.VectorKeyframeTrack(`${tObj.uuid}.scale`, scaleTimes, scaleValues, THREE.InterpolateLinear));
-
-              // Posición: baja y se asegura en su nivel, luego reposa y en 7.3s gira
-              const posTimes = [
-                0, tTornIni, tTornPop, tTornFin,
-                T_GIRO_INI, T_GIRO_SUBIDA, T_GIRO_ROTMID, T_GIRO_ROTFIN, T_GIRO_PISO, T_PASO_TOTAL
-              ];
-              const posValues = [
-                pPopT.x, pPopT.y, pPopT.z,
-                pPopT.x, pPopT.y, pPopT.z,
-                pPopT.x, pPopT.y, pPopT.z,
-                pRestT.x, pRestT.y, pRestT.z,
-                pRestT.x, pRestT.y, pRestT.z,
-                pSubidaT.x, pSubidaT.y, pSubidaT.z,
-                pMidRotT.x, pMidRotT.y, pMidRotT.z,
-                pFinRotT.x, pFinRotT.y, pFinRotT.z,
-                pPisoVolteadaT.x, pPisoVolteadaT.y, pPisoVolteadaT.z,
-                pPisoVolteadaT.x, pPisoVolteadaT.y, pPisoVolteadaT.z,
-              ];
-              tracks.push(new THREE.VectorKeyframeTrack(`${tObj.uuid}.position`, posTimes, posValues, THREE.InterpolateLinear));
-
-              // Rotación: atornillado axial 720° en su ventana, luego reposo y giro a 7.3s
-              const rotTimes = [
-                0, tTornPop, tTornFin,
-                T_GIRO_INI, T_GIRO_SUBIDA, T_GIRO_ROTMID, T_GIRO_ROTFIN, T_GIRO_PISO, T_PASO_TOTAL
-              ];
-              const rotValues = [
-                qRestT.x, qRestT.y, qRestT.z, qRestT.w,
-                qRestT.x, qRestT.y, qRestT.z, qRestT.w,
-                qAtornilladoA.x, qAtornilladoA.y, qAtornilladoA.z, qAtornilladoA.w,
-                qAtornilladoA.x, qAtornilladoA.y, qAtornilladoA.z, qAtornilladoA.w,
-                qAtornilladoA.x, qAtornilladoA.y, qAtornilladoA.z, qAtornilladoA.w,
-                qMidRotT.x, qMidRotT.y, qMidRotT.z, qMidRotT.w,
-                qFinRotT.x, qFinRotT.y, qFinRotT.z, qFinRotT.w,
-                qFinRotT.x, qFinRotT.y, qFinRotT.z, qFinRotT.w,
-                qFinRotT.x, qFinRotT.y, qFinRotT.z, qFinRotT.w,
-              ];
-              tracks.push(new THREE.QuaternionKeyframeTrack(`${tObj.uuid}.quaternion`, rotTimes, rotValues, THREE.InterpolateLinear));
-            });
-          });
-
-          // ── 4 y 5. CARA B: CORREDERAS Y TORNILLOS (Coreografía 1 Secuencial vs Coreografía 2 Simultánea) ──
-          const KB = Math.max(1, gruposCaraB.length);
-          const tDurTotalB = T_PASO_TOTAL - T_CORRB_INI;
-          const dtCaraB = tDurTotalB / (coreoPaso === 1 ? KB : 1);
-
-          gruposCaraB.forEach((grp, k) => {
-            const tNivelIni = coreoPaso === 1 ? T_CORRB_INI + k * dtCaraB : T_CORRB_INI;
-            const tNivelFin = coreoPaso === 1 ? tNivelIni + dtCaraB : T_PASO_TOTAL;
-            const tCorrIni = tNivelIni;
-            const tCorrFin = tNivelIni + (tNivelFin - tNivelIni) * 0.42;
-            const tTornIni = tCorrFin + 0.08;
-            const tTornPop = Math.min(tTornIni + 0.22, tNivelFin - 0.22);
-            const tTornFin = tNivelFin - 0.03;
-
-            grp.correderas.forEach((obj) => {
-              const pRestB_orig = getSafeRestPosition(obj);
-              const qRestB_orig = getSafeRestQuaternion(obj);
-
-              // Posición y rotación de destino sobre la madera volteada
-              const pDestinoB = rotarPunto(pRestB_orig, qRot180);
-              const qDestinoB = qRot180.clone().multiply(qRestB_orig);
-              const pPopB = pDestinoB.clone().add(new THREE.Vector3(0, ALTURA_APROX, 0));
-
-              // Escala: estrictamente OCULTA hasta su tCorrIni
-              const scaleTimes = [0, tCorrIni - 0.01, tCorrIni, T_PASO_TOTAL];
-              const scaleValues = [0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1];
-              tracks.push(new THREE.VectorKeyframeTrack(`${obj.uuid}.scale`, scaleTimes, scaleValues, THREE.InterpolateLinear));
-
-              // Posición: aparece arriba a 30 cm sobre la cara superior volteada y desciende
-              const posTimes = [0, tCorrIni, tCorrFin, T_PASO_TOTAL];
-              const posValues = [
-                pPopB.x, pPopB.y, pPopB.z,
-                pPopB.x, pPopB.y, pPopB.z,
-                pDestinoB.x, pDestinoB.y, pDestinoB.z,
-                pDestinoB.x, pDestinoB.y, pDestinoB.z,
-              ];
-              tracks.push(new THREE.VectorKeyframeTrack(`${obj.uuid}.position`, posTimes, posValues, THREE.InterpolateLinear));
-
-              // Rotación: orientada boca arriba en la cara volteada
-              const rotTimes = [0, tCorrIni, T_PASO_TOTAL];
-              const rotValues = [
-                qDestinoB.x, qDestinoB.y, qDestinoB.z, qDestinoB.w,
-                qDestinoB.x, qDestinoB.y, qDestinoB.z, qDestinoB.w,
-                qDestinoB.x, qDestinoB.y, qDestinoB.z, qDestinoB.w,
-              ];
-              tracks.push(new THREE.QuaternionKeyframeTrack(`${obj.uuid}.quaternion`, rotTimes, rotValues, THREE.InterpolateLinear));
-            });
-
-            grp.tornillos.forEach((tObj) => {
-              const pRestT_orig = getSafeRestPosition(tObj);
-              const qRestT_orig = getSafeRestQuaternion(tObj);
-
-              // Posición y orientación de destino sobre la corredera volteada
-              const pDestinoTB = rotarPunto(pRestT_orig, qRot180);
-              const qBaseTB = qRot180.clone().multiply(qRestT_orig);
-              const pPopTB = pDestinoTB.clone().add(new THREE.Vector3(0, ALTURA_APROX, 0));
-
-              // Escala: estrictamente OCULTA hasta tTornIni, Pop-In 200% -> 100%
-              const scaleTimes = [0, Math.max(0, tTornIni - 0.01), tTornIni, tTornPop, T_PASO_TOTAL];
-              const scaleValues = [
-                0, 0, 0,
-                0, 0, 0,
-                2.0, 2.0, 2.0,
-                1.0, 1.0, 1.0,
-                1.0, 1.0, 1.0,
-              ];
-              tracks.push(new THREE.VectorKeyframeTrack(`${tObj.uuid}.scale`, scaleTimes, scaleValues, THREE.InterpolateLinear));
-
-              // Posición: arriba a 30cm -> desciende colinealmente hasta pDestinoTB
-              const posTimes = [0, tTornIni, tTornPop, tTornFin, T_PASO_TOTAL];
-              const posValues = [
-                pPopTB.x, pPopTB.y, pPopTB.z,
-                pPopTB.x, pPopTB.y, pPopTB.z,
-                pPopTB.x, pPopTB.y, pPopTB.z,
-                pDestinoTB.x, pDestinoTB.y, pDestinoTB.z,
-                pDestinoTB.x, pDestinoTB.y, pDestinoTB.z,
-              ];
-              tracks.push(new THREE.VectorKeyframeTrack(`${tObj.uuid}.position`, posTimes, posValues, THREE.InterpolateLinear));
-
-              // Rotación: atornillado axial continuo de 720° (2 vueltas) sobre el eje local del tornillo
-              const rotAxis = new THREE.Vector3(0, 1, 0);
-              const totalAngle = Math.PI * 4;
-              const qRotAtornillado = new THREE.Quaternion().setFromAxisAngle(rotAxis, totalAngle);
-              const qAtornilladoTB = qBaseTB.clone().multiply(qRotAtornillado);
-              const tMid = tTornPop + (tTornFin - tTornPop) * 0.5;
-
-              const rotTimes = [0, tTornPop, tMid, tTornFin, T_PASO_TOTAL];
-              const rotValues = [
-                qBaseTB.x, qBaseTB.y, qBaseTB.z, qBaseTB.w,
-                qBaseTB.x, qBaseTB.y, qBaseTB.z, qBaseTB.w,
-                qAtornilladoTB.x, qAtornilladoTB.y, qAtornilladoTB.z, qAtornilladoTB.w,
-                qAtornilladoTB.x, qAtornilladoTB.y, qAtornilladoTB.z, qAtornilladoTB.w,
-                qAtornilladoTB.x, qAtornilladoTB.y, qAtornilladoTB.z, qAtornilladoTB.w,
-              ];
-              tracks.push(new THREE.QuaternionKeyframeTrack(`${tObj.uuid}.quaternion`, rotTimes, rotValues, THREE.InterpolateLinear));
-            });
+            const rotTimes = [0, T_TORNB_POP, tMid, T_TORNB_FIN, T_PASO_TOTAL];
+            const rotValues = [
+              qBaseTB.x, qBaseTB.y, qBaseTB.z, qBaseTB.w,
+              qBaseTB.x, qBaseTB.y, qBaseTB.z, qBaseTB.w,
+              qAtornilladoTB.x, qAtornilladoTB.y, qAtornilladoTB.z, qAtornilladoTB.w,
+              qAtornilladoTB.x, qAtornilladoTB.y, qAtornilladoTB.z, qAtornilladoTB.w,
+              qAtornilladoTB.x, qAtornilladoTB.y, qAtornilladoTB.z, qAtornilladoTB.w,
+            ];
+            tracks.push(new THREE.QuaternionKeyframeTrack(`${tObj.uuid}.quaternion`, rotTimes, rotValues, THREE.InterpolateLinear));
           });
         } else {
           // =========================================================================
