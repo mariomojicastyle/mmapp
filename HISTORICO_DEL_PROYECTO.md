@@ -3640,11 +3640,16 @@ Con esta batería de arreglos y la validación en caliente, la V20 se establece 
   * `BloqueEstandarEditorForm.tsx`: Modal/formulario inferior de edición de bloques estándar con subida de archivos `.glb` y traducción multilingüe automática TTS (ES, PT-BR, EN).
   * `StepManagerIcons.tsx`: Vectores SVG oficiales de rotaciones cinemáticas en banco de trabajo.
 
-#### 3. Fase 3: Desacople del Gestor de Estado Global (`store.ts`) mediante Zustand Slices Pattern
-- **Reducción**: De 6.753 líneas a **2.118 líneas** (**-68.6%** en el archivo total, y la implementación de `use3BFStore` pasó de 4.651 líneas a **10 líneas** declarativas).
+#### 3. Fase 3: Desacople del Gestor de Estado Global (`store.ts`) mediante Zustand Slices Pattern y Erradicación de Dependencias Circulares ESM
+- **Reducción de `store.ts`**: De 6.753 líneas a **30 líneas** (**-99.5%** de reducción directa).
+- **Arquitectura de 4 Capas Aclícica (DAG)**:
+  * `lib/storeTypes.ts`: 1.054 líneas de contratos puros de TypeScript (interfaces, types, data models). Al no emitir código JavaScript en runtime, erradica cualquier riesgo de referencias no inicializadas (TDZ).
+  * `lib/storeDefaults.ts`: 1.161 líneas con presets de iluminación, constantes de persistencia, materias primas y funciones de saneamiento/cómputo (`getCachedManualData`, `sanitizarPasosManuales`, etc.). Depende únicamente de utilidades puras y tipos, sin dependencias circulares.
+  * `lib/slices/`: 8 domain slices desacoplados consumiendo tipos de `storeTypes` y valores de `storeDefaults`.
+  * `lib/store.ts`: Archivo coordinador de 30 líneas que re-exporta tipos, constantes y compone `use3BFStore` de forma limpia y declarativa.
 - **Slices creados en `lib/slices/`**:
   * `createEngineSlice.ts`: Parámetros de mueble, cómputo Grasshopper, resultado geométrico, calibración de visualización.
-  * `createManualSlice.ts`: Manual Studio, pasamanos, picking 3D, bloques estándar, persistencia Google Drive y caché local.
+  * `createManualSlice.ts`: Manual Studio, pasamanos, picking 3D, bloques estándar, persistencia Google Drive e hidratación segura de caché sin errores de `undefined`.
   * `createCatalogSlice.ts`: Ficha de producto comercial, recetas de color Henn/IKEA, capas y materiales PBR, catálogo de muebles en Drive.
   * `createSceneInstanceSlice.ts`: Multi-instancia GHX en escenario 3D y mecanizados cruzados inter-componentes.
   * `createHistorySlice.ts`: Pila de historial Undo/Redo (100 estados).
@@ -3653,6 +3658,7 @@ Con esta batería de arreglos y la validación en caliente, la V20 se establece 
   * `createRenderIASlice.ts`: 3BF AI Render Studio (Gemini/Fal API key, prompts, histórico de renders).
 
 #### 4. Balance Global de Optimización
-- **Líneas eliminadas de monolitos**: **9.767 líneas**.
+- **Líneas eliminadas de los 3 monolitos**: **11.853 líneas** erradicadas (de 15.041 líneas iniciales a 3.186 líneas combinadas en los 3 archivos: `Viewer3D.tsx` 2.905, `StepManagerPanel.tsx` 251, `store.ts` 30).
 - **Validación**: `npx tsc --noEmit` con **0 errores**.
 - **Servidores en vivo**: Todos los endpoints respondiendo **200 OK** (Next.js :3005, Python Worker :8005, RhinoCompute :5000, Cloudflare Tunnel).
+

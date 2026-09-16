@@ -1,11 +1,13 @@
 import {
-  ObjetoInstancia3BF,
-  PerforacionCruzadaItem,
   generarNombreSecuencial,
   MAPA_PARAMETROS,
+} from "../storeDefaults";
+import type {
+  ObjetoInstancia3BF,
+  PerforacionCruzadaItem,
   PiezaDespiece,
   HerrajeItem,
-} from "../store";
+} from "../storeTypes";
 
 export interface SceneInstanceSlice {
   instancias: Record<string, ObjetoInstancia3BF>;

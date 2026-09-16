@@ -1,4 +1,4 @@
-import { SnapshotEscenario } from "../store";
+import type { SnapshotEscenario } from "../storeTypes";
 
 export interface HistorySlice {
   pilaHistorial: SnapshotEscenario[];

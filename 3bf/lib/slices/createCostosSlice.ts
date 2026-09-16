@@ -1,26 +1,28 @@
 // @ts-nocheck
 import { StateCreator } from "zustand";
-import { State3BF } from "../store";
 import {
   HERRAJES_INICIALES_DEFECTO,
   TABLEROS_INICIALES_DEFECTO,
   CANTOS_INICIALES_DEFECTO,
   COSTOS_CONVERSION_DEFECTO,
   NEGOCIACION_NOVOPAN_DEFECTO,
+  getCachedManualData,
+  calcularCostoLaminaNovopan,
+  FICHA_DEFECTO,
+  PROMPTS_INICIALES_DEFECTO,
+  STORAGE_KEY_ILUMINACION,
+  defaultLucesEstudio,
+} from "../storeDefaults";
+import type {
+  State3BF,
   HerrajeRecord,
   TableroRecord,
   CantoRecord,
   CostosConversionConfig,
   NegociacionNovopan,
   FichaCostosConfig,
-  getCachedManualData,
-  calcularCostoLaminaNovopan,
-  FICHA_DEFECTO,
   PromptTemplateItem,
-  PROMPTS_INICIALES_DEFECTO,
-  STORAGE_KEY_ILUMINACION,
-  defaultLucesEstudio,
-} from "../store";
+} from "../storeTypes";
 
 export interface CostosSlice {
   dbHerrajes: HerrajeRecord[];

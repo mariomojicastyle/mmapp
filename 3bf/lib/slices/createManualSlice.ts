@@ -8,22 +8,31 @@ import {
   BLOQUES_ESTANDAR_DEFAULT,
   STORAGE_KEY_PASOS_MANUAL,
   STORAGE_KEY_LAST_MANUAL_ID,
+  STORAGE_KEY_MANUAL_ACTIVO,
   obtenerCalibracionInicial,
   STORAGE_KEY_ILUMINACION,
+  defaultLucesEstudio,
+} from "../storeDefaults";
+import type {
   PasoManualStudio,
   Manual3BMProyecto,
   BloqueEstandarDef,
   ModoPickingManualState,
   SubBloqueArmado,
   GrupoCinematicoShowcase,
-} from "../store";
+} from "../storeTypes";
 import { agruparMallasEnPiezasMadre, extraerPiezaMadre, esHerrajeNombre } from "../piezaMadreUtils";
 
-const initialCachedManual = getCachedManualData();
+export const createManualSlice = (set: any, get: any): any => {
+  const initialCachedManual = getCachedManualData();
+  const pasosIniciales = (initialCachedManual && initialCachedManual.pasos && initialCachedManual.pasos.length > 0)
+    ? initialCachedManual.pasos
+    : generarPasosManualesPorDefecto();
 
-export const createManualSlice = (set: any, get: any): any => ({
-  pasosManual: initialCachedManual.pasos,
-  pasoActivoManualId: initialCachedManual.pasos[0]?.id || "P00",
+  return {
+
+  pasosManual: pasosIniciales,
+  pasoActivoManualId: pasosIniciales[0]?.id || "P00",
   isTimelinePlaying: false,
   timelineCurrentTime: 0,
   timelineVelocidad: 1.0,
@@ -1948,4 +1957,5 @@ export const createManualSlice = (set: any, get: any): any => ({
     set({ anchoPanelDerecho: normalizado });
   },
 
-});
+  };
+};

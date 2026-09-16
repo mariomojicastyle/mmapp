@@ -1,4 +1,5 @@
-import { PromptTemplateItem, RenderIAResultado, PROMPTS_INICIALES_DEFECTO } from "../store";
+import { PROMPTS_INICIALES_DEFECTO } from "../storeDefaults";
+import type { PromptTemplateItem, RenderIAResultado } from "../storeTypes";
 
 export interface RenderIASlice {
   modalRenderIAAbierto: boolean;

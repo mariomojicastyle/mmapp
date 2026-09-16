@@ -1,5 +1,15 @@
 // @ts-nocheck
 import {
+  crearFichaEstandarLimpia,
+  PRESET_MATERIALES_PBR,
+  PRESET_CAPAS,
+  PRESET_COLORES_CLARO,
+  PRESET_COLORES_OSCURO,
+  purgarResultadoGeometria,
+  guardarPasosEnCacheLocal,
+  generarPasosManualesPorDefecto,
+} from "../storeDefaults";
+import type {
   FichaProductoDef,
   RecetaColorMueble,
   MaterialPBRDef,
@@ -8,17 +18,9 @@ import {
   CarpetaMuebleNode,
   MuebleGuardadoItem,
   ColoresApariencia,
-  crearFichaEstandarLimpia,
-  PRESET_MATERIALES_PBR,
-  PRESET_CAPAS,
-  PRESET_COLORES_CLARO,
-  PRESET_COLORES_OSCURO,
-  purgarResultadoGeometria,
   ObjetoInstancia3BF,
   Manual3BMProyecto,
-  guardarPasosEnCacheLocal,
-  generarPasosManualesPorDefecto,
-} from "../store";
+} from "../storeTypes";
 
 export interface CatalogSlice {
   fichasProducto: Record<string, FichaProductoDef>;
