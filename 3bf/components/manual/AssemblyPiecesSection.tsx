@@ -38,6 +38,8 @@ export default function AssemblyPiecesSection({
     desasignarHerrajeDePasoManual,
     conmutarVisibilidadPiezasPaso,
     conmutarOcultarNoAsignadasPaso,
+    asignarPiezaASubBloque,
+    desasignarPiezaDeSubBloque,
     modoPickingManual,
     iniciarPickingManual,
     limpiarPickingManual,
@@ -225,26 +227,51 @@ export default function AssemblyPiecesSection({
                                     const subAsignado = (pasoActivo.subbloques || []).find((s) =>
                                       s.piezas.some((sp) => sp === pz || extraerPiezaMadre(sp) === pmLimpia)
                                     );
+                                    const subIdx = subAsignado ? (pasoActivo.subbloques || []).findIndex((s) => s.id === subAsignado.id) : -1;
+                                    const colorSub = subIdx >= 0 ? obtenerColorSubbloque(subIdx) : null;
+
                                     return (
                                       <span
                                         key={pz}
                                         style={{ borderColor: botonActivoColor }}
                                         className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[9.5px] font-semibold bg-cyan-500/10 text-cyan-800 dark:text-cyan-200 border"
                                       >
-                                        <span className="truncate max-w-[140px]">{pmLimpia}</span>
-                                        {subAsignado && (() => {
-                                          const sIdx = (pasoActivo.subbloques || []).findIndex((s) => s.id === subAsignado.id);
-                                          const colorSub = obtenerColorSubbloque(sIdx >= 0 ? sIdx : 0);
-                                          return (
-                                            <span
-                                              className="px-1.5 py-0.5 rounded-full text-white font-black text-[8px] flex items-center justify-center shrink-0 shadow-xs"
-                                              style={{ backgroundColor: colorSub.bg }}
-                                              title={`Asignado a ${subAsignado.nombre}`}
-                                            >
-                                              {subAsignado.codigo || `${pasoActivo.id}${subAsignado.letra}`}
-                                            </span>
-                                          );
-                                        })()}
+                                        <span className="truncate max-w-[130px]">{pmLimpia}</span>
+                                        
+                                        {/* Selector rápido de Subbloque para Tableros */}
+                                        {(pasoActivo.subbloques || []).length > 0 && (
+                                          <select
+                                            value={subAsignado ? subAsignado.id : ""}
+                                            onChange={(e) => {
+                                              const targetSubId = e.target.value;
+                                              if (!targetSubId) {
+                                                if (subAsignado) desasignarPiezaDeSubBloque(pasoActivo.id, subAsignado.id, pz);
+                                              } else {
+                                                asignarPiezaASubBloque(pasoActivo.id, targetSubId, pz);
+                                              }
+                                            }}
+                                            className="px-1.5 py-0.5 rounded-full text-[8.5px] font-black cursor-pointer border-none outline-none text-white shadow-xs appearance-none text-center"
+                                            style={{
+                                              backgroundColor: colorSub ? colorSub.bg : "rgba(100, 116, 139, 0.4)",
+                                              color: colorSub ? "#ffffff" : "currentColor"
+                                            }}
+                                            title={subAsignado ? `Asignado a ${subAsignado.nombre} (Clic para cambiar)` : "Asignar a subbloque"}
+                                          >
+                                            <option value="" className="text-slate-800 dark:text-slate-200 bg-white dark:bg-slate-900 font-normal">
+                                              {subAsignado ? "✕ Quitar Sub" : "+ Sub"}
+                                            </option>
+                                            {(pasoActivo.subbloques || []).map((sub, sIndex) => (
+                                              <option
+                                                key={sub.id}
+                                                value={sub.id}
+                                                className="text-slate-800 dark:text-slate-200 bg-white dark:bg-slate-900 font-semibold"
+                                              >
+                                                {sub.codigo || `${pasoActivo.id}${sub.letra}`} - {sub.nombre}
+                                              </option>
+                                            ))}
+                                          </select>
+                                        )}
+
                                         <button
                                           type="button"
                                           onClick={() => desasignarPiezaDePasoManual(pasoActivo.id, pz)}
@@ -272,25 +299,50 @@ export default function AssemblyPiecesSection({
                                     const subAsignadoH = (pasoActivo.subbloques || []).find((s) =>
                                       s.herrajes.some((sh) => sh === h || extraerPiezaMadre(sh) === hLimpio)
                                     );
+                                    const subIdxH = subAsignadoH ? (pasoActivo.subbloques || []).findIndex((s) => s.id === subAsignadoH.id) : -1;
+                                    const colorSubH = subIdxH >= 0 ? obtenerColorSubbloque(subIdxH) : null;
+
                                     return (
                                       <span
                                         key={h}
                                         className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[9.5px] font-semibold bg-slate-200/70 dark:bg-slate-800 text-slate-700 dark:text-slate-200 border border-slate-300 dark:border-slate-700"
                                       >
-                                        <span className="truncate max-w-[140px]">{hLimpio}</span>
-                                        {subAsignadoH && (() => {
-                                          const sIdx = (pasoActivo.subbloques || []).findIndex((s) => s.id === subAsignadoH.id);
-                                          const colorSub = obtenerColorSubbloque(sIdx >= 0 ? sIdx : 0);
-                                          return (
-                                            <span
-                                              className="px-1.5 py-0.5 rounded-full text-white font-black text-[8px] flex items-center justify-center shrink-0 shadow-xs"
-                                              style={{ backgroundColor: colorSub.bg }}
-                                              title={`Asignado a ${subAsignadoH.nombre}`}
-                                            >
-                                              {subAsignadoH.codigo || `${pasoActivo.id}${subAsignadoH.letra}`}
-                                            </span>
-                                          );
-                                        })()}
+                                        <span className="truncate max-w-[130px]">{hLimpio}</span>
+                                        
+                                        {/* Selector rápido de Subbloque para Herrajes (Tarugos / Cavilhas, etc.) */}
+                                        {(pasoActivo.subbloques || []).length > 0 && (
+                                          <select
+                                            value={subAsignadoH ? subAsignadoH.id : ""}
+                                            onChange={(e) => {
+                                              const targetSubId = e.target.value;
+                                              if (!targetSubId) {
+                                                if (subAsignadoH) desasignarPiezaDeSubBloque(pasoActivo.id, subAsignadoH.id, h);
+                                              } else {
+                                                asignarPiezaASubBloque(pasoActivo.id, targetSubId, h);
+                                              }
+                                            }}
+                                            className="px-1.5 py-0.5 rounded-full text-[8.5px] font-black cursor-pointer border-none outline-none text-white shadow-xs appearance-none text-center"
+                                            style={{
+                                              backgroundColor: colorSubH ? colorSubH.bg : "rgba(100, 116, 139, 0.5)",
+                                              color: colorSubH ? "#ffffff" : "currentColor"
+                                            }}
+                                            title={subAsignadoH ? `Asignado a ${subAsignadoH.nombre} (Clic para cambiar)` : "Asignar a subbloque"}
+                                          >
+                                            <option value="" className="text-slate-800 dark:text-slate-200 bg-white dark:bg-slate-900 font-normal">
+                                              {subAsignadoH ? "✕ Quitar Sub" : "+ Sub"}
+                                            </option>
+                                            {(pasoActivo.subbloques || []).map((sub, sIndex) => (
+                                              <option
+                                                key={sub.id}
+                                                value={sub.id}
+                                                className="text-slate-800 dark:text-slate-200 bg-white dark:bg-slate-900 font-semibold"
+                                              >
+                                                {sub.codigo || `${pasoActivo.id}${sub.letra}`} - {sub.nombre}
+                                              </option>
+                                            ))}
+                                          </select>
+                                        )}
+
                                         <button
                                           type="button"
                                           onClick={() => desasignarHerrajeDePasoManual(pasoActivo.id, h)}

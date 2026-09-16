@@ -640,7 +640,13 @@ export const createManualSlice = (set: any, get: any): any => {
     const actualizados = state.pasosManual.map((p) => {
       if (p.id !== pasoId || !p.subbloques) return p;
       const modificados = p.subbloques.map((s) => {
-        if (s.id !== subbloqueId) return s;
+        if (s.id !== subbloqueId) {
+          return {
+            ...s,
+            piezas: s.piezas.filter((pz) => pz !== piezaKey && extraerPiezaMadre(pz) !== extraerPiezaMadre(piezaKey)),
+            herrajes: s.herrajes.filter((hr) => hr !== piezaKey && extraerPiezaMadre(hr) !== extraerPiezaMadre(piezaKey)),
+          };
+        }
         if (esHerraje) {
           if (s.herrajes.includes(piezaKey)) return s;
           return { ...s, herrajes: [...s.herrajes, piezaKey] };
