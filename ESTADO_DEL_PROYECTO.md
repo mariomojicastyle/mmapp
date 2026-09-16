@@ -59,6 +59,12 @@ Este archivo es la "Memoria RAM" para Antigravity. Contiene el contexto de lo qu
   - **Balance Total**: **11.853 líneas de complejidad monolítica erradicadas** de los 3 archivos principales (de 15.041 a 3.186 líneas combinadas), eliminando la latencia, el consumo de tokens y los bloqueos circulares de importación ESM.
   - **Validación**: Compilación TypeScript con `npx tsc --noEmit` con **0 errores**. Todos los servicios activos y respondiendo con código **200 OK** (Next.js :3005, Python Worker :8005, RhinoCompute :5000, Cloudflare Tunnel).
 
+- [x] **[16 de Septiembre, 2026] Hito 139: Calibración y Persistencia del Ancho Ergonómico por Defecto (740px) del N-Panel de Bloques Estándar de Armado**:
+  - **Desacople Contextual de Dimensiones del N-Panel**: `anchoNPanelManual` y `setAnchoNPanelManual` integrados en Zustand con persistencia en `localStorage` (`3bf_ancho_npanel_manual`).
+  - **Apertura Ergonómica en Modo Manual**: Al pulsar la tecla `N` o el chevron en Modo Manual, el panel abre directamente en **740px** de ancho (en lugar de los 380px del Visor 3D), garantizando que tanto la columna del árbol de marcas (220px) como las tarjetas de bloques (480px+) sean 100% legibles de inmediato con todas las rutas y botones en una sola línea sin deformaciones ni necesidad de redimensionar.
+  - **Independencia entre Modos**: El Visor 3D mantiene sus 380px compactos, y cualquier redimensionamiento manual por parte del usuario en Modo Manual se recuerda de forma independiente.
+  - **Validación**: Compilación `npx tsc --noEmit` con **0 errores**.
+
 - [x] **[16 de Septiembre, 2026] Hito 137: Restauración de Orientación de Banco de Trabajo en Bloque de Armado (P03), Desacople de Matrices 3D, Bypass de Seguridad AR y Preparación de Refactorización Arquitectónica**:
   - **Botonera Canónica de Orientación y Giro de Banco (`Giro X ±90°` / `Giro Y ±90°`)**: Restaurada en `StepManagerPanel.tsx` en cápsulas puras (`rounded-full`) con color corporativo `#1368AA`, ubicada sobre la cabecera de `SUB-BLOQUES DE ARMADO`, con selector de `Pieza Master` y toggle de `Apoyo en ras del suelo (Y = 0)`.
   - **Desacople de Coordenadas y Matrices en el Visor 3D (`Viewer3D.tsx`)**: Eliminación en `BoardMesh` de la asignación congelada `meshRef.current?.position`, restableciendo `position={position}` relativa al grupo padre de la instancia. El bloque completo de 98 piezas de P03 ahora rota y se acuesta 90° de manera instantánea y solidaria.

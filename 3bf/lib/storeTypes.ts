@@ -838,6 +838,8 @@ export interface State3BF {
   setPestanaNPanel: (pestana: "componentes" | "muebles" | "capas" | "partes" | "materiales" | "calibrar" | "apariencia" | "ficha" | "bloques_estandar") => void;
   anchoNPanel: number;
   setAnchoNPanel: (ancho: number) => void;
+  anchoNPanelManual: number;
+  setAnchoNPanelManual: (ancho: number) => void;
   anchoPanelDerecho: number;
   setAnchoPanelDerecho: (ancho: number) => void;
 

@@ -3662,3 +3662,16 @@ Con esta batería de arreglos y la validación en caliente, la V20 se establece 
 - **Validación**: `npx tsc --noEmit` con **0 errores**.
 - **Servidores en vivo**: Todos los endpoints respondiendo **200 OK** (Next.js :3005, Python Worker :8005, RhinoCompute :5000, Cloudflare Tunnel).
 
+---
+
+### 🔹 Hito 139: Calibración y Persistencia del Ancho Ergonómico por Defecto (740px) del N-Panel de Bloques Estándar de Armado (16 de Septiembre, 2026)
+- **Desacople Contextual de Dimensiones del N-Panel**:
+  * Creación de `anchoNPanelManual` y `setAnchoNPanelManual` en el estado global (`storeTypes.ts` y `createManualSlice.ts`), con persistencia en `localStorage` (`3bf_ancho_npanel_manual`).
+  * En **Modo Manual 3D** (`pestanaActiva === "manual"` o `pestanaNPanel === "bloques_estandar"`), al presionar la tecla `N` o el chevron lateral, el panel ahora abre por defecto a **740px** de ancho (en lugar de los 380px compactos de Visor 3D).
+  * En **Modo Visor 3D** (`pestanaActiva === "3d"`), el panel preserva su ancho compacto de 380px sin invadir el espacio de visualización del mueble.
+- **Ergonomía y Visualización Inmediata de Dos Columnas**:
+  * La columna izquierda (Árbol de Marcas & Categorías) conserva sus 220px holgados sin cortar nombres corporativos.
+  * La columna derecha (Tarjetas de Bloques Estándar) dispone de más de 480px, permitiendo que la fila de ruta física en disco (`min-w-0`), botón `Copiar` y botón `Ir a Carpeta`, así como los botones `Editar Bloque` e `Insertar en Manual`, se muestren en líneas horizontales fluidas sin cortes ni saltos forzados de línea.
+  * Si el usuario redimensiona el panel manualmente arrastrando el controlador izquierdo, la nueva medida se almacena de forma independiente para el Modo Manual respetando su preferencia.
+- **Validación**: `npx tsc --noEmit` con **0 errores** y servidor Next.js respondiendo **200 OK**.
+

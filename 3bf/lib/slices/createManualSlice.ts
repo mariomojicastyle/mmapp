@@ -1933,6 +1933,29 @@ export const createManualSlice = (set: any, get: any): any => {
     }
     set({ anchoNPanel: normalizado });
   },
+  anchoNPanelManual: typeof window !== "undefined" && window.localStorage && localStorage.getItem("3bf_ancho_npanel_manual")
+    ? (() => {
+        const val = Number(localStorage.getItem("3bf_ancho_npanel_manual"));
+        const esMovil = typeof window !== "undefined" && window.innerWidth < 1024;
+        if (esMovil) {
+          if (!val || val > 360 || val < 140) return 260;
+          return Math.max(140, Math.min(360, val));
+        }
+        if (!val || val < 500) return 740; // En PC Modo Manual por defecto 740px funcional
+        const maxLimit = typeof window !== "undefined" ? Math.max(1400, window.innerWidth - 60) : 1400;
+        return Math.max(500, Math.min(maxLimit, val));
+      })()
+    : (typeof window !== "undefined" && window.innerWidth < 1024 ? 260 : 740),
+  setAnchoNPanelManual: (ancho) => {
+    const esMovil = typeof window !== "undefined" && window.innerWidth < 1024;
+    const minW = esMovil ? 140 : 500;
+    const maxW = esMovil ? 360 : (typeof window !== "undefined" ? Math.max(1400, window.innerWidth - 60) : 1400);
+    const normalizado = Math.max(minW, Math.min(maxW, ancho));
+    if (typeof window !== "undefined" && window.localStorage) {
+      localStorage.setItem("3bf_ancho_npanel_manual", String(normalizado));
+    }
+    set({ anchoNPanelManual: normalizado });
+  },
   anchoPanelDerecho: typeof window !== "undefined" && window.localStorage && localStorage.getItem("3bf_ancho_panel_derecho")
     ? (() => {
         const val = Number(localStorage.getItem("3bf_ancho_panel_derecho"));

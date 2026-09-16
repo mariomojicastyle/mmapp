@@ -233,6 +233,8 @@ export default function NPanel() {
     centrarCamara,
     anchoNPanel,
     setAnchoNPanel,
+    anchoNPanelManual,
+    setAnchoNPanelManual,
     modalRenderIAAbierto,
     setModalRenderIAAbierto,
     setLuzPropiedad,
@@ -253,6 +255,8 @@ export default function NPanel() {
   const esOscuro = esquemaColor === "oscuro";
   const colorBotonActivo = esOscuro ? "#1368AA" : (coloresApariencia?.botonActivo || "#0891B2");
 
+  const esModoManual = pestanaActiva === "manual" || pestanaNPanel === "bloques_estandar";
+
   const recetaEditandoInfo = React.useMemo(() => {
     if (!recetaEnEdicion) return null;
     const ficha = getFichaProductoActivo();
@@ -261,8 +265,14 @@ export default function NPanel() {
   }, [recetaEnEdicion, getFichaProductoActivo]);
 
   const anchoEfectivoNPanel = React.useMemo(() => {
-    if (typeof window === "undefined") return 380;
-    if (window.innerWidth >= 1024) {
+    if (typeof window === "undefined") return esModoManual ? 740 : 380;
+    const esEscritorio = window.innerWidth >= 1024;
+    if (esEscritorio) {
+      if (esModoManual) {
+        const val = anchoNPanelManual || 740;
+        const maxLimit = Math.max(740, window.innerWidth - 60);
+        return Math.max(500, Math.min(maxLimit, val));
+      }
       return anchoNPanel && anchoNPanel >= 280 ? anchoNPanel : 380;
     }
     const ancho25 = Math.max(160, Math.round(window.innerWidth * 0.25));
@@ -270,7 +280,7 @@ export default function NPanel() {
       return ancho25;
     }
     return anchoNPanel;
-  }, [anchoNPanel]);
+  }, [anchoNPanel, anchoNPanelManual, esModoManual]);
   const ancho = anchoEfectivoNPanel;
   const [isResizing, setIsResizing] = useState(false);
   const [busqueda, setBusqueda] = useState("");
@@ -341,10 +351,14 @@ export default function NPanel() {
       const currentX = "touches" in moveEvent ? moveEvent.touches[0].clientX : moveEvent.clientX;
       const deltaX = startX - currentX; // Mover a la izquierda ensancha
       const esMovil = typeof window !== "undefined" && window.innerWidth < 1024;
-      const minW = esMovil ? 140 : 280;
+      const minW = esMovil ? 140 : (esModoManual ? 500 : 280);
       const maxW = esMovil ? 360 : (typeof window !== "undefined" ? Math.max(1400, window.innerWidth - 60) : 1400);
       const newWidth = Math.max(minW, Math.min(maxW, startWidth + deltaX));
-      setAnchoNPanel(newWidth);
+      if (esModoManual) {
+        setAnchoNPanelManual(newWidth);
+      } else {
+        setAnchoNPanel(newWidth);
+      }
     };
 
     const onEnd = () => {

@@ -45,9 +45,10 @@ export default function BloquesEstandarAssetBrowser() {
     eliminarBloqueEstandar,
     coloresApariencia,
     anchoNPanel,
+    anchoNPanelManual,
   } = use3BFStore();
 
-  const ancho = anchoNPanel || 380;
+  const ancho = anchoNPanelManual || anchoNPanel || 740;
   const esCompacto = ancho < 450;
 
   const [busqueda, setBusqueda] = useState("");
