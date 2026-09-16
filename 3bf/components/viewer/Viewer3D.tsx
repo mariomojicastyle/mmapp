@@ -1153,11 +1153,18 @@ function BoardMesh({
     ? Math.max(baseEnvIntensity * 1.5, 1.15)
     : baseEnvIntensity;
 
+  // 🛡️ Blindaje físico contra colapso al centro (0, 0, 0):
+  // Si meshRef ya tiene una posición asignada por la cinemática o subbloque, se preserva;
+  // de lo contrario, se inicializa SIEMPRE en su posición CAD original para que nunca colapse a [0, 0, 0].
+  const safePosition = meshRef.current
+    ? meshRef.current.position
+    : (position || [0, 0, 0]);
+
   if (customGeometry) {
     return (
       <mesh 
         ref={meshRef}
-        position={pestanaActiva === "manual" ? undefined : position}
+        position={position}
         scale={esDuplicado ? [1.06, 1.06, 1.06] : (estaSeleccionadaEnPicking ? [1.015, 1.015, 1.015] : undefined)}
         renderOrder={esDuplicado ? 20 : (estaSeleccionadaEnPicking ? 22 : undefined)}
         name={instanciaKey ? `${instanciaKey}::${cleanName}` : cleanName}
@@ -1266,7 +1273,7 @@ function BoardMesh({
   return (
     <mesh
       ref={meshRef}
-      position={pestanaActiva === "manual" ? undefined : position}
+      position={position}
       scale={esDuplicado ? [1.06, 1.06, 1.06] : (estaSeleccionadaEnPicking ? [1.015, 1.015, 1.015] : undefined)}
       renderOrder={esDuplicado ? 20 : (estaSeleccionadaEnPicking ? 22 : undefined)}
       name={cleanName}

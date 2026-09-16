@@ -79,4 +79,12 @@ export const PERMISSIONS = {
     VIEW: ["superadmin"],
     MANAGE: ["superadmin"],
   },
+  DICTADO_Y_TRADUCCION: {
+    VIEW: ["superadmin", "coequipero", "admin", "designer", "viewer"],
+    MANAGE: ["superadmin", "admin"],
+  },
+  "DICTADO Y TRADUCCION": {
+    VIEW: ["superadmin", "coequipero", "admin", "designer", "viewer"],
+    MANAGE: ["superadmin", "admin"],
+  },
 } as const

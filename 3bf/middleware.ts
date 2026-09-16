@@ -30,6 +30,8 @@ export function middleware(request: NextRequest) {
     pathname.startsWith("/api/health") ||
     pathname.startsWith("/api/ar-model") ||
     pathname.startsWith("/api/bloques") ||
+    pathname === "/ar" ||
+    pathname.startsWith("/ar") ||
     pathname === "/access" ||
     pathname === "/api/access";
 

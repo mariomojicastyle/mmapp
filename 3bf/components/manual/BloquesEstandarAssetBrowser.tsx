@@ -423,7 +423,7 @@ export default function BloquesEstandarAssetBrowser() {
               </p>
             </div>
           ) : (
-            <div className={`grid ${ancho >= 750 ? "grid-cols-2" : "grid-cols-1"} gap-2.5`}>
+            <div className="flex flex-col gap-3">
               {bloquesFiltrados.map((bloque) => {
                 const fueInsertado = insertadoId === bloque.id;
 

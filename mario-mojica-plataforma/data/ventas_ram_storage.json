@@ -1,6 +1,52 @@
 {
   "prospectos": [
     {
+      "id": "p-edipo-lima",
+      "empresa": "NODERE Pessoas & Negócios",
+      "contacto_nombre": "Édipo Lima",
+      "contacto_cargo": "Consultor Comercial e Novos Negócios | Vendas Consultivas B2B | Executive Search",
+      "contacto_telefono": null,
+      "contacto_email": null,
+      "perfil_url": "https://www.linkedin.com/in/edipolima/",
+      "canal_preferido": "LinkedIn",
+      "pais": "Brasil (Caxias do Sul, RS)",
+      "temperatura": "caliente",
+      "ultima_interaccion_at": "2026-09-16T13:54:00.000Z",
+      "proxima_accion_at": "2026-09-17T15:00:00.000Z",
+      "proxima_accion_descripcion": "Responder confirmando disposición para el café virtual y manteniendo el contacto para sinergias en la Serra Gaúcha.",
+      "avatar_url": null,
+      "notas_estrategicas": "Consultor Comercial e Novos Negócios en NODERE Pessoas & Negócios en Caxias do Sul, RS. Especialista en ventas consultivas B2B y executive search. Conexión de alto valor en la Serra Gaúcha con más de 15 contactos en común. Muy receptivo a 3dBimFab y a la conexión entre tecnología, industria y negocios. Propuso café virtual.",
+      "referido_por_id": null,
+      "referido_por_nombre": null,
+      "tipo_relacion": "Contacto de 1er grado en LinkedIn",
+      "created_at": "2026-09-15T10:00:00.000Z",
+      "updated_at": "2026-09-16T13:54:00.000Z",
+      "interacciones_count": 2
+    },
+    {
+      "id": "p-cesar-castaneda",
+      "empresa": "SABMiller / Bavaria",
+      "contacto_nombre": "Cesar Alejandro Castañeda Castillo",
+      "contacto_cargo": "Coordinador de Ventas Regional Costa - Occidente",
+      "contacto_telefono": null,
+      "contacto_email": null,
+      "perfil_url": "https://www.linkedin.com/in/cesar-alejandro-casta%C3%B1eda-castillo-b0728929/",
+      "canal_preferido": "LinkedIn",
+      "pais": "Colombia (Costa / Occidente)",
+      "temperatura": "frio",
+      "ultima_interaccion_at": "2026-09-16T14:19:00.000Z",
+      "proxima_accion_at": null,
+      "proxima_accion_descripcion": "Descartado: Mensaje masivo automatizado invitando a grupo de WhatsApp de 120 empresas y 26k miembros (Spam / Caza-leads).",
+      "avatar_url": null,
+      "notas_estrategicas": "DESCARTADO / SPAM DE RED. Tras responderle con calidez a su saludo inicial, envió un copy-paste masivo ofreciendo entrar a un grupo de WhatsApp de '120 empresas' y acceso a '26.000 miembros'. Típica táctica de granja de leads, club de networking cazabobos o prospección no cualificada. No es un prospecto B2B de manufactura ni diseño.",
+      "referido_por_id": null,
+      "referido_por_nombre": null,
+      "tipo_relacion": "Contacto directo de 1er grado en LinkedIn (Spam)",
+      "created_at": "2026-09-16T13:49:00.000Z",
+      "updated_at": "2026-09-16T14:19:00.000Z",
+      "interacciones_count": 2
+    },
+    {
       "id": "p-muebles-jamar-omar-delahoz",
       "empresa": "Muebles Jamar Colombia",
       "contacto_nombre": "Omar DeLaHoz Rocha",
@@ -1565,6 +1611,24 @@
         "detalle": "Ol?, ?dipo, tudo bem? Obrigado pela conex?o no LinkedIn! ? sempre uma satisfa??o falar com profissionais de Caxias do Sul...",
         "resultado": "Enviado / En espera de respuesta",
         "created_at": "2026-09-15T11:18:32.913199"
+      }
+    ],
+    "p-cesar-castaneda": [
+      {
+        "id": "int-cesar-001",
+        "prospecto_id": "p-cesar-castaneda",
+        "canal": "LinkedIn",
+        "tipo_entrada": "screenshot",
+        "imagen_url": null,
+        "resumen_es": "Cesar Alejandro Castañeda Castillo (Gerente en C3 Soluciones e Innovaciones / ex-SABMiller) inició contacto por LinkedIn: 'Buen dia / Cordial saludo'.",
+        "intencion_detectada": "Saludo de cortesía / Apertura de conversación profesional.",
+        "termometro": "caliente",
+        "borrador_pt": "",
+        "traduccion_es": "César: 'Buen dia / Cordial saludo'",
+        "mensaje_final_enviado": null,
+        "contactos_referidos": [],
+        "proxima_accion_sugerida": "Responder saludo cordial con calidez y consultar en qué se le puede colaborar.",
+        "created_at": "2026-09-16T13:49:00.000Z"
       }
     ]
   }

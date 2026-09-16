@@ -114,13 +114,15 @@ Para evitar respuestas genéricas, el RAM de ventas almacena y cruza 5 dimension
 | **Madesa Móveis** | Douglas Guth | Líder DHO & Formação / P&D | Costos de P&D en manuales, e-commerce, reducción de garantías | 🔥 Caliente / En Evaluación Técnica | 18 Ago 2026 - Reenvió demo al sector técnico. Elogió la propuesta | Enviar comparativa de costos + prototipo 3D gratuito |
 | **Del Alba / ex-Maderkit** | Andrés Felipe Moncaleano Campo | Gerente Supply Chain | Reconexión profesional, empaque, compras y manuales 3D | 🔥 Padrino B2B Activo | 18 Ago 2026 - Conectó con Juan Carlos Londoño (CEO Inval) | Mantenerlo informado de los avances con Inval |
 | **Inval S.A.** | Juan Carlos Londoño | Presidente & CEO | Manuales interactivos 3D para muebles RTA, reducción de garantías | 🔥 Caliente / Vía Andrés Moncaleano | 18 Ago 2026 - Andrés facilitó su WhatsApp directo | Contactar por WhatsApp con el saludo y aval de Andrés Moncaleano |
-| **RTA Design S.A.S** | Juan Carlos Pérez Londoño | Gerente Administrativo y Financiero | Entrevista realizada con Paola y Viviana (GH). Sin vacante tradicional; propuesta de Piloto de Diseño con Agente de IA | 🔥 Caliente / Propuesta Piloto Enviada | 10 Sep 2026 - Entrevista realizada con GH. Envío de mensaje de agradecimiento y propuesta de proyecto piloto con video 3dBimFab | Enviar mensaje en LinkedIn y evaluar respuesta para definir ambiente piloto |
+| **RTA Design S.A.S** | Juan Carlos Pérez & Paola Reyes | Gerente Adm. Financiero / Dir. Compensación | Entrevista presencial en Yumbo (Paola y Viviana). Propuesta de Piloto con Agente IA / 3dBimFab | 🔥 Caliente / Retroalimentación Pendiente | 16 Sep 2026 - Paola confirmó por WhatsApp que está pendiente la sesión de feedback con Juan Carlos | Responder con tranquilidad y esperar la retroalimentación interna |
 | **Muebles Jamar Colombia** | Omar DeLaHoz Rocha & Juan Carlos Goez | VP Logística e Industria / Ingeniería CILA | Control de costo objetivo (Design to Cost), optimización de corte y kits mecanizados para el CILA | 🔥 Muy Caliente / Reconexión Activa | Ago 2026 - Omar comentó en LinkedIn: "Excelente. Cuando hablamos". Video demo 24 Ene 2026 analizado | Responder en LinkedIn/WhatsApp retomando el dolor de costo objetivo y mostrando 3dBimFab para los kits del CILA |
 | **Ternova** | Julio Sanchez | Ingeniería / Automatización | Manuales para maquinaria, limitaciones de Fusion 360 | 🟡 Puerta Abierta / Seguimiento Suave | 18 Ago 2026 - Mencionó avance en Fusion 360. Dejar relación abierta | Enviar tip de exportación web sin presión en 15 días |
 | **Móveis Henn (Planejamento)** | Rudgeri Henkel | Gerente Planejamento e Materiais | Costos de asistencia técnica, errores de ensamble en RTA | 🟡 Mensaje de WhatsApp Listo | 03 Ago 2026 - Dio su WhatsApp directo en LinkedIn | Integrar al hilo de la reunión con Marcos y Jonas |
 | **Bartira** | Hermes Rodrigues de Oliveira | Operador Logística / Planta | Conexión interna hacia el líder de Producto / Ingeniería | 🔥 Puente Interno Activo / Caliente | 18 Ago 2026 - Pasó perfil de Denis (ya salió). Pedir líder actual | Agradecer y pedir contacto del actual líder de P&D |
 | **Bartira (Ex-Líder)** | Denis Roveri | Ex-Gerente de Engenharia | Relacionamiento en la industria de manufactura | ⏸️ Red Abierta | 17 Ago 2026 - Informó que salió de Bartira | Mantener contacto en su nuevo rol en la industria |
 | **Demóbile** | Junio César Françolin | Gerente de Produção | Control de calidad extendido, telemetría de ensamble | ❄️ Enfriando | 05 Ago 2026 - Vio el perfil de Mario en LinkedIn | Enviar mensaje corto sobre control de calidad extendido |
+| **SABMiller / Bavaria** | Cesar Alejandro Castañeda Castillo | Coordinador de Ventas Regional Costa - Occidente | Operaciones, ventas, proyectos (Descartado: Spam masivo de grupos WP) | 🛑 Descartado / Spam de Red | 16 Sep 2026 - Ofreció grupo de WP masivo de 120 empresas y 26k miembros | No responder o declinar educadamente sin entregar datos |
+| **NODERE Pessoas & Negócios** | Édipo Lima | Consultor Comercial e Novos Negócios | Sinergias tecnología, industria y negocios en Serra Gaúcha, café virtual | 🔥 Caliente / Apertura Directa | 16 Sep 2026 - Respondió proponiendo sinergias y café virtual | Responder confirmando disposición para el café virtual y dejando la puerta abierta |
 
 ---
 
@@ -256,23 +258,29 @@ Para evitar respuestas genéricas, el RAM de ventas almacena y cruza 5 dimension
 
 ---
 
-### 🟢 9. RTA Design S.A.S (Medellín, Colombia)
-- **Contacto:** Juan Carlos Pérez Londoño (Gerente Administrativo y Financiero).
+### 🟢 9. CI RTA Design S.A.S (Yumbo / Medellín, Colombia)
+- **Contactos:**
+  * **Juan Carlos Pérez Londoño:** Gerente Administrativo y Financiero.
+  * **Paola Reyes:** Directora de Personal y Compensación (Planta Yumbo). Contacto directo por WhatsApp.
+  * **Viviana:** Área de Gestión Humana / Selección (Planta Yumbo).
 - **Conector / Referido:** Andrés Felipe Moncaleano Campo (ex-Maderkit) en común.
 - **Historial Completo:**
   * *13 Agosto 2026:* Contacto inicial con Juan Carlos por LinkedIn. Solicitó el envío de la hoja de vida al correo `juan.perez@rta.com.co`.
-  * *03 Septiembre 2026:* Entrevista con Paola y Viviana del departamento de Gestión Humana de RTA Design (referenciada por Juan Carlos). Mario compartió su trayectoria de 15 años en diseño industrial y manufactura de muebles RTA, y les presentó el motor paramétrico `3dBimFab` en funcionamiento.
-  * *Conclusión de la Entrevista:* Paola y Viviana indicaron que la reunión se llevó a cabo por indicación de Juan Carlos, pero que actualmente en la empresa no tienen una vacante abierta formal ni presupuesto asignado para nuevas contrataciones tradicionales este año. El objetivo era elaborar un informe interno para Juan Carlos.
-  * *10 Septiembre 2026:* Envío de mensaje directo a Juan Carlos Pérez vía LinkedIn junto con el video de demostración de `3dBimFab`. Se agradece el tiempo de la entrevista con Gestión Humana, se asume con total comprensión la inexistencia de vacantes laborales tradicionales, y se le plantea la oportunidad de colaborar mediante un **Proyecto Piloto de Diseño Asistido por Agente de IA** (ej. un ambiente de dormitorio u oficina) entregando toda la ingeniería lista para fabricación (planos, despiece DfMA, CNC/DXF, costeo paramétrico) para evaluar en la práctica el desempeño y potencial de escalamiento de esta nueva metodología de trabajo.
-- **Objetivo Estratégico:** Abrir una vía de colaboración ágil B2B como partner tecnológico/diseñador aumentado con IA para un producto o ambiente específico de RTA Design, sin la fricción de un proceso de nómina tradicional.
+  * *28 Agosto 2026:* Paola Reyes contactó a Mario por WhatsApp para coordinar entrevista presencial en la planta de Yumbo (Carrera 15 # 17-28 La Nueva Estancia).
+  * *04 Septiembre 2026:* Entrevista presencial en la planta de Yumbo con Paola Reyes y Viviana. Mario compartió su trayectoria de 15 años en diseño industrial y manufactura de muebles RTA, y les presentó el motor paramétrico `3dBimFab`. Paola y Viviana indicaron que la reunión se dio por solicitud de Juan Carlos, pero que no tenían vacante tradicional abierta este año, y elaborarían un informe interno para él.
+  * *10 Septiembre 2026:* Envío de mensaje directo a Juan Carlos Pérez vía LinkedIn junto con el video de demostración de `3dBimFab`, agradeciendo la atención en Yumbo y proponiendo un Proyecto Piloto de Diseño Asistido por Agente de IA para una categoría o ambiente específico.
+  * *16 Septiembre 2026 (10:14 - 10:18 COL):* Mario escribió por WhatsApp a Paola Reyes agradeciendo la visita a Yumbo y consultando por la retroalimentación de Juan Carlos. Paola respondió casi de inmediato (4 min): *"Buenos días Mario cómo estás no tenemos pendiente la retroalimentación de la entrevista con el"*. Se confirma que el informe fue remitido pero la sesión de retroalimentación interna de GH con Juan Carlos Pérez Londoño aún está pendiente de realizarse en RTA Design. Mario responde agradeciendo y quedando atento sin presionar.
+- **Objetivo Estratégico:** Esperar a que Paola y Viviana tengan la sesión interna con Juan Carlos Pérez para conocer sus comentarios y evaluar la viabilidad del Proyecto Piloto o consultoría.
 
 ---
 
 ### 🟢 10. Muebles Jamar Colombia (Barranquilla / CILA)
 - **Contactos:**
+  * **Benny Naimark:** Liderazgo directivo / Alta Dirección de Muebles Jamar. Contacto de 1er grado en LinkedIn.
   * **Omar DeLaHoz Rocha:** VP de Logística e Industria de Muebles Jamar Colombia. Cuenta con 19 años de experiencia previa como Gerente de Informática y TI en Carulla (perfil con mentalidad de datos, sistemas, logística y optimización de procesos). Lidera a toda la red de fábricas y artesanos del clúster **CILA** (Centro de Innovación y Logística del Atlántico), responsables de fabricar el 95% del mobiliario comercializado por Jamar.
   * **Juan Carlos Goez Zapata:** Área de Ingeniería / Operaciones de Planta Jamar CILA (participó activamente en la sesión técnica demostrativa).
 - **Historial Completo:**
+  * *16 Septiembre 2026:* Benny publicó sobre sus visitas a ferias internacionales y fábricas para aprender y optimizar la operación y exhibición en Jamar. Mario interactúa mediante social selling (Top-of-Mind / comentario de alto nivel sobre traducción industrial de tendencias globales).
   * *Enero 2026 (Preparación y Contacto Inicial):* Mario identificó el perfil tecnológico de Omar y su liderazgo sobre el CILA. Tras estructurar un pitch que conectaba el pasado comercial de Mario (diseño de muebles icónicos para Jamar desde Maderkit) con la tecnología digital (Grasshopper, automatización CNC y corte limpio), Omar aceptó inmediatamente coordinar una reunión de 1 hora.
   * *24 Enero 2026 (Reunión Demostrativa de 48 minutos con Omar y Juan Carlos Goez Zapata):*
     - **Demostración de Mario:** Presentó en Rhino 8 + Grasshopper el prototipo paramétrico de "Cajonera Modular" con control de cotas en vivo, anidado automático en lámina de 122x244 cm, porcentaje de desperdicio y cálculo financiero instantáneo ($78.000 COP de costo, 35% de margen, $159.900 PVP). También exhibió el visor 3D interactivo de armado.
@@ -288,7 +296,18 @@ Para evitar respuestas genéricas, el RAM de ventas almacena y cruza 5 dimension
 - **Conexión:** Solicitud / conexión en LinkedIn. Más de 15 contactos en común (Alex Jonas, Daniel, etc.).
 - **Historial:**
   * *15 Septiembre 2026:* Contacto inicial generado para LinkedIn. Mensaje de bienvenida (~600 caracteres) destacando el vínculo con Caxias do Sul, la trayectoria en mobiliario RTA, el propósito de transformación digital con `3dBimFab` y apertura para colaborar con NODERE en iniciativas y proyectos del polo mueblero de la Serra Gaúcha.
-- **Objetivo Estratégico:** Construir relación como referente tecnológico de muebles RTA en Caxias do Sul y explorar sinergias o proyectos con empresas cliente de NODERE.
+  * *16 Septiembre 2026:* Édipo respondió con gran apertura y afinidad: *"Obrigado pela mensagem e pela conexão. Muito interessante conhecer um pouco mais sobre o seu trabalho e o 3dBimFab. Acredito bastante nessas conexões entre tecnologia, indústria e desenvolvimento de negócios. Com certeza podemos trocar algumas ideias e entender possíveis pontos de sinergia. Vamos mantendo contato e, em um próximo momento, podemos combinar esse café virtual."* Apertura confirmada para café virtual y sinergias en la Serra Gaúcha.
+- **Objetivo Estratégico:** Responder con calidez ejecutiva confirmando disposición para el café virtual, manteniendo el vínculo vivo con NODERE para explorar sinergias y conexiones en el polo de Caxias do Sul.
+
+---
+
+### 🔴 12. Cesar Alejandro Castañeda Castillo (Descartado - Spam de Red)
+- **Contacto:** Cesar Alejandro Castañeda Castillo (Figura en LinkedIn como Coordinador de Ventas Regional Costa - Occidente en SABMiller).
+- **Canal:** LinkedIn (Contacto de 1er grado).
+- **Historial:**
+  * *16 Septiembre 2026 (08:49 COL):* Cesar Alejandro inició contacto directo con saludo escueto: *"Buen dia / Cordial saludo"*. Mario respondió a las 08:56 de forma cálida indagando por sus proyectos en C3.
+  * *16 Septiembre 2026 (09:19 COL):* Respondió con mensaje masivo prefabricado/automatizado: *"Buen dia, estimado miembro de mi red. Tenemos un grupo de wp con mas de 120 empresas y personas para hacer negocios, re gustaria estar ahi? Y adicional tener acceso a 26.000 miembros mas?"*.
+- **Diagnóstico y Estado:** 🛑 **DESCARTADO / SPAM DE RED (Caza-leads / Grupos masivos de WhatsApp).** No existe necesidad B2B, no es un tomador de decisiones industrial y presenta riesgo de spam o captura de datos. Se sugiere no interactuar o declinar amablemente sin entregar teléfonos.
 
 ---
 

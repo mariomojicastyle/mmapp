@@ -408,6 +408,11 @@ export function compilarAnimacionPaso(
   const sceneObjects = new Map<string, THREE.Object3D>();
   rootScene.traverse((child) => {
     if ((child as THREE.Mesh).isMesh || (child as THREE.Group).isGroup) {
+      // 🛡️ Si el nodo es el grupo raíz de la escena o mueble, no sobreescribir su posición/rotación
+      // ya que este grupo recibe la orientación y elevación de banco del paso activo
+      if (child === rootScene) {
+        return;
+      }
       if (!omitirBanco) {
         asegurarCadOriginal(child);
         restaurarACadOriginal(child);

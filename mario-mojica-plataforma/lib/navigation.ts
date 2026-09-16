@@ -13,7 +13,7 @@ import {
   Settings,
   Bell,
   BrainCircuit,
-  MessagesSquare,
+  Mic,
   type LucideIcon,
 } from "lucide-react"
 
@@ -47,7 +47,7 @@ export const navigationSections: NavSection[] = [
       { name: "Equipo", href: "/equipo", icon: Users },
       { name: "Marketing", href: "/marketing", icon: Megaphone },
       { name: "Ventas RAM", href: "/ventas-ram", icon: BrainCircuit },
-      { name: "Mesa Bilingüe B2B", href: "/mesa-bilingue", icon: MessagesSquare },
+      { name: "Dictado y Traducción", href: "/dictado-y-traduccion", icon: Mic },
       { name: "Integraciones", href: "/integraciones", icon: Puzzle },
       { name: "Uso", href: "/uso", icon: BarChart3 },
       { name: "Facturación", href: "/facturacion", icon: Receipt },

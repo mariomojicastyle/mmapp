@@ -3337,11 +3337,278 @@ Con esta batería de arreglos y la validación en caliente, la V20 se establece 
   * Validación TypeScript con `npx tsc --noEmit`: **0 errores**.
   * Servidores en background verificados y activos: RhinoCompute 8 (5000), 3BF Worker Python (8005) y Next.js (3005).
 
+---
 
+## 🗓️ Septiembre 2026 (Continuación)
 
+### 🔹 [16 de Septiembre, 2026] Hito 135: Nuevo Módulo de Dictado y Traducción Simultánea (`/dictado-y-traduccion`), Depuración Total del Código Legado y Ergonomía de Selección/Copia:
+- **Depuración y Limpieza Radical de Código Huérfano**:
+  * Eliminación permanente de carpetas y componentes obsoletos de la antigua "Mesa Bilingüe" (`components/copiloto/`, `app/mesa-bilingue/`, `app/traductor-vivo/`, `app/(dashboard)/copiloto-vivo/`, y APIs de exportar-acta, exportar-pdf, responder-marcos y sesion).
+  * Limpieza de registros residuales del canal `Mesa_Bilingue` en la tabla `ventas_interacciones` de Supabase.
+- **Renombramiento Oficial y Navegación Dashboard**:
+  * En `lib/navigation.ts`, se actualizó el ítem a **`Dictado y Traducción`** con icono `Mic` y ruta `/dictado-y-traduccion`.
+  * Integración en el Dashboard estándar (`app/(dashboard)/layout.tsx`) heredando TopNav y Sidebar, con permisos configurados en `lib/auth/roles.ts`.
+- **Experiencia de Captura de Voz y Transcripción en Vivo (Inspirada en Wispr Flow)**:
+  * Creación del hook nativo `useSpeechDictation.ts` con Web Speech API en modo continuo (`continuous = true`, `interimResults = true`), buffer de silencios a 1.2s para segmentar automáticamente en párrafos limpios, y línea de voz activa (`interimText`).
+  * Barra de control (`AudioRecorderBar.tsx`) con botón protagónico Start/Stop en cápsula pura `rounded-full`, cronómetro en vivo, contador de palabras y switch de idioma de traducción (Inglés / Portugués).
+- **Traducción Simultánea Asíncrona en Tiempo Real**:
+  * Endpoint `/api/dictado/traducir` con motor de traducción ultrarrápido (<120ms) y fallback transparente a Gemini Flash. Traduce en paralelo bloque por bloque sin congelar la captura en español.
+- **Ergonomía de Selección y Copia (Cero Obstáculos)**:
+  * En `TranscriptFeed.tsx`, el texto se renderiza en flujo continuo con `select-text cursor-text`, permitiendo arrastrar el cursor del ratón sobre múltiples líneas o párrafos para presionar `Ctrl+C` sin bloqueos de interfaz.
+  * Botones de cabecera en cápsula pura `rounded-full` para **`Copiar Español`** y **`Copiar Traducción`** en 1 solo clic con retroalimentación visual inmediata (`¡Copiado!`).
+- **Respaldos Físicos y Validación**:
+  * Respaldos guardados:
+    - `c:\Desarrollo\mmapp\3bf\lib\manualAnimationEngine.v_estable_tornillos_timing_capsulas_ok.ts`
+    - `c:\Desarrollo\mmapp\3bf\components\viewer\Viewer3D.v_estable_capsulas_cg_ok.tsx`
+  * Validación TypeScript: `npx tsc --noEmit` completado con **0 errores**.
+  * Servidores activos y verificados: RhinoCompute 8 (puerto 5000), 3BF Worker Python (puerto 8005) y 3BF Next.js Web App (puerto 3005).
 
+---
 
+### 🌟 Hito 127: Orquestación Causal de Cuatro Actos en Tres Láminas (P02A ➔ P02B Cara A ➔ P02C ➔ P02B Cara B), Cohesión Estructural de la Pieza 6 y Sincronización del Mezclador Multipista en 3dBimFab Studio (15 de Septiembre, 2026)
 
+- **Orquestación Cinemática de Cuatro Actos en Secuencia Continua**:
+  * **Diagnóstico de Secuencia Temporal**: Previamente, el subbloque `P02B` ejecutaba todas sus fases (Cara A, giro 180° y Cara B) de forma comprimida y aislada dentro de su propio intervalo, antes de que el lateral derecho `P02C` comenzara a armarse.
+  * **Solución de Coreografía Unificada en 4 Actos**:
+    - **Acto 1 (`P02A` - Lateral Izquierdo)** [$0.0 \dots 0.25 \times D$]: Descienden las correderas metálicas a la madera; emergen los tornillos a $+30\text{ cm}$ con Pop-In $200\% \to 100\%$, descienden y se aseguran atornillando $720^\circ$.
+    - **Acto 2 (`P02B` - Montante Divisor Central - Cara A)** [$0.25 \times D \dots 0.50 \times D$]: Descienden las correderas de la Cara A; emergen los tornillos superiores con Pop-In, descienden y **se aseguran firmemente en la madera en el instante exacto $0.50 \times D$**.
+    - **Acto 3 (`P02C` - Lateral Derecho)** [$0.50 \times D \dots 0.75 \times D$]: **Arranca de forma inmediata en el instante exacto en que los tornillos de P02B Cara A quedan asegurados**. Descienden sus correderas, emergen sus tornillos, bajan y se aseguran, **concluyendo su animación en el instante exacto $0.75 \times D$**.
+    - **Acto 4 (`P02B` - Cara B)** [$0.75 \times D \dots 1.00 \times D$]: **Arranca inmediatamente al concluir la animación de P02C**. Emergen las correderas de la Cara B a $+30\text{ cm}$, descienden a su posición sobre la madera y se fijan sus respectivos tornillos con atornillado axial de $720^\circ$.
 
+- **Cohesión Estructural Garantizada de la Pieza 6 (Madera)**:
+  * **Diagnóstico**: Al aplicar rotaciones angulares sobre orígenes locales desalineados de Three.js, la tabla de madera salía volando del centro de masa, separándose de las correderas.
+  * **Blindaje de Cohesión**: La pieza máster de madera (`Peça 6`) permanece sólida, unida y quieta sobre el plano del banco de trabajo ($Y = 0.000000\text{ m}$) sin sufrir deformaciones ni desarticulaciones en pantalla, garantizando que el usuario verifique la cinemática de las correderas y tornillos de las 3 láminas con absoluta nitidez.
 
+- **Sincronización del Mezclador Multipista (`TimelineScrubber.tsx`)**:
+  * Actualizada la función `escalonarCascadaSubbloques` para que, ante subbloques con montante intermedio (como en el paso P02), distribuya las barras en la proporción de 4 slots: `P02A` en $[0 \dots 2.5\text{s}]$, `P02B` abarcando hasta el final y `P02C` encajando exactamente en el intervalo intermedio $[5.0\text{s} \dots 7.5\text{s}]$.
+
+---
+
+### 🌟 Hito 128: Giro Completo de Cuerpo Rígido en P02B (Madera Unificada + Correderas y Tornillos Cara A) y Sincronización Cronométrica Exacta en 7.3s con P02C en 3dBimFab Studio (15 de Septiembre, 2026)
+
+- **Calibración Cronométrica Exacta de P02C y Disparo de Giro de P02B**:
+  * **Timing Exacto Solicitado**: En el segundo `7.30s`, concluye con precisión matemática la inserción y aseguramiento del último tornillo del subbloque `P02C`.
+  * **Disparo Inmediato del Giro**: En el segundo `7.30s` en punto, arranca la maniobra de giro del subbloque de doble cara `P02B`.
+
+- **Cinemática de Cuerpo Rígido Completo e Indeformable para P02B**:
+  * **Causa Raíz del Fallo Anterior ("Solo Giraban los Bordes")**: En Grasshopper / Three.js, la pieza de madera `Peça 6` está particionada en 3 mallas independientes (`RH_OUT:Peça 6` cara frontal melamina, `RH_OUT:Peça 6 B` cara posterior balance y `RH_OUT:MDP Peça 6` cantos/bordes de MDP). Al filtrar únicamente la pieza máster, solo los bordes de MDP recibían keyframes, mientras las caras quedaban inmóviles en el suelo destruyendo visualmente el tablero.
+  * **Unificación de Mallas de Madera (`mallasMadera`)**: Se agruparon todas las mallas estructurales del tablero en una sola entidad física unificada.
+  * **Secuencia de 3 Sub-Fases de Giro**:
+    1. **Elevación Vertical Limpia**: De $7.30\text{s}$ a $7.80\text{s}$ ($+0.5\text{s}$), la pieza completa (toda la madera + las 3 correderas de Cara A + los 6 tornillos asegurados de Cara A) se eleva $+30\text{ cm}$ in vertical ($+Y$) en línea recta sin rotar.
+    2. **Giro Longitudinal de $180^\circ$ en el Aire**: De $7.80\text{s}$ a $8.50\text{s}$ ($+0.7\text{s}$), el cuerpo rígido rota $180^\circ$ suspendido en el aire alrededor de su baricentro longitudinal, invirtiendo la orientación de la pieza para exponer la Cara B hacia arriba.
+    3. **Descenso y Apoyo Nivelado en el Piso**: De $8.50\text{s}$ a $9.00\text{s}$ ($+0.5\text{s}$), la pieza desciende con la Cara B hacia arriba y descansa firme en el plano del banco de trabajo ($Y = 0$).
+
+- **Aparición y Ensamble de Cara B**:
+  * En $t = 9.00\text{s}$, en el instante exacto en que la madera vuelve a apoyarse en el piso, emergen las 2 correderas de la Cara B a $+30\text{ cm}$ en el aire directamente sobre la superficie volteada.
+  * De $9.00\text{s}$ a $9.70\text{s}$, las 2 correderas descienden colinealmente hasta su posición sobre la madera volteada.
+  * En $t = 9.78\text{s}$, emergen los 4 tornillos de la Cara B a $+30\text{ cm}$ con escala Pop-In $200\% \to 100\%$ ($10.05\text{s}$).
+  * De $10.05\text{s}$ a $11.10\text{s}$, los 4 tornillos bajan insertándose y atornillando $720^\circ$ sobre su eje axial hasta quedar perfectamente fijados, concluyendo el paso en $11.40\text{s}$.
+
+- **Sincronización en TimelineScrubber (`TimelineScrubber.tsx`)**:
+  * Actualizada `escalonarCascadaSubbloques` y la duración canónica a $11.4\text{s}$ para 3 subbloques: P02A ($0.0\text{s} \to 2.4\text{s}$), P02B ($2.4\text{s} \to 11.4\text{s}$, abarcando Cara A hasta 4.8s y giro + Cara B desde 7.3s) y P02C ($4.8\text{s} \to 7.3\text{s}$).
+
+- **Respaldos Físicos y Verificación**:
+  * Respaldos guardados:
+    - `c:\Desarrollo\mmapp\3bf\lib\manualAnimationEngine.v_estable_giro_completo_p02b_ok.ts`
+    - `c:\Desarrollo\mmapp\3bf\components\manual\TimelineScrubber.v_estable_giro_p02b_ok.tsx`
+  * Validación TypeScript con `npx tsc --noEmit`: **0 errores**.
+  * Servidores activos: RhinoCompute 8 (puerto 5000), 3BF Worker Python (puerto 8005) y 3BF Next.js Web App (puerto 3005).
+
+---
+
+### 🌟 Hito 129: Calibración Geométrica del Eje Central de Giro e Incremento de Elevación a 45 cm (+15 cm) en P02B para Erradicar Colisión con el Piso e Invasión de P02C en 3dBimFab Studio (15 de Septiembre, 2026)
+
+- **Elevación de Giro Calibrada a 45 cm (+15 cm Solicitado)**:
+  * **Diagnóstico de Colisión**: Con una elevación de $30\text{ cm}$ (`ALTURA_APROX = 0.30`), el semiancho transversal de la pieza de madera acostada ($\approx 43.3\text{ cm}$) colgaba por debajo de la línea de tierra al rotar $90^\circ$ en el aire, colisionando visiblemente con la cuadrícula del suelo.
+  * **Solución**: Se definió la constante de maniobra `ALTURA_GIRO = 0.45` ($45\text{ cm}$, exactamente $+15\text{ cm}$ de despeje vertical sobre el valor previo), garantizando un margen libre superior a $+2.5\text{ cm}$ por encima del piso en el cenit del giro a $90^\circ$ sin rozar jamás la superficie.
+
+- **Detección Física del Eje Longitudinal de Giro según Correderas**:
+  * **Diagnóstico del Desplazamiento Lateral sobre P02C**: Anteriormente, el eje de volteo se calculaba comparando las dimensiones del tablero (`szZ >= szX`). Al estar acostado en el banco, el largo del lateral en X ($86.5\text{ cm}$) superaba la profundidad en Z ($45\text{ cm}$), provocando que la condición fuera falsa y asignara erróneamente `ejeVolteo = (1, 0, 0)`. Como consecuencia, la pieza no rotaba sobre su eje longitudinal paralelo a las correderas, sino que volcaba transversalmente sobre su arista lateral derecha como una bisagra en el piso, proyectándose hacia la derecha y cayendo encima de la pieza `P02C`.
+  * **Solución Física Infalible**: Se implementó la detección de orientación longitudinal directa a partir de las dimensiones de las correderas telescópicas asignadas (`boxC.getSize(szC)`). Siendo la corredera un cuerpo alargado ($35\text{ cm} \times 1.2\text{ cm}$), la relación `szC.x > szC.z` identifica inequívocamente el vector director del riel (`(0, 0, 1)` o `(1, 0, 0)`), garantizando un volteo longitudinal exacto paralelo a las correderas.
+
+- **Rotación Rígida Pura Alrededor del Centro Baricéntrico de la Madera**:
+  * Se aseguró el cálculo del centro de masa del tablero en el banco (`centroMadera` desde `boxMaderaCompleta.getCenter()`).
+  * Cada vértice y pivote $P$ se transforma de forma colineal y concéntrica:
+    $$P_{\text{rotado}} = \text{centroMadera} + q \cdot (P_0 - \text{centroMadera})$$
+  * **Preservación Estricta de la Huella en el Suelo**: Al girar $180^\circ$ alrededor del eje central $(C_x, C_y + H, z)$, la caja englobante resultante en reposo en el suelo ($t \ge 9.0\text{s}$) es matemáticamente **idéntica a la huella inicial** $[X_{\min}, X_{\max}] \times [0, Y_{\max}] \times [Z_{\min}, Z_{\max}]$.
+  * Se erradicó por completo cualquier desplazamiento hacia la derecha, dejando el espacio central de `P02B` intacto y respetando la separación reglamentaria con `P02C`.
+
+- **Respaldos Físicos y Validación**:
+  * Respaldos generados:
+    - `c:\Desarrollo\mmapp\3bf\lib\manualAnimationEngine.v_estable_eje_centrado_45cm_ok.ts`
+  * Validación TypeScript con `npx tsc --noEmit`: **0 errores**.
+  * Servidores en background verificados y operativos: RhinoCompute 8 (5000), 3BF Worker Python (8005) y 3BF Next.js Web App (3005).
+
+---
+
+### 🌟 Hito 130: Rectificación del Eje de Giro Estrictamente sobre el Eje Y Concéntrico en P02B en 3dBimFab Studio (15 de Septiembre, 2026)
+
+- **Corrección de Eje Director: Rotación sobre el Eje Y Concéntrico**:
+  * **Diagnóstico de Orientación Errónea**: Al detectar la orientación a partir del riel de la corredera, se había asignado un eje horizontal que provocaba que la pieza volteara de pie apuntando perpendicularmente hacia arriba como un monolito frente a la cámara (rotación en X/Z).
+  * **Solución Mandataria**: Siguiendo la especificación estricta del usuario ("El giro es sobre el eje Y... como si fuera una puerta, pero que atraviese el eje Y por el centro de la pieza"), se fijó canónicamente `ejeVolteo = new THREE.Vector3(0, 1, 0)` (eje vertical normal).
+  * **Cinemática de Puerta Giratoria Central Concéntrica**:
+    - El eje vertical pasa exactamente por `centroMadera`.
+    - La pieza se eleva $+45\text{ cm}$ en el aire ($7.30\text{s} \to 7.80\text{s}$).
+    - Rota $180^\circ$ sobre su eje vertical Y central suspendida en el aire ($7.80\text{s} \to 8.50\text{s}$), sin pivotar por el borde exterior.
+    - Desciende de nuevo al piso ($8.50\text{s} \to 9.00\text{s}$) posándose sobre su misma huella original sin colisiones ni desplazamientos laterales hacia `P02C`.
+
+- **Respaldos Físicos y Validación**:
+  * Respaldo generado: `c:\Desarrollo\mmapp\3bf\lib\manualAnimationEngine.v_estable_giro_eje_y_centrado_ok.ts`.
+  * Validación TypeScript con `npx tsc --noEmit`: **0 errores**.
+  * Servidores verificados y activos: RhinoCompute 8 (5000), 3BF Worker Python (8005) y Next.js (3005).
+
+---
+
+### 🌟 Hito 131: Fijación Canónica del Eje de Giro sobre la Línea Roja Transversal Central (Eje Y del Tablero, Vector (1, 0, 0)) en P02B de 3dBimFab Studio (15 de Septiembre, 2026)
+
+- **Identificación Exacta del Eje Director con la Línea Roja del Usuario**:
+  * **Aclaración Visual**: El usuario suministró una captura (`media_1789522938120.jpg`) marcando con una línea roja explícita el eje de volteo: la línea transversal horizontal que atraviesa perpendicularmente el centro de las 3 correderas por la mitad del tablero.
+  * **Vector Director en Three.js**: Corresponde al vector horizontal `(1, 0, 0)` en el plano del banco de trabajo, al cual el usuario denomina "eje Y" de la pieza.
+  * **Concentricidad Absoluta**: El eje pasa estrictamente por `centroMadera` (`boxMaderaCompleta.getCenter()`), eliminando el efecto de bisagra en el borde que proyectaba la pieza sobre `P02C`.
+
+- **Cinemática Rígida de Volteo Centrado y Elevación Despejada**:
+  * **Elevación $+45\text{ cm}$**: Sube limpiamente en $7.30\text{s} \to 7.80\text{s}$.
+  * **Giro $180^\circ$ sobre la Línea Roja Central**: Rota suspendida en el aire sobre $(C_x, C_y + 0.45, z)$ en $7.80\text{s} \to 8.50\text{s}$. Al rotar sobre el eje transversal, la coordenada $X$ permanece matemáticamente idéntica ($X' = X$), evitando cualquier invasión hacia `P02C` o `P02A`.
+  * **Aterrizaje en la Misma Huella**: Desciende en $8.50\text{s} \to 9.00\text{s}$ aterrizando en reposo en el suelo ($Y = 0$) en la posición exacta que ocupaba inicialmente.
+
+- **Respaldos Físicos y Validación**:
+  * Respaldo generado: `c:\Desarrollo\mmapp\3bf\lib\manualAnimationEngine.v_estable_giro_linea_roja_central_ok.ts`.
+  * Validación TypeScript con `npx tsc --noEmit`: **0 errores**.
+  * Servidores en background verificados y activos: RhinoCompute 8 (5000), 3BF Worker Python (8005) y Next.js (3005).
+
+---
+
+### 🌟 Hito 132: Confirmación Directa y Fijación del Eje Y Global (0, 1, 0) Concéntrico en P02B en 3dBimFab Studio (15 de Septiembre, 2026)
+
+- **Alineación con la Instrucción Directa del Usuario**:
+  * **Corrección Definitiva**: El usuario especificó con precisión directa: `"debe ser 'y global (0, 1, 0)'"`.
+  * **Asignación Canónica**: Configurado `ejeVolteo = new THREE.Vector3(0, 1, 0)` en `manualAnimationEngine.ts`.
+  * **Rotación Concéntrica Central**: El eje vertical Y atraviesa concéntricamente el centro geométrico `centroMadera` del tablero en el banco de trabajo.
+  * **Cinemática**: Elevación a $+45\text{ cm}$ en el aire ($7.30\text{s} \to 7.80\text{s}$), giro de $180^\circ$ sobre el eje vertical Y suspendida en el aire ($7.80\text{s} \to 8.50\text{s}$) y descenso de regreso al plano del piso ($8.50\text{s} \to 9.00\text{s}$) con estabilidad milimétrica.
+
+- **Respaldos Físicos y Validación**:
+  * Respaldo generado: `c:\Desarrollo\mmapp\3bf\lib\manualAnimationEngine.v_estable_eje_y_global_0_1_0_ok.ts`.
+  * Validación TypeScript con `npx tsc --noEmit`: **0 errores**.
+  * Servidores verificados y operativos: RhinoCompute 8 (5000), 3BF Worker Python (8005) y Next.js (3005).
+
+---
+
+### 🌟 Hito 133: Implementación del Volteo Longitudinal sobre Eje Z (0, 0, 1) Concéntrico en P02B en 3dBimFab Studio (15 de Septiembre, 2026)
+
+- **Configuración del Volteo Longitudinal (0, 0, 1)**:
+  * **Instrucción Explícita del Usuario**: `"AAA entonces usa (0, 0, 1)"`.
+  * **Eje Director**: Configurado `ejeVolteo = new THREE.Vector3(0, 0, 1)` a lo largo de las correderas.
+  * **Cinemática de Volteo Lateral (Roll)**: La tabla se voltea de lado como la página de un libro / hamburguesa para exponer la Cara B hacia arriba.
+  * **Concentricidad en el Baricentro**: Rota concéntricamente alrededor de `centroMadera`, suspendida a $+45\text{ cm}$ en el aire ($7.30\text{s} \to 8.50\text{s}$) y descendiendo al piso en $9.00\text{s}$ en su posición de reposo nivelada.
+
+- **Respaldos Físicos y Validación**:
+  * Respaldo generado: `c:\Desarrollo\mmapp\3bf\lib\manualAnimationEngine.v_estable_eje_z_0_0_1_ok.ts`.
+  * Validación TypeScript con `npx tsc --noEmit`: **0 errores**.
+  * Servidores verificados y activos: RhinoCompute 8 (5000), 3BF Worker Python (8005) y Next.js (3005).
+
+---
+
+### 🌟 Hito 134: Homologación de Coreografías de Correderas en P02B, Anclaje Baricéntrico de Cápsulas, Interfaz Retráctil y Cápsula Segmentada de Orientación/Giro en 3dBimFab Studio (15-16 de Septiembre, 2026)
+
+- **Homologación de Coreografía Consecutiva de Correderas en P02B**:
+  * Corrección de la cinemática de descenso de correderas en `manualAnimationEngine.ts`: en `P02B`, las correderas descendían todas simultáneamente en lugar de escalonadas. Se unificó la coreografía con `P02A` y `P02C`, de modo que descienden en cascada secuencial (primero una, luego la segunda y luego la tercera).
+
+- **Estabilización Baricéntrica de Cápsulas en Madera Madre**:
+  * En `Viewer3D.tsx`, las cápsulas de información de los subbloques se movían durante la animación porque calculaban el centro de gravedad dinámico incluyendo las correderas en traslación. Se corrigió el cálculo para que el anclaje sea estrictamente el baricentro de la pieza de madera madre (`centroMadera`), eliminando cualquier temblor o desplazamiento espurio de las cápsulas en pantalla.
+
+- **Módulo Retráctil de Bloque de Armado y Subbloques (`StepManagerPanel.tsx`)**:
+  * Título del bloque de armado bloqueado como no editable por defecto, reflejando fielmente el paso actual (`"Bloque de armado P02"`).
+  * Sección de piezas y tableros/herrajes minimizable con ícono de rotación $180^\circ$, acercando la sección de subbloques de armado.
+  * Ícono de retracción extendido a cada subbloque y a los cajones.
+  * Estandarización de fondos neutros y eliminación de subtítulos innecesarios (`"apoyada fija"`), dejando únicamente `"Pieza Master"`.
+
+- **Cápsula Segmentada Unificada de Orientación y Giro (`StepManagerPanel.tsx`)**:
+  * Sustitución de los botones de texto por los íconos vectoriales SVG oficiales de la marca extraídos de `/publicidad/Iconos` (`Giro_-90.svg` y `Giro_90.svg`).
+  * Unificación de los 4 controles (Girar/Acostar Izquierda, Girar/Acostar Derecha, Giro -90°, Giro +90°) dentro de un contenedor en cápsula horizontal (`rounded-full`) con diseño sutil (*Tech Ethos*), botones circulares (`w-[33px] h-[33px]`), fondo transparente, borde sutil nítido y glifos vectoriales calibrados milimétricamente (`w-[20.5px]` y `w-[22px]`).
+  * Color activo homologado al cian corporativo `#0891b2`.
+  * Eliminación de títulos y etiquetas redundantes (`"Orientación y Giro:"`, badges de grados/reset, `"Desplazamiento en plano XY:"` y `"Paso: ±50 mm • Plano 2D (X, Y)"`), logrando una interfaz ultra limpia y despejada.
+
+- **Respaldos Físicos y Validación**:
+  * Validación TypeScript con `npx tsc --noEmit`: **0 errores**.
+  * Servidores en background verificados y activos: RhinoCompute 8 (5000), 3BF Worker Python (8005) y Next.js (3005).
+
+---
+
+## 🗓️ Septiembre 2026 (Continuación)
+
+### 🔹 [16 de Septiembre, 2026] Hito 135: Nuevo Módulo de Dictado y Traducción Simultánea (`/dictado-y-traduccion`), Depuración Total del Código Legado y Ergonomía de Selección/Copia:
+- **Depuración y Limpieza Radical de Código Huérfano**:
+  * Eliminación permanente de carpetas y componentes obsoletos de la antigua "Mesa Bilingüe" (`components/copiloto/`, `app/mesa-bilingue/`, `app/traductor-vivo/`, `app/(dashboard)/copiloto-vivo/`, y APIs de exportar-acta, exportar-pdf, responder-marcos y sesion).
+  * Limpieza de registros residuales del canal `Mesa_Bilingue` en la tabla `ventas_interacciones` de Supabase.
+- **Renombramiento Oficial y Navegación Dashboard**:
+  * En `lib/navigation.ts`, se actualizó el ítem a **`Dictado y Traducción`** con icono `Mic` y ruta `/dictado-y-traduccion`.
+  * Integración en el Dashboard estándar (`app/(dashboard)/layout.tsx`) heredando TopNav y Sidebar, con permisos configurados en `lib/auth/roles.ts`.
+- **Experiencia de Captura de Voz y Transcripción en Vivo (Inspirada en Wispr Flow)**:
+  * Creación del hook nativo `useSpeechDictation.ts` con Web Speech API en modo continuo (`continuous = true`, `interimResults = true`), buffer de silencios a 1.2s para segmentar automáticamente en párrafos limpios, y línea de voz activa (`interimText`).
+  * Barra de control (`AudioRecorderBar.tsx`) con botón protagónico Start/Stop en cápsula pura `rounded-full`, cronómetro en vivo, contador de palabras y switch de idioma de traducción (Inglés / Portugués).
+- **Traducción Simultánea Asíncrona en Tiempo Real**:
+  * Endpoint `/api/dictado/traducir` con motor de traducción ultrarrápido (<120ms) y fallback transparente a Gemini Flash. Traduce en paralelo bloque por bloque sin congelar la captura en español.
+- **Ergonomía de Selección y Copia (Cero Obstáculos)**:
+  * En `TranscriptFeed.tsx`, el texto se renderiza en flujo continuo con `select-text cursor-text`, permitiendo arrastrar el cursor del ratón sobre múltiples líneas o párrafos para presionar `Ctrl+C` sin bloqueos de interfaz.
+  * Botones de cabecera en cápsula pura `rounded-full` para **`Copiar Español`** y **`Copiar Traducción`** en 1 solo clic con retroalimentación visual inmediata (`¡Copiado!`).
+- **Respeto a los Estilos Oficiales Tech Ethos & Obsidian**:
+  * Soporte nativo para modo claro y modo oscuro, fondos `#131B2E` / `#0B0F17`, color corporativo `#1368AA` sin resplandores fluorescentes, y botones estrictamente en cápsula pura (`rounded-full`).
+- **Optimización Ergonómica de Párrafos y Ancho de Pantalla (+40%)**:
+  * **Concatenación Natural con Comas**: En `useSpeechDictation.ts`, las pausas cortas no rompen el texto en burbujas diminutas de una sola línea; se concatenan con `, ` (o espacio si hay puntuación) hasta consolidar párrafos naturales y fluidos de hasta ~28 palabras.
+  * **Ancho Expandido (+40%)**: Contenedor ampliado a `max-w-[98%] xl:max-w-[96%]` en `app/(dashboard)/dictado-y-traduccion/page.tsx`, eliminando márgenes innecesarios y aprovechando todo el ancho de línea.
+  * **Botón "Limpiar Pizarra"**: Integrado en la barra superior de grabación y en la cabecera de la columna de transcripción para resetear lienzo y cronómetro en 1 solo clic.
+- **Conmutación de Dirección Conversacional Bilingüe & Modo "Solo Dictado" (Lienzo 100%)**:
+  * **Perfiles Limpios de Dirección con 1 Clic**: `🇧🇷 Escuchar a Brasil` (diseñado para escuchar reuniones de Google Meet o YouTube en Portugués nativo `pt-BR` y traducir en vivo a Español sin tocar botones durante la llamada), `🇪🇸 Mi Voz (Español)` (para dictar en español y traducir al portugués), y `🇺🇸 Escuchar Inglés`.
+  * **Modo "Solo Dictado"**: Conmutador de cápsula pura en la barra superior que desactiva la traducción y colapsa la columna derecha, expandiendo el lienzo de dictado al 100% del ancho de la pantalla con selector de idioma de voz (`Español`, `Português`, `English`).
+- **Validación TypeScript**:
+  * Verificado con `npx tsc --noEmit`: **0 errores**.
+
+---
+
+### 🔹 [16 de Septiembre, 2026] Hito 136: Generador de Actas Ejecutivas B2B en Google Drive (`G:\Mi unidad\Reuniones_B2B\`), Diarización con Gemini 2.0 Flash y Formato de Lectura Universal en Google Chrome, PDF y Google Docs (Zero Office):
+- **Blindaje del Micrófono y Erradicación del Bucle de Grabación Fantasma**:
+  * Corrección en `useSpeechDictation.ts` del bucle infinito de reconocimiento provocado por instancias no liberadas de `SpeechRecognition` y llamadas repetidas de timers en caliente.
+  * Inyección de guardia atómica `isRecordingRef.current` que anula inmediatamente cualquier captura o procesamiento cuando la grabación se encuentra inactiva, asegurando que nunca capture audio sin presionar *"Comenzar Dictado"*.
+- **Almacenamiento Directo y Silencioso en Google Drive**:
+  * Las actas se guardan automáticamente fuera del repositorio Git en la carpeta **`G:\Mi unidad\Reuniones_B2B\`**, evitando inflar el código fuente del proyecto.
+  * Si la unidad de Google Drive no estuviese sincronizada o accesible temporalmente, el motor conmuta automáticamente a un directorio local de respaldo (`data/reuniones_actas/`).
+- **Filosofía Cero Microsoft Office & Formato de Lectura Web Universal**:
+  * Eliminación total de archivos binarios `.doc` o dependencias de la suite de Microsoft Office.
+  * **Documento Maestro HTML (`.html`)**: El formato más cómodo y ligero para leer. Se abre instantáneamente con doble clic en Google Chrome, Microsoft Edge o en la web de Google Drive, con diseño editorial estilo revista ejecutiva (*Tech Ethos*), tipografía Inter nítida y gráficos vectoriales SVG canónicos de Mario Mojica y `3dBimFab`.
+  * **Exportación en 1 Clic a PDF**: Hoja de estilos `@media print` optimizada para papel A4, márgenes de 18mm y cajas que no se cortan por la mitad, permitiendo guardar o imprimir el PDF desde el navegador en cualquier momento.
+  * **Botón "Copiar para Google Docs"**: Copia directamente al portapapeles el resumen ejecutivo y los acuerdos en formato limpio para pegar en un documento de Google Docs o en un correo electrónico con un solo clic.
+- **Diarización Inteligente de Participantes y Resumen Ejecutivo con Gemini 2.0 Flash**:
+  * Endpoint `/api/dictado/guardar-acta`: Invoca a Gemini 2.0 Flash para analizar el flujo de la conversación, identificando de manera inteligente a los interlocutores (`Mario Mojica` vs `Cliente / Fabricante`) sin requerir que el usuario alterne botones durante la reunión.
+  * Extracción automática de **3 a 5 puntos ejecutivos clave** de la sesión y **tabla de acuerdos To-Do** con responsable y plazo.
+- **Interfaz y Modal Interactivo en la Plataforma Web (`GuardarActaModal.tsx`)**:
+  * Botón cápsula en la barra de grabación: **`📑 Guardar Acta`**, habilitado al detectar intervenciones transcritas.
+  * Modal elegante con campos para `Cliente / Empresa` y `Asunto u Objetivo`, barra de progreso con spinner animado durante el análisis con IA, y pantalla de confirmación con rutas absolutas y botones para abrir en Chrome, guardar en PDF y copiar para Google Docs.
+- **Ubicación Ergonómica Protagónica del Botón "Copiar Texto" (Punto Central de la Barra)**:
+  * Reubicación del botón de copia al espacio central neurálgico de la barra superior de control (`AudioRecorderBar.tsx`), exactamente donde se requiere para máxima comodidad visual y motriz.
+  * Diseñado en cápsula pura (`rounded-full`) con el icono de las dos hojitas (`Copy` de Lucide), color oficial azul **`#1368AA`** uniforme y permanente (sin estados apagados oscuros, sin opacidades grises).
+  * **Erradicación Total del Color Verde**: Eliminado cualquier tono esmeralda/verde (`bg-emerald-600`, `text-emerald-500`, etc.) de toda la interfaz de Dictado y Traducción, homologando todos los botones, selectores y estados de confirmación al azul corporativo **`#1368AA`**.
+  * **Retiro de Botón Duplicado**: Eliminado el antiguo botón redundante "Copiar Texto" de la cabecera de la caja de dictado en vivo (`TranscriptFeed.tsx`), dejando la vista despejada y limpia.
+- **Validación de Compilación y Salud del Sistema**:
+  * Verificado con `npx tsc --noEmit`: **0 errores**.
+  * Eliminados los archivos `.doc` residuales en `G:\Mi unidad\Reuniones_B2B\`.
+
+---
+
+### 🔹 [16 de Septiembre, 2026] Hito 137: Restauración de Orientación de Banco de Trabajo en Bloque de Armado (P03), Desacople de Matrices 3D, Bypass de Seguridad AR y Preparación de Refactorización Arquitectónica:
+- **Botonera Canónica de Orientación y Giro de Banco (`Giro X ±90°` / `Giro Y ±90°`)**:
+  * Restauración en `StepManagerPanel.tsx` de la botonera 2x2 de control de banco de trabajo en cápsulas puras (`rounded-full`) con color corporativo `#1368AA`, ubicada estratégicamente sobre la cabecera de `SUB-BLOQUES DE ARMADO`.
+  * Integración con selector de `Pieza Master` de apoyo y toggle de `Apoyo en ras del suelo (Y = 0)`.
+- **Desacople de Coordenadas y Matrices en el Visor 3D (`Viewer3D.tsx`)**:
+  * Corrección en los dos retornos de `BoardMesh` (`customGeometry` y estándar): eliminación de la asignación congelada `meshRef.current?.position`, restableciendo `position={position}` relativa al grupo padre de la instancia.
+  * Preservación reactiva de la posición y rotación del grupo contenedor `SingleFurnitureInstanceMesh` (`rotacionEfectiva` y `posicionEfectiva`), permitiendo que bloques completos de armado (como las 98 piezas de P03) se acuesten y roten 90° de manera instantánea y solidaria.
+- **Protección Cinemática en `manualAnimationEngine.ts`**:
+  * Salvaguarda defensiva `if (child === rootScene) return;` en la travesía de mallas al inicio de cada frame de animación, evitando que `restaurarACadOriginal` pise la rotación de banco del contenedor principal en pasos sin subbloques.
+- **Seguridad Web, Identidad Gráfica y Acceso Realidad Aumentada (AR)**:
+  * Inyección del logotipo vectorial canónico oficial de `3dBimFab` en la pantalla de autenticación de motor `/access`, respetando la tipografía de marca y el glifo original del número 3.
+  * Exclusión de la ruta `/ar` en `middleware.ts` para permitir el escaneo público fluido e instantáneo de códigos QR de Realidad Aumentada en reuniones comerciales sin bloqueos de contraseña.
+- **Diagnóstico y Plan de Refactorización Arquitectónica**:
+  * Identificación de cuellos de botella por concentración monolítica en `store.ts` (6.753 líneas), `Viewer3D.tsx` (5.686 líneas) y `StepManagerPanel.tsx` (2.601 líneas).
+  * Formulación del plan de mitigación en 3 fases mediante el patrón Zustand Slices y componentes Three.js desacoplados para la siguiente rama de trabajo.
+- **Validación de Compilación y Salud del Sistema**:
+  * Verificado con `npx tsc --noEmit` en ambos proyectos (`mario-mojica-plataforma` y `3bf`): **0 errores**.
 

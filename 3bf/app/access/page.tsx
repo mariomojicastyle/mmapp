@@ -64,12 +64,35 @@ export default function AccessPage() {
         {/* Logotipo Oficial Canónico 3dBimFab */}
         <div className="flex flex-col items-center text-center mb-6">
           <div className="py-2 px-3 flex items-center justify-center">
-            {/* Logotipo SVG Canónico Oficial */}
-            <img
-              src="/Logo_3BF.svg"
-              alt="3dBimFab - Powered by MARIO MOJICA"
-              className="h-16 sm:h-20 w-auto object-contain transition-transform hover:scale-[1.02] duration-300"
-            />
+            {/* Logotipo SVG Canónico Oficial 3dBimFab */}
+            <div className="flex items-center gap-2 cursor-pointer select-none">
+              <div className="flex items-center">
+                <svg width="46" height="46" viewBox="0 0 70 70" fill="none" xmlns="http://www.w3.org/2000/svg" className="shrink-0 shadow-sm">
+                  <rect width="70" height="70" fill="#bb0f0f" />
+                  <text 
+                    x="50%" 
+                    y="53%" 
+                    dominantBaseline="central" 
+                    textAnchor="middle" 
+                    fill="#ffffff" 
+                    fontFamily="Prompt, sans-serif" 
+                    fontWeight="normal" 
+                    fontSize="32" 
+                    letterSpacing="-0.5px"
+                  >
+                    3BF
+                  </text>
+                </svg>
+              </div>
+              <div className="flex flex-col text-left">
+                <span className="font-extrabold text-2xl tracking-tighter text-slate-800 leading-none">
+                  3d<span className="text-[#bb0f0f]">Bim</span>Fab
+                </span>
+                <span className="text-[9.5px] font-medium tracking-widest text-slate-500 uppercase mt-0.5">
+                  Powered by <strong className="font-bold text-slate-700">MARIO MOJICA</strong>
+                </span>
+              </div>
+            </div>
           </div>
 
           {/* Badge de Seguridad en Cápsula Pura */}

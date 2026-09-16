@@ -2,14 +2,13 @@
 
 import React, { useState } from "react";
 import { use3BFStore } from "@/lib/store";
-import { Layers, Film, Mic, Download } from "lucide-react";
+import { Layers, Mic, Download } from "lucide-react";
 import StepManagerPanel from "./StepManagerPanel";
-import SequenceTimelinePanel from "./SequenceTimelinePanel";
 import VoiceStudioPanel from "./VoiceStudioPanel";
 import ExportManualPanel from "./ExportManualPanel";
 import ManualsLibraryModal from "./ManualsLibraryModal";
 
-type PestanaManualStudio = "pasos" | "secuencia" | "voz" | "exportar";
+type PestanaManualStudio = "pasos" | "voz" | "exportar";
 
 export default function ManualControlPanel() {
   const {
@@ -59,21 +58,6 @@ export default function ManualControlPanel() {
 
           <button
             type="button"
-            onClick={() => setSubPestana("secuencia")}
-            style={
-              subPestana === "secuencia"
-                ? { backgroundColor: botonActivoColor, color: "#ffffff", borderColor: botonActivoColor }
-                : {}
-            }
-            className={`flex-1 py-1.5 px-1 sm:px-2 rounded-full text-[10.5px] font-bold transition flex items-center justify-center gap-1 cursor-pointer select-none ${
-              subPestana === "secuencia" ? "shadow-sm border text-white" : "opacity-75 hover:opacity-100 border border-transparent"
-            }`}
-          >
-            <Film className="w-3.5 h-3.5 shrink-0" /> <span className="whitespace-nowrap">Secuencia</span>
-          </button>
-
-          <button
-            type="button"
             onClick={() => setSubPestana("voz")}
             style={
               subPestana === "voz"
@@ -107,7 +91,6 @@ export default function ManualControlPanel() {
       {/* Contenido Desplazable del Panel */}
       <div className="flex-1 p-3 overflow-y-auto custom-scrollbar">
         {subPestana === "pasos" && <StepManagerPanel />}
-        {subPestana === "secuencia" && <SequenceTimelinePanel />}
         {subPestana === "voz" && <VoiceStudioPanel />}
         {subPestana === "exportar" && <ExportManualPanel />}
       </div>
