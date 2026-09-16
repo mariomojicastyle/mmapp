@@ -3675,17 +3675,3 @@ Con esta batería de arreglos y la validación en caliente, la V20 se establece 
   * Si el usuario redimensiona el panel manualmente arrastrando el controlador izquierdo, la nueva medida se almacena de forma independiente para el Modo Manual respetando su preferencia.
 - **Validación**: `npx tsc --noEmit` con **0 errores** y servidor Next.js respondiendo **200 OK**.
 
----
-
-### 🔹 Hito 140: Asignación Rápida de Herrajes (Tarugos / Cavilhas) y Tableros a Subbloques en Bloque de Armado (16 de Septiembre, 2026)
-- **Selectores Interactivos en Cápsulas de Componentes (`AssemblyPiecesSection.tsx`)**:
-  * Implementación de micro-selectores desplegables interactivos directos en cada píldora tanto de tableros como de herrajes (`Cavilhas`, tornillos, correderas).
-  * Si un componente no tiene subbloque asignado, muestra una cápsula estilizada `+ Sub`. Al hacer clic, despliega los subbloques activos del paso (`P02A`, `P02B`, `P02C`, etc.) para vincularlo inmediatamente en 1 clic.
-  * Si el componente ya tiene subbloque asignado, el badge muestra el código con su color baricéntrico oficial (`P02A`, `P02B`, etc.) y permite conmutar a otro subbloque o seleccionar `✕ Quitar Sub` con saneamiento automático.
-- **Integración con Cinemática de Banco de Trabajo (`manualAnimationEngine.ts` / `BoardMesh.tsx`)**:
-  * Al asignarse las 6 clavilhas (`Cavilha (81)`, `Cavilha (48)`, etc.) a su subbloque correspondiente, el motor de animación cinemática de `3dBimFab` les aplica automáticamente el transform de banco de trabajo (rotación, abatimiento y posición acostada sobre la mesa) de la pieza máster del subbloque, garantizando coherencia geométrica 1:1.
-- **Saneamiento en Zustand (`createManualSlice.ts`)**:
-  * Al asignar una pieza o herraje a un subbloque, la acción `asignarPiezaASubBloque` la desasigna automáticamente de cualquier subbloque previo en el mismo paso para evitar duplicados o estados cruzados.
-- **Validación**: `npx tsc --noEmit` con **0 errores**, diseño de cápsulas puras (`rounded-full`) conforme a la directiva Tech Ethos.
-
-
