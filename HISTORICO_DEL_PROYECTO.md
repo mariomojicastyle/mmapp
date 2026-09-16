@@ -3612,3 +3612,47 @@ Con esta batería de arreglos y la validación en caliente, la V20 se establece 
 - **Validación de Compilación y Salud del Sistema**:
   * Verificado con `npx tsc --noEmit` en ambos proyectos (`mario-mojica-plataforma` y `3bf`): **0 errores**.
 
+### Hito Completado: Refactorización Arquitectónica y Desacople de Monolitos en 3dBimFab
+- **Fecha**: 16 de Septiembre de 2026
+- **Rama**: `refactor-architecture`
+- **Objetivo**: Erradicar cuellos de botella de latencia, saturación de tokens en IA y complejidad ciclopléjica mediante el desacople de los 3 archivos monolíticos principales de `3bf` (`Viewer3D.tsx`, `StepManagerPanel.tsx` y `store.ts`).
+
+#### 1. Fase 1: Desacople del Visor 3D (`Viewer3D.tsx`)
+- **Reducción**: De 5.686 líneas a 2.905 líneas (**-48.9%**).
+- **Módulos extraídos en `components/viewer/`**:
+  * `BoardMesh.tsx`: Hook `useMaterialPBRMaps`, renderizado DfMA y wireframe CAD.
+  * `SingleFurnitureInstanceMesh.tsx`: Lógica de orientación de banco de trabajo (`orientacionBanco`), apoyo en piso `Y = 0` y jerarquía de grupos (Tableros, Herrajes, Maquinados, Otros).
+  * `SnapSystemOverlay.tsx`: `SnapPointMarkers`, `GuidelineAxes`, `TransformSnappingController`, `getFurnitureGroupBoardBox`, `extractCandidatePoints`.
+  * `SceneEnvironment.tsx`: HDRI dinámico, rotación azimutal y aislamiento de `RGBELoader`.
+  * `CameraControllers.tsx`: `BlenderNavigationController`, `CameraRefBridge`, `ThumbnailCapturer` (1:1 WebP/PNG) y `CameraViewController`.
+  * `SubbloquesTooltipsBillboard.tsx`: Cápsulas flotantes de subbloques ubicadas en el centro de gravedad de las maderas.
+  * `DfMAShieldAlert.tsx`: Alerta defensiva y purga de mallas duplicadas en cómputos GHX.
+
+#### 2. Fase 2: Desacople del Gestor de Pasos (`StepManagerPanel.tsx`)
+- **Reducción**: De 2.602 líneas a **251 líneas** (**-90.4%**).
+- **Módulos extraídos en `components/manual/`**:
+  * `ShowcaseConfigSection.tsx`: Cinemática P00, carrera milimétrica de cajones, coreografía de puertas y apertura bilateral.
+  * `AssemblyPiecesSection.tsx`: Tarjeta de tableros y herrajes asignados del paso de ensamble, herramientas 3D (*Tocar en 3D*, *Retirar*, *Visibilidad*, *Invertir*, *Limpiar todo*).
+  * `AssemblyBlockControls.tsx`: Selector de pieza master del paso general, matriz de giros X/Y en banco de trabajo (+90°, -90°, 0°) y checkbox de apoyo en suelo (`Y = 0`).
+  * `SubbloquesManagerSection.tsx`: Gestión de subbloques de armado (Sub A, B, C), paleta cromática coordinada, segmented pill bar horizontal (Acostar/Erguir y Giros en plano) y joystick D-pad de micro-posicionamiento (±50 mm).
+  * `FunctionalBlocksVisibilityCard.tsx`: Tarjeta de visibilidad de bloques funcionales de P00 en pasos de ensamble.
+  * `BloqueEstandarConfigSection.tsx`: Visualización y persistencia de bloques estándar reutilizables en disco (`.3bb.json`).
+  * `BloqueEstandarEditorForm.tsx`: Modal/formulario inferior de edición de bloques estándar con subida de archivos `.glb` y traducción multilingüe automática TTS (ES, PT-BR, EN).
+  * `StepManagerIcons.tsx`: Vectores SVG oficiales de rotaciones cinemáticas en banco de trabajo.
+
+#### 3. Fase 3: Desacople del Gestor de Estado Global (`store.ts`) mediante Zustand Slices Pattern
+- **Reducción**: De 6.753 líneas a **2.118 líneas** (**-68.6%** en el archivo total, y la implementación de `use3BFStore` pasó de 4.651 líneas a **10 líneas** declarativas).
+- **Slices creados en `lib/slices/`**:
+  * `createEngineSlice.ts`: Parámetros de mueble, cómputo Grasshopper, resultado geométrico, calibración de visualización.
+  * `createManualSlice.ts`: Manual Studio, pasamanos, picking 3D, bloques estándar, persistencia Google Drive y caché local.
+  * `createCatalogSlice.ts`: Ficha de producto comercial, recetas de color Henn/IKEA, capas y materiales PBR, catálogo de muebles en Drive.
+  * `createSceneInstanceSlice.ts`: Multi-instancia GHX en escenario 3D y mecanizados cruzados inter-componentes.
+  * `createHistorySlice.ts`: Pila de historial Undo/Redo (100 estados).
+  * `createTransformSlice.ts`: Transformación espacial estilo Blender (G: Grab / B: Snap).
+  * `createCostosSlice.ts`: Base de datos de materias primas (Herrajes, Tableros, Cantos), costos vivos en tiempo real y persistencia local.
+  * `createRenderIASlice.ts`: 3BF AI Render Studio (Gemini/Fal API key, prompts, histórico de renders).
+
+#### 4. Balance Global de Optimización
+- **Líneas eliminadas de monolitos**: **9.767 líneas**.
+- **Validación**: `npx tsc --noEmit` con **0 errores**.
+- **Servidores en vivo**: Todos los endpoints respondiendo **200 OK** (Next.js :3005, Python Worker :8005, RhinoCompute :5000, Cloudflare Tunnel).
