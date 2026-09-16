@@ -523,11 +523,13 @@ export function BoardMesh({
     }
 
     // 0.2 🧩 Aislamiento Estricto de Pasos con Subbloques:
-    // Si el paso contiene subbloques (ej. P02A, P02B, P02C), NINGUNA pieza o herraje ajeno del mueble
-    // puede flotar en el aire. Solo se muestran las mallas que pertenezcan a alguno de los subbloques.
+    // Si el paso contiene subbloques (ej. P02A, P02B, P02C) Y Invert Hide está activo,
+    // se aíslan los subbloques ocultando el resto del mueble.
+    // Si Invert Hide está DESACTIVADO (o estamos seleccionando piezas con el cuentagotas para el paso),
+    // se muestra el mueble completo para poder inspeccionar e incorporar piezas/herrajes (como tarugos).
     const subbloquesPaso = pasoActivoManual.subbloques || [];
     const rawClean = name ? name.replace(/^RH_(?:OUT|IN):\s*/i, "").trim() : "";
-    if (subbloquesPaso.length > 0) {
+    if (subbloquesPaso.length > 0 && pasoActivoManual.ocultarNoAsignadas && (!modoPickingManual.activo || Boolean(modoPickingManual.grupoId))) {
       const perteneceAAlgunSubbloque = subbloquesPaso.some((sub) => {
         const elementos = [
           sub.piezaMaster,
@@ -559,7 +561,7 @@ export function BoardMesh({
 
     // 1. Invert Hide (Aislar Paso): Ocultar cualquier pieza que NO esté seleccionada para este paso
     // Se ejecuta fielmente al presionar Invert Hide, ocultando todo lo que no ha sido seleccionado con el cuentagotas.
-    if (pasoActivoManual.ocultarNoAsignadas && totalAsignadas > 0) {
+    if (pasoActivoManual.ocultarNoAsignadas && totalAsignadas > 0 && (!modoPickingManual.activo || Boolean(modoPickingManual.grupoId))) {
       if (!perteneceAlPasoActivo) {
         return true;
       }
