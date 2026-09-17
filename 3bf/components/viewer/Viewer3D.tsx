@@ -2813,83 +2813,8 @@ export default function Viewer3D() {
       {/* 🎬 Barra Flotante de Reproducción y Scrubber para Modo Manual */}
       {pestanaActiva === "manual" && <TimelineScrubber />}
 
-      {/* 🛡️ Badge Testigo de Invert Hide Activo en Modo Manual (Centrado horizontalmente, colores de Guardar Manual) */}
-      {pestanaActiva === "manual" && pasoActivoManual && pasoActivoManual.tipo !== "showcase" && pasoActivoManual.ocultarNoAsignadas && (
-        <div 
-          className={`absolute left-1/2 -translate-x-1/2 z-30 flex items-center gap-2.5 px-4 py-2 rounded-full text-white text-[11px] font-bold shadow-xl backdrop-blur-sm border border-cyan-400/40 animate-in fade-in duration-200 transition-all ${
-            modoPickingManual.activo ? "top-20" : "top-4"
-          }`}
-          style={{ backgroundColor: coloresApariencia?.botonActivo || "#0891b2" }}
-        >
-          <EyeOff className="w-4 h-4 text-white shrink-0" />
-          <span>Invert Hide: Solo {pasoActivoManual.id} ({((pasoActivoManual.piezasAsignadas || []).length + (pasoActivoManual.herrajesAsignados || []).length)} piezas)</span>
-          <button
-            type="button"
-            onClick={() => conmutarOcultarNoAsignadasPaso(pasoActivoManual.id)}
-            className="ml-1 px-3 py-0.5 rounded-full bg-white/20 hover:bg-white/30 active:scale-95 text-white text-[10.5px] font-bold transition cursor-pointer shadow-xs"
-          >
-            Mostrar Todo
-          </button>
-        </div>
-      )}
 
-      {/* 🎯 Barra Flotante de Selección 3D (Modo Cuentagotas / Picking de Pieza Madre) */}
-      {modoPickingManual.activo && (
-        <div className="absolute top-4 left-1/2 -translate-x-1/2 z-40 flex items-center gap-3 px-5 py-2.5 rounded-full bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border border-cyan-500/50 shadow-2xl animate-in fade-in slide-in-from-top-4 duration-200">
-          <div className="flex items-center gap-2.5">
-            <span className="w-8 h-8 rounded-full bg-cyan-500/15 border border-cyan-500/40 flex items-center justify-center text-cyan-600 dark:text-cyan-400 shrink-0">
-              <Pipette className="w-4 h-4 animate-bounce" />
-            </span>
-            <div className="flex flex-col text-left">
-              <div className="flex items-center gap-2">
-                <span className="text-xs font-black text-slate-800 dark:text-slate-100">
-                  {(() => {
-                    const paso = pasosManual.find((p) => p.id === modoPickingManual.pasoId);
-                    const grupo = paso?.showcase?.gruposCinematicos.find((g) => g.id === modoPickingManual.grupoId);
-                    const subbloque = paso?.subbloques?.find((sb) => sb.id === modoPickingManual.grupoId);
-                    if (subbloque) return `Seleccionando para: ${subbloque.nombre}`;
-                    if (grupo) return `Seleccionando para: ${grupo.nombre}`;
-                    return "Selección 3D de Piezas Madre";
-                  })()}
-                </span>
-                <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-cyan-500/10 text-cyan-700 dark:text-cyan-300 border border-cyan-500/30">
-                  {modoPickingManual.piezasTemporalmenteSeleccionadas.length} piezas
-                </span>
-              </div>
-              <span className="text-[10.5px] text-slate-500 dark:text-slate-400">
-                {(() => {
-                  const paso = pasosManual.find((p) => p.id === modoPickingManual.pasoId);
-                  const subbloque = paso?.subbloques?.find((sb) => sb.id === modoPickingManual.grupoId);
-                  if (subbloque) return `Toca las piezas de este bloque para asignarlas o retirarlas de ${subbloque.nombre}.`;
-                  return "Toca cualquier cara, canto o reverso del tablero para seleccionarlo como Pieza Madre (toggle).";
-                })()}
-              </span>
-            </div>
-          </div>
 
-          <div className="h-6 w-px bg-slate-200 dark:bg-slate-700 mx-1" />
-
-          {/* Botones de Acción en Cápsula Circular */}
-          <div className="flex items-center gap-2">
-            <button
-              type="button"
-              onClick={confirmarPickingManual}
-              style={{ backgroundColor: coloresApariencia?.botonActivo || "#0891b2" }}
-              className="px-4 py-1.5 rounded-full text-white font-bold text-xs shadow-md flex items-center gap-1.5 hover:opacity-90 active:scale-95 transition cursor-pointer"
-            >
-              <CheckCircle2 className="w-3.5 h-3.5" />
-              <span>Guardar ({modoPickingManual.piezasTemporalmenteSeleccionadas.length})</span>
-            </button>
-            <button
-              type="button"
-              onClick={limpiarPickingManual}
-              className="px-3 py-1.5 rounded-full bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 font-semibold text-xs border border-slate-300 dark:border-slate-700 active:scale-95 transition cursor-pointer"
-            >
-              Cancelar
-            </button>
-          </div>
-        </div>
-      )}
 
       {/* 📱 Overlay de Preparación para Realidad Aumentada */}
       {generandoAR && (

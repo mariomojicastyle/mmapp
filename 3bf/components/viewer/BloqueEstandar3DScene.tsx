@@ -3,7 +3,6 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import * as THREE from "three";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
-import { DRACOLoader } from "three/examples/jsm/loaders/DRACOLoader.js";
 import { PasoManualStudio } from "@/lib/store";
 
 interface BloqueEstandar3DSceneProps {
@@ -11,18 +10,48 @@ interface BloqueEstandar3DSceneProps {
   timelineTime: number;
 }
 
-// Singleton para reutilizar Web Workers de Draco y evitar reinicios pesados
-let sharedDracoLoader: DRACOLoader | null = null;
+// ── CACHÉ SINGLETON EN MEMORIA DE MODELOS GLB PARSEADOS (0 MS DE LATENCIA) ──
+const glbRawSceneCache = new Map<string, THREE.Group>();
+const glbInflightPromises = new Map<string, Promise<THREE.Group | null>>();
 let sharedGLTFLoader: GLTFLoader | null = null;
 
 function getGLTFLoader(): GLTFLoader {
   if (!sharedGLTFLoader && typeof window !== "undefined") {
-    sharedDracoLoader = new DRACOLoader();
-    sharedDracoLoader.setDecoderPath("/draco/gltf/");
     sharedGLTFLoader = new GLTFLoader();
-    sharedGLTFLoader.setDRACOLoader(sharedDracoLoader);
   }
   return sharedGLTFLoader!;
+}
+
+// Carga con deduplicación y caché en memoria
+function fetchAndCacheGLB(url: string): Promise<THREE.Group | null> {
+  if (glbRawSceneCache.has(url)) {
+    return Promise.resolve(glbRawSceneCache.get(url)!);
+  }
+  if (glbInflightPromises.has(url)) {
+    return glbInflightPromises.get(url)!;
+  }
+
+  const loader = getGLTFLoader();
+  const promise = new Promise<THREE.Group | null>((resolve) => {
+    loader.load(
+      url,
+      (gltf) => {
+        const escena = gltf.scene;
+        glbRawSceneCache.set(url, escena);
+        glbInflightPromises.delete(url);
+        resolve(escena);
+      },
+      undefined,
+      (err) => {
+        console.warn(`[BloqueEstandar3D] Error cargando ${url}:`, err);
+        glbInflightPromises.delete(url);
+        resolve(null);
+      }
+    );
+  });
+
+  glbInflightPromises.set(url, promise);
+  return promise;
 }
 
 // Suavizado cúbico para animación realista
@@ -73,10 +102,9 @@ export default function BloqueEstandar3DScene({ paso, timelineTime }: BloqueEsta
     });
   }, []);
 
-  // Cargar los 4 GLB con DRACOLoader singleton optimizado
+  // Cargar los 4 GLB con Caché Instantánea en Memoria
   useEffect(() => {
     let isMounted = true;
-    const loader = getGLTFLoader();
 
     // Resolver rutas dinámicas desde el paso activo
     const partes = paso.bloqueEstandar?.partesGlb || [];
@@ -95,49 +123,55 @@ export default function BloqueEstandar3DScene({ paso, timelineTime }: BloqueEsta
     const rutaMovil = getRuta("movil", "Movil.glb");
     const rutaSeguro = getRuta("seguro", "Seguro.glb");
 
-    const cargarGlb = (url: string, rol: "fija" | "intermedia" | "movil" | "seguro"): Promise<THREE.Group | null> => {
-      return new Promise((resolve) => {
-        loader.load(
-          url,
-          (gltf) => {
-            const escena = gltf.scene;
-            escena.traverse((child) => {
-              if ((child as THREE.Mesh).isMesh) {
-                const mesh = child as THREE.Mesh;
-                mesh.castShadow = true;
-                mesh.receiveShadow = true;
-                if (rol === "seguro") {
-                  mesh.material = materialNylonNegro;
-                } else if (rol === "intermedia") {
-                  mesh.material = materialAceroIntermedio;
-                } else {
-                  mesh.material = materialAceroGalvanizado;
-                }
-              }
-            });
-            resolve(escena);
-          },
-          undefined,
-          (err) => {
-            console.warn(`[BloqueEstandar3D] Error cargando ${url}:`, err);
-            resolve(null);
+    const clonarYAplicarMaterial = (rawScene: THREE.Group | null, rol: "fija" | "intermedia" | "movil" | "seguro"): THREE.Group | null => {
+      if (!rawScene) return null;
+      const escena = rawScene.clone(true);
+      escena.traverse((child) => {
+        if ((child as THREE.Mesh).isMesh) {
+          const mesh = child as THREE.Mesh;
+          mesh.castShadow = true;
+          mesh.receiveShadow = true;
+          if (rol === "seguro") {
+            mesh.material = materialNylonNegro;
+          } else if (rol === "intermedia") {
+            mesh.material = materialAceroIntermedio;
+          } else {
+            mesh.material = materialAceroGalvanizado;
           }
-        );
+        }
       });
+      return escena;
     };
 
+    // Si ya están en caché en memoria, resolver instantáneamente de forma síncrona
+    if (
+      glbRawSceneCache.has(rutaFija) &&
+      glbRawSceneCache.has(rutaIntermedia) &&
+      glbRawSceneCache.has(rutaMovil) &&
+      glbRawSceneCache.has(rutaSeguro)
+    ) {
+      setModelosCargados({
+        fija: clonarYAplicarMaterial(glbRawSceneCache.get(rutaFija)!, "fija") || undefined,
+        intermedia: clonarYAplicarMaterial(glbRawSceneCache.get(rutaIntermedia)!, "intermedia") || undefined,
+        movil: clonarYAplicarMaterial(glbRawSceneCache.get(rutaMovil)!, "movil") || undefined,
+        seguro: clonarYAplicarMaterial(glbRawSceneCache.get(rutaSeguro)!, "seguro") || undefined,
+      });
+      return;
+    }
+
+    // Si aún no estaban en memoria, cargar en paralelo con promesas seguras
     Promise.all([
-      cargarGlb(rutaFija, "fija"),
-      cargarGlb(rutaIntermedia, "intermedia"),
-      cargarGlb(rutaMovil, "movil"),
-      cargarGlb(rutaSeguro, "seguro"),
-    ]).then(([fija, intermedia, movil, seguro]) => {
+      fetchAndCacheGLB(rutaFija),
+      fetchAndCacheGLB(rutaIntermedia),
+      fetchAndCacheGLB(rutaMovil),
+      fetchAndCacheGLB(rutaSeguro),
+    ]).then(([rawFija, rawIntermedia, rawMovil, rawSeguro]) => {
       if (!isMounted) return;
       setModelosCargados({
-        fija: fija || undefined,
-        intermedia: intermedia || undefined,
-        movil: movil || undefined,
-        seguro: seguro || undefined,
+        fija: clonarYAplicarMaterial(rawFija, "fija") || undefined,
+        intermedia: clonarYAplicarMaterial(rawIntermedia, "intermedia") || undefined,
+        movil: clonarYAplicarMaterial(rawMovil, "movil") || undefined,
+        seguro: clonarYAplicarMaterial(rawSeguro, "seguro") || undefined,
       });
     });
 

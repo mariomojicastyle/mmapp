@@ -673,9 +673,9 @@
         "Parafuso E (58)"
       ],
       "secuencia": [],
-      "guionEs": "Paso 3: Ensambla los componentes correspondientes a esta etapa.",
-      "guionPt": "Passo 3: Monte os componentes correspondentes a esta etapa.",
-      "guionEn": "Step 3: Assemble the corresponding components for this stage.",
+      "guionEs": "",
+      "guionPt": "",
+      "guionEn": "",
       "vozEs": "es-MX-DaliaNeural",
       "vozPt": "pt-BR-FranciscaNeural",
       "vozEn": "en-US-JennyNeural",

@@ -44,7 +44,19 @@ export const createManualSlice = (set: any, get: any): any => {
     set({ pasosManual: sanitizados });
     guardarPasosEnCacheLocal(sanitizados, get().manualActivoGuardado);
   },
-  seleccionarPasoManualActivo: (pasoActivoManualId) => set({ pasoActivoManualId, timelineCurrentTime: 0, isTimelinePlaying: false }),
+  seleccionarPasoManualActivo: (pasoActivoManualId) =>
+    set({
+      pasoActivoManualId,
+      timelineCurrentTime: 0,
+      isTimelinePlaying: false,
+      modoPickingManual: {
+        activo: false,
+        modo: "agregar",
+        grupoId: null,
+        pasoId: null,
+        piezasTemporalmenteSeleccionadas: [],
+      },
+    }),
   crearPasoManual: (tipo = "ensamble") => {
     const state = get();
     // 1. Encontrar el menor paso faltante disponible (gap-filling inteligente, sin duplicados)
@@ -62,9 +74,12 @@ export const createManualSlice = (set: any, get: any): any => {
       piezasAsignadas: [],
       herrajesAsignados: [],
       secuencia: [],
-      guionEs: `Paso ${num}: Ensambla los componentes correspondientes a esta etapa.`,
-      guionPt: `Passo ${num}: Monte os componentes correspondentes a esta etapa.`,
-      guionEn: `Step ${num}: Assemble the corresponding components for this stage.`,
+      subbloques: [],
+      piezasOcultas: false,
+      ocultarNoAsignadas: false,
+      guionEs: "",
+      guionPt: "",
+      guionEn: "",
       vozEs: "es-MX-DaliaNeural",
       vozPt: "pt-BR-FranciscaNeural",
       vozEn: "en-US-JennyNeural",
@@ -80,7 +95,19 @@ export const createManualSlice = (set: any, get: any): any => {
       nuevosPasos.push(nuevoPaso);
     }
 
-    set({ pasosManual: nuevosPasos, pasoActivoManualId: nuevoId, timelineCurrentTime: 0, isTimelinePlaying: false });
+    set({
+      pasosManual: nuevosPasos,
+      pasoActivoManualId: nuevoId,
+      timelineCurrentTime: 0,
+      isTimelinePlaying: false,
+      modoPickingManual: {
+        activo: false,
+        modo: "agregar",
+        grupoId: null,
+        pasoId: null,
+        piezasTemporalmenteSeleccionadas: [],
+      },
+    });
     guardarPasosEnCacheLocal(nuevosPasos, state.manualActivoGuardado);
   },
   eliminarPasoManual: (pasoId) => {
@@ -95,7 +122,19 @@ export const createManualSlice = (set: any, get: any): any => {
       const prevIdx = Math.max(0, idxEliminado - 1);
       siguienteActivo = sanitizados[prevIdx]?.id || sanitizados[0]?.id || "P00";
     }
-    set({ pasosManual: sanitizados, pasoActivoManualId: siguienteActivo, timelineCurrentTime: 0, isTimelinePlaying: false });
+    set({
+      pasosManual: sanitizados,
+      pasoActivoManualId: siguienteActivo,
+      timelineCurrentTime: 0,
+      isTimelinePlaying: false,
+      modoPickingManual: {
+        activo: false,
+        modo: "agregar",
+        grupoId: null,
+        pasoId: null,
+        piezasTemporalmenteSeleccionadas: [],
+      },
+    });
     guardarPasosEnCacheLocal(sanitizados, state.manualActivoGuardado);
   },
   actualizarPasoManual: (pasoId, data) => {
@@ -846,17 +885,8 @@ export const createManualSlice = (set: any, get: any): any => {
       piezasIniciales = Array.from(new Set([...(paso.piezasAsignadas || []), ...(paso.herrajesAsignados || [])]));
     }
 
-    // 👁️ REGLA: Al seleccionar el cuentagotas, activar simultáneamente por defecto el botón de apagar piezas (primer ojito)
-    let pasosActualizados = state.pasosManual;
-    if (paso && paso.tipo !== "showcase" && !paso.piezasOcultas) {
-      pasosActualizados = state.pasosManual.map((p) =>
-        p.id === pasoId ? { ...p, piezasOcultas: true } : p
-      );
-      guardarPasosEnCacheLocal(pasosActualizados, state.manualActivoGuardado);
-    }
-
+    // En modo picking no forzamos piezasOcultas en el paso; la ocultación temporal se gestiona por el modo de picking activo
     set({
-      pasosManual: pasosActualizados,
       modoPickingManual: {
         activo: true,
         modo,
@@ -1096,7 +1126,21 @@ export const createManualSlice = (set: any, get: any): any => {
   },
 
   limpiarPickingManual: () => {
+    const st = get();
+    let pasosActualizados = st.pasosManual;
+    const pasoActivoId = st.modoPickingManual.pasoId || st.pasoActivoManualId;
+    if (pasoActivoId) {
+      const paso = st.pasosManual.find((p) => p.id === pasoActivoId);
+      if (paso && paso.piezasOcultas) {
+        pasosActualizados = st.pasosManual.map((p) =>
+          p.id === pasoActivoId ? { ...p, piezasOcultas: false } : p
+        );
+        guardarPasosEnCacheLocal(pasosActualizados, st.manualActivoGuardado);
+      }
+    }
+
     set({
+      pasosManual: pasosActualizados,
       modoPickingManual: {
         activo: false,
         modo: "agregar",

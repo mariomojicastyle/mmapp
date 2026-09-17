@@ -23,6 +23,8 @@ import {
   IconGirarDerecha,
   IconGiroMenos90,
   IconGiroMas90,
+  IconOcultarMostrar,
+  IconOcultarMostrarInvertido,
 } from "./StepManagerIcons";
 
 export const COLORES_SUBBLOQUES: Array<{ bg: string; border: string; text: string }> = [
@@ -170,33 +172,57 @@ export default function SubbloquesManagerSection({
                           {/* Contenido Retráctil del Sub-Bloque */}
                           {!estaColapsado && (
                             <>
-                              {/* Fila 2: Herramientas dedicadas del Subbloque (Tocar en 3D, Retirar, Ocultar/Ver y Tarrito de Basura) */}
+                              {/* Fila 2: Herramientas dedicadas del Subbloque (Bombillo Ocultar/Mostrar, Retirar y Basura) */}
                               <div className="flex items-center gap-1.5 w-full flex-wrap">
-                            {/* Tocar en 3D */}
+                            {/* 1. Botón Circular Oficial: Ocultar / Mostrar (Bombillo Amarillo = Normal / Gris = Tocar en 3D para empacar en este subbloque) */}
                             <button
                               type="button"
                               onClick={() => {
                                 if (estaEnPickingAgregar) {
                                   limpiarPickingManual();
                                 } else {
-                                  if (!pasoActivo.piezasOcultas) {
-                                    conmutarVisibilidadPiezasPaso(pasoActivo.id);
-                                  }
                                   iniciarPickingManual(pasoActivo.id, sub.id, "agregar");
                                 }
                               }}
-                              title="Seleccionar piezas o correderas para este subbloque tocándolas en 3D"
-                              className={`px-2.5 py-1 rounded-full transition flex items-center gap-1 font-bold text-[9px] border cursor-pointer ${
+                              title={
                                 estaEnPickingAgregar
-                                  ? "bg-cyan-500 text-white border-cyan-400 shadow-sm animate-pulse"
-                                  : "bg-cyan-500/10 text-cyan-700 dark:text-cyan-300 border-cyan-500/30 hover:bg-cyan-500/20"
+                                  ? `Bombillo apagado (Gris): Cada pieza o herraje que toques en 3D se oculta y queda dentro de ${sub.nombre}. Clic para encender.`
+                                  : `Bombillo encendido (Amarillo): Muestra todo en 3D. Clic para apagar y asignar componentes a ${sub.nombre} tocándolos.`
+                              }
+                              className={`p-1.5 rounded-full transition shrink-0 cursor-pointer border shadow-2xs ${
+                                !estaEnPickingAgregar
+                                  ? "bg-amber-400/20 text-amber-500 border-amber-400/50 hover:bg-amber-400/30"
+                                  : "bg-slate-100 dark:bg-slate-800 text-slate-400 border-slate-300 dark:border-slate-700 hover:text-slate-200"
                               }`}
                             >
-                              <Pipette className="w-3 h-3" />
-                              <span>{estaEnPickingAgregar ? "Tocando 3D..." : "Tocar en 3D"}</span>
+                              <IconOcultarMostrar
+                                className="w-4 h-4"
+                                encendido={!estaEnPickingAgregar}
+                              />
                             </button>
 
-                            {/* Retirar */}
+                            {/* 2. Botón Circular Oficial: Ocultar / Mostrar Piezas de este Subbloque (Ojito / Invertido de Subbloque) */}
+                            <button
+                              type="button"
+                              onClick={() => conmutarVisibilidadSubBloqueArmado(pasoActivo.id, sub.id)}
+                              title={
+                                sub.oculto
+                                  ? `Mostrar piezas de ${sub.nombre} en 3D`
+                                  : `Ocultar piezas de ${sub.nombre} en 3D`
+                              }
+                              className={`p-1.5 rounded-full transition shrink-0 cursor-pointer border shadow-2xs ${
+                                sub.oculto
+                                  ? "bg-cyan-500/20 text-cyan-600 dark:text-cyan-400 border-cyan-400 shadow-sm ring-2 ring-cyan-500/30"
+                                  : "bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-700"
+                              }`}
+                            >
+                              <IconOcultarMostrarInvertido
+                                className="w-4 h-4"
+                                activo={Boolean(sub.oculto)}
+                              />
+                            </button>
+
+                            {/* 3. Botón Cápsula Retirar de Subbloque */}
                             <button
                               type="button"
                               onClick={() => {
@@ -206,7 +232,7 @@ export default function SubbloquesManagerSection({
                                   iniciarPickingManual(pasoActivo.id, sub.id, "retirar");
                                 }
                               }}
-                              title="Retirar piezas o correderas de este subbloque tocándolas en 3D"
+                              title={`Retirar: Toca piezas o herrajes en 3D para expulsarlos de ${sub.nombre}`}
                               className={`px-2.5 py-1 rounded-full transition flex items-center gap-1 font-bold text-[9px] border cursor-pointer ${
                                 estaEnPickingRetirar
                                   ? "bg-rose-600 text-white border-rose-500 shadow-md ring-2 ring-rose-400/40 animate-pulse"
@@ -217,29 +243,7 @@ export default function SubbloquesManagerSection({
                               <span>{estaEnPickingRetirar ? "Retirando 3D..." : "Retirar"}</span>
                             </button>
 
-                            {/* 3. Botón Circular Ocultar/Prender Subbloque en 3D (Ojito) */}
-                            <button
-                              type="button"
-                              onClick={() => conmutarVisibilidadSubBloqueArmado(pasoActivo.id, sub.id)}
-                              title={
-                                sub.oculto
-                                  ? `Mostrar piezas de ${sub.nombre} en 3D`
-                                  : `Ocultar piezas de ${sub.nombre} en 3D`
-                              }
-                              className={`p-1.5 rounded-full transition shrink-0 cursor-pointer border ${
-                                sub.oculto
-                                  ? "bg-amber-500/20 text-amber-500 border-amber-500/40"
-                                  : "bg-slate-100 dark:bg-slate-800 text-slate-400 hover:text-amber-500 border-slate-200 dark:border-slate-700"
-                              }`}
-                            >
-                              {sub.oculto ? (
-                                <EyeOff className="w-3.5 h-3.5 text-amber-500" />
-                              ) : (
-                                <Eye className="w-3.5 h-3.5" />
-                              )}
-                            </button>
-
-                            {/* Tarrito de Basura */}
+                            {/* 4. Tarrito de Basura */}
                             <button
                               type="button"
                               onClick={() => eliminarSubBloqueArmado(pasoActivo.id, sub.id)}

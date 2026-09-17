@@ -1100,6 +1100,17 @@ export function sanitizarPasosManuales(pasos: PasoManualStudio[]): PasoManualStu
       p.titulo = `Paso ${String(p.numero).padStart(2, "0")}: Ensamble`;
     }
 
+    // 🧹 Limpieza automática de guiones genéricos por defecto para no obligar al usuario a borrarlos
+    if (p.guionEs && /Paso \d+: Ensambla los componentes correspondientes a esta etapa\./i.test(p.guionEs)) {
+      p.guionEs = "";
+    }
+    if (p.guionPt && /Passo \d+: Monte os componentes correspondentes a esta etapa\./i.test(p.guionPt)) {
+      p.guionPt = "";
+    }
+    if (p.guionEn && /Step \d+: Assemble the corresponding components for this stage\./i.test(p.guionEn)) {
+      p.guionEn = "";
+    }
+
     idsVistos.add(p.id);
     resultado.push(p);
   });

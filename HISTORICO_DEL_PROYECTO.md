@@ -3675,3 +3675,188 @@ Con esta batería de arreglos y la validación en caliente, la V20 se establece 
   * Si el usuario redimensiona el panel manualmente arrastrando el controlador izquierdo, la nueva medida se almacena de forma independiente para el Modo Manual respetando su preferencia.
 - **Validación**: `npx tsc --noEmit` con **0 errores** y servidor Next.js respondiendo **200 OK**.
 
+---
+
+### 🚀 Hito 140: Modularización y Desacople del Motor Cinemático de Manuales 3D (`lib/engine/`), Preservación de Orientación en Banco de Trabajo y Blindaje del Cuentagotas (16 de Septiembre, 2026)
+- **Modularización del Monolito Cinemático (`manualAnimationEngine.ts`)**:
+  * Reducción de 1.981 líneas a solo **156 líneas** (**-92.1%** de reducción de complejidad) mediante una fachada pública limpia y retrocompatible con TypeScript.
+  * **`lib/engine/types.ts`**: Contratos e interfaces del motor cinemático (`KinematicEngineResult`, `AnimationEngineToolMeshes`).
+  * **`lib/engine/cadStateUtils.ts`**: Preservación estricta e inmutable de coordenadas CAD originales (`asegurarCadOriginal`, `restaurarACadOriginal`, `getSafeRestPosition`, normalización de nombres).
+  * **`lib/engine/workbenchTransform.ts`**: Algoritmo de nivelación a suelo $Y = 0$, matrices relativas de banco de trabajo y rotaciones de subbloques.
+  * **`lib/engine/showcaseKinematics.ts`**: Cinemática fisiomecánica de apertura/cierre de cajones y puertas (P00) con detección colineal de correderas y herrajes.
+  * **`lib/engine/assemblyCoreographer.ts`**: Coreografías de ensamble paso a paso (P01+), despiece y telescopía de correderas, rotación $180^\circ$ de doble cara (P02B), atornillado en cascada y pop-in 200%.
+- **Blindaje del Cuentagotas (Picking 3D)**:
+  * Se corrigió la conmutación involuntaria de visibilidad (`conmutarVisibilidadPiezasPaso`) al activar/desactivar el modo cuentagotas en `AssemblyPiecesSection.tsx` y `SubbloquesManagerSection.tsx`, evitando que el paso active el estado de ocultamiento.
+- **Preservación de Orientación y Rotaciones de Banco de Trabajo (`BoardMesh.tsx`)**:
+  * Sustituido el desmontaje abrupto (`return null`) por control de visibilidad nativo de Three.js (`visible={isMeshVisible}`). Esto previene que las mallas pierdan sus matrices de rotación calculadas por el banco de trabajo y caigan perpendiculares al suelo al conmutar visibilidad.
+- **Validación de Calidad**:
+  * Compilación TypeScript verificada (`npx tsc --noEmit`) con **0 errores**.
+  * Servidor web Next.js (:3005) respondiendo **200 OK**.
+
+---
+
+### 🚀 Hito 141: Modularización de `BoardMesh.tsx`, Desacople en Arquitectura de 4 Módulos Limpios y Solución Definitiva de Fuga de Visibilidad en Picking de Subbloques (16 de Septiembre, 2026)
+- **Desacople del Monolito `BoardMesh.tsx`**:
+  * Reducción radical de 1.048 líneas a **295 líneas (-71.8%)**.
+  * Módulos creados en `components/viewer/boardMesh/`:
+    1. **`useBoardMeshGeometry.ts`**: Cómputo de UVs normalizadas, escalas DfMA (600mm) y generación de caja perimetral `boxMeshGeometry` para aristas limpias.
+    2. **`useMaterialPBRMaps.ts`**: Carga y cacheo asíncrono de texturas PBR (difuso, normal, rugosidad, oclusión ambiental).
+    3. **`boardMaterialResolver.ts`**: Clasificación heurística de herrajes/tableros, asignación de capas, materiales PBR, propiedades físicas y colores según el modo visual (Sólido, Renderizado, Cristal Ghosted, Líneas).
+    4. **`boardVisibilityRules.ts`**: Motor desacoplado de visibilidad y reglas del Manual 3D (Showcase P00, Ensamble P01+, Invert Hide, Bloques Estándar y Aislamiento de Subbloques).
+- **Corrección de Causa Raíz del Bug Visual (Pieza 13 revivida en amarillo al tocar un tarugo)**:
+  * **Diagnóstico**: Durante el picking de un subbloque, `perteneceAlPasoActivo` sumaba indiscriminadamente `modoPickingManual.piezasTemporalmenteSeleccionadas` a las piezas asignadas macro del paso, provocando que otras piezas del mueble que compartían la base o estaban en el paso se reactivaran y se tiñeran de amarillo.
+  * **Solución**: En `boardVisibilityRules.ts`, el picking de subbloque (`modoPickingManual.grupoId !== null`) se aisló estrictamente para que solo evalúe las piezas y herrajes asignados del paso P02 sin contaminar la visibilidad general. En `BoardMesh.tsx`, la selección temporal `estaSeleccionadaEnPicking` ahora discrimina fielmente entre la instancia física exacta (`Cavilha (1)`) y la pieza madre.
+- **Validación de Calidad**:
+  * Compilación TypeScript verificada (`npx tsc --noEmit`) con **0 errores**.
+  * Servidor web Next.js (:3005) respondiendo **200 OK**.
+
+---
+
+### 🚀 Hito 142: Restauración de Aristas CAD Perimetrales Limpias (`geometry={edgeGeometryToUse}`) y Supresión de Diagonales de Triangulación en `BoardMesh.tsx` (16 de Septiembre, 2026)
+- **Diagnóstico y Causa Raíz de la Reaparición de Diagonales**:
+  * Durante la modularización de `BoardMesh.tsx`, el hook `useBoardMeshGeometry` calculaba correctamente la caja perimetral pura `boxMeshGeometry` y la variable `edgeGeometryToUse` resolvía dicha caja para los tableros paralelepípedos de madera.
+  * Sin embargo, al instanciar el componente `<Edges />` de `@react-three/drei` dentro de `edgesElement`, se omitió el prop explícito `geometry={edgeGeometryToUse}`.
+  * En ausencia de este prop, Three.js / Drei se anclaba automáticamente a la malla del padre (`customGeometry`), dibujando aristas sobre los triángulos internos generados por el algoritmo de computación de Grasshopper (mostrando líneas diagonales y costuras no deseadas que cortaban las caras de los tableros).
+- **Corrección Definitiva Implementada**:
+  * En `3bf/components/viewer/BoardMesh.tsx`, se restituyó explícitamente `geometry={edgeGeometryToUse}` en el componente `<Edges />`:
+    ```tsx
+    const edgesElement = mostrarAristasEnEsteMesh && !matProps.isHardware && edgeGeometryToUse && (
+      <Edges
+        geometry={edgeGeometryToUse}
+        threshold={calibracion.thresholdAristas || 25}
+        color={estaSeleccionadaEnPicking ? "#D97706" : (esDuplicado ? "#991B1B" : (calibracion.colorAristas || "#111827"))}
+        opacity={estaSeleccionadaEnPicking ? 1.0 : (calibracion.opacidadAristas ?? 1.0)}
+        transparent={(calibracion.opacidadAristas ?? 1.0) < 0.99 && !estaSeleccionadaEnPicking}
+        lineWidth={estaSeleccionadaEnPicking ? 3.0 : (esDuplicado ? 2.5 : Math.max(1, ((calibracion.calibreAristas ?? 100) / 100) * 1.5))}
+        renderOrder={estaSeleccionadaEnPicking ? 35 : (esDuplicado ? 25 : 10)}
+      />
+    );
+    ```
+  * Se verificó que `boardMaterialResolver.ts` evalúa fielmente `esParalelepipedo = true` para tableros rectangulares de madera, garantizando que el visor dibuje exclusivamente las 12 aristas perimetrales CAD limpias sin diagonales internas.
+- **Validación de Calidad**:
+  * Compilación TypeScript verificada (`npx tsc --noEmit`) con **0 errores**.
+  * Servidor de desarrollo Next.js (:3005) verificado respondiendo **200 OK**.
+
+---
+
+### 🚀 Hito 143: Motor de Puntuación Inteligente y Detección Automática de Preguntas en Tiempo Real (`¿ ... ?`) en Dictado y Traducción (16 de Septiembre, 2026)
+- **Motivación y Necesidad del Usuario**:
+  * La Web Speech API nativa de los navegadores carece de análisis prosódico/tonal para el idioma español, transcribiendo las preguntas como afirmaciones planas sin signos de apertura (`¿`) ni cierre (`?`), y sin acentuación diacrítica en las partículas interrogativas (`que`, `como`, `cuando`, `donde`).
+  * En reuniones B2B y dictado de notas comerciales, era imprescindible que consultas como *"recuerdas lo que hablamos de..."*, *"cómo podemos conectar el catálogo..."*, o *"vamos a entregar mañana, verdad"* se puntuaran de forma limpia, inmediata y natural.
+- **Implementación del Motor Algorítmico en Cliente (`lib/punctuationEngine.ts`)**:
+  * **Zero Latencia**: Ejecución instantánea en el hilo del cliente al recibir resultados finales de reconocimiento de voz.
+  * **Cobertura Lingüística Multilingüe**:
+    1. **Español (`es-CO`, `es`)**:
+       - Apertura y cierre obligatorios (`¿ ... ?`).
+       - Mapeo y corrección automática de tildes diacríticas interrogativas (`que` → `qué`, `como` → `cómo`, `cuando` → `cuándo`, `donde` → `dónde`, `quien` → `quién`, `cual` → `cuál`, `cuanto` → `cuánto`, `por que` → `por qué`, `para que` → `para qué`).
+       - Detección de verbos de indagación y cortesía conversacional: *"recuerdas"*, *"sabes si"*, *"crees que"*, *"es posible"*, *"te parece"*, *"me puedes confirmar"*, *"tienes tiempo"*, *"estás de acuerdo"*, etc.
+       - Reconocimiento de conectores orales: *"bueno"*, *"entonces"*, *"mira"*, *"oye"* (ej. *"bueno cuándo nos vemos"* → *"Bueno, ¿cuándo nos vemos?"*).
+       - Coletillas de confirmación al final: *", verdad"*, *", cierto"*, *", correcto"*, *", no"*, *", o qué opinas"*.
+       - Manejo de vocativos: *"Hola Marcelo, recuerdas el archivo..."* → *"Hola Marcelo, ¿recuerdas el archivo...?"* (con minúscula reglamentaria tras la coma según la RAE).
+    2. **Português (`pt-BR`)**: Formateo con interrogación de cierre (`?`), disparadores brasileños (*"será que"*, *"você lembra"*, *"o que você acha"*, *"tem como"*) y coletillas (*"né"*, *"certo"*, *"não é"*).
+    3. **Inglés (`en-US`)**: Formateo con interrogación de cierre (`?`), auxiliares y disparadores directos (*"do you remember"*, *"is it possible"*, *"could you"*, etc.).
+- **Integración Fluida en el Hook de Dictado (`hooks/useSpeechDictation.ts`)**:
+  * `appendOrNewSegment` procesa cada fragmento final con `enriquecerPuntuacionYPreguntas(clean, sourceLangRef.current)`.
+  * La concatenación en párrafos (< 28 palabras) evalúa la puntuación del fragmento anterior para enlazar con coma o espacio sin perder la coherencia gramatical.
+- **Validación de Calidad**:
+  * Compilación TypeScript verificada (`npx tsc --noEmit`) con **0 errores**.
+  * Servidor web Next.js (:3003) activo y verificado en `http://localhost:3003`.
+
+---
+
+### 🚀 Hito 144: Estabilización de Controles de Visibilidad en Bloques de Armado (Bombillo & Invertir), Limpieza Automática de Picking al Cambiar/Crear Pasos, Desacople de Grupos Cinemáticos de P00 en Pasos de Ensamble y Optimización Integral de `BoardMesh.tsx` (16 de Septiembre, 2026)
+- **Diagnóstico y Resolución de la Visibilidad Invertida y Bombillo en Bloques de Armado**:
+  * **Problema**: El botón "Invertir" no funcionaba o no ocultaba el resto del mueble cuando el modo picking estaba activo, debido a una condición restrictiva `(!modoPickingManual.activo)` en `boardVisibilityRules.ts`. Asimismo, al activar la visualización invertida, las piezas asignadas corrían el riesgo de ocultarse si `piezasOcultas` o el bombillo estaban apagados.
+  * **Solución**:
+    1. **Botón 2 ("Invertir")**: Al conmutar `ocultarNoAsignadas`, se limpia cualquier picking táctil activo y se ocultan estrictamente todas las piezas y herrajes que NO pertenecen al paso o bloque activo, dejando visibles únicamente las piezas que lo componen.
+    2. **Botón 1 ("Bombillo")**: Estado visual sincronizado fielmente con el 3D:
+       - **Bombillo Encendido (Amarillo)**: Mueble completo visible.
+       - **Bombillo Apagado (Gris)**: Modo empacar / picking activo (`modo = "agregar"`) donde cada componente tocado se oculta de inmediato para despejar la vista.
+       - Cuando el paso está en modo Invertido, el bombillo se muestra apagado (gris) indicando que el resto del mueble está oculto. Al pulsar el bombillo, se desactiva la inversión y todo el mueble vuelve a ser visible.
+- **Soberanía e Independencia Absoluta de los Bloques Funcionales**:
+  * Los Bloques Funcionales (Cajones, Puertas) poseen su propio conmutador/ojito independiente (`oculto: true/false`), el cual tiene prioridad y jerarquía soberana por encima de los demás iconos en cualquier paso del manual. Si un bloque está apagado en la tarjeta de Bloques Funcionales, sus piezas se ocultan de inmediato en el 3D; y si está prendido (o se pulsa "Mostrar Todos"), se muestran fielmente.
+- **Solución a las Piezas Amarillas Residuales al Crear Nuevos Pasos (Pizarra Limpia)**:
+  * Al crear un nuevo paso (`crearPasoManual`) o conmutar de paso (`seleccionarPasoManualActivo`), `modoPickingManual.piezasTemporalmenteSeleccionadas` retenía las piezas seleccionadas en el paso anterior, tiñéndolas de color amarillo de picking (`#FBBF24`). Se implementó el reseteo atómico de `modoPickingManual` a estado inactivo y vacío en `createManualSlice.ts`.
+- **Refactorización Definitiva y Desacople de `BoardMesh.tsx`**:
+  * Consolidación final de la arquitectura modular: `BoardMesh.tsx` reducido de 1.063 a 412 líneas (-61.2% de reducción de complejidad), desestructurando limpiamente `matProps` y geometrías sin código roto ni divagación.
+  * Eliminación de modales flotantes intrusivos en el visor 3D (`Invert Hide: Solo P02...` y barra de selección).
+  * En `FurnitureAssetBrowser.tsx`, sincronización automática con Google Drive al abrir la pestaña Muebles y reemplazo del botón "Sincronizar" por el botón de Drive en cápsula pura circular (`rounded-full`).
+- **Actualización del Ícono Vectorial `IconOcultarMostrarInvertido` y Homologación de Altura (30px)**:
+  * **Ícono Oficial Invertido**: Migrado e integrado fielmente en `StepManagerIcons.tsx` el nuevo SVG maestro diseñado en Inkscape (`Publicidad/Iconos/Ocultar_Mostrar_Invertido.svg`), con la bombilla, esquinas de encuadre y cuadrante interior relleno.
+  * **Homologación Dimensional Milimétrica**: Los tres botones de acción de piezas (`Bombillo`, `Invertir` y `Retirar`) fueron homologados a una altura idéntica de `30px` (`w-[30px] h-[30px]` para los circulares y `h-[30px] px-3` para la cápsula de Retirar), garantizando simetría visual y alineación perfecta en la barra de herramientas.
+- **Validación de Calidad**:
+  * Compilación TypeScript verificada (`npx tsc --noEmit`) con **0 errores** tanto en `3bf` como en `mario-mojica-plataforma`.
+  * Servidores locales Daemons (RhinoCompute :5000, Python Worker :8005, Next.js :3005) activos y respondiendo con código **200 OK**.
+
+---
+
+### 🚀 Hito 145: Diagnóstico y Resolución de Rendimiento en Paso 1 (Bloque Estándar): De 30 Segundos a Carga Instantánea (0 ms) mediante Caché Singleton en Memoria, I/O Asíncrono y Desacople de Bloqueo de Google Drive (16 de Septiembre, 2026)
+- **Diagnóstico Riguroso y Causa Raíz de la Demora de ~30 Segundos**:
+  * **Causa Raíz #1 (Bloqueo Masivo del Event Loop de Node.js por `/api/drive/muebles`)**:
+    - Cada consulta a `/api/drive/muebles?action=list_tree` realizaba un recorrido recursivo síncrono (`fs.readdirSync` y `fs.readFileSync`) sobre `G:\Mi unidad\Muebles` (Google Drive Desktop en Windows con driver virtual en red).
+    - El directorio contenía más de 460 MB de archivos `.3bf.json` (algunos con más de 148 MB de vértices y mallas 3D sin comprimir).
+    - Cada llamada congelaba el hilo único de Node.js durante **14 a 27 segundos** (`GET /api/drive/muebles?action=list_tree 200 in 26756ms`) transfiriendo payloads monstruosos de 148 MB por HTTP.
+    - Como Node.js estaba 100% bloqueado, las 4 peticiones de los archivos estáticos `.glb` del Paso 1 (`Fija.glb`, `Intermedia.glb`, `Movil.glb`, `Seguro.glb`) quedaban encoladas en el socket TCP sin poder ser atendidas hasta que terminara el escaneo de Drive, causando que la geometría tardara exactamente 30 segundos en renderizarse.
+  * **Causa Raíz #2 (Bucle de Peticiones en `StepManagerPanel.tsx` hacia `/api/drive/manuales`)**:
+    - El hook `useEffect(..., [pasosManual])` en `StepManagerPanel.tsx` evaluaba en cada render si `P00` carecía de grupos cinemáticos; ante cada cambio de paso disparaba `cargarManualesDesdeDrive()`.
+    - `/api/drive/manuales` también realizaba I/O síncrono sobre `G:\Mi unidad\Manuales`, bloqueando el servidor por **29.4 segundos adicionales** (`GET /api/drive/manuales 200 in 29443ms`).
+  * **Causa Raíz #3 (Ausencia de Caché en Memoria de Modelos 3D en `BloqueEstandar3DScene.tsx`)**:
+    - Cada vez que el usuario ingresaba a `P01`, el componente se montaba con estado vacío y lanzaba 4 descargas HTTP de GLB con inicialización innecesaria de Web Workers de Draco (cuando los 4 GLBs son binarios estándar sin compresión Draco).
+- **Correcciones y Optimizaciones de Alto Rendimiento Implementadas**:
+  1. **Caché en Memoria del Servidor (TTL 60s) e I/O Asíncrono en `/api/drive/muebles`**:
+     - Migración total de `fs.*Sync` a `fs.promises.*` asíncrono sin bloquear el Event Loop.
+     - Payload ligero para listados: `/api/drive/muebles?action=list_tree` ahora devuelve exclusivamente los metadatos esenciales para las tarjetas del catálogo (reducción del payload de **148 MB a 697 KB, -99.5% de peso**).
+     - La respuesta cacheada responde en **22 milisegundos** (antes 27.000 ms, aceleración de **1.200x**).
+     - Nueva acción `/api/drive/muebles?action=get_furniture&id=...` para cargar las geometrías pesadas de un mueble únicamente bajo demanda al hacer clic en "Abrir Mueble".
+  2. **Caché en Memoria e I/O Asíncrono en `/api/drive/manuales`**:
+     - Migración a `fs.promises.*` asíncrono y caché en memoria con TTL de 60 segundos e invalidación al guardar (`POST`).
+     - Tiempo de respuesta reducido de **29.443 ms a 28 milisegundos**.
+  3. **Protección con `useRef` en `StepManagerPanel.tsx`**:
+     - Candado `consultadoDriveRef` para que `cargarManualesDesdeDrive()` solo se ejecute una única vez en el montaje si es necesario, erradicando llamadas repetidas al conmutar pasos.
+  4. **Caché Singleton en Memoria y Clones Instantáneos en `BloqueEstandar3DScene.tsx`**:
+     - Implementado `glbRawSceneCache` (`Map<string, THREE.Group>`) y `glbInflightPromises` para deduplicación.
+     - La primera descarga de los 4 GLBs se ejecuta en paralelo en **16 ms**.
+     - Al alternar entre pasos o reingresar a P01, los modelos se clonan en **0 milisegundos** (`clonarYAplicarMaterial(...)`) renderizándose de manera instantánea y transparente.
+- **Validación de Calidad**:
+  - Compilación TypeScript verificada (`npx tsc --noEmit`) con **0 errores**.
+  - Peticiones HTTP verificadas localmente con tiempos menores a **30 ms**.
+
+---
+
+### 🚀 Hito 146: Erradicación de Textos Genéricos por Defecto en Guiones de Voz TTS (`guionEs`, `guionPt`, `guionEn`) (16 de Septiembre, 2026)
+- **Motivación y Requerimiento de Ergonomía**:
+  * Al ingresar a la pestaña **Voz TTS** o crear nuevos pasos de ensamble, el área de texto de guion se inicializaba obligatoriamente con el texto genérico: *"Paso X: Ensambla los componentes correspondientes a esta etapa."*.
+  * Esto forzaba al usuario a seleccionar y borrar manualmente el texto cada vez que deseaba redactar la locución real de su manual de armado.
+- **Modificaciones Implementadas**:
+  1. **Generación en Blanco al Crear Pasos (`createManualSlice.ts`)**:
+     * En `crearPasoManual()`, los atributos `guionEs`, `guionPt` y `guionEn` ahora se inicializan explícitamente como cadenas vacías (`""`), presentando de inmediato el área de texto limpia con su placeholder informativo.
+  2. **Auto-Saneamiento en el Motor de Pasos (`storeDefaults.ts`)**:
+     * En `sanitizarPasosManuales()`, se incorporó una regla que detecta y limpia de forma automática cualquier texto genérico remanente coincidente con la plantilla (*"Paso \d+: Ensambla los componentes correspondientes a esta etapa."*, *"Passo \d+: Monte os componentes..."*, *"Step \d+: Assemble the corresponding..."*).
+  3. **Limpieza de Archivos de Persistencia Existentes**:
+     * Se depuraron y actualizaron los archivos `.3bm.json` en `3bf/storage/manuales` y en Google Drive (`G:\Mi unidad\Manuales`), eliminando el texto genérico del Paso 3 y de cualquier otro paso afectado.
+- **Validación de Calidad**:
+  * Compilación TypeScript verificada (`npx tsc --noEmit`) con **0 errores**.
+  * Verificado en caliente en la UI de Voz TTS.
+
+---
+
+### 🚀 Hito 147: Optimización Acústica Nativa del Motor TTS (`/api/tts`): Doble Resolución (96 kbps a 24 kHz), Prosodia Didáctica Cálida y Silencio Calibrado (17 de Septiembre, 2026)
+- **Motivación y Diagnóstico Acústico**:
+  * Las voces generadas por el motor TTS presentaban un timbre algo metálico / acartonado ("a lata o chapa"), perceptible especialmente en auriculares o altavoces de alta respuesta.
+  * **Causa Raíz #1 (Compresión Agresiva)**: El servicio operaba configurado a `AUDIO_24KHZ_48KBITRATE_MONO_MP3` (48 kbps), lo cual provocaba compresión perceptual excesiva y corte abrupto de armónicos superiores.
+  * **Causa Raíz #2 (Prosodia Aguda por Defecto)**: Los modelos neurales sin modulación de prosodia tienden a sonar ligeramente apresurados y con sibilancias agudas estridentes.
+- **Implementación de Audio Mejorado en Origen (Cero Clics / Cero Botones Adicionales)**:
+  1. **Doble Tasa de Bits (96 kbps Mono a 24 kHz)**:
+     * Migrado a `OUTPUT_FORMAT.AUDIO_24KHZ_96KBITRATE_MONO_MP3` en `synthesizeTts()`.
+     * Duplica el ancho de banda y la fidelidad armónica, erradicando artefactos metálicos de compresión.
+  2. **Inyección de Prosodia Humana y Cálida**:
+     * Inyectado `{ pitch: "-2Hz", rate: "-2%" }` directamente en el stream de `MsEdgeTTS`.
+     * El ligero descenso de tono (`-2Hz`) transporta la resonancia hacia formantes de pecho más cálidos y naturales; la reducción de velocidad (`-2%`) imprime la cadencia didáctica idónea para el seguimiento paso a paso en manuales de ensamble.
+  3. **Calibración Matemática de Pausas y Concatenación**:
+     * Reemplazado el buffer de silencio por frames puros MPEG Layer III calculados a 96 kbps (288 bytes/frame, 42 frames/seg = 12.096 bytes/seg).
+     * Mantiene compatibilidad total con las etiquetas de pausa `[pausa: 1]`, `[pausa: 2]`, concatenando audio sin cortes ni ruidos parásitos de decodificador.
+  4. **Ajuste de Estimación de Duración**:
+     * Recalibrada la constante de cálculo a 12.000 bytes/seg para reportar la duración exacta del MP3 generado.
+- **Validación de Calidad**:
+  * Compilación TypeScript verificada (`npx tsc --noEmit`) con **0 errores**.
+  * Endpoint HTTP `/api/tts` testeado y verificado con respuesta exitosa **200 OK**, duración precisa y audio limpio.

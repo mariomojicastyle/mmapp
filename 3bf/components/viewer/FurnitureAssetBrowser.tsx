@@ -123,7 +123,11 @@ export default function FurnitureAssetBrowser() {
   const anchoArbolEfectivo = Math.min(Math.max(70, anchoArbolCarpetas), Math.max(70, anchoDisponibleTotal - 84));
 
   useEffect(() => {
-    cargarArbolMuebles();
+    // Sincronización automática de Google Drive en cuanto se abre la pestaña de Muebles
+    setSincronizando(true);
+    cargarArbolMuebles().finally(() => {
+      setTimeout(() => setSincronizando(false), 600);
+    });
 
     const handleThumbUpdated = () => {
       cargarArbolMuebles();
@@ -598,30 +602,10 @@ export default function FurnitureAssetBrowser() {
           
           <div 
             style={{ color: coloresApariencia?.textoSecundario }} 
-            className="text-[10px] font-semibold px-1 mb-2 flex items-center justify-between gap-1 shrink-0"
+            className="text-[10px] font-semibold px-1 mb-2 flex items-center justify-end gap-1 shrink-0"
           >
-            <span className="flex items-center gap-1 min-w-0 truncate font-bold">
-              <Box 
-                style={{ color: coloresApariencia?.botonActivo || "#0891b2" }} 
-                className="w-3.5 h-3.5 shrink-0" 
-              />
-              <span className="truncate">
-                {esUltraCompacto ? `(${mueblesFiltrados.length})` : `MUEBLES (${mueblesFiltrados.length})`}
-              </span>
-            </span>
-            
             {/* Acciones de Google Drive */}
             <div className="flex items-center gap-1 shrink-0">
-              <button
-                onClick={handleSincronizarDrive}
-                title="Refrescar y sincronizar cambios desde Google Drive"
-                style={{ color: coloresApariencia?.textoPrincipal }}
-                className="flex items-center gap-1 text-[10px] font-semibold p-1 rounded-md hover:opacity-80 transition cursor-pointer"
-              >
-                <RefreshCw className={`w-3 h-3 ${sincronizando ? "animate-spin text-cyan-600" : ""}`} />
-                {!esUltraCompacto && <span>Sincronizar</span>}
-              </button>
-
               <a
                 href={urlGoogleDrive}
                 target="_blank"
@@ -632,10 +616,10 @@ export default function FurnitureAssetBrowser() {
                   borderColor: coloresApariencia?.bordePaneles,
                   color: coloresApariencia?.textoPrincipal,
                 }}
-                className="flex items-center gap-1 text-[10px] font-bold hover:underline px-1.5 py-0.5 rounded-lg border shadow-2xs transition cursor-pointer"
+                className="flex items-center gap-1 text-[10px] font-bold hover:underline px-2 py-0.5 rounded-full border shadow-2xs transition cursor-pointer"
               >
                 <ExternalLink className="w-3 h-3" />
-                {!esUltraCompacto && <span>Drive</span>}
+                <span>Drive</span>
               </a>
             </div>
           </div>

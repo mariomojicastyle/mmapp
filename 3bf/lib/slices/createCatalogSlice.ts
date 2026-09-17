@@ -1217,10 +1217,26 @@ export const createCatalogSlice = (set: any, get: any): any => ({
   },
 
   abrirMueble: async (mueble: MuebleGuardadoItem) => {
-    if (!mueble || !mueble.instancias) return;
+    if (!mueble) return;
+
+    let targetMueble = mueble;
+    // Si el mueble proviene del listado ligero, cargar sus instancias completas bajo demanda
+    if (!targetMueble.instancias || Object.keys(targetMueble.instancias).length === 0) {
+      try {
+        const res = await fetch(`/api/drive/muebles?action=get_furniture&id=${encodeURIComponent(targetMueble.id)}`);
+        if (res.ok) {
+          const data = await res.json();
+          if (data.success && data.furniture) {
+            targetMueble = data.furniture;
+          }
+        }
+      } catch (err) {
+        console.error("[3dBimFab] Error cargando datos completos del mueble:", err);
+      }
+    }
 
     // 1. Restaurar y sanitizar instancias en el Store (purgando cualquier duplicado persistente)
-    const rawInst = mueble.instancias || {};
+    const rawInst = targetMueble.instancias || {};
     const restoredInstancias: Record<string, ObjetoInstancia3BF> = {};
     for (const [k, v] of Object.entries(rawInst)) {
       restoredInstancias[k] = {

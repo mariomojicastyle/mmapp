@@ -35,6 +35,8 @@ export default function StepManagerPanel() {
   } = use3BFStore();
 
   // 🛡️ Blindaje y Autocuración: Garantizar que P00 siempre esté presente y sincronizar versión de Drive si está vacío
+  const consultadoDriveRef = React.useRef(false);
+
   React.useEffect(() => {
     if (!pasosManual || pasosManual.length === 0 || !pasosManual.some((p) => p.id === "P00" || p.tipo === "showcase")) {
       const curados = sanitizarPasosManuales(pasosManual || []);
@@ -42,10 +44,13 @@ export default function StepManagerPanel() {
       return;
     }
 
-    // Si P00 no tiene grupos cinemáticos asignados, consultar Drive para recuperar versión guardada con animaciones
-    const p00 = pasosManual.find((p) => p.id === "P00");
-    if (!p00?.showcase?.gruposCinematicos || p00.showcase.gruposCinematicos.length === 0) {
-      use3BFStore.getState().cargarManualesDesdeDrive();
+    // Si P00 no tiene grupos cinemáticos asignados, consultar Drive UNA SOLA VEZ para recuperar versión guardada
+    if (!consultadoDriveRef.current) {
+      const p00 = pasosManual.find((p) => p.id === "P00");
+      if (!p00?.showcase?.gruposCinematicos || p00.showcase.gruposCinematicos.length === 0) {
+        consultadoDriveRef.current = true;
+        use3BFStore.getState().cargarManualesDesdeDrive();
+      }
     }
   }, [pasosManual]);
 

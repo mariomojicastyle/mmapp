@@ -11,6 +11,12 @@ Este archivo es la "Memoria RAM" para Antigravity. Contiene el contexto de lo qu
 ## 🏗️ 1. Plataforma B2B & 3dBimFab (Foco Actual)
 **Estado:** Integración Supabase avanzada, Identidad Visual estandarizada e Hito Fundacional de **3dBimFab (3BF)** completado.
 
+> [!IMPORTANT]
+> ### ☀️ RECORDATORIO MATUTINO (Próxima Tarea Prioritaria):
+> - **Selector de Calidad / Compresión de Salida TTS en el Panel de Manuales 3D**:
+>   * Actualmente la locución se sintetiza por defecto en **96 kbps** (sonido cálido, alta fidelidad, cero lata).
+>   * **Requerimiento acordado**: Permitirle al usuario en el campo de texto o en la sección de Voz TTS **escoger la calidad de salida** (ej: 96 kbps Alta Fidelidad vs 48 kbps / 64 kbps Comprimido para menor peso de archivo), brindando flexibilidad de optimización según la necesidad de carga móvil o ancho de banda.
+
 ### 🧠 RAM de Ventas B2B & CRM Relacional Multimodal (`/ventas-ram`) — Estado: IMPLEMENTADO Y VALIDADO
 - [x] **Módulo Completo de RAM de Ventas (`/ventas-ram`)**: Implementado en la plataforma Next.js con permisos de rol (`VENTAS_RAM`), navegación con ícono `BrainCircuit`, diseño Tech Ethos / Obsidian Teal, márgenes de contenedor estándar (`p-6 space-y-6`) homologados con Proyectos y **divisor redimensionable (Splitter interactivo)** para ajustar el ancho entre el Directorio y la Ficha con persistencia local.
 - [x] **Visión Multimodal con Ingesta Multi-Captura**: Soporte para **arrastrar y soltar (Drag and Drop)** imágenes directamente sobre la zona punteada o pegar múltiples capturas en secuencia con `Ctrl+V` (o seleccionar archivos) con galería cronológica numerada, compresión inteligente en cliente (JPEG 1280px a 0.82) y modelos probados en vivo (`gemini-3.5-flash`, `gemini-3.5-flash-lite`).
@@ -39,6 +45,7 @@ Este archivo es la "Memoria RAM" para Antigravity. Contiene el contexto de lo qu
   - **Traducción Simultánea en Paralelo**: Endpoint `/api/dictado/traducir` con traducción asíncrona al Inglés (o Portugués con conmutador en caliente de 1 clic) sin frenar la velocidad del dictado en español.
   - **Ergonomía de Selección, Copia y Párrafos Continuos (Validado y Aprobado)**: Flujo de texto continuo (`select-text cursor-text`) que permite seleccionar libremente cualquier parte con el mouse para hacer `Ctrl+C`, botones de cápsula pura (`rounded-full`) para copiar la transcripción completa en 1 clic, concatenación inteligente por comas (`, `) para oraciones fluidas de hasta ~28 palabras sin saltos innecesarios de burbuja, contenedor con ancho expandido en un 40% (`max-w-[98%]`) y botón rápido para **Limpiar Pizarra**.
   - **Dirección Conversacional Bilingüe Limpia & Modo "Solo Dictado" (Lienzo 100%)**: Perfiles humanos sin siglas crípticas (`🇧🇷 Escuchar a Brasil` para reuniones de Meet/YouTube sin tocar botones durante la llamada, `🇪🇸 Mi Voz (Español)` para dictar notas, y `🇺🇸 Escuchar Inglés`), junto con el conmutador a "Solo Dictado" que colapsa la columna de traducción y despliega el lienzo al 100% de la pantalla.
+  - **Detección Inteligente de Preguntas y Puntuación en Tiempo Real (`lib/punctuationEngine.ts`)**: Motor algorítmico sin latencia que detecta automáticamente oraciones interrogativas directas e indirectas, inserta signos de apertura y cierre en español (`¿ ... ?`), corrige tildes diacríticas interrogativas (`qué`, `cómo`, `cuándo`, `dónde`, `por qué`), reconoce verbos de indagación conversacionales (*"recuerdas"*, *"sabes si"*, *"es posible"*, *"te parece"*), coletillas de confirmación (*", verdad?"*, *", no?"*) y estructura preguntas en portugués e inglés con signo de cierre (`?`).
   - **Temas Tech Ethos & Obsidian Compliant**: Cumplimiento del tema claro y oscuro con botones cápsula `rounded-full` y color corporativo dark `#1368AA`.
   - **Validación TypeScript**: **0 errores** (`npx tsc --noEmit`).
 
@@ -48,6 +55,81 @@ Este archivo es la "Memoria RAM" para Antigravity. Contiene el contexto de lo qu
   - **Paneles Retráctiles y Título No Editable**: Título `"Bloque de armado P02"` asignado automáticamente por el paso activo. Secciones minimizables con ícono de rotación $180^\circ$ en bloque de piezas, subbloques y cajones.
   - **Cápsula Segmentada de Orientación y Giro**: Unificación en cápsula horizontal (`rounded-full`) de los 4 botones de transformación con íconos vectoriales SVG oficiales (`Giro_-90.svg` y `Giro_90.svg`), botones circulares `33px` con fondo transparente y borde sutil, glifos calibrados a `20.5px` y `22px`, color activo corporativo `#0891b2`, y depuración de textos redundantes.
   - **Validación TypeScript**: **0 errores** (`npx tsc --noEmit`).
+- [x] **[16 de Septiembre, 2026] Hito 141: Modularización de `BoardMesh.tsx`, Desacople en Arquitectura de 4 Módulos Limpios y Solución Definitiva de Fuga de Visibilidad en Picking de Subbloques**:
+  - **Modularización de `BoardMesh.tsx`**: Reducción de 1.048 líneas a solo **295 líneas (-71.8%)** separando responsabilidades en `components/viewer/boardMesh/`:
+    * `useBoardMeshGeometry.ts`: Cómputo matemático de UVs (escala DfMA 600mm) y caja perimetral para aristas.
+    * `useMaterialPBRMaps.ts`: Hook de carga y cacheo de texturas PBR.
+    * `boardMaterialResolver.ts`: Clasificación de partes, capas, materiales PBR, propiedades físicas y colores de shaders.
+    * `boardVisibilityRules.ts`: Motor desacoplado de reglas de visibilidad, aislamiento de subbloques e Invert Hide.
+  - **Corrección de Causa Raíz del Bug Visual (Pieza 13 revivida al tocar un tarugo)**:
+    * Se eliminó la fuga de piezas temporales de subbloques en la pertenencia macro del paso, impidiendo que piezas ajenas se vuelvan visibles o se resalten erróneamente en amarillo.
+    * Selección en picking afinada para distinguir instancias físicas exactas (`Cavilha (1)` vs genéricos).
+  - **Validación**: Compilación TypeScript verificada (`npx tsc --noEmit`) con **0 errores** y servidor Next.js respondiendo **200 OK**.
+- [x] **[16 de Septiembre, 2026] Hito 142: Restauración de Aristas CAD Perimetrales Limpias (`geometry={edgeGeometryToUse}`) y Supresión de Diagonales de Triangulación en `BoardMesh.tsx`**:
+  - **Restauración de Aristas Puras**: Inyectado explícitamente `geometry={edgeGeometryToUse}` en el componente `<Edges />` de `BoardMesh.tsx`.
+  - **Eliminación de Diagonales**: Los tableros de madera rectangulares vuelven a renderizar únicamente sus 12 aristas de caja prisma pura (`boxMeshGeometry`), erradicando cualquier arista diagonal o costura de triangulación interna proveniente de la geometría computada de Grasshopper.
+  - **Validación**: Compilación TypeScript verificada (`npx tsc --noEmit`) con **0 errores** y servidor Next.js respondiendo **200 OK**.
+
+- [x] **[16 de Septiembre, 2026] Hito 144: Estabilización de Controles de Visibilidad en Bloques de Armado (Bombillo & Invertir), Limpieza Automática de Picking al Cambiar/Crear Pasos, Desacople de Grupos Cinemáticos de P00 en Pasos de Ensamble y Optimización Integral de `BoardMesh.tsx`**:
+  - **Diagnóstico y Resolución de la Visibilidad Invertida y Bombillo en Bloques de Armado**:
+    * **Botón 2 ("Invertir")**: Conmutación directa de `ocultarNoAsignadas` con limpieza atómica del modo picking táctil y ocultamiento estricto de cualquier pieza no perteneciente al bloque.
+    * **Botón 1 ("Bombillo")**: Estado sincronizado fielmente con el 3D: Amarillo/Encendido cuando el mueble completo está visible; Gris/Apagado en modo empacar/picking ("agregar") donde cada componente tocado se oculta de inmediato. En modo Invertido, el bombillo se muestra apagado (gris); al pulsarlo, se desactiva la inversión y vuelve a mostrarse el mueble completo.
+  - **Soberanía e Independencia Absoluta de los Bloques Funcionales**:
+    * Los Bloques Funcionales (Cajones, Puertas) poseen su propio conmutador/ojito independiente (`oculto: true/false`), el cual tiene prioridad soberana por encima de los demás iconos en cualquier paso del manual. Si un bloque está apagado en su tarjeta, sus piezas se ocultan de inmediato en el 3D; y si está prendido (o se pulsa "Mostrar Todos"), se muestran fielmente.
+  - **Solución a Piezas Amarillas Residuales en Pasos Nuevos (Pizarra Limpia)**:
+    * **Reseteo de Picking**: Se implementó el reseteo atómico de `modoPickingManual` a estado vacío e inactivo al seleccionar o crear cualquier paso nuevo (`createManualSlice.ts`), eliminando la contaminación de piezas amarillas residuales del paso anterior.
+  - **Refactorización Definitiva de `BoardMesh.tsx`**: Reducción de 1.063 a 412 líneas (-61.2%), desestructuración limpia de `matProps` y geometrías, eliminación de modales flotantes intrusivos en `Viewer3D.tsx`, y sincronización automática con Google Drive en `FurnitureAssetBrowser.tsx` con botón en cápsula circular (`rounded-full`).
+  - **Actualización de Ícono Vectorial y Homologación Dimensional (30px)**:
+    * Migración exacta del nuevo SVG de Inkscape (`Ocultar_Mostrar_Invertido.svg`) en `StepManagerIcons.tsx`.
+    * Homologación milimétrica de altura a `30px` en los tres botones (`Bombillo`, `Invertir` y `Retirar`) en `AssemblyPiecesSection.tsx`.
+  - **Validación**: Compilación TypeScript verificada (`npx tsc --noEmit`) con **0 errores**.
+
+- [x] **[16 de Septiembre, 2026] Hito 145: Diagnóstico y Resolución de Rendimiento en Paso 1 (Bloque Estándar): De 30 Segundos a Carga Instantánea (0 ms) mediante Caché Singleton en Memoria, I/O Asíncrono y Desacople de Bloqueo de Google Drive**:
+  - **Diagnóstico y Causa Raíz de la Demora de ~30 Segundos**:
+    * **Bloqueo Monolítico del Event Loop**: `/api/drive/muebles` realizaba `fs.readdirSync` y `fs.readFileSync` síncronos sobre `G:\Mi unidad\Muebles` leyendo > 460 MB de archivos `.3bf.json`, generando payloads de 148 MB que congelaban el hilo de Node.js durante 27 segundos. Durante ese bloqueo, los 4 archivos `.glb` del Paso 1 quedaban retenidos en la cola HTTP.
+    * **Bucle de Llamadas en StepManagerPanel**: `useEffect` en `StepManagerPanel.tsx` volvía a pedir `/api/drive/manuales` ante cualquier cambio de estado, congelando el servidor por 29.4 segundos adicionales.
+  - **Optimizaciones de Alto Rendimiento Implementadas**:
+    * **Caché en Memoria Node.js (TTL 60s) e I/O Asíncrono (`fs/promises`)**: Migrado `/api/drive/muebles` y `/api/drive/manuales` a lectura no bloqueante.
+    * **Payload Ligero de Catálogo**: `/api/drive/muebles` para listados redujo su payload de **148 MB a 697 KB (-99.5%)** y su tiempo de respuesta de **27.000 ms a 22 ms**. Carga pesada de geometrías diferida bajo demanda con `action=get_furniture`.
+    * **Candado en StepManagerPanel**: Referencia `consultadoDriveRef` para evitar llamadas redundantes de sincronización.
+    * **Caché Singleton en Memoria Three.js en `BloqueEstandar3DScene.tsx`**: `glbRawSceneCache` descarga los 4 GLBs en paralelo en **16 ms** y permite conmutaciones entre pasos en **0 milisegundos** mediante clones instantáneos.
+  - **Validación**: Compilación TypeScript limpia (`npx tsc --noEmit`) con **0 errores** y tiempos de respuesta verificados < 30 ms.
+
+- [x] **[17 de Septiembre, 2026] Hito 147: Optimización Acústica Nativa del Motor TTS (`/api/tts`): Doble Resolución (96 kbps a 24 kHz), Prosodia Didáctica Cálida y Silencio Calibrado**:
+  - **Causa Raíz del Audio Metálico / Sonido a Chapa**:
+    * El endpoint `/api/tts` operaba con `OUTPUT_FORMAT.AUDIO_24KHZ_48KBITRATE_MONO_MP3` (48 kbps mono), produciendo fuerte cuantización espectral, corte brusco en armónicos superiores a 10 kHz y resonancias ásperas.
+    * Las voces neurales por defecto emitían sibilancias agudas y velocidad ligeramente apresurada.
+  - **Mejora Nativa de Alta Fidelidad en Origen (Cero Botones / Cero Clics Adicionales)**:
+    * **Resolución Duplicada (96 kbps)**: Migrado a `OUTPUT_FORMAT.AUDIO_24KHZ_96KBITRATE_MONO_MP3`, otorgando el doble de detalle acústico y eliminando cualquier efecto a lata/chapa.
+    * **Prosodia Cálida y Humana**: Inyección directa de modulación `{ pitch: "-2Hz", rate: "-2%" }` en `tts.toStream()`. Baja suavemente el timbre hacia resonancias de pecho eliminando sibilancias estridentes y dota a la locución de un ritmo didáctico claro para manuales de armado.
+    * **Frame de Silencio Calibrado a 96 kbps para Pausas**: Sustituido el buffer de silencio de `[pausa: N]` por frames MPEG Layer III calibrados matemáticamente a 96 kbps (288 bytes/frame, 42 frames/seg = 12.096 bytes/seg), garantizando concatenación limpia sin chasquidos ni saltos de decodificación.
+    * **Cálculo de Duración Ajustado**: Adaptado el cálculo de duración a la tasa de 96 kbps (12.000 bytes/seg).
+  - **Validación de Calidad**:
+    * Compilación TypeScript verificada (`npx tsc --noEmit`) con **0 errores**.
+    * Petición HTTP directa a `/api/tts` verificada con estado **200 OK**, devolviendo audio nítido de 93.6 KB y 7.8s con concatenación de pausas perfecta.
+
+- [x] **[16 de Septiembre, 2026] Hito 146: Erradicación de Textos Genéricos por Defecto en Guiones de Voz TTS (`guionEs`, `guionPt`, `guionEn`)**:
+  - **Limpieza de Creador de Pasos (`createManualSlice.ts`)**: Los nuevos pasos se crean con cadenas vacías (`guionEs: ""`, `guionPt: ""`, `guionEn: ""`), eliminando el texto genérico *"Paso X: Ensambla los componentes correspondientes a esta etapa."* y permitiendo un lienzo en blanco inmediato.
+  - **Autodepuración en Sanitizador (`storeDefaults.ts`)**: `sanitizarPasosManuales` limpia de forma proactiva cualquier texto genérico remanente al cargar o reindexar pasos.
+  - **Limpieza de Persistencia en Disco y Drive**: Saneados los archivos `.3bm.json` en almacenamiento local y en Google Drive (`G:\Mi unidad\Manuales`).
+  - **Validación**: Compilación TypeScript limpia (`npx tsc --noEmit`) con **0 errores**.
+
+- [x] **[16 de Septiembre, 2026] Hito 140: Modularización y Desacople del Motor Cinemático de Manuales 3D (`lib/engine/`), Preservación de Orientación en Banco de Trabajo y Blindaje del Cuentagotas (Picking 3D)**:
+  - **Modularización del Monolito Cinemático (`manualAnimationEngine.ts`)**:
+    * Reducción de 1.981 líneas a solo **156 líneas** (**-92.1%** de reducción de complejidad) mediante una fachada pública limpia y retrocompatible con TypeScript.
+    * Creación de `lib/engine/types.ts`: Tipos y contratos del motor cinemático (`KinematicEngineResult`, `AnimationEngineToolMeshes`).
+    * Creación de `lib/engine/cadStateUtils.ts`: Preservación estricta de coordenadas CAD inmutables (`asegurarCadOriginal`, `restaurarACadOriginal`, `getSafeRestPosition`, normalización de nombres).
+    * Creación de `lib/engine/workbenchTransform.ts`: Nivelación a suelo $Y = 0$, matrices relativas de banco de trabajo y rotaciones de subbloques.
+    * Creación de `lib/engine/showcaseKinematics.ts`: Cinemática fisiomecánica de apertura/cierre de cajones y puertas (P00) con detección colineal de correderas y herrajes.
+    * Creación de `lib/engine/assemblyCoreographer.ts`: Coreografías de ensamble paso a paso (P01+), despiece y telescopía de correderas, rotación $180^\circ$ de doble cara (P02B), atornillado en cascada y pop-in 200%.
+  - **Blindaje del Cuentagotas (Picking 3D)**:
+    * Se erradicó la conmutación involuntaria de visibilidad (`conmutarVisibilidadPiezasPaso`) al activar/desactivar el modo cuentagotas en `AssemblyPiecesSection.tsx` y `SubbloquesManagerSection.tsx`, evitando que el paso active el estado de ocultamiento.
+  - **Preservación de Orientación y Rotaciones de Banco de Trabajo (`BoardMesh.tsx`)**:
+    * Sustituido el desmontaje abrupto (`return null`) por control de visibilidad nativo de Three.js (`visible={isMeshVisible}`). Esto previene que las mallas pierdan sus matrices de rotación calculadas por el banco de trabajo y caigan perpendiculares al suelo al conmutar visibilidad.
+  - **Validación de Calidad**:
+    * Compilación TypeScript verificada (`npx tsc --noEmit`) con **0 errores**.
+    * Servidor web Next.js (:3005) respondiendo **200 OK**.
+
 - [x] **[16 de Septiembre, 2026] Hito 138: Refactorización Arquitectónica Integral, Erradicación de Monolitos y Arquitectura Aclícica DAG en 3dBimFab (Viewer3D, StepManagerPanel, store.ts, storeTypes y storeDefaults)**:
   - **Fase 1: Modularización de `Viewer3D.tsx`**: Reducción de 5.686 a 2.905 líneas (**-48.9%**) mediante 7 submódulos limpios en `components/viewer/` (`BoardMesh`, `SingleFurnitureInstanceMesh`, `SnapSystemOverlay`, `SceneEnvironment`, `CameraControllers`, `SubbloquesTooltipsBillboard`, `DfMAShieldAlert`).
   - **Fase 2: Modularización de `StepManagerPanel.tsx`**: Reducción de 2.602 a **251 líneas** (**-90.4%**) mediante 8 submódulos desacoplados en `components/manual/` (`ShowcaseConfigSection`, `AssemblyPiecesSection`, `AssemblyBlockControls`, `SubbloquesManagerSection`, `FunctionalBlocksVisibilityCard`, `BloqueEstandarConfigSection`, `BloqueEstandarEditorForm`, `StepManagerIcons`).

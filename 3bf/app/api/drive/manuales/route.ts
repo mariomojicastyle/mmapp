@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import fs from "fs";
+import fsp from "fs/promises";
 import path from "path";
 
 // Detectar directorio base de Google Drive (G:\Mi unidad\Manuales) con fallback local
@@ -20,83 +21,138 @@ function getStorageDirectory(): string {
   return path.join(process.cwd(), "storage", "manuales");
 }
 
-function ensureStorage(storageDir: string) {
+async function ensureStorage(storageDir: string) {
   if (!fs.existsSync(storageDir)) {
-    fs.mkdirSync(storageDir, { recursive: true });
+    await fsp.mkdir(storageDir, { recursive: true });
   }
 }
 
+// ── CACHÉ EN MEMORIA DEL SERVIDOR NODE.JS (TTL 60 segundos) ─────────────────
+interface CacheStateManuales {
+  timestamp: number;
+  tree: any[];
+  manuales: any[];
+  storageDir: string;
+}
+
+let memoryCacheManuales: CacheStateManuales | null = null;
+const CACHE_TTL_MS = 60 * 1000; // 60 segundos
+
+function invalidarCacheManuales() {
+  memoryCacheManuales = null;
+}
+
 // Escaneo dinámico en tiempo real del árbol de carpetas de manuales
-function buildLiveTree(storageDir: string) {
+async function buildLiveTreeAsync(storageDir: string) {
   if (!fs.existsSync(storageDir)) return [];
-  const entries = fs.readdirSync(storageDir, { withFileTypes: true });
-  const marcasFolders = entries.filter((e) => e.isDirectory() && !e.name.startsWith("."));
+  try {
+    const entries = await fsp.readdir(storageDir, { withFileTypes: true });
+    const marcasFolders = entries.filter((e) => e.isDirectory() && !e.name.startsWith("."));
 
-  return marcasFolders.map((marcaDir) => {
-    const marcaName = marcaDir.name;
-    const marcaId = marcaName.toLowerCase().replace(/\s+/g, "-");
-    const marcaPath = path.join(storageDir, marcaName);
+    const treePromises = marcasFolders.map(async (marcaDir) => {
+      const marcaName = marcaDir.name;
+      const marcaId = marcaName.toLowerCase().replace(/\s+/g, "-");
+      const marcaPath = path.join(storageDir, marcaName);
 
-    let subcarpetas: any[] = [];
+      let subcarpetas: any[] = [];
+      try {
+        const subEntries = await fsp.readdir(marcaPath, { withFileTypes: true });
+        const subFolders = subEntries.filter((e) => e.isDirectory() && !e.name.startsWith("."));
+
+        subcarpetas = subFolders.map((subDir) => {
+          const subName = subDir.name;
+          const subId = `${marcaId}/${subName.toLowerCase().replace(/\s+/g, "-")}`;
+          return {
+            id: subId,
+            nombre: subName,
+            tipo: "tipologia" as const,
+            padreId: marcaId,
+            ruta: `${marcaName}/${subName}`,
+          };
+        });
+      } catch (err) {
+        console.warn("[3dBimFab Drive Manuales] Error leyendo subcarpetas de:", marcaName, err);
+      }
+
+      return {
+        id: marcaId,
+        nombre: marcaName,
+        tipo: "marca" as const,
+        padreId: null,
+        ruta: marcaName,
+        subcarpetas,
+      };
+    });
+
+    return await Promise.all(treePromises);
+  } catch (e) {
+    console.error("[3dBimFab Drive Manuales] Error escaneando árbol:", e);
+    return [];
+  }
+}
+
+// Escaneo asíncrono recursivo de manuales (.3bm.json)
+async function scanManualesAsync(storageDir: string) {
+  const manuales: any[] = [];
+
+  async function scanDir(currentDir: string) {
     try {
-      const subEntries = fs.readdirSync(marcaPath, { withFileTypes: true });
-      const subFolders = subEntries.filter((e) => e.isDirectory() && !e.name.startsWith("."));
-
-      subcarpetas = subFolders.map((subDir) => {
-        const subName = subDir.name;
-        const subId = `${marcaId}/${subName.toLowerCase().replace(/\s+/g, "-")}`;
-        return {
-          id: subId,
-          nombre: subName,
-          tipo: "tipologia" as const,
-          padreId: marcaId,
-          ruta: `${marcaName}/${subName}`,
-        };
-      });
+      const entries = await fsp.readdir(currentDir, { withFileTypes: true });
+      for (const entry of entries) {
+        const fullPath = path.join(currentDir, entry.name);
+        if (entry.isDirectory()) {
+          await scanDir(fullPath);
+        } else if (entry.isFile() && entry.name.endsWith(".3bm.json")) {
+          try {
+            const content = await fsp.readFile(fullPath, "utf-8");
+            const data = JSON.parse(content);
+            manuales.push(data);
+          } catch (e) {
+            console.error("[3dBimFab Drive Manuales] Error leyendo manual:", fullPath, e);
+          }
+        }
+      }
     } catch (err) {
-      console.warn("Error leyendo subcarpetas de manuales:", marcaName, err);
+      console.warn("[3dBimFab Drive Manuales] Error escaneando directorio:", currentDir, err);
     }
+  }
 
-    return {
-      id: marcaId,
-      nombre: marcaName,
-      tipo: "marca" as const,
-      padreId: null,
-      ruta: marcaName,
-      subcarpetas,
-    };
-  });
+  await scanDir(storageDir);
+  return manuales;
 }
 
 export async function GET() {
   try {
     const storageDir = getStorageDirectory();
-    ensureStorage(storageDir);
+    await ensureStorage(storageDir);
 
-    const tree = buildLiveTree(storageDir);
+    const now = Date.now();
+    if (
+      memoryCacheManuales &&
+      now - memoryCacheManuales.timestamp < CACHE_TTL_MS &&
+      memoryCacheManuales.storageDir === storageDir
+    ) {
+      return NextResponse.json({
+        success: true,
+        tree: memoryCacheManuales.tree,
+        manuales: memoryCacheManuales.manuales,
+        storagePath: storageDir,
+        provider: storageDir.startsWith("G:") ? "google_drive_desktop_active" : "local_storage",
+        fromCache: true,
+      });
+    }
 
-    // Escanear todos los manuales guardados (.3bm.json)
-    const manuales: any[] = [];
-    const scanDir = (currentDir: string) => {
-      if (!fs.existsSync(currentDir)) return;
-      const entries = fs.readdirSync(currentDir, { withFileTypes: true });
-      for (const entry of entries) {
-        const fullPath = path.join(currentDir, entry.name);
-        if (entry.isDirectory()) {
-          scanDir(fullPath);
-        } else if (entry.isFile() && entry.name.endsWith(".3bm.json")) {
-          try {
-            const content = fs.readFileSync(fullPath, "utf-8");
-            const data = JSON.parse(content);
-            manuales.push(data);
-          } catch (e) {
-            console.error("Error leyendo archivo de manual .3bm.json:", fullPath, e);
-          }
-        }
-      }
+    const [tree, manuales] = await Promise.all([
+      buildLiveTreeAsync(storageDir),
+      scanManualesAsync(storageDir),
+    ]);
+
+    memoryCacheManuales = {
+      timestamp: now,
+      tree,
+      manuales,
+      storageDir,
     };
-
-    scanDir(storageDir);
 
     return NextResponse.json({
       success: true,
@@ -114,17 +170,20 @@ export async function GET() {
 export async function POST(request: Request) {
   try {
     const storageDir = getStorageDirectory();
-    ensureStorage(storageDir);
+    await ensureStorage(storageDir);
     const body = await request.json();
     const { action, folder, manual } = body;
+
+    // Cualquier modificación invalida la memoria caché
+    invalidarCacheManuales();
 
     if (action === "create_folder" && folder) {
       const folderPath = path.join(storageDir, folder.ruta || folder.nombre);
       if (!fs.existsSync(folderPath)) {
-        fs.mkdirSync(folderPath, { recursive: true });
+        await fsp.mkdir(folderPath, { recursive: true });
       }
 
-      const updatedTree = buildLiveTree(storageDir);
+      const updatedTree = await buildLiveTreeAsync(storageDir);
       return NextResponse.json({ success: true, tree: updatedTree });
     }
 
@@ -134,13 +193,13 @@ export async function POST(request: Request) {
       const targetDir = path.join(storageDir, marca, tipologia);
 
       if (!fs.existsSync(targetDir)) {
-        fs.mkdirSync(targetDir, { recursive: true });
+        await fsp.mkdir(targetDir, { recursive: true });
       }
 
       const fileName = `${manual.id}.3bm.json`;
       const filePath = path.join(targetDir, fileName);
 
-      fs.writeFileSync(filePath, JSON.stringify(manual, null, 2), "utf-8");
+      await fsp.writeFile(filePath, JSON.stringify(manual, null, 2), "utf-8");
 
       return NextResponse.json({
         success: true,
@@ -151,22 +210,22 @@ export async function POST(request: Request) {
     }
 
     if (action === "delete_manual" && body.id) {
-      const searchAndDelete = (currentDir: string): boolean => {
+      const searchAndDelete = async (currentDir: string): Promise<boolean> => {
         if (!fs.existsSync(currentDir)) return false;
-        const entries = fs.readdirSync(currentDir, { withFileTypes: true });
+        const entries = await fsp.readdir(currentDir, { withFileTypes: true });
         for (const entry of entries) {
           const fullPath = path.join(currentDir, entry.name);
           if (entry.isDirectory()) {
-            if (searchAndDelete(fullPath)) return true;
+            if (await searchAndDelete(fullPath)) return true;
           } else if (entry.isFile() && entry.name === `${body.id}.3bm.json`) {
-            fs.unlinkSync(fullPath);
+            await fsp.unlink(fullPath);
             return true;
           }
         }
         return false;
       };
 
-      const deleted = searchAndDelete(storageDir);
+      const deleted = await searchAndDelete(storageDir);
       return NextResponse.json({ success: deleted });
     }
 

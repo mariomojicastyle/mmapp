@@ -1,5 +1,6 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import fs from "fs";
+import fsp from "fs/promises";
 import path from "path";
 
 // Detectar directorio base de Google Drive (G:\Mi unidad\Muebles) con fallback local
@@ -13,88 +14,212 @@ function getStorageDirectory(): string {
 
 const OFFICIAL_DRIVE_WEB_URL = "https://drive.google.com/drive/u/0/folders/1zzeGpgyLbCUKrUUhT7Lk-_7xRW_kZf9t";
 
-function ensureStorage(storageDir: string) {
+async function ensureStorage(storageDir: string) {
   if (!fs.existsSync(storageDir)) {
-    fs.mkdirSync(storageDir, { recursive: true });
+    await fsp.mkdir(storageDir, { recursive: true });
   }
 }
 
-// Escaneo dinámico en tiempo real del árbol de carpetas de Google Drive (SIN carpetas por defecto)
-function buildLiveTree(storageDir: string) {
-  if (!fs.existsSync(storageDir)) return [];
-  const entries = fs.readdirSync(storageDir, { withFileTypes: true });
-  const marcasFolders = entries.filter((e) => e.isDirectory() && !e.name.startsWith("."));
-
-  return marcasFolders.map((marcaDir) => {
-    const marcaName = marcaDir.name;
-    const marcaId = marcaName.toLowerCase().replace(/\s+/g, "-");
-    const marcaPath = path.join(storageDir, marcaName);
-
-    let subcarpetas: any[] = [];
-    try {
-      const subEntries = fs.readdirSync(marcaPath, { withFileTypes: true });
-      const subFolders = subEntries.filter((e) => e.isDirectory() && !e.name.startsWith("."));
-
-      subcarpetas = subFolders.map((subDir) => {
-        const subName = subDir.name;
-        const subId = `${marcaId}/${subName.toLowerCase().replace(/\s+/g, "-")}`;
-        return {
-          id: subId,
-          nombre: subName,
-          tipo: "tipologia" as const,
-          padreId: marcaId,
-          ruta: `${marcaName}/${subName}`,
-        };
-      });
-    } catch (err) {
-      console.warn("Error leyendo subcarpetas de:", marcaName, err);
-    }
-
-    return {
-      id: marcaId,
-      nombre: marcaName,
-      tipo: "marca" as const,
-      padreId: null,
-      ruta: marcaName,
-      subcarpetas,
-    };
-  });
+// ── CACHÉ EN MEMORIA DEL SERVIDOR NODE.JS (TTL 60 segundos) ─────────────────
+interface CacheState {
+  timestamp: number;
+  tree: any[];
+  mueblesResumen: any[];
+  storageDir: string;
 }
 
-export async function GET() {
+let memoryCache: CacheState | null = null;
+const fullFurnitureCache = new Map<string, { data: any; mtime: number }>();
+const CACHE_TTL_MS = 60 * 1000; // 60 segundos
+
+function invalidarCache() {
+  memoryCache = null;
+  fullFurnitureCache.clear();
+}
+
+// Escaneo dinámico y asíncrono del árbol de carpetas
+async function buildLiveTreeAsync(storageDir: string) {
+  if (!fs.existsSync(storageDir)) return [];
   try {
-    const storageDir = getStorageDirectory();
-    ensureStorage(storageDir);
+    const entries = await fsp.readdir(storageDir, { withFileTypes: true });
+    const marcasFolders = entries.filter((e) => e.isDirectory() && !e.name.startsWith("."));
 
-    const tree = buildLiveTree(storageDir);
+    const treePromises = marcasFolders.map(async (marcaDir) => {
+      const marcaName = marcaDir.name;
+      const marcaId = marcaName.toLowerCase().replace(/\s+/g, "-");
+      const marcaPath = path.join(storageDir, marcaName);
 
-    // Escanear todos los muebles guardados en Google Drive
-    const muebles: any[] = [];
-    const scanDir = (currentDir: string) => {
-      if (!fs.existsSync(currentDir)) return;
-      const entries = fs.readdirSync(currentDir, { withFileTypes: true });
+      let subcarpetas: any[] = [];
+      try {
+        const subEntries = await fsp.readdir(marcaPath, { withFileTypes: true });
+        const subFolders = subEntries.filter((e) => e.isDirectory() && !e.name.startsWith("."));
+
+        subcarpetas = subFolders.map((subDir) => {
+          const subName = subDir.name;
+          const subId = `${marcaId}/${subName.toLowerCase().replace(/\s+/g, "-")}`;
+          return {
+            id: subId,
+            nombre: subName,
+            tipo: "tipologia" as const,
+            padreId: marcaId,
+            ruta: `${marcaName}/${subName}`,
+          };
+        });
+      } catch (err) {
+        console.warn("[3dBimFab Drive] Error leyendo subcarpetas de:", marcaName, err);
+      }
+
+      return {
+        id: marcaId,
+        nombre: marcaName,
+        tipo: "marca" as const,
+        padreId: null,
+        ruta: marcaName,
+        subcarpetas,
+      };
+    });
+
+    return await Promise.all(treePromises);
+  } catch (e) {
+    console.error("[3dBimFab Drive] Error escaneando árbol:", e);
+    return [];
+  }
+}
+
+// Escaneo asíncrono recursivo de archivos de muebles (.3bf.json)
+async function scanMueblesAsync(storageDir: string) {
+  const mueblesResumen: any[] = [];
+
+  async function scanDir(currentDir: string) {
+    try {
+      const entries = await fsp.readdir(currentDir, { withFileTypes: true });
       for (const entry of entries) {
         const fullPath = path.join(currentDir, entry.name);
         if (entry.isDirectory()) {
-          scanDir(fullPath);
+          await scanDir(fullPath);
         } else if (entry.isFile() && entry.name.endsWith(".3bf.json")) {
           try {
-            const content = fs.readFileSync(fullPath, "utf-8");
-            const data = JSON.parse(content);
-            muebles.push(data);
-          } catch (e) {
-            console.error("Error leyendo archivo de mueble:", fullPath, e);
+            const stat = await fsp.stat(fullPath);
+            const cachedItem = fullFurnitureCache.get(fullPath);
+
+            let data: any;
+            if (cachedItem && cachedItem.mtime === stat.mtimeMs) {
+              data = cachedItem.data;
+            } else {
+              const content = await fsp.readFile(fullPath, "utf-8");
+              data = JSON.parse(content);
+              fullFurnitureCache.set(fullPath, { data, mtime: stat.mtimeMs });
+              if (data.id) {
+                fullFurnitureCache.set(data.id, { data, mtime: stat.mtimeMs });
+              }
+            }
+
+            // Metadatos ligeros para lista de catálogo (elimina el peso de mallas gigantes)
+            mueblesResumen.push({
+              id: data.id,
+              nombre: data.nombre || entry.name.replace(/\.3bf\.json$/, ""),
+              marca: data.marca || "RTA Design",
+              tipologia: data.tipologia || "Escritorios",
+              rutaCarpeta: data.rutaCarpeta || "",
+              fechaGuardado: data.fechaGuardado || new Date(stat.mtimeMs).toISOString(),
+              thumbnail: data.thumbnail,
+              descripcionComercial: data.descripcionComercial,
+              dimensionesEnvolventes: data.dimensionesEnvolventes,
+              totalPiezas: data.totalPiezas || (data.instancias ? Object.keys(data.instancias).length : 0),
+              costoEstimadoCop: data.costoEstimadoCop,
+              costoEstimadoUsd: data.costoEstimadoUsd,
+              manualVinculadoId: data.manualVinculadoId,
+              instancias: {}, // Se carga bajo demanda en abrirMueble para no saturar con 148 MB
+              fichaConfig: data.fichaConfig,
+              fichaProducto: data.fichaProducto,
+            });
+          } catch (readErr) {
+            console.error("[3dBimFab Drive] Error leyendo archivo de mueble:", fullPath, readErr);
           }
         }
       }
-    };
+    } catch (err) {
+      console.warn("[3dBimFab Drive] Error escaneando directorio:", currentDir, err);
+    }
+  }
 
-    scanDir(storageDir);
+  await scanDir(storageDir);
+  return mueblesResumen;
+}
+
+export async function GET(request: NextRequest) {
+  try {
+    const storageDir = getStorageDirectory();
+    await ensureStorage(storageDir);
+
+    const { searchParams } = new URL(request.url);
+    const action = searchParams.get("action");
+    const id = searchParams.get("id");
+
+    // 🚀 Acción: Obtener mueble completo por ID bajo demanda (para abrir en 3D)
+    if (action === "get_furniture" && id) {
+      // 1. Intentar desde caché en memoria
+      const cached = fullFurnitureCache.get(id);
+      if (cached) {
+        return NextResponse.json({ success: true, furniture: cached.data });
+      }
+
+      // 2. Buscar archivo en disco asíncronamente
+      async function findFileById(dir: string): Promise<any | null> {
+        const entries = await fsp.readdir(dir, { withFileTypes: true });
+        for (const e of entries) {
+          const p = path.join(dir, e.name);
+          if (e.isDirectory()) {
+            const found = await findFileById(p);
+            if (found) return found;
+          } else if (e.isFile() && e.name === `${id}.3bf.json`) {
+            const content = await fsp.readFile(p, "utf-8");
+            return JSON.parse(content);
+          }
+        }
+        return null;
+      }
+
+      const foundData = await findFileById(storageDir);
+      if (foundData) {
+        fullFurnitureCache.set(id, { data: foundData, mtime: Date.now() });
+        return NextResponse.json({ success: true, furniture: foundData });
+      }
+
+      return NextResponse.json({ success: false, error: "Mueble no encontrado" }, { status: 404 });
+    }
+
+    // ⚡ Catálogo y Árbol de Carpetas con Caché en Memoria
+    const now = Date.now();
+    if (memoryCache && (now - memoryCache.timestamp < CACHE_TTL_MS) && memoryCache.storageDir === storageDir) {
+      return NextResponse.json({
+        success: true,
+        tree: memoryCache.tree,
+        muebles: memoryCache.mueblesResumen,
+        driveUrl: OFFICIAL_DRIVE_WEB_URL,
+        storagePath: storageDir,
+        provider: storageDir.startsWith("G:") ? "google_drive_desktop_active" : "local_storage",
+        fromCache: true,
+      });
+    }
+
+    // Si no está en caché o expiró, escanear asíncronamente sin bloquear el event loop
+    const [tree, mueblesResumen] = await Promise.all([
+      buildLiveTreeAsync(storageDir),
+      scanMueblesAsync(storageDir),
+    ]);
+
+    memoryCache = {
+      timestamp: now,
+      tree,
+      mueblesResumen,
+      storageDir,
+    };
 
     return NextResponse.json({
       success: true,
       tree,
-      muebles,
+      muebles: mueblesResumen,
       driveUrl: OFFICIAL_DRIVE_WEB_URL,
       storagePath: storageDir,
       provider: storageDir.startsWith("G:") ? "google_drive_desktop_active" : "local_storage",
@@ -108,17 +233,20 @@ export async function GET() {
 export async function POST(request: Request) {
   try {
     const storageDir = getStorageDirectory();
-    ensureStorage(storageDir);
+    await ensureStorage(storageDir);
     const body = await request.json();
     const { action, folder, furniture } = body;
+
+    // Cualquier modificación invalida la caché en memoria inmediatamente
+    invalidarCache();
 
     if (action === "create_folder" && folder) {
       const folderPath = path.join(storageDir, folder.ruta || folder.nombre);
       if (!fs.existsSync(folderPath)) {
-        fs.mkdirSync(folderPath, { recursive: true });
+        await fsp.mkdir(folderPath, { recursive: true });
       }
 
-      const updatedTree = buildLiveTree(storageDir);
+      const updatedTree = await buildLiveTreeAsync(storageDir);
       return NextResponse.json({ success: true, tree: updatedTree });
     }
 
@@ -128,13 +256,13 @@ export async function POST(request: Request) {
       const targetDir = path.join(storageDir, marca, tipologia);
       
       if (!fs.existsSync(targetDir)) {
-        fs.mkdirSync(targetDir, { recursive: true });
+        await fsp.mkdir(targetDir, { recursive: true });
       }
 
       const fileName = `${furniture.id}.3bf.json`;
       const filePath = path.join(targetDir, fileName);
 
-      fs.writeFileSync(filePath, JSON.stringify(furniture, null, 2), "utf-8");
+      await fsp.writeFile(filePath, JSON.stringify(furniture, null, 2), "utf-8");
 
       return NextResponse.json({
         success: true,
@@ -144,17 +272,17 @@ export async function POST(request: Request) {
     }
 
     if (action === "update_thumbnail" && body.id && body.thumbnail) {
-      const scanAndUpdateThumb = (currentDir: string): boolean => {
-        const entries = fs.readdirSync(currentDir, { withFileTypes: true });
+      const scanAndUpdateThumb = async (currentDir: string): Promise<boolean> => {
+        const entries = await fsp.readdir(currentDir, { withFileTypes: true });
         for (const entry of entries) {
           const fullPath = path.join(currentDir, entry.name);
           if (entry.isDirectory()) {
-            if (scanAndUpdateThumb(fullPath)) return true;
+            if (await scanAndUpdateThumb(fullPath)) return true;
           } else if (entry.isFile() && entry.name === `${body.id}.3bf.json`) {
             try {
-              const data = JSON.parse(fs.readFileSync(fullPath, "utf-8"));
+              const data = JSON.parse(await fsp.readFile(fullPath, "utf-8"));
               data.thumbnail = body.thumbnail;
-              fs.writeFileSync(fullPath, JSON.stringify(data, null, 2), "utf-8");
+              await fsp.writeFile(fullPath, JSON.stringify(data, null, 2), "utf-8");
               return true;
             } catch (e) {
               console.error("Error actualizando thumbnail de mueble en disco:", e);
@@ -164,22 +292,22 @@ export async function POST(request: Request) {
         return false;
       };
 
-      const ok = scanAndUpdateThumb(storageDir);
+      const ok = await scanAndUpdateThumb(storageDir);
       return NextResponse.json({ success: ok });
     }
 
     if (action === "rename_furniture" && body.id && body.nuevoNombre) {
-      const scanAndRename = (currentDir: string): boolean => {
-        const entries = fs.readdirSync(currentDir, { withFileTypes: true });
+      const scanAndRename = async (currentDir: string): Promise<boolean> => {
+        const entries = await fsp.readdir(currentDir, { withFileTypes: true });
         for (const entry of entries) {
           const fullPath = path.join(currentDir, entry.name);
           if (entry.isDirectory()) {
-            if (scanAndRename(fullPath)) return true;
+            if (await scanAndRename(fullPath)) return true;
           } else if (entry.isFile() && entry.name === `${body.id}.3bf.json`) {
             try {
-              const data = JSON.parse(fs.readFileSync(fullPath, "utf-8"));
+              const data = JSON.parse(await fsp.readFile(fullPath, "utf-8"));
               data.nombre = body.nuevoNombre;
-              fs.writeFileSync(fullPath, JSON.stringify(data, null, 2), "utf-8");
+              await fsp.writeFile(fullPath, JSON.stringify(data, null, 2), "utf-8");
               return true;
             } catch (e) {
               console.error("Error renombrando mueble en disco:", e);
@@ -189,20 +317,20 @@ export async function POST(request: Request) {
         return false;
       };
 
-      const ok = scanAndRename(storageDir);
+      const ok = await scanAndRename(storageDir);
       return NextResponse.json({ success: ok });
     }
 
     if (action === "delete_furniture" && body.id) {
-      const scanAndDelete = (currentDir: string): boolean => {
-        const entries = fs.readdirSync(currentDir, { withFileTypes: true });
+      const scanAndDelete = async (currentDir: string): Promise<boolean> => {
+        const entries = await fsp.readdir(currentDir, { withFileTypes: true });
         for (const entry of entries) {
           const fullPath = path.join(currentDir, entry.name);
           if (entry.isDirectory()) {
-            if (scanAndDelete(fullPath)) return true;
+            if (await scanAndDelete(fullPath)) return true;
           } else if (entry.isFile() && entry.name === `${body.id}.3bf.json`) {
             try {
-              fs.unlinkSync(fullPath);
+              await fsp.unlink(fullPath);
               return true;
             } catch (e) {
               console.error("Error eliminando mueble en disco:", e);
@@ -212,7 +340,7 @@ export async function POST(request: Request) {
         return false;
       };
 
-      const ok = scanAndDelete(storageDir);
+      const ok = await scanAndDelete(storageDir);
       return NextResponse.json({ success: ok });
     }
 

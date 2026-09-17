@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef, useCallback } from "react";
+import { enriquecerPuntuacionYPreguntas } from "@/lib/punctuationEngine";
 
 export interface SpeechSegment {
   id: string;
@@ -83,7 +84,7 @@ export function useSpeechDictation({
 
   const lastChunkRef = useRef<string>("");
 
-  // Agregar texto continuo: si el último bloque tiene menos de 28 palabras, concatena con coma o espacio
+  // Agregar texto continuo con puntuación inteligente y detección de preguntas
   const appendOrNewSegment = useCallback(
     (newChunk: string) => {
       if (!isRecordingRef.current) return;
@@ -94,16 +95,18 @@ export function useSpeechDictation({
       if (clean === lastChunkRef.current) return;
       lastChunkRef.current = clean;
 
+      // Detección y formateo inteligente de preguntas según el idioma activo
+      const punctuatedChunk = enriquecerPuntuacionYPreguntas(clean, sourceLangRef.current);
       const isTranslating = autoTranslateRef.current;
 
       setSegments((prev) => {
         if (prev.length === 0) {
           const newId = `seg_${Date.now()}`;
-          if (isTranslating) translateSegment(newId, clean);
+          if (isTranslating) translateSegment(newId, punctuatedChunk);
           return [
             {
               id: newId,
-              originalText: clean,
+              originalText: punctuatedChunk,
               translatedText: isTranslating ? "Traduciendo..." : "",
               timestamp: Date.now(),
               isFinal: true,
@@ -115,17 +118,36 @@ export function useSpeechDictation({
         const lastSeg = prev[lastIndex];
 
         // Evitar duplicación si el bloque anterior ya termina exactamente con esta frase
-        if (lastSeg.originalText.endsWith(clean)) {
+        if (lastSeg.originalText.endsWith(punctuatedChunk) || lastSeg.originalText.endsWith(clean)) {
           return prev;
         }
 
         const lastWords = lastSeg.originalText.trim().split(/\s+/).length;
 
-        // Si el párrafo actual tiene menos de 28 palabras, concatenamos con coma o espacio
+        // Si el párrafo actual tiene menos de 28 palabras, concatenamos de forma armónica
         if (lastWords < 28) {
-          const needsComma = !/[.,;:!?]$/.test(lastSeg.originalText.trim());
-          const separator = needsComma ? ", " : " ";
-          const combinedOriginal = `${lastSeg.originalText.trim()}${separator}${clean}`;
+          const lastText = lastSeg.originalText.trim();
+          const endsWithPunctuation = /[.,;:!?]$/.test(lastText);
+
+          let combinedOriginal = "";
+          if (endsWithPunctuation) {
+            combinedOriginal = `${lastText} ${punctuatedChunk}`;
+          } else {
+            if (punctuatedChunk.startsWith("¿")) {
+              const despuesDeSigno = punctuatedChunk.slice(1);
+              const primeraPalabra = despuesDeSigno.split(" ")[0] || "";
+              const esSigla = primeraPalabra === primeraPalabra.toUpperCase() && primeraPalabra.length > 1;
+              const letraInicio = esSigla ? despuesDeSigno.charAt(0) : despuesDeSigno.charAt(0).toLowerCase();
+              combinedOriginal = `${lastText}, ¿${letraInicio}${despuesDeSigno.slice(1)}`;
+            } else {
+              const primeraPalabra = punctuatedChunk.split(" ")[0] || "";
+              const esSigla = primeraPalabra === primeraPalabra.toUpperCase() && primeraPalabra.length > 1;
+              const letraInicio = esSigla ? punctuatedChunk.charAt(0) : punctuatedChunk.charAt(0).toLowerCase();
+              combinedOriginal = `${lastText}, ${letraInicio}${punctuatedChunk.slice(1)}`;
+            }
+          }
+
+          combinedOriginal = combinedOriginal.replace(/\s+/g, " ").trim();
 
           const updated = [...prev];
           updated[lastIndex] = {
@@ -141,12 +163,12 @@ export function useSpeechDictation({
         } else {
           // Párrafo nuevo tras superar 28 palabras
           const newId = `seg_${Date.now()}`;
-          if (isTranslating) translateSegment(newId, clean);
+          if (isTranslating) translateSegment(newId, punctuatedChunk);
           return [
             ...prev,
             {
               id: newId,
-              originalText: clean,
+              originalText: punctuatedChunk,
               translatedText: isTranslating ? "Traduciendo..." : "",
               timestamp: Date.now(),
               isFinal: true,
