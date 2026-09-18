@@ -381,6 +381,17 @@ export interface ElementoSecuenciaCinematica {
   rotacionGrados?: number; // e.g. 720 para tornillos (2 vueltas), 180 para tambor minifix
   herramienta?: "ninguna" | "martillo" | "llave_allen" | "destornillador";
   impactosHerramienta?: number; // e.g. 3 golpes para martillo con 0mm de separación tangencial
+  herrajesCohesionados?: string[]; // Nombres de mallas de herrajes solidarios que viajan con este elemento
+  duracionInsercionHerrajes?: number; // Tiempo dedicado a la inserción de herrajes en barrenos antes de la traslación
+  herrajesNuevos?: string[]; // Subconjunto de herrajes que se insertan en esta fase
+  herrajesCongelados?: string[]; // Subconjunto de herrajes pre-instalados que ya están fijos
+  direccionesHerrajes?: Record<string, string>; // Vector de aproximación por herraje (+X, -X, +Y, -Y, +Z, -Z)
+  tiemposAparicionHerrajes?: Record<string, number>; // Segundo exacto en que cada herraje aparece a escala real (por defecto 0)
+  tiempoAparicionPieza?: number; // Segundo exacto en que la pieza/capa aparece a escala real (por defecto 0)
+  tiempoFinHerrajes?: number; // Segundo exacto en que termina el ensamble de herrajes e inicia el desplazamiento de la pieza (por defecto 0 = automático)
+  distanciaAproximacionHerrajesCm?: number; // Movimiento global de herrajes en cm (Punto A -> Punto B, ej: 15 cm)
+  puntosAHerrajes?: Record<string, [number, number, number]>; // Coordenadas 3D del Punto A (espera separada)
+  puntosBHerrajes?: Record<string, [number, number, number]>; // Coordenadas 3D del Punto B (alojamiento barreno)
 }
 
 
@@ -517,6 +528,47 @@ export interface PasoManualStudio {
   audioUrlPt?: string;
   audioUrlEn?: string;
   duracionAudioSegundos: number;
+  calidadAudioTts?: "48k" | "96k" | "opus";
+  velocidadAudioTts?: number; // 0.8 a 1.1 (defecto: 0.9)
+  // 🎬 Configuración Cinemática Global y Posiciones de Espera en Piso (Offset XY)
+  configuracionCinematica?: ConfiguracionCinematicaPaso;
+  // 🎥 Dirección Cinematográfica de Cámara (Keyframes por segundo en la línea de tiempo)
+  keyframesCamara?: KeyframeCamaraPaso[];
+  camaraCinematicaActiva?: boolean; // Habilita o deshabilita la reproducción de cámara cinemática
+}
+
+export interface KeyframeCamaraPaso {
+  id: string; // ej: "kf_cam_171000"
+  tiempo: number; // Segundo exacto en la línea de tiempo (ej: 4.5)
+  posicion: [number, number, number]; // Vector3 [x, y, z] posición de la cámara
+  target: [number, number, number]; // Vector3 [x, y, z] punto de mira (OrbitControls target)
+  fov?: number;
+}
+
+export interface PiezaEsperaConfig {
+  nombrePieza: string; // ej. "Peça 1", "Peça 4"
+  ordenEnsamble: number; // 1, 2, 3...
+  offsetXCm: number; // Distancia de espera en cm en el eje horizontal X del piso (ej: -50)
+  offsetYCm: number; // Distancia de espera en cm en el eje horizontal Y del piso (ej: +40)
+  offsetZCm?: number; // Compatibilidad retroactiva
+  apoyadaEnPiso?: boolean;
+  tiempoAnimacionSegundos?: number; // Tiempo individual para modo "por_capa" (ej: 2.5s)
+  herrajesCohesionados?: string[]; // Identificadores de herrajes cohesionados que viajan con esta pieza
+  herrajesDesactivados?: string[]; // Herrajes explícitamente desactivados (no viajan con la pieza)
+  herrajesActivados?: string[]; // Herrajes explícitamente activados (transferidos activamente a esta pieza)
+  herrajesCongelados?: string[]; // Herrajes pre-instalados en pasos anteriores (congelador) que viajan 100% fijos con la pieza
+  direccionesHerrajes?: Record<string, string>; // Vector de aproximación por herraje (+X, -X, +Y, -Y, +Z, -Z)
+  tiemposAparicionHerrajes?: Record<string, number>; // Segundo exacto en que cada herraje individual aparece a escala real (por defecto 0)
+  tiempoAparicionPieza?: number; // Segundo exacto en que la pieza/capa aparece a escala real en la escena (por defecto 0s)
+  tiempoFinHerrajes?: number; // Segundo exacto en que termina el ensamble de herrajes e inicia el desplazamiento de la pieza (por defecto 0s = automático)
+}
+
+export interface ConfiguracionCinematicaPaso {
+  modoTiempo?: "global" | "por_capa"; // "global": velocidad física cm/s | "por_capa": duración individual por pieza
+  velocidadPiezasCmS: number; // Velocidad de traslación de tableros (ej: 15 cm/s)
+  velocidadHerrajesCmS: number; // Velocidad de aproximación/inserción de herrajes (ej: 8 cm/s)
+  distanciaAproximacionHerrajesCm?: number; // Movimiento global en cm de herrajes (Punto A -> Punto B, ej: 15 cm)
+  piezasEspera: PiezaEsperaConfig[];
 }
 
 
@@ -756,6 +808,14 @@ export interface State3BF {
   
   // 🎯 Modo Picking 3D / Cuentagotas para Asignación de Piezas
   modoPickingManual: ModoPickingManualState;
+  piezaEnPosicionamientoManual: { pasoId: string; nombrePieza: string } | null;
+  setPiezaEnPosicionamientoManual: (val: { pasoId: string; nombrePieza: string } | null) => void;
+  ultimaPiezaCalibrada: string | null;
+  setUltimaPiezaCalibrada: (val: string | null) => void;
+  herrajesHovered: string[] | null;
+  setHerrajesHovered: (val: string[] | null) => void;
+  vistaPiezasDesplazadas: boolean;
+  setVistaPiezasDesplazadas: (val: boolean) => void;
   iniciarPickingManual: (pasoId: string, grupoId?: string | null, modo?: "agregar" | "retirar") => void;
   togglePiezaEnPickingManual: (piezaMadre: string) => void;
   retirarComponenteManual3D: (meshTargetKey: string, pasoId?: string) => void;
@@ -766,6 +826,16 @@ export interface State3BF {
   setTimelineVelocidad: (velocidad: number) => void;
   setIdiomaVozManual: (idioma: IdiomaManual) => void;
   setAudioMutedManual: (muted: boolean) => void;
+  autoEnfoqueCamaraManual: boolean;
+  setAutoEnfoqueCamaraManual: (activo: boolean) => void;
+  // 🎥 Métodos de Dirección Cinematográfica de Cámara
+  capturarKeyframeCamaraPaso: (pasoId: string, tiempo: number, posicion: [number, number, number], target: [number, number, number], fov?: number) => void;
+  eliminarKeyframeCamaraPaso: (pasoId: string, kfId: string) => void;
+  toggleCamaraCinematicaPaso: (pasoId: string) => void;
+  // 📱 Simulador de Pantalla de Celular (Safe Frame Vertical 9:16)
+  simuladorMovilActivo: boolean;
+  setSimuladorMovilActivo: (activo: boolean) => void;
+  toggleSimuladorMovil: () => void;
 
   // 📦 Persistencia de Manuales en Google Drive (.3bm.json)
   manualActivoGuardado: Manual3BMProyecto | null;

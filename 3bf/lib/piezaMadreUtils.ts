@@ -56,7 +56,9 @@ export function esHerrajeNombre(name?: string | null): boolean {
     cleanLower.includes("clavo") ||
     cleanLower.includes("grampo") ||
     cleanLower.includes("prego") ||
-    cleanLower.includes("tampa")
+    cleanLower.includes("tampa") ||
+    cleanLower.includes("tapa") ||
+    cleanLower.includes("adesiv")
   ) && !cleanLower.includes("cajon") && !cleanLower.includes("gaveta");
 }
 
@@ -112,6 +114,27 @@ export function perteneceAPiezaMadre(nombreMalla: string, piezaMadreBuscada: str
   const pmMalla = extraerPiezaMadre(nombreMalla).toLowerCase();
   const pmBuscada = extraerPiezaMadre(piezaMadreBuscada).toLowerCase();
   return pmMalla === pmBuscada;
+}
+
+/**
+ * Extrae la familia raíz canónica de la pieza descartando cualquier sufijo de instancia (1), (2), etc.
+ * Ejemplos:
+ * - "Peça 8 (2)" -> "Peça 8"
+ * - "Peça 8" -> "Peça 8"
+ * - "RH_OUT:MDP Peça 8 (1)" -> "Peça 8"
+ */
+export function extraerFamiliaPieza(rawName?: string | null): string {
+  if (!rawName) return "";
+  const pm = extraerPiezaMadre(rawName);
+  return pm.replace(/\s*\(\d+\)$/, "").trim();
+}
+
+/**
+ * Comprueba si dos identificadores de pieza pertenecen a la misma familia raíz
+ */
+export function perteneceAMismaFamiliaPieza(a?: string | null, b?: string | null): boolean {
+  if (!a || !b) return false;
+  return extraerFamiliaPieza(a).toLowerCase() === extraerFamiliaPieza(b).toLowerCase();
 }
 
 /**
@@ -317,7 +340,7 @@ export function anotarInstanciasFisicas<T extends { name: string; position?: [nu
 
         resultado.push({
           ...fija.mesh,
-          instanciaKey: `Corrediça - Fija (${slideIdx})`,
+          instanciaKey: `Corrediça - Fixa (${slideIdx})`,
         });
 
         // Emparejar perfil intermedio más cercano (< 10mm de distancia en X/Y)
@@ -334,7 +357,7 @@ export function anotarInstanciasFisicas<T extends { name: string; position?: [nu
           const [matchedInter] = poolInter.splice(bestIdx, 1);
           resultado.push({
             ...matchedInter.mesh,
-            instanciaKey: `Corrediça - Intermedia (${slideIdx})`,
+            instanciaKey: `Corrediça - Intermediária (${slideIdx})`,
           });
         }
 
@@ -352,11 +375,11 @@ export function anotarInstanciasFisicas<T extends { name: string; position?: [nu
           const [matchedMovil] = poolMovil.splice(bestIdx, 1);
           resultado.push({
             ...matchedMovil.mesh,
-            instanciaKey: `Corrediça - Móvil (${slideIdx})`,
+            instanciaKey: `Corrediça - Móvel (${slideIdx})`,
           });
         }
 
-        // Emparejar gatillo / seguro plástico frontal
+        // Emparejar gatillo / trava plástica frontal
         if (poolSeguro.length > 0) {
           let bestIdx = 0;
           let bestDist = Infinity;
@@ -370,7 +393,7 @@ export function anotarInstanciasFisicas<T extends { name: string; position?: [nu
           const [matchedSeguro] = poolSeguro.splice(bestIdx, 1);
           resultado.push({
             ...matchedSeguro.mesh,
-            instanciaKey: `Corrediça - Seguro (${slideIdx})`,
+            instanciaKey: `Corrediça - Trava (${slideIdx})`,
           });
         }
       });
@@ -379,19 +402,19 @@ export function anotarInstanciasFisicas<T extends { name: string; position?: [nu
       poolInter.forEach((it, i) => {
         resultado.push({
           ...it.mesh,
-          instanciaKey: `Corrediça - Intermedia (${fijas.length + i + 1})`,
+          instanciaKey: `Corrediça - Intermediária (${fijas.length + i + 1})`,
         });
       });
       poolMovil.forEach((it, i) => {
         resultado.push({
           ...it.mesh,
-          instanciaKey: `Corrediça - Móvil (${fijas.length + i + 1})`,
+          instanciaKey: `Corrediça - Móvel (${fijas.length + i + 1})`,
         });
       });
       poolSeguro.forEach((it, i) => {
         resultado.push({
           ...it.mesh,
-          instanciaKey: `Corrediça - Seguro (${fijas.length + i + 1})`,
+          instanciaKey: `Corrediça - Trava (${fijas.length + i + 1})`,
         });
       });
 

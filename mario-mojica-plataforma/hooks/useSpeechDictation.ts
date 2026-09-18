@@ -350,6 +350,45 @@ export function useSpeechDictation({
     [segments, translateSegment]
   );
 
+  // Actualizar el texto original de un segmento específico (edición en vivo)
+  const updateSegmentText = useCallback(
+    (segmentId: string, newText: string) => {
+      setSegments((prev) =>
+        prev.map((seg) =>
+          seg.id === segmentId ? { ...seg, originalText: newText } : seg
+        )
+      );
+
+      // Si autoTranslate está activo y el texto no está vacío, re-traducir
+      if (autoTranslateRef.current && newText.trim()) {
+        translateSegment(segmentId, newText);
+      }
+    },
+    [translateSegment]
+  );
+
+  // Actualizar directamente la traducción de un segmento
+  const updateTranslatedText = useCallback(
+    (segmentId: string, newTranslation: string) => {
+      setSegments((prev) =>
+        prev.map((seg) =>
+          seg.id === segmentId ? { ...seg, translatedText: newTranslation } : seg
+        )
+      );
+    },
+    []
+  );
+
+  // Eliminar un segmento específico
+  const deleteSegment = useCallback((segmentId: string) => {
+    setSegments((prev) => prev.filter((seg) => seg.id !== segmentId));
+  }, []);
+
+  // Eliminar el último segmento
+  const deleteLastSegment = useCallback(() => {
+    setSegments((prev) => (prev.length > 0 ? prev.slice(0, -1) : prev));
+  }, []);
+
   return {
     isRecording,
     interimText,
@@ -361,5 +400,9 @@ export function useSpeechDictation({
     toggleRecording,
     clearAll,
     retranslateAll,
+    updateSegmentText,
+    updateTranslatedText,
+    deleteSegment,
+    deleteLastSegment,
   };
 }

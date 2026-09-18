@@ -7,6 +7,7 @@ import StepManagerPanel from "./StepManagerPanel";
 import VoiceStudioPanel from "./VoiceStudioPanel";
 import ExportManualPanel from "./ExportManualPanel";
 import ManualsLibraryModal from "./ManualsLibraryModal";
+import ManualStepSelector from "./ManualStepSelector";
 
 type PestanaManualStudio = "pasos" | "voz" | "exportar";
 
@@ -87,6 +88,9 @@ export default function ManualControlPanel() {
           </button>
         </div>
       </div>
+
+      {/* 📌 LÍNEA DE PASOS FIJA (Inmóvil, siempre visible al hacer scroll) */}
+      <ManualStepSelector />
 
       {/* Contenido Desplazable del Panel */}
       <div className="flex-1 p-3 overflow-y-auto custom-scrollbar">

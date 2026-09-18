@@ -2,7 +2,8 @@
 
 import React, { useState, useRef, useEffect } from "react";
 import { use3BFStore, IdiomaManual } from "@/lib/store";
-import { Mic, Play, Square, Loader2, Volume2, Globe, Sparkles, CheckCircle2, Download } from "lucide-react";
+import { Mic, Play, Square, Loader2, Volume2, Globe, Sparkles, CheckCircle2, Download, Gauge, Zap, FastForward } from "lucide-react";
+import CalibradorCinematicaSection from "./CalibradorCinematicaSection";
 
 export interface VozTtsOpcion {
   id: string;
@@ -182,6 +183,16 @@ export default function VoiceStudioPanel() {
     }
   };
 
+  const calidadActual = pasoActivo.calidadAudioTts || "96k";
+  const setCalidad = (val: "48k" | "96k" | "opus") => {
+    actualizarPasoManual(pasoActivo.id, { calidadAudioTts: val });
+  };
+
+  const velocidadActual = typeof pasoActivo.velocidadAudioTts === "number" ? pasoActivo.velocidadAudioTts : 0.9;
+  const setVelocidad = (val: number) => {
+    actualizarPasoManual(pasoActivo.id, { velocidadAudioTts: val });
+  };
+
   const generarLocucion = async () => {
     if (!textoActual.trim()) return;
 
@@ -196,6 +207,8 @@ export default function VoiceStudioPanel() {
         body: JSON.stringify({
           text: textoActual.trim(),
           voice: vozActual,
+          calidad: calidadActual,
+          velocidad: velocidadActual,
           formato: "json",
         }),
       });
@@ -212,6 +225,8 @@ export default function VoiceStudioPanel() {
       const updateData: any = {
         duracionAudioSegundos: duracionAudio,
         duracionTotal: Math.max(duracionAudio, pasoActivo.duracionTotal),
+        calidadAudioTts: calidadActual,
+        velocidadAudioTts: velocidadActual,
       };
 
       if (idiomaVozManual === "pt") {
@@ -295,9 +310,13 @@ export default function VoiceStudioPanel() {
 
     try {
       setDescargando(true);
+      // Detectar la extensión correcta del archivo a partir de la data URL o de la calidad
+      const isWebm = url.startsWith("data:audio/webm") || calidadActual === "opus";
+      const ext = isWebm ? "webm" : "mp3";
+
       const a = document.createElement("a");
       a.href = url;
-      a.download = `${pasoActivo.id}_locucion_${idiomaVozManual.toUpperCase()}.mp3`;
+      a.download = `${pasoActivo.id}_locucion_${idiomaVozManual.toUpperCase()}.${ext}`;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
@@ -308,15 +327,14 @@ export default function VoiceStudioPanel() {
     }
   };
 
-  const nombreIdiomaTitulo =
-    idiomaVozManual === "pt"
-      ? "Texto en Portugués"
-      : idiomaVozManual === "en"
-      ? "Texto en Inglés"
-      : "Texto en Español";
+  const codigoPaso = pasoActivo.id.toUpperCase().startsWith("P")
+    ? pasoActivo.id.toUpperCase()
+    : `P${String(pasoActivo.numero ?? 0).padStart(2, "0")}`;
+
+  const tituloNarracion = `Narración de Armado ${codigoPaso}`;
 
   return (
-    <div className="flex flex-col gap-3.5 text-xs">
+    <div className="flex flex-col gap-3.5 text-xs pb-12">
       {/* Selector de Idioma en Cápsulas */}
       <div className="flex items-center justify-between">
         <span className="font-bold tracking-wide uppercase opacity-70 text-[10px] flex items-center gap-1">
@@ -367,11 +385,67 @@ export default function VoiceStudioPanel() {
         </select>
       </div>
 
+      {/* Selector de Calidad / Compresión de Audio TTS */}
+      <div className="flex flex-col gap-1">
+        <div className="flex items-center justify-between">
+          <label className="font-semibold opacity-80 text-[11px] flex items-center gap-1">
+            <Gauge className="w-3 h-3 text-cyan-600" /> Calidad / Compresión de Audio:
+          </label>
+          <span className="text-[10px] opacity-60 font-mono font-medium">
+            {calidadActual === "96k" ? "96 kbps (Máx. Fidelidad)" : calidadActual === "48k" ? "48 kbps (-50% Peso)" : "Opus (Ultra-ligero)"}
+          </span>
+        </div>
+        <select
+          value={calidadActual}
+          onChange={(e) => setCalidad(e.target.value as any)}
+          className="w-full px-3 py-1.5 rounded-full border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-xs font-medium outline-none cursor-pointer focus:border-cyan-500 shadow-2xs"
+        >
+          <option value="96k">💎 96 kbps — Alta Fidelidad (Cálido, Acústica Plena, 0 Lata)</option>
+          <option value="48k">⚡ 48 kbps — Balanceado / Comprimido (-50% tamaño, Carga Rápida)</option>
+          <option value="opus">📦 Opus WebM — Ultra-Comprimido (-70% tamaño, Ideal Móvil)</option>
+        </select>
+      </div>
+
+      {/* Selector de Velocidad / Cadencia de Voz (0.8x a 1.1x) */}
+      <div className="flex flex-col gap-1">
+        <div className="flex items-center justify-between">
+          <label className="font-semibold opacity-80 text-[11px] flex items-center gap-1">
+            <FastForward className="w-3 h-3 text-cyan-600" /> Velocidad de Locución:
+          </label>
+          <span className="text-[10px] opacity-70 font-mono font-bold text-cyan-600 dark:text-cyan-400">
+            {velocidadActual === 0.9 ? "0.90x (Velocidad Normal)" : velocidadActual === 0.85 ? "0.85x (Un poco más lenta)" : velocidadActual === 0.8 ? "0.80x (Más lenta)" : velocidadActual === 1.0 ? "1.00x (Un poco rápido)" : "1.10x (Más rápido)"}
+          </span>
+        </div>
+        <div className="flex items-center gap-2">
+          <select
+            value={velocidadActual}
+            onChange={(e) => setVelocidad(parseFloat(e.target.value))}
+            className="flex-1 px-3 py-1.5 rounded-full border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-xs font-medium outline-none cursor-pointer focus:border-cyan-500 shadow-2xs"
+          >
+            <option value="0.8">0.80x — Más lenta</option>
+            <option value="0.85">0.85x — Un poco más lenta</option>
+            <option value="0.9">0.90x — Velocidad normal (Por defecto)</option>
+            <option value="1.0">1.00x — Un poco rápido</option>
+            <option value="1.1">1.10x — Más rápido</option>
+          </select>
+          {velocidadActual !== 0.9 && (
+            <button
+              type="button"
+              onClick={() => setVelocidad(0.9)}
+              title="Restablecer a Velocidad Normal (0.90x)"
+              className="px-2.5 py-1.5 rounded-full border border-slate-200 dark:border-slate-700 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-[10px] font-bold text-slate-600 dark:text-slate-300 transition cursor-pointer shrink-0"
+            >
+              0.9x Normal
+            </button>
+          )}
+        </div>
+      </div>
+
       {/* Editor de Guion de Locución Crecido al 300% con Traductor Automático */}
       <div className="flex flex-col gap-1.5">
         <div className="flex items-center justify-between">
           <label className="font-bold text-slate-800 dark:text-slate-100 text-xs flex items-center gap-1.5">
-            {nombreIdiomaTitulo}
+            {tituloNarracion}
           </label>
 
           <div className="flex items-center gap-2">
@@ -431,6 +505,12 @@ export default function VoiceStudioPanel() {
           rows={12}
           value={textoActual}
           onChange={(e) => setTexto(e.target.value)}
+          onFocus={(e) => {
+            e.currentTarget.select();
+          }}
+          onClick={(e) => {
+            e.currentTarget.select();
+          }}
           placeholder={`Escribe el texto que la voz neural locutará para el ${pasoActivo.id} en ${idiomaVozManual.toUpperCase()}... Usa [pausa: 1] para silencios.`}
           className="w-full p-3 rounded-2xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-xs font-sans outline-none focus:border-cyan-500 transition resize-y min-h-[250px] leading-relaxed shadow-inner"
         />
@@ -503,8 +583,16 @@ export default function VoiceStudioPanel() {
               <span className="font-bold text-[11px] text-slate-800 dark:text-slate-100 truncate">
                 Audio sincronizado ({idiomaVozManual.toUpperCase()})
               </span>
-              <span className="text-[10px] opacity-60 font-mono">
-                Duración calibrada: {pasoActivo.duracionAudioSegundos || 10}s
+              <span className="text-[10px] opacity-60 font-mono flex items-center gap-1.5">
+                <span>Duración: {pasoActivo.duracionAudioSegundos || 10}s</span>
+                <span>•</span>
+                <span className="font-bold text-cyan-600 dark:text-cyan-400">
+                  {calidadActual === "96k" ? "96 kbps (HQ)" : calidadActual === "48k" ? "48 kbps (Ligero)" : "Opus (WebM)"}
+                </span>
+                <span>•</span>
+                <span className="font-semibold text-slate-700 dark:text-slate-300">
+                  {velocidadActual.toFixed(2).replace(/\.?0+$/, "")}x
+                </span>
               </span>
             </div>
           </div>
@@ -517,6 +605,9 @@ export default function VoiceStudioPanel() {
           )}
         </div>
       )}
+
+      {/* 🎬 Calibración Cinemática de Ensamble (Offset XY & Velocidades Globales) */}
+      <CalibradorCinematicaSection pasoActivo={pasoActivo} />
     </div>
   );
 }

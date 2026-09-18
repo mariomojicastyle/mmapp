@@ -3,7 +3,8 @@
 import React, { useRef, useEffect, useMemo, useCallback } from "react";
 import * as THREE from "three";
 import { use3BFStore, ObjetoInstancia3BF } from "@/lib/store";
-import { anotarInstanciasFisicas } from "@/lib/piezaMadreUtils";
+import { anotarInstanciasFisicas, perteneceAMismaFamiliaPieza } from "@/lib/piezaMadreUtils";
+import { isHardwareMeshName, coincidenMismoHerraje } from "@/lib/engine/cadStateUtils";
 import BoardMesh from "./BoardMesh";
 
 export interface SingleFurnitureInstanceMeshProps {
@@ -66,11 +67,44 @@ export function SingleFurnitureInstanceMesh({
     const rawMeshes = inst.resultado?.real_meshes || [];
     if (rawMeshes.length === 0) return [];
 
+    // 🪵 DfMA Board Solid Repair: Sanear tableros cuya malla de apariencia exterior (Cara A)
+    // haya sido colapsada o aplanada en Grasshopper (ej. Peça 5, Peça 2)
+    const mapaMdp: Record<string, any> = {};
+    for (const m of rawMeshes) {
+      const nRaw = (m.name || "").replace(/^RH_OUT:/i, "").trim().toLowerCase();
+      if (nRaw.startsWith("mdp ")) {
+        const tag = nRaw.replace(/^mdp\s+/, "").trim();
+        mapaMdp[tag] = m;
+      }
+    }
+
+    const processedRawMeshes = rawMeshes.map((m: any) => {
+      const nRaw = (m.name || "").replace(/^RH_OUT:/i, "").trim().toLowerCase();
+      if (!nRaw.startsWith("mdp ") && !nRaw.includes("balance") && !nRaw.endsWith(" b")) {
+        const mdpMesh = mapaMdp[nRaw];
+        if (mdpMesh && m.size && mdpMesh.size) {
+          const minM = Math.min(...m.size);
+          const minMdp = Math.min(...mdpMesh.size);
+          if (minM < 0.008 && minMdp >= 0.010) {
+            return {
+              ...m,
+              size: [...mdpMesh.size],
+              position: [...mdpMesh.position],
+              vertices: mdpMesh.vertices ? [...mdpMesh.vertices] : m.vertices,
+              indices: mdpMesh.indices ? [...mdpMesh.indices] : m.indices,
+              uvs: mdpMesh.uvs ? [...mdpMesh.uvs] : m.uvs,
+            };
+          }
+        }
+      }
+      return m;
+    });
+
     const cleanRealMeshes: any[] = [];
-    if (rawMeshes.length <= 1) {
-      cleanRealMeshes.push(...rawMeshes);
+    if (processedRawMeshes.length <= 1) {
+      cleanRealMeshes.push(...processedRawMeshes);
     } else {
-      for (const m of rawMeshes) {
+      for (const m of processedRawMeshes) {
         if (m.es_duplicado_ghx) {
           if (mostrarDuplicadosRojos) {
             cleanRealMeshes.push(m);
@@ -124,7 +158,7 @@ export function SingleFurnitureInstanceMesh({
     const rotZ = orientacionBanco.rotacion?.[2] || 0;
     const apoyoEnPiso = orientacionBanco.apoyoEnPiso ?? true;
 
-    if (rotX === 0 && rotY === 0 && rotZ === 0) {
+    if (rotX === 0 && rotY === 0 && rotZ === 0 && !apoyoEnPiso) {
       return {
         rotacionEfectiva: [0, 0, 0] as [number, number, number],
         posicionEfectiva: basePos,
@@ -153,12 +187,28 @@ export function SingleFurnitureInstanceMesh({
           const asignadas = [...(pasoActivoManual.piezasAsignadas || []), ...(pasoActivoManual.herrajesAsignados || [])];
           return asignadas.some((p) => {
             const pLow = p.toLowerCase();
-            return pLow === ik || pLow === cn || ik.startsWith(pLow);
+            return (
+              pLow === ik ||
+              pLow === cn ||
+              ik.startsWith(pLow) ||
+              coincidenMismoHerraje(p, ik) ||
+              coincidenMismoHerraje(p, cn)
+            );
           });
         })
       : annotatedMeshes;
 
-    const meshesParaBox = piezasTarget.length > 0 ? piezasTarget : annotatedMeshes;
+    // Si el paso tiene una Pieza Master asignada, medir la cota de la Master para que sea su base la que apoye en el piso Y = 0
+    const masterTarget = pasoActivoManual?.piezaMaster ? pasoActivoManual.piezaMaster.toLowerCase().trim() : "";
+    const mallasMaster = masterTarget
+      ? piezasTarget.filter((m: any) => {
+          const ik = (m.instanciaKey || "").toLowerCase();
+          const cn = (m.name || "").replace(/^RH_OUT:/i, "").trim().toLowerCase();
+          return perteneceAMismaFamiliaPieza(ik, masterTarget) || perteneceAMismaFamiliaPieza(cn, masterTarget);
+        })
+      : [];
+
+    const meshesParaBox = mallasMaster.length > 0 ? mallasMaster : (piezasTarget.length > 0 ? piezasTarget : annotatedMeshes);
 
     const localBox = new THREE.Box3();
     for (const m of meshesParaBox) {
@@ -258,7 +308,12 @@ export function SingleFurnitureInstanceMesh({
     return n.includes("color") || n.includes("balance") || (n.includes("mdp") && !n.includes("nurbs"));
   });
 
+  const hardwareMeshes = annotatedMeshes.filter((m: any) => {
+    return isHardwareMeshName(m.name) || (m.instanciaKey && isHardwareMeshName(m.instanciaKey));
+  });
+
   const boardMeshes = annotatedMeshes.filter((m: any) => {
+    if (hardwareMeshes.includes(m)) return false;
     const n = m.name.toLowerCase();
     if (hasTexturedMeshes && (n.includes("nurbs") || m.is_nurbs_solid)) {
       return false;
@@ -267,7 +322,6 @@ export function SingleFurnitureInstanceMesh({
       n.includes("cubierta") ||
       n.includes("frente") ||
       n.includes("lateral") ||
-      n.includes("tapa") ||
       n.includes("posterior") ||
       n.includes("cajon") ||
       n.includes("cajón") ||
@@ -289,33 +343,6 @@ export function SingleFurnitureInstanceMesh({
       n.includes("fondo") ||
       n.includes("fundo")
     );
-  });
-
-  const hardwareMeshes = annotatedMeshes.filter((m: any) => {
-    const n = m.name.toLowerCase();
-    return (
-      n.includes("perno") ||
-      n.includes("caja") ||
-      n.includes("tarugo") ||
-      n.includes("cavilha") ||
-      n.includes("clavilha") ||
-      n.includes("tornillo") ||
-      n.includes("parafuso") ||
-      n.includes("soporte") ||
-      n.includes("corredera") ||
-      n.includes("corredi") ||
-      n.includes("cantoneira") ||
-      n.includes("angulo") ||
-      n.includes("esquinero") ||
-      n.includes("bisagra") ||
-      n.includes("dobradiça") ||
-      n.includes("puxador") ||
-      n.includes("manija") ||
-      n.includes("pes") ||
-      n.includes("pés") ||
-      n.includes("pata") ||
-      n.includes("pie")
-    ) && !n.includes("cajon") && !n.includes("cajón");
   });
 
   const machiningMeshes = annotatedMeshes.filter((m: any) => 

@@ -75,21 +75,27 @@ export default function DictadoYTraduccionPage() {
     toggleRecording,
     clearAll,
     retranslateAll,
+    updateSegmentText,
+    updateTranslatedText,
+    deleteSegment,
+    deleteLastSegment,
   } = useSpeechDictation({
     sourceLang: config.sourceLang,
     targetLang: config.targetLang,
     autoTranslate,
   });
 
-  // Conteo total de palabras
-  const wordCount = useMemo(() => {
-    const allWords = segments.reduce((acc, seg) => {
-      const words = seg.originalText.trim().split(/\s+/).filter(Boolean);
-      return acc + words.length;
-    }, 0);
+  // Conteo total de palabras y caracteres (estándar web universal con espacios y signos)
+  const { wordCount, charCount } = useMemo(() => {
+    const consolidatedText = segments.map((s) => s.originalText).join("\n\n");
+    const fullText = interimText.trim()
+      ? (consolidatedText ? `${consolidatedText} ${interimText.trim()}` : interimText.trim())
+      : consolidatedText;
 
-    const interimWords = interimText.trim().split(/\s+/).filter(Boolean).length;
-    return allWords + interimWords;
+    const words = fullText.trim() ? fullText.trim().split(/\s+/).filter(Boolean).length : 0;
+    const chars = fullText.length;
+
+    return { wordCount: words, charCount: chars };
   }, [segments, interimText]);
 
   // Cambiar modo de conversación
@@ -138,64 +144,74 @@ export default function DictadoYTraduccionPage() {
   };
 
   return (
-    <div className="p-3 sm:p-5 w-full max-w-[98%] xl:max-w-[96%] mx-auto space-y-3 sm:space-y-4 font-sans">
-      {/* 1. Header Minimalista */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-        <div className="flex items-center gap-3">
-          <div className="p-2.5 rounded-full bg-blue-500/10 dark:bg-[#1368AA]/20 text-[#1368AA] dark:text-cyan-400">
-            <Mic className="w-6 h-6" />
+    <div className="h-[calc(100vh-4rem)] flex flex-col overflow-hidden p-3 sm:p-4 w-full max-w-[98%] xl:max-w-[96%] mx-auto gap-2.5 sm:gap-3 font-sans">
+      {/* ZONA SUPERIOR FIJA / ESTÁTICA (Cabecera, Alertas y Controles) */}
+      <div className="shrink-0 space-y-2.5 select-none">
+        {/* 1. Header Minimalista */}
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
+          <div className="flex items-center gap-3">
+            <div className="p-2 rounded-full bg-blue-500/10 dark:bg-[#1368AA]/20 text-[#1368AA] dark:text-cyan-400">
+              <Mic className="w-5 h-5 sm:w-6 sm:h-6" />
+            </div>
+            <div>
+              <h1 className="text-lg sm:text-xl font-bold text-slate-900 dark:text-white tracking-tight">
+                Dictado y Traducción
+              </h1>
+              <p className="text-xs text-slate-500 dark:text-slate-400">
+                {autoTranslate
+                  ? "Captura de voz bilingüe para reuniones B2B y traducción simultánea"
+                  : "Captura de voz de alta fidelidad en lienzo completo"}
+              </p>
+            </div>
           </div>
-          <div>
-            <h1 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white tracking-tight">
-              Dictado y Traducción
-            </h1>
-            <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400">
-              {autoTranslate
-                ? "Captura de voz bilingüe para reuniones B2B y traducción simultánea"
-                : "Captura de voz de alta fidelidad en lienzo completo"}
+        </div>
+
+        {/* Alerta si el navegador no soporta Speech Recognition */}
+        {!isSupported && (
+          <div className="rounded-2xl p-3.5 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 flex items-center gap-3 text-amber-800 dark:text-amber-200 text-xs sm:text-sm">
+            <AlertCircle className="w-5 h-5 shrink-0" />
+            <p>
+              Tu navegador actual no tiene habilitada la API nativa de reconocimiento de voz. Te recomendamos abrir esta sección en <strong>Google Chrome</strong> o <strong>Microsoft Edge</strong> para disfrutar de la captura en vivo.
             </p>
           </div>
-        </div>
+        )}
+
+        {/* 2. Barra de Grabación y Control */}
+        <AudioRecorderBar
+          isRecording={isRecording}
+          durationSeconds={durationSeconds}
+          wordCount={wordCount}
+          charCount={charCount}
+          autoTranslate={autoTranslate}
+          conversationMode={conversationMode}
+          singleDictationLang={singleDictationLang}
+          onToggleRecording={toggleRecording}
+          onToggleAutoTranslate={setAutoTranslate}
+          onChangeConversationMode={handleChangeConversationMode}
+          onChangeSingleDictationLang={handleChangeSingleDictationLang}
+          onClearAll={clearAll}
+          onOpenGuardarActa={() => setIsActaModalOpen(true)}
+          onCopyText={handleCopyBoardText}
+          hasSegments={segments.length > 0}
+          isSupported={isSupported}
+        />
       </div>
 
-      {/* Alerta si el navegador no soporta Speech Recognition */}
-      {!isSupported && (
-        <div className="rounded-2xl p-4 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 flex items-center gap-3 text-amber-800 dark:text-amber-200 text-sm">
-          <AlertCircle className="w-5 h-5 shrink-0" />
-          <p>
-            Tu navegador actual no tiene habilitada la API nativa de reconocimiento de voz. Te recomendamos abrir esta sección en <strong>Google Chrome</strong> o <strong>Microsoft Edge</strong> para disfrutar de la captura en vivo.
-          </p>
-        </div>
-      )}
-
-      {/* 2. Barra de Grabación y Control */}
-      <AudioRecorderBar
-        isRecording={isRecording}
-        durationSeconds={durationSeconds}
-        wordCount={wordCount}
-        autoTranslate={autoTranslate}
-        conversationMode={conversationMode}
-        singleDictationLang={singleDictationLang}
-        onToggleRecording={toggleRecording}
-        onToggleAutoTranslate={setAutoTranslate}
-        onChangeConversationMode={handleChangeConversationMode}
-        onChangeSingleDictationLang={handleChangeSingleDictationLang}
-        onClearAll={clearAll}
-        onOpenGuardarActa={() => setIsActaModalOpen(true)}
-        onCopyText={handleCopyBoardText}
-        hasSegments={segments.length > 0}
-        isSupported={isSupported}
-      />
-
-      {/* 3. Panel de Transcripción (Dual o Pantalla Completa según autoTranslate) */}
-      <TranscriptFeed
-        segments={segments}
-        interimText={interimText}
-        sourceLangName={config.sourceLangName}
-        targetLangName={config.targetLangName}
-        autoTranslate={autoTranslate}
-        onClear={clearAll}
-      />
+      {/* ZONA INFERIOR SCROLLEABLE (Lienzo / Pizarra de Texto con Rueda del Ratón y Scroll) */}
+      <div className="flex-1 min-h-0 overflow-hidden flex flex-col">
+        <TranscriptFeed
+          segments={segments}
+          interimText={interimText}
+          sourceLangName={config.sourceLangName}
+          targetLangName={config.targetLangName}
+          autoTranslate={autoTranslate}
+          onClear={clearAll}
+          onUpdateSegmentText={updateSegmentText}
+          onUpdateTranslatedText={updateTranslatedText}
+          onDeleteSegment={deleteSegment}
+          onDeleteLastSegment={deleteLastSegment}
+        />
+      </div>
 
       {/* 4. Modal para Guardar Acta en Google Drive con Diarización y Resumen IA */}
       <GuardarActaModal
@@ -208,4 +224,5 @@ export default function DictadoYTraduccionPage() {
     </div>
   );
 }
+
 

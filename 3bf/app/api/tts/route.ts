@@ -87,15 +87,67 @@ function stripLameHeader(buffer: Buffer): Buffer {
   return data;
 }
 
-/// Genera audio básico mediante msedge-tts con alta fidelidad y prosodia cálida
-async function synthesizeTts(text: string, voice: string): Promise<Buffer> {
+export type CalidadAudioTts = "48k" | "96k" | "opus";
+
+// Configuración por calidad
+const CONFIG_CALIDAD: Record<CalidadAudioTts, {
+  formatString: string;
+  bytesPerSec: number;
+  silenceFrameHex: string;
+  frameSize: number;
+  mimeType: string;
+  extension: string;
+}> = {
+  // 48 kbps: 50% menos peso, ideal para móviles o catálogos ligeros
+  "48k": {
+    formatString: OUTPUT_FORMAT.AUDIO_24KHZ_48KBITRATE_MONO_MP3,
+    bytesPerSec: 6000,
+    silenceFrameHex: "fff364c47c000003480000000000000000000000" + "00".repeat(124), // 144 bytes
+    frameSize: 144,
+    mimeType: "audio/mpeg",
+    extension: "mp3",
+  },
+  // 96 kbps: Máxima fidelidad y calidez acústica (sin sibilancias metálicas)
+  "96k": {
+    formatString: OUTPUT_FORMAT.AUDIO_24KHZ_96KBITRATE_MONO_MP3,
+    bytesPerSec: 12000,
+    silenceFrameHex: "fff3a4c47c000003480000000000000000000000" + "00".repeat(268), // 288 bytes
+    frameSize: 288,
+    mimeType: "audio/mpeg",
+    extension: "mp3",
+  },
+  // Opus WebM: Máxima compresión moderna con códec Opus ultra-eficiente
+  "opus": {
+    formatString: OUTPUT_FORMAT.WEBM_24KHZ_16BIT_MONO_OPUS,
+    bytesPerSec: 3500,
+    silenceFrameHex: "",
+    frameSize: 0,
+    mimeType: "audio/webm; codecs=opus",
+    extension: "webm",
+  },
+};
+
+/// Genera audio básico mediante msedge-tts con la calidad, velocidad y prosodia seleccionada
+async function synthesizeTts(
+  text: string, 
+  voice: string, 
+  calidad: CalidadAudioTts = "96k", 
+  velocidad: number = 1.0
+): Promise<Buffer> {
   const tts = new MsEdgeTTS();
-  // Formato MP3 de alta fidelidad 24kHz 96kbps Mono (duplica la resolución de audio, elimina sonido a lata/chapa)
-  await tts.setMetadata(voice, OUTPUT_FORMAT.AUDIO_24KHZ_96KBITRATE_MONO_MP3);
+  const cfg = CONFIG_CALIDAD[calidad] || CONFIG_CALIDAD["96k"];
+  await tts.setMetadata(voice, cfg.formatString as any);
   
   const safeText = escapeXml(text);
-  // Prosodia calibrada: pitch -2Hz (baja sibilancias estridentes hacia el pecho) y rate -2% (cadencia humana didáctica)
-  const { audioStream } = tts.toStream(safeText, { pitch: "-2Hz", rate: "-2%" });
+  // Cálculo de velocidad (rate):
+  // velocidad = 1.0 -> -2% (calibración base cálida didáctica)
+  // velocidad < 1.0 (ej 0.8) -> reduce aún más la velocidad en porcentaje
+  // velocidad > 1.0 (ej 1.2) -> incrementa la velocidad
+  const deltaPercent = Math.round((velocidad - 1.0) * 100);
+  const totalRatePercent = Math.max(-50, Math.min(50, -2 + deltaPercent));
+  const rateStr = (totalRatePercent >= 0 ? "+" : "") + totalRatePercent + "%";
+
+  const { audioStream } = tts.toStream(safeText, { pitch: "-2Hz", rate: rateStr });
   const chunks: Buffer[] = [];
   
   return new Promise((resolve, reject) => {
@@ -106,11 +158,24 @@ async function synthesizeTts(text: string, voice: string): Promise<Buffer> {
 }
 
 // Genera audio procesando etiquetas de pausa [pausa: X] o [pause: X]
-async function synthesizeTtsWithPauses(text: string, voice: string): Promise<Buffer> {
+async function synthesizeTtsWithPauses(
+  text: string, 
+  voice: string, 
+  calidad: CalidadAudioTts = "96k", 
+  velocidad: number = 1.0
+): Promise<Buffer> {
+  const cfg = CONFIG_CALIDAD[calidad] || CONFIG_CALIDAD["96k"];
   const pauseRegex = /\[(?:pausa|pause):\s*(\d+)\]/gi;
   const hasPauses = pauseRegex.test(text);
 
   if (hasPauses) {
+    // Si es Opus (contenedor WebM), sintetizamos directamente reemplazando la etiqueta con puntos suspensivos
+    // debido a que WebM no permite concatenación simple de frames binarios MP3
+    if (calidad === "opus") {
+      const parsedText = text.replace(pauseRegex, " ... ");
+      return await synthesizeTts(parsedText, voice, calidad, velocidad);
+    }
+
     const segments: { type: "text" | "pause"; value: string | number }[] = [];
     let lastIndex = 0;
     let match;
@@ -132,15 +197,14 @@ async function synthesizeTtsWithPauses(text: string, voice: string): Promise<Buf
       segments.push({ type: "text", value: textAfter });
     }
 
-    // Búfer de silencio de 1 segundo calibrado a 24kHz Mono 96kbps MP3 (42 frames de 288 bytes = 12096 bytes)
-    const SILENCE_FRAME_HEX = "fff3a4c47c000003480000000000000000000000" + "00".repeat(268);
-    const silenceFrameBuf = Buffer.from(SILENCE_FRAME_HEX, "hex");
+    // Búfer de silencio de 1 segundo calibrado para la tasa MP3 seleccionada (42 frames/seg)
+    const silenceFrameBuf = Buffer.from(cfg.silenceFrameHex, "hex");
     const cleanSilenceBuffer = Buffer.concat(Array(42).fill(silenceFrameBuf));
 
     const renderedSegments: Buffer[] = [];
     for (const segment of segments) {
       if (segment.type === "text" && typeof segment.value === "string") {
-        const buf = await synthesizeTts(segment.value, voice);
+        const buf = await synthesizeTts(segment.value, voice, calidad, velocidad);
         renderedSegments.push(stripLameHeader(buf));
       } else if (segment.type === "pause" && typeof segment.value === "number") {
         renderedSegments.push(Buffer.concat(Array(segment.value).fill(cleanSilenceBuffer)));
@@ -148,14 +212,24 @@ async function synthesizeTtsWithPauses(text: string, voice: string): Promise<Buf
     }
     return Buffer.concat(renderedSegments);
   } else {
-    return await synthesizeTts(text, voice);
+    return await synthesizeTts(text, voice, calidad, velocidad);
   }
 }
 
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { text, voice = "es-MX-DaliaNeural", formato = "json" } = body;
+    const { 
+      text, 
+      voice = "es-MX-DaliaNeural", 
+      calidad = "96k", 
+      velocidad = 0.9,
+      formato = "json" 
+    } = body;
+
+    const calidadEfectiva: CalidadAudioTts = (calidad === "48k" || calidad === "opus") ? calidad : "96k";
+    const numVelocidad = typeof velocidad === "number" ? Math.max(0.8, Math.min(1.1, velocidad)) : 0.9;
+    const cfg = CONFIG_CALIDAD[calidadEfectiva];
 
     if (!text || typeof text !== "string") {
       return NextResponse.json(
@@ -172,31 +246,33 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    console.log(`[3dBimFab TTS] Generando voz "${voice}" para texto: "${cleanText.substring(0, 50)}..."`);
-    const audioBuffer = await synthesizeTtsWithPauses(cleanText, voice);
+    console.log(`[3dBimFab TTS] Generando voz "${voice}" (${calidadEfectiva}, ${numVelocidad}x) para texto: "${cleanText.substring(0, 50)}..."`);
+    const audioBuffer = await synthesizeTtsWithPauses(cleanText, voice, calidadEfectiva, numVelocidad);
 
-    // Estimación matemática de duración a 96kbps (12000 bytes/seg)
-    const estimatedDuration = Math.round((audioBuffer.length / 12000) * 10) / 10;
+    // Estimación matemática de duración según la tasa de bits seleccionada
+    const estimatedDuration = Math.round((audioBuffer.length / cfg.bytesPerSec) * 10) / 10;
 
     if (formato === "binary") {
       return new NextResponse(new Uint8Array(audioBuffer), {
         status: 200,
         headers: {
-          "Content-Type": "audio/mpeg",
+          "Content-Type": cfg.mimeType,
           "Content-Length": String(audioBuffer.length),
           "X-Audio-Duration": String(estimatedDuration),
-          "Content-Disposition": "inline; filename=\"locucion_3bf.mp3\"",
+          "Content-Disposition": `inline; filename="locucion_3bf.${cfg.extension}"`,
         },
       });
     }
 
-    const base64Audio = `data:audio/mpeg;base64,${audioBuffer.toString("base64")}`;
+    const base64Audio = `data:${cfg.mimeType};base64,${audioBuffer.toString("base64")}`;
 
     return NextResponse.json({
       success: true,
       audioBase64: base64Audio,
       durationSeconds: estimatedDuration,
       bytes: audioBuffer.length,
+      calidad: calidadEfectiva,
+      velocidad: numVelocidad,
       voice,
     });
   } catch (error: any) {

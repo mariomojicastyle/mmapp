@@ -1,8 +1,8 @@
 "use client";
 
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef, useState, useMemo } from "react";
 import { use3BFStore } from "@/lib/store";
-import { Play, Pause, RotateCcw, Volume2, VolumeX, SkipBack, SkipForward, ChevronDown, ChevronUp, Sliders, Layers, Sparkles } from "lucide-react";
+import { Play, Pause, RotateCcw, Volume2, VolumeX, SkipBack, SkipForward, ChevronDown, ChevronUp, Sliders, Layers, Sparkles, Camera, Smartphone, Clapperboard, Trash2 } from "lucide-react";
 import { obtenerColorSubbloque } from "./StepManagerPanel";
 
 export default function TimelineScrubber() {
@@ -26,12 +26,78 @@ export default function TimelineScrubber() {
     setSubbloqueSolo,
     actualizarTrackSubBloque,
     setCoreografiaSubbloques,
+    capturarKeyframeCamaraPaso,
+    eliminarKeyframeCamaraPaso,
+    toggleCamaraCinematicaPaso,
+    simuladorMovilActivo,
+    toggleSimuladorMovil,
   } = use3BFStore();
 
   const pasoActivo = pasosManual.find((p) => p.id === pasoActivoManualId) || pasosManual[0];
   const esMultiSub3 = Boolean(pasoActivo?.subbloques && pasoActivo.subbloques.length >= 3);
-  const duracionTotal = Math.max(pasoActivo?.duracionTotal || 10.0, esMultiSub3 ? 11.4 : 1.0);
+
+  // ⏱️ Duración física calculada a partir de la cinemática de la animación 3D
+  const duracionAnimCalculada = useMemo(() => {
+    let maxTime = 0;
+    if (pasoActivo?.secuencia && pasoActivo.secuencia.length > 0) {
+      pasoActivo.secuencia.forEach((s) => {
+        const fin = (s.tiempoInicio || 0) + (s.duracionMovimiento || 1.5);
+        if (fin > maxTime) maxTime = fin;
+      });
+    }
+    if (pasoActivo?.configuracionCinematica?.piezasEspera) {
+      pasoActivo.configuracionCinematica.piezasEspera.forEach((p) => {
+        const tAp = p.tiempoAparicionPieza || 0;
+        const tFin = p.tiempoFinHerrajes || 0;
+        const tMaxP = Math.max(tAp, tFin);
+        if (tMaxP > maxTime && tMaxP < 1000) {
+          maxTime = tMaxP + 3.0;
+        }
+      });
+    }
+    if (maxTime > 0) {
+      return Math.max(6, Math.round((maxTime + 0.5) * 10) / 10);
+    }
+    if (pasoActivo?.duracionTotal && pasoActivo.duracionTotal > 0) {
+      return Math.round(pasoActivo.duracionTotal * 10) / 10;
+    }
+    return 10.0;
+  }, [pasoActivo?.secuencia, pasoActivo?.configuracionCinematica?.piezasEspera, pasoActivo?.duracionTotal]);
+
+  const duracionTotal = Math.max(
+    pasoActivo?.duracionTotal !== undefined && pasoActivo.duracionTotal > 0
+      ? pasoActivo.duracionTotal
+      : duracionAnimCalculada,
+    esMultiSub3 ? 11.4 : 1.0
+  );
+
+  // ⏱️ Estado local del input para que el usuario pueda escribir libremente cualquier duración
+  const [inputDuracionTexto, setInputDuracionTexto] = useState<string>(
+    duracionTotal % 1 === 0 ? duracionTotal.toString() : duracionTotal.toFixed(1)
+  );
+
+  useEffect(() => {
+    const formatted = duracionTotal % 1 === 0 ? duracionTotal.toString() : duracionTotal.toFixed(1);
+    setInputDuracionTexto(formatted);
+  }, [duracionTotal, pasoActivo?.id]);
+
+  const guardarDuracionPersonalizada = () => {
+    const nuevo = parseFloat(inputDuracionTexto);
+    if (!isNaN(nuevo) && nuevo > 0 && pasoActivo) {
+      const duracionSaneada = Math.round(nuevo * 10) / 10;
+      actualizarPasoManual(pasoActivo.id, { duracionTotal: duracionSaneada });
+      setInputDuracionTexto(duracionSaneada % 1 === 0 ? duracionSaneada.toString() : duracionSaneada.toFixed(1));
+      if (timelineCurrentTime > duracionSaneada) {
+        setTimelineCurrentTime(0);
+        setIsTimelinePlaying(false);
+      }
+    } else {
+      setInputDuracionTexto(duracionTotal % 1 === 0 ? duracionTotal.toString() : duracionTotal.toFixed(1));
+    }
+  };
+
   const audioRef = useRef<HTMLAudioElement | null>(null);
+
 
   // Determinar URL de audio según el idioma seleccionado
   const currentAudioUrl =
@@ -188,6 +254,29 @@ export default function TimelineScrubber() {
     }
   };
 
+  // 🎥 Lógica de Keyframes Cinemáticos de Cámara
+  const keyframesCamara = useMemo(() => {
+    return (pasoActivo?.keyframesCamara || []).slice().sort((a, b) => a.tiempo - b.tiempo);
+  }, [pasoActivo?.keyframesCamara]);
+
+  const [panelCamaraAbierto, setPanelCamaraAbierto] = useState(false);
+
+  const handleCapturarCamara = () => {
+    if (!pasoActivo) return;
+    const pose = (window as any).__obtenerPoseCamara3BF?.();
+    if (!pose) {
+      alert("No se pudo leer la posición de la cámara del visor 3D.");
+      return;
+    }
+    capturarKeyframeCamaraPaso(
+      pasoActivo.id,
+      timelineCurrentTime,
+      pose.pos,
+      pose.target,
+      pose.fov
+    );
+  };
+
   return (
     <div className="absolute bottom-3 left-3 right-3 z-20 flex flex-col gap-1.5 pointer-events-none select-none">
       {/* Elemento de Audio Oculto para Sincronización (no detiene la animación 3D al terminar el audio) */}
@@ -196,6 +285,93 @@ export default function TimelineScrubber() {
           ref={audioRef}
           src={currentAudioUrl}
         />
+      )}
+
+      {/* 🎬 PANEL DE CONTROL DE CÁMARA CINEMÁTICA (KEYFRAMES LIST) */}
+      {panelCamaraAbierto && keyframesCamara.length > 0 && (
+        <div
+          style={{
+            backgroundColor: coloresApariencia?.fondoPaneles || "rgba(255, 255, 255, 0.96)",
+            borderColor: coloresApariencia?.bordePaneles || "rgba(203, 213, 225, 0.8)",
+            color: coloresApariencia?.textoPrincipal || "#0F172A",
+          }}
+          className="pointer-events-auto backdrop-blur-md rounded-3xl p-3 border shadow-2xl flex flex-col gap-2 max-w-4xl mx-auto w-full transition-all animate-in fade-in slide-in-from-bottom-2 duration-200"
+        >
+          {/* Header del Panel de Cámara */}
+          <div className="flex items-center justify-between border-b border-slate-200/70 dark:border-slate-800/70 pb-1.5">
+            <div className="flex items-center gap-2">
+              <span className="font-extrabold text-[11px] uppercase tracking-wider text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
+                <Clapperboard className="w-3.5 h-3.5 text-amber-500" />
+                Dirección Cinematográfica de Cámara ({keyframesCamara.length} encuadres)
+              </span>
+              <button
+                type="button"
+                onClick={() => toggleCamaraCinematicaPaso(pasoActivo.id)}
+                title={
+                  pasoActivo.camaraCinematicaActiva !== false
+                    ? "Cámara Cinemática Activada (sigue los keyframes automáticamente). Clic para pausar y mover libre"
+                    : "Cámara en Modo Libre Manual. Clic para activar reproducción cinemática"
+                }
+                className={`px-2 py-0.5 rounded-full text-[9px] font-bold border transition cursor-pointer select-none ${
+                  pasoActivo.camaraCinematicaActiva !== false
+                    ? "bg-emerald-500 text-white border-emerald-400 shadow-2xs"
+                    : "bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300 border-slate-300 dark:border-slate-600"
+                }`}
+              >
+                {pasoActivo.camaraCinematicaActiva !== false ? "🎬 Cinemática: Activa" : "🖐️ Cinemática: En Pausa"}
+              </button>
+            </div>
+
+            <div className="flex items-center gap-1.5">
+              <button
+                type="button"
+                onClick={() => setPanelCamaraAbierto(false)}
+                title="Cerrar panel de cámara"
+                className="w-6 h-6 rounded-full flex items-center justify-center border border-slate-200 dark:border-slate-700 hover:bg-black/5 dark:hover:bg-white/5 transition text-slate-500 cursor-pointer"
+              >
+                <ChevronDown className="w-3.5 h-3.5" />
+              </button>
+            </div>
+          </div>
+
+          {/* Chips horizontales de keyframes */}
+          <div className="flex items-center gap-1.5 overflow-x-auto py-1">
+            {keyframesCamara.map((kf, kIdx) => {
+              const esActivo = Math.abs(timelineCurrentTime - kf.tiempo) < 0.15;
+              return (
+                <div
+                  key={kf.id}
+                  className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-mono font-bold border transition shadow-2xs ${
+                    esActivo
+                      ? "bg-amber-500/15 border-amber-500 text-amber-600 dark:text-amber-300"
+                      : "bg-slate-100 dark:bg-slate-800/80 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300"
+                  }`}
+                >
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setTimelineCurrentTime(kf.tiempo);
+                      if (audioRef.current) audioRef.current.currentTime = kf.tiempo;
+                    }}
+                    title={`Ir al encuadre ${kIdx + 1} (${kf.tiempo.toFixed(1)}s)`}
+                    className="flex items-center gap-1 cursor-pointer hover:underline"
+                  >
+                    <Camera className="w-3 h-3 text-amber-500" />
+                    <span>#{kIdx + 1}: {kf.tiempo.toFixed(1)}s</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => eliminarKeyframeCamaraPaso(pasoActivo.id, kf.id)}
+                    title="Eliminar este encuadre de cámara"
+                    className="w-4 h-4 rounded-full flex items-center justify-center text-red-500 hover:bg-red-100 dark:hover:bg-red-950/50 transition cursor-pointer"
+                  >
+                    <Trash2 className="w-2.5 h-2.5" />
+                  </button>
+                </div>
+              );
+            })}
+          </div>
+        </div>
       )}
 
       {/* 🎛️ MEZCLADOR MULTIPISTA DE SUB-BLOQUES (SUB-TRACK MIXER) */}
@@ -460,39 +636,54 @@ export default function TimelineScrubber() {
           <SkipForward className="w-3.5 h-3.5" />
         </button>
 
-        {/* Indicador de Tiempo Actual / Selector de Duración Total */}
-        <div className="flex items-center gap-1 font-mono text-xs font-semibold px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800/90 border border-slate-200 dark:border-slate-700/70 shrink-0">
-          <span style={{ color: botonActivoColor }} className="min-w-[40px] text-right">
+        {/* Indicador de Tiempo Actual / Campo Editable de Duración Total */}
+        <div className="flex items-center gap-1.5 font-mono text-xs font-semibold px-2.5 py-1 rounded-full bg-slate-100 dark:bg-slate-800/90 border border-slate-200 dark:border-slate-700/70 shrink-0">
+          <span style={{ color: botonActivoColor }} className="min-w-[42px] text-right font-bold">
             {formatoTiempo(timelineCurrentTime)}
           </span>
           <span className="opacity-30 select-none">/</span>
-          <div className="relative inline-flex items-center" title="Duración total del paso / animación (Haz clic para cambiar)">
-            <select
-              value={duracionTotal}
-              onChange={(e) => {
-                const nuevo = parseFloat(e.target.value);
-                if (pasoActivo) {
-                  actualizarPasoManual(pasoActivo.id, { duracionTotal: nuevo });
-                  if (timelineCurrentTime > nuevo) {
-                    setTimelineCurrentTime(0);
-                    setIsTimelinePlaying(false);
-                  }
+          <div className="relative inline-flex items-center gap-1" title="Duración total del paso en segundos (Escribe el tiempo exacto que desees)">
+            <input
+              type="number"
+              min={1}
+              max={9999}
+              step={0.5}
+              value={inputDuracionTexto}
+              onFocus={(e) => e.target.select()}
+              onClick={(e) => (e.target as HTMLInputElement).select()}
+              onChange={(e) => setInputDuracionTexto(e.target.value)}
+              onBlur={guardarDuracionPersonalizada}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  guardarDuracionPersonalizada();
+                  (e.target as HTMLInputElement).blur();
                 }
               }}
-              className="appearance-none bg-transparent pr-4 pl-0.5 font-mono text-xs font-bold text-slate-700 dark:text-slate-200 cursor-pointer outline-none hover:text-cyan-600 dark:hover:text-cyan-400 transition"
-            >
-              {[3, 5, 8, 10, 12, 15, 20, 25, 30].map((sec) => (
-                <option key={sec} value={sec} className="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">
-                  {String(sec).padStart(2, "0")}.0s
-                </option>
-              ))}
-            </select>
-            <ChevronDown className="w-2.5 h-2.5 absolute right-0 pointer-events-none opacity-50" />
+              className="w-14 text-center font-mono text-xs font-bold bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-600 rounded-full px-1.5 py-0.5 text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-1 focus:ring-cyan-500 focus:border-cyan-500 transition shadow-inner"
+            />
+            <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400 select-none">s</span>
+
+            {/* Sincronización rápida con la animación si difiere */}
+            {Math.abs(duracionTotal - duracionAnimCalculada) > 0.5 && (
+              <button
+                type="button"
+                onClick={() => {
+                  if (pasoActivo) {
+                    actualizarPasoManual(pasoActivo.id, { duracionTotal: duracionAnimCalculada });
+                    setInputDuracionTexto(duracionAnimCalculada % 1 === 0 ? duracionAnimCalculada.toString() : duracionAnimCalculada.toFixed(1));
+                  }
+                }}
+                title={`Sincronizar con duración calculada de la animación (${duracionAnimCalculada.toFixed(1)}s)`}
+                className="w-5 h-5 rounded-full flex items-center justify-center text-amber-500 hover:bg-amber-500/10 transition active:scale-95"
+              >
+                <Sparkles className="w-3 h-3" />
+              </button>
+            )}
           </div>
         </div>
 
-        {/* Slider / Scrubber de Línea de Tiempo */}
-        <div className="flex-1 flex items-center px-1">
+        {/* Slider / Scrubber de Línea de Tiempo con Marcadores de Cámara Cinemática */}
+        <div className="flex-1 flex items-center px-1 relative">
           <input
             type="range"
             min={0}
@@ -500,9 +691,61 @@ export default function TimelineScrubber() {
             step={0.05}
             value={timelineCurrentTime}
             onChange={handleSliderChange}
-            className="w-full h-1.5 bg-slate-200 dark:bg-slate-700 rounded-full appearance-none cursor-pointer accent-cyan-600 dark:accent-cyan-400"
+            className="w-full h-1.5 bg-slate-200 dark:bg-slate-700 rounded-full appearance-none cursor-pointer accent-cyan-600 dark:accent-cyan-400 relative z-10"
           />
+
+          {/* 💎 Marcadores de Keyframes de Cámara sobre el Scrubber */}
+          {keyframesCamara.map((kf) => {
+            const pct = Math.min(100, Math.max(0, (kf.tiempo / duracionTotal) * 100));
+            const esCercano = Math.abs(timelineCurrentTime - kf.tiempo) < 0.15;
+            return (
+              <button
+                key={kf.id}
+                type="button"
+                onClick={() => {
+                  setTimelineCurrentTime(kf.tiempo);
+                  if (audioRef.current) audioRef.current.currentTime = kf.tiempo;
+                }}
+                title={`Keyframe de cámara en ${kf.tiempo.toFixed(1)}s (Clic para saltar)`}
+                style={{ left: `${pct}%` }}
+                className={`absolute top-1/2 -translate-y-1/2 -translate-x-1/2 z-20 w-3 h-3 rotate-45 transition-transform cursor-pointer border ${
+                  esCercano
+                    ? "bg-amber-400 border-amber-200 scale-125 shadow-md shadow-amber-500/50"
+                    : "bg-cyan-500 border-cyan-200 hover:scale-125 shadow-xs"
+                }`}
+              />
+            );
+          })}
         </div>
+
+        {/* 📸 Botón Fijar Cámara (Captura instantánea de la pose 3D en el segundo actual) */}
+        <button
+          type="button"
+          onClick={handleCapturarCamara}
+          title={`Fijar ángulo de cámara actual en ${timelineCurrentTime.toFixed(1)}s`}
+          className="flex items-center gap-1 text-[10px] font-bold px-2.5 py-1 rounded-full bg-cyan-600 hover:bg-cyan-700 text-white shadow-md transition active:scale-95 cursor-pointer shrink-0 select-none"
+        >
+          <Camera className="w-3 h-3" />
+          <span>Fijar ({timelineCurrentTime.toFixed(1)}s)</span>
+        </button>
+
+        {/* 🎬 Botón Administrar Keyframes de Cámara */}
+        {keyframesCamara.length > 0 && (
+          <button
+            type="button"
+            onClick={() => setPanelCamaraAbierto(!panelCamaraAbierto)}
+            title={panelCamaraAbierto ? "Ocultar lista de encuadres de cámara" : "Ver encuadres de cámara registrados"}
+            className={`px-2 py-1 rounded-full text-[10px] font-bold border transition flex items-center gap-1 cursor-pointer shrink-0 select-none ${
+              panelCamaraAbierto
+                ? "bg-amber-500 text-white border-amber-400 shadow-xs"
+                : "bg-slate-100 dark:bg-slate-800 border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700"
+            }`}
+          >
+            <Clapperboard className="w-3 h-3" />
+            <span>({keyframesCamara.length})</span>
+            {panelCamaraAbierto ? <ChevronDown className="w-2.5 h-2.5" /> : <ChevronUp className="w-2.5 h-2.5" />}
+          </button>
+        )}
 
         {/* Botón Pistas / Mezclador de Sub-Bloques en Cápsula */}
         {tieneSubbloques && (

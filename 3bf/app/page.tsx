@@ -122,6 +122,7 @@ export default function Home3BF() {
     setAnchoPanelDerecho,
     setModalRenderIAAbierto,
     cargarArbolMuebles,
+    centrarCamara,
   } = use3BFStore();
 
   const [guardandoFoto, setGuardandoFoto] = React.useState(false);
@@ -468,6 +469,7 @@ export default function Home3BF() {
             <button
               onClick={() => {
                 setPestanaActiva("manual");
+                setMostrarNPanel(false);
                 const s = use3BFStore.getState();
                 if (!s.objetoActivoId) {
                   const instKeys = Object.keys(s.instancias);
@@ -475,6 +477,7 @@ export default function Home3BF() {
                     s.seleccionarInstancia(instKeys[0]);
                   }
                 }
+                centrarCamara();
               }}
               style={
                 pestanaActiva === "manual"

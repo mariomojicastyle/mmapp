@@ -223,3 +223,21 @@ Default values cause runtime failures.
 - **Azul Oficial Dark:** El color primario de botones activos, acentos y llamadas a la acción en la versión Dark es **`#1368AA`** (RGB: 19, 104, 170).
 - **Prohibición Absoluta de Incandescencias:** Queda estrictamente PROHIBIDO aplicar efectos incandescentes, resplandores neón fluorescentes (`shadow-[...rgba(...)]`) o tonos turquesa/cyan brillantes (`#0891B2`, `#06B6D4`, `#00FFFF`, etc.) a los botones y badges oscuros. Los botones deben ser mate, sobrios, con sombras limpias y sutiles estándar (`shadow-md`).
 - **Fondo Dark Oficial:** El fondo de paneles y modales oscuros es **`#131B2E`** y el fondo profundo es **`#0B0F17`**.
+
+## 📐 Regla Canónica de Nombres y Traducción Interna Bilingüe: Grasshopper es la Verdad Absoluta
+- **Fuente de Verdad Única (Single Source of Truth):** Todas las piezas de madera, herrajes, correderas y mallas del mueble se identifican y gestionan en el código, estado, Three.js, JSON de cinemática e interfaz de usuario utilizando **estrictamente el nombre nativo real de Grasshopper (PT-BR)**:
+  * Tableros: `Peça 1`, `Peça 2` ... `Peça 13`
+  * Tarugos: `Cavilha (1)` ... `Cavilha (93)`
+  * Tornillos: `Parafuso A (1)`, `Parafuso B (1)` ...
+  * Tapas adhesivas: `Tampa (1)` ... `Tampa (6)`
+  * Cantoneras / Escuadras: `Cantoneira (1)` ... `Cantoneira (24)`
+  * Correderas Telescópicas: `Corrediça - Fixa (1)`, `Corrediça - Intermediária (1)`, `Corrediça - Móvel (1)`, `Corrediça - Trava (1)`
+  * Tuercas / Tambores: `Porca (1)` ...
+  * Clavos / Puntillas: `Prego (1)` ...
+  * Patas / Deslizadores: `Sapata (1)` o `Pé (1)` ...
+  * Tiradores / Manijas: `Puxador (1)` ...
+- **Traductor Interno Transparente (Usuario en Español ➔ Agente en Grasshopper PT-BR):**
+  * El usuario se comunica siempre en **Español natural de taller** (*"la tapa 3"*, *"el tarugo 4"*, *"el tornillo B 1"*, *"la corredera fija 2"*, *"el lateral 7"*, etc.).
+  * El agente DEBE hacer la **traducción interna instantánea** hacia el nombre nativo exacto de Grasshopper (`Tampa (3)`, `Cavilha (4)`, `Parafuso B (1)`, `Corrediça - Fixa (2)`, `Peça 7`, etc.) al leer peticiones, modificar mallas o manipular configuraciones.
+  * En la interfaz (UI), las cápsulas muestran el nombre nativo de Grasshopper con tooltip explicativo en español para máxima claridad.
+

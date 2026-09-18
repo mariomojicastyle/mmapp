@@ -264,8 +264,26 @@ export function CameraViewController({
 
   useEffect(() => {
     if (centrarCamaraTrigger > 0 && controlsRef.current && camera) {
-      if (furnitureGroup && furnitureGroup.children.length > 0) {
-        const box = new THREE.Box3().setFromObject(furnitureGroup);
+      let targetGroup: THREE.Object3D | null = furnitureGroup;
+
+      if (!targetGroup || targetGroup.children.length === 0) {
+        if (typeof window !== "undefined") {
+          const s = use3BFStore.getState();
+          const groupsMap = (window as any).__3bfInstanceGroups as Map<string, THREE.Group> | undefined;
+          if (groupsMap && groupsMap.size > 0) {
+            if (s.objetoActivoId && groupsMap.has(s.objetoActivoId)) {
+              targetGroup = groupsMap.get(s.objetoActivoId)!;
+            } else {
+              targetGroup = groupsMap.values().next().value || null;
+            }
+          } else if ((window as any).__threeScene3BF) {
+            targetGroup = (window as any).__threeScene3BF;
+          }
+        }
+      }
+
+      if (targetGroup && targetGroup.children.length > 0) {
+        const box = new THREE.Box3().setFromObject(targetGroup);
         if (!box.isEmpty()) {
           const center = new THREE.Vector3();
           const size = new THREE.Vector3();

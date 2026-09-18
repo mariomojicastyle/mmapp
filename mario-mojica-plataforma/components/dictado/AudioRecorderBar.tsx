@@ -10,6 +10,7 @@ export function AudioRecorderBar({
   isRecording,
   durationSeconds,
   wordCount,
+  charCount = 0,
   autoTranslate,
   conversationMode,
   singleDictationLang,
@@ -26,6 +27,7 @@ export function AudioRecorderBar({
   isRecording: boolean;
   durationSeconds: number;
   wordCount: number;
+  charCount?: number;
   autoTranslate: boolean;
   conversationMode: ConversationMode;
   singleDictationLang: SingleDictationLang;
@@ -108,6 +110,16 @@ export function AudioRecorderBar({
               <span className="text-[11px] text-slate-500 dark:text-slate-400 font-medium">Palabras</span>
               <span className="text-sm sm:text-base font-mono font-bold text-slate-800 dark:text-slate-100">
                 {wordCount}
+              </span>
+            </div>
+
+            <div className="h-7 w-px bg-slate-200 dark:bg-slate-800 hidden sm:block mx-1" />
+
+            {/* Contador de Caracteres (Estándar Web) */}
+            <div className="flex flex-col" title="Caracteres totales (estándar web con espacios)">
+              <span className="text-[11px] text-slate-500 dark:text-slate-400 font-medium">Caracteres</span>
+              <span className="text-sm sm:text-base font-mono font-bold text-slate-800 dark:text-slate-100">
+                {charCount}
               </span>
             </div>
           </div>

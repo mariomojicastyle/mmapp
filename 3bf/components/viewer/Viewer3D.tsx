@@ -63,7 +63,9 @@ import ARViewerModal from "./ARViewerModal";
 import ViewInArIcon from "@/components/icons/ViewInArIcon";
 import { saveLocalARModel } from "@/lib/arStorage";
 import TimelineScrubber from "@/components/manual/TimelineScrubber";
+import { AssemblyPiecePositioner } from "./AssemblyPiecePositioner";
 import { compilarAnimacionPaso, KinematicEngineResult } from "@/lib/manualAnimationEngine";
+import { getSafeRestPosition, getSafeRestQuaternion } from "@/lib/engine/cadStateUtils";
 import { extraerPiezaMadre, anotarInstanciasFisicas } from "@/lib/piezaMadreUtils";
 import { exportarGlbPasoManual, descargarBufferComoArchivo } from "@/lib/exportManualGlb";
 import BloqueEstandar3DScene from "./BloqueEstandar3DScene";
@@ -72,6 +74,8 @@ import BoardMesh, { useMaterialPBRMaps } from "./BoardMesh";
 import SingleFurnitureInstanceMesh from "./SingleFurnitureInstanceMesh";
 import { SnapPointMarkers, GuidelineAxes, TransformSnappingController, getFurnitureGroupBoardBox } from "./SnapSystemOverlay";
 import { BlenderNavigationController, CameraRefBridge, ThumbnailCapturer, CameraViewController } from "./CameraControllers";
+import { AutoFramingCameraController } from "./AutoFramingCameraController";
+import { ManualCameraDirector } from "./ManualCameraDirector";
 import DfMAShieldAlert from "./DfMAShieldAlert";
 
 function obtenerNombreUnificadoPieza(obj: THREE.Object3D): string {
@@ -631,6 +635,7 @@ function AssemblyAnimationController({ furnitureGroup }: { furnitureGroup: THREE
     timelineCurrentTime,
     objetoActivoId,
     instancias,
+    vistaPiezasDesplazadas,
   } = use3BFStore();
 
   const activeStep = pasosManual.find((p) => p.id === pasoActivoManualId) || pasosManual[0];
@@ -667,6 +672,26 @@ function AssemblyAnimationController({ furnitureGroup }: { furnitureGroup: THREE
       (window as any).__threeScene3BF = effectiveGroup;
     }
 
+    // 🔄 Si el switch está en "Posición Original" (vistaPiezasDesplazadas === false),
+    // restaurar inmediatamente todas las mallas a su posición de reposo ensamblada original (pRest).
+    if (!vistaPiezasDesplazadas) {
+      if (engineRef.current) {
+        engineRef.current.detener();
+        engineRef.current = null;
+      }
+      effectiveGroup.traverse((child: any) => {
+        if (child.isMesh) {
+          const rest = getSafeRestPosition(child);
+          child.position.copy(rest);
+          const restQ = getSafeRestQuaternion(child);
+          child.quaternion.copy(restQ);
+          child.updateMatrix();
+          child.updateMatrixWorld(true);
+        }
+      });
+      return;
+    }
+
     try {
       const res = compilarAnimacionPaso(effectiveGroup, activeStep);
       engineRef.current = res;
@@ -690,9 +715,11 @@ function AssemblyAnimationController({ furnitureGroup }: { furnitureGroup: THREE
   }, [
     pestanaActiva,
     effectiveGroup,
+    vistaPiezasDesplazadas,
     activeStep?.id,
     activeStep?.duracionTotal,
-    activeStep?.secuencia,
+    JSON.stringify(activeStep?.secuencia),
+    JSON.stringify(activeStep?.configuracionCinematica),
     activeStep?.showcase?.coreografia,
     activeStep?.showcase?.distanciaAperturaMm,
     activeStep?.showcase?.ejeGlobal,
@@ -747,6 +774,7 @@ export default function Viewer3D() {
     cancelarGrab,
     ejeBloqueado,
     setEjeBloqueado,
+    piezaEnPosicionamientoManual,
     snapActivo,
     snapPicking,
     snapBasePoint,
@@ -767,6 +795,8 @@ export default function Viewer3D() {
     toggleGizmosLuces,
     mostrarMarcoEncuadre,
     toggleMarcoEncuadre,
+    simuladorMovilActivo,
+    toggleSimuladorMovil,
     modoPickingManual,
     limpiarPickingManual,
     confirmarPickingManual,
@@ -2164,6 +2194,34 @@ export default function Viewer3D() {
         </div>
       )}
 
+      {/* 📱 OVERLAY SIMULADOR DE CELULAR (SAFE FRAME VERTICAL 9:16) */}
+      {simuladorMovilActivo && (
+        <div className="absolute inset-0 z-10 pointer-events-none flex items-center justify-center overflow-hidden">
+          {/* Marco Vertical 9:16 con sombreado Passepartout exterior y esquinas seguras */}
+          <div 
+            className="relative aspect-[9/16] max-h-[90vh] h-[86vh] w-auto border-2 rounded-3xl shadow-[0_0_0_9999px_rgba(11,15,23,0.65)] flex items-center justify-center transition-all"
+            style={{
+              borderColor: coloresApariencia?.botonActivo || "#1368AA",
+            }}
+          >
+            {/* Altavoz superior de smartphone simulado */}
+            <div className="absolute top-2 w-12 h-1 bg-slate-400/40 rounded-full" />
+
+            {/* Esquinas de encuadre seguras (Safe Frame Guides) */}
+            <div className="absolute top-4 left-4 w-4 h-4 border-t-2 border-l-2 border-cyan-400/80 rounded-tl-sm" />
+            <div className="absolute top-4 right-4 w-4 h-4 border-t-2 border-r-2 border-cyan-400/80 rounded-tr-sm" />
+            <div className="absolute bottom-4 left-4 w-4 h-4 border-b-2 border-l-2 border-cyan-400/80 rounded-bl-sm" />
+            <div className="absolute bottom-4 right-4 w-4 h-4 border-b-2 border-r-2 border-cyan-400/80 rounded-br-sm" />
+
+            {/* Badge indicador discreto */}
+            <div className="absolute top-5 left-1/2 -translate-x-1/2 px-2.5 py-0.5 rounded-full bg-slate-950/85 text-cyan-400 border border-cyan-500/40 text-[9px] font-mono tracking-wider font-bold uppercase backdrop-blur-xs shadow-xs flex items-center gap-1.5">
+              <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-pulse" />
+              <span>9:16 Mobile Safe View</span>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* 📦 OVERLAY MACRO DE BLOQUE ESTÁNDAR (Modo Manual 3D) */}
       {pestanaActiva === "manual" && pasoActivoManual?.tipo === "bloque_estandar" && (
         <div className="absolute top-4 left-1/2 -translate-x-1/2 z-10 pointer-events-none flex flex-col items-center max-w-lg w-[90vw] select-none">
@@ -2413,6 +2471,22 @@ export default function Viewer3D() {
               className={`w-3.5 lg:w-3.5 h-3.5 lg:h-3.5 text-white shrink-0 ${mostrarMarcoEncuadre ? "opacity-100 fill-white/20" : "opacity-90"}`} 
             />
           </button>
+
+          {/* 📱 Botón Toggle de Simulador Móvil 9:16 (Safe Frame Celular) */}
+          <button
+            onClick={() => toggleSimuladorMovil()}
+            title={simuladorMovilActivo ? "Ocultar simulador de celular 9:16" : "Activar simulador de celular 9:16 (Safe Frame vertical para pantalla móvil)"}
+            style={{
+              backgroundColor: coloresApariencia?.botonActivo || "#1368AA",
+              borderColor: coloresApariencia?.colorMarca || "#1368AA",
+            }}
+            className="w-8 lg:w-7 h-8 lg:h-7 rounded-full text-white shadow-md border flex items-center justify-center hover:opacity-90 active:scale-95 transition-all cursor-pointer box-border shrink-0"
+          >
+            <Smartphone 
+              strokeWidth={1.75}
+              className={`w-3.5 lg:w-3.5 h-3.5 lg:h-3.5 text-white shrink-0 ${simuladorMovilActivo ? "opacity-100 fill-white/25" : "opacity-90"}`} 
+            />
+          </button>
         </div>
 
         {/* Nivel 2: Contador de Componentes (N) y Listado Jerárquico */}
@@ -2602,6 +2676,7 @@ export default function Viewer3D() {
                 <SelectionController />
                 <BoardSilhouetteOutline furnitureGroup={furnitureGroup} />
                 <AssemblyAnimationController furnitureGroup={furnitureGroup} />
+                <AssemblyPiecePositioner furnitureGroup={furnitureGroup} />
                 <SubbloquesTooltipsBillboard furnitureGroup={furnitureGroup} />
               </>
             ) : null}
@@ -2627,11 +2702,13 @@ export default function Viewer3D() {
         )}
         <GroundInfiniteAxes />
         <CameraViewController furnitureGroup={furnitureGroup} controlsRef={controlsRef} />
+        <AutoFramingCameraController controlsRef={controlsRef} />
+        <ManualCameraDirector controlsRef={controlsRef} />
         <BlenderNavigationController controlsRef={controlsRef} />
         <OrbitControls 
           ref={controlsRef}
           makeDefault 
-          enabled={modoTransformacion !== "grab"} 
+          enabled={modoTransformacion !== "grab" && !piezaEnPosicionamientoManual} 
           target={pasoActivoManual?.tipo === "bloque_estandar" ? [0, 0.1, 0] : [0.25, 0, -0.24]} 
           minDistance={calibracion.zoomMinimoMetros ?? 0.02} 
           maxDistance={calibracion.zoomMaximoMetros ?? 30} 

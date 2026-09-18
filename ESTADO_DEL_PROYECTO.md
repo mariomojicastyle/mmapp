@@ -9,13 +9,218 @@ Este archivo es la "Memoria RAM" para Antigravity. Contiene el contexto de lo qu
 ---
 
 ## 🏗️ 1. Plataforma B2B & 3dBimFab (Foco Actual)
-**Estado:** Integración Supabase avanzada, Identidad Visual estandarizada e Hito Fundacional de **3dBimFab (3BF)** completado.
+**Estado:** Arquitectura Cinemática Modular al 95%, Dirección de Cámara (9:16) y Ensamble CAD Milimétrico Completados.
 
-> [!IMPORTANT]
-> ### ☀️ RECORDATORIO MATUTINO (Próxima Tarea Prioritaria):
-> - **Selector de Calidad / Compresión de Salida TTS en el Panel de Manuales 3D**:
->   * Actualmente la locución se sintetiza por defecto en **96 kbps** (sonido cálido, alta fidelidad, cero lata).
->   * **Requerimiento acordado**: Permitirle al usuario en el campo de texto o en la sección de Voz TTS **escoger la calidad de salida** (ej: 96 kbps Alta Fidelidad vs 48 kbps / 64 kbps Comprimido para menor peso de archivo), brindando flexibilidad de optimización según la necesidad de carga móvil o ancho de banda.
+- [x] **[18 de Septiembre, 2026] Hito 174: Arquitectura Modular Cinemática, Dirección Cinematográfica de Cámara (9:16), Precisión CAD de Ensamble y Sincronización Solidaria de Herrajes (`CalibradorCinematica`, `coreografiaHerrajes`, `ManualCameraDirector` & `TimelineScrubber`)**:
+  * **Modularización y Seccionamiento de Archivos**: Desacople del componente monolítico `CalibradorCinematicaSection.tsx` (> 1200 líneas) en módulos especializados dentro de `3BF/components/manual/calibrador/` (`useCalibradorCinematica.ts`, `CapaPiezaEsperaItem.tsx`, `HerrajePillItem.tsx`, `CalibradorHeaderControls.tsx`, `CalibradorModoManualToggle.tsx`), y extracción de cinemática de herrajes a `3BF/lib/engine/choreographer/coreografiaHerrajes.ts`.
+  * **Dirección de Cámara & Safe Frame Celular (9:16)**: Interpolación continua `smoothstep` cúbica con keyframes de cámara (`ManualCameraDirector.tsx`), marcadores diamante (`◆`) interactivos en `TimelineScrubber.tsx`, captura instantánea de pose `[ 📸 Fijar (Xs) ]` y visor passepartout 9:16 con viñeta oscura.
+  * **Precisión CAD Milimétrica (Cero Desfase)**: Reposo de diseño final inmutable `pRestFinal = pRest.clone()` con 0.000 mm de tolerancia en `assemblyCoreographer.ts` y `coreografiaHerrajes.ts`. Base anclada a `(0, 0, 0)` y traslación derivada de la velocidad física (`cm/s`).
+  * **Control Editable de Duración Total & Blindaje Soberano**: Input numérico editable en cápsula `rounded-full` con selección a un toque en el timeline. La duración total fijada por el usuario queda blindada e inmutable contra auto-cálculos de piezas.
+  * **Aproximación Analítica de Cantoneras**: Detección geométrica relativa a la madera (`-Y`, cara inferior) y distancia reducida a 5 cm, erradicando que atraviesen la madera.
+  * **Sincronización Solidaria y Erradicación de Vuelo Errático**: Detección temporal condicional en `coreografiaHerrajes.ts` (aparición directa en mueble si $t_{\text{aparición}} \ge t_{\text{StartTraslado}}$, o traslado solidario con la pieza madre desde el piso si $t < t_{\text{StartTraslado}}$). Sanitización estricta de pistas Three.js (`crearTrackVectorSanitizado`, `crearTrackQuaternionSanitizado`) previniendo timestamps repetidos y errores NaN.
+  * **Validación TypeScript**: `npx tsc --noEmit` verificado con **0 errores**.
+
+- [x] **[17 de Septiembre, 2026] Hito 173: Restauración Integral de Correderas Telescópicas y Tapas Adhesivas en Capas y Escenario 3D (`cadStateUtils`, `CalibradorCinematicaSection`, `piezaMadreUtils` & `SingleFurnitureInstanceMesh`)**:
+  * **Causa Raíz de Desaparición de Cápsulas y Mallas**:
+    1. *Filtro Ciego por Comparación Directa*: `mapearContactosPiezasHerrajes` y `detectarHerrajesEnContactoConPieza` descartaban los herrajes del paso porque comparaban strings exactos (`===` / `includes`) en lugar de usar `coincidenMismoHerraje`. Al haber estandarizado a portugués técnico (`Fixa`, `Intermediária`, `Trava`, `Tampa`), los herrajes previamente guardados en español (`Fija`, `Intermedia`, `Seguro`, `Tapa 3`) eran descartados del mapa de contactos.
+    2. *Tolerancia Espacial Insuficiente para Telescópicos*: La tolerancia fija de 4 mm no alcanzaba a envolver perfiles intermedios (6-8 mm), móviles (8-12 mm) ni travas plásticas (10-14 mm) de las correderas, ni cubría con certeza las tapas adhesivas en la cara exterior, dejando la lista de contactos vacía (`[]`).
+    3. *Reposo CAD al Carecer de Dueño*: En `aplicarPosicionesEscena3D`, la falta de contacto asignado mandaba las mallas a `pRest` (posición CAD del mueble vertical armado) en vez de situarlas en la pieza acostada en el banco (`Peça 7`).
+  * **Solución Técnica Implementada**:
+    - **Filtro Canónico Universal en Mapeo de Contactos (`cadStateUtils.ts`)**: Validación mediante `coincidenMismoHerraje(instKey, target)`, garantizando 100% de compatibilidad retroactiva entre idiomas y versiones.
+    - **Tolerancia Adaptativa (22 mm) y Regla de Oro de Correderas Telescópicas**: Detección en 2 fases: las correderas fijas (`Fixa`) identifican su lateral anfitrión (`Peça 6` o `Peça 7`), y automáticamente todos los perfiles hermanos del mismo riel (`Intermediária`, `Móvel`, `Trava`) heredan ese mismo anfitrión de forma concéntrica y directa.
+    - **Resolución de Tapas Adhesivas (`Tampa`)**: Búsqueda ampliada a 22 mm con resolución de panel anfitrión por proximidad de superficie (`boxExp.distanceToPoint`).
+    - **Blindaje en Cápsulas y Selectores (`CalibradorCinematicaSection.tsx`)**: `estaEnCongelador` y la lectura de `direccionesHerrajes` emplean `coincidenMismoHerraje` para recuperar el estado congelado y la dirección vectorial sin importar diferencias de idioma.
+    - **Tipología en `esHerrajeNombre` (`piezaMadreUtils.ts`)**: Añadidos `"tapa"` y `"adesiv"`.
+    - **Centrado en Banco Robusto (`SingleFurnitureInstanceMesh.tsx`)**: `piezasTarget` valida pertenencia al paso con `coincidenMismoHerraje`.
+  * **Validación TypeScript**: `npx tsc --noEmit` en `c:\Desarrollo\mmapp\3BF` verificado con **0 errores**.
+
+- [x] **[17 de Septiembre, 2026] Hito 172: Blindaje Estricto de Instancia en Visibilidad de Herrajes y Supresión de Falsos Positivos en Paso P03 (`cadStateUtils`, `boardVisibilityRules` & `assemblyCoreographer`)**:
+  * **Causa del Despliegue Masivo en P03**: `coincidenMismoHerraje` permitía que una instancia física numerada (ej. `Cavilha (2)`) coincidiera con un nombre base sin número (ej. `cleanName = "Cavilha"`), provocando que todas las 93 cavilhas y tornillos del mueble se asumieran asignadas al paso P03 y se mostraran en el piso.
+  * **Regla Estricta de Número de Instancia**: Si existe número de instancia física, solo hay coincidencia si ambos lados poseen exactamente el mismo número (`numA === numB && famA === famB`). `Cavilha (2)` nunca coincide con `Cavilha (93)` ni con `Cavilha` genérico.
+  * **Aislamiento en `boardVisibilityRules.ts`**: Evaluación dedicada para herrajes (`esHardware`), comparando exclusivamente la identidad unívoca numerada contra la lista del paso, erradicando filtraciones a tableros y subcadenas.
+  * **Validación TypeScript**: `npx tsc --noEmit` en `c:\Desarrollo\mmapp\3BF` verificado con **0 errores**.
+
+- [x] **[17 de Septiembre, 2026] Hito 171: Estandarización Universal Nativa de Grasshopper (Single Source of Truth), Portugués Técnico en Correderas y Traductor Interno Bilingüe (`piezaMadreUtils`, `cadStateUtils`, `CalibradorCinematicaSection` & Reglas Globales)**:
+  * **Principio de Fuente de Verdad Única**: Toda pieza, herraje y malla se gestiona con su nombre nativo real de Grasshopper en portugués técnico (`Tampa (3)`, `Cavilha (4)`, `Parafuso B (5)`, `Cantoneira (13)`, `Corrediça - Fixa (1)`, `Porca (1)`).
+  * **Portugués Técnico en Correderas Telescópicas (`piezaMadreUtils.ts`)**: Estandarizadas las 4 partes de corredera: `Corrediça - Fixa`, `Corrediça - Intermediária`, `Corrediça - Móvel` y `Corrediça - Trava`.
+  * **Cápsulas e Identificadores en UI**: Las cápsulas muestran el nombre nativo exacto de Grasshopper y cuentan con tooltips explicativos en español (`obtenerDescripcionEspanolHerraje`).
+  * **Regla Global de Traductor Interno Transparente**: El usuario habla en español de taller ("la tapa 3", "el tarugo 4", "el tornillo B 1", "la corredera fija 2") y el agente traduce internamente al nombre nativo de Grasshopper para operar sobre el sistema.
+  * **Validación TypeScript**: `npx tsc --noEmit` en `c:\Desarrollo\mmapp\3BF` verificado con **0 errores**.
+
+- [x] **[17 de Septiembre, 2026] Hito 170: Motor Canónico Universal de Equivalencia de Herrajes, Visibilidad 3D de Tapas y Desacoplamiento Multilingüe (`cadStateUtils`, `boardVisibilityRules`, `SingleFurnitureInstanceMesh` & `assemblyCoreographer`)**:
+  * **Diagnóstico del Fallo de la Tapa 3**:
+    1. *Asimetría de Formatos y Lenguajes*: Grasshopper genera `Tampa (3)` (portugués y con paréntesis), mientras que la UI formateaba `Tapa 3` (español y sin paréntesis).
+    2. *Filtro de Visibilidad en BoardMesh*: `evaluarPertenenciaPaso` comparaba cadenas directas y, al diferir el formato, marcaba la tapa como no perteneciente al paso, provocando que Three.js no montara la malla 3D.
+    3. *Clasificación en SingleFurnitureInstanceMesh*: Mallas como `Tampa (3)` o `Tapa 3` eran susceptibles de clasificarse erróneamente en `boardMeshes` o quedar fuera de `hardwareMeshes`.
+    4. *Cinemática 3D*: Desconexión en la asignación de dueños (`duenio`), congelados y vectores de aproximación (`dirsMap`).
+  * **Solución Técnica Universal**:
+    - **Motor Canónico Universal (`coincidenMismoHerraje`)**: Normalización semántica de familias (`tapa`/`tampa`/`adesiv` $\to$ `"tapa"`, `tarugo`/`cavilha` $\to$ `"tarugo"`, `tornillo`/`parafuso` $\to$ `"tornillo_x"`, etc.) y coincidencia estricta por número de instancia física.
+    - **Blindaje en `boardVisibilityRules.ts`**: Visibilidad 3D garantizada independientemente de si la malla se llama `Tampa (3)`, `Tapa 3` o `Peça 7::Tampa (3)`.
+    - **Clasificación Unificada**: `isHardwareMeshName()` rige la categorización de herrajes y excluye tajantemente herrajes del grupo de tableros.
+    - **Pistas Cinemáticas Sincronizadas**: Traslación a Punto A en el aire y animación fluida al barreno (Punto B).
+  * **Validación TypeScript**: `npx tsc --noEmit` en `c:\Desarrollo\mmapp\3BF` verificado con **0 errores**.
+
+- [x] **[17 de Septiembre, 2026] Desbloqueo Integral de Herrajes de la Pieza Master, Cinemática Concéntrica y Sincronización Espacial 3D (`CalibradorCinematicaSection`, `cadStateUtils` & `assemblyCoreographer`)**:
+  * **Causa del Bloqueo Erradicada**: `sincronizarYGuardarSecuencia` ejecutaba un `return;` temprano incondicional cuando `esMaster && distEspera < 0.01`. Esto borraba a la Pieza Master de la secuencia cinemática del paso al cambiar cualquier eje o modificar el Movimiento Global.
+  * **Inclusión Permanente en la Secuencia**: La Pieza Master se registra siempre en `secuencia` con `duracionMovimiento: 0`, `duracionInsercionHerrajes: durInsertMaster`, sus herrajes nuevos, congelados, direcciones vectoriales (`-X`, `+X`, etc.) y distancia global.
+  * **Resolución Tolerante en Escena 3D (`cadStateUtils.ts`)**: `vOffsetDuenio` garantiza el posicionamiento espacial en reposo o piso para cualquier dueño activo. Los tornillos de la Pieza Master (`Peça 7`) se trasladan inmediatamente en el viewport 3D hacia su **Punto A** en el aire con base en el eje seleccionado.
+  * **Animación Concéntrica en Pieza Master (`assemblyCoreographer.ts`)**: Los tornillos de la Master inician en el Punto A en $t = 0$, se insertan concéntricamente en el barreno (Punto B) con rotación continua de apriete, y quedan fijados con precisión física.
+  * **Validación TypeScript**: `npx tsc --noEmit` en `c:\Desarrollo\mmapp\3BF` verificado con **0 errores**.
+
+- [x] **[17 de Septiembre, 2026] Inmovilidad Estricta de Herrajes Congelados, Matching Case-Insensitive de Dirección y Entradas Numéricas Directas en Sliders (`cadStateUtils`, `assemblyCoreographer` & `CalibradorCinematicaSection`)**:
+  * **Inmovilidad Estricta de Herrajes Congelados**: Eliminado el falso negativo en la comprobación de mayúsculas/minúsculas. Todos los herrajes en el congelador permanecen 100% inmóviles en su barreno (Punto B) con cero offset.
+  * **Resolución Vectorial Fidedigna**: Normalizada la consulta de `direccionesHerrajes` en Three.js y en la cinemática; si se selecciona `-X`, el herraje nuevo se desplaza exactamente $-d_{\text{global}}$ en el eje X respecto a su barreno.
+  * **Inputs Numéricos Editables con Teclado**: Los valores de `Velocidad Tableros`, `Inserción Herrajes` y `Movimiento Global` son ahora inputs numéricos (`<input type="number">`) en cápsula donde se puede escribir directamente cualquier cifra o arrastrar el slider.
+  * **Validación TypeScript**: `npx tsc --noEmit` en `c:\Desarrollo\mmapp\3BF` verificado con **0 errores**.
+
+- [x] **[17 de Septiembre, 2026] Parámetro Global "Movimiento Global" (cm), Cinemática Punto A ➔ Punto B y Badges de Trayectoria en Cápsulas (`CalibradorCinematicaSection`, `assemblyCoreographer`, `cadStateUtils` & `storeTypes`)**:
+  * **Configuración Global Centralizada**: Creación del parámetro editable **"Movimiento Global"** en centímetros (5 a 50 cm, default 15 cm) en la cabecera cinemática del paso, unificando la distancia de separación de espera de todos los herrajes del paso.
+  * **Cinemática Punto A ➔ Punto B**:
+    - **Punto B (Alojamiento Final)**: Coordenadas del barreno en el tablero en piso o mueble.
+    - **Punto A (Espera Desplazada)**: $\text{Punto B} + \vec{v}_{\text{dir}} \times d$. Los herrajes no congelados inician en el Punto A y descienden al Punto B durante la animación de ensamble.
+    - Los herrajes del congelador reposan y viajan siempre en el Punto B.
+  * **Badges de Trayectoria en Cápsulas**: Incorporación del badge cápsula `[ A ➔ B ]` con colores diferenciados (A en cyan, B en verde esmeralda) en cada cápsula de herraje y `[ Punto B (Fijo) ]` en el congelador.
+  * **Sincronización 3D y Pistas Cinemáticas**: `aplicarPosicionesEscena3D` ubica físicamente las mallas en su Punto A al conmutar a *"Piezas Desplazadas"*, y `assemblyCoreographer` compila las pistas de traslación recta concéntrica desde Punto A hasta Punto B con escala 100%.
+  * **Validación TypeScript**: `npx tsc --noEmit` en `c:\Desarrollo\mmapp\3BF` verificado con **0 errores**.
+
+- [x] **[17 de Septiembre, 2026] Visibilidad Permanente de Herrajes en Piso, Pistas de Escala 1.0 y Selector Desplegable de Vector Direccional (+X, -X, +Y, -Y, +Z, -Z) (`assemblyCoreographer`, `storeTypes` & `CalibradorCinematicaSection`)**:
+  * **Diagnóstico del Bug de Desaparición Inmediata al Desplazar a Piso**: Al alternar al modo *"Piezas Desplazadas Piso XY"*, `aplicarPosicionesEscena3D` posicionaba correctamente las mallas de los herrajes en sus orificios sobre el piso y eran visibles por milisegundos. No obstante, de inmediato `AssemblyAnimationController` evaluaba la animación en $t = 0$. En `assemblyCoreographer.ts`, la pista de escala para herrajes no congelados (`scaleValues`) estaba configurada con valores `[0, 0, 0]` desde $t = 0$ hasta el turno de inserción (`tHwStart`), colapsando instantáneamente la escala de todos los herrajes nuevos a cero (invisibles).
+  * **Visibilidad Permanente y Escala 100% en `assemblyCoreographer.ts`**: Se fijó la escala en `[1, 1, 1]` permanentemente en todo el timeline (`scaleTimes = [0, duracionPaso]`), impidiendo cualquier desaparición visual. En reposo sobre piso ($t=0$ a $t_{\text{start}}$), el herraje descansa en su barreno en el piso (`pHwPop`); en su turno, se separa hacia `pHwElevado` en la dirección configurada y desciende para asentarse antes del traslado del tablero.
+  * **Selector Desplegable de Vector Direccional (+X, -X, +Y, -Y, +Z, -Z)**: Cada cápsula de herraje en la interfaz cuenta ahora con un menú desplegable en cápsula pura (`rounded-full`) que permite seleccionar la dirección cartesiana de aproximación del herraje para su ensamble.
+  * **Inyección en JSON de Cinemática**: `direccionesHerrajes` se persiste en `PiezaEsperaConfig` y se exporta en cada nodo de la secuencia cinemática automática.
+  * **Validación TypeScript**: `npx tsc --noEmit` en `c:\Desarrollo\mmapp\3BF` verificado con **0 errores**.
+
+- [x] **[17 de Septiembre, 2026] Resolución Canónica de Dueños de Herrajes por Prioridad Estricta y Blindaje contra Falsos Positivos de Instancia (`cadStateUtils`, `BoardMesh` & `CalibradorCinematicaSection`)**:
+  * **Diagnóstico del Bug de Herrajes Invisibles / Desaparecidos en Piezas**:
+    1. *Conflicto de Pertenencia en Contactos Compartidos:* Un herraje de unión (como un tarugo o tornillo) colisiona geométricamente con al menos dos piezas de madera (ej. lateral `Peça 6` y travesaños `Peça 8`). En `cadStateUtils.ts`, el motor ejecutaba un bucle lineal sobre `ctcList` y realizaba un `break` incondicional en la primera pieza evaluada (`ctcList[0] === pz`), apropiándose del herraje sin comprobar si la segunda pieza (`Peça 6`) lo tenía activado o congelado en su capa.
+    2. *Discrepancia entre la UI y Three.js:* La UI evaluaba el estado de la cápsula de forma local por tarjeta (`p.herrajesActivados?.includes(...)`), mostrando `Tarugo 4` y `Tarugo 16` como prendidos (cyan) en la tarjeta de `Peça 6`. Sin embargo, Three.js le había asignado la propiedad a `Peça 8`, trasladando físicamente los tarugos a la posición de `Peça 8` en el piso o dejándolos en el aire, provocando que `Peça 6` mostrase únicamente los dos tarugos congelados (`Tarugo 46` y `Tarugo 61`) y sus otros dos orificios vacíos.
+    3. *Falsos Positivos Críticos por Subcadenas Numéricas (`.includes()`):* Al realizar la búsqueda tolerante de nombres de malla en Three.js, la instrucción `k.includes(ik) || ik.includes(k)` provocaba que herrajes de un solo dígito como `Cavilha (4)` sufrieran colisiones erróneas con herrajes de dos dígitos como `Cavilha (46)` (`"cavilha (46)".includes("cavilha (4)") === true`), sobreescribiendo sus coordenadas espaciales.
+  * **Función Canónica de Resolución con Prioridades Estrictas (`resolverDuenioHerrajeCanonica`)**:
+    - **Prioridad 1 (Suprema: Congelado):** Si alguna pieza en contacto tiene el herraje en `herrajesCongelados`, esa pieza es el dueño incondicional.
+    - **Prioridad 2 (Alta: Activado Explícitamente):** Si alguna pieza lo tiene en `herrajesActivados` (y no desactivado), se convierte en el dueño prioritario sobre dueños pasivos por defecto.
+    - **Prioridad 3 (Por Defecto):** Si nadie lo ha tocado, el primer contacto `ctcList[0]` no desactivado asume el herraje.
+    - **Prioridad 4 (Secundaria):** La siguiente pieza en contacto que no lo tenga en `herrajesDesactivados`.
+  * **Blindaje contra Falsos Positivos de Instancia en Three.js (`aplicarPosicionesEscena3D`)**:
+    - Discriminación estricta del número de instancia entre paréntesis (`\((\d+)\)`). Si ambos nombres poseen número (ej. `(4)` vs `(46)`), deben coincidir exactamente (`numMesh === numK`), eliminando de raíz cualquier colisión entre `Tarugo 4` y `Tarugo 46`.
+    - Inyección garantizada de `cleanName` y `rawName` en `userData` de `BoardMesh.tsx` para coincidencia directa limpia sin ambigüedad.
+  * **Sincronización Total en la UI (`CalibradorCinematicaSection.tsx`)**:
+    - El cálculo de `estaPrendido` en las cápsulas de la interfaz, el despachador de clics `handleToggleHerraje` y el compilador de pistas cinemáticas `sincronizarYGuardarSecuencia` consumen ahora de forma unificada `resolverDuenioHerrajeCanonica`.
+    - Lo que el usuario observa en color cyan en la tarjeta coincide 100% con la pieza a la que Three.js adhiere el herraje en la escena 3D.
+  * **Validación TypeScript**: `npx tsc --noEmit` verificado con **0 errores**.
+
+- [x] **[17 de Septiembre, 2026] Fijación Persistente de la Cabecera del Configurador Manual (Línea de Pasos, Sub-pestañas y Título) (`ManualControlPanel` & `ManualStepSelector`)**:
+  * **Problema Ergonómico Resuelto**: Al hacer scroll vertical para configurar las herramientas y piezas de cada paso, la barra de pasos (`P00`, `P01`, `P02`, etc.) se desplazaba fuera del visor, obligando a subir constantemente con el ratón para cambiar de paso.
+  * **Desacoplamiento Modular (`ManualStepSelector.tsx`)**: Se extrajo la barra horizontal de pasos a un componente limpio e independiente que encapsula el drag & drop, creación de pasos y selección activa en cápsulas (`rounded-full`).
+  * **Layout de Cabecera Fija**: Se ancló como bloque inamovible (`shrink-0`) en `ManualControlPanel.tsx` junto al título del panel y la botonera de sub-pestañas (`Pasos`, `Voz TTS`, `Exportar`) con fondo semitransparente (`backdrop-blur-sm`).
+  * **Scroll Subyacente Independiente**: El contenedor scrolleable de herramientas (`overflow-y-auto`) comienza justo por debajo de la línea de pasos fija, permitiendo que todo el contenido desfile por debajo de forma fluida.
+  * **Validación TypeScript**: `npx tsc --noEmit` verificado con **0 errores**.
+
+- [x] **[17 de Septiembre, 2026] Animación Cinemática Concéntrica de Inserción de Herrajes en el Piso Previa al Traslado de Pieza (`assemblyCoreographer` & `CalibradorCinematicaSection`)**:
+  * **Principio DfMA de Cinemática en Dos Fases**: En el ensamble de muebles RTA, el operario primero coloca los herrajes (tarugos, tuercas plásticas, tornillos, cantoneras) en los orificios del tablero mientras este descansa en el piso o banco de trabajo; una vez insertados, la pieza pre-equipada se acopla a la estructura del mueble.
+  * **Fase 1 (Inserción Concéntrica en Piso)**: Los herrajes nuevos asignados a cada capa aparecen elevados $+15\text{ cm}$ colineales al taladro, realizan un Pop-In elástico ($1.5\text{x} \to 1.0\text{x}$), descienden concéntricamente hasta alojarse en la madera y aplican rotación axial helicoidal ($720^\circ$) en tornillos y pernos. El tablero permanece fijo en el piso durante esta fase.
+  * **Fase 2 (Traslado Solidario al Ensamble)**: Al finalizar el descenso de los herrajes, la pieza y todos sus herrajes (nuevos + pre-instalados/congelados) viajan solidariamente a su posición definitiva de armado en el mueble.
+  * **Herrajes Pre-instalados (Congelador)**: Los herrajes congelados reposan dentro de la pieza desde $t=0$ y se trasladan con ella sin animaciones de inserción aérea independientes.
+  * **Soporte para Pieza Master con Herrajes**: Si la pieza Master contiene herrajes nuevos por instalar, estos descienden sobre ella en su origen antes del traslado de las piezas secundarias.
+  * **Validación TypeScript**: `npx tsc --noEmit` en `c:\Desarrollo\mmapp\3BF` verificado con **0 errores**.
+
+- [x] **[17 de Septiembre, 2026] Diagnóstico de Desplazamiento Anómalo en Pieza Master, Normalización Automática a Origen (X: 0, Y: 0) y Sincronización Integral en Reset (`CalibradorCinematicaSection.tsx`)**:
+  * **Diagnóstico del Desplazamiento de `Peça 7`**: En la captura del usuario, `Peça 7` (Pieza Master) presentaba en sus inputs numéricos `X: 50 cm, Y: 42 cm`. Estos valores provenían de la dispersión radial trigonométrica automática calculada inicialmente cuando no era Master. Al oprimir *"Sincronizar herrajes"*, Three.js aplicó ese offset a `Peça 7`, trasladándola hacia la derecha y adelante, atravesando los 4 travesaños del piso.
+  * **Normalización Automática para la Pieza Master**: En `piezasConConfig`, se añadió la regla que detecta si una pieza es `esMaster` y contiene los valores residuales de dispersión (`50` y `42`), normalizándolos de inmediato a `X: 0, Y: 0, Z: 0` para mantener la base de ensamble fija en su origen CAD sin invadir otras piezas.
+  * **Reseteo en `handleDefinirPiezaMaster`**: Al designar cualquier pieza como Pieza Master (#1), sus coordenadas se restablecen de forma determinista a `X: 0, Y: 0, Z: 0` y se ejecuta `aplicarPosicionesEscena3D`.
+  * **Sincronización Total en Reseteo**: En `handleResetOffsetPieza` y `handleResetearTodasLasPosiciones`, se conectó `aplicarPosicionesEscena3D`, logrando que al resetear cualquier fila viajen coordinadamente tanto el tablero como todos sus herrajes.
+  * **Validación TypeScript**: `npx tsc --noEmit` verificado con **0 errores**.
+
+- [x] **[17 de Septiembre, 2026] Diagnóstico de Herrajes Flotantes, Auto-escáner Reactivo y Botón "Sincronizar Herrajes" (`cadStateUtils` v1.4.0 & `CalibradorCinematicaSection`)**:
+  * **Diagnóstico de Herrajes Flotantes en el Aire**: Al incorporar 4 nuevos herrajes a `pasoActivo.herrajesAsignados` (2 tarugos y 2 tuercas plásticas para `Peça 1` y `Peça 4`), estos quedaban en su posición de reposo ensamblada CAD original (`pRest`), ya que la secuencia cinemática (`herrajesCohesionados`) no se regeneraba de forma automática y la búsqueda en Three.js hacía un lookup estricto de coincidencia exacta que arrojaba `undefined` ante pequeñas diferencias de nombrado.
+  * **Búsqueda Robusta y Tolerante de Dueño en Three.js**: En `cadStateUtils.ts` (`aplicarPosicionesEscena3D`), se implementó matching multinivel por `instanciaKey`, `cleanName`, `rawName` y substrings bidireccionales, garantizando que el herraje adopte el offset de piso de su pieza matriz.
+  * **Auto-escáner Reactivo**: Agregado listener `useEffect` en `CalibradorCinematicaSection.tsx` que re-ejecuta `aplicarPosicionesEscena3D` de inmediato ante cambios de paso, asignaciones o contactos detectados.
+  * **Botón Manual "Sincronizar Herrajes"**: Botón en cápsula (`rounded-full`) con icono `RefreshCw` en la barra superior de capas que reconstruye la secuencia cinemática cohesionada y reposiciona las mallas Three.js sobre las piezas del piso en 1 solo clic.
+  * **Validación TypeScript**: `npx tsc --noEmit` verificado con **0 errores**.
+
+- [x] **[17 de Septiembre, 2026] El Congelador de Herrajes Pre-instalados, Drag & Drop con Clic Sostenido y Cohesión Inamovible DfMA (`CalibradorCinematicaSection` & `cadStateUtils`)**:
+  * **Concepto DfMA del Congelador**: Solución para herrajes complejos (como correderas) que se instalan en un paso previo (Paso 02 en `Peça 6`) y que en pasos posteriores deben llegar ya montados y fijos en la pieza, sin animaciones de inserción aérea independientes.
+  * **Contenedor Adaptativo en UI**: Cada capa posee en su parte inferior un recuadro que cuando está vacío es ultra-angosto y no consume espacio vertical (`❄️ Congelador vacío...`). Al introducir herrajes, crece dinámicamente con estética Tech Ethos / azul hielo y badge de conteo.
+  * **Interacción Drag & Drop + 1 Clic**: Se pueden arrastrar herrajes con clic sostenido desde la lista superior hacia el congelador y viceversa, o pulsar el acceso rápido `❄️` para congelar en 1 clic.
+  * **Cohesión Inamovible en Cinemática**: Los herrajes congelados se inyectan en `mallasCohesionadas` de la secuencia cinemática, viajando solidariamente pegados a la pieza desde el piso hasta el ensamble.
+  * **Validación TypeScript**: `npx tsc --noEmit` verificado con **0 errores**.
+
+- [x] **[17 de Septiembre, 2026] Diagnóstico y Blindaje de Asignación de Herrajes, Exclusión de Correderas en Travesaños y Switch de Alternancia "Original (CAD) vs Desplazadas (Piso XY)" (`cadStateUtils` v1.4.0)**:
+  * **Diagnóstico de Reubicación Masiva**: Identificado que la expansión de bounding box de `Peça 8` (travesaño) intersectaba el extremo de las correderas fijadas al lateral `Peça 7`. Al alternar un tarugo, `handleToggleHerraje` recalculaba la secuencia cinemática global y, por matching wildcard en `assemblyCoreographer.ts`, todas las correderas adoptaban el offset de `Peça 8`, parándose en el piso.
+  * **Clasificación de Herrajes Transferibles vs Fijos (`esHerrajeTransferible`)**: Se discriminan tarugos/cantoneras/minifix (transferibles entre 2 piezas de unión) de correderas/tapas/patas (fijas a un único panel). Las correderas se asignan mediante cálculo tridimensional de volumen de intersección exacto, perteneciendo de forma irrevocable a `Peça 7` (lateral) y erradicando falsos contactos con travesaños.
+  * **Coincidencia Estricta en Three.js (`assemblyCoreographer.ts`)**: Matching unívoco por `instanciaKey` (`ik === hwTargetLow`), anulando fallbacks a nombres genéricos para mallas discretas.
+  * **Sincronizador Universal de Escena (`aplicarPosicionesEscena3D`)**: Nueva función canónica que garantiza que cada herraje viaje únicamente con su pieza dueña activa en piso o permanezca en su reposo original (`pRest`).
+  * **Switch On/Off "Original (CAD) vs Desplazadas (Piso XY)"**: Nuevo interruptor físico en cápsula (`rounded-full`) en la cabecera de capas de `CalibradorCinematicaSection.tsx` que alterna instantáneamente entre el mueble cerrado en CAD (`Original`) y las piezas en el piso preparadas para el armado (`Desplazadas`).
+  * **Versionado de Motor a v1.4.0**: `cadStateUtils.ts` formalmente elevado a **v1.4.0**.
+  * **Validación TypeScript**: `npx tsc --noEmit` verificado con **0 errores**.
+
+- [x] **[17 de Septiembre, 2026] Emparentamiento Exclusivo Inter-Pieza, Transferencia Automática y Traslación 3D en Piso de Herrajes & Denominación "Cantonera" (`cadStateUtils` v1.3.0)**:
+  * **Nomenclatura Canónica "Cantonera"**: Sustituido el término "Escuadra" por **"Cantonera"** en todas las etiquetas y categorizaciones semánticas (`Cantonera 13`, `Cantonera 21`, etc.).
+  * **Regla de Pertenencia Única (Cero Duplicidad Inicial)**: Cada herraje que conecta dos piezas (ej. `Tarugo 9` entre `Peça 7` y `Peça 8`) se enciende inicialmente solo en una pieza (`contactos[0]`); en la segunda pieza permanece apagado por defecto, erradicando duplicidades.
+  * **Transferencia Automática al Apagar**: Al apagar un herraje en `Peça 7`, se transfiere automáticamente a `Peça 8` (se enciende en `Peça 8`). Y viceversa al encenderlo en `Peça 7`.
+  * **Traslación 3D en Piso en Tiempo Real (Feedback 0 ms)**: Al transferir el herraje a la pieza secundaria (`Peça 8`), el motor Three.js traslada inmediatamente la malla física en el visor hacia la posición de espera en piso de `Peça 8`, encajándola en sus orificios correspondientes.
+  * **Arrastre Sincronizado en Piso (`AssemblyPiecePositioner.tsx`)**: Los herrajes cohesionados viajan solidariamente al mover cualquier pieza con el mouse sobre el piso.
+  * **Animación Cinemática Sincronizada (`assemblyCoreographer.ts`)**: Coincidencia por `u.instanciaKey` para que los herrajes viajen junto a la pieza a la que quedaron emparentados durante la animación de ensamble.
+  * **Versionado de Motor a v1.3.0**: `cadStateUtils.ts` formalmente elevado a **v1.3.0**.
+  * **Validación TypeScript**: `npx tsc --noEmit` verificado con **0 errores**.
+
+- [x] **[17 de Septiembre, 2026] Desglose Granular de Cápsulas de Herrajes (1 a 1), Filtro Exclusivo de Herrajes Asignados al Paso y Mapeo Semántico de Escuadras (`cadStateUtils` v1.2.0)**:
+  * **Explicación & Corrección de "4 Herrajes"**: En Grasshopper (`Comoda Ravenna.ghx`), las escuadras angulares vienen nombradas como `Cantoneira (13)`, `Cantoneira (21)`. Al carecer de mapeo semántico, caían en el fallback `"Herraje"` con la pluralización errónea `"4 Herrajees"`. Se añadió mapeo para `cantoneira`, `escuadra` y `angulo` (`tipo: "escuadra"`, `label: "Escuadra"`), más `soporte`, `bisagra`, `manija/tirador` y `pata`.
+  * **Filtro Estricto de Herrajes del Paso**: `detectarHerrajesEnContactoConPieza` evalúa exclusivamente los herrajes asignados al paso activo (`pasoActivo.herrajesAsignados`), descartando el resto de herrajes del mueble pertenecientes a pasos futuros.
+  * **Cápsulas Granulares Individuales (1 Cápsula por Cada Herraje Físico)**: En lugar de un solo chip acumulativo que agrupaba todo (`10 Tarugos`), cada elemento físico genera su propia cápsula individual: `Tarugo 1`, `Tarugo 2`, `Escuadra 13`, `Tornillo B (5)`.
+  * **Iluminación Quirúrgica en 3D (Hover 1 a 1)**: Al posar el puntero sobre una cápsula individual, el visor 3D ilumina exclusivamente ese herraje físico específico en amarillo radiante `#FACC15`, otorgando control visual y certeza total al asignar herrajes cohesionados a cada capa.
+  * **Versionado de Motor a v1.2.0**: `cadStateUtils.ts` formalmente elevado a v1.2.0 con tipado ampliado en `HerrajeContactoItem`.
+  * **Validación TypeScript**: `npx tsc --noEmit` verificado con **0 errores**.
+
+- [x] **[17 de Septiembre, 2026] Versionado de Motor `cadStateUtils` (v1.1.0), Switch de Visualización Ensamblado/Piso y Resaltado 3D en Amarillo Radiante en `3dBimFab`**:
+  * **Versionado Formal de Motor**: Preservado respaldo histórico `3BF/lib/engine/v1/cadStateUtils_v1.ts` y etiquetado el motor activo `cadStateUtils.ts` como **v1.1.0**.
+  * **Eliminación de Falso Positivo en Hover Lejano**: Suprimida la inyección de nombres genéricos (`rName`) en `nombresMallas`, restringiendo la lista a los IDs únicos de instancia (`Cavilha (1)`... `Cavilha (93)`). En `BoardMesh.tsx`, se exige coincidencia unívoca por `instanciaKey`, impidiendo que se enciendan tarugos situados en el piso a 30 cm de distancia.
+  * **Resaltado 3D Amarillo Radiante (#FACC15 / #F59E0B)**: Modificado el material emisivo a amarillo dorado al $100\%$, logrando máximo contraste y legibilidad frente al cristal azul del mueble.
+  * **Switch de Prender/Apagar en Animador P03**: Botón toggle en cápsula que conmuta entre `🧩 Posición Original` (mueble ensamblado) y `📐 Piezas Desplazadas` (piezas en piso preparadas para armado).
+  * **Validación TypeScript**: `npx tsc --noEmit` verificado con **0 errores**.
+
+- [x] **[17 de Septiembre, 2026] Animador de Paso P03 — Detección Espacial Precisa de Herrajes por Pieza, Resaltado Visual Emisivo en 3D (Hover) y Exclusividad Inter-Capa en `3dBimFab`**:
+  * **Detección Espacial Física de Instancias Discretas (`cadStateUtils.ts`)**: Desagregación de mallas compuestas de Grasshopper con `anotarInstanciasFisicas()`, analizando cada instancia individual (`Cavilha (1)`, `Corrediça - Fija (1)`) en su estado de reposo ensamblado (`pRest` CAD) con una micro-tolerancia de 3.5 mm (`TOLERANCIA_CONTACTO_M = 0.0035`). Elimina los conteos desproporcionados (ej. 48 correderas en Peça 4).
+  * **Resaltado 3D Interactivo por Hover (`BoardMesh.tsx` & `storeTypes.ts`)**: Al pasar el ratón (`hover`) sobre cualquier cápsula de herraje en la interfaz de capas, las mallas correspondientes en el visor WebGL 3D se iluminan en cian emisivo brillante (`#06B6D4`, `emissiveIntensity=0.90`), permitiendo verificar al instante qué herrajes físicos corresponden a esa capa.
+  * **Exclusividad Inter-Capa**: Al activar un herraje para una pieza, se desactiva de forma automática en las piezas vecinas para evitar traslaciones duplicadas en la cinemática.
+  * **Denominación Oficial "Animador P03" & Cápsulas Puras**: Cabecera formalizada como **Animador P03** y botones/badges en cápsulas circulares (`rounded-full`).
+  * **Validación TypeScript**: `npx tsc --noEmit` verificado con **0 errores**.
+
+- [x] **[17 de Septiembre, 2026] Calibrador Cinemático de Ensamble (Velocidades Globales + Offsets XY en Piso, Puntero de Mouse Interactivo, Botón Reset al Origen y Generador JSON)**:
+  * **Componente `CalibradorCinematicaSection.tsx`**: Integrado en el espacio inferior de `VoiceStudioPanel.tsx` con diseño Tech Ethos y cápsulas (`rounded-full`).
+  * **Botón Protagónico *"Posicionar en el escenario"* (Ícono de Mira / Crosshair)**: Ubicado estratégicamente entre el nombre de la pieza y las coordenadas. Al hacer clic, la pieza se adhiere en tiempo real al puntero del mouse sobre el plano horizontal del piso, y con un simple clic izquierdo queda fijada en el lugar exacto.
+  * **Botón de Reset al Origen Individual (`RotateCcw`) y Global (`Resetear todo`)**: Agregado un botón circular (`w-6 h-6 rounded-full`) en cada fila de pieza que permite restablecer al instante sus coordenadas a `X: 0, Y: 0`, devolviendo inmediatamente las mallas en la escena 3D a su posición de reposo ensamblada original (`getSafeRestPosition`). Cuando alguna pieza tiene offset activo, se habilita además en la cabecera el botón *"Resetear todo"* para devolver todo el lote al origen en 1 clic.
+  * **Movimiento Horizontal Estricto sobre el Suelo (Cero Vuelo Vertical en Eje Z/Y)**: Corregido el mapeo de coordenadas del mundo a las coordenadas locales del contenedor del mueble (el cual posee rotaciones de orientación de banco, ej. 90° en X). El desplazamiento se proyecta exclusivamente en el plano del piso mundial ($Y_{\text{mundo}} = 0$), garantizando que la pieza permanezca de canto o apoyada en el piso sin subir ni bajar de forma errática.
+  * **Auto-Apoyo en Piso para Piezas Elevadas (ej. `Peça 9`)**: Al activar el posicionamiento o al compilar la cinemática de espera para una pieza que en el mueble final va elevada (como entrepaños, estantes o fondos flotantes), el sistema calcula automáticamente la cota inferior de su caja delimitadora (`Box3.min.y`) y aplica una bajada compensatoria (`floorDropY = -minY`), logrando que la pieza repose exactamente sobre el piso físico ($Y = 0$) durante el arrastre con el mouse y durante su fase de espera previa al ensamble.
+  * **Sincronización Multi-Malla de Instancias Hermanas (ej. `Peça 8`)**: Al seleccionar una pieza que posee múltiples instancias físicas (como `Peça 8 (1)`, `Peça 8 (2)`, `Peça 8 (3)`), el puntero traslada en tiempo real a todo el conjunto de piezas sincronizadamente manteniendo sus distancias relativas exactas.
+  * **Cancelación con Tecla Escape (`Esc`)**: Implementado listener global que al presionar la tecla `Escape` suelta inmediatamente la pieza, restaura su posición previa intacta y cancela el modo de posicionamiento sin alterar datos.
+  * **Coordenadas Claras del Piso (X / Y en cm)**: Estandarizado el sistema de coordenadas para que el usuario manipule los dos ejes del plano del piso ($X$ horizontal e $Y$ de profundidad), manteniendo siempre la pieza apoyada de canto contra el piso sin alterar su altura de reposo.
+  * **Velocidades Físicas Globales**: Control interactivo con sliders para la **Velocidad de Tableros (5 a 40 cm/s)** y la **Velocidad de Inserción de Herrajes (3 a 25 cm/s)**, permitiendo que la velocidad física del armado gobierne la duración total del paso.
+  * **Componente Three.js `AssemblyPiecePositioner.tsx`**: Raycaster reactivo al plano $Y = 0$ con fijación al vuelo y cálculo instantáneo de delta en centímetros.
+  * **Motor Cinemático Three.js (`assemblyCoreographer.ts`)**: Vinculación matemática de los offsets de espera a las trayectorias de interpolación (`KeyframeTracks`) y botón **"Generar Cinemática JSON"** que orquesta la secuencia y recalibra la duración total del paso en tiempo real.
+  * **Detección Automática de Extensión en Descargas (`VoiceStudioPanel.tsx`)**: Solucionado el error de reproducción en VLC para Opus, descargando nativamente como `.webm` cuando es Opus y como `.mp3` para 48k/96k.
+
+- [x] **[17 de Septiembre, 2026] Auto-Selección Total Inmediata al Tocar el Campo de Texto de Guion (`VoiceStudioPanel.tsx`)**:
+  * Implementado en los eventos `onFocus` y `onClick` del `textarea` de locución (`e.currentTarget.select()`).
+  * Cada vez que el usuario hace clic o toca el área de texto, el 100% del guion previo queda seleccionado al instante, permitiendo pegar directamente texto nuevo con `Ctrl+V` y reemplazar la versión anterior sin tener que borrar manualmente ni presionar `Ctrl+A`.
+
+- [x] **[17 de Septiembre, 2026] Recalibración Acústica de Velocidades TTS (0.80x a 1.10x, 0.90x Normal por Defecto)**:
+  * **Opciones Calibradas en UI (`VoiceStudioPanel.tsx`)**: Menú simplificado con rango de 0.8x a 1.1x:
+    - `0.80x — Más lenta`
+    - `0.85x — Un poco más lenta`
+    - `0.90x — Velocidad normal (Por defecto)`
+    - `1.00x — Un poco rápido`
+    - `1.10x — Más rápido`
+  * **Valor Normal 0.90x**: Se fijó 0.90x como la velocidad base estándar predeterminada para todos los pasos, otorgando cadencia didáctica calmada y botón de 1 clic `0.9x Normal` para restablecer el ritmo de fábrica.
+  * **Backend `/api/tts`**: Clamping de seguridad ajustado a [0.8, 1.1] con fallback a 0.9.
+
+- [x] **[17 de Septiembre, 2026] Selector de Calidad / Compresión TTS en Panel de Manuales 3D (96 kbps, 48 kbps y Opus WebM)**:
+  * **Endpoint `/api/tts` multi-resolución**: Configurado para admitir `calidad: "96k" | "48k" | "opus"`, adaptando dinámicamente el formato de salida (`OUTPUT_FORMAT.AUDIO_24KHZ_96KBITRATE_MONO_MP3`, `OUTPUT_FORMAT.AUDIO_24KHZ_48KBITRATE_MONO_MP3` y `OUTPUT_FORMAT.WEBM_24KHZ_16BIT_MONO_OPUS`), la calibración matemática de silencios concatenados y el cálculo exacto de duración.
+  * **Selector en UI (`VoiceStudioPanel.tsx`)**: Menú desplegable interactivo con ícono `Gauge` y cápsulas (`rounded-full`) que permite conmutar entre **96 kbps (Máxima Fidelidad / Acústica Cálida)**, **48 kbps (Balanceado / 50% de peso reducido)** y **Opus WebM (Ultra-ligero para conexiones móviles)**.
+  * **Persistencia en Modelo de Datos**: Propiedad `calidadAudioTts` integrada en `PasoManualStudio` (`storeTypes.ts`) y reflejada en la tarjeta de audio sincronizado con badge dinámico de calidad.
+
+- [x] **[17 de Septiembre, 2026] Auto-Minimizado del N-Panel y Centrado Automático de Geometría 3D al Activar Manual 3D**:
+  * En [app/page.tsx](file:///c:/Desarrollo/mmapp/3BF/app/page.tsx), se configuró el botón superior `Manual 3D` para ejecutar simultáneamente `setMostrarNPanel(false)` y `centrarCamara()`.
+  * En [CameraControllers.tsx](file:///c:/Desarrollo/mmapp/3BF/components/viewer/CameraControllers.tsx), se robusteció `CameraViewController` para resolver el grupo 3D de la geometría activa (vía `furnitureGroup`, `__3bfInstanceGroups` o la escena raíz), calculando su `BoundingBox` tridimensional y orientando suavemente la cámara para encuadrar y centrar con precisión el mueble en el centro del viewport.
 
 ### 🧠 RAM de Ventas B2B & CRM Relacional Multimodal (`/ventas-ram`) — Estado: IMPLEMENTADO Y VALIDADO
 - [x] **Módulo Completo de RAM de Ventas (`/ventas-ram`)**: Implementado en la plataforma Next.js con permisos de rol (`VENTAS_RAM`), navegación con ícono `BrainCircuit`, diseño Tech Ethos / Obsidian Teal, márgenes de contenedor estándar (`p-6 space-y-6`) homologados con Proyectos y **divisor redimensionable (Splitter interactivo)** para ajustar el ancho entre el Directorio y la Ficha con persistencia local.
@@ -46,6 +251,9 @@ Este archivo es la "Memoria RAM" para Antigravity. Contiene el contexto de lo qu
   - **Ergonomía de Selección, Copia y Párrafos Continuos (Validado y Aprobado)**: Flujo de texto continuo (`select-text cursor-text`) que permite seleccionar libremente cualquier parte con el mouse para hacer `Ctrl+C`, botones de cápsula pura (`rounded-full`) para copiar la transcripción completa en 1 clic, concatenación inteligente por comas (`, `) para oraciones fluidas de hasta ~28 palabras sin saltos innecesarios de burbuja, contenedor con ancho expandido en un 40% (`max-w-[98%]`) y botón rápido para **Limpiar Pizarra**.
   - **Dirección Conversacional Bilingüe Limpia & Modo "Solo Dictado" (Lienzo 100%)**: Perfiles humanos sin siglas crípticas (`🇧🇷 Escuchar a Brasil` para reuniones de Meet/YouTube sin tocar botones durante la llamada, `🇪🇸 Mi Voz (Español)` para dictar notas, y `🇺🇸 Escuchar Inglés`), junto con el conmutador a "Solo Dictado" que colapsa la columna de traducción y despliega el lienzo al 100% de la pantalla.
   - **Detección Inteligente de Preguntas y Puntuación en Tiempo Real (`lib/punctuationEngine.ts`)**: Motor algorítmico sin latencia que detecta automáticamente oraciones interrogativas directas e indirectas, inserta signos de apertura y cierre en español (`¿ ... ?`), corrige tildes diacríticas interrogativas (`qué`, `cómo`, `cuándo`, `dónde`, `por qué`), reconoce verbos de indagación conversacionales (*"recuerdas"*, *"sabes si"*, *"es posible"*, *"te parece"*), coletillas de confirmación (*", verdad?"*, *", no?"*) y estructura preguntas en portugués e inglés con signo de cierre (`?`).
+  - **Edición en Vivo y Borrado en Tiempo Real (Hito 149)**: Edición directa no bloqueante con cursor sobre cualquier frase dictada mientras el micrófono sigue activo; auto-ajuste de altura, soporte completo para borrar caracteres con Backspace/Supr, botón rápido de papelera por frase (`Trash2`), botón de cabecera `Deshacer Frase` (`Undo2`) y sincronización automática de traducción al pausar la edición.
+  - **Métricas Completas en Barra Superior (Hito 150)**: Cronómetro en vivo, contador de **Palabras** y contador de **Caracteres** estándar web universal (conteo exacto de longitud con espacios y puntuación, 100% compatible con formularios web y límites de redes sociales).
+  - **Fijación Estática Superior y Scroll Independiente en Lienzo (Hito 154)**: Cabecera, títulos y barra de grabación `AudioRecorderBar` 100% estáticas (`shrink-0`) con scroll independiente fluido en el lienzo de texto mediante rueda del ratón y barra de desplazamiento vertical.
   - **Temas Tech Ethos & Obsidian Compliant**: Cumplimiento del tema claro y oscuro con botones cápsula `rounded-full` y color corporativo dark `#1368AA`.
   - **Validación TypeScript**: **0 errores** (`npx tsc --noEmit`).
 

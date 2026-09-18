@@ -1,5 +1,6 @@
 import { PasoManualStudio, ModoPickingManualState } from '@/lib/store';
-import { extraerPiezaMadre } from '@/lib/piezaMadreUtils';
+import { extraerPiezaMadre, perteneceAMismaFamiliaPieza, esHerrajeNombre } from '@/lib/piezaMadreUtils';
+import { coincidenMismoHerraje, isHardwareMeshName } from '@/lib/engine/cadStateUtils';
 
 export interface BoardVisibilityInput {
   name: string;
@@ -24,37 +25,52 @@ export function evaluarPertenenciaPaso(
   if (!asignadas || asignadas.length === 0) return false;
   const rawClean = name ? name.replace(/^RH_(?:OUT|IN):\s*/i, '').trim() : '';
 
+  // 🛡️ 1. EVALUACIÓN EXCLUSIVA PARA HERRAJES DE ENSAMBLE:
+  const esHardware =
+    isHardwareMeshName(name) ||
+    isHardwareMeshName(cleanName) ||
+    (instanciaKey ? isHardwareMeshName(instanciaKey) : false) ||
+    esHerrajeNombre(name) ||
+    esHerrajeNombre(cleanName) ||
+    (instanciaKey ? esHerrajeNombre(instanciaKey) : false);
+
+  if (esHardware) {
+    // La identidad física unívoca del herraje es su instancia numerada (ej. "Cavilha (2)")
+    const idHerrajeMesh = instanciaKey || rawClean || cleanName;
+    const idLow = idHerrajeMesh.toLowerCase().trim();
+
+    return asignadas.some((pz) => {
+      if (!pz) return false;
+      const pzLow = pz.toLowerCase().trim();
+      // Coincidencia exacta directa (ej. "Cavilha (2)" === "Cavilha (2)")
+      if (pzLow === idLow) return true;
+      // Coincidencia canónica universal (mismo número de instancia física y misma familia)
+      return coincidenMismoHerraje(pz, idHerrajeMesh);
+    });
+  }
+
+  // 🪵 2. EVALUACIÓN PARA TABLEROS DE MADERA Y PIEZAS ESTRUCTURALES:
   return asignadas.some((pz) => {
     if (!pz) return false;
 
-    // 1. Coincidencia directa con instanciaKey o piezaMadre
-    if (instanciaKey && (pz === instanciaKey || pz.toLowerCase() === instanciaKey.toLowerCase())) {
-      return true;
-    }
-    if (piezaMadre && (pz === piezaMadre || pz.toLowerCase() === piezaMadre.toLowerCase())) {
-      return true;
-    }
+    // Coincidencia directa exacta de string
+    if (instanciaKey && (pz === instanciaKey || pz.toLowerCase() === instanciaKey.toLowerCase())) return true;
+    if (piezaMadre && (pz === piezaMadre || pz.toLowerCase() === piezaMadre.toLowerCase())) return true;
+    if (cleanName && (pz === cleanName || pz.toLowerCase() === cleanName.toLowerCase())) return true;
+    if (rawClean && (pz === rawClean || pz.toLowerCase() === rawClean.toLowerCase())) return true;
 
-    // 2. Discriminación estricta de instancias numeradas
-    const tieneInstanciaPz = Boolean(pz.match(/\s*\(\d+\)$/));
-    const tieneInstanciaMesh = Boolean((instanciaKey || piezaMadre || '').match(/\s*\(\d+\)$/));
-    if (tieneInstanciaPz && tieneInstanciaMesh) {
-      return false;
-    }
-
-    // 3. Coincidencia por nombre limpio
-    if (cleanName && (pz === cleanName || pz.toLowerCase() === cleanName.toLowerCase())) {
+    // Coincidencia de familia de tablero (ej. Peça 8 (1) pertenece a Peça 8)
+    if (
+      perteneceAMismaFamiliaPieza(pz, piezaMadre) ||
+      perteneceAMismaFamiliaPieza(pz, instanciaKey) ||
+      perteneceAMismaFamiliaPieza(pz, cleanName) ||
+      perteneceAMismaFamiliaPieza(pz, rawClean)
+    ) {
+      // Si ambos especifican número de sub-instancia de pieza (ej. Peça 8 (1) vs Peça 8 (2))
+      const numPz = pz.match(/\((\d+)\)/)?.[1];
+      const numMesh = (instanciaKey || cleanName || rawClean || '').match(/\((\d+)\)/)?.[1];
+      if (numPz && numMesh) return numPz === numMesh;
       return true;
-    }
-    if (rawClean && (pz === rawClean || pz.toLowerCase() === rawClean.toLowerCase())) {
-      return true;
-    }
-
-    // 4. Coincidencia canónica de Pieza Madre
-    const pmPz = extraerPiezaMadre(pz);
-    const pmMesh = piezaMadre || (instanciaKey ? extraerPiezaMadre(instanciaKey) : extraerPiezaMadre(cleanName || rawClean));
-    if (pmPz && pmMesh && pmPz.toLowerCase() === pmMesh.toLowerCase()) {
-      if (!tieneInstanciaPz && !tieneInstanciaMesh) return true;
     }
 
     return false;

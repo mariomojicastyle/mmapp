@@ -38,6 +38,19 @@ export const createManualSlice = (set: any, get: any): any => {
   timelineVelocidad: 1.0,
   idiomaVozManual: "es",
   audioMutedManual: false,
+  autoEnfoqueCamaraManual: false, // Desactivado por defecto para dar control libre y cinematográfico al usuario
+  setAutoEnfoqueCamaraManual: (autoEnfoqueCamaraManual: boolean) => set({ autoEnfoqueCamaraManual }),
+  simuladorMovilActivo: false,
+  setSimuladorMovilActivo: (simuladorMovilActivo: boolean) => set({ simuladorMovilActivo }),
+  toggleSimuladorMovil: () => set((s) => ({ simuladorMovilActivo: !s.simuladorMovilActivo })),
+  piezaEnPosicionamientoManual: null,
+  setPiezaEnPosicionamientoManual: (piezaEnPosicionamientoManual: any) => set({ piezaEnPosicionamientoManual }),
+  ultimaPiezaCalibrada: null,
+  setUltimaPiezaCalibrada: (ultimaPiezaCalibrada: string | null) => set({ ultimaPiezaCalibrada }),
+  herrajesHovered: null,
+  setHerrajesHovered: (herrajesHovered: string[] | null) => set({ herrajesHovered }),
+  vistaPiezasDesplazadas: false,
+  setVistaPiezasDesplazadas: (vistaPiezasDesplazadas: boolean) => set({ vistaPiezasDesplazadas }),
 
   setPasosManual: (pasosManual) => {
     const sanitizados = sanitizarPasosManuales(pasosManual);
@@ -49,6 +62,7 @@ export const createManualSlice = (set: any, get: any): any => {
       pasoActivoManualId,
       timelineCurrentTime: 0,
       isTimelinePlaying: false,
+      piezaEnPosicionamientoManual: null,
       modoPickingManual: {
         activo: false,
         modo: "agregar",
@@ -2022,6 +2036,78 @@ export const createManualSlice = (set: any, get: any): any => {
       localStorage.setItem("3bf_ancho_panel_derecho", String(normalizado));
     }
     set({ anchoPanelDerecho: normalizado });
+  },
+
+  // 🎥 Implementación de Keyframes de Cámara Cinematográfica
+  capturarKeyframeCamaraPaso: (pasoId, tiempo, posicion, target, fov) => {
+    set((state) => {
+      const tiempoNormalizado = Math.max(0, Math.round(tiempo * 100) / 100);
+      const nuevosPasos = state.pasosManual.map((p) => {
+        if (p.id !== pasoId) return p;
+
+        const kfsExistentes = [...(p.keyframesCamara || [])];
+        // Buscar si ya existe un keyframe dentro de una tolerancia de 0.1s para sobreescribirlo
+        const idxExistente = kfsExistentes.findIndex((k) => Math.abs(k.tiempo - tiempoNormalizado) < 0.1);
+
+        const nuevoKf = {
+          id: idxExistente >= 0 ? kfsExistentes[idxExistente].id : `kf_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`,
+          tiempo: tiempoNormalizado,
+          posicion,
+          target,
+          fov,
+        };
+
+        if (idxExistente >= 0) {
+          kfsExistentes[idxExistente] = nuevoKf;
+        } else {
+          kfsExistentes.push(nuevoKf);
+        }
+
+        // Mantener ordenados cronológicamente
+        kfsExistentes.sort((a, b) => a.tiempo - b.tiempo);
+
+        return {
+          ...p,
+          keyframesCamara: kfsExistentes,
+          camaraCinematicaActiva: true, // Auto-activar al capturar un keyframe
+        };
+      });
+
+      guardarPasosEnCacheLocal(nuevosPasos, state.manualActivoGuardado);
+      return { pasosManual: nuevosPasos };
+    });
+  },
+
+  eliminarKeyframeCamaraPaso: (pasoId, kfId) => {
+    set((state) => {
+      const nuevosPasos = state.pasosManual.map((p) => {
+        if (p.id !== pasoId) return p;
+        const kfsRestantes = (p.keyframesCamara || []).filter((k) => k.id !== kfId);
+        return {
+          ...p,
+          keyframesCamara: kfsRestantes,
+        };
+      });
+
+      guardarPasosEnCacheLocal(nuevosPasos, state.manualActivoGuardado);
+      return { pasosManual: nuevosPasos };
+    });
+  },
+
+  toggleCamaraCinematicaPaso: (pasoId) => {
+    set((state) => {
+      const nuevosPasos = state.pasosManual.map((p) => {
+        if (p.id !== pasoId) return p;
+        const estadoActual = p.camaraCinematicaActiva ?? true;
+        return {
+          ...p,
+          camaraCinematicaActiva: !estadoActual,
+        };
+      });
+
+      guardarPasosEnCacheLocal(nuevosPasos, state.manualActivoGuardado);
+      return { pasosManual: nuevosPasos };
+    });
   },
 
   };

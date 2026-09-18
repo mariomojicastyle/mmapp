@@ -9,6 +9,7 @@ import { useMaterialPBRMaps } from "./boardMesh/useMaterialPBRMaps";
 import { useBoardMeshGeometry } from "./boardMesh/useBoardMeshGeometry";
 import { resolverPropiedadesMaterial } from "./boardMesh/boardMaterialResolver";
 import { resolverVisibilidadBoard } from "./boardMesh/boardVisibilityRules";
+import { coincidenMismoHerraje } from "@/lib/engine/cadStateUtils";
 
 export { useMaterialPBRMaps };
 
@@ -52,6 +53,8 @@ export function BoardMesh({
     pasosManual,
     pasoActivoManualId,
     pestanaActiva,
+    herrajesHovered,
+    timelineCurrentTime,
   } = use3BFStore();
 
   const meshRef = React.useRef<THREE.Mesh>(null);
@@ -66,6 +69,64 @@ export function BoardMesh({
 
   const cleanName = name.replace(/^RH_OUT:/i, "").trim();
   const piezaMadre = instanciaKey || extraerPiezaMadre(cleanName || name);
+
+  // Resaltado interactivo de herrajes cuando el usuario pasa el cursor por una cápsula en las Capas de Animación
+  const estaHoveredEnHerrajes = React.useMemo(() => {
+    if (!herrajesHovered || herrajesHovered.length === 0) return false;
+
+    // ⏱️ En modo manual, verificar estrictamente si la capa o herraje está activo en el tiempo actual
+    if (pestanaActiva === "manual" && pasoActivoManual) {
+      const piezasEspera = pasoActivoManual.configuracionCinematica?.piezasEspera || [];
+      const ikLow = (instanciaKey || "").toLowerCase().trim();
+      const cLow = cleanName.toLowerCase().trim();
+      const rLow = name.replace(/^RH_OUT:/i, "").trim().toLowerCase();
+
+      for (const p of piezasEspera) {
+        const herrajesHabilitados = p.herrajesCohesionados || [];
+        const herrajesCongelados = p.herrajesCongelados || [];
+        const tieneEsteHerraje =
+          herrajesHabilitados.some((h) => coincidenMismoHerraje(h, ikLow) || coincidenMismoHerraje(h, cLow) || coincidenMismoHerraje(h, rLow)) ||
+          herrajesCongelados.some((h) => coincidenMismoHerraje(h, ikLow) || coincidenMismoHerraje(h, cLow) || coincidenMismoHerraje(h, rLow));
+
+        if (tieneEsteHerraje) {
+          const tPieza = p.tiempoAparicionPieza || 0;
+          const tiemposHw = p.tiemposAparicionHerrajes || {};
+          let tHw: number | null = null;
+          for (const [k, v] of Object.entries(tiemposHw)) {
+            if (coincidenMismoHerraje(k, ikLow) || coincidenMismoHerraje(k, cLow) || coincidenMismoHerraje(k, rLow)) {
+              if (typeof v === "number" && v > 0) {
+                tHw = v;
+                break;
+              }
+            }
+          }
+          const tEfectivo = tHw !== null && tHw > 0 ? tHw : tPieza;
+          if (tEfectivo > 0 && timelineCurrentTime < tEfectivo) {
+            // Aún no ha aparecido en el timeline: NO debe resaltarse ni forzarse en la escena
+            return false;
+          }
+          break;
+        }
+      }
+    }
+
+    const ikLow = (instanciaKey || "").toLowerCase().trim();
+    const cLow = cleanName.toLowerCase().trim();
+    const rLow = name.replace(/^RH_OUT:/i, "").trim().toLowerCase();
+
+    return herrajesHovered.some((h) => {
+      const hLow = h.toLowerCase().trim();
+      if (ikLow) {
+        if (ikLow === hLow || coincidenMismoHerraje(ikLow, hLow)) return true;
+      }
+      return (
+        hLow === cLow ||
+        hLow === rLow ||
+        coincidenMismoHerraje(cLow, hLow) ||
+        coincidenMismoHerraje(rLow, hLow)
+      );
+    });
+  }, [herrajesHovered, cleanName, name, instanciaKey, pestanaActiva, pasoActivoManual, timelineCurrentTime]);
 
   // En modo Invertir (ocultarNoAsignadas activo), las piezas se muestran en su color y material normal
   const estaSeleccionadaEnPicking = Boolean(
@@ -199,7 +260,7 @@ export function BoardMesh({
         ref={meshRef}
         position={position}
         scale={esDuplicado ? [1.06, 1.06, 1.06] : (estaSeleccionadaEnPicking ? [1.015, 1.015, 1.015] : undefined)}
-        renderOrder={esDuplicado ? 20 : (estaSeleccionadaEnPicking ? 22 : undefined)}
+        renderOrder={esDuplicado ? 20 : (estaHoveredEnHerrajes ? 35 : (estaSeleccionadaEnPicking ? 22 : (isHardwareTampa ? 25 : undefined)))}
         name={instanciaKey ? `${instanciaKey}::${cleanName}` : cleanName}
         geometry={customGeometry}
         onClick={(e) => {
@@ -231,7 +292,7 @@ export function BoardMesh({
             new THREE.Vector3(1, 1, 1)
           ),
           instanciaId,
-          instanciaKey: piezaMadre,
+          instanciaKey: instanciaKey || cleanName || name,
           pbrDiffuse: pbrMaps.diffuse,
           materialPBR,
           nombreMaterialEfectivo,
@@ -256,11 +317,17 @@ export function BoardMesh({
         }}
       >
         <meshStandardMaterial
-          key={`${activeMap ? (activeMap as any).uuid : "no-map"}-${modoVisual}-${nombreMaterialEfectivo}-${finalMeshColor}-${opacity}-${roughness}-${metalness}-${esDuplicado}-${estaSeleccionadaEnPicking}`}
-          name={esDuplicado ? "Material_Duplicado_Alerta" : nombreMaterialEfectivo}
-          color={esDuplicado ? "#EF4444" : (estaSeleccionadaEnPicking ? "#FBBF24" : finalMeshColor)}
-          emissive={estaSeleccionadaEnPicking ? new THREE.Color("#F59E0B") : (esDuplicado ? new THREE.Color("#DC2626") : undefined)}
-          emissiveIntensity={estaSeleccionadaEnPicking ? 0.70 : (esDuplicado ? 0.45 : 0)}
+          key={`${activeMap ? (activeMap as any).uuid : "no-map"}-${modoVisual}-${nombreMaterialEfectivo}-${finalMeshColor}-${opacity}-${roughness}-${metalness}-${esDuplicado}-${estaSeleccionadaEnPicking}-${estaHoveredEnHerrajes}`}
+          name={esDuplicado ? "Material_Duplicado_Alerta" : (estaHoveredEnHerrajes ? "Material_Herraje_Hover" : nombreMaterialEfectivo)}
+          color={esDuplicado ? "#EF4444" : (estaSeleccionadaEnPicking ? "#FBBF24" : (estaHoveredEnHerrajes ? "#FACC15" : finalMeshColor))}
+          emissive={
+            estaHoveredEnHerrajes
+              ? new THREE.Color("#FFE600")
+              : (estaSeleccionadaEnPicking
+                  ? new THREE.Color("#F59E0B")
+                  : (esDuplicado ? new THREE.Color("#DC2626") : undefined))
+          }
+          emissiveIntensity={estaHoveredEnHerrajes ? 1.25 : (estaSeleccionadaEnPicking ? 0.70 : (esDuplicado ? 0.45 : 0))}
           map={activeMap}
           normalMap={activeNormal}
           normalScale={activeNormal ? new THREE.Vector2(normalScaleVal, normalScaleVal) : undefined}
@@ -268,12 +335,15 @@ export function BoardMesh({
           aoMap={activeAO}
           aoMapIntensity={materialPBR?.aoIntensity ?? 1.0}
           envMapIntensity={envMapIntensityEfectivo}
-          transparent={estaSeleccionadaEnPicking ? false : transparent}
-          opacity={estaSeleccionadaEnPicking ? 1.0 : opacity}
-          roughness={roughness}
-          metalness={metalness}
+          transparent={estaSeleccionadaEnPicking || estaHoveredEnHerrajes ? false : transparent}
+          opacity={estaSeleccionadaEnPicking || estaHoveredEnHerrajes ? 1.0 : opacity}
+          roughness={estaHoveredEnHerrajes ? 0.2 : roughness}
+          metalness={estaHoveredEnHerrajes ? 0.5 : metalness}
           wireframe={isWireframe}
-          depthWrite={estaSeleccionadaEnPicking ? true : depthWrite}
+          depthWrite={estaSeleccionadaEnPicking || estaHoveredEnHerrajes ? true : depthWrite}
+          polygonOffset={isHardwareTampa || estaSeleccionadaEnPicking}
+          polygonOffsetFactor={isHardwareTampa ? -2 : -1}
+          polygonOffsetUnits={isHardwareTampa ? -2 : -1}
           side={THREE.DoubleSide}
         />
         {/* 📐 Malla pura (wireframe de la geometría real) sobre la superficie sólida translúcida */}
@@ -288,15 +358,25 @@ export function BoardMesh({
             />
           </mesh>
         )}
-        {mostrarAristasEnEsteMesh && !isHardware && (
+        {mostrarAristasEnEsteMesh && (!isHardware || isHardwareTampa || estaSeleccionadaEnPicking || estaHoveredEnHerrajes) && (
           <Edges
             geometry={edgeGeometryToUse}
-            threshold={calibracion.thresholdAristas || 25}
-            color={estaSeleccionadaEnPicking ? "#D97706" : (esDuplicado ? "#991B1B" : (calibracion.colorAristas || "#111827"))}
-            opacity={estaSeleccionadaEnPicking ? 1.0 : (calibracion.opacidadAristas ?? 1.0)}
-            transparent={(calibracion.opacidadAristas ?? 1.0) < 0.99 && !estaSeleccionadaEnPicking}
-            lineWidth={estaSeleccionadaEnPicking ? 3.0 : (esDuplicado ? 2.5 : Math.max(1, ((calibracion.calibreAristas ?? 100) / 100) * 1.5))}
-            renderOrder={estaSeleccionadaEnPicking ? 35 : (esDuplicado ? 25 : 10)}
+            threshold={isHardwareTampa ? 15 : (calibracion.thresholdAristas || 25)}
+            color={
+              estaHoveredEnHerrajes
+                ? "#854D0E"
+                : (estaSeleccionadaEnPicking
+                    ? "#D97706"
+                    : (isHardwareTampa
+                        ? "#475569"
+                        : (esDuplicado
+                            ? "#991B1B"
+                            : (calibracion.colorAristas || "#111827"))))
+            }
+            opacity={estaSeleccionadaEnPicking || estaHoveredEnHerrajes ? 1.0 : (isHardwareTampa ? 0.90 : (calibracion.opacidadAristas ?? 1.0))}
+            transparent={(calibracion.opacidadAristas ?? 1.0) < 0.99 && !estaSeleccionadaEnPicking && !isHardwareTampa && !estaHoveredEnHerrajes}
+            lineWidth={estaHoveredEnHerrajes ? 3.0 : (estaSeleccionadaEnPicking ? 3.0 : (isHardwareTampa ? 1.5 : (esDuplicado ? 2.5 : Math.max(1, ((calibracion.calibreAristas ?? 100) / 100) * 1.5))))}
+            renderOrder={estaHoveredEnHerrajes ? 40 : (estaSeleccionadaEnPicking ? 35 : (isHardwareTampa ? 28 : (esDuplicado ? 25 : 10)))}
           />
         )}
       </mesh>
@@ -308,7 +388,7 @@ export function BoardMesh({
       ref={meshRef}
       position={position}
       scale={esDuplicado ? [1.06, 1.06, 1.06] : (estaSeleccionadaEnPicking ? [1.015, 1.015, 1.015] : undefined)}
-      renderOrder={esDuplicado ? 20 : (estaSeleccionadaEnPicking ? 22 : undefined)}
+      renderOrder={esDuplicado ? 20 : (estaHoveredEnHerrajes ? 35 : (estaSeleccionadaEnPicking ? 22 : (isHardwareTampa ? 25 : undefined)))}
       name={cleanName}
       onClick={(e) => {
         if (modoPickingManual.activo) {
@@ -339,6 +419,7 @@ export function BoardMesh({
           new THREE.Vector3(1, 1, 1)
         ),
         instanciaId,
+        instanciaKey: instanciaKey || cleanName || name,
         pbrDiffuse: pbrMaps.diffuse,
         materialPBR,
         nombreMaterialEfectivo,
@@ -364,11 +445,17 @@ export function BoardMesh({
     >
       <boxGeometry args={size} />
       <meshStandardMaterial
-        key={`${activeMap ? (activeMap as any).uuid : "no-map"}-${modoVisual}-${nombreMaterialEfectivo}-${finalMeshColor}-${opacity}-${roughness}-${metalness}-${esDuplicado}-${estaSeleccionadaEnPicking}`}
-        name={esDuplicado ? "Material_Duplicado_Alerta" : nombreMaterialEfectivo}
-        color={esDuplicado ? "#EF4444" : (estaSeleccionadaEnPicking ? "#FBBF24" : finalMeshColor)}
-        emissive={estaSeleccionadaEnPicking ? new THREE.Color("#F59E0B") : (esDuplicado ? new THREE.Color("#DC2626") : undefined)}
-        emissiveIntensity={estaSeleccionadaEnPicking ? 0.70 : (esDuplicado ? 0.45 : 0)}
+        key={`${activeMap ? (activeMap as any).uuid : "no-map"}-${modoVisual}-${nombreMaterialEfectivo}-${finalMeshColor}-${opacity}-${roughness}-${metalness}-${esDuplicado}-${estaSeleccionadaEnPicking}-${estaHoveredEnHerrajes}`}
+        name={esDuplicado ? "Material_Duplicado_Alerta" : (estaHoveredEnHerrajes ? "Material_Herraje_Hover" : nombreMaterialEfectivo)}
+        color={esDuplicado ? "#EF4444" : (estaSeleccionadaEnPicking ? "#FBBF24" : (estaHoveredEnHerrajes ? "#FACC15" : finalMeshColor))}
+        emissive={
+          estaHoveredEnHerrajes
+            ? new THREE.Color("#FFE600")
+            : (estaSeleccionadaEnPicking
+                ? new THREE.Color("#F59E0B")
+                : (esDuplicado ? new THREE.Color("#DC2626") : undefined))
+        }
+        emissiveIntensity={estaHoveredEnHerrajes ? 1.25 : (estaSeleccionadaEnPicking ? 0.70 : (esDuplicado ? 0.45 : 0))}
         map={activeMap}
         normalMap={activeNormal}
         normalScale={activeNormal ? new THREE.Vector2(normalScaleVal, normalScaleVal) : undefined}
@@ -376,12 +463,15 @@ export function BoardMesh({
         aoMap={activeAO}
         aoMapIntensity={materialPBR?.aoIntensity ?? 1.0}
         envMapIntensity={envMapIntensityEfectivo}
-        transparent={estaSeleccionadaEnPicking ? false : transparent}
-        opacity={estaSeleccionadaEnPicking ? 1.0 : opacity}
-        roughness={roughness}
-        metalness={metalness}
+        transparent={estaSeleccionadaEnPicking || estaHoveredEnHerrajes ? false : transparent}
+        opacity={estaSeleccionadaEnPicking || estaHoveredEnHerrajes ? 1.0 : opacity}
+        roughness={estaHoveredEnHerrajes ? 0.2 : roughness}
+        metalness={estaHoveredEnHerrajes ? 0.5 : metalness}
         wireframe={isWireframe}
-        depthWrite={estaSeleccionadaEnPicking ? true : depthWrite}
+        depthWrite={estaSeleccionadaEnPicking || estaHoveredEnHerrajes ? true : depthWrite}
+        polygonOffset={isHardwareTampa || estaSeleccionadaEnPicking}
+        polygonOffsetFactor={isHardwareTampa ? -2 : -1}
+        polygonOffsetUnits={isHardwareTampa ? -2 : -1}
         side={THREE.DoubleSide}
       />
       {/* 📐 Malla pura (wireframe de la geometría real) sobre la superficie sólida translúcida */}
@@ -397,14 +487,24 @@ export function BoardMesh({
           />
         </mesh>
       )}
-      {mostrarAristasEnEsteMesh && !isHardware && (
+      {mostrarAristasEnEsteMesh && (!isHardware || isHardwareTampa || estaSeleccionadaEnPicking || estaHoveredEnHerrajes) && (
         <Edges
-          threshold={calibracion.thresholdAristas || 25}
-          color={estaSeleccionadaEnPicking ? "#D97706" : (esDuplicado ? "#991B1B" : (calibracion.colorAristas || "#111827"))}
-          opacity={estaSeleccionadaEnPicking ? 1.0 : (calibracion.opacidadAristas ?? 1.0)}
-          transparent={(calibracion.opacidadAristas ?? 1.0) < 0.99 && !estaSeleccionadaEnPicking}
-          lineWidth={estaSeleccionadaEnPicking ? 3.0 : (esDuplicado ? 2.5 : Math.max(1, ((calibracion.calibreAristas ?? 100) / 100) * 1.5))}
-          renderOrder={estaSeleccionadaEnPicking ? 35 : (esDuplicado ? 25 : 10)}
+          threshold={isHardwareTampa ? 15 : (calibracion.thresholdAristas || 25)}
+          color={
+            estaHoveredEnHerrajes
+              ? "#854D0E"
+              : (estaSeleccionadaEnPicking
+                  ? "#D97706"
+                  : (isHardwareTampa
+                      ? "#475569"
+                      : (esDuplicado
+                          ? "#991B1B"
+                          : (calibracion.colorAristas || "#111827"))))
+          }
+          opacity={estaSeleccionadaEnPicking || estaHoveredEnHerrajes ? 1.0 : (isHardwareTampa ? 0.90 : (calibracion.opacidadAristas ?? 1.0))}
+          transparent={(calibracion.opacidadAristas ?? 1.0) < 0.99 && !estaSeleccionadaEnPicking && !isHardwareTampa && !estaHoveredEnHerrajes}
+          lineWidth={estaHoveredEnHerrajes ? 3.0 : (estaSeleccionadaEnPicking ? 3.0 : (isHardwareTampa ? 1.5 : (esDuplicado ? 2.5 : Math.max(1, ((calibracion.calibreAristas ?? 100) / 100) * 1.5))))}
+          renderOrder={estaHoveredEnHerrajes ? 40 : (estaSeleccionadaEnPicking ? 35 : (isHardwareTampa ? 28 : (esDuplicado ? 25 : 10)))}
         />
       )}
     </mesh>

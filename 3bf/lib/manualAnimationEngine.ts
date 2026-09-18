@@ -99,6 +99,10 @@ export function compilarAnimacionPaso(
       sceneObjects.set(norm, child);
       sceneObjects.set(child.name, child);
     }
+    const u = child.userData || {};
+    if (u.cleanName) sceneObjects.set(u.cleanName, child);
+    if (u.instanciaKey) sceneObjects.set(u.instanciaKey, child);
+    if (u.piezaMadre && !sceneObjects.has(u.piezaMadre)) sceneObjects.set(u.piezaMadre, child);
   });
 
   // 🛡️ Asegurar que cada malla arranque físicamente en su posición de reposo limpia (t = 0)
@@ -112,8 +116,15 @@ export function compilarAnimacionPaso(
       mesh.updateMatrixWorld(true);
     });
 
-    // 🔨 Aplicar transformaciones de Banco de Trabajo si el paso contiene subbloques
-    if (paso.subbloques && paso.subbloques.length > 0 && paso.tipo !== "showcase") {
+    const tieneCinematicaCalibrada = Boolean(
+      paso.configuracionCinematica?.piezasEspera &&
+      paso.configuracionCinematica.piezasEspera.length > 0 &&
+      paso.secuencia &&
+      paso.secuencia.length > 0
+    );
+
+    // 🔨 Aplicar transformaciones de Banco de Trabajo si el paso contiene subbloques y NO tiene cinemática calibrada
+    if (paso.subbloques && paso.subbloques.length > 0 && paso.tipo !== "showcase" && !tieneCinematicaCalibrada) {
       aplicarTransformacionesBancoSubbloques(sceneMeshes, paso.subbloques);
     }
   }
@@ -140,6 +151,14 @@ export function compilarAnimacionPaso(
     );
   }
 
+  // 🛡️ CRÍTICO: Permitir que Three.js PropertyBinding resuelva pistas por UUID o por name
+  const origGetObjectByName = rootScene.getObjectByName.bind(rootScene);
+  rootScene.getObjectByName = function (name: string) {
+    const found = origGetObjectByName(name);
+    if (found) return found;
+    return (this as any).getObjectByProperty("uuid", name);
+  };
+
   const clip = new THREE.AnimationClip("default", duracionPaso, tracks);
   const mixer = new THREE.AnimationMixer(rootScene);
   const action = mixer.clipAction(clip);
@@ -147,16 +166,21 @@ export function compilarAnimacionPaso(
   action.clampWhenFinished = true;
   action.play();
 
+  // 🛡️ CRÍTICO: Forzar primera evaluación a 0.0001s para que todas las mallas adopten
+  // sus posiciones de espera en el piso (pPop) inmediatamente al compilar el paso.
+  mixer.setTime(0.0001);
+
   return {
     clip,
     mixer,
     actualizarTiempo: (segundos: number) => {
       const tClamped = Math.max(0, Math.min(segundos, duracionPaso));
-      if (!action.isRunning() || tClamped <= 0.05) {
-        action.reset();
+      if (!action.isRunning()) {
         action.play();
       }
-      mixer.setTime(tClamped);
+      // Three.js mixer.setTime(0) omite evaluación cuando deltaTime es 0.
+      // Usar Math.max(0.0001, tClamped) fuerza evaluación instantánea de keyframes en t = 0.
+      mixer.setTime(Math.max(0.0001, tClamped));
     },
     detener: () => {
       mixer.stopAllAction();
