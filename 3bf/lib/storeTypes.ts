@@ -992,6 +992,8 @@ export interface State3BF {
   recargarDefinicionInstancia: (id: string, force?: boolean) => Promise<boolean>;
   forzarRecargaDesdeGHX: (id?: string) => Promise<boolean>;
   recomputarTodas: () => Promise<void>;
+  cargarCacheDesdeArchivo: (archivoOrData: File | string | Record<string, any>, id?: string) => Promise<boolean>;
+  exportarCacheAArchivo: (id?: string) => void;
   
   // Despiece & Herrajes Globales Multiobjeto (BOM Escenario Completo)
   getDespieceGlobal: () => Array<PiezaDespiece & { instanciaNombre: string; instanciaId: string; descripcion: string }>;

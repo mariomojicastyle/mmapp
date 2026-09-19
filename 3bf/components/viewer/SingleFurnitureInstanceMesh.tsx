@@ -349,9 +349,13 @@ export function SingleFurnitureInstanceMesh({
     m.name.toLowerCase().includes("maquinados") || m.name.toLowerCase().includes("machining")
   );
 
-  const otherMeshes = annotatedMeshes.filter((m: any) => 
-    !boardMeshes.includes(m) && !hardwareMeshes.includes(m) && !machiningMeshes.includes(m)
-  );
+  const otherMeshes = annotatedMeshes.filter((m: any) => {
+    if (boardMeshes.includes(m) || hardwareMeshes.includes(m) || machiningMeshes.includes(m)) return false;
+    // Omitir únicamente si no tiene vértices reales y sus dimensiones son nulas
+    const hasValidVerts = m.vertices && m.vertices.length >= 9;
+    if (!hasValidVerts && (!m.size || (m.size[0] <= 0.0005 && m.size[1] <= 0.0005 && m.size[2] <= 0.0005))) return false;
+    return true;
+  });
 
   return (
     <group 
@@ -404,7 +408,7 @@ export function SingleFurnitureInstanceMesh({
         </group>
       )}
 
-      {machiningMeshes.length > 0 && (
+      {pestanaActiva !== "manual" && machiningMeshes.length > 0 && (
         <group name="Maquinados">
           {machiningMeshes.map((m: any, idx: number) => (
             <BoardMesh

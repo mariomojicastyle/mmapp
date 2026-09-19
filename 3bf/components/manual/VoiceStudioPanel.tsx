@@ -213,12 +213,19 @@ export default function VoiceStudioPanel() {
         }),
       });
 
-      if (!res.ok) {
-        const data = await res.json();
-        throw new Error(data.error || "Error al sintetizar voz");
+      let data: any;
+      try {
+        data = await res.json();
+      } catch {
+        throw new Error(
+          `El servidor de voz respondió con un formato no válido (HTTP ${res.status}). Reintentando...`
+        );
       }
 
-      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data?.error || `Error al sintetizar voz (HTTP ${res.status})`);
+      }
+
       const duracionAudio = data.durationSeconds || 10.0;
 
       // Actualizar el paso con la URL del audio y calibrar la duración total del paso
@@ -270,12 +277,18 @@ export default function VoiceStudioPanel() {
         body: JSON.stringify({ text: textoOrigen, targetLang }),
       });
 
-      if (!res.ok) {
-        const data = await res.json();
-        throw new Error(data.error || "Error en la traducción automática");
+      let data: any;
+      try {
+        data = await res.json();
+      } catch {
+        throw new Error(
+          `El servicio de traducción respondió con formato inválido (HTTP ${res.status}).`
+        );
       }
 
-      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data?.error || `Error en la traducción automática (HTTP ${res.status})`);
+      }
       if (data.translation) {
         if (targetLang === "pt") {
           actualizarPasoManual(pasoActivo.id, { guionPt: data.translation });

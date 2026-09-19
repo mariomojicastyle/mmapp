@@ -53,7 +53,7 @@ import { OrbitControls, Grid, Stage, Edges, Line, Html } from "@react-three/drei
 import { use3BFStore, ObjetoInstancia3BF, MaterialPBRDef, DEFAULT_HDRI_CONFIG } from "@/lib/store";
 import * as THREE from "three";
 import * as BufferGeometryUtils from "three/examples/jsm/utils/BufferGeometryUtils.js";
-import { Download, Save, Zap, Trash2, CheckCircle2, AlertCircle, AlertTriangle, X, Loader2, Sun, Lamp, Sparkles, Smartphone, Square, Eye, EyeOff, Pipette, Check, Boxes, RefreshCw, Camera } from "lucide-react";
+import { Download, Upload, FileDown, Save, Zap, Trash2, CheckCircle2, AlertCircle, AlertTriangle, X, Loader2, Sun, Lamp, Sparkles, Smartphone, Square, Eye, EyeOff, Pipette, Check, Boxes, RefreshCw, Camera } from "lucide-react";
 import NPanel from "./NPanel";
 import { GHXAutoWatcher } from "./GHXAutoWatcher";
 import SceneEnvironment from "./SceneEnvironment";
@@ -61,13 +61,12 @@ import StudioLightGizmos from "./StudioLightGizmos";
 import LightInspectorModal from "./LightInspectorModal";
 import ARViewerModal from "./ARViewerModal";
 import ViewInArIcon from "@/components/icons/ViewInArIcon";
-import { saveLocalARModel } from "@/lib/arStorage";
+import { useGLBExport } from "./useGLBExport";
 import TimelineScrubber from "@/components/manual/TimelineScrubber";
 import { AssemblyPiecePositioner } from "./AssemblyPiecePositioner";
 import { compilarAnimacionPaso, KinematicEngineResult } from "@/lib/manualAnimationEngine";
 import { getSafeRestPosition, getSafeRestQuaternion } from "@/lib/engine/cadStateUtils";
 import { extraerPiezaMadre, anotarInstanciasFisicas } from "@/lib/piezaMadreUtils";
-import { exportarGlbPasoManual, descargarBufferComoArchivo } from "@/lib/exportManualGlb";
 import BloqueEstandar3DScene from "./BloqueEstandar3DScene";
 import SubbloquesTooltipsBillboard from "./SubbloquesTooltipsBillboard";
 import BoardMesh, { useMaterialPBRMaps } from "./BoardMesh";
@@ -809,7 +808,31 @@ export default function Viewer3D() {
     manualActivoGuardado,
     timelineCurrentTime,
     forzarRecargaDesdeGHX,
+    cargarCacheDesdeArchivo,
+    exportarCacheAArchivo,
   } = use3BFStore();
+
+  const cacheFileInputRef = React.useRef<HTMLInputElement | null>(null);
+  const [cargandoCacheArchivo, setCargandoCacheArchivo] = React.useState(false);
+
+  const handleCargarCacheArchivo = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setCargandoCacheArchivo(true);
+    try {
+      const ok = await cargarCacheDesdeArchivo(file);
+      if (ok) {
+        console.log(`[3BF Cache] Archivo '${file.name}' cargado con éxito en 3D`);
+      } else {
+        alert("El archivo seleccionado no contiene una estructura de geometría válida de 3dBimFab.");
+      }
+    } catch (err) {
+      console.error("Error al cargar archivo de caché:", err);
+    } finally {
+      setCargandoCacheArchivo(false);
+      if (e.target) e.target.value = "";
+    }
+  };
 
   const pasoActivoManual = React.useMemo(() => {
     return pasosManual.find((p) => p.id === pasoActivoManualId);
@@ -818,17 +841,58 @@ export default function Viewer3D() {
   const [guardadoManualReciente, setGuardadoManualReciente] = React.useState(false);
   const [recargandoGHX, setRecargandoGHX] = React.useState(false);
 
-  const estaSincronizando = Boolean(cargando || (objetoActivoId && instancias[objetoActivoId]?.cargando));
+  const estaSincronizando = Boolean(cargando || (objetoActivoId && instancias[objetoActivoId]?.cargando) || recargandoGHX);
+
+  // ⚡ Progreso proporcional dinámico para la barra de carga (verde sobre gris)
+  const [progresoSincronizacion, setProgresoSincronizacion] = React.useState(0);
+  const [mostrarBarraProgreso, setMostrarBarraProgreso] = React.useState(false);
+
+  React.useEffect(() => {
+    let intervalId: any = null;
+    let timeoutId: any = null;
+
+    if (estaSincronizando) {
+      setMostrarBarraProgreso(true);
+      setProgresoSincronizacion(8); // Inicio visible inmediato
+
+      const startTime = Date.now();
+      // Curva asintótica que modela el cómputo de Grasshopper hacia un 94% máximo
+      intervalId = setInterval(() => {
+        const elapsed = (Date.now() - startTime) / 1000;
+        setProgresoSincronizacion((prev) => {
+          if (prev >= 94) return 94;
+          const target = Math.min(94, 8 + 86 * (1 - Math.exp(-elapsed / 8.0)));
+          return Math.max(prev, Math.round(target));
+        });
+      }, 100);
+    } else {
+      if (mostrarBarraProgreso) {
+        // Al terminar el cómputo, saltar a 100% y dar feedback de éxito antes de desvanecer
+        setProgresoSincronizacion(100);
+        timeoutId = setTimeout(() => {
+          setMostrarBarraProgreso(false);
+          setProgresoSincronizacion(0);
+        }, 650);
+      }
+    }
+
+    return () => {
+      if (intervalId) clearInterval(intervalId);
+      if (timeoutId) clearTimeout(timeoutId);
+    };
+  }, [estaSincronizando, mostrarBarraProgreso]);
 
   const [furnitureGroup, setFurnitureGroup] = React.useState<THREE.Group | null>(null);
-  const [exportandoGLB, setExportandoGLB] = React.useState(false);
-  const [generandoAR, setGenerandoAR] = React.useState(false);
-  const [modalARAbierto, setModalARAbierto] = React.useState(false);
-  const [arData, setArData] = React.useState<{
-    id: string | null;
-    sizeBefore?: number;
-    sizeAfter?: number;
-  }>({ id: null });
+  const {
+    exportandoGLB,
+    generandoAR,
+    modalARAbierto,
+    setModalARAbierto,
+    arData,
+    exportToGLB,
+    descargarGlbSegunModo,
+    abrirRealidadAumentada,
+  } = useGLBExport(furnitureGroup);
   const [editingInstId, setEditingInstId] = React.useState<string | null>(null);
   const [editTempName, setEditTempName] = React.useState<string>("");
   const [mousePos, setMousePos] = React.useState({ x: 0, y: 0 });
@@ -1019,1035 +1083,6 @@ export default function Viewer3D() {
     });
   };
 
-  // 1. Generador central de escena limpia y GLB optimizado (con perfil ultra-liviano para AR)
-  // Por defecto, includeEdges = false para descargas limpias sin mallas de aristas duplicadas.
-  // Se conserva toda la definición matemática de aristas para AR o cuando se active explícitamente.
-  const generateCleanGLB = async (
-    isForAR = false,
-    includeEdges = false
-  ): Promise<{ arrayBuffer: ArrayBuffer; piecesCount: number } | null> => {
-    const instanceMap: Map<string, THREE.Group> | undefined = typeof window !== "undefined" ? (window as any).__3bfInstanceGroups : undefined;
-    const targetGroups: THREE.Group[] = [];
-    if (furnitureGroup) {
-      targetGroups.push(furnitureGroup);
-    } else if (instanceMap && instanceMap.size > 0) {
-      instanceMap.forEach((grp) => targetGroups.push(grp));
-    }
-
-    if (targetGroups.length === 0) {
-      alert("Espera a que el modelo esté cargado en pantalla para exportar.");
-      return null;
-    }
-
-    const { GLTFExporter } = await import("three/examples/jsm/exporters/GLTFExporter.js");
-    const exporter = new GLTFExporter();
-
-    // Caché para optimizar exactamente 1 solo bitmap (256 para AR o 512 para desktop) por textura única
-    const textureOptimizedCache = new Map<string, THREE.Texture>();
-
-    const getOptimized512Texture = (srcTexture: THREE.Texture): THREE.Texture => {
-      const cacheKey = (srcTexture.image as any)?.src || srcTexture.uuid || srcTexture.name || "tex";
-      if (textureOptimizedCache.has(cacheKey)) {
-        return textureOptimizedCache.get(cacheKey)!;
-      }
-
-      try {
-        const targetSize = isForAR ? 256 : 512;
-        const canvas = document.createElement("canvas");
-        canvas.width = targetSize;
-        canvas.height = targetSize;
-        const ctx = canvas.getContext("2d");
-
-        if (ctx && srcTexture.image) {
-          ctx.imageSmoothingEnabled = true;
-          ctx.imageSmoothingQuality = "high";
-          ctx.drawImage(srcTexture.image, 0, 0, targetSize, targetSize);
-
-          const optTexture = new THREE.CanvasTexture(canvas);
-          optTexture.name = (srcTexture.name || "Texture") + "_" + targetSize;
-          optTexture.wrapS = srcTexture.wrapS;
-          optTexture.wrapT = srcTexture.wrapT;
-          optTexture.repeat.copy(srcTexture.repeat);
-          optTexture.offset.copy(srcTexture.offset);
-          optTexture.rotation = srcTexture.rotation;
-          optTexture.center.copy(srcTexture.center);
-          optTexture.flipY = srcTexture.flipY;
-          // image/jpeg es el estándar glTF 2.0 nativo de ultra compresión universal
-          optTexture.userData = { mimeType: "image/jpeg" };
-          optTexture.needsUpdate = true;
-
-          textureOptimizedCache.set(cacheKey, optTexture);
-          return optTexture;
-        }
-      } catch (err) {
-        console.warn("[3dBimFab GLB] Fallback a textura directa por:", err);
-      }
-
-      return srcTexture;
-    };
-
-    // Caché de materiales compartidos para reutilizar 1 solo material por acabado
-    const materialOptimizedCache = new Map<string, THREE.MeshStandardMaterial>();
-
-    // 1. Recolectar mallas visibles elegibles de todos los grupos
-    const candidateMeshes: Array<{ mesh: THREE.Mesh; groupWorldPos: THREE.Vector3 }> = [];
-
-    targetGroups.forEach((targetGroup) => {
-      targetGroup.updateWorldMatrix(true, true);
-      const groupWorldPos = new THREE.Vector3();
-      targetGroup.getWorldPosition(groupWorldPos);
-
-      targetGroup.traverse((child) => {
-        const mesh = child as THREE.Mesh;
-        if (!mesh || !mesh.isMesh) return;
-        if (!mesh.visible) return;
-        const meshName = (mesh.name || "").trim();
-        if (!meshName) return;
-
-        const nLow = meshName.toLowerCase();
-        if (
-          nLow.includes("perforado") || 
-          nLow.includes("maquinado") || 
-          nLow.includes("helper") || 
-          nLow.includes("plane") || 
-          nLow.includes("nurbs") ||
-          nLow.includes("edges") ||
-          nLow.includes("outline") ||
-          nLow.includes("silhouette") ||
-          nLow.includes("shadow") ||
-          nLow.includes("axis")
-        ) {
-          return;
-        }
-
-        // 🚀 En perfil AR: omitir herrajes internos ocultos (pernos, minifix, tarugos, tornillos)
-        // ya que están embutidos dentro de los tableros y consumen el 70% del peso geométrico
-        if (isForAR) {
-          if (
-            nLow.includes("perno") || 
-            nLow.includes("caja") || 
-            nLow.includes("minifix") || 
-            nLow.includes("tarugo") || 
-            nLow.includes("tornillo") ||
-            nLow.includes("porca") ||
-            nLow.includes("herraje")
-          ) {
-            return;
-          }
-        }
-
-        // 🛡️ Omitir mallas duplicadas de Grasshopper marcadas para inspección visual
-        if (mesh.userData?.esDuplicado) {
-          return;
-        }
-
-        if (!mesh.geometry || !mesh.geometry.attributes.position || mesh.geometry.attributes.position.count === 0) {
-          return;
-        }
-
-        candidateMeshes.push({ mesh, groupWorldPos });
-      });
-    });
-
-    if (candidateMeshes.length === 0) {
-      alert("No se encontraron mallas visibles para exportar.");
-      return null;
-    }
-
-    const { mergeGeometries, mergeVertices } = await import("three/examples/jsm/utils/BufferGeometryUtils.js");
-
-    // 2. Crear escena de exportación plana sin emparentamientos hacia (0,0,0)
-    const exportScene = new THREE.Scene();
-    exportScene.name = "Scene";
-
-    const isExportSolid = modoVisual === "solido";
-
-    // 🏷️ Funciones de clasificación y nombres
-    const isHardwareMesh = (name: string, isHwData?: boolean): boolean => {
-      if (isHwData) return true;
-      const n = name.toLowerCase();
-      return (
-        n.includes("perno") ||
-        n.includes("caja") ||
-        n.includes("minifix") ||
-        n.includes("tarugo") ||
-        n.includes("cavilha") ||
-        n.includes("clavilha") ||
-        n.includes("tornillo") ||
-        n.includes("parafuso") ||
-        n.includes("porca") ||
-        n.includes("tuerca") ||
-        n.includes("corredera") ||
-        n.includes("corredi") ||
-        n.includes("cantoneira") ||
-        n.includes("soporte") ||
-        n.includes("pata") ||
-        n.includes("pes") ||
-        n.includes("pés") ||
-        n.includes("bisagra") ||
-        n.includes("dobradiça") ||
-        n.includes("puxador") ||
-        n.includes("manija")
-      ) && !n.includes("cajon") && !n.includes("cajón");
-    };
-
-    const getCleanPieceBaseName = (rawName: string): string => {
-      let clean = rawName
-        .replace(/^RH_OUT:/i, "")
-        .trim();
-
-      // Si es un herraje (tornillo, parafuso, cavilha, etc.), conservar su nombre íntegro original de Grasshopper
-      if (isHardwareMesh(clean)) {
-        return clean;
-      }
-
-      // 1. Quitar prefijos de material, sustrato o capas
-      clean = clean
-        .replace(/^(MDP|MDF|HDF|Compensado|Aglomerado|Melamina|Tablero|Madera|Fondo|Fundo|Canto|Borde)\s+/i, "")
-        .replace(/^(Color|Balance|Back|Cara|Reverso|Nucleo|Sustrato)\s+/i, "")
-        .trim();
-
-      // 2. Quitar sufijos técnicos de capas y duplicaciones de piezas
-      clean = clean
-        .replace(/(_Color|_MDP|_MDF|_Balance|_Back|_Cara|_Nucleo|_B|-Color|-MDP|-MDF|-Balance|-Back|-B)$/i, "")
-        .replace(/(\s+Color|\s+MDP|\s+MDF|\s+Balance|\s+Back|\s+B)$/i, "")
-        .trim();
-
-      // 3. Normalizar números de 1 dígito a 2 dígitos para consistencia (ej. "Peça 1" -> "Peça 01", "PK1" -> "PK01")
-      clean = clean.replace(/^(Pe[cç]a\s*)(\d)$/i, (_, prefix, num) => `${prefix}0${num}`);
-      clean = clean.replace(/^(PK\s*)(\d)$/i, (_, prefix, num) => `PK${String(num).padStart(2, "0")}`);
-      clean = clean.replace(/^(P\s*)(\d)$/i, (_, prefix, num) => `P${String(num).padStart(2, "0")}`);
-
-      // 4. Fallback de seguridad si el nombre quedó vacío (ej. era solo "RH_OUT:MDP")
-      if (!clean) {
-        clean = parametros.model_id ? `PK01_${parametros.model_id}` : "PK01";
-      }
-
-      return clean;
-    };
-
-    // Separador de islas disjuntas en geometrías no continuas (para Linear Arrays / Mirrors de Grasshopper)
-    const splitDisconnectedIslands = (geo: THREE.BufferGeometry): THREE.BufferGeometry[] => {
-      const nonIdx = geo.index ? geo.toNonIndexed() : geo.clone();
-      const pos = nonIdx.attributes.position;
-      const norm = nonIdx.attributes.normal;
-      const uv = nonIdx.attributes.uv;
-      if (!pos || pos.count === 0) return [geo];
-
-      const triCount = Math.floor(pos.count / 3);
-      if (triCount <= 1) return [nonIdx];
-
-      // 1. Mapear cada vértice a una clave espacial (cuantizada a 1.0 mm para tolerar imprecisiones flotantes)
-      const vertToTris = new Map<string, number[]>();
-      const getVertKey = (idx: number) => {
-        const x = Math.round(pos.getX(idx) * 1000);
-        const y = Math.round(pos.getY(idx) * 1000);
-        const z = Math.round(pos.getZ(idx) * 1000);
-        return `${x}_${y}_${z}`;
-      };
-
-      for (let t = 0; t < triCount; t++) {
-        for (let v = 0; v < 3; v++) {
-          const k = getVertKey(t * 3 + v);
-          if (!vertToTris.has(k)) vertToTris.set(k, []);
-          vertToTris.get(k)!.push(t);
-        }
-      }
-
-      // 2. Grafo de adyacencia de triángulos por inundación (BFS)
-      const triVisited = new Uint8Array(triCount);
-      const islands: number[][] = [];
-
-      for (let t = 0; t < triCount; t++) {
-        if (triVisited[t]) continue;
-        const currentIsland: number[] = [];
-        const queue: number[] = [t];
-        triVisited[t] = 1;
-
-        while (queue.length > 0) {
-          const cur = queue.pop()!;
-          currentIsland.push(cur);
-
-          for (let v = 0; v < 3; v++) {
-            const k = getVertKey(cur * 3 + v);
-            const neighbors = vertToTris.get(k);
-            if (neighbors) {
-              for (let i = 0; i < neighbors.length; i++) {
-                const n = neighbors[i];
-                if (!triVisited[n]) {
-                  triVisited[n] = 1;
-                  queue.push(n);
-                }
-              }
-            }
-          }
-        }
-
-        islands.push(currentIsland);
-      }
-
-      if (islands.length <= 1) {
-        return [nonIdx];
-      }
-
-      // 3. Crear una BufferGeometry independiente para cada isla detectada
-      const resultGeos: THREE.BufferGeometry[] = [];
-      for (const island of islands) {
-        const islandTriCount = island.length;
-        const newPos = new Float32Array(islandTriCount * 9);
-        const newNorm = norm ? new Float32Array(islandTriCount * 9) : null;
-        const newUv = uv ? new Float32Array(islandTriCount * 6) : null;
-
-        let dstVert = 0;
-        for (const triIdx of island) {
-          const srcVert = triIdx * 3;
-          for (let v = 0; v < 3; v++) {
-            const src = srcVert + v;
-            newPos[dstVert * 3] = pos.getX(src);
-            newPos[dstVert * 3 + 1] = pos.getY(src);
-            newPos[dstVert * 3 + 2] = pos.getZ(src);
-
-            if (newNorm && norm) {
-              newNorm[dstVert * 3] = norm.getX(src);
-              newNorm[dstVert * 3 + 1] = norm.getY(src);
-              newNorm[dstVert * 3 + 2] = norm.getZ(src);
-            }
-
-            if (newUv && uv) {
-              newUv[dstVert * 2] = uv.getX(src);
-              newUv[dstVert * 2 + 1] = uv.getY(src);
-            }
-
-            dstVert++;
-          }
-        }
-
-        const islandGeo = new THREE.BufferGeometry();
-        islandGeo.setAttribute("position", new THREE.BufferAttribute(newPos, 3));
-        if (newNorm) islandGeo.setAttribute("normal", new THREE.BufferAttribute(newNorm, 3));
-        if (newUv) islandGeo.setAttribute("uv", new THREE.BufferAttribute(newUv, 2));
-        islandGeo.computeBoundingBox();
-        resultGeos.push(islandGeo);
-      }
-
-      return resultGeos;
-    };
-
-    // 3. Agrupar las mallas candidatas por entidad lógica (Pieza de Madera o Herraje Individual)
-    interface PreparedSubMesh {
-      geo: THREE.BufferGeometry;
-      mat: THREE.MeshStandardMaterial;
-      box: THREE.Box3;
-      center: THREE.Vector3;
-    }
-
-    const rawBoardSubMeshes = new Map<string, PreparedSubMesh[]>();
-    const hardwareItems: Array<{ baseName: string; sub: PreparedSubMesh }> = [];
-
-    for (const { mesh, groupWorldPos } of candidateMeshes) {
-      const meshName = (mesh.name || "").trim();
-      const nLow = meshName.toLowerCase();
-
-      // Limpiar geometría con atributos estándar (position, normal, uv)
-      const cleanGeo = mesh.geometry.clone();
-      Object.keys(cleanGeo.attributes).forEach((attrKey) => {
-        if (!["position", "normal", "uv"].includes(attrKey)) {
-          cleanGeo.deleteAttribute(attrKey);
-        }
-      });
-
-      if (!cleanGeo.attributes.uv) {
-        const pos = cleanGeo.attributes.position;
-        const uvs = new Float32Array(pos.count * 2);
-        for (let i = 0; i < pos.count; i++) {
-          uvs[i * 2] = pos.getX(i);
-          uvs[i * 2 + 1] = pos.getZ(i);
-        }
-        cleanGeo.setAttribute("uv", new THREE.BufferAttribute(uvs, 2));
-      }
-
-      // Preservar geometrías indexadas (3x más livianas)
-      let finalGeo = cleanGeo;
-
-      // Calcular normales geométricas naturales si la malla no las incluye
-      if (!finalGeo.attributes.normal) {
-        finalGeo.computeVertexNormals();
-      }
-
-      finalGeo.clearGroups();
-
-      // Transformar los vértices al espacio local del mueble (aplicando groupWorldPos)
-      const meshWorldPos = new THREE.Vector3();
-      const meshWorldQuat = new THREE.Quaternion();
-      const meshWorldScale = new THREE.Vector3();
-      mesh.getWorldPosition(meshWorldPos);
-      mesh.getWorldQuaternion(meshWorldQuat);
-      mesh.getWorldScale(meshWorldScale);
-
-      const localOffset = new THREE.Vector3().subVectors(meshWorldPos, groupWorldPos);
-      const transformMatrix = new THREE.Matrix4().compose(localOffset, meshWorldQuat, meshWorldScale);
-      finalGeo.applyMatrix4(transformMatrix);
-
-      // Resolución de material
-      let cleanMat: THREE.MeshStandardMaterial;
-      if (isExportSolid && !isForAR) {
-        const solidKey = "mat_solido_global";
-        if (!materialOptimizedCache.has(solidKey)) {
-          materialOptimizedCache.set(
-            solidKey,
-            new THREE.MeshStandardMaterial({
-              name: "Material_Solido_3BF",
-              color: new THREE.Color(coloresApariencia.materialPorDefecto || calibracion.colorSolido || "#CBD5E1"),
-              roughness: 0.5,
-              metalness: 0.05,
-              map: null,
-              transparent: false,
-              opacity: 1.0,
-              side: THREE.DoubleSide,
-            })
-          );
-        }
-        cleanMat = materialOptimizedCache.get(solidKey)!;
-      } else {
-        const srcMat = Array.isArray(mesh.material) ? mesh.material[0] : mesh.material;
-        const srcTexture: THREE.Texture | null = (mesh.userData?.pbrDiffuse) || ((srcMat as any)?.map) || null;
-
-        let optTexture: THREE.Texture | null = null;
-        if (srcTexture) {
-          optTexture = getOptimized512Texture(srcTexture);
-        }
-
-        const isHw = isHardwareMesh(meshName, mesh.userData?.isHardware);
-        let baseMatName = mesh.userData?.nombreMaterialEfectivo || srcMat?.name;
-        if (!baseMatName || baseMatName === "PBR_Material") {
-          const isBalanceMesh = mesh.userData?.isBalance || nLow.includes("balance") || nLow.endsWith(" b") || nLow.endsWith("_b") || /pe[cç]a\s*\d+\s*b$/i.test(nLow);
-          if (nLow.includes("mdf")) {
-            baseMatName = "MDF";
-          } else if (nLow.includes("mdp")) {
-            baseMatName = "MDP";
-          } else if (isBalanceMesh) {
-            baseMatName = "Balance";
-          } else if (isHw) {
-            baseMatName = "Herraje_Mat";
-          } else {
-            baseMatName = "M_Acabado";
-          }
-        }
-
-        const colHex = optTexture ? "FFFFFF" : ((mesh.userData?.materialPBR?.colorBase) ? mesh.userData.materialPBR.colorBase.replace("#", "") : ((srcMat as any)?.color ? (srcMat as any).color.getHexString() : "CBD5E1"));
-        const roughVal = isHw ? "0.25" : ((mesh.userData?.materialPBR?.rugosidad ?? 0.45)).toFixed(2);
-        const metalVal = isHw ? "0.85" : ((mesh.userData?.materialPBR?.metalico ?? 0.05)).toFixed(2);
-        const texKey = srcTexture ? ((srcTexture.image as any)?.src || srcTexture.uuid || "tex") : "no_tex";
-        const matCacheKey = `${baseMatName}_${colHex}_${roughVal}_${metalVal}_${texKey}_${isForAR ? "ar" : "std"}`;
-
-        if (!materialOptimizedCache.has(matCacheKey)) {
-          materialOptimizedCache.set(
-            matCacheKey,
-            new THREE.MeshStandardMaterial({
-              name: baseMatName,
-              color: optTexture 
-                ? new THREE.Color("#FFFFFF") 
-                : (mesh.userData?.materialPBR?.colorBase ? new THREE.Color(mesh.userData.materialPBR.colorBase) : ((srcMat as any)?.color || new THREE.Color("#CBD5E1"))),
-              roughness: isHw ? 0.25 : (mesh.userData?.materialPBR?.rugosidad ?? 0.45),
-              metalness: isHw ? 0.85 : (mesh.userData?.materialPBR?.metalico ?? 0.05),
-              map: optTexture,
-              transparent: false,
-              opacity: 1.0,
-              side: THREE.DoubleSide,
-            })
-          );
-        }
-        cleanMat = materialOptimizedCache.get(matCacheKey)!;
-      }
-
-      const isHw = isHardwareMesh(meshName, mesh.userData?.isHardware);
-      const cleanPieceKey = getCleanPieceBaseName(meshName);
-
-      // 🔍 Separar mallas compuestas en islas físicas independientes (arrays, mirrors)
-      const discreteIslands = splitDisconnectedIslands(finalGeo);
-
-      for (const islandGeo of discreteIslands) {
-        const box = new THREE.Box3().setFromBufferAttribute(islandGeo.attributes.position as THREE.BufferAttribute);
-        const center = new THREE.Vector3();
-        box.getCenter(center);
-
-        const subItem: PreparedSubMesh = { geo: islandGeo, mat: cleanMat, box, center };
-
-        if (isHw) {
-          // 🛡️ Deduplicador espacial de herrajes: Evita clones superpuestos al 100% de Grasshopper
-          const curSize = new THREE.Vector3();
-          box.getSize(curSize);
-
-          const isDuplicateHw = hardwareItems.some((existing) => {
-            if (existing.baseName !== cleanPieceKey) return false;
-            if (existing.sub.center.distanceTo(center) > 0.0005) return false;
-            const exSize = new THREE.Vector3();
-            existing.sub.box.getSize(exSize);
-            return (
-              Math.abs(exSize.x - curSize.x) < 0.0005 &&
-              Math.abs(exSize.y - curSize.y) < 0.0005 &&
-              Math.abs(exSize.z - curSize.z) < 0.0005
-            );
-          });
-
-          if (isDuplicateHw) {
-            console.warn(
-              `[3dBimFab Deduplicador] 🛡️ Herraje duplicado descartado para GLB: '${cleanPieceKey}' en (${center.x.toFixed(4)}, ${center.y.toFixed(4)}, ${center.z.toFixed(4)})`
-            );
-            continue;
-          }
-
-          hardwareItems.push({
-            baseName: cleanPieceKey,
-            sub: subItem
-          });
-        } else {
-          if (!rawBoardSubMeshes.has(cleanPieceKey)) {
-            rawBoardSubMeshes.set(cleanPieceKey, []);
-          }
-          const existingList = rawBoardSubMeshes.get(cleanPieceKey)!;
-
-          // 🛡️ Deduplicador de sub-mallas de tablero superpuestas idénticas
-          const curSize = new THREE.Vector3();
-          box.getSize(curSize);
-          const isDuplicateBoard = existingList.some((existing) => {
-            if (existing.center.distanceTo(center) > 0.0005) return false;
-            const exSize = new THREE.Vector3();
-            existing.box.getSize(exSize);
-            const sameBox = (
-              Math.abs(exSize.x - curSize.x) < 0.0005 &&
-              Math.abs(exSize.y - curSize.y) < 0.0005 &&
-              Math.abs(exSize.z - curSize.z) < 0.0005
-            );
-            return sameBox && existing.mat === cleanMat;
-          });
-
-          if (isDuplicateBoard) {
-            console.warn(
-              `[3dBimFab Deduplicador] 🛡️ Capa de tablero duplicada descartada para GLB: '${cleanPieceKey}'`
-            );
-            continue;
-          }
-
-          existingList.push(subItem);
-        }
-      }
-    }
-
-    // 4. Agrupación Espacial Inteligente por Pieza Física (Cohesión de MDP + Color + Balance por instancia)
-    interface PhysicalPieceUnit {
-      subMeshes: PreparedSubMesh[];
-      box: THREE.Box3;
-      center: THREE.Vector3;
-    }
-
-    rawBoardSubMeshes.forEach((subMeshesList, pieceBaseName) => {
-      const pieceUnits: PhysicalPieceUnit[] = [];
-
-      // Conectividad espacial BFS por Bounding Box Overlap con tolerancia estricta de 0.5 mm (0.0005 m)
-      // Esta tolerancia de 0.5 mm conecta con 100% de precisión todas las partes en contacto directo de la misma pieza
-      // (MDP, caras de melamina, contrabalances, cantos y listones de engruese),
-      // mientras que piezas separadas (como los frentes de cajón con holguras de 2mm a 4mm) permanecen perfectamente aisladas.
-      const pendientes = [...subMeshesList];
-      while (pendientes.length > 0) {
-        const actual = pendientes.pop()!;
-        const cluster: PreparedSubMesh[] = [actual];
-        const frontier: PreparedSubMesh[] = [actual];
-
-        while (frontier.length > 0) {
-          const ref = frontier.pop()!;
-          const refBoxExpanded = ref.box.clone().expandByScalar(0.0005); // Tolerancia exacta de 0.5 mm
-
-          for (let i = pendientes.length - 1; i >= 0; i--) {
-            const candidate = pendientes[i];
-            if (refBoxExpanded.intersectsBox(candidate.box)) {
-              cluster.push(candidate);
-              frontier.push(candidate);
-              pendientes.splice(i, 1);
-            }
-          }
-        }
-
-        const unitBox = new THREE.Box3();
-        cluster.forEach((s) => unitBox.union(s.box));
-        const unitCenter = new THREE.Vector3();
-        unitBox.getCenter(unitCenter);
-
-        pieceUnits.push({
-          subMeshes: cluster,
-          box: unitBox,
-          center: unitCenter
-        });
-      }
-
-      // Ordenar unidades físicamente (de arriba hacia abajo o de izquierda a derecha)
-      pieceUnits.sort((a, b) => {
-        if (Math.abs(a.center.y - b.center.y) > 0.01) {
-          return b.center.y - a.center.y; // Z/Y descendente (top-down)
-        }
-        if (Math.abs(a.center.x - b.center.x) > 0.01) {
-          return a.center.x - b.center.x; // X ascendente (left-to-right)
-        }
-        return a.center.z - b.center.z;
-      });
-
-      // Construir cada pieza física independiente con su Pivote en el Centro de Masa
-      pieceUnits.forEach((unit, unitIdx) => {
-        // Formato Canónico Blender: 1ra pieza -> 'Peça 19', 2da pieza -> 'Peça 19.001', 3ra pieza -> 'Peça 19.002'
-        // El objeto padre (Node) y la malla hija (Mesh Data) tienen exactamente el mismo nombre canónico
-        const instanceParentName = unitIdx === 0 ? pieceBaseName : `${pieceBaseName}.${String(unitIdx).padStart(3, "0")}`;
-        const instanceMeshName = instanceParentName;
-
-        let finalPieceGeo: THREE.BufferGeometry;
-        let finalPieceMat: THREE.Material | THREE.Material[];
-
-        if (unit.subMeshes.length === 1) {
-          finalPieceGeo = unit.subMeshes[0].geo.clone();
-          finalPieceMat = unit.subMeshes[0].mat;
-        } else {
-          // Fusionar las capas de la pieza en una sola geometría multi-material
-          const nonIndexedGeos: THREE.BufferGeometry[] = [];
-          const matsToMerge: THREE.MeshStandardMaterial[] = [];
-
-          unit.subMeshes.forEach((s) => {
-            const nonIdx = s.geo.index ? s.geo.toNonIndexed() : s.geo.clone();
-            nonIndexedGeos.push(nonIdx);
-            matsToMerge.push(s.mat);
-          });
-
-          const merged = mergeGeometries(nonIndexedGeos, true);
-          if (merged) {
-            finalPieceGeo = merged;
-            finalPieceMat = matsToMerge;
-          } else {
-            finalPieceGeo = unit.subMeshes[0].geo.clone();
-            finalPieceMat = unit.subMeshes[0].mat;
-          }
-        }
-
-        // 🎯 PIVOTE EN EL CENTRO DE MASA:
-        // Calculamos el centroide de la geometría, trasladamos los vértices a (0,0,0) local
-        // y colocamos el grupo contenedor en la posición del centro de masa en el mundo.
-        finalPieceGeo.computeBoundingBox();
-        const centerOfMass = new THREE.Vector3();
-        if (finalPieceGeo.boundingBox) {
-          finalPieceGeo.boundingBox.getCenter(centerOfMass);
-        }
-        finalPieceGeo.translate(-centerOfMass.x, -centerOfMass.y, -centerOfMass.z);
-        finalPieceGeo.computeVertexNormals();
-
-        const pieceMesh = new THREE.Mesh(finalPieceGeo, finalPieceMat);
-        pieceMesh.name = instanceParentName;
-        pieceMesh.geometry.name = instanceMeshName;
-        pieceMesh.position.copy(centerOfMass);
-
-        exportScene.add(pieceMesh);
-
-        // 📐 Aristas CAD suavizadas y anti-aliasing geométrico (EdgesGeometry):
-        // Se generan ÚNICAMENTE si includeEdges === true (ej. previsualización técnica o cuando se active explícitamente).
-        // En descargas GLB estándar se omiten por completo para entregar el mueble limpio y sin duplicar peso.
-        if (includeEdges) {
-          try {
-            const weldedForEdges = mergeVertices(finalPieceGeo.clone(), 0.001);
-            const edgeThreshold = isForAR ? 32 : (calibracion?.thresholdAristas || 25);
-            const edgesGeo = new THREE.EdgesGeometry(weldedForEdges, edgeThreshold);
-            if (edgesGeo.attributes.position && edgesGeo.attributes.position.count > 0) {
-              // Desplazar los vértices de la arista 0.2 mm hacia afuera del centro de masa
-              // para evitar que queden coplanares con la superficie del tablero (elimina Z-fighting y líneas cortadas)
-              const linePos = edgesGeo.attributes.position;
-              for (let i = 0; i < linePos.count; i++) {
-                const vx = linePos.getX(i);
-                const vy = linePos.getY(i);
-                const vz = linePos.getZ(i);
-                const len = Math.sqrt(vx * vx + vy * vy + vz * vz);
-                if (len > 0.001) {
-                  linePos.setXYZ(i, vx + (vx / len) * 0.0002, vy + (vy / len) * 0.0002, vz + (vz / len) * 0.0002);
-                }
-              }
-              linePos.needsUpdate = true;
-
-              // En AR: Cálculo adaptativo del tono de la arista según el color del material de la pieza:
-              // - Para materiales claros/blancos (luminancia > 0.65): Gris suave (#94A3B8) que luce como sombra tenue.
-              // - Para materiales de madera/oscuros (luminancia <= 0.65): Tono sombra oscurecido del propio color (multiplicador 0.42)
-              //   que simula el bisel/quiebre de luz físico real del borde del tablero (#4D3320 en Cinamomo) sin verse blancuzco ni tiza.
-              let edgeColorHex: string;
-              if (isForAR) {
-                let refColor: THREE.Color | null = null;
-                if (Array.isArray(finalPieceMat)) {
-                  refColor = (finalPieceMat[0] as THREE.MeshStandardMaterial)?.color || null;
-                } else if (finalPieceMat) {
-                  refColor = (finalPieceMat as THREE.MeshStandardMaterial)?.color || null;
-                }
-
-                if (refColor) {
-                  const lum = 0.299 * refColor.r + 0.587 * refColor.g + 0.114 * refColor.b;
-                  if (lum > 0.65) {
-                    edgeColorHex = "#94A3B8";
-                  } else {
-                    // Sombra del propio color de la madera / melamina (quiebre de bisel físico realista)
-                    const darkened = refColor.clone().multiplyScalar(0.42);
-                    edgeColorHex = `#${darkened.getHexString()}`;
-                  }
-                } else {
-                  edgeColorHex = "#94A3B8";
-                }
-              } else {
-                edgeColorHex = calibracion?.colorAristas || "#334155";
-              }
-
-              const edgeMat = new THREE.LineBasicMaterial({
-                color: new THREE.Color(edgeColorHex),
-                linewidth: 1,
-              });
-              const lineMesh = new THREE.LineSegments(edgesGeo, edgeMat);
-              lineMesh.name = `${instanceParentName}_Edges`;
-              lineMesh.position.copy(centerOfMass);
-              exportScene.add(lineMesh);
-            }
-          } catch (edgeErr) {
-            console.warn("[3dBimFab GLB] Error generando aristas para pieza:", edgeErr);
-          }
-        }
-      });
-    });
-
-    // 5. Construcción de Herrajes Discretos Jerárquicos con Pivote en Centro de Masa (Sin emparentamientos a 0,0,0)
-    const hardwareSequenceCounters = new Map<string, number>();
-
-    // Ordenar herrajes por posición espacial para numeración estable
-    hardwareItems.sort((a, b) => {
-      if (Math.abs(a.sub.center.y - b.sub.center.y) > 0.01) {
-        return b.sub.center.y - a.sub.center.y;
-      }
-      return a.sub.center.x - b.sub.center.x;
-    });
-
-    hardwareItems.forEach(({ baseName, sub }) => {
-      const count = (hardwareSequenceCounters.get(baseName) || 0) + 1;
-      hardwareSequenceCounters.set(baseName, count);
-
-      // Formato Padre e Hijo: 1ro -> Cavilha, 2do -> Cavilha.001, 3ro -> Cavilha.002
-      // El objeto padre (Node) y la malla interna (Mesh) llevan exactamente el mismo nombre
-      const hwName = count === 1 ? baseName : `${baseName}.${String(count - 1).padStart(3, "0")}`;
-      const hwMeshName = hwName;
-
-      const hwGeo = sub.geo.clone();
-      hwGeo.computeBoundingBox();
-      const hwCenter = new THREE.Vector3();
-      if (hwGeo.boundingBox) {
-        hwGeo.boundingBox.getCenter(hwCenter);
-      }
-      // 🎯 Pivote en centro de masa del herraje
-      hwGeo.translate(-hwCenter.x, -hwCenter.y, -hwCenter.z);
-      hwGeo.computeVertexNormals();
-
-      const hwMesh = new THREE.Mesh(hwGeo, sub.mat);
-      hwMesh.name = hwName;
-      hwMesh.geometry.name = hwMeshName;
-      hwMesh.position.copy(hwCenter);
-
-      exportScene.add(hwMesh);
-    });
-
-    // 6. Centrar el mueble en X y Z (origen de rotación/colocación) y asentar su base exactamente en Y = 0 (el suelo físico)
-    exportScene.updateMatrixWorld(true);
-    const totalBox = new THREE.Box3().setFromObject(exportScene);
-    if (!totalBox.isEmpty()) {
-      const center = new THREE.Vector3();
-      totalBox.getCenter(center);
-      const minY = totalBox.min.y;
-
-      // Desplazar cada pieza/herraje para que el centro horizontal esté en (0, 0) y el piso físico en Y = 0
-      exportScene.children.forEach((child) => {
-        child.position.x -= center.x;
-        child.position.z -= center.z;
-        child.position.y -= minY;
-      });
-      exportScene.updateMatrixWorld(true);
-      console.log(
-        `[3dBimFab GLB Cohesion] Mueble cohesionado con éxito: ${rawBoardSubMeshes.size} familias de piezas de madera y ${hardwareItems.length} herrajes.`
-      );
-    }
-
-    return new Promise((resolve, reject) => {
-      exporter.parse(
-        exportScene,
-        (gltf) => {
-          resolve({ arrayBuffer: gltf as ArrayBuffer, piecesCount: exportScene.children.length });
-        },
-        (error) => {
-          reject(error);
-        },
-        { binary: true, maxTextureSize: 512 }
-      );
-    });
-  };
-
-  // 📥 Exportar GLB (con compresión Draco automática a ~2.1 MB)
-  const exportToGLB = async (comprimido = true) => {
-    setExportandoGLB(true);
-    try {
-      const glbData = await generateCleanGLB();
-      if (!glbData) {
-        setExportandoGLB(false);
-        return;
-      }
-
-      const modelName = parametros.model_id || "Cubierta";
-      const timestamp = new Date().toISOString().replace(/[:.]/g, "-").slice(11, 19);
-
-      let finalBlob: Blob;
-      let finalFileName: string;
-
-      if (comprimido) {
-        try {
-          const res = await fetch(`/api/compress-glb?mode=download&name=${encodeURIComponent(modelName)}`, {
-            method: "POST",
-            headers: { "Content-Type": "application/octet-stream" },
-            body: glbData.arrayBuffer,
-          });
-
-          if (res.ok) {
-            finalBlob = await res.blob();
-            finalFileName = `${modelName}_${timestamp}_comprimido.glb`;
-          } else {
-            throw new Error("API de compresión devolvió status " + res.status);
-          }
-        } catch (compErr) {
-          console.warn("Fallo compresión en servidor, descargando versión estándar:", compErr);
-          finalBlob = new Blob([glbData.arrayBuffer], { type: "application/octet-stream" });
-          finalFileName = `${modelName}_${timestamp}.glb`;
-        }
-      } else {
-        finalBlob = new Blob([glbData.arrayBuffer], { type: "application/octet-stream" });
-        finalFileName = `${modelName}_${timestamp}.glb`;
-      }
-
-      const link = document.createElement("a");
-      link.href = URL.createObjectURL(finalBlob);
-      link.download = finalFileName;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      setTimeout(() => URL.revokeObjectURL(link.href), 1000);
-      console.log(
-        `[3dBimFab GLB Exporter] Descarga completada: ${finalFileName} (${(finalBlob.size / (1024 * 1024)).toFixed(2)} MB)`
-      );
-    } catch (err: any) {
-      console.error("Error al exportar GLB:", err);
-      alert("Error en exportación: " + (err?.message || err));
-    } finally {
-      setExportandoGLB(false);
-    }
-  };
-
-  // 🚀 Descargar GLB unificado según la pestaña activa (Estático en 3D / Animado en Manual 3D)
-  const descargarGlbSegunModo = async () => {
-    if (pestanaActiva === "manual") {
-      const state = use3BFStore.getState();
-      const pasos = state.pasosManual;
-      const activeId = state.pasoActivoManualId;
-      const pasoActivo = pasos.find((p) => p.id === activeId) || pasos[0];
-      if (!pasoActivo) {
-        exportToGLB(true);
-        return;
-      }
-      try {
-        setExportandoGLB(true);
-        // 1. Pausar y llevar el timeline estrictamente a t = 0 para garantizar mallas 100% cerradas
-        const prevTime = use3BFStore.getState().timelineCurrentTime;
-        const prevPlaying = use3BFStore.getState().isTimelinePlaying;
-        use3BFStore.setState({ isTimelinePlaying: false, timelineCurrentTime: 0 });
-
-        if (typeof window !== "undefined" && (window as any).__3bfManualEngine) {
-          (window as any).__3bfManualEngine.detener();
-        }
-
-        await new Promise((resolve) => setTimeout(resolve, 80));
-
-        const scene = (window as any).__threeScene3BF || furnitureGroup || new THREE.Scene();
-        const { buffer, filename, sizeMb } = await exportarGlbPasoManual(scene, pasoActivo);
-
-        descargarBufferComoArchivo(buffer, filename);
-        console.log(`[3dBimFab Manual] 🚀 GLB animado exportado: ${filename} (${sizeMb} MB)`);
-
-        if (typeof window !== "undefined" && (window as any).__3bfManualEngine) {
-          (window as any).__3bfManualEngine.actualizarTiempo(prevTime);
-        }
-        use3BFStore.setState({ timelineCurrentTime: prevTime, isTimelinePlaying: prevPlaying });
-      } catch (err: any) {
-        console.error("[3dBimFab Manual] Error al exportar paso animado:", err);
-        alert(`Error al exportar paso animado: ${err.message}`);
-      } finally {
-        setExportandoGLB(false);
-      }
-    } else {
-      exportToGLB(true);
-    }
-  };
-
-  // ✨ Abrir Realidad Aumentada "Ver en tu espacio"
-  const abrirRealidadAumentada = async () => {
-    setGenerandoAR(true);
-    try {
-      let glbBuffer: ArrayBuffer;
-      let rawSize = 0;
-      let modelName = parametros.model_id || "Cubierta";
-
-      if (pestanaActiva === "manual") {
-        const state = use3BFStore.getState();
-        const pasoActivo = state.pasosManual.find((p) => p.id === state.pasoActivoManualId) || state.pasosManual[0];
-        if (pasoActivo) {
-          modelName = `${modelName}_${pasoActivo.id}`;
-          // 1. Pausar y resetear timeline a 0 para que la animación empiece limpia desde reposo absoluto
-          const prevTime = state.timelineCurrentTime;
-          const prevPlaying = state.isTimelinePlaying;
-          use3BFStore.setState({ isTimelinePlaying: false, timelineCurrentTime: 0 });
-
-          if (typeof window !== "undefined" && (window as any).__3bfManualEngine) {
-            (window as any).__3bfManualEngine.detener();
-          }
-
-          await new Promise((resolve) => setTimeout(resolve, 80));
-
-          const scene = (window as any).__threeScene3BF || furnitureGroup || new THREE.Scene();
-          const { buffer, sizeMb } = await exportarGlbPasoManual(scene, pasoActivo);
-          glbBuffer = buffer;
-          rawSize = buffer.byteLength;
-          console.log(`[3dBimFab AR] 🎬 Paso animado preparado para AR: ${modelName} (${sizeMb} MB)`);
-
-          if (typeof window !== "undefined" && (window as any).__3bfManualEngine) {
-            (window as any).__3bfManualEngine.actualizarTiempo(prevTime);
-          }
-          use3BFStore.setState({ timelineCurrentTime: prevTime, isTimelinePlaying: prevPlaying });
-        } else {
-          const glbData = await generateCleanGLB(true);
-          if (!glbData) {
-            setGenerandoAR(false);
-            return;
-          }
-          glbBuffer = glbData.arrayBuffer;
-          rawSize = glbData.arrayBuffer.byteLength;
-        }
-      } else {
-        // 🚀 Generar GLB con perfil ultra liviano exclusivo para AR (< 900 KB)
-        const glbData = await generateCleanGLB(true);
-        if (!glbData) {
-          setGenerandoAR(false);
-          return;
-        }
-        glbBuffer = glbData.arrayBuffer;
-        rawSize = glbData.arrayBuffer.byteLength;
-      }
-
-      // 📱 Detección universal de dispositivo móvil o tablet (inmune a "Sitio para computadoras"):
-      const ua = typeof navigator !== "undefined" ? navigator.userAgent || navigator.vendor || (window as any).opera || "" : "";
-      const isMobileUA = /android|webos|iphone|ipad|ipod|blackberry|iemobile|opera mini/i.test(ua);
-      const isIPad = /macintosh/i.test(ua) && typeof navigator !== "undefined" && navigator.maxTouchPoints > 1;
-      const isTouch =
-        typeof window !== "undefined" &&
-        ("ontouchstart" in window ||
-          (navigator && (navigator.maxTouchPoints > 0 || (navigator as any).msMaxTouchPoints > 0)) ||
-          (window.matchMedia && window.matchMedia("(pointer: coarse)").matches));
-      const esDispositivoMovil = isMobileUA || isIPad || isTouch;
-
-      // 💾 Guardar snapshot de sesión activa para que al volver de AR no se pierda ninguna personalización
-      try {
-        if (typeof window !== "undefined") {
-          const snapshot = {
-            parametros,
-            instancias,
-            modelName,
-            timestamp: Date.now(),
-          };
-          sessionStorage.setItem("3bf_ar_return_session", JSON.stringify(snapshot));
-        }
-      } catch (e) {
-        console.warn("No se pudo guardar la sesión de retorno AR:", e);
-      }
-
-      // Endpoint permanente para AR (elude la memoria efímera y timeouts de Lambdas de Netlify)
-      const arHost = "https://engine.mariomojica.com";
-      const arUploadUrl =
-        typeof window !== "undefined" &&
-        (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1")
-          ? "/api/compress-glb"
-          : `${arHost}/api/compress-glb`;
-      const arRedirectBase =
-        typeof window !== "undefined" &&
-        (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1")
-          ? ""
-          : arHost;
-
-      if (esDispositivoMovil) {
-        // En móvil: Guardar en IndexedDB para disponibilidad inmediata
-        try {
-          const glbBlob = new Blob([glbBuffer], { type: "model/gltf-binary" });
-          await saveLocalARModel(glbBlob, modelName);
-        } catch (storageErr) {
-          console.warn("[3dBimFab AR] IndexedDB no disponible:", storageErr);
-        }
-
-        // Subir al backend persistente con timeout de 10s para registrar el ID de Scene Viewer
-        const abortCtrl = new AbortController();
-        const timeoutId = setTimeout(() => abortCtrl.abort(), 10000);
-
-        try {
-          const res = await fetch(`${arUploadUrl}?mode=ar&name=${encodeURIComponent(modelName)}`, {
-            method: "POST",
-            headers: { "Content-Type": "application/octet-stream" },
-            body: glbBuffer,
-            signal: abortCtrl.signal,
-          });
-          clearTimeout(timeoutId);
-
-          if (res.ok) {
-            const data = await res.json();
-            if (data?.id) {
-              setGenerandoAR(false);
-              // Navegar exactamente a la misma URL pública que descarga Google Scene Viewer en el QR de PC
-              window.location.href = `${arRedirectBase}/ar?id=${data.id}&name=${encodeURIComponent(modelName)}`;
-              return;
-            }
-          }
-        } catch (apiErr) {
-          clearTimeout(timeoutId);
-          console.warn("[3dBimFab AR] Subida serverless demorada o fallida:", apiErr);
-        }
-
-        // Fallback si la API tardó más de 10s o falló: abrir localmente
-        setGenerandoAR(false);
-        window.location.href = `/ar?source=local&name=${encodeURIComponent(modelName)}`;
-        return;
-      }
-
-      // En PC: Preparar modelo en API para generar el ID del QR
-      const res = await fetch(`${arUploadUrl}?mode=ar&name=${encodeURIComponent(modelName)}`, {
-        method: "POST",
-        headers: { "Content-Type": "application/octet-stream" },
-        body: glbBuffer,
-      });
-
-      if (!res.ok) {
-        throw new Error("No se pudo preparar el modelo para Realidad Aumentada.");
-      }
-
-      const data = await res.json();
-
-      setArData({
-        id: data.id,
-        sizeBefore: data.sizeBefore,
-        sizeAfter: data.sizeAfter,
-      });
-      setModalARAbierto(true);
-    } catch (err: any) {
-      console.error("Error al preparar AR:", err);
-      alert("Error al preparar Realidad Aumentada: " + (err?.message || err));
-    } finally {
-      setGenerandoAR(false);
-    }
-  };
-
   const [isDraggingOver, setIsDraggingOver] = React.useState(false);
 
   const handleDropOnCanvas = async (e: React.DragEvent<HTMLDivElement>) => {
@@ -2144,6 +1179,16 @@ export default function Viewer3D() {
       className="w-full h-full relative rounded-xl overflow-hidden shadow-inner border border-gray-200 dark:border-cyan-900/50 glass-panel"
     >
       {(pestanaActiva === "3d" || pestanaActiva === "manual") && <NPanel />}
+
+      {/* ⚡ Barra de Carga Superior Horizontal durante Cómputo/Sincronización (Verde esmeralda sobre gris) */}
+      {mostrarBarraProgreso && (
+        <div className="absolute top-0 left-0 right-0 h-1.5 z-30 overflow-hidden bg-slate-300 dark:bg-slate-700/80 pointer-events-none">
+          <div 
+            className="h-full bg-gradient-to-r from-emerald-500 via-green-400 to-emerald-500 transition-all duration-150 ease-out shadow-[0_0_8px_rgba(16,185,129,0.8)] rounded-r-full"
+            style={{ width: `${Math.min(100, Math.max(3, progresoSincronizacion))}%` }}
+          />
+        </div>
+      )}
 
       {/* Indicador visual de Zona de Suelta (Drop Zone) */}
       {isDraggingOver && (
@@ -2378,31 +1423,8 @@ export default function Viewer3D() {
             )}
           </button>
 
-          {/* En Modo Manual: Botón Circular Actualizar GHX (flechas circulares) */}
           {/* En Modo 3D: Botón Perforar Mueble */}
-          {pestanaActiva === "manual" ? (
-            <button
-              onClick={async () => {
-                setRecargandoGHX(true);
-                try {
-                  await forzarRecargaDesdeGHX();
-                } catch (e) {
-                  console.error("Error al actualizar GHX:", e);
-                } finally {
-                  setRecargandoGHX(false);
-                }
-              }}
-              disabled={recargandoGHX}
-              title="Actualizar / recalcular geometría fresca desde Grasshopper (.ghx)"
-              style={{
-                backgroundColor: coloresApariencia?.botonActivo || "#0891b2",
-                borderColor: coloresApariencia?.colorMarca || "#0891b2",
-              }}
-              className="w-8 lg:w-7 h-8 lg:h-7 rounded-full text-white shadow-md border flex items-center justify-center hover:opacity-90 active:scale-95 transition-all cursor-pointer disabled:opacity-50 box-border shrink-0"
-            >
-              <RefreshCw className={`w-3.5 h-3.5 ${recargandoGHX ? "animate-spin" : ""}`} />
-            </button>
-          ) : (
+          {pestanaActiva !== "manual" && (
             <button
               onClick={async () => {
                 await perforarMueble();
@@ -2425,6 +1447,29 @@ export default function Viewer3D() {
             </button>
           )}
 
+          {/* 🔄 Botón Circular Actualizar GHX (Visible SIEMPRE en Visor 3D y en Manual 3D) */}
+          <button
+            onClick={async () => {
+              setRecargandoGHX(true);
+              try {
+                await forzarRecargaDesdeGHX();
+              } catch (e) {
+                console.error("Error al actualizar GHX:", e);
+              } finally {
+                setRecargandoGHX(false);
+              }
+            }}
+            disabled={recargandoGHX}
+            title="Actualizar y recalcular geometría fresca desde el archivo Grasshopper (.ghx) en disco"
+            style={{
+              backgroundColor: coloresApariencia?.botonActivo || "#0891b2",
+              borderColor: coloresApariencia?.colorMarca || "#0891b2",
+            }}
+            className="w-8 lg:w-7 h-8 lg:h-7 rounded-full text-white shadow-md border flex items-center justify-center hover:opacity-90 active:scale-95 transition-all cursor-pointer disabled:opacity-50 box-border shrink-0"
+          >
+            <RefreshCw className={`w-3.5 h-3.5 ${recargandoGHX ? "animate-spin" : ""}`} />
+          </button>
+
           {/* Botón Limpiar Perforaciones */}
           {Object.keys(mecanizadosCruzados || {}).length > 0 && (
             <button
@@ -2439,6 +1484,44 @@ export default function Viewer3D() {
               <Trash2 className="w-3.5 lg:w-3.5 h-3.5 lg:h-3.5" />
             </button>
           )}
+
+          {/* Input oculto para cargar caché desde archivo local */}
+          <input 
+            type="file" 
+            ref={cacheFileInputRef} 
+            onChange={handleCargarCacheArchivo} 
+            accept=".json" 
+            className="hidden" 
+          />
+
+          {/* ⚡ Botón Cargar Caché desde Archivo JSON (Cápsula pura rounded-full) */}
+          <button
+            onClick={() => cacheFileInputRef.current?.click()}
+            disabled={cargandoCacheArchivo}
+            title="Cargar Caché 3D desde archivo JSON (.json) - Apertura instantánea (0 ms)"
+            style={{
+              backgroundColor: coloresApariencia?.botonActivo || "#0891b2",
+              borderColor: coloresApariencia?.colorMarca || "#0891b2",
+            }}
+            className="px-2.5 lg:px-3 h-8 lg:h-7 rounded-full text-white shadow-md border flex items-center gap-1 text-[11px] lg:text-xs font-bold leading-none hover:opacity-90 active:scale-95 transition-all cursor-pointer disabled:opacity-50 box-border shrink-0"
+          >
+            <Upload className={`w-3.5 h-3.5 ${cargandoCacheArchivo ? "animate-pulse" : ""}`} />
+            <span className="hidden sm:inline">Caché</span>
+          </button>
+
+          {/* ⚡ Botón Exportar Caché a Archivo JSON (Circular rounded-full) */}
+          <button
+            onClick={() => exportarCacheAArchivo()}
+            title="Descargar cálculo 3D actual como archivo de caché (.json)"
+            style={{
+              backgroundColor: coloresApariencia?.fondoPaneles || "#FFFFFF",
+              borderColor: coloresApariencia?.bordePaneles || "#CBD5E1",
+              color: coloresApariencia?.textoPrincipal || "#0F172A",
+            }}
+            className="w-8 lg:w-7 h-8 lg:h-7 rounded-full shadow-md border flex items-center justify-center hover:bg-slate-50 dark:hover:bg-slate-800 active:scale-95 transition-all cursor-pointer box-border shrink-0"
+          >
+            <FileDown className="w-3.5 h-3.5 opacity-80" />
+          </button>
 
           {/* 💡 Botón Toggle de Luces de Estudio 3D (Circular, fondo cian, ícono blanco) */}
           <button
@@ -2793,11 +1876,37 @@ export default function Viewer3D() {
           </div>
         )}
 
-        {/* ⚡ Testigo de Sincronización con intensidad de iluminación parpadeante (justo encima de Online) */}
-        {estaSincronizando && (
-          <div className="flex items-center gap-1.5 text-[9px] md:text-[10.5px] font-bold text-cyan-500 dark:text-cyan-400 animate-pulse pointer-events-auto tracking-wide">
-            <span className="w-1.5 h-1.5 rounded-full bg-cyan-500 dark:bg-cyan-400 shadow-[0_0_6px_rgba(6,182,212,0.8)] shrink-0" />
-            <span>Sincronizando...</span>
+        {/* ⚡ Barra de Carga & Testigo de Sincronización Proporcional en Verde */}
+        {mostrarBarraProgreso && (
+          <div className="flex flex-col gap-1.5 pointer-events-auto mb-1 bg-white/90 dark:bg-[#131B2E]/95 backdrop-blur-md p-2 px-3 rounded-2xl border border-emerald-500/30 dark:border-emerald-500/40 shadow-lg min-w-[190px] max-w-[230px] transition-all">
+            <div className="flex items-center justify-between gap-1.5 text-[9.5px] md:text-[10.5px] font-bold tracking-wide">
+              <div className="flex items-center gap-1.5 text-slate-800 dark:text-slate-200">
+                {progresoSincronizacion === 100 ? (
+                  <Check className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
+                ) : (
+                  <Loader2 className="w-3 h-3 text-emerald-500 animate-spin shrink-0" />
+                )}
+                <span>
+                  {progresoSincronizacion === 100
+                    ? "¡Completado!"
+                    : progresoSincronizacion < 25
+                    ? "Enviando datos..."
+                    : progresoSincronizacion < 80
+                    ? "Calculando Rhino..."
+                    : "Procesando mallas..."}
+                </span>
+              </div>
+              <span className="text-[10.5px] font-mono font-bold text-emerald-600 dark:text-emerald-400">
+                {Math.round(progresoSincronizacion)}%
+              </span>
+            </div>
+            {/* Pista gris (falta para llegar al 100%) con barra verde proporcional en cápsula rounded-full */}
+            <div className="w-full h-2 bg-slate-200 dark:bg-slate-700/80 rounded-full overflow-hidden relative">
+              <div 
+                className="h-full rounded-full bg-gradient-to-r from-emerald-500 to-green-400 transition-all duration-150 ease-out shadow-[0_0_6px_rgba(16,185,129,0.5)]"
+                style={{ width: `${Math.min(100, Math.max(4, progresoSincronizacion))}%` }}
+              />
+            </div>
           </div>
         )}
 

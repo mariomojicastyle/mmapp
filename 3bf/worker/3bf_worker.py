@@ -66,11 +66,25 @@ from pydantic import BaseModel, ConfigDict
 
 app = FastAPI(title="3BF Worker Python Engine", version="2.5.0")
 
-def parse_ghx_slider_limits(ghx_path):
-    limits = {}
-    if not os.path.exists(ghx_path):
-        return limits
+CACHE_DIR = os.path.join(os.path.dirname(__file__), "cache")
+os.makedirs(CACHE_DIR, exist_ok=True)
 
+_SLIDER_LIMITS_CACHE = {}
+
+def parse_ghx_slider_limits(ghx_path):
+    if not ghx_path or not os.path.exists(ghx_path):
+        return {}
+
+    try:
+        cur_mtime = os.path.getmtime(ghx_path)
+        if ghx_path in _SLIDER_LIMITS_CACHE:
+            cached_mtime, cached_limits = _SLIDER_LIMITS_CACHE[ghx_path]
+            if cached_mtime == cur_mtime:
+                return cached_limits
+    except Exception:
+        cur_mtime = 0
+
+    limits = {}
     try:
         tree = ET.parse(ghx_path)
         root = tree.getroot()
@@ -122,6 +136,8 @@ def parse_ghx_slider_limits(ghx_path):
     except Exception as e:
         print(f"[3BF Worker] Error parseando límites slider: {e}", flush=True)
 
+    if cur_mtime > 0:
+        _SLIDER_LIMITS_CACHE[ghx_path] = (cur_mtime, limits)
     return limits
 
 def parse_ghx_default_values(ghx_path):
@@ -610,6 +626,8 @@ def health_check():
 # =============================================================================
 _GEOMETRY_CACHE = {}      # Por model_key: guarda estado estructural + fondos desglosados
 _FULL_RESPONSE_CACHE = {} # Por hash exacto de todos los parámetros: respuesta instantánea (0 ms)
+_GHX_TEMPLATE_CACHE = {}  # Por ghx_path: mtime, b64_algo base, default_values y valuelist_nicks
+_RAW_GHX_STRING_CACHE = {} # Por ghx_path: (mtime, raw_xml_str) lectura cero-disco en RAM
 
 def extract_tris_from_mesh(mesh):
     verts = mesh.get("vertices", [])
@@ -1085,24 +1103,64 @@ async def compute_model(request: Request):
 
     force_reload = bool(p.get("force_reload", False))
     if force_reload:
+        # Purgar cachés en RAM
         for k in list(_FULL_RESPONSE_CACHE.keys()):
             if model_id in k:
                 _FULL_RESPONSE_CACHE.pop(k, None)
         for k in list(_GEOMETRY_CACHE.keys()):
             if model_id in k:
                 _GEOMETRY_CACHE.pop(k, None)
-        print(f"[3BF Worker] [FORCE RELOAD] Caché purgada para '{model_id}'. Recomputando directamente en RhinoCompute...", flush=True)
+        if ghx_file_path:
+            _RAW_GHX_STRING_CACHE.pop(ghx_file_path, None)
+            _GHX_TEMPLATE_CACHE.pop(ghx_file_path, None)
+            
+        # Purgar cachés en disco asociadas a este modelo
+        for f in os.listdir(CACHE_DIR):
+            if model_id.lower() in f.lower():
+                try:
+                    os.remove(os.path.join(CACHE_DIR, f))
+                except Exception:
+                    pass
+        # Al forzar recarga, ignorar cualquier ghx_content cacheado en el cliente para leer el GHX fresco del disco
+        p["ghx_content"] = None
+        print(f"[3BF Worker] [FORCE RELOAD] Caché total (RAM y Disco) purgada para '{model_id}'. Leyendo GHX fresco desde disco...", flush=True)
 
-    # 1. ⚡ Chequeo de Caché Total Exacto (0 ms)
+    # 1. ⚡ Chequeo de Caché Total Exacto (RAM y Disco)
+    hash_p = {k: v for k, v in p.items() if k not in ["timestamp", "client_time", "last_mtime"]}
+    full_cache_key = f"{model_key}_" + hashlib.md5(json.dumps(hash_p, sort_keys=True, default=str).encode("utf-8")).hexdigest()
+    disk_cache_file = os.path.join(CACHE_DIR, f"{full_cache_key}.json")
+    if ghx_mtime > 0:
+        if os.path.exists(disk_cache_file) and os.path.getmtime(disk_cache_file) < ghx_mtime:
+            try:
+                os.remove(disk_cache_file)
+            except Exception:
+                pass
+
     if not force_reload:
-        hash_p = {k: v for k, v in p.items() if k not in ["timestamp", "client_time", "last_mtime"]}
-        full_cache_key = f"{model_key}_" + hashlib.md5(json.dumps(hash_p, sort_keys=True, default=str).encode("utf-8")).hexdigest()
+        # A) RAM Cache (0 ms)
         if full_cache_key in _FULL_RESPONSE_CACHE:
             cached_resp = dict(_FULL_RESPONSE_CACHE[full_cache_key])
             exec_ms = round((time.time() - start_time) * 1000, 2)
             cached_resp["execution_time_ms"] = exec_ms
-            print(f"[3BF Worker] [CACHE] CACHE TOTAL EXACTO ACTIVADO: Recalculo en {exec_ms} ms", flush=True)
+            print(f"[3BF Worker] [CACHE RAM] CACHE TOTAL EXACTO ACTIVADO: Recalculo en {exec_ms} ms", flush=True)
             return cached_resp
+
+        # B) Disco Cache por Hash Exacto (~30-50 ms)
+        if os.path.exists(disk_cache_file):
+            try:
+                with open(disk_cache_file, "r", encoding="utf-8") as f:
+                    cached_resp = json.load(f)
+                exec_ms = round((time.time() - start_time) * 1000, 2)
+                cached_resp["execution_time_ms"] = exec_ms
+                _FULL_RESPONSE_CACHE[full_cache_key] = cached_resp
+                print(f"[3BF Worker] [CACHE DISCO] Carga desde archivo JSON en {exec_ms} ms ({disk_cache_file})", flush=True)
+                return cached_resp
+            except Exception as disk_err:
+                print(f"[3BF Worker Disk Cache Read Warning]: {disk_err}", flush=True)
+
+        # 🛡️ NORMA OBLIGATORIA: Prohibido cargar estados inventados o congelados en _default.json.
+        # Al abrir cualquier modelo en 3dBimFab debe resolverse siempre el GHX real.
+        # Los puntos de caché se capturan exclusivamente en las 5 esferas de memoria (Poser).
 
     ancho = extract_dimension_smart(p, ["ancho"], 1200.0)
     alto = extract_dimension_smart(p, ["alto", "altura"], 800.0)
@@ -1253,13 +1311,13 @@ async def compute_model(request: Request):
     
     # 2. Selección de Algoritmo NATIVO (.ghx)
     model_id = str(p.get("model_id", "Cajon_Experimento_Viktor"))
-    raw_ghx_content = str(p.get("ghx_content", ""))
+    raw_ghx_content = p.get("ghx_content") or ""
     custom_filename = str(p.get("custom_filename", ""))
     
     root = None
     ghx_file = ""
 
-    if raw_ghx_content:
+    if raw_ghx_content and raw_ghx_content.strip():
         try:
             root = ET.fromstring(raw_ghx_content)
             temp_dir = r"C:\Desarrollo\mmapp\temporal"
@@ -1285,17 +1343,26 @@ async def compute_model(request: Request):
     default_values = {}
     rhino_compute_success = False
     rhino_outputs_count = 0
+    b64_algo = None
     
     try:
         if root is not None or (ghx_file and os.path.exists(ghx_file)):
-            if root is None:
-                tree = ET.parse(ghx_file)
-                root = tree.getroot()
-            
-            # Extraer valores por defecto ORIGINALES antes de hacer cualquier reescritura en caliente
+            if root is None and ghx_file and os.path.exists(ghx_file):
+                ghx_mtime_disk = int(os.path.getmtime(ghx_file))
+                raw_xml_str = None
+                if ghx_file in _RAW_GHX_STRING_CACHE:
+                    cached_mtime, cached_str = _RAW_GHX_STRING_CACHE[ghx_file]
+                    if cached_mtime == ghx_mtime_disk:
+                        raw_xml_str = cached_str
+                if raw_xml_str is None:
+                    with open(ghx_file, "r", encoding="utf-8-sig") as f:
+                        raw_xml_str = f.read()
+                    _RAW_GHX_STRING_CACHE[ghx_file] = (ghx_mtime_disk, raw_xml_str)
+                root = ET.fromstring(raw_xml_str)
+
+            # 1. Extraer valores por defecto ORIGINALES de sliders y value lists
             default_values = {}
             for chunk in root.iter("chunk"):
-                # 1. Sliders (Números)
                 if chunk.attrib.get("name") == "Object":
                     name_item = chunk.find("items/item[@name='Name']")
                     if name_item is not None and "Number Slider" in str(name_item.text):
@@ -1312,13 +1379,11 @@ async def compute_model(request: Request):
                                     except:
                                         default_values[nick] = val_item.text
 
-                # 2. Value Lists (Selectores)
                 if chunk.attrib.get("name") == "Container":
                     nick = ""
                     for it in chunk.findall("items/item"):
                         if it.attrib.get("name") == "NickName":
                             nick = it.text or ""
-                    
                     if nick.startswith("RH_IN:"):
                         for sub in chunk.iter("chunk"):
                             if sub.attrib.get("name") == "ListItem":
@@ -1327,7 +1392,8 @@ async def compute_model(request: Request):
                                 if name_item is not None and sel_item is not None and sel_item.text == "true":
                                     default_values[nick] = name_item.text
 
-            # 1. Actualizar Number Sliders en caliente en el XML
+            # 2. ⚡ ACTUALIZACIÓN EN CALIENTE DE NUMBER SLIDERS EN EL XML
+            # En Grasshopper/RhinoCompute, los Number Sliders leen su valor directamente del XML del archivo .ghx
             for chunk in root.iter("chunk"):
                 if chunk.attrib.get("name") == "Object":
                     container = chunk.find("chunks/chunk[@name='Container']")
@@ -1346,7 +1412,7 @@ async def compute_model(request: Request):
                                     except:
                                         val_item.text = str(user_v)
 
-            # 2. Actualizar Value Lists en caliente en el XML con preservación estricta de opciones
+            # 3. ⚡ ACTUALIZACIÓN EN CALIENTE DE VALUE LISTS (SELECTORES) EN EL XML
             for chunk in root.iter("chunk"):
                 if chunk.attrib.get("name") == "Object":
                     container = chunk.find("chunks/chunk[@name='Container']")
@@ -1403,6 +1469,7 @@ async def compute_model(request: Request):
 
             xml_bytes = ET.tostring(root, encoding="utf-8")
             b64_algo = base64.b64encode(xml_bytes).decode("utf-8")
+
             print(f"[3BF Worker] Solucionando modelo {model_id} ({ghx_file}) en RhinoCompute (Grafo Optimizado)", flush=True)
 
             # Armar payload_values 100% DINÁMICO para Sliders y Parámetros en RhinoCompute
@@ -2080,6 +2147,16 @@ async def compute_model(request: Request):
             }
             _FULL_RESPONSE_CACHE[full_cache_key] = dict(response_payload)
             print(f"[3BF Worker] [RAM CACHE] Estado generalizado guardado en RAM: {len(pieces_classified)} piezas clasificadas + {len(static_other_meshes)} mallas estáticas + {len(fondos_data_list)} fondos", flush=True)
+
+            # Persistencia en Disco para carga en 0.05 segundos
+            try:
+                with open(disk_cache_file, "w", encoding="utf-8") as f_out:
+                    json.dump(response_payload, f_out)
+                
+                # 🛡️ NORMA OBLIGATORIA: Prohibido escribir o sobrescribir _default.json. Los snapshots se capturan en las esferas.
+                pass
+            except Exception as disk_write_err:
+                print(f"[3BF Worker Disk Write Warning]: {disk_write_err}", flush=True)
         except Exception as cache_err:
             print(f"[3BF Worker Cache Warning]: {cache_err}", flush=True)
 
@@ -2579,6 +2656,79 @@ async def export_dxf_biesse(request: Request):
     except Exception as e:
         print(f"[3BF Worker DXF Error]: {e}", flush=True)
         return {"status": "error", "message": str(e)}
+
+
+# =============================================================================
+# ⚡ ENDPOINTS DE GESTIÓN DE CACHÉ EN DISCO (Apertura Instantánea 0.05s)
+# =============================================================================
+@app.get("/cache/list")
+async def list_disk_caches():
+    try:
+        files = [f for f in os.listdir(CACHE_DIR) if f.endswith(".json")]
+        items = []
+        for f in files:
+            fp = os.path.join(CACHE_DIR, f)
+            size_kb = round(os.path.getsize(fp) / 1024.0, 1)
+            mtime = os.path.getmtime(fp)
+            items.append({
+                "filename": f,
+                "size_kb": size_kb,
+                "mtime": mtime,
+                "is_default": "_default" in f
+            })
+        return {"status": "success", "count": len(items), "files": items}
+    except Exception as err:
+        return {"status": "error", "message": str(err)}
+
+
+@app.post("/cache/save")
+async def save_disk_cache(request: Request):
+    try:
+        data = await request.json()
+        filename = data.get("filename", "").strip()
+        payload = data.get("payload")
+        if not filename or not payload:
+            raise HTTPException(status_code=400, detail="Se requiere filename y payload")
+        if not filename.endswith(".json"):
+            filename += ".json"
+        
+        # Sanitizar nombre
+        filename = re.sub(r'[\\/*?:"<>|]', "_", filename)
+        target_path = os.path.join(CACHE_DIR, filename)
+        with open(target_path, "w", encoding="utf-8") as f:
+            json.dump(payload, f)
+        
+        size_kb = round(os.path.getsize(target_path) / 1024.0, 1)
+        print(f"[3BF Worker] Caché guardado exitosamente: {filename} ({size_kb} KB)", flush=True)
+        return {"status": "success", "filename": filename, "size_kb": size_kb}
+    except Exception as err:
+        return {"status": "error", "message": str(err)}
+
+
+@app.post("/cache/load")
+async def load_disk_cache(request: Request):
+    try:
+        data = await request.json()
+        filename = data.get("filename", "").strip()
+        if not filename:
+            raise HTTPException(status_code=400, detail="Se requiere filename")
+        if not filename.endswith(".json"):
+            filename += ".json"
+        
+        target_path = os.path.join(CACHE_DIR, filename)
+        if not os.path.exists(target_path):
+            raise HTTPException(status_code=404, detail="Archivo de caché no encontrado")
+        
+        t0 = time.time()
+        with open(target_path, "r", encoding="utf-8") as f:
+            loaded_data = json.load(f)
+        elapsed_ms = round((time.time() - t0) * 1000, 2)
+        loaded_data["execution_time_ms"] = elapsed_ms
+        
+        print(f"[3BF Worker] Caché cargado en {elapsed_ms} ms: {filename}", flush=True)
+        return {"status": "success", "elapsed_ms": elapsed_ms, "data": loaded_data}
+    except Exception as err:
+        return {"status": "error", "message": str(err)}
 
 
 if __name__ == "__main__":

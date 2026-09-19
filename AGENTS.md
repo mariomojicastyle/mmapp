@@ -241,3 +241,6 @@ Default values cause runtime failures.
   * El agente DEBE hacer la **traducción interna instantánea** hacia el nombre nativo exacto de Grasshopper (`Tampa (3)`, `Cavilha (4)`, `Parafuso B (1)`, `Corrediça - Fixa (2)`, `Peça 7`, etc.) al leer peticiones, modificar mallas o manipular configuraciones.
   * En la interfaz (UI), las cápsulas muestran el nombre nativo de Grasshopper con tooltip explicativo en español para máxima claridad.
 
+## 🧊 Regla Obligatoria de Carga de Modelos en 3dBimFab
+- **Apertura de Modelos Siempre en GHX Real:** Al abrir cualquier definición o componente en 3dBimFab (por ejemplo Cómoda Ravenna, Cubiertas, etc.), se debe resolver **SIEMPRE el `.ghx` real en vivo** evaluado por Grasshopper y RhinoCompute con sus parámetros genuinos. Queda ESTRICTAMENTE PROHIBIDO interceptar la apertura con archivos congelados o inventados en caché de disco (`_default.json`).
+

@@ -201,15 +201,35 @@ async function synthesizeTtsWithPauses(
     const silenceFrameBuf = Buffer.from(cfg.silenceFrameHex, "hex");
     const cleanSilenceBuffer = Buffer.concat(Array(42).fill(silenceFrameBuf));
 
+    // ⚡ Síntesis ultra rápida concurrente con Promise.all (reduce tiempo de ~15s a < 2s)
+    const textIndices: number[] = [];
+    segments.forEach((s, idx) => {
+      if (s.type === "text" && typeof s.value === "string") {
+        textIndices.push(idx);
+      }
+    });
+
+    const textPromises = textIndices.map((idx) =>
+      synthesizeTts(segments[idx].value as string, voice, calidad, velocidad).then((buf) => ({
+        idx,
+        buf: stripLameHeader(buf),
+      }))
+    );
+
+    const renderedResults = await Promise.all(textPromises);
+    const audioMap = new Map<number, Buffer>();
+    renderedResults.forEach((r) => audioMap.set(r.idx, r.buf));
+
     const renderedSegments: Buffer[] = [];
-    for (const segment of segments) {
-      if (segment.type === "text" && typeof segment.value === "string") {
-        const buf = await synthesizeTts(segment.value, voice, calidad, velocidad);
-        renderedSegments.push(stripLameHeader(buf));
+    segments.forEach((segment, idx) => {
+      if (segment.type === "text") {
+        const audioBuf = audioMap.get(idx);
+        if (audioBuf) renderedSegments.push(audioBuf);
       } else if (segment.type === "pause" && typeof segment.value === "number") {
         renderedSegments.push(Buffer.concat(Array(segment.value).fill(cleanSilenceBuffer)));
       }
-    }
+    });
+
     return Buffer.concat(renderedSegments);
   } else {
     return await synthesizeTts(text, voice, calidad, velocidad);

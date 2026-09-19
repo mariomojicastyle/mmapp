@@ -185,6 +185,7 @@ export interface HerrajeContactoItem {
     | "bisagra"
     | "manija"
     | "pata"
+    | "clavo"
     | "otro";
   label: string; // ej. "Tarugo" | "Tuerca plástica" | "Tornillo" | "Tarugo 14" | "Cantonera 13"
   cantidad: number;
@@ -214,15 +215,26 @@ export function isHardwareMeshName(name: string): boolean {
     n.includes("cantonera") ||
     n.includes("escuadra") ||
     n.includes("soporte") ||
+    n.includes("suporte") ||
     n.includes("pata") ||
     n.includes("pes") ||
     n.includes("pés") ||
+    n.includes("sapata") ||
+    n.includes("deslizador") ||
     n.includes("bisagra") ||
     n.includes("dobradiça") ||
+    n.includes("dobradi") ||
     n.includes("puxador") ||
     n.includes("manija") ||
+    n.includes("tirador") ||
     n.includes("tapa") ||
-    n.includes("tampa")
+    n.includes("tampa") ||
+    n.includes("clavo") ||
+    n.includes("prego") ||
+    n.includes("puntilla") ||
+    n.includes("grampo") ||
+    n.includes("perfil") ||
+    n.includes("trilho")
   ) && !n.includes("cajon") && !n.includes("cajón");
 }
 
@@ -230,7 +242,7 @@ export function isHardwareMeshName(name: string): boolean {
  * Categoriza el herraje en una familia semántica y etiqueta legible en español.
  */
 export function categorizarHerraje(name: string): {
-  tipo: "tarugo" | "tuerca" | "tornillo" | "tapa" | "minifix" | "corredera" | "cantonera" | "escuadra" | "soporte" | "bisagra" | "manija" | "pata" | "otro";
+  tipo: "tarugo" | "tuerca" | "tornillo" | "tapa" | "minifix" | "corredera" | "cantonera" | "escuadra" | "soporte" | "bisagra" | "manija" | "pata" | "clavo" | "otro";
   label: string;
 } {
   const n = (name || "").toLowerCase();
@@ -255,7 +267,7 @@ export function categorizarHerraje(name: string): {
   if (n.includes("minifix") || n.includes("caja")) {
     return { tipo: "minifix", label: "Minifix" };
   }
-  if (n.includes("corredera") || n.includes("corredi")) {
+  if (n.includes("corredera") || n.includes("corredi") || n.includes("trilho")) {
     return { tipo: "corredera", label: "Corredera" };
   }
   if (n.includes("dobradi") || n.includes("bisagra")) {
@@ -264,7 +276,10 @@ export function categorizarHerraje(name: string): {
   if (n.includes("puxador") || n.includes("manija") || n.includes("tirador")) {
     return { tipo: "manija", label: "Tirador" };
   }
-  if (n.includes("pata") || n.includes("sapata") || n.includes("pé") || n.includes("pes")) {
+  if (n.includes("prego") || n.includes("clavo") || n.includes("puntilla") || n.includes("grampo")) {
+    return { tipo: "clavo", label: "Clavo / Grapa" };
+  }
+  if (n.includes("pata") || n.includes("sapata") || n.includes("pé") || n.includes("pes") || n.includes("deslizador")) {
     return { tipo: "pata", label: "Pata" };
   }
   return { tipo: "otro", label: "Herraje" };

@@ -214,6 +214,15 @@ export function BoardMesh({
     return null;
   }
 
+  // 🛡️ Solo omitir si la geometría carece de mallas poligonales reales y además tiene dimensiones nulas
+  if (!customGeometry && (!size || size[0] <= 0.0001 || size[1] <= 0.0001 || size[2] <= 0.0001)) {
+    return null;
+  }
+  // Si tiene customGeometry pero está vacía sin vértices
+  if (customGeometry && customGeometry.attributes.position.count < 3) {
+    return null;
+  }
+
   // 5. Configuración de Aristas Técnicas CAD
   const {
     finalMeshColor,
@@ -244,7 +253,15 @@ export function BoardMesh({
     esParalelepipedo,
   } = matProps;
 
-  const debeMostrarAristas = calibracion.mostrarAristas !== false && (isWoodBoard || isHardware);
+  // Prevenir que geometrías milimétricas (clavos, grampas, etc.) dibujen aristas de caja que se perciban como puntos flotantes
+  const esMicroGeometria = Boolean(
+    size && (
+      Math.max(size[0], size[1], size[2]) < 0.005 ||
+      (Math.min(size[0], size[1], size[2]) <= 0.002 && Math.max(size[0], size[1], size[2]) < 0.025)
+    )
+  );
+
+  const debeMostrarAristas = calibracion.mostrarAristas !== false && (isWoodBoard || isHardware) && !esMicroGeometria;
   const debeOmitirAristasPorDuplicidadCapa = isWoodBoard && (isBalance || isMdpExpuesto);
   const mostrarAristasEnEsteMesh = (debeMostrarAristas && !debeOmitirAristasPorDuplicidadCapa) || estaSeleccionadaEnPicking;
   const edgeGeometryToUse = (esParalelepipedo && boxMeshGeometry) ? boxMeshGeometry : (customGeometry || undefined);

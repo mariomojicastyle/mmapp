@@ -115,8 +115,8 @@ export const createSceneInstanceSlice = (set: any, get: any): any => ({
       escenarioLimpio: false,
     }));
 
-    // 2. Ejecutar cómputo de la nueva instancia
-    await get().recomputarInstancia(id);
+    // 2. ⚡ NORMA OBLIGATORIA: Ejecutar cómputo fresco del GHX real en vivo (sin cachés default intermedias)
+    await get().recomputarInstancia(id, true);
     get().guardarEstadoHistorial();
     return id;
   },
@@ -440,6 +440,10 @@ export const createSceneInstanceSlice = (set: any, get: any): any => ({
     }));
 
     try {
+      if (force) {
+        inst.ghxContent = undefined as any;
+      }
+
       // 2. Re-leer metadata fresca desde el archivo GHX en disco
       const metaRes = await fetch("/api/metadata", {
         method: "POST",
@@ -447,7 +451,8 @@ export const createSceneInstanceSlice = (set: any, get: any): any => ({
         body: JSON.stringify({
           model_id: inst.definitionId,
           custom_filename: inst.archivo,
-          ghx_content: inst.ghxContent,
+          ghx_content: force ? undefined : inst.ghxContent,
+          force_reload: force,
         }),
       });
 
@@ -541,6 +546,93 @@ export const createSceneInstanceSlice = (set: any, get: any): any => ({
     }
     const ids = Object.keys(state.instancias);
     await Promise.all(ids.map((id) => get().recomputarInstancia(id)));
+  },
+
+  cargarCacheDesdeArchivo: async (archivoOrData: File | string | Record<string, any>, id?: string) => {
+    const s = get();
+    const targetId = id || s.objetoActivoId || Object.keys(s.instancias || {})[0];
+    if (!targetId) {
+      console.warn("[3BF Cache] No hay instancia activa para cargar el caché.");
+      return false;
+    }
+
+    try {
+      let parsedData: any = null;
+      if (typeof archivoOrData === "object" && !(archivoOrData instanceof File)) {
+        parsedData = archivoOrData;
+      } else if (typeof archivoOrData === "string") {
+        parsedData = JSON.parse(archivoOrData);
+      } else if (archivoOrData instanceof File) {
+        const text = await archivoOrData.text();
+        parsedData = JSON.parse(text);
+      }
+
+      if (!parsedData || (parsedData.status !== "success" && !parsedData.real_meshes)) {
+        console.error("[3BF Cache] Estructura de archivo de caché inválida:", parsedData);
+        return false;
+      }
+
+      // Normalizar estructura si viene anidada en 'data'
+      const data = parsedData.data ? parsedData.data : parsedData;
+
+      set((state: any) => {
+        const currentInst = state.instancias[targetId];
+        if (!currentInst) return state;
+        const updatedInst = {
+          ...currentInst,
+          resultado: data,
+          cargando: false,
+        };
+        const nuevasInstancias = { ...state.instancias, [targetId]: updatedInst };
+        let nuevoMueble = state.muebleActivoGuardado;
+        if (nuevoMueble) {
+          nuevoMueble = { ...nuevoMueble, instancias: nuevasInstancias };
+        }
+        return {
+          instancias: nuevasInstancias,
+          muebleActivoGuardado: nuevoMueble,
+          resultado: state.objetoActivoId === targetId ? data : state.resultado,
+          workerStatus: "online",
+        };
+      });
+
+      console.log(`[3BF Cache] Caché inyectado instantáneamente en la instancia '${targetId}' (${data.real_meshes?.length || 0} mallas)`);
+      s.guardarEstadoHistorial();
+      return true;
+    } catch (err) {
+      console.error("[3BF Cache] Error al cargar caché desde archivo:", err);
+      return false;
+    }
+  },
+
+  exportarCacheAArchivo: (id?: string) => {
+    const s = get();
+    const targetId = id || s.objetoActivoId || Object.keys(s.instancias || {})[0];
+    const inst = targetId ? s.instancias[targetId] : null;
+    const res = inst?.resultado || s.resultado;
+
+    if (!res) {
+      alert("No hay geometría activa calculada para exportar en caché.");
+      return;
+    }
+
+    try {
+      const jsonStr = JSON.stringify(res, null, 2);
+      const blob = new Blob([jsonStr], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      const modelName = (inst?.nombreVisible || inst?.definitionId || "modelo_3bf").toLowerCase().replace(/\s+/g, "_");
+      const dims = res.dimensions || "";
+      const dimsClean = dims ? `_${dims.replace(/\s+/g, "").replace(/x/g, "_")}` : "";
+      link.href = url;
+      link.download = `${modelName}${dimsClean}_cache.json`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error("[3BF Cache] Error al exportar archivo de caché:", err);
+    }
   },
 
   getDespieceGlobal: () => {

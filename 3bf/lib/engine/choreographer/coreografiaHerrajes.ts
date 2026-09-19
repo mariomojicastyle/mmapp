@@ -227,12 +227,6 @@ export function compilarCoreografiaHerrajesCohesionados(
         tracks.push(crearTrackVectorSanitizado(`${hwMesh.uuid}.position`, hwPosTimes, hwPosValues));
       } else {
         // 🔩 HERRAJE NUEVO: ANIMACIÓN DE INSERCIÓN CONCÉNTRICA EN BARRENO
-        const tHwStart = durInsert > 0
-          ? tStart + (Math.max(0, idxNuevo) / totalNuevos) * (durInsert * 0.40)
-          : tStart;
-        const tHwPop = tHwStart + 0.15;
-        const tHwLlegada = durInsert > 0 ? tHwStart + (durInsert * 0.55) : tStart + 0.3;
-
         const distGlobalCm =
           elem.distanciaAproximacionHerrajesCm ||
           paso.configuracionCinematica?.distanciaAproximacionHerrajesCm ||
@@ -267,6 +261,17 @@ export function compilarCoreografiaHerrajesCohesionados(
 
         const dirNorm = dirInfo.dirCode;
         const distEfectivaM = dirInfo.distM;
+        const distEfectivaCm = distEfectivaM * 100;
+
+        // 🚀 VELOCIDAD FÍSICA REAL: Calculada a partir del control "Inserción Herrajes" (cm/s)
+        const vHwCm_s = Math.max(0.5, paso.configuracionCinematica?.velocidadHerrajesCmS || 8);
+        const tViajeHerraje = Math.max(0.2, Math.round((distEfectivaCm / vHwCm_s) * 100) / 100);
+
+        const tHwStart = durInsert > 0
+          ? tStart + (Math.max(0, idxNuevo) / totalNuevos) * Math.max(0.1, durInsert - tViajeHerraje)
+          : tStart;
+        const tHwPop = tHwStart + 0.05;
+        const tHwLlegada = Math.min(duracionPaso, tHwStart + tViajeHerraje);
 
         let vDirOffset = new THREE.Vector3(0, distEfectivaM, 0); // +Y por defecto
         if (dirNorm === "-Y") vDirOffset.set(0, -distEfectivaM, 0);
@@ -342,10 +347,11 @@ export function compilarCoreografiaHerrajesCohesionados(
 
         if (tAparicionPersonalizado !== null && tAparicionPersonalizado > 0) {
           const tHwCustomStart = Math.min(duracionPaso, tAparicionPersonalizado);
-          const tHwCustomLlegada = Math.min(duracionPaso, tHwCustomStart + 0.6);
+          // ⏱️ Duración real de inserción basada en la velocidad física de herrajes
+          const tHwCustomLlegada = Math.min(duracionPaso, tHwCustomStart + tViajeHerraje);
 
           if (trasladaMadera && tHwCustomStart >= tStartTraslado) {
-            // 🎯 CASO A: El herraje aparece DESPUÉS de que la pieza madre ya inició o completó su traslado (ej: 53s vs 14s).
+            // 🎯 CASO A: El herraje aparece DESPUÉS de que la pieza madre ya inició o completó su traslado.
             // La pieza madre ya está en el mueble. El herraje debe aparecer DIRECTAMENTE en el mueble junto a la pieza.
             const puntoBMueble = pHwRestFinal.clone();
             const puntoAMueble = pHwRestFinal.clone().add(vDirOffset);
@@ -358,7 +364,7 @@ export function compilarCoreografiaHerrajesCohesionados(
               puntoBMueble.x, puntoBMueble.y, puntoBMueble.z
             );
           } else {
-            // 🎯 CASO B: El herraje aparece ANTES del traslado de la pieza madre (ej: 0s vs 14s).
+            // 🎯 CASO B: El herraje aparece ANTES del traslado de la pieza madre.
             // Se inserta en el piso y a partir de tStartTraslado viaja SOLIDARIAMENTE con la pieza hacia el mueble.
             hwPosTimes.push(0, tHwCustomStart, tHwCustomLlegada);
             hwPosValues.push(
@@ -368,11 +374,14 @@ export function compilarCoreografiaHerrajesCohesionados(
             );
 
             if (trasladaMadera) {
-              if (tStartTraslado > tHwCustomLlegada) {
-                hwPosTimes.push(tStartTraslado);
+              const tTrasladoInicio = Math.max(tStartTraslado, tHwCustomLlegada);
+              if (tTrasladoInicio > tHwCustomLlegada) {
+                hwPosTimes.push(tTrasladoInicio);
                 hwPosValues.push(puntoB.x, puntoB.y, puntoB.z);
               }
-              hwPosTimes.push(tEndAction, duracionPaso);
+              const duracionTrasladoMadera = Math.max(0.5, tEndAction - tStartTraslado);
+              const tFinAccionHerraje = Math.min(duracionPaso, tTrasladoInicio + duracionTrasladoMadera);
+              hwPosTimes.push(tFinAccionHerraje, duracionPaso);
               hwPosValues.push(
                 pHwRestFinal.x, pHwRestFinal.y, pHwRestFinal.z,
                 pHwRestFinal.x, pHwRestFinal.y, pHwRestFinal.z
@@ -391,11 +400,14 @@ export function compilarCoreografiaHerrajesCohesionados(
           );
 
           if (trasladaMadera) {
-            if (tStartTraslado > tHwLlegada) {
-              hwPosTimes.push(tStartTraslado);
+            const tTrasladoInicio = Math.max(tStartTraslado, tHwLlegada);
+            if (tTrasladoInicio > tHwLlegada) {
+              hwPosTimes.push(tTrasladoInicio);
               hwPosValues.push(puntoB.x, puntoB.y, puntoB.z);
             }
-            hwPosTimes.push(tEndAction, duracionPaso);
+            const duracionTrasladoMadera = Math.max(0.5, tEndAction - tStartTraslado);
+            const tFinAccionHerraje = Math.min(duracionPaso, tTrasladoInicio + duracionTrasladoMadera);
+            hwPosTimes.push(tFinAccionHerraje, duracionPaso);
             hwPosValues.push(
               pHwRestFinal.x, pHwRestFinal.y, pHwRestFinal.z,
               pHwRestFinal.x, pHwRestFinal.y, pHwRestFinal.z
@@ -421,7 +433,7 @@ export function compilarCoreografiaHerrajesCohesionados(
 
           if (tAparicionPersonalizado !== null && tAparicionPersonalizado > 0) {
             const tRotStart = Math.min(duracionPaso, tAparicionPersonalizado);
-            const tRotEnd = Math.min(duracionPaso, tRotStart + 0.6);
+            const tRotEnd = Math.min(duracionPaso, tRotStart + tViajeHerraje);
             const tRotMid = tRotStart + (tRotEnd - tRotStart) * 0.5;
             rotTimes = [0, tRotStart, tRotMid, tRotEnd, duracionPaso];
             rotValues = [
@@ -432,8 +444,10 @@ export function compilarCoreografiaHerrajesCohesionados(
               qRotFin.x, qRotFin.y, qRotFin.z, qRotFin.w,
             ];
           } else {
-            const tRotMid = tHwPop + (tHwLlegada - tHwPop) * 0.5;
-            rotTimes = [0, tHwPop, tRotMid, tHwLlegada, duracionPaso];
+            const tRotStart = tHwStart;
+            const tRotEnd = tHwLlegada;
+            const tRotMid = tRotStart + (tRotEnd - tRotStart) * 0.5;
+            rotTimes = [0, tRotStart, tRotMid, tRotEnd, duracionPaso];
             rotValues = [
               qRestHw.x, qRestHw.y, qRestHw.z, qRestHw.w,
               qRestHw.x, qRestHw.y, qRestHw.z, qRestHw.w,

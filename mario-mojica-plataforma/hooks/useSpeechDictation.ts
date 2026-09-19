@@ -27,10 +27,13 @@ export function useSpeechDictation({
   const [segments, setSegments] = useState<SpeechSegment[]>([]);
   const [isSupported, setIsSupported] = useState(true);
   const [durationSeconds, setDurationSeconds] = useState(0);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const recognitionRef = useRef<any>(null);
   const isRecordingRef = useRef(false);
   const timerIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const silenceCommitTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const interimTextRef = useRef("");
 
   const sourceLangRef = useRef<string>(sourceLang);
   sourceLangRef.current = sourceLang;
@@ -40,6 +43,12 @@ export function useSpeechDictation({
 
   const autoTranslateRef = useRef(autoTranslate);
   autoTranslateRef.current = autoTranslate;
+
+  const lastChunkRef = useRef<string>("");
+
+  const clearError = useCallback(() => {
+    setErrorMessage(null);
+  }, []);
 
   // Traducir texto consolidado
   const translateSegment = useCallback(async (segmentId: string, text: string) => {
@@ -82,12 +91,9 @@ export function useSpeechDictation({
     }
   }, []);
 
-  const lastChunkRef = useRef<string>("");
-
   // Agregar texto continuo con puntuación inteligente y detección de preguntas
   const appendOrNewSegment = useCallback(
     (newChunk: string) => {
-      if (!isRecordingRef.current) return;
       const clean = newChunk.trim();
       if (!clean) return;
 
@@ -177,31 +183,31 @@ export function useSpeechDictation({
         }
       });
 
+      interimTextRef.current = "";
       setInterimText("");
     },
     [translateSegment]
   );
 
-  // Inicializar Web Speech API con guardas estrictas de grabación
-  useEffect(() => {
-    if (typeof window === "undefined") return;
+  // Inicializar y vincular eventos a una instancia de SpeechRecognition
+  const setupRecognition = useCallback(() => {
+    if (typeof window === "undefined") return null;
 
     const SpeechRecognition =
       (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
 
     if (!SpeechRecognition) {
       setIsSupported(false);
-      return;
+      return null;
     }
 
     const recognition = new SpeechRecognition();
     recognition.continuous = true;
     recognition.interimResults = true;
-    recognition.lang = sourceLang;
+    recognition.lang = sourceLangRef.current;
     recognition.maxAlternatives = 1;
 
     recognition.onresult = (event: any) => {
-      // Bloqueo estricto si no estamos grabando
       if (!isRecordingRef.current) return;
 
       let finalTranscript = "";
@@ -217,48 +223,98 @@ export function useSpeechDictation({
         }
       }
 
-      // Solo el resultado marcado como FINAL se consolida
       if (finalTranscript.trim()) {
+        if (silenceCommitTimerRef.current) {
+          clearTimeout(silenceCommitTimerRef.current);
+          silenceCommitTimerRef.current = null;
+        }
         appendOrNewSegment(finalTranscript.trim());
       } else {
-        // El interim solo se muestra visualmente, NUNCA se consolida con un timer automático
-        setInterimText(currentInterim);
+        const trimmedInterim = currentInterim.trim();
+        interimTextRef.current = trimmedInterim;
+        setInterimText(trimmedInterim);
+
+        // Temporizador de silencio: si el usuario hace una pausa y Chrome no marca isFinal,
+        // consolidamos automáticamente tras 1.4 segundos de silencio para que el texto no quede trabado
+        if (trimmedInterim) {
+          if (silenceCommitTimerRef.current) {
+            clearTimeout(silenceCommitTimerRef.current);
+          }
+          silenceCommitTimerRef.current = setTimeout(() => {
+            if (isRecordingRef.current && interimTextRef.current) {
+              appendOrNewSegment(interimTextRef.current);
+            }
+          }, 1400);
+        }
       }
     };
 
     recognition.onerror = (event: any) => {
-      if (event.error === "no-speech" || event.error === "aborted") {
+      const err = event.error;
+
+      // Eventos benignos que se pueden ignorar
+      if (err === "no-speech" || err === "aborted") {
         return;
       }
-      console.warn("Speech recognition error:", event.error);
+
+      console.warn("[SpeechRecognition] Error detectado:", err);
+
+      if (err === "not-allowed" || err === "service-not-allowed") {
+        setErrorMessage(
+          "Permiso de micrófono denegado. Haz clic en el icono del candado en la barra de direcciones de tu navegador y permite el uso del micrófono."
+        );
+        isRecordingRef.current = false;
+        setIsRecording(false);
+      } else if (err === "audio-capture") {
+        setErrorMessage(
+          "No se detecta captura de audio. Verifica que tu micrófono esté conectado, seleccionado como predeterminado en Windows y no esté en uso exclusivo por otra app (Meet, Zoom, etc.)."
+        );
+        isRecordingRef.current = false;
+        setIsRecording(false);
+      } else if (err === "network") {
+        setErrorMessage(
+          "Error de conexión con el servicio de transcripción de voz de Google. Verifica tu conexión a internet."
+        );
+        isRecordingRef.current = false;
+        setIsRecording(false);
+      } else {
+        setErrorMessage(`Error en el reconocimiento de voz (${err}).`);
+        isRecordingRef.current = false;
+        setIsRecording(false);
+      }
     };
 
     recognition.onend = () => {
-      // Si se detuvo la grabación, salir limpiamente
       if (!isRecordingRef.current) {
         setIsRecording(false);
         return;
       }
 
-      // Si la grabación sigue activa y el motor se apagó por silencio largo del navegador, reiniciar
-      try {
-        recognition.start();
-      } catch (e) {}
+      // Si la grabación sigue activa y el motor finalizó por tiempo límite del navegador,
+      // reiniciar suavemente tras una pausa mínima para evitar bucles cerrados
+      setTimeout(() => {
+        if (isRecordingRef.current && recognitionRef.current) {
+          try {
+            recognitionRef.current.start();
+          } catch (e) {
+            console.warn("[SpeechRecognition] No se pudo reiniciar tras onend:", e);
+          }
+        }
+      }, 150);
     };
 
-    recognitionRef.current = recognition;
+    return recognition;
+  }, [appendOrNewSegment]);
 
-    return () => {
-      if (recognitionRef.current) {
-        try {
-          recognitionRef.current.abort();
-        } catch (e) {}
-      }
-      if (timerIntervalRef.current) clearInterval(timerIntervalRef.current);
-    };
-  }, [sourceLang, appendOrNewSegment]);
+  // Verificar soporte al montar
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const hasSpeech =
+      !!((window as any).SpeechRecognition || (window as any).webkitSpeechRecognition);
+    setIsSupported(hasSpeech);
+  }, []);
 
-  // Cronómetro
+  // Cronómetro de grabación
   useEffect(() => {
     if (isRecording) {
       timerIntervalRef.current = setInterval(() => {
@@ -276,31 +332,79 @@ export function useSpeechDictation({
     };
   }, [isRecording]);
 
-  const startRecording = useCallback(() => {
-    if (!recognitionRef.current) return;
-    try {
-      // Abortar cualquier sesión huérfana previa
-      try {
-        recognitionRef.current.abort();
-      } catch (e) {}
+  // Iniciar grabación con verificación de micrófono previa
+  const startRecording = useCallback(async () => {
+    setErrorMessage(null);
 
+    // 1. Pre-flight check: Despertar hardware y validar permisos mediante getUserMedia
+    try {
+      if (typeof navigator !== "undefined" && navigator.mediaDevices?.getUserMedia) {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        // Liberar inmediatamente las pistas para que SpeechRecognition tenga acceso libre
+        stream.getTracks().forEach((track) => track.stop());
+      }
+    } catch (mediaErr: any) {
+      console.warn("[startRecording] Error solicitando micrófono:", mediaErr);
+      if (mediaErr.name === "NotAllowedError" || mediaErr.name === "PermissionDeniedError") {
+        setErrorMessage(
+          "Permiso de micrófono denegado. Permite el acceso al micrófono haciendo clic en el icono del candado en la barra de URL."
+        );
+      } else if (mediaErr.name === "NotFoundError" || mediaErr.name === "DevicesNotFoundError") {
+        setErrorMessage(
+          "No se encontró ningún micrófono conectado en tu equipo. Conecta un micrófono e inténtalo de nuevo."
+        );
+      } else {
+        setErrorMessage(
+          "No se puede acceder al micrófono. Verifica que otra aplicación no lo esté usando de forma exclusiva."
+        );
+      }
+      setIsRecording(false);
+      isRecordingRef.current = false;
+      return;
+    }
+
+    // 2. Crear instancia limpia de reconocimiento
+    try {
+      if (recognitionRef.current) {
+        try {
+          recognitionRef.current.abort();
+        } catch (e) {}
+      }
+
+      const instance = setupRecognition();
+      if (!instance) {
+        setErrorMessage("Reconocimiento de voz no compatible con este navegador.");
+        return;
+      }
+
+      recognitionRef.current = instance;
       isRecordingRef.current = true;
       setIsRecording(true);
       lastChunkRef.current = "";
-      recognitionRef.current.lang = sourceLangRef.current;
-      recognitionRef.current.start();
-    } catch (e) {
-      console.warn("No se pudo iniciar reconocimiento:", e);
+      instance.lang = sourceLangRef.current;
+      instance.start();
+    } catch (startErr: any) {
+      console.warn("[startRecording] Error al arrancar SpeechRecognition:", startErr);
+      setErrorMessage("No se pudo iniciar el servicio de dictado. Intenta de nuevo.");
+      isRecordingRef.current = false;
+      setIsRecording(false);
     }
-  }, []);
+  }, [setupRecognition]);
 
+  // Detener grabación limpiamente
   const stopRecording = useCallback(() => {
     isRecordingRef.current = false;
     setIsRecording(false);
 
+    if (silenceCommitTimerRef.current) {
+      clearTimeout(silenceCommitTimerRef.current);
+      silenceCommitTimerRef.current = null;
+    }
+
     // Consolidar remanente si había interim pendiente
-    if (interimText.trim()) {
-      appendOrNewSegment(interimText.trim());
+    if (interimTextRef.current.trim()) {
+      appendOrNewSegment(interimTextRef.current.trim());
+      interimTextRef.current = "";
       setInterimText("");
     }
 
@@ -309,7 +413,7 @@ export function useSpeechDictation({
         recognitionRef.current.stop();
       } catch (e) {}
     }
-  }, [interimText, appendOrNewSegment]);
+  }, [appendOrNewSegment]);
 
   const toggleRecording = useCallback(() => {
     if (isRecording) {
@@ -322,8 +426,10 @@ export function useSpeechDictation({
   const clearAll = useCallback(() => {
     setSegments([]);
     setInterimText("");
+    interimTextRef.current = "";
     setDurationSeconds(0);
     lastChunkRef.current = "";
+    setErrorMessage(null);
   }, []);
 
   // Actualizar idioma de reconocimiento si cambia dinámicamente
@@ -389,12 +495,28 @@ export function useSpeechDictation({
     setSegments((prev) => (prev.length > 0 ? prev.slice(0, -1) : prev));
   }, []);
 
+  // Limpieza al desmontar el hook
+  useEffect(() => {
+    return () => {
+      isRecordingRef.current = false;
+      if (silenceCommitTimerRef.current) clearTimeout(silenceCommitTimerRef.current);
+      if (timerIntervalRef.current) clearInterval(timerIntervalRef.current);
+      if (recognitionRef.current) {
+        try {
+          recognitionRef.current.abort();
+        } catch (e) {}
+      }
+    };
+  }, []);
+
   return {
     isRecording,
     interimText,
     segments,
     isSupported,
     durationSeconds,
+    errorMessage,
+    clearError,
     startRecording,
     stopRecording,
     toggleRecording,

@@ -9,7 +9,7 @@ import {
 import { TranscriptFeed } from "@/components/dictado/TranscriptFeed";
 import { GuardarActaModal } from "@/components/dictado/GuardarActaModal";
 import { useSpeechDictation } from "@/hooks/useSpeechDictation";
-import { Mic, AlertCircle } from "lucide-react";
+import { Mic, AlertCircle, AlertTriangle, X, RefreshCw } from "lucide-react";
 
 export default function DictadoYTraduccionPage() {
   const [autoTranslate, setAutoTranslate] = useState(true);
@@ -72,6 +72,8 @@ export default function DictadoYTraduccionPage() {
     segments,
     isSupported,
     durationSeconds,
+    errorMessage,
+    clearError,
     toggleRecording,
     clearAll,
     retranslateAll,
@@ -173,6 +175,35 @@ export default function DictadoYTraduccionPage() {
             <p>
               Tu navegador actual no tiene habilitada la API nativa de reconocimiento de voz. Te recomendamos abrir esta sección en <strong>Google Chrome</strong> o <strong>Microsoft Edge</strong> para disfrutar de la captura en vivo.
             </p>
+          </div>
+        )}
+
+        {/* Alerta de Error de Captura de Audio o Micrófono con Diagnóstico Asistido */}
+        {errorMessage && (
+          <div className="rounded-2xl p-3 bg-rose-50 dark:bg-[#131B2E] border border-rose-200 dark:border-rose-900/60 flex items-center justify-between gap-3 text-rose-800 dark:text-rose-300 text-xs sm:text-sm shadow-sm">
+            <div className="flex items-center gap-2.5">
+              <AlertTriangle className="w-5 h-5 shrink-0 text-rose-600 dark:text-rose-400" />
+              <span>{errorMessage}</span>
+            </div>
+            <div className="flex items-center gap-2 shrink-0">
+              <button
+                onClick={() => {
+                  clearError();
+                  toggleRecording();
+                }}
+                className="flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-rose-600 hover:bg-rose-700 text-white transition-all shadow-sm"
+              >
+                <RefreshCw className="w-3.5 h-3.5" />
+                Reintentar
+              </button>
+              <button
+                onClick={clearError}
+                aria-label="Cerrar aviso"
+                className="p-1 rounded-full hover:bg-rose-200/60 dark:hover:bg-rose-900/40 text-rose-600 dark:text-rose-400 transition-colors"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
           </div>
         )}
 

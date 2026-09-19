@@ -219,13 +219,8 @@ export function useCalibradorCinematica(pasoActivo: PasoManualStudio) {
       piezasEspera: piezasConConfig,
     };
 
-    if (campo === "distanciaAproximacionHerrajesCm") {
-      sincronizarYGuardarSecuencia(piezasConConfig, nuevoConfig);
-    } else {
-      actualizarPasoManual(pasoActivo.id, {
-        configuracionCinematica: nuevoConfig,
-      });
-    }
+    // 🔄 Sincronizar y recalcular la secuencia cinemática en caliente ante cualquier cambio de velocidad o distancia global
+    sincronizarYGuardarSecuencia(piezasConConfig, nuevoConfig);
   };
 
   // Actualizar coordenadas de espera de una pieza específica
@@ -504,31 +499,61 @@ export function useCalibradorCinematica(pasoActivo: PasoManualStudio) {
     const herrajesPieza = herrajesEnContactoPorPieza[nombrePieza] || [];
     const item = herrajesPieza.find((h) => h.id === herrajeId);
     const mallasTarget = item ? item.nombresMallas : [herrajeId];
+    const instKey = (item?.nombresMallas && item.nombresMallas[0]) || herrajeId.split("::").pop() || herrajeId;
+    const contactos = contactosPorHerraje[instKey] || [nombrePieza];
+
+    // Verificar si actualmente esta pieza es la dueña del herraje
+    const duenioActual = resolverDuenioHerrajeCanonica(instKey, contactos, piezasConConfig);
+    const estaPrendido = duenioActual === nombrePieza;
+
+    // Helper para comprobar si un identificador coincide canónicamente con este herraje
+    const coincideHerraje = (str: string) => {
+      if (!str) return false;
+      return (
+        mallasTarget.includes(str) ||
+        str === instKey ||
+        str === herrajeId ||
+        mallasTarget.some((m) => coincidenMismoHerraje(str, m)) ||
+        coincidenMismoHerraje(str, instKey) ||
+        coincidenMismoHerraje(str, herrajeId)
+      );
+    };
 
     const nuevaLista = piezasConConfig.map((p) => {
-      const desacts = new Set(p.herrajesDesactivados || []);
-      const acts = new Set(p.herrajesActivados || []);
+      let desacts = (p.herrajesDesactivados || []).filter((h) => !coincideHerraje(h));
+      let acts = (p.herrajesActivados || []).filter((h) => !coincideHerraje(h));
 
       if (p.nombrePieza === nombrePieza) {
-        mallasTarget.forEach((mId) => {
-          if (desacts.has(mId)) {
-            desacts.delete(mId);
-            acts.add(mId);
-          } else {
-            desacts.add(mId);
-            acts.delete(mId);
-          }
-        });
-      } else {
-        mallasTarget.forEach((mId) => {
-          acts.delete(mId);
-        });
+        if (estaPrendido) {
+          // Estaba prendido en esta pieza -> El usuario hace clic para apagarlo / desvincularlo
+          mallasTarget.forEach((mId) => {
+            if (!desacts.includes(mId)) desacts.push(mId);
+          });
+        } else {
+          // Estaba apagado / con link roto -> El usuario hace clic para ENCENDERLO y apropiárselo en esta pieza
+          mallasTarget.forEach((mId) => {
+            if (!acts.includes(mId)) acts.push(mId);
+          });
+        }
+      } else if (contactos.includes(p.nombrePieza)) {
+        // En las demás piezas que tocan físicamente este herraje:
+        if (estaPrendido) {
+          // Si se apagó en la pieza actual, se transfiere limpiamente a la otra pieza de contacto
+          mallasTarget.forEach((mId) => {
+            if (!acts.includes(mId)) acts.push(mId);
+          });
+        } else {
+          // Si se encendió en la pieza actual, se desactiva en la otra pieza para no disputar posesión
+          mallasTarget.forEach((mId) => {
+            if (!desacts.includes(mId)) desacts.push(mId);
+          });
+        }
       }
 
       return {
         ...p,
-        herrajesDesactivados: Array.from(desacts),
-        herrajesActivados: Array.from(acts),
+        herrajesDesactivados: desacts,
+        herrajesActivados: acts,
       };
     });
 
@@ -663,12 +688,16 @@ export function useCalibradorCinematica(pasoActivo: PasoManualStudio) {
         }
       });
 
+      // 🚀 Cálculo físico de duración de inserción de herrajes: tiempo de recorrido (d/v) + apriete rotacional y escalonamiento
+      const tiempoViajeHw = Math.max(0.3, distGlobalM / vHwM_s);
+      const escalonamientoHw = Math.min(1.2, Math.max(0, mallasNuevas.length - 1) * 0.12);
+      const duracionInsercionFisica = mallasNuevas.length > 0
+        ? Math.round((tiempoViajeHw + 0.4 + escalonamientoHw) * 10) / 10
+        : 0;
+
       if (esMaster && distEspera < 0.01) {
         if (mallasCohesionadas.length > 0) {
-          const durInsertMaster =
-            mallasNuevas.length > 0
-              ? Math.max(1.2, Math.min(3.0, 0.6 + mallasNuevas.length * 0.3))
-              : 0;
+          const durInsertMaster = duracionInsercionFisica;
           nuevaSecuencia.push({
             id: `seq_${pConfig.nombrePieza}`,
             nombreNodo: pConfig.nombrePieza,
@@ -694,10 +723,7 @@ export function useCalibradorCinematica(pasoActivo: PasoManualStudio) {
         return;
       }
 
-      const duracionInsercion =
-        mallasNuevas.length > 0
-          ? Math.max(1.2, Math.min(3.5, 0.6 + mallasNuevas.length * 0.35))
-          : 0;
+      const duracionInsercion = duracionInsercionFisica;
 
       const duracionTraslacion =
         modoTiempo === "por_capa"
@@ -946,148 +972,15 @@ export function useCalibradorCinematica(pasoActivo: PasoManualStudio) {
 
   // Generar la coreografía matemática automática de tracks en el paso
   const compilarCinematicaAutomatica = () => {
-    const vPiezaM_s = (config.velocidadPiezasCmS || 15) / 100; // m/s
     const piezasOrdenadas = [...piezasConConfig].sort((a, b) => a.ordenEnsamble - b.ordenEnsamble);
-
-    let tiempoAcumulado = 0.5;
-    const nuevaSecuencia: any[] = [];
-
-    piezasOrdenadas.forEach((pConfig) => {
-      const offY = pConfig.offsetYCm ?? pConfig.offsetZCm ?? 0;
-      const distEspera = Math.sqrt(pConfig.offsetXCm ** 2 + offY ** 2) / 100;
-      const esMaster = pConfig.nombrePieza === piezaMasterNombre;
-
-      const herrajesPieza = herrajesEnContactoPorPieza[pConfig.nombrePieza] || [];
-      const mallasCohesionadas: string[] = [];
-      const mallasNuevas: string[] = [];
-      const mallasCongeladas: string[] = [];
-
-      herrajesPieza.forEach((hw) => {
-        const hwInstKey = hw.nombresMallas[0] || hw.id.split("::")[1] || hw.id;
-        const ctc = contactosPorHerraje[hwInstKey] || [pConfig.nombrePieza];
-        const esDef = ctc[0] === pConfig.nombrePieza;
-        const idParaEstaPieza = `${pConfig.nombrePieza}::${hwInstKey}`;
-        const estaCongelado = Boolean(
-          comprobarHerrajeCongelado(idParaEstaPieza, pConfig.herrajesCongelados) ||
-          comprobarHerrajeCongelado(hwInstKey, pConfig.herrajesCongelados) ||
-          comprobarHerrajeCongelado(hw.id, pConfig.herrajesCongelados)
-        );
-        const prendido = Boolean(
-          estaCongelado ||
-          pConfig.herrajesActivados?.includes(hw.id) ||
-          (esDef && !pConfig.herrajesDesactivados?.includes(hw.id))
-        );
-
-        if (prendido) {
-          mallasCohesionadas.push(...hw.nombresMallas);
-          if (estaCongelado) {
-            mallasCongeladas.push(...hw.nombresMallas);
-          } else {
-            mallasNuevas.push(...hw.nombresMallas);
-          }
-        }
-      });
-
-      if (esMaster && distEspera < 0.01) {
-        if (mallasNuevas.length > 0) {
-          const durInsertMaster = Math.max(1.2, Math.min(3.0, 0.6 + mallasNuevas.length * 0.3));
-          nuevaSecuencia.push({
-            id: `seq_${pConfig.nombrePieza}`,
-            nombreNodo: pConfig.nombrePieza,
-            tipo: "pieza",
-            tiempoInicio: tiempoAcumulado,
-            duracionInsercionHerrajes: durInsertMaster,
-            duracionMovimiento: 0,
-            popIn: false,
-            distanciaAproximacion: 0,
-            herrajesCohesionados: mallasCohesionadas,
-            herrajesNuevos: mallasNuevas,
-            herrajesCongelados: mallasCongeladas,
-            direccionesHerrajes: pConfig.direccionesHerrajes || {},
-            tiemposAparicionHerrajes: pConfig.tiemposAparicionHerrajes || {},
-            tiempoAparicionPieza: pConfig.tiempoAparicionPieza || 0,
-            tiempoFinHerrajes: pConfig.tiempoFinHerrajes || 0,
-            distanciaAproximacionHerrajesCm: config.distanciaAproximacionHerrajesCm || 15,
-          });
-          tiempoAcumulado += durInsertMaster + 0.4;
-        }
-        return;
-      }
-
-      const duracionInsercion = mallasNuevas.length > 0
-        ? Math.max(1.2, Math.min(3.5, 0.6 + mallasNuevas.length * 0.35))
-        : 0;
-
-      const duracionTraslacion =
-        config.modoTiempo === "por_capa"
-          ? Math.max(0.5, pConfig.tiempoAnimacionSegundos || 2.5)
-          : Math.max(1.5, Math.round((distEspera / vPiezaM_s) * 10) / 10);
-
-      const tIniPieza = tiempoAcumulado;
-      nuevaSecuencia.push({
-        id: `seq_${pConfig.nombrePieza}`,
-        nombreNodo: pConfig.nombrePieza,
-        tipo: "pieza",
-        tiempoInicio: tIniPieza,
-        duracionInsercionHerrajes: duracionInsercion,
-        duracionMovimiento: duracionTraslacion,
-        popIn: false,
-        distanciaAproximacion: distEspera,
-        herrajesCohesionados: mallasCohesionadas,
-        herrajesNuevos: mallasNuevas,
-        herrajesCongelados: mallasCongeladas,
-        direccionesHerrajes: pConfig.direccionesHerrajes || {},
-        tiemposAparicionHerrajes: pConfig.tiemposAparicionHerrajes || {},
-        tiempoAparicionPieza: pConfig.tiempoAparicionPieza || 0,
-        tiempoFinHerrajes: pConfig.tiempoFinHerrajes || 0,
-        distanciaAproximacionHerrajesCm: config.distanciaAproximacionHerrajesCm || 15,
-      });
-
-      tiempoAcumulado += (duracionInsercion > 0 ? duracionInsercion + 0.2 : 0) + duracionTraslacion + 0.5;
-    });
-
-    let maxTiempoAparicion = 0;
-    piezasOrdenadas.forEach((p) => {
-      if (typeof p.tiempoAparicionPieza === "number" && p.tiempoAparicionPieza > maxTiempoAparicion) {
-        maxTiempoAparicion = p.tiempoAparicionPieza;
-      }
-      if (typeof p.tiempoFinHerrajes === "number" && p.tiempoFinHerrajes > maxTiempoAparicion) {
-        maxTiempoAparicion = p.tiempoFinHerrajes;
-      }
-      Object.values(p.tiemposAparicionHerrajes || {}).forEach((t) => {
-        if (typeof t === "number" && t > maxTiempoAparicion) {
-          maxTiempoAparicion = t;
-        }
-      });
-    });
-
-    const duracionFinal = Math.max(
-      6,
-      Math.max(
-        Math.round((tiempoAcumulado + 0.5) * 10) / 10,
-        maxTiempoAparicion > 0 ? Math.round((maxTiempoAparicion + 4.0) * 10) / 10 : 0
-      )
-    );
-
-    // 🛡️ REGLA SOBERANA: La duración total de la animación es controlada EXCLUSIVAMENTE por el usuario.
-    const duracionPreservada = (pasoActivo.duracionTotal && pasoActivo.duracionTotal > 0)
-      ? pasoActivo.duracionTotal
-      : duracionFinal;
-
-    actualizarPasoManual(pasoActivo.id, {
-      duracionTotal: duracionPreservada,
-      secuencia: nuevaSecuencia,
-      configuracionCinematica: {
-        ...config,
-        piezasEspera: piezasOrdenadas,
-      },
-    });
+    sincronizarYGuardarSecuencia(piezasOrdenadas);
 
     use3BFStore.setState({
       timelineCurrentTime: 0,
       isTimelinePlaying: true,
       piezaEnPosicionamientoManual: null,
     });
+    setMensajeGuion("Animación generada y sincronizada exitosamente con la física de taller.");
   };
 
   return {

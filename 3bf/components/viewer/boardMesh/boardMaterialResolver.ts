@@ -75,7 +75,7 @@ export function resolverPropiedadesMaterial(p: MaterialPropertiesInput): Resolve
   const isWireframe = false;
   const isTransparent = p.modoVisual === 'semitransparente' || p.modoVisual === 'lineas';
   const isHardwarePerno = normName.includes('perno') || normName.includes('tornillo') || normName.includes('parafuso');
-  const isHardwarePrego = normName.includes('prego') || normName.includes('puntilla') || normName.includes('clavo') || normName.includes('tachuela');
+  const isHardwarePrego = normName.includes('prego') || normName.includes('puntilla') || normName.includes('clavo') || normName.includes('tachuela') || normName.includes('grampo');
   const isHardwareCaja = (normName.includes('caja') && !normName.includes('cajon') && !normName.includes('cajón')) || normName === 'caja' || normName.includes('minifix') || normName.includes('girofix') || normName.includes('tambor');
   const isHardwareTarugo = normName.includes('tarugo') || normName.includes('cavilha') || normName.includes('clavilha') || normName.includes('espiga');
   const isHardwareSuporte = normName.includes('suporte') || normName.includes('soporte') || normName.includes('esquadro') || normName.includes('mao francesa') || normName.includes('mão francesa');
@@ -89,7 +89,7 @@ export function resolverPropiedadesMaterial(p: MaterialPropertiesInput): Resolve
   const isHardwareCantoneira = normName.includes('cantoneira') || normName.includes('cantonera') || normName.includes('angulo') || normName.includes('ángulo') || normName.includes('esquinero');
   const isHardwarePorca = normName.includes('porca') || normName.includes('tuerca') || normName.includes('bucha');
   const isHardwareTampa = normName.includes('tampa') || normName.includes('tapa') || normName.includes('adesivo') || normName.includes('tapon') || normName.includes('tapón');
-  const isHardware = isHardwarePerno || isHardwarePrego || isHardwareCaja || isHardwareTarugo || isHardwareSuporte || isHardwarePata || isHardwareCorredera || isHardwareCantoneira || isHardwarePorca || isHardwareTampa || normName.includes('bisagra') || normName.includes('dobradiça') || normName.includes('dobradi') || normName.includes('puxador') || normName.includes('manija') || normName.includes('tirador') || normName.includes('jaladera');
+  const isHardware = isHardwarePerno || isHardwarePrego || isHardwareCaja || isHardwareTarugo || isHardwareSuporte || isHardwarePata || isHardwareCorredera || isHardwareCantoneira || isHardwarePorca || isHardwareTampa || normName.includes('bisagra') || normName.includes('dobradiça') || normName.includes('dobradi') || normName.includes('puxador') || normName.includes('manija') || normName.includes('tirador') || normName.includes('jaladera') || normName.includes('perfil');
   const isMachining = normName.includes('maquinado') || normName.includes('perforado');
   const isWoodBoard = !isHardware && !isMachining;
 

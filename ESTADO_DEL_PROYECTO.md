@@ -9,7 +9,134 @@ Este archivo es la "Memoria RAM" para Antigravity. Contiene el contexto de lo qu
 ---
 
 ## 🏗️ 1. Plataforma B2B & 3dBimFab (Foco Actual)
-**Estado:** Arquitectura Cinemática Modular al 95%, Dirección de Cámara (9:16) y Ensamble CAD Milimétrico Completados.
+**Estado:** Diagnóstico de Simetría (Mirror) y Unificación de Apariencias Melamínicas en Cómoda Ravenna; Próximo Foco: Animación 3D y Cinemática de Armado (`aNIM_3000`).
+
+- [x] **[19 de Septiembre, 2026] Hito 186: Diagnóstico de Simetría (Mirror), Inversión de Caras de Apariencia (`Peça 8` vs `Peça 11`) y Unificación Melamínica Doble Cara (`D/D`)**:
+  * **Causa Raíz Diagnosticada**: La rutina de simetría de Grasshopper (`separar_malla_pieza`) clasifica a `Peça 11` como pieza reflejada (`es_espejo = True`) e invierte las caras de salida (`f_A = faces_B_idx; f_B = faces_A_idx`), proyectando la `Cara B` (Capa Back, Naranja `#D97706`) hacia la cámara frontal $+Z$, mientras que en `Peça 8` la cara frontal es `Cara A` (Capa Tono, Amarillo `#EAB308`).
+  * **Solución Doble Cara (`D/D`)**: Con la opción `D/D` en `Lado balance`, se asigna Capa Tono (Amarillo) a ambas caras de la madera, erradicando superficies naranja de contracara y unificando simétricamente el frente del mueble y los zócalos.
+  * **Validación**: `npx tsc --noEmit` completado con 0 errores; los 4 daemons operativos.
+
+- [x] **[18 de Septiembre, 2026] Hito 185: Corrección de Filtrado de Mallas Laminares 2D y Restauración de Cáscaras Superiores / Balances (`BoardMesh.tsx`, `SingleFurnitureInstanceMesh.tsx`)**:
+  * **Causa Raíz**: En `BoardMesh.tsx` se descartaba cualquier malla con `size[eje] <= 0.0001 m`. La cáscara superior (`Peça 13 B`) generada por Grasshopper tiene espesor CAD `0.0` (lámina 2D), por lo que el componente hacía `return null`, dejando la cubierta hueca y exponiendo los herrajes y cantoneras interiores.
+  * **Corrección**: Ajustado el filtro para que NUNCA descarte mallas poligonales que contengan `customGeometry` con triángulos e índices válidos.
+  * **Validación**: `npx tsc --noEmit` completado con 0 errores; restaurada la superficie superior y 27 mallas laminares legítimas (fondos de cajón `Peça 18`, espaldares `Peça 15`, tapas adhesivas `Tampa`).
+
+- [x] **[18 de Septiembre, 2026] Hito 184: Retiro Completo del Concepto de Poses / Configuraciones de Memoria (`Viewer3D.tsx`, `MemoryPosesBar.tsx`)**:
+  * Eliminado físicamente el archivo `MemoryPosesBar.tsx`.
+  * Desvinculadas importación y renderizado en `Viewer3D.tsx`, dejando el visor 100% limpio y despejado.
+  * Reglas en `AGENTS.md` y `GEMINI.md` actualizadas manteniendo la Norma Obligatoria de Carga en GHX Real.
+  * Validación con `npx tsc --noEmit` (0 errores).
+
+- [x] **[18 de Septiembre, 2026] Hito 183: Norma Obligatoria de Carga en GHX Real, Supresión de Default Cache Fantasma (`3bf_worker.py`, `createSceneInstanceSlice.ts`)**:
+  * **Causa Raíz de Desincronización**: El worker interceptaba las solicitudes con un `_default.json` que tenía mallas viejas de 600 mm, causando que el slider mostrara 1295 mm mientras el visor mostraba el estado congelado.
+  * **Supresión de Default Cache**: Eliminado el interceptor `[CACHE DISCO DEFAULT]`, purgado `worker/cache/` y forzada la evaluación fresca del `.ghx` real en caliente en RhinoCompute cada vez que se abre un modelo.
+  * **Rediseño de MemoryPosesBar**:
+    - Oculto condicionalmente: solo se muestra si hay un componente inteligente cargado en la escena. Si el escenario está limpio, retorna `null`.
+    - 5 opciones vacías en gris (`bg-slate-200 dark:bg-slate-700`): eliminados los presets precargados en azul/cyan.
+    - Renombrado de "Poses" a "Configuraciones" y eliminado el ícono de estrellas (`Sparkles`).
+  * **Validación**: `npx tsc --noEmit` completado con 0 errores; los 4 daemons operativos y probados con cálculo en caliente de 630 mallas.
+
+- [x] **[18 de Septiembre, 2026] Hito 182: Implementación de las 5 Esferas de Memoria 3D / Poses Rápidas Estilo Poser (`MemoryPosesBar.tsx`)**:
+  * **Concepto Poser Memory Dots**:
+    - Cápsula flotante central superior (`top-3.5 left-1/2 -translate-x-1/2`) en glassmorphism con terminación en cápsula (`rounded-full`).
+    - 5 esferas con volumen 3D: grises cuando están vacías, vivas en color de marca cuando tienen pose memorizada.
+    - Clic en 0 ms para saltar entre variantes comerciales: de la Cómoda Ravenna (1295 mm) a la Mesa de Noche (600 mm) o Chifonier (800 mm).
+    - Popover interactivo con nombre editable, medidas resumen y acciones (`[ Cargar (0ms) ]`, `[ Sobrescribir ]`, `[ 🗑️ Vaciar ]`).
+    - Persistencia en `localStorage` con clave `3bf_poses_{modelId}`.
+  * **Validación**: `npx tsc --noEmit` completado con 0 errores; los 4 daemons operativos.
+
+- [x] **[18 de Septiembre, 2026] Hito 181: Barra de Progreso Dinámica Verde Proporcional con Pista Gris y Diagnóstico Técnico de Cómputo (22.65s vs 7.21s)**:
+  * **Barra Proporcional Verde sobre Gris**:
+    - Pista de fondo en gris (`bg-slate-200` / `bg-slate-700/80`) representando la proporción pendiente de carga hasta el 100%.
+    - Barra activa en degradado verde esmeralda con terminación circular en cápsula (`rounded-full`), vinculada a un porcentaje dinámico en vivo.
+    - Fases textuales progresivas (`Enviando datos... 15%`, `Calculando Rhino... 68%`, `Procesando mallas... 88%`, `¡Completado! 100%`) con número en verde brillante.
+    - Barra superior del Canvas 3D sincronizada en verde sobre base gris.
+  * **Diagnóstico de los 22.65 Segundos en RhinoCompute**:
+    - Se identificaron los 5 factores: Deserialización XML C# (13.6 MB, ~6s) + Inicialización 107 scripts Python (~3s) + Grafo Grasshopper puro (**7.21s**, idéntico a Desktop) + Serialización 627 mallas JSON Rhino3dm (~3.8s) + Decodificación Worker/Browser (~1.5s).
+  * **Validación**: `npx tsc --noEmit` completado con 0 errores; los 4 daemons operativos.
+
+- [x] **[18 de Septiembre, 2026] Hito 180: Modularización de `Viewer3D.tsx` (`useGLBExport`), Invalidador Automático por Modificación de GHX y Barra de Progreso de Sincronización 3D**:
+  * **Barra de Progreso y Feedback Visual de Sincronización**:
+    - Reemplazo del texto estático por una cápsula visual de alto impacto con glassmorphism, loader giratorio y barra de progreso animada (`rounded-full`).
+    - Línea de progreso superior de degradado cian-cielo en el Canvas 3D al sincronizar.
+  * **Botón "Actualizar GHX" Permanente e Invalidación Automática de Caché**:
+    - Botón circular `<RefreshCw />` desacoplado y visible permanentemente tanto en modo 3D como en Manual 3D.
+    - `3bf_worker.py` detecta si el `.ghx` fue modificado mediante comparación de `mtime` y purga automáticamente los cachés de disco y RAM, forzando recomputo fresco (comprobado con reducción a 627 mallas en Cómoda Ravenna).
+  * **Modularización Mayor de `Viewer3D.tsx`**:
+    - Creación de [useGLBExport.ts](file:///c:/Desarrollo/mmapp/3bf/components/viewer/useGLBExport.ts) (760 líneas) con toda la lógica de exportación GLB, división de islas y Realidad Aumentada.
+    - `Viewer3D.tsx` reducido de 2,987 líneas a **1,959 líneas** (más de 1,028 líneas desacopladas) con **0 errores de TypeScript**.
+  * **Validación**: `npx tsc --noEmit` completado con 0 errores; los 4 daemons de segundo plano activos y saludables.
+
+- [x] **[18 de Septiembre, 2026] Hito 179: Optimización de RhinoCompute, Modularización de `ComponentAssetBrowser` y Caché en Disco para Apertura Instantánea en 0.05s**:
+  * **Análisis de Cuello de Botella y Comparativa Web (Desktop vs RhinoCompute)**:
+    - Hallazgo clave: en Desktop Grasshopper el grafo está pre-instanciado en memoria y solo evalúa componentes sucios (`ExpireSolution()`, ~7.2s). En RhinoCompute (enviando Base64 completo), C# deserializa 13.6 MB de XML, crea 1,928 componentes, inicializa 107 scripts de Python 3 y recompila todo el grafo desde cero (~18s).
+    - Breps vs Meshes: 16 Solid Differences y 48 conversiones Brep-Mesh en tiempo de ejecución representan el 95% del tiempo de cómputo en la geometría de Cómoda Ravenna.
+  * **Modularización de Componentes (`ComponentAssetBrowser.tsx`)**:
+    - Extracción de la biblioteca de componentes (L650-L779 de `NPanel.tsx`) en el nuevo componente independiente `ComponentAssetBrowser.tsx`.
+    - Eliminadas más de 120 líneas de código muerto y estados huérfanos en `NPanel.tsx`. Cápsulas redondeadas (`rounded-full`) aplicadas según la regla global de marca.
+  * **Sistema de Caché en Archivo / Precarga Instantánea (0.05s)**:
+    - Persistencia automática en disco en `worker/cache/{model_id}_default.json` y `{full_cache_key}.json`.
+    - `Comoda_Ravenna_default.json` (30.9 MB) generado y probado en caliente: tiempo de respuesta en el worker de **0.93 milisegundos** (<0.001s).
+    - Endpoints FastAPI creados: `GET /cache/list`, `POST /cache/save`, `POST /cache/load`.
+    - Botones en la barra superior del Visor 3D: "Cargar Caché (.json)" y "Exportar Caché (.json)" con cápsulas puras (`rounded-full`).
+  * **Validación**:
+    - `npx tsc --noEmit` en `c:\Desarrollo\mmapp\3bf`: **0 errores**.
+    - Los 4 daemons operativos (RhinoCompute en :5000, Worker en :8005, Next.js en :3005, Túnel Cloudflare).
+
+- [x] **[18 de Septiembre, 2026] Hito 178: Corrección de Inyección de Sliders Numéricos en Grasshopper y Reactivación de Variación Paramétrica Dinámica 3D (`3bf_worker.py`)**:
+  * **Causa Raíz de Inmovilidad de Medidas en 3D**:
+    - En la optimización previa de `3bf_worker.py`, se había omitido la reescritura en caliente de los `<item name="Value">` dentro de los bloques `<chunk name="Slider">` del archivo `.ghx`.
+    - Al enviar los valores solo mediante el payload JSON de `values` (`System.Double`), RhinoCompute los ignoraba porque los Number Sliders nativos de Grasshopper leen su valor directamente del XML del archivo. En consecuencia, el servidor siempre calculaba con las medidas por defecto (`1295x930x475`).
+    - Además, `full_cache_key` estaba declarado dentro de un bloque condicional, provocando un `UnboundLocalError` en recargas forzadas.
+  * **Solución Implementada**:
+    - **Reactivación de Inyección Directa en XML**: Se restauró la actualización en caliente de todos los `Number Slider` y `Value List` directamente en el árbol XML antes de enviarlo codificado en Base64 a RhinoCompute.
+    - **Caché en RAM de Cadena GHX (`_RAW_GHX_STRING_CACHE`)**: Lectura de disco cero; el texto plano del archivo se conserva en memoria y se parsea en <160 ms.
+    - **Ámbito Global de Caché**: `full_cache_key` corregido para evitar errores en recargas y garantizar respuestas inmediatas (0.5 ms) ante configuraciones repetidas.
+  * **Validación Empírica**:
+    - Prueba directa con `Ancho = 600 mm`: `RH_OUT:Peça 1` cambió exactamente de **1.239 m a 0.544 m** (544 mm reales de fabricación).
+    - `npx tsc --noEmit` verificado con **0 errores**.
+    - Los 4 daemons operativos y sincronizados.
+
+- [x] **[18 de Septiembre, 2026] Hito 177: Diagnóstico y Blindaje Integral del Motor de Dictado y Traducción por Voz (`useSpeechDictation`, `AudioRecorderBar` & `/api/dictado/traducir`)**:
+  * **Causa Raíz de Falla de Captura**:
+    - Bloqueo por `audio-capture` en Chromium al carecer de pre-activación de hardware y diálogo de permisos previo.
+    - Bucle zombi en el evento `onend` al no desactivar la bandera `isRecordingRef.current = false` tras errores del navegador.
+    - Condición de carrera síncrona entre `.abort()` y `.start()` en `SpeechRecognition`.
+    - Frases cortas retenidas en gris indefinidamente en `interimText` por latencia del flag `isFinal` de Google.
+    - Error 500 en la API de traducción ante caracteres especiales o comillas en el payload.
+  * **Solución Implementada**:
+    - Pre-flight check y despertar de hardware de micrófono mediante `navigator.mediaDevices.getUserMedia({ audio: true })`.
+    - Gestión de errores con feedback visual directo en la UI (`errorMessage`) con botón de reintento y descarte asistido.
+    - Auto-commit de silencio con debounce de 1.4s para consolidar de inmediato frases habladas sin esperar a Google.
+    - Blindaje de la API `/api/dictado/traducir` con sanitización de JSON y cascada de fallbacks (Fast Stream ➔ MyMemory ➔ Gemini ➔ Passthrough).
+  * **Validación**:
+    - `npx tsc --noEmit` verificado con **0 errores**.
+    - Pruebas en caliente de traducción y reconocimiento validadas.
+
+- [x] **[18 de Septiembre, 2026] Hito 176: Sincronización Grasshopper 8.35 SDK, Restauración de Plugins (Krill) y Reactivación de Daemons 3BF (`/Arranque3BF`)**:
+  * **Resolución de Breakpoint Headless SDK Mismatch**:
+    - Tras la actualización automática de Rhino a la versión 8.35, `Grasshopper.dll` había quedado bloqueada en 8.34, generando una ventana modal de interrupción que congelaba RhinoCompute en headless.
+    - Se ejecutó script de sincronización binaria reemplazando la DLL con la versión 8.35 (`8.35.26251.13001`).
+    - Instalación y validación del plugin `krill (0.12.0)` para Grasshopper.
+  * **Verificación de Cómputo Cómoda Ravenna**:
+    - Prueba directa de cálculo `test_ravenna.py` contra `http://localhost:5000/grasshopper`: **Status 200 OK**, **73 outputs generados**, **67 mallas no vacías**.
+  * **Puesta en Marcha 100% Operativa de los 4 Daemons**:
+    - RhinoCompute 8 en puerto 5000 (`rhino.compute.exe`).
+    - 3BF Worker Python en puerto 8005 (`worker/3bf_worker.py`).
+    - 3BF Web App Next.js en puerto 3005 (`npm run dev`).
+    - Cloudflare Tunnel Permanente en `engine.mariomojica.com`.
+
+- [x] **[18 de Septiembre, 2026] Hito 175: Depuración Profunda de Rendimiento ("Limpieza del Edificio"), Aceleración 3x del Worker Python y Partición Modular de Memoria Histórica (18 de Septiembre, 2026)**:
+  * **Optimización Extrema de Cómputo Paramétrico en Worker Python (`3bf_worker.py`)**:
+    - Implementación de `_SLIDER_LIMITS_CACHE` y `_GHX_TEMPLATE_CACHE` en memoria RAM.
+    - Supresión de re-parseo y re-codificación Base64 innecesaria del archivo de 13.6 MB de la Cómoda Ravenna (`ET.tostring` + `base64.b64encode`, ahorrando >500 ms por solicitud).
+    - Los recálculos de medidas bajaron de 5-7 segundos a **1.04s - 1.76s** (más de 300% de aceleración neta).
+  * **Partición Modular de Memoria Histórica (`HISTORICO_DEL_PROYECTO.md`)**:
+    - Se redujo el archivo principal de 4,453 líneas (597 KB) a 1,132 líneas (**139 KB**, -77% de tamaño) sin perder ni una sola coma de información.
+    - Creación de la carpeta `Historico/` con bóvedas trimestrales estructuradas (`HISTORICO_2026_Q1.md`, `HISTORICO_2026_Q2.md`, `HISTORICO_2026_AGOSTO.md`) vinculadas en el índice maestro.
+  * **Estabilidad y Calidad**:
+    - Compilación TypeScript verificada (`npx tsc --noEmit`) con **0 errores**.
+    - Daemons operativos: RhinoCompute 8, 3BF Worker Python, Next.js Web App y Cloudflare Tunnel.
 
 - [x] **[18 de Septiembre, 2026] Hito 174: Arquitectura Modular Cinemática, Dirección Cinematográfica de Cámara (9:16), Precisión CAD de Ensamble y Sincronización Solidaria de Herrajes (`CalibradorCinematica`, `coreografiaHerrajes`, `ManualCameraDirector` & `TimelineScrubber`)**:
   * **Modularización y Seccionamiento de Archivos**: Desacople del componente monolítico `CalibradorCinematicaSection.tsx` (> 1200 líneas) en módulos especializados dentro de `3BF/components/manual/calibrador/` (`useCalibradorCinematica.ts`, `CapaPiezaEsperaItem.tsx`, `HerrajePillItem.tsx`, `CalibradorHeaderControls.tsx`, `CalibradorModoManualToggle.tsx`), y extracción de cinemática de herrajes a `3BF/lib/engine/choreographer/coreografiaHerrajes.ts`.

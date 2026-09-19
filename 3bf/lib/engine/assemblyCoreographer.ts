@@ -144,8 +144,10 @@ export function compilarEnsamblePaso(
         });
         const tieneHerrajesNuevos =
           (elem.herrajesNuevos && elem.herrajesNuevos.length > 0) || listaNuevosPre.length > 0;
-
-        const durInsert = elem.duracionInsercionHerrajes || (tieneHerrajesNuevos ? 2.0 : 0);
+        const vHwM_sPre = Math.max(0.02, (paso.configuracionCinematica?.velocidadHerrajesCmS || 8) / 100);
+        const distHwMPre = ((elem.distanciaAproximacionHerrajesCm || paso.configuracionCinematica?.distanciaAproximacionHerrajesCm || 15) / 100);
+        const durInsertFisicaFallback = Math.round((Math.max(0.3, distHwMPre / vHwM_sPre) + 0.4) * 10) / 10;
+        const durInsert = elem.duracionInsercionHerrajes || (tieneHerrajesNuevos ? durInsertFisicaFallback : 0);
 
         const tKey = (elem.nombreNodo || "").toLowerCase().trim();
         const tMadre = extraerPiezaMadre(elem.nombreNodo || "").toLowerCase().trim();
@@ -230,9 +232,11 @@ export function compilarEnsamblePaso(
           }
 
           const tStartBase = Math.max(tStart, tAparicionPieza);
-          // 🚀 Si se definió tiempoFinHerrajes (> 0), la pieza permanece inmóvil y a partir de ese segundo exacto inicia su desplazamiento
+          // 🚀 Si se definió tiempoFinHerrajes (> 0), la pieza permanece inmóvil y a partir de ese segundo inicia su desplazamiento
+          // Asegurando siempre que los herrajes hayan culminado su inserción física previa
+          const tFinInsercionMinima = durInsertCalculada > 0 ? tStartBase + durInsertCalculada : tStartBase;
           const tStartTraslado = tFinHerrajes > 0
-            ? Math.max(tAparicionPieza, tFinHerrajes)
+            ? Math.max(tAparicionPieza, tFinHerrajes, tFinInsercionMinima)
             : (durInsertCalculada > 0 ? tStartBase + durInsertCalculada + 0.2 : tStartBase);
           const tEndAction = trasladaMadera ? tStartTraslado + tDurTraslado : tStartBase + durInsertCalculada;
 
@@ -396,7 +400,7 @@ export function compilarEnsamblePaso(
             stepFloorDropY,
             vOffset,
             tStart,
-            durInsert,
+            durInsertCalculada,
             duracionPaso,
             tAparicionPieza,
             tStartTraslado,

@@ -46,3 +46,8 @@ temporal
 docs/Upwork/
 Docs/Upwork/
 
+# Python and Worker cache
+__pycache__/
+*.pyc
+3bf/worker/cache/
+3BF/worker/cache/
