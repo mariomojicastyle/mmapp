@@ -49,6 +49,71 @@ export function compilarEnsamblePaso(
         ""
       ).toLowerCase().trim();
 
+      // 🎯 CÁLCULO DEL VECTOR DE ASENTAMIENTO DE LA PIEZA MASTER (deltaMaster):
+      // Si la pieza master apoya en el piso (apoyadaEnPiso !== false), desciende para que su cota mínima toque Y = 0.
+      // Todas las piezas secundarias que se ensamblan sobre ella deben recibir este mismo deltaMaster
+      // para llegar a la posición física exacta de ensamble sobre la pieza master en el piso.
+      let deltaMaster = new THREE.Vector3(0, 0, 0);
+
+      if (masterKey) {
+        const masterMesh = sceneMeshes.find((m) => {
+          if (!m.isMesh) return false;
+          const u = m.userData || {};
+          const cn = ((u.cleanName || m.name || "") as string).toLowerCase().trim();
+          const pm = ((u.piezaMadre || extraerPiezaMadre(cn)) as string).toLowerCase().trim();
+          const ik = ((u.instanciaKey || "") as string).toLowerCase().trim();
+          const raw = (m.name || "").replace(/^RH_OUT:/i, "").trim().toLowerCase();
+
+          return (
+            cn === masterKey ||
+            ik === masterKey ||
+            raw === masterKey ||
+            pm === masterKey ||
+            perteneceAMismaFamiliaPieza(cn, masterKey) ||
+            perteneceAMismaFamiliaPieza(pm, masterKey) ||
+            perteneceAMismaFamiliaPieza(ik, masterKey) ||
+            perteneceAMismaFamiliaPieza(raw, masterKey)
+          );
+        });
+
+        if (masterMesh && masterMesh.parent) {
+          const confMaster = paso.configuracionCinematica?.piezasEspera?.find(
+            (p) =>
+              (p.nombrePieza || "").toLowerCase().trim() === masterKey ||
+              perteneceAMismaFamiliaPieza(p.nombrePieza, masterKey)
+          );
+
+          if (confMaster?.apoyadaEnPiso !== false) {
+            const pRestMaster = getSafeRestPosition(masterMesh);
+            masterMesh.parent.updateWorldMatrix(true, false);
+            const masterRestWorld = masterMesh.parent.localToWorld(pRestMaster.clone());
+
+            const curPos = masterMesh.position.clone();
+            masterMesh.position.copy(pRestMaster);
+            masterMesh.updateWorldMatrix(true, true);
+            const objBox = new THREE.Box3().setFromObject(masterMesh);
+            masterMesh.position.copy(curPos);
+            masterMesh.updateWorldMatrix(true, true);
+
+            let floorDropY = 0;
+            if (!objBox.isEmpty()) {
+              floorDropY = -objBox.min.y;
+            }
+
+            const offX = (confMaster?.offsetXCm || 0) / 100;
+            const offZ = ((confMaster?.offsetYCm ?? confMaster?.offsetZCm ?? 0)) / 100;
+
+            const masterPopWorld = new THREE.Vector3(
+              masterRestWorld.x + offX,
+              masterRestWorld.y + floorDropY,
+              masterRestWorld.z + offZ
+            );
+            const masterPopLocal = masterMesh.parent.worldToLocal(masterPopWorld);
+            deltaMaster = masterPopLocal.clone().sub(pRestMaster);
+          }
+        }
+      }
+
       // 🔍 ESCÁNER DE ASENTAMIENTO EN PISO (DfMA Grounding Scanner):
       // Analiza la cota mínima de todas las piezas activas del paso en su reposo CAD.
       // Si el paso no incluye piezas apoyadas en el piso (ej. patas no instaladas en este paso),
@@ -190,8 +255,8 @@ export function compilarEnsamblePaso(
           const qRest = getSafeRestQuaternion(targetObj);
           const sRest = new THREE.Vector3(1, 1, 1);
 
-          // 🎯 Posición de reposo final exacta de diseño ensamblado (Modelo Armado CAD original de Grasshopper)
-          const pRestFinal = pRest.clone();
+          // 🎯 Posición de reposo final exacta de diseño ensamblado (asentada sobre la pieza master en piso)
+          const pRestFinal = pRest.clone().add(deltaMaster);
 
           const tStart = Math.max(0, elem.tiempoInicio);
           const durInsertCalculada = durInsert || elem.duracionInsercionHerrajes || 0;
@@ -244,31 +309,31 @@ export function compilarEnsamblePaso(
             const offY = confPieza.offsetYCm ?? confPieza.offsetZCm ?? 0;
             const tieneDesplazamientoPiso = Math.abs(confPieza.offsetXCm || 0) > 0.01 || Math.abs(offY) > 0.01;
 
-            if (!tieneDesplazamientoPiso) {
-              // 🛡️ Si la pieza no tiene desplazamiento en el piso (ej. Peça 7 / base firme), su posición es estrictamente el reposo CAD
-              vOffset.set(0, 0, 0);
-            } else {
-              const vWorld = new THREE.Vector3((confPieza.offsetXCm || 0) / 100, 0, offY / 100);
+            const vWorld = new THREE.Vector3((confPieza.offsetXCm || 0) / 100, 0, offY / 100);
 
-              if (targetObj.parent) {
-                targetObj.parent.updateWorldMatrix(true, false);
-                const targetObjRestWorld = targetObj.parent.localToWorld(pRest.clone());
+            if (targetObj.parent) {
+              targetObj.parent.updateWorldMatrix(true, false);
+              const targetObjRestWorld = targetObj.parent.localToWorld(pRest.clone());
 
-                // 🎯 Si la pieza está en espera y debe reposar en piso (apoyadaEnPiso !== false):
-                let floorDropY = 0;
-                if (confPieza.apoyadaEnPiso !== false) {
-                  const curPos = targetObj.position.clone();
-                  targetObj.position.copy(pRest);
-                  targetObj.updateWorldMatrix(true, true);
-                  const objBox = new THREE.Box3().setFromObject(targetObj);
-                  targetObj.position.copy(curPos);
-                  targetObj.updateWorldMatrix(true, true);
+              // 🎯 Si la pieza está en espera y debe reposar en piso (apoyadaEnPiso !== false):
+              let floorDropY = 0;
+              if (confPieza.apoyadaEnPiso !== false) {
+                const curPos = targetObj.position.clone();
+                targetObj.position.copy(pRest);
+                targetObj.updateWorldMatrix(true, true);
+                const objBox = new THREE.Box3().setFromObject(targetObj);
+                targetObj.position.copy(curPos);
+                targetObj.updateWorldMatrix(true, true);
 
-                  if (!objBox.isEmpty()) {
-                    floorDropY = -objBox.min.y;
-                  }
+                if (!objBox.isEmpty()) {
+                  floorDropY = -objBox.min.y;
                 }
+              }
 
+              if (!tieneDesplazamientoPiso && Math.abs(floorDropY) < 0.001) {
+                // 🛡️ Si la pieza no tiene desplazamiento en el piso ni drop al piso, reposo estricto CAD
+                vOffset.set(0, 0, 0);
+              } else {
                 const targetObjPopWorld = new THREE.Vector3(
                   targetObjRestWorld.x + vWorld.x,
                   targetObjRestWorld.y + floorDropY,
@@ -276,12 +341,16 @@ export function compilarEnsamblePaso(
                 );
                 const targetObjPopLocal = targetObj.parent.worldToLocal(targetObjPopWorld);
                 vOffset = targetObjPopLocal.clone().sub(pRest);
-              } else {
-                vOffset = vWorld;
               }
+            } else {
+              vOffset = vWorld;
             }
           } else if (elem.tipo === "herraje") {
             vOffset.set(0, elem.distanciaAproximacion || 0.15, 0.05);
+          }
+
+          if (esMaster) {
+            vOffset.copy(deltaMaster);
           }
           const pPop = pRest.clone().add(vOffset);
 
@@ -407,7 +476,8 @@ export function compilarEnsamblePaso(
             tEndAction,
             trasladaMadera,
             paso,
-            tracks
+            tracks,
+            deltaMaster
           );
 
           // ── HERRAMIENTAS ACOPLADAS AL ELEMENTO (Martillo, Llave Allen) ─────

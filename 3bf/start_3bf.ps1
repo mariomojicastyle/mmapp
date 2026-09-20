@@ -39,7 +39,19 @@ if (-not $webTest) {
     Write-Host "✅ Aplicación Web Next.js ya se encuentra activa en puerto 3005." -ForegroundColor Green
 }
 
-Write-Host "`n🎉 ¡Ecosistema 3DBimFab 100% Operativo!" -ForegroundColor Green
-Write-Host "🌐 Web UI: http://localhost:3005" -ForegroundColor Cyan
+# 5. Iniciar Plataforma B2B & Dictador por Voz si no está activa (Puerto 3003)
+$plataformaFolder = "C:\Desarrollo\mmapp\mario-mojica-plataforma"
+$dictadorTest = Get-NetTCPConnection -LocalPort 3003 -ErrorAction SilentlyContinue
+if (-not $dictadorTest) {
+    Write-Host "⚡ arrancando Plataforma B2B & Dictador por Voz (Puerto 3003)..." -ForegroundColor Yellow
+    Start-Process -FilePath "cmd.exe" -ArgumentList "/c npm run dev" -WorkingDirectory $plataformaFolder -WindowStyle Hidden
+    Start-Sleep -Seconds 3
+} else {
+    Write-Host "✅ Plataforma B2B & Dictador por Voz ya se encuentra activa en puerto 3003." -ForegroundColor Green
+}
+
+Write-Host "`n🎉 ¡Ecosistema 3DBimFab & Plataforma B2B 100% Operativos!" -ForegroundColor Green
+Write-Host "🌐 Web UI 3BF: http://localhost:3005" -ForegroundColor Cyan
+Write-Host "🎙️ Plataforma B2B & Dictador: http://localhost:3003/dictado-y-traduccion" -ForegroundColor Cyan
 Write-Host "🐍 Worker API: http://localhost:8005" -ForegroundColor Cyan
 Write-Host "🦏 RhinoCompute API: http://localhost:5000`n" -ForegroundColor Cyan

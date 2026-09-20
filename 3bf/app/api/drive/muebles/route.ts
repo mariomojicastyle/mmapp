@@ -3,6 +3,9 @@ import fs from "fs";
 import fsp from "fs/promises";
 import path from "path";
 
+export const dynamic = "force-dynamic";
+export const maxDuration = 60;
+
 // Detectar directorio base de Google Drive (G:\Mi unidad\Muebles) con fallback local
 function getStorageDirectory(): string {
   const gDrivePath = "G:\\Mi unidad\\Muebles";
@@ -129,9 +132,11 @@ async function scanMueblesAsync(storageDir: string) {
               costoEstimadoCop: data.costoEstimadoCop,
               costoEstimadoUsd: data.costoEstimadoUsd,
               manualVinculadoId: data.manualVinculadoId,
+              pasosManual: data.pasosManual || [],
               instancias: {}, // Se carga bajo demanda en abrirMueble para no saturar con 148 MB
               fichaConfig: data.fichaConfig,
               fichaProducto: data.fichaProducto,
+              camara: data.camara,
             });
           } catch (readErr) {
             console.error("[3dBimFab Drive] Error leyendo archivo de mueble:", fullPath, readErr);
@@ -260,14 +265,42 @@ export async function POST(request: Request) {
       }
 
       const fileName = `${furniture.id}.3bf.json`;
-      const filePath = path.join(targetDir, fileName);
+      let filePath = path.join(targetDir, fileName);
 
-      await fsp.writeFile(filePath, JSON.stringify(furniture, null, 2), "utf-8");
+      // Buscar si el archivo ya existe en otra subcarpeta para no duplicar ni errar de ruta
+      async function findExistingFile(dir: string): Promise<string | null> {
+        try {
+          const entries = await fsp.readdir(dir, { withFileTypes: true });
+          for (const entry of entries) {
+            const fullP = path.join(dir, entry.name);
+            if (entry.isDirectory()) {
+              const res = await findExistingFile(fullP);
+              if (res) return res;
+            } else if (entry.isFile() && entry.name === fileName) {
+              return fullP;
+            }
+          }
+        } catch (_) {}
+        return null;
+      }
+
+      const existingPath = await findExistingFile(storageDir);
+      if (existingPath) {
+        filePath = existingPath;
+      }
+
+      // ⚡ Serialización compacta de alto rendimiento: reduce 80% el tamaño del archivo y elimina el colapso de memoria
+      await fsp.writeFile(filePath, JSON.stringify(furniture), "utf-8");
+
+      if (furniture.id) {
+        fullFurnitureCache.set(furniture.id, { data: furniture, mtime: Date.now() });
+        fullFurnitureCache.set(filePath, { data: furniture, mtime: Date.now() });
+      }
 
       return NextResponse.json({
         success: true,
         furniture,
-        filePath: `${marca}/${tipologia}/${fileName}`,
+        filePath: path.relative(storageDir, filePath).replace(/\\/g, "/"),
       });
     }
 

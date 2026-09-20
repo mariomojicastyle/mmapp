@@ -4,10 +4,12 @@ import {
 } from "../storeDefaults";
 import type {
   ObjetoInstancia3BF,
+  DisenoEncapsulado3BF,
   PerforacionCruzadaItem,
   PiezaDespiece,
   HerrajeItem,
 } from "../storeTypes";
+import { extraerPiezaMadre } from "../piezaMadreUtils";
 
 export interface SceneInstanceSlice {
   instancias: Record<string, ObjetoInstancia3BF>;
@@ -17,7 +19,11 @@ export interface SceneInstanceSlice {
   ultimoResumenMecanizado: string[];
 
   agregarInstanciaGHX: (item: any, posicionInicial?: [number, number, number]) => Promise<void>;
-  seleccionarInstanciaActiva: (id: string | null) => void;
+  guardarDisenoInstancia: (instanciaId: string, diseno: DisenoEncapsulado3BF) => void;
+  reordenarDisenosInstancia: (instanciaId: string, disenosReordenados: DisenoEncapsulado3BF[]) => void;
+  sincronizarColeccionDisenos: (disenos: DisenoEncapsulado3BF[], instanciaId?: string) => void;
+  activarDisenoInstancia: (instanciaId: string, disenoInput: string | DisenoEncapsulado3BF) => void;
+  eliminarDisenoInstancia: (instanciaId: string, disenoId: string) => void;
   actualizarInstancia: (id: string, updates: Partial<ObjetoInstancia3BF>) => void;
   eliminarInstancia: (id: string) => void;
   duplicarInstancia: (id: string) => void;
@@ -258,27 +264,36 @@ export const createSceneInstanceSlice = (set: any, get: any): any => ({
     });
 
     // 📏 Sincronización de dimensiones globales canónicas (ancho, alto, profundidad)
-    if (normTarget.includes("ancho")) {
+    const normKey = key.toLowerCase();
+    if (normTarget.includes("ancho") || normKey.includes("01.0") || normKey.includes("ancho")) {
       nextParams["ancho"] = typeof value === "number" ? value : (Number(value) || value);
     }
-    if (normTarget.includes("alto") || normTarget.includes("altura")) {
+    if (normTarget.includes("alto") || normTarget.includes("altura") || normKey.includes("01.1") || normKey.includes("alto")) {
       nextParams["alto"] = typeof value === "number" ? value : (Number(value) || value);
     }
-    if (normTarget.includes("profundidad") || normTarget.includes("prof")) {
+    if (normTarget.includes("profundidad") || normTarget.includes("prof") || normKey.includes("01.2") || normKey.includes("profundidad")) {
       nextParams["profundidad"] = typeof value === "number" ? value : (Number(value) || value);
     }
 
-    // Actualización inmediata del estado local (UI a 60 FPS ultra fluida)
+    // Actualización inmediata del estado local (UI a 60 FPS ultra fluida) e inicio de sincronización
     set((s: any) => ({
       instancias: {
         ...s.instancias,
-        [id]: { ...s.instancias[id], parametros: nextParams },
+        [id]: { ...s.instancias[id], parametros: nextParams, cargando: true },
       },
       parametros: s.objetoActivoId === id ? (nextParams as any) : s.parametros,
+      cargando: true,
     }));
 
-    // 🛡️ BLINDAJE ESTRICTO: Si el usuario está en Manual 3D o Picking activo, PROHIBIDO recomputar geometría
-    if (state.pestanaActiva === "manual" || state.modoPickingManual.activo) {
+    // 🛡️ BLINDAJE ESTRICTO: Solo si estamos en pestaña Manual 3D Y con Picking activo se suspende el cómputo automático
+    if (state.pestanaActiva === "manual" && state.modoPickingManual?.activo) {
+      set((s: any) => ({
+        instancias: {
+          ...s.instancias,
+          [id]: { ...s.instancias[id], cargando: false },
+        },
+        cargando: false,
+      }));
       return;
     }
 
@@ -323,9 +338,16 @@ export const createSceneInstanceSlice = (set: any, get: any): any => ({
 
   recomputarInstancia: async (id: string, forceReload: boolean = false) => {
     const state = get();
-    // 🛡️ BLINDAJE ESTRICTO: Prohibido recomputar automáticamente en modo Manual 3D o con Picking activo (a menos que sea forzado por el usuario)
-    if (!forceReload && (state.pestanaActiva === "manual" || state.modoPickingManual.activo)) {
-      console.warn(`[3BF Shield] 🛡️ Recomputo automático bloqueado para ${id}: En modo Manual 3D o Picking activo.`);
+    // 🛡️ BLINDAJE ESTRICTO: Prohibido recomputar automáticamente solo si está en Manual 3D con Picking activo (a menos que sea forzado por el usuario)
+    if (!forceReload && state.pestanaActiva === "manual" && state.modoPickingManual?.activo) {
+      console.warn(`[3BF Shield] 🛡️ Recomputo automático bloqueado para ${id}: En modo Manual 3D con Picking activo.`);
+      set((s: any) => ({
+        instancias: {
+          ...s.instancias,
+          [id]: { ...s.instancias[id], cargando: false },
+        },
+        cargando: false,
+      }));
       return;
     }
     const inst = state.instancias[id];
@@ -345,12 +367,24 @@ export const createSceneInstanceSlice = (set: any, get: any): any => ({
     const controller = new AbortController();
     (globalThis as any).__3bf_abort_controllers[id] = controller;
 
+    // Generar un número de secuencia atómico para descartar respuestas tardías
+    (globalThis as any).__3bf_compute_seq = ((globalThis as any).__3bf_compute_seq || 0) + 1;
+    const currentSeq = (globalThis as any).__3bf_compute_seq;
+
     set((s: any) => ({
       instancias: {
         ...s.instancias,
         [id]: { ...s.instancias[id], cargando: true },
       },
+      cargando: true,
     }));
+
+    console.log(`[3BF Engine] 🚀 Despachando cómputo para instancia '${id}' (seq: ${currentSeq})`, {
+      ancho: inst.parametros?.ancho,
+      alto: inst.parametros?.alto,
+      profundidad: inst.parametros?.profundidad,
+      custom_filename: inst.archivo,
+    });
 
     try {
       const computeRes = await fetch("/api/compute", {
@@ -368,7 +402,15 @@ export const createSceneInstanceSlice = (set: any, get: any): any => ({
       });
 
       const data = await computeRes.json();
+
+      // 🛡️ VERIFICACIÓN ESTRICTA DE SECUENCIA: Si el usuario activó un diseño u otra petición mientras calculaba, DESCARTAR
+      if ((globalThis as any).__3bf_compute_seq !== currentSeq) {
+        console.warn(`[3BF Engine] 🛡️ Respuesta de cómputo tardía descartada para '${id}': seq ${currentSeq} vs activa ${(globalThis as any).__3bf_compute_seq}`);
+        return;
+      }
+
       if (computeRes.ok && data.status === "success" && data.real_meshes && data.real_meshes.length > 0) {
+        console.log(`[3BF Engine] ✅ Cómputo exitoso para '${id}': ${data.real_meshes.length} mallas 3D recibidas.`);
         set((s: any) => {
           const currentInst = s.instancias[id];
           if (!currentInst) return s;
@@ -390,11 +432,14 @@ export const createSceneInstanceSlice = (set: any, get: any): any => ({
             muebleActivoGuardado: nuevoMueble,
             resultado: s.objetoActivoId === id ? data : s.resultado,
             workerStatus: "online",
+            cargando: false,
           };
         });
       } else {
+        console.warn(`[3BF Engine] ⚠️ Respuesta de cómputo sin mallas o fallida para '${id}':`, data);
         set((s: any) => ({
           workerStatus: "offline",
+          cargando: false,
           instancias: {
             ...s.instancias,
             [id]: { ...s.instancias[id], cargando: false },
@@ -409,6 +454,7 @@ export const createSceneInstanceSlice = (set: any, get: any): any => ({
       console.error("Error en cómputo de instancia:", id, err);
       set((s: any) => ({
         workerStatus: "offline",
+        cargando: false,
         instancias: {
           ...s.instancias,
           [id]: { ...s.instancias[id], cargando: false },
@@ -417,6 +463,11 @@ export const createSceneInstanceSlice = (set: any, get: any): any => ({
     } finally {
       if ((globalThis as any).__3bf_abort_controllers?.[id] === controller) {
         delete (globalThis as any).__3bf_abort_controllers[id];
+      }
+      const currentInsts = get().instancias || {};
+      const algunaCargando = Object.values(currentInsts).some((i: any) => i.cargando);
+      if (!algunaCargando) {
+        set({ cargando: false });
       }
     }
   },
@@ -526,6 +577,10 @@ export const createSceneInstanceSlice = (set: any, get: any): any => ({
     if (!targetId) return false;
     const ok = await s.recargarDefinicionInstancia(targetId, true);
     if (ok) {
+      if (typeof window !== "undefined") {
+        (window as any).__3bf_last_ghx_reload_time = Date.now();
+        window.dispatchEvent(new CustomEvent("3bf-ghx-reloaded", { detail: { targetId, timestamp: Date.now() } }));
+      }
       // 🔗 Cerrar el círculo: Persistir de inmediato la geometría fresca del GHX en el .3bf y .3bm
       const freshState = get();
       if (freshState.muebleActivoGuardado) {
@@ -641,9 +696,11 @@ export const createSceneInstanceSlice = (set: any, get: any): any => ({
     Object.values(state.instancias).forEach((inst: any) => {
       if (inst.resultado?.despiece) {
         inst.resultado.despiece.forEach((p: any) => {
+          const nombreNormalizado = extraerPiezaMadre(p.nombre) || p.nombre;
           list.push({
             ...p,
-            descripcion: p.descripcion || inst.nombreVisible || p.nombre,
+            nombre: nombreNormalizado,
+            descripcion: p.descripcion && p.descripcion !== p.nombre ? p.descripcion : (inst.nombreVisible || nombreNormalizado),
             instanciaNombre: inst.nombreVisible,
             instanciaId: inst.id,
           });
@@ -730,6 +787,243 @@ export const createSceneInstanceSlice = (set: any, get: any): any => ({
       mecanizadosCruzados: {},
       ultimoResumenMecanizado: ["✓ Perforaciones inter-componentes eliminadas."],
     });
+  },
+
+  guardarDisenoInstancia: (instanciaId: string, diseno: DisenoEncapsulado3BF) => {
+    const state = get();
+    const inst = state.instancias[instanciaId];
+    if (!inst) return;
+
+    const disenosActuales = inst.disenos || [];
+    const indexExistente = disenosActuales.findIndex((d: DisenoEncapsulado3BF) => d.id === diseno.id);
+    let nuevosDisenos: DisenoEncapsulado3BF[];
+
+    if (indexExistente >= 0) {
+      nuevosDisenos = disenosActuales.map((d: DisenoEncapsulado3BF, i: number) => (i === indexExistente ? diseno : d));
+    } else {
+      nuevosDisenos = [...disenosActuales, diseno];
+    }
+
+    const instActualizada = {
+      ...inst,
+      disenos: nuevosDisenos,
+      disenoActivoId: diseno.id,
+    };
+
+    const nuevasInstancias = {
+      ...state.instancias,
+      [instanciaId]: instActualizada,
+    };
+
+    let nuevoMuebleActivo = state.muebleActivoGuardado;
+    if (nuevoMuebleActivo) {
+      nuevoMuebleActivo = {
+        ...nuevoMuebleActivo,
+        instancias: nuevasInstancias,
+        disenos: nuevosDisenos,
+        disenoActivoId: diseno.id,
+      };
+    }
+
+    set({
+      instancias: nuevasInstancias,
+      muebleActivoGuardado: nuevoMuebleActivo,
+    });
+    get().guardarEstadoHistorial();
+  },
+
+  reordenarDisenosInstancia: (instanciaId: string, disenosReordenados: DisenoEncapsulado3BF[]) => {
+    const state = get();
+    const inst = state.instancias[instanciaId];
+    if (!inst) return;
+
+    const instActualizada = {
+      ...inst,
+      disenos: disenosReordenados,
+    };
+
+    const nuevasInstancias = {
+      ...state.instancias,
+      [instanciaId]: instActualizada,
+    };
+
+    let nuevoMuebleActivo = state.muebleActivoGuardado;
+    if (nuevoMuebleActivo) {
+      nuevoMuebleActivo = {
+        ...nuevoMuebleActivo,
+        instancias: nuevasInstancias,
+        disenos: disenosReordenados,
+      };
+    }
+
+    set({
+      instancias: nuevasInstancias,
+      muebleActivoGuardado: nuevoMuebleActivo,
+    });
+    get().guardarEstadoHistorial();
+  },
+
+  sincronizarColeccionDisenos: (disenos: DisenoEncapsulado3BF[], instanciaId?: string) => {
+    const state = get();
+    const targetId = instanciaId || state.objetoActivoId || Object.keys(state.instancias || {})[0];
+
+    const nuevasInstancias: Record<string, ObjetoInstancia3BF> = {};
+    for (const [k, inst] of Object.entries(state.instancias || {})) {
+      nuevasInstancias[k] = {
+        ...(inst as ObjetoInstancia3BF),
+        disenos: (!targetId || k === targetId || !(inst as any).disenos || (inst as any).disenos.length === 0)
+          ? disenos
+          : (inst as any).disenos,
+      };
+    }
+
+    let nuevoMuebleActivo = state.muebleActivoGuardado;
+    if (nuevoMuebleActivo) {
+      nuevoMuebleActivo = {
+        ...nuevoMuebleActivo,
+        instancias: nuevasInstancias,
+        disenos: disenos,
+      };
+    }
+
+    set({
+      instancias: nuevasInstancias,
+      muebleActivoGuardado: nuevoMuebleActivo,
+    });
+  },
+
+  activarDisenoInstancia: (instanciaId: string, disenoInput: string | DisenoEncapsulado3BF) => {
+    const state = get();
+    const inst = state.instancias[instanciaId];
+    if (!inst) return;
+
+    let diseno: DisenoEncapsulado3BF | undefined;
+    let disenoId: string;
+
+    if (typeof disenoInput === "string") {
+      disenoId = disenoInput;
+      diseno = (inst.disenos || []).find((d: DisenoEncapsulado3BF) => d.id === disenoId);
+    } else {
+      diseno = disenoInput;
+      disenoId = diseno.id;
+    }
+
+    if (!diseno) return;
+
+    // 🛡️ CANCELAR INMEDIATAMENTE CUALQUIER TIMER O PETICIÓN EN VUELO DE RHINOCOMPUTE
+    if ((globalThis as any).__3bf_debounce_timers?.[instanciaId]) {
+      clearTimeout((globalThis as any).__3bf_debounce_timers[instanciaId]);
+      delete (globalThis as any).__3bf_debounce_timers[instanciaId];
+    }
+    if ((globalThis as any).__3bf_abort_controllers?.[instanciaId]) {
+      try {
+        (globalThis as any).__3bf_abort_controllers[instanciaId].abort();
+      } catch (_) {}
+      delete (globalThis as any).__3bf_abort_controllers[instanciaId];
+    }
+    // Incrementar número de secuencia para invalidar cualquier cómputo en segundo plano
+    (globalThis as any).__3bf_compute_seq = ((globalThis as any).__3bf_compute_seq || 0) + 1;
+
+    // ⚡ CONMUTACIÓN INSTANTÁNEA EN MEMORIA (< 10 ms)
+    // Inyecta el resultado 3D resuelto directamente en Three.js sin llamar a RhinoCompute
+    const nextParams = { ...inst.parametros, ...diseno.valores };
+    Object.entries(diseno.valores || {}).forEach(([pKey, val]) => {
+      const cleanKey = pKey.replace("RH_IN:", "").toLowerCase().replace(/\s+/g, "_");
+      nextParams[cleanKey] = val;
+      const pureKey = pKey.replace(/^RH_IN:\s*/i, "").replace(/^[\d.]+[_\s]*/, "").toLowerCase().replace(/\s+/g, "_");
+      if (pureKey) nextParams[pureKey] = val;
+      const legacyKey = (MAPA_PARAMETROS as any)[pKey];
+      if (legacyKey) nextParams[legacyKey] = val;
+
+      const normTarget = (pureKey || cleanKey).replace(/^[\d.]+[_\s]*/, "").replace(/[_\s]+/g, "_").trim();
+      const normKey = pKey.toLowerCase();
+      if (normTarget.includes("ancho") || normKey.includes("01.0") || normKey.includes("ancho")) {
+        nextParams["ancho"] = typeof val === "number" ? val : (Number(val) || val);
+      }
+      if (normTarget.includes("alto") || normTarget.includes("altura") || normKey.includes("01.1") || normKey.includes("alto")) {
+        nextParams["alto"] = typeof val === "number" ? val : (Number(val) || val);
+      }
+      if (normTarget.includes("profundidad") || normTarget.includes("prof") || normKey.includes("01.2") || normKey.includes("profundidad")) {
+        nextParams["profundidad"] = typeof val === "number" ? val : (Number(val) || val);
+      }
+    });
+
+    const disenosActuales = inst.disenos || [];
+    const indexExistente = disenosActuales.findIndex((d: DisenoEncapsulado3BF) => d.id === diseno!.id);
+    const nuevosDisenos = indexExistente >= 0
+      ? disenosActuales.map((d: DisenoEncapsulado3BF, i: number) => (i === indexExistente ? diseno! : d))
+      : [...disenosActuales, diseno];
+
+    const instActualizada = {
+      ...inst,
+      parametros: nextParams,
+      resultado: diseno.resultado || inst.resultado,
+      disenos: nuevosDisenos,
+      disenoActivoId: disenoId,
+      cargando: false,
+    };
+
+    const nuevasInstancias = {
+      ...state.instancias,
+      [instanciaId]: instActualizada,
+    };
+
+    let nuevoMuebleActivo = state.muebleActivoGuardado;
+    if (nuevoMuebleActivo) {
+      nuevoMuebleActivo = {
+        ...nuevoMuebleActivo,
+        instancias: nuevasInstancias,
+        disenos: nuevosDisenos,
+        disenoActivoId: disenoId,
+      };
+    }
+
+    set({
+      instancias: nuevasInstancias,
+      muebleActivoGuardado: nuevoMuebleActivo,
+      objetoActivoId: instanciaId,
+      parametros: state.objetoActivoId === instanciaId ? nextParams : state.parametros,
+      resultado: state.objetoActivoId === instanciaId ? (diseno.resultado || inst.resultado) : state.resultado,
+      cargando: false,
+    });
+
+    get().guardarEstadoHistorial();
+  },
+
+  eliminarDisenoInstancia: (instanciaId: string, disenoId: string) => {
+    const state = get();
+    const inst = state.instancias[instanciaId];
+    if (!inst) return;
+
+    const disenosFiltrados = (inst.disenos || []).filter((d: DisenoEncapsulado3BF) => d.id !== disenoId);
+    const nuevoActivoId = inst.disenoActivoId === disenoId ? (disenosFiltrados[0]?.id || null) : inst.disenoActivoId;
+
+    const instActualizada = {
+      ...inst,
+      disenos: disenosFiltrados,
+      disenoActivoId: nuevoActivoId,
+    };
+
+    const nuevasInstancias = {
+      ...state.instancias,
+      [instanciaId]: instActualizada,
+    };
+
+    let nuevoMuebleActivo = state.muebleActivoGuardado;
+    if (nuevoMuebleActivo) {
+      nuevoMuebleActivo = {
+        ...nuevoMuebleActivo,
+        instancias: nuevasInstancias,
+        disenos: disenosFiltrados,
+        disenoActivoId: nuevoActivoId,
+      };
+    }
+
+    set({
+      instancias: nuevasInstancias,
+      muebleActivoGuardado: nuevoMuebleActivo,
+    });
+    get().guardarEstadoHistorial();
   },
 
 });

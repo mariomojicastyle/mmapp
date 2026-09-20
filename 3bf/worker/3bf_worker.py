@@ -1006,10 +1006,18 @@ def extract_all_user_params_flat(p: dict) -> dict:
 
 def extract_dimension_smart(p_dict: dict, keywords: list, fallback: float) -> float:
     flat = extract_all_user_params_flat(p_dict)
-    # 1. Buscar coincidencia con clave explícita de dimensión específica del usuario (priorizar claves con prefijo numérico como '01.0_ancho_1295' o 'ancho_1295' sobre la genérica)
+    extra_prefixes = []
+    if any("ancho" in kw for kw in keywords):
+        extra_prefixes.append("01.0")
+    if any("alto" in kw or "altura" in kw for kw in keywords):
+        extra_prefixes.append("01.1")
+    if any("prof" in kw for kw in keywords):
+        extra_prefixes.append("01.2")
+
+    # 1. Buscar coincidencia con clave explícita de dimensión específica del usuario (priorizar claves con prefijo numérico como '01.0_ancho_1295' o '01.0 300-1600')
     for k, v in flat.items():
         k_lower = k.lower()
-        if any(kw in k_lower for kw in keywords) and any(c.isdigit() for c in k):
+        if (any(kw in k_lower for kw in keywords) or any(pref in k_lower for pref in extra_prefixes)) and any(c.isdigit() for c in k):
             try:
                 val = float(v)
                 if val > 0:
@@ -1165,6 +1173,16 @@ async def compute_model(request: Request):
     ancho = extract_dimension_smart(p, ["ancho"], 1200.0)
     alto = extract_dimension_smart(p, ["alto", "altura"], 800.0)
     prof = extract_dimension_smart(p, ["profundidad", "prof"], 400.0)
+
+    # 🛡️ Blindaje mecánico contra dimensiones degeneradas (evitar colapsos a < 100mm en Grasshopper)
+    if "comoda" in (model_id + custom_filename).lower() or "ravenna" in (model_id + custom_filename).lower():
+        ancho = max(300.0, min(1600.0, ancho))
+        alto = max(400.0, min(1200.0, alto))
+        prof = max(300.0, min(650.0, prof))
+    else:
+        ancho = max(100.0, ancho)
+        alto = max(100.0, alto)
+        prof = max(100.0, prof)
     cant_cajones = int(p.get("cant_cajones", 3))
     apertura_mm = float(find_user_param_value(p, "RH_IN:02.5 Abrir Cajones", find_user_param_value(p, "RH_IN:Abrir Cajones", find_user_param_value(p, "abrir_cajones", find_user_param_value(p, "apertura_cajones", find_user_param_value(p, "apertura_mm", 0.0))))))
     prof_cajon_param = float(p.get("profundidad_cajon", 351.0))
@@ -1404,12 +1422,28 @@ async def compute_model(request: Request):
                             nick = nick_item.text or ""
                             if nick.startswith("RH_IN:"):
                                 val_item = slider_chunk.find("items/item[@name='Value']")
+                                min_item = slider_chunk.find("items/item[@name='Min']")
+                                max_item = slider_chunk.find("items/item[@name='Max']")
                                 if val_item is not None:
                                     def_v = default_values.get(nick, 0.0)
                                     user_v = find_user_param_value(p, nick, def_v)
                                     try:
-                                        val_item.text = str(float(user_v))
-                                    except:
+                                        f_user = float(user_v)
+                                        # 🛡️ BLINDAJE ANTI-COLAPSO GRASSHOPPER:
+                                        # Clamping estricto contra Min y Max del propio Slider GHX para impedir
+                                        # que dimensiones degeneradas (ej. Alto = 9mm) bloqueen el solver C++ de RhinoCompute
+                                        if min_item is not None and min_item.text:
+                                            try:
+                                                f_user = max(float(min_item.text), f_user)
+                                            except Exception:
+                                                pass
+                                        if max_item is not None and max_item.text:
+                                            try:
+                                                f_user = min(float(max_item.text), f_user)
+                                            except Exception:
+                                                pass
+                                        val_item.text = str(f_user)
+                                    except Exception:
                                         val_item.text = str(user_v)
 
             # 3. ⚡ ACTUALIZACIÓN EN CALIENTE DE VALUE LISTS (SELECTORES) EN EL XML
@@ -1850,13 +1884,23 @@ async def compute_model(request: Request):
                 nombre_limpio = custom_name
             else:
                 nombre_limpio = m.get("name", "").replace("RH_OUT:", "").strip()
-                for prefix in ["MDP ", "Color ", "Balance ", "Nurbs ", "Brep ", "MDP", "Color", "Balance"]:
-                    if nombre_limpio.startswith(prefix):
+                for prefix in ["MDF ", "MDP ", "Color ", "Balance ", "Nurbs ", "Brep ", "MDF", "MDP", "Color", "Balance"]:
+                    if nombre_limpio.upper().startswith(prefix.upper()):
                         nombre_limpio = nombre_limpio[len(prefix):].strip()
-                nombre_limpio = re.sub(r'[\s_]b$', '', nombre_limpio, flags=re.IGNORECASE).strip()
-                nombre_limpio = nombre_limpio.capitalize()
-                if not nombre_limpio or nombre_limpio in ["Cubierta2", "Entrepaño2", "Pieza", "Mdp", "Tablero"]:
-                    nombre_limpio = "Cubierta" if "cubierta" in name_lower else ("Entrepaño" if "entrepaño" in name_lower else "Tablero")
+
+                # Normalización canónica para Peça X y PK X
+                match_peca = re.search(r'pe[çc]a\s*(\d+)', nombre_limpio, flags=re.IGNORECASE)
+                if match_peca:
+                    nombre_limpio = f"Peça {match_peca.group(1)}"
+                else:
+                    match_pk = re.search(r'pk\s*(\d+)', nombre_limpio, flags=re.IGNORECASE)
+                    if match_pk:
+                        nombre_limpio = f"PK {match_pk.group(1)}"
+                    else:
+                        nombre_limpio = re.sub(r'[\s_]b$', '', nombre_limpio, flags=re.IGNORECASE).strip()
+                        nombre_limpio = nombre_limpio.capitalize()
+                        if not nombre_limpio or nombre_limpio in ["Cubierta2", "Entrepaño2", "Pieza", "Mdp", "Mdf", "Tablero"]:
+                            nombre_limpio = "Cubierta" if "cubierta" in name_lower else ("Entrepaño" if "entrepaño" in name_lower else "Tablero")
 
             # COHESIÓN ESPACIAL MADERKIT V54 (Fase 2 + Fase 3):
             # Absorción de parches, ranuras y caras divididas pertenecientes a la misma pieza física
@@ -1877,7 +1921,9 @@ async def compute_model(request: Request):
                         t["largo"] = max(t["largo"], lar_malla)
                         t["espesor"] = max(t["espesor"], esp_malla)
                         t["pos"][1] = (y_min + y_max) / 2000.0
-                        if t["nombre"] in ["Tablero", "Mdp", "Balance"] and nombre_limpio not in ["Tablero", "Mdp", "Balance"]:
+                        if "peça" in nombre_limpio.lower() or "pk" in nombre_limpio.lower():
+                            t["nombre"] = nombre_limpio
+                        elif t["nombre"].lower() in ["tablero", "mdp", "mdf", "balance"] and nombre_limpio.lower() not in ["tablero", "mdp", "mdf", "balance"]:
                             t["nombre"] = nombre_limpio
                         break
                 elif dist_x < 15.0 and dist_y < 15.0 and dist_z < 15.0 and diff_lar < 15.0:
@@ -1885,7 +1931,9 @@ async def compute_model(request: Request):
                     t["largo"] = max(t["largo"], lar_malla)
                     t["ancho"] = max(t["ancho"], anc_malla)
                     t["espesor"] = max(t["espesor"], esp_malla)
-                    if t["nombre"] in ["Tablero", "Mdp", "Balance"] and nombre_limpio not in ["Tablero", "Mdp", "Balance"]:
+                    if "peça" in nombre_limpio.lower() or "pk" in nombre_limpio.lower():
+                        t["nombre"] = nombre_limpio
+                    elif t["nombre"].lower() in ["tablero", "mdp", "mdf", "balance"] and nombre_limpio.lower() not in ["tablero", "mdp", "mdf", "balance"]:
                         t["nombre"] = nombre_limpio
                     break
                     
@@ -1908,7 +1956,12 @@ async def compute_model(request: Request):
         n_raw = m.get("name", "").strip()
         if "mdp" in n_raw.lower():
             n_clean = re.sub(r'RH_OUT:\s*', '', n_raw, flags=re.IGNORECASE)
-            n_clean = re.sub(r'MDP\s+', '', n_clean, flags=re.IGNORECASE).strip().capitalize()
+            n_clean = re.sub(r'MDP\s+', '', n_clean, flags=re.IGNORECASE).strip()
+            match_p = re.search(r'pe[çc]a\s*(\d+)', n_clean, flags=re.IGNORECASE)
+            if match_p:
+                n_clean = f"Peça {match_p.group(1)}"
+            else:
+                n_clean = n_clean.capitalize()
             m_size = m.get("size", [0, 0, 0])
             m_dims = sorted([round(m_size[0] * 1000.0, 1), round(m_size[1] * 1000.0, 1), round(m_size[2] * 1000.0, 1)])
             # Filtrar dimensiones: espesor suele ser entre 12mm y 30mm, no 0 ni 5mm de perforaciones

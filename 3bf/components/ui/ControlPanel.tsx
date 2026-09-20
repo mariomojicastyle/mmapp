@@ -3,6 +3,7 @@
 import React, { useEffect } from "react";
 import { use3BFStore } from "@/lib/store";
 import { Sliders, Box, Layers, Palette, Cpu, CheckCircle2, AlertCircle, Camera, Check, RotateCw, MousePointerClick } from "lucide-react";
+import { MemoryPosesLED } from "./MemoryPosesLED";
 
 // =========================================================================
 // 🎨 ICONOS DE MODOS DE VISUALIZACIÓN (INSPIRADOS EN BLENDER 4.X)
@@ -109,12 +110,21 @@ const DirectNumberInput = ({
   }, [value, isFocused]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const raw = e.target.value;
-    setLocalText(raw);
-    const normalizado = raw.replace(/\./g, "").replace(",", ".");
-    const num = parseFloat(normalizado);
-    if (!isNaN(num)) {
-      onChange(num, 200);
+    // 🛡️ REGLA ESTRICTA DE TALLER: NUNCA recalcular mientras el usuario digita.
+    // Solo se actualiza el texto local en pantalla a 60 FPS.
+    // El recálculo únicamente se dispara cuando el usuario pulsa 'Enter' o hace clic fuera (Blur).
+    setLocalText(e.target.value);
+  };
+
+  const handleCommit = () => {
+    const normalizado = localText.replace(/\./g, "").replace(",", ".");
+    let num = parseFloat(normalizado);
+    if (isNaN(num)) num = value;
+    const clamped = Math.min(max, Math.max(min, num));
+    setLocalText(String(clamped));
+    if (clamped !== value) {
+      onChange(clamped, 0); // Disparo instantáneo al salir del input o pulsar Enter
+      guardarEstadoHistorial();
     }
   };
 
@@ -125,13 +135,7 @@ const DirectNumberInput = ({
 
   const handleBlur = () => {
     setIsFocused(false);
-    const normalizado = localText.replace(/\./g, "").replace(",", ".");
-    let num = parseFloat(normalizado);
-    if (isNaN(num)) num = value;
-    const clamped = Math.min(max, Math.max(min, num));
-    onChange(clamped, 0); // Disparo instantáneo al salir del input
-    setLocalText(String(clamped));
-    guardarEstadoHistorial();
+    handleCommit();
   };
 
   return (
@@ -170,7 +174,8 @@ function limpiarEtiqueta(paramKey: string): string {
 
 function RenderParamControl({ paramKey }: { paramKey: string }) {
   const { parametros, setParametro, resultado, objetoActivoId, instancias, setParametroInstancia, coloresApariencia, guardarEstadoHistorial } = use3BFStore();
-  const instanciaActiva = objetoActivoId ? instancias[objetoActivoId] : null;
+  const activeId = objetoActivoId || Object.keys(instancias || {})[0] || null;
+  const instanciaActiva = activeId ? instancias[activeId] : null;
   const currentParams = instanciaActiva ? instanciaActiva.parametros : parametros;
   const currentResult = instanciaActiva ? instanciaActiva.resultado : resultado;
 
@@ -192,8 +197,8 @@ function RenderParamControl({ paramKey }: { paramKey: string }) {
     const numVal: number = typeof value === "number" ? value : (typeof limit?.default === "number" ? limit.default : Number(limit?.default ?? minVal));
 
     const handleNumChange = (val: number, debounceMs: number = 180) => {
-      if (objetoActivoId) {
-        setParametroInstancia(objetoActivoId, storeKey, val, debounceMs);
+      if (activeId) {
+        setParametroInstancia(activeId, storeKey, val, debounceMs);
       } else {
         setParametro(storeKey as any, val);
       }
@@ -222,7 +227,7 @@ function RenderParamControl({ paramKey }: { paramKey: string }) {
           max={maxVal}
           step={maxVal <= 10 ? 0.1 : (maxVal <= 200 ? 1 : 10)}
           value={Math.min(maxVal, Math.max(minVal, numVal))}
-          onChange={(e) => handleNumChange(Number(e.target.value), 180)}
+          onChange={(e) => handleNumChange(Number(e.target.value), 450)}
           onPointerUp={(e) => {
             handleNumChange(Number((e.target as HTMLInputElement).value), 0);
             guardarEstadoHistorial();
@@ -266,8 +271,8 @@ function RenderParamControl({ paramKey }: { paramKey: string }) {
   const selectedValue = String(value ?? limit?.default ?? options[0]);
 
   const handleSelectChange = (newVal: string) => {
-    if (objetoActivoId) {
-      setParametroInstancia(objetoActivoId, storeKey, newVal, 0);
+    if (activeId) {
+      setParametroInstancia(activeId, storeKey, newVal, 0);
     } else {
       setParametro(storeKey as any, newVal);
     }
@@ -306,7 +311,8 @@ function RenderParamControl({ paramKey }: { paramKey: string }) {
 // Panel de Parámetros Dinámico Autónomo (Sólo visible cuando hay un archivo cargado con grupos reales)
 function ParametrosPanel() {
   const { parametros, resultado, coloresApariencia, objetoActivoId, instancias } = use3BFStore();
-  const instanciaActiva = objetoActivoId ? instancias[objetoActivoId] : null;
+  const activeId = objetoActivoId || Object.keys(instancias || {})[0] || null;
+  const instanciaActiva = activeId ? instancias[activeId] : null;
   const currentResult = instanciaActiva ? instanciaActiva.resultado : resultado;
 
   if (!parametros.model_id && !instanciaActiva) return null;
@@ -348,6 +354,11 @@ function ParametrosPanel() {
               <RenderParamControl key={pKey} paramKey={pKey} />
             ))}
           </div>
+
+          {/* Ranuras de Memoria de Dimensiones con LEDs estilo Poser */}
+          {(idx === 0 || grp.title.toLowerCase().includes("dimen") || grp.title.toLowerCase().includes("principal")) && (
+            <MemoryPosesLED groupParameters={grp.parameters} />
+          )}
         </div>
       ))}
     </div>
@@ -529,8 +540,16 @@ export default function ControlPanel() {
   }, [parametros, isSyncing]);
 
   const { instancias, objetoActivoId, coloresApariencia, seleccionarInstancia } = use3BFStore();
-  const instanciaActiva = objetoActivoId ? instancias[objetoActivoId] : null;
+  const activeId = objetoActivoId || Object.keys(instancias || {})[0] || null;
+  const instanciaActiva = activeId ? instancias[activeId] : null;
   const listaInstancias = Object.values(instancias || {});
+
+  // Auto-seleccionar la primera instancia si no hay objetoActivoId pero sí hay piezas en la escena
+  useEffect(() => {
+    if (!objetoActivoId && Object.keys(instancias || {}).length > 0) {
+      seleccionarInstancia(Object.keys(instancias)[0]);
+    }
+  }, [objetoActivoId, instancias, seleccionarInstancia]);
 
   const [isPortrait, setIsPortrait] = React.useState(false);
 

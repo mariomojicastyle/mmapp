@@ -138,14 +138,18 @@ export function obtenerMallasDeSubbloque(sceneMeshes: THREE.Mesh[], sub: SubBloq
       const tieneInstancia = /\(\s*\d+\s*\)/.test(tClean);
 
       if (tieneInstancia) {
-        // Coincidencia estricta de instancia (ej. "corrediça - fija (5)")
+        // Coincidencia estricta de instancia (ej. "corrediça - fija (5)" vs "corrediça - fixa (5)")
         return (
           instKey === tClean ||
           cleanName === tClean ||
           rawName === tClean ||
           meshName === tClean ||
           meshName.startsWith(tClean + "::") ||
-          meshName.includes(tClean)
+          meshName.includes(tClean) ||
+          coincidenMismoHerraje(target, instKey) ||
+          coincidenMismoHerraje(target, cleanName) ||
+          coincidenMismoHerraje(target, rawName) ||
+          coincidenMismoHerraje(target, meshName)
         );
       }
 

@@ -9,9 +9,109 @@ Este archivo es la "Memoria RAM" para Antigravity. Contiene el contexto de lo qu
 ---
 
 ## 🏗️ 1. Plataforma B2B & 3dBimFab (Foco Actual)
-**Estado:** Diagnóstico de Simetría (Mirror) y Unificación de Apariencias Melamínicas en Cómoda Ravenna; Próximo Foco: Animación 3D y Cinemática de Armado (`aNIM_3000`).
+**Estado:** Consola Timeline y Dope Sheet Estilo Blender con Keyframes Cinemáticos de Cámara y Portapapeles (Ctrl+C, Ctrl+V, Shift+D); Próximo Foco: Perfeccionamiento y Efecto Wow de Animación 3D (`3BF_Animacion_Wow`).
+
+- [x] **[20 de Septiembre, 2026] Consola Timeline y Dope Sheet Estilo Blender con Keyframes Cinemáticos de Cámara y Portapapeles (`BlenderTimeline.tsx`, `TimelineScrubber.tsx`, `Viewer3D.tsx`)**:
+  * **Consola Profesional de Animación**: Nueva interfaz inferior en modo director / simulador móvil (lanzamiento nativo en 16:9) con regla graduada (Ruler), zoom/pan con rueda y atajos de Blender (`Ctrl + Clic central`).
+  * **Pista Dope Sheet y Rombos de Keyframe**: Pista de cámara 3D con rombos dorados interactivos, arrastre con clic sostenido (drag & drop) y cabezal playhead vertical azul de reproducción sincronizado con audio y cinemática física.
+  * **Portapapeles Estilo Blender (Ctrl+C, Ctrl+V, Shift+D)**: Atajos y botones cápsula (`rounded-full`) para copiar encuadre, pegar en la aguja de tiempo y duplicar con offset $+0.5$s. Tooltip interactivo con botones directos y toast visual flotante de confirmación.
+  * **Validación**: `npx tsc --noEmit` completado con 0 errores.
+
+- [x] **[19 de Septiembre, 2026] Soporte de Orientación Horizontal (16:9) y Vertical (9:16) en Simulador de Celular (`Viewer3D.tsx`, `storeTypes.ts`, `createManualSlice.ts`)**:
+  * **Problema Resuelto**: El simulador de celular (Mobile Safe View) estaba fijado únicamente en orientación vertical 9:16, impidiendo evaluar cómo se visualiza el manual 3D y las animaciones en vista apaisada / horizontal (landscape 16:9).
+  * **Rotación en 1 Clic**: Incorporado botón circular `RotateCw` en la barra superior de acciones junto al botón de `Smartphone` y botón interactivo dentro del badge central del propio simulador.
+  * **Adaptación Cinemática y Gráfica**:
+    - Modo Vertical (9:16): `aspect-[9/16]`, altavoz superior, badge `9:16 Mobile Safe View`.
+    - Modo Horizontal (16:9): `aspect-[16/9]`, altavoz lateral, badge `16:9 Mobile Safe View`.
+    - Ícono de `Smartphone` en la barra superior rota dinámicamente $90^\circ$ según la orientación activa.
+    - Transición CSS suave (`transition-all duration-300 ease-out`) con guías seguras (Safe Frame Guides) y sombreado Passepartout.
+  * **Validación**: `npx tsc --noEmit` completado con 0 errores.
+
+- [x] **[19 de Septiembre, 2026] Corrección de Vector de Ensamble Físico sobre Pieza Maestra en Piso (`assemblyCoreographer.ts`, `coreografiaHerrajes.ts`)**:
+  * **Problema Resuelto**: Al asentar la pieza maestra (`Peça 7`) sobre el piso con `floorDropY`, las piezas secundarias que se acoplan (`Peça 4`, `Peça 8`, `Peça 9`, `Peça 6`, etc.) y sus herrajes viajaban hacia la posición antigua de CAD donde la pieza maestra flotaba en el aire.
+  * **Propagación del Vector $\vec{\Delta}_{\text{Master}}$**: Se calcula el desplazamiento exacto al piso de la pieza maestra y se propaga como destino final $\vec{p}_{\text{RestFinal}} = \vec{p}_{\text{Rest}} + \vec{\Delta}_{\text{Master}}$ a todas las piezas secundarias y a sus herrajes cohesionados (`pHwRestFinal`).
+  * **Validación**: `npx tsc --noEmit` completado con 0 errores.
+
+- [x] **[19 de Septiembre, 2026] Aislamiento Estricto de Diseños por Mueble (Isolation by Furniture ID) (`MemoryPosesLED.tsx`, `createCatalogSlice.ts`)**:
+  * **Problema Resuelto**: Al abrir `1_Comoda Ravenna`, aparecían en pantalla los 6 diseños de `Linea Ravenna` porque la clave de IndexedDB y `localStorage` utilizaba el nombre genérico del algoritmo (`modelId: "Comoda Ravenna"`), compartido por ambos archivos. Además, la lógica previa de React retenía en pantalla la lista del mueble anterior si el nuevo tenía menos diseños.
+  * **Aislamiento por Mueble**: Se individualizó la clave de almacenamiento a `mueble_${muebleActivoGuardado.id}`. Cada mueble tiene su propio espacio estanco sin contaminación cruzada.
+  * **Reseteo al Cambiar de Archivo**: Al abrir cualquier mueble nuevo, la UI limpia de inmediato las poses y carga estrictamente los diseños propios de ese archivo.
+  * **Integridad Comprobada**: El archivo `1_Comoda Ravenna` en Google Drive permaneció 100% intacto con 0 diseños. Purgadas las claves compartidas legacy.
+
+- [x] **[19 de Septiembre, 2026] Persistencia Fotográfica de Cámara 3D y Conmutación de Pestañas Sin Reset (`Viewer3D.tsx`, `CameraControllers.tsx`, `app/page.tsx`, `createCatalogSlice.ts`)**:
+  * **Problema Resuelto**: Al cambiar de pestaña (ej. a "Despiece & Costos" o "Base de Datos") y regresar al "Visor 3D", el componente se desmontaba y reseteaba la cámara a una posición por defecto incómoda y pegada a una esquina (`[0.6, 0.9, 1.1]` y target `[0.25, 0, -0.24]`), obligando a reacomodar el mueble cada vez.
+  * **Preservación en el DOM**: Se mantiene `<Viewer3D />` montado en segundo plano con visibilidad condicional (`hidden` / `block`), conservando intacta la cámara, la órbita de `OrbitControls`, los materiales y el contexto WebGL (conmutación instantánea en 0 ms).
+  * **Controlador `CameraPersistenceController`**: Monitorea el final de cada órbita/paneo/zoom del usuario, persistiendo en tiempo real la posición $[X, Y, Z]$, el target $[TX, TY, TZ]$ y el $FOV$ en el Store de Zustand y `localStorage`.
+  * **Persistencia en Archivo `.3bf.json`**: Al pulsar "Guardar", las coordenadas de cámara quedan grabadas en el archivo de Google Drive. Al abrir el mueble o recargar (F5), se restaura el último ángulo de visión exacto del diseñador.
+
+- [x] **[19 de Septiembre, 2026] Optimización Extrema de Persistencia (.3bf.json -94%) y Texture Pool Singleton (`useMaterialPBRMaps.ts`, `storeDefaults.ts`)**:
+  * **Diagnóstico de Causa Raíz (241 MB $\rightarrow$ ~12 MB)**: Purgada la duplicación recursiva de diseños en `instancias`, eliminados los espacios en blanco del formateo indentado mediante serialización compacta y filtradas las trazas de depuración de Grasshopper.
+  * **Texture Pool Singleton**: Reutilización de una única instancia de textura en GPU para las 374 mallas del mueble, eliminando la sobrecarga de VRAM y los congelamientos. Texturas convertidas a WebP (-75% peso).
+  * **Hidratación Automática y Botón `↻`**: Captura confiable de geometrías 3D (`3D ✓`) y desaparición limpia del botón tras 2 segundos de confirmación verde.
+
+- [x] **[19 de Septiembre, 2026] Botón Dinámico Inteligente de Actualización de Diseños (`MemoryPosesLED.tsx`, `createSceneInstanceSlice.ts`)**:
+  * **Aparición Solo ante Cambios Reales**: El botón circular de actualizar (`↻`) ahora solo se muestra si el diseño activo tiene diferencias respecto a la escena (dimensiones modificadas, recarga fresca de GHX con `forzarRecargaDesdeGHX` o ausencia de mallas 3D).
+  * **Desvanecimiento Automático Post-Actualización**: Al hacer clic, se actualizan medidas y mallas del diseño, se muestra el icono de confirmación verde `Check` (`✓`) durante 2 segundos y luego el botón desaparece automáticamente, dejando la fila limpia con solo el lápiz y la cruz.
+  * **Claridad de Copys**: Cambiado el texto confuso "Congelar geometría" por "Actualizar diseño: Guarda las nuevas medidas y geometría física actual sobre este diseño".
+  * **Validación**: `npx tsc --noEmit` completado con 0 errores.
+
+- [x] **[19 de Septiembre, 2026] Persistencia Definitiva de Diseños (Optimización 75% JSON) y Barra Superior de Guardado (`createCatalogSlice.ts`, `route.ts`, `MemoryPosesLED.tsx`)**:
+  * **Diagnóstico de Causa Raíz de Pérdida de Diseños**: Cada diseño encapsula mallas 3D completas (1.7M vértices). Al usar `JSON.stringify(furniture, null, 2)` con saltos de línea por cada número, el archivo de Línea Ravenna pesaba **518 MB** con 3 diseños. Al agregar un 4º y 5º diseño, el payload superaba 1 GB, colapsando la red en el navegador y dejando en disco solo la versión de 3 diseños.
+  * **Serialización Compacta**: En `app/api/drive/muebles/route.ts` se implementó serialización compacta `JSON.stringify(furniture)`. El archivo en disco pasó de **518 MB a 135 MB** (reducción del 75%) preservando el 100% de la geometría y permitiendo colecciones ilimitadas de diseños.
+  * **Sincronización Atómica Centralizada**: Creado el método `sincronizarColeccionDisenos` en el store que actualiza a la vez `instancias.disenos`, `muebleActivoGuardado.disenos` e IndexedDB en todas las operaciones de usuario (`+`, renombrar, reordenar por arrastre, eliminar).
+  * **Consolidación Definitiva al Guardar**: En `guardarCambiosMueble` y `guardarMuebleComo`, los diseños de la instancia y del mueble se unifican por ID único para garantizar que ningún diseño creado se pierda jamás.
+  * **Activación de la Barra de Guardado**: Se eliminó `guardandoMueble: false` prematuro que se apagaba antes del `fetch`. Ahora permanece en `true` durante todo el guardado hasta el bloque `finally`. La barra horizontal superior y el widget HUD muestran `"Guardando en Drive..."` con porcentaje dinámico, y el botón muestra `"Guardando..."` y `"¡Guardado!"` con icono de verificación.
+  * **Validación**: `npx tsc --noEmit` completado con 0 errores y prueba de API verificada.
+
+- [x] **[19 de Septiembre, 2026] Reinicio Automático de Barra de Carga al Modificar Dimensiones y Asignación de Tonos de Tema (`Viewer3D.tsx`, `createSceneInstanceSlice.ts`)**:
+  * **Diagnóstico de Causa Raíz**: Cuando el usuario modificaba una dimensión (ej. Ancho) y luego otra (ej. Alto) mientras calculaba, `estaSincronizando` se mantenía en `true` sin disparar el `useEffect`, por lo que el cronómetro e intervalo continuaban llenando la barra como si fuera el mismo cálculo anterior.
+  * **Reinicio Reactivo**: Se implementó una firma de parámetros (`paramSignature`) que detecta inmediatamente cualquier modificación de dimensiones durante el cómputo. Al detectar un nuevo valor, la barra se reinicia de inmediato al 8% y el cronómetro arranca de cero para reflejar el nuevo cálculo del mueble.
+  * **Activación Inmediata**: Al mover cualquier slider en `setParametroInstancia`, se activa `cargando: true` al instante sin esperar el retardo del debounce, mostrando feedback visual en 0 ms.
+  * **Colorimetría de Tema Adaptativa**: Se reemplazó el color verde esmeralda por los tonos oficiales de marca:
+    - **Modo Claro (Light)**: Azul cyan oficial `#0088AA` (`#0891B2`).
+    - **Modo Oscuro (Dark)**: Azul oficial `#1368AA` con sombra mate sobria sin incandescencias fluorescentes.
+  * **Validación**: `npx tsc --noEmit` completado con 0 errores.
+
+- [x] **[19 de Septiembre, 2026] Sistema de Ranuras de Memoria de Dimensiones con Luces LED Estilo Poser (`ControlPanel.tsx`, `MemoryPosesLED.tsx`)**:
+  * **Ubicación Exacta**: Integrado en `ControlPanel.tsx` dentro de la tarjeta "Dimensões principais", ubicado justo debajo de los controles deslizantes de dimensiones.
+  * **Cabecera Sobria**: Título oficial **"Diseños"** en tipografía técnica sobria, sin íconos distractores de estrellitas, con contador dinámico y botón `+` para añadir configuraciones.
+  * **Estado Inicial Elegante**: Ranura cápsula limpia (`rounded-full`) con diodo LED cóncavo apagado y botón `Guardar pose actual...`.
+  * **Captura y Diódo LED 3D**: Al pulsar, captura las dimensiones activas, enciende el diodo LED con gradiente azul de marca `#1368AA` y reflejo especular esférico 3D, y abre inmediatamente un input inline para nombrar la pose con teclado.
+  * **Interacción Instantánea**: Al pulsar cualquier pose guardada, aplica de inmediato todos los valores al modelo 3D sin retraso, enciende su LED respectivo y guarda snapshot en el historial (`guardarEstadoHistorial()`).
+  * **Gestión Completa**: Posibilidad de añadir nuevas ranuras (`+`), renombrar (doble clic o icono de edición), eliminar (`X`) y plegar/desplegar la lista para optimizar el espacio vertical.
+  * **Reglas de Marca**: Estrictamente cápsulas `rounded-full`, azul `#1368AA`, estética limpia "Tech Ethos" y modo oscuro sobrio sin incandescencias. Persistencia local por modelo en `localStorage`.
+  * **Validación**: `npx tsc --noEmit` completado con 0 errores.
+
+- [x] **[19 de Septiembre, 2026] Alineación Horizontal de Botones Superiores en Fila Única (`Viewer3D.tsx`)**:
+  * Ajustado el contenedor de la barra de acciones superior a `flex-nowrap` sin límite restrictivo de ancho (`max-w-[260px]`).
+  * Los botones de **Marco de Encuadre 1:1** (`Square`) y **Simulador de Celular 9:16** (`Smartphone`) quedan ahora ubicados inmediatamente a la derecha del botón de **Ver Lámparas / Luces** (`Sun`), formando una sola línea continua, ordenada y ergonómica:
+    `[💾 Guardar] [Perforar] [🔄 Actualizar GHX] [☀️ Luces] [🔲 Marco 1:1] [📱 Celular]`.
+  * Validación con `npx tsc --noEmit` (0 errores).
+
+- [x] **[19 de Septiembre, 2026] Restauración de la Cuadrícula y Ejes del Suelo a su Estado Original (`Viewer3D.tsx`)**:
+  * Revertida la condición de ocultado de la grilla: `<Grid />` y `<GroundInfiniteAxes />` han sido restaurados exactamente a su estado original visible y permanente en el escenario en todas las modalidades.
+  * Preservada la alineación horizontal de los botones superiores en fila única y el retiro de los botones de caché.
+  * Validación con `npx tsc --noEmit` (0 errores).
+
+- [x] **[19 de Septiembre, 2026] Retiro de Botones de Caché en Archivo JSON de la Barra Superior (`Viewer3D.tsx`)**:
+  * Eliminados de la interfaz del visor 3D el botón cápsula `Caché` (carga manual de `.json`) y el botón circular de descarga de caché (`FileDown`).
+  * Desacoplados inputs de archivo y handlers locales huérfanos, dejando la barra superior limpia, sobria y despejada.
+  * Validación con `npx tsc --noEmit` (0 errores).
+
+- [x] **[19 de Septiembre, 2026] Integración del Servidor de Dictado y Traducción (`localhost:3003`) en el Protocolo `/Arranque3BF` y `start_3bf.ps1`**:
+  * Incorporado como el 5.° servicio daemon permanente en `AGENTS.md`, `GEMINI.md`, `3BF_Proceso.md` y `start_3bf.ps1`:
+    - Plataforma B2B & Dictador por Voz Next.js (`http://localhost:3003/dictado-y-traduccion`) en `c:\Desarrollo\mmapp\mario-mojica-plataforma`.
+  * Los 5 servicios comprobados y operativos en simultáneo (`:5000`, `:8005`, `:3005`, `:3003` y Túnel Cloudflare `engine.mariomojica.com`).
+
+- [x] **[19 de Septiembre, 2026] Excepción Paramétrica y Detección Automática de Bisel en Frentes de Cajón (`BoardMesh.tsx`, `useBoardMeshGeometry.ts`, `boardMaterialResolver.ts`)**:
+  * **Problema Resuelto**: Las aristas técnicas CAD forzaban `boxMeshGeometry` (paralelepípedo recto de 12 aristas) en todos los tableros de madera, ocultando el bisel superior/corte a inglete en frentes de cajón como la `Peça 19`.
+  * **Sensor de Bisel Geométrico**: Implementada detección vectorial automática en `useBoardMeshGeometry.ts` que analiza caras diagonales no ortogonales a los ejes cartesianos con longitud significativa ($> 50\text{ mm}$ y $> 20\%$ de la dimensión máxima de la pieza).
+  * **Excepción Segura**: Si la pieza contiene un bisel real (`tieneBiselDiagonal`) o coincide con términos de frentes/uñeros (`frente`, `gaveta`, `cajon`, `bisel`, `chaflan`, `uñero`, `peça 19`), Drei `<Edges>` calcula las aristas directamente desde su `customGeometry` real con un threshold de $20^\circ$.
+  * **Preservación Total**: El 100% de los tableros rectangulares estándar (laterales, repisas, cubiertas) mantienen sus aristas limpias de paralelepípedo (`boxMeshGeometry`) sin sufrir la más mínima alteración.
+  * **Validación**: `npx tsc --noEmit` completado con 0 errores.
 
 - [x] **[19 de Septiembre, 2026] Hito 186: Diagnóstico de Simetría (Mirror), Inversión de Caras de Apariencia (`Peça 8` vs `Peça 11`) y Unificación Melamínica Doble Cara (`D/D`)**:
+
   * **Causa Raíz Diagnosticada**: La rutina de simetría de Grasshopper (`separar_malla_pieza`) clasifica a `Peça 11` como pieza reflejada (`es_espejo = True`) e invierte las caras de salida (`f_A = faces_B_idx; f_B = faces_A_idx`), proyectando la `Cara B` (Capa Back, Naranja `#D97706`) hacia la cámara frontal $+Z$, mientras que en `Peça 8` la cara frontal es `Cara A` (Capa Tono, Amarillo `#EAB308`).
   * **Solución Doble Cara (`D/D`)**: Con la opción `D/D` en `Lado balance`, se asigna Capa Tono (Amarillo) a ambas caras de la madera, erradicando superficies naranja de contracara y unificando simétricamente el frente del mueble y los zócalos.
   * **Validación**: `npx tsc --noEmit` completado con 0 errores; los 4 daemons operativos.

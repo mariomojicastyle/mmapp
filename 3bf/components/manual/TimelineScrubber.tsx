@@ -2,7 +2,7 @@
 
 import React, { useEffect, useRef, useState, useMemo } from "react";
 import { use3BFStore } from "@/lib/store";
-import { Play, Pause, RotateCcw, Volume2, VolumeX, SkipBack, SkipForward, ChevronDown, ChevronUp, Sliders, Layers, Sparkles, Camera, Smartphone, Clapperboard, Trash2 } from "lucide-react";
+import { Play, Pause, RotateCcw, Volume2, VolumeX, SkipBack, SkipForward, ChevronDown, ChevronUp, Sliders, Layers, Sparkles, Smartphone } from "lucide-react";
 import { obtenerColorSubbloque } from "./StepManagerPanel";
 
 export default function TimelineScrubber() {
@@ -26,9 +26,6 @@ export default function TimelineScrubber() {
     setSubbloqueSolo,
     actualizarTrackSubBloque,
     setCoreografiaSubbloques,
-    capturarKeyframeCamaraPaso,
-    eliminarKeyframeCamaraPaso,
-    toggleCamaraCinematicaPaso,
     simuladorMovilActivo,
     toggleSimuladorMovil,
   } = use3BFStore();
@@ -254,28 +251,8 @@ export default function TimelineScrubber() {
     }
   };
 
-  // 🎥 Lógica de Keyframes Cinemáticos de Cámara
-  const keyframesCamara = useMemo(() => {
-    return (pasoActivo?.keyframesCamara || []).slice().sort((a, b) => a.tiempo - b.tiempo);
-  }, [pasoActivo?.keyframesCamara]);
-
-  const [panelCamaraAbierto, setPanelCamaraAbierto] = useState(false);
-
-  const handleCapturarCamara = () => {
-    if (!pasoActivo) return;
-    const pose = (window as any).__obtenerPoseCamara3BF?.();
-    if (!pose) {
-      alert("No se pudo leer la posición de la cámara del visor 3D.");
-      return;
-    }
-    capturarKeyframeCamaraPaso(
-      pasoActivo.id,
-      timelineCurrentTime,
-      pose.pos,
-      pose.target,
-      pose.fov
-    );
-  };
+  // Si el simulador móvil está activo, el Timeline profesional estilo Blender toma el control inferior
+  if (simuladorMovilActivo) return null;
 
   return (
     <div className="absolute bottom-3 left-3 right-3 z-20 flex flex-col gap-1.5 pointer-events-none select-none">
@@ -285,93 +262,6 @@ export default function TimelineScrubber() {
           ref={audioRef}
           src={currentAudioUrl}
         />
-      )}
-
-      {/* 🎬 PANEL DE CONTROL DE CÁMARA CINEMÁTICA (KEYFRAMES LIST) */}
-      {panelCamaraAbierto && keyframesCamara.length > 0 && (
-        <div
-          style={{
-            backgroundColor: coloresApariencia?.fondoPaneles || "rgba(255, 255, 255, 0.96)",
-            borderColor: coloresApariencia?.bordePaneles || "rgba(203, 213, 225, 0.8)",
-            color: coloresApariencia?.textoPrincipal || "#0F172A",
-          }}
-          className="pointer-events-auto backdrop-blur-md rounded-3xl p-3 border shadow-2xl flex flex-col gap-2 max-w-4xl mx-auto w-full transition-all animate-in fade-in slide-in-from-bottom-2 duration-200"
-        >
-          {/* Header del Panel de Cámara */}
-          <div className="flex items-center justify-between border-b border-slate-200/70 dark:border-slate-800/70 pb-1.5">
-            <div className="flex items-center gap-2">
-              <span className="font-extrabold text-[11px] uppercase tracking-wider text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
-                <Clapperboard className="w-3.5 h-3.5 text-amber-500" />
-                Dirección Cinematográfica de Cámara ({keyframesCamara.length} encuadres)
-              </span>
-              <button
-                type="button"
-                onClick={() => toggleCamaraCinematicaPaso(pasoActivo.id)}
-                title={
-                  pasoActivo.camaraCinematicaActiva !== false
-                    ? "Cámara Cinemática Activada (sigue los keyframes automáticamente). Clic para pausar y mover libre"
-                    : "Cámara en Modo Libre Manual. Clic para activar reproducción cinemática"
-                }
-                className={`px-2 py-0.5 rounded-full text-[9px] font-bold border transition cursor-pointer select-none ${
-                  pasoActivo.camaraCinematicaActiva !== false
-                    ? "bg-emerald-500 text-white border-emerald-400 shadow-2xs"
-                    : "bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300 border-slate-300 dark:border-slate-600"
-                }`}
-              >
-                {pasoActivo.camaraCinematicaActiva !== false ? "🎬 Cinemática: Activa" : "🖐️ Cinemática: En Pausa"}
-              </button>
-            </div>
-
-            <div className="flex items-center gap-1.5">
-              <button
-                type="button"
-                onClick={() => setPanelCamaraAbierto(false)}
-                title="Cerrar panel de cámara"
-                className="w-6 h-6 rounded-full flex items-center justify-center border border-slate-200 dark:border-slate-700 hover:bg-black/5 dark:hover:bg-white/5 transition text-slate-500 cursor-pointer"
-              >
-                <ChevronDown className="w-3.5 h-3.5" />
-              </button>
-            </div>
-          </div>
-
-          {/* Chips horizontales de keyframes */}
-          <div className="flex items-center gap-1.5 overflow-x-auto py-1">
-            {keyframesCamara.map((kf, kIdx) => {
-              const esActivo = Math.abs(timelineCurrentTime - kf.tiempo) < 0.15;
-              return (
-                <div
-                  key={kf.id}
-                  className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-mono font-bold border transition shadow-2xs ${
-                    esActivo
-                      ? "bg-amber-500/15 border-amber-500 text-amber-600 dark:text-amber-300"
-                      : "bg-slate-100 dark:bg-slate-800/80 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300"
-                  }`}
-                >
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setTimelineCurrentTime(kf.tiempo);
-                      if (audioRef.current) audioRef.current.currentTime = kf.tiempo;
-                    }}
-                    title={`Ir al encuadre ${kIdx + 1} (${kf.tiempo.toFixed(1)}s)`}
-                    className="flex items-center gap-1 cursor-pointer hover:underline"
-                  >
-                    <Camera className="w-3 h-3 text-amber-500" />
-                    <span>#{kIdx + 1}: {kf.tiempo.toFixed(1)}s</span>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => eliminarKeyframeCamaraPaso(pasoActivo.id, kf.id)}
-                    title="Eliminar este encuadre de cámara"
-                    className="w-4 h-4 rounded-full flex items-center justify-center text-red-500 hover:bg-red-100 dark:hover:bg-red-950/50 transition cursor-pointer"
-                  >
-                    <Trash2 className="w-2.5 h-2.5" />
-                  </button>
-                </div>
-              );
-            })}
-          </div>
-        </div>
       )}
 
       {/* 🎛️ MEZCLADOR MULTIPISTA DE SUB-BLOQUES (SUB-TRACK MIXER) */}
@@ -682,7 +572,7 @@ export default function TimelineScrubber() {
           </div>
         </div>
 
-        {/* Slider / Scrubber de Línea de Tiempo con Marcadores de Cámara Cinemática */}
+        {/* Slider / Scrubber de Línea de Tiempo Limpio */}
         <div className="flex-1 flex items-center px-1 relative">
           <input
             type="range"
@@ -693,59 +583,7 @@ export default function TimelineScrubber() {
             onChange={handleSliderChange}
             className="w-full h-1.5 bg-slate-200 dark:bg-slate-700 rounded-full appearance-none cursor-pointer accent-cyan-600 dark:accent-cyan-400 relative z-10"
           />
-
-          {/* 💎 Marcadores de Keyframes de Cámara sobre el Scrubber */}
-          {keyframesCamara.map((kf) => {
-            const pct = Math.min(100, Math.max(0, (kf.tiempo / duracionTotal) * 100));
-            const esCercano = Math.abs(timelineCurrentTime - kf.tiempo) < 0.15;
-            return (
-              <button
-                key={kf.id}
-                type="button"
-                onClick={() => {
-                  setTimelineCurrentTime(kf.tiempo);
-                  if (audioRef.current) audioRef.current.currentTime = kf.tiempo;
-                }}
-                title={`Keyframe de cámara en ${kf.tiempo.toFixed(1)}s (Clic para saltar)`}
-                style={{ left: `${pct}%` }}
-                className={`absolute top-1/2 -translate-y-1/2 -translate-x-1/2 z-20 w-3 h-3 rotate-45 transition-transform cursor-pointer border ${
-                  esCercano
-                    ? "bg-amber-400 border-amber-200 scale-125 shadow-md shadow-amber-500/50"
-                    : "bg-cyan-500 border-cyan-200 hover:scale-125 shadow-xs"
-                }`}
-              />
-            );
-          })}
         </div>
-
-        {/* 📸 Botón Fijar Cámara (Captura instantánea de la pose 3D en el segundo actual) */}
-        <button
-          type="button"
-          onClick={handleCapturarCamara}
-          title={`Fijar ángulo de cámara actual en ${timelineCurrentTime.toFixed(1)}s`}
-          className="flex items-center gap-1 text-[10px] font-bold px-2.5 py-1 rounded-full bg-cyan-600 hover:bg-cyan-700 text-white shadow-md transition active:scale-95 cursor-pointer shrink-0 select-none"
-        >
-          <Camera className="w-3 h-3" />
-          <span>Fijar ({timelineCurrentTime.toFixed(1)}s)</span>
-        </button>
-
-        {/* 🎬 Botón Administrar Keyframes de Cámara */}
-        {keyframesCamara.length > 0 && (
-          <button
-            type="button"
-            onClick={() => setPanelCamaraAbierto(!panelCamaraAbierto)}
-            title={panelCamaraAbierto ? "Ocultar lista de encuadres de cámara" : "Ver encuadres de cámara registrados"}
-            className={`px-2 py-1 rounded-full text-[10px] font-bold border transition flex items-center gap-1 cursor-pointer shrink-0 select-none ${
-              panelCamaraAbierto
-                ? "bg-amber-500 text-white border-amber-400 shadow-xs"
-                : "bg-slate-100 dark:bg-slate-800 border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700"
-            }`}
-          >
-            <Clapperboard className="w-3 h-3" />
-            <span>({keyframesCamara.length})</span>
-            {panelCamaraAbierto ? <ChevronDown className="w-2.5 h-2.5" /> : <ChevronUp className="w-2.5 h-2.5" />}
-          </button>
-        )}
 
         {/* Botón Pistas / Mezclador de Sub-Bloques en Cápsula */}
         {tieneSubbloques && (

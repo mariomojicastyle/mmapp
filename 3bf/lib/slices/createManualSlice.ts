@@ -41,8 +41,14 @@ export const createManualSlice = (set: any, get: any): any => {
   autoEnfoqueCamaraManual: false, // Desactivado por defecto para dar control libre y cinematográfico al usuario
   setAutoEnfoqueCamaraManual: (autoEnfoqueCamaraManual: boolean) => set({ autoEnfoqueCamaraManual }),
   simuladorMovilActivo: false,
+  simuladorMovilOrientacion: "horizontal",
   setSimuladorMovilActivo: (simuladorMovilActivo: boolean) => set({ simuladorMovilActivo }),
   toggleSimuladorMovil: () => set((s) => ({ simuladorMovilActivo: !s.simuladorMovilActivo })),
+  setSimuladorMovilOrientacion: (simuladorMovilOrientacion: "vertical" | "horizontal") => set({ simuladorMovilOrientacion }),
+  toggleSimuladorMovilOrientacion: () =>
+    set((s) => ({
+      simuladorMovilOrientacion: s.simuladorMovilOrientacion === "vertical" ? "horizontal" : "vertical",
+    })),
   piezaEnPosicionamientoManual: null,
   setPiezaEnPosicionamientoManual: (piezaEnPosicionamientoManual: any) => set({ piezaEnPosicionamientoManual }),
   ultimaPiezaCalibrada: null,
@@ -1537,31 +1543,41 @@ export const createManualSlice = (set: any, get: any): any => {
           const tienePiezasAsignadas = (state.pasosManual || []).some(
             (p) => (p.piezasAsignadas && p.piezasAsignadas.length > 0) || (p.herrajesAsignados && p.herrajesAsignados.length > 0)
           );
-          const tieneTrabajoLocal = tieneGruposConfigurados || tienePiezasAsignadas;
+          const tienePasosMultiples = (state.pasosManual || []).length > 1;
+          const tieneTrabajoLocal = tieneGruposConfigurados || tienePiezasAsignadas || tienePasosMultiples;
 
-          // 1. Intentar vincular por muebleActivoGuardado
+          // 1. Intentar vincular por muebleActivoGuardado y puntuación de relevancia
           const muebleActivoId = state.muebleActivoGuardado?.id;
           const muebleActivoNombre = state.muebleActivoGuardado?.nombre;
-          let target = null;
-          if (muebleActivoId || muebleActivoNombre) {
-            target = data.manuales.find(
-              (m: any) =>
-                (muebleActivoId && m.muebleOrigenId === muebleActivoId) ||
-                (muebleActivoNombre && m.nombre.toLowerCase().includes(muebleActivoNombre.toLowerCase()))
-            );
-          }
+
+          const scoreManual = (m: any) => {
+            const matchId = (muebleActivoId && m.muebleOrigenId === muebleActivoId) ? 100 : 0;
+            const matchManualId = (state.muebleActivoGuardado?.manualVinculadoId && m.id === state.muebleActivoGuardado.manualVinculadoId) ? 30 : 0;
+            const matchMarca = (m.marca && state.muebleActivoGuardado?.marca && m.marca.toLowerCase() === state.muebleActivoGuardado.marca.toLowerCase()) ? 50 : 0;
+            const matchNombre = (muebleActivoNombre && m.nombre && m.nombre.toLowerCase().includes(muebleActivoNombre.toLowerCase())) ? 20 : 0;
+            const pasosCount = Array.isArray(m.pasos) ? m.pasos.length : 0;
+            const p00 = m.pasos?.find((p: any) => p.id === "P00");
+            const gruposCount = p00?.showcase?.gruposCinematicos?.length || 0;
+            return matchId + matchMarca + matchManualId + matchNombre + (pasosCount * 10) + gruposCount;
+          };
+
+          const sortedManuales = [...data.manuales].sort((a: any, b: any) => scoreManual(b) - scoreManual(a));
+          const bestCandidate = sortedManuales[0];
+          let target = (bestCandidate && scoreManual(bestCandidate) > 0) ? bestCandidate : null;
 
           // 2. Si no hay target específico por ID pero el manual actual local no tiene grupos cinemáticos,
-          // buscar el manual guardado en Drive que sí tenga grupos cinemáticos en P00 (ej: Cómoda Ravenna con 6 cajones)
+          // buscar el manual guardado en Drive que sí tenga grupos cinemáticos en P00 o múltiples pasos
           if (!target && !tieneTrabajoLocal) {
             target = data.manuales.find((m: any) => {
               const p00m = (m.pasos || []).find((p: any) => p.id === "P00");
-              return (p00m?.showcase?.gruposCinematicos?.length || 0) > 0;
+              return (p00m?.showcase?.gruposCinematicos?.length || 0) > 0 || (m.pasos || []).length > 1;
             });
           }
 
-          if (target) {
-            if (tieneTrabajoLocal) {
+          if (target && target.pasos && target.pasos.length > 0) {
+            const numPasosLocales = (state.pasosManual || []).length;
+            const numPasosTarget = target.pasos.length;
+            if (tieneTrabajoLocal && numPasosLocales >= numPasosTarget) {
               if (!state.manualActivoGuardado) {
                 const manualEnlazado: Manual3BMProyecto = {
                   ...target,
@@ -1572,8 +1588,8 @@ export const createManualSlice = (set: any, get: any): any => {
                 guardarPasosEnCacheLocal(state.pasosManual, manualEnlazado);
               }
             } else {
-              // Restaurar automáticamente la versión completa guardada con animaciones
-              console.log("[3dBimFab] Auto-cargando manual guardado con animaciones:", target.nombre);
+              // Restaurar automáticamente la versión completa guardada con animaciones y pasos
+              console.log("[3dBimFab] Auto-hidratando manual guardado desde Drive:", target.nombre, "con", numPasosTarget, "pasos");
               get().cargarManualProyecto(target);
             }
           }
@@ -2102,6 +2118,44 @@ export const createManualSlice = (set: any, get: any): any => {
         return {
           ...p,
           camaraCinematicaActiva: !estadoActual,
+        };
+      });
+
+      guardarPasosEnCacheLocal(nuevosPasos, state.manualActivoGuardado);
+      return { pasosManual: nuevosPasos };
+    });
+  },
+
+  moverKeyframeCamaraPaso: (pasoId, kfId, nuevoTiempo) => {
+    set((state) => {
+      const tiempoNormalizado = Math.max(0, Math.round(nuevoTiempo * 100) / 100);
+      const nuevosPasos = state.pasosManual.map((p) => {
+        if (p.id !== pasoId) return p;
+        const kfs = (p.keyframesCamara || []).map((k) =>
+          k.id === kfId ? { ...k, tiempo: tiempoNormalizado } : k
+        );
+        kfs.sort((a, b) => a.tiempo - b.tiempo);
+        return {
+          ...p,
+          keyframesCamara: kfs,
+        };
+      });
+
+      guardarPasosEnCacheLocal(nuevosPasos, state.manualActivoGuardado);
+      return { pasosManual: nuevosPasos };
+    });
+  },
+
+  sobrescribirKeyframeCamaraPaso: (pasoId, kfId, posicion, target, fov) => {
+    set((state) => {
+      const nuevosPasos = state.pasosManual.map((p) => {
+        if (p.id !== pasoId) return p;
+        const kfs = (p.keyframesCamara || []).map((k) =>
+          k.id === kfId ? { ...k, posicion, target, fov: fov ?? k.fov } : k
+        );
+        return {
+          ...p,
+          keyframesCamara: kfs,
         };
       });
 

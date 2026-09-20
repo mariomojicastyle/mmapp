@@ -59,8 +59,9 @@ export function BoardMesh({
 
   const meshRef = React.useRef<THREE.Mesh>(null);
 
-  // 1. Geometría optimizada y aristas de caja limpias
-  const { customGeometry, boxMeshGeometry } = useBoardMeshGeometry(vertices, indices, grasshopperUvs, size, tipoMapeado);
+  // 1. Geometría optimizada, detección de biseles y aristas de caja limpias
+  const { customGeometry, boxMeshGeometry, tieneBiselDiagonal } = useBoardMeshGeometry(vertices, indices, grasshopperUvs, size, tipoMapeado);
+
 
   // 2. Paso activo manual
   const pasoActivoManual = React.useMemo(() => {
@@ -137,13 +138,77 @@ export function BoardMesh({
   );
 
   const asignacionParte = asignacionesPartes[name] || asignacionesPartes[cleanName] || asignacionesPartes[`RH_OUT:${cleanName}`];
-  let materialRef = asignacionParte?.materialId && asignacionParte.materialId !== "por_capa"
-    ? materialesPBR.find((m) => m.id === asignacionParte.materialId)
+  
+  // 1. Identificar capa asignada (por asignación explícita de parte o heurística por tipo de componente)
+  const kLow = cleanName.toLowerCase();
+  let capaAsignadaParte = asignacionParte?.capaId && asignacionParte.capaId !== "por_defecto"
+    ? capas.find((c) => c.id === asignacionParte.capaId)
     : null;
+
+  if (!capaAsignadaParte) {
+    if (kLow.includes("tampa")) {
+      capaAsignadaParte = capas.find((c) => c.id === "capa_tono" || (c.nombre.toLowerCase().includes("tono") && !c.nombre.toLowerCase().includes("fondo"))) || capas[0] || null;
+    } else if (kLow.includes("perfil") || kLow.includes("porca") || kLow.includes("pata") || kLow.includes("sapata") || kLow.includes("suporte")) {
+      capaAsignadaParte = capas.find((c) => c.id === "capa_plastico_2" || c.id === "capa_plastico_1" || c.nombre.toLowerCase().includes("plastico")) || null;
+    } else if (kLow.includes("mdp")) {
+      capaAsignadaParte = capas.find((c) => c.id === "capa_mdp" || c.nombre.toLowerCase() === "mdp") || null;
+    } else if (kLow.includes("mdf")) {
+      capaAsignadaParte = capas.find((c) => c.id === "capa_mdf" || c.nombre.toLowerCase() === "mdf") || null;
+    } else if (kLow.includes("balance") || kLow.endsWith(" b")) {
+      capaAsignadaParte = capas.find((c) => c.id === "capa_back" || c.nombre.toLowerCase().includes("back") || c.nombre.toLowerCase().includes("balance")) || null;
+    }
+  }
+
+  // 2. Resolver material PBR efectivo: primero el directo de la parte, luego el de su capa asignada
+  const materialRef = (asignacionParte?.materialId && asignacionParte.materialId !== "por_capa")
+    ? materialesPBR.find((m) => m.id === asignacionParte.materialId)
+    : (capaAsignadaParte?.materialId ? materialesPBR.find((m) => m.id === capaAsignadaParte.materialId) : null);
+
+  // 3. Determinar si esta pieza debe usar fallback de textura de madera
+  const esHerrajeOPerfil = kLow.includes("perfil") || 
+    kLow.includes("tornillo") || 
+    kLow.includes("parafuso") || 
+    kLow.includes("perno") || 
+    kLow.includes("tarugo") || 
+    kLow.includes("cavilha") || 
+    kLow.includes("corredera") || 
+    kLow.includes("corredi") || 
+    kLow.includes("cantoneira") || 
+    kLow.includes("angulo") || 
+    kLow.includes("porca") || 
+    kLow.includes("pata") || 
+    kLow.includes("pes") || 
+    kLow.includes("maquinado") || 
+    kLow.includes("perforado");
+
+  const esMaterialSinTexturaMelamina = Boolean(
+    materialRef && (
+      materialRef.tipo === "Plastico" ||
+      materialRef.tipo === "Metal" ||
+      materialRef.tipo === "Pintura" ||
+      materialRef.tipo === "PBR" ||
+      materialRef.id === "mat_blanco" ||
+      materialRef.id === "mat_mdp" ||
+      materialRef.id === "mat_mdf" ||
+      materialRef.nombre.toLowerCase() === "mdp" ||
+      materialRef.nombre.toLowerCase() === "mdf"
+    )
+  );
+
+  const fallbackTexturaUrl = (
+    esHerrajeOPerfil || 
+    esMaterialSinTexturaMelamina || 
+    kLow.includes("mdp") || 
+    kLow.includes("mdf") || 
+    kLow.includes("balance") || 
+    kLow.endsWith(" b")
+  )
+    ? null
+    : (calibracion.customTextureUrl || "/textures/Marfil_diffuse.jpg");
 
   const pbrMaps = useMaterialPBRMaps(
     materialRef,
-    calibracion.customTextureUrl || (name.toLowerCase().includes("mdf") ? null : "/textures/Marfil_diffuse.jpg"),
+    fallbackTexturaUrl,
     tipoMapeado,
     Boolean(grasshopperUvs && grasshopperUvs.length > 0)
   );
@@ -264,7 +329,12 @@ export function BoardMesh({
   const debeMostrarAristas = calibracion.mostrarAristas !== false && (isWoodBoard || isHardware) && !esMicroGeometria;
   const debeOmitirAristasPorDuplicidadCapa = isWoodBoard && (isBalance || isMdpExpuesto);
   const mostrarAristasEnEsteMesh = (debeMostrarAristas && !debeOmitirAristasPorDuplicidadCapa) || estaSeleccionadaEnPicking;
-  const edgeGeometryToUse = (esParalelepipedo && boxMeshGeometry) ? boxMeshGeometry : (customGeometry || undefined);
+  
+  // 📐 Excepción para frentes de cajón o piezas con bisel/chaflán diagonal:
+  // Si la pieza tiene bisel o está identificada como frente/perfil, usamos la geometría real para que se aprecien sus aristas diagonales.
+  const esExcepcionBisel = tieneBiselDiagonal || !esParalelepipedo;
+  const edgeGeometryToUse = (esParalelepipedo && !tieneBiselDiagonal && boxMeshGeometry) ? boxMeshGeometry : (customGeometry || undefined);
+
 
   const activeMap = modoVisual === "renderizado" ? pbrMaps.diffuse : null;
   const activeNormal = modoVisual === "renderizado" ? pbrMaps.normal : null;
@@ -378,7 +448,7 @@ export function BoardMesh({
         {mostrarAristasEnEsteMesh && (!isHardware || isHardwareTampa || estaSeleccionadaEnPicking || estaHoveredEnHerrajes) && (
           <Edges
             geometry={edgeGeometryToUse}
-            threshold={isHardwareTampa ? 15 : (calibracion.thresholdAristas || 25)}
+            threshold={isHardwareTampa ? 15 : (esExcepcionBisel ? 20 : (calibracion.thresholdAristas || 25))}
             color={
               estaHoveredEnHerrajes
                 ? "#854D0E"

@@ -74,7 +74,8 @@ export function compilarCoreografiaHerrajesCohesionados(
   tEndAction: number,
   trasladaMadera: boolean,
   paso: PasoManualStudio,
-  tracks: THREE.KeyframeTrack[]
+  tracks: THREE.KeyframeTrack[],
+  deltaMaster: THREE.Vector3 = new THREE.Vector3(0, 0, 0)
 ): void {
   if (!elem.herrajesCohesionados || elem.herrajesCohesionados.length === 0) return;
 
@@ -140,8 +141,8 @@ export function compilarCoreografiaHerrajesCohesionados(
         comprobarHerrajeCongelado(cn, listaCongeladosRaw);
 
       const pHwRest = getSafeRestPosition(hwMesh);
-      // 🎯 Posición de reposo final exacta de diseño ensamblado (Modelo Armado CAD original de Grasshopper)
-      const pHwRestFinal = pHwRest.clone();
+      // 🎯 Posición de reposo final exacta de diseño ensamblado (asentada sobre la pieza master en piso)
+      const pHwRestFinal = pHwRest.clone().add(deltaMaster);
       const pHwPop = pHwRest.clone().add(vOffset);
 
       if (esCongeladoMesh) {

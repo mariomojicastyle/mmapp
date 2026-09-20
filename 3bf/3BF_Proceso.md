@@ -14,12 +14,13 @@ Para iniciar la suite completa de **3DBimFab (3BF)** en una sola orden sin neces
 ```
 > O ejecuta en PowerShell: `powershell -ExecutionPolicy Bypass -File C:\Desarrollo\mmapp\3BF\start_3bf.ps1`
 
-### ⚙️ Los 4 Procesos Principales del Ecosistema (Daemons Persistentes):
+### ⚙️ Los 5 Procesos Principales del Ecosistema (Daemons Persistentes):
 Para garantizar que los servicios permanezcan activos a la primera sin cerrarse al finalizar la sesión del lanzador, se inician como demonios independientes (`IsDaemon: true`):
 1. **🦏 RhinoCompute 8 Engine**: `$env:USERPROFILE\AppData\Roaming\McNeel\Rhinoceros\packages\8.0\Hops\0.17.0\rhino.compute\rhino.compute.exe` ➔ `http://localhost:5000` *(Motor CAD Grasshopper)*
 2. **🐍 3BF Worker Python Engine**: `python -u worker/3bf_worker.py` ➔ `http://localhost:8005` *(Solver FastAPI DfMA en C:\Desarrollo\mmapp\3bf)*
 3. **🌐 3BF Web App**: `npm run dev` ➔ `http://localhost:3005` *(Interfaz Web React / Three.js en C:\Desarrollo\mmapp\3bf)*
 4. **☁️ Cloudflare Tunnel Permanente (`https://engine.mariomojica.com`)**: `cloudflared.exe tunnel run --token eyJhIjoiYmNlY2ViYzc5Yzg3NDhiNDJkOGM2OTFjMmNkYThmYjQiLCJ0IjoiNjNiNDMxMjgtNzhkNC00MWMzLWEwYjktYTk3MzY2OTliMGIyIiwicyI6Ik5HUXhabVprWVdRdE1ETmpNUzAwWTJJMExUbGxaVGN0TjJVMllqSTFNMkZpWkRFMyJ9`
+5. **🎙️ Plataforma B2B & Dictador por Voz Next.js**: `npm run dev` ➔ `http://localhost:3003` *(Módulo de Dictado y Traducción en C:\Desarrollo\mmapp\mario-mojica-plataforma)*
 
 ### 🛠️ Protocolo de Recuperación Rápida ante Bloqueo / API Fallback:
 Si el visor se pone en blanco o muestra el badge amarillo `Worker: API Fallback`:

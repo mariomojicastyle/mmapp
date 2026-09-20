@@ -24,11 +24,12 @@ Cada vez que iniciamos, tu primera tarea absoluta debe ser recuperar el contexto
 - [Seguridad.md](file:///c:/Desarrollo/mmapp/docs/Seguridad.md) - Protocolo de blindaje 3D (IP Shield), Cloudflare DNS, HSTS y SSL Compliance.
 
 ### ⚡ Comando Explícito `/Arranque3BF`
-Nota: El arranque general del agente (`arranque` / inicio de sesión) solo realiza la lectura y recuperación de contexto. El comando `/Arranque3BF` es una instrucción explícita que el usuario ejecutará únicamente cuando requiera poner en marcha los servicios de 3BF. Cuando el usuario invoque explícitamente `/Arranque3BF`, se deben verificar o lanzar los 4 servidores de segundo plano como Daemons (`run_command` con `IsDaemon: true`):
+Nota: El arranque general del agente (`arranque` / inicio de sesión) solo realiza la lectura y recuperación de contexto. El comando `/Arranque3BF` es una instrucción explícita que el usuario ejecutará únicamente cuando requiera poner en marcha los servicios de 3BF y las herramientas locales. Cuando el usuario invoque explícitamente `/Arranque3BF`, se deben verificar o lanzar los 5 servidores de segundo plano como Daemons (`run_command` con `IsDaemon: true`):
 1. **RhinoCompute 8** (`http://localhost:5000`): Executable en AppData `rhino.compute.exe` (`IsDaemon: true`)
 2. **3BF Worker Python** (`http://localhost:8005`): `python -u worker/3bf_worker.py` en `c:\Desarrollo\mmapp\3bf` (`IsDaemon: true`)
 3. **3BF Web App Next.js** (`http://localhost:3005`): `npm run dev` en `c:\Desarrollo\mmapp\3bf` (`IsDaemon: true`)
 4. **Cloudflare Tunnel Permanente (`https://engine.mariomojica.com`)**: `cloudflared.exe tunnel run --token eyJhIjoiYmNlY2ViYzc5Yzg3NDhiNDJkOGM2OTFjMmNkYThmYjQiLCJ0IjoiNjNiNDMxMjgtNzhkNC00MWMzLWEwYjktYTk3MzY2OTliMGIyIiwicyI6Ik5HUXhabVprWVdRdE1ETmpNUzAwWTJJMExUbGxaVGN0TjJVMllqSTFNMkZpWkRFMyJ9` (`IsDaemon: true`)
+5. **Plataforma B2B & Dictador por Voz Next.js** (`http://localhost:3003`): `npm run dev` en `c:\Desarrollo\mmapp\mario-mojica-plataforma` (`IsDaemon: true`)
 
 ---
 
@@ -243,4 +244,12 @@ Default values cause runtime failures.
 
 ## 🧊 Regla Obligatoria de Carga de Modelos en 3dBimFab
 - **Apertura de Modelos Siempre en GHX Real:** Al abrir cualquier definición o componente en 3dBimFab (por ejemplo Cómoda Ravenna, Cubiertas, etc.), se debe resolver **SIEMPRE el `.ghx` real en vivo** evaluado por Grasshopper y RhinoCompute con sus parámetros genuinos. Queda ESTRICTAMENTE PROHIBIDO interceptar la apertura con archivos congelados o inventados en caché de disco (`_default.json`).
+
+## 🎨 Prohibición Estricta de Colores Fuera de Estilo y Prioridad Absoluta al Color de Marca
+- **Prohibición de Verdes / Esmeraldas Genéricos:** Queda ESTRICTAMENTE PROHIBIDO usar gradientes o colores verdes genéricos como `"from-emerald-500 via-green-400 to-emerald-500"` o similares en barras de progreso, acentos, badges o indicadores de la suite.
+- **Prioridad al Color de Estilo Oficial:** Se debe dar SIEMPRE Y SIN EXCEPCIÓN prioridad al color oficial del estilo activo:
+  * **Modo Light (Tema Claro):** Azul cyan oficial **`#0088AA`** / `#0891B2` (`coloresApariencia.botonActivo`).
+  * **Modo Dark (Tema Oscuro):** Azul oficial **`#1368AA`** mate sin incandescencias.
+- **Consulta Obligatoria ante Duda:** Ante cualquier duda sobre el color de estilo a aplicar en cualquier componente o elemento de interfaz, se DEBE consultar explícitamente al usuario antes de implementar.
+
 

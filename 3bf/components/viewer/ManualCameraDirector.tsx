@@ -35,6 +35,19 @@ export function ManualCameraDirector({ controlsRef }: ManualCameraDirectorProps)
   const usuarioInteractuandoRef = useRef<boolean>(false);
   const timeoutInteraccionRef = useRef<NodeJS.Timeout | null>(null);
 
+  // Control de animación transitoria cuando se hace clic en un keyframe para saltar a él
+  const transicionSaltoRef = useRef<{
+    activa: boolean;
+    posDestino: THREE.Vector3;
+    targetDestino: THREE.Vector3;
+    tiempoRestante: number;
+  }>({
+    activa: false,
+    posDestino: new THREE.Vector3(),
+    targetDestino: new THREE.Vector3(),
+    tiempoRestante: 0,
+  });
+
   // Vectores temporales para evitar garbage collection en el render loop
   const tempPos = useRef(new THREE.Vector3());
   const tempTarget = useRef(new THREE.Vector3());
@@ -46,6 +59,7 @@ export function ManualCameraDirector({ controlsRef }: ManualCameraDirectorProps)
 
     const onStart = () => {
       usuarioInteractuandoRef.current = true;
+      transicionSaltoRef.current.activa = false;
       if (timeoutInteraccionRef.current) {
         clearTimeout(timeoutInteraccionRef.current);
       }
@@ -55,10 +69,10 @@ export function ManualCameraDirector({ controlsRef }: ManualCameraDirectorProps)
       if (timeoutInteraccionRef.current) {
         clearTimeout(timeoutInteraccionRef.current);
       }
-      // Reanudar la interpolación suave 1.2 segundos después de soltar el mouse
+      // Cuando el usuario suelta el mouse, no bloqueamos la cámara: permanece libre
       timeoutInteraccionRef.current = setTimeout(() => {
         usuarioInteractuandoRef.current = false;
-      }, 1200);
+      }, 300);
     };
 
     controls.addEventListener("start", onStart);
@@ -81,10 +95,23 @@ export function ManualCameraDirector({ controlsRef }: ManualCameraDirectorProps)
       return { pos, target, fov };
     };
 
+    // Exponer función para saltar con animación suave hacia un keyframe
+    (window as any).__saltarAKeyframeCamara3BF = (
+      pos: [number, number, number],
+      target: [number, number, number]
+    ) => {
+      transicionSaltoRef.current.posDestino.set(pos[0], pos[1], pos[2]);
+      transicionSaltoRef.current.targetDestino.set(target[0], target[1], target[2]);
+      transicionSaltoRef.current.tiempoRestante = 0.6; // 600ms de transición fluida
+      transicionSaltoRef.current.activa = true;
+      usuarioInteractuandoRef.current = false;
+    };
+
     return () => {
       controls.removeEventListener("start", onStart);
       controls.removeEventListener("end", onEnd);
       delete (window as any).__obtenerPoseCamara3BF;
+      delete (window as any).__saltarAKeyframeCamara3BF;
       if (timeoutInteraccionRef.current) {
         clearTimeout(timeoutInteraccionRef.current);
       }
@@ -95,6 +122,7 @@ export function ManualCameraDirector({ controlsRef }: ManualCameraDirectorProps)
   useEffect(() => {
     if (isTimelinePlaying) {
       usuarioInteractuandoRef.current = false;
+      transicionSaltoRef.current.activa = false;
       if (timeoutInteraccionRef.current) {
         clearTimeout(timeoutInteraccionRef.current);
       }
@@ -105,14 +133,44 @@ export function ManualCameraDirector({ controlsRef }: ManualCameraDirectorProps)
   useFrame((_, delta) => {
     if (pestanaActiva !== "manual" || !pasoActivo) return;
     if (!camaraActiva || keyframes.length === 0) return;
-    if (usuarioInteractuandoRef.current) return;
 
     const controls = controlsRef.current;
     if (!controls) return;
 
+    // A. Manejo de transición suave hacia un keyframe seleccionado (cuando el usuario hace clic)
+    if (transicionSaltoRef.current.activa) {
+      if (usuarioInteractuandoRef.current) {
+        transicionSaltoRef.current.activa = false;
+        return;
+      }
+
+      transicionSaltoRef.current.tiempoRestante -= delta;
+      const factorLerp = Math.min(1.0, delta * 8.0);
+      camera.position.lerp(transicionSaltoRef.current.posDestino, factorLerp);
+      controls.target.lerp(transicionSaltoRef.current.targetDestino, factorLerp);
+      controls.update();
+
+      if (transicionSaltoRef.current.tiempoRestante <= 0) {
+        transicionSaltoRef.current.activa = false;
+      }
+      return;
+    }
+
+    // B. MODO LIBRE CUANDO ESTÁ PAUSADO:
+    // Si la línea de tiempo NO se está reproduciendo, la cámara permanece 100% libre para que el usuario
+    // pueda orbitar, hacer zoom, encuadrar y fijar nuevos ángulos sin fuerzas de atracción invasivas.
+    // Solo cuando isTimelinePlaying es true o se está reproduciendo la cinemática, se interpola automáticamente.
+    const isScrubbing = (window as any).__isTimelineScrubbing === true;
+    if (!isTimelinePlaying && !isScrubbing) {
+      return;
+    }
+
+    // Si el usuario está tocando los controles manualmente en plena reproducción, respetamos su mano
+    if (usuarioInteractuandoRef.current) return;
+
     const t = Math.max(0, timelineCurrentTime);
 
-    // Caso A: Solo 1 keyframe definido -> la cámara se alinea suavemente con ese único ángulo
+    // Caso 1: Solo 1 keyframe definido -> la cámara se alinea suavemente con ese único ángulo
     if (keyframes.length === 1) {
       const kf = keyframes[0];
       tempPos.current.set(kf.posicion[0], kf.posicion[1], kf.posicion[2]);
@@ -125,7 +183,7 @@ export function ManualCameraDirector({ controlsRef }: ManualCameraDirectorProps)
       return;
     }
 
-    // Caso B: Múltiples keyframes ordenados cronológicamente
+    // Caso 2: Múltiples keyframes ordenados cronológicamente
     // Si estamos antes o en el primer keyframe
     if (t <= keyframes[0].tiempo) {
       const kf = keyframes[0];

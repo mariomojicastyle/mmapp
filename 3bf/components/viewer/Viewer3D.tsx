@@ -53,7 +53,7 @@ import { OrbitControls, Grid, Stage, Edges, Line, Html } from "@react-three/drei
 import { use3BFStore, ObjetoInstancia3BF, MaterialPBRDef, DEFAULT_HDRI_CONFIG } from "@/lib/store";
 import * as THREE from "three";
 import * as BufferGeometryUtils from "three/examples/jsm/utils/BufferGeometryUtils.js";
-import { Download, Upload, FileDown, Save, Zap, Trash2, CheckCircle2, AlertCircle, AlertTriangle, X, Loader2, Sun, Lamp, Sparkles, Smartphone, Square, Eye, EyeOff, Pipette, Check, Boxes, RefreshCw, Camera } from "lucide-react";
+import { Download, Save, Zap, Trash2, CheckCircle2, AlertCircle, AlertTriangle, X, Loader2, Sun, Lamp, Sparkles, Smartphone, Square, Eye, EyeOff, Pipette, Check, Boxes, RefreshCw, Camera, RotateCw } from "lucide-react";
 import NPanel from "./NPanel";
 import { GHXAutoWatcher } from "./GHXAutoWatcher";
 import SceneEnvironment from "./SceneEnvironment";
@@ -63,6 +63,7 @@ import ARViewerModal from "./ARViewerModal";
 import ViewInArIcon from "@/components/icons/ViewInArIcon";
 import { useGLBExport } from "./useGLBExport";
 import TimelineScrubber from "@/components/manual/TimelineScrubber";
+import BlenderTimeline from "@/components/manual/BlenderTimeline";
 import { AssemblyPiecePositioner } from "./AssemblyPiecePositioner";
 import { compilarAnimacionPaso, KinematicEngineResult } from "@/lib/manualAnimationEngine";
 import { getSafeRestPosition, getSafeRestQuaternion } from "@/lib/engine/cadStateUtils";
@@ -72,7 +73,7 @@ import SubbloquesTooltipsBillboard from "./SubbloquesTooltipsBillboard";
 import BoardMesh, { useMaterialPBRMaps } from "./BoardMesh";
 import SingleFurnitureInstanceMesh from "./SingleFurnitureInstanceMesh";
 import { SnapPointMarkers, GuidelineAxes, TransformSnappingController, getFurnitureGroupBoardBox } from "./SnapSystemOverlay";
-import { BlenderNavigationController, CameraRefBridge, ThumbnailCapturer, CameraViewController } from "./CameraControllers";
+import { BlenderNavigationController, CameraRefBridge, ThumbnailCapturer, CameraViewController, CameraPersistenceController } from "./CameraControllers";
 import { AutoFramingCameraController } from "./AutoFramingCameraController";
 import { ManualCameraDirector } from "./ManualCameraDirector";
 import DfMAShieldAlert from "./DfMAShieldAlert";
@@ -500,7 +501,11 @@ function SelectionController() {
           if (currentHover !== null) {
             setObjetoSeleccionado(true);
           } else {
-            seleccionarInstancia(null);
+            if (Object.keys(state.instancias || {}).length <= 1) {
+              // Mantener la instancia activa seleccionada
+            } else {
+              seleccionarInstancia(null);
+            }
           }
         }
       } else if (e.button === 0) {
@@ -514,7 +519,11 @@ function SelectionController() {
             if (currentHover !== null) {
               setObjetoSeleccionado(true);
             } else {
-              seleccionarInstancia(null);
+              if (Object.keys(state.instancias || {}).length <= 1) {
+                // Mantener la instancia activa seleccionada
+              } else {
+                seleccionarInstancia(null);
+              }
             }
           }
         } else if (modoTransformacion === "grab") {
@@ -550,7 +559,11 @@ function SelectionController() {
         if (currentHover !== null) {
           setObjetoSeleccionado(true);
         } else {
-          seleccionarInstancia(null);
+          if (Object.keys(state.instancias || {}).length <= 1) {
+            // Mantener la instancia activa seleccionada
+          } else {
+            seleccionarInstancia(null);
+          }
         }
       }
     };
@@ -748,6 +761,7 @@ export default function Viewer3D() {
   const cameraRef = useRef<THREE.Camera | null>(null);
   const {
     tema,
+    esquemaColor,
     pestanaActiva,
     resultado,
     modoVisual,
@@ -761,6 +775,7 @@ export default function Viewer3D() {
     setPestanaNPanel,
     setModalGuardarComoAbierto,
     muebleActivoGuardado,
+    camaraEscena,
     instancias,
     objetoActivoId,
     seleccionarInstancia,
@@ -796,6 +811,8 @@ export default function Viewer3D() {
     toggleMarcoEncuadre,
     simuladorMovilActivo,
     toggleSimuladorMovil,
+    simuladorMovilOrientacion,
+    toggleSimuladorMovilOrientacion,
     modoPickingManual,
     limpiarPickingManual,
     confirmarPickingManual,
@@ -808,71 +825,84 @@ export default function Viewer3D() {
     manualActivoGuardado,
     timelineCurrentTime,
     forzarRecargaDesdeGHX,
-    cargarCacheDesdeArchivo,
-    exportarCacheAArchivo,
   } = use3BFStore();
-
-  const cacheFileInputRef = React.useRef<HTMLInputElement | null>(null);
-  const [cargandoCacheArchivo, setCargandoCacheArchivo] = React.useState(false);
-
-  const handleCargarCacheArchivo = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    setCargandoCacheArchivo(true);
-    try {
-      const ok = await cargarCacheDesdeArchivo(file);
-      if (ok) {
-        console.log(`[3BF Cache] Archivo '${file.name}' cargado con éxito en 3D`);
-      } else {
-        alert("El archivo seleccionado no contiene una estructura de geometría válida de 3dBimFab.");
-      }
-    } catch (err) {
-      console.error("Error al cargar archivo de caché:", err);
-    } finally {
-      setCargandoCacheArchivo(false);
-      if (e.target) e.target.value = "";
-    }
-  };
 
   const pasoActivoManual = React.useMemo(() => {
     return pasosManual.find((p) => p.id === pasoActivoManualId);
   }, [pasosManual, pasoActivoManualId]);
 
   const [guardadoManualReciente, setGuardadoManualReciente] = React.useState(false);
+  const [guardadoMuebleReciente, setGuardadoMuebleReciente] = React.useState(false);
   const [recargandoGHX, setRecargandoGHX] = React.useState(false);
 
-  const estaSincronizando = Boolean(cargando || (objetoActivoId && instancias[objetoActivoId]?.cargando) || recargandoGHX);
+  const prevGuardandoMueble = React.useRef(guardandoMueble);
+  React.useEffect(() => {
+    if (prevGuardandoMueble.current && !guardandoMueble) {
+      setGuardadoMuebleReciente(true);
+      const timer = setTimeout(() => setGuardadoMuebleReciente(false), 2400);
+      return () => clearTimeout(timer);
+    }
+    prevGuardandoMueble.current = guardandoMueble;
+  }, [guardandoMueble]);
 
-  // ⚡ Progreso proporcional dinámico para la barra de carga (verde sobre gris)
+  const prevGuardandoManual = React.useRef(guardandoManual);
+  React.useEffect(() => {
+    if (prevGuardandoManual.current && !guardandoManual) {
+      setGuardadoManualReciente(true);
+      const timer = setTimeout(() => setGuardadoManualReciente(false), 2400);
+      return () => clearTimeout(timer);
+    }
+    prevGuardandoManual.current = guardandoManual;
+  }, [guardandoManual]);
+
+  const estaGuardando = Boolean(guardandoMueble || guardandoManual);
+  const estaSincronizando = Boolean(cargando || (objetoActivoId && instancias[objetoActivoId]?.cargando) || recargandoGHX || estaGuardando);
+  const parametrosActivos = (objetoActivoId && instancias[objetoActivoId]?.parametros) || parametros;
+  const paramSignature = React.useMemo(() => {
+    if (!parametrosActivos) return "";
+    return `${parametrosActivos.ancho ?? ""}_${parametrosActivos.alto ?? ""}_${parametrosActivos.profundidad ?? ""}_${parametrosActivos.model_id ?? ""}_${JSON.stringify(parametrosActivos)}_${estaGuardando ? "guardando" : "idle"}`;
+  }, [parametrosActivos, estaGuardando]);
+
+  // ⚡ Progreso proporcional dinámico para la barra de carga (Tema Light: #0088AA / Tema Dark: #1368AA)
   const [progresoSincronizacion, setProgresoSincronizacion] = React.useState(0);
   const [mostrarBarraProgreso, setMostrarBarraProgreso] = React.useState(false);
+  const startTimeRef = React.useRef<number>(Date.now());
+  const prevSignatureRef = React.useRef<string>(paramSignature);
 
   React.useEffect(() => {
     let intervalId: any = null;
     let timeoutId: any = null;
 
+    const parametrosCambiaron = paramSignature !== prevSignatureRef.current;
+    prevSignatureRef.current = paramSignature;
+
     if (estaSincronizando) {
       setMostrarBarraProgreso(true);
-      setProgresoSincronizacion(8); // Inicio visible inmediato
 
-      const startTime = Date.now();
-      // Curva asintótica que modela el cómputo de Grasshopper hacia un 94% máximo
+      // Si se modificó otra dimensión durante el cómputo (o arranca una nueva sincronización), resetear barra a 8% y reiniciar cronómetro
+      if (parametrosCambiaron || progresoSincronizacion === 0 || progresoSincronizacion === 100) {
+        setProgresoSincronizacion(estaGuardando ? 15 : 8);
+        startTimeRef.current = Date.now();
+      }
+
+      // Curva asintótica que modela el cómputo o guardado hacia un 94% máximo
       intervalId = setInterval(() => {
-        const elapsed = (Date.now() - startTime) / 1000;
+        const elapsed = (Date.now() - startTimeRef.current) / 1000;
+        const rate = estaGuardando ? 1.8 : 8.0;
         setProgresoSincronizacion((prev) => {
           if (prev >= 94) return 94;
-          const target = Math.min(94, 8 + 86 * (1 - Math.exp(-elapsed / 8.0)));
+          const target = Math.min(94, (estaGuardando ? 15 : 8) + (estaGuardando ? 79 : 86) * (1 - Math.exp(-elapsed / rate)));
           return Math.max(prev, Math.round(target));
         });
-      }, 100);
+      }, 80);
     } else {
       if (mostrarBarraProgreso) {
-        // Al terminar el cómputo, saltar a 100% y dar feedback de éxito antes de desvanecer
+        // Al terminar el cómputo o guardado, saltar a 100% y dar feedback de éxito antes de desvanecer
         setProgresoSincronizacion(100);
         timeoutId = setTimeout(() => {
           setMostrarBarraProgreso(false);
           setProgresoSincronizacion(0);
-        }, 650);
+        }, 550);
       }
     }
 
@@ -880,7 +910,7 @@ export default function Viewer3D() {
       if (intervalId) clearInterval(intervalId);
       if (timeoutId) clearTimeout(timeoutId);
     };
-  }, [estaSincronizando, mostrarBarraProgreso]);
+  }, [estaSincronizando, paramSignature]);
 
   const [furnitureGroup, setFurnitureGroup] = React.useState<THREE.Group | null>(null);
   const {
@@ -1138,6 +1168,8 @@ export default function Viewer3D() {
     }
   };
 
+  const camaraInicial = muebleActivoGuardado?.camara || camaraEscena;
+
   return (
     <div 
       ref={containerRef}
@@ -1180,15 +1212,29 @@ export default function Viewer3D() {
     >
       {(pestanaActiva === "3d" || pestanaActiva === "manual") && <NPanel />}
 
-      {/* ⚡ Barra de Carga Superior Horizontal durante Cómputo/Sincronización (Verde esmeralda sobre gris) */}
-      {mostrarBarraProgreso && (
-        <div className="absolute top-0 left-0 right-0 h-1.5 z-30 overflow-hidden bg-slate-300 dark:bg-slate-700/80 pointer-events-none">
-          <div 
-            className="h-full bg-gradient-to-r from-emerald-500 via-green-400 to-emerald-500 transition-all duration-150 ease-out shadow-[0_0_8px_rgba(16,185,129,0.8)] rounded-r-full"
-            style={{ width: `${Math.min(100, Math.max(3, progresoSincronizacion))}%` }}
-          />
-        </div>
-      )}
+      {/* ⚡ Barra de Carga Superior Horizontal durante Cómputo/Sincronización (Tema Light: #0088AA / Tema Dark: #1368AA) */}
+      {mostrarBarraProgreso && (() => {
+        const esDark = esquemaColor === "oscuro" || tema === "obsidian";
+        const colorBarraProgreso = esDark
+          ? (coloresApariencia?.botonActivo || "#1368AA")
+          : (coloresApariencia?.botonActivo || "#0088AA");
+
+        return (
+          <div className="absolute top-0 left-0 right-0 h-1 z-30 overflow-hidden bg-slate-200/80 dark:bg-slate-800/80 pointer-events-none">
+            <div 
+              className={`h-full transition-all duration-150 ease-out rounded-r-full ${
+                esDark 
+                  ? "shadow-sm shadow-[#1368AA]/40" 
+                  : "shadow-[0_0_8px_rgba(0,136,170,0.45)]"
+              }`}
+              style={{ 
+                backgroundColor: colorBarraProgreso,
+                width: `${Math.min(100, Math.max(3, progresoSincronizacion))}%` 
+              }}
+            />
+          </div>
+        );
+      })()}
 
       {/* Indicador visual de Zona de Suelta (Drop Zone) */}
       {isDraggingOver && (
@@ -1239,33 +1285,52 @@ export default function Viewer3D() {
         </div>
       )}
 
-      {/* 📱 OVERLAY SIMULADOR DE CELULAR (SAFE FRAME VERTICAL 9:16) */}
-      {simuladorMovilActivo && (
-        <div className="absolute inset-0 z-10 pointer-events-none flex items-center justify-center overflow-hidden">
-          {/* Marco Vertical 9:16 con sombreado Passepartout exterior y esquinas seguras */}
-          <div 
-            className="relative aspect-[9/16] max-h-[90vh] h-[86vh] w-auto border-2 rounded-3xl shadow-[0_0_0_9999px_rgba(11,15,23,0.65)] flex items-center justify-center transition-all"
-            style={{
-              borderColor: coloresApariencia?.botonActivo || "#1368AA",
-            }}
-          >
-            {/* Altavoz superior de smartphone simulado */}
-            <div className="absolute top-2 w-12 h-1 bg-slate-400/40 rounded-full" />
+      {/* 📱 OVERLAY SIMULADOR DE CELULAR (SAFE FRAME VERTICAL 9:16 / HORIZONTAL 16:9) */}
+      {simuladorMovilActivo && (() => {
+        const esHorizontal = simuladorMovilOrientacion === "horizontal";
+        return (
+          <div className="absolute inset-0 z-10 pointer-events-none flex items-center justify-center overflow-hidden pb-[180px]">
+            {/* Marco del celular con sombreado Passepartout exterior y esquinas seguras */}
+            <div 
+              className={`relative border-2 rounded-3xl shadow-[0_0_0_9999px_rgba(11,15,23,0.65)] flex items-center justify-center transition-all duration-300 ease-out ${
+                esHorizontal
+                  ? "aspect-[16/9] max-w-[78vw] w-[74vw] max-h-[58vh] h-auto"
+                  : "aspect-[9/16] max-h-[64vh] h-[60vh] w-auto"
+              }`}
+              style={{
+                borderColor: coloresApariencia?.botonActivo || "#1368AA",
+              }}
+            >
+              {/* Altavoz superior/lateral de smartphone simulado */}
+              {esHorizontal ? (
+                <div className="absolute left-2 top-1/2 -translate-y-1/2 w-1 h-12 bg-slate-400/40 rounded-full" />
+              ) : (
+                <div className="absolute top-2 left-1/2 -translate-x-1/2 w-12 h-1 bg-slate-400/40 rounded-full" />
+              )}
 
-            {/* Esquinas de encuadre seguras (Safe Frame Guides) */}
-            <div className="absolute top-4 left-4 w-4 h-4 border-t-2 border-l-2 border-cyan-400/80 rounded-tl-sm" />
-            <div className="absolute top-4 right-4 w-4 h-4 border-t-2 border-r-2 border-cyan-400/80 rounded-tr-sm" />
-            <div className="absolute bottom-4 left-4 w-4 h-4 border-b-2 border-l-2 border-cyan-400/80 rounded-bl-sm" />
-            <div className="absolute bottom-4 right-4 w-4 h-4 border-b-2 border-r-2 border-cyan-400/80 rounded-br-sm" />
+              {/* Esquinas de encuadre seguras (Safe Frame Guides) */}
+              <div className="absolute top-4 left-4 w-4 h-4 border-t-2 border-l-2 border-cyan-400/80 rounded-tl-sm" />
+              <div className="absolute top-4 right-4 w-4 h-4 border-t-2 border-r-2 border-cyan-400/80 rounded-tr-sm" />
+              <div className="absolute bottom-4 left-4 w-4 h-4 border-b-2 border-l-2 border-cyan-400/80 rounded-bl-sm" />
+              <div className="absolute bottom-4 right-4 w-4 h-4 border-b-2 border-r-2 border-cyan-400/80 rounded-br-sm" />
 
-            {/* Badge indicador discreto */}
-            <div className="absolute top-5 left-1/2 -translate-x-1/2 px-2.5 py-0.5 rounded-full bg-slate-950/85 text-cyan-400 border border-cyan-500/40 text-[9px] font-mono tracking-wider font-bold uppercase backdrop-blur-xs shadow-xs flex items-center gap-1.5">
-              <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-pulse" />
-              <span>9:16 Mobile Safe View</span>
+              {/* Badge indicador interactivo y botón para girar la orientación */}
+              <div className="absolute top-4 left-1/2 -translate-x-1/2 flex items-center gap-1.5 pointer-events-auto">
+                <button
+                  type="button"
+                  onClick={() => toggleSimuladorMovilOrientacion()}
+                  title={esHorizontal ? "Cambiar a orientación vertical (9:16)" : "Cambiar a orientación horizontal (16:9)"}
+                  className="px-3 py-1 rounded-full bg-slate-950/85 hover:bg-slate-900 text-cyan-400 hover:text-cyan-300 border border-cyan-500/40 text-[9px] font-mono tracking-wider font-bold uppercase backdrop-blur-xs shadow-md flex items-center gap-2 cursor-pointer transition-all active:scale-95"
+                >
+                  <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-pulse" />
+                  <span>{esHorizontal ? "16:9 Mobile Safe View" : "9:16 Mobile Safe View"}</span>
+                  <RotateCw className="w-3 h-3 text-cyan-400 ml-0.5 hover:rotate-90 transition-transform duration-200" />
+                </button>
+              </div>
             </div>
           </div>
-        </div>
-      )}
+        );
+      })()}
 
       {/* 📦 OVERLAY MACRO DE BLOQUE ESTÁNDAR (Modo Manual 3D) */}
       {pestanaActiva === "manual" && pasoActivoManual?.tipo === "bloque_estandar" && (
@@ -1360,9 +1425,9 @@ export default function Viewer3D() {
 
       {/* 🧭 HUD SUPERIOR IZQUIERDO: JERARQUÍA BOTONES + (N) COMPONENTES + LISTA DE PIEZAS (Visor 3D y Manual 3D) */}
       {(pestanaActiva === "3d" || pestanaActiva === "manual") && (
-        <div className="absolute top-3.5 left-4 z-20 flex flex-col items-start gap-1 select-none pointer-events-auto max-w-[calc(100vw-32px)] lg:max-w-[260px]">
-          {/* Nivel 1: Barra de Acciones Superior (Guardar + Perforar + Luz + Marco 1:1) */}
-          <div className="flex items-center gap-1.5 flex-wrap">
+        <div className="absolute top-3.5 left-4 z-20 flex flex-col items-start gap-1 select-none pointer-events-auto">
+          {/* Nivel 1: Barra de Acciones Superior (Guardar + Perforar + Actualizar GHX + Luces + Marco 1:1 + Simulador Móvil) */}
+          <div className="flex items-center gap-1.5 flex-nowrap">
           {/* Botón Guardar (Guardar nuevo o Guardar Cambios en caliente / Guardar .3bm en modo manual sin preguntas) */}
           <button
             onClick={async () => {
@@ -1415,10 +1480,20 @@ export default function Viewer3D() {
                   <span>Guardar Manual</span>
                 </>
               )
+            ) : guardandoMueble ? (
+              <>
+                <Loader2 className="w-3.5 lg:w-3.5 h-3.5 lg:h-3.5 text-white animate-spin" />
+                <span>Guardando...</span>
+              </>
+            ) : guardadoMuebleReciente ? (
+              <>
+                <Check className="w-3.5 lg:w-3.5 h-3.5 lg:h-3.5 text-white" />
+                <span>¡Guardado!</span>
+              </>
             ) : (
               <>
-                <Save className={`w-3.5 lg:w-3.5 h-3.5 lg:h-3.5 text-white ${guardandoMueble ? "animate-spin" : ""}`} />
-                <span>{guardandoMueble ? "Guardando..." : "Guardar"}</span>
+                <Save className="w-3.5 lg:w-3.5 h-3.5 lg:h-3.5 text-white" />
+                <span>Guardar</span>
               </>
             )}
           </button>
@@ -1485,43 +1560,7 @@ export default function Viewer3D() {
             </button>
           )}
 
-          {/* Input oculto para cargar caché desde archivo local */}
-          <input 
-            type="file" 
-            ref={cacheFileInputRef} 
-            onChange={handleCargarCacheArchivo} 
-            accept=".json" 
-            className="hidden" 
-          />
 
-          {/* ⚡ Botón Cargar Caché desde Archivo JSON (Cápsula pura rounded-full) */}
-          <button
-            onClick={() => cacheFileInputRef.current?.click()}
-            disabled={cargandoCacheArchivo}
-            title="Cargar Caché 3D desde archivo JSON (.json) - Apertura instantánea (0 ms)"
-            style={{
-              backgroundColor: coloresApariencia?.botonActivo || "#0891b2",
-              borderColor: coloresApariencia?.colorMarca || "#0891b2",
-            }}
-            className="px-2.5 lg:px-3 h-8 lg:h-7 rounded-full text-white shadow-md border flex items-center gap-1 text-[11px] lg:text-xs font-bold leading-none hover:opacity-90 active:scale-95 transition-all cursor-pointer disabled:opacity-50 box-border shrink-0"
-          >
-            <Upload className={`w-3.5 h-3.5 ${cargandoCacheArchivo ? "animate-pulse" : ""}`} />
-            <span className="hidden sm:inline">Caché</span>
-          </button>
-
-          {/* ⚡ Botón Exportar Caché a Archivo JSON (Circular rounded-full) */}
-          <button
-            onClick={() => exportarCacheAArchivo()}
-            title="Descargar cálculo 3D actual como archivo de caché (.json)"
-            style={{
-              backgroundColor: coloresApariencia?.fondoPaneles || "#FFFFFF",
-              borderColor: coloresApariencia?.bordePaneles || "#CBD5E1",
-              color: coloresApariencia?.textoPrincipal || "#0F172A",
-            }}
-            className="w-8 lg:w-7 h-8 lg:h-7 rounded-full shadow-md border flex items-center justify-center hover:bg-slate-50 dark:hover:bg-slate-800 active:scale-95 transition-all cursor-pointer box-border shrink-0"
-          >
-            <FileDown className="w-3.5 h-3.5 opacity-80" />
-          </button>
 
           {/* 💡 Botón Toggle de Luces de Estudio 3D (Circular, fondo cian, ícono blanco) */}
           <button
@@ -1555,10 +1594,10 @@ export default function Viewer3D() {
             />
           </button>
 
-          {/* 📱 Botón Toggle de Simulador Móvil 9:16 (Safe Frame Celular) */}
+          {/* 📱 Botón Toggle de Simulador Móvil (Safe Frame Celular) */}
           <button
             onClick={() => toggleSimuladorMovil()}
-            title={simuladorMovilActivo ? "Ocultar simulador de celular 9:16" : "Activar simulador de celular 9:16 (Safe Frame vertical para pantalla móvil)"}
+            title={simuladorMovilActivo ? "Ocultar simulador de celular" : "Activar simulador de celular (Safe Frame móvil)"}
             style={{
               backgroundColor: coloresApariencia?.botonActivo || "#1368AA",
               borderColor: coloresApariencia?.colorMarca || "#1368AA",
@@ -1567,9 +1606,27 @@ export default function Viewer3D() {
           >
             <Smartphone 
               strokeWidth={1.75}
-              className={`w-3.5 lg:w-3.5 h-3.5 lg:h-3.5 text-white shrink-0 ${simuladorMovilActivo ? "opacity-100 fill-white/25" : "opacity-90"}`} 
+              className={`w-3.5 lg:w-3.5 h-3.5 lg:h-3.5 text-white shrink-0 transition-transform duration-300 ${simuladorMovilOrientacion === "horizontal" ? "-rotate-90" : "rotate-0"} ${simuladorMovilActivo ? "opacity-100 fill-white/25" : "opacity-90"}`} 
             />
           </button>
+
+          {/* 🔄 Botón Girar Orientación del Celular (Vertical 9:16 / Horizontal 16:9) */}
+          {simuladorMovilActivo && (
+            <button
+              onClick={() => toggleSimuladorMovilOrientacion()}
+              title={simuladorMovilOrientacion === "vertical" ? "Girar a pantalla horizontal (16:9)" : "Girar a pantalla vertical (9:16)"}
+              style={{
+                backgroundColor: coloresApariencia?.botonActivo || "#1368AA",
+                borderColor: coloresApariencia?.colorMarca || "#1368AA",
+              }}
+              className="w-8 lg:w-7 h-8 lg:h-7 rounded-full text-white shadow-md border flex items-center justify-center hover:opacity-90 active:scale-95 transition-all cursor-pointer box-border shrink-0"
+            >
+              <RotateCw 
+                strokeWidth={1.85}
+                className="w-3.5 lg:w-3.5 h-3.5 lg:h-3.5 text-white shrink-0 hover:rotate-90 transition-transform duration-200" 
+              />
+            </button>
+          )}
         </div>
 
         {/* Nivel 2: Contador de Componentes (N) y Listado Jerárquico */}
@@ -1722,7 +1779,12 @@ export default function Viewer3D() {
       />
 
       <Canvas
-        camera={{ position: [0.6, 0.9, 1.1], fov: 45, near: 0.005, far: 100 }}
+        camera={{
+          position: (camaraInicial && Array.isArray(camaraInicial.position)) ? camaraInicial.position : [0.9, 1.1, 1.4],
+          fov: camaraInicial?.fov || 45,
+          near: 0.005,
+          far: 100,
+        }}
         shadows
         gl={{ preserveDrawingBuffer: true, antialias: true }}
         onPointerMissed={() => {
@@ -1785,6 +1847,7 @@ export default function Viewer3D() {
         )}
         <GroundInfiniteAxes />
         <CameraViewController furnitureGroup={furnitureGroup} controlsRef={controlsRef} />
+        <CameraPersistenceController controlsRef={controlsRef} />
         <AutoFramingCameraController controlsRef={controlsRef} />
         <ManualCameraDirector controlsRef={controlsRef} />
         <BlenderNavigationController controlsRef={controlsRef} />
@@ -1792,7 +1855,13 @@ export default function Viewer3D() {
           ref={controlsRef}
           makeDefault 
           enabled={modoTransformacion !== "grab" && !piezaEnPosicionamientoManual} 
-          target={pasoActivoManual?.tipo === "bloque_estandar" ? [0, 0.1, 0] : [0.25, 0, -0.24]} 
+          target={
+            pasoActivoManual?.tipo === "bloque_estandar" 
+              ? [0, 0.1, 0] 
+              : (camaraInicial && Array.isArray(camaraInicial.target)) 
+                ? camaraInicial.target 
+                : [0, 0.4, 0]
+          } 
           minDistance={calibracion.zoomMinimoMetros ?? 0.02} 
           maxDistance={calibracion.zoomMaximoMetros ?? 30} 
           enableDamping
@@ -1876,39 +1945,58 @@ export default function Viewer3D() {
           </div>
         )}
 
-        {/* ⚡ Barra de Carga & Testigo de Sincronización Proporcional en Verde */}
-        {mostrarBarraProgreso && (
-          <div className="flex flex-col gap-1.5 pointer-events-auto mb-1 bg-white/90 dark:bg-[#131B2E]/95 backdrop-blur-md p-2 px-3 rounded-2xl border border-emerald-500/30 dark:border-emerald-500/40 shadow-lg min-w-[190px] max-w-[230px] transition-all">
-            <div className="flex items-center justify-between gap-1.5 text-[9.5px] md:text-[10.5px] font-bold tracking-wide">
-              <div className="flex items-center gap-1.5 text-slate-800 dark:text-slate-200">
-                {progresoSincronizacion === 100 ? (
-                  <Check className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
-                ) : (
-                  <Loader2 className="w-3 h-3 text-emerald-500 animate-spin shrink-0" />
-                )}
-                <span>
-                  {progresoSincronizacion === 100
-                    ? "¡Completado!"
-                    : progresoSincronizacion < 25
-                    ? "Enviando datos..."
-                    : progresoSincronizacion < 80
-                    ? "Calculando Rhino..."
-                    : "Procesando mallas..."}
+        {/* ⚡ Barra de Carga & Testigo de Sincronización Proporcional (Tema Light: #0088AA / Tema Dark: #1368AA) */}
+        {mostrarBarraProgreso && (() => {
+          const esDark = esquemaColor === "oscuro" || tema === "obsidian";
+          const colorPrimario = esDark
+            ? (coloresApariencia?.botonActivo || "#1368AA")
+            : (coloresApariencia?.botonActivo || "#0088AA");
+
+          return (
+            <div 
+              style={{
+                borderColor: esDark ? "rgba(19, 104, 170, 0.4)" : "rgba(0, 136, 170, 0.35)",
+              }}
+              className="flex flex-col gap-1 pointer-events-auto mb-1 bg-white/95 dark:bg-[#131B2E]/95 backdrop-blur-md p-1.5 px-3.5 rounded-full border shadow-md min-w-[200px] max-w-[240px] transition-all"
+            >
+              <div className="flex items-center justify-between gap-1.5 text-[9.5px] md:text-[10px] font-bold tracking-wide">
+                <div className="flex items-center gap-1.5 text-slate-800 dark:text-slate-200">
+                  {progresoSincronizacion === 100 ? (
+                    <Check style={{ color: colorPrimario }} className="w-3.5 h-3.5 shrink-0" />
+                  ) : (
+                    <Loader2 style={{ color: colorPrimario }} className="w-3 h-3 animate-spin shrink-0" />
+                  )}
+                  <span className="truncate">
+                    {estaGuardando
+                      ? progresoSincronizacion === 100
+                        ? "¡Archivo guardado!"
+                        : "Guardando en Drive..."
+                      : progresoSincronizacion === 100
+                      ? "¡Completado!"
+                      : progresoSincronizacion < 25
+                      ? "Enviando datos..."
+                      : progresoSincronizacion < 80
+                      ? "Diseñando..."
+                      : "Procesando mallas..."}
+                  </span>
+                </div>
+                <span style={{ color: colorPrimario }} className="text-[10px] font-mono font-bold shrink-0">
+                  {Math.round(progresoSincronizacion)}%
                 </span>
               </div>
-              <span className="text-[10.5px] font-mono font-bold text-emerald-600 dark:text-emerald-400">
-                {Math.round(progresoSincronizacion)}%
-              </span>
+              {/* Pista gris con barra proporcional en cápsula rounded-full */}
+              <div className="w-full h-1.5 bg-slate-200 dark:bg-slate-700/80 rounded-full overflow-hidden relative">
+                <div 
+                  className="h-full rounded-full transition-all duration-150 ease-out"
+                  style={{ 
+                    backgroundColor: colorPrimario,
+                    width: `${Math.min(100, Math.max(4, progresoSincronizacion))}%` 
+                  }}
+                />
+              </div>
             </div>
-            {/* Pista gris (falta para llegar al 100%) con barra verde proporcional en cápsula rounded-full */}
-            <div className="w-full h-2 bg-slate-200 dark:bg-slate-700/80 rounded-full overflow-hidden relative">
-              <div 
-                className="h-full rounded-full bg-gradient-to-r from-emerald-500 to-green-400 transition-all duration-150 ease-out shadow-[0_0_6px_rgba(16,185,129,0.5)]"
-                style={{ width: `${Math.min(100, Math.max(4, progresoSincronizacion))}%` }}
-              />
-            </div>
-          </div>
-        )}
+          );
+        })()}
 
         {/* Texto limpio del testigo alineado a la izquierda con el botón Guardar */}
         <div className="flex items-center gap-1 md:gap-1.5 text-[9px] md:text-[11px] font-semibold tracking-wide pointer-events-auto">
@@ -1996,8 +2084,11 @@ export default function Viewer3D() {
       {/* ⚡ Observador Automático de Archivos GHX en Caliente (Auto Hot-Reload) */}
       <GHXAutoWatcher />
 
-      {/* 🎬 Barra Flotante de Reproducción y Scrubber para Modo Manual */}
-      {pestanaActiva === "manual" && <TimelineScrubber />}
+      {/* 🎬 Barra Flotante de Reproducción para Modo Manual (Normal) */}
+      {pestanaActiva === "manual" && !simuladorMovilActivo && <TimelineScrubber />}
+
+      {/* 🎞️ Consola Timeline y Dope Sheet Profesional estilo Blender para Modo Simulador Móvil / Director */}
+      {pestanaActiva === "manual" && simuladorMovilActivo && <BlenderTimeline />}
 
 
 

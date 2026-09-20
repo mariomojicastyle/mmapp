@@ -343,3 +343,112 @@ export function CameraViewController({
 
   return null;
 }
+
+/**
+ * 🎥 CameraPersistenceController
+ * 
+ * Gestiona la memoria fotográfica de la cámara 3D:
+ * 1. Restaura las coordenadas de posición y target guardadas en el mueble activo o en sesión local.
+ * 2. Escucha el final de cada órbita/paneo/zoom del usuario para persistir la posición en tiempo real.
+ * 3. Garantiza que cambiar entre pestañas o recargar mantenga la vista exacta elegida por el usuario.
+ */
+export function CameraPersistenceController({ controlsRef }: { controlsRef: React.MutableRefObject<any> }) {
+  const { camera } = useThree();
+  const setCamaraEscena = use3BFStore((s) => s.setCamaraEscena);
+  const muebleActivoGuardado = use3BFStore((s) => s.muebleActivoGuardado);
+  const camaraEscenaStore = use3BFStore((s) => s.camaraEscena);
+  const muebleId = muebleActivoGuardado?.id;
+  const ultimoMuebleRestauradoRef = useRef<string | null>(null);
+
+  // 1. Restaurar cámara cuando se abre o cambia el mueble activo
+  useEffect(() => {
+    if (!controlsRef.current || !camera || !muebleId) return;
+
+    if (ultimoMuebleRestauradoRef.current !== muebleId) {
+      ultimoMuebleRestauradoRef.current = muebleId;
+
+      // A) Buscar en mueble guardado (.3bf.json)
+      const camaraItem = muebleActivoGuardado?.camara || camaraEscenaStore;
+      if (camaraItem && Array.isArray(camaraItem.position) && Array.isArray(camaraItem.target)) {
+        camera.position.set(camaraItem.position[0], camaraItem.position[1], camaraItem.position[2]);
+        controlsRef.current.target.set(camaraItem.target[0], camaraItem.target[1], camaraItem.target[2]);
+        camera.lookAt(camaraItem.target[0], camaraItem.target[1], camaraItem.target[2]);
+        if (camaraItem.fov && "fov" in camera) {
+          (camera as THREE.PerspectiveCamera).fov = camaraItem.fov;
+          (camera as THREE.PerspectiveCamera).updateProjectionMatrix();
+        }
+        controlsRef.current.update();
+        return;
+      }
+
+      // B) Buscar en caché local de sesión de este mueble
+      if (typeof window !== "undefined") {
+        try {
+          const cached = localStorage.getItem(`3bf_camara_${muebleId}`);
+          if (cached) {
+            const parsed = JSON.parse(cached);
+            if (Array.isArray(parsed?.position) && Array.isArray(parsed?.target)) {
+              camera.position.set(parsed.position[0], parsed.position[1], parsed.position[2]);
+              controlsRef.current.target.set(parsed.target[0], parsed.target[1], parsed.target[2]);
+              camera.lookAt(parsed.target[0], parsed.target[1], parsed.target[2]);
+              controlsRef.current.update();
+              return;
+            }
+          }
+        } catch (_) {}
+      }
+    }
+  }, [muebleId, muebleActivoGuardado?.camara, camaraEscenaStore, camera, controlsRef]);
+
+  // 2. Escuchar cuando el usuario termina de orbitar, panear o hacer zoom
+  useEffect(() => {
+    const controls = controlsRef.current;
+    if (!controls) return;
+
+    let debounceTimer: NodeJS.Timeout | null = null;
+
+    const alTerminarMovimiento = () => {
+      if (debounceTimer) clearTimeout(debounceTimer);
+      debounceTimer = setTimeout(() => {
+        if (!camera || !controls) return;
+
+        const pos = camera.position;
+        const tgt = controls.target;
+
+        const camPayload = {
+          position: [
+            Number(pos.x.toFixed(4)),
+            Number(pos.y.toFixed(4)),
+            Number(pos.z.toFixed(4)),
+          ] as [number, number, number],
+          target: [
+            Number(tgt.x.toFixed(4)),
+            Number(tgt.y.toFixed(4)),
+            Number(tgt.z.toFixed(4)),
+          ] as [number, number, number],
+          fov: (camera as THREE.PerspectiveCamera).fov || 45,
+        };
+
+        setCamaraEscena(camPayload);
+
+        // Guardar en sesión de navegador para persistencia ultrarrápida entre recargas
+        const currentMuebleId = use3BFStore.getState().muebleActivoGuardado?.id;
+        if (currentMuebleId && typeof window !== "undefined") {
+          try {
+            localStorage.setItem(`3bf_camara_${currentMuebleId}`, JSON.stringify(camPayload));
+            localStorage.setItem(`3bf_camara_ultima_global`, JSON.stringify(camPayload));
+          } catch (_) {}
+        }
+      }, 100);
+    };
+
+    controls.addEventListener("end", alTerminarMovimiento);
+
+    return () => {
+      controls.removeEventListener("end", alTerminarMovimiento);
+      if (debounceTimer) clearTimeout(debounceTimer);
+    };
+  }, [controlsRef, camera, setCamaraEscena]);
+
+  return null;
+}

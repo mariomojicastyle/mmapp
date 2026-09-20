@@ -6,9 +6,12 @@ import {
   PRESET_COLORES_CLARO,
   PRESET_COLORES_OSCURO,
   purgarResultadoGeometria,
+  sanitizarMuebleParaDisco,
   guardarPasosEnCacheLocal,
   generarPasosManualesPorDefecto,
+  sanitizarPasosManuales,
 } from "../storeDefaults";
+import { saveDisenosToIndexedDB } from "../disenosStorage";
 import type {
   FichaProductoDef,
   RecetaColorMueble,
@@ -850,7 +853,8 @@ export const createCatalogSlice = (set: any, get: any): any => ({
                 (m) => m.id === ultimoId
               );
               if (targetMueble) {
-                set({ muebleActivoGuardado: targetMueble });
+                // Hidratar mueble completo con geometrías 3D y diseños bajo demanda
+                get().abrirMueble(targetMueble);
               }
             }
           }
@@ -930,16 +934,31 @@ export const createCatalogSlice = (set: any, get: any): any => ({
         titulo: datos.nombre,
         descripcionCorta: datos.descripcion || fichaActual.descripcionCorta,
       };
-
+      // Sanitizar instancias y consolidar colecciones de diseños
       const rawInst = state.instancias || {};
+      const targetInstId = state.objetoActivoId || Object.keys(rawInst)[0];
+      const instPrincipal = targetInstId ? rawInst[targetInstId] : Object.values(rawInst)[0];
+      
+      const disenosDesdeInst = (instPrincipal && Array.isArray(instPrincipal.disenos)) ? instPrincipal.disenos : [];
+      const disenosDesdeMueble = Array.isArray(state.muebleActivoGuardado?.disenos) ? state.muebleActivoGuardado!.disenos! : [];
+      const mapaDisenos = new Map<string, DisenoEncapsulado3BF>();
+      disenosDesdeMueble.forEach((d) => mapaDisenos.set(d.id, d));
+      disenosDesdeInst.forEach((d) => mapaDisenos.set(d.id, d));
+      const disenosVivos: DisenoEncapsulado3BF[] = Array.from(mapaDisenos.values());
+
+      const disenoActivoVivo = (instPrincipal && instPrincipal.disenoActivoId) || state.muebleActivoGuardado?.disenoActivoId || null;
+
       const sanitizedInst: Record<string, ObjetoInstancia3BF> = {};
       for (const [k, v] of Object.entries(rawInst)) {
+        const disenosInst = (v.disenos && v.disenos.length > 0) ? v.disenos : disenosVivos;
         sanitizedInst[k] = {
           ...v,
           posicion: Array.isArray(v.posicion) ? [...v.posicion] : [0, 0, 0],
           rotacion: Array.isArray(v.rotacion) ? [...v.rotacion] : [0, 0, 0],
           parametros: { ...(v.parametros || {}) },
           resultado: v.resultado ? purgarResultadoGeometria(v.resultado) : undefined,
+          disenos: disenosInst,
+          disenoActivoId: v.disenoActivoId || disenoActivoVivo,
         };
       }
 
@@ -951,12 +970,15 @@ export const createCatalogSlice = (set: any, get: any): any => ({
         rutaCarpeta,
         fechaGuardado: new Date().toISOString(),
         thumbnail,
-        descripcionComercial: datos.descripcion || `Mueble diseñado en 3BF (${datos.marca})`,
+        descripcionComercial: datos.descripcion || `Mueble diseñado en 3dBimFab (${datos.marca})`,
         instancias: sanitizedInst,
+        disenos: disenosVivos,
+        disenoActivoId: disenoActivoVivo,
         fichaConfig,
         fichaProducto: fichaGuardada,
         totalPiezas: despieceGlobal.reduce((acc, p) => acc + (p.cantidad || 1), 0),
         pasosManual: state.pasosManual,
+        camara: state.camaraEscena || state.muebleActivoGuardado?.camara,
       };
 
       // Guardar en Store y localStorage
@@ -970,21 +992,27 @@ export const createCatalogSlice = (set: any, get: any): any => ({
       }));
 
       try {
-        await fetch("/api/drive/muebles", {
+        const payloadDisco = sanitizarMuebleParaDisco(nuevoMueble);
+        const res = await fetch("/api/drive/muebles", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ action: "save_furniture", furniture: nuevoMueble }),
+          body: JSON.stringify({ action: "save_furniture", furniture: payloadDisco }),
+          signal: AbortSignal.timeout(10000),
         });
+        if (!res.ok) {
+          const errData = await res.json().catch(() => ({}));
+          console.warn("[3dBimFab] Advertencia guardando nuevo mueble en Drive:", res.status, errData);
+        }
       } catch (err) {
         console.warn("Mueble guardado en local:", err);
       }
 
-      set({ guardandoMueble: false });
       return true;
     } catch (err) {
       console.error("Error al guardar mueble:", err);
-      set({ guardandoMueble: false });
       return false;
+    } finally {
+      set({ guardandoMueble: false });
     }
   },
 
@@ -1008,16 +1036,48 @@ export const createCatalogSlice = (set: any, get: any): any => ({
         if (nuevoThumb) thumbnail = nuevoThumb;
       }
 
-      // Sanitizar instancias y purgar duplicados geométricos
+      // Sanitizar instancias y consolidar colecciones de diseños vivos
       const rawInst = state.instancias || {};
+      const targetInstId = state.objetoActivoId || Object.keys(rawInst)[0];
+      const instPrincipal = targetInstId ? rawInst[targetInstId] : Object.values(rawInst)[0];
+
+      // 🎨 Consolidación robusta: Unir colecciones de instancias y mueble guardado por ID único priorizando versiones con mallas 3D
+      const disenosDesdeInst = (instPrincipal && Array.isArray(instPrincipal.disenos)) ? instPrincipal.disenos : [];
+      const disenosDesdeMueble = Array.isArray(state.muebleActivoGuardado?.disenos) ? state.muebleActivoGuardado!.disenos! : [];
+      const mapaDisenos = new Map<string, DisenoEncapsulado3BF>();
+
+      const agregarOActualizarDiseno = (d: DisenoEncapsulado3BF) => {
+        const existente = mapaDisenos.get(d.id);
+        if (!existente) {
+          mapaDisenos.set(d.id, d);
+          return;
+        }
+        const entranteTieneMallas = !!(d.resultado && Array.isArray(d.resultado.real_meshes) && d.resultado.real_meshes.length > 0);
+        const existenteTieneMallas = !!(existente.resultado && Array.isArray(existente.resultado.real_meshes) && existente.resultado.real_meshes.length > 0);
+        if (entranteTieneMallas && !existenteTieneMallas) {
+          mapaDisenos.set(d.id, d);
+        } else if (entranteTieneMallas === existenteTieneMallas && (d.fecha || 0) >= (existente.fecha || 0)) {
+          mapaDisenos.set(d.id, d);
+        }
+      };
+
+      disenosDesdeMueble.forEach(agregarOActualizarDiseno);
+      disenosDesdeInst.forEach(agregarOActualizarDiseno);
+      const disenosVivos: DisenoEncapsulado3BF[] = Array.from(mapaDisenos.values());
+
+      const disenoActivoVivo = (instPrincipal && instPrincipal.disenoActivoId) || state.muebleActivoGuardado?.disenoActivoId || null;
+
       const sanitizedInst: Record<string, ObjetoInstancia3BF> = {};
       for (const [k, v] of Object.entries(rawInst)) {
+        const disenosInst = (v.disenos && v.disenos.length > 0) ? v.disenos : disenosVivos;
         sanitizedInst[k] = {
           ...v,
           posicion: Array.isArray(v.posicion) ? [...v.posicion] : [0, 0, 0],
           rotacion: Array.isArray(v.rotacion) ? [...v.rotacion] : [0, 0, 0],
           parametros: { ...(v.parametros || {}) },
           resultado: v.resultado ? purgarResultadoGeometria(v.resultado) : undefined,
+          disenos: disenosInst,
+          disenoActivoId: v.disenoActivoId || disenoActivoVivo,
         };
       }
 
@@ -1027,29 +1087,38 @@ export const createCatalogSlice = (set: any, get: any): any => ({
         fechaGuardado: new Date().toISOString(),
         thumbnail,
         instancias: sanitizedInst,
+        disenos: disenosVivos,
+        disenoActivoId: disenoActivoVivo,
         fichaConfig,
         fichaProducto: fichaActual,
         totalPiezas: despieceGlobal.reduce((acc, p) => acc + (p.cantidad || 1), 0),
         pasosManual: state.pasosManual,
+        camara: state.camaraEscena || state.muebleActivoGuardado?.camara,
       };
 
       state.actualizarFichaProducto(state.muebleActivoGuardado.nombre, fichaActual);
       state.actualizarFichaProducto(id, fichaActual);
 
+      // Actualizar estado en memoria sin apagar prematuramente guardandoMueble
       set((s) => ({
         mueblesGuardados: s.mueblesGuardados.map((m) => (m.id === id ? muebleActualizado : m)),
         muebleActivoGuardado: muebleActualizado,
         instancias: sanitizedInst,
         resultado: purgarResultadoGeometria(s.resultado),
-        guardandoMueble: false,
       }));
 
       try {
-        await fetch("/api/drive/muebles", {
+        const payloadDisco = sanitizarMuebleParaDisco(muebleActualizado);
+        const res = await fetch("/api/drive/muebles", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ action: "save_furniture", furniture: muebleActualizado }),
+          body: JSON.stringify({ action: "save_furniture", furniture: payloadDisco }),
+          signal: AbortSignal.timeout(10000),
         });
+        if (!res.ok) {
+          const errData = await res.json().catch(() => ({}));
+          console.warn("[3dBimFab] Advertencia guardando en Drive:", res.status, errData);
+        }
         if (typeof window !== "undefined" && window.localStorage) {
           localStorage.setItem("3bf_ultimo_mueble_id", muebleActualizado.id);
         }
@@ -1074,6 +1143,7 @@ export const createCatalogSlice = (set: any, get: any): any => ({
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ action: "save_manual", manual: manualPayload }),
+          signal: AbortSignal.timeout(10000),
         });
         set({ manualActivoGuardado: manualPayload });
         guardarPasosEnCacheLocal(state.pasosManual, manualPayload);
@@ -1084,8 +1154,10 @@ export const createCatalogSlice = (set: any, get: any): any => ({
       return true;
     } catch (err) {
       console.error("Error al actualizar cambios de mueble:", err);
-      set({ guardandoMueble: false });
       return false;
+    } finally {
+      // 🛡️ Apagar guardandoMueble de forma segura solo al culminar todo el ciclo
+      set({ guardandoMueble: false });
     }
   },
 
@@ -1220,8 +1292,12 @@ export const createCatalogSlice = (set: any, get: any): any => ({
     if (!mueble) return;
 
     let targetMueble = mueble;
-    // Si el mueble proviene del listado ligero, cargar sus instancias completas bajo demanda
-    if (!targetMueble.instancias || Object.keys(targetMueble.instancias).length === 0) {
+    // Si el mueble proviene del listado ligero, no tiene mallas 3D en sus diseños o no tiene pasosManual completos, cargar el archivo completo de disco
+    const tieneMallasEnDisenos = !!(targetMueble.disenos && targetMueble.disenos.some((d) => d.resultado?.real_meshes && d.resultado.real_meshes.length > 0));
+    const tieneInstanciasCargadas = !!(targetMueble.instancias && Object.keys(targetMueble.instancias).length > 0);
+    const tienePasosManualCargados = !!(targetMueble.pasosManual && targetMueble.pasosManual.length > 1);
+
+    if (!tieneInstanciasCargadas || !tieneMallasEnDisenos || !tienePasosManualCargados) {
       try {
         const res = await fetch(`/api/drive/muebles?action=get_furniture&id=${encodeURIComponent(targetMueble.id)}`);
         if (res.ok) {
@@ -1245,23 +1321,25 @@ export const createCatalogSlice = (set: any, get: any): any => ({
         rotacion: Array.isArray(v.rotacion) ? [...v.rotacion] : [0, 0, 0],
         parametros: { ...(v.parametros || {}) },
         resultado: v.resultado ? purgarResultadoGeometria(v.resultado) : undefined,
+        disenos: v.disenos || targetMueble.disenos || [],
+        disenoActivoId: v.disenoActivoId || targetMueble.disenoActivoId || null,
       };
     }
     const firstKey = Object.keys(restoredInstancias)[0] || null;
 
     // 2. Restaurar ficha técnica y comercial si existe
-    if (mueble.fichaConfig) {
+    if (targetMueble.fichaConfig) {
       const modelKey = get().parametros.model_id || "Cubierta";
-      get().setFichaConfig(modelKey, mueble.fichaConfig);
+      get().setFichaConfig(modelKey, targetMueble.fichaConfig);
     }
-    if (mueble.fichaProducto) {
-      const limpiaKey = mueble.nombre.trim();
-      const idKey = mueble.id;
+    if (targetMueble.fichaProducto) {
+      const limpiaKey = targetMueble.nombre.trim();
+      const idKey = targetMueble.id;
       set((s) => ({
         fichasProducto: {
           ...s.fichasProducto,
-          [limpiaKey]: mueble.fichaProducto!,
-          [idKey]: mueble.fichaProducto!
+          [limpiaKey]: targetMueble.fichaProducto!,
+          [idKey]: targetMueble.fichaProducto!
         }
       }));
     }
@@ -1273,51 +1351,121 @@ export const createCatalogSlice = (set: any, get: any): any => ({
       objetoActivoId: firstKey,
       objetoSeleccionado: !!firstKey,
       muebleActivoGuardado: {
-        ...mueble,
+        ...targetMueble,
         instancias: restoredInstancias,
+        disenos: targetMueble.disenos || (firstKey ? restoredInstancias[firstKey]?.disenos : []) || [],
+        disenoActivoId: targetMueble.disenoActivoId || (firstKey ? restoredInstancias[firstKey]?.disenoActivoId : null),
       },
       escenarioLimpio: false,
       pestanaActiva: "3d",
       resultado: firstInst?.resultado ? purgarResultadoGeometria(firstInst.resultado) : null,
       parametros: firstInst?.parametros ? (firstInst.parametros as any) : get().parametros,
+      camaraEscena: targetMueble.camara || null,
     });
 
+    // 🎨 Inyectar diseños directamente en IndexedDB aislados por el ID único del mueble
+    const coleccionDisenos = targetMueble.disenos || (firstKey ? restoredInstancias[firstKey]?.disenos : []) || [];
+    if (typeof window !== "undefined" && Array.isArray(coleccionDisenos) && coleccionDisenos.length > 0) {
+      const storageEntityId = `mueble_${targetMueble.id}`;
+      saveDisenosToIndexedDB(storageEntityId, coleccionDisenos).catch(() => {});
+    }
+
     // Si la ficha guardada tiene una receta activa, aplicarla
-    if (mueble.fichaProducto?.recetaColorActivaId) {
-      get().aplicarRecetaColor(mueble.nombre.trim(), mueble.fichaProducto.recetaColorActivaId);
+    if (targetMueble.fichaProducto?.recetaColorActivaId) {
+      get().aplicarRecetaColor(targetMueble.nombre.trim(), targetMueble.fichaProducto.recetaColorActivaId);
     }
 
     // 2.2 Vinculación Inteligente con el Manual 3D (.3bm)
-    const cleanNombre = mueble.nombre.trim();
-    const manualVinculadoId = mueble.manualVinculadoId || `manual_${cleanNombre.toLowerCase().replace(/[^a-z0-9]/gi, "_")}`;
-    const manualesList = get().manualesDrive || [];
-    const manualEnDrive = manualesList.find(
-      (m) =>
-        m.id === manualVinculadoId ||
-        m.muebleOrigenId === mueble.id ||
-        m.nombre.toLowerCase() === cleanNombre.toLowerCase() ||
-        (cleanNombre.toLowerCase().includes("comoda") && m.id === "manual_1_comoda_ravenna")
-    );
-
-    let pasosFinales = mueble.pasosManual && mueble.pasosManual.length > 0 ? mueble.pasosManual : (manualEnDrive?.pasos || generarPasosManualesPorDefecto());
-
-    // Si el archivo en Drive tiene más grupos configurados o es más reciente, priorizarlo
-    if (manualEnDrive?.pasos && manualEnDrive.pasos.length > 0) {
-      const p00Drive = manualEnDrive.pasos.find((p) => p.id === "P00");
-      const p00Mueble = pasosFinales.find((p) => p.id === "P00");
-      const gruposDrive = p00Drive?.showcase?.gruposCinematicos?.length || 0;
-      const gruposMueble = p00Mueble?.showcase?.gruposCinematicos?.length || 0;
-      if (gruposDrive >= gruposMueble) {
-        pasosFinales = manualEnDrive.pasos;
+    const cleanNombre = targetMueble.nombre.trim();
+    const manualVinculadoId = targetMueble.manualVinculadoId || `manual_${cleanNombre.toLowerCase().replace(/[^a-z0-9]/gi, "_")}`;
+    
+    // Asegurar que la lista de manuales en Drive esté cargada si aún está vacía
+    let manualesList = get().manualesDrive || [];
+    if (!manualesList || manualesList.length === 0) {
+      try {
+        await get().cargarManualesDesdeDrive();
+        manualesList = get().manualesDrive || [];
+      } catch (eDrive) {
+        console.warn("[3dBimFab] Error cargando lista de manuales en abrirMueble:", eDrive);
       }
     }
 
+    const scoreCandidate = (m: any) => {
+      const matchId = m.muebleOrigenId === targetMueble.id ? 100 : 0;
+      const matchMarca = (m.marca && targetMueble.marca && m.marca.toLowerCase() === targetMueble.marca.toLowerCase()) ? 50 : 0;
+      const matchManualId = m.id === manualVinculadoId ? 25 : 0;
+      const matchNombre = (m.nombre && cleanNombre && m.nombre.toLowerCase() === cleanNombre.toLowerCase()) ? 20 : 0;
+      const pasosCount = Array.isArray(m.pasos) ? m.pasos.length : 0;
+      const p00 = m.pasos?.find((p: any) => p.id === "P00");
+      const gruposCount = p00?.showcase?.gruposCinematicos?.length || 0;
+      return matchId + matchMarca + matchManualId + matchNombre + (pasosCount * 10) + gruposCount;
+    };
+
+    let candidates = (manualesList || []).filter(
+      (m: any) =>
+        m.muebleOrigenId === targetMueble.id ||
+        m.id === manualVinculadoId ||
+        m.nombre?.toLowerCase() === cleanNombre.toLowerCase() ||
+        (cleanNombre.toLowerCase().includes("comoda") && m.id === "manual_1_comoda_ravenna")
+    );
+
+    candidates.sort((a: any, b: any) => scoreCandidate(b) - scoreCandidate(a));
+    let manualEnDrive = candidates[0] || null;
+
+    // Si aún no se encontró en la lista de memoria o el candidato tiene solo 1 paso pero el mueble tampoco tiene pasos, consultar directamente al endpoint
+    if ((!manualEnDrive || manualEnDrive.pasos?.length <= 1) && (!targetMueble.pasosManual || targetMueble.pasosManual.length <= 1)) {
+      try {
+        const resM = await fetch("/api/drive/manuales");
+        if (resM.ok) {
+          const datM = await resM.json();
+          if (datM.manuales && Array.isArray(datM.manuales)) {
+            set({ manualesDrive: datM.manuales });
+            const directCandidates = datM.manuales.filter(
+              (m: any) =>
+                m.muebleOrigenId === targetMueble.id ||
+                m.id === manualVinculadoId ||
+                m.nombre?.toLowerCase() === cleanNombre.toLowerCase() ||
+                (cleanNombre.toLowerCase().includes("comoda") && m.id === "manual_1_comoda_ravenna")
+            );
+            directCandidates.sort((a: any, b: any) => scoreCandidate(b) - scoreCandidate(a));
+            if (directCandidates.length > 0) {
+              manualEnDrive = directCandidates[0];
+            }
+          }
+        }
+      } catch {}
+    }
+
+    const mueblePasos = targetMueble.pasosManual && targetMueble.pasosManual.length > 0 ? targetMueble.pasosManual : null;
+    const drivePasos = manualEnDrive?.pasos && manualEnDrive.pasos.length > 0 ? manualEnDrive.pasos : null;
+
+    let pasosFinales: PasoManualStudio[];
+    if (mueblePasos && drivePasos) {
+      const p00Drive = drivePasos.find((p: any) => p.id === "P00");
+      const p00Mueble = mueblePasos.find((p: any) => p.id === "P00");
+      const gruposDrive = p00Drive?.showcase?.gruposCinematicos?.length || 0;
+      const gruposMueble = p00Mueble?.showcase?.gruposCinematicos?.length || 0;
+      if (drivePasos.length > mueblePasos.length || gruposDrive >= gruposMueble) {
+        pasosFinales = drivePasos;
+      } else {
+        pasosFinales = mueblePasos;
+      }
+    } else if (drivePasos) {
+      pasosFinales = drivePasos;
+    } else if (mueblePasos) {
+      pasosFinales = mueblePasos;
+    } else {
+      pasosFinales = generarPasosManualesPorDefecto();
+    }
+
+    pasosFinales = sanitizarPasosManuales(pasosFinales);
+
     const manualActivo: Manual3BMProyecto = {
       id: manualEnDrive?.id || manualVinculadoId,
-      muebleOrigenId: mueble.id,
+      muebleOrigenId: targetMueble.id,
       nombre: cleanNombre,
-      marca: mueble.marca || "RTA Design",
-      tipologia: mueble.tipologia || "Manuales 3D",
+      marca: targetMueble.marca || "RTA Design",
+      tipologia: targetMueble.tipologia || "Manuales 3D",
       fechaModificacion: new Date().toISOString(),
       parametrosMueble: { ...get().parametros },
       pasos: pasosFinales,
@@ -1331,7 +1479,7 @@ export const createCatalogSlice = (set: any, get: any): any => ({
 
     guardarPasosEnCacheLocal(pasosFinales, manualActivo);
     if (typeof window !== "undefined" && window.localStorage) {
-      localStorage.setItem("3bf_ultimo_mueble_id", mueble.id);
+      localStorage.setItem("3bf_ultimo_mueble_id", targetMueble.id);
     }
 
     // 3. Recomputar SOLO si alguna instancia no tiene geometría 3D guardada

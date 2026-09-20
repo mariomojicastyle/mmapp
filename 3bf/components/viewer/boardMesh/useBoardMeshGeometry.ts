@@ -103,5 +103,48 @@ export function useBoardMeshGeometry(
     };
   }, [boxMeshGeometry]);
 
-  return { customGeometry, boxMeshGeometry };
+  // 🛡️ Detección geométrica de bisel / chaflán exterior en frentes de cajón o piezas con perfil diagonal
+  const tieneBiselDiagonal = React.useMemo(() => {
+    if (!vertices || !indices || vertices.length === 0 || indices.length === 0) return false;
+    if (!size || size.length < 3) return false;
+    const maxDim = Math.max(size[0], size[1], size[2]);
+
+    for (let t = 0; t < indices.length; t += 3) {
+      const ia = indices[t] * 3;
+      const ib = indices[t + 1] * 3;
+      const ic = indices[t + 2] * 3;
+
+      const ax = vertices[ia], ay = vertices[ia + 1], az = vertices[ia + 2];
+      const bx = vertices[ib], by = vertices[ib + 1], bz = vertices[ib + 2];
+      const cx = vertices[ic], cy = vertices[ic + 1], cz = vertices[ic + 2];
+
+      const ux = bx - ax, uy = by - ay, uz = bz - az;
+      const wx = cx - ax, wy = cy - ay, wz = cz - az;
+
+      let nx = uy * wz - uz * wy;
+      let ny = uz * wx - ux * wz;
+      let nz = ux * wy - uy * wx;
+      const len = Math.sqrt(nx * nx + ny * ny + nz * nz);
+      if (len > 1e-6) {
+        nx /= len;
+        ny /= len;
+        nz /= len;
+        // Si la cara tiene normal diagonal (no ortogonal a los 3 ejes cartesianos)
+        if (Math.abs(nx) < 0.95 && Math.abs(ny) < 0.95 && Math.abs(nz) < 0.95) {
+          const spanX = Math.max(ax, bx, cx) - Math.min(ax, bx, cx);
+          const spanY = Math.max(ay, by, cy) - Math.min(ay, by, cy);
+          const spanZ = Math.max(az, bz, cz) - Math.min(az, bz, cz);
+          const maxSpan = Math.max(spanX, spanY, spanZ);
+          // Si el bisel abarca más de 50 mm o más del 20% de la longitud mayor de la pieza
+          if (maxSpan > 0.05 && maxSpan > maxDim * 0.2) {
+            return true;
+          }
+        }
+      }
+    }
+    return false;
+  }, [vertices, indices, size?.[0], size?.[1], size?.[2]]);
+
+  return { customGeometry, boxMeshGeometry, tieneBiselDiagonal };
 }
+

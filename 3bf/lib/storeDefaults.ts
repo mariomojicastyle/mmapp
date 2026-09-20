@@ -700,7 +700,7 @@ export const PRESET_MATERIALES_PBR: MaterialPBRDef[] = [
   { id: "mat_cromo", nombre: "Cromo", tipo: "Metal", colorBase: "#FAFAFA", metalico: 1.00, rugosidad: 0.04, especularidad: 1.00, opacidad: 1.0, ior: 1.50, notas: "Cromado brillante tipo espejo" },
   { id: "mat_blanco", nombre: "M_Blanco", tipo: "Melamina", colorBase: "#FFFFFF", metalico: 0.05, rugosidad: 0.70, especularidad: 0.50, opacidad: 1.0, ior: 1.50, notas: "Melamina Blanco Glacial mate" },
   { id: "mat_mdf", nombre: "MDF", tipo: "Madera", colorBase: "#BDB088", metalico: 0.00, rugosidad: 0.85, especularidad: 0.30, opacidad: 1.0, ior: 1.50, notas: "Sustrato MDF crudo fibroso" },
-  { id: "mat_mdp", nombre: "MDP", tipo: "Madera", colorBase: "#D5B88A", metalico: 0.00, rugosidad: 0.80, especularidad: 0.30, opacidad: 1.0, ior: 1.50, notas: "Sustrato MDP aglomerado canto expuesto" },
+  { id: "mat_mdp", nombre: "MDP", tipo: "Madera", colorBase: "#D5B88A", texturaUrl: "/textures/mdp_diffuse.jpg", metalico: 0.00, rugosidad: 0.85, especularidad: 0.25, opacidad: 1.0, ior: 1.50, notas: "Sustrato MDP aglomerado canto expuesto" },
   { id: "mat_nurbs", nombre: "Nurbs", tipo: "PBR", colorBase: "#E036C0", metalico: 0.10, rugosidad: 0.30, especularidad: 0.60, opacidad: 0.85, ior: 1.50, notas: "Geometría analítica CAD" },
   { id: "mat_pnegro", nombre: "P_Negro", tipo: "Plastico", colorBase: "#1A1A1A", metalico: 0.10, rugosidad: 0.40, especularidad: 0.50, opacidad: 1.0, ior: 1.50, notas: "Plástico inyectado negro" },
   { id: "mat_pblanco", nombre: "P_Blanco", tipo: "Plastico", colorBase: "#F1F5F9", metalico: 0.10, rugosidad: 0.40, especularidad: 0.50, opacidad: 1.0, ior: 1.50, notas: "Plástico inyectado blanco" },
@@ -1203,3 +1203,67 @@ export function guardarPasosEnCacheLocal(nuevosPasos: PasoManualStudio[], manual
 
 
 export const initialCachedManual = getCachedManualData();
+
+/**
+ * ⚡ DfMA Storage Optimizer: Sanitización inteligente de mallas 3D para serialización a disco (.3bf.json).
+ * Preserva real_meshes en los diseños para conmutación instantánea (<10ms) sin badge 'sin 3D',
+ * pero elimina duplicación en instancias para evitar colapsos de memoria.
+ */
+export function sanitizarResultadoParaDisco(res: any, incluirMallas = true) {
+  if (!res || typeof res !== "object") return null;
+
+  let mallasOptimizadas: any[] = [];
+  if (incluirMallas && Array.isArray(res.real_meshes)) {
+    mallasOptimizadas = res.real_meshes.map((m: any) => ({
+      name: m.name,
+      size: m.size,
+      position: m.position,
+      vertices: m.vertices,
+      indices: m.indices,
+      uvs: m.uvs,
+    }));
+  }
+
+  return {
+    status: res.status,
+    model_id: res.model_id,
+    source_gh: res.source_gh,
+    rhino8_compute: res.rhino8_compute,
+    slider_limits: res.slider_limits,
+    default_values: res.default_values,
+    parameter_groups: res.parameter_groups,
+    summary: res.summary,
+    despiece: res.despiece,
+    herrajes: res.herrajes,
+    declared_outputs: res.declared_outputs,
+    execution_time_ms: res.execution_time_ms,
+    mallas_duplicadas_detectadas: res.mallas_duplicadas_detectadas,
+    real_meshes: mallasOptimizadas,
+  };
+}
+
+export function sanitizarMuebleParaDisco(mueble: any): any {
+  if (!mueble) return mueble;
+  const disenosLimpios = (mueble.disenos || []).map((d: any) => ({
+    ...d,
+    resultado: d.resultado ? sanitizarResultadoParaDisco(d.resultado, true) : null,
+  }));
+
+  const sanitizedInst: Record<string, any> = {};
+  for (const [k, v] of Object.entries(mueble.instancias || {})) {
+    const instVal = v as any;
+    sanitizedInst[k] = {
+      ...instVal,
+      resultado: instVal.resultado ? sanitizarResultadoParaDisco(instVal.resultado, true) : null,
+      disenos: undefined, // Nunca duplicar toda la lista dentro de cada instancia
+      disenoActivoId: instVal.disenoActivoId || mueble.disenoActivoId,
+    };
+  }
+
+  return {
+    ...mueble,
+    instancias: sanitizedInst,
+    disenos: disenosLimpios,
+  };
+}
+

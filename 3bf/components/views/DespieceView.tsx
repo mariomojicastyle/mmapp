@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useMemo } from "react";
 import { use3BFStore, TableroRecord, HerrajeRecord, CantoRecord } from "@/lib/store";
+import { extraerPiezaMadre } from "@/lib/piezaMadreUtils";
 import { 
   FileText, 
   Hammer, 
@@ -248,7 +249,15 @@ export default function DespieceView() {
 
   const piezasGlobales = useMemo(() => {
     const list = getDespieceGlobal();
-    const base = list.length > 0 ? list : (resultado?.despiece || []);
+    const rawList = list.length > 0 ? list : (resultado?.despiece || []);
+    const base = rawList.map((p: any) => {
+      const nombreNorm = extraerPiezaMadre(p.nombre) || p.nombre;
+      return {
+        ...p,
+        nombre: nombreNorm,
+        descripcion: p.descripcion && p.descripcion !== p.nombre ? p.descripcion : (p.instanciaNombre || nombreNorm)
+      };
+    });
     return [...base].sort((a, b) =>
       (a.nombre || "").localeCompare(b.nombre || "", undefined, { numeric: true, sensitivity: "base" })
     );
@@ -1409,7 +1418,7 @@ export default function DespieceView() {
                 >
                   {/* Columna 1: Pieza (Nombre GHX de origen) */}
                   <td style={{ color: coloresApariencia?.textoPrincipal }} className="p-2.5 font-bold">
-                    {p.nombre}
+                    {extraerPiezaMadre(p.nombre) || p.nombre}
                   </td>
 
                   {/* Columna 2: Descripción (Nombre Oficial Editable) */}

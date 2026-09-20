@@ -128,26 +128,21 @@ export function resolverPropiedadesMaterial(p: MaterialPropertiesInput): Resolve
     capaAsignada = p.capas.find((c) => c.id === asignacion.capaId) || null;
   }
   
-  if (normName.includes('mdf')) {
-    capaAsignada = p.capas.find((c) => c.id === 'capa_mdf' || c.nombre.toLowerCase() === 'mdf') || p.capas[0];
-  } else if (isFondoBoard) {
-    const capaInvalidaFondo = !capaAsignada || 
-                              capaAsignada.id === 'capa_tono' || 
-                              capaAsignada.id === 'capa_espaldar' || 
-                              capaAsignada.id === 'capa_back' ||
-                              capaAsignada.id === 'capa_acero' ||
-                              capaAsignada.id === 'capa_aluminio';
-    if (capaInvalidaFondo) {
-      capaAsignada = p.capas.find((c) => c.id === 'capa_tono_fondo' || c.nombre.toLowerCase().includes('tono fondo') || c.nombre.toLowerCase().includes('fondo')) || capaAsignada || p.capas[0];
-    }
-  } else if (!capaAsignada) {
-    if (isHardwareCorredera || isHardwarePrego) {
+  // Heurísticas automáticas SOLO si no hay asignación manual explícita
+  if (!capaAsignada) {
+    if (normName.includes('mdf')) {
+      capaAsignada = p.capas.find((c) => c.id === 'capa_mdf' || c.nombre.toLowerCase() === 'mdf') || p.capas[0];
+    } else if (isFondoBoard) {
+      capaAsignada = p.capas.find((c) => c.id === 'capa_tono_fondo' || c.nombre.toLowerCase().includes('tono fondo') || c.nombre.toLowerCase().includes('fondo')) || p.capas[0];
+    } else if (isHardwareCorredera || isHardwarePrego) {
       capaAsignada = p.capas.find((c) => c.id === 'capa_acero' || c.id === 'capa_zincado' || c.nombre.toLowerCase().includes('acero') || c.nombre.toLowerCase().includes('zinc')) || p.capas.find((c) => c.id === 'capa_herrajes') || p.capas[0];
     } else if (isHardwareCantoneira) {
       capaAsignada = p.capas.find((c) => c.id === 'capa_zincado' || c.id === 'capa_zinc' || c.id === 'capa_acero' || c.nombre.toLowerCase().includes('zinc') || c.nombre.toLowerCase().includes('acero')) || p.capas.find((c) => c.id === 'capa_herrajes') || p.capas[0];
     } else if (isHardwarePata) {
       capaAsignada = p.capas.find((c) => c.id === 'capa_plastico_1' || c.id === 'capa_plastico_2' || c.nombre.toLowerCase().includes('plastico')) || p.capas.find((c) => c.id === 'capa_herrajes') || p.capas[0];
-    } else if (isHardwarePorca || isHardwareTampa || isHardwareSuporte) {
+    } else if (isHardwareTampa) {
+      capaAsignada = p.capas.find((c) => c.id === 'capa_tono' || (c.nombre.toLowerCase().includes('tono') && !c.nombre.toLowerCase().includes('fondo'))) || p.capas[0];
+    } else if (isHardwarePorca || isHardwareSuporte || normName.includes('perfil')) {
       capaAsignada = p.capas.find((c) => c.id === 'capa_plastico_2' || c.id === 'capa_plastico_1' || c.nombre.toLowerCase().includes('plastico')) || p.capas.find((c) => c.id === 'capa_herrajes') || p.capas[0];
     } else if (isHardwarePerno) {
       capaAsignada = p.capas.find((c) => c.id === 'capa_herrajes' || c.id === 'capa_acero' || c.nombre.toLowerCase().includes('acero') || c.nombre.toLowerCase().includes('herraje'));
@@ -244,7 +239,14 @@ export function resolverPropiedadesMaterial(p: MaterialPropertiesInput): Resolve
     opacity = 1.0;
     transparent = false;
     depthWrite = true;
-  } else if (isHardwarePorca || isHardwareTampa || isHardwareSuporte) {
+  } else if (isHardwareTampa) {
+    meshColor = p.mainColor || '#F4F4F5';
+    metalness = p.calibracion.metalicidadMadera ?? 0.05;
+    roughness = p.calibracion.rugosidadMadera ?? 0.55;
+    opacity = 1.0;
+    transparent = false;
+    depthWrite = true;
+  } else if (isHardwarePorca || isHardwareSuporte) {
     meshColor = '#F4F4F5';
     metalness = 0.05;
     roughness = 0.35;
@@ -267,9 +269,9 @@ export function resolverPropiedadesMaterial(p: MaterialPropertiesInput): Resolve
 
   if (materialPBR && p.modoVisual !== 'semitransparente') {
     meshColor = materialPBR.colorBase;
-    const esMetalico = materialPBR.tipo === 'Metal' || (materialPBR.metalico ?? 0) >= 0.5;
-    metalness = esMetalico ? materialPBR.metalico : (p.calibracion.metalicidadMadera ?? materialPBR.metalico);
-    roughness = esMetalico ? materialPBR.rugosidad : (p.calibracion.rugosidadMadera ?? materialPBR.rugosidad);
+    const esMaderaCalibrada = isWoodBoard && (materialPBR.tipo === 'Madera' || materialPBR.tipo === 'Melamina');
+    metalness = esMaderaCalibrada ? (p.calibracion.metalicidadMadera ?? materialPBR.metalico) : materialPBR.metalico;
+    roughness = esMaderaCalibrada ? (p.calibracion.rugosidadMadera ?? materialPBR.rugosidad) : materialPBR.rugosidad;
     if (materialPBR.opacidad < 1.0 || (p.calibracion.opacidadMadera ?? 1.0) < 0.99) {
       opacity = Math.min(materialPBR.opacidad, p.calibracion.opacidadMadera ?? 1.0);
       transparent = true;
@@ -282,10 +284,10 @@ export function resolverPropiedadesMaterial(p: MaterialPropertiesInput): Resolve
     if (isHardware) {
       finalMeshColor = (isHardwareCorredera || isHardwarePrego)
         ? '#F8FAFC' 
-        : (isHardwareCantoneira ? '#E2E8F0' : (isHardwarePata ? '#1E293B' : (isHardwarePorca || isHardwareTampa || isHardwareSuporte ? '#F4F4F5' : (p.coloresApariencia.colorHerrajes || '#CBD5E1'))));
+        : (isHardwareCantoneira ? '#E2E8F0' : (isHardwarePata ? '#1E293B' : (isHardwareTampa ? meshColor : (isHardwarePorca || isHardwareSuporte ? '#F4F4F5' : (p.coloresApariencia.colorHerrajes || '#CBD5E1')))));
       opacity = 1.0;
-      roughness = (isHardwarePata || isHardwarePorca || isHardwareSuporte) ? 0.4 : 0.18;
-      metalness = (isHardwarePata || isHardwarePorca || isHardwareSuporte) ? 0.05 : 0.92;
+      roughness = (isHardwarePata || isHardwarePorca || isHardwareSuporte || isHardwareTampa) ? 0.4 : 0.18;
+      metalness = (isHardwarePata || isHardwarePorca || isHardwareSuporte || isHardwareTampa) ? 0.05 : 0.92;
       transparent = false;
       depthWrite = true;
     } else {
@@ -339,17 +341,25 @@ export function resolverPropiedadesMaterial(p: MaterialPropertiesInput): Resolve
     } else {
       finalMeshColor = p.calibracion.colorSolido || '#CBD5E1';
     }
-    if (isWoodBoard) {
-      const esMetalico = materialPBR?.tipo === 'Metal' || (materialPBR?.metalico ?? 0) >= 0.5;
-      roughness = esMetalico ? materialPBR!.rugosidad : (materialPBR ? materialPBR.rugosidad : (p.calibracion.rugosidadMadera ?? 0.58));
-      metalness = esMetalico ? materialPBR!.metalico : (materialPBR ? materialPBR.metalico : (p.calibracion.metalicidadMadera ?? 0.20));
+    if (materialPBR) {
+      const esMaderaCalibrada = isWoodBoard && (materialPBR.tipo === 'Madera' || materialPBR.tipo === 'Melamina');
+      roughness = esMaderaCalibrada ? (p.calibracion.rugosidadMadera ?? materialPBR.rugosidad) : materialPBR.rugosidad;
+      metalness = esMaderaCalibrada ? (p.calibracion.metalicidadMadera ?? materialPBR.metalico) : materialPBR.metalico;
+      if (materialPBR.opacidad !== undefined) {
+        opacity = materialPBR.opacidad;
+        transparent = opacity < 0.99;
+        depthWrite = opacity >= 0.95;
+      }
+    } else if (isWoodBoard) {
+      roughness = p.calibracion.rugosidadMadera ?? 0.58;
+      metalness = p.calibracion.metalicidadMadera ?? 0.20;
       opacity = p.calibracion.opacidadMadera ?? 1.0;
       transparent = opacity < 0.99;
       depthWrite = opacity >= 0.95;
     }
   }
 
-  const nombreMaterialEfectivo = materialPBR ? materialPBR.nombre : (isWoodBoard ? 'M_Marfil' : (isHardwarePata || isHardwarePorca || isHardwareTampa || isHardwareSuporte ? 'P_Blanco' : (isHardwarePerno || isHardwarePrego ? 'Acero' : (isHardwareCaja ? 'Zinc' : 'PBR_Default'))));
+  const nombreMaterialEfectivo = materialPBR ? materialPBR.nombre : (isWoodBoard ? 'M_Marfil' : (isHardwarePata || isHardwarePorca || isHardwareTampa || isHardwareSuporte || normName.includes('perfil') ? 'P_Blanco' : (isHardwarePerno || isHardwarePrego ? 'Acero' : (isHardwareCaja ? 'Zinc' : 'PBR_Default'))));
   const normalScaleVal = materialPBR?.normalScale ?? 1.0;
 
   const luzEntornoConfig = p.calibracion.lucesEstudio?.['env_hdri'];
@@ -373,11 +383,19 @@ export function resolverPropiedadesMaterial(p: MaterialPropertiesInput): Resolve
     normName.includes('curv') || 
     normName.includes('arco') || 
     normName.includes('cilindr') || 
-    normName.includes('redond') || 
     normName.includes('chaflan') || 
+    normName.includes('bisel') ||
+    normName.includes('frente') ||
+    normName.includes('gaveta') ||
+    normName.includes('cajon') ||
+    normName.includes('uñero') ||
+    normName.includes('unero') ||
+    normName.includes('peça 19') ||
+    normName.includes('peca 19') ||
     normName.includes('angulo');
 
   const esParalelepipedo = !isHardware && isWoodBoard && !noEsParalelepipedo;
+
 
   return {
     finalMeshColor,

@@ -1,5 +1,6 @@
 "use client";
 
+// Build update: 2026-09-20T03:31:00Z - Peça 7 ground drop
 import React, { useEffect } from "react";
 import Viewer3D from "@/components/viewer/Viewer3D";
 import ControlPanel from "@/components/ui/ControlPanel";
@@ -650,12 +651,19 @@ export default function Home3BF() {
       <div className={`flex-1 flex overflow-hidden p-1.5 lg:p-3 gap-0 relative ${isResizingPanel ? "select-none cursor-ew-resize" : ""}`}>
         {/* Columna Izquierda: Visor 3D o Tablas de Datos */}
         <div className="flex-1 h-full flex flex-col relative overflow-hidden">
-          {pestanaActiva === "3d" || pestanaActiva === "manual" ? (
+          {/* 🎥 El Visor 3D se mantiene montado para preservar al 100% la cámara, órbita y contexto WebGL al conmutar pestañas */}
+          <div className={`w-full h-full relative ${pestanaActiva === "3d" || pestanaActiva === "manual" ? "block" : "hidden"}`}>
             <Viewer3D />
-          ) : pestanaActiva === "despiece" ? (
-            <DespieceView />
-          ) : (
-            <DatabaseView />
+          </div>
+          {pestanaActiva === "despiece" && (
+            <div className="w-full h-full relative">
+              <DespieceView />
+            </div>
+          )}
+          {pestanaActiva !== "3d" && pestanaActiva !== "manual" && pestanaActiva !== "despiece" && (
+            <div className="w-full h-full relative">
+              <DatabaseView />
+            </div>
           )}
         </div>
 

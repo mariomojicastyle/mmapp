@@ -2,6 +2,16 @@
 // No runtime JS code - 100% safe from circular dependencies
 
 
+export interface DisenoEncapsulado3BF {
+  id: string;                         // e.g. "diseno_171000000"
+  nombre: string;                     // "Cómoda Ravenna", "Cómoda Ravenna 1600"
+  valores: Record<string, number | string>; // Parámetros dimensionales y selectores
+  resultado: ComputoResultado | null; // 🧊 Geometría 3D completa resuelta en memoria (mallas, BOM, mecanizados)
+  fecha: number;
+  thumbnail?: string;
+}
+
+
 export interface ObjetoInstancia3BF {
   id: string;                       // e.g. "inst_Cubierta_12345"
   nombreVisible: string;            // "Cubierta", "Cubierta_01", "Cubierta_02"
@@ -10,6 +20,8 @@ export interface ObjetoInstancia3BF {
   ghxContent?: string;
   parametros: Record<string, any>;  // Parámetros específicos de esta instancia
   resultado: ComputoResultado | null; // Mallas 3D y despiece de esta instancia
+  disenos?: DisenoEncapsulado3BF[]; // 🎨 Diseños encapsulados estilo Poser (geometría + medidas en RAM)
+  disenoActivoId?: string | null;
   cargando: boolean;
   posicion: [number, number, number]; // [X, Y, Z] en metros
   rotacion: [number, number, number];
@@ -147,6 +159,15 @@ export interface MuebleGuardadoItem {
   costoEstimadoUsd?: number;
   pasosManual?: PasoManualStudio[]; // Persistencia de pasos del manual 3D
   manualVinculadoId?: string; // 🔗 Vinculación inteligente con el manual .3bm
+  disenos?: DisenoEncapsulado3BF[]; // 🎨 Colección de diseños encapsulados pertenecientes a la línea de producto
+  disenoActivoId?: string | null;
+  camara?: CamaraEscena3D; // 🎥 Persistencia de coordenadas de cámara y target de órbita
+}
+
+export interface CamaraEscena3D {
+  position: [number, number, number];
+  target: [number, number, number];
+  fov?: number;
 }
 
 
@@ -761,6 +782,10 @@ export interface State3BF {
   pestanaActiva: "3d" | "despiece" | "basedatos" | "costos" | "dxf" | "manual";
   setPestanaActiva: (pestana: "3d" | "despiece" | "basedatos" | "costos" | "dxf" | "manual") => void;
 
+  // 🎥 Persistencia de Cámara en Escena 3D
+  camaraEscena?: CamaraEscena3D | null;
+  setCamaraEscena: (camara: CamaraEscena3D | null) => void;
+
   // 🎬 Manual Studio State & Acciones
   pasosManual: PasoManualStudio[];
   pasoActivoManualId: string;
@@ -831,11 +856,16 @@ export interface State3BF {
   // 🎥 Métodos de Dirección Cinematográfica de Cámara
   capturarKeyframeCamaraPaso: (pasoId: string, tiempo: number, posicion: [number, number, number], target: [number, number, number], fov?: number) => void;
   eliminarKeyframeCamaraPaso: (pasoId: string, kfId: string) => void;
+  moverKeyframeCamaraPaso: (pasoId: string, kfId: string, nuevoTiempo: number) => void;
+  sobrescribirKeyframeCamaraPaso: (pasoId: string, kfId: string, posicion: [number, number, number], target: [number, number, number], fov?: number) => void;
   toggleCamaraCinematicaPaso: (pasoId: string) => void;
-  // 📱 Simulador de Pantalla de Celular (Safe Frame Vertical 9:16)
+  // 📱 Simulador de Pantalla de Celular (Safe Frame Vertical 9:16 / Horizontal 16:9)
   simuladorMovilActivo: boolean;
+  simuladorMovilOrientacion: "vertical" | "horizontal";
   setSimuladorMovilActivo: (activo: boolean) => void;
   toggleSimuladorMovil: () => void;
+  setSimuladorMovilOrientacion: (orientacion: "vertical" | "horizontal") => void;
+  toggleSimuladorMovilOrientacion: () => void;
 
   // 📦 Persistencia de Manuales en Google Drive (.3bm.json)
   manualActivoGuardado: Manual3BMProyecto | null;
@@ -994,6 +1024,11 @@ export interface State3BF {
   recomputarTodas: () => Promise<void>;
   cargarCacheDesdeArchivo: (archivoOrData: File | string | Record<string, any>, id?: string) => Promise<boolean>;
   exportarCacheAArchivo: (id?: string) => void;
+  guardarDisenoInstancia: (instanciaId: string, diseno: DisenoEncapsulado3BF) => void;
+  reordenarDisenosInstancia: (instanciaId: string, disenosReordenados: DisenoEncapsulado3BF[]) => void;
+  sincronizarColeccionDisenos: (disenos: DisenoEncapsulado3BF[], instanciaId?: string) => void;
+  activarDisenoInstancia: (instanciaId: string, disenoInput: string | DisenoEncapsulado3BF) => void;
+  eliminarDisenoInstancia: (instanciaId: string, disenoId: string) => void;
   
   // Despiece & Herrajes Globales Multiobjeto (BOM Escenario Completo)
   getDespieceGlobal: () => Array<PiezaDespiece & { instanciaNombre: string; instanciaId: string; descripcion: string }>;

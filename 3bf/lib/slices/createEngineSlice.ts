@@ -12,9 +12,13 @@ export interface EngineSlice {
   pestanaActiva: string;
   setPestanaActiva: (pestana: string) => void;
   cargarDefinicion: (item: { id: string; archivo?: string; nombre?: string }) => Promise<void>;
+  camaraEscena?: any;
+  setCamaraEscena: (camara: any) => void;
 }
 
 export const createEngineSlice = (set: any, get: any): any => ({
+  camaraEscena: null,
+  setCamaraEscena: (camara: any) => set({ camaraEscena: camara }),
   centrarCamaraTrigger: 0,
   centrarCamara: () => set((s: any) => ({ centrarCamaraTrigger: (s.centrarCamaraTrigger || 0) + 1 })),
 
@@ -67,7 +71,19 @@ export const createEngineSlice = (set: any, get: any): any => ({
   },
   
   pestanaActiva: "3d",
-  setPestanaActiva: (pestanaActiva: string) => set({ pestanaActiva }),
+  setPestanaActiva: (pestanaActiva: string) => {
+    const patch: any = { pestanaActiva };
+    if (pestanaActiva !== "manual") {
+      patch.modoPickingManual = {
+        activo: false,
+        modo: "agregar",
+        grupoId: null,
+        pasoId: null,
+        piezasTemporalmenteSeleccionadas: [],
+      };
+    }
+    set(patch);
+  },
 
   cargarDefinicion: async (item: { id: string; archivo?: string; nombre?: string }) => {
     if (get().agregarInstanciaGHX) {

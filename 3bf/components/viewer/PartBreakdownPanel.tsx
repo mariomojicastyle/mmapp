@@ -62,6 +62,9 @@ export default function PartBreakdownPanel() {
     if (kLow.includes("tarugo") || kLow.includes("cavilha") || kLow.includes("clavilha") || kLow.includes("soporte")) {
       return capas.find((c) => c.id === "capa_madera" || c.nombre.toLowerCase().includes("madera"))?.id || capas[0]?.id;
     }
+    if (kLow.includes("perfil") || kLow.includes("porca") || kLow.includes("tampa") || kLow.includes("pata") || kLow.includes("sapata")) {
+      return capas.find((c) => c.id === "capa_plastico_2" || c.id === "capa_plastico_1" || c.nombre.toLowerCase().includes("plastico"))?.id || capas[0]?.id;
+    }
     if (kLow.includes("mdf")) return capas.find((c) => c.nombre.toLowerCase() === "mdf" || c.id === "capa_mdf")?.id || capas[0]?.id;
     if (kLow.includes("mdp")) return capas.find((c) => c.nombre.toLowerCase() === "mdp" || c.id === "capa_mdp")?.id || capas[0]?.id;
 

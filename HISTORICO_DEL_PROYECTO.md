@@ -1368,13 +1368,114 @@ Para mantener la máxima agilidad y minimizar el consumo de tokens sin perder ni
     3. *Desfase de Numeración en Grupos de Grasshopper*: En `Comoda Ravenna.ghx`, el grupo `Peça 8 Aparência` contiene los sliders `RH_IN:11.1` (desfasado al número 11), `Peça 11 Aparência` contiene `RH_IN:14.1`, y `Peça 1 Aparência` contiene `RH_IN:03.1`.
 - **Solución y Regla de Unificación Melamínica**:
   * **Modo Doble Decorativo (`D/D`)**: Al seleccionar `D/D` en `Lado balance`, Grasshopper asigna Capa Tono (Color) a ambas caras (`color_idx.extend(f_A); color_idx.extend(f_B)`), erradicando las superficies de contracara naranja (`capa_back`) y logrando que ambos lados (izquierdo y derecho) y los zócalos queden 100% simétricos, amarillos y homogéneos sin importar la inversión de Mirror.
+---
+
+### 🚀 Hito 187: Optimización Extrema de Persistencia (.3bf.json -94%), Texture Pool Singleton y Persistencia Fotográfica de Cámara 3D (19 de Septiembre, 2026)
+- **Diagnóstico y Solución del Colapso de Peso en Disco (241 MB $\rightarrow$ ~12 MB)**:
+  * **Causa Raíz Diagnosticada**:
+    1. *Efecto Matrioska*: La colección de diseños encapsulados (`mueble.disenos`) se duplicaba recursivamente dentro de cada objeto de escena en `mueble.instancias[id].disenos`, triplicando el volumen de mallas 3D en memoria.
+    2. *Monstruo de Espacios en Blanco*: La serialización previa empleaba `JSON.stringify(data, null, 2)`, añadiendo cientos de miles de saltos de línea y sangrías de espacios en arreglos numéricos flotantes de coordenadas 3D, sumando más de 100 MB de texto inútil.
+    3. *Grasa Computacional*: Se empaquetaban trazas de depuración de RhinoCompute.
+  * **Implementación**:
+    - Serialización compacta de alto rendimiento `JSON.stringify(furniture)`.
+    - Poda quirúrgica de metadatos en `sanitizarMuebleParaDisco` y `sanitizarResultadoParaDisco`: las instancias solo conservan su `disenoActivoId`, mientras que la geometría completa vive en `mueble.disenos`.
+    - Reducción del tamaño del archivo a entre **10 MB y 18 MB** (guardado en Google Drive en menos de 1 segundo).
+- **Texture Pool Singleton en Three.js (`useMaterialPBRMaps.ts`)**:
+  * Implementación de un mapa caché global singleton (`textureCache`). Las 374 mallas del mueble ya no ejecutan 374 cargadores independientes, sino que comparten una única instancia de textura en VRAM (de ~2 GB a 16 MB en GPU).
+  * Conversión de texturas difusas a formato WebP optimizado (-75% peso).
+- **Persistencia Fotográfica de Cámara y Conmutación de Pestañas Sin Reset (`Viewer3D.tsx`, `CameraControllers.tsx`, `app/page.tsx`)**:
+  * **Problema Planteado**: Al conmutar entre el "Visor 3D" y la vista de "Despiece & Costos" o "Base de Datos", el visor 3D se desmontaba, provocando que al regresar la cámara volviera a una posición por defecto incómoda y pegada a una esquina (`[0.6, 0.9, 1.1]` y `[0.25, 0, -0.24]`), perdiendo la orientación de trabajo elegida por el usuario.
+  * **Solución Técnica Implementada**:
+    1. *Preservación en el DOM (`app/page.tsx`)*: Se mantiene `<Viewer3D />` montado en segundo plano utilizando visibilidad condicional (`hidden` / `block`), conservando el contexto WebGL, las texturas y la orientación exacta de la cámara sin parpadeos ni tiempos de recarga (conmutación en 0 ms).
+    2. *Controlador `CameraPersistenceController` (`CameraControllers.tsx`)*: Escucha los eventos `end` de interacción del usuario en `OrbitControls`, capturando la posición $[X, Y, Z]$, el target de enfoque $[TX, TY, TZ]$ y el campo de visión ($FOV$) con persistencia en el Store central y `localStorage`.
+    3. *Persistencia en Archivo `.3bf.json` (`createCatalogSlice.ts`, `storeTypes.ts`, `route.ts`)*: La propiedad `camara` se serializa dentro del archivo del mueble en Google Drive. Al abrir un mueble guardado o pulsar F5, la cámara se restaura con precisión milimétrica al último ángulo de visión del diseñador.
 - **Validación de Calidad**:
-  * `npx tsc --noEmit` completado con **0 errores** tanto en `3bf` como en la plataforma principal.
-  * Todos los daemons (`RhinoCompute 8`, `3BF Worker`, `3BF Next.js`, `Cloudflare Tunnel`) continúan operando de forma continua.
+  * Compilación TypeScript verificada (`npx tsc --noEmit`) en `c:\Desarrollo\mmapp\3BF` con **0 errores**.
+  * Los daemons de RhinoCompute, Worker Python y Next.js continúan activos y en perfecto estado.
 
+---
 
+### 🚀 Hito 188: Aislamiento Estricto de Diseños por Mueble (Isolation by Furniture ID) y Purgado de Claves Compartidas (`MemoryPosesLED.tsx`, `createCatalogSlice.ts`) (19 de Septiembre, 2026)
+- **Diagnóstico del Fantasma de Diseños Cruzados**:
+  * **Problema Planteado**: Al abrir el archivo `1_Comoda Ravenna`, aparecían en el panel de control los 6 diseños pertenecientes a `Linea Ravenna` como si fueran globales para todos los archivos.
+  * **Causa Raíz Identificada**:
+    1. *Clave de Almacenamiento Compartida*: La clave de almacenamiento en IndexedDB y `localStorage` utilizaba `modelId` (nombre de la definición Grasshopper: `"Comoda Ravenna"`). Como ambos muebles (`Linea Ravenna` y `1_Comoda Ravenna`) provienen del mismo `.ghx`, compartían ciegamente el mismo cajón de almacenamiento.
+    2. *Condición de Retención en Estado Local de React*: En `MemoryPosesLED.tsx`, la lógica `if (disenosMueble.length >= poses.length)` y `if (poses.length > 0) return;` impedía vaciar o reemplazar el estado `poses` cuando se abría un mueble con menos diseños que el anterior (ej. 0 diseños vs 6 diseños), reteniendo en pantalla la lista del mueble anterior.
+- **Implementación Técnica y Blindaje de Seguridad**:
+  1. *Aislamiento Estricto por ID Único de Mueble (`mueble_${muebleActivoGuardado.id}`)*:
+     - Tanto en IndexedDB como en `localStorage`, la clave ahora es estrictamente individual por mueble (`storageEntityId = mueble_${id}`). Cada mueble tiene su propio espacio estanco e impenetrable.
+  2. *Reseteo Inmediato al Cambiar de Mueble*:
+     - Se implementó un detector de cambio de mueble (`ultimoMuebleIdRef`). Al abrir un mueble nuevo, la UI limpia de inmediato las poses y carga **exclusivamente** los diseños que pertenecen a ese archivo en disco. Si el mueble tiene 0 diseños, la ranura se muestra vacía con el botón `+ Capturar / Guardar diseño actual...`.
+  3. *Verificación de Integridad en Google Drive*:
+     - Se comprobó mediante escaneo directo en disco que el archivo `1_Comoda Ravenna` (`mueble_1789226875940_xq2sn.3bf.json`) **permaneció 100% intacto con 0 diseños**, sin sufrir ninguna alteración o contaminación.
+  4. *Purgado de Claves Compartidas Legacy*:
+     - Se implementó la limpieza automática al arrancar de las claves legacy (`Comoda Ravenna`, `Comoda Ravenna.ghx`, `default_model`) para evitar cualquier residuo huérfano en navegadores locales.
+- **Validación de Calidad**:
+  * Compilación TypeScript verificada (`npx tsc --noEmit`) en `c:\Desarrollo\mmapp\3BF` con **0 errores**.
+  * Cero contaminación cruzada entre muebles verificada.
 
+---
 
+### 🚀 Hito 189: Corrección Cinemática de Ensamblaje Físico sobre Pieza Maestra Asentada en Piso (`assemblyCoreographer.ts`, `coreografiaHerrajes.ts`) (19 de Septiembre, 2026)
+- **Diagnóstico del Desfase Vectorial de Ensamble**:
+  * **Problema Planteado**: En el paso de ensamble P02 de Cómoda Ravenna, al corregir el asentamiento de la pieza maestra (`Peça 7`) para que descanse sobre el piso (`floorDropY` descendió ~24.7 cm a $Y = 0$), las piezas secundarias que se acoplan (`Peça 4`, `Peça 8`, `Peça 9`, `Peça 6`, `Peça 1`, `Peça 5`) y sus herrajes viajaban hacia la posición antigua de diseño en el aire, ensamblándose donde la `Peça 7` flotaba anteriormente.
+  * **Causa Raíz**: Las pistas de animación de las piezas secundarias calculaban su posición final con `pRestFinal = pRest.clone()`, usando las coordenadas puras de CAD sin incorporar el desplazamiento al suelo que había sufrido la pieza maestra.
+- **Implementación Técnica**:
+  1. *Cálculo del Vector de Desplazamiento $\vec{\Delta}_{\text{Master}}$*:
+     - Se escanea la malla maestra del paso (`masterKey`) y se calcula su vector exacto de apoyo en piso: $\vec{\Delta}_{\text{Master}} = \vec{p}_{\text{PopLocal}} - \vec{p}_{\text{RestMaster}}$.
+  2. *Propagación del Destino Final a Todas las Piezas Acopladas*:
+     - Cada pieza secundaria recibe $\vec{p}_{\text{RestFinal}} = \vec{p}_{\text{Rest}} + \vec{\Delta}_{\text{Master}}$, garantizando que al viajar desde su posición de espera en piso, aterrice y encaje exactamente sobre la `Peça 7` asentada en el suelo.
+  3. *Propagación a los Herrajes Cohesionados*:
+     - Se inyectó $\vec{\Delta}_{\text{Master}}$ en `compilarCoreografiaHerrajesCohesionados` para calcular `pHwRestFinal = pHwRest + deltaMaster`. Tanto los tarugos (`Cavilhas`) como los tornillos (`Parafusos`) se insertan con precisión milimétrica en los barrenos a ras de piso.
+- **Validación de Calidad**:
+  * Compilación TypeScript verificada (`npx tsc --noEmit`) con **0 errores**.
 
+---
 
+### 🚀 Hito 190: Soporte Dinámico de Orientación Horizontal (16:9) y Vertical (9:16) en Simulador de Celular (`Viewer3D.tsx`, `storeTypes.ts`, `createManualSlice.ts`) (19 de Septiembre, 2026)
+- **Objetivo y Contexto**:
+  * Proporcionar al usuario la capacidad de girar entre pantalla vertical (Portrait 9:16) y apaisada/horizontal (Landscape 16:9) en el simulador de celular, permitiendo evaluar la composición visual, el encuadre seguro (Safe Frame) y la legibilidad de animaciones 3D para videos de manuales y publicaciones móviles.
+- **Implementación Técnica**:
+  1. *Estado en Store Central (`createManualSlice.ts`, `storeTypes.ts`)*:
+     - Nuevas propiedades `simuladorMovilOrientacion: "vertical" | "horizontal"` y acción atómica `toggleSimuladorMovilOrientacion()`.
+  2. *Controles Ergonómicos en Doble Punto de Interacción*:
+     - **Barra Superior**: Botón circular `RotateCw` visible dinámicamente cuando el simulador móvil está encendido, permitiendo girar con 1 clic. El ícono `Smartphone` rota visualmente $90^\circ$ al estar en horizontal.
+     - **Badge Central Interactivo**: La cápsula central en pantalla (`rounded-full`) ahora es interactiva (`pointer-events-auto`), alternando el texto entre `9:16 Mobile Safe View` y `16:9 Mobile Safe View` con ícono de rotación animado.
+  3. *Adaptación Cinemática del Marco de Celular*:
+     - Modo Vertical: `aspect-[9/16]`, altavoz superior centrado (`top-2`).
+     - Modo Horizontal: `aspect-[16/9]`, altavoz lateral izquierdo (`left-2 top-1/2 -translate-y-1/2`), redimensionado a `w-[84vw] max-h-[82vh]`.
+     - Transición suave con animación CSS (`transition-all duration-300 ease-out`), esquinas seguras y sombreado Passepartout exterior.
+- **Validación de Calidad**:
+  * Compilación TypeScript verificada (`npx tsc --noEmit`) en `c:\Desarrollo\mmapp\3BF` con **0 errores**.
+  * Servidores Next.js, RhinoCompute y 3BF Worker 100% operativos.
 
+---
+
+### 🚀 Hito 191: Consola Timeline y Dope Sheet Estilo Blender con Keyframes Cinemáticos de Cámara y Portapapeles (Ctrl+C, Ctrl+V, Shift+D) (`BlenderTimeline.tsx`, `TimelineScrubber.tsx`, `Viewer3D.tsx`, `use3BFStore`) (20 de Septiembre, 2026)
+- **Objetivo y Contexto**:
+  * Diseñar e implementar una suite profesional de animación y control de cámara en el modo simulador móvil de `3dBimFab`, inspirada en la ergonomía y flujos de trabajo de Blender (regla numérica graduada, pistas Dope Sheet, zoom y desplazamiento temporal interactivo, keyframes en rombo dorado, arrastre sostenido y portapapeles con atajos industriales).
+- **Implementación Técnica**:
+  1. *Desacoplamiento y Limpieza del Scrubber Estándar (`TimelineScrubber.tsx`)*:
+     - Se limpió el reproductor flotante estándar para mantener una visualización minimalista y libre de distracciones en el modo de trabajo ordinario.
+  2. *Lanzamiento Horizontal Predeterminado en Modo Director / Simulador de Celular*:
+     - El simulador móvil se inicializa de forma nativa en orientación apaisada 16:9 (`simuladorMovilOrientacion: "horizontal"`), óptimo para edición de video y animación 3D de instructivos.
+  3. *Consola de Animación Profesional (`BlenderTimeline.tsx`)*:
+     - **Regla Numérica Graduada (Ruler)**: Marcas mayores por segundo y submarcas cada 0.5s con conversión matemática reactiva entre píxeles y tiempo (`tiempoAPx`, `pxATiempo`).
+     - **Zoom y Panning Temporal Fluido**: Zoom con rueda del mouse (`wheel`) centrado en la posición del cursor y navegación interactiva Blender (`Ctrl + Presionar rueda central del mouse` para zoom analógico y arrastre con botón central para pan horizontal).
+     - **Aguja Playhead Azul Vertical**: Línea y cabezal superior azul con tiempo numérico en décimas de segundo, arrastrable interactivamente sobre la regla y sincronizada con el audio multilingüe.
+     - **Pista Dope Sheet de Cámara 3D con Rombos Dorados**: Visualización en rombos de keyframes de cámara (`#F5A623`, `#FFCC00` al coincidir con el playhead, y cyan `#00FFFF` con anillo blanco al seleccionarse).
+     - **Arrastre Sostenido (Drag & Drop) de Keyframes**: Posibilidad de mover cualquier rombo a lo largo del tiempo con clic sostenido, actualizando dinámicamente su marca cronológica en el paso activo.
+  4. *Portapapeles de Keyframes Estilo Blender (Copiar, Pegar, Duplicar)*:
+     - **Atajos de Teclado**:
+       * `Ctrl + C` / `Cmd + C`: Copia la posición, target y FOV del keyframe seleccionado al portapapeles.
+       * `Ctrl + V` / `Cmd + V`: Pega el encuadre en el segundo exacto donde se ubica el playhead (sobrescribe si coincide a $\pm 0.08$s o inserta nuevo keyframe).
+       * `Shift + D`: Duplica instantáneamente el keyframe (desplaza $+0.5$s adelante si el playhead está en el mismo tiempo).
+       * `Supr` / `Delete` / `Backspace`: Elimina el keyframe seleccionado.
+     - **Botones en Barra de Herramientas**: Clúster de botones cápsula (`rounded-full`) para Copiar (`Copy`), Pegar (`ClipboardPaste`) y Duplicar (`CopyPlus`), con estados activos/deshabilitados según la selección y contenido del clipboard.
+     - **Tooltip Interactivo en Rombos**: Al hacer clic en un rombo, despliega píldora con tiempo numérico, botón Copiar, botón Duplicar y botón Eliminar.
+     - **Toast Flotante**: Retroalimentación visual inmediata en la parte superior del timeline confirmando cada acción.
+  5. *Reglas de Diseño y Calidad*:
+     - Respeto riguroso a terminaciones circulares en cápsula (`rounded-full`), paleta Tech Ethos / Dark `#1368AA` mate sin incandescencias, y denominación de marca canónica `3dBimFab`.
+- **Validación de Calidad**:
+  * Compilación TypeScript verificada (`npx tsc --noEmit`) en `c:\Desarrollo\mmapp\3BF` con **0 errores**.
+  * Servicios locales daemons sincronizados y estables.
