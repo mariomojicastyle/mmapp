@@ -1505,3 +1505,188 @@ Para mantener la máxima agilidad y minimizar el consumo de tokens sin perder ni
   * Compilación TypeScript verificada (`npx tsc --noEmit`) en `c:\Desarrollo\mmapp\3bf` y `c:\Desarrollo\mmapp\mario-mojica-plataforma` con **0 errores**.
   * Daemons de RhinoCompute, Worker Python y Next.js estables.
 
+---
+
+### 🚀 Hito 193: Erradicación de Freeze en P02, Desacoplamiento de `Viewer3D.tsx` y Modularización Atómica de `createManualSlice.ts` en `3dBimFab` (22 de Septiembre, 2026)
+- **Diagnóstico de Causa Raíz & Solución del Bloqueo (Freeze en P02)**:
+  * **Problema Diagnósticado**: Al entrar al paso `P02` de la Cómoda Ravenna (subbloques con rotación de 180° y correderas por ambos lados), la pestaña del navegador se congelaba completamente requiriendo forzar el cierre del proceso.
+  * **Causa Raíz 1 (Asimetría en Buffer de Pistas de Animación)**: En `coreografiaSubbloquesGiro.ts`, la pista de rotación de la corredera fija (`rotValues`) tenía 7 cuaterniones (28 floats) para 8 marcas de tiempo, y las pistas de los tornillos (`posValues` y `rotValues`) tenían 9 valores para 10 marcas de tiempo. Three.js `AnimationClip` entraba en un bucle de interpolación infinito / saturación de memoria por desbordamiento de índices en el mixer. Se normalizó la matriz física de tiempos y valores para cada herraje y pieza.
+  * **Causa Raíz 2 (Recorridos Recursivos en useFrame)**: En `SubbloquesTooltipsBillboard.tsx`, se ejecutaba `scene.traverse()` a 60 FPS dentro de `useFrame` buscando mallas de referencia. Se reemplazó por una resolución cacheada reactiva mediante `useEffect` ligada a las dependencias de piezas activas.
+  * **Causa Raíz 3 (Reactividad Desbordada en Mixer)**: En `Viewer3D.tsx`, la suscripción a `timelineCurrentTime` disparaba re-evaluaciones redundantes del mixer de Three.js. Se implementó el centinela `lastTime` para aislar el cómputo solo ante avances temporales reales.
+  * **Resultado**: Eliminación 100% confirmada del bug por el usuario: *"Ya no se bloquea, el bug fue eliminado!!"*.
+- **Desacoplamiento y Limpieza de `Viewer3D.tsx`**:
+  * Se extrajo la lógica de animación a un nuevo componente de escena auto-contenido: `AssemblyAnimationController.tsx`.
+  * Se aligeró `Viewer3D.tsx` en más de 120 líneas de código, reduciendo la complejidad ciclomática del visor 3D principal y depurando imports huérfanos.
+- **Modularización Atómica de `createManualSlice.ts`**:
+  * De un archivo monolítico de **2,169 líneas** con 8 dominios acoplados, se transformó en un orquestador canónico de apenas **24 líneas** que compone **9 sub-slices especializados** bajo `3bf/lib/slices/manual/`:
+    1. [manualStepsSlice.ts](file:///c:/Desarrollo/mmapp/3bf/lib/slices/manual/manualStepsSlice.ts): CRUD de pasos de ensamble, ordenación, auto-secuencia y simulador móvil.
+    2. [manualShowcaseSlice.ts](file:///c:/Desarrollo/mmapp/3bf/lib/slices/manual/manualShowcaseSlice.ts): Grupos cinemáticos, auto-detección y visibilidad de cajones/puertas.
+    3. [manualSubbloquesSlice.ts](file:///c:/Desarrollo/mmapp/3bf/lib/slices/manual/manualSubbloquesSlice.ts): Subbloques A, B, C, piezas, herrajes y transformaciones de banco de trabajo.
+    4. [manualPickingSlice.ts](file:///c:/Desarrollo/mmapp/3bf/lib/slices/manual/manualPickingSlice.ts): Modo picking interactivo 3D (cuentagotas), selección y retiro de componentes.
+    5. [manualTimelineSlice.ts](file:///c:/Desarrollo/mmapp/3bf/lib/slices/manual/manualTimelineSlice.ts): Controles de timeline, velocidad de reproducción y TTS multilingüe.
+    6. [manualBloquesSlice.ts](file:///c:/Desarrollo/mmapp/3bf/lib/slices/manual/manualBloquesSlice.ts): Bloques estándar universales y de marca (`.3bb.json`).
+    7. [manualProyectosSlice.ts](file:///c:/Desarrollo/mmapp/3bf/lib/slices/manual/manualProyectosSlice.ts): Persistencia en Google Drive (`.3bm.json`) y sincronización local.
+    8. [manualStudioSlice.ts](file:///c:/Desarrollo/mmapp/3bf/lib/slices/manual/manualStudioSlice.ts): Iluminación PBR de estudio, presets, gizmos, HDRI y ancho dinámico del panel lateral N-Panel.
+    9. [manualCameraSlice.ts](file:///c:/Desarrollo/mmapp/3bf/lib/slices/manual/manualCameraSlice.ts): Captura, edición y reproducción de keyframes cinemáticos de cámara por paso.
+  * Preservación del 100% de retrocompatibilidad con `use3BFStore` y todos los componentes de la interfaz.
+- **Validación de Calidad**:
+  * Compilación TypeScript verificada (`npx tsc --noEmit`) en `c:\Desarrollo\mmapp\3bf` con **0 errores**.
+  * Todos los daemons y servicios locales 100% activos y funcionales.
+
+---
+
+### 🚀 Hito 194: Integración Cinemática de Tarugos (Cavilhas) en Paso P02 con Auto-Detección Espacial y Sincronía Timeline en `3dBimFab` (22 de Septiembre, 2026)
+- **Diagnóstico y Solicitud del Usuario**:
+  * **Situación Inicial**: En el paso `P02` (ensamble básico de laterales con correderas telescópicas y giro longitudinal de 180° en la Cómoda Ravenna), los tarugos de madera (`Cavilhas`) no aparecían en ningún momento de la animación cinemática.
+  * **Causa Raíz 1 (Ausencia de Tarugos en Subbloques Individuales)**: En `workbenchTransform.ts` y `coreografiaSubbloquesGiro.ts`, la asignación de mallas dependía estrictamente de que las cavilhas estuvieran mapeadas una a una en el array `sub.herrajes` del subbloque. Al estar mapeadas únicamente en `herrajesAsignados` del paso general, los subbloques quedaban con `tarugos.length === 0` y la animación del Acto 5 nunca se ejecutaba.
+  * **Causa Raíz 2 (Desfase de Transformación en Banco de Trabajo)**: Las transformaciones del banco de trabajo (`acostado`, `rotPlano`, `apoyoEnPiso`) solo afectaban a las mallas del subbloque, dejando los tarugos en su orientación CAD vertical en el aire si no eran identificados como parte solidaria de la pieza de madera madre.
+  * **Causa Raíz 3 (Corte Prematuro en Timeline)**: La duración mínima de `esMultiSub3` en `manualAnimationEngine.ts` estaba limitada a `11.40s`. Como los tarugos emergen en `T_TARUGOS_INI = 11.40s`, alcanzan escala completa en `T_TARUGOS_POP = 11.60s` y se insertan hasta `T_TARUGOS_FIN = 12.90s`, el reproductor se detenía antes de que fueran visibles (permaneciendo en escala 0 invisible).
+- **Implementación Técnica**:
+  1. *Auto-Detección CAD de Tarugos en Banco de Trabajo (`workbenchTransform.ts`)*:
+     - Se incorporó detección espacial por proximidad CAD ($\le 35\text{ mm}$ de la pieza de madera madre).
+     - Si el subbloque no tiene tarugos asignados explícitamente, se capturan automáticamente sus cavilhas en estado CAD y se transforman rígidamente (acostadas y trasladadas al suelo de ensamble) de forma solidaria con la madera.
+  2. *Auto-Detección y Coreografía Espacial del Acto 5 (`coreografiaSubbloquesGiro.ts`)*:
+     - Se implementó un registro global `tarugosYaAsignadosGlobal` para evitar asignaciones duplicadas entre subbloques.
+     - Detección espacial por proximidad geométrica ($\le 35\text{ mm}$ de `boxMaderaCompleta`) en el espacio del banco de trabajo.
+     - Orquestación del **Acto 5 (11.40s $\rightarrow$ 13.50s)**: Una vez concluido el ensamble y fijación de todas las correderas telescópicas y tornillos (en 11.40s), los tarugos emergen a 20 cm sobre el plano XY a lo largo del eje Y ($\\pm Y$ según su ubicación respecto al centro baricéntrico), hacen pop-in a escala 100% en 11.60s y se insertan colinealmente en los orificios de la madera en 12.90s, reposando firmes hasta el final del paso (13.50s).
+     - Para la pieza que rota 180° (`P02B`), los vectores de aparición y las orientaciones de los tarugos se transforman coherentemente mediante `qRot180` para acoplarse con exactitud a la pieza volteada en el suelo.
+  3. *Ampliación de Duración a 13.50s (`manualAnimationEngine.ts`, `BlenderTimeline.tsx`, `TimelineScrubber.tsx`)*:
+     - Se sincronizó la duración física canónica para pasos de 3 láminas con subbloques y tarugos a un mínimo de **13.50s**, permitiendo la reproducción fluida y completa del Acto 5 sin cortes.
+- **Validación de Calidad**:
+  * Compilación TypeScript verificada (`npx tsc --noEmit`) en `c:\\Desarrollo\\mmapp\\3bf` con **0 errores**.
+  * Coherencia física total: las correderas y tornillos terminan su ensamble en 11.40s y de inmediato emergen e ingresan los tarugos a ras de los orificios.
+---
+
+### 🚀 Hito 195: Calibración Milimétrica del Eje de Giro X a 730 mm en Subbloques de Doble Cara (P03B / P02B) en `3dBimFab` (22 de Septiembre, 2026)
+- **Diagnóstico y Solicitud del Usuario**:
+  * **Problema Identificado**: La pieza central de doble cara (`P03B` / `P02B`) no rotaba desde su verdadero centro geométrico en el banco de trabajo, sufriendo un descentrado angular al voltearse $180^\circ$ sobre su eje longitudinal.
+  * **Causa Raíz**: Al modularizar `coreografiaSubbloquesGiro.ts`, el baricentro de giro en el eje X había quedado asignado dinámicamente a `cMaster.x` (centro del bounding box de la malla individual), perdiendo la cota geométrica fija calibrada previamente.
+- **Implementación Técnica**:
+  1. *Fijación Canónica de la Cota del Eje de Giro (`coreografiaSubbloquesGiro.ts`)*:
+     - Se fijó explícitamente `centroMadera.x = 0.730` (730 mm = 0.730 m) para subbloques de doble cara (`tieneDosCaras === true`).
+     - Al operar el operador de rotación `rotarPunto(p, qRot90)` y `rotarPunto(p, qRot180)` sobre $(X = 0.730\text{ m})$, la tabla, las correderas Cara A/B, los tornillos y los tarugos rotan concéntricamente desde su centro simétrico sin desalineaciones laterales ni invasión de subbloques vecinos.
+- **Validación de Calidad**:
+  * Compilación TypeScript verificada (`npx tsc --noEmit`) en `c:\\Desarrollo\\mmapp\\3bf` con **0 errores**.
+  * Giro concéntrico rigurosamente centrado a 730 mm en el banco de trabajo.
+---
+
+### 🚀 Hito 196: Inmutabilidad Absoluta en X del Eje y Pieza de Giro en Subbloques de Doble Cara en `3dBimFab` (22 de Septiembre, 2026)
+- **Diagnóstico y Solicitud del Usuario**:
+  * **Pregunta / Inquietud del Usuario**: *"¿El eje de rotación se está moviendo en sentido X / -X? Si es así ajústalo para que el eje no se mueva, quede fijo y sus valores en X no varíen"*.
+  * **Causa Raíz Analizada**: Al calcular las posiciones de la madera (`pMidRot`, `pFinRot`, `pPisoVolteada`), se utilizaba la función `rotarPunto(p0, qRot90)` y `rotarPunto(p0, qRot180)`. Como el pivote local de la malla `p0` no coincidía con precisión de micrómetro con el centro del eje, la rotación producía un desplazamiento orbital lateral en X ($X = 0.700 \to 0.730 \to 0.760$), provocando que la pieza y el centro rotacional oscilaran visualmente hacia $+X$ en el aire antes de descender al piso.
+- **Implementación Técnica**:
+  1. *Fijación Estricta de la Coordenada X (`coreografiaSubbloquesGiro.ts`)*:
+     - Se aseguró la invariabilidad completa de la posición en X para todos los keyframes de la madera:
+       `pSubida.x = p0.x`, `pMidRot.x = p0.x`, `pFinRot.x = p0.x` y `pPisoVolteada.x = p0.x`.
+     - La madera se eleva puramente en el eje Y ($+45\text{ cm}$), gira $180^\circ$ concéntricamente en el aire y desciende puramente en el eje Y sobre su misma huella horizontal exacta, con **cero variación en X** ($X(t) = p0.x$ inmutable).
+  2. *Inmovilidad del Eje Director*:
+     - El eje longitudinal Z permanece fijo en $X = 0.730\text{ m}$ (o $X = p0.x$), garantizando que no exista ninguna oscilación lateral ni deriva en sentido $X$ o $-X$.
+- **Validación de Calidad**:
+  * Compilación TypeScript verificada (`npx tsc --noEmit`) en `c:\\Desarrollo\\mmapp\\3bf` con **0 errores**.
+  * Cero oscilación en el eje X durante toda la cinemática de giro y descenso.
+
+---
+
+### 🚀 Hito 197: Acoplamiento Cinemático Rígido de Herrajes y Tarugos al Pivote Inmutable de la Madera en Subbloques de Doble Cara (`coreografiaSubbloquesGiro.ts`) (22 de Septiembre, 2026)
+- **Diagnóstico y Solicitud del Usuario**:
+  * **Situación Confirmada**: La madera del subbloque de doble cara (`P02B` / `P03B`) ya rota de manera perfecta e inmutable en su sitio sobre el banco de trabajo.
+  * **Problema Identificado**: Los herrajes (correderas telescópicas Cara A y B, tornillos de fijación y tarugos del Acto 5) quedaron desalineados de la madera durante y después de la rotación de 180°.
+  * **Causa Raíz Matemática**: Mientras la madera se transformaba con respecto a su propio pivote físico local $p_0$ (`getSafeRestPosition(masterMesh)`), los herrajes calculaban su trayectoria orbital mediante `rotarPunto(p, qRot)` referenciado a `centroMadera` (con cota arbitraria forzada $X = 0.730\text{ m}$). Al diferir $p_0$ de `centroMadera`, la madera rotaba sobre un centro y los herrajes sobre otro centro distinto, generando una discrepancia lateral de varios centímetros en el espacio.
+- **Implementación Técnica**:
+  1. *Marco Inercial Rígido Unificado (`coreografiaSubbloquesGiro.ts`)*:
+     - Se unificó el operador de rotación espacial `rotarPunto` para que en subbloques de doble cara tome obligatoriamente como centro de giro el pivote inmutable de la pieza máster de madera:
+       `pMaderaRef = getSafeRestPosition(masterMesh) || mallasMadera[0]`.
+     - Fórmula cinemática canónica: $\vec{P}(t) = \vec{p}_{\text{MaderaRef}} + \mathbf{R}(t) \cdot (\vec{P}_{\text{rest}} - \vec{p}_{\text{MaderaRef}})$.
+     - Correderas y tornillos de Cara A suben, giran 90°, giran 180° y descienden rígidamente fijados a la cara inferior de la madera volteada en su misma huella del suelo.
+     - Correderas y tornillos de Cara B aparecen verticalmente y descienden de manera milimétrica sobre los barrenos de la cara ahora superior de la madera volteada.
+     - Los tarugos (`Cavilhas`) del Acto 5 se insertan colinealmente con precisión absoluta en los orificios del canto de la madera volteada.
+  2. *Conservación de Orientación Atornillada en Cara A*:
+     - Se vinculó `qMidRotT` y `qFinRotT` a `qFinal` (orientación con las 2 vueltas axiales completadas), garantizando que los tornillos mantengan su condición física atornillada al rotar en el aire junto a la madera.
+- **Validación de Calidad**:
+  * Compilación TypeScript verificada (`npx tsc --noEmit`) en `c:\\Desarrollo\\mmapp\\3bf` con **0 errores**.
+  * Sincronía y alineación de cuerpo rígido 100% coherente entre madera, correderas, tornillos y tarugos en el visor 3D.
+
+---
+
+### 🚀 Hito 198: Erradicación del Hundimiento / Clavado de Correderas Mediante Trayectoria de Arco Circular Muestreado a 24 Keyframes (`coreografiaSubbloquesGiro.ts`) (22 de Septiembre, 2026)
+- **Diagnóstico y Solicitud del Usuario**:
+  * **Problema Visual Identificado**: Entre los segundos $7.9\text{s}$ y $8.1\text{s}$ (durante la rotación en el aire de $0^\circ \to 90^\circ \to 180^\circ$), las correderas telescópicas y tornillos de Cara A se "clavaban" y penetraban visiblemente a través del grosor de la madera (`Peça 6`).
+  * **Causa Raíz Cinemática (Interpolación Cartesiana Lineal)**: En Three.js, un `VectorKeyframeTrack` para posiciones 3D interpola linealmente en coordenadas cartesianas (LERP) a través de la cuerda secante entre dos puntos espaciales. Al tener únicamente 2 keyframes en el giro ($0^\circ \to 90^\circ$ y $90^\circ \to 180^\circ$), el punto medio a $45^\circ$ y a $135^\circ$ sufría un acortamiento radial de $R \cdot (1 - \cos 45^\circ) \approx 29.3\%$, provocando que los herrajes se hundieran hasta **$7.3\text{ cm}$** dentro del alma del tablero en vez de seguir el arco circular exterior.
+- **Implementación Técnica**:
+  1. *Generador de Arco Circular Muestreado (`coreografiaSubbloquesGiro.ts`)*:
+     - Se implementó `generarMuestrasGiroArco(pRest, qBase)` con $N = 24$ intervalos equiespaciados ($\Delta \theta = 7.5^\circ$, $\Delta t \approx 0.029\text{s}$) en el lapso de giro ($7.80\text{s} \to 8.50\text{s}$).
+     - Cada muestra calcula trigonométricamente la posición en la esfera/círculo en el aire:
+       $\vec{P}_i = \text{rotarPunto}(\vec{P}_{\text{rest}}, Q_i) + (0, \text{ALTURA\_GIRO}, 0)$, donde $Q_i = \text{Quaternion}(\text{ejeVolteo}, u \cdot \pi)$.
+     - El error de cuerda entre keyframes se redujo de $73.2\text{ mm}$ a menos de **$0.53\text{ mm}$** (reducción del **$99.3\%$** del desvío).
+     - Las correderas y tornillos giran tangencialmente y se deslizan pegados como una sola piel a la cara exterior de la madera sin clavarse ni hundirse en lo más mínimo.
+- **Validación de Calidad**:
+  * Confirmación visual directa del usuario (*"Ya esta ok!"*).
+  * Compilación TypeScript verificada (`npx tsc --noEmit`) en `c:\\Desarrollo\\mmapp\\3bf` con **0 errores**.
+
+---
+
+### 🚀 Hito 199: Calibración Vectorial de Tarugos en el Plano Longitudinal (Cero Desplazamiento Vertical/X y Entrada Colineal a Cantos Y1 $\to$ Y0 y Y0 $\to$ Y1) (`coreografiaSubbloquesGiro.ts`) (22 de Septiembre, 2026)
+- **Diagnóstico y Clarificación de Ejes con el Usuario**:
+  * **Problema Visual**: En la cinemática previa, los tarugos aparecían con desplazamiento en el eje vertical (unos por debajo de la tabla y otros por encima, interpretados visualmente como valores negativos/positivos en Z según el convenio Rhino Z-Up).
+  * **Causa Raíz de Convención de Ejes (Rhino Z-Up vs Three.js Y-Up)**:
+    - En el convenio CAD de Rhino/Grasshopper, la altura vertical de la mesa es **Z**, mientras que el eje horizontal a lo largo del tablero es **Y**.
+    - En Three.js WebGL, la altura vertical es **Y**, y la profundidad longitudinal del tablero acostado es **Z**.
+    - El offset anterior aplicaba un vector $(0, \Delta Y, 0)$ en Three.js, haciendo que los tarugos flotaran arriba y abajo en vertical en lugar de desplazarse en el plano de la mesa.
+- **Implementación Técnica**:
+  1. *Inmutabilidad Absoluta en Altura Vertical y Ancho X*:
+     - Se fijaron estrictamente: $p_{\text{aparición}}.x = p_{\text{final}}.x$ (cero desplazamiento en X) y $p_{\text{aparición}}.y = p_{\text{final}}.y$ (cero desplazamiento vertical en Three.js, alineados al milímetro con el centro del barreno en el canto).
+  2. *Desplazamiento Longitudinal Exclusivo hacia los Cantos*:
+     - **Franja del borde superior (fondo / $Z < z_{\text{centro}}$)**: Aparecen desplazados hacia atrás ($Z_{\text{aparición}} = Z_{\text{final}} - 0.20\text{m}$) y se desplazan en dirección **Y1 $\to$ Y0** hacia adelante para insertarse colinealmente en el canto superior.
+     - **Par de tarugos inferiores de P03B (frente / $Z \ge z_{\text{centro}}$)**: Aparecen desplazados hacia adelante ($Z_{\text{aparición}} = Z_{\text{final}} + 0.20\text{m}$) y se desplazan en dirección **Y0 $\to$ Y1** hacia atrás para insertarse colinealmente en el canto inferior.
+- **Validación de Calidad**:
+  * Confirmación visual directa del usuario (*"Ya quedaron bien!!!!"*).
+  * Compilación TypeScript verificada (`npx tsc --noEmit`) en `c:\\Desarrollo\\mmapp\\3bf` con **0 errores**.
+  * Cero desvío vertical, cero variación en X y aproximación colineal pura al canto de ensamble.
+
+---
+
+### 🚀 Hito 200: Creación de la Habilidad Canónica `cinematica-rhino-threejs`, Helper `coordinateBridge.ts` y Reglas de Gobernanza en `3dBimFab` (22 de Septiembre, 2026)
+- **Motivación y Diagnóstico Estratégico**:
+  * **Brecha Conceptual Recurrente**: En múltiples sesiones de cinemática y animación 3D, surgieron desalineaciones provocadas por la discrepancia entre el marco mental de taller/CNC de Rhino/Grasshopper (Z-Up) y el motor gráfico de Three.js (Y-Up).
+  * **Objetivo**: Crear una solución permanente en 3 capas que unifique la interpretación de ejes, haga natural la comunicación y erradique de raíz futuros errores de animación.
+- **Implementación Técnica en 3 Capas**:
+  1. *Skill Especializada (`.agent/skills/cinematica-rhino-threejs/SKILL.md`)*:
+     - Documento maestro de instrucciones y conversión de coordenadas.
+     - Tabla canónica de correspondencia entre los ejes de taller (X, Y, Z) y Three.js.
+     - Reglas de emparentamiento de cuerpo rígido con $\mathbf{T}_{\text{rel}} = \mathbf{W}_{0,\text{madera}}^{-1} \cdot \mathbf{W}_{0,\text{herraje}}$.
+     - Protocolo de muestreo trigonométrico de arco circular a 24 pasos ($7.5^\circ$) para evitar clavado en tableros al voltear.
+     - Reglas de aproximación a cantos superior/inferior en tableros acostados en el banco de trabajo.
+  2. *Módulo Helper Matemático Reutilizable (`3bf/lib/engine/coordinateBridge.ts`)*:
+     - `calcularPuntoAparicionCanto(pFinal, zCentro, distanciaM)`: cálculo determinista de aproximaciones a cantos.
+     - `evaluarHijoConMadera(WMatrizMadera, TRelativaHijo)`: transformación rígida instantánea.
+     - `generarMuestrasArcoCircular(...)`: muestreo continuo sin deformaciones radiales.
+  3. *Inyección en Reglas de Gobernanza (`AGENTS.md` y `GEMINI.md`)*:
+     - Incorporada la **"Regla Canónica de Cinemática: Traductor Mental de Ejes Rhino/CNC (Z-Up) ➔ Three.js (Y-Up)"**.
+     - El agente aplica silenciosa e instantáneamente la equivalencia física sin pedir jamás al usuario que traduzca su lenguaje de taller.
+- **Validación de Calidad**:
+  * Compilación TypeScript verificada (`npx tsc --noEmit`) in `c:\\Desarrollo\\mmapp\\3bf` con **0 errores**.
+  * Coherencia estructural 100% blindada en el ecosistema de IA y plataforma `3dBimFab`.
+
+---
+
+### 🚀 Hito 201: Erradicación del Artefacto de Rejilla Blanca en Base de Cristal y Vinculación Reactiva Total de Colores de Rejilla en `3dBimFab` (22 de Septiembre, 2026)
+- **Diagnóstico y Causa Raíz de Artefacto Visual**:
+  * **Problema Visual**: En modo semitransparente (cristal), en la base de apoyo del mueble (cantos de apoyo contra el suelo en $y=0$), se visualizaba una franja densa de cuadrícula blanca fluorescente muy contrastada que rompía la apariencia de cristal sólido.
+  * **Causa Raíz 1 (Doble cara `THREE.DoubleSide` coplanar con el suelo)**: Los tableros cerrados se renderizaban con doble cara, lo que generaba que la cara inferior apuntando hacia abajo estuviera coplanar a 1 mm de la grilla Drei, duplicando las capas transparentes y atrapando la cuadrícula en la base.
+  * **Causa Raíz 2 (Dilución cromática en shader Drei)**: En Drei `<Grid>`, el shader interpola `color = mix(cellColor, sectionColor, min(1.0, sectionThickness * g2))`. Con un grosor menor a 1.0 (`sectionThickness: 0.7`), la fórmula diluía la línea principal al 50% con el color de la secundaria, impidiendo apreciar los cambios de color de la "Línea de rejilla principal" en el visor.
+- **Implementación Técnica**:
+  1. *Backface Culling Inteligente en Modo Cristal (`BoardMesh.tsx`)*:
+     - Configurado `side={modoVisual === "semitransparente" ? THREE.FrontSide : THREE.DoubleSide}` en geometrías reales y fallback de caja.
+     - Al mirar desde arriba, la cara inferior de apoyo se descarta automáticamente por la GPU (Backface Culling), eliminando la doble capa transparente coplanar con el suelo.
+  2. *Mayor Cuerpo y Solidez de Cristal (`boardMaterialResolver.ts`)*:
+     - Se ajustó la opacidad del cristal a `0.80`, con `roughness: 0.22` y `metalness: 0.08`, logrando un acabado sólido-translúcido uniforme en toda la pieza sin perder visibilidad de herrajes internos.
+  3. *Subordinación Espacial de la Grilla (`Viewer3D.tsx`)*:
+     - Se desplazó el plano de la grilla a `position={[0, -0.003, 0]}` (3 mm bajo el suelo) para eliminar cualquier interferencia rasante.
+  4. *Vinculación Reactiva Instantánea y Pureza Cromática al 100% (`Viewer3D.tsx` & `createCatalogSlice.ts`)*:
+     - Se vinculó directamente `sectionColor` a `coloresApariencia.rejillaPrincipal` y `cellColor` a `coloresApariencia.rejillaSecundaria`.
+     - Se ajustó `sectionThickness` a `1.6` para alcanzar el 100% de pureza cromática en la rejilla principal sin dilución.
+     - Se sincronizó `setColorApariencia` para actualizar en tiempo real tanto `coloresApariencia` como `calibracion.colorGrillaGruesa` / `colorGrillaDelgada`.
+     - Se incorporó `key` reactivo al componente `<Grid>` para respuesta inmediata ante cualquier ajuste de paleta o cuentagotas.
+- **Validación de Calidad**:
+  * Compilación TypeScript verificada (`npx tsc --noEmit`) in `c:\Desarrollo\mmapp\3bf` con **0 errores**.
+  * Visualización de cristal homogénea, base limpia y vinculación en vivo comprobada.

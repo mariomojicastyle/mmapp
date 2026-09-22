@@ -448,7 +448,7 @@ export function BoardMesh({
           polygonOffset={isHardwareTampa || estaSeleccionadaEnPicking || esLaminaPlanaMadera}
           polygonOffsetFactor={isHardwareTampa ? -2 : -1}
           polygonOffsetUnits={isHardwareTampa ? -2 : -1}
-          side={THREE.DoubleSide}
+          side={modoVisual === "semitransparente" ? THREE.FrontSide : THREE.DoubleSide}
         />
         {/* 📐 Malla pura (wireframe de la geometría real) sobre la superficie sólida translúcida */}
         {modoVisual === "lineas" && (
@@ -576,7 +576,7 @@ export function BoardMesh({
         polygonOffset={isHardwareTampa || estaSeleccionadaEnPicking}
         polygonOffsetFactor={isHardwareTampa ? -2 : -1}
         polygonOffsetUnits={isHardwareTampa ? -2 : -1}
-        side={THREE.DoubleSide}
+        side={modoVisual === "semitransparente" ? THREE.FrontSide : THREE.DoubleSide}
       />
       {/* 📐 Malla pura (wireframe de la geometría real) sobre la superficie sólida translúcida */}
       {modoVisual === "lineas" && (

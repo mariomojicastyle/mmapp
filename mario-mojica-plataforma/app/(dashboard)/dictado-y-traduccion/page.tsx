@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import {
   AudioRecorderBar,
   ConversationMode,
@@ -16,6 +16,24 @@ export default function DictadoYTraduccionPage() {
   const [conversationMode, setConversationMode] = useState<ConversationMode>("es_to_pt");
   const [singleDictationLang, setSingleDictationLang] = useState<SingleDictationLang>("es-CO");
   const [isActaModalOpen, setIsActaModalOpen] = useState(false);
+
+  // Cargar preferencias guardadas del usuario desde localStorage
+  useEffect(() => {
+    try {
+      const savedAutoTranslate = localStorage.getItem("dictado_auto_translate");
+      if (savedAutoTranslate !== null) {
+        setAutoTranslate(savedAutoTranslate === "true");
+      }
+      const savedMode = localStorage.getItem("dictado_conversation_mode") as ConversationMode | null;
+      if (savedMode) {
+        setConversationMode(savedMode);
+      }
+      const savedLang = localStorage.getItem("dictado_single_lang") as SingleDictationLang | null;
+      if (savedLang) {
+        setSingleDictationLang(savedLang);
+      }
+    } catch (e) {}
+  }, []);
 
   // Configuración de idiomas según modo
   const config = useMemo(() => {
@@ -69,6 +87,7 @@ export default function DictadoYTraduccionPage() {
   const {
     isRecording,
     interimText,
+    interimTranslatedText,
     segments,
     isSupported,
     durationSeconds,
@@ -100,32 +119,91 @@ export default function DictadoYTraduccionPage() {
     return { wordCount: words, charCount: chars };
   }, [segments, interimText]);
 
-  // Cambiar modo de conversación
+  // Cambiar modo de conversación con persistencia y sincronización bidireccional
   const handleChangeConversationMode = (mode: ConversationMode) => {
     setConversationMode(mode);
+    try {
+      localStorage.setItem("dictado_conversation_mode", mode);
+    } catch (e) {}
+
     let newSource = "es-CO";
     let newTarget: "en" | "pt" | "es" = "pt";
 
     if (mode === "es_to_pt") {
       newSource = "es-CO";
       newTarget = "pt";
+      setSingleDictationLang("es-CO");
     } else if (mode === "pt_to_es") {
       newSource = "pt-BR";
       newTarget = "es";
+      setSingleDictationLang("pt-BR");
     } else if (mode === "es_to_en") {
       newSource = "es-CO";
       newTarget = "en";
+      setSingleDictationLang("es-CO");
     } else if (mode === "en_to_es") {
       newSource = "en-US";
       newTarget = "es";
+      setSingleDictationLang("en-US");
     }
+
+    try {
+      localStorage.setItem("dictado_single_lang", newSource as SingleDictationLang);
+    } catch (e) {}
 
     retranslateAll(newTarget, newSource);
   };
 
-  // Cambiar idioma en modo solo dictado
+  // Cambiar idioma en modo solo dictado con persistencia y sincronización
   const handleChangeSingleDictationLang = (lang: SingleDictationLang) => {
     setSingleDictationLang(lang);
+    try {
+      localStorage.setItem("dictado_single_lang", lang);
+    } catch (e) {}
+
+    if (lang === "pt-BR") {
+      setConversationMode("pt_to_es");
+      try {
+        localStorage.setItem("dictado_conversation_mode", "pt_to_es");
+      } catch (e) {}
+    } else if (lang === "es-CO") {
+      setConversationMode("es_to_pt");
+      try {
+        localStorage.setItem("dictado_conversation_mode", "es_to_pt");
+      } catch (e) {}
+    } else if (lang === "en-US") {
+      setConversationMode("en_to_es");
+      try {
+        localStorage.setItem("dictado_conversation_mode", "en_to_es");
+      } catch (e) {}
+    }
+  };
+
+  // Conmutador de modo Traducción vs Solo Dictado sincronizado
+  const handleToggleAutoTranslate = (enabled: boolean) => {
+    setAutoTranslate(enabled);
+    try {
+      localStorage.setItem("dictado_auto_translate", String(enabled));
+    } catch (e) {}
+
+    // Coherencia del idioma de escucha seleccionado
+    if (enabled) {
+      if (singleDictationLang === "pt-BR") {
+        setConversationMode("pt_to_es");
+      } else if (singleDictationLang === "en-US") {
+        setConversationMode("en_to_es");
+      } else {
+        setConversationMode("es_to_pt");
+      }
+    } else {
+      if (conversationMode === "pt_to_es") {
+        setSingleDictationLang("pt-BR");
+      } else if (conversationMode === "en_to_es") {
+        setSingleDictationLang("en-US");
+      } else {
+        setSingleDictationLang("es-CO");
+      }
+    }
   };
 
   // Copiar el texto de la pizarra al portapapeles desde el botón central
@@ -217,7 +295,7 @@ export default function DictadoYTraduccionPage() {
           conversationMode={conversationMode}
           singleDictationLang={singleDictationLang}
           onToggleRecording={toggleRecording}
-          onToggleAutoTranslate={setAutoTranslate}
+          onToggleAutoTranslate={handleToggleAutoTranslate}
           onChangeConversationMode={handleChangeConversationMode}
           onChangeSingleDictationLang={handleChangeSingleDictationLang}
           onClearAll={clearAll}
@@ -233,6 +311,7 @@ export default function DictadoYTraduccionPage() {
         <TranscriptFeed
           segments={segments}
           interimText={interimText}
+          interimTranslatedText={interimTranslatedText}
           sourceLangName={config.sourceLangName}
           targetLangName={config.targetLangName}
           autoTranslate={autoTranslate}

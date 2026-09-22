@@ -21,6 +21,7 @@ interface HerrajePillItemProps {
   onCambiarDireccion: (dir: string) => void;
   onCambiarTiempo: (segundos: number) => void;
   onDescongelar?: () => void;
+  onRetirar?: () => void;
   onDragStart?: (e: React.DragEvent) => void;
   onDragEnd?: () => void;
 }
@@ -41,6 +42,7 @@ export function HerrajePillItem({
   onCambiarDireccion,
   onCambiarTiempo,
   onDescongelar,
+  onRetirar,
   onDragStart,
   onDragEnd,
 }: HerrajePillItemProps) {
@@ -162,6 +164,20 @@ export function HerrajePillItem({
           />
           <span className="text-[7.5px] font-mono font-bold text-slate-400 select-none">s</span>
         </div>
+
+        {/* ❌ Botón X para retirar / eliminar este herraje del paso si fue añadido por error */}
+        {onRetirar && (
+          <span
+            onClick={(e) => {
+              e.stopPropagation();
+              onRetirar();
+            }}
+            title={`Retirar ${herraje.label} de este paso (eliminar selección accidental)`}
+            className="w-3.5 h-3.5 rounded-full flex items-center justify-center hover:bg-red-200 dark:hover:bg-red-900/60 text-slate-400 hover:text-red-600 transition ml-0.5 cursor-pointer"
+          >
+            <X className="w-2.5 h-2.5" />
+          </span>
+        )}
       </button>
     </div>
   );

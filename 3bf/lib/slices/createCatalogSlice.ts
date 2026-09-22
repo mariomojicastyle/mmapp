@@ -747,6 +747,11 @@ export const createCatalogSlice = (set: any, get: any): any => ({
         ...(clave === "bordePaneles" ? { colorMarca: valor } : {}),
         ...(clave === "botonActivo" ? { iconosFijos: valor } : {}),
       },
+      calibracion: {
+        ...state.calibracion,
+        ...(clave === "rejillaPrincipal" ? { colorGrillaGruesa: valor } : {}),
+        ...(clave === "rejillaSecundaria" ? { colorGrillaDelgada: valor } : {}),
+      },
     })),
   restaurarColoresApariencia: () => {
     const state = get();

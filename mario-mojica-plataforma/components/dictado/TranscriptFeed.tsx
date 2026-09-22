@@ -93,6 +93,7 @@ function EditableSegmentCard({
 export function TranscriptFeed({
   segments,
   interimText,
+  interimTranslatedText = "",
   sourceLangName = "Español",
   targetLangName,
   autoTranslate = true,
@@ -104,6 +105,7 @@ export function TranscriptFeed({
 }: {
   segments: { id: string; originalText: string; translatedText: string; timestamp: number }[];
   interimText: string;
+  interimTranslatedText?: string;
   sourceLangName?: string;
   targetLangName: string;
   autoTranslate?: boolean;
@@ -115,6 +117,41 @@ export function TranscriptFeed({
 }) {
   const [copiedOriginal, setCopiedOriginal] = useState(false);
   const [copiedTranslation, setCopiedTranslation] = useState(false);
+
+  // Referencias para auto-scroll tipo teleprompter
+  const originalScrollRef = useRef<HTMLDivElement>(null);
+  const translatedScrollRef = useRef<HTMLDivElement>(null);
+
+  // Mantener siempre visible la última línea que se está dictando o traduciendo
+  const scrollToBottom = useCallback(() => {
+    const activeEl = typeof document !== "undefined" ? document.activeElement : null;
+    const isEditingPastOriginal =
+      originalScrollRef.current &&
+      activeEl &&
+      originalScrollRef.current.contains(activeEl) &&
+      activeEl.tagName === "TEXTAREA";
+
+    const isEditingPastTranslated =
+      translatedScrollRef.current &&
+      activeEl &&
+      translatedScrollRef.current.contains(activeEl) &&
+      activeEl.tagName === "TEXTAREA";
+
+    if (originalScrollRef.current && !isEditingPastOriginal) {
+      originalScrollRef.current.scrollTop = originalScrollRef.current.scrollHeight;
+    }
+    if (translatedScrollRef.current && !isEditingPastTranslated) {
+      translatedScrollRef.current.scrollTop = translatedScrollRef.current.scrollHeight;
+    }
+  }, []);
+
+  useEffect(() => {
+    // requestAnimationFrame asegura que el scroll se aplique inmediatamente tras el render del DOM
+    const frameId = requestAnimationFrame(() => {
+      scrollToBottom();
+    });
+    return () => cancelAnimationFrame(frameId);
+  }, [segments, interimText, interimTranslatedText, scrollToBottom]);
 
   // Copiar todo el texto original
   const handleCopyOriginal = () => {
@@ -180,8 +217,11 @@ export function TranscriptFeed({
           </div>
         </div>
 
-        {/* Cuerpo del Texto - Flujo Continuo compacto, editable en vivo y scrolleable */}
-        <div className="flex-1 p-3.5 sm:p-4 overflow-y-auto font-sans leading-relaxed text-slate-800 dark:text-slate-200 text-[13.5px] sm:text-[14.5px] space-y-2 select-text min-h-0 scroll-smooth">
+        {/* Cuerpo del Texto - Flujo Continuo compacto, editable en vivo y scrolleable con auto-scroll teleprompter */}
+        <div
+          ref={originalScrollRef}
+          className="flex-1 p-3.5 sm:p-4 overflow-y-auto font-sans leading-relaxed text-slate-800 dark:text-slate-200 text-[13.5px] sm:text-[14.5px] space-y-2 select-text min-h-0"
+        >
           {segments.length === 0 && !interimText && (
             <div className="h-full flex flex-col items-center justify-center text-center text-slate-400 dark:text-slate-500 py-16 px-4 select-none">
               <p className="font-medium text-sm text-slate-500 dark:text-slate-400">
@@ -213,6 +253,9 @@ export function TranscriptFeed({
               </p>
             </div>
           )}
+
+          {/* Espaciador terminal para garantizar visibilidad al final del scroll */}
+          <div className="h-2 w-full shrink-0" />
         </div>
       </div>
 
@@ -248,9 +291,12 @@ export function TranscriptFeed({
             </button>
           </div>
 
-          {/* Cuerpo de Traducción - Flujo Continuo editable y scrolleable */}
-          <div className="flex-1 p-3.5 sm:p-4 overflow-y-auto font-sans leading-relaxed text-slate-800 dark:text-slate-200 text-[13.5px] sm:text-[14.5px] space-y-2 select-text min-h-0 scroll-smooth">
-            {segments.length === 0 && (
+          {/* Cuerpo de Traducción - Flujo Continuo editable y scrolleable con auto-scroll teleprompter */}
+          <div
+            ref={translatedScrollRef}
+            className="flex-1 p-3.5 sm:p-4 overflow-y-auto font-sans leading-relaxed text-slate-800 dark:text-slate-200 text-[13.5px] sm:text-[14.5px] space-y-2 select-text min-h-0"
+          >
+            {segments.length === 0 && !interimTranslatedText && (
               <div className="h-full flex flex-col items-center justify-center text-center text-slate-400 dark:text-slate-500 py-16 px-4 select-none">
                 <p className="font-medium text-sm text-slate-500 dark:text-slate-400">
                   Traducción automática en paralelo
@@ -271,6 +317,19 @@ export function TranscriptFeed({
                 placeholder="Traducción..."
               />
             ))}
+
+            {/* Texto en Proceso de Traducción en Tiempo Real */}
+            {interimTranslatedText && (
+              <div className="p-3 rounded-xl bg-cyan-50/70 dark:bg-[#1368AA]/15 border border-cyan-200/60 dark:border-[#1368AA]/30 animate-pulse">
+                <p className="text-cyan-950 dark:text-cyan-200 font-medium select-text leading-relaxed">
+                  {interimTranslatedText}
+                  <span className="inline-block w-2 h-4 ml-1 bg-cyan-500 dark:bg-[#1368AA] animate-pulse align-middle" />
+                </p>
+              </div>
+            )}
+
+            {/* Espaciador terminal para garantizar visibilidad al final del scroll */}
+            <div className="h-2 w-full shrink-0" />
           </div>
         </div>
       )}

@@ -93,7 +93,7 @@ export default function BlenderTimeline() {
     pasoActivo?.duracionTotal !== undefined && pasoActivo.duracionTotal > 0
       ? pasoActivo.duracionTotal
       : duracionAnimCalculada,
-    esMultiSub3 ? 11.4 : 1.0
+    esMultiSub3 ? 13.5 : 1.0
   );
 
   // Keyframes ordenados cronológicamente

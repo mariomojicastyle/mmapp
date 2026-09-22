@@ -65,9 +65,7 @@ import { useGLBExport } from "./useGLBExport";
 import TimelineScrubber from "@/components/manual/TimelineScrubber";
 import BlenderTimeline from "@/components/manual/BlenderTimeline";
 import { AssemblyPiecePositioner } from "./AssemblyPiecePositioner";
-import { compilarAnimacionPaso, KinematicEngineResult } from "@/lib/manualAnimationEngine";
-import { aplicarTransformacionesBancoSubbloques } from "@/lib/engine/workbenchTransform";
-import { getSafeRestPosition, getSafeRestQuaternion } from "@/lib/engine/cadStateUtils";
+import { AssemblyAnimationController } from "./AssemblyAnimationController";
 import { extraerPiezaMadre, anotarInstanciasFisicas } from "@/lib/piezaMadreUtils";
 import BloqueEstandar3DScene from "./BloqueEstandar3DScene";
 import SubbloquesTooltipsBillboard from "./SubbloquesTooltipsBillboard";
@@ -640,128 +638,6 @@ function ParametricFurnitureMesh({
   );
 }
 
-function AssemblyAnimationController({ furnitureGroup }: { furnitureGroup: THREE.Group | null }) {
-  const {
-    pestanaActiva,
-    pasosManual,
-    pasoActivoManualId,
-    timelineCurrentTime,
-    objetoActivoId,
-    instancias,
-    vistaPiezasDesplazadas,
-  } = use3BFStore();
-
-  const activeStep = pasosManual.find((p) => p.id === pasoActivoManualId) || pasosManual[0];
-  const engineRef = useRef<KinematicEngineResult | null>(null);
-
-  // Obtener el grupo de muebles efectivo (prop directa o fallback dinámico a mapa de instancias o escena)
-  const effectiveGroup = React.useMemo(() => {
-    if (furnitureGroup) return furnitureGroup;
-    if (typeof window !== "undefined") {
-      const groupsMap = (window as any).__3bfInstanceGroups as Map<string, THREE.Group> | undefined;
-      if (groupsMap && groupsMap.size > 0) {
-        if (objetoActivoId && groupsMap.has(objetoActivoId)) {
-          return groupsMap.get(objetoActivoId)!;
-        }
-        return groupsMap.values().next().value || null;
-      }
-      if ((window as any).__threeScene3BF) {
-        return (window as any).__threeScene3BF;
-      }
-    }
-    return null;
-  }, [furnitureGroup, objetoActivoId, instancias]);
-
-  useEffect(() => {
-    if (pestanaActiva !== "manual" || !effectiveGroup || !activeStep) {
-      if (engineRef.current) {
-        engineRef.current.detener();
-        engineRef.current = null;
-      }
-      return;
-    }
-
-    if (typeof window !== "undefined") {
-      (window as any).__threeScene3BF = effectiveGroup;
-    }
-
-    // 🔄 Si el switch está en "Posición Original" (vistaPiezasDesplazadas === false),
-    // restaurar inmediatamente todas las mallas a su posición de reposo ensamblada original (pRest).
-    if (!vistaPiezasDesplazadas) {
-      if (engineRef.current) {
-        engineRef.current.detener();
-        engineRef.current = null;
-      }
-      effectiveGroup.traverse((child: any) => {
-        if (child.isMesh) {
-          const rest = getSafeRestPosition(child);
-          child.position.copy(rest);
-          const restQ = getSafeRestQuaternion(child);
-          child.quaternion.copy(restQ);
-          child.updateMatrix();
-          child.updateMatrixWorld(true);
-        }
-      });
-
-      // 🪚 Si el paso activo contiene subbloques, aplicar directamente sus transformaciones de banco de trabajo
-      if (activeStep.subbloques && activeStep.subbloques.length > 0 && activeStep.tipo !== "showcase") {
-        const sceneMeshes: THREE.Mesh[] = [];
-        effectiveGroup.traverse((child: any) => {
-          if (child.isMesh) sceneMeshes.push(child);
-        });
-        aplicarTransformacionesBancoSubbloques(sceneMeshes, activeStep.subbloques);
-      }
-
-      return;
-    }
-
-    try {
-      const res = compilarAnimacionPaso(effectiveGroup, activeStep);
-      engineRef.current = res;
-      if (typeof window !== "undefined") {
-        (window as any).__3bfManualEngine = res;
-      }
-      res.actualizarTiempo(timelineCurrentTime);
-    } catch (e) {
-      console.warn("[AssemblyAnimationController] Error al compilar animación:", e);
-    }
-
-    return () => {
-      if (typeof window !== "undefined" && (window as any).__3bfManualEngine === engineRef.current) {
-        (window as any).__3bfManualEngine = null;
-      }
-      if (engineRef.current) {
-        engineRef.current.detener();
-        engineRef.current = null;
-      }
-    };
-  }, [
-    pestanaActiva,
-    effectiveGroup,
-    vistaPiezasDesplazadas,
-    activeStep?.id,
-    activeStep?.duracionTotal,
-    JSON.stringify(activeStep?.secuencia),
-    JSON.stringify(activeStep?.configuracionCinematica),
-    activeStep?.showcase?.coreografia,
-    activeStep?.showcase?.distanciaAperturaMm,
-    activeStep?.showcase?.ejeGlobal,
-    activeStep?.showcase?.abrirCajones,
-    activeStep?.showcase?.abrirPuertas,
-    JSON.stringify(activeStep?.showcase?.gruposCinematicos),
-    JSON.stringify(activeStep?.orientacionBanco),
-    JSON.stringify(activeStep?.subbloques),
-    activeStep?.coreografiaSubbloques,
-  ]);
-
-  useEffect(() => {
-    if (engineRef.current && pestanaActiva === "manual") {
-      engineRef.current.actualizarTiempo(timelineCurrentTime);
-    }
-  }, [timelineCurrentTime, pestanaActiva]);
-
-  return null;
-}
 
 // =========================================================================
 // VISOR 3D PRINCIPAL (VIEWPORT)
@@ -1841,20 +1717,21 @@ export default function Viewer3D() {
 
         {calibracion.mostrarGrilla && (
           <Grid
+            key={`grid-${coloresApariencia.rejillaPrincipal || ""}-${coloresApariencia.rejillaSecundaria || ""}-${calibracion.distanciaCuadricula}-${calibracion.distanciaSeccion}`}
             renderOrder={-10}
-            position={[0, -0.001, 0]}
+            position={[0, -0.003, 0]}
             args={[
               Math.max(0.1, (calibracion.numeroLineasRejilla || 500) * (calibracion.distanciaCuadricula || 0.01) * 2),
               Math.max(0.1, (calibracion.numeroLineasRejilla || 500) * (calibracion.distanciaCuadricula || 0.01) * 2),
             ]}
             cellSize={calibracion.distanciaCuadricula || 0.01}
-            cellThickness={calibracion.grosorGrillaDelgada || 1.0}
+            cellThickness={calibracion.grosorGrillaDelgada || 0.5}
             cellColor={coloresApariencia.rejillaSecundaria || calibracion.colorGrillaDelgada || "#CBD5E1"}
             sectionSize={calibracion.distanciaSeccion || 0.1}
-            sectionThickness={calibracion.grosorGrillaGruesa || 1.5}
+            sectionThickness={calibracion.grosorGrillaGruesa || 1.6}
             sectionColor={coloresApariencia.rejillaPrincipal || calibracion.colorGrillaGruesa || "#94A3B8"}
-            fadeDistance={Math.max(35, (calibracion.numeroLineasRejilla || 500) * (calibracion.distanciaCuadricula || 0.01) * 2)}
-            fadeStrength={1.5}
+            fadeDistance={Math.max(12, (calibracion.numeroLineasRejilla || 500) * (calibracion.distanciaCuadricula || 0.01) * 0.8)}
+            fadeStrength={2.2}
           />
         )}
         <GroundInfiniteAxes />

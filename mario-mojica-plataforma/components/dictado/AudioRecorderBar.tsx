@@ -200,13 +200,13 @@ export function AudioRecorderBar({
         </div>
       </div>
 
-      {/* FILA INFERIOR: Selectores de Dirección / Idioma Contextuales */}
-      <div className="pt-2 border-t border-slate-100 dark:border-slate-800/60 flex flex-wrap items-center justify-between gap-2 select-none">
+      {/* FILA INFERIOR: Selectores de Dirección / Idioma Contextuales & Estado de Chrome */}
+      <div className="pt-2 border-t border-slate-100 dark:border-slate-800/60 flex flex-wrap items-center justify-between gap-2.5 select-none">
         {autoTranslate ? (
           /* Sub-barra Modo Traducción: Dirección de Conversación */
-          <div className="flex flex-wrap items-center gap-2 text-xs w-full">
+          <div className="flex flex-wrap items-center gap-2 text-xs w-full sm:w-auto">
             <span className="text-slate-500 dark:text-slate-400 text-[11px] font-semibold flex items-center gap-1 mr-1">
-              <ArrowRightLeft className="w-3.5 h-3.5 text-cyan-500" />
+              <ArrowRightLeft className="w-3.5 h-3.5 text-[#1368AA] dark:text-cyan-400" />
               <span>Escuchando:</span>
             </span>
 
@@ -217,9 +217,9 @@ export function AudioRecorderBar({
                   ? "bg-[#1368AA] text-white border-transparent shadow-sm"
                   : "bg-slate-100 dark:bg-slate-800/70 border-slate-200 dark:border-slate-700/60 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700"
               }`}
-              title="Para reuniones con Brasil o videos de YouTube: escucha en portugués y te entrega todo traducido a español"
+              title="Para reuniones con Brasil o videos de YouTube: escucha en portugués (pt-BR) y entrega traducción automática a español"
             >
-              🇧🇷 Escuchar a Brasil
+              🇧🇷 Português (Brasil) ➔ Español
             </button>
 
             <button
@@ -231,7 +231,7 @@ export function AudioRecorderBar({
               }`}
               title="Para cuando tú hablas en español y quieres obtener la traducción en portugués para copiar y pegar al cliente"
             >
-              🇪🇸 Mi Voz (Español)
+              🇪🇸 Español ➔ Português
             </button>
 
             <button
@@ -243,7 +243,7 @@ export function AudioRecorderBar({
               }`}
               title="Escuchar reuniones o videos en inglés y traducir a español"
             >
-              🇺🇸 Escuchar Inglés
+              🇺🇸 English ➔ Español
             </button>
 
             <button
@@ -255,12 +255,12 @@ export function AudioRecorderBar({
               }`}
               title="Tu voz en español traducida a inglés"
             >
-              🇪🇸 Traducir a Inglés
+              🇪🇸 Español ➔ English
             </button>
           </div>
         ) : (
           /* Sub-barra Modo Solo Dictado: Selección del idioma de voz */
-          <div className="flex flex-wrap items-center gap-1.5 text-xs w-full">
+          <div className="flex flex-wrap items-center gap-1.5 text-xs w-full sm:w-auto">
             <span className="text-slate-500 dark:text-slate-400 text-[11px] font-semibold flex items-center gap-1 mr-1">
               <Mic className="w-3.5 h-3.5 text-[#1368AA] dark:text-cyan-400" />
               <span>Idioma de Escucha:</span>
@@ -268,42 +268,59 @@ export function AudioRecorderBar({
 
             <button
               onClick={() => onChangeSingleDictationLang("es-CO")}
-              className={`rounded-full px-3 py-1 font-semibold transition-all border ${
+              className={`rounded-full px-3.5 py-1 font-semibold transition-all border ${
                 singleDictationLang === "es-CO"
                   ? "bg-[#1368AA] text-white border-transparent shadow-sm"
                   : "bg-slate-100 dark:bg-slate-800/70 border-slate-200 dark:border-slate-700/60 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700"
               }`}
             >
-              🇪🇸 Español
+              🇪🇸 Español [es-CO]
             </button>
 
             <button
               onClick={() => onChangeSingleDictationLang("pt-BR")}
-              className={`rounded-full px-3 py-1 font-semibold transition-all border ${
+              className={`rounded-full px-3.5 py-1 font-semibold transition-all border ${
                 singleDictationLang === "pt-BR"
                   ? "bg-[#1368AA] text-white border-transparent shadow-sm"
                   : "bg-slate-100 dark:bg-slate-800/70 border-slate-200 dark:border-slate-700/60 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700"
               }`}
             >
-              🇧🇷 Português (Brasil)
+              🇧🇷 Português (Brasil) [pt-BR]
             </button>
 
             <button
               onClick={() => onChangeSingleDictationLang("en-US")}
-              className={`rounded-full px-3 py-1 font-semibold transition-all border ${
+              className={`rounded-full px-3.5 py-1 font-semibold transition-all border ${
                 singleDictationLang === "en-US"
                   ? "bg-[#1368AA] text-white border-transparent shadow-sm"
                   : "bg-slate-100 dark:bg-slate-800/70 border-slate-200 dark:border-slate-700/60 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700"
               }`}
             >
-              🇺🇸 English
+              🇺🇸 English [en-US]
             </button>
-
-            <span className="text-[11px] text-slate-400 dark:text-slate-500 ml-auto italic hidden sm:inline">
-              Lienzo completo activado: sin panel de traducción
-            </span>
           </div>
         )}
+
+        {/* Badge de Confirmación Activa del Motor de Chrome */}
+        <div className="flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-semibold bg-[#1368AA]/10 dark:bg-[#1368AA]/25 text-[#1368AA] dark:text-cyan-300 border border-[#1368AA]/30 ml-auto shadow-sm">
+          <span className="w-1.5 h-1.5 rounded-full bg-[#1368AA] dark:bg-cyan-400 animate-pulse" />
+          <span>
+            Chrome activo en:{" "}
+            <strong>
+              {autoTranslate
+                ? conversationMode === "pt_to_es"
+                  ? "Português (Brasil) [pt-BR]"
+                  : conversationMode === "en_to_es"
+                  ? "English [en-US]"
+                  : "Español [es-CO]"
+                : singleDictationLang === "pt-BR"
+                ? "Português (Brasil) [pt-BR]"
+                : singleDictationLang === "en-US"
+                ? "English [en-US]"
+                : "Español [es-CO]"}
+            </strong>
+          </span>
+        </div>
       </div>
     </div>
   );

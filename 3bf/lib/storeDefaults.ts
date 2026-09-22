@@ -921,11 +921,11 @@ export const defaultCalibracion: CalibracionVisual = {
   mostrarEjeX: true,
   mostrarEjeY: true,
   distanciaCuadricula: 0.01,
-  grosorGrillaDelgada: 1.0,
-  colorGrillaDelgada: "#E5E7EB",
+  grosorGrillaDelgada: 0.5,
+  colorGrillaDelgada: "#CBD5E1",
   distanciaSeccion: 0.1,
-  grosorGrillaGruesa: 1.5,
-  colorGrillaGruesa: "#CBD5E1",
+  grosorGrillaGruesa: 0.8,
+  colorGrillaGruesa: "#94A3B8",
   colorEjeX: "#0891B2",
   colorEjeY: "#B91C1C",
 
@@ -1166,8 +1166,15 @@ export function guardarPasosEnCacheLocal(nuevosPasos: PasoManualStudio[], manual
 
     localStorage.setItem(STORAGE_KEY_MANUAL_ACTIVO, JSON.stringify(manualActualizado));
     localStorage.setItem(STORAGE_KEY_LAST_MANUAL_ID, manualActualizado.id);
-  } catch (err) {
-    console.warn("[3dBimFab] Error guardando pasos en caché local:", err);
+  } catch (err: any) {
+    // 🛡️ Si se excede la cuota de 5MB de localStorage de Chrome, limpiar entradas pesadas para no saturar el hilo principal
+    if (err?.name === "QuotaExceededError" || err?.code === 22) {
+      try {
+        localStorage.removeItem(STORAGE_KEY_PASOS_MANUAL);
+        localStorage.removeItem(STORAGE_KEY_MANUAL_ACTIVO);
+      } catch {}
+    }
+    // Silencioso para no disparar cientos de warnings en la consola de Chrome
   }
 }
 

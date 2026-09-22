@@ -67,7 +67,12 @@ export function compilarAnimacionPaso(
 ): KinematicEngineResult {
   const tracks: THREE.KeyframeTrack[] = [];
   const esMultiSub3 = Boolean(paso.subbloques && paso.subbloques.length >= 3);
-  const duracionPaso = Math.max(paso.duracionTotal || 10.0, esMultiSub3 ? 11.40 : 1.0);
+  const duracionPaso = Math.max(
+    paso.duracionTotal !== undefined && paso.duracionTotal > 0
+      ? (esMultiSub3 ? Math.max(paso.duracionTotal, 13.50) : paso.duracionTotal)
+      : (esMultiSub3 ? 13.50 : 10.0),
+    1.0
+  );
   const omitirBanco = Boolean(toolMeshes?.omitirTransformBanco);
 
   // Lista de todas las mallas y mapa por nombre normalizado
@@ -178,12 +183,25 @@ export function compilarAnimacionPaso(
     mixer,
     actualizarTiempo: (segundos: number) => {
       const tClamped = Math.max(0, Math.min(segundos, duracionPaso));
+      // 🛡️ CRÍTICO: Three.js LoopOnce con clampWhenFinished pone action.paused = true al terminar el clip.
+      // action.play() NO despausa la acción; para despertarla se debe forzar action.paused = false y action.enabled = true.
+      action.paused = false;
+      action.enabled = true;
+      action.timeScale = 1;
       if (!action.isRunning()) {
         action.play();
       }
       // Three.js mixer.setTime(0) omite evaluación cuando deltaTime es 0.
       // Usar Math.max(0.0001, tClamped) fuerza evaluación instantánea de keyframes en t = 0.
       mixer.setTime(Math.max(0.0001, tClamped));
+    },
+    despertar: () => {
+      // ⚡ Despertar forzado: reactivar mixer y posicionar en el instante actual
+      action.paused = false;
+      action.enabled = true;
+      action.timeScale = 1;
+      action.play();
+      mixer.setTime(0.0001);
     },
     detener: () => {
       mixer.stopAllAction();

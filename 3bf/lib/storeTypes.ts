@@ -851,6 +851,8 @@ export interface State3BF {
   setTimelineVelocidad: (velocidad: number) => void;
   setIdiomaVozManual: (idioma: IdiomaManual) => void;
   setAudioMutedManual: (muted: boolean) => void;
+  versionAnimacionManual: number;
+  despertarAnimacionManual: () => void;
   autoEnfoqueCamaraManual: boolean;
   setAutoEnfoqueCamaraManual: (activo: boolean) => void;
   // 🎥 Métodos de Dirección Cinematográfica de Cámara

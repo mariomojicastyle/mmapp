@@ -104,7 +104,7 @@ Para evitar respuestas genéricas, el RAM de ventas almacena y cruza 5 dimension
 | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
 | **Mobille / AKEO Partner** | Luiz Atilio Barse | Diretor & Super-Conector B2B | Conexión estratégica, apadrinamiento con fábricas en RS | 🔥 Aliado Estratégico (Padrino B2B) | 10 Ago 2026 - Conexión directa a Marcelo Novo (Politorno) con aval de Sr. Pedro | Mantenerlo informado de avances con Politorno |
 | **Politorno Móveis** | Marcelo Novo | Diretor / Líder P&D | Estudio visual Mesa Tijuca, presentación interna a equipo de Render, aval de marca | 🔥 Muy Caliente / Presentación Interna | 08 Sep 2026 - Marcelo validó el estudio y lo presenta hoy al equipo de Render | Esperar feedback de reunión con el equipo de Render y aval de publicación |
-| **Móveis Henn** | Marcos Unnass & Jonas Borck | Coordenador P&D & Analista Engenharia | Manuales interactivos 3D, 3dBimFab, ERP TOTVS Datasul, ahorro 30% | 🔥 Negociación Avanzada / Demostración Ravena | 28 Ago 2026 - Levantamiento de Costos completado (80 manuales/año, R$ 1.926 vs R$ 1.348 Mario, ahorro +R$ 46.227 BRL). Marcos enviará archivos Cómoda Ravena. Vacaciones 3-11 Sep. | Recibir archivos de Cómoda Ravena, modelar en 3dBimFab y agendar demo en vivo con Marcos y Jonas para después del 15 de Sep |
+| **Móveis Henn** | Marcos Unnass & Jonas Borck | Coordenador P&D & Analista Engenharia | Manuales interactivos 3D, 3dBimFab, ERP TOTVS Datasul, ahorro 30% | 🔥 ¡Reunión Agendada! / Demo Ravena + TI | 22 Sep 2026 - Marcos confirmó reunión: Jueves 24/09 de 10:30 a 11:30 BRT (08:30 a 09:30 COL) con P&D y Sistemas/TI | Enviar confirmación y preparar link de Google Meet / Teams para la sesión |
 | **Grupo K1 (Kappesberg)** | Julio Santos | Especialista IA & Automação / Mkt | Costos de P&D de manuales, modelo suscripción ($1 USD/mes), IA aplicada | 🔥 En Evaluación / Cotización Enviada | 17 Ago 2026 - Solicitó valores e insumos. Enviada calculadora 30% ahorro | Esperar feedback de reunión interna con su gerente |
 | **Kit's Paraná** | Marcos Benedito & Jamylle Duarte | Directivos P&D / Marketing | Costos de asistencia técnica, manuales en papel, telemetría | 🟡 Referenciado / Email Preparado | 17 Ago 2026 - Andre Luis facilitó sus correos | Enviar correo corporativo formal a Marcos y Jamylle |
 | **MADECENTRO** | Dimas Tobón | Gerente General | Manuales interactivos 3D, módulos de cocina/closets, telemetría y software | 🔥 Contacto Directo / Caliente | 18 Ago 2026 - Respondió en LinkedIn | Responder para agendar reunión o demo 3D personalizada |
@@ -193,15 +193,17 @@ Para evitar respuestas genéricas, el RAM de ventas almacena y cruza 5 dimension
     1. `D737_Comoda_Ravena_6Gavetas.DWG` (5 MB - Modelo 3D Promob para test de manuales en video y presentación interna).
     2. `D737-Comoda_Ravenna_6Gav (lista de ferragens).xlsx` (10 kB - Lista de herrajes completa).
     3. `D737- Comoda Ravenna 6Pts.indd` (21 MB - Manual técnico en InDesign).
-  * *01 Septiembre 2026 (05:43 BRT):* Marcos confirmó disponibilidad: *"Pode me contatar que estarei com o telefone junto. Sobre as ferragens, vale olhar o que sai hoje no desenho do construct..."*. Mario agradeció y confirmó que cruzará el DWG con InDesign/Excel en 3dBimFab.
-  * *01 Septiembre 2026 (13:27 BRT):* Marcos cerró de forma ágil y positiva: *"Boa tarde. Isso blza, precisar me chama"*. Canal abierto y alineado al 100% para el modelado de la Cómoda Ravena.
-- **Objetivo Estratégico:** Modelar la *Cómoda Ravena D737* en `3dBimFab` (RhinoCompute) cruzando la geometría del DWG con el Construct/InDesign y la lista Excel para completar el 100% de herrajes en el Gemelo Digital y estructurar el Manual 3D interactivo con asistencia de voz, preparando la gran demo con directivos y TI después del 15 de septiembre.
-    - **Acuerdos & Próximos Pasos (Demostración Cómoda Ravena):**
-      1. Mario cruza la geometría del DWG contra el manual del Construct/InDesign y la lista de herrajes en Excel.
-      2. Mario prepara el Gemelo Digital en `3dBimFab` y el Manual 3D interactivo.
-      3. Marcos en vacaciones del 3 al 11 de septiembre (pero atento al teléfono para dudas puntuales).
-      4. **Próxima Reunión (Post 15 de Septiembre):** Demostración en vivo de la Cómoda Ravena con Marcos, Jonas Borck y el área de Sistemas/TI de Henn para iniciar el piloto de 3-5 productos.
-      5. Marcos coordinará con Marketing y con el gerente de planificación **Rudgeri Henkel** la alineación con los videos de montaje.
+  * *15-16 Septiembre 2026:* Mario escribió a Marcos proponiendo miércoles (16) o jueves (17). Marcos respondió por WhatsApp que sus vacaciones se aplazaron y regresaba el 21: *"Peguei férias mais tarde e estou essa semana fora da empresa. Volto dia 21 aos trabalhos. Podemos marcar na outra semana."* Mario respondió acordando escribirle el lunes 21 de septiembre.
+  * *21 Septiembre 2026 (07:35 BRT):* Mario envió saludo de bienvenida post-vacaciones proponiendo franjas para miércoles 23/09 o jueves 24/09 (mañana o tarde BRT).
+  * *22 Septiembre 2026 (09:56 BRT):* **¡HITO CRÍTICO DE ESCALAMIENTO - AUDIO DE MARCOS UNNASS!** Marcos envió mensaje de audio de WhatsApp (18s):
+    > *"Ô Mário, tudo certo? Desculpa não ter respondido antes aí. É, de tarde eu vou te falar qual o horário certo porque eu quero envolver o pessoal do sistema ali e ele não me passou a agenda dele ainda. Se pode ser na, na quarta de manhã ou na quinta, ou de manhã ou de tarde."*
+    **Impacto:** Marcos confirma que va a convocar directamente al **equipo de Sistemas / TI de Henn** para evaluar la integración de `3dBimFab` y el manual 3D con su infraestructura.
+  * *22 Septiembre 2026 (10:16 BRT):* Mario respondió celebrando la inclusión del equipo de Sistemas y confirmando flexibilidad para jueves, viernes o próxima semana.
+  * *22 Septiembre 2026 (11:23 BRT):* **¡HITO HISTÓRICO - REUNIÓN AGENDADA Y CONFIRMADA!** Marcos confirmó la fecha y franja exacta por WhatsApp:
+    > *"Tudo certo aqui tbm. Pode marcar para quinta feira de manhã das 10:30 as 11:30"*
+    **Reunión Agendada:** **Jueves 24 de Septiembre de 2026, de 10:30 a 11:30 BRT (08:30 a 09:30 COL)**.
+    **Participantes:** Mario Mojica, Marcos Unnass (Coordenador P&D), Jonas Borck (Engenharia de Produtos) y el **Equipo de Sistemas / TI de Móveis Henn**.
+- **Objetivo Estratégico:** Demostración en vivo de la *Cômoda Ravenna D737* en `3dBimFab` (RhinoCompute), interoperabilidad con Promob/DWG/Construct, validación de herrajes 100% automatizados, orientación de vetas, y modelo de integración con ERP TOTVS Datasul para acordar el inicio del proyecto piloto de 3 meses.
 
 ---
 

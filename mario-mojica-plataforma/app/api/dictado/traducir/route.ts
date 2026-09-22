@@ -52,9 +52,77 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Texto requerido" }, { status: 400, headers: corsHeaders });
     }
 
-    // 1. Intento con Google Translate Fast Stream (<120ms)
+    // Normalización lingüística para habla oral en Portugués de Brasil (WhatsApp, audios rápidos)
+    let textToTranslate = cleanText;
+    if (sourceLang.toLowerCase().startsWith("pt")) {
+      textToTranslate = textToTranslate
+        .replace(/\bpra\b/gi, "para a")
+        .replace(/\bpro\b/gi, "para o")
+        .replace(/\bpras\b/gi, "para as")
+        .replace(/\bpros\b/gi, "para os")
+        .replace(/\btá\b/gi, "está")
+        .replace(/\btô\b/gi, "estou")
+        .replace(/\btava\b/gi, "estava")
+        .replace(/\bcê\b/gi, "você")
+        .replace(/\bcês\b/gi, "vocês")
+        .replace(/\bdá pra\b/gi, "é possível")
+        .replace(/\btem como\b/gi, "é possível")
+        .replace(/\baí tudo bem\b/gi, "aí tudo bem,")
+        .trim();
+    }
+
+    const sl = sourceLang.split("-")[0].toLowerCase();
+    const tl = toLang.split("-")[0].toLowerCase();
+
+    // 1. Motor Neuronal de Google Translate (GTX NMT - Máxima precisión y contexto de párrafos)
     try {
-      const gUrl = `https://clients5.google.com/translate_a/t?client=dict-chrome-ex&sl=${sourceLang}&tl=${toLang}&q=${encodeURIComponent(cleanText)}`;
+      const gtxUrl = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=${sl}&tl=${tl}&dt=t&q=${encodeURIComponent(textToTranslate)}`;
+      const gtxRes = await fetch(gtxUrl, {
+        cache: "no-store",
+        headers: {
+          "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36"
+        }
+      });
+
+      if (gtxRes.ok) {
+        const rawJson = await gtxRes.text();
+        let translated = "";
+        try {
+          const parsed = JSON.parse(rawJson);
+          if (Array.isArray(parsed) && Array.isArray(parsed[0])) {
+            translated = parsed[0]
+              .map((chunk: any) => (Array.isArray(chunk) && chunk[0] ? chunk[0] : ""))
+              .filter(Boolean)
+              .join("");
+          }
+        } catch {
+          // Extracción por regex en caso de fragmentos JSON no estándar
+          const matches = rawJson.match(/\["([^"\\]*(?:\\.[^"\\]*)*)"/g);
+          if (matches) {
+            translated = matches.map((m) => m.replace(/^\["|\\"/g, '"').slice(1)).join("");
+          }
+        }
+
+        if (translated && translated.trim()) {
+          return NextResponse.json(
+            {
+              translation: translated.trim(),
+              fromLang: sourceLang,
+              toLang,
+              engine: "google-gtx-neural",
+              timestamp: Date.now(),
+            },
+            { headers: corsHeaders }
+          );
+        }
+      }
+    } catch (gtxErr) {
+      console.warn("[dictado/traducir] GTX Neural fallback:", gtxErr);
+    }
+
+    // 2. Intento de respaldo con Google Translate Fast Stream
+    try {
+      const gUrl = `https://clients5.google.com/translate_a/t?client=dict-chrome-ex&sl=${sl}&tl=${tl}&q=${encodeURIComponent(textToTranslate)}`;
       const gRes = await fetch(gUrl, { cache: "no-store" });
       
       if (gRes.ok) {
@@ -64,7 +132,6 @@ export async function POST(request: NextRequest) {
           const gData = JSON.parse(rawText);
           translated = Array.isArray(gData) ? gData.join("") : String(gData || "");
         } catch {
-          // Si el JSON viene con caracteres especiales o sin comillas estándar
           translated = rawText.replace(/^\["|"]$/g, "").replace(/\\"/g, '"');
         }
         

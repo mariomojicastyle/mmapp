@@ -16,6 +16,8 @@ import {
  * 3. La transformación rígida completa se aplica solidariamente a todos los componentes del subbloque.
  */
 export function aplicarTransformacionesBancoSubbloques(sceneMeshes: THREE.Mesh[], subbloques: SubBloqueArmado[]) {
+  const tarugosYaAsignadosBanco = new Set<string>();
+
   subbloques.forEach((sub) => {
     const tb = sub.transformBanco;
     const mallas = obtenerMallasDeSubbloque(sceneMeshes, sub);
@@ -50,6 +52,45 @@ export function aplicarTransformacionesBancoSubbloques(sceneMeshes: THREE.Mesh[]
     }
 
     if (!masterMesh) return;
+
+    // 🪵 Auto-detección de tarugos (cavilhas) por proximidad CAD a la madera del subbloque:
+    const tieneTarugos = mallas.some((m) => {
+      const n = (m.name || m.userData?.cleanName || "").toLowerCase();
+      return n.includes("cavilha") || n.includes("tarugo") || n.includes("clavilha");
+    });
+
+    if (!tieneTarugos && masterMesh) {
+      asegurarCadOriginal(masterMesh);
+      restaurarACadOriginal(masterMesh);
+      masterMesh.updateMatrixWorld(true);
+      const boxCadMadera = new THREE.Box3().setFromObject(masterMesh);
+
+      mallas.forEach((m) => {
+        if (m.userData?.isWoodBoard) {
+          asegurarCadOriginal(m);
+          restaurarACadOriginal(m);
+          m.updateMatrixWorld(true);
+          boxCadMadera.expandByObject(m);
+        }
+      });
+
+      if (!boxCadMadera.isEmpty()) {
+        sceneMeshes.forEach((mesh) => {
+          const cn = (mesh.name || mesh.userData?.cleanName || "").toLowerCase();
+          if (
+            (cn.includes("cavilha") || cn.includes("tarugo") || cn.includes("clavilha")) &&
+            !tarugosYaAsignadosBanco.has(mesh.uuid)
+          ) {
+            asegurarCadOriginal(mesh);
+            const pCad = mesh.userData.__cadOrigPosition || mesh.position;
+            if (boxCadMadera.distanceToPoint(pCad) <= 0.035) {
+              mallas.push(mesh);
+              tarugosYaAsignadosBanco.add(mesh.uuid);
+            }
+          }
+        });
+      }
+    }
 
     const acostado = tb?.acostado ?? false;
     const rotPlano = tb?.rotacionPlano ?? tb?.rotacionYDeg ?? (tb?.rotacion?.[1] || 0);

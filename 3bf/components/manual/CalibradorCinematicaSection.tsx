@@ -2,7 +2,7 @@
 
 import React from "react";
 import { Sliders, ChevronDown, Sparkles } from "lucide-react";
-import { PasoManualStudio } from "@/lib/store";
+import { PasoManualStudio, use3BFStore } from "@/lib/store";
 import { useCalibradorCinematica, extraerOrdenDePiezasDesdeGuion } from "./calibrador/useCalibradorCinematica";
 import { CalibradorGlobalControls } from "./calibrador/CalibradorGlobalControls";
 import { CapaPiezaEsperaItem } from "./calibrador/CapaPiezaEsperaItem";
@@ -16,6 +16,7 @@ interface CalibradorCinematicaSectionProps {
 export default function CalibradorCinematicaSection({
   pasoActivo,
 }: CalibradorCinematicaSectionProps) {
+  const retirarComponenteManual3D = use3BFStore((s) => s.retirarComponenteManual3D);
   const {
     colapsado,
     setColapsado,
@@ -177,6 +178,7 @@ export default function CalibradorCinematicaSection({
                   onCambiarTiempoHerraje={handleCambiarTiempoAparicionHerraje}
                   onCongelarHerraje={handleCongelarHerraje}
                   onDescongelarHerraje={handleDescongelarHerraje}
+                  onRetirarHerraje={(key) => retirarComponenteManual3D(key, pasoActivo.id)}
                   onCambiarTiempoPieza={handleCambiarTiempoPieza}
                   setDraggedHerraje={setDraggedHerraje}
                   setDragOverNormalPieza={setDragOverNormalPieza}

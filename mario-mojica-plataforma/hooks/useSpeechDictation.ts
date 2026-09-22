@@ -24,6 +24,7 @@ export function useSpeechDictation({
 }: UseSpeechDictationOptions = {}) {
   const [isRecording, setIsRecording] = useState(false);
   const [interimText, setInterimText] = useState("");
+  const [interimTranslatedText, setInterimTranslatedText] = useState("");
   const [segments, setSegments] = useState<SpeechSegment[]>([]);
   const [isSupported, setIsSupported] = useState(true);
   const [durationSeconds, setDurationSeconds] = useState(0);
@@ -33,6 +34,7 @@ export function useSpeechDictation({
   const isRecordingRef = useRef(false);
   const timerIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const silenceCommitTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const interimTranslateTimerRef = useRef<NodeJS.Timeout | null>(null);
   const interimTextRef = useRef("");
 
   const sourceLangRef = useRef<string>(sourceLang);
@@ -91,11 +93,63 @@ export function useSpeechDictation({
     }
   }, []);
 
+  // Traducción en tiempo real del texto en proceso (interim) con debounce ágil (220ms)
+  const triggerInterimTranslation = useCallback((text: string) => {
+    if (!autoTranslateRef.current) return;
+    const clean = text.trim();
+    if (!clean || clean.split(/\s+/).length < 2) {
+      setInterimTranslatedText("");
+      return;
+    }
+
+    if (interimTranslateTimerRef.current) {
+      clearTimeout(interimTranslateTimerRef.current);
+    }
+
+    interimTranslateTimerRef.current = setTimeout(async () => {
+      try {
+        const fromLang = sourceLangRef.current.split("-")[0] || "es";
+        const toLang = targetLangRef.current;
+        if (fromLang === toLang) {
+          setInterimTranslatedText(clean);
+          return;
+        }
+
+        const res = await fetch("/api/dictado/traducir", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            text: clean,
+            fromLang,
+            toLang,
+          }),
+        });
+
+        if (res.ok) {
+          const data = await res.json();
+          const translated = data.translation || clean;
+          if (interimTextRef.current) {
+            setInterimTranslatedText(translated);
+          }
+        }
+      } catch (err) {
+        // Silencioso en interim para no interrumpir el flujo
+      }
+    }, 220);
+  }, []);
+
   // Agregar texto continuo con puntuación inteligente y detección de preguntas
   const appendOrNewSegment = useCallback(
     (newChunk: string) => {
       const clean = newChunk.trim();
       if (!clean) return;
+
+      // Limpiar timer de interim y texto provisional
+      if (interimTranslateTimerRef.current) {
+        clearTimeout(interimTranslateTimerRef.current);
+        interimTranslateTimerRef.current = null;
+      }
+      setInterimTranslatedText("");
 
       // Anti-repetición inmediata
       if (clean === lastChunkRef.current) return;
@@ -129,24 +183,19 @@ export function useSpeechDictation({
         }
 
         const lastWords = lastSeg.originalText.trim().split(/\s+/).length;
+        const lastText = lastSeg.originalText.trim();
+        const endsWithPunctuation = /[.,;:!?]$/.test(lastText);
 
-        // Si el párrafo actual tiene menos de 28 palabras, concatenamos de forma armónica
-        if (lastWords < 28) {
-          const lastText = lastSeg.originalText.trim();
-          const endsWithPunctuation = /[.,;:!?]$/.test(lastText);
-
+        // Si el párrafo actual tiene menos de 16 palabras y no concluyó con puntuación fuerte, concatenamos
+        if (lastWords < 16 && !endsWithPunctuation) {
           let combinedOriginal = "";
-          if (endsWithPunctuation) {
+          if (punctuatedChunk.startsWith("¿")) {
             combinedOriginal = `${lastText} ${punctuatedChunk}`;
           } else {
-            if (punctuatedChunk.startsWith("¿")) {
-              combinedOriginal = `${lastText} ${punctuatedChunk}`;
-            } else {
-              const primeraPalabra = punctuatedChunk.split(" ")[0] || "";
-              const esSigla = primeraPalabra === primeraPalabra.toUpperCase() && primeraPalabra.length > 1;
-              const letraInicio = esSigla ? punctuatedChunk.charAt(0) : punctuatedChunk.charAt(0).toLowerCase();
-              combinedOriginal = `${lastText} ${letraInicio}${punctuatedChunk.slice(1)}`;
-            }
+            const primeraPalabra = punctuatedChunk.split(" ")[0] || "";
+            const esSigla = primeraPalabra === primeraPalabra.toUpperCase() && primeraPalabra.length > 1;
+            const letraInicio = esSigla ? punctuatedChunk.charAt(0) : punctuatedChunk.charAt(0).toLowerCase();
+            combinedOriginal = `${lastText} ${letraInicio}${punctuatedChunk.slice(1)}`;
           }
 
           combinedOriginal = combinedOriginal.replace(/\s+/g, " ").trim();
@@ -163,7 +212,7 @@ export function useSpeechDictation({
           }
           return updated;
         } else {
-          // Párrafo nuevo tras superar 28 palabras
+          // Párrafo nuevo: oración limpia e independiente
           const newId = `seg_${Date.now()}`;
           if (isTranslating) translateSegment(newId, punctuatedChunk);
           return [
@@ -230,8 +279,49 @@ export function useSpeechDictation({
         interimTextRef.current = trimmedInterim;
         setInterimText(trimmedInterim);
 
-        // Temporizador de silencio: si el usuario hace una pausa y Chrome no marca isFinal,
-        // consolidamos automáticamente tras 1.4 segundos de silencio para que el texto no quede trabado
+        // 1. Traducción en tiempo real de interim simultánea en segundo plano
+        triggerInterimTranslation(trimmedInterim);
+
+        // 2. Micro-segmentación proactiva: si el audio de WhatsApp o hablante no pausa,
+        // dividimos inteligentemente por frontera de frase o conector para no dejar el texto trabado
+        const words = trimmedInterim.split(/\s+/);
+        if (words.length >= 12) {
+          const punctMatch = trimmedInterim.match(/^(.*?[.,;!?])\s+(.+)$/);
+          if (punctMatch) {
+            const head = punctMatch[1].trim();
+            const tail = punctMatch[2].trim();
+            if (head) {
+              appendOrNewSegment(head);
+              interimTextRef.current = tail;
+              setInterimText(tail);
+              triggerInterimTranslation(tail);
+            }
+          } else if (words.length >= 16) {
+            const connectorRegex = /\s+(mas|então|entao|aí|ai|porque|por exemplo|quando|além disso|onde|pero|entonces|porque|y|e)\s+/i;
+            const searchSlice = trimmedInterim.slice(25);
+            const matchIdx = searchSlice.search(connectorRegex);
+            if (matchIdx !== -1) {
+              const cutPos = 25 + matchIdx;
+              const head = trimmedInterim.slice(0, cutPos).trim();
+              const tail = trimmedInterim.slice(cutPos).trim();
+              if (head) {
+                appendOrNewSegment(head);
+                interimTextRef.current = tail;
+                setInterimText(tail);
+                triggerInterimTranslation(tail);
+              }
+            } else if (words.length >= 20) {
+              const head = words.slice(0, 12).join(" ");
+              const tail = words.slice(12).join(" ");
+              appendOrNewSegment(head);
+              interimTextRef.current = tail;
+              setInterimText(tail);
+              triggerInterimTranslation(tail);
+            }
+          }
+        }
+
+        // 3. Temporizador de silencio ágil (800ms en vez de 1400ms para respuesta inmediata)
         if (trimmedInterim) {
           if (silenceCommitTimerRef.current) {
             clearTimeout(silenceCommitTimerRef.current);
@@ -240,7 +330,7 @@ export function useSpeechDictation({
             if (isRecordingRef.current && interimTextRef.current) {
               appendOrNewSegment(interimTextRef.current);
             }
-          }, 1400);
+          }, 800);
         }
       }
     };
@@ -422,34 +512,93 @@ export function useSpeechDictation({
   const clearAll = useCallback(() => {
     setSegments([]);
     setInterimText("");
+    setInterimTranslatedText("");
     interimTextRef.current = "";
+    if (interimTranslateTimerRef.current) {
+      clearTimeout(interimTranslateTimerRef.current);
+      interimTranslateTimerRef.current = null;
+    }
     setDurationSeconds(0);
     lastChunkRef.current = "";
     setErrorMessage(null);
   }, []);
 
-  // Actualizar idioma de reconocimiento si cambia dinámicamente
+  // Actualizar idioma de reconocimiento si cambia dinámicamente y forzar a Chromium a cargar el nuevo modelo
   useEffect(() => {
+    const prevLang = sourceLangRef.current;
     sourceLangRef.current = sourceLang;
     if (recognitionRef.current) {
       recognitionRef.current.lang = sourceLang;
     }
-  }, [sourceLang]);
+
+    // Si el usuario cambia el idioma mientras el micrófono está grabando,
+    // destruimos limpiamente la sesión vieja de Chrome y creamos una nueva instancia
+    // vinculada estrictamente al nuevo idioma (ej: pt-BR) para que Google Speech API
+    // conmute sus servidores de inmediato sin quedarse atascado en el idioma anterior.
+    if (isRecordingRef.current && prevLang !== sourceLang) {
+      try {
+        if (recognitionRef.current) {
+          recognitionRef.current.onend = null;
+          recognitionRef.current.onerror = null;
+          recognitionRef.current.abort();
+        }
+      } catch (e) {}
+
+      setTimeout(() => {
+        if (isRecordingRef.current) {
+          const freshInstance = setupRecognition();
+          if (freshInstance) {
+            freshInstance.lang = sourceLang;
+            recognitionRef.current = freshInstance;
+            try {
+              freshInstance.start();
+            } catch (err) {
+              console.warn("[useSpeechDictation] Error al reiniciar SpeechRecognition con nuevo idioma:", err);
+            }
+          }
+        }
+      }, 100);
+    }
+  }, [sourceLang, setupRecognition]);
 
   const retranslateAll = useCallback(
     async (newTargetLang: "en" | "pt" | "es", newSourceLang?: string) => {
       targetLangRef.current = newTargetLang;
-      if (newSourceLang) {
+      if (newSourceLang && newSourceLang !== sourceLangRef.current) {
+        const prevLang = sourceLangRef.current;
         sourceLangRef.current = newSourceLang;
         if (recognitionRef.current) {
           recognitionRef.current.lang = newSourceLang;
+        }
+
+        if (isRecordingRef.current && prevLang !== newSourceLang) {
+          try {
+            if (recognitionRef.current) {
+              recognitionRef.current.onend = null;
+              recognitionRef.current.onerror = null;
+              recognitionRef.current.abort();
+            }
+          } catch (e) {}
+
+          setTimeout(() => {
+            if (isRecordingRef.current) {
+              const freshInstance = setupRecognition();
+              if (freshInstance) {
+                freshInstance.lang = newSourceLang;
+                recognitionRef.current = freshInstance;
+                try {
+                  freshInstance.start();
+                } catch (err) {}
+              }
+            }
+          }, 100);
         }
       }
       for (const seg of segments) {
         translateSegment(seg.id, seg.originalText);
       }
     },
-    [segments, translateSegment]
+    [segments, translateSegment, setupRecognition]
   );
 
   // Actualizar el texto original de un segmento específico (edición en vivo)
@@ -486,6 +635,21 @@ export function useSpeechDictation({
     setSegments((prev) => prev.filter((seg) => seg.id !== segmentId));
   }, []);
 
+  // Agregar un segmento completo directamente (por ejemplo, desde carga de archivo de audio)
+  const addDirectSegment = useCallback((originalText: string, translatedText: string) => {
+    const newId = `seg_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`;
+    setSegments((prev) => [
+      ...prev,
+      {
+        id: newId,
+        originalText: originalText.trim(),
+        translatedText: translatedText.trim(),
+        timestamp: Date.now(),
+        isFinal: true,
+      },
+    ]);
+  }, []);
+
   // Eliminar el último segmento
   const deleteLastSegment = useCallback(() => {
     setSegments((prev) => (prev.length > 0 ? prev.slice(0, -1) : prev));
@@ -496,6 +660,7 @@ export function useSpeechDictation({
     return () => {
       isRecordingRef.current = false;
       if (silenceCommitTimerRef.current) clearTimeout(silenceCommitTimerRef.current);
+      if (interimTranslateTimerRef.current) clearTimeout(interimTranslateTimerRef.current);
       if (timerIntervalRef.current) clearInterval(timerIntervalRef.current);
       if (recognitionRef.current) {
         try {
@@ -508,6 +673,7 @@ export function useSpeechDictation({
   return {
     isRecording,
     interimText,
+    interimTranslatedText,
     segments,
     isSupported,
     durationSeconds,
@@ -522,5 +688,6 @@ export function useSpeechDictation({
     updateTranslatedText,
     deleteSegment,
     deleteLastSegment,
+    addDirectSegment,
   };
 }

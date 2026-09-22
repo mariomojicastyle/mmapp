@@ -1,10 +1,11 @@
-﻿import * as THREE from "three";
+import * as THREE from "three";
 
 export interface KinematicEngineResult {
   clip: THREE.AnimationClip;
   mixer: THREE.AnimationMixer;
   actualizarTiempo: (segundos: number) => void;
   detener: () => void;
+  despertar?: () => void;
 }
 
 export interface AnimationEngineToolMeshes {

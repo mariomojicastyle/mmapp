@@ -252,4 +252,16 @@ Default values cause runtime failures.
   * **Modo Dark (Tema Oscuro):** Azul oficial **`#1368AA`** mate sin incandescencias.
 - **Consulta Obligatoria ante Duda:** Ante cualquier duda sobre el color de estilo a aplicar en cualquier componente o elemento de interfaz, se DEBE consultar explícitamente al usuario antes de implementar.
 
+## 📐 Regla Canónica de Cinemática: Traductor Mental de Ejes Rhino/CNC (Z-Up) ➔ Three.js (Y-Up)
+- **Premisa de Taller Inmutable:** El usuario diseña, piensa y se comunica en el sistema de coordenadas natural de **Rhino, Grasshopper y fresadoras CNC (Z-Up)**:
+  * **Eje Z (Taller):** Altura vertical perpendicular a la mesa de trabajo o suelo.
+  * **Eje Y (Taller):** Eje longitudinal sobre la mesa de trabajo (del operario hacia el fondo de la máquina).
+  * **Eje X (Taller):** Eje transversal sobre la mesa de trabajo (izquierda a derecha).
+- **Traductor Mental Automático e Instantáneo (Usuario en Taller ➔ Agente en Three.js):**
+  * Queda **ESTRICTAMENTE PROHIBIDO** pedirle al usuario que cambie su vocabulario o traduzca sus instrucciones a Three.js.
+  * Cuando el usuario diga *"se mueve en Y"* o señale las direcciones longitudinales de la mesa (Y1 $\to$ Y0, Y0 $\to$ Y1), el agente DEBE mapearlo al **Eje Z de Three.js** en el plano del banco de trabajo.
+  * Cuando el usuario diga *"se mueve en Z"*, el agente DEBE mapearlo a la **altura vertical (Eje Y de Three.js)**.
+  * En tableros acostados en el banco de trabajo, los tarugos y pernos de canto **NUNCA varían en altura vertical (Y de Three.js / Z de Rhino) ni en X**: su posición permanece 100% alineada con el barreno, desplazándose únicamente de forma colineal hacia los cantos.
+
+
 

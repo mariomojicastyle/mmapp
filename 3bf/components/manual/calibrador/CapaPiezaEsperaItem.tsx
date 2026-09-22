@@ -54,6 +54,7 @@ interface CapaPiezaEsperaItemProps {
   onCambiarTiempoHerraje: (nombrePieza: string, herrajeId: string, segundos: number) => void;
   onCongelarHerraje: (nombrePieza: string, herrajeId: string) => void;
   onDescongelarHerraje: (nombrePieza: string, herrajeId: string) => void;
+  onRetirarHerraje?: (herrajeKey: string) => void;
   onCambiarTiempoPieza: (nombrePieza: string, delta: number) => void;
   setDraggedHerraje: (val: { nombrePieza: string; herrajeId: string } | null) => void;
   setDragOverNormalPieza: (nombre: string | null) => void;
@@ -91,6 +92,7 @@ export function CapaPiezaEsperaItem({
   onCambiarTiempoHerraje,
   onCongelarHerraje,
   onDescongelarHerraje,
+  onRetirarHerraje,
   onCambiarTiempoPieza,
   setDraggedHerraje,
   setDragOverNormalPieza,
@@ -411,6 +413,7 @@ export function CapaPiezaEsperaItem({
                     onHover={onHoverHerrajes}
                     onCambiarDireccion={(dir) => onCambiarDireccionHerraje(p.nombrePieza, hw.id, dir)}
                     onCambiarTiempo={(val) => onCambiarTiempoHerraje(p.nombrePieza, hw.id, val)}
+                    onRetirar={() => onRetirarHerraje?.(instKey)}
                     onDragStart={(e) => {
                       e.dataTransfer.setData("text/plain", hw.id);
                       setDraggedHerraje({ nombrePieza: p.nombrePieza, herrajeId: hw.id });

@@ -288,18 +288,18 @@ export function resolverPropiedadesMaterial(p: MaterialPropertiesInput): Resolve
   if (p.modoVisual === 'semitransparente') {
     if (isHardware) {
       finalMeshColor = (isHardwareCorredera || isHardwarePrego)
-        ? '#F8FAFC' 
-        : (isHardwareCantoneira ? '#E2E8F0' : (isHardwarePata ? '#1E293B' : (isHardwareTampa ? meshColor : (isHardwarePorca || isHardwareSuporte ? '#F4F4F5' : (p.coloresApariencia.colorHerrajes || '#CBD5E1')))));
+        ? '#64748B' 
+        : (isHardwareCantoneira ? '#94A3B8' : (isHardwarePata ? '#1E293B' : (isHardwareTampa ? meshColor : (isHardwarePorca || isHardwareSuporte ? '#CBD5E1' : (p.coloresApariencia.colorHerrajes || '#94A3B8')))));
       opacity = 1.0;
-      roughness = (isHardwarePata || isHardwarePorca || isHardwareSuporte || isHardwareTampa) ? 0.4 : 0.18;
-      metalness = (isHardwarePata || isHardwarePorca || isHardwareSuporte || isHardwareTampa) ? 0.05 : 0.92;
+      roughness = (isHardwarePata || isHardwarePorca || isHardwareSuporte || isHardwareTampa) ? 0.4 : 0.28;
+      metalness = (isHardwarePata || isHardwarePorca || isHardwareSuporte || isHardwareTampa) ? 0.05 : 0.70;
       transparent = false;
       depthWrite = true;
     } else {
       finalMeshColor = p.coloresApariencia.mallasCristal || '#0284C7';
-      opacity = 0.35;
-      roughness = 0.25;
-      metalness = 0.05;
+      opacity = 0.80;
+      roughness = 0.22;
+      metalness = 0.08;
       transparent = true;
       depthWrite = false;
     }

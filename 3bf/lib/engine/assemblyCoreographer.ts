@@ -36,7 +36,9 @@ export function compilarEnsamblePaso(
     );
 
     // 🧩 2.1 MODO MULTI-SUBBLOQUE (P02A, P02B, P02C... con Coreografía 1 o 2)
-    if (paso.subbloques && paso.subbloques.length > 0 && !tieneCinematicaCalibrada) {
+    // En pasos con subbloques (ensamble básico en banco), los offsets representan la posición sobre el suelo del banco,
+    // por lo que siempre deben ser orquestados por compilarCoreografiaSubbloquesGiro.
+    if (paso.subbloques && paso.subbloques.length > 0) {
       compilarCoreografiaSubbloquesGiro(paso, sceneMeshes, tracks, duracionPaso);
     } else {
       // 2.2 Cinemática calibrada por piezas o fallback de secuencia

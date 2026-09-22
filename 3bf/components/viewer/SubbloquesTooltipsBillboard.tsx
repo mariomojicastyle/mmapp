@@ -19,31 +19,31 @@ export function SubbloqueSingleTooltip({
   pasoId: string;
   furnitureGroup: THREE.Group;
 }) {
-  const [centerPos, setCenterPos] = useState<[number, number, number] | null>(null);
+  const groupRef = React.useRef<THREE.Group>(null);
   const colorSub = obtenerColorSubbloque(sIdx);
   const letraSub = sub.letra || String.fromCharCode(65 + sIdx);
   const codigoSub = sub.codigo || `${pasoId}${letraSub}`;
 
-  if (sub.oculto) return null;
+  const cachedMeshesRef = React.useRef<{ mesh: THREE.Mesh; esMaster: boolean }[]>([]);
 
-  // useFrame para actualizar dinámicamente la posición en tiempo real anclada al centro de gravedad de la MADERA
-  useFrame(() => {
-    // 🪵 FILTRADO ESTRICTO: Para evitar que las cápsulas oscilen cuando las correderas o tornillos se mueven,
-    // el centro de gravedad debe calcularse EXCLUSIVAMENTE a partir de la pieza de madera (tablero estructural).
+  // 🪵 Cachear mallas de madera del subbloque para evitar traversing a 60 FPS
+  React.useEffect(() => {
+    if (!furnitureGroup || sub.oculto) {
+      cachedMeshesRef.current = [];
+      return;
+    }
+
     const piezasMaderaDelSub = [
       sub.piezaMaster,
       ...(sub.piezas || [])
     ].filter(Boolean) as string[];
 
     if (piezasMaderaDelSub.length === 0) {
-      if (centerPos !== null) setCenterPos(null);
+      cachedMeshesRef.current = [];
       return;
     }
 
-    const boxMadera = new THREE.Box3();
-    const boxMaster = new THREE.Box3();
-    let count = 0;
-    let tieneMaster = false;
+    const list: { mesh: THREE.Mesh; esMaster: boolean }[] = [];
     const pMasterTarget = (sub.piezaMaster || "").toLowerCase().trim();
 
     furnitureGroup.traverse((obj) => {
@@ -57,7 +57,6 @@ export function SubbloqueSingleTooltip({
         const rnLow = rawName.toLowerCase();
         const nLow = (obj.name || "").toLowerCase();
 
-        // 🛡️ REGLA: Excluir explícitamente cualquier herraje o corredera del cálculo del centro de la cápsula
         const esHerraje = (
           u?.isHardware ||
           u?.isMachining ||
@@ -91,28 +90,54 @@ export function SubbloqueSingleTooltip({
           );
         });
 
-        if (match && obj.visible && Math.abs(obj.scale.x) > 0.01) {
-          const esMaster = pMasterTarget && (
+        if (match) {
+          const esMaster = Boolean(pMasterTarget && (
             cnLow.includes(pMasterTarget) ||
             pm.toLowerCase().includes(pMasterTarget) ||
             instKey.toLowerCase().includes(pMasterTarget) ||
             rnLow.includes(pMasterTarget)
-          );
-
-          // Si es pieza master o si tiene escala válida, expandir la caja de madera
-          if (esMaster) {
-            obj.updateWorldMatrix(true, false);
-            boxMaster.expandByObject(obj);
-            tieneMaster = true;
-            count++;
-          } else {
-            obj.updateWorldMatrix(true, false);
-            boxMadera.expandByObject(obj);
-            count++;
-          }
+          ));
+          list.push({ mesh: obj as THREE.Mesh, esMaster });
         }
       }
     });
+
+    cachedMeshesRef.current = list;
+  }, [furnitureGroup, sub.id, sub.oculto, sub.piezaMaster, JSON.stringify(sub.piezas)]);
+
+  // useFrame para actualizar dinámicamente la posición en tiempo real anclada al centro de gravedad de la MADERA
+  useFrame(() => {
+    if (!groupRef.current || sub.oculto) {
+      if (groupRef.current) groupRef.current.visible = false;
+      return;
+    }
+
+    const items = cachedMeshesRef.current;
+    if (items.length === 0) {
+      groupRef.current.visible = false;
+      return;
+    }
+
+    const boxMadera = new THREE.Box3();
+    const boxMaster = new THREE.Box3();
+    let count = 0;
+    let tieneMaster = false;
+
+    for (let i = 0; i < items.length; i++) {
+      const item = items[i];
+      const obj = item.mesh;
+      if (obj.visible && Math.abs(obj.scale.x) > 0.01) {
+        obj.updateWorldMatrix(true, false);
+        if (item.esMaster) {
+          boxMaster.expandByObject(obj);
+          tieneMaster = true;
+          count++;
+        } else {
+          boxMadera.expandByObject(obj);
+          count++;
+        }
+      }
+    }
 
     if (count > 0 && (!boxMaster.isEmpty() || !boxMadera.isEmpty())) {
       const c = new THREE.Vector3();
@@ -120,43 +145,38 @@ export function SubbloqueSingleTooltip({
       targetBox.getCenter(c);
       c.y = targetBox.max.y + 0.04;
 
-      if (
-        !centerPos ||
-        Math.abs(centerPos[0] - c.x) > 0.001 ||
-        Math.abs(centerPos[1] - c.y) > 0.001 ||
-        Math.abs(centerPos[2] - c.z) > 0.001
-      ) {
-        setCenterPos([c.x, c.y, c.z]);
-      }
-    } else if (centerPos !== null && (!tieneMaster || boxMaster.isEmpty())) {
-      setCenterPos(null);
+      groupRef.current.position.set(c.x, c.y, c.z);
+      groupRef.current.visible = true;
+    } else {
+      groupRef.current.visible = false;
     }
   });
 
-  if (!centerPos) return null;
+  if (sub.oculto) return null;
 
   return (
-    <Html
-      position={centerPos}
-      center
-      zIndexRange={[100, 0]}
-      style={{
-        pointerEvents: "auto",
-        userSelect: "none",
-        transition: "all 0.15s ease-out",
-      }}
-    >
-      <div
-        className="px-2.5 py-1 rounded-full text-white font-black text-[11px] border-2 border-white flex items-center justify-center cursor-pointer select-none transition-transform hover:scale-115 active:scale-95 whitespace-nowrap"
+    <group ref={groupRef} visible={false}>
+      <Html
+        center
+        zIndexRange={[100, 0]}
         style={{
-          backgroundColor: colorSub.bg,
-          boxShadow: `0 4px 14px ${colorSub.bg}70, 0 2px 4px rgba(0,0,0,0.35)`,
+          pointerEvents: "auto",
+          userSelect: "none",
+          transition: "all 0.15s ease-out",
         }}
-        title={`${sub.nombre || `Sub-Bloque ${pasoId}-${letraSub}`} (${sub.piezas?.length || 0} tableros, ${sub.herrajes?.length || 0} herrajes)`}
       >
-        <span>{codigoSub}</span>
-      </div>
-    </Html>
+        <div
+          className="px-2.5 py-1 rounded-full text-white font-black text-[11px] border-2 border-white flex items-center justify-center cursor-pointer select-none transition-transform hover:scale-115 active:scale-95 whitespace-nowrap"
+          style={{
+            backgroundColor: colorSub.bg,
+            boxShadow: `0 4px 14px ${colorSub.bg}70, 0 2px 4px rgba(0,0,0,0.35)`,
+          }}
+          title={`${sub.nombre || `Sub-Bloque ${pasoId}-${letraSub}`} (${sub.piezas?.length || 0} tableros, ${sub.herrajes?.length || 0} herrajes)`}
+        >
+          <span>{codigoSub}</span>
+        </div>
+      </Html>
+    </group>
   );
 }
 
