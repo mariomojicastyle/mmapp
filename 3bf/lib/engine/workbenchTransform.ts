@@ -1,4 +1,4 @@
-﻿import * as THREE from "three";
+import * as THREE from "three";
 import { SubBloqueArmado } from "../store";
 import { extraerPiezaMadre } from "../piezaMadreUtils";
 import {
@@ -25,23 +25,25 @@ export function aplicarTransformacionesBancoSubbloques(sceneMeshes: THREE.Mesh[]
     let masterMesh: THREE.Mesh | null = null;
     if (sub.piezaMaster) {
       const pTarget = sub.piezaMaster.toLowerCase().trim();
+      const pTargetPM = extraerPiezaMadre(pTarget).toLowerCase().trim();
       masterMesh = mallas.find((m) => {
         const u = m.userData || {};
         const cn = ((u.cleanName || m.name || "") as string).toLowerCase().trim();
         const pm = ((u.piezaMadre || extraerPiezaMadre(cn)) as string).toLowerCase().trim();
         const ik = ((u.instanciaKey || "") as string).toLowerCase().trim();
-        return cn === pTarget || pm === pTarget || ik === pTarget;
+        return cn === pTarget || pm === pTarget || ik === pTarget || (pTargetPM && (pm === pTargetPM || cn === pTargetPM));
       }) || null;
     }
     if (!masterMesh) {
       // Fallback a la primera pieza de madera del subbloque
       if (sub.piezas && sub.piezas.length > 0) {
         const pTarget = sub.piezas[0].toLowerCase().trim();
+        const pTargetPM = extraerPiezaMadre(pTarget).toLowerCase().trim();
         masterMesh = mallas.find((m) => {
           const u = m.userData || {};
           const cn = ((u.cleanName || m.name || "") as string).toLowerCase().trim();
           const pm = ((u.piezaMadre || extraerPiezaMadre(cn)) as string).toLowerCase().trim();
-          return cn === pTarget || pm === pTarget;
+          return cn === pTarget || pm === pTarget || (pTargetPM && (pm === pTargetPM || cn === pTargetPM));
         }) || null;
       }
       if (!masterMesh) masterMesh = mallas[0];

@@ -986,38 +986,8 @@ export function purgarResultadoGeometria(res: any) {
   if (!res || !res.real_meshes || !Array.isArray(res.real_meshes)) return res;
   const raw = res.real_meshes;
 
-  // 🪵 DfMA Board Solid Repair: Sanear tableros cuya malla de apariencia exterior (Cara A)
-  // haya sido colapsada o aplanada en Grasshopper (ej. Peça 5, Peça 2)
-  const mapaMdp: Record<string, any> = {};
-  for (const m of raw) {
-    const nRaw = (m.name || "").replace(/^RH_OUT:/i, "").trim().toLowerCase();
-    if (nRaw.startsWith("mdp ")) {
-      const tag = nRaw.replace(/^mdp\s+/, "").trim();
-      mapaMdp[tag] = m;
-    }
-  }
-
-  const processedRaw = raw.map((m: any) => {
-    const nRaw = (m.name || "").replace(/^RH_OUT:/i, "").trim().toLowerCase();
-    if (!nRaw.startsWith("mdp ") && !nRaw.includes("balance") && !nRaw.endsWith(" b")) {
-      const mdpMesh = mapaMdp[nRaw];
-      if (mdpMesh && m.size && mdpMesh.size) {
-        const minM = Math.min(...m.size);
-        const minMdp = Math.min(...mdpMesh.size);
-        if (minM < 0.008 && minMdp >= 0.010) {
-          return {
-            ...m,
-            size: [...mdpMesh.size],
-            position: [...mdpMesh.position],
-            vertices: mdpMesh.vertices ? [...mdpMesh.vertices] : m.vertices,
-            indices: mdpMesh.indices ? [...mdpMesh.indices] : m.indices,
-            uvs: mdpMesh.uvs ? [...mdpMesh.uvs] : m.uvs,
-          };
-        }
-      }
-    }
-    return m;
-  });
+  // 🪵 DfMA Board Dimension Preservation
+  const processedRaw = raw;
 
   const unicas: any[] = [];
 

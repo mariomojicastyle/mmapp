@@ -3,7 +3,7 @@
 import React, { useRef, useEffect, useMemo, useCallback } from "react";
 import * as THREE from "three";
 import { use3BFStore, ObjetoInstancia3BF } from "@/lib/store";
-import { anotarInstanciasFisicas, perteneceAMismaFamiliaPieza } from "@/lib/piezaMadreUtils";
+import { anotarInstanciasFisicas, perteneceAMismaFamiliaPieza, extraerPiezaMadre } from "@/lib/piezaMadreUtils";
 import { isHardwareMeshName, coincidenMismoHerraje } from "@/lib/engine/cadStateUtils";
 import BoardMesh from "./BoardMesh";
 
@@ -67,38 +67,8 @@ export function SingleFurnitureInstanceMesh({
     const rawMeshes = inst.resultado?.real_meshes || [];
     if (rawMeshes.length === 0) return [];
 
-    // 🪵 DfMA Board Solid Repair: Sanear tableros cuya malla de apariencia exterior (Cara A)
-    // haya sido colapsada o aplanada en Grasshopper (ej. Peça 5, Peça 2)
-    const mapaMdp: Record<string, any> = {};
-    for (const m of rawMeshes) {
-      const nRaw = (m.name || "").replace(/^RH_OUT:/i, "").trim().toLowerCase();
-      if (nRaw.startsWith("mdp ")) {
-        const tag = nRaw.replace(/^mdp\s+/, "").trim();
-        mapaMdp[tag] = m;
-      }
-    }
-
-    const processedRawMeshes = rawMeshes.map((m: any) => {
-      const nRaw = (m.name || "").replace(/^RH_OUT:/i, "").trim().toLowerCase();
-      if (!nRaw.startsWith("mdp ") && !nRaw.includes("balance") && !nRaw.endsWith(" b")) {
-        const mdpMesh = mapaMdp[nRaw];
-        if (mdpMesh && m.size && mdpMesh.size) {
-          const minM = Math.min(...m.size);
-          const minMdp = Math.min(...mdpMesh.size);
-          if (minM < 0.008 && minMdp >= 0.010) {
-            return {
-              ...m,
-              size: [...mdpMesh.size],
-              position: [...mdpMesh.position],
-              vertices: mdpMesh.vertices ? [...mdpMesh.vertices] : m.vertices,
-              indices: mdpMesh.indices ? [...mdpMesh.indices] : m.indices,
-              uvs: mdpMesh.uvs ? [...mdpMesh.uvs] : m.uvs,
-            };
-          }
-        }
-      }
-      return m;
-    });
+    // 🪵 DfMA Board Dimension Preservation
+    const processedRawMeshes = rawMeshes;
 
     const cleanRealMeshes: any[] = [];
     if (processedRawMeshes.length <= 1) {
@@ -158,7 +128,7 @@ export function SingleFurnitureInstanceMesh({
     const rotZ = orientacionBanco.rotacion?.[2] || 0;
     const apoyoEnPiso = orientacionBanco.apoyoEnPiso ?? true;
 
-    if (rotX === 0 && rotY === 0 && rotZ === 0 && !apoyoEnPiso) {
+    if (rotX === 0 && rotY === 0 && rotZ === 0) {
       return {
         rotacionEfectiva: [0, 0, 0] as [number, number, number],
         posicionEfectiva: basePos,
@@ -212,20 +182,28 @@ export function SingleFurnitureInstanceMesh({
 
     const localBox = new THREE.Box3();
     for (const m of meshesParaBox) {
+      const pX = m.position ? m.position[0] : 0;
+      const pY = m.position ? m.position[1] : 0;
+      const pZ = m.position ? m.position[2] : 0;
+
       if (m.vertices && m.vertices.length >= 3) {
         for (let i = 0; i < m.vertices.length; i += 3) {
-          localBox.expandByPoint(new THREE.Vector3(m.vertices[i], m.vertices[i + 1], m.vertices[i + 2]));
+          localBox.expandByPoint(new THREE.Vector3(
+            pX + m.vertices[i],
+            pY + m.vertices[i + 1],
+            pZ + m.vertices[i + 2]
+          ));
         }
       } else if (m.position && m.size) {
         localBox.expandByPoint(new THREE.Vector3(
-          m.position[0] - m.size[0] / 2,
-          m.position[1] - m.size[1] / 2,
-          m.position[2] - m.size[2] / 2
+          pX - m.size[0] / 2,
+          pY - m.size[1] / 2,
+          pZ - m.size[2] / 2
         ));
         localBox.expandByPoint(new THREE.Vector3(
-          m.position[0] + m.size[0] / 2,
-          m.position[1] + m.size[1] / 2,
-          m.position[2] + m.size[2] / 2
+          pX + m.size[0] / 2,
+          pY + m.size[1] / 2,
+          pZ + m.size[2] / 2
         ));
       }
     }
@@ -357,6 +335,41 @@ export function SingleFurnitureInstanceMesh({
     return true;
   });
 
+  // 📐 Detección de tableros cuya Cara A es una lámina superficial plana (< 5mm) y delegan sus aristas 3D de caja al MDP
+  const piezasConAristasEnMdp = useMemo(() => {
+    const mapa = new Map<string, { tieneLaminaPlana: boolean; tieneMdpSolido: boolean }>();
+    for (const m of boardMeshes) {
+      const pm = (m.instanciaKey || extraerPiezaMadre((m.name || "").replace(/^RH_OUT:/i, "").trim())).toLowerCase();
+      if (!mapa.has(pm)) {
+        mapa.set(pm, { tieneLaminaPlana: false, tieneMdpSolido: false });
+      }
+      const entry = mapa.get(pm)!;
+      const nLow = (m.name || "").toLowerCase();
+      const minDim = m.size ? Math.min(m.size[0], m.size[1], m.size[2]) : 0;
+      
+      const esMdpOMdf = nLow.includes("mdp") || nLow.includes("mdf");
+      const esBalance = nLow.includes("balance") || nLow.endsWith(" b");
+      
+      if (!esMdpOMdf && !esBalance) {
+        if (minDim < 0.005) {
+          entry.tieneLaminaPlana = true;
+        }
+      } else if (esMdpOMdf) {
+        if (minDim >= 0.005) {
+          entry.tieneMdpSolido = true;
+        }
+      }
+    }
+    
+    const setMadresConMdpAristas = new Set<string>();
+    mapa.forEach((val, pm) => {
+      if (val.tieneLaminaPlana && val.tieneMdpSolido) {
+        setMadresConMdpAristas.add(pm);
+      }
+    });
+    return setMadresConMdpAristas;
+  }, [boardMeshes]);
+
   return (
     <group 
       ref={meshRef} 
@@ -366,23 +379,43 @@ export function SingleFurnitureInstanceMesh({
     >
       {boardMeshes.length > 0 && (
         <group name={parentBoardGroupName}>
-          {boardMeshes.map((m: any, idx: number) => (
-            <BoardMesh
-              key={`board-${idx}`}
-              instanciaId={inst.id}
-              instanciaKey={m.instanciaKey}
-              position={m.position}
-              size={m.size}
-              name={m.name}
-              mainColor={mainColor}
-              modoVisual={modoVisual}
-              vertices={m.vertices}
-              indices={m.indices}
-              uvs={m.uvs}
-              tipoMapeado={resolverTipoMapeado(m.name)}
-              esDuplicado={Boolean(m.es_duplicado_ghx)}
-            />
-          ))}
+          {boardMeshes.map((m: any, idx: number) => {
+            const pm = (m.instanciaKey || extraerPiezaMadre((m.name || "").replace(/^RH_OUT:/i, "").trim())).toLowerCase();
+            const debeDelegarAristasAlMdp = piezasConAristasEnMdp.has(pm);
+            const nLow = (m.name || "").toLowerCase();
+            const esMdpOMdf = nLow.includes("mdp") || nLow.includes("mdf");
+            const esBalance = nLow.includes("balance") || nLow.endsWith(" b");
+
+            const omitirAristas = debeDelegarAristasAlMdp && !esMdpOMdf && !esBalance;
+            const forzarAristasCaja = debeDelegarAristasAlMdp && esMdpOMdf;
+
+            // 💎 En modo cristal (semitransparente): Si la pieza cuenta con cuerpo sólido de MDP,
+            // suprimir las láminas 2D redundantes (Cara B y Cara A) para evitar que se solapen 3 capas transparentes
+            // en el mismo volumen físico, lo cual triplicaba la opacidad y oscurecía el fondo tornando la cuadrícula en un entramado negro.
+            if (modoVisual === "semitransparente" && debeDelegarAristasAlMdp && (esBalance || !esMdpOMdf)) {
+              return null;
+            }
+
+            return (
+              <BoardMesh
+                key={`board-${idx}`}
+                instanciaId={inst.id}
+                instanciaKey={m.instanciaKey}
+                position={m.position}
+                size={m.size}
+                name={m.name}
+                mainColor={mainColor}
+                modoVisual={modoVisual}
+                vertices={m.vertices}
+                indices={m.indices}
+                uvs={m.uvs}
+                tipoMapeado={resolverTipoMapeado(m.name)}
+                esDuplicado={Boolean(m.es_duplicado_ghx)}
+                omitirAristas={omitirAristas}
+                forzarAristasCaja={forzarAristasCaja}
+              />
+            );
+          })}
         </group>
       )}
 

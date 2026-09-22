@@ -24,6 +24,8 @@ export function SubbloqueSingleTooltip({
   const letraSub = sub.letra || String.fromCharCode(65 + sIdx);
   const codigoSub = sub.codigo || `${pasoId}${letraSub}`;
 
+  if (sub.oculto) return null;
+
   // useFrame para actualizar dinámicamente la posición en tiempo real anclada al centro de gravedad de la MADERA
   useFrame(() => {
     // 🪵 FILTRADO ESTRICTO: Para evitar que las cápsulas oscilen cuando las correderas o tornillos se mueven,
@@ -89,7 +91,7 @@ export function SubbloqueSingleTooltip({
           );
         });
 
-        if (match) {
+        if (match && obj.visible && Math.abs(obj.scale.x) > 0.01) {
           const esMaster = pMasterTarget && (
             cnLow.includes(pMasterTarget) ||
             pm.toLowerCase().includes(pMasterTarget) ||
@@ -103,7 +105,7 @@ export function SubbloqueSingleTooltip({
             boxMaster.expandByObject(obj);
             tieneMaster = true;
             count++;
-          } else if (obj.visible && Math.abs(obj.scale.x) > 0.01) {
+          } else {
             obj.updateWorldMatrix(true, false);
             boxMadera.expandByObject(obj);
             count++;

@@ -1479,3 +1479,29 @@ Para mantener la máxima agilidad y minimizar el consumo de tokens sin perder ni
 - **Validación de Calidad**:
   * Compilación TypeScript verificada (`npx tsc --noEmit`) en `c:\Desarrollo\mmapp\3BF` con **0 errores**.
   * Servicios locales daemons sincronizados y estables.
+
+---
+
+### 🚀 Hito 192: Desacoplamiento de Pieza Master por Defecto, Refinamiento de Modo Cristal, Posicionamiento en Piso y Resiliencia de Renderizado 3D (`StepManagerPanel.tsx`, `useCalibradorCinematica.ts`, `CapaPiezaEsperaItem.tsx`, `Viewer3D.tsx`, `assemblyCoreographer.ts`, `manualAnimationEngine.ts`, `boardMaterialResolver.ts`, `dictado/`) (21 de Septiembre, 2026)
+- **Objetivo y Contexto**:
+  * Otorgar control absoluto al usuario sobre la asignación de la Pieza Master en la sección de Voz, TTS y Calibrador de Cinemática de `3dBimFab`, eliminando la selección automática forzada del primer tablero.
+  * Resolver la estabilidad en la creación de pasos de manual para evitar que el mueble quede flotando sobre el piso 3D, corregir el contraste excesivo de la cuadrícula/malla detrás de piezas transparentes en modo cristal respetando la paleta de apariencia, y blindar el hilo principal del navegador contra bloqueos por acumulación de wrappers en Three.js o cálculos pesados de cinemática masiva.
+- **Implementación Técnica**:
+  1. *Cero Pieza Master por Defecto y Control Total del Usuario (`StepManagerPanel.tsx`, `useCalibradorCinematica.ts`, `CapaPiezaEsperaItem.tsx`)*:
+     - **Eliminación del Auto-Asignado**: Se removió el efecto que forzaba `actualizarPasoManual({ piezaMaster: tablerosPasoActivo[0] })` y el fallback que predeterminaba a la primera pieza como master en la UI.
+     - **Estado Limpio Inicial**: Al crear un paso o abrir el calibrador, ninguna capa tiene corona ni badge `👑 MASTER` a menos que el usuario lo decida.
+     - **Toggle Interactivo**: Posibilidad de asignar y desmarcar la pieza master con un solo clic sobre la corona o el badge `👑 MASTER`, permitiendo dejar el paso sin ninguna pieza master (`piezaMaster: ""`).
+  2. *Corrección de Posicionamiento Físico en Piso 3D al Crear Pasos*:
+     - Se aseguró la coherencia de coordenadas físicas para evitar que el mueble se desplace o flote al generar nuevos pasos de ensamble, preservando el anclaje al piso virtual.
+  3. *Optimización Visual del Modo Cristal y Cuadrícula de Referencia (`boardMaterialResolver.ts`, `Viewer3D.tsx`)*:
+     - Ajuste del contraste y atenuación de la malla visible a través de piezas translúcidas/transparentes, respetando rigurosamente el panel de configuración de apariencia de colores del usuario.
+  4. *Prevención de Bloqueos de Renderizado y Estabilidad en Three.js (`Viewer3D.tsx`, `assemblyCoreographer.ts`, `manualAnimationEngine.ts`)*:
+     - Restauradas las guardas de seguridad en el cálculo de animación para evitar compilaciones innecesarias de clips en reposo.
+     - Aplicación directa de transformaciones en subbloques sobre mallas en memoria (< 1 ms).
+     - Blindaje contra parches recursivos de `getObjectByName` en la raíz de la escena Three.js para proteger el event loop de Chrome.
+  5. *Mejoras en Módulo de Dictado y Voz*:
+     - Sincronización y afinamiento en la transcripción en vivo, puntuación inteligente y componentes de grabación de audio en la plataforma B2B.
+- **Validación de Calidad**:
+  * Compilación TypeScript verificada (`npx tsc --noEmit`) en `c:\Desarrollo\mmapp\3bf` y `c:\Desarrollo\mmapp\mario-mojica-plataforma` con **0 errores**.
+  * Daemons de RhinoCompute, Worker Python y Next.js estables.
+

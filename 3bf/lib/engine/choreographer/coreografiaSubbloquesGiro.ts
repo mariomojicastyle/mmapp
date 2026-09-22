@@ -157,7 +157,6 @@ export function compilarCoreografiaSubbloquesGiro(
       boxMaster.getCenter(cMaster);
       centroMadera.x = cMaster.x;
     }
-    centroMadera.x = 0.730;
     const yCentroMadera = centroMadera.y;
     const ALTURA_APROX = 0.30;
     const ALTURA_GIRO = 0.45;

@@ -140,16 +140,12 @@ export function useSpeechDictation({
             combinedOriginal = `${lastText} ${punctuatedChunk}`;
           } else {
             if (punctuatedChunk.startsWith("¿")) {
-              const despuesDeSigno = punctuatedChunk.slice(1);
-              const primeraPalabra = despuesDeSigno.split(" ")[0] || "";
-              const esSigla = primeraPalabra === primeraPalabra.toUpperCase() && primeraPalabra.length > 1;
-              const letraInicio = esSigla ? despuesDeSigno.charAt(0) : despuesDeSigno.charAt(0).toLowerCase();
-              combinedOriginal = `${lastText}, ¿${letraInicio}${despuesDeSigno.slice(1)}`;
+              combinedOriginal = `${lastText} ${punctuatedChunk}`;
             } else {
               const primeraPalabra = punctuatedChunk.split(" ")[0] || "";
               const esSigla = primeraPalabra === primeraPalabra.toUpperCase() && primeraPalabra.length > 1;
               const letraInicio = esSigla ? punctuatedChunk.charAt(0) : punctuatedChunk.charAt(0).toLowerCase();
-              combinedOriginal = `${lastText}, ${letraInicio}${punctuatedChunk.slice(1)}`;
+              combinedOriginal = `${lastText} ${letraInicio}${punctuatedChunk.slice(1)}`;
             }
           }
 

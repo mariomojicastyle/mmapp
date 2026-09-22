@@ -151,13 +151,16 @@ export function compilarAnimacionPaso(
     );
   }
 
-  // 🛡️ CRÍTICO: Permitir que Three.js PropertyBinding resuelva pistas por UUID o por name
-  const origGetObjectByName = rootScene.getObjectByName.bind(rootScene);
-  rootScene.getObjectByName = function (name: string) {
-    const found = origGetObjectByName(name);
-    if (found) return found;
-    return (this as any).getObjectByProperty("uuid", name);
-  };
+  // 🛡️ CRÍTICO: Permitir que Three.js PropertyBinding resuelva pistas por UUID o por name (sin acumular wrappers)
+  if (!(rootScene as any).__hasPatchedGetObjectByName) {
+    (rootScene as any).__hasPatchedGetObjectByName = true;
+    const origGetObjectByName = rootScene.getObjectByName.bind(rootScene);
+    rootScene.getObjectByName = function (name: string) {
+      const found = origGetObjectByName(name);
+      if (found) return found;
+      return (this as any).getObjectByProperty("uuid", name);
+    };
+  }
 
   const clip = new THREE.AnimationClip("default", duracionPaso, tracks);
   const mixer = new THREE.AnimationMixer(rootScene);

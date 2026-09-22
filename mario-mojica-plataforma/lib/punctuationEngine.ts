@@ -33,35 +33,20 @@ const CONECTORES_ORALES_ES = [
   "bueno", "entonces", "mira", "mire", "oye", "oiga", "por cierto", "a ver", "dime", "cuéntame"
 ];
 
-// Expresiones de inicio de pregunta en Español (partículas + verbos de indagación y cortesía)
+// Expresiones de inicio de pregunta inequívocas en Español (partículas con tilde obligatoria o bi-gramas interrogativos modales)
 const DISPARADORES_PREGUNTA_ES = [
-  // Interrogativos directos (con o sin tilde)
-  "qué", "que", "cómo", "como", "cuándo", "cuando", "dónde", "donde",
-  "quién", "quien", "quiénes", "quienes", "cuál", "cual", "cuáles", "cuales",
-  "cuánto", "cuanto", "cuánta", "cuanta", "cuántos", "cuantos", "cuántas", "cuantas",
-  "por qué", "por que", "para qué", "para que", "a qué", "a que", "de qué", "de que",
-  "en dónde", "en donde", "a dónde", "a donde", "con quién", "con quien",
+  // Interrogativos directos con tilde
+  "qué", "cómo", "cuándo", "dónde", "quién", "quiénes", "cuál", "cuáles",
+  "cuánto", "cuánta", "cuántos", "cuántas", "por qué", "para qué",
+  "en dónde", "a dónde", "con quién", "con quiénes",
   "y qué", "y cómo", "y cuándo", "y dónde", "y quién", "y cuál", "y cuánto", "y por qué",
+  "a qué hora", "de qué manera", "por qué motivo", "por qué razón",
 
-  // Verbos de indagación, memoria y duda
-  "recuerdas", "recuerda", "te acuerdas", "se acuerda", "sabes si", "sabes",
-  "sabías que", "sabías", "sabe si", "conoces", "crees que", "cree que",
-  "piensas que", "te parece si", "te parece", "le parece", "te gustaría",
-  "le gustaría", "es posible", "sería posible", "me puedes decir", "me puede decir",
-  "me puedes confirmar", "me puede confirmar", "me ayudas", "me podrías ayudar",
-  "puedes", "puede", "podrías", "podría", "cómo ves", "como ves", "qué opinas",
-  "que opinas", "qué piensas", "que piensas", "no crees que", "no crees",
-  "de casualidad", "acaso", "será que", "habrá que", "podemos", "se puede",
-
-  // Disponibilidad, acuerdo y confirmación en reuniones
-  "tienes tiempo", "tienen tiempo", "tienes disponibilidad", "tienen disponibilidad",
-  "tienes", "tienen", "tiene",
-  "estás de acuerdo", "está de acuerdo", "están de acuerdo",
-  "te quedó claro", "quedó claro", "está claro",
-  "me confirmas", "me confirma", "nos confirma",
-  "viste", "viste que", "vio",
-  "te llegó", "le llegó", "recibiste", "recibió",
-  "hay alguna", "hay algún", "hay forma", "existe alguna"
+  // Bi-gramas modales de indagación y cortesía inequívocos
+  "es posible", "sería posible", "me puedes decir", "me puede decir",
+  "me puedes confirmar", "me puede confirmar", "me podrías decir", "me podría decir",
+  "me ayudas", "me podrías ayudar", "cómo ves", "qué opinas", "qué piensas",
+  "será que", "de casualidad", "tienes tiempo para", "tienes disponibilidad"
 ];
 
 // Coletillas interrogativas de confirmación al final en Español

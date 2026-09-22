@@ -61,29 +61,52 @@ export function AudioRecorderBar({
     <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#131B2E] p-3.5 sm:p-4 shadow-sm flex flex-col gap-3">
       {/* FILA SUPERIOR: Mandos Principales & Modos */}
       <div className="flex flex-col lg:flex-row items-center justify-between gap-3">
-        {/* 1. Botón Principal de Grabación & Métricas */}
-        <div className="flex items-center gap-4 w-full lg:w-auto justify-between lg:justify-start">
-          <button
-            onClick={onToggleRecording}
-            disabled={!isSupported}
-            className={`rounded-full px-5 py-2.5 font-semibold text-xs sm:text-sm flex items-center gap-2.5 transition-all shadow-sm active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed select-none ${
-              isRecording
-                ? "bg-rose-600 hover:bg-rose-700 text-white animate-pulse"
-                : "bg-[#1368AA] hover:bg-[#1368AA]/90 text-white"
-            }`}
-          >
-            {isRecording ? (
-              <>
-                <Square className="w-4 h-4 fill-current" />
-                <span>Detener Grabación</span>
-              </>
-            ) : (
-              <>
-                <Mic className="w-4 h-4" />
-                <span>Comenzar Dictado</span>
-              </>
+        {/* 1. Botón Principal de Grabación, Botón Copiar Texto & Métricas */}
+        <div className="flex items-center gap-4 w-full lg:w-auto justify-between lg:justify-start flex-wrap sm:flex-nowrap">
+          <div className="flex items-center gap-2">
+            <button
+              onClick={onToggleRecording}
+              disabled={!isSupported}
+              className={`rounded-full px-5 py-2.5 font-semibold text-xs sm:text-sm flex items-center gap-2.5 transition-all shadow-sm active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed select-none ${
+                isRecording
+                  ? "bg-rose-600 hover:bg-rose-700 text-white animate-pulse"
+                  : "bg-[#1368AA] hover:bg-[#1368AA]/90 text-white"
+              }`}
+            >
+              {isRecording ? (
+                <>
+                  <Square className="w-4 h-4 fill-current" />
+                  <span>Detener Grabación</span>
+                </>
+              ) : (
+                <>
+                  <Mic className="w-4 h-4" />
+                  <span>Comenzar Dictado</span>
+                </>
+              )}
+            </button>
+
+            {/* Botón "Copiar Texto" Ergonómico a la derecha de Comenzar Dictado */}
+            {onCopyText && (
+              <button
+                onClick={handleCopyText}
+                className="rounded-full px-4 py-2.5 font-semibold text-xs sm:text-sm flex items-center gap-2 transition-all shadow-sm active:scale-95 select-none bg-[#1368AA] hover:bg-[#1368AA]/90 text-white border-transparent"
+                title="Copiar texto de la pizarra al portapapeles"
+              >
+                {isCopied ? (
+                  <>
+                    <Check className="w-4 h-4 text-white" />
+                    <span>¡Copiado!</span>
+                  </>
+                ) : (
+                  <>
+                    <Copy className="w-4 h-4 text-white" />
+                    <span>Copiar Texto</span>
+                  </>
+                )}
+              </button>
             )}
-          </button>
+          </div>
 
           {/* Indicador de Estado y Tiempo */}
           <div className="flex items-center gap-3">
@@ -124,29 +147,6 @@ export function AudioRecorderBar({
             </div>
           </div>
         </div>
-
-        {/* 2. ZONA CENTRAL: Botón "Copiar Texto" Ergonómico (Azul Uniforme Permanente) */}
-        {onCopyText && (
-          <div className="flex items-center justify-center my-0.5 lg:my-0">
-            <button
-              onClick={handleCopyText}
-              className="rounded-full px-5 py-2 font-semibold text-xs sm:text-sm flex items-center gap-2 transition-all shadow-sm active:scale-95 select-none bg-[#1368AA] hover:bg-[#1368AA]/90 text-white border-transparent"
-              title="Copiar texto de la pizarra al portapapeles"
-            >
-              {isCopied ? (
-                <>
-                  <Check className="w-4 h-4 text-white" />
-                  <span>¡Copiado!</span>
-                </>
-              ) : (
-                <>
-                  <Copy className="w-4 h-4 text-white" />
-                  <span>Copiar Texto</span>
-                </>
-              )}
-            </button>
-          </div>
-        )}
 
         {/* 3. Switch Modo: Traducción vs Solo Dictado & Limpiar Pizarra */}
         <div className="flex items-center gap-2 w-full lg:w-auto justify-end">

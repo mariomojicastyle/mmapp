@@ -12,7 +12,7 @@ import { useSpeechDictation } from "@/hooks/useSpeechDictation";
 import { Mic, AlertCircle, AlertTriangle, X, RefreshCw } from "lucide-react";
 
 export default function DictadoYTraduccionPage() {
-  const [autoTranslate, setAutoTranslate] = useState(true);
+  const [autoTranslate, setAutoTranslate] = useState(false);
   const [conversationMode, setConversationMode] = useState<ConversationMode>("es_to_pt");
   const [singleDictationLang, setSingleDictationLang] = useState<SingleDictationLang>("es-CO");
   const [isActaModalOpen, setIsActaModalOpen] = useState(false);

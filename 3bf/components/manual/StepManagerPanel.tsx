@@ -59,11 +59,11 @@ export default function StepManagerPanel() {
     return (pasoActivo.piezasAsignadas || []).filter((p) => !esHerrajeNombre(p));
   }, [pasoActivo]);
 
-  // Sincronización automática de Pieza Master si la actual no pertenece a las asignadas del paso
+  // Limpieza de Pieza Master únicamente si la configurada ya no pertenece a las asignadas del paso
   React.useEffect(() => {
     if (pasoActivo && pasoActivo.tipo !== "showcase" && tablerosPasoActivo.length > 0) {
-      if (!pasoActivo.piezaMaster || !tablerosPasoActivo.includes(pasoActivo.piezaMaster)) {
-        actualizarPasoManual(pasoActivo.id, { piezaMaster: tablerosPasoActivo[0] });
+      if (pasoActivo.piezaMaster && !tablerosPasoActivo.includes(pasoActivo.piezaMaster)) {
+        actualizarPasoManual(pasoActivo.id, { piezaMaster: "" });
       }
     }
   }, [pasoActivo?.id, pasoActivo?.tipo, tablerosPasoActivo, pasoActivo?.piezaMaster, actualizarPasoManual]);

@@ -143,36 +143,40 @@ export function TranscriptFeed({
       {/* COLUMNA 1: VOZ ORIGINAL (TIEMPO REAL CON EDICIÓN EN LÍNEA) */}
       <div className="flex flex-col rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#131B2E] shadow-sm overflow-hidden w-full h-full min-h-0">
         {/* Cabecera de Columna */}
-        <div className="px-5 py-3 border-b border-slate-200 dark:border-slate-800/80 bg-slate-50/70 dark:bg-[#0B0F17]/50 flex items-center justify-between gap-3 select-none shrink-0">
-          <div className="flex items-center gap-2">
-            <span className="w-2.5 h-2.5 rounded-full bg-[#1368AA] animate-pulse" />
-            <h2 className="text-xs sm:text-sm font-semibold text-slate-800 dark:text-slate-100 uppercase tracking-wider">
-              {sourceLangName} (Dictado en Vivo)
-            </h2>
-          </div>
+        <div className="px-5 py-3 border-b border-slate-200 dark:border-slate-800/80 bg-slate-50/70 dark:bg-[#0B0F17]/50 flex items-center justify-between gap-3 select-none shrink-0 flex-wrap">
+          <div className="flex items-center gap-3 flex-wrap">
+            <div className="flex items-center gap-2">
+              <span className="w-2.5 h-2.5 rounded-full bg-[#1368AA] animate-pulse" />
+              <h2 className="text-xs sm:text-sm font-semibold text-slate-800 dark:text-slate-100 uppercase tracking-wider">
+                {sourceLangName} (Dictado en Vivo)
+              </h2>
+            </div>
 
-          <div className="flex items-center gap-2">
-            {onDeleteLastSegment && (
-              <button
-                onClick={onDeleteLastSegment}
-                disabled={segments.length === 0}
-                className="rounded-full px-3 py-1.5 text-xs font-semibold flex items-center gap-1.5 transition-colors shadow-sm disabled:opacity-40 disabled:cursor-not-allowed bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300"
-                title="Deshacer o borrar la última frase dictada"
-              >
-                <Undo2 className="w-3.5 h-3.5" />
-                <span>Deshacer Frase</span>
-              </button>
-            )}
-            {onClear && (
-              <button
-                onClick={onClear}
-                disabled={segments.length === 0 && !interimText}
-                className="rounded-full px-3 py-1.5 text-xs font-semibold flex items-center gap-1.5 transition-colors shadow-sm disabled:opacity-40 disabled:cursor-not-allowed bg-slate-100 hover:bg-rose-50 hover:text-rose-600 dark:bg-slate-800 dark:hover:bg-rose-950/40 dark:hover:text-rose-400 text-slate-600 dark:text-slate-300"
-                title="Limpiar pizarra y borrar todo"
-              >
-                Limpiar Pizarra
-              </button>
-            )}
+            <div className="h-4 w-px bg-slate-200 dark:bg-slate-700 hidden sm:block" />
+
+            <div className="flex items-center gap-2">
+              {onDeleteLastSegment && (
+                <button
+                  onClick={onDeleteLastSegment}
+                  disabled={segments.length === 0}
+                  className="rounded-full px-3 py-1.5 text-xs font-semibold flex items-center gap-1.5 transition-colors shadow-sm disabled:opacity-40 disabled:cursor-not-allowed bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300"
+                  title="Deshacer o borrar la última frase dictada"
+                >
+                  <Undo2 className="w-3.5 h-3.5" />
+                  <span>Deshacer Frase</span>
+                </button>
+              )}
+              {onClear && (
+                <button
+                  onClick={onClear}
+                  disabled={segments.length === 0 && !interimText}
+                  className="rounded-full px-3 py-1.5 text-xs font-semibold flex items-center gap-1.5 transition-colors shadow-sm disabled:opacity-40 disabled:cursor-not-allowed bg-slate-100 hover:bg-rose-50 hover:text-rose-600 dark:bg-slate-800 dark:hover:bg-rose-950/40 dark:hover:text-rose-400 text-slate-600 dark:text-slate-300"
+                  title="Limpiar pizarra y borrar todo"
+                >
+                  Limpiar Pizarra
+                </button>
+              )}
+            </div>
           </div>
         </div>
 

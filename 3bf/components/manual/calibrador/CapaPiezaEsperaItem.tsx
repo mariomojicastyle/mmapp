@@ -147,9 +147,17 @@ export function CapaPiezaEsperaItem({
             <GripVertical className="w-3.5 h-3.5" />
           </div>
         ) : (
-          <div className="p-1 shrink-0" title="Pieza Master fija (Base de ensamble)">
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              onDefinirMaster(p.nombrePieza);
+            }}
+            className="p-1 shrink-0 cursor-pointer hover:scale-115 active:scale-95 transition"
+            title="Pieza Master fija (Base de ensamble). Clic para desmarcar"
+          >
             <Crown className="w-3.5 h-3.5 text-amber-500 fill-amber-500" />
-          </div>
+          </button>
         )}
 
         {/* Nombre y Orden */}
@@ -203,9 +211,17 @@ export function CapaPiezaEsperaItem({
 
           {/* Badges de Estado */}
           {esMaster ? (
-            <span className="px-2 py-0.2 rounded-full bg-amber-100 dark:bg-amber-900/60 text-amber-800 dark:text-amber-200 text-[8.5px] font-extrabold flex items-center gap-1 shrink-0">
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                onDefinirMaster(p.nombrePieza);
+              }}
+              title="Pieza Master activa. Clic para desmarcar y dejar sin pieza master"
+              className="px-2 py-0.5 rounded-full bg-amber-100 hover:bg-amber-200 dark:bg-amber-900/60 dark:hover:bg-amber-900/90 text-amber-800 dark:text-amber-200 text-[8.5px] font-extrabold flex items-center gap-1 shrink-0 cursor-pointer transition shadow-2xs"
+            >
               <Crown className="w-2.5 h-2.5 fill-amber-600 text-amber-600" /> MASTER
-            </span>
+            </button>
           ) : estaPosicionando ? (
             <span className="px-1.5 py-0.2 rounded-full bg-cyan-200 dark:bg-cyan-800 text-cyan-800 dark:text-cyan-100 text-[8.5px] font-bold animate-pulse shrink-0">
               Moviendo
@@ -216,7 +232,10 @@ export function CapaPiezaEsperaItem({
           {!esMaster && (
             <button
               type="button"
-              onClick={() => onDefinirMaster(p.nombrePieza)}
+              onClick={(e) => {
+                e.stopPropagation();
+                onDefinirMaster(p.nombrePieza);
+              }}
               title="Designar esta pieza como la Pieza Master (Base #1)"
               className="w-5 h-5 rounded-full flex items-center justify-center text-slate-300 hover:text-amber-500 hover:bg-amber-50 dark:hover:bg-amber-950/40 transition shrink-0 ml-auto mr-0.5 cursor-pointer"
             >

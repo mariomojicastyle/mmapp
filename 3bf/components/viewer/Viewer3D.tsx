@@ -66,6 +66,7 @@ import TimelineScrubber from "@/components/manual/TimelineScrubber";
 import BlenderTimeline from "@/components/manual/BlenderTimeline";
 import { AssemblyPiecePositioner } from "./AssemblyPiecePositioner";
 import { compilarAnimacionPaso, KinematicEngineResult } from "@/lib/manualAnimationEngine";
+import { aplicarTransformacionesBancoSubbloques } from "@/lib/engine/workbenchTransform";
 import { getSafeRestPosition, getSafeRestQuaternion } from "@/lib/engine/cadStateUtils";
 import { extraerPiezaMadre, anotarInstanciasFisicas } from "@/lib/piezaMadreUtils";
 import BloqueEstandar3DScene from "./BloqueEstandar3DScene";
@@ -701,6 +702,16 @@ function AssemblyAnimationController({ furnitureGroup }: { furnitureGroup: THREE
           child.updateMatrixWorld(true);
         }
       });
+
+      // 🪚 Si el paso activo contiene subbloques, aplicar directamente sus transformaciones de banco de trabajo
+      if (activeStep.subbloques && activeStep.subbloques.length > 0 && activeStep.tipo !== "showcase") {
+        const sceneMeshes: THREE.Mesh[] = [];
+        effectiveGroup.traverse((child: any) => {
+          if (child.isMesh) sceneMeshes.push(child);
+        });
+        aplicarTransformacionesBancoSubbloques(sceneMeshes, activeStep.subbloques);
+      }
+
       return;
     }
 
@@ -1842,7 +1853,8 @@ export default function Viewer3D() {
             sectionSize={calibracion.distanciaSeccion || 0.1}
             sectionThickness={calibracion.grosorGrillaGruesa || 1.5}
             sectionColor={coloresApariencia.rejillaPrincipal || calibracion.colorGrillaGruesa || "#94A3B8"}
-            fadeDistance={Math.max(100, (calibracion.numeroLineasRejilla || 500) * (calibracion.distanciaCuadricula || 0.01) * 4)}
+            fadeDistance={Math.max(35, (calibracion.numeroLineasRejilla || 500) * (calibracion.distanciaCuadricula || 0.01) * 2)}
+            fadeStrength={1.5}
           />
         )}
         <GroundInfiniteAxes />

@@ -389,8 +389,8 @@ export default function SubbloquesManagerSection({
                                           }
                                           className={`w-[33px] h-[33px] rounded-full flex items-center justify-center transition-all cursor-pointer ${
                                             acostado && direccionAcostar !== "derecha"
-                                              ? "bg-[#0891b2] text-white shadow-sm border border-[#0891b2] scale-105"
-                                              : "bg-transparent border border-slate-300/80 dark:border-slate-600/60 text-slate-700 dark:text-slate-200 hover:border-slate-400 dark:hover:border-slate-500 hover:bg-slate-200/40 dark:hover:bg-slate-700/40"
+                                              ? "bg-[#0891b2] dark:bg-[#1368AA] text-white shadow-sm border border-[#0891b2] dark:border-[#1368AA] scale-105"
+                                              : "bg-transparent border border-slate-300/80 dark:border-slate-600/60 text-slate-700 dark:text-slate-200 hover:border-[#0891b2] dark:hover:border-[#1368AA] hover:bg-slate-200/40 dark:hover:bg-slate-700/40"
                                           }`}
                                         >
                                           <IconGirarIzquierda className="w-[20.5px] h-[20.5px]" />
@@ -414,8 +414,8 @@ export default function SubbloquesManagerSection({
                                           }
                                           className={`w-[33px] h-[33px] rounded-full flex items-center justify-center transition-all cursor-pointer ${
                                             acostado && direccionAcostar === "derecha"
-                                              ? "bg-[#0891b2] text-white shadow-sm border border-[#0891b2] scale-105"
-                                              : "bg-transparent border border-slate-300/80 dark:border-slate-600/60 text-slate-700 dark:text-slate-200 hover:border-slate-400 dark:hover:border-slate-500 hover:bg-slate-200/40 dark:hover:bg-slate-700/40"
+                                              ? "bg-[#0891b2] dark:bg-[#1368AA] text-white shadow-sm border border-[#0891b2] dark:border-[#1368AA] scale-105"
+                                              : "bg-transparent border border-slate-300/80 dark:border-slate-600/60 text-slate-700 dark:text-slate-200 hover:border-[#0891b2] dark:hover:border-[#1368AA] hover:bg-slate-200/40 dark:hover:bg-slate-700/40"
                                           }`}
                                         >
                                           <IconGirarDerecha className="w-[20.5px] h-[20.5px]" />

@@ -173,6 +173,7 @@ export function resolverVisibilidadBoard(input: BoardVisibilityInput): {
 
   // 5. Reglas de Aislamiento
   let estaOcultaPorReglasPaso = false;
+  const subbloquesPaso = pasoActivoManual.subbloques || [];
 
   // 5.0 Bloque estándar: aislar completamente
   if (pasoActivoManual.tipo === 'bloque_estandar') {
@@ -184,48 +185,46 @@ export function resolverVisibilidadBoard(input: BoardVisibilityInput): {
     estaOcultaPorReglasPaso = true;
   }
 
-  // 5.2 Aislamiento de subbloques con Invert Hide
-  const subbloquesPaso = pasoActivoManual.subbloques || [];
-  if (subbloquesPaso.length > 0 && pasoActivoManual.ocultarNoAsignadas) {
-    if (!perteneceAlPasoActivo) {
-      estaOcultaPorReglasPaso = true;
-    }
+  // 5.2 Invertir del Bloque: si Invertir está activo, oculta todo lo que NO pertenezca a este bloque
+  if (pasoActivoManual.ocultarNoAsignadas && !perteneceAlPasoActivo) {
+    estaOcultaPorReglasPaso = true;
   }
 
-  // 5.3 Invertir General: oculta todas las piezas que NO pertenecen a este bloque
-  if (pasoActivoManual.ocultarNoAsignadas) {
-    if (!perteneceAlPasoActivo) {
-      estaOcultaPorReglasPaso = true;
-    }
-  }
-
-  // 5.4 Ocultar piezas asignadas cuando el bombillo está apagado (modo empacar activo)
-  // Solo aplica si NO está invertido (en modo Invertir, las asignadas deben estar visibles)
-  if (!pasoActivoManual.ocultarNoAsignadas && (pasoActivoManual.piezasOcultas || (modoPickingManual.activo && modoPickingManual.modo === "agregar" && modoPickingManual.pasoId === pasoActivoManual.id)) && !esPickingSubbloque) {
-    if (perteneceAlPasoActivo) {
-      estaOcultaPorReglasPaso = true;
-    }
-  }
-
-  // 5.5 Ojito individual de subbloque
+  // 5.3 Ojito de Subbloque: si un subbloque está con su ojito apagado (sub.oculto === true)
   if (!estaOcultaPorReglasPaso) {
-    const rawClean = name ? name.replace(/^RH_(?:OUT|IN):\s*/i, '').trim() : '';
     const estaEnSubbloqueOculto = subbloquesPaso.some((sub) => {
       if (!sub.oculto) return false;
       const elementosSub = [...(sub.piezas || []), ...(sub.herrajes || [])];
-      return elementosSub.some((pz) => {
-        if (!pz) return false;
-        if (instanciaKey && (pz === instanciaKey || pz.toLowerCase() === instanciaKey.toLowerCase())) return true;
-        if (piezaMadre && (pz === piezaMadre || pz.toLowerCase() === piezaMadre.toLowerCase())) return true;
-        if (cleanName && (pz === cleanName || pz.toLowerCase() === cleanName.toLowerCase())) return true;
-        if (rawClean && (pz === rawClean || pz.toLowerCase() === rawClean.toLowerCase())) return true;
-        const pmPz = extraerPiezaMadre(pz);
-        const pmMesh = piezaMadre || (instanciaKey ? extraerPiezaMadre(instanciaKey) : extraerPiezaMadre(cleanName || rawClean));
-        return pmPz && pmMesh && pmPz.toLowerCase() === pmMesh.toLowerCase();
-      });
+      return evaluarPertenenciaPaso(elementosSub, name, cleanName, instanciaKey, piezaMadre);
     });
 
     if (estaEnSubbloqueOculto) {
+      estaOcultaPorReglasPaso = true;
+    }
+  }
+
+  // 5.4 Modo Empacar en Subbloque (Bombillo del Subbloque apagado en gris / picking activo en subbloque)
+  if (!estaOcultaPorReglasPaso && esPickingSubbloque && modoPickingManual.modo === "agregar") {
+    const subActivo = subbloquesPaso.find((s) => s.id === modoPickingManual.grupoId);
+    if (subActivo) {
+      const elementosSub = [
+        ...(subActivo.piezas || []),
+        ...(subActivo.herrajes || []),
+        ...(modoPickingManual.piezasTemporalmenteSeleccionadas || [])
+      ];
+      if (evaluarPertenenciaPaso(elementosSub, name, cleanName, instanciaKey, piezaMadre)) {
+        estaOcultaPorReglasPaso = true;
+      }
+    }
+  }
+
+  // 5.5 Modo Empacar en Bloque (Bombillo del Bloque apagado en gris / picking activo en bloque general)
+  if (!estaOcultaPorReglasPaso && !esPickingSubbloque) {
+    const bombilloBloqueApagado = Boolean(
+      pasoActivoManual.piezasOcultas ||
+      (modoPickingManual.activo && modoPickingManual.modo === "agregar" && modoPickingManual.pasoId === pasoActivoManual.id && !modoPickingManual.grupoId)
+    );
+    if (bombilloBloqueApagado && perteneceAlPasoActivo) {
       estaOcultaPorReglasPaso = true;
     }
   }

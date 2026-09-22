@@ -139,16 +139,17 @@ export function useCalibradorCinematica(pasoActivo: PasoManualStudio) {
     };
   }, [tablerosAsignados, resultado?.real_meshes, pasoActivo.herrajesAsignados]);
 
-  // 👑 Determinar la Pieza Master oficial del paso (siempre ubicada en primera posición)
+  // 👑 Determinar la Pieza Master oficial del paso (únicamente si el usuario la ha seleccionado explícitamente)
   const piezaMasterNombre = useMemo(() => {
-    if (pasoActivo.piezaMaster && tablerosAsignados.includes(extraerFamiliaPieza(pasoActivo.piezaMaster))) {
+    if (!pasoActivo.piezaMaster) return "";
+    if (tablerosAsignados.includes(extraerFamiliaPieza(pasoActivo.piezaMaster))) {
       return extraerFamiliaPieza(pasoActivo.piezaMaster);
     }
     const encontrada = tablerosAsignados.find(
       (t) => pasoActivo.piezaMaster && perteneceAMismaFamiliaPieza(t, pasoActivo.piezaMaster)
     );
     if (encontrada) return encontrada;
-    return tablerosAsignados[0] || "";
+    return "";
   }, [pasoActivo.piezaMaster, tablerosAsignados]);
 
   // Configuración cinemática actual con valores por defecto óptimos
@@ -160,10 +161,10 @@ export function useCalibradorCinematica(pasoActivo: PasoManualStudio) {
 
   const piezasEspera = config.piezasEspera || [];
 
-  // Asegurar que cada tablero tenga su registro de espera ordenado: Master siempre 1º, secundarias 2º, 3º...
+  // Asegurar que cada tablero tenga su registro de espera ordenado: Master siempre 1º si existe, secundarias ordenadas
   const piezasConConfig = useMemo(() => {
     const rawList = tablerosAsignados.map((nombre, idx) => {
-      const esMaster = nombre === piezaMasterNombre;
+      const esMaster = Boolean(piezaMasterNombre && nombre === piezaMasterNombre);
       const encontrada = piezasEspera.find(
         (p) => p.nombrePieza === nombre || perteneceAMismaFamiliaPieza(p.nombrePieza, nombre)
       );
@@ -184,7 +185,7 @@ export function useCalibradorCinematica(pasoActivo: PasoManualStudio) {
       const radioCm = 50 + idx * 15;
       return {
         nombrePieza: nombre,
-        ordenEnsamble: esMaster ? 1 : idx + 2,
+        ordenEnsamble: esMaster ? 1 : idx + (piezaMasterNombre ? 2 : 1),
         offsetXCm: esMaster ? 0 : Math.round(Math.cos(angulo) * radioCm),
         offsetYCm: esMaster ? 0 : Math.round(Math.sin(angulo) * radioCm),
         offsetZCm: esMaster ? 0 : Math.round(Math.sin(angulo) * radioCm),
@@ -192,18 +193,22 @@ export function useCalibradorCinematica(pasoActivo: PasoManualStudio) {
       };
     });
 
-    const masterItem = rawList.find((p) => p.nombrePieza === piezaMasterNombre);
-    const secundarias = rawList.filter((p) => p.nombrePieza !== piezaMasterNombre);
+    const masterItem = piezaMasterNombre ? rawList.find((p) => p.nombrePieza === piezaMasterNombre) : null;
+    const secundarias = piezaMasterNombre ? rawList.filter((p) => p.nombrePieza !== piezaMasterNombre) : [...rawList];
 
     secundarias.sort((a, b) => (a.ordenEnsamble || 99) - (b.ordenEnsamble || 99));
 
     const resultadoLista: PiezaEsperaConfig[] = [];
     if (masterItem) {
       resultadoLista.push({ ...masterItem, ordenEnsamble: 1 });
+      secundarias.forEach((p, idx) => {
+        resultadoLista.push({ ...p, ordenEnsamble: idx + 2 });
+      });
+    } else {
+      secundarias.forEach((p, idx) => {
+        resultadoLista.push({ ...p, ordenEnsamble: idx + 1 });
+      });
     }
-    secundarias.forEach((p, idx) => {
-      resultadoLista.push({ ...p, ordenEnsamble: idx + 2 });
-    });
 
     return resultadoLista;
   }, [tablerosAsignados, piezasEspera, piezaMasterNombre]);
@@ -405,9 +410,15 @@ export function useCalibradorCinematica(pasoActivo: PasoManualStudio) {
   };
 
   const handleDefinirPiezaMaster = (nombrePieza: string) => {
+    const esYaMaster = Boolean(
+      pasoActivo.piezaMaster &&
+      (pasoActivo.piezaMaster === nombrePieza || perteneceAMismaFamiliaPieza(pasoActivo.piezaMaster, nombrePieza))
+    );
+    const nuevaMaster = esYaMaster ? "" : nombrePieza;
+
     const actualizadas = piezasConConfig.map((item) => {
       const esEsta = item.nombrePieza === nombrePieza || perteneceAMismaFamiliaPieza(item.nombrePieza, nombrePieza);
-      if (esEsta) {
+      if (esEsta && !esYaMaster) {
         return {
           ...item,
           ordenEnsamble: 1,
@@ -420,14 +431,18 @@ export function useCalibradorCinematica(pasoActivo: PasoManualStudio) {
     });
 
     actualizarPasoManual(pasoActivo.id, {
-      piezaMaster: nombrePieza,
+      piezaMaster: nuevaMaster,
       configuracionCinematica: {
         ...config,
         piezasEspera: actualizadas,
       },
     });
-    setUltimaPiezaCalibrada(nombrePieza);
-    setMensajeGuion(`👑 ${nombrePieza} establecida como Pieza Master (Base de ensamble #1 en origen X:0, Y:0)`);
+    setUltimaPiezaCalibrada(nuevaMaster);
+    if (nuevaMaster) {
+      setMensajeGuion(`👑 ${nuevaMaster} establecida como Pieza Master (Base de ensamble #1 en origen X:0, Y:0)`);
+    } else {
+      setMensajeGuion(`Ninguna Pieza Master seleccionada. Todas las piezas se desplazan libremente.`);
+    }
 
     if (typeof window !== "undefined") {
       const searchRoot = (window as any).__threeScene3BF;

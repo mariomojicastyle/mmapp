@@ -9,7 +9,14 @@ Este archivo es la "Memoria RAM" para Antigravity. Contiene el contexto de lo qu
 ---
 
 ## 🏗️ 1. Plataforma B2B & 3dBimFab (Foco Actual)
-**Estado:** Consola Timeline y Dope Sheet Estilo Blender con Keyframes Cinemáticos de Cámara y Portapapeles (Ctrl+C, Ctrl+V, Shift+D); Próximo Foco: Perfeccionamiento y Efecto Wow de Animación 3D (`3BF_Animacion_Wow`).
+**Estado:** Hito 192 completado (Control total de Pieza Master, modo cristal calibrado, piso 3D sin saltos y resiliencia de motor Three.js); Próximo Foco: Retomando Animación 3D y Efectos Cinemáticos (`3BF_Retomando_Anim`).
+
+- [x] **[21 de Septiembre, 2026] Desacoplamiento de Pieza Master por Defecto, Refinamiento de Modo Cristal, Posicionamiento en Piso y Resiliencia de Renderizado 3D (`StepManagerPanel.tsx`, `useCalibradorCinematica.ts`, `CapaPiezaEsperaItem.tsx`, `Viewer3D.tsx`, `assemblyCoreographer.ts`, `manualAnimationEngine.ts`)**:
+  * **Cero Pieza Master por Defecto**: Removida la auto-asignación arbitraria del primer tablero como master. El usuario es el único con potestad para elegirla o desmarcarla en cualquier momento (toggle interactivo con un clic en la corona o badge `👑 MASTER`).
+  * **Anclaje al Piso 3D**: Estabilidad geométrica garantizada al crear nuevos pasos de armado sin que el mueble quede flotando ni varíe su cota de apoyo.
+  * **Modo Cristal & Cuadrícula**: Atenuación del contraste de la malla de referencia detrás de piezas translúcidas respetando al 100% los ajustes de apariencia y colores personalizados.
+  * **Fluidez y Cero Congelamientos**: Blindaje de Three.js contra recreación innecesaria de clips de animación y parches recursivos sobre `getObjectByName`.
+  * **Validación**: `npx tsc --noEmit` completado con 0 errores en `3bf` y `mario-mojica-plataforma`.
 
 - [x] **[20 de Septiembre, 2026] Consola Timeline y Dope Sheet Estilo Blender con Keyframes Cinemáticos de Cámara y Portapapeles (`BlenderTimeline.tsx`, `TimelineScrubber.tsx`, `Viewer3D.tsx`)**:
   * **Consola Profesional de Animación**: Nueva interfaz inferior en modo director / simulador móvil (lanzamiento nativo en 16:9) con regla graduada (Ruler), zoom/pan con rueda y atajos de Blender (`Ctrl + Clic central`).

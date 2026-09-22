@@ -26,6 +26,8 @@ export interface BoardMeshProps {
   instanciaId?: string;
   instanciaKey?: string;
   esDuplicado?: boolean;
+  omitirAristas?: boolean;
+  forzarAristasCaja?: boolean;
 }
 
 export function BoardMesh({
@@ -41,6 +43,8 @@ export function BoardMesh({
   instanciaId,
   instanciaKey,
   esDuplicado = false,
+  omitirAristas = false,
+  forzarAristasCaja = false,
 }: BoardMeshProps) {
   const { 
     calibracion, 
@@ -229,6 +233,7 @@ export function BoardMesh({
       hasMap: pbrMaps.diffuse !== null,
       esDuplicado,
       estaSeleccionadaEnPicking,
+      pestanaActiva,
     });
   }, [
     name,
@@ -245,6 +250,7 @@ export function BoardMesh({
     pbrMaps.diffuse,
     esDuplicado,
     estaSeleccionadaEnPicking,
+    pestanaActiva,
   ]);
 
   // 4. Evaluación Pura de Visibilidad y Reglas del Paso (Delegado al motor de reglas)
@@ -326,14 +332,25 @@ export function BoardMesh({
     )
   );
 
+  // Tablero de madera plano (lámina superficial sin espesor volumétrico de caja)
+  const esLaminaPlanaMadera = Boolean(
+    isWoodBoard && size && Math.min(size[0], size[1], size[2]) < 0.005
+  );
+
   const debeMostrarAristas = calibracion.mostrarAristas !== false && (isWoodBoard || isHardware) && !esMicroGeometria;
-  const debeOmitirAristasPorDuplicidadCapa = isWoodBoard && (isBalance || isMdpExpuesto);
-  const mostrarAristasEnEsteMesh = (debeMostrarAristas && !debeOmitirAristasPorDuplicidadCapa) || estaSeleccionadaEnPicking;
+  const debeOmitirAristasPorDuplicidadCapa = isWoodBoard && (
+    isBalance || 
+    (isMdpExpuesto && !forzarAristasCaja) ||
+    (esLaminaPlanaMadera && !forzarAristasCaja) ||
+    omitirAristas
+  );
+  const mostrarAristasEnEsteMesh = (debeMostrarAristas && !debeOmitirAristasPorDuplicidadCapa) || (estaSeleccionadaEnPicking && !omitirAristas && !esLaminaPlanaMadera);
   
   // 📐 Excepción para frentes de cajón o piezas con bisel/chaflán diagonal:
   // Si la pieza tiene bisel o está identificada como frente/perfil, usamos la geometría real para que se aprecien sus aristas diagonales.
   const esExcepcionBisel = tieneBiselDiagonal || !esParalelepipedo;
-  const edgeGeometryToUse = (esParalelepipedo && !tieneBiselDiagonal && boxMeshGeometry) ? boxMeshGeometry : (customGeometry || undefined);
+  const geometryBaseForEdges = customGeometry || undefined;
+  const edgeGeometryToUse = ((esParalelepipedo || forzarAristasCaja) && !tieneBiselDiagonal && boxMeshGeometry) ? boxMeshGeometry : geometryBaseForEdges;
 
 
   const activeMap = modoVisual === "renderizado" ? pbrMaps.diffuse : null;
@@ -347,7 +364,7 @@ export function BoardMesh({
         ref={meshRef}
         position={position}
         scale={esDuplicado ? [1.06, 1.06, 1.06] : (estaSeleccionadaEnPicking ? [1.015, 1.015, 1.015] : undefined)}
-        renderOrder={esDuplicado ? 20 : (estaHoveredEnHerrajes ? 35 : (estaSeleccionadaEnPicking ? 22 : (isHardwareTampa ? 25 : undefined)))}
+        renderOrder={esDuplicado ? 20 : (estaHoveredEnHerrajes ? 35 : (estaSeleccionadaEnPicking ? 22 : (isHardwareTampa ? 25 : (esLaminaPlanaMadera ? 2 : undefined))))}
         name={instanciaKey ? `${instanciaKey}::${cleanName}` : cleanName}
         geometry={customGeometry}
         onClick={(e) => {
@@ -428,7 +445,7 @@ export function BoardMesh({
           metalness={estaHoveredEnHerrajes ? 0.5 : metalness}
           wireframe={isWireframe}
           depthWrite={estaSeleccionadaEnPicking || estaHoveredEnHerrajes ? true : depthWrite}
-          polygonOffset={isHardwareTampa || estaSeleccionadaEnPicking}
+          polygonOffset={isHardwareTampa || estaSeleccionadaEnPicking || esLaminaPlanaMadera}
           polygonOffsetFactor={isHardwareTampa ? -2 : -1}
           polygonOffsetUnits={isHardwareTampa ? -2 : -1}
           side={THREE.DoubleSide}
@@ -463,7 +480,7 @@ export function BoardMesh({
             opacity={estaSeleccionadaEnPicking || estaHoveredEnHerrajes ? 1.0 : (isHardwareTampa ? 0.90 : (calibracion.opacidadAristas ?? 1.0))}
             transparent={(calibracion.opacidadAristas ?? 1.0) < 0.99 && !estaSeleccionadaEnPicking && !isHardwareTampa && !estaHoveredEnHerrajes}
             lineWidth={estaHoveredEnHerrajes ? 3.0 : (estaSeleccionadaEnPicking ? 3.0 : (isHardwareTampa ? 1.5 : (esDuplicado ? 2.5 : Math.max(1, ((calibracion.calibreAristas ?? 100) / 100) * 1.5))))}
-            renderOrder={estaHoveredEnHerrajes ? 40 : (estaSeleccionadaEnPicking ? 35 : (isHardwareTampa ? 28 : (esDuplicado ? 25 : 10)))}
+            renderOrder={estaHoveredEnHerrajes ? 40 : (estaSeleccionadaEnPicking ? 35 : (isHardwareTampa ? 28 : (esDuplicado ? 25 : (forzarAristasCaja ? 15 : 10))))}
           />
         )}
       </mesh>
@@ -591,7 +608,7 @@ export function BoardMesh({
           opacity={estaSeleccionadaEnPicking || estaHoveredEnHerrajes ? 1.0 : (isHardwareTampa ? 0.90 : (calibracion.opacidadAristas ?? 1.0))}
           transparent={(calibracion.opacidadAristas ?? 1.0) < 0.99 && !estaSeleccionadaEnPicking && !isHardwareTampa && !estaHoveredEnHerrajes}
           lineWidth={estaHoveredEnHerrajes ? 3.0 : (estaSeleccionadaEnPicking ? 3.0 : (isHardwareTampa ? 1.5 : (esDuplicado ? 2.5 : Math.max(1, ((calibracion.calibreAristas ?? 100) / 100) * 1.5))))}
-          renderOrder={estaHoveredEnHerrajes ? 40 : (estaSeleccionadaEnPicking ? 35 : (isHardwareTampa ? 28 : (esDuplicado ? 25 : 10)))}
+          renderOrder={estaHoveredEnHerrajes ? 40 : (estaSeleccionadaEnPicking ? 35 : (isHardwareTampa ? 28 : (esDuplicado ? 25 : (forzarAristasCaja ? 15 : 10))))}
         />
       )}
     </mesh>

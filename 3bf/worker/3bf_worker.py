@@ -1690,10 +1690,8 @@ async def compute_model(request: Request):
                             "position": [0, 0.0075, 0]
                         })
 
-                # 🪵 DfMA Board Solid Repair: Sanear tableros cuya malla de apariencia exterior (Cara A)
-                # haya sido aplanada o colapsada en Grasshopper por la sustracción booleana (ej. Peça 5, Peça 2).
-                # Si 'RH_OUT:Peça X' tiene un espesor colapsado (< 8mm) pero existe su contraparte estructural 'RH_OUT:MDP Peça X' (>= 10mm),
-                # restaurar el volumen completo, posición y vértices del MDP para que las aristas y el despiece sean 100% perfectos.
+                # 🪵 DfMA Board Dimension Repair: Informar el calibre estructural real en el BOM/metadata
+                # sin sobreescribir destructivamente la geometría real de las caras superficiales de apariencia.
                 mapa_mdp = {}
                 for m in real_meshes:
                     n_raw = m.get("name", "").strip()
@@ -1714,15 +1712,8 @@ async def compute_model(request: Request):
                             min_m = min(m_sz) if m_sz else 0
                             min_mdp = min(mdp_sz) if mdp_sz else 0
                             if min_m < 0.008 and min_mdp >= 0.010:
-                                print(f"[3BF DfMA Solid Repair] 🪵 Restaurando volumen estructural de {n_raw} ({round(min_m*1000, 1)}mm -> {round(min_mdp*1000, 1)}mm) usando {mdp_m.get('name')}", flush=True)
-                                m["size"] = list(mdp_sz)
-                                m["position"] = list(mdp_m.get("position", [0, 0, 0]))
-                                if mdp_m.get("vertices"):
-                                    m["vertices"] = list(mdp_m["vertices"])
-                                if mdp_m.get("indices"):
-                                    m["indices"] = list(mdp_m["indices"])
-                                if mdp_m.get("uvs"):
-                                    m["uvs"] = list(mdp_m["uvs"])
+                                # Preservar fielmente los vértices originales de la Cara A
+                                m["espesor_nominal"] = min_mdp
 
                 # 🛡️ Aplicar Deduplicador DfMA de Mallas (marca duplicados para resaltado en rojo y limpia BOM)
                 unique_meshes, all_annotated_meshes, mallas_duplicadas_detectadas = deduplicate_real_meshes(real_meshes)

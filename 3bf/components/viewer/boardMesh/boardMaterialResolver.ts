@@ -17,6 +17,7 @@ export interface MaterialPropertiesInput {
   hasMap: boolean;
   esDuplicado: boolean;
   estaSeleccionadaEnPicking: boolean;
+  pestanaActiva?: string;
 }
 
 export interface ResolvedMaterialProperties {
@@ -155,7 +156,11 @@ export function resolverPropiedadesMaterial(p: MaterialPropertiesInput): Resolve
     } else if (isBalance) {
       capaAsignada = p.capas.find((c) => c.id === 'capa_back' || c.id === 'capa_espaldar' || c.nombre.toLowerCase().includes('back') || c.nombre.toLowerCase().includes('balance'));
     } else if (normName.includes('mdp')) {
-      capaAsignada = p.capas.find((c) => c.id === 'capa_mdp' || c.nombre.toLowerCase() === 'mdp');
+      if (p.pestanaActiva === 'manual') {
+        capaAsignada = p.capas.find((c) => c.id === 'capa_tono' || (c.nombre.toLowerCase().includes('tono') && !c.nombre.toLowerCase().includes('fondo'))) || p.capas[0];
+      } else {
+        capaAsignada = p.capas.find((c) => c.id === 'capa_mdp' || c.nombre.toLowerCase() === 'mdp');
+      }
     } else {
       capaAsignada = p.capas.find((c) => c.id === 'capa_tono' || (c.nombre.toLowerCase().includes('tono') && !c.nombre.toLowerCase().includes('fondo'))) || p.capas.find(c => c.id !== 'capa_acero') || p.capas[0];
     }
@@ -292,9 +297,9 @@ export function resolverPropiedadesMaterial(p: MaterialPropertiesInput): Resolve
       depthWrite = true;
     } else {
       finalMeshColor = p.coloresApariencia.mallasCristal || '#0284C7';
-      opacity = 0.52;
-      roughness = 0.75;
-      metalness = 0.0;
+      opacity = 0.35;
+      roughness = 0.25;
+      metalness = 0.05;
       transparent = true;
       depthWrite = false;
     }
@@ -335,7 +340,7 @@ export function resolverPropiedadesMaterial(p: MaterialPropertiesInput): Resolve
     } else if (materialPBR) {
       finalMeshColor = materialPBR.colorBase;
     } else if (isMdpExpuesto) {
-      finalMeshColor = '#D5B88A';
+      finalMeshColor = p.pestanaActiva === 'manual' ? (p.mainColor || p.calibracion.colorSolido || '#CBD5E1') : '#D5B88A';
     } else if (isBalance) {
       finalMeshColor = '#F9FAFB';
     } else {
