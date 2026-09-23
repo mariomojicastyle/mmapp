@@ -50,12 +50,36 @@ export function compilarShowcaseP00(
     });
     const centroXMueble = (minXMueble + maxXMueble) / 2.0;
 
-    // Mapa de correderas fijas
+function esCorrederaFijaMesh(name: string, cleanName: string, instKey: string): boolean {
+  const all = `${name} ${cleanName} ${instKey}`.toLowerCase();
+  return (
+    all.includes("fixa") ||
+    all.includes("fija") ||
+    all.includes("corrediça - fixa") ||
+    all.includes("corredica - fixa") ||
+    all.includes("corredera fija") ||
+    all.includes("corredera_fija")
+  );
+}
+
+function esCorrederaIntermediaMesh(name: string, cleanName: string, instKey: string): boolean {
+  const all = `${name} ${cleanName} ${instKey}`.toLowerCase();
+  return (
+    all.includes("intermedia") ||
+    all.includes("intermediária") ||
+    all.includes("intermediaria") ||
+    all.includes("corrediça - intermediária") ||
+    all.includes("corredica - intermediaria")
+  );
+}
+
+    // Mapa de correderas fijas (perfiles atornillados al lateral del mueble que NUNCA se mueven)
     const correderasFijas: THREE.Vector3[] = [];
     sceneMeshes.forEach((mesh) => {
-      const n = (mesh.name || mesh.userData?.cleanName || "").toLowerCase();
+      const n = (mesh.name || "").toLowerCase();
+      const cn = ((mesh.userData?.cleanName || "") as string).toLowerCase();
       const ik = ((mesh.userData?.instanciaKey || "") as string).toLowerCase();
-      if ((n.includes("corredi") || ik.includes("corredi")) && (n.includes("fija") || ik.includes("fija"))) {
+      if ((n.includes("corredi") || ik.includes("corredi") || cn.includes("corredi")) && esCorrederaFijaMesh(n, cn, ik)) {
         correderasFijas.push(getSafeRestPosition(mesh));
       }
     });
@@ -280,7 +304,7 @@ export function compilarShowcaseP00(
             const nodeName = (obj.name || "").toLowerCase().trim();
             const pmObj = extraerPiezaMadre(instKey || cleanName || nodeName).toLowerCase().trim();
 
-            const esFija = instKey.includes("fija") || cleanName.includes("fija") || nodeName.includes("fija");
+            const esFija = esCorrederaFijaMesh(nodeName, cleanName, instKey);
             if (esFija) return;
 
             const initPos = getSafeRestPosition(obj);
@@ -314,8 +338,7 @@ export function compilarShowcaseP00(
 
             if (coincide && !animatedMeshUuids.has(obj.uuid)) {
               animatedMeshUuids.add(obj.uuid);
-              const isIntermedia =
-                instKey.includes("intermedia") || cleanName.includes("intermedia") || nodeName.includes("intermedia");
+              const isIntermedia = esCorrederaIntermediaMesh(nodeName, cleanName, instKey);
               const effectiveOffset = isIntermedia ? offset.clone().multiplyScalar(0.5) : offset;
               tracks.push(generarPistasCajon(obj.uuid, initPos, effectiveOffset));
             }
@@ -344,12 +367,11 @@ export function compilarShowcaseP00(
                   if (!enMismaColumna) return;
                 }
 
-                const esFija = instKey.includes("fija") || cleanName.includes("fija") || nodeName.includes("fija");
+                const esFija = esCorrederaFijaMesh(nodeName, cleanName, instKey);
                 if (esFija) return;
 
                 animatedMeshUuids.add(obj.uuid);
-                const esIntermedia =
-                  instKey.includes("intermedia") || cleanName.includes("intermedia") || nodeName.includes("intermedia");
+                const esIntermedia = esCorrederaIntermediaMesh(nodeName, cleanName, instKey);
                 if (esIntermedia) {
                   tracks.push(generarPistasCajon(obj.uuid, initPos, offset.clone().multiplyScalar(0.5)));
                 } else {

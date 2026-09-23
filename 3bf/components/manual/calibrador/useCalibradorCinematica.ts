@@ -6,6 +6,7 @@ import {
   extraerPiezaMadre,
   extraerFamiliaPieza,
   perteneceAMismaFamiliaPieza,
+  esHerrajeNombre,
 } from "@/lib/piezaMadreUtils";
 import {
   mapearContactosPiezasHerrajes,
@@ -114,7 +115,7 @@ export function useCalibradorCinematica(pasoActivo: PasoManualStudio) {
 
   // Obtener la lista limpia de tableros de madera asignados a este paso agrupados por familia canónica
   const tablerosAsignados = useMemo(() => {
-    const piezas = pasoActivo.piezasAsignadas || [];
+    const piezas = (pasoActivo.piezasAsignadas || []).filter((p) => !esHerrajeNombre(p));
     const setMadres = new Set<string>();
     piezas.forEach((p) => {
       const familia = extraerFamiliaPieza(p);

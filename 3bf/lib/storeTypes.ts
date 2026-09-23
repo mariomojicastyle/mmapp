@@ -500,10 +500,56 @@ export interface SubBloqueArmado {
 }
 
 
+export interface TableroCapaPlus {
+  id: string; // ej. "Peça 10"
+  destinoId: string; // "base_master" o id de otra pieza ej. "Peça 7"
+  tiempoAparicion: number; // Segundo exacto en que aparece en espera (defecto 0)
+  tiempoInicioMovimiento: number; // Segundo exacto en que inicia su recorrido hacia destino (defecto 500)
+  offsetXCm?: number;
+  offsetYCm?: number;
+  offsetZCm?: number;
+}
+
+export interface HerrajeCapaPlus {
+  id: string; // ej. "Cantoneira (17)"
+  ejeAproximacion: "+X" | "-X" | "+Y" | "-Y" | "+Z" | "-Z"; // Defecto: "-X"
+  tiempoAparicion: number; // Segundo exacto en que aparece (defecto 0)
+  congelado?: boolean;
+}
+
+export interface CapaMultiplePlus {
+  id: string; // ej. "capa_plus_1"
+  nombre: string; // ej. "Capa 1 de armado P04"
+  visible?: boolean;
+  colapsada?: boolean; // Minimizar / Colapsar tarjeta de capa
+  tableros: TableroCapaPlus[];
+  herrajes: HerrajeCapaPlus[];
+  congelados: HerrajeCapaPlus[];
+  bloquesHeredadosIds?: string[];
+  bloquesHeredadosVisibles?: Record<string, boolean>;
+  piezaMaster?: string;
+  orientacionBanco?: {
+    rotacion: [number, number, number];
+    apoyoEnPiso: boolean;
+  };
+}
+
+export interface MultiplePlusConfigPaso {
+  velocidadTablerosCmS: number; // Defecto: 15 cm/s
+  velocidadHerrajesCmS: number; // Defecto: 8 cm/s
+  movimientoGlobalCm: number; // Defecto: 20 cm
+  capas: CapaMultiplePlus[];
+  orientacionBanco?: {
+    rotacion: [number, number, number];
+    apoyoEnPiso: boolean;
+  };
+  ponerDePieAlFinal?: boolean; // Poner de pie el mueble al terminar el armado
+}
+
 export interface PasoManualStudio {
   id: string; // "P00", "P01", "P02"...
   numero: number;
-  tipo: "showcase" | "ensamble" | "bloque_estandar";
+  tipo: "showcase" | "ensamble" | "bloque_estandar" | "ensamble_multiple" | "multiple_plus";
   titulo: string;
   descripcion: string;
   duracionTotal: number; // segundos
@@ -532,7 +578,10 @@ export interface PasoManualStudio {
   subbloques?: SubBloqueArmado[]; // 🧩 Sub-etapas de armado (Subbloque A, B, C...)
   coreografiaSubbloques?: 1 | 2; // 🎭 1 = Secuencial por corredera, 2 = Simultánea en bloque
   piezasOcultas?: boolean; // 💡 Apagar / Prender piezas de este paso en el 3D
+  capasOcultas?: string[]; // 💡 Nombres de piezas o capas ocultadas individualmente con el bombillito
   ocultarNoAsignadas?: boolean; // 💡 Apagar piezas y herrajes que no pertenecen a este paso (Aislar Paso)
+  bloquesHeredadosIds?: string[]; // 🧩 IDs de pasos previos consolidados como sub-ensambles (ej: ["P01", "P03"])
+  bloquesHeredadosVisibles?: Record<string, boolean>; // 💡 Visibilidad individual de bloques heredados { [pasoId]: boolean }
   secuencia: ElementoSecuenciaCinematica[];
 
   // 📦 Configuración Bloque Estándar Reutilizable (.3bb.json)
@@ -556,6 +605,8 @@ export interface PasoManualStudio {
   // 🎥 Dirección Cinematográfica de Cámara (Keyframes por segundo en la línea de tiempo)
   keyframesCamara?: KeyframeCamaraPaso[];
   camaraCinematicaActiva?: boolean; // Habilita o deshabilita la reproducción de cámara cinemática
+  // 🌟 Configuración Modo 5: Ensamble Múltiple Plus
+  multiplePlus?: MultiplePlusConfigPaso;
 }
 
 export interface KeyframeCamaraPaso {
@@ -582,6 +633,11 @@ export interface PiezaEsperaConfig {
   tiemposAparicionHerrajes?: Record<string, number>; // Segundo exacto en que cada herraje individual aparece a escala real (por defecto 0)
   tiempoAparicionPieza?: number; // Segundo exacto en que la pieza/capa aparece a escala real en la escena (por defecto 0s)
   tiempoFinHerrajes?: number; // Segundo exacto en que termina el ensamble de herrajes e inicia el desplazamiento de la pieza (por defecto 0s = automático)
+  visible?: boolean; // 💡 Control de visibilidad individual de la capa en el visor 3D (Bombillito)
+  piezaDestinoId?: string; // 🎯 Destino específico de ensamble (Multi-Destino por capa, descentralizando piezaMaster)
+  esBloqueHeredado?: boolean; // 🧩 Si esta capa representa un bloque heredado completo consolidado
+  bloqueOrigenId?: string; // ID del paso de origen heredado (ej: "P03")
+  tablerosAsignados?: string[]; // Perfiles o tableros complementarios asignados a esta capa
 }
 
 export interface ConfiguracionCinematicaPaso {
@@ -797,7 +853,7 @@ export interface State3BF {
 
   setPasosManual: (pasos: PasoManualStudio[]) => void;
   seleccionarPasoManualActivo: (pasoId: string) => void;
-  crearPasoManual: (tipo?: "showcase" | "ensamble") => void;
+  crearPasoManual: (tipo?: "showcase" | "ensamble" | "bloque_estandar" | "multiple_plus") => void;
   eliminarPasoManual: (pasoId: string) => void;
   actualizarPasoManual: (pasoId: string, data: Partial<PasoManualStudio>) => void;
   reordenarSecuenciaPaso: (pasoId: string, nuevaSecuencia: ElementoSecuenciaCinematica[]) => void;
@@ -817,6 +873,14 @@ export interface State3BF {
   conmutarVisibilidadPiezasPaso: (pasoId: string) => void;
   conmutarOcultarNoAsignadasPaso: (pasoId: string) => void;
   
+  // 🧩 Bloques Heredados y Multi-Destino por Capa
+  asociarBloqueHeredado: (pasoId: string, bloqueId: string) => void;
+  desasociarBloqueHeredado: (pasoId: string, bloqueId: string) => void;
+  conmutarVisibilidadBloqueHeredado: (pasoId: string, bloqueId: string) => void;
+  conmutarVisibilidadCapaPieza: (pasoId: string, nombrePieza: string, herrajesAsociados?: string[]) => void;
+  setPiezaDestinoCapa: (pasoId: string, nombrePieza: string, piezaDestinoId?: string) => void;
+  eliminarCapaPiezaManual: (pasoId: string, nombrePieza: string) => void;
+  
   // 🧩 Subbloques de Armado en Pasos de Ensamble
   agregarSubBloqueArmado: (pasoId: string, nombre?: string) => void;
   actualizarSubBloqueArmado: (pasoId: string, subbloqueId: string, data: Partial<SubBloqueArmado>) => void;
@@ -830,6 +894,35 @@ export interface State3BF {
   resetTransformBancoSubBloque: (pasoId: string, subbloqueId: string) => void;
   actualizarTrackSubBloque: (pasoId: string, subbloqueId: string, track: Partial<SubBloqueAnimacionTrack>) => void;
   setCoreografiaSubbloques: (pasoId: string, coreografia: 1 | 2) => void;
+
+  // 🌟 Acciones Modo 5: Múltiple Plus (Capas Independientes)
+  asegurarMultiplePlusPaso: (pasoId: string) => void;
+  crearCapaPlus: (pasoId: string, nombre?: string) => void;
+  eliminarCapaPlus: (pasoId: string, capaId: string) => void;
+  toggleVisibilidadCapaPlus: (pasoId: string, capaId: string) => void;
+  renombrarCapaPlus: (pasoId: string, capaId: string, nuevoNombre: string) => void;
+  reordenarCapasPlus: (pasoId: string, origenIndex: number, destinoIndex: number) => void;
+  actualizarConfigGlobalPlus: (pasoId: string, config: Partial<MultiplePlusConfigPaso>) => void;
+  asignarTableroACapaPlus: (pasoId: string, capaId: string, tableroId: string) => void;
+  desasignarTableroDeCapaPlus: (pasoId: string, capaId: string, tableroId: string) => void;
+  actualizarTableroCapaPlus: (pasoId: string, capaId: string, tableroId: string, cambios: Partial<TableroCapaPlus>) => void;
+  asignarHerrajeACapaPlus: (pasoId: string, capaId: string, herrajeId: string, congelado?: boolean) => void;
+  desasignarHerrajeDeCapaPlus: (pasoId: string, capaId: string, herrajeId: string) => void;
+  actualizarHerrajeCapaPlus: (pasoId: string, capaId: string, herrajeId: string, cambios: Partial<HerrajeCapaPlus>) => void;
+  toggleCongelarHerrajePlus: (pasoId: string, capaId: string, herrajeId: string) => void;
+  asociarBloqueHeredadoPlus: (pasoId: string, capaId: string, bloquePasoId: string) => void;
+  desasociarBloqueHeredadoPlus: (pasoId: string, capaId: string, bloquePasoId: string) => void;
+  toggleVisibilidadBloqueHeredadoPlus: (pasoId: string, capaId: string, bloquePasoId: string) => void;
+  rotarCapaBancoPlus: (pasoId: string, capaId: string, eje: "X" | "Y" | "Z", anguloDeg: number) => void;
+  resetRotacionCapaBancoPlus: (pasoId: string, capaId: string) => void;
+  girarBancoGlobalPlus: (pasoId: string, eje: "X" | "Y", deltaDeg: number) => void;
+  toggleApoyoPisoGlobalPlus: (pasoId: string) => void;
+  togglePonerDePieAlFinalPlus: (pasoId: string) => void;
+  toggleColapsarCapaPlus: (pasoId: string, capaId: string) => void;
+  setColapsarTodasCapasPlus: (pasoId: string, colapsadas: boolean) => void;
+  setVelocidadTablerosPlus: (pasoId: string, velocidadCmS: number) => void;
+  setVelocidadHerrajesPlus: (pasoId: string, velocidadCmS: number) => void;
+  setMovimientoGlobalPlus: (pasoId: string, movimientoCm: number) => void;
   
   // 🎯 Modo Picking 3D / Cuentagotas para Asignación de Piezas
   modoPickingManual: ModoPickingManualState;
@@ -844,6 +937,7 @@ export interface State3BF {
   iniciarPickingManual: (pasoId: string, grupoId?: string | null, modo?: "agregar" | "retirar") => void;
   togglePiezaEnPickingManual: (piezaMadre: string) => void;
   retirarComponenteManual3D: (meshTargetKey: string, pasoId?: string) => void;
+  desasignarTableroDeCapa: (pasoId: string, nombreCapa: string, tableroNombre: string) => void;
   limpiarPickingManual: () => void;
   confirmarPickingManual: () => void;
   setIsTimelinePlaying: (playing: boolean) => void;

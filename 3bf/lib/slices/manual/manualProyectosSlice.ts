@@ -114,7 +114,7 @@ export const createManualProyectosSlice = (set: any, get: any): any => {
       guardarPasosEnCacheLocal(pasos, manual);
     },
 
-    guardarManualProyecto: async (nombre?: string, marca = "RTA Design", tipologia = "Manuales 3D") => {
+    guardarManualProyecto: async (nombre?: string, marca?: string, tipologia?: string) => {
       const state = get();
       set({ guardandoManual: true });
 
@@ -126,12 +126,15 @@ export const createManualProyectosSlice = (set: any, get: any): any => {
           manualId = `manual_${currentNombre.toLowerCase().replace(/[^a-z0-9]/gi, "_")}`;
         }
 
+        const currentMarca = marca || state.manualActivoGuardado?.marca || state.muebleActivoGuardado?.marca || "RTA Design";
+        const currentTipologia = tipologia || state.manualActivoGuardado?.tipologia || state.muebleActivoGuardado?.tipologia || "Manuales 3D";
+
         const payload: Manual3BMProyecto = {
           id: manualId,
           muebleOrigenId: state.muebleActivoGuardado?.id || state.parametros?.model_id || "1_Comoda Ravenna",
           nombre: currentNombre,
-          marca: marca || state.manualActivoGuardado?.marca || "RTA Design",
-          tipologia: tipologia || state.manualActivoGuardado?.tipologia || "Manuales 3D",
+          marca: currentMarca,
+          tipologia: currentTipologia,
           fechaModificacion: new Date().toISOString(),
           parametrosMueble: { ...state.parametros },
           pasos: state.pasosManual,
@@ -141,6 +144,7 @@ export const createManualProyectosSlice = (set: any, get: any): any => {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ action: "save_manual", manual: payload }),
+          signal: AbortSignal.timeout(10000),
         });
 
         if (res.ok) {
@@ -182,6 +186,7 @@ export const createManualProyectosSlice = (set: any, get: any): any => {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ action: "save_furniture", furniture: muebleSincronizado }),
+                signal: AbortSignal.timeout(10000),
               });
               if (typeof window !== "undefined" && window.localStorage) {
                 localStorage.setItem("3bf_ultimo_mueble_id", muebleSincronizado.id);

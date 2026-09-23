@@ -9,7 +9,35 @@ Este archivo es la "Memoria RAM" para Antigravity. Contiene el contexto de lo qu
 ---
 
 ## 🏗️ 1. Plataforma B2B & 3dBimFab (Foco Actual)
-**Estado:** Hito 201 completado (Erradicación del Artefacto de Rejilla Blanca y Vinculación Reactiva de Colores de Rejilla); Próximo Foco: Bloques Heredados, Multi-Destino por Capa y Control de Visibilidad en Modo Ensamble Múltiple (`Bloques_Heredados`).
+**Estado:** Hito 202 completado (Múltiple Plus Estable: Cinemática Solidaria Automática de Herrajes, Normalización Incondicional de Capas, Ancho Flexible de Panel y UX Optimizada de Cápsulas); Próximo Foco: Consolidación y Escalamiento de Pasos Múltiple Plus en Producción (`Animacion_Plus_Estable`).
+
+- [x] **[23 de Septiembre, 2026] Múltiple Plus Estable: Cinemática Solidaria Automática de Herrajes, Normalización Incondicional de Capas, Ancho Flexible de Panel y UX Optimizada de Cápsulas (`manualAnimationEngine.ts`, `multiplePlusKinematics.ts`, `AssemblyAnimationController.tsx`, `AssemblyPiecePositioner.tsx`, `manualMultiplePlusSlice.ts`, `CapsulaTableroPlus.tsx`, `CapsulaHerrajePlus.tsx`, `MultiplePlusSection.tsx`)**:
+  * **Problema Resuelto 1 (Herrajes Flotantes en el Aire)**: Al desplazar tableros de madera al suelo (ej. `Peça 4` a `[35, -16, 2] cm`), los herrajes quedaban suspendidos en el aire. La causa raíz era la falta de tipo explícito en el paso, impidiendo que el motor AnimationMixer ejecutara `compilarMultiplePlusPaso` y reseteando las mallas al reposo.
+  * **Solución 1**: Detección incondicional en todo el sistema (`paso.tipo === "multiple_plus" || Boolean(paso.multiplePlus?.capas?.length)`), auto-estampado en mutaciones y vinculación determinista tablero-herraje. Los herrajes heredan automáticamente el offset del tablero y reposan en sus barrenos sobre el piso (validado con `Peça 4`, `Peça 7`, `Peça 3`, `Peça 8`).
+  * **Problema Resuelto 2 (Ancho Limitado del Configurador Manual)**: El panel lateral tenía un tope duro de 800px. Se eliminó la restricción permitiendo redimensionar a voluntad hasta el ancho total de pantalla.
+  * **Problema Resuelto 3 (UX de Cápsulas y Número "500" Cortado)**:
+    - Se amplió el input numérico de tiempo de 24px a **32px** (+33%) y se suprimieron los controles nativos con `[appearance:textfield]`, mostrando el número `500` completo y holgado.
+    - Se implementó auto-selección total al **primer clic** para reemplazo veloz y posicionamiento de cursor al **segundo clic** para edición fina.
+  * **Validación**: Compilación `npx tsc --noEmit` con **0 errores** y confirmación visual directa del usuario.
+
+- [x] **[22 de Septiembre, 2026] Estandarización y Compactación Proporcional de Cápsulas en Modo Múltiple Plus (`CapsulaHerrajePlus.tsx`, `CapsulaTableroPlus.tsx`, `CapaMultiplePlusCard.tsx`)**:
+  * **Problema Resuelto**: Las cápsulas de tableros y herrajes del nuevo 5º Modo "Múltiple Plus" tenían dimensiones y espaciados excesivamente grandes (ocupando ~240px de ancho y solo 2 herrajes por fila), desentonando con la alta densidad visual y elegancia compacta del modo de subbloques tradicional (referencia de la imagen adjunta del usuario).
+  * **Solución Implementada**:
+    - **Cápsulas de Herrajes (`CapsulaHerrajePlus.tsx`)**: Reducción de escala proporcional idéntica a la referencia (`inline-flex items-center gap-1 px-2 py-0.5 rounded-full border text-[9px] font-medium shadow-2xs`). Se ajustaron el selector de eje axial (`text-[7.5px] px-1 py-0`), el mini input de tiempo (`w-4.5 text-[8px]`), el botón de congelado ❄️ (`w-3.5 h-3.5`) y el botón de retiro `X` (`w-3.5 h-3.5`).
+    - **Cápsulas de Tableros (`CapsulaTableroPlus.tsx`)**: Reducción de paddings y fuentes a escala compacta (`px-2.5 py-0.5 text-[9.5px] font-bold`), dropdown de destino `Hacia:` en `text-[8.5px] px-1.5 py-0`, mini inputs de tiempo `👁 [0s]` y `➔ [500s]` en `text-[8.5px]` y mira 3D `Crosshair` en `w-4 h-4`.
+    - **Contenedores de Capa (`CapaMultiplePlusCard.tsx`)**: Ajuste de separación `gap-2` $\to$ `gap-1` en las listas de tableros, herrajes y congelados, permitiendo albergar entre 4 y 6 herrajes por fila con fluidez visual armónica y sin saturación de espacio.
+  * **Validación**: `npx tsc --noEmit` completado con **0 errores** (código 0).
+
+- [x] **[22 de Septiembre, 2026] Recuperación Total de Cinemática P00 (Showcase Fisiomecánico: Individual, Cascada y Simultáneo) y Calibración de Dirección de Cámara Cinematográfica en P03 (`AssemblyAnimationController.tsx`, `Viewer3D.tsx`, `AutoFramingCameraController.tsx`, `ManualCameraDirector.tsx`)**:
+  * **Problema Resuelto 1 (Cinemática P00 Inoperativa)**: Los modos de movimiento de los cajones en el paso P00 (Individual / `secuencial`, Cascada / `cascada` y Simultáneo / `simultaneo`) dejaron de moverse porque la condición `!vistaPiezasDesplazadas && !esPasoSubbloques` en `AssemblyAnimationController.tsx` forzaba un retorno temprano y detenía el motor de animación, asumiendo que solo los pasos de ensamble con piezas desplazadas debían compilar animación.
+  * **Solución P00**: Se excluyeron explícitamente `showcase` y `multiple_plus` de la cláusula de retorno CAD de `AssemblyAnimationController.tsx` y se enriqueció `compilationKey` con `coreografia`, `distanciaAperturaMm`, `abrirCajones`, `sincronizarCarreraCajones` y los estados de los grupos cinemáticos, logrando reactividad y movimiento inmediato ante cualquier cambio.
+  * **Problema Resuelto 2 (Cámara de P03 Desalineada en Timeline Blender)**: En el paso P03, con 11 keyframes cinemáticos activos, la cámara apuntaba al suelo vacío a la izquierda en `X ≈ 0`, dejando la Cómoda Ravenna cortada a la derecha en el marco 16:9 ("16:9 MOBILE SAFE VIEW").
+  * **Causa Raíz Identificada**: Drei `<OrbitControls target={[0, 0.4, 0]} />` en `Viewer3D.tsx` creaba una nueva referencia de array en cada ciclo de render, reseteando `controls.target` a `(0, 0.4, 0)` continuamente. Además, `AutoFramingCameraController` operaba en cada frame a 60 FPS compitiendo y forzando la cámara al origen.
+  * **Solución Cámara P03**:
+    1. Se eliminó la prop `target={[...]}` inline de `OrbitControls` en `Viewer3D.tsx`.
+    2. Se configuró `AutoFramingCameraController` para inhibirse de inmediato si el paso activo cuenta con keyframes cinemáticos activos (`keyframesCamara.length > 0 && camaraCinematicaActiva !== false`).
+    3. Se actualizó `ManualCameraDirector.tsx` con soporte para respuesta al scrubbing, clics y pausas en el timeline, incorporando un detector de centroide de ensamble en banco (`X ≈ 0.730`) que traslada solidariamente tanto la posición como el punto focal de los keyframes cuando fueron grabados cerca del origen, encuadrando con exactitud matemática el lateral y los componentes en el centro del marco 16:9.
+  * **Validación**: `npx tsc --noEmit` completado con **0 errores** (código 0).
 
 - [x] **[22 de Septiembre, 2026] Erradicación del Artefacto de Rejilla Blanca en Base de Cristal y Vinculación Reactiva Total de Colores de Rejilla en `3dBimFab` (`BoardMesh.tsx`, `boardMaterialResolver.ts`, `Viewer3D.tsx`, `createCatalogSlice.ts`, `storeDefaults.ts`)**:
   * **Problema Resuelto**: La cara de apoyo de los tableros en el suelo ($y=0$) mostraba una trama de cuadrícula blanca muy contrastada debido a `THREE.DoubleSide` coplanar con el plano del suelo y opacidad reducida. Además, el cambio de color de la "Línea de rejilla principal" no se apreciaba en pantalla porque el shader de Drei diluía el color con un `sectionThickness < 1.0`.
@@ -18,7 +46,38 @@ Este archivo es la "Memoria RAM" para Antigravity. Contiene el contexto de lo qu
   * **Vinculación Reactiva Total (`Viewer3D.tsx` & `createCatalogSlice.ts`)**: `cellColor` y `sectionColor` vinculados de forma directa e incondicional a `coloresApariencia.rejillaSecundaria` y `rejillaPrincipal` con `key` reactivo. Se elevó `sectionThickness` a `1.6` para alcanzar 100% de pureza cromática sin dilución.
   * **Validación**: `npx tsc --noEmit` completado con **0 errores**.
 
-- [ ] **[Próximo Foco] Bloques Heredados, Multi-Destino por Capa y Control de Visibilidad en Modo Ensamble Múltiple (`Bloques_Heredados`)**:
+- [x] **[22 de Septiembre, 2026] Desagregación y Separación Física de las 4 Piezas de Fondo (`Peça 15`) en `3dBimFab` (`piezaMadreUtils.ts`)**:
+  * **Problema Resuelto**: En el paso `P04`, al hacer clic sobre los fondos de la Cómoda Ravenna en el visor 3D, el contorno naranja abarcaba los 4 paneles de fondo juntos bajo una única etiqueta `Peça 15`, impidiendo seleccionarlos o asignarlos a capas de forma independiente.
+  * **Causa Raíz Identificada**: El algoritmo de clusterizado AABB en `anotarInstanciasFisicas` utilizaba `bboxesSeTocan(mBBox, cl.bbox, 0.002)`. Dado que la junta entre fondos adyacentes es de 2 mm, la función los detectaba en contacto y fusionaba los 4 paneles en un único cluster.
+  * **Discriminación por Centroides**: Se añadió la condición física `distCentros <= 0.035` (35 mm). Las caras A/B y sustrato MDF del mismo panel (distancia $\le 15$ mm) se mantienen unificadas, mientras que paneles adyacentes distintos ($\Delta X \approx 314$ mm) generan clusters independientes ordenados de izquierda a derecha: `Peça 15 (1)`, `Peça 15 (2)`, `Peça 15 (3)` y `Peça 15 (4)`.
+  * **Validación**: Compilación `npx tsc --noEmit` completada con **0 errores** y verificación sobre las 630 mallas reales del modelo.
+
+- [x] **[22 de Septiembre, 2026] Formalización de la Arquitectura de los 4 Modos de Paso de Armado y Protocolo de Blindaje Intermodal (`manuales_proceso.md`)**:
+  * **Arquitectura de Modos Documentada**: Se integró en la Sección 7 de `manuales_proceso.md` la definición técnica exhaustiva de:
+    1. **Modo 1: Tipo Exhibición (`P00` / Showcase Fisiomecánico)**: `showcaseKinematics.ts`, `manualShowcaseSlice.ts`, `ShowcaseConfigSection.tsx`.
+    2. **Modo 2: Bloque Estándar (Componente Modular `.3bb.json`)**: `manualBloquesSlice.ts`, `BloquesEstandarSection.tsx`, `/api/bloques/`.
+    3. **Modo 3: Ensamble Básico (Taller Lineal con Pieza Máster)**: `workbenchTransform.ts`, `coreografiaHerrajes.ts`, `assemblyCoreographer.ts`, `manualStepsSlice.ts`.
+    4. **Modo 4: Ensamble Múltiple (Subbloques, Multi-Destino & Bloques Heredados)**: `coreografiaSubbloquesGiro.ts`, `manualSubbloquesSlice.ts`, `CapaPiezaEsperaItem.tsx`, `SubbloquesSelector.tsx`, `boardVisibilityRules.ts`.
+  * **Protocolo de Blindaje Intermodal**: Establecidas 4 reglas de inviolabilidad (Bifurcación estricta por discriminador `paso.tipo`, Inmutabilidad rígida de Bloques Heredados como marcos inerciales cerrados, Desacoplamiento estricto de sub-slices Zustand sin mutaciones cruzadas, e Independencia matemática del puente de coordenadas `coordinateBridge.ts`).
+
+- [x] **[22 de Septiembre, 2026] Implementación del 5º Modo de Animación "Múltiple Plus" (`multiple_plus`), Iluminación Super-Brillante de Herrajes Hover y Blindaje Intermodal en `3dBimFab`**:
+  * **Iluminación Super-Brillante de Herrajes Hover (`BoardMesh.tsx`, `HerrajePillItem.tsx`, `CapaPiezaEsperaItem.tsx`)**:
+    - Al pasar el cursor por encima de cualquier cápsula de herraje en la interfaz, el herraje en el visor 3D resalta de inmediato con `emissiveIntensity: 2.8` en dorado solar `#FFDE00`, escala al 108% (`scale: 1.08`), aristas nítidas de grosor `4.5` (`#D97706`), `color` `#FFF066` y `renderOrder: 50`.
+    - Excepción de visibilidad en `BoardMesh.tsx`: si un herraje está hovered, se fuerza su visibilidad instantáneamente incluso si las reglas de tiempo de timeline o de paso lo mantenían oculto.
+    - `onHover` incondicional en `onMouseEnter` / `onMouseLeave` en todos los componentes de la interfaz.
+  * **Arquitectura del 5º Modo: "Múltiple Plus" (`multiple_plus`)**:
+    - **Cero Llenado Automático**: Las capas nacen vacías; tableros y herrajes ingresan únicamente por interacción directa del usuario mediante picking 3D reactivo con el bombillo encendido.
+    - **Cápsulas Ricas Circulares (`rounded-full`)**:
+      * **Tableros (`CapsulaTableroPlus.tsx`)**: Nombre nativo Grasshopper PT-BR, dropdown de destino (`Hacia: 👑 Base Master` o id de otra pieza), tiempo de espera `👁 [0 s]`, tiempo de inicio de movimiento `➔ [500 s]` (por defecto en 500s para permanecer en espera sin moverse hasta que el usuario decida), mira de centrado 3D (`Crosshair`) y botón de retiro (`X`).
+      * **Herrajes (`CapsulaHerrajePlus.tsx`)**: Píldora de congelado `❄️`, nombre nativo, selector de eje colineal con **`-X` por defecto** (`+X`, `-X`, `+Y`, `-Y`, `+Z`, `-Z`), tiempo de inserción `[0 s]` y botón de desasignación (`X`).
+    - **Tarjeta de Capa (`CapaMultiplePlusCard.tsx`)**: Gestión por capas con picking 3D reactivo, bloques heredados, rotación en banco y visibilidad independiente.
+    - **Sección Principal (`MultiplePlusSection.tsx`)**: Panel de control del paso con parámetros globales de velocidad (`velocidadTablerosCmS = 15`, `velocidadHerrajesCmS = 8`, `movimientoGlobalCm = 20`) y lista de capas.
+    - **Conmutador de Modo en la UI (`StepManagerPanel.tsx`)**: Selector tipo tab `[ Ensamble Estándar | 🌟 Múltiple Plus ]` en la cabecera de cada paso para alternar sin pérdida de datos.
+    - **Motor Cinemático Aislado (`multiplePlusKinematics.ts`)**: Compilador de pistas de posición y escala con interpolación colineal, tiempos de espera desacoplados e inserción a velocidad constante.
+    - **10º Sub-Slice Zustand (`manualMultiplePlusSlice.ts`) & Tipos (`storeTypes.ts`)**: Métodos puros para mutación de capas, tableros y herrajes plus.
+  * **Validación**: `npx tsc --noEmit` completado con **0 errores** (código 0).
+
+- [ ] **[Próximo Foco] Validación Visual y Pruebas en el Visor 3D del Modo Múltiple Plus (`http://localhost:3005`)**:
   * **Bloques Heredados**: Selector de pasos previos consolidados (ej. `P03`) como subconjuntos importados listos y agrupados.
   * **Multi-Destino por Capa**: Descentralizar la "Pieza Máster Única" permitiendo que cada capa defina su propio `piezaDestinoId` de ensamble.
   * **Control de Visibilidad**: Interruptor (bombillito / ojo) por capa de animación.

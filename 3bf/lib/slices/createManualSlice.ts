@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { createManualStepsSlice } from "./manual/manualStepsSlice";
 import { createManualShowcaseSlice } from "./manual/manualShowcaseSlice";
 import { createManualSubbloquesSlice } from "./manual/manualSubbloquesSlice";
@@ -8,10 +7,11 @@ import { createManualBloquesSlice } from "./manual/manualBloquesSlice";
 import { createManualProyectosSlice } from "./manual/manualProyectosSlice";
 import { createManualStudioSlice } from "./manual/manualStudioSlice";
 import { createManualCameraSlice } from "./manual/manualCameraSlice";
+import { createManualMultiplePlusSlice } from "./manual/manualMultiplePlusSlice";
 
 /**
  * 🎬 Orquestador Canónico de Manual Studio para 3dBimFab
- * Compone los 9 sub-slices modulares preservando el 100% de compatibilidad
+ * Compone los 10 sub-slices modulares preservando el 100% de compatibilidad
  * con use3BFStore y el ecosistema de componentes.
  */
 export const createManualSlice = (set: any, get: any): any => ({
@@ -24,4 +24,5 @@ export const createManualSlice = (set: any, get: any): any => ({
   ...createManualProyectosSlice(set, get),
   ...createManualStudioSlice(set, get),
   ...createManualCameraSlice(set, get),
+  ...createManualMultiplePlusSlice(set, get),
 });

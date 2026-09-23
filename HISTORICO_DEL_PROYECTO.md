@@ -1690,3 +1690,32 @@ Para mantener la máxima agilidad y minimizar el consumo de tokens sin perder ni
 - **Validación de Calidad**:
   * Compilación TypeScript verificada (`npx tsc --noEmit`) in `c:\Desarrollo\mmapp\3bf` con **0 errores**.
   * Visualización de cristal homogénea, base limpia y vinculación en vivo comprobada.
+
+---
+
+### 🚀 Hito 202: Múltiple Plus Estable: Cinemática Solidaria Automática de Herrajes, Normalización Incondicional de Capas, Ancho Flexible de Panel y UX Optimizada de Cápsulas en `3dBimFab` (23 de Septiembre, 2026)
+- **Diagnóstico y Causa Raíz de Desfase de Herrajes**:
+  * **Problema Planteado**: Al desplazar una pieza de madera en modo Múltiple Plus (ej. `Peça 4` al suelo con offset `[35, -16, 2] cm`), la madera se situaba en el piso pero sus herrajes asignados (`Porca (5)`, `Porca (6)`, `Cavilha (87)`, `Cavilha (88)`) permanecían suspendidos en el aire en la posición del mueble ensamblado. Además, el botón *"Posicionar en pieza"* no surtía efecto duradero.
+  * **Causa Raíz Identificada**:
+    1. *Bifurcación Estricta de Modo en el Motor*: En `manualAnimationEngine.ts` y `AssemblyAnimationController.tsx`, la compilación cinemática dependía exclusivamente de `paso.tipo === "multiple_plus"`. Si el paso en memoria o caché tenía `paso.tipo === "ensamble"` o `undefined` (aunque tuviese `multiplePlus: { capas: [...] }`), `compilarMultiplePlusPaso` no se ejecutaba.
+    2. *Reseteo al Reposo por AnimationMixer*: Al inicio de cada ciclo de compilación, Three.js reseteaba todas las mallas a su posición de reposo en el aire (`mesh.position.copy(rest)`). Al no crearse pistas de Múltiple Plus, los herrajes quedaban congelados en el aire.
+    3. *Ciclo Reactivo de "Posicionar en pieza"*: El botón movía las mallas directamente en Three.js, pero al incrementar `versionAnimacionManual` forzaba una recompilación que volvía a resetear las mallas al reposo en el aire por la falta de tipo.
+- **Implementación Técnica**:
+  1. *Normalización Incondicional de Múltiple Plus en Todo el Ecosistema*:
+     - `manualAnimationEngine.ts`, `AssemblyAnimationController.tsx`, `BoardMesh.tsx` y `boardVisibilityRules.ts` evalúan incondicionalmente: `const esMultiplePlus = paso.tipo === "multiple_plus" || Boolean(paso.multiplePlus?.capas && paso.multiplePlus.capas.length > 0);`.
+     - `storeDefaults.ts` (`sanitizarPasosManuales`): Cualquier paso con capas se sella automáticamente como `tipo: "multiple_plus"`.
+     - `AssemblyPiecePositioner.tsx` y `manualMultiplePlusSlice.ts` (`actualizarTableroPlus`, `asegurarMultiplePlusPaso`, `posicionarHerrajesEnPiezaPlus`): Se estampa y preserva `tipo: "multiple_plus"` en cada mutación.
+  2. *Cinemática Solidaria 100% Automática (Cero Botones Manuales)*:
+     - En `multiplePlusKinematics.ts`, cada herraje de la capa resuelve de forma determinista su tablero anfitrión (el único de la capa, o el más cercano a su barreno en reposo mediante `resolverTableroAnfitrionHerraje`).
+     - Los herrajes heredan instantáneamente el vector de desplazamiento del tablero $\vec{V}_{\text{offset}} = [X, Y, Z] / 100$. Con `movimientoGlobalCm = 0`, el herraje reposa exactamente dentro del barreno sobre el piso a lo largo de todo el paso.
+  3. *Ancho Flexible a Voluntad del Panel Lateral ("Configurador Manual")*:
+     - Se eliminó el tope artificial de `maxW = 800px` en `app/page.tsx`, `manualStudioSlice.ts` y `NPanel.tsx`.
+     - Ahora el usuario puede redimensionar el configurador lateral a voluntad (hasta `window.innerWidth - 60px`), permitiendo alinear cómodamente todas las cápsulas.
+  4. *UX de Selección y Edición Rápida en Cápsulas*:
+     - **Primer clic (Foco)**: Selecciona de inmediato todo el contenido mediante `target.select()`, permitiendo sobrescribir valores sin borrar dígito por dígito.
+     - **Segundo clic**: Sitúa el cursor exactamente en el carácter deseado para edición quirúrgica.
+     - **Ampliación de Campo Numérico de Tiempo**: Se amplió el ancho del input de tiempo en `CapsulaTableroPlus.tsx` de 24px a **32px** (+33%) y se suprimieron los controles nativos con `[appearance:textfield]`, logrando que valores como `500` o `500.5` se visualicen completos y nítidos.
+- **Validación de Calidad**:
+  * Confirmación visual directa del usuario con capturas (`media_1790182676324.png`): `Peça 4`, `Peça 7`, `Peça 3`, `Peça 8` y sus respectivos herrajes se mueven solidarios y alineados.
+  * Compilación TypeScript verificada (`npx tsc --noEmit`) en `c:\Desarrollo\mmapp\3bf` con **0 errores**.
+

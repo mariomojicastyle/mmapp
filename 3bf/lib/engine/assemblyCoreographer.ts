@@ -1,5 +1,5 @@
 import * as THREE from "three";
-import { PasoManualStudio, ElementoSecuenciaCinematica } from "../store";
+import { PasoManualStudio, ElementoSecuenciaCinematica, use3BFStore } from "../store";
 import { AnimationEngineToolMeshes } from "./types";
 import {
   extraerPiezaMadre,
@@ -8,6 +8,7 @@ import {
   getSafeRestPosition,
   getSafeRestQuaternion,
   normalizarNombreNodo,
+  coincidenMismoHerraje,
 } from "./cadStateUtils";
 import { compilarCoreografiaSubbloquesGiro } from "./choreographer/coreografiaSubbloquesGiro";
 import { compilarCoreografiaHerrajesCohesionados } from "./choreographer/coreografiaHerrajes";
@@ -357,8 +358,8 @@ export function compilarEnsamblePaso(
           const pPop = pRest.clone().add(vOffset);
 
           // ── PISTA DE ESCALA (Aparición en segundo exacto o Pop-In 200% -> 100%) ──────────────────────────────
-          if (tAparicionPieza >= duracionPaso) {
-            // 🚫 La pieza NO debe aparecer en este paso (ej. configurada en 100s para que permanezca ausente)
+          if (confPieza?.visible === false || tAparicionPieza >= duracionPaso) {
+            // 🚫 La pieza NO debe aparecer en este paso (apagada por bombillito o configurada ausente)
             const scaleTimes = [0, duracionPaso];
             const scaleValues = [
               0, 0, 0,
@@ -396,7 +397,7 @@ export function compilarEnsamblePaso(
           }
 
           // ── PISTA DE POSICIÓN DE LA MADERA ──────────────────────────────────
-          if (tAparicionPieza >= duracionPaso) {
+          if (confPieza?.visible === false || tAparicionPieza >= duracionPaso) {
             // Pieza oculta durante todo el paso: fija e invisible en espera
             const pPosFija = pPop;
             const posTimes = [0, duracionPaso];
@@ -495,6 +496,81 @@ export function compilarEnsamblePaso(
           );
         });
       });
+
+      // 🧩 2.3 BLOQUES HEREDADOS: Consolidar y fijar piezas y herrajes heredados en reposo final ensamblado
+      const bloquesHeredadosIds = paso.bloquesHeredadosIds || [];
+      const bloquesVisibles = paso.bloquesHeredadosVisibles || {};
+
+      if (bloquesHeredadosIds.length > 0) {
+        const pasosTodos = use3BFStore.getState().pasosManual || [];
+        const tracksUuids = new Set(tracks.map((t) => t.name.split(".")[0]));
+
+        bloquesHeredadosIds.forEach((bId) => {
+          if (bloquesVisibles[bId] === false) return;
+          const pasoHeredado = pasosTodos.find((p) => p.id === bId);
+          if (!pasoHeredado) return;
+
+          const elementosHeredados = [
+            ...(pasoHeredado.piezasAsignadas || []),
+            ...(pasoHeredado.herrajesAsignados || []),
+          ];
+
+          elementosHeredados.forEach((elemNom) => {
+            const nomLow = elemNom.toLowerCase().trim();
+            const nomMadre = extraerPiezaMadre(elemNom).toLowerCase().trim();
+
+            const meshesHeredadas = sceneMeshes.filter((m) => {
+              if (!m.isMesh) return false;
+              if (tracksUuids.has(m.uuid)) return false; // Ya tiene animación explícita
+              const u = m.userData || {};
+              const cn = ((u.cleanName || m.name || "") as string).toLowerCase().trim();
+              const pm = ((u.piezaMadre || extraerPiezaMadre(cn)) as string).toLowerCase().trim();
+              const ik = ((u.instanciaKey || "") as string).toLowerCase().trim();
+              const raw = (m.name || "").replace(/^RH_OUT:/i, "").trim().toLowerCase();
+
+              return (
+                cn === nomLow ||
+                ik === nomLow ||
+                raw === nomLow ||
+                pm === nomLow ||
+                (Boolean(nomMadre) && (pm === nomMadre || extraerPiezaMadre(cn) === nomMadre)) ||
+                coincidenMismoHerraje(elemNom, cn) ||
+                coincidenMismoHerraje(elemNom, ik)
+              );
+            });
+
+            meshesHeredadas.forEach((mHeredada) => {
+              tracksUuids.add(mHeredada.uuid);
+              const pRest = getSafeRestPosition(mHeredada);
+              const qRest = getSafeRestQuaternion(mHeredada);
+              const pRestFinal = pRest.clone().add(deltaMaster);
+
+              // Fijar en su posición ensamblada consolidada durante toda la duración del paso
+              tracks.push(
+                new THREE.VectorKeyframeTrack(
+                  `${mHeredada.uuid}.position`,
+                  [0, duracionPaso],
+                  [pRestFinal.x, pRestFinal.y, pRestFinal.z, pRestFinal.x, pRestFinal.y, pRestFinal.z]
+                )
+              );
+              tracks.push(
+                new THREE.VectorKeyframeTrack(
+                  `${mHeredada.uuid}.scale`,
+                  [0, duracionPaso],
+                  [1, 1, 1, 1, 1, 1]
+                )
+              );
+              tracks.push(
+                new THREE.QuaternionKeyframeTrack(
+                  `${mHeredada.uuid}.quaternion`,
+                  [0, duracionPaso],
+                  [qRest.x, qRest.y, qRest.z, qRest.w, qRest.x, qRest.y, qRest.z, qRest.w]
+                )
+              );
+            });
+          });
+        });
+      }
     }
   }
 }

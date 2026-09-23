@@ -186,9 +186,172 @@ Durante la exportación del paso animado a formato `.glb`, el motor debe garanti
 
 ---
 
-## 🚀 7. Hojas de Ruta y Próximos Pasos
+## 🎭 7. Arquitectura Canónica de los 4 Modos de Paso de Armado y Blindaje Intermodal
+
+El sistema de manuales 3D de **3dBimFab** clasifica y procesa cada paso del libreto técnico a través de **cuatro modos cinemáticos especializados**. Cada modo responde a un paradigma físico distinto, posee sus propios componentes UI, motores de cálculo y estructuras de datos en Zustand, y debe mantenerse estrictamente aislado para impedir regresiones o alteraciones intermodales.
+
+```mermaid
+flowchart TD
+    subgraph ModosDePaso["Arquitectura de Modos de Paso de Armado (3dBimFab)"]
+        M1["1. Modo Exhibición (P00)\nShowcase Fisiomecánico"]
+        M2["2. Modo Bloque Estándar\nSub-ensamble Modular .3bb.json"]
+        M3["3. Modo Ensamble Básico\nLineal en Banco de Trabajo"]
+        M4["4. Modo Ensamble Múltiple\nSubbloques & Bloques Heredados"]
+    end
+
+    M1 --> E1["Motor: showcaseKinematics.ts\nUI: ShowcaseConfigSection.tsx\nEstado: manualShowcaseSlice.ts"]
+    M2 --> E2["Motor: manualBloquesSlice.ts\nUI: BloquesEstandarSection.tsx\nAlmacén: /api/bloques/ (*.3bb.json)"]
+    M3 --> E3["Motor: assemblyCoreographer.ts\nTransform: workbenchTransform.ts\nHerrajes: coreografiaHerrajes.ts"]
+    M4 --> E4["Motor: coreografiaSubbloquesGiro.ts\nUI: CapaPiezaEsperaItem.tsx\nHerencia: bloquesHeredadosIds"]
+
+    style M1 fill:#f0f9ff,stroke:#0284c7,stroke-width:2px;
+    style M2 fill:#fefce8,stroke:#ca8a04,stroke-width:2px;
+    style M3 fill:#f0fdf4,stroke:#16a34a,stroke-width:2px;
+    style M4 fill:#faf5ff,stroke:#9333ea,stroke-width:2px;
+```
+
+---
+
+### 7.1 Modo 1: Tipo Exhibición (`P00` / Showcase Fisiomecánico)
+* **Propósito:** Demostración comercial y técnica del mueble 100% armado y en operación funcional antes de iniciar el desmontaje o ensamble.
+* **Comportamiento Físico:**
+  - Apertura sincronizada o en cascada de cajones con **correderas telescópicas en 3 secciones** (Fija al 0%, Intermedia al 50%, Móvil al 100% solidaria a la madera).
+  - Apertura angular de puertas batientes sobre el eje de sus bisagras.
+  - Giro de presentación 360° opcional para apreciación volumétrica.
+  - Curvas de frenado **Smoothstep acotadas** $[0.0, 1.0]$ con cero rebote colisionante en $0.0\text{ mm}$.
+* **Archivos que Componen el Modo:**
+  - [`3bf/lib/engine/showcaseKinematics.ts`](file:///c:/Desarrollo/mmapp/3bf/lib/engine/showcaseKinematics.ts): Motor analítico de traslación telescópica y cálculo de matrices de apertura.
+  - [`3bf/lib/slices/manual/manualShowcaseSlice.ts`](file:///c:/Desarrollo/mmapp/3bf/lib/slices/manual/manualShowcaseSlice.ts): Sub-slice Zustand exclusivo para parámetros de apertura, carreras y ángulos.
+  - [`3bf/components/manual/ShowcaseConfigSection.tsx`](file:///c:/Desarrollo/mmapp/3bf/components/manual/ShowcaseConfigSection.tsx): Interfaz de usuario con controles de carrera, sliders de ángulo y coreografía.
+  - [`3bf/lib/manualAnimationEngine.ts`](file:///c:/Desarrollo/mmapp/3bf/lib/manualAnimationEngine.ts): Orquestador que despacha hacia `compilarShowcaseP00`.
+
+---
+
+### 7.2 Modo 2: Bloque Estándar (Componente Modular `.3bb.json`)
+* **Propósito:** Creación, edición y parametrización de sub-ensambles universales y repetitivos (ej. cuerpo de cajón estándar, módulos de patas, repisas flotantes) exportables e importables entre diferentes proyectos.
+* **Comportamiento Físico:**
+  - Se define de forma autónoma con su propio archivo serializado `.3bb.json` (3B-Block).
+  - Contiene su propia lista cerrada de tableros, herrajes, cotas relativas y tiempos de ensamble.
+  - Al insertarse en un manual maestro, actúa como una unidad de bloque pre-calculada sin tener que re-parametrizar cada tornillo.
+* **Archivos que Componen el Modo:**
+  - [`3bf/lib/slices/manual/manualBloquesSlice.ts`](file:///c:/Desarrollo/mmapp/3bf/lib/slices/manual/manualBloquesSlice.ts): Gestión de estado de bloques estándar, importación, clonación y persistencia.
+  - [`3bf/components/manual/BloquesEstandarSection.tsx`](file:///c:/Desarrollo/mmapp/3bf/components/manual/BloquesEstandarSection.tsx): Galería visual y selector de bloques modulares disponibles.
+  - [`3bf/app/api/bloques/route.ts`](file:///c:/Desarrollo/mmapp/3bf/app/api/bloques/route.ts) y [`3bf/app/api/bloques/upload/route.ts`](file:///c:/Desarrollo/mmapp/3bf/app/api/bloques/upload/route.ts): Endpoints del backend para sincronización de bloques estándar en disco.
+  - [`3bf/lib/storeTypes.ts`](file:///c:/Desarrollo/mmapp/3bf/lib/storeTypes.ts): Definición de contratos `BloqueEstandarRef` y `BloqueArmadoEstudio`.
+
+---
+
+### 7.3 Modo 3: Ensamble Básico (Taller Lineal con Pieza Máster)
+* **Propósito:** Secuencia clásica de armado de carpintería y taller para ensambles directos sobre el banco de trabajo.
+* **Comportamiento Físico:**
+  - Una **Pieza Máster** descansa sobre la superficie de trabajo o piso ($Y=0$).
+  - Las piezas secundarias aproximan colinealmente desde cotas de espera hacia la pieza máster.
+  - Los herrajes (tarugos, pernos, tornillos) emergen y penetran estrictamente a lo largo del eje normal axial ($\vec{n}$) de sus respectivos orificios.
+  - Se permiten rotaciones del banco de trabajo ($90^\circ$ o $180^\circ$) con re-apoyo inercial en piso.
+* **Archivos que Componen el Modo:**
+  - [`3bf/lib/engine/workbenchTransform.ts`](file:///c:/Desarrollo/mmapp/3bf/lib/engine/workbenchTransform.ts): Transformaciones espaciales rígidas de banco de trabajo y nivelación en piso ($Y=0$).
+  - [`3bf/lib/engine/choreographer/coreografiaHerrajes.ts`](file:///c:/Desarrollo/mmapp/3bf/lib/engine/choreographer/coreografiaHerrajes.ts): Algoritmo de traslación e inserción colineal de herrajes en perforaciones mecanizadas.
+  - [`3bf/lib/engine/assemblyCoreographer.ts`](file:///c:/Desarrollo/mmapp/3bf/lib/engine/assemblyCoreographer.ts): Compilación de trayectorias lineales y sincronización de herrajes cohesionados.
+  - [`3bf/lib/slices/manual/manualStepsSlice.ts`](file:///c:/Desarrollo/mmapp/3bf/lib/slices/manual/manualStepsSlice.ts): Sub-slice para gestión secuencial de piezas máster, asignación y duraciones.
+
+---
+
+### 7.4 Modo 4: Ensamble Múltiple (Subbloques, Multi-Destino & Bloques Heredados)
+* **Propósito:** Ensamble avanzado para pasos de alta complejidad mecánica donde coexisten múltiples subconjuntos independientes o se ensamblan componentes sobre estructuras pre-armadas en pasos anteriores.
+* **Comportamiento Físico:**
+  - **Subbloques Concurrentes (Subbloque A, B, C...):** Cada subbloque posee su propia madera base, sus herrajes exclusivos y su propia cinemática sin interferir con los demás.
+  - **Piezas de Doble Cara con Volteo en Arco:** Rotación pura de $180^\circ$ en el aire muestreada con 24 keyframes trigonométricos sobre el pivote inmutable de la madera (`pMaderaRef`), manteniendo los herrajes de ambas caras pegados como una sola piel sin penetración en la madera.
+  - **Bloques Heredados (`bloquesHeredadosIds`):** Capacidad de importar el resultado consolidado de uno o varios pasos previos (ej. importar `P01` y `P03` como cuerpos rígidos terminados dentro de `P04`).
+  - **Multi-Destino por Capa (`piezaDestinoId`):** Descentralización de la pieza máster única, permitiendo que cada capa/pieza elija a qué parte específica de la estructura global se acopla.
+  - **Control de Visibilidad Granular:** Ojos/bombillitos dedicados por capa (`visible`), por bloque heredado (`bloquesHeredadosVisibles`) y por subbloque.
+* **Archivos que Componen el Modo:**
+  - [`3bf/lib/engine/choreographer/coreografiaSubbloquesGiro.ts`](file:///c:/Desarrollo/mmapp/3bf/lib/engine/choreographer/coreografiaSubbloquesGiro.ts): Motor de cinemática rígida para subbloques, volteos de 180° y sincronización de doble cara.
+  - [`3bf/lib/slices/manual/manualSubbloquesSlice.ts`](file:///c:/Desarrollo/mmapp/3bf/lib/slices/manual/manualSubbloquesSlice.ts): Sub-slice Zustand para subbloques, matrices de giro y asignación de piezas.
+  - [`3bf/components/manual/calibrador/CapaPiezaEsperaItem.tsx`](file:///c:/Desarrollo/mmapp/3bf/components/manual/calibrador/CapaPiezaEsperaItem.tsx): UI de calibración de capas con selectores de destino, herrajes cohesionados y visibilidad.
+  - [`3bf/components/manual/SubbloquesSelector.tsx`](file:///c:/Desarrollo/mmapp/3bf/components/manual/SubbloquesSelector.tsx): Selector de subbloques y panel de gestión de bloques heredados.
+  - [`3bf/components/viewer/boardMesh/boardVisibilityRules.ts`](file:///c:/Desarrollo/mmapp/3bf/components/viewer/boardMesh/boardVisibilityRules.ts): Motor de evaluación de visibilidad para bloques heredados, sub-bloques y piezas activas.
+
+---
+
+### 7.5 Modo 5: Múltiple Plus (`multiple_plus` — Capas Dinámicas, Picking Reactivo & Inserción Axial)
+* **Propósito:** El modo de manufactura y animación más avanzado y flexible de la suite. Permite componer el paso a través de **capas independientes** donde cada capa define sus propios tableros, destinos cinemáticos, herrajes axiales y bloques heredados con **cero llenado automático** y máxima interactividad visual.
+* **Comportamiento Físico y Características:**
+  - **Cero Llenado Automático:** Las capas nacen vacías. Ni tableros ni herrajes se asignan por defecto; el usuario decide con precisión qué pieza ingresa a cada capa usando el picking 3D interactivo con el bombillo encendido.
+  - **Super-Brillo Hover de Herrajes:** Al pasar el cursor por cualquier cápsula de herraje en la interfaz, el herraje en el visor 3D resalta de inmediato con `emissiveIntensity: 2.8` en dorado `#FFDE00`, escala al 108% (`1.08`), aristas nítidas de grosor `4.5` y `renderOrder: 50` sobrepasando cualquier oclusión física.
+  - **Cápsulas Ricas Circulares (`rounded-full`):**
+    * **Tableros:** Nombre nativo Grasshopper PT-BR, dropdown de destino (`Hacia: 👑 Base Master` o id de otra pieza), tiempo de espera en el visor `👁 [0 s]`, tiempo de inicio de movimiento `➔ [500 s]` (por defecto en 500s para permanecer en espera sin moverse hasta que el usuario decida), mira de centrado 3D (`Crosshair`) y botón de retiro (`X`).
+    * **Herrajes:** Indicador de congelado `❄️`, nombre nativo, selector de eje colineal con **`-X` por defecto** (`+X`, `-X`, `+Y`, `-Y`, `+Z`, `-Z`), tiempo de inserción `[0 s]` y botón de desasignación (`X`).
+  - **Inserción Colineal a Velocidad Paramétrica:** Los herrajes se aproximan al barreno en su eje axial configurado a una velocidad constante (`velocidadHerrajesCmS`, por defecto 8 cm/s) con carrera de aproximación (`movimientoGlobalCm`, por defecto 20 cm).
+  - **Cinemática Aislada de Tableros:** Los paneles se trasladan hacia su pieza de destino a velocidad constante (`velocidadTablerosCmS`, por defecto 15 cm/s).
+* **Archivos que Componen el Modo:**
+  - [`3bf/lib/engine/multiplePlusKinematics.ts`](file:///c:/Desarrollo/mmapp/3bf/lib/engine/multiplePlusKinematics.ts): Motor cinemático aislado para compilación de pistas de posición y escala de capas plus.
+  - [`3bf/lib/slices/manual/manualMultiplePlusSlice.ts`](file:///c:/Desarrollo/mmapp/3bf/lib/slices/manual/manualMultiplePlusSlice.ts): 10º sub-slice de Zustand para gestión de capas plus, adición/eliminación de tableros y herrajes, y rotación en banco.
+  - [`3bf/components/manual/multiplePlus/MultiplePlusSection.tsx`](file:///c:/Desarrollo/mmapp/3bf/components/manual/multiplePlus/MultiplePlusSection.tsx): Panel orquestador del modo con cabecera de parámetros de velocidad y lista de capas.
+  - [`3bf/components/manual/multiplePlus/CapaMultiplePlusCard.tsx`](file:///c:/Desarrollo/mmapp/3bf/components/manual/multiplePlus/CapaMultiplePlusCard.tsx): Tarjeta de capa individual con picking 3D, selección de bloques heredados y rotaciones.
+  - [`3bf/components/manual/multiplePlus/CapsulaTableroPlus.tsx`](file:///c:/Desarrollo/mmapp/3bf/components/manual/multiplePlus/CapsulaTableroPlus.tsx): Cápsula de tablero con destino, tiempos y mira 3D.
+  - [`3bf/components/manual/multiplePlus/CapsulaHerrajePlus.tsx`](file:///c:/Desarrollo/mmapp/3bf/components/manual/multiplePlus/CapsulaHerrajePlus.tsx): Cápsula de herraje con congelado, eje por defecto -X y tiempo.
+  - [`3bf/components/viewer/BoardMesh.tsx`](file:///c:/Desarrollo/mmapp/3bf/components/viewer/BoardMesh.tsx): Resaltado visual super-brillante al hover de herrajes y soporte de visibilidad de capas plus.
+
+---
+
+### 7.6 🛡️ Protocolo de Blindaje Contra Contaminación Intermodal
+
+Para impedir que modificaciones en un modo degraden o descalibren los demás, rigen las siguientes reglas de blindaje de software:
+
+```mermaid
+flowchart LR
+    subgraph Blindaje["Blindaje Arquitectónico Intermodal"]
+        D1["Bifurcación Estricta por Discriminador\n(paso.tipo === 'showcase' | 'ensamble' | 'bloque_estandar')"]
+        D2["Inmutabilidad de Bloques Heredados\n(Transformación Rígida Compuesta, Sin Recálculo Local)"]
+        D3["Aislamiento de Slices Zustand\n(Sub-slices Especializados Sin Efectos Colaterales Cruzados)"]
+        D4["Inviolabilidad de Coordenadas de Taller\n(coordinateBridge.ts Mantiene Z-Up Taller Aislado de Three.js)"]
+    end
+```
+
+1. **Bifurcación Estricta por Discriminador de Tipo (`manualAnimationEngine.ts`):**
+   - El compilador principal bifurca de forma mutuamente excluyente según `paso.tipo`:
+     * Si `paso.tipo === "showcase"`, se ejecuta única y exclusivamente `compilarShowcaseP00()`. Queda terminantemente prohibido evaluar `piezasEspera`, rotaciones de banco o subbloques dentro de este flujo.
+     * Si `paso.tipo === "ensamble"`, se ejecuta el despachador de ensamble. Si existen subbloques con rotación (`subbloques.length > 0`), se aísla la cinemática en `coreografiaSubbloquesGiro.ts`. Si es ensamble lineal, se utiliza `assemblyCoreographer.ts`.
+2. **Inmutabilidad Rígida de Bloques Heredados:**
+   - Los elementos importados a través de `bloquesHeredadosIds` se tratan como **ensambles consolidados inviolables**. El motor cinemático del paso receptor jamás debe desagregar sus tornillos, reposicionar sus mallas individuales o alterar sus relaciones de emparentado. Viajan y reposan como un único marco inercial rígido.
+3. **Desacoplamiento Estricto de Slices en Zustand:**
+   - Cada modo opera sobre su propio sub-slice modular en `3bf/lib/slices/manual/`:
+     * Showcase solo muta `manualShowcaseSlice.ts`.
+     * Bloques Estándar solo muta `manualBloquesSlice.ts`.
+     * Pasos y Ensamble Básico solo mutan `manualStepsSlice.ts`.
+     * Subbloques y Capas solo mutan `manualSubbloquesSlice.ts` y `manualPickingSlice.ts`.
+   - Queda prohibido que una acción de Zustand perteneciente a un modo modifique propiedades reservadas de otro (ej. una acción de subbloques jamás debe mutar `showcase.distanciaAperturaMm`).
+4. **Independencia del Puente de Coordenadas (`coordinateBridge.ts`):**
+   - Las transformaciones de taller ($Z$-Up, $Y$-Longitudinal, $X$-Transversal) se resuelven exclusivamente mediante funciones puras de `coordinateBridge.ts` en el momento de compilación de matrices, impidiendo que la convención gráfica de Three.js ($Y$-Up) contamine la persistencia física de los manuales.
+
+---
+
+### 7.7 🎬 Calibración y Recuperación de Cinemática P00 (Showcase Fisiomecánico) y Cámara Cinematográfica P03
+
+#### 1. Recuperación de Coreografías P00 (`AssemblyAnimationController.tsx` & `showcaseKinematics.ts`):
+- **Causa Raíz Diagnosticada:** En pasos `showcase` (P00), la bandera de interfaz `vistaPiezasDesplazadas` permanecía en `false` por defecto, activando la condición `!vistaPiezasDesplazadas && !esPasoSubbloques`, lo que ejecutaba un retorno temprano forzado que detenía el motor cinemático e impedía compilar las pistas de apertura de cajones.
+- **Resolución Implementada:**
+  * Exclusión explícita de `activeStep.tipo === "showcase"` y `activeStep.tipo === "multiple_plus"` de la cláusula de retorno CAD de `AssemblyAnimationController.tsx`.
+  * Integración en `compilationKey` de todos los parámetros de showcase (`coreografia`, `distanciaAperturaMm`, `abrirCajones`, `sincronizarCarreraCajones` y estado de grupos cinemáticos) para recompilación reactiva instantánea ante conmutaciones entre **Individual** (`secuencial`), **Cascada** (`cascada`) y **Simultáneo** (`simultaneo`).
+  * Validación de las 3 coreografías con perfiles de curva ease-in-out cúbica garantizando apertura y cierre fisiomecánico fluido.
+
+#### 2. Encuadre y Dirección de Cámara en P03 tipo Blender (`Viewer3D.tsx`, `AutoFramingCameraController.tsx` & `ManualCameraDirector.tsx`):
+- **Causa Raíz Diagnosticada:**
+  1. `<OrbitControls />` en `Viewer3D.tsx` recibía la prop `target` con una instancia de array literal inline `[0, 0.4, 0]`. En cada ciclo de renderizado de React, Drei detectaba una nueva referencia y reseteaba `controls.target` al suelo vacío en `[0, 0.4, 0]`.
+  2. `AutoFramingCameraController` se ejecutaba en cada frame a 60 FPS dentro de `useFrame`, compitiendo con `ManualCameraDirector` y forzando la cámara hacia el centroide general del origen.
+  3. Los keyframes de P03 apuntaban al origen `X ≈ 0`, mientras que la pieza de ensamble en el banco de trabajo se encuentra en `X ≈ 0.730`.
+- **Resolución Implementada:**
+  * **Eliminación del Target Inline:** Se suprimió la prop `target={[...]}` de `OrbitControls` en `Viewer3D.tsx`, delegando el control del target a los controladores especializados y a la interacción del usuario sin reseteos fantasma.
+  * **Inhibición de Auto-Framing:** `AutoFramingCameraController` ahora verifica si el paso cuenta con keyframes cinemáticos activos (`keyframesCamara.length > 0 && camaraCinematicaActiva !== false`) y se inhibe por completo para no competir con el Director de Cámara.
+  * **Auto-Alineación y Compensación de Banco:** `ManualCameraDirector.tsx` analiza el centro geométrico del ensamble en el banco de trabajo (`X ≈ 0.730`); si un keyframe fue capturado con su punto focal cerca del origen (`|target.x| < 0.35`), traslada solidariamente tanto la `posicion` como el `target` por `deltaX = centroBancoX - target.x`. De este modo, la toma y ángulo del usuario se preservan al 100%, centrando exactamente el ensamble de la Cómoda Ravenna en el recuadro 16:9 ("16:9 MOBILE SAFE VIEW"), tanto en reproducción como al saltar entre fotogramas en pausa.
+
+---
+
+## 🚀 8. Hojas de Ruta y Próximos Pasos
 
 1. **Adopción de Bake v20 y Jerarquía de Grupo Rígido:** Estandarizar el algoritmo v20 para pasos donde sub-ensambles giran juntos.
 2. **Integración con Grasshopper y 3dBimFab:** Conectar las cotas de perforaciones directamente desde las definiciones `.ghx` para que las coordenadas de inserción y de las herramientas provengan de la manufactura real del mueble.
 3. **Persistencia de Cinemática Paramétrica en `.3bf.json`:** Almacenar la coreografía de movimiento, distancias y asignaciones de bloques funcionales en la sección `manual.pasos` del archivo de persistencia del mueble.
+
+
 

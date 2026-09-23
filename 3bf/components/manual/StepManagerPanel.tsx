@@ -2,24 +2,16 @@
 
 import React, { useMemo } from "react";
 import { use3BFStore, sanitizarPasosManuales } from "@/lib/store";
-import { Plus, Trash2, Boxes, GripVertical } from "lucide-react";
-import { esHerrajeNombre } from "@/lib/piezaMadreUtils";
+import { Plus, Trash2 } from "lucide-react";
 import ShowcaseConfigSection from "./ShowcaseConfigSection";
-import SubbloquesManagerSection, { obtenerColorSubbloque, COLORES_SUBBLOQUES } from "./SubbloquesManagerSection";
-export { obtenerColorSubbloque, COLORES_SUBBLOQUES };
-import AssemblyBlockControls from "./AssemblyBlockControls";
-import AssemblyPiecesSection from "./AssemblyPiecesSection";
 import FunctionalBlocksVisibilityCard from "./FunctionalBlocksVisibilityCard";
 import BloqueEstandarConfigSection from "./BloqueEstandarConfigSection";
 import BloqueEstandarEditorForm from "./BloqueEstandarEditorForm";
+import MultiplePlusSection from "./multiplePlus/MultiplePlusSection";
+export { obtenerColorSubbloque } from "./SubbloquesManagerSection";
 
 export default function StepManagerPanel() {
-  const [mostrarMenuAnadirBloque, setMostrarMenuAnadirBloque] = React.useState(false);
-  const [seccionPiezasColapsada, setSeccionPiezasColapsada] = React.useState(false);
-  const [subbloquesColapsados, setSubbloquesColapsados] = React.useState<Record<string, boolean>>({});
   const [gruposCinematicosColapsados, setGruposCinematicosColapsados] = React.useState<Record<string, boolean>>({});
-  const [guardandoBloque, setGuardandoBloque] = React.useState(false);
-  const [mensajeBloque, setMensajeBloque] = React.useState<string | null>(null);
 
   const {
     pasosManual,
@@ -53,20 +45,6 @@ export default function StepManagerPanel() {
   const botonActivoColor = coloresApariencia?.botonActivo || "#0891b2";
 
 
-  // 🪵 Tableros asignados exclusivamente a este paso (excluyendo cualquier herraje)
-  const tablerosPasoActivo = useMemo(() => {
-    if (!pasoActivo || pasoActivo.tipo === "showcase") return [];
-    return (pasoActivo.piezasAsignadas || []).filter((p) => !esHerrajeNombre(p));
-  }, [pasoActivo]);
-
-  // Limpieza de Pieza Master únicamente si la configurada ya no pertenece a las asignadas del paso
-  React.useEffect(() => {
-    if (pasoActivo && pasoActivo.tipo !== "showcase" && tablerosPasoActivo.length > 0) {
-      if (pasoActivo.piezaMaster && !tablerosPasoActivo.includes(pasoActivo.piezaMaster)) {
-        actualizarPasoManual(pasoActivo.id, { piezaMaster: "" });
-      }
-    }
-  }, [pasoActivo?.id, pasoActivo?.tipo, tablerosPasoActivo, pasoActivo?.piezaMaster, actualizarPasoManual]);
 
   return (
     <div className="flex flex-col gap-4 text-xs">
@@ -118,32 +96,15 @@ export default function StepManagerPanel() {
             botonActivoColor={botonActivoColor}
           />
         ) : (
-          /* ── MODO ENSAMBLE (PASO 01+) ─────────────────────────────────── */
+          /* ── MODO MÚLTIPLE PLUS (POR CAPAS INDEPENDIENTES) ───────── */
           <div className="flex flex-col gap-3">
-            {/* 🎯 TARJETA DE PIEZAS CONFIGURADAS DEL PASO (Inspirado en la lógica de Bloques Funcionales de P00) */}
-            <div className="flex flex-col gap-2.5 p-3 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/60 shadow-sm">
-                            <AssemblyPiecesSection
-                pasoActivo={pasoActivo}
-                botonActivoColor={botonActivoColor}
-                tablerosPasoActivo={tablerosPasoActivo}
-              />
+            <MultiplePlusSection
+              pasoActivo={pasoActivo}
+              botonActivoColor={botonActivoColor}
+            />
 
-              {/* 🪚 CONTROLES DE MANIPULACIÓN DEL BLOQUE DE ARMADO (PIEZA MASTER, ORIENTACIÓN Y D-PAD) */}
-              <AssemblyBlockControls
-                pasoActivo={pasoActivo}
-                tablerosPasoActivo={tablerosPasoActivo}
-              />
-
-              {/* 🧩 SECCIÓN DE SUBBLOQUES DE ARMADO */}
-              <SubbloquesManagerSection
-                pasoActivo={pasoActivo}
-                botonActivoColor={botonActivoColor}
-              />
-            </div>
-
-            {/* 🗄️ CONTROL DE VISIBILIDAD DE BLOQUES FUNCIONALES (P00) EN PASO DE ENSAMBLE */}
+            {/* 🗄️ CONTROL DE VISIBILIDAD DE BLOQUES FUNCIONALES (P00) EN PASO MÚLTIPLE PLUS */}
             <FunctionalBlocksVisibilityCard />
-
           </div>
         )}
       </div>

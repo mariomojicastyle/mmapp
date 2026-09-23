@@ -182,7 +182,7 @@ export default function NPanel() {
     if (esEscritorio) {
       if (esModoManual) {
         const val = anchoNPanelManual || 740;
-        const maxLimit = Math.max(740, window.innerWidth - 60);
+        const maxLimit = Math.max(740, window.innerWidth - 20);
         return Math.max(500, Math.min(maxLimit, val));
       }
       return anchoNPanel && anchoNPanel >= 280 ? anchoNPanel : 380;
@@ -209,7 +209,9 @@ export default function NPanel() {
       const deltaX = startX - currentX; // Mover a la izquierda ensancha
       const esMovil = typeof window !== "undefined" && window.innerWidth < 1024;
       const minW = esMovil ? 140 : (esModoManual ? 500 : 280);
-      const maxW = esMovil ? 360 : (typeof window !== "undefined" ? Math.max(1400, window.innerWidth - 60) : 1400);
+      const maxW = esMovil 
+        ? (typeof window !== "undefined" ? Math.max(360, window.innerWidth - 10) : 360) 
+        : (typeof window !== "undefined" ? Math.max(3840, window.innerWidth - 20) : 3840);
       const newWidth = Math.max(minW, Math.min(maxW, startWidth + deltaX));
       if (esModoManual) {
         setAnchoNPanelManual(newWidth);
@@ -267,6 +269,7 @@ export default function NPanel() {
       {/* 🗂️ SIDEBAR N-PANEL REDIMENSIONABLE (Borde Izquierdo + Pestañas Verticales)   */}
       {/* ========================================================================= */}
       <aside
+        suppressHydrationWarning
         style={(pestanaActiva === "3d" || pestanaActiva === "manual") ? { 
           width: `${ancho}px`,
           backgroundColor: coloresApariencia?.fondoPaneles,

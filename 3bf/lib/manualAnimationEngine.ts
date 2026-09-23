@@ -48,6 +48,7 @@ import {
 import { aplicarTransformacionesBancoSubbloques } from "./engine/workbenchTransform";
 import { compilarShowcaseP00 } from "./engine/showcaseKinematics";
 import { compilarEnsamblePaso } from "./engine/assemblyCoreographer";
+import { compilarMultiplePlusPaso } from "./engine/multiplePlusKinematics";
 
 // Re-exportar tipos y utilidades públicas para retrocompatibilidad total
 export * from "./engine/types";
@@ -55,6 +56,7 @@ export * from "./engine/cadStateUtils";
 export * from "./engine/workbenchTransform";
 export { compilarShowcaseP00 } from "./engine/showcaseKinematics";
 export { compilarEnsamblePaso } from "./engine/assemblyCoreographer";
+export { compilarMultiplePlusPaso } from "./engine/multiplePlusKinematics";
 
 /**
  * Construye y hornea un AnimationClip glTF nativo para el paso especificado,
@@ -142,9 +144,24 @@ export function compilarAnimacionPaso(
   }
 
   // =========================================================================
-  // 2. PASOS DE ENSAMBLE (P01+): PIEZA MASTER, HERRAJES Y SUBBLOQUES
+  // 2. MODO 5: MÚLTIPLE PLUS (Capas Independientes, Inserción Axial y Destinos)
+  // 🛡️ REGLA SUPREMA: Si el paso tiene capas en multiplePlus, se compila SIEMPRE como multiple_plus
   // =========================================================================
-  if (paso.tipo === "ensamble") {
+  const esMultiplePlus = paso.tipo === "multiple_plus" || Boolean(paso.multiplePlus?.capas && paso.multiplePlus.capas.length > 0);
+  if (esMultiplePlus) {
+    compilarMultiplePlusPaso(
+      rootScene,
+      paso,
+      sceneMeshes,
+      sceneObjects,
+      tracks,
+      duracionPaso,
+      toolMeshes
+    );
+  } else if (paso.tipo === "ensamble") {
+    // =========================================================================
+    // 3. PASOS DE ENSAMBLE CLÁSICO (P01+): PIEZA MASTER, HERRAJES Y SUBBLOQUES
+    // =========================================================================
     compilarEnsamblePaso(
       rootScene,
       paso,
@@ -156,14 +173,30 @@ export function compilarAnimacionPaso(
     );
   }
 
-  // 🛡️ CRÍTICO: Permitir que Three.js PropertyBinding resuelva pistas por UUID o por name (sin acumular wrappers)
+  // 🛡️ CRÍTICO: Permitir que Three.js PropertyBinding resuelva pistas por UUID, name, o instanciaKey
   if (!(rootScene as any).__hasPatchedGetObjectByName) {
     (rootScene as any).__hasPatchedGetObjectByName = true;
     const origGetObjectByName = rootScene.getObjectByName.bind(rootScene);
-    rootScene.getObjectByName = function (name: string) {
-      const found = origGetObjectByName(name);
+    rootScene.getObjectByName = function (targetName: string) {
+      let found = origGetObjectByName(targetName);
       if (found) return found;
-      return (this as any).getObjectByProperty("uuid", name);
+      found = (this as any).getObjectByProperty("uuid", targetName);
+      if (found) return found;
+      // Búsqueda profunda por userData.instanciaKey, cleanName o prefijo de name
+      this.traverse((child: any) => {
+        if (!found && child.isMesh) {
+          const ik = child.userData?.instanciaKey;
+          const cn = child.userData?.cleanName;
+          if (
+            ik === targetName ||
+            cn === targetName ||
+            (child.name && (child.name === targetName || child.name.startsWith(targetName + "::")))
+          ) {
+            found = child;
+          }
+        }
+      });
+      return found;
     };
   }
 

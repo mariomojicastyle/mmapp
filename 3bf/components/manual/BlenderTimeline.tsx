@@ -315,24 +315,38 @@ export default function BlenderTimeline() {
     window.addEventListener("mouseup", onMouseUp);
   };
 
+  // 📸 Sincronizar estado de keyframe seleccionado con el director de cámara
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      (window as any).__isEditingKeyframeCamera3BF = Boolean(selectedKfId);
+      (window as any).__selectedKeyframeCameraId3BF = selectedKfId;
+    }
+    return () => {
+      if (typeof window !== "undefined") {
+        (window as any).__isEditingKeyframeCamera3BF = false;
+        (window as any).__selectedKeyframeCameraId3BF = null;
+      }
+    };
+  }, [selectedKfId]);
+
   // 💎 Arrastre Horizontal de Keyframes (Rombos Dorados)
   const handleKeyframeMouseDown = (e: React.MouseEvent, kfId: string, tiempoActual: number) => {
     e.stopPropagation();
     if (e.button !== 0) return;
     if (!pasoActivo) return;
 
-    setSelectedKfId(kfId);
+    const startX = e.clientX;
+    let haArrastrado = false;
     isDraggingKfRef.current = kfId;
-    (window as any).__isTimelineScrubbing = true;
-
-    const kf = keyframesCamara.find((k) => k.id === kfId);
-    if (kf) {
-      setTimelineCurrentTime(kf.tiempo);
-      (window as any).__saltarAKeyframeCamara3BF?.(kf.posicion, kf.target);
-    }
 
     const onMouseMove = (moveEvent: MouseEvent) => {
       if (!isDraggingKfRef.current || !containerRef.current) return;
+      if (Math.abs(moveEvent.clientX - startX) > 4) {
+        haArrastrado = true;
+        (window as any).__isTimelineScrubbing = true;
+      }
+      if (!haArrastrado) return;
+
       const rect = containerRef.current.getBoundingClientRect();
       const x = moveEvent.clientX - rect.left;
       const nuevoTiempo = Math.max(0, Math.min(duracionTotal, Math.round(pxATiempo(x) * 20) / 20));
@@ -350,6 +364,38 @@ export default function BlenderTimeline() {
 
     window.addEventListener("mousemove", onMouseMove);
     window.addEventListener("mouseup", onMouseUp);
+  };
+
+  // 🎯 Clic interactivo en Keyframe: Verde para encuadre libre -> Segundo clic para fijar en amarillo
+  const handleKeyframeClick = (e: React.MouseEvent, kfId: string) => {
+    e.stopPropagation();
+    if (!pasoActivo) return;
+
+    if (selectedKfId === kfId) {
+      // 🎯 SEGUNDO CLIC: Fijar nueva pose de cámara en el keyframe y volver a amarillo
+      const pose = (window as any).__obtenerPoseCamara3BF?.();
+      if (pose) {
+        sobrescribirKeyframeCamaraPaso(
+          pasoActivo.id,
+          kfId,
+          pose.pos,
+          pose.target,
+          pose.fov
+        );
+        mostrarToast(`📸 Nueva posición de cámara fijada con éxito`);
+      }
+      setSelectedKfId(null);
+      return;
+    }
+
+    // 🎯 PRIMER CLIC: Activar modo encuadre (verde) y liberar cámara
+    setSelectedKfId(kfId);
+    const kf = keyframesCamara.find((k) => k.id === kfId);
+    if (kf) {
+      setTimelineCurrentTime(kf.tiempo);
+      (window as any).__saltarAKeyframeCamara3BF?.(kf.posicion, kf.target);
+    }
+    mostrarToast(`🟢 Modo encuadre: ajusta la cámara y vuelve a tocar el keyframe para fijarlo`);
   };
 
   // 🔍 Evitar que Ctrl+Wheel haga zoom al navegador y en su lugar haga zoom suave al Timeline
@@ -479,6 +525,8 @@ export default function BlenderTimeline() {
       if (e.key === "Delete" || e.key === "Backspace") {
         if (!selectedKfId || !pasoActivo) return;
         e.preventDefault();
+        e.stopPropagation();
+        e.stopImmediatePropagation?.();
         eliminarKeyframeCamaraPaso(pasoActivo.id, selectedKfId);
         setSelectedKfId(null);
         mostrarToast("Keyframe eliminado");
@@ -969,28 +1017,46 @@ export default function BlenderTimeline() {
                   key={kf.id}
                   style={{ left: `${kfX}px` }}
                   onMouseDown={(e) => handleKeyframeMouseDown(e, kf.id, kf.tiempo)}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setSelectedKfId(kf.id);
-                    setTimelineCurrentTime(kf.tiempo);
-                    (window as any).__saltarAKeyframeCamara3BF?.(kf.posicion, kf.target);
-                  }}
-                  title={`Encuadre #${kIdx + 1}: ${kf.tiempo.toFixed(1)}s (Arrastra para mover en el tiempo, Supr para eliminar)`}
-                  className={`absolute top-1/2 -translate-y-1/2 -translate-x-1/2 z-25 w-3.5 h-3.5 rotate-45 cursor-grab active:cursor-grabbing transition-transform ${
+                  onClick={(e) => handleKeyframeClick(e, kf.id)}
+                  title={
                     esSeleccionado
-                      ? "bg-cyan-400 border-2 border-white ring-4 ring-cyan-500/50 scale-125 z-30 shadow-lg"
+                      ? `Keyframe ${kf.tiempo.toFixed(1)}s en MODO ENCUADRE (Verde): Mueve la cámara y vuelve a hacer clic para fijar nueva posición`
+                      : `Encuadre #${kIdx + 1}: ${kf.tiempo.toFixed(1)}s (Haz clic para encuadrar en verde, arrastra para mover en el tiempo)`
+                  }
+                  className={`absolute top-1/2 -translate-y-1/2 -translate-x-1/2 z-25 w-3.5 h-3.5 rotate-45 cursor-pointer active:cursor-grabbing transition-transform ${
+                    esSeleccionado
+                      ? "bg-[#10B981] border-2 border-white ring-4 ring-emerald-400/70 scale-135 z-30 shadow-lg shadow-emerald-500/60 animate-pulse"
                       : esTiempoActual
                       ? "bg-[#FFCC00] border border-white scale-125 shadow-md shadow-amber-500/50"
                       : "bg-[#F5A623] hover:bg-[#FFD15C] border border-[#FFE082] shadow-xs"
                   }`}
                 >
-                  {/* Tooltip con tiempo, copiar, duplicar y eliminar al seleccionar */}
+                  {/* Tooltip con tiempo, botón fijar, copiar, duplicar y eliminar al seleccionar */}
                   {esSeleccionado && (
                     <div
                       onClick={(e) => e.stopPropagation()}
-                      className="absolute -top-7 left-1/2 -translate-x-1/2 -rotate-45 px-2 py-0.5 rounded-full bg-slate-950 text-[9px] font-mono text-white flex items-center gap-1.5 border border-cyan-400 shadow-xl cursor-default"
+                      className="absolute -top-8 left-1/2 -translate-x-1/2 -rotate-45 px-2 py-0.5 rounded-full bg-slate-950 text-[9px] font-mono text-white flex items-center gap-1.5 border border-emerald-400 shadow-xl cursor-default whitespace-nowrap"
                     >
-                      <span className="font-bold text-cyan-300">{kf.tiempo.toFixed(1)}s</span>
+                      <span className="font-bold text-emerald-400">{kf.tiempo.toFixed(1)}s</span>
+
+                      {/* 📸 Botón Fijar Posición Actual */}
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          const pose = (window as any).__obtenerPoseCamara3BF?.();
+                          if (pose && pasoActivo) {
+                            sobrescribirKeyframeCamaraPaso(pasoActivo.id, kf.id, pose.pos, pose.target, pose.fov);
+                            mostrarToast(`📸 Posición de cámara fijada en ${kf.tiempo.toFixed(1)}s`);
+                          }
+                          setSelectedKfId(null);
+                        }}
+                        title="Fijar ángulo actual de cámara y guardar (o vuelve a hacer clic en el rombo verde)"
+                        className="flex items-center gap-0.5 px-1.5 py-0.5 rounded-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-[8.5px] transition cursor-pointer shadow-xs"
+                      >
+                        <Camera className="w-2.5 h-2.5" />
+                        <span>Fijar</span>
+                      </button>
 
                       {/* Copiar */}
                       <button

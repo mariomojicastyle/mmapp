@@ -286,6 +286,9 @@ export function categorizarHerraje(name: string): {
   if (n.includes("pata") || n.includes("sapata") || n.includes("pé") || n.includes("pes") || n.includes("deslizador")) {
     return { tipo: "pata", label: "Pata" };
   }
+  if (n.includes("perfil") || n.includes("trilho")) {
+    return { tipo: "otro", label: "Perfil H" };
+  }
   return { tipo: "otro", label: "Herraje" };
 }
 
@@ -465,6 +468,10 @@ export function formatearNombreIndividualHerraje(instKey: string): string {
   if (n.includes("pata") || n.includes("sapata") || n.includes("pé") || n.includes("pes")) {
     return numStr ? `Sapata (${numStr})` : "Sapata";
   }
+  // Perfil (Perfil H de unión de fondos)
+  if (n.includes("perfil")) {
+    return numStr ? `Perfil (${numStr})` : "Perfil";
+  }
 
   // Si ya viene con formato exacto de Grasshopper (ej. "Tampa (3)"), mantenerlo fiel
   return clean || "Herraje";
@@ -499,6 +506,7 @@ export function obtenerDescripcionEspanolHerraje(instKey: string): string {
   if (n.includes("puxador") || n.includes("manija")) return "Tirador / Manija de cajón";
   if (n.includes("prego") || n.includes("clavo")) return "Clavo / Puntilla de fondo";
   if (n.includes("sapata") || n.includes("pata") || n.includes("pé")) return "Deslizador / Pata de apoyo";
+  if (n.includes("perfil") || n.includes("trilho")) return "Perfil H de unión de fondos";
 
   return "Herraje de ensamble";
 }
@@ -872,10 +880,13 @@ export function mapearContactosPiezasHerrajes(
   const boxPiezaRealMap: Record<string, THREE.Box3> = {};
   const boxPiezaExpandidaMap: Record<string, THREE.Box3> = {};
   const boxPiezaExpandidaAmpliadaMap: Record<string, THREE.Box3> = {};
+  const cajasIndividualesPorPiezaMap: Record<string, THREE.Box3[]> = {};
   const esTableroVerticalMap: Record<string, boolean> = {};
 
   tablerosAsignados.forEach((nombreFamilia) => {
     const box = new THREE.Box3();
+    cajasIndividualesPorPiezaMap[nombreFamilia] = [];
+
     const mallasPieza = anotadas.filter((m) => {
       const raw = (m.name || "").replace(/^RH_OUT:/i, "").trim();
       if (isHardwareMeshName(raw)) return false;
@@ -886,35 +897,40 @@ export function mapearContactosPiezasHerrajes(
     });
 
     mallasPieza.forEach((m) => {
+      const boxMalla = new THREE.Box3();
       const posX = m.position ? m.position[0] : 0;
       const posY = m.position ? m.position[1] : 0;
       const posZ = m.position ? m.position[2] : 0;
 
       if (m.vertices && m.vertices.length >= 3) {
         for (let i = 0; i < m.vertices.length; i += 3) {
-          box.expandByPoint(
-            new THREE.Vector3(
-              m.vertices[i] + posX,
-              m.vertices[i + 1] + posY,
-              m.vertices[i + 2] + posZ
-            )
+          const pt = new THREE.Vector3(
+            m.vertices[i] + posX,
+            m.vertices[i + 1] + posY,
+            m.vertices[i + 2] + posZ
           );
+          box.expandByPoint(pt);
+          boxMalla.expandByPoint(pt);
         }
       } else if (m.position && m.size) {
-        box.expandByPoint(
-          new THREE.Vector3(
-            posX - m.size[0] / 2,
-            posY - m.size[1] / 2,
-            posZ - m.size[2] / 2
-          )
+        const ptMin = new THREE.Vector3(
+          posX - m.size[0] / 2,
+          posY - m.size[1] / 2,
+          posZ - m.size[2] / 2
         );
-        box.expandByPoint(
-          new THREE.Vector3(
-            posX + m.size[0] / 2,
-            posY + m.size[1] / 2,
-            posZ + m.size[2] / 2
-          )
+        const ptMax = new THREE.Vector3(
+          posX + m.size[0] / 2,
+          posY + m.size[1] / 2,
+          posZ + m.size[2] / 2
         );
+        box.expandByPoint(ptMin);
+        box.expandByPoint(ptMax);
+        boxMalla.expandByPoint(ptMin);
+        boxMalla.expandByPoint(ptMax);
+      }
+
+      if (!boxMalla.isEmpty()) {
+        cajasIndividualesPorPiezaMap[nombreFamilia].push(boxMalla);
       }
     });
 
@@ -1054,7 +1070,8 @@ export function mapearContactosPiezasHerrajes(
     const nKeyLow = instKey.toLowerCase();
     const esCorredera = cat.tipo === "corredera" || nKeyLow.includes("corredi") || nKeyLow.includes("corredera");
     const esTapa = cat.tipo === "tapa" || nKeyLow.includes("tampa") || nKeyLow.includes("tapa") || nKeyLow.includes("adesiv");
-    const mapaCajas = (esCorredera || esTapa) ? boxPiezaExpandidaAmpliadaMap : boxPiezaExpandidaMap;
+    const esPerfil = cat.label.includes("Perfil") || nKeyLow.includes("perfil") || nKeyLow.includes("trilho");
+    const mapaCajas = (esCorredera || esTapa || esPerfil) ? boxPiezaExpandidaAmpliadaMap : boxPiezaExpandidaMap;
 
     let piezasEnContacto: string[] = [];
 
@@ -1065,12 +1082,20 @@ export function mapearContactosPiezasHerrajes(
       piezasEnContacto = [duenioPorSlideIdx[matchSlideIdx]];
     } else {
       const piezasCandidatas: string[] = [];
+      const tolUso = (esCorredera || esTapa || esPerfil) ? TOLERANCIA_AMPLIADA_M : TOLERANCIA_ESTANDAR_M;
 
       tablerosAsignados.forEach((nombreFamilia) => {
-        const boxExp = mapaCajas[nombreFamilia];
-        if (!boxExp) return;
+        const cajasMallas = cajasIndividualesPorPiezaMap[nombreFamilia];
+        if (!cajasMallas || cajasMallas.length === 0) return;
 
-        if (boxExp.intersectsBox(boxHw) || boxExp.containsPoint(centroHw)) {
+        // Comprobación ESTRICTA de contacto físico real con alguna de las mallas individuales del tablero
+        const tocaMallaReal = cajasMallas.some((bMalla) => {
+          if (bMalla.isEmpty()) return false;
+          const bExp = bMalla.clone().expandByScalar(tolUso);
+          return bExp.intersectsBox(boxHw) || bExp.containsPoint(centroHw);
+        });
+
+        if (tocaMallaReal) {
           piezasCandidatas.push(nombreFamilia);
         }
       });
@@ -1088,18 +1113,20 @@ export function mapearContactosPiezasHerrajes(
           if (soloVerticales.length > 0) candidatasFiltradas = soloVerticales;
         }
 
-        // Elegimos la pieza con menor distancia euclídea exacta a la caja CAD real sin expandir
+        // Elegimos la pieza cuya malla física individual esté a menor distancia euclídea exacta
         let mejorPieza = candidatasFiltradas[0];
         let menorDist = Infinity;
 
         candidatasFiltradas.forEach((pz) => {
-          const boxReal = boxPiezaRealMap[pz];
-          if (!boxReal) return;
-          const dist = boxReal.distanceToPoint(centroHw);
-          if (dist < menorDist) {
-            menorDist = dist;
-            mejorPieza = pz;
-          }
+          const cajasMallas = cajasIndividualesPorPiezaMap[pz];
+          if (!cajasMallas || cajasMallas.length === 0) return;
+          cajasMallas.forEach((bMalla) => {
+            const dist = bMalla.distanceToPoint(centroHw);
+            if (dist < menorDist) {
+              menorDist = dist;
+              mejorPieza = pz;
+            }
+          });
         });
 
         piezasEnContacto = [mejorPieza];
@@ -1201,6 +1228,52 @@ export function calcularVectorOffsetPieza(
   );
   const targetObjPopLocal = meshPieza.parent.worldToLocal(targetObjPopWorld);
   return targetObjPopLocal.clone().sub(pRest);
+}
+
+export interface TableroCapaReferencia {
+  id: string; // ej. "Peça 4" o "Peça 8 (1)"
+  cleanName?: string;
+  boxRestWorld: THREE.Box3;
+  restWorldPos: THREE.Vector3;
+  mesh?: THREE.Object3D;
+  offsetXCm?: number;
+  offsetYCm?: number;
+  offsetZCm?: number;
+  tiempoInicioMovimiento?: number;
+}
+
+/**
+ * 🎯 Resuelve el tablero anfitrión exacto al que pertenece un herraje dentro de una capa.
+ * - Si la capa solo tiene 1 tablero (ej. Peça 4), retorna ese tablero de inmediato (100% certezas).
+ * - Si la capa tiene múltiples tableros (ej. tres Peça 8), calcula la distancia euclídea del herraje
+ *   en su posición de diseño (pHwRestWorld) a la caja envolvente de cada tablero, eligiendo
+ *   la pieza cuyo barreno contiene el herraje (distancia euclídea mínima <= 3.5 cm).
+ */
+export function resolverTableroAnfitrionHerraje(
+  pHwRestWorld: THREE.Vector3,
+  tablerosCapa: TableroCapaReferencia[]
+): TableroCapaReferencia | null {
+  if (!tablerosCapa || tablerosCapa.length === 0) return null;
+  if (tablerosCapa.length === 1) return tablerosCapa[0];
+
+  let mejorTablero = tablerosCapa[0];
+  let menorDist = Infinity;
+
+  for (const tab of tablerosCapa) {
+    let dist = Infinity;
+    if (tab.boxRestWorld && !tab.boxRestWorld.isEmpty()) {
+      dist = tab.boxRestWorld.distanceToPoint(pHwRestWorld);
+    } else if (tab.restWorldPos) {
+      dist = tab.restWorldPos.distanceTo(pHwRestWorld);
+    }
+
+    if (dist < menorDist) {
+      menorDist = dist;
+      mejorTablero = tab;
+    }
+  }
+
+  return mejorTablero;
 }
 
 /**

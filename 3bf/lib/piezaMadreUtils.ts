@@ -58,6 +58,8 @@ export function esHerrajeNombre(name?: string | null): boolean {
     cleanLower.includes("prego") ||
     cleanLower.includes("tampa") ||
     cleanLower.includes("tapa") ||
+    cleanLower.includes("perfil") ||
+    cleanLower.includes("trilho") ||
     cleanLower.includes("adesiv")
   ) && !cleanLower.includes("cajon") && !cleanLower.includes("gaveta");
 }
@@ -454,10 +456,32 @@ export function anotarInstanciasFisicas<T extends { name: string; position?: [nu
 
     for (const { mesh } of items) {
       const mBBox = calcularBBoxMalla(mesh as any);
+      const mCenter = [
+        (mBBox[0] + mBBox[1]) / 2,
+        (mBBox[2] + mBBox[3]) / 2,
+        (mBBox[4] + mBBox[5]) / 2,
+      ];
       const matchedIndices: number[] = [];
 
       clusters.forEach((cl, idx) => {
-        if (bboxesSeTocan(mBBox, cl.bbox, 0.002)) {
+        const clCenter = [
+          (cl.bbox[0] + cl.bbox[1]) / 2,
+          (cl.bbox[2] + cl.bbox[3]) / 2,
+          (cl.bbox[4] + cl.bbox[5]) / 2,
+        ];
+        const distCentros = Math.hypot(
+          mCenter[0] - clCenter[0],
+          mCenter[1] - clCenter[1],
+          mCenter[2] - clCenter[2]
+        );
+
+        // Dos submallas solo son parte de la MISMA pieza física si sus centros geométricos
+        // están muy próximos (distancia <= 35 mm, que cubre el espesor de Cara A vs Cara B/MDP).
+        // Si la distancia entre centros es mayor a 35 mm (como entre paneles adyacentes de fondo o repisas contiguas),
+        // son piezas físicas distintas y NO deben fusionarse en el mismo cluster.
+        const esMismaPiezaFisica = distCentros <= 0.035 && bboxesSeTocan(mBBox, cl.bbox, 0.005);
+
+        if (esMismaPiezaFisica) {
           matchedIndices.push(idx);
         }
       });

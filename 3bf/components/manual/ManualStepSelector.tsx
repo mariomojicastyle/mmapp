@@ -25,14 +25,17 @@ export default function ManualStepSelector() {
         <span className="font-bold tracking-wide uppercase opacity-70 text-[10px]">
           Línea de Pasos del Manual
         </span>
-        <button
-          type="button"
-          onClick={() => crearPasoManual("ensamble")}
-          style={{ borderColor: botonActivoColor, color: botonActivoColor }}
-          className="flex items-center gap-1 px-2.5 py-0.5 rounded-full border hover:bg-cyan-500/10 transition font-bold text-[10px] cursor-pointer"
-        >
-          <Plus className="w-3 h-3" /> + Nuevo Paso
-        </button>
+        <div className="flex items-center gap-1.5">
+          <button
+            type="button"
+            onClick={() => crearPasoManual("multiple_plus")}
+            style={{ backgroundColor: botonActivoColor, borderColor: botonActivoColor }}
+            className="flex items-center gap-1 px-3 py-0.5 rounded-full border text-white hover:opacity-90 shadow-2xs transition font-bold text-[10px] cursor-pointer"
+            title="Crear un nuevo paso de armado por capas"
+          >
+            <Plus className="w-3 h-3" /> Nuevo Paso
+          </button>
+        </div>
       </div>
 
       <div className="flex items-center gap-1.5 overflow-x-auto py-1 custom-scrollbar">
@@ -103,6 +106,13 @@ export default function ManualStepSelector() {
               <span>{paso.id}</span>
               {paso.tipo === "showcase" ? null : paso.tipo === "bloque_estandar" ? (
                 <Boxes className="w-3 h-3 text-cyan-400 shrink-0" />
+              ) : paso.tipo === "multiple_plus" ? (
+                <span className="flex items-center gap-0.5">
+                  <span className="text-[9px]">🌟</span>
+                  <span className="opacity-70 font-normal text-[10px]">
+                    ({(paso.multiplePlus?.capas || []).reduce((acc, c) => acc + (c.tableros?.length || 0) + (c.herrajes?.length || 0) + (c.congelados?.length || 0), 0)})
+                  </span>
+                </span>
               ) : (
                 <span className="opacity-70 font-normal text-[10px]">
                   ({(paso.piezasAsignadas || []).length + (paso.herrajesAsignados || []).length})

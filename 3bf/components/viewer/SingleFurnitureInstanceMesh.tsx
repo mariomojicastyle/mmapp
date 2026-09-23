@@ -149,13 +149,31 @@ export function SingleFurnitureInstanceMesh({
     }
 
     // 🎯 CÁLCULO PRECISO DEL APOYO EN SUELO (Y = 0) Y CENTRADO EN BANCO
+    // Extraer piezas asignadas tanto del motor clásico como de Múltiple Plus (capas)
+    const asignadasClasicas = [
+      ...(pasoActivoManual?.piezasAsignadas || []),
+      ...(pasoActivoManual?.herrajesAsignados || []),
+    ];
+    const asignadasPlus: string[] = [];
+    let masterPlus = pasoActivoManual?.piezaMaster || "";
+
+    if (pasoActivoManual?.multiplePlus?.capas) {
+      pasoActivoManual.multiplePlus.capas.forEach((c: any) => {
+        if (c.piezaMaster && !masterPlus) masterPlus = c.piezaMaster;
+        (c.tableros || []).forEach((t: any) => asignadasPlus.push(t.id));
+        (c.herrajes || []).forEach((h: any) => asignadasPlus.push(h.id));
+        (c.congelados || []).forEach((h: any) => asignadasPlus.push(h.id));
+      });
+    }
+
+    const todasAsignadas = asignadasPlus.length > 0 ? asignadasPlus : asignadasClasicas;
+
     // Si Invert Hide está activo, tomamos prioritariamente las piezas de este paso
-    const piezasTarget = (pasoActivoManual?.ocultarNoAsignadas && (pasoActivoManual.piezasAsignadas?.length || 0) > 0)
+    const piezasTarget = (pasoActivoManual?.ocultarNoAsignadas && todasAsignadas.length > 0)
       ? annotatedMeshes.filter((m: any) => {
           const ik = (m.instanciaKey || "").toLowerCase();
           const cn = (m.name || "").replace(/^RH_OUT:/i, "").trim().toLowerCase();
-          const asignadas = [...(pasoActivoManual.piezasAsignadas || []), ...(pasoActivoManual.herrajesAsignados || [])];
-          return asignadas.some((p) => {
+          return todasAsignadas.some((p) => {
             const pLow = p.toLowerCase();
             return (
               pLow === ik ||
@@ -168,8 +186,8 @@ export function SingleFurnitureInstanceMesh({
         })
       : annotatedMeshes;
 
-    // Si el paso tiene una Pieza Master asignada, medir la cota de la Master para que sea su base la que apoye en el piso Y = 0
-    const masterTarget = pasoActivoManual?.piezaMaster ? pasoActivoManual.piezaMaster.toLowerCase().trim() : "";
+    // Si el paso o alguna capa tiene una Pieza Master asignada, medir la cota de la Master para que sea su base la que apoye en el piso Y = 0
+    const masterTarget = masterPlus ? masterPlus.toLowerCase().trim() : "";
     const mallasMaster = masterTarget
       ? piezasTarget.filter((m: any) => {
           const ik = (m.instanciaKey || "").toLowerCase();

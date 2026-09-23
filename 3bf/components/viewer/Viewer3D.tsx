@@ -925,13 +925,19 @@ export default function Viewer3D() {
         return;
       }
 
-      // 🗑️ Atajo Delete / Supr / Backspace / X: Eliminar componente seleccionado
+      // 🗑️ Atajo Delete / Supr / Backspace / X: Eliminar componente seleccionado (EXCLUSIVO de visor 3D paramétrico, NUNCA en modo manual)
       if (
         (e.key === "Delete" || e.key === "Del" || e.key === "Backspace" || ((e.key === "x" || e.key === "X") && modoTransformacion !== "grab")) &&
         !e.ctrlKey &&
         !e.altKey &&
         !e.metaKey
       ) {
+        const state = use3BFStore.getState();
+        // 🛡️ BLINDAJE SUPREMO: En modo Manual 3D o con keyframes/timeline activos, la tecla Delete/Supr NUNCA toca el mueble del escenario
+        if (state.pestanaActiva !== "3d" || state.modoPickingManual.activo || (window as any).__isEditingKeyframeCamera3BF) {
+          return;
+        }
+
         if (objetoActivoId && modoTransformacion !== "grab") {
           e.preventDefault();
           eliminarInstancia(objetoActivoId);
@@ -1320,12 +1326,11 @@ export default function Viewer3D() {
             onClick={async () => {
               if (pestanaActiva === "manual") {
                 // 💾 Modo Manual: Guardar .3bm directamente sin preguntas en cualquier momento
-                await guardarManualProyecto();
-                if (muebleActivoGuardado) {
-                  await guardarCambiosMueble();
+                const exito = await guardarManualProyecto();
+                if (exito !== false) {
+                  setGuardadoManualReciente(true);
+                  setTimeout(() => setGuardadoManualReciente(false), 2500);
                 }
-                setGuardadoManualReciente(true);
-                setTimeout(() => setGuardadoManualReciente(false), 2500);
               } else {
                 if (muebleActivoGuardado) {
                   await guardarCambiosMueble();
@@ -1744,13 +1749,6 @@ export default function Viewer3D() {
           ref={controlsRef}
           makeDefault 
           enabled={modoTransformacion !== "grab" && !piezaEnPosicionamientoManual} 
-          target={
-            pasoActivoManual?.tipo === "bloque_estandar" 
-              ? [0, 0.1, 0] 
-              : (camaraInicial && Array.isArray(camaraInicial.target)) 
-                ? camaraInicial.target 
-                : [0, 0.4, 0]
-          } 
           minDistance={calibracion.zoomMinimoMetros ?? 0.02} 
           maxDistance={calibracion.zoomMaximoMetros ?? 30} 
           enableDamping

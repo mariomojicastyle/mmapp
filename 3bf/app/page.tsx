@@ -136,7 +136,9 @@ export default function Home3BF() {
       const nuevoAncho = window.innerWidth - clientX - 12;
       const esMovil = typeof window !== "undefined" && window.innerWidth < 1024;
       const minW = esMovil ? 150 : 280;
-      const maxW = esMovil ? 220 : 800;
+      const maxW = esMovil 
+        ? (typeof window !== "undefined" ? Math.min(window.innerWidth - 20, 360) : 220) 
+        : (typeof window !== "undefined" ? Math.max(3840, window.innerWidth - 60) : 3840);
       setAnchoPanelDerecho(Math.max(minW, Math.min(maxW, nuevoAncho)));
     };
 

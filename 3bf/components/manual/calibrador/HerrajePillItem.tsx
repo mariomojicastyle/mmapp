@@ -51,9 +51,7 @@ export function HerrajePillItem({
       <div
         className="inline-flex items-center group cursor-default"
         onMouseEnter={() => {
-          if (activoEnTiempo) {
-            onHover(herraje.nombresMallas);
-          }
+          onHover(herraje.nombresMallas);
         }}
         onMouseLeave={() => onHover(null)}
       >
@@ -106,9 +104,7 @@ export function HerrajePillItem({
         type="button"
         onClick={onToggle}
         onMouseEnter={() => {
-          if (activoEnTiempo) {
-            onHover(herraje.nombresMallas);
-          }
+          onHover(herraje.nombresMallas);
         }}
         onMouseLeave={() => onHover(null)}
         title={

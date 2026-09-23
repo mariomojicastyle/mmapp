@@ -157,13 +157,55 @@ export function resolverVisibilidadBoard(input: BoardVisibilityInput): {
 
   // 4. En Pasos de Ensamble (P01+): Pertenencia canónica al paso
   // 🛡️ REGLA SUPREMA DE AISLAMIENTO Y BLINDAJE:
-  // - Si estamos en picking de subbloque (grupoId activo), las piezas temporalmente seleccionadas
-  //   pertenecen a ese subbloque específico. NO deben usarse para alterar la pertenencia macro del paso.
-  // - Solo si el picking es para el paso general (sin grupoId), se suman a las asignadas del paso.
-  const esPickingSubbloque = modoPickingManual.activo && Boolean(modoPickingManual.grupoId);
+  const subbloquesPaso = pasoActivoManual.subbloques || [];
+  const esPickingSubbloque = modoPickingManual.activo && Boolean(modoPickingManual.grupoId) && subbloquesPaso.some((s) => s.id === modoPickingManual.grupoId);
+  const capasEsperaPaso = pasoActivoManual.configuracionCinematica?.piezasEspera || [];
+  const capasPlus = pasoActivoManual.multiplePlus?.capas || [];
+  const esPickingCapa = modoPickingManual.activo && Boolean(modoPickingManual.grupoId) && (
+    capasEsperaPaso.some((c) => c.nombrePieza === modoPickingManual.grupoId) ||
+    capasPlus.some((c) => c.id === modoPickingManual.grupoId)
+  );
+
+  // 🧩 Recopilación de piezas y herrajes de Bloques Heredados activos (ej. P03 en P04)
+  const piezasHeredadas: string[] = [];
+  const herrajesHeredados: string[] = [];
+  const bloquesHeredadosIds = pasoActivoManual.bloquesHeredadosIds || [];
+  const bloquesVisibles = pasoActivoManual.bloquesHeredadosVisibles || {};
+
+  for (const bId of bloquesHeredadosIds) {
+    if (bloquesVisibles[bId] !== false) {
+      const pasoHeredado = pasosManual.find((p) => p.id === bId);
+      if (pasoHeredado) {
+        piezasHeredadas.push(...(pasoHeredado.piezasAsignadas || []));
+        herrajesHeredados.push(...(pasoHeredado.herrajesAsignados || []));
+      }
+    }
+  }
+
+  // 🎬 Extraer todas las piezas y herrajes configurados en Capas de Animación (piezasEspera) y Múltiple Plus
+  const piezasCapasCinematica: string[] = [];
+  const herrajesCapasCinematica: string[] = [];
+
+  for (const c of capasEsperaPaso) {
+    if (c.nombrePieza) piezasCapasCinematica.push(c.nombrePieza);
+    if (c.tablerosAsignados) piezasCapasCinematica.push(...c.tablerosAsignados);
+    if (c.herrajesCohesionados) herrajesCapasCinematica.push(...c.herrajesCohesionados);
+    if (c.herrajesCongelados) herrajesCapasCinematica.push(...c.herrajesCongelados);
+  }
+
+  for (const cp of capasPlus) {
+    if (cp.tableros) piezasCapasCinematica.push(...cp.tableros.map((t) => t.id));
+    if (cp.herrajes) herrajesCapasCinematica.push(...cp.herrajes.map((h) => h.id));
+    if (cp.congelados) herrajesCapasCinematica.push(...cp.congelados.map((h) => h.id));
+  }
+
   const asignadasPaso = [
     ...(pasoActivoManual.piezasAsignadas || []),
     ...(pasoActivoManual.herrajesAsignados || []),
+    ...piezasCapasCinematica,
+    ...herrajesCapasCinematica,
+    ...piezasHeredadas,
+    ...herrajesHeredados,
     ...((modoPickingManual.activo && !modoPickingManual.grupoId && modoPickingManual.pasoId === pasoActivoManual.id)
       ? modoPickingManual.piezasTemporalmenteSeleccionadas
       : [])
@@ -173,7 +215,6 @@ export function resolverVisibilidadBoard(input: BoardVisibilityInput): {
 
   // 5. Reglas de Aislamiento
   let estaOcultaPorReglasPaso = false;
-  const subbloquesPaso = pasoActivoManual.subbloques || [];
 
   // 5.0 Bloque estándar: aislar completamente
   if (pasoActivoManual.tipo === 'bloque_estandar') {
@@ -185,12 +226,107 @@ export function resolverVisibilidadBoard(input: BoardVisibilityInput): {
     estaOcultaPorReglasPaso = true;
   }
 
-  // 5.2 Invertir del Bloque: si Invertir está activo, oculta todo lo que NO pertenezca a este bloque
-  if (pasoActivoManual.ocultarNoAsignadas && !perteneceAlPasoActivo) {
+  // 5.2 Invertir del Bloque: si Invertir está activo, oculta todo lo que NO pertenezca a este bloque ni a sus bloques heredados
+  // (Si estamos en picking de capa, se permite ver todo el mueble para facilitar la selección 3D)
+  if (!esPickingCapa && pasoActivoManual.ocultarNoAsignadas && !perteneceAlPasoActivo) {
     estaOcultaPorReglasPaso = true;
   }
 
-  // 5.3 Ojito de Subbloque: si un subbloque está con su ojito apagado (sub.oculto === true)
+  // 5.3 Bloques Heredados Apagados: si el usuario apagó el ojito de un bloque heredado específico
+  if (!estaOcultaPorReglasPaso) {
+    for (const bId of bloquesHeredadosIds) {
+      if (bloquesVisibles[bId] === false) {
+        const pasoHeredado = pasosManual.find((p) => p.id === bId);
+        if (pasoHeredado) {
+          const elementosBloqueApagado = [
+            ...(pasoHeredado.piezasAsignadas || []),
+            ...(pasoHeredado.herrajesAsignados || [])
+          ];
+          if (evaluarPertenenciaPaso(elementosBloqueApagado, name, cleanName, instanciaKey, piezaMadre)) {
+            estaOcultaPorReglasPaso = true;
+            break;
+          }
+        }
+      }
+    }
+  }
+
+  // 5.4 Control de Visibilidad Individual por Capa (Bombillito visible === false o capasOcultas)
+  // Optimizado a O(1) sin bucles de expresiones regulares para garantizar 60 FPS
+  if (!estaOcultaPorReglasPaso) {
+    const capasOcultasLista = pasoActivoManual.capasOcultas;
+    if (capasOcultasLista && capasOcultasLista.length > 0) {
+      const idKey = (instanciaKey || cleanName || name).toLowerCase().trim();
+      const cnKey = cleanName.toLowerCase().trim();
+      const pmKey = (piezaMadre || "").toLowerCase().trim();
+
+      const esHw =
+        isHardwareMeshName(name) ||
+        isHardwareMeshName(cleanName) ||
+        (instanciaKey ? isHardwareMeshName(instanciaKey) : false) ||
+        esHerrajeNombre(name) ||
+        esHerrajeNombre(cleanName) ||
+        (instanciaKey ? esHerrajeNombre(instanciaKey) : false);
+
+      const estaOculta = capasOcultasLista.some((pz: string) => {
+        if (!pz) return false;
+        const pzLow = pz.toLowerCase().trim();
+        if (pzLow === idKey || pzLow === cnKey || pzLow === pmKey) return true;
+
+        if (esHw) {
+          // 🛡️ HERRAJE: La coincidencia DEBE ser estricta a la misma instancia física numerada
+          // NUNCA ocultar todas las cavilhas o porcas del mueble si solo se ocultó una específica
+          return coincidenMismoHerraje(pz, idKey) || coincidenMismoHerraje(pz, cnKey) || coincidenMismoHerraje(pz, pmKey);
+        }
+
+        return (
+          perteneceAMismaFamiliaPieza(pz, cleanName) ||
+          perteneceAMismaFamiliaPieza(pz, piezaMadre)
+        );
+      });
+
+      if (estaOculta) {
+        estaOcultaPorReglasPaso = true;
+      }
+    }
+
+    if (!estaOcultaPorReglasPaso) {
+      const esMultiplePlus = pasoActivoManual.tipo === "multiple_plus" || Boolean(pasoActivoManual.multiplePlus?.capas && pasoActivoManual.multiplePlus.capas.length > 0);
+      if (esMultiplePlus && capasPlus.length > 0) {
+        const capaPlusApagada = capasPlus.some((c) => {
+          if (c.visible !== false) return false;
+          const elementosCapa = [
+            ...(c.tableros || []).map((t) => t.id),
+            ...(c.herrajes || []).map((h) => h.id),
+            ...(c.congelados || []).map((h) => h.id),
+          ];
+          return evaluarPertenenciaPaso(elementosCapa, name, cleanName, instanciaKey, piezaMadre);
+        });
+        if (capaPlusApagada) {
+          estaOcultaPorReglasPaso = true;
+        }
+      } else {
+        const confs = pasoActivoManual.configuracionCinematica?.piezasEspera;
+        if (confs && confs.length > 0) {
+          const confApagada = confs.some((c) => {
+            if (c.visible !== false) return false;
+            return (
+              c.nombrePieza === cleanName ||
+              c.nombrePieza === piezaMadre ||
+              perteneceAMismaFamiliaPieza(c.nombrePieza, cleanName) ||
+              perteneceAMismaFamiliaPieza(c.nombrePieza, piezaMadre)
+            );
+          });
+
+          if (confApagada) {
+            estaOcultaPorReglasPaso = true;
+          }
+        }
+      }
+    }
+  }
+
+  // 5.5 Ojito de Subbloque: si un subbloque está con su ojito apagado (sub.oculto === true)
   if (!estaOcultaPorReglasPaso) {
     const estaEnSubbloqueOculto = subbloquesPaso.some((sub) => {
       if (!sub.oculto) return false;
@@ -203,7 +339,7 @@ export function resolverVisibilidadBoard(input: BoardVisibilityInput): {
     }
   }
 
-  // 5.4 Modo Empacar en Subbloque (Bombillo del Subbloque apagado en gris / picking activo en subbloque)
+  // 5.6 Modo Empacar en Subbloque (Bombillo del Subbloque apagado en gris / picking activo en subbloque)
   if (!estaOcultaPorReglasPaso && esPickingSubbloque && modoPickingManual.modo === "agregar") {
     const subActivo = subbloquesPaso.find((s) => s.id === modoPickingManual.grupoId);
     if (subActivo) {
@@ -218,8 +354,36 @@ export function resolverVisibilidadBoard(input: BoardVisibilityInput): {
     }
   }
 
-  // 5.5 Modo Empacar en Bloque (Bombillo del Bloque apagado en gris / picking activo en bloque general)
-  if (!estaOcultaPorReglasPaso && !esPickingSubbloque) {
+  // 5.6.5 Modo Empacar en Capa de Animación (Bombillo de la Capa apagado en gris / picking activo en capa)
+  if (!estaOcultaPorReglasPaso && esPickingCapa && modoPickingManual.modo === "agregar") {
+    const capaActiva = capasEsperaPaso.find((c) => c.nombrePieza === modoPickingManual.grupoId);
+    const capaPlusActiva = capasPlus.find((c) => c.id === modoPickingManual.grupoId);
+    if (capaActiva) {
+      const elementosCapa = [
+        capaActiva.nombrePieza,
+        ...(capaActiva.herrajesCohesionados || []),
+        ...(capaActiva.herrajesCongelados || []),
+        ...(capaActiva.tablerosAsignados || []),
+        ...(modoPickingManual.piezasTemporalmenteSeleccionadas || [])
+      ];
+      if (evaluarPertenenciaPaso(elementosCapa, name, cleanName, instanciaKey, piezaMadre)) {
+        estaOcultaPorReglasPaso = true;
+      }
+    } else if (capaPlusActiva) {
+      const elementosCapa = [
+        ...(capaPlusActiva.tableros || []).map((t) => t.id),
+        ...(capaPlusActiva.herrajes || []).map((h) => h.id),
+        ...(capaPlusActiva.congelados || []).map((h) => h.id),
+        ...(modoPickingManual.piezasTemporalmenteSeleccionadas || [])
+      ];
+      if (evaluarPertenenciaPaso(elementosCapa, name, cleanName, instanciaKey, piezaMadre)) {
+        estaOcultaPorReglasPaso = true;
+      }
+    }
+  }
+
+  // 5.7 Modo Empacar en Bloque (Bombillo del Bloque apagado en gris / picking activo en bloque general)
+  if (!estaOcultaPorReglasPaso && !esPickingSubbloque && !esPickingCapa) {
     const bombilloBloqueApagado = Boolean(
       pasoActivoManual.piezasOcultas ||
       (modoPickingManual.activo && modoPickingManual.modo === "agregar" && modoPickingManual.pasoId === pasoActivoManual.id && !modoPickingManual.grupoId)

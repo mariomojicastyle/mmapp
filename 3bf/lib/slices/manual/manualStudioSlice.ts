@@ -319,7 +319,7 @@ export const createManualStudioSlice = (set: any, get: any): any => ({
             return Math.max(140, Math.min(360, val));
           }
           if (!val || val < 500) return 740; // En PC Modo Manual por defecto 740px funcional
-          const maxLimit = typeof window !== "undefined" ? Math.max(1400, window.innerWidth - 60) : 1400;
+          const maxLimit = typeof window !== "undefined" ? Math.max(3840, window.innerWidth - 20) : 3840;
           return Math.max(500, Math.min(maxLimit, val));
         })()
       : typeof window !== "undefined" && window.innerWidth < 1024
@@ -329,7 +329,7 @@ export const createManualStudioSlice = (set: any, get: any): any => ({
   setAnchoNPanelManual: (ancho: number) => {
     const esMovil = typeof window !== "undefined" && window.innerWidth < 1024;
     const minW = esMovil ? 140 : 500;
-    const maxW = esMovil ? 360 : typeof window !== "undefined" ? Math.max(1400, window.innerWidth - 60) : 1400;
+    const maxW = esMovil ? (typeof window !== "undefined" ? Math.max(360, window.innerWidth - 10) : 360) : (typeof window !== "undefined" ? Math.max(3840, window.innerWidth - 20) : 3840);
     const normalizado = Math.max(minW, Math.min(maxW, ancho));
     if (typeof window !== "undefined" && window.localStorage) {
       localStorage.setItem("3bf_ancho_npanel_manual", String(normalizado));
@@ -350,7 +350,8 @@ export const createManualStudioSlice = (set: any, get: any): any => ({
             return Math.max(150, Math.min(210, val));
           }
           if (!val || val < 280) return 380; // En PC restaurar a 380
-          return Math.max(280, Math.min(800, val));
+          const maxLimit = typeof window !== "undefined" ? Math.max(3840, window.innerWidth - 60) : 3840;
+          return Math.max(280, Math.min(maxLimit, val));
         })()
       : typeof window !== "undefined" && window.innerWidth < 1024
       ? 180
@@ -359,7 +360,9 @@ export const createManualStudioSlice = (set: any, get: any): any => ({
   setAnchoPanelDerecho: (ancho: number) => {
     const esMovil = typeof window !== "undefined" && window.innerWidth < 1024;
     const minW = esMovil ? 150 : 280;
-    const maxW = esMovil ? 220 : 800;
+    const maxW = esMovil 
+      ? (typeof window !== "undefined" ? Math.min(window.innerWidth - 20, 360) : 220) 
+      : (typeof window !== "undefined" ? Math.max(3840, window.innerWidth - 60) : 3840);
     const normalizado = Math.max(minW, Math.min(maxW, ancho));
     if (typeof window !== "undefined" && window.localStorage) {
       localStorage.setItem("3bf_ancho_panel_derecho", String(normalizado));

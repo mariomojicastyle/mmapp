@@ -9,7 +9,8 @@ import type {
   PasoManualStudio,
   ElementoSecuenciaCinematica,
 } from "../../storeTypes";
-import { extraerPiezaMadre } from "../../piezaMadreUtils";
+import { extraerPiezaMadre, perteneceAMismaFamiliaPieza } from "../../piezaMadreUtils";
+import { coincidenMismoHerraje } from "../../engine/cadStateUtils";
 
 export const createManualStepsSlice = (set: any, get: any): any => {
   const initialCachedManual = getCachedManualData();
@@ -65,15 +66,16 @@ export const createManualStepsSlice = (set: any, get: any): any => {
       },
     }),
 
-  crearPasoManual: (tipo: "ensamble" | "showcase" | "bloque_estandar" = "ensamble") => {
+  crearPasoManual: (tipo: "ensamble" | "showcase" | "bloque_estandar" | "multiple_plus" = "multiple_plus") => {
     const state = get();
     const { id: nuevoId, numero: num } = encontrarSiguienteIdPasoDisponible(state.pasosManual);
+    const tipoEfectivo = tipo === "ensamble" ? "multiple_plus" : tipo;
 
     const nuevoPaso: PasoManualStudio = {
       id: nuevoId,
       numero: num,
-      tipo,
-      titulo: tipo === "showcase" ? `${nuevoId}: Showcase` : `Bloque de armado ${nuevoId}`,
+      tipo: tipoEfectivo,
+      titulo: tipoEfectivo === "showcase" ? `${nuevoId}: Showcase` : `Paso ${nuevoId}: Armado por Capas`,
       descripcion: "Nuevo paso de ensamble",
       duracionTotal: 10.0,
       piezaMaster: "",
@@ -84,6 +86,12 @@ export const createManualStepsSlice = (set: any, get: any): any => {
       subbloques: [],
       piezasOcultas: false,
       ocultarNoAsignadas: false,
+      multiplePlus: tipoEfectivo === "multiple_plus" ? {
+        velocidadTablerosCmS: 15,
+        velocidadHerrajesCmS: 8,
+        movimientoGlobalCm: 20,
+        capas: [],
+      } : undefined,
       guionEs: "",
       guionPt: "",
       guionEn: "",
@@ -147,7 +155,7 @@ export const createManualStepsSlice = (set: any, get: any): any => {
   actualizarPasoManual: (pasoId: string, data: Partial<PasoManualStudio>) => {
     const state = get();
     const actualizados = state.pasosManual.map((p: any) => (p.id === pasoId ? { ...p, ...data } : p));
-    set({ pasosManual: actualizados });
+    set({ pasosManual: actualizados, versionAnimacionManual: (state.versionAnimacionManual || 0) + 1 });
     guardarPasosEnCacheLocal(actualizados, state.manualActivoGuardado);
   },
 
@@ -352,6 +360,306 @@ export const createManualStepsSlice = (set: any, get: any): any => {
       pasoActivoManualId: nuevoIdActivo,
     });
     guardarPasosEnCacheLocal(reindexados, state.manualActivoGuardado);
+  },
+
+  // 🧩 BLOQUES HEREDADOS Y MULTI-DESTINO POR CAPA
+  asociarBloqueHeredado: (pasoId: string, bloqueId: string) => {
+    if (pasoId === bloqueId) return;
+    const state = get();
+    const actualizados = state.pasosManual.map((p: any) => {
+      if (p.id !== pasoId) return p;
+      const idsActuales = p.bloquesHeredadosIds || [];
+      if (idsActuales.includes(bloqueId)) return p;
+      const nuevosIds = [...idsActuales, bloqueId];
+      const visActuales = p.bloquesHeredadosVisibles || {};
+      return {
+        ...p,
+        bloquesHeredadosIds: nuevosIds,
+        bloquesHeredadosVisibles: { ...visActuales, [bloqueId]: true },
+      };
+    });
+    set({ pasosManual: actualizados });
+    guardarPasosEnCacheLocal(actualizados, state.manualActivoGuardado);
+  },
+
+  desasociarBloqueHeredado: (pasoId: string, bloqueId: string) => {
+    const state = get();
+    const actualizados = state.pasosManual.map((p: any) => {
+      if (p.id !== pasoId) return p;
+      const idsActuales = p.bloquesHeredadosIds || [];
+      const nuevosIds = idsActuales.filter((id: string) => id !== bloqueId);
+      const visActuales = { ...(p.bloquesHeredadosVisibles || {}) };
+      delete visActuales[bloqueId];
+      return {
+        ...p,
+        bloquesHeredadosIds: nuevosIds,
+        bloquesHeredadosVisibles: visActuales,
+      };
+    });
+    set({ pasosManual: actualizados });
+    guardarPasosEnCacheLocal(actualizados, state.manualActivoGuardado);
+  },
+
+  conmutarVisibilidadBloqueHeredado: (pasoId: string, bloqueId: string) => {
+    const state = get();
+    const actualizados = state.pasosManual.map((p: any) => {
+      if (p.id !== pasoId) return p;
+      const visActuales = { ...(p.bloquesHeredadosVisibles || {}) };
+      const estadoActual = visActuales[bloqueId] !== false;
+      visActuales[bloqueId] = !estadoActual;
+      return {
+        ...p,
+        bloquesHeredadosVisibles: visActuales,
+      };
+    });
+    set({ pasosManual: actualizados });
+    guardarPasosEnCacheLocal(actualizados, state.manualActivoGuardado);
+  },
+
+  conmutarVisibilidadCapaPieza: (pasoId: string, nombrePieza: string, herrajesAsociados?: string[]) => {
+    const state = get();
+    const pm = extraerPiezaMadre(nombrePieza);
+    let nuevoEstadoVisible = false;
+    let todosLosHerrajesCapa: string[] = herrajesAsociados ? [...herrajesAsociados] : [];
+
+    const actualizados = state.pasosManual.map((p: any) => {
+      if (p.id !== pasoId) return p;
+      const confCin = p.configuracionCinematica || {
+        velocidadPiezasCmS: 15,
+        velocidadHerrajesCmS: 8,
+        piezasEspera: [],
+      };
+
+      const piezasEspera = [...(confCin.piezasEspera || [])];
+      const idxExistente = piezasEspera.findIndex(
+        (pz: any) =>
+          pz.nombrePieza === nombrePieza ||
+          extraerPiezaMadre(pz.nombrePieza) === pm ||
+          perteneceAMismaFamiliaPieza(pz.nombrePieza, nombrePieza)
+      );
+
+      const pExistente = idxExistente >= 0 ? piezasEspera[idxExistente] : null;
+
+      // Si no se pasaron herrajesAsociados desde la UI, recolectar de la pieza de espera existente
+      if (todosLosHerrajesCapa.length === 0 && pExistente) {
+        todosLosHerrajesCapa = Array.from(new Set([
+          ...(pExistente.herrajesCohesionados || []),
+          ...(pExistente.herrajesCongelados || []),
+          ...(pExistente.herrajesActivados || []),
+          ...Object.keys(pExistente.direccionesHerrajes || {}),
+          ...Object.keys(pExistente.tiemposAparicionHerrajes || {}),
+        ]));
+      }
+
+      let nuevasPiezasEspera: any[];
+      if (pExistente) {
+        const visActual = pExistente.visible !== false;
+        nuevoEstadoVisible = !visActual;
+        nuevasPiezasEspera = piezasEspera.map((item: any, idx: number) => {
+          if (idx === idxExistente) {
+            return { ...item, visible: nuevoEstadoVisible };
+          }
+          return item;
+        });
+      } else {
+        nuevoEstadoVisible = false;
+        nuevasPiezasEspera = [
+          ...piezasEspera,
+          {
+            nombrePieza,
+            ordenEnsamble: piezasEspera.length + 1,
+            offsetXCm: 0,
+            offsetYCm: 0,
+            offsetZCm: 0,
+            apoyadaEnPiso: true,
+            visible: false,
+          },
+        ];
+      }
+
+      const capasOcultasPrev = p.capasOcultas || [];
+      let nuevasCapasOcultas: string[];
+      if (!nuevoEstadoVisible) {
+        nuevasCapasOcultas = Array.from(new Set([
+          ...capasOcultasPrev,
+          nombrePieza,
+          pm,
+          ...todosLosHerrajesCapa,
+        ]));
+      } else {
+        const itemsARemover = new Set([nombrePieza, pm, ...todosLosHerrajesCapa]);
+        nuevasCapasOcultas = capasOcultasPrev.filter(
+          (c: string) =>
+            !itemsARemover.has(c) &&
+            !perteneceAMismaFamiliaPieza(c, nombrePieza) &&
+            !todosLosHerrajesCapa.some((h) => coincidenMismoHerraje(h, c) || h.toLowerCase() === c.toLowerCase())
+        );
+      }
+
+      return {
+        ...p,
+        capasOcultas: nuevasCapasOcultas,
+        configuracionCinematica: {
+          ...confCin,
+          piezasEspera: nuevasPiezasEspera,
+        },
+      };
+    });
+
+    // 🚀 Feedback instantáneo en la escena Three.js para la Pieza Y todos sus Herrajes
+    if (typeof window !== "undefined") {
+      const searchRoot = (window as any).__threeScene3BF;
+      if (searchRoot) {
+        searchRoot.traverse((obj: any) => {
+          if (!obj.isMesh) return;
+          const n = obj.name || "";
+          const cn = obj.userData?.cleanName || "";
+          const ik = obj.userData?.instanciaKey || "";
+          const pmObj = obj.userData?.piezaMadre || extraerPiezaMadre(cn || n);
+
+          const esLaPieza =
+            n === nombrePieza ||
+            cn === nombrePieza ||
+            ik === nombrePieza ||
+            pmObj === pm ||
+            perteneceAMismaFamiliaPieza(n, nombrePieza) ||
+            perteneceAMismaFamiliaPieza(cn, nombrePieza) ||
+            perteneceAMismaFamiliaPieza(ik, nombrePieza);
+
+          const esHerrajeDeEstaCapa = todosLosHerrajesCapa.some((h) =>
+            coincidenMismoHerraje(h, ik) ||
+            coincidenMismoHerraje(h, cn) ||
+            coincidenMismoHerraje(h, n) ||
+            h.toLowerCase().trim() === ik.toLowerCase().trim() ||
+            h.toLowerCase().trim() === cn.toLowerCase().trim() ||
+            h.toLowerCase().trim() === n.toLowerCase().trim()
+          );
+
+          if (esLaPieza || esHerrajeDeEstaCapa) {
+            obj.visible = nuevoEstadoVisible;
+          }
+        });
+      }
+    }
+
+    set({ pasosManual: actualizados });
+    guardarPasosEnCacheLocal(actualizados, state.manualActivoGuardado);
+  },
+
+  setPiezaDestinoCapa: (pasoId: string, nombrePieza: string, piezaDestinoId?: string) => {
+    const state = get();
+    const pm = extraerPiezaMadre(nombrePieza);
+    const actualizados = state.pasosManual.map((p: any) => {
+      if (p.id !== pasoId) return p;
+      const confCin = p.configuracionCinematica;
+      if (!confCin || !confCin.piezasEspera) return p;
+
+      const nuevasPiezasEspera = confCin.piezasEspera.map((pz: any) => {
+        if (pz.nombrePieza === nombrePieza || extraerPiezaMadre(pz.nombrePieza) === pm) {
+          return { ...pz, piezaDestinoId: piezaDestinoId || undefined };
+        }
+        return pz;
+      });
+
+      return {
+        ...p,
+        configuracionCinematica: {
+          ...confCin,
+          piezasEspera: nuevasPiezasEspera,
+        },
+      };
+    });
+    set({ pasosManual: actualizados });
+    guardarPasosEnCacheLocal(actualizados, state.manualActivoGuardado);
+  },
+
+  eliminarCapaPiezaManual: (pasoId: string, nombrePieza: string) => {
+    const state = get();
+    const pm = extraerPiezaMadre(nombrePieza);
+    const targetClean = nombrePieza.replace(/^RH_OUT:\s*/i, "").trim();
+
+    const coincideConTarget = (entry: string) => {
+      if (!entry) return false;
+      const entryClean = entry.replace(/^RH_OUT:\s*/i, "").trim();
+      if (entryClean === targetClean || entry === nombrePieza) return true;
+      const entryPM = extraerPiezaMadre(entryClean);
+      if (entryPM === pm || entryPM === targetClean) return true;
+      return perteneceAMismaFamiliaPieza(entryClean, targetClean);
+    };
+
+    const actualizados = state.pasosManual.map((p: any) => {
+      if (p.id !== pasoId) return p;
+
+      // 1. Filtrar piezas asignadas del paso
+      const nuevasPiezas = (p.piezasAsignadas || []).filter((pz: string) => !coincideConTarget(pz));
+
+      // 2. Filtrar configuración de piezas en espera (re-indexando ordenEnsamble)
+      const confCin = p.configuracionCinematica;
+      let nuevasPiezasEspera = confCin?.piezasEspera || [];
+      if (confCin && confCin.piezasEspera) {
+        nuevasPiezasEspera = confCin.piezasEspera
+          .filter((pz: any) => !coincideConTarget(pz.nombrePieza))
+          .map((pz: any, idx: number) => ({
+            ...pz,
+            ordenEnsamble: idx + 1,
+          }));
+      }
+
+      // 3. Filtrar de la secuencia cinemática
+      const nuevaSecuencia = (p.secuencia || []).filter((s: any) => !coincideConTarget(s.nombreNodo));
+
+      // 4. Si era la Pieza Master, desmarcarla
+      let nuevaPiezaMaster = p.piezaMaster;
+      if (nuevaPiezaMaster && coincideConTarget(nuevaPiezaMaster)) {
+        nuevaPiezaMaster = undefined;
+      }
+
+      return {
+        ...p,
+        piezasAsignadas: nuevasPiezas,
+        piezaMaster: nuevaPiezaMaster,
+        secuencia: nuevaSecuencia,
+        configuracionCinematica: confCin
+          ? {
+              ...confCin,
+              piezasEspera: nuevasPiezasEspera,
+            }
+          : undefined,
+      };
+    });
+
+    // 5. Restaurar posición original en escena 3D si estaba desplazada
+    if (typeof window !== "undefined") {
+      const searchRoot = (window as any).__threeScene3BF;
+      if (searchRoot) {
+        searchRoot.traverse((obj: any) => {
+          if (obj.isMesh && (coincideConTarget(obj.name) || coincideConTarget(obj.userData?.cleanName || ""))) {
+            const pRest = obj.userData?.restPosition;
+            if (pRest) {
+              obj.position.copy(pRest);
+              obj.updateWorldMatrix(true, true);
+            }
+          }
+        });
+      }
+    }
+
+    // 6. Sincronizar picking temporal si está activo en este paso
+    let nuevoPicking = state.modoPickingManual;
+    if (state.modoPickingManual.activo && state.modoPickingManual.pasoId === pasoId) {
+      nuevoPicking = {
+        ...state.modoPickingManual,
+        piezasTemporalmenteSeleccionadas: state.modoPickingManual.piezasTemporalmenteSeleccionadas.filter(
+          (pz: string) => !coincideConTarget(pz)
+        ),
+      };
+    }
+
+    set({
+      pasosManual: actualizados,
+      modoPickingManual: nuevoPicking,
+    });
+    guardarPasosEnCacheLocal(actualizados, state.manualActivoGuardado);
   },
   };
 };

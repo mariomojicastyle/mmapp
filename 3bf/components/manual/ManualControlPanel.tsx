@@ -2,7 +2,7 @@
 
 import React, { useState } from "react";
 import { use3BFStore } from "@/lib/store";
-import { Layers, Mic, Download } from "lucide-react";
+import { Layers, Mic, Download, Save, Loader2, Check } from "lucide-react";
 import StepManagerPanel from "./StepManagerPanel";
 import VoiceStudioPanel from "./VoiceStudioPanel";
 import ExportManualPanel from "./ExportManualPanel";
@@ -15,8 +15,11 @@ export default function ManualControlPanel() {
   const {
     coloresApariencia,
     cargarManualesDesdeDrive,
+    guardarManualProyecto,
+    guardandoManual,
   } = use3BFStore();
   const [subPestana, setSubPestana] = useState<PestanaManualStudio>("pasos");
+  const [guardadoReciente, setGuardadoReciente] = useState(false);
 
   React.useEffect(() => {
     cargarManualesDesdeDrive();
@@ -37,6 +40,42 @@ export default function ManualControlPanel() {
         <h3 className="font-bold text-[11px] lg:text-sm" style={{ color: coloresApariencia?.textoPrincipal }}>
           Configurador Manual
         </h3>
+
+        {/* 💾 Botón Guardar Manual Directo en Cápsula Pura (rounded-full) */}
+        <button
+          type="button"
+          onClick={async () => {
+            const exito = await guardarManualProyecto();
+            if (exito !== false) {
+              setGuardadoReciente(true);
+              setTimeout(() => setGuardadoReciente(false), 2500);
+            }
+          }}
+          disabled={guardandoManual}
+          title="Guardar cambios del manual 3D (.3bm) en cualquier momento sin salir del panel"
+          style={{
+            backgroundColor: guardadoReciente ? "#10b981" : botonActivoColor,
+            borderColor: guardadoReciente ? "#059669" : coloresApariencia?.colorMarca || botonActivoColor,
+          }}
+          className="px-3 py-1 rounded-full text-white shadow-sm border flex items-center gap-1.5 text-[11px] font-bold leading-none hover:opacity-90 active:scale-95 transition-all cursor-pointer disabled:opacity-50 select-none shrink-0"
+        >
+          {guardandoManual ? (
+            <>
+              <Loader2 className="w-3 h-3 text-white animate-spin shrink-0" />
+              <span>Guardando...</span>
+            </>
+          ) : guardadoReciente ? (
+            <>
+              <Check className="w-3 h-3 text-white shrink-0" />
+              <span>¡Guardado!</span>
+            </>
+          ) : (
+            <>
+              <Save className="w-3 h-3 text-white shrink-0" />
+              <span>Guardar Manual</span>
+            </>
+          )}
+        </button>
       </div>
 
       {/* Botonera de Sub-pestañas en Cápsulas Puras (rounded-full) */}

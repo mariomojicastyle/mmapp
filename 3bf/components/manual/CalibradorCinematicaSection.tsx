@@ -1,11 +1,16 @@
 "use client";
 
-import React from "react";
+import React, { useMemo } from "react";
 import { Sliders, ChevronDown, Sparkles } from "lucide-react";
 import { PasoManualStudio, use3BFStore } from "@/lib/store";
+import { extraerFamiliaPieza, esHerrajeNombre } from "@/lib/piezaMadreUtils";
 import { useCalibradorCinematica, extraerOrdenDePiezasDesdeGuion } from "./calibrador/useCalibradorCinematica";
 import { CalibradorGlobalControls } from "./calibrador/CalibradorGlobalControls";
 import { CapaPiezaEsperaItem } from "./calibrador/CapaPiezaEsperaItem";
+import {
+  categorizarHerraje,
+  HerrajeContactoItem,
+} from "@/lib/engine/cadStateUtils";
 
 export { extraerOrdenDePiezasDesdeGuion };
 
@@ -17,6 +22,14 @@ export default function CalibradorCinematicaSection({
   pasoActivo,
 }: CalibradorCinematicaSectionProps) {
   const retirarComponenteManual3D = use3BFStore((s) => s.retirarComponenteManual3D);
+  const desasignarTableroDeCapa = use3BFStore((s) => s.desasignarTableroDeCapa);
+  const pasosManual = use3BFStore((s) => s.pasosManual);
+  const conmutarVisibilidadCapaPieza = use3BFStore((s) => s.conmutarVisibilidadCapaPieza);
+  const setPiezaDestinoCapa = use3BFStore((s) => s.setPiezaDestinoCapa);
+  const eliminarCapaPiezaManual = use3BFStore((s) => s.eliminarCapaPiezaManual);
+  const modoPickingManual = use3BFStore((s) => s.modoPickingManual);
+  const iniciarPickingManual = use3BFStore((s) => s.iniciarPickingManual);
+  const limpiarPickingManual = use3BFStore((s) => s.limpiarPickingManual);
   const {
     colapsado,
     setColapsado,
@@ -136,57 +149,132 @@ export default function CalibradorCinematicaSection({
           )}
 
           {/* Lista de Capas (Piezas en Espera) */}
-          <div className="flex flex-col gap-2">
-            {piezasConConfig.map((p) => {
-              const esMaster = p.nombrePieza === piezaMasterNombre;
-              const estaPosicionando =
-                piezaEnPosicionamientoManual?.nombrePieza === p.nombrePieza;
-              const estaSiendoArrastrada = draggedPiezaNombre === p.nombrePieza;
-              const estaSobreDrag = dragOverPiezaNombre === p.nombrePieza;
-              const herrajesPieza = herrajesEnContactoPorPieza[p.nombrePieza] || [];
+          {(() => {
+            const opcionesDestino: { id: string; label: string; esHeredado?: boolean }[] = [];
+            tablerosAsignados.forEach((pName) => {
+              opcionesDestino.push({ id: pName, label: pName });
+            });
+            const bIds = pasoActivo.bloquesHeredadosIds || [];
+            bIds.forEach((bId) => {
+              const pasoH = pasosManual.find((p) => p.id === bId);
+              if (pasoH?.piezasAsignadas) {
+                pasoH.piezasAsignadas.forEach((pz) => {
+                  const fam = extraerFamiliaPieza(pz);
+                  if (fam && !opcionesDestino.some((op) => op.id === fam)) {
+                    opcionesDestino.push({
+                      id: fam,
+                      label: `${fam} [${bId}]`,
+                      esHeredado: true,
+                    });
+                  }
+                });
+              }
+            });
 
-              return (
-                <CapaPiezaEsperaItem
-                  key={p.nombrePieza}
-                  pieza={p}
-                  esMaster={esMaster}
-                  estaPosicionando={estaPosicionando}
-                  estaSiendoArrastrada={estaSiendoArrastrada}
-                  estaSobreDrag={estaSobreDrag}
-                  herrajesPieza={herrajesPieza}
-                  contactosPorHerraje={contactosPorHerraje}
-                  piezasConConfig={piezasConConfig}
-                  modoTiempo={config.modoTiempo || "global"}
-                  draggedHerraje={draggedHerraje}
-                  dragOverNormalPieza={dragOverNormalPieza}
-                  dragOverCongeladorPieza={dragOverCongeladorPieza}
-                  comprobarActivoEnTiempo={comprobarHerrajeActivoEnTiempo}
-                  onDragStart={handleDragStart}
-                  onDragEnd={handleDragEnd}
-                  onDragOver={handleDragOver}
-                  onDragLeave={handleDragLeave}
-                  onDrop={handleDrop}
-                  onDefinirMaster={handleDefinirPiezaMaster}
-                  onTogglePosicionar={handleTogglePosicionarEnEscenario}
-                  onCambiarTiempoAparicion={handleCambiarTiempoAparicionPieza}
-                  onCambiarTiempoFinHerrajes={handleCambiarTiempoFinHerrajesPieza}
-                  onCambiarOffset={handleCambiarOffsetPieza}
-                  onResetOffset={handleResetOffsetPieza}
-                  onToggleHerraje={handleToggleHerraje}
-                  onHoverHerrajes={setHerrajesHovered}
-                  onCambiarDireccionHerraje={handleCambiarDireccionHerraje}
-                  onCambiarTiempoHerraje={handleCambiarTiempoAparicionHerraje}
-                  onCongelarHerraje={handleCongelarHerraje}
-                  onDescongelarHerraje={handleDescongelarHerraje}
-                  onRetirarHerraje={(key) => retirarComponenteManual3D(key, pasoActivo.id)}
-                  onCambiarTiempoPieza={handleCambiarTiempoPieza}
-                  setDraggedHerraje={setDraggedHerraje}
-                  setDragOverNormalPieza={setDragOverNormalPieza}
-                  setDragOverCongeladorPieza={setDragOverCongeladorPieza}
-                />
-              );
-            })}
-          </div>
+            return (
+              <div className="flex flex-col gap-2">
+                {piezasConConfig.map((p) => {
+                  const esMaster = p.nombrePieza === piezaMasterNombre;
+                  const estaPosicionando =
+                    piezaEnPosicionamientoManual?.nombrePieza === p.nombrePieza;
+                  const estaSiendoArrastrada = draggedPiezaNombre === p.nombrePieza;
+                  const estaSobreDrag = dragOverPiezaNombre === p.nombrePieza;
+                  const herrajesBase = herrajesEnContactoPorPieza[p.nombrePieza] || [];
+                  const idsExistentes = new Set(herrajesBase.map((h) => h.id));
+                  const herrajesAsignadosManual = [
+                    ...(p.herrajesCohesionados || []),
+                    ...(p.herrajesCongelados || []),
+                  ].filter((id) => !idsExistentes.has(id) && esHerrajeNombre(id) && !id.includes("::"));
+
+                  const herrajesPieza = [
+                    ...herrajesBase,
+                    ...herrajesAsignadosManual.map((id) => {
+                      const cat = categorizarHerraje(id);
+                      return {
+                        id,
+                        tipo: cat.tipo,
+                        label: cat.label,
+                        nombresMallas: [id],
+                        cantidad: 1,
+                      } as HerrajeContactoItem;
+                    }),
+                  ];
+
+                  const estaEnPickingAgregarCapa = Boolean(
+                    modoPickingManual.activo &&
+                    modoPickingManual.modo === "agregar" &&
+                    modoPickingManual.pasoId === pasoActivo.id &&
+                    modoPickingManual.grupoId === p.nombrePieza
+                  );
+
+                  return (
+                    <CapaPiezaEsperaItem
+                      key={p.nombrePieza}
+                      pieza={p}
+                      esMaster={esMaster}
+                      estaPosicionando={estaPosicionando}
+                      estaSiendoArrastrada={estaSiendoArrastrada}
+                      estaSobreDrag={estaSobreDrag}
+                      herrajesPieza={herrajesPieza}
+                      tablerosAsignados={p.tablerosAsignados || []}
+                      onRetirarTableroAsignado={(nombreCapa, tableroNombre) =>
+                        desasignarTableroDeCapa(pasoActivo.id, nombreCapa, tableroNombre)
+                      }
+                      contactosPorHerraje={contactosPorHerraje}
+                      piezasConConfig={piezasConConfig}
+                      modoTiempo={config.modoTiempo || "global"}
+                      piezaMasterNombre={piezaMasterNombre}
+                      opcionesDestino={opcionesDestino}
+                      draggedHerraje={draggedHerraje}
+                      dragOverNormalPieza={dragOverNormalPieza}
+                      dragOverCongeladorPieza={dragOverCongeladorPieza}
+                      comprobarActivoEnTiempo={comprobarHerrajeActivoEnTiempo}
+                      estaEnPickingAgregarCapa={estaEnPickingAgregarCapa}
+                      onTogglePickingAgregar={(nombrePieza) => {
+                        if (estaEnPickingAgregarCapa) {
+                          limpiarPickingManual();
+                        } else {
+                          iniciarPickingManual(pasoActivo.id, nombrePieza, "agregar");
+                        }
+                      }}
+                      onDragStart={handleDragStart}
+                      onDragEnd={handleDragEnd}
+                      onDragOver={handleDragOver}
+                      onDragLeave={handleDragLeave}
+                      onDrop={handleDrop}
+                      onDefinirMaster={handleDefinirPiezaMaster}
+                      onTogglePosicionar={handleTogglePosicionarEnEscenario}
+                      onToggleVisibilidad={(nombrePieza) => {
+                        const herrajesNombres = (herrajesPieza || []).flatMap((h) => h.nombresMallas || [h.id]);
+                        conmutarVisibilidadCapaPieza(pasoActivo.id, nombrePieza, herrajesNombres);
+                      }}
+                      onCambiarPiezaDestino={(nombrePieza, destinoId) =>
+                        setPiezaDestinoCapa(pasoActivo.id, nombrePieza, destinoId || undefined)
+                      }
+                      onEliminarCapa={(nombrePieza) =>
+                        eliminarCapaPiezaManual(pasoActivo.id, nombrePieza)
+                      }
+                      onCambiarTiempoAparicion={handleCambiarTiempoAparicionPieza}
+                      onCambiarTiempoFinHerrajes={handleCambiarTiempoFinHerrajesPieza}
+                      onCambiarOffset={handleCambiarOffsetPieza}
+                      onResetOffset={handleResetOffsetPieza}
+                      onToggleHerraje={handleToggleHerraje}
+                      onHoverHerrajes={setHerrajesHovered}
+                      onCambiarDireccionHerraje={handleCambiarDireccionHerraje}
+                      onCambiarTiempoHerraje={handleCambiarTiempoAparicionHerraje}
+                      onCongelarHerraje={handleCongelarHerraje}
+                      onDescongelarHerraje={handleDescongelarHerraje}
+                      onRetirarHerraje={(key) => retirarComponenteManual3D(key, pasoActivo.id)}
+                      onCambiarTiempoPieza={handleCambiarTiempoPieza}
+                      setDraggedHerraje={setDraggedHerraje}
+                      setDragOverNormalPieza={setDragOverNormalPieza}
+                      setDragOverCongeladorPieza={setDragOverCongeladorPieza}
+                    />
+                  );
+                })}
+              </div>
+            );
+          })()}
 
           {/* Pie de Panel: Duración y Botón de Cinemática */}
           <div className="pt-2 flex items-center justify-between gap-2 border-t border-slate-100 dark:border-slate-800">

@@ -75,6 +75,10 @@ export function AutoFramingCameraController({ controlsRef }: AutoFramingCameraCo
 
   // 2. Evaluar qué piezas y herrajes están activos en el tiempo actual del timeline
   useEffect(() => {
+    const tieneKeyframesCinematicos =
+      (pasoActivo?.keyframesCamara?.length || 0) > 0 &&
+      pasoActivo?.camaraCinematicaActiva !== false;
+
     if (pestanaActiva !== "manual" || !pasoActivo || !autoEnfoqueCamaraManual) return;
     if (!controlsRef.current || !camera) return;
 
@@ -221,6 +225,10 @@ export function AutoFramingCameraController({ controlsRef }: AutoFramingCameraCo
 
   // 3. Paneo e interpolación suave en cada fotograma (lerp a 60fps)
   useFrame((_, delta) => {
+    const tieneKeyframesCinematicos =
+      (pasoActivo?.keyframesCamara?.length || 0) > 0 &&
+      pasoActivo?.camaraCinematicaActiva !== false;
+
     if (pestanaActiva !== "manual" || !autoEnfoqueCamaraManual) return;
     if (usuarioInteractuandoRef.current) return;
     const controls = controlsRef.current;

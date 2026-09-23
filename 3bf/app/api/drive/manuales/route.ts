@@ -201,6 +201,20 @@ export async function POST(request: Request) {
 
       await fsp.writeFile(filePath, JSON.stringify(manual, null, 2), "utf-8");
 
+      // 🔄 Espejo Seguro Local: Si storageDir es G Drive, guardar también copia espejo en storage/manuales local
+      try {
+        const localDir = path.join(process.cwd(), "storage", "manuales", marca, tipologia);
+        if (path.resolve(targetDir) !== path.resolve(localDir)) {
+          if (!fs.existsSync(localDir)) {
+            await fsp.mkdir(localDir, { recursive: true });
+          }
+          const localPath = path.join(localDir, fileName);
+          await fsp.writeFile(localPath, JSON.stringify(manual, null, 2), "utf-8");
+        }
+      } catch (eMirror) {
+        console.warn("[3dBimFab Drive Manuales] Error al guardar copia local espejo:", eMirror);
+      }
+
       return NextResponse.json({
         success: true,
         savedPath: filePath,

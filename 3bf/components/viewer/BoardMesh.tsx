@@ -79,38 +79,57 @@ export function BoardMesh({
   const estaHoveredEnHerrajes = React.useMemo(() => {
     if (!herrajesHovered || herrajesHovered.length === 0) return false;
 
-    // ⏱️ En modo manual, verificar estrictamente si la capa o herraje está activo en el tiempo actual
+    // ⏱️ En modo manual, verificar si la capa o herraje está activo en el tiempo actual
     if (pestanaActiva === "manual" && pasoActivoManual) {
-      const piezasEspera = pasoActivoManual.configuracionCinematica?.piezasEspera || [];
       const ikLow = (instanciaKey || "").toLowerCase().trim();
       const cLow = cleanName.toLowerCase().trim();
       const rLow = name.replace(/^RH_OUT:/i, "").trim().toLowerCase();
 
-      for (const p of piezasEspera) {
-        const herrajesHabilitados = p.herrajesCohesionados || [];
-        const herrajesCongelados = p.herrajesCongelados || [];
-        const tieneEsteHerraje =
-          herrajesHabilitados.some((h) => coincidenMismoHerraje(h, ikLow) || coincidenMismoHerraje(h, cLow) || coincidenMismoHerraje(h, rLow)) ||
-          herrajesCongelados.some((h) => coincidenMismoHerraje(h, ikLow) || coincidenMismoHerraje(h, cLow) || coincidenMismoHerraje(h, rLow));
+      // 1. Verificación en modo Múltiple Plus (multiple_plus)
+      const esMultiplePlus = pasoActivoManual.tipo === "multiple_plus" || Boolean(pasoActivoManual.multiplePlus?.capas && pasoActivoManual.multiplePlus.capas.length > 0);
+      if (esMultiplePlus && pasoActivoManual.multiplePlus?.capas) {
+        for (const capa of pasoActivoManual.multiplePlus.capas) {
+          const herrajesCapa = [...(capa.herrajes || []), ...(capa.congelados || [])];
+          const hwEnCapa = herrajesCapa.find(
+            (h) => coincidenMismoHerraje(h.id, ikLow) || coincidenMismoHerraje(h.id, cLow) || coincidenMismoHerraje(h.id, rLow)
+          );
+          if (hwEnCapa) {
+            const tHw = hwEnCapa.tiempoAparicion || 0;
+            if (tHw > 0 && timelineCurrentTime < tHw) {
+              return false;
+            }
+            break;
+          }
+        }
+      } else {
+        // 2. Verificación estándar en modos cinemáticos convencionales (piezasEspera)
+        const piezasEspera = pasoActivoManual.configuracionCinematica?.piezasEspera || [];
+        for (const p of piezasEspera) {
+          const herrajesHabilitados = p.herrajesCohesionados || [];
+          const herrajesCongelados = p.herrajesCongelados || [];
+          const tieneEsteHerraje =
+            herrajesHabilitados.some((h) => coincidenMismoHerraje(h, ikLow) || coincidenMismoHerraje(h, cLow) || coincidenMismoHerraje(h, rLow)) ||
+            herrajesCongelados.some((h) => coincidenMismoHerraje(h, ikLow) || coincidenMismoHerraje(h, cLow) || coincidenMismoHerraje(h, rLow));
 
-        if (tieneEsteHerraje) {
-          const tPieza = p.tiempoAparicionPieza || 0;
-          const tiemposHw = p.tiemposAparicionHerrajes || {};
-          let tHw: number | null = null;
-          for (const [k, v] of Object.entries(tiemposHw)) {
-            if (coincidenMismoHerraje(k, ikLow) || coincidenMismoHerraje(k, cLow) || coincidenMismoHerraje(k, rLow)) {
-              if (typeof v === "number" && v > 0) {
-                tHw = v;
-                break;
+          if (tieneEsteHerraje) {
+            const tPieza = p.tiempoAparicionPieza || 0;
+            const tiemposHw = p.tiemposAparicionHerrajes || {};
+            let tHw: number | null = null;
+            for (const [k, v] of Object.entries(tiemposHw)) {
+              if (coincidenMismoHerraje(k, ikLow) || coincidenMismoHerraje(k, cLow) || coincidenMismoHerraje(k, rLow)) {
+                if (typeof v === "number" && v > 0) {
+                  tHw = v;
+                  break;
+                }
               }
             }
+            const tEfectivo = tHw !== null && tHw > 0 ? tHw : tPieza;
+            if (tEfectivo > 0 && timelineCurrentTime < tEfectivo) {
+              // Aún no ha aparecido en el timeline: NO debe resaltarse ni forzarse en la escena
+              return false;
+            }
+            break;
           }
-          const tEfectivo = tHw !== null && tHw > 0 ? tHw : tPieza;
-          if (tEfectivo > 0 && timelineCurrentTime < tEfectivo) {
-            // Aún no ha aparecido en el timeline: NO debe resaltarse ni forzarse en la escena
-            return false;
-          }
-          break;
         }
       }
     }
@@ -281,7 +300,8 @@ export function BoardMesh({
   ]);
 
   // Si está oculta por reglas del paso, subbloque, cinemática o capa: retorno temprano limpio
-  if (!visibilidad.isMeshVisible) {
+  // (Excepción: si el usuario está haciendo hover sobre la cápsula de este herraje en la interfaz, se muestra para poder iluminarse)
+  if (!visibilidad.isMeshVisible && !estaHoveredEnHerrajes) {
     return null;
   }
 
@@ -363,8 +383,8 @@ export function BoardMesh({
       <mesh 
         ref={meshRef}
         position={position}
-        scale={esDuplicado ? [1.06, 1.06, 1.06] : (estaSeleccionadaEnPicking ? [1.015, 1.015, 1.015] : undefined)}
-        renderOrder={esDuplicado ? 20 : (estaHoveredEnHerrajes ? 35 : (estaSeleccionadaEnPicking ? 22 : (isHardwareTampa ? 25 : (esLaminaPlanaMadera ? 2 : undefined))))}
+        scale={esDuplicado ? [1.06, 1.06, 1.06] : (estaHoveredEnHerrajes ? [1.08, 1.08, 1.08] : (estaSeleccionadaEnPicking ? [1.015, 1.015, 1.015] : undefined))}
+        renderOrder={esDuplicado ? 20 : (estaHoveredEnHerrajes ? 50 : (estaSeleccionadaEnPicking ? 22 : (isHardwareTampa ? 25 : (esLaminaPlanaMadera ? 2 : undefined))))}
         name={instanciaKey ? `${instanciaKey}::${cleanName}` : cleanName}
         geometry={customGeometry}
         onClick={(e) => {
@@ -423,32 +443,32 @@ export function BoardMesh({
         <meshStandardMaterial
           key={`${activeMap ? (activeMap as any).uuid : "no-map"}-${modoVisual}-${nombreMaterialEfectivo}-${finalMeshColor}-${opacity}-${roughness}-${metalness}-${esDuplicado}-${estaSeleccionadaEnPicking}-${estaHoveredEnHerrajes}`}
           name={esDuplicado ? "Material_Duplicado_Alerta" : (estaHoveredEnHerrajes ? "Material_Herraje_Hover" : nombreMaterialEfectivo)}
-          color={esDuplicado ? "#EF4444" : (estaSeleccionadaEnPicking ? "#FBBF24" : (estaHoveredEnHerrajes ? "#FACC15" : finalMeshColor))}
+          color={esDuplicado ? "#EF4444" : (estaSeleccionadaEnPicking ? "#FBBF24" : (estaHoveredEnHerrajes ? "#FFF066" : finalMeshColor))}
           emissive={
             estaHoveredEnHerrajes
-              ? new THREE.Color("#FFE600")
+              ? new THREE.Color("#FFDE00")
               : (estaSeleccionadaEnPicking
                   ? new THREE.Color("#F59E0B")
                   : (esDuplicado ? new THREE.Color("#DC2626") : undefined))
           }
-          emissiveIntensity={estaHoveredEnHerrajes ? 1.25 : (estaSeleccionadaEnPicking ? 0.70 : (esDuplicado ? 0.45 : 0))}
+          emissiveIntensity={estaHoveredEnHerrajes ? 2.8 : (estaSeleccionadaEnPicking ? 0.70 : (esDuplicado ? 0.45 : 0))}
           map={activeMap}
           normalMap={activeNormal}
           normalScale={activeNormal ? new THREE.Vector2(normalScaleVal, normalScaleVal) : undefined}
           roughnessMap={activeRoughness}
           aoMap={activeAO}
           aoMapIntensity={materialPBR?.aoIntensity ?? 1.0}
-          envMapIntensity={envMapIntensityEfectivo}
+          envMapIntensity={estaHoveredEnHerrajes ? 2.5 : envMapIntensityEfectivo}
           transparent={estaSeleccionadaEnPicking || estaHoveredEnHerrajes ? false : transparent}
           opacity={estaSeleccionadaEnPicking || estaHoveredEnHerrajes ? 1.0 : opacity}
-          roughness={estaHoveredEnHerrajes ? 0.2 : roughness}
-          metalness={estaHoveredEnHerrajes ? 0.5 : metalness}
+          roughness={estaHoveredEnHerrajes ? 0.05 : roughness}
+          metalness={estaHoveredEnHerrajes ? 0.8 : metalness}
           wireframe={isWireframe}
           depthWrite={estaSeleccionadaEnPicking || estaHoveredEnHerrajes ? true : depthWrite}
           polygonOffset={isHardwareTampa || estaSeleccionadaEnPicking || esLaminaPlanaMadera}
           polygonOffsetFactor={isHardwareTampa ? -2 : -1}
           polygonOffsetUnits={isHardwareTampa ? -2 : -1}
-          side={modoVisual === "semitransparente" ? THREE.FrontSide : THREE.DoubleSide}
+          side={(isWoodBoard && modoVisual === "semitransparente") ? THREE.FrontSide : THREE.DoubleSide}
         />
         {/* 📐 Malla pura (wireframe de la geometría real) sobre la superficie sólida translúcida */}
         {modoVisual === "lineas" && (
@@ -468,7 +488,7 @@ export function BoardMesh({
             threshold={isHardwareTampa ? 15 : (esExcepcionBisel ? 20 : (calibracion.thresholdAristas || 25))}
             color={
               estaHoveredEnHerrajes
-                ? "#854D0E"
+                ? "#D97706"
                 : (estaSeleccionadaEnPicking
                     ? "#D97706"
                     : (isHardwareTampa
@@ -479,8 +499,8 @@ export function BoardMesh({
             }
             opacity={estaSeleccionadaEnPicking || estaHoveredEnHerrajes ? 1.0 : (isHardwareTampa ? 0.90 : (calibracion.opacidadAristas ?? 1.0))}
             transparent={(calibracion.opacidadAristas ?? 1.0) < 0.99 && !estaSeleccionadaEnPicking && !isHardwareTampa && !estaHoveredEnHerrajes}
-            lineWidth={estaHoveredEnHerrajes ? 3.0 : (estaSeleccionadaEnPicking ? 3.0 : (isHardwareTampa ? 1.5 : (esDuplicado ? 2.5 : Math.max(1, ((calibracion.calibreAristas ?? 100) / 100) * 1.5))))}
-            renderOrder={estaHoveredEnHerrajes ? 40 : (estaSeleccionadaEnPicking ? 35 : (isHardwareTampa ? 28 : (esDuplicado ? 25 : (forzarAristasCaja ? 15 : 10))))}
+            lineWidth={estaHoveredEnHerrajes ? 4.5 : (estaSeleccionadaEnPicking ? 3.0 : (isHardwareTampa ? 1.5 : (esDuplicado ? 2.5 : Math.max(1, ((calibracion.calibreAristas ?? 100) / 100) * 1.5))))}
+            renderOrder={estaHoveredEnHerrajes ? 55 : (estaSeleccionadaEnPicking ? 35 : (isHardwareTampa ? 28 : (esDuplicado ? 25 : (forzarAristasCaja ? 15 : 10))))}
           />
         )}
       </mesh>
@@ -491,8 +511,8 @@ export function BoardMesh({
     <mesh
       ref={meshRef}
       position={position}
-      scale={esDuplicado ? [1.06, 1.06, 1.06] : (estaSeleccionadaEnPicking ? [1.015, 1.015, 1.015] : undefined)}
-      renderOrder={esDuplicado ? 20 : (estaHoveredEnHerrajes ? 35 : (estaSeleccionadaEnPicking ? 22 : (isHardwareTampa ? 25 : undefined)))}
+      scale={esDuplicado ? [1.06, 1.06, 1.06] : (estaHoveredEnHerrajes ? [1.08, 1.08, 1.08] : (estaSeleccionadaEnPicking ? [1.015, 1.015, 1.015] : undefined))}
+      renderOrder={esDuplicado ? 20 : (estaHoveredEnHerrajes ? 50 : (estaSeleccionadaEnPicking ? 22 : (isHardwareTampa ? 25 : undefined)))}
       name={cleanName}
       onClick={(e) => {
         if (modoPickingManual.activo) {
@@ -551,32 +571,32 @@ export function BoardMesh({
       <meshStandardMaterial
         key={`${activeMap ? (activeMap as any).uuid : "no-map"}-${modoVisual}-${nombreMaterialEfectivo}-${finalMeshColor}-${opacity}-${roughness}-${metalness}-${esDuplicado}-${estaSeleccionadaEnPicking}-${estaHoveredEnHerrajes}`}
         name={esDuplicado ? "Material_Duplicado_Alerta" : (estaHoveredEnHerrajes ? "Material_Herraje_Hover" : nombreMaterialEfectivo)}
-        color={esDuplicado ? "#EF4444" : (estaSeleccionadaEnPicking ? "#FBBF24" : (estaHoveredEnHerrajes ? "#FACC15" : finalMeshColor))}
+        color={esDuplicado ? "#EF4444" : (estaSeleccionadaEnPicking ? "#FBBF24" : (estaHoveredEnHerrajes ? "#FFF066" : finalMeshColor))}
         emissive={
           estaHoveredEnHerrajes
-            ? new THREE.Color("#FFE600")
+            ? new THREE.Color("#FFDE00")
             : (estaSeleccionadaEnPicking
                 ? new THREE.Color("#F59E0B")
                 : (esDuplicado ? new THREE.Color("#DC2626") : undefined))
         }
-        emissiveIntensity={estaHoveredEnHerrajes ? 1.25 : (estaSeleccionadaEnPicking ? 0.70 : (esDuplicado ? 0.45 : 0))}
+        emissiveIntensity={estaHoveredEnHerrajes ? 2.8 : (estaSeleccionadaEnPicking ? 0.70 : (esDuplicado ? 0.45 : 0))}
         map={activeMap}
         normalMap={activeNormal}
         normalScale={activeNormal ? new THREE.Vector2(normalScaleVal, normalScaleVal) : undefined}
         roughnessMap={activeRoughness}
         aoMap={activeAO}
         aoMapIntensity={materialPBR?.aoIntensity ?? 1.0}
-        envMapIntensity={envMapIntensityEfectivo}
+        envMapIntensity={estaHoveredEnHerrajes ? 2.5 : envMapIntensityEfectivo}
         transparent={estaSeleccionadaEnPicking || estaHoveredEnHerrajes ? false : transparent}
         opacity={estaSeleccionadaEnPicking || estaHoveredEnHerrajes ? 1.0 : opacity}
-        roughness={estaHoveredEnHerrajes ? 0.2 : roughness}
-        metalness={estaHoveredEnHerrajes ? 0.5 : metalness}
+        roughness={estaHoveredEnHerrajes ? 0.05 : roughness}
+        metalness={estaHoveredEnHerrajes ? 0.8 : metalness}
         wireframe={isWireframe}
         depthWrite={estaSeleccionadaEnPicking || estaHoveredEnHerrajes ? true : depthWrite}
         polygonOffset={isHardwareTampa || estaSeleccionadaEnPicking}
         polygonOffsetFactor={isHardwareTampa ? -2 : -1}
         polygonOffsetUnits={isHardwareTampa ? -2 : -1}
-        side={modoVisual === "semitransparente" ? THREE.FrontSide : THREE.DoubleSide}
+        side={(isWoodBoard && modoVisual === "semitransparente") ? THREE.FrontSide : THREE.DoubleSide}
       />
       {/* 📐 Malla pura (wireframe de la geometría real) sobre la superficie sólida translúcida */}
       {modoVisual === "lineas" && (
@@ -596,7 +616,7 @@ export function BoardMesh({
           threshold={isHardwareTampa ? 15 : (calibracion.thresholdAristas || 25)}
           color={
             estaHoveredEnHerrajes
-              ? "#854D0E"
+              ? "#D97706"
               : (estaSeleccionadaEnPicking
                   ? "#D97706"
                   : (isHardwareTampa
@@ -607,8 +627,8 @@ export function BoardMesh({
           }
           opacity={estaSeleccionadaEnPicking || estaHoveredEnHerrajes ? 1.0 : (isHardwareTampa ? 0.90 : (calibracion.opacidadAristas ?? 1.0))}
           transparent={(calibracion.opacidadAristas ?? 1.0) < 0.99 && !estaSeleccionadaEnPicking && !isHardwareTampa && !estaHoveredEnHerrajes}
-          lineWidth={estaHoveredEnHerrajes ? 3.0 : (estaSeleccionadaEnPicking ? 3.0 : (isHardwareTampa ? 1.5 : (esDuplicado ? 2.5 : Math.max(1, ((calibracion.calibreAristas ?? 100) / 100) * 1.5))))}
-          renderOrder={estaHoveredEnHerrajes ? 40 : (estaSeleccionadaEnPicking ? 35 : (isHardwareTampa ? 28 : (esDuplicado ? 25 : (forzarAristasCaja ? 15 : 10))))}
+          lineWidth={estaHoveredEnHerrajes ? 4.5 : (estaSeleccionadaEnPicking ? 3.0 : (isHardwareTampa ? 1.5 : (esDuplicado ? 2.5 : Math.max(1, ((calibracion.calibreAristas ?? 100) / 100) * 1.5))))}
+          renderOrder={estaHoveredEnHerrajes ? 55 : (estaSeleccionadaEnPicking ? 35 : (isHardwareTampa ? 28 : (esDuplicado ? 25 : (forzarAristasCaja ? 15 : 10))))}
         />
       )}
     </mesh>

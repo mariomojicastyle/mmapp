@@ -1,6 +1,6 @@
-// @ts-nocheck
 import { guardarPasosEnCacheLocal } from "../../storeDefaults";
 import { anotarInstanciasFisicas, extraerPiezaMadre, esHerrajeNombre } from "../../piezaMadreUtils";
+import { coincidenMismoHerraje } from "../../engine/cadStateUtils";
 import type { ModoPickingManualState } from "../../storeTypes";
 
 export const createManualPickingSlice = (set: any, get: any): any => ({
@@ -22,10 +22,29 @@ export const createManualPickingSlice = (set: any, get: any): any => ({
       if (grupo) {
         piezasIniciales = [...grupo.piezas];
       }
-    } else if (paso && paso.subbloques && grupoId) {
+    } else if (paso && paso.subbloques && grupoId && paso.subbloques.some((s: any) => s.id === grupoId)) {
       const sub = paso.subbloques.find((s: any) => s.id === grupoId);
       if (sub) {
         piezasIniciales = Array.from(new Set([...(sub.piezas || []), ...(sub.herrajes || [])]));
+      }
+    } else if (paso && paso.tipo === "multiple_plus" && grupoId && paso.multiplePlus?.capas?.some((c: any) => c.id === grupoId)) {
+      const capa = paso.multiplePlus.capas.find((c: any) => c.id === grupoId);
+      if (capa) {
+        piezasIniciales = Array.from(new Set([
+          ...(capa.tableros || []).map((t: any) => t.id),
+          ...(capa.herrajes || []).map((h: any) => h.id),
+          ...(capa.congelados || []).map((h: any) => h.id),
+        ]));
+      }
+    } else if (paso && grupoId && paso.configuracionCinematica?.piezasEspera?.some((ce: any) => ce.nombrePieza === grupoId)) {
+      const capa = paso.configuracionCinematica.piezasEspera.find((ce: any) => ce.nombrePieza === grupoId);
+      if (capa) {
+        piezasIniciales = Array.from(new Set([
+          capa.nombrePieza,
+          ...(capa.herrajesCohesionados || []),
+          ...(capa.herrajesCongelados || []),
+          ...(capa.tablerosAsignados || []),
+        ]));
       }
     } else if (paso) {
       // 🧩 Modo Ensamble (Paso 01+): piezas de madera y herrajes asignados al paso
@@ -145,11 +164,28 @@ export const createManualPickingSlice = (set: any, get: any): any => ({
 
     const actualizados = state.pasosManual.map((p: any) => {
       if (p.id !== targetPasoId) return p;
+      let confCin = p.configuracionCinematica;
+      if (confCin?.piezasEspera) {
+        confCin = {
+          ...confCin,
+          piezasEspera: confCin.piezasEspera.map((ce: any) => ({
+            ...ce,
+            herrajesCohesionados: (ce.herrajesCohesionados || []).filter((h: string) => !coincideConTarget(h)),
+            herrajesCongelados: (ce.herrajesCongelados || []).filter((h: string) => !coincideConTarget(h)),
+            tablerosAsignados: (ce.tablerosAsignados || []).filter((t: string) => !coincideConTarget(t)),
+          })),
+        };
+      }
+      const prevOcultas = p.capasOcultas || [];
+      const nuevasCapasOcultas = Array.from(new Set([...prevOcultas, targetClean, targetPM]));
+
       return {
         ...p,
         piezasAsignadas: nuevasPiezas,
         herrajesAsignados: nuevosHerrajes,
         secuencia: nuevaSecuencia,
+        configuracionCinematica: confCin,
+        capasOcultas: nuevasCapasOcultas,
       };
     });
 
@@ -158,6 +194,69 @@ export const createManualPickingSlice = (set: any, get: any): any => ({
       nuevoPicking = {
         ...state.modoPickingManual,
         piezasTemporalmenteSeleccionadas: Array.from(new Set([...nuevasPiezas, ...nuevosHerrajes])),
+      };
+    }
+
+    set({
+      pasosManual: actualizados,
+      modoPickingManual: nuevoPicking,
+    });
+    guardarPasosEnCacheLocal(actualizados, state.manualActivoGuardado);
+  },
+
+  desasignarTableroDeCapa: (pasoId: string, nombreCapa: string, tableroNombre: string) => {
+    const state = get();
+    const paso = state.pasosManual.find((p: any) => p.id === pasoId);
+    if (!paso) return;
+
+    const pmTarget = extraerPiezaMadre(tableroNombre);
+
+    const actualizados = state.pasosManual.map((p: any) => {
+      if (p.id !== pasoId) return p;
+      let confCin = p.configuracionCinematica;
+      if (confCin?.piezasEspera) {
+        confCin = {
+          ...confCin,
+          piezasEspera: confCin.piezasEspera.map((ce: any) => {
+            if (ce.nombrePieza !== nombreCapa) return ce;
+            return {
+              ...ce,
+              tablerosAsignados: (ce.tablerosAsignados || []).filter(
+                (t: string) => t !== tableroNombre && extraerPiezaMadre(t) !== pmTarget
+              ),
+            };
+          }),
+        };
+      }
+
+      // Si no existe como capa propia ni en otra capa, removerlo de piezasAsignadas del paso
+      const existeComoOtraCapa = (confCin?.piezasEspera || []).some(
+        (ce: any) =>
+          ce.nombrePieza === tableroNombre ||
+          extraerPiezaMadre(ce.nombrePieza) === pmTarget ||
+          (ce.tablerosAsignados || []).some((t: string) => t === tableroNombre || extraerPiezaMadre(t) === pmTarget)
+      );
+
+      const nuevasPiezas = existeComoOtraCapa
+        ? p.piezasAsignadas
+        : (p.piezasAsignadas || []).filter(
+            (pz: string) => pz !== tableroNombre && extraerPiezaMadre(pz) !== pmTarget
+          );
+
+      return {
+        ...p,
+        piezasAsignadas: nuevasPiezas,
+        configuracionCinematica: confCin,
+      };
+    });
+
+    let nuevoPicking = state.modoPickingManual;
+    if (state.modoPickingManual.activo && state.modoPickingManual.pasoId === pasoId) {
+      nuevoPicking = {
+        ...state.modoPickingManual,
+        piezasTemporalmenteSeleccionadas: (state.modoPickingManual.piezasTemporalmenteSeleccionadas || []).filter(
+          (pz: string) => pz !== tableroNombre && extraerPiezaMadre(pz) !== pmTarget
+        ),
       };
     }
 
@@ -178,15 +277,34 @@ export const createManualPickingSlice = (set: any, get: any): any => ({
     let listaBase = modoPickingManual.piezasTemporalmenteSeleccionadas;
     if (modoPickingManual.pasoId && modoPickingManual.grupoId) {
       const paso = pasosManual.find((p: any) => p.id === modoPickingManual.pasoId);
-      if (paso?.tipo === "showcase") {
-        const grupo = (paso?.showcase?.gruposCinematicos || []).find((g: any) => g.id === modoPickingManual.grupoId);
-        if (grupo) {
-          listaBase = grupo.piezas;
+      if (paso?.tipo === "multiple_plus" && paso.multiplePlus?.capas) {
+        const capa = paso.multiplePlus.capas.find((c: any) => c.id === modoPickingManual.grupoId);
+        if (capa) {
+          listaBase = Array.from(new Set([
+            ...(capa.tableros || []).map((t: any) => t.id),
+            ...(capa.herrajes || []).map((h: any) => h.id),
+            ...(capa.congelados || []).map((h: any) => h.id),
+          ]));
         }
-      } else if (paso?.subbloques) {
-        const sub = paso.subbloques.find((s: any) => s.id === modoPickingManual.grupoId);
-        if (sub) {
-          listaBase = Array.from(new Set([...(sub.piezas || []), ...(sub.herrajes || [])]));
+      } else {
+        const capaEspera = paso?.configuracionCinematica?.piezasEspera?.find((ce: any) => ce.nombrePieza === modoPickingManual.grupoId);
+        if (capaEspera) {
+          listaBase = Array.from(new Set([
+            capaEspera.nombrePieza,
+            ...(capaEspera.herrajesCohesionados || []),
+            ...(capaEspera.herrajesCongelados || []),
+            ...(capaEspera.tablerosAsignados || []),
+          ]));
+        } else if (paso?.tipo === "showcase") {
+          const grupo = (paso?.showcase?.gruposCinematicos || []).find((g: any) => g.id === modoPickingManual.grupoId);
+          if (grupo) {
+            listaBase = grupo.piezas;
+          }
+        } else if (paso?.subbloques) {
+          const sub = paso.subbloques.find((s: any) => s.id === modoPickingManual.grupoId);
+          if (sub) {
+            listaBase = Array.from(new Set([...(sub.piezas || []), ...(sub.herrajes || [])]));
+          }
         }
       }
     } else if (modoPickingManual.pasoId) {
@@ -206,12 +324,93 @@ export const createManualPickingSlice = (set: any, get: any): any => ({
         : [...listaBase, pm];
     }
 
-    // Sincronización reactiva en tiempo real si hay un grupo de cajón activo O subbloque O paso de ensamble
+    // Sincronización reactiva en tiempo real si hay un grupo de cajón activo O subbloque O capa de animación O paso de ensamble
     let pasosActualizados = pasosManual;
     if (modoPickingManual.pasoId && modoPickingManual.grupoId) {
       pasosActualizados = pasosManual.map((p: any) => {
         if (p.id !== modoPickingManual.pasoId) return p;
-        if (p.tipo === "showcase" && p.showcase) {
+
+        if (p.tipo === "multiple_plus" && p.multiplePlus?.capas) {
+          const nuevasCapas = p.multiplePlus.capas.map((c: any) => {
+            if (c.id !== modoPickingManual.grupoId) return c;
+            const nuevosTableros = nuevas
+              .filter((pz: string) => !esHerrajeNombre(pz))
+              .map((id: string) => {
+                const previo = c.tableros.find((t: any) => t.id === id);
+                return previo || {
+                  id,
+                  destinoId: "base_master",
+                  tiempoAparicion: 0,
+                  tiempoInicioMovimiento: 500,
+                  offsetXCm: 0,
+                  offsetYCm: 0,
+                  offsetZCm: 0,
+                };
+              });
+
+            const nuevosHerrajes = nuevas
+              .filter((pz: string) => esHerrajeNombre(pz))
+              .map((id: string) => {
+                const previo = c.herrajes.find((h: any) => h.id === id);
+                return previo || {
+                  id,
+                  ejeAproximacion: "-X",
+                  tiempoAparicion: 0,
+                  congelado: false,
+                };
+              });
+
+            return {
+              ...c,
+              tableros: nuevosTableros,
+              herrajes: nuevosHerrajes,
+            };
+          });
+
+          const todasPz = Array.from(new Set([...(p.piezasAsignadas || []), ...nuevas.filter((pz: string) => !esHerrajeNombre(pz))]));
+          const todosHr = Array.from(new Set([...(p.herrajesAsignados || []), ...nuevas.filter((pz: string) => esHerrajeNombre(pz))]));
+
+          return {
+            ...p,
+            piezasAsignadas: todasPz,
+            herrajesAsignados: todosHr,
+            multiplePlus: {
+              ...p.multiplePlus,
+              capas: nuevasCapas,
+            },
+          };
+        }
+
+        const capaEspera = p.configuracionCinematica?.piezasEspera?.find((ce: any) => ce.nombrePieza === modoPickingManual.grupoId);
+        if (capaEspera) {
+          const nuevosHerrajes = nuevas.filter((pz: string) => esHerrajeNombre(pz));
+          const nuevosTableros = nuevas.filter((pz: string) => !esHerrajeNombre(pz) && pz !== capaEspera.nombrePieza);
+          const nuevasCapas = p.configuracionCinematica.piezasEspera.map((ce: any) => {
+            if (ce.nombrePieza !== modoPickingManual.grupoId) return ce;
+            return {
+              ...ce,
+              herrajesCohesionados: nuevosHerrajes,
+              tablerosAsignados: nuevosTableros,
+            };
+          });
+
+          const todasPz = modoPickingManual.modo === "agregar"
+            ? Array.from(new Set([...(p.piezasAsignadas || []), ...nuevas.filter((pz: string) => !esHerrajeNombre(pz))]))
+            : p.piezasAsignadas;
+          const todosHr = modoPickingManual.modo === "agregar"
+            ? Array.from(new Set([...(p.herrajesAsignados || []), ...nuevosHerrajes]))
+            : p.herrajesAsignados;
+
+          return {
+            ...p,
+            piezasAsignadas: todasPz,
+            herrajesAsignados: todosHr,
+            configuracionCinematica: {
+              ...p.configuracionCinematica,
+              piezasEspera: nuevasCapas,
+            },
+          };
+        } else if (p.tipo === "showcase" && p.showcase) {
           const modificados = (p.showcase.gruposCinematicos || []).map((g: any) => {
             if (g.id !== modoPickingManual.grupoId) return g;
             return { ...g, piezas: nuevas };
@@ -253,10 +452,62 @@ export const createManualPickingSlice = (set: any, get: any): any => ({
     } else if (modoPickingManual.pasoId) {
       pasosActualizados = pasosManual.map((p: any) => {
         if (p.id !== modoPickingManual.pasoId) return p;
+
+        let nuevasCapasOcultas = p.capasOcultas || [];
+        let pzActuales = nuevas.filter((pz: string) => !esHerrajeNombre(pz));
+        let hrActuales = nuevas.filter((pz: string) => esHerrajeNombre(pz));
+        const esHw = esHerrajeNombre(pm) || esHerrajeNombre(piezaMadre);
+
+        if (modoPickingManual.modo === "retirar") {
+          if (esHw) {
+            // 🛡️ HERRAJES: Unívocos y quirúrgicos por instancia física numerada (ej. "Cavilha (51)")
+            // NUNCA borrar todas las cavilhas o porcas del paso ni de otras piezas
+            hrActuales = (p.herrajesAsignados || []).filter(
+              (hr: string) => !coincidenMismoHerraje(hr, piezaMadre) && !coincidenMismoHerraje(hr, pm) && hr !== pm && hr !== piezaMadre
+            );
+            pzActuales = p.piezasAsignadas || [];
+            nuevasCapasOcultas = Array.from(new Set([...nuevasCapasOcultas, piezaMadre || pm]));
+          } else {
+            // TABLEROS: Expulsión por pieza madre
+            pzActuales = (p.piezasAsignadas || []).filter(
+              (pz: string) => pz !== pm && pz !== piezaMadre && extraerPiezaMadre(pz) !== pm
+            );
+            hrActuales = p.herrajesAsignados || [];
+            nuevasCapasOcultas = Array.from(new Set([...nuevasCapasOcultas, pm, piezaMadre]));
+          }
+        } else {
+          // Si estamos agregando, liberarlo de capasOcultas si estuviera apagado
+          nuevasCapasOcultas = nuevasCapasOcultas.filter(
+            (c: string) => esHw ? (!coincidenMismoHerraje(c, piezaMadre) && !coincidenMismoHerraje(c, pm)) : (c !== pm && c !== piezaMadre && extraerPiezaMadre(c) !== pm)
+          );
+        }
+
+        // Limpiar también de piezasEspera si estaba allí
+        let confCin = p.configuracionCinematica;
+        if (modoPickingManual.modo === "retirar" && confCin?.piezasEspera) {
+          confCin = {
+            ...confCin,
+            piezasEspera: confCin.piezasEspera.map((ce: any) => ({
+              ...ce,
+              herrajesCohesionados: (ce.herrajesCohesionados || []).filter(
+                (h: string) => esHw ? (!coincidenMismoHerraje(h, piezaMadre) && !coincidenMismoHerraje(h, pm)) : (h !== pm && h !== piezaMadre && extraerPiezaMadre(h) !== pm)
+              ),
+              herrajesCongelados: (ce.herrajesCongelados || []).filter(
+                (h: string) => esHw ? (!coincidenMismoHerraje(h, piezaMadre) && !coincidenMismoHerraje(h, pm)) : (h !== pm && h !== piezaMadre && extraerPiezaMadre(h) !== pm)
+              ),
+              tablerosAsignados: (ce.tablerosAsignados || []).filter(
+                (t: string) => !esHw && t !== pm && t !== piezaMadre && extraerPiezaMadre(t) !== pm
+              ),
+            })),
+          };
+        }
+
         return {
           ...p,
-          piezasAsignadas: nuevas.filter((pz: string) => !esHerrajeNombre(pz)),
-          herrajesAsignados: nuevas.filter((pz: string) => esHerrajeNombre(pz)),
+          piezasAsignadas: pzActuales,
+          herrajesAsignados: hrActuales,
+          capasOcultas: nuevasCapasOcultas,
+          configuracionCinematica: confCin,
         };
       });
     }
@@ -316,7 +567,27 @@ export const createManualPickingSlice = (set: any, get: any): any => ({
     if (modoPickingManual.grupoId) {
       const actualizados = pasosManual.map((p: any) => {
         if (p.id !== modoPickingManual.pasoId) return p;
-        if (p.showcase) {
+        const capaEspera = p.configuracionCinematica?.piezasEspera?.find((ce: any) => ce.nombrePieza === modoPickingManual.grupoId);
+        if (capaEspera) {
+          const nuevas = modoPickingManual.piezasTemporalmenteSeleccionadas;
+          const nuevosHerrajes = nuevas.filter((pz: string) => esHerrajeNombre(pz));
+          const nuevosTableros = nuevas.filter((pz: string) => !esHerrajeNombre(pz) && pz !== capaEspera.nombrePieza);
+          const nuevasCapas = p.configuracionCinematica.piezasEspera.map((ce: any) => {
+            if (ce.nombrePieza !== modoPickingManual.grupoId) return ce;
+            return {
+              ...ce,
+              herrajesCohesionados: nuevosHerrajes,
+              tablerosAsignados: nuevosTableros,
+            };
+          });
+          return {
+            ...p,
+            configuracionCinematica: {
+              ...p.configuracionCinematica,
+              piezasEspera: nuevasCapas,
+            },
+          };
+        } else if (p.showcase) {
           const modificados = (p.showcase.gruposCinematicos || []).map((g: any) => {
             if (g.id !== modoPickingManual.grupoId) return g;
             return {

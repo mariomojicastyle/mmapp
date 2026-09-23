@@ -56,6 +56,22 @@ export function AssemblyAnimationController({ furnitureGroup }: AssemblyAnimatio
       .map((s) => `${s.id}:${s.trackAnimacion?.tiempoInicio ?? 0}:${s.trackAnimacion?.duracion ?? 0}`)
       .join("|");
 
+    const multiplePlusStr = activeStep.multiplePlus
+      ? `${activeStep.multiplePlus.velocidadTablerosCmS || 0}_${activeStep.multiplePlus.velocidadHerrajesCmS || 0}_${activeStep.multiplePlus.movimientoGlobalCm || 0}_` +
+        (activeStep.multiplePlus.capas || [])
+          .map((c: any) => {
+            const tabs = (c.tableros || []).map((t: any) => `${t.id}:${t.offsetXCm || 0}:${t.offsetYCm || 0}:${t.offsetZCm || 0}:${t.tiempoAparicion || 0}:${t.tiempoInicioMovimiento || 0}:${t.destinoId || ""}`).join(",");
+            const hws = (c.herrajes || []).map((h: any) => `${h.id}:${h.ejeAproximacion || ""}:${h.tiempoAparicion || 0}:${h.congelado}`).join(",");
+            const congs = (c.congelados || []).map((h: any) => `${h.id}:${h.tiempoAparicion || 0}`).join(",");
+            return `${c.id}:${c.visible !== false}:${tabs}:${hws}:${congs}`;
+          })
+          .join("||")
+      : "";
+
+    const piezasEsperaStr = (activeStep.configuracionCinematica?.piezasEspera || [])
+      .map((p: any) => `${p.nombrePieza}:${p.offsetXCm || 0}:${p.offsetYCm || 0}:${p.offsetZCm || 0}:${p.tiempoAparicion || 0}:${p.tiempoFinHerrajes || 0}`)
+      .join("|");
+
     return [
       activeStep.id,
       activeStep.duracionTotal,
@@ -65,7 +81,13 @@ export function AssemblyAnimationController({ furnitureGroup }: AssemblyAnimatio
       activeStep.secuencia?.length || 0,
       activeStep.coreografiaSubbloques || 1,
       activeStep.showcase?.coreografia || "",
+      activeStep.showcase?.distanciaAperturaMm ?? 0,
+      activeStep.showcase?.abrirCajones !== false ? "open" : "closed",
+      activeStep.showcase?.sincronizarCarreraCajones !== false ? "sinc" : "indep",
+      (activeStep.showcase?.gruposCinematicos || []).map((g: any) => `${g.id}:${g.distanciaMm}:${g.visible !== false}:${g.oculto !== true}`).join("|"),
       activeStep.configuracionCinematica?.piezasEspera?.length || 0,
+      piezasEsperaStr,
+      multiplePlusStr,
       vistaPiezasDesplazadas ? "desplazada" : "original",
       versionAnimacionManual || 0,
     ].join("_");
@@ -85,26 +107,11 @@ export function AssemblyAnimationController({ furnitureGroup }: AssemblyAnimatio
       (window as any).__threeScene3BF = effectiveGroup;
     }
 
-    const esPasoSubbloques = Boolean(activeStep.subbloques && activeStep.subbloques.length > 0 && activeStep.tipo !== "showcase");
+    const esShowcase = activeStep.tipo === "showcase";
+    const esMultiplePlus = activeStep.tipo === "multiple_plus" || Boolean(activeStep.multiplePlus?.capas && activeStep.multiplePlus.capas.length > 0);
+    const esPasoSubbloques = Boolean(activeStep.subbloques && activeStep.subbloques.length > 0 && !esShowcase);
 
-    // Si el usuario elige ver la pieza en posición CAD ensamblada y no tiene subbloques:
-    if (!vistaPiezasDesplazadas && !esPasoSubbloques) {
-      if (engineRef.current) {
-        engineRef.current.detener();
-        engineRef.current = null;
-      }
-      effectiveGroup.traverse((child: any) => {
-        if (child.isMesh) {
-          const rest = getSafeRestPosition(child);
-          child.position.copy(rest);
-          const restQ = getSafeRestQuaternion(child);
-          child.quaternion.copy(restQ);
-          child.updateMatrix();
-          child.updateMatrixWorld(true);
-        }
-      });
-      return;
-    }
+    // 🎬 Compilación universal de la cinemática: siempre activa para permitir reproducción y scrubber fluido
 
     try {
       const res = compilarAnimacionPaso(effectiveGroup, activeStep);

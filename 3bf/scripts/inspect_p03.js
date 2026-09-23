@@ -1,0 +1,11 @@
+const fs = require('fs');
+const p = 'G:/Mi unidad/Manuales/RTA Design/Manuales 3D/manual_1_comoda_ravenna.3bm.json';
+const data = JSON.parse(fs.readFileSync(p, 'utf8'));
+const p03 = data.pasos.find(x => x.id === 'P03');
+console.log('P03 orientacionBanco:', p03?.orientacionBanco);
+console.log('P03 multiplePlus orientacionBanco:', p03?.multiplePlus?.orientacionBanco);
+console.log('P03 multiplePlus velocidadTablerosCmS:', p03?.multiplePlus?.velocidadTablerosCmS);
+console.log('P03 multiplePlus velocidadHerrajesCmS:', p03?.multiplePlus?.velocidadHerrajesCmS);
+console.log('P03 multiplePlus movimientoGlobalCm:', p03?.multiplePlus?.movimientoGlobalCm);
+console.log('P03 ocultarNoAsignadas:', p03?.ocultarNoAsignadas);
+console.log('Capa 01:', JSON.stringify(p03?.multiplePlus?.capas?.[0], null, 2));
