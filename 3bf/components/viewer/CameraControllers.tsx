@@ -367,6 +367,16 @@ export function CameraPersistenceController({ controlsRef }: { controlsRef: Reac
     if (ultimoMuebleRestauradoRef.current !== muebleId) {
       ultimoMuebleRestauradoRef.current = muebleId;
 
+      // 🛡️ Si estamos en la pestaña manual y el paso activo tiene keyframes cinematográficos,
+      // NO restauramos la cámara genérica para no competir con el director de animación
+      const estadoStore = use3BFStore.getState();
+      if (estadoStore.pestanaActiva === "manual") {
+        const pasoActual = estadoStore.pasosManual.find((p) => p.id === estadoStore.pasoActivoManualId);
+        if (pasoActual && (pasoActual.keyframesCamara?.length || 0) > 0 && pasoActual.camaraCinematicaActiva !== false) {
+          return;
+        }
+      }
+
       // A) Buscar en mueble guardado (.3bf.json)
       const camaraItem = muebleActivoGuardado?.camara || camaraEscenaStore;
       if (camaraItem && Array.isArray(camaraItem.position) && Array.isArray(camaraItem.target)) {

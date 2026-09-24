@@ -1737,4 +1737,27 @@ Para mantener la máxima agilidad y minimizar el consumo de tokens sin perder ni
   * Compilación TypeScript verificada (`npx tsc --noEmit`) en `c:\Desarrollo\mmapp\3bf` con **0 errores**.
   * Archivo de animación verificado en disco: 3,104,907 bytes, 16 capas, 257 herrajes en P03.
 
+---
+
+### 🚀 Hito 204: Estabilización de Dirección Cinemática de Cámara en Timeline Blender, Desacoplamiento de Persistencia Global y Botón Cápsula "Restaurar Cámara" en `3dBimFab` (23 de Septiembre, 2026)
+- **Diagnóstico y Causa Raíz de Desincronización de Cámara**:
+  * **Problema Planteado**: Al recargar la página o volver a abrir un manual con keyframes cinemáticos (ej. P03 con 28 keyframes), la cámara aparecía desincronizada, apuntando al origen o a coordenadas viejas, requiriendo "despertar" la aguja manualmente para que adoptara el encuadre.
+  * **Causa Raíz Identificada**:
+    1. *Conflicto Intercontrolador al Montar*: `CameraPersistenceController` forzaba la restauración de la última posición del mouse guardada en `localStorage` o en el archivo `.3bf.json`. Como el timeline arranca en pausa (`isTimelinePlaying = false`), `ManualCameraDirector` respetaba el reposo y no sobreescribía la vista hasta que se producía un evento de scrubbing o play.
+- **Implementación Técnica**:
+  1. *Desacoplamiento Condicional de Persistencia*:
+     - En `CameraControllers.tsx` (`CameraPersistenceController`), se agregó una cláusula de exclusión inteligente: si el paso manual activo cuenta con keyframes cinemáticos (`keyframesCamara.length > 0 && camaraCinematicaActiva !== false`), la persistencia genérica se inhibe de inmediato, cediendo la dirección absoluta a los keyframes.
+  2. *Libertad Órbita/Pan en Pausa para Creación de Keyframes*:
+     - En `ManualCameraDirector.tsx`, se preserva el control manual del usuario cuando el timeline está en pausa (`usuarioInteractuandoRef`), permitiendo posicionar la cámara libremente para encuadrar y fijar nuevos fotogramas clave sin que el motor fuerce retrocesos no deseados.
+  3. *Botón Cápsula "Restaurar Cámara" en Barra de Transporte*:
+     - En `BlenderTimeline.tsx`, se integró la cápsula ámbar con icono `RotateCcw`: **`[Restaurar Cámara]`** junto al selector `Cam: Auto`.
+     - Permite que el usuario, tras explorar o manipular libremente la escena con el mouse en cualquier segundo de la animación, recupere en 1 clic el encuadre cinemático exacto de ese instante.
+  4. *Exposición de Comando Global en Ventana*:
+     - Exposición de `(window as any).__restaurarCamaraCinematica3BF` para forzar la re-evaluación inmediata de posición, target y smoothstep.
+- **Validación de Calidad**:
+  * Compilación TypeScript verificada (`npx tsc --noEmit`) en `c:\Desarrollo\mmapp\3bf` con **0 errores**.
+  * Creación previa de snapshot de seguridad: `manual_1_comoda_ravenna_antes_estabilidad_camara_20260923_215147.3bm.json`.
+  * Sincronización atómica verificada en disco: 3,113,592 bytes (28 keyframes en P03).
+
+
 

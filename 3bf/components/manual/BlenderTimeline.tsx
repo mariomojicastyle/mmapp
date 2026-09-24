@@ -24,6 +24,7 @@ import {
   Copy,
   ClipboardPaste,
   CopyPlus,
+  RotateCcw,
 } from "lucide-react";
 
 /**
@@ -848,24 +849,41 @@ export default function BlenderTimeline() {
             </button>
           </div>
 
-          {/* Estado Cinemática */}
-          <button
-            type="button"
-            onClick={() => pasoActivo && toggleCamaraCinematicaPaso(pasoActivo.id)}
-            title={
-              pasoActivo?.camaraCinematicaActiva !== false
-                ? "Cinemática de cámara activada. Clic para modo libre"
-                : "Cinemática en pausa. Clic para activar seguimiento de keyframes"
-            }
-            className={`px-2 py-0.5 rounded-full text-[9px] font-bold border transition ${
-              pasoActivo?.camaraCinematicaActiva !== false
-                ? "bg-cyan-900/60 text-cyan-300 border-cyan-500/40"
-                : "bg-slate-800 text-slate-400 border-slate-700"
-            }`}
-          >
-            <Clapperboard className="w-2.5 h-2.5 inline mr-1" />
-            {pasoActivo?.camaraCinematicaActiva !== false ? "Cam: Auto" : "Cam: Libre"}
-          </button>
+          {/* Estado Cinemática y Botón Restaurar Enfoque */}
+          <div className="flex items-center gap-1">
+            <button
+              type="button"
+              onClick={() => pasoActivo && toggleCamaraCinematicaPaso(pasoActivo.id)}
+              title={
+                pasoActivo?.camaraCinematicaActiva !== false
+                  ? "Cinemática de cámara activada. Clic para modo libre"
+                  : "Cinemática en pausa. Clic para activar seguimiento de keyframes"
+              }
+              className={`px-2 py-0.5 rounded-full text-[9px] font-bold border transition cursor-pointer ${
+                pasoActivo?.camaraCinematicaActiva !== false
+                  ? "bg-cyan-900/60 text-cyan-300 border-cyan-500/40"
+                  : "bg-slate-800 text-slate-400 border-slate-700"
+              }`}
+            >
+              <Clapperboard className="w-2.5 h-2.5 inline mr-1" />
+              {pasoActivo?.camaraCinematicaActiva !== false ? "Cam: Auto" : "Cam: Libre"}
+            </button>
+
+            {/* 🎯 Botón Cápsula: Restaurar Cámara Cinematográfica (Despertar Cámara) */}
+            {keyframesCamara.length > 0 && (
+              <button
+                type="button"
+                onClick={() => {
+                  (window as any).__restaurarCamaraCinematica3BF?.();
+                }}
+                title={`Restaurar cámara al encuadre cinematográfico en ${timelineCurrentTime.toFixed(1)}s`}
+                className="px-2 py-0.5 rounded-full text-[9px] font-bold border border-amber-500/40 bg-amber-950/40 hover:bg-amber-900/60 text-amber-300 flex items-center gap-1 transition cursor-pointer shadow-xs active:scale-95"
+              >
+                <RotateCcw className="w-2.5 h-2.5" />
+                <span>Restaurar Cámara</span>
+              </button>
+            )}
+          </div>
 
           {/* Campo End (Duración total en segundos estilo Blender) */}
           <div

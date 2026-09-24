@@ -108,11 +108,19 @@ export function ManualCameraDirector({ controlsRef }: ManualCameraDirectorProps)
       usuarioInteractuandoRef.current = false;
     };
 
+    // Exponer función para forzar encuadre cinematográfico inmediato al tiempo actual
+    (window as any).__restaurarCamaraCinematica3BF = () => {
+      ultimoTiempoRef.current = -1;
+      usuarioInteractuandoRef.current = false;
+      transicionSaltoRef.current.activa = false;
+    };
+
     return () => {
       controls.removeEventListener("start", onStart);
       controls.removeEventListener("end", onEnd);
       delete (window as any).__obtenerPoseCamara3BF;
       delete (window as any).__saltarAKeyframeCamara3BF;
+      delete (window as any).__restaurarCamaraCinematica3BF;
       if (timeoutInteraccionRef.current) {
         clearTimeout(timeoutInteraccionRef.current);
       }
@@ -122,13 +130,15 @@ export function ManualCameraDirector({ controlsRef }: ManualCameraDirectorProps)
   // Seguimiento de último tiempo y paso evaluado para responder a clics y cambios de fotograma
   const ultimoTiempoRef = useRef<number>(-1);
   const ultimoPasoIdRef = useRef<string>("");
+  const encuadreInicialRealizadoRef = useRef<boolean>(false);
 
-  // Si cambia de paso, forzamos re-evaluación inmediata para encuadrar la cámara
+  // Si cambia de paso o se monta por primera vez, forzamos encuadre inicial al tiempo actual
   useEffect(() => {
     if (pasoActivoManualId !== ultimoPasoIdRef.current) {
       ultimoPasoIdRef.current = pasoActivoManualId;
       ultimoTiempoRef.current = -1;
       usuarioInteractuandoRef.current = false;
+      encuadreInicialRealizadoRef.current = false;
     }
   }, [pasoActivoManualId]);
 

@@ -9,7 +9,15 @@ Este archivo es la "Memoria RAM" para Antigravity. Contiene el contexto de lo qu
 ---
 
 ## 🏗️ 1. Plataforma B2B & 3dBimFab (Foco Actual)
-**Estado:** Hito 203 completado (Protocolo de Blindaje Total Atómico y Preservación de Animación Múltiple Plus P03); Próximo Foco: Botón Unificado "Guardar Proyecto" y Snapshots Automáticos en Tiempo Real (`3dBF_Seguridad_Anim`).
+**Estado:** Hito 204 completado (Estabilización de Dirección Cinemática de Cámara en Timeline Blender, Desacoplamiento de Persistencia Global y Botón Cápsula "Restaurar Cámara"); Próximo Foco: Consolidación y Escalamiento de Keyframes y Animación (`3dBF_Keyframes`).
+
+- [x] **[23 de Septiembre, 2026] Estabilización de Dirección Cinemática de Cámara en Timeline Blender, Desacoplamiento de Persistencia Global y Botón Cápsula "Restaurar Cámara" (`CameraControllers.tsx`, `ManualCameraDirector.tsx`, `BlenderTimeline.tsx`, `manual_1_comoda_ravenna.3bm.json`)**:
+  * **Problema Resuelto (Desincronización de Cámara al Montar/Recargar)**: Al abrir manuales con keyframes grabados (28 keyframes en P03), la cámara aparecía desfasada o en el origen porque `CameraPersistenceController` imponía coordenadas viejas de `localStorage` mientras el timeline estaba en pausa.
+  * **Solución Implementada**:
+    1. Desacoplamiento condicional: `CameraPersistenceController` se inhibe si el paso tiene keyframes cinemáticos activos, cediendo el control total al director cinematográfico.
+    2. Libertad manual en pausa: el usuario puede orbitar, panear y hacer zoom libremente para encuadrar y fijar nuevos keyframes sin que el motor fuerce rebotes.
+    3. Botón cápsula `[Restaurar Cámara]` en la barra de transporte para volver en 1 clic al encuadre cinemático del fotograma actual.
+  * **Validación**: Compilación `npx tsc --noEmit` con **0 errores**, snapshot de seguridad creado y paridad atómica con Google Drive (3,113,592 bytes).
 
 - [x] **[23 de Septiembre, 2026] Protocolo de Blindaje Total Atómico y Preservación de Animación Múltiple Plus (P03) en `3dBimFab` (`manual_1_comoda_ravenna.3bm.json`, `snapshots_manuales/`, `multiplePlusKinematics.ts`, `cadStateUtils.ts`, `BoardMesh.tsx`, `manualMultiplePlusSlice.ts`)**:
   * **Problema Resuelto (Riesgo de Pérdida y Desfase Git vs Drive)**: Tras una sesión intensiva de calibración milimétrica en el paso `P03` (16 capas, 257 herrajes), la manipulación de capas y duplicación desalinearon el archivo en memoria y sobreescribieron versiones en Drive.
