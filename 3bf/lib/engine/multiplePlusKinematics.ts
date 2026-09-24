@@ -84,6 +84,39 @@ function resolverVectorEje(eje: string, distanciaM: number): THREE.Vector3 {
 }
 
 /**
+ * 🎯 Determina si una malla de la escena corresponde unívocamente a un tablero de capa,
+ * respetando la discriminación atómica de instancias (1), (2), etc.
+ */
+function coincideMallaConTablero(
+  tabTargetLow: string,
+  cn: string,
+  pm: string,
+  ik: string
+): boolean {
+  if (ik === tabTargetLow || cn === tabTargetLow || pm === tabTargetLow) {
+    return true;
+  }
+
+  const matchTarget = tabTargetLow.match(/\((\d+)\)/);
+  const matchMesh = ik.match(/\((\d+)\)/) || cn.match(/\((\d+)\)/);
+
+  if (matchTarget) {
+    // Si el tablero es una instancia específica (ej. "Peça 15 (1)"):
+    if (matchMesh) {
+      return matchMesh[1] === matchTarget[1] && perteneceAMismaFamiliaPieza(cn, tabTargetLow);
+    }
+    return false;
+  }
+
+  // Si el tablero es genérico sin número (ej. "Peça 1"):
+  if (matchMesh) {
+    return false;
+  }
+
+  return perteneceAMismaFamiliaPieza(cn, tabTargetLow);
+}
+
+/**
  * Compila y hornea las pistas de animación de un paso Múltiple Plus.
  */
 export function compilarMultiplePlusPaso(
@@ -132,7 +165,7 @@ export function compilarMultiplePlusPaso(
         const cn = (u.cleanName || m.name || "").replace(/^RH_OUT:/i, "").trim().toLowerCase();
         const pm = (u.piezaMadre || "").toLowerCase().trim();
         const ik = (u.instanciaKey || "").toLowerCase().trim();
-        return cn === tabTargetLow || pm === tabTargetLow || ik === tabTargetLow || perteneceAMismaFamiliaPieza(cn, tabTargetLow);
+        return coincideMallaConTablero(tabTargetLow, cn, pm, ik);
       });
 
       matchingMeshes.forEach((mesh) => {
@@ -212,7 +245,7 @@ export function compilarMultiplePlusPaso(
         const cn = (u.cleanName || m.name || "").replace(/^RH_OUT:/i, "").trim().toLowerCase();
         const pm = (u.piezaMadre || "").toLowerCase().trim();
         const ik = (u.instanciaKey || "").toLowerCase().trim();
-        return cn === tLow || pm === tLow || ik === tLow || perteneceAMismaFamiliaPieza(cn, tLow);
+        return coincideMallaConTablero(tLow, cn, pm, ik);
       });
 
       const boxTotal = new THREE.Box3();
@@ -348,11 +381,6 @@ export function compilarMultiplePlusPaso(
           const eje = herraje.ejeAproximacion || "-X";
           const vDirOffset = resolverVectorEje(eje, distGlobalM);
 
-          // Si el tablero está posicionado en el suelo, el barreno está en el suelo
-          const pBarrenoEnPiso = pHwRest.clone().add(vTableroOffset);
-          const puntoA = pBarrenoEnPiso.clone().add(vDirOffset);
-          const puntoB = pBarrenoEnPiso.clone();
-
           const tViaje = distGlobalM > 0.001
             ? Math.max(0.15, distGlobalM / velocidadHerrajesM_s)
             : 0;
@@ -379,11 +407,31 @@ export function compilarMultiplePlusPaso(
             );
           }
 
-          // Posición: si el tablero permanece en el suelo, el herraje permanece en el suelo
+          // 📐 Posición:
+          // Caso A: El herraje se instala DESPUÉS (o a la par) de que el tablero inicie su ensamble final.
+          // Ej. Cantoneras y tornillos fijando la pieza 1 a la pieza 7 en t=51s cuando la pieza 1 ensambló en t=45s.
+          // El barreno ya se encuentra en su posición armada final (pHwRest) y la inserción es 100% axial y colineal.
+          const seInstalaDespuesDeEnsamble = tieneOffsetTablero && tHwStart >= tInicioMovTablero;
+
           const posTimes: number[] = [];
           const posVals: number[] = [];
 
-          if (!tieneOffsetTablero || tInicioMovTablero >= duracionPaso) {
+          if (seInstalaDespuesDeEnsamble || !tieneOffsetTablero) {
+            const puntoB = pHwRest.clone();
+            const puntoA = puntoB.clone().add(vDirOffset);
+
+            posTimes.push(0, tHwStart, tHwLlegada, duracionPaso);
+            posVals.push(
+              puntoA.x, puntoA.y, puntoA.z,
+              puntoA.x, puntoA.y, puntoA.z,
+              puntoB.x, puntoB.y, puntoB.z,
+              puntoB.x, puntoB.y, puntoB.z
+            );
+          } else if (tInicioMovTablero >= duracionPaso) {
+            // El tablero permanece en espera con offset durante todo el paso (banco/piso)
+            const puntoB = pHwRest.clone().add(vTableroOffset);
+            const puntoA = puntoB.clone().add(vDirOffset);
+
             posTimes.push(0, tHwStart, tHwLlegada, duracionPaso);
             posVals.push(
               puntoA.x, puntoA.y, puntoA.z,
@@ -392,9 +440,15 @@ export function compilarMultiplePlusPaso(
               puntoB.x, puntoB.y, puntoB.z
             );
           } else {
+            // Caso B: El herraje se instala PREVIAMENTE en el tablero (en espera en banco/suelo) antes de que viaje.
+            // Ej. Tarugos o pernos instalados en t=10s, y el tablero viaja con ellos en t=45s.
+            const pBarrenoEnPiso = pHwRest.clone().add(vTableroOffset);
+            const puntoA = pBarrenoEnPiso.clone().add(vDirOffset);
+            const puntoB = pBarrenoEnPiso.clone();
+            const pFinalMueble = pHwRest.clone();
+
             const tTabStart = Math.max(tHwLlegada, tInicioMovTablero);
             const tTabEnd = Math.min(duracionPaso, tTabStart + (tLlegadaTablero - tInicioMovTablero));
-            const pFinalMueble = pHwRest.clone();
 
             posTimes.push(0, tHwStart, tHwLlegada, tTabStart, tTabEnd, duracionPaso);
             posVals.push(

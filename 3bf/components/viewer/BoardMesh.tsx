@@ -140,9 +140,13 @@ export function BoardMesh({
 
     return herrajesHovered.some((h) => {
       const hLow = h.toLowerCase().trim();
+      const hTieneInstancia = hLow.includes("(");
       if (ikLow) {
         if (ikLow === hLow || coincidenMismoHerraje(ikLow, hLow)) return true;
+        // Si el elemento hovered es una instancia específica (ej. "Peça 15 (1)"), no caer a coincidencia genérica
+        if (hTieneInstancia) return false;
       }
+      if (hTieneInstancia) return false;
       return (
         hLow === cLow ||
         hLow === rLow ||

@@ -359,6 +359,13 @@ export function coincidenMismoHerraje(a?: string | null, b?: string | null): boo
   const bClean = b.replace(/^rh_(?:out|in):\s*/i, "").split("::").pop()!.toLowerCase().trim();
   if (aClean === bClean) return true;
 
+  // 🛡️ REGLA ESTRICTA DE INSTANCIA EN PARÉNTESIS (ej. "(1)" vs "(2)" o "Peça 15 (1)" vs "Peça 15 (2)")
+  const matchParenA = aClean.match(/\((\d+)\)/);
+  const matchParenB = bClean.match(/\((\d+)\)/);
+  if (matchParenA || matchParenB) {
+    if (!matchParenA || !matchParenB || matchParenA[1] !== matchParenB[1]) return false;
+  }
+
   // Extraer número de instancia física de ambos (ej. "3" en "Tampa (3)" y "Tapa 3")
   const matchA = aClean.match(/\d+/);
   const matchB = bClean.match(/\d+/);

@@ -9,9 +9,18 @@ Este archivo es la "Memoria RAM" para Antigravity. Contiene el contexto de lo qu
 ---
 
 ## 🏗️ 1. Plataforma B2B & 3dBimFab (Foco Actual)
-**Estado:** Hito 202 completado (Múltiple Plus Estable: Cinemática Solidaria Automática de Herrajes, Normalización Incondicional de Capas, Ancho Flexible de Panel y UX Optimizada de Cápsulas); Próximo Foco: Consolidación y Escalamiento de Pasos Múltiple Plus en Producción (`Animacion_Plus_Estable`).
+**Estado:** Hito 203 completado (Protocolo de Blindaje Total Atómico y Preservación de Animación Múltiple Plus P03); Próximo Foco: Botón Unificado "Guardar Proyecto" y Snapshots Automáticos en Tiempo Real (`3dBF_Seguridad_Anim`).
+
+- [x] **[23 de Septiembre, 2026] Protocolo de Blindaje Total Atómico y Preservación de Animación Múltiple Plus (P03) en `3dBimFab` (`manual_1_comoda_ravenna.3bm.json`, `snapshots_manuales/`, `multiplePlusKinematics.ts`, `cadStateUtils.ts`, `BoardMesh.tsx`, `manualMultiplePlusSlice.ts`)**:
+  * **Problema Resuelto (Riesgo de Pérdida y Desfase Git vs Drive)**: Tras una sesión intensiva de calibración milimétrica en el paso `P03` (16 capas, 257 herrajes), la manipulación de capas y duplicación desalinearon el archivo en memoria y sobreescribieron versiones en Drive.
+  * **Solución de Seguridad**:
+    1. Auditoría y rescate atómico del archivo de la Cómoda Ravenna (16 capas en P03, duración 160s, pasos P00 a P03 limpios).
+    2. Creación de snapshot inmutable local en `storage/snapshots_manuales/` y paridad 1:1 con Google Drive (`G:\Mi unidad\Manuales\...`).
+    3. Inclusión del manual 3D en el commit atómico de Git para congelar simultáneamente el código de la suite y el estado exacto de la animación.
+  * **Validación**: Compilación `npx tsc --noEmit` completada con **0 errores** y archivo verificado de 3,104,907 bytes.
 
 - [x] **[23 de Septiembre, 2026] Múltiple Plus Estable: Cinemática Solidaria Automática de Herrajes, Normalización Incondicional de Capas, Ancho Flexible de Panel y UX Optimizada de Cápsulas (`manualAnimationEngine.ts`, `multiplePlusKinematics.ts`, `AssemblyAnimationController.tsx`, `AssemblyPiecePositioner.tsx`, `manualMultiplePlusSlice.ts`, `CapsulaTableroPlus.tsx`, `CapsulaHerrajePlus.tsx`, `MultiplePlusSection.tsx`)**:
+
   * **Problema Resuelto 1 (Herrajes Flotantes en el Aire)**: Al desplazar tableros de madera al suelo (ej. `Peça 4` a `[35, -16, 2] cm`), los herrajes quedaban suspendidos en el aire. La causa raíz era la falta de tipo explícito en el paso, impidiendo que el motor AnimationMixer ejecutara `compilarMultiplePlusPaso` y reseteando las mallas al reposo.
   * **Solución 1**: Detección incondicional en todo el sistema (`paso.tipo === "multiple_plus" || Boolean(paso.multiplePlus?.capas?.length)`), auto-estampado en mutaciones y vinculación determinista tablero-herraje. Los herrajes heredan automáticamente el offset del tablero y reposan en sus barrenos sobre el piso (validado con `Peça 4`, `Peça 7`, `Peça 3`, `Peça 8`).
   * **Problema Resuelto 2 (Ancho Limitado del Configurador Manual)**: El panel lateral tenía un tope duro de 800px. Se eliminó la restricción permitiendo redimensionar a voluntad hasta el ancho total de pantalla.

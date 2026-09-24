@@ -824,10 +824,17 @@ export const createManualMultiplePlusSlice = (set: any, get: any): any => ({
             const n = (child.name || "").toLowerCase().trim();
             const matchTab = (capa.tableros || []).find((t: any) => {
               const tId = (t.id || "").toLowerCase().trim();
+              if (tId === ik || tId === cn || tId === n) return true;
+              const matchT = tId.match(/\((\d+)\)/);
+              const matchM = ik.match(/\((\d+)\)/) || cn.match(/\((\d+)\)/);
+              if (matchT) {
+                if (matchM) {
+                  return matchM[1] === matchT[1] && perteneceAMismaFamiliaPieza(cn, tId);
+                }
+                return false;
+              }
+              if (matchM) return false;
               return (
-                tId === ik ||
-                tId === cn ||
-                tId === n ||
                 perteneceAMismaFamiliaPieza(tId, ik) ||
                 perteneceAMismaFamiliaPieza(tId, cn) ||
                 perteneceAMismaFamiliaPieza(tId, n)
