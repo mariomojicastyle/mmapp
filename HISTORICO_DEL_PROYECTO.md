@@ -1850,3 +1850,26 @@ Para mantener la máxima agilidad y minimizar el consumo de tokens sin perder ni
   * `npx tsc --noEmit` verificado con **0 errores** tanto en `3bf` como en `mario-mojica-plataforma`.
   * Verificación visual de diapositivas 16:9 e inspección de PDF compilado.
 
+---
+
+### 🚀 Hito 209: Creación del Hub Comercial B2B (`comercial.html`) y Detección Automática del Idioma de Google Chrome (`pt-BR` / `es`) en Presentaciones Interactivas (25 de Septiembre, 2026)
+- **Contexto y Solicitud Estratégica**:
+  * **Directorio Comercial Centralizado**: Crear un archivo centralizado `comercial.html` que registre y agrupe de forma permanente todas las actas, presentaciones web interactivas y PDFs oficiales desarrollados (Politorno Móveis, Móveis Henn, etc.), permitiendo consultar y copiar los enlaces frescos en cualquier momento desde un único tablero.
+  * **Detección Automática de Idioma por Google Chrome**: Garantizar que cuando un prospecto en Brasil abra cualquier enlace de propuesta o acta técnica, el visor detecte automáticamente la configuración de idioma de su navegador (`navigator.language` / `pt-BR`) y se abra por defecto en **Português**, sin requerir intervención manual.
+- **Implementación Técnica**:
+  1. *Detección Inteligente de Idioma (Chrome / Navegador)*:
+     - En `acta-propuesta-politorno-usd.html` y `propuesta-henn-usd.html`, se implementó `detectInitialLang()` con la siguiente jerarquía:
+       1. Parámetro explícito en URL (`?lang=pt` o `?lang=es`).
+       2. Preferencia previa guardada en `localStorage` (`propuesta_preferred_lang`).
+       3. **Idioma del Navegador del Usuario**: Si `navigator.language` o `navigator.languages[0]` inicia con `pt` (`pt-BR`, `pt`), la presentación se abre de forma **100% automática en Portugués**. Si es español, en Español.
+     - Persistencia reactiva: al hacer clic en las cápsulas `ES` o `PT`, la preferencia se guarda de inmediato para futuras sesiones.
+  2. *Hub Comercial B2B (`comercial.html`)*:
+     - Diseñado bajo la estética canónica **Tech Ethos** (tema claro oficial, acento cyan `#0088AA`, cápsulas circulares obligatorias `rounded-full` y logotipos vectoriales de `/publicidad`).
+     - **Búsqueda en Tiempo Real**: Filtrado dinámico instantáneo por cliente, tecnología o palabra clave.
+     - **Filtros por Cápsula**: Selectores rápidos para *Todos*, *Politorno Móveis*, *Móveis Henn*, *Manuales 3D* y *Renders IA*.
+     - **Copiado en 1 Clic**: Botones con función `navigator.clipboard.writeText` y retroalimentación mediante notificación Toast flotante.
+     - **Registro Completo de Activos**: Incluye enlaces de producción en `mariomojica.com`, enlaces locales de prueba (`:3003`), documentos PDF oficiales y fichas técnicas con alcance y precios.
+     - Desplegado y sincronizado en `Comercial/comercial.html`, `mario-mojica-plataforma/public/comercial.html` y `mario-mojica-homepage/public/comercial.html`.
+- **Validación de Calidad**:
+  * Servidor local respondiendo `HTTP 200 OK` en `http://localhost:3003/comercial.html`.
+  * Verificación de la jerarquía de detección de idioma en Chrome.

@@ -1561,6 +1561,9 @@
     // Función de Switcher de Idioma
     function setLang(lang) {
       currentLang = lang;
+      try {
+        localStorage.setItem('propuesta_preferred_lang', lang);
+      } catch (e) {}
       const d = translations[lang];
       if (!d) return;
 
@@ -1809,12 +1812,28 @@
 
     window.addEventListener('resize', resizePresentation);
 
-    // Arranque
-    document.addEventListener('DOMContentLoaded', () => {
+    // Detección Inteligente de Idioma (Prioridad: URL -> LocalStorage -> Idioma del Navegador Chrome)
+    function detectInitialLang() {
       const params = new URLSearchParams(window.location.search);
       const urlLang = params.get('lang');
-      const initialLang = (urlLang === 'pt' || urlLang === 'es') ? urlLang : 'es';
+      if (urlLang === 'pt' || urlLang === 'es') return urlLang;
 
+      try {
+        const savedLang = localStorage.getItem('propuesta_preferred_lang');
+        if (savedLang === 'pt' || savedLang === 'es') return savedLang;
+      } catch (e) {}
+
+      // Detección automática por Google Chrome / Navegador del usuario (Brasil / PT-BR -> Portugués por defecto)
+      const browserLang = (navigator.language || (navigator.languages && navigator.languages[0]) || '').toLowerCase();
+      if (browserLang.startsWith('pt')) {
+        return 'pt';
+      }
+      return 'es';
+    }
+
+    // Arranque
+    document.addEventListener('DOMContentLoaded', () => {
+      const initialLang = detectInitialLang();
       setLang(initialLang);
       resizePresentation();
       goToSlide(1);

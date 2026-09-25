@@ -9,7 +9,19 @@ Este archivo es la "Memoria RAM" para Antigravity. Contiene el contexto de lo qu
 ---
 
 ## 🏗️ 1. Plataforma B2B & 3dBimFab (Foco Actual)
-**Estado:** Hito 208 completado (Acta Técnica y Propuesta Piloto 10 Productos para Politorno Móveis en USD con Manuales 3D al 50% OFF, Bonificación 100% Software `3dBimFab`, Soporte Cloud $5 USD/mes y Despliegue Netlify); Próximo Foco: Seguimiento Comercial Politorno / Henn (`Politorno_Renders`).
+**Estado:** Hito 209 completado (Hub Comercial B2B `comercial.html` y Detección Automática de Idioma en Chrome para Brasil `pt-BR`); Próximo Foco: Seguimiento Comercial Politorno / Henn (`Politorno_Renders`).
+
+- [x] **[25 de Septiembre, 2026] Hub Comercial B2B (`comercial.html`) y Detección Automática de Idioma de Google Chrome (`pt-BR` / `es`) en Presentaciones Interactivas (`comercial.html`, `acta-propuesta-politorno-usd.html`, `propuesta-henn-usd.html`)**:
+  * **Directorio Comercial Centralizado (`comercial.html`)**:
+    - Página web responsiva diseñada bajo el estilo **Tech Ethos** (`#0088AA`, cápsulas circulares `rounded-full` y logotipos de `/publicidad`).
+    - Búsqueda en tiempo real y filtrado por cliente (Politorno, Henn) y tecnología (Manuales 3D, Renders IA).
+    - Botones de 1 clic para copiar enlaces directos con retroalimentación Toast flotante.
+    - Sincronizado en `Comercial/comercial.html`, `mario-mojica-plataforma/public/comercial.html` y `mario-mojica-homepage/public/comercial.html` para acceso local (`:3003`) y producción (`mariomojica.com/comercial.html`).
+  * **Detección Automática de Idioma de Google Chrome (`navigator.language`)**:
+    - Se implementó la resolución automática de idioma: si un usuario abre la presentación en Brasil o tiene su navegador en portugués (`pt-BR` o `pt`), el contenido se despliega **100% en Portugués por defecto**.
+    - Si se abre en navegador en español, se despliega en Español.
+    - Jerarquía de prioridad: `URL ?lang=...` $\to$ `localStorage` $\to$ `navigator.language` (Chrome en Brasil $\to$ PT).
+  * **Validación**: Respuesta `HTTP 200 OK` en `http://localhost:3003/comercial.html`.
 
 - [x] **[25 de Septiembre, 2026] Acta Técnica y Propuesta Piloto 10 Productos para Politorno Móveis en USD (Manuales 3D al 50% OFF, Bonificación 100% Software `3dBimFab`, Soporte Cloud $5 USD/mes y Despliegue Netlify) (`acta-propuesta-politorno-usd.html`, `Acta_Propuesta_Piloto_Politorno_Mario_Mojica_USD.pdf`, `acta-politorno.html`)**:
   * **Propuesta Piloto Foco (10 Muebles Medianos)**:
