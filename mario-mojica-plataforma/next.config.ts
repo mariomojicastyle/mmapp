@@ -6,6 +6,18 @@ const nextConfig: NextConfig = {
       bodySizeLimit: '25mb',
     },
   },
+  async rewrites() {
+    return [
+      {
+        source: '/comercial',
+        destination: '/comercial/comercial.html',
+      },
+      {
+        source: '/comercial/',
+        destination: '/comercial/comercial.html',
+      },
+    ];
+  },
 };
 
 export default nextConfig;

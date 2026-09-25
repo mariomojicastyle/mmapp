@@ -1904,3 +1904,57 @@ Para mantener la máxima agilidad y minimizar el consumo de tokens sin perder ni
     - Claves erróneas (`1234`, `admin`, `hackme`): Bloqueo estricto por autenticación de etiqueta GCM (`OperationError`), impidiendo cualquier fuga de información.
   * Archivos sincronizados en `Comercial/comercial.html`, `mario-mojica-plataforma/public/comercial.html` y `mario-mojica-homepage/public/comercial.html`.
 
+---
+
+### 🚀 Hito 211: Estrategia de Objetos Inteligentes 3dBimFab (Opción B: Escale su P&D sin Aumentar Nómina), Diapositiva de Complejidad y Clarificación Contractual de Empaque en Politorno y Henn (25 de Septiembre, 2026)
+- **Contexto y Definición del Core de Negocio**:
+  * Tras un análisis estratégico junto al usuario, se determinó que mientras el manual 3D interactivo opera como el "caballo de Troya" comercial para entrar a la fábrica, el verdadero motor de escalabilidad y facturación a largo plazo de la compañía radica en la venta y modelado de **Objetos Inteligentes en 3dBimFab**.
+  * Se identificó la necesidad de ser 100% transparentes en las presentaciones respecto a:
+    1. Vender explícitamente los Objetos Inteligentes en la tabla de costos/complejidad.
+    2. Enfatizar la ventaja operativa: un único bloque inteligente permite atender a múltiples retailers (Magazine Luiza, MadeiraMadeira, etc.) con infinitas variantes sin sobrecargar a los ingenieros de planta (Opción B seleccionada: *Escale su P&D sin Aumentar la Nómina*).
+    3. Acotar técnicamente el alcance: el Objeto Inteligente parametriza automáticamente medidas, despiece y lista de herrajes (BOM), mientras que el manual 3D se entrega compilado para el modelo base oficial de catálogo.
+    4. Delimitar el módulo de empaque: no venderlo como una promesa de automatización mágica preexistente, sino como un desarrollo conjunto de co-innovación que se calibrará con Politorno durante los 60 días del programa piloto.
+    5. Establecer con elegancia y sin fricciones el perímetro del acuerdo piloto: 10 productos y 60 días de acompañamiento (nuevos modelos tras el piloto se cotizan con la tabla oficial de objetos inteligentes).
+- **Implementación Técnica y de Copy**:
+  1. *Evolución de la Diapositiva de Complejidad (Slide 4 en Politorno y Henn)*:
+     - Título oficial: *Objetos Inteligentes 3dBimFab: Inversión, Complejidad y Tiempos de Desarrollo* (PT: *Objetos Inteligentes 3dBimFab: Investimento, Complexidade e Prazos de Desenvolvimento*).
+     - Subtítulo purificado sin tarifas senior: *"Para garantizar la predictibilidad y rigor técnico, clasificamos el catálogo de la marca en tres niveles de complejidad."* (Cero mención a $6.000 USD/mes ni tarifas por día en todas las diapositivas).
+     - Columnas de tabla renombradas: *Desarrollo Objeto Inteligente* y *Valor Comercial Objeto Inteligente*.
+     - Recuadro inferior de valor Opción B implementado:
+       * ES: *"Multiplicación de Capacidad: Escale su P&D sin Aumentar la Nómina. El crecimiento del catálogo en planta suele estar limitado por la cantidad de proyectistas disponibles para redibujar en TopSolid o Promob. Un Objeto Inteligente elimina ese cuello de botella: su equipo actual multiplica por 10 su capacidad de innovación, generando familias enteras de producto en minutos en lugar de semanas. La empresa gana velocidad y asertividad comercial con exactamente el mismo equipo de fábrica."*
+       * PT: *"Multiplicação de Capacidade: Escale seu P&D sem Aumentar a Equipe. A expansão do catálogo na fábrica é historicamente limitada pelo número de projetistas disponíveis para redesenhar. O Objeto Inteligente elimina esse gargalo: sua equipe atual multiplica por 10 sua capacidade de inovação, gerando famílias inteiras de produtos em minutos em vez de semanas. A empresa ganha velocidade de lançamento e assertividade comercial mantendo exatamente a mesma estrutura operacional."*
+  2. *Ajuste de Expectativas en Slide 3 (Manual 3D & Empaque)*:
+     - En Politorno, se sustituyó la promesa riesgosa de "Sincronización Total" por *4. MANUAL 3D & CO-INNOVACIÓN EN EMPAQUE* / *Manual Oficial & Módulo de Empaque*:
+       *"Cada producto incluye su manual 3D interactivo y narración por voz para la configuración estándar de catálogo acordada. Como beneficio exclusivo de co-innovación durante el piloto, se incluye el desarrollo y calibración conjunta del módulo de optimización de empaque a la medida junto al equipo técnico de Politorno durante los 60 días de acompañamiento."*
+  3. *Blindaje de Condiciones en Cierre (Slide 9 en Politorno y Slide 8 en Henn)*:
+     - Condición 3 renombrada: *10 Productos • 60 Días de Acompañamiento*, dejando establecido con total elegancia ejecutiva que el piloto cubre los 10 primeros muebles y 60 días, y que modelos posteriores se rigen por la tabla oficial.
+  4. *Corrección Estricta de Logotipos*:
+     - Reemplazo de todos los `<svg>` sin cotas por Base64 data URIs en elementos `<img>` con directivas CSS prioritarias (`height: ...px !important; max-height: ...px !important; object-fit: contain !important;`), eliminando por completo cualquier riesgo de desbordamiento.
+  5. *Recompilación Vectorizada de PDFs*:
+     - Politorno (9 páginas) y Henn (8 páginas) recompilados mediante Microsoft Edge headless.
+### 🚀 Hito 212: Estandarización de Tarifas de Objetos Inteligentes ($399 / $599 / $899 USD), Estructura Canónica de Carpeta Comercial (`/comercial/`) y Protocolo de Blindaje por Perímetro (25 de Septiembre, 2026)
+- **Contexto y Ajuste Comercial Estratégico**:
+  * El usuario definió las tarifas comerciales finales y ultra-competitivas para la tabla de Objetos Inteligentes (Bloques Paramétricos 3dBimFab):
+    - Mueble Pequeño (hasta 10 piezas): **$ 399 USD** (3 días de desarrollo).
+    - Mueble Mediano (11 a 24 piezas): **$ 599 USD** (5 días de desarrollo).
+    - Mueble Grande (25 a 40 piezas): **$ 899 USD** (8 días de desarrollo).
+  * En cascada, se ajustó la bonificación de los 10 muebles medianos en el paquete piloto de 3dBimFab a **$ 5.990 USD 100% bonificados** (10 × $ 599 USD) y el ahorro consolidado en tecnología a **+$ 7.864 USD** para Politorno y **+$ 7.863,7 USD** para Henn.
+  * Condiciones de pago consolidadas en **30% Anticipo ($ 562 USD) / 70% Saldo contra entrega ($ 1.312 USD)** y hosting en nube estructurado como **suscripción anual escalable por catálogo (desde $ 100 USD / año)** con los primeros 60 días bonificados.
+- **Implementación y Estandarización de Carpeta `/comercial/`**:
+  1. *Creación del Perímetro de Carpeta Unificado*:
+     - Se crearon y poblaron las carpetas físicas `Comercial/`, `mario-mojica-homepage/public/comercial/` y `mario-mojica-plataforma/public/comercial/`.
+     - Todos los recursos comerciales (actas, visores 16:9, PDFs vectoriales y el Hub cifrado) se reubicaron y sincronizaron canónicamente bajo la ruta `mariomojica.com/comercial/*`.
+  2. *Blindaje de Infraestructura Global (`netlify.toml` y `robots.txt`)*:
+     - Directiva en `netlify.toml` para `/comercial/*` con cabeceras `X-Robots-Tag: noindex, nofollow, noarchive, nosnippet, noimageindex` y `Cache-Control: no-store, no-cache, must-revalidate`.
+     - Directiva en `robots.txt`: `Disallow: /comercial/` y `Disallow: /comercial/*`, impidiendo la indexación por parte de Google, Bing, OpenAI, Claude o cualquier crawler.
+     - Redirecciones 302 automáticas desde las URLs anteriores en la raíz hacia la nueva ruta protegida `/comercial/*`.
+  3. *Documentación Maestra*:
+     - Creación de `c:\Desarrollo\mmapp\Comercial\SEGURIDAD_COMERCIAL.md` detallando las 4 capas de blindaje y el principio de seguridad por perímetro.
+  4. *Hub Comercial Cifrado AES-256-GCM*:
+     - Regenerado con las URLs actualizadas a `/comercial/...` y los nuevos valores económicos. Descifrado verificado con PIN `6907` y llave maestra `MM-3BF-2026`.
+  5. *Compilación y Validación*:
+     - Recompilación con Microsoft Edge Headless: Politorno (9 páginas exactas) y Henn (8 páginas exactas) verificados con PyMuPDF.
+     - TypeScript validado con **0 errores** (`npx tsc --noEmit`).
+
+
+

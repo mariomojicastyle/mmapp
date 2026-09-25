@@ -14,13 +14,70 @@
     X-Content-Type-Options = "nosniff"
     X-XSS-Protection = "1; mode=block"
 
-# Blindaje Estricto Anti-Indexación y Anti-Caché para Hub Comercial Privado
+# Blindaje Estricto Anti-Indexación y Anti-Caché para Carpeta y Hub Comercial Privado
+[[headers]]
+  for = "/comercial/*"
+  [headers.values]
+    X-Robots-Tag = "noindex, nofollow, noarchive, nosnippet, noimageindex"
+    Cache-Control = "no-store, no-cache, must-revalidate, max-age=0"
+    Pragma = "no-cache"
+
+[[headers]]
+  for = "/comercial"
+  [headers.values]
+    X-Robots-Tag = "noindex, nofollow, noarchive, nosnippet, noimageindex"
+    Cache-Control = "no-store, no-cache, must-revalidate, max-age=0"
+    Pragma = "no-cache"
+
 [[headers]]
   for = "/comercial.html"
   [headers.values]
     X-Robots-Tag = "noindex, nofollow, noarchive, nosnippet, noimageindex"
     Cache-Control = "no-store, no-cache, must-revalidate, max-age=0"
     Pragma = "no-cache"
+
+# Alias y Redirecciones Canónicas para la Carpeta Comercial
+[[redirects]]
+  from = "/comercial"
+  to = "/comercial/comercial.html"
+  status = 302
+  force = true
+
+[[redirects]]
+  from = "/comercial/"
+  to = "/comercial/comercial.html"
+  status = 302
+  force = true
+
+[[redirects]]
+  from = "/acta-politorno.html"
+  to = "/comercial/acta-politorno.html"
+  status = 302
+
+[[redirects]]
+  from = "/acta-propuesta-politorno-usd.html"
+  to = "/comercial/acta-propuesta-politorno-usd.html"
+  status = 302
+
+[[redirects]]
+  from = "/propuesta-henn.html"
+  to = "/comercial/propuesta-henn.html"
+  status = 302
+
+[[redirects]]
+  from = "/propuesta-henn-usd.html"
+  to = "/comercial/propuesta-henn-usd.html"
+  status = 302
+
+[[redirects]]
+  from = "/Acta_Propuesta_Piloto_Politorno_Mario_Mojica_USD.pdf"
+  to = "/comercial/Acta_Propuesta_Piloto_Politorno_Mario_Mojica_USD.pdf"
+  status = 302
+
+[[redirects]]
+  from = "/Propuesta_Comercial_Moveis_Henn_Mario_Mojica_USD.pdf"
+  to = "/comercial/Propuesta_Comercial_Moveis_Henn_Mario_Mojica_USD.pdf"
+  status = 302
 
 # Excepción para las API Routes internas y Traductor Vivo
 [[redirects]]

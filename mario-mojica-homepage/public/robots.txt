@@ -1,6 +1,8 @@
 # Robots.txt for mariomojica.com
 User-agent: *
 Allow: /
+Disallow: /comercial/
+Disallow: /comercial/*
 Disallow: /comercial.html
 Disallow: /api/
 Disallow: /admin/

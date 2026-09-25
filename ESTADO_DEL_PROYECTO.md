@@ -9,7 +9,41 @@ Este archivo es la "Memoria RAM" para Antigravity. Contiene el contexto de lo qu
 ---
 
 ## 🏗️ 1. Plataforma B2B & 3dBimFab (Foco Actual)
-**Estado:** Hito 209 completado (Hub Comercial B2B `comercial.html` y Detección Automática de Idioma en Chrome para Brasil `pt-BR`); Próximo Foco: Seguimiento Comercial Politorno / Henn (`Politorno_Renders`).
+**Estado:** Hito 212 completado (Estandarización de Tarifas de Objetos Inteligentes $399/$599/$899 USD, Estructura Canónica de Carpeta Comercial `/comercial/` y Blindaje por Perímetro); Despliegue a Netlify autorizado por el usuario.
+
+- [x] **[25 de Septiembre, 2026] Estandarización de Tarifas de Objetos Inteligentes ($399 / $599 / $899 USD), Estructura Canónica de Carpeta Comercial (`/comercial/`) y Protocolo de Blindaje por Perímetro**:
+  * **Tarifas Comerciales Definitivas de Objetos Inteligentes (Bloques Paramétricos 3dBimFab)**:
+    - Mueble Pequeño (hasta 10 piezas): **$ 399 USD** (3 días de desarrollo).
+    - Mueble Mediano (11 a 24 piezas): **$ 599 USD** (5 días de desarrollo).
+    - Mueble Grande (25 a 40 piezas): **$ 899 USD** (8 días de desarrollo).
+  * **Actualización en Cascada en Politorno y Henn**:
+    - Bonificación de 10 muebles medianos en 3dBimFab: **$ 5.990 USD 100% bonificados** ($0 USD para el cliente).
+    - Ahorro consolidado en tecnología: **+$ 7.864 USD** en Politorno y **+$ 7.863,7 USD** en Henn.
+    - Condiciones de pago: **30% Anticipo ($ 562 USD) / 70% Saldo contra entrega ($ 1.312 USD)**. Acompañamiento: 60 días.
+    - Plataforma cloud e IA: 60 días gratis, luego suscripción anual desde **$ 100 USD / año** (hasta 100 muebles).
+  * **Estandarización de la Carpeta `/comercial/` y Blindaje Global**:
+    - Creación de carpetas físicas `Comercial/`, `mario-mojica-homepage/public/comercial/` y `mario-mojica-plataforma/public/comercial/`.
+    - Todas las URLs comerciales unificadas bajo el prefijo canónico: `mariomojica.com/comercial/*`.
+    - Redirecciones automáticas 302 en `netlify.toml` para enlaces anteriores de la raíz.
+    - Blindaje de servidor Edge (`netlify.toml`): cabeceras `X-Robots-Tag: noindex, nofollow, noarchive, nosnippet` y `Cache-Control: no-store, no-cache` para toda la ruta `/comercial/*`.
+    - Exclusión estricta de motores de búsqueda e IA en `robots.txt`: `Disallow: /comercial/` y `Disallow: /comercial/*`.
+    - Creación del documento maestro [SEGURIDAD_COMERCIAL.md](file:///c:/Desarrollo/mmapp/Comercial/SEGURIDAD_COMERCIAL.md).
+    - Hub Comercial Cifrado AES-256-GCM regenerado y verificado con PIN `6907`.
+    - PDFs oficiales de Politorno (9 págs) y Henn (8 págs) recompilados y validados.
+
+- [x] **[25 de Septiembre, 2026] Objetos Inteligentes 3dBimFab (Opción B: Escale su P&D sin Aumentar Nómina), Diapositiva de Complejidad en Politorno/Henn y Clarificación de Alcance/Empaque (`acta-politorno.html`, `propuesta-henn.html`, PDFs)**:
+  * **Evolución Comercial a Objetos Inteligentes (Slide 4 en Politorno y Henn)**:
+    - Nuevo título: *Objetos Inteligentes 3dBimFab: Inversión, Complejidad y Tiempos de Desarrollo* (PT: *Objetos Inteligentes 3dBimFab: Investimento, Complexidade e Prazos de Desenvolvimento*).
+    - Subtítulo purificado sin tarifas senior: *"Para garantizar la predictibilidad y rigor técnico, clasificamos el catálogo de la marca en tres niveles de complejidad."* (Cero mención a $6.000 USD/mes ni tarifas por día).
+    - Columnas de tabla clarificadas: *Desarrollo Objeto Inteligente* y *Valor Comercial Objeto Inteligente*.
+    - Recuadro de Valor Opción B implementado: *"Multiplicación de Capacidad: Escale su P&D sin Aumentar la Nómina"* en ES y PT.
+  * **Clarificación Técnica y Blindaje de Alcance (Slide 3 y Slide 8/9)**:
+    - Se eliminó la promesa de "Sincronización Total" en Slide 3: ajustada a *Manual Oficial de Catálogo & Co-Innovación en Empaque* (el manual corresponde a la configuración de catálogo acordada, mientras que el módulo de empaque es un desarrollo conjunto durante el piloto).
+    - En condiciones de cierre: *10 Productos • 60 Días de Acompañamiento* (nuevos modelos tras el piloto se rigen por la tabla oficial de objetos inteligentes).
+  * **Logotipos Blindados Definitivamente**:
+    - Reemplazados todos los SVGs en crudo por Base64 data URIs con CSS prioritario `height: ...px !important; max-height: ...px !important; object-fit: contain !important;`, erradicando cualquier desborde.
+  * **Compilación de PDFs**: Recompilados vía Edge headless (Politorno 9 páginas, Henn 8 páginas).
+  * **Validación**: Servidor local respondiendo `HTTP 200 OK` en `http://localhost:3003`. Cero carga a Netlify, pendiente de aprobación del usuario.
 
 - [x] **[25 de Septiembre, 2026] Blindaje Bancario AES-256-GCM, Camuflaje Fantasma 404 y Anti-Indexación Total en Hub Comercial B2B (`comercial.html`) y Detección Automática de Idioma Chrome (`pt-BR` / `es`)**:
   * **Blindaje Criptográfico de Grado Bancario (AES-256-GCM + PBKDF2)**:
