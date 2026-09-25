@@ -1956,5 +1956,32 @@ Para mantener la máxima agilidad y minimizar el consumo de tokens sin perder ni
      - Recompilación con Microsoft Edge Headless: Politorno (9 páginas exactas) y Henn (8 páginas exactas) verificados con PyMuPDF.
      - TypeScript validado con **0 errores** (`npx tsc --noEmit`).
 
-
-
+### 🚀 Hito 213: Transición Canónica a Presentaciones PDF Vectoriales Nativas, Estructura Cronológica en Google Drive y Limpieza Web (25 de Septiembre, 2026)
+- **Contexto y Definición Estratégica**:
+  * Tras evaluar la visualización móvil en smartphones (donde visores web panorámicos de 1920x1080 o presentaciones rasterizadas sufrían limitaciones de escala o pixelación), el usuario tomó la decisión ejecutiva de adoptar el **PDF vectorial nativo TrueType** como formato canónico y definitivo para todas las presentaciones comerciales B2B.
+  * Los PDFs vectoriales permiten zoom infinito al 1000% con doble dedo, visualización vertical/horizontal nativa, compatibilidad total en WhatsApp y máxima nitidez ejecutiva para directores de fábrica en Brasil.
+- **Estructura Cronológica y Migración a Google Drive (`G:\Mi unidad\Comercial\09_septiembre\`)**:
+  * Para no sobrecargar la infraestructura web de la plataforma con archivos comerciales pesados, se migró todo el almacenamiento de presentaciones y propuestas a Google Drive para escritorio (`G:\Mi unidad\Comercial\09_septiembre\`).
+  * Se eliminó el nivel redundante `Propuestas/`, consolidando la estructura directamente por mes y fecha:
+    - `09_25_2026_Acta_Propuesta_Piloto_Politorno_Mario_Mojica_USD/`:
+      * `Acta_Propuesta_Piloto_Politorno_Mario_Mojica_ES_USD.pdf` (8 páginas, versión limpia oficial para envío).
+      * `Ata_Proposta_Piloto_Politorno_Mario_Mojica_PT_USD.pdf` (8 páginas, versión limpia oficial en portugués).
+      * `Acta_Propuesta_Piloto_Politorno_Mario_Mojica_ES_USD_Con_Objetos_Inteligentes.pdf` (9 páginas, versión con tabla de objetos inteligentes $399/$599/$899 USD).
+      * `Ata_Proposta_Piloto_Politorno_Mario_Mojica_PT_USD_Com_Objetos_Inteligentes.pdf` (9 páginas, versión en portugués con objetos inteligentes).
+      * Fuentes HTML de trabajo para recompilaciones futuras del agente.
+    - `09_25_2026_Propuesta_Comercial_Moveis_Henn_Mario_Mojica_USD/`:
+      * `Propuesta_Comercial_Moveis_Henn_Mario_Mojica_ES_USD.pdf` (8 páginas en español).
+      * `Proposta_Comercial_Moveis_Henn_Mario_Mojica_PT_USD.pdf` (8 páginas en portugués).
+      * Fuentes HTML de trabajo y memoria de costos Excel `Cotizador_Costos_Moveis_Henn_Mario_Mojica_V2.xlsx`.
+    - `09_24_2026_Propuesta_Comercial_Renders_Politorno_Mario_Mojica/`:
+      * `Propuesta_Comercial_Renders_Politorno_Mario_Mojica_ES.pdf` (Español).
+      * `Proposta_Comercial_Renders_Politorno_Mario_Mojica_PT.pdf` (Portugués) y fuentes HTML.
+- **Estrategia Comercial de Variantes para Politorno**:
+  * Versión Oficial (8 diapositivas): Omite la tabla de modelado paramétrico para iniciar la conversación sin fricción de costos extra, enfocada 100% en los manuales 3D del programa piloto.
+  * Versión Completa (9 diapositivas): Conserva la diapositiva de Objetos Inteligentes ($399 USD pequeño, $599 USD mediano, $899 USD grande) con su argumentación de escala de P&D sin aumentar nómina, reservada para consulta interna o por si el cliente la solicita.
+- **Limpieza Integral de Netlify**:
+  * Se eliminaron todos los HTMLs y carpetas obsoletas de catálogos y propuestas web del repositorio (`acta-politorno.html`, `propuesta-henn.html`, `comercial.html`, `index.html`, etc.).
+  * Se preservó intacto y funcional el activo interactivo `estudio-comparativo-politorno.html` (slider comparativo antes/después de renders con IA para Politorno).
+- **Validación**:
+  * Verificación exhaustiva de PDFs con PyMuPDF (fidelidad de textos en portugués y español, conteo de páginas y resolución 4K).
+  * `npx tsc --noEmit` validado con **0 errores**.

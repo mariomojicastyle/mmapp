@@ -9,9 +9,27 @@ Este archivo es la "Memoria RAM" para Antigravity. Contiene el contexto de lo qu
 ---
 
 ## 🏗️ 1. Plataforma B2B & 3dBimFab (Foco Actual)
-**Estado:** Hito 212 completado (Estandarización de Tarifas de Objetos Inteligentes $399/$599/$899 USD, Estructura Canónica de Carpeta Comercial `/comercial/` y Blindaje por Perímetro); Despliegue a Netlify autorizado por el usuario.
+**Estado:** Hito 213 completado (Transición Canónica a Presentaciones PDF Vectoriales Nativas, Organización Cronológica en Google Drive `G:\Mi unidad\Comercial\09_septiembre\`, Estrategia de Variantes para Politorno y Limpieza Web de Netlify); Despliegue a Netlify en curso.
 
-- [x] **[25 de Septiembre, 2026] Estandarización de Tarifas de Objetos Inteligentes ($399 / $599 / $899 USD), Estructura Canónica de Carpeta Comercial (`/comercial/`) y Protocolo de Blindaje por Perímetro**:
+- [x] **[25 de Septiembre, 2026] Transición Canónica a Presentaciones PDF Vectoriales Nativas, Estructura Cronológica en Google Drive (`G:\Mi unidad\Comercial\09_septiembre\`) y Limpieza Integral de Netlify**:
+  * **Decisión Estratégica Formato PDF Vectorial**:
+    - El formato rector y definitivo para compartir y consultar presentaciones es el **PDF vectorial TrueType**, garantizando nitidez 4K infinita al 1000% con los dedos en smartphones, visualización nativa fluida y envío directo por WhatsApp.
+  * **Estructura Cronológica Consolidada en Google Drive**:
+    - Eliminado el nivel redundante `Propuestas/`. Las propuestas se gestionan directamente en Google Drive: `G:\Mi unidad\Comercial\09_septiembre\`.
+    - Politorno (`09_25_2026_Acta_Propuesta_Piloto_Politorno_Mario_Mojica_USD`):
+      * `Acta_Propuesta_Piloto_Politorno_Mario_Mojica_ES_USD.pdf` (8 págs, oficial limpia).
+      * `Ata_Proposta_Piloto_Politorno_Mario_Mojica_PT_USD.pdf` (8 págs, oficial en portugués).
+      * `Acta_Propuesta_Piloto_Politorno_Mario_Mojica_ES_USD_Con_Objetos_Inteligentes.pdf` (9 págs, incluye tabla $399/$599/$899 USD).
+      * `Ata_Proposta_Piloto_Politorno_Mario_Mojica_PT_USD_Com_Objetos_Inteligentes.pdf` (9 págs, en portugués con tabla).
+    - Henn (`09_25_2026_Propuesta_Comercial_Moveis_Henn_Mario_Mojica_USD`):
+      * `Propuesta_Comercial_Moveis_Henn_Mario_Mojica_ES_USD.pdf` (8 págs en español).
+      * `Proposta_Comercial_Moveis_Henn_Mario_Mojica_PT_USD.pdf` (8 págs en portugués).
+    - Renders Politorno (`09_24_2026_Propuesta_Comercial_Renders_Politorno_Mario_Mojica`):
+      * Versiones en ES y PT organizadas limpiamente.
+  * **Limpieza de Netlify**:
+    - Removidos todos los HTMLs y subcarpetas obsoletas de catálogos y propuestas web del repositorio (`acta-politorno.html`, `propuesta-henn.html`, `comercial.html`, `index.html`, etc.).
+    - Se preservó intacto y funcional el visor interactivo [estudio-comparativo-politorno.html](file:///c:/Desarrollo/mmapp/mario-mojica-homepage/public/estudio-comparativo-politorno.html) para el slider de renders con IA.
+
   * **Tarifas Comerciales Definitivas de Objetos Inteligentes (Bloques Paramétricos 3dBimFab)**:
     - Mueble Pequeño (hasta 10 piezas): **$ 399 USD** (3 días de desarrollo).
     - Mueble Mediano (11 a 24 piezas): **$ 599 USD** (5 días de desarrollo).
