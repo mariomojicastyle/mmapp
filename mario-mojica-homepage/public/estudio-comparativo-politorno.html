@@ -906,7 +906,7 @@
       <!-- 3. Acciones de Escritorio (Desktop) -->
       <div class="desktop-actions">
         <!-- Botón Propuesta Comercial -->
-        <a id="btnPropuestaComercial" href="Propuesta_Comercial_Renders_Politorno_Mario_Mojica_ES.html" class="btn-header-primary" style="background: #1368AA; color: #ffffff; border: 1.5px solid rgba(255, 255, 255, 0.45); box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);" title="Ver Propuesta Comercial">
+        <a id="btnPropuestaComercial" href="Propuesta_Comercial_Renders_Politorno_Mario_Mojica_ES.html" target="_blank" class="btn-header-primary" style="background: #1368AA; color: #ffffff; border: 1.5px solid rgba(255, 255, 255, 0.45); box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);" title="Ver Propuesta Comercial">
           💼 <span id="txtBtnPropuesta">Propuesta Comercial</span>
         </a>
 
@@ -952,7 +952,7 @@
     <div class="drawer-body">
       <div class="drawer-section-title" id="txtDrawerDownloadsTitle">Descargas & Documentos</div>
       
-      <a id="btnDrawerPropuesta" href="Propuesta_Comercial_Renders_Politorno_Mario_Mojica_ES.html" class="drawer-btn drawer-btn-primary" style="background: #1368AA; color: #ffffff;" onclick="toggleDrawer(false)">
+      <a id="btnDrawerPropuesta" href="Propuesta_Comercial_Renders_Politorno_Mario_Mojica_ES.html" target="_blank" class="drawer-btn drawer-btn-primary" style="background: #1368AA; color: #ffffff;" onclick="toggleDrawer(false)">
         💼 <span id="txtDrawerPropuesta">Ver Propuesta Comercial</span>
       </a>
 
@@ -1065,7 +1065,7 @@
           <h3 id="txtSummaryTitle">Ecosistema Integrado: Catálogo Digital + Manuales 3D + 3dBimFab</h3>
           <p id="txtSummaryBody">Un mismo activo digital tridimensional genera renders comerciales de máxima conversión, alimenta los manuales de armado interactivos en el móvil del cliente y se conecta con la ingeniería paramétrica de fábrica.</p>
         </div>
-        <a id="btnSummaryPropuesta" href="Propuesta_Comercial_Renders_Politorno_Mario_Mojica_ES.html" class="btn-header-primary" style="padding: 12px 24px; font-size: 13px; background: #0088AA; color: #ffffff; text-decoration: none; border-radius: 9999px; display: inline-flex; align-items: center; gap: 8px; border: 1.5px solid rgba(255, 255, 255, 0.4); box-shadow: 0 4px 12px rgba(0,0,0,0.25);">
+        <a id="btnSummaryPropuesta" href="Propuesta_Comercial_Renders_Politorno_Mario_Mojica_ES.html" target="_blank" class="btn-header-primary" style="padding: 12px 24px; font-size: 13px; background: #0088AA; color: #ffffff; text-decoration: none; border-radius: 9999px; display: inline-flex; align-items: center; gap: 8px; border: 1.5px solid rgba(255, 255, 255, 0.4); box-shadow: 0 4px 12px rgba(0,0,0,0.25);">
           💼 <span id="txtSummaryPropuesta">Ver Propuesta Comercial</span>
         </a>
       </div>
@@ -1401,23 +1401,30 @@
       
       const txtBtnPropuesta = document.getElementById('txtBtnPropuesta');
       const btnPropuestaComercial = document.getElementById('btnPropuestaComercial');
+      const proposalHtmlUrl = lang === 'pt' 
+        ? "Propuesta_Comercial_Renders_Politorno_Mario_Mojica_PT.html" 
+        : "Propuesta_Comercial_Renders_Politorno_Mario_Mojica_ES.html";
+
       if (txtBtnPropuesta && btnPropuestaComercial) {
         txtBtnPropuesta.textContent = dict.btnPropuesta;
-        btnPropuestaComercial.href = `Propuesta_Comercial_Renders_Politorno_Mario_Mojica_ES.html?lang=${lang}`;
+        btnPropuestaComercial.href = proposalHtmlUrl;
+        btnPropuestaComercial.target = "_blank";
       }
 
       const txtDrawerPropuesta = document.getElementById('txtDrawerPropuesta');
       const btnDrawerPropuesta = document.getElementById('btnDrawerPropuesta');
       if (txtDrawerPropuesta && btnDrawerPropuesta) {
         txtDrawerPropuesta.textContent = dict.txtDrawerPropuesta;
-        btnDrawerPropuesta.href = `Propuesta_Comercial_Renders_Politorno_Mario_Mojica_ES.html?lang=${lang}`;
+        btnDrawerPropuesta.href = proposalHtmlUrl;
+        btnDrawerPropuesta.target = "_blank";
       }
 
       const txtSummaryPropuesta = document.getElementById('txtSummaryPropuesta');
       const btnSummaryPropuesta = document.getElementById('btnSummaryPropuesta');
       if (txtSummaryPropuesta && btnSummaryPropuesta) {
         txtSummaryPropuesta.textContent = dict.summaryPropuesta;
-        btnSummaryPropuesta.href = `Propuesta_Comercial_Renders_Politorno_Mario_Mojica_ES.html?lang=${lang}`;
+        btnSummaryPropuesta.href = proposalHtmlUrl;
+        btnSummaryPropuesta.target = "_blank";
       }
       
       const txtBtnHd = document.getElementById('txtBtnHd');

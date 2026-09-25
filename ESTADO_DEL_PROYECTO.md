@@ -15,10 +15,10 @@ Este archivo es la "Memoria RAM" para Antigravity. Contiene el contexto de lo qu
   * **Propuesta Comercial Politorno (Reunión con Marcelo Novo y Mercadeo)**:
     - Servicio de renovación de renders de catálogo mediante Inteligencia Artificial impulsada por `3dBimFab`. Cero modelado 3D manual y cero carga para Politorno: se utilizan los renders antiguos existentes en su sitio web (`politorno.com.br`).
     - Estructura de 10 imágenes estratégicas por mueble (portada marketplace, frontal 3/4 abierto, frontal cerrado, macro de herrajes, ergonomía y capacidad, lifestyle día, lifestyle noche cálido, detalle táctil de melamina, vista técnica posterior y despiece dimensional con medidas).
-    - Tarifas en Dólares Estadounidenses (USD) con tasa base de $1 USD = $3.000 COP:
-      * **Paquete Piloto (20 Muebles / ~200 Renders 2K)**: $22.22 USD por mueble ($2.22 USD por render). Inversión total: **$444 USD**.
-      * **Paquete Escala (50 Muebles / ~500 Renders 2K - Recomendado / 25% OFF)**: $16.67 USD por mueble ($1.67 USD por render). Inversión total: **$833 USD** (ahorro de $278 USD). Sprints de entrega semanales continuos de 5 a 10 muebles.
-    - Generación de presentaciones web interactivas (16:9) y PDFs descargables de 6 diapositivas en alta resolución en Español y Portugués (`Propuesta_Comercial_Renders_Politorno_Mario_Mojica_ES.html` y `_PT.html`), enlazadas mediante botón en `estudio-corporativo-politorno.html`.
+    - Tarifas exclusivamente en Dólares Estadounidenses (USD - sin TRM ni monedas locales):
+      * **Paquete Piloto (20 Muebles / ~200 Renders 2K)**: $24.95 USD por mueble ($2.49 USD por render). Inversión total: **$499 USD**.
+      * **Paquete Escala (50 Muebles / ~500 Renders 2K - Recomendado / 28% OFF)**: $17.98 USD por mueble ($1.80 USD por render). Inversión total: **$899 USD** (ahorro directo de $348 USD). Sprints de entrega semanales continuos de 5 a 10 muebles.
+    - Generación de presentaciones web interactivas (16:9) y PDFs descargables de 6 diapositivas en alta resolución en Español y Portugués (`Propuesta_Comercial_Renders_Politorno_Mario_Mojica_ES.html` y `_PT.html`), enlazadas mediante botones directos a la versión HTML interactiva en `estudio-corporativo-politorno.html` y con botón flotante superior para descargar el PDF.
   * **Blindaje y Botón Toggle Permanente del N-Panel**:
     - Botón en `top-3.5 right-3.5` en móvil (`w-8 h-8 rounded-full` / 32px, misma altura que *Guardar Proyecto* y *Perforar*). Ahora es un toggle permanente (`z-50`) que alterna entre `<` y `>` sin desaparecer nunca.
     - Backdrop táctil sutil en móvil (`z-35 bg-black/25`) para cerrar el panel al tocar el lienzo 3D.

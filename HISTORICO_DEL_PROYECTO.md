@@ -1789,6 +1789,29 @@ Para mantener la máxima agilidad y minimizar el consumo de tokens sin perder ni
   * Compilación TypeScript verificada (`npx tsc --noEmit`) en `c:\Desarrollo\mmapp\3bf` con **0 errores**.
   * Servicios locales (RhinoCompute en 5000, 3BF Worker en 8005, Next.js en 3005) y Cloudflare Tunnel en `https://engine.mariomojica.com` 100% operativos.
 
+---
+
+### 🚀 Hito 206: Actualización de Precios Exclusivos en USD ($499 Piloto / $899 Escala - 28% OFF), Eliminación de TRM y Enrutamiento Coherente HTML/PDF para Politorno Móveis (24 de Septiembre, 2026)
+- **Motivación & Decisiones Estratégicas de Cierre B2B**:
+  * **Tarifas Exclusivas en USD**: Para la negociación internacional con Politorno Móveis en Bento Gonçalves (RS, Brasil), se eliminaron todas las menciones a tasas de cambio o conversiones en monedas locales (sin TRM en pesos colombianos ni reales), simplificando la presentación a valores netos directos en Dólares Estadounidenses (USD).
+  * **Actualización Matemática de Paquetes**:
+    - **Paquete Piloto (20 Muebles)**: Actualizado a **$499 USD** ($24.95 USD/mueble, $2.49 USD por render en ~200 renders 2K). Anticipo 50%: $249.50 USD / Entrega final 50%: $249.50 USD.
+    - **Paquete Escala (50 Muebles - Recomendado)**: Actualizado a **$899 USD** ($17.98 USD/mueble, $1.80 USD por render en ~500 renders 2K). Representa un **28% de descuento por volumen (28% OFF)** con un ahorro directo de **$348 USD** en el contrato respecto a la tarifa regular ($1,247.50 USD). Anticipo 50%: $449.50 USD / Entrega final 50%: $449.50 USD.
+  * **Coherencia de Enrutamiento (HTML vs. PDF)**:
+    - Botones de "Ver Propuesta Comercial" (cabecera, drawer móvil y banner inferior de `estudio-corporativo-politorno.html`) enlazan directamente a las presentaciones interactivas completas en **HTML** (`Propuesta_Comercial_Renders_Politorno_Mario_Mojica_PT.html` o `ES.html` con `target="_blank"`).
+    - Botón flotante superior integrado en las presentaciones web para descargar la versión en **PDF** en 1 clic (con `@media print` para ocultarse automáticamente en la compilación a papel o archivo).
+- **Implementación Técnica**:
+  1. *Generador Automatizado de Propuestas (`scratch/build_complete_politorno_proposal.py`)*:
+     - Diccionarios ES y PT actualizados con los nuevos valores $499 USD y $899 USD (28% OFF), ahorro de $348 USD y términos de pago ($249.50 / $449.50 USD).
+     - Supresión total de tasas de conversión (TRM) y monedas secundarias; cabeceras y pie de diapositiva configurados en "Facturación Internacional en USD".
+     - Inyección de botón flotante `.no-print` para descarga directa del PDF.
+     - Regeneración y exportación de archivos HTML y PDF sincronizados en `Comercial/Propuestas/` y `mario-mojica-homepage/public/`.
+  2. *Landing Corporativa (`estudio-corporativo-politorno.html` y `estudio-comparativo-politorno.html`)*:
+     - En `setLanguage(lang)`, los enlaces de `btnPropuestaComercial`, `btnDrawerPropuesta` y `btnSummaryPropuesta` se dirigen de forma bilingüe estricta al HTML en portugués (`_PT.html`) o español (`_ES.html`) con `target="_blank"`.
+- **Validación de Calidad**:
+  * Compilación y verificación de archivos PDF y HTML en vivo.
+
+
 
 
 

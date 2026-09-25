@@ -17,6 +17,11 @@
       margin: 0;
       padding: 0;
     }
+    @media print {
+      .no-print {
+        display: none !important;
+      }
+    }
     body {
       font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
       background-color: #0F172A;
@@ -765,6 +770,11 @@
 </head>
 <body>
 
+  <!-- Botón flotante para descargar PDF (Oculto al compilar en PDF gracias a @media print) -->
+  <a href="Propuesta_Comercial_Renders_Politorno_Mario_Mojica_ES.pdf" download class="no-print" style="position: fixed; top: 18px; right: 24px; z-index: 99999; background: #0088AA; color: #ffffff; padding: 10px 22px; border-radius: 9999px; font-weight: 700; font-size: 13px; text-decoration: none; display: flex; align-items: center; gap: 8px; box-shadow: 0 4px 14px rgba(0,0,0,0.35); border: 1.5px solid rgba(255,255,255,0.4); font-family: inherit; cursor: pointer;">
+    📄 Descargar Presentación en PDF
+  </a>
+
   <!-- ==================== LÁMINA 1: PORTADA ==================== -->
   <div class="slide">
     <div class="bg-grid"></div>
@@ -1084,7 +1094,7 @@
         </div>
         <div class="header-right">
           <span class="capsule-badge badge-accent">Tarifas en Dólares (USD)</span>
-          <span class="capsule-badge badge-dark">Tasa Base: 1 USD = $3.000 COP</span>
+          <span class="capsule-badge badge-dark">Facturación Internacional en USD</span>
         </div>
       </div>
 
@@ -1102,12 +1112,12 @@
 
           <div class="price-box">
             <span class="price-currency">$</span>
-            <span class="price-amount">22.22</span>
+            <span class="price-amount">24.95</span>
             <span class="price-period">USD / mueble</span>
           </div>
 
           <div class="price-unit-calc">
-            📊 Equivale a solo <strong>$2.22 USD</strong> por imagen renderizada (~10 renders/mueble)
+            📊 Equivale a solo <strong>$2.49 USD</strong> por imagen renderizada (~10 renders/mueble)
           </div>
 
           <ul class="pricing-features">
@@ -1132,26 +1142,26 @@
           <div class="pricing-total-banner">
             <div>
               <div class="total-lbl" style="color: #64748B;">Inversión Total Paquete</div>
-              <div class="total-equiv" style="color: #0284C7;">~ $1.333.333 COP | ~ R$ 2.450 BRL</div>
+              <div class="total-equiv" style="color: #0284C7;">Tarifa plana sin costos ocultos</div>
             </div>
-            <div class="total-val" style="color: #0F172A;">$444 <span style="font-size: 16px; font-weight: 600;">USD</span></div>
+            <div class="total-val" style="color: #0F172A;">$499 <span style="font-size: 16px; font-weight: 600;">USD</span></div>
           </div>
         </div>
 
         <!-- PLAN 2: 50 MUEBLES (ESCALA) -->
         <div class="pricing-card card-tier2">
-          <div class="best-value-ribbon">⭐ Mejor Valor: 25% OFF</div>
+          <div class="best-value-ribbon">⭐ Mejor Valor: 28% OFF</div>
           <div class="pricing-tier-name" style="color: #0088AA;">Paquete Escala (50 Muebles)</div>
           <div class="pricing-tier-sub">Renovación masiva para transformar por completo la presencia digital y e-commerce de Politorno.</div>
 
           <div class="price-box">
             <span class="price-currency" style="color: #0088AA;">$</span>
-            <span class="price-amount" style="color: #0088AA;">16.67</span>
+            <span class="price-amount" style="color: #0088AA;">17.98</span>
             <span class="price-period">USD / mueble</span>
           </div>
 
           <div class="price-unit-calc price-unit-calc-highlight">
-            🎉 <strong>25% de Descuento por Volumen</strong> = ¡Apenas <strong>$1.67 USD</strong> por render!
+            🎉 <strong>28% de Descuento por Volumen</strong> = ¡Apenas <strong>$1.80 USD</strong> por render!
           </div>
 
           <ul class="pricing-features">
@@ -1165,7 +1175,7 @@
             </li>
             <li class="p-feat">
               <span class="p-icon p-icon-green">✓</span>
-              <span><strong>Ahorro Directo de $278 USD</strong> en el contrato frente a tarifa regular.</span>
+              <span><strong>Ahorro Directo de $348 USD</strong> en el contrato frente a tarifa regular.</span>
             </li>
             <li class="p-feat">
               <span class="p-icon p-icon-green">✓</span>
@@ -1180,16 +1190,16 @@
           <div class="pricing-total-banner tier2-banner">
             <div>
               <div class="total-lbl" style="color: #94A3B8;">Inversión Total Paquete</div>
-              <div class="total-equiv">~ $2.500.000 COP | ~ R$ 4.590 BRL</div>
+              <div class="total-equiv">Tarifa corporativa preferencial con 28% OFF</div>
             </div>
-            <div class="total-val">$833 <span style="font-size: 16px; font-weight: 600; color: #E2E8F0;">USD</span></div>
+            <div class="total-val">$899 <span style="font-size: 16px; font-weight: 600; color: #E2E8F0;">USD</span></div>
           </div>
         </div>
       </div>
 
       <div class="footer">
         <div class="footer-left">
-          <span>Tasa de cambio base de referencia: 1 USD = $3.000 COP | 1 USD ≈ 5.50 BRL</span>
+          <span>Valores netos expresados en Dólares Americanos (USD)</span>
           <span class="footer-dot"></span>
           <span>Facturación directa de servicios de diseño tecnológico y software</span>
         </div>
@@ -1306,7 +1316,7 @@
           <div class="term-num">1</div>
           <div>
             <div class="term-title">Esquema de Pago en Dos Fases</div>
-            <div class="term-desc"><strong>50% de Anticipo</strong> ($222 USD Piloto / $416.50 USD Escala) al autorizar el inicio del paquete y <strong>50% contra entrega</strong> a entera satisfacción de los lotes pactados.</div>
+            <div class="term-desc"><strong>50% de Anticipo</strong> ($249.50 USD Piloto / $449.50 USD Escala) al autorizar el inicio del paquete y <strong>50% contra entrega</strong> a entera satisfacción de los lotes pactados.</div>
           </div>
         </div>
         
