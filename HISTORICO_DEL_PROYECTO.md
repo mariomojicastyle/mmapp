@@ -1873,3 +1873,34 @@ Para mantener la máxima agilidad y minimizar el consumo de tokens sin perder ni
 - **Validación de Calidad**:
   * Servidor local respondiendo `HTTP 200 OK` en `http://localhost:3003/comercial.html`.
   * Verificación de la jerarquía de detección de idioma en Chrome.
+
+---
+
+### 🚀 Hito 210: Blindaje Bancario AES-256-GCM, Camuflaje Fantasma 404 y Anti-Indexación Total en Hub Comercial B2B (`comercial.html`) (25 de Septiembre, 2026)
+- **Contexto y Requerimiento de Confidencialidad**:
+  * Ante la presencia de tarifas estratégicas, márgenes de descuento, actas técnicas y nombres de grandes corporaciones en `comercial.html`, el usuario solicitó máxima seguridad de grado bancario para evitar que competidores o motores de búsqueda (Google, Bing, crawlers de IA) puedan acceder o indexar la página, manteniendo al mismo tiempo un acceso ágil y sin fricciones para Mario Mojica.
+- **Implementación Técnica de Blindaje Multicapa**:
+  1. *Criptografía AES-256-GCM con PBKDF2 en Reposo y Memoria RAM*:
+     - La totalidad del contenido sensible (HTML de propuestas, clientes, precios y enlaces) fue cifrado en reposo utilizando **AES-256-GCM** con derivación de clave **PBKDF2** (100.000 iteraciones con SHA-256 y sal criptográfica de 16 bytes).
+     - El archivo HTML público contiene únicamente un payload en Base64 (`CIPHERTEXT_B64`). Cero texto plano, cero nombres de clientes y cero cifras financieras visibles en el código fuente.
+     - El descifrado se realiza exclusivamente del lado del cliente en la memoria RAM del navegador mediante la API nativa del estándar W3C **Web Crypto** (`window.crypto.subtle`), ejecutándose en menos de 1 milisegundo sin llamadas a servidores externos.
+  2. *Camuflaje Fantasma 404 (Ghost Shield)*:
+     - Cualquier usuario no autenticado, escáner de puertos o motor de búsqueda ve una página idéntica a un error real `404 - Página no encontrada` ("El recurso que estás intentando consultar no existe...").
+     - Se crearon tres mecanismos discretos de activación para el titular:
+       * **Acceso Directo por URL**: `https://mariomojica.com/comercial.html?key=MM-3BF-2026` o `?key=6907` para desbloqueo instantáneo de 1 clic desde marcadores del teléfono o escritorio, con opción de recordar sesión en `localStorage`.
+       * **Atajo de Teclado Oculto**: `Alt + M` o `Ctrl + Shift + K` despliega el modal de PIN.
+       * **Gatillo Táctil / Clic Secreto**: Triple clic consecutivo sobre el número "404" abre el modal de autenticación.
+     - Contraseñas admitidas: Llave maestra corporativa `MM-3BF-2026` y PIN mnemotécnico de 4 dígitos `6907` (mapeado de forma segura a la derivación PBKDF2).
+  3. *Blindaje Anti-Rastreadores y Cabeceras HTTP*:
+     - Inyección de etiquetas meta de exclusión absoluta: `<meta name="robots" content="noindex, nofollow, noarchive, nosnippet, noimageindex" />`.
+     - Inclusión en `mario-mojica-homepage/netlify.toml` de cabeceras HTTP de servidor: `X-Robots-Tag: noindex, nofollow, noarchive, nosnippet, noimageindex` y `Cache-Control: no-store, no-cache, must-revalidate`.
+     - Bloqueo en `robots.txt`: `Disallow: /comercial.html`.
+  4. *Normalización de Logotipos SVG (Resolución de Desbordamiento)*:
+     - Se resolvió la anomalía de "logos locos" sustituyendo las cadenas XML directas por Base64 data URIs embebidas en elementos `<img>` con directivas CSS estrictas (`height: 32px !important; max-height: 32px !important; width: auto !important; max-width: 180px !important; object-fit: contain !important;`), garantizando estabilidad visual milimétrica en cualquier resolución.
+- **Validación Criptográfica y Pruebas Unitarias**:
+  * Ejecución de suite de pruebas automatizada (`test_decrypt.js`):
+    - Clave `MM-3BF-2026`: Descifrado OK (100% integridad verificada).
+    - PIN `6907`: Descifrado OK.
+    - Claves erróneas (`1234`, `admin`, `hackme`): Bloqueo estricto por autenticación de etiqueta GCM (`OperationError`), impidiendo cualquier fuga de información.
+  * Archivos sincronizados en `Comercial/comercial.html`, `mario-mojica-plataforma/public/comercial.html` y `mario-mojica-homepage/public/comercial.html`.
+

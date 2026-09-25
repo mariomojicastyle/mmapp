@@ -1,0 +1,6 @@
+# Robots.txt for plataforma.mariomojica.com
+User-agent: *
+Allow: /
+Disallow: /comercial.html
+Disallow: /api/
+Disallow: /admin/

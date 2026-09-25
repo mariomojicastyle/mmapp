@@ -1,0 +1,8 @@
+# Robots.txt for mariomojica.com
+User-agent: *
+Allow: /
+Disallow: /comercial.html
+Disallow: /api/
+Disallow: /admin/
+
+Sitemap: https://mariomojica.com/sitemap.xml

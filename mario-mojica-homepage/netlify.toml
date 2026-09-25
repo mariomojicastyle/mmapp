@@ -14,6 +14,14 @@
     X-Content-Type-Options = "nosniff"
     X-XSS-Protection = "1; mode=block"
 
+# Blindaje Estricto Anti-Indexación y Anti-Caché para Hub Comercial Privado
+[[headers]]
+  for = "/comercial.html"
+  [headers.values]
+    X-Robots-Tag = "noindex, nofollow, noarchive, nosnippet, noimageindex"
+    Cache-Control = "no-store, no-cache, must-revalidate, max-age=0"
+    Pragma = "no-cache"
+
 # Excepción para las API Routes internas y Traductor Vivo
 [[redirects]]
   from = "/api/*"
