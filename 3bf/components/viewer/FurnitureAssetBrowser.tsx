@@ -89,6 +89,7 @@ export default function FurnitureAssetBrowser() {
   });
 
   const [isResizingArbol, setIsResizingArbol] = useState(false);
+  const touchStartPos = React.useRef<{ id: string; x: number; y: number; time: number } | null>(null);
 
   const startResizingArbol = React.useCallback((mouseDownEvent: React.MouseEvent) => {
     mouseDownEvent.preventDefault();
@@ -633,9 +634,69 @@ export default function FurnitureAssetBrowser() {
               return (
                 <div
                   key={mueble.id}
-                  onClick={() => !isEditing && abrirMueble(mueble)}
-                  title={`${mueble.nombre} (${mueble.tipologia})\nHaz clic para abrir en 3D o doble clic para renombrar`}
-                  className="group flex flex-col items-center cursor-pointer p-0.5 rounded-xl hover:bg-slate-100/80 dark:hover:bg-slate-800/50 transition-all select-none relative w-[78px] shrink-0"
+                  draggable={typeof window !== "undefined" ? window.innerWidth >= 1024 : true}
+                  onDragStart={(e) => {
+                    if (typeof window !== "undefined") {
+                      (window as any).__dragged3BFItem = { ...mueble, tipo: "mueble_guardado" };
+                    }
+                    const payload = JSON.stringify({ ...mueble, tipo: "mueble_guardado" });
+                    e.dataTransfer.setData("application/json", payload);
+                    e.dataTransfer.setData("text/plain", payload);
+                    e.dataTransfer.effectAllowed = "copy";
+                  }}
+                  onDragEnd={() => {
+                    if (typeof window !== "undefined") {
+                      setTimeout(() => {
+                        (window as any).__dragged3BFItem = null;
+                      }, 500);
+                    }
+                  }}
+                  onTouchStart={(e) => {
+                    const t = e.touches[0];
+                    touchStartPos.current = { id: mueble.id, x: t.clientX, y: t.clientY, time: Date.now() };
+                    if (typeof window !== "undefined") {
+                      (window as any).__dragged3BFItem = { ...mueble, tipo: "mueble_guardado" };
+                    }
+                  }}
+                  onTouchEnd={async (e) => {
+                    const info = touchStartPos.current;
+                    touchStartPos.current = null;
+                    if (!info || info.id !== mueble.id) return;
+                    const t = e.changedTouches[0];
+                    const dx = Math.abs(t.clientX - info.x);
+                    const dy = Math.abs(t.clientY - info.y);
+                    const elapsed = Date.now() - info.time;
+                    const esMovil = typeof window !== "undefined" && window.innerWidth < 1024;
+
+                    // Si es un tap/toque limpio en pantalla táctil (movimiento mínimo < 25px)
+                    if (dx < 25 && dy < 25 && elapsed < 700) {
+                      e.preventDefault();
+                      if (!isEditing) {
+                        await abrirMueble(mueble);
+                        if (esMovil) {
+                          use3BFStore.getState().setMostrarNPanel(false);
+                        }
+                      }
+                      return;
+                    }
+
+                    // Si se arrastró el dedo hacia el lienzo 3D (fuera del panel hacia la izquierda)
+                    if (esMovil && t.clientX < window.innerWidth - 70) {
+                      e.preventDefault();
+                      await abrirMueble(mueble);
+                      use3BFStore.getState().setMostrarNPanel(false);
+                    }
+                  }}
+                  onClick={async () => {
+                    if (!isEditing) {
+                      await abrirMueble(mueble);
+                      if (typeof window !== "undefined" && window.innerWidth < 1024) {
+                        use3BFStore.getState().setMostrarNPanel(false);
+                      }
+                    }
+                  }}
+                  title={`${mueble.nombre} (${mueble.tipologia})\nHaz clic o toca para abrir en 3D, arrastra al escenario o doble clic para renombrar`}
+                  className="group flex flex-col items-center cursor-grab active:cursor-grabbing p-0.5 rounded-xl hover:bg-slate-100/80 dark:hover:bg-slate-800/50 transition-all select-none relative w-[78px] shrink-0"
                 >
                   {/* Miniatura Cuadrada Estilo Componentes (Tamaño uniforme y constante sin deformarse) */}
                   <div 

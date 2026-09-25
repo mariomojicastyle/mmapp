@@ -30,10 +30,30 @@ export function middleware(request: NextRequest) {
     pathname.startsWith("/api/health") ||
     pathname.startsWith("/api/ar-model") ||
     pathname.startsWith("/api/bloques") ||
+    pathname.startsWith("/api/compute") ||
+    pathname.startsWith("/api/metadata") ||
+    pathname.startsWith("/api/definitions") ||
+    pathname.startsWith("/api/drive") ||
+    pathname.startsWith("/api/thumbnail") ||
+    pathname.startsWith("/api/compress-glb") ||
+    pathname.startsWith("/api/mecanizar-intercomponentes") ||
+    pathname.startsWith("/api/export-dxf") ||
     pathname === "/ar" ||
     pathname.startsWith("/ar") ||
     pathname === "/access" ||
-    pathname === "/api/access";
+    pathname === "/api/access" ||
+    pathname.startsWith("/api/shield-toggle");
+
+  // 1.1 Si el blindaje está configurado en modo libre/desactivado (3bf_shield_mode === "disabled")
+  const shieldModeCookie = request.cookies.get("3bf_shield_mode")?.value;
+  if (shieldModeCookie === "disabled") {
+    if (pathname === "/access") {
+      const homeUrl = request.nextUrl.clone();
+      homeUrl.pathname = "/";
+      return NextResponse.redirect(homeUrl);
+    }
+    return NextResponse.next();
+  }
 
   // 2. Comprobar si viene con la llave secreta en la URL (?key=... o ?auth=...)
   const queryKey =

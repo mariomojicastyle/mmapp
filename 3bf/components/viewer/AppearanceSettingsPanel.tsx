@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { use3BFStore, ColoresApariencia } from "@/lib/store";
 import { 
   RotateCcw, 
@@ -16,7 +16,10 @@ import {
   Type,
   Grid3X3,
   ClipboardPaste,
-  Pipette
+  Pipette,
+  ShieldCheck,
+  ShieldAlert,
+  Loader2
 } from "lucide-react";
 
 // Función de compatibilidad total con formatos de color de Inkscape y CSS
@@ -97,6 +100,39 @@ export default function AppearanceSettingsPanel() {
   const [guardadoFeedback, setGuardadoFeedback] = useState(false);
   const [copiadoKey, setCopiadoKey] = useState<string | null>(null);
   const [pegadoKey, setPegadoKey] = useState<string | null>(null);
+  const [shieldActivo, setShieldActivo] = useState(true);
+  const [guardandoShield, setGuardandoShield] = useState(false);
+
+  useEffect(() => {
+    fetch("/api/shield-toggle")
+      .then((res) => res.json())
+      .then((data) => {
+        if (data && typeof data.enabled === "boolean") {
+          setShieldActivo(data.enabled);
+        }
+      })
+      .catch(() => {});
+  }, []);
+
+  const handleToggleShield = async () => {
+    const nextState = !shieldActivo;
+    setGuardandoShield(true);
+    try {
+      const res = await fetch("/api/shield-toggle", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ enabled: nextState }),
+      });
+      const data = await res.json();
+      if (data && data.success) {
+        setShieldActivo(data.enabled);
+      }
+    } catch (err) {
+      console.error("Error al alternar blindaje de seguridad:", err);
+    } finally {
+      setGuardandoShield(false);
+    }
+  };
 
   // 💧 Cuentagotas Universal de Pantalla (EyeDropper API nativo de Chromium)
   const abrirCuentagotas = async (key: keyof ColoresApariencia) => {
@@ -288,52 +324,121 @@ export default function AppearanceSettingsPanel() {
     setTimeout(() => setGuardadoFeedback(false), 2500);
   };
 
+  const esOscuro = esquemaColor === "oscuro";
+  const colorBotonActivo = esOscuro ? "#1368AA" : (coloresApariencia?.botonActivo || "#0891B2");
+
   return (
     <div className="flex-1 overflow-y-auto p-3 space-y-4 text-xs custom-scrollbar">
       
-      {/* 🔘 SELECTOR DE ESQUEMA (ESTILO ORIGINAL RHINOCEROS 8) */}
-      <div 
-        style={{ 
-          backgroundColor: coloresApariencia.fondoPaneles, 
-          borderColor: coloresApariencia?.bordePaneles 
-        }}
-        className="p-3 rounded-xl border shadow-xs space-y-2 transition-colors"
-      >
+      {/* 🔘 SELECTOR DE ESQUEMA & BLINDAJE DE SEGURIDAD (EN PARALELO) */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+        {/* Columna Izquierda: Esquema de Color */}
         <div 
-          style={{ color: coloresApariencia?.textoPrincipal }}
-          className="text-[11px] font-bold"
+          style={{ 
+            backgroundColor: coloresApariencia.fondoPaneles, 
+            borderColor: coloresApariencia?.bordePaneles 
+          }}
+          className="p-3 rounded-xl border shadow-xs space-y-2 transition-colors flex flex-col justify-between"
         >
-          Esquema de Color
-        </div>
-        <div 
-          style={{ color: coloresApariencia?.textoPrincipal }}
-          className="flex items-center gap-6 text-xs font-semibold"
-        >
-          <label className="flex items-center gap-1.5 cursor-pointer hover:opacity-80 transition">
-            <input
-              type="radio"
-              name="esquema"
-              value="oscuro"
-              checked={esquemaColor === "oscuro"}
-              onChange={() => setEsquemaColor("oscuro")}
-              style={{ accentColor: coloresApariencia?.bordePaneles }}
-              className="cursor-pointer"
-            />
-            <span>Oscuro</span>
-          </label>
+          <div 
+            style={{ color: coloresApariencia?.textoPrincipal }}
+            className="text-[11px] font-bold"
+          >
+            Esquema de Color
+          </div>
+          <div 
+            style={{ color: coloresApariencia?.textoPrincipal }}
+            className="flex items-center gap-4 text-xs font-semibold pt-0.5"
+          >
+            <label className="flex items-center gap-1.5 cursor-pointer hover:opacity-80 transition">
+              <input
+                type="radio"
+                name="esquema"
+                value="oscuro"
+                checked={esquemaColor === "oscuro"}
+                onChange={() => setEsquemaColor("oscuro")}
+                style={{ accentColor: coloresApariencia?.bordePaneles }}
+                className="cursor-pointer"
+              />
+              <span>Oscuro</span>
+            </label>
 
-          <label className="flex items-center gap-1.5 cursor-pointer hover:opacity-80 transition">
-            <input
-              type="radio"
-              name="esquema"
-              value="claro"
-              checked={esquemaColor === "claro"}
-              onChange={() => setEsquemaColor("claro")}
-              style={{ accentColor: coloresApariencia?.bordePaneles }}
-              className="cursor-pointer"
-            />
-            <span>Claro</span>
-          </label>
+            <label className="flex items-center gap-1.5 cursor-pointer hover:opacity-80 transition">
+              <input
+                type="radio"
+                name="esquema"
+                value="claro"
+                checked={esquemaColor === "claro"}
+                onChange={() => setEsquemaColor("claro")}
+                style={{ accentColor: coloresApariencia?.bordePaneles }}
+                className="cursor-pointer"
+              />
+              <span>Claro</span>
+            </label>
+          </div>
+        </div>
+
+        {/* Columna Derecha: Blindaje de Acceso (Shield ON/OFF) */}
+        <div 
+          style={{ 
+            backgroundColor: coloresApariencia.fondoPaneles, 
+            borderColor: coloresApariencia?.bordePaneles 
+          }}
+          className="p-3 rounded-xl border shadow-xs space-y-2 transition-colors flex flex-col justify-between"
+        >
+          <div className="flex items-center justify-between">
+            <div 
+              style={{ color: coloresApariencia?.textoPrincipal }}
+              className="text-[11px] font-bold flex items-center gap-1.5"
+            >
+              <ShieldCheck className="w-3.5 h-3.5" style={{ color: colorBotonActivo }} />
+              <span>Seguridad & Clave</span>
+            </div>
+            <span 
+              className={`text-[9px] font-bold px-2 py-0.5 rounded-full ${
+                shieldActivo 
+                  ? "bg-cyan-500/15 text-cyan-600 dark:text-cyan-400 border border-cyan-500/30" 
+                  : "bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30"
+              }`}
+            >
+              {shieldActivo ? "PROTEGIDO" : "LIBRE"}
+            </span>
+          </div>
+
+          <div className="flex items-center justify-between gap-1.5">
+            <span style={{ color: coloresApariencia?.textoSecundario }} className="text-[10px] leading-tight">
+              {shieldActivo ? "Pide clave al entrar" : "Acceso libre sin clave"}
+            </span>
+
+            {/* Botón Cápsula Circular ON/OFF */}
+            <button
+              onClick={handleToggleShield}
+              disabled={guardandoShield}
+              title={shieldActivo ? "Desactivar blindaje (acceso libre sin clave)" : "Activar blindaje (requerir clave de acceso)"}
+              style={
+                shieldActivo
+                  ? { backgroundColor: colorBotonActivo, color: "#FFFFFF" }
+                  : { backgroundColor: coloresApariencia?.fondoAplicacion, color: coloresApariencia?.textoPrincipal, borderColor: coloresApariencia?.bordePaneles }
+              }
+              className={`px-3 py-1 rounded-full text-[11px] font-bold border transition-all shadow-xs flex items-center gap-1.5 cursor-pointer active:scale-95 ${
+                shieldActivo ? "hover:opacity-90" : "hover:bg-slate-200 dark:hover:bg-slate-700"
+              }`}
+            >
+              {guardandoShield ? (
+                <Loader2 className="w-3 h-3 animate-spin" />
+              ) : shieldActivo ? (
+                <>
+                  <ShieldCheck className="w-3 h-3" />
+                  <span>ON</span>
+                </>
+              ) : (
+                <>
+                  <ShieldAlert className="w-3 h-3 text-amber-500" />
+                  <span>OFF</span>
+                </>
+              )}
+            </button>
+          </div>
         </div>
       </div>
 

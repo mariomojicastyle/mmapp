@@ -262,6 +262,7 @@ export const createManualStudioSlice = (set: any, get: any): any => ({
   // Blender N-Panel (Sidebar)
   mostrarNPanel:
     typeof window !== "undefined" &&
+    window.innerWidth >= 1024 &&
     window.localStorage &&
     localStorage.getItem("3bf_mostrar_npanel") === "true",
   setMostrarNPanel: (mostrar: boolean | ((prev: boolean) => boolean)) =>

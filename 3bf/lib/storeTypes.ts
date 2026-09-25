@@ -1097,6 +1097,7 @@ export interface State3BF {
   crearCarpetaMueble: (nombre: string, tipo?: "marca" | "tipologia", padreId?: string | null) => Promise<boolean>;
   guardarMuebleComo: (datos: { nombre: string; marca: string; tipologia: string; descripcion?: string }) => Promise<boolean>;
   guardarCambiosMueble: () => Promise<boolean>;
+  guardarProyectoCompleto: () => Promise<boolean>;
   renombrarMuebleGuardado: (id: string, nuevoNombre: string) => Promise<boolean>;
   actualizarThumbnailMueble: (id: string, thumbnail: string) => Promise<boolean>;
   eliminarMuebleGuardado: (id: string) => Promise<boolean>;

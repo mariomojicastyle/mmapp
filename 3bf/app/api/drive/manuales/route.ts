@@ -3,20 +3,19 @@ import fs from "fs";
 import fsp from "fs/promises";
 import path from "path";
 
-// Detectar directorio base de Google Drive (G:\Mi unidad\Manuales) con fallback local
+function toSafeFileName(name: string): string {
+  return (name || "").trim().replace(/[\\/:*?"<>|]/g, "_");
+}
+
+// Detectar directorio base de Google Drive (priorizando G:\Mi unidad\Muebles para convivencia en la misma carpeta)
 function getStorageDirectory(): string {
-  const gDrivePath = "G:\\Mi unidad\\Manuales";
-  if (fs.existsSync("G:\\Mi unidad")) {
-    if (!fs.existsSync(gDrivePath)) {
-      try {
-        fs.mkdirSync(gDrivePath, { recursive: true });
-      } catch {
-        // Ignorar si hay restricción de permisos
-      }
-    }
-    if (fs.existsSync(gDrivePath)) {
-      return gDrivePath;
-    }
+  const gDriveMuebles = "G:\\Mi unidad\\Muebles";
+  if (fs.existsSync(gDriveMuebles)) {
+    return gDriveMuebles;
+  }
+  const gDriveManuales = "G:\\Mi unidad\\Manuales";
+  if (fs.existsSync(gDriveManuales)) {
+    return gDriveManuales;
   }
   return path.join(process.cwd(), "storage", "manuales");
 }
@@ -91,9 +90,16 @@ async function buildLiveTreeAsync(storageDir: string) {
   }
 }
 
-// Escaneo asíncrono recursivo de manuales (.3bm.json)
+// Escaneo asíncrono recursivo de manuales (.3bm.json) en Google Drive y almacenamiento local
 async function scanManualesAsync(storageDir: string) {
-  const manuales: any[] = [];
+  const manualesMap = new Map<string, any>();
+
+  const directoriosAEscanear = new Set<string>();
+  directoriosAEscanear.add(storageDir);
+  if (fs.existsSync("G:\\Mi unidad\\Muebles")) directoriosAEscanear.add("G:\\Mi unidad\\Muebles");
+  if (fs.existsSync("G:\\Mi unidad\\Manuales")) directoriosAEscanear.add("G:\\Mi unidad\\Manuales");
+  const localManuales = path.join(process.cwd(), "storage", "manuales");
+  if (fs.existsSync(localManuales)) directoriosAEscanear.add(localManuales);
 
   async function scanDir(currentDir: string) {
     try {
@@ -106,7 +112,18 @@ async function scanManualesAsync(storageDir: string) {
           try {
             const content = await fsp.readFile(fullPath, "utf-8");
             const data = JSON.parse(content);
-            manuales.push(data);
+            const clave = data.id || entry.name.replace(/\.3bm\.json$/, "");
+            const existente = manualesMap.get(clave);
+            if (!existente) {
+              manualesMap.set(clave, data);
+            } else {
+              // Priorizar el que tenga más pasos o esté en G:\Mi unidad\Muebles
+              const pasosEntrante = Array.isArray(data.pasos) ? data.pasos.length : 0;
+              const pasosExistente = Array.isArray(existente.pasos) ? existente.pasos.length : 0;
+              if (pasosEntrante > pasosExistente || fullPath.includes("Muebles")) {
+                manualesMap.set(clave, data);
+              }
+            }
           } catch (e) {
             console.error("[3dBimFab Drive Manuales] Error leyendo manual:", fullPath, e);
           }
@@ -117,8 +134,13 @@ async function scanManualesAsync(storageDir: string) {
     }
   }
 
-  await scanDir(storageDir);
-  return manuales;
+  for (const dir of directoriosAEscanear) {
+    if (fs.existsSync(dir)) {
+      await scanDir(dir);
+    }
+  }
+
+  return Array.from(manualesMap.values());
 }
 
 export async function GET() {
@@ -190,30 +212,57 @@ export async function POST(request: Request) {
     if (action === "save_manual" && manual) {
       const marca = manual.marca || "RTA Design";
       const tipologia = manual.tipologia || "Manuales 3D";
-      const targetDir = path.join(storageDir, marca, tipologia);
+      const safeName = toSafeFileName(manual.nombre || manual.id);
+      const fileName = `${safeName}.3bm.json`;
+
+      // 🎯 Co-ubicación Hermana: Guardar primariamente en G:\Mi unidad\Muebles/<marca>/<tipologia>/ junto al .3bf.json
+      const gDriveMuebles = "G:\\Mi unidad\\Muebles";
+      const targetDir = fs.existsSync(gDriveMuebles)
+        ? path.join(gDriveMuebles, marca, tipologia)
+        : path.join(storageDir, marca, tipologia);
 
       if (!fs.existsSync(targetDir)) {
         await fsp.mkdir(targetDir, { recursive: true });
       }
 
-      const fileName = `${manual.id}.3bm.json`;
       const filePath = path.join(targetDir, fileName);
-
       await fsp.writeFile(filePath, JSON.stringify(manual, null, 2), "utf-8");
 
-      // 🔄 Espejo Seguro Local: Si storageDir es G Drive, guardar también copia espejo en storage/manuales local
+      // 🔄 Espejo en G:\Mi unidad\Manuales (para compatibilidad de consultas legacy)
+      const gDriveManuales = "G:\\Mi unidad\\Manuales";
+      if (fs.existsSync(gDriveManuales)) {
+        try {
+          const manualesTarget = path.join(gDriveManuales, marca, tipologia);
+          if (!fs.existsSync(manualesTarget)) {
+            await fsp.mkdir(manualesTarget, { recursive: true });
+          }
+          const manualesPath = path.join(manualesTarget, fileName);
+          await fsp.writeFile(manualesPath, JSON.stringify(manual, null, 2), "utf-8");
+        } catch (_) {}
+      }
+
+      // 🔄 Espejo Seguro Local: Guardar también copia espejo en storage/manuales local
       try {
         const localDir = path.join(process.cwd(), "storage", "manuales", marca, tipologia);
-        if (path.resolve(targetDir) !== path.resolve(localDir)) {
-          if (!fs.existsSync(localDir)) {
-            await fsp.mkdir(localDir, { recursive: true });
-          }
-          const localPath = path.join(localDir, fileName);
-          await fsp.writeFile(localPath, JSON.stringify(manual, null, 2), "utf-8");
+        if (!fs.existsSync(localDir)) {
+          await fsp.mkdir(localDir, { recursive: true });
         }
+        const localPath = path.join(localDir, fileName);
+        await fsp.writeFile(localPath, JSON.stringify(manual, null, 2), "utf-8");
       } catch (eMirror) {
         console.warn("[3dBimFab Drive Manuales] Error al guardar copia local espejo:", eMirror);
       }
+
+      // 🛡️ Snapshot atómico inmutable de seguridad
+      try {
+        const snapDir = path.join(process.cwd(), "storage", "snapshots_manuales");
+        if (!fs.existsSync(snapDir)) {
+          await fsp.mkdir(snapDir, { recursive: true });
+        }
+        const nowStamp = new Date().toISOString().replace(/[:.]/g, "-").replace("T", "_");
+        const snapPath = path.join(snapDir, `${safeName}_${nowStamp}.3bm.json`);
+        await fsp.writeFile(snapPath, JSON.stringify(manual, null, 2), "utf-8");
+      } catch (_) {}
 
       return NextResponse.json({
         success: true,

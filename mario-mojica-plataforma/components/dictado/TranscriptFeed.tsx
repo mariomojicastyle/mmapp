@@ -254,8 +254,8 @@ export function TranscriptFeed({
             </div>
           )}
 
-          {/* Espaciador terminal para garantizar visibilidad al final del scroll */}
-          <div className="h-2 w-full shrink-0" />
+          {/* Espaciador terminal del 15% para que la línea activa dictada flote 15% más arriba del borde inferior */}
+          <div className="h-[15vh] min-h-[90px] max-h-[140px] w-full shrink-0 pointer-events-none" />
         </div>
       </div>
 
@@ -328,8 +328,8 @@ export function TranscriptFeed({
               </div>
             )}
 
-            {/* Espaciador terminal para garantizar visibilidad al final del scroll */}
-            <div className="h-2 w-full shrink-0" />
+            {/* Espaciador terminal del 15% para que la línea activa traducida flote 15% más arriba del borde inferior */}
+            <div className="h-[15vh] min-h-[90px] max-h-[140px] w-full shrink-0 pointer-events-none" />
           </div>
         </div>
       )}

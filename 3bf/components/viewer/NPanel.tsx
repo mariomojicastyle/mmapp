@@ -187,11 +187,11 @@ export default function NPanel() {
       }
       return anchoNPanel && anchoNPanel >= 280 ? anchoNPanel : 380;
     }
-    const ancho25 = Math.max(160, Math.round(window.innerWidth * 0.25));
-    if (!anchoNPanel || anchoNPanel > window.innerWidth * 0.35 || anchoNPanel < 140) {
-      return ancho25;
+    // 📱 Móviles y tablets (< 1024px): Asegurar ancho óptimo dejando ver el lienzo 3D para arrastrar o tocar
+    if (esModoManual) {
+      return Math.min(window.innerWidth - 16, 740);
     }
-    return anchoNPanel;
+    return Math.min(320, Math.max(260, window.innerWidth - 64));
   }, [anchoNPanel, anchoNPanelManual, esModoManual]);
   const ancho = anchoEfectivoNPanel;
   const [isResizing, setIsResizing] = useState(false);
@@ -238,31 +238,48 @@ export default function NPanel() {
   return (
     <>
       {/* ========================================================================= */}
-      {/* 🔘 BOTÓN PESTAÑA CHEVRON ESTILO BLENDER (<) EN ESQUINA SUPERIOR DERECHA (Visor 3D y Manual 3D) */}
+      {/* 🔘 BOTÓN TOGGLE PESTAÑA (< / >) EN ESQUINA SUPERIOR DERECHA (Visor 3D y Manual 3D) */}
       {/* ========================================================================= */}
       {(pestanaActiva === "3d" || pestanaActiva === "manual") && (
         <div 
-          className={`absolute top-3 right-3 z-30 transition-all duration-200 ${
-            mostrarNPanel 
-              ? "opacity-0 pointer-events-none scale-75" 
-              : "opacity-100 pointer-events-auto scale-100"
-          }`}
+          className="absolute top-3.5 right-3.5 lg:top-3 lg:right-3 z-50 transition-all duration-200 pointer-events-auto"
         >
           <button
-            onClick={() => setMostrarNPanel(true)}
-            title="Mostrar panel lateral (Atajo: N)"
+            onClick={(e) => {
+              e.stopPropagation();
+              setMostrarNPanel((prev) => !prev);
+            }}
+            title={mostrarNPanel ? "Cerrar panel lateral (Atajo: N)" : "Mostrar panel lateral (Atajo: N)"}
             style={{
               backgroundColor: coloresApariencia?.fondoPaneles || "#FFFFFF",
               borderColor: coloresApariencia?.bordePaneles || "#CBD5E1",
             }}
-            className="flex items-center justify-center w-5.5 h-5.5 lg:w-7 lg:h-7 rounded-full border shadow-md backdrop-blur-md transition-all cursor-pointer group hover:scale-105 box-border"
+            className="flex items-center justify-center w-8 h-8 lg:w-7 lg:h-7 rounded-full border shadow-md backdrop-blur-md transition-all cursor-pointer group hover:scale-105 active:scale-95 box-border"
           >
-            <ChevronLeft 
-              style={{ color: coloresApariencia?.colorMarca || "#0891b2" }}
-              className="w-3 h-3 lg:w-4 lg:h-4 group-hover:-translate-x-0.5 transition-transform" 
-            />
+            {mostrarNPanel ? (
+              <ChevronRight 
+                style={{ color: coloresApariencia?.colorMarca || "#0891b2" }}
+                className="w-4 h-4 lg:w-4 lg:h-4 group-hover:translate-x-0.5 transition-transform" 
+              />
+            ) : (
+              <ChevronLeft 
+                style={{ color: coloresApariencia?.colorMarca || "#0891b2" }}
+                className="w-4 h-4 lg:w-4 lg:h-4 group-hover:-translate-x-0.5 transition-transform" 
+              />
+            )}
           </button>
         </div>
+      )}
+
+      {/* 📱 Backdrop sutil en móvil para cerrar al tocar el lienzo 3D */}
+      {(pestanaActiva === "3d" || pestanaActiva === "manual") && mostrarNPanel && (
+        <div 
+          onClick={(e) => {
+            e.stopPropagation();
+            setMostrarNPanel(false);
+          }}
+          className="lg:hidden fixed inset-0 z-35 bg-black/25 backdrop-blur-[1px] transition-opacity"
+        />
       )}
 
       {/* ========================================================================= */}
@@ -280,7 +297,7 @@ export default function NPanel() {
           color: coloresApariencia?.textoPrincipal
         }}
         className={(pestanaActiva === "3d" || pestanaActiva === "manual") 
-          ? `absolute top-3 bottom-3 right-3 z-40 rounded-2xl glass-panel border shadow-2xl flex flex-row overflow-hidden transition-transform ${
+          ? `absolute top-3.5 bottom-3.5 right-2 lg:top-3 lg:bottom-3 lg:right-3 z-40 rounded-2xl glass-panel border shadow-2xl flex flex-row overflow-hidden transition-transform ${
               isResizing ? "transition-none select-none" : "duration-300 ease-in-out"
             } ${
               mostrarNPanel 

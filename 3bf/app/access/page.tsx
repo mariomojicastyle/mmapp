@@ -10,13 +10,35 @@ export default function AccessPage() {
   const [success, setSuccess] = useState<string | null>(null);
 
   useEffect(() => {
-    // Si viene redirigido con error en URL (?error=invalid_key)
+    // 1. Si viene redirigido con error en URL (?error=invalid_key)
     if (typeof window !== "undefined") {
       const params = new URLSearchParams(window.location.search);
       if (params.get("error") === "invalid_key") {
         setError("El enlace de acceso utilizado contiene una clave inválida o expirada.");
       }
     }
+
+    // 2. Comprobar si el propietario desactivó el blindaje (acceso libre)
+    fetch("/api/shield-toggle")
+      .then((res) => res.json())
+      .then(async (data) => {
+        if (data && data.enabled === false) {
+          // El blindaje está deshabilitado: auto-acceso inmediato
+          try {
+            const authRes = await fetch("/api/access", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ key: "mario3bf2026" }),
+            });
+            if (authRes.ok) {
+              window.location.href = "/";
+            }
+          } catch (e) {
+            console.error("Error auto-login:", e);
+          }
+        }
+      })
+      .catch(() => {});
   }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {

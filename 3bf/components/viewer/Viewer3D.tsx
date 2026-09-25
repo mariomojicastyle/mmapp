@@ -689,6 +689,7 @@ export default function Viewer3D() {
     renombrarInstancia,
     eliminarInstancia,
     guardarCambiosMueble,
+    guardarProyectoCompleto,
     guardandoMueble,
     recargarDefinicionInstancia,
     workerStatus,
@@ -1053,7 +1054,14 @@ export default function Viewer3D() {
     }
 
     if (itemToLoad && itemToLoad.id) {
-      await use3BFStore.getState().agregarInstanciaGHX(itemToLoad, dropPosition);
+      if (itemToLoad.tipo === "mueble_guardado" || itemToLoad.marca || (itemToLoad.disenos && !itemToLoad.archivo)) {
+        await use3BFStore.getState().abrirMueble(itemToLoad);
+      } else {
+        await use3BFStore.getState().agregarInstanciaGHX(itemToLoad, dropPosition);
+      }
+      if (typeof window !== "undefined" && window.innerWidth < 1024) {
+        use3BFStore.getState().setMostrarNPanel(false);
+      }
     }
 
     if (typeof window !== "undefined") {
@@ -1318,36 +1326,25 @@ export default function Viewer3D() {
 
       {/* 🧭 HUD SUPERIOR IZQUIERDO: JERARQUÍA BOTONES + (N) COMPONENTES + LISTA DE PIEZAS (Visor 3D y Manual 3D) */}
       {(pestanaActiva === "3d" || pestanaActiva === "manual") && (
-        <div className="absolute top-3.5 left-4 z-20 flex flex-col items-start gap-1 select-none pointer-events-auto">
+        <div className="absolute top-3.5 left-3 lg:left-4 max-w-[calc(100%-3.75rem)] lg:max-w-none z-20 flex flex-col items-start gap-1 select-none pointer-events-auto">
           {/* Nivel 1: Barra de Acciones Superior (Guardar + Perforar + Actualizar GHX + Luces + Marco 1:1 + Simulador Móvil) */}
-          <div className="flex items-center gap-1.5 flex-nowrap">
-          {/* Botón Guardar (Guardar nuevo o Guardar Cambios en caliente / Guardar .3bm en modo manual sin preguntas) */}
+          <div className="flex items-center gap-1.5 flex-nowrap overflow-x-auto max-w-full pb-0.5" style={{ scrollbarWidth: "none" }}>
+          {/* Botón Unificado: Guardar Proyecto (Guarda atómicamente .3bf.json + .3bm.json en la misma carpeta) */}
           <button
             onClick={async () => {
-              if (pestanaActiva === "manual") {
-                // 💾 Modo Manual: Guardar .3bm directamente sin preguntas en cualquier momento
-                const exito = await guardarManualProyecto();
-                if (exito !== false) {
-                  setGuardadoManualReciente(true);
-                  setTimeout(() => setGuardadoManualReciente(false), 2500);
-                }
+              if (muebleActivoGuardado) {
+                await guardarProyectoCompleto();
               } else {
-                if (muebleActivoGuardado) {
-                  await guardarCambiosMueble();
-                } else {
-                  setMostrarNPanel(true);
-                  setPestanaNPanel("muebles");
-                  setModalGuardarComoAbierto(true);
-                }
+                setMostrarNPanel(true);
+                setPestanaNPanel("muebles");
+                setModalGuardarComoAbierto(true);
               }
             }}
-            disabled={pestanaActiva === "manual" ? guardandoManual : guardandoMueble}
+            disabled={estaGuardando}
             title={
-              pestanaActiva === "manual"
-                ? "Guardar proyecto de manual 3D (.3bm) en cualquier momento sin preguntas"
-                : muebleActivoGuardado
-                ? `Guardar cambios en "${muebleActivoGuardado.nombre}"`
-                : "Guardar nuevo mueble en el catálogo"
+              muebleActivoGuardado
+                ? `Guardar Proyecto completo ("${muebleActivoGuardado.nombre}"): Modelo 3D (.3bf) + Animación Manual (.3bm) en la misma carpeta de Drive`
+                : "Guardar nuevo Proyecto (3D + Manual) en Google Drive"
             }
             style={{
               backgroundColor: coloresApariencia?.botonActivo || "#0891b2",
@@ -1355,37 +1352,20 @@ export default function Viewer3D() {
             }}
             className="px-3.5 lg:px-3 h-8 lg:h-7 rounded-full text-white shadow-md border flex items-center gap-1.5 text-xs lg:text-xs font-bold leading-none hover:opacity-90 active:scale-95 transition-all cursor-pointer disabled:opacity-50 box-border"
           >
-            {pestanaActiva === "manual" ? (
-              guardandoManual ? (
-                <>
-                  <Loader2 className="w-3.5 lg:w-3.5 h-3.5 lg:h-3.5 text-white animate-spin" />
-                  <span>Guardando...</span>
-                </>
-              ) : guardadoManualReciente ? (
-                <>
-                  <Check className="w-3.5 lg:w-3.5 h-3.5 lg:h-3.5 text-white" />
-                  <span>¡Guardado!</span>
-                </>
-              ) : (
-                <>
-                  <Save className="w-3.5 lg:w-3.5 h-3.5 lg:h-3.5 text-white" />
-                  <span>Guardar Manual</span>
-                </>
-              )
-            ) : guardandoMueble ? (
+            {estaGuardando ? (
               <>
                 <Loader2 className="w-3.5 lg:w-3.5 h-3.5 lg:h-3.5 text-white animate-spin" />
-                <span>Guardando...</span>
+                <span>Guardando Proyecto...</span>
               </>
-            ) : guardadoMuebleReciente ? (
+            ) : (guardadoManualReciente || guardadoMuebleReciente) ? (
               <>
                 <Check className="w-3.5 lg:w-3.5 h-3.5 lg:h-3.5 text-white" />
-                <span>¡Guardado!</span>
+                <span>¡Proyecto Guardado!</span>
               </>
             ) : (
               <>
                 <Save className="w-3.5 lg:w-3.5 h-3.5 lg:h-3.5 text-white" />
-                <span>Guardar</span>
+                <span>Guardar Proyecto</span>
               </>
             )}
           </button>

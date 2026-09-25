@@ -1,5 +1,45 @@
 [
   {
+    "id": "alt_1790306899938_uqyhf",
+    "fechaIso": "2026-09-25T03:28:19.937Z",
+    "fechaColombia": "24/09/2026, 10:28:19 p. m.",
+    "tipo": "ACCESO_EXITOSO_PROPIETARIO",
+    "ip": "127.0.0.1",
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/154.0.0.0 Safari/537.36",
+    "ruta": "/access",
+    "detalles": "Dispositivo autorizado bajo modalidad: Acceso Propietario (Permanente)"
+  },
+  {
+    "id": "alt_1790306899918_myw67",
+    "fechaIso": "2026-09-25T03:28:19.918Z",
+    "fechaColombia": "24/09/2026, 10:28:19 p. m.",
+    "tipo": "ACCESO_EXITOSO_PROPIETARIO",
+    "ip": "127.0.0.1",
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/154.0.0.0 Safari/537.36",
+    "ruta": "/access",
+    "detalles": "Dispositivo autorizado bajo modalidad: Acceso Propietario (Permanente)"
+  },
+  {
+    "id": "alt_1790306787150_ub9m7",
+    "fechaIso": "2026-09-25T03:26:27.150Z",
+    "fechaColombia": "24/09/2026, 10:26:27 p. m.",
+    "tipo": "ACCESO_EXITOSO_PROPIETARIO",
+    "ip": "127.0.0.1",
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/154.0.0.0 Safari/537.36",
+    "ruta": "/access",
+    "detalles": "Dispositivo autorizado bajo modalidad: Acceso Propietario (Permanente)"
+  },
+  {
+    "id": "alt_1790306787150_vt013",
+    "fechaIso": "2026-09-25T03:26:27.138Z",
+    "fechaColombia": "24/09/2026, 10:26:27 p. m.",
+    "tipo": "ACCESO_EXITOSO_PROPIETARIO",
+    "ip": "127.0.0.1",
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/154.0.0.0 Safari/537.36",
+    "ruta": "/access",
+    "detalles": "Dispositivo autorizado bajo modalidad: Acceso Propietario (Permanente)"
+  },
+  {
     "id": "alt_1789413631009_yuph9",
     "fechaIso": "2026-09-14T19:20:31.003Z",
     "fechaColombia": "14/09/2026, 02:20:31 p. m.",

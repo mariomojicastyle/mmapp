@@ -291,16 +291,12 @@ export function SingleFurnitureInstanceMesh({
     return "Longitudinal";
   }, [inst.parametros?.tipo_mapeado_cubierta, inst.parametros?.tipo_mapeado_entrepanio]);
 
-  if (!inst.resultado?.real_meshes || inst.resultado.real_meshes.length === 0 || annotatedMeshes.length === 0) {
-    return null;
-  }
-
-  const isModelCubierta = inst.definitionId.toLowerCase().includes("cubierta");
+  const isModelCubierta = inst.definitionId?.toLowerCase().includes("cubierta");
   const parentBoardGroupName = isModelCubierta ? "Cubierta" : "Tableros";
-  const mainColor = inst.parametros.color_acabado || "#0088aa";
+  const mainColor = inst.parametros?.color_acabado || "#0088aa";
 
   const hasTexturedMeshes = annotatedMeshes.some((m: any) => {
-    const n = m.name.toLowerCase();
+    const n = m.name?.toLowerCase() || "";
     return n.includes("color") || n.includes("balance") || (n.includes("mdp") && !n.includes("nurbs"));
   });
 
@@ -310,7 +306,7 @@ export function SingleFurnitureInstanceMesh({
 
   const boardMeshes = annotatedMeshes.filter((m: any) => {
     if (hardwareMeshes.includes(m)) return false;
-    const n = m.name.toLowerCase();
+    const n = (m.name || "").toLowerCase();
     if (hasTexturedMeshes && (n.includes("nurbs") || m.is_nurbs_solid)) {
       return false;
     }
@@ -342,7 +338,7 @@ export function SingleFurnitureInstanceMesh({
   });
 
   const machiningMeshes = annotatedMeshes.filter((m: any) => 
-    m.name.toLowerCase().includes("maquinados") || m.name.toLowerCase().includes("machining")
+    (m.name || "").toLowerCase().includes("maquinados") || (m.name || "").toLowerCase().includes("machining")
   );
 
   const otherMeshes = annotatedMeshes.filter((m: any) => {
@@ -387,6 +383,11 @@ export function SingleFurnitureInstanceMesh({
     });
     return setMadresConMdpAristas;
   }, [boardMeshes]);
+
+  // 🛡️ Salida defensiva segura: Se evalúa DESPUÉS de todos los hooks de React
+  if (!inst.resultado?.real_meshes || inst.resultado.real_meshes.length === 0 || annotatedMeshes.length === 0) {
+    return null;
+  }
 
   return (
     <group 

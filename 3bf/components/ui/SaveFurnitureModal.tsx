@@ -110,13 +110,13 @@ export default function SaveFurnitureModal() {
                 style={{ color: esOscuro ? "#F8FAFC" : "#0F172A" }}
                 className="text-sm font-bold leading-tight"
               >
-                Guardar como Mueble
+                Guardar como Proyecto
               </h3>
               <p 
                 style={{ color: esOscuro ? "#94A3B8" : "#64748B" }}
                 className="text-[11px] mt-0.5"
               >
-                Guardar en Google Drive & Catálogo de Marcas
+                Guarda simultáneamente .3bf.json (3D) y .3bm.json (Manual) en la misma carpeta
               </p>
             </div>
           </div>
@@ -338,7 +338,7 @@ export default function SaveFurnitureModal() {
                 </>
               ) : (
                 <>
-                  <Save className="w-3.5 h-3.5" /> Guardar Mueble
+                  <Save className="w-3.5 h-3.5" /> Guardar Proyecto
                 </>
               )}
             </button>

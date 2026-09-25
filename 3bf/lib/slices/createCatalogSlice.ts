@@ -919,7 +919,9 @@ export const createCatalogSlice = (set: any, get: any): any => ({
     set({ guardandoMueble: true });
     const state = get();
     try {
-      const id = `mueble_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`;
+      const cleanNombre = datos.nombre.trim();
+      const safeName = cleanNombre.replace(/[\\/:*?"<>|]/g, "_");
+      const id = safeName;
       const rutaCarpeta = `${datos.marca}/${datos.tipologia}`;
       const modelKey = state.parametros.model_id || "Cubierta";
       const fichaConfig = state.getFichaConfig(modelKey);
@@ -935,8 +937,8 @@ export const createCatalogSlice = (set: any, get: any): any => ({
       const fichaActual = state.getFichaProductoActivo();
       const fichaGuardada: FichaProductoDef = {
         ...fichaActual,
-        muebleId: datos.nombre,
-        titulo: datos.nombre,
+        muebleId: cleanNombre,
+        titulo: cleanNombre,
         descripcionCorta: datos.descripcion || fichaActual.descripcionCorta,
       };
       // Sanitizar instancias y consolidar colecciones de diseños
@@ -967,9 +969,13 @@ export const createCatalogSlice = (set: any, get: any): any => ({
         };
       }
 
+      const pasosAClonar = state.pasosManual && state.pasosManual.length > 0 
+        ? state.pasosManual 
+        : (state.muebleActivoGuardado?.pasosManual || generarPasosManualesPorDefecto());
+
       const nuevoMueble: MuebleGuardadoItem = {
         id,
-        nombre: datos.nombre,
+        nombre: cleanNombre,
         marca: datos.marca,
         tipologia: datos.tipologia,
         rutaCarpeta,
@@ -982,20 +988,22 @@ export const createCatalogSlice = (set: any, get: any): any => ({
         fichaConfig,
         fichaProducto: fichaGuardada,
         totalPiezas: despieceGlobal.reduce((acc, p) => acc + (p.cantidad || 1), 0),
-        pasosManual: state.pasosManual,
+        pasosManual: pasosAClonar,
+        manualVinculadoId: safeName,
         camara: state.camaraEscena || state.muebleActivoGuardado?.camara,
       };
 
       // Guardar en Store y localStorage
-      state.actualizarFichaProducto(datos.nombre, fichaGuardada);
+      state.actualizarFichaProducto(cleanNombre, fichaGuardada);
       state.actualizarFichaProducto(id, fichaGuardada);
 
       set((s) => ({
-        mueblesGuardados: [nuevoMueble, ...s.mueblesGuardados.filter((m) => m.id !== id)],
+        mueblesGuardados: [nuevoMueble, ...s.mueblesGuardados.filter((m) => m.id !== id && m.nombre !== cleanNombre)],
         muebleActivoGuardado: nuevoMueble,
         modalGuardarComoAbierto: false,
       }));
 
+      // 1. Guardar archivo 3D .3bf.json en Google Drive
       try {
         const payloadDisco = sanitizarMuebleParaDisco(nuevoMueble);
         const res = await fetch("/api/drive/muebles", {
@@ -1012,6 +1020,34 @@ export const createCatalogSlice = (set: any, get: any): any => ({
         console.warn("Mueble guardado en local:", err);
       }
 
+      // 2. Guardar archivo hermano .3bm.json de animación con el MISMO nombre en la MISMA carpeta
+      try {
+        const manualPayload: Manual3BMProyecto = {
+          id: safeName,
+          muebleOrigenId: id,
+          nombre: cleanNombre,
+          marca: datos.marca,
+          tipologia: datos.tipologia,
+          fechaModificacion: new Date().toISOString(),
+          parametrosMueble: { ...state.parametros },
+          pasos: pasosAClonar,
+        };
+        await fetch("/api/drive/manuales", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ action: "save_manual", manual: manualPayload }),
+          signal: AbortSignal.timeout(10000),
+        });
+        set({ manualActivoGuardado: manualPayload });
+        guardarPasosEnCacheLocal(pasosAClonar, manualPayload);
+      } catch (errM) {
+        console.warn("Manual hermano guardado en local:", errM);
+      }
+
+      if (typeof window !== "undefined" && window.localStorage) {
+        localStorage.setItem("3bf_ultimo_mueble_id", id);
+      }
+
       return true;
     } catch (err) {
       console.error("Error al guardar mueble:", err);
@@ -1021,16 +1057,20 @@ export const createCatalogSlice = (set: any, get: any): any => ({
     }
   },
 
-  guardarCambiosMueble: async () => {
+  guardarProyectoCompleto: async () => {
     const state = get();
     if (!state.muebleActivoGuardado) {
       set({ modalGuardarComoAbierto: true });
       return false;
     }
 
-    set({ guardandoMueble: true });
+    set({ guardandoMueble: true, guardandoManual: true });
     try {
-      const id = state.muebleActivoGuardado.id;
+      const cleanNombre = state.muebleActivoGuardado.nombre.trim();
+      const safeName = cleanNombre.replace(/[\\/:*?"<>|]/g, "_");
+      const id = safeName;
+      const marca = state.muebleActivoGuardado.marca || "RTA Design";
+      const tipologia = state.muebleActivoGuardado.tipologia || "Muebles";
       const modelKey = state.parametros.model_id || "Cubierta";
       const fichaConfig = state.getFichaConfig(modelKey);
       const despieceGlobal = state.getDespieceGlobal();
@@ -1046,7 +1086,6 @@ export const createCatalogSlice = (set: any, get: any): any => ({
       const targetInstId = state.objetoActivoId || Object.keys(rawInst)[0];
       const instPrincipal = targetInstId ? rawInst[targetInstId] : Object.values(rawInst)[0];
 
-      // 🎨 Consolidación robusta: Unir colecciones de instancias y mueble guardado por ID único priorizando versiones con mallas 3D
       const disenosDesdeInst = (instPrincipal && Array.isArray(instPrincipal.disenos)) ? instPrincipal.disenos : [];
       const disenosDesdeMueble = Array.isArray(state.muebleActivoGuardado?.disenos) ? state.muebleActivoGuardado!.disenos! : [];
       const mapaDisenos = new Map<string, DisenoEncapsulado3BF>();
@@ -1087,8 +1126,15 @@ export const createCatalogSlice = (set: any, get: any): any => ({
       }
 
       const fichaActual = state.getFichaProductoActivo();
+      const pasosActuales = state.pasosManual || [];
+
+      // 1. Objeto Mueble (.3bf.json)
       const muebleActualizado: MuebleGuardadoItem = {
         ...state.muebleActivoGuardado,
+        id,
+        nombre: cleanNombre,
+        marca,
+        tipologia,
         fechaGuardado: new Date().toISOString(),
         thumbnail,
         instancias: sanitizedInst,
@@ -1097,73 +1143,75 @@ export const createCatalogSlice = (set: any, get: any): any => ({
         fichaConfig,
         fichaProducto: fichaActual,
         totalPiezas: despieceGlobal.reduce((acc, p) => acc + (p.cantidad || 1), 0),
-        pasosManual: state.pasosManual,
+        pasosManual: pasosActuales,
+        manualVinculadoId: safeName,
         camara: state.camaraEscena || state.muebleActivoGuardado?.camara,
       };
 
-      state.actualizarFichaProducto(state.muebleActivoGuardado.nombre, fichaActual);
+      // 2. Objeto Manual (.3bm.json)
+      const manualPayload: Manual3BMProyecto = {
+        id: safeName,
+        muebleOrigenId: id,
+        nombre: cleanNombre,
+        marca,
+        tipologia,
+        fechaModificacion: new Date().toISOString(),
+        parametrosMueble: { ...state.parametros },
+        pasos: pasosActuales,
+      };
+
+      state.actualizarFichaProducto(cleanNombre, fichaActual);
       state.actualizarFichaProducto(id, fichaActual);
 
-      // Actualizar estado en memoria sin apagar prematuramente guardandoMueble
       set((s) => ({
-        mueblesGuardados: s.mueblesGuardados.map((m) => (m.id === id ? muebleActualizado : m)),
+        mueblesGuardados: s.mueblesGuardados.map((m) => (m.id === state.muebleActivoGuardado!.id || m.id === id ? muebleActualizado : m)),
         muebleActivoGuardado: muebleActualizado,
+        manualActivoGuardado: manualPayload,
         instancias: sanitizedInst,
         resultado: purgarResultadoGeometria(s.resultado),
       }));
 
+      // Guardar .3bf.json en Drive
       try {
         const payloadDisco = sanitizarMuebleParaDisco(muebleActualizado);
-        const res = await fetch("/api/drive/muebles", {
+        await fetch("/api/drive/muebles", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ action: "save_furniture", furniture: payloadDisco }),
           signal: AbortSignal.timeout(10000),
         });
-        if (!res.ok) {
-          const errData = await res.json().catch(() => ({}));
-          console.warn("[3dBimFab] Advertencia guardando en Drive:", res.status, errData);
-        }
-        if (typeof window !== "undefined" && window.localStorage) {
-          localStorage.setItem("3bf_ultimo_mueble_id", muebleActualizado.id);
-        }
-      } catch (err) {
-        console.warn("Mueble actualizado en local:", err);
+      } catch (err3bf) {
+        console.warn("Mueble .3bf guardado en local:", err3bf);
       }
 
-      // 🔗 Sincronización Hermana: Guardar también el .3bm del manual
+      // Guardar .3bm.json en Drive (misma carpeta)
       try {
-        const manualVinculadoId = muebleActualizado.manualVinculadoId || `manual_${muebleActualizado.nombre.toLowerCase().replace(/[^a-z0-9]/gi, "_")}`;
-        const manualPayload: Manual3BMProyecto = {
-          id: manualVinculadoId,
-          muebleOrigenId: id,
-          nombre: muebleActualizado.nombre,
-          marca: muebleActualizado.marca,
-          tipologia: muebleActualizado.tipologia,
-          fechaModificacion: new Date().toISOString(),
-          parametrosMueble: { ...state.parametros },
-          pasos: state.pasosManual,
-        };
         await fetch("/api/drive/manuales", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ action: "save_manual", manual: manualPayload }),
           signal: AbortSignal.timeout(10000),
         });
-        set({ manualActivoGuardado: manualPayload });
-        guardarPasosEnCacheLocal(state.pasosManual, manualPayload);
       } catch (errManual) {
-        console.warn("Manual .3bm sincronizado en caché local:", errManual);
+        console.warn("Manual .3bm guardado en local:", errManual);
       }
+
+      if (typeof window !== "undefined" && window.localStorage) {
+        localStorage.setItem("3bf_ultimo_mueble_id", id);
+      }
+      guardarPasosEnCacheLocal(pasosActuales, manualPayload);
 
       return true;
     } catch (err) {
-      console.error("Error al actualizar cambios de mueble:", err);
+      console.error("Error al guardar proyecto completo:", err);
       return false;
     } finally {
-      // 🛡️ Apagar guardandoMueble de forma segura solo al culminar todo el ciclo
-      set({ guardandoMueble: false });
+      set({ guardandoMueble: false, guardandoManual: false });
     }
+  },
+
+  guardarCambiosMueble: async () => {
+    return await get().guardarProyectoCompleto();
   },
 
   renombrarMuebleGuardado: async (id: string, nuevoNombre: string) => {

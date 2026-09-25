@@ -23,6 +23,10 @@ async function ensureStorage(storageDir: string) {
   }
 }
 
+function toSafeFileName(name: string): string {
+  return (name || "").trim().replace(/[\\/:*?"<>|]/g, "_");
+}
+
 // ── CACHÉ EN MEMORIA DEL SERVIDOR NODE.JS (TTL 60 segundos) ─────────────────
 interface CacheState {
   timestamp: number;
@@ -169,6 +173,9 @@ export async function GET(request: NextRequest) {
         return NextResponse.json({ success: true, furniture: cached.data });
       }
 
+      const targetId = id;
+      const safeId = toSafeFileName(targetId);
+
       // 2. Buscar archivo en disco asíncronamente
       async function findFileById(dir: string): Promise<any | null> {
         const entries = await fsp.readdir(dir, { withFileTypes: true });
@@ -177,9 +184,17 @@ export async function GET(request: NextRequest) {
           if (e.isDirectory()) {
             const found = await findFileById(p);
             if (found) return found;
-          } else if (e.isFile() && e.name === `${id}.3bf.json`) {
-            const content = await fsp.readFile(p, "utf-8");
-            return JSON.parse(content);
+          } else if (e.isFile() && e.name.endsWith(".3bf.json")) {
+            const baseName = e.name.replace(/\.3bf\.json$/, "");
+            if (
+              e.name === `${targetId}.3bf.json` ||
+              e.name === `${safeId}.3bf.json` ||
+              baseName.toLowerCase() === targetId.toLowerCase() ||
+              baseName.toLowerCase() === safeId.toLowerCase()
+            ) {
+              const content = await fsp.readFile(p, "utf-8");
+              return JSON.parse(content);
+            }
           }
         }
         return null;
@@ -188,6 +203,8 @@ export async function GET(request: NextRequest) {
       const foundData = await findFileById(storageDir);
       if (foundData) {
         fullFurnitureCache.set(id, { data: foundData, mtime: Date.now() });
+        if (foundData.id) fullFurnitureCache.set(foundData.id, { data: foundData, mtime: Date.now() });
+        if (foundData.nombre) fullFurnitureCache.set(foundData.nombre, { data: foundData, mtime: Date.now() });
         return NextResponse.json({ success: true, furniture: foundData });
       }
 
@@ -264,10 +281,11 @@ export async function POST(request: Request) {
         await fsp.mkdir(targetDir, { recursive: true });
       }
 
-      const fileName = `${furniture.id}.3bf.json`;
+      const safeName = toSafeFileName(furniture.nombre || furniture.id);
+      const fileName = `${safeName}.3bf.json`;
       let filePath = path.join(targetDir, fileName);
 
-      // Buscar si el archivo ya existe en otra subcarpeta para no duplicar ni errar de ruta
+      // Buscar si el archivo ya existía con otro nombre (ej. ID antiguo con hash) para actualizarlo sin dejar duplicados huérfanos
       async function findExistingFile(dir: string): Promise<string | null> {
         try {
           const entries = await fsp.readdir(dir, { withFileTypes: true });
@@ -276,7 +294,10 @@ export async function POST(request: Request) {
             if (entry.isDirectory()) {
               const res = await findExistingFile(fullP);
               if (res) return res;
-            } else if (entry.isFile() && entry.name === fileName) {
+            } else if (
+              entry.isFile() &&
+              (entry.name === fileName || (furniture.id && entry.name === `${furniture.id}.3bf.json`))
+            ) {
               return fullP;
             }
           }
@@ -285,8 +306,11 @@ export async function POST(request: Request) {
       }
 
       const existingPath = await findExistingFile(storageDir);
-      if (existingPath) {
-        filePath = existingPath;
+      if (existingPath && path.resolve(existingPath) !== path.resolve(filePath)) {
+        try {
+          // Si tenía un nombre viejo diferente, eliminar el viejo para no duplicar
+          await fsp.unlink(existingPath);
+        } catch (_) {}
       }
 
       // ⚡ Serialización compacta de alto rendimiento: reduce 80% el tamaño del archivo y elimina el colapso de memoria
@@ -294,8 +318,9 @@ export async function POST(request: Request) {
 
       if (furniture.id) {
         fullFurnitureCache.set(furniture.id, { data: furniture, mtime: Date.now() });
-        fullFurnitureCache.set(filePath, { data: furniture, mtime: Date.now() });
       }
+      fullFurnitureCache.set(safeName, { data: furniture, mtime: Date.now() });
+      fullFurnitureCache.set(filePath, { data: furniture, mtime: Date.now() });
 
       return NextResponse.json({
         success: true,

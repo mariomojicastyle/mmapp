@@ -376,12 +376,17 @@ export function useSpeechDictation({
         return;
       }
 
-      // Si la grabación sigue activa y el motor finalizó por tiempo límite del navegador,
-      // reiniciar suavemente tras una pausa mínima para evitar bucles cerrados
+      // Si la grabación sigue activa y el motor finalizó por tiempo límite del navegador (pausa/timeout),
+      // reiniciar construyendo una nueva instancia limpia (obligatorio en Chrome para evitar InvalidStateError)
       setTimeout(() => {
-        if (isRecordingRef.current && recognitionRef.current) {
+        if (isRecordingRef.current) {
           try {
-            recognitionRef.current.start();
+            const fresh = setupRecognition();
+            if (fresh) {
+              fresh.lang = sourceLangRef.current;
+              recognitionRef.current = fresh;
+              fresh.start();
+            }
           } catch (e) {
             console.warn("[SpeechRecognition] No se pudo reiniciar tras onend:", e);
           }
@@ -418,41 +423,15 @@ export function useSpeechDictation({
     };
   }, [isRecording]);
 
-  // Iniciar grabación con verificación de micrófono previa
+  // Iniciar grabación de forma limpia y directa
   const startRecording = useCallback(async () => {
     setErrorMessage(null);
 
-    // 1. Pre-flight check: Despertar hardware y validar permisos mediante getUserMedia
-    try {
-      if (typeof navigator !== "undefined" && navigator.mediaDevices?.getUserMedia) {
-        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-        // Liberar inmediatamente las pistas para que SpeechRecognition tenga acceso libre
-        stream.getTracks().forEach((track) => track.stop());
-      }
-    } catch (mediaErr: any) {
-      console.warn("[startRecording] Error solicitando micrófono:", mediaErr);
-      if (mediaErr.name === "NotAllowedError" || mediaErr.name === "PermissionDeniedError") {
-        setErrorMessage(
-          "Permiso de micrófono denegado. Permite el acceso al micrófono haciendo clic en el icono del candado en la barra de URL."
-        );
-      } else if (mediaErr.name === "NotFoundError" || mediaErr.name === "DevicesNotFoundError") {
-        setErrorMessage(
-          "No se encontró ningún micrófono conectado en tu equipo. Conecta un micrófono e inténtalo de nuevo."
-        );
-      } else {
-        setErrorMessage(
-          "No se puede acceder al micrófono. Verifica que otra aplicación no lo esté usando de forma exclusiva."
-        );
-      }
-      setIsRecording(false);
-      isRecordingRef.current = false;
-      return;
-    }
-
-    // 2. Crear instancia limpia de reconocimiento
     try {
       if (recognitionRef.current) {
         try {
+          recognitionRef.current.onend = null;
+          recognitionRef.current.onerror = null;
           recognitionRef.current.abort();
         } catch (e) {}
       }

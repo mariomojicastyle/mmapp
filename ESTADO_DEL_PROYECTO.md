@@ -9,7 +9,41 @@ Este archivo es la "Memoria RAM" para Antigravity. Contiene el contexto de lo qu
 ---
 
 ## 🏗️ 1. Plataforma B2B & 3dBimFab (Foco Actual)
-**Estado:** Hito 204 completado (Estabilización de Dirección Cinemática de Cámara en Timeline Blender, Desacoplamiento de Persistencia Global y Botón Cápsula "Restaurar Cámara"); Próximo Foco: Consolidación y Escalamiento de Keyframes y Animación (`3dBF_Keyframes`).
+**Estado:** Hito 205 completado (Propuesta Comercial Politorno Renders ES/PT en USD, Blindaje Táctil Móvil N-Panel, Corrección de Hooks en Three.js y Botón On/Off de Seguridad); Próximo Foco: Presentación Comercial Politorno y Despliegue (`Politorno_Renders`).
+
+- [x] **[24 de Septiembre, 2026] Propuesta Comercial Renders Politorno (ES/PT en USD), Blindaje Táctil Móvil N-Panel, Corrección de Hooks en Three.js y Control On/Off de Seguridad (`estudio-corporativo-politorno.html`, `NPanel.tsx`, `SingleFurnitureInstanceMesh.tsx`, `AppearanceSettingsPanel.tsx`, `FurnitureAssetBrowser.tsx`, `ComponentAssetBrowser.tsx`, `shield-toggle/`, `middleware.ts`)**:
+  * **Propuesta Comercial Politorno (Reunión con Marcelo Novo y Mercadeo)**:
+    - Servicio de renovación de renders de catálogo mediante Inteligencia Artificial impulsada por `3dBimFab`. Cero modelado 3D manual y cero carga para Politorno: se utilizan los renders antiguos existentes en su sitio web (`politorno.com.br`).
+    - Estructura de 10 imágenes estratégicas por mueble (portada marketplace, frontal 3/4 abierto, frontal cerrado, macro de herrajes, ergonomía y capacidad, lifestyle día, lifestyle noche cálido, detalle táctil de melamina, vista técnica posterior y despiece dimensional con medidas).
+    - Tarifas en Dólares Estadounidenses (USD) con tasa base de $1 USD = $3.000 COP:
+      * **Paquete Piloto (20 Muebles / ~200 Renders 2K)**: $22.22 USD por mueble ($2.22 USD por render). Inversión total: **$444 USD**.
+      * **Paquete Escala (50 Muebles / ~500 Renders 2K - Recomendado / 25% OFF)**: $16.67 USD por mueble ($1.67 USD por render). Inversión total: **$833 USD** (ahorro de $278 USD). Sprints de entrega semanales continuos de 5 a 10 muebles.
+    - Generación de presentaciones web interactivas (16:9) y PDFs descargables de 6 diapositivas en alta resolución en Español y Portugués (`Propuesta_Comercial_Renders_Politorno_Mario_Mojica_ES.html` y `_PT.html`), enlazadas mediante botón en `estudio-corporativo-politorno.html`.
+  * **Blindaje y Botón Toggle Permanente del N-Panel**:
+    - Botón en `top-3.5 right-3.5` en móvil (`w-8 h-8 rounded-full` / 32px, misma altura que *Guardar Proyecto* y *Perforar*). Ahora es un toggle permanente (`z-50`) que alterna entre `<` y `>` sin desaparecer nunca.
+    - Backdrop táctil sutil en móvil (`z-35 bg-black/25`) para cerrar el panel al tocar el lienzo 3D.
+    - `mostrarNPanel` inicializado en `false` en móviles para arranque limpio.
+  * **Detección Táctil de Toque (Tap) y Arrastre en Muebles y Componentes**:
+    - Se limitó `draggable` a ratón de escritorio para evitar que los navegadores móviles cancelen el evento `click`.
+    - Detección táctil nativa: un tap limpio con el dedo abre el mueble o componente en 3D de inmediato y pliega el panel. Arrastre hacia la izquierda lo suelta en el lienzo 3D.
+  * **Corrección de Violación de Hooks de React en `SingleFurnitureInstanceMesh.tsx`**:
+    - Se eliminó el `return null;` temprano que precedía al hook `useMemo` (`piezasConAristasEnMdp`), erradicando de raíz el error *Unhandled Runtime Error: Rendered more hooks than during the previous render* que congelaba la suite.
+  * **Botón On/Off de Blindaje de Seguridad y Clave en "Apariencia & Colores"**:
+    - En `AppearanceSettingsPanel.tsx`, a la derecha de "Esquema de Color", se implementó el interruptor cápsula `rounded-full` **Seguridad & Clave** (ON: `PROTEGIDO` / OFF: `LIBRE`).
+    - Endpoint `/api/shield-toggle` sincronizado con cookie `3bf_shield_mode=disabled` / `enabled`, permitiendo el acceso libre sin contraseñas cuando se desactiva.
+  * **Validación**: Compilación `npx tsc --noEmit` completada con **0 errores**, servicios locales y Cloudflare Tunnel 100% activos.
+
+- [x] **[24 de Septiembre, 2026] Unificación Atómica de "Guardar Proyecto", Nomenclatura Limpia Personalizada y Co-ubicación en Misma Carpeta Google Drive (`Viewer3D.tsx`, `SaveFurnitureModal.tsx`, `createCatalogSlice.ts`, `manualProyectosSlice.ts`, `storeTypes.ts`, `api/drive/muebles/route.ts`, `api/drive/manuales/route.ts`)**:
+  * **Petición del Usuario**: 
+    1. Asegurar la preservación de la animación de la Cómoda Ravenna creando una copia de trabajo segura (`3_Comoda Ravenna`).
+    2. Garantizar que tanto el archivo 3D (`.3bf.json`) como el manual de animación (`.3bm.json`) lleven **exactamente el mismo nombre limpio definido por el usuario** (eliminando IDs de hash criptográficos opacos como `mueble_179...`).
+    3. Asegurar que ambos archivos residan **en la misma carpeta** de Google Drive (`G:\Mi unidad\Muebles\<marca>\<tipologia>\`).
+    4. Implementar un único botón global en la suite denominado **`Guardar Proyecto`** que sincronice de forma atómica tanto la cinemática 3D como las definiciones de animación.
+  * **Solución Implementada**:
+    1. **Co-ubicación y Nomenclatura Limpia**: Clonación y verificación de `3_Comoda Ravenna.3bf.json` (3.26 MB) y `3_Comoda Ravenna.3bm.json` (3.11 MB, 4 pasos y 28 keyframes íntegros) en `G:\Mi unidad\Muebles\Henn\CÔMODA\`.
+    2. **Persistencia Backend**: `api/drive/muebles` guarda con `${cleanName}.3bf.json` y purga automáticamente archivos hash anteriores tras un renombrado. `api/drive/manuales` guarda el `.3bm.json` en la misma carpeta física del mueble con snapshots de seguridad en `storage/snapshots_manuales/`.
+    3. **Botón Unificado en UI**: En `Viewer3D.tsx`, se consolidaron los botones dispersos en un único botón cápsula `[ Guardar Proyecto ]` (`rounded-full`), con estados de carga interactivos (`Guardando Proyecto...` y `¡Proyecto Guardado!`), enlazado al método atómico `guardarProyectoCompleto()`.
+  * **Validación**: Compilación `npx tsc --noEmit` completada con **0 errores**, verificación física de archivos en Drive e interfaces reactivas.
 
 - [x] **[23 de Septiembre, 2026] Estabilización de Dirección Cinemática de Cámara en Timeline Blender, Desacoplamiento de Persistencia Global y Botón Cápsula "Restaurar Cámara" (`CameraControllers.tsx`, `ManualCameraDirector.tsx`, `BlenderTimeline.tsx`, `manual_1_comoda_ravenna.3bm.json`)**:
   * **Problema Resuelto (Desincronización de Cámara al Montar/Recargar)**: Al abrir manuales con keyframes grabados (28 keyframes en P03), la cámara aparecía desfasada o en el origen porque `CameraPersistenceController` imponía coordenadas viejas de `localStorage` mientras el timeline estaba en pausa.

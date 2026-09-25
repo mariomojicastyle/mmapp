@@ -905,6 +905,11 @@
 
       <!-- 3. Acciones de Escritorio (Desktop) -->
       <div class="desktop-actions">
+        <!-- Botón Propuesta Comercial -->
+        <a id="btnPropuestaComercial" href="Propuesta_Comercial_Renders_Politorno_Mario_Mojica_ES.html" class="btn-header-primary" style="background: #1368AA; color: #ffffff; border: 1.5px solid rgba(255, 255, 255, 0.45); box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);" title="Ver Propuesta Comercial">
+          💼 <span id="txtBtnPropuesta">Propuesta Comercial</span>
+        </a>
+
         <!-- Descargar paquete de imágenes en HD -->
         <a id="btnDownloadHd" href="Politorno_Imagens_HD_Mario_Mojica.zip" download class="btn-header-primary" title="Descargar paquete de imágenes HD">
           📦 <span id="txtBtnHd">Descargar imágenes HD</span>
@@ -947,6 +952,10 @@
     <div class="drawer-body">
       <div class="drawer-section-title" id="txtDrawerDownloadsTitle">Descargas & Documentos</div>
       
+      <a id="btnDrawerPropuesta" href="Propuesta_Comercial_Renders_Politorno_Mario_Mojica_ES.html" class="drawer-btn drawer-btn-primary" style="background: #1368AA; color: #ffffff;" onclick="toggleDrawer(false)">
+        💼 <span id="txtDrawerPropuesta">Ver Propuesta Comercial</span>
+      </a>
+
       <a href="Politorno_Imagens_HD_Mario_Mojica.zip" download class="drawer-btn drawer-btn-primary" onclick="toggleDrawer(false)">
         📦 <span id="txtDrawerZip">Descargar imágenes en HD</span>
       </a>
@@ -1051,11 +1060,14 @@
       </div>
 
       <!-- Banner de Cierre -->
-      <div class="summary-card">
-        <div class="summary-text" style="max-width: 100%;">
+      <div class="summary-card" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px;">
+        <div class="summary-text" style="max-width: 760px;">
           <h3 id="txtSummaryTitle">Ecosistema Integrado: Catálogo Digital + Manuales 3D + 3dBimFab</h3>
           <p id="txtSummaryBody">Un mismo activo digital tridimensional genera renders comerciales de máxima conversión, alimenta los manuales de armado interactivos en el móvil del cliente y se conecta con la ingeniería paramétrica de fábrica.</p>
         </div>
+        <a id="btnSummaryPropuesta" href="Propuesta_Comercial_Renders_Politorno_Mario_Mojica_ES.html" class="btn-header-primary" style="padding: 12px 24px; font-size: 13px; background: #0088AA; color: #ffffff; text-decoration: none; border-radius: 9999px; display: inline-flex; align-items: center; gap: 8px; border: 1.5px solid rgba(255, 255, 255, 0.4); box-shadow: 0 4px 12px rgba(0,0,0,0.25);">
+          💼 <span id="txtSummaryPropuesta">Ver Propuesta Comercial</span>
+        </a>
       </div>
 
     </main>
@@ -1086,6 +1098,9 @@
     const I18N = {
       es: {
         badgeHeader: "Estudio de Fotorrealismo 3D",
+        btnPropuesta: "Propuesta Comercial",
+        txtDrawerPropuesta: "Ver Propuesta Comercial",
+        summaryPropuesta: "Ver Propuesta Comercial",
         downloadPackBtn: "📦 Descargar paquete de imágenes en HD",
         downloadPackUrl: "Politorno_Imagens_HD_Mario_Mojica.zip",
         pdfBtn: "📄 Abrir PDF Completo",
@@ -1105,6 +1120,9 @@
       },
       pt: {
         badgeHeader: "Estudo de Fotorrealismo 3D",
+        btnPropuesta: "Proposta Comercial",
+        txtDrawerPropuesta: "Ver Proposta Comercial",
+        summaryPropuesta: "Ver Proposta Comercial",
         downloadPackBtn: "📦 Baixar pacote de imagens em HD",
         downloadPackUrl: "Politorno_Imagens_HD_Mario_Mojica.zip",
         pdfBtn: "📄 Abrir PDF Completo",
@@ -1380,6 +1398,27 @@
       
       const txtBadge = document.getElementById('txtBadgeHeader');
       if (txtBadge) txtBadge.textContent = dict.badgeHeader;
+      
+      const txtBtnPropuesta = document.getElementById('txtBtnPropuesta');
+      const btnPropuestaComercial = document.getElementById('btnPropuestaComercial');
+      if (txtBtnPropuesta && btnPropuestaComercial) {
+        txtBtnPropuesta.textContent = dict.btnPropuesta;
+        btnPropuestaComercial.href = `Propuesta_Comercial_Renders_Politorno_Mario_Mojica_ES.html?lang=${lang}`;
+      }
+
+      const txtDrawerPropuesta = document.getElementById('txtDrawerPropuesta');
+      const btnDrawerPropuesta = document.getElementById('btnDrawerPropuesta');
+      if (txtDrawerPropuesta && btnDrawerPropuesta) {
+        txtDrawerPropuesta.textContent = dict.txtDrawerPropuesta;
+        btnDrawerPropuesta.href = `Propuesta_Comercial_Renders_Politorno_Mario_Mojica_ES.html?lang=${lang}`;
+      }
+
+      const txtSummaryPropuesta = document.getElementById('txtSummaryPropuesta');
+      const btnSummaryPropuesta = document.getElementById('btnSummaryPropuesta');
+      if (txtSummaryPropuesta && btnSummaryPropuesta) {
+        txtSummaryPropuesta.textContent = dict.summaryPropuesta;
+        btnSummaryPropuesta.href = `Propuesta_Comercial_Renders_Politorno_Mario_Mojica_ES.html?lang=${lang}`;
+      }
       
       const txtBtnHd = document.getElementById('txtBtnHd');
       if (txtBtnHd) txtBtnHd.textContent = lang === 'pt' ? 'Baixar imagens em HD' : 'Descargar imágenes en HD';

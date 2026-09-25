@@ -37,6 +37,7 @@ export default function ComponentAssetBrowser() {
   const [categorias, setCategorias] = useState<string[]>(CATEGORIAS_FALLBACK);
   const [definiciones, setDefiniciones] = useState<DefinicionItem[]>(DEFINICIONES_FALLBACK);
   const [draggedItemId, setDraggedItemId] = useState<string | null>(null);
+  const touchStartPos = React.useRef<{ id: string; x: number; y: number; time: number } | null>(null);
 
   // Estados de captura de miniatura individual para componentes
   const [capturandoCompId, setCapturandoCompId] = useState<string | null>(null);
@@ -230,12 +231,56 @@ export default function ComponentAssetBrowser() {
             return (
               <div
                 key={item.id}
-                draggable
+                draggable={typeof window !== "undefined" ? window.innerWidth >= 1024 : true}
                 onDragStart={(e) => handleDragStart(e, item)}
                 onDragEnd={handleDragEnd}
-                onClick={() => use3BFStore.getState().cargarDefinicion(item)}
-                onDoubleClick={() => use3BFStore.getState().cargarDefinicion(item)}
-                title={`${item.nombre} (${item.archivo}) - Haz doble clic o arrastra al visor 3D`}
+                onTouchStart={(e) => {
+                  const t = e.touches[0];
+                  touchStartPos.current = { id: item.id, x: t.clientX, y: t.clientY, time: Date.now() };
+                  if (typeof window !== "undefined") {
+                    (window as any).__dragged3BFItem = item;
+                  }
+                }}
+                onTouchEnd={async (e) => {
+                  const info = touchStartPos.current;
+                  touchStartPos.current = null;
+                  if (!info || info.id !== item.id) return;
+                  const t = e.changedTouches[0];
+                  const dx = Math.abs(t.clientX - info.x);
+                  const dy = Math.abs(t.clientY - info.y);
+                  const elapsed = Date.now() - info.time;
+                  const esMovil = typeof window !== "undefined" && window.innerWidth < 1024;
+
+                  // Tap o toque simple en móvil
+                  if (dx < 25 && dy < 25 && elapsed < 700) {
+                    e.preventDefault();
+                    await use3BFStore.getState().cargarDefinicion(item);
+                    if (esMovil) {
+                      use3BFStore.getState().setMostrarNPanel(false);
+                    }
+                    return;
+                  }
+
+                  // Arrastre con el dedo soltado en el escenario 3D
+                  if (esMovil && t.clientX < window.innerWidth - 70) {
+                    e.preventDefault();
+                    await use3BFStore.getState().cargarDefinicion(item);
+                    use3BFStore.getState().setMostrarNPanel(false);
+                  }
+                }}
+                onClick={async () => {
+                  await use3BFStore.getState().cargarDefinicion(item);
+                  if (typeof window !== "undefined" && window.innerWidth < 1024) {
+                    use3BFStore.getState().setMostrarNPanel(false);
+                  }
+                }}
+                onDoubleClick={async () => {
+                  await use3BFStore.getState().cargarDefinicion(item);
+                  if (typeof window !== "undefined" && window.innerWidth < 1024) {
+                    use3BFStore.getState().setMostrarNPanel(false);
+                  }
+                }}
+                title={`${item.nombre} (${item.archivo}) - Haz clic o arrastra al visor 3D`}
                 className={`group flex flex-col items-center cursor-grab active:cursor-grabbing p-0.5 lg:p-1 rounded-lg hover:bg-slate-100/80 dark:hover:bg-slate-800/50 transition-all select-none relative w-[60px] lg:w-[88px] shrink-0 ${
                   draggedItemId === item.id ? "opacity-40 scale-95" : ""
                 }`}

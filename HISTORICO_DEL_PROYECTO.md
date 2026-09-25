@@ -1754,10 +1754,41 @@ Para mantener la máxima agilidad y minimizar el consumo de tokens sin perder ni
      - Permite que el usuario, tras explorar o manipular libremente la escena con el mouse en cualquier segundo de la animación, recupere en 1 clic el encuadre cinemático exacto de ese instante.
   4. *Exposición de Comando Global en Ventana*:
      - Exposición de `(window as any).__restaurarCamaraCinematica3BF` para forzar la re-evaluación inmediata de posición, target y smoothstep.
+### 🚀 Hito 205: Propuesta Comercial Renders Politorno (ES/PT en USD), Blindaje Táctil Móvil N-Panel, Corrección de Hooks en Three.js y Control On/Off de Seguridad en `3dBimFab` (24 de Septiembre, 2026)
+- **Contexto y Solicitud Estratégica**:
+  * **Propuesta Comercial para Politorno**: Preparación de propuesta comercial integral para la reunión con Marcelo Novo y el equipo de mercadeo de Politorno Móveis (Bento Gonçalves, RS, Brasil). Servicio de renovación fotorrealista de renders de catálogo mediante Inteligencia Artificial impulsada por `3dBimFab`, utilizando los renders antiguos existentes en su sitio web (`politorno.com.br`) con cero modelado 3D manual ni carga operativa para el cliente.
+  * **Ajuste de Divisa y Bilingüismo**: Tarifas calculadas en Dólares Estadounidenses (USD) con tasa base acordada de **$1 USD = $3.000 COP** (~R$ 5.50 BRL). Generación de presentaciones web interactivas y PDFs descargables de 6 diapositivas (16:9) tanto en Español como en Portugués brasileño nativo, enlazadas desde `estudio-corporativo-politorno.html`.
+  * **Problemas Técnicos Móviles en `3dBimFab`**:
+    1. El N-Panel funcionaba solo una vez en dispositivos móviles y desaparecía el botón de apertura.
+    2. Las tarjetas de muebles no abrían ni se arrastraban al tocarlas con el dedo en pantallas táctiles.
+    3. Al abrir un mueble, React arrojaba un error de ejecución en caliente (*Unhandled Runtime Error: Rendered more hooks than during the previous render* en `SingleFurnitureInstanceMesh.tsx`), congelando la suite.
+    4. Petición del usuario para habilitar/deshabilitar el blindaje de clave mediante un botón On/Off en "Apariencia & Colores" a la derecha de "Esquema de Color".
+- **Implementación Técnica**:
+  1. *Propuesta Comercial B2B Politorno (Landing Interactiva + PDFs en Alta Resolución)*:
+     - **Estructura de 10 Renders por Mueble**: Portada Marketplace (estudio infinito), Frontal 3/4 Abierto (funcionalidad), Frontal 3/4 Cerrado (proporción), Macro Constructivo (*bokeh* de herrajes), Ergonomía con utilería real, Lifestyle Día, Lifestyle Noche (iluminación cálida), Textura táctil de melamina, Vista técnica de espaldar/perfil, e Infografía dimensional con cotas superpuestas.
+     - **Paquete Piloto (20 Muebles / ~200 Renders 2K)**: $22.22 USD por mueble ($2.22 USD por render). Inversión total: **$444 USD**.
+     - **Paquete Escala (50 Muebles / ~500 Renders 2K - Recomendado / 25% OFF)**: $16.67 USD por mueble ($1.67 USD por render). Inversión total: **$833 USD** (ahorro directo de $278 USD). Sprints de entrega semanales de 5 a 10 muebles.
+     - **Condiciones Comerciales**: 50% de anticipo y 50% contra entrega a satisfacción, calibración visual con mercadeo y arranque inmediato con los primeros 5 muebles prioritarios.
+     - **Activos Digitales Publicados**: `Propuesta_Comercial_Renders_Politorno_Mario_Mojica_ES.html`, `_PT.html`, y PDFs en alta resolución (1920x1080) generados con Chromium headless.
+  2. *Blindaje y Botón Toggle Permanente del N-Panel (`NPanel.tsx`, `manualStudioSlice.ts`)*:
+     - **Botón Permanente (`z-50`)**: Ubicado en `top-3.5 right-3.5` en móvil (`w-8 h-8 rounded-full` / 32px, idéntico en altura a *Guardar Proyecto* y *Perforar*). Muestra `<` (`ChevronLeft`) cuando está cerrado y `>` (`ChevronRight`) cuando está abierto, eliminando la desaparición del botón.
+     - **Backdrop Táctil Móvil**: Fondo sutil `bg-black/25` (`z-35`) que cierra el panel al tocar cualquier área del lienzo 3D.
+     - **Arranque Limpio en Celulares**: En `manualStudioSlice.ts`, `mostrarNPanel` se inicializa en `false` para dispositivos móviles (`window.innerWidth < 1024`).
+  3. *Detección Táctil de Toque (Tap) y Arrastre en Muebles y Componentes (`FurnitureAssetBrowser.tsx`, `ComponentAssetBrowser.tsx`)*:
+     - Atributo HTML5 `draggable` limitado estrictamente a ratón de escritorio (`window.innerWidth >= 1024`), liberando el flujo nativo de toques táctiles.
+     - Listeners de touch dedicados: detección de toque limpio (`dx < 25px`, `dy < 25px`, `t < 700ms`) que ejecuta de inmediato `abrirMueble(mueble)` / `cargarDefinicion(item)` y pliega el panel, permitiendo ver el modelo en el lienzo 3D.
+     - Soporte para arrastre táctil soltado sobre el área del visor 3D.
+  4. *Corrección de Violación de Reglas de Hooks de React en `SingleFurnitureInstanceMesh.tsx`*:
+     - Se eliminó el retorno temprano condicional (`if (!inst.resultado?.real_meshes) return null;`) que se encontraba antes de la llamada a `useMemo` (`piezasConAristasEnMdp`).
+     - Se reordenó el componente para que todos los hooks (`useRef`, `useMemo`, `useEffect`, `useCallback`) se ejecuten siempre incondicionalmente en cada render, trasladando la guarda de seguridad inmediatamente antes del JSX final.
+  5. *Botón On/Off de Blindaje de Seguridad y Clave en "Apariencia & Colores" (`AppearanceSettingsPanel.tsx`, `/api/shield-toggle/route.ts`, `middleware.ts`, `access/page.tsx`)*:
+     - En `AppearanceSettingsPanel.tsx`, al lado derecho de "Esquema de Color", se implementó el interruptor cápsula `rounded-full` **Seguridad & Clave** (ON: `PROTEGIDO` con clave / OFF: `LIBRE` sin clave).
+     - Endpoint `/api/shield-toggle` que lee y escribe de forma atómica el estado en `storage/shield_config.json` y emite la cookie `3bf_shield_mode=disabled` / `enabled`.
+     - `middleware.ts` y `/access` detectan el modo libre, permitiendo el ingreso inmediato sin credenciales ni URLs con `?key=...`.
 - **Validación de Calidad**:
   * Compilación TypeScript verificada (`npx tsc --noEmit`) en `c:\Desarrollo\mmapp\3bf` con **0 errores**.
-  * Creación previa de snapshot de seguridad: `manual_1_comoda_ravenna_antes_estabilidad_camara_20260923_215147.3bm.json`.
-  * Sincronización atómica verificada en disco: 3,113,592 bytes (28 keyframes en P03).
+  * Servicios locales (RhinoCompute en 5000, 3BF Worker en 8005, Next.js en 3005) y Cloudflare Tunnel en `https://engine.mariomojica.com` 100% operativos.
+
 
 
 
