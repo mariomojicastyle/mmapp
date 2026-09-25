@@ -1809,9 +1809,44 @@ Para mantener la máxima agilidad y minimizar el consumo de tokens sin perder ni
   2. *Landing Corporativa (`estudio-corporativo-politorno.html` y `estudio-comparativo-politorno.html`)*:
      - En `setLanguage(lang)`, los enlaces de `btnPropuestaComercial`, `btnDrawerPropuesta` y `btnSummaryPropuesta` se dirigen de forma bilingüe estricta al HTML en portugués (`_PT.html`) o español (`_ES.html`) con `target="_blank"`.
 - **Validación de Calidad**:
-  * Compilación y verificación de archivos PDF y HTML en vivo.
+  * Compilación y verificación de archivos PDF y HTML en vivo.---
 
+### 🚀 Hito 207: Narrador Neuronal en Portugués (TTS Bajo Demanda), Selector de Intérpretes Brasileños y Audición por Frase en Dictado y Traducción (`TranscriptFeed.tsx`, `/api/tts`) (25 de Septiembre, 2026)
+- **Contexto y Solicitud del Usuario**:
+  * Implementar un narrador de voz neuronal para que, al traducir al portugués (o idioma destino), el usuario pueda presionar un botón "Narrar en Portugués" y escuchar el audio generado con la voz de un intérprete nativo que pueda escogerse de una lista. La generación de audio debe ocurrir estrictamente bajo demanda al hacer clic.
+- **Implementación Técnica**:
+  1. *Voces Neuronales Brasileñas Integradas*: Mapeo de intérpretes nativos de Microsoft Edge Neural Voices (`msedge-tts` vía `/api/tts`): `pt-BR-AntonioNeural` (Masculino - Corporativo), `pt-BR-FranciscaNeural` (Femenino - Profesional), `pt-BR-ThalitaNeural` (Femenino - Conversacional) y `pt-BR-NicolauNeural` (Masculino - Casual).
+  2. *Selector Ergonómico en Cápsula*: Dropdown estilizado en cápsula pura `rounded-full` en la cabecera de la columna de traducción para alternar entre intérpretes con persistencia en `localStorage` (`dictado_narrador_voz`).
+  3. *Botón Protagónico de Narración Bajo Demanda*: Cápsula interactiva `[ 🔊 Narrar en Portugués ]` con estados dinámicos: reposo, carga (`[ ⏳ Generando Audio... ]`) y reproducción activa (`[ ⏹️ Detener Narración ]` con pulso).
+  4. *Narración Quirúrgica por Frase*: Cada tarjeta individual de texto traducido (`EditableSegmentCard`) cuenta ahora con un mini-botón de altavoz `🔊` al pasar el cursor para audicionar de forma aislada esa frase específica antes de enviarla al cliente.
+  5. *Gestión de Audio Limpia*: Streaming con `fetch` a `/api/tts`, objeto `Audio` con `revokeObjectURL`, pausa al cambiar de voz y liberación total de memoria al desmontar.
+- **Validación de Calidad**:
+  * Compilación `npx tsc --noEmit` completada con **0 errores**, respuesta HTTP 200 en `http://localhost:3003/dictado-y-traduccion`.
 
+---
 
-
+### 🚀 Hito 208: Acta Técnica y Propuesta Piloto 10 Productos para Politorno Móveis en USD (Manuales 3D al 50% OFF, Bonificación 100% Software `3dBimFab`, Soporte Cloud $5 USD/mes y Despliegue Netlify) (25 de Septiembre, 2026)
+- **Contexto y Acuerdos de la Reunión Técnica**:
+  * Tras la reunión técnica del 25 de septiembre de 2026 con Marcelo Piriz y Ricardo de Politorno Móveis (donde se evidenció la fragmentación de herramientas de planta: Rhinoceros para producto, TopSolid para ingeniería/corte, 3ds Max para renders y software externo para manuales), se elaboró el Acta Oficial y Propuesta Comercial Piloto sin esperar para liderar proactivamente la adopción tecnológica.
+  * **Propuesta Piloto Foco (10 Muebles Medianos)**:
+    - Manuales de armado 3D interactivos al **50% de descuento** ($187 USD c/u respecto a la tarifa regular de $375 USD) = **$1.874 USD total**.
+    - **Bonificación del 100% en Desarrollo de Software en `3dBimFab`**: Mario Mojica asume el costo de desarrollo y parametrización de los 10 productos ($10.000 USD de valor comercial bonificado al 100% $\to$ **$0 USD GRATUITO**).
+    - **Ahorro total en tecnología para Politorno**: **+$11.874 USD**.
+    - **Esquema de Pagos**: 20% de anticipo ($375 USD) y 80% contra entrega a entera satisfacción ($1.499 USD).
+    - **Plazo**: 30 días hábiles (primer prototipo funcional en 7 días).
+  * **Blindaje Operativo y Propiedad Intelectual**:
+    - **Propiedad de Archivos**: Politorno conserva la propiedad definitiva de todos los archivos fuente descargables entregados (Rhinoceros `.3dm`, WebGL `.glb`, capas técnicas `.dxf` y planos `.pdf`).
+    - **Infraestructura Cloud ($5 USD / mes por mueble activo)**: Se eliminó cualquier compromiso riesgoso de alojamiento web "perpetuo" sin ventas previas. La disponibilidad pública del visor interactivo 3D, el direccionamiento mediante QR y la telemetría se respaldan mediante una administración mensual de solo **$5 USD / mes por mueble activo** para servidores, bases de datos y CDN global (primeros 60 días bonificados en el acuerdo piloto).
+    - **Blindaje de Know-How Interno**: Supresión total de menciones a tecnologías y lenguajes internos (Python, Grasshopper) en las diapositivas y minutas, sustituyéndolas por terminología de ingeniería industrial de alto nivel (*"Desarrollo y Parametrización Paramétrica"*).
+- **Implementación Técnica y Multilingüe**:
+  * **Visor Interactivo Web 16:9 (`acta-propuesta-politorno-usd.html`, `acta-politorno.html`)**:
+    - Navegación interactiva por diapositivas con barra de transporte, teclado (`← / →`) y pantalla completa.
+    - Selector dinámico de idioma en la barra de navegación superior (**ES / PT**) con cambio instantáneo de todo el contenido.
+    - Exportación a PDF de alta resolución vectorizada en 1 clic.
+    - Estilo visual **Tech Ethos** con cápsulas circulares obligatorias (`rounded-full`), paleta oficial cyan `#0088AA` y logos vectoriales oficiales desde `/publicidad`.
+  * **Publicación y Despliegue en Netlify**:
+    - Sincronización de archivos interactivos HTML y PDF oficiales en `mario-mojica-homepage/public/` para disponibilidad inmediata en producción (`mariomojica.com`).
+- **Validación de Calidad**:
+  * `npx tsc --noEmit` verificado con **0 errores** tanto en `3bf` como en `mario-mojica-plataforma`.
+  * Verificación visual de diapositivas 16:9 e inspección de PDF compilado.
 

@@ -9,7 +9,29 @@ Este archivo es la "Memoria RAM" para Antigravity. Contiene el contexto de lo qu
 ---
 
 ## 🏗️ 1. Plataforma B2B & 3dBimFab (Foco Actual)
-**Estado:** Hito 205 completado (Propuesta Comercial Politorno Renders ES/PT en USD, Blindaje Táctil Móvil N-Panel, Corrección de Hooks en Three.js y Botón On/Off de Seguridad); Próximo Foco: Presentación Comercial Politorno y Despliegue (`Politorno_Renders`).
+**Estado:** Hito 208 completado (Acta Técnica y Propuesta Piloto 10 Productos para Politorno Móveis en USD con Manuales 3D al 50% OFF, Bonificación 100% Software `3dBimFab`, Soporte Cloud $5 USD/mes y Despliegue Netlify); Próximo Foco: Seguimiento Comercial Politorno / Henn (`Politorno_Renders`).
+
+- [x] **[25 de Septiembre, 2026] Acta Técnica y Propuesta Piloto 10 Productos para Politorno Móveis en USD (Manuales 3D al 50% OFF, Bonificación 100% Software `3dBimFab`, Soporte Cloud $5 USD/mes y Despliegue Netlify) (`acta-propuesta-politorno-usd.html`, `Acta_Propuesta_Piloto_Politorno_Mario_Mojica_USD.pdf`, `acta-politorno.html`)**:
+  * **Propuesta Piloto Foco (10 Muebles Medianos)**:
+    - Manuales 3D interactivos al **50% de descuento** ($187 USD c/u respecto a $375 USD) = **$1.874 USD total**.
+    - **100% de Bonificación en Software `3dBimFab`**: Mario Mojica asume el costo de desarrollo ($10.000 USD de valor comercial bonificado $\to$ **$0 USD GRATUITO**).
+    - **Ahorro total en tecnología**: **+$11.874 USD**.
+    - **Condiciones**: 20% anticipo ($375 USD), 80% saldo contra entrega a satisfacción ($1.499 USD). Plazo: 30 días hábiles (primer prototipo en 7 días).
+  * **Blindaje Operativo e IP**:
+    - **Propiedad de Archivos**: Politorno conserva la propiedad definitiva de todos los archivos fuente (Rhinoceros `.3dm`, WebGL `.glb`, capas técnicas `.dxf` y planos `.pdf`).
+    - **Soporte Cloud ($5 USD/mes)**: Disponibilidad del manual 3D interactivo en la nube respaldada con **$5 USD / mes por mueble activo** (primeros 60 días bonificados).
+    - **Blindaje Tecnológico**: Supresión de palabras o lenguajes internos (Python, Grasshopper); terminología de alto nivel (*"Desarrollo y Parametrización"*).
+  * **Entrega Web y PDF**: Visor interactivo 16:9 con selector bilingüe (**ES / PT**), exportación a PDF vectorizada en 1 clic y sincronización con `mario-mojica-homepage/public/` para despliegue en Netlify.
+
+- [x] **[25 de Septiembre, 2026] Narrador Neuronal en Portugués (TTS Bajo Demanda), Selector de Intérpretes Brasileños y Audición por Frase en Dictado y Traducción (`TranscriptFeed.tsx`, `/api/tts`)**:
+  * **Petición del Usuario**: Implementar un narrador de voz neuronal para que, al traducir al portugués (o idioma destino), el usuario pueda presionar un botón "Narrar en Portugués" y escuchar el audio generado con la voz de un intérprete nativo que pueda escogerse de una lista. La generación de audio debe ocurrir estrictamente bajo demanda al hacer clic.
+  * **Implementación Técnica**:
+    1. **Voces Neuronales Brasileñas Integradas**: Mapeo de intérpretes nativos de Microsoft Edge Neural Voices (`msedge-tts` vía `/api/tts`): `pt-BR-AntonioNeural` (Masculino - Corporativo), `pt-BR-FranciscaNeural` (Femenino - Profesional), `pt-BR-ThalitaNeural` (Femenino - Conversacional) y `pt-BR-NicolauNeural` (Masculino - Casual).
+    2. **Selector Ergonómico en Cápsula**: Dropdown estilizado en cápsula pura `rounded-full` en la cabecera de la columna de traducción para alternar entre intérpretes con persistencia en `localStorage` (`dictado_narrador_voz`).
+    3. **Botón Protagónico de Narración Bajo Demanda**: Cápsula interactiva `[ 🔊 Narrar en Portugués ]` con estados dinámicos: reposo, carga (`[ ⏳ Generando Audio... ]`) y reproducción activa (`[ ⏹️ Detener Narración ]` con pulso).
+    4. **Narración Quirúrgica por Frase**: Cada tarjeta individual de texto traducido (`EditableSegmentCard`) cuenta ahora con un mini-botón de altavoz `🔊` al pasar el cursor para audicionar de forma aislada esa frase específica antes de enviarla al cliente.
+    5. **Gestión de Audio Limpia**: Streaming con `fetch` a `/api/tts`, objeto `Audio` con `revokeObjectURL`, pausa al cambiar de voz y liberación total de memoria al desmontar.
+  * **Validación**: Compilación `npx tsc --noEmit` completada con **0 errores**, respuesta HTTP 200 en `http://localhost:3003/dictado-y-traduccion`.
 
 - [x] **[24 de Septiembre, 2026] Propuesta Comercial Renders Politorno (ES/PT en USD), Blindaje Táctil Móvil N-Panel, Corrección de Hooks en Three.js y Control On/Off de Seguridad (`estudio-corporativo-politorno.html`, `NPanel.tsx`, `SingleFurnitureInstanceMesh.tsx`, `AppearanceSettingsPanel.tsx`, `FurnitureAssetBrowser.tsx`, `ComponentAssetBrowser.tsx`, `shield-toggle/`, `middleware.ts`)**:
   * **Propuesta Comercial Politorno (Reunión con Marcelo Novo y Mercadeo)**:

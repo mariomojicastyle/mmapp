@@ -61,6 +61,7 @@ export default function RootLayout({
       lang="es" 
       data-theme="tech" 
       className={`${promptFont.variable} ${interFont.variable} ${arimoFont.variable}`}
+      suppressHydrationWarning
     >
       <head>
         <link rel="icon" type="image/svg+xml" href="/Icon_3BF.svg?v=6" />
@@ -75,7 +76,7 @@ export default function RootLayout({
         <meta name="mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-title" content="3dBimFab" />
       </head>
-      <body>
+      <body suppressHydrationWarning>
         <ThemeManager />
         {children}
       </body>

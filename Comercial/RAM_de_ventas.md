@@ -103,7 +103,7 @@ Para evitar respuestas genéricas, el RAM de ventas almacena y cruza 5 dimension
 | Empresa | Contacto | Cargo | Dolores / Oportunidad | Estado / Temperatura | Último Hito | Próxima Jugada Táctica |
 | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
 | **Mobille / AKEO Partner** | Luiz Atilio Barse | Diretor & Super-Conector B2B | Conexión estratégica, apadrinamiento con fábricas en RS | 🔥 Aliado Estratégico (Padrino B2B) | 10 Ago 2026 - Conexión directa a Marcelo Novo (Politorno) con aval de Sr. Pedro | Mantenerlo informado de avances con Politorno |
-| **Politorno Móveis** | Marcelo Novo | Diretor / Líder P&D | Demostración completa 3dBimFab (Mesa Tijuca, renders, cinemática y dirección de cámara) | 🔥 ¡Reunión Confirmada! / Viernes 25 Sep 10:30 BRT | 24 Sep 2026 - Marcelo confirmó reunión: Viernes 25/09 a las 10:30 BRT (08:30 COL) con el equipo de Render | Enviar convite de Google Calendar y link de Google Meet para sesión de mañana |
+| **Politorno Móveis** | Marcelo Piriz & Ricardo | Dirección P&D / Proyectos | Desconexión de software (Rhino, TopSolid, 3ds Max, manuales, empaque). Manual 3D y ADN paramétrico | 🔥 Propuesta Piloto Enviada / Muy Caliente | 25 Sep 2026 - Demostración técnica en vivo (1h 12m). Acta ejecutiva y propuesta piloto 10 productos ($1.874 USD) enviada | Seguimiento con Marcelo y Ricardo para selección de los 10 productos |
 | **Móveis Henn** | Marcos Unnass & Jonas Borck | Coordenador P&D & Analista Engenharia | Manuales interactivos 3D, 3dBimFab, ERP TOTVS Datasul, ahorro 30% | 🔥 ¡Reunión Confirmada! / Martes 29 Sep 10:30 BRT | 24 Sep 2026 - Marcos aceptó Martes 29/09. Mario ajusta a 10:30 a 11:30 BRT (08:30 a 09:30 COL) para calzar agenda con Sistemas | Enviar link de Google Meet y citación para Marcos, Jonas y Sistemas |
 | **Grupo K1 (Kappesberg)** | Julio Santos | Especialista IA & Automação / Mkt | Costos de P&D de manuales, modelo suscripción ($1 USD/mes), IA aplicada | 🔥 En Evaluación / Cotización Enviada | 17 Ago 2026 - Solicitó valores e insumos. Enviada calculadora 30% ahorro | Esperar feedback de reunión interna con su gerente |
 | **Kit's Paraná** | Marcos Benedito & Jamylle Duarte | Directivos P&D / Marketing | Costos de asistencia técnica, manuales en papel, telemetría | 🟡 Referenciado / Email Preparado | 17 Ago 2026 - Andre Luis facilitó sus correos | Enviar correo corporativo formal a Marcos y Jamylle |
@@ -118,7 +118,8 @@ Para evitar respuestas genéricas, el RAM de ventas almacena y cruza 5 dimension
 | **Muebles Jamar Colombia** | Omar DeLaHoz Rocha & Juan Carlos Goez | VP Logística e Industria / Ingeniería CILA | Control de costo objetivo (Design to Cost), optimización de corte y kits mecanizados para el CILA | 🔥 Muy Caliente / Reconexión Activa | Ago 2026 - Omar comentó en LinkedIn: "Excelente. Cuando hablamos". Video demo 24 Ene 2026 analizado | Responder en LinkedIn/WhatsApp retomando el dolor de costo objetivo y mostrando 3dBimFab para los kits del CILA |
 | **Ternova** | Julio Sanchez | Ingeniería / Automatización | Manuales para maquinaria, limitaciones de Fusion 360 | 🟡 Puerta Abierta / Seguimiento Suave | 18 Ago 2026 - Mencionó avance en Fusion 360. Dejar relación abierta | Enviar tip de exportación web sin presión en 15 días |
 | **Móveis Henn (Planejamento)** | Rudgeri Henkel | Gerente Planejamento e Materiais | Costos de asistencia técnica, errores de ensamble en RTA | 🟡 Mensaje de WhatsApp Listo | 03 Ago 2026 - Dio su WhatsApp directo en LinkedIn | Integrar al hilo de la reunión con Marcos y Jonas |
-| **Bartira** | Hermes Rodrigues de Oliveira | Operador Logística / Planta | Conexión interna hacia el líder de Producto / Ingeniería | 🔥 Puente Interno Activo / Caliente | 18 Ago 2026 - Pasó perfil de Denis (ya salió). Pedir líder actual | Agradecer y pedir contacto del actual líder de P&D |
+| **Bartira (Padrino B2B)** | Hermes Rodrigues de Oliveira | Operador Logística / Planta | Conexión interna hacia el líder de Producto / Ingeniería | 🔥 Padrino Interno Clave | 25 Sep 2026 - Consiguió y entregó el contacto directo de Fábio de Jesus Ferreira (Projetista P&D) | Agradecer y coordinar aval de mención en la apertura |
+| **Bartira (P&D / Engenharia)** | Fábio de Jesus Ferreira | Projetista | Desenvolvimento de Produtos - Eng | Modernización de proyectos, DfMA, gemelos digitales 3D y Lean Six Sigma | 🔥 Lead Caliente / Vía Hermes Oliveira | 25 Sep 2026 - Hermes pasó su perfil directo de LinkedIn | Conectar en LinkedIn y enviar mensaje de apertura mencionando el puente de Hermes |
 | **Bartira (Ex-Líder)** | Denis Roveri | Ex-Gerente de Engenharia | Relacionamiento en la industria de manufactura | ⏸️ Red Abierta | 17 Ago 2026 - Informó que salió de Bartira | Mantener contacto en su nuevo rol en la industria |
 | **Demóbile** | Junio César Françolin | Gerente de Produção | Control de calidad extendido, telemetría de ensamble | ❄️ Enfriando | 05 Ago 2026 - Vio el perfil de Mario en LinkedIn | Enviar mensaje corto sobre control de calidad extendido |
 | **SABMiller / Bavaria** | Cesar Alejandro Castañeda Castillo | Coordinador de Ventas Regional Costa - Occidente | Operaciones, ventas, proyectos (Descartado: Spam masivo de grupos WP) | 🛑 Descartado / Spam de Red | 16 Sep 2026 - Ofreció grupo de WP masivo de 120 empresas y 26k miembros | No responder o declinar educadamente sin entregar datos |
@@ -150,9 +151,18 @@ Para evitar respuestas genéricas, el RAM de ventas almacena y cruza 5 dimension
   * *21 Septiembre 2026 (07:46 BRT):* **¡REUNIÓN AGENDADA CON EQUIPO DE RENDER!** Marcelo respondió acordando fecha y hora: *"Bom dia Mário... Na quarta eu não consigo. Poderíamos agendar para quinta de tarde? 15:00h?"*. Mario confirmó de inmediato para el **Jueves 24 de Septiembre a las 15:00 BRT (13:00 COL)**.
   * *24 Septiembre 2026 (07:20 COL / 09:20 BRT):* **Envío de Recordatorio & Link de Google Meet:** Mario envió saludo y enlace de Google Meet para la reunión de las 15:00 BRT.
   * *24 Septiembre 2026 (07:34 COL / 09:34 BRT):* **¡HITO HISTÓRICO - REUNIÓN CONFIRMADA DEFINITIVA PARA MAÑANA!** Marcelo respondió acordando la franja matutina: *"Pode ser 10:30h"*.
-    **Nueva Reunión Agendada:** **Viernes 25 de Septiembre de 2026, de 10:30 a 11:30 BRT (08:30 a 09:30 COL)**.
-    **Participantes:** Marcelo Novo (Diretor / P&D Politorno), Equipo de Renderizado de Politorno y Mario Mojica.
-- **Objetivo Estratégico:** Demostración completa en vivo de la Mesa Tijuca en `3dBimFab` (fidelidad fotorrealista de materiales, dirección de cámara en tiempo real y cinemática de ensamble) mañana Viernes 25 de Septiembre a las 10:30 BRT (08:30 COL). Disparar citación de Google Calendar y Meet.
+  * *25 Septiembre 2026 (10:30 - 11:42 BRT):* **¡HITO HISTÓRICO - REUNIÓN DE DEMOSTRACIÓN TÉCNICA (1h 12m)!**
+    - **Participantes:** Marcelo Piriz (Dirección P&D Politorno), Ricardo (Ingeniería / Proyectos Politorno) y Mario Mojica.
+    - **Puntos Clave y Diagnóstico:**
+      1. *Desconexión Total Identificada:* Marcelo confirmó (<em>"Igual aquí"</em>) la fragmentación de herramientas en Politorno: diseño en **Rhino 3D**, ingeniería en **TopSolid**, renders en **3ds Max** (2 a 3 horas por imagen), manual de armado en software separado e instructivo de empaque en otro software aislado.
+      2. *Demostración 3dBimFab:* Control paramétrico de variantes (2 a 3 minutos vs 1 día de cotización manual), costeo de insumos y mano de obra en tiempo real, renders IA con Google Nano Banana en segundos respetando 100% el diseño original, y exportación DXF/planos técnicos por coordenadas.
+      3. *Manuales 3D:* Pestaña de armado con cinemática fotorrealista, sincronización de colores y locución inteligente en PT-BR, ES y EN.
+      4. *Acuerdo de Cierre:* Marcelo indicó que debatirá internamente con Ricardo y el equipo. Para desbloquear y acelerar la decisión, Mario estructuró la propuesta de un piloto de 10 productos para manuales 3D interactivos.
+  * *25 Septiembre 2026 (Tarde BRT):* **Entrega de Acta Ejecutiva & Propuesta Piloto 10 Productos:**
+    - Mario formalizó y publicó la presentación interactiva en 16:9 (`http://localhost:3003/acta-propuesta-politorno-usd.html`) y documento PDF descargable (`Acta_Propuesta_Piloto_Politorno_Mario_Mojica_USD.pdf`).
+    - **Esquema Económico:** 10 manuales medianos al 50% de descuento ($187 USD c/u = **$1.874 USD**), con **100% de bonificación en el desarrollo de software paramétrico 3dBimFab ($10.000 USD ➔ $0 USD)**. Ahorro consolidado en tecnología: **+$11.874 USD**.
+    - **Anticipo 20%:** $375 USD | **Saldo 80%:** $1.499 USD | **Plazo:** 30 días hábiles.
+- **Objetivo Estratégico:** Seguimiento proactivo con Marcelo Piriz y Ricardo tras la entrega del acta y propuesta interactiva para acordar la lista de 10 productos prioritarios y arrancar el desarrollo del primer modelo piloto en 7 días.
 
 ---
 
@@ -318,6 +328,20 @@ Para evitar respuestas genéricas, el RAM de ventas almacena y cruza 5 dimension
   * *16 Septiembre 2026 (08:49 COL):* Cesar Alejandro inició contacto directo con saludo escueto: *"Buen dia / Cordial saludo"*. Mario respondió a las 08:56 de forma cálida indagando por sus proyectos en C3.
   * *16 Septiembre 2026 (09:19 COL):* Respondió con mensaje masivo prefabricado/automatizado: *"Buen dia, estimado miembro de mi red. Tenemos un grupo de wp con mas de 120 empresas y personas para hacer negocios, re gustaria estar ahi? Y adicional tener acceso a 26.000 miembros mas?"*.
 - **Diagnóstico y Estado:** 🛑 **DESCARTADO / SPAM DE RED (Caza-leads / Grupos masivos de WhatsApp).** No existe necesidad B2B, no es un tomador de decisiones industrial y presenta riesgo de spam o captura de datos. Se sugiere no interactuar o declinar amablemente sin entregar teléfonos.
+
+### 🟢 13. Indústria de Móveis Bartira (Grupo Casas Bahia - São Caetano do Sul, SP)
+- **Empresa:** Indústria de Móveis Bartira Ltda (Mayor fábrica de muebles de América Latina por volumen, Tier 1 indiscutible de Brasil, ~1.800 - 2.200 colaboradores, facturación R$ 1.2B - 1.5B).
+- **Padrino B2B / Puente Interno:** Hermes Rodrigues de Oliveira (Operador de Logística y Planta en Bartira). Actuó como conector interno clave.
+- **Tomador de Decisión / Lead Técnico:** Fábio de Jesus Ferreira (Projetista | Desenvolvimento de Produtos - Engenharia). Perfil: `https://www.linkedin.com/in/fabiodejesusferreira/`.
+- **Antecedentes:**
+  * *17-18 Agosto 2026:* Contacto con Denis Roveri (ex-Gerente de Engenharia), quien informó que ya no estaba en Bartira. Mario conversó con Hermes para solicitar el contacto del líder actual del área técnica.
+  * *25 Septiembre 2026 (10:08 COL):* Hermes escribió proactivamente: *"Olá Mario tudo bem? Conseguir achar esse funcionário da Bartira, ele trabalha na engenharia na parte de projetos. Acho que ele pode te dar uma atenção melhor no seus projetos. Desculpe a demora."* Hermes entregó la captura del perfil de LinkedIn de Fábio de Jesus Ferreira.
+- **Perfil de Fábio de Jesus Ferreira:**
+  * Más de 6 años en control de calidad y desarrollo de producto en Bartira.
+  * Formación en Lean Six Sigma, ingeniería de procesos y modernización de líneas de ensamble.
+  * Responsable directo de proyectos en planta: dolor latente en reprocesos de planos, despieces rígidos y garantías de ensamble en las colecciones masivas de Casas Bahia.
+- **Estado Actual:** 🔥 **LEAD CALIENTE / PROSPECCIÓN CON PADRINO INTERNO.** Lead ID 275 registrado en Baserow y vinculado a la empresa 16 (Indústria de Móveis Bartira Ltda).
+- **Próxima Jugada:** Conectar en LinkedIn y enviar mensaje de apertura mencionando la indicación de Hermes, enfocándose en cómo el DfMA y los manuales 3D interactivos reducen reclamos de calidad y tiempos de desarrollo para el Grupo Casas Bahia.
 
 ---
 

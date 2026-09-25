@@ -1,6 +1,28 @@
 {
   "prospectos": [
     {
+      "id": "p-fabio-bartira-1790353587203",
+      "empresa": "Indústria de Móveis Bartira",
+      "contacto_nombre": "Fábio de Jesus Ferreira",
+      "contacto_cargo": "Projetista | Desenvolvimento de Produtos - Eng",
+      "contacto_telefono": "",
+      "perfil_url": "https://www.linkedin.com/in/fabiodejesusferreira/",
+      "canal_preferido": "linkedin",
+      "pais": "Brasil",
+      "temperatura": "caliente",
+      "ultima_interaccion_at": "2026-09-25T11:22:00.000Z",
+      "proxima_accion_at": "2026-09-25T14:00:00.000Z",
+      "proxima_accion_descripcion": "Conectar en LinkedIn y enviar mensaje de apertura citando la recomendación de Hermes Rodrigues de Oliveira.",
+      "avatar_url": "",
+      "notas_estrategicas": "Projetista de Desarrollo de Productos en Indústria de Móveis Bartira (Grupo Casas Bahia). Más de 6 años de trayectoria en calidad y producto, especialista en Lean Six Sigma y modernización de procesos. Recomendado directamente por Hermes Rodrigues de Oliveira.",
+      "referido_por_id": "p-1787084924304",
+      "referido_por_nombre": "Hermes Rodrigues de Oliveira",
+      "tipo_relacion": "Padrino B2B / Puente Interno",
+      "created_at": "2026-09-25T16:26:27.203Z",
+      "updated_at": "2026-09-25T16:26:27.203Z",
+      "interacciones_count": 1
+    },
+    {
       "id": "p-edipo-lima",
       "empresa": "NODERE Pessoas & Negócios",
       "contacto_nombre": "Édipo Lima",
@@ -94,7 +116,6 @@
     {
       "id": "p-1787156003733",
       "empresa": "Henn",
-      "contacto_nombre": "Marcos De Henn Brasil",
       "contacto_nombre": "Andre Luis de Melo Levinski",
       "contacto_cargo": "Analista de Comércio Exterior | Eng. Produção",
       "contacto_telefono": null,

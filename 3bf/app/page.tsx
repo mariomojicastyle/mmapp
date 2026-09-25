@@ -126,9 +126,11 @@ export default function Home3BF() {
     centrarCamara,
   } = use3BFStore();
 
+  const [mounted, setMounted] = React.useState(false);
   const [guardandoFoto, setGuardandoFoto] = React.useState(false);
   const [fotoCapturada, setFotoCapturada] = React.useState(false);
   const [isResizingPanel, setIsResizingPanel] = React.useState(false);
+
   const handleStartResizePanel = (e: React.MouseEvent | React.TouchEvent) => {
     setIsResizingPanel(true);
     const onMove = (moveEvent: MouseEvent | TouchEvent) => {
@@ -246,6 +248,7 @@ export default function Home3BF() {
   };
 
   useEffect(() => {
+    setMounted(true);
     // Hidratar inmediatamente toda la base de datos de materias primas y costos
     hidratarDesdeLocalStorage();
     cargarArbolMuebles();
@@ -321,6 +324,19 @@ export default function Home3BF() {
     }
     return anchoPanelDerecho;
   }, [anchoPanelDerecho, pestanaActiva]);
+
+  if (!mounted) {
+    return (
+      <main 
+        className="w-screen h-screen flex flex-col items-center justify-center bg-[#F1F5F9] dark:bg-[#0B0F17] text-slate-500 select-none"
+      >
+        <div className="flex flex-col items-center gap-3">
+          <div className="w-8 h-8 border-2 border-[#1368AA] border-t-transparent rounded-full animate-spin" />
+          <span className="text-xs font-semibold tracking-wider text-slate-500">Iniciando 3dBimFab...</span>
+        </div>
+      </main>
+    );
+  }
 
   return (
     <main 
