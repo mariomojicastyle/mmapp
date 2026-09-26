@@ -184,6 +184,19 @@ export async function exportarGlbPasoManual(
   const exportScene = new THREE.Scene();
   exportScene.name = "Scene";
 
+  // 1.1. Crear el grupo raíz del mueble preservando rigurosamente su orientación en el banco de trabajo
+  // (rotación de taller X/Y/Z y apoyo físico en el suelo Y = 0)
+  const furnitureRoot = new THREE.Group();
+  furnitureRoot.name = (scene.name && scene.name !== "Scene") ? scene.name : "Mueble";
+
+  scene.getWorldPosition(furnitureRoot.position);
+  scene.getWorldQuaternion(furnitureRoot.quaternion);
+  scene.getWorldScale(furnitureRoot.scale);
+  furnitureRoot.updateMatrix();
+  furnitureRoot.updateMatrixWorld(true);
+
+  exportScene.add(furnitureRoot);
+
   // Caché para optimizar exactamente 1 solo bitmap (512x512 JPEG) por textura única
   const textureOptimizedCache = new Map<string, THREE.Texture>();
   const getOptimized512Texture = (srcTexture: THREE.Texture): THREE.Texture => {
@@ -556,7 +569,7 @@ export async function exportarGlbPasoManual(
       isWoodBoard: mesh.userData?.isWoodBoard,
     };
 
-    exportScene.add(exportMesh);
+    furnitureRoot.add(exportMesh);
   });
 
   // 1.2. Restaurar inmediatamente la escena viva a su estado temporal del scrubber
@@ -567,14 +580,151 @@ export async function exportarGlbPasoManual(
   });
   scene.updateMatrixWorld(true);
 
-  if (exportScene.children.length === 0) {
+  if (furnitureRoot.children.length === 0) {
     throw new Error("No se encontraron piezas físicas visibles para exportar.");
   }
 
   // 6. Compilar el clip de animación glTF a partir de la escena limpia en reposo
-  // 🛡️ Omitir re-aplicar transformaciones de banco ya que exportScene fue clonada directamente con las posiciones del banco
+  // 🛡️ Omitir re-aplicar transformaciones de banco ya que furnitureRoot conserva la orientación del banco
   const { clip } = compilarAnimacionPaso(exportScene, paso, { omitirTransformBanco: true });
   clip.name = "default";
+
+  // 6.2. Incorporar Cámara Cinematográfica Animada nativa en glTF 2.0 (compatible con Babylon Sandbox y Blender)
+  const keyframesCamara = (paso.keyframesCamara || []).slice().sort((a, b) => a.tiempo - b.tiempo);
+  const duracionTotal = Math.max(paso.duracionTotal || 10, 1.0);
+
+  if (keyframesCamara.length > 0) {
+    const fovInicial = keyframesCamara[0]?.fov || 45;
+    const cameraNode = new THREE.PerspectiveCamera(fovInicial, 16 / 9, 0.05, 1000);
+    cameraNode.name = "Camera";
+
+    // Evaluar curva continua Hermite suave para obtener la pose en cualquier tiempo t
+    const evaluarPoseCamara = (t: number) => {
+      if (keyframesCamara.length === 1 || t <= keyframesCamara[0].tiempo) {
+        const kf = keyframesCamara[0];
+        return {
+          pos: new THREE.Vector3(kf.posicion[0], kf.posicion[1], kf.posicion[2]),
+          target: new THREE.Vector3(kf.target[0], kf.target[1], kf.target[2]),
+          fov: kf.fov || 45,
+        };
+      }
+      if (t >= keyframesCamara[keyframesCamara.length - 1].tiempo) {
+        const kf = keyframesCamara[keyframesCamara.length - 1];
+        return {
+          pos: new THREE.Vector3(kf.posicion[0], kf.posicion[1], kf.posicion[2]),
+          target: new THREE.Vector3(kf.target[0], kf.target[1], kf.target[2]),
+          fov: kf.fov || 45,
+        };
+      }
+      let kfA = keyframesCamara[0];
+      let kfB = keyframesCamara[1];
+      for (let i = 0; i < keyframesCamara.length - 1; i++) {
+        if (t >= keyframesCamara[i].tiempo && t <= keyframesCamara[i + 1].tiempo) {
+          kfA = keyframesCamara[i];
+          kfB = keyframesCamara[i + 1];
+          break;
+        }
+      }
+      const dur = Math.max(0.0001, kfB.tiempo - kfA.tiempo);
+      const alpha = Math.max(0, Math.min(1, (t - kfA.tiempo) / dur));
+      const smooth = alpha * alpha * (3 - 2 * alpha);
+
+      const posA = new THREE.Vector3(kfA.posicion[0], kfA.posicion[1], kfA.posicion[2]);
+      const posB = new THREE.Vector3(kfB.posicion[0], kfB.posicion[1], kfB.posicion[2]);
+      const tgtA = new THREE.Vector3(kfA.target[0], kfA.target[1], kfA.target[2]);
+      const tgtB = new THREE.Vector3(kfB.target[0], kfB.target[1], kfB.target[2]);
+
+      const pos = new THREE.Vector3().lerpVectors(posA, posB, smooth);
+      const target = new THREE.Vector3().lerpVectors(tgtA, tgtB, smooth);
+      const fovA = kfA.fov || 45;
+      const fovB = kfB.fov || 45;
+      const fov = fovA + (fovB - fovA) * smooth;
+      return { pos, target, fov };
+    };
+
+    // Establecer pose inicial en t = 0
+    const pose0 = evaluarPoseCamara(0);
+    cameraNode.position.copy(pose0.pos);
+    cameraNode.lookAt(pose0.target);
+    cameraNode.fov = pose0.fov;
+    cameraNode.updateMatrix();
+    cameraNode.updateMatrixWorld(true);
+
+    exportScene.add(cameraNode);
+
+    // Muestreo denso de la trayectoria cinematográfica (15 FPS + marcas exactas de cada keyframe)
+    const tiemposSet = new Set<number>();
+    tiemposSet.add(0);
+    tiemposSet.add(duracionTotal);
+    keyframesCamara.forEach((k) => {
+      if (k.tiempo >= 0 && k.tiempo <= duracionTotal) {
+        tiemposSet.add(Number(k.tiempo.toFixed(4)));
+      }
+    });
+
+    const fpsMuestreo = 15;
+    const totalFrames = Math.ceil(duracionTotal * fpsMuestreo);
+    for (let f = 0; f <= totalFrames; f++) {
+      const t = Math.min(duracionTotal, f / fpsMuestreo);
+      tiemposSet.add(Number(t.toFixed(4)));
+    }
+
+    const tiemposOrdenados = Array.from(tiemposSet).sort((a, b) => a - b);
+    const camTimes: number[] = [];
+    const camPosVals: number[] = [];
+    const camQuatVals: number[] = [];
+
+    const dummyCam = new THREE.PerspectiveCamera(45, 16 / 9, 0.05, 1000);
+
+    for (let i = 0; i < tiemposOrdenados.length; i++) {
+      const t = tiemposOrdenados[i];
+      if (camTimes.length > 0 && Math.abs(camTimes[camTimes.length - 1] - t) < 0.002) {
+        continue;
+      }
+
+      const { pos, target } = evaluarPoseCamara(t);
+      dummyCam.position.copy(pos);
+      dummyCam.lookAt(target);
+      dummyCam.updateMatrix();
+
+      camTimes.push(t);
+      camPosVals.push(
+        Number(pos.x.toFixed(4)),
+        Number(pos.y.toFixed(4)),
+        Number(pos.z.toFixed(4))
+      );
+      camQuatVals.push(
+        Number(dummyCam.quaternion.x.toFixed(5)),
+        Number(dummyCam.quaternion.y.toFixed(5)),
+        Number(dummyCam.quaternion.z.toFixed(5)),
+        Number(dummyCam.quaternion.w.toFixed(5))
+      );
+    }
+
+    if (camTimes.length >= 2) {
+      const camPosTrack = new THREE.VectorKeyframeTrack(
+        `${cameraNode.name}.position`,
+        camTimes,
+        camPosVals
+      );
+      const camQuatTrack = new THREE.QuaternionKeyframeTrack(
+        `${cameraNode.name}.quaternion`,
+        camTimes,
+        camQuatVals
+      );
+      clip.tracks.push(camPosTrack);
+      clip.tracks.push(camQuatTrack);
+    }
+  } else {
+    // Si no hay keyframes cinematográficos específicos, incorporar una cámara fija de encuadre
+    const cameraNode = new THREE.PerspectiveCamera(45, 16 / 9, 0.05, 1000);
+    cameraNode.name = "Camera";
+    cameraNode.position.set(0, 1.2, 2.5);
+    cameraNode.lookAt(0, 0.4, 0);
+    cameraNode.updateMatrix();
+    cameraNode.updateMatrixWorld(true);
+    exportScene.add(cameraNode);
+  }
 
   // 7. Parsear a binario glTF estándar universal glTF 2.0 (compatible al 100% con Windows 3D Viewer, Babylon Sandbox, Blender)
   const rawBuffer = await new Promise<ArrayBuffer>((resolve, reject) => {

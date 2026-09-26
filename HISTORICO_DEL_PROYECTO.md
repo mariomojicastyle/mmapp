@@ -2038,4 +2038,30 @@ Para mantener la máxima agilidad y minimizar el consumo de tokens sin perder ni
   * Compilación TypeScript verificada (`npx tsc --noEmit`) con **código 0 (cero errores)**.
   * Pruebas de usuario: pieza fantasma erradicada a 0 ms de latencia tanto al recargar el navegador como al reiniciar Google Chrome desde cero.
 
+---
+
+### 🚀 Hito 216: Exportación de GLB con Orientación de Taller (Banco de Trabajo $Y = 0$) y Cámara Cinematográfica Animada Nativa glTF 2.0 en `3dBimFab` (`exportManualGlb.ts`) (26 de Septiembre, 2026)
+- **Motivación & Diagnóstico del Problema en GLB**:
+  * *Mueble en Pose Vertical*: Al exportar el GLB del paso de armado P03 y visualizarlo en Babylon.js Sandbox, la Cómoda Ravenna aparecía de pie (en su orientación CAD original), perdiendo el giro del banco de trabajo donde se monta acostada boca arriba sobre el suelo.
+  * *Causa*: El exportador multiplicaba la posición de cada malla por la matriz inversa del grupo (`invSceneMatrix`) pero luego las agregaba a una escena vacía sin nodo padre rotado, anulando el giro del taller.
+  * *Cámara Congelada*: El GLB exportado carecía de nodo de cámara y de pistas cinemáticas de cámara, dejando el punto de vista inmóvil en visores externos.
+- **Implementación Técnica de la Solución**:
+  1. **Preservación Fiel del Banco de Trabajo (`furnitureRoot`)**:
+     * En `exportManualGlb.ts`, se incorporó el grupo raíz `furnitureRoot` (`"Mueble"`), que hereda la matriz de transformación mundial exacta de la escena viva (`rotacionEfectiva` $X = -90^\circ, Y = +90^\circ$ y descenso gravitacional de apoyo en suelo $Y = 0$).
+     * Cada malla exportable se emparenta dentro de `furnitureRoot`, de modo que en cualquier visor glTF (Babylon.js Sandbox, Blender, Windows 3D Viewer) el mueble aparece acostado en el piso del taller y las piezas se mueven solidariamente en su marco local.
+  2. **Cámara Cinematográfica Animada Nativa en glTF 2.0**:
+     * Se integró un nodo `PerspectiveCamera` (`"Camera"`) en la raíz del glTF con su pose inicial en $t = 0\text{ s}$.
+     * Se implementó un evaluador continuo basado en la función de interpolación cúbica suave **Hermite Smoothstep** ($3\alpha^2 - 2\alpha^3$) para reproducir fielmente la trayectoria de los 28 keyframes del director.
+     * Muestreo denso de la trayectoria a 15 FPS continuos más las marcas temporales exactas de cada keyframe.
+     * Generación de tracks glTF `Camera.position` y `Camera.quaternion` integrados dentro del clip de animación maestro (`default`).
+  3. **Compatibilidad Universal Multiplataforma**:
+     * **Babylon.js Sandbox**: El selector de cámaras muestra ahora `default` (cámara libre de órbita) y `Camera` (cámara de dirección cinematográfica). Al pulsar Play, la cámara vuela suavemente siguiendo los 28 encuadres en sincronía con el armado.
+     * **Blender**: Al importar el `.glb`, Blender crea automáticamente el objeto de cámara con sus curvas de animación en el Timeline.
+- **Validación de Calidad**:
+  * Pruebas matemáticas en Node.js validando coincidencia de matrices mundiales (diferencia de posición = 0, ángulo de orientación = 0).
+  * Inspección de round-trip con `GLTFLoader`: 1 cámara exportada (`Camera`), 1 animación glTF con tracks de mallas y pistas `Camera.position` y `Camera.quaternion`.
+  * Compilación TypeScript verificada (`npx tsc --noEmit`) con **código 0 (cero errores)**.
+  * Validación visual en Babylon.js Sandbox confirmada con éxito por el usuario (*"Quedo espectacular!!!!!!"*).
+
+
 

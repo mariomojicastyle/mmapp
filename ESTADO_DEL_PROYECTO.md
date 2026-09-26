@@ -9,7 +9,13 @@ Este archivo es la "Memoria RAM" para Antigravity. Contiene el contexto de lo qu
 ---
 
 ## 🏗️ 1. Plataforma B2B & 3dBimFab (Foco Actual)
-**Estado:** Hito 215 completado y validado. Pieza Fantasma y desfase de mallas asíncronas erradicados al 100% con sincronización `useFrame` Pre-Render. Próxima rama: `3BF_Resuelto_Pieza_Fantasma`. Despliegue a Netlify omitido por mandato del usuario.
+**Estado:** Hito 216 completado con éxito total. Exportación de GLB con orientación de taller (banco de trabajo $Y = 0$) y cámara cinematográfica animada glTF 2.0 validada en Babylon.js Sandbox. Próxima rama: `3BF_GLB_Animacion`. Despliegue a Netlify omitido por mandato expreso del usuario.
+
+- [x] **[26 de Septiembre, 2026] Exportación de GLB con Orientación de Taller (Banco de Trabajo $Y = 0$) y Cámara Cinematográfica Animada Nativa glTF 2.0 en `3dBimFab` (`exportManualGlb.ts`)**:
+  * Resolución de orientación en banco: incorporación de `furnitureRoot` preservando la rotación de taller ($X = -90^\circ, Y = +90^\circ$) y apoyo en suelo ($Y = 0$) para que el mueble emerja acostado en el piso tal como en 3dBimFab.
+  * Cámara cinematográfica animada: nodo `PerspectiveCamera` (`"Camera"`) agregado a la raíz del glTF con muestreo a 15 FPS de los 28 keyframes mediante interpolación Hermite cúbica suave.
+  * Tracks glTF `Camera.position` y `Camera.quaternion` integrados dentro del clip maestro `default`.
+  * Verificado y celebrado en Babylon.js Sandbox con reproducción sincronizada y selección de cámara interactiva.
 
 - [x] **[25 de Septiembre, 2026] Erradicación Definitiva de la "Pieza Fantasma", Blindaje Asíncrono CAD ➔ Cinemática Three.js (`useFrame` Pre-Render), Cancelación de Hover Fantasma e Inmutabilidad de Escala en `3dBimFab`**:
   * Identificación de la causa raíz: RhinoCompute entrega las 568 mallas de forma asíncrona (~2.2s) después de que `AssemblyAnimationController` ya había compilado con 0 mallas. Al reiniciar Chrome, las piezas permanecían en su pose CAD cruda (arriba).
