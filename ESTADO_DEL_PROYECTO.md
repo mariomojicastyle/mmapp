@@ -9,9 +9,13 @@ Este archivo es la "Memoria RAM" para Antigravity. Contiene el contexto de lo qu
 ---
 
 ## 🏗️ 1. Plataforma B2B & 3dBimFab (Foco Actual)
-**Estado:** Hito 213 completado (Transición Canónica a Presentaciones PDF Vectoriales Nativas, Organización Cronológica en Google Drive `G:\Mi unidad\Comercial\09_septiembre\`, Estrategia de Variantes para Politorno y Limpieza Web de Netlify); Despliegue a Netlify en curso.
+**Estado:** Hito 214 registrado; Rama de trabajo activa `Ajuste_Comarta_Cinematografica` (Implementación de la Cámara Cinematográfica Desacoplada sin Libre Albedrío en 3dBimFab). Despliegue a Netlify omitido a petición del usuario.
 
-- [x] **[25 de Septiembre, 2026] Transición Canónica a Presentaciones PDF Vectoriales Nativas, Estructura Cronológica en Google Drive (`G:\Mi unidad\Comercial\09_septiembre\`) y Limpieza Integral de Netlify**:
+- [x] **[25 de Septiembre, 2026] Diagnóstico Arquitectónico y Diseño de la Cámara Cinematográfica Desacoplada sin Libre Albedrío en 3dBimFab (`Viewer3D`, `ManualCameraDirector`, `CameraControllers`)**:
+  * Confirmación de integridad de los 28 keyframes cinematográficos del paso P03 en `3_Comoda Ravenna.3bm.json`.
+  * Identificación de conflicto de 4 controladores concurrentes sobre la misma cámara Three.js y amortiguamiento inercial de `OrbitControls`.
+  * Diseño del desacoplamiento en dos regímenes: Cámara Cinematográfica (rígida, matemática pura $F(t)$, `OrbitControls.enabled = false` en reproducción y pausa) vs. Cámara de Trabajo (modo encuadre deliberado al tocar keyframes en verde).
+  * Creación y transición a la rama de desarrollo `Ajuste_Comarta_Cinematografica`.
   * **Decisión Estratégica Formato PDF Vectorial**:
     - El formato rector y definitivo para compartir y consultar presentaciones es el **PDF vectorial TrueType**, garantizando nitidez 4K infinita al 1000% con los dedos en smartphones, visualización nativa fluida y envío directo por WhatsApp.
   * **Estructura Cronológica Consolidada en Google Drive**:

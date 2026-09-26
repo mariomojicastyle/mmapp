@@ -1985,3 +1985,22 @@ Para mantener la máxima agilidad y minimizar el consumo de tokens sin perder ni
 - **Validación**:
   * Verificación exhaustiva de PDFs con PyMuPDF (fidelidad de textos en portugués y español, conteo de páginas y resolución 4K).
   * `npx tsc --noEmit` validado con **0 errores**.
+
+---
+
+### 🚀 Hito 214: Diagnóstico Arquitectónico y Diseño de la Cámara Cinematográfica Desacoplada sin Libre Albedrío en 3dBimFab (`Viewer3D`, `ManualCameraDirector`, `CameraControllers`) (25 de Septiembre, 2026)
+- **Diagnóstico Exhaustivo de Inestabilidad y Variación de Cámara**:
+  * *Auditoría de Datos en Disco*: Se auditó el archivo maestro `G:\Mi unidad\Muebles\Henn\CÔMODA\3_Comoda Ravenna.3bm.json` mediante script de inspección, confirmando que el paso de armado P03 posee **28 keyframes cinematográficos intactos y continuos** desde $t = 0s$ hasta $t = 141.35s$. Los datos matemáticos originales están íntegros en el archivo.
+  * *Identificación de Competencia Concurrente en WebGL (`Viewer3D.tsx`)*: Se descubrió que 4 controladores compiten simultáneamente sobre el mismo objeto `camera` y el mismo `OrbitControls`:
+    1. `OrbitControls`: Siempre habilitado con amortiguación inercial (`dampingFactor: 0.05`), alterando las coordenadas de cámara ante cualquier clic o interacción accidental del usuario en la escena 3D.
+    2. `ManualCameraDirector.tsx`: En pausa o al detener la aguja del timeline, liberaba el control de la cámara (`if (!isTimelinePlaying && !isScrubbing && !tiempoCambio) return;`), dejando la cámara a merced de `OrbitControls` y provocando desviaciones que no se corregían al mantenerse en el mismo fotograma.
+    3. `CameraPersistenceController`: Escuchaba el final del movimiento del mouse en `OrbitControls` y persistía la cámara desviada en `localStorage` (`3bf_camara_${muebleId}`), compitiendo al recargar la página o cambiar de pestaña.
+    4. `AutoFramingCameraController`: Continuaba activo interpolando hacia el centro de las mallas activas si `autoEnfoqueCamaraManual` no estaba formalmente apagado.
+    5. *Retardo por Doble Lerp*: `ManualCameraDirector` aplicaba un `lerp` temporal dependiente de delta (`delta * 12.0`) sobre la interpolación Hermite cúbica (`alphaSuave`), generando arrastre y desfase dependiente de los FPS en lugar de una evaluación matemática instantánea.
+- **Diseño de la Solución Arquitectónica (Cámara Cinematográfica Desacoplada)**:
+  * Inspirado en el estándar de animación 3D profesional (Blender/Maya/Unreal), se acordó desacoplar formalmente dos regímenes de operación:
+    1. **Cámara Cinematográfica (Active Scene Camera / Modo Película)**: Régimen determinista y rígido gobernado 100% por $F(t)$, donde la posición, target y FOV se calculan matemáticamente y se aplican de forma instantánea (`copy`). `OrbitControls` queda inhabilitado (`enabled = false`) y blindado contra cualquier toque accidental del mouse en reproducción o pausa.
+    2. **Cámara de Trabajo / Modo Encuadre**: Activada deliberadamente únicamente al hacer clic en un keyframe del timeline (rombo verde) o en el botón de encuadre. Se desbloquea `OrbitControls` para componer la toma y, al hacer el segundo clic (rombo amarillo), se hornea la pose y la cámara vuelve de inmediato a bloquearse en modo cinematográfico.
+- **Preparación de la Rama y Plan de Trabajo**:
+  * Creación de la rama especializada `Ajuste_Comarta_Cinematografica` para la implementación y blindaje del nuevo modelo de cámaras.
+
