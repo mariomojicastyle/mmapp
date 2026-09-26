@@ -35,6 +35,9 @@ export interface SnapshotEscenario {
   posicionObjeto: [number, number, number];
   parametros: Record<string, any>;
   resultado: ComputoResultado | null;
+  pasosManual?: PasoManualStudio[];
+  pasoActivoManualId?: string;
+  capas?: CapaDef[];
 }
 
 
@@ -544,6 +547,8 @@ export interface MultiplePlusConfigPaso {
     apoyoEnPiso: boolean;
   };
   ponerDePieAlFinal?: boolean; // Poner de pie el mueble al terminar el armado
+  modoVisualizacionInactivos?: "oculto" | "cristal" | "global"; // 💎 Modo visual para la capa virtual de piezas inactivas (Ocultos, Modo Cristal o Modo Global)
+  modoVisualizacionHeredados?: "solido" | "cristal" | "oculto"; // 🧱 Modo visual para objetos heredados de pasos anteriores (Sólido, Modo Cristal u Oculto)
 }
 
 export interface PasoManualStudio {
@@ -923,6 +928,9 @@ export interface State3BF {
   setVelocidadTablerosPlus: (pasoId: string, velocidadCmS: number) => void;
   setVelocidadHerrajesPlus: (pasoId: string, velocidadCmS: number) => void;
   setMovimientoGlobalPlus: (pasoId: string, movimientoCm: number) => void;
+  setModoVisualizacionInactivosPlus: (pasoId: string, modo: "oculto" | "cristal" | "global") => void;
+  setModoVisualizacionHeredadosPlus: (pasoId: string, modo: "solido" | "cristal" | "oculto") => void;
+  asignarInactivoACapaPlus: (pasoId: string, capaId: string, meshKey: string, tipo: "tablero" | "herraje") => void;
   
   // 🎯 Modo Picking 3D / Cuentagotas para Asignación de Piezas
   modoPickingManual: ModoPickingManualState;
@@ -1171,6 +1179,7 @@ export interface State3BF {
   puedeDeshacer: boolean;
   puedeRehacer: boolean;
   guardarEstadoHistorial: () => void;
+  prepararHistorialParaCambio: () => void;
   deshacer: () => void;
   rehacer: () => void;
 

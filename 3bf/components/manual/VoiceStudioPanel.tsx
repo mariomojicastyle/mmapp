@@ -3,7 +3,6 @@
 import React, { useState, useRef, useEffect } from "react";
 import { use3BFStore, IdiomaManual } from "@/lib/store";
 import { Mic, Play, Square, Loader2, Volume2, Globe, Sparkles, CheckCircle2, Download, Gauge, Zap, FastForward } from "lucide-react";
-import CalibradorCinematicaSection from "./CalibradorCinematicaSection";
 
 export interface VozTtsOpcion {
   id: string;
@@ -619,8 +618,6 @@ export default function VoiceStudioPanel() {
         </div>
       )}
 
-      {/* 🎬 Calibración Cinemática de Ensamble (Offset XY & Velocidades Globales) */}
-      <CalibradorCinematicaSection pasoActivo={pasoActivo} />
     </div>
   );
 }

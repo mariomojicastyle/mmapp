@@ -240,42 +240,6 @@ export function BoardMesh({
     Boolean(grasshopperUvs && grasshopperUvs.length > 0)
   );
 
-  const matProps = React.useMemo(() => {
-    return resolverPropiedadesMaterial({
-      name,
-      cleanName,
-      instanciaKey,
-      size,
-      mainColor,
-      modoVisual,
-      capas,
-      materialesPBR,
-      asignacionesPartes,
-      calibracion,
-      coloresApariencia,
-      hasMap: pbrMaps.diffuse !== null,
-      esDuplicado,
-      estaSeleccionadaEnPicking,
-      pestanaActiva,
-    });
-  }, [
-    name,
-    cleanName,
-    instanciaKey,
-    size,
-    mainColor,
-    modoVisual,
-    capas,
-    materialesPBR,
-    asignacionesPartes,
-    calibracion,
-    coloresApariencia,
-    pbrMaps.diffuse,
-    esDuplicado,
-    estaSeleccionadaEnPicking,
-    pestanaActiva,
-  ]);
-
   // 4. Evaluación Pura de Visibilidad y Reglas del Paso (Delegado al motor de reglas)
   const visibilidad = React.useMemo(() => {
     return resolverVisibilidadBoard({
@@ -288,7 +252,7 @@ export function BoardMesh({
       pasosManual,
       modoPickingManual,
       asignacionVisible: asignacionParte ? asignacionParte.visible !== false : true,
-      capaVisible: matProps.capaAsignada ? matProps.capaAsignada.visible !== false : true,
+      capaVisible: capaAsignadaParte ? capaAsignadaParte.visible !== false : true,
     });
   }, [
     name,
@@ -300,12 +264,58 @@ export function BoardMesh({
     pasosManual,
     modoPickingManual,
     asignacionParte,
-    matProps.capaAsignada,
+    capaAsignadaParte,
+  ]);
+
+  const modoVisualEfectivo = visibilidad.esInactivoCristal ? "semitransparente" : modoVisual;
+
+  const matProps = React.useMemo(() => {
+    return resolverPropiedadesMaterial({
+      name,
+      cleanName,
+      instanciaKey,
+      size,
+      mainColor,
+      modoVisual: modoVisualEfectivo,
+      capas,
+      materialesPBR,
+      asignacionesPartes,
+      calibracion,
+      coloresApariencia,
+      hasMap: visibilidad.esInactivoCristal ? false : (pbrMaps.diffuse !== null),
+      esDuplicado,
+      estaSeleccionadaEnPicking,
+      pestanaActiva,
+      esInactivoCristal: visibilidad.esInactivoCristal,
+    });
+  }, [
+    name,
+    cleanName,
+    instanciaKey,
+    size,
+    mainColor,
+    modoVisualEfectivo,
+    capas,
+    materialesPBR,
+    asignacionesPartes,
+    calibracion,
+    coloresApariencia,
+    pbrMaps.diffuse,
+    esDuplicado,
+    estaSeleccionadaEnPicking,
+    pestanaActiva,
+    visibilidad.esInactivoCristal,
   ]);
 
   // Si está oculta por reglas del paso, subbloque, cinemática o capa: retorno temprano limpio estricto
   // 🛡️ REGLA CANÓNICA: Las piezas ocultas NUNCA deben forzarse en escena por hover sobre cápsulas
   if (!visibilidad.isMeshVisible) {
+    return null;
+  }
+
+  // 💎 En modo cristal para inactivos: Suprimir láminas 2D redundantes (Cara A y Cara B)
+  // ÚNICAMENTE si la pieza delega sus aristas al cuerpo de MDP (omitirAristas) para no duplicar capas vítreas
+  if (visibilidad.esInactivoCristal && matProps.isWoodBoard && (matProps.isBalance || omitirAristas)) {
     return null;
   }
 
@@ -377,10 +387,11 @@ export function BoardMesh({
   const edgeGeometryToUse = ((esParalelepipedo || forzarAristasCaja) && !tieneBiselDiagonal && boxMeshGeometry) ? boxMeshGeometry : geometryBaseForEdges;
 
 
-  const activeMap = modoVisual === "renderizado" ? pbrMaps.diffuse : null;
-  const activeNormal = modoVisual === "renderizado" ? pbrMaps.normal : null;
-  const activeRoughness = modoVisual === "renderizado" ? pbrMaps.roughness : null;
-  const activeAO = modoVisual === "renderizado" ? pbrMaps.ao : null;
+  // 💎 En modo cristal inactivo: NUNCA aplicar mapas de textura (veta de madera) para que sea cristal puro idéntico al modo global
+  const activeMap = modoVisualEfectivo === "renderizado" ? pbrMaps.diffuse : null;
+  const activeNormal = modoVisualEfectivo === "renderizado" ? pbrMaps.normal : null;
+  const activeRoughness = modoVisualEfectivo === "renderizado" ? pbrMaps.roughness : null;
+  const activeAO = modoVisualEfectivo === "renderizado" ? pbrMaps.ao : null;
 
   // 📐 Escala interactiva: En tableros de madera NUNCA se altera la escala física por hover. Solo en herrajes pequeños para visibilidad.
   const escalaEfectiva: [number, number, number] | undefined = esDuplicado
@@ -452,7 +463,7 @@ export function BoardMesh({
         }}
       >
         <meshStandardMaterial
-          key={`${activeMap ? (activeMap as any).uuid : "no-map"}-${modoVisual}-${nombreMaterialEfectivo}-${finalMeshColor}-${opacity}-${roughness}-${metalness}-${esDuplicado}-${estaSeleccionadaEnPicking}-${estaHoveredEnHerrajes}`}
+          key={`${activeMap ? (activeMap as any).uuid : "no-map"}-${modoVisualEfectivo}-${nombreMaterialEfectivo}-${finalMeshColor}-${opacity}-${roughness}-${metalness}-${esDuplicado}-${estaSeleccionadaEnPicking}-${estaHoveredEnHerrajes}`}
           name={esDuplicado ? "Material_Duplicado_Alerta" : (estaHoveredEnHerrajes ? "Material_Herraje_Hover" : nombreMaterialEfectivo)}
           color={esDuplicado ? "#EF4444" : (estaSeleccionadaEnPicking ? "#FBBF24" : (estaHoveredEnHerrajes ? "#FFF066" : finalMeshColor))}
           emissive={
@@ -479,7 +490,7 @@ export function BoardMesh({
           polygonOffset={isHardwareTampa || estaSeleccionadaEnPicking || esLaminaPlanaMadera}
           polygonOffsetFactor={isHardwareTampa ? -2 : -1}
           polygonOffsetUnits={isHardwareTampa ? -2 : -1}
-          side={(isWoodBoard && modoVisual === "semitransparente") ? THREE.FrontSide : THREE.DoubleSide}
+          side={THREE.DoubleSide}
         />
         {/* 📐 Malla pura (wireframe de la geometría real) sobre la superficie sólida translúcida */}
         {modoVisual === "lineas" && (
@@ -580,7 +591,7 @@ export function BoardMesh({
     >
       <boxGeometry args={size} />
       <meshStandardMaterial
-        key={`${activeMap ? (activeMap as any).uuid : "no-map"}-${modoVisual}-${nombreMaterialEfectivo}-${finalMeshColor}-${opacity}-${roughness}-${metalness}-${esDuplicado}-${estaSeleccionadaEnPicking}-${estaHoveredEnHerrajes}`}
+        key={`${activeMap ? (activeMap as any).uuid : "no-map"}-${modoVisualEfectivo}-${nombreMaterialEfectivo}-${finalMeshColor}-${opacity}-${roughness}-${metalness}-${esDuplicado}-${estaSeleccionadaEnPicking}-${estaHoveredEnHerrajes}`}
         name={esDuplicado ? "Material_Duplicado_Alerta" : (estaHoveredEnHerrajes ? "Material_Herraje_Hover" : nombreMaterialEfectivo)}
         color={esDuplicado ? "#EF4444" : (estaSeleccionadaEnPicking ? "#FBBF24" : (estaHoveredEnHerrajes ? "#FFF066" : finalMeshColor))}
         emissive={
@@ -607,7 +618,7 @@ export function BoardMesh({
         polygonOffset={isHardwareTampa || estaSeleccionadaEnPicking}
         polygonOffsetFactor={isHardwareTampa ? -2 : -1}
         polygonOffsetUnits={isHardwareTampa ? -2 : -1}
-        side={(isWoodBoard && modoVisual === "semitransparente") ? THREE.FrontSide : THREE.DoubleSide}
+        side={THREE.DoubleSide}
       />
       {/* 📐 Malla pura (wireframe de la geometría real) sobre la superficie sólida translúcida */}
       {modoVisual === "lineas" && (

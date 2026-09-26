@@ -5,6 +5,8 @@ import { Plus, Sliders, Gauge, Move, RotateCw, RotateCcw, ArrowDown } from "luci
 import { PasoManualStudio } from "@/lib/storeTypes";
 import { use3BFStore } from "@/lib/store";
 import { CapaMultiplePlusCard } from "./CapaMultiplePlusCard";
+import { CapaHeredadosCard } from "./CapaHeredadosCard";
+import { CapaInactivosCard } from "./CapaInactivosCard";
 
 interface MultiplePlusSectionProps {
   pasoActivo: PasoManualStudio;
@@ -39,8 +41,8 @@ export default function MultiplePlusSection({
     girarBancoGlobalPlus,
     toggleApoyoPisoGlobalPlus,
     togglePonerDePieAlFinalPlus,
-    toggleBloqueHeredadoCapaPlus,
-    toggleVisibilidadBloqueHeredadoCapaPlus,
+    toggleBloqueHeredadoPlus: toggleBloqueHeredadoCapaPlus,
+    toggleVisibilidadBloqueHeredadoPlus: toggleVisibilidadBloqueHeredadoCapaPlus,
     setVelocidadTablerosPlus,
     setVelocidadHerrajesPlus,
     setMovimientoGlobalPlus,
@@ -397,6 +399,20 @@ export default function MultiplePlusSection({
           ))}
         </div>
       )}
+
+      {/* ── CAPA DE OBJETOS HEREDADOS (PASOS PREVIOS / SÓLIDO POR DEFECTO) ── */}
+      <CapaHeredadosCard
+        paso={pasoActivo}
+        pasosManual={pasosManual}
+        botonActivoColor={botonActivoColor}
+      />
+
+      {/* ── CAPA VIRTUAL DE INACTIVOS (MUEBLE COMPLETO / MODO CRISTAL) ── */}
+      <CapaInactivosCard
+        paso={pasoActivo}
+        pasosManual={pasosManual}
+        botonActivoColor={botonActivoColor}
+      />
     </div>
   );
 }

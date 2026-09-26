@@ -2057,11 +2057,58 @@ Para mantener la máxima agilidad y minimizar el consumo de tokens sin perder ni
   3. **Compatibilidad Universal Multiplataforma**:
      * **Babylon.js Sandbox**: El selector de cámaras muestra ahora `default` (cámara libre de órbita) y `Camera` (cámara de dirección cinematográfica). Al pulsar Play, la cámara vuela suavemente siguiendo los 28 encuadres en sincronía con el armado.
      * **Blender**: Al importar el `.glb`, Blender crea automáticamente el objeto de cámara con sus curvas de animación en el Timeline.
+
+---
+
+### 🚀 Hito 217: Estabilización de la Visualización en `3dBimFab`: Sistema Universal de 3 Estados de Inactivos, Modo Cristal Translúcido Homogéneo para Tableros y Herrajes, y Blindaje de Normales con `THREE.DoubleSide` (26 de Septiembre, 2026)
+- **Motivación & Objetivos Cumplidos**:
+  1. **Sistema de 3 Estados de la Capa Virtual de Inactivos**:
+     - `[ 👁️‍🗨️ Ocultos ]`: Las piezas y herrajes fuera del paso activo se suprimen completamente (escala $0$ inmutable en reposo).
+     - `[ 💎 Modo Cristal ]`: Acabado vítreo translúcido uniforme (`#0284C7`, opacidad $0.80$, `transparent: true`, `depthWrite: false`) que atenúa tableros y herrajes inactivos sin robar protagonismo visual al paso activo.
+     - `[ 🌐 Modo Global ]`: Hereda fielmente la visualización seleccionada en la barra superior (líneas, cristal, sólido o renderizado con mapas PBR completos).
+  2. **Resolución Definitiva de Normales Invertidas y Back-Face Culling (`Peça 2` y `Peça 3`)**:
+     - Diagnóstico: En modelos paramétricos RTA de Grasshopper/Rhino, los divisores y travesaños internos (`Peça 3`, `Peça 2`) presentan triangulación horaria (CW) o extrusiones negativas donde las normales miran hacia el reverso o interior. Con `THREE.FrontSide` en Modo Cristal, WebGL las descartaba por Back-Face Culling, dejando solo el contorno de aristas.
+     - Solución Canónica: Estandarizado `side: THREE.DoubleSide` universal en `BoardMesh.tsx` para todas las mallas. WebGL renderiza ambas caras independientemente del sentido vectorial de las normales, garantizando que ninguna pieza vuelva a desaparecer.
+  3. **Segregación Precisa de Herrajes (Inactivos vs Modo Global)**:
+     - En la **Capa de Inactivos en Modo Cristal**: Tanto tableros de madera como herrajes (patas plásticas `Sapata`, correderas telescópicas, cantoneras, tornillos y clavos) se vuelven translúcidos vítreos (`esInactivoCristal: true`), eliminando bloques negros sólidos distractores.
+     - En el **Modo Global Cristal (Barra Superior)**: Los herrajes conservan su solidez opaca metálica/plástica (`opacity: 1.0`, `transparent: false`) para permitir la inspección técnica de ensambles internos a través de los tableros.
+  4. **Estabilidad Visual y Coexistencia PBR**:
+     - Renderizado nítido y de alta definición con materiales PBR en las piezas activas del paso, contrastado armoniosamente contra el fondo vítreo uniforme de los inactivos.
+     - Momento histórico de estabilidad estética y técnica alcanzado con éxito total (*"Momento de estabilidad de la visualización"*).
 - **Validación de Calidad**:
-  * Pruebas matemáticas en Node.js validando coincidencia de matrices mundiales (diferencia de posición = 0, ángulo de orientación = 0).
-  * Inspección de round-trip con `GLTFLoader`: 1 cámara exportada (`Camera`), 1 animación glTF con tracks de mallas y pistas `Camera.position` y `Camera.quaternion`.
-  * Compilación TypeScript verificada (`npx tsc --noEmit`) con **código 0 (cero errores)**.
-  * Validación visual en Babylon.js Sandbox confirmada con éxito por el usuario (*"Quedo espectacular!!!!!!"*).
+  * Compilación TypeScript verificada (`npx tsc --noEmit`) en `c:\Desarrollo\mmapp\3bf` con **código 0 (cero errores)**.
+  * Verificación visual confirmada por el usuario con captura de pantalla (`media_1790457210376.png`) mostrando el equilibrio perfecto entre inactivos vítreos y capas activas hiper-realistas.
 
+---
 
-
+### 🚀 Hito 218: La Trinidad del Ensamble (Activos, Heredados e Inactivos), Capa de Heredados con Selector Triple, Eliminación Segura de Pasos y Erradicación del Bug de Escala 50% en `3dBimFab` (26 de Septiembre, 2026)
+- **Motivación & Arquitectura de "La Trinidad del Ensamble"**:
+  * *El Problema Detectado al Crear Nuevos Pasos*: Al crear un nuevo paso de ensamble (ej. P03 tras P01 y P02), los objetos ya ensamblados en pasos previos quedaban en el limbo visual y lógico, mezclándose indistintamente con piezas nunca tocadas.
+  * *Arquitectura Matemática Universal*: Se formalizó la partición disjunta del mueble:
+    $$\text{Mueble Total} = \mathbf{Objetos\ Activos} \cup \mathbf{Objetos\ Heredados} \cup \mathbf{Objetos\ Inactivos}$$
+    1. **Objetos Activos (Capas Activas del Paso)**: Piezas y herrajes que se animan cinemáticamente en el paso actual.
+    2. **Objetos Heredados (Capa de Objetos Heredados)**: Piezas y herrajes ya ensamblados en pasos previos que ahora forman la base física fija del nuevo ensamble.
+    3. **Objetos Inactivos (Capa de Objetos Inactivos)**: Piezas y herrajes aún no ensamblados que esperan su turno en pasos futuros.
+- **Implementación Técnica de la Solución**:
+  1. **Componente `CapaHeredadosCard.tsx` y Selector Triple en Cápsula Pura**:
+     * Creado `CapaHeredadosCard.tsx` montado en `MultiplePlusSection.tsx` ubicado estratégicamente entre las capas activas y la tarjeta de inactivos.
+     * Selector de 3 estados en cápsula `rounded-full`: `[ 🧱 Sólido ]` (materiales PBR fotorrealistas originales), `[ 💎 Modo Cristal ]` (azul vítreo `#0284C7`, opacidad 0.80) y `[ 👁️‍🗨️ Ocultos ]` (escala 0 invisible).
+     * Buscador de piezas en tiempo real, contador badge de tableros y herrajes, y colapso/expansión ergonómico.
+     * Persistencia por paso en `paso.multiplePlus.modoHeredados` con valor predeterminado `"solido"`.
+  2. **Eliminación Segura de Pasos en `ManualStepSelector.tsx`**:
+     * Botón de eliminación en cápsula circular con icono `X` en cada píldora de paso (protegiendo estrictamente a `P00` como paso cero indestructible).
+     * Modal de confirmación nativo que reasigna el paso activo al anterior y re-numera limpiamente la secuencia sin colapsar el estado de la animación.
+  3. **Depuración y Erradicación de Controles Obsoletos en `VoiceStudioPanel.tsx`**:
+     * Removido el acordeón antiguo y redundante de capas de animación dentro del panel de voz TTS (`VoiceStudioPanel.tsx`), eliminando residuos técnicos que generaban duplicidad visual.
+  4. **Diagnóstico y Erradicación Definitiva del Bug de Escala al 50% (`multiplePlusKinematics.ts`)**:
+     * *Diagnóstico*: En P03 a $t = 0\text{s}$, piezas como `Peça 7` y `Peça 6` aparecían reducidas al 50% de escala visual.
+     * *Causa Raíz*: Three.js `AnimationClip` recibía dos pistas `VectorKeyframeTrack` para la misma propiedad `${mesh.uuid}.scale` (una fija en $1.0$ generada por el bloque de heredados, y otra de $0.0 \to 1.0$ generada por la capa activa). El evaluador de Three.js promediaba ambas pistas: $(1.0 + 0.0) / 2 = 0.50$ (50%).
+     * *Solución Canónica*:
+       - Priorización jerárquica estricta: Capas Activas (Prioridad 1) $\to$ Heredados (Prioridad 2) $\to$ Inactivos (Prioridad 3).
+       - Implementado `tracksMap = new Map<string, THREE.KeyframeTrack>()` y registro `mallasAnimadasEnCapas = new Set<string>()`.
+       - Garantizada la unicidad matemática estricta de pistas en Three.js; ninguna malla activa recibe pistas espurias de heredados ni inactivos.
+  5. **Regla Canónica de Herencia Estricta para Pasos Múltiple Plus**:
+     * En `inactivosVirtualesUtils.ts`, `boardVisibilityRules.ts` y `multiplePlusKinematics.ts`, un paso de tipo `multiple_plus` hereda únicamente lo que fue efectivamente configurado y animado en sus capas (`capas.length > 0`). Se erradicaron arrays residuales obsoletos (`piezasAsignadas`) en pasos vacíos como P02, impidiendo que piezas como `MDP Peça 10` y `Peça 10` aparecieran indebidamente como heredadas.
+- **Validación de Calidad**:
+  * Compilación TypeScript verificada (`npx tsc --noEmit`) en `c:\Desarrollo\mmapp\3bf` con **código 0 (cero errores)**.
+  * Verificación interactiva: apertura limpia en $t = 0\text{s}$ con escala 0% para activas, escala 100% para heredadas sólidas o cristal, e inactivos controlados por su propia cápsula.

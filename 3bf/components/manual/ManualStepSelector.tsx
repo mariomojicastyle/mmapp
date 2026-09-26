@@ -2,7 +2,7 @@
 
 import React from "react";
 import { use3BFStore } from "@/lib/store";
-import { Plus, GripVertical, Boxes } from "lucide-react";
+import { Plus, GripVertical, Boxes, X } from "lucide-react";
 
 export default function ManualStepSelector() {
   const {
@@ -10,6 +10,7 @@ export default function ManualStepSelector() {
     pasoActivoManualId,
     seleccionarPasoManualActivo,
     crearPasoManual,
+    eliminarPasoManual,
     reordenarPasosManual,
     coloresApariencia,
   } = use3BFStore();
@@ -116,6 +117,24 @@ export default function ManualStepSelector() {
               ) : (
                 <span className="opacity-70 font-normal text-[10px]">
                   ({(paso.piezasAsignadas || []).length + (paso.herrajesAsignados || []).length})
+                </span>
+              )}
+              {!esP00 && pasosManual.length > 1 && (
+                <span
+                  role="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    if (
+                      typeof window !== "undefined" &&
+                      window.confirm(`¿Estás seguro de eliminar el paso ${paso.id}? Esta acción no se puede deshacer.`)
+                    ) {
+                      eliminarPasoManual(paso.id);
+                    }
+                  }}
+                  title={`Eliminar ${paso.id}`}
+                  className="ml-0.5 w-3.5 h-3.5 rounded-full flex items-center justify-center opacity-60 hover:opacity-100 hover:bg-rose-500 hover:text-white transition cursor-pointer"
+                >
+                  <X className="w-2 h-2" />
                 </span>
               )}
             </button>

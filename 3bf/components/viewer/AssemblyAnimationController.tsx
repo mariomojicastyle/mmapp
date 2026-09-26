@@ -64,7 +64,7 @@ export function AssemblyAnimationController({ furnitureGroup }: AssemblyAnimatio
       .join("|");
 
     const multiplePlusStr = activeStep.multiplePlus
-      ? `${activeStep.multiplePlus.velocidadTablerosCmS || 0}_${activeStep.multiplePlus.velocidadHerrajesCmS || 0}_${activeStep.multiplePlus.movimientoGlobalCm || 0}_` +
+      ? `${activeStep.multiplePlus.velocidadTablerosCmS || 0}_${activeStep.multiplePlus.velocidadHerrajesCmS || 0}_${activeStep.multiplePlus.movimientoGlobalCm || 0}_${activeStep.multiplePlus.modoVisualizacionInactivos || "oculto"}_${activeStep.multiplePlus.modoVisualizacionHeredados || "solido"}_` +
         (activeStep.multiplePlus.capas || [])
           .map((c: any) => {
             const tabs = (c.tableros || []).map((t: any) => `${t.id}:${t.offsetXCm || 0}:${t.offsetYCm || 0}:${t.offsetZCm || 0}:${t.tiempoAparicion || 0}:${t.tiempoInicioMovimiento || 0}:${t.destinoId || ""}`).join(",");
@@ -116,7 +116,7 @@ export function AssemblyAnimationController({ furnitureGroup }: AssemblyAnimatio
     if (count > 0 && count !== lastCompiledMeshCountRef.current) {
       lastCompiledMeshCountRef.current = count;
       try {
-        const res = compilarAnimacionPaso(effectiveGroup, activeStep);
+        const res = compilarAnimacionPaso(effectiveGroup, activeStep, { todosLosPasos: pasosManual });
         engineRef.current = res;
         lastTimeRef.current = -1;
         const tActual = use3BFStore.getState().timelineCurrentTime || 0;
@@ -151,7 +151,7 @@ export function AssemblyAnimationController({ furnitureGroup }: AssemblyAnimatio
 
     // 🎬 Compilación universal de la cinemática: siempre activa para permitir reproducción y scrubber fluido
     try {
-      const res = compilarAnimacionPaso(effectiveGroup, activeStep);
+      const res = compilarAnimacionPaso(effectiveGroup, activeStep, { todosLosPasos: pasosManual });
       engineRef.current = res;
       lastTimeRef.current = -1; // ⚡ Resetear memoria de tiempo para garantizar evaluación reactiva
 

@@ -504,11 +504,13 @@ export const createCatalogSlice = (set: any, get: any): any => ({
 
   eliminarCapa: (id) => {
     if (get().capas.length <= 1) return;
+    if (get().prepararHistorialParaCambio) get().prepararHistorialParaCambio();
     const listaActualizada = get().capas.filter((c) => c.id !== id);
     if (typeof window !== "undefined" && window.localStorage) {
       localStorage.setItem("3bf_capas_v1", JSON.stringify(listaActualizada));
     }
     set({ capas: listaActualizada });
+    if (get().guardarEstadoHistorial) get().guardarEstadoHistorial();
   },
 
   toggleVisibilidadCapa: (id) => {

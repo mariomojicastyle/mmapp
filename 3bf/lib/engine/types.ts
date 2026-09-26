@@ -13,4 +13,5 @@ export interface AnimationEngineToolMeshes {
   llaveAllen?: THREE.Object3D | null;
   destornillador?: THREE.Object3D | null;
   omitirTransformBanco?: boolean;
+  todosLosPasos?: any[];
 }

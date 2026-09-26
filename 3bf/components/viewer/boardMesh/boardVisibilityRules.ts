@@ -82,6 +82,8 @@ export function resolverVisibilidadBoard(input: BoardVisibilityInput): {
   estaOcultaPorReglasPaso: boolean;
   estaOcultaPorGrupoCinematico: boolean;
   perteneceAlPasoActivo: boolean;
+  esInactivoCristal?: boolean;
+  esInactivoGlobal?: boolean;
 } {
   const {
     name,
@@ -166,23 +168,57 @@ export function resolverVisibilidadBoard(input: BoardVisibilityInput): {
     capasPlus.some((c) => c.id === modoPickingManual.grupoId)
   );
 
-  // 🧩 Recopilación de piezas y herrajes de Bloques Heredados activos (ej. P03 en P04)
+  // 🧩 Recopilación de piezas y herrajes de Bloques Heredados (Pasos anteriores cronológicamente y bloques declarados)
   const piezasHeredadas: string[] = [];
   const herrajesHeredados: string[] = [];
   const bloquesHeredadosIds = pasoActivoManual.bloquesHeredadosIds || [];
   const bloquesVisibles = pasoActivoManual.bloquesHeredadosVisibles || {};
 
-  for (const bId of bloquesHeredadosIds) {
-    if (bloquesVisibles[bId] !== false) {
-      const pasoHeredado = pasosManual.find((p) => p.id === bId);
-      if (pasoHeredado) {
-        piezasHeredadas.push(...(pasoHeredado.piezasAsignadas || []));
-        herrajesHeredados.push(...(pasoHeredado.herrajesAsignados || []));
+  // 1. Heredar automáticamente todo lo ensamblado en pasos previos cronológicamente
+  const currentIndex = pasosManual.findIndex((p) => p.id === pasoActivoManual.id);
+  const pasosPrevios = currentIndex > 0 ? pasosManual.slice(0, currentIndex) : [];
+
+  for (const pasoPrevio of pasosPrevios) {
+    if (pasoPrevio.multiplePlus?.capas && pasoPrevio.multiplePlus.capas.length > 0) {
+      for (const cp of pasoPrevio.multiplePlus.capas) {
+        if (cp.tableros) piezasHeredadas.push(...cp.tableros.map((t) => t.id));
+        if (cp.herrajes) herrajesHeredados.push(...cp.herrajes.map((h) => h.id));
+        if (cp.congelados) herrajesHeredados.push(...cp.congelados.map((h) => h.id));
+      }
+    } else if (pasoPrevio.tipo === "ensamble") {
+      if (pasoPrevio.piezasAsignadas) piezasHeredadas.push(...pasoPrevio.piezasAsignadas);
+      if (pasoPrevio.herrajesAsignados) {
+        for (const h of pasoPrevio.herrajesAsignados) {
+          herrajesHeredados.push(typeof h === "string" ? h : (h as any).id);
+        }
       }
     }
   }
 
-  // 🎬 Extraer todas las piezas y herrajes configurados en Capas de Animación (piezasEspera) y Múltiple Plus
+  // 2. Heredar bloques declarados explícitamente
+  for (const bId of bloquesHeredadosIds) {
+    if (bloquesVisibles[bId] !== false) {
+      const pasoHeredado = pasosManual.find((p) => p.id === bId);
+      if (pasoHeredado) {
+        if (pasoHeredado.multiplePlus?.capas && pasoHeredado.multiplePlus.capas.length > 0) {
+          for (const cp of pasoHeredado.multiplePlus.capas) {
+            if (cp.tableros) piezasHeredadas.push(...cp.tableros.map((t) => t.id));
+            if (cp.herrajes) herrajesHeredados.push(...cp.herrajes.map((h) => h.id));
+            if (cp.congelados) herrajesHeredados.push(...cp.congelados.map((h) => h.id));
+          }
+        } else if (pasoHeredado.tipo === "ensamble") {
+          if (pasoHeredado.piezasAsignadas) piezasHeredadas.push(...pasoHeredado.piezasAsignadas);
+          if (pasoHeredado.herrajesAsignados) {
+            for (const h of pasoHeredado.herrajesAsignados) {
+              herrajesHeredados.push(typeof h === "string" ? h : (h as any).id);
+            }
+          }
+        }
+      }
+    }
+  }
+
+  // 🎬 Extraer todas las piezas y herrajes configurados en Capas de Animación (piezasEspera) y Múltiple Plus (Activas)
   const piezasCapasCinematica: string[] = [];
   const herrajesCapasCinematica: string[] = [];
 
@@ -199,19 +235,37 @@ export function resolverVisibilidadBoard(input: BoardVisibilityInput): {
     if (cp.congelados) herrajesCapasCinematica.push(...cp.congelados.map((h) => h.id));
   }
 
-  const asignadasPaso = [
-    ...(pasoActivoManual.piezasAsignadas || []),
-    ...(pasoActivoManual.herrajesAsignados || []),
+  const esMultiplePlus = pasoActivoManual.tipo === "multiple_plus" || Boolean(pasoActivoManual.multiplePlus?.capas && pasoActivoManual.multiplePlus.capas.length > 0);
+  const modoHeredados = pasoActivoManual.multiplePlus?.modoVisualizacionHeredados || "solido";
+  const modoInactivos = pasoActivoManual.multiplePlus?.modoVisualizacionInactivos || "oculto";
+
+  const pickingTemporal = (modoPickingManual.activo && !modoPickingManual.grupoId && modoPickingManual.pasoId === pasoActivoManual.id)
+    ? modoPickingManual.piezasTemporalmenteSeleccionadas
+    : [];
+
+  const activasPaso = [
     ...piezasCapasCinematica,
     ...herrajesCapasCinematica,
-    ...piezasHeredadas,
-    ...herrajesHeredados,
-    ...((modoPickingManual.activo && !modoPickingManual.grupoId && modoPickingManual.pasoId === pasoActivoManual.id)
-      ? modoPickingManual.piezasTemporalmenteSeleccionadas
-      : [])
+    ...pickingTemporal,
   ];
 
+  const heredadasPaso = [
+    ...piezasHeredadas,
+    ...herrajesHeredados,
+  ];
+
+  const asignadasPaso = esMultiplePlus
+    ? [...activasPaso, ...heredadasPaso]
+    : [
+        ...(pasoActivoManual.piezasAsignadas || []),
+        ...(pasoActivoManual.herrajesAsignados || []),
+        ...activasPaso,
+        ...heredadasPaso,
+      ];
+
   const perteneceAlPasoActivo = evaluarPertenenciaPaso(asignadasPaso, name, cleanName, instanciaKey, piezaMadre);
+  const esPiezaActiva = evaluarPertenenciaPaso(activasPaso, name, cleanName, instanciaKey, piezaMadre);
+  const esPiezaHeredada = !esPiezaActiva && evaluarPertenenciaPaso(heredadasPaso, name, cleanName, instanciaKey, piezaMadre);
 
   // 5. Reglas de Aislamiento
   let estaOcultaPorReglasPaso = false;
@@ -226,9 +280,34 @@ export function resolverVisibilidadBoard(input: BoardVisibilityInput): {
     estaOcultaPorReglasPaso = true;
   }
 
-  // 5.2 Invertir del Bloque: si Invertir está activo, oculta todo lo que NO pertenezca a este bloque ni a sus bloques heredados
-  // (Si estamos en picking de capa, se permite ver todo el mueble para facilitar la selección 3D)
-  if (!esPickingCapa && pasoActivoManual.ocultarNoAsignadas && !perteneceAlPasoActivo) {
+  // 5.2 Control de la Trinidad del Ensamble en Múltiple Plus (Activos, Heredados, Inactivos):
+  let esInactivoCristal = false;
+  let esInactivoGlobal = false;
+
+  if (esMultiplePlus) {
+    if (esPiezaActiva) {
+      // Activa en el paso actual: siempre sólida, visible
+      esInactivoCristal = false;
+      esInactivoGlobal = false;
+    } else if (esPiezaHeredada) {
+      // Heredada de pasos anteriores: controlada por modoHeredados (por defecto "solido")
+      if (modoHeredados === "oculto") {
+        estaOcultaPorReglasPaso = true;
+      } else if (modoHeredados === "cristal") {
+        esInactivoCristal = true;
+      }
+      // Si modoHeredados === "solido", permanece visible y sólida PBR (esInactivoCristal = false)
+    } else if (!esPickingCapa) {
+      // Inactiva (futura no ensamblada): controlada por modoInactivos (por defecto "oculto")
+      if (modoInactivos === "oculto") {
+        estaOcultaPorReglasPaso = true;
+      } else if (modoInactivos === "cristal") {
+        esInactivoCristal = true;
+      } else if (modoInactivos === "global") {
+        esInactivoGlobal = true;
+      }
+    }
+  } else if (!esPickingCapa && pasoActivoManual.ocultarNoAsignadas && !perteneceAlPasoActivo) {
     estaOcultaPorReglasPaso = true;
   }
 
@@ -399,6 +478,8 @@ export function resolverVisibilidadBoard(input: BoardVisibilityInput): {
     isMeshVisible,
     estaOcultaPorReglasPaso,
     estaOcultaPorGrupoCinematico,
-    perteneceAlPasoActivo
+    perteneceAlPasoActivo,
+    esInactivoCristal: Boolean(esInactivoCristal),
+    esInactivoGlobal: Boolean(esInactivoGlobal),
   };
 }

@@ -603,6 +603,7 @@ export const createManualStepsSlice = (set: any, get: any): any => {
 
   eliminarCapaPiezaManual: (pasoId: string, nombrePieza: string) => {
     const state = get();
+    if (state.prepararHistorialParaCambio) state.prepararHistorialParaCambio();
     const pm = extraerPiezaMadre(nombrePieza);
     const targetClean = nombrePieza.replace(/^RH_OUT:\s*/i, "").trim();
 
@@ -688,6 +689,7 @@ export const createManualStepsSlice = (set: any, get: any): any => {
       modoPickingManual: nuevoPicking,
     });
     guardarPasosEnCacheLocal(actualizados, state.manualActivoGuardado);
+    if (get().guardarEstadoHistorial) get().guardarEstadoHistorial();
   },
   };
 };

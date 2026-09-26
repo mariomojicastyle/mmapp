@@ -9,7 +9,20 @@ Este archivo es la "Memoria RAM" para Antigravity. Contiene el contexto de lo qu
 ---
 
 ## 🏗️ 1. Plataforma B2B & 3dBimFab (Foco Actual)
-**Estado:** Hito 216 completado con éxito total. Exportación de GLB con orientación de taller (banco de trabajo $Y = 0$) y cámara cinematográfica animada glTF 2.0 validada en Babylon.js Sandbox. Próxima rama: `3BF_GLB_Animacion`. Despliegue a Netlify omitido por mandato expreso del usuario.
+**Estado:** Hito 218 completado con éxito total. "La Trinidad del Ensamble" en `3dBimFab`: División formal en 3 dominios disjuntos (Objetos Activos, Objetos Heredados y Objetos Inactivos), tarjeta `CapaHeredadosCard.tsx` con selector triple (`Sólido`, `Modo Cristal`, `Ocultos`), eliminación segura de pasos con resecuenciación en `ManualStepSelector.tsx`, erradicación de controles residuales en TTS y eliminación del bug de escala al 50% en Three.js con `tracksMap` y prioridad jerárquica estricta. Momento de estabilidad cumbre. Nueva rama de trabajo: `3BF_3_Tipos_de_Capas`.
+
+- [x] **[26 de Septiembre, 2026] La Trinidad del Ensamble (Activos, Heredados e Inactivos), Capa de Heredados con Selector Triple, Eliminación Segura de Pasos y Erradicación del Bug de Escala 50% en `3dBimFab`**:
+  * Formalización de la arquitectura matemática: $\text{Mueble Total} = \mathbf{Activos} \cup \mathbf{Heredados} \cup \mathbf{Inactivos}$.
+  * Componente `CapaHeredadosCard.tsx` con selector de 3 estados (`Sólido`, `Modo Cristal`, `Ocultos`), contador dinámico y buscador integrado.
+  * Botón de eliminación en cápsula circular con confirmación de seguridad en `ManualStepSelector.tsx` (preservando `P00` intacto).
+  * Erradicación de pistas duplicadas en Three.js `AnimationClip` en `multiplePlusKinematics.ts`: `tracksMap` y prioridad estricta eliminan el bug de reducción de escala al 50% en $t=0\text{s}$.
+  * Depuración de herencia en pasos Múltiple Plus: herencia estricta solo desde capas reales (`capas.length > 0`), limpiando residuos de `piezasAsignadas` vacíos.
+
+- [x] **[26 de Septiembre, 2026] Estabilización de la Visualización en `3dBimFab`: Sistema Universal de 3 Estados de Inactivos, Modo Cristal Translúcido Homogéneo para Tableros y Herrajes, y Blindaje de Normales con `THREE.DoubleSide`**:
+  * Sistema de 3 estados en Capa Virtual de Inactivos: `[ 👁️‍🗨️ Ocultos ]` (escala 0), `[ 💎 Modo Cristal ]` (azul vítreo `#0284C7`, opacidad 0.80) y `[ 🌐 Modo Global ]` (herencia de la barra superior).
+  * Blindaje contra Back-Face Culling: reemplazado `FrontSide` por `side: THREE.DoubleSide` universal en `BoardMesh.tsx`, resolviendo definitivamente la desaparición de caras en `Peça 2` y `Peça 3`.
+  * Homogeneidad de herrajes inactivos: en modo cristal de inactivos, patas (`Sapata`), correderas y cantoneras adquieren transparencia vítrea (`esInactivoCristal: true`), mientras que en modo cristal global permanecen sólidos para inspección técnica.
+  * Coexistencia PBR perfecta: contraste hiper-realista entre capas activas y fondo inactivo translúcido uniforme.
 
 - [x] **[26 de Septiembre, 2026] Exportación de GLB con Orientación de Taller (Banco de Trabajo $Y = 0$) y Cámara Cinematográfica Animada Nativa glTF 2.0 en `3dBimFab` (`exportManualGlb.ts`)**:
   * Resolución de orientación en banco: incorporación de `furnitureRoot` preservando la rotación de taller ($X = -90^\circ, Y = +90^\circ$) y apoyo en suelo ($Y = 0$) para que el mueble emerja acostado en el piso tal como en 3dBimFab.

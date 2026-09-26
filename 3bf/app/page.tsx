@@ -254,6 +254,11 @@ export default function Home3BF() {
     cargarArbolMuebles();
     verificarWorker();
 
+    // 🛡️ Inicializar estado base en el historial de Deshacer / Rehacer si está vacío
+    if (use3BFStore.getState().pilaHistorial.length === 0) {
+      use3BFStore.getState().guardarEstadoHistorial();
+    }
+
     // Heartbeat cada 8 segundos y al reactivar la pantalla / regresar de hibernación
     const interval = setInterval(verificarWorker, 8000);
     const handleReactivation = () => {
@@ -278,6 +283,7 @@ export default function Home3BF() {
       // ⏪ DESHACER (Ctrl + Z / Cmd + Z)
       if ((e.ctrlKey || e.metaKey) && (e.key === "z" || e.key === "Z" || e.code === "KeyZ") && !e.shiftKey) {
         e.preventDefault();
+        e.stopImmediatePropagation();
         use3BFStore.getState().deshacer();
         return;
       }
@@ -288,6 +294,7 @@ export default function Home3BF() {
         ((e.ctrlKey || e.metaKey) && e.shiftKey && (e.key === "z" || e.key === "Z" || e.code === "KeyZ"))
       ) {
         e.preventDefault();
+        e.stopImmediatePropagation();
         use3BFStore.getState().rehacer();
         return;
       }

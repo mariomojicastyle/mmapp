@@ -1,4 +1,5 @@
 import type { SnapshotEscenario } from "../storeTypes";
+import { guardarPasosEnCacheLocal } from "../storeDefaults";
 
 export interface HistorySlice {
   pilaHistorial: SnapshotEscenario[];
@@ -6,6 +7,7 @@ export interface HistorySlice {
   puedeDeshacer: boolean;
   puedeRehacer: boolean;
   guardarEstadoHistorial: () => void;
+  prepararHistorialParaCambio: () => void;
   deshacer: () => void;
   rehacer: () => void;
 }
@@ -15,6 +17,13 @@ export const createHistorySlice = (set: any, get: any): HistorySlice => ({
   indiceHistorial: -1,
   puedeDeshacer: false,
   puedeRehacer: false,
+
+  prepararHistorialParaCambio: () => {
+    const s = get();
+    if (s.pilaHistorial.length === 0) {
+      s.guardarEstadoHistorial();
+    }
+  },
 
   guardarEstadoHistorial: () => {
     const s = get();
@@ -34,6 +43,9 @@ export const createHistorySlice = (set: any, get: any): HistorySlice => ({
       posicionObjeto: Array.isArray(s.posicionObjeto) ? [...s.posicionObjeto] as [number, number, number] : [0, 0, 0],
       parametros: { ...(s.parametros || {}) },
       resultado: s.resultado,
+      pasosManual: s.pasosManual ? JSON.parse(JSON.stringify(s.pasosManual)) : undefined,
+      pasoActivoManualId: s.pasoActivoManualId,
+      capas: s.capas ? JSON.parse(JSON.stringify(s.capas)) : undefined,
     };
 
     const historialValido = s.pilaHistorial.slice(0, s.indiceHistorial + 1);
@@ -58,7 +70,7 @@ export const createHistorySlice = (set: any, get: any): HistorySlice => ({
       const nuevoIndice = s.indiceHistorial - 1;
       const estado = s.pilaHistorial[nuevoIndice];
       if (estado) {
-        set({
+        const updates: any = {
           instancias: Object.fromEntries(
             Object.entries(estado.instancias || {}).map(([k, v]: [string, any]) => [
               k,
@@ -74,13 +86,33 @@ export const createHistorySlice = (set: any, get: any): HistorySlice => ({
           objetoSeleccionado: estado.objetoActivoId !== null,
           posicionObjeto: Array.isArray(estado.posicionObjeto) ? [...estado.posicionObjeto] : [0, 0, 0],
           posicionPrevia: Array.isArray(estado.posicionObjeto) ? [...estado.posicionObjeto] : [0, 0, 0],
-          parametros: { ...estado.parametros } as any,
+          parametros: { ...estado.parametros },
           resultado: estado.resultado,
           indiceHistorial: nuevoIndice,
           puedeDeshacer: nuevoIndice > 0,
           puedeRehacer: true,
           modoTransformacion: "none",
-        });
+        };
+
+        if (estado.pasosManual) {
+          const pasosClonados = JSON.parse(JSON.stringify(estado.pasosManual));
+          updates.pasosManual = pasosClonados;
+          updates.versionAnimacionManual = (s.versionAnimacionManual || 0) + 1;
+          if (estado.pasoActivoManualId) {
+            updates.pasoActivoManualId = estado.pasoActivoManualId;
+          }
+          guardarPasosEnCacheLocal(pasosClonados, s.manualActivoGuardado);
+        }
+
+        if (estado.capas) {
+          const capasClonadas = JSON.parse(JSON.stringify(estado.capas));
+          updates.capas = capasClonadas;
+          if (typeof window !== "undefined" && window.localStorage) {
+            localStorage.setItem("3bf_capas_v1", JSON.stringify(capasClonadas));
+          }
+        }
+
+        set(updates);
       }
     }
   },
@@ -91,7 +123,7 @@ export const createHistorySlice = (set: any, get: any): HistorySlice => ({
       const nuevoIndice = s.indiceHistorial + 1;
       const estado = s.pilaHistorial[nuevoIndice];
       if (estado) {
-        set({
+        const updates: any = {
           instancias: Object.fromEntries(
             Object.entries(estado.instancias || {}).map(([k, v]: [string, any]) => [
               k,
@@ -107,14 +139,35 @@ export const createHistorySlice = (set: any, get: any): HistorySlice => ({
           objetoSeleccionado: estado.objetoActivoId !== null,
           posicionObjeto: Array.isArray(estado.posicionObjeto) ? [...estado.posicionObjeto] : [0, 0, 0],
           posicionPrevia: Array.isArray(estado.posicionObjeto) ? [...estado.posicionObjeto] : [0, 0, 0],
-          parametros: { ...estado.parametros } as any,
+          parametros: { ...estado.parametros },
           resultado: estado.resultado,
           indiceHistorial: nuevoIndice,
           puedeDeshacer: true,
           puedeRehacer: nuevoIndice < s.pilaHistorial.length - 1,
           modoTransformacion: "none",
-        });
+        };
+
+        if (estado.pasosManual) {
+          const pasosClonados = JSON.parse(JSON.stringify(estado.pasosManual));
+          updates.pasosManual = pasosClonados;
+          updates.versionAnimacionManual = (s.versionAnimacionManual || 0) + 1;
+          if (estado.pasoActivoManualId) {
+            updates.pasoActivoManualId = estado.pasoActivoManualId;
+          }
+          guardarPasosEnCacheLocal(pasosClonados, s.manualActivoGuardado);
+        }
+
+        if (estado.capas) {
+          const capasClonadas = JSON.parse(JSON.stringify(estado.capas));
+          updates.capas = capasClonadas;
+          if (typeof window !== "undefined" && window.localStorage) {
+            localStorage.setItem("3bf_capas_v1", JSON.stringify(capasClonadas));
+          }
+        }
+
+        set(updates);
       }
     }
   },
 });
+

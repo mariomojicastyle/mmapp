@@ -18,6 +18,7 @@ export interface MaterialPropertiesInput {
   esDuplicado: boolean;
   estaSeleccionadaEnPicking: boolean;
   pestanaActiva?: string;
+  esInactivoCristal?: boolean;
 }
 
 export interface ResolvedMaterialProperties {
@@ -286,7 +287,7 @@ export function resolverPropiedadesMaterial(p: MaterialPropertiesInput): Resolve
 
   let finalMeshColor = meshColor;
   if (p.modoVisual === 'semitransparente') {
-    if (isHardware) {
+    if (isHardware && !p.esInactivoCristal) {
       finalMeshColor = (isHardwareCorredera || isHardwarePrego)
         ? '#64748B' 
         : (isHardwareCantoneira ? '#94A3B8' : (isHardwarePata ? '#1E293B' : (isHardwareTampa ? meshColor : (isHardwarePorca || isHardwareSuporte ? '#CBD5E1' : (p.coloresApariencia.colorHerrajes || '#94A3B8')))));

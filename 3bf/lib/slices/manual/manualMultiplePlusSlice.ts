@@ -40,6 +40,8 @@ export const createManualMultiplePlusSlice = (set: any, get: any): any => ({
   // 1. Crear una nueva capa limpia (Cero llenado automático)
   crearCapaPlus: (pasoId: string, nombre?: string) => {
     const state = get();
+    if (state.prepararHistorialParaCambio) state.prepararHistorialParaCambio();
+
     const actualizados = state.pasosManual.map((p: any) => {
       if (p.id !== pasoId) return p;
       const mp = p.multiplePlus || {
@@ -76,15 +78,42 @@ export const createManualMultiplePlusSlice = (set: any, get: any): any => ({
 
     set({ pasosManual: actualizados, versionAnimacionManual: (state.versionAnimacionManual || 0) + 1 });
     guardarPasosEnCacheLocal(actualizados, state.manualActivoGuardado);
+    if (get().guardarEstadoHistorial) get().guardarEstadoHistorial();
   },
 
   // 2. Eliminar capa
   eliminarCapaPlus: (pasoId: string, capaId: string) => {
     const state = get();
+    if (state.prepararHistorialParaCambio) state.prepararHistorialParaCambio();
+
     const actualizados = state.pasosManual.map((p: any) => {
       if (p.id !== pasoId || !p.multiplePlus) return p;
+
+      // 🔍 Encontrar la capa a eliminar para liberar sus piezas hacia el paso
+      const capaAEliminar = (p.multiplePlus.capas || []).find((c: any) => c.id === capaId);
+      const tablerosIds = (capaAEliminar?.tableros || []).map((t: any) => t.id);
+      const herrajesIds = [
+        ...(capaAEliminar?.herrajes || []).map((h: any) => h.id),
+        ...(capaAEliminar?.congelados || []).map((c: any) => c.id),
+      ];
+
+      // 🛡️ REGLA CANÓNICA: Los objetos dentro de la capa eliminada NO desaparecen al limbo:
+      // Pasan automáticamente a piezasAsignadas y herrajesAsignados del paso, quedando visibles en reposo
+      const piezasAsignadasSet = new Set<string>(p.piezasAsignadas || []);
+      tablerosIds.forEach((id: string) => piezasAsignadasSet.add(id));
+
+      const herrajesAsignadosSet = new Set<string>(p.herrajesAsignados || []);
+      herrajesIds.forEach((id: string) => herrajesAsignadosSet.add(id));
+
+      // Limpiar de capasOcultas si estuvieran allí para que queden visibles
+      const todasLiberadas = new Set([...tablerosIds, ...herrajesIds]);
+      const nuevasCapasOcultas = (p.capasOcultas || []).filter((o: string) => !todasLiberadas.has(o));
+
       return {
         ...p,
+        piezasAsignadas: Array.from(piezasAsignadasSet),
+        herrajesAsignados: Array.from(herrajesAsignadosSet),
+        capasOcultas: nuevasCapasOcultas,
         multiplePlus: {
           ...p.multiplePlus,
           capas: (p.multiplePlus.capas || []).filter((c: any) => c.id !== capaId),
@@ -94,6 +123,7 @@ export const createManualMultiplePlusSlice = (set: any, get: any): any => ({
 
     set({ pasosManual: actualizados, versionAnimacionManual: (state.versionAnimacionManual || 0) + 1 });
     guardarPasosEnCacheLocal(actualizados, state.manualActivoGuardado);
+    if (get().guardarEstadoHistorial) get().guardarEstadoHistorial();
   },
 
   // 3. Toggle visibilidad de capa (Bombillo general de la capa)
@@ -139,6 +169,8 @@ export const createManualMultiplePlusSlice = (set: any, get: any): any => ({
   // 3c. Reordenar capas con drag and drop
   reordenarCapasPlus: (pasoId: string, origenIndex: number, destinoIndex: number) => {
     const state = get();
+    if (state.prepararHistorialParaCambio) state.prepararHistorialParaCambio();
+
     const actualizados = state.pasosManual.map((p: any) => {
       if (p.id !== pasoId || !p.multiplePlus) return p;
       const capas = [...(p.multiplePlus.capas || [])];
@@ -163,12 +195,15 @@ export const createManualMultiplePlusSlice = (set: any, get: any): any => ({
 
     set({ pasosManual: actualizados, versionAnimacionManual: (state.versionAnimacionManual || 0) + 1 });
     guardarPasosEnCacheLocal(actualizados, state.manualActivoGuardado);
+    if (get().guardarEstadoHistorial) get().guardarEstadoHistorial();
   },
 
   // 4. Agregar Tablero a la capa
   // Por defecto: destinoId = "base_master", tiempoAparicion = 0, tiempoInicioMovimiento = 500
   agregarTableroPlus: (pasoId: string, capaId: string, tableroId: string) => {
     const state = get();
+    if (state.prepararHistorialParaCambio) state.prepararHistorialParaCambio();
+
     const actualizados = state.pasosManual.map((p: any) => {
       if (p.id !== pasoId || !p.multiplePlus) return p;
       return {
@@ -199,11 +234,14 @@ export const createManualMultiplePlusSlice = (set: any, get: any): any => ({
 
     set({ pasosManual: actualizados, versionAnimacionManual: (state.versionAnimacionManual || 0) + 1 });
     guardarPasosEnCacheLocal(actualizados, state.manualActivoGuardado);
+    if (get().guardarEstadoHistorial) get().guardarEstadoHistorial();
   },
 
   // 5. Remover Tablero de la capa
   removerTableroPlus: (pasoId: string, capaId: string, tableroId: string) => {
     const state = get();
+    if (state.prepararHistorialParaCambio) state.prepararHistorialParaCambio();
+
     const actualizados = state.pasosManual.map((p: any) => {
       if (p.id !== pasoId || !p.multiplePlus) return p;
       return {
@@ -223,6 +261,7 @@ export const createManualMultiplePlusSlice = (set: any, get: any): any => ({
 
     set({ pasosManual: actualizados, versionAnimacionManual: (state.versionAnimacionManual || 0) + 1 });
     guardarPasosEnCacheLocal(actualizados, state.manualActivoGuardado);
+    if (get().guardarEstadoHistorial) get().guardarEstadoHistorial();
   },
 
   // 6. Actualizar configuración de un Tablero
@@ -261,6 +300,8 @@ export const createManualMultiplePlusSlice = (set: any, get: any): any => ({
   // Por defecto: ejeAproximacion = "-X", tiempoAparicion = 0
   agregarHerrajePlus: (pasoId: string, capaId: string, herrajeId: string) => {
     const state = get();
+    if (state.prepararHistorialParaCambio) state.prepararHistorialParaCambio();
+
     const actualizados = state.pasosManual.map((p: any) => {
       if (p.id !== pasoId || !p.multiplePlus) return p;
       return {
@@ -289,11 +330,14 @@ export const createManualMultiplePlusSlice = (set: any, get: any): any => ({
 
     set({ pasosManual: actualizados, versionAnimacionManual: (state.versionAnimacionManual || 0) + 1 });
     guardarPasosEnCacheLocal(actualizados, state.manualActivoGuardado);
+    if (get().guardarEstadoHistorial) get().guardarEstadoHistorial();
   },
 
   // 8. Remover Herraje de la capa
   removerHerrajePlus: (pasoId: string, capaId: string, herrajeId: string) => {
     const state = get();
+    if (state.prepararHistorialParaCambio) state.prepararHistorialParaCambio();
+
     const actualizados = state.pasosManual.map((p: any) => {
       if (p.id !== pasoId || !p.multiplePlus) return p;
       return {
@@ -314,6 +358,7 @@ export const createManualMultiplePlusSlice = (set: any, get: any): any => ({
 
     set({ pasosManual: actualizados, versionAnimacionManual: (state.versionAnimacionManual || 0) + 1 });
     guardarPasosEnCacheLocal(actualizados, state.manualActivoGuardado);
+    if (get().guardarEstadoHistorial) get().guardarEstadoHistorial();
   },
 
   // 9. Actualizar Herraje
@@ -922,4 +967,81 @@ export const createManualMultiplePlusSlice = (set: any, get: any): any => ({
       (window as any).__3bfDespertarAnimacion();
     }
   },
+
+  // 17. Conmutar modo de visualización de la Capa Virtual de Inactivos ("oculto" | "cristal" | "global")
+  setModoVisualizacionInactivosPlus: (pasoId: string, modo: "oculto" | "cristal" | "global") => {
+    const state = get();
+    if (state.prepararHistorialParaCambio) state.prepararHistorialParaCambio();
+
+    const actualizados = state.pasosManual.map((p: any) => {
+      if (p.id !== pasoId) return p;
+      const mp = p.multiplePlus || {
+        velocidadTablerosCmS: 15,
+        velocidadHerrajesCmS: 8,
+        movimientoGlobalCm: 20,
+        capas: [],
+      };
+      return {
+        ...p,
+        multiplePlus: {
+          ...mp,
+          modoVisualizacionInactivos: modo,
+        },
+      };
+    });
+
+    set({ pasosManual: actualizados, versionAnimacionManual: (state.versionAnimacionManual || 0) + 1 });
+    guardarPasosEnCacheLocal(actualizados, state.manualActivoGuardado);
+    if (get().guardarEstadoHistorial) get().guardarEstadoHistorial();
+
+    if (typeof window !== "undefined" && (window as any).__3bfDespertarAnimacion) {
+      (window as any).__3bfDespertarAnimacion();
+    }
+  },
+
+  // 17b. Conmutar modo de visualización de la Capa de Objetos Heredados ("solido" | "cristal" | "oculto")
+  setModoVisualizacionHeredadosPlus: (pasoId: string, modo: "solido" | "cristal" | "oculto") => {
+    const state = get();
+    if (state.prepararHistorialParaCambio) state.prepararHistorialParaCambio();
+
+    const actualizados = state.pasosManual.map((p: any) => {
+      if (p.id !== pasoId) return p;
+      const mp = p.multiplePlus || {
+        velocidadTablerosCmS: 15,
+        velocidadHerrajesCmS: 8,
+        movimientoGlobalCm: 20,
+        capas: [],
+      };
+      return {
+        ...p,
+        multiplePlus: {
+          ...mp,
+          modoVisualizacionHeredados: modo,
+        },
+      };
+    });
+
+    set({ pasosManual: actualizados, versionAnimacionManual: (state.versionAnimacionManual || 0) + 1 });
+    guardarPasosEnCacheLocal(actualizados, state.manualActivoGuardado);
+    if (get().guardarEstadoHistorial) get().guardarEstadoHistorial();
+
+    if (typeof window !== "undefined" && (window as any).__3bfDespertarAnimacion) {
+      (window as any).__3bfDespertarAnimacion();
+    }
+  },
+
+  // 18. Asignación rápida de una pieza/herraje inactivo a una capa activa
+  asignarInactivoACapaPlus: (pasoId: string, capaId: string, meshKey: string, tipo: "tablero" | "herraje") => {
+    const slice = get();
+    if (tipo === "tablero") {
+      if (slice.agregarTableroPlus) {
+        slice.agregarTableroPlus(pasoId, capaId, meshKey);
+      }
+    } else {
+      if (slice.agregarHerrajePlus) {
+        slice.agregarHerrajePlus(pasoId, capaId, meshKey);
+      }
+    }
+  },
 });
+

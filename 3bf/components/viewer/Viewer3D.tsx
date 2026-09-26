@@ -906,6 +906,7 @@ export default function Viewer3D() {
       // ⏪ Atajo Ctrl+Z / Cmd+Z: Deshacer (Undo) / Ctrl+Shift+Z / Ctrl+Y: Rehacer (Redo)
       if ((e.ctrlKey || e.metaKey) && (e.key === "z" || e.key === "Z")) {
         e.preventDefault();
+        e.stopImmediatePropagation();
         if (e.shiftKey) {
           rehacer();
         } else {
@@ -916,6 +917,7 @@ export default function Viewer3D() {
 
       if ((e.ctrlKey || e.metaKey) && (e.key === "y" || e.key === "Y")) {
         e.preventDefault();
+        e.stopImmediatePropagation();
         rehacer();
         return;
       }

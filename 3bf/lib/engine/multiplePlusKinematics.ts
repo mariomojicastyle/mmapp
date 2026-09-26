@@ -141,6 +141,13 @@ export function compilarMultiplePlusPaso(
 
   const capas = mpConfig.capas || [];
 
+  // 🛡️ Mapa unívoco de pistas de animación por nombre de propiedad (Garantía de unicidad total Three.js)
+  const tracksMap = new Map<string, THREE.KeyframeTrack>();
+  const agregarTrack = (track: THREE.KeyframeTrack) => {
+    tracksMap.set(track.name, track);
+  };
+  const mallasAnimadasEnCapas = new Set<string>();
+
   // Mapear todas las piezas y herrajes asignados en cualquier capa
   const piezasAsignadasSet = new Set<string>();
   const herrajesAsignadosSet = new Set<string>();
@@ -169,11 +176,12 @@ export function compilarMultiplePlusPaso(
       });
 
       matchingMeshes.forEach((mesh) => {
+        mallasAnimadasEnCapas.add(mesh.uuid);
         const pRest = getSafeRestPosition(mesh);
 
         // Si la capa está apagada, ocultar por completo
         if (!capaVisible) {
-          tracks.push(
+          agregarTrack(
             crearTrackEscalaSanitizado(`${mesh.uuid}.scale`, [0, duracionPaso], [0, 0, 0, 0, 0, 0])
           );
           return;
@@ -192,16 +200,16 @@ export function compilarMultiplePlusPaso(
 
         // Pista de Escala
         if (tAparicion >= duracionPaso) {
-          tracks.push(
+          agregarTrack(
             crearTrackEscalaSanitizado(`${mesh.uuid}.scale`, [0, duracionPaso], [0, 0, 0, 0, 0, 0])
           );
         } else if (tAparicion > 0) {
           const tPre = Math.max(0, tAparicion - 0.02);
           const sTimes = [0, tPre, tAparicion, duracionPaso];
           const sVals = [0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1];
-          tracks.push(crearTrackEscalaSanitizado(`${mesh.uuid}.scale`, sTimes, sVals));
+          agregarTrack(crearTrackEscalaSanitizado(`${mesh.uuid}.scale`, sTimes, sVals));
         } else {
-          tracks.push(
+          agregarTrack(
             crearTrackEscalaSanitizado(`${mesh.uuid}.scale`, [0, duracionPaso], [1, 1, 1, 1, 1, 1])
           );
         }
@@ -229,7 +237,7 @@ export function compilarMultiplePlusPaso(
           );
         }
 
-        tracks.push(crearTrackVectorSanitizado(`${mesh.uuid}.position`, pTimes, pVals));
+        agregarTrack(crearTrackVectorSanitizado(`${mesh.uuid}.position`, pTimes, pVals));
       });
     });
 
@@ -306,6 +314,7 @@ export function compilarMultiplePlusPaso(
       });
 
       matchingHwMeshes.forEach((hwMesh) => {
+        mallasAnimadasEnCapas.add(hwMesh.uuid);
         const pHwRest = getSafeRestPosition(hwMesh);
         const pHwRestWorld = hwMesh.parent ? hwMesh.parent.localToWorld(pHwRest.clone()) : pHwRest.clone();
 
@@ -326,7 +335,7 @@ export function compilarMultiplePlusPaso(
 
         // Si la capa está apagada, ocultar por completo
         if (!capaVisible) {
-          tracks.push(
+          agregarTrack(
             crearTrackEscalaSanitizado(`${hwMesh.uuid}.scale`, [0, duracionPaso], [0, 0, 0, 0, 0, 0])
           );
           return;
@@ -337,12 +346,12 @@ export function compilarMultiplePlusPaso(
         if (herraje.congelado) {
           // ❄️ Herraje congelado: ya instalado en barreno
           if (tAparicion >= duracionPaso) {
-            tracks.push(
+            agregarTrack(
               crearTrackEscalaSanitizado(`${hwMesh.uuid}.scale`, [0, duracionPaso], [0, 0, 0, 0, 0, 0])
             );
           } else if (tAparicion > 0) {
             const tPre = Math.max(0, tAparicion - 0.02);
-            tracks.push(
+            agregarTrack(
               crearTrackEscalaSanitizado(
                 `${hwMesh.uuid}.scale`,
                 [0, tPre, tAparicion, duracionPaso],
@@ -350,7 +359,7 @@ export function compilarMultiplePlusPaso(
               )
             );
           } else {
-            tracks.push(
+            agregarTrack(
               crearTrackEscalaSanitizado(`${hwMesh.uuid}.scale`, [0, duracionPaso], [1, 1, 1, 1, 1, 1])
             );
           }
@@ -375,7 +384,7 @@ export function compilarMultiplePlusPaso(
             );
           }
 
-          tracks.push(crearTrackVectorSanitizado(`${hwMesh.uuid}.position`, pTimes, pVals));
+          agregarTrack(crearTrackVectorSanitizado(`${hwMesh.uuid}.position`, pTimes, pVals));
         } else {
           // 🚀 Herraje nuevo: inserción colineal desde Punto A hasta Punto B (barreno)
           const eje = herraje.ejeAproximacion || "-X";
@@ -389,12 +398,12 @@ export function compilarMultiplePlusPaso(
 
           // Escala
           if (tHwStart >= duracionPaso) {
-            tracks.push(
+            agregarTrack(
               crearTrackEscalaSanitizado(`${hwMesh.uuid}.scale`, [0, duracionPaso], [0, 0, 0, 0, 0, 0])
             );
           } else if (tHwStart > 0) {
             const tPre = Math.max(0, tHwStart - 0.02);
-            tracks.push(
+            agregarTrack(
               crearTrackEscalaSanitizado(
                 `${hwMesh.uuid}.scale`,
                 [0, tPre, tHwStart, duracionPaso],
@@ -402,7 +411,7 @@ export function compilarMultiplePlusPaso(
               )
             );
           } else {
-            tracks.push(
+            agregarTrack(
               crearTrackEscalaSanitizado(`${hwMesh.uuid}.scale`, [0, duracionPaso], [1, 1, 1, 1, 1, 1])
             );
           }
@@ -461,34 +470,115 @@ export function compilarMultiplePlusPaso(
             );
           }
 
-          tracks.push(crearTrackVectorSanitizado(`${hwMesh.uuid}.position`, posTimes, posVals));
+          agregarTrack(crearTrackVectorSanitizado(`${hwMesh.uuid}.position`, posTimes, posVals));
         }
       });
     });
   });
 
   // ─────────────────────────────────────────────────────────────────────────
-  // 💡 3. AISLAMIENTO DE PIEZAS NO ASIGNADAS (si ocultarNoAsignadas está activo)
+  // 🧩 2. BLOQUES HEREDADOS (Consolidados a t = t_final como cuerpo rígido inmóvil)
   // ─────────────────────────────────────────────────────────────────────────
-  if (paso.ocultarNoAsignadas) {
-    sceneMeshes.forEach((m) => {
-      const u = m.userData || {};
-      const cn = (u.cleanName || m.name || "").replace(/^RH_OUT:/i, "").trim().toLowerCase();
+  const todosLosPasos = toolMeshes?.todosLosPasos || [];
+  const bloquesHeredadosIds: string[] = [
+    ...(paso.bloquesHeredadosIds || []),
+    ...capas.flatMap((c) => c.bloquesHeredadosIds || []),
+  ];
+
+  // 1. Heredar automáticamente los pasos previos cronológicamente
+  const currentIndex = todosLosPasos.findIndex((p: any) => p.id === paso.id);
+  const pasosPreviosIds = currentIndex > 0 ? todosLosPasos.slice(0, currentIndex).map((p: any) => p.id) : [];
+  const todosHeredadosIds = Array.from(new Set([...pasosPreviosIds, ...bloquesHeredadosIds]));
+
+  const modoHeredados = paso.multiplePlus?.modoVisualizacionHeredados || "solido";
+  const estaVisibleHeredados = modoHeredados !== "oculto";
+
+  todosHeredadosIds.forEach((pasoHeredadoId) => {
+    const pasoPrevio = todosLosPasos.find((p: any) => p.id === pasoHeredadoId);
+    if (!pasoPrevio) return;
+
+    const estaVisibleEspecifico = paso.bloquesHeredadosVisibles?.[pasoHeredadoId] !== false;
+    const esVisibleFinal = estaVisibleHeredados && estaVisibleEspecifico;
+
+    const piezasHeredadas: string[] = [];
+    const herrajesHeredados: string[] = [];
+
+    if (pasoPrevio.multiplePlus?.capas && pasoPrevio.multiplePlus.capas.length > 0) {
+      pasoPrevio.multiplePlus.capas.forEach((c: any) => {
+        (c.tableros || []).forEach((t: any) => piezasHeredadas.push(t.id));
+        (c.herrajes || []).forEach((h: any) => herrajesHeredados.push(h.id));
+        (c.congelados || []).forEach((cg: any) => herrajesHeredados.push(cg.id));
+      });
+    } else if (pasoPrevio.tipo === "ensamble") {
+      (pasoPrevio.piezasAsignadas || []).forEach((p: any) => piezasHeredadas.push(p));
+      (pasoPrevio.herrajesAsignados || []).forEach((h: any) => herrajesHeredados.push(typeof h === "string" ? h : h.id));
+    }
+
+    sceneMeshes.forEach((mesh) => {
+      // 🛡️ REGLA SUPREMA: Si la malla ya fue animada en una capa activa del paso actual, NO tocarla aquí
+      if (mallasAnimadasEnCapas.has(mesh.uuid)) return;
+
+      const u = mesh.userData || {};
+      const cn = (u.cleanName || mesh.name || "").replace(/^RH_OUT:/i, "").trim().toLowerCase();
       const pm = (u.piezaMadre || "").toLowerCase().trim();
       const ik = (u.instanciaKey || "").toLowerCase().trim();
 
-      const estaAsignada =
-        piezasAsignadasSet.has(cn) ||
-        piezasAsignadasSet.has(pm) ||
-        piezasAsignadasSet.has(ik) ||
-        herrajesAsignadosSet.has(cn) ||
-        herrajesAsignadosSet.has(ik);
+      const perteneceTablero = piezasHeredadas.some((pId) =>
+        coincideMallaConTablero(pId.toLowerCase().trim(), cn, pm, ik)
+      );
+      const perteneceHerraje = herrajesHeredados.some((hId) =>
+        coincidenMismoHerraje(hId, ik) || coincidenMismoHerraje(hId, cn)
+      );
 
-      if (!estaAsignada) {
-        tracks.push(
-          crearTrackEscalaSanitizado(`${m.uuid}.scale`, [0, duracionPaso], [0, 0, 0, 0, 0, 0])
-        );
+      if (perteneceTablero || perteneceHerraje) {
+        mallasAnimadasEnCapas.add(mesh.uuid);
+        if (!esVisibleFinal) {
+          agregarTrack(crearTrackEscalaSanitizado(`${mesh.uuid}.scale`, [0, duracionPaso], [0, 0, 0, 0, 0, 0]));
+        } else {
+          const pRest = getSafeRestPosition(mesh);
+          agregarTrack(crearTrackEscalaSanitizado(`${mesh.uuid}.scale`, [0, duracionPaso], [1, 1, 1, 1, 1, 1]));
+          agregarTrack(
+            crearTrackVectorSanitizado(
+              `${mesh.uuid}.position`,
+              [0, duracionPaso],
+              [pRest.x, pRest.y, pRest.z, pRest.x, pRest.y, pRest.z]
+            )
+          );
+        }
       }
     });
-  }
+  });
+
+  // ─────────────────────────────────────────────────────────────────────────
+  // 💡 3. AISLAMIENTO Y VISIBILIDAD DE PIEZAS INACTIVAS (Fuera de Capas y Heredados)
+  // ─────────────────────────────────────────────────────────────────────────
+  sceneMeshes.forEach((m) => {
+    // Si ya fue procesada en capas activas o en heredados, omitir
+    if (mallasAnimadasEnCapas.has(m.uuid)) return;
+    mallasAnimadasEnCapas.add(m.uuid);
+
+    const modoInactivos = paso.multiplePlus?.modoVisualizacionInactivos || "oculto";
+    if (modoInactivos === "cristal" || modoInactivos === "global") {
+      // 💎 MODO CRISTAL o 🌐 MODO GLOBAL: Permanecen visibles en escala 1.0 en su posición de reposo
+      const pRest = getSafeRestPosition(m);
+      agregarTrack(
+        crearTrackEscalaSanitizado(`${m.uuid}.scale`, [0, duracionPaso], [1, 1, 1, 1, 1, 1])
+      );
+      agregarTrack(
+        crearTrackVectorSanitizado(
+          `${m.uuid}.position`,
+          [0, duracionPaso],
+          [pRest.x, pRest.y, pRest.z, pRest.x, pRest.y, pRest.z]
+        )
+      );
+    } else {
+      // 👁️‍🗨️ MODO OCULTO: Escala 0 continua incondicional para piezas inactivas
+      agregarTrack(
+        crearTrackEscalaSanitizado(`${m.uuid}.scale`, [0, duracionPaso], [0, 0, 0, 0, 0, 0])
+      );
+    }
+  });
+
+  // 🚀 Insertar todas las pistas sanitizadas y unívocas en el AnimationClip
+  tracks.push(...Array.from(tracksMap.values()));
 }
