@@ -9,7 +9,15 @@ Este archivo es la "Memoria RAM" para Antigravity. Contiene el contexto de lo qu
 ---
 
 ## 🏗️ 1. Plataforma B2B & 3dBimFab (Foco Actual)
-**Estado:** Hito 214 registrado; Rama de trabajo activa `Ajuste_Comarta_Cinematografica` (Implementación de la Cámara Cinematográfica Desacoplada sin Libre Albedrío en 3dBimFab). Despliegue a Netlify omitido a petición del usuario.
+**Estado:** Hito 215 completado y validado. Pieza Fantasma y desfase de mallas asíncronas erradicados al 100% con sincronización `useFrame` Pre-Render. Próxima rama: `3BF_Resuelto_Pieza_Fantasma`. Despliegue a Netlify omitido por mandato del usuario.
+
+- [x] **[25 de Septiembre, 2026] Erradicación Definitiva de la "Pieza Fantasma", Blindaje Asíncrono CAD ➔ Cinemática Three.js (`useFrame` Pre-Render), Cancelación de Hover Fantasma e Inmutabilidad de Escala en `3dBimFab`**:
+  * Identificación de la causa raíz: RhinoCompute entrega las 568 mallas de forma asíncrona (~2.2s) después de que `AssemblyAnimationController` ya había compilado con 0 mallas. Al reiniciar Chrome, las piezas permanecían en su pose CAD cruda (arriba).
+  * Sincronización instantánea con `useFrame`: detección en el bucle de renderizado WebGL antes de enviar el frame a la GPU, aplicando $t = 0\text{s}$ a 0 ms de latencia (destello visual 100% eliminado).
+  * Blindaje en `BoardMesh`: eliminación del bypass de hover (`if (!visibilidad.isMeshVisible) return null;`), garantizando que ninguna pieza aparezca antes de su tiempo por rozar cápsulas.
+  * Inmutabilidad física: congelada la escala de tableros de madera en 1.0 (sin inflación $1.08\times$).
+  * Salida del simulador de celular: retorno automático a Cámara Libre con botón "Fijar" deshabilitado en gris.
+  * Limpieza de eventos hover en cápsulas y tarjetas para evitar residuos en memoria.
 
 - [x] **[25 de Septiembre, 2026] Diagnóstico Arquitectónico y Diseño de la Cámara Cinematográfica Desacoplada sin Libre Albedrío en 3dBimFab (`Viewer3D`, `ManualCameraDirector`, `CameraControllers`)**:
   * Confirmación de integridad de los 28 keyframes cinematográficos del paso P03 en `3_Comoda Ravenna.3bm.json`.

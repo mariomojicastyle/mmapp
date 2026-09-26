@@ -949,6 +949,8 @@ export interface State3BF {
   despertarAnimacionManual: () => void;
   autoEnfoqueCamaraManual: boolean;
   setAutoEnfoqueCamaraManual: (activo: boolean) => void;
+  modoEncuadreCamaraManual: boolean;
+  setModoEncuadreCamaraManual: (activo: boolean) => void;
   // 🎥 Métodos de Dirección Cinematográfica de Cámara
   capturarKeyframeCamaraPaso: (pasoId: string, tiempo: number, posicion: [number, number, number], target: [number, number, number], fov?: number) => void;
   eliminarKeyframeCamaraPaso: (pasoId: string, kfId: string) => void;

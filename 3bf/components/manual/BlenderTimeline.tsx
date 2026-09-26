@@ -24,7 +24,6 @@ import {
   Copy,
   ClipboardPaste,
   CopyPlus,
-  RotateCcw,
 } from "lucide-react";
 
 /**
@@ -57,6 +56,7 @@ export default function BlenderTimeline() {
     simuladorMovilOrientacion,
     toggleSimuladorMovilOrientacion,
     toggleSimuladorMovil,
+    setModoEncuadreCamaraManual,
   } = use3BFStore();
 
   const pasoActivo = pasosManual.find((p) => p.id === pasoActivoManualId) || pasosManual[0];
@@ -318,17 +318,20 @@ export default function BlenderTimeline() {
 
   // 📸 Sincronizar estado de keyframe seleccionado con el director de cámara
   useEffect(() => {
+    const isEditing = Boolean(selectedKfId);
+    setModoEncuadreCamaraManual(isEditing);
     if (typeof window !== "undefined") {
-      (window as any).__isEditingKeyframeCamera3BF = Boolean(selectedKfId);
+      (window as any).__isEditingKeyframeCamera3BF = isEditing;
       (window as any).__selectedKeyframeCameraId3BF = selectedKfId;
     }
     return () => {
+      setModoEncuadreCamaraManual(false);
       if (typeof window !== "undefined") {
         (window as any).__isEditingKeyframeCamera3BF = false;
         (window as any).__selectedKeyframeCameraId3BF = null;
       }
     };
-  }, [selectedKfId]);
+  }, [selectedKfId, setModoEncuadreCamaraManual]);
 
   // 💎 Arrastre Horizontal de Keyframes (Rombos Dorados)
   const handleKeyframeMouseDown = (e: React.MouseEvent, kfId: string, tiempoActual: number) => {
@@ -774,20 +777,36 @@ export default function BlenderTimeline() {
 
         {/* Derecha: Fijar Cámara, Portapapeles (Copiar/Pegar/Duplicar), Cinemática, Campo End, Zoom Fit, Giro Orientación y Cerrar */}
         <div className="flex items-center gap-1.5">
-          {/* Botón FIJAR CÁMARA */}
-          <button
-            type="button"
-            onClick={handleFijarCamara}
-            title={`Fijar encuadre y target de cámara en el segundo actual (${timelineCurrentTime.toFixed(1)}s)`}
-            className={`flex items-center gap-1 text-[10px] font-bold px-3 py-1 rounded-full shadow-md transition active:scale-95 cursor-pointer ${
-              feedbackFijar
-                ? "bg-emerald-600 text-white ring-2 ring-emerald-400"
-                : "bg-[#1368AA] hover:bg-[#10568c] text-white"
-            }`}
-          >
-            {feedbackFijar ? <Check className="w-3 h-3" /> : <Camera className="w-3 h-3 text-amber-300" />}
-            <span>{feedbackFijar ? "¡Fijado!" : `Fijar (${timelineCurrentTime.toFixed(1)}s)`}</span>
-          </button>
+          {/* Botón FIJAR CÁMARA (Solo habilitado en Cámara Animada) */}
+          {(() => {
+            const esCamaraAnimada = Boolean(pasoActivo?.camaraCinematicaActiva === true);
+            return (
+              <button
+                type="button"
+                onClick={handleFijarCamara}
+                disabled={!esCamaraAnimada}
+                title={
+                  esCamaraAnimada
+                    ? `Fijar encuadre y target de cámara en el segundo actual (${timelineCurrentTime.toFixed(1)}s)`
+                    : "Solo puedes fijar keyframes en Cámara Animada. Activa la Cámara Animada para grabar encuadres."
+                }
+                className={`flex items-center gap-1 text-[10px] font-bold px-3 py-1 rounded-full shadow-md transition active:scale-95 ${
+                  !esCamaraAnimada
+                    ? "bg-slate-800 text-slate-500 border border-slate-700 cursor-not-allowed opacity-50"
+                    : feedbackFijar
+                    ? "bg-emerald-600 text-white ring-2 ring-emerald-400 cursor-pointer"
+                    : "bg-[#1368AA] hover:bg-[#10568c] text-white cursor-pointer"
+                }`}
+              >
+                {feedbackFijar ? (
+                  <Check className="w-3 h-3" />
+                ) : (
+                  <Camera className={`w-3 h-3 ${esCamaraAnimada ? "text-amber-300" : "text-slate-500"}`} />
+                )}
+                <span>{feedbackFijar ? "¡Fijado!" : `Fijar (${timelineCurrentTime.toFixed(1)}s)`}</span>
+              </button>
+            );
+          })()}
 
           {/* Grupo Portapapeles (Copiar, Pegar, Duplicar estilo Blender) */}
           <div className="flex items-center bg-[#181818] p-0.5 rounded-full border border-[#404040]">
@@ -849,39 +868,31 @@ export default function BlenderTimeline() {
             </button>
           </div>
 
-          {/* Estado Cinemática y Botón Restaurar Enfoque */}
-          <div className="flex items-center gap-1">
+          {/* Estado de Cámara: Cámara Animada vs Cámara Libre */}
+          <div className="flex items-center gap-1.5">
             <button
               type="button"
               onClick={() => pasoActivo && toggleCamaraCinematicaPaso(pasoActivo.id)}
               title={
-                pasoActivo?.camaraCinematicaActiva !== false
-                  ? "Cinemática de cámara activada. Clic para modo libre"
-                  : "Cinemática en pausa. Clic para activar seguimiento de keyframes"
+                pasoActivo?.camaraCinematicaActiva === true
+                  ? "Cámara Animada activa (sigue rígidamente los keyframes). Clic para pasar a Cámara Libre"
+                  : "Cámara Libre activa (órbita 360° con el mouse). Clic para volver a Cámara Animada"
               }
-              className={`px-2 py-0.5 rounded-full text-[9px] font-bold border transition cursor-pointer ${
-                pasoActivo?.camaraCinematicaActiva !== false
-                  ? "bg-cyan-900/60 text-cyan-300 border-cyan-500/40"
-                  : "bg-slate-800 text-slate-400 border-slate-700"
+              className={`px-3 py-1 rounded-full text-[10px] font-bold border transition cursor-pointer flex items-center gap-1.5 shadow-xs ${
+                pasoActivo?.camaraCinematicaActiva === true
+                  ? "bg-[#1368AA]/30 text-cyan-300 border-[#1368AA] hover:bg-[#1368AA]/50"
+                  : "bg-slate-800 text-slate-300 border-slate-600 hover:bg-slate-700"
               }`}
             >
-              <Clapperboard className="w-2.5 h-2.5 inline mr-1" />
-              {pasoActivo?.camaraCinematicaActiva !== false ? "Cam: Auto" : "Cam: Libre"}
+              <Clapperboard className="w-3 h-3" />
+              <span>{pasoActivo?.camaraCinematicaActiva === true ? "🎥 Cámara Animada" : "🖐️ Cámara Libre"}</span>
             </button>
 
-            {/* 🎯 Botón Cápsula: Restaurar Cámara Cinematográfica (Despertar Cámara) */}
-            {keyframesCamara.length > 0 && (
-              <button
-                type="button"
-                onClick={() => {
-                  (window as any).__restaurarCamaraCinematica3BF?.();
-                }}
-                title={`Restaurar cámara al encuadre cinematográfico en ${timelineCurrentTime.toFixed(1)}s`}
-                className="px-2 py-0.5 rounded-full text-[9px] font-bold border border-amber-500/40 bg-amber-950/40 hover:bg-amber-900/60 text-amber-300 flex items-center gap-1 transition cursor-pointer shadow-xs active:scale-95"
-              >
-                <RotateCcw className="w-2.5 h-2.5" />
-                <span>Restaurar Cámara</span>
-              </button>
+            {selectedKfId && (
+              <span className="px-2.5 py-0.5 rounded-full text-[9px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 animate-pulse flex items-center gap-1.5 shadow-xs">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
+                Calibrando Encuadre
+              </span>
             )}
           </div>
 

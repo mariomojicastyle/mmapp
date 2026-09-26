@@ -24,8 +24,29 @@ export const createManualStepsSlice = (set: any, get: any): any => {
     pasoActivoManualId: pasosIniciales[0]?.id || "P00",
     simuladorMovilActivo: false,
     simuladorMovilOrientacion: "horizontal",
-    setSimuladorMovilActivo: (simuladorMovilActivo: boolean) => set({ simuladorMovilActivo }),
-    toggleSimuladorMovil: () => set((s: any) => ({ simuladorMovilActivo: !s.simuladorMovilActivo })),
+    setSimuladorMovilActivo: (simuladorMovilActivo: boolean) =>
+      set((s: any) => {
+        if (!simuladorMovilActivo) {
+          // 🛡️ Al salir del simulador de celular, volver automáticamente a Cámara Libre y limpiar hover
+          const nuevosPasos = s.pasosManual.map((p: any) =>
+            p.id === s.pasoActivoManualId ? { ...p, camaraCinematicaActiva: false } : p
+          );
+          return { simuladorMovilActivo: false, herrajesHovered: null, pasosManual: nuevosPasos };
+        }
+        return { simuladorMovilActivo: true, herrajesHovered: null };
+      }),
+    toggleSimuladorMovil: () =>
+      set((s: any) => {
+        const nuevoEstado = !s.simuladorMovilActivo;
+        if (!nuevoEstado) {
+          // 🛡️ Al salir del simulador de celular, volver automáticamente a Cámara Libre y limpiar hover
+          const nuevosPasos = s.pasosManual.map((p: any) =>
+            p.id === s.pasoActivoManualId ? { ...p, camaraCinematicaActiva: false } : p
+          );
+          return { simuladorMovilActivo: false, herrajesHovered: null, pasosManual: nuevosPasos };
+        }
+        return { simuladorMovilActivo: true, herrajesHovered: null };
+      }),
     setSimuladorMovilOrientacion: (simuladorMovilOrientacion: "vertical" | "horizontal") =>
       set({ simuladorMovilOrientacion }),
     toggleSimuladorMovilOrientacion: () =>
@@ -34,6 +55,8 @@ export const createManualStepsSlice = (set: any, get: any): any => {
       })),
     autoEnfoqueCamaraManual: false,
     setAutoEnfoqueCamaraManual: (autoEnfoqueCamaraManual: boolean) => set({ autoEnfoqueCamaraManual }),
+    modoEncuadreCamaraManual: false,
+    setModoEncuadreCamaraManual: (modoEncuadreCamaraManual: boolean) => set({ modoEncuadreCamaraManual }),
 
     piezaEnPosicionamientoManual: null,
     setPiezaEnPosicionamientoManual: (piezaEnPosicionamientoManual: any) =>
@@ -52,11 +75,12 @@ export const createManualStepsSlice = (set: any, get: any): any => {
     },
 
   seleccionarPasoManualActivo: (pasoActivoManualId: string) =>
-    set({
+    set((s: any) => ({
       pasoActivoManualId,
       timelineCurrentTime: 0,
       isTimelinePlaying: false,
       piezaEnPosicionamientoManual: null,
+      herrajesHovered: null,
       modoPickingManual: {
         activo: false,
         modo: "agregar",
@@ -64,7 +88,11 @@ export const createManualStepsSlice = (set: any, get: any): any => {
         pasoId: null,
         piezasTemporalmenteSeleccionadas: [],
       },
-    }),
+      // 🛡️ Siempre arrancar en Cámara Libre al seleccionar un paso
+      pasosManual: s.pasosManual.map((p: any) =>
+        p.id === pasoActivoManualId ? { ...p, camaraCinematicaActiva: false } : p
+      ),
+    })),
 
   crearPasoManual: (tipo: "ensamble" | "showcase" | "bloque_estandar" | "multiple_plus" = "multiple_plus") => {
     const state = get();

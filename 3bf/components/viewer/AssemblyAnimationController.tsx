@@ -2,6 +2,7 @@
 
 import React, { useRef, useEffect } from "react";
 import * as THREE from "three";
+import { useFrame } from "@react-three/fiber";
 import { use3BFStore } from "@/lib/store";
 import { KinematicEngineResult, compilarAnimacionPaso } from "@/lib/manualAnimationEngine";
 import { getSafeRestPosition, getSafeRestQuaternion } from "@/lib/engine/cadStateUtils";
@@ -30,6 +31,12 @@ export function AssemblyAnimationController({ furnitureGroup }: AssemblyAnimatio
   const versionAnimacionManual = use3BFStore((s) => s.versionAnimacionManual);
   const engineRef = useRef<KinematicEngineResult | null>(null);
   const lastTimeRef = useRef<number>(-1);
+  const lastCompiledMeshCountRef = useRef<number>(0);
+
+  // Obtener el total de mallas reales resueltas por el worker para la instancia activa
+  const instanciasLista = React.useMemo(() => Object.values(instancias || {}), [instancias]);
+  const instanciaActiva = (objetoActivoId ? instancias[objetoActivoId] : null) || instanciasLista[0];
+  const realMeshesCount = instanciaActiva?.resultado?.real_meshes?.length || 0;
 
   // Obtener el grupo de muebles efectivo (prop directa o fallback dinámico a mapa de instancias o escena)
   const effectiveGroup = React.useMemo(() => {
@@ -89,9 +96,40 @@ export function AssemblyAnimationController({ furnitureGroup }: AssemblyAnimatio
       piezasEsperaStr,
       multiplePlusStr,
       vistaPiezasDesplazadas ? "desplazada" : "original",
+      realMeshesCount,
       versionAnimacionManual || 0,
     ].join("_");
-  }, [activeStep, vistaPiezasDesplazadas, versionAnimacionManual]);
+  }, [activeStep, vistaPiezasDesplazadas, versionAnimacionManual, realMeshesCount]);
+
+  // 🛡️ Sincronización Inmediata Pre-Render (useFrame a 60 FPS):
+  // Se ejecuta en el ciclo de animación de Three.js ANTES de pintar el fotograma en pantalla.
+  // En el instante exacto en que RhinoCompute entrega las mallas, compila y evalúa t=0
+  // antes del renderizado de WebGL, eliminando al 100% cualquier destello de la pieza en su pose original.
+  useFrame(() => {
+    if (pestanaActiva !== "manual" || !effectiveGroup || !activeStep) return;
+
+    let count = 0;
+    effectiveGroup.traverse((ch: THREE.Object3D) => {
+      if ((ch as THREE.Mesh).isMesh) count++;
+    });
+
+    if (count > 0 && count !== lastCompiledMeshCountRef.current) {
+      lastCompiledMeshCountRef.current = count;
+      try {
+        const res = compilarAnimacionPaso(effectiveGroup, activeStep);
+        engineRef.current = res;
+        lastTimeRef.current = -1;
+        const tActual = use3BFStore.getState().timelineCurrentTime || 0;
+        res.actualizarTiempo(tActual);
+
+        if (typeof window !== "undefined") {
+          (window as any).__3bfManualEngine = res;
+        }
+      } catch (e) {
+        console.warn("[AssemblyAnimationController] Error en sincronización useFrame:", e);
+      }
+    }
+  });
 
   // 1. Efecto de Compilación: Se ejecuta ÚNICAMENTE cuando cambia el paso, su estructura o se solicita despertar
   useEffect(() => {
@@ -112,11 +150,17 @@ export function AssemblyAnimationController({ furnitureGroup }: AssemblyAnimatio
     const esPasoSubbloques = Boolean(activeStep.subbloques && activeStep.subbloques.length > 0 && !esShowcase);
 
     // 🎬 Compilación universal de la cinemática: siempre activa para permitir reproducción y scrubber fluido
-
     try {
       const res = compilarAnimacionPaso(effectiveGroup, activeStep);
       engineRef.current = res;
       lastTimeRef.current = -1; // ⚡ Resetear memoria de tiempo para garantizar evaluación reactiva
+
+      let mCount = 0;
+      effectiveGroup.traverse((ch: THREE.Object3D) => {
+        if ((ch as THREE.Mesh).isMesh) mCount++;
+      });
+      lastCompiledMeshCountRef.current = mCount;
+
       if (typeof window !== "undefined") {
         (window as any).__3bfManualEngine = res;
         (window as any).__3bfDespertarAnimacion = () => {

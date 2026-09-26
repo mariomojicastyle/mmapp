@@ -33,6 +33,13 @@ export function CapsulaTableroPlus({
     (tablero.offsetZCm || 0) !== 0
   );
 
+  // 🛡️ Al desmontar la cápsula (por ejemplo al eliminarla), limpiar el hover inmediatamente
+  React.useEffect(() => {
+    return () => {
+      onHover(null);
+    };
+  }, [onHover]);
+
   return (
     <div
       onMouseEnter={() => onHover([tablero.id])}
@@ -160,6 +167,7 @@ export function CapsulaTableroPlus({
         type="button"
         onClick={(e) => {
           e.stopPropagation();
+          onHover(null);
           onRemover(tablero.id);
         }}
         title={`Eliminar ${tablero.id} de esta capa`}

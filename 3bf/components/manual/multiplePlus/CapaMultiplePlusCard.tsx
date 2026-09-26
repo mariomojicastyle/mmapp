@@ -312,6 +312,7 @@ export function CapaMultiplePlusCard({
           <button
             type="button"
             onClick={() => {
+              onHoverHerrajes(null);
               if (estaEnPickingCapa) {
                 onLimpiarPicking();
               } else {
@@ -335,7 +336,10 @@ export function CapaMultiplePlusCard({
           {/* 🔄 Botón Invertir Selección */}
           <button
             type="button"
-            onClick={onInvertirSeleccion}
+            onClick={() => {
+              onHoverHerrajes(null);
+              onInvertirSeleccion();
+            }}
             title={
               paso.ocultarNoAsignadas
                 ? "Invertir activo: solo se muestran las piezas asignadas al paso. Clic para ver todo el mueble."
@@ -353,7 +357,10 @@ export function CapaMultiplePlusCard({
           {/* ❌ Botón Eliminar Capa */}
           <button
             type="button"
-            onClick={() => onEliminarCapa(capa.id)}
+            onClick={() => {
+              onHoverHerrajes(null);
+              onEliminarCapa(capa.id);
+            }}
             title="Eliminar esta capa de armado"
             className="w-7 h-7 rounded-full flex items-center justify-center text-rose-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition cursor-pointer shadow-xs"
           >

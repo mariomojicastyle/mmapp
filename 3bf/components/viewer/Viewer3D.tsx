@@ -713,11 +713,19 @@ export default function Viewer3D() {
     manualActivoGuardado,
     timelineCurrentTime,
     forzarRecargaDesdeGHX,
+    modoEncuadreCamaraManual,
   } = use3BFStore();
 
   const pasoActivoManual = React.useMemo(() => {
     return pasosManual.find((p) => p.id === pasoActivoManualId);
   }, [pasosManual, pasoActivoManualId]);
+
+  const esCamaraCinematicaBloqueada = React.useMemo(() => {
+    if (pestanaActiva !== "manual" || !pasoActivoManual) return false;
+    const tieneKeyframes = (pasoActivoManual.keyframesCamara?.length || 0) > 0;
+    const camaraActiva = Boolean(pasoActivoManual.camaraCinematicaActiva === true);
+    return tieneKeyframes && camaraActiva && !modoEncuadreCamaraManual;
+  }, [pestanaActiva, pasoActivoManual, modoEncuadreCamaraManual]);
 
   const [guardadoManualReciente, setGuardadoManualReciente] = React.useState(false);
   const [guardadoMuebleReciente, setGuardadoMuebleReciente] = React.useState(false);
@@ -1724,14 +1732,14 @@ export default function Viewer3D() {
         <CameraPersistenceController controlsRef={controlsRef} />
         <AutoFramingCameraController controlsRef={controlsRef} />
         <ManualCameraDirector controlsRef={controlsRef} />
-        <BlenderNavigationController controlsRef={controlsRef} />
+        <BlenderNavigationController controlsRef={controlsRef} bloqueado={esCamaraCinematicaBloqueada} />
         <OrbitControls 
           ref={controlsRef}
           makeDefault 
-          enabled={modoTransformacion !== "grab" && !piezaEnPosicionamientoManual} 
+          enabled={modoTransformacion !== "grab" && !piezaEnPosicionamientoManual && !esCamaraCinematicaBloqueada} 
           minDistance={calibracion.zoomMinimoMetros ?? 0.02} 
           maxDistance={calibracion.zoomMaximoMetros ?? 30} 
-          enableDamping
+          enableDamping={!esCamaraCinematicaBloqueada}
           dampingFactor={0.05}
           screenSpacePanning={true}
           mouseButtons={{

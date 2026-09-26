@@ -2004,3 +2004,38 @@ Para mantener la máxima agilidad y minimizar el consumo de tokens sin perder ni
 - **Preparación de la Rama y Plan de Trabajo**:
   * Creación de la rama especializada `Ajuste_Comarta_Cinematografica` para la implementación y blindaje del nuevo modelo de cámaras.
 
+---
+
+### 🚀 Hito 215: Erradicación Definitiva de la "Pieza Fantasma", Blindaje Asíncrono CAD ➔ Cinemática Three.js (`useFrame` Pre-Render), Cancelación de Hover Fantasma e Inmutabilidad de Escala en `3dBimFab` (25 de Septiembre, 2026)
+- **Motivación & Diagnóstico Profundo de la Falla ("Pieza Fantasma")**:
+  * *Síntoma Reportado*: Al cargar la Cómoda Ravenna en el Paso P03, la `Peça 5` (lámina frontal de melamina) aparecía suspendida en el aire en su posición final de armado desde el segundo cero ($t = 0\text{s}$). Al avanzar la animación hasta el instante de su colocación ($t = 122\text{s}$), solo se animaba el núcleo de MDP, mientras que la melamina permanecía congelada flotando arriba.
+  * *El Patrón Revelador*: El usuario descubrió que al apagar y volver a encender la capa en la interfaz (ojito), la pieza desaparecía mágicamente y se reposicionaba abajo en el piso en su pose correcta de espera. Sin embargo, al recargar la página o reiniciar Google Chrome, la pieza volvía a aparecer arriba flotando.
+  * *Causa Raíz Arquitectónica (Desconexión Asíncrona CAD $\to$ Motor Cinemático)*:
+    1. RhinoCompute tarda aproximadamente $2.2\text{ segundos}$ (`POST /api/compute 200 in 2268ms`) en resolver el archivo paramétrico Grasshopper `.ghx` y transferir las 568 mallas al frontend.
+    2. El controlador de animación (`AssemblyAnimationController.tsx`) se montaba de inmediato con el contenedor Three.js vacío (0 mallas). El `AnimationMixer` compilaba sobre 0 mallas.
+    3. Cuando las 568 mallas finalmente llegaban e ingresaban al grafo de escena, ningún observador notificaba al motor de animación que debía re-compilar. Por ello, las mallas conservaban la pose original de diseño CAD (posición final arriba en el mueble).
+    4. Al apagar y prender la capa, `toggleVisibilidadCapaPlus` incrementaba `versionAnimacionManual`, obligando al controlador a re-compilar sobre las mallas que ya estaban en memoria y aplicando el frame inicial $t = 0.0001\text{s}$ (oculta en el suelo).
+  * *Causa del Micro-Destello (200 ms)*: La primera versión del observador empleaba `setInterval(..., 200)`. Durante esos 200 ms (unos 12 fotogramas de pantalla a 60 FPS), la pieza era visible en sus coordenadas CAD antes de que el temporizador despertara al motor cinemático.
+  * *Hover Fantasma y Aumento de Escala*: En `BoardMesh.tsx`, una excepción en la visibilidad (`!visibilidad.isMeshVisible && !estaHoveredEnHerrajes`) forzaba a la pieza a renderizarse en la escena si el usuario rozaba su cápsula en la interfaz, incluso si su tiempo de aparición era en el segundo 122. Además, se le aplicaba un inflado de escala a $1.08\times$ que rompía el rigor dimensional milimétrico del despiece.
+- **Implementación Técnica de la Solución (Blindaje en 5 Niveles)**:
+  1. **Sincronización Instantánea Pre-Render a 60 FPS (`AssemblyAnimationController.tsx` con `useFrame`)**:
+     * Se erradicó el temporizador de 200 ms y se sustituyó por un hook de ciclo directo `useFrame` de `@react-three/fiber`.
+     * `useFrame` se ejecuta en el bucle gráfico de WebGL **inmediatamente antes de pintar el fotograma en pantalla**.
+     * En el milisegundo exacto en que la cuenta de mallas pasa de 0 a 568 (`count > 0 && count !== lastCompiledMeshCountRef.current`), el controlador compila la cinemática (`compilarAnimacionPaso`) y evalúa $t = 0\text{s}$ **antes de que la tarjeta de video envíe el primer píxel al canvas**.
+     * **Resultado**: 0 ms de destello visual, 100% imperceptible desde el primer fotograma.
+  2. **Disparo Redundante al Anotar Mallas (`SingleFurnitureInstanceMesh.tsx`)**:
+     * Incorporado `useEffect` que dispara `despertarAnimacionManual()` en el instante en que `annotatedMeshes.length > 0`.
+  3. **Erradicación Definitiva del "Hover Fantasma" (`BoardMesh.tsx`)**:
+     * Regla estricta sin excepciones: `if (!visibilidad.isMeshVisible) return null;`.
+     * Si una pieza no ha nacido en la línea de tiempo ($t < t_{\text{aparición}}$), es matemáticamente imposible que se renderice en el escenario por rozar o hacer clic en su cápsula.
+  4. **Inmutabilidad Dimensional en Tableros de Madera (`BoardMesh.tsx`)**:
+     * Factor de escala `escalaEfectiva`: Los tableros de madera (`isWoodBoard`) tienen su escala estrictamente fijada en $1.0\times$ (sin inflado ni distorsión geométrica; solo se altera su material/emissive para feedback visual). El factor $1.08\times$ se restringió con exclusividad a herrajes pequeños (`isHardware`).
+  5. **Limpieza de Estados de Hover & Regreso a Cámara Libre**:
+     * Añadidas rutinas de limpieza (`return () => onHover(null)`) en `CapsulaTableroPlus.tsx`, `CapsulaHerrajePlus.tsx` y botones de gestión en `CapaMultiplePlusCard.tsx`, evitando piezas iluminadas en amarillo residuales al manipular capas.
+     * En `manualStepsSlice.ts`, al cerrar el Simulador Móvil se restablece automáticamente a **Cámara Libre** (`camaraCinematicaActiva: false`).
+     * En `BlenderTimeline.tsx`, el botón "Fijar" queda deshabilitado en gris (`cursor-not-allowed`, `opacity-50`) mientras el usuario esté en Cámara Libre.
+- **Validación de Calidad**:
+  * Compilación TypeScript verificada (`npx tsc --noEmit`) con **código 0 (cero errores)**.
+  * Pruebas de usuario: pieza fantasma erradicada a 0 ms de latencia tanto al recargar el navegador como al reiniciar Google Chrome desde cero.
+
+

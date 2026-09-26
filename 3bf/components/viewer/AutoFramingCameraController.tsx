@@ -79,7 +79,7 @@ export function AutoFramingCameraController({ controlsRef }: AutoFramingCameraCo
       (pasoActivo?.keyframesCamara?.length || 0) > 0 &&
       pasoActivo?.camaraCinematicaActiva !== false;
 
-    if (pestanaActiva !== "manual" || !pasoActivo || !autoEnfoqueCamaraManual) return;
+    if (pestanaActiva !== "manual" || !pasoActivo || !autoEnfoqueCamaraManual || tieneKeyframesCinematicos) return;
     if (!controlsRef.current || !camera) return;
 
     const piezasEspera = pasoActivo.configuracionCinematica?.piezasEspera || [];
@@ -229,7 +229,7 @@ export function AutoFramingCameraController({ controlsRef }: AutoFramingCameraCo
       (pasoActivo?.keyframesCamara?.length || 0) > 0 &&
       pasoActivo?.camaraCinematicaActiva !== false;
 
-    if (pestanaActiva !== "manual" || !autoEnfoqueCamaraManual) return;
+    if (pestanaActiva !== "manual" || !autoEnfoqueCamaraManual || tieneKeyframesCinematicos) return;
     if (usuarioInteractuandoRef.current) return;
     const controls = controlsRef.current;
     if (!controls || !camera) return;

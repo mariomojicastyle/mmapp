@@ -25,6 +25,13 @@ export function CapsulaHerrajePlus({
   onRemover,
   onToggleCongelar,
 }: CapsulaHerrajePlusProps) {
+  // 🛡️ Al desmontar la cápsula (por ejemplo al eliminarla), limpiar el hover inmediatamente
+  React.useEffect(() => {
+    return () => {
+      onHover(null);
+    };
+  }, [onHover]);
+
   return (
     <div
       onMouseEnter={() => onHover([herraje.id])}
@@ -106,6 +113,7 @@ export function CapsulaHerrajePlus({
         type="button"
         onClick={(e) => {
           e.stopPropagation();
+          onHover(null);
           onRemover(herraje.id);
         }}
         title={`Eliminar ${herraje.id} de esta capa`}

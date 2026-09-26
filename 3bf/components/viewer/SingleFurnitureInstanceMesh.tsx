@@ -109,6 +109,13 @@ export function SingleFurnitureInstanceMesh({
     return anotarInstanciasFisicas(cleanRealMeshes);
   }, [inst.resultado?.real_meshes, mostrarDuplicadosRojos]);
 
+  // ⚡ Sincronización de montaje de mallas: Notificar al motor de cinemática para aplicar clips t=0
+  useEffect(() => {
+    if (annotatedMeshes.length > 0) {
+      use3BFStore.getState().despertarAnimacionManual();
+    }
+  }, [annotatedMeshes.length]);
+
   // 📐 Cálculo de Orientación en Banco de Trabajo y Apoyo Físico en Suelo (Y = 0)
   const { rotacionEfectiva, posicionEfectiva } = useMemo(() => {
     const basePos: [number, number, number] = isSelected && modoTransformacion === "grab" 

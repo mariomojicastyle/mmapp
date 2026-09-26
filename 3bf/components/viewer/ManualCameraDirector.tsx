@@ -13,11 +13,20 @@ interface ManualCameraDirectorProps {
  * 🎥 ManualCameraDirector
  * 
  * Controlador de Dirección Cinematográfica de Cámara en 3dBimFab.
- * - Lee los keyframes de cámara (tiempo, posición, target) guardados para el paso activo.
- * - En modo reproducción o arrastre del timeline, interpola con suavidad continua (smoothstep)
- *   tanto la posición de la cámara (camera.position) como el centro focal (controls.target).
- * - Cede el control de forma transparente al instante si el usuario interactúa manualmente con el mouse/órbita.
- * - Si no hay keyframes o si camaraCinematicaActiva === false, deja la cámara en modo libre.
+ * Arquitectura de Cámara Desacoplada sin Libre Albedrío:
+ * 
+ * 1. MODO PELÍCULA (Bloqueado / Determinista):
+ *    - Cuando el paso tiene keyframes y la cámara cinematográfica está activa.
+ *    - La posición, target y FOV se evalúan como una función matemática pura F(t)
+ *      utilizando interpolación Hermite cúbica suave (C1-continua).
+ *    - Se aplican de forma instantánea y pura (copy), eliminando cualquier retardo
+ *      temporal (lerp secundario) y fricción inercial de OrbitControls.
+ *    - Cero variaciones o derivas tanto en reproducción como en pausa.
+ * 
+ * 2. MODO ENCUADRE / CALIBRACIÓN (Cámara de Trabajo):
+ *    - Se activa deliberadamente cuando el usuario selecciona un keyframe para editarlo (rombo verde).
+ *    - Libera el control de la cámara para permitir orbitar, panear y componer la toma.
+ *    - Al hacer segundo clic (rombo amarillo), se guarda la pose y se vuelve a bloquear inmediatamente.
  */
 export function ManualCameraDirector({ controlsRef }: ManualCameraDirectorProps) {
   const { camera } = useThree();
@@ -27,14 +36,11 @@ export function ManualCameraDirector({ controlsRef }: ManualCameraDirectorProps)
   const timelineCurrentTime = use3BFStore((s) => s.timelineCurrentTime);
   const isTimelinePlaying = use3BFStore((s) => s.isTimelinePlaying);
   const autoEnfoqueCamaraManual = use3BFStore((s) => s.autoEnfoqueCamaraManual);
+  const modoEncuadreCamaraManual = use3BFStore((s) => s.modoEncuadreCamaraManual);
 
   const pasoActivo = pasosManual.find((p) => p.id === pasoActivoManualId);
   const keyframes = pasoActivo?.keyframesCamara || [];
-  const camaraActiva = pasoActivo?.camaraCinematicaActiva ?? true;
-
-  // Detección de interacción manual del usuario en el viewport
-  const usuarioInteractuandoRef = useRef<boolean>(false);
-  const timeoutInteraccionRef = useRef<NodeJS.Timeout | null>(null);
+  const camaraActiva = Boolean(pasoActivo?.camaraCinematicaActiva === true);
 
   // Control de animación transitoria cuando se hace clic en un keyframe para saltar a él
   const transicionSaltoRef = useRef<{
@@ -49,37 +55,16 @@ export function ManualCameraDirector({ controlsRef }: ManualCameraDirectorProps)
     tiempoRestante: 0,
   });
 
-  // Vectores temporales para evitar garbage collection en el render loop
+  // Vectores temporales para cálculo determinista de alto rendimiento
   const tempPos = useRef(new THREE.Vector3());
   const tempTarget = useRef(new THREE.Vector3());
+  const tempFov = useRef<number>(45);
 
-  // 1. Escuchar eventos de OrbitControls para conceder prioridad absoluta a la mano humana
   useEffect(() => {
     const controls = controlsRef.current;
     if (!controls) return;
 
-    const onStart = () => {
-      usuarioInteractuandoRef.current = true;
-      transicionSaltoRef.current.activa = false;
-      if (timeoutInteraccionRef.current) {
-        clearTimeout(timeoutInteraccionRef.current);
-      }
-    };
-
-    const onEnd = () => {
-      if (timeoutInteraccionRef.current) {
-        clearTimeout(timeoutInteraccionRef.current);
-      }
-      // Cuando el usuario suelta el mouse, no bloqueamos la cámara: permanece libre
-      timeoutInteraccionRef.current = setTimeout(() => {
-        usuarioInteractuandoRef.current = false;
-      }, 300);
-    };
-
-    controls.addEventListener("start", onStart);
-    controls.addEventListener("end", onEnd);
-
-    // Exponer función de captura instantánea en window para el botón del Scrubber
+    // Exponer función de captura instantánea en window para el botón del Scrubber / Calibrador
     (window as any).__obtenerPoseCamara3BF = () => {
       const pos: [number, number, number] = [
         Number(camera.position.x.toFixed(4)),
@@ -103,53 +88,26 @@ export function ManualCameraDirector({ controlsRef }: ManualCameraDirectorProps)
     ) => {
       transicionSaltoRef.current.posDestino.set(pos[0], pos[1], pos[2]);
       transicionSaltoRef.current.targetDestino.set(target[0], target[1], target[2]);
-      transicionSaltoRef.current.tiempoRestante = 0.6; // 600ms de transición fluida
+      transicionSaltoRef.current.tiempoRestante = 0.5; // 500ms de transición fluida
       transicionSaltoRef.current.activa = true;
-      usuarioInteractuandoRef.current = false;
     };
 
     // Exponer función para forzar encuadre cinematográfico inmediato al tiempo actual
     (window as any).__restaurarCamaraCinematica3BF = () => {
-      ultimoTiempoRef.current = -1;
-      usuarioInteractuandoRef.current = false;
       transicionSaltoRef.current.activa = false;
     };
 
     return () => {
-      controls.removeEventListener("start", onStart);
-      controls.removeEventListener("end", onEnd);
       delete (window as any).__obtenerPoseCamara3BF;
       delete (window as any).__saltarAKeyframeCamara3BF;
       delete (window as any).__restaurarCamaraCinematica3BF;
-      if (timeoutInteraccionRef.current) {
-        clearTimeout(timeoutInteraccionRef.current);
-      }
     };
   }, [camera, controlsRef]);
 
-  // Seguimiento de último tiempo y paso evaluado para responder a clics y cambios de fotograma
-  const ultimoTiempoRef = useRef<number>(-1);
-  const ultimoPasoIdRef = useRef<string>("");
-  const encuadreInicialRealizadoRef = useRef<boolean>(false);
-
-  // Si cambia de paso o se monta por primera vez, forzamos encuadre inicial al tiempo actual
-  useEffect(() => {
-    if (pasoActivoManualId !== ultimoPasoIdRef.current) {
-      ultimoPasoIdRef.current = pasoActivoManualId;
-      ultimoTiempoRef.current = -1;
-      usuarioInteractuandoRef.current = false;
-      encuadreInicialRealizadoRef.current = false;
-    }
-  }, [pasoActivoManualId]);
-
-  // Si el usuario da "Play", reanudamos inmediatamente el modo director
+  // Si el usuario da "Play", cancelamos transiciones de salto para seguir la curva
   useEffect(() => {
     if (isTimelinePlaying) {
-      usuarioInteractuandoRef.current = false;
       transicionSaltoRef.current.activa = false;
-      if (timeoutInteraccionRef.current) {
-        clearTimeout(timeoutInteraccionRef.current);
-      }
     }
   }, [isTimelinePlaying]);
 
@@ -161,129 +119,96 @@ export function ManualCameraDirector({ controlsRef }: ManualCameraDirectorProps)
     const controls = controlsRef.current;
     if (!controls) return;
 
+    // 🟢 Si el usuario tiene un keyframe en MODO ENCUADRE (Verde), la cámara permanece 100% libre para componer
+    const isEditingKeyframe = modoEncuadreCamaraManual || (window as any).__isEditingKeyframeCamera3BF === true;
+    if (isEditingKeyframe) return;
+
     // A. Manejo de transición suave hacia un keyframe seleccionado (cuando el usuario hace clic en el rombo)
     if (transicionSaltoRef.current.activa) {
-      if (usuarioInteractuandoRef.current) {
-        transicionSaltoRef.current.activa = false;
-        return;
-      }
-
       transicionSaltoRef.current.tiempoRestante -= delta;
-      const factorLerp = Math.min(1.0, delta * 8.0);
+      const factorLerp = Math.min(1.0, delta * 10.0);
       camera.position.lerp(transicionSaltoRef.current.posDestino, factorLerp);
       controls.target.lerp(transicionSaltoRef.current.targetDestino, factorLerp);
+      camera.lookAt(controls.target);
       controls.update();
 
       if (transicionSaltoRef.current.tiempoRestante <= 0) {
+        camera.position.copy(transicionSaltoRef.current.posDestino);
+        controls.target.copy(transicionSaltoRef.current.targetDestino);
+        camera.lookAt(controls.target);
+        controls.update();
         transicionSaltoRef.current.activa = false;
       }
       return;
     }
 
-    // B. MODO LIBRE vs SEGUIMIENTO INTELIGENTE:
-    // Si el usuario está orbitando manualmente con el mouse, respetamos su mano al 100%
-    if (usuarioInteractuandoRef.current) return;
-
-    // 🟢 Si el usuario tiene un keyframe en MODO ENCUADRE (Verde), la cámara permanece 100% libre para reposicionar
-    const isEditingKeyframe = (window as any).__isEditingKeyframeCamera3BF === true;
-    if (isEditingKeyframe) return;
-
-    const isScrubbing = (window as any).__isTimelineScrubbing === true;
-    const tiempoCambio = Math.abs(timelineCurrentTime - ultimoTiempoRef.current) > 0.01;
-
-    // Si está pausado, no está haciendo scrubbing y la cámara ya se asentó en este tiempo, queda libre
-    if (!isTimelinePlaying && !isScrubbing && !tiempoCambio) {
-      return;
-    }
-
+    // B. MODO CÁMARA CINEMATOGRÁFICA (EVALUACIÓN MATEMÁTICA EXACTA F(t))
     const t = Math.max(0, timelineCurrentTime);
 
-    // Caso 1: Solo 1 keyframe definido -> la cámara se alinea suavemente con ese único ángulo
+    // Caso 1: Solo 1 keyframe definido -> Bloqueo exacto a ese ángulo
     if (keyframes.length === 1) {
       const kf = keyframes[0];
       tempPos.current.set(kf.posicion[0], kf.posicion[1], kf.posicion[2]);
       tempTarget.current.set(kf.target[0], kf.target[1], kf.target[2]);
-
-      const factorLerp = Math.min(1.0, delta * 5.0);
-      camera.position.lerp(tempPos.current, factorLerp);
-      controls.target.lerp(tempTarget.current, factorLerp);
-      controls.update();
-
-      if (!isTimelinePlaying && camera.position.distanceTo(tempPos.current) < 0.005) {
-        ultimoTiempoRef.current = timelineCurrentTime;
-      }
-      return;
+      tempFov.current = kf.fov || 45;
     }
-
-    // Caso 2: Múltiples keyframes ordenados cronológicamente
-    if (t <= keyframes[0].tiempo) {
+    // Caso 2: Antes del primer keyframe
+    else if (t <= keyframes[0].tiempo) {
       const kf = keyframes[0];
       tempPos.current.set(kf.posicion[0], kf.posicion[1], kf.posicion[2]);
       tempTarget.current.set(kf.target[0], kf.target[1], kf.target[2]);
-
-      const factorLerp = Math.min(1.0, delta * 6.0);
-      camera.position.lerp(tempPos.current, factorLerp);
-      controls.target.lerp(tempTarget.current, factorLerp);
-      controls.update();
-
-      if (!isTimelinePlaying && camera.position.distanceTo(tempPos.current) < 0.005) {
-        ultimoTiempoRef.current = timelineCurrentTime;
-      }
-      return;
+      tempFov.current = kf.fov || 45;
     }
-
-    const ultimoKf = keyframes[keyframes.length - 1];
-    if (t >= ultimoKf.tiempo) {
+    // Caso 3: Después del último keyframe
+    else if (t >= keyframes[keyframes.length - 1].tiempo) {
+      const ultimoKf = keyframes[keyframes.length - 1];
       tempPos.current.set(ultimoKf.posicion[0], ultimoKf.posicion[1], ultimoKf.posicion[2]);
       tempTarget.current.set(ultimoKf.target[0], ultimoKf.target[1], ultimoKf.target[2]);
+      tempFov.current = ultimoKf.fov || 45;
+    }
+    // Caso 4: Interpolación Hermite cúbica suave entre el par de keyframes activo [kfA, kfB]
+    else {
+      let kfA = keyframes[0];
+      let kfB = keyframes[1];
 
-      const factorLerp = Math.min(1.0, delta * 6.0);
-      camera.position.lerp(tempPos.current, factorLerp);
-      controls.target.lerp(tempTarget.current, factorLerp);
-      controls.update();
-
-      if (!isTimelinePlaying && camera.position.distanceTo(tempPos.current) < 0.005) {
-        ultimoTiempoRef.current = timelineCurrentTime;
+      for (let i = 0; i < keyframes.length - 1; i++) {
+        if (t >= keyframes[i].tiempo && t < keyframes[i + 1].tiempo) {
+          kfA = keyframes[i];
+          kfB = keyframes[i + 1];
+          break;
+        }
       }
-      return;
+
+      const duracionSegmento = Math.max(0.0001, kfB.tiempo - kfA.tiempo);
+      const alphaLineal = Math.max(0, Math.min(1, (t - kfA.tiempo) / duracionSegmento));
+
+      // Función Smoothstep Hermite cúbica: 3α² - 2α³ (aceleración y desaceleración fluida sin picos)
+      const alphaSuave = alphaLineal * alphaLineal * (3 - 2 * alphaLineal);
+
+      const vPosA = new THREE.Vector3(kfA.posicion[0], kfA.posicion[1], kfA.posicion[2]);
+      const vPosB = new THREE.Vector3(kfB.posicion[0], kfB.posicion[1], kfB.posicion[2]);
+      const vTargetA = new THREE.Vector3(kfA.target[0], kfA.target[1], kfA.target[2]);
+      const vTargetB = new THREE.Vector3(kfB.target[0], kfB.target[1], kfB.target[2]);
+
+      tempPos.current.lerpVectors(vPosA, vPosB, alphaSuave);
+      tempTarget.current.lerpVectors(vTargetA, vTargetB, alphaSuave);
+
+      const fovA = kfA.fov || 45;
+      const fovB = kfB.fov || 45;
+      tempFov.current = fovA + (fovB - fovA) * alphaSuave;
     }
 
-    // Encontrar el segmento [kfA, kfB] tal que kfA.tiempo <= t < kfB.tiempo
-    let kfA = keyframes[0];
-    let kfB = keyframes[1];
+    // 🎯 APLICACIÓN DIRECTA Y DETERMINISTA (Cero lag, cero arrastre inercial, cero libre albedrío)
+    camera.position.copy(tempPos.current);
+    controls.target.copy(tempTarget.current);
 
-    for (let i = 0; i < keyframes.length - 1; i++) {
-      if (t >= keyframes[i].tiempo && t < keyframes[i + 1].tiempo) {
-        kfA = keyframes[i];
-        kfB = keyframes[i + 1];
-        break;
-      }
+    if (tempFov.current && "fov" in camera && (camera as THREE.PerspectiveCamera).fov !== tempFov.current) {
+      (camera as THREE.PerspectiveCamera).fov = tempFov.current;
+      (camera as THREE.PerspectiveCamera).updateProjectionMatrix();
     }
 
-    const duracionSegmento = Math.max(0.001, kfB.tiempo - kfA.tiempo);
-    const alphaLineal = Math.max(0, Math.min(1, (t - kfA.tiempo) / duracionSegmento));
-
-    // Función Smoothstep (Hermite cúbico) para aceleración y desaceleración suave cinemática
-    const alphaSuave = alphaLineal * alphaLineal * (3 - 2 * alphaLineal);
-
-    const vPosA = new THREE.Vector3(kfA.posicion[0], kfA.posicion[1], kfA.posicion[2]);
-    const vPosB = new THREE.Vector3(kfB.posicion[0], kfB.posicion[1], kfB.posicion[2]);
-    const vTargetA = new THREE.Vector3(kfA.target[0], kfA.target[1], kfA.target[2]);
-    const vTargetB = new THREE.Vector3(kfB.target[0], kfB.target[1], kfB.target[2]);
-
-    // Interpolación de posición y punto focal
-    tempPos.current.lerpVectors(vPosA, vPosB, alphaSuave);
-    tempTarget.current.lerpVectors(vTargetA, vTargetB, alphaSuave);
-
-    // Suavizado dinámico por delta para asegurar 60 FPS sin saltos
-    const factorLerp = Math.min(1.0, delta * 12.0);
-    camera.position.lerp(tempPos.current, factorLerp);
-    controls.target.lerp(tempTarget.current, factorLerp);
+    camera.lookAt(controls.target);
     controls.update();
-
-    if (!isTimelinePlaying && camera.position.distanceTo(tempPos.current) < 0.005) {
-      ultimoTiempoRef.current = timelineCurrentTime;
-    }
   });
 
   return null;

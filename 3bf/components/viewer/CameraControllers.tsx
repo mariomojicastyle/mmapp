@@ -5,11 +5,18 @@ import * as THREE from "three";
 import { useThree } from "@react-three/fiber";
 import { use3BFStore } from "@/lib/store";
 
-export function BlenderNavigationController({ controlsRef }: { controlsRef: React.RefObject<any> }) {
+export function BlenderNavigationController({ 
+  controlsRef, 
+  bloqueado = false 
+}: { 
+  controlsRef: React.RefObject<any>; 
+  bloqueado?: boolean; 
+}) {
   const { camera, gl } = useThree();
   const { modoTransformacion } = use3BFStore();
 
   useEffect(() => {
+    if (bloqueado) return;
     const domElement = gl.domElement;
     let isMiddleDragging = false;
     let isCtrlZooming = false;
@@ -421,6 +428,15 @@ export function CameraPersistenceController({ controlsRef }: { controlsRef: Reac
       if (debounceTimer) clearTimeout(debounceTimer);
       debounceTimer = setTimeout(() => {
         if (!camera || !controls) return;
+
+        // 🛡️ NUNCA sobreescribir la cámara si estamos en la pestaña manual y el paso tiene keyframes cinemáticos
+        const estadoStore = use3BFStore.getState();
+        if (estadoStore.pestanaActiva === "manual") {
+          const pasoActual = estadoStore.pasosManual.find((p) => p.id === estadoStore.pasoActivoManualId);
+          if (pasoActual && (pasoActual.keyframesCamara?.length || 0) > 0 && pasoActual.camaraCinematicaActiva !== false) {
+            return;
+          }
+        }
 
         const pos = camera.position;
         const tgt = controls.target;

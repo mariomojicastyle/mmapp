@@ -303,9 +303,9 @@ export function BoardMesh({
     matProps.capaAsignada,
   ]);
 
-  // Si está oculta por reglas del paso, subbloque, cinemática o capa: retorno temprano limpio
-  // (Excepción: si el usuario está haciendo hover sobre la cápsula de este herraje en la interfaz, se muestra para poder iluminarse)
-  if (!visibilidad.isMeshVisible && !estaHoveredEnHerrajes) {
+  // Si está oculta por reglas del paso, subbloque, cinemática o capa: retorno temprano limpio estricto
+  // 🛡️ REGLA CANÓNICA: Las piezas ocultas NUNCA deben forzarse en escena por hover sobre cápsulas
+  if (!visibilidad.isMeshVisible) {
     return null;
   }
 
@@ -382,12 +382,19 @@ export function BoardMesh({
   const activeRoughness = modoVisual === "renderizado" ? pbrMaps.roughness : null;
   const activeAO = modoVisual === "renderizado" ? pbrMaps.ao : null;
 
+  // 📐 Escala interactiva: En tableros de madera NUNCA se altera la escala física por hover. Solo en herrajes pequeños para visibilidad.
+  const escalaEfectiva: [number, number, number] | undefined = esDuplicado
+    ? [1.06, 1.06, 1.06]
+    : (estaHoveredEnHerrajes
+        ? (isHardware ? [1.08, 1.08, 1.08] : undefined)
+        : (estaSeleccionadaEnPicking ? [1.015, 1.015, 1.015] : undefined));
+
   if (customGeometry) {
     return (
       <mesh 
         ref={meshRef}
         position={position}
-        scale={esDuplicado ? [1.06, 1.06, 1.06] : (estaHoveredEnHerrajes ? [1.08, 1.08, 1.08] : (estaSeleccionadaEnPicking ? [1.015, 1.015, 1.015] : undefined))}
+        scale={escalaEfectiva}
         renderOrder={esDuplicado ? 20 : (estaHoveredEnHerrajes ? 50 : (estaSeleccionadaEnPicking ? 22 : (isHardwareTampa ? 25 : (esLaminaPlanaMadera ? 2 : undefined))))}
         name={instanciaKey ? `${instanciaKey}::${cleanName}` : cleanName}
         geometry={customGeometry}
@@ -515,7 +522,7 @@ export function BoardMesh({
     <mesh
       ref={meshRef}
       position={position}
-      scale={esDuplicado ? [1.06, 1.06, 1.06] : (estaHoveredEnHerrajes ? [1.08, 1.08, 1.08] : (estaSeleccionadaEnPicking ? [1.015, 1.015, 1.015] : undefined))}
+      scale={escalaEfectiva}
       renderOrder={esDuplicado ? 20 : (estaHoveredEnHerrajes ? 50 : (estaSeleccionadaEnPicking ? 22 : (isHardwareTampa ? 25 : undefined)))}
       name={cleanName}
       onClick={(e) => {
