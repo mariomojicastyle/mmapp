@@ -13,7 +13,7 @@ import AIRenderStudioModal from "@/components/ui/AIRenderStudioModal";
 import PBRMaterialStudioModal from "@/components/ui/PBRMaterialStudioModal";
 import NPanel from "@/components/viewer/NPanel";
 import { use3BFStore, APP_VERSION } from "@/lib/store";
-import { Box, Layers, Cpu, CheckCircle2, AlertCircle, Database, Camera, Check, Sparkles, BookOpen } from "lucide-react";
+import { Box, Layers, Cpu, CheckCircle2, AlertCircle, Database, Camera, Check, Sparkles, BookOpen, BoxSelect } from "lucide-react";
 import { IconModoLineas, IconModoCristal, IconModoSolido, IconModoRender } from "@/components/ui/ControlPanel";
 
 function DocumentTitleEditor() {
@@ -118,6 +118,8 @@ export default function Home3BF() {
     setEsquemaColor,
     modoVisual,
     setModoVisual,
+    calibracion,
+    setCalibracion,
     parametros,
     anchoPanelDerecho,
     setAnchoPanelDerecho,
@@ -593,6 +595,34 @@ export default function Home3BF() {
               }`}
             >
               <IconModoRender className="w-2.5 lg:w-3.5 h-2.5 lg:h-3.5" />
+            </button>
+          </div>
+
+          {/* Botón de Aristas Técnicas CAD (Cápsula rounded-full) */}
+          <div
+            style={{ 
+              borderColor: coloresApariencia?.insigniaFondo || coloresApariencia?.bordePaneles,
+              backgroundColor: coloresApariencia?.panelContenedor || "#E2E8F0"
+            }}
+            className="p-0.5 lg:p-1 rounded-full border shadow-inner h-[22px] lg:h-9 shrink-0 flex items-center justify-center"
+          >
+            <button
+              onClick={() => setCalibracion("mostrarAristas", !(calibracion.mostrarAristas !== false))}
+              title={
+                calibracion.mostrarAristas !== false
+                  ? "Aristas Técnicas CAD: Visibles (Clic para ocultar)"
+                  : "Aristas Técnicas CAD: Ocultas (Clic para mostrar)"
+              }
+              style={
+                calibracion.mostrarAristas !== false
+                  ? { backgroundColor: coloresApariencia?.botonActivo || "#0891b2", borderColor: coloresApariencia?.colorMarca || "#0891b2", color: "#FFFFFF" }
+                  : { backgroundColor: coloresApariencia?.botonInactivo || "#E2E8F0", borderColor: coloresApariencia?.bordeBotonInactivo || "#CBD5E1", color: coloresApariencia?.textoPrincipal || "#0F172A" }
+              }
+              className={`w-[18px] lg:w-7 h-[18px] lg:h-7 rounded-full border flex items-center justify-center transition cursor-pointer ${
+                calibracion.mostrarAristas !== false ? "shadow-md" : "hover:opacity-90 backdrop-blur-sm"
+              }`}
+            >
+              <BoxSelect className="w-2.5 lg:w-3.5 h-2.5 lg:h-3.5 shrink-0" />
             </button>
           </div>
 

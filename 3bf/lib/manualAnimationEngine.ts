@@ -81,6 +81,20 @@ export function compilarAnimacionPaso(
   const sceneMeshes: THREE.Mesh[] = [];
   const sceneObjects = new Map<string, THREE.Object3D>();
   rootScene.traverse((child) => {
+    // 🛡️ REGLA SUPREMA: NUNCA procesar líneas de contorno Drei Edges, wireframes ni helpers visuales como mallas de ensamble
+    const isAuxiliary = (child as any).isLine ||
+      (child as any).isLine2 ||
+      (child as any).isLineSegments ||
+      (child as any).isLineSegments2 ||
+      child.type?.includes("Line") ||
+      child.name?.includes("Edges") ||
+      (child as any).userData?.isWireframeHelper ||
+      (child as any).userData?.__esHelperVisual ||
+      Boolean(child.parent && (child.parent as THREE.Mesh).isMesh);
+    if (isAuxiliary) {
+      return;
+    }
+
     if ((child as THREE.Mesh).isMesh || (child as THREE.Group).isGroup) {
       // 🛡️ Si el nodo es el grupo raíz de la escena o mueble, no sobreescribir su posición/rotación
       if (child === rootScene) {

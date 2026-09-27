@@ -13,6 +13,7 @@ import type {
   TableroCapaPlus,
   HerrajeCapaPlus,
   MultiplePlusConfigPaso,
+  OffsetBancoCm,
 } from "../../storeTypes";
 
 export const createManualMultiplePlusSlice = (set: any, get: any): any => ({
@@ -379,7 +380,7 @@ export const createManualMultiplePlusSlice = (set: any, get: any): any => ({
             if (c.id !== capaId) return c;
             return {
               ...c,
-              herrajes: c.herrajes.map((h: any) =>
+              herrajes: (c.herrajes || []).map((h: any) =>
                 h.id === herrajeId ? { ...h, ...partial } : h
               ),
               congelados: (c.congelados || []).map((h: any) =>
@@ -522,7 +523,7 @@ export const createManualMultiplePlusSlice = (set: any, get: any): any => ({
   },
 
   // 13. Pieza Master de la capa
-  setPiezaMasterPlus: (pasoId: string, capaId: string, masterName: string) => {
+  setPiezaMasterPlus: (pasoId: string, capaId: string, masterName?: string) => {
     const state = get();
     const actualizados = state.pasosManual.map((p: any) => {
       if (p.id !== pasoId || !p.multiplePlus) return p;
@@ -531,8 +532,66 @@ export const createManualMultiplePlusSlice = (set: any, get: any): any => ({
         multiplePlus: {
           ...p.multiplePlus,
           capas: (p.multiplePlus.capas || []).map((c: any) =>
-            c.id === capaId ? { ...c, piezaMaster: masterName } : c
+            c.id === capaId ? { ...c, piezaMaster: masterName || undefined } : c
           ),
+        },
+      };
+    });
+
+    set({ pasosManual: actualizados, versionAnimacionManual: (state.versionAnimacionManual || 0) + 1 });
+    guardarPasosEnCacheLocal(actualizados, state.manualActivoGuardado);
+  },
+
+  definirPiezaMasterPlus: (pasoId: string, capaId: string, masterName?: string) => {
+    get().setPiezaMasterPlus(pasoId, capaId, masterName);
+  },
+
+  // 13.1 Desplazamiento del Subensamble en Banco de Trabajo (Offset X, Y, Z)
+  actualizarOffsetBancoMasterPlus: (pasoId: string, capaId: string, offset: Partial<OffsetBancoCm>) => {
+    const state = get();
+    const actualizados = state.pasosManual.map((p: any) => {
+      if (p.id !== pasoId || !p.multiplePlus) return p;
+      return {
+        ...p,
+        multiplePlus: {
+          ...p.multiplePlus,
+          capas: (p.multiplePlus.capas || []).map((c: any) => {
+            if (c.id !== capaId) return c;
+            const actual = c.offsetBancoCm || { x: 0, y: 0, z: 0 };
+            return {
+              ...c,
+              offsetBancoCm: {
+                x: offset.x !== undefined ? offset.x : actual.x,
+                y: offset.y !== undefined ? offset.y : actual.y,
+                z: offset.z !== undefined ? offset.z : actual.z,
+              },
+            };
+          }),
+        },
+      };
+    });
+
+    set({ pasosManual: actualizados, versionAnimacionManual: (state.versionAnimacionManual || 0) + 1 });
+    guardarPasosEnCacheLocal(actualizados, state.manualActivoGuardado);
+  },
+
+  // 13.2 Tiempo y Duración del Acople Solidario al Mueble CAD
+  actualizarTiempoAcopleMasterPlus: (pasoId: string, capaId: string, tiempo?: number, duracion?: number) => {
+    const state = get();
+    const actualizados = state.pasosManual.map((p: any) => {
+      if (p.id !== pasoId || !p.multiplePlus) return p;
+      return {
+        ...p,
+        multiplePlus: {
+          ...p.multiplePlus,
+          capas: (p.multiplePlus.capas || []).map((c: any) => {
+            if (c.id !== capaId) return c;
+            return {
+              ...c,
+              tiempoAcopleSegundos: tiempo !== undefined ? tiempo : c.tiempoAcopleSegundos,
+              duracionAcopleSegundos: duracion !== undefined ? duracion : c.duracionAcopleSegundos,
+            };
+          }),
         },
       };
     });
@@ -933,10 +992,18 @@ export const createManualMultiplePlusSlice = (set: any, get: any): any => ({
               const pRest = getSafeRestPosition(child);
               const pHwRestWorld = child.parent ? child.parent.localToWorld(pRest.clone()) : pRest.clone();
               const tabAnfitrion = resolverTableroAnfitrionHerraje(pHwRestWorld, tablerosCapaRefs);
-              const offX = (tabAnfitrion?.offsetXCm || 0) / 100;
-              const offY = (tabAnfitrion?.offsetYCm || 0) / 100;
-              const offZ = (tabAnfitrion?.offsetZCm || 0) / 100;
-              const vOffset = new THREE.Vector3(offX, offY, offZ);
+              let vOffset = new THREE.Vector3(
+                (tabAnfitrion?.offsetXCm || 0) / 100,
+                (tabAnfitrion?.offsetYCm || 0) / 100,
+                (tabAnfitrion?.offsetZCm || 0) / 100
+              );
+
+              // 🎯 Si la pieza anfitriona está en la escena, sincronizar con su desplazamiento real en vivo
+              if (tabAnfitrion?.mesh) {
+                const pRestMesh = getSafeRestPosition(tabAnfitrion.mesh);
+                const curMeshPos = tabAnfitrion.mesh.position.clone();
+                vOffset.copy(curMeshPos.sub(pRestMesh));
+              }
 
               const pTarget = pRest.clone().add(vOffset);
               child.position.copy(pTarget);

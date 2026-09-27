@@ -433,7 +433,7 @@ export default function NPanel() {
           {/* ========================================================================= */}
           {/* VISTA 3: PESTAÑA CALIBRAR (Integración Completa del Calibrador 3D)         */}
           {/* ========================================================================= */}
-          {pestanaActiva !== "manual" && pestanaNPanel === "calibrar" && (
+          {pestanaNPanel === "calibrar" && (
             <div className="flex-1 min-w-0 overflow-y-auto p-3 space-y-4 custom-scrollbar text-xs">
               
               {/* Sección 1: Material del Tablero */}
@@ -1238,7 +1238,7 @@ export default function NPanel() {
           {/* ========================================================================= */}
           {/* VISTA 6: PESTAÑA APARIENCIA (Personalización de Colores Rhino 8 Style)    */}
           {/* ========================================================================= */}
-          {pestanaActiva !== "manual" && pestanaNPanel === "apariencia" && <AppearanceSettingsPanel />}
+          {pestanaNPanel === "apariencia" && <AppearanceSettingsPanel />}
 
           {/* Pie de Panel Informativo */}
           <div 
@@ -1267,24 +1267,79 @@ export default function NPanel() {
           className="w-7 lg:w-9 shrink-0 flex flex-col py-1.5 lg:py-2.5 px-0.5 lg:px-1 items-center gap-1 lg:gap-1.5 border-l select-none overflow-y-auto no-scrollbar touch-pan-y overscroll-contain"
         >
           {pestanaActiva === "manual" ? (
-            /* ── EN MODO MANUAL 3D: EXCLUSIVAMENTE LA PESTAÑA BLOQUES ESTÁNDAR ── */
-            <button
-              onClick={() => setPestanaNPanel("bloques_estandar")}
-              style={{
-                backgroundColor: coloresApariencia?.botonActivo || "#0284c7",
-                color: "#FFFFFF",
-              }}
-              title="Biblioteca de Bloques Estándar de Armado"
-              className="w-5.5 lg:w-7 py-2.5 px-0.5 lg:px-1 rounded-full flex flex-col items-center justify-center gap-1.5 transition-all cursor-pointer shadow-sm font-bold"
-            >
-              <Boxes className="w-3.5 lg:w-4 h-3.5 lg:h-4 shrink-0 text-white" />
-              <span
-                style={{ writingMode: "vertical-rl" }}
-                className="text-[8.5px] lg:text-[9.5px] tracking-wider font-sans leading-none font-bold text-white uppercase"
+            /* ── EN MODO MANUAL 3D: PESTAÑAS BLOQUES ESTÁNDAR, CALIBRAR Y APARIENCIA ── */
+            <>
+              <button
+                onClick={() => setPestanaNPanel("bloques_estandar")}
+                style={
+                  pestanaNPanel === "bloques_estandar"
+                    ? { backgroundColor: coloresApariencia?.botonActivo || "#0284c7", color: "#FFFFFF" }
+                    : { color: coloresApariencia?.textoPrincipal }
+                }
+                title="Biblioteca de Bloques Estándar de Armado"
+                className={`w-5.5 lg:w-7 py-2.5 px-0.5 lg:px-1 rounded-full flex flex-col items-center justify-center gap-1.5 transition-all cursor-pointer shadow-sm font-bold ${
+                  pestanaNPanel === "bloques_estandar" ? "" : "hover:opacity-80"
+                }`}
               >
-                Bloques Estándar
-              </span>
-            </button>
+                <Boxes className="w-3.5 lg:w-4 h-3.5 lg:h-4 shrink-0 text-white" />
+                <span
+                  style={{ writingMode: "vertical-rl" }}
+                  className="text-[8.5px] lg:text-[9.5px] tracking-wider font-sans leading-none font-bold text-white uppercase"
+                >
+                  Bloques Estándar
+                </span>
+              </button>
+
+              <div className="w-3 lg:w-4 h-px bg-slate-200 dark:bg-slate-700 my-0.5 lg:my-1" />
+
+              {/* Pestaña Vertical: Calibrar */}
+              <button
+                onClick={() => setPestanaNPanel("calibrar")}
+                style={
+                  pestanaNPanel === "calibrar"
+                    ? { backgroundColor: coloresApariencia?.botonActivo || "#0891b2", color: "#FFFFFF" }
+                    : { color: coloresApariencia?.textoPrincipal }
+                }
+                title="Calibración de Aristas y Renderizado 3D"
+                className={`w-5.5 lg:w-7 py-2 lg:py-2.5 px-0.5 lg:px-1 rounded-full flex flex-col items-center justify-center gap-1 lg:gap-1.5 transition-all cursor-pointer ${
+                  pestanaNPanel === "calibrar"
+                    ? "shadow-sm font-bold"
+                    : "hover:opacity-80"
+                }`}
+              >
+                <Sliders className="w-3 lg:w-3.5 h-3 lg:h-3.5 shrink-0" />
+                <span 
+                  style={{ writingMode: "vertical-rl" }}
+                  className="text-[8px] lg:text-[9px] tracking-wide font-sans leading-none font-semibold"
+                >
+                  Calibrar
+                </span>
+              </button>
+
+              {/* Pestaña Vertical: Apariencia */}
+              <button
+                onClick={() => setPestanaNPanel("apariencia")}
+                style={
+                  pestanaNPanel === "apariencia"
+                    ? { backgroundColor: coloresApariencia?.botonActivo || "#0891b2", color: "#FFFFFF" }
+                    : { color: coloresApariencia?.textoPrincipal }
+                }
+                title="Personalización de Apariencia y Colores"
+                className={`w-5.5 lg:w-7 py-2 lg:py-2.5 px-0.5 lg:px-1 rounded-full flex flex-col items-center justify-center gap-1 lg:gap-1.5 transition-all cursor-pointer ${
+                  pestanaNPanel === "apariencia"
+                    ? "shadow-sm font-bold"
+                    : "hover:opacity-80"
+                }`}
+              >
+                <Paintbrush className="w-3 lg:w-3.5 h-3 lg:h-3.5 shrink-0" />
+                <span 
+                  style={{ writingMode: "vertical-rl" }}
+                  className="text-[8px] lg:text-[9px] tracking-wide font-sans leading-none font-semibold"
+                >
+                  Apariencia
+                </span>
+              </button>
+            </>
           ) : (
             <>
             {/* Pestaña Vertical 1: Componentes */}

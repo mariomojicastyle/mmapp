@@ -1,6 +1,6 @@
 import { PasoManualStudio, ComputoResultado } from "../storeTypes";
 import { isHardwareMeshName, coincidenMismoHerraje } from "./cadStateUtils";
-import { perteneceAMismaFamiliaPieza } from "../piezaMadreUtils";
+import { perteneceAMismaFamiliaPieza, anotarInstanciasFisicas, extraerPiezaMadre } from "../piezaMadreUtils";
 
 export interface PiezaInactivaItem {
   key: string;
@@ -82,6 +82,11 @@ export function calcularHeredadosPaso(
     } else if (pasoPrevio.tipo === "ensamble") {
       (pasoPrevio.piezasAsignadas || []).forEach((p) => heredadosSet.add(p.toLowerCase().trim()));
       (pasoPrevio.herrajesAsignados || []).forEach((h) => heredadosSet.add(h.toLowerCase().trim()));
+    } else if (pasoPrevio.subbloques && pasoPrevio.subbloques.length > 0) {
+      pasoPrevio.subbloques.forEach((sub: any) => {
+        (sub.piezas || []).forEach((p: string) => heredadosSet.add(p.toLowerCase().trim()));
+        (sub.herrajes || []).forEach((h: string) => heredadosSet.add(h.toLowerCase().trim()));
+      });
     }
   });
 
@@ -93,41 +98,56 @@ export function calcularHeredadosPaso(
       (capa.herrajes || []).forEach((h) => activosSet.add(h.id.toLowerCase().trim()));
       (capa.congelados || []).forEach((c) => activosSet.add(c.id.toLowerCase().trim()));
     });
+  } else if (paso.tipo === "ensamble") {
+    (paso.piezasAsignadas || []).forEach((p) => activosSet.add(p.toLowerCase().trim()));
+    (paso.herrajesAsignados || []).forEach((h) => activosSet.add(h.toLowerCase().trim()));
   }
 
-  // 2. Extraer mallas que pertenecen a los pasos heredados
+  // 2. Extraer mallas anotadas con instanciaKey física unívoca (ej. "Pes (1)", "Porca (3)")
+  const cleanMeshes = resultado.real_meshes.filter((m) => !m.es_duplicado_ghx);
+  const meshesAnotadas = anotarInstanciasFisicas(cleanMeshes);
+
   const tablerosMap = new Map<string, PiezaInactivaItem>();
   const herrajesMap = new Map<string, PiezaInactivaItem>();
 
-  resultado.real_meshes.forEach((m) => {
-    if (m.es_duplicado_ghx) return;
+  meshesAnotadas.forEach((m) => {
+    const rawClean = (m.name || "").replace(/^rh_(?:out|in):\s*/i, "").trim();
+    if (!rawClean) return;
 
-    const rawName = (m.name || "").replace(/^RH_OUT:/i, "").trim();
-    if (!rawName) return;
+    const ik = m.instanciaKey || rawClean;
+    const ikLow = ik.toLowerCase().trim();
+    const rawLow = rawClean.toLowerCase().trim();
+    const baseName = extraerPiezaMadre(rawClean);
+    const esHw = isHardwareMeshName(rawClean) || isHardwareMeshName(ik);
 
-    const rawLow = rawName.toLowerCase();
-    const esHw = isHardwareMeshName(rawName);
+    // Comprobar si ya está activa en las capas del paso actual
+    const estaActiva = Array.from(activosSet).some((act) => {
+      if (esHw) {
+        return act === ikLow || act === rawLow || coincidenMismoHerraje(act, ik) || coincidenMismoHerraje(act, rawClean);
+      }
+      return act === ikLow || act === rawLow || act === baseName.toLowerCase() || perteneceAMismaFamiliaPieza(ikLow, act) || perteneceAMismaFamiliaPieza(rawLow, act);
+    });
 
-    // Excluir si la pieza ya está activa en las capas del paso actual
-    const estaActiva = Array.from(activosSet).some((act) =>
-      esHw ? coincidenMismoHerraje(act, rawLow) : (act === rawLow || perteneceAMismaFamiliaPieza(rawLow, act))
-    );
     if (estaActiva) return;
 
-    const estaHeredada = Array.from(heredadosSet).some((her) =>
-      esHw ? coincidenMismoHerraje(her, rawLow) : (her === rawLow || perteneceAMismaFamiliaPieza(rawLow, her))
-    );
+    // Comprobar si está en heredados
+    const estaHeredada = Array.from(heredadosSet).some((her) => {
+      if (esHw) {
+        return her === ikLow || her === rawLow || coincidenMismoHerraje(her, ik) || coincidenMismoHerraje(her, rawClean);
+      }
+      return her === ikLow || her === rawLow || her === baseName.toLowerCase() || perteneceAMismaFamiliaPieza(ikLow, her) || perteneceAMismaFamiliaPieza(rawLow, her);
+    });
 
     if (!estaHeredada) return;
 
     const targetMap = esHw ? herrajesMap : tablerosMap;
-    const existing = targetMap.get(rawName);
+    const existing = targetMap.get(baseName);
     if (existing) {
       existing.cantidad += 1;
     } else {
-      targetMap.set(rawName, {
-        key: rawName,
-        nombre: rawName,
+      targetMap.set(baseName, {
+        key: baseName,
+        nombre: baseName,
         tipo: esHw ? "herraje" : "tablero",
         cantidad: 1,
       });
@@ -185,43 +205,78 @@ export function calcularInactivosPaso(
       (capa.herrajes || []).forEach((h) => activosSet.add(h.id.toLowerCase().trim()));
       (capa.congelados || []).forEach((c) => activosSet.add(c.id.toLowerCase().trim()));
     });
+  } else if (paso.tipo === "ensamble") {
+    (paso.piezasAsignadas || []).forEach((p) => activosSet.add(p.toLowerCase().trim()));
+    (paso.herrajesAsignados || []).forEach((h) => activosSet.add(h.toLowerCase().trim()));
   }
 
-  // 3. Evaluar cada malla física de Grasshopper en el universo total del mueble
+  // 2.1 Recopilar piezas y herrajes asignados a Bloques Funcionales (ej. Cajones, Puertas)
+  // 🛡️ REGLA CANÓNICA: Si hacen parte de bloques funcionales, NO pertenecen a la capa virtual de inactivos
+  const bloquesFuncionalesSet = new Set<string>();
+  const todosLosGrupos = [
+    ...(paso?.showcase?.gruposCinematicos || []),
+    ...todosLosPasos.flatMap((p) => p.showcase?.gruposCinematicos || []),
+  ];
+  todosLosGrupos.forEach((g) => {
+    (g.piezas || []).forEach((piez) => {
+      const cleanPiez = piez.toLowerCase().trim();
+      if (cleanPiez) bloquesFuncionalesSet.add(cleanPiez);
+    });
+  });
+
+  // 3. Evaluar cada malla física anotada con instanciaKey física unívoca
+  const cleanMeshes = resultado.real_meshes.filter((m) => !m.es_duplicado_ghx);
+  const meshesAnotadas = anotarInstanciasFisicas(cleanMeshes);
+
   const tablerosMap = new Map<string, PiezaInactivaItem>();
   const herrajesMap = new Map<string, PiezaInactivaItem>();
 
-  resultado.real_meshes.forEach((m) => {
-    if (m.es_duplicado_ghx) return;
+  meshesAnotadas.forEach((m) => {
+    const rawClean = (m.name || "").replace(/^rh_(?:out|in):\s*/i, "").trim();
+    if (!rawClean) return;
 
-    const rawName = (m.name || "").replace(/^RH_OUT:/i, "").trim();
-    if (!rawName) return;
-
-    const rawLow = rawName.toLowerCase();
-    const esHw = isHardwareMeshName(rawName);
+    const ik = m.instanciaKey || rawClean;
+    const ikLow = ik.toLowerCase().trim();
+    const rawLow = rawClean.toLowerCase().trim();
+    const baseName = extraerPiezaMadre(rawClean);
+    const esHw = isHardwareMeshName(rawClean) || isHardwareMeshName(ik);
 
     // Comprobar si ya está activa o heredada
-    const estaActiva = Array.from(activosSet).some((act) =>
-      esHw ? coincidenMismoHerraje(act, rawLow) : (act === rawLow || perteneceAMismaFamiliaPieza(rawLow, act))
-    );
+    const estaActiva = Array.from(activosSet).some((act) => {
+      if (esHw) {
+        return act === ikLow || act === rawLow || coincidenMismoHerraje(act, ik) || coincidenMismoHerraje(act, rawClean);
+      }
+      return act === ikLow || act === rawLow || act === baseName.toLowerCase() || perteneceAMismaFamiliaPieza(ikLow, act) || perteneceAMismaFamiliaPieza(rawLow, act);
+    });
 
-    const estaHeredada = Array.from(heredadosSet).some((her) =>
-      esHw ? coincidenMismoHerraje(her, rawLow) : (her === rawLow || perteneceAMismaFamiliaPieza(rawLow, her))
-    );
+    const estaHeredada = Array.from(heredadosSet).some((her) => {
+      if (esHw) {
+        return her === ikLow || her === rawLow || coincidenMismoHerraje(her, ik) || coincidenMismoHerraje(her, rawClean);
+      }
+      return her === ikLow || her === rawLow || her === baseName.toLowerCase() || perteneceAMismaFamiliaPieza(ikLow, her) || perteneceAMismaFamiliaPieza(rawLow, her);
+    });
 
-    if (estaActiva || estaHeredada) {
+    // Comprobar si pertenece a algún Bloque Funcional (ej. Cajón, Puerta)
+    const estaEnBloqueFuncional = Array.from(bloquesFuncionalesSet).some((bf) => {
+      if (esHw) {
+        return bf === ikLow || bf === rawLow || coincidenMismoHerraje(bf, ik) || coincidenMismoHerraje(bf, rawClean);
+      }
+      return bf === ikLow || bf === rawLow || bf === baseName.toLowerCase() || perteneceAMismaFamiliaPieza(ikLow, bf) || perteneceAMismaFamiliaPieza(rawLow, bf);
+    });
+
+    if (estaActiva || estaHeredada || estaEnBloqueFuncional) {
       return; // No es inactiva
     }
 
     // Es Inactiva -> agregar al mapa correspondiente
     const targetMap = esHw ? herrajesMap : tablerosMap;
-    const existing = targetMap.get(rawName);
+    const existing = targetMap.get(baseName);
     if (existing) {
       existing.cantidad += 1;
     } else {
-      targetMap.set(rawName, {
-        key: rawName,
-        nombre: rawName,
+      targetMap.set(baseName, {
+        key: baseName,
+        nombre: baseName,
         tipo: esHw ? "herraje" : "tablero",
         cantidad: 1,
       });

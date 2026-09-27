@@ -28,6 +28,8 @@ export function middleware(request: NextRequest) {
     pathname.endsWith(".wasm") ||
     pathname.endsWith(".bin") ||
     pathname.startsWith("/api/health") ||
+    pathname.startsWith("/api/tts") ||
+    pathname.startsWith("/api/translate") ||
     pathname.startsWith("/api/ar-model") ||
     pathname.startsWith("/api/bloques") ||
     pathname.startsWith("/api/compute") ||

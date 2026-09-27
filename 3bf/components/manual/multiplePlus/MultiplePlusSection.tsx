@@ -38,6 +38,8 @@ export default function MultiplePlusSection({
     removerHerrajePlus,
     toggleCongelarHerrajePlus,
     definirPiezaMasterPlus,
+    actualizarOffsetBancoMasterPlus,
+    actualizarTiempoAcopleMasterPlus,
     girarBancoGlobalPlus,
     toggleApoyoPisoGlobalPlus,
     togglePonerDePieAlFinalPlus,
@@ -378,6 +380,8 @@ export default function MultiplePlusSection({
               onRemoverHerraje={(cId, hId) => removerHerrajePlus(pasoActivo.id, cId, hId)}
               onToggleCongelarHerraje={(cId, hId) => toggleCongelarHerrajePlus(pasoActivo.id, cId, hId)}
               onDefinirMaster={(cId, pNombre) => definirPiezaMasterPlus(pasoActivo.id, cId, pNombre)}
+              onActualizarOffsetMaster={(cId, offset) => actualizarOffsetBancoMasterPlus(pasoActivo.id, cId, offset)}
+              onActualizarTiempoAcopleMaster={(cId, tAcople, durAcople) => actualizarTiempoAcopleMasterPlus(pasoActivo.id, cId, tAcople, durAcople)}
               onToggleColapsar={(cId) => toggleColapsarCapaPlus(pasoActivo.id, cId)}
               onTogglePosicionar={(tId) => {
                 const estaActivo = typeof piezaEnPosicionamientoManual === "string"

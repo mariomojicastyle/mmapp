@@ -67,7 +67,7 @@ export function AssemblyAnimationController({ furnitureGroup }: AssemblyAnimatio
       ? `${activeStep.multiplePlus.velocidadTablerosCmS || 0}_${activeStep.multiplePlus.velocidadHerrajesCmS || 0}_${activeStep.multiplePlus.movimientoGlobalCm || 0}_${activeStep.multiplePlus.modoVisualizacionInactivos || "oculto"}_${activeStep.multiplePlus.modoVisualizacionHeredados || "solido"}_` +
         (activeStep.multiplePlus.capas || [])
           .map((c: any) => {
-            const tabs = (c.tableros || []).map((t: any) => `${t.id}:${t.offsetXCm || 0}:${t.offsetYCm || 0}:${t.offsetZCm || 0}:${t.tiempoAparicion || 0}:${t.tiempoInicioMovimiento || 0}:${t.destinoId || ""}`).join(",");
+            const tabs = (c.tableros || []).map((t: any) => `${t.id}:${t.offsetXCm || 0}:${t.offsetYCm || 0}:${t.offsetZCm || 0}:${t.elevacionZCm || 0}:${(t.rotacionGrados || [0, 0, 0]).join(",")}:${t.tiempoAparicion || 0}:${t.tiempoInicioMovimiento || 0}:${t.destinoId || ""}`).join(",");
             const hws = (c.herrajes || []).map((h: any) => `${h.id}:${h.ejeAproximacion || ""}:${h.tiempoAparicion || 0}:${h.congelado}`).join(",");
             const congs = (c.congelados || []).map((h: any) => `${h.id}:${h.tiempoAparicion || 0}`).join(",");
             return `${c.id}:${c.visible !== false}:${tabs}:${hws}:${congs}`;
@@ -110,7 +110,16 @@ export function AssemblyAnimationController({ furnitureGroup }: AssemblyAnimatio
 
     let count = 0;
     effectiveGroup.traverse((ch: THREE.Object3D) => {
-      if ((ch as THREE.Mesh).isMesh) count++;
+      const isAuxiliary = (ch as any).isLine ||
+        (ch as any).isLine2 ||
+        (ch as any).isLineSegments ||
+        (ch as any).isLineSegments2 ||
+        ch.type?.includes("Line") ||
+        ch.name?.includes("Edges") ||
+        (ch as any).userData?.isWireframeHelper ||
+        (ch as any).userData?.__esHelperVisual ||
+        Boolean(ch.parent && (ch.parent as THREE.Mesh).isMesh);
+      if ((ch as THREE.Mesh).isMesh && !isAuxiliary) count++;
     });
 
     if (count > 0 && count !== lastCompiledMeshCountRef.current) {
@@ -157,7 +166,16 @@ export function AssemblyAnimationController({ furnitureGroup }: AssemblyAnimatio
 
       let mCount = 0;
       effectiveGroup.traverse((ch: THREE.Object3D) => {
-        if ((ch as THREE.Mesh).isMesh) mCount++;
+        const isAuxiliary = (ch as any).isLine ||
+          (ch as any).isLine2 ||
+          (ch as any).isLineSegments ||
+          (ch as any).isLineSegments2 ||
+          ch.type?.includes("Line") ||
+          ch.name?.includes("Edges") ||
+          (ch as any).userData?.isWireframeHelper ||
+          (ch as any).userData?.__esHelperVisual ||
+          Boolean(ch.parent && (ch.parent as THREE.Mesh).isMesh);
+        if ((ch as THREE.Mesh).isMesh && !isAuxiliary) mCount++;
       });
       lastCompiledMeshCountRef.current = mCount;
 

@@ -27,10 +27,36 @@ export function CapsulaTableroPlus({
   onRemover,
   onTogglePosicionar,
 }: CapsulaTableroPlusProps) {
+  const rotacion = tablero.rotacionGrados || [0, 0, 0];
+  const tieneGiro = Boolean(rotacion[0] !== 0 || rotacion[1] !== 0 || rotacion[2] !== 0);
+
   const tieneDesplazamiento = Boolean(
     (tablero.offsetXCm || 0) !== 0 ||
     (tablero.offsetYCm || 0) !== 0 ||
-    (tablero.offsetZCm || 0) !== 0
+    (tablero.offsetZCm || 0) !== 0 ||
+    (tablero.elevacionZCm || 0) !== 0 ||
+    tieneGiro
+  );
+
+  const SECUENCIA_ANGULOS = React.useMemo(() => [0, 90, 180, -90] as const, []);
+
+  const ciclarEje = React.useCallback(
+    (ejeIdx: 0 | 1 | 2, direccion: 1 | -1 = 1) => {
+      const valActual = rotacion[ejeIdx] || 0;
+      let idxActual = SECUENCIA_ANGULOS.indexOf(valActual as any);
+      if (idxActual === -1) idxActual = 0;
+      const siguienteIdx = (idxActual + direccion + SECUENCIA_ANGULOS.length) % SECUENCIA_ANGULOS.length;
+      const nuevoValor = SECUENCIA_ANGULOS[siguienteIdx];
+
+      const nuevaRot: [number, number, number] = [
+        rotacion[0] || 0,
+        rotacion[1] || 0,
+        rotacion[2] || 0,
+      ];
+      nuevaRot[ejeIdx] = nuevoValor;
+      onActualizar(tablero.id, { rotacionGrados: nuevaRot });
+    },
+    [rotacion, tablero.id, onActualizar, SECUENCIA_ANGULOS]
   );
 
   // 🛡️ Al desmontar la cápsula (por ejemplo al eliminarla), limpiar el hover inmediatamente
@@ -39,6 +65,88 @@ export function CapsulaTableroPlus({
       onHover(null);
     };
   }, [onHover]);
+
+  // ⚡ Estado local desacoplado para edición fluida sin interferencias del store en cada tecla
+  const [textoAparicion, setTextoAparicion] = React.useState<string>(() =>
+    tablero.tiempoAparicion !== undefined && tablero.tiempoAparicion !== null
+      ? String(tablero.tiempoAparicion)
+      : "0"
+  );
+  const [editandoAparicion, setEditandoAparicion] = React.useState(false);
+
+  const [textoMov, setTextoMov] = React.useState<string>(() =>
+    tablero.tiempoInicioMovimiento !== undefined && tablero.tiempoInicioMovimiento !== null
+      ? String(tablero.tiempoInicioMovimiento)
+      : "500"
+  );
+  const [editandoMov, setEditandoMov] = React.useState(false);
+
+  const [textoElevacion, setTextoElevacion] = React.useState<string>(() =>
+    tablero.elevacionZCm !== undefined && tablero.elevacionZCm !== null
+      ? String(tablero.elevacionZCm)
+      : "0"
+  );
+  const [editandoElevacion, setEditandoElevacion] = React.useState(false);
+
+  React.useEffect(() => {
+    if (!editandoAparicion) {
+      setTextoAparicion(
+        tablero.tiempoAparicion !== undefined && tablero.tiempoAparicion !== null
+          ? String(tablero.tiempoAparicion)
+          : "0"
+      );
+    }
+  }, [tablero.tiempoAparicion, editandoAparicion]);
+
+  React.useEffect(() => {
+    if (!editandoMov) {
+      setTextoMov(
+        tablero.tiempoInicioMovimiento !== undefined && tablero.tiempoInicioMovimiento !== null
+          ? String(tablero.tiempoInicioMovimiento)
+          : "500"
+      );
+    }
+  }, [tablero.tiempoInicioMovimiento, editandoMov]);
+
+  React.useEffect(() => {
+    if (!editandoElevacion) {
+      setTextoElevacion(
+        tablero.elevacionZCm !== undefined && tablero.elevacionZCm !== null
+          ? String(tablero.elevacionZCm)
+          : "0"
+      );
+    }
+  }, [tablero.elevacionZCm, editandoElevacion]);
+
+  const commitAparicion = React.useCallback(() => {
+    setEditandoAparicion(false);
+    const parsed = parseFloat(textoAparicion);
+    const finalVal = isNaN(parsed) ? 0 : Math.max(0, Math.round(parsed * 10) / 10);
+    setTextoAparicion(String(finalVal));
+    if (finalVal !== (tablero.tiempoAparicion ?? 0)) {
+      onActualizar(tablero.id, { tiempoAparicion: finalVal });
+    }
+  }, [textoAparicion, tablero.tiempoAparicion, tablero.id, onActualizar]);
+
+  const commitMov = React.useCallback(() => {
+    setEditandoMov(false);
+    const parsed = parseFloat(textoMov);
+    const finalVal = isNaN(parsed) ? 500 : Math.max(0, Math.round(parsed * 10) / 10);
+    setTextoMov(String(finalVal));
+    if (finalVal !== (tablero.tiempoInicioMovimiento ?? 500)) {
+      onActualizar(tablero.id, { tiempoInicioMovimiento: finalVal });
+    }
+  }, [textoMov, tablero.tiempoInicioMovimiento, tablero.id, onActualizar]);
+
+  const commitElevacion = React.useCallback(() => {
+    setEditandoElevacion(false);
+    const parsed = parseFloat(textoElevacion);
+    const finalVal = isNaN(parsed) ? 0 : Math.max(0, Math.round(parsed * 10) / 10);
+    setTextoElevacion(String(finalVal));
+    if (finalVal !== (tablero.elevacionZCm ?? 0)) {
+      onActualizar(tablero.id, { elevacionZCm: finalVal });
+    }
+  }, [textoElevacion, tablero.elevacionZCm, tablero.id, onActualizar]);
 
   return (
     <div
@@ -77,21 +185,33 @@ export function CapsulaTableroPlus({
       {/* 👁️ Tiempo de aparición en espera (defecto 0s) */}
       <div
         onClick={(e) => e.stopPropagation()}
-        title="Segundo exacto en que este tablero aparece en escena en su posición de espera (por defecto 0s)"
+        title="Segundo exacto en que este tablero aparece en escena en su posición de espera (por defecto 0s). Presiona Enter o haz clic fuera para confirmar."
         className="inline-flex items-center gap-0.5 bg-white dark:bg-slate-900 px-1 py-0 rounded-full border border-slate-200 dark:border-slate-700 text-[8.5px] shadow-2xs"
       >
         <Eye className="w-2 h-2 text-slate-400 shrink-0" />
         <input
-          type="number"
-          min={0}
-          step={0.5}
-          value={tablero.tiempoAparicion ?? 0}
+          type="text"
+          inputMode="decimal"
+          value={textoAparicion}
           onFocus={(e) => {
-            const t = e.currentTarget;
-            setTimeout(() => t.select(), 0);
+            setEditandoAparicion(true);
+            const target = e.currentTarget;
+            setTimeout(() => target.select(), 0);
           }}
-          onChange={(e) => onActualizar(tablero.id, { tiempoAparicion: Math.max(0, parseFloat(e.target.value) || 0) })}
-          className="w-[22px] min-w-[22px] bg-transparent text-right font-mono font-bold text-[8.5px] text-slate-700 dark:text-slate-200 outline-none p-0 border-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none cursor-text"
+          onBlur={commitAparicion}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") {
+              e.currentTarget.blur();
+            } else if (e.key === "Escape") {
+              setEditandoAparicion(false);
+              setTextoAparicion(String(tablero.tiempoAparicion ?? 0));
+              e.currentTarget.blur();
+            }
+          }}
+          onChange={(e) => {
+            setTextoAparicion(e.target.value);
+          }}
+          className="w-[26px] min-w-[26px] bg-transparent text-right font-mono font-bold text-[8.5px] text-slate-700 dark:text-slate-200 outline-none p-0 border-none cursor-text"
         />
         <span className="text-[7.5px] font-bold text-slate-400">s</span>
       </div>
@@ -99,43 +219,122 @@ export function CapsulaTableroPlus({
       {/* ➔ Tiempo de inicio de movimiento hacia destino (defecto 500s para que no se mueva) */}
       <div
         onClick={(e) => e.stopPropagation()}
-        title="Segundo exacto en que inicia su trayectoria hacia la pieza de destino (por defecto 500s para permanecer en espera)"
+        title="Segundo exacto en que inicia su trayectoria hacia la pieza de destino (por defecto 500s para permanecer en espera). Presiona Enter o haz clic fuera para confirmar."
         className="inline-flex items-center gap-0.5 bg-white dark:bg-slate-900 px-1.5 py-0 rounded-full border border-slate-200 dark:border-slate-700 text-[8.5px] shadow-2xs"
       >
         <ArrowRight className="w-2 h-2 text-cyan-600 shrink-0" />
         <input
-          type="number"
-          min={0}
-          step={0.5}
-          value={tablero.tiempoInicioMovimiento ?? 500}
+          type="text"
+          inputMode="decimal"
+          value={textoMov}
           onFocus={(e) => {
-            const t = e.currentTarget;
-            setTimeout(() => t.select(), 0);
+            setEditandoMov(true);
+            const target = e.currentTarget;
+            setTimeout(() => target.select(), 0);
           }}
-          onChange={(e) => onActualizar(tablero.id, { tiempoInicioMovimiento: Math.max(0, parseFloat(e.target.value) || 0) })}
-          className="w-[32px] min-w-[32px] bg-transparent text-right font-mono font-bold text-[8.5px] text-cyan-700 dark:text-cyan-300 outline-none p-0 border-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none cursor-text"
+          onBlur={commitMov}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") {
+              e.currentTarget.blur();
+            } else if (e.key === "Escape") {
+              setEditandoMov(false);
+              setTextoMov(String(tablero.tiempoInicioMovimiento ?? 500));
+              e.currentTarget.blur();
+            }
+          }}
+          onChange={(e) => {
+            setTextoMov(e.target.value);
+          }}
+          className="w-[32px] min-w-[32px] bg-transparent text-right font-mono font-bold text-[8.5px] text-cyan-700 dark:text-cyan-300 outline-none p-0 border-none cursor-text"
         />
         <span className="text-[7.5px] font-bold text-slate-400">s</span>
       </div>
 
-      {/* 📍 Testigo de Coordenadas de Piso si tiene desplazamiento */}
-      {tieneDesplazamiento && (
-        <span
-          title={`Desplazamiento de piso: X=${tablero.offsetXCm || 0}cm, Y=${tablero.offsetYCm || 0}cm, Z=${tablero.offsetZCm || 0}cm`}
-          className="text-[8px] font-mono font-bold px-1.5 py-0.5 rounded-full bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20 shrink-0 select-none"
-        >
-          {tablero.offsetXCm || 0},{tablero.offsetYCm || 0},{tablero.offsetZCm || 0}cm
-        </span>
-      )}
+      {/* 📐 Altura Z sobre el banco/suelo (elevación en cm) */}
+      <div
+        onClick={(e) => e.stopPropagation()}
+        title="Altura Z sobre el banco/suelo (elevación en cm para despejar tarugos inferiores). Presiona Enter o haz clic fuera para confirmar."
+        className="inline-flex items-center gap-0.5 bg-white dark:bg-slate-900 px-1.5 py-0 rounded-full border border-slate-200 dark:border-slate-700 text-[8.5px] shadow-2xs"
+      >
+        <span className="font-bold text-amber-600 dark:text-amber-400 text-[8px]">Z:</span>
+        <input
+          type="text"
+          inputMode="decimal"
+          value={textoElevacion}
+          onFocus={(e) => {
+            setEditandoElevacion(true);
+            const target = e.currentTarget;
+            setTimeout(() => target.select(), 0);
+          }}
+          onBlur={commitElevacion}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") {
+              e.currentTarget.blur();
+            } else if (e.key === "Escape") {
+              setEditandoElevacion(false);
+              setTextoElevacion(String(tablero.elevacionZCm ?? 0));
+              e.currentTarget.blur();
+            }
+          }}
+          onChange={(e) => {
+            setTextoElevacion(e.target.value);
+          }}
+          className="w-[28px] min-w-[28px] bg-transparent text-right font-mono font-bold text-[8.5px] text-amber-700 dark:text-amber-300 outline-none p-0 border-none cursor-text"
+        />
+        <span className="text-[7.5px] font-bold text-slate-400">cm</span>
+      </div>
 
-      {/* 🔄 Botón Resetear Posición de Espera a Origen [0, 0, 0] */}
+      {/* 🔄 Triple Píldora Cíclica de Giro 3D Inline (Opción 2) */}
+      <div
+        onClick={(e) => e.stopPropagation()}
+        className="inline-flex items-center gap-0.5 bg-white dark:bg-slate-900 px-1.5 py-0 rounded-full border border-slate-200 dark:border-slate-700 text-[8.5px] shadow-2xs shrink-0 select-none"
+      >
+        <span className="text-[7.5px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">
+          Giro:
+        </span>
+        {(["X", "Y", "Z"] as const).map((eje, idx) => {
+          const val = rotacion[idx] || 0;
+          const estaActivo = val !== 0;
+          return (
+            <button
+              key={eje}
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                ciclarEje(idx as 0 | 1 | 2, 1);
+              }}
+              onContextMenu={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                ciclarEje(idx as 0 | 1 | 2, -1);
+              }}
+              title={`Eje ${eje}: ${val}° (Clic izquierdo: +90°, Clic secundario: -90°)`}
+              className={`px-1.5 py-0 rounded-full font-mono font-bold text-[8.5px] transition cursor-pointer ${
+                estaActivo
+                  ? "bg-[#0088AA] dark:bg-[#1368AA] text-white shadow-2xs"
+                  : "bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700 hover:text-slate-800 dark:hover:text-slate-200"
+              }`}
+            >
+              {eje}:{val}°
+            </button>
+          );
+        })}
+      </div>
+
+      {/* 🔄 Botón Resetear Posición de Espera a Origen [0, 0, 0], Z: 0 y Giro: 0° */}
       <button
         type="button"
         onClick={(e) => {
           e.stopPropagation();
-          onActualizar(tablero.id, { offsetXCm: 0, offsetYCm: 0, offsetZCm: 0 });
+          onActualizar(tablero.id, {
+            offsetXCm: 0,
+            offsetYCm: 0,
+            offsetZCm: 0,
+            elevacionZCm: 0,
+            rotacionGrados: [0, 0, 0],
+          });
         }}
-        title="Resetear posición de espera a origen de diseño [0, 0, 0]"
+        title="Resetear posición de espera a origen [0, 0, 0], altura Z a 0 y giro a 0°"
         className={`w-4 h-4 rounded-full flex items-center justify-center transition cursor-pointer shrink-0 ${
           tieneDesplazamiento
             ? "text-amber-600 bg-amber-100 hover:bg-amber-200 dark:bg-amber-950/60 dark:text-amber-300 dark:hover:bg-amber-900/80 shadow-2xs"

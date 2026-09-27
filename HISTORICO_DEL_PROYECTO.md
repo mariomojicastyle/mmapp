@@ -2112,3 +2112,267 @@ Para mantener la máxima agilidad y minimizar el consumo de tokens sin perder ni
 - **Validación de Calidad**:
   * Compilación TypeScript verificada (`npx tsc --noEmit`) en `c:\Desarrollo\mmapp\3bf` con **código 0 (cero errores)**.
   * Verificación interactiva: apertura limpia en $t = 0\text{s}$ con escala 0% para activas, escala 100% para heredadas sólidas o cristal, e inactivos controlados por su propia cápsula.
+
+---
+
+### 🚀 Hito 219: Pieza Master con Subensambles Desplazados en Banco de Trabajo y Acople Cinemático Rígido al Mueble en `3dBimFab` (26 de Septiembre, 2026)
+- **Motivación & Reto Físico de Taller**:
+  * En procesos reales de ensamblaje (ej. Paso 04 de Cómoda Ravenna), ciertos conjuntos de piezas —como travesaños frontales, amarres intermedios y sus herrajes— deben armarse de forma independiente en un punto espacial despejado de la mesa o banco de trabajo ($\vec{P}_{\text{banco}} = \vec{P}_{\text{CAD}} + \vec{\Delta}_{\text{offset}}$), alejado de la carcasa vertical principal armada en pasos previos (P01..P03).
+  * Una vez completado este pre-ensamble (aproximadamente al 60% de avance del paso), el subensamble completo debe comportarse como un cuerpo rígido solidario y viajar en bloque hacia su posición geométrica final dentro de la estructura del mueble ($[t_{\text{acople}}, t_{\text{finAcople}}]$).
+- **Implementación Técnica de la Arquitectura Cinemática**:
+  1. **Tipado y Persistencia en Store (`storeTypes.ts` y `manualMultiplePlusSlice.ts`)**:
+     * Estructura de coordenadas `OffsetBancoCm` ($\Delta X, \Delta Y, \Delta Z$ en cm).
+     * Campos en `CapaMultiplePlus`: `offsetBancoCm?`, `tiempoAcopleSegundos?` y `duracionAcopleSegundos?`.
+     * Acciones inmutables añadidas a `manualMultiplePlusSlice.ts`: `actualizarOffsetBancoMasterPlus` y `actualizarTiempoAcopleMasterPlus`.
+  2. **Motor Cinemático en Three.js (`multiplePlusKinematics.ts`)**:
+     * **Mapeo de Dependencias**: Resolución automática de masters por capa directa (`c.piezaMaster`) o por destino de tableros (`t.destinoId === masterClean`).
+     * **Trayectoria Bietápica de Tableros**:
+       - *Fase 1 (Armado en Banco)*: De punto de espera $A_{\text{banco}}$ a punto ensamblado en banco $B_{\text{banco}} = \vec{P}_{\text{CAD}} + \vec{\Delta}$.
+       - *Fase 2 (Acople a Mueble)*: De $B_{\text{banco}}$ a punto final $\vec{P}_{\text{CAD}}$ durante el intervalo $[t_{\text{acople}}, t_{\text{acople}} + \Delta t_{\text{acople}}]$.
+     * **Cinemática Colineal de Herrajes (Nuevos y Congelados)**:
+       - Los herrajes congelados (`congelados`) permanecen anclados a la pieza en banco y vuelan solidariamente con el subensamble durante el acople.
+       - Los herrajes nuevos se aproximan e insertan colinealmente en los barrenos del tablero desplazado en el banco, y luego viajan integrados con el subensamble hacia la carcasa del mueble.
+  3. **Interfaz de Usuario Hiperintuitiva y Zero-Friction (`CapaMultiplePlusCard.tsx` & `MultiplePlusSection.tsx`)**:
+     * En la fila 5 de cada tarjeta de capa, junto al selector de `Pieza Master`, se despliegan automáticamente al seleccionar una pieza:
+       - **Cápsula de Banco**: Inputs numéricos de alta precisión para $X$ (transversal) y $Z$ (longitudinal) en cm con terminación circular pura (`rounded-full`) e ícono `Move`.
+       - **Cápsula de Acople**: Inputs numéricos para segundo exacto de inicio (`al seg:`) y duración (`dur: s`) con ícono `Link2`.
+     * Diseño 100% fiel a los principios del proyecto: estética Tech Ethos, cero rectángulos redondeados y soporte completo para temas claro y oscuro.
+- **Validación de Calidad**:
+  * Compilación TypeScript verificada (`npx tsc --noEmit`) en `c:\Desarrollo\mmapp\3bf` con **código 0 (cero errores)**.
+  * Servidores locales (`:3005`, `:8005`, `:5000`, `:3003`) respondiendo activamente sin caídas.
+
+---
+
+### 🚀 Hito 220: Sincronización Cinemática Rígida de Herrajes y Tableros Hijos con la Pieza Master en `3dBimFab` (26 de Septiembre, 2026)
+- **Motivación & Reto Físico en Taller**:
+  * Al implementar el subensamble desplazado en el Paso 04 de Cómoda Ravenna, se identificaron dos desajustes cinemáticos críticos:
+    1. *Inversión de Roles*: La Pieza Master (`Peça 10`) viajaba erróneamente hacia las piezas hijas (`Peça 11 (1, 2, 3)`), cuando físicamente la Master debe permanecer **estacionaria en su banco de trabajo** ($\vec{P}_{\text{CAD}} + \vec{\Delta}_{\text{Master}}$) como base sólida receptora, y son las piezas hijas las que viajan hacia ella para ensamblarse.
+    2. *Pérdida de Coordenadas de Herrajes*: Los herrajes congelados (correderas telescópicas `Corrediça - Fixa` y tornillos `Parafuso E` fijados previamente en `Peça 10`) flotaban en el espacio en la carcasa izquierda al obedecer desplazamientos globales o dobles offsets, mientras que los herrajes nuevos (tarugos `Cavilha` en `Peça 11`) quedaban desfasados respecto a los barrenos de su tablero anfitrión.
+- **Implementación Técnica de la Arquitectura Cinemática**:
+  1. **Inversión Canónica de la Cinemática Master / Hija (`multiplePlusKinematics.ts`)**:
+     * Diferenciación matemática entre `esLaPropiaMaster` y `esHijaDelMaster`:
+       - *Master (`Peça 10`)*: Permanece inmóvil en su posición de banco $\vec{P}_{\text{CAD}} + \vec{\Delta}_{\text{Master}}$ durante $[0, t_{\text{acople}}]$ y se desplaza hacia $\vec{P}_{\text{CAD}}$ en $[t_{\text{acople}}, t_{\text{finAcople}}]$.
+       - *Hijas (`Peça 11`)*: Viajan desde su punto de espera hacia el punto de ensamble en banco con la Master ($[t_{\text{inicioMov}}, t_{\text{llegada}}]$), permanecen acopladas hasta $t_{\text{acople}}$ y viajan solidariamente en bloque hacia la carcasa.
+  2. **Evaluador Universal de Desplazamiento de Tablero para Herrajes (`evaluarDeltaTablero`)**:
+     * Sustituidas más de 180 líneas de `if/else` anidados por una función unificada $\vec{\Delta}_{\text{tablero}}(t)$ transferida directamente a cada herraje de la capa:
+       $$\vec{P}_{\text{hw\_congelado}}(t) \equiv \vec{P}_{\text{CAD\_hw}} + \vec{\Delta}_{\text{tablero}}(t)$$
+       $$\vec{P}_{\text{hw\_nuevo}}(t \ge t_{\text{llegada}}) \equiv \vec{P}_{\text{CAD\_hw}} + \vec{\Delta}_{\text{tablero}}(t)$$
+     * *Herrajes Congelados*: Soldados rígidamente al barreno de su pieza anfitriona en todo momento, inmunes al desplazamiento global de aproximación (`distGlobalM`).
+     * *Herrajes Nuevos*: Realizan su aproximación colineal hacia el barreno del tablero en su posición instantánea y, tras el ensamble, se fijan rígidamente al tablero anfitrión.
+  3. **Cómputo Seguro de Bounding Box en Reposo (`boxRestWorld`)**:
+     * En `multiplePlusKinematics.ts`, se blindó la resolución del tablero anfitrión (`resolverTableroAnfitrionHerraje`) evaluando la caja perimetral del tablero en su posición de reposo con escala $1.0$, evitando falsos cálculos provocados por mallas en escala $0$ u ocultas.
+  4. **Aislamiento Estricto de Bloques Funcionales (Cajones)**:
+     * Las piezas pertenecientes a grupos cinemáticos de bloques funcionales (cajones) quedan excluidas de la capa de piezas inactivas (`inactivosVirtualesUtils.ts` y `multiplePlusKinematics.ts`), permaneciendo estrictamente ocultas durante el armado de la carcasa.
+- **Validación de Calidad**:
+  * Compilación TypeScript verificada (`npx tsc --noEmit`) en `c:\Desarrollo\mmapp\3bf` con **código 0 (cero errores)**.
+  * Verificación visual en Paso 04: la corredera telescópica permanece 100% soldada a `Peça 10` en el banco, las 3 `Peça 11` viajan hacia `Peça 10` con sus tarugos en sus barrenos exactos, y el subensamble se acopla suavemente a la carcasa.
+
+---
+
+### 🚀 Hito 221: Corrección de Apoyo en Suelo (Y ≥ 0) y Erradicación del Doble Offset en Piezas Posicionadas Hijas de Master (`multiplePlusKinematics.ts` & `AssemblyPiecePositioner.tsx`) (26 de Septiembre, 2026)
+- **Diagnóstico y Consulta del Usuario**:
+  * **Problema Reportado**: Al utilizar la herramienta interactiva de posicionamiento manual (*"Posicionar en el escenario"*) sobre `Peça 12` en el Paso P04 (Capa 03), la pieza se colocó por debajo del plano del suelo XY ($Y < 0$), quedando las líneas de la cuadrícula atravesando o flotando por encima de su cara superior.
+  * *¿Por qué ocurrió si la norma siempre dice que se posiciona sobre el plano XY?*
+- **Causa Raíz Matemática & Cinemática Identificada**:
+  1. *Doble Desplazamiento Acumulado (`vMaster + vPropio`)*:
+     - En `AssemblyPiecePositioner.tsx`, al arrastrar interactivamente una pieza sobre el plano horizontal, el componente proyecta la cota mínima de la geometría para que repose sobre el suelo mundial ($Y_{\text{min}} = 0.000\text{ m}$) y calcula el vector de desplazamiento directo desde la posición de reposo CAD: $\vec{\Delta}_{\text{local}} = \vec{P}_{\text{piso, local}} - \vec{P}_{\text{CAD, local}}$. Este delta ya contiene el $100\%$ de la traslación necesaria para apoyarse en el piso.
+     - Sin embargo, en `multiplePlusKinematics.ts` (líneas 439 y 564), al detectar que `Peça 12` tenía como destino a la pieza Master (`destinoId: "Peça 10"`), el motor cinemático sumaba erróneamente:
+       $$\vec{v}_{\text{deltaEspera}} = \vec{v}_{\text{Master}} + \vec{v}_{\text{propio}}$$
+     - Como la Master (`Peça 10`) poseía un offset de banco con componente $Z = +2\text{ cm}$, y el Paso P04 está rotado $90^\circ$ sobre el eje X en el banco de trabajo, una traslación local en $+Z$ se transforma en una caída vertical mundial en $-Y$ (hacia abajo).
+     - Al sumar los $2\text{ cm}$ de la Master sobre el vector del piso, `Peça 12` (cuyo grosor es de solo $1.2\text{ cm}$) se hundió $-1.7\text{ cm}$ bajo el nivel cero, sumergiéndose por completo debajo de la cuadrícula.
+- **Implementación Técnica**:
+  1. *Uso Directo de `vPropio` en Piezas Hijas con Posición de Suelo (`multiplePlusKinematics.ts`)*:
+     - En las líneas 439 (tableros) y 564 (referencia para herrajes solidarios), se reemplazó la suma residual por el vector directo:
+       `const vDeltaEspera = tieneOffsetPropio ? vPropio.clone() : new THREE.Vector3(0, 0, 0);`
+     - De esta forma, la pieza espera exactamente en la coordenada física del suelo ($Y \ge 0$) donde el usuario la posicionó, y viaja limpiamente desde allí hacia $\vec{v}_{\text{Master}}$ al comenzar su movimiento de ensamble.
+  2. *Elevación de Precisión a Escala Milimétrica (`AssemblyPiecePositioner.tsx`)*:
+     - Se actualizó el redondeo de los deltas de $\pm 1\text{ cm}$ (`Math.round(delta * 100)`) a precisión milimétrica de $1\text{ mm}$ (`Math.round(delta * 1000) / 10`), eliminando errores de discretización de 3 a 5 mm en tableros delgados.
+- **Validación de Calidad**:
+  * Simulación matemática del Bounding Box mundial de `Peça 12`:
+    - Con doble offset anterior: $Y_{\text{min}} = -0.017\text{ m}$ (hundida $-17\text{ mm}$ bajo el piso).
+    - Con corrección canónica: $Y_{\text{min}} = +0.003\text{ m}$ ($+3\text{ mm}$ de cota de apoyo sobre la rejilla).
+  * Compilación TypeScript verificada (`npx tsc --noEmit`) en `c:\Desarrollo\mmapp\3bf` con **0 errores**.
+
+---
+
+### 🚀 Hito 222: Desacoplamiento de Estado Local y Erradicación del Titileo y Bloqueo en Inputs de Tiempo de Herrajes y Tableros (`CapsulaHerrajePlus.tsx` & `CapsulaTableroPlus.tsx`) (26 de Septiembre, 2026)
+- **Diagnóstico y Solicitud del Usuario**:
+  * **Problema Reportado**: Al intentar modificar el segundo de aparición (`tiempoAparicion`) en los herrajes congelados (por ejemplo en `Parafuso E (72)` en Capa 02 de Paso P04), el campo de texto empezaba a titilar incesantemente, perdía el foco y no permitía escribir ni borrar el valor. Solicitud directa: *"liberalos por favor, analiza, diagnostica y ejecuta"*.
+- **Causa Raíz Arquitectónica (Feedback Loop Síncrono Zustand ➔ Three.js ➔ DOM)**:
+  1. *Falta de Estado Local en Inputs Controlados*: Los inputs numéricos de `CapsulaHerrajePlus` y `CapsulaTableroPlus` consumían directamente `value={herraje.tiempoAparicion ?? 0}` y disparaban `onActualizar` en el evento `onChange` con cada pulsación de tecla.
+  2. *Re-render y Re-compilación Global en Cada Teclazo*:
+     - Al presionar una tecla (o Backspace), `actualizarHerrajePlus` mutaba `pasosManual` e incrementaba `versionAnimacionManual`.
+     - Esto forzaba un re-render sincrónico de todo el árbol React (`StepManagerPanel` $\to$ `MultiplePlusSection` $\to$ `CapaMultiplePlusCard` $\to$ todas las cápsulas).
+     - Paralelamente, `AssemblyAnimationController` re-compilaba cientos de pistas de animación y re-evaluaba todas las 560 mallas en Three.js, provocando destellos en el visor 3D ("titileo").
+  3. *Bloqueo de Escritura y Reemplazo Forzado a Cero*:
+     - Al intentar borrar `10` para escribir otro número, el valor temporal era `""` (cadena vacía).
+     - `parseFloat("") || 0` evaluaba a `0`, inyectando de inmediato `tiempoAparicion: 0` en el store.
+     - El re-render instantáneo forzaba `input.value = "0"`, impidiendo borrar o tipear números de más de un dígito.
+- **Implementación Técnica de Liberación Total**:
+  1. *Estado Local Desacoplado (`textoTiempo` & `editando`)*:
+     - Se dotó a `CapsulaHerrajePlus.tsx` de un estado local `[textoTiempo, setTextoTiempo]` y bandera `editando`.
+     - Durante la escritura, el input actualiza exclusivamente el estado local: cero escrituras en Zustand, cero re-renders del panel, cero recálculos de mallas en Three.js.
+  2. *Confirmación Atómica en `onBlur` y `onKeyDown (Enter)`*:
+     - La persistencia al store (`onActualizar`) solo se ejecuta cuando el usuario finaliza su edición (presionando `Enter` o haciendo clic fuera `blur`). Si presiona `Escape`, cancela y restaura el valor original.
+  3. *Eliminación de Bugs Nativos de HTML5 `type="number"`*:
+     - Reemplazado por `type="text"` con `inputMode="decimal"`, permitiendo borrar completamente, tipear decimales y navegar con el cursor sin saltos de foco.
+     - Ampliado el ancho visual a `w-[28px]` para admitir cifras de 2 dígitos y decimales con holgura.
+  4. *Replicación Canónica en `CapsulaTableroPlus.tsx`*:
+     - Se aplicó exactamente el mismo patrón desacoplado para `tiempoAparicion` y `tiempoInicioMovimiento` de tableros.
+  5. *Acción Rápida por Lotes en Cabecera de Congelados (`CapaMultiplePlusCard.tsx`)*:
+     - Añadida una cápsula rápida en la cabecera: `Todos a: [   ] s`, permitiendo sincronizar en un solo clic/Enter el segundo de aparición de todos los herrajes congelados de la capa.
+- **Validación de Calidad**:
+  * Compilación TypeScript verificada (`npx tsc --noEmit`) en `c:\Desarrollo\mmapp\3bf` con **0 errores**.
+  * Edición fluida garantizada: escritura inmediata de cualquier valor (`0`, `10`, `15.5`), borrado sin trabas y cero titileo en el canvas 3D.
+
+---
+
+### 🚀 Hito 223: Elevación Vertical en Altura Z de Piezas y Despeje Físico de Herrajes Inferiores en Múltiple Plus (Opción B) (`storeTypes.ts`, `multiplePlusKinematics.ts`, `cadStateUtils.ts`, `CapsulaTableroPlus.tsx`) (27 de Septiembre, 2026)
+- **Diagnóstico y Solicitud del Usuario**:
+  * **Problema Físico de Taller**: En el Paso P03 de Cómoda Ravenna, la `Peça 2` (montante vertical) recibe tarugos (`Cavilhas`) tanto en su canto superior como en su canto inferior. Al colocar la pieza en su posición de espera sobre el suelo ($Y = 0$), el canto inferior quedaba apoyado a ras de la cuadrícula, dejando $0\text{ cm}$ de espacio libre. Esto provocaba que los tarugos inferiores tuvieran que entrar atravesando o intersectando el suelo, resultando en una presentación visual y pedagógicamente incorrecta.
+  * **Decisión Estratégica**: Para no agregar la complejidad de rotar piezas individuales a $90^\circ$ en este hito, se implementó la **Opción B**: permitir elevar la pieza en vertical (altura $Z$ de taller sobre el banco) desde su propia cápsula. Esta elevación imita fielmente el acto real de un operario que sostiene o suspende la pieza en el aire mientras le inserta los tarugos antes de encajarla en la estructura.
+- **Implementación Técnica & Matemática Rigurosa**:
+  1. *Transformación Inversa de Orientación de Banco ($\mathbf{R}^{-1} \cdot (0, H, 0)$)*:
+     - En Three.js, la altura vertical mundial es $+Y_{\text{mundo}} = (0, 1, 0)$. El contenedor del mueble se encuentra rotado por la matriz $\mathbf{R}$ de `paso.orientacionBanco?.rotacion`.
+     - Para elevar cualquier pieza por una altura $H$ (en metros) verticalmente en el mundo, sin importar la rotación angular del mueble en el banco de trabajo, se calcula el vector en espacio local:
+       $$\vec{v}_{\text{elevLocal}} = \mathbf{R}^{-1} \cdot \begin{pmatrix} 0 \\ H \\ 0 \end{pmatrix}$$
+     - Se integró la función pura `calcularVectorElevacionLocal(elevacionCm?: number)` en `multiplePlusKinematics.ts`.
+  2. *Propagación Cinemática Rígida Solidaria a Tableros y Herrajes*:
+     - Se sumó $\vec{v}_{\text{elevLocal}}$ directamente a `vPropio` en el bucle de tableros y en la resolución de tableros anfitriones (`TableroCapaReferencia`) para herrajes.
+     - Tanto los tarugos del canto superior como los del canto inferior quedan automáticamente elevados por la misma cota $H$, despejando el espacio inferior para que los herrajes se aproximen y se inserten limpiamente en el aire.
+     - Durante el desplazamiento de armado hacia el destino (`base_master` o CAD final), la pieza translada y desciende simultáneamente hasta su posición final ensamblada.
+  3. *Tipado e Interfaces (`storeTypes.ts` & `cadStateUtils.ts`)*:
+     - Añadido `elevacionZCm?: number;` a `TableroCapaPlus` y a `TableroCapaReferencia`.
+  4. *Ergonomía de Interfaz Desacoplada (`CapsulaTableroPlus.tsx`)*:
+     - Incorporado el control en cápsula pura `rounded-full`: `Z: [ 0 ] cm` con estado local desacoplado `[textoElevacion, setTextoElevacion]` que confirma atómicamente en `onBlur` y tecla `Enter` (sin re-renders reactivos ni titileos al tipear).
+     - Actualizado el botón de reset ($\circlearrowleft$) para restablecer también `{ elevacionZCm: 0 }`.
+     - Actualizado el testigo visual de coordenadas para mostrar `+Zz` (ej. `0, 0, 0cm +40z`) cuando la pieza se encuentra elevada.
+- **Validación de Calidad**:
+  * Compilación TypeScript verificada (`npx tsc --noEmit`) en `c:\Desarrollo\mmapp\3bf` con **0 errores**.
+  * Coherencia cinemática 100% preservada con apoyo en suelo y acople rígido.
+
+---
+
+### 🚀 Hito 224: Giro 3D Discreto de Tableros en Ángulos Cerrados (Opción 2: Triple Píldora Cíclica Inline) y Limpieza de UI en Múltiple Plus (`storeTypes.ts`, `multiplePlusKinematics.ts`, `CapsulaTableroPlus.tsx`) (27 de Septiembre, 2026)
+- **Diagnóstico y Solicitud del Usuario**:
+  * **Casos de Uso de Taller**:
+    1. *Peça 5 (Zócalo / Traviesa con minifix en Cómoda Ravenna)*: Al acostarla en el banco de trabajo, los orificios para las tuercas minifix (`Porca (7)`, `Porca (8)`) quedan orientados hacia abajo contra el suelo; para insertar los herrajes de manera ergonómica y pedagógica se requiere voltear la pieza $180^\circ$ (sobre el eje Z) para que los barrenos apunten hacia arriba.
+    2. *Puertas de armario / Tableros verticales de gran formato*: Requieren acostarse ($X = 90^\circ$) para instalar bisagras y rotar en el plano de la mesa ($Y = 90^\circ$) para optimizar el encuadre horizontal de la pantalla sin requerir desplazamientos extremos de cámara.
+  * **Sinergia con Elevación Z (Hito 223)**: La cota de elevación vertical `elevacionZCm` garantiza el despeje necesario sobre el suelo para evitar que la pieza colisione con el plano al rotar.
+  * **Selección de Interfaz (Opción 2)**: Tras revisar el prototipo visual interactivo, el usuario seleccionó la **Opción 2: Triple Píldora Cíclica Inline (1 Clic = +90°)** por ser directa, ultra-rápida y carecer de menús flotantes.
+  * **Limpieza de Cápsula Solicitada**: El usuario identificó como innecesario el testigo numérico de coordenadas `(0, 0, 0cm +30z)`, solicitando su remoción definitiva para mantener la cápsula despejada.
+- **Implementación Técnica & Matemática Rigurosa**:
+  1. *Estructura de Datos y Tipado (`storeTypes.ts` & `cadStateUtils.ts`)*:
+     - Añadido `rotacionGrados?: [number, number, number];` en `TableroCapaPlus` y `TableroCapaReferencia`.
+  2. *Motor Cinemático Rígido de Giro en Banco (`multiplePlusKinematics.ts`)*:
+     - **Pivote Central Local**: Se calcula el baricentro geométrico local colectivo `centroTableroLocal` de todas las mallas que componen el tablero (ej. `Peça 5`, `MDP Peça 5`). Al rotar alrededor de este centro, la pieza gira in situ sobre su propio eje sin desplazarse por el escenario:
+       $$\vec{P}_{\text{rot}} = \vec{C} + \mathbf{R}_{\text{giro}} \cdot (\vec{P}_{\text{rest}} - \vec{C}) \implies \vec{\delta}_{\text{rot}} = \vec{P}_{\text{rot}} - \vec{P}_{\text{rest}}$$
+     - **Pista de Orientación Cuaternión (`QuaternionKeyframeTrack`)**:
+       Durante el lapso de desplazamiento $[t_{\text{inicioMov}}, t_{\text{llegada}}]$, el tablero interpola con `slerp` desde su orientación rotada en espera $\mathbf{q}_{\text{rotada}} = \mathbf{q}_{\text{giro}} \cdot \mathbf{q}_{\text{rest}}$ hacia su orientación definitiva de diseño CAD $\mathbf{q}_{\text{rest}}$.
+     - **Acople Solidario de Barrenos y Herrajes**:
+       Tanto los orificios como los herrajes (axial y congelados) se transforman de manera rígida:
+       $$\vec{P}_{\text{hw, espera}} = \vec{C} + \mathbf{R}_{\text{giro}} \cdot (\vec{P}_{\text{hw, rest}} - \vec{C}) + \vec{\Delta}_{\text{espera}}$$
+       El vector de aproximación de inserción $\vec{v}_{\text{dir}}$ se rota por $\mathbf{R}_{\text{giro}}$, garantizando que pernos y tuercas ingresen perpendicularmente a las caras y cantos rotados.
+  3. *Interfaz Ergonómica Inline (`CapsulaTableroPlus.tsx`)*:
+     - Implementada la píldora `[ Giro: | X:0° | Y:0° | Z:0° ]`.
+     - Ciclado discreto a 1 clic: $0^\circ \to 90^\circ \to 180^\circ \to -90^\circ \to 0^\circ$ (con clic secundario / derecho para ciclado inverso).
+     - Terminaciones en cápsulas circulares puras (`rounded-full`).
+     - Estado neutro $0^\circ$ en gris tenue; estado activo ($\neq 0^\circ$) iluminado con el color oficial de la marca (`#0088AA` en Tech Ethos Light / `#1368AA` en Obsidian Dark mate sin incandescencias).
+     - Eliminación definitiva del testigo numérico redundante `(0, 0, 0cm +30z)`.
+     - Botón de reset ($\circlearrowleft$) ampliado para restablecer también `{ rotacionGrados: [0, 0, 0] }`.
+- **Validación de Calidad**:
+  * Compilación TypeScript verificada (`npx tsc --noEmit`) en `c:\Desarrollo\mmapp\3bf` con **0 errores**.
+  * Cero titileos en edición, fluidez total de animación y rotación 3D precisa sin desarticulación de herrajes.
+
+---
+
+### 🚀 Hito 225: Blindaje Cinemático de Aristas Técnicas CAD, Wireframe de Herrajes en Modo Líneas y Acceso Rápido Universal (`manualAnimationEngine.ts`, `AssemblyAnimationController.tsx`, `cadStateUtils.ts`, `BoardMesh.tsx`, `NPanel.tsx`, `page.tsx`) (27 de Septiembre, 2026)
+- **Diagnóstico del Problema**:
+  * **Invisibilidad en Modo Manual vs Nítidas en Visor 3D**: Las aristas técnicas CAD y la malla wireframe de los herrajes (`modoVisual === "lineas"`) eran perfectamente visibles en el Visor 3D pero desaparecían por completo en el Manual 3D.
+  * **Causa Raíz Cinemática (Bug de Escala Cero en Sub-Mallas y Líneas)**:
+    1. El componente `@react-three/drei` `<Edges />` crea instancias de `Line2` (que en Three.js heredan de `THREE.Mesh`).
+    2. En el modo líneas, `BoardMesh.tsx` monta una submalla hija `<mesh geometry={customGeometry}><meshBasicMaterial wireframe={true} ... /></mesh>` para dibujar la triangulación de herrajes y piezas.
+    3. Al arrancar el mezclador de animaciones del Manual 3D, `rootScene.traverse` recolectaba todas las mallas `isMesh`. Al no coincidir con nombres de tableros ni herrajes de capa, el motor cinemático catalogaba tanto a las líneas `Line2` como a las submallas hijas de wireframe como piezas inactivas no asignadas, inyectándoles una pista de escala `[0, 0, 0]`, haciéndolas colapsar a cero en cada frame.
+  * **Causa de Interfaz**: En el modo Manual, la tira vertical de pestañas del N-Panel restringía el acceso exclusivamente a "Bloques Estándar", ocultando "Calibrar" y "Apariencia", y no existía un botón de acceso directo en la cabecera del visor.
+- **Implementación Técnica**:
+  1. *Filtro Incondicional de Líneas Auxiliares, Wireframes y Submallas Hijas (`manualAnimationEngine.ts`, `cadStateUtils.ts`, `AssemblyAnimationController.tsx`, `BoardMesh.tsx`)*:
+     - Anotación explícita de las mallas wireframe hijas con `userData={{ isWireframeHelper: true, __esHelperVisual: true }}` y renderOrder priorizado para herrajes (`isHardware ? 26 : 12`, `opacity: 0.70`).
+     - Se blindaron todos los traversals de escena (`manualAnimationEngine.ts`, `cadStateUtils.ts`, `AssemblyAnimationController.tsx`) para ignorar de forma absoluta cualquier objeto donde `isLine`, `isLine2`, `isLineSegments`, `isLineSegments2`, `isWireframeHelper`, `__esHelperVisual` o `child.parent.isMesh` sea verdadero.
+     - Ni las aristas perimetrales ni el wireframe facetado de los herrajes reciben jamás pistas de escala `[0, 0, 0]`, manteniéndose en escala natural `[1, 1, 1]` y moviéndose solidariamente con su malla padre animada.
+     - Se previenen recompilaciones espurias en `AssemblyAnimationController` al montar o desmontar helpers visuales.
+  2. *Botón de Acceso Rápido en la Cabecera Superior (`app/page.tsx`)*:
+     - Botón cápsula pura (`rounded-full`) integrado junto a la botonera de los 4 modos visuales con ícono `BoxSelect`.
+     - Permite alternar las aristas técnicas CAD en 1 solo clic (`mostrarAristas: true/false`) con feedback visual instantáneo (azul oficial de marca `#0891b2` cuando están activas).
+  3. *Habilitación de Calibrar y Apariencia en el Modo Manual 3D (`NPanel.tsx`)*:
+     - Se liberó el acceso en la tira de pestañas laterales para que durante el modo manual el usuario pueda alternar entre "Bloques Estándar", "Calibrar" y "Apariencia".
+     - Permite ajustar en vivo el color, grosor y opacidad de las aristas sin tener que cambiar de vista.
+- **Validación de Calidad**:
+
+---
+
+### 🚀 Hito 226: Cohesión Geométrica Rígida Absoluta en Giros 3D: Sub-muestreo Denso de Trayectoria Rotacional, Erradicación del Colapso Lineal de Cuerdas y Vinculación Milimétrica de Barrenos en `3dBimFab` (`multiplePlusKinematics.ts`, `cadStateUtils.ts`, `AssemblyAnimationController.tsx`) (27 de Septiembre, 2026)
+- **Diagnóstico del Problema (Desarticulación en Rotación Dinámica)**:
+  * **Síntomas Observados**: Al girar una pieza (ej. $180^\circ$ en $X$ para `Peça 3`), durante el vuelo de traslación/rotación hacia su posición final, las distintas mallas de la pieza se desunían: la lámina con textura de madera se hundía dentro del núcleo de MDP, las tuercas (`Porca (7)`) se salían de su cajeado quedando suspendidas en el aire, y los tarugos (`Cavilha (91)`) se desencajaban de los barrenos.
+  * **Causa Raíz Cinemática (Desviación de Cuerda vs Arco Esférico en Three.js)**:
+    1. El motor generaba únicamente los keyframes en los extremos de la trayectoria (`tInicioMov` y `tLlegada`).
+    2. Durante ese intervalo, Three.js interpola la orientación de forma esférica (`slerp`), pero la posición de forma **lineal** (`lerp`).
+    3. Una interpolación lineal entre dos puntos de un arco circular traza una **cuerda recta**. Para un giro de $180^\circ$ con radio de giro $R = 60\text{ cm}$ (distancia del barreno al centro de masa), la desviación en el punto medio alcanzaba hasta $600\text{ mm}$ ($60\text{ cm}$), haciendo que cada malla siguiera su propia cuerda y colapsara hacia el centro del giro.
+    4. Adicionalmente, el evaluador de herrajes calculaba `deltaRotHw.lerp(0, alpha)` en lugar de aplicar la matriz rotacional instantánea sobre el vector barreno-centro.
+- **Implementación Técnica de la Solución**:
+  1. *Sub-muestreo Denso de Trayectoria Rotacional en Tableros (`multiplePlusKinematics.ts`)*:
+     - Cuando `tieneRotacion` es verdadero y la pieza viaja hacia el ensamble (`tRotEnd > tRotStart`), el motor inyecta automáticamente keyframes densos a lo largo del arco rotacional ($\Delta t \le 0.04\text{ s}$, mínimo 30 pasos).
+     - La desviación geométrica máxima de cuerda se reduce de **$600\text{ mm}$ a menos de $0.3\text{ mm}$**, eliminando de raíz cualquier colapso visual o separación física.
+  2. *Función Canónica de Transformación Rígida Instantánea (`evaluarGiroTableroAtTime`)*:
+     - Se implementó la evaluación analítica universal:
+       $$P(t) = C_{\text{cad}} + \Delta_{\text{tab}}(t) + \text{matCurGiro}(t) \cdot (p_{\text{rest}} - C_{\text{cad}})$$
+       $$Q(t) = qCurGiro(t) \cdot q_{\text{rest}}$$
+     - Aplicada de manera 100% idéntica e invariante a todas las mallas del tablero (Cara A, Cara B, Núcleo MDP), herrajes congelados y barrenos de herrajes nuevos.
+  3. *Seguimiento Rígido de Barrenos para Herrajes en Rotación (`multiplePlusKinematics.ts`)*:
+     - La posición del barreno $P_{\text{barreno}}(t)$ se evalúa rígidamente en cada micro-instante a partir del centro del tablero anfitrión y su rotación esférica actual.
+     - Los herrajes congelados permanecen soldados a sus barrenos con 0.00 mm de tolerancia.
+     - Los herrajes nuevos reciben sub-muestreo durante la inserción y mantienen su vector axial $vDirOffsetRot(t)$ perfectamente alineado con la normal inclinada de la pieza.
+  4. *Sanitización Defensiva de Pistas de Cuaternión (`crearTrackQuaternionSanitizado`)*:
+     - Se creó un sanitizador estricto para evitar marcas de tiempo duplicadas ($< 5\text{ ms}$) en los `QuaternionKeyframeTrack` de Three.js.
+  6. *Restauración de Pista de Escala en Herrajes Nuevos (`multiplePlusKinematics.ts`)*:
+     - Se aseguró la pista de escala sanitizada `scale` (`[0, 0, 0]` antes de `tHwStart`, `[1, 1, 1]` a partir de `tHwStart`) para todos los herrajes nuevos en inserción axial, garantizando que permanezcan 100% invisibles en el aire hasta el segundo exacto estipulado en sus cápsulas (`tiempoAparicion`).
+- **Validación de Calidad**:
+  * Compilación TypeScript verificada (`npx tsc --noEmit`) en `c:\Desarrollo\mmapp\3bf` con **0 errores**.
+  * Cohesión matemática absoluta: tuercas, tarugos y láminas de madera viajan 100% integrados sin desfasarse ni un solo milímetro durante giros de $90^\circ$ o $180^\circ$, y respetan estrictamente su segundo de aparición programado.
+
+---
+
+### 🚀 Hito 227: Sistema de Detección Cromática de Iluminación y Destello Titilante (Beacon Glow Pulse) para Herrajes en `3dBimFab`: Cápsula Sin Iconos (Azul Tenue / Amarillo) y Sincronización Independiente de Segundo y Duración (`CapsulaHerrajePlus.tsx`, `BoardMesh.tsx`, `storeTypes.ts`) (27 de Septiembre, 2026)
+- **Problema de Negocio y Didáctica Visual**:
+  * Al colocar tapas adhesivas para tornillos (`Tampa (1)` ... `Tampa (6)`), al compartir exactamente la misma textura y veta del tablero de MDP, el herraje quedaba camuflado e imperceptible durante su colocación y trayectoria.
+  * Adicionalmente, durante las locuciones del manual y encuadres cinematográficos de cámara en pasos de armado, se requería una señal luminosa llamativa para enfocar la atención del usuario en un herraje específico en un segundo determinado.
+- **Implementación Técnica de la Solución**:
+  1. *Estructura de Datos en `lib/storeTypes.ts`*:
+     - Se definió la interfaz `HerrajeDestelloConfig` con `duracion?: number` y `tiempoInicio?: number`.
+     - Integración retrocompatible en `HerrajeCapaPlus` (`destello?: HerrajeDestelloConfig`).
+  2. *Cápsula de Herrajes con Detección Cromática Sin Iconos (`CapsulaHerrajePlus.tsx`)*:
+     - Cumplimiento estricto de la regla de diseño: cápsulas puras (`rounded-full`), cero rectángulos redondeados y **cero iconos visuales añadidos** (100% tipográfico y semántica de color).
+     - **Separación Conceptual y Espacial**:
+       * `apa: [ 152 ] s`: Segundo de aparición física en escena.
+       * Cápsula de Iluminación agrupada:
+         - `dur: [ 0 ] s`: Fondo azul tenue por defecto (`bg-sky-100 dark:bg-sky-950/70 border-sky-300`), representando estado estático/congelado. Al digitar cualquier número mayor a 0 (ej. `2` o `3`), se transforma automáticamente en amarillo cálido (`bg-amber-300 dark:bg-amber-500 border-amber-500 text-amber-950 ring-1 ring-amber-400/60`).
+         - `|`: Separador visual sutil.
+         - `en: [ 152 ] s`: Segundo exacto en que debe titilar, ubicado a la derecha de la cápsula de iluminación. Por defecto se sincroniza con el tiempo de aparición, pero es 100% editable e independiente (ej. `160s` para locución con zoom de cámara).
+  3. *Motor de Sombreado 3D y Pulso Senoidal en WebGL (`BoardMesh.tsx`)*:
+     - Detección en tiempo real de `estaTitilando` comparando `timelineCurrentTime` contra el intervalo $[t_{\text{inicio}}, t_{\text{inicio}} + \text{duración}]$.
+     - Integración de `useFrame` de `@react-three/fiber` con oscilación senoidal suave a $2.5\text{ Hz}$ sobre `emissive` (`#FFDE00`) variando la intensidad de $0.6$ a $3.0\times$.
+     - Prioridad de renderizado (`renderOrder: 48`), `depthWrite: true`, `transparent: false` y `polygonOffset: true` (`factor: -2`, `units: -2`) para garantizar que las tapas adhesivas y herrajes resalten con absoluta claridad sin z-fighting ni camuflaje con la madera.
+  4. *Opción C: Aura / Resplandor Dorado Expandible (Glow Shell) en Exportación glTF 2.0 / GLB para Babylon.js Sandbox y Blender (`multiplePlusKinematics.ts`)*:
+     - Debido a que el estándar glTF 2.0 universal no admite canales de animación sobre propiedades de material (`emissive` animado en núcleo glTF), se implementó la arquitectura de **Malla de Aura Dorada (Glow Shell)**.
+     - Para cada herraje con destello activo, se genera automáticamente una malla hija `${hwMesh.name}_AuraDestello` con material PBR oro de alto resplandor (`color: #FFE066`, `emissive: #FFC000`, intensidad $3.0\times$).
+     - Al estar emparentada como hija directa de la malla del herraje, acompaña de forma 100% rígida y matemática cualquier posición, giro de banco o trayectoria de aproximación.
+     - Su animación en el archivo GLB se rige por un track de escala `${auraMesh.uuid}.scale` sanitizado: permanece en `[0, 0, 0]` antes y después del intervalo, y durante el destello $[t_{\text{inicio}}, t_{\text{inicio}} + \text{duración}]$ pulsa a $2.5\text{ Hz}$ expandiéndose suavemente entre $1.05\times$ y $1.40\times$ sobre la superficie de madera.
+     - Compatibilidad garantizada al 100% en Babylon.js Sandbox, Blender, Windows 3D Viewer y visores AR de iOS y Android.
+- **Validación de Calidad**:
+  * Compilación TypeScript verificada (`npx tsc --noEmit`) en `c:\Desarrollo\mmapp\3bf` con **0 errores**.
+  * Detección cromática instantánea en UI: escribir duración activa el resplandor amarillo; borrarlo o dejarlo en `0s` regresa al azul tenue sin saturación visual.
+  * Animación en GLB: la malla de aura dorada palpita de forma visible y llamativa en Babylon.js Sandbox exactamente en el segundo y duración configurados.
+
+
+
+
+

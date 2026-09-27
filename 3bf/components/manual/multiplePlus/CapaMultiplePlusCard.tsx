@@ -16,8 +16,10 @@ import {
   ChevronRight,
   LocateFixed,
   Check,
+  Move,
+  Link2,
 } from "lucide-react";
-import { CapaMultiplePlus, PasoManualStudio, TableroCapaPlus, HerrajeCapaPlus } from "@/lib/storeTypes";
+import { CapaMultiplePlus, PasoManualStudio, TableroCapaPlus, HerrajeCapaPlus, OffsetBancoCm } from "@/lib/storeTypes";
 import { CapsulaTableroPlus } from "./CapsulaTableroPlus";
 import { CapsulaHerrajePlus } from "./CapsulaHerrajePlus";
 import { IconOcultarMostrar, IconOcultarMostrarInvertido as IconInvertir } from "../StepManagerIcons";
@@ -46,6 +48,8 @@ interface CapaMultiplePlusCardProps {
   onRemoverHerraje: (capaId: string, herrajeId: string) => void;
   onToggleCongelarHerraje: (capaId: string, herrajeId: string) => void;
   onDefinirMaster: (capaId: string, piezaNombre: string | undefined) => void;
+  onActualizarOffsetMaster?: (capaId: string, offset: OffsetBancoCm) => void;
+  onActualizarTiempoAcopleMaster?: (capaId: string, tiempoAcopleSegundos: number, duracionAcopleSegundos: number) => void;
   onToggleColapsar?: (capaId: string) => void;
   onTogglePosicionar: (tableroId: string) => void;
   onIniciarPickingCapa: (capaId: string) => void;
@@ -80,6 +84,8 @@ export function CapaMultiplePlusCard({
   onRemoverHerraje,
   onToggleCongelarHerraje,
   onDefinirMaster,
+  onActualizarOffsetMaster,
+  onActualizarTiempoAcopleMaster,
   onToggleColapsar,
   onTogglePosicionar,
   onIniciarPickingCapa,
@@ -483,14 +489,38 @@ export function CapaMultiplePlusCard({
       {/* ── FILA 4: CONGELADOR DE HERRAJES (Pre-instalados en pasos anteriores) ── */}
       {capa.congelados.length > 0 && (
         <div className="flex flex-col gap-1 p-2 rounded-2xl bg-sky-50/60 dark:bg-sky-950/40 border border-sky-200 dark:border-sky-800/60">
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between gap-1 flex-wrap">
             <span className="text-[10px] font-bold text-sky-800 dark:text-sky-300 flex items-center gap-1">
               <Snowflake className="w-3 h-3 text-sky-500" />
               Herrajes Congelados ({capa.congelados.length}):
             </span>
-            <span className="text-[8.5px] text-sky-600/70 dark:text-sky-400/70 italic">
-              Viajan fijos sin animación de aproximación
-            </span>
+            <div className="flex items-center gap-2">
+              <span className="text-[8.5px] text-sky-600/70 dark:text-sky-400/70 italic hidden sm:inline">
+                Viajan fijos sin aproximación
+              </span>
+              {/* ⚡ Fijar a todos a la vez */}
+              <div
+                title="Fijar el segundo de aparición de todos los herrajes congelados a la vez (presiona Enter)"
+                className="flex items-center gap-1 bg-white dark:bg-slate-900 px-2 py-0.5 rounded-full border border-sky-300 dark:border-sky-700 shadow-2xs text-[8.5px]"
+              >
+                <span className="font-bold text-sky-700 dark:text-sky-300">Todos a:</span>
+                <input
+                  type="text"
+                  inputMode="decimal"
+                  placeholder="0"
+                  defaultValue=""
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      const val = Math.max(0, parseFloat((e.target as HTMLInputElement).value) || 0);
+                      capa.congelados.forEach((h) => onActualizarHerraje(capa.id, h.id, { tiempoAparicion: val }));
+                      (e.target as HTMLInputElement).blur();
+                    }
+                  }}
+                  className="w-7 text-center font-mono font-bold bg-transparent text-sky-800 dark:text-sky-200 outline-none p-0 border-none cursor-text"
+                />
+                <span className="font-bold text-sky-500">s</span>
+              </div>
+            </div>
           </div>
 
           <div className="flex flex-wrap gap-1 max-h-28 overflow-y-auto">
@@ -511,24 +541,134 @@ export function CapaMultiplePlusCard({
         </div>
       )}
 
-      {/* ── FILA 5: PIEZA MASTER DE LA CAPA ── */}
+      {/* ── FILA 5: PIEZA MASTER DE LA CAPA & SUBENSAMBLE DESPLAZADO ── */}
       <div className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-slate-100 dark:border-slate-800/80 text-[10px]">
-        {/* Selector de Pieza Master */}
-        <div className="flex items-center gap-1 bg-amber-50 dark:bg-amber-950/60 px-2.5 py-1 rounded-full border border-amber-200 dark:border-amber-800 text-[10px]">
-          <Crown className="w-3 h-3 text-amber-500 shrink-0" />
-          <span className="font-bold text-amber-800 dark:text-amber-200">Pieza Master:</span>
-          <select
-            value={capa.piezaMaster || ""}
-            onChange={(e) => onDefinirMaster(capa.id, e.target.value || undefined)}
-            className="bg-transparent font-extrabold text-amber-900 dark:text-amber-100 outline-none cursor-pointer max-w-[130px] truncate"
-          >
-            <option value="">(Ninguna / Solidaria)</option>
-            {capa.tableros.map((t) => (
-              <option key={t.id} value={t.id}>
-                👑 {t.id}
-              </option>
-            ))}
-          </select>
+        {/* Selector de Pieza Master y Controles de Subensamble */}
+        <div className="flex items-center gap-1.5 flex-wrap">
+          <div className="flex items-center gap-1 bg-amber-50 dark:bg-amber-950/60 px-2.5 py-1 rounded-full border border-amber-200 dark:border-amber-800 text-[10px]">
+            <Crown className="w-3 h-3 text-amber-500 shrink-0" />
+            <span className="font-bold text-amber-800 dark:text-amber-200">Pieza Master:</span>
+            <select
+              value={capa.piezaMaster || ""}
+              onChange={(e) => onDefinirMaster(capa.id, e.target.value || undefined)}
+              className="bg-transparent font-extrabold text-amber-900 dark:text-amber-100 outline-none cursor-pointer max-w-[130px] truncate"
+            >
+              <option value="">(Ninguna / Solidaria)</option>
+              {capa.tableros.map((t) => (
+                <option key={t.id} value={t.id}>
+                  👑 {t.id}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* 🌟 Controles de Subensamble Desplazado en Banco & Acople */}
+          {capa.piezaMaster && (
+            <>
+              {/* Cápsula de Desplazamiento en Banco */}
+              <div
+                className="flex items-center gap-1.5 bg-slate-50 dark:bg-slate-800/70 border border-slate-200 dark:border-slate-700/80 px-2.5 py-0.5 rounded-full shadow-2xs"
+                title="Desplazamiento del subensamble en el banco de trabajo (X transversal, Z longitudinal)"
+              >
+                <Move className="w-3 h-3 text-cyan-600 dark:text-cyan-400 shrink-0" />
+                <span className="font-bold text-slate-600 dark:text-slate-300">Banco:</span>
+
+                {/* X */}
+                <div className="flex items-center gap-0.5">
+                  <span className="text-[9px] font-mono text-slate-400">X:</span>
+                  <input
+                    type="number"
+                    value={capa.offsetBancoCm?.x ?? 0}
+                    onChange={(e) => {
+                      const val = parseFloat(e.target.value);
+                      onActualizarOffsetMaster?.(capa.id, {
+                        x: isNaN(val) ? 0 : val,
+                        y: capa.offsetBancoCm?.y ?? 0,
+                        z: capa.offsetBancoCm?.z ?? 0,
+                      });
+                    }}
+                    onFocus={(e) => e.currentTarget.select()}
+                    step={5}
+                    className="w-11 px-1 py-0.5 text-center font-mono font-bold text-slate-800 dark:text-slate-100 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-full text-[9.5px] outline-none focus:border-cyan-500 shadow-2xs"
+                  />
+                </div>
+
+                {/* Z */}
+                <div className="flex items-center gap-0.5">
+                  <span className="text-[9px] font-mono text-slate-400">Z:</span>
+                  <input
+                    type="number"
+                    value={capa.offsetBancoCm?.z ?? 0}
+                    onChange={(e) => {
+                      const val = parseFloat(e.target.value);
+                      onActualizarOffsetMaster?.(capa.id, {
+                        x: capa.offsetBancoCm?.x ?? 0,
+                        y: capa.offsetBancoCm?.y ?? 0,
+                        z: isNaN(val) ? 0 : val,
+                      });
+                    }}
+                    onFocus={(e) => e.currentTarget.select()}
+                    step={5}
+                    className="w-11 px-1 py-0.5 text-center font-mono font-bold text-slate-800 dark:text-slate-100 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-full text-[9.5px] outline-none focus:border-cyan-500 shadow-2xs"
+                  />
+                  <span className="text-[9px] text-slate-400 font-medium">cm</span>
+                </div>
+              </div>
+
+              {/* Cápsula de Acople / Docking */}
+              <div
+                className="flex items-center gap-1.5 bg-slate-50 dark:bg-slate-800/70 border border-slate-200 dark:border-slate-700/80 px-2.5 py-0.5 rounded-full shadow-2xs"
+                title="Momento en que el subensamble finalizado viaja desde el banco a su posición final en el mueble"
+              >
+                <Link2 className="w-3 h-3 text-amber-500 shrink-0" />
+                <span className="font-bold text-slate-600 dark:text-slate-300">Acople:</span>
+
+                {/* Segundo de acople */}
+                <div className="flex items-center gap-0.5">
+                  <span className="text-[9px] text-slate-400">seg:</span>
+                  <input
+                    type="number"
+                    value={
+                      capa.tiempoAcopleSegundos ??
+                      Math.max(0.5, Number(((paso.duracionAudioSegundos || 6) - 2.0).toFixed(1)))
+                    }
+                    onChange={(e) => {
+                      const val = parseFloat(e.target.value);
+                      const dur = capa.duracionAcopleSegundos ?? 2.0;
+                      onActualizarTiempoAcopleMaster?.(capa.id, isNaN(val) ? 0 : val, dur);
+                    }}
+                    onFocus={(e) => e.currentTarget.select()}
+                    step={0.5}
+                    min={0}
+                    max={paso.duracionAudioSegundos || 60}
+                    className="w-11 px-1 py-0.5 text-center font-mono font-bold text-slate-800 dark:text-slate-100 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-full text-[9.5px] outline-none focus:border-amber-500 shadow-2xs"
+                  />
+                </div>
+
+                {/* Duración del acople */}
+                <div className="flex items-center gap-0.5">
+                  <span className="text-[9px] text-slate-400">dur:</span>
+                  <input
+                    type="number"
+                    value={capa.duracionAcopleSegundos ?? 2.0}
+                    onChange={(e) => {
+                      const val = parseFloat(e.target.value);
+                      const tAcople =
+                        capa.tiempoAcopleSegundos ??
+                        Math.max(0.5, Number(((paso.duracionAudioSegundos || 6) - 2.0).toFixed(1)));
+                      onActualizarTiempoAcopleMaster?.(capa.id, tAcople, isNaN(val) ? 2.0 : val);
+                    }}
+                    onFocus={(e) => e.currentTarget.select()}
+                    step={0.5}
+                    min={0.5}
+                    max={10}
+                    className="w-10 px-1 py-0.5 text-center font-mono font-bold text-slate-800 dark:text-slate-100 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-full text-[9.5px] outline-none focus:border-amber-500 shadow-2xs"
+                  />
+                  <span className="text-[9px] text-slate-400 font-medium">s</span>
+                </div>
+              </div>
+            </>
+          )}
         </div>
       </div>
         </>

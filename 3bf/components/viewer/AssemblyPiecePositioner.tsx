@@ -330,9 +330,9 @@ export function AssemblyPiecePositioner({
       if (paso) {
         // En el sistema de coordenadas local del contenedor (consistente con cinemática y rotación de banco):
         const deltaLocal = latestDeltaLocalRef.current;
-        const deltaX_cm = Math.round(deltaLocal.x * 100);
-        const deltaY_cm = Math.round(deltaLocal.y * 100); // 🎯 Drop local que apoya la pieza en el suelo
-        const deltaZ_cm = Math.round(deltaLocal.z * 100);
+        const deltaX_cm = Math.round(deltaLocal.x * 1000) / 10;
+        const deltaY_cm = Math.round(deltaLocal.y * 1000) / 10; // 🎯 Drop local que apoya la pieza en el suelo (precisión 1 mm)
+        const deltaZ_cm = Math.round(deltaLocal.z * 1000) / 10;
 
         const cfgActual = paso.configuracionCinematica || {
           velocidadPiezasCmS: 15,

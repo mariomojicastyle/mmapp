@@ -31,6 +31,19 @@ export { extraerPiezaMadre, extraerFamiliaPieza, perteneceAMismaFamiliaPieza };
  * Este estado representa el diseño exacto original sin ninguna transformación de banco.
  */
 export function asegurarCadOriginal(obj: THREE.Object3D) {
+  if (
+    (obj as any).isLine ||
+    (obj as any).isLine2 ||
+    (obj as any).isLineSegments ||
+    (obj as any).isLineSegments2 ||
+    obj.type?.includes("Line") ||
+    obj.name?.includes("Edges") ||
+    (obj as any).userData?.isWireframeHelper ||
+    (obj as any).userData?.__esHelperVisual ||
+    Boolean(obj.parent && (obj.parent as THREE.Mesh).isMesh)
+  ) {
+    return;
+  }
   if (!obj.userData.__cadOrigPosition) {
     const init = obj.userData.initialPosition;
     if (init && typeof init.clone === "function") {
@@ -55,6 +68,19 @@ export function asegurarCadOriginal(obj: THREE.Object3D) {
  * Restaura el objeto a su posición, rotación, escala y matriz CAD original inmutable.
  */
 export function restaurarACadOriginal(obj: THREE.Object3D) {
+  if (
+    (obj as any).isLine ||
+    (obj as any).isLine2 ||
+    (obj as any).isLineSegments ||
+    (obj as any).isLineSegments2 ||
+    obj.type?.includes("Line") ||
+    obj.name?.includes("Edges") ||
+    (obj as any).userData?.isWireframeHelper ||
+    (obj as any).userData?.__esHelperVisual ||
+    Boolean(obj.parent && (obj.parent as THREE.Mesh).isMesh)
+  ) {
+    return;
+  }
   asegurarCadOriginal(obj);
   obj.position.copy(obj.userData.__cadOrigPosition);
   obj.quaternion.copy(obj.userData.__cadOrigQuaternion);
@@ -1246,7 +1272,15 @@ export interface TableroCapaReferencia {
   offsetXCm?: number;
   offsetYCm?: number;
   offsetZCm?: number;
+  elevacionZCm?: number;
+  rotacionGrados?: [number, number, number];
   tiempoInicioMovimiento?: number;
+  centroLocal?: THREE.Vector3;
+  qGiro?: THREE.Quaternion;
+  matGiro?: THREE.Matrix4;
+  tieneRotacion?: boolean;
+  tLlegada?: number;
+  tRotStart?: number;
 }
 
 /**
@@ -1256,10 +1290,10 @@ export interface TableroCapaReferencia {
  *   en su posición de diseño (pHwRestWorld) a la caja envolvente de cada tablero, eligiendo
  *   la pieza cuyo barreno contiene el herraje (distancia euclídea mínima <= 3.5 cm).
  */
-export function resolverTableroAnfitrionHerraje(
+export function resolverTableroAnfitrionHerraje<T extends TableroCapaReferencia = TableroCapaReferencia>(
   pHwRestWorld: THREE.Vector3,
-  tablerosCapa: TableroCapaReferencia[]
-): TableroCapaReferencia | null {
+  tablerosCapa: T[]
+): T | null {
   if (!tablerosCapa || tablerosCapa.length === 0) return null;
   if (tablerosCapa.length === 1) return tablerosCapa[0];
 
@@ -1430,7 +1464,8 @@ export function aplicarPosicionesEscena3D(
   if (modo === "original") {
     // Restaurar absolutamente todas las mallas al reposo CAD
     sceneRoot.traverse((child: any) => {
-      if (child.isMesh) {
+      const isAuxiliary = child.isLine || child.isLine2 || child.isLineSegments || child.isLineSegments2 || child.type?.includes("Line") || child.name?.includes("Edges") || child.userData?.isWireframeHelper || child.userData?.__esHelperVisual || Boolean(child.parent && child.parent.isMesh);
+      if (child.isMesh && !isAuxiliary) {
         const pRest = getSafeRestPosition(child);
         const qRest = getSafeRestQuaternion(child);
         child.position.copy(pRest);
@@ -1448,7 +1483,8 @@ export function aplicarPosicionesEscena3D(
   const meshPorPieza: Record<string, THREE.Object3D> = {};
 
   sceneRoot.traverse((child: any) => {
-    if (!child.isMesh) return;
+    const isAuxiliary = child.isLine || child.isLine2 || child.isLineSegments || child.isLineSegments2 || child.type?.includes("Line") || child.name?.includes("Edges") || child.userData?.isWireframeHelper || child.userData?.__esHelperVisual || Boolean(child.parent && child.parent.isMesh);
+    if (!child.isMesh || isAuxiliary) return;
     const ik = ((child.userData?.instanciaKey || "") as string).toLowerCase().trim();
     const cn = ((child.userData?.cleanName || child.name || "") as string).toLowerCase().trim();
     const raw = (child.name || "").replace(/^RH_OUT:/i, "").trim().toLowerCase();
@@ -1481,7 +1517,8 @@ export function aplicarPosicionesEscena3D(
 
   // 3. Aplicar las transformaciones en la escena
   sceneRoot.traverse((child: any) => {
-    if (!child.isMesh) return;
+    const isAuxiliary = child.isLine || child.isLine2 || child.isLineSegments || child.isLineSegments2 || child.type?.includes("Line") || child.name?.includes("Edges") || child.userData?.isWireframeHelper || child.userData?.__esHelperVisual || Boolean(child.parent && child.parent.isMesh);
+    if (!child.isMesh || isAuxiliary) return;
     const u = child.userData || {};
     const ik = ((u.instanciaKey || "") as string).toLowerCase().trim();
     const cn = ((u.cleanName || child.name || "") as string).toLowerCase().trim();

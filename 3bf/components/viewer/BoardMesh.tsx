@@ -3,6 +3,7 @@
 import React from "react";
 import * as THREE from "three";
 import { Edges } from "@react-three/drei";
+import { useFrame } from "@react-three/fiber";
 import { use3BFStore } from "@/lib/store";
 import { extraerPiezaMadre } from "@/lib/piezaMadreUtils";
 import { useMaterialPBRMaps } from "./boardMesh/useMaterialPBRMaps";
@@ -155,6 +156,53 @@ export function BoardMesh({
       );
     });
   }, [herrajesHovered, cleanName, name, instanciaKey, pestanaActiva, pasoActivoManual, timelineCurrentTime]);
+
+  // 💡 Detección de destello titilante para herrajes (Tapas, tornillos, etc.) en el paso activo
+  const destelloHerraje = React.useMemo(() => {
+    if (pestanaActiva !== "manual" || !pasoActivoManual) return null;
+
+    const ikLow = (instanciaKey || "").toLowerCase().trim();
+    const cLow = cleanName.toLowerCase().trim();
+    const rLow = name.replace(/^RH_OUT:/i, "").trim().toLowerCase();
+
+    const esMultiplePlus = pasoActivoManual.tipo === "multiple_plus" || Boolean(pasoActivoManual.multiplePlus?.capas && pasoActivoManual.multiplePlus.capas.length > 0);
+    if (esMultiplePlus && pasoActivoManual.multiplePlus?.capas) {
+      for (const capa of pasoActivoManual.multiplePlus.capas) {
+        const herrajesCapa = [...(capa.herrajes || []), ...(capa.congelados || [])];
+        const hwEnCapa = herrajesCapa.find(
+          (h) => coincidenMismoHerraje(h.id, ikLow) || coincidenMismoHerraje(h.id, cLow) || coincidenMismoHerraje(h.id, rLow)
+        );
+        if (hwEnCapa?.destello && (hwEnCapa.destello.duracion || 0) > 0) {
+          const tInicio = hwEnCapa.destello.tiempoInicio ?? hwEnCapa.tiempoAparicion ?? 0;
+          const duracion = hwEnCapa.destello.duracion || 0;
+          return {
+            tInicio,
+            duracion,
+            tFin: tInicio + duracion,
+          };
+        }
+      }
+    }
+    return null;
+  }, [pestanaActiva, pasoActivoManual, instanciaKey, cleanName, name]);
+
+  const estaTitilando = Boolean(
+    destelloHerraje &&
+    timelineCurrentTime >= destelloHerraje.tInicio &&
+    timelineCurrentTime <= destelloHerraje.tFin
+  );
+
+  // 💫 Oscilación suave senoidal a 2.5 Hz (Three.js Emissive) durante el intervalo de titileo
+  useFrame(({ clock }) => {
+    if (!meshRef.current || !estaTitilando) return;
+    const mat = meshRef.current.material as THREE.MeshStandardMaterial;
+    if (mat && mat.emissive) {
+      const elapsed = clock.getElapsedTime();
+      const factor = (Math.sin(elapsed * Math.PI * 5) + 1) / 2;
+      mat.emissive.set("#FFDE00");
+      mat.emissiveIntensity = 0.6 + factor * 2.4;
+    }
+  });
 
   // En modo Invertir (ocultarNoAsignadas activo), las piezas se muestran en su color y material normal
   const estaSeleccionadaEnPicking = Boolean(
@@ -406,7 +454,7 @@ export function BoardMesh({
         ref={meshRef}
         position={position}
         scale={escalaEfectiva}
-        renderOrder={esDuplicado ? 20 : (estaHoveredEnHerrajes ? 50 : (estaSeleccionadaEnPicking ? 22 : (isHardwareTampa ? 25 : (esLaminaPlanaMadera ? 2 : undefined))))}
+        renderOrder={esDuplicado ? 20 : (estaHoveredEnHerrajes ? 50 : (estaTitilando ? 48 : (estaSeleccionadaEnPicking ? 22 : (isHardwareTampa ? 25 : (esLaminaPlanaMadera ? 2 : undefined)))))}
         name={instanciaKey ? `${instanciaKey}::${cleanName}` : cleanName}
         geometry={customGeometry}
         onClick={(e) => {
@@ -463,43 +511,49 @@ export function BoardMesh({
         }}
       >
         <meshStandardMaterial
-          key={`${activeMap ? (activeMap as any).uuid : "no-map"}-${modoVisualEfectivo}-${nombreMaterialEfectivo}-${finalMeshColor}-${opacity}-${roughness}-${metalness}-${esDuplicado}-${estaSeleccionadaEnPicking}-${estaHoveredEnHerrajes}`}
-          name={esDuplicado ? "Material_Duplicado_Alerta" : (estaHoveredEnHerrajes ? "Material_Herraje_Hover" : nombreMaterialEfectivo)}
-          color={esDuplicado ? "#EF4444" : (estaSeleccionadaEnPicking ? "#FBBF24" : (estaHoveredEnHerrajes ? "#FFF066" : finalMeshColor))}
+          key={`${activeMap ? (activeMap as any).uuid : "no-map"}-${modoVisualEfectivo}-${nombreMaterialEfectivo}-${finalMeshColor}-${opacity}-${roughness}-${metalness}-${esDuplicado}-${estaSeleccionadaEnPicking}-${estaHoveredEnHerrajes}-${estaTitilando}`}
+          name={esDuplicado ? "Material_Duplicado_Alerta" : (estaHoveredEnHerrajes ? "Material_Herraje_Hover" : (estaTitilando ? "Material_Herraje_Destello" : nombreMaterialEfectivo))}
+          color={esDuplicado ? "#EF4444" : (estaTitilando ? "#FFE066" : (estaSeleccionadaEnPicking ? "#FBBF24" : (estaHoveredEnHerrajes ? "#FFF066" : finalMeshColor)))}
           emissive={
             estaHoveredEnHerrajes
               ? new THREE.Color("#FFDE00")
-              : (estaSeleccionadaEnPicking
-                  ? new THREE.Color("#F59E0B")
-                  : (esDuplicado ? new THREE.Color("#DC2626") : undefined))
+              : (estaTitilando
+                  ? new THREE.Color("#FFDE00")
+                  : (estaSeleccionadaEnPicking
+                      ? new THREE.Color("#F59E0B")
+                      : (esDuplicado ? new THREE.Color("#DC2626") : undefined)))
           }
-          emissiveIntensity={estaHoveredEnHerrajes ? 2.8 : (estaSeleccionadaEnPicking ? 0.70 : (esDuplicado ? 0.45 : 0))}
+          emissiveIntensity={estaHoveredEnHerrajes ? 2.8 : (estaTitilando ? 2.0 : (estaSeleccionadaEnPicking ? 0.70 : (esDuplicado ? 0.45 : 0)))}
           map={activeMap}
           normalMap={activeNormal}
           normalScale={activeNormal ? new THREE.Vector2(normalScaleVal, normalScaleVal) : undefined}
           roughnessMap={activeRoughness}
           aoMap={activeAO}
           aoMapIntensity={materialPBR?.aoIntensity ?? 1.0}
-          envMapIntensity={estaHoveredEnHerrajes ? 2.5 : envMapIntensityEfectivo}
-          transparent={estaSeleccionadaEnPicking || estaHoveredEnHerrajes ? false : transparent}
-          opacity={estaSeleccionadaEnPicking || estaHoveredEnHerrajes ? 1.0 : opacity}
-          roughness={estaHoveredEnHerrajes ? 0.05 : roughness}
-          metalness={estaHoveredEnHerrajes ? 0.8 : metalness}
+          envMapIntensity={estaHoveredEnHerrajes || estaTitilando ? 2.5 : envMapIntensityEfectivo}
+          transparent={estaSeleccionadaEnPicking || estaHoveredEnHerrajes || estaTitilando ? false : transparent}
+          opacity={estaSeleccionadaEnPicking || estaHoveredEnHerrajes || estaTitilando ? 1.0 : opacity}
+          roughness={estaHoveredEnHerrajes || estaTitilando ? 0.05 : roughness}
+          metalness={estaHoveredEnHerrajes || estaTitilando ? 0.8 : metalness}
           wireframe={isWireframe}
-          depthWrite={estaSeleccionadaEnPicking || estaHoveredEnHerrajes ? true : depthWrite}
-          polygonOffset={isHardwareTampa || estaSeleccionadaEnPicking || esLaminaPlanaMadera}
-          polygonOffsetFactor={isHardwareTampa ? -2 : -1}
-          polygonOffsetUnits={isHardwareTampa ? -2 : -1}
+          depthWrite={estaSeleccionadaEnPicking || estaHoveredEnHerrajes || estaTitilando ? true : depthWrite}
+          polygonOffset={isHardwareTampa || estaSeleccionadaEnPicking || estaTitilando || esLaminaPlanaMadera}
+          polygonOffsetFactor={isHardwareTampa || estaTitilando ? -2 : -1}
+          polygonOffsetUnits={isHardwareTampa || estaTitilando ? -2 : -1}
           side={THREE.DoubleSide}
         />
         {/* 📐 Malla pura (wireframe de la geometría real) sobre la superficie sólida translúcida */}
         {modoVisual === "lineas" && (
-          <mesh geometry={customGeometry || undefined}>
+          <mesh 
+            geometry={customGeometry || undefined}
+            userData={{ isWireframeHelper: true, __esHelperVisual: true }}
+            renderOrder={estaHoveredEnHerrajes ? 56 : (estaSeleccionadaEnPicking ? 36 : (isHardware ? 26 : 12))}
+          >
             <meshBasicMaterial
               wireframe={true}
               color={calibracion.colorAristas || "#1E293B"}
               transparent={true}
-              opacity={0.45}
+              opacity={isHardware ? 0.70 : 0.45}
               depthWrite={false}
             />
           </mesh>
@@ -591,44 +645,49 @@ export function BoardMesh({
     >
       <boxGeometry args={size} />
       <meshStandardMaterial
-        key={`${activeMap ? (activeMap as any).uuid : "no-map"}-${modoVisualEfectivo}-${nombreMaterialEfectivo}-${finalMeshColor}-${opacity}-${roughness}-${metalness}-${esDuplicado}-${estaSeleccionadaEnPicking}-${estaHoveredEnHerrajes}`}
-        name={esDuplicado ? "Material_Duplicado_Alerta" : (estaHoveredEnHerrajes ? "Material_Herraje_Hover" : nombreMaterialEfectivo)}
-        color={esDuplicado ? "#EF4444" : (estaSeleccionadaEnPicking ? "#FBBF24" : (estaHoveredEnHerrajes ? "#FFF066" : finalMeshColor))}
+        key={`${activeMap ? (activeMap as any).uuid : "no-map"}-${modoVisualEfectivo}-${nombreMaterialEfectivo}-${finalMeshColor}-${opacity}-${roughness}-${metalness}-${esDuplicado}-${estaSeleccionadaEnPicking}-${estaHoveredEnHerrajes}-${estaTitilando}`}
+        name={esDuplicado ? "Material_Duplicado_Alerta" : (estaHoveredEnHerrajes ? "Material_Herraje_Hover" : (estaTitilando ? "Material_Herraje_Destello" : nombreMaterialEfectivo))}
+        color={esDuplicado ? "#EF4444" : (estaTitilando ? "#FFE066" : (estaSeleccionadaEnPicking ? "#FBBF24" : (estaHoveredEnHerrajes ? "#FFF066" : finalMeshColor)))}
         emissive={
           estaHoveredEnHerrajes
             ? new THREE.Color("#FFDE00")
-            : (estaSeleccionadaEnPicking
-                ? new THREE.Color("#F59E0B")
-                : (esDuplicado ? new THREE.Color("#DC2626") : undefined))
+            : (estaTitilando
+                ? new THREE.Color("#FFDE00")
+                : (estaSeleccionadaEnPicking
+                    ? new THREE.Color("#F59E0B")
+                    : (esDuplicado ? new THREE.Color("#DC2626") : undefined)))
         }
-        emissiveIntensity={estaHoveredEnHerrajes ? 2.8 : (estaSeleccionadaEnPicking ? 0.70 : (esDuplicado ? 0.45 : 0))}
+        emissiveIntensity={estaHoveredEnHerrajes ? 2.8 : (estaTitilando ? 2.0 : (estaSeleccionadaEnPicking ? 0.70 : (esDuplicado ? 0.45 : 0)))}
         map={activeMap}
         normalMap={activeNormal}
         normalScale={activeNormal ? new THREE.Vector2(normalScaleVal, normalScaleVal) : undefined}
         roughnessMap={activeRoughness}
         aoMap={activeAO}
         aoMapIntensity={materialPBR?.aoIntensity ?? 1.0}
-        envMapIntensity={estaHoveredEnHerrajes ? 2.5 : envMapIntensityEfectivo}
-        transparent={estaSeleccionadaEnPicking || estaHoveredEnHerrajes ? false : transparent}
-        opacity={estaSeleccionadaEnPicking || estaHoveredEnHerrajes ? 1.0 : opacity}
-        roughness={estaHoveredEnHerrajes ? 0.05 : roughness}
-        metalness={estaHoveredEnHerrajes ? 0.8 : metalness}
+        envMapIntensity={estaHoveredEnHerrajes || estaTitilando ? 2.5 : envMapIntensityEfectivo}
+        transparent={estaSeleccionadaEnPicking || estaHoveredEnHerrajes || estaTitilando ? false : transparent}
+        opacity={estaSeleccionadaEnPicking || estaHoveredEnHerrajes || estaTitilando ? 1.0 : opacity}
+        roughness={estaHoveredEnHerrajes || estaTitilando ? 0.05 : roughness}
+        metalness={estaHoveredEnHerrajes || estaTitilando ? 0.8 : metalness}
         wireframe={isWireframe}
-        depthWrite={estaSeleccionadaEnPicking || estaHoveredEnHerrajes ? true : depthWrite}
-        polygonOffset={isHardwareTampa || estaSeleccionadaEnPicking}
-        polygonOffsetFactor={isHardwareTampa ? -2 : -1}
-        polygonOffsetUnits={isHardwareTampa ? -2 : -1}
+        depthWrite={estaSeleccionadaEnPicking || estaHoveredEnHerrajes || estaTitilando ? true : depthWrite}
+        polygonOffset={isHardwareTampa || estaSeleccionadaEnPicking || estaTitilando}
+        polygonOffsetFactor={isHardwareTampa || estaTitilando ? -2 : -1}
+        polygonOffsetUnits={isHardwareTampa || estaTitilando ? -2 : -1}
         side={THREE.DoubleSide}
       />
       {/* 📐 Malla pura (wireframe de la geometría real) sobre la superficie sólida translúcida */}
       {modoVisual === "lineas" && (
-        <mesh>
+        <mesh 
+          userData={{ isWireframeHelper: true, __esHelperVisual: true }}
+          renderOrder={estaHoveredEnHerrajes ? 56 : (estaSeleccionadaEnPicking ? 36 : (isHardware ? 26 : 12))}
+        >
           <boxGeometry args={size} />
           <meshBasicMaterial
             wireframe={true}
             color={calibracion.colorAristas || "#1E293B"}
             transparent={true}
-            opacity={0.45}
+            opacity={isHardware ? 0.70 : 0.45}
             depthWrite={false}
           />
         </mesh>

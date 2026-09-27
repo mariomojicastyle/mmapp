@@ -120,23 +120,26 @@ export function resolverVisibilidadBoard(input: BoardVisibilityInput): {
 
   // 3. Bloques Funcionales / Grupos Cinemáticos (Soberanía e Independencia Absoluta)
   let estaOcultaPorGrupoCinematico = false;
+  let esPiezaDeBloqueFuncional = false;
   const pasoConGrupos = (pasoActivoManual.showcase?.gruposCinematicos && pasoActivoManual.showcase.gruposCinematicos.length > 0)
     ? pasoActivoManual
     : pasosManual.find((p) => p.id === 'P00' || p.tipo === 'showcase');
 
   if (pasoConGrupos?.showcase?.gruposCinematicos) {
-    estaOcultaPorGrupoCinematico = pasoConGrupos.showcase.gruposCinematicos.some(
-      (g) =>
-        g.oculto &&
-        g.piezas.some(
-          (pz) =>
-            pz === piezaMadre ||
-            pz === cleanName ||
-            (instanciaKey && pz === instanciaKey) ||
-            extraerPiezaMadre(pz) === piezaMadre ||
-            (instanciaKey && extraerPiezaMadre(pz) === instanciaKey)
-        )
+    const grupoEncontrado = pasoConGrupos.showcase.gruposCinematicos.find((g) =>
+      g.piezas.some(
+        (pz) =>
+          pz === piezaMadre ||
+          pz === cleanName ||
+          (instanciaKey && pz === instanciaKey) ||
+          extraerPiezaMadre(pz) === piezaMadre ||
+          (instanciaKey && extraerPiezaMadre(pz) === instanciaKey)
+      )
     );
+    if (grupoEncontrado) {
+      esPiezaDeBloqueFuncional = true;
+      estaOcultaPorGrupoCinematico = Boolean(grupoEncontrado.oculto);
+    }
   }
 
   if (estaOcultaPorGrupoCinematico) {
@@ -298,13 +301,19 @@ export function resolverVisibilidadBoard(input: BoardVisibilityInput): {
       }
       // Si modoHeredados === "solido", permanece visible y sólida PBR (esInactivoCristal = false)
     } else if (!esPickingCapa) {
-      // Inactiva (futura no ensamblada): controlada por modoInactivos (por defecto "oculto")
-      if (modoInactivos === "oculto") {
+      if (esPiezaDeBloqueFuncional) {
+        // 🛡️ Las piezas de Bloques Funcionales NO pertenecen a la capa virtual de inactivos
+        // Permanecen ocultas durante el ensamble del casco si su bloque no está activo
         estaOcultaPorReglasPaso = true;
-      } else if (modoInactivos === "cristal") {
-        esInactivoCristal = true;
-      } else if (modoInactivos === "global") {
-        esInactivoGlobal = true;
+      } else {
+        // Inactiva (futura no ensamblada): controlada por modoInactivos (por defecto "oculto")
+        if (modoInactivos === "oculto") {
+          estaOcultaPorReglasPaso = true;
+        } else if (modoInactivos === "cristal") {
+          esInactivoCristal = true;
+        } else if (modoInactivos === "global") {
+          esInactivoGlobal = true;
+        }
       }
     }
   } else if (!esPickingCapa && pasoActivoManual.ocultarNoAsignadas && !perteneceAlPasoActivo) {

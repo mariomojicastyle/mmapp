@@ -139,10 +139,6 @@ async function synthesizeTts(
   await tts.setMetadata(voice, cfg.formatString as any);
   
   const safeText = escapeXml(text);
-  // Cálculo de velocidad (rate):
-  // velocidad = 1.0 -> -2% (calibración base cálida didáctica)
-  // velocidad < 1.0 (ej 0.8) -> reduce aún más la velocidad en porcentaje
-  // velocidad > 1.0 (ej 1.2) -> incrementa la velocidad
   const deltaPercent = Math.round((velocidad - 1.0) * 100);
   const totalRatePercent = Math.max(-50, Math.min(50, -2 + deltaPercent));
   const rateStr = (totalRatePercent >= 0 ? "+" : "") + totalRatePercent + "%";
@@ -155,6 +151,65 @@ async function synthesizeTts(
     audioStream.on("end", () => resolve(Buffer.concat(chunks)));
     audioStream.on("error", (err: any) => reject(err));
   });
+}
+
+/// 🛡️ Ejecuta síntesis de TTS con hasta 3 reintentos automáticos y backoff ante caídas temporales de red o DNS (ENOTFOUND / ECONNRESET)
+async function synthesizeTtsWithRetry(
+  text: string,
+  voice: string,
+  calidad: CalidadAudioTts = "96k",
+  velocidad: number = 1.0,
+  maxRetries: number = 3
+): Promise<Buffer> {
+  let lastError: any = null;
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    try {
+      return await synthesizeTts(text, voice, calidad, velocidad);
+    } catch (err: any) {
+      lastError = err;
+      const esNetworkError =
+        err?.message?.includes("ENOTFOUND") ||
+        err?.message?.includes("ECONNRESET") ||
+        err?.message?.includes("ETIMEDOUT") ||
+        err?.message?.includes("WebSocket") ||
+        err?.message?.includes("closed before");
+
+      console.warn(
+        `[3dBimFab TTS] Segmento ("${text.substring(0, 30)}...") intento ${attempt}/${maxRetries} falló (${err?.message || err}). ${
+          attempt < maxRetries ? "Reintentando..." : "Sin más reintentos."
+        }`
+      );
+
+      if (attempt < maxRetries && esNetworkError) {
+        await new Promise((resolve) => setTimeout(resolve, attempt * 500));
+      } else if (!esNetworkError) {
+        throw err;
+      }
+    }
+  }
+  throw lastError;
+}
+
+/// 🚦 Pool de concurrencia controlada para no saturar el resolver DNS de Windows ni disparar bloqueos de Microsoft
+async function ejecutarConcurrenciaLimitada<T, R>(
+  items: T[],
+  limiteConcurrencia: number,
+  fn: (item: T) => Promise<R>
+): Promise<R[]> {
+  const resultados: R[] = new Array(items.length);
+  let index = 0;
+
+  async function worker() {
+    while (index < items.length) {
+      const i = index++;
+      resultados[i] = await fn(items[i]);
+    }
+  }
+
+  const workerCount = Math.max(1, Math.min(limiteConcurrencia, items.length));
+  const workers = Array.from({ length: workerCount }, () => worker());
+  await Promise.all(workers);
+  return resultados;
 }
 
 // Genera audio procesando etiquetas de pausa [pausa: X] o [pause: X]
@@ -173,7 +228,7 @@ async function synthesizeTtsWithPauses(
     // debido a que WebM no permite concatenación simple de frames binarios MP3
     if (calidad === "opus") {
       const parsedText = text.replace(pauseRegex, " ... ");
-      return await synthesizeTts(parsedText, voice, calidad, velocidad);
+      return await synthesizeTtsWithRetry(parsedText, voice, calidad, velocidad);
     }
 
     const segments: { type: "text" | "pause"; value: string | number }[] = [];
@@ -201,7 +256,8 @@ async function synthesizeTtsWithPauses(
     const silenceFrameBuf = Buffer.from(cfg.silenceFrameHex, "hex");
     const cleanSilenceBuffer = Buffer.concat(Array(42).fill(silenceFrameBuf));
 
-    // ⚡ Síntesis ultra rápida concurrente con Promise.all (reduce tiempo de ~15s a < 2s)
+    // ⚡ Síntesis controlada con un pool de concurrencia de máximo 3 conexiones simultáneas
+    // Evita saturar los 4 hilos del threadpool DNS de Node.js en Windows (ENOTFOUND)
     const textIndices: number[] = [];
     segments.forEach((s, idx) => {
       if (s.type === "text" && typeof s.value === "string") {
@@ -209,14 +265,19 @@ async function synthesizeTtsWithPauses(
       }
     });
 
-    const textPromises = textIndices.map((idx) =>
-      synthesizeTts(segments[idx].value as string, voice, calidad, velocidad).then((buf) => ({
-        idx,
-        buf: stripLameHeader(buf),
-      }))
+    const renderedResults = await ejecutarConcurrenciaLimitada(
+      textIndices,
+      3, // Concurrencia óptima: rápido, estable y 100% inmune a saturación DNS
+      async (idx) => {
+        const segText = segments[idx].value as string;
+        const buf = await synthesizeTtsWithRetry(segText, voice, calidad, velocidad);
+        return {
+          idx,
+          buf: stripLameHeader(buf),
+        };
+      }
     );
 
-    const renderedResults = await Promise.all(textPromises);
     const audioMap = new Map<number, Buffer>();
     renderedResults.forEach((r) => audioMap.set(r.idx, r.buf));
 
@@ -232,7 +293,7 @@ async function synthesizeTtsWithPauses(
 
     return Buffer.concat(renderedSegments);
   } else {
-    return await synthesizeTts(text, voice, calidad, velocidad);
+    return await synthesizeTtsWithRetry(text, voice, calidad, velocidad);
   }
 }
 

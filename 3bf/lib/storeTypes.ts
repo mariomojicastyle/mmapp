@@ -511,6 +511,13 @@ export interface TableroCapaPlus {
   offsetXCm?: number;
   offsetYCm?: number;
   offsetZCm?: number;
+  elevacionZCm?: number; // Elevación vertical de taller sobre el banco/suelo (en cm, +Z taller = +Y Three.js mundo)
+  rotacionGrados?: [number, number, number]; // [rotX, rotY, rotZ] en grados (ángulos cerrados: 0, 90, 180, -90)
+}
+
+export interface HerrajeDestelloConfig {
+  duracion?: number;      // Segundos que dura el destello (0 = inactivo / azul tenue)
+  tiempoInicio?: number;  // Segundo exacto en que empieza a titilar (por defecto igual al tiempo de aparición)
 }
 
 export interface HerrajeCapaPlus {
@@ -518,6 +525,13 @@ export interface HerrajeCapaPlus {
   ejeAproximacion: "+X" | "-X" | "+Y" | "-Y" | "+Z" | "-Z"; // Defecto: "-X"
   tiempoAparicion: number; // Segundo exacto en que aparece (defecto 0)
   congelado?: boolean;
+  destello?: HerrajeDestelloConfig;
+}
+
+export interface OffsetBancoCm {
+  x: number; // Desplazamiento transversal en cm (+ derecha / - izquierda)
+  y: number; // Desplazamiento vertical en cm (+ arriba / - abajo, por defecto 0)
+  z: number; // Desplazamiento longitudinal en cm (+ adelante / - atrás)
 }
 
 export interface CapaMultiplePlus {
@@ -531,6 +545,9 @@ export interface CapaMultiplePlus {
   bloquesHeredadosIds?: string[];
   bloquesHeredadosVisibles?: Record<string, boolean>;
   piezaMaster?: string;
+  offsetBancoCm?: OffsetBancoCm;
+  tiempoAcopleSegundos?: number;
+  duracionAcopleSegundos?: number;
   orientacionBanco?: {
     rotacion: [number, number, number];
     apoyoEnPiso: boolean;
@@ -931,6 +948,10 @@ export interface State3BF {
   setModoVisualizacionInactivosPlus: (pasoId: string, modo: "oculto" | "cristal" | "global") => void;
   setModoVisualizacionHeredadosPlus: (pasoId: string, modo: "solido" | "cristal" | "oculto") => void;
   asignarInactivoACapaPlus: (pasoId: string, capaId: string, meshKey: string, tipo: "tablero" | "herraje") => void;
+  setPiezaMasterPlus: (pasoId: string, capaId: string, masterName?: string) => void;
+  definirPiezaMasterPlus?: (pasoId: string, capaId: string, masterName?: string) => void;
+  actualizarOffsetBancoMasterPlus: (pasoId: string, capaId: string, offset: Partial<OffsetBancoCm>) => void;
+  actualizarTiempoAcopleMasterPlus: (pasoId: string, capaId: string, tiempo?: number, duracion?: number) => void;
   
   // 🎯 Modo Picking 3D / Cuentagotas para Asignación de Piezas
   modoPickingManual: ModoPickingManualState;
