@@ -192,6 +192,9 @@ export function compilarAnimacionPaso(
     (rootScene as any).__hasPatchedGetObjectByName = true;
     const origGetObjectByName = rootScene.getObjectByName.bind(rootScene);
     rootScene.getObjectByName = function (targetName: string) {
+      if (targetName === this.uuid || targetName === this.name || targetName === "" || targetName === ".") {
+        return this;
+      }
       let found = origGetObjectByName(targetName);
       if (found) return found;
       found = (this as any).getObjectByProperty("uuid", targetName);
@@ -224,6 +227,9 @@ export function compilarAnimacionPaso(
   // 🛡️ CRÍTICO: Forzar primera evaluación a 0.0001s para que todas las mallas adopten
   // sus posiciones de espera en el piso (pPop) inmediatamente al compilar el paso.
   mixer.setTime(0.0001);
+  if ((rootScene as any).__evaluarDePieAlFinal) {
+    (rootScene as any).__evaluarDePieAlFinal(0.0001);
+  }
 
   return {
     clip,
@@ -241,6 +247,9 @@ export function compilarAnimacionPaso(
       // Three.js mixer.setTime(0) omite evaluación cuando deltaTime es 0.
       // Usar Math.max(0.0001, tClamped) fuerza evaluación instantánea de keyframes en t = 0.
       mixer.setTime(Math.max(0.0001, tClamped));
+      if ((rootScene as any).__evaluarDePieAlFinal) {
+        (rootScene as any).__evaluarDePieAlFinal(tClamped);
+      }
     },
     despertar: () => {
       // ⚡ Despertar forzado: reactivar mixer y posicionar en el instante actual
@@ -249,6 +258,9 @@ export function compilarAnimacionPaso(
       action.timeScale = 1;
       action.play();
       mixer.setTime(0.0001);
+      if ((rootScene as any).__evaluarDePieAlFinal) {
+        (rootScene as any).__evaluarDePieAlFinal(0.0001);
+      }
     },
     detener: () => {
       mixer.stopAllAction();
@@ -263,6 +275,15 @@ export function compilarAnimacionPaso(
           mesh.scale.copy(mesh.userData.__baseRestScale);
         }
       });
+      if (rootScene.userData.__baseRestPosition) {
+        rootScene.position.copy(rootScene.userData.__baseRestPosition);
+      }
+      if (rootScene.userData.__baseRestQuaternion) {
+        rootScene.quaternion.copy(rootScene.userData.__baseRestQuaternion);
+      }
+      if ((rootScene as any).__evaluarDePieAlFinal) {
+        delete (rootScene as any).__evaluarDePieAlFinal;
+      }
     },
   };
 }

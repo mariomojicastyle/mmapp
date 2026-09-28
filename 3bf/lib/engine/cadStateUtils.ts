@@ -216,6 +216,7 @@ export interface HerrajeContactoItem {
     | "manija"
     | "pata"
     | "clavo"
+    | "grampo"
     | "otro";
   label: string; // ej. "Tarugo" | "Tuerca plástica" | "Tornillo" | "Tarugo 14" | "Cantonera 13"
   cantidad: number;
@@ -263,6 +264,7 @@ export function isHardwareMeshName(name: string): boolean {
     n.includes("prego") ||
     n.includes("puntilla") ||
     n.includes("grampo") ||
+    n.includes("grapa") ||
     n.includes("perfil") ||
     n.includes("trilho")
   ) && !n.includes("cajon") && !n.includes("cajón");
@@ -272,7 +274,7 @@ export function isHardwareMeshName(name: string): boolean {
  * Categoriza el herraje en una familia semántica y etiqueta legible en español.
  */
 export function categorizarHerraje(name: string): {
-  tipo: "tarugo" | "tuerca" | "tornillo" | "tapa" | "minifix" | "corredera" | "cantonera" | "escuadra" | "soporte" | "bisagra" | "manija" | "pata" | "clavo" | "otro";
+  tipo: "tarugo" | "tuerca" | "tornillo" | "tapa" | "minifix" | "corredera" | "cantonera" | "escuadra" | "soporte" | "bisagra" | "manija" | "pata" | "clavo" | "grampo" | "otro";
   label: string;
 } {
   const n = (name || "").toLowerCase();
@@ -306,8 +308,11 @@ export function categorizarHerraje(name: string): {
   if (n.includes("puxador") || n.includes("manija") || n.includes("tirador")) {
     return { tipo: "manija", label: "Tirador" };
   }
-  if (n.includes("prego") || n.includes("clavo") || n.includes("puntilla") || n.includes("grampo")) {
-    return { tipo: "clavo", label: "Clavo / Grapa" };
+  if (n.includes("grampo") || n.includes("grapa")) {
+    return { tipo: "grampo", label: "Grapa" };
+  }
+  if (n.includes("prego") || n.includes("clavo") || n.includes("puntilla")) {
+    return { tipo: "clavo", label: "Puntilla / Clavo" };
   }
   if (n.includes("pata") || n.includes("sapata") || n.includes("pé") || n.includes("pes") || n.includes("deslizador")) {
     return { tipo: "pata", label: "Pata" };
@@ -362,7 +367,10 @@ export function obtenerFamiliaHerrajeCanonica(rawStr?: string | null): string {
   if (sinNum.includes("puxador") || sinNum.includes("manija") || sinNum.includes("tirador") || sinNum.includes("jaladera")) {
     return "manija";
   }
-  if (sinNum.includes("prego") || sinNum.includes("clavo") || sinNum.includes("puntilla") || sinNum.includes("grampo")) {
+  if (sinNum.includes("grampo") || sinNum.includes("grapa")) {
+    return "grampo";
+  }
+  if (sinNum.includes("prego") || sinNum.includes("clavo") || sinNum.includes("puntilla")) {
     return "clavo";
   }
   if (sinNum.includes("pata") || sinNum.includes("pes") || sinNum.includes("pés") || sinNum.includes("sapata") || sinNum.includes("pie")) {
@@ -493,6 +501,10 @@ export function formatearNombreIndividualHerraje(instKey: string): string {
   if (n.includes("puxador") || n.includes("manija") || n.includes("tirador")) {
     return numStr ? `Puxador (${numStr})` : "Puxador";
   }
+  // Grampo (Grapa)
+  if (n.includes("grampo") || n.includes("grapa")) {
+    return numStr ? `Grampo (${numStr})` : "Grampo";
+  }
   // Prego (Clavo / Puntilla)
   if (n.includes("prego") || n.includes("clavo") || n.includes("puntilla")) {
     return numStr ? `Prego (${numStr})` : "Prego";
@@ -537,7 +549,8 @@ export function obtenerDescripcionEspanolHerraje(instKey: string): string {
   }
   if (n.includes("dobradi") || n.includes("bisagra")) return "Bisagra de cazoleta";
   if (n.includes("puxador") || n.includes("manija")) return "Tirador / Manija de cajón";
-  if (n.includes("prego") || n.includes("clavo")) return "Clavo / Puntilla de fondo";
+  if (n.includes("grampo") || n.includes("grapa")) return "Grapa metálica de fijación";
+  if (n.includes("prego") || n.includes("clavo") || n.includes("puntilla")) return "Puntilla / Clavo de acero";
   if (n.includes("sapata") || n.includes("pata") || n.includes("pé")) return "Deslizador / Pata de apoyo";
   if (n.includes("perfil") || n.includes("trilho")) return "Perfil H de unión de fondos";
 
@@ -835,6 +848,8 @@ export function detectarHerrajesEnContactoConPieza(
       manija: 9,
       pata: 10,
       soporte: 11,
+      clavo: 12,
+      grampo: 13,
       otro: 99,
     };
 

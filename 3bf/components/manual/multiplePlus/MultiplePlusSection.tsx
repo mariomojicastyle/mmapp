@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { Plus, Sliders, Gauge, Move, RotateCw, RotateCcw, ArrowDown } from "lucide-react";
+import { Plus, Sliders, Gauge, Move, RotateCw, RotateCcw, ArrowDown, Play } from "lucide-react";
 import { PasoManualStudio } from "@/lib/storeTypes";
 import { use3BFStore } from "@/lib/store";
 import { CapaMultiplePlusCard } from "./CapaMultiplePlusCard";
@@ -26,6 +26,8 @@ export default function MultiplePlusSection({
     iniciarPickingManual,
     limpiarPickingManual,
     conmutarOcultarNoAsignadasPaso,
+    setTimelineCurrentTime,
+    setIsTimelinePlaying,
     // Acciones de MultiplePlusSlice
     crearCapaPlus,
     eliminarCapaPlus,
@@ -43,6 +45,7 @@ export default function MultiplePlusSection({
     girarBancoGlobalPlus,
     toggleApoyoPisoGlobalPlus,
     togglePonerDePieAlFinalPlus,
+    setParametrosDePieAlFinalPlus,
     toggleBloqueHeredadoPlus: toggleBloqueHeredadoCapaPlus,
     toggleVisibilidadBloqueHeredadoPlus: toggleVisibilidadBloqueHeredadoCapaPlus,
     setVelocidadTablerosPlus,
@@ -288,20 +291,87 @@ export default function MultiplePlusSection({
             <span>Suelo</span>
           </button>
 
-          {/* Animar Poner de pie al terminar armado */}
-          <button
-            type="button"
-            onClick={() => togglePonerDePieAlFinalPlus(pasoActivo.id)}
-            title="Animar puesta de pie del mueble al terminar el armado"
-            className={`px-3 py-1 rounded-full font-bold text-[10px] transition-all cursor-pointer border flex items-center gap-1 shadow-2xs ${
-              mpConfig.ponerDePieAlFinal
-                ? "bg-amber-500 text-white border-amber-500 shadow-sm"
-                : "bg-white/90 dark:bg-slate-800/90 border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 hover:border-amber-400"
-            }`}
-          >
-            <RotateCw className="w-3 h-3" />
-            <span>De pie al final</span>
-          </button>
+          {/* 🌟 CÁPSULA DINÁMICA: DE PIE AL FINAL 🌟 */}
+          {!mpConfig.ponerDePieAlFinal ? (
+            <button
+              type="button"
+              onClick={() => togglePonerDePieAlFinalPlus(pasoActivo.id)}
+              title="Animar puesta de pie del mueble al terminar el armado"
+              className="px-3.5 py-1 rounded-full font-bold text-[10px] transition-all cursor-pointer border flex items-center gap-1.5 shadow-2xs bg-white/90 dark:bg-slate-800/90 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:border-amber-400 hover:text-amber-600 dark:hover:text-amber-400"
+            >
+              <RotateCw className="w-3 h-3 text-amber-500" />
+              <span>De pie al final</span>
+            </button>
+          ) : (
+            <div className="flex items-center gap-1.5 px-3 py-0.5 rounded-full border border-amber-400 dark:border-amber-500/80 bg-amber-500/15 dark:bg-amber-500/20 text-amber-800 dark:text-amber-200 shadow-xs transition-all">
+              <button
+                type="button"
+                onClick={() => togglePonerDePieAlFinalPlus(pasoActivo.id)}
+                title="Haga clic para desactivar la puesta de pie"
+                className="flex items-center gap-1 font-bold text-[10px] cursor-pointer hover:opacity-80 text-amber-700 dark:text-amber-300"
+              >
+                <RotateCw className="w-3 h-3 text-amber-600 dark:text-amber-400" />
+                <span>De pie</span>
+              </button>
+
+              <div className="flex items-center gap-1.5 pl-2 border-l border-amber-400/50 dark:border-amber-500/40 text-[9px]">
+                <span className="font-semibold text-[9px] text-slate-600 dark:text-slate-300">Inicio:</span>
+                <div className="inline-flex items-center bg-white dark:bg-slate-800 border border-amber-300 dark:border-amber-600/70 rounded-full px-1.5 py-0.5 shadow-2xs">
+                  <input
+                    type="number"
+                    value={mpConfig.tiempoInicioDePie ?? Math.max(0, (pasoActivo.duracionTotal || 10) - 4)}
+                    min={0}
+                    max={600}
+                    step={1}
+                    onChange={(e) => {
+                      const val = parseFloat(e.target.value);
+                      if (!isNaN(val)) {
+                        setParametrosDePieAlFinalPlus(pasoActivo.id, { tiempoInicio: val });
+                      }
+                    }}
+                    title="Segundo exacto en que inicia el giro de puesta de pie"
+                    className="w-10 text-center font-mono font-bold text-[9.5px] bg-transparent outline-none cursor-text text-slate-800 dark:text-slate-100"
+                  />
+                  <span className="text-[7.5px] font-mono font-bold text-slate-400 dark:text-slate-400 select-none">s</span>
+                </div>
+
+                <span className="font-semibold text-[9px] text-slate-600 dark:text-slate-300 ml-0.5">Dur:</span>
+                <div className="inline-flex items-center bg-white dark:bg-slate-800 border border-amber-300 dark:border-amber-600/70 rounded-full px-1.5 py-0.5 shadow-2xs">
+                  <input
+                    type="number"
+                    value={mpConfig.duracionDePie ?? 4.0}
+                    min={0.5}
+                    max={30}
+                    step={0.5}
+                    onChange={(e) => {
+                      const val = parseFloat(e.target.value);
+                      if (!isNaN(val)) {
+                        setParametrosDePieAlFinalPlus(pasoActivo.id, { duracion: val });
+                      }
+                    }}
+                    title="Duración en segundos del giro de levantamiento"
+                    className="w-8 text-center font-mono font-bold text-[9.5px] bg-transparent outline-none cursor-text text-slate-800 dark:text-slate-100"
+                  />
+                  <span className="text-[7.5px] font-mono font-bold text-slate-400 dark:text-slate-400 select-none">s</span>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    const tInicio = mpConfig.tiempoInicioDePie ?? Math.max(0, (pasoActivo.duracionTotal || 10) - 4);
+                    const tArrancada = Math.max(0, tInicio - 0.5);
+                    setTimelineCurrentTime(tArrancada);
+                    setIsTimelinePlaying(true);
+                  }}
+                  title="Saltar a la maniobra y reproducir el levantamiento"
+                  className="ml-0.5 px-2.5 py-0.5 rounded-full bg-amber-500 hover:bg-amber-600 active:scale-95 text-white font-bold text-[8.5px] shadow-2xs cursor-pointer flex items-center gap-1 transition"
+                >
+                  <Play className="w-2.5 h-2.5 fill-current" />
+                  <span>Probar</span>
+                </button>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Botón + Nueva Capa */}

@@ -64,7 +64,7 @@ export function AssemblyAnimationController({ furnitureGroup }: AssemblyAnimatio
       .join("|");
 
     const multiplePlusStr = activeStep.multiplePlus
-      ? `${activeStep.multiplePlus.velocidadTablerosCmS || 0}_${activeStep.multiplePlus.velocidadHerrajesCmS || 0}_${activeStep.multiplePlus.movimientoGlobalCm || 0}_${activeStep.multiplePlus.modoVisualizacionInactivos || "oculto"}_${activeStep.multiplePlus.modoVisualizacionHeredados || "solido"}_` +
+      ? `${activeStep.multiplePlus.velocidadTablerosCmS || 0}_${activeStep.multiplePlus.velocidadHerrajesCmS || 0}_${activeStep.multiplePlus.movimientoGlobalCm || 0}_${activeStep.multiplePlus.modoVisualizacionInactivos || "oculto"}_${activeStep.multiplePlus.modoVisualizacionHeredados || "solido"}_${activeStep.multiplePlus.ponerDePieAlFinal ? "1" : "0"}_${activeStep.multiplePlus.tiempoInicioDePie ?? ""}_${activeStep.multiplePlus.duracionDePie ?? ""}_` +
         (activeStep.multiplePlus.capas || [])
           .map((c: any) => {
             const tabs = (c.tableros || []).map((t: any) => `${t.id}:${t.offsetXCm || 0}:${t.offsetYCm || 0}:${t.offsetZCm || 0}:${t.elevacionZCm || 0}:${(t.rotacionGrados || [0, 0, 0]).join(",")}:${t.tiempoAparicion || 0}:${t.tiempoInicioMovimiento || 0}:${t.destinoId || ""}`).join(",");
@@ -146,6 +146,13 @@ export function AssemblyAnimationController({ furnitureGroup }: AssemblyAnimatio
       if (engineRef.current) {
         engineRef.current.detener();
         engineRef.current = null;
+      }
+      if (effectiveGroup && pestanaActiva !== "manual") {
+        const basePos = (instanciaActiva?.posicion || [0, 0, 0]) as [number, number, number];
+        effectiveGroup.position.set(basePos[0], basePos[1], basePos[2]);
+        effectiveGroup.quaternion.set(0, 0, 0, 1);
+        effectiveGroup.updateMatrix();
+        effectiveGroup.updateMatrixWorld(true);
       }
       return;
     }

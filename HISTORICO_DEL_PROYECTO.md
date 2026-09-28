@@ -2372,7 +2372,83 @@ Para mantener la máxima agilidad y minimizar el consumo de tokens sin perder ni
   * Detección cromática instantánea en UI: escribir duración activa el resplandor amarillo; borrarlo o dejarlo en `0s` regresa al azul tenue sin saturación visual.
   * Animación en GLB: la malla de aura dorada palpita de forma visible y llamativa en Babylon.js Sandbox exactamente en el segundo y duración configurados.
 
+---
 
+### 🚀 Hito 228: Cinemática Física de Levantamiento y Cápsula Dinámica "De pie al final" con Tiempos Paramétricos en `3dBimFab` (`MultiplePlusSection.tsx`, `multiplePlusKinematics.ts`, `manualAnimationEngine.ts`, `AssemblyAnimationController.tsx`, `manualMultiplePlusSlice.ts`, `storeTypes.ts`) (27 de Septiembre, 2026)
+- **Problema de Ensamble y Necesidad de Taller**:
+  * En manuales de armado complejos (como la Cómoda Ravenna en el Paso 04), la fijación estructural de laterales, travesaños y fondos se realiza con el mueble acostado a $90^\circ$ sobre el piso (`X+90°` y `Suelo`).
+  * Una vez armada la estructura principal, es indispensable que el mueble se ponga de pie sobre sus patas ($0^\circ$) antes de armar e insertar los cajones.
+  * Se requería que la cápsula `De pie al final` contara con inputs paramétricos de tiempo para indicar el segundo exacto de inicio y la duración de la maniobra, con una animación física realista donde el mueble se apoye continuamente en el piso sin penetrar la grilla ni flotar en el aire.
+- **Implementación Técnica de la Solución**:
+  1. *Estructura de Datos y Modelo de Dominio (`lib/storeTypes.ts`)*:
+     - En `MultiplePlusConfigPaso` se añadieron las propiedades opcionales `tiempoInicioDePie?: number` (segundo de inicio de la maniobra) y `duracionDePie?: number` (duración del giro en segundos, por defecto 4.0s).
+     - En la interfaz de acciones de Zustand se registraron `togglePonerDePieAlFinalPlus(pasoId)` y `setParametrosDePieAlFinalPlus(pasoId, params)`.
+  2. *Slice y Gestión de Estado (`lib/slices/manual/manualMultiplePlusSlice.ts`)*:
+     - `togglePonerDePieAlFinalPlus`: Al activar la puesta de pie, si los tiempos no están definidos, calcula inteligentemente el fin del último tablero o herraje de todas las capas del paso (`Math.ceil(maxFin)` o `duracionPaso - 4.0`), asigna duración por defecto de `4.0s` y auto-expande la `duracionTotal` del paso si el giro rebasa el tiempo actual.
+     - `setParametrosDePieAlFinalPlus`: Permite ajustar de forma granular tanto `tiempoInicio` como `duracion`, manteniendo siempre la coherencia de la duración global del paso y persistiendo en el caché local y archivo `.3bm.json`.
+  3. *Cápsula Dinámica en UI (`MultiplePlusSection.tsx`)*:
+     - Cumplimiento 100% de la regla canónica de cápsulas puras (`rounded-full`) sin rectángulos redondeados.
+     - Estado Inactivo: Botón discreto `[ ↻ De pie al final ]` en la barra de orientación de banco.
+     - Estado Activo: Cápsula ámbar expandible con botón `↻ De pie`, campos independientes `Inicio: [ 165 ] s` y `Dur: [ 4 ] s` con sufijo tipográfico integrado, y botón de acción rápida `[ ▶ Probar ]` con icono `Play` que salta la línea de tiempo a $t_{\text{inicio}} - 0.5\text{ s}$ y arranca la reproducción para audicionar la maniobra de inmediato.
+  4. *Cinemática Física con Compensación Continua de Suelo (`lib/engine/multiplePlusKinematics.ts`)*:
+     - Cálculo de la caja envolvente unrotada (`localBox`) a partir de las mallas reales de madera del mueble en su pose de reposo CAD.
+     - A partir de los 8 vértices de la caja (`corners`), se evalúa la cota mínima rotada $y_{\text{min}}(t) = \min_{c \in \text{corners}} (\mathbf{R}(t) \cdot c)_y$ a lo largo de 20 muestras intermedias con curva de aceleración smoothstep $s(u) = 3u^2 - 2u^3$.
+     - Se calcula el offset vertical $\Delta y = -y_{\text{min}}(t)$ y el desplazamiento del centro $\Delta x, \Delta z$, manteniendo el punto inferior de contacto del mueble exactamente a $Y = 0$ durante todo el giro desde $90^\circ \to 0^\circ$.
+     - Generación de pistas de animación `.position` y `.quaternion` para el objeto raíz de la instancia (soportadas nativamente por Three.js `AnimationMixer` y exportación glTF).
+  5. *Evaluador Reactivo a 60 FPS (`lib/manualAnimationEngine.ts` & `AssemblyAnimationController.tsx`)*:
+     - En `manualAnimationEngine.ts` se implementó el hook `__evaluarDePieAlFinal` invocado en `actualizarTiempo`, `despertar` y `detener`, garantizando fluidez total sin latencia durante el arrastre manual del scrubber en el timeline.
+     - En `AssemblyAnimationController.tsx` se agregaron `ponerDePieAlFinal`, `tiempoInicioDePie` y `duracionDePie` a la clave de compilación (`compilationKey`) para que cualquier cambio en la interfaz recompile el clip de animación al instante.
+- **Validación de Calidad**:
+  * Compilación TypeScript verificada (`npx tsc --noEmit`) en `c:\Desarrollo\mmapp\3bf` con **0 errores**.
+  * Ergonomía y respuesta en vivo: activar la cápsula, ajustar los tiempos y presionar `[ ▶ Probar ]` levanta el mueble de forma realista y lo asienta con precisión milimétrica en el suelo sobre sus patas a $0^\circ$.
 
+---
 
+### 🚀 Hito 229: Blindaje de Apoyo de Patas en Suelo (Y = 0), Retorno Upright Incondicional a Visor 3D y Activación Universal de Componentes en Modificador (`multiplePlusKinematics.ts`, `SingleFurnitureInstanceMesh.tsx`, `AssemblyAnimationController.tsx`, `manualAnimationEngine.ts`, `ControlPanel.tsx`) (27 de Septiembre, 2026)
+- **Diagnóstico Integral de las 3 Anomalías Reportadas**:
+  1. *Patas debajo del piso*: En `multiplePlusKinematics.ts`, la condición `if (isHw) continue` descartaba las patas (`Pé (1)` ... `Pé (4)`) de la caja envolvente `localBox` por ser clasificadas como herrajes. La cota mínima calculada era el borde inferior del zócalo de MDP y no la base de las patas, haciendo que éstas penetraran bajo la cuadrícula del piso.
+  2. *Mueble acostado al regresar al Visor 3D*: Al cambiar de "Manual 3D" a "Visor 3D", el método `detener()` de `manualAnimationEngine.ts` invocaba erróneamente `__evaluarDePieAlFinal(0)`, fijando el cuaternión en $90^\circ$ (pose acostada en banco). Al desmontar el controlador de cinemática, Fiber no reseteaba el cuaternión dirty en `SingleFurnitureInstanceMesh.tsx`.
+  3. *Modificador de Componentes inactivo ("Ningún componente seleccionado")*: Al cargar Cómoda Ravenna desde el almacenamiento único de definición (`resultado` y `parametros` sin clonarse en el diccionario multi-instancia `instancias`), `ControlPanel.tsx` condicionaba el renderizado a `instanciaActiva`. Al ser nulo, ocultaba `ParametrosPanel` a pesar de que el modelo y sus sliders de Grasshopper estaban listos en memoria.
+- **Implementación Técnica de la Solución**:
+  1. *Inclusión de Patas y Deslizadores en la Envolvente (`lib/engine/multiplePlusKinematics.ts`)*:
+     - Se incorporó la regla `const isLeg = /p[eé]|sapata|pata|deslizador|pie/i.test(...)` para conservar las patas en `localBox` aunque sean clasificadas como herrajes.
+     - `localBox.min.y` ahora mide la cota exacta de la base de las patas, garantizando que el punto de contacto al levantarse descanse milimétricamente sobre $Y = 0$ sin hundirse.
+  2. *Retorno Upright Incondicional al Salir de Manual (`lib/manualAnimationEngine.ts`, `SingleFurnitureInstanceMesh.tsx`, `AssemblyAnimationController.tsx`)*:
+     - En `manualAnimationEngine.ts` se suprimió la llamada forzada a `__evaluarDePieAlFinal(0)` dentro de `detener()`, eliminando el hook para evitar mutaciones residuales.
+     - En `SingleFurnitureInstanceMesh.tsx` se añadió un `useEffect` sincronizador que detecta cuando `pestanaActiva !== "manual"` y resetea de forma inmediata `meshRef.current.position.set(basePos)` y `meshRef.current.quaternion.set(0, 0, 0, 1)`, actualizando matrices mundiales.
+     - En `AssemblyAnimationController.tsx` se agregó el mismo reset seguro sobre `effectiveGroup` al desmontar.
+  3. *Soporte Universal en Modificador de Componentes (`components/ui/ControlPanel.tsx`)*:
+     - Se integró `instanciaEfectiva = instanciaActiva || legacyInst`, permitiendo que si `instancias` está vacío, el panel adopte el modelo base de `resultado` y `parametros`.
+     - `ControlPanel.tsx` renderiza de inmediato `ParametrosPanel` con todos los grupos de sliders de Grasshopper de Cómoda Ravenna, tanto al entrar a Visor 3D como al tocar cualquier pieza del mueble.
+- **Validación de Calidad**:
+  * Compilación TypeScript verificada (`npx tsc --noEmit`) en `c:\Desarrollo\mmapp\3bf` con **0 errores**.
+  * Al reproducir el levantamiento en Manual 3D, las patas quedan perfectamente apoyadas al ras del suelo ($Y = 0$).
+  * Al hacer clic en "Visor 3D", el mueble se muestra erguido y de pie a $0^\circ$.
+  * Al tocar la cómoda o entrar al visor, el Modificador de Componentes despliega todos los parámetros editables.
 
+---
+
+### 🚀 Hito 230: Erradicación de Excepción en Exportación GLB, Malla de Aura Dorada (Glow Shell) Universal para Babylon.js / Blender y Titileo Reactivo a 60 FPS en Visor Web (`multiplePlusKinematics.ts`, `exportManualGlb.ts`, `BoardMesh.tsx`) (28 de Septiembre, 2026)
+- **Diagnóstico y Causa Raíz de las Anomalías Reportadas**:
+  1. *Excepción en Exportación (`PropertyBinding: Cannot parse trackName: Tampa (2):...`)*: El parser interno de `PropertyBinding` de Three.js utiliza una expresión regular estricta (`\w+`) que prohíbe espacios y paréntesis en los nombres de nodos que componen una ruta jerárquica con separador `:` (`parentName:childName.property`). Al crear la malla de aura hija dentro de `Tampa (2)`, Three.js construyó `Tampa (2):Tampa_AuraDestello.scale`, abortando la exportación del GLB.
+  2. *Pérdida del Color Dorado en Babylon.js Sandbox*: El estándar glTF 2.0 universal no admite canales de animación de color o emisivo de material (únicamente traslación, rotación, escala y morph targets). Al retirar la malla de aura y animar únicamente la escala del herraje, éste palpitaba en Babylon.js pero conservando su material plástico blanco/gris estándar sin teñirse jamás de oro.
+  3. *Inercia de Color en el Visor Web*: En `BoardMesh.tsx`, la condición `estaTitilando` dependía del re-render de React. Durante la reproducción fluida a 60 FPS gobernada por `useFrame` y AnimationMixer, React no re-renderizaba cada milisegundo, impidiendo que el material se tiñera de oro en tiempo real.
+- **Implementación Técnica de la Solución**:
+  1. *Arquitectura Blindada de Malla de Aura Dorada (Glow Shell) en `multiplePlusKinematics.ts`*:
+     - **Nombre 100% Alfanumérico Sanitizado**: Se genera como `Aura_${safeHwName}_${safeHwUuid}` (sustituyendo cualquier carácter no alfanumérico por `_`), garantizando total compatibilidad con `PropertyBinding.parseTrackName`.
+     - **Emparentamiento Directo a la Raíz (`rootScene` / `furnitureRoot`)**: La malla de aura se añade directamente al grupo raíz del mueble como hermana de las piezas y no como hija de `hwMesh`, suprimiendo al 100% los dos puntos (`:`) y las rutas compuestas en los tracks de animación glTF.
+     - **Sincronización Rígida 1:1**: Hereda exactamente las mismas pistas de trayectoria de posición (`.position`) y rotación (`.quaternion`) calculadas para el herraje anfitrión, acompañándolo con precisión milimétrica en cualquier posición de espera, acueste de banco o inserción axial.
+     - **Pista de Escala Senoidal en Oro Incandescente**:
+       * En $t = 0$ y antes del destello: escala `[0, 0, 0]` (completamente invisible, eliminando cualquier herraje o aura flotante al abrir el GLB).
+       * Durante $[t_{\text{inicio}}, t_{\text{fin}}]$: pulsa rítmicamente de $1.08\times$ a $1.36\times$ a $2.5\text{ Hz}$ con material PBR Oro Incandescente (`color: #FFE066`, `emissive: #FFDE00`, intensidad $2.8$, `metalness: 0.85`, `roughness: 0.15`), envolviendo la pieza en un resplandor dorado visible de forma inmediata.
+       * Al terminar el destello: su escala desciende y se sella en `[0, 0, 0]`, dejando visible la pieza en su material realista definitivo en reposo.
+  2. *Limpieza y Purgado de Auras en Exportación (`exportManualGlb.ts`)*:
+     - Se reforzó la purga previa de auras residuales en `scene.children` y jerarquías vivas antes de clonar la geometría exportable.
+     - Al invocar `compilarAnimacionPaso(furnitureRoot, paso)` sobre la escena limpia, se inyectan las auras al grupo raíz, se evalúan en $t = 0.0001$ para fijar su escala inicial en 0 y se exportan limpiamente a través de `GLTFExporter`.
+  3. *Visor Web Reactivo a 60 FPS (`BoardMesh.tsx`)*:
+     - Se conectó `useFrame` directamente al reloj de Zustand (`use3BFStore.getState().timelineCurrentTime`).
+     - Al entrar en el intervalo de destello, el shader almacena en `userData` el color y propiedades originales, tiñe la pieza en oro `#FFE066` con emisivo `#FFDE00` modulado por una función senoidal a 2.5 Hz, y restaura inmediatamente los valores originales al salir del intervalo sin provocar re-renders de React.
+- **Validación de Calidad**:
+  * Compilación TypeScript verificada (`npx tsc --noEmit`) en `c:\Desarrollo\mmapp\3bf` con **0 errores**.
+  * Exportación de GLB completada con éxito sin ninguna alerta de `PropertyBinding`.
+  * Verificación en Babylon.js Sandbox: los herrajes y tapitas titilan en un resplandor dorado brillante y pulsante en su segundo exacto, no hay piezas flotando a $t=0$, y al final de la animación la Cómoda Ravenna se pone de pie erguida sobre sus patas a $0^\circ$.

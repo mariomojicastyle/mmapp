@@ -3,11 +3,11 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import * as THREE from "three";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
-import { PasoManualStudio } from "@/lib/store";
+import { PasoManualStudio, use3BFStore } from "@/lib/store";
 
 interface BloqueEstandar3DSceneProps {
   paso: PasoManualStudio;
-  timelineTime: number;
+  timelineTime?: number;
 }
 
 // ── CACHÉ SINGLETON EN MEMORIA DE MODELOS GLB PARSEADOS (0 MS DE LATENCIA) ──
@@ -188,11 +188,13 @@ export default function BloqueEstandar3DScene({ paso, timelineTime }: BloqueEsta
   ]);
 
   const seguroPivotRef = useRef<THREE.Group>(null);
+  const storeTimelineTime = use3BFStore((s) => s.timelineCurrentTime);
+  const effectiveTimelineTime = timelineTime !== undefined ? timelineTime : storeTimelineTime;
 
   // 🎬 Animación Cinemática de Desacople según el Timeline adaptativa a la duración total del paso
   useEffect(() => {
     const duracion = Math.max(paso.duracionTotal || 8.0, 1.0);
-    const t = Math.max(0, Math.min(duracion, timelineTime));
+    const t = Math.max(0, Math.min(duracion, effectiveTimelineTime));
 
     // Centrado de la corredera: la corredera mide 350mm en Z (-0.35 a 0.0).
     // La desplazamos +0.175 en Z para que su punto medio quede exactamente en el origen (0, 0, 0).
@@ -268,7 +270,7 @@ export default function BloqueEstandar3DScene({ paso, timelineTime }: BloqueEsta
     if (seguroPivotRef.current) {
       seguroPivotRef.current.rotation.set(0, rotSeguroY, 0);
     }
-  }, [timelineTime, paso.duracionTotal]);
+  }, [effectiveTimelineTime, paso.duracionTotal]);
 
   // Exponer el grupo en window para que el exportador GLB pueda capturarlo directamente
   useEffect(() => {

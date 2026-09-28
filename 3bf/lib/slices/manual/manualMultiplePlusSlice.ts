@@ -14,6 +14,7 @@ import type {
   HerrajeCapaPlus,
   MultiplePlusConfigPaso,
   OffsetBancoCm,
+  AcopleHeredadosConfig,
 } from "../../storeTypes";
 
 export const createManualMultiplePlusSlice = (set: any, get: any): any => ({
@@ -370,6 +371,8 @@ export const createManualMultiplePlusSlice = (set: any, get: any): any => ({
     partial: Partial<HerrajeCapaPlus>
   ) => {
     const state = get();
+    if (state.prepararHistorialParaCambio) state.prepararHistorialParaCambio();
+
     const actualizados = state.pasosManual.map((p: any) => {
       if (p.id !== pasoId || !p.multiplePlus) return p;
       return {
@@ -394,11 +397,18 @@ export const createManualMultiplePlusSlice = (set: any, get: any): any => ({
 
     set({ pasosManual: actualizados, versionAnimacionManual: (state.versionAnimacionManual || 0) + 1 });
     guardarPasosEnCacheLocal(actualizados, state.manualActivoGuardado);
+    if (get().guardarEstadoHistorial) get().guardarEstadoHistorial();
+
+    if (typeof window !== "undefined" && (window as any).__3bfDespertarAnimacion) {
+      (window as any).__3bfDespertarAnimacion();
+    }
   },
 
   // 10. Congelar Herraje (Pasa a la sección Congelados)
   congelarHerrajePlus: (pasoId: string, capaId: string, herrajeId: string) => {
     const state = get();
+    if (state.prepararHistorialParaCambio) state.prepararHistorialParaCambio();
+
     const actualizados = state.pasosManual.map((p: any) => {
       if (p.id !== pasoId || !p.multiplePlus) return p;
       return {
@@ -422,11 +432,14 @@ export const createManualMultiplePlusSlice = (set: any, get: any): any => ({
 
     set({ pasosManual: actualizados, versionAnimacionManual: (state.versionAnimacionManual || 0) + 1 });
     guardarPasosEnCacheLocal(actualizados, state.manualActivoGuardado);
+    if (get().guardarEstadoHistorial) get().guardarEstadoHistorial();
   },
 
   // 11. Descongelar Herraje (Regresa a la sección activa de Herrajes)
   descongelarHerrajePlus: (pasoId: string, capaId: string, herrajeId: string) => {
     const state = get();
+    if (state.prepararHistorialParaCambio) state.prepararHistorialParaCambio();
+
     const actualizados = state.pasosManual.map((p: any) => {
       if (p.id !== pasoId || !p.multiplePlus) return p;
       return {
@@ -450,11 +463,14 @@ export const createManualMultiplePlusSlice = (set: any, get: any): any => ({
 
     set({ pasosManual: actualizados, versionAnimacionManual: (state.versionAnimacionManual || 0) + 1 });
     guardarPasosEnCacheLocal(actualizados, state.manualActivoGuardado);
+    if (get().guardarEstadoHistorial) get().guardarEstadoHistorial();
   },
 
   // 11b. Toggle Congelar / Descongelar Herraje
   toggleCongelarHerrajePlus: (pasoId: string, capaId: string, herrajeId: string) => {
     const state = get();
+    if (state.prepararHistorialParaCambio) state.prepararHistorialParaCambio();
+
     const actualizados = state.pasosManual.map((p: any) => {
       if (p.id !== pasoId || !p.multiplePlus) return p;
       return {
@@ -489,6 +505,7 @@ export const createManualMultiplePlusSlice = (set: any, get: any): any => ({
 
     set({ pasosManual: actualizados, versionAnimacionManual: (state.versionAnimacionManual || 0) + 1 });
     guardarPasosEnCacheLocal(actualizados, state.manualActivoGuardado);
+    if (get().guardarEstadoHistorial) get().guardarEstadoHistorial();
   },
 
   // 12. Velocidades globales del paso
@@ -797,11 +814,72 @@ export const createManualMultiplePlusSlice = (set: any, get: any): any => ({
     const actualizados = state.pasosManual.map((p: any) => {
       if (p.id !== pasoId || !p.multiplePlus) return p;
       const estadoActual = Boolean(p.multiplePlus.ponerDePieAlFinal);
+      const nuevoEstado = !estadoActual;
+
+      let tInicio = p.multiplePlus.tiempoInicioDePie;
+      let duracion = p.multiplePlus.duracionDePie ?? 4.0;
+      let durPaso = p.duracionTotal || 10;
+
+      if (nuevoEstado) {
+        if (tInicio === undefined || tInicio === null) {
+          let maxFin = 0;
+          (p.multiplePlus.capas || []).forEach((c: any) => {
+            (c.tableros || []).forEach((t: any) => {
+              const fin = (t.tiempoInicioMovimiento || 0) + 2.5;
+              if (fin > maxFin) maxFin = fin;
+            });
+            (c.herrajes || []).forEach((h: any) => {
+              const fin = (h.tiempoAparicion || 0) + 1.5;
+              if (fin > maxFin) maxFin = fin;
+            });
+          });
+          tInicio = maxFin > 0 ? Math.ceil(maxFin) : Math.max(0, durPaso - 4.0);
+        }
+        if (tInicio + duracion > durPaso) {
+          durPaso = Math.ceil(tInicio + duracion);
+        }
+      }
+
       return {
         ...p,
+        duracionTotal: durPaso,
         multiplePlus: {
           ...p.multiplePlus,
-          ponerDePieAlFinal: !estadoActual,
+          ponerDePieAlFinal: nuevoEstado,
+          tiempoInicioDePie: tInicio,
+          duracionDePie: duracion,
+        },
+      };
+    });
+
+    set({ pasosManual: actualizados, versionAnimacionManual: (state.versionAnimacionManual || 0) + 1 });
+    guardarPasosEnCacheLocal(actualizados, state.manualActivoGuardado);
+  },
+
+  // 20b. Configurar tiempos exactos de Poner de Pie al Terminar
+  setParametrosDePieAlFinalPlus: (pasoId: string, params: { tiempoInicio?: number; duracion?: number }) => {
+    const state = get();
+    const actualizados = state.pasosManual.map((p: any) => {
+      if (p.id !== pasoId || !p.multiplePlus) return p;
+      const tInicio = params.tiempoInicio !== undefined 
+        ? Math.max(0, params.tiempoInicio) 
+        : (p.multiplePlus.tiempoInicioDePie ?? Math.max(0, p.duracionTotal - 4.0));
+      const duracion = params.duracion !== undefined 
+        ? Math.max(0.5, params.duracion) 
+        : (p.multiplePlus.duracionDePie ?? 4.0);
+
+      let durPaso = p.duracionTotal || 10;
+      if (tInicio + duracion > durPaso) {
+        durPaso = Math.ceil(tInicio + duracion);
+      }
+
+      return {
+        ...p,
+        duracionTotal: durPaso,
+        multiplePlus: {
+          ...p.multiplePlus,
+          tiempoInicioDePie: tInicio,
+          duracionDePie: duracion,
         },
       };
     });
@@ -1084,6 +1162,49 @@ export const createManualMultiplePlusSlice = (set: any, get: any): any => ({
         multiplePlus: {
           ...mp,
           modoVisualizacionHeredados: modo,
+        },
+      };
+    });
+
+    set({ pasosManual: actualizados, versionAnimacionManual: (state.versionAnimacionManual || 0) + 1 });
+    guardarPasosEnCacheLocal(actualizados, state.manualActivoGuardado);
+    if (get().guardarEstadoHistorial) get().guardarEstadoHistorial();
+
+    if (typeof window !== "undefined" && (window as any).__3bfDespertarAnimacion) {
+      (window as any).__3bfDespertarAnimacion();
+    }
+  },
+
+  // 17c. Actualizar cinemática de acople de los objetos heredados hacia el paso actual
+  actualizarAcopleHeredadosPlus: (pasoId: string, config: Partial<AcopleHeredadosConfig>) => {
+    const state = get();
+    if (state.prepararHistorialParaCambio) state.prepararHistorialParaCambio();
+
+    const actualizados = state.pasosManual.map((p: any) => {
+      if (p.id !== pasoId) return p;
+      const mp = p.multiplePlus || {
+        velocidadTablerosCmS: 15,
+        velocidadHerrajesCmS: 8,
+        movimientoGlobalCm: 20,
+        capas: [],
+      };
+      const acopleActual: AcopleHeredadosConfig = mp.acopleHeredados || {
+        modo: "recien_armado_a_heredado",
+        tiempoAparicion: 0,
+        tiempoInicio: Math.max(0.5, Number(((p.duracionAudioSegundos || 8) - 2.5).toFixed(1))),
+        duracion: 2.5,
+        ejeAproximacion: "+Z",
+        distanciaAproximacionCm: 30,
+      };
+
+      return {
+        ...p,
+        multiplePlus: {
+          ...mp,
+          acopleHeredados: {
+            ...acopleActual,
+            ...config,
+          },
         },
       };
     });

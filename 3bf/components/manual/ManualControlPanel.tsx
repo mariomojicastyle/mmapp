@@ -2,7 +2,7 @@
 
 import React, { useState } from "react";
 import { use3BFStore } from "@/lib/store";
-import { Layers, Mic, Download, Save, Loader2, Check } from "lucide-react";
+import { Layers, Mic, Download, Save, Loader2, Check, FolderOpen } from "lucide-react";
 import StepManagerPanel from "./StepManagerPanel";
 import VoiceStudioPanel from "./VoiceStudioPanel";
 import ExportManualPanel from "./ExportManualPanel";
@@ -41,24 +41,36 @@ export default function ManualControlPanel() {
           Configurador Manual
         </h3>
 
-        {/* 💾 Botón Guardar Manual Directo en Cápsula Pura (rounded-full) */}
-        <button
-          type="button"
-          onClick={async () => {
-            const exito = await guardarManualProyecto();
-            if (exito !== false) {
-              setGuardadoReciente(true);
-              setTimeout(() => setGuardadoReciente(false), 2500);
-            }
-          }}
-          disabled={guardandoManual}
-          title="Guardar cambios del manual 3D (.3bm) en cualquier momento sin salir del panel"
-          style={{
-            backgroundColor: guardadoReciente ? "#10b981" : botonActivoColor,
-            borderColor: guardadoReciente ? "#059669" : coloresApariencia?.colorMarca || botonActivoColor,
-          }}
-          className="px-3 py-1 rounded-full text-white shadow-sm border flex items-center gap-1.5 text-[11px] font-bold leading-none hover:opacity-90 active:scale-95 transition-all cursor-pointer disabled:opacity-50 select-none shrink-0"
-        >
+        <div className="flex items-center gap-2">
+          {/* 📂 Botón Abrir Biblioteca de Manuales Guardados */}
+          <button
+            type="button"
+            onClick={() => use3BFStore.getState().setModalBibliotecaManualesAbierto(true)}
+            title="Abrir o restaurar un proyecto de manual guardado (.3bm.json)"
+            className="px-3 py-1 rounded-full text-slate-700 dark:text-slate-200 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 shadow-xs border border-slate-300 dark:border-slate-700 flex items-center gap-1.5 text-[11px] font-bold leading-none active:scale-95 transition-all cursor-pointer select-none shrink-0"
+          >
+            <FolderOpen className="w-3 h-3 text-amber-500 shrink-0" />
+            <span>Biblioteca</span>
+          </button>
+
+          {/* 💾 Botón Guardar Manual Directo en Cápsula Pura (rounded-full) */}
+          <button
+            type="button"
+            onClick={async () => {
+              const exito = await guardarManualProyecto();
+              if (exito !== false) {
+                setGuardadoReciente(true);
+                setTimeout(() => setGuardadoReciente(false), 2500);
+              }
+            }}
+            disabled={guardandoManual}
+            title="Guardar cambios del manual 3D (.3bm) en cualquier momento sin salir del panel"
+            style={{
+              backgroundColor: guardadoReciente ? "#10b981" : botonActivoColor,
+              borderColor: guardadoReciente ? "#059669" : coloresApariencia?.colorMarca || botonActivoColor,
+            }}
+            className="px-3 py-1 rounded-full text-white shadow-sm border flex items-center gap-1.5 text-[11px] font-bold leading-none hover:opacity-90 active:scale-95 transition-all cursor-pointer disabled:opacity-50 select-none shrink-0"
+          >
           {guardandoManual ? (
             <>
               <Loader2 className="w-3 h-3 text-white animate-spin shrink-0" />
@@ -76,6 +88,7 @@ export default function ManualControlPanel() {
             </>
           )}
         </button>
+        </div>
       </div>
 
       {/* Botonera de Sub-pestañas en Cápsulas Puras (rounded-full) */}

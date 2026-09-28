@@ -1,8 +1,9 @@
 "use client";
 
-import React, { useRef, useEffect } from "react";
+import React, { useRef, useEffect, useState } from "react";
 import * as THREE from "three";
 import { useThree, useFrame } from "@react-three/fiber";
+import { Line, Html } from "@react-three/drei";
 import { use3BFStore } from "@/lib/store";
 import { extraerPiezaMadre, extraerFamiliaPieza, perteneceAMismaFamiliaPieza } from "@/lib/piezaMadreUtils";
 import { getSafeRestPosition, coincidenMismoHerraje, isHardwareMeshName } from "@/lib/engine/cadStateUtils";
@@ -21,8 +22,11 @@ interface TargetMeshItem {
  * se adhieran en tiempo real al puntero del mouse proyectadas estrictamente sobre el plano
  * del piso horizontal (Y = 0 en el mundo), moviéndose sin oscilaciones ni vuelos verticales.
  *
- * Controles:
- * - Movimiento del mouse: arrastra la pieza o grupo de piezas sobre el piso XY.
+ * Controles tipo Blender:
+ * - Movimiento del mouse: arrastra la pieza sobre el piso.
+ * - Tecla X: restringe el movimiento estrictamente al eje X (transversal).
+ * - Tecla Y: restringe el movimiento estrictamente al eje Y del taller (longitudinal).
+ * - Tecla C / G: vuelve al modo libre (ambos ejes).
  * - Clic izquierdo: fija la coordenada exacta (X, Y en cm) en el paso activo.
  * - Tecla Escape (Esc): cancela y devuelve las piezas a su posición original.
  */
@@ -50,13 +54,22 @@ export function AssemblyPiecePositioner({
   const latestDeltaLocalRef = useRef<THREE.Vector3>(new THREE.Vector3(0, 0, 0));
   const floorDropYRef = useRef<number>(0);
 
+  // 🎯 Restricción de ejes al estilo Blender (X: Transversal, Y: Longitudinal taller)
+  const [ejeRestringido, setEjeRestringido] = useState<"X" | "Y" | null>(null);
+  const ejeRestringidoRef = useRef<"X" | "Y" | null>(null);
+
   // 1. Localizar TODAS las mallas correspondientes a la pieza activa (incluyendo instancias hermanas)
   useEffect(() => {
     if (!piezaEnPosicionamientoManual) {
       targetMeshesRef.current = [];
       floorDropYRef.current = 0;
+      setEjeRestringido(null);
+      ejeRestringidoRef.current = null;
       return;
     }
+
+    setEjeRestringido(null);
+    ejeRestringidoRef.current = null;
 
     setVistaPiezasDesplazadas(true);
 
@@ -73,15 +86,20 @@ export function AssemblyPiecePositioner({
     const targetKey = rawNombre.toLowerCase().trim();
     const targetMadre = extraerPiezaMadre(targetKey).toLowerCase().trim();
     const targetFamilia = extraerFamiliaPieza(targetKey).toLowerCase().trim();
+    const tieneInstanciaTarget = /\(\d+\)/.test(targetKey);
+    const matchInstanciaTarget = targetKey.match(/\((\d+)\)/);
 
     // Recuperar los herrajes cohesionados que viajan con esta pieza (secuencia clásica o Múltiple Plus)
     const pasoId = typeof piezaEnPosicionamientoManual === "string"
       ? (pasosManual[0]?.id || "")
       : piezaEnPosicionamientoManual.pasoId;
     const pasoActivo = pasosManual.find((p) => p.id === pasoId);
-    const elemSecuencia = pasoActivo?.secuencia?.find(
-      (s) => s.nombreNodo === targetKey || perteneceAMismaFamiliaPieza(s.nombreNodo, targetKey)
-    );
+    const elemSecuencia = pasoActivo?.secuencia?.find((s) => {
+      const sNombre = (s.nombreNodo || "").toLowerCase().trim();
+      if (sNombre === targetKey) return true;
+      if (tieneInstanciaTarget || /\(\d+\)/.test(sNombre)) return false;
+      return perteneceAMismaFamiliaPieza(sNombre, targetKey);
+    });
     const herrajesCohesionadosSet = new Set(
       (elemSecuencia?.herrajesCohesionados || []).map((h) => h.toLowerCase().trim())
     );
@@ -89,9 +107,12 @@ export function AssemblyPiecePositioner({
     // Herrajes de la capa en Múltiple Plus (o asignados a este tablero)
     if (pasoActivo?.multiplePlus?.capas) {
       for (const capa of pasoActivo.multiplePlus.capas) {
-        const tieneTablero = (capa.tableros || []).some(
-          (t) => t.id.toLowerCase().trim() === targetKey || perteneceAMismaFamiliaPieza(t.id, targetKey)
-        );
+        const tieneTablero = (capa.tableros || []).some((t) => {
+          const tId = t.id.toLowerCase().trim();
+          if (tId === targetKey) return true;
+          if (tieneInstanciaTarget || /\(\d+\)/.test(tId)) return false;
+          return perteneceAMismaFamiliaPieza(tId, targetKey);
+        });
         if (tieneTablero) {
           (capa.herrajes || []).forEach((h) => herrajesCohesionadosSet.add(h.id.toLowerCase().trim()));
           (capa.congelados || []).forEach((c) => herrajesCohesionadosSet.add(c.id.toLowerCase().trim()));
@@ -124,6 +145,20 @@ export function AssemblyPiecePositioner({
             return true;
           }
         }
+      }
+
+      // 🛡️ REGLA CANÓNICA: Si el objetivo tiene número de instancia explícito (ej. "Peça 14 (1)"),
+      // solo puede coincidir con esa instancia física unívoca. Queda estrictamente PROHIBIDO
+      // agrupar o mover instancias hermanas discretas (ej. "Peça 14 (2)").
+      if (tieneInstanciaTarget && matchInstanciaTarget) {
+        if (instanciaKey === targetKey || cleanName === targetKey || name === targetKey) {
+          return true;
+        }
+        const meshInstMatch = instanciaKey.match(/\((\d+)\)/) || cleanName.match(/\((\d+)\)/) || name.match(/\((\d+)\)/);
+        if (meshInstMatch) {
+          return meshInstMatch[1] === matchInstanciaTarget[1] && childFamilia === targetFamilia;
+        }
+        return false;
       }
 
       return (
@@ -220,11 +255,21 @@ export function AssemblyPiecePositioner({
     };
   }, [piezaEnPosicionamientoManual, furnitureGroup, gl, pasosManual]);
 
-  // 2. Manejo de tecla Escape (Esc) para soltar la pieza y cancelar sin guardar
+  // 2. Manejo de teclado tipo Blender:
+  // - Tecla X: bloquea en eje X (transversal)
+  // - Tecla Y: bloquea en eje Y del taller (longitudinal / Z de Three.js)
+  // - Tecla C / G: libera restricciones y vuelve a modo libre
+  // - Tecla Escape (Esc): cancela y devuelve las piezas a su posición original
   useEffect(() => {
     if (!piezaEnPosicionamientoManual) return;
 
     const handleKeyDown = (e: KeyboardEvent) => {
+      // Ignorar si el usuario está interactuando con inputs de texto
+      const activeEl = document.activeElement as HTMLElement | null;
+      if (activeEl && (activeEl.tagName === "INPUT" || activeEl.tagName === "TEXTAREA" || activeEl.isContentEditable)) {
+        return;
+      }
+
       if (e.key === "Escape") {
         e.preventDefault();
         e.stopPropagation();
@@ -236,7 +281,34 @@ export function AssemblyPiecePositioner({
             item.mesh.updateMatrixWorld(true);
           }
         }
+        setEjeRestringido(null);
+        ejeRestringidoRef.current = null;
         setPiezaEnPosicionamientoManual(null);
+        return;
+      }
+
+      const k = e.key.toLowerCase();
+      if (k === "x") {
+        e.preventDefault();
+        e.stopPropagation();
+        setEjeRestringido((prev) => {
+          const nextVal = prev === "X" ? null : "X";
+          ejeRestringidoRef.current = nextVal;
+          return nextVal;
+        });
+      } else if (k === "y") {
+        e.preventDefault();
+        e.stopPropagation();
+        setEjeRestringido((prev) => {
+          const nextVal = prev === "Y" ? null : "Y";
+          ejeRestringidoRef.current = nextVal;
+          return nextVal;
+        });
+      } else if (k === "c" || k === "g") {
+        e.preventDefault();
+        e.stopPropagation();
+        setEjeRestringido(null);
+        ejeRestringidoRef.current = null;
       }
     };
 
@@ -256,10 +328,20 @@ export function AssemblyPiecePositioner({
     if (hit) {
       // El piso en Three.js es el plano horizontal X-Z (donde Y = 0)
       // Calculamos el desplazamiento sobre el piso respecto al centro de reposo colectivo
-      const deltaXWorld = hit.x - collectiveRestWorldRef.current.x;
-      const deltaZWorld = hit.z - collectiveRestWorldRef.current.z;
-      const deltaWorld = new THREE.Vector3(deltaXWorld, 0, deltaZWorld);
+      let deltaXWorld = hit.x - collectiveRestWorldRef.current.x;
+      let deltaZWorld = hit.z - collectiveRestWorldRef.current.z;
 
+      // 🎯 Restricción de ejes al estilo Blender:
+      // - Eje X (Taller / Three.js): Solo movimiento transversal (deltaZWorld = 0)
+      // - Eje Y (Taller / Z Three.js): Solo movimiento longitudinal (deltaXWorld = 0)
+      const eje = ejeRestringidoRef.current;
+      if (eje === "X") {
+        deltaZWorld = 0;
+      } else if (eje === "Y") {
+        deltaXWorld = 0;
+      }
+
+      const deltaWorld = new THREE.Vector3(deltaXWorld, 0, deltaZWorld);
       latestDeltaWorldRef.current.copy(deltaWorld);
 
       // 🎯 Calcular y registrar el delta local para la pieza primaria (consistente con rotación de orientacionBanco)
@@ -341,9 +423,22 @@ export function AssemblyPiecePositioner({
         };
 
         const listaPiezas = [...(cfgActual.piezasEspera || [])];
-        const idx = listaPiezas.findIndex(
-          (p) => p.nombrePieza === nombrePieza || perteneceAMismaFamiliaPieza(p.nombrePieza, nombrePieza)
-        );
+        const tieneInstanciaTargetCommit = /\(\d+\)/.test(nombrePieza);
+        const matchInstanciaTargetCommit = nombrePieza.match(/\((\d+)\)/);
+
+        const idx = listaPiezas.findIndex((p) => {
+          if (p.nombrePieza === nombrePieza) return true;
+          if (tieneInstanciaTargetCommit || /\(\d+\)/.test(p.nombrePieza)) {
+            const pMatch = p.nombrePieza.match(/\((\d+)\)/);
+            return Boolean(
+              matchInstanciaTargetCommit &&
+              pMatch &&
+              pMatch[1] === matchInstanciaTargetCommit[1] &&
+              extraerFamiliaPieza(p.nombrePieza) === extraerFamiliaPieza(nombrePieza)
+            );
+          }
+          return perteneceAMismaFamiliaPieza(p.nombrePieza, nombrePieza);
+        });
 
         if (idx >= 0) {
           listaPiezas[idx] = {
@@ -367,9 +462,19 @@ export function AssemblyPiecePositioner({
 
         // Mantener la secuencia en sincronía para que Three.js retenga la posición de espera en piso de inmediato
         const nuevaSecuencia = [...(paso.secuencia || [])];
-        const seqIdx = nuevaSecuencia.findIndex(
-          (s) => s.nombreNodo === nombrePieza || perteneceAMismaFamiliaPieza(s.nombreNodo || "", nombrePieza)
-        );
+        const seqIdx = nuevaSecuencia.findIndex((s) => {
+          if (s.nombreNodo === nombrePieza) return true;
+          if (tieneInstanciaTargetCommit || /\(\d+\)/.test(s.nombreNodo || "")) {
+            const sMatch = (s.nombreNodo || "").match(/\((\d+)\)/);
+            return Boolean(
+              matchInstanciaTargetCommit &&
+              sMatch &&
+              sMatch[1] === matchInstanciaTargetCommit[1] &&
+              extraerFamiliaPieza(s.nombreNodo || "") === extraerFamiliaPieza(nombrePieza)
+            );
+          }
+          return perteneceAMismaFamiliaPieza(s.nombreNodo || "", nombrePieza);
+        });
         const distEspera = Math.sqrt((deltaX_cm / 100) ** 2 + (deltaY_cm / 100) ** 2 + (deltaZ_cm / 100) ** 2);
         const vPiezaM_s = (cfgActual.velocidadPiezasCmS || 15) / 100;
         const durTraslacion = Math.max(1.5, Math.round((distEspera / vPiezaM_s) * 10) / 10);
@@ -396,7 +501,12 @@ export function AssemblyPiecePositioner({
           const nuevasCapas = multiplePlusActualizado.capas.map((capa) => ({
             ...capa,
             tableros: (capa.tableros || []).map((t) => {
-              if (t.id === nombrePieza || perteneceAMismaFamiliaPieza(t.id, nombrePieza)) {
+              const coincideTablero = t.id === nombrePieza || (
+                !tieneInstanciaTargetCommit &&
+                !/\(\d+\)/.test(t.id) &&
+                perteneceAMismaFamiliaPieza(t.id, nombrePieza)
+              );
+              if (coincideTablero) {
                 return {
                   ...t,
                   offsetXCm: deltaX_cm,
@@ -433,7 +543,9 @@ export function AssemblyPiecePositioner({
         }
       }
 
-      // Finalizar modo de posicionamiento
+      // Finalizar modo de posicionamiento y limpiar restricciones de eje
+      setEjeRestringido(null);
+      ejeRestringidoRef.current = null;
       setPiezaEnPosicionamientoManual(null);
     };
 
@@ -444,5 +556,81 @@ export function AssemblyPiecePositioner({
     };
   }, [piezaEnPosicionamientoManual, gl, pasosManual, actualizarPasoManual, setPiezaEnPosicionamientoManual, setUltimaPiezaCalibrada, despertarAnimacionManual]);
 
-  return null;
+  if (!piezaEnPosicionamientoManual) return null;
+
+  const rawNombre = typeof piezaEnPosicionamientoManual === "string"
+    ? piezaEnPosicionamientoManual
+    : piezaEnPosicionamientoManual.nombrePieza;
+
+  const restCenter = collectiveRestWorldRef.current;
+
+  return (
+    <>
+      {/* 🔴 Línea de guía Eje X (Rojo Blender / Transversal) */}
+      {ejeRestringido === "X" && (
+        <Line
+          points={[
+            [-100, 0.003, restCenter.z],
+            [100, 0.003, restCenter.z],
+          ]}
+          color="#EF4444"
+          lineWidth={2.5}
+          dashed={false}
+          renderOrder={999}
+        />
+      )}
+
+      {/* 🟢 Línea de guía Eje Y (Verde Blender / Longitudinal taller) */}
+      {ejeRestringido === "Y" && (
+        <Line
+          points={[
+            [restCenter.x, 0.003, -100],
+            [restCenter.x, 0.003, 100],
+          ]}
+          color="#10B981"
+          lineWidth={2.5}
+          dashed={false}
+          renderOrder={999}
+        />
+      )}
+
+      {/* 🧭 HUD Flotante tipo Blender con terminaciones circulares puras */}
+      <Html position={[0, 0, 0]} fullscreen style={{ pointerEvents: "none" }}>
+        <div className="absolute top-16 left-1/2 -translate-x-1/2 flex items-center gap-2 bg-slate-900/90 dark:bg-slate-950/95 text-white px-4 py-1.5 rounded-full shadow-2xl border border-slate-700/60 backdrop-blur-md text-[11px] select-none z-50">
+          <span className="font-bold text-amber-400 truncate max-w-[120px]">
+            {rawNombre}
+          </span>
+          <span className="text-slate-500">|</span>
+          <span
+            className={`px-2 py-0.5 rounded-full font-bold text-[10px] tracking-wider uppercase transition-all shadow-xs ${
+              ejeRestringido === "X"
+                ? "bg-red-500 text-white shadow-red-500/40"
+                : ejeRestringido === "Y"
+                ? "bg-emerald-500 text-white shadow-emerald-500/40"
+                : "bg-cyan-600 text-white shadow-cyan-600/30"
+            }`}
+          >
+            {ejeRestringido === "X"
+              ? "🔒 EJE X (Transversal)"
+              : ejeRestringido === "Y"
+              ? "🔒 EJE Y (Longitudinal)"
+              : "🌐 MOVIMIENTO LIBRE"}
+          </span>
+          <span className="text-slate-500">|</span>
+          <div className="flex items-center gap-1.5 text-[9.5px] text-slate-300">
+            <span className="bg-slate-800 border border-slate-600 px-1.5 py-0.5 rounded-full font-mono font-bold">X</span>
+            <span className="text-slate-400">Eje X</span>
+            <span className="bg-slate-800 border border-slate-600 px-1.5 py-0.5 rounded-full font-mono font-bold">Y</span>
+            <span className="text-slate-400">Eje Y</span>
+            <span className="bg-slate-800 border border-slate-600 px-1.5 py-0.5 rounded-full font-mono font-bold">C</span>
+            <span className="text-slate-400">Libre</span>
+            <span className="bg-slate-800 border border-slate-600 px-1.5 py-0.5 rounded-full font-mono font-bold">Clic</span>
+            <span className="text-slate-400">Fijar</span>
+            <span className="bg-slate-800 border border-slate-600 px-1.5 py-0.5 rounded-full font-mono font-bold">Esc</span>
+            <span className="text-slate-400">Salir</span>
+          </div>
+        </div>
+      </Html>
+    </>
+  );
 }

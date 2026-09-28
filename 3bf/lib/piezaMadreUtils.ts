@@ -55,6 +55,7 @@ export function esHerrajeNombre(name?: string | null): boolean {
     cleanLower.includes("tuerca") ||
     cleanLower.includes("clavo") ||
     cleanLower.includes("grampo") ||
+    cleanLower.includes("grapa") ||
     cleanLower.includes("prego") ||
     cleanLower.includes("tampa") ||
     cleanLower.includes("tapa") ||

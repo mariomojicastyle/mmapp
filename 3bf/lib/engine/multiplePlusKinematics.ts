@@ -10,6 +10,7 @@
 
 import * as THREE from "three";
 import { PasoManualStudio, CapaMultiplePlus, TableroCapaPlus, HerrajeCapaPlus } from "../storeTypes";
+import { use3BFStore } from "../store";
 import { KinematicEngineResult, AnimationEngineToolMeshes } from "./types";
 import {
   getSafeRestPosition,
@@ -148,16 +149,41 @@ function resolverVectorEje(eje: string, distanciaM: number): THREE.Vector3 {
 }
 
 /**
+ * 🎯 Determina si dos nombres de tablero corresponden a la misma instancia física,
+ * distinguiendo estrictamente instancias numeradas (1) y (2).
+ */
+export function sonMismoTableroOInstancia(a?: string | null, b?: string | null): boolean {
+  if (!a || !b) return false;
+  const aLow = a.replace(/^RH_OUT:/i, "").trim().toLowerCase();
+  const bLow = b.replace(/^RH_OUT:/i, "").trim().toLowerCase();
+  if (aLow === bLow) return true;
+
+  const matchA = aLow.match(/\((\d+)\)/);
+  const matchB = bLow.match(/\((\d+)\)/);
+
+  if (matchA || matchB) {
+    return Boolean(
+      matchA &&
+      matchB &&
+      matchA[1] === matchB[1] &&
+      perteneceAMismaFamiliaPieza(aLow, bLow)
+    );
+  }
+
+  return perteneceAMismaFamiliaPieza(aLow, bLow);
+}
+
+/**
  * 🎯 Determina si una malla de la escena corresponde unívocamente a un tablero de capa,
  * respetando la discriminación atómica de instancias (1), (2), etc.
  */
-function coincideMallaConTablero(
+export function coincideMallaConTablero(
   tabTargetLow: string,
   cn: string,
   pm: string,
   ik: string
 ): boolean {
-  if (ik === tabTargetLow || cn === tabTargetLow || pm === tabTargetLow) {
+  if (ik === tabTargetLow || cn === tabTargetLow) {
     return true;
   }
 
@@ -165,7 +191,7 @@ function coincideMallaConTablero(
   const matchMesh = ik.match(/\((\d+)\)/) || cn.match(/\((\d+)\)/);
 
   if (matchTarget) {
-    // Si el tablero es una instancia específica (ej. "Peça 15 (1)"):
+    // Si el tablero es una instancia específica (ej. "Peça 14 (1)"):
     if (matchMesh) {
       return matchMesh[1] === matchTarget[1] && perteneceAMismaFamiliaPieza(cn, tabTargetLow);
     }
@@ -174,10 +200,10 @@ function coincideMallaConTablero(
 
   // Si el tablero es genérico sin número (ej. "Peça 1"):
   if (matchMesh) {
-    return false;
+    return perteneceAMismaFamiliaPieza(cn, tabTargetLow) || perteneceAMismaFamiliaPieza(pm, tabTargetLow);
   }
 
-  return perteneceAMismaFamiliaPieza(cn, tabTargetLow);
+  return pm === tabTargetLow || perteneceAMismaFamiliaPieza(cn, tabTargetLow) || perteneceAMismaFamiliaPieza(pm, tabTargetLow);
 }
 
 /**
@@ -206,7 +232,7 @@ export function compilarMultiplePlusPaso(
   const capas = mpConfig.capas || [];
 
   // 📐 Transformación de elevación vertical mundial (Y-Up Three.js) al espacio local del contenedor (consistente con orientacionBanco)
-  const rotBanco = paso.orientacionBanco?.rotacion || [0, 0, 0];
+  const rotBanco = paso.orientacionBanco?.rotacion || mpConfig.orientacionBanco?.rotacion || [0, 0, 0];
   const radX = THREE.MathUtils.degToRad(rotBanco[0] || 0);
   const radY = THREE.MathUtils.degToRad(rotBanco[1] || 0);
   const radZ = THREE.MathUtils.degToRad(rotBanco[2] || 0);
@@ -258,6 +284,29 @@ export function compilarMultiplePlusPaso(
     });
   });
 
+  // Helper para resolver los tiempos de acople del subensamble activo según acopleHeredados
+  const resolverTiemposAcopleSubensamble = (c: CapaMultiplePlus): { tAcople: number; durAcople: number; tFinAcople: number } => {
+    const modoAcople = mpConfig.acopleHeredados?.modo;
+    if (modoAcople === "recien_armado_a_heredado") {
+      const tAcople = typeof mpConfig.acopleHeredados?.tiempoInicio === "number"
+        ? mpConfig.acopleHeredados.tiempoInicio
+        : (typeof c.tiempoAcopleSegundos === "number" && c.tiempoAcopleSegundos > 0 ? c.tiempoAcopleSegundos : Math.max(0.5, duracionPaso - 2.5));
+      const durAcople = Math.max(0.2, mpConfig.acopleHeredados?.duracion ?? c.duracionAcopleSegundos ?? 2.0);
+      const tFinAcople = Math.min(duracionPaso, tAcople + durAcople);
+      return { tAcople, durAcople, tFinAcople };
+    }
+    if (modoAcople === "heredado_a_recien_armado" || modoAcople === "acoplarse_a_paso") {
+      // La carcasa viaja hacia el subensamble, por lo tanto el subensamble permanece en vOff en banco
+      return { tAcople: duracionPaso + 1000, durAcople: 0.001, tFinAcople: duracionPaso + 1000 };
+    }
+    // Modo "fijo": respeta si la capa tenía acople propio explícito o se queda en banco
+    if (typeof c.tiempoAcopleSegundos === "number" && c.tiempoAcopleSegundos > 0) {
+      const durAcople = Math.max(0.2, c.duracionAcopleSegundos || 2.0);
+      return { tAcople: c.tiempoAcopleSegundos, durAcople, tFinAcople: Math.min(duracionPaso, c.tiempoAcopleSegundos + durAcople) };
+    }
+    return { tAcople: duracionPaso + 1000, durAcople: 0.001, tFinAcople: duracionPaso + 1000 };
+  };
+
   // 2. Poblar mastersMap detectando masters explícitas (capa.piezaMaster) o implícitas (destinoId / base_master)
   capas.forEach((c) => {
     // A) Si la capa tiene piezaMaster explícita
@@ -273,7 +322,7 @@ export function compilarMultiplePlusPaso(
       }
       if (vOff.lengthSq() <= 0.00001) {
         const tabMaster = (c.tableros || []).find((t) =>
-          perteneceAMismaFamiliaPieza(t.id.replace(/^RH_OUT:/i, "").trim().toLowerCase(), mClean)
+          sonMismoTableroOInstancia(t.id, mClean)
         );
         if (tabMaster && ((tabMaster.offsetXCm || 0) !== 0 || (tabMaster.offsetYCm || 0) !== 0 || (tabMaster.offsetZCm || 0) !== 0 || (tabMaster.elevacionZCm || 0) !== 0)) {
           vOff.set(
@@ -285,11 +334,7 @@ export function compilarMultiplePlusPaso(
       }
 
       if (vOff.lengthSq() > 0.00001) {
-        const tAcople = typeof c.tiempoAcopleSegundos === "number" && c.tiempoAcopleSegundos > 0
-          ? c.tiempoAcopleSegundos
-          : Math.max(0.5, duracionPaso - (c.duracionAcopleSegundos || 2.5));
-        const durAcople = Math.max(0.2, c.duracionAcopleSegundos || 2.0);
-        const tFinAcople = Math.min(duracionPaso, tAcople + durAcople);
+        const { tAcople, durAcople, tFinAcople } = resolverTiemposAcopleSubensamble(c);
 
         mastersMap.set(mClean, {
           masterId: mClean,
@@ -305,7 +350,7 @@ export function compilarMultiplePlusPaso(
     (c.tableros || []).forEach((t) => {
       const tIdClean = t.id.replace(/^RH_OUT:/i, "").trim().toLowerCase();
       const esDestinoDeOtras = destinosReferenciados.has(tIdClean) ||
-        Array.from(destinosReferenciados).some((d) => perteneceAMismaFamiliaPieza(tIdClean, d));
+        Array.from(destinosReferenciados).some((d) => sonMismoTableroOInstancia(tIdClean, d));
       const esBaseMaster = t.destinoId === "base_master" || !t.destinoId;
 
       if ((esDestinoDeOtras || esBaseMaster) && !mastersMap.has(tIdClean)) {
@@ -325,11 +370,7 @@ export function compilarMultiplePlusPaso(
         }
 
         if (vOff.lengthSq() > 0.00001 && esDestinoDeOtras) {
-          const tAcople = typeof c.tiempoAcopleSegundos === "number" && c.tiempoAcopleSegundos > 0
-            ? c.tiempoAcopleSegundos
-            : Math.max(0.5, duracionPaso - (c.duracionAcopleSegundos || 2.5));
-          const durAcople = Math.max(0.2, c.duracionAcopleSegundos || 2.0);
-          const tFinAcople = Math.min(duracionPaso, tAcople + durAcople);
+          const { tAcople, durAcople, tFinAcople } = resolverTiemposAcopleSubensamble(c);
 
           mastersMap.set(tIdClean, {
             masterId: tIdClean,
@@ -348,7 +389,7 @@ export function compilarMultiplePlusPaso(
       const mClean = capaItem.piezaMaster.replace(/^RH_OUT:/i, "").trim().toLowerCase();
       if (mastersMap.has(mClean)) return mastersMap.get(mClean)!;
       for (const [key, conf] of mastersMap.entries()) {
-        if (perteneceAMismaFamiliaPieza(mClean, key) || coincideMallaConTablero(key, mClean, mClean, mClean)) {
+        if (sonMismoTableroOInstancia(mClean, key)) {
           return conf;
         }
       }
@@ -357,7 +398,7 @@ export function compilarMultiplePlusPaso(
       const destLow = (t.destinoId || "").replace(/^RH_OUT:/i, "").trim().toLowerCase();
       if (destLow && destLow !== "base_master") {
         for (const [key, conf] of mastersMap.entries()) {
-          if (destLow === key || perteneceAMismaFamiliaPieza(destLow, key) || coincideMallaConTablero(key, destLow, destLow, destLow)) {
+          if (sonMismoTableroOInstancia(destLow, key)) {
             return conf;
           }
         }
@@ -365,7 +406,7 @@ export function compilarMultiplePlusPaso(
       const tIdLow = t.id.replace(/^RH_OUT:/i, "").trim().toLowerCase();
       if (mastersMap.has(tIdLow)) return mastersMap.get(tIdLow)!;
       for (const [key, conf] of mastersMap.entries()) {
-        if (perteneceAMismaFamiliaPieza(tIdLow, key) || coincideMallaConTablero(key, tIdLow, tIdLow, tIdLow)) {
+        if (sonMismoTableroOInstancia(tIdLow, key)) {
           return conf;
         }
       }
@@ -380,7 +421,7 @@ export function compilarMultiplePlusPaso(
     // 1. Si el propio tablero es una Master registrada
     if (mastersMap.has(tIdLow)) return mastersMap.get(tIdLow)!;
     for (const [key, conf] of mastersMap.entries()) {
-      if (perteneceAMismaFamiliaPieza(tIdLow, key) || coincideMallaConTablero(key, tIdLow, tIdLow, tIdLow)) {
+      if (sonMismoTableroOInstancia(tIdLow, key)) {
         return conf;
       }
     }
@@ -389,7 +430,7 @@ export function compilarMultiplePlusPaso(
     if (destLow && destLow !== "base_master") {
       if (mastersMap.has(destLow)) return mastersMap.get(destLow)!;
       for (const [key, conf] of mastersMap.entries()) {
-        if (destLow === key || perteneceAMismaFamiliaPieza(destLow, key) || coincideMallaConTablero(key, destLow, destLow, destLow)) {
+        if (sonMismoTableroOInstancia(destLow, key)) {
           return conf;
         }
       }
@@ -477,9 +518,9 @@ export function compilarMultiplePlusPaso(
         if (tieneMasterOffset && masterConf) {
           const mId = masterConf.masterId;
           const destLow = (tablero.destinoId || "").replace(/^RH_OUT:/i, "").trim().toLowerCase();
-          if (tabTargetLow === mId || perteneceAMismaFamiliaPieza(tabTargetLow, mId) || coincideMallaConTablero(mId, tabTargetLow, tabTargetLow, tabTargetLow)) {
+          if (sonMismoTableroOInstancia(tabTargetLow, mId)) {
             esLaPropiaMaster = true;
-          } else if (destLow === mId || perteneceAMismaFamiliaPieza(destLow, mId) || coincideMallaConTablero(mId, destLow, destLow, destLow)) {
+          } else if (sonMismoTableroOInstancia(destLow, mId)) {
             esHijaDelMaster = true;
           } else {
             esHijaDelMaster = true;
@@ -701,7 +742,7 @@ export function compilarMultiplePlusPaso(
       let esLaPropiaMaster = false;
       if (tieneMasterOffset && masterConf) {
         const mId = masterConf.masterId;
-        if (tLow === mId || perteneceAMismaFamiliaPieza(tLow, mId) || coincideMallaConTablero(mId, tLow, tLow, tLow)) {
+        if (sonMismoTableroOInstancia(tLow, mId)) {
           esLaPropiaMaster = true;
         }
       }
@@ -888,26 +929,42 @@ export function compilarMultiplePlusPaso(
           return qCurGiro.clone().multiply(qHwRest);
         };
 
+        const generarPistasEscalaHw = (tVisible: number) => {
+          if (tVisible >= duracionPaso) {
+            return {
+              times: [0, duracionPaso],
+              scales: [0, 0, 0, 0, 0, 0],
+            };
+          }
+
+          const times: number[] = [0];
+          const scales: number[] = [0, 0, 0];
+
+          if (tVisible > 0.04) {
+            times.push(tVisible - 0.02);
+            scales.push(0, 0, 0);
+          }
+
+          times.push(tVisible);
+          scales.push(1, 1, 1);
+
+          if (times[times.length - 1] < duracionPaso) {
+            times.push(duracionPaso);
+            scales.push(1, 1, 1);
+          }
+
+          return { times, scales };
+        };
+
+        let tHwStartCalc = tAparicion;
+        let posTimesHw: number[] = [];
+        let posValsHw: number[] = [];
+        let qValsHw: number[] = [];
+
         if (herraje.congelado) {
           // ❄️ Herraje congelado: soldado rígidamente al barreno de su tablero en todo instante (cero desfases)
-          if (tAparicion >= duracionPaso) {
-            agregarTrack(
-              crearTrackEscalaSanitizado(`${hwMesh.uuid}.scale`, [0, duracionPaso], [0, 0, 0, 0, 0, 0])
-            );
-          } else if (tAparicion > 0) {
-            const tPre = Math.max(0, tAparicion - 0.02);
-            agregarTrack(
-              crearTrackEscalaSanitizado(
-                `${hwMesh.uuid}.scale`,
-                [0, tPre, tAparicion, duracionPaso],
-                [0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1]
-              )
-            );
-          } else {
-            agregarTrack(
-              crearTrackEscalaSanitizado(`${hwMesh.uuid}.scale`, [0, duracionPaso], [1, 1, 1, 1, 1, 1])
-            );
-          }
+          const { times: sTimes, scales: sVals } = generarPistasEscalaHw(tAparicion);
+          agregarTrack(crearTrackEscalaSanitizado(`${hwMesh.uuid}.scale`, sTimes, sVals));
 
           // Posición: 100% fiel y rígida a la transformación del tablero
           const pTimes = pTimesTablero;
@@ -922,6 +979,10 @@ export function compilarMultiplePlusPaso(
             }
           });
 
+          posTimesHw = pTimes;
+          posValsHw = pVals;
+          qValsHw = qVals;
+
           agregarTrack(crearTrackVectorSanitizado(`${hwMesh.uuid}.position`, pTimes, pVals));
           if (tieneRotHw) {
             agregarTrack(crearTrackQuaternionSanitizado(`${hwMesh.uuid}.quaternion`, pTimes, qVals));
@@ -935,27 +996,11 @@ export function compilarMultiplePlusPaso(
             ? Math.max(0.15, distGlobalM / velocidadHerrajesM_s)
             : 0;
           const tHwStart = tAparicion;
+          tHwStartCalc = tHwStart;
           const tHwLlegada = Math.min(duracionPaso, tHwStart + tViaje);
 
-          // Escala: invisible hasta tHwStart
-          if (tHwStart >= duracionPaso) {
-            agregarTrack(
-              crearTrackEscalaSanitizado(`${hwMesh.uuid}.scale`, [0, duracionPaso], [0, 0, 0, 0, 0, 0])
-            );
-          } else if (tHwStart > 0) {
-            const tPre = Math.max(0, tHwStart - 0.02);
-            agregarTrack(
-              crearTrackEscalaSanitizado(
-                `${hwMesh.uuid}.scale`,
-                [0, tPre, tHwStart, duracionPaso],
-                [0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1]
-              )
-            );
-          } else {
-            agregarTrack(
-              crearTrackEscalaSanitizado(`${hwMesh.uuid}.scale`, [0, duracionPaso], [1, 1, 1, 1, 1, 1])
-            );
-          }
+          const { times: sTimes, scales: sVals } = generarPistasEscalaHw(tHwStart);
+          agregarTrack(crearTrackEscalaSanitizado(`${hwMesh.uuid}.scale`, sTimes, sVals));
 
           // Sub-muestreo durante la inserción si tiene distancia
           const insertionTimes: number[] = [tHwStart, tHwLlegada];
@@ -1000,87 +1045,108 @@ export function compilarMultiplePlusPaso(
             }
           });
 
+          posTimesHw = posTimes;
+          posValsHw = posVals;
+          qValsHw = qVals;
+
           agregarTrack(crearTrackVectorSanitizado(`${hwMesh.uuid}.position`, posTimes, posVals));
           if (tieneRotHw) {
             agregarTrack(crearTrackQuaternionSanitizado(`${hwMesh.uuid}.quaternion`, posTimes, qVals));
           }
         }
 
-        // 🌟 OPCIÓN C: Aura / Resplandor Dorado Expandible (Glow Shell) en GLB y Three.js
-        if (herraje.destello && (herraje.destello.duracion || 0) > 0) {
-          const tInicioDestello = herraje.destello.tiempoInicio ?? tAparicion;
-          const durDestello = herraje.destello.duracion || 0;
-          const tFinDestello = Math.min(duracionPaso, tInicioDestello + durDestello);
+        // 🌟 Malla de Aura Dorada (Glow Shell) para Babylon.js Sandbox, Blender y Three.js
+        const tieneDestello = Boolean(herraje.destello && (herraje.destello.duracion || 0) > 0);
+        const tVisibleHw = herraje.congelado ? tAparicion : tHwStartCalc;
+        const tInicioDestello = tieneDestello ? (herraje.destello!.tiempoInicio ?? tVisibleHw) : tVisibleHw;
+        const durDestello = tieneDestello ? (herraje.destello!.duracion || 0) : 0;
+        const tFinDestello = Math.min(duracionPaso, tInicioDestello + durDestello);
 
-          if (durDestello > 0 && tInicioDestello < duracionPaso) {
-            const auraName = `${hwMesh.name || hwMesh.uuid}_AuraDestello`;
-            let auraMesh = hwMesh.children.find((c) => c.name === auraName) as THREE.Mesh;
-            if (!auraMesh) {
-              const auraMat = new THREE.MeshStandardMaterial({
-                name: "Material_Aura_Destello_Oro",
-                color: new THREE.Color("#FFE066"),
-                emissive: new THREE.Color("#FFC000"),
-                emissiveIntensity: 3.0,
-                roughness: 0.15,
-                metalness: 0.85,
-                side: THREE.DoubleSide,
-              });
-              auraMesh = new THREE.Mesh(hwMesh.geometry, auraMat);
-              auraMesh.name = auraName;
-              auraMesh.scale.set(0, 0, 0);
-              auraMesh.userData = { isAuraDestelloHelper: true };
-              hwMesh.add(auraMesh);
-            }
+        // 🛡️ REGLA SUPREMA glTF: El nombre debe ser estrictamente alfanumérico sin paréntesis, espacios ni dos puntos
+        const safeHwName = (hwMesh.name || "hw").replace(/[^a-zA-Z0-9_]/g, "_");
+        const safeHwUuid = hwMesh.uuid.replace(/-/g, "_");
+        const auraNodeName = `Aura_${safeHwName}_${safeHwUuid}`;
 
-            mallasAnimadasEnCapas.add(auraMesh.uuid);
+        if (tieneDestello && durDestello > 0.05 && tFinDestello > tInicioDestello) {
+          let auraMesh = rootScene.children.find((c) => c.name === auraNodeName) as THREE.Mesh;
+          if (!auraMesh) {
+            const auraMat = new THREE.MeshStandardMaterial({
+              name: "Material_Aura_Destello_Oro",
+              color: new THREE.Color("#FFE066"),
+              emissive: new THREE.Color("#FFDE00"),
+              emissiveIntensity: 2.8,
+              roughness: 0.15,
+              metalness: 0.85,
+              side: THREE.DoubleSide,
+            });
+            auraMesh = new THREE.Mesh(hwMesh.geometry, auraMat);
+            auraMesh.name = auraNodeName;
+            auraMesh.scale.set(0, 0, 0);
+            auraMesh.userData = {
+              isAuraDestelloHelper: true,
+              __esHelperVisual: true,
+              __baseRestPosition: hwMesh.userData?.__baseRestPosition?.clone() || hwMesh.position.clone(),
+              __baseRestQuaternion: hwMesh.userData?.__baseRestQuaternion?.clone() || hwMesh.quaternion.clone(),
+              __baseRestScale: new THREE.Vector3(0, 0, 0),
+            };
+            rootScene.add(auraMesh);
+          }
+          mallasAnimadasEnCapas.add(auraMesh.uuid);
 
-            // Generar pulsos senoidales rítmicos durante [tInicioDestello, tFinDestello]
-            const auraTimes: number[] = [0];
-            const auraScales: number[] = [0, 0, 0];
+          // Pista de escala del Aura: 0 antes, pulso senoidal de 1.08 a 1.35 en [tInicioDestello, tFinDestello], y 0 después
+          const auraTimes: number[] = [0];
+          const auraScales: number[] = [0, 0, 0];
 
-            if (tInicioDestello > 0.04) {
-              auraTimes.push(tInicioDestello - 0.02);
-              auraScales.push(0, 0, 0);
-            }
-            auraTimes.push(tInicioDestello);
+          if (tInicioDestello > 0.04) {
+            auraTimes.push(tInicioDestello - 0.02);
             auraScales.push(0, 0, 0);
+          }
+          auraTimes.push(tInicioDestello);
+          auraScales.push(0, 0, 0);
 
-            // 2.5 Hz (2.5 ciclos por segundo) a 20 FPS para curvas 100% orgánicas en Babylon y Blender
-            const fpsAura = 20;
-            const nPasos = Math.max(6, Math.round(durDestello * fpsAura));
-            for (let s = 1; s <= nPasos; s++) {
-              const curT = tInicioDestello + (s / nPasos) * durDestello;
-              if (s === nPasos) {
-                auraTimes.push(curT);
-                auraScales.push(0, 0, 0);
-              } else {
-                const elapsed = curT - tInicioDestello;
-                const factorSeno = (Math.sin(elapsed * Math.PI * 5) + 1) / 2; // 0 a 1 a 2.5 Hz
-                const escalaVal = 1.05 + factorSeno * 0.35; // 1.05x a 1.40x
-                auraTimes.push(curT);
-                auraScales.push(escalaVal, escalaVal, escalaVal);
-              }
-            }
-
-            if (tFinDestello < duracionPaso) {
-              auraTimes.push(duracionPaso);
+          const fpsPulse = 20;
+          const nPasos = Math.max(6, Math.round(durDestello * fpsPulse));
+          for (let s = 1; s <= nPasos; s++) {
+            const curT = tInicioDestello + (s / nPasos) * durDestello;
+            if (s === nPasos) {
+              auraTimes.push(curT);
               auraScales.push(0, 0, 0);
+            } else {
+              const elapsed = curT - tInicioDestello;
+              const factorSeno = (Math.sin(elapsed * Math.PI * 5) + 1) / 2; // 2.5 Hz
+              const escalaVal = 1.08 + factorSeno * 0.28; // 1.08x a 1.36x
+              auraTimes.push(curT);
+              auraScales.push(escalaVal, escalaVal, escalaVal);
             }
+          }
 
-            agregarTrack(
-              crearTrackEscalaSanitizado(`${auraMesh.uuid}.scale`, auraTimes, auraScales)
-            );
+          if (tFinDestello < duracionPaso) {
+            auraTimes.push(duracionPaso);
+            auraScales.push(0, 0, 0);
+          }
+
+          agregarTrack(crearTrackEscalaSanitizado(`${auraNodeName}.scale`, auraTimes, auraScales));
+
+          // Sincronización idéntica de trayectoria de posición y rotación con hwMesh
+          agregarTrack(crearTrackVectorSanitizado(`${auraNodeName}.position`, posTimesHw, posValsHw));
+
+          if (tieneRotHw && qValsHw.length > 0) {
+            agregarTrack(crearTrackQuaternionSanitizado(`${auraNodeName}.quaternion`, posTimesHw, qValsHw));
           }
         } else {
-          const auraName = `${hwMesh.name || hwMesh.uuid}_AuraDestello`;
-          const auraMesh = hwMesh.children.find((c) => c.name === auraName) as THREE.Mesh;
+          // Si el herraje no tiene destello activo pero existía una malla de aura previa en la escena viva, silenciarla
+          const auraMesh = rootScene.children.find((c) => c.name === auraNodeName) as THREE.Mesh;
           if (auraMesh) {
             auraMesh.scale.set(0, 0, 0);
             mallasAnimadasEnCapas.add(auraMesh.uuid);
-            agregarTrack(
-              crearTrackEscalaSanitizado(`${auraMesh.uuid}.scale`, [0, duracionPaso], [0, 0, 0, 0, 0, 0])
-            );
+            agregarTrack(crearTrackEscalaSanitizado(`${auraNodeName}.scale`, [0, duracionPaso], [0, 0, 0, 0, 0, 0]));
           }
+        }
+
+        // 🛡️ Purgar cualquier residuo de aura parásita como hija de hwMesh
+        const auraResidual = hwMesh.children.find((c) => c.name?.includes("AuraDestello") || (c as any).userData?.isAuraDestelloHelper);
+        if (auraResidual) {
+          hwMesh.remove(auraResidual);
         }
       });
     });
@@ -1089,7 +1155,13 @@ export function compilarMultiplePlusPaso(
   // ─────────────────────────────────────────────────────────────────────────
   // 🧩 2. BLOQUES HEREDADOS (Consolidados a t = t_final como cuerpo rígido inmóvil)
   // ─────────────────────────────────────────────────────────────────────────
-  const todosLosPasos = toolMeshes?.todosLosPasos || [];
+  const todosLosPasos = (toolMeshes?.todosLosPasos && toolMeshes.todosLosPasos.length > 0)
+    ? toolMeshes.todosLosPasos
+    : (typeof use3BFStore !== "undefined" && use3BFStore.getState?.()?.pasosManual?.length > 0)
+      ? use3BFStore.getState().pasosManual
+      : (typeof window !== "undefined" && (window as any).__3bfPasosManual)
+        ? (window as any).__3bfPasosManual
+        : [];
   const bloquesHeredadosIds: string[] = [
     ...(paso.bloquesHeredadosIds || []),
     ...capas.flatMap((c) => c.bloquesHeredadosIds || []),
@@ -1102,6 +1174,47 @@ export function compilarMultiplePlusPaso(
 
   const modoHeredados = paso.multiplePlus?.modoVisualizacionHeredados || "solido";
   const estaVisibleHeredados = modoHeredados !== "oculto";
+
+  // 🔗 Configuración y cinemática de acople de los objetos heredados
+  const acopleHeredados = mpConfig.acopleHeredados;
+  const modoAcopleHeredados = acopleHeredados?.modo || "recien_armado_a_heredado";
+  const esAcopleHeredadosActivo = modoAcopleHeredados === "heredado_a_recien_armado" || modoAcopleHeredados === "acoplarse_a_paso";
+  const tAparicionHeredados = Math.max(0, acopleHeredados?.tiempoAparicion ?? 0);
+  const tInicioAcopleHeredados = Math.max(0, acopleHeredados?.tiempoInicio ?? Math.max(0.5, duracionPaso - 2.5));
+  const durAcopleHeredados = Math.max(0.2, acopleHeredados?.duracion ?? 2.5);
+  const tFinAcopleHeredados = Math.min(duracionPaso, tInicioAcopleHeredados + durAcopleHeredados);
+
+  // Vector de offset del paso actual (si existe una piezaMaster o capa con offsetBancoCm)
+  const vOffsetPasoActual = new THREE.Vector3(0, 0, 0);
+  if (mastersMap.size > 0) {
+    const primerMaster = Array.from(mastersMap.values())[0];
+    if (primerMaster && primerMaster.vOffset.lengthSq() > 0.00001) {
+      vOffsetPasoActual.copy(primerMaster.vOffset);
+    }
+  } else {
+    for (const c of capas) {
+      if (c.offsetBancoCm && ((c.offsetBancoCm.x || 0) !== 0 || (c.offsetBancoCm.y || 0) !== 0 || (c.offsetBancoCm.z || 0) !== 0)) {
+        vOffsetPasoActual.set(
+          (c.offsetBancoCm.x || 0) / 100,
+          (c.offsetBancoCm.y || 0) / 100,
+          (c.offsetBancoCm.z || 0) / 100
+        );
+        break;
+      }
+    }
+  }
+
+  // Vector de aproximación cuando no hay offset de banco en el subensamble actual
+  const tieneOffsetSubensamble = vOffsetPasoActual.lengthSq() > 0.00001;
+  const distAproxM = Math.max(0.05, (acopleHeredados?.distanciaAproximacionCm ?? 30) / 100);
+  const ejeAprox = acopleHeredados?.ejeAproximacion || "+Z";
+  let vAproxHeredados = new THREE.Vector3(0, 0, distAproxM);
+  if (ejeAprox === "-Z") vAproxHeredados.set(0, 0, -distAproxM);
+  else if (ejeAprox === "+Z") vAproxHeredados.set(0, 0, distAproxM);
+  else if (ejeAprox === "+Y") vAproxHeredados.set(0, distAproxM, 0).applyMatrix4(invRotMat);
+  else if (ejeAprox === "-Y") vAproxHeredados.set(0, -distAproxM, 0).applyMatrix4(invRotMat);
+  else if (ejeAprox === "+X") vAproxHeredados.set(distAproxM, 0, 0);
+  else if (ejeAprox === "-X") vAproxHeredados.set(-distAproxM, 0, 0);
 
   todosHeredadosIds.forEach((pasoHeredadoId) => {
     const pasoPrevio = todosLosPasos.find((p: any) => p.id === pasoHeredadoId);
@@ -1146,14 +1259,71 @@ export function compilarMultiplePlusPaso(
           agregarTrack(crearTrackEscalaSanitizado(`${mesh.uuid}.scale`, [0, duracionPaso], [0, 0, 0, 0, 0, 0]));
         } else {
           const pRest = getSafeRestPosition(mesh);
-          agregarTrack(crearTrackEscalaSanitizado(`${mesh.uuid}.scale`, [0, duracionPaso], [1, 1, 1, 1, 1, 1]));
-          agregarTrack(
-            crearTrackVectorSanitizado(
-              `${mesh.uuid}.position`,
-              [0, duracionPaso],
-              [pRest.x, pRest.y, pRest.z, pRest.x, pRest.y, pRest.z]
-            )
-          );
+
+          // 📐 Track de Escala (respetando tiempo de aparición)
+          if (tAparicionHeredados > 0.05) {
+            agregarTrack(
+              crearTrackEscalaSanitizado(
+                `${mesh.uuid}.scale`,
+                [0, Math.max(0.01, tAparicionHeredados - 0.02), tAparicionHeredados, duracionPaso],
+                [0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1]
+              )
+            );
+          } else {
+            agregarTrack(crearTrackEscalaSanitizado(`${mesh.uuid}.scale`, [0, duracionPaso], [1, 1, 1, 1, 1, 1]));
+          }
+
+          // 📐 Track de Posición (Fijo en Banco vs Acoplarse al Paso Actual)
+          if (!esAcopleHeredadosActivo) {
+            agregarTrack(
+              crearTrackVectorSanitizado(
+                `${mesh.uuid}.position`,
+                [0, duracionPaso],
+                [pRest.x, pRest.y, pRest.z, pRest.x, pRest.y, pRest.z]
+              )
+            );
+          } else {
+            let pIni: THREE.Vector3;
+            let pFin: THREE.Vector3;
+
+            if (tieneOffsetSubensamble) {
+              pIni = pRest.clone();
+              pFin = pRest.clone().add(vOffsetPasoActual);
+            } else {
+              pIni = pRest.clone().add(vAproxHeredados);
+              pFin = pRest.clone();
+            }
+
+            const tIni = Math.max(0, tInicioAcopleHeredados);
+            const tFin = Math.max(tIni + 0.05, Math.min(duracionPaso, tFinAcopleHeredados));
+
+            if (tIni > 0.05) {
+              agregarTrack(
+                crearTrackVectorSanitizado(
+                  `${mesh.uuid}.position`,
+                  [0, tIni, tFin, duracionPaso],
+                  [
+                    pIni.x, pIni.y, pIni.z,
+                    pIni.x, pIni.y, pIni.z,
+                    pFin.x, pFin.y, pFin.z,
+                    pFin.x, pFin.y, pFin.z,
+                  ]
+                )
+              );
+            } else {
+              agregarTrack(
+                crearTrackVectorSanitizado(
+                  `${mesh.uuid}.position`,
+                  [0, tFin, duracionPaso],
+                  [
+                    pIni.x, pIni.y, pIni.z,
+                    pFin.x, pFin.y, pFin.z,
+                    pFin.x, pFin.y, pFin.z,
+                  ]
+                )
+              );
+            }
+          }
         }
       }
     });
@@ -1166,7 +1336,7 @@ export function compilarMultiplePlusPaso(
   const bloquesFuncionalesSet = new Set<string>();
   const todosLosGrupos = [
     ...(paso?.showcase?.gruposCinematicos || []),
-    ...((toolMeshes?.todosLosPasos || []).flatMap((p) => p.showcase?.gruposCinematicos || [])),
+    ...(todosLosPasos.flatMap((p: any) => p.showcase?.gruposCinematicos || [])),
   ];
   todosLosGrupos.forEach((g: any) => {
     (g.piezas || []).forEach((piez: string) => {
@@ -1222,6 +1392,202 @@ export function compilarMultiplePlusPaso(
       );
     }
   });
+
+  // =========================================================================
+  // 🌟 ANIMACIÓN DE PUESTA DE PIE AL FINAL (Poner el mueble de pie a 0°)
+  // =========================================================================
+  if (mpConfig.ponerDePieAlFinal) {
+    const rotBancoActual = paso.orientacionBanco?.rotacion || mpConfig.orientacionBanco?.rotacion || [0, 0, 0];
+    const rotX_banco = rotBancoActual[0] || 0;
+    const rotY_banco = rotBancoActual[1] || 0;
+    const rotZ_banco = rotBancoActual[2] || 0;
+
+    const tieneRotacionBanco = rotX_banco !== 0 || rotY_banco !== 0 || rotZ_banco !== 0;
+    if (tieneRotacionBanco) {
+      // 1. Calcular el bounding box unrotado del mueble a partir de las piezas de madera
+      const localBox = new THREE.Box3();
+      for (const m of sceneMeshes) {
+        if (!m.geometry) continue;
+        const isHw = isHardwareMeshName(m.name) || (m.userData?.instanciaKey && isHardwareMeshName(m.userData.instanciaKey));
+        // 🦶 CRÍTICO: Las patas y deslizadores (Pé / Sapata) son herrajes pero definen la base física del mueble en el suelo
+        const isLeg = /p[eé]|sapata|pata|deslizador|pie/i.test(m.name || "") || 
+                      /p[eé]|sapata|pata|deslizador|pie/i.test(m.userData?.instanciaKey || "") ||
+                      /p[eé]|sapata|pata|deslizador|pie/i.test(m.userData?.cleanName || "");
+        if (isHw && !isLeg) continue;
+        if (!m.geometry.boundingBox) {
+          m.geometry.computeBoundingBox();
+        }
+        if (m.geometry.boundingBox) {
+          const mBox = m.geometry.boundingBox.clone();
+          const restPos = getSafeRestPosition(m);
+          const restQuat = getSafeRestQuaternion(m);
+          mBox.applyMatrix4(new THREE.Matrix4().compose(restPos, restQuat, new THREE.Vector3(1, 1, 1)));
+          localBox.union(mBox);
+        }
+      }
+
+      if (!localBox.isEmpty()) {
+        const unrotatedCenter = new THREE.Vector3();
+        localBox.getCenter(unrotatedCenter);
+
+        const corners: THREE.Vector3[] = [
+          new THREE.Vector3(localBox.min.x, localBox.min.y, localBox.min.z),
+          new THREE.Vector3(localBox.min.x, localBox.min.y, localBox.max.z),
+          new THREE.Vector3(localBox.min.x, localBox.max.y, localBox.min.z),
+          new THREE.Vector3(localBox.min.x, localBox.max.y, localBox.max.z),
+          new THREE.Vector3(localBox.max.x, localBox.min.y, localBox.min.z),
+          new THREE.Vector3(localBox.max.x, localBox.min.y, localBox.max.z),
+          new THREE.Vector3(localBox.max.x, localBox.max.y, localBox.min.z),
+          new THREE.Vector3(localBox.max.x, localBox.max.y, localBox.max.z),
+        ];
+
+        const radX_0 = THREE.MathUtils.degToRad(rotX_banco);
+        const radY_0 = THREE.MathUtils.degToRad(rotY_banco);
+        const radZ_0 = THREE.MathUtils.degToRad(rotZ_banco);
+
+        // Calcular basePos a partir de la pose inicial de rootScene
+        const rotMat0 = new THREE.Matrix4().makeRotationFromEuler(new THREE.Euler(radX_0, radY_0, radZ_0, "XYZ"));
+        let minY0 = Infinity;
+        for (const c of corners) {
+          const cRot = c.clone().applyMatrix4(rotMat0);
+          if (cRot.y < minY0) minY0 = cRot.y;
+        }
+        const rotCenter0 = unrotatedCenter.clone().applyMatrix4(rotMat0);
+        const offX0 = unrotatedCenter.x - rotCenter0.x;
+        const offY0 = -minY0;
+        const offZ0 = unrotatedCenter.z - rotCenter0.z;
+
+        const basePosX = rootScene.position.x - offX0;
+        const basePosY = rootScene.position.y - offY0;
+        const basePosZ = rootScene.position.z - offZ0;
+
+        const calcularTransformDePie = (radX: number, radY: number, radZ: number) => {
+          const rMat = new THREE.Matrix4().makeRotationFromEuler(new THREE.Euler(radX, radY, radZ, "XYZ"));
+          let minYRot = Infinity;
+          for (const c of corners) {
+            const cRot = c.clone().applyMatrix4(rMat);
+            if (cRot.y < minYRot) minYRot = cRot.y;
+          }
+          const rotCenter = unrotatedCenter.clone().applyMatrix4(rMat);
+          const offX = unrotatedCenter.x - rotCenter.x;
+          const offY = -minYRot;
+          const offZ = unrotatedCenter.z - rotCenter.z;
+
+          return {
+            pos: new THREE.Vector3(basePosX + offX, basePosY + offY, basePosZ + offZ),
+            quat: new THREE.Quaternion().setFromEuler(new THREE.Euler(radX, radY, radZ, "XYZ")),
+          };
+        };
+
+        const tInicio = mpConfig.tiempoInicioDePie ?? Math.max(0, duracionPaso - 4.0);
+        const duracionGiro = Math.max(0.5, mpConfig.duracionDePie ?? 4.0);
+        const tFin = tInicio + duracionGiro;
+
+        const posTimes: number[] = [];
+        const posValues: number[] = [];
+        const quatTimes: number[] = [];
+        const quatValues: number[] = [];
+
+        const t0_trans = calcularTransformDePie(radX_0, radY_0, radZ_0);
+        const tEnd_trans = calcularTransformDePie(0, 0, 0);
+
+        // Guardar estado base de reposo para el reset
+        if (!rootScene.userData.__baseRestPosition) {
+          rootScene.userData.__baseRestPosition = t0_trans.pos.clone();
+          rootScene.userData.__baseRestQuaternion = t0_trans.quat.clone();
+        }
+
+        // Fase 1: Antes del levantamiento (mantiene rotación en suelo)
+        if (tInicio > 0) {
+          posTimes.push(0, tInicio);
+          posValues.push(
+            t0_trans.pos.x, t0_trans.pos.y, t0_trans.pos.z,
+            t0_trans.pos.x, t0_trans.pos.y, t0_trans.pos.z
+          );
+          quatTimes.push(0, tInicio);
+          quatValues.push(
+            t0_trans.quat.x, t0_trans.quat.y, t0_trans.quat.z, t0_trans.quat.w,
+            t0_trans.quat.x, t0_trans.quat.y, t0_trans.quat.z, t0_trans.quat.w
+          );
+        } else {
+          posTimes.push(0);
+          posValues.push(t0_trans.pos.x, t0_trans.pos.y, t0_trans.pos.z);
+          quatTimes.push(0);
+          quatValues.push(t0_trans.quat.x, t0_trans.quat.y, t0_trans.quat.z, t0_trans.quat.w);
+        }
+
+        // Fase 2: Giro físico dinámico manteniendo apoyo continuo al suelo
+        const NUM_SAMPLES = 20;
+        for (let i = 1; i < NUM_SAMPLES; i++) {
+          const u = i / NUM_SAMPLES;
+          const s = u * u * (3 - 2 * u); // Smoothstep easing
+          const curRadX = radX_0 * (1 - s);
+          const curRadY = radY_0 * (1 - s);
+          const curRadZ = radZ_0 * (1 - s);
+
+          const curTrans = calcularTransformDePie(curRadX, curRadY, curRadZ);
+          const tSample = tInicio + u * duracionGiro;
+
+          posTimes.push(tSample);
+          posValues.push(curTrans.pos.x, curTrans.pos.y, curTrans.pos.z);
+          quatTimes.push(tSample);
+          quatValues.push(curTrans.quat.x, curTrans.quat.y, curTrans.quat.z, curTrans.quat.w);
+        }
+
+        // Fase 3: Mueble totalmente erguido y asentado en el suelo sobre sus patas (0°)
+        posTimes.push(tFin);
+        posValues.push(tEnd_trans.pos.x, tEnd_trans.pos.y, tEnd_trans.pos.z);
+        quatTimes.push(tFin);
+        quatValues.push(tEnd_trans.quat.x, tEnd_trans.quat.y, tEnd_trans.quat.z, tEnd_trans.quat.w);
+
+        if (tFin < duracionPaso) {
+          posTimes.push(duracionPaso);
+          posValues.push(tEnd_trans.pos.x, tEnd_trans.pos.y, tEnd_trans.pos.z);
+          quatTimes.push(duracionPaso);
+          quatValues.push(tEnd_trans.quat.x, tEnd_trans.quat.y, tEnd_trans.quat.z, tEnd_trans.quat.w);
+        }
+
+        const rootTargetName = (rootScene.name && rootScene.name !== "Scene") ? rootScene.name : (rootScene.uuid || "Mueble");
+        if (!rootScene.name || rootScene.name === "Scene") {
+          rootScene.name = rootTargetName;
+        }
+
+        // 🎬 Pistas de puesta de pie:
+        // 1. Con nombre explícito del nodo para que GLTFExporter las vincule a glTF 2.0 (Babylon.js Sandbox / Blender)
+        agregarTrack(crearTrackVectorSanitizado(`${rootTargetName}.position`, posTimes, posValues));
+        agregarTrack(crearTrackQuaternionSanitizado(`${rootTargetName}.quaternion`, quatTimes, quatValues));
+        // 2. Con punto para compatibilidad nativa directa en Three.js AnimationMixer local
+        agregarTrack(crearTrackVectorSanitizado(".position", posTimes, posValues));
+        agregarTrack(crearTrackQuaternionSanitizado(".quaternion", quatTimes, quatValues));
+
+        // Hook de sincronización instantánea para useFrame y reactividad a 60 FPS
+        (rootScene as any).__evaluarDePieAlFinal = (tSeg: number) => {
+          if (tSeg <= tInicio) {
+            rootScene.position.copy(t0_trans.pos);
+            rootScene.quaternion.copy(t0_trans.quat);
+          } else if (tSeg >= tFin) {
+            rootScene.position.copy(tEnd_trans.pos);
+            rootScene.quaternion.copy(tEnd_trans.quat);
+          } else {
+            const u = (tSeg - tInicio) / duracionGiro;
+            const s = u * u * (3 - 2 * u);
+            const curRadX = radX_0 * (1 - s);
+            const curRadY = radY_0 * (1 - s);
+            const curRadZ = radZ_0 * (1 - s);
+            const curTrans = calcularTransformDePie(curRadX, curRadY, curRadZ);
+            rootScene.position.copy(curTrans.pos);
+            rootScene.quaternion.copy(curTrans.quat);
+          }
+          rootScene.updateMatrix();
+          rootScene.updateMatrixWorld(true);
+        };
+      }
+    }
+  } else {
+    if ((rootScene as any).__evaluarDePieAlFinal) {
+      delete (rootScene as any).__evaluarDePieAlFinal;
+    }
+  }
 
   // 🚀 Insertar todas las pistas sanitizadas y unívocas en el AnimationClip
   tracks.push(...Array.from(tracksMap.values()));

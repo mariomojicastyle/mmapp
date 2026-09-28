@@ -3,7 +3,9 @@ import * as THREE from "three";
 import JSZip from "jszip";
 import { PasoManualStudio, use3BFStore } from "./store";
 import { compilarAnimacionPaso } from "./manualAnimationEngine";
-import { extraerPiezaMadre } from "./piezaMadreUtils";
+import { extraerPiezaMadre, perteneceAMismaFamiliaPieza } from "./piezaMadreUtils";
+import { coincidenMismoHerraje, isHardwareMeshName } from "./engine/cadStateUtils";
+import { coincideMallaConTablero } from "./engine/multiplePlusKinematics";
 
 /**
  * Exporta un único paso como archivo GLB animado estándar glTF 2.0.
@@ -180,6 +182,16 @@ export async function exportarGlbPasoManual(
     };
   }
 
+  // 0. Purgar cualquier residuo de auras de destello que hayan quedado en la escena viva
+  const aurasEnEscena = scene.children.filter((c) => c.name?.startsWith("Aura_") || (c as any).userData?.isAuraDestelloHelper);
+  aurasEnEscena.forEach((a) => scene.remove(a));
+  scene.traverse((child) => {
+    if (child.children && child.children.length > 0) {
+      const auras = child.children.filter((c) => c.name?.startsWith("Aura_") || c.name?.includes("AuraDestello") || (c as any).userData?.isAuraDestelloHelper);
+      auras.forEach((a) => child.remove(a));
+    }
+  });
+
   // 1. Crear escena de exportación limpia y aislada
   const exportScene = new THREE.Scene();
   exportScene.name = "Scene";
@@ -266,6 +278,56 @@ export async function exportarGlbPasoManual(
   });
   scene.updateMatrixWorld(true);
 
+  // 1.9. Preparar el conjunto de piezas y herrajes heredados de pasos previos
+  const storeState = use3BFStore.getState();
+  const todosLosPasos = storeState.pasosManual || [];
+  const currentIndex = todosLosPasos.findIndex((p: any) => p.id === paso.id);
+  const pasosPrevios = currentIndex > 0 ? todosLosPasos.slice(0, currentIndex) : [];
+
+  const bloquesHeredadosIds = [
+    ...(paso.bloquesHeredadosIds || []),
+    ...((paso.multiplePlus?.capas || []).flatMap((c: any) => c.bloquesHeredadosIds || [])),
+  ];
+
+  const pasosAProcesar = new Map<string, PasoManualStudio>();
+  pasosPrevios.forEach((p: any) => pasosAProcesar.set(p.id, p));
+  bloquesHeredadosIds.forEach((id) => {
+    if (paso.bloquesHeredadosVisibles?.[id] !== false) {
+      const p = todosLosPasos.find((x: any) => x.id === id);
+      if (p) pasosAProcesar.set(p.id, p);
+    }
+  });
+
+  const piezasHeredadasSet = new Set<string>();
+  const herrajesHeredadosSet = new Set<string>();
+
+  pasosAProcesar.forEach((pasoPrevio) => {
+    if (pasoPrevio.multiplePlus?.capas && pasoPrevio.multiplePlus.capas.length > 0) {
+      pasoPrevio.multiplePlus.capas.forEach((capa: any) => {
+        (capa.tableros || []).forEach((t: any) => piezasHeredadasSet.add(t.id.toLowerCase().trim()));
+        (capa.herrajes || []).forEach((h: any) => herrajesHeredadosSet.add(h.id.toLowerCase().trim()));
+        (capa.congelados || []).forEach((c: any) => herrajesHeredadosSet.add(c.id.toLowerCase().trim()));
+      });
+    } else if (pasoPrevio.tipo === "ensamble") {
+      (pasoPrevio.piezasAsignadas || []).forEach((p: any) => piezasHeredadasSet.add(p.toLowerCase().trim()));
+      (pasoPrevio.herrajesAsignados || []).forEach((h: any) => {
+        const id = typeof h === "string" ? h : h.id;
+        if (id) herrajesHeredadosSet.add(id.toLowerCase().trim());
+      });
+    }
+  });
+
+  const activosSet = new Set<string>();
+  if (paso.multiplePlus?.capas) {
+    paso.multiplePlus.capas.forEach((capa: any) => {
+      (capa.tableros || []).forEach((t: any) => activosSet.add(t.id.toLowerCase().trim()));
+      (capa.herrajes || []).forEach((h: any) => activosSet.add(h.id.toLowerCase().trim()));
+      (capa.congelados || []).forEach((c: any) => activosSet.add(c.id.toLowerCase().trim()));
+    });
+  }
+
+  const modoHeredados = paso.multiplePlus?.modoVisualizacionHeredados || "solido";
+
   // 2. Extraer ÚNICAMENTE mallas físicas reales (tableros y herrajes),
   // descartando de raíz planos de corte, maquinados, aristas drei, helpers, nurbs, etc.
   scene.traverse((child) => {
@@ -276,14 +338,31 @@ export async function exportarGlbPasoManual(
 
     const mesh = child as THREE.Mesh;
     if (!mesh || !mesh.isMesh) return;
-    if (!mesh.visible) return;
 
     const meshName = (mesh.name || "").trim();
     if (!meshName) return;
 
+    const u = mesh.userData || {};
+    const isPhysicalPart = Boolean(
+      u.isWoodBoard ||
+      u.isHardware ||
+      isHardwareMeshName(meshName) ||
+      isHardwareMeshName(u.cleanName || "") ||
+      /pe[cç]a\s*\d+/i.test(meshName) ||
+      /pe[cç]a\s*\d+/i.test(u.cleanName || "")
+    );
+
+    // Omitir mallas no visibles salvo que sean piezas físicas del mueble
+    if (!mesh.visible && !isPhysicalPart) return;
+
     const nLow = meshName.toLowerCase();
-    // 🛡️ Filtro estricto antimanchas/antiplanos: Omitir maquinados CNC, perforaciones, planos de corte, nurbs, rejillas
+    // 🛡️ Filtro estricto antimanchas/antiplanos/antiauras: Omitir maquinados CNC, perforaciones, planos de corte, nurbs, auras de destello
     if (
+      (child as any).userData?.isAuraDestelloHelper ||
+      (child as any).userData?.isWireframeHelper ||
+      nLow.includes("auradestello") ||
+      nLow.includes("destello") ||
+      nLow.includes("aura") ||
       nLow.includes("perforado") ||
       nLow.includes("maquinado") ||
       nLow.includes("machining") ||
@@ -353,13 +432,40 @@ export async function exportarGlbPasoManual(
 
     const cleanName = (mesh.userData?.cleanName || meshName.replace(/^RH_OUT:/i, "")).trim();
     const cLow = cleanName.toLowerCase();
+    const rawClean = meshName.replace(/^RH_(?:OUT|IN):\s*/i, "").trim().toLowerCase();
     const piezaMadre = mesh.userData?.piezaMadre || extraerPiezaMadre(cleanName);
+    const pm = (piezaMadre || "").toLowerCase().trim();
+    const ik = (mesh.userData?.instanciaKey || "").toLowerCase().trim();
+
+    // Determinar si es activa del paso actual o heredada
+    const esActivaDelPaso = Array.from(activosSet).some((aId) =>
+      coincideMallaConTablero(aId, cLow, pm, ik) ||
+      coincidenMismoHerraje(aId, ik) ||
+      coincidenMismoHerraje(aId, cLow)
+    );
+
+    const esHeredada = !esActivaDelPaso && (
+      Array.from(piezasHeredadasSet).some((pId) => coincideMallaConTablero(pId, cLow, pm, ik)) ||
+      Array.from(herrajesHeredadosSet).some((hId) =>
+        coincidenMismoHerraje(hId, ik) ||
+        coincidenMismoHerraje(hId, cLow) ||
+        coincidenMismoHerraje(hId, rawClean)
+      )
+    );
+
+    // Si es una pieza heredada pero el usuario configuró modoHeredados === "oculto", se omite
+    if (esHeredada && modoHeredados === "oculto") {
+      return;
+    }
+
+    const esCristalHeredado = esHeredada && modoHeredados === "cristal";
 
     // Detección semántica de tipos de herraje y componentes
     const isHwCorredera = Boolean(mesh.userData?.isHardwareCorredera || nLow.includes("corredera") || nLow.includes("corredi") || nLow.includes("trilho"));
     const isHwCantoneira = Boolean(mesh.userData?.isHardwareCantoneira || nLow.includes("cantoneira") || nLow.includes("cantonera") || nLow.includes("esquinero"));
     const isHwPerno = Boolean(mesh.userData?.isHardwarePerno || nLow.includes("perno") || nLow.includes("tornillo") || nLow.includes("parafuso"));
     const isHwPrego = Boolean(mesh.userData?.isHardwarePrego || nLow.includes("prego") || nLow.includes("puntilla") || nLow.includes("clavo") || nLow.includes("tachuela"));
+    const isHwGrampo = Boolean(mesh.userData?.isHardwareGrampo || nLow.includes("grampo") || nLow.includes("grapa"));
     const isHwSuporte = Boolean(mesh.userData?.isHardwareSuporte || nLow.includes("suporte") || nLow.includes("soporte") || nLow.includes("esquadro"));
     const isHwCaja = Boolean(mesh.userData?.isHardwareCaja || ((nLow.includes("caja") || nLow.includes("minifix") || nLow.includes("girofix") || nLow.includes("tambor")) && !nLow.includes("cajon") && !nLow.includes("cajón") && !nLow.includes("gaveta")));
     const isHwTarugo = Boolean(mesh.userData?.isHardwareTarugo || nLow.includes("tarugo") || nLow.includes("cavilha") || nLow.includes("clavilha") || nLow.includes("espiga"));
@@ -367,7 +473,7 @@ export async function exportarGlbPasoManual(
     const isHwPorca = Boolean(mesh.userData?.isHardwarePorca || nLow.includes("porca") || nLow.includes("tuerca") || nLow.includes("bucha"));
     const isHwTampa = Boolean(mesh.userData?.isHardwareTampa || nLow.includes("tampa") || nLow.includes("tapa") || nLow.includes("adesivo"));
     const isHwPuxador = Boolean(nLow.includes("puxador") || nLow.includes("manija") || nLow.includes("tirador") || nLow.includes("jaladera"));
-    const isHw = Boolean(mesh.userData?.isHardware || isHwCorredera || isHwCantoneira || isHwPerno || isHwPrego || isHwSuporte || isHwCaja || isHwTarugo || isHwPata || isHwPorca || isHwTampa || isHwPuxador || nLow.includes("bisagra") || nLow.includes("dobradiça") || nLow.includes("dobradi"));
+    const isHw = Boolean(mesh.userData?.isHardware || isHwCorredera || isHwCantoneira || isHwPerno || isHwPrego || isHwGrampo || isHwSuporte || isHwCaja || isHwTarugo || isHwPata || isHwPorca || isHwTampa || isHwPuxador || nLow.includes("bisagra") || nLow.includes("dobradiça") || nLow.includes("dobradi"));
 
     // Detección de tableros de fondo de 3 mm (costas, traseras, fondos de cajón, Peça 15, Peça 18)
     const isFondoBoard = Boolean(
@@ -519,8 +625,23 @@ export async function exportarGlbPasoManual(
       metalValNum = (srcMat as any)?.metalness ?? 0.05;
     }
 
-    const texKey = srcTexture ? ((srcTexture.image as any)?.src || srcTexture.uuid || "tex") : "no_tex";
-    const matCacheKey = `${baseMatName}_${finalColorHex}_${roughValNum.toFixed(2)}_${metalValNum.toFixed(2)}_${texKey}`;
+    let esTransparente = false;
+    let opacidadVal = 1.0;
+    let escribirProfundidad = true;
+
+    if (esCristalHeredado) {
+      finalColorHex = "0284C7";
+      roughValNum = 0.18;
+      metalValNum = 0.08;
+      baseMatName = "M_Cristal_Heredado";
+      esTransparente = true;
+      opacidadVal = 0.45;
+      escribirProfundidad = false;
+      optTexture = null;
+    }
+
+    const texKey = optTexture ? ((optTexture.image as any)?.src || optTexture.uuid || "tex") : "no_tex";
+    const matCacheKey = `${baseMatName}_${finalColorHex}_${roughValNum.toFixed(2)}_${metalValNum.toFixed(2)}_${opacidadVal.toFixed(2)}_${texKey}`;
 
     if (!materialOptimizedCache.has(matCacheKey)) {
       materialOptimizedCache.set(
@@ -531,8 +652,9 @@ export async function exportarGlbPasoManual(
           roughness: roughValNum,
           metalness: metalValNum,
           map: optTexture,
-          transparent: false,
-          opacity: 1.0,
+          transparent: esTransparente,
+          opacity: opacidadVal,
+          depthWrite: escribirProfundidad,
           side: THREE.DoubleSide,
         })
       );
@@ -567,6 +689,8 @@ export async function exportarGlbPasoManual(
       piezaMadre: mesh.userData?.piezaMadre,
       isHardware: mesh.userData?.isHardware,
       isWoodBoard: mesh.userData?.isWoodBoard,
+      esHeredada,
+      esCristalHeredado,
     };
 
     furnitureRoot.add(exportMesh);
@@ -585,9 +709,23 @@ export async function exportarGlbPasoManual(
   }
 
   // 6. Compilar el clip de animación glTF a partir de la escena limpia en reposo
-  // 🛡️ Omitir re-aplicar transformaciones de banco ya que furnitureRoot conserva la orientación del banco
-  const { clip } = compilarAnimacionPaso(exportScene, paso, { omitirTransformBanco: true });
+  // 🛡️ Asignar nombre canónico a furnitureRoot para que GLTFExporter lo enlace al nodo raíz glTF
+  furnitureRoot.name = (furnitureRoot.name && furnitureRoot.name !== "Scene") ? furnitureRoot.name : "Mueble";
+
+  const { clip, actualizarTiempo } = compilarAnimacionPaso(furnitureRoot, paso, {
+    omitirTransformBanco: true,
+    todosLosPasos,
+  });
   clip.name = "default";
+
+  // 🛡️ CRÍTICO: Evaluar la escena exportable en t = 0.0001
+  // Para que todo herraje o tablero que aparezca en el futuro adopte scale = 0 inmediatamente en el archivo GLB
+  if (actualizarTiempo) {
+    actualizarTiempo(0.0001);
+  }
+  furnitureRoot.updateMatrix();
+  furnitureRoot.updateMatrixWorld(true);
+  exportScene.updateMatrixWorld(true);
 
   // 6.2. Incorporar Cámara Cinematográfica Animada nativa en glTF 2.0 (compatible con Babylon Sandbox y Blender)
   const keyframesCamara = (paso.keyframesCamara || []).slice().sort((a, b) => a.tiempo - b.tiempo);

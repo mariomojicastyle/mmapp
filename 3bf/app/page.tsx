@@ -261,6 +261,27 @@ export default function Home3BF() {
       use3BFStore.getState().guardarEstadoHistorial();
     }
 
+    if (typeof window !== "undefined") {
+      (window as any).__3bfStore = use3BFStore;
+      (window as any).restaurarManualRavenna = async () => {
+        try {
+          const res = await fetch("/api/drive/manuales");
+          const data = await res.json();
+          const manual = (data.manuales || []).find((m: any) => m.nombre?.includes("Ravenna") || m.id?.includes("Ravenna"));
+          if (manual) {
+            use3BFStore.getState().cargarManualProyecto(manual);
+            use3BFStore.setState({ pasoActivoManualId: "P04" });
+            console.log("[3dBimFab] ¡Manual Ravenna restaurado con éxito en el paso P04!");
+            return "¡Manual Ravenna restaurado con éxito en el paso P04!";
+          }
+          return "No se encontró el manual de Ravenna.";
+        } catch (err: any) {
+          console.error("Error restaurando manual:", err);
+          return "Error: " + err.message;
+        }
+      };
+    }
+
     // Heartbeat cada 8 segundos y al reactivar la pantalla / regresar de hibernación
     const interval = setInterval(verificarWorker, 8000);
     const handleReactivation = () => {

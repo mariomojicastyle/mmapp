@@ -117,10 +117,15 @@ async function scanManualesAsync(storageDir: string) {
             if (!existente) {
               manualesMap.set(clave, data);
             } else {
-              // Priorizar el que tenga más pasos o esté en G:\Mi unidad\Muebles
+              // Priorizar el que tenga más pasos o tenga fecha de modificación más reciente
               const pasosEntrante = Array.isArray(data.pasos) ? data.pasos.length : 0;
               const pasosExistente = Array.isArray(existente.pasos) ? existente.pasos.length : 0;
-              if (pasosEntrante > pasosExistente || fullPath.includes("Muebles")) {
+              const fechaEntrante = new Date(data.fechaModificacion || 0).getTime();
+              const fechaExistente = new Date(existente.fechaModificacion || 0).getTime();
+              if (
+                pasosEntrante > pasosExistente ||
+                (pasosEntrante === pasosExistente && fechaEntrante >= fechaExistente)
+              ) {
                 manualesMap.set(clave, data);
               }
             }

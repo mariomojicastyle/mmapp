@@ -194,13 +194,41 @@ export function BoardMesh({
 
   // 💫 Oscilación suave senoidal a 2.5 Hz (Three.js Emissive) durante el intervalo de titileo
   useFrame(({ clock }) => {
-    if (!meshRef.current || !estaTitilando) return;
+    if (!meshRef.current || !destelloHerraje) return;
     const mat = meshRef.current.material as THREE.MeshStandardMaterial;
-    if (mat && mat.emissive) {
+    if (!mat || !mat.emissive) return;
+
+    const tCurrent = use3BFStore.getState().timelineCurrentTime || 0;
+    const titilandoEnFrame = tCurrent >= destelloHerraje.tInicio && tCurrent <= destelloHerraje.tFin;
+
+    if (titilandoEnFrame) {
+      if (!mat.userData.__origColor) {
+        mat.userData.__origColor = mat.color ? mat.color.getHex() : 0xffffff;
+        mat.userData.__origEmissive = mat.emissive ? mat.emissive.getHex() : 0x000000;
+        mat.userData.__origEmissiveIntensity = mat.emissiveIntensity ?? 0;
+        mat.userData.__origRoughness = mat.roughness ?? 0.5;
+        mat.userData.__origMetalness = mat.metalness ?? 0.1;
+        mat.userData.__eraTitilando = true;
+      }
       const elapsed = clock.getElapsedTime();
       const factor = (Math.sin(elapsed * Math.PI * 5) + 1) / 2;
+      mat.color.set("#FFE066");
       mat.emissive.set("#FFDE00");
-      mat.emissiveIntensity = 0.6 + factor * 2.4;
+      mat.emissiveIntensity = 1.0 + factor * 2.2;
+      mat.roughness = 0.15;
+      mat.metalness = 0.85;
+    } else if (mat.userData.__eraTitilando) {
+      mat.color.setHex(mat.userData.__origColor);
+      mat.emissive.setHex(mat.userData.__origEmissive);
+      mat.emissiveIntensity = mat.userData.__origEmissiveIntensity;
+      mat.roughness = mat.userData.__origRoughness;
+      mat.metalness = mat.userData.__origMetalness;
+      delete mat.userData.__eraTitilando;
+      delete mat.userData.__origColor;
+      delete mat.userData.__origEmissive;
+      delete mat.userData.__origEmissiveIntensity;
+      delete mat.userData.__origRoughness;
+      delete mat.userData.__origMetalness;
     }
   });
 

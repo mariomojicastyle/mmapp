@@ -287,6 +287,37 @@ export function SingleFurnitureInstanceMesh({
     annotatedMeshes,
   ]);
 
+  // 🛡️ Sincronización incondicional de posición y rotación al cambiar entre Visor 3D y Manual 3D
+  useEffect(() => {
+    if (!meshRef.current) return;
+    if (pestanaActiva !== "manual") {
+      // En Visor 3D, Despiece o Base de Datos: EL MUEBLE ESTÁ SIEMPRE DE PIE (0°) EN SU POSICIÓN BASE
+      const basePos = (inst.posicion || [0, 0, 0]) as [number, number, number];
+      meshRef.current.position.set(basePos[0], basePos[1], basePos[2]);
+      if (inst.rotacion) {
+        const radX = THREE.MathUtils.degToRad(inst.rotacion[0] || 0);
+        const radY = THREE.MathUtils.degToRad(inst.rotacion[1] || 0);
+        const radZ = THREE.MathUtils.degToRad(inst.rotacion[2] || 0);
+        meshRef.current.quaternion.setFromEuler(new THREE.Euler(radX, radY, radZ, "XYZ"));
+      } else {
+        meshRef.current.quaternion.set(0, 0, 0, 1);
+      }
+      meshRef.current.updateMatrix();
+      meshRef.current.updateMatrixWorld(true);
+    } else {
+      // En Manual 3D: aplicar posicionEfectiva y rotacionEfectiva del paso activo solo si NO estamos en animación
+      const s = use3BFStore.getState();
+      const estaEnAnimacion = Boolean(s.isTimelinePlaying || (s.timelineCurrentTime && s.timelineCurrentTime > 0.05));
+      if (!estaEnAnimacion) {
+        meshRef.current.position.set(posicionEfectiva[0], posicionEfectiva[1], posicionEfectiva[2]);
+        const euler = new THREE.Euler(rotacionEfectiva[0], rotacionEfectiva[1], rotacionEfectiva[2], "XYZ");
+        meshRef.current.quaternion.setFromEuler(euler);
+        meshRef.current.updateMatrix();
+        meshRef.current.updateMatrixWorld(true);
+      }
+    }
+  }, [pestanaActiva, posicionEfectiva, rotacionEfectiva, inst.posicion, inst.rotacion]);
+
   const resolverTipoMapeado = useCallback((meshName: string) => {
     const norm = (meshName || "").toLowerCase();
     if (norm.includes("cubierta") || norm.includes("tapa")) {
@@ -399,8 +430,8 @@ export function SingleFurnitureInstanceMesh({
   return (
     <group 
       ref={meshRef} 
-      position={posicionEfectiva} 
-      rotation={rotacionEfectiva}
+      position={pestanaActiva === "manual" ? undefined : posicionEfectiva} 
+      rotation={pestanaActiva === "manual" ? undefined : rotacionEfectiva}
       name={inst.nombreVisible}
     >
       {boardMeshes.length > 0 && (

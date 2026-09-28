@@ -12,8 +12,9 @@ import {
   Layers,
   History,
   CheckCircle2,
+  Link2,
 } from "lucide-react";
-import { PasoManualStudio } from "@/lib/storeTypes";
+import { PasoManualStudio, AcopleHeredadosConfig } from "@/lib/storeTypes";
 import { use3BFStore } from "@/lib/store";
 import { calcularHeredadosPaso, PiezaInactivaItem } from "@/lib/engine/inactivosVirtualesUtils";
 
@@ -31,6 +32,7 @@ export function CapaHeredadosCard({
   const {
     resultado,
     setModoVisualizacionHeredadosPlus,
+    actualizarAcopleHeredadosPlus,
   } = use3BFStore() as any;
 
   const [colapsada, setColapsada] = useState(true);
@@ -38,6 +40,33 @@ export function CapaHeredadosCard({
 
   // Modo de visualización actual de los heredados ("solido" | "cristal" | "oculto")
   const modoActual = paso.multiplePlus?.modoVisualizacionHeredados || "solido";
+
+  // Configuración de acople cinemático de objetos heredados
+  const acopleConfig: AcopleHeredadosConfig = paso.multiplePlus?.acopleHeredados || {
+    modo: "recien_armado_a_heredado",
+    tiempoAparicion: 0,
+    tiempoInicio: Math.max(0.5, Number(((paso.duracionAudioSegundos || 8) - 2.5).toFixed(1))),
+    duracion: 2.5,
+    ejeAproximacion: "+Z",
+    distanciaAproximacionCm: 30,
+  };
+  const modoAcople = acopleConfig.modo || "recien_armado_a_heredado";
+  const esRecienArmadoHaciaHeredado = modoAcople === "recien_armado_a_heredado";
+  const esHeredadoHaciaRecienArmado = modoAcople === "heredado_a_recien_armado" || modoAcople === "acoplarse_a_paso";
+  const esFijo = modoAcople === "fijo";
+  const hayAcopleActivo = esRecienArmadoHaciaHeredado || esHeredadoHaciaRecienArmado;
+
+  // Detección automática si alguna capa del paso actual tiene offset de banco configurado
+  const capaConOffset = useMemo(() => {
+    return (paso.multiplePlus?.capas || []).find(
+      (c) =>
+        (c.offsetBancoCm &&
+          ((c.offsetBancoCm.x || 0) !== 0 ||
+            (c.offsetBancoCm.y || 0) !== 0 ||
+            (c.offsetBancoCm.z || 0) !== 0)) ||
+        Boolean(c.piezaMaster)
+    );
+  }, [paso.multiplePlus?.capas]);
 
   // Cálculo en memoria de piezas heredadas de pasos previos cronológicamente
   const heredados = useMemo(() => {
@@ -143,6 +172,190 @@ export function CapaHeredadosCard({
             <span>Ocultos</span>
           </button>
         </div>
+      </div>
+
+      {/* ── BARRA DE CINEMÁTICA Y ACOPLE DE OBJETOS HEREDADOS ── */}
+      <div className="px-3.5 py-2.5 flex flex-wrap items-center justify-between gap-2.5 bg-amber-50/70 dark:bg-slate-900/80 border-b border-amber-200/60 dark:border-slate-800">
+        <div className="flex items-center gap-2 flex-wrap">
+          {/* Conmutador Direccional Triple en Cápsula */}
+          <div className="flex items-center gap-1 p-0.5 rounded-full bg-slate-100 dark:bg-slate-950 border border-slate-200 dark:border-slate-700 shadow-inner">
+            {/* Opción 1: Recién Armado ➔ Heredado (Default de Taller: Pieza liviana viaja a estructura fija) */}
+            <button
+              type="button"
+              onClick={() => actualizarAcopleHeredadosPlus(paso.id, { modo: "recien_armado_a_heredado" })}
+              title={`El nuevo ensamble armado en ${paso.id} viaja a acoplarse dentro de la estructura heredada fija en banco`}
+              className={`flex items-center gap-1 px-3 py-1 rounded-full text-[10px] font-bold transition-all cursor-pointer ${
+                esRecienArmadoHaciaHeredado
+                  ? "bg-[#0088AA] dark:bg-[#1368AA] text-white shadow-xs"
+                  : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
+              }`}
+            >
+              <Link2 className="w-3 h-3" />
+              <span>{paso.id} ➔ Heredado</span>
+            </button>
+
+            {/* Opción 2: Heredado ➔ Recién Armado (Estructura pesada viaja al nuevo ensamble) */}
+            <button
+              type="button"
+              onClick={() => actualizarAcopleHeredadosPlus(paso.id, { modo: "heredado_a_recien_armado" })}
+              title={`La estructura heredada viaja para acoplarse hacia el nuevo ensamble armado en ${paso.id}`}
+              className={`flex items-center gap-1 px-3 py-1 rounded-full text-[10px] font-bold transition-all cursor-pointer ${
+                esHeredadoHaciaRecienArmado
+                  ? "bg-amber-500 text-white shadow-xs"
+                  : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
+              }`}
+            >
+              <Link2 className="w-3 h-3" />
+              <span>Heredado ➔ {paso.id}</span>
+            </button>
+
+            {/* Opción 3: Fijo en Banco (Sin acople) */}
+            <button
+              type="button"
+              onClick={() => actualizarAcopleHeredadosPlus(paso.id, { modo: "fijo" })}
+              title="Ambos bloques permanecen fijos en sus puestos en el banco (sin movimiento de acople)"
+              className={`px-3 py-1 rounded-full text-[10px] font-bold transition-all cursor-pointer ${
+                esFijo
+                  ? "bg-slate-700 text-white shadow-xs"
+                  : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
+              }`}
+            >
+              Fijo en Banco
+            </button>
+          </div>
+
+          {/* Parámetros cuando hay acople activo */}
+          {hayAcopleActivo && (
+            <div className="flex items-center gap-2 flex-wrap">
+              {/* Segundo de aparición */}
+              <div
+                className="flex items-center gap-1 bg-white dark:bg-slate-800/90 border border-amber-200 dark:border-slate-700 px-2 py-0.5 rounded-full shadow-2xs"
+                title="Segundo exacto en que los objetos heredados se hacen visibles en la escena (0 = visibles desde el inicio)"
+              >
+                <span className="text-[9.5px] font-bold text-slate-500 dark:text-slate-400">apa:</span>
+                <input
+                  type="number"
+                  value={acopleConfig.tiempoAparicion ?? 0}
+                  onChange={(e) => {
+                    const val = parseFloat(e.target.value);
+                    actualizarAcopleHeredadosPlus(paso.id, { tiempoAparicion: isNaN(val) ? 0 : Math.max(0, val) });
+                  }}
+                  onFocus={(e) => e.currentTarget.select()}
+                  step={0.5}
+                  min={0}
+                  max={paso.duracionAudioSegundos || 60}
+                  className="w-11 px-1 py-0.5 text-center font-mono font-bold text-slate-800 dark:text-slate-100 bg-amber-50/50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-full text-[9.5px] outline-none focus:border-amber-500 shadow-2xs"
+                />
+                <span className="text-[9px] text-slate-400 font-medium">s</span>
+              </div>
+
+              {/* Segundo de inicio de acople */}
+              <div
+                className="flex items-center gap-1 bg-white dark:bg-slate-800/90 border border-amber-200 dark:border-slate-700 px-2 py-0.5 rounded-full shadow-2xs"
+                title={
+                  esRecienArmadoHaciaHeredado
+                    ? `Segundo en que el ensamble recién armado arranca su viaje hacia la estructura heredada`
+                    : `Segundo en que la estructura heredada arranca su viaje hacia el ensamble recién armado`
+                }
+              >
+                <span className="text-[9.5px] font-bold text-slate-500 dark:text-slate-400">inicio:</span>
+                <input
+                  type="number"
+                  value={acopleConfig.tiempoInicio ?? Math.max(0.5, Number(((paso.duracionAudioSegundos || 8) - 2.5).toFixed(1)))}
+                  onChange={(e) => {
+                    const val = parseFloat(e.target.value);
+                    actualizarAcopleHeredadosPlus(paso.id, { tiempoInicio: isNaN(val) ? 0 : Math.max(0, val) });
+                  }}
+                  onFocus={(e) => e.currentTarget.select()}
+                  step={0.5}
+                  min={0}
+                  max={paso.duracionAudioSegundos || 60}
+                  className="w-11 px-1 py-0.5 text-center font-mono font-bold text-slate-800 dark:text-slate-100 bg-amber-50/50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-full text-[9.5px] outline-none focus:border-amber-500 shadow-2xs"
+                />
+                <span className="text-[9px] text-slate-400 font-medium">s</span>
+              </div>
+
+              {/* Duración del viaje de acople */}
+              <div
+                className="flex items-center gap-1 bg-white dark:bg-slate-800/90 border border-amber-200 dark:border-slate-700 px-2 py-0.5 rounded-full shadow-2xs"
+                title="Segundos que tarda en recorrer la distancia y unirse rígidamente"
+              >
+                <span className="text-[9.5px] font-bold text-slate-500 dark:text-slate-400">dur:</span>
+                <input
+                  type="number"
+                  value={acopleConfig.duracion ?? 2.5}
+                  onChange={(e) => {
+                    const val = parseFloat(e.target.value);
+                    actualizarAcopleHeredadosPlus(paso.id, { duracion: isNaN(val) ? 0.2 : Math.max(0.2, val) });
+                  }}
+                  onFocus={(e) => e.currentTarget.select()}
+                  step={0.5}
+                  min={0.2}
+                  max={20}
+                  className="w-11 px-1 py-0.5 text-center font-mono font-bold text-slate-800 dark:text-slate-100 bg-amber-50/50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-full text-[9.5px] outline-none focus:border-amber-500 shadow-2xs"
+                />
+                <span className="text-[9px] text-slate-400 font-medium">s</span>
+              </div>
+            </div>
+          )}
+
+          {/* Badge Informativo cuando es Fijo */}
+          {esFijo && (
+            <span className="text-[10px] text-slate-500 dark:text-slate-400 italic">
+              Ambos bloques permanecen estáticos en sus puestos del banco
+            </span>
+          )}
+        </div>
+
+        {/* Destino / Aproximación */}
+        {hayAcopleActivo && (
+          <div className="flex items-center gap-2">
+            {esRecienArmadoHaciaHeredado ? (
+              <span
+                className="px-2.5 py-0.5 rounded-full text-[9.5px] font-medium bg-cyan-100 dark:bg-cyan-950/70 text-cyan-800 dark:text-cyan-300 border border-cyan-300 dark:border-cyan-800/60 shadow-2xs"
+                title="El ensamble nuevo viaja de su posición de banco hacia la posición de reposo de la estructura heredada"
+              >
+                {paso.id} viaja hacia Carcasa
+              </span>
+            ) : capaConOffset?.offsetBancoCm && ((capaConOffset.offsetBancoCm.x || 0) !== 0 || (capaConOffset.offsetBancoCm.z || 0) !== 0) ? (
+              <span
+                className="px-2.5 py-0.5 rounded-full text-[9.5px] font-medium bg-amber-100 dark:bg-amber-950/70 text-amber-800 dark:text-amber-300 border border-amber-300 dark:border-amber-800/60 shadow-2xs"
+                title={`La carcasa viaja hacia el banco donde se armó ${paso.id} (X: ${capaConOffset.offsetBancoCm.x || 0}, Z: ${capaConOffset.offsetBancoCm.z || 0} cm)`}
+              >
+                Carcasa viaja a Banco ({capaConOffset.offsetBancoCm.x || 0}X, {capaConOffset.offsetBancoCm.z || 0}Z cm)
+              </span>
+            ) : (
+              <div className="flex items-center gap-1.5 bg-white dark:bg-slate-800/90 border border-amber-200 dark:border-slate-700 px-2 py-0.5 rounded-full shadow-2xs">
+                <span className="text-[9.5px] font-bold text-slate-500 dark:text-slate-400">eje:</span>
+                <select
+                  value={acopleConfig.ejeAproximacion || "+Z"}
+                  onChange={(e) => actualizarAcopleHeredadosPlus(paso.id, { ejeAproximacion: e.target.value as any })}
+                  className="bg-transparent font-mono font-bold text-[9.5px] text-slate-800 dark:text-slate-200 outline-none cursor-pointer"
+                >
+                  <option value="+Z">+Z (Atrás)</option>
+                  <option value="-Z">-Z (Frente)</option>
+                  <option value="+Y">+Y (Arriba)</option>
+                  <option value="-Y">-Y (Abajo)</option>
+                  <option value="+X">+X (Derecha)</option>
+                  <option value="-X">-X (Izquierda)</option>
+                </select>
+                <span className="text-[9.5px] font-bold text-slate-500 dark:text-slate-400 ml-1">dist:</span>
+                <input
+                  type="number"
+                  value={acopleConfig.distanciaAproximacionCm ?? 30}
+                  onChange={(e) => {
+                    const val = parseFloat(e.target.value);
+                    actualizarAcopleHeredadosPlus(paso.id, { distanciaAproximacionCm: isNaN(val) ? 0 : val });
+                  }}
+                  onFocus={(e) => e.currentTarget.select()}
+                  step={5}
+                  className="w-10 px-1 py-0.5 text-center font-mono font-bold text-slate-800 dark:text-slate-100 bg-amber-50/50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-full text-[9.5px] outline-none focus:border-amber-500 shadow-2xs"
+                />
+                <span className="text-[9px] text-slate-400 font-medium">cm</span>
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
       {/* ── CONTENIDO DESPLEGABLE (LISTADO DE HEREDADOS) ── */}

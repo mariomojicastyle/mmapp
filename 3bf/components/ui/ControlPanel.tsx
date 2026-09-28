@@ -539,10 +539,26 @@ export default function ControlPanel() {
     ejecutarComputo();
   }, [parametros, isSyncing]);
 
-  const { instancias, objetoActivoId, coloresApariencia, seleccionarInstancia } = use3BFStore();
+  const { instancias, objetoActivoId, coloresApariencia, seleccionarInstancia, resultado } = use3BFStore();
   const activeId = objetoActivoId || Object.keys(instancias || {})[0] || null;
   const instanciaActiva = activeId ? instancias[activeId] : null;
   const listaInstancias = Object.values(instancias || {});
+
+  // 🛡️ Soporte universal para modelo base / legacy cuando instancias está vacío pero resultado o parametros existen
+  const legacyInst: any = (!instanciaActiva && ((resultado?.real_meshes && resultado.real_meshes.length > 0) || parametros?.model_id)) ? {
+    id: "legacy_single",
+    nombreVisible: parametros.model_id || (parametros as any).custom_filename?.replace(/\.ghx$/i, "") || "Cómoda Ravenna",
+    definitionId: parametros.model_id || "base_model",
+    archivo: (parametros as any).custom_filename || `${parametros.model_id || "modelo"}.ghx`,
+    parametros: parametros as any,
+    resultado: resultado,
+    cargando: false,
+    posicion: [0, 0, 0],
+    rotacion: [0, 0, 0],
+    posicionPrevia: [0, 0, 0],
+  } : null;
+
+  const instanciaEfectiva = instanciaActiva || legacyInst;
 
   // Auto-seleccionar la primera instancia si no hay objetoActivoId pero sí hay piezas en la escena
   useEffect(() => {
@@ -599,8 +615,8 @@ export default function ControlPanel() {
         </div>
       )}
 
-      {/* 🏷️ CABECERA: OBJETO ACTIVO EN EL ESCENARIO (Multi-Instancia) */}
-      {instanciaActiva ? (
+      {/* 🏷️ CABECERA: OBJETO ACTIVO EN EL ESCENARIO (Multi-Instancia y Single-Model) */}
+      {instanciaEfectiva ? (
         <>
           {/* Panel de Parámetros Dinámico Activo */}
           <ParametrosPanel />

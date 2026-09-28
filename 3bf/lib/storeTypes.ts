@@ -554,6 +554,21 @@ export interface CapaMultiplePlus {
   };
 }
 
+export type ModoAcopleHeredados =
+  | "recien_armado_a_heredado" // El subensamble recién armado viaja hacia el bloque heredado fijo
+  | "heredado_a_recien_armado" // El bloque heredado viaja hacia el subensamble recién armado
+  | "acoplarse_a_paso"          // Alias retrocompatible
+  | "fijo";                     // Ambos bloques fijos en banco (sin movimiento de unión)
+
+export interface AcopleHeredadosConfig {
+  modo: ModoAcopleHeredados;
+  tiempoAparicion?: number; // Segundo en que aparece en el paso (defecto 0)
+  tiempoInicio?: number;    // Segundo exacto en que inicia el viaje de acople hacia el destino
+  duracion?: number;        // Duración en segundos del viaje (defecto 2.5)
+  ejeAproximacion?: "+X" | "-X" | "+Y" | "-Y" | "+Z" | "-Z"; // Dirección de aproximación si no hay offset de banco
+  distanciaAproximacionCm?: number; // Distancia en cm desde donde viaja (defecto 30)
+}
+
 export interface MultiplePlusConfigPaso {
   velocidadTablerosCmS: number; // Defecto: 15 cm/s
   velocidadHerrajesCmS: number; // Defecto: 8 cm/s
@@ -564,8 +579,11 @@ export interface MultiplePlusConfigPaso {
     apoyoEnPiso: boolean;
   };
   ponerDePieAlFinal?: boolean; // Poner de pie el mueble al terminar el armado
+  tiempoInicioDePie?: number; // Segundo exacto de inicio del giro de puesta de pie
+  duracionDePie?: number;     // Duración en segundos del giro (defecto: 4.0s)
   modoVisualizacionInactivos?: "oculto" | "cristal" | "global"; // 💎 Modo visual para la capa virtual de piezas inactivas (Ocultos, Modo Cristal o Modo Global)
   modoVisualizacionHeredados?: "solido" | "cristal" | "oculto"; // 🧱 Modo visual para objetos heredados de pasos anteriores (Sólido, Modo Cristal u Oculto)
+  acopleHeredados?: AcopleHeredadosConfig; // 🔗 Cinemática y ensamble de objetos heredados hacia el subensamble activo
 }
 
 export interface PasoManualStudio {
@@ -940,6 +958,7 @@ export interface State3BF {
   girarBancoGlobalPlus: (pasoId: string, eje: "X" | "Y", deltaDeg: number) => void;
   toggleApoyoPisoGlobalPlus: (pasoId: string) => void;
   togglePonerDePieAlFinalPlus: (pasoId: string) => void;
+  setParametrosDePieAlFinalPlus: (pasoId: string, params: { tiempoInicio?: number; duracion?: number }) => void;
   toggleColapsarCapaPlus: (pasoId: string, capaId: string) => void;
   setColapsarTodasCapasPlus: (pasoId: string, colapsadas: boolean) => void;
   setVelocidadTablerosPlus: (pasoId: string, velocidadCmS: number) => void;
@@ -952,6 +971,7 @@ export interface State3BF {
   definirPiezaMasterPlus?: (pasoId: string, capaId: string, masterName?: string) => void;
   actualizarOffsetBancoMasterPlus: (pasoId: string, capaId: string, offset: Partial<OffsetBancoCm>) => void;
   actualizarTiempoAcopleMasterPlus: (pasoId: string, capaId: string, tiempo?: number, duracion?: number) => void;
+  actualizarAcopleHeredadosPlus: (pasoId: string, config: Partial<AcopleHeredadosConfig>) => void;
   
   // 🎯 Modo Picking 3D / Cuentagotas para Asignación de Piezas
   modoPickingManual: ModoPickingManualState;

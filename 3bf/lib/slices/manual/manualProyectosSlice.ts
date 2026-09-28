@@ -77,7 +77,11 @@ export const createManualProyectosSlice = (set: any, get: any): any => {
             if (target && target.pasos && target.pasos.length > 0) {
               const numPasosLocales = (state.pasosManual || []).length;
               const numPasosTarget = target.pasos.length;
-              if (tieneTrabajoLocal && numPasosLocales >= numPasosTarget) {
+              const fechaTarget = new Date(target.fechaModificacion || 0).getTime();
+              const fechaLocal = new Date(state.manualActivoGuardado?.fechaModificacion || 0).getTime();
+              const driveEsMasReciente = fechaTarget > fechaLocal + 1000;
+
+              if (tieneTrabajoLocal && numPasosLocales >= numPasosTarget && !driveEsMasReciente) {
                 if (!state.manualActivoGuardado) {
                   const manualEnlazado: Manual3BMProyecto = {
                     ...target,

@@ -100,6 +100,8 @@ function obtenerNombreUnificadoPieza(obj: THREE.Object3D): string {
       meshNameLower.includes("prego") ||
       meshNameLower.includes("puntilla") ||
       meshNameLower.includes("clavo") ||
+      meshNameLower.includes("grampo") ||
+      meshNameLower.includes("grapa") ||
       meshNameLower.includes("soporte") ||
       meshNameLower.includes("suporte") ||
       meshNameLower.includes("corredera") ||
@@ -711,7 +713,6 @@ export default function Viewer3D() {
     guardarManualProyecto,
     guardandoManual,
     manualActivoGuardado,
-    timelineCurrentTime,
     forzarRecargaDesdeGHX,
     modoEncuadreCamaraManual,
   } = use3BFStore();
@@ -1689,7 +1690,6 @@ export default function Viewer3D() {
             {pestanaActiva === "manual" && pasoActivoManual?.tipo === "bloque_estandar" ? (
               <BloqueEstandar3DScene
                 paso={pasoActivoManual}
-                timelineTime={timelineCurrentTime}
               />
             ) : (Object.keys(instancias || {}).length > 0 || resultado || muebleActivoGuardado) ? (
               <>

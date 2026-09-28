@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useRef } from "react";
 import {
   Layers,
   Crown,
@@ -12,6 +12,9 @@ import {
   Eye,
   EyeOff,
   GripVertical,
+  GripHorizontal,
+  Maximize2,
+  Minimize2,
   ChevronDown,
   ChevronRight,
   LocateFixed,
@@ -98,6 +101,54 @@ export function CapaMultiplePlusCard({
   const [busquedaHerrajes, setBusquedaHerrajes] = useState("");
   const [nombreSeleccionado, setNombreSeleccionado] = useState(false);
   const [posicionadoOk, setPosicionadoOk] = useState(false);
+
+  // 📏 Altura ajustable y expandible para la lista de herrajes (memoria local)
+  const [alturaHerrajesPx, setAlturaHerrajesPx] = useState<number>(() => {
+    if (typeof window !== "undefined") {
+      const guardada = localStorage.getItem("3bf_capa_herrajes_height");
+      if (guardada) {
+        const parsed = parseInt(guardada, 10);
+        if (!isNaN(parsed) && parsed >= 120 && parsed <= 1600) return parsed;
+      }
+    }
+    return 192; // 192px = equivalente a max-h-48
+  });
+  const [esHerrajesExpandido, setEsHerrajesExpandido] = useState(false);
+  const [arrastrandoAltura, setArrastrandoAltura] = useState(false);
+  const dragStartYRef = useRef(0);
+  const startHeightRef = useRef(0);
+
+  const handleStartResize = (e: React.PointerEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
+    setArrastrandoAltura(true);
+    setEsHerrajesExpandido(false);
+    dragStartYRef.current = e.clientY;
+    startHeightRef.current = alturaHerrajesPx;
+  };
+
+  const handlePointerMove = (e: React.PointerEvent) => {
+    if (!arrastrandoAltura) return;
+    const deltaY = e.clientY - dragStartYRef.current;
+    const nuevaAltura = Math.max(120, Math.min(1400, Math.round(startHeightRef.current + deltaY)));
+    setAlturaHerrajesPx(nuevaAltura);
+  };
+
+  const handlePointerUp = (e: React.PointerEvent) => {
+    if (!arrastrandoAltura) return;
+    setArrastrandoAltura(false);
+    try {
+      (e.currentTarget as HTMLElement).releasePointerCapture(e.pointerId);
+    } catch {}
+    if (typeof window !== "undefined") {
+      localStorage.setItem("3bf_capa_herrajes_height", String(alturaHerrajesPx));
+    }
+  };
+
+  const handleToggleExpandir = () => {
+    setEsHerrajesExpandido((prev) => !prev);
+  };
 
   const handlePosicionarHerrajes = () => {
     if (onPosicionarHerrajesEnPieza) {
@@ -449,22 +500,57 @@ export function CapaMultiplePlusCard({
             )}
           </div>
 
-          {/* Buscador / Filtro ergonómico */}
-          {capa.herrajes.length > 3 && (
-            <div className="flex items-center gap-1 bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded-full text-[9px] w-36">
-              <Search className="w-2.5 h-2.5 text-slate-400 shrink-0" />
-              <input
-                type="text"
-                placeholder="Buscar herraje..."
-                value={busquedaHerrajes}
-                onChange={(e) => setBusquedaHerrajes(e.target.value)}
-                className="bg-transparent text-slate-700 dark:text-slate-200 outline-none w-full text-[9px]"
-              />
-            </div>
-          )}
+          <div className="flex items-center gap-1.5">
+            {/* Buscador / Filtro ergonómico */}
+            {capa.herrajes.length > 3 && (
+              <div className="flex items-center gap-1 bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded-full text-[9px] w-32 sm:w-36">
+                <Search className="w-2.5 h-2.5 text-slate-400 shrink-0" />
+                <input
+                  type="text"
+                  placeholder="Buscar herraje..."
+                  value={busquedaHerrajes}
+                  onChange={(e) => setBusquedaHerrajes(e.target.value)}
+                  className="bg-transparent text-slate-700 dark:text-slate-200 outline-none w-full text-[9px]"
+                />
+              </div>
+            )}
+
+            {/* 🔲 Botón Expandir / Maximizar lista completa de herrajes */}
+            {capa.herrajes.length > 4 && (
+              <button
+                type="button"
+                onClick={handleToggleExpandir}
+                title={
+                  esHerrajesExpandido
+                    ? "Compactar a la altura ajustada"
+                    : "Expandir para ver todos los herrajes sin límite de altura"
+                }
+                className={`w-6 h-6 rounded-full flex items-center justify-center transition cursor-pointer shadow-2xs ${
+                  esHerrajesExpandido
+                    ? "bg-[#0088AA] dark:bg-[#1368AA] text-white shadow-cyan-600/30 ring-1 ring-cyan-400/50"
+                    : "bg-slate-100 dark:bg-slate-800 text-slate-500 hover:text-cyan-600 dark:hover:text-cyan-400 hover:bg-cyan-50 dark:hover:bg-cyan-950/40 border border-slate-200 dark:border-slate-700"
+                }`}
+              >
+                {esHerrajesExpandido ? (
+                  <Minimize2 className="w-3 h-3" />
+                ) : (
+                  <Maximize2 className="w-3 h-3" />
+                )}
+              </button>
+            )}
+          </div>
         </div>
 
-        <div className="flex flex-wrap gap-1 max-h-48 overflow-y-auto pr-1">
+        {/* 📦 Contenedor dinámico de herrajes con altura ajustable */}
+        <div
+          style={{
+            height: esHerrajesExpandido ? "auto" : `${alturaHerrajesPx}px`,
+            maxHeight: esHerrajesExpandido ? "none" : `${alturaHerrajesPx}px`,
+          }}
+          className={`flex flex-wrap gap-1 overflow-y-auto pr-1 transition-[max-height] duration-150 custom-scrollbar ${
+            arrastrandoAltura ? "select-none" : ""
+          }`}
+        >
           {herrajesFiltrados.map((hw) => (
             <CapsulaHerrajePlus
               key={hw.id}
@@ -484,6 +570,29 @@ export function CapaMultiplePlusCard({
             </span>
           )}
         </div>
+
+        {/* ↕️ Tirador inferior interactivo (Resize Handle) para estirar la sección de herrajes arrastrando */}
+        {capa.herrajes.length > 4 && (
+          <div
+            onPointerDown={handleStartResize}
+            onPointerMove={handlePointerMove}
+            onPointerUp={handlePointerUp}
+            onDoubleClick={handleToggleExpandir}
+            title="Arrastra hacia abajo/arriba para cambiar la altura de la sección. Doble clic para expandir/compactar todo."
+            className={`w-full py-1 -mt-0.5 flex items-center justify-center cursor-ns-resize group select-none transition-colors rounded-full ${
+              arrastrandoAltura ? "bg-cyan-100/50 dark:bg-cyan-950/40" : "hover:bg-slate-100/70 dark:hover:bg-slate-800/50"
+            }`}
+          >
+            <div className="flex items-center gap-1.5 px-3 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800/90 border border-slate-200 dark:border-slate-700 text-slate-400 dark:text-slate-500 group-hover:border-cyan-400 group-hover:text-cyan-600 dark:group-hover:text-cyan-400 shadow-2xs transition-all">
+              <GripHorizontal className="w-3.5 h-3.5" />
+              <span className="text-[7.5px] font-bold tracking-wider uppercase">
+                {esHerrajesExpandido
+                  ? "Ver todo activo (Doble clic para compactar)"
+                  : `${alturaHerrajesPx}px (Arrastra para estirar | Doble clic expande)`}
+              </span>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* ── FILA 4: CONGELADOR DE HERRAJES (Pre-instalados en pasos anteriores) ── */}
