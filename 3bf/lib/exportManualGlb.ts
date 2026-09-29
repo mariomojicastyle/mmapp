@@ -3,7 +3,7 @@ import * as THREE from "three";
 import JSZip from "jszip";
 import { PasoManualStudio, use3BFStore } from "./store";
 import { compilarAnimacionPaso } from "./manualAnimationEngine";
-import { extraerPiezaMadre, perteneceAMismaFamiliaPieza } from "./piezaMadreUtils";
+import { extraerPiezaMadre, perteneceAMismaFamiliaPieza, esHerrajeNombre } from "./piezaMadreUtils";
 import { coincidenMismoHerraje, isHardwareMeshName } from "./engine/cadStateUtils";
 import { coincideMallaConTablero } from "./engine/multiplePlusKinematics";
 
@@ -290,16 +290,39 @@ export async function exportarGlbPasoManual(
   ];
 
   const pasosAProcesar = new Map<string, PasoManualStudio>();
-  pasosPrevios.forEach((p: any) => pasosAProcesar.set(p.id, p));
-  bloquesHeredadosIds.forEach((id) => {
-    if (paso.bloquesHeredadosVisibles?.[id] !== false) {
-      const p = todosLosPasos.find((x: any) => x.id === id);
-      if (p) pasosAProcesar.set(p.id, p);
-    }
-  });
-
   const piezasHeredadasSet = new Set<string>();
   const herrajesHeredadosSet = new Set<string>();
+
+  // 🛡️ REGLA DE BANCO AISLADO: Si el paso tiene "ocultarNoAsignadas: true" (Mesa Limpia) o declara bloques específicos, NO forzar la carcasa previa
+  const heredarCronologicoAuto = !paso.ocultarNoAsignadas && (bloquesHeredadosIds.length === 0);
+  if (heredarCronologicoAuto) {
+    pasosPrevios.forEach((p: any) => pasosAProcesar.set(p.id, p));
+  }
+
+  bloquesHeredadosIds.forEach((id) => {
+    if (paso.bloquesHeredadosVisibles?.[id] !== false) {
+      // ⚡ A) ¿Es un Bloque Funcional individual?
+      const cleanBfId = id.replace(/^BF:/i, "").trim().toLowerCase();
+      const pasoShowcase = todosLosPasos.find((x: any) => x.showcase?.gruposCinematicos && x.showcase.gruposCinematicos.length > 0) || todosLosPasos[0];
+      const grupoBF = pasoShowcase?.showcase?.gruposCinematicos?.find(
+        (g: any) => g.id.toLowerCase() === cleanBfId || g.nombre.toLowerCase() === cleanBfId
+      );
+
+      if (grupoBF) {
+        grupoBF.piezas.forEach((pz: string) => {
+          if (esHerrajeNombre(pz)) {
+            herrajesHeredadosSet.add(pz.toLowerCase().trim());
+          } else {
+            piezasHeredadasSet.add(pz.toLowerCase().trim());
+          }
+        });
+      } else {
+        // 🧱 B) Paso previo de ensamble
+        const p = todosLosPasos.find((x: any) => x.id === id);
+        if (p) pasosAProcesar.set(p.id, p);
+      }
+    }
+  });
 
   pasosAProcesar.forEach((pasoPrevio) => {
     if (pasoPrevio.multiplePlus?.capas && pasoPrevio.multiplePlus.capas.length > 0) {
@@ -438,11 +461,15 @@ export async function exportarGlbPasoManual(
     const ik = (mesh.userData?.instanciaKey || "").toLowerCase().trim();
 
     // Determinar si es activa del paso actual o heredada
-    const esActivaDelPaso = Array.from(activosSet).some((aId) =>
-      coincideMallaConTablero(aId, cLow, pm, ik) ||
-      coincidenMismoHerraje(aId, ik) ||
-      coincidenMismoHerraje(aId, cLow)
-    );
+    const esActivaDelPaso =
+      paso.tipo === "showcase" ||
+      paso.tipo === "insercion_cajones" ||
+      Boolean(paso.insercionCajones) ||
+      Array.from(activosSet).some((aId) =>
+        coincideMallaConTablero(aId, cLow, pm, ik) ||
+        coincidenMismoHerraje(aId, ik) ||
+        coincidenMismoHerraje(aId, cLow)
+      );
 
     const esHeredada = !esActivaDelPaso && (
       Array.from(piezasHeredadasSet).some((pId) => coincideMallaConTablero(pId, cLow, pm, ik)) ||
@@ -531,6 +558,17 @@ export async function exportarGlbPasoManual(
       }
     }
 
+    if (!assignedPbr && isHwPata) {
+      // Buscar si existe una capa de plástico con material o Plastico_3
+      const capaPlastico = capas.find((c: any) => (c.nombre || "").toLowerCase().includes("plastico_3") || (c.nombre || "").toLowerCase().includes("plástico 3") || c.id === "capa_plastico_3");
+      if (capaPlastico && capaPlastico.materialId) {
+        assignedPbr = materialesPBR.find((m: any) => m.id === capaPlastico.materialId) || null;
+      }
+      if (!assignedPbr) {
+        assignedPbr = materialesPBR.find((m: any) => (m.nombre || "").toLowerCase() === "plastico_3" || (m.id || "").toLowerCase() === "mat_plastico_3") || null;
+      }
+    }
+
     // Resolución de color hex, rugosidad, metalicidad y nombre canónico de material
     let finalColorHex = "FFFFFF";
     let roughValNum = 0.45;
@@ -550,11 +588,26 @@ export async function exportarGlbPasoManual(
       metalValNum = 0.92;
       baseMatName = "Herraje_Corredera";
     } else if (isHwPata) {
-      // 🦶 Patas plásticas estructurales (negro inyectado mate #18181B)
-      finalColorHex = "18181B";
-      roughValNum = 0.45;
-      metalValNum = 0.08;
-      baseMatName = "P_Negro_Estructural";
+      // 🦶 Patas del mueble (Respetar siempre material PBR asignado Plastico_3 / capa / color real en Three.js)
+      if (assignedPbr?.colorBase) {
+        finalColorHex = assignedPbr.colorBase.replace("#", "").toUpperCase();
+        roughValNum = assignedPbr.rugosidad ?? 0.45;
+        metalValNum = assignedPbr.metalico ?? 0.10;
+        baseMatName = (assignedPbr.nombre || "Plastico_3").trim();
+      } else {
+        const rawHex = (srcMat as any)?.color ? (srcMat as any).color.getHexString().toUpperCase() : "";
+        if (rawHex && rawHex !== "000000" && rawHex !== "18181B" && rawHex !== "1E293B" && rawHex !== "F59E0B" && rawHex !== "EAB308") {
+          finalColorHex = rawHex;
+          roughValNum = (srcMat as any)?.roughness ?? 0.45;
+          metalValNum = (srcMat as any)?.metalness ?? 0.10;
+          baseMatName = ((srcMat as any)?.name || mesh.userData?.nombreMaterialEfectivo || "Plastico_3").trim();
+        } else {
+          finalColorHex = "AA8B6F";
+          roughValNum = 0.45;
+          metalValNum = 0.10;
+          baseMatName = "Plastico_3";
+        }
+      }
     } else if (isHwCantoneira || isHwPerno || isHwCaja) {
       // 🔩 Herrajes metálicos de unión (Zamak / Acero)
       finalColorHex = isHwCaja ? "D97706" : "CBD5E1";

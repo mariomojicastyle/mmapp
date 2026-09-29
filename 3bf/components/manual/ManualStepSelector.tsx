@@ -2,7 +2,7 @@
 
 import React from "react";
 import { use3BFStore } from "@/lib/store";
-import { Plus, GripVertical, Boxes, X } from "lucide-react";
+import { Plus, GripVertical, Boxes, X, PackageCheck } from "lucide-react";
 
 export default function ManualStepSelector() {
   const {
@@ -35,6 +35,15 @@ export default function ManualStepSelector() {
             title="Crear un nuevo paso de armado por capas"
           >
             <Plus className="w-3 h-3" /> Nuevo Paso
+          </button>
+
+          <button
+            type="button"
+            onClick={() => crearPasoManual("insercion_cajones")}
+            className="flex items-center gap-1 px-3 py-0.5 rounded-full border border-cyan-400/80 dark:border-cyan-600/80 bg-cyan-50 dark:bg-cyan-950/40 text-cyan-800 dark:text-cyan-200 hover:bg-cyan-100 dark:hover:bg-cyan-900/50 shadow-2xs transition font-bold text-[10px] cursor-pointer"
+            title="Crear paso final de incorporación de cajones al interior del mueble"
+          >
+            <PackageCheck className="w-3 h-3" /> + Gavetas
           </button>
         </div>
       </div>

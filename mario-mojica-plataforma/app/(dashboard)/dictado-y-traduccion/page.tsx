@@ -206,22 +206,7 @@ export default function DictadoYTraduccionPage() {
     }
   };
 
-  // Copiar el texto de la pizarra al portapapeles desde el botón central
-  const handleCopyBoardText = () => {
-    if (segments.length === 0) return;
-    let textToCopy = "";
-    if (!autoTranslate) {
-      // Modo solo dictado: copia todo el texto continuo
-      textToCopy = segments.map((s) => s.originalText).join("\n\n");
-    } else {
-      // Modo traducción: copia la traducción resultante (o el original si estuviera vacío)
-      textToCopy = segments.map((s) => s.translatedText || s.originalText).join("\n\n");
-    }
 
-    if (textToCopy.trim()) {
-      navigator.clipboard.writeText(textToCopy);
-    }
-  };
 
   return (
     <div className="h-[calc(100vh-4rem)] flex flex-col overflow-hidden p-3 sm:p-4 w-full max-w-[98%] xl:max-w-[96%] mx-auto gap-2.5 sm:gap-3 font-sans">
@@ -300,7 +285,6 @@ export default function DictadoYTraduccionPage() {
           onChangeSingleDictationLang={handleChangeSingleDictationLang}
           onClearAll={clearAll}
           onOpenGuardarActa={() => setIsActaModalOpen(true)}
-          onCopyText={handleCopyBoardText}
           hasSegments={segments.length > 0}
           isSupported={isSupported}
         />

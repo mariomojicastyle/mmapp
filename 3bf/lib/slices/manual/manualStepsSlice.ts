@@ -9,7 +9,7 @@ import type {
   PasoManualStudio,
   ElementoSecuenciaCinematica,
 } from "../../storeTypes";
-import { extraerPiezaMadre, perteneceAMismaFamiliaPieza } from "../../piezaMadreUtils";
+import { extraerPiezaMadre, perteneceAMismaFamiliaPieza, esHerrajeNombre } from "../../piezaMadreUtils";
 import { coincidenMismoHerraje } from "../../engine/cadStateUtils";
 
 export const createManualStepsSlice = (set: any, get: any): any => {
@@ -94,18 +94,27 @@ export const createManualStepsSlice = (set: any, get: any): any => {
       ),
     })),
 
-  crearPasoManual: (tipo: "ensamble" | "showcase" | "bloque_estandar" | "multiple_plus" = "multiple_plus") => {
+  crearPasoManual: (tipo: "ensamble" | "showcase" | "bloque_estandar" | "multiple_plus" | "insercion_cajones" = "multiple_plus") => {
     const state = get();
     const { id: nuevoId, numero: num } = encontrarSiguienteIdPasoDisponible(state.pasosManual);
     const tipoEfectivo = tipo === "ensamble" ? "multiple_plus" : tipo;
+    const p00 = state.pasosManual.find((p: any) => p.id === "P00" || p.tipo === "showcase");
 
     const nuevoPaso: PasoManualStudio = {
       id: nuevoId,
       numero: num,
       tipo: tipoEfectivo,
-      titulo: tipoEfectivo === "showcase" ? `${nuevoId}: Showcase` : `Paso ${nuevoId}: Armado por Capas`,
-      descripcion: "Nuevo paso de ensamble",
-      duracionTotal: 10.0,
+      titulo:
+        tipoEfectivo === "showcase"
+          ? `${nuevoId}: Showcase`
+          : tipoEfectivo === "insercion_cajones"
+          ? `${nuevoId}: Incorporación de Gavetas`
+          : `Paso ${nuevoId}: Armado por Capas`,
+      descripcion:
+        tipoEfectivo === "insercion_cajones"
+          ? "Incorporación y montaje de cajones en las correderas telescópicas hacia el interior del mueble"
+          : "Nuevo paso de ensamble",
+      duracionTotal: tipoEfectivo === "insercion_cajones" ? 12.0 : 10.0,
       piezaMaster: "",
       orientacionBanco: { rotacion: [0, 0, 0], apoyoEnPiso: true },
       piezasAsignadas: [],
@@ -114,6 +123,16 @@ export const createManualStepsSlice = (set: any, get: any): any => {
       subbloques: [],
       piezasOcultas: false,
       ocultarNoAsignadas: false,
+      insercionCajones:
+        tipoEfectivo === "insercion_cajones"
+          ? {
+              distanciaAproximacionCm: 30,
+              distanciaAperturaMm: p00?.showcase?.distanciaAperturaMm || 350,
+              coreografia: "cascada",
+              ordenInsercion: "descendente",
+              ejeGlobal: p00?.showcase?.ejeGlobal || "+Z",
+            }
+          : undefined,
       multiplePlus: tipoEfectivo === "multiple_plus" ? {
         velocidadTablerosCmS: 15,
         velocidadHerrajesCmS: 8,
@@ -126,7 +145,7 @@ export const createManualStepsSlice = (set: any, get: any): any => {
       vozEs: "es-MX-DaliaNeural",
       vozPt: "pt-BR-FranciscaNeural",
       vozEn: "en-US-JennyNeural",
-      duracionAudioSegundos: 10.0,
+      duracionAudioSegundos: tipoEfectivo === "insercion_cajones" ? 12.0 : 10.0,
     };
 
     const nuevosPasos = [...state.pasosManual];
@@ -442,6 +461,111 @@ export const createManualStepsSlice = (set: any, get: any): any => {
     });
     set({ pasosManual: actualizados });
     guardarPasosEnCacheLocal(actualizados, state.manualActivoGuardado);
+  },
+
+  setModoVisualBloqueHeredado: (pasoId: string, bloqueId: string, modo: "solido" | "cristal") => {
+    const state = get();
+    const actualizados = state.pasosManual.map((p: any) => {
+      if (p.id !== pasoId) return p;
+      const modosActuales = { ...(p.bloquesHeredadosModoVisual || {}) };
+      modosActuales[bloqueId] = modo;
+      return {
+        ...p,
+        bloquesHeredadosModoVisual: modosActuales,
+      };
+    });
+    set({ pasosManual: actualizados });
+    guardarPasosEnCacheLocal(actualizados, state.manualActivoGuardado);
+  },
+
+  cargarBloqueFuncionalEnPaso: (pasoId: string, grupoId: string) => {
+    const state = get();
+    // Buscar el grupo cinemático en P00 o pasos showcase
+    const pasoShowcase = state.pasosManual.find((p: any) => p.showcase?.gruposCinematicos && p.showcase.gruposCinematicos.length > 0) || state.pasosManual[0];
+    const grupo = pasoShowcase?.showcase?.gruposCinematicos?.find((g: any) => g.id === grupoId);
+    if (!grupo || !grupo.piezas || grupo.piezas.length === 0) return;
+
+    const piezasTableros: string[] = [];
+    const herrajesLista: string[] = [];
+
+    grupo.piezas.forEach((pz: string) => {
+      if (esHerrajeNombre(pz)) {
+        if (!herrajesLista.includes(pz)) herrajesLista.push(pz);
+      } else {
+        if (!piezasTableros.includes(pz)) piezasTableros.push(pz);
+      }
+    });
+
+    const actualizados = state.pasosManual.map((p: any) => {
+      // 👁️ Asegurar que el bloque funcional quede visible en P00 / Showcase para que aparezca de inmediato en 3D
+      if (p.showcase?.gruposCinematicos && p.showcase.gruposCinematicos.some((g: any) => g.id === grupoId)) {
+        p = {
+          ...p,
+          showcase: {
+            ...p.showcase,
+            gruposCinematicos: p.showcase.gruposCinematicos.map((g: any) =>
+              g.id === grupoId ? { ...g, oculto: false } : g
+            ),
+          },
+        };
+      }
+
+      if (p.id !== pasoId) return p;
+
+      const mp = p.multiplePlus || {
+        velocidadTablerosCmS: 15,
+        velocidadHerrajesCmS: 8,
+        movimientoGlobalCm: 20,
+        capas: [],
+      };
+
+      const capasFiltradas = (mp.capas || []).filter((c: any) => !c.nombre.toLowerCase().includes(grupo.nombre.toLowerCase()));
+      const capaIndex = capasFiltradas.length + 1;
+      const nuevaCapa = {
+        id: `capa_plus_${Date.now()}_${capaIndex}`,
+        nombre: `Capa ${capaIndex}: ${grupo.nombre}`,
+        bloqueFuncionalId: grupo.id,
+        visible: true,
+        tableros: piezasTableros.map((tId) => ({
+          id: tId,
+          destinoId: "base_master",
+          tiempoAparicion: 0,
+          tiempoInicioMovimiento: 500,
+          offsetXCm: 0,
+          offsetYCm: 0,
+          offsetZCm: 0,
+        })),
+        herrajes: herrajesLista.map((hId) => ({
+          id: hId,
+          ejeAproximacion: "-X",
+          tiempoAparicion: 0,
+          congelado: false,
+        })),
+        congelados: [],
+        bloquesHeredadosIds: [],
+        bloquesHeredadosVisibles: {},
+        piezaMaster: piezasTableros[0] || undefined,
+        orientacionBanco: {
+          rotacion: [0, 0, 0],
+          apoyoEnPiso: true,
+        },
+      };
+
+      return {
+        ...p,
+        piezasAsignadas: piezasTableros,
+        herrajesAsignados: herrajesLista,
+        ocultarNoAsignadas: true, // Mesa limpia / aislar banco de trabajo
+        multiplePlus: {
+          ...mp,
+          capas: [...capasFiltradas, nuevaCapa],
+        },
+      };
+    });
+
+    set({ pasosManual: actualizados, versionAnimacionManual: (state.versionAnimacionManual || 0) + 1 });
+    guardarPasosEnCacheLocal(actualizados, state.manualActivoGuardado);
+    if (get().guardarEstadoHistorial) get().guardarEstadoHistorial();
   },
 
   conmutarVisibilidadCapaPieza: (pasoId: string, nombrePieza: string, herrajesAsociados?: string[]) => {

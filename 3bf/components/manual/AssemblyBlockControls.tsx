@@ -57,12 +57,14 @@ export default function AssemblyBlockControls({
 
                   const isXPosActive = rotX === 90;
                   const isXNegActive = rotX === -90;
+                  const isX180Active = rotX === 180 || rotX === -180;
                   const isYPosActive = rotY === 90;
                   const isYNegActive = rotY === -90;
+                  const isY180Active = rotY === 180 || rotY === -180;
 
-                  const toggleRotacionBanco = (eje: "X" | "Y", anguloObjetivo: 90 | -90) => {
+                  const toggleRotacionBanco = (eje: "X" | "Y", anguloObjetivo: 90 | -90 | 180) => {
                     const anguloActual = eje === "X" ? rotX : rotY;
-                    const nuevoAngulo = anguloActual === anguloObjetivo ? 0 : anguloObjetivo;
+                    const nuevoAngulo = (anguloActual === anguloObjetivo || (Math.abs(anguloActual) === 180 && Math.abs(anguloObjetivo) === 180)) ? 0 : anguloObjetivo;
                     const nuevoX = eje === "X" ? nuevoAngulo : rotX;
                     const nuevoY = eje === "Y" ? nuevoAngulo : rotY;
 
@@ -104,21 +106,21 @@ export default function AssemblyBlockControls({
                         </div>
                       </div>
 
-                      {/* Cuadrícula 2x2 de Botones en Cápsula Pura */}
-                      <div className="grid grid-cols-2 gap-2">
+                      {/* Cuadrícula de Botones en Cápsula Pura */}
+                      <div className="grid grid-cols-3 gap-1.5">
                         {/* Giro X +90° */}
                         <button
                           type="button"
                           onClick={() => toggleRotacionBanco("X", 90)}
                           title={isXPosActive ? "Desactivar giro X +90° (volver a 0°)" : "Activar giro X +90°"}
-                          className={`flex items-center justify-center gap-1.5 px-3 py-2 rounded-full border text-xs font-semibold shadow-xs active:scale-95 transition-all cursor-pointer ${
+                          className={`flex items-center justify-center gap-1 px-2.5 py-1.5 rounded-full border text-[11px] font-semibold shadow-xs active:scale-95 transition-all cursor-pointer ${
                             isXPosActive
-                              ? "bg-[#1368AA] text-white border-[#1368AA] shadow-sm"
-                              : "border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:border-[#1368AA] hover:text-[#1368AA] dark:hover:text-blue-400"
+                              ? "bg-[#0088AA] dark:bg-[#1368AA] text-white border-[#0088AA] dark:border-[#1368AA] shadow-sm"
+                              : "border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:border-[#0088AA] hover:text-[#0088AA] dark:hover:text-blue-400"
                           }`}
                         >
-                          <RotateCw className={`w-3.5 h-3.5 ${isXPosActive ? "text-white" : "text-cyan-600 dark:text-cyan-400"}`} />
-                          <span>Giro X +90°</span>
+                          <RotateCw className={`w-3 h-3 ${isXPosActive ? "text-white" : "text-cyan-600 dark:text-cyan-400"}`} />
+                          <span>X +90°</span>
                         </button>
 
                         {/* Giro X -90° */}
@@ -126,14 +128,29 @@ export default function AssemblyBlockControls({
                           type="button"
                           onClick={() => toggleRotacionBanco("X", -90)}
                           title={isXNegActive ? "Desactivar giro X -90° (volver a 0°)" : "Activar giro X -90°"}
-                          className={`flex items-center justify-center gap-1.5 px-3 py-2 rounded-full border text-xs font-semibold shadow-xs active:scale-95 transition-all cursor-pointer ${
+                          className={`flex items-center justify-center gap-1 px-2.5 py-1.5 rounded-full border text-[11px] font-semibold shadow-xs active:scale-95 transition-all cursor-pointer ${
                             isXNegActive
-                              ? "bg-[#1368AA] text-white border-[#1368AA] shadow-sm"
-                              : "border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:border-[#1368AA] hover:text-[#1368AA] dark:hover:text-blue-400"
+                              ? "bg-[#0088AA] dark:bg-[#1368AA] text-white border-[#0088AA] dark:border-[#1368AA] shadow-sm"
+                              : "border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:border-[#0088AA] hover:text-[#0088AA] dark:hover:text-blue-400"
                           }`}
                         >
-                          <RotateCcw className={`w-3.5 h-3.5 ${isXNegActive ? "text-white" : "text-cyan-600 dark:text-cyan-400"}`} />
-                          <span>Giro X -90°</span>
+                          <RotateCcw className={`w-3 h-3 ${isXNegActive ? "text-white" : "text-cyan-600 dark:text-cyan-400"}`} />
+                          <span>X -90°</span>
+                        </button>
+
+                        {/* Giro X 180° */}
+                        <button
+                          type="button"
+                          onClick={() => toggleRotacionBanco("X", 180)}
+                          title={isX180Active ? "Desactivar giro X 180° (volver a 0°)" : "Activar giro X 180° (voltear arriba/abajo)"}
+                          className={`flex items-center justify-center gap-1 px-2.5 py-1.5 rounded-full border text-[11px] font-semibold shadow-xs active:scale-95 transition-all cursor-pointer ${
+                            isX180Active
+                              ? "bg-[#0088AA] dark:bg-[#1368AA] text-white border-[#0088AA] dark:border-[#1368AA] shadow-sm"
+                              : "border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:border-[#0088AA] hover:text-[#0088AA] dark:hover:text-blue-400"
+                          }`}
+                        >
+                          <RotateCw className={`w-3 h-3 ${isX180Active ? "text-white" : "text-cyan-600 dark:text-cyan-400"}`} />
+                          <span>X 180°</span>
                         </button>
 
                         {/* Giro Y +90° */}
@@ -141,14 +158,14 @@ export default function AssemblyBlockControls({
                           type="button"
                           onClick={() => toggleRotacionBanco("Y", 90)}
                           title={isYPosActive ? "Desactivar giro Y +90° (volver a 0°)" : "Activar giro Y +90°"}
-                          className={`flex items-center justify-center gap-1.5 px-3 py-2 rounded-full border text-xs font-semibold shadow-xs active:scale-95 transition-all cursor-pointer ${
+                          className={`flex items-center justify-center gap-1 px-2.5 py-1.5 rounded-full border text-[11px] font-semibold shadow-xs active:scale-95 transition-all cursor-pointer ${
                             isYPosActive
-                              ? "bg-[#1368AA] text-white border-[#1368AA] shadow-sm"
-                              : "border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:border-[#1368AA] hover:text-[#1368AA] dark:hover:text-blue-400"
+                              ? "bg-[#0088AA] dark:bg-[#1368AA] text-white border-[#0088AA] dark:border-[#1368AA] shadow-sm"
+                              : "border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:border-[#0088AA] hover:text-[#0088AA] dark:hover:text-blue-400"
                           }`}
                         >
-                          <RotateCw className={`w-3.5 h-3.5 ${isYPosActive ? "text-white" : "text-cyan-600 dark:text-cyan-400"}`} />
-                          <span>Giro Y +90°</span>
+                          <RotateCw className={`w-3 h-3 ${isYPosActive ? "text-white" : "text-cyan-600 dark:text-cyan-400"}`} />
+                          <span>Y +90°</span>
                         </button>
 
                         {/* Giro Y -90° */}
@@ -156,14 +173,29 @@ export default function AssemblyBlockControls({
                           type="button"
                           onClick={() => toggleRotacionBanco("Y", -90)}
                           title={isYNegActive ? "Desactivar giro Y -90° (volver a 0°)" : "Activar giro Y -90°"}
-                          className={`flex items-center justify-center gap-1.5 px-3 py-2 rounded-full border text-xs font-semibold shadow-xs active:scale-95 transition-all cursor-pointer ${
+                          className={`flex items-center justify-center gap-1 px-2.5 py-1.5 rounded-full border text-[11px] font-semibold shadow-xs active:scale-95 transition-all cursor-pointer ${
                             isYNegActive
-                              ? "bg-[#1368AA] text-white border-[#1368AA] shadow-sm"
-                              : "border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:border-[#1368AA] hover:text-[#1368AA] dark:hover:text-blue-400"
+                              ? "bg-[#0088AA] dark:bg-[#1368AA] text-white border-[#0088AA] dark:border-[#1368AA] shadow-sm"
+                              : "border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:border-[#0088AA] hover:text-[#0088AA] dark:hover:text-blue-400"
                           }`}
                         >
-                          <RotateCcw className={`w-3.5 h-3.5 ${isYNegActive ? "text-white" : "text-cyan-600 dark:text-cyan-400"}`} />
-                          <span>Giro Y -90°</span>
+                          <RotateCcw className={`w-3 h-3 ${isYNegActive ? "text-white" : "text-cyan-600 dark:text-cyan-400"}`} />
+                          <span>Y -90°</span>
+                        </button>
+
+                        {/* Giro Y 180° */}
+                        <button
+                          type="button"
+                          onClick={() => toggleRotacionBanco("Y", 180)}
+                          title={isY180Active ? "Desactivar giro Y 180° (volver a 0°)" : "Activar giro Y 180° (voltear frente/espalda)"}
+                          className={`flex items-center justify-center gap-1 px-2.5 py-1.5 rounded-full border text-[11px] font-semibold shadow-xs active:scale-95 transition-all cursor-pointer ${
+                            isY180Active
+                              ? "bg-[#0088AA] dark:bg-[#1368AA] text-white border-[#0088AA] dark:border-[#1368AA] shadow-sm"
+                              : "border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:border-[#0088AA] hover:text-[#0088AA] dark:hover:text-blue-400"
+                          }`}
+                        >
+                          <RotateCw className={`w-3 h-3 ${isY180Active ? "text-white" : "text-cyan-600 dark:text-cyan-400"}`} />
+                          <span>Y 180°</span>
                         </button>
                       </div>
 

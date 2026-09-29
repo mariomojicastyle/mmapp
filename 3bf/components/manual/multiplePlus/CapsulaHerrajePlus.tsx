@@ -162,201 +162,193 @@ export function CapsulaHerrajePlus({
     <div
       onMouseEnter={() => onHover([herraje.id])}
       onMouseLeave={() => onHover(null)}
-      className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full border text-[9px] font-medium select-none transition-all shadow-2xs ${
+      className={`flex items-center justify-between gap-1.5 w-full min-w-[310px] shrink-0 px-2.5 py-0.5 rounded-full border shadow-2xs text-[9px] select-none transition-all ${
         esCongelado
-          ? "border-sky-300 dark:border-sky-700 bg-sky-50/90 dark:bg-sky-950/70 text-sky-800 dark:text-sky-200 hover:border-sky-400"
+          ? "border-sky-300 dark:border-sky-700 bg-sky-50/90 dark:bg-sky-950/70 text-sky-900 dark:text-sky-100"
           : esDestelloActivo
-          ? "border-amber-300 dark:border-amber-600 bg-amber-50/70 dark:bg-amber-950/40 text-slate-800 dark:text-slate-100 ring-1 ring-amber-400/40"
-          : "border-slate-300 dark:border-slate-700 bg-slate-100/90 dark:bg-slate-800/90 text-slate-700 dark:text-slate-200 hover:border-cyan-400 hover:bg-cyan-50/50 dark:hover:bg-cyan-950/40 hover:ring-1 hover:ring-cyan-400/40"
+          ? "border-amber-300 dark:border-amber-700 bg-amber-50/90 dark:bg-amber-950/70 text-amber-900 dark:text-amber-100"
+          : "border-slate-200 dark:border-slate-700 bg-white/95 dark:bg-slate-900/90 text-slate-700 dark:text-slate-200 hover:border-cyan-400"
       }`}
     >
-      {/* ❄️ Botón Congelar / Descongelar */}
-      <button
-        type="button"
-        onClick={(e) => {
-          e.stopPropagation();
-          onToggleCongelar(herraje.id);
-        }}
-        title={
-          esCongelado
-            ? "Herraje Congelado (ya pre-instalado). Clic para descongelar y animar inserción"
-            : "Congelar: herraje pre-instalado en paso anterior (viaja fijo sin animación de aproximación)"
-        }
-        className={`w-3.5 h-3.5 rounded-full flex items-center justify-center transition cursor-pointer shrink-0 ${
-          esCongelado
-            ? "bg-sky-500 text-white shadow-2xs hover:bg-sky-600"
-            : "text-slate-400 hover:text-sky-600 hover:bg-sky-100 dark:hover:bg-sky-950/50"
-        }`}
-      >
-        <Snowflake className="w-2 h-2" />
-      </button>
-
-      {/* 🔩 Nombre nativo Grasshopper */}
-      <span className="font-semibold text-[9px] truncate max-w-[90px]" title={herraje.id}>
-        {herraje.id}
-      </span>
-
-      {/* 🧭 Selector de Eje de Inserción (por defecto en -X) */}
-      {!esCongelado && (
-        <div onClick={(e) => e.stopPropagation()} className="inline-flex items-center">
-          <select
-            value={herraje.ejeAproximacion || "-X"}
-            onChange={(e) => onActualizar(herraje.id, { ejeAproximacion: e.target.value as any })}
-            title="Eje del vector de aproximación e inserción (+X, -X, +Y, -Y, +Z, -Z)"
-            className="text-[7.5px] font-mono font-bold bg-white/90 dark:bg-slate-900 text-slate-700 dark:text-slate-200 border border-slate-300 dark:border-slate-600 rounded-full px-1 py-0 cursor-pointer outline-none hover:border-cyan-500 transition shadow-2xs"
-          >
-            <option value="-X">-X</option>
-            <option value="+X">+X</option>
-            <option value="-Y">-Y</option>
-            <option value="+Y">+Y</option>
-            <option value="-Z">-Z</option>
-            <option value="+Z">+Z</option>
-          </select>
-        </div>
-      )}
-
-      {/* ⏱️ 1. SEGUNDO DE APARICIÓN EN ESCENA (Presencia física del herraje) */}
-      <div
-        onClick={(e) => e.stopPropagation()}
-        title="Segundo exacto en que este herraje aparece en escena física a escala real (por defecto 0s). Presiona Enter o clic fuera para confirmar."
-        className="inline-flex items-center gap-0.5 bg-white/90 dark:bg-slate-900 px-1 py-0 rounded-full border border-slate-200 dark:border-slate-700 text-[8px] shadow-2xs shrink-0"
-      >
-        <span className="text-[7px] font-semibold text-slate-400">apa:</span>
-        <input
-          type="text"
-          inputMode="decimal"
-          value={textoAparicion}
-          onFocus={(e) => {
-            setEditandoAparicion(true);
-            const target = e.currentTarget;
-            setTimeout(() => target.select(), 0);
+      {/* 🔹 Zona Izquierda: Snowflake + Nombre nativo Grasshopper garantizado y rígido */}
+      <div className="flex items-center gap-1.5 shrink-0">
+        {/* ❄️ Botón Congelar / Descongelar */}
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            onToggleCongelar(herraje.id);
           }}
-          onBlur={commitAparicion}
-          onKeyDown={(e) => {
-            if (e.key === "Enter") {
-              e.currentTarget.blur();
-            } else if (e.key === "Escape") {
-              setEditandoAparicion(false);
-              setTextoAparicion(String(herraje.tiempoAparicion ?? 0));
-              e.currentTarget.blur();
-            }
-          }}
-          onChange={(e) => {
-            setTextoAparicion(e.target.value);
-          }}
-          className="w-[24px] min-w-[24px] bg-transparent text-right font-mono font-bold text-slate-700 dark:text-slate-200 outline-none text-[8px] p-0 border-none cursor-text"
-        />
-        <span className="text-[7px] font-bold text-slate-400">s</span>
-      </div>
-
-      {/* 💡 2. CÁPSULA DE ILUMINACIÓN AGRUPADA: DURACIÓN (AZUL/AMARILLO) + SEGUNDO EN QUE DEBE TITILAR (DERECHA) */}
-      <div
-        onClick={(e) => e.stopPropagation()}
-        className={`inline-flex items-center gap-1 px-1.5 py-0 rounded-full border transition-all shadow-2xs shrink-0 ${
-          esDestelloActivo
-            ? "bg-amber-300 dark:bg-amber-500 border-amber-500 dark:border-amber-400 text-amber-950 ring-1 ring-amber-400/60"
-            : "bg-sky-100/80 dark:bg-sky-950/70 border-sky-300 dark:border-sky-800 text-sky-800 dark:text-sky-300"
-        }`}
-      >
-        {/* Duración del destello (0s = inactivo / azul tenue, >0s = amarillo) */}
-        <div
-          title="Duración del titileo en segundos. Al digitar un número > 0 se torna amarillo indicando que titilará."
-          className="inline-flex items-center gap-0.5 cursor-text"
+          title={
+            esCongelado
+              ? "Herraje Congelado (ya pre-instalado). Clic para descongelar y animar inserción"
+              : "Congelar: herraje pre-instalado en paso anterior (viaja fijo sin animación de aproximación)"
+          }
+          className={`w-3.5 h-3.5 rounded-full flex items-center justify-center transition cursor-pointer shrink-0 ${
+            esCongelado
+              ? "bg-sky-500 text-white shadow-2xs"
+              : "text-slate-400 hover:text-sky-600 hover:bg-sky-100 dark:hover:bg-sky-950/50"
+          }`}
         >
-          <span className={`text-[7px] font-bold ${esDestelloActivo ? "text-amber-900" : "text-sky-700 dark:text-sky-400"}`}>
-            dur:
-          </span>
-          <input
-            type="text"
-            inputMode="decimal"
-            value={textoDuracion}
-            onFocus={(e) => {
-              setEditandoDuracion(true);
-              const target = e.currentTarget;
-              setTimeout(() => target.select(), 0);
-            }}
-            onBlur={commitDuracion}
-            onKeyDown={(e) => {
-              if (e.key === "Enter") {
-                e.currentTarget.blur();
-              } else if (e.key === "Escape") {
-                setEditandoDuracion(false);
-                setTextoDuracion(String(herraje.destello?.duracion ?? 0));
-                e.currentTarget.blur();
-              }
-            }}
-            onChange={(e) => {
-              setTextoDuracion(e.target.value);
-            }}
-            className={`w-[18px] min-w-[18px] bg-transparent text-right font-mono font-black outline-none text-[8px] p-0 border-none cursor-text ${
-              esDestelloActivo ? "text-amber-950" : "text-sky-900 dark:text-sky-200"
-            }`}
-          />
-          <span className={`text-[7px] font-bold ${esDestelloActivo ? "text-amber-900" : "text-sky-600 dark:text-sky-400"}`}>
-            s
-          </span>
-        </div>
+          <Snowflake className="w-2.5 h-2.5" />
+        </button>
 
-        {/* Separador visual sutil */}
-        <span className={`text-[7px] font-mono select-none ${esDestelloActivo ? "text-amber-600" : "text-sky-300 dark:text-sky-700"}`}>
-          |
+        {/* 🔩 Nombre nativo Grasshopper (100% visible, rígido, sin compresión) */}
+        <span className="font-bold text-[9.5px] whitespace-nowrap text-slate-800 dark:text-slate-100 leading-tight" title={herraje.id}>
+          {herraje.id}
         </span>
+      </div>
 
-        {/* Segundo en el que debe titilar (al lado derecho de la cápsula de iluminación) */}
+      {/* 🔹 Zona Derecha: Vector Inserción + apa + dur|en + Eliminar */}
+      <div className="flex items-center gap-1 shrink-0">
+        {/* 🧭 Selector de Eje de Inserción (por defecto en -X) */}
+        {!esCongelado && (
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="flex items-center bg-white dark:bg-slate-800 px-1.5 py-0 rounded-full border border-slate-200 dark:border-slate-700 text-[8px] shadow-2xs shrink-0"
+            title="Eje del vector de aproximación (+X, -X, +Y, -Y, +Z, -Z)"
+          >
+            <select
+              value={herraje.ejeAproximacion || "-X"}
+              onChange={(e) => onActualizar(herraje.id, { ejeAproximacion: e.target.value as any })}
+              className="bg-transparent font-mono font-bold text-slate-700 dark:text-slate-200 outline-none cursor-pointer text-[8px] leading-tight"
+            >
+              <option value="-X">-X</option>
+              <option value="+X">+X</option>
+              <option value="-Y">-Y</option>
+              <option value="+Y">+Y</option>
+              <option value="-Z">-Z</option>
+              <option value="+Z">+Z</option>
+            </select>
+          </div>
+        )}
+
+        {/* ⏱️ 1. SEGUNDO DE APARICIÓN EN ESCENA */}
         <div
-          title="Segundo exacto en el que debe comenzar a titilar (por defecto igual al segundo de aparición, editable para cámara zoom o locución)."
-          className="inline-flex items-center gap-0.5 cursor-text"
+          onClick={(e) => e.stopPropagation()}
+          title="Segundo exacto de aparición física (por defecto 0s). Presiona Enter o clic fuera para confirmar."
+          className="inline-flex items-center gap-0.5 bg-white dark:bg-slate-800 px-1 py-0 rounded-full border border-slate-200 dark:border-slate-700 text-[8px] shadow-2xs shrink-0"
         >
-          <span className={`text-[7px] font-bold ${esDestelloActivo ? "text-amber-900" : "text-sky-700 dark:text-sky-400"}`}>
-            en:
-          </span>
+          <span className="font-bold text-slate-400 dark:text-slate-500 text-[7.5px] select-none">apa:</span>
           <input
             type="text"
             inputMode="decimal"
-            value={textoSegundoTitileo}
+            value={textoAparicion}
             onFocus={(e) => {
-              setEditandoSegundoTitileo(true);
+              setEditandoAparicion(true);
               const target = e.currentTarget;
               setTimeout(() => target.select(), 0);
             }}
-            onBlur={commitSegundoTitileo}
+            onBlur={commitAparicion}
             onKeyDown={(e) => {
               if (e.key === "Enter") {
                 e.currentTarget.blur();
               } else if (e.key === "Escape") {
-                setEditandoSegundoTitileo(false);
-                setTextoSegundoTitileo(
-                  String(herraje.destello?.tiempoInicio ?? herraje.tiempoAparicion ?? 0)
-                );
+                setEditandoAparicion(false);
+                setTextoAparicion(String(herraje.tiempoAparicion ?? 0));
                 e.currentTarget.blur();
               }
             }}
             onChange={(e) => {
-              setTextoSegundoTitileo(e.target.value);
+              setTextoAparicion(e.target.value);
             }}
-            className={`w-[24px] min-w-[24px] bg-transparent text-right font-mono font-black outline-none text-[8px] p-0 border-none cursor-text ${
-              esDestelloActivo ? "text-amber-950" : "text-sky-900 dark:text-sky-200"
-            }`}
+            className="w-[16px] bg-transparent text-right font-mono font-bold text-slate-700 dark:text-slate-200 outline-none text-[8px] p-0 border-none cursor-text leading-tight"
           />
-          <span className={`text-[7px] font-bold ${esDestelloActivo ? "text-amber-900" : "text-sky-600 dark:text-sky-400"}`}>
-            s
-          </span>
+          <span className="font-bold text-slate-400 dark:text-slate-500 text-[7.5px] select-none">s</span>
         </div>
-      </div>
 
-      {/* ❌ Botón Eliminar / Remover */}
-      <button
-        type="button"
-        onClick={(e) => {
-          e.stopPropagation();
-          onHover(null);
-          onRemover(herraje.id);
-        }}
-        title={`Eliminar ${herraje.id} de esta capa`}
-        className="w-3.5 h-3.5 rounded-full flex items-center justify-center text-slate-400 hover:text-rose-600 hover:bg-rose-100 dark:hover:bg-rose-950/60 transition cursor-pointer shrink-0"
-      >
-        <X className="w-2 h-2" />
-      </button>
+        {/* 💡 2. CÁPSULA DE ILUMINACIÓN COMPACTA */}
+        <div
+          onClick={(e) => e.stopPropagation()}
+          className={`inline-flex items-center gap-0.5 px-1 py-0 rounded-full border text-[8px] shadow-2xs shrink-0 select-none ${
+            esDestelloActivo
+              ? "bg-amber-100 dark:bg-amber-900/60 border-amber-300 dark:border-amber-700 text-amber-900 dark:text-amber-100 font-bold"
+              : "bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400"
+          }`}
+        >
+          <div
+            title="Duración del destello (0s = inactivo)"
+            className="inline-flex items-center gap-0.5 cursor-text"
+          >
+            <span className="font-bold text-[7.5px] opacity-75">dur:</span>
+            <input
+              type="text"
+              inputMode="decimal"
+              value={textoDuracion}
+              onFocus={(e) => {
+                setEditandoDuracion(true);
+                const target = e.currentTarget;
+                setTimeout(() => target.select(), 0);
+              }}
+              onBlur={commitDuracion}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  e.currentTarget.blur();
+                } else if (e.key === "Escape") {
+                  setEditandoDuracion(false);
+                  setTextoDuracion(String(herraje.destello?.duracion ?? 0));
+                  e.currentTarget.blur();
+                }
+              }}
+              onChange={(e) => {
+                setTextoDuracion(e.target.value);
+              }}
+              className="w-[14px] bg-transparent text-right font-mono font-bold outline-none text-[8px] p-0 border-none cursor-text leading-tight"
+            />
+            <span className="font-bold text-[7.5px] opacity-75">s</span>
+          </div>
+
+          <span className="opacity-30 select-none mx-0.5 text-[7.5px]">|</span>
+
+          <div
+            title="Segundo en que inicia el titileo"
+            className="inline-flex items-center gap-0.5 cursor-text"
+          >
+            <span className="font-bold text-[7.5px] opacity-75">en:</span>
+            <input
+              type="text"
+              inputMode="decimal"
+              value={textoSegundoTitileo}
+              onFocus={(e) => {
+                setEditandoSegundoTitileo(true);
+                const target = e.currentTarget;
+                setTimeout(() => target.select(), 0);
+              }}
+              onBlur={commitSegundoTitileo}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  e.currentTarget.blur();
+                } else if (e.key === "Escape") {
+                  setEditandoSegundoTitileo(false);
+                  setTextoSegundoTitileo(
+                    String(herraje.destello?.tiempoInicio ?? herraje.tiempoAparicion ?? 0)
+                  );
+                  e.currentTarget.blur();
+                }
+              }}
+              onChange={(e) => {
+                setTextoSegundoTitileo(e.target.value);
+              }}
+              className="w-[16px] bg-transparent text-right font-mono font-bold outline-none text-[8px] p-0 border-none cursor-text leading-tight"
+            />
+            <span className="font-bold text-[7.5px] opacity-75">s</span>
+          </div>
+        </div>
+
+        {/* ❌ Botón Eliminar / Remover */}
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            onHover(null);
+            onRemover(herraje.id);
+          }}
+          title={`Eliminar ${herraje.id} de esta capa`}
+          className="w-3.5 h-3.5 rounded-full flex items-center justify-center text-slate-400 hover:text-rose-600 hover:bg-rose-100 dark:hover:bg-rose-950/60 transition cursor-pointer shrink-0"
+        >
+          <X className="w-2.5 h-2.5" />
+        </button>
+      </div>
     </div>
   );
 }

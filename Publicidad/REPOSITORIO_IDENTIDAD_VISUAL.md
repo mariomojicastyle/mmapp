@@ -1,4 +1,4 @@
-﻿# 🎨 Repositorio Canónico de Identidad Gráfica y Logotipos (/Publicidad)
+# 🎨 Repositorio Canónico de Identidad Gráfica y Logotipos (/Publicidad)
 
 > 🏷️ **REGLA DE ORO DE MARCA:** La suite y motor paramétrico se escribe **SIEMPRE Y SIN EXCEPCIÓN** como **`3dBimFab`** (`3` + `d` minúscula + `B` mayúscula + `im` + `F` mayúscula + `ab`).
 
@@ -21,6 +21,10 @@ Todos los archivos originales, editables en Inkscape / Illustrator y rasterizado
 | **`Logo_3BF.png`** | PNG 920x320 | Logotipo horizontal exportado en fondo transparente para documentos de oficina. | Word, Excel, presentaciones y redes. |
 | **`Logo_3BF_Dark.png`** | PNG 920x320 | Logotipo horizontal para fondos oscuros con base pre-renderizada en `#131B2E`. | Mockups y banners nocturnos. |
 | **`Logo_MM_en.svg`** | SVG Vectorial | **Logotipo Corporativo Maestro Mario Mojica**: Isotipo MM + *FORM & FUTURE*. | Identidad institucional y pie de firma. |
+| **`Logo_Henn.svg`** | SVG Vectorial | **Logotipo Oficial Móveis Henn (Badge)**: Placa roja `#A8112E` con letras blancas oficiales extraídas de planos de ingeniería CAD. | Manuales 3D interactivos, cabeceras y portadas. |
+| **`Logo_Henn_Transparente.svg`** | SVG Vectorial | **Logotipo Móveis Henn (Blanco Transparente)**: Letras blancas puras sin fondo para incrustar sobre cualquier interfaz. | Visores 3D, barras flotantes y fondos oscuros. |
+| **`Logo_Henn_Rojo.svg`** | SVG Vectorial | **Logotipo Móveis Henn (Rojo Transparente)**: Letras en rojo oficial Henn `#A8112E` sobre fondo transparente. | Fondos claros, papelería y temas Light. |
+
 
 ---
 

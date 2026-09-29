@@ -1113,10 +1113,10 @@ async def compute_model(request: Request):
     if force_reload:
         # Purgar cachés en RAM
         for k in list(_FULL_RESPONSE_CACHE.keys()):
-            if model_id in k:
+            if (model_id and model_id.lower() in k.lower()) or (custom_filename and custom_filename.lower() in k.lower()):
                 _FULL_RESPONSE_CACHE.pop(k, None)
         for k in list(_GEOMETRY_CACHE.keys()):
-            if model_id in k:
+            if (model_id and model_id.lower() in k.lower()) or (custom_filename and custom_filename.lower() in k.lower()):
                 _GEOMETRY_CACHE.pop(k, None)
         if ghx_file_path:
             _RAW_GHX_STRING_CACHE.pop(ghx_file_path, None)
@@ -1124,14 +1124,14 @@ async def compute_model(request: Request):
             
         # Purgar cachés en disco asociadas a este modelo
         for f in os.listdir(CACHE_DIR):
-            if model_id.lower() in f.lower():
+            if (model_id and model_id.lower() in f.lower()) or (custom_filename and custom_filename.lower() in f.lower()):
                 try:
                     os.remove(os.path.join(CACHE_DIR, f))
                 except Exception:
                     pass
         # Al forzar recarga, ignorar cualquier ghx_content cacheado en el cliente para leer el GHX fresco del disco
         p["ghx_content"] = None
-        print(f"[3BF Worker] [FORCE RELOAD] Caché total (RAM y Disco) purgada para '{model_id}'. Leyendo GHX fresco desde disco...", flush=True)
+        print(f"[3BF Worker] [FORCE RELOAD] Caché total (RAM y Disco) purgada para '{model_id}' / '{custom_filename}'. Leyendo GHX fresco desde disco...", flush=True)
 
     # 1. ⚡ Chequeo de Caché Total Exacto (RAM y Disco)
     hash_p = {k: v for k, v in p.items() if k not in ["timestamp", "client_time", "last_mtime"]}

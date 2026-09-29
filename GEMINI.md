@@ -263,5 +263,7 @@ Default values cause runtime failures.
   * Cuando el usuario diga *"se mueve en Z"*, el agente DEBE mapearlo a la **altura vertical (Eje Y de Three.js)**.
   * En tableros acostados en el banco de trabajo, los tarugos y pernos de canto **NUNCA varían en altura vertical (Y de Three.js / Z de Rhino) ni en X**: su posición permanece 100% alineada con el barreno, desplazándose únicamente de forma colineal hacia los cantos.
 
-
-
+## 🖼️ Disparador Canónico de Maquetas de Interfaz (Habilidad `maquetas-ui-interactivas`)
+- **Activación Instantánea:** Cada vez que el usuario diga *"maqueta"*, *"maqueta interactiva"*, *"maqueta de UI"*, *"laboratorio de UI"*, *"propuesta de interfaz"*, o pida validar cómo va a quedar un botón, cápsula, control o panel antes de codificar, el agente DEBE activar automáticamente la habilidad `maquetas-ui-interactivas`.
+- **Mandato Estricto:** Foco 100% en la interfaz real (cápsulas `rounded-full`, botones, textos, colores oficiales Tech Ethos/Obsidian, micro-interacciones JS en vivo). Queda estrictamente prohibido perder tiempo simulando entornos 3D ficticios.
+- **Incrustación en Chat:** La maqueta debe compilarse en un archivo HTML autónomo (usando exclusivamente Tailwind de gstatic y JavaScript vanilla) e incrustarse obligatoriamente en el mensaje del chat mediante `<agent-embed src="file:///..."></agent-embed>` para que el usuario pueda probarla e interactuar con ella de inmediato haciendo scroll.

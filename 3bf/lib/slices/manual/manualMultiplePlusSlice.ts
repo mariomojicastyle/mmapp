@@ -739,8 +739,8 @@ export const createManualMultiplePlusSlice = (set: any, get: any): any => ({
     guardarPasosEnCacheLocal(actualizados, state.manualActivoGuardado);
   },
 
-  // 18. Giro Global de Banco para todas las capas (X±90°, Y±90°)
-  girarBancoGlobalPlus: (pasoId: string, eje: "X" | "Y", anguloObjetivo: number) => {
+  // 18. Giro Global de Banco para todas las capas (X±90°, Y±90°, Z±90°)
+  girarBancoGlobalPlus: (pasoId: string, eje: "X" | "Y" | "Z", anguloObjetivo: number) => {
     const state = get();
     const paso = state.pasosManual.find((p: any) => p.id === pasoId);
     if (!paso) return;
@@ -750,14 +750,16 @@ export const createManualMultiplePlusSlice = (set: any, get: any): any => ({
     const rotY = rotActual[1] || 0;
     const rotZ = rotActual[2] || 0;
 
-    const anguloActualEje = eje === "X" ? rotX : rotY;
-    const nuevoAngulo = anguloActualEje === anguloObjetivo ? 0 : anguloObjetivo;
+    const anguloActualEje = eje === "X" ? rotX : eje === "Y" ? rotY : rotZ;
+    const nuevoAngulo = (anguloActualEje === anguloObjetivo || (Math.abs(anguloActualEje) === 180 && Math.abs(anguloObjetivo) === 180)) ? 0 : anguloObjetivo;
     const nuevoX = eje === "X" ? nuevoAngulo : rotX;
     const nuevoY = eje === "Y" ? nuevoAngulo : rotY;
+    const nuevoZ = eje === "Z" ? nuevoAngulo : rotZ;
 
     const nuevaOrientacion = {
-      rotacion: [nuevoX, nuevoY, rotZ] as [number, number, number],
+      rotacion: [nuevoX, nuevoY, nuevoZ] as [number, number, number],
       apoyoEnPiso: paso.orientacionBanco?.apoyoEnPiso ?? true,
+      alturaZCm: paso.orientacionBanco?.alturaZCm ?? paso.multiplePlus?.alturaZCm ?? 0,
     };
 
     const actualizados = state.pasosManual.map((p: any) => {
@@ -788,6 +790,7 @@ export const createManualMultiplePlusSlice = (set: any, get: any): any => ({
     const nuevaOrientacion = {
       rotacion: (paso.orientacionBanco?.rotacion || [0, 0, 0]) as [number, number, number],
       apoyoEnPiso: !estadoActual,
+      alturaZCm: paso.orientacionBanco?.alturaZCm ?? paso.multiplePlus?.alturaZCm ?? 0,
     };
 
     const actualizados = state.pasosManual.map((p: any) => {
@@ -808,6 +811,108 @@ export const createManualMultiplePlusSlice = (set: any, get: any): any => ({
     guardarPasosEnCacheLocal(actualizados, state.manualActivoGuardado);
   },
 
+  // 19.1 Ajustar desplazamiento del eje de rotación en cm (CDG)
+  setOffsetEjeRotacionPlus: (pasoId: string, cm: number) => {
+    const state = get();
+    const actualizados = state.pasosManual.map((p: any) => {
+      if (p.id !== pasoId) return p;
+      return {
+        ...p,
+        multiplePlus: p.multiplePlus
+          ? {
+              ...p.multiplePlus,
+              offsetEjeRotacionCm: cm,
+            }
+          : p.multiplePlus,
+      };
+    });
+
+    set({ pasosManual: actualizados, versionAnimacionManual: (state.versionAnimacionManual || 0) + 1 });
+    guardarPasosEnCacheLocal(actualizados, state.manualActivoGuardado);
+  },
+
+  // 19.2 Ajustar altura vertical en Z (cm)
+  setAlturaZPlus: (pasoId: string, cm: number) => {
+    const state = get();
+    const actualizados = state.pasosManual.map((p: any) => {
+      if (p.id !== pasoId) return p;
+      const ob = p.orientacionBanco || { rotacion: [0, 0, 0], apoyoEnPiso: true };
+      const nuevaOrientacion = {
+        ...ob,
+        alturaZCm: cm,
+      };
+      return {
+        ...p,
+        orientacionBanco: nuevaOrientacion,
+        multiplePlus: p.multiplePlus
+          ? {
+              ...p.multiplePlus,
+              alturaZCm: cm,
+              orientacionBanco: nuevaOrientacion,
+            }
+          : p.multiplePlus,
+      };
+    });
+
+    set({ pasosManual: actualizados, versionAnimacionManual: (state.versionAnimacionManual || 0) + 1 });
+    guardarPasosEnCacheLocal(actualizados, state.manualActivoGuardado);
+  },
+
+  // 19.3 Toggle Antigravedad Global Plus (Neutralizar caída al suelo de piezas al posicionar)
+  toggleAntigravedadPlus: (pasoId: string) => {
+    const state = get();
+    const paso = state.pasosManual.find((p: any) => p.id === pasoId);
+    if (!paso) return;
+
+    const actual = Boolean(paso.multiplePlus?.antigravedad);
+    const nuevo = !actual;
+
+    const actualizados = state.pasosManual.map((p: any) => {
+      if (p.id !== pasoId) return p;
+
+      // Si se activa la antigravedad, neutralizamos cualquier caída al suelo previa
+      // (offsetYCm originado por floorDrop) en los tableros de este paso
+      let nuevoMultiplePlus = p.multiplePlus ? { ...p.multiplePlus, antigravedad: nuevo } : p.multiplePlus;
+      if (nuevo && nuevoMultiplePlus && nuevoMultiplePlus.capas) {
+        nuevoMultiplePlus = {
+          ...nuevoMultiplePlus,
+          capas: nuevoMultiplePlus.capas.map((capa: any) => ({
+            ...capa,
+            tableros: (capa.tableros || []).map((t: any) => {
+              if (typeof t.offsetYCm === "number" && t.offsetYCm !== 0) {
+                return { ...t, offsetYCm: 0 };
+              }
+              return t;
+            }),
+          })),
+        };
+      }
+
+      // Sincronizar también piezasEspera en configuracionCinematica si existe
+      let nuevaConfigCinematica = p.configuracionCinematica;
+      if (nuevo && nuevaConfigCinematica?.piezasEspera) {
+        nuevaConfigCinematica = {
+          ...nuevaConfigCinematica,
+          piezasEspera: nuevaConfigCinematica.piezasEspera.map((pz: any) => {
+            if (typeof pz.offsetYCm === "number" && pz.offsetYCm !== 0) {
+              return { ...pz, offsetYCm: 0, apoyadaEnPiso: false };
+            }
+            return pz;
+          }),
+        };
+      }
+
+      return {
+        ...p,
+        multiplePlus: nuevoMultiplePlus,
+        configuracionCinematica: nuevaConfigCinematica,
+      };
+    });
+
+    set({ pasosManual: actualizados, versionAnimacionManual: (state.versionAnimacionManual || 0) + 1 });
+    guardarPasosEnCacheLocal(actualizados, state.manualActivoGuardado);
+  },
+
   // 20. Toggle Animación Poner de Pie al Terminar
   togglePonerDePieAlFinalPlus: (pasoId: string) => {
     const state = get();
@@ -818,26 +923,30 @@ export const createManualMultiplePlusSlice = (set: any, get: any): any => ({
 
       let tInicio = p.multiplePlus.tiempoInicioDePie;
       let duracion = p.multiplePlus.duracionDePie ?? 4.0;
-      let durPaso = p.duracionTotal || 10;
+      let durPaso = (p.duracionTotal && p.duracionTotal < 60) ? p.duracionTotal : 10;
 
       if (nuevoEstado) {
         if (tInicio === undefined || tInicio === null) {
           let maxFin = 0;
           (p.multiplePlus.capas || []).forEach((c: any) => {
             (c.tableros || []).forEach((t: any) => {
-              const fin = (t.tiempoInicioMovimiento || 0) + 2.5;
-              if (fin > maxFin) maxFin = fin;
+              const tMov = t.tiempoInicioMovimiento || 0;
+              if (tMov < 60) {
+                const fin = tMov + 2.5;
+                if (fin > maxFin) maxFin = fin;
+              }
             });
             (c.herrajes || []).forEach((h: any) => {
-              const fin = (h.tiempoAparicion || 0) + 1.5;
-              if (fin > maxFin) maxFin = fin;
+              const tAp = h.tiempoAparicion || 0;
+              if (tAp < 60) {
+                const fin = tAp + 1.5;
+                if (fin > maxFin) maxFin = fin;
+              }
             });
           });
-          tInicio = maxFin > 0 ? Math.ceil(maxFin) : Math.max(0, durPaso - 4.0);
+          tInicio = maxFin > 0 ? Math.ceil(maxFin) : 0;
         }
-        if (tInicio + duracion > durPaso) {
-          durPaso = Math.ceil(tInicio + duracion);
-        }
+        durPaso = Math.max(8, Math.ceil(tInicio + duracion));
       }
 
       return {
@@ -863,15 +972,12 @@ export const createManualMultiplePlusSlice = (set: any, get: any): any => ({
       if (p.id !== pasoId || !p.multiplePlus) return p;
       const tInicio = params.tiempoInicio !== undefined 
         ? Math.max(0, params.tiempoInicio) 
-        : (p.multiplePlus.tiempoInicioDePie ?? Math.max(0, p.duracionTotal - 4.0));
+        : (p.multiplePlus.tiempoInicioDePie ?? 0);
       const duracion = params.duracion !== undefined 
         ? Math.max(0.5, params.duracion) 
         : (p.multiplePlus.duracionDePie ?? 4.0);
 
-      let durPaso = p.duracionTotal || 10;
-      if (tInicio + duracion > durPaso) {
-        durPaso = Math.ceil(tInicio + duracion);
-      }
+      const durPaso = Math.max(8, Math.ceil(tInicio + duracion));
 
       return {
         ...p,
@@ -880,6 +986,72 @@ export const createManualMultiplePlusSlice = (set: any, get: any): any => ({
           ...p.multiplePlus,
           tiempoInicioDePie: tInicio,
           duracionDePie: duracion,
+        },
+      };
+    });
+
+    set({ pasosManual: actualizados, versionAnimacionManual: (state.versionAnimacionManual || 0) + 1 });
+    guardarPasosEnCacheLocal(actualizados, state.manualActivoGuardado);
+  },
+
+  // 20c. Toggle Volteo / Giro Intermedio 180° (Sin retorno)
+  toggleVolteoIntermedioPlus: (pasoId: string) => {
+    const state = get();
+    const actualizados = state.pasosManual.map((p: any) => {
+      if (p.id !== pasoId || !p.multiplePlus) return p;
+      const actual = p.multiplePlus.volteoIntermedio;
+      const estadoActual = Boolean(actual?.activo);
+      const nuevoEstado = !estadoActual;
+
+      const nuevoVolteo = {
+        activo: nuevoEstado,
+        eje: actual?.eje || "Y",
+        anguloGrados: actual?.anguloGrados ?? 180,
+        tiempoInicio: actual?.tiempoInicio ?? Math.max(10, Math.round((p.duracionTotal || 50) * 0.45)),
+        duracion: actual?.duracion ?? 3.0,
+        alturaEjeZCm: actual?.alturaEjeZCm ?? p.multiplePlus.offsetEjeRotacionCm ?? 30,
+      };
+
+      return {
+        ...p,
+        multiplePlus: {
+          ...p.multiplePlus,
+          volteoIntermedio: nuevoVolteo,
+        },
+      };
+    });
+
+    set({ pasosManual: actualizados, versionAnimacionManual: (state.versionAnimacionManual || 0) + 1 });
+    guardarPasosEnCacheLocal(actualizados, state.manualActivoGuardado);
+  },
+
+  // 20d. Configurar parámetros de Volteo / Giro Intermedio 180°
+  setParametrosVolteoIntermedioPlus: (pasoId: string, params: any) => {
+    const state = get();
+    const actualizados = state.pasosManual.map((p: any) => {
+      if (p.id !== pasoId || !p.multiplePlus) return p;
+      const actual = p.multiplePlus.volteoIntermedio || {
+        activo: true,
+        eje: "Y",
+        anguloGrados: 180,
+        tiempoInicio: 48,
+        duracion: 3.0,
+        alturaEjeZCm: p.multiplePlus.offsetEjeRotacionCm ?? 30,
+      };
+
+      const actualizado = {
+        ...actual,
+        ...params,
+        tiempoInicio: params.tiempoInicio !== undefined ? Math.max(0, params.tiempoInicio) : actual.tiempoInicio,
+        duracion: params.duracion !== undefined ? Math.max(0.5, params.duracion) : actual.duracion,
+        alturaEjeZCm: params.alturaEjeZCm !== undefined ? params.alturaEjeZCm : (actual.alturaEjeZCm ?? p.multiplePlus.offsetEjeRotacionCm ?? 30),
+      };
+
+      return {
+        ...p,
+        multiplePlus: {
+          ...p.multiplePlus,
+          volteoIntermedio: actualizado,
         },
       };
     });

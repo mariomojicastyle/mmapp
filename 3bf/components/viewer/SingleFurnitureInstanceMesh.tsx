@@ -130,43 +130,47 @@ export function SingleFurnitureInstanceMesh({
       };
     }
 
-    const rotX = orientacionBanco.rotacion?.[0] || 0;
-    const rotY = orientacionBanco.rotacion?.[1] || 0;
-    const rotZ = orientacionBanco.rotacion?.[2] || 0;
+    const rotX = orientacionBanco.rotacion?.[0] || 0; // Giro en X (Taller / Rhino)
+    const rotY = orientacionBanco.rotacion?.[1] || 0; // Giro en Y (Taller / Rhino: Longitudinal -> Three.js Z)
+    const rotZ = orientacionBanco.rotacion?.[2] || 0; // Giro en Z (Taller / Rhino: Vertical -> Three.js Y)
     const apoyoEnPiso = orientacionBanco.apoyoEnPiso ?? true;
+    const alturaZCm = pasoActivoManual?.multiplePlus?.alturaZCm ?? pasoActivoManual?.orientacionBanco?.alturaZCm ?? 0;
+    const alturaZM = alturaZCm / 100;
 
-    if (rotX === 0 && rotY === 0 && rotZ === 0) {
+    if (rotX === 0 && rotY === 0 && rotZ === 0 && !apoyoEnPiso && alturaZM === 0) {
       return {
         rotacionEfectiva: [0, 0, 0] as [number, number, number],
         posicionEfectiva: basePos,
       };
     }
 
-    const radX = THREE.MathUtils.degToRad(rotX);
-    const radY = THREE.MathUtils.degToRad(rotY);
-    const radZ = THREE.MathUtils.degToRad(rotZ);
-    const euler = new THREE.Euler(radX, radY, radZ, "XYZ");
+    // 🧭 TRADUCTOR MENTAL CANÓNICO: Ejes de Taller (Rhino Z-Up) -> Three.js (Y-Up)
+    // - Giro en X (Rhino) -> Eje transversal X en Three.js
+    // - Giro en Y (Rhino longitudinal) -> Eje longitudinal Z en Three.js
+    // - Giro en Z (Rhino vertical) -> Eje vertical Y en Three.js
+    const radThreeX = THREE.MathUtils.degToRad(rotX);
+    const radThreeY = THREE.MathUtils.degToRad(rotZ);
+    const radThreeZ = -THREE.MathUtils.degToRad(rotY);
+    const euler = new THREE.Euler(radThreeX, radThreeY, radThreeZ, "XYZ");
     const rotMat = new THREE.Matrix4().makeRotationFromEuler(euler);
 
-    if (!apoyoEnPiso || annotatedMeshes.length === 0) {
+    if (annotatedMeshes.length === 0) {
       return {
-        rotacionEfectiva: [radX, radY, radZ] as [number, number, number],
-        posicionEfectiva: basePos,
+        rotacionEfectiva: [radThreeX, radThreeY, radThreeZ] as [number, number, number],
+        posicionEfectiva: [basePos[0], basePos[1] + alturaZM, basePos[2]] as [number, number, number],
       };
     }
 
-    // 🎯 CÁLCULO PRECISO DEL APOYO EN SUELO (Y = 0) Y CENTRADO EN BANCO
-    // Extraer piezas asignadas tanto del motor clásico como de Múltiple Plus (capas)
+    // 🎯 NORMA CANÓNICA DE EJES PASANDO POR EL CENTRO DE GRAVEDAD (CDG):
+    // 1. Extraer todas las piezas y herrajes asignados del paso activo (capas Múltiple Plus o clásico)
     const asignadasClasicas = [
       ...(pasoActivoManual?.piezasAsignadas || []),
       ...(pasoActivoManual?.herrajesAsignados || []),
     ];
     const asignadasPlus: string[] = [];
-    let masterPlus = pasoActivoManual?.piezaMaster || "";
 
     if (pasoActivoManual?.multiplePlus?.capas) {
       pasoActivoManual.multiplePlus.capas.forEach((c: any) => {
-        if (c.piezaMaster && !masterPlus) masterPlus = c.piezaMaster;
         (c.tableros || []).forEach((t: any) => asignadasPlus.push(t.id));
         (c.herrajes || []).forEach((h: any) => asignadasPlus.push(h.id));
         (c.congelados || []).forEach((h: any) => asignadasPlus.push(h.id));
@@ -175,8 +179,8 @@ export function SingleFurnitureInstanceMesh({
 
     const todasAsignadas = asignadasPlus.length > 0 ? asignadasPlus : asignadasClasicas;
 
-    // Si Invert Hide está activo, tomamos prioritariamente las piezas de este paso
-    const piezasTarget = (pasoActivoManual?.ocultarNoAsignadas && todasAsignadas.length > 0)
+    // 2. Filtrar las mallas que pertenecen al ensamble / bloque funcional del paso activo
+    const piezasTarget = (todasAsignadas.length > 0)
       ? annotatedMeshes.filter((m: any) => {
           const ik = (m.instanciaKey || "").toLowerCase();
           const cn = (m.name || "").replace(/^RH_OUT:/i, "").trim().toLowerCase();
@@ -193,17 +197,15 @@ export function SingleFurnitureInstanceMesh({
         })
       : annotatedMeshes;
 
-    // Si el paso o alguna capa tiene una Pieza Master asignada, medir la cota de la Master para que sea su base la que apoye en el piso Y = 0
-    const masterTarget = masterPlus ? masterPlus.toLowerCase().trim() : "";
-    const mallasMaster = masterTarget
-      ? piezasTarget.filter((m: any) => {
-          const ik = (m.instanciaKey || "").toLowerCase();
-          const cn = (m.name || "").replace(/^RH_OUT:/i, "").trim().toLowerCase();
-          return perteneceAMismaFamiliaPieza(ik, masterTarget) || perteneceAMismaFamiliaPieza(cn, masterTarget);
-        })
-      : [];
+    // 3. Para definir el Centro de Gravedad y la caja envolvente del ensamble, priorizar los tableros estructurales
+    const mallasCandidatas = piezasTarget.length > 0 ? piezasTarget : annotatedMeshes;
+    const mallasTableros = mallasCandidatas.filter((m: any) => {
+      const n = (m.name || "").toLowerCase();
+      const ik = (m.instanciaKey || "").toLowerCase();
+      return !isHardwareMeshName(n) && !isHardwareMeshName(ik);
+    });
 
-    const meshesParaBox = mallasMaster.length > 0 ? mallasMaster : (piezasTarget.length > 0 ? piezasTarget : annotatedMeshes);
+    const meshesParaBox = mallasTableros.length > 0 ? mallasTableros : mallasCandidatas;
 
     const localBox = new THREE.Box3();
     for (const m of meshesParaBox) {
@@ -235,13 +237,21 @@ export function SingleFurnitureInstanceMesh({
 
     if (localBox.isEmpty()) {
       return {
-        rotacionEfectiva: [radX, radY, radZ] as [number, number, number],
-        posicionEfectiva: basePos,
+        rotacionEfectiva: [radThreeX, radThreeY, radThreeZ] as [number, number, number],
+        posicionEfectiva: [basePos[0], basePos[1] + alturaZM, basePos[2]] as [number, number, number],
       };
     }
 
+    // 🎯 CENTRO DE GRAVEDAD (CDG) EXACTO DEL BLOQUE O CONJUNTO
     const unrotatedCenter = new THREE.Vector3();
     localBox.getCenter(unrotatedCenter);
+
+    // 🌟 AJUSTE DEL EJE DE ROTACIÓN: Subir el eje de rotación unos 30 cm (configurable desde la UI)
+    const offsetEjeCm = pasoActivoManual?.multiplePlus?.offsetEjeRotacionCm ?? 30;
+    const offsetEjeM = (offsetEjeCm !== undefined ? offsetEjeCm : 30) / 100;
+
+    const ejePivote = unrotatedCenter.clone();
+    ejePivote.y += offsetEjeM;
 
     const corners: THREE.Vector3[] = [
       new THREE.Vector3(localBox.min.x, localBox.min.y, localBox.min.z),
@@ -262,18 +272,23 @@ export function SingleFurnitureInstanceMesh({
       }
     }
 
-    const rotatedCenter = unrotatedCenter.clone().applyMatrix4(rotMat);
+    const rotatedPivot = ejePivote.clone().applyMatrix4(rotMat);
 
-    const offsetY = -minYRotado;
-    const offsetX = unrotatedCenter.x - rotatedCenter.x;
-    const offsetZ = unrotatedCenter.z - rotatedCenter.z;
+    // ⚖️ APLICACIÓN DE LA NORMA: Los ejes de rotación X e Y pasan por el ejePivote elevado (+30 cm)
+    // offsetX y offsetZ cancelan el desplazamiento horizontal para que el eje permanezca invariante
+    const offsetX = ejePivote.x - rotatedPivot.x;
+    const offsetZ = ejePivote.z - rotatedPivot.z;
+
+    // Si apoyoEnPiso está activo, compensamos verticalmente para asentar el punto más bajo en Y = 0 (más elevación alturaZM)
+    // Si no está activo, la rotación en altura es puramente sobre el eje elevado (más elevación alturaZM)
+    const offsetY = (apoyoEnPiso ? -minYRotado : (ejePivote.y - rotatedPivot.y)) + alturaZM;
 
     const finalX = basePos[0] + offsetX;
     const finalY = basePos[1] + offsetY;
     const finalZ = basePos[2] + offsetZ;
 
     return {
-      rotacionEfectiva: [radX, radY, radZ] as [number, number, number],
+      rotacionEfectiva: [radThreeX, radThreeY, radThreeZ] as [number, number, number],
       posicionEfectiva: [finalX, finalY, finalZ] as [number, number, number],
     };
   }, [
@@ -305,10 +320,11 @@ export function SingleFurnitureInstanceMesh({
       meshRef.current.updateMatrix();
       meshRef.current.updateMatrixWorld(true);
     } else {
-      // En Manual 3D: aplicar posicionEfectiva y rotacionEfectiva del paso activo solo si NO estamos en animación
+      // En Manual 3D: aplicar posicionEfectiva y rotacionEfectiva del paso activo solo si NO estamos en animación de regreso/de pie
       const s = use3BFStore.getState();
-      const estaEnAnimacion = Boolean(s.isTimelinePlaying || (s.timelineCurrentTime && s.timelineCurrentTime > 0.05));
-      if (!estaEnAnimacion) {
+      const tienePonerDePie = Boolean(pasoActivoManual?.multiplePlus?.ponerDePieAlFinal);
+      const estaEnAnimacionDePie = tienePonerDePie && Boolean(s.isTimelinePlaying || (s.timelineCurrentTime && s.timelineCurrentTime > 0.05));
+      if (!estaEnAnimacionDePie) {
         meshRef.current.position.set(posicionEfectiva[0], posicionEfectiva[1], posicionEfectiva[2]);
         const euler = new THREE.Euler(rotacionEfectiva[0], rotacionEfectiva[1], rotacionEfectiva[2], "XYZ");
         meshRef.current.quaternion.setFromEuler(euler);
@@ -445,13 +461,6 @@ export function SingleFurnitureInstanceMesh({
 
             const omitirAristas = debeDelegarAristasAlMdp && !esMdpOMdf && !esBalance;
             const forzarAristasCaja = debeDelegarAristasAlMdp && esMdpOMdf;
-
-            // 💎 En modo cristal (semitransparente): Si la pieza cuenta con cuerpo sólido de MDP,
-            // suprimir las láminas 2D redundantes (Cara B y Cara A) para evitar que se solapen 3 capas transparentes
-            // en el mismo volumen físico, lo cual triplicaba la opacidad y oscurecía el fondo tornando la cuadrícula en un entramado negro.
-            if (modoVisual === "semitransparente" && debeDelegarAristasAlMdp && (esBalance || !esMdpOMdf)) {
-              return null;
-            }
 
             return (
               <BoardMesh

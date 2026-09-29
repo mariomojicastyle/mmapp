@@ -1,7 +1,7 @@
 "use client";
 
-import React, { useState } from "react";
-import { Mic, Square, Trash2, Globe2, FileText, ArrowRightLeft, FolderDown, Copy, Check } from "lucide-react";
+import React from "react";
+import { Mic, Square, Trash2, Globe2, FileText, ArrowRightLeft, FolderDown } from "lucide-react";
 
 export type ConversationMode = "es_to_pt" | "pt_to_es" | "es_to_en" | "en_to_es";
 export type SingleDictationLang = "es-CO" | "pt-BR" | "en-US";
@@ -20,7 +20,6 @@ export function AudioRecorderBar({
   onChangeSingleDictationLang,
   onClearAll,
   onOpenGuardarActa,
-  onCopyText,
   hasSegments,
   isSupported,
 }: {
@@ -37,19 +36,9 @@ export function AudioRecorderBar({
   onChangeSingleDictationLang: (lang: SingleDictationLang) => void;
   onClearAll: () => void;
   onOpenGuardarActa?: () => void;
-  onCopyText?: () => void;
   hasSegments?: boolean;
   isSupported: boolean;
 }) {
-  const [isCopied, setIsCopied] = useState(false);
-
-  const handleCopyText = () => {
-    if (onCopyText) {
-      onCopyText();
-      setIsCopied(true);
-      setTimeout(() => setIsCopied(false), 2000);
-    }
-  };
 
   const formatTime = (secs: number) => {
     const mins = Math.floor(secs / 60);
@@ -85,27 +74,6 @@ export function AudioRecorderBar({
                 </>
               )}
             </button>
-
-            {/* Botón "Copiar Texto" Ergonómico a la derecha de Comenzar Dictado */}
-            {onCopyText && (
-              <button
-                onClick={handleCopyText}
-                className="rounded-full px-4 py-2.5 font-semibold text-xs sm:text-sm flex items-center gap-2 transition-all shadow-sm active:scale-95 select-none bg-[#1368AA] hover:bg-[#1368AA]/90 text-white border-transparent"
-                title="Copiar texto de la pizarra al portapapeles"
-              >
-                {isCopied ? (
-                  <>
-                    <Check className="w-4 h-4 text-white" />
-                    <span>¡Copiado!</span>
-                  </>
-                ) : (
-                  <>
-                    <Copy className="w-4 h-4 text-white" />
-                    <span>Copiar Texto</span>
-                  </>
-                )}
-              </button>
-            )}
           </div>
 
           {/* Indicador de Estado y Tiempo */}

@@ -389,11 +389,8 @@ export function BoardMesh({
     return null;
   }
 
-  // 💎 En modo cristal para inactivos: Suprimir láminas 2D redundantes (Cara A y Cara B)
-  // ÚNICAMENTE si la pieza delega sus aristas al cuerpo de MDP (omitirAristas) para no duplicar capas vítreas
-  if (visibilidad.esInactivoCristal && matProps.isWoodBoard && (matProps.isBalance || omitirAristas)) {
-    return null;
-  }
+  // 🛡️ REGLA CANÓNICA: Las cubiertas exteriores (Cara A y B) y el núcleo de MDP se preservan siempre
+  // montados en la escena Three.js para garantizar visualización transparente coherente y exportación fiel al GLB.
 
   // 🛡️ Solo omitir si la geometría carece de mallas poligonales reales y además tiene dimensiones nulas
   if (!customGeometry && (!size || size[0] <= 0.0001 || size[1] <= 0.0001 || size[2] <= 0.0001)) {

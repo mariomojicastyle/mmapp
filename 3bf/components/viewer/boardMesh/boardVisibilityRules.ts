@@ -142,21 +142,21 @@ export function resolverVisibilidadBoard(input: BoardVisibilityInput): {
     }
   }
 
-  if (estaOcultaPorGrupoCinematico) {
-    return {
-      isMeshVisible: false,
-      estaOcultaPorReglasPaso: false,
-      estaOcultaPorGrupoCinematico: true,
-      perteneceAlPasoActivo: false,
-    };
-  }
-
-  if (pasoActivoManual.tipo === 'showcase') {
+  // En pasos de Showcase (P00) o Inserción de Cajones, el estado de grupo cinemático controla la visibilidad directamente
+  if (pasoActivoManual.tipo === 'showcase' || pasoActivoManual.tipo === 'insercion_cajones' || Boolean(pasoActivoManual.insercionCajones)) {
+    if (estaOcultaPorGrupoCinematico) {
+      return {
+        isMeshVisible: false,
+        estaOcultaPorReglasPaso: false,
+        estaOcultaPorGrupoCinematico: true,
+        perteneceAlPasoActivo: false,
+      };
+    }
     return {
       isMeshVisible: true,
       estaOcultaPorReglasPaso: false,
       estaOcultaPorGrupoCinematico: false,
-      perteneceAlPasoActivo: false,
+      perteneceAlPasoActivo: true,
     };
   }
 
@@ -178,42 +178,63 @@ export function resolverVisibilidadBoard(input: BoardVisibilityInput): {
   const bloquesVisibles = pasoActivoManual.bloquesHeredadosVisibles || {};
 
   // 1. Heredar automáticamente todo lo ensamblado en pasos previos cronológicamente
+  // 🛡️ REGLA DE BANCO AISLADO: Si el paso tiene "ocultarNoAsignadas: true" (Mesa Limpia) o declara bloques específicos, NO forzar la carcasa previa
   const currentIndex = pasosManual.findIndex((p) => p.id === pasoActivoManual.id);
   const pasosPrevios = currentIndex > 0 ? pasosManual.slice(0, currentIndex) : [];
+  const heredarCronologicoAuto = !pasoActivoManual.ocultarNoAsignadas && (bloquesHeredadosIds.length === 0);
 
-  for (const pasoPrevio of pasosPrevios) {
-    if (pasoPrevio.multiplePlus?.capas && pasoPrevio.multiplePlus.capas.length > 0) {
-      for (const cp of pasoPrevio.multiplePlus.capas) {
-        if (cp.tableros) piezasHeredadas.push(...cp.tableros.map((t) => t.id));
-        if (cp.herrajes) herrajesHeredados.push(...cp.herrajes.map((h) => h.id));
-        if (cp.congelados) herrajesHeredados.push(...cp.congelados.map((h) => h.id));
-      }
-    } else if (pasoPrevio.tipo === "ensamble") {
-      if (pasoPrevio.piezasAsignadas) piezasHeredadas.push(...pasoPrevio.piezasAsignadas);
-      if (pasoPrevio.herrajesAsignados) {
-        for (const h of pasoPrevio.herrajesAsignados) {
-          herrajesHeredados.push(typeof h === "string" ? h : (h as any).id);
+  if (heredarCronologicoAuto) {
+    for (const pasoPrevio of pasosPrevios) {
+      if (pasoPrevio.multiplePlus?.capas && pasoPrevio.multiplePlus.capas.length > 0) {
+        for (const cp of pasoPrevio.multiplePlus.capas) {
+          if (cp.tableros) piezasHeredadas.push(...cp.tableros.map((t) => t.id));
+          if (cp.herrajes) herrajesHeredados.push(...cp.herrajes.map((h) => h.id));
+          if (cp.congelados) herrajesHeredados.push(...cp.congelados.map((h) => h.id));
+        }
+      } else if (pasoPrevio.tipo === "ensamble") {
+        if (pasoPrevio.piezasAsignadas) piezasHeredadas.push(...pasoPrevio.piezasAsignadas);
+        if (pasoPrevio.herrajesAsignados) {
+          for (const h of pasoPrevio.herrajesAsignados) {
+            herrajesHeredados.push(typeof h === "string" ? h : (h as any).id);
+          }
         }
       }
     }
   }
 
-  // 2. Heredar bloques declarados explícitamente
+  // 2. Heredar bloques declarados explícitamente (Pasos de ensamble o Bloques Funcionales Granulares)
   for (const bId of bloquesHeredadosIds) {
     if (bloquesVisibles[bId] !== false) {
-      const pasoHeredado = pasosManual.find((p) => p.id === bId);
-      if (pasoHeredado) {
-        if (pasoHeredado.multiplePlus?.capas && pasoHeredado.multiplePlus.capas.length > 0) {
-          for (const cp of pasoHeredado.multiplePlus.capas) {
-            if (cp.tableros) piezasHeredadas.push(...cp.tableros.map((t) => t.id));
-            if (cp.herrajes) herrajesHeredados.push(...cp.herrajes.map((h) => h.id));
-            if (cp.congelados) herrajesHeredados.push(...cp.congelados.map((h) => h.id));
+      // ⚡ A) ¿Es un Bloque Funcional individual? (ej: "BF:cajon_7536", "cajon_7536" o nombre de grupo)
+      const cleanBfId = bId.replace(/^BF:/i, "").trim().toLowerCase();
+      const grupoBF = pasoConGrupos?.showcase?.gruposCinematicos?.find(
+        (g) => g.id.toLowerCase() === cleanBfId || g.nombre.toLowerCase() === cleanBfId
+      );
+
+      if (grupoBF) {
+        for (const pz of grupoBF.piezas) {
+          if (esHerrajeNombre(pz) || isHardwareMeshName(pz)) {
+            herrajesHeredados.push(pz);
+          } else {
+            piezasHeredadas.push(pz);
           }
-        } else if (pasoHeredado.tipo === "ensamble") {
-          if (pasoHeredado.piezasAsignadas) piezasHeredadas.push(...pasoHeredado.piezasAsignadas);
-          if (pasoHeredado.herrajesAsignados) {
-            for (const h of pasoHeredado.herrajesAsignados) {
-              herrajesHeredados.push(typeof h === "string" ? h : (h as any).id);
+        }
+      } else {
+        // 🧱 B) Es un paso previo de armado de estructura/carcasa
+        const pasoHeredado = pasosManual.find((p) => p.id === bId);
+        if (pasoHeredado) {
+          if (pasoHeredado.multiplePlus?.capas && pasoHeredado.multiplePlus.capas.length > 0) {
+            for (const cp of pasoHeredado.multiplePlus.capas) {
+              if (cp.tableros) piezasHeredadas.push(...cp.tableros.map((t) => t.id));
+              if (cp.herrajes) herrajesHeredados.push(...cp.herrajes.map((h) => h.id));
+              if (cp.congelados) herrajesHeredados.push(...cp.congelados.map((h) => h.id));
+            }
+          } else if (pasoHeredado.tipo === "ensamble") {
+            if (pasoHeredado.piezasAsignadas) piezasHeredadas.push(...pasoHeredado.piezasAsignadas);
+            if (pasoHeredado.herrajesAsignados) {
+              for (const h of pasoHeredado.herrajesAsignados) {
+                herrajesHeredados.push(typeof h === "string" ? h : (h as any).id);
+              }
             }
           }
         }

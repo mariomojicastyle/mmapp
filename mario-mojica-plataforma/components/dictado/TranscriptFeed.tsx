@@ -384,6 +384,16 @@ export function TranscriptFeed({
             <div className="h-4 w-px bg-slate-200 dark:bg-slate-700 hidden sm:block" />
 
             <div className="flex items-center gap-2">
+              {onClear && (
+                <button
+                  onClick={onClear}
+                  disabled={segments.length === 0 && !interimText}
+                  className="rounded-full px-3 py-1.5 text-xs font-semibold flex items-center gap-1.5 transition-colors shadow-sm disabled:opacity-40 disabled:cursor-not-allowed bg-slate-100 hover:bg-rose-50 hover:text-rose-600 dark:bg-slate-800 dark:hover:bg-rose-950/40 dark:hover:text-rose-400 text-slate-600 dark:text-slate-300"
+                  title="Limpiar pizarra y borrar todo"
+                >
+                  Limpiar Pizarra
+                </button>
+              )}
               {onDeleteLastSegment && (
                 <button
                   onClick={onDeleteLastSegment}
@@ -395,16 +405,24 @@ export function TranscriptFeed({
                   <span>Deshacer Frase</span>
                 </button>
               )}
-              {onClear && (
-                <button
-                  onClick={onClear}
-                  disabled={segments.length === 0 && !interimText}
-                  className="rounded-full px-3 py-1.5 text-xs font-semibold flex items-center gap-1.5 transition-colors shadow-sm disabled:opacity-40 disabled:cursor-not-allowed bg-slate-100 hover:bg-rose-50 hover:text-rose-600 dark:bg-slate-800 dark:hover:bg-rose-950/40 dark:hover:text-rose-400 text-slate-600 dark:text-slate-300"
-                  title="Limpiar pizarra y borrar todo"
-                >
-                  Limpiar Pizarra
-                </button>
-              )}
+              <button
+                onClick={handleCopyOriginal}
+                disabled={segments.length === 0}
+                className="rounded-full px-3 py-1.5 text-xs font-semibold flex items-center gap-1.5 transition-all shadow-sm active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed select-none bg-[#1368AA] hover:bg-[#1368AA]/90 text-white"
+                title="Copiar texto de la pizarra al portapapeles"
+              >
+                {copiedOriginal ? (
+                  <>
+                    <Check className="w-3.5 h-3.5 text-white" />
+                    <span>¡Copiado!</span>
+                  </>
+                ) : (
+                  <>
+                    <Copy className="w-3.5 h-3.5 text-white" />
+                    <span>Copiar Texto</span>
+                  </>
+                )}
+              </button>
             </div>
           </div>
         </div>

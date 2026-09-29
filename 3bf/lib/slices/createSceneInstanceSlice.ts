@@ -386,6 +386,10 @@ export const createSceneInstanceSlice = (set: any, get: any): any => ({
       custom_filename: inst.archivo,
     });
 
+    if (forceReload) {
+      console.log(`[3BF Engine] 🔄 FORZANDO RECARGA DESDE GHX EN DISCO (Bypass total de caché) para '${id}'`);
+    }
+
     try {
       const computeRes = await fetch("/api/compute", {
         method: "POST",
@@ -395,8 +399,8 @@ export const createSceneInstanceSlice = (set: any, get: any): any => ({
           ...inst.parametros,
           model_id: inst.definitionId,
           custom_filename: inst.archivo,
-          ghx_content: inst.ghxContent,
-          force_reload: forceReload,
+          ghx_content: forceReload ? undefined : inst.ghxContent,
+          force_reload: Boolean(forceReload),
           timestamp: Date.now(),
         }),
       });
@@ -482,12 +486,17 @@ export const createSceneInstanceSlice = (set: any, get: any): any => ({
     const inst = state.instancias[id];
     if (!inst) return false;
 
-    // 1. Activar estado de carga en la instancia
+    // 1. Activar estado de carga en la instancia y limpiar ghxContent cacheado si es forzado
     set((s: any) => ({
       instancias: {
         ...s.instancias,
-        [id]: { ...s.instancias[id], cargando: true },
+        [id]: {
+          ...s.instancias[id],
+          cargando: true,
+          ghxContent: force ? undefined : s.instancias[id]?.ghxContent,
+        },
       },
+      cargando: true,
     }));
 
     try {
@@ -544,6 +553,7 @@ export const createSceneInstanceSlice = (set: any, get: any): any => ({
           ...s.instancias,
           [id]: {
             ...s.instancias[id],
+            ghxContent: force ? undefined : s.instancias[id]?.ghxContent,
             parametros: updatedParams,
             resultado: {
               ...(s.instancias[id].resultado || {}),

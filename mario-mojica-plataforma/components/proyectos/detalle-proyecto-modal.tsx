@@ -2,7 +2,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unused-vars, react-hooks/exhaustive-deps */
 
 import React, { useState, useEffect, useRef } from "react"
-import { X, Download, Paperclip, Image, FileText, Music, Cpu, Layers, Plus, Trash2, Loader2, Eye, ExternalLink, ChevronDown, ChevronUp, UploadCloud, CheckCircle2, AlertCircle, AlertTriangle, FileSpreadsheet, Box, Boxes, Coins, Hammer, Wrench, Sparkles, Volume2, Play, Square, Mic, Library, Camera, HelpCircle, BookOpen, ScanLine } from "lucide-react"
+import { X, Download, Paperclip, Image, FileText, Music, Cpu, Layers, Plus, Trash2, Loader2, Eye, ExternalLink, ChevronDown, ChevronUp, UploadCloud, CheckCircle2, AlertCircle, AlertTriangle, FileSpreadsheet, Box, Boxes, Coins, Hammer, Wrench, Sparkles, Volume2, Play, Square, Mic, Library, Camera, HelpCircle, BookOpen, ScanLine, Gauge, FastForward } from "lucide-react"
 import { motion, AnimatePresence } from "framer-motion"
 import { cn } from "@/lib/utils"
 import { usePermissions } from "@/hooks/use-permissions"
@@ -354,6 +354,8 @@ export function DetalleProyectoModal({ isOpen, onClose, proyecto, onUpdate }: De
     en: "en-US-GuyNeural",
     pt: "pt-BR-AntonioNeural"
   })
+  const [ttsVelocidad, setTtsVelocidad] = useState<number>(0.9)
+  const [ttsCalidad, setTtsCalidad] = useState<"96k" | "48k" | "opus">("96k")
   const [ttsSaludo, setTtsSaludo] = useState({ texto_es: "", texto_en: "", texto_pt: "" })
   const [ttsAyuda, setTtsAyuda] = useState({ texto_es: "", texto_en: "", texto_pt: "" })
   const [ttsCantidadPasos, setTtsCantidadPasos] = useState(8)
@@ -593,7 +595,12 @@ export function DetalleProyectoModal({ isOpen, onClose, proyecto, onUpdate }: De
       const res = await fetch("/api/tts", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ text: sampleText, voice })
+        body: JSON.stringify({ 
+          text: sampleText, 
+          voice,
+          velocidad: ttsVelocidad,
+          calidad: ttsCalidad
+        })
       })
       if (!res.ok) throw new Error(await res.text())
       const blob = await res.blob()
@@ -630,13 +637,13 @@ export function DetalleProyectoModal({ isOpen, onClose, proyecto, onUpdate }: De
           const pEs = fetch("/api/tts", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ text, voice: ttsVoices.es_latam, codigoManual, storagePath: storagePathEs })
+            body: JSON.stringify({ text, voice: ttsVoices.es_latam, codigoManual, storagePath: storagePathEs, velocidad: ttsVelocidad, calidad: ttsCalidad })
           })
           
           const pEsEs = fetch("/api/tts", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ text, voice: ttsVoices.es_europe, codigoManual, storagePath: storagePathEsEs })
+            body: JSON.stringify({ text, voice: ttsVoices.es_europe, codigoManual, storagePath: storagePathEsEs, velocidad: ttsVelocidad, calidad: ttsCalidad })
           })
 
           const [resEs, resEsEs] = await Promise.all([pEs, pEsEs])
@@ -651,7 +658,7 @@ export function DetalleProyectoModal({ isOpen, onClose, proyecto, onUpdate }: De
           const res = await fetch("/api/tts", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ text, voice, codigoManual, storagePath })
+            body: JSON.stringify({ text, voice, codigoManual, storagePath, velocidad: ttsVelocidad, calidad: ttsCalidad })
           })
           if (!res.ok) { const err = await res.json(); throw new Error(err.error) }
           setSuccessMsg(`Audio ${audioKey} generado y subido a Storage ✓`)
@@ -660,7 +667,7 @@ export function DetalleProyectoModal({ isOpen, onClose, proyecto, onUpdate }: De
         const res = await fetch("/api/tts", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ text, voice })
+          body: JSON.stringify({ text, voice, velocidad: ttsVelocidad, calidad: ttsCalidad })
         })
         if (!res.ok) throw new Error(await res.text())
         const blob = await res.blob()
@@ -852,7 +859,9 @@ export function DetalleProyectoModal({ isOpen, onClose, proyecto, onUpdate }: De
             saludo: newSaludo,
             ayuda: newAyuda,
             cantidadPasos: ttsCantidadPasos,
-            pasos: newPasos
+            pasos: newPasos,
+            velocidad: ttsVelocidad,
+            calidad: ttsCalidad
           }
         }, { onConflict: "proyecto_id" })
       if (configError) throw configError
@@ -902,7 +911,7 @@ export function DetalleProyectoModal({ isOpen, onClose, proyecto, onUpdate }: De
         const res = await fetch("/api/tts", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ text: t.text, voice, codigoManual, storagePath })
+          body: JSON.stringify({ text: t.text, voice, codigoManual, storagePath, velocidad: ttsVelocidad, calidad: ttsCalidad })
         })
         if (!res.ok) { const err = await res.json(); console.error(`Error generando ${storagePath}:`, err.error) }
         else { successCount++ }
@@ -1256,6 +1265,8 @@ export function DetalleProyectoModal({ isOpen, onClose, proyecto, onUpdate }: De
               if (tts.ayuda) setTtsAyuda(tts.ayuda)
               if (tts.cantidadPasos) setTtsCantidadPasos(tts.cantidadPasos)
               if (tts.pasos) setTtsPasos(tts.pasos)
+              if (typeof tts.velocidad === "number") setTtsVelocidad(tts.velocidad)
+              if (tts.calidad) setTtsCalidad(tts.calidad)
               // Cargar Glosario de Traducción
               if (data.glosario_traduccion) setGlosarioTraduccion(data.glosario_traduccion)
               else setGlosarioTraduccion([])
@@ -2957,7 +2968,9 @@ export function DetalleProyectoModal({ isOpen, onClose, proyecto, onUpdate }: De
             saludo: ttsSaludo,
             ayuda: ttsAyuda,
             cantidadPasos: ttsCantidadPasos,
-            pasos: ttsPasos
+            pasos: ttsPasos,
+            velocidad: ttsVelocidad,
+            calidad: ttsCalidad
           }
         }, { onConflict: "proyecto_id" })
 
@@ -4674,6 +4687,65 @@ export function DetalleProyectoModal({ isOpen, onClose, proyecto, onUpdate }: De
                                   )}
                                   {playingAudio === `preview_${ttsVoices.pt}` ? "Detener muestra" : "Escuchar muestra"}
                                 </button>
+                              </div>
+                            </div>
+
+                            {/* ─── VELOCIDAD Y CALIDAD / COMPRESIÓN DE AUDIO TTS ─── */}
+                            <div className="pt-3 border-t border-outline-variant/10 grid grid-cols-1 md:grid-cols-2 gap-4">
+                              {/* Velocidad de Locución */}
+                              <div className="flex flex-col gap-1.5">
+                                <div className="flex items-center justify-between">
+                                  <label className="font-semibold text-on-surface-variant flex items-center gap-1.5 text-xs">
+                                    <FastForward className="h-3.5 w-3.5 text-primary" /> Velocidad de Locución:
+                                  </label>
+                                  <span className="text-[10px] font-mono font-bold text-primary">
+                                    {ttsVelocidad === 0.9 ? "0.90x (Velocidad Normal)" : ttsVelocidad === 0.85 ? "0.85x (Un poco más lenta)" : ttsVelocidad === 0.8 ? "0.80x (Más lenta)" : ttsVelocidad === 1.0 ? "1.00x (Un poco rápido)" : "1.10x (Más rápido)"}
+                                  </span>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                  <select
+                                    value={ttsVelocidad}
+                                    onChange={(e) => setTtsVelocidad(parseFloat(e.target.value))}
+                                    className="flex-1 rounded-full border border-outline-variant bg-surface-container px-3.5 py-2 text-xs text-on-surface outline-none focus:border-primary transition cursor-pointer"
+                                  >
+                                    <option value="0.8">0.80x — Más lenta</option>
+                                    <option value="0.85">0.85x — Un poco más lenta</option>
+                                    <option value="0.9">0.90x — Velocidad normal (Por defecto)</option>
+                                    <option value="1.0">1.00x — Un poco rápido</option>
+                                    <option value="1.1">1.10x — Más rápido</option>
+                                  </select>
+                                  {ttsVelocidad !== 0.9 && (
+                                    <button
+                                      type="button"
+                                      onClick={() => setTtsVelocidad(0.9)}
+                                      title="Restablecer a Velocidad Normal (0.90x)"
+                                      className="px-3 py-1.5 rounded-full border border-outline-variant bg-surface-container hover:bg-surface-container-high text-[10px] font-bold text-primary transition cursor-pointer shrink-0"
+                                    >
+                                      0.9x Normal
+                                    </button>
+                                  )}
+                                </div>
+                              </div>
+
+                              {/* Calidad / Compresión de Audio */}
+                              <div className="flex flex-col gap-1.5">
+                                <div className="flex items-center justify-between">
+                                  <label className="font-semibold text-on-surface-variant flex items-center gap-1.5 text-xs">
+                                    <Gauge className="h-3.5 w-3.5 text-primary" /> Calidad / Compresión de Audio:
+                                  </label>
+                                  <span className="text-[10px] font-mono font-medium text-on-surface-variant/70">
+                                    {ttsCalidad === "96k" ? "96 kbps (Máx. Fidelidad)" : ttsCalidad === "48k" ? "48 kbps (-50% Peso)" : "Opus (Ultra-ligero)"}
+                                  </span>
+                                </div>
+                                <select
+                                  value={ttsCalidad}
+                                  onChange={(e) => setTtsCalidad(e.target.value as any)}
+                                  className="w-full rounded-full border border-outline-variant bg-surface-container px-3.5 py-2 text-xs text-on-surface outline-none focus:border-primary transition cursor-pointer"
+                                >
+                                  <option value="96k">💎 96 kbps — Alta Fidelidad (Cálido, Acústica Plena, 0 Lata)</option>
+                                  <option value="48k">⚡ 48 kbps — Balanceado / Comprimido (-50% tamaño, Carga Rápida)</option>
+                                  <option value="opus">📦 Opus WebM — Ultra-Comprimido (-70% tamaño, Ideal Móvil)</option>
+                                </select>
                               </div>
                             </div>
                           </div>

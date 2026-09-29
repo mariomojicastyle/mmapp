@@ -539,6 +539,7 @@ export interface CapaMultiplePlus {
   nombre: string; // ej. "Capa 1 de armado P04"
   visible?: boolean;
   colapsada?: boolean; // Minimizar / Colapsar tarjeta de capa
+  bloqueFuncionalId?: string; // ID del bloque funcional vinculado (ej. cajon_1)
   tableros: TableroCapaPlus[];
   herrajes: HerrajeCapaPlus[];
   congelados: HerrajeCapaPlus[];
@@ -569,6 +570,15 @@ export interface AcopleHeredadosConfig {
   distanciaAproximacionCm?: number; // Distancia en cm desde donde viaja (defecto 30)
 }
 
+export interface VolteoIntermedioPlusConfig {
+  activo: boolean;
+  eje: "X" | "Y" | "Z"; // Eje de giro (Y = Roll longitudinal, X = Transversal, Z = Horizontal)
+  anguloGrados?: number; // 180 por defecto
+  tiempoInicio: number; // Segundo exacto de inicio del giro (ej. 48s)
+  duracion: number;     // Duración en segundos del giro (defecto: 3.0s)
+  alturaEjeZCm?: number; // Altura / offset Z del eje de rotación en cm (defecto: 30)
+}
+
 export interface MultiplePlusConfigPaso {
   velocidadTablerosCmS: number; // Defecto: 15 cm/s
   velocidadHerrajesCmS: number; // Defecto: 8 cm/s
@@ -577,19 +587,33 @@ export interface MultiplePlusConfigPaso {
   orientacionBanco?: {
     rotacion: [number, number, number];
     apoyoEnPiso: boolean;
+    alturaZCm?: number;
   };
   ponerDePieAlFinal?: boolean; // Poner de pie el mueble al terminar el armado
   tiempoInicioDePie?: number; // Segundo exacto de inicio del giro de puesta de pie
   duracionDePie?: number;     // Duración en segundos del giro (defecto: 4.0s)
+  volteoIntermedio?: VolteoIntermedioPlusConfig; // 🔄 Giro animado de 180° a mitad del paso sin retorno
   modoVisualizacionInactivos?: "oculto" | "cristal" | "global"; // 💎 Modo visual para la capa virtual de piezas inactivas (Ocultos, Modo Cristal o Modo Global)
   modoVisualizacionHeredados?: "solido" | "cristal" | "oculto"; // 🧱 Modo visual para objetos heredados de pasos anteriores (Sólido, Modo Cristal u Oculto)
   acopleHeredados?: AcopleHeredadosConfig; // 🔗 Cinemática y ensamble de objetos heredados hacia el subensamble activo
+  offsetEjeRotacionCm?: number; // 🌟 Desplazamiento vertical en cm del eje de rotación respecto al Centro de Gravedad (defecto: 30 cm)
+  alturaZCm?: number; // 📏 Elevación vertical en Z (cm) respecto al suelo
+  antigravedad?: boolean; // 🪶 Neutralizar caída al suelo de piezas al posicionar (flotación neutra a su cota)
+}
+
+export interface InsercionCajonesConfig {
+  distanciaAproximacionCm?: number; // Defecto: 30 cm
+  distanciaAperturaMm?: number;     // Defecto: 350 mm (carrera extendida de corredera)
+  coreografia?: "cascada" | "simultaneo" | "secuencial"; // Defecto: "cascada"
+  ordenInsercion?: "ascendente" | "descendente"; // "descendente" = 1 a 6 (arriba a abajo), "ascendente" = 6 a 1 (abajo a arriba)
+  gruposCinematicos?: GrupoCinematicoShowcase[]; // Si no se especifican, se leen de P00
+  ejeGlobal?: "+Z" | "-Z" | "+X" | "-X" | "+Y" | "-Y";
 }
 
 export interface PasoManualStudio {
   id: string; // "P00", "P01", "P02"...
   numero: number;
-  tipo: "showcase" | "ensamble" | "bloque_estandar" | "ensamble_multiple" | "multiple_plus";
+  tipo: "showcase" | "ensamble" | "bloque_estandar" | "ensamble_multiple" | "multiple_plus" | "insercion_cajones";
   titulo: string;
   descripcion: string;
   duracionTotal: number; // segundos
@@ -606,12 +630,16 @@ export interface PasoManualStudio {
     gruposCinematicos: GrupoCinematicoShowcase[];
     sincronizarCarreraCajones?: boolean; // Unificar carrera de apertura idéntica en todos los cajones
   };
+
+  // Configuración Inserción de Cajones al interior del mueble
+  insercionCajones?: InsercionCajonesConfig;
   
   // Configuración Ensamble (P01+)
   piezaMaster?: string; // Nombre del nodo base que apoya en banco
   orientacionBanco?: {
     rotacion: [number, number, number]; // Radianes Euler
     apoyoEnPiso: boolean;
+    alturaZCm?: number;
   };
   piezasAsignadas: string[];
   herrajesAsignados: string[];
@@ -620,8 +648,9 @@ export interface PasoManualStudio {
   piezasOcultas?: boolean; // 💡 Apagar / Prender piezas de este paso en el 3D
   capasOcultas?: string[]; // 💡 Nombres de piezas o capas ocultadas individualmente con el bombillito
   ocultarNoAsignadas?: boolean; // 💡 Apagar piezas y herrajes que no pertenecen a este paso (Aislar Paso)
-  bloquesHeredadosIds?: string[]; // 🧩 IDs de pasos previos consolidados como sub-ensambles (ej: ["P01", "P03"])
-  bloquesHeredadosVisibles?: Record<string, boolean>; // 💡 Visibilidad individual de bloques heredados { [pasoId]: boolean }
+  bloquesHeredadosIds?: string[]; // 🧩 IDs de pasos previos consolidados como sub-ensambles (ej: ["P01", "P03", "BF:cajon_1"])
+  bloquesHeredadosVisibles?: Record<string, boolean>; // 💡 Visibilidad individual de bloques heredados { [bloqueId]: boolean }
+  bloquesHeredadosModoVisual?: Record<string, "solido" | "cristal">; // 💎 Modo visual por bloque heredado (Sólido o Cristal)
   secuencia: ElementoSecuenciaCinematica[];
 
   // 📦 Configuración Bloque Estándar Reutilizable (.3bb.json)
@@ -893,7 +922,7 @@ export interface State3BF {
 
   setPasosManual: (pasos: PasoManualStudio[]) => void;
   seleccionarPasoManualActivo: (pasoId: string) => void;
-  crearPasoManual: (tipo?: "showcase" | "ensamble" | "bloque_estandar" | "multiple_plus") => void;
+  crearPasoManual: (tipo?: "showcase" | "ensamble" | "bloque_estandar" | "multiple_plus" | "insercion_cajones") => void;
   eliminarPasoManual: (pasoId: string) => void;
   actualizarPasoManual: (pasoId: string, data: Partial<PasoManualStudio>) => void;
   reordenarSecuenciaPaso: (pasoId: string, nuevaSecuencia: ElementoSecuenciaCinematica[]) => void;
@@ -917,6 +946,8 @@ export interface State3BF {
   asociarBloqueHeredado: (pasoId: string, bloqueId: string) => void;
   desasociarBloqueHeredado: (pasoId: string, bloqueId: string) => void;
   conmutarVisibilidadBloqueHeredado: (pasoId: string, bloqueId: string) => void;
+  setModoVisualBloqueHeredado: (pasoId: string, bloqueId: string, modo: "solido" | "cristal") => void;
+  cargarBloqueFuncionalEnPaso: (pasoId: string, grupoId: string) => void;
   conmutarVisibilidadCapaPieza: (pasoId: string, nombrePieza: string, herrajesAsociados?: string[]) => void;
   setPiezaDestinoCapa: (pasoId: string, nombrePieza: string, piezaDestinoId?: string) => void;
   eliminarCapaPiezaManual: (pasoId: string, nombrePieza: string) => void;
@@ -955,10 +986,15 @@ export interface State3BF {
   toggleVisibilidadBloqueHeredadoPlus: (pasoId: string, capaId: string, bloquePasoId: string) => void;
   rotarCapaBancoPlus: (pasoId: string, capaId: string, eje: "X" | "Y" | "Z", anguloDeg: number) => void;
   resetRotacionCapaBancoPlus: (pasoId: string, capaId: string) => void;
-  girarBancoGlobalPlus: (pasoId: string, eje: "X" | "Y", deltaDeg: number) => void;
+  girarBancoGlobalPlus: (pasoId: string, eje: "X" | "Y" | "Z", deltaDeg: number) => void;
   toggleApoyoPisoGlobalPlus: (pasoId: string) => void;
+  toggleAntigravedadPlus: (pasoId: string) => void;
+  setOffsetEjeRotacionPlus: (pasoId: string, cm: number) => void;
+  setAlturaZPlus: (pasoId: string, cm: number) => void;
   togglePonerDePieAlFinalPlus: (pasoId: string) => void;
   setParametrosDePieAlFinalPlus: (pasoId: string, params: { tiempoInicio?: number; duracion?: number }) => void;
+  toggleVolteoIntermedioPlus: (pasoId: string) => void;
+  setParametrosVolteoIntermedioPlus: (pasoId: string, params: Partial<VolteoIntermedioPlusConfig>) => void;
   toggleColapsarCapaPlus: (pasoId: string, capaId: string) => void;
   setColapsarTodasCapasPlus: (pasoId: string, colapsadas: boolean) => void;
   setVelocidadTablerosPlus: (pasoId: string, velocidadCmS: number) => void;

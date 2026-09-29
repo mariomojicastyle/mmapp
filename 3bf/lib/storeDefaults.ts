@@ -1101,8 +1101,9 @@ export function sanitizarPasosManuales(pasos: PasoManualStudio[]): PasoManualStu
     p.id = consecutivoId;
 
     // 🛡️ Migración absoluta: Eliminar residuos de 'ensamble' heredado convirtiéndolo en 'multiple_plus'
+    const esTipoEspecial = p.tipo === "bloque_estandar" || p.tipo === "insercion_cajones";
     const tieneCapasMultiplePlus = Boolean(p.multiplePlus?.capas && p.multiplePlus.capas.length > 0);
-    if (p.tipo === "ensamble" || tieneCapasMultiplePlus || (!p.tipo && p.id !== "P00")) {
+    if (!esTipoEspecial && (p.tipo === "ensamble" || tieneCapasMultiplePlus || (!p.tipo && p.id !== "P00"))) {
       p.tipo = "multiple_plus";
       if (!p.multiplePlus) {
         p.multiplePlus = {
@@ -1116,6 +1117,8 @@ export function sanitizarPasosManuales(pasos: PasoManualStudio[]): PasoManualStu
 
     if (p.tipo === "multiple_plus" && (p.titulo.startsWith("Paso ") || /^P\d+:?/i.test(p.titulo) || p.titulo.includes("Ensamble"))) {
       p.titulo = `Paso ${String(p.numero).padStart(2, "0")}: Armado por Capas`;
+    } else if (p.tipo === "insercion_cajones" && (!p.titulo || p.titulo.startsWith("Paso "))) {
+      p.titulo = `Paso ${String(p.numero).padStart(2, "0")}: Incorporación de Gavetas`;
     }
 
     // 🧹 Limpieza automática de guiones genéricos por defecto para no obligar al usuario a borrarlos

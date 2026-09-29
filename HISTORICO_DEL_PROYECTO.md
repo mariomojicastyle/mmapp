@@ -2452,3 +2452,34 @@ Para mantener la máxima agilidad y minimizar el consumo de tokens sin perder ni
   * Compilación TypeScript verificada (`npx tsc --noEmit`) en `c:\Desarrollo\mmapp\3bf` con **0 errores**.
   * Exportación de GLB completada con éxito sin ninguna alerta de `PropertyBinding`.
   * Verificación en Babylon.js Sandbox: los herrajes y tapitas titilan en un resplandor dorado brillante y pulsante en su segundo exacto, no hay piezas flotando a $t=0$, y al final de la animación la Cómoda Ravenna se pone de pie erguida sobre sus patas a $0^\circ$.
+
+---
+
+### 🚀 Hito 231: Cinemática Completa de Gavetas (Giro 180° y Ensamble Final en Cascada al Mueble), Vectorización CAD de Móveis Henn y Paridad Acústica TTS con Control de Velocidad en Plataforma B2B (28 de Septiembre, 2026)
+- **Diagnóstico y Requerimientos Clave del Hito**:
+  1. *Armado y Giro Intermedio de 180° de Gaveta (`P04`)*: Necesidad en taller de voltear 180° el cajón sobre su eje longitudinal durante el ensamble para fijar los soportes inferiores sin retornar a la pose inicial, controlando milimétricamente la cota Z del eje de rotación.
+  2. *Inserción de Gavetas al Mueble en Cascada (`P05`)*: Integración de los cajones armados al cuerpo de la cómoda partiendo de correderas extendidas a $t=0$, cohesión física total de herrajes por bloque funcional sin elementos huérfanos, duración triplicada para seguimiento de cámara y animación del seguro (`Corrediça - Trava`).
+  3. *Vectorización de Logotipo Oficial de Móveis Henn*: Requerimiento de vectorizar con nitidez infinita el logotipo de Henn para su integración en manuales interactivos 3D a partir de la web oficial `henn.com.br` y planos técnicos.
+  4. *Discrepancia Temporal en Audios TTS*: Desfase de duraciones entre los audios sintetizados en `3dBimFab` y los de la plataforma `app.mariomojica.com`, causado por la ausencia del control de velocidad y calibración acústica a 96 kbps en la plataforma B2B.
+- **Implementación Técnica de la Solución**:
+  1. *Giro de 180° con Altura Z Paramétrica en Gavetas (`multiplePlusKinematics.ts`, `MultiplePlusSection.tsx`)*:
+     - Implementado soporte para rotación longitudinal de 180° de sub-ensambles de cajón, con campo numérico editable de altura del eje de giro Z en la interfaz de Múltiple Plus.
+     - Preservación de la pose volteada para permitir la instalación de soportes y piezas inferiores sin forzar retorno a la pose inicial.
+  2. *Motor de Inserción Cinemática de Cajones (`insercionCajonesKinematics.ts`, `InsercionCajonesConfigSection.tsx`)*:
+     - Coreografía en cascada suave y extendida (duración triplicada): en $t=0$ las correderas fijas e intermedias reposan extendidas con los cajones a 30 cm en el aire.
+     - Cohesión física estricta por bloques funcionales: todos los herrajes, cantoneras, correderas móviles y tableros de cada gaveta se desplazan solidarios como un solo cuerpo rígido.
+     - Replicación cinemática del movimiento del seguro de la corredera móvil (`Corrediça - Trava`) para ilustrar el encastre real de armado.
+  3. *Extracción y Normalización Vectorial del Logotipo Móveis Henn (`publicidad/`, `3bf/public/`)*:
+     - Extracción directa de las curvas de Bézier nativas oficiales desde los planos de ingeniería de Henn (`D737- Comoda Ravenna 6Pts_web.pdf`).
+     - Creación de 3 variantes vectoriales SVG puras (sin un solo píxel de desenfoque ni artefactos):
+       * `Logo_Henn.svg`: Placa / badge oficial en rojo Henn (`#A8112E`) con letras blancas y esquinas suaves.
+       * `Logo_Henn_Transparente.svg`: Letras blancas puras sobre fondo transparente para visores 3D y temas oscuros.
+       * `Logo_Henn_Rojo.svg`: Letras en rojo `#A8112E` sobre fondo transparente para fondos claros y papelería.
+     - Documentación centralizada en `publicidad/REPOSITORIO_IDENTIDAD_VISUAL.md`.
+  4. *Paridad Acústica y Control de Velocidad TTS en Plataforma B2B (`app/api/tts/route.ts`, `detalle-proyecto-modal.tsx`)*:
+     - **Backend TTS (`/api/tts`)**: Integrado soporte de velocidad (`velocidad` de 0.80x a 1.10x, default `0.90x`), calidad acústica dual (96 kbps HQ cálido y 48 kbps balanceado), prosodia idéntica a 3dBimFab (`pitch: "-2Hz"` y rate modulado), frames de silencio calibrados para `[pausa: N]` y pool de concurrencia para estabilidad DNS.
+     - **Frontend (`detalle-proyecto-modal.tsx`)**: Nuevos selectores en cápsulas `rounded-full` para **Velocidad de Locución** (con botón `0.9x Normal` para restablecer en 1 clic) y **Calidad / Compresión de Audio** dentro de la tarjeta de configuración de voces.
+     - **Persistencia en Supabase**: Guardado y carga reactiva en `tts_config` (`velocidad` y `calidad`).
+- **Validación de Calidad**:
+  * Compilación TypeScript verificada (`npx tsc --noEmit`) en `3bf` y en `mario-mojica-plataforma` con **0 errores**.
+  * Prueba cruzada de síntesis TTS: duración (`6.5 s`), tasa de bits (`96 kbps`) y tamaño binario (`77.472 bytes`) **100% idénticos entre ambos servidores locales** (puertos 3003 y 3005).

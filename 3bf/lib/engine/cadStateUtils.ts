@@ -371,7 +371,8 @@ export function obtenerFamiliaHerrajeCanonica(rawStr?: string | null): string {
     return "grampo";
   }
   if (sinNum.includes("prego") || sinNum.includes("clavo") || sinNum.includes("puntilla")) {
-    return "clavo";
+    const subL = clean.match(/(?:prego|clavo|puntilla)\s*([a-z])/i)?.[1]?.toLowerCase() || "";
+    return subL ? `clavo_${subL}` : "clavo";
   }
   if (sinNum.includes("pata") || sinNum.includes("pes") || sinNum.includes("pés") || sinNum.includes("sapata") || sinNum.includes("pie")) {
     return "pata";
@@ -507,7 +508,12 @@ export function formatearNombreIndividualHerraje(instKey: string): string {
   }
   // Prego (Clavo / Puntilla)
   if (n.includes("prego") || n.includes("clavo") || n.includes("puntilla")) {
-    return numStr ? `Prego (${numStr})` : "Prego";
+    const letraMatch = clean.match(/(?:prego|clavo|puntilla)\s*([a-zA-Z])/i);
+    const letra = letraMatch ? ` ${letraMatch[1].toUpperCase()}` : "";
+    if (n.includes("clavo")) {
+      return numStr ? `Clavo${letra} (${numStr})` : `Clavo${letra}`;
+    }
+    return numStr ? `Prego${letra} (${numStr})` : `Prego${letra}`;
   }
   // Sapata / Pé (Pata / Deslizador)
   if (n.includes("pata") || n.includes("sapata") || n.includes("pé") || n.includes("pes")) {

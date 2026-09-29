@@ -2,6 +2,7 @@
 
 import React from "react";
 import { use3BFStore, PasoManualStudio } from "@/lib/store";
+import type { GrupoCinematicoShowcase } from "@/lib/storeTypes";
 import {
   ChevronDown,
   Pipette,
@@ -13,6 +14,8 @@ import {
   Hammer,
   X,
   RotateCw,
+  Zap,
+  Box,
 } from "lucide-react";
 import { extraerPiezaMadre, esHerrajeNombre } from "@/lib/piezaMadreUtils";
 import { obtenerColorSubbloque } from "./SubbloquesManagerSection";
@@ -20,7 +23,6 @@ import {
   IconOcultarMostrar,
   IconOcultarMostrarInvertido,
 } from "./StepManagerIcons";
-
 
 interface AssemblyPiecesSectionProps {
   pasoActivo: PasoManualStudio;
@@ -35,7 +37,11 @@ export default function AssemblyPiecesSection({
 }: AssemblyPiecesSectionProps) {
   const [seccionPiezasColapsada, setSeccionPiezasColapsada] = React.useState(false);
   const [mostrarMenuHeredados, setMostrarMenuHeredados] = React.useState(false);
+  const [mostrarMenuImportarBF, setMostrarMenuImportarBF] = React.useState(false);
+  const [tabHeredadosActiva, setTabHeredadosActiva] = React.useState<"pasos" | "bf">("pasos");
+
   const menuHeredadosRef = React.useRef<HTMLDivElement>(null);
+  const menuImportarBFRef = React.useRef<HTMLDivElement>(null);
 
   const {
     pasosManual,
@@ -48,28 +54,42 @@ export default function AssemblyPiecesSection({
     asociarBloqueHeredado,
     desasociarBloqueHeredado,
     conmutarVisibilidadBloqueHeredado,
+    cargarBloqueFuncionalEnPaso,
+    setModoVisualBloqueHeredado,
     modoPickingManual,
     iniciarPickingManual,
     limpiarPickingManual,
     resultado,
   } = use3BFStore();
 
-  // Cerrar menú de bloques heredados al hacer clic fuera
+  // Cerrar menús al hacer clic fuera
   React.useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
       if (menuHeredadosRef.current && !menuHeredadosRef.current.contains(e.target as Node)) {
         setMostrarMenuHeredados(false);
       }
+      if (menuImportarBFRef.current && !menuImportarBFRef.current.contains(e.target as Node)) {
+        setMostrarMenuImportarBF(false);
+      }
     };
-    if (mostrarMenuHeredados) {
+    if (mostrarMenuHeredados || mostrarMenuImportarBF) {
       document.addEventListener("mousedown", handleClickOutside);
     }
     return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, [mostrarMenuHeredados]);
+  }, [mostrarMenuHeredados, mostrarMenuImportarBF]);
 
   const idPasoLimpio = pasoActivo.id.startsWith("P") ? pasoActivo.id : `P${String(pasoActivo.numero ?? "").padStart(2, "0")}`;
   const tituloFijo = `Bloque de armado ${idPasoLimpio}`;
   const totalComponentes = (pasoActivo.piezasAsignadas || []).length + (pasoActivo.herrajesAsignados || []).length;
+
+  // Bloques funcionales / cinemáticos disponibles (Cajones, Puertas)
+  const gruposCinematicosDisponibles = React.useMemo<GrupoCinematicoShowcase[]>(() => {
+    const p00 = pasosManual.find((p) => p.showcase?.gruposCinematicos && p.showcase.gruposCinematicos.length > 0);
+    if (p00?.showcase?.gruposCinematicos) {
+      return p00.showcase.gruposCinematicos;
+    }
+    return [];
+  }, [pasosManual]);
 
   // Pasos anteriores elegibles para ser heredados
   const pasosPreviosDisponibles = React.useMemo(() => {
@@ -83,9 +103,42 @@ export default function AssemblyPiecesSection({
   }, [pasosManual, pasoActivo]);
 
   const bloquesHeredadosIds = pasoActivo.bloquesHeredadosIds || [];
+
+  // Mapeo enriquecido de bloques heredados activos (pasos tradicionales + bloques funcionales)
   const bloquesHeredadosActivos = React.useMemo(() => {
-    return pasosManual.filter((p) => bloquesHeredadosIds.includes(p.id));
-  }, [pasosManual, bloquesHeredadosIds]);
+    return bloquesHeredadosIds.map((id) => {
+      const modoVisual = pasoActivo.bloquesHeredadosModoVisual?.[id] || "solido";
+      const visible = pasoActivo.bloquesHeredadosVisibles?.[id] !== false;
+
+      if (id.startsWith("BF:") || gruposCinematicosDisponibles.some((g: GrupoCinematicoShowcase) => g.id === id)) {
+        const cleanId = id.startsWith("BF:") ? id.slice(3) : id;
+        const grupo = gruposCinematicosDisponibles.find((g: GrupoCinematicoShowcase) => g.id === cleanId || g.id === id);
+        const nombre = grupo?.nombre || cleanId;
+        const cantPiezas = (grupo?.piezas || []).filter((m: string) => !esHerrajeNombre(m)).length;
+        const cantHerrajes = (grupo?.piezas || []).filter((m: string) => esHerrajeNombre(m)).length;
+        return {
+          id,
+          esBF: true,
+          titulo: nombre,
+          cantPiezas,
+          cantHerrajes,
+          modoVisual,
+          visible,
+        };
+      }
+
+      const paso = pasosManual.find((p) => p.id === id);
+      return {
+        id,
+        esBF: false,
+        titulo: paso?.id || id,
+        cantPiezas: paso?.piezasAsignadas?.length || 0,
+        cantHerrajes: paso?.herrajesAsignados?.length || 0,
+        modoVisual,
+        visible,
+      };
+    });
+  }, [bloquesHeredadosIds, pasosManual, gruposCinematicosDisponibles, pasoActivo.bloquesHeredadosModoVisual, pasoActivo.bloquesHeredadosVisibles]);
 
   return (
     <div className="flex flex-col gap-2.5 w-full">
@@ -109,19 +162,94 @@ export default function AssemblyPiecesSection({
           </span>
         </div>
 
-        {/* Lado derecho: Botón Desplegable de Bloques Heredados y contador */}
-        <div className="flex items-center gap-2" ref={menuHeredadosRef}>
-          {pasosPreviosDisponibles.length > 0 && (
-            <div className="relative">
+        {/* Lado derecho: Botones Cápsula de Acción y Desplegables */}
+        <div className="flex items-center gap-1.5">
+          {/* ⚡ BOTÓN 1: Cargar Bloque Funcional en este paso (1 Clic para poblar cajón/puerta) */}
+          {gruposCinematicosDisponibles.length > 0 && (
+            <div className="relative" ref={menuImportarBFRef}>
               <button
                 type="button"
-                onClick={() => setMostrarMenuHeredados(!mostrarMenuHeredados)}
+                onClick={() => {
+                  setMostrarMenuImportarBF(!mostrarMenuImportarBF);
+                  setMostrarMenuHeredados(false);
+                }}
+                className="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold text-white bg-[#0088AA] hover:bg-[#007799] dark:bg-[#1368AA] dark:hover:bg-[#115b94] border border-cyan-400/50 dark:border-blue-400/30 transition-all cursor-pointer shadow-xs active:scale-95"
+                title="Poblar automáticamente este paso con las piezas de un cajón o bloque funcional específico"
+              >
+                <Zap className="w-3 h-3 text-amber-300 fill-amber-300" />
+                <span>Cargar Bloque Funcional</span>
+                <ChevronDown className={`w-3 h-3 transition-transform ${mostrarMenuImportarBF ? "rotate-180" : ""}`} />
+              </button>
+
+              {/* Popover selector de Cajón / Bloque Funcional */}
+              {mostrarMenuImportarBF && (
+                <div className="absolute right-0 top-full mt-1.5 w-72 p-2.5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-2xl z-50 flex flex-col gap-1.5 animate-in fade-in-50 zoom-in-95 text-xs">
+                  <div className="flex items-center justify-between pb-1.5 border-b border-slate-100 dark:border-slate-800 px-1 font-bold text-slate-800 dark:text-slate-100">
+                    <span className="flex items-center gap-1.5 text-cyan-700 dark:text-cyan-400">
+                      <Zap className="w-3.5 h-3.5 text-amber-500 fill-amber-500" />
+                      <span>Elegir Cajón / Bloque</span>
+                    </span>
+                    <span className="text-[10px] text-slate-400 font-mono">
+                      {gruposCinematicosDisponibles.length} disp.
+                    </span>
+                  </div>
+
+                  <p className="text-[10.5px] text-slate-500 dark:text-slate-400 px-1 py-0.5 leading-tight">
+                    Carga todas las maderas y herrajes de este bloque al paso activo y despeja el banco de trabajo:
+                  </p>
+
+                  <div className="flex flex-col gap-1 max-h-52 overflow-y-auto custom-scrollbar pt-1">
+                    {gruposCinematicosDisponibles.map((grupo: GrupoCinematicoShowcase, idx: number) => {
+                      const totalPzs = (grupo.piezas || []).length;
+                      return (
+                        <div
+                          key={grupo.id}
+                          onClick={() => {
+                            cargarBloqueFuncionalEnPaso(pasoActivo.id, grupo.id);
+                            setMostrarMenuImportarBF(false);
+                          }}
+                          className="flex items-center justify-between p-2 rounded-xl border border-slate-200 dark:border-slate-800 hover:border-cyan-400 dark:hover:border-cyan-600 hover:bg-cyan-50/50 dark:hover:bg-cyan-950/30 cursor-pointer transition-all group"
+                        >
+                          <div className="flex items-center gap-2">
+                            <span className="w-5 h-5 rounded-full bg-cyan-100 dark:bg-cyan-900/60 text-cyan-800 dark:text-cyan-200 font-black text-[10px] flex items-center justify-center shrink-0">
+                              {idx + 1}
+                            </span>
+                            <div className="min-w-0">
+                              <div className="font-bold text-slate-800 dark:text-slate-100 group-hover:text-cyan-700 dark:group-hover:text-cyan-300 text-[11px] truncate">
+                                {grupo.nombre}
+                              </div>
+                              <div className="text-[9px] text-slate-400 dark:text-slate-500 font-mono">
+                                {totalPzs} componentes
+                              </div>
+                            </div>
+                          </div>
+                          <span className="px-2 py-0.5 rounded-full bg-cyan-600 dark:bg-cyan-700 text-white text-[9px] font-bold shrink-0 group-hover:bg-cyan-700">
+                            Cargar
+                          </span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* 🧱 BOTÓN 2: Menú Desplegable de Bloques Heredados con Pestañas (Pasos vs Bloques Funcionales) */}
+          {(pasosPreviosDisponibles.length > 0 || gruposCinematicosDisponibles.length > 0) && (
+            <div className="relative" ref={menuHeredadosRef}>
+              <button
+                type="button"
+                onClick={() => {
+                  setMostrarMenuHeredados(!mostrarMenuHeredados);
+                  setMostrarMenuImportarBF(false);
+                }}
                 className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold border transition-all cursor-pointer shadow-2xs ${
                   bloquesHeredadosIds.length > 0
                     ? "bg-indigo-500/15 border-indigo-400/60 text-indigo-700 dark:text-indigo-300 hover:bg-indigo-500/25"
                     : "bg-slate-100 dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:border-slate-300"
                 }`}
-                title="Heredar sub-ensambles armados en pasos anteriores"
+                title="Heredar sub-ensambles o bloques funcionales terminados"
               >
                 <Layers className="w-3 h-3 text-indigo-500" />
                 <span>Bloques heredados</span>
@@ -133,66 +261,157 @@ export default function AssemblyPiecesSection({
                 <ChevronDown className={`w-3 h-3 transition-transform ${mostrarMenuHeredados ? "rotate-180" : ""}`} />
               </button>
 
-              {/* Popover / Menú desplegable de selección múltiple */}
+              {/* Popover / Menú desplegable con pestañas (Pasos Previos vs Bloques Funcionales) */}
               {mostrarMenuHeredados && (
-                <div className="absolute right-0 top-full mt-1.5 w-64 p-2 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-xl z-50 flex flex-col gap-1.5 animate-in fade-in-50 zoom-in-95">
+                <div className="absolute right-0 top-full mt-1.5 w-76 p-2.5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-2xl z-50 flex flex-col gap-2 animate-in fade-in-50 zoom-in-95">
                   <div className="flex items-center justify-between pb-1.5 border-b border-slate-100 dark:border-slate-800 text-[11px] font-bold text-slate-800 dark:text-slate-100 px-1">
                     <span className="flex items-center gap-1.5">
                       <Layers className="w-3.5 h-3.5 text-indigo-500" />
-                      <span>Heredar Paso Armado</span>
+                      <span>Gestionar Herencia</span>
                     </span>
                     <span className="text-[9px] font-mono text-slate-400 font-normal">
-                      Sub-ensambles
+                      {idPasoLimpio} Activo
                     </span>
                   </div>
 
-                  <div className="flex flex-col gap-1 max-h-48 overflow-y-auto custom-scrollbar">
-                    {pasosPreviosDisponibles.map((prev) => {
-                      const yaAsociado = bloquesHeredadosIds.includes(prev.id);
-                      const cantPiezas = prev.piezasAsignadas?.length || 0;
-                      const cantHw = prev.herrajesAsignados?.length || 0;
-
-                      return (
-                        <div
-                          key={prev.id}
-                          onClick={() => {
-                            if (yaAsociado) {
-                              desasociarBloqueHeredado(pasoActivo.id, prev.id);
-                            } else {
-                              asociarBloqueHeredado(pasoActivo.id, prev.id);
-                            }
-                          }}
-                          className={`flex items-center justify-between p-2 rounded-xl border text-xs cursor-pointer transition-all select-none ${
-                            yaAsociado
-                              ? "bg-indigo-50/80 dark:bg-indigo-950/40 border-indigo-300 dark:border-indigo-700/80 text-indigo-900 dark:text-indigo-200 font-semibold"
-                              : "hover:bg-slate-50 dark:hover:bg-slate-800/60 border-transparent text-slate-700 dark:text-slate-300"
-                          }`}
-                        >
-                          <div className="flex items-center gap-2 min-w-0">
-                            <input
-                              type="checkbox"
-                              checked={yaAsociado}
-                              onChange={() => {}} // Manejado por el clic del contenedor
-                              className="rounded cursor-pointer accent-indigo-600 w-3.5 h-3.5 shrink-0"
-                            />
-                            <div className="flex flex-col min-w-0">
-                              <span className="text-xs font-bold truncate">
-                                {prev.id} - {prev.titulo || "Sin título"}
-                              </span>
-                              <span className="text-[9.5px] text-slate-400 dark:text-slate-500 font-mono">
-                                {cantPiezas} {cantPiezas === 1 ? "madera" : "maderas"} · {cantHw} herrajes
-                              </span>
-                            </div>
-                          </div>
-                          {yaAsociado && (
-                            <span className="px-1.5 py-0.5 rounded-full bg-indigo-600 text-white text-[8.5px] font-bold shrink-0">
-                              Heredado
-                            </span>
-                          )}
-                        </div>
-                      );
-                    })}
+                  {/* Pestañas dentro del Popover */}
+                  <div className="flex items-center p-0.5 rounded-full bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700">
+                    <button
+                      type="button"
+                      onClick={() => setTabHeredadosActiva("pasos")}
+                      className={`flex-1 py-1 rounded-full text-[10px] font-bold text-center transition-all cursor-pointer ${
+                        tabHeredadosActiva === "pasos"
+                          ? "bg-white dark:bg-slate-900 text-indigo-700 dark:text-indigo-300 shadow-xs"
+                          : "text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200"
+                      }`}
+                    >
+                      Pasos Previos ({pasosPreviosDisponibles.length})
+                    </button>
+                    {gruposCinematicosDisponibles.length > 0 && (
+                      <button
+                        type="button"
+                        onClick={() => setTabHeredadosActiva("bf")}
+                        className={`flex-1 py-1 rounded-full text-[10px] font-bold text-center transition-all cursor-pointer ${
+                          tabHeredadosActiva === "bf"
+                            ? "bg-white dark:bg-slate-900 text-cyan-700 dark:text-cyan-300 shadow-xs"
+                            : "text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200"
+                        }`}
+                      >
+                        ⚡ Cajones ({gruposCinematicosDisponibles.length})
+                      </button>
+                    )}
                   </div>
+
+                  {/* Pestaña 1: Pasos Previos de Carcasa */}
+                  {tabHeredadosActiva === "pasos" && (
+                    <div className="flex flex-col gap-1 max-h-48 overflow-y-auto custom-scrollbar">
+                      {pasosPreviosDisponibles.length === 0 ? (
+                        <div className="text-center py-4 text-xs text-slate-400">
+                          No hay pasos previos para heredar
+                        </div>
+                      ) : (
+                        pasosPreviosDisponibles.map((prev) => {
+                          const yaAsociado = bloquesHeredadosIds.includes(prev.id);
+                          const cantPiezas = prev.piezasAsignadas?.length || 0;
+                          const cantHw = prev.herrajesAsignados?.length || 0;
+
+                          return (
+                            <div
+                              key={prev.id}
+                              onClick={() => {
+                                if (yaAsociado) {
+                                  desasociarBloqueHeredado(pasoActivo.id, prev.id);
+                                } else {
+                                  asociarBloqueHeredado(pasoActivo.id, prev.id);
+                                }
+                              }}
+                              className={`flex items-center justify-between p-2 rounded-xl border text-xs cursor-pointer transition-all select-none ${
+                                yaAsociado
+                                  ? "bg-indigo-50/80 dark:bg-indigo-950/40 border-indigo-300 dark:border-indigo-700/80 text-indigo-900 dark:text-indigo-200 font-semibold"
+                                  : "hover:bg-slate-50 dark:hover:bg-slate-800/60 border-transparent text-slate-700 dark:text-slate-300"
+                              }`}
+                            >
+                              <div className="flex items-center gap-2 min-w-0">
+                                <input
+                                  type="checkbox"
+                                  checked={yaAsociado}
+                                  onChange={() => {}}
+                                  className="rounded cursor-pointer accent-indigo-600 w-3.5 h-3.5 shrink-0"
+                                />
+                                <div className="flex flex-col min-w-0">
+                                  <span className="text-xs font-bold truncate">
+                                    {prev.id} - {prev.titulo || "Sin título"}
+                                  </span>
+                                  <span className="text-[9.5px] text-slate-400 dark:text-slate-500 font-mono">
+                                    {cantPiezas} {cantPiezas === 1 ? "madera" : "maderas"} · {cantHw} herrajes
+                                  </span>
+                                </div>
+                              </div>
+                              {yaAsociado && (
+                                <span className="px-1.5 py-0.5 rounded-full bg-indigo-600 text-white text-[8.5px] font-bold shrink-0">
+                                  Heredado
+                                </span>
+                              )}
+                            </div>
+                          );
+                        })
+                      )}
+                    </div>
+                  )}
+
+                  {/* Pestaña 2: Bloques Funcionales Granulares (Cajón 1, Cajón 2, etc.) */}
+                  {tabHeredadosActiva === "bf" && (
+                    <div className="flex flex-col gap-1 max-h-48 overflow-y-auto custom-scrollbar">
+                      {gruposCinematicosDisponibles.map((grupo: GrupoCinematicoShowcase) => {
+                        const targetId = `BF:${grupo.id}`;
+                        const yaAsociado = bloquesHeredadosIds.includes(targetId) || bloquesHeredadosIds.includes(grupo.id);
+                        const cantPz = (grupo.piezas || []).length;
+
+                        return (
+                          <div
+                            key={grupo.id}
+                            onClick={() => {
+                              if (yaAsociado) {
+                                desasociarBloqueHeredado(pasoActivo.id, targetId);
+                                if (bloquesHeredadosIds.includes(grupo.id)) {
+                                  desasociarBloqueHeredado(pasoActivo.id, grupo.id);
+                                }
+                              } else {
+                                asociarBloqueHeredado(pasoActivo.id, targetId);
+                              }
+                            }}
+                            className={`flex items-center justify-between p-2 rounded-xl border text-xs cursor-pointer transition-all select-none ${
+                              yaAsociado
+                                ? "bg-cyan-50/80 dark:bg-cyan-950/40 border-cyan-300 dark:border-cyan-700/80 text-cyan-900 dark:text-cyan-200 font-semibold"
+                                : "hover:bg-slate-50 dark:hover:bg-slate-800/60 border-transparent text-slate-700 dark:text-slate-300"
+                            }`}
+                          >
+                            <div className="flex items-center gap-2 min-w-0">
+                              <input
+                                type="checkbox"
+                                checked={yaAsociado}
+                                onChange={() => {}}
+                                className="rounded cursor-pointer accent-cyan-600 w-3.5 h-3.5 shrink-0"
+                              />
+                              <div className="flex flex-col min-w-0">
+                                <span className="text-xs font-bold truncate">
+                                  {grupo.nombre}
+                                </span>
+                                <span className="text-[9.5px] text-slate-400 dark:text-slate-500 font-mono">
+                                  {cantPz} piezas (Bloque armado)
+                                </span>
+                              </div>
+                            </div>
+                            {yaAsociado && (
+                              <span className="px-1.5 py-0.5 rounded-full bg-cyan-600 text-white text-[8.5px] font-bold shrink-0">
+                                Heredado
+                              </span>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
                 </div>
               )}
             </div>
@@ -206,38 +425,62 @@ export default function AssemblyPiecesSection({
         </div>
       </div>
 
-      {/* Cápsulas de Bloques Heredados Activos (Chips con visibilidad y botón quitar) */}
+      {/* Cápsulas de Bloques Heredados Activos (Chips con visibilidad, modo visual 💎/🧱 y botón quitar) */}
       {bloquesHeredadosActivos.length > 0 && (
         <div className="flex items-center gap-1.5 flex-wrap pt-0.5">
           {bloquesHeredadosActivos.map((b) => {
-            const estaVisible = pasoActivo.bloquesHeredadosVisibles?.[b.id] !== false;
-            const cantPz = b.piezasAsignadas?.length || 0;
-            const cantHw = b.herrajesAsignados?.length || 0;
+            const esCristal = b.modoVisual === "cristal";
 
             return (
               <div
                 key={b.id}
                 className={`flex items-center gap-1.5 pl-2.5 pr-1.5 py-1 rounded-full border text-[10px] font-semibold transition-all shadow-2xs ${
-                  estaVisible
-                    ? "bg-indigo-50 dark:bg-indigo-950/40 border-indigo-300 dark:border-indigo-800 text-indigo-800 dark:text-indigo-200"
+                  b.visible
+                    ? b.esBF
+                      ? "bg-cyan-50 dark:bg-cyan-950/40 border-cyan-300 dark:border-cyan-800 text-cyan-800 dark:text-cyan-200"
+                      : "bg-indigo-50 dark:bg-indigo-950/40 border-indigo-300 dark:border-indigo-800 text-indigo-800 dark:text-indigo-200"
                     : "bg-slate-100 dark:bg-slate-800 border-slate-300 dark:border-slate-700 text-slate-400 dark:text-slate-500 opacity-60"
                 }`}
-                title={`Bloque Heredado ${b.id}: Contiene ${cantPz} piezas y ${cantHw} herrajes ensamblados`}
+                title={`Bloque Heredado ${b.titulo}: ${b.cantPiezas} maderas y ${b.cantHerrajes} herrajes`}
               >
-                <Layers className="w-3 h-3 text-indigo-500 shrink-0" />
-                <span className="font-bold">{b.id}</span>
+                {b.esBF ? (
+                  <Box className="w-3 h-3 text-cyan-600 dark:text-cyan-400 shrink-0" />
+                ) : (
+                  <Layers className="w-3 h-3 text-indigo-500 shrink-0" />
+                )}
+                <span className="font-bold truncate max-w-[120px]">{b.titulo}</span>
                 <span className="text-[9px] font-mono text-slate-400 font-normal">
-                  ({cantPz}p/{cantHw}h)
+                  ({b.cantPiezas}p/{b.cantHerrajes}h)
                 </span>
+
+                {/* Botón Cápsula Circular: Modo Visual (💎 Cristal / 🧱 Sólido) */}
+                <button
+                  type="button"
+                  onClick={() =>
+                    setModoVisualBloqueHeredado(
+                      pasoActivo.id,
+                      b.id,
+                      esCristal ? "solido" : "cristal"
+                    )
+                  }
+                  className="w-5 h-5 rounded-full flex items-center justify-center bg-white/80 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-[10px] hover:scale-105 transition cursor-pointer shadow-2xs"
+                  title={
+                    esCristal
+                      ? "Modo Cristal activo (Fondo semitransparente). Haz clic para volver a Sólido."
+                      : "Modo Sólido activo. Haz clic para cambiar a Modo Cristal de fondo."
+                  }
+                >
+                  {esCristal ? "💎" : "🧱"}
+                </button>
 
                 {/* Botón Ojito para Ocultar/Mostrar el bloque heredado completo */}
                 <button
                   type="button"
                   onClick={() => conmutarVisibilidadBloqueHeredado(pasoActivo.id, b.id)}
-                  className="w-4 h-4 rounded-full flex items-center justify-center hover:bg-indigo-200/50 dark:hover:bg-indigo-900/50 transition cursor-pointer"
-                  title={estaVisible ? "Ocultar este bloque heredado en el 3D" : "Mostrar este bloque heredado en el 3D"}
+                  className="w-4 h-4 rounded-full flex items-center justify-center hover:bg-slate-200/50 dark:hover:bg-slate-800/50 transition cursor-pointer"
+                  title={b.visible ? "Ocultar este bloque heredado en el 3D" : "Mostrar este bloque heredado en el 3D"}
                 >
-                  {estaVisible ? (
+                  {b.visible ? (
                     <Eye className="w-3 h-3 text-indigo-600 dark:text-indigo-400" />
                   ) : (
                     <EyeOff className="w-3 h-3 text-slate-400" />

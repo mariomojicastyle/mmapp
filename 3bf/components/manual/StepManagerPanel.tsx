@@ -4,6 +4,7 @@ import React, { useMemo } from "react";
 import { use3BFStore, sanitizarPasosManuales } from "@/lib/store";
 import { Plus, Trash2 } from "lucide-react";
 import ShowcaseConfigSection from "./ShowcaseConfigSection";
+import InsercionCajonesConfigSection from "./InsercionCajonesConfigSection";
 import FunctionalBlocksVisibilityCard from "./FunctionalBlocksVisibilityCard";
 import BloqueEstandarConfigSection from "./BloqueEstandarConfigSection";
 import BloqueEstandarEditorForm from "./BloqueEstandarEditorForm";
@@ -50,8 +51,8 @@ export default function StepManagerPanel() {
     <div className="flex flex-col gap-4 text-xs">
       {/* 2. Tarjeta de Configuración del Paso Seleccionado */}
       <div className="p-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-black/[0.02] dark:bg-white/[0.02] flex flex-col gap-3">
-        {/* Encabezado del Paso Activo (Solo para Showcase) */}
-        {pasoActivo.tipo === "showcase" && (
+        {/* Encabezado del Paso Activo (Para Showcase e Inserción de Cajones) */}
+        {(pasoActivo.tipo === "showcase" || pasoActivo.tipo === "insercion_cajones") && (
           <div className="flex items-center justify-between gap-2 border-b border-slate-200 dark:border-slate-800 pb-2">
             <div className="flex items-center gap-2 min-w-0">
               <span
@@ -87,6 +88,12 @@ export default function StepManagerPanel() {
             pasoActivo={pasoActivo}
             gruposCinematicosColapsados={gruposCinematicosColapsados}
             setGruposCinematicosColapsados={setGruposCinematicosColapsados}
+            botonActivoColor={botonActivoColor}
+          />
+        ) : pasoActivo.tipo === "insercion_cajones" || Boolean(pasoActivo.insercionCajones) ? (
+          /* ── MODO INCORPORACIÓN / INSERCIÓN DE CAJONES (P06+) ─────── */
+          <InsercionCajonesConfigSection
+            pasoActivo={pasoActivo}
             botonActivoColor={botonActivoColor}
           />
         ) : pasoActivo.tipo === "bloque_estandar" ? (

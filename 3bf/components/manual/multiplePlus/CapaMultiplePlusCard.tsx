@@ -23,6 +23,7 @@ import {
   Link2,
 } from "lucide-react";
 import { CapaMultiplePlus, PasoManualStudio, TableroCapaPlus, HerrajeCapaPlus, OffsetBancoCm } from "@/lib/storeTypes";
+import { use3BFStore } from "@/lib/store";
 import { CapsulaTableroPlus } from "./CapsulaTableroPlus";
 import { CapsulaHerrajePlus } from "./CapsulaHerrajePlus";
 import { IconOcultarMostrar, IconOcultarMostrarInvertido as IconInvertir } from "../StepManagerIcons";
@@ -98,6 +99,23 @@ export function CapaMultiplePlusCard({
   onInvertirSeleccion,
   onPosicionarHerrajesEnPieza,
 }: CapaMultiplePlusCardProps) {
+  const conmutarVisibilidadGrupoCinematico = use3BFStore((s: any) => s.conmutarVisibilidadGrupoCinematico);
+
+  const pasoP00 = useMemo(() => {
+    return pasosManual.find((p) => p.showcase?.gruposCinematicos && p.showcase.gruposCinematicos.length > 0) || pasosManual[0];
+  }, [pasosManual]);
+
+  // Identificar si esta capa corresponde a un bloque funcional de P00
+  const grupoBloqueFuncional = useMemo(() => {
+    const grupos = pasoP00?.showcase?.gruposCinematicos || [];
+    if (capa.bloqueFuncionalId) {
+      const match = grupos.find((g: any) => g.id === capa.bloqueFuncionalId);
+      if (match) return match;
+    }
+    const nombreLow = (capa.nombre || "").toLowerCase();
+    return grupos.find((g: any) => nombreLow.includes(g.nombre.toLowerCase()));
+  }, [capa.bloqueFuncionalId, capa.nombre, pasoP00]);
+
   const [busquedaHerrajes, setBusquedaHerrajes] = useState("");
   const [nombreSeleccionado, setNombreSeleccionado] = useState(false);
   const [posicionadoOk, setPosicionadoOk] = useState(false);
@@ -117,6 +135,22 @@ export function CapaMultiplePlusCard({
   const [arrastrandoAltura, setArrastrandoAltura] = useState(false);
   const dragStartYRef = useRef(0);
   const startHeightRef = useRef(0);
+
+  // 🪵 Altura ajustable y expandible para la lista de tableros de madera (memoria local)
+  const [alturaTablerosPx, setAlturaTablerosPx] = useState<number>(() => {
+    if (typeof window !== "undefined") {
+      const guardada = localStorage.getItem("3bf_capa_tableros_height");
+      if (guardada) {
+        const parsed = parseInt(guardada, 10);
+        if (!isNaN(parsed) && parsed >= 80 && parsed <= 1200) return parsed;
+      }
+    }
+    return 180; // 180px por defecto
+  });
+  const [esTablerosExpandido, setEsTablerosExpandido] = useState(false);
+  const [arrastrandoAlturaTableros, setArrastrandoAlturaTableros] = useState(false);
+  const dragStartYTablerosRef = useRef(0);
+  const startHeightTablerosRef = useRef(0);
 
   const handleStartResize = (e: React.PointerEvent) => {
     e.preventDefault();
@@ -150,6 +184,38 @@ export function CapaMultiplePlusCard({
     setEsHerrajesExpandido((prev) => !prev);
   };
 
+  const handleStartResizeTableros = (e: React.PointerEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
+    setArrastrandoAlturaTableros(true);
+    setEsTablerosExpandido(false);
+    dragStartYTablerosRef.current = e.clientY;
+    startHeightTablerosRef.current = alturaTablerosPx;
+  };
+
+  const handlePointerMoveTableros = (e: React.PointerEvent) => {
+    if (!arrastrandoAlturaTableros) return;
+    const deltaY = e.clientY - dragStartYTablerosRef.current;
+    const nuevaAltura = Math.max(80, Math.min(1200, Math.round(startHeightTablerosRef.current + deltaY)));
+    setAlturaTablerosPx(nuevaAltura);
+  };
+
+  const handlePointerUpTableros = (e: React.PointerEvent) => {
+    if (!arrastrandoAlturaTableros) return;
+    setArrastrandoAlturaTableros(false);
+    try {
+      (e.currentTarget as HTMLElement).releasePointerCapture(e.pointerId);
+    } catch {}
+    if (typeof window !== "undefined") {
+      localStorage.setItem("3bf_capa_tableros_height", String(alturaTablerosPx));
+    }
+  };
+
+  const handleToggleExpandirTableros = () => {
+    setEsTablerosExpandido((prev) => !prev);
+  };
+
   const handlePosicionarHerrajes = () => {
     if (onPosicionarHerrajesEnPieza) {
       onPosicionarHerrajesEnPieza(capa.id);
@@ -166,7 +232,7 @@ export function CapaMultiplePlusCard({
 
   const estaColapsada = Boolean(capa.colapsada);
 
-  // Opciones de destino: bloques heredados + tableros de otras capas
+  // Opciones de destino: bloques heredados + tableros de la misma capa + tableros de otras capas
   const opcionesDestino = useMemo(() => {
     const list: Array<{ id: string; label: string; esHeredado?: boolean }> = [];
 
@@ -177,6 +243,15 @@ export function CapaMultiplePlusCard({
         id: bId,
         label: pHeredado ? `${pHeredado.id} - ${pHeredado.titulo}` : bId,
         esHeredado: true,
+      });
+    });
+
+    // Tableros de esta misma capa (compañeros de capa para ensamblaje relativo)
+    (capa.tableros || []).forEach((t) => {
+      list.push({
+        id: t.id,
+        label: t.id,
+        esHeredado: false,
       });
     });
 
@@ -194,7 +269,7 @@ export function CapaMultiplePlusCard({
     });
 
     return list;
-  }, [capa.bloquesHeredadosIds, paso.multiplePlus?.capas, pasosManual, capa.id]);
+  }, [capa.bloquesHeredadosIds, capa.tableros, paso.multiplePlus?.capas, pasosManual, capa.id]);
 
   // Pasos previos elegibles para Bloques Heredados
   const pasosPrevios = useMemo(() => {
@@ -304,6 +379,32 @@ export function CapaMultiplePlusCard({
               <EyeOff className="w-3.5 h-3.5" />
             )}
           </button>
+
+          {/* 🗄️ Botón Espejo de Visibilidad de Bloque Funcional */}
+          {grupoBloqueFuncional && (
+            <button
+              type="button"
+              onClick={() => pasoP00 && conmutarVisibilidadGrupoCinematico(pasoP00.id, grupoBloqueFuncional.id)}
+              title={
+                grupoBloqueFuncional.oculto
+                  ? `Bloque Funcional oculto en 3D. Clic para mostrar ${grupoBloqueFuncional.nombre}`
+                  : `Bloque Funcional visible en 3D. Clic para ocultar ${grupoBloqueFuncional.nombre}`
+              }
+              className={`flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[9.5px] font-bold border transition cursor-pointer shadow-2xs shrink-0 ${
+                grupoBloqueFuncional.oculto
+                  ? "bg-[#1368AA] text-white border-[#1368AA] shadow-xs animate-pulse"
+                  : "bg-cyan-50 dark:bg-cyan-950/40 text-cyan-700 dark:text-cyan-300 border-cyan-300 dark:border-cyan-800 hover:bg-cyan-100"
+              }`}
+            >
+              <span className="text-[10px]">🗄️</span>
+              <span className="truncate max-w-[85px]">{grupoBloqueFuncional.nombre}</span>
+              {grupoBloqueFuncional.oculto ? (
+                <EyeOff className="w-3 h-3 text-white" />
+              ) : (
+                <Eye className="w-3 h-3 text-cyan-600 dark:text-cyan-400" />
+              )}
+            </button>
+          )}
         </div>
 
         {/* Centro-Derecha: Bloques Heredados */}
@@ -430,20 +531,54 @@ export function CapaMultiplePlusCard({
       {!estaColapsada && (
         <>
           {/* ── FILA 2: TABLEROS ASIGNADOS A LA CAPA ── */}
-      <div className="flex flex-col gap-2">
+      <div className="flex flex-col gap-1.5">
         <div className="flex items-center justify-between">
           <span className="text-[10px] font-bold text-amber-700 dark:text-amber-400 flex items-center gap-1">
             <Layers className="w-3 h-3 text-amber-500" />
             Tableros de Madera ({capa.tableros.length}):
           </span>
-          {capa.tableros.length === 0 && (
-            <span className="text-[9px] text-slate-400 italic">
-              Activa el bombillo y toca tableros en el visor 3D para añadirlos
-            </span>
-          )}
+          <div className="flex items-center gap-1.5">
+            {capa.tableros.length === 0 && (
+              <span className="text-[9px] text-slate-400 italic">
+                Activa el bombillo y toca tableros en el visor 3D para añadirlos
+              </span>
+            )}
+            {/* 🔲 Botón Expandir / Maximizar lista de tableros */}
+            {capa.tableros.length > 2 && (
+              <button
+                type="button"
+                onClick={handleToggleExpandirTableros}
+                title={
+                  esTablerosExpandido
+                    ? "Compactar a la altura ajustada"
+                    : "Expandir para ver todos los tableros sin límite de altura"
+                }
+                className={`w-6 h-6 rounded-full flex items-center justify-center transition cursor-pointer shadow-2xs ${
+                  esTablerosExpandido
+                    ? "bg-[#0088AA] dark:bg-[#1368AA] text-white shadow-cyan-600/30 ring-1 ring-cyan-400/50"
+                    : "bg-slate-100 dark:bg-slate-800 text-slate-500 hover:text-amber-600 dark:hover:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-950/40 border border-slate-200 dark:border-slate-700"
+                }`}
+              >
+                {esTablerosExpandido ? (
+                  <Minimize2 className="w-3 h-3" />
+                ) : (
+                  <Maximize2 className="w-3 h-3" />
+                )}
+              </button>
+            )}
+          </div>
         </div>
 
-        <div className="flex flex-wrap gap-1 max-h-36 overflow-y-auto pr-1">
+        {/* 📦 Contenedor dinámico de tableros con altura ajustable */}
+        <div
+          style={{
+            height: esTablerosExpandido ? "auto" : `${alturaTablerosPx}px`,
+            maxHeight: esTablerosExpandido ? "none" : `${alturaTablerosPx}px`,
+          }}
+          className={`flex flex-wrap gap-1 content-start overflow-y-auto pr-1 transition-[max-height] duration-150 custom-scrollbar ${
+            arrastrandoAlturaTableros ? "select-none" : ""
+          }`}
+        >
           {capa.tableros.map((tab) => (
             <CapsulaTableroPlus
               key={tab.id}
@@ -463,6 +598,29 @@ export function CapaMultiplePlusCard({
             />
           ))}
         </div>
+
+        {/* ↕️ Tirador inferior interactivo (Resize Handle) para estirar la sección de tableros arrastrando */}
+        {capa.tableros.length > 2 && (
+          <div
+            onPointerDown={handleStartResizeTableros}
+            onPointerMove={handlePointerMoveTableros}
+            onPointerUp={handlePointerUpTableros}
+            onDoubleClick={handleToggleExpandirTableros}
+            title="Arrastra hacia abajo/arriba para cambiar la altura de los tableros. Doble clic para expandir/compactar todo."
+            className={`w-full py-0.5 -mt-0.5 flex items-center justify-center cursor-ns-resize group select-none transition-colors rounded-full ${
+              arrastrandoAlturaTableros ? "bg-amber-100/50 dark:bg-amber-950/40" : "hover:bg-slate-100/70 dark:hover:bg-slate-800/50"
+            }`}
+          >
+            <div className="flex items-center gap-1.5 px-3 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800/90 border border-slate-200 dark:border-slate-700 text-slate-400 dark:text-slate-500 group-hover:border-amber-400 group-hover:text-amber-600 dark:group-hover:text-amber-400 shadow-2xs transition-all">
+              <GripHorizontal className="w-3.5 h-3.5" />
+              <span className="text-[7.5px] font-bold tracking-wider uppercase">
+                {esTablerosExpandido
+                  ? "Ver todo activo (Doble clic para compactar)"
+                  : `${alturaTablerosPx}px (Arrastra para estirar | Doble clic expande)`}
+              </span>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* ── FILA 3: HERRAJES ASIGNADOS A LA CAPA (Con buscador, scroll y cápsulas de alto brillo) ── */}
@@ -541,13 +699,13 @@ export function CapaMultiplePlusCard({
           </div>
         </div>
 
-        {/* 📦 Contenedor dinámico de herrajes con altura ajustable */}
+        {/* 📦 Contenedor dinámico de herrajes con altura ajustable y rigidez estructural (mínimo 320px por cápsula) */}
         <div
           style={{
             height: esHerrajesExpandido ? "auto" : `${alturaHerrajesPx}px`,
             maxHeight: esHerrajesExpandido ? "none" : `${alturaHerrajesPx}px`,
           }}
-          className={`flex flex-wrap gap-1 overflow-y-auto pr-1 transition-[max-height] duration-150 custom-scrollbar ${
+          className={`grid [grid-template-columns:repeat(auto-fill,minmax(320px,1fr))] gap-1.5 content-start overflow-y-auto pr-1 transition-[max-height] duration-150 custom-scrollbar ${
             arrastrandoAltura ? "select-none" : ""
           }`}
         >
@@ -632,7 +790,7 @@ export function CapaMultiplePlusCard({
             </div>
           </div>
 
-          <div className="flex flex-wrap gap-1 max-h-28 overflow-y-auto">
+          <div className="grid [grid-template-columns:repeat(auto-fill,minmax(320px,1fr))] gap-1.5 content-start max-h-28 overflow-y-auto pr-1 custom-scrollbar">
             {capa.congelados.map((hw) => (
               <CapsulaHerrajePlus
                 key={hw.id}

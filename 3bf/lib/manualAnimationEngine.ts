@@ -49,6 +49,8 @@ import { aplicarTransformacionesBancoSubbloques } from "./engine/workbenchTransf
 import { compilarShowcaseP00 } from "./engine/showcaseKinematics";
 import { compilarEnsamblePaso } from "./engine/assemblyCoreographer";
 import { compilarMultiplePlusPaso } from "./engine/multiplePlusKinematics";
+import { compilarInsercionCajonesPaso } from "./engine/insercionCajonesKinematics";
+import { use3BFStore } from "./store";
 
 // Re-exportar tipos y utilidades públicas para retrocompatibilidad total
 export * from "./engine/types";
@@ -57,6 +59,7 @@ export * from "./engine/workbenchTransform";
 export { compilarShowcaseP00 } from "./engine/showcaseKinematics";
 export { compilarEnsamblePaso } from "./engine/assemblyCoreographer";
 export { compilarMultiplePlusPaso } from "./engine/multiplePlusKinematics";
+export { compilarInsercionCajonesPaso } from "./engine/insercionCajonesKinematics";
 
 /**
  * Construye y hornea un AnimationClip glTF nativo para el paso especificado,
@@ -155,6 +158,13 @@ export function compilarAnimacionPaso(
   // =========================================================================
   if (paso.tipo === "showcase") {
     compilarShowcaseP00(rootScene, sceneMeshes, sceneObjects, paso, duracionPaso, tracks);
+  } else if (paso.tipo === "insercion_cajones" || Boolean(paso.insercionCajones)) {
+    // =========================================================================
+    // 1.5. INCORPORACIÓN / INSERCIÓN DE CAJONES (P06+): ENSAMBLE FINAL EN EL MUEBLE
+    // =========================================================================
+    const todosPasos = toolMeshes?.todosLosPasos || use3BFStore.getState?.()?.pasosManual || [];
+    const pasoP00 = todosPasos.find((p: any) => p.id === "P00" || p.tipo === "showcase") || null;
+    compilarInsercionCajonesPaso(rootScene, sceneMeshes, sceneObjects, paso, duracionPaso, tracks, pasoP00);
   }
 
   // =========================================================================

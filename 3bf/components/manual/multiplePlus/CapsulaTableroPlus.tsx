@@ -169,7 +169,7 @@ export function CapsulaTableroPlus({
         <select
           value={tablero.destinoId || "base_master"}
           onChange={(e) => onActualizar(tablero.id, { destinoId: e.target.value })}
-          className="bg-transparent font-bold text-slate-700 dark:text-slate-200 outline-none cursor-pointer max-w-[85px] truncate text-[8.5px]"
+          className="bg-transparent font-bold text-slate-700 dark:text-slate-200 outline-none cursor-pointer max-w-[125px] truncate text-[8.5px]"
         >
           <option value="base_master">👑 Base Master</option>
           {opcionesDestino

@@ -54,6 +54,10 @@ export function AssemblyPiecePositioner({
   const latestDeltaLocalRef = useRef<THREE.Vector3>(new THREE.Vector3(0, 0, 0));
   const floorDropYRef = useRef<number>(0);
 
+  // 🪶 Control de Antigravedad (Neutralizar caída al suelo para conservar cota de altura)
+  const [antigravedad, setAntigravedad] = useState<boolean>(false);
+  const antigravedadRef = useRef<boolean>(false);
+
   // 🎯 Restricción de ejes al estilo Blender (X: Transversal, Y: Longitudinal taller)
   const [ejeRestringido, setEjeRestringido] = useState<"X" | "Y" | null>(null);
   const ejeRestringidoRef = useRef<"X" | "Y" | null>(null);
@@ -94,6 +98,11 @@ export function AssemblyPiecePositioner({
       ? (pasosManual[0]?.id || "")
       : piezaEnPosicionamientoManual.pasoId;
     const pasoActivo = pasosManual.find((p) => p.id === pasoId);
+
+    // Inicializar antigravedad desde la configuración de Múltiple Plus del paso
+    const agInit = Boolean(pasoActivo?.multiplePlus?.antigravedad);
+    setAntigravedad(agInit);
+    antigravedadRef.current = agInit;
     const elemSecuencia = pasoActivo?.secuencia?.find((s) => {
       const sNombre = (s.nombreNodo || "").toLowerCase().trim();
       if (sNombre === targetKey) return true;
@@ -304,11 +313,19 @@ export function AssemblyPiecePositioner({
           ejeRestringidoRef.current = nextVal;
           return nextVal;
         });
-      } else if (k === "c" || k === "g") {
+      } else if (k === "c") {
         e.preventDefault();
         e.stopPropagation();
         setEjeRestringido(null);
         ejeRestringidoRef.current = null;
+      } else if (k === "g" || k === "f") {
+        e.preventDefault();
+        e.stopPropagation();
+        setAntigravedad((prev) => {
+          const nextVal = !prev;
+          antigravedadRef.current = nextVal;
+          return nextVal;
+        });
       }
     };
 
@@ -318,7 +335,7 @@ export function AssemblyPiecePositioner({
     };
   }, [piezaEnPosicionamientoManual, setPiezaEnPosicionamientoManual]);
 
-  // 3. useFrame: Proyección estricta sobre el piso horizontal (Y = 0) en coordenadas mundiales
+  // 3. useFrame: Proyección estricta sobre el plano horizontal (Y = 0 o cota de antigravedad)
   useFrame(() => {
     if (!piezaEnPosicionamientoManual || targetMeshesRef.current.length === 0) return;
 
@@ -326,8 +343,8 @@ export function AssemblyPiecePositioner({
     const hit = raycaster.ray.intersectPlane(floorPlane.current, intersectPoint.current);
 
     if (hit) {
-      // El piso en Three.js es el plano horizontal X-Z (donde Y = 0)
-      // Calculamos el desplazamiento sobre el piso respecto al centro de reposo colectivo
+      // El plano base en Three.js es el plano horizontal X-Z (donde Y = 0)
+      // Calculamos el desplazamiento respecto al centro de reposo colectivo
       let deltaXWorld = hit.x - collectiveRestWorldRef.current.x;
       let deltaZWorld = hit.z - collectiveRestWorldRef.current.z;
 
@@ -344,12 +361,16 @@ export function AssemblyPiecePositioner({
       const deltaWorld = new THREE.Vector3(deltaXWorld, 0, deltaZWorld);
       latestDeltaWorldRef.current.copy(deltaWorld);
 
+      // 🪶 Drop Y efectivo: 0 si antigravedad está activa (flota a su cota); floorDropY si cae al suelo
+      const esAntigravedad = antigravedadRef.current;
+      const dropY = esAntigravedad ? 0 : floorDropYRef.current;
+
       // 🎯 Calcular y registrar el delta local para la pieza primaria (consistente con rotación de orientacionBanco)
       const primaryItem = targetMeshesRef.current[0];
       if (primaryItem && primaryItem.mesh.parent) {
         const targetWorldPos = new THREE.Vector3(
           primaryItem.restWorldPos.x + deltaXWorld,
-          primaryItem.restWorldPos.y + floorDropYRef.current,
+          primaryItem.restWorldPos.y + dropY,
           primaryItem.restWorldPos.z + deltaZWorld
         );
         primaryItem.mesh.parent.updateWorldMatrix(true, false);
@@ -363,10 +384,10 @@ export function AssemblyPiecePositioner({
         const mesh = item.mesh;
         if (!mesh.parent) continue;
 
-        // La nueva posición deseada en el mundo apoya la base de la pieza en el piso (Y = 0)
+        // La nueva posición deseada en el mundo apoya la base de la pieza en el piso o flota a su cota
         const targetWorldPos = new THREE.Vector3(
           item.restWorldPos.x + deltaXWorld,
-          item.restWorldPos.y + floorDropYRef.current, // Apoyada automáticamente sobre el piso
+          item.restWorldPos.y + dropY,
           item.restWorldPos.z + deltaZWorld
         );
 
@@ -410,10 +431,11 @@ export function AssemblyPiecePositioner({
       const paso = pasosManual.find((p) => p.id === pasoId);
 
       if (paso) {
+        const esAntigravedad = antigravedadRef.current;
         // En el sistema de coordenadas local del contenedor (consistente con cinemática y rotación de banco):
         const deltaLocal = latestDeltaLocalRef.current;
         const deltaX_cm = Math.round(deltaLocal.x * 1000) / 10;
-        const deltaY_cm = Math.round(deltaLocal.y * 1000) / 10; // 🎯 Drop local que apoya la pieza en el suelo (precisión 1 mm)
+        const deltaY_cm = esAntigravedad ? 0 : Math.round(deltaLocal.y * 1000) / 10; // 🎯 Cota Y neutralizada a 0 si hay antigravedad (precisión 1 mm)
         const deltaZ_cm = Math.round(deltaLocal.z * 1000) / 10;
 
         const cfgActual = paso.configuracionCinematica || {
@@ -445,18 +467,18 @@ export function AssemblyPiecePositioner({
             ...listaPiezas[idx],
             nombrePieza, // Consistente con el nombre seleccionado
             offsetXCm: deltaX_cm,
-            offsetYCm: deltaY_cm, // 🎯 Apoyada en suelo
+            offsetYCm: deltaY_cm, // 🎯 Apoyada en suelo o flotando en cota
             offsetZCm: deltaZ_cm,
-            apoyadaEnPiso: true,
+            apoyadaEnPiso: !esAntigravedad,
           };
         } else {
           listaPiezas.push({
             nombrePieza,
             ordenEnsamble: listaPiezas.length + 1,
             offsetXCm: deltaX_cm,
-            offsetYCm: deltaY_cm, // 🎯 Apoyada en suelo
+            offsetYCm: deltaY_cm, // 🎯 Apoyada en suelo o flotando en cota
             offsetZCm: deltaZ_cm,
-            apoyadaEnPiso: true,
+            apoyadaEnPiso: !esAntigravedad,
           });
         }
 
@@ -519,6 +541,7 @@ export function AssemblyPiecePositioner({
           }));
           multiplePlusActualizado = {
             ...multiplePlusActualizado,
+            antigravedad: esAntigravedad,
             capas: nuevasCapas,
           };
         }
@@ -617,11 +640,35 @@ export function AssemblyPiecePositioner({
               : "🌐 MOVIMIENTO LIBRE"}
           </span>
           <span className="text-slate-500">|</span>
+          {/* Botón interactivo Cápsula Antigravedad */}
+          <button
+            type="button"
+            style={{ pointerEvents: "auto" }}
+            onClick={(e) => {
+              e.stopPropagation();
+              setAntigravedad((prev) => {
+                const nextVal = !prev;
+                antigravedadRef.current = nextVal;
+                return nextVal;
+              });
+            }}
+            title="Presiona G o haz clic para alternar entre Antigravedad (flotación a su cota) y Caída al Suelo"
+            className={`px-2.5 py-0.5 rounded-full font-bold text-[9.5px] tracking-wider uppercase transition-all shadow-xs cursor-pointer flex items-center gap-1 ${
+              antigravedad
+                ? "bg-[#0088AA] dark:bg-[#1368AA] text-white shadow-cyan-500/40 ring-1 ring-cyan-300"
+                : "bg-slate-800 text-slate-300 border border-slate-600 hover:text-white"
+            }`}
+          >
+            <span>{antigravedad ? "🪶 ANTIGRAVEDAD (Flotar)" : "🧲 CAÍDA A SUELO"}</span>
+          </button>
+          <span className="text-slate-500">|</span>
           <div className="flex items-center gap-1.5 text-[9.5px] text-slate-300">
             <span className="bg-slate-800 border border-slate-600 px-1.5 py-0.5 rounded-full font-mono font-bold">X</span>
             <span className="text-slate-400">Eje X</span>
             <span className="bg-slate-800 border border-slate-600 px-1.5 py-0.5 rounded-full font-mono font-bold">Y</span>
             <span className="text-slate-400">Eje Y</span>
+            <span className="bg-slate-800 border border-slate-600 px-1.5 py-0.5 rounded-full font-mono font-bold">G</span>
+            <span className="text-slate-400">Gravedad</span>
             <span className="bg-slate-800 border border-slate-600 px-1.5 py-0.5 rounded-full font-mono font-bold">C</span>
             <span className="text-slate-400">Libre</span>
             <span className="bg-slate-800 border border-slate-600 px-1.5 py-0.5 rounded-full font-mono font-bold">Clic</span>

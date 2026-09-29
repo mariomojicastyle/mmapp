@@ -2,13 +2,15 @@
 
 import React from "react";
 import { use3BFStore } from "@/lib/store";
-import { Eye, EyeOff } from "lucide-react";
+import { Eye, EyeOff, Zap } from "lucide-react";
 
 export default function FunctionalBlocksVisibilityCard() {
   const {
     pasosManual,
+    pasoActivoManualId,
     conmutarVisibilidadTodosGruposCinematicos,
     conmutarVisibilidadGrupoCinematico,
+    cargarBloqueFuncionalEnPaso,
   } = use3BFStore();
 
   const pasoP00 = pasosManual.find((p) => p.id === "P00" || p.tipo === "showcase");
@@ -16,6 +18,7 @@ export default function FunctionalBlocksVisibilityCard() {
   if (bloques.length === 0) return null;
 
   const algunOculto = bloques.some((g) => g.oculto);
+  const pasoEsArmable = pasoActivoManualId && pasoActivoManualId !== "P00";
 
   return (
     <div className="flex flex-col gap-2 p-3 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/60 shadow-sm">
@@ -46,8 +49,8 @@ export default function FunctionalBlocksVisibilityCard() {
         </button>
       </div>
 
-      {/* Lista de Bloques Funcionales con su Ojito individual */}
-      <div className="flex flex-col gap-1.5 pt-1 border-t border-slate-200/50 dark:border-slate-800/50 max-h-48 overflow-y-auto pr-0.5">
+      {/* Lista de Bloques Funcionales con su Ojito individual y Botón Armar en este Paso */}
+      <div className="flex flex-col gap-1.5 pt-1 border-t border-slate-200/50 dark:border-slate-800/50 max-h-56 overflow-y-auto pr-0.5">
         {bloques.map((grupo) => {
           const esPuerta = grupo.tipo === "puerta";
           const estaOculto = Boolean(grupo.oculto);
@@ -73,19 +76,34 @@ export default function FunctionalBlocksVisibilityCard() {
                 </span>
               </div>
 
-              {/* Botón Bombillito / Ojito por bloque */}
-              <button
-                type="button"
-                onClick={() => pasoP00 && conmutarVisibilidadGrupoCinematico(pasoP00.id, grupo.id)}
-                title={estaOculto ? "Mostrar este bloque en 3D" : "Ocultar este bloque en 3D"}
-                className={`p-1 rounded-full transition shrink-0 cursor-pointer border ${
-                  estaOculto
-                    ? "bg-[#1368AA] text-white border-[#1368AA] shadow-xs"
-                    : "bg-white dark:bg-slate-900 text-slate-400 hover:text-cyan-500 border-slate-200 dark:border-slate-700"
-                }`}
-              >
-                {estaOculto ? <EyeOff className="w-3 h-3" /> : <Eye className="w-3 h-3" />}
-              </button>
+              <div className="flex items-center gap-1 shrink-0">
+                {/* 🚀 BOTÓN 1 CLIC: Armar en este paso (Carga todas las piezas y crea la capa) */}
+                {pasoEsArmable && (
+                  <button
+                    type="button"
+                    onClick={() => cargarBloqueFuncionalEnPaso(pasoActivoManualId, grupo.id)}
+                    className="flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[9px] font-bold text-white bg-[#0088AA] hover:bg-[#007799] dark:bg-[#1368AA] dark:hover:bg-[#115b94] border border-cyan-400/40 transition cursor-pointer shadow-2xs active:scale-95"
+                    title={`Asignar todas las piezas de ${grupo.nombre} a ${pasoActivoManualId} como capa limpia y despejar el banco`}
+                  >
+                    <Zap className="w-2.5 h-2.5 text-amber-300 fill-amber-300" />
+                    <span>Armar en {pasoActivoManualId}</span>
+                  </button>
+                )}
+
+                {/* Botón Bombillito / Ojito por bloque */}
+                <button
+                  type="button"
+                  onClick={() => pasoP00 && conmutarVisibilidadGrupoCinematico(pasoP00.id, grupo.id)}
+                  title={estaOculto ? "Mostrar este bloque en 3D" : "Ocultar este bloque en 3D"}
+                  className={`p-1 rounded-full transition shrink-0 cursor-pointer border ${
+                    estaOculto
+                      ? "bg-[#1368AA] text-white border-[#1368AA] shadow-xs"
+                      : "bg-white dark:bg-slate-900 text-slate-400 hover:text-cyan-500 border-slate-200 dark:border-slate-700"
+                  }`}
+                >
+                  {estaOculto ? <EyeOff className="w-3 h-3" /> : <Eye className="w-3 h-3" />}
+                </button>
+              </div>
             </div>
           );
         })}
