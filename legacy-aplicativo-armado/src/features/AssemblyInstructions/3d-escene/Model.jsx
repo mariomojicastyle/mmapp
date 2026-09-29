@@ -311,7 +311,11 @@ function ActualModel(props) {
     });
 
     const posicionDeCamaraActual = CameraPosition ? CameraPosition.find((item) => item.pasos == pasoActual) : null;
-    const useOverride = posicionDeCamaraActual?.override;
+    const isGlbCamPreferred = posicionDeCamaraActual?.useGlbCamera === true || posicionDeCamaraActual?.cameraMode === "glb";
+    const useOverride = !isGlbCamPreferred && posicionDeCamaraActual?.override;
+
+    // Buscar si existe un nodo de cámara en el GLB (nodo "Camera" de 3dBimFab o array cameras)
+    const glbCamNode = scene.getObjectByName("Camera") || (cameras && cameras.length > 0 ? cameras[0] : null);
 
     if (useOverride) {
       camera.position.set(
@@ -329,33 +333,35 @@ function ActualModel(props) {
       }
       
       camera.setFocalLength(posicionDeCamaraActual.fov || defaultFov);
-    } else if (camarasCount > 0 && cameras && cameras.length > 0) {
-      // Si la cámara está ubicada en el origen (0,0,0) del parent, se configura su posición
-      if (
-        cameras[0].parent.position.x === 0 &&
-        cameras[0].parent.position.y === 0 &&
-        cameras[0].parent.position.z === 0
-      ) {
-        camera.position.set(
-          cameras[0].position.x,
-          cameras[0].position.y,
-          cameras[0].position.z
-        );
-      } else {
-        if (posicionDeCamaraActual) {
-          camera.position.set(
-            posicionDeCamaraActual.position.x,
-            posicionDeCamaraActual.position.y,
-            posicionDeCamaraActual.position.z
-          );
-        }
+    } else if (glbCamNode) {
+      // Usar cámara del GLB (3dBimFab animada o fija)
+      const worldPos = new THREE.Vector3();
+      const worldQuat = new THREE.Quaternion();
+      glbCamNode.getWorldPosition(worldPos);
+      glbCamNode.getWorldQuaternion(worldQuat);
+
+      camera.position.copy(worldPos);
+      camera.quaternion.copy(worldQuat);
+
+      if (typeof glbCamNode.getFocalLength === "function") {
+        camera.setFocalLength(glbCamNode.getFocalLength());
+      } else if (glbCamNode.fov) {
+        camera.fov = glbCamNode.fov;
       }
 
-      // Se copia la distancia focal, rotación y quaternion de la cámara del GLB
-      camera.setFocalLength(cameras[0].getFocalLength());
-      camera.rotation.copy(cameras[0].rotation);
-      camera.quaternion.copy(cameras[0].quaternion);
-
+      // Sincronizar el target de OrbitControls colinealmente con la mirada de la cámara
+      if (props.orbitControlsRef && props.orbitControlsRef.current) {
+        const forwardDir = new THREE.Vector3();
+        camera.getWorldDirection(forwardDir);
+        props.orbitControlsRef.current.target.copy(camera.position).addScaledVector(forwardDir, 2.5);
+      }
+    } else if (posicionDeCamaraActual?.position) {
+      camera.position.set(
+        posicionDeCamaraActual.position.x,
+        posicionDeCamaraActual.position.y,
+        posicionDeCamaraActual.position.z
+      );
+      camera.setFocalLength(defaultFov);
     } else {
       // Si no hay cámaras en el archivo GLB, se usa la posición por defecto
       camera.position.set(defaultCameraPosX, defaultCameraPosY, defaultCameraPosZ);
@@ -369,6 +375,119 @@ function ActualModel(props) {
       props.orbitControlsRef.current.update();
     }
   }, [scene, StartApp, actions, camera, CameraPosition, pasoActual, props.orbitControlsRef]);
+
+  // Bandera para permitir órbita manual sólo si el usuario interactúa activamente con el mouse/touch
+  const userInteractedWithCameraRef = useRef(false);
+
+  // Escuchar cuando el usuario interactúa manualmente con OrbitControls
+  useEffect(() => {
+    const controls = props.orbitControlsRef?.current;
+    if (!controls) return;
+
+    const onControlsStart = () => {
+      userInteractedWithCameraRef.current = true;
+    };
+
+    controls.addEventListener('start', onControlsStart);
+    return () => {
+      controls.removeEventListener('start', onControlsStart);
+    };
+  }, [props.orbitControlsRef?.current]);
+
+  // Si cambia el paso, se resetea la animación o se da Play, retomar la cinemática de la cámara
+  useEffect(() => {
+    userInteractedWithCameraRef.current = false;
+  }, [pasoActual, ResetBool]);
+
+  useEffect(() => {
+    if (phaseAudio === 'playing') {
+      userInteractedWithCameraRef.current = false;
+    }
+  }, [phaseAudio]);
+
+  // Sincronización continua en vivo de la cámara animada del GLB (3dBimFab) cuadro a cuadro
+  useFrame(() => {
+    const currentCamConfig = CameraPosition ? CameraPosition.find((item) => item.pasos == pasoActual) : null;
+    const isGlbCamActive = currentCamConfig?.useGlbCamera === true || 
+      currentCamConfig?.cameraMode === "glb" || 
+      (!currentCamConfig?.override && (scene.getObjectByName("Camera") || (cameras && cameras.length > 0)));
+
+    if (!isGlbCamActive) return;
+
+    const glbCamNode = scene.getObjectByName("Camera") || (cameras && cameras.length > 0 ? cameras[0] : null);
+    if (!glbCamNode) return;
+
+    const controls = props.orbitControlsRef?.current;
+
+    // Verificar si alguna acción de animación se está reproduciendo activamente
+    let isRunning = false;
+    if (actions) {
+      for (const act of Object.values(actions)) {
+        if (act && act.isRunning()) {
+          isRunning = true;
+          break;
+        }
+      }
+    }
+
+    if (isRunning) {
+      // Mientras la animación está corriendo, deshabilitar OrbitControls para evitar colisiones
+      if (controls && controls.enabled) {
+        controls.enabled = false;
+      }
+
+      // Sincronizar posición, orientación y fov en coordenadas de mundo
+      const worldPos = new THREE.Vector3();
+      const worldQuat = new THREE.Quaternion();
+      glbCamNode.getWorldPosition(worldPos);
+      glbCamNode.getWorldQuaternion(worldQuat);
+
+      camera.position.copy(worldPos);
+      camera.quaternion.copy(worldQuat);
+
+      if (glbCamNode.fov && Math.abs(camera.fov - glbCamNode.fov) > 0.01) {
+        camera.fov = glbCamNode.fov;
+        camera.updateProjectionMatrix();
+      }
+
+      // Mantener SIEMPRE el target de OrbitControls perfectamente alineado al frente de la cámara
+      if (controls) {
+        const forwardDir = new THREE.Vector3();
+        camera.getWorldDirection(forwardDir);
+        controls.target.copy(camera.position).addScaledVector(forwardDir, 2.5);
+      }
+    } else {
+      // Animación pausada o finalizada:
+      // Si el usuario aún NO ha tomado el mouse/touch para orbitar manualmente,
+      // la cámara DEBE PERMANECER congelada exactamente donde está el GLB
+      if (!userInteractedWithCameraRef.current) {
+        const worldPos = new THREE.Vector3();
+        const worldQuat = new THREE.Quaternion();
+        glbCamNode.getWorldPosition(worldPos);
+        glbCamNode.getWorldQuaternion(worldQuat);
+
+        camera.position.copy(worldPos);
+        camera.quaternion.copy(worldQuat);
+
+        if (glbCamNode.fov && Math.abs(camera.fov - glbCamNode.fov) > 0.01) {
+          camera.fov = glbCamNode.fov;
+          camera.updateProjectionMatrix();
+        }
+
+        // Alinear el target de OrbitControls hacia donde mira la cámara ANTES de habilitarlo
+        if (controls) {
+          const forwardDir = new THREE.Vector3();
+          camera.getWorldDirection(forwardDir);
+          controls.target.copy(camera.position).addScaledVector(forwardDir, 2.5);
+        }
+      }
+
+      // Habilitar OrbitControls de forma segura (sin ningún salto angular ni descentrado)
+      if (controls && !controls.enabled) {
+        controls.enabled = true;
+      }
+    }
+  });
 
   // Preload de pasos adyacentes para que las transiciones sean instantáneas y fluidas (Capa protegida)
   useEffect(() => {

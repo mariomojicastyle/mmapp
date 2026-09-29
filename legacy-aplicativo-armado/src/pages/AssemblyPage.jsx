@@ -275,6 +275,7 @@ const AssemblyPage = () => {
               target: g.cameraTarget ? [g.cameraTarget[0], g.cameraTarget[1], g.cameraTarget[2]] : undefined
             })),
             cameraPositions: (configData.glb_pasos || []).map(g => {
+              const useGlbCam = g.useGlbCamera === true || g.cameraMode === "glb";
               let pos = { x: -3.177, y: 2, z: 5 };
               if (g.cameraPosition) {
                 if (Array.isArray(g.cameraPosition)) {
@@ -287,9 +288,14 @@ const AssemblyPage = () => {
                   };
                 }
               }
+              const hasManualCoords = Boolean(g.cameraPosition && (Array.isArray(g.cameraPosition) ? g.cameraPosition.length > 0 : true));
               return {
                 pasos: g.step,
-                override: true,
+                override: !useGlbCam && hasManualCoords,
+                useGlbCamera: useGlbCam,
+                cameraMode: g.cameraMode || (useGlbCam ? "glb" : "manual"),
+                hasGlbCamera: g.hasGlbCamera,
+                hasAnimatedCamera: g.hasAnimatedCamera,
                 position: pos
               };
             }),

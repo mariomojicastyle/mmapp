@@ -2,7 +2,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unused-vars, react-hooks/exhaustive-deps */
 
 import React, { useState, useEffect, useRef } from "react"
-import { X, Download, Paperclip, Image, FileText, Music, Cpu, Layers, Plus, Trash2, Loader2, Eye, ExternalLink, ChevronDown, ChevronUp, UploadCloud, CheckCircle2, AlertCircle, AlertTriangle, FileSpreadsheet, Box, Boxes, Coins, Hammer, Wrench, Sparkles, Volume2, Play, Square, Mic, Library, Camera, HelpCircle, BookOpen, ScanLine, Gauge, FastForward } from "lucide-react"
+import { X, Download, Paperclip, Image, FileText, Music, Cpu, Layers, Plus, Trash2, Loader2, Eye, ExternalLink, ChevronDown, ChevronUp, UploadCloud, CheckCircle2, AlertCircle, AlertTriangle, FileSpreadsheet, Box, Boxes, Coins, Hammer, Wrench, Sparkles, Volume2, Play, Square, Mic, Library, Camera, Video, HelpCircle, BookOpen, ScanLine, Gauge, FastForward } from "lucide-react"
 import { motion, AnimatePresence } from "framer-motion"
 import { cn } from "@/lib/utils"
 import { usePermissions } from "@/hooks/use-permissions"
@@ -243,6 +243,72 @@ const getValidHexColor = (val: string): string => {
   return "#000000";
 };
 
+export interface GlbStepItem {
+  step: string;
+  fileName: string;
+  progress: number;
+  cameraPosition?: number[];
+  cameraTarget?: number[];
+  useGlbCamera?: boolean;
+  cameraMode?: "glb" | "manual";
+  hasGlbCamera?: boolean;
+  hasAnimatedCamera?: boolean;
+}
+
+export interface GlbCameraInspection {
+  hasCamera: boolean;
+  hasAnimatedCamera: boolean;
+}
+
+export const inspectGlbCamera = (buffer: ArrayBuffer): GlbCameraInspection => {
+  try {
+    const dataView = new DataView(buffer);
+    if (buffer.byteLength < 20) return { hasCamera: false, hasAnimatedCamera: false };
+    const magic = dataView.getUint32(0, true);
+    if (magic !== 0x46546C67) return { hasCamera: false, hasAnimatedCamera: false }; // "glTF"
+    const jsonChunkLength = dataView.getUint32(12, true);
+    const jsonChunkType = dataView.getUint32(16, true);
+    if (jsonChunkType !== 0x4E4F534A) return { hasCamera: false, hasAnimatedCamera: false }; // "JSON"
+    const jsonBytes = new Uint8Array(buffer, 20, Math.min(jsonChunkLength, buffer.byteLength - 20));
+    const jsonStr = new TextDecoder("utf-8").decode(jsonBytes);
+    const gltf = JSON.parse(jsonStr);
+
+    const hasCamerasArray = Array.isArray(gltf.cameras) && gltf.cameras.length > 0;
+    
+    // Buscar si hay nodos con cámara
+    const cameraNodeIndices = new Set<number>();
+    if (Array.isArray(gltf.nodes)) {
+      gltf.nodes.forEach((node: any, idx: number) => {
+        if (node.camera !== undefined || node.name === "Camera" || (typeof node.name === "string" && node.name.toLowerCase().includes("cam"))) {
+          cameraNodeIndices.add(idx);
+        }
+      });
+    }
+
+    // Buscar si hay animaciones que apunten a un nodo de cámara
+    let hasAnimatedCamera = false;
+    if (Array.isArray(gltf.animations)) {
+      for (const anim of gltf.animations) {
+        if (Array.isArray(anim.channels)) {
+          for (const ch of anim.channels) {
+            if (ch.target && cameraNodeIndices.has(ch.target.node)) {
+              hasAnimatedCamera = true;
+              break;
+            }
+          }
+        }
+        if (hasAnimatedCamera) break;
+      }
+    }
+
+    const hasCamera = hasCamerasArray || cameraNodeIndices.size > 0;
+    return { hasCamera, hasAnimatedCamera };
+  } catch (err) {
+    console.warn("No se pudo inspeccionar la cámara del GLB:", err);
+    return { hasCamera: false, hasAnimatedCamera: false };
+  }
+};
+
 export function DetalleProyectoModal({ isOpen, onClose, proyecto, onUpdate }: DetalleProyectoModalProps) {
   const { isSuperAdmin, isCoequipero } = usePermissions()
   const [activeTab, setActiveTab] = useState<"solicitud" | "insumos" | "ui" | "audios" | "despiece">("solicitud")
@@ -331,7 +397,7 @@ export function DetalleProyectoModal({ isOpen, onClose, proyecto, onUpdate }: De
   const [translatingAyuda, setTranslatingAyuda] = useState<string | null>(null)
 
   // Insumos State
-  const [glbSteps, setGlbSteps] = useState<{ step: string; fileName: string; progress: number; cameraPosition?: number[]; cameraTarget?: number[] }[]>([])
+  const [glbSteps, setGlbSteps] = useState<GlbStepItem[]>([])
   const [tempPosInputs, setTempPosInputs] = useState<Record<string, string>>({})
   const [tempTgtInputs, setTempTgtInputs] = useState<Record<string, string>>({})
   const [audioEsSteps, setAudioEsSteps] = useState<{ step: string; fileName: string }[]>([])
@@ -1467,27 +1533,52 @@ export function DetalleProyectoModal({ isOpen, onClose, proyecto, onUpdate }: De
           }
           path = `${codigoManual}/models/P${stepStr}.glb`
 
-          // Encriptar el modelo en caliente antes de subirlo a Supabase Storage con AES-256
+          // Inspeccionar cámara interna y animación del GLB antes de encriptar
+          let camInspection = { hasCamera: false, hasAnimatedCamera: false }
           try {
             const arrayBuffer = await file.arrayBuffer()
+            camInspection = inspectGlbCamera(arrayBuffer)
+
             const encrypted = await encryptBuffer(arrayBuffer, codigoManual)
             fileToUpload = new File([encrypted], fileNameToUse, { type: file.type || "model/gltf-binary" })
           } catch (cryptErr) {
-            console.error("Error al encriptar el GLB con AES-256 antes de subir:", cryptErr)
+            console.error("Error al procesar/encriptar el GLB con AES-256 antes de subir:", cryptErr)
             throw new Error("No se pudo proteger el modelo 3D antes de subir.")
           }
+
+          const detectedGlbCamera = camInspection.hasCamera || camInspection.hasAnimatedCamera
 
           updatedStateCallback = () => {
             setGlbSteps(prev => {
               const existing = prev.find(s => s.step === stepStr)
               const filtered = prev.filter(s => s.step !== stepStr)
-              return [...filtered, { 
+
+              // Si el archivo trae cámara del GLB o animación de cámara, seleccionarla por defecto
+              const defaultMode: "glb" | "manual" = detectedGlbCamera ? "glb" : (existing?.cameraMode || "manual")
+              const useGlb = existing?.useGlbCamera !== undefined ? existing.useGlbCamera : (defaultMode === "glb")
+
+              const newStepItem: GlbStepItem = { 
                 step: stepStr, 
                 fileName: `P${stepStr}.glb`, 
                 progress: 100,
                 cameraPosition: existing?.cameraPosition,
-                cameraTarget: existing?.cameraTarget
-              }].sort((a,b) => a.step.localeCompare(b.step))
+                cameraTarget: existing?.cameraTarget,
+                useGlbCamera: useGlb,
+                cameraMode: existing?.cameraMode || defaultMode,
+                hasGlbCamera: detectedGlbCamera,
+                hasAnimatedCamera: camInspection.hasAnimatedCamera
+              }
+
+              const newSteps = [...filtered, newStepItem].sort((a,b) => a.step.localeCompare(b.step))
+
+              // Guardar en Supabase para persistencia inmediata
+              const supabaseClient = createClient()
+              supabaseClient
+                .from("configuraciones_manual")
+                .update({ glb_pasos: newSteps })
+                .eq("proyecto_id", proyecto?.id)
+
+              return newSteps
             })
           }
         } else if (type === 'audio_es') {
@@ -3386,24 +3477,21 @@ export function DetalleProyectoModal({ isOpen, onClose, proyecto, onUpdate }: De
                                   </div>
                                 </div>
 
-                                {/* Estado de posición de cámara */}
-                                <div className="w-full mt-1.5 pt-1.5 border-t border-outline-variant/10">
-                                  <div className="flex items-center justify-between">
+                                {/* Selector de Cámara por Defecto del Paso */}
+                                <div className="w-full mt-1.5 pt-1.5 border-t border-outline-variant/10 flex flex-col gap-2">
+                                  <div className="flex items-center justify-between gap-1">
                                     <span className="text-[10px] text-on-surface-variant font-medium flex items-center gap-1">
-                                      🎥 Cámara: {g.cameraPosition && g.cameraTarget ? (
-                                        <span className="text-teal-400 font-bold">Definida</span>
-                                      ) : (
-                                        <span className="text-on-surface-variant/40 italic">Sin definir</span>
-                                      )}
+                                      <Camera className="h-3 w-3 text-primary" />
+                                      Cámara:
                                     </span>
-                                    {(g.cameraPosition || g.cameraTarget) && (
+                                    <div className="flex items-center p-0.5 bg-surface-container-lowest border border-outline-variant/20 rounded-full">
                                       <button
                                         type="button"
                                         onClick={() => {
                                           setGlbSteps(prev => {
                                             const updated = prev.map(s =>
                                               s.step === g.step
-                                                ? { ...s, cameraPosition: undefined, cameraTarget: undefined }
+                                                ? { ...s, useGlbCamera: true, cameraMode: "glb" as const }
                                                 : s
                                             );
                                             const supabaseClient = createClient();
@@ -3413,54 +3501,138 @@ export function DetalleProyectoModal({ isOpen, onClose, proyecto, onUpdate }: De
                                               .eq("proyecto_id", proyecto?.id);
                                             return updated;
                                           });
+                                          setSuccessMsg(`Paso ${g.step}: Activada cámara por defecto del GLB ✓`);
                                         }}
-                                        className="text-[9px] text-on-surface-variant hover:text-red-400 font-medium"
+                                        className={cn(
+                                          "px-2.5 py-0.5 rounded-full text-[9px] font-semibold transition-all flex items-center gap-1",
+                                          (g.useGlbCamera || g.cameraMode === "glb" || (!g.cameraMode && !g.cameraPosition))
+                                            ? "bg-primary text-on-primary shadow-sm"
+                                            : "text-on-surface-variant hover:text-on-surface"
+                                        )}
                                       >
-                                        Limpiar
+                                        <Video className="h-2.5 w-2.5" />
+                                        <span>Cámara GLB</span>
+                                        {g.hasAnimatedCamera && (
+                                          <span className="text-[7px] bg-white/20 px-1 py-0.2 rounded-full font-bold uppercase tracking-wider">
+                                            Animada
+                                          </span>
+                                        )}
                                       </button>
-                                    )}
-                                  </div>
-                                  
-                                  {/* Pegar coordenadas manualmente */}
-                                  <div className="mt-1 flex items-center gap-1">
-                                    <input
-                                      type="text"
-                                      placeholder="Pegar posición de cámara..."
-                                      value={tempPosInputs[g.step] || ""}
-                                      onChange={(e) => {
-                                        const val = e.target.value;
-                                        setTempPosInputs(prev => ({ ...prev, [g.step]: val }));
-                                        
-                                        const parsed = parseCameraCoords(val);
-                                        if (parsed && parsed.pos && parsed.tgt) {
+
+                                      <button
+                                        type="button"
+                                        onClick={() => {
                                           setGlbSteps(prev => {
                                             const updated = prev.map(s =>
                                               s.step === g.step
-                                                ? { ...s, cameraPosition: parsed.pos, cameraTarget: parsed.tgt }
+                                                ? { ...s, useGlbCamera: false, cameraMode: "manual" as const }
                                                 : s
                                             );
                                             const supabaseClient = createClient();
                                             supabaseClient
                                               .from("configuraciones_manual")
                                               .update({ glb_pasos: updated })
-                                              .eq("proyecto_id", proyecto?.id)
-                                              .then(({ error }) => {
-                                                if (!error) {
-                                                  setSuccessMsg(`Cámara guardada para Paso ${g.step} ✓`);
-                                                }
-                                              });
+                                              .eq("proyecto_id", proyecto?.id);
                                             return updated;
                                           });
-                                          setTempPosInputs(prev => {
-                                            const copy = { ...prev };
-                                            delete copy[g.step];
-                                            return copy;
-                                          });
-                                        }
-                                      }}
-                                      className="text-[9px] w-full bg-surface-container-lowest border border-outline-variant/30 rounded px-2 py-0.5 outline-none focus:border-primary text-on-surface placeholder:text-on-surface-variant/40"
-                                    />
+                                          setSuccessMsg(`Paso ${g.step}: Modo coordenadas manuales activado ✓`);
+                                        }}
+                                        className={cn(
+                                          "px-2.5 py-0.5 rounded-full text-[9px] font-semibold transition-all flex items-center gap-1",
+                                          (!g.useGlbCamera && (g.cameraMode === "manual" || (g.cameraPosition && !g.cameraMode)))
+                                            ? "bg-primary text-on-primary shadow-sm"
+                                            : "text-on-surface-variant hover:text-on-surface"
+                                        )}
+                                      >
+                                        <Camera className="h-2.5 w-2.5" />
+                                        <span>Manual</span>
+                                      </button>
+                                    </div>
                                   </div>
+
+                                  {/* Detalle interactivo según el modo activo */}
+                                  {(g.useGlbCamera || g.cameraMode === "glb" || (!g.cameraMode && !g.cameraPosition)) ? (
+                                    <div className="flex items-center justify-between px-2.5 py-1 bg-primary/10 rounded-full border border-primary/20 text-[9px]">
+                                      <span className="text-primary font-medium flex items-center gap-1 truncate">
+                                        🎬 Cámara interna {g.hasAnimatedCamera ? "animada (3dBimFab)" : "del GLB"}
+                                      </span>
+                                      <span className="text-emerald-500 dark:text-emerald-400 font-bold uppercase text-[8px] tracking-wider shrink-0">
+                                        Por Defecto
+                                      </span>
+                                    </div>
+                                  ) : (
+                                    <div className="flex flex-col gap-1">
+                                      <div className="flex items-center justify-between">
+                                        <span className="text-[9px] text-on-surface-variant font-medium">
+                                          {g.cameraPosition && g.cameraTarget ? (
+                                            <span className="text-teal-400 font-bold">✓ Coordenadas fijas activas</span>
+                                          ) : (
+                                            <span className="text-on-surface-variant/40 italic">Sin definir (usa default)</span>
+                                          )}
+                                        </span>
+                                        {(g.cameraPosition || g.cameraTarget) && (
+                                          <button
+                                            type="button"
+                                            onClick={() => {
+                                              setGlbSteps(prev => {
+                                                const updated = prev.map(s =>
+                                                  s.step === g.step
+                                                    ? { ...s, cameraPosition: undefined, cameraTarget: undefined }
+                                                    : s
+                                                );
+                                                const supabaseClient = createClient();
+                                                supabaseClient
+                                                  .from("configuraciones_manual")
+                                                  .update({ glb_pasos: updated })
+                                                  .eq("proyecto_id", proyecto?.id);
+                                                return updated;
+                                              });
+                                            }}
+                                            className="text-[9px] text-on-surface-variant hover:text-red-400 font-medium rounded-full px-1.5 py-0.5 hover:bg-red-500/10 transition"
+                                          >
+                                            Limpiar
+                                          </button>
+                                        )}
+                                      </div>
+                                      <input
+                                        type="text"
+                                        placeholder="Pegar posición de cámara..."
+                                        value={tempPosInputs[g.step] || ""}
+                                        onChange={(e) => {
+                                          const val = e.target.value;
+                                          setTempPosInputs(prev => ({ ...prev, [g.step]: val }));
+                                          
+                                          const parsed = parseCameraCoords(val);
+                                          if (parsed && parsed.pos && parsed.tgt) {
+                                            setGlbSteps(prev => {
+                                              const updated = prev.map(s =>
+                                                s.step === g.step
+                                                  ? { ...s, cameraPosition: parsed.pos, cameraTarget: parsed.tgt, useGlbCamera: false, cameraMode: "manual" as const }
+                                                  : s
+                                              );
+                                              const supabaseClient = createClient();
+                                              supabaseClient
+                                                .from("configuraciones_manual")
+                                                .update({ glb_pasos: updated })
+                                                .eq("proyecto_id", proyecto?.id)
+                                                .then(({ error }) => {
+                                                  if (!error) {
+                                                    setSuccessMsg(`Cámara guardada para Paso ${g.step} ✓`);
+                                                  }
+                                                });
+                                              return updated;
+                                            });
+                                            setTempPosInputs(prev => {
+                                              const copy = { ...prev };
+                                              delete copy[g.step];
+                                              return copy;
+                                            });
+                                          }
+                                        }}
+                                        className="text-[9px] w-full bg-surface-container-lowest border border-outline-variant/30 rounded-full px-2.5 py-1 outline-none focus:border-primary text-on-surface placeholder:text-on-surface-variant/40"
+                                      />
+                                    </div>
+                                  )}
                                 </div>
                               </div>
                             ))}
@@ -3469,7 +3641,7 @@ export function DetalleProyectoModal({ isOpen, onClose, proyecto, onUpdate }: De
                           <button
                             type="button"
                             onClick={() => handleSimulateUpload("glb")}
-                            className="flex items-center gap-1.5 rounded-lg border border-primary/30 border-dashed px-4 py-2 text-xs font-semibold text-primary transition hover:bg-primary/5 hover:border-primary"
+                            className="flex items-center gap-1.5 rounded-full border border-primary/30 border-dashed px-4 py-2 text-xs font-semibold text-primary transition hover:bg-primary/5 hover:border-primary"
                           >
                             <Plus className="h-3.5 w-3.5" />
                             Agregar Nuevo Paso (GLB)

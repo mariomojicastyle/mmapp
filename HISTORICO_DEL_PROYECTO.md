@@ -2483,3 +2483,23 @@ Para mantener la máxima agilidad y minimizar el consumo de tokens sin perder ni
 - **Validación de Calidad**:
   * Compilación TypeScript verificada (`npx tsc --noEmit`) en `3bf` y en `mario-mojica-plataforma` con **0 errores**.
   * Prueba cruzada de síntesis TTS: duración (`6.5 s`), tasa de bits (`96 kbps`) y tamaño binario (`77.472 bytes`) **100% idénticos entre ambos servidores locales** (puertos 3003 y 3005).
+---
+
+### 🚀 Hito 232: Selección de Cámara por Defecto GLB en Plataforma B2B, Detección de Cabeceras glTF y Erradicación de Descentrado en Pausa (`detalle-proyecto-modal.tsx`, `AssemblyPage.jsx`, `Model.jsx`) (29 de Septiembre, 2026)
+- **Diagnóstico y Requerimientos Clave del Hito**:
+  1. *Cámaras Animadas de 3dBimFab*: Varios pasos del manual exportados desde 3dBimFab integran cámaras cinematográficas animadas (`Camera.position`, `Camera.quaternion`), pero la plataforma B2B (`app.mariomojica.com`) carecía de selector por paso y forzaba coordenadas fijas con `override: true`.
+  2. *Descentrado de Cámara al Pausar*: Al presionar el botón de Pausa durante la reproducción del paso, la cámara saltaba y se torcía bruscamente, enviando el mueble a la esquina inferior derecha.
+- **Implementación Técnica de la Solución**:
+  1. *Inspección Ultrarrápida de Binario GLB e Interfaz de Selección en Plataforma B2B (`detalle-proyecto-modal.tsx`)*:
+     - **Función `inspectGlbCamera`**: Analiza los primeros chunks del archivo GLB antes de encriptarlo con AES-256 para detectar la existencia de nodos de cámara y canales de animación de cámara. Si detecta cámara interna o animada, predetermina automáticamente `useGlbCamera: true` (`cameraMode: 'glb'`).
+     - **Selector en Cápsulas `rounded-full`**: Incorporado en cada tarjeta de paso GLB del CMS con botones cápsula `[ 🎬 Cámara GLB ]` (con chip `Animada` si aplica) y `[ 📍 Manual ]` (para pegar coordenadas tradicionales y botón Limpiar), con persistencia inmediata en Supabase (`configuraciones_manual.glb_pasos`).
+  2. *Desacople de Override en Ensamblador (`AssemblyPage.jsx`)*:
+     - Removido `override: true` forzado para todos los pasos; ahora evalúa dinámicamente si el paso usa cámara del GLB (`useGlbCam`), respetando la configuración elegida en la plataforma.
+  3. *Sincronización en Vivo y Erradicación del Descentrado en Pausa (`Model.jsx`)*:
+     - **Causa Raíz Diagnosticada**: Al pausar la animación, `actions.isRunning()` devolvía `false`, lo cual reactivaba `OrbitControls.enabled = true` con un target desactualizado en `(0, 0.8, 0)`. Drei ejecutaba `OrbitControls.update()`, forzando a la cámara a mirar al centro de la habitación (`camera.lookAt(target)`) y descentrando por completo las piezas activas.
+     - **Alineación Colineal del Target**: En cada fotograma, el target de OrbitControls se calcula y sincroniza exactamente sobre el vector de mirada frontal de la cámara ($ec{T} = ec{P} + d cdot ec{D}$), convirtiendo la rotación interna de `OrbitControls` en una operación identidad ($0^circ$ de desvío).
+     - **Persistencia en Pausa**: Durante la pausa (`phaseAudio === 'paused'`), la cámara continúa fija en la posición y orientación exactas del GLB sin saltos ni tirones.
+     - **Interacción Manual Segura**: Se detecta el evento `start` de OrbitControls para permitir órbita libre si el usuario arrastra con el ratón o pantalla táctil teniendo como pivote la pieza activa; al presionar Play o Repetir se retoma fluidamente la cinemática de la cámara.
+- **Validación de Calidad**:
+  * Compilación TypeScript verificada (`npx tsc --noEmit`) en `mario-mojica-plataforma` con **0 errores**.
+  * Verificado en `http://localhost:5173/Comoda_Ravenna?cameraOverlay=off&lightingEditor=off`: cámara perfectamente centrada y estable al pausar en cualquier instante.
