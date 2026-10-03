@@ -2551,4 +2551,39 @@ Para mantener la máxima agilidad y minimizar el consumo de tokens sin perder ni
   * Compilación TypeScript verificada (`npx tsc --noEmit`) en `3bf` y `mario-mojica-plataforma` con **0 errores**.
   * Los 5 daemons locales continúan operativos y sincronizados.
 
+---
+
+### 🚀 Hito 235: Módulo de Optimización y Nesting Industrial (`Opti_Nesting`) en `3dBimFab`: Tríada de Corte, Interoperabilidad CSV/DXF, Salidas de Taller (PDF, G-Code .nc, SCM Morbidelli .xcs) y Multiplicador de Lote de Producción (03 de Octubre, 2026)
+- **Diagnóstico y Objetivos de Ingeniería**:
+  * Dotar a `3dBimFab` de un motor de anidado y aprovechamiento de materia prima industrial de ciclo cerrado (*cero fricción*), permitiendo pasar del modelo paramétrico 3D a los diagramas de corte de taller y programas CNC en segundos.
+  * Requerimiento estricto de la Tríada de manufactura: 1) Seccionadora industrial (corte guillotina de lado a lado), 2) Celda Nesting CNC (mesa de vacío continua SCM Morbidelli X200), y 3) Madera Maciza & Ebanistería (tablones naturales con estrategia Rip-First vs Crosscut-First y cubicación en Pies Tablares PT).
+  * Requerimiento de interoperabilidad externa (listas de corte CSV y siluetas DXF 2D) y salidas profesionales de producción para taller.
+- **Implementación Técnica por Fases**:
+  1. *Fase 1: Núcleo Nativo In-Memory & Tríada de Motores (`extractorPiezasModelo.ts`, `guillotineOptimizer.ts`, `nestingCncOptimizer.ts`, `maderaMacizaOptimizer.ts`, `motorOptimizacionFacade.ts`, `VisorLaminasCanvas.tsx`)*:
+     - **Extractor In-Memory**: Extracción automática de piezas directamente de `use3BFStore` sin requerir archivos intermedios, segregando físicamente por espesores reales ($15\text{ mm}$, $12\text{ mm}$, $3\text{ mm}$) y detectando sentido de veta.
+     - **Motor 1 (Seccionadora Guillotina 2D)**: Algoritmo recursivo *Best Short Side Fit* con kerf de disco ($3.5\text{ mm}$), refilado perimetral ($10\text{ mm}$) y coordenadas exactas de líneas de corte.
+     - **Motor 2 (Celda Nesting CNC)**: Mesa de vacío continua, separación paramétrica por diámetro de fresa de compresión ($10\text{ mm}$) y detección automática de piezas chicas ($< 0.08\text{ m}^2$) para corte con pestañas de sujeción (*onion skin*).
+     - **Motor 3 (Madera Maciza & Ebanistería)**: Aserrado longitudinal (*Rip-First*) vs troceado (*Crosscut-First*) y cálculo automático de volumen comercial en Pies Tablares ($\text{PT} = \frac{E \times A \times L}{2.359.737}$).
+     - **Visor Interactivo Canvas 2D**: Visualización a escala con zoom/pan, nombres canónicos PT-BR (`Peça 1`, `Peça 2`...), líneas de corte rojas discontinuas y selector dinámico de láminas.
+  2. *Fase 2: Interoperabilidad Externa con CSV y DXF (`csvParser.ts`, `dxfParser2D.ts`, `ModalImportarCorte.tsx`)*:
+     - **Parser Universal CSV**: Autodetección de delimitadores (`,`, `;`, `\t`), normalización de columnas multilingües (ES, PT, EN), preservación de veta y generador de plantilla CSV de ejemplo en 1 clic.
+     - **Parser DXF 2D**: Extracción de entidades `LWPOLYLINE` con cálculo de *Bounding Box* para siluetas complejas o piezas no ortogonales.
+     - **Modal Drag & Drop**: Zona interactiva de arrastre con tabla de previsualización en vivo, conteo de piezas y selector `[ Modelo 3D ]` vs `[ Archivo Externo ]`.
+  3. *Fase 3: Salidas Industriales para Taller (`exportadorPdfTaller.ts`, `exportadorCncGcode.ts`, `exportadorCncXilog.ts`, `ResumenMetricasCard.tsx`)*:
+     - **Ficha Técnica PDF**: Reporte imprimible con membrete canónico vectorial oficial de `3dBimFab` (`Logo_3BF.svg` de `/publicidad`), código QR Base64 para trazabilidad en planta, diagramas vectoriales SVG a escala por lámina, despiece completo y fallback automático ante bloqueo de ventanas emergentes.
+     - **G-Code Estándar (`.nc`)**: Velocidad de avance $F6000\text{ mm/min}$, penetración $F1500$, husillo a $18.000\text{ RPM}$, cota de seguridad $Z25.0$, sobrecorte de sacrificio y empaquetado multi-lámina en `.zip` vía `JSZip`.
+     - **SCM Morbidelli X200 / Maestro Lab (`.xcs`)**: Generador de scripts nativos para el software Xilog Plus con empaquetado por lote en `.zip`.
+  4. *Multiplicador de Lote de Producción (`OptimizadorParametrosBar.tsx`, `OptimizadorPanel.tsx`, `ListaPiezasOptimizadas.tsx`)*:
+     - Control en cápsula pura `rounded-full`: `[ 📦 Lote: - [ 1 ] + muebles | 1 5 10 20 50 ]` con stepper numérico y presets de 1 clic.
+     - Escalado reactivo automático de la demanda total de piezas (ej. 53 piezas $\times 10 = 530$ piezas), recalculando en tiempo real las láminas necesarias, metros de corte, mermas y costos.
+  5. *Ergonomía de Interfaz & Cumplimiento de Marca*:
+     - Cumplimiento incondicional de cápsulas puras `rounded-full` en todos los interactivos.
+     - Paleta oficial: **Tech Ethos** (`#0088AA`) en Light y **Obsidian** (`#1368AA` mate) en Dark.
+     - Nomenclatura canónica inmutable: **`3dBimFab`**.
+- **Validación de Calidad**:
+  * Compilación TypeScript verificada (`npx tsc --noEmit`) en `3bf` con **0 errores**.
+  * Servidor Next.js local respondiendo con código **HTTP 200 OK**.
+  * Documentación de ingeniería y memoria activa sincronizadas al 100%.
+
+
 

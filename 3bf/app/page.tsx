@@ -12,8 +12,9 @@ import SaveFurnitureModal from "@/components/ui/SaveFurnitureModal";
 import AIRenderStudioModal from "@/components/ui/AIRenderStudioModal";
 import PBRMaterialStudioModal from "@/components/ui/PBRMaterialStudioModal";
 import NPanel from "@/components/viewer/NPanel";
+import OptimizadorPanel from "@/components/optimizacion/OptimizadorPanel";
 import { use3BFStore, APP_VERSION } from "@/lib/store";
-import { Box, Layers, Cpu, CheckCircle2, AlertCircle, Database, Camera, Check, Sparkles, BookOpen, BoxSelect } from "lucide-react";
+import { Box, Layers, Cpu, CheckCircle2, AlertCircle, Database, Camera, Check, Sparkles, BookOpen, BoxSelect, Scissors } from "lucide-react";
 import { IconModoLineas, IconModoCristal, IconModoSolido, IconModoRender } from "@/components/ui/ControlPanel";
 
 function DocumentTitleEditor() {
@@ -501,6 +502,21 @@ export default function Home3BF() {
               <Layers className="w-2.5 lg:w-4 h-2.5 lg:h-4" /> <span>Despiece<span className="hidden sm:inline"> & Costos</span></span>
             </button>
             <button
+              onClick={() => setPestanaActiva("optimizacion")}
+              style={
+                pestanaActiva === "optimizacion"
+                  ? { backgroundColor: coloresApariencia?.botonActivo || "#0891b2", borderColor: coloresApariencia?.colorMarca || "#0891b2" }
+                  : { backgroundColor: coloresApariencia?.botonInactivo || "#E2E8F0", borderColor: coloresApariencia?.bordeBotonInactivo || "#CBD5E1", color: coloresApariencia?.textoPrincipal || "#0F172A" }
+              }
+              className={`px-1.5 sm:px-2 lg:px-3.5 h-[18px] lg:h-7 rounded-full transition flex items-center gap-1 font-bold cursor-pointer text-[8.5px] sm:text-[9.5px] lg:text-xs ${
+                pestanaActiva === "optimizacion"
+                  ? "text-white shadow-md border"
+                  : "hover:opacity-90 border backdrop-blur-sm"
+              }`}
+            >
+              <Scissors className="w-2.5 lg:w-4 h-2.5 lg:h-4" /> <span>Optimización</span>
+            </button>
+            <button
               onClick={() => setPestanaActiva("basedatos")}
               style={
                 pestanaActiva === "basedatos"
@@ -736,7 +752,12 @@ export default function Home3BF() {
               <DespieceView />
             </div>
           )}
-          {pestanaActiva !== "3d" && pestanaActiva !== "manual" && pestanaActiva !== "despiece" && (
+          {pestanaActiva === "optimizacion" && (
+            <div className="w-full h-full relative">
+              <OptimizadorPanel />
+            </div>
+          )}
+          {pestanaActiva !== "3d" && pestanaActiva !== "manual" && pestanaActiva !== "despiece" && pestanaActiva !== "optimizacion" && (
             <div className="w-full h-full relative">
               <DatabaseView />
             </div>

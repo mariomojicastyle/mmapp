@@ -904,8 +904,8 @@ export interface State3BF {
   setTema: (tema: "tech" | "obsidian") => void;
   
   // Pestaña Activa
-  pestanaActiva: "3d" | "despiece" | "basedatos" | "costos" | "dxf" | "manual";
-  setPestanaActiva: (pestana: "3d" | "despiece" | "basedatos" | "costos" | "dxf" | "manual") => void;
+  pestanaActiva: "3d" | "despiece" | "basedatos" | "costos" | "dxf" | "manual" | "optimizacion";
+  setPestanaActiva: (pestana: "3d" | "despiece" | "basedatos" | "costos" | "dxf" | "manual" | "optimizacion") => void;
 
   // 🎥 Persistencia de Cámara en Escena 3D
   camaraEscena?: CamaraEscena3D | null;
