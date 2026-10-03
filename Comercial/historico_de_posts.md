@@ -15,6 +15,66 @@ Para evaluar el impacto de cada publicación, analizamos tres niveles de métric
 
 ## 🗄️ Registro de Publicaciones (Orden Cronológico: Más Reciente Arriba, Más Antiguo al Final)
 
+### 🎬 [EN PRE-PRODUCCIÓN / PRÓXIMO LANZAMIENTO] Detrás de Cámaras: Criterio de Ensamble y Manual 3D
+* **Estado:** Guion definitivo aprobado / En preparación de rodaje
+* **Archivo Maestro:** [storyboard_video_2min_criterio_manual_3d.md](file:///c:/Desarrollo/mmapp/Comercial/Videos/storyboard_video_2min_criterio_manual_3d.md)
+* **Formato:** Video de 2:10 min (Mario conversando a cámara en estudio + captura viva de pantalla en `3dBimFab` módulo `Manual 3D` + smartphone)
+* **Tesis Estratégica B2B:** Demostrar que los videos 3D lineales tradicionales ("videojuegos") no sirven en planta ni en la sala del cliente; sustituirlos por el manual interactivo paso a paso con el "Paso Cero" (match de herrajes con foto real) y coherencia física.
+* **Hashtags Proyectados:** `#DisenoIndustrial #MueblesRTA #IndustriaMoveleira #Industria40 #MarioMojica #3dBimFab #DisenoParametrico #SmartManufacturing`
+
+---
+
+### [POST RÉCORD / HITTO HISTÓRICO] Diseño Industrial Inteligente: Tu departamento de diseño está saturado
+* **Fecha de Publicación:** 25 de Septiembre, 2026 (Activo / Récord histórico de canal)
+* **Red Social / Canal:** LinkedIn Personal (`mario-mojica`)
+* **Formato:** Video Demostrativo de 1 Minuto (`temporal/Diseño_Industrial_Inteligente.mp4`) con dual monitor (Rhino/Grasshopper paramétrico + Excel BOM/Costeo vivo) + Copy Editorial de Fricciones Técnicas + Primer Comentario (Soluciones a Medida & WhatsApp)
+* **Pilar de Contenido:** Pilar 1 (Ingeniería de Producto & DfMA) + Pilar 3 (Motor Paramétrico 3dBimFab) + Pilar 2 (Manual 3D por Voz)
+* **Hashtags Utilizados:** `#DisenoIndustrial #MueblesRTA #IndustriaMoveleira #Industria40 #MarioMojica #3dBimFab #DisenoParametrico #SmartManufacturing`
+
+#### 📊 Métricas Consolidadas (Día 4-5):
+* **Impresiones Totales:** 973 impresiones (Récord absoluto del canal).
+* **Miembros Alcanzados:** 554 profesionales únicos.
+* **Distribución de Red:** **74% Fuera de la Red** (Viralización por algoritmo en audiencia fría) / 26% Contactos y seguidores.
+* **Visualizaciones de Vídeo:** **392 reproducciones** (40.3% ratio de conversión vista/impresión).
+* **Tiempo Total de Visualización:** 2 horas 22 minutos.
+* **Tiempo Promedio de Reproducción:** 21 segundos (Retención del 35% en video de 60s, altísima para LinkedIn).
+* **Interacciones Sociales:** 11 interacciones (8 reacciones positivas, 1 comentario autor con 119 impresiones).
+* **Conversión de Tráfico:** 3 clics en botón de perfil ("Ir a mi sitio web"), 5 visualizaciones del perfil y 4 nuevos seguidores.
+* **Segmentación Clave de Audiencia:**
+  * **Sectores:** Servicios de diseño (37%), Fabricación de maquinaria industrial (6%), Muebles y hogar (5%), Servicios de ingeniería (4%).
+  * **Cargos:** Diseñador industrial (15%), Proyectistas de producto.
+  * **Empresas Destacadas:** Móveis Bartira (Fábio de Jesus Ferreira - Projetista P&D), Maderkit S.A. (3%), Fabricantes de Buenos Aires (11%).
+
+#### 📝 Copy Oficial Publicado (Español):
+> Tu departamento interno de diseño tiene talento de sobra, pero está saturado.
+>
+> Pasan semanas modelando piezas rígidas en CAD, calculando metros de canto en Excel y redibujando planos cada vez que producción cambia un herraje. Y al final del día, el cliente recibe el mismo instructivo de papel de hace 70 años.
+>
+> En Mario Mojica hacemos las cosas de forma diferente. 🚀
+>
+> No solo creamos software; somos un estudio de Diseño Industrial Inteligente que acompaña a las fábricas de muebles en el desarrollo ágil de sus colecciones:
+>
+> 🧩 Diseño con Bloques Inteligentes: Diseñamos tu mobiliario paramétricamente. Si cambiamos una medida, los mecanizados CNC, ranuras y herrajes se recalculan solos.
+> 📊 BOM y Costeo en Tiempo Real: Sabes exactamente cuánto cuesta fabricar el mueble mientras lo estamos diseñando, no tres semanas después.
+> 💾 Entregables Universales: Te entregamos la propiedad total de tus modelos en DWG, OBJ y GLB para alimentar directamente tus renders de catálogo y tus centros de mecanizado.
+> 📱 Manual de Armado 3D por Voz: El gran plus que eleva la reputación de tu marca. El consumidor escanea un código QR y arma el mueble con un gemelo digital interactivo guiado paso a paso por voz.
+>
+> Entramos a apoyar a tu equipo técnico para que lances productos más rápido, con costos blindados y una experiencia de armado insuperable.
+>
+> 🎥 Mira el video de 1 minuto y descubre cómo trabajamos.
+>
+> ¿Hablamos de tu próxima colección? Escríbeme por mensaje directo o al WhatsApp +57 311 764 6907.
+>
+> El futuro se construye desde hoy. ✨
+>
+> #DisenoIndustrial #MueblesRTA #IndustriaMoveleira #Industria40 #MarioMojica #3dBimFab #DisenoParametrico #SmartManufacturing
+
+#### 💬 Primer Comentario Oficial Publicado:
+> Cada fábrica es única y sus desafíos también. En Mario Mojica adaptamos soluciones a la medida exacta de tu planta de producción. Construyamos el futuro de tu fábrica:
+> 📲 WhatsApp: +57 311 764 6907 | 📩 O escríbeme al DM aquí en LinkedIn.
+
+---
+
 ### [POST OFICIAL LANZAMIENTO] Presentación 3dBimFab: La Plataforma en la Nube para Muebles RTA
 * **Fecha de Publicación:** 29 de Agosto, 2026 (Activo / 58+ impresiones en primeras 48h)
 * **Red Social / Canal:** LinkedIn Personal (`mario-mojica`) / Página de Empresa (`Mario Mojica - Desenvolvedor de Software para Manufatura`)

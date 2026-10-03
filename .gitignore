@@ -52,3 +52,6 @@ __pycache__/
 *.pyc
 3bf/worker/cache/
 3BF/worker/cache/
+
+# Graphify cache and output
+**/graphify-out/

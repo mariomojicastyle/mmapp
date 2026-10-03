@@ -93,6 +93,7 @@ export default function DictadoYTraduccionPage() {
     durationSeconds,
     errorMessage,
     clearError,
+    stopRecording,
     toggleRecording,
     clearAll,
     retranslateAll,
@@ -100,11 +101,32 @@ export default function DictadoYTraduccionPage() {
     updateTranslatedText,
     deleteSegment,
     deleteLastSegment,
+    addDirectSegment,
   } = useSpeechDictation({
     sourceLang: config.sourceLang,
     targetLang: config.targetLang,
     autoTranslate,
   });
+
+  // Manejar pegado de texto desde portapapeles o modal
+  const handlePasteText = (pastedText: string) => {
+    const raw = pastedText.trim();
+    if (!raw) return;
+
+    // Dividir por saltos de línea (párrafos) o frases si es un bloque continuo
+    const lines = raw
+      .split(/\r?\n+/)
+      .map((l) => l.trim())
+      .filter(Boolean);
+
+    if (lines.length > 0) {
+      lines.forEach((line) => {
+        addDirectSegment(line, "");
+      });
+    } else {
+      addDirectSegment(raw, "");
+    }
+  };
 
   // Conteo total de palabras y caracteres (estándar web universal con espacios y signos)
   const { wordCount, charCount } = useMemo(() => {
@@ -304,6 +326,9 @@ export default function DictadoYTraduccionPage() {
           onUpdateTranslatedText={updateTranslatedText}
           onDeleteSegment={deleteSegment}
           onDeleteLastSegment={deleteLastSegment}
+          onPasteText={handlePasteText}
+          isRecording={isRecording}
+          onStopRecording={stopRecording}
         />
       </div>
 

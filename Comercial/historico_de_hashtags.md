@@ -37,16 +37,18 @@ Esta tabla debe retroalimentarse periódicamente con datos de plataformas como L
 
 | Hashtag | Veces Usado | Impresiones Promedio | Clics en Enlace (Umami) | Nivel de Competencia | Estado |
 | :--- | :---: | :---: | :---: | :---: | :---: |
-| `#ManualDeArmado3D` | 1 | *Pendiente* | *Pendiente* | Bajo (Nicho) | Activo |
-| `#MueblesRTA` | 1 | *Pendiente* | *Pendiente* | Medio | Activo |
-| `#PostventaInteligente` | 1 | *Pendiente* | *Pendiente* | Bajo (Nicho) | Activo |
-| `#IndustriaMueblera` | 1 | *Pendiente* | *Pendiente* | Medio-Alto | Activo |
-| `#Industria40` | 1 | *Pendiente* | *Pendiente* | Alto (Saturado) | Activo |
-| `#CustomerExperience` | 1 | *Pendiente* | *Pendiente* | Muy Alto | Activo |
-| `#B2B` | 1 | *Pendiente* | *Pendiente* | Muy Alto | Activo |
-| `#ReadyToAssemble` | 1 | *Pendiente* | *Pendiente* | Alto | Activo |
-| `#Movergs` | 1 | *Pendiente* | *Pendiente* | Bajo (Súper Nicho) | Activo |
-| `#Fimma` | 1 | *Pendiente* | *Pendiente* | Bajo (Súper Nicho) | Activo |
+| `#DisenoIndustrial` | 1 | 973 | 3 (Perfil) | Alto (Excelente tracción) | ⭐ Ganador |
+| `#IndustriaMoveleira` | 2 | ~515 | 3 (Perfil) | Medio (Atracción Brasil/Bartira) | ⭐ Ganador |
+| `#DisenoParametrico` | 1 | 973 | 3 (Perfil) | Medio-Bajo (Nicho Proyectistas) | ⭐ Ganador |
+| `#SmartManufacturing` | 1 | 973 | 3 (Perfil) | Alto (Alcance Global) | ⭐ Ganador |
+| `#MueblesRTA` | 2 | ~515 | 3 (Perfil) | Medio (Nicho Clave) | Activo |
+| `#Industria40` | 2 | ~515 | 3 (Perfil) | Alto (Saturado pero da volumen) | Activo |
+| `#3dBimFab` | 2 | ~515 | 3 (Perfil) | Propio (Branding) | Activo |
+| `#ManualDeArmado3D` | 1 | 58 | 0 | Bajo (Nicho) | Activo |
+| `#PostventaInteligente` | 1 | 58 | 0 | Bajo (Nicho) | Activo |
+| `#IndustriaMueblera` | 1 | 58 | 0 | Medio-Alto | Activo |
+| `#CustomerExperience` | 1 | 58 | 0 | Muy Alto | Activo |
+| `#B2B` | 1 | 58 | 0 | Muy Alto | Activo |
 
 ---
 

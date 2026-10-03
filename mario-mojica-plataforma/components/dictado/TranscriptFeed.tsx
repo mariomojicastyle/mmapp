@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useRef, useEffect, useCallback, useMemo } from "react";
-import { Copy, Check, Trash2, Undo2, Volume2, Square, Loader2, ChevronDown } from "lucide-react";
+import { Copy, Check, Trash2, Undo2, Volume2, Square, Play, Pause, RotateCcw, Loader2, ChevronDown, Clipboard, X } from "lucide-react";
 
 export interface NarradorVoz {
   id: string;
@@ -36,7 +36,12 @@ function EditableSegmentCard({
   onChange,
   onDelete,
   onSpeak,
+  onPause,
+  onRepeat,
   isSpeaking = false,
+  isPaused = false,
+  isCurrentlyNarrating = false,
+  onFocus,
   placeholder = "Escribe o dicta aquí...",
   readOnly = false,
 }: {
@@ -44,7 +49,12 @@ function EditableSegmentCard({
   onChange?: (val: string) => void;
   onDelete?: () => void;
   onSpeak?: () => void;
+  onPause?: () => void;
+  onRepeat?: () => void;
   isSpeaking?: boolean;
+  isPaused?: boolean;
+  isCurrentlyNarrating?: boolean;
+  onFocus?: () => void;
   placeholder?: string;
   readOnly?: boolean;
 }) {
@@ -93,30 +103,62 @@ function EditableSegmentCard({
   };
 
   return (
-    <div className="group relative px-3.5 py-2.5 rounded-xl bg-slate-50/70 dark:bg-[#0B0F17]/40 border border-slate-100 dark:border-slate-800/60 hover:border-slate-300 dark:hover:border-slate-700 transition-all focus-within:border-[#1368AA]/50 focus-within:bg-white dark:focus-within:bg-[#0B0F17]/80 focus-within:shadow-sm">
+    <div
+      className={`group relative px-3.5 py-2.5 rounded-xl transition-all ${
+        isCurrentlyNarrating
+          ? "bg-blue-50/80 dark:bg-[#1368AA]/25 border-2 border-[#1368AA] dark:border-cyan-500 shadow-md ring-2 ring-[#1368AA]/20"
+          : "bg-slate-50/70 dark:bg-[#0B0F17]/40 border border-slate-100 dark:border-slate-800/60 hover:border-slate-300 dark:hover:border-slate-700"
+      } focus-within:border-[#1368AA]/50 focus-within:bg-white dark:focus-within:bg-[#0B0F17]/80 focus-within:shadow-sm`}
+    >
       <textarea
         ref={textareaRef}
         value={localText}
         onChange={handleChange}
         onBlur={handleBlur}
+        onFocus={onFocus}
         rows={1}
         placeholder={placeholder}
         readOnly={readOnly}
         className="w-full bg-transparent border-none outline-none resize-none font-sans leading-relaxed text-slate-800 dark:text-slate-200 text-[13.5px] sm:text-[14.5px] p-0 pr-14 focus:outline-none focus:ring-0 block select-text"
       />
       <div className="absolute top-2 right-2 flex items-center gap-1">
-        {onSpeak && (
+        {/* Botón Reanudar / Repetir Frase desde el inicio (RotateCcw) */}
+        {onRepeat && (
           <button
-            onClick={onSpeak}
+            onClick={onRepeat}
             className={`w-6 h-6 rounded-full flex items-center justify-center transition-all select-none ${
-              isSpeaking
-                ? "bg-[#1368AA] text-white animate-pulse opacity-100 shadow-sm"
+              isSpeaking || isPaused
+                ? "bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-300 dark:hover:bg-slate-600 shadow-xs"
                 : "opacity-0 group-hover:opacity-100 focus:opacity-100 text-slate-400 hover:text-[#1368AA] dark:hover:text-cyan-400 hover:bg-blue-50 dark:hover:bg-[#1368AA]/20"
             }`}
-            title={isSpeaking ? "Detener audio" : "Escuchar esta frase con el narrador"}
+            title="Volver a leer este párrafo completo desde el inicio"
+          >
+            <RotateCcw className="w-3 h-3" />
+          </button>
+        )}
+        {/* Botón Play / Pausa */}
+        {(onPause || onSpeak) && (
+          <button
+            onClick={() => {
+              if (isSpeaking || isPaused) {
+                onPause?.();
+              } else {
+                onSpeak?.();
+              }
+            }}
+            className={`w-6 h-6 rounded-full flex items-center justify-center transition-all select-none ${
+              isSpeaking
+                ? "bg-[#1368AA] text-white shadow-sm hover:bg-[#1368AA]/90 animate-pulse"
+                : isPaused
+                ? "bg-amber-500 text-white shadow-sm hover:bg-amber-600"
+                : "opacity-0 group-hover:opacity-100 focus:opacity-100 text-slate-400 hover:text-[#1368AA] dark:hover:text-cyan-400 hover:bg-blue-50 dark:hover:bg-[#1368AA]/20"
+            }`}
+            title={isSpeaking ? "Pausar narración" : isPaused ? "Reanudar narración" : "Escuchar esta frase con el narrador"}
           >
             {isSpeaking ? (
-              <Square className="w-3 h-3 fill-current" />
+              <Pause className="w-3 h-3 fill-current" />
+            ) : isPaused ? (
+              <Play className="w-3 h-3 fill-current ml-0.5" />
             ) : (
               <Volume2 className="w-3.5 h-3.5" />
             )}
@@ -148,6 +190,9 @@ export function TranscriptFeed({
   onUpdateTranslatedText,
   onDeleteSegment,
   onDeleteLastSegment,
+  onPasteText,
+  isRecording = false,
+  onStopRecording,
 }: {
   segments: { id: string; originalText: string; translatedText: string; timestamp: number }[];
   interimText: string;
@@ -160,26 +205,74 @@ export function TranscriptFeed({
   onUpdateTranslatedText?: (segmentId: string, text: string) => void;
   onDeleteSegment?: (segmentId: string) => void;
   onDeleteLastSegment?: () => void;
+  onPasteText?: (text: string) => void;
+  isRecording?: boolean;
+  onStopRecording?: () => void;
 }) {
   const [copiedOriginal, setCopiedOriginal] = useState(false);
   const [copiedTranslation, setCopiedTranslation] = useState(false);
+  const [pasteModalOpen, setPasteModalOpen] = useState(false);
+  const [pasteInputText, setPasteInputText] = useState("");
 
   // Estados de Reproducción de Voz (TTS - Narrador Neuronal)
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const [selectedVoice, setSelectedVoice] = useState<string>("pt-BR-AntonioNeural");
+  const [selectedOriginalVoice, setSelectedOriginalVoice] = useState<string>("es-CO-GonzaloNeural");
   const [isPlayingAll, setIsPlayingAll] = useState(false);
+  const [isPlayingOriginalAll, setIsPlayingOriginalAll] = useState(false);
+  const [isPausedOriginal, setIsPausedOriginal] = useState(false);
   const [playingSegmentId, setPlayingSegmentId] = useState<string | null>(null);
   const [isAudioLoading, setIsAudioLoading] = useState(false);
+  const [audioSpeed, setAudioSpeed] = useState<number>(0.9); // Velocidades pedagógicas de 0.6x a 1.0x
 
-  // Cargar voz preferida del almacenamiento local
+  // Estados de Cursor y Párrafo Activo para Narración Continua Instantánea
+  const [focusedSegmentId, setFocusedSegmentId] = useState<string | null>(null);
+  const masterAudioOriginalRef = useRef<{
+    url: string;
+    textKey: string;
+    voiceKey: string;
+    segmentsMap: { id: string; startTime: number; endTime: number }[];
+  } | null>(null);
+
+  // Cargar voces y velocidad preferida del almacenamiento local
   useEffect(() => {
     try {
-      const saved = localStorage.getItem("dictado_narrador_voz");
-      if (saved && VOCES_NARRADOR.some((v) => v.id === saved)) {
-        setSelectedVoice(saved);
+      const savedTrans = localStorage.getItem("dictado_narrador_voz");
+      if (savedTrans && VOCES_NARRADOR.some((v) => v.id === savedTrans)) {
+        setSelectedVoice(savedTrans);
+      }
+      const savedOrig = localStorage.getItem("dictado_narrador_voz_original");
+      if (savedOrig && VOCES_NARRADOR.some((v) => v.id === savedOrig)) {
+        setSelectedOriginalVoice(savedOrig);
+      }
+      const savedSpeed = localStorage.getItem("dictado_narrador_velocidad");
+      if (savedSpeed) {
+        const parsedSpeed = parseFloat(savedSpeed);
+        if ([0.6, 0.7, 0.8, 0.9, 1.0].includes(parsedSpeed)) {
+          setAudioSpeed(parsedSpeed);
+        }
       }
     } catch (e) {}
   }, []);
+
+  // Filtrar voces disponibles según el idioma de origen
+  const availableOriginalVoices = useMemo(() => {
+    const isPt = sourceLangName.toLowerCase().includes("portugu");
+    const isEs = sourceLangName.toLowerCase().includes("español");
+    const isEn = sourceLangName.toLowerCase().includes("english") || sourceLangName.toLowerCase().includes("ingl");
+
+    if (isPt) return VOCES_NARRADOR.filter((v) => v.lang === "pt");
+    if (isEs) return VOCES_NARRADOR.filter((v) => v.lang === "es");
+    if (isEn) return VOCES_NARRADOR.filter((v) => v.lang === "en");
+    return VOCES_NARRADOR.filter((v) => v.lang === "es");
+  }, [sourceLangName]);
+
+  // Si la voz original actual no pertenece a las disponibles del idioma de origen, cambiar
+  useEffect(() => {
+    if (availableOriginalVoices.length > 0 && !availableOriginalVoices.some((v) => v.id === selectedOriginalVoice)) {
+      setSelectedOriginalVoice(availableOriginalVoices[0].id);
+    }
+  }, [availableOriginalVoices, selectedOriginalVoice]);
 
   // Filtrar voces disponibles según el idioma de destino (priorizando portugués de Brasil)
   const availableVoices = useMemo(() => {
@@ -193,28 +286,59 @@ export function TranscriptFeed({
     return VOCES_NARRADOR.filter((v) => v.lang === "pt");
   }, [targetLangName]);
 
-  // Si la voz actual no pertenece a las disponibles del idioma, cambiar a la primera disponible
+  // Si la voz actual no pertenece a las disponibles del idioma de destino, cambiar
   useEffect(() => {
     if (availableVoices.length > 0 && !availableVoices.some((v) => v.id === selectedVoice)) {
       setSelectedVoice(availableVoices[0].id);
     }
   }, [availableVoices, selectedVoice]);
 
+  // Detener de forma blindada cualquier audio activo para que NUNCA se solapen
   const stopAudio = useCallback(() => {
     if (audioRef.current) {
-      audioRef.current.pause();
-      audioRef.current.currentTime = 0;
+      try {
+        audioRef.current.pause();
+        audioRef.current.currentTime = 0;
+        audioRef.current.onended = null;
+        audioRef.current.onerror = null;
+        audioRef.current.ontimeupdate = null;
+      } catch (e) {}
       audioRef.current = null;
     }
     setIsPlayingAll(false);
+    setIsPlayingOriginalAll(false);
+    setIsPausedOriginal(false);
     setPlayingSegmentId(null);
     setIsAudioLoading(false);
+  }, []);
+
+  // Pausar o reanudar el audio actual manteniendo la posición
+  const togglePauseOriginal = useCallback(() => {
+    if (!audioRef.current) return;
+    if (audioRef.current.paused) {
+      audioRef.current.play().then(() => {
+        setIsPausedOriginal(false);
+        setIsPlayingOriginalAll(true);
+      }).catch((e) => console.warn(e));
+    } else {
+      audioRef.current.pause();
+      setIsPausedOriginal(true);
+      setIsPlayingOriginalAll(false);
+    }
   }, []);
 
   const handleChangeVoice = (voiceId: string) => {
     setSelectedVoice(voiceId);
     try {
       localStorage.setItem("dictado_narrador_voz", voiceId);
+    } catch (e) {}
+    stopAudio();
+  };
+
+  const handleChangeOriginalVoice = (voiceId: string) => {
+    setSelectedOriginalVoice(voiceId);
+    try {
+      localStorage.setItem("dictado_narrador_voz_original", voiceId);
     } catch (e) {}
     stopAudio();
   };
@@ -229,34 +353,47 @@ export function TranscriptFeed({
     };
   }, []);
 
-  // Reproducir un texto con el motor TTS bajo demanda
+  // Reproducir un texto con el motor TTS bajo demanda (soporta voz parametrizable)
   const playText = useCallback(
-    async (textToPlay: string, segmentId?: string) => {
+    async (textToPlay: string, segmentId?: string, overrideVoice?: string, isOriginalAllMode = false) => {
       const cleanText = textToPlay.trim();
       if (!cleanText) return;
 
       // Toggle: Si ya está reproduciendo este mismo bloque o todo, detenerlo
-      if ((segmentId && playingSegmentId === segmentId) || (!segmentId && isPlayingAll)) {
+      if (
+        (segmentId && playingSegmentId === segmentId) ||
+        (!segmentId && isOriginalAllMode && isPlayingOriginalAll) ||
+        (!segmentId && !isOriginalAllMode && isPlayingAll)
+      ) {
         stopAudio();
         return;
       }
 
       stopAudio();
 
+      // Si el micrófono está activo dictando, detenerlo de inmediato para que la narración no se re-capture como texto
+      if (isRecording && onStopRecording) {
+        onStopRecording();
+      }
+
       try {
         setIsAudioLoading(true);
         if (segmentId) {
           setPlayingSegmentId(segmentId);
+        } else if (isOriginalAllMode) {
+          setIsPlayingOriginalAll(true);
         } else {
           setIsPlayingAll(true);
         }
+
+        const voiceToUse = overrideVoice || selectedVoice;
 
         const res = await fetch("/api/tts", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             text: cleanText,
-            voice: selectedVoice,
+            voice: voiceToUse,
           }),
         });
 
@@ -286,8 +423,14 @@ export function TranscriptFeed({
         stopAudio();
       }
     },
-    [playingSegmentId, isPlayingAll, selectedVoice, stopAudio]
+    [playingSegmentId, isPlayingAll, isPlayingOriginalAll, selectedVoice, stopAudio]
   );
+
+  // Texto consolidado para reproducir todo el original
+  const fullOriginalText = useMemo(() => {
+    const segs = segments.map((s) => s.originalText).filter(Boolean).join(". ");
+    return segs || interimText;
+  }, [segments, interimText]);
 
   // Texto consolidado para reproducir toda la traducción
   const fullTranslatedText = useMemo(() => {
@@ -295,12 +438,209 @@ export function TranscriptFeed({
     return segs || interimTranslatedText;
   }, [segments, interimTranslatedText]);
 
+  // Invalida la caché del audio maestro si se edita el texto o se cambia la voz o la velocidad
+  useEffect(() => {
+    if (masterAudioOriginalRef.current) {
+      if (
+        masterAudioOriginalRef.current.textKey !== fullOriginalText ||
+        masterAudioOriginalRef.current.voiceKey !== `${selectedOriginalVoice}_${audioSpeed}`
+      ) {
+        if (masterAudioOriginalRef.current.url) {
+          URL.revokeObjectURL(masterAudioOriginalRef.current.url);
+        }
+        masterAudioOriginalRef.current = null;
+      }
+    }
+  }, [fullOriginalText, selectedOriginalVoice, audioSpeed]);
+
+  // Si cambia la velocidad en vivo mientras hay un audio activo, aplicarla directamente
+  const handleToggleSpeed = () => {
+    // Ciclo pedagógico: 0.9x -> 0.8x -> 0.7x -> 0.6x -> 1.0x -> 0.9x
+    const speeds = [1.0, 0.9, 0.8, 0.7, 0.6];
+    const currentIndex = speeds.indexOf(audioSpeed);
+    const nextSpeed = currentIndex !== -1 && currentIndex < speeds.length - 1 ? speeds[currentIndex + 1] : speeds[0];
+    
+    setAudioSpeed(nextSpeed);
+    try {
+      localStorage.setItem("dictado_narrador_velocidad", String(nextSpeed));
+    } catch (e) {}
+
+    if (audioRef.current) {
+      audioRef.current.playbackRate = nextSpeed;
+    }
+  };
+
+  // Reproducir o saltar instantáneamente al párrafo donde está el cursor
+  const playOriginalFromSegment = useCallback(
+    async (targetSegmentId?: string) => {
+      const activeSegId = targetSegmentId || focusedSegmentId || (segments.length > 0 ? segments[0].id : undefined);
+
+      // Si el micrófono está dictando, apagarlo de inmediato
+      if (isRecording && onStopRecording) {
+        onStopRecording();
+      }
+
+      // 1. CASO INSTANTÁNEO (0 ms): El audio maestro ya existe y coincide
+      if (
+        masterAudioOriginalRef.current &&
+        audioRef.current &&
+        masterAudioOriginalRef.current.textKey === fullOriginalText &&
+        masterAudioOriginalRef.current.voiceKey === `${selectedOriginalVoice}_${audioSpeed}`
+      ) {
+        const segMap = masterAudioOriginalRef.current.segmentsMap.find((s) => s.id === activeSegId);
+        if (segMap && audioRef.current) {
+          audioRef.current.currentTime = Math.max(0, segMap.startTime);
+          audioRef.current.playbackRate = audioSpeed;
+          if (audioRef.current.paused) {
+            await audioRef.current.play();
+          }
+          setIsPlayingOriginalAll(true);
+          setPlayingSegmentId(activeSegId || null);
+          return;
+        }
+      }
+
+      // 2. CASO INICIAL: Generar el audio maestro completo y mapear los segmentos
+      stopAudio();
+      const cleanText = fullOriginalText.trim();
+      if (!cleanText) return;
+
+      try {
+        setIsAudioLoading(true);
+        setIsPlayingOriginalAll(true);
+        if (activeSegId) setPlayingSegmentId(activeSegId);
+
+        const res = await fetch("/api/tts", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            text: cleanText,
+            voice: selectedOriginalVoice,
+            velocidad: audioSpeed,
+          }),
+        });
+
+        if (!res.ok) throw new Error("Error en la síntesis de audio");
+
+        const blob = await res.blob();
+        const url = URL.createObjectURL(blob);
+        const audio = new Audio(url);
+        audio.playbackRate = audioSpeed;
+        audioRef.current = audio;
+
+        // Calcular mapa proporcional de tiempo para cada segmento
+        const totalChars = segments.reduce((acc, s) => acc + (s.originalText.trim().length || 1), 0) || 1;
+
+        audio.onloadedmetadata = () => {
+          const totalDur = audio.duration || (cleanText.length / 15);
+          let currentSec = 0;
+          const segmentsMap = segments.map((seg) => {
+            const segChars = seg.originalText.trim().length || 1;
+            const segDur = (segChars / totalChars) * totalDur;
+            const start = currentSec;
+            currentSec += segDur;
+            return {
+              id: seg.id,
+              startTime: Math.max(0, start - 0.15), // leve antelación para que no corte la primera letra
+              endTime: currentSec,
+            };
+          });
+
+          masterAudioOriginalRef.current = {
+            url,
+            textKey: fullOriginalText,
+            voiceKey: `${selectedOriginalVoice}_${audioSpeed}`,
+            segmentsMap,
+          };
+
+          // Si el usuario quería empezar desde un párrafo específico, saltar inmediatamente
+          if (activeSegId) {
+            const target = segmentsMap.find((s) => s.id === activeSegId);
+            if (target && target.startTime > 0) {
+              audio.currentTime = target.startTime;
+            }
+          }
+        };
+
+        // Escuchar el avance del audio para resaltar el párrafo activo en tiempo real
+        audio.ontimeupdate = () => {
+          if (!masterAudioOriginalRef.current) return;
+          const ct = audio.currentTime;
+          const currentSeg = masterAudioOriginalRef.current.segmentsMap.find(
+            (s) => ct >= s.startTime && ct <= s.endTime
+          );
+          if (currentSeg && currentSeg.id !== playingSegmentId) {
+            setPlayingSegmentId(currentSeg.id);
+          }
+        };
+
+        audio.onended = () => {
+          stopAudio();
+        };
+
+        audio.onerror = () => {
+          stopAudio();
+        };
+
+        await audio.play();
+        setIsAudioLoading(false);
+      } catch (err) {
+        console.warn("[TTS Cursor Seek] Error:", err);
+        stopAudio();
+      }
+    },
+    [
+      focusedSegmentId,
+      segments,
+      isRecording,
+      onStopRecording,
+      fullOriginalText,
+      selectedOriginalVoice,
+      audioSpeed,
+      playingSegmentId,
+      stopAudio,
+    ]
+  );
+
+  const handleTogglePlayOriginalAll = () => {
+    if (isPlayingOriginalAll) {
+      stopAudio();
+    } else {
+      playOriginalFromSegment(focusedSegmentId || undefined);
+    }
+  };
+
   const handleTogglePlayAll = () => {
     if (isPlayingAll) {
       stopAudio();
     } else {
-      playText(fullTranslatedText);
+      playText(fullTranslatedText, undefined, selectedVoice, false);
     }
+  };
+
+  // Acción de pegar desde el portapapeles con 1 clic (con fallback si el navegador deniega permisos)
+  const handleClipboardPaste = async () => {
+    if (!onPasteText) return;
+    try {
+      if (navigator.clipboard && navigator.clipboard.readText) {
+        const text = await navigator.clipboard.readText();
+        if (text && text.trim()) {
+          onPasteText(text);
+          return;
+        }
+      }
+    } catch (e) {
+      // Si el navegador bloquea permisos de lectura del portapapeles, abrimos el modal
+    }
+    setPasteModalOpen(true);
+  };
+
+  const handleConfirmPasteModal = () => {
+    if (pasteInputText.trim() && onPasteText) {
+      onPasteText(pasteInputText);
+      setPasteInputText("");
+    }
+    setPasteModalOpen(false);
   };
 
   const targetLangLabel = useMemo(() => {
@@ -383,7 +723,8 @@ export function TranscriptFeed({
 
             <div className="h-4 w-px bg-slate-200 dark:bg-slate-700 hidden sm:block" />
 
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 flex-wrap">
+              {/* 1. Limpiar Pizarra */}
               {onClear && (
                 <button
                   onClick={onClear}
@@ -394,6 +735,8 @@ export function TranscriptFeed({
                   Limpiar Pizarra
                 </button>
               )}
+
+              {/* 2. Deshacer Frase */}
               {onDeleteLastSegment && (
                 <button
                   onClick={onDeleteLastSegment}
@@ -405,6 +748,8 @@ export function TranscriptFeed({
                   <span>Deshacer Frase</span>
                 </button>
               )}
+
+              {/* 3. Copiar Texto */}
               <button
                 onClick={handleCopyOriginal}
                 disabled={segments.length === 0}
@@ -423,6 +768,80 @@ export function TranscriptFeed({
                   </>
                 )}
               </button>
+
+              {/* 4. Pegar Texto */}
+              {onPasteText && (
+                <button
+                  onClick={handleClipboardPaste}
+                  className="rounded-full px-3 py-1.5 text-xs font-semibold flex items-center gap-1.5 transition-colors shadow-sm bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700"
+                  title="Pegar texto desde el portapapeles o cuadro de texto"
+                >
+                  <Clipboard className="w-3.5 h-3.5 text-[#1368AA] dark:text-cyan-400" />
+                  <span>Pegar Texto</span>
+                </button>
+              )}
+
+              {/* 5. Nombre del Narrador y 6. Narrar (en modo Solo Dictado) */}
+              {!autoTranslate && (
+                <>
+                  {/* 5. Nombre del Narrador */}
+                  <div className="relative inline-flex items-center">
+                    <select
+                      value={selectedOriginalVoice}
+                      onChange={(e) => handleChangeOriginalVoice(e.target.value)}
+                      className="rounded-full pl-3 pr-7 py-1.5 text-xs font-semibold bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700 outline-none cursor-pointer transition-colors appearance-none shadow-2xs"
+                      title={`Seleccionar narrador en ${sourceLangName}`}
+                    >
+                      {availableOriginalVoices.map((v) => (
+                        <option key={v.id} value={v.id} className="dark:bg-[#131B2E] text-slate-800 dark:text-slate-200">
+                          {v.icon} {v.nombre} ({v.desc})
+                        </option>
+                      ))}
+                    </select>
+                    <ChevronDown className="w-3.5 h-3.5 text-slate-400 dark:text-slate-300 absolute right-2.5 pointer-events-none" />
+                  </div>
+
+                  {/* Botón Circular Compacto de Velocidad (0.6x a 1.0x) */}
+                  <button
+                    onClick={handleToggleSpeed}
+                    className="h-7 w-auto min-w-[28px] px-2 rounded-full flex items-center justify-center text-[11px] font-bold tracking-tight transition-all select-none bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700 shadow-2xs active:scale-95"
+                    title={`Velocidad de narración: ${audioSpeed}x (Haz clic para alternar: 1.0x, 0.9x, 0.8x, 0.7x, 0.6x)`}
+                  >
+                    <span>{audioSpeed.toFixed(1)}x</span>
+                  </button>
+
+                  {/* 6. Narrar (Único botón en la cabecera) */}
+                  <button
+                    onClick={handleTogglePlayOriginalAll}
+                    disabled={!fullOriginalText.trim() || isAudioLoading}
+                    className={`rounded-full px-3.5 py-1.5 text-xs font-semibold flex items-center gap-2 transition-all shadow-sm active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed select-none ${
+                      isPlayingOriginalAll
+                        ? "bg-rose-600 hover:bg-rose-700 text-white animate-pulse"
+                        : isAudioLoading
+                        ? "bg-[#1368AA]/80 text-white cursor-wait"
+                        : "bg-[#1368AA] hover:bg-[#1368AA]/90 text-white"
+                    }`}
+                    title={`Generar y escuchar narración en ${sourceLangName}`}
+                  >
+                    {isPlayingOriginalAll ? (
+                      <>
+                        <Square className="w-3.5 h-3.5 fill-current" />
+                        <span>Detener</span>
+                      </>
+                    ) : isAudioLoading ? (
+                      <>
+                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                        <span>Generando Audio...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Volume2 className="w-3.5 h-3.5" />
+                        <span>Narrar en {sourceLangName}</span>
+                      </>
+                    )}
+                  </button>
+                </>
+              )}
             </div>
           </div>
         </div>
@@ -435,10 +854,10 @@ export function TranscriptFeed({
           {segments.length === 0 && !interimText && (
             <div className="h-full flex flex-col items-center justify-center text-center text-slate-400 dark:text-slate-500 py-16 px-4 select-none">
               <p className="font-medium text-sm text-slate-500 dark:text-slate-400">
-                Tu dictado aparecerá aquí en tiempo real
+                Tu dictado o texto pegado aparecerá aquí en tiempo real
               </p>
               <p className="text-xs text-slate-400 dark:text-slate-500 mt-1 max-w-sm">
-                Pulsa &quot;Comenzar Dictado&quot; y empieza a hablar. Puedes hacer clic en cualquier frase para borrarla o editarla con el teclado mientras sigues hablando.
+                Pulsa &quot;Comenzar Dictado&quot;, o haz clic en &quot;Pegar Texto&quot; para cargar cualquier texto y escucharlo con los narradores neuronales.
               </p>
             </div>
           )}
@@ -450,6 +869,28 @@ export function TranscriptFeed({
               text={segment.originalText}
               onChange={(newVal) => onUpdateSegmentText?.(segment.id, newVal)}
               onDelete={() => onDeleteSegment?.(segment.id)}
+              onFocus={() => {
+                setFocusedSegmentId(segment.id);
+                // Si el narrador ya está en marcha, salta instantáneamente al párrafo enfocado
+                if (isPlayingOriginalAll) {
+                  playOriginalFromSegment(segment.id);
+                }
+              }}
+              onSpeak={() => {
+                // Si está hablando este segmento, detenerlo por completo
+                if (playingSegmentId === segment.id && (isPlayingOriginalAll || isPausedOriginal)) {
+                  stopAudio();
+                } else {
+                  playOriginalFromSegment(segment.id);
+                }
+              }}
+              onPause={togglePauseOriginal}
+              onRepeat={() => {
+                playOriginalFromSegment(segment.id);
+              }}
+              isSpeaking={playingSegmentId === segment.id && isPlayingOriginalAll}
+              isPaused={playingSegmentId === segment.id && isPausedOriginal}
+              isCurrentlyNarrating={playingSegmentId === segment.id && (isPlayingOriginalAll || isPausedOriginal)}
               placeholder="Frase original..."
             />
           ))}
@@ -593,6 +1034,59 @@ export function TranscriptFeed({
 
             {/* Espaciador terminal del 15% para que la línea activa traducida flote 15% más arriba del borde inferior */}
             <div className="h-[15vh] min-h-[90px] max-h-[140px] w-full shrink-0 pointer-events-none" />
+          </div>
+        </div>
+      )}
+
+      {/* Modal / Cuadro de Diálogo Rápido para Pegar Texto */}
+      {pasteModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in">
+          <div className="bg-white dark:bg-[#131B2E] border border-slate-200 dark:border-slate-800 rounded-3xl p-5 sm:p-6 w-full max-w-lg shadow-2xl flex flex-col gap-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2.5">
+                <div className="p-2 rounded-full bg-blue-50 dark:bg-[#1368AA]/20 text-[#1368AA] dark:text-cyan-400">
+                  <Clipboard className="w-5 h-5" />
+                </div>
+                <h3 className="text-base font-bold text-slate-900 dark:text-white">
+                  Pegar Texto para Dictado y Narrador
+                </h3>
+              </div>
+              <button
+                onClick={() => setPasteModalOpen(false)}
+                className="w-7 h-7 rounded-full flex items-center justify-center text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <p className="text-xs text-slate-500 dark:text-slate-400">
+              Pega aquí el texto que deseas incorporar a la pizarra para editarlo o escucharlo con los narradores neuronales en {sourceLangName}:
+            </p>
+
+            <textarea
+              value={pasteInputText}
+              onChange={(e) => setPasteInputText(e.target.value)}
+              placeholder="Pega aquí el guion, párrafo o texto a narrar..."
+              rows={6}
+              autoFocus
+              className="w-full rounded-2xl p-3 bg-slate-50 dark:bg-[#0B0F17] border border-slate-200 dark:border-slate-800 text-slate-800 dark:text-slate-100 text-sm focus:outline-none focus:border-[#1368AA] resize-none"
+            />
+
+            <div className="flex items-center justify-end gap-2.5 pt-1">
+              <button
+                onClick={() => setPasteModalOpen(false)}
+                className="rounded-full px-4 py-2 text-xs font-semibold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={handleConfirmPasteModal}
+                disabled={!pasteInputText.trim()}
+                className="rounded-full px-5 py-2 text-xs font-semibold bg-[#1368AA] hover:bg-[#1368AA]/90 text-white shadow-sm disabled:opacity-40 disabled:cursor-not-allowed transition-all"
+              >
+                Incorporar Texto
+              </button>
+            </div>
           </div>
         </div>
       )}

@@ -1,0 +1,17 @@
+# Folders to ignore for Graphify knowledge graph
+node_modules/
+**/node_modules/
+.next/
+**/.next/
+dist/
+build/
+__pycache__/
+**/*.pyc
+*.3bm.json
+3BF/storage/
+Publicidad/
+Clientes/
+Temporales/
+temporal/
+docs/Upwork/
+.git/

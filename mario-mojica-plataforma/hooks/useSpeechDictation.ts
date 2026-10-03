@@ -177,11 +177,33 @@ export function useSpeechDictation({
         const lastIndex = prev.length - 1;
         const lastSeg = prev[lastIndex];
 
-        // Evitar duplicación si el bloque anterior ya termina exactamente con esta frase
-        if (lastSeg.originalText.endsWith(punctuatedChunk) || lastSeg.originalText.endsWith(clean)) {
+        // Evitar duplicación estricta y solapamiento entre segmentos
+        const normalizar = (s: string) => s.toLowerCase().replace(/[¿?¡!.,;:]/g, "").replace(/\s+/g, " ").trim();
+        const normLast = normalizar(lastSeg.originalText);
+        const normClean = normalizar(clean);
+
+        if (normLast.endsWith(normClean) || normLast === normClean) {
           return prev;
         }
 
+        // Si el nuevo chunk comienza con el final del segmento anterior (eco de SpeechRecognition), recortar el solapamiento
+        let chunkSinSolape = clean;
+        const palabrasLast = normLast.split(" ");
+        for (let w = Math.min(8, palabrasLast.length); w >= 2; w--) {
+          const tail = palabrasLast.slice(-w).join(" ");
+          const normChunk = normalizar(chunkSinSolape);
+          if (normChunk.startsWith(tail)) {
+            const wordsChunk = chunkSinSolape.split(/\s+/);
+            chunkSinSolape = wordsChunk.slice(w).join(" ");
+            break;
+          }
+        }
+
+        if (!chunkSinSolape.trim()) {
+          return prev;
+        }
+
+        const chunkDefinitivo = enriquecerPuntuacionYPreguntas(chunkSinSolape.trim(), sourceLangRef.current);
         const lastWords = lastSeg.originalText.trim().split(/\s+/).length;
         const lastText = lastSeg.originalText.trim();
         const endsWithPunctuation = /[.,;:!?]$/.test(lastText);
@@ -189,13 +211,13 @@ export function useSpeechDictation({
         // Si el párrafo actual tiene menos de 16 palabras y no concluyó con puntuación fuerte, concatenamos
         if (lastWords < 16 && !endsWithPunctuation) {
           let combinedOriginal = "";
-          if (punctuatedChunk.startsWith("¿")) {
-            combinedOriginal = `${lastText} ${punctuatedChunk}`;
+          if (chunkDefinitivo.startsWith("¿")) {
+            combinedOriginal = `${lastText} ${chunkDefinitivo}`;
           } else {
-            const primeraPalabra = punctuatedChunk.split(" ")[0] || "";
+            const primeraPalabra = chunkDefinitivo.split(" ")[0] || "";
             const esSigla = primeraPalabra === primeraPalabra.toUpperCase() && primeraPalabra.length > 1;
-            const letraInicio = esSigla ? punctuatedChunk.charAt(0) : punctuatedChunk.charAt(0).toLowerCase();
-            combinedOriginal = `${lastText} ${letraInicio}${punctuatedChunk.slice(1)}`;
+            const letraInicio = esSigla ? chunkDefinitivo.charAt(0) : chunkDefinitivo.charAt(0).toLowerCase();
+            combinedOriginal = `${lastText} ${letraInicio}${chunkDefinitivo.slice(1)}`;
           }
 
           combinedOriginal = combinedOriginal.replace(/\s+/g, " ").trim();
@@ -214,12 +236,12 @@ export function useSpeechDictation({
         } else {
           // Párrafo nuevo: oración limpia e independiente
           const newId = `seg_${Date.now()}`;
-          if (isTranslating) translateSegment(newId, punctuatedChunk);
+          if (isTranslating) translateSegment(newId, chunkDefinitivo);
           return [
             ...prev,
             {
               id: newId,
-              originalText: punctuatedChunk,
+              originalText: chunkDefinitivo,
               translatedText: isTranslating ? "Traduciendo..." : "",
               timestamp: Date.now(),
               isFinal: true,
@@ -273,64 +295,31 @@ export function useSpeechDictation({
           clearTimeout(silenceCommitTimerRef.current);
           silenceCommitTimerRef.current = null;
         }
+        interimTextRef.current = "";
+        setInterimText("");
         appendOrNewSegment(finalTranscript.trim());
       } else {
         const trimmedInterim = currentInterim.trim();
         interimTextRef.current = trimmedInterim;
         setInterimText(trimmedInterim);
 
-        // 1. Traducción en tiempo real de interim simultánea en segundo plano
+        // Traducción en tiempo real de interim simultánea en segundo plano
         triggerInterimTranslation(trimmedInterim);
 
-        // 2. Micro-segmentación proactiva: si el audio de WhatsApp o hablante no pausa,
-        // dividimos inteligentemente por frontera de frase o conector para no dejar el texto trabado
-        const words = trimmedInterim.split(/\s+/);
-        if (words.length >= 12) {
-          const punctMatch = trimmedInterim.match(/^(.*?[.,;!?])\s+(.+)$/);
-          if (punctMatch) {
-            const head = punctMatch[1].trim();
-            const tail = punctMatch[2].trim();
-            if (head) {
-              appendOrNewSegment(head);
-              interimTextRef.current = tail;
-              setInterimText(tail);
-              triggerInterimTranslation(tail);
-            }
-          } else if (words.length >= 16) {
-            const connectorRegex = /\s+(mas|então|entao|aí|ai|porque|por exemplo|quando|além disso|onde|pero|entonces|porque|y|e)\s+/i;
-            const searchSlice = trimmedInterim.slice(25);
-            const matchIdx = searchSlice.search(connectorRegex);
-            if (matchIdx !== -1) {
-              const cutPos = 25 + matchIdx;
-              const head = trimmedInterim.slice(0, cutPos).trim();
-              const tail = trimmedInterim.slice(cutPos).trim();
-              if (head) {
-                appendOrNewSegment(head);
-                interimTextRef.current = tail;
-                setInterimText(tail);
-                triggerInterimTranslation(tail);
-              }
-            } else if (words.length >= 20) {
-              const head = words.slice(0, 12).join(" ");
-              const tail = words.slice(12).join(" ");
-              appendOrNewSegment(head);
-              interimTextRef.current = tail;
-              setInterimText(tail);
-              triggerInterimTranslation(tail);
-            }
-          }
-        }
-
-        // 3. Temporizador de silencio ágil (800ms en vez de 1400ms para respuesta inmediata)
+        // Temporizador de silencio: si el usuario deja de hablar por 1000ms y el navegador
+        // no ha marcado isFinal, consolidar el interim acumulado para no dejar el texto flotando.
         if (trimmedInterim) {
           if (silenceCommitTimerRef.current) {
             clearTimeout(silenceCommitTimerRef.current);
           }
           silenceCommitTimerRef.current = setTimeout(() => {
             if (isRecordingRef.current && interimTextRef.current) {
-              appendOrNewSegment(interimTextRef.current);
+              const textToCommit = interimTextRef.current;
+              interimTextRef.current = "";
+              setInterimText("");
+              appendOrNewSegment(textToCommit);
             }
-          }, 800);
+          }, 1100);
         }
       }
     };

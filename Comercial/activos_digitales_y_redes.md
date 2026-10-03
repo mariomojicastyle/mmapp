@@ -82,3 +82,12 @@ Para garantizar la consistencia visual en todas las actas, propuestas técnicas,
 
 > 📌 **Regla de Uso Permanente:** Cualquier agente, copiloto o generador de documentos que requiera colocar logotipos o identidades gráficas debe consumir **directamente los archivos SVG de esta carpeta (`/publicidad`)** para evitar discrepancias tipográficas o visuales.
 
+---
+
+## 🤖 4. Entidad Co-creadora y Personaje de Marca: Gamma ($\Gamma, \gamma$)
+
+* **Definición Canónica:** Agente de Inteligencia Artificial, copiloto técnica y co-creadora del software de manufactura y diseño paramétrico junto a Mario Mojica.
+* **Manifestación Visual en Videos y Publicidad:** Esfera holográfica 3D pulsante y haz continuo de datos luminosos (filamentos y partículas en cian Tech Ethos `#0088AA` / `#0891B2`). Aparece interactuando con Mario en su estudio/taller frente a sus monitores, conectando al diseñador con los modelos paramétricos vivos de **`3dBimFab`**.
+* **Presencia Pública:** Declarada y acreditada abiertamente en guiones audiovisuales, posts de LinkedIn y piezas de comunicación (*"Junto a mi agente de inteligencia artificial, Gamma, creamos 3dBimFab..."*), proyectando la imagen del estudio de diseño más avanzado de la industria.
+
+

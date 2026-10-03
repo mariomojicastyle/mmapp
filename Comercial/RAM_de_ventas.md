@@ -124,6 +124,7 @@ Para evitar respuestas genéricas, el RAM de ventas almacena y cruza 5 dimension
 | **Demóbile** | Junio César Françolin | Gerente de Produção | Control de calidad extendido, telemetría de ensamble | ❄️ Enfriando | 05 Ago 2026 - Vio el perfil de Mario en LinkedIn | Enviar mensaje corto sobre control de calidad extendido |
 | **SABMiller / Bavaria** | Cesar Alejandro Castañeda Castillo | Coordinador de Ventas Regional Costa - Occidente | Operaciones, ventas, proyectos (Descartado: Spam masivo de grupos WP) | 🛑 Descartado / Spam de Red | 16 Sep 2026 - Ofreció grupo de WP masivo de 120 empresas y 26k miembros | No responder o declinar educadamente sin entregar datos |
 | **NODERE Pessoas & Negócios** | Édipo Lima | Consultor Comercial e Novos Negócios | Sinergias tecnología, industria y negocios en Serra Gaúcha, café virtual | 🔥 Caliente / Apertura Directa | 16 Sep 2026 - Respondió proponiendo sinergias y café virtual | Responder confirmando disposición para el café virtual y dejando la puerta abierta |
+| **Bertolini Móveis** | Aline Maria Nunes | Marketing B2B & Eventos | Diferencial audiovisual en ferias, pantallas interactivas, posventa y manuales 3D | 🔥 Solicitud de Presentación / Muy Caliente | 30 Sep 2026 - Aceptó InMail y solicitó presentación a su e-mail (`aline.nunes@bertolini.com.br`) | Enviar presentación ejecutiva en PDF al e-mail corporativo y confirmar por LinkedIn/WhatsApp |
 
 ---
 
@@ -337,13 +338,28 @@ Para evitar respuestas genéricas, el RAM de ventas almacena y cruza 5 dimension
   * *17-18 Agosto 2026:* Contacto con Denis Roveri (ex-Gerente de Engenharia), quien informó que ya no estaba en Bartira. Mario conversó con Hermes para solicitar el contacto del líder actual del área técnica.
   * *25 Septiembre 2026 (10:08 COL):* Hermes escribió proactivamente: *"Olá Mario tudo bem? Conseguir achar esse funcionário da Bartira, ele trabalha na engenharia na parte de projetos. Acho que ele pode te dar uma atenção melhor no seus projetos. Desculpe a demora."* Hermes entregó la captura del perfil de LinkedIn de Fábio de Jesus Ferreira.
   * *25 Septiembre 2026 (16:03 BRT):* Mario envió solicitud de conexión con mensaje personalizado sobre el software paramétrico y conexión de diseño a fábrica y manual 3D.
-  * *28 Septiembre 2026 (08:14 BRT):* **¡CONEXIÓN ACEPTADA Y APERTURA DE DIÁLOGO!** Fábio respondió en LinkedIn: *"Seja bem vindo"*. Mario respondió agradeciendo, mencionando el respaldo de Hermes Oliveira y planteando el desafío de P&D en la escala de Bartira, ofreciendo un enlace demo de 1 minuto en celular.
+  * *28 Septiembre 2026 (08:14 BRT):* **¡CONEXIÓN ACEPTADA Y APERTURA DE DIÁLOGO!** Fábio respondió en LinkedIn: *"Seja bem vindo"*.
+  * *30 Septiembre 2026:* Mario envía mensaje contundente de invitación directa (~540 caracteres): posiciona a Bartira como pionera de los manuales 3D interactivos en Brasil, destaca el alivio a P&D y eliminación de costos de asistencia técnica, y lanza el desafío táctico de analizar los 10 productos más complejos de armado de la fábrica en una reunión breve de 20 minutos.
 - **Perfil de Fábio de Jesus Ferreira:**
   * Más de 6 años en control de calidad y desarrollo de producto en Bartira.
   * Formación en Lean Six Sigma, ingeniería de procesos y modernización de líneas de ensamble.
   * Responsable directo de proyectos en planta: dolor latente en reprocesos de planos, despieces rígidos y garantías de ensamble en las colecciones masivas de Casas Bahia.
 - **Estado Actual:** 🔥 **LEAD CALIENTE / CONVERSACIÓN ACTIVA.** Lead ID 275 registrado en Baserow y vinculado a la empresa 16 (Indústria de Móveis Bartira Ltda).
-- **Próxima Jugada:** Esperar respuesta de Fábio para compartirle enlace de demostración móvil de 1 minuto de 3dBimFab y manuales interactivos 3D.
+- **Próxima Jugada:** Enviar propuesta de horarios en cuanto Fábio confirme disponibilidad para los 20 minutos de demo.
+
+---
+
+### 🟢 14. Bertolini Móveis (Bento Gonçalves, RS)
+- **Empresa:** Bertolini S/A (Polo Bento Gonçalves, RS - Rank 12 Tier 1 de Brasil, R$ 250M - 300M, 550 - 700 colaboradores). Gigante en cocinas de acero RTA, mobiliario corporativo, residencial y sistemas de almacenaje industrial.
+- **Contacto Clave:** Aline Maria Nunes (Marketing B2B, campañas, contenidos audiovisuales y apoyo a ferias y convenciones).
+- **Email Corporativo:** `aline.nunes@bertolini.com.br`
+- **Canal de Entrada:** LinkedIn InMail.
+- **Historial Completo:**
+  * *Septiembre 2026:* Mario envió mensaje personalizado vía InMail destacando el rol de Aline en marketing B2B y ferias, proponiendo los Manuales 3D Interactivos como herramienta audiovisual de alto impacto para pantallas interactivas en estands de ferias y revolución de la posventa (enlace `mariomojica.com/demo`).
+  * *30 Septiembre 2026 (06:10 BRT):* **¡HITO CRÍTICO - INMAIL ACEPTADO Y SOLICITUD DE PRESENTACIÓN!** Aline respondió en LinkedIn aceptando el InMail y pidiendo la presentación formal: *"Oii, bom día! Poderia enviar uma apresentação da sua empresa para meu e-mail corporativo? aline.nunes@bertolini.com.br"*.
+  * *30 Septiembre 2026:* Mario responde por LinkedIn confirmando el envío inmediato de la presentación ejecutiva en PDF y enlaces 3D al correo corporativo, y facilitando su WhatsApp directo (`+57 311 764 6907`).
+- **Estado Actual:** 🔥 **MUY CALIENTE / SOLICITUD FORMAL DE PRESENTACIÓN RECIBIDA.**
+- **Próxima Jugada:** Enviar correo corporativo formal a `aline.nunes@bertolini.com.br` con el dossier ejecutivo y enlaces de prueba móvil, avisándole por LinkedIn para consolidar el contacto.
 
 ---
 
