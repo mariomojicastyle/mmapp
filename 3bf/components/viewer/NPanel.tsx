@@ -238,35 +238,28 @@ export default function NPanel() {
   return (
     <>
       {/* ========================================================================= */}
-      {/* 🔘 BOTÓN TOGGLE PESTAÑA (< / >) EN ESQUINA SUPERIOR DERECHA (Visor 3D y Manual 3D) */}
+      {/* 🔘 BOTÓN TOGGLE PESTAÑA (<) EN ESQUINA SUPERIOR DERECHA (Solo cuando N-Panel está CERRADO) */}
       {/* ========================================================================= */}
-      {(pestanaActiva === "3d" || pestanaActiva === "manual") && (
+      {(pestanaActiva === "3d" || pestanaActiva === "manual") && !mostrarNPanel && (
         <div 
           className="absolute top-3.5 right-3.5 lg:top-3 lg:right-3 z-50 transition-all duration-200 pointer-events-auto"
         >
           <button
             onClick={(e) => {
               e.stopPropagation();
-              setMostrarNPanel((prev) => !prev);
+              setMostrarNPanel(true);
             }}
-            title={mostrarNPanel ? "Cerrar panel lateral (Atajo: N)" : "Mostrar panel lateral (Atajo: N)"}
+            title="Mostrar panel lateral (Atajo: N)"
             style={{
               backgroundColor: coloresApariencia?.fondoPaneles || "#FFFFFF",
               borderColor: coloresApariencia?.bordePaneles || "#CBD5E1",
             }}
             className="flex items-center justify-center w-8 h-8 lg:w-7 lg:h-7 rounded-full border shadow-md backdrop-blur-md transition-all cursor-pointer group hover:scale-105 active:scale-95 box-border"
           >
-            {mostrarNPanel ? (
-              <ChevronRight 
-                style={{ color: coloresApariencia?.colorMarca || "#0891b2" }}
-                className="w-4 h-4 lg:w-4 lg:h-4 group-hover:translate-x-0.5 transition-transform" 
-              />
-            ) : (
-              <ChevronLeft 
-                style={{ color: coloresApariencia?.colorMarca || "#0891b2" }}
-                className="w-4 h-4 lg:w-4 lg:h-4 group-hover:-translate-x-0.5 transition-transform" 
-              />
-            )}
+            <ChevronLeft 
+              style={{ color: coloresApariencia?.colorMarca || "#0891b2" }}
+              className="w-4 h-4 lg:w-4 lg:h-4 group-hover:-translate-x-0.5 transition-transform" 
+            />
           </button>
         </div>
       )}

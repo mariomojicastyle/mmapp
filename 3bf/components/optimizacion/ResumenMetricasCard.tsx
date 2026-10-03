@@ -1,12 +1,13 @@
 "use client";
 
 import React, { useState, useMemo } from "react";
-import type { ResultadoOptimizacionGlobal } from "@/lib/optimizador/tiposOptimizador";
+import type { ResultadoOptimizacionGlobal, PiezaCorte } from "@/lib/optimizador/tiposOptimizador";
 import { use3BFStore } from "@/lib/store";
 import { useOptimizadorStore } from "@/lib/optimizador/useOptimizadorStore";
 import { generarFichaTecnicaTallerPdf } from "@/lib/optimizador/exportadorPdfTaller";
 import { generarYDescargarGcode, generarYDescargarTodosGcodeZip } from "@/lib/optimizador/exportadorCncGcode";
 import { generarYDescargarXilog, generarYDescargarTodosXilogZip } from "@/lib/optimizador/exportadorCncXilog";
+import { descargarMaxCutCsv } from "@/lib/optimizador/exportadorMaxCut";
 import { 
   Percent, 
   Layers, 
@@ -16,14 +17,16 @@ import {
   FileText, 
   Download, 
   Cpu, 
-  Printer 
+  Printer,
+  FileSpreadsheet
 } from "lucide-react";
 
 interface Props {
   resultado: ResultadoOptimizacionGlobal | null;
+  piezas?: PiezaCorte[];
 }
 
-export default function ResumenMetricasCard({ resultado }: Props) {
+export default function ResumenMetricasCard({ resultado, piezas }: Props) {
   const { coloresApariencia, esquemaColor, objetoActivoId, instancias } = use3BFStore();
   const { 
     configuracion, 
@@ -49,6 +52,150 @@ export default function ResumenMetricasCard({ resultado }: Props) {
     return instActiva?.nombreVisible || "3dBimFab_Proyecto";
   }, [origenDatos, nombreArchivoExterno, objetoActivoId, instancias]);
 
+  // 1. Resumen Consolidado Global por Tipo de Material / Lámina
+  const resumenPorMaterial = useMemo(() => {
+    if (!resultado || !resultado.laminas || resultado.laminas.length === 0) return [];
+
+    const mapa = new Map<string, {
+      material: string;
+      espesor: number;
+      largoTotal: number;
+      anchoTotal: number;
+      cantidadLaminas: number;
+      areaTotalMm2: number;
+      areaUtilizadaMm2: number;
+    }>();
+
+    resultado.laminas.forEach((lam) => {
+      const clave = `${lam.material}_${lam.espesor}_${lam.largoTotal}x${lam.anchoTotal}`;
+      const actual = mapa.get(clave) || {
+        material: lam.material || `Tablero ${lam.espesor}mm`,
+        espesor: lam.espesor,
+        largoTotal: lam.largoTotal,
+        anchoTotal: lam.anchoTotal,
+        cantidadLaminas: 0,
+        areaTotalMm2: 0,
+        areaUtilizadaMm2: 0,
+      };
+
+      actual.cantidadLaminas += 1;
+      actual.areaTotalMm2 += lam.areaTotalMm2;
+      actual.areaUtilizadaMm2 += lam.areaUtilizadaMm2;
+      mapa.set(clave, actual);
+    });
+
+    return Array.from(mapa.values()).map((g) => {
+      const desperdicioMm2 = g.areaTotalMm2 - g.areaUtilizadaMm2;
+      const porcentajeDesperdicio = g.areaTotalMm2 > 0
+        ? Number(((desperdicioMm2 / g.areaTotalMm2) * 100).toFixed(1))
+        : 0;
+      return {
+        ...g,
+        porcentajeDesperdicio,
+      };
+    });
+  }, [resultado]);
+
+  // Desperdicio Global Ponderado de todo el lote
+  const desperdicioGlobalPonderado = useMemo(() => {
+    if (!resultado || !resultado.laminas || resultado.laminas.length === 0) return 0;
+    const totalAreaBruta = resultado.laminas.reduce((acc, l) => acc + l.areaTotalMm2, 0);
+    const totalAreaUtil = resultado.laminas.reduce((acc, l) => acc + l.areaUtilizadaMm2, 0);
+    if (totalAreaBruta <= 0) return 0;
+    return Number((((totalAreaBruta - totalAreaUtil) / totalAreaBruta) * 100).toFixed(1));
+  }, [resultado]);
+
+  const handleExportarMaxCut = () => {
+    let listaPiezas: any[] | undefined = piezas;
+    if ((!listaPiezas || listaPiezas.length === 0) && resultado) {
+      listaPiezas = resultado.laminas.flatMap((l) =>
+        l.piezas.map((p) => ({
+          nombre: p.nombre,
+          descripcion: p.descripcion,
+          largo: p.largo,
+          ancho: p.ancho,
+          espesor: l.espesor,
+          cantidad: 1,
+          material: l.material,
+          rotacionPermitida: p.rotada,
+        }))
+      );
+    }
+    if (!listaPiezas || listaPiezas.length === 0) return;
+
+    descargarMaxCutCsv({
+      nombreProyecto,
+      piezas: listaPiezas,
+      formato: "espanol",
+    });
+  };
+
+  // Manejador Ficha Técnica PDF
+  const handleExportarPdf = async () => {
+    if (!resultado) return;
+    setExportandoPdf(true);
+    try {
+      await generarFichaTecnicaTallerPdf({
+        nombreProyecto,
+        resultado,
+        config: configuracion,
+      });
+    } catch (err) {
+      console.error("Error al exportar PDF:", err);
+    } finally {
+      setExportandoPdf(false);
+    }
+  };
+
+  // Manejador G-Code .nc
+  const handleExportarGcode = async () => {
+    setExportandoGcode(true);
+    try {
+      if (resultado && resultado.laminas.length === 1) {
+        generarYDescargarGcode({
+          nombreProyecto,
+          lamina: resultado.laminas[0],
+          diametroFresaMm: configuracion.diametroFresa,
+        });
+      } else if (resultado) {
+        await generarYDescargarTodosGcodeZip({
+          nombreProyecto,
+          laminas: resultado.laminas,
+          diametroFresaMm: configuracion.diametroFresa,
+        });
+      }
+    } catch (err) {
+      console.error("Error al exportar G-Code:", err);
+    } finally {
+      setExportandoGcode(false);
+    }
+  };
+
+  // Manejador SCM Morbidelli Xilog .xcs
+  const handleExportarXilog = async () => {
+    setExportandoXilog(true);
+    try {
+      if (resultado && resultado.laminas.length === 1) {
+        generarYDescargarXilog({
+          nombreProyecto,
+          lamina: resultado.laminas[0],
+          diametroFresaMm: configuracion.diametroFresa,
+        });
+      } else if (resultado) {
+        await generarYDescargarTodosXilogZip({
+          nombreProyecto,
+          laminas: resultado.laminas,
+          diametroFresaMm: configuracion.diametroFresa,
+        });
+      }
+    } catch (err) {
+      console.error("Error al exportar Morbidelli Xilog:", err);
+    } finally {
+      setExportandoXilog(false);
+    }
+  };
+
+  // Estado vacío: si aún no hay cálculo generado
   if (!resultado || resultado.laminas.length === 0) {
     return (
       <div 
@@ -71,97 +218,50 @@ export default function ResumenMetricasCard({ resultado }: Props) {
     resultado.laminas.reduce((acc, l) => acc + (l.piesTablaresBrutos || 0), 0).toFixed(2)
   );
 
-  // Manejador Ficha Técnica PDF
-  const handleExportarPdf = async () => {
-    setExportandoPdf(true);
-    try {
-      await generarFichaTecnicaTallerPdf({
-        nombreProyecto,
-        resultado,
-        config: configuracion,
-      });
-    } catch (err) {
-      console.error("Error al exportar PDF:", err);
-    } finally {
-      setExportandoPdf(false);
-    }
-  };
-
-  // Manejador G-Code .nc
-  const handleExportarGcode = async () => {
-    setExportandoGcode(true);
-    try {
-      if (resultado.laminas.length === 1) {
-        generarYDescargarGcode({
-          nombreProyecto,
-          lamina: resultado.laminas[0],
-          diametroFresaMm: configuracion.diametroFresa,
-        });
-      } else {
-        await generarYDescargarTodosGcodeZip({
-          nombreProyecto,
-          laminas: resultado.laminas,
-          diametroFresaMm: configuracion.diametroFresa,
-        });
-      }
-    } catch (err) {
-      console.error("Error al exportar G-Code:", err);
-    } finally {
-      setExportandoGcode(false);
-    }
-  };
-
-  // Manejador SCM Morbidelli Xilog .xcs
-  const handleExportarXilog = async () => {
-    setExportandoXilog(true);
-    try {
-      if (resultado.laminas.length === 1) {
-        generarYDescargarXilog({
-          nombreProyecto,
-          lamina: resultado.laminas[0],
-          diametroFresaMm: configuracion.diametroFresa,
-        });
-      } else {
-        await generarYDescargarTodosXilogZip({
-          nombreProyecto,
-          laminas: resultado.laminas,
-          diametroFresaMm: configuracion.diametroFresa,
-        });
-      }
-    } catch (err) {
-      console.error("Error al exportar Morbidelli Xilog:", err);
-    } finally {
-      setExportandoXilog(false);
-    }
-  };
-
   return (
     <div 
       style={{ backgroundColor: colorFondo, borderColor: colorBorde }}
-      className="p-2.5 lg:p-3 border-t flex flex-wrap items-center justify-between gap-3 text-xs"
+      className="p-2.5 lg:p-3 border-t flex flex-wrap items-center justify-between gap-2.5 text-xs shadow-inner"
     >
-      {/* 1. Métricas de Rendimiento */}
-      <div className="flex items-center gap-2.5 flex-wrap">
-        {/* Aprovechamiento */}
-        <div className="flex items-center gap-2 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 px-3 py-1 rounded-full text-emerald-700 dark:text-emerald-300">
-          <Percent className="w-3.5 h-3.5" />
-          <span className="font-bold text-sm">{resultado.aprovechamientoPromedio}%</span>
-          <span className="text-[10px] uppercase font-semibold">Aprovechamiento</span>
-        </div>
-
-        {/* Desperdicio */}
-        <div className="flex items-center gap-1.5 bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800 px-2.5 py-1 rounded-full text-rose-700 dark:text-rose-300">
-          <span className="font-bold text-xs">{(100 - resultado.aprovechamientoPromedio).toFixed(1)}%</span>
-          <span className="text-[10px] font-semibold opacity-80">Merma</span>
-        </div>
-
-        {/* Total Láminas */}
-        <div className="flex items-center gap-1.5 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 px-2.5 py-1 rounded-full text-slate-700 dark:text-slate-200">
-          <Layers className="w-3.5 h-3.5 text-cyan-600 dark:text-cyan-400" />
-          <span className="font-bold text-xs">{resultado.totalLaminas}</span>
-          <span className="text-[10px] font-semibold opacity-80">
-            {resultado.modo === "madera_maciza" ? "Tablones" : "Láminas"}
+      {/* 1. Métricas de Rendimiento con Foco en Desperdicio Global y Láminas Totales */}
+      <div className="flex items-center gap-2 flex-wrap">
+        {/* Total Tableros Totales */}
+        <div className="flex items-center gap-1.5 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 px-3 py-1.5 rounded-full text-slate-800 dark:text-slate-100 shadow-sm">
+          <Layers className="w-4 h-4 text-cyan-600 dark:text-cyan-400" />
+          <span className="font-bold text-sm">{resultado.totalLaminas}</span>
+          <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">
+            {resultado.modo === "madera_maciza" ? "Tablones" : "Tableros Totales"}
           </span>
+        </div>
+
+        {/* Desperdicio Global Ponderado (Merma) */}
+        <div className="flex items-center gap-1.5 bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800 px-3 py-1.5 rounded-full text-rose-700 dark:text-rose-300 shadow-sm">
+          <Percent className="w-4 h-4" />
+          <span className="font-bold text-sm">{desperdicioGlobalPonderado}%</span>
+          <span className="text-[11px] uppercase font-bold tracking-wider">Desperdicio Global</span>
+        </div>
+
+        {/* Desglose de Desperdicio y Láminas por Tipo de Material */}
+        <div className="flex items-center gap-1.5 flex-wrap">
+          {resumenPorMaterial.map((m) => (
+            <div 
+              key={`${m.material}_${m.espesor}`}
+              className="flex items-center gap-1.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 px-2.5 py-1 rounded-full shadow-sm text-xs"
+              title={`${m.material}: ${m.cantidadLaminas} tableros (${m.largoTotal}×${m.anchoTotal}mm) con ${m.porcentajeDesperdicio}% de merma`}
+            >
+              <span className="w-2 h-2 rounded-full bg-cyan-500 shrink-0" />
+              <span className="font-bold text-slate-700 dark:text-slate-200 truncate max-w-[130px] lg:max-w-[180px]">
+                {m.material}:
+              </span>
+              <span className="font-bold text-cyan-600 dark:text-cyan-400">
+                {m.cantidadLaminas} {m.cantidadLaminas === 1 ? "tablero" : "tableros"}
+              </span>
+              <span className="text-slate-300 dark:text-slate-700">|</span>
+              <span className="font-bold text-rose-600 dark:text-rose-400">
+                {m.porcentajeDesperdicio}% merma
+              </span>
+            </div>
+          ))}
         </div>
 
         {/* Metros Lineales de Corte */}
@@ -194,6 +294,18 @@ export default function ResumenMetricasCard({ resultado }: Props) {
         >
           <Printer className="w-3.5 h-3.5 text-cyan-600 dark:text-cyan-400" />
           <span>{exportandoPdf ? "Generando..." : "Ficha Técnica PDF"}</span>
+        </button>
+
+        {/* Botón MaxCut CSV */}
+        <button
+          type="button"
+          onClick={handleExportarMaxCut}
+          style={{ borderColor: colorBorde }}
+          className="px-3 py-1 rounded-full border bg-white dark:bg-slate-900 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-800 dark:text-slate-100 font-bold text-xs flex items-center gap-1.5 cursor-pointer shadow-sm transition active:scale-95"
+          title="Descargar lista de corte en formato CSV para importar y calibrar en MaxCut"
+        >
+          <FileSpreadsheet className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+          <span>MaxCut (CSV)</span>
         </button>
 
         {/* Botones CNC si el modo es Nesting CNC (o exportación universal de corte) */}

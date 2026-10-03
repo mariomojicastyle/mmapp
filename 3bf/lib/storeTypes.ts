@@ -1331,6 +1331,7 @@ export interface FichaCostosConfig {
     cantosLargo: number;
     cantoCodigo?: string;
   }>;
+  giroPorPieza?: Record<number, boolean>; // true = Giro Libre, false = Veta Fija (Bloqueada)
   piezasNombres?: Record<number, string>;
   versionActual?: string;
   costoEmpaqueManualCop?: number;

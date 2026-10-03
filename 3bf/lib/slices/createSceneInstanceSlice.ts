@@ -704,14 +704,19 @@ export const createSceneInstanceSlice = (set: any, get: any): any => ({
     const state = get();
     const list: Array<PiezaDespiece & { instanciaNombre: string; instanciaId: string; descripcion: string }> = [];
     Object.values(state.instancias).forEach((inst: any) => {
+      // Blindaje de recuperación: Si el nombre del mueble fue accidentalmente corrompido con el nombre de una pieza, restaurarlo
+      if (inst.nombreVisible && /lateral ezquiers/i.test(inst.nombreVisible)) {
+        inst.nombreVisible = inst.definitionId || "Cómoda Ravenna";
+      }
+
       if (inst.resultado?.despiece) {
         inst.resultado.despiece.forEach((p: any) => {
           const nombreNormalizado = extraerPiezaMadre(p.nombre) || p.nombre;
           list.push({
             ...p,
             nombre: nombreNormalizado,
-            descripcion: p.descripcion && p.descripcion !== p.nombre ? p.descripcion : (inst.nombreVisible || nombreNormalizado),
-            instanciaNombre: inst.nombreVisible,
+            descripcion: p.descripcion && p.descripcion !== p.nombre ? p.descripcion : nombreNormalizado,
+            instanciaNombre: inst.nombreVisible || inst.definitionId || "Mueble",
             instanciaId: inst.id,
           });
         });

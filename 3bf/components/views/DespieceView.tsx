@@ -1,8 +1,8 @@
 "use client";
 
 import React, { useState, useEffect, useMemo } from "react";
-import { use3BFStore, TableroRecord, HerrajeRecord, CantoRecord } from "@/lib/store";
-import { extraerPiezaMadre } from "@/lib/piezaMadreUtils";
+import { use3BFStore, TableroRecord, HerrajeRecord, CantoRecord, FichaCostosConfig } from "@/lib/store";
+import { extraerPiezaMadre, obtenerDescripcionCanonicaPieza } from "@/lib/piezaMadreUtils";
 import { 
   FileText, 
   Hammer, 
@@ -25,9 +25,14 @@ import {
   FileCode2,
   Zap,
   Trash2,
-  FolderOpen
+  FolderOpen,
+  FileSpreadsheet,
+  Lock,
+  RotateCw,
+  Loader2
 } from "lucide-react";
 import JSZip from "jszip";
+import { descargarMaxCutCsv } from "@/lib/optimizador/exportadorMaxCut";
 
 /**
  * Componente de entrada numérica inteligente con formato latino/español:
@@ -144,6 +149,7 @@ export default function DespieceView() {
     resultado, 
     parametros,
     instancias,
+    objetoActivoId,
     getDespieceGlobal,
     getHerrajesGlobal,
     dbHerrajes,
@@ -167,16 +173,31 @@ export default function DespieceView() {
     ultimoResumenMecanizado,
     perforarMueble,
     limpiarPerforaciones,
+    esquemaColor,
+    muebleActivoGuardado,
+    guardarProyectoCompleto,
   } = use3BFStore();
 
+  const esOscuro = esquemaColor === "oscuro";
   const trm = negociacionNovopan?.trmNovopan || 3000;
 
   const [descargando, setDescargando] = useState(false);
   const [progresoExportacion, setProgresoExportacion] = useState<{ actual: number; total: number; nombre?: string } | null>(null);
   const [guardando, setGuardando] = useState(false);
-  const modelKey = parametros.model_id || parametros.custom_filename || "Cubierta";
-
   const [guardadoExitoso, setGuardadoExitoso] = useState(false);
+
+  // 📐 Resolución Canónica del Modelo Activo (instancia activa 3D > mueble guardado > parámetros)
+  const instanciaActiva = (objetoActivoId && instancias[objetoActivoId]) || Object.values(instancias || {})[0];
+  const modelKey = useMemo(() => {
+    const raw = muebleActivoGuardado?.nombre
+      || instanciaActiva?.definitionId 
+      || instanciaActiva?.nombreVisible 
+      || instanciaActiva?.parametros?.model_id 
+      || parametros.model_id 
+      || parametros.custom_filename 
+      || "Comoda Ravenna";
+    return raw.replace(/\.(gh|ghx)$/i, "").trim();
+  }, [muebleActivoGuardado?.nombre, instanciaActiva, parametros.model_id, parametros.custom_filename]);
 
   // Leer configuración inicial directamente del Store de Zustand / localStorage
   const fichaInicial = getFichaConfig(modelKey);
@@ -199,15 +220,27 @@ export default function DespieceView() {
     cantoCodigo?: string;
   }>>(fichaInicial.cantosPorPieza || {});
 
+  // Sentido de veta / Rotación permitida en corte por pieza (true = Giro Libre, false = Veta Fija)
+  const [giroPorPieza, setGiroPorPieza] = useState<Record<number, boolean>>(fichaInicial.giroPorPieza || {});
+
   // Costo manual de empaque (Fase transicional previa al módulo dedicado de empaque)
   const [costoEmpaqueManualCop, setCostoEmpaqueManualCop] = useState<number | undefined>(fichaInicial.costoEmpaqueManualCop);
   const [costoEmpaqueManualUsd, setCostoEmpaqueManualUsd] = useState<number | undefined>(fichaInicial.costoEmpaqueManualUsd);
+
+  // Multiplicador de lote para producción masiva y nesting en MaxCut
+  const [loteMuebles, setLoteMuebles] = useState<number>(1);
 
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
   const [editingDescIndex, setEditingDescIndex] = useState<number | null>(null);
 
   useEffect(() => {
     hidratarDesdeLocalStorage();
+    // Sanear instancias del escenario si fueron renombradas accidentalmente por el bug
+    Object.values(instancias || {}).forEach((inst: any) => {
+      if (inst && inst.nombreVisible && /lateral ezquiers/i.test(inst.nombreVisible)) {
+        renombrarInstancia(inst.id, inst.definitionId || "Cómoda Ravenna");
+      }
+    });
   }, []);
 
   // Sincronizar reactivamente si cambia de modelo
@@ -219,6 +252,7 @@ export default function DespieceView() {
     setDescripcionesPersonalizadas((config as any).descripcionesPersonalizadas || {});
     setMaterialesPorPieza(config.materialesPorPieza || {});
     setCantosPorPieza(config.cantosPorPieza || {});
+    setGiroPorPieza(config.giroPorPieza || {});
     setVersionActual(config.versionActual || "v1.0");
     setCostoEmpaqueManualCop(config.costoEmpaqueManualCop ?? 0);
     setCostoEmpaqueManualUsd(config.costoEmpaqueManualUsd ?? 0);
@@ -255,7 +289,7 @@ export default function DespieceView() {
       return {
         ...p,
         nombre: nombreNorm,
-        descripcion: p.descripcion && p.descripcion !== p.nombre ? p.descripcion : (p.instanciaNombre || nombreNorm)
+        descripcion: p.descripcion && p.descripcion !== p.nombre ? p.descripcion : nombreNorm
       };
     });
     return [...base].sort((a, b) =>
@@ -300,17 +334,22 @@ export default function DespieceView() {
       // Blindaje DfMA: Si el material guardado era fondo (< 5mm) debido al bug previo de espesor 0,
       // pero la pieza ahora tiene calibre estructural (>= 12mm) y no es un fondo real, reasignar al tablero correcto
       const esFondoInvalido = found && found.calibreMm < 5 && espesor >= 12 && !nombre?.toLowerCase().includes("fondo");
-      if (found && !esFondoInvalido) return found;
+      // Coherencia física: si el material guardado tenía calibre incompatible con la pieza (ej: 15mm para pieza de 12mm), reasignar
+      const esCalibreIncompatible = found && Math.abs(found.calibreMm - espesor) > 1.5;
+      if (found && !esFondoInvalido && !esCalibreIncompatible) return found;
     }
-    // Detección automática por calibre de la pieza
+    // Detección automática por calibre exacto de la pieza
     if (espesor >= 24) {
       return dbTableros.find((t: TableroRecord) => t.calibreMm === 25) || dbTableros[1] || dbTableros[0];
     }
     if (espesor <= 5) {
-      return dbTableros.find((t: TableroRecord) => t.calibreMm < 5) || dbTableros[3] || dbTableros[0];
+      return dbTableros.find((t: TableroRecord) => t.calibreMm < 5) || dbTableros.find((t: TableroRecord) => t.calibreMm === 2.7) || dbTableros[0];
     }
     if (espesor === 18) {
-      return dbTableros.find((t: TableroRecord) => t.calibreMm === 18) || dbTableros[4] || dbTableros[0];
+      return dbTableros.find((t: TableroRecord) => t.calibreMm === 18) || dbTableros[0];
+    }
+    if (espesor === 12) {
+      return dbTableros.find((t: TableroRecord) => t.calibreMm === 12) || dbTableros.find((t: TableroRecord) => t.nombreComercial.includes("12mm")) || dbTableros[0];
     }
     return dbTableros.find((t: TableroRecord) => t.calibreMm === 15) || dbTableros[0];
   };
@@ -437,7 +476,8 @@ export default function DespieceView() {
     setCantosPorPieza((prev) => {
       const updated = { ...prev };
       piezasActivas.forEach((p: any, idx: number) => {
-        const descOficial = descripcionesPersonalizadas[idx] || p.descripcion || p.instanciaNombre || p.nombre;
+        const descGuardada = descripcionesPersonalizadas[idx] || (p.nombre ? descripcionesPersonalizadas[p.nombre] : undefined);
+        const descOficial = descGuardada || (p.descripcion && p.descripcion !== p.nombre ? p.descripcion : p.nombre);
         const cConfig = getCantoPieza(idx, p.nombre, p.espesor, descOficial);
         if (!codigoViejo || cConfig.cantoCodigo === codigoViejo) {
           updated[idx] = {
@@ -479,8 +519,9 @@ export default function DespieceView() {
     let totalMaderaUsd = 0;
 
     const items = piezasActivas.map((p: any, idx: number) => {
-      // Nombre de descripción oficial asignado por el diseñador
-      const descOficial = descripcionesPersonalizadas[idx] || p.descripcion || p.instanciaNombre || p.nombre;
+      // 📐 Regla Canónica: Si el usuario editó o guardó una descripción, se respeta; de lo contrario toma el nombre canónico de taller
+      const descGuardada = descripcionesPersonalizadas[idx] || (p.nombre ? descripcionesPersonalizadas[p.nombre] : undefined);
+      const descOficial = obtenerDescripcionCanonicaPieza(p.nombre, descGuardada, p.descripcion, modelKey) || descGuardada || (p.descripcion && p.descripcion !== p.nombre ? p.descripcion : p.nombre);
       const mat = getMaterialParaPieza(idx, p.espesor, descOficial || p.nombre);
       const areaM2 = (p.largo * p.ancho * p.cantidad) / 1_000_000.0;
       areaTotalM2 += areaM2;
@@ -851,41 +892,99 @@ export default function DespieceView() {
   };
 
   const handleDescripcionChange = (idx: number, nuevaDesc: string) => {
+    const piezaActual = piezasActivas[idx];
+    const nombrePieza = piezaActual?.nombre;
     setDescripcionesPersonalizadas((prev) => {
-      const updated = { ...prev, [idx]: nuevaDesc };
+      const updated = { 
+        ...prev, 
+        [idx]: nuevaDesc,
+        ...(nombrePieza ? { [nombrePieza]: nuevaDesc } : {})
+      };
       sincronizarCambios({ descripcionesPersonalizadas: updated });
       return updated;
     });
-
-    // Si la pieza proviene de una instancia del escenario, actualizar su nombre oficial en el store
-    const pieza = piezasActivas[idx];
-    if (pieza && (pieza as any).instanciaId) {
-      renombrarInstancia((pieza as any).instanciaId, nuevaDesc);
-    }
   };
 
-  const guardarEnSupabase = async () => {
+  const handleSincronizarDescripcionesDesdeGH = () => {
+    setDescripcionesPersonalizadas({});
+    sincronizarCambios({ descripcionesPersonalizadas: {} });
+  };
+
+  const getGiroPieza = (idx: number, nombre?: string, largo?: number, ancho?: number, espesor?: number): boolean => {
+    if (giroPorPieza[idx] !== undefined) {
+      return giroPorPieza[idx];
+    }
+    if (nombre && (giroPorPieza as any)[nombre] !== undefined) {
+      return (giroPorPieza as any)[nombre];
+    }
+    // Por defecto de taller: todas las piezas inician en Giro Libre (true)
+    return true;
+  };
+
+  const ejecutarGuardado = async () => {
     setGuardando(true);
     setGuardadoExitoso(false);
     try {
-      // 1. Sincronizar estado completo en el Store Global de Zustand y en LocalStorage
-      sincronizarCambios({
+      // 1. Resolver el identificador de modelo limpio
+      const cleanKey = modelKey || "Comoda Ravenna";
+
+      // 2. Consolidar todas las descripciones oficiales (Grasshopper + ediciones manuales)
+      const descripcionesCompletas: Record<string, string> = { ...descripcionesPersonalizadas };
+      resumenMadera.items.forEach((p: any, idx: number) => {
+        const descOficial = p.descripcionOficial || p.descripcion || descripcionesPersonalizadas[idx] || (p.nombre ? descripcionesPersonalizadas[p.nombre] : "") || p.nombre;
+        if (descOficial) {
+          descripcionesCompletas[idx] = descOficial;
+          if (p.nombre) {
+            descripcionesCompletas[p.nombre] = descOficial;
+          }
+        }
+      });
+
+      // 3. Consolidar mapa de giros de veta por pieza (true = Giro Libre, false = Veta Fija)
+      const girosCompletos: Record<number, boolean> = { ...giroPorPieza };
+      resumenMadera.items.forEach((p: any, idx: number) => {
+        const giro = getGiroPieza(idx, p.nombre, p.largo, p.ancho, p.espesor);
+        girosCompletos[idx] = giro;
+        if (p.nombre) {
+          (girosCompletos as any)[p.nombre] = giro;
+        }
+      });
+
+      // 4. Mapear nombres canónicos de piezas
+      const nombresObj = piezasActivas.reduce((acc: Record<number, string>, p: any, i: number) => {
+        acc[i] = p.nombre;
+        return acc;
+      }, {});
+
+      // 5. Configuración de ficha técnica integral completa
+      const fichaParaGuardar: FichaCostosConfig = {
         desperdicioGlobalPct,
         despunteCantoGlobalMm,
         desperdicioPorPieza,
-        descripcionesPersonalizadas,
+        descripcionesPersonalizadas: descripcionesCompletas,
         materialesPorPieza,
         cantosPorPieza,
+        giroPorPieza: girosCompletos,
+        piezasNombres: nombresObj,
         versionActual,
         costoEmpaqueManualCop,
         costoEmpaqueManualUsd,
-        piezasNombres: piezasEditadas.reduce((acc: Record<number, string>, p: any, i: number) => ({ ...acc, [i]: p.nombre }), {})
-      });
+      };
 
-      // 2. Construir el payload industrial oficial
+      // 6. Persistir en el Store Global de Zustand y en LocalStorage
+      setFichaConfig(cleanKey, fichaParaGuardar);
+      if (modelKey !== cleanKey) {
+        setFichaConfig(modelKey, fichaParaGuardar);
+      }
+
+      // Asegurar sincronización del estado reactivo local
+      setDescripcionesPersonalizadas(descripcionesCompletas);
+      setGiroPorPieza(girosCompletos);
+
+      // 7. Construir y persistir el BOM industrial oficial
       const payload = {
-        model_id: parametros.model_id || "Cubierta",
-        custom_filename: parametros.custom_filename || "Cubierta.ghx",
+        model_id: cleanKey,
+        custom_filename: instanciaActiva?.archivo || `${cleanKey}.ghx`,
         version: versionActual,
         moneda: moneda,
         trm: trm,
@@ -893,7 +992,7 @@ export default function DespieceView() {
         despunte_canto_global_mm: despunteCantoGlobalMm,
         costo_empaque_manual_cop: costoEmpaqueManualCop,
         costo_empaque_manual_usd: costoEmpaqueManualUsd,
-        despiece: resumenMadera.items.map((i: any) => ({
+        despiece: resumenMadera.items.map((i: any, idx: number) => ({
           nombre: i.nombre,
           descripcion: i.descripcionOficial || i.nombre,
           largo: i.largo,
@@ -908,6 +1007,7 @@ export default function DespieceView() {
           canto_material: i.cantoMaterial?.descripcion || "Ninguno",
           canto_codigo: i.cantoMaterial?.codigo || "NONE",
           metros_canto: i.metrosCanto,
+          giro_libre: getGiroPieza(idx, i.nombre, i.largo, i.ancho, i.espesor),
           costo_total_cop: i.costoTotalCop,
           costo_total_usd: i.costoTotalUsd
         })),
@@ -941,21 +1041,28 @@ export default function DespieceView() {
         timestamp: new Date().toISOString()
       };
       
-      localStorage.setItem(`3bf_bom_${payload.model_id}_${versionActual}`, JSON.stringify(payload));
-      localStorage.setItem(`3bf_ficha_config_${modelKey}`, JSON.stringify({
-        desperdicioGlobalPct,
-        despunteCantoGlobalMm,
-        desperdicioPorPieza,
-        materialesPorPieza,
-        cantosPorPieza,
-        versionActual
-      }));
+      if (typeof window !== "undefined" && window.localStorage) {
+        localStorage.setItem(`3bf_bom_${cleanKey}_${versionActual}`, JSON.stringify(payload));
+        localStorage.setItem(`3bf_ficha_config_${cleanKey}`, JSON.stringify(fichaParaGuardar));
+        if (modelKey !== cleanKey) {
+          localStorage.setItem(`3bf_ficha_config_${modelKey}`, JSON.stringify(fichaParaGuardar));
+        }
+      }
+
+      // 8. Sincronizar catálogo persistente si hay un mueble activo
+      if (muebleActivoGuardado && typeof guardarProyectoCompleto === "function") {
+        try {
+          await guardarProyectoCompleto();
+        } catch (errM) {
+          console.warn("Sincronización catálogo en segundo plano:", errM);
+        }
+      }
       
-      await new Promise((resolve) => setTimeout(resolve, 400));
+      await new Promise((resolve) => setTimeout(resolve, 350));
       setGuardadoExitoso(true);
       setTimeout(() => setGuardadoExitoso(false), 3500);
     } catch (e) {
-      console.error("Error guardando en Supabase:", e);
+      console.error("Error guardando ficha y despiece:", e);
     } finally {
       setGuardando(false);
     }
@@ -1026,6 +1133,54 @@ export default function DespieceView() {
     } catch (e) {
       console.error(`Error al exportar DXF para ${pieza.descripcion || pieza.nombre}:`, e);
     }
+  };
+
+
+  const handleToggleGiro = (idx: number, nombre: string, largo: number, ancho: number, espesor: number) => {
+    const actual = getGiroPieza(idx, nombre, largo, ancho, espesor);
+    const nuevoGiro = !actual;
+    const updated = { ...giroPorPieza, [idx]: nuevoGiro };
+    setGiroPorPieza(updated);
+    sincronizarCambios({ giroPorPieza: updated });
+  };
+
+  const handleExportarMaxCut = () => {
+    const lista = (piezasActivas && piezasActivas.length > 0) ? piezasActivas : [];
+    if (lista.length === 0) return;
+
+    const factorLote = Math.max(1, loteMuebles || 1);
+
+    const piezasParaExportar = lista.map((p: any, idx: number) => {
+      const tieneDescGH = p.descripcion && p.descripcion !== p.nombre;
+      const descOficial = tieneDescGH 
+        ? p.descripcion 
+        : (descripcionesPersonalizadas[idx] || descripcionesPersonalizadas[p.nombre] || p.nombre);
+      const mat = getMaterialParaPieza(idx, p.espesor, descOficial || p.nombre);
+      const rotacionPermitida = getGiroPieza(idx, p.nombre, p.largo, p.ancho, p.espesor);
+
+      return {
+        nombre: p.nombre,
+        descripcion: descOficial !== p.nombre ? descOficial : "",
+        largo: p.largo,
+        ancho: p.ancho,
+        espesor: p.espesor,
+        cantidad: Math.max(1, Math.round((p.cantidad || 1) * factorLote)),
+        material: mat?.nombreComercial || (Number(p.espesor) <= 3 ? "MDF 3mm" : Number(p.espesor) <= 12 ? "MDP 12mm" : "MDP 15mm"),
+        rotacionPermitida,
+      };
+    });
+
+    const nombreMueble = objetoActivoId && instancias[objetoActivoId]
+      ? instancias[objetoActivoId].nombreVisible
+      : (parametros.model_id || "Comoda_Ravenna");
+
+    const sufijoLote = factorLote > 1 ? `_Lote_${factorLote}_uds` : "";
+
+    descargarMaxCutCsv({
+      nombreProyecto: `${nombreMueble}${sufijoLote}`,
+      piezas: piezasParaExportar,
+      formato: "espanol",
+    });
   };
 
   const descargarDXF = async () => {
@@ -1138,21 +1293,53 @@ export default function DespieceView() {
       >
         {/* Acciones de Cabecera: Guardar Mueble, Versión y Moneda */}
         <div className="flex items-center gap-2 flex-wrap">
-          {/* Botón Único Guardar (Abre el panel deslizante lateral de Biblioteca de Muebles) */}
+          {/* Botón Principal: Guardar Ficha y Despiece */}
+          <button
+            onClick={ejecutarGuardado}
+            disabled={guardando}
+            style={{ 
+              backgroundColor: guardadoExitoso 
+                ? "#10B981" 
+                : (coloresApariencia?.botonActivo || "#0891B2"), 
+              color: "#FFFFFF",
+            }}
+            className="flex items-center gap-1.5 px-4 py-1.5 rounded-full font-bold text-xs shadow-md transition cursor-pointer hover:opacity-90 active:scale-95 border border-transparent disabled:opacity-75 disabled:cursor-not-allowed"
+            title="Guardar ficha técnica, nombres de piezas, sentidos de veta, materiales y costos en la memoria del proyecto"
+          >
+            {guardando ? (
+              <>
+                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                <span>Guardando...</span>
+              </>
+            ) : guardadoExitoso ? (
+              <>
+                <Check className="w-3.5 h-3.5" />
+                <span>¡Guardado!</span>
+              </>
+            ) : (
+              <>
+                <Save className="w-3.5 h-3.5" />
+                <span>Guardar</span>
+              </>
+            )}
+          </button>
+
+          {/* Botón Secundario: Catálogo / Biblioteca de Muebles */}
           <button
             onClick={() => {
               setPestanaNPanel("muebles");
               setMostrarNPanel(true);
             }}
             style={{ 
-              backgroundColor: coloresApariencia?.botonActivo || "#0891B2", 
-              color: "#FFFFFF",
+              backgroundColor: coloresApariencia?.fondoAplicacion, 
+              borderColor: coloresApariencia?.bordePaneles,
+              color: coloresApariencia?.textoPrincipal
             }}
-            className="flex items-center gap-1.5 px-4 py-1.5 rounded-full font-bold text-xs shadow-md transition cursor-pointer hover:opacity-90 active:scale-95 border border-transparent"
-            title="Abrir Biblioteca de Muebles para guardar y organizar en carpetas"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-full font-bold text-xs shadow-xs transition cursor-pointer hover:opacity-90 active:scale-95 border"
+            title="Abrir Biblioteca de Muebles para organizar en carpetas o guardar como nuevo modelo"
           >
-            <Save className="w-3.5 h-3.5" />
-            <span>Guardar</span>
+            <FolderOpen className="w-3.5 h-3.5 opacity-70" />
+            <span>Catálogo</span>
           </button>
 
           <div 
@@ -1353,6 +1540,49 @@ export default function DespieceView() {
                 <span style={{ color: coloresApariencia?.textoSecundario }} className="font-mono font-bold text-xs">%</span>
               </div>
             </div>
+
+            {/* Multiplicador de Muebles para Lote Industrial en MaxCut */}
+            <div 
+              style={{ 
+                borderColor: coloresApariencia?.bordePaneles,
+                backgroundColor: coloresApariencia?.fondoPaneles,
+                color: coloresApariencia?.textoPrincipal
+              }}
+              className="flex items-center gap-1.5 px-3 py-1 rounded-full border shadow-xs"
+              title="Cantidad de cómodas a producir en lote (multiplica automáticamente las cantidades en el CSV de MaxCut)"
+            >
+              <span style={{ color: coloresApariencia?.textoSecundario }} className="text-[11px] font-bold">Lote:</span>
+              <input
+                type="number"
+                min="1"
+                max="5000"
+                value={loteMuebles}
+                onChange={(e) => setLoteMuebles(Math.max(1, parseInt(e.target.value) || 1))}
+                style={{
+                  backgroundColor: coloresApariencia?.fondoAplicacion,
+                  borderColor: coloresApariencia?.bordePaneles,
+                  color: coloresApariencia?.botonActivo,
+                }}
+                className="w-14 text-center font-mono font-extrabold text-xs border rounded-full px-1.5 py-0.5 outline-none shadow-inner"
+              />
+              <span style={{ color: coloresApariencia?.textoSecundario }} className="text-[11px] font-medium">muebles</span>
+            </div>
+
+            {/* Botón Exportar a MaxCut en Cápsula rounded-full */}
+            <button
+              type="button"
+              onClick={handleExportarMaxCut}
+              style={{
+                borderColor: coloresApariencia?.bordePaneles,
+                backgroundColor: coloresApariencia?.fondoPaneles,
+                color: coloresApariencia?.textoPrincipal,
+              }}
+              className="px-3.5 py-1 rounded-full border hover:bg-slate-100 dark:hover:bg-slate-800 text-xs font-bold flex items-center gap-1.5 cursor-pointer shadow-xs transition active:scale-95"
+              title={`Exportar la lista de tableros para ${loteMuebles} mueble(s) a CSV para MaxCut`}
+            >
+              <FileSpreadsheet className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+              <span>Exportar a MaxCut (CSV)</span>
+            </button>
           </div>
         </div>
 
@@ -1373,8 +1603,26 @@ export default function DespieceView() {
                 }}
                 className="font-bold border-b whitespace-nowrap transition-colors"
               >
-                <th className="p-2.5 w-28">Pieza</th>
-                <th className="p-2.5 min-w-[170px]">Descripción</th>
+                <th className="p-2.5 w-28">Nombre</th>
+                <th className="p-2.5 min-w-[200px]">
+                  <div className="flex items-center justify-between gap-1.5">
+                    <span>Descripción</span>
+                    <button
+                      type="button"
+                      onClick={handleSincronizarDescripcionesDesdeGH}
+                      style={{
+                        borderColor: coloresApariencia?.bordePaneles,
+                        backgroundColor: coloresApariencia?.fondoAplicacion,
+                        color: coloresApariencia?.botonActivo,
+                      }}
+                      className="px-2 py-0.5 rounded-full border text-[10px] font-bold inline-flex items-center gap-1 cursor-pointer transition hover:opacity-80 active:scale-95 shadow-xs"
+                      title="Sincronizar descripciones oficiales desde el panel de Grasshopper (limpia cualquier edición manual de prueba)"
+                    >
+                      <RotateCw className="w-2.5 h-2.5" />
+                      <span>Desde GH</span>
+                    </button>
+                  </div>
+                </th>
                 <th className="p-2.5 min-w-[220px]">Tableros</th>
                 <th className="p-2.5 w-16 text-center">Largo</th>
                 <th className="p-2.5 w-16 text-center">Ancho</th>
@@ -1384,6 +1632,11 @@ export default function DespieceView() {
                 <th className="p-2.5 w-20 text-right">Costo m²</th>
                 <th className="p-2.5 w-20 text-center" title="Porcentaje de desperdicio estimado por nesting">
                   % Desp.
+                </th>
+
+                {/* COLUMNA DE VETA / GIRO */}
+                <th className="p-2.5 w-28 text-center" title="Sentido de veta en corte: Veta Fija (Bloqueado) o Giro Libre (Permite rotar 90°)">
+                  Veta / Giro
                 </th>
                 
                 {/* COLUMNAS DE CANTOS */}
@@ -1502,6 +1755,51 @@ export default function DespieceView() {
                       />
                       <span style={{ color: coloresApariencia?.textoSecundario }} className="font-bold font-mono text-[10px]">%</span>
                     </div>
+                  </td>
+
+                  {/* CONTROL INTERACTIVO DE VETA / GIRO (CÁPSULA PURA ROUNDED-FULL) */}
+                  <td className="p-2 text-center">
+                    {(() => {
+                      const puedeGirar = getGiroPieza(idx, p.nombre, p.largo, p.ancho, p.espesor);
+                      const colorPrimario = esOscuro ? "#1368AA" : (coloresApariencia?.botonActivo || "#0088AA");
+                      return (
+                        <button
+                          type="button"
+                          onClick={() => handleToggleGiro(idx, p.nombre, p.largo, p.ancho, p.espesor)}
+                          style={
+                            puedeGirar
+                              ? {
+                                  backgroundColor: esOscuro ? "rgba(19, 104, 170, 0.25)" : "rgba(0, 136, 170, 0.12)",
+                                  borderColor: colorPrimario,
+                                  color: esOscuro ? "#60A5FA" : colorPrimario,
+                                }
+                              : {
+                                  backgroundColor: coloresApariencia?.fondoAplicacion || (esOscuro ? "#1E293B" : "#F8FAFC"),
+                                  borderColor: coloresApariencia?.bordePaneles || (esOscuro ? "#334155" : "#CBD5E1"),
+                                  color: coloresApariencia?.textoSecundario || (esOscuro ? "#94A3B8" : "#64748B"),
+                                }
+                          }
+                          className="px-2.5 py-1 rounded-full border text-[11px] font-bold inline-flex items-center gap-1 cursor-pointer transition-all shadow-xs hover:scale-105 active:scale-95 select-none"
+                          title={
+                            puedeGirar
+                              ? "Giro Libre: El optimizador y MaxCut pueden rotar esta pieza 90° para mayor rendimiento (clic para bloquear veta)"
+                              : "Veta Fija: Rotación bloqueada a 0° para respetar la dirección de la veta del material (clic para permitir giro libre)"
+                          }
+                        >
+                          {puedeGirar ? (
+                            <>
+                              <RotateCw className="w-3 h-3 shrink-0" />
+                              <span>Giro Libre</span>
+                            </>
+                          ) : (
+                            <>
+                              <Lock className="w-3 h-3 shrink-0 opacity-70" />
+                              <span>Veta Fija</span>
+                            </>
+                          )}
+                        </button>
+                      );
+                    })()}
                   </td>
 
                   {/* CANTOS AUTOMÁTICOS LEÍDOS DEL 3D (L × A) */}
@@ -2543,6 +2841,22 @@ export default function DespieceView() {
                           ? `Exportar ${piezasActivas.length} DXFs CNC` 
                           : "Exportar DXF Seccionadora CNC"))}
               </span>
+            </button>
+
+            {/* Botón Exportar a MaxCut en Barra Inferior */}
+            <button
+              type="button"
+              onClick={handleExportarMaxCut}
+              style={{
+                borderColor: coloresApariencia?.bordePaneles,
+                backgroundColor: coloresApariencia?.fondoPaneles,
+                color: coloresApariencia?.textoPrincipal,
+              }}
+              className="py-1.5 px-4 rounded-full border font-semibold text-xs shadow-xs transition flex items-center justify-center gap-2 cursor-pointer hover:opacity-90 active:scale-95"
+              title={`Exportar la lista de tableros para ${loteMuebles} mueble(s) a formato CSV para MaxCut`}
+            >
+              <FileSpreadsheet className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+              <span>{loteMuebles > 1 ? `Exportar Lote (${loteMuebles} Cómodas) a MaxCut` : "Exportar a MaxCut (CSV)"}</span>
             </button>
           </div>
         </div>

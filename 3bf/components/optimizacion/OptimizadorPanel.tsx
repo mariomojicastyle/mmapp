@@ -5,10 +5,10 @@ import { useOptimizadorStore } from "@/lib/optimizador/useOptimizadorStore";
 import { use3BFStore } from "@/lib/store";
 import { extraerPiezasParaOptimizacion, agruparPiezasPorEspesor } from "@/lib/optimizador/extractorPiezasModelo";
 import { ejecutarOptimizacionGlobal } from "@/lib/optimizador/motorOptimizacionFacade";
+import { cargarPlanLocal } from "@/lib/optimizador/persistenciaOptimizacion";
 import OptimizadorHeader from "./OptimizadorHeader";
 import OptimizadorParametrosBar from "./OptimizadorParametrosBar";
 import VisorLaminasCanvas from "./VisorLaminasCanvas";
-import ResumenMetricasCard from "./ResumenMetricasCard";
 import ListaPiezasOptimizadas from "./ListaPiezasOptimizadas";
 import ModalImportarCorte from "./ModalImportarCorte";
 
@@ -16,7 +16,9 @@ export default function OptimizadorPanel() {
   const store3BF = use3BFStore();
   const {
     modoActivo,
+    setModoActivo,
     configuracion,
+    actualizarConfiguracion,
     espesorActivo,
     laminaActivaIndex,
     resultadoOptimizacion,
@@ -28,7 +30,48 @@ export default function OptimizadorPanel() {
 
   const [modalImportarAbierto, setModalImportarAbierto] = useState(false);
 
+  // Restaurar automáticamente parámetros guardados del proyecto (si existen)
+  useEffect(() => {
+    const rawKey = store3BF.muebleActivoGuardado?.nombre
+      || (store3BF.objetoActivoId && store3BF.instancias[store3BF.objetoActivoId]?.nombreVisible)
+      || "3dBimFab_Proyecto";
+    const planGuardado = cargarPlanLocal(rawKey);
+    if (planGuardado && planGuardado.configuracion) {
+      actualizarConfiguracion(planGuardado.configuracion);
+      if (planGuardado.modoActivo) {
+        setModoActivo(planGuardado.modoActivo);
+      }
+    }
+  }, [store3BF.muebleActivoGuardado?.nombre, store3BF.objetoActivoId]);
+
   const lote = Math.max(1, configuracion.tamanoLote || 1);
+
+  // Sincronizar automáticamente dimensiones de lámina comercial con dbTableros al filtrar espesor
+  useEffect(() => {
+    const db = store3BF.dbTableros;
+    if (!db || db.length === 0) return;
+
+    if (espesorActivo !== null) {
+      const match = db.find((t: any) => Math.abs((t.calibreMm ?? 0) - espesorActivo) <= 1.5);
+      if (match?.largoLaminaMm && match?.anchoLaminaMm) {
+        actualizarConfiguracion({
+          largoBruto: match.largoLaminaMm,
+          anchoBruto: match.anchoLaminaMm,
+          espesorBruto: match.calibreMm,
+        });
+      }
+    } else {
+      // Modo "Todos": Formato estándar Duratex 2440x2150 mm del tablero principal
+      const match15 = db.find((t: any) => t.calibreMm === 15);
+      if (match15?.largoLaminaMm && match15?.anchoLaminaMm) {
+        actualizarConfiguracion({
+          largoBruto: match15.largoLaminaMm,
+          anchoBruto: match15.anchoLaminaMm,
+          espesorBruto: 15,
+        });
+      }
+    }
+  }, [espesorActivo, store3BF.dbTableros]);
 
   // 1. Extraer piezas según el origen de datos activo (Modelo 3D o Archivo Externo) y escalar por tamaño de lote
   const piezasDisponibles = useMemo(() => {
@@ -58,7 +101,8 @@ export default function OptimizadorPanel() {
         modoActivo,
         piezasDisponibles,
         configuracion,
-        espesorActivo
+        espesorActivo,
+        store3BF.dbTableros || []
       );
       setResultadoOptimizacion(res);
       setCalculando(false);
@@ -80,6 +124,7 @@ export default function OptimizadorPanel() {
     configuracion.kerfSierra,
     configuracion.diametroFresa,
     configuracion.refiladoMargen,
+    configuracion.nivelOptimizacion,
     lote
   ]);
 
@@ -93,6 +138,7 @@ export default function OptimizadorPanel() {
         onEjecutarCalculo={handleCalcular}
         totalPiezas={piezasDisponibles.reduce((acc, p) => acc + p.cantidad, 0)}
         onAbrirImportador={() => setModalImportarAbierto(true)}
+        piezas={piezasDisponibles}
       />
 
       {/* 2. Barra de Parámetros de Máquina / Material */}
@@ -108,16 +154,13 @@ export default function OptimizadorPanel() {
           />
         </div>
 
-        {/* Panel Lateral de Piezas */}
-        <div className="w-64 lg:w-72 h-full border-l border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/60 shrink-0 hidden md:block">
+        {/* Panel Lateral de Piezas y Resumen */}
+        <div className="w-72 lg:w-80 h-full border-l border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/60 shrink-0 hidden md:block">
           <ListaPiezasOptimizadas piezas={piezasDisponibles} />
         </div>
       </div>
 
-      {/* 4. Barra Inferior con Métricas de Rendimiento */}
-      <ResumenMetricasCard resultado={resultadoOptimizacion} />
-
-      {/* 5. Modal de Importación Externa CSV / DXF */}
+      {/* 4. Modal de Importación Externa CSV / DXF */}
       <ModalImportarCorte
         abierto={modalImportarAbierto}
         onCerrar={() => setModalImportarAbierto(false)}

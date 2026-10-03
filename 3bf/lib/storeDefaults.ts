@@ -556,11 +556,13 @@ export const HERRAJES_INICIALES_DEFECTO: HerrajeRecord[] = [
 ];
 
 // Cálculo inicial de Duratex con la matriz de negociación
+const cal12 = calcularCostoLaminaNovopan(51.200, 2440, 2150, 12, 5.0, NEGOCIACION_NOVOPAN_DEFECTO, "DURATEX Trama Marfil 12mm 215x244");
 const cal15 = calcularCostoLaminaNovopan(58.468, 2440, 2150, 15, 5.0, NEGOCIACION_NOVOPAN_DEFECTO, "DURATEX Trama Marfil 15mm 215x244");
 const cal25 = calcularCostoLaminaNovopan(95.170, 2440, 2150, 25, 0.0, NEGOCIACION_NOVOPAN_DEFECTO, "DURATEX Trama Marfil 25mm 215x244");
 
 
 export const TABLEROS_INICIALES_DEFECTO: TableroRecord[] = [
+  { id: "t0_12", codigo: "DX-128401", sustrato: "MDP", nombreComercial: "DURATEX Trama Marfil 12mm 215x244", calibreMm: 12, largoLaminaMm: 2440, anchoLaminaMm: 2150, costoListaUsd: 51.200, descuentoCaraPct: 5.0, costoLaminaUsd: cal12.costoLaminaUsd, costoLaminaCop: cal12.costoLaminaCop, costoM2Usd: cal12.costoM2Usd, costoM2Cop: cal12.costoM2Cop, proveedor: "Duratex" },
   { id: "t1", codigo: "DX-158402", sustrato: "MDP", nombreComercial: "DURATEX Trama Marfil 15mm 215x244", calibreMm: 15, largoLaminaMm: 2440, anchoLaminaMm: 2150, costoListaUsd: 58.468, descuentoCaraPct: 5.0, costoLaminaUsd: cal15.costoLaminaUsd, costoLaminaCop: cal15.costoLaminaCop, costoM2Usd: cal15.costoM2Usd, costoM2Cop: cal15.costoM2Cop, proveedor: "Duratex" },
   { id: "t2", codigo: "DX-259104", sustrato: "MDP", nombreComercial: "DURATEX Trama Marfil 25mm 215x244", calibreMm: 25, largoLaminaMm: 2440, anchoLaminaMm: 2150, costoListaUsd: 95.170, descuentoCaraPct: 0.0, costoLaminaUsd: cal25.costoLaminaUsd, costoLaminaCop: cal25.costoLaminaCop, costoM2Usd: cal25.costoM2Usd, costoM2Cop: cal25.costoM2Cop, proveedor: "Duratex" },
   { id: "t3", codigo: "DX-157219", sustrato: "MDP", nombreComercial: "DURATEX Carboncillo Matt 15mm 183x244", calibreMm: 15, largoLaminaMm: 2440, anchoLaminaMm: 1830, costoListaUsd: 37.700, descuentoCaraPct: 0.0, costoLaminaUsd: 37.70, costoLaminaCop: 113100, costoM2Usd: 8.44, costoM2Cop: 25320, proveedor: "Duratex" },
@@ -790,6 +792,7 @@ export const FICHA_DEFECTO: FichaCostosConfig = {
   descripcionesPersonalizadas: {},
   materialesPorPieza: {},
   cantosPorPieza: {},
+  giroPorPieza: {},
   piezasNombres: {},
   versionActual: "BD 1.0",
   costoEmpaqueManualCop: 0,

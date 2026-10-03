@@ -57,13 +57,14 @@ export const useOptimizadorStore = create<OptimizadorState>((set) => ({
   setModoActivo: (modo) => set({ modoActivo: modo }),
 
   configuracion: {
-    tamanoLote: 1,          // 1 unidad de mueble por defecto (escalable a 5, 10, 50, etc.)
+    tamanoLote: 1,          // 1 unidad de mueble por defecto (escalable a 5, 10, 50, 100, etc.)
     largoBruto: 2440,
-    anchoBruto: 1830,
+    anchoBruto: 2150,       // Formato estándar Duratex / Novopan (2440 x 2150 mm)
     espesorBruto: 15,
     kerfSierra: 3.5,        // Disco sierra seccionadora (3.5 mm)
     diametroFresa: 10.0,    // Fresa de compresión nesting CNC (10 mm)
     refiladoMargen: 10.0,   // Refilado perimetral (10 mm en cada borde)
+    nivelOptimizacion: "intensivo", // Motor Metaheurístico Multi-Iterativo (Máximo aprovechamiento)
     estrategiaMadera: "rip_first",
     largoTablonMm: 3048,    // 10 pies
     anchoTablonMm: 203.2,   // 8 pulgadas

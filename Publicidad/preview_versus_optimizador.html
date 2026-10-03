@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Comparativa: Software Tradicional vs 3dBimFab Cloud</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@400;500;600;700;800;900&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    body { font-family: 'Prompt', 'Inter', sans-serif; }
+  </style>
+</head>
+<body class="bg-slate-100 text-slate-800 antialiased p-4 md:p-6 min-h-screen flex flex-col items-center">
+
+  <!-- Header de Controles y Acciones -->
+  <div class="w-full max-w-6xl mb-4 flex flex-wrap items-center justify-between gap-3 bg-white p-4 rounded-2xl shadow-sm border border-slate-200">
+    <div class="flex items-center gap-3">
+      <div class="w-8 h-8 rounded-full bg-[#0088AA] flex items-center justify-center text-white font-black text-sm">
+        3BF
+      </div>
+      <div>
+        <h1 class="text-sm font-bold text-slate-900 leading-tight">Infografía Técnica B2B: El Costo Oculto de la Espera</h1>
+        <p class="text-xs text-slate-500">Formato vectorial SVG nativo (1440 × 960 px) • Listo para Inkscape, LinkedIn y Pitch Decks</p>
+      </div>
+    </div>
+
+    <!-- Botones de Acción en Cápsulas rounded-full -->
+    <div class="flex items-center gap-2">
+      <a 
+        href="versus_optimizador_escritorio_vs_3dbimfab.svg" 
+        download="versus_optimizador_escritorio_vs_3dbimfab.svg"
+        class="px-4 py-2 rounded-full bg-[#0088AA] hover:bg-[#0E7490] text-white text-xs font-bold transition shadow-sm flex items-center gap-1.5"
+      >
+        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+        Descargar SVG Maestro
+      </a>
+      <button 
+        onclick="copiarRutaSvg()" 
+        class="px-3 py-2 rounded-full border border-slate-300 hover:bg-slate-50 text-slate-700 text-xs font-semibold transition"
+      >
+        Copiar Ruta
+      </button>
+    </div>
+  </div>
+
+  <!-- Contenedor del Gráfico SVG Renderizado -->
+  <div class="w-full max-w-6xl bg-white rounded-3xl shadow-lg border border-slate-200/80 overflow-hidden flex flex-col items-center justify-center p-2 sm:p-4">
+    <img 
+      src="versus_optimizador_escritorio_vs_3dbimfab.svg" 
+      alt="Software de Escritorio vs 3dBimFab Cloud" 
+      class="w-full h-auto rounded-2xl block"
+      loading="eager"
+    />
+  </div>
+
+  <!-- Resumen de Argumentario Comercial de Venta -->
+  <div class="w-full max-w-6xl mt-6 grid grid-cols-1 md:grid-cols-3 gap-4">
+    <div class="bg-white p-4 rounded-2xl border border-rose-200 shadow-sm">
+      <div class="text-[11px] font-bold text-rose-600 uppercase tracking-wider mb-1">1. La Fricción Psicológica</div>
+      <div class="text-sm font-bold text-slate-900 mb-1">El Efecto "Reel de Instagram"</div>
+      <p class="text-xs text-slate-600 leading-relaxed">
+        Nadie se queda 3 minutos mirando una barra de progreso estática. El operario saca su teléfono, se distrae y cuando vuelve a la máquina, se perdieron 15 o 20 minutos de corte real.
+      </p>
+    </div>
+
+    <div class="bg-white p-4 rounded-2xl border border-cyan-200 shadow-sm">
+      <div class="text-[11px] font-bold text-[#0088AA] uppercase tracking-wider mb-1">2. La Solución 3dBimFab</div>
+      <div class="text-sm font-bold text-slate-900 mb-1">Cálculo en 283 Milisegundos</div>
+      <p class="text-xs text-slate-600 leading-relaxed">
+        Al ser sub-segundo (0.28s para 2,650 piezas), el operario no tiene tiempo ni de soltar la cinta métrica o el tablero. El flujo de trabajo no se rompe jamás.
+      </p>
+    </div>
+
+    <div class="bg-white p-4 rounded-2xl border border-emerald-200 shadow-sm">
+      <div class="text-[11px] font-bold text-emerald-600 uppercase tracking-wider mb-1">3. Ganancia Neta</div>
+      <div class="text-sm font-bold text-slate-900 mb-1">+3 Tableros y +40 min / día</div>
+      <p class="text-xs text-slate-600 leading-relaxed">
+        12.9% de merma frente al 16.5% de los programas de escritorio, más la recuperación de hasta 16 horas mensuales de máquina operando.
+      </p>
+    </div>
+  </div>
+
+  <script>
+    function copiarRutaSvg() {
+      navigator.clipboard.writeText("c:\\Desarrollo\\mmapp\\publicidad\\versus_optimizador_escritorio_vs_3dbimfab.svg");
+      alert("¡Ruta copiada al portapapeles!\nc:\\Desarrollo\\mmapp\\publicidad\\versus_optimizador_escritorio_vs_3dbimfab.svg");
+    }
+  </script>
+</body>
+</html>

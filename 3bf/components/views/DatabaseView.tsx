@@ -25,8 +25,10 @@ import {
   ChevronDown,
   ChevronUp,
   Globe,
-  Tag
+  Tag,
+  Pencil
 } from "lucide-react";
+import ModalEditarMaterialDb, { ElementoDbSeleccionado } from "./ModalEditarMaterialDb";
 
 /**
  * Componente de entrada numérica inteligente con formato latino/español:
@@ -135,6 +137,7 @@ export default function DatabaseView() {
   const [busqueda, setBusqueda] = useState("");
   const [guardado, setGuardado] = useState(false);
   const [importando, setImportando] = useState(false);
+  const [elementoEditando, setElementoEditando] = useState<ElementoDbSeleccionado | null>(null);
 
   // Estado para acordeón de proveedores desplegables (Novopan abierto por defecto)
   const [proveedoresAbiertos, setProveedoresAbiertos] = useState<Record<string, boolean>>({
@@ -306,21 +309,85 @@ export default function DatabaseView() {
     updateDbTablero(id, field, value);
   };
 
-  const handleAddHerraje = () => {
+  const handleGuardarElementoEditado = (tipo: "tablero" | "herraje" | "canto", itemActualizado: any) => {
+    if (tipo === "tablero") {
+      const existe = dbTableros.some((t) => t.id === itemActualizado.id);
+      const updated = existe
+        ? dbTableros.map((t) => (t.id === itemActualizado.id ? itemActualizado : t))
+        : [itemActualizado, ...dbTableros];
+      setDbTableros(updated);
+      try { localStorage.setItem("3bf_db_tableros", JSON.stringify(updated)); } catch {}
+    } else if (tipo === "herraje") {
+      const existe = dbHerrajes.some((h) => h.id === itemActualizado.id);
+      const updated = existe
+        ? dbHerrajes.map((h) => (h.id === itemActualizado.id ? itemActualizado : h))
+        : [itemActualizado, ...dbHerrajes];
+      setDbHerrajes(updated);
+      try { localStorage.setItem("3bf_db_herrajes", JSON.stringify(updated)); } catch {}
+    } else if (tipo === "canto") {
+      const existe = dbCantos.some((c) => c.id === itemActualizado.id);
+      const updated = existe
+        ? dbCantos.map((c) => (c.id === itemActualizado.id ? itemActualizado : c))
+        : [itemActualizado, ...dbCantos];
+      setDbCantos(updated);
+      try { localStorage.setItem("3bf_db_cantos", JSON.stringify(updated)); } catch {}
+    }
+  };
+
+  const handleCrearHerraje = () => {
     const nuevo: HerrajeRecord = {
       id: `h_${Date.now()}`,
       codigo: `00${Math.floor(1000 + Math.random() * 9000)}`,
       nombreGhx: "Nuevo Herraje GH",
-      descripcion: "Descripción del herraje",
+      descripcion: "Descripción comercial del herraje",
       categoria: "Accesorios",
       mallasPorUnidad: 1,
-      costoCop: 1000,
-      costoUsd: 0.25,
+      costoCop: 1500,
+      costoUsd: 0.375,
       unidad: "UND",
       pesoKg: 0.01,
       proveedor: "Genérico"
     };
-    setDbHerrajes([nuevo, ...dbHerrajes]);
+    setElementoEditando({ tipo: "herraje", item: nuevo });
+  };
+
+  const handleCrearTablero = () => {
+    const nuevo: TableroRecord = {
+      id: `t_${Date.now()}`,
+      codigo: `TAB-${Math.floor(1000 + Math.random() * 9000)}`,
+      sustrato: "MDP",
+      nombreComercial: "Nueva Lámina Comercial",
+      calibreMm: 15,
+      largoLaminaMm: 2440,
+      anchoLaminaMm: 1830,
+      costoListaUsd: 45.0,
+      descuentoCaraPct: 0,
+      costoLaminaUsd: 45.0,
+      costoLaminaCop: 180000,
+      costoM2Usd: 10.08,
+      costoM2Cop: 40314,
+      proveedor: "Duratex"
+    };
+    setElementoEditando({ tipo: "tablero", item: nuevo });
+  };
+
+  const handleCrearCanto = () => {
+    const nuevo: CantoRecord = {
+      id: `c_${Date.now()}`,
+      codigo: `CAN-${Math.floor(1000 + Math.random() * 9000)}`,
+      descripcion: "Nuevo Canto PVC 22mm",
+      espesorMm: 0.45,
+      anchoMm: 22,
+      tipo: "Flexible",
+      costoMlCop: 1200,
+      costoMlUsd: 0.3,
+      proveedor: "Duratex"
+    };
+    setElementoEditando({ tipo: "canto", item: nuevo });
+  };
+
+  const handleAddHerraje = () => {
+    handleCrearHerraje();
   };
 
   const handleDeleteHerraje = (id: string) => {
@@ -539,15 +606,46 @@ export default function DatabaseView() {
 
             {tab === "herrajes" && (
               <button
-                onClick={handleAddHerraje}
+                type="button"
+                onClick={handleCrearHerraje}
                 style={{
                   backgroundColor: coloresApariencia?.botonActivo || "#0891b2",
                   borderColor: coloresApariencia?.colorMarca || "#0891b2",
                   color: "#FFFFFF"
                 }}
-                className="px-4 py-1.5 rounded-full font-bold transition flex items-center gap-1.5 shadow-md border cursor-pointer hover:opacity-90 active:scale-95 text-xs"
+                className="px-4 py-1.5 rounded-full font-bold transition flex items-center gap-1.5 shadow-md border cursor-pointer hover:opacity-90 active:scale-95 text-xs whitespace-nowrap"
               >
                 <Plus className="w-3.5 h-3.5" /> + Nuevo Herraje
+              </button>
+            )}
+
+            {tab === "tableros" && (
+              <button
+                type="button"
+                onClick={handleCrearTablero}
+                style={{
+                  backgroundColor: coloresApariencia?.botonActivo || "#0891b2",
+                  borderColor: coloresApariencia?.colorMarca || "#0891b2",
+                  color: "#FFFFFF"
+                }}
+                className="px-4 py-1.5 rounded-full font-bold transition flex items-center gap-1.5 shadow-md border cursor-pointer hover:opacity-90 active:scale-95 text-xs whitespace-nowrap"
+              >
+                <Plus className="w-3.5 h-3.5" /> + Nueva Lámina
+              </button>
+            )}
+
+            {tab === "cantos" && (
+              <button
+                type="button"
+                onClick={handleCrearCanto}
+                style={{
+                  backgroundColor: coloresApariencia?.botonActivo || "#0891b2",
+                  borderColor: coloresApariencia?.colorMarca || "#0891b2",
+                  color: "#FFFFFF"
+                }}
+                className="px-4 py-1.5 rounded-full font-bold transition flex items-center gap-1.5 shadow-md border cursor-pointer hover:opacity-90 active:scale-95 text-xs whitespace-nowrap"
+              >
+                <Plus className="w-3.5 h-3.5" /> + Nuevo Canto
               </button>
             )}
           </div>
@@ -586,7 +684,7 @@ export default function DatabaseView() {
                 <th className="p-2.5 w-16 text-center">Unidad</th>
                 <th className="p-2.5 w-28 text-right">Costo (COP)</th>
                 <th className="p-2.5 w-24 text-right">Costo (USD)</th>
-                <th className="p-2.5 w-12 text-center"></th>
+                <th className="p-2.5 w-20 text-center">Acciones</th>
               </tr>
             </thead>
             <tbody 
@@ -690,16 +788,27 @@ export default function DatabaseView() {
                   >
                     ${(h.costoUsd ?? 0).toFixed(2)}
                   </td>
-                  {/* Eliminar */}
+                  {/* Acciones: Editar y Eliminar */}
                   <td className="p-2.5 text-center">
-                    <button
-                      onClick={() => handleDeleteHerraje(h.id)}
-                      style={{ color: coloresApariencia?.textoSecundario }}
-                      className="p-1 hover:text-red-500 transition opacity-0 group-hover:opacity-100 cursor-pointer"
-                      title="Eliminar referencia"
-                    >
-                      <Trash2 className="w-3.5 h-3.5" />
-                    </button>
+                    <div className="flex items-center justify-center gap-1">
+                      <button
+                        type="button"
+                        onClick={() => setElementoEditando({ tipo: "herraje", item: h })}
+                        className="p-1 rounded-full text-cyan-600 dark:text-cyan-400 hover:bg-cyan-500/10 transition cursor-pointer"
+                        title="Editar datos de herraje"
+                      >
+                        <Pencil className="w-3.5 h-3.5" />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleDeleteHerraje(h.id)}
+                        style={{ color: coloresApariencia?.textoSecundario }}
+                        className="p-1 rounded-full hover:text-red-500 hover:bg-red-500/10 transition opacity-0 group-hover:opacity-100 cursor-pointer"
+                        title="Eliminar referencia"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))}
@@ -748,6 +857,7 @@ export default function DatabaseView() {
                 <th className="p-2.5 w-28 text-right">Costo m² (COP)</th>
                 <th className="p-2.5 w-24 text-right">Costo m² (USD)</th>
                 <th className="p-2.5 w-24 text-center">Proveedor</th>
+                <th className="p-2.5 w-24 text-center">Acciones</th>
               </tr>
             </thead>
             <tbody 
@@ -889,6 +999,19 @@ export default function DatabaseView() {
                         {t.proveedor}
                       </span>
                     </td>
+
+                    {/* BOTÓN EDITAR MATERIAL Y FORMATO */}
+                    <td className="p-2.5 text-center">
+                      <button
+                        type="button"
+                        onClick={() => setElementoEditando({ tipo: "tablero", item: t })}
+                        className="px-3 py-1 rounded-full border border-cyan-500/40 bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-700 dark:text-cyan-300 font-bold text-[11px] flex items-center justify-center gap-1.5 cursor-pointer transition active:scale-95 shadow-xs mx-auto"
+                        title="Editar formato de lámina, dimensiones, textura y costos"
+                      >
+                        <Pencil className="w-3 h-3 text-cyan-600 dark:text-cyan-400" />
+                        <span>Editar</span>
+                      </button>
+                    </td>
                   </tr>
                 );
               })}
@@ -918,6 +1041,7 @@ export default function DatabaseView() {
                 <th className="p-2.5 w-28 text-right">Costo ML (COP)</th>
                 <th className="p-2.5 w-24 text-right">Costo ML (USD)</th>
                 <th className="p-2.5 w-28">Proveedor</th>
+                <th className="p-2.5 w-24 text-center">Acciones</th>
               </tr>
             </thead>
             <tbody 
@@ -981,6 +1105,18 @@ export default function DatabaseView() {
                     className="p-2.5 font-medium"
                   >
                     {c.proveedor}
+                  </td>
+                  {/* BOTÓN EDITAR CANTO */}
+                  <td className="p-2.5 text-center">
+                    <button
+                      type="button"
+                      onClick={() => setElementoEditando({ tipo: "canto", item: c })}
+                      className="px-3 py-1 rounded-full border border-cyan-500/40 bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-700 dark:text-cyan-300 font-bold text-[11px] flex items-center justify-center gap-1.5 cursor-pointer transition active:scale-95 shadow-xs mx-auto"
+                      title="Editar medidas, espesor y costo del canto"
+                    >
+                      <Pencil className="w-3 h-3 text-cyan-600 dark:text-cyan-400" />
+                      <span>Editar</span>
+                    </button>
                   </td>
                 </tr>
               ))}
@@ -2370,6 +2506,14 @@ export default function DatabaseView() {
           Los costos de tableros se liquidan automáticamente a través de la matriz de negociación de cada proveedor.
         </span>
       </div>
+
+      {/* Modal Universal para Edición de Materiales, Formatos de Lámina, Herrajes y Cantos */}
+      <ModalEditarMaterialDb
+        abierto={!!elementoEditando}
+        elemento={elementoEditando}
+        onCerrar={() => setElementoEditando(null)}
+        onGuardar={handleGuardarElementoEditado}
+      />
     </div>
   );
 }

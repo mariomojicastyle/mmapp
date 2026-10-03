@@ -37,6 +37,9 @@ export interface ConfiguracionLaminas {
   diametroFresa: number;      // Modo 2: Diámetro fresa de compresión (10 o 12 mm)
   refiladoMargen: number;     // Margen perimetral de saneamiento (10 a 15 mm)
   
+  // Nivel de Búsqueda Metaheurística / Algoritmo Multi-Iterativo
+  nivelOptimizacion?: "rapido" | "estandar" | "intensivo"; // Default: "intensivo"
+  
   // Parámetros de Madera Maciza (Modo 3)
   estrategiaMadera: EstrategiaMadera;
   largoTablonMm: number;      // ej. 3048 mm (10 pies)
@@ -91,6 +94,8 @@ export interface ResultadoOptimizacionGlobal {
   totalLaminas: number;
   aprovechamientoPromedio: number;
   tiempoCalculoMs: number;
+  semillaOptimizacion?: number;
+  iteracionesEjecutadas?: number;
   piezasNoColocadas: PiezaCorte[];
   totalPiezasProgramadas: number;
   totalPiezasUbicadas: number;

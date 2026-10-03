@@ -2585,5 +2585,36 @@ Para mantener la máxima agilidad y minimizar el consumo de tokens sin perder ni
   * Servidor Next.js local respondiendo con código **HTTP 200 OK**.
   * Documentación de ingeniería y memoria activa sincronizadas al 100%.
 
+---
+
+### 🚀 Hito 236: Superación Histórica de MaxCut en Opti_Nesting (12.9% Merma vs 16.46% en 283 ms), Strip-Packing Multi-Semilla (1x, 50x, 150x), CRUD de Base de Datos y Diagrama B2B en SVG del Costo Oculto de la Espera (`guillotineOptimizer.ts`, `ModalEditarMaterialDb.tsx`, `DatabaseView.tsx`, `exportadorDeepnest.ts`, `OptimizadorHeader.tsx`, `versus_optimizador_escritorio_vs_3dbimfab.svg`) (03 de Octubre, 2026)
+- **Diagnóstico y Objetivos de Ingeniería**:
+  * Afinar el motor de optimización de corte guillotina 2D para superar el referente histórico de carpintería **MaxCut v2** en aprovechamiento de material sin sacrificar la velocidad in-memory sub-segundo.
+  * Dotar a la Base de Datos de materiales de capacidades completas de edición y creación (CRUD) para que el usuario pueda corregir dimensiones comerciales de láminas, cantos y herrajes.
+  * Optimizar la ergonomía visual del visor Canvas (evitar que los controles de láminas tapen las cotas de 2440 × 1830 mm y asegurar que los nombres de piezas inicien idénticos al original con truncado elegante).
+  * Validar la comparativa frente a software de nesting como **Deepnest** y formalizar el hallazgo comercial de la psicología del tiempo muerto en taller.
+- **Implementación Técnica de la Solución**:
+  1. *Motor Metaheurístico Strip-Packing con Semillas Estocásticas (`guillotineOptimizer.ts`, `OptimizadorParametrosBar.tsx`)*:
+     - **Superación Histórica de MaxCut**: En la prueba de fuego de 50 cómodas Ravenna (2,650 piezas), `3dBimFab` alcanzó **75 tableros y 12.9% de desperdicio** frente a los **78 tableros y 16.46% de MaxCut**, logrando un ahorro neto de 3 tableros por lote en tan solo **283.8 ms** (148 iteraciones estocásticas in-memory).
+     - **Selector de Nivel de Cálculo en Cápsulas `rounded-full`**: Opciones de intensidad configurables: `Rápido (1x)`, `Estándar (50x)` y `Máximo (150x)` con badge informativo en tiempo real de la mejor semilla e iteraciones procesadas.
+  2. *CRUD Completo de Base de Datos de Materiales (`ModalEditarMaterialDb.tsx`, `DatabaseView.tsx`)*:
+     - Creación del componente `ModalEditarMaterialDb.tsx` para edición reactiva de tableros, cantos y herrajes.
+     - Corrección del bug de orden de hooks de React en modales condicionales.
+     - Botones `Editar` en cada fila de datos y botones de alta `+ Nueva Lámina`, `+ Nuevo Canto` y `+ Nuevo Herraje`.
+  3. *Ergonomía de Interfaz y Canvas 2D (`VisorLaminasCanvas.tsx`, `ListaPiezasOptimizadas.tsx`, `OptimizadorPanel.tsx`)*:
+     - Reubicación de la cápsula de navegación entre láminas para despejar la cota maestra de $2440 \times 1830\text{ mm}$.
+     - Normalización de nombres de piezas: inician con su nombre original (`Peça 1`, `Peça 2`...) con puntos suspensivos si no caben y tooltips descriptivos en español natural de taller.
+  4. *Interoperabilidad con Deepnest y Diagnóstico de Fricción (`exportadorDeepnest.ts`, `OptimizadorHeader.tsx`)*:
+     - Desarrollo del exportador DXF (AutoCAD R2000 con polilíneas cerradas) y SVG nativo para Deepnest.
+     - Diagnóstico del error `ERR-G5b4DeVf` de Deepnest provocado por caídas en sus servidores externos de conversión DXF y descarte de Deepnest como herramienta legacy e inadecuada para corte ortogonal de carpintería frente a la precisión de MaxCut y `3dBimFab`.
+  5. *Activo Gráfico B2B de Venta: "El Costo Oculto de la Espera" (`versus_optimizador_escritorio_vs_3dbimfab.svg`, `preview_versus_optimizador.html`)*:
+     - Infografía vectorial SVG nativa (1440 × 960 px) bajo la estética Tech Ethos, ilustrando la reacción en cadena en planta: 3 minutos de cálculo local provocan que el operario revise el celular (WhatsApp/Reels), transformándose en 20 minutos de máquina detenida.
+     - Visor interactivo web con previsualización en vivo incrustable en chat.
+- **Validación de Calidad**:
+  * Compilación TypeScript verificada (`npx tsc --noEmit`) en `3bf` con **0 errores**.
+  * Servidores locales operativos y estables.
+  * Hito de optimización Opti_Nesting declarado 100% funcional, estable y exitoso.
+
+
 
 

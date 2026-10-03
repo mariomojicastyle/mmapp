@@ -3,15 +3,19 @@
 import React, { useState, useMemo } from "react";
 import { useOptimizadorStore } from "@/lib/optimizador/useOptimizadorStore";
 import { use3BFStore } from "@/lib/store";
-import type { ModoOptimizacion } from "@/lib/optimizador/tiposOptimizador";
+import type { ModoOptimizacion, PiezaCorte } from "@/lib/optimizador/tiposOptimizador";
 import { generarFichaTecnicaTallerPdf } from "@/lib/optimizador/exportadorPdfTaller";
-import { Scissors, Cpu, Trees, Play, Layers, Upload, FileText, CheckCircle2, Printer } from "lucide-react";
+import { descargarMaxCutCsv } from "@/lib/optimizador/exportadorMaxCut";
+import { descargarDeepnestDxf, descargarDeepnestSvg } from "@/lib/optimizador/exportadorDeepnest";
+import { guardarPlanLocal, descargarPlanJson } from "@/lib/optimizador/persistenciaOptimizacion";
+import { Scissors, Cpu, Trees, Play, Layers, Upload, FileText, CheckCircle2, Printer, FileSpreadsheet, Save, Download, Shapes } from "lucide-react";
 
 interface Props {
   espesoresDisponibles: number[];
   onEjecutarCalculo: () => void;
   totalPiezas: number;
   onAbrirImportador: () => void;
+  piezas?: PiezaCorte[];
 }
 
 export default function OptimizadorHeader({
@@ -19,6 +23,7 @@ export default function OptimizadorHeader({
   onEjecutarCalculo,
   totalPiezas,
   onAbrirImportador,
+  piezas,
 }: Props) {
   const { 
     modoActivo, 
@@ -65,6 +70,48 @@ export default function OptimizadorHeader({
     } finally {
       setExportandoPdf(false);
     }
+  };
+
+  const handleExportarMaxCut = () => {
+    if (!piezas || piezas.length === 0) return;
+    descargarMaxCutCsv({
+      nombreProyecto,
+      piezas,
+      formato: "espanol",
+    });
+  };
+
+  const handleExportarDeepnest = () => {
+    if (!piezas || piezas.length === 0) return;
+    // Deepnest procesa SVG de forma nativa sin depender del servidor externo de conversión DXF (evita el error ERR-...)
+    descargarDeepnestSvg({
+      nombreProyecto,
+      piezas,
+      configuracion,
+      incluirLoteCompleto: true,
+    });
+  };
+
+  const [guardando, setGuardando] = useState(false);
+  const [guardadoExitoso, setGuardadoExitoso] = useState(false);
+
+  const handleGuardarPlan = () => {
+    if (!resultadoOptimizacion) return;
+    setGuardando(true);
+    try {
+      guardarPlanLocal(nombreProyecto, modoActivo, configuracion, resultadoOptimizacion);
+      setGuardadoExitoso(true);
+      setTimeout(() => setGuardadoExitoso(false), 3000);
+    } catch (err) {
+      console.error("Error al guardar plan de corte:", err);
+    } finally {
+      setGuardando(false);
+    }
+  };
+
+  const handleDescargarJson = () => {
+    if (!resultadoOptimizacion) return;
+    descargarPlanJson(nombreProyecto, modoActivo, configuracion, resultadoOptimizacion);
   };
 
   const MODOS: Array<{ id: ModoOptimizacion; label: string; icon: React.ReactNode; tooltip: string }> = [
@@ -234,7 +281,39 @@ export default function OptimizadorHeader({
           <span>{calculando ? "Optimizando..." : "Calcular Corte"}</span>
         </button>
 
-        {/* 4. Botón Rápido Ficha Técnica PDF */}
+        {/* 4. Botón Guardar Plan de Optimización */}
+        {resultadoOptimizacion && resultadoOptimizacion.laminas.length > 0 && (
+          <button
+            type="button"
+            onClick={handleGuardarPlan}
+            disabled={guardando}
+            style={
+              guardadoExitoso
+                ? { borderColor: "#10B981", backgroundColor: esOscuro ? "#064E3B" : "#ECFDF5" }
+                : { borderColor: colorBorde }
+            }
+            className={`px-3 py-1.5 rounded-full border transition font-bold text-xs flex items-center gap-1.5 cursor-pointer shadow-sm active:scale-95 ml-1 ${
+              guardadoExitoso
+                ? "text-emerald-600 dark:text-emerald-300"
+                : "bg-white dark:bg-slate-900 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-800 dark:text-slate-100"
+            }`}
+            title="Guardar este plan de corte (parámetros de lote, disco, láminas y desperdicio) en el proyecto"
+          >
+            {guardadoExitoso ? (
+              <>
+                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" />
+                <span>¡Guardado!</span>
+              </>
+            ) : (
+              <>
+                <Save className="w-3.5 h-3.5 text-cyan-600 dark:text-cyan-400" />
+                <span>Guardar Plan</span>
+              </>
+            )}
+          </button>
+        )}
+
+        {/* 5. Botón Rápido Ficha Técnica PDF */}
         {resultadoOptimizacion && resultadoOptimizacion.laminas.length > 0 && (
           <button
             type="button"
@@ -246,6 +325,48 @@ export default function OptimizadorHeader({
           >
             <Printer className="w-3.5 h-3.5 text-cyan-600 dark:text-cyan-400" />
             <span className="hidden sm:inline">{exportandoPdf ? "Generando..." : "Ficha PDF"}</span>
+          </button>
+        )}
+
+        {/* 6. Botón Exportar a MaxCut CSV */}
+        {piezas && piezas.length > 0 && (
+          <button
+            type="button"
+            onClick={handleExportarMaxCut}
+            style={{ borderColor: colorBorde }}
+            className="px-3 py-1.5 rounded-full border bg-white dark:bg-slate-900 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-800 dark:text-slate-100 font-bold text-xs flex items-center gap-1.5 cursor-pointer shadow-sm transition active:scale-95 ml-1"
+            title="Exportar lista de corte a archivo CSV formateado para MaxCut"
+          >
+            <FileSpreadsheet className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+            <span className="hidden sm:inline">MaxCut (CSV)</span>
+          </button>
+        )}
+
+        {/* 7. Botón Exportar a Deepnest SVG */}
+        {piezas && piezas.length > 0 && (
+          <button
+            type="button"
+            onClick={handleExportarDeepnest}
+            style={{ borderColor: colorBorde }}
+            className="px-3 py-1.5 rounded-full border bg-white dark:bg-slate-900 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-800 dark:text-slate-100 font-bold text-xs flex items-center gap-1.5 cursor-pointer shadow-sm transition active:scale-95 ml-1"
+            title="Exportar archivo vectorial SVG nativo para Deepnest (sin errores de servidor de conversión)"
+          >
+            <Shapes className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" />
+            <span className="hidden sm:inline">Deepnest (SVG)</span>
+          </button>
+        )}
+
+        {/* 8. Botón Descargar Archivo JSON de Nesting */}
+        {resultadoOptimizacion && resultadoOptimizacion.laminas.length > 0 && (
+          <button
+            type="button"
+            onClick={handleDescargarJson}
+            style={{ borderColor: colorBorde }}
+            className="px-2.5 py-1.5 rounded-full border bg-white dark:bg-slate-900 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-800 dark:text-slate-100 font-bold text-xs flex items-center gap-1 cursor-pointer shadow-sm transition active:scale-95 ml-1"
+            title="Descargar archivo JSON de manufactura para archivo o intercambio"
+          >
+            <Download className="w-3.5 h-3.5 text-slate-500 hover:text-cyan-600 dark:hover:text-cyan-400" />
+            <span className="hidden lg:inline text-[11px]">JSON</span>
           </button>
         )}
       </div>

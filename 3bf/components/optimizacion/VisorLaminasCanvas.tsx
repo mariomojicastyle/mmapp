@@ -75,6 +75,15 @@ export default function VisorLaminasCanvas({ lamina, totalLaminas }: Props) {
       ctx.setLineDash([]);
     }
 
+    // 4.1. Marca de agua / Rótulo de Material en la esquina de la lámina bruta
+    ctx.save();
+    ctx.fillStyle = esOscuro ? "rgba(148, 163, 184, 0.4)" : "rgba(100, 116, 139, 0.4)";
+    ctx.font = "bold 13px sans-serif";
+    ctx.textAlign = "left";
+    ctx.textBaseline = "top";
+    ctx.fillText(`${lamina.material}  [${lamina.largoTotal} × ${lamina.anchoTotal} × ${lamina.espesor} mm]`, 14, 12);
+    ctx.restore();
+
     // 5. Dibujar cada pieza colocada
     lamina.piezas.forEach((p) => {
       const px = p.x * escalaBase;
@@ -90,7 +99,7 @@ export default function VisorLaminasCanvas({ lamina, totalLaminas }: Props) {
 
       // Sombreado sutil o resaltado en hover
       if (isHovered) {
-        ctx.fillStyle = "rgba(255, 255, 255, 0.35)";
+        ctx.fillStyle = "rgba(255, 255, 255, 0.4)";
         ctx.fillRect(px, py, pw, ph);
       }
 
@@ -121,23 +130,82 @@ export default function VisorLaminasCanvas({ lamina, totalLaminas }: Props) {
         ctx.fill();
       }
 
-      // Rótulo tipográfico centrado (Nombre y Medidas)
-      if (pw > 35 && ph > 20) {
-        ctx.fillStyle = "#0F172A";
-        ctx.font = `bold ${Math.max(10, Math.min(13, ph / 3.5))}px sans-serif`;
+// Trunca el texto con puntos suspensivos (...) de forma exacta según el ancho disponible en píxeles del Canvas
+function truncarConPuntos(ctx: CanvasRenderingContext2D, texto: string, maxAncho: number): string {
+  if (!texto || maxAncho <= 0) return "";
+  if (ctx.measureText(texto).width <= maxAncho) {
+    return texto;
+  }
+  let recortado = texto;
+  while (recortado.length > 0 && ctx.measureText(recortado + "...").width > maxAncho) {
+    recortado = recortado.slice(0, -1);
+  }
+  return recortado.length > 0 ? recortado + "..." : "";
+}
+
+      // Rótulo tipográfico centrado con autoescalado dinámico y truncamiento limpio con tres puntos (...)
+      if (pw > 18 && ph > 12) {
         ctx.textAlign = "center";
         ctx.textBaseline = "middle";
 
         const textoNombre = p.nombre;
+        const textoDesc = p.descripcion && p.descripcion !== p.nombre ? p.descripcion : "";
         const textoMedidas = `${Math.round(p.largo)} × ${Math.round(p.ancho)}`;
+        const anchoMaximoTexto = Math.max(10, pw - 6);
 
-        if (ph > 36) {
-          ctx.fillText(textoNombre, px + pw / 2, py + ph / 2 - 7);
-          ctx.font = `${Math.max(9, Math.min(11, ph / 4.2))}px sans-serif`;
-          ctx.fillStyle = "#334155";
-          ctx.fillText(textoMedidas, px + pw / 2, py + ph / 2 + 8);
+        if (ph >= 46 && pw >= 50) {
+          // Espacio amplio: 3 líneas o 2 líneas
+          const fontTam1 = Math.max(9, Math.min(13, ph / 4.2));
+          const fontTam2 = Math.max(8, Math.min(11, ph / 4.8));
+          const fontTam3 = Math.max(8, Math.min(10, ph / 5));
+
+          if (textoDesc) {
+            ctx.fillStyle = "#0F172A";
+            ctx.font = `bold ${fontTam1}px sans-serif`;
+            const nombreMostrado = truncarConPuntos(ctx, textoNombre, anchoMaximoTexto);
+            ctx.fillText(nombreMostrado, px + pw / 2, py + ph / 2 - 13);
+
+            ctx.fillStyle = "#0369A1"; // Azul Tech Ethos para la descripción
+            ctx.font = `bold ${fontTam2}px sans-serif`;
+            const descMostrada = truncarConPuntos(ctx, textoDesc, anchoMaximoTexto);
+            ctx.fillText(descMostrada, px + pw / 2, py + ph / 2);
+
+            ctx.fillStyle = "#475569";
+            ctx.font = `${fontTam3}px monospace`;
+            ctx.fillText(textoMedidas, px + pw / 2, py + ph / 2 + 13);
+          } else {
+            // Solo nombre y medidas en 2 líneas
+            ctx.fillStyle = "#0F172A";
+            ctx.font = `bold ${fontTam1 + 1}px sans-serif`;
+            const nombreMostrado = truncarConPuntos(ctx, textoNombre, anchoMaximoTexto);
+            ctx.fillText(nombreMostrado, px + pw / 2, py + ph / 2 - 8);
+
+            ctx.fillStyle = "#475569";
+            ctx.font = `${fontTam3}px monospace`;
+            ctx.fillText(textoMedidas, px + pw / 2, py + ph / 2 + 10);
+          }
+        } else if (ph >= 22 && pw >= 30) {
+          // Espacio medio (ej. Peça 2 de 73mm): 2 líneas bien distribuidas con autoescalado
+          const fontTam1 = Math.max(7.5, Math.min(10.5, ph / 2.8));
+          const fontTam2 = Math.max(7, Math.min(9.5, ph / 3.4));
+
+          ctx.fillStyle = "#0F172A";
+          ctx.font = `bold ${fontTam1}px sans-serif`;
+          const textoLinea1 = textoDesc ? `${textoNombre}: ${textoDesc}` : textoNombre;
+          const linea1Final = truncarConPuntos(ctx, textoLinea1, anchoMaximoTexto);
+          ctx.fillText(linea1Final, px + pw / 2, py + ph / 2 - (ph / 4.5));
+
+          ctx.fillStyle = "#475569";
+          ctx.font = `${fontTam2}px monospace`;
+          ctx.fillText(textoMedidas, px + pw / 2, py + ph / 2 + (ph / 4.5));
         } else {
-          ctx.fillText(`${textoNombre} (${textoMedidas})`, px + pw / 2, py + ph / 2);
+          // Espacio compacto: 1 línea auto-escalada
+          const fontTam = Math.max(7, Math.min(9.5, ph / 2.2));
+          ctx.fillStyle = "#0F172A";
+          ctx.font = `bold ${fontTam}px sans-serif`;
+          const etiqueta = textoDesc ? `${textoNombre}: ${textoDesc}` : `${textoNombre} [${textoMedidas}]`;
+          const etiquetaFinal = truncarConPuntos(ctx, etiqueta, anchoMaximoTexto);
+          ctx.fillText(etiquetaFinal, px + pw / 2, py + ph / 2);
         }
       }
     });
@@ -148,7 +216,7 @@ export default function VisorLaminasCanvas({ lamina, totalLaminas }: Props) {
     ctx.fillStyle = esOscuro ? "#94A3B8" : "#64748B";
     ctx.font = "bold 11px monospace";
     ctx.textAlign = "center";
-    ctx.fillText(`${lamina.largoTotal} mm`, width / 2, offsetY - 12);
+    ctx.fillText(`${lamina.largoTotal} mm`, width / 2, offsetY - 14);
     ctx.save();
     ctx.translate(offsetX - 14, height / 2);
     ctx.rotate(-Math.PI / 2);
@@ -179,78 +247,87 @@ export default function VisorLaminasCanvas({ lamina, totalLaminas }: Props) {
   }, [dibujarCanvas]);
 
   return (
-    <div ref={containerRef} className="w-full h-full relative overflow-hidden flex flex-col bg-slate-100 dark:bg-slate-950">
-      {/* Canvas Principal */}
-      <canvas
-        ref={canvasRef}
-        className="w-full h-full block cursor-crosshair"
-      />
-
-      {/* Barra Flotante Superior: Navegación de Láminas en Cápsula rounded-full */}
+    <div className="w-full h-full relative overflow-hidden flex flex-col bg-slate-100 dark:bg-slate-950">
+      {/* 1. Sub-header Dedicado Superior: Navegación de Láminas y Controles de Zoom (Sin invadir el Canvas) */}
       {lamina && totalLaminas > 0 && (
-        <div className="absolute top-3 left-1/2 -translate-x-1/2 z-20 flex items-center gap-1.5 p-1 rounded-full bg-white/90 dark:bg-slate-900/90 backdrop-blur-md border border-slate-200 dark:border-slate-800 shadow-lg">
-          <button
-            type="button"
-            onClick={() => setLaminaActivaIndex(Math.max(0, laminaActivaIndex - 1))}
-            disabled={laminaActivaIndex === 0}
-            className="w-7 h-7 rounded-full flex items-center justify-center hover:bg-slate-200 dark:hover:bg-slate-800 disabled:opacity-30 transition cursor-pointer text-slate-700 dark:text-slate-200"
-            title="Lámina anterior"
-          >
-            <ChevronLeft className="w-4 h-4" />
-          </button>
+        <div className="h-11 px-3 border-b border-slate-200 dark:border-slate-800 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md flex items-center justify-between shrink-0 z-10 shadow-xs">
+          {/* Navegación entre Láminas */}
+          <div className="flex items-center gap-1.5 min-w-0">
+            <button
+              type="button"
+              onClick={() => setLaminaActivaIndex(Math.max(0, laminaActivaIndex - 1))}
+              disabled={laminaActivaIndex === 0}
+              className="w-7 h-7 rounded-full flex items-center justify-center border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 disabled:opacity-30 transition cursor-pointer text-slate-700 dark:text-slate-200 shrink-0 shadow-xs active:scale-95"
+              title="Lámina anterior"
+            >
+              <ChevronLeft className="w-4 h-4" />
+            </button>
 
-          <div className="px-3 py-0.5 text-xs font-bold text-slate-800 dark:text-slate-100 flex items-center gap-2">
-            <span>
-              Lámina {lamina.indice} de {totalLaminas}
-            </span>
-            <span className="w-1 h-1 rounded-full bg-slate-400" />
-            <span className="text-cyan-600 dark:text-cyan-400 font-semibold">
-              {lamina.espesor} mm
-            </span>
-            <span className="w-1 h-1 rounded-full bg-slate-400" />
-            <span className="text-emerald-600 dark:text-emerald-400">
-              {lamina.porcentajeAprovechamiento}% útil
-            </span>
+            <div className="flex items-center gap-2 text-xs font-bold text-slate-800 dark:text-slate-100 truncate">
+              <span className="shrink-0">
+                Lámina {lamina.indice} de {totalLaminas}
+              </span>
+              <span className="w-1 h-1 rounded-full bg-slate-300 dark:bg-slate-700 shrink-0" />
+              <span className="px-2.5 py-0.5 rounded-full bg-cyan-100 dark:bg-cyan-900/60 text-cyan-800 dark:text-cyan-200 font-bold text-[11px] truncate shrink-0">
+                {lamina.material || `Tablero ${lamina.espesor}mm`}
+              </span>
+              <span className="w-1 h-1 rounded-full bg-slate-300 dark:bg-slate-700 shrink-0" />
+              <span className="text-slate-500 dark:text-slate-400 font-mono text-[11px] shrink-0">
+                {lamina.largoTotal} × {lamina.anchoTotal} mm
+              </span>
+              <span className="w-1 h-1 rounded-full bg-slate-300 dark:bg-slate-700 shrink-0" />
+              <span className="px-2.5 py-0.5 rounded-full bg-rose-100 dark:bg-rose-900/50 text-rose-700 dark:text-rose-300 font-bold text-[11px] shrink-0">
+                {lamina.porcentajeDesperdicio}% Merma
+              </span>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => setLaminaActivaIndex(Math.min(totalLaminas - 1, laminaActivaIndex + 1))}
+              disabled={laminaActivaIndex >= totalLaminas - 1}
+              className="w-7 h-7 rounded-full flex items-center justify-center border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 disabled:opacity-30 transition cursor-pointer text-slate-700 dark:text-slate-200 shrink-0 shadow-xs active:scale-95"
+              title="Lámina siguiente"
+            >
+              <ChevronRight className="w-4 h-4" />
+            </button>
           </div>
 
-          <button
-            type="button"
-            onClick={() => setLaminaActivaIndex(Math.min(totalLaminas - 1, laminaActivaIndex + 1))}
-            disabled={laminaActivaIndex >= totalLaminas - 1}
-            className="w-7 h-7 rounded-full flex items-center justify-center hover:bg-slate-200 dark:hover:bg-slate-800 disabled:opacity-30 transition cursor-pointer text-slate-700 dark:text-slate-200"
-            title="Lámina siguiente"
-          >
-            <ChevronRight className="w-4 h-4" />
-          </button>
+          {/* Controles de Zoom en Cápsulas rounded-full */}
+          <div className="flex items-center gap-1 shrink-0 ml-2">
+            <button
+              type="button"
+              onClick={() => setZoomCanvas((z) => Math.min(2.5, z + 0.15))}
+              className="w-7 h-7 rounded-full flex items-center justify-center border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 transition cursor-pointer text-slate-700 dark:text-slate-200 shadow-xs active:scale-95"
+              title="Acercar (+)"
+            >
+              <ZoomIn className="w-3.5 h-3.5" />
+            </button>
+            <button
+              type="button"
+              onClick={() => setZoomCanvas((z) => Math.max(0.5, z - 0.15))}
+              className="w-7 h-7 rounded-full flex items-center justify-center border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 transition cursor-pointer text-slate-700 dark:text-slate-200 shadow-xs active:scale-95"
+              title="Alejar (-)"
+            >
+              <ZoomOut className="w-3.5 h-3.5" />
+            </button>
+            <button
+              type="button"
+              onClick={resetearZoom}
+              className="w-7 h-7 rounded-full flex items-center justify-center border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 transition cursor-pointer text-slate-700 dark:text-slate-200 shadow-xs active:scale-95"
+              title="Restablecer encuadre"
+            >
+              <RotateCcw className="w-3.5 h-3.5" />
+            </button>
+          </div>
         </div>
       )}
 
-      {/* Botonera Flotante Inferior Derecha: Controles de Zoom en Cápsula rounded-full */}
-      <div className="absolute bottom-3 right-3 z-20 flex items-center gap-1 p-1 rounded-full bg-white/90 dark:bg-slate-900/90 backdrop-blur-md border border-slate-200 dark:border-slate-800 shadow-md">
-        <button
-          type="button"
-          onClick={() => setZoomCanvas((z) => Math.min(2.5, z + 0.15))}
-          className="w-7 h-7 rounded-full flex items-center justify-center hover:bg-slate-200 dark:hover:bg-slate-800 transition cursor-pointer text-slate-700 dark:text-slate-200"
-          title="Acercar (+)"
-        >
-          <ZoomIn className="w-3.5 h-3.5" />
-        </button>
-        <button
-          type="button"
-          onClick={() => setZoomCanvas((z) => Math.max(0.5, z - 0.15))}
-          className="w-7 h-7 rounded-full flex items-center justify-center hover:bg-slate-200 dark:hover:bg-slate-800 transition cursor-pointer text-slate-700 dark:text-slate-200"
-          title="Alejar (-)"
-        >
-          <ZoomOut className="w-3.5 h-3.5" />
-        </button>
-        <button
-          type="button"
-          onClick={resetearZoom}
-          className="w-7 h-7 rounded-full flex items-center justify-center hover:bg-slate-200 dark:hover:bg-slate-800 transition cursor-pointer text-slate-700 dark:text-slate-200"
-          title="Restablecer encuadre"
-        >
-          <RotateCcw className="w-3.5 h-3.5" />
-        </button>
+      {/* 2. Área Libre del Canvas (Sin superposiciones que tapen las cotas) */}
+      <div ref={containerRef} className="flex-1 w-full h-full relative overflow-hidden">
+        <canvas
+          ref={canvasRef}
+          className="w-full h-full block cursor-crosshair"
+        />
       </div>
     </div>
   );

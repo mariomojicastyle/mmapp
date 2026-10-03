@@ -1836,6 +1836,59 @@ async def compute_model(request: Request):
     # =========================================================================
     # 🪵 ESCANEO GEOMÉTRICO 3D DIRECTO DE TABLEROS (BOM REAL DfMA CONSOLIDADO)
     # =========================================================================
+    # 1. Analizar si Grasshopper tiene un panel o componente con descripciones oficiales en el XML o en text_outputs
+    def _norm_clave_pieza(clave: str) -> str:
+        k = clave.strip().lower()
+        k = re.sub(r'pe[çc]a\s*(\d+)', r'peca_\1', k)
+        k = re.sub(r'pk\s*(\d+)', r'peca_\1', k)
+        return k
+
+    mapa_descripciones_ghx = {}
+
+    # A) Extraer del XML directo de Grasshopper (Paneles o Parámetros)
+    if root is not None:
+        for chunk in root.iter("chunk"):
+            if chunk.attrib.get("name") == "Object":
+                c = chunk.find("chunks/chunk[@name='Container']")
+                if c is not None:
+                    nick_item = c.find("items/item[@name='NickName']")
+                    nick_t = (nick_item.text or "").strip() if nick_item is not None else ""
+                    if any(w in nick_t.lower() for w in ["descrip", "bom", "nombres"]):
+                        user_text_item = c.find("items/item[@name='UserText']")
+                        if user_text_item is not None and user_text_item.text:
+                            text_outputs[nick_t] = user_text_item.text.strip()
+
+    # B) Procesar todos los textos recolectados (paneles XML y salidas de solver)
+    for k_out, v_out in text_outputs.items():
+        k_lower = k_out.lower()
+        if any(w in k_lower for w in ["descrip", "bom", "nombres", "piezas_nombres"]):
+            texto_raw = str(v_out).strip()
+            if texto_raw.startswith("{"):
+                try:
+                    parsed_json = json.loads(texto_raw)
+                    if isinstance(parsed_json, dict):
+                        for pk, pv in parsed_json.items():
+                            mapa_descripciones_ghx[_norm_clave_pieza(pk)] = str(pv).strip()
+                except Exception:
+                    pass
+            else:
+                for line in texto_raw.splitlines():
+                    line = line.strip()
+                    if not line:
+                        continue
+                    if "=" in line:
+                        pk, pv = line.split("=", 1)
+                        mapa_descripciones_ghx[_norm_clave_pieza(pk)] = pv.strip()
+                    elif ":" in line:
+                        pk, pv = line.split(":", 1)
+                        mapa_descripciones_ghx[_norm_clave_pieza(pk)] = pv.strip()
+                    else:
+                        # Soporte para separación por espacios (ej: "Peça 6   Paral Central")
+                        match_sp = re.match(r'^(pe[çc]a\s*\d+|pk\s*\d+)\s+(.+)$', line, flags=re.IGNORECASE)
+                        if match_sp:
+                            pk, pv = match_sp.group(1), match_sp.group(2)
+                            mapa_descripciones_ghx[_norm_clave_pieza(pk)] = pv.strip()
+
     tableros_consolidados = []
     for m in real_meshes:
         raw_name = m.get("name", "").strip()
@@ -1864,7 +1917,8 @@ async def compute_model(request: Request):
         
         # Filtrar solo elementos que califiquen como tableros (ancho y largo >= 40mm)
         if lar_malla >= 40.0 and anc_malla >= 40.0:
-            # Nombre de la pieza
+            # Nombre de la pieza y descripción
+            desc_extraida = ""
             custom_name = None
             for k_out, v_out in text_outputs.items():
                 if any(k in k_out.lower() for k in ["nombre", "pieza", "piecename"]):
@@ -1874,24 +1928,43 @@ async def compute_model(request: Request):
             if custom_name:
                 nombre_limpio = custom_name
             else:
-                nombre_limpio = m.get("name", "").replace("RH_OUT:", "").strip()
+                raw_m_name = m.get("name", "").replace("RH_OUT:", "").strip()
+                nombre_temp = raw_m_name
                 for prefix in ["MDF ", "MDP ", "Color ", "Balance ", "Nurbs ", "Brep ", "MDF", "MDP", "Color", "Balance"]:
-                    if nombre_limpio.upper().startswith(prefix.upper()):
-                        nombre_limpio = nombre_limpio[len(prefix):].strip()
+                    if nombre_temp.upper().startswith(prefix.upper()):
+                        nombre_temp = nombre_temp[len(prefix):].strip()
+
+                # Detección de descripción embebida en el nombre del output (ej: "Peça 1 - Lateral Izquierdo" o "Peça 1: Lateral Izquierdo")
+                if " - " in nombre_temp:
+                    partes = nombre_temp.split(" - ", 1)
+                    nombre_temp, desc_extraida = partes[0].strip(), partes[1].strip()
+                elif " : " in nombre_temp or (":" in nombre_temp and not nombre_temp.startswith("RH_OUT")):
+                    partes = nombre_temp.split(":", 1)
+                    nombre_temp, desc_extraida = partes[0].strip(), partes[1].strip()
+                elif "(" in nombre_temp and nombre_temp.endswith(")"):
+                    partes = nombre_temp.split("(", 1)
+                    nombre_temp = partes[0].strip()
+                    desc_extraida = partes[1].rstrip(")").strip()
 
                 # Normalización canónica para Peça X y PK X
-                match_peca = re.search(r'pe[çc]a\s*(\d+)', nombre_limpio, flags=re.IGNORECASE)
+                match_peca = re.search(r'pe[çc]a\s*(\d+)', nombre_temp, flags=re.IGNORECASE)
                 if match_peca:
                     nombre_limpio = f"Peça {match_peca.group(1)}"
                 else:
-                    match_pk = re.search(r'pk\s*(\d+)', nombre_limpio, flags=re.IGNORECASE)
+                    match_pk = re.search(r'pk\s*(\d+)', nombre_temp, flags=re.IGNORECASE)
                     if match_pk:
                         nombre_limpio = f"PK {match_pk.group(1)}"
                     else:
-                        nombre_limpio = re.sub(r'[\s_]b$', '', nombre_limpio, flags=re.IGNORECASE).strip()
-                        nombre_limpio = nombre_limpio.capitalize()
-                        if not nombre_limpio or nombre_limpio in ["Cubierta2", "Entrepaño2", "Pieza", "Mdp", "Mdf", "Tablero"]:
+                        nombre_temp = re.sub(r'[\s_]b$', '', nombre_temp, flags=re.IGNORECASE).strip()
+                        nombre_temp = nombre_temp.capitalize()
+                        if not nombre_temp or nombre_temp in ["Cubierta2", "Entrepaño2", "Pieza", "Mdp", "Mdf", "Tablero"]:
                             nombre_limpio = "Cubierta" if "cubierta" in name_lower else ("Entrepaño" if "entrepaño" in name_lower else "Tablero")
+                        else:
+                            nombre_limpio = nombre_temp
+
+            # Resolver descripción oficial: embebida > panel RH_OUT:Descripciones > nombre_limpio
+            clave_norm = _norm_clave_pieza(nombre_limpio)
+            descripcion_final = desc_extraida or mapa_descripciones_ghx.get(clave_norm, "") or mapa_descripciones_ghx.get(nombre_limpio.lower(), "") or nombre_limpio
 
             # COHESIÓN ESPACIAL MADERKIT V54 (Fase 2 + Fase 3):
             # Absorción de parches, ranuras y caras divididas pertenecientes a la misma pieza física
@@ -1916,6 +1989,8 @@ async def compute_model(request: Request):
                             t["nombre"] = nombre_limpio
                         elif t["nombre"].lower() in ["tablero", "mdp", "mdf", "balance"] and nombre_limpio.lower() not in ["tablero", "mdp", "mdf", "balance"]:
                             t["nombre"] = nombre_limpio
+                        if descripcion_final and descripcion_final != nombre_limpio:
+                            t["descripcion"] = descripcion_final
                         break
                 elif dist_x < 15.0 and dist_y < 15.0 and dist_z < 15.0 and diff_lar < 15.0:
                     encontrado = True
@@ -1926,11 +2001,14 @@ async def compute_model(request: Request):
                         t["nombre"] = nombre_limpio
                     elif t["nombre"].lower() in ["tablero", "mdp", "mdf", "balance"] and nombre_limpio.lower() not in ["tablero", "mdp", "mdf", "balance"]:
                         t["nombre"] = nombre_limpio
+                    if descripcion_final and descripcion_final != nombre_limpio:
+                        t["descripcion"] = descripcion_final
                     break
                     
             if not encontrado:
                 tableros_consolidados.append({
                     "nombre": nombre_limpio,
+                    "descripcion": descripcion_final,
                     "largo": lar_malla,
                     "ancho": anc_malla,
                     "espesor": esp_malla,
@@ -1988,17 +2066,29 @@ async def compute_model(request: Request):
             if tab.get("espesor", 0) <= 0.5:
                 tab["espesor"] = 15.0
 
-    # Agrupar piezas idénticas leyendo 100% de la geometría real
+    # Agrupar piezas idénticas leyendo 100% de la geometría real con Tolerancia DfMA de Taller (<= 2mm)
     if tableros_consolidados:
-        agrupados = {}
+        piezas_consolidadas = []
         for tab in tableros_consolidados:
-            k_dim = f"{tab['nombre']}_{tab['largo']}_{tab['ancho']}_{tab['espesor']}"
-            if k_dim in agrupados:
-                agrupados[k_dim]["cantidad"] += 1
-            else:
+            encontrado = False
+            for p_exist in piezas_consolidadas:
+                # Mismo nombre canónico y mismo espesor (tolerancia 0.5mm en calibre)
+                if p_exist["nombre"] == tab["nombre"] and abs(p_exist["espesor"] - tab["espesor"]) < 0.5:
+                    diff_lar = abs(p_exist["largo"] - tab["largo"])
+                    diff_anc = abs(p_exist["ancho"] - tab["ancho"])
+                    # Tolerancia DfMA de taller para absorber diferencias asimétricas de ranuras o decimales (<= 2.0mm)
+                    if diff_lar <= 2.0 and diff_anc <= 2.0:
+                        p_exist["cantidad"] += tab.get("cantidad", 1)
+                        # Adoptar dimensión estándar unificada
+                        p_exist["largo"] = max(p_exist["largo"], tab["largo"])
+                        p_exist["ancho"] = max(p_exist["ancho"], tab["ancho"])
+                        encontrado = True
+                        break
+            if not encontrado:
                 item_copy = {k: v for k, v in tab.items() if k != "pos"}
-                agrupados[k_dim] = item_copy
-        piezas_madera_final = list(agrupados.values())
+                piezas_consolidadas.append(item_copy)
+
+        piezas_madera_final = piezas_consolidadas
         
         def _sort_pieza_key(item):
             name = item.get("nombre", "")

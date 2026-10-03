@@ -563,3 +563,59 @@ export function anotarInstanciasFisicas<T extends { name: string; position?: [nu
 
   return resultado;
 }
+
+/**
+ * Diccionario Canónico de Descripciones para Piezas Nominales Genéricas
+ * Solo aplica si el nombre de la pieza es la palabra misma (ej. "Cubierta", "Entrepaño")
+ * Queda PROHIBIDO mapear piezas numeradas (Peça 1, Peça 5, etc.) de forma estática
+ */
+export const DICCIONARIO_DESCRIPCIONES_CANONICAS: Record<string, string> = {
+  "cubierta": "Cubierta Superior",
+  "entrepaño": "Entrepaño Central",
+  "entrepanio": "Entrepaño Central",
+  "lateral": "Lateral",
+  "fondo": "Fondo Posterior",
+};
+
+/**
+ * Resuelve la descripción humana en español de una pieza de taller.
+ * Prioridad estricta y transparente:
+ * 1. Descripción manual guardada por el usuario en Despiece / Ficha de Costos.
+ * 2. Descripción explícita enviada por Grasshopper (que no sea el nombre genérico del mueble ni el nombre de la pieza).
+ * 3. Mapeo solo para términos genéricos literales ("cubierta", "entrepaño").
+ * 4. Si no tiene descripción, retorna "" (vacía) para que se muestre su nombre real sin inventar nombres.
+ */
+export function obtenerDescripcionCanonicaPieza(
+  nombre: string,
+  descPersonalizada?: string,
+  descOriginal?: string,
+  nombreModeloGenerico?: string
+): string {
+  const modeloGenerico = (nombreModeloGenerico || "Cómoda Ravenna").toLowerCase().trim();
+
+  // 1. Si el usuario guardó una descripción personalizada en Despiece & Costos
+  if (descPersonalizada && descPersonalizada.trim()) {
+    const dTrim = descPersonalizada.trim();
+    const dLower = dTrim.toLowerCase();
+    if (dLower !== nombre.toLowerCase() && dLower !== modeloGenerico && dLower !== "comoda ravenna") {
+      return dTrim;
+    }
+  }
+
+  // 2. Si vino una descripción original válida en Grasshopper
+  if (descOriginal && descOriginal.trim()) {
+    const oTrim = descOriginal.trim();
+    const oLower = oTrim.toLowerCase();
+    if (oLower !== nombre.toLowerCase() && oLower !== modeloGenerico && oLower !== "comoda ravenna") {
+      return oTrim;
+    }
+  }
+
+  // 3. Buscar en el diccionario solo por términos genéricos literales
+  const clean = nombre.toLowerCase().trim().replace(/^rh_out:\s*/i, "").replace(/\.\d{3}$/, "").replace(/\s*\(\d+\)$/, "");
+  if (DICCIONARIO_DESCRIPCIONES_CANONICAS[clean]) {
+    return DICCIONARIO_DESCRIPCIONES_CANONICAS[clean];
+  }
+
+  return "";
+}

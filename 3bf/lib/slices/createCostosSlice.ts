@@ -223,7 +223,14 @@ export const createCostosSlice = (set: any, get: any): any => ({
           set({ dbTableros: TABLEROS_INICIALES_DEFECTO });
           localStorage.setItem("3bf_db_tableros", JSON.stringify(TABLEROS_INICIALES_DEFECTO));
         } else {
-          const sanitized = parsed.map((t: TableroRecord) => {
+          // Inyectar tablero de 12 mm si la base guardada aún no lo tenía
+          const tiene12 = parsed.some((t) => t.calibreMm === 12);
+          const listCompleta = tiene12 ? parsed : [
+            ...TABLEROS_INICIALES_DEFECTO.filter((t) => t.calibreMm === 12),
+            ...parsed
+          ];
+
+          const sanitized = listCompleta.map((t: TableroRecord) => {
             const lista = t.costoListaUsd ?? t.costoLaminaUsd ?? 58.468;
             if (t.proveedor === "Novopan" || t.proveedor === "Duratex") {
               const cal = calcularCostoLaminaNovopan(lista, t.largoLaminaMm || 2440, t.anchoLaminaMm || 2150, t.calibreMm || 15, undefined, currentNeg, t.nombreComercial);
@@ -249,6 +256,7 @@ export const createCostosSlice = (set: any, get: any): any => ({
             };
           });
           set({ dbTableros: sanitized });
+          localStorage.setItem("3bf_db_tableros", JSON.stringify(sanitized));
         }
       } else {
         set({ dbTableros: TABLEROS_INICIALES_DEFECTO });
