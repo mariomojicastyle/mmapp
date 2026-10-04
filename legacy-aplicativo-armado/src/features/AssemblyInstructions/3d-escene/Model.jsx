@@ -318,7 +318,8 @@ function ActualModel(props) {
           act.reset(); // Reinicia siempre la animación al cambiar de modelo
           act.clampWhenFinished = true; // Detiene la animación cuando finaliza
           act.loop = THREE.LoopOnce;    // Ejecuta la animación una sola vez
-          act.play(); // Iniciar la animación si la app ha comenzado
+          act.paused = false;           // Asegura que arranque activa
+          act.play();                   // Iniciar la animación si la app ha comenzado
         }
       });
     }

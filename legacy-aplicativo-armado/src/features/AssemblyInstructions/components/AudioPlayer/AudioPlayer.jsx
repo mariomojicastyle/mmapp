@@ -82,10 +82,28 @@ export default function AudioPlayer({ id: propId }) {
     return () => { delete window.__directAudioPlay; };
   }, []);
 
-  // ─── Efecto 0: canplaythrough ───
-  // Cuando el audio termina de descargarse (ej: desde Supabase vía proxy),
-  // si phaseAudio ya es "playing", arrancamos inmediatamente.
-  // Esto soluciona el caso donde play() se llama antes de que el audio esté listo.
+  const safePlay = (audioEl, source = "audio") => {
+    if (!audioEl) return;
+    try {
+      const p = audioEl.play();
+      if (p !== undefined) {
+        p.catch(err => {
+          if (err.name === 'AbortError') return; // Cancelación esperada por navegación rápida o carga
+          if (err.name === 'NotAllowedError') {
+            console.warn(`[AudioPlayer] Autoplay retenido en ${source}:`, err.message);
+            return;
+          }
+          console.warn(`[AudioPlayer] Error en ${source}:`, err.message);
+        });
+      }
+    } catch (e) {
+      // Ignorar errores síncronos
+    }
+  };
+
+  // ─── Efecto 0: canplay y canplaythrough ───
+  // Cuando el audio tiene los primeros bytes listos o termina de descargarse,
+  // si la app está en marcha y phaseAudio no es "paused", arrancamos inmediatamente.
   useEffect(() => {
     const audio = audioRef.current;
     if (!audio) return;
@@ -93,12 +111,16 @@ export default function AudioPlayer({ id: propId }) {
     const handleCanPlay = () => {
       const state = useEnviroment.getState();
       if (state.StartApp === true && state.phaseAudio === "playing") {
-        audio.play().catch(e => console.log("canplaythrough auto-play:", e.message));
+        safePlay(audio, "canplay/canplaythrough");
       }
     };
 
+    audio.addEventListener("canplay", handleCanPlay);
     audio.addEventListener("canplaythrough", handleCanPlay);
-    return () => audio.removeEventListener("canplaythrough", handleCanPlay);
+    return () => {
+      audio.removeEventListener("canplay", handleCanPlay);
+      audio.removeEventListener("canplaythrough", handleCanPlay);
+    };
   }, []);
 
   // ─── Efecto 1: Cargar src de audio (Paso o Ayuda) ───
@@ -113,7 +135,7 @@ export default function AudioPlayer({ id: propId }) {
       }
       setTimeout(() => {
         if (audioRef.current && (useEnviroment.getState().StartApp === true || PanelAyudas)) {
-          audioRef.current.play().catch(e => console.log("Ayuda play error:", e));
+          safePlay(audioRef.current, "ayuda");
         }
       }, 500);
 
@@ -150,6 +172,10 @@ export default function AudioPlayer({ id: propId }) {
       if (audioRef.current) {
         audioRef.current.src = url;
         audioRef.current.load();
+        const state = useEnviroment.getState();
+        if (state.StartApp === true && state.phaseAudio === "playing") {
+          safePlay(audioRef.current, "pasoAudio");
+        }
       }
     }
   }, [PanelAyudas, pasoActual, id, idioma]);
@@ -158,28 +184,23 @@ export default function AudioPlayer({ id: propId }) {
   useEffect(() => {
     if (StartApp === true) {
       if (audioRef.current && audioRef.current.paused) {
-        audioRef.current.play().catch(e => console.log("Iniciar app play error:", e));
+        safePlay(audioRef.current, "startApp");
       }
     }
   }, [StartApp]);
 
   // ─── Efecto 3: Control de fases (start / playing / paused) ───
-  // CRÍTICO: La fase "playing" NO verifica ReadyToPlay.
-  // ReadyToPlay solo se usa en "start" (carga inicial del primer modelo).
-  // El audio del manual ORIGINAL nunca esperaba al modelo 3D para sonar.
   useEffect(() => {
     if (StartApp === true) {
       if (phaseAudio === "start") {
-        // Solo la fase "start" espera al modelo 3D (primera carga)
         if (ReadyToPlay === true && audioRef.current && audioRef.current.paused) {
           audioRef.current.load();
-          audioRef.current.play().catch(e => console.log("Start phase play error:", e));
+          safePlay(audioRef.current, "startPhase");
         }
       } else if (phaseAudio === "playing") {
-        // ← SIN verificar ReadyToPlay — idéntico al original que funcionaba
         AudioEndedFalse();
         if (audioRef.current && audioRef.current.paused) {
-          audioRef.current.play().catch(e => console.log("Playing phase play error:", e));
+          safePlay(audioRef.current, "playingPhase");
         }
       } else if (phaseAudio === "paused") {
         if (audioRef.current) {

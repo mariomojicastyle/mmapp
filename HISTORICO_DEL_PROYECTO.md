@@ -2723,6 +2723,32 @@ Para mantener la máxima agilidad y minimizar el consumo de tokens sin perder ni
   * Compilación de producción con Vite (`npm run build` en `legacy-aplicativo-armado`) completada limpiamente en 4.43s con **0 errores**.
   * Verificados los endpoints del decodificador con HTTP 200 OK y `Content-Type: application/wasm` (192 KB).
 
+---
+
+### 🚀 Hito 241: Corrección de Cinemática en Pausa, Blindaje contra AbortError de Audio y Proxy Canónico para HDRI2 (`Model.jsx`, `NavBarInferior.jsx`, `AudioPlayer.jsx`, `Experience.jsx`, `homepage/netlify.toml`) (03 de Octubre, 2026)
+- **Diagnóstico y Contexto del Bug**:
+  * El usuario reportó dos anomalías críticas en el manual interactivo de Cómoda Ravenna (`/embed/armado/Comoda_Ravenna`):
+    1. En el Paso 02, el escenario 3D aparecía completamente desierto (mostrando solo el piso y la cuadrícula roja, sin piezas visibles). En la consola de Chrome DevTools se apreciaban errores `404 Not Found` en `/hdri2/salon_01.webp` y `AbortError: The play() request was interrupted by a new load request`, con el botón inferior en icono de Play (visor en estado pausado).
+    2. En dispositivos móviles, la transición entre pasos tardaba hasta 40 segundos, mientras que en PC funcionaba de inmediato.
+- **Causas Raíces Identificadas mediante Auditoría Forense**:
+  1. *Congelamiento de Acciones en Escala Cero (Blender)*: En `P02.glb`, 43 de los 50 nodos fueron exportados desde Blender con `scale: [0, 0, 0]` inicial para que una animación de 24 segundos los haga crecer progresivamente. Al cambiar de paso, un `setTimeout(200)` previo ponía `phaseAudio = 'paused'`. En `Model.jsx`, el efecto de sincronización detectaba `phaseAudio === 'paused'` y ejecutaba inmediatamente `act.paused = true` en el segundo `0.000s`, congelando para siempre las 43 piezas en tamaño cero (invisibles).
+  2. *Pérdida de Activación de Usuario y AbortError en Móviles*: Al avanzar de paso, `NavBarInferior` ejecutaba `PausedAudio()` y luego un `setTimeout(() => { PlayingAudio(); }, 200)`. En navegadores móviles (Chrome Android / Safari iOS), llamar a `audio.play()` dentro de un `setTimeout` asíncrono destruye el token de interacción directa del usuario (*User Gesture Activation*). El navegador bloqueaba el audio y arrojaba `AbortError` / `NotAllowedError`. Al fallar el audio, el estado global quedaba en pausa permanente, impidiendo que el 3D arrancara.
+  3. *Ausencia de Proxy Reverso para HDRI2*: En `mario-mojica-homepage/netlify.toml` existían reglas para `/hdri/*`, pero no para `/hdri2/*` ni `/embed/armado/hdri2/*`. Al solicitar `salon_01.webp`, Next.js devolvía una página de error 404 (HTML de 56 KB) que Three.js intentaba procesar infructuosamente 6 veces.
+- **Implementación Técnica de la Solución**:
+  1. *Arranque Autónomo e Inmediato del 3D (`Model.jsx`)*:
+     - Al instanciar las animaciones del nuevo paso (`StartApp === true`), se asegura `act.reset(); act.clampWhenFinished = true; act.loop = THREE.LoopOnce; act.paused = false; act.play();`. La cinemática 3D arranca de inmediato sin depender de si el audio móvil sufrió retrasos de buffer.
+  2. *Eliminación del Timeout Destructivo de Navegación (`NavBarInferior.jsx`)*:
+     - Se eliminó el `PausedAudio()` y el `setTimeout(200)` en `leftButtton` y `RightButtton`. El nuevo paso arranca directamente con `CambiarModelo(newPaso)` y `PlayingAudio()`, manteniendo intacto el contexto de activación del usuario para el navegador móvil.
+  3. *Blindaje de Audio y Detección Temprana con `canplay` (`AudioPlayer.jsx`)*:
+     - Creación de la función `safePlay(audioEl)` que captura y silencia de forma segura `AbortError` y `NotAllowedError` ante cambios rápidos de paso.
+     - Inclusión del listener del evento nativo `canplay` (además de `canplaythrough`), reproduciendo el audio en cuanto los primeros bytes están listos sin esperar la descarga completa del archivo en redes celulares.
+  4. *Proxy Reverso para Atlas HDRI2 (`homepage/netlify.toml`, `Experience.jsx`)*:
+     - Añadidas reglas de proxy reverso en `mario-mojica-homepage/netlify.toml` para `/embed/armado/hdri2/*`, `/embed/armado/hdri/*` y `/hdri2/*` hacia `https://mario-mojica-armado.netlify.app/hdri2/:splat`.
+     - `atlasUrl` en `Experience.jsx` ahora se resuelve formalmente con `getAssetPath("/hdri2/salon_01.webp")`.
+- **Validación de Calidad**:
+  * Compilación de producción con Vite (`npm run build` en `legacy-aplicativo-armado`) completada exitosamente en 5.09s con **0 errores**.
+  * Cero bloqueos de escala 0 en Paso 02 y erradicación total del `AbortError` y errores 404.
+
 
 
 

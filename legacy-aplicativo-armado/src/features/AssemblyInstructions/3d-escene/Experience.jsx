@@ -90,7 +90,7 @@ function ActualAssemblySceneViewer({ id, modelUrl, productData, decryptedUrl }) 
   const atlasUrl = useMemo(() => {
     return (!hasWallTextures && productData?.pbrWallDiff) 
       ? productData.pbrWallDiff 
-      : "/hdri2/salon_01.webp";
+      : getAssetPath("/hdri2/salon_01.webp");
   }, [hasWallTextures, productData?.pbrWallDiff]);
 
   const [cacheBuster] = useState(() => Date.now());
