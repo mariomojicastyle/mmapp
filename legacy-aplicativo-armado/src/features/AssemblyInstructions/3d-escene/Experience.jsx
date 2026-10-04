@@ -3,10 +3,16 @@ import { OrbitControls, Html, useProgress, useGLTF, useHelper, Environment, useT
 import React, { useRef, useEffect, Suspense, useState, useMemo } from "react";
 import useEnviroment from "../hooks/useEnviroment.js";
 import * as THREE from 'three';
-import Model, { getProtectedGLB } from "./Model.jsx";
+import Model from "./Model.jsx";
 import Floor from "./Floor/Floor.jsx";
 import LightingPanel from "./LightingPanel.jsx";
 import { getAssetPath } from "../../../lib/assets.js";
+
+// Configurar el decodificador de Draco localmente para eliminar latencias externas en móviles
+if (typeof window !== "undefined") {
+  const dracoOrigin = window.location.origin || "";
+  useGLTF.setDecoderPath(`${dracoOrigin}/draco/gltf/`);
+}
 
 
 
@@ -132,15 +138,6 @@ function ActualAssemblySceneViewer({ id, modelUrl, productData, decryptedUrl }) 
       }
     }
   }, [hasWallTextures, stableWallTextureMaps]);
-
-  // Cargar el modelo GLB inicial (paso 00) - Capa protegida
-  const { scene: gltfScene } = useGLTF(decryptedUrl);
-
-  useEffect(() => {
-    if (gltfScene) {
-      CargarPasoInicial(gltfScene);
-    }
-  }, [gltfScene, CargarPasoInicial]);
 
   // Ref para persistir el skybox entre re-renders
   const skyBoxRef = useRef(null);
@@ -601,25 +598,5 @@ function ViewportCameraManager({ orbitControlsRef }) {
 }
 
 export default function AssemblySceneViewer(props) {
-  const [decryptedUrl, setDecryptedUrl] = useState(null);
-  const urlOriginal = getAssetPath(`/${props.id}/models/P00.glb`);
-  
-  useEffect(() => {
-    let active = true;
-    setDecryptedUrl(null);
-    
-    getProtectedGLB(urlOriginal, props.id)
-      .then(objUrl => {
-        if (active) setDecryptedUrl(objUrl);
-      })
-      .catch(err => {
-        console.error("Error al cargar escena base encriptada:", err);
-      });
-      
-    return () => { active = false; };
-  }, [urlOriginal]);
-  
-  if (!decryptedUrl) return null; // Esperar a la desencriptación inicial
-  
-  return <ActualAssemblySceneViewer {...props} decryptedUrl={decryptedUrl} />;
+  return <ActualAssemblySceneViewer {...props} />;
 }

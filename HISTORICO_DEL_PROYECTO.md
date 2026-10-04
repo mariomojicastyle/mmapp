@@ -2664,6 +2664,42 @@ Para mantener la máxima agilidad y minimizar el consumo de tokens sin perder ni
   * Compilación de producción con Vite (`npm run build` en `legacy-aplicativo-armado`) completada limpiamente en 3.94s y **0 errores**.
   * Modelos GLB verificados contra Supabase Storage y Netlify con código **HTTP 200 OK** y decodificación AES-256 exitosa en todos los pasos (P00 a P06).
 
+---
+
+### 🚀 Hito 239: Despliegue de Decodificador Draco Local, Deduplicación de Memoria Three.js y Retroalimentación Transicional entre Pasos (`Model.jsx`, `Experience.jsx`, `_redirects`) (03 de Octubre, 2026)
+- **Diagnóstico y Contexto del Bug**:
+  * El usuario reportó que al llegar al Paso 02 de la Cómoda Ravenna en dispositivos móviles, el escenario 3D quedaba vacío durante aproximadamente 2 minutos antes de mostrar el modelo. Además, durante esa pausa no se mostraba ninguna barra de carga ni indicador visual.
+- **Causas Raíces Identificadas mediante Auditoría Forense**:
+  1. *Dependencia Externa de Google CDN (`gstatic.com`) para Draco*:
+     - Todos los modelos GLB de Cómoda Ravenna (`P00.glb` a `P06.glb`) utilizan compresión geométrica obligatoria `KHR_draco_mesh_compression`.
+     - Drei/Three.js apuntaba por defecto al decodificador de Google: `https://www.gstatic.com/draco/versioned/decoders/1.5.5/`.
+     - En navegadores móviles (Safari iOS y Chrome Android con protección de datos/antirrastreo), las peticiones cruzadas (`cross-origin importScripts`) dentro de Web Workers sufrían bloqueos o latencias masivas en redes celulares, forzando a Three.js a hacer fallback y compilar el binario WASM en el hilo principal (Main Thread), colapsando la CPU del teléfono móvil y provocando *thermal throttling*.
+  2. *Vacío React Suspense sin Indicador*:
+     - `PanelInicial` (la pantalla de bienvenida con barra de carga) se destruye y oculta permanentemente (`display = 'none'`) en el paso 00.
+     - En `Model.jsx`, al avanzar de paso se ejecutaba `setDecryptedUrl(null)` y `return null;` dentro de `<Suspense fallback={null}>`, dejando el lienzo 3D completamente desierto sin que el usuario supiera si la aplicación estaba cargando o se había colgado.
+  3. *Doble Carga Redundante de P00.glb*:
+     - `Experience.jsx` mantenía una llamada activa a `useGLTF(P00.glb)` de 1.8 MB y 229 mallas con Draco al mismo tiempo que `<Model>` cargaba el paso activo, duplicando el consumo de memoria en la GPU.
+  4. *Precarga Simultánea Destructiva*:
+     - El efecto de precarga intentaba precargar hacia adelante (P02) y hacia atrás (P00) en el mismo instante en que se reproducía la animación y el audio del paso actual, saturando el ancho de banda y la memoria de WebAssembly.
+- **Implementación Técnica de la Solución**:
+  1. *Decodificador Draco Local en Mismo Origen (`/draco/gltf/`)*:
+     - Se copiaron los archivos oficiales (`draco_decoder.wasm`, `draco_decoder.js`, `draco_wasm_wrapper.js`) directamente a `public/draco/gltf/`.
+     - Se configuró `useGLTF.setDecoderPath(`${window.location.origin}/draco/gltf/`)` en `Model.jsx` y `Experience.jsx`. El móvil descarga el decodificador localmente en 5ms con caché permanente HTTP.
+     - Regla explícita añadida en `_redirects` (`/draco/* /draco/:splat 200`) para evitar intercepciones.
+  2. *Cápsula Flotante de Carga Transicional entre Pasos*:
+     - Implementación de un badge flotante centrado con forma de cápsula pura (`rounded-full`, `#0088AA` oficial, fondo `#131B2E`, sin incandescencias): `⏳ Cargando paso {pasoActual}...` que mantiene informado al usuario en tiempo real ante cualquier retardo de red o procesamiento.
+  3. *Eliminación de la Carga Duplicada de P00.glb*:
+     - Se desacopló `Experience.jsx` de la dependencia bloqueante de `P00.glb`, renderizando la escena de forma inmediata.
+     - `CargarPasoInicial` se sincroniza limpiamente desde `Model.jsx` cuando el paso 00 se monta, liberando cientos de megabytes de RAM en la GPU.
+  4. *Preload Inteligente Unidireccional con Respiro de CPU*:
+     - Se eliminó la precarga retrógrada a pasos anteriores.
+     - Se introdujo un temporizador de 1.5s para precargar el paso siguiente en segundo plano solo una vez que la animación activa ya está en ejecución fluida a 60 FPS.
+  5. *Deduplicación de Promesas en Vuelo (`glbPromiseCache`)*:
+     - Previene descargas o descifrados AES-256 redundantes si múltiples componentes solicitan el mismo asset simultáneamente.
+- **Validación de Calidad**:
+  * Compilación de producción con Vite (`npm run build` en `legacy-aplicativo-armado`) completada exitosamente en 4.58s con **0 errores**.
+  * Binarios WASM verificados y empaquetados en `dist/draco/gltf/`.
+
 
 
 

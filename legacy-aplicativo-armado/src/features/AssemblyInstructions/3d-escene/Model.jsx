@@ -1,4 +1,4 @@
-import { useMatcapTexture, useAnimations, useGLTF } from "@react-three/drei";
+import { useMatcapTexture, useAnimations, useGLTF, Html } from "@react-three/drei";
 import { useState, useRef, useEffect } from "react";
 import * as THREE from "three";
 import { useThree, useFrame } from "@react-three/fiber";
@@ -8,22 +8,38 @@ import { getAssetPath, resolveAlias, translateHerraje } from "../../../lib/asset
 import { isPieceName, extractPieceNumber, translatePieceLabel } from "../../../lib/pieceUtils.js";
 import { decryptBuffer } from "../../../lib/cryptoAES.js";
 
+// Configurar el decodificador de Draco localmente para máxima velocidad en móviles sin dependencias de gstatic
+if (typeof window !== "undefined") {
+  const dracoOrigin = window.location.origin || "";
+  useGLTF.setDecoderPath(`${dracoOrigin}/draco/gltf/`);
+}
+
 const glbCache = {}; // Cache local: Url original -> ObjectURL del Blob desencriptado
+const glbPromiseCache = {}; // Deduplicación de descargas y descifrados en vuelo
 
 export async function getProtectedGLB(url, manualId) {
   if (glbCache[url]) return glbCache[url];
+  if (glbPromiseCache[url]) return glbPromiseCache[url];
   
-  const response = await fetch(url);
-  if (!response.ok) throw new Error(`Error descargando modelo: ${response.status}`);
-  const buffer = await response.arrayBuffer();
+  glbPromiseCache[url] = (async () => {
+    try {
+      const response = await fetch(url);
+      if (!response.ok) throw new Error(`Error descargando modelo: ${response.status}`);
+      const buffer = await response.arrayBuffer();
+      
+      // Revertir cifrado AES-256 en memoria
+      const decrypted = await decryptBuffer(buffer, manualId);
+      
+      const blob = new Blob([decrypted], { type: "model/gltf-binary" });
+      const objectUrl = URL.createObjectURL(blob);
+      glbCache[url] = objectUrl;
+      return objectUrl;
+    } finally {
+      delete glbPromiseCache[url];
+    }
+  })();
   
-  // Revertir cifrado AES-256 en memoria
-  const decrypted = await decryptBuffer(buffer, manualId);
-  
-  const blob = new Blob([decrypted], { type: "model/gltf-binary" });
-  const objectUrl = URL.createObjectURL(blob);
-  glbCache[url] = objectUrl;
-  return objectUrl;
+  return glbPromiseCache[url];
 }
 
 function cleanMeshIdentifier(rawName) {
@@ -267,6 +283,11 @@ function ActualModel(props) {
   useEffect(() => {
     ChargeModel(scene); // Carga el modelo en la escena
 
+    // Sincronizar escena de paso 00 para que PanelCantidades tenga acceso sin cargas duplicadas
+    if (scene && (pasoActual === "00" || pasoActual === 0)) {
+      useEnviroment.getState().CargarPasoInicial(scene);
+    }
+
     // Auto-grounding: Calcular el punto más bajo del modelo (min.y) usando Box3
     // Esto permite al Floor.jsx y Experience.jsx posicionar el piso y skybox correctamente
     // sin depender de valores manuales hardcodeados
@@ -508,27 +529,24 @@ function ActualModel(props) {
     }
   });
 
-  // Preload de pasos adyacentes para que las transiciones sean instantáneas y fluidas (Capa protegida)
+  // Preload inteligente solo del paso siguiente (hacia adelante) con respiro de CPU
   useEffect(() => {
     if (pasos && pasos.length > 0) {
       const idx = pasos.indexOf(pasoActual);
-      if (idx !== -1) {
-        // Preload del paso siguiente
-        if (idx < pasos.length - 1) {
-          const nextStep = pasos[idx + 1];
-          const nextUrl = getAssetPath(`/${props.id}/models/P${nextStep}.glb`);
+      if (idx !== -1 && idx < pasos.length - 1) {
+        const nextStep = pasos[idx + 1];
+        const nextUrl = getAssetPath(`/${props.id}/models/P${nextStep}.glb`);
+        
+        // Retardo de 1.5s para no competir con los primeros fotogramas de la animación en curso
+        const timer = setTimeout(() => {
           getProtectedGLB(nextUrl, props.id)
-            .then(objUrl => useGLTF.preload(objUrl))
-            .catch(err => console.warn("[Preload] Error precargando paso siguiente:", err));
-        }
-        // Preload del paso anterior
-        if (idx > 0) {
-          const prevStep = pasos[idx - 1];
-          const prevUrl = getAssetPath(`/${props.id}/models/P${prevStep}.glb`);
-          getProtectedGLB(prevUrl, props.id)
-            .then(objUrl => useGLTF.preload(objUrl))
-            .catch(err => console.warn("[Preload] Error precargando paso anterior:", err));
-        }
+            .then(objUrl => {
+              useGLTF.preload(objUrl);
+            })
+            .catch(err => console.warn("[Preload] Paso siguiente omitido:", err));
+        }, 1500);
+
+        return () => clearTimeout(timer);
       }
     }
   }, [pasoActual, pasos, props.id]);
@@ -830,29 +848,69 @@ function ActualModel(props) {
 export default function Model(props) {
   const pasoActual = useEnviroment((state) => state.pasoActual);
   const urlOriginal = getAssetPath(`/${props.id}/models/P${pasoActual}.glb`);
-  const [decryptedUrl, setDecryptedUrl] = useState(() => glbCache[urlOriginal] || null);
+  const [currentUrl, setCurrentUrl] = useState(() => glbCache[urlOriginal] || null);
+  const [loading, setLoading] = useState(!glbCache[urlOriginal]);
 
   useEffect(() => {
     let active = true;
     if (glbCache[urlOriginal]) {
-      setDecryptedUrl(glbCache[urlOriginal]);
+      setCurrentUrl(glbCache[urlOriginal]);
+      setLoading(false);
       return;
     }
 
-    setDecryptedUrl(null); // Limpiar pantalla solo si no está en caché
+    setLoading(true);
     
     getProtectedGLB(urlOriginal, props.id)
       .then(objUrl => {
-        if (active) setDecryptedUrl(objUrl);
+        if (active) {
+          setCurrentUrl(objUrl);
+          setLoading(false);
+        }
       })
       .catch(err => {
         console.error("Error al cargar y descifrar el modelo 3D:", err);
+        if (active) setLoading(false);
       });
       
     return () => { active = false; };
   }, [urlOriginal, props.id]);
 
-  if (!decryptedUrl) return null; // Transición fluida durante la desencriptación
-
-  return <ActualModel key={`${props.id}_${pasoActual}_${decryptedUrl}`} {...props} decryptedUrl={decryptedUrl} />;
+  return (
+    <>
+      {loading && (
+        <Html center position={[0, 0.6, 0]} style={{ pointerEvents: 'none' }}>
+          <div style={{
+            background: 'rgba(19, 27, 46, 0.90)',
+            color: '#ffffff',
+            padding: '8px 22px',
+            borderRadius: '9999px',
+            fontSize: '13px',
+            fontWeight: '600',
+            fontFamily: 'Inter, sans-serif',
+            boxShadow: '0 4px 20px rgba(0,0,0,0.4)',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '10px',
+            backdropFilter: 'blur(8px)',
+            border: '1px solid rgba(0, 136, 170, 0.4)',
+            whiteSpace: 'nowrap'
+          }}>
+            <svg style={{ animation: 'spin 1s linear infinite', width: '15px', height: '15px' }} viewBox="0 0 24 24" fill="none">
+              <circle cx="12" cy="12" r="10" stroke="rgba(255,255,255,0.2)" strokeWidth="3" />
+              <path d="M12 2a10 10 0 0 1 10 10" stroke="#0088AA" strokeWidth="3" strokeLinecap="round" />
+            </svg>
+            <span>Cargando paso {pasoActual}...</span>
+          </div>
+        </Html>
+      )}
+      {currentUrl && (
+        <ActualModel 
+          key={`${props.id}_${pasoActual}_${currentUrl}`} 
+          {...props} 
+          decryptedUrl={currentUrl} 
+        />
+      )}
+    </>
+  );
 }
