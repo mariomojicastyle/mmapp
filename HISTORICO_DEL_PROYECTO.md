@@ -2615,6 +2615,33 @@ Para mantener la máxima agilidad y minimizar el consumo de tokens sin perder ni
   * Servidores locales operativos y estables.
   * Hito de optimización Opti_Nesting declarado 100% funcional, estable y exitoso.
 
+---
+
+### 🚀 Hito 237: Erradicación del Reinicio por Rotación de Pantalla en Visor Móvil de Manuales 3D (`AssemblyViewer.jsx`) (03 de Octubre, 2026)
+- **Diagnóstico y Contexto de UX Crítico**:
+  * Al visualizar el manual de ensamble interactivo en dispositivos móviles de forma vertical y girar el teléfono a horizontal (o dejarlo en el piso durante el proceso de armado en taller), la aplicación se reiniciaba por completo.
+  * Esto causaba la pérdida total del avance del usuario (ej. si estaba en el Paso 2 fijando correderas o tornillos), reiniciando el flujo desde la pantalla de bienvenida o el Paso 1 y rompiendo la experiencia de ensamble.
+- **Causa Raíz Identificada**:
+  * En `legacy-aplicativo-armado/src/features/AssemblyInstructions/AssemblyViewer.jsx`, el efecto de orientación contenía una llamada forzada a `location.reload()` dentro de `handleOrientationChange`:
+    ```javascript
+    function handleOrientationChange() {
+      setOrientation(window.orientation);
+      location.reload(); // ❌ Destruía el estado de React y Zustand recargando la pestaña
+    }
+    ```
+- **Implementación Técnica de la Solución**:
+  1. *Erradicación Total de `location.reload()`*: Se eliminó la recarga forzada del navegador ante cambios de orientación de pantalla.
+  2. *Manejador Reactivo y Continuo de Orientación*:
+     - Estado de orientación reactivo compatible con `window.orientation` y la API moderna `screen.orientation.angle`.
+     - Suscripción a eventos `orientationchange`, `screen.orientation.change` y `resize`.
+     - Inyección de micro-delays controlados (50ms y 250ms) con `window.dispatchEvent(new Event("resize"))` para garantizar que React Three Fiber y Three.js recalculen de forma limpia el *aspect ratio* y matriz de proyección de la cámara en WebViews móviles (iOS Safari y Chrome Android).
+  3. *Experiencia de Usuario Idéntica a Video (YouTube / Netflix)*:
+     - El manual permanece exactamente en el paso donde se encuentra el usuario (`pasoActual`), con el audio, la animación 3D y los modelos intactos sin parpadear ni recargar.
+- **Validación de Calidad**:
+  * Compilación de producción en `legacy-aplicativo-armado` (`npm run build` con Vite) verificada con éxito total en 5.13s y **0 errores**.
+  * `npx tsc --noEmit` en `3BF` y `mario-mojica-plataforma` con **0 errores**.
+
+
 
 
 

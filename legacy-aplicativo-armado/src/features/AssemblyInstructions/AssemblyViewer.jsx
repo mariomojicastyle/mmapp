@@ -186,19 +186,40 @@ export default function AssemblyViewer({ productData, steps, id }) {
     }
   }, [productData]);
 
-  const [orientation, setOrientation] = useState(window.orientation);
+  const [orientation, setOrientation] = useState(
+    typeof window !== "undefined" ? (window.orientation ?? screen?.orientation?.angle ?? 0) : 0
+  );
 
-  // Función de reload al cambio de orientacion
+  // Manejo fluido de cambio de orientación sin recargar la página (preserva el paso actual y la experiencia viva)
   useEffect(() => {
     function handleOrientationChange() {
-      setOrientation(window.orientation);
-      location.reload();
+      const newOrientation = window.orientation ?? screen?.orientation?.angle ?? 0;
+      setOrientation(newOrientation);
+
+      // Despachar eventos de resize con micro-delay para que Three.js y el Canvas recalculen
+      // el aspect ratio de la cámara perfectamente en navegadores móviles (iOS Safari / Chrome Android)
+      setTimeout(() => {
+        window.dispatchEvent(new Event("resize"));
+      }, 50);
+      setTimeout(() => {
+        window.dispatchEvent(new Event("resize"));
+      }, 250);
     }
-    window.addEventListener('orientationchange', handleOrientationChange);
+
+    window.addEventListener("orientationchange", handleOrientationChange);
+    if (screen?.orientation?.addEventListener) {
+      screen.orientation.addEventListener("change", handleOrientationChange);
+    }
+    window.addEventListener("resize", handleOrientationChange);
+
     return () => {
-      window.removeEventListener('orientationchange', handleOrientationChange);
+      window.removeEventListener("orientationchange", handleOrientationChange);
+      if (screen?.orientation?.removeEventListener) {
+        screen.orientation.removeEventListener("change", handleOrientationChange);
+      }
+      window.removeEventListener("resize", handleOrientationChange);
     };
-  }, [id]);
+  }, []);
 
   if (!id) return <div className="p-10 text-red-500">Error: No Product ID provided</div>;
 
