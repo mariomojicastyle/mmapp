@@ -312,29 +312,41 @@ function ActualModel(props) {
 
     const posicionDeCamaraActual = CameraPosition ? CameraPosition.find((item) => item.pasos == pasoActual) : null;
     const isGlbCamPreferred = posicionDeCamaraActual?.useGlbCamera === true || posicionDeCamaraActual?.cameraMode === "glb";
-    const useOverride = !isGlbCamPreferred && posicionDeCamaraActual?.override;
+    const useOverride = !isGlbCamPreferred && Boolean(posicionDeCamaraActual?.override && posicionDeCamaraActual?.position);
 
-    // Buscar si existe un nodo de cámara en el GLB (nodo "Camera" de 3dBimFab o array cameras)
-    const glbCamNode = scene.getObjectByName("Camera") || (cameras && cameras.length > 0 ? cameras[0] : null);
+    // Buscar si existe un nodo de cámara en el GLB SOLAMENTE si se configuró explícitamente el modo GLB
+    const glbCamNode = isGlbCamPreferred ? (scene.getObjectByName("Camera") || (cameras && cameras.length > 0 ? cameras[0] : null)) : null;
 
-    if (useOverride) {
+    // Calcular el centro geométrico del modelo para garantizar que siempre esté encuadrado
+    const modelBox = new THREE.Box3().setFromObject(scene);
+    const modelCenter = new THREE.Vector3(0, 0.5, 0);
+    if (!modelBox.isEmpty()) {
+      modelBox.getCenter(modelCenter);
+    }
+
+    if (useOverride && posicionDeCamaraActual?.position) {
       camera.position.set(
         posicionDeCamaraActual.position.x,
         posicionDeCamaraActual.position.y,
         posicionDeCamaraActual.position.z
       );
 
-      // Si existe un target en alturas, hacer lookAt para evitar saltos
+      // Si existe un target en alturas, hacer lookAt y sincronizar OrbitControls
+      let targetVec = modelCenter;
       if (alturas && alturas.length > 0) {
         const altData = alturas.find(a => a.paso === pasoActual);
         if (altData && altData.target) {
-          camera.lookAt(new THREE.Vector3(altData.target[0], altData.target[1], altData.target[2]));
+          targetVec = new THREE.Vector3(altData.target[0], altData.target[1], altData.target[2]);
         }
+      }
+      camera.lookAt(targetVec);
+      if (props.orbitControlsRef && props.orbitControlsRef.current) {
+        props.orbitControlsRef.current.target.copy(targetVec);
       }
       
       camera.setFocalLength(posicionDeCamaraActual.fov || defaultFov);
     } else if (glbCamNode) {
-      // Usar cámara del GLB (3dBimFab animada o fija)
+      // Usar cámara del GLB (3dBimFab animada o fija) SOLO si fue solicitada explícitamente
       const worldPos = new THREE.Vector3();
       const worldQuat = new THREE.Quaternion();
       glbCamNode.getWorldPosition(worldPos);
@@ -361,11 +373,20 @@ function ActualModel(props) {
         posicionDeCamaraActual.position.y,
         posicionDeCamaraActual.position.z
       );
+      camera.lookAt(modelCenter);
       camera.setFocalLength(defaultFov);
+      if (props.orbitControlsRef && props.orbitControlsRef.current) {
+        props.orbitControlsRef.current.target.copy(modelCenter);
+      }
     } else {
-      // Si no hay cámaras en el archivo GLB, se usa la posición por defecto
+      // Si no hay configuración manual ni cámara GLB explícita, se usa la posición por defecto
+      // y se enfoca exactamente al centro del modelo del paso actual
       camera.position.set(defaultCameraPosX, defaultCameraPosY, defaultCameraPosZ);
+      camera.lookAt(modelCenter);
       camera.setFocalLength(defaultFov);
+      if (props.orbitControlsRef && props.orbitControlsRef.current) {
+        props.orbitControlsRef.current.target.copy(modelCenter);
+      }
     }
 
     camera.updateProjectionMatrix();
@@ -405,12 +426,10 @@ function ActualModel(props) {
     }
   }, [phaseAudio]);
 
-  // Sincronización continua en vivo de la cámara animada del GLB (3dBimFab) cuadro a cuadro
+  // Sincronización continua en vivo de la cámara animada del GLB (3dBimFab) cuadro a cuadro SOLO si está explícitamente activada
   useFrame(() => {
     const currentCamConfig = CameraPosition ? CameraPosition.find((item) => item.pasos == pasoActual) : null;
-    const isGlbCamActive = currentCamConfig?.useGlbCamera === true || 
-      currentCamConfig?.cameraMode === "glb" || 
-      (!currentCamConfig?.override && (scene.getObjectByName("Camera") || (cameras && cameras.length > 0)));
+    const isGlbCamActive = currentCamConfig?.useGlbCamera === true || currentCamConfig?.cameraMode === "glb";
 
     if (!isGlbCamActive) return;
 
@@ -810,12 +829,17 @@ function ActualModel(props) {
 
 export default function Model(props) {
   const pasoActual = useEnviroment((state) => state.pasoActual);
-  const [decryptedUrl, setDecryptedUrl] = useState(null);
   const urlOriginal = getAssetPath(`/${props.id}/models/P${pasoActual}.glb`);
+  const [decryptedUrl, setDecryptedUrl] = useState(() => glbCache[urlOriginal] || null);
 
   useEffect(() => {
     let active = true;
-    setDecryptedUrl(null); // Limpiar pantalla en cambio de paso
+    if (glbCache[urlOriginal]) {
+      setDecryptedUrl(glbCache[urlOriginal]);
+      return;
+    }
+
+    setDecryptedUrl(null); // Limpiar pantalla solo si no está en caché
     
     getProtectedGLB(urlOriginal, props.id)
       .then(objUrl => {
@@ -826,9 +850,9 @@ export default function Model(props) {
       });
       
     return () => { active = false; };
-  }, [urlOriginal]);
+  }, [urlOriginal, props.id]);
 
   if (!decryptedUrl) return null; // Transición fluida durante la desencriptación
 
-  return <ActualModel {...props} decryptedUrl={decryptedUrl} />;
+  return <ActualModel key={`${props.id}_${pasoActual}_${decryptedUrl}`} {...props} decryptedUrl={decryptedUrl} />;
 }

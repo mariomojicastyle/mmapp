@@ -2641,6 +2641,30 @@ Para mantener la máxima agilidad y minimizar el consumo de tokens sin perder ni
   * Compilación de producción en `legacy-aplicativo-armado` (`npm run build` con Vite) verificada con éxito total en 5.13s y **0 errores**.
   * `npx tsc --noEmit` en `3BF` y `mario-mojica-plataforma` con **0 errores**.
 
+---
+
+### 🚀 Hito 238: Corrección Crítica de Carga y Visualización de Pasos en Visor 3D: Erradicación del Secuestro de Cámara por Nodos Residuales de Blender y Centrado Inteligente (`Model.jsx`, `Experience.jsx`) (03 de Octubre, 2026)
+- **Diagnóstico y Contexto del Bug**:
+  * Tras implementar la rotación de pantalla fluida en móviles, el usuario reportó que al avanzar de paso (por ejemplo del Paso 00 al Paso 01 o al Paso 04), la interfaz cambiaba de número de paso, pero el modelo 3D del mueble no se mostraba (pantalla en blanco/vacía mostrando únicamente la cuadrícula del suelo y el fondo gris/beige).
+- **Causa Raíz Identificada**:
+  1. *Secuestro Involuntario de Cámara por Nodos Residuales del GLB*: En el soporte de cámaras de GLB (`useFrame` a 60 FPS), existía una condición de fallback: si un paso no tenía coordenadas manuales en Supabase (`!currentCamConfig?.override`), el visor asumía que cualquier nodo llamado `"Camera"` en el `.glb` era la cámara oficial del paso.
+  2. *Cámara Inversa en Blender/Rhino*: Los archivos GLB exportados (como `P04.glb`) contenían un nodo `"Camera"` residual de Blender ubicado en `[0.5653, 0.8096, 0.9098]` y apuntando hacia el suelo en dirección `[1.267, -0.857, -0.815]`. Al entrar al paso, Three.js forzaba cuadro a cuadro la posición y el target de `OrbitControls` hacia esa dirección opuesta al mueble (dándole la espalda a la Cómoda Ravenna centrada en `[0, 0, 0]`), dejando el visor apuntando al suelo vacío.
+  3. *Falta de Centrado Geométrico en Pasos sin Coordenadas Manuales*: Los pasos sin cámara definida en el CMS quedaban desorientados sin un target colineal alineado al centro del modelo.
+  4. *Ciclo de Vida sin Clave Única*: React 19 y Drei reutilizaban componentes de modelo sin clave única (`key`), provocando desincronización de estado en el desmontaje/montaje del renderizado.
+- **Implementación Técnica de la Solución**:
+  1. *Restricción Estricta de Cámara GLB*:
+     - Se eliminó el secuestro implícito en `Model.jsx`. La cámara del GLB ahora se activa **ÚNICAMENTE** si el usuario en el CMS configuró de forma explícita `useGlbCamera: true` o `cameraMode: 'glb'`. Nodos residuales de Blender son ignorados al 100%.
+  2. *Centrado Geométrico Inteligente (Auto-Grounding & Auto-Centering)*:
+     - En pasos con coordenadas manuales o por defecto, se calcula en caliente el centro real de las geometrías con `modelBox.getCenter(modelCenter)`.
+     - La cámara y el target de `OrbitControls` (`props.orbitControlsRef.current.target.copy(targetVec)`) se alinean matemáticamente al centro físico del mueble, garantizando que el usuario SIEMPRE lo vea centrado y nítido.
+  3. *Instancias Atómicas y Desencriptación Instantánea en Memoria*:
+     - Inyección de `key={`${id}_${PasoActual}`}` en `<Model>` (`Experience.jsx`) y `key={`${props.id}_${pasoActual}_${decryptedUrl}`}` en `<ActualModel>` (`Model.jsx`).
+     - El estado `decryptedUrl` se inicializa sincrónicamente con `glbCache[urlOriginal]`, eliminando pantallas negras y retrasos cuando el paso ya fue precargado.
+- **Validación de Calidad**:
+  * Compilación de producción con Vite (`npm run build` en `legacy-aplicativo-armado`) completada limpiamente en 3.94s y **0 errores**.
+  * Modelos GLB verificados contra Supabase Storage y Netlify con código **HTTP 200 OK** y decodificación AES-256 exitosa en todos los pasos (P00 a P06).
+
+
 
 
 

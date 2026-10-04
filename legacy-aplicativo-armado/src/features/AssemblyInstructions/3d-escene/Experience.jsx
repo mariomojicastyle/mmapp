@@ -404,7 +404,7 @@ function ActualAssemblySceneViewer({ id, modelUrl, productData, decryptedUrl }) 
       </Suspense>
 
       <Suspense fallback={null}>
-        {isModelVisible && <Model id={id} modelUrl={modelUrl} orbitControlsRef={controlsRef} productData={productData} />}
+        {isModelVisible && <Model key={`${id}_${PasoActual}`} id={id} modelUrl={modelUrl} orbitControlsRef={controlsRef} productData={productData} />}
       </Suspense>
 
       <ViewportCameraManager orbitControlsRef={controlsRef} />
