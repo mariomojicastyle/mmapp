@@ -2717,11 +2717,11 @@ Para mantener la máxima agilidad y minimizar el consumo de tokens sin perder ni
        * `/draco/*` $\to$ `https://mario-mojica-armado.netlify.app/draco/:splat` (status 200, force = true).
   2. *Cabeceras CORS y Caché Inmutable (`legacy-aplicativo-armado/netlify.toml`)*:
      - Inyección de cabeceras `Access-Control-Allow-Origin: *` y `Cache-Control: public, max-age=31536000, immutable` para `/draco/*`.
-  3. *Resolución Consciente de Subpath en Visor 3D (`Model.jsx`, `Experience.jsx`)*:
-     - Detección reactiva de subpath: si `window.location.pathname.startsWith('/embed/armado')`, se define el path como `/embed/armado/draco/gltf/`, resolviéndose de forma nativa a través del proxy sin errores de origen ni 404s.
+  3. *Enlace Canónico Directo de Alta Velocidad (`Model.jsx`, `Experience.jsx`)*:
+     - Configuración de `useGLTF.setDecoderPath("https://mario-mojica-armado.netlify.app/draco/gltf/")` con origen verificado en Netlify, eliminando cualquier intermediación, salto de proxy o desvío a Next.js/Supabase.
 - **Validación de Calidad**:
-  * Compilación de producción con Vite (`npm run build` en `legacy-aplicativo-armado`) completada limpiamente en 4.40s con **0 errores**.
-  * Verificados los endpoints del decodificador con HTTP 200 OK y `Content-Type: application/wasm`.
+  * Compilación de producción con Vite (`npm run build` en `legacy-aplicativo-armado`) completada limpiamente en 4.43s con **0 errores**.
+  * Verificados los endpoints del decodificador con HTTP 200 OK y `Content-Type: application/wasm` (192 KB).
 
 
 

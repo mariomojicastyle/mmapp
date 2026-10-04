@@ -8,11 +8,9 @@ import { getAssetPath, resolveAlias, translateHerraje } from "../../../lib/asset
 import { isPieceName, extractPieceNumber, translatePieceLabel } from "../../../lib/pieceUtils.js";
 import { decryptBuffer } from "../../../lib/cryptoAES.js";
 
-// Configurar el decodificador de Draco localmente contemplando subpath /embed/armado
+// Configurar el decodificador de Draco directamente desde el origen verificado de Netlify
 if (typeof window !== "undefined") {
-  const isEmbed = window.location.pathname.startsWith("/embed/armado");
-  const dracoPath = isEmbed ? "/embed/armado/draco/gltf/" : "/draco/gltf/";
-  useGLTF.setDecoderPath(dracoPath);
+  useGLTF.setDecoderPath("https://mario-mojica-armado.netlify.app/draco/gltf/");
 }
 
 const glbCache = {}; // Cache local: Url original -> ObjectURL del Blob desencriptado
