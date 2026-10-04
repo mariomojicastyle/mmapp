@@ -8,10 +8,11 @@ import { getAssetPath, resolveAlias, translateHerraje } from "../../../lib/asset
 import { isPieceName, extractPieceNumber, translatePieceLabel } from "../../../lib/pieceUtils.js";
 import { decryptBuffer } from "../../../lib/cryptoAES.js";
 
-// Configurar el decodificador de Draco localmente para máxima velocidad en móviles sin dependencias de gstatic
+// Configurar el decodificador de Draco localmente contemplando subpath /embed/armado
 if (typeof window !== "undefined") {
-  const dracoOrigin = window.location.origin || "";
-  useGLTF.setDecoderPath(`${dracoOrigin}/draco/gltf/`);
+  const isEmbed = window.location.pathname.startsWith("/embed/armado");
+  const dracoPath = isEmbed ? "/embed/armado/draco/gltf/" : "/draco/gltf/";
+  useGLTF.setDecoderPath(dracoPath);
 }
 
 const glbCache = {}; // Cache local: Url original -> ObjectURL del Blob desencriptado

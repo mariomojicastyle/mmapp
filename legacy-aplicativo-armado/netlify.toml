@@ -6,6 +6,18 @@
   VITE_SUPABASE_URL = "https://dezaisaunoumhqpssols.supabase.co"
   VITE_SUPABASE_ANON_KEY = "sb_publishable_HyhWSanS2mhByF476p_EzA_6oq2bQOT"
 
+[[headers]]
+  for = "/draco/*"
+  [headers.values]
+    Access-Control-Allow-Origin = "*"
+    Access-Control-Allow-Methods = "GET, OPTIONS"
+    Cache-Control = "public, max-age=31536000, immutable"
+
+[[redirects]]
+  from = "/draco/*"
+  to = "/draco/:splat"
+  status = 200
+
 [[redirects]]
   from = "/assets/herrajes_compartidos/*"
   to = "https://dezaisaunoumhqpssols.supabase.co/storage/v1/object/public/insumos_manuales/_herrajes_compartidos/:splat"

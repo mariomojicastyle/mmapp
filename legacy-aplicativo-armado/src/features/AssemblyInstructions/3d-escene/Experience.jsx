@@ -8,10 +8,11 @@ import Floor from "./Floor/Floor.jsx";
 import LightingPanel from "./LightingPanel.jsx";
 import { getAssetPath } from "../../../lib/assets.js";
 
-// Configurar el decodificador de Draco localmente para eliminar latencias externas en móviles
+// Configurar el decodificador de Draco localmente contemplando subpath /embed/armado
 if (typeof window !== "undefined") {
-  const dracoOrigin = window.location.origin || "";
-  useGLTF.setDecoderPath(`${dracoOrigin}/draco/gltf/`);
+  const isEmbed = window.location.pathname.startsWith("/embed/armado");
+  const dracoPath = isEmbed ? "/embed/armado/draco/gltf/" : "/draco/gltf/";
+  useGLTF.setDecoderPath(dracoPath);
 }
 
 

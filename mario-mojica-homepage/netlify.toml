@@ -157,6 +157,18 @@
   force = true
 
 [[redirects]]
+  from = "/embed/armado/draco/*"
+  to = "https://mario-mojica-armado.netlify.app/draco/:splat"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "/draco/*"
+  to = "https://mario-mojica-armado.netlify.app/draco/:splat"
+  status = 200
+  force = true
+
+[[redirects]]
   from = "/embed/armado/:manualId/:file"
   to = "https://dezaisaunoumhqpssols.supabase.co/storage/v1/object/public/insumos_manuales/:manualId/:file"
   status = 200

@@ -2700,6 +2700,29 @@ Para mantener la máxima agilidad y minimizar el consumo de tokens sin perder ni
   * Compilación de producción con Vite (`npm run build` en `legacy-aplicativo-armado`) completada exitosamente en 4.58s con **0 errores**.
   * Binarios WASM verificados y empaquetados en `dist/draco/gltf/`.
 
+---
+
+### 🚀 Hito 240: Reparación del Enrutamiento Draco en Reverse Proxy Netlify y Cabeceras CORS (`homepage/netlify.toml`, `legacy/netlify.toml`, `Model.jsx`, `Experience.jsx`) (03 de Octubre, 2026)
+- **Diagnóstico y Contexto del Bug**:
+  * Tras el despliegue del Hito 239, el usuario reportó que el visor no cargaba ningún modelo (ni el paso 0), la barra de progreso se congelaba en el 80% y solo sonaba el audio de fondo sin mostrar el 3D.
+- **Causa Raíz Identificada**:
+  1. *Secuestro de Ruta por Proxy Inverso de Homepage*: La plataforma principal en `mariomojica.com` corre sobre Next.js (`mario-mojica-homepage`) y delega las rutas `/embed/armado/*` hacia `https://mario-mojica-armado.netlify.app/`.
+  2. Al solicitar el visor `window.location.origin + '/draco/gltf/draco_decoder.wasm'`, la petición fue a parar directamente a la app de Next.js (`https://mariomojica.com/draco/gltf/...`), que respondió **HTTP 404 Not Found** (un HTML de error en lugar del binario WebAssembly).
+  3. Cuando se intentaba a través de `/embed/armado/draco/gltf/...`, al no existir una regla explícita previa en `mario-mojica-homepage/netlify.toml`, Netlify ejecutaba la regla comodín `/embed/armado/:manualId/:category/*`, interpretando `manualId = "draco"` y enviando la petición a Supabase Storage, que retornaba **HTTP 400 Bad Request**.
+  4. Al recibir un 404/400 en lugar del decodificador WASM, Three.js DRACOLoader fallaba silenciosamente en segundo plano, impidiendo que `useGLTF` resolviera las geometrías y congelando `useProgress` indefinidamente en 80%.
+- **Implementación Técnica de la Solución**:
+  1. *Enrutamiento de Draco en Reverse Proxy (`mario-mojica-homepage/netlify.toml`)*:
+     - Añadidas reglas prioritarias antes de los comodines de manuales:
+       * `/embed/armado/draco/*` $\to$ `https://mario-mojica-armado.netlify.app/draco/:splat` (status 200, force = true).
+       * `/draco/*` $\to$ `https://mario-mojica-armado.netlify.app/draco/:splat` (status 200, force = true).
+  2. *Cabeceras CORS y Caché Inmutable (`legacy-aplicativo-armado/netlify.toml`)*:
+     - Inyección de cabeceras `Access-Control-Allow-Origin: *` y `Cache-Control: public, max-age=31536000, immutable` para `/draco/*`.
+  3. *Resolución Consciente de Subpath en Visor 3D (`Model.jsx`, `Experience.jsx`)*:
+     - Detección reactiva de subpath: si `window.location.pathname.startsWith('/embed/armado')`, se define el path como `/embed/armado/draco/gltf/`, resolviéndose de forma nativa a través del proxy sin errores de origen ni 404s.
+- **Validación de Calidad**:
+  * Compilación de producción con Vite (`npm run build` en `legacy-aplicativo-armado`) completada limpiamente en 4.40s con **0 errores**.
+  * Verificados los endpoints del decodificador con HTTP 200 OK y `Content-Type: application/wasm`.
+
 
 
 
