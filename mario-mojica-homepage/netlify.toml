@@ -169,6 +169,31 @@
   force = true
 
 [[redirects]]
+  from = "/embed/armado/hdri2/*"
+  to = "https://mario-mojica-armado.netlify.app/hdri2/:splat"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "/embed/armado/hdri/*"
+  to = "https://mario-mojica-armado.netlify.app/hdri/:splat"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "/hdri2/*"
+  to = "https://mario-mojica-armado.netlify.app/hdri2/:splat"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "/hdri/*"
+  to = "https://mario-mojica-armado.netlify.app/hdri/:splat"
+  status = 200
+  force = true
+
+
+[[redirects]]
   from = "/embed/armado/:manualId/:file"
   to = "https://dezaisaunoumhqpssols.supabase.co/storage/v1/object/public/insumos_manuales/:manualId/:file"
   status = 200
@@ -223,27 +248,5 @@
   status = 200
   force = true
 
-[[redirects]]
-  from = "/embed/armado/hdri2/*"
-  to = "https://mario-mojica-armado.netlify.app/hdri2/:splat"
-  status = 200
-  force = true
 
-[[redirects]]
-  from = "/embed/armado/hdri/*"
-  to = "https://mario-mojica-armado.netlify.app/hdri/:splat"
-  status = 200
-  force = true
-
-[[redirects]]
-  from = "/hdri2/*"
-  to = "https://mario-mojica-armado.netlify.app/hdri2/:splat"
-  status = 200
-  force = true
-
-[[redirects]]
-  from = "/hdri/*"
-  to = "https://mario-mojica-armado.netlify.app/hdri/:splat"
-  status = 200
-  force = true
 
