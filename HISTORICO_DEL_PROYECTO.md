@@ -2956,4 +2956,24 @@ Para mantener la máxima agilidad y minimizar el consumo de tokens sin perder ni
   - Compilación de producción con Vite (`npm run build` en `legacy-aplicativo-armado`) completada exitosamente en 4.27s con **0 errores**.
   - Estética homogénea en la barra superior, menú de velocidad acotado y comportamiento perceptual coherente en el botón de reproducción/pausa.
 
+---
+
+### 🚀 Hito 251: Activación Automática de Botón Play en Órbita Libre y Cálculo Dinámico de Centro de Gravedad de Piezas Activas en Pantalla (`Model.jsx`, `NavBarInferior.jsx`) (05 de Octubre, 2026)
+- **Diagnóstico y Requerimientos de Usuario**:
+  1. *Activación Automática del Botón Play al Tomar Control de la Órbita*:
+     - **Problema**: Al tocar o arrastrar la pantalla para orbitar libremente, el botón central permanecía en icono de Pausa (`||`). El usuario percibe la cámara guiada como "desacoplada", por lo que necesita ver el botón de **Play** (`▶`) como señal clara e inmediata de que puede retomar la trayectoria cinematográfica original cuando lo desee.
+     - **Solución**: En `NavBarInferior.jsx`, se priorizó la condición `if (isManualOrbit) return <IconPlay />;`. Tan pronto como el usuario toca la pantalla para orbitar, el botón se transforma instantáneamente en Play. Al presionar dicho botón Play, se invoca `window.__resumeGuidedCamera?.()`, reanudando el seguimiento automático de la cámara del GLB sin reiniciar la animación ni el audio.
+  2. *Órbita y Zoom Centrados en el Centro de Gravedad de lo Activo en Pantalla (NO del mueble final armado)*:
+     - **Problema en P03 (y pasos iniciales)**: Al aparecer la primera pieza en P03, se veía a cierta distancia. Cuando el usuario intentaba hacer zoom (pinch o rueda), la pieza se descentraba bruscamente moviéndose hacia abajo/afuera de la pantalla, y la órbita giraba alrededor del centro del mueble completo armado en su posición final.
+     - **Causa Raíz Matemática**: `controls.target` estaba forzado a `furnitureCenter` (centroide global calculado con todas las piezas en su pose final de ensamble). Dado que la primera pieza está en una coordenada distinta y más alta que el centroide del mueble completo, OrbitControls hacía dolly/zoom hacia ese punto inferior vacío, expulsando la pieza de la vista.
+     - **Solución Técnica Implementada (`getActiveOnScreenCenter`)**:
+       - Se diseñó la función `getActiveOnScreenCenter(scene, camera, fallback)` que proyecta el frustum de la cámara actual (`Frustum.setFromProjectionMatrix`) e identifica las mallas reales del mueble que están actualmente activas y visibles en pantalla (excluyendo auxiliares, mallas invisibles, y piezas con escala nula $\approx 0$ que aún no se ensamblan).
+       - Se calcula el baricentro exacto (`activeBox.getCenter()`) de las piezas visibles en el cono de visión.
+       - En `Model.jsx`, tanto al cargar el paso, como durante la reproducción guiada (`useFrame` a intervalos regulares) y al momento exacto en que el usuario toca la pantalla (`onControlsStart`), `controls.target` se ancla de forma matemática al centro de gravedad de las piezas visibles en ese segundo.
+       - **Resultado**: Al hacer zoom, la cámara se acerca directamente a la pieza activa manteniéndola perfectamente encuadrada y centrada. Al orbitar, el giro se produce concéntricamente sobre la pieza visible y no sobre el espacio vacío de ensamblajes futuros.
+- **Validación de Calidad**:
+  - Compilación de producción con Vite (`npm run build` en `legacy-aplicativo-armado`) completada exitosamente en 3.91s con **0 errores**.
+  - Control de cámara natural, zoom preciso sin descentrado y conmutación de Play/Pausa coherente.
+
+
 

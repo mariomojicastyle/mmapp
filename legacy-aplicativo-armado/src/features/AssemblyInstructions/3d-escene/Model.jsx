@@ -129,6 +129,72 @@ function cleanMeshIdentifier(rawName) {
   return name;
 }
 
+/**
+ * Calcula en tiempo real el centro de gravedad (baricentro 3D) de las mallas
+ * que están actualmente ACTIVAS y VISIBLES en pantalla (dentro del frustum de la cámara).
+ * Permite que el zoom y la órbita manual se centren en la pieza en curso y no en el mueble final vacío.
+ */
+export function getActiveOnScreenCenter(scene, camera, fallback) {
+  if (!scene || !camera) return fallback || new THREE.Vector3(0, 0.5, 0);
+
+  const projScreenMatrix = new THREE.Matrix4();
+  projScreenMatrix.multiplyMatrices(camera.projectionMatrix, camera.matrixWorldInverse);
+  const frustum = new THREE.Frustum();
+  frustum.setFromProjectionMatrix(projScreenMatrix);
+
+  const forwardDir = new THREE.Vector3();
+  camera.getWorldDirection(forwardDir);
+
+  const activeBox = new THREE.Box3();
+  let meshesFound = 0;
+
+  scene.traverse((node) => {
+    if (node.isMesh && node.geometry && !node.isCamera) {
+      const lowerName = (node.name || "").toLowerCase();
+      const isAuxiliary = lowerName.includes("floor") || lowerName.includes("piso") || 
+                          lowerName.includes("ground") || lowerName.includes("helper") || 
+                          lowerName.includes("camera") || lowerName.includes("light");
+      if (isAuxiliary) return;
+      if (node.visible === false) return;
+
+      // Descartar mallas que aún no nacen o tienen escala nula/colapsada
+      const s = node.scale;
+      if (Math.abs(s.x) < 0.005 || Math.abs(s.y) < 0.005 || Math.abs(s.z) < 0.005) {
+        return;
+      }
+
+      node.updateWorldMatrix(true, false);
+
+      if (!node.geometry.boundingBox) {
+        node.geometry.computeBoundingBox();
+      }
+      if (!node.geometry.boundingBox) return;
+
+      const meshBox = node.geometry.boundingBox.clone();
+      meshBox.applyMatrix4(node.matrixWorld);
+
+      // Comprobar si la malla intersecta el frustum de la cámara
+      if (frustum.intersectsBox(meshBox)) {
+        const meshCenter = new THREE.Vector3();
+        meshBox.getCenter(meshCenter);
+        // Debe estar delante del lente de la cámara
+        if (meshCenter.clone().sub(camera.position).dot(forwardDir) > 0.01) {
+          activeBox.union(meshBox);
+          meshesFound++;
+        }
+      }
+    }
+  });
+
+  if (meshesFound > 0 && !activeBox.isEmpty()) {
+    const center = new THREE.Vector3();
+    activeBox.getCenter(center);
+    return center;
+  }
+
+  return fallback || new THREE.Vector3(0, 0.5, 0);
+}
+
 
 function ActualModel(props) {
   // Obtiene los estados y funciones del contexto de uso
@@ -166,6 +232,8 @@ function ActualModel(props) {
   const materialsCache = useRef(new Map());
   
   const activeMeshRef = useRef(null);
+  const activeCenterRef = useRef(new THREE.Vector3(0, 0.5, 0));
+  const frameCountRef = useRef(0);
   const isTouchDevice = typeof window !== "undefined" && ('ontouchstart' in window || navigator.maxTouchPoints > 0);
   const globalPiezaHerraje = useEnviroment((state) => state.PiezaHerraje);
 
@@ -346,9 +414,9 @@ function ActualModel(props) {
           }
 
           if (props.orbitControlsRef?.current) {
-            const forwardDir = new THREE.Vector3();
-            camera.getWorldDirection(forwardDir);
-            props.orbitControlsRef.current.target.copy(camera.position).addScaledVector(forwardDir, 2.5);
+            const activeTarget = getActiveOnScreenCenter(scene, camera, modelCenter);
+            props.orbitControlsRef.current.target.copy(activeTarget);
+            activeCenterRef.current.copy(activeTarget);
             props.orbitControlsRef.current.update();
           }
         }
@@ -538,9 +606,11 @@ function ActualModel(props) {
         camera.fov = glbCamNode.fov;
       }
 
-      // Sincronizar el target de OrbitControls con el centro de gravedad del mueble
+      // Sincronizar el target de OrbitControls con el centro de gravedad de lo que está activo en pantalla
+      const initialActiveCenter = getActiveOnScreenCenter(scene, camera, modelCenter);
+      activeCenterRef.current.copy(initialActiveCenter);
       if (props.orbitControlsRef && props.orbitControlsRef.current) {
-        props.orbitControlsRef.current.target.copy(modelCenter);
+        props.orbitControlsRef.current.target.copy(initialActiveCenter);
       }
     } else if (posicionDeCamaraActual?.position) {
       camera.position.set(
@@ -581,11 +651,15 @@ function ActualModel(props) {
     if (!controls) return;
 
     const onControlsStart = () => {
-      // Si la cámara venía siendo guiada automáticamente por el GLB, inicializar el target al centroide antes de ceder el control
+      // Si la cámara venía siendo guiada automáticamente por el GLB, inicializar el target
+      // al centro de gravedad exacto de lo que está activo en pantalla antes de ceder el control
       if (!userInteractedWithCameraRef.current) {
-        const centerArr = useEnviroment.getState().modelCenter;
-        if (centerArr && controls) {
-          controls.target.set(centerArr[0], centerArr[1], centerArr[2]);
+        const centerArr = useEnviroment.getState().modelCenter || [0, 0.5, 0];
+        const furnitureCenter = new THREE.Vector3(centerArr[0], centerArr[1], centerArr[2]);
+        const activeTarget = getActiveOnScreenCenter(scene, camera, furnitureCenter);
+        if (controls && activeTarget) {
+          controls.target.copy(activeTarget);
+          activeCenterRef.current.copy(activeTarget);
           controls.update();
         }
       }
@@ -729,9 +803,14 @@ function ActualModel(props) {
         camera.updateProjectionMatrix();
       }
 
-      // Sincronizar target colinealmente hacia el centro de gravedad de la geometría
+      // Sincronizar target hacia el centro de gravedad de lo que está activo en pantalla
       if (controls) {
-        controls.target.copy(furnitureCenter);
+        frameCountRef.current++;
+        if (frameCountRef.current % 12 === 0) {
+          const activeTarget = getActiveOnScreenCenter(scene, camera, furnitureCenter);
+          activeCenterRef.current.copy(activeTarget);
+        }
+        controls.target.copy(activeCenterRef.current);
       }
     }
   });
