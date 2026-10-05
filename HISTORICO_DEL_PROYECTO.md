@@ -2774,6 +2774,39 @@ Para mantener la máxima agilidad y minimizar el consumo de tokens sin perder ni
   * Compilación de producción con Vite (`npm run build` en `legacy-aplicativo-armado`) en 4.72s con **0 errores**.
   * `npx tsc --noEmit` en `3BF` y `mario-mojica-plataforma` completado con **0 errores**.
 
+---
+
+### 🚀 Hito 243: Reparación Integral de Evaluación de Seek en AnimationMixer (P00/P01), Auto-Activación Incondicional de Cámara Animada GLB (P03-P06) y Sincronización Scrubber (`Model.jsx`, `AnimationScrubber.jsx`, Supabase `configuraciones_manual`) (04 de Octubre, 2026)
+- **Diagnóstico y Contexto del Bug**:
+  * El usuario reportó dos comportamientos específicos tras implementar el slider vertical:
+    1. En Paso 00 y Paso 01, el slider controlaba el audio pero NO movía la animación 3D de las piezas.
+    2. En Paso 03, el slider sí movía la animación y el audio, pero la cámara cinematográfica animada del GLB no se activaba.
+    3. (El Paso 02 fue excluido deliberadamente por el usuario al ser un archivo dañado previamente).
+- **Causas Raíces Técnicas Identificadas mediante Auditoría Forense**:
+  1. *Comportamiento de Three.js AnimationMixer ante Acciones Finalizadas*:
+     - En `P00.glb` la animación dura solo $8\text{ s}$ y en `P01.glb` dura $14.4\text{ s}$, mientras que en `P03.glb` dura $202.2\text{ s}$ (> 3 minutos).
+     - Al tener `clampWhenFinished = true` y `LoopOnce`, al finalizar los 8 o 14 segundos, Three.js desactiva internamente el `AnimationAction` (`isRunning() === false`).
+     - Al llamar únicamente a `act.time = t; mixer.setTime(t);`, el mixer de Three.js ignora por completo la acción si ya terminó o si aún no había arrancado (en P00 antes de presionar Iniciar).
+     - Mediante pruebas sintéticas en Node/Three.js se comprobó que `mixer.setTime(t)` daba posición estática $0$, mientras que el patrón canónico `act.reset(); act.play(); act.paused = true; act.time = validTime; mixer.update(0);` interpola y ubica las geometrías de inmediato en el milisegundo exacto en todos los escenarios (antes de iniciar, durante la marcha y tras finalizar).
+  2. *Bloqueo de Cámara Animada en Paso 03 por Fallback "manual"*:
+     - `P03.glb`, `P04.glb`, `P05.glb` y `P06.glb` contienen nodos de cámara (`Camera`) con canales animados de traslación y rotación.
+     - En `AssemblyPage.jsx`, al no haber configuración explícita en Supabase para `P03`, se asignaba `cameraMode = "manual"`.
+     - En `Model.jsx`, la condición previa exigía `cameraMode !== "manual" && hasCameraAnimation`. Al ser `"manual"`, la cámara del GLB era descartada y reemplazada por la cámara orbital por defecto.
+- **Implementación Técnica de la Solución**:
+  1. *Evaluación Canónica de Seek en `Model.jsx` (`window.__seekAnimation`)*:
+     - Implementado el ciclo `act.reset(); act.play(); act.paused = true; act.time = validTime; mixer.update(0); scene.updateMatrixWorld(true);`. Las piezas en P00 y P01 responden y se mueven instantáneamente al arrastrar el slider bidireccionalmente.
+     - Añadido `window.__resumeAnimation` para reanudar limpiamente la reproducción fluida al soltar el puntero si la experiencia está en fase activa (`phaseAudio === 'playing'`).
+     - Al arrastrar el slider hacia atrás antes del final (`targetTime < duration - 0.1`), se invoca `AnimationEndedFalse()`.
+  2. *Auto-Activación Incondicional de Cámara Animada del GLB (`Model.jsx`)*:
+     - Simplificada la condición: `isGlbCamActive = Boolean(currentCamConfig?.useGlbCamera === true || currentCamConfig?.cameraMode === "glb" || hasCameraAnimation)`.
+     - Si el GLB contiene animación de cámara (`hasCameraAnimation === true`), el visor la activa con máxima prioridad cinematográfica.
+     - En `useFrame`: la cámara animada se sincroniza tanto durante la reproducción normal (`isRunning`) como durante el arrastre interactivo del slider (`isScrubbing`), alineando colinealmente el target de `OrbitControls`.
+  3. *Actualización de Registros en Supabase Storage / PostgreSQL*:
+     - Actualizada la fila de `configuraciones_manual` de la Cómoda Ravenna para que los pasos `03`, `04`, `05` y `06` tengan formalmente `cameraMode: "glb"`, `useGlbCamera: true`, `hasGlbCamera: true`, `hasAnimatedCamera: true`.
+- **Validación de Calidad**:
+  * Compilación de producción con Vite (`npm run build` en `legacy-aplicativo-armado`) completada exitosamente en 4.08s con **0 errores**.
+  * Pruebas de simulación matemática de `AnimationMixer` en Node arrojaron coincidencia milimétrica en todos los casos de prueba.
+
 
 
 

@@ -291,27 +291,82 @@ function ActualModel(props) {
     }
   }, [animations, pasoActual]);
 
+  const currentCamConfig = CameraPosition ? CameraPosition.find((item) => item.pasos == pasoActual) : null;
+  const hasCameraAnimation = Boolean(
+    ((cameras && cameras.length > 0) || scene.getObjectByName("Camera")) &&
+    animations?.some(clip => clip.tracks?.some(track => track.name.toLowerCase().includes("camera")))
+  );
+  const isGlbCamActive = Boolean(
+    currentCamConfig?.useGlbCamera === true || 
+    currentCamConfig?.cameraMode === "glb" || 
+    hasCameraAnimation
+  );
+
   // Exponer API de búsqueda interactiva (Scrubbing / Seek) para el Slider
   useEffect(() => {
     window.__seekAnimation = (targetTime) => {
+      const validTime = Math.max(0, targetTime);
       if (actions) {
         Object.values(actions).forEach((act) => {
           if (act) {
-            act.time = Math.max(0, targetTime);
+            act.reset();
+            act.play();
+            act.paused = true;
+            act.time = validTime;
           }
         });
       }
       if (mixer) {
-        mixer.setTime(Math.max(0, targetTime));
+        mixer.update(0);
       }
       if (scene) {
         scene.updateMatrixWorld(true);
       }
+
+      // Sincronización instantánea de la cámara animada durante el seek interactivo
+      if (isGlbCamActive && scene) {
+        const glbCam = scene.getObjectByName("Camera") || (cameras && cameras.length > 0 ? cameras[0] : null);
+        if (glbCam) {
+          glbCam.updateWorldMatrix(true, false);
+          const worldPos = new THREE.Vector3();
+          const worldQuat = new THREE.Quaternion();
+          glbCam.getWorldPosition(worldPos);
+          glbCam.getWorldQuaternion(worldQuat);
+
+          camera.position.copy(worldPos);
+          camera.quaternion.copy(worldQuat);
+
+          if (glbCam.fov && Math.abs(camera.fov - glbCam.fov) > 0.01) {
+            camera.fov = glbCam.fov;
+            camera.updateProjectionMatrix();
+          }
+
+          if (props.orbitControlsRef?.current) {
+            const forwardDir = new THREE.Vector3();
+            camera.getWorldDirection(forwardDir);
+            props.orbitControlsRef.current.target.copy(camera.position).addScaledVector(forwardDir, 2.5);
+            props.orbitControlsRef.current.update();
+          }
+        }
+      }
     };
+
+    window.__resumeAnimation = () => {
+      if (actions) {
+        Object.values(actions).forEach((act) => {
+          if (act) {
+            act.paused = false;
+            act.play();
+          }
+        });
+      }
+    };
+
     return () => {
       delete window.__seekAnimation;
+      delete window.__resumeAnimation;
     };
-  }, [mixer, actions, scene]);
+  }, [mixer, actions, scene, camera, isGlbCamActive, cameras, props.orbitControlsRef]);
 
   // Configuración inicial del modelo GLB, de la animación y de la cámara
   useEffect(() => {
@@ -371,7 +426,11 @@ function ActualModel(props) {
       ((cameras && cameras.length > 0) || scene.getObjectByName("Camera")) &&
       animations?.some(clip => clip.tracks?.some(track => track.name.toLowerCase().includes("camera")))
     );
-    const isGlbCamPreferred = posicionDeCamaraActual?.useGlbCamera === true || posicionDeCamaraActual?.cameraMode === "glb" || (posicionDeCamaraActual?.cameraMode !== "manual" && hasCameraAnimation);
+    const isGlbCamPreferred = Boolean(
+      posicionDeCamaraActual?.useGlbCamera === true || 
+      posicionDeCamaraActual?.cameraMode === "glb" || 
+      hasCameraAnimation
+    );
     const useOverride = !isGlbCamPreferred && Boolean(posicionDeCamaraActual?.override && posicionDeCamaraActual?.position);
 
     // Buscar si existe un nodo de cámara en el GLB (configurada explícitamente o auto-detectada con animación)
@@ -493,7 +552,11 @@ function ActualModel(props) {
       ((cameras && cameras.length > 0) || scene.getObjectByName("Camera")) &&
       animations?.some(clip => clip.tracks?.some(track => track.name.toLowerCase().includes("camera")))
     );
-    const isGlbCamActive = currentCamConfig?.useGlbCamera === true || currentCamConfig?.cameraMode === "glb" || (currentCamConfig?.cameraMode !== "manual" && hasCameraAnimation);
+    const isGlbCamActive = Boolean(
+      currentCamConfig?.useGlbCamera === true || 
+      currentCamConfig?.cameraMode === "glb" || 
+      hasCameraAnimation
+    );
 
     if (!isGlbCamActive) return;
 
@@ -501,6 +564,12 @@ function ActualModel(props) {
     if (!glbCamNode) return;
 
     const controls = props.orbitControlsRef?.current;
+    const isScrubbing = useEnviroment.getState().isScrubbing;
+
+    // Si se está haciendo scrubbing, reiniciar la bandera de interacción manual para que la cámara siga el slider
+    if (isScrubbing) {
+      userInteractedWithCameraRef.current = false;
+    }
 
     // Verificar si alguna acción de animación se está reproduciendo activamente
     let isRunning = false;
@@ -513,8 +582,8 @@ function ActualModel(props) {
       }
     }
 
-    if (isRunning) {
-      // Mientras la animación está corriendo, deshabilitar OrbitControls para evitar colisiones
+    if (isRunning || isScrubbing) {
+      // Mientras la animación está corriendo o en scrubbing, deshabilitar OrbitControls para evitar colisiones
       if (controls && controls.enabled) {
         controls.enabled = false;
       }

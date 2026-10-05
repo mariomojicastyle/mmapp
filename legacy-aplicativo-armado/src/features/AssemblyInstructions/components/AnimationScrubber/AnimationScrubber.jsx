@@ -107,6 +107,17 @@ export default function AnimationScrubber() {
       window.__seekAudio(targetTime);
     }
 
+    // Si retrocede antes del final, restablecer el estado de animación no terminada
+    if (targetTime < duration - 0.1) {
+      useEnviroment.getState().AnimationEndedFalse();
+    }
+
+    // Reanudar suavemente la animación si la experiencia está activa en reproducción
+    const currentPhase = useEnviroment.getState().phaseAudio;
+    if (currentPhase === "playing" && window.__resumeAnimation) {
+      window.__resumeAnimation();
+    }
+
     // Ocultar el tooltip flotante tras medio segundo
     setTimeout(() => {
       setShowTooltip(false);
