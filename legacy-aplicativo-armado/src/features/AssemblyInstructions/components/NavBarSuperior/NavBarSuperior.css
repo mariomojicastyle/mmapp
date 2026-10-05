@@ -489,4 +489,35 @@ form {
 @media (min-width: 788px) and (max-width: 1024px) {
   .contenedor1 { top: 20px !important; }
 }
+
+/* Reducción ergonómica del 50% de botones en posición horizontal (Landscape móvil) */
+@media (orientation: landscape) and (max-height: 550px) {
+  .contenedor1 {
+    height: 34px !important;
+    top: 8px !important;
+  }
+  .contenedor1-1 {
+    width: auto !important;
+    gap: 8px !important;
+    justify-content: center !important;
+  }
+  .contenedor1-1 > * {
+    margin-right: 0 !important;
+  }
+  .contenedor1-1 .button {
+    height: 28px !important;
+    width: 28px !important;
+    min-width: 28px !important;
+    min-height: 28px !important;
+  }
+  .contenedor1-1 .button > svg,
+  .contenedor1-1 #info > svg,
+  .contenedor1-1 #help > svg {
+    height: 16px !important;
+    width: 16px !important;
+  }
+  .speed-btn-text, .lang-btn-text {
+    font-size: 0.65rem !important;
+  }
+}
 /* CALIBRATOR_GENERATED_END */

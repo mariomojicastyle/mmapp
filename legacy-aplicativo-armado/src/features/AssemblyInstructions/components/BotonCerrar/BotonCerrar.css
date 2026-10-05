@@ -95,4 +95,16 @@
     right: 20px !important;
   }
 }
+
+@media (orientation: landscape) and (max-height: 550px) {
+  .cerrar {
+    top: 48px !important;
+    right: 12px !important;
+    height: 28px !important;
+    width: 28px !important;
+  }
+  .cerrar span {
+    font-size: 16px !important;
+  }
+}
 /* CALIBRATOR_GENERATED_END */

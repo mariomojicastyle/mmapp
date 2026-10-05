@@ -587,4 +587,57 @@ svg circle:nth-child(2) {
 @media (min-width: 788px) and (max-width: 1024px) {
   .contenedor { bottom: calc(32px + env(safe-area-inset-bottom)) !important; }
 }
+
+/* Reducción ergonómica del 50% de botones en posición horizontal (Landscape móvil) */
+@media (orientation: landscape) and (max-height: 550px) {
+  .contenedor {
+    height: 38px !important;
+    bottom: 8px !important;
+  }
+  .SesionArriba {
+    width: auto !important;
+    gap: 8px !important;
+    margin: 0 auto !important;
+  }
+  .SesionArriba .button, 
+  .SesionArriba #left, 
+  .SesionArriba #right {
+    height: 28px !important;
+    width: 28px !important;
+    min-width: 28px !important;
+    min-height: 28px !important;
+  }
+  .SesionArriba .button > svg,
+  .SesionArriba #left > svg,
+  .SesionArriba #right > svg {
+    height: 16px !important;
+    width: 16px !important;
+  }
+  .slider {
+    margin: 0 !important;
+  }
+  .card2, .percent {
+    width: 34px !important;
+    height: 34px !important;
+    min-width: 34px !important;
+    min-height: 34px !important;
+  }
+  .percent .number h2 {
+    font-size: 16px !important;
+  }
+  .circule {
+    display: none !important;
+  }
+  .circule2 {
+    display: flex !important;
+    position: absolute !important;
+    width: 40px !important;
+    height: 40px !important;
+    top: -3px !important;
+    left: -3px !important;
+  }
+  .circule2 circle {
+    stroke-width: 5 !important;
+  }
+}
 /* CALIBRATOR_GENERATED_END */

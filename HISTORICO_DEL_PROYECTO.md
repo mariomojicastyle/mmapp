@@ -2919,3 +2919,22 @@ Para mantener la máxima agilidad y minimizar el consumo de tokens sin perder ni
 - **Validación de Calidad**:
   - Compilación de producción con Vite (`npm run build` en `legacy-aplicativo-armado`) completada exitosamente en 4.23s con **0 errores**.
   - Paneo con 2 dedos, rotación cenital libre y desaparición del letrero gris confirmados.
+
+---
+
+### 🚀 Hito 249: Anclaje y Visibilidad Permanente de Botón AR y Reducción del 50% de Botones en Orientación Horizontal (`RealidadAumentada.css`, `NavBarSuperior.css`, `NavBarInferior.css`, `BotonCerrar.css`, `AnimationScrubber.jsx`) (05 de Octubre, 2026)
+- **Diagnóstico y Requerimientos de Usuario**:
+  1. *Botón de Realidad Aumentada (AR) Fuera de Pantalla*:
+     - **Causa Raíz**: En `RealidadAumentada.css`, el contenedor `.AR` utilizaba `bottom: 120px` / `bottom: 160px` y `close-fullscreen-btn` tenía `top: 120px`. En pantallas móviles horizontales donde la altura es de apenas 320-380px, esta superposición empujaba el botón de AR hacia arriba por fuera del borde superior del viewport, viéndose cortado.
+     - **Solución**: Se definió la regla para `@media (orientation: landscape) and (max-height: 550px)` anclando `.AR` en `top: 10px !important; right: 12px !important; bottom: auto !important;`, garantizando que el botón de AR permanezca siempre 100% visible, accesible y sin recortes.
+  2. *Reducción Ergonómica del 50% de Botones en Orientación Horizontal*:
+     - **Causa Raíz**: En horizontal, los botones estándar de 52px ocupaban más del 35% de la reducida altura vertical disponible, obstaculizando la vista del mueble y el proceso de armado.
+     - **Solución Estética y Funcional**:
+       - **Barra Superior (`NavBarSuperior.css`)**: Botones reducidos a `28px x 28px` con iconos de `16px x 16px` y contenedor de `34px` de altura en `top: 8px`.
+       - **Barra Inferior (`NavBarInferior.css`)**: Botones laterales reducidos a `28px x 28px` con iconos de `16px x 16px`, círculo central del paso reducido a `34px x 34px` con texto de `16px` y anillo de progreso a escala, anclado en `bottom: 8px`.
+       - **Botones Flotantes y Cierre**: Botones AR, Home y Cerrar ajustados a `28-30px`.
+       - **AnimationScrubber**: Altura mínima adaptada a `170px` (`min-h-[170px] max-h-[480px]`) para escalar armónicamente al 54% del viewport sin desbordarse.
+- **Validación de Calidad**:
+  - Compilación de producción con Vite (`npm run build` en `legacy-aplicativo-armado`) completada exitosamente en 4.31s con **0 errores**.
+  - Interfaz panorámica despejada en más de un 40% de área libre central y botón de AR perfectamente encuadrado.
+

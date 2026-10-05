@@ -400,4 +400,45 @@
     bottom: auto !important;
   }
 }
+
+/* Modo Horizontal (Landscape en móviles/tablets con altura reducida) */
+@media (orientation: landscape) and (max-height: 550px) {
+  .AR {
+    position: fixed !important;
+    top: 10px !important;
+    bottom: auto !important;
+    right: 12px !important;
+    left: auto !important;
+    gap: 8px !important;
+    z-index: 990 !important;
+    transform: none !important;
+  }
+  .ar-btn-pc, .home-btn-pc {
+    width: 30px !important;
+    height: 30px !important;
+    min-width: 30px !important;
+    min-height: 30px !important;
+    max-width: 30px !important;
+    max-height: 30px !important;
+  }
+  .ar-btn-pc .material-symbols-outlined, .home-btn-pc .material-symbols-outlined {
+    font-size: 17px !important;
+  }
+  .close-fullscreen-btn {
+    position: fixed !important;
+    top: 48px !important;
+    right: 12px !important;
+    left: auto !important;
+    bottom: auto !important;
+    width: 30px !important;
+    height: 30px !important;
+    min-width: 30px !important;
+    min-height: 30px !important;
+    max-width: 30px !important;
+    max-height: 30px !important;
+  }
+  .close-fullscreen-btn .material-symbols-outlined {
+    font-size: 17px !important;
+  }
+}
 /* CALIBRATOR_GENERATED_END */

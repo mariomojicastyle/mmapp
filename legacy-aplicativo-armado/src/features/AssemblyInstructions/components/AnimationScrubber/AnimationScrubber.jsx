@@ -205,7 +205,7 @@ export default function AnimationScrubber() {
     >
       {/* Contenedor Esbelto y Minimalista (Sin cápsula exterior pesada) */}
       <div 
-        className="relative w-8 sm:w-9 h-[54vh] min-h-[290px] max-h-[500px] py-1 flex flex-col items-center justify-between select-none"
+        className="relative w-8 sm:w-9 h-[54vh] min-h-[170px] max-h-[480px] py-1 flex flex-col items-center justify-between select-none"
       >
         {/* Indicador superior (Duración Total) */}
         <span 
