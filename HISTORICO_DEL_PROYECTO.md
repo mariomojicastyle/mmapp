@@ -2833,6 +2833,29 @@ Para mantener la máxima agilidad y minimizar el consumo de tokens sin perder ni
   * Compilación de producción con Vite (`npm run build` en `legacy-aplicativo-armado`) completada exitosamente en 4.01s con **0 errores**.
   * Cero ciclos de eventos infinitos y sincronización reactiva garantizada en móviles y PC.
 
+---
+
+### 🚀 Hito 245: Unificación de Duración de Experiencia (Audio & 3D) y Control Bidireccional Completo de Locución en Scrubber (`useEnviroment.js`, `AudioPlayer.jsx`, `Model.jsx`, `AnimationScrubber.jsx`) (04 de Octubre, 2026)
+- **Diagnóstico y Contexto**:
+  * El usuario observó que en pasos como el Paso 00 la animación 3D dura solo $8\text{ s}$, mientras que el audio de locución explicativa dura $54\text{ s}$.
+  * Al limitar el slider a la duración de la animación ($8\text{ s}$), el usuario no podía controlar ni explorar temporalmente la mayor parte de la explicación narrada.
+- **Implementación Técnica de la Solución**:
+  1. *Unificación de Duración Máxima en el Store Global (`useEnviroment.js`)*:
+     - Implementada la fórmula maestra de escala temporal:
+       $$D_{\text{total}} = \max(D_{\text{anim}}, D_{\text{audio}})$$
+     - Agregados los estados desacoplados `animDuration` y `audioDuration`.
+     - Funciones `SetAnimDuration` y `SetAudioDuration` que actualizan reactivamente `animationDuration` tomando el valor máximo entre el modelo 3D y el audio narrado.
+  2. *Sincronización Dual Audio-Visual en `AudioPlayer.jsx`*:
+     - Inyección de listeners `loadedmetadata`, `durationchange` y `canplay` que transmiten la duración real del archivo de sonido hacia el store.
+     - En `ontimeupdate`: si no hay interacción de arrastre activo (`!isScrubbing`), el tiempo del audio actualiza el scrubber a 60 FPS y se conecta a `window.__syncAnimationToTime(ct)`.
+  3. *Comportamiento Cinemático Híbrido en `Model.jsx`*:
+     - Para $t \le D_{\text{anim}}$: las piezas de madera y herrajes se animan y ensamblan en sincronía exacta con la narración.
+     - Para $t > D_{\text{anim}}$: la animación 3D permanece congelada de manera limpia y estable en su posición final completada (`clampWhenFinished`), mientras el audio continúa explicando recomendaciones, tips y cuidados.
+     - Si el usuario arrastra el slider hacia atrás ($t < D_{\text{anim}}$), la animación 3D retrocede instantáneamente a ese fotograma exacto.
+- **Validación de Calidad**:
+  * Compilación de producción con Vite (`npm run build` en `legacy-aplicativo-armado`) completada exitosamente en 4.21s con **0 errores**.
+  * Control temporal pleno de voz y 3D garantizado.
+
 
 
 

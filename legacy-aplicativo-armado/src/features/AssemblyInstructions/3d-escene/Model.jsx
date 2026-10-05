@@ -278,19 +278,20 @@ function ActualModel(props) {
     };
   }, [actions, mixer, AnimationEndedTrue, AnimationEndedFalse, pasoActual]);
 
-  // Sincronizar duración total del clip para el Scrubber de animación
+  // Sincronizar duración del modelo 3D con el store global
   useEffect(() => {
     if (animations && animations.length > 0) {
       let maxDur = 0;
       animations.forEach((a) => {
         if (a.duration && a.duration > maxDur) maxDur = a.duration;
       });
-      useEnviroment.getState().SetAnimationDuration(maxDur);
+      useEnviroment.getState().SetAnimDuration(maxDur);
     } else {
-      useEnviroment.getState().SetAnimationDuration(0);
+      useEnviroment.getState().SetAnimDuration(0);
     }
   }, [animations, pasoActual]);
 
+  const animDuration = useEnviroment((state) => state.animDuration);
   const currentCamConfig = CameraPosition ? CameraPosition.find((item) => item.pasos == pasoActual) : null;
   const hasCameraAnimation = Boolean(
     ((cameras && cameras.length > 0) || scene.getObjectByName("Camera")) &&
@@ -306,13 +307,16 @@ function ActualModel(props) {
   useEffect(() => {
     window.__seekAnimation = (targetTime) => {
       const validTime = Math.max(0, targetTime);
+      const effectiveAnimDur = animDuration > 0 ? animDuration : validTime;
+      const animTargetTime = Math.min(validTime, effectiveAnimDur);
+
       if (actions) {
         Object.values(actions).forEach((act) => {
           if (act) {
             act.reset();
             act.play();
             act.paused = true;
-            act.time = validTime;
+            act.time = animTargetTime;
           }
         });
       }
@@ -352,11 +356,31 @@ function ActualModel(props) {
     };
 
     window.__resumeAnimation = () => {
+      const currentTime = useEnviroment.getState().animationCurrentTime || 0;
+      const effectiveAnimDur = animDuration > 0 ? animDuration : currentTime;
       if (actions) {
         Object.values(actions).forEach((act) => {
           if (act) {
-            act.paused = false;
-            act.play();
+            if (currentTime < effectiveAnimDur - 0.05) {
+              act.paused = false;
+              act.play();
+            } else {
+              // Si ya superó la duración de la animación, permanece estático al final
+              act.paused = true;
+            }
+          }
+        });
+      }
+    };
+
+    // Sincronizador llamado por el audio mientras avanza
+    window.__syncAnimationToTime = (time) => {
+      const effectiveAnimDur = animDuration > 0 ? animDuration : time;
+      if (time >= effectiveAnimDur && actions) {
+        Object.values(actions).forEach((act) => {
+          if (act && !act.paused) {
+            act.paused = true;
+            act.time = effectiveAnimDur;
           }
         });
       }
@@ -365,8 +389,9 @@ function ActualModel(props) {
     return () => {
       delete window.__seekAnimation;
       delete window.__resumeAnimation;
+      delete window.__syncAnimationToTime;
     };
-  }, [mixer, actions, scene, camera, isGlbCamActive, cameras, props.orbitControlsRef]);
+  }, [mixer, actions, scene, camera, isGlbCamActive, cameras, props.orbitControlsRef, animDuration]);
 
   // Configuración inicial del modelo GLB, de la animación y de la cámara
   useEffect(() => {

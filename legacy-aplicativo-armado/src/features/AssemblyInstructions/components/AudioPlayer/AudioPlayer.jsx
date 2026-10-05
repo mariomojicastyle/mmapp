@@ -127,9 +127,21 @@ export default function AudioPlayer({ id: propId }) {
       }
     };
 
+    const handleLoadedMetadata = () => {
+      if (audio.duration && Number.isFinite(audio.duration) && audio.duration > 0) {
+        useEnviroment.getState().SetAudioDuration(audio.duration);
+      }
+    };
+
+    audio.addEventListener("loadedmetadata", handleLoadedMetadata);
+    audio.addEventListener("durationchange", handleLoadedMetadata);
+    audio.addEventListener("canplay", handleLoadedMetadata);
     audio.addEventListener("canplay", handleCanPlay);
     audio.addEventListener("canplaythrough", handleCanPlay);
     return () => {
+      audio.removeEventListener("loadedmetadata", handleLoadedMetadata);
+      audio.removeEventListener("durationchange", handleLoadedMetadata);
+      audio.removeEventListener("canplay", handleLoadedMetadata);
       audio.removeEventListener("canplay", handleCanPlay);
       audio.removeEventListener("canplaythrough", handleCanPlay);
     };
@@ -223,8 +235,21 @@ export default function AudioPlayer({ id: propId }) {
 
     if (audioRef.current) {
       audioRef.current.ontimeupdate = () => {
-        if (audioRef.current && audioRef.current.ended) {
+        if (!audioRef.current) return;
+        if (audioRef.current.ended) {
           AudioEndedTrue();
+        }
+
+        const isScrubbing = useEnviroment.getState().isScrubbing;
+        if (!isScrubbing) {
+          const ct = audioRef.current.currentTime;
+          useEnviroment.getState().SetAnimationCurrentTime(ct);
+          if (typeof window.__updateScrubberUI === "function") {
+            window.__updateScrubberUI(ct);
+          }
+          if (typeof window.__syncAnimationToTime === "function") {
+            window.__syncAnimationToTime(ct);
+          }
         }
       };
 

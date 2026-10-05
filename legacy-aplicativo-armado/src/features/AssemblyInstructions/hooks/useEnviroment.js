@@ -71,6 +71,8 @@ export default create(
       AnimationEnded: false,//Variable de animación 3D finalizada
       colorObjetoTocado: "#ec4899",//Color de objeto tocado / resaltado
 
+      animDuration: 0,
+      audioDuration: 0,
       animationDuration: 0,
       animationCurrentTime: 0,
       isScrubbing: false,
@@ -141,7 +143,7 @@ export default create(
       
       NamePieza: (name) => {set((state) => {return { PiezaHerraje: name[0] };});},
       NuevosPasos: (pasos) => {set((state) => {return { pasos: pasos };});},
-      CambiarModelo: (paso) => {set((state) => {return { pasoActual: paso, PiezaHerraje: "" };});},
+      CambiarModelo: (paso) => {set(() => ({ pasoActual: paso, PiezaHerraje: "", animDuration: 0, audioDuration: 0, animationDuration: 0, animationCurrentTime: 0 }));},
       CargarPasoInicial: (paso) => {set((state) => {return { pasoInicial: paso };});},
 
       CargarPasoInicial: (paso) => {set((state) => {return { pasoInicial: paso };});},
@@ -223,7 +225,21 @@ export default create(
       AnimationEndedFalse: () => set((state) => ({ AnimationEnded: false })),
       AnimationEndedTrue: () => set((state) => ({ AnimationEnded: true })),
 
-      SetAnimationDuration: (dur) => set(() => ({ animationDuration: dur })),
+      SetAnimDuration: (dur) => set((state) => {
+        const d = Number.isFinite(dur) && dur > 0 ? dur : 0;
+        const total = Math.max(d, state.audioDuration || 0);
+        return { animDuration: d, animationDuration: total };
+      }),
+      SetAudioDuration: (dur) => set((state) => {
+        const d = Number.isFinite(dur) && dur > 0 ? dur : 0;
+        const total = Math.max(state.animDuration || 0, d);
+        return { audioDuration: d, animationDuration: total };
+      }),
+      SetAnimationDuration: (dur) => set((state) => {
+        const d = Number.isFinite(dur) && dur > 0 ? dur : 0;
+        const total = Math.max(d, state.audioDuration || 0);
+        return { animDuration: d, animationDuration: total };
+      }),
       SetAnimationCurrentTime: (time) => set(() => ({ animationCurrentTime: time })),
       SetIsScrubbing: (scrubbing) => set(() => ({ isScrubbing: scrubbing })),
 
