@@ -254,22 +254,15 @@ export default function NavBarInferior({ id, data }) {
   }, [Parpadeo]);
 
   const PlayButton = () => {
-    // Si el usuario tomó el control para orbitar libremente, retomar la cinemática guiada sin reiniciar
-    if (isManualOrbit) {
-      if (typeof window.__resumeGuidedCamera === "function") {
-        window.__resumeGuidedCamera();
-      }
-      if (phaseAudio !== "playing") {
-        PlayingAudio();
-      }
-      return;
-    }
-
     // Se verifica los estados de la animación para alternar entre pausa y reproducción
     if (phaseAudio === "playing") {
       PausedAudio();
     } else if (phaseAudio === "paused") {
       PlayingAudio();
+      // Si el usuario estaba en órbita libre manual, al reanudar retoma también la cinemática guiada
+      if (isManualOrbit && typeof window.__resumeGuidedCamera === "function") {
+        window.__resumeGuidedCamera();
+      }
     } else if (phaseAudio === "reset" && resetAction === true) {
       ResetBoolTrue();
       PlayingAudio();
@@ -282,17 +275,14 @@ export default function NavBarInferior({ id, data }) {
     if (isScrubbing) {
       return <IconPause />;
     }
-    // Si está en modo órbita libre manual, mostrar el botón Play para retomar la cámara
-    if (isManualOrbit) {
-      return <IconPlay />;
+    // Si la animación o el audio se está reproduciendo, SIEMPRE mostrar el botón de PAUSA (dos barras verticales)
+    if (phaseAudio === "playing") {
+      return <IconPause />;
     }
     if (phaseAudio === "reset" && resetAction === true) {
       return <IconReset />;
-    } else if (phaseAudio === "playing") {
-      return <IconPause />;
-    } else {
-      return <IconPlay />;
     }
+    return <IconPlay />;
   };
 
   return (

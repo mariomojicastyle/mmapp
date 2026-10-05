@@ -267,7 +267,7 @@ export default function NavBarSuperior({ id, data }) {
 
             {showSpeedMenu && (
               <div className="speed-menu" onClick={(e) => e.stopPropagation()}>
-                {[0.5, 0.75, 1.0, 1.25, 1.5, 2.0].map((rate) => (
+                {[0.5, 0.75, 1.0, 1.25, 1.5].map((rate) => (
                   <button
                     key={rate}
                     className={`speed-menu-item ${playbackRate === rate ? "speed-menu-item--active" : ""}`}

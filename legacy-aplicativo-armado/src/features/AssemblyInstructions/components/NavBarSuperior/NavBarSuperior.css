@@ -345,40 +345,9 @@ form {
   }
 }
 
-/* ─── Círculo concéntrico para los botones de velocidad e idioma ────── */
+/* ─── Botones de velocidad e idioma limpios e idénticos al resto ────── */
 #btnSpeed, #btnLang {
   position: relative;
-}
-
-#btnSpeed::before, #btnLang::before {
-  content: "";
-  position: absolute;
-  width: 39px;
-  height: 39px;
-  border: 3px solid currentColor;
-  border-radius: 50%;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  pointer-events: none;
-  box-sizing: border-box;
-  transition: var(--transition-smooth);
-}
-
-@media (max-width: 787px) {
-  #btnSpeed::before, #btnLang::before {
-    width: 31px;
-    height: 31px;
-    border-width: 2.4px;
-  }
-}
-
-@media (max-width: 320px) {
-  #btnSpeed::before, #btnLang::before {
-    width: 25px;
-    height: 25px;
-    border-width: 2px;
-  }
 }
 
 /* ─── Contenedor y Menú de Idioma ──────────────────────────────────── */

@@ -2938,3 +2938,22 @@ Para mantener la máxima agilidad y minimizar el consumo de tokens sin perder ni
   - Compilación de producción con Vite (`npm run build` en `legacy-aplicativo-armado`) completada exitosamente en 4.31s con **0 errores**.
   - Interfaz panorámica despejada en más de un 40% de área libre central y botón de AR perfectamente encuadrado.
 
+---
+
+### 🚀 Hito 250: Erradicación del Aura Blanca en Botones 1x y PT, Supresión de Velocidad 2X y Consistencia de Icono de Pausa Durante Reproducción (`NavBarSuperior.css`, `NavBarSuperior.jsx`, `NavBarInferior.jsx`) (05 de Octubre, 2026)
+- **Diagnóstico y Solución de Requerimientos de Usuario**:
+  1. *Eliminación del Aura Blanca Exterior en Botones de Velocidad ("1x") e Idioma ("PT")*:
+     - **Causa Raíz**: En `NavBarSuperior.css`, existían pseudoelementos `#btnSpeed::before, #btnLang::before` con dimensión rígida de `39px x 39px`, `border: 3px solid currentColor; border-radius: 50%`. Al haberse reducido el diámetro de los botones a 28px en orientación horizontal, este aro concéntrico de 39px quedaba desbordado flotando por fuera del perímetro de los botones, proyectando la apariencia de un halo o aura blanca gruesa.
+     - **Solución**: Se eliminaron por completo las reglas `#btnSpeed::before` y `#btnLang::before`. Los botones `1x` y `PT` ahora lucen limpios, mates e idénticos al resto de la barra superior.
+  2. *Supresión de la Opción de Velocidad "2X"*:
+     - **Causa Raíz**: A velocidad 2.0x, la dicción del sintetizador de voz se vuelve ininteligible para un operario o usuario final armando el mueble.
+     - **Solución**: En `NavBarSuperior.jsx`, se retiró el valor `2.0` de las opciones del menú de velocidad (`[0.5, 0.75, 1.0, 1.25, 1.5]`), limitando la aceleración a un máximo comprensible y ergonómico de 1.5x.
+  3. *Garantía de Icono de Pausa (||) Activo Durante Toda la Reproducción*:
+     - **Causa Raíz**: En `NavBarInferior.jsx`, se priorizaba la condición `if (isManualOrbit) return <IconPlay />;` por encima de la comprobación del audio. Cuando el usuario interactuaba para orbitar la escena, el botón central cambiaba al triángulo de Play a pesar de que las piezas y el audio se encontraban en plena marcha.
+     - **Solución**: Se refactorizó `renderPausePlayIcon` estableciendo que siempre que la animación o locución esté en curso (`phaseAudio === "playing"`), el botón devuelva incondicionalmente `<IconPause />` (dos barras verticales). El botón Play solo se exhibe cuando el usuario pausa explícitamente (`phaseAudio === "paused"`) o al reiniciar el paso.
+     - Al presionar Play desde el estado pausado en órbita manual, el sistema no solo reanuda el audio sino que invoca suavemente `window.__resumeGuidedCamera?.()`, cediendo el control de regreso a la cinemática guiada del GLB.
+- **Validación de Calidad**:
+  - Compilación de producción con Vite (`npm run build` en `legacy-aplicativo-armado`) completada exitosamente en 4.27s con **0 errores**.
+  - Estética homogénea en la barra superior, menú de velocidad acotado y comportamiento perceptual coherente en el botón de reproducción/pausa.
+
+
