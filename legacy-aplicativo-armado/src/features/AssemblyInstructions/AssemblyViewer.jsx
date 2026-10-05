@@ -207,9 +207,10 @@ export default function AssemblyViewer({ productData, steps, id }) {
       <PanelInicial />
       
       {/* The Canvas fills the parent */}
-      <div className="absolute inset-0 z-0">
+      <div className="absolute inset-0 z-0 touch-none" style={{ touchAction: "none" }}>
         <Canvas
           shadows={sombras}
+          style={{ touchAction: "none" }}
           gl={{
             antialias: true,
             toneMapping: toneMappingMap[lightingConfig.toneMapping] || THREE.ACESFilmicToneMapping,

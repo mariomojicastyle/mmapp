@@ -400,11 +400,19 @@ function ActualAssemblySceneViewer({ id, modelUrl, productData, decryptedUrl }) 
         makeDefault
         ref={controlsRef}
         target={cameraTarget ? new THREE.Vector3(cameraTarget[0], cameraTarget[1], cameraTarget[2]) : undefined}
+        enablePan={true}
+        screenSpacePanning={true}
+        panSpeed={1.0}
+        zoomSpeed={0.8}
         autoRotateSpeed={0.85}
-        zoomSpeed={0.75}
-        maxDistance={7}
-        minPolarAngle={Math.PI / 5}
-        maxPolarAngle={Math.PI / 2 - 0.05}
+        maxDistance={12}
+        minDistance={0.15}
+        minPolarAngle={0.01}
+        maxPolarAngle={Math.PI / 2 + 0.12}
+        touches={{
+          ONE: THREE.TOUCH.ROTATE,
+          TWO: THREE.TOUCH.DOLLY_PAN,
+        }}
       />
 
       <Suspense fallback={null}>

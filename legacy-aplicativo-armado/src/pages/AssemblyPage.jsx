@@ -369,69 +369,6 @@ const AssemblyPage = () => {
     fetchProduct();
   }, [id]);
 
-  // Efecto para activar el modo pantalla completa (fullscreen) al rotar a landscape en móviles
-  useEffect(() => {
-    // Detectar si es un dispositivo móvil
-    const isMobile = /Mobi|Android|iPhone|iPad|iPod/i.test(navigator.userAgent) || 
-                     (window.matchMedia && window.matchMedia("(pointer: coarse)").matches);
-    
-    if (!isMobile) return;
-
-    const handleFullscreenRequest = () => {
-      if (!document.fullscreenElement) {
-        document.documentElement.requestFullscreen().catch((err) => {
-          console.warn("Fullscreen automático bloqueado, esperando interacción táctil del usuario:", err);
-        });
-      }
-    };
-
-    const handleFullscreenExit = () => {
-      if (document.fullscreenElement) {
-        document.exitFullscreen().catch((err) => {
-          console.warn("Error al salir de fullscreen:", err);
-        });
-      }
-    };
-
-    let lastLandscape = null;
-
-    const checkOrientation = () => {
-      const isLandscape = window.matchMedia("(orientation: landscape)").matches;
-      if (lastLandscape === isLandscape) return; // Evitar ejecuciones redundantes si no cambió
-      lastLandscape = isLandscape;
-
-      if (isLandscape) {
-        handleFullscreenRequest();
-        window.addEventListener("touchstart", handleFullscreenRequest, { once: true });
-        window.addEventListener("click", handleFullscreenRequest, { once: true });
-      } else {
-        handleFullscreenExit();
-        window.removeEventListener("touchstart", handleFullscreenRequest);
-        window.removeEventListener("click", handleFullscreenRequest);
-      }
-    };
-
-    // Escuchar exclusivamente eventos genuinos de orientación física de pantalla
-    if (screen?.orientation?.addEventListener) {
-      screen.orientation.addEventListener("change", checkOrientation);
-    } else {
-      window.addEventListener("orientationchange", checkOrientation);
-    }
-
-    // Chequeo inicial
-    checkOrientation();
-
-    return () => {
-      if (screen?.orientation?.removeEventListener) {
-        screen.orientation.removeEventListener("change", checkOrientation);
-      } else {
-        window.removeEventListener("orientationchange", checkOrientation);
-      }
-      window.removeEventListener("touchstart", handleFullscreenRequest);
-      window.removeEventListener("click", handleFullscreenRequest);
-    };
-  }, []);
-
   const [isPortraitBlocked, setIsPortraitBlocked] = useState(false);
 
   // Efecto para verificar orientación si está activa la vista horizontal obligatoria

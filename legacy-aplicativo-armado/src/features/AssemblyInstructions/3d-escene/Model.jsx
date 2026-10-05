@@ -581,13 +581,16 @@ function ActualModel(props) {
     if (!controls) return;
 
     const onControlsStart = () => {
+      // Si la cámara venía siendo guiada automáticamente por el GLB, inicializar el target al centroide antes de ceder el control
+      if (!userInteractedWithCameraRef.current) {
+        const centerArr = useEnviroment.getState().modelCenter;
+        if (centerArr && controls) {
+          controls.target.set(centerArr[0], centerArr[1], centerArr[2]);
+          controls.update();
+        }
+      }
       userInteractedWithCameraRef.current = true;
       useEnviroment.getState().SetIsManualOrbit(true);
-      const centerArr = useEnviroment.getState().modelCenter;
-      if (centerArr && controls) {
-        controls.target.set(centerArr[0], centerArr[1], centerArr[2]);
-        controls.update();
-      }
     };
 
     controls.addEventListener('start', onControlsStart);
@@ -691,10 +694,8 @@ function ActualModel(props) {
     }
 
     if (!isGlbCamActive) {
-      // Si no es paso con cámara GLB animada, OrbitControls siempre gira sobre el centro de gravedad del mueble
-      if (controls) {
-        controls.target.copy(furnitureCenter);
-      }
+      // Si el paso no tiene cámara animada en el GLB, OrbitControls opera con total libertad
+      // (el target ya fue fijado al centro de gravedad al cargar el paso, permitiendo rotación, zoom y desplazamiento libre con 2 dedos).
       return;
     }
 
@@ -709,11 +710,9 @@ function ActualModel(props) {
 
     // Si el usuario tomó el control para orbitar libremente:
     if (userInteractedWithCameraRef.current) {
-      // Asegurar que el punto de giro sea el centro de gravedad de la geometría
-      if (controls) {
-        controls.target.copy(furnitureCenter);
-      }
-      // NO sobreescribir la posición de la cámara: dejar que el usuario gire libremente
+      // Dejar que OrbitControls gestione la cámara de forma completamente libre
+      // (rotación con 1 dedo, zoom y paneo/desplazamiento con 2 dedos).
+      // NUNCA sobreescribir la posición ni el target de la cámara aquí para permitir reencuadre libre.
       // ¡Y la animación de las piezas y el audio de la locución continúan reproduciéndose fluidamente!
     } else {
       // MODO CÁMARA GUIADA AUTOMÁTICA DEL GLB:

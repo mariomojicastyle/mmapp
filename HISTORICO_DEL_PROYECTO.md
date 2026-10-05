@@ -2899,3 +2899,23 @@ Para mantener la máxima agilidad y minimizar el consumo de tokens sin perder ni
   - Compilación de producción en Vite (`npm run build` en `legacy-aplicativo-armado`) completada en 4.34s con **0 errores**.
   - Validación TypeScript (`npx tsc --noEmit` en `mario-mojica-plataforma`) completada con **0 errores**.
   - Sincronización orbital y centrado geométrico comprobados.
+
+---
+
+### 🚀 Hito 248: Erradicación del Cartel Gris de Chrome, Desbloqueo Angular Vertical y Activación de Desplazamiento (Pan) con 2 Dedos (`AssemblyPage.jsx`, `Experience.jsx`, `Model.jsx`, `AssemblyViewer.jsx`) (05 de Octubre, 2026)
+- **Diagnóstico y Solución de Requerimientos**:
+  1. *Eliminación del Cartel Gris por Defecto de Chrome*:
+     - **Causa Raíz**: En `AssemblyPage.jsx`, se invocaba `document.documentElement.requestFullscreen()` al rotar la pantalla a horizontal. Chrome en Android despliega obligatoriamente un banner nativo del sistema operativo advirtiendo cómo salir de la pantalla completa, obstruyendo la interfaz.
+     - **Solución**: Se eliminó la llamada a `requestFullscreen()`. El contenedor web ya ocupa el 100vw $\times$ 100vh del viewport de manera inmersiva natural, impidiendo que Chrome muestre el cartel gris.
+  2. *Desbloqueo Angular Vertical (Subir y Reencuadrar la Vista)*:
+     - **Causa Raíz**: En `Experience.jsx`, `<OrbitControls>` tenía configurado `minPolarAngle={Math.PI / 5}` ($36^\circ$). Esto impedía subir la cámara para ver el mueble desde arriba o cenitalmente, sintiéndose bloqueado en el eje vertical.
+     - **Solución**: Se reconfiguró `minPolarAngle={0.01}` y `maxPolarAngle={Math.PI / 2 + 0.12}`, otorgando un rango vertical completo de $90^\circ$ cenital hasta ras de suelo para inspeccionar el mueble desde cualquier ángulo superior.
+  3. *Habilitación de Desplazamiento (Pan) con 2 Dedos*:
+     - **Causa Raíz**: En `Model.jsx`, la función `useFrame` forzaba `controls.target.copy(furnitureCenter)` 60 veces por segundo en pasos fijos (Paso 4) y al interactuar. Dado que el Pan de OrbitControls desplaza conjuntamente `camera.position` y `controls.target`, esta sobreescritura a 60 FPS anulaba de inmediato cualquier desplazamiento con 2 dedos.
+     - **Solución**:
+       - En `Experience.jsx`, se habilitó `enablePan={true}`, `screenSpacePanning={true}`, `panSpeed={1.0}` y `touches={{ ONE: THREE.TOUCH.ROTATE, TWO: THREE.TOUCH.DOLLY_PAN }}`.
+       - En `Model.jsx`, se eliminó la sobreescritura destructiva de `controls.target` en `useFrame` tanto para pasos estáticos como en órbita interactiva manual.
+       - En `AssemblyViewer.jsx`, se aplicó `touchAction: "none"` al contenedor y Canvas para que el navegador no intercepte los gestos multitouch de dos dedos.
+- **Validación de Calidad**:
+  - Compilación de producción con Vite (`npm run build` en `legacy-aplicativo-armado`) completada exitosamente en 4.23s con **0 errores**.
+  - Paneo con 2 dedos, rotación cenital libre y desaparición del letrero gris confirmados.
