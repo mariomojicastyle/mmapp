@@ -108,6 +108,7 @@ export default function NavBarInferior({ id, data }) {
   const toogle = useEnviroment((state) => state.show);
   const idioma = useEnviroment((state) => state.idioma);
   const isScrubbing = useEnviroment((state) => state.isScrubbing);
+  const isManualOrbit = useEnviroment((state) => state.isManualOrbit);
 
   const texts = {
     es: {
@@ -253,6 +254,17 @@ export default function NavBarInferior({ id, data }) {
   }, [Parpadeo]);
 
   const PlayButton = () => {
+    // Si el usuario tomó el control para orbitar libremente, retomar la cinemática guiada sin reiniciar
+    if (isManualOrbit) {
+      if (typeof window.__resumeGuidedCamera === "function") {
+        window.__resumeGuidedCamera();
+      }
+      if (phaseAudio !== "playing") {
+        PlayingAudio();
+      }
+      return;
+    }
+
     // Se verifica los estados de la animación para alternar entre pausa y reproducción
     if (phaseAudio === "playing") {
       PausedAudio();
@@ -269,6 +281,10 @@ export default function NavBarInferior({ id, data }) {
   const renderPausePlayIcon = () => {
     if (isScrubbing) {
       return <IconPause />;
+    }
+    // Si está en modo órbita libre manual, mostrar el botón Play para retomar la cámara
+    if (isManualOrbit) {
+      return <IconPlay />;
     }
     if (phaseAudio === "reset" && resetAction === true) {
       return <IconReset />;

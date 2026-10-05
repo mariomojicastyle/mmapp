@@ -2877,10 +2877,25 @@ Para mantener la máxima agilidad y minimizar el consumo de tokens sin perder ni
   * Compilación de producción con Vite (`npm run build` en `legacy-aplicativo-armado`) completada exitosamente en 4.24s con **0 errores**.
   * Scrubbing continuo en P00 validado, control ergonómico ampliado, transparencia dinámica y cinemática orbital simétrica aseguradas.
 
+---
 
-
-
-
-
-
-
+### 🚀 Hito 247: Slider Ultraligero con Thumb Centrado, Centro de Gravedad de Estado Final Ensamblado, Órbita Libre Continua con Play sin Reiniciar y Gobernanza de Modo Horizontal en CMS (`Model.jsx`, `Experience.jsx`, `AnimationScrubber.jsx`, `AssemblyPage.jsx`, `detalle-proyecto-modal.tsx`) (05 de Octubre, 2026)
+- **Diagnóstico y Requerimientos Clave del Usuario**:
+  1. *Diseño Ultraligero del Slider y Centrado Matemático*:
+     - Se eliminó la apariencia de cápsula pesada exterior (fondos opacos y bordes gruesos), dejando exclusivamente la línea vertical esbelta de avance y las etiquetas numéricas de tiempo (`0s` y duración total).
+     - Se centró con exactitud matemática el círculo de manipulación (`thumb`) respecto al track vertical mediante `left: 50%`, `transform: translate(-50%, 50%)`, eliminando el desplazamiento visual a la izquierda (`-ml-1.5`).
+  2. *Giro Alrededor del Centro de Gravedad de la Geometría en Estado Final (NO en 0,0,0)*:
+     - **Problema**: Grasshopper modela los muebles en el cuadrante positivo ($+X, +Y$), por lo que el origen $(0,0,0)$ correspondía a una esquina exterior. Además, calcular el centroide en $t=0$ deformaba la caja delimitadora al considerar piezas flotantes en proceso de aproximación.
+     - **Solución Matemática Determinista**: En `Model.jsx`, se evalúa temporalmente el mixer en el tiempo final de la animación ($t = D_{\text{anim}}$), forzando `scene.updateWorldMatrix(true, true)` para ubicar todas las mallas en su **pose de ensamble final definitivo**. Se calcula la caja envolvente exclusiva de mallas (`Box3`), obteniendo el baricentro exacto de la masa del mueble ensamblado (`modelCenter`). Posteriormente, el mixer se restablece a $t=0$ para que la animación comience normalmente.
+     - En `Experience.jsx`, `<OrbitControls target={cameraTarget} />` se alimenta directamente con `modelCenter`, garantizando que la cámara siempre orbite sobre el centro de gravedad real del mueble y no sobre el origen $(0,0,0)$.
+  3. *Órbita Libre en Todos los Pasos con Reanudación mediante Play (Sin Reiniciar)*:
+     - En cualquier paso con cámara animada guiada del GLB, al tocar o arrastrar la pantalla, el usuario toma inmediatamente el control manual orbital de la cámara (`isManualOrbit = true`).
+     - **Crucial**: La animación 3D de las piezas y la locución de audio **continúan reproduciéndose fluidamente en vivo sin pausarse**.
+     - El botón central inferior se convierte en `<IconPlay />`. Al presionarlo, invoca `window.__resumeGuidedCamera?.()`, devolviendo la cámara a su cinemática guiada del GLB en el segundo actual, sin reiniciar jamás la animación ni el audio.
+  4. *Gobernanza de "Modo Horizontal Obligatorio" desde el CMS y Overlay Móvil*:
+     - En `detalle-proyecto-modal.tsx`, se integró un botón toggle en cápsula pura `rounded-full` al inicio de la sección *"1. Modelos GLB de los Pasos"*, con persistencia en Supabase en `configuraciones_manual.bloqueo_horizontal_activo`.
+     - En `AssemblyPage.jsx`, cuando la opción está activa y el usuario abre el visor en un móvil o tablet en posición vertical (`portrait`), se despliega un elegante overlay a pantalla completa con smartphone animado rotando a horizontal y mensajes explicativos bilingües. Al rotar el teléfono a horizontal, el overlay desaparece automáticamente.
+- **Validación de Calidad**:
+  - Compilación de producción en Vite (`npm run build` en `legacy-aplicativo-armado`) completada en 4.34s con **0 errores**.
+  - Validación TypeScript (`npx tsc --noEmit` en `mario-mojica-plataforma`) completada con **0 errores**.
+  - Sincronización orbital y centrado geométrico comprobados.

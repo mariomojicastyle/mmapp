@@ -70,7 +70,9 @@ function ActualAssemblySceneViewer({ id, modelUrl, productData, decryptedUrl }) 
   // Actualizar el target de la cámara usando el centro de gravedad del mueble o datos de 'alturas' del JSON
   useEffect(() => {
     let customTarget = null;
-    if (alturas && alturas.length > 0) {
+    if (modelCenter && Array.isArray(modelCenter)) {
+      customTarget = modelCenter;
+    } else if (alturas && alturas.length > 0) {
       const altData = alturas.find(a => a.paso === PasoActual);
       if (altData && altData.target && (altData.target[0] !== 0 || altData.target[1] !== 0 || altData.target[2] !== 0)) {
         customTarget = [altData.target[0], altData.target[1], altData.target[2]];
@@ -78,8 +80,10 @@ function ActualAssemblySceneViewer({ id, modelUrl, productData, decryptedUrl }) 
     }
     if (customTarget) {
       setCameraTarget(customTarget);
-    } else if (modelCenter) {
-      setCameraTarget(modelCenter);
+      if (controlsRef.current) {
+        controlsRef.current.target.set(customTarget[0], customTarget[1], customTarget[2]);
+        controlsRef.current.update();
+      }
     }
   }, [PasoActual, alturas, modelCenter]);
 
@@ -395,9 +399,9 @@ function ActualAssemblySceneViewer({ id, modelUrl, productData, decryptedUrl }) 
       <OrbitControls
         makeDefault
         ref={controlsRef}
+        target={cameraTarget ? new THREE.Vector3(cameraTarget[0], cameraTarget[1], cameraTarget[2]) : undefined}
         autoRotateSpeed={0.85}
         zoomSpeed={0.75}
-        target={cameraTarget}
         maxDistance={7}
         minPolarAngle={Math.PI / 5}
         maxPolarAngle={Math.PI / 2 - 0.05}

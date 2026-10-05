@@ -249,6 +249,7 @@ const AssemblyPage = () => {
             modoArranqueMovil: configData.modo_arranque_movil || "gamma",
             homeButtonActivo: configData.home_button_activo === true,
             homeUrl: configData.home_url || "https://mariomojica.com",
+            bloqueoHorizontalActivo: configData.bloqueo_horizontal_activo === true,
             
             // Insumos del CMS para resolución dinámica
             imagenHerramientas: configData.imagen_herramientas,
@@ -431,6 +432,39 @@ const AssemblyPage = () => {
     };
   }, []);
 
+  const [isPortraitBlocked, setIsPortraitBlocked] = useState(false);
+
+  // Efecto para verificar orientación si está activa la vista horizontal obligatoria
+  useEffect(() => {
+    if (!productData?.bloqueoHorizontalActivo) {
+      setIsPortraitBlocked(false);
+      return;
+    }
+
+    const checkOrientation = () => {
+      const isMobile = /Mobi|Android|iPhone|iPad|iPod/i.test(navigator.userAgent) || 
+                       (window.matchMedia && window.matchMedia("(pointer: coarse)").matches) ||
+                       window.innerWidth < 850;
+      const isPortrait = window.innerHeight > window.innerWidth;
+      setIsPortraitBlocked(Boolean(isMobile && isPortrait));
+    };
+
+    checkOrientation();
+    window.addEventListener("resize", checkOrientation);
+    window.addEventListener("orientationchange", checkOrientation);
+    if (screen?.orientation?.addEventListener) {
+      screen.orientation.addEventListener("change", checkOrientation);
+    }
+
+    return () => {
+      window.removeEventListener("resize", checkOrientation);
+      window.removeEventListener("orientationchange", checkOrientation);
+      if (screen?.orientation?.removeEventListener) {
+        screen.orientation.removeEventListener("change", checkOrientation);
+      }
+    };
+  }, [productData?.bloqueoHorizontalActivo]);
+
   if (loading) {
     return (
       <div className="flex flex-col h-screen w-screen items-center justify-center bg-white relative">
@@ -470,6 +504,62 @@ const AssemblyPage = () => {
 
   return (
     <div className="w-screen h-screen bg-gray-900 overflow-hidden relative">
+      {/* Overlay Bloqueante de Orientación Horizontal */}
+      {isPortraitBlocked && (
+        <div 
+          className="fixed inset-0 z-[99999] flex flex-col items-center justify-center p-6 text-center select-none"
+          style={{
+            background: "radial-gradient(circle at center, #131B2E 0%, #0B0F17 100%)",
+            color: "#FFFFFF"
+          }}
+        >
+          {/* Animación del Smartphone Rotando */}
+          <div className="relative w-24 h-24 mb-6 flex items-center justify-center">
+            <div className="absolute inset-0 rounded-full bg-cyan-500/10 blur-xl animate-pulse" />
+            <svg 
+              className="w-16 h-16 text-cyan-400 animate-pulse" 
+              viewBox="0 0 24 24" 
+              fill="none" 
+              stroke="currentColor" 
+              strokeWidth="1.75" 
+              strokeLinecap="round" 
+              strokeLinejoin="round"
+            >
+              <rect x="5" y="2" width="14" height="20" rx="3" ry="3" />
+              <line x1="12" y1="18" x2="12.01" y2="18" strokeWidth="2.5" />
+            </svg>
+            <svg 
+              className="absolute -top-1 -right-1 w-8 h-8 text-amber-400 animate-spin" 
+              style={{ animationDuration: "3s" }}
+              viewBox="0 0 24 24" 
+              fill="none" 
+              stroke="currentColor" 
+              strokeWidth="2" 
+              strokeLinecap="round" 
+              strokeLinejoin="round"
+            >
+              <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67" />
+            </svg>
+          </div>
+
+          {/* Badge en Cápsula Pura */}
+          <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-cyan-500/15 border border-cyan-500/30 text-cyan-300 text-xs font-bold uppercase tracking-wider mb-4 shadow-sm">
+            <span>📱</span> Modo Horizontal Requerido
+          </div>
+
+          {/* Textos explicativos */}
+          <h2 className="text-xl font-bold mb-2 tracking-tight text-white">
+            Gira tu dispositivo a posición horizontal
+          </h2>
+          <p className="text-sm text-gray-300 max-w-xs mb-3 font-medium leading-relaxed">
+            Este manual 3D interactivo está diseñado para ser visualizado en orientación panorámica.
+          </p>
+          <p className="text-xs text-gray-400 max-w-xs italic">
+            Por favor, vire seu celular para a posição horizontal para uma melhor visualização.
+          </p>
+        </div>
+      )}
+
       <AssemblyViewer 
         productData={productData}
         steps={productData.pasos} 

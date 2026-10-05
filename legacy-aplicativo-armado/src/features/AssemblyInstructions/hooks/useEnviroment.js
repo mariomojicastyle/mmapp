@@ -77,6 +77,7 @@ export default create(
       animationDuration: 0,
       animationCurrentTime: 0,
       isScrubbing: false,
+      isManualOrbit: false, // Variable activa cuando el usuario toma el control manual de órbita libre
 
       CloudOneTime: true,//Valida que los tootlips de los paneles solo se activen una vez.
 
@@ -243,6 +244,7 @@ export default create(
       }),
       SetAnimationCurrentTime: (time) => set(() => ({ animationCurrentTime: time })),
       SetIsScrubbing: (scrubbing) => set(() => ({ isScrubbing: scrubbing })),
+      SetIsManualOrbit: (val) => set(() => ({ isManualOrbit: val })),
 
       SetColorObjetoTocado: (color) => set(() => ({ colorObjetoTocado: color })),
 

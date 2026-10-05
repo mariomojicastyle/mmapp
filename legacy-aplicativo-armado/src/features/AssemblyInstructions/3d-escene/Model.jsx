@@ -461,24 +461,44 @@ function ActualModel(props) {
     // Buscar si existe un nodo de cámara en el GLB (configurada explícitamente o auto-detectada con animación)
     const glbCamNode = isGlbCamPreferred ? (scene.getObjectByName("Camera") || (cameras && cameras.length > 0 ? cameras[0] : null)) : null;
 
-    // Calcular el centro geométrico y centro de gravedad real del mueble recorriendo exclusivamente sus mallas
+    // Calcular el centro geométrico y centro de gravedad real del mueble en su ESTADO FINAL ENSAMBLADO
+    const effectiveAnimDur = animDuration > 0 ? animDuration : 0;
+    if (mixer && effectiveAnimDur > 0) {
+      mixer.setTime(effectiveAnimDur);
+    }
+    scene.updateWorldMatrix(true, true);
+
     const modelBox = new THREE.Box3();
     let hasMesh = false;
     scene.traverse((node) => {
-      if (node.isMesh && node.geometry) {
-        if (!node.geometry.boundingBox) {
-          node.geometry.computeBoundingBox();
+      if (node.isMesh && node.geometry && !node.isCamera) {
+        const lowerName = (node.name || "").toLowerCase();
+        const isAuxiliary = lowerName.includes("floor") || lowerName.includes("piso") || lowerName.includes("ground") || lowerName.includes("helper") || lowerName.includes("camera") || lowerName.includes("light");
+        if (!isAuxiliary) {
+          if (!node.geometry.boundingBox) {
+            node.geometry.computeBoundingBox();
+          }
+          if (node.geometry.boundingBox) {
+            const meshBox = node.geometry.boundingBox.clone();
+            meshBox.applyMatrix4(node.matrixWorld);
+            modelBox.union(meshBox);
+            hasMesh = true;
+          }
         }
-        const meshBox = node.geometry.boundingBox.clone();
-        meshBox.applyMatrix4(node.matrixWorld);
-        modelBox.union(meshBox);
-        hasMesh = true;
       }
     });
+
     const modelCenter = new THREE.Vector3(0, 0.5, 0);
     if (hasMesh && !modelBox.isEmpty()) {
       modelBox.getCenter(modelCenter);
     }
+
+    // Restaurar el mixer al inicio para comenzar la animación desde t = 0
+    if (mixer) {
+      mixer.setTime(0);
+    }
+    scene.updateWorldMatrix(true, true);
+
     useEnviroment.getState().SetModelCenter([modelCenter.x, modelCenter.y, modelCenter.z]);
 
     if (useOverride && posicionDeCamaraActual?.position) {
@@ -488,7 +508,7 @@ function ActualModel(props) {
         posicionDeCamaraActual.position.z
       );
 
-      // Si existe un target en alturas, hacer lookAt y sincronizar OrbitControls
+      // Usar centro de gravedad del mueble ensamblado como target de órbita
       let targetVec = modelCenter;
       if (alturas && alturas.length > 0) {
         const altData = alturas.find(a => a.paso === pasoActual);
@@ -550,9 +570,9 @@ function ActualModel(props) {
     if (props.orbitControlsRef && props.orbitControlsRef.current) {
       props.orbitControlsRef.current.update();
     }
-  }, [scene, StartApp, actions, camera, CameraPosition, pasoActual, props.orbitControlsRef]);
+  }, [scene, StartApp, actions, camera, CameraPosition, pasoActual, props.orbitControlsRef, animDuration, mixer]);
 
-  // Bandera para permitir órbita manual sólo si el usuario interactúa activamente con el mouse/touch
+  // Bandera para permitir órbita manual del usuario
   const userInteractedWithCameraRef = useRef(false);
 
   // Escuchar cuando el usuario interactúa manualmente con OrbitControls
@@ -562,6 +582,12 @@ function ActualModel(props) {
 
     const onControlsStart = () => {
       userInteractedWithCameraRef.current = true;
+      useEnviroment.getState().SetIsManualOrbit(true);
+      const centerArr = useEnviroment.getState().modelCenter;
+      if (centerArr && controls) {
+        controls.target.set(centerArr[0], centerArr[1], centerArr[2]);
+        controls.update();
+      }
     };
 
     controls.addEventListener('start', onControlsStart);
@@ -570,16 +596,22 @@ function ActualModel(props) {
     };
   }, [props.orbitControlsRef?.current]);
 
-  // Si cambia el paso, se resetea la animación o se da Play, retomar la cinemática de la cámara
+  // Exponer API global para retomar la cámara guiada del GLB cuando se presiona Play
+  useEffect(() => {
+    window.__resumeGuidedCamera = () => {
+      userInteractedWithCameraRef.current = false;
+      useEnviroment.getState().SetIsManualOrbit(false);
+    };
+    return () => {
+      delete window.__resumeGuidedCamera;
+    };
+  }, []);
+
+  // Si cambia el paso o se resetea la animación, retomar la cinemática de la cámara
   useEffect(() => {
     userInteractedWithCameraRef.current = false;
+    useEnviroment.getState().SetIsManualOrbit(false);
   }, [pasoActual, ResetBool]);
-
-  useEffect(() => {
-    if (phaseAudio === 'playing') {
-      userInteractedWithCameraRef.current = false;
-    }
-  }, [phaseAudio]);
 
   // Sincronización continua en vivo cuadro a cuadro
   useFrame(() => {
@@ -635,7 +667,7 @@ function ActualModel(props) {
       }
     }
 
-    // 2. Cinemática de cámara animada del GLB
+    // 2. Cinemática de cámara animada del GLB y Órbita Libre
     const currentCamConfig = CameraPosition ? CameraPosition.find((item) => item.pasos == pasoActual) : null;
     const hasCameraAnimation = Boolean(
       ((cameras && cameras.length > 0) || scene.getObjectByName("Camera")) &&
@@ -647,40 +679,44 @@ function ActualModel(props) {
       hasCameraAnimation
     );
 
-    if (!isGlbCamActive) return;
+    const controls = props.orbitControlsRef?.current;
+
+    // Obtener centro de gravedad real del mueble
+    const centerArr = useEnviroment.getState().modelCenter || [0, 0.5, 0];
+    const furnitureCenter = new THREE.Vector3(centerArr[0], centerArr[1], centerArr[2]);
+
+    // Garantizar que OrbitControls esté siempre habilitado para permitir toque en cualquier segundo
+    if (controls && !controls.enabled) {
+      controls.enabled = true;
+    }
+
+    if (!isGlbCamActive) {
+      // Si no es paso con cámara GLB animada, OrbitControls siempre gira sobre el centro de gravedad del mueble
+      if (controls) {
+        controls.target.copy(furnitureCenter);
+      }
+      return;
+    }
 
     const glbCamNode = scene.getObjectByName("Camera") || (cameras && cameras.length > 0 ? cameras[0] : null);
     if (!glbCamNode) return;
 
-    const controls = props.orbitControlsRef?.current;
-
-    // Si se está haciendo scrubbing, reiniciar la bandera de interacción manual para que la cámara siga el slider
+    // Si se está haciendo scrubbing, reiniciar bandera de interacción para que la cámara siga el slider
     if (isScrubbing) {
       userInteractedWithCameraRef.current = false;
+      useEnviroment.getState().SetIsManualOrbit(false);
     }
 
-    // Verificar si alguna acción de animación se está reproduciendo activamente
-    let isRunning = false;
-    if (actions) {
-      for (const act of Object.values(actions)) {
-        if (act && act.isRunning()) {
-          isRunning = true;
-          break;
-        }
+    // Si el usuario tomó el control para orbitar libremente:
+    if (userInteractedWithCameraRef.current) {
+      // Asegurar que el punto de giro sea el centro de gravedad de la geometría
+      if (controls) {
+        controls.target.copy(furnitureCenter);
       }
-    }
-
-    // Obtener centro de gravedad del mueble calculado
-    const centerArr = useEnviroment.getState().modelCenter || [0, 0.5, 0];
-    const furnitureCenter = new THREE.Vector3(centerArr[0], centerArr[1], centerArr[2]);
-
-    if (isRunning || isScrubbing) {
-      // Mientras la animación está corriendo o en scrubbing, deshabilitar OrbitControls para evitar colisiones
-      if (controls && controls.enabled) {
-        controls.enabled = false;
-      }
-
-      // Sincronizar posición, orientación y fov en coordenadas de mundo
+      // NO sobreescribir la posición de la cámara: dejar que el usuario gire libremente
+      // ¡Y la animación de las piezas y el audio de la locución continúan reproduciéndose fluidamente!
+    } else {
+      // MODO CÁMARA GUIADA AUTOMÁTICA DEL GLB:
       const worldPos = new THREE.Vector3();
       const worldQuat = new THREE.Quaternion();
       glbCamNode.getWorldPosition(worldPos);
@@ -694,37 +730,9 @@ function ActualModel(props) {
         camera.updateProjectionMatrix();
       }
 
-      // Sincronizar el target de OrbitControls con el centro de gravedad del mueble
+      // Sincronizar target colinealmente hacia el centro de gravedad de la geometría
       if (controls) {
         controls.target.copy(furnitureCenter);
-      }
-    } else {
-      // Animación pausada o finalizada:
-      // Si el usuario aún NO ha tomado el mouse/touch para orbitar manualmente,
-      // la cámara PERMANECE donde está el GLB
-      if (!userInteractedWithCameraRef.current) {
-        const worldPos = new THREE.Vector3();
-        const worldQuat = new THREE.Quaternion();
-        glbCamNode.getWorldPosition(worldPos);
-        glbCamNode.getWorldQuaternion(worldQuat);
-
-        camera.position.copy(worldPos);
-        camera.quaternion.copy(worldQuat);
-
-        if (glbCamNode.fov && Math.abs(camera.fov - glbCamNode.fov) > 0.01) {
-          camera.fov = glbCamNode.fov;
-          camera.updateProjectionMatrix();
-        }
-
-        // Fijar el centro de rotación exactamente en el centro de gravedad del mueble
-        if (controls) {
-          controls.target.copy(furnitureCenter);
-        }
-      }
-
-      // Habilitar OrbitControls para permitir órbita libre perfecta sobre el centro de gravedad del mueble
-      if (controls && !controls.enabled) {
-        controls.enabled = true;
       }
     }
   });

@@ -2,7 +2,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unused-vars, react-hooks/exhaustive-deps */
 
 import React, { useState, useEffect, useRef } from "react"
-import { X, Download, Paperclip, Image, FileText, Music, Cpu, Layers, Plus, Trash2, Loader2, Eye, ExternalLink, ChevronDown, ChevronUp, UploadCloud, CheckCircle2, AlertCircle, AlertTriangle, FileSpreadsheet, Box, Boxes, Coins, Hammer, Wrench, Sparkles, Volume2, Play, Square, Mic, Library, Camera, Video, HelpCircle, BookOpen, ScanLine, Gauge, FastForward } from "lucide-react"
+import { X, Download, Paperclip, Image, FileText, Music, Cpu, Layers, Plus, Trash2, Loader2, Eye, ExternalLink, ChevronDown, ChevronUp, UploadCloud, CheckCircle2, AlertCircle, AlertTriangle, FileSpreadsheet, Box, Boxes, Coins, Hammer, Wrench, Sparkles, Volume2, Play, Square, Mic, Library, Camera, Video, HelpCircle, BookOpen, ScanLine, Gauge, FastForward, Smartphone } from "lucide-react"
 import { motion, AnimatePresence } from "framer-motion"
 import { cn } from "@/lib/utils"
 import { usePermissions } from "@/hooks/use-permissions"
@@ -368,6 +368,7 @@ export function DetalleProyectoModal({ isOpen, onClose, proyecto, onUpdate }: De
   const [modoArranqueMovil, setModoArranqueMovil] = useState("gamma")
   const [homeButtonActivo, setHomeButtonActivo] = useState(false)
   const [homeUrl, setHomeUrl] = useState("https://mariomojica.com")
+  const [bloqueoHorizontalActivo, setBloqueoHorizontalActivo] = useState(false)
   
   // Opciones de personalización de Tipografía avanzadas
   const [fontTitle, setFontTitle] = useState("Inter")
@@ -1288,6 +1289,7 @@ export function DetalleProyectoModal({ isOpen, onClose, proyecto, onUpdate }: De
               setModoArranqueMovil(data.modo_arranque_movil || "gamma")
               setHomeButtonActivo(data.home_button_activo || false)
               setHomeUrl(data.home_url || "https://mariomojica.com")
+              setBloqueoHorizontalActivo(data.bloqueo_horizontal_activo === true)
               
               // Cargar valores tipográficos (o dejar fallbacks)
               setFontTitle(data.font_title || "Inter")
@@ -3018,6 +3020,7 @@ export function DetalleProyectoModal({ isOpen, onClose, proyecto, onUpdate }: De
           modo_arranque_movil: modoArranqueMovil,
           home_button_activo: homeButtonActivo,
           home_url: homeUrl,
+          bloqueo_horizontal_activo: bloqueoHorizontalActivo,
           
           // Guardar campos de tipografía en BD
           font_title: fontTitle,
@@ -3396,36 +3399,67 @@ export function DetalleProyectoModal({ isOpen, onClose, proyecto, onUpdate }: De
                       
                       {openSection === "glb" && (
                         <div className="p-4 bg-surface-container-lowest/50 border-t border-outline-variant/10 space-y-3.5">
-                          {/* Botón toggle de cámara */}
-                          <div className="flex items-center justify-between pb-1 border-b border-outline-variant/5">
+                          {/* Botones de control de la sección 1 */}
+                          <div className="flex items-center justify-between pb-1.5 border-b border-outline-variant/10 flex-wrap gap-2">
                             <span className="text-[10px] text-on-surface-variant italic font-medium">Asigna la posición de la cámara del visor 3D para cada paso.</span>
-                            <button
-                              type="button"
-                              onClick={() => {
-                                const newVal = cameraOverlayActive ? 'off' : 'on'
-                                localStorage.setItem('cameraOverlay', newVal)
-                                setCameraOverlayActive(!cameraOverlayActive)
-                                window.dispatchEvent(new StorageEvent('storage', {
-                                  key: 'cameraOverlay', newValue: newVal
-                                }))
-                                if (realtimeChannelRef.current) {
-                                  realtimeChannelRef.current.send({
-                                    type: 'broadcast',
-                                    event: 'toggle-feature',
-                                    payload: { codigoManual, key: 'cameraOverlay', value: newVal }
-                                  })
-                                }
-                              }}
-                              className={cn(
-                                "flex items-center gap-1.5 text-[11px] font-bold px-2.5 py-1 rounded-md border transition-all duration-200",
-                                cameraOverlayActive
-                                  ? "bg-teal-500/10 border-teal-500/30 text-teal-400 hover:bg-teal-500/20"
-                                  : "bg-surface-container border-outline-variant/20 text-on-surface-variant hover:text-on-surface"
-                              )}
-                            >
-                              <Camera className="h-3.5 w-3.5" />
-                              {cameraOverlayActive ? '🟢 Guía de Cámara Activa' : '⚪ Activar Guía de Cámara'}
-                            </button>
+                            <div className="flex items-center gap-2">
+                              {/* Botón Horizontal Obligatorio gobernado desde el CMS */}
+                              <button
+                                type="button"
+                                onClick={async () => {
+                                  const newVal = !bloqueoHorizontalActivo
+                                  setBloqueoHorizontalActivo(newVal)
+                                  try {
+                                    const supabaseClient = createClient()
+                                    await supabaseClient
+                                      .from("configuraciones_manual")
+                                      .update({ bloqueo_horizontal_activo: newVal })
+                                      .eq("proyecto_id", proyecto.id)
+                                    setSuccessMsg(newVal ? "📱 Vista Horizontal Obligatoria ACTIVADA ✓" : "📱 Vista Horizontal Libre ✓")
+                                  } catch (err) {
+                                    console.error("Error guardando bloqueo_horizontal_activo:", err)
+                                  }
+                                }}
+                                className={cn(
+                                  "flex items-center gap-1.5 text-[11px] font-bold px-3 py-1 rounded-full border transition-all duration-200",
+                                  bloqueoHorizontalActivo
+                                    ? "bg-amber-500/15 border-amber-500/40 text-amber-400 hover:bg-amber-500/25 shadow-sm"
+                                    : "bg-surface-container border-outline-variant/20 text-on-surface-variant hover:text-on-surface"
+                                )}
+                                title="Exige que el visor 3D en dispositivos móviles se utilice obligatoriamente en orientación horizontal"
+                              >
+                                <Smartphone className={cn("h-3.5 w-3.5 rotate-90", bloqueoHorizontalActivo ? "text-amber-400" : "text-on-surface-variant")} />
+                                {bloqueoHorizontalActivo ? "📱 Horizontal Obligatorio: ACTIVO" : "📱 Horizontal: Libre"}
+                              </button>
+
+                              {/* Botón toggle de cámara */}
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  const newVal = cameraOverlayActive ? 'off' : 'on'
+                                  localStorage.setItem('cameraOverlay', newVal)
+                                  setCameraOverlayActive(!cameraOverlayActive)
+                                  window.dispatchEvent(new StorageEvent('storage', {
+                                    key: 'cameraOverlay', newValue: newVal
+                                  }))
+                                  if (realtimeChannelRef.current) {
+                                    realtimeChannelRef.current.send({
+                                      type: 'broadcast',
+                                      event: 'toggle-feature',
+                                      payload: { codigoManual, key: 'cameraOverlay', value: newVal }
+                                    })
+                                  }
+                                }}
+                                className={cn(
+                                  "flex items-center gap-1.5 text-[11px] font-bold px-3 py-1 rounded-full border transition-all duration-200",
+                                  cameraOverlayActive
+                                    ? "bg-teal-500/10 border-teal-500/30 text-teal-400 hover:bg-teal-500/20"
+                                    : "bg-surface-container border-outline-variant/20 text-on-surface-variant hover:text-on-surface"
+                                )}
+                              >
+                                <Camera className="h-3.5 w-3.5" />
+                                {cameraOverlayActive ? '🟢 Guía de Cámara Activa' : '⚪ Activar Guía de Cámara'}
+                              </button>
                             <button
                               type="button"
                               onClick={() => {
@@ -3452,6 +3486,7 @@ export function DetalleProyectoModal({ isOpen, onClose, proyecto, onUpdate }: De
                             >
                               ☀️ {lightingEditorActive ? '🟢 Editor de Iluminación Activo' : '⚪ Editor de Iluminación'}
                             </button>
+                            </div>
                           </div>
 
                           <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2">

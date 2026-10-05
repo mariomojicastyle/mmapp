@@ -2,11 +2,9 @@ import React, { useRef, useState, useEffect, useCallback } from "react";
 import useEnviroment from "../../hooks/useEnviroment.js";
 
 /**
- * AnimationScrubber: Control deslizante vertical tipo video scrubber de alta precisión
- * Permite adelantar, atrasar e interactuar cuadro a cuadro con la animación 3D y audio.
- * Ergonomía: Altura expandida de pantalla con track vertical largo para máxima sensibilidad.
- * Estilo de Marca: Vidrio translúcido dinámico según personalización de UI (--surface / --nubes-bg-opacity).
- * Formas: Cápsula pura (rounded-full) con pulgar táctil de precisión circular.
+ * AnimationScrubber: Control deslizante vertical ultraligero y minimalista
+ * Muestra únicamente la línea de avance y los indicadores numéricos sin cápsula envolvente pesada.
+ * Pulgar táctil matemáticamente centrado (left: 50%, translate(-50%, 50%)) sobre la línea de avance.
  */
 export default function AnimationScrubber() {
   const duration = useEnviroment((state) => state.animationDuration);
@@ -40,7 +38,7 @@ export default function AnimationScrubber() {
         fillRef.current.style.height = `${pct}%`;
       }
       if (thumbRef.current) {
-        thumbRef.current.style.bottom = `calc(${pct}% - 12px)`;
+        thumbRef.current.style.bottom = `${pct}%`;
       }
     };
     return () => {
@@ -205,37 +203,34 @@ export default function AnimationScrubber() {
       style={{ WebkitTapHighlightColor: "transparent" }}
       aria-label="Controlador de tiempo de animación"
     >
-      {/* Contenedor Cápsula Vertical Oficial con Estética de Vidrio Dinámico */}
+      {/* Contenedor Esbelto y Minimalista (Sin cápsula exterior pesada) */}
       <div 
-        className="relative w-10 sm:w-11 h-[54vh] min-h-[290px] max-h-[500px] py-3.5 rounded-full flex flex-col items-center justify-between transition-all duration-200"
-        style={{
-          background: "color-mix(in srgb, var(--primary, #0088AA) var(--nubes-bg-opacity, 20%), transparent)",
-          backdropFilter: "var(--glass-blur, blur(12px))",
-          WebkitBackdropFilter: "var(--glass-blur, blur(12px))",
-          border: "1px solid color-mix(in srgb, var(--primary, #0088AA) 40%, transparent)",
-          boxShadow: "0 10px 30px rgba(0, 0, 0, 0.45), 0 0 15px var(--primary-glow, rgba(0, 136, 170, 0.2))"
-        }}
+        className="relative w-8 sm:w-9 h-[54vh] min-h-[290px] max-h-[500px] py-1 flex flex-col items-center justify-between select-none"
       >
         {/* Indicador superior (Duración Total) */}
         <span 
-          className="text-[10px] font-mono font-bold select-none"
+          className="text-[10px] font-mono font-bold select-none drop-shadow-[0_1px_3px_rgba(0,0,0,0.9)]"
           style={{ color: "var(--secondary, #ffffff)" }}
         >
           {formatTime(duration)}
         </span>
 
-        {/* Track central vertical interactivo de alta resolución táctil */}
+        {/* Track central vertical interactivo con área táctil invisible amplia */}
         <div 
           ref={trackRef}
           onPointerDown={handlePointerDown}
           onPointerMove={handlePointerMove}
           onPointerUp={handlePointerUp}
           onPointerCancel={handlePointerUp}
-          className="relative w-2.5 h-[calc(100%-54px)] my-auto rounded-full cursor-pointer touch-none flex justify-center"
+          className="relative w-1.5 h-[calc(100%-44px)] my-auto rounded-full cursor-pointer touch-none flex justify-center items-end"
           style={{
-            backgroundColor: "rgba(255, 255, 255, 0.15)"
+            backgroundColor: "rgba(255, 255, 255, 0.25)",
+            boxShadow: "0 0 4px rgba(0, 0, 0, 0.4)"
           }}
         >
+          {/* Zona táctil expandida invisible para facilitar toque suave en móviles */}
+          <div className="absolute inset-y-0 -inset-x-3 cursor-pointer touch-none" />
+
           {/* Barra de progreso rellena desde el fondo con color de estilo primario */}
           <div 
             ref={fillRef}
@@ -243,18 +238,20 @@ export default function AnimationScrubber() {
             style={{ 
               height: `${percentage}%`,
               backgroundColor: "var(--primary, #0088AA)",
-              boxShadow: "0 0 8px var(--primary-glow, rgba(0, 136, 170, 0.4))"
+              boxShadow: "0 0 6px var(--primary-glow, rgba(0, 136, 170, 0.5))"
             }}
           />
 
-          {/* Pulgar Táctil Circular Puro (Thumb) */}
+          {/* Pulgar Táctil Circular Puro (Thumb) Matemáticamente Centrado sobre la línea */}
           <div 
             ref={thumbRef}
-            className={`absolute w-6 h-6 -ml-1.5 rounded-full border-2 border-white shadow-lg flex items-center justify-center cursor-grab active:cursor-grabbing transition-transform ${isDragging ? "scale-125" : "hover:scale-110"}`}
+            className={`absolute w-5 h-5 rounded-full border-2 border-white shadow-md flex items-center justify-center cursor-grab active:cursor-grabbing pointer-events-none transition-transform ${isDragging ? "scale-125" : "hover:scale-110"}`}
             style={{ 
-              bottom: `calc(${percentage}% - 12px)`,
+              bottom: `${percentage}%`,
+              left: "50%",
+              transform: "translate(-50%, 50%)",
               backgroundColor: "var(--primary, #0088AA)",
-              boxShadow: "0 2px 8px rgba(0,0,0,0.6)"
+              boxShadow: "0 2px 8px rgba(0,0,0,0.7), 0 0 6px var(--primary-glow, rgba(0, 136, 170, 0.4))"
             }}
           >
             {/* Punto focal central blanco */}
@@ -264,7 +261,7 @@ export default function AnimationScrubber() {
 
         {/* Indicador inferior (Inicio 0s) */}
         <span 
-          className="text-[10px] font-mono font-bold select-none"
+          className="text-[10px] font-mono font-bold select-none drop-shadow-[0_1px_3px_rgba(0,0,0,0.9)]"
           style={{ color: "var(--secondary, #ffffff)" }}
         >
           0s
@@ -274,18 +271,19 @@ export default function AnimationScrubber() {
       {/* Tooltip Flotante Dinámico en Cápsula (Aparece a la derecha del slider) */}
       {(showTooltip || isDragging) && (
         <div 
-          className="absolute left-14 px-3 py-1.5 rounded-full text-white text-[11px] font-mono font-bold shadow-xl flex items-center gap-1.5 pointer-events-none animate-in fade-in zoom-in-95 duration-150"
+          className="absolute left-10 px-2.5 py-1 rounded-full text-white text-[11px] font-mono font-bold shadow-xl flex items-center gap-1.5 pointer-events-none animate-in fade-in zoom-in-95 duration-150"
           style={{
             background: "color-mix(in srgb, var(--primary, #0088AA) var(--nubes-bg-opacity, 30%), #0B0F17)",
             backdropFilter: "var(--glass-blur, blur(12px))",
             WebkitBackdropFilter: "var(--glass-blur, blur(12px))",
             border: "1px solid var(--primary, #0088AA)",
-            boxShadow: "0 8px 24px rgba(0, 0, 0, 0.5), 0 0 12px var(--primary-glow, rgba(0, 136, 170, 0.3))",
-            bottom: `calc(${percentage * 0.78 + 10}%)`
+            boxShadow: "0 8px 24px rgba(0, 0, 0, 0.6), 0 0 10px var(--primary-glow, rgba(0, 136, 170, 0.3))",
+            bottom: `${percentage}%`,
+            transform: "translateY(50%)"
           }}
         >
           <span 
-            className="w-2 h-2 rounded-full animate-pulse"
+            className="w-1.5 h-1.5 rounded-full animate-pulse"
             style={{ backgroundColor: "var(--primary, #0088AA)" }}
           />
           <span style={{ color: "var(--secondary, #ffffff)" }}>
