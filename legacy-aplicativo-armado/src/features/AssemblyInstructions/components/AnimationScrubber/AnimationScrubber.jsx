@@ -14,9 +14,36 @@ export default function AnimationScrubber() {
   const SetAnimationCurrentTime = useEnviroment((state) => state.SetAnimationCurrentTime);
 
   const trackRef = useRef(null);
+  const fillRef = useRef(null);
+  const thumbRef = useRef(null);
+  const isDraggingRef = useRef(false);
+  const durationRef = useRef(duration);
+  durationRef.current = duration;
+
   const [isDragging, setIsDragging] = useState(false);
+  isDraggingRef.current = isDragging;
   const [dragProgress, setDragProgress] = useState(0);
   const [showTooltip, setShowTooltip] = useState(false);
+
+  // Sincronización continua directa en DOM a 60 FPS durante la reproducción de Three.js
+  useEffect(() => {
+    window.__updateScrubberUI = (time) => {
+      if (isDraggingRef.current) return;
+      const dur = durationRef.current;
+      if (!dur || dur <= 0) return;
+      const progress = Math.min(1, Math.max(0, time / dur));
+      const pct = progress * 100;
+      if (fillRef.current) {
+        fillRef.current.style.height = `${pct}%`;
+      }
+      if (thumbRef.current) {
+        thumbRef.current.style.bottom = `calc(${pct}% - 10px)`;
+      }
+    };
+    return () => {
+      delete window.__updateScrubberUI;
+    };
+  }, []);
 
   // Calcular el progreso actual normalizado [0, 1]
   const currentProgress = duration > 0 ? Math.min(1, Math.max(0, currentTime / duration)) : 0;
@@ -164,6 +191,7 @@ export default function AnimationScrubber() {
         >
           {/* Barra de progreso rellena desde el fondo */}
           <div 
+            ref={fillRef}
             className="absolute bottom-0 w-full rounded-full transition-none pointer-events-none"
             style={{ 
               height: `${percentage}%`,
@@ -173,6 +201,7 @@ export default function AnimationScrubber() {
 
           {/* Pulgar Circular Puro (Thumb) */}
           <div 
+            ref={thumbRef}
             className={`absolute w-5 h-5 -ml-1.5 rounded-full border-2 border-white shadow-md flex items-center justify-center cursor-grab active:cursor-grabbing transition-transform ${isDragging ? "scale-125" : "hover:scale-110"}`}
             style={{ 
               bottom: `calc(${percentage}% - 10px)`,

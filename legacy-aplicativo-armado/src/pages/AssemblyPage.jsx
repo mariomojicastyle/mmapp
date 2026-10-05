@@ -392,40 +392,36 @@ const AssemblyPage = () => {
       }
     };
 
+    let lastLandscape = null;
+
     const checkOrientation = () => {
       const isLandscape = window.matchMedia("(orientation: landscape)").matches;
-      
+      if (lastLandscape === isLandscape) return; // Evitar ejecuciones redundantes si no cambió
+      lastLandscape = isLandscape;
+
       if (isLandscape) {
-        // Intentar ir a fullscreen
         handleFullscreenRequest();
-        
-        // Agregar listeners para el primer toque en caso de bloqueo por política de gestos de usuario
         window.addEventListener("touchstart", handleFullscreenRequest, { once: true });
         window.addEventListener("click", handleFullscreenRequest, { once: true });
       } else {
-        // Salir de fullscreen si está activo
         handleFullscreenExit();
-        
-        // Limpiar listeners si regresa a portrait
         window.removeEventListener("touchstart", handleFullscreenRequest);
         window.removeEventListener("click", handleFullscreenRequest);
       }
     };
 
-    // Escuchar cambios de orientación y resize
-    window.addEventListener("resize", checkOrientation);
-    if (screen.orientation) {
+    // Escuchar exclusivamente eventos genuinos de orientación física de pantalla
+    if (screen?.orientation?.addEventListener) {
       screen.orientation.addEventListener("change", checkOrientation);
     } else {
       window.addEventListener("orientationchange", checkOrientation);
     }
 
-    // Ejecutar chequeo inicial
+    // Chequeo inicial
     checkOrientation();
 
     return () => {
-      window.removeEventListener("resize", checkOrientation);
-      if (screen.orientation) {
+      if (screen?.orientation?.removeEventListener) {
         screen.orientation.removeEventListener("change", checkOrientation);
       } else {
         window.removeEventListener("orientationchange", checkOrientation);

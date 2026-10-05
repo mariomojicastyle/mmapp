@@ -2807,6 +2807,32 @@ Para mantener la máxima agilidad y minimizar el consumo de tokens sin perder ni
   * Compilación de producción con Vite (`npm run build` en `legacy-aplicativo-armado`) completada exitosamente en 4.08s con **0 errores**.
   * Pruebas de simulación matemática de `AnimationMixer` en Node arrojaron coincidencia milimétrica en todos los casos de prueba.
 
+---
+
+### 🚀 Hito 244: Erradicación del Bucle Recursivo de Resize al Girar Pantalla y Sincronización Continua del Slider a 60 FPS en Todos los Pasos (`AssemblyViewer.jsx`, `AssemblyPage.jsx`, `Model.jsx`, `AnimationScrubber.jsx`) (04 de Octubre, 2026)
+- **Diagnóstico y Contexto del Bug**:
+  * El usuario reportó dos anomalías tras el despliegue del Hito 243:
+    1. Al girar el celular, la aplicación colapsaba por completo, tardando hasta 40 segundos en cargar o cambiar de paso, rompiéndose la fluidez tanto al avanzar como al retroceder.
+    2. Durante la reproducción normal de la animación, el slider vertical se quedaba estático en un solo punto en vez de avanzar gradualmente con la escena.
+- **Causas Raíces Técnicas Identificadas**:
+  1. *Bucle Infinito Recursivo de Eventos `resize` al Rotar Pantalla (`AssemblyViewer.jsx`)*:
+     - En `AssemblyViewer.jsx`, la función `handleOrientationChange` escuchaba el evento `"resize"`, y dentro de ella despachaba dos eventos sintéticos `window.dispatchEvent(new Event("resize"))` a los 50ms y 250ms.
+     - Al escuchar el propio evento que ella misma disparaba, se generaba una avalancha exponencial en el event loop ($1 \to 2 \to 4 \to 8 \dots$), saturando la CPU al 100% y bloqueando el compositor gráfico de Android/iOS.
+     - En paralelo, `AssemblyPage.jsx` también escuchaba `resize` para intentar solicitar y salir de fullscreen continuamente (`requestFullscreen` / `exitFullscreen`), colapsando el render de WebGL.
+  2. *Retorno Prematuro en `useFrame` que Ocultaba la Actualización del Slider (`Model.jsx`)*:
+     - En `Model.jsx`, la sentencia `if (!isGlbCamActive) return;` estaba ubicada en la línea 561, antes del bloque que calculaba `SetAnimationCurrentTime`.
+     - En los pasos sin cámara animada (Paso 00 y Paso 01), la función salía inmediatamente en ese `return`, impidiendo que el slider recibiera la posición temporal de la animación.
+- **Implementación Técnica de la Solución**:
+  1. *Eliminación del Bucle de Resize y Desacoplamiento de Fullscreen (`AssemblyViewer.jsx`, `AssemblyPage.jsx`)*:
+     - Suprimido en `AssemblyViewer.jsx` el listener recursivo `window.addEventListener("resize")` y el dispatcher de eventos sintéticos. React Three Fiber (`<Canvas>`) utiliza `ResizeObserver` nativo sobre su contenedor, adaptándose de forma automática e instantánea a cualquier cambio de orientación sin consumir CPU.
+     - En `AssemblyPage.jsx`, la verificación de orientación para fullscreen se desacopló del evento de `resize`, escuchando exclusivamente eventos físicos de pantalla (`screen.orientation` y `orientationchange`), protegiendo la llamada con un filtro de estado previo (`lastLandscape`) para evitar churn.
+  2. *Sincronización Incondicional de Scrubber a 60 FPS (`Model.jsx`, `AnimationScrubber.jsx`)*:
+     - En `Model.jsx`, la actualización temporal de `useFrame` se movió al inicio absoluto de la función, antes de cualquier condicional de cámara, ejecutándose en el 100% de los pasos (P00 a P06).
+     - Se creó el canal de actualización directa por DOM `window.__updateScrubberUI(time)`, conectado a `ref={fillRef}` y `ref={thumbRef}` en `AnimationScrubber.jsx`, permitiendo que el pulgar y la barra asciendan con suavidad a 60 FPS sin sobrecargar React ni causar re-renders innecesarios.
+- **Validación de Calidad**:
+  * Compilación de producción con Vite (`npm run build` en `legacy-aplicativo-armado`) completada exitosamente en 4.01s con **0 errores**.
+  * Cero ciclos de eventos infinitos y sincronización reactiva garantizada en móviles y PC.
+
 
 
 

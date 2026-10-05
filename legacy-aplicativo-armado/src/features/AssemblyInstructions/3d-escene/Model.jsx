@@ -545,8 +545,23 @@ function ActualModel(props) {
     }
   }, [phaseAudio]);
 
-  // Sincronización continua en vivo de la cámara animada del GLB (3dBimFab) cuadro a cuadro
+  // Sincronización continua en vivo cuadro a cuadro
   useFrame(() => {
+    // 1. Sincronización incondicional de tiempo de animación para el Scrubber (P00 a P06)
+    if (actions) {
+      const isScrubbing = useEnviroment.getState().isScrubbing;
+      if (!isScrubbing) {
+        const activeAct = Object.values(actions).find((a) => a && a.isRunning()) || Object.values(actions)[0];
+        if (activeAct && typeof activeAct.time === "number") {
+          useEnviroment.getState().SetAnimationCurrentTime(activeAct.time);
+          if (typeof window.__updateScrubberUI === "function") {
+            window.__updateScrubberUI(activeAct.time);
+          }
+        }
+      }
+    }
+
+    // 2. Cinemática de cámara animada del GLB
     const currentCamConfig = CameraPosition ? CameraPosition.find((item) => item.pasos == pasoActual) : null;
     const hasCameraAnimation = Boolean(
       ((cameras && cameras.length > 0) || scene.getObjectByName("Camera")) &&
@@ -637,17 +652,6 @@ function ActualModel(props) {
       // Habilitar OrbitControls de forma segura (sin ningún salto angular ni descentrado)
       if (controls && !controls.enabled) {
         controls.enabled = true;
-      }
-    }
-
-    // Actualizar tiempo actual para el slider scrubber si el usuario no está arrastrándolo
-    if (actions) {
-      const isScrubbing = useEnviroment.getState().isScrubbing;
-      if (!isScrubbing) {
-        const activeAct = Object.values(actions).find((a) => a && a.isRunning()) || Object.values(actions)[0];
-        if (activeAct && typeof activeAct.time === "number") {
-          useEnviroment.getState().SetAnimationCurrentTime(activeAct.time);
-        }
       }
     }
   });
