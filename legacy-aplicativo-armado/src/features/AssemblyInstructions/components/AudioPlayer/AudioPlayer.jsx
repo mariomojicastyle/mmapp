@@ -82,7 +82,11 @@ export default function AudioPlayer({ id: propId }) {
     window.__seekAudio = (targetTime) => {
       if (audioRef.current && Number.isFinite(targetTime)) {
         try {
-          audioRef.current.currentTime = Math.max(0, targetTime);
+          const maxDur = audioRef.current.duration;
+          const clamped = (Number.isFinite(maxDur) && maxDur > 0) 
+            ? Math.min(Math.max(0, targetTime), maxDur) 
+            : Math.max(0, targetTime);
+          audioRef.current.currentTime = clamped;
         } catch (e) {
           // ignore seek bounds error
         }

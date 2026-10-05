@@ -107,6 +107,7 @@ export default function NavBarInferior({ id, data }) {
   const phaseAudio = useEnviroment((state) => state.phaseAudio);
   const toogle = useEnviroment((state) => state.show);
   const idioma = useEnviroment((state) => state.idioma);
+  const isScrubbing = useEnviroment((state) => state.isScrubbing);
 
   const texts = {
     es: {
@@ -252,7 +253,7 @@ export default function NavBarInferior({ id, data }) {
   }, [Parpadeo]);
 
   const PlayButton = () => {
-    //Se verifica los estados de la animación para cambiar el icono del boton
+    // Se verifica los estados de la animación para alternar entre pausa y reproducción
     if (phaseAudio === "playing") {
       PausedAudio();
     } else if (phaseAudio === "paused") {
@@ -261,12 +262,15 @@ export default function NavBarInferior({ id, data }) {
       ResetBoolTrue();
       PlayingAudio();
     } else {
-      PausedAudio();
+      PlayingAudio();
     }
   };
 
   const renderPausePlayIcon = () => {
-    if (phaseAudio === "reset") {
+    if (isScrubbing) {
+      return <IconPause />;
+    }
+    if (phaseAudio === "reset" && resetAction === true) {
       return <IconReset />;
     } else if (phaseAudio === "playing") {
       return <IconPause />;

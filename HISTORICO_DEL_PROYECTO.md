@@ -2856,6 +2856,28 @@ Para mantener la máxima agilidad y minimizar el consumo de tokens sin perder ni
   * Compilación de producción con Vite (`npm run build` en `legacy-aplicativo-armado`) completada exitosamente en 4.21s con **0 errores**.
   * Control temporal pleno de voz y 3D garantizado.
 
+---
+
+### 🚀 Hito 246: Corrección de Reloj Maestro en P00, Rediseño Ergonómico de Scrubber con Vidrio Dinámico UI, Control de Pausa Permanente y Órbita 3D Baricéntrica en Centro de Gravedad (`Model.jsx`, `AnimationScrubber.jsx`, `NavBarInferior.jsx`, `AudioPlayer.jsx`, `Experience.jsx`, `useEnviroment.js`) (04 de Octubre, 2026)
+- **Diagnóstico y Solución de Requerimientos de Usuario**:
+  1. *Corrección de Scrubber en Paso 00 (Salto Inmediato a Cero)*:
+     - **Causa Raíz**: En `Model.jsx`, la función `useFrame` (a 60 FPS) actualizaba el tiempo con `activeAct.time`. En el Paso 00, la animación 3D dura 9s mientras que el audio dura 54s; al adelantar el slider a un tiempo mayor o al finalizar el clip de 9s, `actions` no estaba corriendo o tenía tiempo 0, por lo que en el frame inmediato (16ms) `useFrame` pisaba el tiempo del audio y forzaba el scrubber de vuelta a 0.
+     - **Solución Arquitectónica (Reloj Maestro Unificado)**: Se reestructuró `useFrame` para determinar la fuente de verdad. Si existe pista de audio (`audioDuration > 0`), el elemento `<audio>` es el reloj maestro indiscutible: emite a 60 FPS con suavidad extrema sin saltos. La animación 3D se acopla matemáticamente a este tiempo (`clampedAnimTime = Math.min(masterTime, animDur)`), permaneciendo congelada en su pose final para $t > 9\text{s}$, mientras el audio continúa narrando. Si no hay audio, el clip 3D retoma el liderazgo.
+  2. *Rediseño Ergonómico del Slider y Vidrio Translúcido Dinámico de UI*:
+     - **Ergonomía de Alta Resolución**: Se incrementó la altura del scrubber vertical a un formato de pantalla completa estilizado (`h-[54vh] min-h-[290px] max-h-[500px]`), pasando la resolución táctil de 120px a más de 350px. Esto reduce drásticamente la hipersensibilidad al tacto, permitiendo buscar segundo a segundo con precisión milimétrica.
+     - **Estética de Vidrio Reactivo a la Marca**: Se erradicó el fondo gris fijo (`#131B2E`) y se vinculó a las variables maestras de la UI: `color-mix(in srgb, var(--primary) var(--nubes-bg-opacity, 20%), transparent)`, `backdrop-filter: var(--glass-blur, blur(12px))` y bordes con acentos de color primario. Cumple al 100% con la estética de cápsula pura (`rounded-full`) y el estilo de los tooltips de la suite.
+  3. *Preservación del Botón de Pausa / Play (Eliminación de Falso Reinicio)*:
+     - Al interactuar con el slider (`onPointerDown` / `onPointerMove`), se desactiva `resetAction` (`ActionFalse()`) y se limpian los estados de finalización (`AudioEndedFalse()`, `AnimationEndedFalse()`).
+     - En `NavBarInferior.jsx`, se condicionó el icono de reiniciar estrictamente a que `phaseAudio === "reset" && resetAction === true`. Mientras el usuario arrastra (`isScrubbing`), se muestra siempre `<IconPause />`. Al soltar en cualquier punto intermedio, permanece en Play o Pausa, impidiendo que el botón se transforme erróneamente en "Reiniciar".
+  4. *Centro de Gravedad y Órbita Libre 3D Baricéntrica*:
+     - **Consulta del Usuario**: Se determinó que **NO es necesario modificar Grasshopper ni regenerar los archivos GLB**.
+     - **Implementación Matemática en Three.js**: Se implementó el cálculo del centroide real del mueble a partir de la unión de cajas delimitadoras (`Box3`) de todas sus mallas de madera y herrajes (`modelBox.getCenter(modelCenter)`), almacenándolo en el store global (`modelCenter`).
+     - Al entrar en órbita libre o al concluir la animación, `controls.target` se sincroniza con `modelCenter`. Así, la cámara rota en torno al baricentro real del mueble en cada paso, erradicando los giros excéntricos o erráticos originados por el origen $(0,0,0)$ de Grasshopper.
+- **Validación de Calidad**:
+  * Compilación de producción con Vite (`npm run build` en `legacy-aplicativo-armado`) completada exitosamente en 4.24s con **0 errores**.
+  * Scrubbing continuo en P00 validado, control ergonómico ampliado, transparencia dinámica y cinemática orbital simétrica aseguradas.
+
+
 
 
 

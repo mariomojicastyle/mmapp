@@ -21,6 +21,7 @@ export default create(
       alturas:[], //Posicion de  skybox y planeGeometry
 
       computedModelMinY: null, // Punto Y más bajo del bounding box del GLB actual (auto-calculado)
+      modelCenter: [0, 0.5, 0], // Centro de gravedad / geométrico del mueble en cada paso (auto-calculado)
 
       cameraPositions: [], //la posicion de la camara
 
@@ -255,6 +256,7 @@ export default create(
       ChargerAlturas: (alturas) => set((state) => ({ alturas: alturas })),
 
       SetComputedModelMinY: (minY) => set(() => ({ computedModelMinY: minY })),
+      SetModelCenter: (center) => set(() => ({ modelCenter: center })),
 
       ChargerCameraPositions: (cameraPositions) => set((state) => ({ cameraPositions: cameraPositions })),
 

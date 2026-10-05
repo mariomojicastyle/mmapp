@@ -65,15 +65,23 @@ function ActualAssemblySceneViewer({ id, modelUrl, productData, decryptedUrl }) 
   const customColors = useEnviroment((state) => state.customColors);
 
 
-  // Actualizar el target de la cámara usando los datos de 'alturas' del JSON
+  const modelCenter = useEnviroment((state) => state.modelCenter);
+
+  // Actualizar el target de la cámara usando el centro de gravedad del mueble o datos de 'alturas' del JSON
   useEffect(() => {
+    let customTarget = null;
     if (alturas && alturas.length > 0) {
       const altData = alturas.find(a => a.paso === PasoActual);
-      if (altData && altData.target) {
-        setCameraTarget([altData.target[0], altData.target[1], altData.target[2]]);
+      if (altData && altData.target && (altData.target[0] !== 0 || altData.target[1] !== 0 || altData.target[2] !== 0)) {
+        customTarget = [altData.target[0], altData.target[1], altData.target[2]];
       }
     }
-  }, [PasoActual, alturas]);
+    if (customTarget) {
+      setCameraTarget(customTarget);
+    } else if (modelCenter) {
+      setCameraTarget(modelCenter);
+    }
+  }, [PasoActual, alturas, modelCenter]);
 
   // Cargar la imagen panorámica en formato stripe y dividirla en 6 partes
   // Determinar si hay texturas PBR activas en las paredes (modo avanzado)

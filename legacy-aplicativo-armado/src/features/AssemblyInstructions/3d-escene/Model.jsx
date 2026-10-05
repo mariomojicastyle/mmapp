@@ -461,12 +461,25 @@ function ActualModel(props) {
     // Buscar si existe un nodo de cámara en el GLB (configurada explícitamente o auto-detectada con animación)
     const glbCamNode = isGlbCamPreferred ? (scene.getObjectByName("Camera") || (cameras && cameras.length > 0 ? cameras[0] : null)) : null;
 
-    // Calcular el centro geométrico del modelo para garantizar que siempre esté encuadrado
-    const modelBox = new THREE.Box3().setFromObject(scene);
+    // Calcular el centro geométrico y centro de gravedad real del mueble recorriendo exclusivamente sus mallas
+    const modelBox = new THREE.Box3();
+    let hasMesh = false;
+    scene.traverse((node) => {
+      if (node.isMesh && node.geometry) {
+        if (!node.geometry.boundingBox) {
+          node.geometry.computeBoundingBox();
+        }
+        const meshBox = node.geometry.boundingBox.clone();
+        meshBox.applyMatrix4(node.matrixWorld);
+        modelBox.union(meshBox);
+        hasMesh = true;
+      }
+    });
     const modelCenter = new THREE.Vector3(0, 0.5, 0);
-    if (!modelBox.isEmpty()) {
+    if (hasMesh && !modelBox.isEmpty()) {
       modelBox.getCenter(modelCenter);
     }
+    useEnviroment.getState().SetModelCenter([modelCenter.x, modelCenter.y, modelCenter.z]);
 
     if (useOverride && posicionDeCamaraActual?.position) {
       camera.position.set(
@@ -479,7 +492,7 @@ function ActualModel(props) {
       let targetVec = modelCenter;
       if (alturas && alturas.length > 0) {
         const altData = alturas.find(a => a.paso === pasoActual);
-        if (altData && altData.target) {
+        if (altData && altData.target && (altData.target[0] !== 0 || altData.target[1] !== 0 || altData.target[2] !== 0)) {
           targetVec = new THREE.Vector3(altData.target[0], altData.target[1], altData.target[2]);
         }
       }
@@ -505,11 +518,9 @@ function ActualModel(props) {
         camera.fov = glbCamNode.fov;
       }
 
-      // Sincronizar el target de OrbitControls colinealmente con la mirada de la cámara
+      // Sincronizar el target de OrbitControls con el centro de gravedad del mueble
       if (props.orbitControlsRef && props.orbitControlsRef.current) {
-        const forwardDir = new THREE.Vector3();
-        camera.getWorldDirection(forwardDir);
-        props.orbitControlsRef.current.target.copy(camera.position).addScaledVector(forwardDir, 2.5);
+        props.orbitControlsRef.current.target.copy(modelCenter);
       }
     } else if (posicionDeCamaraActual?.position) {
       camera.position.set(
@@ -524,7 +535,7 @@ function ActualModel(props) {
       }
     } else {
       // Si no hay configuración manual ni cámara GLB explícita, se usa la posición por defecto
-      // y se enfoca exactamente al centro del modelo del paso actual
+      // y se enfoca exactamente al centro de gravedad del mueble del paso actual
       camera.position.set(defaultCameraPosX, defaultCameraPosY, defaultCameraPosZ);
       camera.lookAt(modelCenter);
       camera.setFocalLength(defaultFov);
@@ -572,17 +583,55 @@ function ActualModel(props) {
 
   // Sincronización continua en vivo cuadro a cuadro
   useFrame(() => {
-    // 1. Sincronización incondicional de tiempo de animación para el Scrubber (P00 a P06)
-    if (actions) {
-      const isScrubbing = useEnviroment.getState().isScrubbing;
-      if (!isScrubbing) {
+    // 1. Sincronización unificada de tiempo para el Scrubber (P00 a P06)
+    const isScrubbing = useEnviroment.getState().isScrubbing;
+    const audioEl = typeof document !== "undefined" ? document.getElementById("audio") : null;
+    const animDur = animDuration > 0 ? animDuration : 0;
+    const audioDur = useEnviroment.getState().audioDuration || 0;
+    const totalDur = Math.max(animDur, audioDur);
+
+    if (!isScrubbing) {
+      let masterTime = 0;
+      const hasAudioTrack = audioEl && audioDur > 0 && !isNaN(audioEl.duration);
+
+      if (hasAudioTrack) {
+        masterTime = audioEl.currentTime || 0;
+      } else if (actions) {
         const activeAct = Object.values(actions).find((a) => a && a.isRunning()) || Object.values(actions)[0];
         if (activeAct && typeof activeAct.time === "number") {
-          useEnviroment.getState().SetAnimationCurrentTime(activeAct.time);
-          if (typeof window.__updateScrubberUI === "function") {
-            window.__updateScrubberUI(activeAct.time);
-          }
+          masterTime = activeAct.time;
         }
+      }
+
+      if (totalDur > 0 && typeof window.__updateScrubberUI === "function") {
+        window.__updateScrubberUI(masterTime);
+      }
+      useEnviroment.getState().SetAnimationCurrentTime(masterTime);
+
+      // Mantener acoplada la animación 3D cuando el audio es el reloj maestro
+      if (hasAudioTrack && actions) {
+        const phase = useEnviroment.getState().phaseAudio;
+        const isPlaying = (phase === "playing" && !audioEl.paused);
+        const clampedAnimTime = Math.min(masterTime, animDur);
+
+        Object.values(actions).forEach((act) => {
+          if (act) {
+            if (masterTime >= animDur) {
+              act.time = animDur;
+              act.paused = true;
+            } else {
+              if (isPlaying) {
+                act.paused = false;
+                if (Math.abs(act.time - clampedAnimTime) > 0.15) {
+                  act.time = clampedAnimTime;
+                }
+              } else {
+                act.time = clampedAnimTime;
+                act.paused = true;
+              }
+            }
+          }
+        });
       }
     }
 
@@ -604,7 +653,6 @@ function ActualModel(props) {
     if (!glbCamNode) return;
 
     const controls = props.orbitControlsRef?.current;
-    const isScrubbing = useEnviroment.getState().isScrubbing;
 
     // Si se está haciendo scrubbing, reiniciar la bandera de interacción manual para que la cámara siga el slider
     if (isScrubbing) {
@@ -621,6 +669,10 @@ function ActualModel(props) {
         }
       }
     }
+
+    // Obtener centro de gravedad del mueble calculado
+    const centerArr = useEnviroment.getState().modelCenter || [0, 0.5, 0];
+    const furnitureCenter = new THREE.Vector3(centerArr[0], centerArr[1], centerArr[2]);
 
     if (isRunning || isScrubbing) {
       // Mientras la animación está corriendo o en scrubbing, deshabilitar OrbitControls para evitar colisiones
@@ -642,16 +694,14 @@ function ActualModel(props) {
         camera.updateProjectionMatrix();
       }
 
-      // Mantener SIEMPRE el target de OrbitControls perfectamente alineado al frente de la cámara
+      // Sincronizar el target de OrbitControls con el centro de gravedad del mueble
       if (controls) {
-        const forwardDir = new THREE.Vector3();
-        camera.getWorldDirection(forwardDir);
-        controls.target.copy(camera.position).addScaledVector(forwardDir, 2.5);
+        controls.target.copy(furnitureCenter);
       }
     } else {
       // Animación pausada o finalizada:
       // Si el usuario aún NO ha tomado el mouse/touch para orbitar manualmente,
-      // la cámara DEBE PERMANECER congelada exactamente donde está el GLB
+      // la cámara PERMANECE donde está el GLB
       if (!userInteractedWithCameraRef.current) {
         const worldPos = new THREE.Vector3();
         const worldQuat = new THREE.Quaternion();
@@ -666,15 +716,13 @@ function ActualModel(props) {
           camera.updateProjectionMatrix();
         }
 
-        // Alinear el target de OrbitControls hacia donde mira la cámara ANTES de habilitarlo
+        // Fijar el centro de rotación exactamente en el centro de gravedad del mueble
         if (controls) {
-          const forwardDir = new THREE.Vector3();
-          camera.getWorldDirection(forwardDir);
-          controls.target.copy(camera.position).addScaledVector(forwardDir, 2.5);
+          controls.target.copy(furnitureCenter);
         }
       }
 
-      // Habilitar OrbitControls de forma segura (sin ningún salto angular ni descentrado)
+      // Habilitar OrbitControls para permitir órbita libre perfecta sobre el centro de gravedad del mueble
       if (controls && !controls.enabled) {
         controls.enabled = true;
       }
