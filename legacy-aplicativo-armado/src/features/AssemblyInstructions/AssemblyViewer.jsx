@@ -10,6 +10,7 @@ import PanelInicial from "./components/NavBarInferior/PanelInicial/PanelInicial"
 import { getAssetPath } from "../../lib/assets.js";
 import { useTelemetry } from "../../hooks/useTelemetry.js";
 import FeedbackModal from "./components/FeedbackModal/FeedbackModal.jsx";
+import AnimationScrubber from "./components/AnimationScrubber/AnimationScrubber.jsx";
 
 export default function AssemblyViewer({ productData, steps, id }) {
   // Variables y funciones extraidas del state management (useEnviroment)
@@ -270,6 +271,9 @@ export default function AssemblyViewer({ productData, steps, id }) {
           <NavBarInferior id={id} data={productData} />
         </div>
       </div>
+
+      {/* Control Deslizante Scrubber de Animación (Lateral Izquierdo) */}
+      <AnimationScrubber />
 
       {/* Componente que muestra los renders, al cambio de orientacion del app */}
       <Landscape />

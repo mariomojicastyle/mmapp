@@ -278,6 +278,41 @@ function ActualModel(props) {
     };
   }, [actions, mixer, AnimationEndedTrue, AnimationEndedFalse, pasoActual]);
 
+  // Sincronizar duración total del clip para el Scrubber de animación
+  useEffect(() => {
+    if (animations && animations.length > 0) {
+      let maxDur = 0;
+      animations.forEach((a) => {
+        if (a.duration && a.duration > maxDur) maxDur = a.duration;
+      });
+      useEnviroment.getState().SetAnimationDuration(maxDur);
+    } else {
+      useEnviroment.getState().SetAnimationDuration(0);
+    }
+  }, [animations, pasoActual]);
+
+  // Exponer API de búsqueda interactiva (Scrubbing / Seek) para el Slider
+  useEffect(() => {
+    window.__seekAnimation = (targetTime) => {
+      if (actions) {
+        Object.values(actions).forEach((act) => {
+          if (act) {
+            act.time = Math.max(0, targetTime);
+          }
+        });
+      }
+      if (mixer) {
+        mixer.setTime(Math.max(0, targetTime));
+      }
+      if (scene) {
+        scene.updateMatrixWorld(true);
+      }
+    };
+    return () => {
+      delete window.__seekAnimation;
+    };
+  }, [mixer, actions, scene]);
+
   // Configuración inicial del modelo GLB, de la animación y de la cámara
   useEffect(() => {
     ChargeModel(scene); // Carga el modelo en la escena
@@ -332,10 +367,14 @@ function ActualModel(props) {
     });
 
     const posicionDeCamaraActual = CameraPosition ? CameraPosition.find((item) => item.pasos == pasoActual) : null;
-    const isGlbCamPreferred = posicionDeCamaraActual?.useGlbCamera === true || posicionDeCamaraActual?.cameraMode === "glb";
+    const hasCameraAnimation = Boolean(
+      ((cameras && cameras.length > 0) || scene.getObjectByName("Camera")) &&
+      animations?.some(clip => clip.tracks?.some(track => track.name.toLowerCase().includes("camera")))
+    );
+    const isGlbCamPreferred = posicionDeCamaraActual?.useGlbCamera === true || posicionDeCamaraActual?.cameraMode === "glb" || (posicionDeCamaraActual?.cameraMode !== "manual" && hasCameraAnimation);
     const useOverride = !isGlbCamPreferred && Boolean(posicionDeCamaraActual?.override && posicionDeCamaraActual?.position);
 
-    // Buscar si existe un nodo de cámara en el GLB SOLAMENTE si se configuró explícitamente el modo GLB
+    // Buscar si existe un nodo de cámara en el GLB (configurada explícitamente o auto-detectada con animación)
     const glbCamNode = isGlbCamPreferred ? (scene.getObjectByName("Camera") || (cameras && cameras.length > 0 ? cameras[0] : null)) : null;
 
     // Calcular el centro geométrico del modelo para garantizar que siempre esté encuadrado
@@ -447,10 +486,14 @@ function ActualModel(props) {
     }
   }, [phaseAudio]);
 
-  // Sincronización continua en vivo de la cámara animada del GLB (3dBimFab) cuadro a cuadro SOLO si está explícitamente activada
+  // Sincronización continua en vivo de la cámara animada del GLB (3dBimFab) cuadro a cuadro
   useFrame(() => {
     const currentCamConfig = CameraPosition ? CameraPosition.find((item) => item.pasos == pasoActual) : null;
-    const isGlbCamActive = currentCamConfig?.useGlbCamera === true || currentCamConfig?.cameraMode === "glb";
+    const hasCameraAnimation = Boolean(
+      ((cameras && cameras.length > 0) || scene.getObjectByName("Camera")) &&
+      animations?.some(clip => clip.tracks?.some(track => track.name.toLowerCase().includes("camera")))
+    );
+    const isGlbCamActive = currentCamConfig?.useGlbCamera === true || currentCamConfig?.cameraMode === "glb" || (currentCamConfig?.cameraMode !== "manual" && hasCameraAnimation);
 
     if (!isGlbCamActive) return;
 
@@ -525,6 +568,17 @@ function ActualModel(props) {
       // Habilitar OrbitControls de forma segura (sin ningún salto angular ni descentrado)
       if (controls && !controls.enabled) {
         controls.enabled = true;
+      }
+    }
+
+    // Actualizar tiempo actual para el slider scrubber si el usuario no está arrastrándolo
+    if (actions) {
+      const isScrubbing = useEnviroment.getState().isScrubbing;
+      if (!isScrubbing) {
+        const activeAct = Object.values(actions).find((a) => a && a.isRunning()) || Object.values(actions)[0];
+        if (activeAct && typeof activeAct.time === "number") {
+          useEnviroment.getState().SetAnimationCurrentTime(activeAct.time);
+        }
       }
     }
   });

@@ -2749,6 +2749,32 @@ Para mantener la máxima agilidad y minimizar el consumo de tokens sin perder ni
   * Compilación de producción con Vite (`npm run build` en `legacy-aplicativo-armado`) completada exitosamente en 5.09s con **0 errores**.
   * Cero bloqueos de escala 0 en Paso 02 y erradicación total del `AbortError` y errores 404.
 
+---
+
+### 🚀 Hito 242: Optimización Universal de GLBs en la Nube (Sequential Draco & Cero Draco), Auto-Activación de Cámaras GLB y Scrubber Deslizante Vertical de Animación (`Model.jsx`, `AudioPlayer.jsx`, `AssemblyViewer.jsx`, `AnimationScrubber.jsx`, `useEnviroment.js`, `compress-glb/route.ts`) (04 de Octubre, 2026)
+- **Diagnóstico y Contexto**:
+  * Tras resolver la sincronización en Paso 02, el usuario comprobó que el avance entre pasos en móvil tardaba hasta 40s en Cómoda Ravenna frente a la instantaneidad de Mesa Tijuca.
+  * Se descubrió mediante auditoría binaria que Ravenna contenía 589,960 vértices (10x más que Tijuca) y 230,000 vértices duplicados sin soldar (`unwelded`). El algoritmo `edgebreaker` de Draco bloqueaba el hilo WebAssembly de las CPUs móviles durante 40 segundos por paso.
+  * Además, las cámaras animadas del GLB en los pasos 04 y 06 no se movían en el celular por estar condicionadas a flags manuales no activados en el CMS, y el usuario solicitó un slider interactivo para controlar el tiempo de animación hacia adelante y hacia atrás como un video.
+- **Implementación Técnica de la Solución**:
+  1. *Optimización Universal de los 7 Pasos en Supabase Storage*:
+     - Descarga, desencriptación DRM AES-256 en memoria y aplicación de `weld()` geométrico en todos los pasos.
+     - **Pasos Ligeros (`P01.glb` y `P05.glb`)**: Eliminación completa de Draco. `P01` quedó en 48.4 KB y `P05` en 1.10 MB como glTF 2.0 puro, cargando en 0 ms sin tocar WebAssembly.
+     - **Pasos Estructurales (`P00`, `P02`, `P03`, `P04`, `P06`)**: Migración de `edgebreaker` a **Sequential Draco** (streaming lineal a 40 ms), reduciendo vértices a la mitad y subiéndolos encriptados a Supabase.
+  2. *Auto-Detección y Activación de Cámara GLB Cinemática (`Model.jsx`)*:
+     - Detección reactiva en `Model.jsx` y `useFrame`: si el modelo GLB contiene tracks de animación para nodos `"Camera"` o `PerspectiveCamera`, se activa automáticamente la cinemática de cámara sin requerir intervención manual en el CMS.
+     - Actualizados los registros en Supabase con `useGlbCamera: true` para los pasos 04 y 06.
+  3. *Control Deslizante Vertical de Animación (`AnimationScrubber.jsx`, `Model.jsx`, `AudioPlayer.jsx`, `useEnviroment.js`)*:
+     - Nuevo componente en cápsula pura `rounded-full` (`#0088AA` / `#1368AA`, fondo `#131B2E`) ubicado ergonómicamente en el lateral izquierdo al alcance del pulgar.
+     - Permite adelantar, retroceder y pausar la animación 3D mediante `window.__seekAnimation(t)` y `mixer.setTime(t)` a 60 FPS con sincronización simultánea del audio de locución con `window.__seekAudio(t)`.
+     - Tooltip flotante con contador de tiempo en vivo (`{t}s / {duración}s`) y soporte táctil con `setPointerCapture`.
+  4. *Blindaje del Compresor en la Suite 3dBimFab (`3bf/app/api/compress-glb/route.ts`)*:
+     - Inclusión obligatoria de `weld()` y método `sequential` en la API de compresión glTF para que cualquier exportación futura salga optimizada de fábrica.
+- **Validación de Calidad**:
+  * Compilación de producción con Vite (`npm run build` en `legacy-aplicativo-armado`) en 4.72s con **0 errores**.
+  * `npx tsc --noEmit` en `3BF` y `mario-mojica-plataforma` completado con **0 errores**.
+
+
 
 
 

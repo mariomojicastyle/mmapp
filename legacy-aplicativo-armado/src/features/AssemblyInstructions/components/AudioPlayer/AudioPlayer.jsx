@@ -79,7 +79,19 @@ export default function AudioPlayer({ id: propId }) {
         audioRef.current.play().catch(e => console.warn("Direct audio play:", e.message));
       }
     };
-    return () => { delete window.__directAudioPlay; };
+    window.__seekAudio = (targetTime) => {
+      if (audioRef.current && Number.isFinite(targetTime)) {
+        try {
+          audioRef.current.currentTime = Math.max(0, targetTime);
+        } catch (e) {
+          // ignore seek bounds error
+        }
+      }
+    };
+    return () => {
+      delete window.__directAudioPlay;
+      delete window.__seekAudio;
+    };
   }, []);
 
   const safePlay = (audioEl, source = "audio") => {

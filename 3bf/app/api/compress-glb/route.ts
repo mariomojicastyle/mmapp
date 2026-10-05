@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { Document, NodeIO } from "@gltf-transform/core";
 import { KHRDracoMeshCompression } from "@gltf-transform/extensions";
-import { draco, dedup, resample, prune } from "@gltf-transform/functions";
+import { draco, dedup, resample, prune, weld } from "@gltf-transform/functions";
 import draco3d from "draco3d";
 
 import fs from "fs";
@@ -102,11 +102,12 @@ export async function POST(req: Request) {
         }
 
         await doc.transform(
+          weld(),
           dedup(),
           resample(),
           prune(),
           draco({
-            method: "edgebreaker",
+            method: "sequential",
             quantizePosition: 14,
             quantizeNormal: 10,
             quantizeTexcoord: 12,

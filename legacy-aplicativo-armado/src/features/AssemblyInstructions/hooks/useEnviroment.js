@@ -71,6 +71,10 @@ export default create(
       AnimationEnded: false,//Variable de animación 3D finalizada
       colorObjetoTocado: "#ec4899",//Color de objeto tocado / resaltado
 
+      animationDuration: 0,
+      animationCurrentTime: 0,
+      isScrubbing: false,
+
       CloudOneTime: true,//Valida que los tootlips de los paneles solo se activen una vez.
 
       HandToolExist: false,//Valida que ya tengo un tooltip de la mano, para no agregar una cada vez se cambia de paso
@@ -218,6 +222,10 @@ export default create(
 
       AnimationEndedFalse: () => set((state) => ({ AnimationEnded: false })),
       AnimationEndedTrue: () => set((state) => ({ AnimationEnded: true })),
+
+      SetAnimationDuration: (dur) => set(() => ({ animationDuration: dur })),
+      SetAnimationCurrentTime: (time) => set(() => ({ animationCurrentTime: time })),
+      SetIsScrubbing: (scrubbing) => set(() => ({ isScrubbing: scrubbing })),
 
       SetColorObjetoTocado: (color) => set(() => ({ colorObjetoTocado: color })),
 
