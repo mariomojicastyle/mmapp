@@ -9,7 +9,13 @@ Este archivo es la "Memoria RAM" para Antigravity. Contiene el contexto de lo qu
 ---
 
 ## 🏗️ 1. Plataforma B2B & 3dBimFab (Foco Actual)
-**Estado:** Hito 257 completado con éxito total. **Persistencia de Paneo y Traslación 3D con Clic Derecho en PC sin Retorno Forzado (`Experience.jsx`)**. Próximo foco: Continuidad de funcionalidades en la suite 3dBimFab y manuales de armado 3D. Rama: `3BF_Manual_Ravenna_OK`.
+**Estado:** Hito 258 completado con éxito total. **Aislamiento por Scope de Reglas de Cinemática Ravenna vs Manuales Estándar (`Model.jsx`)**. Próximo foco: Continuidad de funcionalidades en la suite 3dBimFab y manuales de armado 3D. Rama: `3BF_Manual_Ravenna_OK`.
+
+- [x] **[05 de Octubre, 2026] Hito 258: Aislamiento por Scope de Reglas de Cinemática Ravenna vs Manuales Estándar (`Model.jsx`)**:
+  * **Diagnóstico de Interferencia Multi-Manual**: Al implementar la desaceleración del 50% en el Paso 02 (`isStep02`) y el bucle continuo en el Paso 00 (`isStep00`) para la Cómoda Ravenna, dichas condiciones evaluaban únicamente el número de paso (`pasoActual === "02"`), careciendo de discriminación por identificador de manual (`props.id` / `manualId`). Como resultado, manuales históricos como la Mesa Multifuncional (`M00001`) sufrían una desaceleración forzada a mitad de velocidad en su paso 2, causando desincronización con el audio de locución grabado y pausas involuntarias.
+  * **Aislamiento Estricto por Scope (`isRavenna`)**: Se incorporó en `Model.jsx` una verificación inequívoca (`isRavenna = props.id === "Comoda_Ravenna" || props.id?.includes("ravenna") || state.id === "Comoda_Ravenna"`), condicionando `isStep00` e `isStep02` exclusivamente al modelo de Ravenna. Todos los demás manuales del catálogo (incluyendo la Mesa Multifuncional `M00001` y futuros desarrollos) operan ahora con la sincronización estándar 1:1 (velocidad 1.0x sin desfasajes de tiempo).
+  * **Integridad Garantizada**: La Cómoda Ravenna conserva intacto su bucle infinito en P00 y su ritmo pausado al 50% en P02, mientras que la Mesa Multifuncional y demás manuales recuperan su fidelidad temporal original.
+  * **Validación de Calidad**: `npm run build` en `legacy-aplicativo-armado` completado en 7.50s con **0 errores**. Despliegue en Netlify sincronizado.
 
 - [x] **[05 de Octubre, 2026] Hito 257: Persistencia de Paneo y Traslación 3D con Clic Derecho en PC sin Retorno Forzado (`Experience.jsx`)**:
   * **Diagnóstico de Rebote de Paneo en PC**: En `Experience.jsx`, el componente `<OrbitControls>` recibía el prop reactivo `target={cameraTarget ? new THREE.Vector3(...) : undefined}` y un `useEffect` sincronizaba `modelCenter` continuamente. Al arrastrar el mueble con clic derecho (acción de paneo), OrbitControls actualizaba su target internamente; sin embargo, al terminar de mover o ante cualquier re-render, el prop forzaba nuevamente el target al centroide original del mueble, haciendo que la cámara "rebotara" o se devolviera al punto de inicio.

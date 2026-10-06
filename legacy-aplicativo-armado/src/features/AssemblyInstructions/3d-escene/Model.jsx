@@ -254,6 +254,14 @@ function ActualModel(props) {
   const alturas = useEnviroment((state) => state.alturas);
   const { camera } = useThree();
 
+  // Scope: Verificar si el manual activo corresponde a la Cómoda Ravenna
+  const isRavenna = Boolean(
+    props.id === "Comoda_Ravenna" || 
+    props.id?.toLowerCase()?.includes("ravenna") || 
+    useEnviroment.getState().id === "Comoda_Ravenna" ||
+    useEnviroment.getState().id?.toLowerCase()?.includes("ravenna")
+  );
+
   // Referencia para el modelo 3D
   // 3D Model Instance Reference
   const modelRef = useRef();
@@ -410,8 +418,8 @@ function ActualModel(props) {
   // Exponer API de búsqueda interactiva (Scrubbing / Seek) para el Slider
   useEffect(() => {
     window.__seekAnimation = (targetTime) => {
-      const isStep00 = pasoActual === "00" || pasoActual === 0;
-      const isStep02 = pasoActual === "02" || pasoActual === 2 || pasoActual === "2";
+      const isStep00 = isRavenna && (pasoActual === "00" || pasoActual === 0);
+      const isStep02 = isRavenna && (pasoActual === "02" || pasoActual === 2 || pasoActual === "2");
       const validTime = Math.max(0, targetTime);
       const effectiveAnimDur = animDuration > 0 ? animDuration : validTime;
       
@@ -471,8 +479,8 @@ function ActualModel(props) {
     };
 
     window.__resumeAnimation = () => {
-      const isStep00 = pasoActual === "00" || pasoActual === 0;
-      const isStep02 = pasoActual === "02" || pasoActual === 2 || pasoActual === "2";
+      const isStep00 = isRavenna && (pasoActual === "00" || pasoActual === 0);
+      const isStep02 = isRavenna && (pasoActual === "02" || pasoActual === 2 || pasoActual === "2");
       const currentTime = useEnviroment.getState().animationCurrentTime || 0;
       const effectiveAnimDur = animDuration > 0 ? animDuration : currentTime;
       if (actions) {
@@ -503,8 +511,8 @@ function ActualModel(props) {
 
     // Sincronizador llamado por el audio mientras avanza
     window.__syncAnimationToTime = (time) => {
-      const isStep00 = pasoActual === "00" || pasoActual === 0;
-      const isStep02 = pasoActual === "02" || pasoActual === 2 || pasoActual === "2";
+      const isStep00 = isRavenna && (pasoActual === "00" || pasoActual === 0);
+      const isStep02 = isRavenna && (pasoActual === "02" || pasoActual === 2 || pasoActual === "2");
       const effectiveAnimDur = animDuration > 0 ? animDuration : time;
       
       if (isStep00) {
@@ -565,8 +573,8 @@ function ActualModel(props) {
     }
 
     if (StartApp === true && actions) {
-      const isStep00 = pasoActual === "00" || pasoActual === 0;
-      const isStep02 = pasoActual === "02" || pasoActual === 2 || pasoActual === "2";
+      const isStep00 = isRavenna && (pasoActual === "00" || pasoActual === 0);
+      const isStep02 = isRavenna && (pasoActual === "02" || pasoActual === 2 || pasoActual === "2");
 
       Object.values(actions).forEach((act) => {
         if (act) {
@@ -802,17 +810,17 @@ function ActualModel(props) {
 
       // Mantener acoplada la animación 3D cuando el audio es el reloj maestro
       if (hasAudioTrack && actions) {
-        const isStep00 = pasoActual === "00" || pasoActual === 0;
-        const isStep02 = pasoActual === "02" || pasoActual === 2 || pasoActual === "2";
+        const isStep00 = isRavenna && (pasoActual === "00" || pasoActual === 0);
+        const isStep02 = isRavenna && (pasoActual === "02" || pasoActual === 2 || pasoActual === "2");
         const phase = useEnviroment.getState().phaseAudio;
         const isPlaying = (phase === "playing" && !audioEl.paused);
         
         let targetAnimTime = Math.min(masterTime, animDur);
         if (isStep00 && animDur > 0) {
-          // Bucle continuo en Paso 00 durante toda la locución
+          // Bucle continuo en Paso 00 durante toda la locución (Ravenna)
           targetAnimTime = masterTime % animDur;
         } else if (isStep02) {
-          // 50% de velocidad (duración x2) en Paso 02
+          // 50% de velocidad (duración x2) en Paso 02 (Ravenna)
           targetAnimTime = Math.min(masterTime * 0.5, animDur);
         }
 

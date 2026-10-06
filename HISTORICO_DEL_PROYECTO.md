@@ -3101,4 +3101,33 @@ Para mantener la máxima agilidad y minimizar el consumo de tokens sin perder ni
   * Compilación de producción con Vite (`npm run build` en `legacy-aplicativo-armado`) completada exitosamente en 5.04s con **0 errores**.
   * Paneo libre y permanente con clic derecho en PC sin rebotes ni devoluciones forzadas.
 
+---
+
+### 🚀 Hito 258: Aislamiento por Scope de Reglas de Cinemática Ravenna vs Manuales Estándar (`Model.jsx`) (05 de Octubre, 2026)
+- **Confirmación y Diagnóstico de Interferencia**:
+  - Al revisar la sincronización de la Mesa Multifuncional (`M00001`), se confirmó plenamente la sospecha del usuario: la decisión tomada en la Cómoda Ravenna de ralentizar la animación al 50% de velocidad (`timeScale = 0.5`) en el Paso 02 y mantener el bucle continuo en el Paso 00 estaba condicionada únicamente por el número del paso (`pasoActual === "02"` o `pasoActual === "00"`).
+  - Al no tener guardia de ámbito por manual (`props.id`), el Paso 2 de cualquier otro manual cargado en la plataforma (como la Mesa Multifuncional) también se ejecutaba a mitad de velocidad, desfasándolo completamente respecto a la locución y provocando que la animación quedara a mitad de camino al terminar el audio.
+- **Implementación Técnica del Aislamiento**:
+  1. *Discriminador por Modelo (`isRavenna`)*:
+     - Se definió en `Model.jsx` una verificación explícita:
+       ```javascript
+       const isRavenna = Boolean(
+         props.id === "Comoda_Ravenna" || 
+         props.id?.toLowerCase()?.includes("ravenna") || 
+         useEnviroment.getState().id === "Comoda_Ravenna" ||
+         useEnviroment.getState().id?.toLowerCase()?.includes("ravenna")
+       );
+       ```
+  2. *Encapsulamiento de Reglas en Model.jsx*:
+     - Se blindaron los cuatro puntos clave de sincronización (`__seekAnimation`, `__resumeAnimation`, `__syncAnimationToTime`, `useEffect` de inicialización de animaciones y el reloj maestro en `useFrame`):
+       ```javascript
+       const isStep00 = isRavenna && (pasoActual === "00" || pasoActual === 0);
+       const isStep02 = isRavenna && (pasoActual === "02" || pasoActual === 2 || pasoActual === "2");
+       ```
+     - Si el manual cargado no es la Cómoda Ravenna (`!isRavenna`), `isStep00` e `isStep02` se evalúan como `false`, restaurando la velocidad estándar 1.0x (1:1 con el audio), el fin natural de animación al terminar el audio y previniendo cualquier pausa involuntaria.
+- **Validación de Calidad**:
+  * Compilación de producción con Vite (`npm run build` en `legacy-aplicativo-armado`) completada exitosamente en 7.50s con **0 errores**.
+  * Integridad de la Cómoda Ravenna 100% preservada (bucle P00 y velocidad reducida P02).
+  * Mesa Multifuncional (`M00001`) y futuros manuales 100% blindados en su tiempo nativo original.
+
 
