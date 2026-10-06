@@ -297,7 +297,8 @@ const AssemblyPage = () => {
                 cameraMode: g.cameraMode || (useGlbCam ? "glb" : "manual"),
                 hasGlbCamera: g.hasGlbCamera,
                 hasAnimatedCamera: g.hasAnimatedCamera,
-                position: pos
+                position: pos,
+                cameraTarget: g.cameraTarget
               };
             }),
             

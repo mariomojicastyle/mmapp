@@ -222,6 +222,11 @@ Para evitar respuestas genéricas, el RAM de ventas almacena y cruza 5 dimension
   * *24 Septiembre 2026 (07:20 COL / 09:20 BRT):* **¡HITO HISTÓRICO - REUNIÓN REAGENDADA Y CONFIRMADA DEFINITIVA!** Marcos respondió confirmando de inmediato la opción: *"vamos marcar pra semana que vem de manhã dia 29 - 9:30 as 10:30"*.
     **Nueva Reunión Agendada:** **Martes 29 de Septiembre de 2026, de 09:30 a 10:30 BRT (07:30 a 08:30 COL)**.
     **Participantes:** Mario Mojica, Marcos Unnass (Coordenador P&D), Jonas Borck (Engenharia de Produtos) y el **Equipo de Sistemas / TI de Móveis Henn**.
+  * *29 Septiembre 2026 (Tarde BRT):* Envío de la Propuesta Comercial en PDF (`Proposta_Comercial_Moveis_Henn_Mario_Mojica_PT_USD_Clean.pdf`) y Acta de Reunión 03 (`Ata_Reuniao_03_Moveis_Henn_Mario_Mojica_PT.pdf`). Marcos respondió: *"Sim, com calma dou uma olhada e se precisar tbm te chamo"*.
+  * *06 Octubre 2026 (Mañana COL/BRT):* **Envío del Manual 3D Interactivo de la Cómoda Ravenna (`https://mariomojica.com/Comoda_Ravenna`):**
+    - Mario envió a Marcos el link interactivo invitándolo a probarlo con un armador de fábrica para recibir feedback técnico objetivo del flujo de ensamble real.
+    - Se reiteró que el proyecto piloto de la cómoda está en manos de Henn para afinar detalles cosméticos (fotos reales de herrajes, términos de garantía, branding de marketing).
+    - Mario confirmó total preparación para la reunión con el equipo de Marketing y anunció el envío de un video en portugués a lo largo de la semana explicando las virtudes del manual. Saludos a Marcos, Jonas y Lucas.
 - **Objetivo Estratégico:** Demostración en vivo de la *Cômoda Ravenna D737* en `3dBimFab`, integración con TOTVS Datasul, y presentación de la oferta irresistible de 10 muebles piloto (manuales 3D al 50% y gemelos digitales bonificados a $0 COP / R$ 0 BRL) el Martes 29 de Septiembre a las 09:30 BRT.
 
 ---

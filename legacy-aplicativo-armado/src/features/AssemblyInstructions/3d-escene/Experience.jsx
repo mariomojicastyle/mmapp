@@ -67,17 +67,20 @@ function ActualAssemblySceneViewer({ id, modelUrl, productData, decryptedUrl }) 
 
   const modelCenter = useEnviroment((state) => state.modelCenter);
 
-  // Actualizar el target de la cámara usando el centro de gravedad del mueble o datos de 'alturas' del JSON
+  // Actualizar el target de la cámara usando coordenadas guardadas en 'alturas' o fallback a centro de gravedad
   useEffect(() => {
     let customTarget = null;
-    if (modelCenter && Array.isArray(modelCenter)) {
-      customTarget = modelCenter;
-    } else if (alturas && alturas.length > 0) {
+    if (alturas && alturas.length > 0) {
       const altData = alturas.find(a => a.paso === PasoActual);
-      if (altData && altData.target && (altData.target[0] !== 0 || altData.target[1] !== 0 || altData.target[2] !== 0)) {
+      if (altData && altData.target && Array.isArray(altData.target)) {
         customTarget = [altData.target[0], altData.target[1], altData.target[2]];
       }
     }
+    
+    if (!customTarget && modelCenter && Array.isArray(modelCenter)) {
+      customTarget = modelCenter;
+    }
+
     if (customTarget) {
       // Solo inicializar target si el usuario no ha tomado el control manual de órbita/paneo libre
       const isManualOrbit = useEnviroment.getState().isManualOrbit;

@@ -405,7 +405,11 @@ function ActualModel(props) {
     ((cameras && cameras.length > 0) || scene?.getObjectByName("Camera")) &&
     animations?.some(clip => clip.tracks?.some(track => track.name.toLowerCase().includes("camera")))
   );
-  const isGlbCamActive = Boolean(
+  const isExplicitManual = Boolean(
+    currentCamConfig?.cameraMode === "manual" || 
+    (currentCamConfig?.override && currentCamConfig?.useGlbCamera === false)
+  );
+  const isGlbCamActive = !isExplicitManual && Boolean(
     currentCamConfig?.useGlbCamera === true || 
     currentCamConfig?.cameraMode === "glb" || 
     hasCameraAnimation
@@ -672,14 +676,25 @@ function ActualModel(props) {
         posicionDeCamaraActual.position.z
       );
 
-      // Usar centro de gravedad del mueble ensamblado como target de órbita
-      let targetVec = modelCenter;
+      // Usar target explícito guardado (de alturas o de la posición guardada)
+      let targetVec = null;
       if (alturas && alturas.length > 0) {
-        const altData = alturas.find(a => a.paso === pasoActual);
-        if (altData && altData.target && (altData.target[0] !== 0 || altData.target[1] !== 0 || altData.target[2] !== 0)) {
+        const altData = alturas.find(a => a.paso == pasoActual);
+        if (altData && altData.target && Array.isArray(altData.target)) {
           targetVec = new THREE.Vector3(altData.target[0], altData.target[1], altData.target[2]);
         }
       }
+      if (!targetVec && posicionDeCamaraActual?.cameraTarget && Array.isArray(posicionDeCamaraActual.cameraTarget)) {
+        targetVec = new THREE.Vector3(
+          posicionDeCamaraActual.cameraTarget[0],
+          posicionDeCamaraActual.cameraTarget[1],
+          posicionDeCamaraActual.cameraTarget[2]
+        );
+      }
+      if (!targetVec) {
+        targetVec = modelCenter;
+      }
+
       camera.lookAt(targetVec);
       if (props.orbitControlsRef && props.orbitControlsRef.current) {
         props.orbitControlsRef.current.target.copy(targetVec);
@@ -891,7 +906,11 @@ function ActualModel(props) {
       ((cameras && cameras.length > 0) || scene.getObjectByName("Camera")) &&
       animations?.some(clip => clip.tracks?.some(track => track.name.toLowerCase().includes("camera")))
     );
-    const isGlbCamActive = Boolean(
+    const isExplicitManual = Boolean(
+      currentCamConfig?.cameraMode === "manual" || 
+      (currentCamConfig?.override && currentCamConfig?.useGlbCamera === false)
+    );
+    const isGlbCamActive = !isExplicitManual && Boolean(
       currentCamConfig?.useGlbCamera === true || 
       currentCamConfig?.cameraMode === "glb" || 
       hasCameraAnimation
