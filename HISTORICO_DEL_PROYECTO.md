@@ -3007,5 +3007,25 @@ Para mantener la máxima agilidad y minimizar el consumo de tokens sin perder ni
   * Compilación de producción con Vite (`npm run build` en `legacy-aplicativo-armado`) completada exitosamente en 4.70s con **0 errores**.
   * Sincronización de animaciones, bucle de P00, ralentización al 50% de P02 y experiencia de usuario limpia y unificada.
 
+---
+
+### 🚀 Hito 253: Integración de Icono Videocam SVG Oficial, Sincronización Reactiva de Cámara Guiada y Supresión de Titileo (Moiré) en Cuadrícula del Estudio (`Icons.jsx`, `NavBarInferior.jsx`, `Model.jsx`, `Experience.jsx`) (05 de Octubre, 2026)
+- **Diagnóstico y Requerimientos de Usuario**:
+  1. *Icono de Cámara de Video Oficial*: El usuario proporcionó el activo vectorial `temporal/videocam.svg` (geometría canónica de Google Material con `viewBox="0 -960 960 960"` y `d="M160-160q-33 0-56.5-23.5T80-240v-480q0-33 23.5-56.5T160-800h480q33 0 56.5 23.5T720-720v180l160-160v440L720-420v180q0 33-23.5 56.5T640-160H160Zm0-80h480v-480H160v480Zm0 0v-480 480Z"`).
+  2. *Causa de No Aparición del Icono*: En `Model.jsx`, `hasGuidedCamera` se actualizaba tarde dentro del effect que inicializaba la escena 3D y calculaba el centroide del mueble. Al cambiar de paso con `CambiarModelo`, el estado se reseteaba a `false` antes de que la escena montara, impidiendo que `NavBarInferior` mostrara el icono en los primeros instantes tras orbitar.
+  3. *Líneas Intermitentes / Titileo en la Lejanía de la Cuadrícula*:
+     - **Causa Raíz Óptica y Matemática**: En gráficos 3D por computadora (WebGL/Three.js), `gridHelper` renderiza líneas vectoriales sin antialiasing multisampling progresivo en profundidad. Al extenderse la cuadrícula a 30 metros sobre un plano rasante con ángulo de visión tangencial, las líneas distantes sub-muestrean los píxeles de la pantalla generando **patrones de interferencia Moiré y aliasing de centelleo (shimmering/flickering)** con cada micro-movimiento de órbita. Además, la niebla (`<fog>`) terminaba en 15 metros mientras la cuadrícula alcanzaba los 30 metros ($[-15, +15]$), proyectando líneas agudas que chocaban contra el fondo.
+- **Implementación Técnica de la Solución**:
+  1. *Icons.jsx*:
+     - Se reemplazó la definición de `<IconCamera />` por la geometría exacta de `temporal/videocam.svg`, conservando `fill="currentColor"` para adoptar dinámicamente los estilos de color de marca.
+  2. *Model.jsx*:
+     - Añadido `useEffect` inmediato al cargar el GLB (`[isGlbCamActive, pasoActual]`) que sincroniza en tiempo real `SetHasGuidedCamera(isGlbCamActive)` con Zustand, asegurando que `NavBarInferior` siempre tenga el valor correcto y renderice la videocámara de forma instantánea al primer toque de órbita.
+  3. *Experience.jsx*:
+     - Se ajustó el radio de la cuadrícula a 24 metros (`args={[24, 24]}`) y se sincronizó la niebla volumétrica del modo estudio (`<fog attach="fog" args={[color, 6, 20]} />`).
+     - Al entrar en la lejanía (a partir de los 6 metros), la niebla desvanece de manera suave y exponencial las líneas de la cuadrícula hacia el color de fondo, erradicando por completo el choque de píxeles, el efecto Moiré y el titileo parpadeante.
+- **Validación de Calidad**:
+  * Compilación de producción con Vite (`npm run build` en `legacy-aplicativo-armado`) completada exitosamente en 5.30s con **0 errores**.
+  * Visualización nítida y elegante de la cuadrícula sin destellos lejanos y botón de videocámara completamente funcional y reactivo.
+
 
 

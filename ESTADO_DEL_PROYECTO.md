@@ -9,9 +9,16 @@ Este archivo es la "Memoria RAM" para Antigravity. Contiene el contexto de lo qu
 ---
 
 ## 🏗️ 1. Plataforma B2B & 3dBimFab (Foco Actual)
-**Estado:** Hito 252 completado con éxito total. **Erradicación de Cápsulas Redundantes, Unificación Monotónica del Loader por Paso, Conmutador Titilante de Cámara Guiada y Cinemática Adaptativa en P00 y P02 (`Model.jsx`, `AnimationScrubber.jsx`, `NavBarInferior.jsx`, `NavBarInferior.css`, `Icons.jsx`, `useEnviroment.js`)**. Próximo foco: Continuidad de funcionalidades en la suite 3dBimFab y manuales de armado 3D. Rama: `3BF_Manual_Ravenna_OK`.
+**Estado:** Hito 253 completado con éxito total. **Integración de Icono Videocam SVG Oficial, Sincronización Reactiva de Cámara Guiada y Supresión de Titileo (Moiré) en Cuadrícula del Estudio (`Icons.jsx`, `NavBarInferior.jsx`, `Model.jsx`, `Experience.jsx`)**. Próximo foco: Continuidad de funcionalidades en la suite 3dBimFab y manuales de armado 3D. Rama: `3BF_Manual_Ravenna_OK`.
+
+- [x] **[05 de Octubre, 2026] Hito 253: Integración de Icono Videocam SVG Oficial, Sincronización Reactiva de Cámara Guiada y Supresión de Titileo (Moiré) en Cuadrícula del Estudio (`Icons.jsx`, `NavBarInferior.jsx`, `Model.jsx`, `Experience.jsx`)**:
+  * **Icono Videocam SVG Oficial**: Integrada la geometría canónica de `temporal/videocam.svg` en `<IconCamera />` con `viewBox="0 -960 960 960"` y `fill="currentColor"`.
+  * **Sincronización Reactiva Inmediata**: Corregido `SetHasGuidedCamera` en `Model.jsx` para actualizar el store Zustand de inmediato al montar el GLB del paso. Al tocar la pantalla para orbitar, el botón se transforma instantáneamente en la videocámara titilante.
+  * **Supresión de Titileo (Moiré / Shimmering) en la Cuadrícula**: Sincronización milimétrica entre la cuadrícula de estudio (`gridHelper` de 24m) y la niebla volumétrica (`<fog args={[color, 6, 20]}`), desvaneciendo progresivamente las líneas en el horizonte y eliminando el centelleo y aliasing visual.
+  * **Validación de Calidad**: `npm run build` en `legacy-aplicativo-armado` completado en 5.30s con **0 errores**.
 
 - [x] **[05 de Octubre, 2026] Hito 252: Erradicación de Cápsulas Redundantes, Unificación Monotónica del Loader por Paso, Conmutador Titilante de Cámara Guiada y Cinemática Adaptativa en P00 y P02 (`Model.jsx`, `AnimationScrubber.jsx`, `NavBarInferior.jsx`, `NavBarInferior.css`, `Icons.jsx`, `useEnviroment.js`)**:
+
   * **Eliminación de Cápsulas Redundantes**: Suprimidas tanto la cápsula flotante de tiempo en el scrubber (`• 116s / 202s`) como el popup modal gris central de carga (`Cargando paso X...`), dejando una interfaz limpia y despejada.
   * **Loader Unificado sin Doble Barra**: Monitoreo monotónico por paso que evita la reactivación del loader provocada por el preload en segundo plano de Three.js.
   * **Icono de Videocámara Titilante en Órbita Libre**: En pasos con cámara animada guiada, el botón se convierte en `<IconCamera />` con animación titilante pulsante (`.btn-camera-blinking`) al orbitar manualmente; al presionarlo retoma la trayectoria original.

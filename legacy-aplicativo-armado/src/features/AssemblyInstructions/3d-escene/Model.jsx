@@ -362,7 +362,7 @@ function ActualModel(props) {
   const animDuration = useEnviroment((state) => state.animDuration);
   const currentCamConfig = CameraPosition ? CameraPosition.find((item) => item.pasos == pasoActual) : null;
   const hasCameraAnimation = Boolean(
-    ((cameras && cameras.length > 0) || scene.getObjectByName("Camera")) &&
+    ((cameras && cameras.length > 0) || scene?.getObjectByName("Camera")) &&
     animations?.some(clip => clip.tracks?.some(track => track.name.toLowerCase().includes("camera")))
   );
   const isGlbCamActive = Boolean(
@@ -370,6 +370,12 @@ function ActualModel(props) {
     currentCamConfig?.cameraMode === "glb" || 
     hasCameraAnimation
   );
+
+  // Sincronizar de forma inmediata con el store global si este paso tiene cámara guiada o animada
+  useEffect(() => {
+    useEnviroment.getState().SetHasGuidedCamera(isGlbCamActive);
+  }, [isGlbCamActive, pasoActual]);
+
 
   // Exponer API de búsqueda interactiva (Scrubbing / Seek) para el Slider
   useEffect(() => {

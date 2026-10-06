@@ -364,18 +364,20 @@ function ActualAssemblySceneViewer({ id, modelUrl, productData, decryptedUrl }) 
       {isEstudio && (
         <>
           <color attach="background" args={[customColors.background || colorAmbienteVal]} />
-          <fog attach="fog" args={[customColors.background || colorAmbienteVal, 5, 15]} />
+          {/* Niebla exponencial suave que desvanece las líneas en la lejanía eliminando el titileo por Moiré y sub-muestreo */}
+          <fog attach="fog" args={[customColors.background || colorAmbienteVal, 6, 20]} />
           <gridHelper 
             args={[
-              30, 
-              30, 
+              24, 
+              24, 
               customColors.gridCenter || '#b5b5c3', 
               customColors.gridLines || '#d1d1db'
             ]} 
-            position={[0, floorY + 0.002, 0]} 
+            position={[0, floorY + 0.003, 0]} 
           />
         </>
       )}
+
 
       <Environment preset="city" blur={0.8} environmentIntensity={lightingConfig.envIntensity} />
       <ambientLight intensity={sombras ? lightingConfig.ambientShadow : lightingConfig.ambientIntensity} />
