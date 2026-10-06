@@ -391,11 +391,13 @@ function ActualModel(props) {
       animations.forEach((a) => {
         if (a.duration && a.duration > maxDur) maxDur = a.duration;
       });
-      useEnviroment.getState().SetAnimDuration(maxDur);
+      const isStep02 = isRavenna && (pasoActual === "02" || pasoActual === 2 || pasoActual === "2");
+      const effectiveVisualDur = isStep02 ? maxDur * 2.0 : maxDur;
+      useEnviroment.getState().SetAnimDuration(effectiveVisualDur);
     } else {
       useEnviroment.getState().SetAnimDuration(0);
     }
-  }, [animations, pasoActual]);
+  }, [animations, pasoActual, isRavenna]);
 
   const animDuration = useEnviroment((state) => state.animDuration);
   const currentCamConfig = CameraPosition ? CameraPosition.find((item) => item.pasos == pasoActual) : null;
@@ -804,7 +806,8 @@ function ActualModel(props) {
           // El audio ya concluyó pero la animación 3D continúa su recorrido hasta animDur
           const activeAct = Object.values(actions || {}).find((a) => a && typeof a.time === "number");
           if (activeAct && typeof activeAct.time === "number") {
-            masterTime = activeAct.time;
+            // Si el paso opera a escala reducida (ej. P02 al 50%), convertimos el tiempo interno al tiempo visual real
+            masterTime = isStep02 ? activeAct.time * 2.0 : activeAct.time;
           } else {
             masterTime = audioDur;
           }
@@ -814,7 +817,7 @@ function ActualModel(props) {
       } else if (actions) {
         const activeAct = Object.values(actions).find((a) => a && a.isRunning()) || Object.values(actions)[0];
         if (activeAct && typeof activeAct.time === "number") {
-          masterTime = activeAct.time;
+          masterTime = isStep02 ? activeAct.time * 2.0 : activeAct.time;
         }
       }
 
@@ -839,16 +842,16 @@ function ActualModel(props) {
           // Bucle continuo en Paso 00 durante toda la locución (Ravenna)
           targetAnimTime = masterTime % animDur;
         } else if (isStep02) {
-          // 50% de velocidad (duración x2) en Paso 02 (Ravenna)
-          targetAnimTime = Math.min(masterTime * 0.5, animDur);
+          // 50% de velocidad (duración x2): el mixer interno llega a su clip original de duración a través del factor 0.5
+          targetAnimTime = Math.min(masterTime * 0.5, animDur * 0.5);
         }
 
-        const isFinished = !isStep00 && (isStep02 ? (masterTime * 0.5 >= animDur) : (masterTime >= animDur));
+        const isFinished = !isStep00 && (masterTime >= totalDur);
 
         Object.values(actions).forEach((act) => {
           if (act) {
             if (isFinished) {
-              act.time = animDur;
+              act.time = isStep02 ? animDur * 0.5 : animDur;
               act.paused = true;
             } else {
               if (isPlaying) {
@@ -866,8 +869,8 @@ function ActualModel(props) {
           }
         });
 
-        // Si la animación superaba al audio y ahora ha alcanzado el final total:
-        if (isFinished && animDur > audioDur && phase === "playing") {
+        // Si la animación o el paso ha alcanzado el final total definitivo:
+        if (isFinished && phase === "playing") {
           const state = useEnviroment.getState();
           state.AudioEndedTrue();
           state.AnimationEndedTrue();

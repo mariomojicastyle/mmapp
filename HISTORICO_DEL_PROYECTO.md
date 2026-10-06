@@ -3159,3 +3159,33 @@ Para mantener la máxima agilidad y minimizar el consumo de tokens sin perder ni
   * Compilación de producción con Vite (`npm run build` en `legacy-aplicativo-armado`) completada exitosamente en 5.50s con **0 errores**.
   * Ensamble 3D de la Mesa Multifuncional (`M00001` Paso 6) y manuales con animaciones largas se reproduce al 100% hasta su encaje final, mostrando la nube de herramientas y herrajes únicamente tras finalizar la acción visual completa.
   * Preservación absoluta e inviolable de la Cómoda Ravenna y sus cinemáticas especiales.
+
+---
+
+### 🚀 Hito 260: Gobernanza Universal de Duración Máxima ($\max(\text{Audio}, \text{Animación Visual})$) y Erradicación Total de Pausas Prematuras (`Model.jsx`, `AudioPlayer.jsx`) (06 de Octubre, 2026)
+- **Diagnóstico Integral (Desfase de Escala de Tiempo y Finalización Temprana)**:
+  1. *Desfase entre Duración Cruda y Duración Visual Percibida*:
+     - En el Paso 02 de la Cómoda Ravenna, el clip de animación del GLB dura 24 segundos nominales; sin embargo, al ejecutarse al 50% de velocidad (`timeScale = 0.5`), su duración visual real de ensamble es de **48 segundos**.
+     - Por su parte, la pista de audio dura **21.12 segundos**.
+     - Al registrar `animDuration` directamente desde `clip.duration` (24s) sin ponderar el `timeScale`, el store global no reflejaba los 48 segundos reales necesarios para completar el ensamble de las correderas y tornillos.
+  2. *Disparo Prematuro de Eventos de Cierre en AudioPlayer*:
+     - Al concluir los 21s de audio, `audio.onended` y `audio.ontimeupdate` evaluaban duraciones nominales, provocando que `AudioPlayer.jsx` disparara prematuramente `AudioEndedTrue()`, `ResetAudio()` y `ActionTrue()`.
+     - Esto activaba la nube *"HERRAJES NECESARIOS"* en `PanelBtn.jsx` mientras los herrajes aún estaban a mitad de su recorrido de animación, pausando además los `actions` en Three.js (`act.paused = true`).
+- **Implementación Técnica de la Gobernanza Universal**:
+  1. *Cálculo de Duración Visual Real en `Model.jsx`*:
+     - `SetAnimDuration` ahora computa la duración real percibida considerando la escala de velocidad (`timeScale`):
+       * Pasos estándar a 1.0x: `effectiveVisualDur = maxDur`.
+       * Pasos ralentizados a 0.5x (ej. Ravenna P02): `effectiveVisualDur = maxDur * 2.0`.
+  2. *Gobernanza Armónica del Reloj Maestro en `useFrame` (`Model.jsx`)*:
+     - Durante la fase posterior al audio (`audioEl.ended`), Three.js mantiene la animación activa (`isPlaying = true`, `act.paused = false`).
+     - Para pasos a velocidad 0.5x, `masterTime` se mapea limpiamente a tiempo visual real (`activeAct.time * 2.0`).
+     - La condición de finalización de paso evalúa de forma estricta e inviolable:
+       $$\text{isFinished} = (\text{masterTime} \ge \text{totalDur}), \quad \text{donde } \text{totalDur} = \max(\text{duraciónAudio}, \text{duraciónAnimaciónReal})$$
+     - Solo al alcanzar `totalDur` se fija la pose final ensamblada y se disparan en sincronía `AudioEndedTrue()`, `AnimationEndedTrue()`, `ResetAudio()` y `ActionTrue()`.
+  3. *Protección en `AudioPlayer.jsx`*:
+     - `audio.ontimeupdate` y `audio.onended` leen `effectiveAnimDur = state.animationDuration || state.animDuration`.
+     - Si la animación es más larga que la pista de audio (`effectiveAnimDur > audioDur + 0.1`), el evento de finalización del elemento HTML `<audio>` se inhibe por completo, delegando el relevo y cierre a Three.js.
+     - Si el audio es más largo que la animación, la animación espera pacíficamente ensamblada en su posición final sin reinicios ni cortes bruscos hasta que la locución concluya.
+- **Validación de Calidad**:
+  * Compilación de producción con Vite (`npm run build` en `legacy-aplicativo-armado`) completada exitosamente en 4.61s con **0 errores**.
+  * Regla 100% universal aplicable a todos los manuales del catálogo (Cómoda Ravenna, Mesa Multifuncional `M00001`, Tijuca y futuros proyectos).

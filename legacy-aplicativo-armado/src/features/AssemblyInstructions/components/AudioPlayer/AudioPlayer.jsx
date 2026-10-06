@@ -242,11 +242,11 @@ export default function AudioPlayer({ id: propId }) {
         if (!audioRef.current) return;
         
         const state = useEnviroment.getState();
-        const animDur = state.animDuration || 0;
+        const effectiveAnimDur = state.animationDuration || state.animDuration || 0;
         const audioDur = state.audioDuration || audioRef.current.duration || 0;
 
-        // Si la animación no es más larga que el audio, el fin del audio concluye la locución
-        if (audioRef.current.ended && animDur <= audioDur + 0.1) {
+        // Solo si la animación 3D no supera la locución de audio, el fin del elemento de audio concluye la reproducción
+        if (audioRef.current.ended && effectiveAnimDur <= audioDur + 0.1) {
           AudioEndedTrue();
         }
 
@@ -265,13 +265,13 @@ export default function AudioPlayer({ id: propId }) {
 
       audioRef.current.onended = () => {
         const state = useEnviroment.getState();
-        const animDur = state.animDuration || 0;
+        const effectiveAnimDur = state.animationDuration || state.animDuration || 0;
         const audioDur = state.audioDuration || (audioRef.current ? audioRef.current.duration : 0) || 0;
 
-        // Si la animación 3D es más larga que la locución (ej. M00001 Paso 6: anim 15s, audio 7.6s),
-        // NO poner phaseAudio en "reset" ni activar ActionTrue() prematuramente.
-        // La animación 3D en useFrame continuará hasta completar su duración total.
-        if (animDur > audioDur + 0.1) {
+        // Si la animación 3D es más larga que la locución (ej. anim 24s/48s vs audio 21s, o M00001 Paso 6),
+        // NUNCA poner phaseAudio en 'reset' ni activar AudioEndedTrue() o ActionTrue() prematuramente.
+        // La animación 3D en useFrame continuará su ciclo hasta completar su tiempo real total.
+        if (effectiveAnimDur > audioDur + 0.1) {
           return;
         }
 

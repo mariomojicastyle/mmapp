@@ -9,7 +9,14 @@ Este archivo es la "Memoria RAM" para Antigravity. Contiene el contexto de lo qu
 ---
 
 ## 🏗️ 1. Plataforma B2B & 3dBimFab (Foco Actual)
-**Estado:** Hito 259 completado con éxito total. **Sincronización Armónica de Duración Total (Audio + Animación 3D) y Prevención de Congelamiento Prematuro de Herrajes (`AudioPlayer.jsx`, `Model.jsx`)**. Próximo foco: Continuidad de funcionalidades en la suite 3dBimFab y manuales de armado 3D. Rama: `Manual_Ravenna_OK`.
+**Estado:** Hito 260 completado con éxito total. **Gobernanza Universal de Duración Máxima ($\max(\text{Audio}, \text{Animación Visual})$) y Erradicación Total de Pausas Prematuras (`Model.jsx`, `AudioPlayer.jsx`)**. Próximo foco: Continuidad de funcionalidades en la suite 3dBimFab y manuales de armado 3D. Rama: `Manual_Ravenna_OK`.
+
+- [x] **[06 de Octubre, 2026] Hito 260: Gobernanza Universal de Duración Máxima ($\max(\text{Audio}, \text{Animación Visual})$) y Erradicación Total de Pausas Prematuras (`Model.jsx`, `AudioPlayer.jsx`)**:
+  * **Diagnóstico de Desfase Temporal y Cierre Anticipado**: En el Paso 02 de la Cómoda Ravenna (y pasos con velocidad reducida), la animación del GLB dura 24s nominales pero al 50% de velocidad (`timeScale = 0.5`) su duración visual real es de 48s, mientras que el audio dura 21.12s. `audio.onended` y `ontimeupdate` evaluaban duraciones nominales sin ponderar `timeScale`, activando prematuramente la nube de herrajes en `PanelBtn.jsx` y pausando las mallas a mitad de recorrido.
+  * **Gobernanza de Duración Real Percibida**: `SetAnimDuration` computa la duración real considerando el factor de velocidad (`effectiveVisualDur = maxDur * 2.0` en Ravenna P02).
+  * **Reloj Maestro Armónico en `useFrame`**: `isFinished` evalúa estrictamente `masterTime >= totalDur`, donde `totalDur = Math.max(animDur, audioDur)`. Al concluir el audio, Three.js mantiene la animación activa (`isPlaying = true`) hasta alcanzar el 100% de la duración máxima.
+  * **Blindaje en `AudioPlayer.jsx`**: Si la animación 3D es más larga que la pista de audio (`effectiveAnimDur > audioDur + 0.1`), los eventos de finalización de audio se inhiben, dejando que Three.js culmine el ciclo y dispare sincronizadamente `AudioEndedTrue()`, `ResetAudio()` y `ActionTrue()`.
+  * **Validación de Calidad**: `npm run build` en `legacy-aplicativo-armado` completado en 4.61s con **0 errores**.
 
 - [x] **[06 de Octubre, 2026] Hito 259: Sincronización Armónica de Duración Total (Audio + Animación 3D) y Prevención de Congelamiento Prematuro de Herrajes (`AudioPlayer.jsx`, `Model.jsx`)**:
   * **Diagnóstico de Congelamiento Prematuro y Nube de Herrajes**: En manuales donde la animación 3D dura más que la locución de voz (ej. Mesa Multifuncional `M00001` Paso 6: audio de 7.6s vs animación de 15.0s, o Tijuca), `audio.onended` forzaba `ResetAudio()` a los 7.6s, congelando la animación al 50% con las bisagras en el aire, mientras que `ontimeupdate` activaba la nube *"HERRAJES NECESARIOS"* antes de que las piezas terminaran de ensamblarse.
