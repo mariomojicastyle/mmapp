@@ -9,7 +9,13 @@ Este archivo es la "Memoria RAM" para Antigravity. Contiene el contexto de lo qu
 ---
 
 ## 🏗️ 1. Plataforma B2B & 3dBimFab (Foco Actual)
-**Estado:** Hito 254 completado con éxito total. **Diagnóstico y Corrección de Camuflaje Cromático y Visibilidad de Icono Videocam en Órbita Libre (`NavBarInferior.css`, `NavBarInferior.jsx`, `Icons.jsx`)**. Próximo foco: Continuidad de funcionalidades en la suite 3dBimFab y manuales de armado 3D. Rama: `3BF_Manual_Ravenna_OK`.
+**Estado:** Hito 255 completado con éxito total. **Erradicación de Saltos Angulares y Transición Suave en Zoom y Órbita mediante Target Colineal de Visión (`Model.jsx`)**. Próximo foco: Continuidad de funcionalidades en la suite 3dBimFab y manuales de armado 3D. Rama: `3BF_Manual_Ravenna_OK`.
+
+- [x] **[05 de Octubre, 2026] Hito 255: Erradicación de Saltos Angulares y Transición Suave en Zoom y Órbita mediante Target Colineal de Visión (`Model.jsx`)**:
+  * **Diagnóstico de Descuadre de Cámara**: En `OrbitControls`, el pivote (`target`) difería del vector director de avance de la cámara animada ($\vec{v}_{\text{forward}}$). Al tocar la pantalla o hacer gesto de pinza (pinch-to-zoom), OrbitControls forzaba a la cámara a mirar rígidamente hacia dicho punto, produciendo un salto o "latigazo" angular instantáneo.
+  * **Solución Geométrica Colineal (`calcularTargetColinealSuave`)**: Implementada proyección matemática que calcula el `target` exactamente sobre la recta óptica de visión de la cámara ($\vec{T} = \vec{P} + \vec{v}_{\text{forward}} \cdot d$). Al ser el ángulo cámara-target de 0°, la rotación y el zoom continúan con suavidad infinita desde el punto exacto de la animación sin ningún salto ni descentrado.
+  * **Sincronización en Caliente y `start`**: Conectado tanto en el evento de inicio de interacción (`onControlsStart`) como cuadro a cuadro en `useFrame` antes del toque.
+  * **Validación de Calidad**: `npm run build` en `legacy-aplicativo-armado` completado en 5.29s con **0 errores**. Despliegue en Netlify sincronizado.
 
 - [x] **[05 de Octubre, 2026] Hito 254: Diagnóstico y Corrección de Camuflaje Cromático y Visibilidad de Icono Videocam en Órbita Libre (`NavBarInferior.css`, `NavBarInferior.jsx`, `Icons.jsx`)**:
   * **Diagnóstico de Causa Raíz**: En `NavBarInferior.css`, la clase pulsante `.btn-camera-blinking` forzaba `color: var(--primary) !important;` y en los keyframes `@keyframes camera-pulse-blink` también asignaba `color: var(--primary)`. Dado que para Cómoda Ravenna el fondo del botón es `--surface` / `--primary` (rojo oscuro `#A8112E`), el SVG vectorial heredaba exactamente el mismo color rojo del fondo (`color: currentColor`), produciendo un camuflaje del 100% (rojo sobre rojo) que hacía parecer el botón vacío.

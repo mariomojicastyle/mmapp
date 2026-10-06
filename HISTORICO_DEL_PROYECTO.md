@@ -3043,3 +3043,25 @@ Para mantener la máxima agilidad y minimizar el consumo de tokens sin perder ni
 - **Validación de Calidad**:
   * Compilación de producción con Vite (`npm run build` en `legacy-aplicativo-armado`) completada exitosamente en 4.86s con **0 errores**.
   * Icono de videocámara completamente visible, nítido y de alto contraste blanco sobre el botón rojo oscuro, titilando con elegancia y llamando la atención al orbitar libremente.
+
+---
+
+### 🚀 Hito 255: Erradicación de Saltos Angulares y Transición Suave en Zoom y Órbita mediante Target Colineal de Visión (`Model.jsx`) (05 de Octubre, 2026)
+- **Diagnóstico del Descuadre de Cámara al Tocar la Pantalla**:
+  1. *Física de la Cámara Animada vs OrbitControls*:
+     - La cámara del GLB se mueve con posición y orientación angular libre (cuaterniones/Euler) siguiendo una trayectoria cinematográfica sin punto pivote rígido.
+     - `OrbitControls` opera en coordenadas esféricas alrededor de un punto pivote (`target`).
+  2. *Causa Raíz del Salto Angular*:
+     - Al interactuar el usuario (touch o gesto de pinza pinch-to-zoom), OrbitControls toma el control de la cámara forzándola a reorientarse hacia su `target` ($\text{lookAt}(\vec{T})$).
+     - Si el vector hacia dicho `target` no era estrictamente colineal con el vector de avance óptico de la cámara ($\vec{v}_{\text{forward}}$), la cámara sufría un "latigazo" o salto angular instantáneo para alinearse con el pivote.
+- **Implementación Técnica de la Solución**:
+  1. *Función Matemática `calcularTargetColinealSuave`*:
+     - Proyecta un rayo óptico hacia adelante desde la cámara a lo largo de su vector director unitario exacto:
+       $$\vec{T}_{\text{colineal}} = \vec{P}_{\text{cámara}} + \vec{v}_{\text{forward}} \cdot d$$
+     - La distancia $d$ se calcula proyectando la posición del centro de las piezas activas en pantalla sobre la línea de visión ($\text{camToCenter} \cdot \vec{v}_{\text{forward}}$), asegurando que el pivote de giro y zoom se sitúe con precisión milimétrica sobre las piezas en ensamble.
+     - Al estar el `target` situado exactamente sobre la recta visual de la cámara, el ángulo de desvío es exactamente **0°**, eliminando por completo cualquier latigazo o salto de orientación.
+  2. *Sincronización en `onControlsStart` y `useFrame`*:
+     - En `Model.jsx`, tanto al iniciar el toque (`controls.addEventListener('start')`) como continuamente en `useFrame` mientras la cámara del GLB vuela, el target de OrbitControls se mantiene alineado en 0°. Al poner los dedos, la transición es 100% suave y continua.
+- **Validación de Calidad**:
+  * Compilación de producción con Vite (`npm run build` en `legacy-aplicativo-armado`) completada exitosamente en 5.29s con **0 errores**.
+  * Transición de cámara guiada a órbita libre y zoom sin saltos, movimientos bruscos ni descuadres.

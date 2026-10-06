@@ -195,6 +195,36 @@ export function getActiveOnScreenCenter(scene, camera, fallback) {
   return fallback || new THREE.Vector3(0, 0.5, 0);
 }
 
+/**
+ * Calcula un Target estrictamente COLINEAL con la dirección de visión actual de la cámara.
+ * Proyecta un rayo hacia adelante (forwardDir) y toma la distancia hacia el centro de las
+ * piezas visibles en pantalla. Al ser target = camera.position + forwardDir * dist,
+ * el ángulo entre la cámara y el target es exactamente 0°, ERRADICANDO al 100%
+ * cualquier salto, latigazo o descuadre angular en OrbitControls al hacer touch o zoom.
+ */
+export function calcularTargetColinealSuave(scene, camera, fallback) {
+  if (!scene || !camera) return fallback || new THREE.Vector3(0, 0.5, 0);
+
+  const forwardDir = new THREE.Vector3();
+  camera.getWorldDirection(forwardDir);
+
+  // Obtener el centro geométrico de lo que está visible actualmente en el visor
+  const activeCenter = getActiveOnScreenCenter(scene, camera, fallback);
+
+  // Proyectar el vector desde la cámara hacia el centro activo sobre la línea de visión forwardDir
+  const camToCenter = activeCenter.clone().sub(camera.position);
+  let dist = camToCenter.dot(forwardDir);
+
+  // Seguridad: si la distancia proyectada es menor a 0.2m o negativa, usar distancia euclidiana o fallback seguro (1.2m)
+  if (dist < 0.2) {
+    dist = Math.max(0.5, camToCenter.length());
+    if (dist < 0.2) dist = 1.2;
+  }
+
+  // El target resultante se encuentra EXACTAMENTE sobre la recta visual de la cámara
+  return camera.position.clone().add(forwardDir.clone().multiplyScalar(dist));
+}
+
 
 function ActualModel(props) {
   // Obtiene los estados y funciones del contexto de uso
@@ -699,15 +729,17 @@ function ActualModel(props) {
     if (!controls) return;
 
     const onControlsStart = () => {
-      // Si la cámara venía siendo guiada automáticamente por el GLB, inicializar el target
-      // al centro de gravedad exacto de lo que está activo en pantalla antes de ceder el control
+      // Si la cámara venía siendo guiada automáticamente por el GLB, sincronizar el target
+      // exactamente a lo largo de la línea óptica de visión de la cámara hacia las piezas visibles.
+      // Al ser colineal, el ángulo cámara-target es exactamente 0°, eliminando cualquier salto
+      // o descuadre angular en OrbitControls al hacer touch o zoom (pinch-to-zoom).
       if (!userInteractedWithCameraRef.current) {
         const centerArr = useEnviroment.getState().modelCenter || [0, 0.5, 0];
         const furnitureCenter = new THREE.Vector3(centerArr[0], centerArr[1], centerArr[2]);
-        const activeTarget = getActiveOnScreenCenter(scene, camera, furnitureCenter);
-        if (controls && activeTarget) {
-          controls.target.copy(activeTarget);
-          activeCenterRef.current.copy(activeTarget);
+        const smoothColinearTarget = calcularTargetColinealSuave(scene, camera, furnitureCenter);
+        if (controls && smoothColinearTarget) {
+          controls.target.copy(smoothColinearTarget);
+          activeCenterRef.current.copy(smoothColinearTarget);
           controls.update();
         }
       }
@@ -863,12 +895,12 @@ function ActualModel(props) {
         camera.updateProjectionMatrix();
       }
 
-      // Sincronizar target hacia el centro de gravedad de lo que está activo en pantalla
+      // Sincronizar target colineal con la recta visual de la cámara hacia las piezas activas
       if (controls) {
         frameCountRef.current++;
-        if (frameCountRef.current % 12 === 0) {
-          const activeTarget = getActiveOnScreenCenter(scene, camera, furnitureCenter);
-          activeCenterRef.current.copy(activeTarget);
+        if (frameCountRef.current % 6 === 0) {
+          const smoothColinearTarget = calcularTargetColinealSuave(scene, camera, furnitureCenter);
+          activeCenterRef.current.copy(smoothColinearTarget);
         }
         controls.target.copy(activeCenterRef.current);
       }
