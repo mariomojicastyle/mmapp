@@ -608,7 +608,12 @@ function ActualModel(props) {
       ((cameras && cameras.length > 0) || scene.getObjectByName("Camera")) &&
       animations?.some(clip => clip.tracks?.some(track => track.name.toLowerCase().includes("camera")))
     );
-    const isGlbCamPreferred = Boolean(
+    // Si el usuario configuró explícitamente modo manual o fijó coordenadas con override, prevalece el ajuste manual
+    const isExplicitManual = Boolean(
+      posicionDeCamaraActual?.cameraMode === "manual" || 
+      (posicionDeCamaraActual?.override && posicionDeCamaraActual?.useGlbCamera === false)
+    );
+    const isGlbCamPreferred = !isExplicitManual && Boolean(
       posicionDeCamaraActual?.useGlbCamera === true || 
       posicionDeCamaraActual?.cameraMode === "glb" || 
       hasCameraAnimation

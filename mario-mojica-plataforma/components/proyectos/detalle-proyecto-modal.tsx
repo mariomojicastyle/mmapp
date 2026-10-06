@@ -475,7 +475,13 @@ export function DetalleProyectoModal({ isOpen, onClose, proyecto, onUpdate }: De
           setGlbSteps(prev => {
             const updated = prev.map(s => 
               s.step === payload.step 
-                ? { ...s, cameraPosition: payload.cameraPosition, cameraTarget: payload.cameraTarget } 
+                ? { 
+                    ...s, 
+                    cameraPosition: payload.cameraPosition, 
+                    cameraTarget: payload.cameraTarget,
+                    cameraMode: (payload.cameraMode === "glb" ? "glb" : "manual") as "glb" | "manual",
+                    useGlbCamera: payload.useGlbCamera === true ? true : false
+                  } 
                 : s
             )
             
@@ -486,7 +492,9 @@ export function DetalleProyectoModal({ isOpen, onClose, proyecto, onUpdate }: De
                 fileName: `P${payload.step}.glb`,
                 progress: 100,
                 cameraPosition: payload.cameraPosition,
-                cameraTarget: payload.cameraTarget
+                cameraTarget: payload.cameraTarget,
+                cameraMode: (payload.cameraMode === "glb" ? "glb" : "manual") as "glb" | "manual",
+                useGlbCamera: payload.useGlbCamera === true ? true : false
               })
             }
 
@@ -539,7 +547,13 @@ export function DetalleProyectoModal({ isOpen, onClose, proyecto, onUpdate }: De
           setGlbSteps(prev => {
             const updated = prev.map(s => 
               s.step === payload.step 
-                ? { ...s, cameraPosition: payload.cameraPosition, cameraTarget: payload.cameraTarget } 
+                ? { 
+                    ...s, 
+                    cameraPosition: payload.cameraPosition, 
+                    cameraTarget: payload.cameraTarget,
+                    cameraMode: (payload.cameraMode === "glb" ? "glb" : "manual") as "glb" | "manual",
+                    useGlbCamera: payload.useGlbCamera === true ? true : false
+                  } 
                 : s
             )
             
@@ -551,7 +565,9 @@ export function DetalleProyectoModal({ isOpen, onClose, proyecto, onUpdate }: De
                 fileName: `P${payload.step}.glb`,
                 progress: 100,
                 cameraPosition: payload.cameraPosition,
-                cameraTarget: payload.cameraTarget
+                cameraTarget: payload.cameraTarget,
+                cameraMode: (payload.cameraMode === "glb" ? "glb" : "manual") as "glb" | "manual",
+                useGlbCamera: payload.useGlbCamera === true ? true : false
               })
             }
 

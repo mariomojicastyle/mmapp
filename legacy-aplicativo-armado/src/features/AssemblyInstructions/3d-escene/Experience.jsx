@@ -323,13 +323,35 @@ function ActualAssemblySceneViewer({ id, modelUrl, productData, decryptedUrl }) 
         channel = supabase.channel('manual-features-realtime');
         channel
           .on('broadcast', { event: 'toggle-feature' }, ({ payload }) => {
-            if (payload && payload.codigoManual === id) {
+            const currentId = id || useEnviroment.getState().id;
+            const matchesManual = !payload?.codigoManual || payload.codigoManual === currentId || payload.codigoManual === "all";
+            if (payload && matchesManual) {
               const state = useEnviroment.getState();
               if (payload.key === 'cameraOverlay') {
-                state.SetCameraOverlay(payload.value === 'on');
+                const isActive = payload.value === 'on';
+                state.SetCameraOverlay(isActive);
+                try {
+                  const url = new URL(window.location.href);
+                  if (isActive) {
+                    url.searchParams.set('cameraOverlay', 'on');
+                  } else {
+                    url.searchParams.delete('cameraOverlay');
+                  }
+                  window.history.replaceState({}, '', url.toString());
+                } catch (e) {}
               }
               if (payload.key === 'lightingEditor') {
-                state.SetLightingEditor(payload.value === 'on');
+                const isActive = payload.value === 'on';
+                state.SetLightingEditor(isActive);
+                try {
+                  const url = new URL(window.location.href);
+                  if (isActive) {
+                    url.searchParams.set('lightingEditor', 'on');
+                  } else {
+                    url.searchParams.delete('lightingEditor');
+                  }
+                  window.history.replaceState({}, '', url.toString());
+                } catch (e) {}
               }
             }
           })
@@ -498,7 +520,35 @@ function ViewportCameraManager({ orbitControlsRef }) {
       useEnviroment.getState().ChargerCameraPositions(updatedPositions);
       useEnviroment.getState().ChargerAlturas(updatedAlturas);
 
-      // 2. Conectar y emitir mensaje Broadcast vía Supabase Realtime para que el CMS guarde con privilegios de administrador
+      // 2. Guardar DIRECTAMENTE en la base de datos vía API de la plataforma (Resiliente, sin depender del CMS)
+      const savePayload = {
+        codigoManual: manualId,
+        step: pasoActual,
+        cameraPosition: currentPos,
+        cameraTarget: currentTarget,
+        cameraMode: 'manual',
+        useGlbCamera: false
+      };
+
+      try {
+        const apiBase = window.location.origin.includes('localhost') 
+          ? 'http://localhost:3003' 
+          : 'https://mariomojica.com';
+        const res = await fetch(`${apiBase}/api/proyectos/guardar-camara`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(savePayload)
+        });
+        if (res.ok) {
+          console.log("✅ Coordenadas de cámara guardadas directamente en Supabase vía API");
+        } else {
+          console.warn("⚠️ API de guardado directo devolvió estado no exitoso:", res.status);
+        }
+      } catch (apiErr) {
+        console.warn("⚠️ No se pudo invocar API directa de guardado de cámara (se usará Realtime/postMessage):", apiErr);
+      }
+
+      // 3. Conectar y emitir mensaje Broadcast vía Supabase Realtime para que el CMS actualice su UI si está abierto
       const { createClient } = await import("@supabase/supabase-js");
       const supabase = createClient(
         import.meta.env.VITE_SUPABASE_URL,
@@ -511,12 +561,7 @@ function ViewportCameraManager({ orbitControlsRef }) {
           channel.send({
             type: 'broadcast',
             event: 'update-camera',
-            payload: {
-              codigoManual: manualId,
-              step: pasoActual,
-              cameraPosition: currentPos,
-              cameraTarget: currentTarget
-            }
+            payload: savePayload
           });
           setTimeout(() => {
             channel.unsubscribe();
@@ -524,16 +569,11 @@ function ViewportCameraManager({ orbitControlsRef }) {
         }
       });
 
-      // 3. Emitir mensaje vía postMessage a window.opener si está disponible
+      // 4. Emitir mensaje vía postMessage a window.opener si está disponible
       if (window.opener) {
         window.opener.postMessage({
           type: 'update-camera',
-          payload: {
-            codigoManual: manualId,
-            step: pasoActual,
-            cameraPosition: currentPos,
-            cameraTarget: currentTarget
-          }
+          payload: savePayload
         }, '*');
         console.log("✅ Posición de cámara enviada vía postMessage a window.opener");
       }
@@ -558,7 +598,17 @@ function ViewportCameraManager({ orbitControlsRef }) {
       setSaving(false);
     }
   };
-  
+
+  const handleCloseOverlay = () => {
+    useEnviroment.getState().SetCameraOverlay(false);
+    try {
+      localStorage.setItem('cameraOverlay', 'off');
+      const url = new URL(window.location.href);
+      url.searchParams.delete('cameraOverlay');
+      window.history.replaceState({}, '', url.toString());
+    } catch (e) {}
+  };
+
   return (
     <Html
       position={[0, 0, 0]}
@@ -583,27 +633,60 @@ function ViewportCameraManager({ orbitControlsRef }) {
         style={{
           background: 'rgba(0,0,0,0.85)',
           border: '1px solid rgba(99,255,200,0.3)',
-          borderRadius: '12px',
+          borderRadius: '16px',
           padding: '14px 16px',
           fontFamily: 'monospace',
           fontSize: '12px',
           color: '#63ffc8',
           minWidth: '240px',
           backdropFilter: 'blur(8px)',
-          boxShadow: '0 4px 24px rgba(0,0,0,0.5)'
+          boxShadow: '0 4px 24px rgba(0,0,0,0.5)',
+          position: 'relative'
         }}
       >
-        <div style={{ fontWeight: 'bold', marginBottom: '8px', fontSize: '13px', textAlign: 'center' }}>
-          🎥 CÁMARA — Paso {pasoActual}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px' }}>
+          <div style={{ fontWeight: 'bold', fontSize: '13px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <span>🎥 CÁMARA</span>
+            <span style={{ opacity: 0.6 }}>— Paso {pasoActual}</span>
+          </div>
+          <button
+            onClick={handleCloseOverlay}
+            title="Ocultar Guía de Cámara"
+            style={{
+              background: 'rgba(255,255,255,0.1)',
+              border: 'none',
+              borderRadius: '9999px',
+              width: '22px',
+              height: '22px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              color: '#ccc',
+              cursor: 'pointer',
+              fontSize: '12px',
+              lineHeight: 1,
+              transition: 'all 0.2s'
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.background = 'rgba(239,68,68,0.3)';
+              e.currentTarget.style.color = '#ff6b6b';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.background = 'rgba(255,255,255,0.1)';
+              e.currentTarget.style.color = '#ccc';
+            }}
+          >
+            ✕
+          </button>
         </div>
         <button
           onClick={handleSetCameraPosition}
           disabled={saving}
           style={{
             width: '100%',
-            padding: '8px',
+            padding: '8px 12px',
             border: saved ? '1px solid #63ffc8' : '1px solid rgba(99,255,200,0.3)',
-            borderRadius: '8px',
+            borderRadius: '9999px',
             background: saved ? 'rgba(99,255,200,0.15)' : 'rgba(255,255,255,0.05)',
             color: saved ? '#63ffc8' : '#ccc',
             cursor: 'pointer',

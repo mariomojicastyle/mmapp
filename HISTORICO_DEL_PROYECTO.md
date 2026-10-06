@@ -3189,3 +3189,21 @@ Para mantener la máxima agilidad y minimizar el consumo de tokens sin perder ni
 - **Validación de Calidad**:
   * Compilación de producción con Vite (`npm run build` en `legacy-aplicativo-armado`) completada exitosamente en 4.61s con **0 errores**.
   * Regla 100% universal aplicable a todos los manuales del catálogo (Cómoda Ravenna, Mesa Multifuncional `M00001`, Tijuca y futuros proyectos).
+
+---
+
+### 🚀 Hito 261: Enlace Corto Canónico `/Comoda_Ravenna` en Netlify, Soporte Bilingüe de Cámara Manual/GLB y Sincronización Segura (`netlify.toml`, `Experience.jsx`, `Model.jsx`, `detalle-proyecto-modal.tsx`, `guardar-camara/route.ts`) (06 de Octubre, 2026)
+- **Enlace Corto Oficial en Netlify**:
+  * Implementadas las reglas de redirección 302 canónicas en `mario-mojica-homepage/netlify.toml` para `/Comoda_Ravenna` y su alias insensible a mayúsculas `/comoda_ravenna`, dirigiendo a `/embed/armado/Comoda_Ravenna?cameraOverlay=on&lightingEditor=off`.
+  * Esto permite compartir un enlace pulcro, corporativo y memorable para clientes y prospectos de la Cómoda Ravenna de Móveis Henn sin exponer parámetros URL extensos.
+- **Gobernanza de Cámara Manual vs GLB en Visor 3D (`Model.jsx`)**:
+  * Se configuró la condición `isExplicitManual` para que, cuando el usuario establezca `cameraMode === "manual"` o use `override` con `useGlbCamera: false`, Three.js respete estrictamente las coordenadas manuales del CMS o Supabase en lugar de dejarse secuestrar por keyframes animados residuales del archivo `.glb`.
+- **Overlay de Cámara Ergonómico con Cierre Rápido y Cápsula (`Experience.jsx`)**:
+  * Incorporado botón de cierre en cápsula pura circular `✕` en el widget flotante `ViewportCameraManager` para ocultar la guía sin recargar la página.
+  * Botón de guardado rediseñado con cápsula pura (`rounded-full`) y sincronización enriquecida que transmite `cameraMode` y `useGlbCamera`.
+- **Persistencia Segura en CMS y API Serverless (`guardar-camara/route.ts`, `detalle-proyecto-modal.tsx`)**:
+  * Creación del endpoint `/api/proyectos/guardar-camara` con permisos de Supabase Service Role para actualización atómica por código de manual.
+  * Sincronización reactiva en tiempo real en el modal de detalle del proyecto en la plataforma B2B.
+- **Validación de Calidad**:
+  * `npx tsc --noEmit` en plataforma completado con **0 errores**.
+  * `npm run build` en `legacy-aplicativo-armado` completado en 4.00s con **0 errores**.
