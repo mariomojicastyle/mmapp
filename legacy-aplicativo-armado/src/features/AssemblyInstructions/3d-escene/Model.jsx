@@ -793,9 +793,24 @@ function ActualModel(props) {
     if (!isScrubbing) {
       let masterTime = 0;
       const hasAudioTrack = audioEl && audioDur > 0 && !isNaN(audioEl.duration);
+      const isStep00 = isRavenna && (pasoActual === "00" || pasoActual === 0);
+      const isStep02 = isRavenna && (pasoActual === "02" || pasoActual === 2 || pasoActual === "2");
+      const phase = useEnviroment.getState().phaseAudio;
 
       if (hasAudioTrack) {
-        masterTime = audioEl.currentTime || 0;
+        if (!audioEl.ended) {
+          masterTime = audioEl.currentTime || 0;
+        } else if (animDur > audioDur) {
+          // El audio ya concluyó pero la animación 3D continúa su recorrido hasta animDur
+          const activeAct = Object.values(actions || {}).find((a) => a && typeof a.time === "number");
+          if (activeAct && typeof activeAct.time === "number") {
+            masterTime = activeAct.time;
+          } else {
+            masterTime = audioDur;
+          }
+        } else {
+          masterTime = audioDur;
+        }
       } else if (actions) {
         const activeAct = Object.values(actions).find((a) => a && a.isRunning()) || Object.values(actions)[0];
         if (activeAct && typeof activeAct.time === "number") {
@@ -810,10 +825,14 @@ function ActualModel(props) {
 
       // Mantener acoplada la animación 3D cuando el audio es el reloj maestro
       if (hasAudioTrack && actions) {
-        const isStep00 = isRavenna && (pasoActual === "00" || pasoActual === 0);
-        const isStep02 = isRavenna && (pasoActual === "02" || pasoActual === 2 || pasoActual === "2");
-        const phase = useEnviroment.getState().phaseAudio;
-        const isPlaying = (phase === "playing" && !audioEl.paused);
+        let isPlaying = false;
+        if (phase === "playing") {
+          if (!audioEl.paused) {
+            isPlaying = true;
+          } else if (audioEl.ended && animDur > audioDur) {
+            isPlaying = true; // El audio terminó pero la animación sigue reproduciéndose
+          }
+        }
         
         let targetAnimTime = Math.min(masterTime, animDur);
         if (isStep00 && animDur > 0) {
@@ -834,7 +853,9 @@ function ActualModel(props) {
             } else {
               if (isPlaying) {
                 act.paused = false;
-                if (Math.abs(act.time - targetAnimTime) > 0.15) {
+                // Si el audio aún está reproduciéndose, sincronizamos al audio.
+                // Si el audio terminó y la animación corre libremente por Three.js, dejamos que act.time avance naturalmente.
+                if (!audioEl.ended && Math.abs(act.time - targetAnimTime) > 0.15) {
                   act.time = targetAnimTime;
                 }
               } else {
@@ -844,6 +865,15 @@ function ActualModel(props) {
             }
           }
         });
+
+        // Si la animación superaba al audio y ahora ha alcanzado el final total:
+        if (isFinished && animDur > audioDur && phase === "playing") {
+          const state = useEnviroment.getState();
+          state.AudioEndedTrue();
+          state.AnimationEndedTrue();
+          state.ResetAudio();
+          state.ActionTrue();
+        }
       }
     }
 

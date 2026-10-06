@@ -240,14 +240,20 @@ export default function AudioPlayer({ id: propId }) {
     if (audioRef.current) {
       audioRef.current.ontimeupdate = () => {
         if (!audioRef.current) return;
-        if (audioRef.current.ended) {
+        
+        const state = useEnviroment.getState();
+        const animDur = state.animDuration || 0;
+        const audioDur = state.audioDuration || audioRef.current.duration || 0;
+
+        // Si la animación no es más larga que el audio, el fin del audio concluye la locución
+        if (audioRef.current.ended && animDur <= audioDur + 0.1) {
           AudioEndedTrue();
         }
 
-        const isScrubbing = useEnviroment.getState().isScrubbing;
+        const isScrubbing = state.isScrubbing;
         if (!isScrubbing) {
           const ct = audioRef.current.currentTime;
-          useEnviroment.getState().SetAnimationCurrentTime(ct);
+          state.SetAnimationCurrentTime(ct);
           if (typeof window.__updateScrubberUI === "function") {
             window.__updateScrubberUI(ct);
           }
@@ -258,6 +264,18 @@ export default function AudioPlayer({ id: propId }) {
       };
 
       audioRef.current.onended = () => {
+        const state = useEnviroment.getState();
+        const animDur = state.animDuration || 0;
+        const audioDur = state.audioDuration || (audioRef.current ? audioRef.current.duration : 0) || 0;
+
+        // Si la animación 3D es más larga que la locución (ej. M00001 Paso 6: anim 15s, audio 7.6s),
+        // NO poner phaseAudio en "reset" ni activar ActionTrue() prematuramente.
+        // La animación 3D en useFrame continuará hasta completar su duración total.
+        if (animDur > audioDur + 0.1) {
+          return;
+        }
+
+        AudioEndedTrue();
         ResetAudio();
         ActionTrue();
       };

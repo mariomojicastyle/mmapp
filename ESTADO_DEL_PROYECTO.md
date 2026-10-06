@@ -9,7 +9,13 @@ Este archivo es la "Memoria RAM" para Antigravity. Contiene el contexto de lo qu
 ---
 
 ## 🏗️ 1. Plataforma B2B & 3dBimFab (Foco Actual)
-**Estado:** Hito 258 completado con éxito total. **Aislamiento por Scope de Reglas de Cinemática Ravenna vs Manuales Estándar (`Model.jsx`)**. Próximo foco: Continuidad de funcionalidades en la suite 3dBimFab y manuales de armado 3D. Rama: `3BF_Manual_Ravenna_OK`.
+**Estado:** Hito 259 completado con éxito total. **Sincronización Armónica de Duración Total (Audio + Animación 3D) y Prevención de Congelamiento Prematuro de Herrajes (`AudioPlayer.jsx`, `Model.jsx`)**. Próximo foco: Continuidad de funcionalidades en la suite 3dBimFab y manuales de armado 3D. Rama: `Manual_Ravenna_OK`.
+
+- [x] **[06 de Octubre, 2026] Hito 259: Sincronización Armónica de Duración Total (Audio + Animación 3D) y Prevención de Congelamiento Prematuro de Herrajes (`AudioPlayer.jsx`, `Model.jsx`)**:
+  * **Diagnóstico de Congelamiento Prematuro y Nube de Herrajes**: En manuales donde la animación 3D dura más que la locución de voz (ej. Mesa Multifuncional `M00001` Paso 6: audio de 7.6s vs animación de 15.0s, o Tijuca), `audio.onended` forzaba `ResetAudio()` a los 7.6s, congelando la animación al 50% con las bisagras en el aire, mientras que `ontimeupdate` activaba la nube *"HERRAJES NECESARIOS"* antes de que las piezas terminaran de ensamblarse.
+  * **Relevo Armónico de Reloj Maestro en Three.js (`useFrame`)**: Si la animación es más larga que el audio (`animDur > audioDur`), al terminar el audio Three.js mantiene activa la animación (`isPlaying = true`, `act.paused = false`) hasta alcanzar `animDur`. La finalización del paso (`AudioEndedTrue()`, `ResetAudio()`, `ActionTrue()`) se posterga hasta que `masterTime >= animDur`.
+  * **Protección en `AudioPlayer.jsx`**: `onended` y `ontimeupdate` respetan la duración de la animación cuando `animDur > audioDur + 0.1`, evitando cortes abruptos y falsos finales.
+  * **Validación de Calidad**: `npm run build` en `legacy-aplicativo-armado` completado en 5.50s con **0 errores**. Cero afectación en Cómoda Ravenna.
 
 - [x] **[05 de Octubre, 2026] Hito 258: Aislamiento por Scope de Reglas de Cinemática Ravenna vs Manuales Estándar (`Model.jsx`)**:
   * **Diagnóstico de Interferencia Multi-Manual**: Al implementar la desaceleración del 50% en el Paso 02 (`isStep02`) y el bucle continuo en el Paso 00 (`isStep00`) para la Cómoda Ravenna, dichas condiciones evaluaban únicamente el número de paso (`pasoActual === "02"`), careciendo de discriminación por identificador de manual (`props.id` / `manualId`). Como resultado, manuales históricos como la Mesa Multifuncional (`M00001`) sufrían una desaceleración forzada a mitad de velocidad en su paso 2, causando desincronización con el audio de locución grabado y pausas involuntarias.

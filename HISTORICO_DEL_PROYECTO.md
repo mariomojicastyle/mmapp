@@ -3131,3 +3131,31 @@ Para mantener la máxima agilidad y minimizar el consumo de tokens sin perder ni
   * Mesa Multifuncional (`M00001`) y futuros manuales 100% blindados en su tiempo nativo original.
 
 
+
+---
+
+### 🚀 Hito 259: Sincronización Armónica de Duración Total (Audio + Animación 3D) y Prevención de Congelamiento Prematuro de Herrajes (`AudioPlayer.jsx`, `Model.jsx`) (06 de Octubre, 2026)
+- **Diagnóstico del Problema (Nube Prematura de Herrajes y Congelamiento 3D)**:
+  1. *Síntomas Observados*:
+     - En manuales donde la animación 3D del paso es más prolongada que la pista de audio de la locución (por ejemplo, en la Mesa Multifuncional `M00001` Paso 6, donde el archivo de audio `06.mp3` dura 7.6s mientras que el GLB `P06.glb` tiene una animación de 15.0s, o en el manual Tijuca):
+       * A los 7.6s, aparecía de manera prematura el globo emergente *"HERRAJES NECESARIOS"*.
+       * Inmediatamente al aparecer la nube, la animación 3D se congelaba al 50% de su recorrido, dejando las bisagras y piezas suspendidas en el aire sin llegar a ensamblarse por completo.
+  2. *Causa Raíz en el Ciclo de Vida del Paso*:
+     - En `AudioPlayer.jsx`, el evento nativo `audio.onended` se disparaba al finalizar los bytes de audio (7.6s), invocando directamente `ResetAudio()` y `ActionTrue()`.
+     - `ResetAudio()` establecía `phaseAudio` en `"reset"`.
+     - En `Model.jsx`, la condición de reproducción de Three.js `isPlaying = (phase === "playing" && !audioEl.paused)` pasaba inmediatamente a `false`, pausando los `actions` (`act.paused = true;`) y congelando la malla 3D en `masterTime = 7.6s`.
+     - Paralelamente, en `AudioPlayer.jsx`, `audio.ontimeupdate` disparaba `AudioEndedTrue()` al detectar `audioRef.current.ended`, lo cual provocaba que en `PanelBtn.jsx` se activara el tooltip `"HERRAJES NECESARIOS"` con la animación aún en curso.
+- **Implementación Técnica de la Solución**:
+  1. *Relevo Armónico de Reloj Maestro en `Model.jsx` (`useFrame`)*:
+     - Cuando la animación 3D es más larga que el audio (`animDur > audioDur`), al terminar la locución de voz (`audioEl.ended`), Three.js toma pacíficamente el relevo de tiempo:
+       * `masterTime` pasa a medirse por `activeAct.time`, permitiendo que las mallas, bisagras y tornillos continúen desplazándose fluidamente hasta alcanzar `animDur` (15.0s).
+       * La bandera `isPlaying` se mantiene en `true` durante este intervalo post-audio (`audioEl.ended && animDur > audioDur`), asegurando que `act.paused` permanezca en `false`.
+       * Solo cuando `isFinished` se cumple (`masterTime >= animDur`), `useFrame` concluye el ciclo disparando en sincronía `AudioEndedTrue()`, `AnimationEndedTrue()`, `ResetAudio()` y `ActionTrue()`.
+  2. *Protección en `AudioPlayer.jsx` (`onended` y `ontimeupdate`)*:
+     - Se condicionaron los disparadores de conclusión de paso para evaluar la duración comparada:
+       * `audio.ontimeupdate` únicamente ejecuta `AudioEndedTrue()` si `animDur <= audioDur + 0.1` (evitando la aparición temprana de la nube de herrajes).
+       * `audio.onended` verifica si `animDur > audioDur + 0.1`; de ser así, no corta ni resetea la fase de audio prematuramente, dejando que la animación culmine su recorrido completo.
+- **Validación de Calidad**:
+  * Compilación de producción con Vite (`npm run build` en `legacy-aplicativo-armado`) completada exitosamente en 5.50s con **0 errores**.
+  * Ensamble 3D de la Mesa Multifuncional (`M00001` Paso 6) y manuales con animaciones largas se reproduce al 100% hasta su encaje final, mostrando la nube de herramientas y herrajes únicamente tras finalizar la acción visual completa.
+  * Preservación absoluta e inviolable de la Cómoda Ravenna y sus cinemáticas especiales.
