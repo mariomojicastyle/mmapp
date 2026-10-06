@@ -3084,3 +3084,21 @@ Para mantener la máxima agilidad y minimizar el consumo de tokens sin perder ni
   * Compilación de producción con Vite (`npm run build` en `legacy-aplicativo-armado`) completada exitosamente en 5.37s con **0 errores**.
   * Control total de la línea de tiempo desde cualquier ángulo de cámara personalizado elegido por el usuario.
 
+---
+
+### 🚀 Hito 257: Persistencia de Paneo y Traslación 3D con Clic Derecho en PC sin Retorno Forzado (`Experience.jsx`) (05 de Octubre, 2026)
+- **Diagnóstico del Efecto Rebote / Retorno al Paneo en PC**:
+  1. *Comportamiento de OrbitControls con Clic Derecho*:
+     - En computadores de escritorio, el clic derecho ejecuta la acción de paneo (`screenSpacePanning`), desplazando la cámara y su punto pivote (`target`) lateral y verticalmente por el escenario.
+  2. *Causa Raíz*:
+     - En `Experience.jsx`, el componente `<OrbitControls>` recibía el prop reactivo `target={cameraTarget ? new THREE.Vector3(...) : undefined}`.
+     - Cada vez que el componente se re-renderizaba o el efecto de `modelCenter` se ejecutaba, el prop `target` de React-Three-Fiber sobreescribía de golpe la posición calculada por OrbitControls, forzando el target de regreso a las coordenadas del centroide del mueble. Al soltar el clic derecho, el mueble "rebotaba" instantáneamente a su ubicación anterior.
+- **Implementación Técnica de la Solución**:
+  1. *`Experience.jsx`*:
+     - Se eliminó el prop reactivo `target` estático de `<OrbitControls />`, permitiendo que el objeto interno de Three.js mantenga de forma fluida y persistente las coordenadas a donde el usuario arrastra la escena.
+     - En el `useEffect` de alineación de `cameraTarget`, se condicionó la actualización con `!isManualOrbit`. Una vez que el usuario toma el control manual en PC, el target permanece exactamente donde fue desplazado con el ratón.
+- **Validación de Calidad**:
+  * Compilación de producción con Vite (`npm run build` en `legacy-aplicativo-armado`) completada exitosamente en 5.04s con **0 errores**.
+  * Paneo libre y permanente con clic derecho en PC sin rebotes ni devoluciones forzadas.
+
+

@@ -79,10 +79,14 @@ function ActualAssemblySceneViewer({ id, modelUrl, productData, decryptedUrl }) 
       }
     }
     if (customTarget) {
-      setCameraTarget(customTarget);
-      if (controlsRef.current) {
-        controlsRef.current.target.set(customTarget[0], customTarget[1], customTarget[2]);
-        controlsRef.current.update();
+      // Solo inicializar target si el usuario no ha tomado el control manual de órbita/paneo libre
+      const isManualOrbit = useEnviroment.getState().isManualOrbit;
+      if (!isManualOrbit) {
+        setCameraTarget(customTarget);
+        if (controlsRef.current) {
+          controlsRef.current.target.set(customTarget[0], customTarget[1], customTarget[2]);
+          controlsRef.current.update();
+        }
       }
     }
   }, [PasoActual, alturas, modelCenter]);
@@ -401,7 +405,6 @@ function ActualAssemblySceneViewer({ id, modelUrl, productData, decryptedUrl }) 
       <OrbitControls
         makeDefault
         ref={controlsRef}
-        target={cameraTarget ? new THREE.Vector3(cameraTarget[0], cameraTarget[1], cameraTarget[2]) : undefined}
         enablePan={true}
         screenSpacePanning={true}
         panSpeed={1.0}

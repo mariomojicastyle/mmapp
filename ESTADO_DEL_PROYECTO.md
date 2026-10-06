@@ -9,7 +9,12 @@ Este archivo es la "Memoria RAM" para Antigravity. Contiene el contexto de lo qu
 ---
 
 ## 🏗️ 1. Plataforma B2B & 3dBimFab (Foco Actual)
-**Estado:** Hito 256 completado con éxito total. **Preservación de Ángulo Orbital Elegido por el Usuario en la Línea de Tiempo / Scrubber Interactivo (`Model.jsx`, `NavBarInferior.jsx`)**. Próximo foco: Continuidad de funcionalidades en la suite 3dBimFab y manuales de armado 3D. Rama: `3BF_Manual_Ravenna_OK`.
+**Estado:** Hito 257 completado con éxito total. **Persistencia de Paneo y Traslación 3D con Clic Derecho en PC sin Retorno Forzado (`Experience.jsx`)**. Próximo foco: Continuidad de funcionalidades en la suite 3dBimFab y manuales de armado 3D. Rama: `3BF_Manual_Ravenna_OK`.
+
+- [x] **[05 de Octubre, 2026] Hito 257: Persistencia de Paneo y Traslación 3D con Clic Derecho en PC sin Retorno Forzado (`Experience.jsx`)**:
+  * **Diagnóstico de Rebote de Paneo en PC**: En `Experience.jsx`, el componente `<OrbitControls>` recibía el prop reactivo `target={cameraTarget ? new THREE.Vector3(...) : undefined}` y un `useEffect` sincronizaba `modelCenter` continuamente. Al arrastrar el mueble con clic derecho (acción de paneo), OrbitControls actualizaba su target internamente; sin embargo, al terminar de mover o ante cualquier re-render, el prop forzaba nuevamente el target al centroide original del mueble, haciendo que la cámara "rebotara" o se devolviera al punto de inicio.
+  * **Solución de Paneo Persistente**: Se retiró la asignación reactiva estática del prop `target` en `<OrbitControls />`, dejando que Three.js gestione el target internamente una vez inicializado. Además, se blindó el `useEffect` de `Experience.jsx` para que no sobreescriba el target si el usuario está en órbita o paneo manual libre (`!isManualOrbit`).
+  * **Validación de Calidad**: `npm run build` en `legacy-aplicativo-armado` completado en 5.04s con **0 errores**. Despliegue en Netlify sincronizado.
 
 - [x] **[05 de Octubre, 2026] Hito 256: Preservación de Ángulo Orbital Elegido por el Usuario en la Línea de Tiempo / Scrubber Interactivo (`Model.jsx`, `NavBarInferior.jsx`)**:
   * **Libertad Total de Punto de Vista en la Línea de Tiempo**: Al deslizar la barra de tiempo vertical (adelantar/retroceder), la cámara ya **NO fuerza el retorno a la posición de la cámara del GLB**. Si el usuario rotó o hizo zoom libremente en la escena, su punto de vista se respeta íntegramente al 100%, permitiéndole inspeccionar cómo se acoplan las piezas cuadro a cuadro desde cualquier ángulo de taller elegido.
