@@ -439,8 +439,11 @@ function ActualModel(props) {
         scene.updateMatrixWorld(true);
       }
 
-      // Sincronización instantánea de la cámara animada durante el seek interactivo
-      if (isGlbCamActive && scene) {
+      // Sincronización de la cámara durante el seek interactivo:
+      // SOLO se sobreescribe la posición de la cámara si el usuario NO ha tomado el control de órbita manual.
+      // Si el usuario rotó o hizo zoom libremente, su punto de vista se respeta al 100%,
+      // permitiéndole avanzar y retroceder en el tiempo viendo el ensamble desde su ángulo preferido.
+      if (isGlbCamActive && scene && !userInteractedWithCameraRef.current) {
         const glbCam = scene.getObjectByName("Camera") || (cameras && cameras.length > 0 ? cameras[0] : null);
         if (glbCam) {
           glbCam.updateWorldMatrix(true, false);
@@ -867,12 +870,6 @@ function ActualModel(props) {
 
     const glbCamNode = scene.getObjectByName("Camera") || (cameras && cameras.length > 0 ? cameras[0] : null);
     if (!glbCamNode) return;
-
-    // Si se está haciendo scrubbing, reiniciar bandera de interacción para que la cámara siga el slider
-    if (isScrubbing) {
-      userInteractedWithCameraRef.current = false;
-      useEnviroment.getState().SetIsManualOrbit(false);
-    }
 
     // Si el usuario tomó el control para orbitar libremente:
     if (userInteractedWithCameraRef.current) {

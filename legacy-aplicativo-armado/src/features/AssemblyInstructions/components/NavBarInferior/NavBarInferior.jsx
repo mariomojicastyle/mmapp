@@ -306,13 +306,13 @@ export default function NavBarInferior({ id, data }) {
   };
 
   const renderPausePlayIcon = () => {
-    if (isScrubbing) {
-      return <IconPause />;
-    }
     // Si el paso tiene cámara animada guiada y el usuario orbitó libremente con el dedo/mouse:
     // Mostrar icono de cámara de video que titila invitándolo a realinearse a la animación
     if (isManualOrbit && hasGuidedCamera) {
       return <IconCamera />;
+    }
+    if (isScrubbing) {
+      return <IconPause />;
     }
     // En cualquier otro caso:
     if (phaseAudio === "playing") {

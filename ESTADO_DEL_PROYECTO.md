@@ -9,7 +9,12 @@ Este archivo es la "Memoria RAM" para Antigravity. Contiene el contexto de lo qu
 ---
 
 ## 🏗️ 1. Plataforma B2B & 3dBimFab (Foco Actual)
-**Estado:** Hito 255 completado con éxito total. **Erradicación de Saltos Angulares y Transición Suave en Zoom y Órbita mediante Target Colineal de Visión (`Model.jsx`)**. Próximo foco: Continuidad de funcionalidades en la suite 3dBimFab y manuales de armado 3D. Rama: `3BF_Manual_Ravenna_OK`.
+**Estado:** Hito 256 completado con éxito total. **Preservación de Ángulo Orbital Elegido por el Usuario en la Línea de Tiempo / Scrubber Interactivo (`Model.jsx`, `NavBarInferior.jsx`)**. Próximo foco: Continuidad de funcionalidades en la suite 3dBimFab y manuales de armado 3D. Rama: `3BF_Manual_Ravenna_OK`.
+
+- [x] **[05 de Octubre, 2026] Hito 256: Preservación de Ángulo Orbital Elegido por el Usuario en la Línea de Tiempo / Scrubber Interactivo (`Model.jsx`, `NavBarInferior.jsx`)**:
+  * **Libertad Total de Punto de Vista en la Línea de Tiempo**: Al deslizar la barra de tiempo vertical (adelantar/retroceder), la cámara ya **NO fuerza el retorno a la posición de la cámara del GLB**. Si el usuario rotó o hizo zoom libremente en la escena, su punto de vista se respeta íntegramente al 100%, permitiéndole inspeccionar cómo se acoplan las piezas cuadro a cuadro desde cualquier ángulo de taller elegido.
+  * **Conservación de Estado de Videocámara**: El botón `#btnPause` mantiene el icono de videocámara titilante activo durante el arrastre si el usuario está en órbita manual, permitiéndole retornar a la cámara del GLB únicamente cuando decida presionar voluntariamente dicho botón.
+  * **Validación de Calidad**: `npm run build` en `legacy-aplicativo-armado` completado en 5.37s con **0 errores**. Despliegue en Netlify sincronizado.
 
 - [x] **[05 de Octubre, 2026] Hito 255: Erradicación de Saltos Angulares y Transición Suave en Zoom y Órbita mediante Target Colineal de Visión (`Model.jsx`)**:
   * **Diagnóstico de Descuadre de Cámara**: En `OrbitControls`, el pivote (`target`) difería del vector director de avance de la cámara animada ($\vec{v}_{\text{forward}}$). Al tocar la pantalla o hacer gesto de pinza (pinch-to-zoom), OrbitControls forzaba a la cámara a mirar rígidamente hacia dicho punto, produciendo un salto o "latigazo" angular instantáneo.

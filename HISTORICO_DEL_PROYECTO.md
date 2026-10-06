@@ -3065,3 +3065,22 @@ Para mantener la máxima agilidad y minimizar el consumo de tokens sin perder ni
 - **Validación de Calidad**:
   * Compilación de producción con Vite (`npm run build` en `legacy-aplicativo-armado`) completada exitosamente en 5.29s con **0 errores**.
   * Transición de cámara guiada a órbita libre y zoom sin saltos, movimientos bruscos ni descuadres.
+
+---
+
+### 🚀 Hito 256: Preservación de Ángulo Orbital Elegido por el Usuario en la Línea de Tiempo / Scrubber Interactivo (`Model.jsx`, `NavBarInferior.jsx`) (05 de Octubre, 2026)
+- **Motivación y Requerimiento de Usuario**:
+  - Al manipular la barra de tiempo vertical (adelantar o retroceder el armado de un paso), el sistema forzaba el retorno de la cámara a la trayectoria grabada del GLB.
+  - El usuario requería poder rotar la escena libremente a cualquier ángulo preferido (por ejemplo, ver la parte trasera, un detalle superior o una unión oculta) y mover la línea de tiempo hacia adelante y hacia atrás observando cómo se ensamblan las piezas exactamente desde el punto de vista elegido, sin que la cámara se reinicie obligatoriamente.
+- **Implementación Técnica de la Solución**:
+  1. *`Model.jsx` (`__seekAnimation`)*:
+     - Se condicionó la actualización de la cámara durante el seek interactivo a que el usuario NO haya tomado el control de órbita manual (`!userInteractedWithCameraRef.current`).
+     - Si el usuario rotó o hizo zoom libremente con el dedo/mouse, su punto de vista y coordenadas de `OrbitControls` se mantienen 100% inalteradas, actualizándose exclusivamente las mallas y cinemática de las piezas del mueble.
+  2. *`Model.jsx` (`useFrame`)*:
+     - Se eliminó el reseteo involuntario de la bandera de interacción que ocurría durante el arrastre (`isScrubbing`), garantizando que la órbita manual permanezca activa.
+  3. *`NavBarInferior.jsx` (`renderPausePlayIcon`)*:
+     - Se priorizó el renderizado del icono de la videocámara titilante sobre `isScrubbing`, asegurando que el botón conserve su indicación visual y permita retomar la cámara guiada del GLB únicamente cuando el usuario decida tocarlo explícitamente.
+- **Validación de Calidad**:
+  * Compilación de producción con Vite (`npm run build` en `legacy-aplicativo-armado`) completada exitosamente en 5.37s con **0 errores**.
+  * Control total de la línea de tiempo desde cualquier ángulo de cámara personalizado elegido por el usuario.
+
