@@ -3207,3 +3207,26 @@ Para mantener la máxima agilidad y minimizar el consumo de tokens sin perder ni
 - **Validación de Calidad**:
   * `npx tsc --noEmit` en plataforma completado con **0 errores**.
   * `npm run build` en `legacy-aplicativo-armado` completado en 4.00s con **0 errores**.
+
+---
+
+### 🚀 Hito 262: Persistencia Autónoma de Posición y Target de Cámara en Supabase vía Netlify Functions y Erradicación de Sobreescritura Baricéntrica (`guardar-camara.js`, `Experience.jsx`, `Model.jsx`, `AssemblyPage.jsx`) (06 de Octubre, 2026)
+- **Diagnóstico Integral de los Tres Obstáculos de la Cámara**:
+  1. *Bloqueo de RLS en Supabase*: Las peticiones directas desde el visor con la clave anónima de Supabase eran bloqueadas por las políticas RLS de `configuraciones_manual`, produciendo respuestas `200 []` que simulaban éxito pero no actualizaban las filas en base de datos.
+  2. *Sobreescritura Baricéntrica (`modelCenter`)*: Al recargar el visor, `Experience.jsx` calculaba el centro geométrico del mueble ensamblado (`modelCenter`) y forzaba `controls.target.set(modelCenter.x, modelCenter.y, modelCenter.z)`, destruyendo el punto de mira (`cameraTarget`) fijado por el operario.
+  3. *Incompatibilidad de Tipado y Bucle `useFrame`*: En `Model.jsx`, la búsqueda `alturas.find(a => a.paso === pasoActual)` fallaba ante diferencias entre tipo número y texto (`3` vs `"03"`), y `useFrame` reactivaba el control de cámara del GLB aún cuando el usuario había guardado un paso en modo manual.
+- **Implementación Técnica de la Solución**:
+  1. *Netlify Function Autónoma con Service Role (`guardar-camara.js`)*:
+     - Creada función serverless en `legacy-aplicativo-armado/netlify/functions/guardar-camara.js` con soporte nativo ESM y acceso a `SUPABASE_SERVICE_ROLE_KEY`.
+     - Permite que cualquier instancia del visor (en local, en producción o embebido en iframe) guarde atómicamente `cameraPosition`, `cameraTarget`, `cameraMode: 'manual'` y `useGlbCamera: false` en Supabase con privilegios completos de administrador.
+  2. *Prioridad Absoluta al Target Guardado en `Experience.jsx`*:
+     - Se refactorizó la inicialización del target para que `altData.target` tenga prelación indiscutible sobre `modelCenter`. Solo si no existe un target explícito guardado se utiliza el centro de masa como fallback.
+  3. *Blindaje de Comparación y Cinemática en `Model.jsx`*:
+     - Comparación flexible `a.paso == pasoActual` tanto para `alturas` como para `CameraPosition`.
+     - `camera.lookAt()` y `orbitControls.target` reciben directamente el `targetVec` del paso guardado.
+     - `isGlbCamActive` en `useFrame` evalúa `!isExplicitManual`, desactivando cualquier secuestro de cámara de Three.js en pasos configurados manualmente.
+  4. *Botón de Cierre con Limpieza URL (`Experience.jsx`)*:
+     - El botón `[✕]` apaga el overlay, limpia el parámetro `?cameraOverlay=on` de la URL mediante `history.replaceState` y almacena `off` en `localStorage`.
+- **Validación de Calidad y Despliegue**:
+  * Compilación exitosa en `legacy-aplicativo-armado` (`npm run build`) en 4.90s con **0 errores**.
+  * Sincronizado, fusionado en `main` y desplegado exitosamente a producción en GitHub y Netlify.
