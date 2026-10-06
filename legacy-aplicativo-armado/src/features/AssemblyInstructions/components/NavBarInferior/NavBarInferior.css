@@ -578,8 +578,16 @@ svg circle:nth-child(2) {
 /* Botón de retorno a cámara guiada con llamada de atención titilante */
 .btn-camera-blinking {
   animation: camera-pulse-blink 1.2s ease-in-out infinite alternate !important;
-  border-color: var(--primary) !important;
-  color: var(--primary) !important;
+  border-color: #ffffff !important;
+  color: var(--btn-text-color, #ffffff) !important;
+}
+
+.btn-camera-blinking svg {
+  color: var(--btn-text-color, #ffffff) !important;
+  fill: currentColor !important;
+  width: 31px !important;
+  height: 31px !important;
+  display: block !important;
 }
 
 @keyframes camera-pulse-blink {
@@ -587,19 +595,19 @@ svg circle:nth-child(2) {
     transform: scale(1);
     box-shadow: var(--glass-shadow);
     border-color: var(--border-light);
-    color: var(--btn-text-color);
+    color: var(--btn-text-color, #ffffff);
   }
   50% {
     transform: scale(1.12);
-    box-shadow: 0 0 20px var(--primary-glow, rgba(0, 136, 170, 0.6));
-    border-color: var(--primary);
-    color: var(--primary);
+    box-shadow: 0 0 20px var(--primary-glow, rgba(255, 255, 255, 0.6));
+    border-color: #ffffff;
+    color: var(--btn-text-color, #ffffff);
   }
   100% {
     transform: scale(1.05);
-    box-shadow: 0 0 12px var(--primary-glow, rgba(0, 136, 170, 0.4));
-    border-color: var(--primary);
-    color: var(--primary);
+    box-shadow: 0 0 12px var(--primary-glow, rgba(255, 255, 255, 0.4));
+    border-color: #ffffff;
+    color: var(--btn-text-color, #ffffff);
   }
 }
 

@@ -3022,10 +3022,24 @@ Para mantener la máxima agilidad y minimizar el consumo de tokens sin perder ni
      - Añadido `useEffect` inmediato al cargar el GLB (`[isGlbCamActive, pasoActual]`) que sincroniza en tiempo real `SetHasGuidedCamera(isGlbCamActive)` con Zustand, asegurando que `NavBarInferior` siempre tenga el valor correcto y renderice la videocámara de forma instantánea al primer toque de órbita.
   3. *Experience.jsx*:
      - Se ajustó el radio de la cuadrícula a 24 metros (`args={[24, 24]}`) y se sincronizó la niebla volumétrica del modo estudio (`<fog attach="fog" args={[color, 6, 20]} />`).
-     - Al entrar en la lejanía (a partir de los 6 metros), la niebla desvanece de manera suave y exponencial las líneas de la cuadrícula hacia el color de fondo, erradicando por completo el choque de píxeles, el efecto Moiré y el titileo parpadeante.
+
+---
+
+### 🚀 Hito 254: Diagnóstico y Corrección de Camuflaje Cromático y Visibilidad de Icono Videocam en Órbita Libre (`NavBarInferior.css`, `NavBarInferior.jsx`, `Icons.jsx`) (05 de Octubre, 2026)
+- **Diagnóstico Profundo de Causa Raíz**:
+  1. *Camuflaje Cromático Rojo sobre Rojo*:
+     - En `NavBarInferior.css`, la clase `.btn-camera-blinking` tenía configurada la regla `color: var(--primary) !important;` y en los keyframes `@keyframes camera-pulse-blink` también asignaba `color: var(--primary)`.
+     - Para la Cómoda Ravenna (cliente Henn), la variable `--primary` es `#A8112E` (rojo oscuro) y el fondo del botón es `--surface` (que se deriva directamente de `--primary`).
+     - Al heredar el elemento `<svg>` la regla `color: currentColor`, el icono SVG de la videocámara se dibujaba en el color `#A8112E` sobre un fondo del botón que también es `#A8112E`. Esto generaba un **camuflaje cromático perfecto del 100%**, haciendo que el botón pareciera totalmente vacío a pesar de que el componente `<IconCamera />` se estaba renderizando correctamente.
+  2. *Dimensionamiento e Inconsistencia con Otros Botones*:
+     - En `NavBarInferior.jsx`, `<IconCamera />` recibía un estilo inline `style={{ width: "60%", height: "60%" }}` en lugar de respetar las reglas globales de `.button > svg` (`width: 31px; height: 31px;` en móvil y `39px` en escritorio).
+- **Implementación Técnica de la Solución**:
+  1. *NavBarInferior.css*:
+     - Modificado `.btn-camera-blinking` para definir `color: var(--btn-text-color, #ffffff) !important;` y `border-color: #ffffff !important;`.
+     - Añadida regla explícita `.btn-camera-blinking svg` con `color: var(--btn-text-color, #ffffff) !important; fill: currentColor !important; width: 31px !important; height: 31px !important; display: block !important;`.
+     - Actualizados los keyframes `@keyframes camera-pulse-blink` para que tanto al 0%, 50% y 100% mantengan `color: var(--btn-text-color, #ffffff); border-color: #ffffff;` y utilicen un resplandor luminoso blanco sutil (`rgba(255, 255, 255, 0.6)`).
+  2. *NavBarInferior.jsx*:
+     - En `renderPausePlayIcon`: retorno simplificado y estandarizado `<IconCamera />` sin estilos inline conflictivos, idéntico a `<IconPlay />` e `<IconPause />`.
 - **Validación de Calidad**:
-  * Compilación de producción con Vite (`npm run build` en `legacy-aplicativo-armado`) completada exitosamente en 5.30s con **0 errores**.
-  * Visualización nítida y elegante de la cuadrícula sin destellos lejanos y botón de videocámara completamente funcional y reactivo.
-
-
-
+  * Compilación de producción con Vite (`npm run build` en `legacy-aplicativo-armado`) completada exitosamente en 4.86s con **0 errores**.
+  * Icono de videocámara completamente visible, nítido y de alto contraste blanco sobre el botón rojo oscuro, titilando con elegancia y llamando la atención al orbitar libremente.

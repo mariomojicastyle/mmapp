@@ -312,7 +312,7 @@ export default function NavBarInferior({ id, data }) {
     // Si el paso tiene cámara animada guiada y el usuario orbitó libremente con el dedo/mouse:
     // Mostrar icono de cámara de video que titila invitándolo a realinearse a la animación
     if (isManualOrbit && hasGuidedCamera) {
-      return <IconCamera style={{ width: "60%", height: "60%" }} />;
+      return <IconCamera />;
     }
     // En cualquier otro caso:
     if (phaseAudio === "playing") {

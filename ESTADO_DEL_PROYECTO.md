@@ -9,7 +9,13 @@ Este archivo es la "Memoria RAM" para Antigravity. Contiene el contexto de lo qu
 ---
 
 ## 🏗️ 1. Plataforma B2B & 3dBimFab (Foco Actual)
-**Estado:** Hito 253 completado con éxito total. **Integración de Icono Videocam SVG Oficial, Sincronización Reactiva de Cámara Guiada y Supresión de Titileo (Moiré) en Cuadrícula del Estudio (`Icons.jsx`, `NavBarInferior.jsx`, `Model.jsx`, `Experience.jsx`)**. Próximo foco: Continuidad de funcionalidades en la suite 3dBimFab y manuales de armado 3D. Rama: `3BF_Manual_Ravenna_OK`.
+**Estado:** Hito 254 completado con éxito total. **Diagnóstico y Corrección de Camuflaje Cromático y Visibilidad de Icono Videocam en Órbita Libre (`NavBarInferior.css`, `NavBarInferior.jsx`, `Icons.jsx`)**. Próximo foco: Continuidad de funcionalidades en la suite 3dBimFab y manuales de armado 3D. Rama: `3BF_Manual_Ravenna_OK`.
+
+- [x] **[05 de Octubre, 2026] Hito 254: Diagnóstico y Corrección de Camuflaje Cromático y Visibilidad de Icono Videocam en Órbita Libre (`NavBarInferior.css`, `NavBarInferior.jsx`, `Icons.jsx`)**:
+  * **Diagnóstico de Causa Raíz**: En `NavBarInferior.css`, la clase pulsante `.btn-camera-blinking` forzaba `color: var(--primary) !important;` y en los keyframes `@keyframes camera-pulse-blink` también asignaba `color: var(--primary)`. Dado que para Cómoda Ravenna el fondo del botón es `--surface` / `--primary` (rojo oscuro `#A8112E`), el SVG vectorial heredaba exactamente el mismo color rojo del fondo (`color: currentColor`), produciendo un camuflaje del 100% (rojo sobre rojo) que hacía parecer el botón vacío.
+  * **Solución de Contraste y Tipografía de Botón**: Corregido `.btn-camera-blinking` y su animación de pulso para utilizar `color: var(--btn-text-color, #ffffff) !important;` y forzar borde `#ffffff !important;` con resplandor blanco sutil (`rgba(255, 255, 255, 0.6)`).
+  * **Dimensionamiento Vectorial SVG**: Aseguradas dimensiones nítidas `width: 31px !important; height: 31px !important; display: block !important; fill: currentColor !important;` en `.btn-camera-blinking svg`, removiendo el inline style de `NavBarInferior.jsx` para alinearlo con los estándares de `<IconPlay />` e `<IconPause />`.
+  * **Validación de Calidad**: `npm run build` en `legacy-aplicativo-armado` completado en 4.86s con **0 errores**. Despliegue en Netlify sincronizado.
 
 - [x] **[05 de Octubre, 2026] Hito 253: Integración de Icono Videocam SVG Oficial, Sincronización Reactiva de Cámara Guiada y Supresión de Titileo (Moiré) en Cuadrícula del Estudio (`Icons.jsx`, `NavBarInferior.jsx`, `Model.jsx`, `Experience.jsx`)**:
   * **Icono Videocam SVG Oficial**: Integrada la geometría canónica de `temporal/videocam.svg` en `<IconCamera />` con `viewBox="0 -960 960 960"` y `fill="currentColor"`.
