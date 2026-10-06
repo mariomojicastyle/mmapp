@@ -79,6 +79,13 @@
   to = "/comercial/Propuesta_Comercial_Moveis_Henn_Mario_Mojica_USD.pdf"
   status = 302
 
+# Proxy para guardado persistente de cámara en Supabase
+[[redirects]]
+  from = "/api/proyectos/guardar-camara"
+  to = "https://mario-mojica-armado.netlify.app/.netlify/functions/guardar-camara"
+  status = 200
+  force = true
+
 # Excepción para las API Routes internas y Traductor Vivo
 [[redirects]]
   from = "/api/*"

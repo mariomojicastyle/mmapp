@@ -531,10 +531,14 @@ function ViewportCameraManager({ orbitControlsRef }) {
       };
 
       try {
-        const apiBase = window.location.origin.includes('localhost') 
-          ? 'http://localhost:3003' 
-          : 'https://mariomojica.com';
-        const res = await fetch(`${apiBase}/api/proyectos/guardar-camara`, {
+        const isLocalPlatform = window.location.origin.includes('localhost:3003');
+        const apiTarget = isLocalPlatform
+          ? 'http://localhost:3003/api/proyectos/guardar-camara'
+          : (window.location.origin.includes('mario-mojica-armado.netlify.app')
+              ? '/.netlify/functions/guardar-camara'
+              : 'https://mariomojica.com/api/proyectos/guardar-camara');
+
+        const res = await fetch(apiTarget, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(savePayload)
@@ -542,10 +546,25 @@ function ViewportCameraManager({ orbitControlsRef }) {
         if (res.ok) {
           console.log("✅ Coordenadas de cámara guardadas directamente en Supabase vía API");
         } else {
-          console.warn("⚠️ API de guardado directo devolvió estado no exitoso:", res.status);
+          // Si falló por proxy, intentar directo a la función de Netlify
+          try {
+            await fetch('https://mario-mojica-armado.netlify.app/.netlify/functions/guardar-camara', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(savePayload)
+            });
+            console.log("✅ Coordenadas de cámara guardadas directamente vía Netlify Function fallback");
+          } catch (e) {}
         }
       } catch (apiErr) {
-        console.warn("⚠️ No se pudo invocar API directa de guardado de cámara (se usará Realtime/postMessage):", apiErr);
+        console.warn("⚠️ Error en invocación directa de API, intentando fallback:", apiErr);
+        try {
+          await fetch('https://mario-mojica-armado.netlify.app/.netlify/functions/guardar-camara', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(savePayload)
+          });
+        } catch (e) {}
       }
 
       // 3. Conectar y emitir mensaje Broadcast vía Supabase Realtime para que el CMS actualice su UI si está abierto
