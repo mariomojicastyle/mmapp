@@ -2975,5 +2975,37 @@ Para mantener la máxima agilidad y minimizar el consumo de tokens sin perder ni
   - Compilación de producción con Vite (`npm run build` en `legacy-aplicativo-armado`) completada exitosamente en 3.91s con **0 errores**.
   - Control de cámara natural, zoom preciso sin descentrado y conmutación de Play/Pausa coherente.
 
+---
+
+### 🚀 Hito 252: Erradicación de Cápsulas Redundantes, Unificación Monotónica del Loader por Paso, Conmutador Titilante de Cámara Guiada y Cinemática Adaptativa en P00 y P02 (`Model.jsx`, `AnimationScrubber.jsx`, `NavBarInferior.jsx`, `NavBarInferior.css`, `Icons.jsx`, `useEnviroment.js`) (05 de Octubre, 2026)
+- **Diagnóstico y Requerimientos de Usuario**:
+  1. *Eliminación de la Cápsula Flotante de Tiempo en Scrubber*: En `AnimationScrubber.jsx` aparecía un indicador flotante (`• 116s / 202s`) al lado de la barra de tiempo que invadía el área visual 3D.
+  2. *Eliminación del Aviso Gris Flotante de Carga en Centro de Pantalla*: En `Model.jsx`, un elemento `<Html center>` mostraba `Cargando paso X...` antes de la barra de carga, generando ruido visual innecesario.
+  3. *Unificación del Loader y Erradicación de la Doble Barra en Paso 2*: `LoaderProgress` se reiniciaba al precargar el modelo siguiente (`useGLTF.preload`) a los 1.5s, mostrando dos veces la barra de carga.
+  4. *Conmutador de Reanudación de Cámara Guiada con Icono de Videocámara Titilante*: Cuando un paso tiene cámara animada guiada (`hasGuidedCamera`) y el usuario toca la pantalla para orbitar (`isManualOrbit`), el botón de reproducción/pausa se transforma en un icono de cámara de video (`<IconCamera />`) con animación pulsante titilante (`.btn-camera-blinking`), invitando al usuario a realinearse a la animación.
+  5. *Consistencia de Botón Play/Pausa en Pasos sin Cámara Guiada*: En pasos estáticos o paso 00, el botón no se bloquea erróneamente en Play al tocar la pantalla; respeta estrictamente el estado del audio y la animación (`<IconPause />` durante reproducción y `<IconPlay />` en pausa).
+  6. *Bucle Continuo en Animación de Paso 00*: La animación de despiece de P00 se repite continuamente en bucle (`THREE.LoopRepeat` y `masterTime % animDur`) durante toda la locución (72 segundos).
+  7. *Paso 02 al 50% de Velocidad (Doble de Duración)*: La animación de ensamble del Paso 02 avanza al 50% de su velocidad nativa (`timeScale = 0.5` y `masterTime * 0.5`), permitiendo apreciar detalladamente la colocación de correderas y herrajes.
+- **Implementación Técnica de la Solución**:
+  1. *AnimationScrubber.jsx*:
+     - Retirado el bloque flotante del tooltip de tiempo (`• {currentTimeFormatted} / {durationFormatted}`).
+  2. *Model.jsx*:
+     - Eliminado el popup modal flotante `{loading && (<Html center>...</Html>)}`.
+     - Inyectado `hasGuidedCamera: isGlbCamPreferred` en el store Zustand `useEnviroment`.
+     - En `useEffect` inicial de `actions`: si el paso es `"00"`, se configura `act.loop = THREE.LoopRepeat` y `act.clampWhenFinished = false`; si el paso es `"02"`, se configura `act.timeScale = 0.5`.
+     - En `useFrame`: acoplamiento adaptativo de tiempo con el reloj maestro de audio; en P00 se evalúa `masterTime % animDur`, y en P02 se evalúa `masterTime * 0.5`.
+     - En `__seekAnimation`, `__resumeAnimation` y `__syncAnimationToTime`: sincronización coherente del scrubber y el seek interactivo para P00 y P02.
+  3. *Icons.jsx*:
+     - Exportado componente vectorial SVG `<IconCamera />` con geometría nítida de cámara de video.
+  4. *NavBarInferior.css*:
+     - Añadida clase `.btn-camera-blinking` con keyframes `@keyframes camera-pulse-blink` a escala y brillo sutil con el color primario oficial.
+  5. *NavBarInferior.jsx*:
+     - Refactorizado `LoaderProgress`: incluye un registro monotónico indexado por paso (`stepLoadedRef.current[pasoActual]`). Una vez que el paso actual alcanza el 100%, el loader se desmonta definitivamente y silencia cualquier re-disparo secundario producido por el preload de Three.js.
+     - En `renderPausePlayIcon`: si `isManualOrbit && hasGuidedCamera`, devuelve `<IconCamera />`; en cualquier otro caso devuelve `<IconPause />` en marcha y `<IconPlay />` en pausa.
+     - En botón `btnPause`: aplica dinámicamente la clase `btn-camera-blinking` y tooltip bilingüe contextual cuando está en órbita manual en pasos guiados.
+- **Validación de Calidad**:
+  * Compilación de producción con Vite (`npm run build` en `legacy-aplicativo-armado`) completada exitosamente en 4.70s con **0 errores**.
+  * Sincronización de animaciones, bucle de P00, ralentización al 50% de P02 y experiencia de usuario limpia y unificada.
+
 
 

@@ -78,6 +78,7 @@ export default create(
       animationCurrentTime: 0,
       isScrubbing: false,
       isManualOrbit: false, // Variable activa cuando el usuario toma el control manual de órbita libre
+      hasGuidedCamera: false, // Indica si el paso actual tiene cámara animada guiada activa
 
       CloudOneTime: true,//Valida que los tootlips de los paneles solo se activen una vez.
 
@@ -145,9 +146,7 @@ export default create(
       
       NamePieza: (name) => {set((state) => {return { PiezaHerraje: name[0] };});},
       NuevosPasos: (pasos) => {set((state) => {return { pasos: pasos };});},
-      CambiarModelo: (paso) => {set(() => ({ pasoActual: paso, PiezaHerraje: "", animDuration: 0, audioDuration: 0, animationDuration: 0, animationCurrentTime: 0 }));},
-      CargarPasoInicial: (paso) => {set((state) => {return { pasoInicial: paso };});},
-
+      CambiarModelo: (paso) => {set(() => ({ pasoActual: paso, PiezaHerraje: "", animDuration: 0, audioDuration: 0, animationDuration: 0, animationCurrentTime: 0, hasGuidedCamera: false }));},
       CargarPasoInicial: (paso) => {set((state) => {return { pasoInicial: paso };});},
 
 
@@ -245,6 +244,8 @@ export default create(
       SetAnimationCurrentTime: (time) => set(() => ({ animationCurrentTime: time })),
       SetIsScrubbing: (scrubbing) => set(() => ({ isScrubbing: scrubbing })),
       SetIsManualOrbit: (val) => set(() => ({ isManualOrbit: val })),
+      SetHasGuidedCamera: (val) => set(() => ({ hasGuidedCamera: val })),
+
 
       SetColorObjetoTocado: (color) => set(() => ({ colorObjetoTocado: color })),
 

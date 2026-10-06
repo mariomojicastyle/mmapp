@@ -374,9 +374,17 @@ function ActualModel(props) {
   // Exponer API de búsqueda interactiva (Scrubbing / Seek) para el Slider
   useEffect(() => {
     window.__seekAnimation = (targetTime) => {
+      const isStep00 = pasoActual === "00" || pasoActual === 0;
+      const isStep02 = pasoActual === "02" || pasoActual === 2 || pasoActual === "2";
       const validTime = Math.max(0, targetTime);
       const effectiveAnimDur = animDuration > 0 ? animDuration : validTime;
-      const animTargetTime = Math.min(validTime, effectiveAnimDur);
+      
+      let animTargetTime = Math.min(validTime, effectiveAnimDur);
+      if (isStep00 && animDuration > 0) {
+        animTargetTime = validTime % animDuration;
+      } else if (isStep02) {
+        animTargetTime = Math.min(validTime * 0.5, effectiveAnimDur);
+      }
 
       if (actions) {
         Object.values(actions).forEach((act) => {
@@ -424,17 +432,30 @@ function ActualModel(props) {
     };
 
     window.__resumeAnimation = () => {
+      const isStep00 = pasoActual === "00" || pasoActual === 0;
+      const isStep02 = pasoActual === "02" || pasoActual === 2 || pasoActual === "2";
       const currentTime = useEnviroment.getState().animationCurrentTime || 0;
       const effectiveAnimDur = animDuration > 0 ? animDuration : currentTime;
       if (actions) {
         Object.values(actions).forEach((act) => {
           if (act) {
-            if (currentTime < effectiveAnimDur - 0.05) {
+            if (isStep00) {
               act.paused = false;
               act.play();
+            } else if (isStep02) {
+              if (currentTime * 0.5 < effectiveAnimDur - 0.05) {
+                act.paused = false;
+                act.play();
+              } else {
+                act.paused = true;
+              }
             } else {
-              // Si ya superó la duración de la animación, permanece estático al final
-              act.paused = true;
+              if (currentTime < effectiveAnimDur - 0.05) {
+                act.paused = false;
+                act.play();
+              } else {
+                act.paused = true;
+              }
             }
           }
         });
@@ -443,8 +464,17 @@ function ActualModel(props) {
 
     // Sincronizador llamado por el audio mientras avanza
     window.__syncAnimationToTime = (time) => {
+      const isStep00 = pasoActual === "00" || pasoActual === 0;
+      const isStep02 = pasoActual === "02" || pasoActual === 2 || pasoActual === "2";
       const effectiveAnimDur = animDuration > 0 ? animDuration : time;
-      if (time >= effectiveAnimDur && actions) {
+      
+      if (isStep00) {
+        // En paso 00, no se detiene; se mantiene en bucle infinito
+        return;
+      }
+
+      const evalTime = isStep02 ? time * 0.5 : time;
+      if (evalTime >= effectiveAnimDur && actions) {
         Object.values(actions).forEach((act) => {
           if (act && !act.paused) {
             act.paused = true;
@@ -496,11 +526,21 @@ function ActualModel(props) {
     }
 
     if (StartApp === true && actions) {
+      const isStep00 = pasoActual === "00" || pasoActual === 0;
+      const isStep02 = pasoActual === "02" || pasoActual === 2 || pasoActual === "2";
+
       Object.values(actions).forEach((act) => {
         if (act) {
           act.reset(); // Reinicia siempre la animación al cambiar de modelo
-          act.clampWhenFinished = true; // Detiene la animación cuando finaliza
-          act.loop = THREE.LoopOnce;    // Ejecuta la animación una sola vez
+          if (isStep00) {
+            act.clampWhenFinished = false;
+            act.loop = THREE.LoopRepeat; // Bucle infinito en paso 00
+            act.timeScale = 1.0;
+          } else {
+            act.clampWhenFinished = true; // Detiene la animación cuando finaliza
+            act.loop = THREE.LoopOnce;    // Ejecuta la animación una sola vez
+            act.timeScale = isStep02 ? 0.5 : 1.0; // 50% de velocidad (duración x2) en paso 02
+          }
           act.paused = false;           // Asegura que arranque activa
           act.play();                   // Iniciar la animación si la app ha comenzado
         }
@@ -524,6 +564,7 @@ function ActualModel(props) {
       posicionDeCamaraActual?.cameraMode === "glb" || 
       hasCameraAnimation
     );
+    useEnviroment.getState().SetHasGuidedCamera(isGlbCamPreferred);
     const useOverride = !isGlbCamPreferred && Boolean(posicionDeCamaraActual?.override && posicionDeCamaraActual?.position);
 
     // Buscar si existe un nodo de cámara en el GLB (configurada explícitamente o auto-detectada con animación)
@@ -531,6 +572,7 @@ function ActualModel(props) {
 
     // Calcular el centro geométrico y centro de gravedad real del mueble en su ESTADO FINAL ENSAMBLADO
     const effectiveAnimDur = animDuration > 0 ? animDuration : 0;
+
     if (mixer && effectiveAnimDur > 0) {
       mixer.setTime(effectiveAnimDur);
     }
@@ -719,23 +761,35 @@ function ActualModel(props) {
 
       // Mantener acoplada la animación 3D cuando el audio es el reloj maestro
       if (hasAudioTrack && actions) {
+        const isStep00 = pasoActual === "00" || pasoActual === 0;
+        const isStep02 = pasoActual === "02" || pasoActual === 2 || pasoActual === "2";
         const phase = useEnviroment.getState().phaseAudio;
         const isPlaying = (phase === "playing" && !audioEl.paused);
-        const clampedAnimTime = Math.min(masterTime, animDur);
+        
+        let targetAnimTime = Math.min(masterTime, animDur);
+        if (isStep00 && animDur > 0) {
+          // Bucle continuo en Paso 00 durante toda la locución
+          targetAnimTime = masterTime % animDur;
+        } else if (isStep02) {
+          // 50% de velocidad (duración x2) en Paso 02
+          targetAnimTime = Math.min(masterTime * 0.5, animDur);
+        }
+
+        const isFinished = !isStep00 && (isStep02 ? (masterTime * 0.5 >= animDur) : (masterTime >= animDur));
 
         Object.values(actions).forEach((act) => {
           if (act) {
-            if (masterTime >= animDur) {
+            if (isFinished) {
               act.time = animDur;
               act.paused = true;
             } else {
               if (isPlaying) {
                 act.paused = false;
-                if (Math.abs(act.time - clampedAnimTime) > 0.15) {
-                  act.time = clampedAnimTime;
+                if (Math.abs(act.time - targetAnimTime) > 0.15) {
+                  act.time = targetAnimTime;
                 }
               } else {
-                act.time = clampedAnimTime;
+                act.time = targetAnimTime;
                 act.paused = true;
               }
             }
@@ -1164,32 +1218,6 @@ export default function Model(props) {
 
   return (
     <>
-      {loading && (
-        <Html center position={[0, 0.6, 0]} style={{ pointerEvents: 'none' }}>
-          <div style={{
-            background: 'rgba(19, 27, 46, 0.90)',
-            color: '#ffffff',
-            padding: '8px 22px',
-            borderRadius: '9999px',
-            fontSize: '13px',
-            fontWeight: '600',
-            fontFamily: 'Inter, sans-serif',
-            boxShadow: '0 4px 20px rgba(0,0,0,0.4)',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '10px',
-            backdropFilter: 'blur(8px)',
-            border: '1px solid rgba(0, 136, 170, 0.4)',
-            whiteSpace: 'nowrap'
-          }}>
-            <svg style={{ animation: 'spin 1s linear infinite', width: '15px', height: '15px' }} viewBox="0 0 24 24" fill="none">
-              <circle cx="12" cy="12" r="10" stroke="rgba(255,255,255,0.2)" strokeWidth="3" />
-              <path d="M12 2a10 10 0 0 1 10 10" stroke="#0088AA" strokeWidth="3" strokeLinecap="round" />
-            </svg>
-            <span>Cargando paso {pasoActual}...</span>
-          </div>
-        </Html>
-      )}
       {currentUrl && (
         <ActualModel 
           key={`${props.id}_${pasoActual}_${currentUrl}`} 

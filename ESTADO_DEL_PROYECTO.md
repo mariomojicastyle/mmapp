@@ -9,9 +9,19 @@ Este archivo es la "Memoria RAM" para Antigravity. Contiene el contexto de lo qu
 ---
 
 ## 🏗️ 1. Plataforma B2B & 3dBimFab (Foco Actual)
-**Estado:** Hito 251 completado con éxito total. **Activación Automática de Botón Play en Órbita Libre y Cálculo Dinámico de Centro de Gravedad de Piezas Activas en Pantalla (`Model.jsx`, `NavBarInferior.jsx`)**. 1) Activación automática del botón Play (`▶`) en cuanto el usuario toca la pantalla para orbitar manualmente; al presionarlo se reanuda la cinemática de cámara del GLB de forma inmediata sin reiniciar la animación ni el audio. 2) Algoritmo `getActiveOnScreenCenter` que proyecta el frustum de la cámara e identifica exclusivamente las mallas del mueble actualmente activas y visibles en pantalla (descartando mallas con escala colapsada $\approx 0$ o piezas que aún no aparecen). OrbitControls sincroniza su target con el baricentro exacto de la pieza en pantalla, permitiendo zoom directo sin descentrado y rotación concéntrica en torno a la pieza activa. Próximo foco: Continuidad de funcionalidades en la suite 3dBimFab y manuales de armado 3D. Rama: `3BF_Manual_Ravenna_OK`.
+**Estado:** Hito 252 completado con éxito total. **Erradicación de Cápsulas Redundantes, Unificación Monotónica del Loader por Paso, Conmutador Titilante de Cámara Guiada y Cinemática Adaptativa en P00 y P02 (`Model.jsx`, `AnimationScrubber.jsx`, `NavBarInferior.jsx`, `NavBarInferior.css`, `Icons.jsx`, `useEnviroment.js`)**. Próximo foco: Continuidad de funcionalidades en la suite 3dBimFab y manuales de armado 3D. Rama: `3BF_Manual_Ravenna_OK`.
+
+- [x] **[05 de Octubre, 2026] Hito 252: Erradicación de Cápsulas Redundantes, Unificación Monotónica del Loader por Paso, Conmutador Titilante de Cámara Guiada y Cinemática Adaptativa en P00 y P02 (`Model.jsx`, `AnimationScrubber.jsx`, `NavBarInferior.jsx`, `NavBarInferior.css`, `Icons.jsx`, `useEnviroment.js`)**:
+  * **Eliminación de Cápsulas Redundantes**: Suprimidas tanto la cápsula flotante de tiempo en el scrubber (`• 116s / 202s`) como el popup modal gris central de carga (`Cargando paso X...`), dejando una interfaz limpia y despejada.
+  * **Loader Unificado sin Doble Barra**: Monitoreo monotónico por paso que evita la reactivación del loader provocada por el preload en segundo plano de Three.js.
+  * **Icono de Videocámara Titilante en Órbita Libre**: En pasos con cámara animada guiada, el botón se convierte en `<IconCamera />` con animación titilante pulsante (`.btn-camera-blinking`) al orbitar manualmente; al presionarlo retoma la trayectoria original.
+  * **Consistencia de Play/Pausa**: En pasos sin cámara guiada y en Paso 00, se muestra incondicionalmente `<IconPause />` durante reproducción y `<IconPlay />` en pausa.
+  * **Bucle Continuo en Paso 00**: Animación en `THREE.LoopRepeat` sincronizada con la locución de 72 segundos.
+  * **Ralentización al 50% en Paso 02**: Animación al 50% de velocidad (`timeScale = 0.5`) para observar detalladamente el montaje.
+  * **Validación de Calidad**: `npm run build` en `legacy-aplicativo-armado` completado en 4.70s con **0 errores**.
 
 - [x] **[05 de Octubre, 2026] Hito 251: Activación Automática de Botón Play en Órbita Libre y Cálculo Dinámico de Centro de Gravedad de Piezas Activas en Pantalla (`Model.jsx`, `NavBarInferior.jsx`)**:
+
   * **Activación Automática de Play en Órbita**: `isManualOrbit` muestra siempre `<IconPlay />`, permitiendo al usuario retomar la cámara guiada con 1 clic sin alterar la reproducción del audio.
   * **Baricentro Dinámico en Pantalla (`getActiveOnScreenCenter`)**: `controls.target` se ancla matemáticamente al centro de masa de lo que está visible en el cono de visión actual de la cámara, erradicando el descentrado hacia abajo al hacer zoom en P03.
   * **Validación de Calidad**: `npm run build` en `legacy-aplicativo-armado` completado en 3.91s con **0 errores**.

@@ -267,32 +267,6 @@ export default function AnimationScrubber() {
           0s
         </span>
       </div>
-
-      {/* Tooltip Flotante Dinámico en Cápsula (Aparece a la derecha del slider) */}
-      {(showTooltip || isDragging) && (
-        <div 
-          className="absolute left-10 px-2.5 py-1 rounded-full text-white text-[11px] font-mono font-bold shadow-xl flex items-center gap-1.5 pointer-events-none animate-in fade-in zoom-in-95 duration-150"
-          style={{
-            background: "color-mix(in srgb, var(--primary, #0088AA) var(--nubes-bg-opacity, 30%), #0B0F17)",
-            backdropFilter: "var(--glass-blur, blur(12px))",
-            WebkitBackdropFilter: "var(--glass-blur, blur(12px))",
-            border: "1px solid var(--primary, #0088AA)",
-            boxShadow: "0 8px 24px rgba(0, 0, 0, 0.6), 0 0 10px var(--primary-glow, rgba(0, 136, 170, 0.3))",
-            bottom: `${percentage}%`,
-            transform: "translateY(50%)"
-          }}
-        >
-          <span 
-            className="w-1.5 h-1.5 rounded-full animate-pulse"
-            style={{ backgroundColor: "var(--primary, #0088AA)" }}
-          />
-          <span style={{ color: "var(--secondary, #ffffff)" }}>
-            {formatTime(displayProgress * duration)}
-          </span>
-          <span className="text-gray-400">/</span>
-          <span className="text-gray-400">{formatTime(duration)}</span>
-        </div>
-      )}
     </div>
   );
 }

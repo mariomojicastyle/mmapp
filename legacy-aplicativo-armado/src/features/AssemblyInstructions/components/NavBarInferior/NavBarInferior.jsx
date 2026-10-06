@@ -9,18 +9,43 @@ import PanelTips from "../PanelTips/PanelTips.jsx";
 import PanelCantidades from "./PanelHerrajes/PanelCantidades/PanelCantidades";
 import PanelInicial from "./PanelInicial/PanelInicial";
 import PanelAyudas from "./PanelAyudas/PanelAyudas";
-import { IconLeft, IconRight, IconReset, IconPlay, IconPause } from "../Icons.jsx";
+import { IconLeft, IconRight, IconReset, IconPlay, IconPause, IconCamera } from "../Icons.jsx";
 import { useProgress } from "@react-three/drei";
 
 
 function LoaderProgress() {
   const { progress } = useProgress();
+  const pasoActual = useEnviroment((state) => state.pasoActual);
   const [targetProgress, setTargetProgress] = useState(0);
   const [displayProgress, setDisplayProgress] = useState(0);
+  
+  // Registrar si el paso actual ya completó su carga inicial del 100%
+  // para evitar que useGLTF.preload del paso siguiente reactive la barra de carga en el paso activo
+  const stepLoadedRef = useRef({});
+  const lastStepRef = useRef(pasoActual);
+
+  useEffect(() => {
+    if (lastStepRef.current !== pasoActual) {
+      lastStepRef.current = pasoActual;
+      setTargetProgress(0);
+      setDisplayProgress(0);
+    }
+  }, [pasoActual]);
 
   // Sincronizar targetProgress de forma estrictamente ascendente (monotónica)
   useEffect(() => {
     const rawProgress = Math.round(progress);
+
+    // Si ya completó la carga inicial para este paso, ignorar re-disparos de Drei (por preload)
+    if (stepLoadedRef.current[pasoActual]) {
+      return;
+    }
+
+    if (rawProgress >= 100) {
+      stepLoadedRef.current[pasoActual] = true;
+      setTargetProgress(100);
+      return;
+    }
 
     // Si el progreso de Three.js baja a menos de 5, asumimos que es una nueva carga de modelo
     if (rawProgress < 5) {
@@ -29,7 +54,7 @@ function LoaderProgress() {
     } else if (rawProgress > targetProgress) {
       setTargetProgress(rawProgress);
     }
-  }, [progress]);
+  }, [progress, pasoActual, targetProgress]);
 
   // Efecto para animar displayProgress suavemente hacia targetProgress
   useEffect(() => {
@@ -62,8 +87,8 @@ function LoaderProgress() {
     };
   }, [targetProgress]);
 
-  // Si no está cargando (progreso es 100%) no mostramos nada
-  if (progress >= 100 && displayProgress >= 100) return null;
+  // Si no está cargando (progreso es 100% o este paso ya fue marcado como cargado) no mostramos nada
+  if ((progress >= 100 && displayProgress >= 100) || stepLoadedRef.current[pasoActual]) return null;
 
   const fillerStyles = {
     height: '100%',
@@ -109,6 +134,7 @@ export default function NavBarInferior({ id, data }) {
   const idioma = useEnviroment((state) => state.idioma);
   const isScrubbing = useEnviroment((state) => state.isScrubbing);
   const isManualOrbit = useEnviroment((state) => state.isManualOrbit);
+  const hasGuidedCamera = useEnviroment((state) => state.hasGuidedCamera);
 
   const texts = {
     es: {
@@ -254,8 +280,9 @@ export default function NavBarInferior({ id, data }) {
   }, [Parpadeo]);
 
   const PlayButton = () => {
-    // Si el usuario tomó el control para orbitar libremente, al presionar Play retoma la cámara guiada
-    if (isManualOrbit) {
+    // Si el usuario tomó el control para orbitar libremente en un paso con cámara animada guiada,
+    // al presionar el botón de la cámara retoma la trayectoria guiada del GLB
+    if (isManualOrbit && hasGuidedCamera) {
       if (typeof window.__resumeGuidedCamera === "function") {
         window.__resumeGuidedCamera();
       }
@@ -282,11 +309,12 @@ export default function NavBarInferior({ id, data }) {
     if (isScrubbing) {
       return <IconPause />;
     }
-    // Cuando el usuario decida tomar el control de la órbita de la cámara,
-    // SIEMPRE debe activarse el botón de "Play" automáticamente
-    if (isManualOrbit) {
-      return <IconPlay />;
+    // Si el paso tiene cámara animada guiada y el usuario orbitó libremente con el dedo/mouse:
+    // Mostrar icono de cámara de video que titila invitándolo a realinearse a la animación
+    if (isManualOrbit && hasGuidedCamera) {
+      return <IconCamera style={{ width: "65%", height: "65%" }} />;
     }
+    // En cualquier otro caso:
     if (phaseAudio === "playing") {
       return <IconPause />;
     }
@@ -358,7 +386,12 @@ export default function NavBarInferior({ id, data }) {
             )}
           </button>
 
-          <div id="btnPause" title={t.pauseTitle} className="button" onClick={PlayButton}>
+          <div 
+            id="btnPause" 
+            title={isManualOrbit && hasGuidedCamera ? (idioma === "en" ? "Resume guided camera" : "Reanudar cámara guiada") : t.pauseTitle} 
+            className={`button ${isManualOrbit && hasGuidedCamera ? "btn-camera-blinking" : ""}`} 
+            onClick={PlayButton}
+          >
             {renderPausePlayIcon()}
           </div>
 

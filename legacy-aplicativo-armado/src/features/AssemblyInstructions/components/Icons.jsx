@@ -160,3 +160,19 @@ export function IconShadows({ sombras, ...props }) {
   );
 }
 
+export function IconCamera(props) {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      viewBox="0 0 16 16"
+      width="100%"
+      height="100%"
+      fill="currentColor"
+      {...props}
+    >
+      <path d="M0 5a2 2 0 0 1 2-2h7a2 2 0 0 1 2 2v1.5l3.223-1.611A1 1 0 0 1 16 5.777v4.446a1 1 0 0 1-1.777.888L11 9.5V11a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V5zm11 1.118v3.764l3 1.5V4.618l-3 1.5zM2 4a1 1 0 0 0-1 1v6a1 1 0 0 0 1 1h7a1 1 0 0 0 1-1V5a1 1 0 0 0-1-1H2z" />
+    </svg>
+  );
+}
+
+
