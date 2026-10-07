@@ -12,6 +12,7 @@ import {
   sanitizarPasosManuales,
 } from "../storeDefaults";
 import { saveDisenosToIndexedDB } from "../disenosStorage";
+import { saveMaterialesToIndexedDB, loadMaterialesFromIndexedDB } from "../materialesStorage";
 import type {
   FichaProductoDef,
   RecetaColorMueble,
@@ -35,6 +36,7 @@ export interface CatalogSlice {
   // Capas y materiales
   capas: CapaDef[];
   materialesPBR: MaterialPBRDef[];
+  cargarMaterialesDesdeDB: () => Promise<void>;
   asignacionesPartes: Record<string, AsignacionParteDef>;
   materialSeleccionadoId: string | null;
   capaSeleccionadaId: string | null;
@@ -391,26 +393,7 @@ export const createCatalogSlice = (set: any, get: any): any => ({
           const stored = JSON.parse(localStorage.getItem("3bf_capas_v1")!) as CapaDef[];
           const storedIds = new Set(stored.map((c) => c.id));
           const missing = PRESET_CAPAS.filter((p) => !storedIds.has(p.id));
-          const allCapas = [...stored, ...missing];
-          // 🛡️ Blindaje de Capa Tono: Si fue sobreescrita accidentalmente con un material de plástico o metal, restaurar mat_marfil
-          const allMats = typeof window !== "undefined" && window.localStorage && localStorage.getItem("3bf_materiales_pbr_v1")
-            ? JSON.parse(localStorage.getItem("3bf_materiales_pbr_v1")!)
-            : PRESET_MATERIALES_PBR;
-          return allCapas.map((c) => {
-            if (c.id === "capa_tono") {
-              const matActual = allMats.find((m: any) => m.id === c.materialId);
-              if (matActual && (matActual.tipo === "Plastico" || matActual.tipo === "Metal" || matActual.nombre?.toLowerCase().includes("beige"))) {
-                return { ...c, materialId: "mat_marfil" };
-              }
-            }
-            if (c.id === "capa_tono_fondo") {
-              const matActual = allMats.find((m: any) => m.id === c.materialId);
-              if (!matActual || matActual.tipo === "Metal" || c.materialId === "mat_zinc" || c.materialId === "mat_acero") {
-                return { ...c, materialId: "mat_offwhite" };
-              }
-            }
-            return c;
-          });
+          return [...stored, ...missing];
         } catch {
           return PRESET_CAPAS;
         }
@@ -546,12 +529,15 @@ export const createCatalogSlice = (set: any, get: any): any => ({
       ...nuevo,
     };
     const listaActualizada = [...get().materialesPBR, materialCompleto];
+    // 🛡️ 1. Persistencia de Alta Capacidad en IndexedDB (soporta Texturas y Mapas PBR sin límite de 5MB)
+    saveMaterialesToIndexedDB(listaActualizada);
+
+    // 💾 2. Fallback de compatibilidad en localStorage
     if (typeof window !== "undefined" && window.localStorage) {
       try {
         localStorage.setItem("3bf_materiales_pbr_v1", JSON.stringify(listaActualizada));
       } catch (e) {
         try {
-          // Fallback: Si supera cuota, omitir dataURIs pesados de mapas generados en localStorage
           const listaLigera = listaActualizada.map((m) => ({
             ...m,
             normalMapUrl: m.normalMapUrl?.startsWith("data:") ? null : m.normalMapUrl,
@@ -560,7 +546,7 @@ export const createCatalogSlice = (set: any, get: any): any => ({
           }));
           localStorage.setItem("3bf_materiales_pbr_v1", JSON.stringify(listaLigera));
         } catch {
-          console.warn("Storage cuota excedida: Materiales conservados en memoria Zustand.");
+          console.warn("Storage cuota excedida: Materiales respaldados de forma segura en IndexedDB.");
         }
       }
     }
@@ -570,12 +556,15 @@ export const createCatalogSlice = (set: any, get: any): any => ({
 
   actualizarMaterialPBR: (id, cambios) => {
     const listaActualizada = get().materialesPBR.map((m) => (m.id === id ? { ...m, ...cambios } : m));
+    // 🛡️ 1. Persistencia de Alta Capacidad en IndexedDB
+    saveMaterialesToIndexedDB(listaActualizada);
+
+    // 💾 2. Fallback de compatibilidad en localStorage
     if (typeof window !== "undefined" && window.localStorage) {
       try {
         localStorage.setItem("3bf_materiales_pbr_v1", JSON.stringify(listaActualizada));
       } catch (e) {
         try {
-          // Fallback seguro contra cuota de 5MB
           const listaLigera = listaActualizada.map((m) => ({
             ...m,
             normalMapUrl: m.normalMapUrl?.startsWith("data:") ? null : m.normalMapUrl,
@@ -584,7 +573,7 @@ export const createCatalogSlice = (set: any, get: any): any => ({
           }));
           localStorage.setItem("3bf_materiales_pbr_v1", JSON.stringify(listaLigera));
         } catch {
-          console.warn("Storage cuota excedida: Materiales actualizados en memoria Zustand.");
+          console.warn("Storage cuota excedida: Materiales respaldados de forma segura en IndexedDB.");
         }
       }
     }
@@ -595,6 +584,9 @@ export const createCatalogSlice = (set: any, get: any): any => ({
     if (get().materialesPBR.length <= 1) return;
     const listaActualizada = get().materialesPBR.filter((m) => m.id !== id);
     const nuevoSel = listaActualizada[0]?.id || "";
+    // 🛡️ 1. Persistencia de Alta Capacidad en IndexedDB
+    saveMaterialesToIndexedDB(listaActualizada);
+
     if (typeof window !== "undefined" && window.localStorage) {
       try {
         localStorage.setItem("3bf_materiales_pbr_v1", JSON.stringify(listaActualizada));
@@ -603,6 +595,20 @@ export const createCatalogSlice = (set: any, get: any): any => ({
       }
     }
     set({ materialesPBR: listaActualizada, materialSeleccionadoId: nuevoSel });
+  },
+
+  cargarMaterialesDesdeDB: async () => {
+    try {
+      const persistidos = await loadMaterialesFromIndexedDB();
+      if (persistidos && persistidos.length > 0) {
+        const storedIds = new Set(persistidos.map((m) => m.id));
+        const missing = PRESET_MATERIALES_PBR.filter((p) => !storedIds.has(p.id));
+        const final = [...persistidos, ...missing];
+        set({ materialesPBR: final });
+      }
+    } catch (err) {
+      console.warn("Error cargando materiales PBR desde IndexedDB:", err);
+    }
   },
 
   setMaterialSeleccionadoId: (materialSeleccionadoId) => set({ materialSeleccionadoId }),
@@ -879,9 +885,20 @@ export const createCatalogSlice = (set: any, get: any): any => ({
     const cleanName = nombre.trim();
     if (!cleanName) return false;
 
+    const state = get();
     const slug = cleanName.toLowerCase().replace(/\s+/g, "-");
     const id = padreId ? `${padreId}/${slug}` : slug;
-    const ruta = padreId ? `${padreId}/${cleanName}` : cleanName;
+
+    // 📁 Resolver ruta física real buscando el nodo padre en el árbol de carpetas
+    let ruta = cleanName;
+    if (padreId) {
+      const padreNode = state.arbolCarpetasMuebles.find((m) => m.id === padreId || m.nombre === padreId);
+      if (padreNode) {
+        ruta = `${padreNode.nombre}/${cleanName}`;
+      } else {
+        ruta = `${padreId}/${cleanName}`;
+      }
+    }
 
     const nuevaCarpeta: CarpetaMuebleNode = {
       id,

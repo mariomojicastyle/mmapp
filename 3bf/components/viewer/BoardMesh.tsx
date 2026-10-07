@@ -10,7 +10,7 @@ import { useMaterialPBRMaps } from "./boardMesh/useMaterialPBRMaps";
 import { useBoardMeshGeometry } from "./boardMesh/useBoardMeshGeometry";
 import { resolverPropiedadesMaterial } from "./boardMesh/boardMaterialResolver";
 import { resolverVisibilidadBoard } from "./boardMesh/boardVisibilityRules";
-import { coincidenMismoHerraje } from "@/lib/engine/cadStateUtils";
+import { coincidenMismoHerraje, getCapaSugeridaId } from "@/lib/engine/cadStateUtils";
 
 export { useMaterialPBRMaps };
 
@@ -240,26 +240,26 @@ export function BoardMesh({
     modoPickingManual.piezasTemporalmenteSeleccionadas.includes(piezaMadre)
   );
 
-  const asignacionParte = asignacionesPartes[name] || asignacionesPartes[cleanName] || asignacionesPartes[`RH_OUT:${cleanName}`];
+  const normalizeKey = (k: string) => k.replace(/^RH_OUT:/i, '').replace(/[_\s]+/g, ' ').replace(/\s*\([^\)]*\)/g, '').trim().toLowerCase();
+  const normClean = normalizeKey(cleanName);
+
+  const asignacionParte = asignacionesPartes[name] || 
+    asignacionesPartes[cleanName] || 
+    asignacionesPartes[`RH_OUT:${cleanName}`] ||
+    (() => {
+      const matchedKey = Object.keys(asignacionesPartes).find((k) => normalizeKey(k) === normClean);
+      return matchedKey ? asignacionesPartes[matchedKey] : null;
+    })();
   
-  // 1. Identificar capa asignada (por asignación explícita de parte o heurística por tipo de componente)
+  // 1. Identificar capa asignada (por asignación explícita o inferencia canónica compartida)
   const kLow = cleanName.toLowerCase();
   let capaAsignadaParte = asignacionParte?.capaId && asignacionParte.capaId !== "por_defecto"
     ? capas.find((c) => c.id === asignacionParte.capaId)
     : null;
 
   if (!capaAsignadaParte) {
-    if (kLow.includes("tampa")) {
-      capaAsignadaParte = capas.find((c) => c.id === "capa_tono" || (c.nombre.toLowerCase().includes("tono") && !c.nombre.toLowerCase().includes("fondo"))) || capas[0] || null;
-    } else if (kLow.includes("perfil") || kLow.includes("porca") || kLow.includes("pata") || kLow.includes("sapata") || kLow.includes("suporte")) {
-      capaAsignadaParte = capas.find((c) => c.id === "capa_plastico_2" || c.id === "capa_plastico_1" || c.nombre.toLowerCase().includes("plastico")) || null;
-    } else if (kLow.includes("mdp")) {
-      capaAsignadaParte = capas.find((c) => c.id === "capa_mdp" || c.nombre.toLowerCase() === "mdp") || null;
-    } else if (kLow.includes("mdf")) {
-      capaAsignadaParte = capas.find((c) => c.id === "capa_mdf" || c.nombre.toLowerCase() === "mdf") || null;
-    } else if (kLow.includes("balance") || kLow.endsWith(" b")) {
-      capaAsignadaParte = capas.find((c) => c.id === "capa_back" || c.nombre.toLowerCase().includes("back") || c.nombre.toLowerCase().includes("balance")) || null;
-    }
+    const capaSugeridaId = getCapaSugeridaId(cleanName, "Estructura", capas);
+    capaAsignadaParte = capas.find((c) => c.id === capaSugeridaId) || capas[0] || null;
   }
 
   // 2. Resolver material PBR efectivo: primero el directo de la parte, luego el de su capa asignada
@@ -298,16 +298,12 @@ export function BoardMesh({
     )
   );
 
-  const fallbackTexturaUrl = (
-    esHerrajeOPerfil || 
-    esMaterialSinTexturaMelamina || 
-    kLow.includes("mdp") || 
-    kLow.includes("mdf") || 
-    kLow.includes("balance") || 
-    kLow.endsWith(" b")
-  )
-    ? null
-    : (calibracion.customTextureUrl || "/textures/Marfil_diffuse.jpg");
+  // 3. Determinar textura difusa efectiva: Si el material tiene texturaUrl se usa esa SIEMPRE; si no tiene texturaUrl propia y es herraje/plástico/metal o material sin textura, queda null; de lo contrario usa customTextureUrl como fallback
+  const fallbackTexturaUrl = materialRef?.texturaUrl
+    ? materialRef.texturaUrl
+    : ((esHerrajeOPerfil || esMaterialSinTexturaMelamina || kLow.includes("mdp") || kLow.includes("mdf") || kLow.includes("balance") || kLow.endsWith(" b"))
+        ? null
+        : (calibracion.customTextureUrl || null));
 
   const pbrMaps = useMaterialPBRMaps(
     materialRef,

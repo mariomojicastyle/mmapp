@@ -1151,6 +1151,7 @@ export interface State3BF {
   crearMaterialPBR: (material?: Partial<MaterialPBRDef>) => string;
   actualizarMaterialPBR: (id: string, cambios: Partial<MaterialPBRDef>) => void;
   eliminarMaterialPBR: (id: string) => void;
+  cargarMaterialesDesdeDB: () => Promise<void>;
   setMaterialSeleccionadoId: (id: string) => void;
   asignarParteACapa: (parteKey: string, capaId: string, nombreVisible?: string) => void;
   asignarParteAMaterial: (parteKey: string, materialId: string) => void;

@@ -163,7 +163,10 @@ Para evitar respuestas genéricas, el RAM de ventas almacena y cruza 5 dimension
     - Mario formalizó y publicó la presentación interactiva en 16:9 (`http://localhost:3003/acta-propuesta-politorno-usd.html`) y documento PDF descargable (`Acta_Propuesta_Piloto_Politorno_Mario_Mojica_USD.pdf`).
     - **Esquema Económico:** 10 manuales medianos al 50% de descuento ($187 USD c/u = **$1.874 USD**), con **100% de bonificación en el desarrollo de software paramétrico 3dBimFab ($10.000 USD ➔ $0 USD)**. Ahorro consolidado en tecnología: **+$11.874 USD**.
   * *28 Septiembre 2026 (11:44 BRT):* **Acuse de Recibo & Rutina de Fábrica:** Marcelo respondió al envío de la propuesta ejecutiva en WhatsApp: *"Boa tarde Mário! Tudo certo e contigo? Estou bem atarefado. Quando der dou uma atenção para este tema!"*. Mario respondió inmediatamente validando el ajetreo habitual de inicio de semana en planta (*"imagino a correria de início de semana aí na fábrica"*), dándole 100% de tranquilidad y libertad para analizarlo con calma junto a Ricardo cuando tengan un respiro, manteniendo la puerta abierta y una relación cálida y profesional.
-- **Objetivo Estratégico:** Esperar con calma a que Marcelo y Ricardo tengan un respiro en su agenda semanal para revisar la propuesta de los 10 productos piloto sin presionar su rutina de planta.
+  * *06 Octubre 2026 (14:25 COL / 16:25 BRT):* **Envío de Video Didáctico en Portugués y Link de Cómoda Ravenna (`https://mariomojica.com/Comoda_Ravenna`):**
+    - Mario envió a Marcelo el nuevo video explicativo hablando en portugués donde reflexiona sobre el criterio de armado real (diferencia entre animaciones lineales tipo videojuego vs manual interactivo paso a paso guiado).
+    - Compartió también el enlace del manual interactivo de la Cómoda Ravenna aclarando con humildad y transparencia que son sus primeros pasos en portugués y que el manual aún está en proceso de calibración cosmética con el área de Marketing de Henn.
+- **Objetivo Estratégico:** Mantener vivo el vínculo con Politorno mediante contenido de alto valor y autenticidad sin presionar la propuesta comercial de los 10 productos piloto.
 
 ---
 
@@ -223,11 +226,14 @@ Para evitar respuestas genéricas, el RAM de ventas almacena y cruza 5 dimension
     **Nueva Reunión Agendada:** **Martes 29 de Septiembre de 2026, de 09:30 a 10:30 BRT (07:30 a 08:30 COL)**.
     **Participantes:** Mario Mojica, Marcos Unnass (Coordenador P&D), Jonas Borck (Engenharia de Produtos) y el **Equipo de Sistemas / TI de Móveis Henn**.
   * *29 Septiembre 2026 (Tarde BRT):* Envío de la Propuesta Comercial en PDF (`Proposta_Comercial_Moveis_Henn_Mario_Mojica_PT_USD_Clean.pdf`) y Acta de Reunión 03 (`Ata_Reuniao_03_Moveis_Henn_Mario_Mojica_PT.pdf`). Marcos respondió: *"Sim, com calma dou uma olhada e se precisar tbm te chamo"*.
-  * *06 Octubre 2026 (Mañana COL/BRT):* **Envío del Manual 3D Interactivo de la Cómoda Ravenna (`https://mariomojica.com/Comoda_Ravenna`):**
-    - Mario envió a Marcos el link interactivo invitándolo a probarlo con un armador de fábrica para recibir feedback técnico objetivo del flujo de ensamble real.
-    - Se reiteró que el proyecto piloto de la cómoda está en manos de Henn para afinar detalles cosméticos (fotos reales de herrajes, términos de garantía, branding de marketing).
-    - Mario confirmó total preparación para la reunión con el equipo de Marketing y anunció el envío de un video en portugués a lo largo de la semana explicando las virtudes del manual. Saludos a Marcos, Jonas y Lucas.
-- **Objetivo Estratégico:** Demostración en vivo de la *Cômoda Ravenna D737* en `3dBimFab`, integración con TOTVS Datasul, y presentación de la oferta irresistible de 10 muebles piloto (manuales 3D al 50% y gemelos digitales bonificados a $0 COP / R$ 0 BRL) el Martes 29 de Septiembre a las 09:30 BRT.
+  * *06 Octubre 2026 (13:22 BRT):* **¡HITO DE VALIDACIÓN INTERNA - AUDIO DE MARCOS UNNASS (30s)!**
+    - Marcos envió mensaje de audio de WhatsApp revisando el manual interactivo de la Cómoda Ravenna (`https://mariomojica.com/Comoda_Ravenna`):
+      > *"Ô Mário, boa tarde, tudo certo 100%. Eu tô conferindo internamente aqui, pedi para passar [para a equipe] do manual. Tu me dá uma olhada, vê se tem algo que dá para enxergar que possa ser diferente, ou que não esteja conclusivo, ou algo nesse sentido. E nessa semana eu vou ainda tentar reunir com o pessoal do marketing, eu vou mandar algumas informações para eles também de acordo como tá, para deixar eles a par da situação de como a gente tem a ideia, e aí nós marcar essa agenda aí, tá bom?"*
+    - **Diagnóstico y Avance Clave:**
+      1. Marcos está revisando el flujo internamente y ya puso a su equipo técnico de manuales a testear la demo interactiva.
+      2. Le pide a Mario revisar si hay detalles a ajustar o pulir.
+      3. Confirmó que **esta misma semana se reunirá con el equipo de Marketing de Henn** y les presentará la propuesta e idea del manual 3D para alinear a todos y **agendar la reunión conjunta**.
+- **Objetivo Estratégico:** Demostración en vivo de la *Cômoda Ravenna D737* en `3dBimFab`, integración con TOTVS Datasul, y reunión con P&D + Marketing para cierre del paquete piloto de manuales interactivos 3D.
 
 ---
 

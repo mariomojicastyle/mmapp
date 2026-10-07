@@ -1738,7 +1738,7 @@ async def compute_model(request: Request):
         nl = name_str.lower()
         if re.search(r"pe.{0,2}a\s*\d+|pk\s*\d+", nl):
             return True
-        for kw in ["cubierta", "tapa", "entrepa", "lateral", "paral", "fondo", "puerta", "frente", "zocalo", "tablero", "costado", "divisor", "repisa", "techo", "piso", "estante"]:
+        for kw in ["cubierta", "tapa", "entrepa", "lateral", "paral", "fondo", "puerta", "frente", "zocalo", "tablero", "costado", "divisor", "repisa", "techo", "piso", "estante", "travesa"]:
             if kw in nl:
                 return True
         return False

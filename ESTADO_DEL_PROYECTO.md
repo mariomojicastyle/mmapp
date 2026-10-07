@@ -9,7 +9,15 @@ Este archivo es la "Memoria RAM" para Antigravity. Contiene el contexto de lo qu
 ---
 
 ## 🏗️ 1. Plataforma B2B & 3dBimFab (Foco Actual)
-**Estado:** Hito 262 completado con éxito total. **Persistencia Autónoma de Posición y Target de Cámara en Supabase vía Netlify Functions y Solución Definitiva de Sobreescritura en Visor 3D (`guardar-camara.js`, `Experience.jsx`, `Model.jsx`, `AssemblyPage.jsx`)**. Próximo foco: Continuidad de funcionalidades en la suite 3dBimFab y manuales de armado 3D. Rama: `Manual_Ravenna_OK`.
+**Estado:** Hito 263 completado con éxito total. **Soberanía de Materiales en Despiece, Persistencia PBR en IndexedDB y Clasificación DfMA de Travesaños en 3dBimFab (`DespieceView.tsx`, `materialesStorage.ts`, `createCatalogSlice.ts`, `MaterialManagerPanel.tsx`, `PBRMaterialStudioModal.tsx`, `3bf_worker.py`)**. Próximo foco: Modelado paramétrico y ensamble del Comedor Dalton. Rama: `Comedor_Dalton`.
+
+- [x] **[07 de Octubre, 2026] Hito 263: Soberanía de Materiales en Despiece, Persistencia PBR en IndexedDB y Clasificación DfMA de Travesaños en 3dBimFab (`DespieceView.tsx`, `materialesStorage.ts`, `createCatalogSlice.ts`, `MaterialManagerPanel.tsx`, `PBRMaterialStudioModal.tsx`, `3bf_worker.py`)**:
+  * **Soberanía Absoluta en Despiece (`DespieceView.tsx`)**: Eliminado el candado de compatibilidad de espesor que anulaba la elección del usuario; el cambio de tablero recalcula costos en tiempo real en la tabla y KPIs.
+  * **Persistencia PBR en IndexedDB (`materialesStorage.ts`, `createCatalogSlice.ts`)**: Base de datos `3bf_materiales_db` para guardar colecciones completas de texturas y mapas PBR en Base64 sin el tope de 5 MB de localStorage, con hidratación automática al arranque.
+  * **Erradicación de Materiales Huérfanos (`MaterialManagerPanel.tsx`)**: Al pulsar `+` se abre inmediatamente el 3BF Material Studio sobre el nuevo material para configurarlo de inmediato.
+  * **Travesaños como Tableros DfMA (`3bf_worker.py`, `cadStateUtils.ts`, `BoardMesh.tsx`)**: Clasificación precisa de piezas de estructura horizontal y largueros como tableros con herencia de material de capa tono y cálculo de dimensiones.
+  * **Soporte de Creación de Carpetas en Drive (`SaveFurnitureModal.tsx`)**: Gestión dinámica de carpetas en Google Drive y disco local.
+  * **Validación de Calidad**: `npx tsc --noEmit` en `3BF` y `mario-mojica-plataforma` con **0 errores**.
 
 - [x] **[06 de Octubre, 2026] Hito 262: Persistencia Autónoma de Posición y Target de Cámara en Supabase vía Netlify Functions y Erradicación de Sobreescritura Baricéntrica (`guardar-camara.js`, `Experience.jsx`, `Model.jsx`, `AssemblyPage.jsx`)**:
   * **Netlify Function Autónoma con Service Role (`guardar-camara.js`)**: Creada función serverless en `legacy-aplicativo-armado/netlify/functions/guardar-camara.js` que elude las restricciones de RLS y permite actualizar `glb_pasos` directamente en Supabase con privilegios de administrador desde cualquier pestaña o visor independiente.

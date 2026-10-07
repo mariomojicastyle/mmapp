@@ -671,6 +671,64 @@ export default function PBRMaterialStudioModal() {
               borderColor: coloresApariencia?.bordePaneles,
             }}
           >
+            {/* 🏷️ Identificación del Material (Nombre y Tipo Visibles Arriba de Todo) */}
+            <div 
+              className="p-2.5 rounded-xl border flex flex-col gap-2 shadow-2xs"
+              style={{
+                backgroundColor: coloresApariencia?.fondoAplicacion,
+                borderColor: coloresApariencia?.bordePaneles,
+              }}
+            >
+              <div className="flex flex-col gap-1">
+                <label className="font-bold text-[10px] uppercase tracking-wider" style={{ color: coloresApariencia?.textoSecundario }}>
+                  Nombre del Material:
+                </label>
+                <input
+                  type="text"
+                  value={matLocal.nombre}
+                  onChange={(e) => {
+                    const nuevoNom = e.target.value;
+                    const actualizado = { ...matLocal, nombre: nuevoNom };
+                    setMatLocal(actualizado);
+                    actualizarMaterialPBR(matLocal.id, { nombre: nuevoNom });
+                  }}
+                  placeholder="Ej: M_Maple..."
+                  className="px-3 py-1.5 rounded-full border text-xs font-bold outline-none shadow-2xs focus:ring-1 focus:ring-cyan-500 transition"
+                  style={{
+                    backgroundColor: coloresApariencia?.fondoPaneles,
+                    borderColor: coloresApariencia?.bordePaneles,
+                    color: coloresApariencia?.textoPrincipal,
+                  }}
+                />
+              </div>
+
+              <div className="flex items-center justify-between gap-2">
+                <span className="text-[10px] font-semibold" style={{ color: coloresApariencia?.textoSecundario }}>Tipo:</span>
+                <select
+                  value={matLocal.tipo}
+                  onChange={(e) => {
+                    const nuevoTipo = e.target.value as any;
+                    const actualizado = { ...matLocal, tipo: nuevoTipo };
+                    setMatLocal(actualizado);
+                    actualizarMaterialPBR(matLocal.id, { tipo: nuevoTipo });
+                  }}
+                  className="px-2.5 py-1 rounded-full border text-[11px] font-semibold outline-none cursor-pointer flex-1"
+                  style={{
+                    backgroundColor: coloresApariencia?.fondoPaneles,
+                    borderColor: coloresApariencia?.bordePaneles,
+                    color: coloresApariencia?.textoPrincipal,
+                  }}
+                >
+                  <option value="Melamina">Melamina / Laminado</option>
+                  <option value="Madera">Madera Maciza</option>
+                  <option value="Metal">Metal / Herraje</option>
+                  <option value="Plastico">Plástico</option>
+                  <option value="Pintura">Pintura / Laca</option>
+                  <option value="PBR">PBR Físico</option>
+                </select>
+              </div>
+            </div>
+
             {/* Cabecera de Canales & Botón de Subida */}
             <div className="flex items-center justify-between">
               <span className="font-semibold text-xs flex items-center gap-1.5" style={{ color: coloresApariencia?.textoPrincipal }}>
@@ -1112,7 +1170,11 @@ export default function PBRMaterialStudioModal() {
                   <input
                     type="text"
                     value={matLocal.nombre}
-                    onChange={(e) => setMatLocal({ ...matLocal, nombre: e.target.value })}
+                    onChange={(e) => {
+                      const nuevoNom = e.target.value;
+                      setMatLocal({ ...matLocal, nombre: nuevoNom });
+                      actualizarMaterialPBR(matLocal.id, { nombre: nuevoNom });
+                    }}
                     className="px-2.5 py-1 rounded-full border text-xs font-semibold outline-none"
                     style={{
                       backgroundColor: coloresApariencia?.fondoAplicacion,
@@ -1125,7 +1187,11 @@ export default function PBRMaterialStudioModal() {
                   <label className="font-semibold text-[10px]" style={{ color: coloresApariencia?.textoSecundario }}>Tipo:</label>
                   <select
                     value={matLocal.tipo}
-                    onChange={(e) => setMatLocal({ ...matLocal, tipo: e.target.value as any })}
+                    onChange={(e) => {
+                      const nuevoTipo = e.target.value as any;
+                      setMatLocal({ ...matLocal, tipo: nuevoTipo });
+                      actualizarMaterialPBR(matLocal.id, { tipo: nuevoTipo });
+                    }}
                     className="px-2.5 py-1 rounded-full border text-xs font-semibold outline-none cursor-pointer"
                     style={{
                       backgroundColor: coloresApariencia?.fondoAplicacion,

@@ -36,6 +36,8 @@ export default function SaveFurnitureModal() {
   const [descripcion, setDescripcion] = useState("");
   const [creandoNuevaCarpeta, setCreandoNuevaCarpeta] = useState(false);
   const [nombreNuevaCarpeta, setNombreNuevaCarpeta] = useState("");
+  const [creandoNuevaMarca, setCreandoNuevaMarca] = useState(false);
+  const [nombreNuevaMarca, setNombreNuevaMarca] = useState("");
   const [mensajeExito, setMensajeExito] = useState(false);
 
   if (!modalGuardarComoAbierto) return null;
@@ -47,6 +49,18 @@ export default function SaveFurnitureModal() {
   // Obtener subcarpetas para la marca seleccionada
   const marcaActual = arbolCarpetasMuebles.find((m) => m.nombre === marcaSeleccionada) || arbolCarpetasMuebles[0];
   const tipologiasDisponibles = marcaActual?.subcarpetas?.map((s) => s.nombre) || ["Escritorios", "Armarios", "Mesas de noche"];
+
+  const handleCrearMarca = async () => {
+    const clean = nombreNuevaMarca.trim();
+    if (!clean) return;
+    const ok = await crearCarpetaMueble(clean, "marca", null);
+    if (ok) {
+      setMarcaSeleccionada(clean);
+      setTipologiaSeleccionada("General");
+      setNombreNuevaMarca("");
+      setCreandoNuevaMarca(false);
+    }
+  };
 
   const handleCrearSubcarpeta = async () => {
     if (!nombreNuevaCarpeta.trim()) return;
@@ -160,13 +174,66 @@ export default function SaveFurnitureModal() {
 
           {/* Selección de Marca Primaria */}
           <div className="flex flex-col gap-1.5">
-            <label 
-              style={{ color: esOscuro ? "#CBD5E1" : "#334155" }}
-              className="font-bold flex items-center gap-1.5"
-            >
-              <Folder className="w-3.5 h-3.5 text-amber-500" />
-              Marca / Catálogo Primario
-            </label>
+            <div className="flex items-center justify-between">
+              <label 
+                style={{ color: esOscuro ? "#CBD5E1" : "#334155" }}
+                className="font-bold flex items-center gap-1.5"
+              >
+                <Folder className="w-3.5 h-3.5 text-amber-500" />
+                Marca / Catálogo Primario
+              </label>
+              {!creandoNuevaMarca && (
+                <button
+                  type="button"
+                  onClick={() => setCreandoNuevaMarca(true)}
+                  style={{ color: colorBotonActivo }}
+                  className="text-[11px] hover:underline flex items-center gap-1 font-bold cursor-pointer"
+                >
+                  <FolderPlus className="w-3.5 h-3.5" /> + Nueva Marca
+                </button>
+              )}
+            </div>
+
+            {/* Input para crear nueva Marca inline */}
+            {creandoNuevaMarca && (
+              <div 
+                style={{
+                  backgroundColor: esOscuro ? "#0B0F17" : "#F8FAFC",
+                  borderColor: esOscuro ? "#1E293B" : "#CBD5E1",
+                }}
+                className="flex items-center gap-1.5 p-1.5 rounded-full border mb-1"
+              >
+                <input
+                  type="text"
+                  placeholder="Nombre de la nueva marca (ej. Jamar)..."
+                  value={nombreNuevaMarca}
+                  onChange={(e) => setNombreNuevaMarca(e.target.value)}
+                  style={{
+                    backgroundColor: esOscuro ? "#131B2E" : "#FFFFFF",
+                    borderColor: esOscuro ? "#334155" : "#E2E8F0",
+                    color: esOscuro ? "#F8FAFC" : "#0F172A",
+                  }}
+                  className="flex-1 px-3 py-1 text-xs rounded-full border focus:outline-none"
+                />
+                <button
+                  type="button"
+                  onClick={handleCrearMarca}
+                  style={{ backgroundColor: colorBotonActivo }}
+                  className="px-3 py-1 text-white rounded-full font-bold text-[10.5px] cursor-pointer hover:opacity-90 transition"
+                >
+                  Crear
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setCreandoNuevaMarca(false)}
+                  style={{ color: esOscuro ? "#94A3B8" : "#64748B" }}
+                  className="px-2 py-1 text-[10.5px] cursor-pointer hover:opacity-80 transition"
+                >
+                  Cancelar
+                </button>
+              </div>
+            )}
+
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
               {arbolCarpetasMuebles.map((marca) => {
                 const isSelected = marcaSeleccionada === marca.nombre;

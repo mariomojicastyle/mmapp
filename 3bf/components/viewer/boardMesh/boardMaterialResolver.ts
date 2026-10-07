@@ -1,6 +1,7 @@
 import React from 'react';
 import * as THREE from 'three';
 import { MaterialPBRDef, CapaDef, AsignacionParteDef } from '@/lib/store';
+import { getCapaSugeridaId } from '@/lib/engine/cadStateUtils';
 
 export interface MaterialPropertiesInput {
   name: string;
@@ -52,7 +53,7 @@ export interface ResolvedMaterialProperties {
 }
 
 export function resolverPropiedadesMaterial(p: MaterialPropertiesInput): ResolvedMaterialProperties {
-  const normalizeKey = (k: string) => k.replace(/^RH_OUT:/i, '').replace(/[_\s]+/g, ' ').trim().toLowerCase();
+  const normalizeKey = (k: string) => k.replace(/^RH_OUT:/i, '').replace(/[_\s]+/g, ' ').replace(/\s*\([^\)]*\)/g, '').trim().toLowerCase();
   const normName = normalizeKey(p.name);
 
   // 1. Asignación de parte
@@ -130,41 +131,11 @@ export function resolverPropiedadesMaterial(p: MaterialPropertiesInput): Resolve
     capaAsignada = p.capas.find((c) => c.id === asignacion.capaId) || null;
   }
   
-  // Heurísticas automáticas SOLO si no hay asignación manual explícita
+  // Inferencia canónica compartida (idéntica a PartBreakdownPanel y BoardMesh) SOLO si no hay asignación manual
   if (!capaAsignada) {
-    if (normName.includes('mdf')) {
-      capaAsignada = p.capas.find((c) => c.id === 'capa_mdf' || c.nombre.toLowerCase() === 'mdf') || p.capas[0];
-    } else if (isFondoBoard) {
-      capaAsignada = p.capas.find((c) => c.id === 'capa_tono_fondo' || c.nombre.toLowerCase().includes('tono fondo') || c.nombre.toLowerCase().includes('fondo')) || p.capas[0];
-    } else if (isHardwareCorredera || isHardwarePrego) {
-      capaAsignada = p.capas.find((c) => c.id === 'capa_acero' || c.id === 'capa_zincado' || c.nombre.toLowerCase().includes('acero') || c.nombre.toLowerCase().includes('zinc')) || p.capas.find((c) => c.id === 'capa_herrajes') || p.capas[0];
-    } else if (isHardwareCantoneira) {
-      capaAsignada = p.capas.find((c) => c.id === 'capa_zincado' || c.id === 'capa_zinc' || c.id === 'capa_acero' || c.nombre.toLowerCase().includes('zinc') || c.nombre.toLowerCase().includes('acero')) || p.capas.find((c) => c.id === 'capa_herrajes') || p.capas[0];
-    } else if (isHardwarePata) {
-      capaAsignada = p.capas.find((c) => c.id === 'capa_plastico_1' || c.id === 'capa_plastico_2' || c.nombre.toLowerCase().includes('plastico')) || p.capas.find((c) => c.id === 'capa_herrajes') || p.capas[0];
-    } else if (isHardwareTampa) {
-      capaAsignada = p.capas.find((c) => c.id === 'capa_tono' || (c.nombre.toLowerCase().includes('tono') && !c.nombre.toLowerCase().includes('fondo'))) || p.capas[0];
-    } else if (isHardwarePorca || isHardwareSuporte || normName.includes('perfil')) {
-      capaAsignada = p.capas.find((c) => c.id === 'capa_plastico_2' || c.id === 'capa_plastico_1' || c.nombre.toLowerCase().includes('plastico')) || p.capas.find((c) => c.id === 'capa_herrajes') || p.capas[0];
-    } else if (isHardwarePerno) {
-      capaAsignada = p.capas.find((c) => c.id === 'capa_herrajes' || c.id === 'capa_acero' || c.nombre.toLowerCase().includes('acero') || c.nombre.toLowerCase().includes('herraje'));
-    } else if (isHardwareCaja) {
-      capaAsignada = p.capas.find((c) => c.id === 'capa_zincado' || c.id === 'capa_zinc' || c.nombre.toLowerCase().includes('zinc'));
-    } else if (isHardwareTarugo) {
-      capaAsignada = p.capas.find((c) => c.id === 'capa_madera' || c.nombre.toLowerCase().includes('madera'));
-    } else if (isMachining) {
-      capaAsignada = p.capas.find((c) => c.id === 'capa_perforados' || c.nombre.toLowerCase().includes('perforad'));
-    } else if (isBalance) {
-      capaAsignada = p.capas.find((c) => c.id === 'capa_back' || c.id === 'capa_espaldar' || c.nombre.toLowerCase().includes('back') || c.nombre.toLowerCase().includes('balance'));
-    } else if (normName.includes('mdp')) {
-      if (p.pestanaActiva === 'manual') {
-        capaAsignada = p.capas.find((c) => c.id === 'capa_tono' || (c.nombre.toLowerCase().includes('tono') && !c.nombre.toLowerCase().includes('fondo'))) || p.capas[0];
-      } else {
-        capaAsignada = p.capas.find((c) => c.id === 'capa_mdp' || c.nombre.toLowerCase() === 'mdp');
-      }
-    } else {
-      capaAsignada = p.capas.find((c) => c.id === 'capa_tono' || (c.nombre.toLowerCase().includes('tono') && !c.nombre.toLowerCase().includes('fondo'))) || p.capas.find(c => c.id !== 'capa_acero') || p.capas[0];
-    }
+    const categoriaInferred = isHardware ? 'Herrajes' : (isMachining ? 'Mecanizados' : 'Estructura');
+    const sugeridaId = getCapaSugeridaId(p.cleanName, categoriaInferred, p.capas);
+    capaAsignada = p.capas.find((c) => c.id === sugeridaId) || p.capas[0] || null;
   }
   if (!capaAsignada && p.capas.length > 0) {
     capaAsignada = p.capas[0];
@@ -365,7 +336,9 @@ export function resolverPropiedadesMaterial(p: MaterialPropertiesInput): Resolve
     }
   }
 
-  const nombreMaterialEfectivo = materialPBR ? materialPBR.nombre : (isWoodBoard ? 'M_Marfil' : (isHardwarePata || isHardwarePorca || isHardwareTampa || isHardwareSuporte || normName.includes('perfil') ? 'P_Blanco' : (isHardwarePerno || isHardwarePrego ? 'Acero' : (isHardwareCaja ? 'Zinc' : 'PBR_Default'))));
+  const nombreMaterialEfectivo = materialPBR 
+    ? materialPBR.nombre 
+    : (capaAsignada?.nombre ? `Capa_${capaAsignada.nombre}` : (isWoodBoard ? 'Material_Tablero' : (isHardwarePata || isHardwarePorca || isHardwareTampa || isHardwareSuporte || normName.includes('perfil') ? 'P_Blanco' : (isHardwarePerno || isHardwarePrego ? 'Acero' : (isHardwareCaja ? 'Zinc' : 'PBR_Default')))));
   const normalScaleVal = materialPBR?.normalScale ?? 1.0;
 
   const luzEntornoConfig = p.calibracion.lucesEstudio?.['env_hdri'];

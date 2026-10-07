@@ -15,12 +15,37 @@ Para evaluar el impacto de cada publicación, analizamos tres niveles de métric
 
 ## 🗄️ Registro de Publicaciones (Orden Cronológico: Más Reciente Arriba, Más Antiguo al Final)
 
-### 🎬 [EN PRE-PRODUCCIÓN / PRÓXIMO LANZAMIENTO] Detrás de Cámaras: Criterio de Ensamble y Manual 3D
-* **Estado:** Guion definitivo aprobado / En preparación de rodaje
-* **Archivo Maestro:** [storyboard_video_2min_criterio_manual_3d.md](file:///c:/Desarrollo/mmapp/Comercial/Videos/storyboard_video_2min_criterio_manual_3d.md)
-* **Formato:** Video de 2:10 min (Mario conversando a cámara en estudio + captura viva de pantalla en `3dBimFab` módulo `Manual 3D` + smartphone)
-* **Tesis Estratégica B2B:** Demostrar que los videos 3D lineales tradicionales ("videojuegos") no sirven en planta ni en la sala del cliente; sustituirlos por el manual interactivo paso a paso con el "Paso Cero" (match de herrajes con foto real) y coherencia física.
-* **Hashtags Proyectados:** `#DisenoIndustrial #MueblesRTA #IndustriaMoveleira #Industria40 #MarioMojica #3dBimFab #DisenoParametrico #SmartManufacturing`
+### 🎬 [PROGRAMADO PARA 07 DE OCTUBRE, 2026] Animação 3D x Manual Interativo: O que realmente funciona na montagem de móveis?
+* **Fecha Programada:** Miércoles 07 de Octubre, 2026 — 07:00 AM (BR Brasil UTC-3) / 05:00 AM (Colombia UTC-5)
+* **Canales:** Multi-Canal (Instagram, Facebook, LinkedIn, YouTube)
+* **Formato:** Video de 2:10 min en Portugués (Mario a cámara + Pantalla `3dBimFab` + Celular interactivo)
+* **Archivo de Origen:** `video_2min_criterio_manual_3d.mp4` / Storyboard: [storyboard_video_2min_criterio_manual_3d.md](file:///c:/Desarrollo/mmapp/Comercial/Videos/storyboard_video_2min_criterio_manual_3d.md)
+* **Enlace Demo en Primer Comentario:** `https://mariomojica.com/Comoda_Ravenna`
+* **Hashtags:** `#MoveisRTA #MontagemDeMoveis #IndustriaMoveleira #Manual3D #EngenhariaMoveleira #PosVenda #MarcenariaModerna #3dBimFab #MarioMojica`
+
+#### 📝 Texto Principal (Copy Persuasivo):
+> "Mario, a gente tem visto algumas animações 3D por aí, mas parecem videogame; não têm nada a ver com como se monta um móvel de verdade na vida real".
+>
+> Essa frase de um cliente resume um erro muito comum na indústria moveleira.
+>
+> Muitas fábricas investem alto em vídeos 3D buscando inovar, mas acabam entregando uma animação linear: um vídeo corrido, sem passos reais, que não permite ao cliente interagir no próprio ritmo nem ensina a identificar as peças. É um visual bonito pro marketing, mas não resolve a vida de quem está com as peças no chão da sala.
+>
+> Por isso, hoje quero compartilhar com vocês os bastidores de como tomamos as decisões técnicas em um Manual 3D Interativo:
+>
+> 1️⃣ O Passo Zero (Confiança antes da ação): Antes de mexer em qualquer chapa, o cliente confere o kit de ferragens com fotos reais, peça por peça. Identificar cavilhas e corrediças sem precisar adivinhar medidas numa régua elimina a ansiedade logo no primeiro minuto.
+>
+> 2️⃣ Respeito à gravidade e ergonomia: Chapas pesam. Por isso, a montagem é projetada deitada no chão para garantir conforto e estabilidade, com voz guiando a ordem exata, sentido de aperto e alinhamento.
+>
+> 3️⃣ O encaixe final: Encaixar gavetas e portas apenas quando a estrutura já está firme e em pé.
+>
+> Quando você faz isso, não está criando apenas uma animação: está blindando sua fábrica contra chamados de SAC, evitando peças danificadas e garantindo que o cliente recomende sua marca na próxima compra.
+>
+> Esse é o caminho da engenharia moderna aplicada à experiência do cliente. 🚀
+>
+> 👉 Deixei o link para você testar a experiência interativa no primeiro comentário!
+
+#### 💬 Primer Comentario:
+> Teste na prática a experiência do Manual 3D Interativo da Cômoda Ravenna no seu celular: https://mariomojica.com/Comoda_Ravenna 📲✨
 
 ---
 

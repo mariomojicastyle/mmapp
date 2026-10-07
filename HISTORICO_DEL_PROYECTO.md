@@ -3230,3 +3230,23 @@ Para mantener la máxima agilidad y minimizar el consumo de tokens sin perder ni
 - **Validación de Calidad y Despliegue**:
   * Compilación exitosa en `legacy-aplicativo-armado` (`npm run build`) en 4.90s con **0 errores**.
   * Sincronizado, fusionado en `main` y desplegado exitosamente a producción en GitHub y Netlify.
+
+---
+
+### 🚀 Hito 263: Soberanía de Materiales en Despiece, Persistencia PBR en IndexedDB y Clasificación DfMA de Travesaños en 3dBimFab (`DespieceView.tsx`, `materialesStorage.ts`, `createCatalogSlice.ts`, `MaterialManagerPanel.tsx`, `PBRMaterialStudioModal.tsx`, `3bf_worker.py`) (07 de Octubre, 2026)
+- **Diagnóstico y Solución - Menú Desplegable de Tableros en Despiece (`DespieceView.tsx`)**:
+  * *Causa Raíz*: La función `getMaterialParaPieza` contenía una condición de calibre rígido (`Math.abs(found.calibreMm - espesor) > 1.5`) que descartaba la elección del usuario y restablecía el material automático si el espesor del tablero comercial no coincidía exactamente con la pieza 3D.
+  * *Corrección*: Se eliminó dicho candado, otorgando **soberanía absoluta** a la selección del usuario en el desplegable. Al cambiar de tablero, los costos unitarios (`costoM2Cop`, `costoM2Usd`) y el costo total de la pieza y del mueble se recalculan en tiempo real en la tabla y en las tarjetas KPI.
+- **Persistencia de Materiales PBR sin Límite de 5 MB en IndexedDB (`materialesStorage.ts`, `createCatalogSlice.ts`)**:
+  * *Causa Raíz*: Las texturas fotográficas y los mapas PBR generados (normales, rugosidad, AO, miniatura) en Base64 superaban con creces la cuota rígida de 5 MB de `localStorage` del navegador, arrojando `QuotaExceededError` silencioso y perdiendo los materiales nuevos (como `N_Maple`) al recargar.
+  * *Implementación*: Creación del módulo persistente `materialesStorage.ts` conectado a IndexedDB (`3bf_materiales_db`), con capacidad para gigabytes de texturas. Sincronización transparente en `crearMaterialPBR`, `actualizarMaterialPBR`, `eliminarMaterialPBR` y método de hidratación `cargarMaterialesDesdeDB` al montar el visor.
+- **Erradicación de Materiales Huérfanos (`MaterialManagerPanel.tsx`)**:
+  * Al hacer clic en el botón `+`, se dispara de forma directa la apertura del modal `3BF Material Studio` enfocado en el nuevo material, evitando la acumulación de registros genéricos incompletos (`Material_29`, `Material_30`).
+- **Clasificación DfMA de Travesaños como Tableros Estructurales (`3bf_worker.py`, `cadStateUtils.ts`, `BoardMesh.tsx`)**:
+  * Reconocimiento explícito de piezas de travesaño, fajas y largueros como tableros de ensamble DfMA, asignándoles materialidad, propiedades geométricas de tablero y consistencia física en Three.js y despiece.
+- **Soporte de Creación de Carpetas en Google Drive / Almacenamiento Local (`SaveFurnitureModal.tsx`)**:
+  * Creación dinámica y reactiva de directorios seleccionados por el usuario para guardado de proyectos paramétricos y snapshots de manuales 3D.
+- **Validación de Calidad**:
+  * `npx tsc --noEmit` en `3BF` verificado con **0 errores**.
+  * `npx tsc --noEmit` en `mario-mojica-plataforma` verificado con **0 errores**.
+

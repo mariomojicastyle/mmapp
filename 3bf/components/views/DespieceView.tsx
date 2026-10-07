@@ -334,9 +334,7 @@ export default function DespieceView() {
       // Blindaje DfMA: Si el material guardado era fondo (< 5mm) debido al bug previo de espesor 0,
       // pero la pieza ahora tiene calibre estructural (>= 12mm) y no es un fondo real, reasignar al tablero correcto
       const esFondoInvalido = found && found.calibreMm < 5 && espesor >= 12 && !nombre?.toLowerCase().includes("fondo");
-      // Coherencia física: si el material guardado tenía calibre incompatible con la pieza (ej: 15mm para pieza de 12mm), reasignar
-      const esCalibreIncompatible = found && Math.abs(found.calibreMm - espesor) > 1.5;
-      if (found && !esFondoInvalido && !esCalibreIncompatible) return found;
+      if (found && !esFondoInvalido) return found;
     }
     // Detección automática por calibre exacto de la pieza
     if (espesor >= 24) {

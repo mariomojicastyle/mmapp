@@ -11,6 +11,7 @@ import {
   ChevronDown, 
   ChevronRight
 } from "lucide-react";
+import { getCapaSugeridaId } from "@/lib/engine/cadStateUtils";
 
 export default function PartBreakdownPanel() {
   const {
@@ -45,67 +46,8 @@ export default function PartBreakdownPanel() {
   const meshNames = realMeshes.map((m: any) => m.name);
   const allOutputKeys = Array.from(new Set([...declaredOutputs, ...meshNames])).filter(Boolean);
 
-  const getCapaSugeridaId = (parteKey: string, categoria: string) => {
-    const kLow = parteKey.toLowerCase();
-    if (kLow.includes("maquinado") || kLow.includes("perforado")) {
-      return capas.find((c) => c.nombre.toLowerCase().includes("perforad") || c.id === "capa_perforados")?.id || capas[0]?.id;
-    }
-    if (kLow.includes("corredi") || kLow.includes("corredera") || kLow.includes("cantoneira")) {
-      return capas.find((c) => c.id === "capa_zinc" || c.nombre.toLowerCase() === "zinc")?.id || capas.find((c) => c.id === "capa_zincado")?.id || capas[0]?.id;
-    }
-    if (categoria === "Herrajes" || kLow.includes("perno") || kLow.includes("tornillo") || kLow.includes("parafuso")) {
-      return capas.find((c) => c.id === "capa_zinc" || c.id === "capa_herrajes" || c.id === "capa_zincado" || c.id === "capa_acero")?.id || capas[0]?.id;
-    }
-    if (kLow.includes("caja")) {
-      return capas.find((c) => c.id === "capa_zinc" || c.id === "capa_zincado" || c.nombre.toLowerCase().includes("zinc"))?.id || capas[0]?.id;
-    }
-    if (kLow.includes("tarugo") || kLow.includes("cavilha") || kLow.includes("clavilha") || kLow.includes("soporte")) {
-      return capas.find((c) => c.id === "capa_madera" || c.nombre.toLowerCase().includes("madera"))?.id || capas[0]?.id;
-    }
-    if (kLow.includes("perfil") || kLow.includes("porca") || kLow.includes("tampa") || kLow.includes("pata") || kLow.includes("sapata")) {
-      return capas.find((c) => c.id === "capa_plastico_2" || c.id === "capa_plastico_1" || c.nombre.toLowerCase().includes("plastico"))?.id || capas[0]?.id;
-    }
-    if (kLow.includes("mdf")) return capas.find((c) => c.nombre.toLowerCase() === "mdf" || c.id === "capa_mdf")?.id || capas[0]?.id;
-    if (kLow.includes("mdp")) return capas.find((c) => c.nombre.toLowerCase() === "mdp" || c.id === "capa_mdp")?.id || capas[0]?.id;
-
-    // 🪵 Fondos y piezas de 3 mm con cara de color -> Capa Tono Fondo
-    const isFondo = (
-      kLow.includes("fondo") ||
-      kLow.includes("fundo") ||
-      kLow.includes("tono fondo") ||
-      kLow.includes("costa") ||
-      kLow.includes("costas") ||
-      kLow.includes("espaldar") ||
-      kLow.includes("trasera") ||
-      kLow.includes("back") ||
-      kLow.includes("peça 15") ||
-      kLow.includes("peca 15") ||
-      kLow.includes("pk15") ||
-      kLow.includes("peça 18") ||
-      kLow.includes("peca 18") ||
-      kLow.includes("pk18")
-    );
-    if (isFondo) {
-      return capas.find((c) => c.id === "capa_tono_fondo" || c.nombre.toLowerCase().includes("fondo"))?.id || "capa_tono_fondo";
-    }
-
-    const isBalance = (
-      kLow.includes("balance") ||
-      kLow.includes("equilibrio") ||
-      kLow.includes("reverso") ||
-      kLow.endsWith(" b") ||
-      kLow.endsWith("_b") ||
-      kLow.endsWith("-b") ||
-      /pe[cç]a\s*\d+\s*b$/i.test(kLow) ||
-      /pk\s*\d+\s*b$/i.test(kLow)
-    );
-    if (isBalance) {
-      return capas.find((c) => c.id === "capa_back" || c.nombre.toLowerCase().includes("back") || c.nombre.toLowerCase().includes("balance"))?.id || capas[0]?.id;
-    }
-
-    // 🪵 Para cualquier lámina / tablero (Cubierta, Lateral, Frente, Tapa, Peça 6, Peça 7, etc.), asignar Capa Tono por defecto
-    const capaTono = capas.find((c) => c.id === "capa_tono" || (c.nombre.toLowerCase().includes("tono") && !c.nombre.toLowerCase().includes("fondo")));
-    return capaTono?.id || capas[0]?.id || "capa_tono";
+  const getCapaSugerida = (parteKey: string, categoria: string) => {
+    return getCapaSugeridaId(parteKey, categoria, capas);
   };
 
   // Mapear partes completas del Grasshopper
@@ -141,6 +83,8 @@ export default function PartBreakdownPanel() {
       categoria = "Herrajes";
     } else if (
       kLow.includes("cubierta") ||
+      kLow.includes("travesa") ||
+      kLow.includes("travessa") ||
       kLow.includes("mdp") ||
       kLow.includes("mdf") ||
       kLow.includes("cajon") ||
@@ -274,7 +218,7 @@ export default function PartBreakdownPanel() {
               {partesFiltradas.length > 0 ? (
                 partesFiltradas.map((parte) => {
                   const isSel = parte.parteKey === parteSeleccionadaKey;
-                  const capaEfectivaId = parte.capaId === "por_defecto" ? getCapaSugeridaId(parte.parteKey, parte.categoria) : parte.capaId;
+                  const capaEfectivaId = parte.capaId === "por_defecto" ? getCapaSugerida(parte.parteKey, parte.categoria) : parte.capaId;
                   const capaItem = capas.find((c) => c.id === capaEfectivaId) || capas[0];
 
                   return (

@@ -30,9 +30,15 @@ export default function MaterialManagerPanel() {
     eliminarMaterialPBR,
     resetCapasYMateriales,
     abrirPBRStudioParaMaterial,
+    cargarMaterialesDesdeDB,
     coloresApariencia,
     esquemaColor
   } = use3BFStore();
+
+  // 🛡️ Hidratar materiales persistidos desde IndexedDB (alta capacidad para texturas pesadas)
+  React.useEffect(() => {
+    cargarMaterialesDesdeDB?.();
+  }, [cargarMaterialesDesdeDB]);
 
   const [busqueda, setBusqueda] = useState("");
   const [filtroTipo, setFiltroTipo] = useState<string>("todos");
@@ -119,16 +125,17 @@ export default function MaterialManagerPanel() {
   const handleCrearNuevo = () => {
     const id = crearMaterialPBR({
       nombre: `Material_${materialesPBR.length + 1}`,
-      tipo: "PBR",
+      tipo: "Melamina",
       colorBase: "#C5B39A",
-      metalico: 0.1,
-      rugosidad: 0.45,
+      metalico: 0.05,
+      rugosidad: 0.60,
       especularidad: 0.5,
       opacidad: 1.0,
       ior: 1.50,
-      notas: "Nuevo material PBR",
+      notas: "Nuevo material personalizado",
     });
     setMaterialSeleccionadoId(id);
+    abrirPBRStudioParaMaterial(id);
   };
 
   const handleDuplicar = () => {

@@ -1712,3 +1712,80 @@ export function aplicarPosicionesEscena3D(
   });
 }
 
+/**
+ * 🏷️ Función canónica compartida para sugerir/inferir la capa de cualquier pieza o herraje.
+ * Garantiza coincidencia 100% idéntica entre la interfaz UI (PartBreakdownPanel) y el motor Three.js (BoardMesh / boardMaterialResolver).
+ */
+export function getCapaSugeridaId(parteKey: string, categoria: string = "Estructura", capasDisponibles: any[] = []): string {
+  const kLow = (parteKey || "").toLowerCase();
+
+  // 1. Mecanizados y perforaciones
+  if (kLow.includes("maquinado") || kLow.includes("perforado")) {
+    return capasDisponibles.find((c) => c.nombre.toLowerCase().includes("perforad") || c.id === "capa_perforados")?.id || "capa_perforados";
+  }
+
+  // 2. Correderas y cantoneras metálicas
+  if (kLow.includes("corredi") || kLow.includes("corredera") || kLow.includes("cantoneira") || kLow.includes("caja")) {
+    return capasDisponibles.find((c) => c.id === "capa_zinc" || c.nombre.toLowerCase() === "zinc" || c.id === "capa_zincado" || c.id === "capa_acero")?.id || "capa_zincado";
+  }
+
+  // 3. Herrajes de unión (tornillos, pernos, clavos)
+  if (categoria === "Herrajes" || kLow.includes("perno") || kLow.includes("tornillo") || kLow.includes("parafuso") || kLow.includes("prego") || kLow.includes("clavo")) {
+    return capasDisponibles.find((c) => c.id === "capa_zinc" || c.id === "capa_herrajes" || c.id === "capa_zincado" || c.id === "capa_acero")?.id || "capa_zincado";
+  }
+
+  // 4. Tarugos y espigas de madera
+  if (kLow.includes("tarugo") || kLow.includes("cavilha") || kLow.includes("clavilha")) {
+    return capasDisponibles.find((c) => c.id === "capa_madera" || c.nombre.toLowerCase().includes("madera"))?.id || "capa_madera";
+  }
+
+  // 5. Componentes plásticos genuinos (perfiles, tuercas, tapas adhesivas, regatones/deslizadores/sapatas pequeñas)
+  if (kLow.includes("perfil") || kLow.includes("porca") || kLow.includes("tampa") || kLow.includes("sapata") || kLow.includes("deslizador") || kLow.includes("nivelador")) {
+    return capasDisponibles.find((c) => c.id === "capa_plastico_2" || c.id === "capa_plastico_1" || c.nombre.toLowerCase().includes("plastico"))?.id || "capa_plastico_2";
+  }
+
+  // 6. Sustratos específicos
+  if (kLow.includes("mdf")) return capasDisponibles.find((c) => c.nombre.toLowerCase() === "mdf" || c.id === "capa_mdf")?.id || "capa_mdf";
+  if (kLow.includes("mdp")) return capasDisponibles.find((c) => c.nombre.toLowerCase() === "mdp" || c.id === "capa_mdp")?.id || "capa_mdp";
+
+  // 7. Fondos y espaldas delgadas (3mm)
+  const isFondo = (
+    kLow.includes("fondo") ||
+    kLow.includes("fundo") ||
+    kLow.includes("tono fondo") ||
+    kLow.includes("costa") ||
+    kLow.includes("costas") ||
+    kLow.includes("espaldar") ||
+    kLow.includes("trasera") ||
+    kLow.includes("back") ||
+    kLow.includes("peça 15") ||
+    kLow.includes("peca 15") ||
+    kLow.includes("pk15") ||
+    kLow.includes("peça 18") ||
+    kLow.includes("peca 18") ||
+    kLow.includes("pk18")
+  );
+  if (isFondo) {
+    return capasDisponibles.find((c) => c.id === "capa_tono_fondo" || c.nombre.toLowerCase().includes("fondo"))?.id || "capa_tono_fondo";
+  }
+
+  // 8. Lados de balance / reverso
+  const isBalance = (
+    kLow.includes("balance") ||
+    kLow.includes("equilibrio") ||
+    kLow.includes("reverso") ||
+    kLow.endsWith(" b") ||
+    kLow.endsWith("_b") ||
+    kLow.endsWith("-b") ||
+    /pe[cç]a\s*\d+\s*b$/i.test(kLow) ||
+    /pk\s*\d+\s*b$/i.test(kLow)
+  );
+  if (isBalance) {
+    return capasDisponibles.find((c) => c.id === "capa_back" || c.nombre.toLowerCase().includes("back") || c.nombre.toLowerCase().includes("balance"))?.id || "capa_back";
+  }
+
+  // 9. Tableros, estructuras, patas de madera, cubiertas, travesaños: Capa Tono por defecto
+  const capaTono = capasDisponibles.find((c) => c.id === "capa_tono" || (c.nombre.toLowerCase().includes("tono") && !c.nombre.toLowerCase().includes("fondo")));
+  return capaTono?.id || capasDisponibles[0]?.id || "capa_tono";
+}
+
