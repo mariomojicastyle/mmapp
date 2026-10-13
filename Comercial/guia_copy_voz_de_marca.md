@@ -28,6 +28,7 @@ Este documento es el "alma" comunicativa de la marca **Mario Mojica**. Cada post
 ### 1.4 Canales Oficiales de Contacto y Representación
 * **WhatsApp Oficial:** **`+57 311 764 6907`** (Único número corporativo oficial para prospección, seguimiento y soporte B2B).
 * **Correo Electrónico Oficial:** **`mariomojica.style@gmail.com`**
+* **Portafolio Oficial:** **`https://portfolio.mariomojica.com/es`** (Versión en español) / **`https://portfolio.mariomojica.com`**
 * **Sitio Web & Demo:** **`https://mariomojica.com`** / **`https://mariomojica.com/demo`**
 
 ### 1.5 El Eslogan Oficial y el ADN de Marca: "Forma y Futuro"

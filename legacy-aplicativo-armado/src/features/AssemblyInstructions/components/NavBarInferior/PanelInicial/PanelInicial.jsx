@@ -35,7 +35,10 @@ export default function PanelInicial() {
     return false;
   });
 
-  const showCleanBackdrop = isArMode || (isMobile && modoArranqueMovil === "simple");
+  const isModelLoaded = useEnviroment((state) => state.isModelLoaded);
+  const modelDownloadProgress = useEnviroment((state) => state.modelDownloadProgress);
+
+  const showCleanBackdrop = isArMode || isMobile || (modoArranqueMovil === "simple");
   const isDemoMode = showCleanBackdrop && !isArMode;
 
   const [isEmbedded, setIsEmbedded] = useState(false);
@@ -48,21 +51,23 @@ export default function PanelInicial() {
   useEffect(() => {
     let intervalId;
     
-    // Si la app está cargando y el progress real sigue en 0 o muy bajo (común sin Content-Length)
-    // Simulamos un progreso progresivo para que no se quede estática.
+    if (isModelLoaded) {
+      setDisplayProgress(100);
+      return;
+    }
+
     if (active && progress < 100) {
       intervalId = setInterval(() => {
         setDisplayProgress(prev => {
-          // Si el progreso real da un salto, lo tomamos. Si no, simulamos hasta el 90%.
-          const actualProgress = Math.max(prev, Math.round(progress));
+          const downloadProg = modelDownloadProgress || 0;
+          const actualProgress = Math.max(prev, Math.round(progress), downloadProg);
           if (actualProgress < 90) {
-            // Crece rápido al inicio, lento al final
             const step = actualProgress < 40 ? 5 : actualProgress < 75 ? 2 : 1;
             return actualProgress + step;
           }
-          return actualProgress; // Se queda en 90% máximo hasta que el real reporte 100%
+          return Math.max(actualProgress, downloadProg);
         });
-      }, 200); // 5 actualizaciones por segundo
+      }, 200);
     } else if (progress >= 100) {
       setDisplayProgress(100);
     }
@@ -70,7 +75,7 @@ export default function PanelInicial() {
     return () => {
       if (intervalId) clearInterval(intervalId);
     };
-  }, [active, progress]);
+  }, [active, progress, modelDownloadProgress, isModelLoaded]);
 
   const fillerStyles = {
     height: '100%',

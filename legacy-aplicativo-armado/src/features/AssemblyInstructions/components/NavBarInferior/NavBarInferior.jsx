@@ -16,11 +16,12 @@ import { useProgress } from "@react-three/drei";
 function LoaderProgress() {
   const { progress } = useProgress();
   const pasoActual = useEnviroment((state) => state.pasoActual);
+  const isModelLoaded = useEnviroment((state) => state.isModelLoaded);
+  const modelDownloadProgress = useEnviroment((state) => state.modelDownloadProgress);
   const [targetProgress, setTargetProgress] = useState(0);
   const [displayProgress, setDisplayProgress] = useState(0);
   
   // Registrar si el paso actual ya completó su carga inicial del 100%
-  // para evitar que useGLTF.preload del paso siguiente reactive la barra de carga en el paso activo
   const stepLoadedRef = useRef({});
   const lastStepRef = useRef(pasoActual);
 
@@ -32,35 +33,34 @@ function LoaderProgress() {
     }
   }, [pasoActual]);
 
-  // Sincronizar targetProgress de forma estrictamente ascendente (monotónica)
+  // Sincronizar targetProgress considerando tanto el progreso Drei como la descarga de red
   useEffect(() => {
-    const rawProgress = Math.round(progress);
-
-    // Si ya completó la carga inicial para este paso, ignorar re-disparos de Drei (por preload)
-    if (stepLoadedRef.current[pasoActual]) {
-      return;
-    }
-
-    if (rawProgress >= 100) {
+    if (isModelLoaded) {
       stepLoadedRef.current[pasoActual] = true;
       setTargetProgress(100);
       return;
     }
 
-    // Si el progreso de Three.js baja a menos de 5, asumimos que es una nueva carga de modelo
-    if (rawProgress < 5) {
-      setTargetProgress(rawProgress);
-      setDisplayProgress(rawProgress);
-    } else if (rawProgress > targetProgress) {
-      setTargetProgress(rawProgress);
+    if (stepLoadedRef.current[pasoActual]) {
+      return;
     }
-  }, [progress, pasoActual, targetProgress]);
+
+    const dreiProgress = Math.round(progress);
+    const downloadProg = modelDownloadProgress || 0;
+    const combinedProgress = Math.max(dreiProgress, downloadProg);
+
+    if (combinedProgress >= 100) {
+      setTargetProgress(100);
+    } else if (combinedProgress > targetProgress) {
+      setTargetProgress(combinedProgress);
+    }
+  }, [progress, modelDownloadProgress, isModelLoaded, pasoActual, targetProgress]);
 
   // Efecto para animar displayProgress suavemente hacia targetProgress
   useEffect(() => {
     let animationFrameId;
     let startTimestamp = null;
-    const duration = 500; // Animación de llenado suave de 500ms
+    const duration = 350; // Animación de llenado suave
     
     const startValue = displayProgress;
     const endValue = targetProgress;
@@ -87,37 +87,63 @@ function LoaderProgress() {
     };
   }, [targetProgress]);
 
-  // Si no está cargando (progreso es 100% o este paso ya fue marcado como cargado) no mostramos nada
-  if ((progress >= 100 && displayProgress >= 100) || stepLoadedRef.current[pasoActual]) return null;
-
-  const fillerStyles = {
-    height: '100%',
-    width: `${displayProgress}%`,
-    backgroundColor: "color-mix(in srgb, var(--primary) var(--nubes-bg-opacity, 20%), transparent)",
-    borderRadius: 'inherit',
-    boxShadow: '0 0 10px var(--primary-glow)',
-    flexShrink: 0,
-    textAlign: 'right',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'flex-end'
-  };
-
-  const labelStyles = {
-    color: 'var(--secondary, #ffffff)', // Forzar color secundario permanente
-    fontWeight: 'bold',
-    fontSize: '0.85rem',
-    fontFamily: 'var(--font-sans)',
-    textShadow: '0 1px 2px rgba(0,0,0,0.8)',
-    marginRight: '8px'
-  };
+  // Si ya completó la carga y el modelo está montado, desvanecer y ocultar
+  if ((isModelLoaded && displayProgress >= 100) || (stepLoadedRef.current[pasoActual] && isModelLoaded)) {
+    return null;
+  }
 
   return (
     <div className="progress-model-loader-container">
-      <div className="progress-model-loader">
-        <div style={fillerStyles} className="progressBar">
-          <span style={labelStyles}>{`${displayProgress}%`}</span>
-        </div>
+      <div 
+        className="progress-model-loader"
+        style={{
+          position: "relative",
+          width: "230px",
+          height: "26px",
+          borderRadius: "9999px",
+          background: "rgba(17, 24, 39, 0.85)",
+          backdropFilter: "blur(10px)",
+          WebkitBackdropFilter: "blur(10px)",
+          border: "1.5px solid var(--primary, #0088AA)",
+          boxShadow: "0 4px 20px rgba(0,0,0,0.5), 0 0 15px var(--primary-glow, rgba(0, 136, 170, 0.3))",
+          overflow: "hidden",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center"
+        }}
+      >
+        {/* Barra de llenado interior */}
+        <div 
+          style={{
+            position: "absolute",
+            left: 0,
+            top: 0,
+            bottom: 0,
+            width: `${Math.max(5, displayProgress)}%`,
+            background: "linear-gradient(90deg, var(--primary, #0088AA), color-mix(in srgb, var(--primary, #0088AA) 70%, #ffffff))",
+            borderRadius: "inherit",
+            transition: "width 0.25s ease-out",
+            opacity: 0.75
+          }}
+        />
+        {/* Etiqueta de porcentaje fija y centrada */}
+        <span 
+          style={{
+            position: "relative",
+            zIndex: 2,
+            fontFamily: "var(--font-sans)",
+            fontSize: "11.5px",
+            fontWeight: "700",
+            color: "#ffffff",
+            letterSpacing: "0.05em",
+            textTransform: "uppercase",
+            textShadow: "0 1px 3px rgba(0,0,0,0.9)",
+            pointerEvents: "none",
+            userSelect: "none"
+          }}
+        >
+          {displayProgress < 100 ? `Cargando 3D... ${displayProgress}%` : "Iniciando..."}
+        </span>
       </div>
     </div>
   );

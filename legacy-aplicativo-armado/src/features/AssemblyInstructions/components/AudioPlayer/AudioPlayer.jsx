@@ -48,6 +48,7 @@ export default function AudioPlayer({ id: propId }) {
   const ReadyToPlay = useEnviroment((state) => state.ReadyToPlay);
 
   const StartApp = useEnviroment((state) => state.StartApp);
+  const isModelLoaded = useEnviroment((state) => state.isModelLoaded);
 
   const AudioEndedTrue = useEnviroment((state) => state.AudioEndedTrue);
   const AudioEndedFalse = useEnviroment((state) => state.AudioEndedFalse);
@@ -126,7 +127,7 @@ export default function AudioPlayer({ id: propId }) {
 
     const handleCanPlay = () => {
       const state = useEnviroment.getState();
-      if (state.StartApp === true && state.phaseAudio === "playing") {
+      if (state.StartApp === true && state.phaseAudio === "playing" && (state.isModelLoaded === true || state.PanelAyudas)) {
         safePlay(audio, "canplay/canplaythrough");
       }
     };
@@ -201,33 +202,33 @@ export default function AudioPlayer({ id: propId }) {
         audioRef.current.src = url;
         audioRef.current.load();
         const state = useEnviroment.getState();
-        if (state.StartApp === true && state.phaseAudio === "playing") {
+        if (state.StartApp === true && state.phaseAudio === "playing" && (state.isModelLoaded === true || PanelAyudas)) {
           safePlay(audioRef.current, "pasoAudio");
         }
       }
     }
   }, [PanelAyudas, pasoActual, id, idioma]);
 
-  // ─── Efecto 2: Arranque inicial (botón INICIAR) ───
+  // ─── Efecto 2: Arranque inicial (botón INICIAR) sincronizado con el modelo 3D ───
   useEffect(() => {
-    if (StartApp === true) {
-      if (audioRef.current && audioRef.current.paused) {
-        safePlay(audioRef.current, "startApp");
+    if (StartApp === true && (isModelLoaded === true || PanelAyudas)) {
+      if (audioRef.current && audioRef.current.paused && phaseAudio === "playing") {
+        safePlay(audioRef.current, "startAppSincronizado");
       }
     }
-  }, [StartApp]);
+  }, [StartApp, isModelLoaded, PanelAyudas, phaseAudio]);
 
   // ─── Efecto 3: Control de fases (start / playing / paused) ───
   useEffect(() => {
     if (StartApp === true) {
       if (phaseAudio === "start") {
-        if (ReadyToPlay === true && audioRef.current && audioRef.current.paused) {
+        if (ReadyToPlay === true && (isModelLoaded === true || PanelAyudas) && audioRef.current && audioRef.current.paused) {
           audioRef.current.load();
           safePlay(audioRef.current, "startPhase");
         }
       } else if (phaseAudio === "playing") {
         AudioEndedFalse();
-        if (audioRef.current && audioRef.current.paused) {
+        if ((isModelLoaded === true || PanelAyudas) && audioRef.current && audioRef.current.paused) {
           safePlay(audioRef.current, "playingPhase");
         }
       } else if (phaseAudio === "paused") {

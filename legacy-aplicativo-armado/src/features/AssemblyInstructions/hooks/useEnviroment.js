@@ -79,6 +79,8 @@ export default create(
       isScrubbing: false,
       isManualOrbit: false, // Variable activa cuando el usuario toma el control manual de órbita libre
       hasGuidedCamera: false, // Indica si el paso actual tiene cámara animada guiada activa
+      isModelLoaded: false, // Indica si el GLB del paso actual ya fue descifrado y montado
+      modelDownloadProgress: 0, // Progreso real de descarga de red (0-100)
 
       CloudOneTime: true,//Valida que los tootlips de los paneles solo se activen una vez.
 
@@ -146,7 +148,7 @@ export default create(
       
       NamePieza: (name) => {set((state) => {return { PiezaHerraje: name[0] };});},
       NuevosPasos: (pasos) => {set((state) => {return { pasos: pasos };});},
-      CambiarModelo: (paso) => {set(() => ({ pasoActual: paso, PiezaHerraje: "", animDuration: 0, audioDuration: 0, animationDuration: 0, animationCurrentTime: 0, hasGuidedCamera: false }));},
+      CambiarModelo: (paso) => {set(() => ({ pasoActual: paso, PiezaHerraje: "", animDuration: 0, audioDuration: 0, animationDuration: 0, animationCurrentTime: 0, hasGuidedCamera: false, isModelLoaded: false, modelDownloadProgress: 0 }));},
       CargarPasoInicial: (paso) => {set((state) => {return { pasoInicial: paso };});},
 
 
@@ -260,6 +262,8 @@ export default create(
 
       SetComputedModelMinY: (minY) => set(() => ({ computedModelMinY: minY })),
       SetModelCenter: (center) => set(() => ({ modelCenter: center })),
+      SetModelLoaded: (loaded) => set(() => ({ isModelLoaded: Boolean(loaded) })),
+      SetModelDownloadProgress: (prog) => set(() => ({ modelDownloadProgress: typeof prog === 'number' ? Math.min(100, Math.max(0, prog)) : 0 })),
 
       ChargerCameraPositions: (cameraPositions) => set((state) => ({ cameraPositions: cameraPositions })),
 

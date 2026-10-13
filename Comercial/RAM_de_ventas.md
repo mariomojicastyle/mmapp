@@ -6,6 +6,7 @@
 > **Persistencia:** Supabase PostgreSQL (`ventas_prospectos`, `ventas_interacciones`) & Local JSON (`data/ventas_ram_storage.json`)  
 > **WhatsApp Oficial:** `+57 311 764 6907`  
 > **Email Oficial:** `mariomojica.style@gmail.com`  
+> **Portafolio Oficial:** `https://portfolio.mariomojica.com/es`  
 
 ---
 
@@ -105,9 +106,9 @@ Para evitar respuestas genéricas, el RAM de ventas almacena y cruza 5 dimension
 | **Mobille / AKEO Partner** | Luiz Atilio Barse | Diretor & Super-Conector B2B | Conexión estratégica, apadrinamiento con fábricas en RS | 🔥 Aliado Estratégico (Padrino B2B) | 10 Ago 2026 - Conexión directa a Marcelo Novo (Politorno) con aval de Sr. Pedro | Mantenerlo informado de avances con Politorno |
 | **Politorno Móveis** | Marcelo Piriz & Ricardo | Dirección P&D / Proyectos | Desconexión de software (Rhino, TopSolid, 3ds Max, manuales, empaque). Manual 3D y ADN paramétrico | 🔥 Propuesta Piloto Enviada / Muy Caliente | 28 Sep 2026 - Marcelo acusó recibo: "Estou bem atarefado. Quando der dou uma atenção para este tema!". Mario respondió con empatía total a la rutina de fábrica y cero presión | Esperar con tranquilidad a que Marcelo y Ricardo revisen la propuesta cuando tengan un respiro |
 | **Móveis Henn** | Marcos Unnass & Jonas Borck | Coordenador P&D & Analista Engenharia | Manuales interactivos 3D, 3dBimFab, ERP TOTVS Datasul, ahorro 30% | 🔥 ¡Reunión Confirmada! / Martes 29 Sep 10:30 BRT | 24 Sep 2026 - Marcos aceptó Martes 29/09. Mario ajusta a 10:30 a 11:30 BRT (08:30 a 09:30 COL) para calzar agenda con Sistemas | Enviar link de Google Meet y citación para Marcos, Jonas y Sistemas |
-| **Grupo K1 (Kappesberg)** | Julio Santos | Especialista IA & Automação / Mkt | Costos de P&D de manuales, modelo suscripción ($1 USD/mes), IA aplicada | 🔥 En Evaluación / Cotización Enviada | 17 Ago 2026 - Solicitó valores e insumos. Enviada calculadora 30% ahorro | Esperar feedback de reunión interna con su gerente |
+| **Grupo K1 (Kappesberg)** | Julio Santos | Especialista IA & Automação / Mkt | Costos de P&D de manuales, modelo suscripción ($1 USD/mes), IA aplicada | 🔥 En Evaluación / Seguimiento Activo | 09 Oct 2026 - Solicitada retroalimentación sobre la planilla de estimación de costos enviada | Esperar respuesta de Julio para agendar 15 min de alineación con gerencia |
 | **Kit's Paraná** | Marcos Benedito & Jamylle Duarte | Directivos P&D / Marketing | Costos de asistencia técnica, manuales en papel, telemetría | 🟡 Referenciado / Email Preparado | 17 Ago 2026 - Andre Luis facilitó sus correos | Enviar correo corporativo formal a Marcos y Jamylle |
-| **MADECENTRO** | Dimas Tobón | Gerente General | Manuales interactivos 3D, módulos de cocina/closets, telemetría y software | 🔥 Contacto Directo / Caliente | 18 Ago 2026 - Respondió en LinkedIn | Responder para agendar reunión o demo 3D personalizada |
+| **MADECENTRO** | Dimas Tobón | Gerente General & Fundador | Oportunidad comercial Buga / Valle en muebles terminados RTA, modulares y 3dBimFab | 🔥 Muy Caliente / Solicitó Email | 10 Oct 2026 - Solicitó propuesta a Dimas.tobon@madecentro.com | Enviar correo ejecutivo y confirmar por LinkedIn para llamada |
 | **Italínea Móveis** | Maria do Carmo Roos Soares | Gestão & Eventos | Conexión con equipo de P&D / Criação (`pedcriareeitalinea@italinea.com.br`) | 🔥 Puente Activo / Caliente | 18 Ago 2026 - Solicitado WhatsApp de P&D tras Movelsul | Esperar respuesta con WhatsApp directo de P&D/Criação |
 | **Grupo Pinho** | Patrick Antonowicz | Analista de Exportação Júnior | Conexión con Cristiane (área técnica de manuales/logística) | 🔥 Puente Activo / Caliente | 18 Ago 2026 - Reenvió propuesta a Cristiane | Solicitar a Patrick el e-mail o WhatsApp directo de Cristiane |
 | **Multimóveis** | Leandra Piccin | Export Manager | Manuales 3D para exportación global, cero barrera idiomática, ahorro 30% P&D | 🔥 Caliente / En Evaluación | 18 Ago 2026 - Reenvió info al área técnica | Seguimiento con 30% ahorro + piloto 3D sin costo para exportación |
@@ -115,7 +116,7 @@ Para evitar respuestas genéricas, el RAM de ventas almacena y cruza 5 dimension
 | **Del Alba / ex-Maderkit** | Andrés Felipe Moncaleano Campo | Gerente Supply Chain | Reconexión profesional, empaque, compras y manuales 3D | 🔥 Padrino B2B Activo | 18 Ago 2026 - Conectó con Juan Carlos Londoño (CEO Inval) | Mantenerlo informado de los avances con Inval |
 | **Inval S.A.** | Juan Carlos Londoño | Presidente & CEO | Manuales interactivos 3D para muebles RTA, reducción de garantías | 🔥 Caliente / Vía Andrés Moncaleano | 18 Ago 2026 - Andrés facilitó su WhatsApp directo | Contactar por WhatsApp con el saludo y aval de Andrés Moncaleano |
 | **RTA Design S.A.S** | Juan Carlos Pérez & Paola Reyes | Gerente Adm. Financiero / Dir. Compensación | Entrevista presencial en Yumbo (Paola y Viviana). Propuesta de Piloto con Agente IA / 3dBimFab | 🔥 Caliente / Retroalimentación Pendiente | 16 Sep 2026 - Paola confirmó por WhatsApp que está pendiente la sesión de feedback con Juan Carlos | Responder con tranquilidad y esperar la retroalimentación interna |
-| **Muebles Jamar Colombia** | Omar DeLaHoz Rocha & Juan Carlos Goez | VP Logística e Industria / Ingeniería CILA | Control de costo objetivo (Design to Cost), optimización de corte y kits mecanizados para el CILA | 🔥 Muy Caliente / Reconexión Activa | Ago 2026 - Omar comentó en LinkedIn: "Excelente. Cuando hablamos". Video demo 24 Ene 2026 analizado | Responder en LinkedIn/WhatsApp retomando el dolor de costo objetivo y mostrando 3dBimFab para los kits del CILA |
+| **Muebles Jamar Colombia** | Omar DeLaHoz Rocha & Juan Carlos Goez | VP Logística e Industria / Ingeniería CILA | Control de costo objetivo (Design to Cost), optimización de corte y kits mecanizados para el CILA | 🔥 Muy Caliente / Agendando Cita | 09 Oct 2026 - Propuesta de horarios de 15 min enviada para ver 3dBimFab (costeo y diseño en tiempo real para CILA) tras acuerdo de liberar agenda | Enviar link de reunión al confirmar opción A, B o C |
 | **Ternova** | Julio Sanchez | Ingeniería / Automatización | Manuales para maquinaria, limitaciones de Fusion 360 | 🟡 Puerta Abierta / Seguimiento Suave | 18 Ago 2026 - Mencionó avance en Fusion 360. Dejar relación abierta | Enviar tip de exportación web sin presión en 15 días |
 | **Móveis Henn (Planejamento)** | Rudgeri Henkel | Gerente Planejamento e Materiais | Costos de asistencia técnica, errores de ensamble en RTA | 🟡 Mensaje de WhatsApp Listo | 03 Ago 2026 - Dio su WhatsApp directo en LinkedIn | Integrar al hilo de la reunión con Marcos y Jonas |
 | **Bartira (Padrino B2B)** | Hermes Rodrigues de Oliveira | Operador Logística / Planta | Conexión interna hacia el líder de Producto / Ingeniería | 🔥 Padrino Interno Clave | 25 Sep 2026 - Consiguió y entregó el contacto directo de Fábio de Jesus Ferreira (Projetista P&D) | Agradecer y coordinar aval de mención en la apertura |
@@ -125,6 +126,9 @@ Para evitar respuestas genéricas, el RAM de ventas almacena y cruza 5 dimension
 | **SABMiller / Bavaria** | Cesar Alejandro Castañeda Castillo | Coordinador de Ventas Regional Costa - Occidente | Operaciones, ventas, proyectos (Descartado: Spam masivo de grupos WP) | 🛑 Descartado / Spam de Red | 16 Sep 2026 - Ofreció grupo de WP masivo de 120 empresas y 26k miembros | No responder o declinar educadamente sin entregar datos |
 | **NODERE Pessoas & Negócios** | Édipo Lima | Consultor Comercial e Novos Negócios | Sinergias tecnología, industria y negocios en Serra Gaúcha, café virtual | 🔥 Caliente / Apertura Directa | 16 Sep 2026 - Respondió proponiendo sinergias y café virtual | Responder confirmando disposición para el café virtual y dejando la puerta abierta |
 | **Bertolini Móveis** | Aline Maria Nunes | Marketing B2B & Eventos | Diferencial audiovisual en ferias, pantallas interactivas, posventa y manuales 3D | 🔥 Solicitud de Presentación / Muy Caliente | 30 Sep 2026 - Aceptó InMail y solicitó presentación a su e-mail (`aline.nunes@bertolini.com.br`) | Enviar presentación ejecutiva en PDF al e-mail corporativo y confirmar por LinkedIn/WhatsApp |
+| **Maderkit** | Don Juan José | Presidencia / Junta Directiva | Paquete Full de Diseño y Entrega Técnica (Diseño de producto + Planos/CNC para máquinas + Manuales de Armado 3D interactivos). Outsourcing de alta eficiencia sin fricción interna | 🔥 ¡Reunión Agendada! / Viernes 16 Oct 19:00 COL (17 Oct 09:00 Japón) | 10 Oct 2026 - Don Juan José propuso cita desde su crucero en Japón para Octubre 16 a las 7:00 pm Colombia (Octubre 17 9:00 am Japón). Enfoque 100% en producto terminado y paquete completo de fabricación | Enviar enlace de Google Meet para Viernes 16 Octubre 7:00 pm COL |
+| **Olivar Móveis** | Helder Lanzoni | Olivar Móveis | Manuales 3D interactivos, reducción de garantías y asistencia técnica en RTA | 🟡 Prospecto Activo / Tibio | 08 Oct 2026 - Registrado en Baserow (Lead ID 362, Empresa ID 82) | Enviar invitación personalizada en LinkedIn con foco en RTA |
+
 
 ---
 
@@ -282,11 +286,13 @@ Para evitar respuestas genéricas, el RAM de ventas almacena y cruza 5 dimension
 
 ---
 
-### 🟢 8. Madecentro (Medellín, Colombia)
-- **Contacto:** Dimas Tobón (Gerente General).
+### 🟢 8. Madecentro (Medellín / Nacional, Colombia)
+- **Contacto:** Dimas Tobón (Gerente General & Fundador). Correo corporativo directo: `Dimas.tobon@madecentro.com`.
 - **Historial Completo:**
-  * Dimas respondió al contacto en LinkedIn de Mario.
-- **Estrategia Activa:** Agendar demo de 15 minutos enfocada en módulos de cocina, closets y muebles RTA para su red nacional de tiendas y clientes finales.
+  * *18 Agosto 2026:* Contacto inicial en Sales Navigator / LinkedIn y envío de presentación ejecutiva.
+  * *09 Octubre 2026:* Mario le envió propuesta estratégica enfocada en la oportunidad de mercado en Buga y centro del Valle para mobiliario terminado y modulares a medida sobre la capacidad instalada de Madecentro.
+  * *10 Octubre 2026 (09:31 COL):* **¡HITO CRÍTICO DE ESCALAMIENTO EJECUTIVO!** Dimas respondió directamente en LinkedIn: *"Hola. Envíame este mensaje a mi e mail: Dimas.tobon@madecentro.com"*.
+- **Estrategia Activa:** Enviar correo ejecutivo a `Dimas.tobon@madecentro.com` con la propuesta de negocio estructurada, CV adjunto y portafolio digital, y responder en LinkedIn confirmando el envío para coordinar llamada de 15 minutos.
 
 ---
 
@@ -318,8 +324,9 @@ Para evitar respuestas genéricas, el RAM de ventas almacena y cruza 5 dimension
     - **Demostración de Mario:** Presentó en Rhino 8 + Grasshopper el prototipo paramétrico de "Cajonera Modular" con control de cotas en vivo, anidado automático en lámina de 122x244 cm, porcentaje de desperdicio y cálculo financiero instantáneo ($78.000 COP de costo, 35% de margen, $159.900 PVP). También exhibió el visor 3D interactivo de armado.
     - **Revelación del Gran Dolor de Jamar / CILA:** Juan Carlos y Omar detallaron el proyecto neurálgico del CILA: un proveedor central en la cámara de secado y mecanizado procesará los tableros para vender los **kits de piezas mecanizadas a los talleres**, quienes únicamente se encargarán del ensamble. El gran dolor de cabeza es que los diseños actuales **no tienen costo objetivo (Design to Cost)** y presentan un altísimo desperdicio de madera por falta de ingeniería algorítmica. Omar enfatizó: *"estamos bregando para que se automaticen, y ahí es donde tú tendrías que asesorarnos y ver cuál es el beneficio"*.
   * *Mayo/Junio 2026 (Presentación de Manuales de Armado 3D):* Mario le presentó la propuesta de manuales de armado interactivos 3D. Omar no mostró interés comercial en este servicio, confirmando que la prioridad de Jamar no es la posventa al usuario final, sino la ingeniería de fábrica, el control de costos y la optimización de despieces del CILA.
-  * *Agosto 2026 (Comentario Público de Omar en LinkedIn):* En un post de logros profesionales y tecnológicos de Mario en LinkedIn, Omar comentó públicamente: **"Excelente. Cuando hablamos"**. Señal de compra y apertura directa para reanudar el diálogo comercial.
-- **Objetivo Estratégico:** Responder al comentario de LinkedIn y reactivar a Omar DeLaHoz presentándole los avances y madurez actual de **`3dBimFab`** como la plataforma Web-BIM que resuelve exactamente el dolor del CILA: diseño paramétrico directo en la web, costeo instantáneo de materiales, despiece DfMA automatizado y exportación de archivos limpios para corte y mecanizado de kits.
+  * *02-03 Octubre 2026 (Envío de Video de Automatización y Acuerdos de Reunión):* Mario le compartió por WhatsApp el video demostrativo de diseño industrial y automatización de diseño (3dBimFab). Omar lo revisó con alto interés y le pidió una semana de plazo para liberar espacio en su agenda y coordinar la cita de 15 minutos, mencionando incluso que coordinaría con alguna de las empresas satélite del CILA para la reunión.
+  * *09 Octubre 2026 (Propuesta de Horarios para Cita de 15 min):* Mario le envía propuesta concreta de horarios (Opciones A, B y C para la semana entrante) enfocada en demostrar la modificación de diseños en tiempo real y retroalimentación instantánea de costos para unificar a las fábricas del CILA. *(Nota de control: Omar mantiene configurados mensajes efímeros que se autodestruyen a las 24 horas en su chat).*
+- **Objetivo Estratégico:** Demostrar a Omar DeLaHoz y a los fabricantes aliados del CILA cómo `3dBimFab` permite el control de costos en vivo (Design to Cost) y despieces automatizados para la producción masiva de kits.
 
 ---
 

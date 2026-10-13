@@ -55,6 +55,11 @@ Para maximizar la efectividad del modelo de ventas corporativo B2B y Account-Bas
 * **Presentación (Bio):** `Desenvolvedor de software para a Indústria de Manufatura ⚙️ Otimizamos processos em fábricas de Móveis RTA com Manuais 3D de Montagem. 🌐 mariomojica.com/demo`
 * **Categoría:** `Empresa de software` / `Desarrollador de software`
 
+### F. Portafolio Web Oficial
+* **Propósito:** Exhibición interactiva de proyectos, mobiliario, manufactura DfMA y trayectoria profesional.
+* **URL Oficial (Español):** [portfolio.mariomojica.com/es](https://portfolio.mariomojica.com/es)
+* **URL Raíz:** [portfolio.mariomojica.com](https://portfolio.mariomojica.com)
+
 ---
 
 ## 📈 2. Estrategia de Contenido y Publicación (Outreach)

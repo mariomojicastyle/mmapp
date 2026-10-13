@@ -3250,3 +3250,21 @@ Para mantener la máxima agilidad y minimizar el consumo de tokens sin perder ni
   * `npx tsc --noEmit` en `3BF` verificado con **0 errores**.
   * `npx tsc --noEmit` en `mario-mojica-plataforma` verificado con **0 errores**.
 
+---
+
+### 🚀 Hito 264: Diagnóstico y Resolución de Cinemática de Cámara GLB (P03/P05), Cargador 3D con Progreso Real de Red y Sincronización Estricta de Narración en Móviles (`Model.jsx`, `AudioPlayer.jsx`, `NavBarInferior.jsx`, `PanelInicial.jsx`, `useEnviroment.js`, `AssemblyPage.jsx`) (13 de Octubre, 2026)
+- **Diagnóstico y Activación de Cámara GLB en Pasos 03 y 05**:
+  * *Auditoría Forense de Binarios*: Descifrados e inspeccionados los archivos `P03.glb` a `P06.glb` desde Supabase Storage; se confirmó que todos contenían la misma cámara glTF y 2 canales de animación activos (`translation` y `rotation`).
+  * *Causa Raíz*: En la tabla `configuraciones_manual` (proyecto `Comoda_Ravenna`), los pasos 03 y 05 carecían de los atributos `cameraMode` y `useGlbCamera`. En `AssemblyPage.jsx`, el fallback ternario les asignaba forzosamente `cameraMode: "manual"`, lo que hacía que `Model.jsx` los tratara como una anulación manual explícita (`isExplicitManual = true`), suprimiendo la cinemática animada de Blender.
+  * *Solución Aplicada*: Actualizado `glb_pasos` en Supabase asignando `"cameraMode": "glb"` y `"useGlbCamera": true` en P03 y P05. Blindado el fallback en `AssemblyPage.jsx` para que solo asigne `"manual"` si existen coordenadas numéricas guardadas.
+- **Erradicación de Pantalla Negra y Barra Vacía en Redes Móviles (iPhone)**:
+  * *Causa Raíz*: La función `getProtectedGLB()` realiza la descarga y descifrado AES-256 en memoria mediante `fetch()` nativo, proceso que es invisible para `useProgress()` de Three.js / Drei. En conexiones celulares con latencia, la barra `.progress-model-loader` se renderizaba con ancho `0%` sin mostrar texto alguno. Además, en `PanelInicial.jsx`, el modo `'gamma'` cargaba un iframe secundario de Spline 3D que competía por la GPU de WebKit en iOS.
+  * *Solución Técnica*:
+    1. *Medición de Flujo de Red*: `getProtectedGLB()` ahora mide el flujo de descarga en tiempo real y notifica a `modelDownloadProgress` en `useEnviroment`.
+    2. *Rediseño de `LoaderProgress` (`NavBarInferior.jsx`)*: Se dotó a la cápsula de fondo translúcido con glassmorphism (`rgba(17, 24, 39, 0.85)`), barra de llenado fluida y etiqueta de porcentaje siempre legible y centrada (`Cargando 3D... X%`).
+    3. *Sincronización Estricta de Audio (`AudioPlayer.jsx`)*: Se condicionó la reproducción de las locuciones a `isModelLoaded === true`. La narración no arranca hasta que la malla 3D está 100% montada y visible en pantalla, eliminando las voces sobre el escenario vacío.
+    4. *Arranque Móvil Ligero (`PanelInicial.jsx`)*: En dispositivos móviles se garantiza el uso del telón minimalista con logotipo vectorial y barra de carga, erradicando el sobrecosto de iframes externos.
+- **Validación de Calidad y Compilación**:
+  * `npm run build` en `legacy-aplicativo-armado` completado en 5.49s con **0 errores**.
+  * Supabase PostgreSQL actualizado y verificado atómicamente con credenciales de Service Role.
+

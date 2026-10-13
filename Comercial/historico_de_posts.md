@@ -15,12 +15,12 @@ Para evaluar el impacto de cada publicación, analizamos tres niveles de métric
 
 ## 🗄️ Registro de Publicaciones (Orden Cronológico: Más Reciente Arriba, Más Antiguo al Final)
 
-### 🎬 [PROGRAMADO PARA 07 DE OCTUBRE, 2026] Animação 3D x Manual Interativo: O que realmente funciona na montagem de móveis?
-* **Fecha Programada:** Miércoles 07 de Octubre, 2026 — 07:00 AM (BR Brasil UTC-3) / 05:00 AM (Colombia UTC-5)
-* **Canales:** Multi-Canal (Instagram, Facebook, LinkedIn, YouTube)
-* **Formato:** Video de 2:10 min en Portugués (Mario a cámara + Pantalla `3dBimFab` + Celular interactivo)
-* **Archivo de Origen:** `video_2min_criterio_manual_3d.mp4` / Storyboard: [storyboard_video_2min_criterio_manual_3d.md](file:///c:/Desarrollo/mmapp/Comercial/Videos/storyboard_video_2min_criterio_manual_3d.md)
-* **Enlace Demo en Primer Comentario:** `https://mariomojica.com/Comoda_Ravenna`
+### 🎬 [PUBLICADO EN LINKEDIN - 07 DE OCTUBRE, 2026] Animação 3D x Manual Interativo: O que realmente funciona na montagem de móveis?
+* **Fecha de Publicación:** Miércoles 07 de Octubre, 2026 — Publicado en LinkedIn
+* **Canales:** LinkedIn Personal (`mario-mojica`) — URN: `urn:li:ugcPost:7513574969293987840`
+* **Formato:** Video nativo de 2:10 min en Portugués (166.7 MB)
+* **Archivo de Origen:** `G:\Mi unidad\Marketing\10_Octubre_2026\01_video_2min_criterio_manual_3d\Animação 3D x Manual Interativo  O que realmente funciona na montagem de móveis .mp4`
+* **Enlace Demo en Primer Comentario:** `https://mariomojica.com/demo` (Comentario ID: `7513575094070202368`)
 * **Hashtags:** `#MoveisRTA #MontagemDeMoveis #IndustriaMoveleira #Manual3D #EngenhariaMoveleira #PosVenda #MarcenariaModerna #3dBimFab #MarioMojica`
 
 #### 📝 Texto Principal (Copy Persuasivo):

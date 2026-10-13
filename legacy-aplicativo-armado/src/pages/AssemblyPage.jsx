@@ -294,7 +294,7 @@ const AssemblyPage = () => {
                 pasos: g.step,
                 override: !useGlbCam && hasManualCoords,
                 useGlbCamera: useGlbCam,
-                cameraMode: g.cameraMode || (useGlbCam ? "glb" : "manual"),
+                cameraMode: g.cameraMode || (useGlbCam ? "glb" : (hasManualCoords ? "manual" : "glb")),
                 hasGlbCamera: g.hasGlbCamera,
                 hasAnimatedCamera: g.hasAnimatedCamera,
                 position: pos,

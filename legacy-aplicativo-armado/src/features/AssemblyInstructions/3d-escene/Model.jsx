@@ -16,24 +16,75 @@ if (typeof window !== "undefined") {
 const glbCache = {}; // Cache local: Url original -> ObjectURL del Blob desencriptado
 const glbPromiseCache = {}; // Deduplicación de descargas y descifrados en vuelo
 
-export async function getProtectedGLB(url, manualId) {
-  if (glbCache[url]) return glbCache[url];
+export async function getProtectedGLB(url, manualId, onProgress) {
+  if (glbCache[url]) {
+    if (typeof onProgress === "function") onProgress(100);
+    return glbCache[url];
+  }
   if (glbPromiseCache[url]) return glbPromiseCache[url];
   
   glbPromiseCache[url] = (async () => {
+    let progressTimer = null;
+    let simulatedProgress = 10;
+    if (typeof onProgress === "function") {
+      onProgress(simulatedProgress);
+      // Simular avance continuo durante descargas móviles con latencia
+      progressTimer = setInterval(() => {
+        simulatedProgress = Math.min(88, simulatedProgress + 4);
+        onProgress(simulatedProgress);
+      }, 150);
+    }
+
     try {
       const response = await fetch(url);
       if (!response.ok) throw new Error(`Error descargando modelo: ${response.status}`);
-      const buffer = await response.arrayBuffer();
       
+      const contentLength = response.headers.get('content-length');
+      const totalBytes = contentLength ? parseInt(contentLength, 10) : 0;
+      let buffer;
+
+      if (response.body && totalBytes > 0 && typeof ReadableStream !== 'undefined') {
+        if (progressTimer) clearInterval(progressTimer);
+        const reader = response.body.getReader();
+        const chunks = [];
+        let receivedBytes = 0;
+
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          chunks.push(value);
+          receivedBytes += value.length;
+          const pct = Math.min(92, Math.round((receivedBytes / totalBytes) * 100));
+          if (typeof onProgress === "function") onProgress(pct);
+        }
+
+        const allChunks = new Uint8Array(receivedBytes);
+        let position = 0;
+        for (const chunk of chunks) {
+          allChunks.set(chunk, position);
+          position += chunk.length;
+        }
+        buffer = allChunks.buffer;
+      } else {
+        buffer = await response.arrayBuffer();
+      }
+      
+      if (progressTimer) clearInterval(progressTimer);
+      if (typeof onProgress === "function") onProgress(95);
+
       // Revertir cifrado AES-256 en memoria
       const decrypted = await decryptBuffer(buffer, manualId);
       
       const blob = new Blob([decrypted], { type: "model/gltf-binary" });
       const objectUrl = URL.createObjectURL(blob);
       glbCache[url] = objectUrl;
+      if (typeof onProgress === "function") onProgress(100);
       return objectUrl;
+    } catch (err) {
+      if (progressTimer) clearInterval(progressTimer);
+      throw err;
     } finally {
+      if (progressTimer) clearInterval(progressTimer);
       delete glbPromiseCache[url];
     }
   })();
@@ -249,6 +300,8 @@ function ActualModel(props) {
   const AnimationEndedTrue = useEnviroment((state) => state.AnimationEndedTrue);
   const AnimationEndedFalse = useEnviroment((state) => state.AnimationEndedFalse);
   const colorObjetoTocado = useEnviroment((state) => state.colorObjetoTocado);
+  const SetModelLoaded = useEnviroment((state) => state.SetModelLoaded);
+  const SetModelDownloadProgress = useEnviroment((state) => state.SetModelDownloadProgress);
 
   const CameraPosition = useEnviroment ((state) => state.cameraPositions)
   const alturas = useEnviroment((state) => state.alturas);
@@ -328,6 +381,17 @@ function ActualModel(props) {
   const { scene, animations, cameras } = useGLTF(props.decryptedUrl);
 
   const sombras = useEnviroment((state) => state.sombras);
+
+  // Sincronizar estado global de modelo montado y listo
+  useEffect(() => {
+    if (scene) {
+      SetModelLoaded(true);
+      SetModelDownloadProgress(100);
+    }
+    return () => {
+      SetModelLoaded(false);
+    };
+  }, [scene, SetModelLoaded, SetModelDownloadProgress]);
 
   // Asignar sombras a los objetos dinámicamente
   useEffect(() => {
@@ -1287,6 +1351,7 @@ function ActualModel(props) {
 
 export default function Model(props) {
   const pasoActual = useEnviroment((state) => state.pasoActual);
+  const SetModelDownloadProgress = useEnviroment((state) => state.SetModelDownloadProgress);
   const urlOriginal = getAssetPath(`/${props.id}/models/P${pasoActual}.glb`);
   const [currentUrl, setCurrentUrl] = useState(() => glbCache[urlOriginal] || null);
   const [loading, setLoading] = useState(!glbCache[urlOriginal]);
@@ -1296,16 +1361,22 @@ export default function Model(props) {
     if (glbCache[urlOriginal]) {
       setCurrentUrl(glbCache[urlOriginal]);
       setLoading(false);
+      SetModelDownloadProgress(100);
       return;
     }
 
     setLoading(true);
     
-    getProtectedGLB(urlOriginal, props.id)
+    getProtectedGLB(urlOriginal, props.id, (prog) => {
+      if (active) {
+        SetModelDownloadProgress(prog);
+      }
+    })
       .then(objUrl => {
         if (active) {
           setCurrentUrl(objUrl);
           setLoading(false);
+          SetModelDownloadProgress(100);
         }
       })
       .catch(err => {
@@ -1314,7 +1385,7 @@ export default function Model(props) {
       });
       
     return () => { active = false; };
-  }, [urlOriginal, props.id]);
+  }, [urlOriginal, props.id, SetModelDownloadProgress]);
 
   return (
     <>

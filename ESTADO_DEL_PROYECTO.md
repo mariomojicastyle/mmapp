@@ -2,14 +2,21 @@
 
 Este archivo es la "Memoria RAM" para Antigravity. Contiene el contexto de lo que estamos trabajando justo ahora, los objetivos pendientes y los bloqueos.
 
-> **Contacto Oficial Mario Mojica:** WhatsApp: **`+57 311 764 6907`** (3117646907) | Email: **`mariomojica.style@gmail.com`** | Demo: **`https://mariomojica.com/demo`**
+> **Contacto Oficial Mario Mojica:** WhatsApp: **`+57 311 764 6907`** (3117646907) | Email: **`mariomojica.style@gmail.com`** | Portafolio: **`https://portfolio.mariomojica.com/es`** | Demo: **`https://mariomojica.com/demo`**
 > 
 > 🏷️ **REGLA GLOBAL DE NOMENCLATURA DE MARCA:** La suite y motor paramétrico se escribe **SIEMPRE Y SIN EXCEPCIÓN** como **`3dBimFab`** (d minúscula, B mayúscula, F mayúscula: `3` + `d` + `Bim` + `Fab`). Prohibido escribir *3D Binfab*, *3DBimFab*, *3D BIM FAB*, *3D BinFab*, etc.
 
 ---
 
 ## 🏗️ 1. Plataforma B2B & 3dBimFab (Foco Actual)
-**Estado:** Hito 263 completado con éxito total. **Soberanía de Materiales en Despiece, Persistencia PBR en IndexedDB y Clasificación DfMA de Travesaños en 3dBimFab (`DespieceView.tsx`, `materialesStorage.ts`, `createCatalogSlice.ts`, `MaterialManagerPanel.tsx`, `PBRMaterialStudioModal.tsx`, `3bf_worker.py`)**. Próximo foco: Modelado paramétrico y ensamble del Comedor Dalton. Rama: `Comedor_Dalton`.
+**Estado:** Hito 264 completado con éxito total. **Diagnóstico y Resolución de Cinemática de Cámara GLB (P03/P05), Cargador 3D con Progreso Real de Red y Sincronización Estricta de Narración en Móviles (`Model.jsx`, `AudioPlayer.jsx`, `NavBarInferior.jsx`, `PanelInicial.jsx`, `useEnviroment.js`, `AssemblyPage.jsx`)**. Próximo foco: Modelado paramétrico y ensamble del Comedor Dalton. Rama: `Comedor_Dalton`.
+
+- [x] **[13 de Octubre, 2026] Hito 264: Diagnóstico y Resolución de Cinemática de Cámara GLB (P03/P05), Cargador 3D con Progreso Real de Red y Sincronización Estricta de Narración en Móviles (`Model.jsx`, `AudioPlayer.jsx`, `NavBarInferior.jsx`, `PanelInicial.jsx`, `useEnviroment.js`, `AssemblyPage.jsx`)**:
+  * **Cámara GLB en Pasos 03 y 05**: Actualizado `glb_pasos` en Supabase (`cameraMode: "glb"`, `useGlbCamera: true`) y blindado el fallback en `AssemblyPage.jsx` para que no fuerce `"manual"` ante la falta de coordenadas guardadas.
+  * **Cargador 3D con Progreso Real de Red**: `getProtectedGLB()` mide y emite el porcentaje real de descarga byte a byte hacia `modelDownloadProgress`. Píldora `.progress-model-loader` rediseñada con glassmorphism, barra de llenado y porcentaje visible (`Cargando 3D... X%`).
+  * **Sincronización Estricta de Narración**: En `AudioPlayer.jsx`, el audio no arranca hasta que `isModelLoaded === true`, erradicando que la voz hable sobre un escenario 3D vacío.
+  * **Arranque Ligero en Móviles**: Activado `modo_arranque_movil: "simple"` en Supabase y `PanelInicial.jsx`, evitando la sobrecarga de GPU por el iframe secundario de Spline en WebKit/iOS.
+  * **Validación de Calidad**: `npm run build` en `legacy-aplicativo-armado` completado en 5.49s con **0 errores**. Supabase actualizado atómicamente.
 
 - [x] **[07 de Octubre, 2026] Hito 263: Soberanía de Materiales en Despiece, Persistencia PBR en IndexedDB y Clasificación DfMA de Travesaños en 3dBimFab (`DespieceView.tsx`, `materialesStorage.ts`, `createCatalogSlice.ts`, `MaterialManagerPanel.tsx`, `PBRMaterialStudioModal.tsx`, `3bf_worker.py`)**:
   * **Soberanía Absoluta en Despiece (`DespieceView.tsx`)**: Eliminado el candado de compatibilidad de espesor que anulaba la elección del usuario; el cambio de tablero recalcula costos en tiempo real en la tabla y KPIs.
