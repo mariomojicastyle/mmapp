@@ -65,452 +65,49 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, ConfigDict
 
-def split_mesh_dict_into_islands(mesh_dict: dict) -> list:
-    """
-    Descompone una malla poligonal con múltiples componentes disjuntos (ej: piezas unidas por Mesh Join
-    en Grasshopper como múltiples Tapaluces o travesaños) en mallas independientes.
-    Preserva coordenadas UV, calcula Bounding Box y centros locales independientes para cada isla.
-    """
-    verts = mesh_dict.get("vertices", [])
-    indices = mesh_dict.get("indices", [])
-    uvs = mesh_dict.get("uvs", [])
-    name = mesh_dict.get("name", "")
-    
-    n_faces = len(indices) // 3
-    if n_faces <= 1 or not verts:
-        return [mesh_dict]
-        
-    v_to_faces = defaultdict(list)
-    for f_idx in range(n_faces):
-        a, b, c = indices[f_idx*3], indices[f_idx*3+1], indices[f_idx*3+2]
-        v_to_faces[a].append(f_idx)
-        v_to_faces[b].append(f_idx)
-        v_to_faces[c].append(f_idx)
-        
-    visited_faces = set()
-    components = []
-    for f_start in range(n_faces):
-        if f_start in visited_faces:
-            continue
-        comp_faces = []
-        queue = deque([f_start])
-        visited_faces.add(f_start)
-        while queue:
-            f = queue.popleft()
-            comp_faces.append(f)
-            a, b, c = indices[f*3], indices[f*3+1], indices[f*3+2]
-            for v in (a, b, c):
-                for neighbor in v_to_faces[v]:
-                    if neighbor not in visited_faces:
-                        visited_faces.add(neighbor)
-                        queue.append(neighbor)
-        components.append(comp_faces)
-        
-    if len(components) <= 1:
-        return [mesh_dict]
-        
-    has_uvs = bool(uvs and len(uvs) == len(verts) * 2 // 3)
-    sub_meshes = []
-    base_pos = mesh_dict.get("position", [0, 0, 0])
-    
-    for comp in components:
-        old_to_new = {}
-        new_verts = []
-        new_indices = []
-        new_uvs = []
-        
-        for f in comp:
-            for i in range(3):
-                old_v = indices[f*3 + i]
-                if old_v not in old_to_new:
-                    new_idx = len(new_verts) // 3
-                    old_to_new[old_v] = new_idx
-                    vx = verts[old_v*3]
-                    vy = verts[old_v*3 + 1]
-                    vz = verts[old_v*3 + 2]
-                    new_verts.extend([vx, vy, vz])
-                    if has_uvs:
-                        new_uvs.extend([uvs[old_v*2], uvs[old_v*2 + 1]])
-                new_indices.append(old_to_new[old_v])
-                
-        xs = new_verts[0::3]
-        ys = new_verts[1::3]
-        zs = new_verts[2::3]
-        min_x, max_x = min(xs), max(xs)
-        min_y, max_y = min(ys), max(ys)
-        min_z, max_z = min(zs), max(zs)
-        
-        island_size = [round(max_x - min_x, 4), round(max_y - min_y, 4), round(max_z - min_z, 4)]
-        center_x = (min_x + max_x) / 2.0
-        center_y = (min_y + max_y) / 2.0
-        center_z = (min_z + max_z) / 2.0
-        
-        centered_verts = []
-        for i in range(len(new_verts) // 3):
-            centered_verts.extend([
-                round(new_verts[i*3] - center_x, 4),
-                round(new_verts[i*3 + 1] - center_y, 4),
-                round(new_verts[i*3 + 2] - center_z, 4)
-            ])
-            
-        island_pos = [
-            round(base_pos[0] + center_x, 4),
-            round(base_pos[1] + center_y, 4),
-            round(base_pos[2] + center_z, 4)
-        ]
-        
-        sub_m = dict(mesh_dict)
-        sub_m["size"] = island_size
-        sub_m["position"] = island_pos
-        sub_m["vertices"] = centered_verts
-        sub_m["indices"] = new_indices
-        if has_uvs:
-            sub_m["uvs"] = new_uvs
-        elif "uvs" in sub_m:
-            del sub_m["uvs"]
-        sub_meshes.append(sub_m)
-        
-    return sub_meshes
+from ghx_parser import (
+    _SLIDER_LIMITS_CACHE,
+    parse_ghx_slider_limits,
+    parse_ghx_default_values,
+    parse_num_prefix,
+    find_user_param_value,
+    extract_parameter_groups,
+    find_ghx_in_system,
+    is_structural_param_name,
+    extract_ghx_aesthetic_mapping,
+    extract_all_user_params_flat,
+    extract_dimension_smart,
+)
+from mesh_builder import (
+    split_mesh_dict_into_islands,
+    extract_tris_from_mesh,
+    build_mesh_from_tris,
+    rebuild_fondos_meshes,
+    classify_instance_tris,
+    rebuild_piece_meshes,
+    deduplicate_real_meshes,
+)
+from bom_engine import (
+    es_nombre_herraje,
+    es_nombre_tablero,
+    calcular_bom_y_despiece,
+)
+from dxf_exporter import (
+    procesar_mecanizado_intercomponentes,
+    generar_dxf_biesse,
+)
 
 app = FastAPI(title="3BF Worker Python Engine", version="2.5.0")
 
 CACHE_DIR = os.path.join(os.path.dirname(__file__), "cache")
 os.makedirs(CACHE_DIR, exist_ok=True)
 
-_SLIDER_LIMITS_CACHE = {}
-
-def parse_ghx_slider_limits(ghx_path):
-    if not ghx_path or not os.path.exists(ghx_path):
-        return {}
-
-    try:
-        cur_mtime = os.path.getmtime(ghx_path)
-        if ghx_path in _SLIDER_LIMITS_CACHE:
-            cached_mtime, cached_limits = _SLIDER_LIMITS_CACHE[ghx_path]
-            if cached_mtime == cur_mtime:
-                return cached_limits
-    except Exception:
-        cur_mtime = 0
-
-    limits = {}
-    try:
-        tree = ET.parse(ghx_path)
-        root = tree.getroot()
-
-        for chunk in root.iter("chunk"):
-            if chunk.attrib.get("name") == "Object":
-                name_item = chunk.find("items/item[@name='Name']")
-                comp_name = str(name_item.text) if name_item is not None else ""
-                if comp_name == "Group":
-                    continue
-                container = chunk.find("chunks/chunk[@name='Container']")
-                if container is not None:
-                    nick_item = container.find("items/item[@name='NickName']")
-                    nick = nick_item.text or "" if nick_item is not None else ""
-                    
-                    if nick.startswith("RH_IN:"):
-                        # 1. Slider
-                        slider_chunk = container.find("chunks/chunk[@name='Slider']")
-                        if slider_chunk is not None or "Slider" in comp_name:
-                            min_item = slider_chunk.find("items/item[@name='Min']") if slider_chunk is not None else None
-                            max_item = slider_chunk.find("items/item[@name='Max']") if slider_chunk is not None else None
-                            val_item = slider_chunk.find("items/item[@name='Value']") if slider_chunk is not None else None
-
-                            if min_item is not None and max_item is not None:
-                                limits[nick] = {
-                                    "type": "slider",
-                                    "min": float(min_item.text),
-                                    "max": float(max_item.text),
-                                    "default": float(val_item.text) if val_item is not None else float(min_item.text)
-                                }
-                        
-                        # 2. Value List
-                        val_options = []
-                        val_selected = None
-                        for sub in chunk.iter("chunk"):
-                            if sub.attrib.get("name") == "ListItem":
-                                n_item = sub.find("items/item[@name='Name']")
-                                s_item = sub.find("items/item[@name='Selected']")
-                                if n_item is not None and n_item.text:
-                                    val_options.append(n_item.text)
-                                    if s_item is not None and s_item.text == "true":
-                                        val_selected = n_item.text
-                        if val_options:
-                            limits[nick] = {
-                                "type": "valuelist",
-                                "options": val_options,
-                                "default": val_selected or val_options[0]
-                            }
-    except Exception as e:
-        print(f"[3BF Worker] Error parseando límites slider: {e}", flush=True)
-
-    if cur_mtime > 0:
-        _SLIDER_LIMITS_CACHE[ghx_path] = (cur_mtime, limits)
-    return limits
-
-def parse_ghx_default_values(ghx_path):
-    defaults = {}
-    if not os.path.exists(ghx_path):
-        return defaults
-
-    try:
-        tree = ET.parse(ghx_path)
-        root = tree.getroot()
-
-        for chunk in root.iter("chunk"):
-            if chunk.attrib.get("name") == "Object":
-                name_item = chunk.find("items/item[@name='Name']")
-                comp_name = str(name_item.text) if name_item is not None else ""
-                if comp_name == "Group":
-                    continue
-                container = chunk.find("chunks/chunk[@name='Container']")
-                if container is not None:
-                    nick_item = container.find("items/item[@name='NickName']")
-                    nick = nick_item.text or "" if nick_item is not None else ""
-                    if nick.startswith("RH_IN:"):
-                        slider_chunk = container.find("chunks/chunk[@name='Slider']")
-                        if slider_chunk is not None:
-                            val_item = slider_chunk.find("items/item[@name='Value']")
-                            if val_item is not None:
-                                try:
-                                    defaults[nick] = float(val_item.text)
-                                except:
-                                    defaults[nick] = val_item.text
-                        
-                        # Value List
-                        first_opt = None
-                        sel_opt = None
-                        for sub in chunk.iter("chunk"):
-                            if sub.attrib.get("name") == "ListItem":
-                                name_item = sub.find("items/item[@name='Name']")
-                                sel_item = sub.find("items/item[@name='Selected']")
-                                if name_item is not None and name_item.text:
-                                    if first_opt is None:
-                                        first_opt = name_item.text
-                                    if sel_item is not None and sel_item.text == "true":
-                                        sel_opt = name_item.text
-                        if first_opt is not None:
-                            defaults[nick] = sel_opt or first_opt
-    except Exception as e:
-        print(f"[3BF Worker] Error parseando valores por defecto del GHX: {e}", flush=True)
-
-    return defaults
 
 class MetadataParams(BaseModel):
     model_id: str
     custom_filename: str = ""
     ghx_content: str = ""
 
-def parse_num_prefix(text: str):
-    clean = text.replace("RH_IN:", "").strip()
-    match = re.search(r'^(\d+)(?:\.(\d+))?', clean)
-    if match:
-        major = int(match.group(1))
-        minor = int(match.group(2)) if match.group(2) is not None else 0
-        return (major, minor, clean.lower())
-    return (999, 999, clean.lower())
-
-def find_user_param_value(p_dict: dict, nick: str, default_val):
-    if not isinstance(p_dict, dict):
-        return default_val
-    sub_p = p_dict.get("parameters", {})
-    if not isinstance(sub_p, dict):
-        sub_p = {}
-        
-    combined = {**p_dict, **sub_p}
-    # 1. Coincidencia exacta (ej. "RH_IN:08.1 Lado balance")
-    if nick in combined and combined[nick] is not None:
-        return combined[nick]
-        
-    # 2. Coincidencia normalizada conservando el identificador numérico (ej. "08.1_lado_balance")
-    clean_with_num = nick.replace("RH_IN:", "").strip().lower().replace(' ', '_')
-    if clean_with_num in combined and combined[clean_with_num] is not None:
-        return combined[clean_with_num]
-
-    # 🌟 PARÁMETROS GLOBALES ESTRUCTURALES (Ancho, Alto, Profundidad, Zócalo, Ritmo, Apertura):
-    # Aunque comiencen con "01.0", "01.1", etc. para orden en Grasshopper, son globales y deben aceptar fallbacks
-    nick_lower = nick.lower()
-    is_global_structural = any(w in nick_lower for w in ["ancho", "alto", "altura", "profundidad", "prof", "zocalo", "ritmo", "apertur"])
-    if is_global_structural:
-        # Priorizar búsqueda por clave parcial en combined
-        pure_name = re.sub(r'^RH_IN:\s*', '', nick, flags=re.I)
-        pure_name = re.sub(r'^[\d.]+[_\s]*', '', pure_name).strip().lower().replace(' ', '_')
-        if pure_name in combined and combined[pure_name] is not None:
-            return combined[pure_name]
-        for k, v in combined.items():
-            if not isinstance(k, str) or v is None or k == "parameters":
-                continue
-            k_pure = re.sub(r'^RH_IN:\s*', '', k, flags=re.I)
-            k_pure = re.sub(r'^[\d.]+[_\s]*', '', k_pure).strip().lower().replace(' ', '_')
-            if pure_name and k_pure == pure_name:
-                return v
-
-    # Verificar si el parámetro pertenece a una pieza numerada específica (ej. "08.1", "11.1", "Peça 8")
-    num_match = re.search(r'(\d+[\.\d]*)', nick)
-    if num_match and not is_global_structural:
-        piece_id = num_match.group(1).lower()
-        # Solo permitir coincidencia con claves que contengan explícitamente el mismo número de pieza
-        for k, v in combined.items():
-            if not isinstance(k, str) or v is None or k == "parameters":
-                continue
-            k_lower = k.lower()
-            if piece_id in k_lower:
-                clean_k = k.replace("RH_IN:", "").strip().lower().replace(' ', '_')
-                if clean_k == clean_with_num:
-                    return v
-        # Si no viene un valor específico para esta pieza numerada, NUNCA caer en claves genéricas contaminadas
-        return default_val
-
-    # 3. Solo para parámetros globales sin número de pieza (ej. Ancho, Alto, Profundidad, Apertura)
-    clean_target = re.sub(r'^RH_IN:\s*', '', nick).strip().lower().replace(' ', '_')
-    if clean_target in combined and combined[clean_target] is not None:
-        return combined[clean_target]
-
-    for k, v in combined.items():
-        if not isinstance(k, str) or v is None or k == "parameters":
-            continue
-        clean_k = re.sub(r'^RH_IN:\s*', '', k).strip().lower().replace(' ', '_')
-        if clean_k == clean_target:
-            return v
-            
-    return default_val
-
-def extract_parameter_groups(root, default_values):
-    rh_inputs = list(default_values.keys())
-    
-    # 1. Mapear TODOS los GUIDs de componentes reales a su NickName RH_IN:
-    guid_to_nick = {}
-    for chunk in root.iter("chunk"):
-        if chunk.attrib.get("name") == "Object":
-            name_item = chunk.find("items/item[@name='Name']")
-            comp_name = str(name_item.text) if name_item is not None else ""
-            if comp_name == "Group":
-                continue # IGNORAR marcos visuales Group
-            container = chunk.find("chunks/chunk[@name='Container']")
-            if container is not None:
-                nick_item = container.find("items/item[@name='NickName']")
-                if nick_item is not None and nick_item.text and nick_item.text.startswith("RH_IN:"):
-                    nick = nick_item.text
-                    for item in chunk.iter("item"):
-                        if item.text and (len(item.text) == 36 and item.text.count("-") == 4):
-                            guid_to_nick[item.text] = nick
-
-    # 2. Mapear Grupos explícitos de Grasshopper (marcos grandes)
-    gh_groups = {}
-    for chunk in root.iter("chunk"):
-        if chunk.attrib.get("name") == "Object":
-            name_item = chunk.find("items/item[@name='Name']")
-            if name_item is not None and "Group" in str(name_item.text):
-                container = chunk.find("chunks/chunk[@name='Container']")
-                if container is not None:
-                    g_nick = container.find("items/item[@name='NickName']")
-                    g_title = g_nick.text if g_nick is not None and g_nick.text else ""
-                    if g_title and not g_title.startswith("RH_"):
-                        for item in container.iter("item"):
-                            if item.text and item.text in guid_to_nick:
-                                nick = guid_to_nick[item.text]
-                                if nick.startswith("RH_IN:"):
-                                    if g_title not in gh_groups:
-                                        gh_groups[g_title] = []
-                                    if nick not in gh_groups[g_title]:
-                                        gh_groups[g_title].append(nick)
-
-    grouped_results = []
-    assigned_nicks = set()
-
-    for g_title, nicks in gh_groups.items():
-        if len(nicks) >= 1:
-            sorted_nicks = sorted(nicks, key=parse_num_prefix)
-            min_rank = min((parse_num_prefix(n) for n in sorted_nicks), default=(999, 999, ""))
-            grouped_results.append({
-                "title": g_title,
-                "parameters": sorted_nicks,
-                "_rank": min_rank
-            })
-            assigned_nicks.update(nicks)
-
-    # Ordenar las tarjetas por el estándar VisualARQ (el número de sus miembros 01.x, 02.x, 05.x)
-    grouped_results.sort(key=lambda g: g["_rank"])
-    for g in grouped_results:
-        g.pop("_rank", None)
-
-    # 3. Categorización DfMA únicamente para los parámetros huérfanos que NO estén agrupados en GH
-    remaining = [p for p in rh_inputs if p not in assigned_nicks]
-    
-    cat_dim = []
-    cat_reced = []
-    cat_uniones = []
-    cat_cantos = []
-    cat_otros = []
-
-    for p in remaining:
-        pl = p.lower()
-        if any(k in pl for k in ["ancho", "alto", "profundidad"]):
-            cat_dim.append(p)
-        elif any(k in pl for k in ["recedido"]):
-            cat_reced.append(p)
-        elif any(k in pl for k in ["union", "orientacion", "tarugo", "tornillo", "minifix", "cajon", "cajón"]):
-            cat_uniones.append(p)
-        elif any(k in pl for k in ["borde", "balance", "mapeado", "textura", "acabado"]):
-            cat_cantos.append(p)
-        else:
-            cat_otros.append(p)
-
-    final_groups = list(grouped_results)
-
-    if cat_dim:
-        final_groups.append({"title": "📏 Dimensiones Principales", "parameters": sorted(cat_dim, key=parse_num_prefix)})
-    if cat_reced:
-        final_groups.append({"title": "📐 Recedidos y Ajustes", "parameters": sorted(cat_reced, key=parse_num_prefix)})
-    if cat_uniones:
-        final_groups.append({"title": "🔩 Uniones y Herrajes DfMA", "parameters": sorted(cat_uniones, key=parse_num_prefix)})
-    if cat_cantos:
-        final_groups.append({"title": "🪵 Cantos y Mapeado de Texturas", "parameters": sorted(cat_cantos, key=parse_num_prefix)})
-    if cat_otros:
-        final_groups.append({"title": "⚙️ Otros Parámetros", "parameters": sorted(cat_otros, key=parse_num_prefix)})
-
-    return final_groups
-
-def find_ghx_in_system(model_id: str, custom_filename: str = "") -> str:
-    search_dirs = [
-        r"C:\Desarrollo\mmapp\3BF\Definiciones",
-        r"C:\Desarrollo\mmapp\temporal"
-    ]
-    
-    # 1. Lista priorizada de objetivos exactos
-    exact_targets = []
-    if custom_filename:
-        c_clean = custom_filename.replace("/", "\\").split("\\")[-1].lower()
-        exact_targets.append(c_clean)
-        if not c_clean.endswith(".ghx") and not c_clean.endswith(".gh"):
-            exact_targets.append(f"{c_clean}.ghx")
-    if model_id:
-        m_clean = model_id.replace("/", "\\").split("\\")[-1].lower()
-        if not m_clean.endswith(".ghx") and not m_clean.endswith(".gh"):
-            exact_targets.append(f"{m_clean}.ghx")
-        exact_targets.append(m_clean)
-
-    # Buscar coincidencia exacta primero
-    for sdir in search_dirs:
-        if not os.path.exists(sdir):
-            continue
-        for root_dir, _, files in os.walk(sdir):
-            for f in files:
-                f_lower = f.lower()
-                for target in exact_targets:
-                    if f_lower == target or f_lower == f"{target}.ghx":
-                        return os.path.join(root_dir, f)
-
-    # 2. Fallbacks si no se encontró coincidencia exacta
-    fallbacks = ["cubierta.ghx", "cajon_experimento_3dbimfab.ghx"]
-    for sdir in search_dirs:
-        if not os.path.exists(sdir):
-            continue
-        for root_dir, _, files in os.walk(sdir):
-            for f in files:
-                if f.lower() in fallbacks:
-                    return os.path.join(root_dir, f)
-    return ""
 
 @app.post("/metadata")
 async def get_model_metadata(request: Request):
@@ -518,10 +115,10 @@ async def get_model_metadata(request: Request):
     model_id = p.get("model_id", "Cubierta")
     raw_ghx_content = p.get("ghx_content", "")
     custom_filename = p.get("custom_filename", "")
-    
+
     root = None
     ghx_file = ""
-    
+
     if raw_ghx_content:
         try:
             root = ET.fromstring(raw_ghx_content)
@@ -538,7 +135,7 @@ async def get_model_metadata(request: Request):
             ghx_file = custom_path
         except Exception as err:
             print(f"[3BF Worker /metadata] Error guardando XML subido: {err}", flush=True)
-            
+
     if root is None:
         ghx_file = find_ghx_in_system(model_id, custom_filename)
 
@@ -546,14 +143,13 @@ async def get_model_metadata(request: Request):
         try:
             tree = ET.parse(ghx_file)
             root = tree.getroot()
-        except:
+        except Exception:
             pass
-            
+
     slider_limits = {}
     default_values = {}
-    
+
     if root is not None:
-        # Extraer slider limits
         for chunk in root.iter("chunk"):
             if chunk.attrib.get("name") == "Object":
                 name_item = chunk.find("items/item[@name='Name']")
@@ -576,7 +172,6 @@ async def get_model_metadata(request: Request):
                                 if nick.startswith("RH_IN:"):
                                     default_values[nick] = slider_limits[nick]["default"]
 
-            # Extraer value list defaults y sus opciones reales
             if chunk.attrib.get("name") == "Container":
                 nick = ""
                 for it in chunk.findall("items/item"):
@@ -628,6 +223,7 @@ async def get_model_metadata(request: Request):
         "declared_outputs": declared_outputs
     }
 
+
 @app.post("/check-mtime")
 async def check_definitions_mtime(request: Request):
     payload = await request.json()
@@ -637,7 +233,7 @@ async def check_definitions_mtime(request: Request):
         model_id = it.get("model_id", "")
         custom_filename = it.get("custom_filename", "")
         last_mtime = float(it.get("last_mtime", 0))
-        
+
         ghx_path = find_ghx_in_system(model_id, custom_filename)
         current_mtime = 0.0
         exists = False
@@ -647,11 +243,11 @@ async def check_definitions_mtime(request: Request):
                 current_mtime = os.path.getmtime(ghx_path)
             except Exception:
                 pass
-        
+
         changed = False
         if exists and last_mtime > 0 and current_mtime > (last_mtime + 0.1):
             changed = True
-            
+
         results.append({
             "id": it.get("id"),
             "model_id": model_id,
@@ -660,8 +256,9 @@ async def check_definitions_mtime(request: Request):
             "current_mtime": current_mtime,
             "changed": changed
         })
-        
+
     return {"status": "success", "results": results}
+
 
 app.add_middleware(
     CORSMiddleware,
@@ -671,11 +268,10 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-from pydantic import BaseModel, ConfigDict
 
 class ComputeParams(BaseModel):
     model_config = ConfigDict(extra="allow")
-    
+
     model_id: str = "Cajon_Experimento_Viktor"
     ancho: float = 1200.0
     alto: float = 800.0
@@ -683,15 +279,13 @@ class ComputeParams(BaseModel):
     cant_cajones: int = 3
     apertura_mm: float = 0.0
     parameters: dict = {}
-    
-    # Parámetros del Cajón
+
     apertura_cajones: float = 0.0
     profundidad_cajon: float = 351.0
     altura_lateral_cajon: float = 102.0
     distancia_bajo_laterales: float = 30.0
     tipo_cajon: str = "Corredera Estandar"
-    
-    # Parámetros de la Cubierta / DfMA
+
     union_izquierda: str = "Minifix"
     union_derecha: str = "Tornillo tarugo"
     orientacion_maquinado_minifix: str = "abajo"
@@ -705,9 +299,9 @@ class ComputeParams(BaseModel):
     lado_balance_entrepanio: str = "Cara B"
     tipo_mapeado_entrepanio: str = "Cubierta"
     recedido_izquierdo: float = 0.0
-    # Cargar contenido XML directo si se subió un archivo desde el cliente
     ghx_content: str = ""
     custom_filename: str = ""
+
 
 @app.get("/health")
 def health_check():
@@ -729,481 +323,14 @@ def health_check():
         "rhino_active_children": active_children
     }
 
+
 # =============================================================================
 # ⚡ 3BF MEMORY BYPASS & GEOMETRY STATE CACHE (Sub-Second Execution Engine)
 # =============================================================================
-_GEOMETRY_CACHE = {}      # Por model_key: guarda estado estructural + fondos desglosados
-_FULL_RESPONSE_CACHE = {} # Por hash exacto de todos los parámetros: respuesta instantánea (0 ms)
-_GHX_TEMPLATE_CACHE = {}  # Por ghx_path: mtime, b64_algo base, default_values y valuelist_nicks
-_RAW_GHX_STRING_CACHE = {} # Por ghx_path: (mtime, raw_xml_str) lectura cero-disco en RAM
-
-def extract_tris_from_mesh(mesh):
-    verts = mesh.get("vertices", [])
-    indices = mesh.get("indices", [])
-    uvs = mesh.get("uvs", [])
-    pos = mesh.get("position", [0.0, 0.0, 0.0])
-    px, py, pz = float(pos[0]), float(pos[1]), float(pos[2])
-    
-    tris = []
-    has_uv = (len(uvs) == len(verts) * 2 // 3)
-    for t in range(0, len(indices), 3):
-        if t + 2 >= len(indices):
-            break
-        i0, i1, i2 = indices[t], indices[t+1], indices[t+2]
-        p0 = (verts[i0*3] + px, verts[i0*3+1] + py, verts[i0*3+2] + pz)
-        p1 = (verts[i1*3] + px, verts[i1*3+1] + py, verts[i1*3+2] + pz)
-        p2 = (verts[i2*3] + px, verts[i2*3+1] + py, verts[i2*3+2] + pz)
-        
-        uv0 = (uvs[i0*2], uvs[i0*2+1]) if has_uv else (0.0, 0.0)
-        uv1 = (uvs[i1*2], uvs[i1*2+1]) if has_uv else (0.0, 0.0)
-        uv2 = (uvs[i2*2], uvs[i2*2+1]) if has_uv else (0.0, 0.0)
-
-        v1 = (p1[0]-p0[0], p1[1]-p0[1], p1[2]-p0[2])
-        v2 = (p2[0]-p0[0], p2[1]-p0[1], p2[2]-p0[2])
-        nx = v1[1]*v2[2] - v1[2]*v2[1]
-        ny = v1[2]*v2[0] - v1[0]*v2[2]
-        nz = v1[0]*v2[1] - v1[1]*v2[0]
-        l = (nx**2 + ny**2 + nz**2)**0.5
-        if l > 0:
-            nx, ny, nz = nx/l, ny/l, nz/l
-            
-        cx = (p0[0] + p1[0] + p2[0]) / 3.0
-        cy = (p0[1] + p1[1] + p2[1]) / 3.0
-        cz = (p0[2] + p1[2] + p2[2]) / 3.0
-            
-        tris.append({
-            "p0": p0, "p1": p1, "p2": p2,
-            "uv0": uv0, "uv1": uv1, "uv2": uv2,
-            "normal": (nx, ny, nz),
-            "ny": ny,
-            "n": (nx, ny, nz),
-            "c": (cx, cy, cz)
-        })
-    return tris
-
-def build_mesh_from_tris(name, template_mesh_or_tris, tris=None):
-    # Soporta tanto firma build_mesh_from_tris(name, tris) como legacy (name, tmpl, tris)
-    if tris is None and isinstance(template_mesh_or_tris, list):
-        target_tris = template_mesh_or_tris
-    else:
-        target_tris = tris if tris is not None else []
-        
-    if not target_tris:
-        return None
-        
-    all_pts = []
-    for tri in target_tris:
-        all_pts.append(tri["p0"])
-        all_pts.append(tri["p1"])
-        all_pts.append(tri["p2"])
-        
-    xs = [p[0] for p in all_pts]
-    ys = [p[1] for p in all_pts]
-    zs = [p[2] for p in all_pts]
-    
-    min_x, max_x = min(xs), max(xs)
-    min_y, max_y = min(ys), max(ys)
-    min_z, max_z = min(zs), max(zs)
-    
-    center_x = (min_x + max_x) / 2.0
-    center_y = (min_y + max_y) / 2.0
-    center_z = (min_z + max_z) / 2.0
-    
-    size_x = max(0.0001, max_x - min_x)
-    size_y = max(0.0001, max_y - min_y)
-    size_z = max(0.0001, max_z - min_z)
-    
-    new_verts = []
-    new_indices = []
-    new_uvs = []
-    
-    idx = 0
-    for tri in target_tris:
-        for p_world, uv in [(tri["p0"], tri["uv0"]), (tri["p1"], tri["uv1"]), (tri["p2"], tri["uv2"])]:
-            lx = round(p_world[0] - center_x, 4)
-            ly = round(p_world[1] - center_y, 4)
-            lz = round(p_world[2] - center_z, 4)
-            new_verts.extend([lx, ly, lz])
-            new_uvs.extend([round(uv[0], 4), round(uv[1], 4)])
-        new_indices.extend([idx, idx + 1, idx + 2])
-        idx += 3
-        
-    return {
-        "name": name,
-        "size": [round(size_x, 4), round(size_y, 4), round(size_z, 4)],
-        "position": [round(center_x, 4), round(center_y, 4), round(center_z, 4)],
-        "vertices": new_verts,
-        "indices": new_indices,
-        "uvs": new_uvs
-    }
-
-def rebuild_fondos_meshes(fondos_data_list, lado_color="Cara A", sustrato="MDF 1 Cara"):
-    new_p18_list = []
-    new_mdf18_list = []
-    
-    lc_norm = str(lado_color).strip().lower()
-    es_cara_b = ("cara b" in lc_norm or "lado 2" in lc_norm or "inferior" in lc_norm)
-    sust_norm = str(sustrato).strip().lower()
-    
-    for item in fondos_data_list:
-        cara_a = item["cara_a"]
-        cara_b = item["cara_b"]
-        cantos = item["cantos"]
-        
-        color_tris = []
-        mdf_tris = []
-        
-        if "crudo" in sust_norm:
-            color_tris = []
-            mdf_tris = cara_a + cara_b + cantos
-        elif "dd" in sust_norm:
-            color_tris = cara_a + cara_b
-            mdf_tris = cantos
-        else: # "MDF 1 Cara", "MDF", "Balance"
-            if es_cara_b:
-                color_tris = cara_b
-                mdf_tris = cara_a + cantos
-            else:
-                color_tris = cara_a
-                mdf_tris = cara_b + cantos
-                
-        p18_mesh = build_mesh_from_tris("RH_OUT:Peça 18", color_tris)
-        mdf18_mesh = build_mesh_from_tris("RH_OUT:MDF Peça 18", mdf_tris)
-        
-        if p18_mesh:
-            new_p18_list.append(p18_mesh)
-        if mdf18_mesh:
-            new_mdf18_list.append(mdf18_mesh)
-            
-    return new_p18_list, new_mdf18_list
-
-def is_structural_param_name(k: str) -> bool:
-    kl = str(k).lower()
-    # Si contiene palabras de acabados, cantos, balances, texturas, fondos -> NO es estructural
-    if any(w in kl for w in ["canto", "balance", "lado", "color", "sustrato", "mapeado", "borde", "textura", "acabado"]):
-        return False
-    # Si contiene palabras de dimensiones físicas o componentes estructurales -> SI es estructural
-    return any(w in kl for w in [
-        "ancho", "largura", "width",
-        "alto", "altura", "height",
-        "profundidad", "profundidade", "depth",
-        "zocalo", "rodapé", "rodape",
-        "ritmo",
-        "posicion pata", "posiçao pé", "posicao pe",
-        "abrir", "apertura", "abertura",
-        "cant_cajones", "cajon", "cajones", "gaveta", "gavetas",
-        "espessor", "espesor", "thickness"
-    ])
-
-def classify_instance_tris(all_tris: list, is_left: bool = False):
-    if not all_tris:
-        return None
-    xs = [t["c"][0] for t in all_tris]
-    ys = [t["c"][1] for t in all_tris]
-    zs = [t["c"][2] for t in all_tris]
-    x0, x1 = min(xs), max(xs)
-    y0, y1 = min(ys), max(ys)
-    z0, z1 = min(zs), max(zs)
-    sx = max(0.001, x1 - x0)
-    sy = max(0.001, y1 - y0)
-    sz = max(0.001, z1 - z0)
-    min_dim = min(sx, sy, sz)
-    tol = max(0.001, min_dim * 0.35)
-    
-    ca, cb = [], []
-    cantos = {1: [], 2: [], 3: [], 4: []}
-    mec = []
-    
-    for t in all_tris:
-        nx, ny, nz = t["n"]
-        cx, cy, cz = t["c"]
-        if min_dim == sy: # Horizontal (Cubierta / Base / Entrepaño / Fondos cajón)
-            # Caras principales: normal vertical (Y en Three.js)
-            if ny > 0.6 and abs(cy - y1) < tol:
-                ca.append(t)
-            elif ny < -0.6 and abs(cy - y0) < tol:
-                cb.append(t)
-            # Cantos perimetrales
-            elif nz > 0.6 and abs(cz - z1) < tol:
-                cantos[1].append(t) # Canto 1: Frontal (+Z hacia usuario)
-            elif nz < -0.6 and abs(cz - z0) < tol:
-                cantos[2].append(t) # Canto 2: Trasero (-Z hacia pared)
-            elif nx < -0.6 and abs(cx - x0) < tol:
-                cantos[3].append(t) # Canto 3: Izquierdo (-X)
-            elif nx > 0.6 and abs(cx - x1) < tol:
-                cantos[4].append(t) # Canto 4: Derecho (+X)
-            else:
-                mec.append(t)
-        elif min_dim == sx: # Vertical Lateral (Costados / Divisiones verticales / Pilastras simétricas)
-            # Caras principales: normal transversal (X en Three.js)
-            if is_left and nx < -0.6 and abs(cx - x0) < tol:
-                ca.append(t) # Cara A (Exterior / Izquierda)
-            elif is_left and nx > 0.6 and abs(cx - x1) < tol:
-                cb.append(t) # Cara B (Interior / Derecha hacia centro)
-            elif not is_left and nx > 0.6 and abs(cx - x1) < tol:
-                ca.append(t) # Cara A (Exterior / Derecha)
-            elif not is_left and nx < -0.6 and abs(cx - x0) < tol:
-                cb.append(t) # Cara B (Interior / Izquierda hacia centro)
-            # Cantos perimetrales
-            elif nz > 0.6 and abs(cz - z1) < tol:
-                cantos[1].append(t) # Canto 1: Frontal (+Z)
-            elif nz < -0.6 and abs(cz - z0) < tol:
-                cantos[2].append(t) # Canto 2: Trasero (-Z)
-            elif ny > 0.6 and abs(cy - y1) < tol:
-                cantos[3].append(t) # Canto 3: Superior / Arriba (+Y)
-            elif ny < -0.6 and abs(cy - y0) < tol:
-                cantos[4].append(t) # Canto 4: Inferior / Abajo (-Y)
-            else:
-                mec.append(t)
-        else: # min_dim == sz: Vertical Frontal (Frentes cajón / Puertas / Zócalos / Travesaños)
-            # Caras principales: normal frontal (Z en Three.js)
-            if nz > 0.6 and abs(cz - z1) < tol:
-                ca.append(t) # Cara A (Frontal hacia usuario)
-            elif nz < -0.6 and abs(cz - z0) < tol:
-                cb.append(t) # Cara B (Posterior hacia interior)
-            # Cantos perimetrales
-            elif ny > 0.6 and abs(cy - y1) < tol:
-                cantos[1].append(t) # Canto 1: Superior (+Y)
-            elif ny < -0.6 and abs(cy - y0) < tol:
-                cantos[2].append(t) # Canto 2: Inferior (-Y)
-            elif nx < -0.6 and abs(cx - x0) < tol:
-                cantos[3].append(t) # Canto 3: Izquierdo (-X)
-            elif nx > 0.6 and abs(cx - x1) < tol:
-                cantos[4].append(t) # Canto 4: Derecho (+X)
-            else:
-                mec.append(t)
-            
-    return {"ca": ca, "cb": cb, "cantos": cantos, "mec": mec}
-
-def rebuild_piece_meshes(inst_list: list, p_num: int, lado_balance="Cara B", c1="Canto", c2="Canto", c3="Canto", c4="Canto"):
-    bal_s = str(lado_balance).lower().strip().replace('"', '').replace("'", "")
-    if bal_s in ["6", "d/d", "dyd", "doble", "ninguno", "ambas"] or "d/d" in bal_s or "dyd" in bal_s:
-        modo_b = "DD"
-    elif bal_s in ["5", "cara a", "a"] or (bal_s.startswith("a") and len(bal_s) <= 6):
-        modo_b = "A"
-    elif bal_s in ["4", "cara b", "b"] or (bal_s.startswith("b") and len(bal_s) <= 6):
-        modo_b = "B"
-    else:
-        modo_b = "B"
-
-    def is_canto_wood(val):
-        s = str(val).lower().strip().replace('"', '').replace("'", "")
-        if s in ["0", "0.0", "canto", "true", "si", "con canto"] or ("canto" in s and "sin" not in s):
-            return True
-        return False
-
-    c_flags = {
-        1: is_canto_wood(c1),
-        2: is_canto_wood(c2),
-        3: is_canto_wood(c3),
-        4: is_canto_wood(c4),
-    }
-
-    new_col, new_bal, new_mdp = [], [], []
-
-    for inst in inst_list:
-        ca = inst["ca"]
-        cb = inst["cb"]
-        cantos = inst["cantos"]
-        mec = inst["mec"]
-
-        color_tris = []
-        balance_tris = []
-        mdp_tris = list(mec) # Mecanizados siempre a MDP
-
-        if modo_b == "DD":
-            color_tris.extend(ca)
-            color_tris.extend(cb)
-        elif modo_b == "A":
-            balance_tris.extend(ca)
-            color_tris.extend(cb)
-        elif modo_b == "B":
-            color_tris.extend(ca)
-            balance_tris.extend(cb)
-        else:
-            balance_tris.extend(ca)
-            balance_tris.extend(cb)
-
-        for c_idx in range(1, 5):
-            if c_flags[c_idx]:
-                color_tris.extend(cantos[c_idx])
-            else:
-                mdp_tris.extend(cantos[c_idx])
-
-        m_c = build_mesh_from_tris(f"RH_OUT:Peça {p_num}", color_tris)
-        m_b = build_mesh_from_tris(f"RH_OUT:Peça {p_num} B", balance_tris)
-        m_m = build_mesh_from_tris(f"RH_OUT:MDP Peça {p_num}", mdp_tris)
-
-        if m_c: new_col.append(m_c)
-        if m_b: new_bal.append(m_b)
-        if m_m: new_mdp.append(m_m)
-
-    return new_col, new_bal, new_mdp
-
-def extract_ghx_aesthetic_mapping(ghx_path: str) -> dict:
-    mapping = {}
-    if not os.path.exists(ghx_path):
-        return mapping
-    try:
-        tree = ET.parse(ghx_path)
-        root = tree.getroot()
-        guid_to_nick = {}
-        for chunk in root.iter("chunk"):
-            if chunk.attrib.get("name") == "Object":
-                container = chunk.find("chunks/chunk[@name='Container']")
-                if container is not None:
-                    nick = container.find("items/item[@name='NickName']")
-                    if nick is not None and nick.text and nick.text.startswith("RH_IN:"):
-                        for item in chunk.iter("item"):
-                            if item.text and len(item.text) == 36 and item.text.count("-") == 4:
-                                guid_to_nick[item.text] = nick.text
-                                
-        gh_group_titles = {}
-        for chunk in root.iter("chunk"):
-            if chunk.attrib.get("name") == "Object":
-                name_item = chunk.find("items/item[@name='Name']")
-                if name_item is not None and "Group" in str(name_item.text):
-                    container = chunk.find("chunks/chunk[@name='Container']")
-                    if container is not None:
-                        g_nick = container.find("items/item[@name='NickName']")
-                        g_title = g_nick.text if g_nick is not None and g_nick.text else ""
-                        for item in container.iter("item"):
-                            if item.text in guid_to_nick:
-                                gh_group_titles[guid_to_nick[item.text]] = g_title
-
-        for nick, g_title in gh_group_titles.items():
-            match = re.search(r'Pe[çc\ufffd\?a]*\s+(\d+)', g_title, re.IGNORECASE) or re.search(r'Pe[çc\ufffd\?a]*\s+(\d+)', nick, re.IGNORECASE)
-            if not match:
-                continue
-            p_num = int(match.group(1))
-            nl = nick.lower()
-            if "balance" in nl:
-                mapping[nick] = (p_num, "balance")
-            elif "frontal" in nl:
-                mapping[nick] = (p_num, "canto_1")
-            elif "trasero" in nl:
-                mapping[nick] = (p_num, "canto_2")
-            elif any(w in nl for w in ["izquierdo", "arriba", "superior"]):
-                mapping[nick] = (p_num, "canto_3")
-            elif any(w in nl for w in ["derecho", "abajo", "inferior"]):
-                mapping[nick] = (p_num, "canto_4")
-            elif "lado color" in nl:
-                mapping[nick] = (p_num, "fondo_color")
-            elif "sustrato" in nl:
-                mapping[nick] = (p_num, "fondo_sustrato")
-    except Exception as e:
-        print(f"[3BF Worker] Error extrayendo mapeo estético GHX: {e}", flush=True)
-    return mapping
-
-def extract_all_user_params_flat(p: dict) -> dict:
-    flat = {}
-    if not isinstance(p, dict):
-        return flat
-    for k, v in p.items():
-        if k in ["parameters", "timestamp", "client_time", "last_mtime", "ghx_content"]:
-            continue
-        if isinstance(v, (str, int, float, bool)):
-            flat[str(k)] = str(v).strip()
-            
-    sub_p = p.get("parameters") or {}
-    if isinstance(sub_p, dict):
-        for k, v in sub_p.items():
-            if isinstance(v, (str, int, float, bool)):
-                flat[str(k)] = str(v).strip()
-    return flat
-
-def extract_dimension_smart(p_dict: dict, keywords: list, fallback: float) -> float:
-    flat = extract_all_user_params_flat(p_dict)
-    extra_prefixes = []
-    if any("ancho" in kw for kw in keywords):
-        extra_prefixes.append("01.0")
-    if any("alto" in kw or "altura" in kw for kw in keywords):
-        extra_prefixes.append("01.1")
-    if any("prof" in kw for kw in keywords):
-        extra_prefixes.append("01.2")
-
-    # 1. Buscar coincidencia con clave explícita de dimensión específica del usuario (priorizar claves con prefijo numérico como '01.0_ancho_1295' o '01.0 300-1600')
-    for k, v in flat.items():
-        k_lower = k.lower()
-        if (any(kw in k_lower for kw in keywords) or any(pref in k_lower for pref in extra_prefixes)) and any(c.isdigit() for c in k):
-            try:
-                val = float(v)
-                if val > 0:
-                    return val
-            except (ValueError, TypeError):
-                pass
-    # 2. Buscar coincidencia estándar (ej. 'ancho', 'rh_in:ancho')
-    for kw in keywords:
-        val = find_user_param_value(p_dict, f"RH_IN:{kw.capitalize()}", find_user_param_value(p_dict, kw, None))
-        if val is not None:
-            try:
-                f_val = float(val)
-                if f_val > 0:
-                    return f_val
-            except (ValueError, TypeError):
-                pass
-    return float(fallback)
-
-def deduplicate_real_meshes(meshes: list) -> tuple[list, list, dict]:
-    """
-    🛡️ DETECTOR Y PURGADOR DE MALLAS DUPLICADAS (3dBimFab DfMA Shield)
-    Identifica y marca mallas que tengan el mismo nombre (normalizado) y ocupen
-    exactamente el mismo espacio 3D (centro y dimensiones idénticas dentro de una tolerancia de 0.5 mm = 0.0005 m).
-    Retorna:
-      - unique_meshes: lista limpia sin duplicados (para BOM e inventario de costos).
-      - all_annotated_meshes: lista completa donde los duplicados tienen 'es_duplicado_ghx': True (para visualizarlos en rojo).
-      - discarded_summary: conteo de duplicados por nombre.
-    """
-    if not meshes or len(meshes) <= 1:
-        return meshes, meshes, {}
-
-    unique_meshes = []
-    all_annotated_meshes = []
-    duplicates_count = 0
-    discarded_summary = {}
-
-    for m in meshes:
-        raw_n = m.get("name", "").strip()
-        m_name = raw_n.lower().replace("rh_out:", "").strip()
-        m_pos = m.get("position", [0, 0, 0])
-        m_size = m.get("size", [0, 0, 0])
-        m_verts_count = len(m.get("vertices", []))
-
-        is_dup = False
-        for u in unique_meshes:
-            u_raw = u.get("name", "").strip()
-            u_name = u_raw.lower().replace("rh_out:", "").strip()
-            if m_name == u_name:
-                u_pos = u.get("position", [0, 0, 0])
-                u_size = u.get("size", [0, 0, 0])
-                u_verts_count = len(u.get("vertices", []))
-
-                # Tolerancia espacial estricta de 0.5 mm (0.0005 m)
-                dist_pos = math.sqrt(sum((float(a) - float(b)) ** 2 for a, b in zip(m_pos, u_pos)))
-                dist_size = math.sqrt(sum((float(a) - float(b)) ** 2 for a, b in zip(m_size, u_size)))
-
-                if dist_pos < 0.0005 and dist_size < 0.0005:
-                    if m_verts_count == 0 or u_verts_count == 0 or m_verts_count == u_verts_count:
-                        is_dup = True
-                        duplicates_count += 1
-                        display_name = raw_n.replace("RH_OUT:", "").strip()
-                        discarded_summary[display_name] = discarded_summary.get(display_name, 0) + 1
-                        break
-
-        if is_dup:
-            m_dup = dict(m)
-            m_dup["es_duplicado_ghx"] = True
-            all_annotated_meshes.append(m_dup)
-        else:
-            unique_meshes.append(m)
-            all_annotated_meshes.append(m)
-
-    if duplicates_count > 0:
-        print(f"[3BF Worker Deduplicador] 🛡️ Se detectaron y marcaron {duplicates_count} mallas duplicadas en Grasshopper que ocupaban el mismo espacio 3D: {discarded_summary}", flush=True)
-
-    return unique_meshes, all_annotated_meshes, discarded_summary
-
-from fastapi import FastAPI, HTTPException, Request
+_GEOMETRY_CACHE = {}
+_FULL_RESPONSE_CACHE = {}
+_GHX_TEMPLATE_CACHE = {}
+_RAW_GHX_STRING_CACHE = {}
 
 @app.post("/compute")
 async def compute_model(request: Request):
@@ -1895,447 +1022,19 @@ async def compute_model(request: Request):
     # =========================================================================
     # 🔩 DETECCIÓN POSITIVA DE HERRAJES & TABLEROS POR GEOMETRÍA REAL (DfMA)
     # =========================================================================
-    def es_nombre_herraje(name_str: str, size: list = None) -> bool:
-        nl = name_str.lower()
-        # Descartar canales de acabado o mecanizados
-        if "maquinado" in nl or "perforad" in nl or "mdp" in nl or "balance" in nl:
-            return False
-        if re.search(r'[\s_]b$', nl):
-            return False
-
-        # 1. Whitelist Positiva de Herrajes (por terminología de ferretería y ensamble)
-        herrajes_keywords = [
-            "tarugo", "cavilha", "tornillo", "parafuso", "minifix", "corredera", "corredi", 
-            "bisagra", "dobradi", "sapata", "pata", "pé", "perno", "puxador", "tirador", 
-            "manija", "cantoneira", "cantonera", "prego", "clavo", "tampa", "tapa adhesiva", 
-            "angulo", "escuadra", "soporte", "suporte", "porca", "tuerca"
-        ]
-        if any(k in nl for k in herrajes_keywords):
-            # Excluir si es claramente un tablero con término compuesto
-            if not any(t in nl for t in ["frente", "lateral", "cubierta", "repisa", "costado", "divis", "zocalo", "fondo", "posterior", "traser", "gaveta", "peça", "peca", "pk"]):
-                return True
-
-        # 2. Heurística Geométrica Positiva de Herraje (volumen físico diminuto tridimensional)
-        if size and len(size) == 3:
-            dims_mm = sorted([abs(size[0])*1000.0, abs(size[1])*1000.0, abs(size[2])*1000.0])
-            if dims_mm[2] < 40.0 and dims_mm[0] >= 1.5:
-                return True
-
-        return False
-
-    def es_nombre_tablero(name_str: str, size: list = None) -> bool:
-        nl = name_str.lower()
-        if "maquinado" in nl or "perforad" in nl or "mdp" in nl or "balance" in nl:
-            return False
-        if re.search(r'[\s_]b$', nl):
-            return False
-        if es_nombre_herraje(name_str, size):
-            return False
-        # Geometría de tablero: largo >= 40mm y ancho >= 8mm (incluye franjas de ranura)
-        if size and len(size) == 3:
-            dims_mm = sorted([abs(size[0])*1000.0, abs(size[1])*1000.0, abs(size[2])*1000.0])
-            if dims_mm[2] >= 40.0 and dims_mm[1] >= 8.0:
-                return True
-        return True
-    
-    conteo_mallas_herrajes = {}
-    for m in real_meshes:
-        if m.get("es_duplicado_ghx"):
-            continue
-        raw_name = m.get("name", "").strip()
-        if es_nombre_herraje(raw_name, m.get("size")):
-            # Respetar 100% el nombre definido por el usuario/diseñador en Grasshopper (limpiando solo el prefijo RH_OUT:)
-            nombre_herraje_ghx = raw_name.replace("RH_OUT:", "").strip()
-            if nombre_herraje_ghx:
-                conteo_mallas_herrajes[nombre_herraje_ghx] = conteo_mallas_herrajes.get(nombre_herraje_ghx, 0) + 1
-
-    herrajes_final = []
-    costo_herrajes_calc = 0.0
-
-    for nombre_ghx, m_count in conteo_mallas_herrajes.items():
-        nh_l = nombre_ghx.lower()
-        # Regla DfMA para herrajes compuestos (ej: 42 mallas para 6 cajones = 7 mallas por par de correderas)
-        if "corredi" in nh_l or "corredera" in nh_l:
-            mallas_por_herraje = 7  # 7 mallas por cajón (par de correderas telescópicas)
-            unidad_str = "pares"
-            costo_unit = 8.22 # ~$8.22 USD por par (~$24.650 COP)
-        elif "perno" in nh_l or "bisagra" in nh_l or "dobradi" in nh_l:
-            mallas_por_herraje = 2
-            unidad_str = "piezas"
-            costo_unit = 0.28 if "perno" in nh_l else 1.20
-        else:
-            mallas_por_herraje = 1
-            unidad_str = "piezas"
-        cant_real = math.ceil(m_count / mallas_por_herraje)
-        
-        # Costeo paramétrico base
-        if "pes" in nh_l or "pata" in nh_l or "pie" in nh_l or "sapata" in nh_l:
-            costo_unit = 0.85 # Pata plástica RTA inyectada ~$0.85 USD
-            unidad_str = "piezas"
-        elif "caja" in nh_l or "minifix" in nh_l:
-            costo_unit = 0.35
-            unidad_str = "piezas"
-        elif "perno" in nh_l:
-            costo_unit = 0.28
-            unidad_str = "piezas"
-        elif "corredi" in nh_l or "corredera" in nh_l:
-            pass # Ya asignado arriba
-        elif "bisagra" in nh_l or "dobradi" in nh_l:
-            costo_unit = 1.20
-            unidad_str = "piezas"
-        elif "cantoneira" in nh_l or "angulo" in nh_l or "escuadra" in nh_l:
-            costo_unit = 0.15 # Escuadra de fijación metálica
-            unidad_str = "piezas"
-        elif "cavilha" in nh_l or "tarugo" in nh_l:
-            costo_unit = 0.03
-            unidad_str = "piezas"
-        elif "parafuso" in nh_l or "tornillo" in nh_l:
-            costo_unit = 0.05
-            unidad_str = "piezas"
-        elif "puxador" in nh_l or "tirador" in nh_l or "manija" in nh_l:
-            costo_unit = 1.50
-            unidad_str = "piezas"
-        else:
-            costo_unit = 0.08
-            unidad_str = "piezas"
-
-        costo_herrajes_calc += cant_real * costo_unit
-        
-        herrajes_final.append({
-            "nombre": nombre_ghx,
-            "cantidad": cant_real,
-            "mallas_count": m_count,
-            "unidad": unidad_str
-        })
-
-    # Fallback si es un modelo sin mallas explícitas de herrajes
-    if not herrajes_final and "cajon" in (model_id + custom_filename).lower():
-        minifix_cant = 16 + (cant_cajones * 8)
-        tarugos_cant = cant_cajones * 12
-        herrajes_final = [
-            {"nombre": "Caja Minifix 15mm", "cantidad": minifix_cant, "unidad": "piezas"},
-            {"nombre": "Perno Minifix 34mm", "cantidad": minifix_cant, "unidad": "piezas"},
-            {"nombre": "Tarugo Madera 8x30mm", "cantidad": tarugos_cant, "unidad": "piezas"},
-            {"nombre": f"Par Correderas ({tipo_cajon_param})", "cantidad": cant_cajones, "unidad": "pares"}
-        ]
-        costo_herrajes_calc = (minifix_cant * 0.63) + (tarugos_cant * 0.05) + (cant_cajones * 4.50)
-
-    # =========================================================================
-    # 🪵 ESCANEO GEOMÉTRICO 3D DIRECTO DE TABLEROS (BOM REAL DfMA CONSOLIDADO)
-    # =========================================================================
-    # 1. Analizar si Grasshopper tiene un panel o componente con descripciones oficiales en el XML o en text_outputs
-    def _norm_clave_pieza(clave: str) -> str:
-        k = clave.strip().lower()
-        k = re.sub(r'pe[çc]a\s*(\d+)', r'peca_\1', k)
-        k = re.sub(r'pk\s*(\d+)', r'peca_\1', k)
-        return k
-
-    mapa_descripciones_ghx = {}
-
-    # A) Extraer del XML directo de Grasshopper (Paneles o Parámetros)
-    if root is not None:
-        for chunk in root.iter("chunk"):
-            if chunk.attrib.get("name") == "Object":
-                c = chunk.find("chunks/chunk[@name='Container']")
-                if c is not None:
-                    nick_item = c.find("items/item[@name='NickName']")
-                    nick_t = (nick_item.text or "").strip() if nick_item is not None else ""
-                    if any(w in nick_t.lower() for w in ["descrip", "bom", "nombres"]):
-                        user_text_item = c.find("items/item[@name='UserText']")
-                        if user_text_item is not None and user_text_item.text:
-                            text_outputs[nick_t] = user_text_item.text.strip()
-
-    # B) Procesar todos los textos recolectados (paneles XML y salidas de solver)
-    for k_out, v_out in text_outputs.items():
-        k_lower = k_out.lower()
-        if any(w in k_lower for w in ["descrip", "bom", "nombres", "piezas_nombres"]):
-            texto_raw = str(v_out).strip()
-            if texto_raw.startswith("{"):
-                try:
-                    parsed_json = json.loads(texto_raw)
-                    if isinstance(parsed_json, dict):
-                        for pk, pv in parsed_json.items():
-                            mapa_descripciones_ghx[_norm_clave_pieza(pk)] = str(pv).strip()
-                except Exception:
-                    pass
-            else:
-                for line in texto_raw.splitlines():
-                    line = line.strip()
-                    if not line:
-                        continue
-                    if "=" in line:
-                        pk, pv = line.split("=", 1)
-                        mapa_descripciones_ghx[_norm_clave_pieza(pk)] = pv.strip()
-                    elif ":" in line:
-                        pk, pv = line.split(":", 1)
-                        mapa_descripciones_ghx[_norm_clave_pieza(pk)] = pv.strip()
-                    else:
-                        # Soporte para separación por espacios (ej: "Peça 6   Paral Central")
-                        match_sp = re.match(r'^(pe[çc]a\s*\d+|pk\s*\d+)\s+(.+)$', line, flags=re.IGNORECASE)
-                        if match_sp:
-                            pk, pv = match_sp.group(1), match_sp.group(2)
-                            mapa_descripciones_ghx[_norm_clave_pieza(pk)] = pv.strip()
-
-    tableros_consolidados = []
-    for m in real_meshes:
-        raw_name = m.get("name", "").strip()
-        name_lower = raw_name.lower()
-        size = m.get("size", [0, 0, 0])
-        pos = m.get("position", [0, 0, 0])
-        
-        # 1. Solo incluir elementos que califiquen como tablero (o no sean herrajes positivos)
-        if not es_nombre_tablero(raw_name, size):
-            continue
-            
-        # 2. Descartar canales de acabado secundarios (MDP es solo mecanizado/cantos, nunca un tablero independiente)
-        if "mdp" in name_lower:
-            continue
-        # 3. Descartar mallas secundarias de Balance (ej: "Peça 17 B", "Peça 16 B", "balance", "_b")
-        # En Grasshopper y DfMA, las láminas secundarias de balance tienen sufijo " B", "_b" o palabra "balance"
-        if re.search(r'[\s_]b$|balance', name_lower):
-            continue
-        
-        # Dimensiones físicas en milímetros
-        dims_mm = sorted([round(size[0] * 1000.0, 1), round(size[1] * 1000.0, 1), round(size[2] * 1000.0, 1)])
-        esp_malla = dims_mm[0]
-        anc_malla = dims_mm[1]
-        lar_malla = dims_mm[2]
-        
-        # Filtrar solo elementos que califiquen como tableros (largo >= 40mm y ancho >= 8mm para incluir franjas de ranura)
-        if lar_malla >= 40.0 and anc_malla >= 8.0:
-            # Nombre de la pieza y descripción
-            desc_extraida = ""
-            custom_name = None
-            for k_out, v_out in text_outputs.items():
-                if any(k in k_out.lower() for k in ["nombre", "pieza", "piecename"]):
-                    custom_name = v_out
-                    break
-                    
-            if custom_name:
-                nombre_limpio = custom_name
-            else:
-                raw_m_name = m.get("name", "").replace("RH_OUT:", "").strip()
-                nombre_temp = raw_m_name
-                for prefix in ["MDF ", "MDP ", "Color ", "Balance ", "Nurbs ", "Brep ", "MDF", "MDP", "Color", "Balance"]:
-                    if nombre_temp.upper().startswith(prefix.upper()):
-                        nombre_temp = nombre_temp[len(prefix):].strip()
-
-                # Detección de descripción embebida en el nombre del output (ej: "Peça 1 - Lateral Izquierdo" o "Peça 1: Lateral Izquierdo")
-                if " - " in nombre_temp:
-                    partes = nombre_temp.split(" - ", 1)
-                    nombre_temp, desc_extraida = partes[0].strip(), partes[1].strip()
-                elif " : " in nombre_temp or (":" in nombre_temp and not nombre_temp.startswith("RH_OUT")):
-                    partes = nombre_temp.split(":", 1)
-                    nombre_temp, desc_extraida = partes[0].strip(), partes[1].strip()
-                elif "(" in nombre_temp and nombre_temp.endswith(")"):
-                    partes = nombre_temp.split("(", 1)
-                    nombre_temp = partes[0].strip()
-                    desc_extraida = partes[1].rstrip(")").strip()
-
-                # Normalización canónica para Peça X y PK X
-                match_peca = re.search(r'pe[çc]a\s*(\d+)', nombre_temp, flags=re.IGNORECASE)
-                if match_peca:
-                    nombre_limpio = f"Peça {match_peca.group(1)}"
-                else:
-                    match_pk = re.search(r'pk\s*(\d+)', nombre_temp, flags=re.IGNORECASE)
-                    if match_pk:
-                        nombre_limpio = f"PK {match_pk.group(1)}"
-                    else:
-                        nombre_temp = re.sub(r'[\s_]b$', '', nombre_temp, flags=re.IGNORECASE).strip()
-                        nombre_temp = nombre_temp.capitalize()
-                        if not nombre_temp or nombre_temp in ["Cubierta2", "Entrepaño2", "Pieza", "Mdp", "Mdf", "Tablero"]:
-                            nombre_limpio = "Cubierta" if "cubierta" in name_lower else ("Entrepaño" if "entrepaño" in name_lower else "Tablero")
-                        else:
-                            nombre_limpio = nombre_temp
-
-            # Resolver descripción oficial: embebida > panel RH_OUT:Descripciones > nombre_limpio
-            clave_norm = _norm_clave_pieza(nombre_limpio)
-            descripcion_final = desc_extraida or mapa_descripciones_ghx.get(clave_norm, "") or mapa_descripciones_ghx.get(nombre_limpio.lower(), "") or nombre_limpio
-
-            # COHESIÓN ESPACIAL MADERKIT V54 (Fase 2 + Fase 3):
-            # Absorción de parches, ranuras y caras divididas pertenecientes a la misma pieza física
-            encontrado = False
-            for t in tableros_consolidados:
-                dist_x = abs(t["pos"][0] - pos[0]) * 1000.0
-                dist_y = abs(t["pos"][1] - pos[1]) * 1000.0
-                dist_z = abs(t["pos"][2] - pos[2]) * 1000.0
-                diff_lar = abs(t["largo"] - lar_malla)
-                
-                # Criterio Maderkit: Mismo plano de tablero (X y Z coincidentes a < 15mm) y misma longitud de pieza (< 15mm)
-                if dist_x < 15.0 and dist_z < 15.0 and diff_lar < 15.0:
-                    if dist_y < 85.0: # Absorber ranura o recorte dentro de la misma pieza física
-                        encontrado = True
-                        y_min = min(t["pos"][1]*1000 - t["ancho"]/2, pos[1]*1000 - anc_malla/2)
-                        y_max = max(t["pos"][1]*1000 + t["ancho"]/2, pos[1]*1000 + anc_malla/2)
-                        t["ancho"] = round(y_max - y_min, 1)
-                        t["largo"] = max(t["largo"], lar_malla)
-                        t["espesor"] = max(t["espesor"], esp_malla)
-                        t["pos"][1] = (y_min + y_max) / 2000.0
-                        if "peça" in nombre_limpio.lower() or "pk" in nombre_limpio.lower():
-                            t["nombre"] = nombre_limpio
-                        elif t["nombre"].lower() in ["tablero", "mdp", "mdf", "balance"] and nombre_limpio.lower() not in ["tablero", "mdp", "mdf", "balance"]:
-                            t["nombre"] = nombre_limpio
-                        if descripcion_final and descripcion_final != nombre_limpio:
-                            t["descripcion"] = descripcion_final
-                        break
-                elif dist_x < 15.0 and dist_y < 15.0 and dist_z < 15.0 and diff_lar < 15.0:
-                    encontrado = True
-                    t["largo"] = max(t["largo"], lar_malla)
-                    t["ancho"] = max(t["ancho"], anc_malla)
-                    t["espesor"] = max(t["espesor"], esp_malla)
-                    if "peça" in nombre_limpio.lower() or "pk" in nombre_limpio.lower():
-                        t["nombre"] = nombre_limpio
-                    elif t["nombre"].lower() in ["tablero", "mdp", "mdf", "balance"] and nombre_limpio.lower() not in ["tablero", "mdp", "mdf", "balance"]:
-                        t["nombre"] = nombre_limpio
-                    if descripcion_final and descripcion_final != nombre_limpio:
-                        t["descripcion"] = descripcion_final
-                    break
-                    
-            if not encontrado:
-                tableros_consolidados.append({
-                    "nombre": nombre_limpio,
-                    "descripcion": descripcion_final,
-                    "largo": lar_malla,
-                    "ancho": anc_malla,
-                    "espesor": esp_malla,
-                    "cantidad": 1,
-                    "tipo": "Estructura DfMA",
-                    "pos": list(pos)
-                })
-
-    # 🪵 RECUPERACIÓN INTELIGENTE DE ESPESOR REAL PARA FRENTES Y TABLEROS CON MALLA PLANA (espesor 0)
-    # Si una pieza fue mallada como lámina de espesor 0 (ej. Peça 5 o Peça 2), recuperamos el espesor
-    # de su canal de cantos/mecanizado 'MDP' correspondiente o de la separación física entre Cara A y Cara B.
-    mapa_espesor_mdp = {}
-    for m in real_meshes:
-        n_raw = m.get("name", "").strip()
-        if "mdp" in n_raw.lower():
-            n_clean = re.sub(r'RH_OUT:\s*', '', n_raw, flags=re.IGNORECASE)
-            n_clean = re.sub(r'MDP\s+', '', n_clean, flags=re.IGNORECASE).strip()
-            match_p = re.search(r'pe[çc]a\s*(\d+)', n_clean, flags=re.IGNORECASE)
-            if match_p:
-                n_clean = f"Peça {match_p.group(1)}"
-            else:
-                n_clean = n_clean.capitalize()
-            m_size = m.get("size", [0, 0, 0])
-            m_dims = sorted([round(m_size[0] * 1000.0, 1), round(m_size[1] * 1000.0, 1), round(m_size[2] * 1000.0, 1)])
-            # Filtrar dimensiones: espesor suele ser entre 12mm y 30mm, no 0 ni 5mm de perforaciones
-            for d in m_dims:
-                if 10.0 <= d <= 36.0:
-                    mapa_espesor_mdp[n_clean] = d
-                    break
-
-    for tab in tableros_consolidados:
-        nom = tab.get("nombre", "")
-        nom_l = nom.lower().strip()
-
-        # 1. Esquivar operación booleana en el borde para Frente de Cajón y piezas estructurales (ej. Peça 5, Peça 2)
-        # La operación booleana sobre el borde sustrae material o aplana la cara frontal en la proyección de Grasshopper.
-        # El espesor nominal real de fabricación del tablero es 15.0 mm (DURATEX 15mm), NUNCA 0 ni 12.
-        if "peça 5" in nom_l or "peca 5" in nom_l or "frente" in nom_l or "peça 2" in nom_l or "peca 2" in nom_l:
-            tab["espesor"] = 15.0
-        elif tab.get("espesor", 0) <= 0.5:
-            # 1. Prioridad: Distancia euclídea exacta entre Cara A y Cara B (separación física del tablero)
-            espesor_encontrado = None
-            pos_a = tab.get("pos", [0, 0, 0])
-            nom_lower = nom.lower()
-            for mb in real_meshes:
-                nb = mb.get("name", "").strip().lower()
-                if f"{nom_lower} b" in nb or f"{nom_lower}_b" in nb:
-                    pos_b = mb.get("position", [0, 0, 0])
-                    # Medir separación en el plano de la pieza
-                    dist_mm = round(math.sqrt(sum((pos_a[i] - pos_b[i])**2 for i in range(3))) * 1000.0, 1)
-                    if 9.0 <= dist_mm <= 36.0:
-                        espesor_encontrado = dist_mm
-                        break
-            
-            if espesor_encontrado is not None:
-                tab["espesor"] = espesor_encontrado
-            elif nom in mapa_espesor_mdp:
-                tab["espesor"] = mapa_espesor_mdp[nom]
-            elif any(k.lower() == nom.lower() for k in mapa_espesor_mdp):
-                for k, v in mapa_espesor_mdp.items():
-                    if k.lower() == nom.lower():
-                        tab["espesor"] = v
-                        break
-            else:
-                tab["espesor"] = 12.0 if any(w in nom_l for w in ["cajon", "cajón", "posterior", "gaveta"]) else 15.0
-
-    # Agrupar piezas idénticas leyendo 100% de la geometría real con Tolerancia DfMA de Taller (<= 2mm)
-    if tableros_consolidados:
-        piezas_consolidadas = []
-        for tab in tableros_consolidados:
-            encontrado = False
-            for p_exist in piezas_consolidadas:
-                # Mismo nombre canónico (insensible a mayúsculas) y mismo espesor (tolerancia 0.5mm en calibre)
-                if p_exist["nombre"].lower() == tab["nombre"].lower() and abs(p_exist["espesor"] - tab["espesor"]) < 0.5:
-                    diff_lar = abs(p_exist["largo"] - tab["largo"])
-                    diff_anc = abs(p_exist["ancho"] - tab["ancho"])
-                    # Tolerancia DfMA de taller para absorber diferencias asimétricas de ranuras o decimales (<= 2.0mm)
-                    if diff_lar <= 2.0 and diff_anc <= 2.0:
-                        p_exist["cantidad"] += tab.get("cantidad", 1)
-                        # Adoptar dimensión estándar unificada
-                        p_exist["largo"] = max(p_exist["largo"], tab["largo"])
-                        p_exist["ancho"] = max(p_exist["ancho"], tab["ancho"])
-                        encontrado = True
-                        break
-            if not encontrado:
-                item_copy = {k: v for k, v in tab.items() if k != "pos"}
-                piezas_consolidadas.append(item_copy)
-
-        piezas_madera_final = piezas_consolidadas
-        
-        def _sort_pieza_key(item):
-            name = item.get("nombre", "")
-            nums = re.findall(r'\d+', name)
-            return (int(nums[0]) if nums else 9999, name)
-            
-        piezas_madera_final.sort(key=_sort_pieza_key)
-    elif "Cubierta" in ghx_file:
-        u_izq_str = str(find_user_param_value(p, "RH_IN:02.1 Union izquierda", find_user_param_value(p, "union_izquierda", ""))).lower()
-        u_der_str = str(find_user_param_value(p, "RH_IN:02.0 Union Derecha", find_user_param_value(p, "union_derecha", ""))).lower()
-        tiene_entrepanio = "entrepaño" in u_izq_str or "entrepanio" in u_izq_str or u_izq_str == "3" or "entrepaño" in u_der_str or "entrepanio" in u_der_str or u_der_str == "3" or any("soporte" in m.get("name", "").lower() for m in real_meshes)
-        
-        ancho_nom = float(find_user_param_value(p, "RH_IN:01.1 Ancho", find_user_param_value(p, "RH_IN:01 Ancho", find_user_param_value(p, "ancho", 500.0))))
-        prof_nom = float(find_user_param_value(p, "RH_IN:01.2 Profundidad", find_user_param_value(p, "RH_IN:02 Profundidad", find_user_param_value(p, "profundidad", 500.0))))
-
-        if tiene_entrepanio:
-            piezas_madera_final = [
-                {
-                    "nombre": "Entrepaño",
-                    "largo": round(ancho_nom - 1.0, 1),
-                    "ancho": round(prof_nom, 1),
-                    "espesor": 15.0,
-                    "cantidad": 1,
-                    "tipo": "Entrepaño Deslizable DfMA"
-                }
-            ]
-        else:
-            piezas_madera_final = [
-                {
-                    "nombre": "Cubierta",
-                    "largo": round(ancho_nom, 1),
-                    "ancho": round(prof_nom, 1),
-                    "espesor": 15.0,
-                    "cantidad": 1,
-                    "tipo": "Estructura Fija DfMA"
-                }
-            ]
-    else:
-        # Fallback sintético solo si no se extrajeron mallas de tableros
-        piezas_madera_final = [
-            {"nombre": "Cubierta", "ancho": float(prof), "largo": float(ancho), "espesor": 15.0, "cantidad": 1, "tipo": "Estructura DfMA"}
-        ]
-
-    area_madera_m2 = sum((item["ancho"] * item["largo"] * item["cantidad"]) for item in piezas_madera_final) / 1_000_000.0
-    costo_madera = area_madera_m2 * 28.50
-    costo_herrajes_calc = sum(h["cantidad"] * 0.45 for h in herrajes_final)
-    costo_total = round(costo_madera + costo_herrajes_calc + 8.50, 2)
-
-    dim_str = f"{ancho} x {prof} x 15 mm"
-    if piezas_madera_final:
-        p0 = piezas_madera_final[0]
-        dim_str = f"{p0['largo']} x {p0['ancho']} x {p0['espesor']} mm"
+    piezas_madera_final, herrajes_final, summary_dict = calcular_bom_y_despiece(
+        real_meshes=real_meshes,
+        root=root,
+        text_outputs=text_outputs,
+        ghx_file=ghx_file,
+        p=p,
+        model_id=model_id,
+        custom_filename=custom_filename,
+        cant_cajones=cant_cajones,
+        tipo_cajon_param=tipo_cajon_param,
+        ancho=ancho,
+        prof=prof,
+    )
 
     declared_outputs = []
     if root is not None:
@@ -2368,12 +1067,7 @@ async def compute_model(request: Request):
         "slider_limits": slider_limits,
         "default_values": default_values,
         "parameter_groups": extract_parameter_groups(root, default_values) if root is not None else [],
-        "summary": {
-            "dimensiones": dim_str,
-            "area_madera_m2": round(area_madera_m2, 3),
-            "costo_estimado_usd": costo_total,
-            "piezas_totales": sum(p["cantidad"] for p in piezas_madera_final)
-        },
+        "summary": summary_dict,
         "despiece": piezas_madera_final,
         "herrajes": herrajes_final,
         "mallas_duplicadas_detectadas": mallas_duplicadas_detectadas
@@ -2497,225 +1191,8 @@ async def compute_model(request: Request):
 # =============================================================================
 @app.post("/mecanizar-intercomponentes")
 async def mecanizar_intercomponentes(request: Request):
-    try:
-        data = await request.json()
-        instancias = data.get("instancias", [])
-        if not instancias or len(instancias) < 1:
-            return {
-                "status": "success", 
-                "mecanizados_cruzados": {}, 
-                "total_perforaciones": 0, 
-                "resumen": ["Escenario sin componentes para mecanizar."]
-            }
-
-        mecanizados_por_instancia = {}
-        total_perforaciones = 0
-        mensajes_resumen = []
-
-        # Estructurar las instancias con sus tableros y perforaciones en coordenadas mundiales
-        instancias_procesadas = []
-        for inst in instancias:
-            inst_id = inst.get("id")
-            inst_nombre = inst.get("nombreVisible") or inst.get("definitionId") or inst_id
-            pos_inst = inst.get("posicion", [0.0, 0.0, 0.0]) # [X, Y, Z] en metros Three.js
-            
-            # Recolectar tableros de esta instancia
-            tableros = []
-            resultado = inst.get("resultado", {})
-            real_meshes = resultado.get("real_meshes", [])
-            
-            for m in real_meshes:
-                m_name = m.get("name", "").lower()
-                # Tableros de madera
-                if any(k in m_name for k in ["cubierta", "tablero", "lateral", "base", "techo", "fondo", "division", "entrepaño", "entrepanio", "cajon", "frente", "board", "mdp"]):
-                    sz = m.get("size", [0.5, 0.015, 0.5]) # [X, Y, Z] en metros
-                    pos_loc = m.get("position", [0.0, 0.0, 0.0])
-                    
-                    min_x = pos_inst[0] + pos_loc[0] - (sz[0] / 2.0)
-                    max_x = pos_inst[0] + pos_loc[0] + (sz[0] / 2.0)
-                    min_y = pos_inst[1] + pos_loc[1] - (sz[1] / 2.0)
-                    max_y = pos_inst[1] + pos_loc[1] + (sz[1] / 2.0)
-                    min_z = pos_inst[2] + pos_loc[2] - (sz[2] / 2.0)
-                    max_z = pos_inst[2] + pos_loc[2] + (sz[2] / 2.0)
-                    
-                    tableros.append({
-                        "name": m.get("name", "Tablero"),
-                        "size_m": sz,
-                        "pos_local_m": pos_loc,
-                        "bbox_world": [min_x, min_y, min_z, max_x, max_y, max_z],
-                        "largo_mm": round(sz[0] * 1000.0, 1),
-                        "ancho_mm": round(sz[2] * 1000.0, 1),
-                        "espesor_mm": round(sz[1] * 1000.0, 1),
-                    })
-            
-            # Si no hay mallas pero hay despiece o parámetros, crear tablero base sintético
-            if not tableros:
-                desp = resultado.get("despiece", [])
-                p0 = desp[0] if desp else None
-                largo_m = (p0.get("largo", 498.0) if p0 else 0.498) / 1000.0
-                ancho_m = (p0.get("ancho", 480.0) if p0 else 0.480) / 1000.0
-                esp_m = 0.015
-                
-                min_x = pos_inst[0] - (largo_m / 2.0)
-                max_x = pos_inst[0] + (largo_m / 2.0)
-                min_y = pos_inst[1] - (esp_m / 2.0)
-                max_y = pos_inst[1] + (esp_m / 2.0)
-                min_z = pos_inst[2] - (ancho_m / 2.0)
-                max_z = pos_inst[2] + (ancho_m / 2.0)
-                
-                tableros.append({
-                    "name": inst_nombre,
-                    "size_m": [largo_m, esp_m, ancho_m],
-                    "pos_local_m": [0, 0, 0],
-                    "bbox_world": [min_x, min_y, min_z, max_x, max_y, max_z],
-                    "largo_mm": round(largo_m * 1000.0, 1),
-                    "ancho_mm": round(ancho_m * 1000.0, 1),
-                    "espesor_mm": 15.0,
-                })
-            
-            # Recolectar perforaciones analíticas NURBS de esta instancia
-            perforaciones = resultado.get("perforaciones_nurbs", [])
-            
-            # Si no hay perforaciones explícitas en el JSON, buscar si hay herrajes para deducir perforaciones
-            if not perforaciones and resultado.get("herrajes"):
-                for h in resultado.get("herrajes", []):
-                    h_nombre = h.get("nombre", "").lower()
-                    cant = h.get("cantidad", 0)
-                    tipo_h = "caja_d15" if "minifix" in h_nombre else ("tarugo_d8" if "tarugo" in h_nombre else "guia_d5")
-                    diam_h = 15.0 if "minifix" in h_nombre else (8.0 if "tarugo" in h_nombre else 5.0)
-                    
-                    # Generar perforaciones en cantos
-                    largo_tab = tableros[0]["largo_mm"] / 1000.0 if tableros else 0.5
-                    ancho_tab = tableros[0]["ancho_mm"] / 1000.0 if tableros else 0.48
-                    
-                    for i in range(cant):
-                        y_offset = (ancho_tab / 2.0 - 0.037) if i % 2 == 0 else (-ancho_tab / 2.0 + 0.037)
-                        x_offset = (-largo_tab / 2.0) if i < (cant // 2) else (largo_tab / 2.0)
-                        
-                        perforaciones.append({
-                            "name": f"Perforacion {h.get('nombre', 'Herraje')} {i+1}",
-                            "size_mm": [diam_h, diam_h, 30.0],
-                            "center_local_m": [x_offset, 0.0, y_offset],
-                            "diametro_mm": diam_h,
-                            "profundidad_mm": 30.0 if diam_h == 8.0 else 12.0,
-                            "eje_principal": "X",
-                            "tipo": tipo_h
-                        })
-
-            instancias_procesadas.append({
-                "id": inst_id,
-                "nombre": inst_nombre,
-                "pos_m": pos_inst,
-                "tableros": tableros,
-                "perforaciones": perforaciones
-            })
-
-        # Evaluar cruces espaciales inter-componentes
-        for inst_receptora in instancias_procesadas:
-            rec_id = inst_receptora["id"]
-            mecanizados_por_instancia[rec_id] = []
-            centros_vistos_rec = set()
-            
-            for tablero in inst_receptora["tableros"]:
-                b_min_x, b_min_y, b_min_z, b_max_x, b_max_y, b_max_z = tablero["bbox_world"]
-                tab_nombre = tablero["name"]
-                
-                # Margen de tolerancia de contacto (25mm)
-                tol = 0.025
-                
-                for inst_emisora in instancias_procesadas:
-                    if inst_emisora["id"] == rec_id:
-                        continue # Solo perforaciones inter-componentes
-                    
-                    em_pos = inst_emisora["pos_m"]
-                    for perf in inst_emisora["perforaciones"]:
-                        p_center_loc = perf.get("center_local_m", [0, 0, 0])
-                        # Posición mundial del cilindro
-                        pw_x = em_pos[0] + p_center_loc[0]
-                        pw_y = em_pos[1] + p_center_loc[1]
-                        pw_z = em_pos[2] + p_center_loc[2]
-                        
-                        # Test de proximidad e intersección
-                        if (b_min_x - tol <= pw_x <= b_max_x + tol and
-                            b_min_y - tol <= pw_y <= b_max_y + tol and
-                            b_min_z - tol <= pw_z <= b_max_z + tol):
-                            
-                            diam = perf.get("diametro_mm", 5.0)
-                            prof = perf.get("profundidad_mm", 12.0)
-                            tipo = perf.get("tipo", "guia_d5")
-                            
-                            # Coordenadas locales en milímetros respecto al centro de corte del tablero
-                            u_mm = round((pw_x - (b_min_x + b_max_x) / 2.0) * 1000.0, 1)
-                            v_mm = round((pw_z - (b_min_z + b_max_z) / 2.0) * 1000.0, 1)
-                            
-                            # Determinar cara y proyección según cercanía a cantos
-                            dist_izq = abs(pw_x - b_min_x)
-                            dist_der = abs(pw_x - b_max_x)
-                            dist_inf = abs(pw_z - b_min_z)
-                            dist_sup_z = abs(pw_z - b_max_z)
-                            
-                            # Si está en el borde lateral/frontal/posterior (a menos de 25mm del canto)
-                            if dist_izq <= 0.025:
-                                cara = "canto_izq"
-                                capa_dxf = f"TCHW1B8D{int(prof*100):04d}" if diam >= 7.0 else f"TCHW1B2D{int(prof*100):04d}"
-                            elif dist_der <= 0.025:
-                                cara = "canto_der"
-                                capa_dxf = f"TCHW3B8D{int(prof*100):04d}" if diam >= 7.0 else f"TCHW3B2D{int(prof*100):04d}"
-                            elif dist_inf <= 0.025:
-                                cara = "canto_inf"
-                                capa_dxf = f"TCHW2B8D{int(prof*100):04d}" if diam >= 7.0 else f"TCHW2B2D{int(prof*100):04d}"
-                            elif dist_sup_z <= 0.025:
-                                cara = "canto_sup"
-                                capa_dxf = f"TCHW4B8D{int(prof*100):04d}" if diam >= 7.0 else f"TCHW4B2D{int(prof*100):04d}"
-                            else:
-                                cara = "cara_superior"
-                                capa_dxf = f"TCHW0B15D{int(prof*100):04d}" if diam >= 14.0 else (f"TCHW0B2D{int(prof*100):04d}" if diam <= 6.0 else f"TCHW0B8D{int(prof*100):04d}")
-                            
-                            # Deduplicar perforaciones en la misma posición geométrica
-                            geo_key = (round(u_mm / 4.0) * 4, round(v_mm / 4.0) * 4, cara)
-                            if geo_key in centros_vistos_rec:
-                                continue
-                            centros_vistos_rec.add(geo_key)
-                            
-                            mecanizado_item = {
-                                "origen_instancia_id": inst_emisora["id"],
-                                "origen_instancia_nombre": inst_emisora["nombre"],
-                                "nombre_perforacion": perf.get("name", "Perforación"),
-                                "tablero_destino": tab_nombre,
-                                "tipo": tipo,
-                                "diametro_mm": diam,
-                                "profundidad_mm": prof,
-                                "cara": cara,
-                                "capa_dxf": capa_dxf,
-                                "u_mm": u_mm,
-                                "v_mm": v_mm,
-                                "pos_mundial_m": [round(pw_x, 4), round(pw_y, 4), round(pw_z, 4)]
-                            }
-                            
-                            mecanizados_por_instancia[rec_id].append(mecanizado_item)
-                            total_perforaciones += 1
-            
-            if len(mecanizados_por_instancia[rec_id]) > 0:
-                mensajes_resumen.append(f"✓ {len(mecanizados_por_instancia[rec_id])} perforación(es) transferidas a '{inst_receptora['nombre']}'")
-
-        if total_perforaciones == 0:
-            mensajes_resumen.append("No se detectaron contactos o intersecciones entre los componentes actuales.")
-
-        return {
-            "status": "success",
-            "total_perforaciones": total_perforaciones,
-            "mecanizados_cruzados": mecanizados_por_instancia,
-            "resumen": mensajes_resumen
-        }
-    except Exception as e:
-        print(f"[3BF Worker Mecanizado Error]: {e}", flush=True)
-        return {
-            "status": "error", 
-            "message": str(e), 
-            "total_perforaciones": 0, 
-            "mecanizados_cruzados": {}, 
-            "resumen": [f"Error: {e}"]
-        }
+    data = await request.json()
+    return procesar_mecanizado_intercomponentes(data)
 
 
 # =============================================================================
@@ -2723,268 +1200,8 @@ async def mecanizar_intercomponentes(request: Request):
 # =============================================================================
 @app.post("/export-dxf")
 async def export_dxf_biesse(request: Request):
-    try:
-        import io
-        import ezdxf
-        
-        data = await request.json()
-        model_id = data.get("model_id", "Cubierta")
-        params = data.get("parameters", {})
-        despiece = data.get("despiece", [])
-        version = data.get("version", "BD 1.0")
-
-        # Seleccionar la pieza principal a mecanizar
-        if data.get("pieza"):
-            pieza = data.get("pieza")
-        elif despiece and len(despiece) > 0:
-            pieza = despiece[0]
-        else:
-            ancho_p = float(params.get("RH_IN:01.1 Ancho", params.get("ancho", 498.0)))
-            prof_p = float(params.get("RH_IN:01.2 Profundidad", params.get("profundidad", 480.0)))
-            pieza = {
-                "nombre": model_id,
-                "largo": ancho_p,
-                "ancho": prof_p,
-                "espesor": 15.0
-            }
-
-        nombre = pieza.get("descripcion") or pieza.get("nombre", model_id)
-        descripcion = pieza.get("descripcion", nombre)
-        largo = float(pieza.get("largo", 498.0))
-        ancho = float(pieza.get("ancho", 480.0))
-        espesor = float(pieza.get("espesor", 15.0))
-        es_entrepanio = "entrepaño" in nombre.lower() or "entrepanio" in nombre.lower() or "entrepaño" in descripcion.lower() or "entrepanio" in descripcion.lower()
-
-        # Crear documento DXF con versión AC1021 (AutoCAD 2007, estándar oficial Biesse)
-        doc = ezdxf.new(dxfversion="AC1021")
-        msp = doc.modelspace()
-
-        # Profundidad de corte en centésimas de milímetro (ej: 15.0mm -> D1500)
-        prof_corte_tag = f"D{int(espesor * 100):04d}"
-        capa_contorno = f"TCHW0B8{prof_corte_tag}"
-
-        # Registrar capas CAM estándar Biesse Skipper
-        doc.layers.new(name=capa_contorno, dxfattribs={"color": 18})
-        doc.layers.new(name="TCHW1B8", dxfattribs={"color": 18})       # Canto Izquierdo (W1)
-        doc.layers.new(name="TCHW2B8", dxfattribs={"color": 18})       # Canto Inferior / Trasero (W2)
-        doc.layers.new(name="TCHW3B8", dxfattribs={"color": 18})       # Canto Derecho (W3)
-        doc.layers.new(name="TCHW4B8", dxfattribs={"color": 18})       # Canto Superior / Frontal (W4)
-        doc.layers.new(name="TCHW0B2D1200", dxfattribs={"color": 18})  # Taladros Ø5mm Cara Superior a 12mm
-        doc.layers.new(name="TCHW0B15D1350", dxfattribs={"color": 18}) # Cajas Minifix Ø15mm a 13.5mm
-        doc.layers.new(name="TCHW1B8D2500", dxfattribs={"color": 18})  # Perforación Canto Izquierdo Ø8mm a 25mm
-        doc.layers.new(name="TCHW3B8D2500", dxfattribs={"color": 18})  # Perforación Canto Derecho Ø8mm a 25mm
-
-        # Geometría de la Pieza Central (Cara Superior W0)
-        hx = largo / 2.0
-        hy = ancho / 2.0
-        gap = 20.0  # Separación estándar ortogonal entre la pieza central y las vistas de cantos
-
-        # 1. Contorno de Pieza Central (Cara Superior W0)
-        puntos_central = [
-            (-hx, -hy),
-            (hx, -hy),
-            (hx, hy),
-            (-hx, hy)
-        ]
-        msp.add_lwpolyline(puntos_central, close=True, dxfattribs={"layer": capa_contorno})
-
-        # 2. Vistas Desplegadas de los 4 Cantos (W1: Izq, W2: Inf, W3: Der, W4: Sup)
-        # Canto Izquierdo (W1) - Vista Lateral Izquierda
-        puntos_canto_izq = [
-            (-hx - gap, -hy),
-            (-hx - gap, hy),
-            (-hx - gap - espesor, hy),
-            (-hx - gap - espesor, -hy)
-        ]
-        msp.add_lwpolyline(puntos_canto_izq, close=True, dxfattribs={"layer": "TCHW1B8"})
-
-        # Canto Derecho (W3) - Vista Lateral Derecha
-        puntos_canto_der = [
-            (hx + gap, -hy),
-            (hx + gap, hy),
-            (hx + gap + espesor, hy),
-            (hx + gap + espesor, -hy)
-        ]
-        msp.add_lwpolyline(puntos_canto_der, close=True, dxfattribs={"layer": "TCHW3B8"})
-
-        # Canto Superior (W4) - Vista Frontal / Superior
-        puntos_canto_sup = [
-            (-hx, hy + gap),
-            (hx, hy + gap),
-            (hx, hy + gap + espesor),
-            (-hx, hy + gap + espesor)
-        ]
-        msp.add_lwpolyline(puntos_canto_sup, close=True, dxfattribs={"layer": "TCHW4B8"})
-
-        # Canto Inferior (W2) - Vista Posterior / Inferior
-        puntos_canto_inf = [
-            (-hx, -hy - gap),
-            (hx, -hy - gap),
-            (hx, -hy - gap - espesor),
-            (-hx, -hy - gap - espesor)
-        ]
-        msp.add_lwpolyline(puntos_canto_inf, close=True, dxfattribs={"layer": "TCHW2B8"})
-
-        # 3. Incorporar perforaciones analíticas OpenNURBS de la propia pieza (Tornillos, Tarugos, Minifix, Guías)
-        raw_perfs = data.get("perforaciones_nurbs") or pieza.get("perforaciones_nurbs") or []
-        boolean_perfs = [p for p in raw_perfs if "nurbs" in p.get("name", "").lower() or "perforad" in p.get("name", "").lower() or "mecanizad" in p.get("name", "").lower()]
-        perforaciones_propias = boolean_perfs if boolean_perfs else raw_perfs
-        centros_vistos = set()
-        perforaciones_dibujadas = 0
-
-        for p_item in perforaciones_propias:
-            if "center_cad_mm" in p_item:
-                cx, cy, cz = p_item["center_cad_mm"]
-                ux = round(cx - (largo / 2.0), 1)
-                vy = round(cy - (ancho / 2.0), 1)
-            elif "center_local_m" in p_item:
-                ux = round(p_item["center_local_m"][0] * 1000.0, 1)
-                vy = round(-p_item["center_local_m"][2] * 1000.0, 1)
-            else:
-                continue
-
-            diam = float(p_item.get("diametro_mm", 8.0))
-            prof = float(p_item.get("profundidad_mm", 25.0))
-            
-            c_key = (round(ux, 0), round(vy, 0), round(diam, 0))
-            if c_key in centros_vistos:
-                continue
-            centros_vistos.add(c_key)
-
-            if ux <= -hx + 25.0:
-                # Canto Izquierdo (W1)
-                x_pos = -hx - gap - (espesor / 2.0)
-                capa = f"TCHW1B8D{int(prof*100):04d}" if diam >= 7.0 else f"TCHW1B2D{int(prof*100):04d}"
-                if capa not in doc.layers: doc.layers.new(name=capa, dxfattribs={"color": 18})
-                msp.add_circle((x_pos, vy), radius=(diam / 2.0), dxfattribs={"layer": capa})
-                perforaciones_dibujadas += 1
-            elif ux >= hx - 25.0:
-                # Canto Derecho (W3)
-                x_pos = hx + gap + (espesor / 2.0)
-                capa = f"TCHW3B8D{int(prof*100):04d}" if diam >= 7.0 else f"TCHW3B2D{int(prof*100):04d}"
-                if capa not in doc.layers: doc.layers.new(name=capa, dxfattribs={"color": 18})
-                msp.add_circle((x_pos, vy), radius=(diam / 2.0), dxfattribs={"layer": capa})
-                perforaciones_dibujadas += 1
-            elif diam >= 14.0:
-                # Cajas Minifix en Cara Superior (W0)
-                capa = f"TCHW0B15D{int(prof*100):04d}"
-                if capa not in doc.layers: doc.layers.new(name=capa, dxfattribs={"color": 18})
-                msp.add_circle((ux, vy), radius=(diam / 2.0), dxfattribs={"layer": capa})
-                perforaciones_dibujadas += 1
-            else:
-                # Perforaciones / Guías en Cara Superior (W0)
-                capa = f"TCHW0B2D{int(prof*100):04d}" if diam <= 6.0 else f"TCHW0B8D{int(prof*100):04d}"
-                if capa not in doc.layers: doc.layers.new(name=capa, dxfattribs={"color": 18})
-                msp.add_circle((ux, vy), radius=(diam / 2.0), dxfattribs={"layer": capa})
-                perforaciones_dibujadas += 1
-
-        # Fallback si no vinieron perforaciones_nurbs explícitas
-        if perforaciones_dibujadas == 0 and not es_entrepanio:
-            union_izq = ""
-            union_der = ""
-            for k, v in params.items():
-                kl = k.lower()
-                if "union" in kl:
-                    if "izq" in kl:
-                        union_izq = str(v).lower()
-                    elif "der" in kl:
-                        union_der = str(v).lower()
-
-            y_pos1 = hy - 48.0
-            y_pos2 = -hy + 48.0
-            y_pos_tornillo1 = hy - 80.0
-            y_pos_tornillo2 = -hy + 80.0
-
-            # Mecanizado Lado Izquierdo
-            if "minifix" in union_izq:
-                x_izq_caja = -hx + 34.0
-                msp.add_circle((x_izq_caja, y_pos1), radius=7.5, dxfattribs={"layer": "TCHW0B15D1350"})
-                msp.add_circle((x_izq_caja, y_pos2), radius=7.5, dxfattribs={"layer": "TCHW0B15D1350"})
-                x_canto_izq_centro = -hx - gap - (espesor / 2.0)
-                msp.add_circle((x_canto_izq_centro, y_pos1), radius=4.0, dxfattribs={"layer": "TCHW1B8D2500"})
-                msp.add_circle((x_canto_izq_centro, y_pos2), radius=4.0, dxfattribs={"layer": "TCHW1B8D2500"})
-            elif "tarugo" in union_izq and "tornillo" in union_izq:
-                x_canto_izq_centro = -hx - gap - (espesor / 2.0)
-                # 2 Tarugos Ø8mm
-                msp.add_circle((x_canto_izq_centro, y_pos1), radius=4.0, dxfattribs={"layer": "TCHW1B8D2500"})
-                msp.add_circle((x_canto_izq_centro, y_pos2), radius=4.0, dxfattribs={"layer": "TCHW1B8D2500"})
-                # 2 Tornillos Ø5mm
-                msp.add_circle((x_canto_izq_centro, y_pos_tornillo1), radius=2.5, dxfattribs={"layer": "TCHW1B2D3500"})
-                msp.add_circle((x_canto_izq_centro, y_pos_tornillo2), radius=2.5, dxfattribs={"layer": "TCHW1B2D3500"})
-            elif "tarugo" in union_izq or "tornillo" in union_izq:
-                x_canto_izq_centro = -hx - gap - (espesor / 2.0)
-                msp.add_circle((x_canto_izq_centro, y_pos1), radius=4.0, dxfattribs={"layer": "TCHW1B8D2500"})
-                msp.add_circle((x_canto_izq_centro, y_pos2), radius=4.0, dxfattribs={"layer": "TCHW1B8D2500"})
-
-            # Mecanizado Lado Derecho
-            if "minifix" in union_der:
-                x_der_caja = hx - 34.0
-                msp.add_circle((x_der_caja, y_pos1), radius=7.5, dxfattribs={"layer": "TCHW0B15D1350"})
-                msp.add_circle((x_der_caja, y_pos2), radius=7.5, dxfattribs={"layer": "TCHW0B15D1350"})
-                x_canto_der_centro = hx + gap + (espesor / 2.0)
-                msp.add_circle((x_canto_der_centro, y_pos1), radius=4.0, dxfattribs={"layer": "TCHW3B8D2500"})
-                msp.add_circle((x_canto_der_centro, y_pos2), radius=4.0, dxfattribs={"layer": "TCHW3B8D2500"})
-            elif "tarugo" in union_der and "tornillo" in union_der:
-                x_canto_der_centro = hx + gap + (espesor / 2.0)
-                # 2 Tarugos Ø8mm
-                msp.add_circle((x_canto_der_centro, y_pos1), radius=4.0, dxfattribs={"layer": "TCHW3B8D2500"})
-                msp.add_circle((x_canto_der_centro, y_pos2), radius=4.0, dxfattribs={"layer": "TCHW3B8D2500"})
-                # 2 Tornillos Ø5mm
-                msp.add_circle((x_canto_der_centro, y_pos_tornillo1), radius=2.5, dxfattribs={"layer": "TCHW3B2D3500"})
-                msp.add_circle((x_canto_der_centro, y_pos_tornillo2), radius=2.5, dxfattribs={"layer": "TCHW3B2D3500"})
-            elif "tarugo" in union_der or "tornillo" in union_der:
-                x_canto_der_centro = hx + gap + (espesor / 2.0)
-                msp.add_circle((x_canto_der_centro, y_pos1), radius=4.0, dxfattribs={"layer": "TCHW3B8D2500"})
-                msp.add_circle((x_canto_der_centro, y_pos2), radius=4.0, dxfattribs={"layer": "TCHW3B8D2500"})
-
-        # 3. Incorporar mecanizados cruzados inter-componentes en el DXF
-        mecanizados_cruzados = data.get("mecanizados_cruzados", [])
-        for mec in mecanizados_cruzados:
-            u_x = float(mec.get("u_mm", 0.0))
-            v_y = float(mec.get("v_mm", 0.0))
-            diam = float(mec.get("diametro_mm", 5.0))
-            capa = mec.get("capa_dxf", "TCHW0B2D1200")
-            cara = mec.get("cara", "cara_superior")
-            
-            if capa not in doc.layers:
-                doc.layers.new(name=capa, dxfattribs={"color": 18})
-                
-            # Clasificar y colocar estrictamente en el canto correspondiente o en el interior del tablero (cero círculos flotantes)
-            if cara == "canto_izq" or u_x <= -hx + 20.0:
-                x_pos = -hx - gap - (espesor / 2.0)
-                msp.add_circle((x_pos, v_y), radius=(diam / 2.0), dxfattribs={"layer": capa})
-            elif cara == "canto_der" or u_x >= hx - 20.0:
-                x_pos = hx + gap + (espesor / 2.0)
-                msp.add_circle((x_pos, v_y), radius=(diam / 2.0), dxfattribs={"layer": capa})
-            elif cara == "canto_inf" or v_y <= -hy + 20.0:
-                y_pos = -hy - gap - (espesor / 2.0)
-                msp.add_circle((u_x, y_pos), radius=(diam / 2.0), dxfattribs={"layer": capa})
-            elif cara == "canto_sup" or v_y >= hy - 20.0:
-                y_pos = hy + gap + (espesor / 2.0)
-                msp.add_circle((u_x, y_pos), radius=(diam / 2.0), dxfattribs={"layer": capa})
-            else:
-                # Cara Superior W0: Solo si se encuentra rigurosamente dentro del perímetro
-                if abs(u_x) <= (hx - 2.0) and abs(v_y) <= (hy - 2.0):
-                    msp.add_circle((u_x, v_y), radius=(diam / 2.0), dxfattribs={"layer": capa})
-
-        # Serializar DXF a texto
-        stream = io.StringIO()
-        doc.write(stream)
-        dxf_content = stream.getvalue()
-
-        version_clean = version.replace(" ", "")
-        filename = f"{nombre}_{int(largo)}x{int(ancho)}_{int(espesor)}mm_{version_clean}.dxf"
-
-        return {
-            "status": "success",
-            "filename": filename,
-            "dxf_content": dxf_content,
-            "machine_profile": "Biesse Skipper (bSolid/BiesseWorks)",
-            "dimensions": f"{largo} x {ancho} x {espesor} mm"
-        }
-    except Exception as e:
-        print(f"[3BF Worker DXF Error]: {e}", flush=True)
-        return {"status": "error", "message": str(e)}
+    data = await request.json()
+    return generar_dxf_biesse(data)
 
 
 # =============================================================================

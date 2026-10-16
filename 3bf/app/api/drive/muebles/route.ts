@@ -167,16 +167,10 @@ export async function GET(request: NextRequest) {
 
     // 🚀 Acción: Obtener mueble completo por ID bajo demanda (para abrir en 3D)
     if (action === "get_furniture" && id) {
-      // 1. Intentar desde caché en memoria
-      const cached = fullFurnitureCache.get(id);
-      if (cached) {
-        return NextResponse.json({ success: true, furniture: cached.data });
-      }
-
       const targetId = id;
       const safeId = toSafeFileName(targetId);
 
-      // 2. Buscar archivo en disco asíncronamente
+      // Buscar archivo en disco asíncronamente verificando mtime real para evitar datos obsoletos
       async function findFileById(dir: string): Promise<any | null> {
         const entries = await fsp.readdir(dir, { withFileTypes: true });
         for (const e of entries) {
@@ -192,8 +186,16 @@ export async function GET(request: NextRequest) {
               baseName.toLowerCase() === targetId.toLowerCase() ||
               baseName.toLowerCase() === safeId.toLowerCase()
             ) {
+              const stat = await fsp.stat(p);
+              const cached = fullFurnitureCache.get(p);
+              if (cached && cached.mtime === stat.mtimeMs) {
+                return cached.data;
+              }
               const content = await fsp.readFile(p, "utf-8");
-              return JSON.parse(content);
+              const parsed = JSON.parse(content);
+              fullFurnitureCache.set(p, { data: parsed, mtime: stat.mtimeMs });
+              fullFurnitureCache.set(targetId, { data: parsed, mtime: stat.mtimeMs });
+              return parsed;
             }
           }
         }
@@ -202,10 +204,10 @@ export async function GET(request: NextRequest) {
 
       const foundData = await findFileById(storageDir);
       if (foundData) {
-        fullFurnitureCache.set(id, { data: foundData, mtime: Date.now() });
-        if (foundData.id) fullFurnitureCache.set(foundData.id, { data: foundData, mtime: Date.now() });
-        if (foundData.nombre) fullFurnitureCache.set(foundData.nombre, { data: foundData, mtime: Date.now() });
-        return NextResponse.json({ success: true, furniture: foundData });
+        return NextResponse.json(
+          { success: true, furniture: foundData },
+          { headers: { "Cache-Control": "no-store, no-cache, must-revalidate" } }
+        );
       }
 
       return NextResponse.json({ success: false, error: "Mueble no encontrado" }, { status: 404 });

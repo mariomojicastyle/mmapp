@@ -69,25 +69,59 @@ export const createCatalogSlice = (set: any, get: any): any => ({
 
   getFichaProductoActivo: () => {
     const state = get();
-    // 1. Si hay un mueble guardado activo en carpeta, prioridad absoluta a su ficha técnica personalizada
+    const rawInst = state.instancias || {};
+    const targetInstId = state.objetoActivoId || Object.keys(rawInst)[0];
+    const objetoActivo = targetInstId ? rawInst[targetInstId] : Object.values(rawInst)[0];
+    const liveParams = { ...(objetoActivo?.parametros || state.parametros || {}) };
+
+    const todasLasCapas: Record<string, string> = {};
+    state.capas.forEach((c) => {
+      todasLasCapas[c.id] = c.materialId;
+    });
+    const todasLasPartes: Record<string, { capaId: string; materialId: string }> = {};
+    Object.entries(state.asignacionesPartes).forEach(([k, v]) => {
+      todasLasPartes[k] = { capaId: v.capaId, materialId: v.materialId };
+    });
+
+    const sincronizarRecetaActivaEnFicha = (fichaBase: FichaProductoDef): FichaProductoDef => {
+      if (!fichaBase || !Array.isArray(fichaBase.recetasColor) || fichaBase.recetasColor.length === 0) {
+        return fichaBase;
+      }
+      const activeRecetaId = fichaBase.recetaColorActivaId || fichaBase.recetasColor[0].id;
+      return {
+        ...fichaBase,
+        recetaColorActivaId: activeRecetaId,
+        recetasColor: fichaBase.recetasColor.map((r) =>
+          r.id === activeRecetaId
+            ? {
+                ...r,
+                asignacionesCapaMaterial: Object.keys(todasLasCapas).length > 0 ? todasLasCapas : r.asignacionesCapaMaterial,
+                asignacionesPartes: Object.keys(todasLasPartes).length > 0 ? todasLasPartes : r.asignacionesPartes,
+                parametros: Object.keys(liveParams).length > 0 ? liveParams : r.parametros,
+              }
+            : r
+        ),
+      };
+    };
+
+    // 1. Si hay un mueble guardado activo en carpeta, prioridad absoluta a su ficha técnica personalizada (sincronizada con los parámetros vivos)
     if (state.muebleActivoGuardado) {
       if (state.muebleActivoGuardado.fichaProducto) {
-        return state.muebleActivoGuardado.fichaProducto;
+        return sincronizarRecetaActivaEnFicha(state.muebleActivoGuardado.fichaProducto);
       }
       const idKey = state.muebleActivoGuardado.id;
       const nombreKey = state.muebleActivoGuardado.nombre.trim();
-      if (state.fichasProducto[idKey]) return state.fichasProducto[idKey];
-      if (state.fichasProducto[nombreKey]) return state.fichasProducto[nombreKey];
+      if (state.fichasProducto[idKey]) return sincronizarRecetaActivaEnFicha(state.fichasProducto[idKey]);
+      if (state.fichasProducto[nombreKey]) return sincronizarRecetaActivaEnFicha(state.fichasProducto[nombreKey]);
     }
 
     // 2. Si estamos en un componente inteligente de biblioteca:
-    const objetoActivo = state.objetoActivoId ? state.instancias[state.objetoActivoId] : null;
     const muebleId = objetoActivo?.definitionId || "Componente Inteligente";
     const limpiaKey = muebleId.replace(/\.(gh|ghx)$/i, "").trim();
 
     // Si ya tiene una ficha personalizada modificada en esta sesión:
     if (state.fichasProducto[limpiaKey]) {
-      return state.fichasProducto[limpiaKey];
+      return sincronizarRecetaActivaEnFicha(state.fichasProducto[limpiaKey]);
     }
 
     // 3. De lo contrario, generar SIEMPRE la ficha estándar básica limpia con 1 solo color por defecto
@@ -98,23 +132,9 @@ export const createCatalogSlice = (set: any, get: any): any => ({
     const nuevaFicha = crearFichaEstandarLimpia(limpiaKey, objetoActivo?.nombreVisible || limpiaKey);
     if (nuevaFicha.recetasColor[0]) {
       nuevaFicha.recetasColor[0].swatch.colorPrimario = colorPrimario;
-
-      // 🛡️ Capturar el 100% de las capas actuales del modelo en el color por defecto
-      const todasLasCapas: Record<string, string> = {};
-      state.capas.forEach((c) => {
-        todasLasCapas[c.id] = c.materialId;
-      });
       nuevaFicha.recetasColor[0].asignacionesCapaMaterial = todasLasCapas;
-
-      // 🛡️ Capturar el 100% de las asignaciones de partes actuales en el color por defecto
-      const todasLasPartes: Record<string, { capaId: string; materialId: string }> = {};
-      Object.entries(state.asignacionesPartes).forEach(([k, v]) => {
-        todasLasPartes[k] = { capaId: v.capaId, materialId: v.materialId };
-      });
       nuevaFicha.recetasColor[0].asignacionesPartes = todasLasPartes;
-
-      // 🛡️ Capturar el 100% de los parámetros de piezas actuales en el color por defecto
-      nuevaFicha.recetasColor[0].parametros = { ...(objetoActivo?.parametros || state.parametros || {}) };
+      nuevaFicha.recetasColor[0].parametros = liveParams;
     }
     return nuevaFicha;
   },
@@ -936,14 +956,36 @@ export const createCatalogSlice = (set: any, get: any): any => ({
 
   guardarMuebleComo: async (datos: { nombre: string; marca: string; tipologia: string; descripcion?: string }) => {
     set({ guardandoMueble: true });
-    const state = get();
     try {
+      // 🛡️ 0. Si hay algún debounce pendiente en vuelo, ejecutarlo y esperar su cómputo antes de serializar
+      const pendingTimers = (globalThis as any).__3bf_debounce_timers;
+      if (pendingTimers && typeof pendingTimers === "object") {
+        const pendingIds = Object.keys(pendingTimers);
+        for (const pId of pendingIds) {
+          clearTimeout(pendingTimers[pId]);
+          delete pendingTimers[pId];
+          await get().recomputarInstancia(pId);
+        }
+      }
+
+      const state = get();
       const cleanNombre = datos.nombre.trim();
       const safeName = cleanNombre.replace(/[\\/:*?"<>|]/g, "_");
       const id = safeName;
       const rutaCarpeta = `${datos.marca}/${datos.tipologia}`;
-      const modelKey = state.parametros.model_id || "Cubierta";
-      const fichaConfig = state.getFichaConfig(modelKey);
+
+      // Sanitizar instancias y consolidar colecciones de diseños
+      const rawInst = state.instancias || {};
+      const targetInstId = state.objetoActivoId || Object.keys(rawInst)[0];
+      const instPrincipal = targetInstId ? rawInst[targetInstId] : Object.values(rawInst)[0];
+
+      const defKey = instPrincipal?.definitionId || state.parametros.model_id || cleanNombre;
+      const fichaConfig =
+        state.fichasConfig?.[cleanNombre] ||
+        state.fichasConfig?.[id] ||
+        state.fichasConfig?.[defKey] ||
+        state.muebleActivoGuardado?.fichaConfig ||
+        state.getFichaConfig(defKey);
       const despieceGlobal = state.getDespieceGlobal();
 
       // Capturar miniatura 3D real desde el Canvas WebGL
@@ -952,7 +994,7 @@ export const createCatalogSlice = (set: any, get: any): any => ({
         thumbnail = (window as any).__capturarThumbnail3BF() || undefined;
       }
 
-      // Capturar ficha técnica y variantes de color del producto
+      // Capturar ficha técnica y variantes de color del producto (ya sincronizada con instPrincipal.parametros)
       const fichaActual = state.getFichaProductoActivo();
       const fichaGuardada: FichaProductoDef = {
         ...fichaActual,
@@ -960,10 +1002,6 @@ export const createCatalogSlice = (set: any, get: any): any => ({
         titulo: cleanNombre,
         descripcionCorta: datos.descripcion || fichaActual.descripcionCorta,
       };
-      // Sanitizar instancias y consolidar colecciones de diseños
-      const rawInst = state.instancias || {};
-      const targetInstId = state.objetoActivoId || Object.keys(rawInst)[0];
-      const instPrincipal = targetInstId ? rawInst[targetInstId] : Object.values(rawInst)[0];
       
       const disenosDesdeInst = (instPrincipal && Array.isArray(instPrincipal.disenos)) ? instPrincipal.disenos : [];
       const disenosDesdeMueble = Array.isArray(state.muebleActivoGuardado?.disenos) ? state.muebleActivoGuardado!.disenos! : [];
@@ -1015,6 +1053,8 @@ export const createCatalogSlice = (set: any, get: any): any => ({
       // Guardar en Store y localStorage
       state.actualizarFichaProducto(cleanNombre, fichaGuardada);
       state.actualizarFichaProducto(id, fichaGuardada);
+      state.setFichaConfig(cleanNombre, fichaConfig);
+      state.setFichaConfig(id, fichaConfig);
 
       set((s) => ({
         mueblesGuardados: [nuevoMueble, ...s.mueblesGuardados.filter((m) => m.id !== id && m.nombre !== cleanNombre)],
@@ -1048,7 +1088,7 @@ export const createCatalogSlice = (set: any, get: any): any => ({
           marca: datos.marca,
           tipologia: datos.tipologia,
           fechaModificacion: new Date().toISOString(),
-          parametrosMueble: { ...state.parametros },
+          parametrosMueble: { ...(instPrincipal?.parametros || state.parametros) },
           pasos: pasosAClonar,
         };
         await fetch("/api/drive/manuales", {
@@ -1077,21 +1117,46 @@ export const createCatalogSlice = (set: any, get: any): any => ({
   },
 
   guardarProyectoCompleto: async () => {
-    const state = get();
-    if (!state.muebleActivoGuardado) {
+    const initialState = get();
+    if (!initialState.muebleActivoGuardado) {
       set({ modalGuardarComoAbierto: true });
       return false;
     }
 
     set({ guardandoMueble: true, guardandoManual: true });
     try {
+      // 🛡️ 0. Si hay algún debounce pendiente en vuelo, ejecutarlo y esperar su cómputo antes de serializar
+      const pendingTimers = (globalThis as any).__3bf_debounce_timers;
+      if (pendingTimers && typeof pendingTimers === "object") {
+        const pendingIds = Object.keys(pendingTimers);
+        for (const pId of pendingIds) {
+          clearTimeout(pendingTimers[pId]);
+          delete pendingTimers[pId];
+          await get().recomputarInstancia(pId);
+        }
+      }
+
+      const state = get();
+      if (!state.muebleActivoGuardado) return false;
+
       const cleanNombre = state.muebleActivoGuardado.nombre.trim();
       const safeName = cleanNombre.replace(/[\\/:*?"<>|]/g, "_");
       const id = safeName;
       const marca = state.muebleActivoGuardado.marca || "RTA Design";
       const tipologia = state.muebleActivoGuardado.tipologia || "Muebles";
-      const modelKey = state.parametros.model_id || "Cubierta";
-      const fichaConfig = state.getFichaConfig(modelKey);
+
+      // Sanitizar instancias y consolidar colecciones de diseños vivos
+      const rawInst = state.instancias || {};
+      const targetInstId = state.objetoActivoId || Object.keys(rawInst)[0];
+      const instPrincipal = targetInstId ? rawInst[targetInstId] : Object.values(rawInst)[0];
+
+      const defKey = instPrincipal?.definitionId || state.parametros.model_id || cleanNombre;
+      const fichaConfig =
+        state.fichasConfig?.[cleanNombre] ||
+        state.fichasConfig?.[id] ||
+        state.fichasConfig?.[defKey] ||
+        state.muebleActivoGuardado?.fichaConfig ||
+        state.getFichaConfig(defKey);
       const despieceGlobal = state.getDespieceGlobal();
 
       let thumbnail = state.muebleActivoGuardado.thumbnail;
@@ -1099,11 +1164,6 @@ export const createCatalogSlice = (set: any, get: any): any => ({
         const nuevoThumb = (window as any).__capturarThumbnail3BF();
         if (nuevoThumb) thumbnail = nuevoThumb;
       }
-
-      // Sanitizar instancias y consolidar colecciones de diseños vivos
-      const rawInst = state.instancias || {};
-      const targetInstId = state.objetoActivoId || Object.keys(rawInst)[0];
-      const instPrincipal = targetInstId ? rawInst[targetInstId] : Object.values(rawInst)[0];
 
       const disenosDesdeInst = (instPrincipal && Array.isArray(instPrincipal.disenos)) ? instPrincipal.disenos : [];
       const disenosDesdeMueble = Array.isArray(state.muebleActivoGuardado?.disenos) ? state.muebleActivoGuardado!.disenos! : [];
@@ -1144,6 +1204,7 @@ export const createCatalogSlice = (set: any, get: any): any => ({
         };
       }
 
+      // getFichaProductoActivo() ya sincroniza automáticamente la receta activa con instPrincipal.parametros
       const fichaActual = state.getFichaProductoActivo();
       const pasosActuales = state.pasosManual || [];
 
@@ -1175,12 +1236,14 @@ export const createCatalogSlice = (set: any, get: any): any => ({
         marca,
         tipologia,
         fechaModificacion: new Date().toISOString(),
-        parametrosMueble: { ...state.parametros },
+        parametrosMueble: { ...(instPrincipal?.parametros || state.parametros) },
         pasos: pasosActuales,
       };
 
       state.actualizarFichaProducto(cleanNombre, fichaActual);
       state.actualizarFichaProducto(id, fichaActual);
+      state.setFichaConfig(cleanNombre, fichaConfig);
+      state.setFichaConfig(id, fichaConfig);
 
       set((s) => ({
         mueblesGuardados: s.mueblesGuardados.map((m) => (m.id === state.muebleActivoGuardado!.id || m.id === id ? muebleActualizado : m)),
@@ -1193,12 +1256,15 @@ export const createCatalogSlice = (set: any, get: any): any => ({
       // Guardar .3bf.json en Drive
       try {
         const payloadDisco = sanitizarMuebleParaDisco(muebleActualizado);
-        await fetch("/api/drive/muebles", {
+        const res = await fetch("/api/drive/muebles", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ action: "save_furniture", furniture: payloadDisco }),
           signal: AbortSignal.timeout(10000),
         });
+        if (!res.ok) {
+          console.warn("[3dBimFab] Advertencia al guardar .3bf en Drive:", res.status);
+        }
       } catch (err3bf) {
         console.warn("Mueble .3bf guardado en local:", err3bf);
       }
@@ -1364,59 +1430,93 @@ export const createCatalogSlice = (set: any, get: any): any => ({
     if (!mueble) return;
 
     let targetMueble = mueble;
-    // Si el mueble proviene del listado ligero, no tiene mallas 3D en sus diseños o no tiene pasosManual completos, cargar el archivo completo de disco
-    const tieneMallasEnDisenos = !!(targetMueble.disenos && targetMueble.disenos.some((d) => d.resultado?.real_meshes && d.resultado.real_meshes.length > 0));
-    const tieneInstanciasCargadas = !!(targetMueble.instancias && Object.keys(targetMueble.instancias).length > 0);
-    const tienePasosManualCargados = !!(targetMueble.pasosManual && targetMueble.pasosManual.length > 1);
-
-    if (!tieneInstanciasCargadas || !tieneMallasEnDisenos || !tienePasosManualCargados) {
-      try {
-        const res = await fetch(`/api/drive/muebles?action=get_furniture&id=${encodeURIComponent(targetMueble.id)}`);
-        if (res.ok) {
-          const data = await res.json();
-          if (data.success && data.furniture) {
-            targetMueble = data.furniture;
-          }
+    // 🛡️ SIEMPRE consultar el archivo .3bf.json completo y fresco desde disco (sin caché de navegador)
+    // para garantizar que las modificaciones recién guardadas se carguen al 100%.
+    try {
+      const res = await fetch(
+        `/api/drive/muebles?action=get_furniture&id=${encodeURIComponent(targetMueble.id)}&_t=${Date.now()}`,
+        { cache: "no-store" }
+      );
+      if (res.ok) {
+        const data = await res.json();
+        if (data.success && data.furniture) {
+          targetMueble = data.furniture;
         }
-      } catch (err) {
-        console.error("[3dBimFab] Error cargando datos completos del mueble:", err);
       }
+    } catch (err) {
+      console.error("[3dBimFab] Error cargando datos completos del mueble desde disco, usando respaldo en memoria:", err);
     }
 
     // 1. Restaurar y sanitizar instancias en el Store (purgando cualquier duplicado persistente)
     const rawInst = targetMueble.instancias || {};
     const restoredInstancias: Record<string, ObjetoInstancia3BF> = {};
     for (const [k, v] of Object.entries(rawInst)) {
+      const cleanParams = { ...(v.parametros || {}) };
+      // Eliminar llaves sin prefijo numérico contaminadas de versiones previas para que nunca interfieran con piezas numeradas
+      delete (cleanParams as any)["canto_frontal"];
+      delete (cleanParams as any)["canto_trasero"];
+      delete (cleanParams as any)["canto_izquierdo_-_arriba"];
+      delete (cleanParams as any)["canto_derecho_-_abajo"];
+      delete (cleanParams as any)["lado_balance"];
+      delete (cleanParams as any)["mapeado"];
+
       restoredInstancias[k] = {
         ...v,
         posicion: Array.isArray(v.posicion) ? [...v.posicion] : [0, 0, 0],
         rotacion: Array.isArray(v.rotacion) ? [...v.rotacion] : [0, 0, 0],
-        parametros: { ...(v.parametros || {}) },
+        parametros: cleanParams,
         resultado: v.resultado ? purgarResultadoGeometria(v.resultado) : undefined,
         disenos: v.disenos || targetMueble.disenos || [],
         disenoActivoId: v.disenoActivoId || targetMueble.disenoActivoId || null,
       };
     }
     const firstKey = Object.keys(restoredInstancias)[0] || null;
+    const firstInst = firstKey ? restoredInstancias[firstKey] : null;
+    const cleanNombre = targetMueble.nombre.trim();
 
-    // 2. Restaurar ficha técnica y comercial si existe
+    // 2. Restaurar ficha técnica y comercial si existe (registrando bajo nombre, id y definitionId real)
     if (targetMueble.fichaConfig) {
-      const modelKey = get().parametros.model_id || "Cubierta";
-      get().setFichaConfig(modelKey, targetMueble.fichaConfig);
+      get().setFichaConfig(cleanNombre, targetMueble.fichaConfig);
+      get().setFichaConfig(targetMueble.id, targetMueble.fichaConfig);
+      if (firstInst?.definitionId) {
+        get().setFichaConfig(firstInst.definitionId, targetMueble.fichaConfig);
+      }
+      if (firstInst?.parametros?.model_id) {
+        get().setFichaConfig(String(firstInst.parametros.model_id), targetMueble.fichaConfig);
+      }
     }
-    if (targetMueble.fichaProducto) {
-      const limpiaKey = targetMueble.nombre.trim();
+
+    // 🛡️ SOBERANÍA DE INSTANCIA AL ABRIR:
+    // Sincronizar la receta de color activa de fichaProducto con los parámetros guardados en la instancia (`firstInst.parametros`)
+    // para que `aplicarRecetaColor` NUNCA sobreescriba los cantos o parámetros guardados en la instancia con valores viejos.
+    let fichaProductoSincronizada = targetMueble.fichaProducto;
+    if (fichaProductoSincronizada && firstInst?.parametros) {
+      const activeRecetaId =
+        fichaProductoSincronizada.recetaColorActivaId ||
+        fichaProductoSincronizada.recetasColor?.[0]?.id;
+      if (activeRecetaId && Array.isArray(fichaProductoSincronizada.recetasColor)) {
+        fichaProductoSincronizada = {
+          ...fichaProductoSincronizada,
+          recetaColorActivaId: activeRecetaId,
+          recetasColor: fichaProductoSincronizada.recetasColor.map((r) =>
+            r.id === activeRecetaId
+              ? { ...r, parametros: { ...firstInst.parametros } }
+              : r
+          ),
+        };
+      }
+    }
+
+    if (fichaProductoSincronizada) {
       const idKey = targetMueble.id;
       set((s) => ({
         fichasProducto: {
           ...s.fichasProducto,
-          [limpiaKey]: targetMueble.fichaProducto!,
-          [idKey]: targetMueble.fichaProducto!
+          [cleanNombre]: fichaProductoSincronizada!,
+          [idKey]: fichaProductoSincronizada!
         }
       }));
     }
-
-    const firstInst = firstKey ? restoredInstancias[firstKey] : null;
 
     set({
       instancias: restoredInstancias,
@@ -1424,6 +1524,7 @@ export const createCatalogSlice = (set: any, get: any): any => ({
       objetoSeleccionado: !!firstKey,
       muebleActivoGuardado: {
         ...targetMueble,
+        fichaProducto: fichaProductoSincronizada || targetMueble.fichaProducto,
         instancias: restoredInstancias,
         disenos: targetMueble.disenos || (firstKey ? restoredInstancias[firstKey]?.disenos : []) || [],
         disenoActivoId: targetMueble.disenoActivoId || (firstKey ? restoredInstancias[firstKey]?.disenoActivoId : null),
@@ -1442,13 +1543,12 @@ export const createCatalogSlice = (set: any, get: any): any => ({
       saveDisenosToIndexedDB(storageEntityId, coleccionDisenos).catch(() => {});
     }
 
-    // Si la ficha guardada tiene una receta activa, aplicarla
-    if (targetMueble.fichaProducto?.recetaColorActivaId) {
-      get().aplicarRecetaColor(targetMueble.nombre.trim(), targetMueble.fichaProducto.recetaColorActivaId);
+    // Si la ficha guardada tiene una receta activa, aplicarla (restaurará capas y materiales con parámetros ya sincronizados)
+    if (fichaProductoSincronizada?.recetaColorActivaId) {
+      get().aplicarRecetaColor(cleanNombre, fichaProductoSincronizada.recetaColorActivaId);
     }
 
     // 2.2 Vinculación Inteligente con el Manual 3D (.3bm)
-    const cleanNombre = targetMueble.nombre.trim();
     const manualVinculadoId = targetMueble.manualVinculadoId || `manual_${cleanNombre.toLowerCase().replace(/[^a-z0-9]/gi, "_")}`;
     
     // Asegurar que la lista de manuales en Drive esté cargada si aún está vacía

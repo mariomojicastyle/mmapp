@@ -295,7 +295,7 @@ export default function DespieceView() {
     return [...base].sort((a, b) =>
       (a.nombre || "").localeCompare(b.nombre || "", undefined, { numeric: true, sensitivity: "base" })
     );
-  }, [instancias, resultado?.despiece, getDespieceGlobal]);
+  }, [instancias, resultado?.despiece, getDespieceGlobal, modelKey]);
 
   useEffect(() => {
     if (piezasGlobales && piezasGlobales.length > 0) {
@@ -328,25 +328,25 @@ export default function DespieceView() {
 
   // Función para obtener el material asignado a cada tablero desde dbTableros
   const getMaterialParaPieza = (idx: number, espesor: number, nombre?: string): TableroRecord => {
+    const espRedondeado = Math.round(espesor);
     const cod = materialesPorPieza[idx];
     if (cod) {
       const found = dbTableros.find((t: TableroRecord) => t.codigo === cod);
-      // Blindaje DfMA: Si el material guardado era fondo (< 5mm) debido al bug previo de espesor 0,
-      // pero la pieza ahora tiene calibre estructural (>= 12mm) y no es un fondo real, reasignar al tablero correcto
-      const esFondoInvalido = found && found.calibreMm < 5 && espesor >= 12 && !nombre?.toLowerCase().includes("fondo");
-      if (found && !esFondoInvalido) return found;
+      const esFondoInvalido = found && found.calibreMm < 5 && espRedondeado >= 12 && !nombre?.toLowerCase().includes("fondo");
+      const difiereCalibre = found && espRedondeado >= 9 && Math.abs(found.calibreMm - espRedondeado) > 1.5;
+      if (found && !esFondoInvalido && !difiereCalibre) return found;
     }
     // Detección automática por calibre exacto de la pieza
-    if (espesor >= 24) {
+    if (espRedondeado >= 24) {
       return dbTableros.find((t: TableroRecord) => t.calibreMm === 25) || dbTableros[1] || dbTableros[0];
     }
-    if (espesor <= 5) {
+    if (espRedondeado <= 5) {
       return dbTableros.find((t: TableroRecord) => t.calibreMm < 5) || dbTableros.find((t: TableroRecord) => t.calibreMm === 2.7) || dbTableros[0];
     }
-    if (espesor === 18) {
+    if (espRedondeado === 18) {
       return dbTableros.find((t: TableroRecord) => t.calibreMm === 18) || dbTableros[0];
     }
-    if (espesor === 12) {
+    if (espRedondeado === 12) {
       return dbTableros.find((t: TableroRecord) => t.calibreMm === 12) || dbTableros.find((t: TableroRecord) => t.nombreComercial.includes("12mm")) || dbTableros[0];
     }
     return dbTableros.find((t: TableroRecord) => t.calibreMm === 15) || dbTableros[0];

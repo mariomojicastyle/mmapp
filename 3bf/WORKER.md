@@ -391,6 +391,23 @@ flowchart TD
    * **`RH_OUT:Tarugo`** $\rightarrow$ Capa **`Madera`** (Material Madera).
    * **`RH_OUT:MDP` / `RH_OUT:Color` / `RH_OUT:Balance`** $\rightarrow$ Capas **`MDP`**, **`Tono`** y **`Back`** (Tableros).
 
+---
 
+## 🧩 14. Arquitectura Modular del Worker Python (`3bf/worker/`) y Consolidación DfMA del Despiece
 
+Para mantener máxima velocidad de lectura, bajo consumo de tokens y separación limpia de responsabilidades, el motor Python en `c:\Desarrollo\mmapp\3bf\worker\` está dividido en **5 módulos especializados**:
 
+1. **`3bf_worker.py` (Orquestador & API FastAPI - `:8005`):**
+   * Endpoints HTTP (`/health`, `/compute`, `/export-dxf`, `/MachineInterComponents`), gestión de caché RAM con `copy.deepcopy` y comunicación con RhinoCompute (`:5000`).
+2. **`ghx_parser.py` (Analizador XML de Grasshopper):**
+   * `parse_ghx_slider_limits`, `extract_parameter_groups`, `extract_ghx_aesthetic_mapping`, `find_user_param_value`.
+3. **`mesh_builder.py` (Topología 3D & Reconstrucción de Caras):**
+   * `split_mesh_dict_into_islands` (BFS $O(V+F)$ para separar mallas unidas por `Mesh Join`), `classify_instance_tris`, `rebuild_piece_meshes`, `rebuild_fondos_meshes`, `deduplicate_real_meshes`.
+4. **`bom_engine.py` (Motor de Despiece & Herrajes DfMA):**
+   * `es_nombre_herraje`, `es_nombre_tablero`, `calcular_bom_y_despiece`.
+   * **Regla de Consolidación DfMA (Caras A/B + Tiras de Canto + Ranuras):**
+     - Las tiras de canto ($\text{ancho} \le 16.5\text{ mm}$) nunca se listan como tableros independientes; su dimensión menor no nula define el **calibre comercial exacto** (`12 mm`, `15 mm`, `18 mm`, etc.).
+     - Las dimensiones de corte ($\text{Largo} \times \text{Ancho}$) se toman del máximo envolvente 2D entre Cara A y Cara B de cada familia, absorbiendo automáticamente las divisiones por ranuras de fondo de cajón.
+     - La cantidad física de tableros de cada familia es estrictamente $\text{Cantidad} = \max(\text{Caras A completas}, \text{Caras B completas})$.
+5. **`dxf_exporter.py` (Motor CAM & Exportación DXF Biesse CIX):**
+   * `procesar_mecanizado_intercomponentes` y `generar_dxf_biesse`.

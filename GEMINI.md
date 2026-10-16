@@ -1,28 +1,16 @@
-# Protocolo de Arranque (Optimizado)
-Cada vez que iniciamos, tu primera tarea absoluta debe ser recuperar el contexto leyendo los siguientes archivos estructurados en paralelo:
+# Protocolo de Arranque Ultrarrápido (Carga por Capas / Tiered Context)
+Cada vez que iniciamos sesión (`arranque`), para maximizar la velocidad de respuesta y ahorrar más del 80% del presupuesto de tokens, tu primera tarea es leer en paralelo únicamente el **Nivel 1 (Núcleo Operativo)** junto con `git status`:
 
-- [ESTADO_DEL_PROYECTO.md](file:///c:/Desarrollo/mmapp/ESTADO_DEL_PROYECTO.md) - Memoria RAM y tareas activas.
-- [HISTORICO_DEL_PROYECTO.md](file:///c:/Desarrollo/mmapp/HISTORICO_DEL_PROYECTO.md) - Registro cronológico de hitos.
-- [MANIFIESTO_NEGOCIO.md](file:///c:/Desarrollo/mmapp/docs/MANIFIESTO_NEGOCIO.md) - GTM: Foco Comercial Manual 3D.
-- [3BF.md](file:///c:/Desarrollo/mmapp/3BF/3BF.md) - 3DBimFab: Motor de Manufactura Digital Paramétrica (Grasshopper → Web).
-- [3BF_Proceso.md](file:///c:/Desarrollo/mmapp/3BF/3BF_Proceso.md) - Flujo paramétrico, comandos de arranque /Arranque3BF e hitos 3BF.
-- [WORKER.md](file:///c:/Desarrollo/mmapp/3BF/WORKER.md) - Memoria Técnica y Estándar de Comunicación GHX ➔ Web (FastAPI/Three.js).
-- [Opti_Nesting.md](file:///c:/Desarrollo/mmapp/3BF/Opti_Nesting.md) - Motor de Nesting y Optimización de Corte (Tríada: Seccionadora, Celda CNC y Madera Maciza).
-- [manuales_proceso.md](file:///c:/Desarrollo/mmapp/Manuales/manuales_proceso.md) - Matriz de Coherencia Física, Protocolo y Proceso de Manuales de Armado 3D.
+### ⚡ Nivel 1 — Núcleo Operativo Obligatorio (Lectura Inmediata en Paralelo)
+- [ESTADO_DEL_PROYECTO.md](file:///c:/Desarrollo/mmapp/ESTADO_DEL_PROYECTO.md) *(leer solo líneas 1 a 90)* - Memoria RAM y tareas activas.
+- [3BF.md](file:///c:/Desarrollo/mmapp/3BF/3BF.md) - `3dBimFab`: Motor de Manufactura Digital Paramétrica (Grasshopper → Web).
+- [WORKER.md](file:///c:/Desarrollo/mmapp/3BF/WORKER.md) - Memoria Técnica y Arquitectura Modular GHX ➔ Web (`3bf_worker.py`, `ghx_parser.py`, `mesh_builder.py`, `bom_engine.py`, `dxf_exporter.py`).
 - [Arquitectura.md](file:///c:/Desarrollo/mmapp/Arquitectura/Arquitectura.md) - Topología del Ecosistema B2B y VPS.
-- [METRICAS.md](file:///c:/Desarrollo/mmapp/Arquitectura/METRICAS.md) - Ecosistema de Métricas y Analíticas B2B (Umami/Supabase).
-- [CRM.md](file:///c:/Desarrollo/mmapp/Comercial/CRM.md) - Diseño Relacional B2B y Árbol de Clientes (Baserow).
-- [RAM_de_ventas.md](file:///c:/Desarrollo/mmapp/Comercial/RAM_de_ventas.md) - CRM Inteligente de Prospección B2B & Outreach Copilot.
-- [ranking_empresas_rta_brasil.md](file:///c:/Desarrollo/mmapp/Comercial/ranking_empresas_rta_brasil.md) - Inteligencia de Mercado: Directorio y Tiers RTA Brasil.
-- [activos_digitales_y_redes.md](file:///c:/Desarrollo/mmapp/Comercial/activos_digitales_y_redes.md) - Gestión de Marca Personal y Redes de la Empresa.
-- [guia_copy_voz_de_marca.md](file:///c:/Desarrollo/mmapp/Comercial/guia_copy_voz_de_marca.md) - Manual de Estilo, Tono y Fórmulas de Venta B2B.
-- [Diseñador_Post.md](file:///c:/Desarrollo/mmapp/Comercial/Diseñador_Post.md) - Diseñador de Post en SVG: Plantillas y formato multipágina de Inkscape.
-- [historico_de_posts.md](file:///c:/Desarrollo/mmapp/Comercial/historico_de_posts.md) - Registro de copys publicados y métricas de rendimiento.
-- [historico_de_hashtags.md](file:///c:/Desarrollo/mmapp/Comercial/historico_de_hashtags.md) - Bitácora de hashtags y rendimiento por etiqueta.
-- [Historia_Manual.md](file:///c:/Desarrollo/mmapp/Comercial/Historia_Manual.md) - Investigación Histórica: De Thonet (1859) y Bauhaus (1926) a la Era Digital 3D.
-- [GUIA_CONFIGURACION_CAMARA.md](file:///c:/Desarrollo/mmapp/docs/GUIA_CONFIGURACION_CAMARA.md) - Captura y persistencia SQL de coordenadas 3D.
-- [reputacion_web.md](file:///c:/Desarrollo/mmapp/docs/reputacion_web.md) - Protocolo DNS (SPF/DKIM/DMARC) y disputas Antivirus.
-- [Seguridad.md](file:///c:/Desarrollo/mmapp/docs/Seguridad.md) - Protocolo de blindaje 3D (IP Shield), Cloudflare DNS, HSTS y SSL Compliance.
+
+### 🎯 Nivel 2 — Memoria Especializada Bajo Demanda (Leer SOLO cuando la tarea lo requiera)
+- **Ingeniería 3D, Nesting & Manuales:** [3BF_Proceso.md](file:///c:/Desarrollo/mmapp/3BF/3BF_Proceso.md), [Opti_Nesting.md](file:///c:/Desarrollo/mmapp/3BF/Opti_Nesting.md), [manuales_proceso.md](file:///c:/Desarrollo/mmapp/Manuales/manuales_proceso.md), [GUIA_CONFIGURACION_CAMARA.md](file:///c:/Desarrollo/mmapp/docs/GUIA_CONFIGURACION_CAMARA.md).
+- **Comercial, CRM B2B & Redes:** [RAM_de_ventas.md](file:///c:/Desarrollo/mmapp/Comercial/RAM_de_ventas.md), [CRM.md](file:///c:/Desarrollo/mmapp/Comercial/CRM.md), [ranking_empresas_rta_brasil.md](file:///c:/Desarrollo/mmapp/Comercial/ranking_empresas_rta_brasil.md), [guia_copy_voz_de_marca.md](file:///c:/Desarrollo/mmapp/Comercial/guia_copy_voz_de_marca.md), [Diseñador_Post.md](file:///c:/Desarrollo/mmapp/Comercial/Diseñador_Post.md), [historico_de_posts.md](file:///c:/Desarrollo/mmapp/Comercial/historico_de_posts.md), [historico_de_hashtags.md](file:///c:/Desarrollo/mmapp/Comercial/historico_de_hashtags.md), [activos_digitales_y_redes.md](file:///c:/Desarrollo/mmapp/Comercial/activos_digitales_y_redes.md), [Historia_Manual.md](file:///c:/Desarrollo/mmapp/Comercial/Historia_Manual.md), [MANIFIESTO_NEGOCIO.md](file:///c:/Desarrollo/mmapp/docs/MANIFIESTO_NEGOCIO.md).
+- **Cierre de Hitos (`/super-commit`), Métricas & Seguridad:** [HISTORICO_DEL_PROYECTO.md](file:///c:/Desarrollo/mmapp/HISTORICO_DEL_PROYECTO.md) *(leer solo las últimas 80 líneas al registrar un hito)*, [METRICAS.md](file:///c:/Desarrollo/mmapp/Arquitectura/METRICAS.md), [reputacion_web.md](file:///c:/Desarrollo/mmapp/docs/reputacion_web.md), [Seguridad.md](file:///c:/Desarrollo/mmapp/docs/Seguridad.md).
 
 ### ⚡ Comando Explícito `/Arranque3BF`
 Nota: El arranque general del agente (`arranque` / inicio de sesión) solo realiza la lectura y recuperación de contexto. El comando `/Arranque3BF` es una instrucción explícita que el usuario ejecutará únicamente cuando requiera poner en marcha los servicios de 3BF y las herramientas locales. Cuando el usuario invoque explícitamente `/Arranque3BF`, se deben verificar o lanzar los 5 servidores de segundo plano como Daemons (`run_command` con `IsDaemon: true`):

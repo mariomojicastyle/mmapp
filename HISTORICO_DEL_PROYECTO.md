@@ -3540,3 +3540,34 @@ Para mantener la máxima agilidad y minimizar el consumo de tokens sin perder ni
   * Todas las mallas y superficies del posterior asientan con 0 mm de holgura y alineación impecable en el visor 3D.
   * Servidores daemons (RhinoCompute 8 en :5000, 3BF Worker en :8005 con caché limpia, Web App en :3005) 100% estables.
 
+
+---
+
+### 🚀 Hito 276: Auditoría Integral de Persistencia `.3bf.json`, Acordeón Plegable en Modificador de Componentes, Consolidación DfMA del Despiece (Cara A/B + Cantos), Modularización del Worker Python en 5 Módulos y Protocolo de Arranque por Capas (16 de Octubre, 2026)
+- **1. Auditoría y Blindaje del Sistema de Guardado (`.3bf.json` / `.3bm.json` / `localStorage`)**:
+  * **Diagnóstico de Causa Raíz**:
+    1. *Hidratación Destructiva de Parámetros (`createCatalogSlice.ts`)*: Al abrir un archivo `.3bf.json` o `.3bm.json`, `abrirMueble` seleccionaba únicamente la primera instancia y sobreescribía `state.parametros` descartando llaves previas y no propagaba bidireccionalmente todas las llaves canónicas (`RH_IN:02.2 Canto Frontal` $\leftrightarrow$ `02.2_canto_frontal`).
+    2. *Bloqueo Silencioso en `guardarProyectoCompleto`*: Si `muebleActivoGuardado` era nulo al editar una instancia viva o si `rutaCarpeta` difería entre entornos, el guardado no resolvía por fallback el registro de catálogo coincidente por `definitionId` / `nombre`.
+    3. *Mutación por Referencia en Caché RAM (`3bf_worker.py` / `bom_engine.py`)*: El caché en RAM devolvía referencias directas de diccionarios de mallas sin `copy.deepcopy`, exponiendo la geometría base a mutaciones acumulativas.
+  * **Solución Implementada**:
+    - Hidratación bidireccional completa (`hidratarParametrosInstancia`) al abrir muebles y sincronización profunda con `state.instancias[id].parametros` y `state.parametros`.
+    - Resolución automática de fallback para `muebleActivoGuardado` en `guardarProyectoCompleto` y validación de escritura atómica en `app/api/catalog/save/route.ts`.
+- **2. Mejora UX en el Modificador de Componentes (`Viewer3D.tsx`)**:
+  * Incorporado botón circular colapsable (`w-6 h-6 rounded-full`) con icono `ChevronDown` en la esquina superior izquierda de cada tarjeta de grupo de parámetros en el panel *Modificador de Componentes*, idéntico al estándar visual del menú de referencia.
+  * Añadido botón maestro en la cabecera del panel para **plegar / desplegar todas las secciones** con un solo clic, optimizando el espacio vertical de trabajo.
+- **3. Consolidación Matemática DfMA del Despiece y Auto-Curación en Vivo (`bom_engine.py`, `createSceneInstanceSlice.ts`, `DespieceView.tsx`)**:
+  * **Diagnóstico**: En modelos híbridos DfMA (`Hib_C_Ravenna`), cada tablero se descompone en Cara A (`RH_OUT:<Pieza>`), Cara B (`RH_OUT:<Pieza> B`), tiras de canto (`ancho <= 16.5 mm`) y canales de mecanizado (`RH_OUT:MDP <Pieza>`). El despiece antiguo listaba las tiras de canto y franjas de ranura como filas separadas (4 filas para `Frente de cajon`, 2 para `Costado derecho`, `Tapaluz` con cantidad 1 y calibres decimales `13.1` / `12.4`). Además, el archivo `Hib_C_Ravenna.3bf.json` conservaba las 10 filas antiguas dentro de `instancias[id].resultado.despiece`.
+  * **Solución**:
+    - En `bom_engine.py` y en `getDespieceGlobal()` (`createSceneInstanceSlice.ts`), se consolidan todas las submallas por familia de pieza madre, absorbiendo las tiras de canto ($\le 16.5\text{ mm}$) para extraer el calibre nominal exacto (`12.0 mm` o `15.0 mm`), tomando las dimensiones máximas de corte ($\text{Largo} \times \text{Ancho}$) entre Cara A y Cara B, y calculando la cantidad física real mediante $\text{Cant} = \max(\text{Caras A completas}, \text{Caras B completas})$.
+    - Actualizado `instancias[id].resultado.despiece` en `Hib_C_Ravenna.3bf.json` y validada la asignación automática de tablero por calibre redondeado (`12 mm` vs `15 mm`) en `DespieceView.tsx`, obteniendo las **6 filas exactas consolidadas (24 piezas totales)** certificadas por el usuario.
+- **4. Refactorización Modular del Worker Python (`3bf/worker/`)**:
+  * Reducido `3bf_worker.py` de **3.089 líneas a 1.283 líneas (-58%)** dividiendo responsabilidades en 5 módulos cohesivos:
+    1. `3bf_worker.py` — Servidor FastAPI, endpoints HTTP, caché RAM y orquestación con RhinoCompute.
+    2. `ghx_parser.py` — Parseo XML de `.ghx`, límites de sliders, Value Lists, grupos de parámetros y mapeo estético.
+    3. `mesh_builder.py` — Descomposición topológica en islas (`split_mesh_dict_into_islands`), reconstrucción de caras A/B/cantos y deduplicación DfMA.
+    4. `bom_engine.py` — Clasificador geométrico positivo de herrajes/tableros y motor consolidado `calcular_bom_y_despiece`.
+    5. `dxf_exporter.py` — Mecanizado inter-componente y generador DXF Biesse CIX.
+- **5. Optimización del Protocolo de Arranque por Capas (`SKILL.md`, `GEMINI.md`, `AGENTS.md`)**:
+  * Implementado **Tiered Context Loading**: Nivel 1 (Núcleo Obligatorio de 4 archivos leídos en paralelo al arrancar: `ESTADO_DEL_PROYECTO.md`, `3BF.md`, `WORKER.md`, `Arquitectura.md`) y Nivel 2 (18 archivos especializados bajo demanda según el dominio de la tarea), ahorrando más del **80% de tokens** en cada inicio de sesión.
+- **Validación de Calidad**:
+  * `npx tsc --noEmit` en `3bf` con **0 errores**. Worker modularizado activo en `:8005` y verificado por el usuario.

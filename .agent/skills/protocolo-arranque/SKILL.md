@@ -1,42 +1,47 @@
 ---
 name: protocolo-arranque
 description: >-
-  Protocolo de Arranque y recuperacion de memoria activa del ecosistema Mario Mojica (3DBimFab, Plataforma B2B, CRM y RAM de Ventas).
-  Activa esta habilidad SIEMPRE que el usuario diga 'arranque', 'protocolo de arranque', 'arrancar', 'iniciar sesion', 'recuperar contexto' o al inicio de cualquier sesion de trabajo.
+  Protocolo de Arranque Ultrarrápido (Tiered Context Loading) y recuperación de memoria activa del ecosistema Mario Mojica (3dBimFab, Plataforma B2B, CRM y RAM de Ventas).
+  Activa esta habilidad SIEMPRE que el usuario diga 'arranque', 'protocolo de arranque', 'arrancar', 'iniciar sesion', 'recuperar contexto' o al inicio de cualquier sesión de trabajo.
 ---
 
-# Protocolo de Arranque Oficial (Ecosistema Mario Mojica)
+# Protocolo de Arranque Oficial Optimizado (Tiered Context Loading)
 
-Cada vez que el usuario escriba **'arranque'**, **'protocolo de arranque'** o inicie una nueva sesion, tu **primera tarea absoluta e ineludible** es recuperar el contexto completo leyendo en paralelo los siguientes 21 archivos estructurados del proyecto ubicados en c:\Desarrollo\mmapp:
+Para garantizar un arranque instantáneo (`< 3 segundos`) y ahorrar más del **80% de la ventana de tokens** en cada sesión, la recuperación de memoria opera en **2 Niveles (Núcleo + Carga Bajo Demanda)**:
 
-## 📚 Lista de Archivos Estructurados Obligatorios a Leer:
-1. c:\Desarrollo\mmapp\ESTADO_DEL_PROYECTO.md - Memoria RAM y tareas activas inmediatas.
-2. c:\Desarrollo\mmapp\HISTORICO_DEL_PROYECTO.md - Registro cronologico de hitos (Regla de oro: lo mas reciente al final, nunca borrar).
-3. c:\Desarrollo\mmapp\docs\MANIFIESTO_NEGOCIO.md - GTM: Foco Comercial Manual 3D y Software de Manufactura 4.0.
-4. c:\Desarrollo\mmapp\3BF\3BF.md - 3DBimFab: Motor de Manufactura Digital Parametrica (Grasshopper -> Web).
-5. c:\Desarrollo\mmapp\3BF\3BF_Proceso.md - Flujo parametrico, comandos de arranque /Arranque3BF e hitos 3BF.
-6. c:\Desarrollo\mmapp\3BF\WORKER.md - Memoria Tecnica y Estandar de Comunicacion GHX -> Web (FastAPI/Three.js).
-7. c:\Desarrollo\mmapp\3BF\Opti_Nesting.md - Motor de Nesting y Optimizacion de Corte Industrial (Seccionadora, Celda CNC y Madera Maciza).
-8. c:\Desarrollo\mmapp\Manuales\manuales_proceso.md - Matriz de Coherencia Fisica, Protocolo y Proceso de Manuales de Armado 3D.
-9. c:\Desarrollo\mmapp\Arquitectura\Arquitectura.md - Topologia del Ecosistema B2B, Hetzner VPS y Google Drive.
-10. c:\Desarrollo\mmapp\Arquitectura\METRICAS.md - Ecosistema de Metricas y Analiticas B2B (Umami/Supabase).
-11. c:\Desarrollo\mmapp\Comercial\CRM.md - Diseno Relacional B2B y Arbol de Clientes (Baserow).
-12. c:\Desarrollo\mmapp\Comercial\RAM_de_ventas.md - CRM Inteligente de Prospeccion B2B & Outreach Copilot.
-13. c:\Desarrollo\mmapp\Comercial\ranking_empresas_rta_brasil.md - Inteligencia de Mercado: Directorio y Tiers RTA Brasil.
-14. c:\Desarrollo\mmapp\Comercial\activos_digitales_y_redes.md - Gestion de Marca Personal y Redes de la Empresa.
-15. c:\Desarrollo\mmapp\Comercial\guia_copy_voz_de_marca.md - Manual de Estilo, Tono y Formulas de Venta B2B.
-16. c:\Desarrollo\mmapp\Comercial\Disenador_Post.md - Disenador de Post en SVG: Plantillas y formato multipagina de Inkscape.
-17. c:\Desarrollo\mmapp\Comercial\historico_de_posts.md - Registro de copys publicados y metricas de rendimiento.
-18. c:\Desarrollo\mmapp\Comercial\historico_de_hashtags.md - Bitacora de hashtags y rendimiento por etiqueta.
-19. c:\Desarrollo\mmapp\Comercial\Historia_Manual.md - Investigacion Historica: De Thonet (1859) y Bauhaus (1926) a la Era Digital 3D.
-20. c:\Desarrollo\mmapp\docs\GUIA_CONFIGURACION_CAMARA.md - Captura y persistencia SQL de coordenadas 3D.
-21. c:\Desarrollo\mmapp\docs\reputacion_web.md - Protocolo DNS (SPF/DKIM/DMARC) y disputas Antivirus.
-22. c:\Desarrollo\mmapp\docs\Seguridad.md - Protocolo de blindaje 3D (IP Shield), Cloudflare DNS, HSTS y SSL Compliance.
+## ⚡ Nivel 1: Núcleo Obligatorio de Arranque (Leer SIEMPRE en paralelo al iniciar)
+1. `c:\Desarrollo\mmapp\ESTADO_DEL_PROYECTO.md` *(leer SOLO `StartLine: 1, EndLine: 90` — contiene el estado activo y los últimos hitos sin cargar los 2.400 renglones históricos)* — Memoria RAM y tareas activas inmediatas.
+2. `c:\Desarrollo\mmapp\3BF\3BF.md` — `3dBimFab`: Motor de Manufactura Digital Paramétrica (Grasshopper → Web).
+3. `c:\Desarrollo\mmapp\3BF\WORKER.md` — Memoria Técnica y arquitectura modular del Worker Python (`3bf_worker.py`, `ghx_parser.py`, `mesh_builder.py`, `bom_engine.py`, `dxf_exporter.py`).
+4. `c:\Desarrollo\mmapp\Arquitectura\Arquitectura.md` — Topología del Ecosistema B2B, Hetzner VPS y Google Drive.
 
-## ⚙️ Pasos de Ejecucion Obligatorios:
-1. **Ejecutar iew_file en paralelo** para leer los archivos estructurados.
-2. **Ejecutar git status** en c:\Desarrollo\mmapp para verificar la rama activa y el arbol de trabajo.
-3. **Emitir al usuario un informe estructurado** que contenga:
-   - Estado de la Sesion & Entorno (Rama Git, Ultimo hito, Estilo visual Tech Ethos).
-   - Lista explicita y confirmacion con checks (✅) de los 20 archivos leidos con una breve linea descriptiva del contexto cargado.
-   - Preguntar proactivamente el objetivo de la sesion.
+## 🎯 Nivel 2: Carga Bajo Demanda (Leer SOLO cuando la tarea del usuario toque ese dominio)
+- **Dominio Ingeniería 3D, Nesting o Manuales:**
+  - `c:\Desarrollo\mmapp\3BF\3BF_Proceso.md`
+  - `c:\Desarrollo\mmapp\3BF\Opti_Nesting.md`
+  - `c:\Desarrollo\mmapp\Manuales\manuales_proceso.md`
+  - `c:\Desarrollo\mmapp\docs\GUIA_CONFIGURACION_CAMARA.md`
+- **Dominio Comercial, CRM B2B, Copywriting o Redes:**
+  - `c:\Desarrollo\mmapp\Comercial\RAM_de_ventas.md`
+  - `c:\Desarrollo\mmapp\Comercial\CRM.md`
+  - `c:\Desarrollo\mmapp\Comercial\ranking_empresas_rta_brasil.md`
+  - `c:\Desarrollo\mmapp\Comercial\guia_copy_voz_de_marca.md`
+  - `c:\Desarrollo\mmapp\Comercial\Diseñador_Post.md`
+  - `c:\Desarrollo\mmapp\Comercial\historico_de_posts.md`
+  - `c:\Desarrollo\mmapp\Comercial\historico_de_hashtags.md`
+  - `c:\Desarrollo\mmapp\Comercial\activos_digitales_y_redes.md`
+  - `c:\Desarrollo\mmapp\Comercial\Historia_Manual.md`
+  - `c:\Desarrollo\mmapp\docs\MANIFIESTO_NEGOCIO.md`
+- **Dominio Git Flow (`/super-commit`), Analíticas o Seguridad:**
+  - `c:\Desarrollo\mmapp\HISTORICO_DEL_PROYECTO.md` *(leer solo el tramo final para agregar nuevos hitos)*
+  - `c:\Desarrollo\mmapp\Arquitectura\METRICAS.md`
+  - `c:\Desarrollo\mmapp\docs\reputacion_web.md`
+  - `c:\Desarrollo\mmapp\docs\Seguridad.md`
+
+## ⚙️ Pasos de Ejecución Obligatorios en el Arranque:
+1. **Ejecutar `view_file` en paralelo** para los **4 archivos del Nivel 1** (más cualquier archivo del Nivel 2 únicamente si el usuario ya especificó una tarea concreta de ese dominio en el mismo mensaje).
+2. **Ejecutar `git status`** en `c:\Desarrollo\mmapp` en la misma tanda paralela para verificar la rama activa.
+3. **Emitir un informe ejecutivo conciso** indicando:
+   - Rama Git activa y último hito en curso.
+   - Confirmación de carga del Núcleo de Nivel 1 (y disponibilidad bajo demanda del Nivel 2).
+   - Si el usuario invocó explícitamente `/Arranque3BF`, verificar o lanzar los Daemons correspondientes.

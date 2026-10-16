@@ -2,7 +2,7 @@
 
 import React, { useEffect } from "react";
 import { use3BFStore } from "@/lib/store";
-import { Sliders, Box, Layers, Palette, Cpu, CheckCircle2, AlertCircle, Camera, Check, RotateCw, MousePointerClick } from "lucide-react";
+import { Sliders, Box, Layers, Palette, Cpu, CheckCircle2, AlertCircle, Camera, Check, RotateCw, MousePointerClick, ChevronDown } from "lucide-react";
 import { MemoryPosesLED } from "./MemoryPosesLED";
 
 // =========================================================================
@@ -311,6 +311,7 @@ function RenderParamControl({ paramKey }: { paramKey: string }) {
 // Panel de Parámetros Dinámico Autónomo (Sólo visible cuando hay un archivo cargado con grupos reales)
 function ParametrosPanel() {
   const { parametros, resultado, coloresApariencia, objetoActivoId, instancias } = use3BFStore();
+  const [gruposColapsados, setGruposColapsados] = React.useState<Record<string, boolean>>({});
   const activeId = objetoActivoId || Object.keys(instancias || {})[0] || null;
   const instanciaActiva = activeId ? instancias[activeId] : null;
   const currentResult = instanciaActiva ? instanciaActiva.resultado : resultado;
@@ -326,41 +327,75 @@ function ParametrosPanel() {
 
   return (
     <div className="flex flex-col gap-2 lg:gap-3.5">
-      {groups.map((grp: { title: string; parameters: string[] }, idx: number) => (
-        <div 
-          key={`group-${idx}`} 
-          style={{ 
-            borderColor: coloresApariencia?.insigniaFondo || coloresApariencia?.bordePaneles,
-            backgroundColor: coloresApariencia?.fondoPaneles ? `${coloresApariencia.fondoPaneles}80` : undefined
-          }}
-          className="flex flex-col gap-1.5 lg:gap-3 p-2 lg:p-3 rounded-xl border shadow-2xs lg:shadow-sm"
-        >
+      {groups.map((grp: { title: string; parameters: string[] }, idx: number) => {
+        const groupKey = grp.title || `group-${idx}`;
+        const estaColapsado = !!gruposColapsados[groupKey];
+
+        const toggleColapsoGrupo = () => {
+          setGruposColapsados((prev) => ({
+            ...prev,
+            [groupKey]: !prev[groupKey],
+          }));
+        };
+
+        return (
           <div 
+            key={`group-${idx}`} 
             style={{ 
               borderColor: coloresApariencia?.insigniaFondo || coloresApariencia?.bordePaneles,
-              color: coloresApariencia?.textoPrincipal 
+              backgroundColor: coloresApariencia?.fondoPaneles ? `${coloresApariencia.fondoPaneles}80` : undefined
             }}
-            className="text-[10.5px] lg:text-xs font-extrabold flex items-center gap-1.5 pb-1 lg:pb-1.5 border-b"
+            className="flex flex-col gap-1.5 lg:gap-3 p-2 lg:p-3 rounded-xl border shadow-2xs lg:shadow-sm transition-all duration-200"
           >
-            <Box 
-              style={{ color: coloresApariencia?.botonActivo || "#0891b2" }} 
-              className="w-3.5 lg:w-4 h-3.5 lg:h-4 shrink-0" 
-            />
-            <span>{grp.title}</span>
-          </div>
+            <div 
+              onClick={toggleColapsoGrupo}
+              style={{ 
+                borderColor: coloresApariencia?.insigniaFondo || coloresApariencia?.bordePaneles,
+                color: coloresApariencia?.textoPrincipal 
+              }}
+              className={`text-[10.5px] lg:text-xs font-extrabold flex items-center gap-1.5 cursor-pointer select-none ${
+                !estaColapsado ? "pb-1 lg:pb-1.5 border-b" : ""
+              }`}
+            >
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  toggleColapsoGrupo();
+                }}
+                title={estaColapsado ? `Expandir ${grp.title}` : `Retraer ${grp.title}`}
+                className="w-5 h-5 rounded-full flex items-center justify-center shrink-0 transition-all duration-300 hover:scale-110 shadow-2xs cursor-pointer border border-cyan-500/40 bg-cyan-500/10 text-cyan-700 dark:text-cyan-300"
+              >
+                <ChevronDown
+                  className={`w-3.5 h-3.5 transition-transform duration-300 ${
+                    estaColapsado ? "-rotate-180" : "rotate-0"
+                  }`}
+                />
+              </button>
+              <Box 
+                style={{ color: coloresApariencia?.botonActivo || "#0891b2" }} 
+                className="w-3.5 lg:w-4 h-3.5 lg:h-4 shrink-0" 
+              />
+              <span className="truncate">{grp.title}</span>
+            </div>
 
-          <div className="flex flex-col gap-1 lg:gap-2">
-            {grp.parameters.map((pKey: string) => (
-              <RenderParamControl key={pKey} paramKey={pKey} />
-            ))}
-          </div>
+            {!estaColapsado && (
+              <>
+                <div className="flex flex-col gap-1 lg:gap-2">
+                  {grp.parameters.map((pKey: string) => (
+                    <RenderParamControl key={pKey} paramKey={pKey} />
+                  ))}
+                </div>
 
-          {/* Ranuras de Memoria de Dimensiones con LEDs estilo Poser */}
-          {(idx === 0 || grp.title.toLowerCase().includes("dimen") || grp.title.toLowerCase().includes("principal")) && (
-            <MemoryPosesLED groupParameters={grp.parameters} />
-          )}
-        </div>
-      ))}
+                {/* Ranuras de Memoria de Dimensiones con LEDs estilo Poser */}
+                {(idx === 0 || grp.title.toLowerCase().includes("dimen") || grp.title.toLowerCase().includes("principal")) && (
+                  <MemoryPosesLED groupParameters={grp.parameters} />
+                )}
+              </>
+            )}
+          </div>
+        );
+      })}
     </div>
   );
 }

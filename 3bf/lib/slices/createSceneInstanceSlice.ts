@@ -288,14 +288,50 @@ export const createSceneInstanceSlice = (set: any, get: any): any => ({
     }
 
     // Actualización inmediata del estado local (UI a 60 FPS ultra fluida) e inicio de sincronización
-    set((s: any) => ({
-      instancias: {
+    set((s: any) => {
+      const updatedInst = { ...s.instancias[id], parametros: nextParams, cargando: true };
+      const nuevasInstancias = {
         ...s.instancias,
-        [id]: { ...s.instancias[id], parametros: nextParams, cargando: true },
-      },
-      parametros: s.objetoActivoId === id ? (nextParams as any) : s.parametros,
-      cargando: true,
-    }));
+        [id]: updatedInst,
+      };
+
+      // 🔗 Sincronizar en tiempo real muebleActivoGuardado y la receta de color activa para evitar pérdidas al guardar o reabrir
+      let nuevoMuebleActivo = s.muebleActivoGuardado;
+      let nuevasFichas = s.fichasProducto;
+      if (nuevoMuebleActivo) {
+        let fichaSync = nuevoMuebleActivo.fichaProducto;
+        if (fichaSync && Array.isArray(fichaSync.recetasColor) && fichaSync.recetasColor.length > 0) {
+          const activeRecetaId = fichaSync.recetaColorActivaId || fichaSync.recetasColor[0].id;
+          fichaSync = {
+            ...fichaSync,
+            recetasColor: fichaSync.recetasColor.map((r: any) =>
+              r.id === activeRecetaId ? { ...r, parametros: { ...nextParams } } : r
+            ),
+          };
+          const cleanName = nuevoMuebleActivo.nombre?.trim();
+          if (cleanName || nuevoMuebleActivo.id) {
+            nuevasFichas = {
+              ...s.fichasProducto,
+              ...(cleanName ? { [cleanName]: fichaSync } : {}),
+              ...(nuevoMuebleActivo.id ? { [nuevoMuebleActivo.id]: fichaSync } : {}),
+            };
+          }
+        }
+        nuevoMuebleActivo = {
+          ...nuevoMuebleActivo,
+          instancias: nuevasInstancias,
+          ...(fichaSync ? { fichaProducto: fichaSync } : {}),
+        };
+      }
+
+      return {
+        instancias: nuevasInstancias,
+        muebleActivoGuardado: nuevoMuebleActivo,
+        fichasProducto: nuevasFichas,
+        parametros: s.objetoActivoId === id ? (nextParams as any) : s.parametros,
+        cargando: true,
+      };
+    });
 
     // 🛡️ BLINDAJE ESTRICTO: Solo si estamos en pestaña Manual 3D Y con Picking activo se suspende el cómputo automático
     if (state.pestanaActiva === "manual" && state.modoPickingManual?.activo) {
@@ -541,8 +577,11 @@ export const createSceneInstanceSlice = (set: any, get: any): any => ({
           // Conservar valores que el usuario ya modificó, y agregar ÚNICAMENTE los nuevos parámetros que no existían
           Object.entries(meta.default_values).forEach(([k, v]) => {
             const cleanKey = k.replace("RH_IN:", "").toLowerCase().replace(/\s+/g, "_");
-            const pureKey = k.replace(/^RH_IN:\s*/i, "").replace(/^[\d.]+[_\s]*/, "").toLowerCase().replace(/\s+/g, "_");
-            const legacyKey = (MAPA_PARAMETROS as any)[k];
+            const isGlobalStructural = /ancho|alto|altura|profundidad|prof|zocalo|ritmo|apertur/i.test(k);
+            const pureKey = isGlobalStructural
+              ? k.replace(/^RH_IN:\s*/i, "").replace(/^[\d.]+[_\s]*/, "").toLowerCase().replace(/\s+/g, "_")
+              : "";
+            const legacyKey = isGlobalStructural ? (MAPA_PARAMETROS as any)[k] : undefined;
 
             const yaExiste = (k in updatedParams) || 
                              (cleanKey in updatedParams) || 
@@ -715,14 +754,118 @@ export const createSceneInstanceSlice = (set: any, get: any): any => ({
   getDespieceGlobal: () => {
     const state = get();
     const list: Array<PiezaDespiece & { instanciaNombre: string; instanciaId: string; descripcion: string }> = [];
+    const CALIBRES_COMERCIALES = [3, 4, 6, 9, 12, 15, 18, 25, 30, 36];
+    const snapCalibre = (v: number) => {
+      for (const c of CALIBRES_COMERCIALES) {
+        if (Math.abs(v - c) <= 1.6) return c;
+      }
+      return Math.round(v * 10) / 10;
+    };
+
     Object.values(state.instancias).forEach((inst: any) => {
       // Blindaje de recuperación: Si el nombre del mueble fue accidentalmente corrompido con el nombre de una pieza, restaurarlo
       if (inst.nombreVisible && /lateral ezquiers/i.test(inst.nombreVisible)) {
         inst.nombreVisible = inst.definitionId || "Cómoda Ravenna";
       }
 
-      if (inst.resultado?.despiece) {
-        inst.resultado.despiece.forEach((p: any) => {
+      const rawDespiece: any[] = inst.resultado?.despiece || [];
+      const realMeshes: any[] = inst.resultado?.real_meshes || [];
+
+      // Detectar si el despiece en memoria proviene de una versión previa fragmentada (nombres duplicados, cantos <= 16.5mm o espesores decimales 13.1/12.4)
+      const nombresVistos = new Set<string>();
+      let requiereSaneamiento = false;
+      for (const p of rawDespiece) {
+        const nom = (extraerPiezaMadre(p.nombre) || p.nombre || "").trim().toLowerCase();
+        if (nombresVistos.has(nom)) requiereSaneamiento = true;
+        nombresVistos.add(nom);
+        if (Number(p.ancho) <= 16.5 || !Number.isInteger(Number(p.espesor))) {
+          requiereSaneamiento = true;
+        }
+        if (nom === "tapaluz" && Number(p.cantidad) === 1 && realMeshes.length > 0) {
+          requiereSaneamiento = true;
+        }
+      }
+
+      let despieceEfectivo = rawDespiece;
+
+      if (requiereSaneamiento && realMeshes.length > 0) {
+        const familias = new Map<string, {
+          nombreDisplay: string;
+          carasA: Array<[number, number]>;
+          carasB: Array<[number, number]>;
+          calibresCanto: number[];
+        }>();
+
+        realMeshes.forEach((m: any) => {
+          if (!m || m.es_duplicado_ghx) return;
+          const rawName = String(m.name || "").replace(/^RH_OUT:\s*/i, "").trim();
+          if (!rawName || /maquinado|perforad|cavilha|tarugo|parafuso|tornillo|minifix|corredi|cantoneira|prego|sapata|puxador|tampa/i.test(rawName)) {
+            return;
+          }
+          const isMdp = /^(mdp|mdf)\s+/i.test(rawName);
+          const isCaraB = !isMdp && (/\s+b$/i.test(rawName) || /^balance\s+/i.test(rawName));
+          let clean = rawName
+            .replace(/^(mdp|mdf|color|balance|nurbs|brep)\s+/i, "")
+            .replace(/[\s_]+b$/i, "")
+            .trim();
+          if (!clean) return;
+          const nombreMadre = extraerPiezaMadre(clean) || (clean.charAt(0).toUpperCase() + clean.slice(1).toLowerCase());
+          const key = nombreMadre.toLowerCase();
+
+          const sz = Array.isArray(m.size) && m.size.length === 3 ? m.size : [0, 0, 0];
+          const dims = [Math.abs(Number(sz[0]) || 0) * 1000, Math.abs(Number(sz[1]) || 0) * 1000, Math.abs(Number(sz[2]) || 0) * 1000].sort((a, b) => a - b);
+          const [dMin, dMid, dMax] = dims;
+          if (dMax < 35) return; // descartar cilindros de perforación
+
+          if (!familias.has(key)) {
+            familias.set(key, { nombreDisplay: nombreMadre, carasA: [], carasB: [], calibresCanto: [] });
+          }
+          const fam = familias.get(key)!;
+
+          // Tira de canto / espesor lateral (ej. 865 x 12 x 0 o 221 x 15 x 0)
+          if (dMid >= 8.0 && dMid <= 16.5 && dMin < 2.5) {
+            fam.calibresCanto.push(snapCalibre(dMid));
+          } else if (!isMdp && dMid > 16.5) {
+            if (isCaraB) {
+              fam.carasB.push([dMax, dMid]);
+            } else {
+              fam.carasA.push([dMax, dMid]);
+            }
+          }
+        });
+
+        const reconstruido: any[] = [];
+        familias.forEach((fam) => {
+          const todasCaras = [...fam.carasA, ...fam.carasB];
+          if (todasCaras.length === 0) return;
+          const maxLargo = Math.round(Math.max(...todasCaras.map((c) => c[0])) * 10) / 10;
+          const maxAncho = Math.round(Math.max(...todasCaras.map((c) => c[1])) * 10) / 10;
+          const countFullA = fam.carasA.filter(([l, a]) => Math.abs(l - maxLargo) <= Math.max(2, maxLargo * 0.03) && Math.abs(a - maxAncho) <= Math.max(2, maxAncho * 0.05)).length;
+          const countFullB = fam.carasB.filter(([l, a]) => Math.abs(l - maxLargo) <= Math.max(2, maxLargo * 0.03) && Math.abs(a - maxAncho) <= Math.max(2, maxAncho * 0.05)).length;
+          const cantidad = Math.max(1, countFullA, countFullB);
+          const espesor = fam.calibresCanto.length > 0 ? fam.calibresCanto[0] : 15;
+          const prev = rawDespiece.find((r: any) => (extraerPiezaMadre(r.nombre) || r.nombre || "").trim().toLowerCase() === fam.nombreDisplay.toLowerCase()) || {};
+
+          reconstruido.push({
+            ...prev,
+            nombre: fam.nombreDisplay,
+            descripcion: prev.descripcion && prev.descripcion !== prev.nombre ? prev.descripcion : fam.nombreDisplay,
+            largo: maxLargo,
+            ancho: maxAncho,
+            espesor,
+            cantidad,
+            area_m2: Math.round(((maxLargo * maxAncho) / 1_000_000) * cantidad * 1000) / 1000,
+          });
+        });
+
+        if (reconstruido.length > 0) {
+          despieceEfectivo = reconstruido;
+          inst.resultado.despiece = reconstruido;
+        }
+      }
+
+      if (despieceEfectivo) {
+        despieceEfectivo.forEach((p: any) => {
           const nombreNormalizado = extraerPiezaMadre(p.nombre) || p.nombre;
           list.push({
             ...p,
@@ -957,21 +1100,24 @@ export const createSceneInstanceSlice = (set: any, get: any): any => ({
     Object.entries(diseno.valores || {}).forEach(([pKey, val]) => {
       const cleanKey = pKey.replace("RH_IN:", "").toLowerCase().replace(/\s+/g, "_");
       nextParams[cleanKey] = val;
-      const pureKey = pKey.replace(/^RH_IN:\s*/i, "").replace(/^[\d.]+[_\s]*/, "").toLowerCase().replace(/\s+/g, "_");
-      if (pureKey) nextParams[pureKey] = val;
-      const legacyKey = (MAPA_PARAMETROS as any)[pKey];
-      if (legacyKey) nextParams[legacyKey] = val;
+      const isGlobalStructural = /ancho|alto|altura|profundidad|prof|zocalo|ritmo|apertur/i.test(pKey);
+      if (isGlobalStructural) {
+        const pureKey = pKey.replace(/^RH_IN:\s*/i, "").replace(/^[\d.]+[_\s]*/, "").toLowerCase().replace(/\s+/g, "_");
+        if (pureKey) nextParams[pureKey] = val;
+        const legacyKey = (MAPA_PARAMETROS as any)[pKey];
+        if (legacyKey) nextParams[legacyKey] = val;
 
-      const normTarget = (pureKey || cleanKey).replace(/^[\d.]+[_\s]*/, "").replace(/[_\s]+/g, "_").trim();
-      const normKey = pKey.toLowerCase();
-      if (normTarget.includes("ancho") || normKey.includes("01.0") || normKey.includes("ancho")) {
-        nextParams["ancho"] = typeof val === "number" ? val : (Number(val) || val);
-      }
-      if (normTarget.includes("alto") || normTarget.includes("altura") || normKey.includes("01.1") || normKey.includes("alto")) {
-        nextParams["alto"] = typeof val === "number" ? val : (Number(val) || val);
-      }
-      if (normTarget.includes("profundidad") || normTarget.includes("prof") || normKey.includes("01.2") || normKey.includes("profundidad")) {
-        nextParams["profundidad"] = typeof val === "number" ? val : (Number(val) || val);
+        const normTarget = (pureKey || cleanKey).replace(/^[\d.]+[_\s]*/, "").replace(/[_\s]+/g, "_").trim();
+        const normKey = pKey.toLowerCase();
+        if (normTarget.includes("ancho") || normKey.includes("01.0") || normKey.includes("ancho")) {
+          nextParams["ancho"] = typeof val === "number" ? val : (Number(val) || val);
+        }
+        if (normTarget.includes("alto") || normTarget.includes("altura") || normKey.includes("01.1") || normKey.includes("alto")) {
+          nextParams["alto"] = typeof val === "number" ? val : (Number(val) || val);
+        }
+        if (normTarget.includes("profundidad") || normTarget.includes("prof") || normKey.includes("01.2") || normKey.includes("profundidad")) {
+          nextParams["profundidad"] = typeof val === "number" ? val : (Number(val) || val);
+        }
       }
     });
 
