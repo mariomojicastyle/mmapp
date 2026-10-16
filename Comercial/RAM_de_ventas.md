@@ -128,6 +128,8 @@ Para evitar respuestas genéricas, el RAM de ventas almacena y cruza 5 dimension
 | **Bertolini Móveis** | Aline Maria Nunes | Marketing B2B & Eventos | Diferencial audiovisual en ferias, pantallas interactivas, posventa y manuales 3D | 🔥 Solicitud de Presentación / Muy Caliente | 30 Sep 2026 - Aceptó InMail y solicitó presentación a su e-mail (`aline.nunes@bertolini.com.br`) | Enviar presentación ejecutiva en PDF al e-mail corporativo y confirmar por LinkedIn/WhatsApp |
 | **Maderkit** | Don Juan José | Presidencia / Junta Directiva | Paquete Full de Diseño y Entrega Técnica (Diseño de producto + Planos/CNC para máquinas + Manuales de Armado 3D interactivos). Outsourcing de alta eficiencia sin fricción interna | 🔥 ¡Reunión Agendada! / Viernes 16 Oct 19:00 COL (17 Oct 09:00 Japón) | 10 Oct 2026 - Don Juan José propuso cita desde su crucero en Japón para Octubre 16 a las 7:00 pm Colombia (Octubre 17 9:00 am Japón). Enfoque 100% en producto terminado y paquete completo de fabricación | Enviar enlace de Google Meet para Viernes 16 Octubre 7:00 pm COL |
 | **Olivar Móveis** | Helder Lanzoni | Olivar Móveis | Manuales 3D interactivos, reducción de garantías y asistencia técnica en RTA | 🟡 Prospecto Activo / Tibio | 08 Oct 2026 - Registrado en Baserow (Lead ID 362, Empresa ID 82) | Enviar invitación personalizada en LinkedIn con foco en RTA |
+| **Bortolini Group** | Lucas Bortolini & Sidinei Luis Sbeghen | Diretor Industrial / Gerente P&D (Estúdio ID) | Cuello de botella en ingeniería y programación de máquinas CNC. Vacantes activas en Garibaldi | 🔥 Prospección Estratégica / Muy Caliente | 14 Oct 2026 - Detección de vacante urgente de Analista de Engenharia y Programador CNC en LinkedIn. Mapeo de Lucas (Dir. Industrial) y Sidinei (Gerente P&D) | Disparar WhatsApp al (54) 99939 5582 y conectar con Lucas Bortolini y Sidinei Sbeghen en LinkedIn |
+| **CE3D (Deep Tech / Óptica 3D)** | Ivan Ivaldo Gonzalez Ayala | Founder & Principal Inventor | Arquitectura de software, procesamiento geométrico 6DoF y optimización para manufactura/robótica | 🔥 Inbound Caliente / Alianza & Codesarrollo | 15 Oct 2026 - Ivan contactó directamente a Mario tras auditar su perfil. Busca escalar su tecnología patentada a nivel de software industrial | Agendar videollamada de intercambio técnico y sinergia |
 
 
 ---
@@ -378,6 +380,42 @@ Para evitar respuestas genéricas, el RAM de ventas almacena y cruza 5 dimension
   * *30 Septiembre 2026:* Mario responde por LinkedIn confirmando el envío inmediato de la presentación ejecutiva en PDF y enlaces 3D al correo corporativo, y facilitando su WhatsApp directo (`+57 311 764 6907`).
 - **Estado Actual:** 🔥 **MUY CALIENTE / SOLICITUD FORMAL DE PRESENTACIÓN RECIBIDA.**
 - **Próxima Jugada:** Enviar correo corporativo formal a `aline.nunes@bertolini.com.br` con el dossier ejecutivo y enlaces de prueba móvil, avisándole por LinkedIn para consolidar el contacto.
+
+---
+
+### 🟢 15. Bortolini Group (Bortolini Móveis Corporativos - Garibaldi, RS)
+- **Empresa:** Bortolini Indústria de Móveis Ltda (Bortolini Group) — RST 453, KM 90, Rota do Sol, Garibaldi, RS. Referencia en mobiliario corporativo, puestos de trabajo, divisiones y almacenamiento para oficinas en la Serra Gaúcha (polo Garibaldi / Bento Gonçalves / Carlos Barbosa).
+- **Contactos Clave Mapeados:**
+  * **Lucas Bortolini:** Diretor Industrial (`https://www.linkedin.com/in/lucas-bortolini-548a86132/`). Líder de planta, procesos verticalizados y tecnología industrial (Baserow ID 363).
+  * **Sidinei Luis Sbeghen:** Gerente de Projetos, Pesquisa e Desenvolvimento / Designer de Produtos e Coordenador do Estúdio ID (`https://www.linkedin.com/in/sidinei-luis-sbeghen-18092162/`). Más de 44 años en Bortolini; comenzó en 1982 como auxiliar de producción, montador y PROGRAMADOR CNC (Baserow ID 364).
+  * **Marcos Barella:** Desenhista Projetista Móveis (`https://www.linkedin.com/in/marcos-barella-663502182/`). ¡PUENTE B2B DE ORO! Ex-Coordenador de Engenharia en Politorno Móveis durante más de 10 años (may. 2023 - abr. 2026), relación directa con Marcelo Novo y Ricardo (Baserow ID 367).
+  * **Cleber Bassani:** Coordenação de Projetos & Desenvolvimento de Produto (`https://www.linkedin.com/in/cleber-bassani-1a2743b6/`). 25 años de experiencia técnica en el sector de mobiliario corporativo (Baserow ID 368).
+  * **Ricardo Donatti:** Executivo Comercial | Expansão & Segmento Premium (`https://www.linkedin.com/in/ricardo-donatti-31069b4a/`) (Baserow ID 365).
+  * **Rodrigo Fernandes:** Gerente Comercial Bortolini Group (`https://www.linkedin.com/in/rodrigo-fernandes-19a96238/`). Contacto en común con Leandra Piccin (Multimóveis) (Baserow ID 369).
+  * **Bruno Rodolfo:** Gerente Comercial | Gestão & Expansão em São Paulo (`https://www.linkedin.com/in/bruno-rodolfo-b5b70938/`) (Baserow ID 366).
+  * **Denise Paz:** Gerente de Contas / Comercial em São Paulo (`https://www.linkedin.com/in/denise-paz-00b21615/`) (Baserow ID 370).
+  * **Igor Silveira Dellazzari:** Projetista Autônomo (`https://www.linkedin.com/in/igor-silveira-dellazzari-40a250398/`) (Baserow ID 371).
+  * **Caroline Covolo Berté:** Publicidade, Marketing e Eventos (`https://www.linkedin.com/in/caroline-covolo-berté-897451148/`). Responsable de comunicación y estandes en ferias (Movelsul 2026, InfraFM SP) y líneas como Miroo Móveis (Baserow ID 372).
+  * **Carlos Mantelli:** Gestor de Engenharia na Bortolini Móveis Corporativos (Baserow ID 373). Contacto personal directo transferido por RRHH con autorización explícita (*"Pode chama-lo, Mario 😉"*).
+- **Canal Abierto de Reclutamiento:** WhatsApp `+55 54 99939-5582` (`(54) 99939 5582`) / Tel: `(54) 3433 2500`.
+- **Diagnóstico del Dolor y Oportunidad B2B:**
+  * *14 Octubre 2026 (12:34 - 12:42):* **¡HITO HISTÓRICO - CONTACTO DIRECTO DEL GESTOR DE ENGENHARIA ENTREGADO!** Mario envió la propuesta técnica por WhatsApp. A las 12:39 RRHH avisó que lo reenviaría a su gestor de ingeniería, y a las **12:42** compartieron la tarjeta de contacto oficial de **Carlos Mantelli** con autorización expresa: *"Pode chama-lo, Mario 😉"*. Conexión caliente 1-a-1 lograda en menos de 8 minutos.
+  * *15 Octubre 2026 (19:03 - 19:51):* **¡DENISE PAZ PIDE LA DEMO DEL MANUAL 3D!** Denise respondió con gran cercanía: *"Estou bem também! Desculpe estava na academia... Vou querer ver sim, me mande quando puder."* Además revisó el perfil de Mario en LinkedIn (Sales Insights). Se le envía el enlace directo de la Cómoda Ravenna (`https://mariomojica.com/Comoda_Ravenna`) enfocado en la experiencia mobile y reducción de fricciones en montajes corporativos en SP.
+- **Estado Actual:** 🔥 **MUY CALIENTE / DEMO 3D ENVIADA A GERENCIA DE CONTAS SP.**
+- **Próxima Jugada:** Dejar que interactúe con el manual 3D en su móvil y hacer seguimiento ligero en 24-48 horas. Paralelamente, disparar WhatsApp a Carlos Mantelli (Gestor de Engenharia).
+
+---
+
+### 🔬 16. CE3D - Three Dimensional Spatial Encoding (Tijuana, México)
+- **Empresa / Proyecto:** CE3D (Tecnología de codificación óptica posicional tridimensional, 6DoF y arquitectura óptica pasiva - Solicitud de Patente MX/a/2026/008448 IMPI).
+- **Contacto Clave:** Ivan Ivaldo Gonzalez Ayala - Founder & Principal Inventor (`https://www.linkedin.com/in/three-dimensional-spatial-encoding/`).
+- **Formación:** Escuela de Mecánica de Aviación Naval, México. Ubicación: Tijuana, Baja California, México.
+- **Tecnología Core de la Patente:** Codificación física directa de coordenadas 3D deterministas en el campo de luz antes de tocar el sensor. Con una sola captura 2D estándar proporciona posición 3D/6DoF exacta, eliminando la sobrecarga computacional de reconstrucción posterior, SLAM, triangulación y estimación de pose.
+- **Diagnóstico del Dolor y Oportunidad B2B:**
+  * *15 Octubre 2026 (20:31):* **INBOUND DIRECTO DE ALTO NIVEL TÉCNICO.** Ivan contactó a Mario en LinkedIn tras revisar su perfil con el mensaje: *"Hola, Mario. Gracias por conectar. Soy inventor y fundador de CE3D, una tecnología mexicana que integra codificación óptica posicional tridimensional, lectura óptico-angular y procesamiento geométrico para navegación espacial 6DoF. Me interesa tu experiencia en software y optimización de procesos de manufactura, especialmente por la siguiente etapa de desarrollo profesional de mi tecnología. Un gusto saludarte."*
+  * **Sinergia Técnica Profunda:** Ivan tiene resuelto el principio físico/óptico y la IP, pero para llevarlo al mercado manufacturero e industrial necesita transformar el modelo en software profesional de alto rendimiento (APIs, algoritmos de procesamiento geométrico, integración con control de movimiento CNC/robótica, CAD/CAM y gemelos digitales). Justo la especialidad de Mario (arquitectura de software, computación geométrica, Three.js/Rhino/Grasshopper y automatización industrial).
+- **Estado Actual:** 🔥 **MUY CALIENTE / INBOUND DE CODESARROLLO & ALIANZA DEEP TECH.**
+- **Próxima Jugada:** Responder validando el enorme valor de eliminar el cuello de botella computacional de pose estimation en 6DoF y proponer una videollamada técnica de 20-30 minutos para explorar cómo estructurar la capa de software para manufactura.
 
 ---
 

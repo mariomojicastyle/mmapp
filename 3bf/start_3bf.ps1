@@ -6,7 +6,7 @@
 Write-Host "🚀 Iniciando Protocolo de Arranque Unificado 3DBimFab (3BF)..." -ForegroundColor Cyan
 
 # 1. Ruta de RhinoCompute 8
-$rhinoComputeExe = "$env:USERPROFILE\AppData\Roaming\McNeel\Rhinoceros\packages\8.0\Hops\0.17.0\rhino.compute\rhino.compute.exe"
+$rhinoComputeExe = "$env:USERPROFILE\AppData\Roaming\McNeel\Rhinoceros\packages\8.0\Hops\0.17.1\rhino.compute\rhino.compute.exe"
 $3bfFolder = "C:\Desarrollo\mmapp\3BF"
 
 # 2. Iniciar RhinoCompute 8 si no está activo (Puerto 5000)

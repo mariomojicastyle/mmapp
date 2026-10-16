@@ -258,7 +258,7 @@ export function isHardwareMeshName(name: string): boolean {
     n.includes("puxador") ||
     n.includes("manija") ||
     n.includes("tirador") ||
-    n.includes("tapa") ||
+    (n.includes("tapa") && !n.includes("tapaluz") && !n.includes("tapacanto") && !n.includes("cubierta")) ||
     n.includes("tampa") ||
     n.includes("clavo") ||
     n.includes("prego") ||
@@ -267,7 +267,7 @@ export function isHardwareMeshName(name: string): boolean {
     n.includes("grapa") ||
     n.includes("perfil") ||
     n.includes("trilho")
-  ) && !n.includes("cajon") && !n.includes("cajón");
+  ) && !n.includes("cajon") && !n.includes("cajón") && !n.includes("tapaluz") && !n.includes("posterior") && !n.includes("traser") && !n.includes("gaveta");
 }
 
 /**

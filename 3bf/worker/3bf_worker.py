@@ -59,10 +59,118 @@ import rhino3dm
 import hashlib
 import copy
 import xml.etree.ElementTree as ET
+from collections import defaultdict, deque
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, ConfigDict
+
+def split_mesh_dict_into_islands(mesh_dict: dict) -> list:
+    """
+    Descompone una malla poligonal con múltiples componentes disjuntos (ej: piezas unidas por Mesh Join
+    en Grasshopper como múltiples Tapaluces o travesaños) en mallas independientes.
+    Preserva coordenadas UV, calcula Bounding Box y centros locales independientes para cada isla.
+    """
+    verts = mesh_dict.get("vertices", [])
+    indices = mesh_dict.get("indices", [])
+    uvs = mesh_dict.get("uvs", [])
+    name = mesh_dict.get("name", "")
+    
+    n_faces = len(indices) // 3
+    if n_faces <= 1 or not verts:
+        return [mesh_dict]
+        
+    v_to_faces = defaultdict(list)
+    for f_idx in range(n_faces):
+        a, b, c = indices[f_idx*3], indices[f_idx*3+1], indices[f_idx*3+2]
+        v_to_faces[a].append(f_idx)
+        v_to_faces[b].append(f_idx)
+        v_to_faces[c].append(f_idx)
+        
+    visited_faces = set()
+    components = []
+    for f_start in range(n_faces):
+        if f_start in visited_faces:
+            continue
+        comp_faces = []
+        queue = deque([f_start])
+        visited_faces.add(f_start)
+        while queue:
+            f = queue.popleft()
+            comp_faces.append(f)
+            a, b, c = indices[f*3], indices[f*3+1], indices[f*3+2]
+            for v in (a, b, c):
+                for neighbor in v_to_faces[v]:
+                    if neighbor not in visited_faces:
+                        visited_faces.add(neighbor)
+                        queue.append(neighbor)
+        components.append(comp_faces)
+        
+    if len(components) <= 1:
+        return [mesh_dict]
+        
+    has_uvs = bool(uvs and len(uvs) == len(verts) * 2 // 3)
+    sub_meshes = []
+    base_pos = mesh_dict.get("position", [0, 0, 0])
+    
+    for comp in components:
+        old_to_new = {}
+        new_verts = []
+        new_indices = []
+        new_uvs = []
+        
+        for f in comp:
+            for i in range(3):
+                old_v = indices[f*3 + i]
+                if old_v not in old_to_new:
+                    new_idx = len(new_verts) // 3
+                    old_to_new[old_v] = new_idx
+                    vx = verts[old_v*3]
+                    vy = verts[old_v*3 + 1]
+                    vz = verts[old_v*3 + 2]
+                    new_verts.extend([vx, vy, vz])
+                    if has_uvs:
+                        new_uvs.extend([uvs[old_v*2], uvs[old_v*2 + 1]])
+                new_indices.append(old_to_new[old_v])
+                
+        xs = new_verts[0::3]
+        ys = new_verts[1::3]
+        zs = new_verts[2::3]
+        min_x, max_x = min(xs), max(xs)
+        min_y, max_y = min(ys), max(ys)
+        min_z, max_z = min(zs), max(zs)
+        
+        island_size = [round(max_x - min_x, 4), round(max_y - min_y, 4), round(max_z - min_z, 4)]
+        center_x = (min_x + max_x) / 2.0
+        center_y = (min_y + max_y) / 2.0
+        center_z = (min_z + max_z) / 2.0
+        
+        centered_verts = []
+        for i in range(len(new_verts) // 3):
+            centered_verts.extend([
+                round(new_verts[i*3] - center_x, 4),
+                round(new_verts[i*3 + 1] - center_y, 4),
+                round(new_verts[i*3 + 2] - center_z, 4)
+            ])
+            
+        island_pos = [
+            round(base_pos[0] + center_x, 4),
+            round(base_pos[1] + center_y, 4),
+            round(base_pos[2] + center_z, 4)
+        ]
+        
+        sub_m = dict(mesh_dict)
+        sub_m["size"] = island_size
+        sub_m["position"] = island_pos
+        sub_m["vertices"] = centered_verts
+        sub_m["indices"] = new_indices
+        if has_uvs:
+            sub_m["uvs"] = new_uvs
+        elif "uvs" in sub_m:
+            del sub_m["uvs"]
+        sub_meshes.append(sub_m)
+        
+    return sub_meshes
 
 app = FastAPI(title="3BF Worker Python Engine", version="2.5.0")
 
@@ -1226,7 +1334,31 @@ async def compute_model(request: Request):
         only_aesthetic_changed = len(changed_keys) > 0 and not any(is_structural_param_name(k) for k in changed_keys)
         no_params_changed = (len(changed_keys) == 0)
 
-        if cached_geom.get("structural_hash") == structural_hash and (only_aesthetic_changed or no_params_changed):
+        # 🛡️ BLINDAJE DE SOBERANÍA: El bypass en RAM solo se puede usar si TODOS los parámetros
+        # estéticos modificados tienen soporte nativo de reconstrucción en memoria RAM (piezas_clasificadas o fondos).
+        # Si un parámetro pertenece a una pieza no clasificada en RAM (ej: Frente de Cajón con chaflán/bocelado),
+        # DEBE enviarse obligatoriamente a RhinoCompute para garantizar la verdad matemática NURBS de Grasshopper.
+        aes_map = cached_geom.get("aesthetic_mapping", {})
+        pieces_classified = cached_geom.get("pieces_classified", {})
+
+        can_bypass_in_ram = True
+        if only_aesthetic_changed:
+            for k in changed_keys:
+                if "21.1" in k or "21.2" in k or "fondo" in k.lower() or "sustrato" in k.lower():
+                    if not cached_geom.get("fondos_data_list"):
+                        can_bypass_in_ram = False
+                        break
+                elif k in aes_map:
+                    p_n, _ = aes_map[k]
+                    if p_n not in pieces_classified:
+                        can_bypass_in_ram = False
+                        break
+                else:
+                    # Parámetro no mapeado en RAM -> requerir RhinoCompute
+                    can_bypass_in_ram = False
+                    break
+
+        if cached_geom.get("structural_hash") == structural_hash and (no_params_changed or (only_aesthetic_changed and can_bypass_in_ram)):
             # 🚀 BYPASS GENERALIZADO ESTÉTICO EN MEMORIA RAM (< 2 ms)
             rebuilt_real_meshes = list(cached_geom.get("static_other_meshes", []))
             
@@ -1531,14 +1663,14 @@ async def compute_model(request: Request):
                 "values": payload_values
             }
             
+            text_outputs = {}
+            perforaciones_nurbs = []
+
             res_rc = requests.post("http://127.0.0.1:5000/grasshopper", json=payload_rc, timeout=60)
             if res_rc.status_code == 200:
                 rhino_compute_success = True
                 data_rc = res_rc.json()
                 rhino_outputs_count = len(data_rc.get("values", []))
-                
-                text_outputs = {}
-                perforaciones_nurbs = []
                 for val in data_rc.get("values", []):
                     p_name = val.get("ParamName", "Pieza GH")
                     p_name_lower = p_name.lower()
@@ -1665,7 +1797,10 @@ async def compute_model(request: Request):
                                                     mesh_dict["indices"] = indices
                                                     if uvs and len(uvs) == len(verts) * 2 // 3:
                                                         mesh_dict["uvs"] = uvs
-                                                    real_meshes.append(mesh_dict)
+                                                    # 🏝️ DfMA Multi-Body Mesh Decomposition: Separar componentes disjuntos (ej: múltiples piezas unidas por Mesh Join)
+                                                    islas = split_mesh_dict_into_islands(mesh_dict)
+                                                    for isl in islas:
+                                                        real_meshes.append(isl)
                                             elif isinstance(decoded_geom, rhino3dm.Brep) or "nurbs" in p_name.lower():
                                                 mesh_dict["is_nurbs_solid"] = True
                                                 pass
@@ -1715,6 +1850,35 @@ async def compute_model(request: Request):
                                 # Preservar fielmente los vértices originales de la Cara A
                                 m["espesor_nominal"] = min_mdp
 
+                # 🪵 DfMA Grooved Board Strip Alignment (Alineación Anatómica de Franja Inferior Bajo Ranura):
+                # Cuando Grasshopper corta una superficie frontal/posterior con ranura (ej: Posterior de Cajón),
+                # la franja inferior (< 40mm) puede quedar centrada en el origen local del Brep (mitad del tablero)
+                # en lugar de alinearse rasante al borde inferior físico del tablero. Reubicamos la franja en su cota real.
+                caras_b_list = [m for m in real_meshes if m.get("name", "").endswith(" B")]
+                print(f"[DEBUG STRIP ALIGNMENT] Caras B encontradas: {len(caras_b_list)}", flush=True)
+                for cb in caras_b_list:
+                    cb_pos = cb.get("position", [0, 0, 0])
+                    cb_sz = cb.get("size", [0, 0, 0])
+                    if len(cb_pos) >= 3 and len(cb_sz) >= 2:
+                        h_board = cb_sz[1]
+                        y_center = cb_pos[1]
+                        y_bottom = y_center - (h_board / 2.0)
+                        base_name = cb.get("name", "")[:-2].strip()
+
+                        for m in real_meshes:
+                            if m.get("name", "").strip() == base_name:
+                                m_pos = m.get("position", [0, 0, 0])
+                                m_sz = m.get("size", [0, 0, 0])
+                                if len(m_pos) >= 3 and len(m_sz) >= 2:
+                                    cond_xz = (abs(m_pos[0] - cb_pos[0]) < 0.01 and abs(m_pos[2] - cb_pos[2]) < 0.03)
+                                    cond_sz = (m_sz[1] < h_board * 0.4)
+                                    cond_y = (abs(m_pos[1] - y_center) < 0.01)
+
+                                    if cond_xz and cond_sz and cond_y:
+                                        y_target = round(y_bottom + (m_sz[1] / 2.0), 4)
+                                        print(f"[DEBUG ALIGNING] {base_name}: {m['position'][1]} -> {y_target}", flush=True)
+                                        m["position"] = [m_pos[0], y_target, m_pos[2]]
+
                 # 🛡️ Aplicar Deduplicador DfMA de Mallas (marca duplicados para resaltado en rojo y limpia BOM)
                 unique_meshes, all_annotated_meshes, mallas_duplicadas_detectadas = deduplicate_real_meshes(real_meshes)
                 real_meshes = all_annotated_meshes
@@ -1729,26 +1893,49 @@ async def compute_model(request: Request):
     slider_limits = parse_ghx_slider_limits(ghx_file)
 
     # =========================================================================
-    # 📊 CÓMPUTO DINÁMICO DE DESPIECE (BOM) E INVENTARIO DE HERRAJES VIVO (DfMA)
+    # 🔩 DETECCIÓN POSITIVA DE HERRAJES & TABLEROS POR GEOMETRÍA REAL (DfMA)
     # =========================================================================
-    # =========================================================================
-    # 🔩 CÓMPUTO DINÁMICO DE HERRAJES 100% FIEL AL GHX
-    # =========================================================================
-    def es_nombre_tablero(name_str: str) -> bool:
+    def es_nombre_herraje(name_str: str, size: list = None) -> bool:
         nl = name_str.lower()
-        if re.search(r"pe.{0,2}a\s*\d+|pk\s*\d+", nl):
-            return True
-        for kw in ["cubierta", "tapa", "entrepa", "lateral", "paral", "fondo", "puerta", "frente", "zocalo", "tablero", "costado", "divisor", "repisa", "techo", "piso", "estante", "travesa"]:
-            if kw in nl:
-                return True
-        return False
-
-    def es_nombre_herraje(name_str: str) -> bool:
-        nl = name_str.lower()
-        if es_nombre_tablero(name_str):
-            return False
+        # Descartar canales de acabado o mecanizados
         if "maquinado" in nl or "perforad" in nl or "mdp" in nl or "balance" in nl:
             return False
+        if re.search(r'[\s_]b$', nl):
+            return False
+
+        # 1. Whitelist Positiva de Herrajes (por terminología de ferretería y ensamble)
+        herrajes_keywords = [
+            "tarugo", "cavilha", "tornillo", "parafuso", "minifix", "corredera", "corredi", 
+            "bisagra", "dobradi", "sapata", "pata", "pé", "perno", "puxador", "tirador", 
+            "manija", "cantoneira", "cantonera", "prego", "clavo", "tampa", "tapa adhesiva", 
+            "angulo", "escuadra", "soporte", "suporte", "porca", "tuerca"
+        ]
+        if any(k in nl for k in herrajes_keywords):
+            # Excluir si es claramente un tablero con término compuesto
+            if not any(t in nl for t in ["frente", "lateral", "cubierta", "repisa", "costado", "divis", "zocalo", "fondo", "posterior", "traser", "gaveta", "peça", "peca", "pk"]):
+                return True
+
+        # 2. Heurística Geométrica Positiva de Herraje (volumen físico diminuto tridimensional)
+        if size and len(size) == 3:
+            dims_mm = sorted([abs(size[0])*1000.0, abs(size[1])*1000.0, abs(size[2])*1000.0])
+            if dims_mm[2] < 40.0 and dims_mm[0] >= 1.5:
+                return True
+
+        return False
+
+    def es_nombre_tablero(name_str: str, size: list = None) -> bool:
+        nl = name_str.lower()
+        if "maquinado" in nl or "perforad" in nl or "mdp" in nl or "balance" in nl:
+            return False
+        if re.search(r'[\s_]b$', nl):
+            return False
+        if es_nombre_herraje(name_str, size):
+            return False
+        # Geometría de tablero: largo >= 40mm y ancho >= 8mm (incluye franjas de ranura)
+        if size and len(size) == 3:
+            dims_mm = sorted([abs(size[0])*1000.0, abs(size[1])*1000.0, abs(size[2])*1000.0])
+            if dims_mm[2] >= 40.0 and dims_mm[1] >= 8.0:
+                return True
         return True
     
     conteo_mallas_herrajes = {}
@@ -1756,7 +1943,7 @@ async def compute_model(request: Request):
         if m.get("es_duplicado_ghx"):
             continue
         raw_name = m.get("name", "").strip()
-        if es_nombre_herraje(raw_name):
+        if es_nombre_herraje(raw_name, m.get("size")):
             # Respetar 100% el nombre definido por el usuario/diseñador en Grasshopper (limpiando solo el prefijo RH_OUT:)
             nombre_herraje_ghx = raw_name.replace("RH_OUT:", "").strip()
             if nombre_herraje_ghx:
@@ -1893,9 +2080,11 @@ async def compute_model(request: Request):
     for m in real_meshes:
         raw_name = m.get("name", "").strip()
         name_lower = raw_name.lower()
+        size = m.get("size", [0, 0, 0])
+        pos = m.get("position", [0, 0, 0])
         
-        # 1. Solo incluir elementos que califiquen estrictamente como tablero
-        if not es_nombre_tablero(raw_name):
+        # 1. Solo incluir elementos que califiquen como tablero (o no sean herrajes positivos)
+        if not es_nombre_tablero(raw_name, size):
             continue
             
         # 2. Descartar canales de acabado secundarios (MDP es solo mecanizado/cantos, nunca un tablero independiente)
@@ -1905,9 +2094,6 @@ async def compute_model(request: Request):
         # En Grasshopper y DfMA, las láminas secundarias de balance tienen sufijo " B", "_b" o palabra "balance"
         if re.search(r'[\s_]b$|balance', name_lower):
             continue
-            
-        size = m.get("size", [0, 0, 0])
-        pos = m.get("position", [0, 0, 0])
         
         # Dimensiones físicas en milímetros
         dims_mm = sorted([round(size[0] * 1000.0, 1), round(size[1] * 1000.0, 1), round(size[2] * 1000.0, 1)])
@@ -1915,8 +2101,8 @@ async def compute_model(request: Request):
         anc_malla = dims_mm[1]
         lar_malla = dims_mm[2]
         
-        # Filtrar solo elementos que califiquen como tableros (ancho y largo >= 40mm)
-        if lar_malla >= 40.0 and anc_malla >= 40.0:
+        # Filtrar solo elementos que califiquen como tableros (largo >= 40mm y ancho >= 8mm para incluir franjas de ranura)
+        if lar_malla >= 40.0 and anc_malla >= 8.0:
             # Nombre de la pieza y descripción
             desc_extraida = ""
             custom_name = None
@@ -2014,7 +2200,7 @@ async def compute_model(request: Request):
                     "espesor": esp_malla,
                     "cantidad": 1,
                     "tipo": "Estructura DfMA",
-                    "pos": pos
+                    "pos": list(pos)
                 })
 
     # 🪵 RECUPERACIÓN INTELIGENTE DE ESPESOR REAL PARA FRENTES Y TABLEROS CON MALLA PLANA (espesor 0)
@@ -2049,22 +2235,31 @@ async def compute_model(request: Request):
         if "peça 5" in nom_l or "peca 5" in nom_l or "frente" in nom_l or "peça 2" in nom_l or "peca 2" in nom_l:
             tab["espesor"] = 15.0
         elif tab.get("espesor", 0) <= 0.5:
-            if nom in mapa_espesor_mdp:
+            # 1. Prioridad: Distancia euclídea exacta entre Cara A y Cara B (separación física del tablero)
+            espesor_encontrado = None
+            pos_a = tab.get("pos", [0, 0, 0])
+            nom_lower = nom.lower()
+            for mb in real_meshes:
+                nb = mb.get("name", "").strip().lower()
+                if f"{nom_lower} b" in nb or f"{nom_lower}_b" in nb:
+                    pos_b = mb.get("position", [0, 0, 0])
+                    # Medir separación en el plano de la pieza
+                    dist_mm = round(math.sqrt(sum((pos_a[i] - pos_b[i])**2 for i in range(3))) * 1000.0, 1)
+                    if 9.0 <= dist_mm <= 36.0:
+                        espesor_encontrado = dist_mm
+                        break
+            
+            if espesor_encontrado is not None:
+                tab["espesor"] = espesor_encontrado
+            elif nom in mapa_espesor_mdp:
                 tab["espesor"] = mapa_espesor_mdp[nom]
+            elif any(k.lower() == nom.lower() for k in mapa_espesor_mdp):
+                for k, v in mapa_espesor_mdp.items():
+                    if k.lower() == nom.lower():
+                        tab["espesor"] = v
+                        break
             else:
-                # Fallback: buscar si existe pieza B para calcular la separación en el eje normal
-                for mb in real_meshes:
-                    nb = mb.get("name", "").strip()
-                    if f"{nom} b" in nb.lower() or f"{nom}_b" in nb.lower():
-                        pos_a = tab.get("pos", [0, 0, 0])
-                        pos_b = mb.get("position", [0, 0, 0])
-                        dist_mm = round(math.sqrt(sum((pos_a[i] - pos_b[i])**2 for i in range(3))) * 1000.0, 1)
-                        if 10.0 <= dist_mm <= 36.0:
-                            tab["espesor"] = dist_mm
-                            break
-            # Si aún es <= 0.5 mm, asignar 15.0mm (calibre estructural estándar del tablero de la cómoda)
-            if tab.get("espesor", 0) <= 0.5:
-                tab["espesor"] = 15.0
+                tab["espesor"] = 12.0 if any(w in nom_l for w in ["cajon", "cajón", "posterior", "gaveta"]) else 15.0
 
     # Agrupar piezas idénticas leyendo 100% de la geometría real con Tolerancia DfMA de Taller (<= 2mm)
     if tableros_consolidados:
@@ -2072,8 +2267,8 @@ async def compute_model(request: Request):
         for tab in tableros_consolidados:
             encontrado = False
             for p_exist in piezas_consolidadas:
-                # Mismo nombre canónico y mismo espesor (tolerancia 0.5mm en calibre)
-                if p_exist["nombre"] == tab["nombre"] and abs(p_exist["espesor"] - tab["espesor"]) < 0.5:
+                # Mismo nombre canónico (insensible a mayúsculas) y mismo espesor (tolerancia 0.5mm en calibre)
+                if p_exist["nombre"].lower() == tab["nombre"].lower() and abs(p_exist["espesor"] - tab["espesor"]) < 0.5:
                     diff_lar = abs(p_exist["largo"] - tab["largo"])
                     diff_anc = abs(p_exist["ancho"] - tab["ancho"])
                     # Tolerancia DfMA de taller para absorber diferencias asimétricas de ranuras o decimales (<= 2.0mm)

@@ -432,7 +432,7 @@ export default function DespieceView() {
     }
 
     // 5. Piezas internas de cajón: 1 largo (canto superior)
-    if (n.includes("cajon") || n.includes("cajón")) {
+    if (n.includes("cajon") || n.includes("cajón") || n.includes("posterior") || n.includes("trasera")) {
       return { cantosAncho: 0, cantosLargo: 1, cantoCodigo: "0004623" };
     }
 

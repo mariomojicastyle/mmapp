@@ -366,6 +366,8 @@ export function SingleFurnitureInstanceMesh({
     }
     return (
       n.includes("cubierta") ||
+      n.includes("tapaluz") ||
+      n.includes("travesa") ||
       n.includes("frente") ||
       n.includes("lateral") ||
       n.includes("posterior") ||
@@ -423,7 +425,7 @@ export function SingleFurnitureInstanceMesh({
           entry.tieneLaminaPlana = true;
         }
       } else if (esMdpOMdf) {
-        if (minDim >= 0.005) {
+        if (minDim >= 0.008) {
           entry.tieneMdpSolido = true;
         }
       }
@@ -462,9 +464,10 @@ export function SingleFurnitureInstanceMesh({
             const omitirAristas = debeDelegarAristasAlMdp && !esMdpOMdf && !esBalance;
             const forzarAristasCaja = debeDelegarAristasAlMdp && esMdpOMdf;
 
+            const uvSig = m.uvs && m.uvs.length >= 4 ? `${m.uvs[0]}_${m.uvs[1]}_${m.uvs[2]}_${m.uvs[3]}` : "no-uv";
             return (
               <BoardMesh
-                key={`board-${idx}`}
+                key={`board-${m.name}-${idx}-${uvSig}`}
                 instanciaId={inst.id}
                 instanciaKey={m.instanciaKey}
                 position={m.position}

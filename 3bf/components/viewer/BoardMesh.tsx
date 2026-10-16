@@ -11,6 +11,7 @@ import { useBoardMeshGeometry } from "./boardMesh/useBoardMeshGeometry";
 import { resolverPropiedadesMaterial } from "./boardMesh/boardMaterialResolver";
 import { resolverVisibilidadBoard } from "./boardMesh/boardVisibilityRules";
 import { coincidenMismoHerraje, getCapaSugeridaId } from "@/lib/engine/cadStateUtils";
+import { buildCleanCadEdges } from "./boardMesh/cadEdgesFilter";
 
 export { useMaterialPBRMaps };
 
@@ -441,19 +442,50 @@ export function BoardMesh({
   );
 
   const debeMostrarAristas = calibracion.mostrarAristas !== false && (isWoodBoard || isHardware) && !esMicroGeometria;
+  
+  // 📐 Regla DfMA de Aristas Técnicas CAD:
+  // - La Cara A (tono / acabado exterior visible) y piezas principales NUNCA omiten aristas.
+  // - Solo omitir en la Cara B (balance) o en cantos planos de MDP para evitar duplicidad de líneas,
+  //   a menos que el MDP contenga un bisel/chaflán geométrico genuino (esExcepcionBisel) o esté forzado como caja sólida.
+  // - NUNCA omitir las aristas de una lámina de Cara A (como Frente de Cajón o Tapaluz) ya que es la cara que define la silueta.
+  const esExcepcionBisel = tieneBiselDiagonal;
   const debeOmitirAristasPorDuplicidadCapa = isWoodBoard && (
     isBalance || 
-    (isMdpExpuesto && !forzarAristasCaja) ||
-    (esLaminaPlanaMadera && !forzarAristasCaja) ||
+    (isMdpExpuesto && !forzarAristasCaja && !esExcepcionBisel) ||
     omitirAristas
   );
-  const mostrarAristasEnEsteMesh = (debeMostrarAristas && !debeOmitirAristasPorDuplicidadCapa) || (estaSeleccionadaEnPicking && !omitirAristas && !esLaminaPlanaMadera);
+  const mostrarAristasEnEsteMesh = (debeMostrarAristas && !debeOmitirAristasPorDuplicidadCapa) || (estaSeleccionadaEnPicking && !isBalance);
   
-  // 📐 Excepción para frentes de cajón o piezas con bisel/chaflán diagonal:
-  // Si la pieza tiene bisel o está identificada como frente/perfil, usamos la geometría real para que se aprecien sus aristas diagonales.
-  const esExcepcionBisel = tieneBiselDiagonal || !esParalelepipedo;
+  // 📐 Geometría base para aristas:
+  // Si la pieza cuenta con geometría real (customGeometry) proveniente de Grasshopper, la usamos fielmente.
+  // Solo recurrimos a boxMeshGeometry si es un paralelepípedo sólido tridimensional con espesor real (>= 8mm) sin bisel.
   const geometryBaseForEdges = customGeometry || undefined;
-  const edgeGeometryToUse = ((esParalelepipedo || forzarAristasCaja) && !tieneBiselDiagonal && boxMeshGeometry) ? boxMeshGeometry : geometryBaseForEdges;
+  const tieneEspesorSolido = Boolean(size && Math.min(size[0], size[1], size[2]) >= 0.008);
+  const edgeGeometryToUse = ((esParalelepipedo || forzarAristasCaja) && tieneEspesorSolido && !tieneBiselDiagonal && boxMeshGeometry)
+    ? boxMeshGeometry 
+    : geometryBaseForEdges;
+
+  // 📐 Creación y cacheo de aristas CAD geométricas estables (THREE.EdgesGeometry nativo con filtro coplanar DfMA):
+  const edgesGeometryMemo = React.useMemo(() => {
+    if (!mostrarAristasEnEsteMesh || !edgeGeometryToUse) return null;
+    try {
+      const thresh = isHardwareTampa ? 15 : (esExcepcionBisel ? 20 : (calibracion.thresholdAristas || 25));
+      // 🛡️ Filtro DfMA: En tableros de madera con geometría de Grasshopper, suprimir trazos y diagonales en caras planas
+      if (isWoodBoard && edgeGeometryToUse === customGeometry) {
+        return buildCleanCadEdges(edgeGeometryToUse, thresh);
+      }
+      return new THREE.EdgesGeometry(edgeGeometryToUse, thresh);
+    } catch (err) {
+      console.warn("Error creando EdgesGeometry:", err);
+      return null;
+    }
+  }, [mostrarAristasEnEsteMesh, edgeGeometryToUse, isHardwareTampa, esExcepcionBisel, isWoodBoard, customGeometry, calibracion.thresholdAristas]);
+
+  React.useEffect(() => {
+    return () => {
+      edgesGeometryMemo?.dispose();
+    };
+  }, [edgesGeometryMemo]);
 
 
   // 💎 En modo cristal inactivo: NUNCA aplicar mapas de textura (veta de madera) para que sea cristal puro idéntico al modo global
@@ -558,9 +590,9 @@ export function BoardMesh({
           metalness={estaHoveredEnHerrajes || estaTitilando ? 0.8 : metalness}
           wireframe={isWireframe}
           depthWrite={estaSeleccionadaEnPicking || estaHoveredEnHerrajes || estaTitilando ? true : depthWrite}
-          polygonOffset={isHardwareTampa || estaSeleccionadaEnPicking || estaTitilando || esLaminaPlanaMadera}
-          polygonOffsetFactor={isHardwareTampa || estaTitilando ? -2 : -1}
-          polygonOffsetUnits={isHardwareTampa || estaTitilando ? -2 : -1}
+          polygonOffset={isHardwareTampa || estaSeleccionadaEnPicking || estaTitilando}
+          polygonOffsetFactor={isHardwareTampa || estaTitilando ? -1 : 0}
+          polygonOffsetUnits={isHardwareTampa || estaTitilando ? -1 : 0}
           side={THREE.DoubleSide}
         />
         {/* 📐 Malla pura (wireframe de la geometría real) sobre la superficie sólida translúcida */}
@@ -579,26 +611,32 @@ export function BoardMesh({
             />
           </mesh>
         )}
-        {mostrarAristasEnEsteMesh && (!isHardware || isHardwareTampa || estaSeleccionadaEnPicking || estaHoveredEnHerrajes) && (
-          <Edges
-            geometry={edgeGeometryToUse}
-            threshold={isHardwareTampa ? 15 : (esExcepcionBisel ? 20 : (calibracion.thresholdAristas || 25))}
-            color={
-              estaHoveredEnHerrajes
-                ? "#D97706"
-                : (estaSeleccionadaEnPicking
-                    ? "#D97706"
-                    : (isHardwareTampa
-                        ? "#475569"
-                        : (esDuplicado
-                            ? "#991B1B"
-                            : (calibracion.colorAristas || "#111827"))))
-            }
-            opacity={estaSeleccionadaEnPicking || estaHoveredEnHerrajes ? 1.0 : (isHardwareTampa ? 0.90 : (calibracion.opacidadAristas ?? 1.0))}
-            transparent={(calibracion.opacidadAristas ?? 1.0) < 0.99 && !estaSeleccionadaEnPicking && !isHardwareTampa && !estaHoveredEnHerrajes}
-            lineWidth={estaHoveredEnHerrajes ? 4.5 : (estaSeleccionadaEnPicking ? 3.0 : (isHardwareTampa ? 1.5 : (esDuplicado ? 2.5 : Math.max(1, ((calibracion.calibreAristas ?? 100) / 100) * 1.5))))}
-            renderOrder={estaHoveredEnHerrajes ? 55 : (estaSeleccionadaEnPicking ? 35 : (isHardwareTampa ? 28 : (esDuplicado ? 25 : (forzarAristasCaja ? 15 : 10))))}
-          />
+        {mostrarAristasEnEsteMesh && edgesGeometryMemo && (!isHardware || isHardwareTampa || estaSeleccionadaEnPicking || estaHoveredEnHerrajes) && (
+          <lineSegments
+            geometry={edgesGeometryMemo}
+            renderOrder={estaHoveredEnHerrajes ? 60 : (estaSeleccionadaEnPicking ? 40 : (isHardwareTampa ? 30 : (esDuplicado ? 26 : (forzarAristasCaja ? 16 : 12))))}
+          >
+            <lineBasicMaterial
+              color={
+                estaHoveredEnHerrajes
+                  ? "#D97706"
+                  : (estaSeleccionadaEnPicking
+                      ? "#D97706"
+                      : (isHardwareTampa
+                          ? "#475569"
+                          : (esDuplicado
+                              ? "#991B1B"
+                              : (calibracion.colorAristas || "#111827"))))
+              }
+              transparent={(calibracion.opacidadAristas ?? 1.0) < 0.99 && !estaSeleccionadaEnPicking && !isHardwareTampa && !estaHoveredEnHerrajes}
+              opacity={estaSeleccionadaEnPicking || estaHoveredEnHerrajes ? 1.0 : (isHardwareTampa ? 0.90 : (calibracion.opacidadAristas ?? 1.0))}
+              depthTest={true}
+              depthWrite={false}
+              polygonOffset={true}
+              polygonOffsetFactor={-2}
+              polygonOffsetUnits={-2}
+            />
+          </lineSegments>
         )}
       </mesh>
     );
@@ -693,8 +731,8 @@ export function BoardMesh({
         wireframe={isWireframe}
         depthWrite={estaSeleccionadaEnPicking || estaHoveredEnHerrajes || estaTitilando ? true : depthWrite}
         polygonOffset={isHardwareTampa || estaSeleccionadaEnPicking || estaTitilando}
-        polygonOffsetFactor={isHardwareTampa || estaTitilando ? -2 : -1}
-        polygonOffsetUnits={isHardwareTampa || estaTitilando ? -2 : -1}
+        polygonOffsetFactor={isHardwareTampa || estaTitilando ? -1 : 0}
+        polygonOffsetUnits={isHardwareTampa || estaTitilando ? -1 : 0}
         side={THREE.DoubleSide}
       />
       {/* 📐 Malla pura (wireframe de la geometría real) sobre la superficie sólida translúcida */}
@@ -713,25 +751,32 @@ export function BoardMesh({
           />
         </mesh>
       )}
-      {mostrarAristasEnEsteMesh && (!isHardware || isHardwareTampa || estaSeleccionadaEnPicking || estaHoveredEnHerrajes) && (
-        <Edges
-          threshold={isHardwareTampa ? 15 : (calibracion.thresholdAristas || 25)}
-          color={
-            estaHoveredEnHerrajes
-              ? "#D97706"
-              : (estaSeleccionadaEnPicking
-                  ? "#D97706"
-                  : (isHardwareTampa
-                      ? "#475569"
-                      : (esDuplicado
-                          ? "#991B1B"
-                          : (calibracion.colorAristas || "#111827"))))
-          }
-          opacity={estaSeleccionadaEnPicking || estaHoveredEnHerrajes ? 1.0 : (isHardwareTampa ? 0.90 : (calibracion.opacidadAristas ?? 1.0))}
-          transparent={(calibracion.opacidadAristas ?? 1.0) < 0.99 && !estaSeleccionadaEnPicking && !isHardwareTampa && !estaHoveredEnHerrajes}
-          lineWidth={estaHoveredEnHerrajes ? 4.5 : (estaSeleccionadaEnPicking ? 3.0 : (isHardwareTampa ? 1.5 : (esDuplicado ? 2.5 : Math.max(1, ((calibracion.calibreAristas ?? 100) / 100) * 1.5))))}
-          renderOrder={estaHoveredEnHerrajes ? 55 : (estaSeleccionadaEnPicking ? 35 : (isHardwareTampa ? 28 : (esDuplicado ? 25 : (forzarAristasCaja ? 15 : 10))))}
-        />
+      {mostrarAristasEnEsteMesh && edgesGeometryMemo && (!isHardware || isHardwareTampa || estaSeleccionadaEnPicking || estaHoveredEnHerrajes) && (
+        <lineSegments
+          geometry={edgesGeometryMemo}
+          renderOrder={estaHoveredEnHerrajes ? 60 : (estaSeleccionadaEnPicking ? 40 : (isHardwareTampa ? 30 : (esDuplicado ? 26 : (forzarAristasCaja ? 16 : 12))))}
+        >
+          <lineBasicMaterial
+            color={
+              estaHoveredEnHerrajes
+                ? "#D97706"
+                : (estaSeleccionadaEnPicking
+                    ? "#D97706"
+                    : (isHardwareTampa
+                        ? "#475569"
+                        : (esDuplicado
+                            ? "#991B1B"
+                            : (calibracion.colorAristas || "#111827"))))
+            }
+            transparent={(calibracion.opacidadAristas ?? 1.0) < 0.99 && !estaSeleccionadaEnPicking && !isHardwareTampa && !estaHoveredEnHerrajes}
+            opacity={estaSeleccionadaEnPicking || estaHoveredEnHerrajes ? 1.0 : (isHardwareTampa ? 0.90 : (calibracion.opacidadAristas ?? 1.0))}
+            depthTest={true}
+            depthWrite={false}
+            polygonOffset={true}
+            polygonOffsetFactor={-2}
+            polygonOffsetUnits={-2}
+          />
+        </lineSegments>
       )}
     </mesh>
   );

@@ -89,9 +89,9 @@ export function resolverPropiedadesMaterial(p: MaterialPropertiesInput): Resolve
     normName.includes('segur') ||
     normName.includes('gatill') ||
     (isHardwareCorredera && (p.size && p.size.length === 3 && Math.min(p.size[0], p.size[1], p.size[2]) < 0.005 && p.size[1] < 0.015));
-  const isHardwareCantoneira = normName.includes('cantoneira') || normName.includes('cantonera') || normName.includes('angulo') || normName.includes('ángulo') || normName.includes('esquinero');
   const isHardwarePorca = normName.includes('porca') || normName.includes('tuerca') || normName.includes('bucha');
-  const isHardwareTampa = normName.includes('tampa') || normName.includes('tapa') || normName.includes('adesivo') || normName.includes('tapon') || normName.includes('tapón');
+  const isHardwareCantoneira = normName.includes('cantoneira') || normName.includes('escuadra') || normName.includes('angulo') || normName.includes('esquadro');
+  const isHardwareTampa = (normName.includes('tampa') || normName.includes('tapa') || normName.includes('adesivo') || normName.includes('tapon') || normName.includes('tapón')) && !normName.includes('tapaluz') && !normName.includes('cubierta') && !normName.includes('cajon');
   const isHardware = isHardwarePerno || isHardwarePrego || isHardwareCaja || isHardwareTarugo || isHardwareSuporte || isHardwarePata || isHardwareCorredera || isHardwareCantoneira || isHardwarePorca || isHardwareTampa || normName.includes('bisagra') || normName.includes('dobradiça') || normName.includes('dobradi') || normName.includes('puxador') || normName.includes('manija') || normName.includes('tirador') || normName.includes('jaladera') || normName.includes('perfil');
   const isMachining = normName.includes('maquinado') || normName.includes('perforado');
   const isWoodBoard = !isHardware && !isMachining;
@@ -364,9 +364,6 @@ export function resolverPropiedadesMaterial(p: MaterialPropertiesInput): Resolve
     normName.includes('cilindr') || 
     normName.includes('chaflan') || 
     normName.includes('bisel') ||
-    normName.includes('frente') ||
-    normName.includes('gaveta') ||
-    normName.includes('cajon') ||
     normName.includes('uñero') ||
     normName.includes('unero') ||
     normName.includes('peça 19') ||

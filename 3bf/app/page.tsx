@@ -111,6 +111,7 @@ export default function Home3BF() {
     workerStatus, 
     setWorkerStatus,
     hidratarDesdeLocalStorage,
+    cargarMaterialesDesdeDB,
     coloresApariencia,
     setMostrarNPanel,
     tema,
@@ -255,6 +256,7 @@ export default function Home3BF() {
     // Hidratar inmediatamente toda la base de datos de materias primas y costos
     hidratarDesdeLocalStorage();
     cargarArbolMuebles();
+    cargarMaterialesDesdeDB();
     verificarWorker();
 
     // 🛡️ Inicializar estado base en el historial de Deshacer / Rehacer si está vacío

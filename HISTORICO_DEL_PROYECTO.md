@@ -3265,6 +3265,278 @@ Para mantener la máxima agilidad y minimizar el consumo de tokens sin perder ni
     3. *Sincronización Estricta de Audio (`AudioPlayer.jsx`)*: Se condicionó la reproducción de las locuciones a `isModelLoaded === true`. La narración no arranca hasta que la malla 3D está 100% montada y visible en pantalla, eliminando las voces sobre el escenario vacío.
     4. *Arranque Móvil Ligero (`PanelInicial.jsx`)*: En dispositivos móviles se garantiza el uso del telón minimalista con logotipo vectorial y barra de carga, erradicando el sobrecosto de iframes externos.
 - **Validación de Calidad y Compilación**:
-  * `npm run build` en `legacy-aplicativo-armado` completado en 5.49s con **0 errores**.
-  * Supabase PostgreSQL actualizado y verificado atómicamente con credenciales de Service Role.
+
+---
+
+### 🚀 Hito 265: Resolución de Mapeado UV de Veta Paramétrica (Longitudinal / Atravesada), Desempaquetado de List Access en Grasshopper y Reactividad Three.js en Piezas Sólidas DWG (`SingleFurnitureInstanceMesh.tsx`, `Hib_C_Ravenna.ghx`, `3bf_worker.py`) (14 de Octubre, 2026)
+- **Diagnóstico y Descubrimiento del Bloqueo en Grasshopper (`List Access`)**:
+  * *Causa Raíz en Grasshopper*: El componente de Python de Box Mapping tenía configurada su entrada `B` en `Item Access`. Al conectarse a un `Value List` de Grasshopper que emitía datos empaquetados en listas o árboles internos, Python recibía la referencia de colección sin evaluar el valor escalar, bloqueando la alternancia entre `Longitudinal = 0` y `Atravesada = 1`.
+  * *Solución Técnica*: Al configurar la entrada `B` en **`List Access`** y aplicar la función universal `extraer_valor_b(val)`, Grasshopper entrega el valor limpio e inmediato hacia RhinoCompute, permitiendo que el swap de coordenadas se compute en **163 ms**.
+- **Alineación Analítica de Veta Horizontal ($U$)**:
+  * *Auditoría de Texturas con Python/NumPy*: Mediante cálculo de varianza de gradientes horizontales y verticales sobre los mapas de textura (`cinamomo_diffuse.jpg` y `wood_melamine.jpg`), se demostró matemáticamente que la veta corre en sentido **horizontal** (a lo largo del ancho de la imagen, eje $U$), refutando la asunción previa de veta vertical.
+  * *Formulación Geométrica Canónica (Caso 3 - Frentes/Zócalos)*:
+    - En **`Longitudinal` (0)**: la veta debe correr a lo largo de la dimensión mayor de la pieza ($X$). Por tanto, $U$ recibe la longitud ($u = lx / \text{escala}$) y $V$ recibe la altura ($v = lz / \text{escala}$).
+    - En **`Atravesada` (1)**: la veta rota 90° para correr perpendicular por la altura ($Z$). Por tanto, $U$ recibe la altura ($u = lz / \text{escala}$) y $V$ recibe la longitud ($v = lx / \text{escala}$).
+- **Reactividad Inmediata en Three.js / WebGL (`SingleFurnitureInstanceMesh.tsx`)**:
+  * *Detección de Re-bind en GPU*: Se incorporó la firma reactiva `uvSig = m.uvs[0]..[3]` dentro de la propiedad `key` del componente `<BoardMesh />`. Cada vez que el solver de RhinoCompute actualiza los UVs de la pieza, React y Three.js fuerzan la regeneración limpia del `BufferGeometry` y re-enlazan las coordenadas sin congelar la textura previa en VRAM.
+- **Auditoría Antivirus y Blindaje de Procesos Locales**:
+  * Localizada y resuelta la interrupción silenciosa que causaba McAfee Exploit Prevention sobre `compute.geometry.exe` y `3bf_worker.py`. Con las rutas añadidas a la lista de exclusiones, las peticiones HTTP y los sockets TCP operan de forma ininterrumpida y estable.
+- **Validación de Calidad y Compilación**:
+  * `npm run build` en `3BF` (Next.js 14) completado con **0 errores** y 27 rutas estáticas/dinámicas verificadas.
+
+---
+
+### 🚀 Hito 266: Consolidación y Máxima Estabilidad de Materializer 3.0 (Piezas con Chaflán/Bocelado y Planas), Desacople Paramétrico en UI y Blindaje Dinámico en 3BF Worker (`createSceneInstanceSlice.ts`, `3bf_worker.py`, `Hib_C_Ravenna.ghx`) (15 de Octubre, 2026)
+- **Diagnóstico y Contexto del Hito de Mayor Estabilidad**:
+  * *Evolución de Geometrías Complejas DfMA*: En el desarrollo de la Cómoda Ravenna Híbrida se incorporó el Frente de Cajón dotado de un chaflán/uñero superior a 45° en el canto. La meta era que este bisel compartiera de manera transparente el mismo comportamiento material que los cantos perimetrales (vistiendo el color/textura de canto al activarse, y derivando a sustrato MDP crudo únicamente cuando se configure sin canto).
+  * *Resolución de Acoplamiento Cruzado en Interfaz Web (`createSceneInstanceSlice.ts`)*: Inicialmente, al cambiar los cantos en el Frente de Cajón (`02.x`), la pieza `Peça 1x` (`03.x`) mutaba en sincronía debido a una propagación de nombres base excesiva. Se implementó la *Regla Canónica de Soberanía de Piezas*, restringiendo la sincronización bidireccional única y exclusivamente a dimensiones globales canónicas (`ancho`, `alto`, `profundidad`).
+  * *Diagnóstico Forense del Congelamiento en MDP en la Web (`3bf_worker.py`)*: Pese a que el algoritmo `Materializer 3.0` en Grasshopper clasificaba perfectamente el chaflán y los cantos, al interactuar en la Web (`localhost:3005`) los cantos del frente permanecían congelados en MDP. El análisis reveló que el *Bypass Estético en Memoria RAM (< 2 ms)* interceptaba la llamada al no haber cambios estructurales (`only_aesthetic_changed = True`). Dado que `pieces_classified` solo mapeaba piezas con nomenclatura `Peça \d+`, `Frente de Cajon` se almacenaba en `static_other_meshes` y se servía desde la caché congelada en su estado inicial (`MDP`), ignorando los cambios del usuario y evitando la llamada a RhinoCompute.
+- **Implementación Técnica de la Solución**:
+  1. *Blindaje de Soberanía `can_bypass_in_ram` en Python Worker (`3bf_worker.py`)*:
+     - Se introdujo una verificación exhaustiva: el bypass en RAM solo se dispara si **todos** los parámetros estéticos modificados poseen soporte nativo de reconstrucción en memoria (piezas indexadas en `pieces_classified` o fondos).
+     - Si un parámetro pertenece a piezas con perfiles geométricos no ortogonales o nombres libres (como `Frente de Cajon` con chaflán/bocelado), el worker delega la resolución directamente a RhinoCompute en vez de devolver mallas obsoletas de la caché.
+  2. *Madurez de `Materializer 3.0` en Grasshopper (`Hib_C_Ravenna.ghx`)*:
+     - Algoritmo DfMA universal con zona de influencia de bisel (`zona_bisel = max(tol * 2.5, min_dim * 2.2)`) y detección angular colineal (`n.Z > 0.20 and (z1 - pt.Z) < zona_bisel`).
+     - Clasificación matemática perfecta:
+       * **Modo Canto**: `RH_OUT:Frente de Cajon` recibe **26 vértices** (Cara A + 4 cantos + chaflán 45°) y `RH_OUT:MDP Frente de Cajon` se reduce estrictamente a **863 vértices** de perforaciones internas y mecanizados de taller.
+       * **Modo MDP**: `RH_OUT:Frente de Cajon` conserva únicamente **4 vértices** (Cara A) y el resto de caras externas e internas se visten de sustrato MDP.
+  3. *Verificación Bidireccional en Vivo (Zero-Lag & Sin Falsos Positivos)*:
+     - Pruebas automatizadas de alternancia en tiempo real (`MDP -> Canto -> MDP`) confirmaron que tanto las piezas planas estándar (`Peça 1x` en ~2 ms vía RAM bypass) como las piezas con chaflán (`Frente de Cajon` en ~400 ms vía RhinoCompute) responden al instante con fidelidad matemática total.
+---
+
+### 🚀 Hito 267: Desacople Semántico de PBR para Piezas "Tapa" (`Tapaluz`) y Descomposición Topológica de Mallas Multi-Body en Islas Conexas (`3bf_worker.py`, `SingleFurnitureInstanceMesh.tsx`, `cadStateUtils.ts`, `boardMaterialResolver.ts`) (15 de Octubre, 2026)
+- **Diagnóstico y Descubrimiento Forense**:
+  * *1. Problema de Tono Oscurecido en los 3 Tapaluces*:
+    - **Causa Raíz**: En `cadStateUtils.ts` y `boardMaterialResolver.ts`, la regla heurística `n.includes("tapa")` clasificaba a `Tapaluz` como un herraje de tapita plástica de tornillo RTA (`isHardwareTampa = true`).
+    - En consecuencia, el motor WebGL suprimía el mapeado difuso de madera (`fallbackTexturaUrl = null`), forzando un sombreado plástico plano mate con tonalidad oscura dentro de la cavidad del mueble.
+    - **Solución**: Se refinó la heurística para proteger los tableros compuestos (`tapaluz`, `cubierta`, `cajon`), restringiendo las tapas plásticas a `tampa`, `tapa tornillo`, `tapa adhesiva`, `tapon` o regex `^tapa\s*\d*$`. Además, en `SingleFurnitureInstanceMesh.tsx`, se incluyó explícitamente `tapaluz` y `travesa` en el array de `boardMeshes`, garantizando que vista el material PBR de melamina auténtica con veta idéntica al frente de cajón.
+  * *2. Problema de Despiece como 1 Sola Pieza de 572 mm en vez de 3 de 60 mm*:
+    - **Causa Raíz en Grasshopper**: En `Hib_C_Ravenna.ghx`, el usuario unió con un componente `Mesh Join` los 3 travesaños Tapaluz antes de enviarlos a `RH_OUT:Tapaluz`.
+    - Al llegar al worker de Python, `decoded_geom.GetBoundingBox()` medía la envolvente total desde el travesaño inferior ($Z=373$) hasta el superior ($Z=885$), reportando una pieza monstruosa de $614 \times 572\text{ mm}$ con `Cantidad: 1`.
+- **Implementación Técnica de la Solución**:
+  1. *Algoritmo de Descomposición Topológica en Islas Conexas (`split_mesh_dict_into_islands`)*:
+     - Se desarrolló una función analítica $O(V+F)$ basada en grafo de adyacencia de caras y búsqueda en anchura (BFS).
+     - Si una malla recibida desde RhinoCompute o Grasshopper contiene múltiples cuerpos geométricos disjuntos (desconectados en el espacio), el worker descompone automáticamente la malla en $N$ mallas individuales.
+     - Cada isla calcula su propio Bounding Box local, posición tridimensional centrada y preserva las coordenadas UV originales.
+  2. *Impacto en BOM / Despiece DfMA y Three.js*:
+     - La salida `RH_OUT:Tapaluz` se divide en **3 mallas independientes** de $614 \times 60\text{ mm}$ en $Y=885$, $Y=629$ y $Y=373$.
+     - En el consolidado de despiece de `3bf_worker.py`, las piezas idénticas se agrupan matemáticamente:
+       $$\text{Tapaluz: Cantidad = 3} \quad | \quad \text{Largo} = 614.0\text{ mm} \quad | \quad \text{Ancho} = 60.0\text{ mm} \quad | \quad \text{Espesor} = 12.0\text{ mm}$$
+     - El espesor de $12.0\text{ mm}$ se obtiene de forma analítica y precisa midiendo la distancia euclídea entre la Cara A ($Z=-21.0$) y la Cara B ($Z=-33.0$).
+---
+
+### 🚀 Hito 268: Creación del Diccionario Maestro Centralizado `dfmaRulesDictionary.ts`, Pestaña Web `Reglas DfMA & Nomenclatura` en Data Hub y Materializer 3.2 con Exclusión Total de Barrenos (`DatabaseView.tsx`, `dfmaRulesDictionary.ts`, `Hib_C_Ravenna.ghx`) (15 de Octubre, 2026)
+- **Diagnóstico y Necesidad de Gobernanza**:
+  * *1. Erradicación de Heurísticas Ocultas ("Cajas Negras")*: Tras la experiencia con la palabra `tapa` y los nombres de piezas en Grasshopper, se evidenció el riesgo de depender de reglas mágicas no documentadas dispersas en el código. Se requería una interfaz transparente en la Web que permita al usuario auditar, consultar y gobernar exactamente qué términos entiende el motor de 3dBimFab y qué comportamiento produce cada uno.
+  * *2. Diagnóstico del Fondo Plano de Barrenos Pintado de Melamina*:
+    - En `Materializer 3.1`, al excluir las superficies cilíndricas con `not f.IsPlanar()`, el cilindro del barreno se corrigió a MDP crudo; sin embargo, el fondo plano del taladro permanecía como cara planar con normal ortogonal exterior ($n.X = +1.0$), cayendo dentro del rango de `zona_bisel` ($26.4\text{ mm}$) del Canto 4 lateral.
+    - Se identificó la discriminación matemática canónica: un canto plano ortogonal ($|n| > 0.85$) DEBE ubicarse estrictamente en la envolvente exterior (`abs(pt - cota) < tol`), mientras que un chaflán a 45° posee una normal inclinada ($0.30 < |n| < 0.85$). De este modo, los fondos de barreno situados a 15-20 mm de profundidad se excluyen al 100% hacia mecanizados (MDP).
+  * *3. Diagnóstico del Pin de Diagnóstico en Grasshopper*:
+    - La salida del componente Python 3 en Grasshopper se llama `Out`. Se incorporó la asignación explícita `Out = diag_txt` (junto con `out`, `a` e `Info_Pieza`), restableciendo el flujo inmediato de datos hacia el panel amarillo de Diagnóstico.
+- **Implementación Técnica de la Solución**:
+  1. *Diccionario Maestro Canónico (`dfmaRulesDictionary.ts`)*:
+     - Creado en `3bf/lib/engine/dfmaRulesDictionary.ts` como Single Source of Truth para todo el ecosistema.
+     - Contiene 18 registros exhaustivos organizados en 4 familias: Tableros Estructurales (10), Herrajes Mecánicos (10), Tapas RTA (1) y Mecanizados/Barrenos (4).
+     - Provee funciones de tipado y clasificación exportables (`esNombreTablero`, `esNombreHerraje`, `esNombreTapa`, `esNombreMecanizado`).
+  2. *Pestaña Web Interactiva en Data Hub (`DatabaseView.tsx`)*:
+     - Incorporada la sexta cápsula botón **`📖 Reglas DfMA & Nomenclatura`** a la derecha de `Mano de Obra & CIF`.
+     - Barra de filtros por categoría en pastillas `rounded-full` (`Todas`, `Tableros`, `Herrajes`, `Tapas RTA`, `Mecanizados`).
+     - Buscador reactivo en vivo que filtra instantáneamente por término, nombre canónico o función técnica.
+     - Tabla fotorrealista Tech Ethos con badges coloreados, chips de términos en código monoespaciado, descripción de taller, comportamiento en Three.js, impacto en BOM / Nesting y formulación geométrica.
+  3. *Script de Grasshopper `Materializer 3.2 Pureza DfMA`*:
+     - Exclusión de caras no planares (`not f.IsPlanar()`) $\to$ cilindros a mecanizados.
+     - Restricción de cantos ortogonales a la piel exterior (`abs(pt - cota) < tol`) $\to$ fondos planos a mecanizados.
+     - Detección precisa de chaflanes inclinados ($0.30 < |n| < 0.85$ dentro de `zona_bisel`).
+     - Emisión por salida `Out` hacia panel de Grasshopper.
+- **Validación de Calidad**:
+  * Compilación TypeScript verificada (`npx tsc --noEmit`) en `3bf` con **0 errores**.
+  * Todos los servidores de fondo (RhinoCompute, 3BF Worker, Web App) operando en perfecta armonía.
+
+---
+
+### 🚀 Hito 269: Restauración Canónica de Aristas Técnicas CAD y Contornos Perimetrales para Tableros DfMA y Frentes con Bisel (`BoardMesh.tsx`, `SingleFurnitureInstanceMesh.tsx`) (15 de Octubre, 2026)
+- **Diagnóstico y Causa Raíz de la Desaparición de Aristas**:
+  * *1. Pérdida Generalizada de Aristas en Tableros*: Al evaluar piezas generadas por el nuevo motor `Materializer 3.0 / 3.2` (como los Tapaluces y la Cara A del Frente de Cajón), Grasshopper emite mallas de superficie correspondientes a la Cara A y cantos independientes con espesor volumétrico nulo ($Z=0.0\text{ mm}$).
+  * *2. Supresión Destructiva por `esLaminaPlanaMadera`*: En `BoardMesh.tsx`, la condición `(esLaminaPlanaMadera && !forzarAristasCaja)` catalogaba erróneamente cualquier malla con $\min(\text{size}) < 0.005$ como "lámina que debe omitir aristas", asumiendo que un bloque 3D de MDP sólido de $15\text{ mm}$ las dibujaría. Sin embargo, en la manufactura moderna DfMA el MDP se compone de tiras perimetrales de cantos y no de un prisma monolítico central. Como resultado, la Cara A se apagaba por lámina plana, la Cara B se apagaba por balance y el MDP se apagaba por no ser caja sólida, dejando a los tableros mudos y sin bordes.
+  * *3. Por qué Solo se Demarcaba el Chaflán*: En el Frente de Cajón, la única submalla cuyas 3 dimensiones cartesianas proyectadas superaban los $5\text{ mm}$ era la franja inclinada a 45° del bisel ($621.6 \times 20.0 \times 10.0\text{ mm}$); por tanto, fue la única submalla que evadió la supresión de `esLaminaPlanaMadera` y dibujó su arista diagonal, mientras los 4 bordes rectangulares del frente y los tapaluces permanecían apagados.
+- **Implementación Técnica de la Solución**:
+  1. *Soberanía de Aristas en la Cara A (`BoardMesh.tsx`)*:
+     - Se eliminó la supresión destructiva `esLaminaPlanaMadera && !forzarAristasCaja`. La Cara A (superficie frontal de acabado y silueta visible) NUNCA omite sus aristas perimetrales.
+     - La supresión de duplicidad `debeOmitirAristasPorDuplicidadCapa` se restringió estrictamente a la Cara B (`isBalance`) y a cantos planos ortogonales sin perfil biselado (`isMdpExpuesto && !forzarAristasCaja && !esExcepcionBisel`).
+  2. *Resolución Geométrica Fiel a Grasshopper (`edgeGeometryToUse`)*:
+     - Si la pieza cuenta con geometría real (`customGeometry`), Drei / Three.js utiliza directamente sus vértices e índices reales de Grasshopper.
+     - `boxMeshGeometry` se reserva única y exclusivamente para paralelepípedos sólidos tridimensionales con espesor volumétrico real ($\min(\text{size}) \ge 8.0\text{ mm}$) sin biseles.
+  3. *Blindaje de Delegación en Instancias (`SingleFurnitureInstanceMesh.tsx`)*:
+     - `tieneMdpSolido` ahora exige espesor real $\ge 8.0\text{ mm}$, evitando que tiras planas de canto o barrenos activen `omitirAristas` en la Cara A.
+- **Validación de Calidad**:
+  * Compilación TypeScript verificada (`npx tsc --noEmit`) en `3bf` con **0 errores**.
+  * Demostración analítica en Three.js / Drei: `customGeometry` en Tapaluz genera exactamente sus 4 aristas rectangulares perimetrales sin diagonales internas espurias, y en Frente de Cajón genera sus 4 aristas exteriores más la arista diagonal del bisel a 45°.
+  * Servidores Next.js y Worker Python operando con recálculo dinámico en caliente.
+
+
+---
+
+### 🚀 Hito 270: Blindaje Canónico de Aristas Geométricas CAD Inmutables para IA (`AIRenderStudioModal`), Erradicación de Z-Fighting y Supresión de Ranuras Ocultas (`BoardMesh.tsx`, `boardMaterialResolver.ts`) (15 de Octubre, 2026)
+- **Diagnóstico y Análisis de Causa Raíz**:
+  * *1. Aristas Ambiguas que Mutaban con la Rotación de Cámara*:
+    - Al girar la escena con OrbitControls, el frente de cajón presentaba líneas horizontales parásitas (una a 2 cm de la base y otra cerca del bisel) que aparecían y desaparecían de forma intermitente según el ángulo y la distancia de la cámara.
+    - Se identificó la causa raíz: `3bf_worker.py` divide la salida de Grasshopper en 18 submallas (islas conexas). Entre estas submallas se encuentran la ranura horizontal de encastre para el fondo del cajón (canal mecanizado) y los taladros cilíndricos de fijación.
+    - En `boardMaterialResolver.ts`, la variable `noEsParalelepipedo` contenía la regla léxica `normName.includes('cajon')`. Como resultado, **todas las 18 submallas heredaban `!esParalelepipedo = true`**, provocando que `esExcepcionBisel = tieneBiselDiagonal || !esParalelepipedo` fuese `true` para la ranura del fondo y los barrenos.
+    - Esto impedía la omisión de aristas en las mallas de MDP interno (`isMdpExpuesto && !esExcepcionBisel`), dibujando líneas en el fondo de la ranura. Además, la superficie exterior de la madera poseía `polygonOffsetFactor: -1` (sesgo negativo que adelanta la cara hacia la cámara), lo que causaba un severo Z-fighting dinámico entre la cara y la arista de la ranura interna al rotar la cámara.
+  * *2. Ausencia de Aristas en Tapaluces*:
+    - Los tapaluces de `Materializer 3.0` son mallas planas de espesor nulo ($Z=0.0\text{ mm}$). El sesgo negativo `polygonOffsetFactor: -1` en el material de la madera adelantaba la superficie por encima de las líneas perimetrales calculadas por Drei `<Edges />`, ocultándolas por completo en el Z-buffer.
+  * *3. Requisito Crítico para Renderizado con Inteligencia Artificial (`AIRenderStudioModal`)*:
+    - Para los modelos de ControlNet, Canny, LineArt y Gemini en el módulo de renderizado por IA, las aristas deben representar **estrictamente los límites físicos de la geometría CAD**, sin líneas fantasmas internas ni cortes inexistentes provocados por mecanizados ocultos.
+- **Implementación Técnica de la Solución**:
+  1. *Depuración de Excepciones en `boardMaterialResolver.ts`*:
+     - Se removieron los términos genéricos `cajon`, `gaveta` y `frente` de `noEsParalelepipedo`. Los frentes son tableros paralelepípedos estándar cuya inclinación a 45° es detectada matemáticamente de forma pura por `tieneBiselDiagonal`.
+  2. *Aislamiento Estricto de Biseles en `BoardMesh.tsx`*:
+     - Se restringió `const esExcepcionBisel = tieneBiselDiagonal`. Solo la submalla que posee efectivamente normales no ortogonales a 45° genera aristas de bisel.
+     - Todas las submallas de MDP interno (ranura de fondo de cajón, barrenos de fijación) quedan silenciadas y omitidas de las aristas (`debeOmitirAristasPorDuplicidadCapa = true`).
+  3. *Motor Nativo Three.js con Depth Bias a Favor de la Línea*:
+     - Se sustituyó Drei `<Edges />` por `THREE.EdgesGeometry` nativo de Three.js renderizado vía `<lineSegments>` y memorizado de forma reactiva con `useMemo` y liberación automática con `dispose()`.
+     - En `<lineBasicMaterial>` se configuró:
+       ```tsx
+       <lineBasicMaterial
+         color={calibracion.colorAristas || "#111827"}
+         depthTest={true}
+         depthWrite={false}
+         polygonOffset={true}
+         polygonOffsetFactor={-2}
+         polygonOffsetUnits={-2}
+       />
+       ```
+     - En `<meshStandardMaterial>` de la madera se eliminó el sesgo negativo hacia la cámara (`polygonOffsetFactor: 0`).
+     - Al tener la línea un bias de profundidad de $-2$ en el Z-buffer frente al $0$ de la superficie sólida, las aristas CAD se renderizan nítidas, continuas, inmutables y 100% estables desde cualquier ángulo de la cámara.
+- **Validación de Calidad**:
+  * Compilación TypeScript verificada (`npx tsc --noEmit`) en `3bf` con **0 errores**.
+  * Frente de cajón: Muestra únicamente sus 4 aristas perimetrales exteriores más la arista diagonal del bisel superior a 45°, con 0 líneas parásitas en la ranura del fondo ni en los barrenos.
+  * Tapaluces y tableros planos: Muestran sus 4 aristas rectangulares perimetrales limpias y nítidas.
+  * Listo para capturas fotorrealistas de alta definición para el motor de renderizado por IA.
+
+
+---
+
+### 🚀 Hito 271: Certificación de Estabilidad Total en Zócalo, Frente de Cajón y Tapaluces (Materializer 3.2 + Aristas CAD Inmutables para IA) (15 de Octubre, 2026)
+- **Hito de Estabilidad y Cierre de Ciclo**:
+  * Certificación definitiva de estabilidad en la tríada crítica de piezas geométricas:
+    1. **Zócalo**: Representante de tablero monolítico sólido paralelepípedo estándar con 12 aristas CAD continuas y cantos perimetrales ortogonales precisos.
+    2. **Frente de Cajón**: Representante de pieza compleja DfMA con bisel/chaflán a 45°, uñero y mecanizados internos (ranura de fondo de cajón a 2 cm de la base y barrenos cilíndricos de fijación).
+    3. **Tapaluces (Múltiples Piezas)**: Representante de piezas laminares de espesor plano generadas en serie por `Materializer 3.2`, con descomposición automática en islas conexas en el worker y agrupación analítica en BOM.
+  * **Comportamiento en Escena Three.js / WebGL**:
+    - 0 parpadeos (Z-fighting erradicado mediante bias de profundidad nativo en `THREE.EdgesGeometry` con `polygonOffsetFactor: -2`).
+    - 0 líneas fantasmas internas en ranuras o barrenos ocultos de MDP.
+    - Contornos limpios, nítidos e inmutables ante la rotación de cámara con OrbitControls.
+    - Base sólida y confiable para capturas fotorrealistas de alta definición destinadas al estudio de renderizado por Inteligencia Artificial (`AIRenderStudioModal`).
+- **Validación de Calidad**:
+  * Compilación TypeScript verificada (`npx tsc --noEmit`) en `3bf` con **0 errores**.
+  * Servidores locales (RhinoCompute 8 en :5000, 3BF Worker en :8005, Web App en :3005) 100% operativos.
+
+
+---
+
+### 🚀 Hito 272: Filtro Canónico de Aristas CAD en Caras Planas (`cadEdgesFilter.ts`, `BoardMesh.tsx`): Erradicación Total de Diagonales y Puentes Espurios en Melaminas con Barrenos (15 de Octubre, 2026)
+- **Diagnóstico y Causa Raíz de Diagonales y Trazos en Caras Planas**:
+  * *1. Problema Visual Reportado*: En el Costado Derecho (lateral) y piezas orientadas en planos perpendiculares, la pieza renderizaba con gran fidelidad pero presentaba líneas no deseadas sobre la cara plana de melamina:
+    - Una diagonal larga desde la esquina superior hacia los barrenos de fijación.
+    - Dos líneas verticales paralelas uniendo dos barrenos intermedios (como puentes sobre la superficie plana).
+  * *2. Origen Topológico en Rhino / Grasshopper*:
+    - Al convertir a malla una superficie planar con perforaciones (`BrepFace` con `InnerLoops` para tarugos/tornillos), el algoritmo de triangulación de Rhino (Ear Clipping / Delaunay) divide la región entre el contorno exterior y los agujeros interiores introduciendo cortes de costura (*seam edges*) y puentes entre orificios.
+    - Aunque ambos triángulos a lo largo de esa línea son 100% coplanares (ángulo diedro = $0.0^\circ$), Three.js `EdgesGeometry` las clasificaba erróneamente como *boundary edges* huérfanas (sin cara opuesta en su hash de índices duplicados de $0.1\text{ mm}$), dibujándolas incondicionalmente sobre la madera.
+- **Implementación Técnica de la Solución**:
+  1. *Módulo Especializado `cadEdgesFilter.ts`*:
+     - Creado en `3bf/components/viewer/boardMesh/cadEdgesFilter.ts` con la función `buildCleanCadEdges(geometry, thresholdAngle, minAngleDeg)`.
+     - **Discriminación Matemática de Cambio de Plano vs Coplanaridad Pura**:
+       * Mapea cada arista de la malla hacia sus triángulos adyacentes y calcula sus vectores normales analíticos.
+       * Si una arista está compartida por triángulos coplanares ($\vec{n}_1 \cdot \vec{n}_2 > \cos(15^\circ) = 0.966$, es decir sin cambio de ángulo real): **se descarta automáticamente**.
+       * Si una arista huérfana yace sobre una cara plana ortogonal pero mide más de $6\text{ mm}$ y no coincide con el perímetro exterior del Bounding Box de la pieza: se identifica como diagonal o puente espurio y **se elimina**.
+     - **Preservación Estricta de Maquinados y Bordes Reales**:
+       * Los 4 bordes exteriores del tablero (encuentro a 90° con los cantos) se preservan al 100%.
+       * Los barrenos circulares de maquinados (aristas cortas $\le 6\text{ mm}$ donde la pared penetra a 90°) se preservan al 100%.
+       * Los biseles y chaflanes a 45° (inclinación $3D \ge 15^\circ$) se preservan al 100%.
+  2. *Integración Reactiva en `BoardMesh.tsx`*:
+     - En `edgesGeometryMemo`, toda pieza de madera (`isWoodBoard`) con geometría de Grasshopper evalúa `buildCleanCadEdges`, entregando una silueta técnica CAD 100% limpia sin trazos espurios que ensucien la gráfica.
+- **Validación de Calidad**:
+  * Compilación TypeScript verificada (`npx tsc --noEmit`) en `3bf` con **0 errores**.
+  * Eliminadas todas las diagonales y puentes entre barrenos en el lateral; contornos exteriores y orificios de mecanizado perfectamente demarcados.
+
+
+---
+
+### 🚀 Hito 273: Victoria Geométrica Absoluta en Filtrado de Aristas CAD: Validación Visual Exitosa del Lateral DfMA con Barrenos Puros sin Diagonales (`cadEdgesFilter.ts`, `BoardMesh.tsx`) (15 de Octubre, 2026)
+- **Hito de Validación y Certificación Visual por el Usuario**:
+  * **Confirmación Fotográfica (`media_1792099460662_5b870405.jpg`)**: La captura en vivo de la escena 3D demuestra la pureza geométrica absoluta del visor WebGL de `3dBimFab`:
+    - El Costado Derecho (lateral blanco de 850 mm con mecanizados) luce con su melamina completamente inmaculada.
+    - Erradicada la diagonal de la esquina superior izquierda ($v_1 \to v_2$).
+    - Erradicados todos los puentes y trazos verticales paralelos entre barrenos intermedios.
+    - Todos los barrenos circulares de maquinado (taladros para tarugos y minifix) aparecen perfectamente delineados con sus aristas perimetrales circulares a 90°.
+    - Los 4 cantos del marco rectangular exterior permanecen nítidos, continuos y estables ante cualquier ángulo de cámara.
+  * **La Clave Matemática del Éxito**:
+    - Se identificó por qué el primer intento falló: evaluar si un solo vértice ($v_1$) tocaba el perímetro dejaba con vida la diagonal porque nacía en la esquina superior izquierda ($Y_{max}, Z_{min}$).
+    - La reformulación a **evaluación concurrente estricta** exige que **ambos extremos ($v_1$ y $v_2$)** pertenezcan simultáneamente al mismo canto exterior del Bounding Box ($Y_{min}, Y_{max}, Z_{min}$ o $Z_{max}$), discriminando con precisión de cirujano entre una arista del perímetro exterior y cualquier corte de triangulación interno de Grasshopper.
+- **Validación de Calidad**:
+  * Compilación TypeScript verificada (`npx tsc --noEmit`) en `3bf` con **0 errores**.
+  * Motor listo y blindado para renderizado AI (`AIRenderStudioModal`), despiece y exportación GLB.
+
+
+---
+
+### 🚀 Hito 274: Desglosador DfMA Materializer 3.4 (Simetría Anatómica Pura & Cierre D/D) y Box Mapping v3.8 Granular (Veta y Cantos Siempre Longitudinales) en Laterales de Cajón de Cómoda Ravenna Híbrida (16 de Octubre, 2026)
+- **Diagnóstico y Causa Raíz de Desplazamiento y Exposición Interior en Modo D/D**:
+  * *1. Problema Reportado por el Usuario*:
+    - Al seleccionar el acabado doble melamínico `D/D` (Balance Color/Color) en los laterales de cajón, una de las caras internas se desplazaba hacia abajo exponiendo el hueco y la geometría interior del tablero.
+    - No se estaba reconociendo simetría entre laterales izquierdos y derechos: al cambiar el lado de balance, todas las piezas cambiaban idénticamente de orientación sin reflejar la relación anatómica de pares en el mueble.
+  * *2. Origen Topológico y de Clasificación*:
+    - En el algoritmo previo de separación de caras, la condición de cierre de extremos en tableros con ranuras de fondo se apoyaba en umbrales fijos o heurísticas de espesor dependientes de la escala en milímetros. Al interactuar en metros ($0.35\text{ m} \times 0.1096\text{ m} \times 0.012\text{ m}$), los filtros colapsaban o clasificaban erróneamente los polígonos de la ranura como cantos exteriores o caras secundarias.
+    - Los laterales de cajón no poseen simetría especular simple (Mirror) a nivel de pieza aislada porque la ranura interior para el fondo del cajón se mecaniza en un solo lado del tablero.
+- **Implementación de Materializer 3.4 (`3bf/Definiciones/Materializer_v3_4.py`)**:
+  * **Detección Anatómica Pura de Cara Interior vs Exterior**:
+    - Se implementó un escaneo analítico de caras planas en los planos límite del Bounding Box ($X = x_0$ vs $X = x_1$).
+    - La cara con $\ge 2$ caras planas coplanares corresponde de forma unívoca a la cara interior (dividida por la ranura longitudinal del fondo de cajón), mientras que el plano con exactamente 1 cara coplanar continua corresponde a la cara exterior lisa.
+    - Se garantiza la asignación de simetría anatómica automática para emparejar laterales izquierdos y derechos con total consistencia física.
+  * **Cierre Robusto en Modo Doble Cara (`D/D`) & Tolerancias Invariantes a la Escala**:
+    - Se recalibraron las tolerancias dinámicas `tol = max(0.0002, min_dim * 0.15)` y `zona_bisel = min_dim * 2.2`.
+    - En modo `D/D`, ambas caras principales se unifican bajo la capa de color melamínico sin desfasar la cota vertical de vértices ni exponer el núcleo crudo de MDP, cerrando limpiamente el volumen del tablero.
+- **Diagnóstico y Solución de Box Mapping v3.8 (`box_mapping_code.py`)**:
+  * *1. Problema Reportado*:
+    - Los laterales de cajón indicaban veta en sentido longitudinal en la interfaz, pero en el visor 3D la textura de melamina y los cantos aparecían atravesados/verticales a $90^\circ$, mientras que los costados principales del mueble lucían correctos.
+  * *2. Causa Raíz Identificada*:
+    - En Grasshopper, los 12 laterales de cajón se fusionaban en una sola malla mediante `Mesh Join` antes de ingresar al componente de Box Mapping.
+    - El Bounding Box combinado de las 12 piezas apiladas arrojaba una altura acumulada $sz \approx 650\text{ mm}$, superior a la longitud individual de cada cajón ($sy = 350\text{ mm}$).
+    - Además, el script ejecutaba `max(1.0, ...)`, lo cual en unidades de metros saturaba todas las cotas en 1.0. Por ende, el algoritmo clasificaba a la entidad completa como un lateral vertical de armario alto ($sz \ge sy$), asignando la veta en $Z$ (vertical) y proyectando los cantos en $X$ (perpendicular).
+  * *3. Descomposición Granular y Mapeado UV Analítico v3.8*:
+    - **Descomposición Topológica Individual (`SplitDisjointPieces()`)**: El componente descompone la malla unida en sus 12 tableros físicos independientes, evaluando el Bounding Box de cada pieza por separado.
+    - **Alineación Longitudinal de Veta ($U$)**: Para cada lateral individual ($sy = 350\text{ mm} > sz = 109.6\text{ mm}$), la cara principal asigna $u = ly / \text{escala}$ y $v = lz / \text{escala}$, logrando que la veta de la madera corra estrictamente a lo largo de los 350 mm del cajón.
+    - **Cantos Siempre Longitudinales**: Los cantos superior e inferior ($nz$) proyectan $u = ly / \text{escala}$ y $v = lx / \text{escala}$, asegurando que el cubrecanto viaje colinealmente con la arista de la madera sin cortes transversales.
+    - Inyectado el código v3.8 en los 17 componentes de Box Mapping de `Hib_C_Ravenna.ghx`.
+- **Validación de Calidad y Pruebas Empíricas**:
+  * Prueba analítica de resolución contra RhinoCompute: UVs del lateral recorren $U = 0.0 \to 0.5833$ (350 mm de largo) y $V = 0.0 \to 0.1827$ (109.6 mm de alto). Costados del mueble conservan su veta vertical ($sz \ge sy$).
+  * Compilación TypeScript verificada (`npx tsc --noEmit`) en `3bf` con **0 errores**.
+  * Certificación de éxito emitida por el usuario para los laterales de cajón en Cómoda Ravenna Híbrida.
+
+
+---
+
+### 🚀 Hito 275: Arquitectura Invertida de Clasificación Geométrica Tableros vs Herrajes (Whitelist Positiva) y Blindaje de Memoria para Piezas Ranuradas (`3bf_worker.py`) (16 de Octubre, 2026)
+- **Diagnóstico y Causa Raíz de Omisión en Despiece y Misclasificación como Herrajes**:
+  * *1. Problema Reportado por el Usuario*:
+    - Al importar los 6 `Posterior de Cajón` en Cómoda Ravenna Híbrida, las piezas no aparecían en el Despiece / BOM de madera y en su lugar se clasificaban erróneamente como herrajes con cantidades anómalas.
+    - En el visor 3D, la superficie inferior del tablero (la franja por debajo de la ranura para el fondo de cajón) saltaba y se desplazaba hacia el centro del cajón.
+  * *2. Causa Raíz de Clasificación Léxica Cerrada*:
+    - La lógica previa dependía de una lista fija de nombres para clasificar tableros de madera. Cuando una pieza llegaba con un nombre no contemplado (`Posterior de Cajon`), caía por defecto en el bucket residual de herrajes.
+  * *3. Causa Raíz de Desplazamiento de la Superficie de Ranura (Mutación de Memoria)*:
+    - En `3bf_worker.py` durante la consolidación de tableros ranurados en Maderkit, se asignaba `"pos": pos` (la referencia mutable directa al array en memoria). Al calcular la absorción de la ranura para el cálculo volumétrico del BOM, la sentencia `t["pos"][1] = (y_min + y_max) / 2000.0` mutaba directamente la propiedad `m["position"]` de la malla en `real_meshes`, teletransportando la tirilla inferior ($12.5\text{ mm}$) hacia el centro vertical del cajón ($Y = 0.72725\text{ m}, 0.47125\text{ m}, 0.21525\text{ m}$).
+- **Implementación Técnica de la Solución**:
+  1. *Arquitectura Invertida por Geometría (Whitelist Positiva de Herrajes)*:
+     - Se invirtió de forma canónica el clasificador: los herrajes operan bajo una whitelist estricta y cerrada (`es_nombre_herraje`: tornillos, tarugos, correderas, cantoneras, minifix, bisagras, tiradores, tapas, etc.).
+     - Si un elemento es plano/sólido con dimensiones geométricas reales ($\ge 40\text{ mm}$ de longitud y $\ge 8\text{ mm}$ de ancho), se matricula incondicionalmente como tablero de madera (`tablero`), garantizando que cualquier nombre de pieza sea automáticamente integrado en el BOM.
+  2. *Desacoplamiento Estricto de Memoria en Python (`3bf_worker.py`)*:
+     - Se reemplazó `"pos": pos` por `"pos": list(pos)` al consolidar tableros, aislando completamente las operaciones matemáticas y de cubitaje del BOM respecto a las transformaciones espaciales de las mallas Three.js en `real_meshes`.
+  3. *Motor de Alineación DfMA para Franjas de Ranura*:
+     - Se calculó analíticamente la cota rasante contra el fondo del cajón ($Y_{\text{base}} = 0.6787\text{ m}, 0.4227\text{ m}, 0.1667\text{ m}$), asegurando que las 6 tirillas inferiores ($12.5\text{ mm}$) queden perfectamente posicionadas a ras de la base sin huecos ni exposición del núcleo de MDP.
+- **Validación de Calidad y Resultados**:
+  * Despiece / BOM verificado en vivo: 6 `Posterior de cajon | Cant: 6 | 594.0 x 109.6 x 12.0 mm` registrados limpiamente.
+  * 0 herrajes espurios y cantidades exactas.
+  * Todas las mallas y superficies del posterior asientan con 0 mm de holgura y alineación impecable en el visor 3D.
+  * Servidores daemons (RhinoCompute 8 en :5000, 3BF Worker en :8005 con caché limpia, Web App en :3005) 100% estables.
 

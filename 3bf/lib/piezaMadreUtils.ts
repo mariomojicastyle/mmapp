@@ -65,7 +65,7 @@ export function esHerrajeNombre(name?: string | null): boolean {
     cleanLower.includes("perfil") ||
     cleanLower.includes("trilho") ||
     cleanLower.includes("adesiv")
-  ) && !cleanLower.includes("cajon") && !cleanLower.includes("gaveta");
+  ) && !cleanLower.includes("cajon") && !cleanLower.includes("gaveta") && !cleanLower.includes("posterior") && !cleanLower.includes("traser");
 }
 
 export function extraerPiezaMadre(rawName?: string | null): string {

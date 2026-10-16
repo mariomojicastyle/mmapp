@@ -26,9 +26,14 @@ import {
   ChevronUp,
   Globe,
   Tag,
-  Pencil
+  Pencil,
+  BookOpen,
+  ShieldCheck,
+  Cpu,
+  Filter
 } from "lucide-react";
 import ModalEditarMaterialDb, { ElementoDbSeleccionado } from "./ModalEditarMaterialDb";
+import { REGLAS_DFMA_CANONICAS, ReglaDfMARecord, CategoriaDfMA } from "@/lib/engine/dfmaRulesDictionary";
 
 /**
  * Componente de entrada numérica inteligente con formato latino/español:
@@ -133,7 +138,8 @@ export default function DatabaseView() {
     coloresApariencia,
   } = use3BFStore();
 
-  const [tab, setTab] = useState<"herrajes" | "tableros" | "cantos" | "proveedores" | "conversion">("herrajes");
+  const [tab, setTab] = useState<"herrajes" | "tableros" | "cantos" | "proveedores" | "conversion" | "reglas">("herrajes");
+  const [filtroCategoriaReglas, setFiltroCategoriaReglas] = useState<"todos" | CategoriaDfMA>("todos");
   const [busqueda, setBusqueda] = useState("");
   const [guardado, setGuardado] = useState(false);
   const [importando, setImportando] = useState(false);
@@ -300,6 +306,22 @@ export default function DatabaseView() {
         (c.proveedor || "").toLowerCase().includes(q)
     );
   }, [dbCantos, busqueda]);
+
+  const reglasFiltradas = useMemo(() => {
+    let list = REGLAS_DFMA_CANONICAS;
+    if (filtroCategoriaReglas !== "todos") {
+      list = list.filter((r) => r.categoria === filtroCategoriaReglas);
+    }
+    const q = busqueda.toLowerCase().trim();
+    if (!q) return list;
+    return list.filter(
+      (r) =>
+        r.nombreCanonica.toLowerCase().includes(q) ||
+        r.descripcion.toLowerCase().includes(q) ||
+        r.ejemplosReales.toLowerCase().includes(q) ||
+        r.terminosReconocidos.some((t) => t.toLowerCase().includes(q))
+    );
+  }, [filtroCategoriaReglas, busqueda]);
 
   const handleUpdateHerraje = (id: string, field: keyof HerrajeRecord, value: any) => {
     updateDbHerraje(id, field, value);
@@ -580,6 +602,23 @@ export default function DatabaseView() {
             <Coins className="w-3.5 h-3.5" />
             Mano de Obra & CIF
           </button>
+
+          <button
+            onClick={() => setTab("reglas")}
+            style={
+              tab === "reglas"
+                ? { backgroundColor: coloresApariencia?.botonActivo || "#0891b2", borderColor: coloresApariencia?.colorMarca || "#0891b2" }
+                : { backgroundColor: coloresApariencia?.botonInactivo || "#E2E8F0", borderColor: coloresApariencia?.bordeBotonInactivo || "#CBD5E1", color: coloresApariencia?.textoPrincipal || "#0F172A" }
+            }
+            className={`px-4 py-1.5 rounded-full transition flex items-center gap-1.5 font-bold cursor-pointer text-xs ${
+              tab === "reglas"
+                ? "text-white shadow-md border"
+                : "hover:opacity-90 border backdrop-blur-sm"
+            }`}
+          >
+            <BookOpen className="w-3.5 h-3.5" />
+            Reglas DfMA & Nomenclatura ({REGLAS_DFMA_CANONICAS.length})
+          </button>
         </div>
 
         {/* Buscador y Botón Nuevo Herraje */}
@@ -592,7 +631,11 @@ export default function DatabaseView() {
               />
               <input
                 type="text"
-                placeholder="Buscar por código, nombre o proveedor..."
+                placeholder={
+                  tab === "reglas"
+                    ? "Buscar regla por término, nombre canónico o función DfMA..."
+                    : "Buscar por código, nombre o proveedor..."
+                }
                 value={busqueda}
                 onChange={(e) => setBusqueda(e.target.value)}
                 style={{
@@ -2493,6 +2536,180 @@ export default function DatabaseView() {
                 </div>
               </div>
             </div>
+          </div>
+        )}
+
+        {/* ========================================================= */}
+        {/* TAB: REGLAS DfMA, NOMENCLATURA & GOBERNANZA DE PIEZAS     */}
+        {/* ========================================================= */}
+        {tab === "reglas" && (
+          <div className="w-full flex flex-col">
+            {/* Barra superior de Gobernanza y Filtros por Categoría (Plana, sin doble radio de esquina) */}
+            <div 
+              style={{
+                backgroundColor: coloresApariencia?.tablaEncabezadoFondo || coloresApariencia?.fondoPaneles,
+                borderColor: coloresApariencia?.tablaBorde || coloresApariencia?.bordePaneles,
+              }}
+              className="px-3.5 py-2.5 border-b flex flex-wrap items-center justify-between gap-2.5 sticky top-0 z-20 backdrop-blur-md transition-colors"
+            >
+              <div className="flex items-center gap-2">
+                <span 
+                  style={{ backgroundColor: `${coloresApariencia?.botonActivo || "#0891b2"}20`, color: coloresApariencia?.botonActivo || "#0891b2" }}
+                  className="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wider border border-current"
+                >
+                  Gobernanza Canónica DfMA
+                </span>
+                <span style={{ color: coloresApariencia?.textoSecundario }} className="text-xs font-semibold">
+                  {reglasFiltradas.length} de {REGLAS_DFMA_CANONICAS.length} reglas activas
+                </span>
+              </div>
+
+              {/* Filtros por Categoría en Cápsulas Puras (rounded-full) */}
+              <div className="flex flex-wrap items-center gap-1.5">
+                {[
+                  { id: "todos", label: "Todas", count: REGLAS_DFMA_CANONICAS.length },
+                  { id: "tablero", label: "Tableros", icon: Layers, count: REGLAS_DFMA_CANONICAS.filter(r => r.categoria === "tablero").length },
+                  { id: "herraje", label: "Herrajes", icon: Hammer, count: REGLAS_DFMA_CANONICAS.filter(r => r.categoria === "herraje").length },
+                  { id: "tapa", label: "Tapas RTA", icon: ShieldCheck, count: REGLAS_DFMA_CANONICAS.filter(r => r.categoria === "tapa").length },
+                  { id: "mecanizado", label: "Mecanizados", icon: Cpu, count: REGLAS_DFMA_CANONICAS.filter(r => r.categoria === "mecanizado").length },
+                ].map((f) => {
+                  const activo = filtroCategoriaReglas === f.id;
+                  const IconC = f.icon;
+                  return (
+                    <button
+                      key={f.id}
+                      onClick={() => setFiltroCategoriaReglas(f.id as any)}
+                      style={
+                        activo
+                          ? { backgroundColor: coloresApariencia?.botonActivo || "#0891b2", color: "#FFFFFF" }
+                          : { backgroundColor: coloresApariencia?.botonInactivo || "#E2E8F0", color: coloresApariencia?.textoPrincipal || "#0F172A" }
+                      }
+                      className="px-3 py-1 rounded-full text-xs font-bold transition flex items-center gap-1 cursor-pointer hover:opacity-90 active:scale-95"
+                    >
+                      {IconC && <IconC className="w-3 h-3" />}
+                      <span>{f.label}</span>
+                      <span className="opacity-70 text-[10px]">({f.count})</span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Tabla de Reglas DfMA a Pantalla Completa (100% altura disponible, scroll fluido) */}
+            <table className="w-full text-left border-collapse text-xs">
+              <thead 
+                style={{
+                  backgroundColor: coloresApariencia?.tablaEncabezadoFondo || coloresApariencia?.fondoPaneles,
+                  borderColor: coloresApariencia?.tablaBorde || coloresApariencia?.bordePaneles,
+                  color: coloresApariencia?.tablaEncabezadoTexto || coloresApariencia?.textoSecundario
+                }}
+                className="sticky top-[49px] z-10 border-b backdrop-blur-md font-bold uppercase text-[10px] tracking-wider shadow-xs"
+              >
+                <tr>
+                  <th className="py-2.5 px-3.5 w-28">Familia DfMA</th>
+                  <th className="py-2.5 px-3.5 w-48">Términos Reconocidos (PT-BR / ES)</th>
+                  <th className="py-2.5 px-3.5 w-52">Nombre Canónico de Taller</th>
+                  <th className="py-2.5 px-3.5">Comportamiento en Motor 3D (Three.js)</th>
+                  <th className="py-2.5 px-3.5">Comportamiento en BOM & Corte (DfMA)</th>
+                  <th className="py-2.5 px-3.5 w-56">Regla Geométrica de Asignación</th>
+                </tr>
+              </thead>
+              <tbody 
+                style={{ borderColor: coloresApariencia?.tablaBorde || coloresApariencia?.bordePaneles }}
+                className="divide-y"
+              >
+                {reglasFiltradas.length === 0 ? (
+                  <tr>
+                    <td colSpan={6} className="py-12 text-center text-xs" style={{ color: coloresApariencia?.textoSecundario }}>
+                      No se encontraron reglas coincidentes con la búsqueda &quot;{busqueda}&quot;.
+                    </td>
+                  </tr>
+                ) : (
+                  reglasFiltradas.map((r) => {
+                    const esTablero = r.categoria === "tablero";
+                    const esHerraje = r.categoria === "herraje";
+                    const esTapa = r.categoria === "tapa";
+                    const esMec = r.categoria === "mecanizado";
+
+                    const badgeColor = esTablero
+                      ? { bg: "#0284C720", border: "#0284C7", text: "#0284C7", label: "Tablero" }
+                      : esHerraje
+                      ? { bg: "#64748B20", border: "#64748B", text: "#475569", label: "Herraje" }
+                      : esTapa
+                      ? { bg: "#D9770620", border: "#D97706", text: "#B45309", label: "Tapa RTA" }
+                      : { bg: "#EA580C20", border: "#EA580C", text: "#C2410C", label: "Mecanizado" };
+
+                    return (
+                      <tr 
+                        key={r.id}
+                        className="hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition-colors"
+                      >
+                        <td className="py-2.5 px-3.5 align-top">
+                          <span 
+                            style={{ backgroundColor: badgeColor.bg, borderColor: badgeColor.border, color: badgeColor.text }}
+                            className="px-2 py-0.5 rounded-full text-[10px] font-extrabold uppercase border inline-flex items-center gap-1"
+                          >
+                            {badgeColor.label}
+                          </span>
+                        </td>
+
+                        <td className="py-2.5 px-3.5 align-top">
+                          <div className="flex flex-wrap gap-1">
+                            {r.terminosReconocidos.map((t, idx) => (
+                              <code 
+                                key={idx}
+                                style={{
+                                  backgroundColor: coloresApariencia?.botonInactivo || "#F1F5F9",
+                                  color: coloresApariencia?.textoPrincipal || "#0F172A",
+                                  borderColor: coloresApariencia?.bordeBotonInactivo || "#E2E8F0"
+                                }}
+                                className="px-1.5 py-0.5 rounded text-[10px] font-mono border"
+                              >
+                                {t}
+                              </code>
+                            ))}
+                          </div>
+                        </td>
+
+                        <td className="py-2.5 px-3.5 align-top">
+                          <div className="flex flex-col">
+                            <span style={{ color: coloresApariencia?.textoPrincipal }} className="font-extrabold text-xs">
+                              {r.nombreCanonica}
+                            </span>
+                            <span style={{ color: coloresApariencia?.textoSecundario }} className="text-[11px] mt-0.5 leading-tight">
+                              {r.descripcion}
+                            </span>
+                            {r.ejemplosReales && (
+                              <span style={{ color: coloresApariencia?.botonActivo || "#0891b2" }} className="text-[10px] font-mono mt-1 opacity-80">
+                                Ej: {r.ejemplosReales}
+                              </span>
+                            )}
+                          </div>
+                        </td>
+
+                        <td className="py-2.5 px-3.5 align-top">
+                          <span style={{ color: coloresApariencia?.textoPrincipal }} className="text-xs leading-relaxed block">
+                            {r.comportamientoThreeJs}
+                          </span>
+                        </td>
+
+                        <td className="py-2.5 px-3.5 align-top">
+                          <span style={{ color: coloresApariencia?.textoPrincipal }} className="text-xs leading-relaxed block">
+                            {r.comportamientoBOM}
+                          </span>
+                        </td>
+
+                        <td className="py-2.5 px-3.5 align-top">
+                          <span style={{ color: coloresApariencia?.textoSecundario }} className="text-[11px] leading-relaxed block font-mono">
+                            {r.reglaGeometrica}
+                          </span>
+                        </td>
+                      </tr>
+                    );
+                  })
+                )}
+              </tbody>
+            </table>
           </div>
         )}
       </div>

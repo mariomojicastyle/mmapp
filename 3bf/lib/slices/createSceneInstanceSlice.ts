@@ -246,33 +246,45 @@ export const createSceneInstanceSlice = (set: any, get: any): any => ({
     const cleanKey = key.replace("RH_IN:", "").toLowerCase().replace(/\s+/g, "_");
     nextParams[cleanKey] = value;
     
-    const pureKey = key.replace(/^RH_IN:\s*/i, "").replace(/^[\d.]+[_\s]*/, "").toLowerCase().replace(/\s+/g, "_");
-    if (pureKey) {
-      nextParams[pureKey] = value;
-    }
+    // 🛡️ REGLA CANÓNICA DE SOBERANÍA DE PIEZAS:
+    // La sincronización bidireccional por nombre base se restringe ÚNICA Y EXCLUSIVAMENTE a dimensiones globales
+    // estructurales (ancho, alto, profundidad, zócalo, ritmo, apertura).
+    // Los parámetros individuales de cada pieza (cantos, balances, mapeados con prefijo numérico como '02.x', '03.x')
+    // son 100% independientes y nunca deben clonarse ni sobreescribir las demás piezas del mueble.
+    const isGlobalStructural = /ancho|alto|altura|profundidad|prof|zocalo|ritmo|apertur/i.test(key);
 
-    const legacyKey = (MAPA_PARAMETROS as any)[key];
-    if (legacyKey) nextParams[legacyKey] = value;
-
-    // 🔄 Sincronización bidireccional de parámetros: asegura que si cambia "ancho_1295" se actualice "RH_IN:01.0 Ancho 1295" y viceversa
-    const normTarget = (pureKey || cleanKey).replace(/^[\d.]+[_\s]*/, "").replace(/[_\s]+/g, "_").trim();
-    Object.keys(inst.parametros || {}).forEach((existingKey) => {
-      const normExisting = existingKey.replace(/^RH_IN:\s*/i, "").replace(/^[\d.]+[_\s]*/, "").toLowerCase().replace(/[_\s]+/g, "_").trim();
-      if (normTarget && normExisting === normTarget) {
-        nextParams[existingKey] = value;
+    if (isGlobalStructural) {
+      const pureKey = key.replace(/^RH_IN:\s*/i, "").replace(/^[\d.]+[_\s]*/, "").toLowerCase().replace(/\s+/g, "_");
+      if (pureKey) {
+        nextParams[pureKey] = value;
       }
-    });
 
-    // 📏 Sincronización de dimensiones globales canónicas (ancho, alto, profundidad)
-    const normKey = key.toLowerCase();
-    if (normTarget.includes("ancho") || normKey.includes("01.0") || normKey.includes("ancho")) {
-      nextParams["ancho"] = typeof value === "number" ? value : (Number(value) || value);
-    }
-    if (normTarget.includes("alto") || normTarget.includes("altura") || normKey.includes("01.1") || normKey.includes("alto")) {
-      nextParams["alto"] = typeof value === "number" ? value : (Number(value) || value);
-    }
-    if (normTarget.includes("profundidad") || normTarget.includes("prof") || normKey.includes("01.2") || normKey.includes("profundidad")) {
-      nextParams["profundidad"] = typeof value === "number" ? value : (Number(value) || value);
+      const legacyKey = (MAPA_PARAMETROS as any)[key];
+      if (legacyKey) nextParams[legacyKey] = value;
+
+      // 🔄 Sincronización bidireccional EXCLUSIVA para dimensiones globales canónicas
+      const normTarget = (pureKey || cleanKey).replace(/^[\d.]+[_\s]*/, "").replace(/[_\s]+/g, "_").trim();
+      Object.keys(inst.parametros || {}).forEach((existingKey) => {
+        const isExistingGlobal = /ancho|alto|altura|profundidad|prof|zocalo|ritmo|apertur/i.test(existingKey);
+        if (isExistingGlobal) {
+          const normExisting = existingKey.replace(/^RH_IN:\s*/i, "").replace(/^[\d.]+[_\s]*/, "").toLowerCase().replace(/[_\s]+/g, "_").trim();
+          if (normTarget && normExisting === normTarget) {
+            nextParams[existingKey] = value;
+          }
+        }
+      });
+
+      // 📏 Sincronización de dimensiones globales canónicas (ancho, alto, profundidad)
+      const normKey = key.toLowerCase();
+      if (normTarget.includes("ancho") || normKey.includes("01.0") || normKey.includes("ancho")) {
+        nextParams["ancho"] = typeof value === "number" ? value : (Number(value) || value);
+      }
+      if (normTarget.includes("alto") || normTarget.includes("altura") || normKey.includes("01.1") || normKey.includes("alto")) {
+        nextParams["alto"] = typeof value === "number" ? value : (Number(value) || value);
+      }
+      if (normTarget.includes("profundidad") || normTarget.includes("prof") || normKey.includes("01.2") || normKey.includes("profundidad")) {
+        nextParams["profundidad"] = typeof value === "number" ? value : (Number(value) || value);
+      }
     }
 
     // Actualización inmediata del estado local (UI a 60 FPS ultra fluida) e inicio de sincronización
