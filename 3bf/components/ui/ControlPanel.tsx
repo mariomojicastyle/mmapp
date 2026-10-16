@@ -310,11 +310,92 @@ function RenderParamControl({ paramKey }: { paramKey: string }) {
 
 // Panel de Parámetros Dinámico Autónomo (Sólo visible cuando hay un archivo cargado con grupos reales)
 function ParametrosPanel() {
-  const { parametros, resultado, coloresApariencia, objetoActivoId, instancias } = use3BFStore();
-  const [gruposColapsados, setGruposColapsados] = React.useState<Record<string, boolean>>({});
+  const {
+    parametros,
+    resultado,
+    coloresApariencia,
+    objetoActivoId,
+    instancias,
+    muebleActivoGuardado,
+  } = use3BFStore();
   const activeId = objetoActivoId || Object.keys(instancias || {})[0] || null;
   const instanciaActiva = activeId ? instancias[activeId] : null;
   const currentResult = instanciaActiva ? instanciaActiva.resultado : resultado;
+
+  const storageKey =
+    muebleActivoGuardado?.id ||
+    instanciaActiva?.definitionId ||
+    parametros.model_id ||
+    "default";
+
+  const [localFallback, setLocalFallback] = React.useState<Record<string, boolean>>({});
+
+  React.useEffect(() => {
+    if (typeof window === "undefined" || !window.localStorage) return;
+    try {
+      const raw =
+        localStorage.getItem(`3bf_grupos_colapsados_${storageKey}`) ||
+        (instanciaActiva?.definitionId
+          ? localStorage.getItem(`3bf_grupos_colapsados_${instanciaActiva.definitionId}`)
+          : null);
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        setLocalFallback(parsed);
+        // Si la instancia activa aún no tenía gruposColapsados hidratados, sincronizarlos al store para que Guardar Proyecto los incluya en el .3bf.json
+        if (
+          activeId &&
+          (!instanciaActiva?.gruposColapsados || Object.keys(instanciaActiva.gruposColapsados).length === 0) &&
+          Object.keys(parsed).length > 0
+        ) {
+          use3BFStore.setState((s) => ({
+            instancias: s.instancias[activeId]
+              ? {
+                  ...s.instancias,
+                  [activeId]: { ...s.instancias[activeId], gruposColapsados: parsed },
+                }
+              : s.instancias,
+          }));
+        }
+      } else {
+        setLocalFallback({});
+      }
+    } catch {
+      setLocalFallback({});
+    }
+  }, [storageKey, activeId, instanciaActiva?.definitionId]);
+
+  const gruposColapsados: Record<string, boolean> =
+    (instanciaActiva?.gruposColapsados && Object.keys(instanciaActiva.gruposColapsados).length > 0
+      ? instanciaActiva.gruposColapsados
+      : null) ||
+    (muebleActivoGuardado?.gruposColapsados && Object.keys(muebleActivoGuardado.gruposColapsados).length > 0
+      ? muebleActivoGuardado.gruposColapsados
+      : null) ||
+    localFallback;
+
+  const actualizarGruposColapsados = (nuevoMapa: Record<string, boolean>) => {
+    setLocalFallback(nuevoMapa);
+    if (typeof window !== "undefined" && window.localStorage) {
+      try {
+        localStorage.setItem(`3bf_grupos_colapsados_${storageKey}`, JSON.stringify(nuevoMapa));
+        if (instanciaActiva?.definitionId) {
+          localStorage.setItem(`3bf_grupos_colapsados_${instanciaActiva.definitionId}`, JSON.stringify(nuevoMapa));
+        }
+      } catch {}
+    }
+    use3BFStore.setState((s) => ({
+      instancias:
+        activeId && s.instancias[activeId]
+          ? {
+              ...s.instancias,
+              [activeId]: { ...s.instancias[activeId], gruposColapsados: nuevoMapa },
+            }
+          : s.instancias,
+      muebleActivoGuardado: s.muebleActivoGuardado
+        ? { ...s.muebleActivoGuardado, gruposColapsados: nuevoMapa }
+        : null,
+    }));
+  };
 
   if (!parametros.model_id && !instanciaActiva) return null;
 
@@ -332,10 +413,10 @@ function ParametrosPanel() {
         const estaColapsado = !!gruposColapsados[groupKey];
 
         const toggleColapsoGrupo = () => {
-          setGruposColapsados((prev) => ({
-            ...prev,
-            [groupKey]: !prev[groupKey],
-          }));
+          actualizarGruposColapsados({
+            ...gruposColapsados,
+            [groupKey]: !gruposColapsados[groupKey],
+          });
         };
 
         return (

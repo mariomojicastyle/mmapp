@@ -127,7 +127,13 @@ export function resolverPropiedadesMaterial(p: MaterialPropertiesInput): Resolve
 
   // 2. Capa asignada
   let capaAsignada: any = null;
-  if (asignacion && asignacion.capaId && asignacion.capaId !== 'por_defecto') {
+  const pKeyLow = (p.cleanName || p.name || '').toLowerCase();
+  const isFondoReverso = (
+    pKeyLow.includes('fondo') || pKeyLow.includes('fundo') || pKeyLow.includes('costa') || pKeyLow.includes('espaldar')
+  ) && (
+    pKeyLow.includes('balance') || pKeyLow.endsWith(' b') || pKeyLow.endsWith('_b') || /pe[cç]a\s*\d+\s*b$/i.test(pKeyLow)
+  );
+  if (asignacion && asignacion.capaId && asignacion.capaId !== 'por_defecto' && !(isFondoReverso && asignacion.capaId === 'capa_tono_fondo')) {
     capaAsignada = p.capas.find((c) => c.id === asignacion.capaId) || null;
   }
   

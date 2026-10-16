@@ -141,6 +141,8 @@ async function scanMueblesAsync(storageDir: string) {
               fichaConfig: data.fichaConfig,
               fichaProducto: data.fichaProducto,
               camara: data.camara,
+              modoVisual: data.modoVisual,
+              gruposColapsados: data.gruposColapsados,
             });
           } catch (readErr) {
             console.error("[3dBimFab Drive] Error leyendo archivo de mueble:", fullPath, readErr);

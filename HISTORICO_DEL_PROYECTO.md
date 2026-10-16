@@ -3571,3 +3571,28 @@ Para mantener la máxima agilidad y minimizar el consumo de tokens sin perder ni
   * Implementado **Tiered Context Loading**: Nivel 1 (Núcleo Obligatorio de 4 archivos leídos en paralelo al arrancar: `ESTADO_DEL_PROYECTO.md`, `3BF.md`, `WORKER.md`, `Arquitectura.md`) y Nivel 2 (18 archivos especializados bajo demanda según el dominio de la tarea), ahorrando más del **80% de tokens** en cada inicio de sesión.
 - **Validación de Calidad**:
   * `npx tsc --noEmit` en `3bf` con **0 errores**. Worker modularizado activo en `:8005` y verificado por el usuario.
+
+---
+
+### 🚀 Hito 277: Integración Canónica de Fondos Delgados DfMA (MDF 3mm), Despiece Sin Duplicados, Persistencia Integral de Estado (.3bf.json) y Auto-Resolución de Capas en 3dBimFab (16 de Octubre, 2026)
+- **1. Integración DfMA de Fondos Delgados (MDF 3 mm) y Erradicación de Duplicados en Despiece**:
+  * **Diagnóstico de Causa Raíz de Duplicación (`Cant: 12` en lugar de `6`) y Espesor Erróneo (`12 mm` en lugar de `3 mm`)**:
+    1. *Omisión de Clasificador MDF (`bom_engine.py`)*: La función `es_nombre_tablero` filtraba e ignoraba mallas de cantos y sustrato buscando la palabra `"mdp"`, pero no incluía el prefijo `"mdf"`. Al enviar la cara reversa y los cantos por `RH_OUT:MDF Fondos de Cajon`, el motor limpiaba el prefijo y las sumaba como 6 piezas principales adicionales ($6\text{ Caras A} + 6\text{ Caras Reverso} = 12\text{ unidades}$).
+    2. *Ventana de Calibre Rígida*: La búsqueda de espesores en `bom_engine.py` requería dimensiones entre $9.0\text{ mm}$ y $36.0\text{ mm}$ (tableros estructurales), cayendo en un fallback que asignaba forzosamente $12.0\text{ mm}$ si el nombre contenía la palabra `"cajon"`.
+  * **Solución Técnica Implementada (`bom_engine.py`, `createSceneInstanceSlice.ts`, `DespieceView.tsx`)**:
+    - **Reconocimiento Canónico de Sustrato MDF**: Mallas con prefijo `MDF ` se clasifican como sustrato y se excluyen del conteo de tableros consolidados, erradicando la duplicación y certificando **6 unidades exactas**.
+    - **Ampliación de Calibre a Micro-Espesores ($\ge 2.0\text{ mm}$)**: Tanto la distancia perpendicular entre Cara A y Cara B como el grosor de las mallas de borde MDF se evalúan admitiendo calibres delgados desde $2.0\text{ mm}$, registrando **`Esp.: 3 mm`** con precisión milimétrica.
+    - **Auto-Asignación en Tabla de Materiales (`DespieceView.tsx`)**: Al detectar calibre $\le 5\text{ mm}$, el sistema asigna automáticamente el tablero comercial de **MDF 3 mm** desde la base de datos de tableros.
+- **2. Auto-Resolución Reactiva de Capas para Fondos de Cajón (`cadStateUtils.ts`, `PartBreakdownPanel.tsx`, `BoardMesh.tsx`, `boardMaterialResolver.ts`, `createCatalogSlice.ts`)**:
+  * **Diagnóstico**: Al conectar el cableado estándar en Grasshopper (`NURBS_Color` $\to$ `RH_OUT:Fondos de Cajon`, `NURBS_Balance` $\to$ `RH_OUT:Fondos de Cajon B`, `NURBS_MDP` $\to$ `RH_OUT:MDF Fondos de Cajon`), la interfaz mostraba `Fondos de Cajon B` asignado a `Tono Fondo` debido a la retención de claves previas en `localStorage` y en `asignacionesPartes`.
+  * **Solución**:
+    - En `cadStateUtils.ts`, `PartBreakdownPanel.tsx`, `BoardMesh.tsx` y `boardMaterialResolver.ts`, se implementó la regla canónica de evaluación combinada: si una pieza es fondo y a la vez Cara B (`isFondo && isBalance`), su capa por defecto obligatoria es **`capa_mdf`** (sustrato MDF crudo).
+    - La cara pintada superior (`Fondos de Cajon`) se asigna a **`capa_tono_fondo`**, el reverso inferior (`Fondos de Cajon B`) a **`capa_mdf`**, y los 4 cantos de 3 mm + interiores de maquinados circulares (`MDF Fondos de Cajon`) a **`capa_mdf`**, logrando renderizado PBR fotorrealista de MDF crudo sin cruces de cables en Grasshopper.
+- **3. Persistencia Integral del Estado de Trabajo en `.3bf.json` y Restauración Determinística**:
+  * **Modificador de Componentes (`gruposColapsados`)**: Persistencia del estado plegado/desplegado de cada acordeón de pieza tanto en el archivo `.3bf.json` como en `localStorage`, restaurando exactamente la vista de trabajo al reabrir el mueble o presionar F5.
+  * **Modo de Visualización (`modoVisual`)**: Persistencia del modo visual activo (`solido`, `semitransparente`, `lineas`, `renderizado`) en `.3bf.json` y `localStorage`.
+  * **Cámara de Escena (`camara`)**: Almacenamiento continuo de posición $[X, Y, Z]$, target $[TX, TY, TZ]$ y FOV con restauración en Three.js vía `CameraPersistenceController`.
+  * **Detección Automática de Nuevas Salidas GHX (`abrirMueble`)**: Comparación en caliente entre las salidas declaradas en disco y las guardadas en memoria, forzando re-cálculo si se agregan nuevos componentes en Grasshopper.
+- **Validación de Calidad**:
+  * `npx tsc --noEmit` en `3bf` con **0 errores**.
+  * Worker Python en `:8005` reiniciado con el motor `bom_engine.py` actualizado y verificado.

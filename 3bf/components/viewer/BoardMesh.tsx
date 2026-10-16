@@ -254,7 +254,12 @@ export function BoardMesh({
   
   // 1. Identificar capa asignada (por asignación explícita o inferencia canónica compartida)
   const kLow = cleanName.toLowerCase();
-  let capaAsignadaParte = asignacionParte?.capaId && asignacionParte.capaId !== "por_defecto"
+  const isFondoReverso = (
+    kLow.includes("fondo") || kLow.includes("fundo") || kLow.includes("costa") || kLow.includes("espaldar")
+  ) && (
+    kLow.includes("balance") || kLow.endsWith(" b") || kLow.endsWith("_b") || /pe[cç]a\s*\d+\s*b$/i.test(kLow)
+  );
+  let capaAsignadaParte = asignacionParte?.capaId && asignacionParte.capaId !== "por_defecto" && !(isFondoReverso && asignacionParte.capaId === "capa_tono_fondo")
     ? capas.find((c) => c.id === asignacionParte.capaId)
     : null;
 

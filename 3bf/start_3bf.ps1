@@ -9,11 +9,11 @@ Write-Host "🚀 Iniciando Protocolo de Arranque Unificado 3DBimFab (3BF)..." -F
 $rhinoComputeExe = "$env:USERPROFILE\AppData\Roaming\McNeel\Rhinoceros\packages\8.0\Hops\0.17.1\rhino.compute\rhino.compute.exe"
 $3bfFolder = "C:\Desarrollo\mmapp\3BF"
 
-# 2. Iniciar RhinoCompute 8 si no está activo (Puerto 5000)
+# 2. Iniciar RhinoCompute 8 si no está activo (Puerto 5000) con pre-calentamiento inmediato de hijos (--spawn-on-startup)
 $rcTest = Get-NetTCPConnection -LocalPort 5000 -ErrorAction SilentlyContinue
 if (-not $rcTest) {
-    Write-Host "⚡ arrancando RhinoCompute 8 (Puerto 5000)..." -ForegroundColor Yellow
-    Start-Process -FilePath $rhinoComputeExe -WindowStyle Hidden
+    Write-Host "⚡ arrancando RhinoCompute 8 con --spawn-on-startup (Puerto 5000)..." -ForegroundColor Yellow
+    Start-Process -FilePath $rhinoComputeExe -ArgumentList "--spawn-on-startup --idlespan 86400" -WindowStyle Hidden
     Start-Sleep -Seconds 2
 } else {
     Write-Host "✅ RhinoCompute 8 ya se encuentra activo en puerto 5000." -ForegroundColor Green

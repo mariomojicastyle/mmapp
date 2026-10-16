@@ -220,17 +220,21 @@ export const createCatalogSlice = (set: any, get: any): any => ({
     if (recetaEntrante.asignacionesPartes) {
       const prevPartes = { ...state.asignacionesPartes };
       Object.entries(recetaEntrante.asignacionesPartes).forEach(([parteKey, def]) => {
+        const kLow = parteKey.toLowerCase();
+        const isBalance = kLow.includes("balance") || kLow.endsWith(" b") || kLow.endsWith("_b") || /pe[cç]a\s*\d+\s*b$/i.test(kLow);
+        const isFondo = kLow.includes("fondo") || kLow.includes("fundo") || kLow.includes("costa") || kLow.includes("espaldar") || kLow.includes("trasera");
+        const resolvedCapaId = (isFondo && isBalance && def.capaId === "capa_tono_fondo") ? "capa_mdf" : def.capaId;
         if (prevPartes[parteKey]) {
           prevPartes[parteKey] = {
             ...prevPartes[parteKey],
-            capaId: def.capaId,
+            capaId: resolvedCapaId,
             materialId: def.materialId
           };
         } else {
           prevPartes[parteKey] = {
             parteKey,
             nombreVisible: parteKey.replace(/^RH_OUT:/, ""),
-            capaId: def.capaId,
+            capaId: resolvedCapaId,
             materialId: def.materialId,
             visible: true
           };
@@ -457,13 +461,24 @@ export const createCatalogSlice = (set: any, get: any): any => ({
             kLow.includes("pk18")
           );
 
+          const isBalance = (
+            kLow.includes("balance") ||
+            kLow.includes("equilibrio") ||
+            kLow.includes("reverso") ||
+            kLow.endsWith(" b") ||
+            kLow.endsWith("_b") ||
+            kLow.endsWith("-b") ||
+            /pe[cç]a\s*\d+\s*b$/i.test(kLow) ||
+            /pk\s*\d+\s*b$/i.test(kLow)
+          );
+
           let safeCapaId = v.capaId;
-          if (kLow.includes("mdf")) {
+          if (kLow.includes("mdf") || (isFondo && isBalance)) {
             safeCapaId = "capa_mdf";
           } else if (isFondo && !kLow.includes("mdp")) {
             safeCapaId = "capa_tono_fondo";
           } else if (isBoard && isInvalidLayer) {
-            if (kLow.includes("balance") || kLow.endsWith(" b") || /pe[cç]a\s*\d+\s*b$/i.test(kLow)) safeCapaId = "capa_back";
+            if (isBalance) safeCapaId = "capa_back";
             else safeCapaId = "capa_tono";
           }
           return [k, { ...v, capaId: safeCapaId, visible: true }];
@@ -1012,6 +1027,14 @@ export const createCatalogSlice = (set: any, get: any): any => ({
 
       const disenoActivoVivo = (instPrincipal && instPrincipal.disenoActivoId) || state.muebleActivoGuardado?.disenoActivoId || null;
 
+      const camaraActual =
+        (typeof window !== "undefined" && (window as any).__obtenerCamaraActual3BF
+          ? (window as any).__obtenerCamaraActual3BF()
+          : null) ||
+        state.camaraEscena ||
+        state.muebleActivoGuardado?.camara;
+      const modoVisualActual = state.modoVisual || state.muebleActivoGuardado?.modoVisual || "semitransparente";
+
       const sanitizedInst: Record<string, ObjetoInstancia3BF> = {};
       for (const [k, v] of Object.entries(rawInst)) {
         const disenosInst = (v.disenos && v.disenos.length > 0) ? v.disenos : disenosVivos;
@@ -1023,6 +1046,8 @@ export const createCatalogSlice = (set: any, get: any): any => ({
           resultado: v.resultado ? purgarResultadoGeometria(v.resultado) : undefined,
           disenos: disenosInst,
           disenoActivoId: v.disenoActivoId || disenoActivoVivo,
+          gruposColapsados: v.gruposColapsados || state.muebleActivoGuardado?.gruposColapsados || {},
+          modoVisual: modoVisualActual as any,
         };
       }
 
@@ -1047,8 +1072,18 @@ export const createCatalogSlice = (set: any, get: any): any => ({
         totalPiezas: despieceGlobal.reduce((acc, p) => acc + (p.cantidad || 1), 0),
         pasosManual: pasosAClonar,
         manualVinculadoId: safeName,
-        camara: state.camaraEscena || state.muebleActivoGuardado?.camara,
+        camara: camaraActual,
+        gruposColapsados: instPrincipal?.gruposColapsados || state.muebleActivoGuardado?.gruposColapsados || {},
+        modoVisual: modoVisualActual as any,
       };
+
+      if (typeof window !== "undefined" && window.localStorage) {
+        try {
+          if (camaraActual) localStorage.setItem(`3bf_camara_${id}`, JSON.stringify(camaraActual));
+          localStorage.setItem(`3bf_modo_visual_${id}`, modoVisualActual);
+          localStorage.setItem("3bf_modo_visual", modoVisualActual);
+        } catch {}
+      }
 
       // Guardar en Store y localStorage
       state.actualizarFichaProducto(cleanNombre, fichaGuardada);
@@ -1190,6 +1225,14 @@ export const createCatalogSlice = (set: any, get: any): any => ({
 
       const disenoActivoVivo = (instPrincipal && instPrincipal.disenoActivoId) || state.muebleActivoGuardado?.disenoActivoId || null;
 
+      const camaraActual =
+        (typeof window !== "undefined" && (window as any).__obtenerCamaraActual3BF
+          ? (window as any).__obtenerCamaraActual3BF()
+          : null) ||
+        state.camaraEscena ||
+        state.muebleActivoGuardado?.camara;
+      const modoVisualActual = state.modoVisual || state.muebleActivoGuardado?.modoVisual || "semitransparente";
+
       const sanitizedInst: Record<string, ObjetoInstancia3BF> = {};
       for (const [k, v] of Object.entries(rawInst)) {
         const disenosInst = (v.disenos && v.disenos.length > 0) ? v.disenos : disenosVivos;
@@ -1201,6 +1244,8 @@ export const createCatalogSlice = (set: any, get: any): any => ({
           resultado: v.resultado ? purgarResultadoGeometria(v.resultado) : undefined,
           disenos: disenosInst,
           disenoActivoId: v.disenoActivoId || disenoActivoVivo,
+          gruposColapsados: v.gruposColapsados || state.muebleActivoGuardado?.gruposColapsados || {},
+          modoVisual: modoVisualActual as any,
         };
       }
 
@@ -1225,8 +1270,18 @@ export const createCatalogSlice = (set: any, get: any): any => ({
         totalPiezas: despieceGlobal.reduce((acc, p) => acc + (p.cantidad || 1), 0),
         pasosManual: pasosActuales,
         manualVinculadoId: safeName,
-        camara: state.camaraEscena || state.muebleActivoGuardado?.camara,
+        camara: camaraActual,
+        gruposColapsados: instPrincipal?.gruposColapsados || state.muebleActivoGuardado?.gruposColapsados || {},
+        modoVisual: modoVisualActual as any,
       };
+
+      if (typeof window !== "undefined" && window.localStorage) {
+        try {
+          if (camaraActual) localStorage.setItem(`3bf_camara_${id}`, JSON.stringify(camaraActual));
+          localStorage.setItem(`3bf_modo_visual_${id}`, modoVisualActual);
+          localStorage.setItem("3bf_modo_visual", modoVisualActual);
+        } catch {}
+      }
 
       // 2. Objeto Manual (.3bm.json)
       const manualPayload: Manual3BMProyecto = {
@@ -1460,6 +1515,19 @@ export const createCatalogSlice = (set: any, get: any): any => ({
       delete (cleanParams as any)["lado_balance"];
       delete (cleanParams as any)["mapeado"];
 
+      let fallbackColapsados: Record<string, boolean> = {};
+      if (typeof window !== "undefined" && window.localStorage) {
+        try {
+          const raw = localStorage.getItem(`3bf_grupos_colapsados_${targetMueble.id}`) ||
+                      localStorage.getItem(`3bf_grupos_colapsados_${v.definitionId}`);
+          if (raw) fallbackColapsados = JSON.parse(raw);
+        } catch {}
+      }
+      const colapsadosGuardados =
+        (v.gruposColapsados && Object.keys(v.gruposColapsados).length > 0 ? v.gruposColapsados : null) ||
+        (targetMueble.gruposColapsados && Object.keys(targetMueble.gruposColapsados).length > 0 ? targetMueble.gruposColapsados : null) ||
+        fallbackColapsados;
+
       restoredInstancias[k] = {
         ...v,
         posicion: Array.isArray(v.posicion) ? [...v.posicion] : [0, 0, 0],
@@ -1468,6 +1536,7 @@ export const createCatalogSlice = (set: any, get: any): any => ({
         resultado: v.resultado ? purgarResultadoGeometria(v.resultado) : undefined,
         disenos: v.disenos || targetMueble.disenos || [],
         disenoActivoId: v.disenoActivoId || targetMueble.disenoActivoId || null,
+        gruposColapsados: colapsadosGuardados,
       };
     }
     const firstKey = Object.keys(restoredInstancias)[0] || null;
@@ -1518,6 +1587,36 @@ export const createCatalogSlice = (set: any, get: any): any => ({
       }));
     }
 
+    let modoVisualRestaurado: any = targetMueble.modoVisual || firstInst?.modoVisual;
+    if (!modoVisualRestaurado && typeof window !== "undefined" && window.localStorage) {
+      try {
+        modoVisualRestaurado =
+          localStorage.getItem(`3bf_modo_visual_${targetMueble.id}`) ||
+          localStorage.getItem("3bf_modo_visual");
+      } catch {}
+    }
+    modoVisualRestaurado = modoVisualRestaurado || get().modoVisual || "semitransparente";
+
+    let camaraRestaurada = targetMueble.camara || null;
+    if (!camaraRestaurada && typeof window !== "undefined" && window.localStorage) {
+      try {
+        const rawCam = localStorage.getItem(`3bf_camara_${targetMueble.id}`);
+        if (rawCam) {
+          const parsedCam = JSON.parse(rawCam);
+          if (Array.isArray(parsedCam?.position) && Array.isArray(parsedCam?.target)) {
+            camaraRestaurada = parsedCam;
+          }
+        }
+      } catch {}
+    }
+
+    if (typeof window !== "undefined" && window.localStorage) {
+      try {
+        localStorage.setItem("3bf_modo_visual", modoVisualRestaurado);
+        localStorage.setItem(`3bf_modo_visual_${targetMueble.id}`, modoVisualRestaurado);
+      } catch {}
+    }
+
     set({
       instancias: restoredInstancias,
       objetoActivoId: firstKey,
@@ -1528,13 +1627,20 @@ export const createCatalogSlice = (set: any, get: any): any => ({
         instancias: restoredInstancias,
         disenos: targetMueble.disenos || (firstKey ? restoredInstancias[firstKey]?.disenos : []) || [],
         disenoActivoId: targetMueble.disenoActivoId || (firstKey ? restoredInstancias[firstKey]?.disenoActivoId : null),
+        modoVisual: modoVisualRestaurado,
+        camara: camaraRestaurada || targetMueble.camara,
       },
       escenarioLimpio: false,
       pestanaActiva: "3d",
+      modoVisual: modoVisualRestaurado,
       resultado: firstInst?.resultado ? purgarResultadoGeometria(firstInst.resultado) : null,
       parametros: firstInst?.parametros ? (firstInst.parametros as any) : get().parametros,
-      camaraEscena: targetMueble.camara || null,
+      camaraEscena: camaraRestaurada,
     });
+
+    if (camaraRestaurada && typeof window !== "undefined" && (window as any).__aplicarCamaraGuardada3BF) {
+      (window as any).__aplicarCamaraGuardada3BF(camaraRestaurada);
+    }
 
     // 🎨 Inyectar diseños directamente en IndexedDB aislados por el ID único del mueble
     const coleccionDisenos = targetMueble.disenos || (firstKey ? restoredInstancias[firstKey]?.disenos : []) || [];
@@ -1654,13 +1760,36 @@ export const createCatalogSlice = (set: any, get: any): any => ({
       localStorage.setItem("3bf_ultimo_mueble_id", targetMueble.id);
     }
 
-    // 3. Recomputar SOLO si alguna instancia no tiene geometría 3D guardada
+    // 3. Recomputar si alguna instancia no tiene geometría 3D guardada o si el .ghx en disco tiene piezas/salidas nuevas
     const requiereComputo = Object.values(restoredInstancias).some(
       (inst) => !inst.resultado || !inst.resultado.real_meshes || inst.resultado.real_meshes.length === 0
     );
 
     if (requiereComputo) {
       await get().recomputarTodas();
+    } else {
+      for (const inst of Object.values(restoredInstancias)) {
+        try {
+          const metaRes = await fetch("/api/metadata", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              model_id: inst.definitionId,
+              custom_filename: inst.archivo,
+            }),
+          });
+          if (metaRes.ok) {
+            const meta = await metaRes.json();
+            const diskOutputs: string[] = meta.declared_outputs || [];
+            const savedOutputs: string[] = inst.resultado?.declared_outputs || [];
+            const hasNewOutputs = diskOutputs.some((o) => !savedOutputs.includes(o));
+            if (hasNewOutputs || (diskOutputs.length > 0 && diskOutputs.length !== savedOutputs.length)) {
+              console.log(`[3dBimFab] 🔄 Detectadas nuevas salidas GHX en disco para '${inst.id}' (${savedOutputs.length} -> ${diskOutputs.length}). Recalculando geometría 3D...`);
+              await get().recargarDefinicionInstancia(inst.id, true);
+            }
+          }
+        } catch {}
+      }
     }
     get().guardarEstadoHistorial();
   },
@@ -1758,6 +1887,16 @@ export const createCatalogSlice = (set: any, get: any): any => ({
         kLow.includes("peca 18") ||
         kLow.includes("pk18")
       ) && !isMdfMdp;
+      const isBalance = (
+        kLow.includes("balance") ||
+        kLow.includes("equilibrio") ||
+        kLow.includes("reverso") ||
+        kLow.endsWith(" b") ||
+        kLow.endsWith("_b") ||
+        kLow.endsWith("-b") ||
+        /pe[cç]a\s*\d+\s*b$/i.test(kLow) ||
+        /pk\s*\d+\s*b$/i.test(kLow)
+      );
       if (!isHardware && !isMdfMdp) {
         nuevasAsignaciones[parteKey] = {
           ...(nuevasAsignaciones[parteKey] || {
@@ -1765,7 +1904,7 @@ export const createCatalogSlice = (set: any, get: any): any => ({
             nombreVisible: parteKey.replace(/^RH_OUT:/, ""),
             visible: true,
           }),
-          capaId: isFondo ? "capa_tono_fondo" : "capa_tono",
+          capaId: (isFondo && isBalance) ? "capa_mdf" : isBalance ? "capa_back" : isFondo ? "capa_tono_fondo" : "capa_tono",
           materialId: "por_capa",
         };
       }

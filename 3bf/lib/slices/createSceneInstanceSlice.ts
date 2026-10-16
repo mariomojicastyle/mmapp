@@ -781,6 +781,9 @@ export const createSceneInstanceSlice = (set: any, get: any): any => ({
         if (Number(p.ancho) <= 16.5 || !Number.isInteger(Number(p.espesor))) {
           requiereSaneamiento = true;
         }
+        if (/fondo|fundo|costa|espaldar|traser/i.test(nom) && Number(p.espesor) >= 9) {
+          requiereSaneamiento = true;
+        }
         if (nom === "tapaluz" && Number(p.cantidad) === 1 && realMeshes.length > 0) {
           requiereSaneamiento = true;
         }
@@ -822,8 +825,16 @@ export const createSceneInstanceSlice = (set: any, get: any): any => ({
           }
           const fam = familias.get(key)!;
 
-          // Tira de canto / espesor lateral (ej. 865 x 12 x 0 o 221 x 15 x 0)
-          if (dMid >= 8.0 && dMid <= 16.5 && dMin < 2.5) {
+          // Tira de canto / espesor lateral (ej. 865 x 12 x 0, 221 x 15 x 0 o 581 x 3 x 0 en MDF)
+          const minCalibreCanto = (isMdp || /fondo|fundo|costa|espaldar|traser/i.test(key)) ? 2.0 : 8.0;
+          if (isMdp) {
+            for (const d of [dMin, dMid]) {
+              if (d >= minCalibreCanto && d <= 36.0) {
+                fam.calibresCanto.push(snapCalibre(d));
+                break;
+              }
+            }
+          } else if (dMid >= minCalibreCanto && dMid <= 16.5 && dMin < 2.5) {
             fam.calibresCanto.push(snapCalibre(dMid));
           } else if (!isMdp && dMid > 16.5) {
             if (isCaraB) {
@@ -843,7 +854,12 @@ export const createSceneInstanceSlice = (set: any, get: any): any => ({
           const countFullA = fam.carasA.filter(([l, a]) => Math.abs(l - maxLargo) <= Math.max(2, maxLargo * 0.03) && Math.abs(a - maxAncho) <= Math.max(2, maxAncho * 0.05)).length;
           const countFullB = fam.carasB.filter(([l, a]) => Math.abs(l - maxLargo) <= Math.max(2, maxLargo * 0.03) && Math.abs(a - maxAncho) <= Math.max(2, maxAncho * 0.05)).length;
           const cantidad = Math.max(1, countFullA, countFullB);
-          const espesor = fam.calibresCanto.length > 0 ? fam.calibresCanto[0] : 15;
+          const fallbackEspesor = /fondo|fundo|costa|espaldar|traser/i.test(fam.nombreDisplay)
+            ? 3
+            : /cajon|cajón|posterior|gaveta/i.test(fam.nombreDisplay)
+              ? 12
+              : 15;
+          const espesor = fam.calibresCanto.length > 0 ? fam.calibresCanto[0] : fallbackEspesor;
           const prev = rawDespiece.find((r: any) => (extraerPiezaMadre(r.nombre) || r.nombre || "").trim().toLowerCase() === fam.nombreDisplay.toLowerCase()) || {};
 
           reconstruido.push({

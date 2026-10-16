@@ -99,6 +99,9 @@ export function BlenderNavigationController({
         if (controlsRef.current && modoTransformacion !== "grab") {
           controlsRef.current.enabled = true;
         }
+        if (typeof window !== "undefined" && (window as any).__sincronizarCamara3BF) {
+          (window as any).__sincronizarCamara3BF();
+        }
       }
     };
 
@@ -360,16 +363,85 @@ export function CameraViewController({
  * 3. Garantiza que cambiar entre pestañas o recargar mantenga la vista exacta elegida por el usuario.
  */
 export function CameraPersistenceController({ controlsRef }: { controlsRef: React.MutableRefObject<any> }) {
-  const { camera } = useThree();
+  const { camera, gl } = useThree();
   const setCamaraEscena = use3BFStore((s) => s.setCamaraEscena);
   const muebleActivoGuardado = use3BFStore((s) => s.muebleActivoGuardado);
   const camaraEscenaStore = use3BFStore((s) => s.camaraEscena);
   const muebleId = muebleActivoGuardado?.id;
   const ultimoMuebleRestauradoRef = useRef<string | null>(null);
 
+  // Función canónica para aplicar una pose de cámara de forma determinista (inmediata + confirmación tras montaje de OrbitControls)
+  const aplicarPoseCamara = React.useCallback(
+    (camaraItem: { position: [number, number, number]; target: [number, number, number]; fov?: number } | null | undefined) => {
+      if (!camaraItem || !Array.isArray(camaraItem.position) || !Array.isArray(camaraItem.target) || !camera) return;
+
+      const ejecutarAplicacion = () => {
+        if (!camera) return;
+        camera.position.set(camaraItem.position[0], camaraItem.position[1], camaraItem.position[2]);
+        if (controlsRef.current && controlsRef.current.target) {
+          controlsRef.current.target.set(camaraItem.target[0], camaraItem.target[1], camaraItem.target[2]);
+        }
+        camera.lookAt(camaraItem.target[0], camaraItem.target[1], camaraItem.target[2]);
+        if (camaraItem.fov && "fov" in camera) {
+          (camera as THREE.PerspectiveCamera).fov = camaraItem.fov;
+          (camera as THREE.PerspectiveCamera).updateProjectionMatrix();
+        }
+        if (controlsRef.current && typeof controlsRef.current.update === "function") {
+          controlsRef.current.update();
+        }
+      };
+
+      ejecutarAplicacion();
+      if (typeof window !== "undefined") {
+        requestAnimationFrame(() => {
+          ejecutarAplicacion();
+        });
+        setTimeout(ejecutarAplicacion, 60);
+      }
+    },
+    [camera, controlsRef]
+  );
+
+  // Exponer funciones globales de lectura y restauración en vivo para guardado/apertura exactos
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    (window as any).__obtenerCamaraActual3BF = () => {
+      if (!camera) return null;
+      const pos = camera.position;
+      const tgt = controlsRef.current?.target || new THREE.Vector3(0, 0, 0);
+      const payload = {
+        position: [
+          Number(pos.x.toFixed(4)),
+          Number(pos.y.toFixed(4)),
+          Number(pos.z.toFixed(4)),
+        ] as [number, number, number],
+        target: [
+          Number(tgt.x.toFixed(4)),
+          Number(tgt.y.toFixed(4)),
+          Number(tgt.z.toFixed(4)),
+        ] as [number, number, number],
+        fov: (camera as THREE.PerspectiveCamera).fov || 45,
+      };
+      setCamaraEscena(payload);
+      return payload;
+    };
+
+    (window as any).__aplicarCamaraGuardada3BF = (camItem: any) => {
+      if (camItem && Array.isArray(camItem.position) && Array.isArray(camItem.target)) {
+        aplicarPoseCamara(camItem);
+      }
+    };
+
+    return () => {
+      delete (window as any).__obtenerCamaraActual3BF;
+      delete (window as any).__aplicarCamaraGuardada3BF;
+    };
+  }, [camera, controlsRef, setCamaraEscena, aplicarPoseCamara]);
+
   // 1. Restaurar cámara cuando se abre o cambia el mueble activo
   useEffect(() => {
-    if (!controlsRef.current || !camera || !muebleId) return;
+    if (!camera || !muebleId) return;
 
     if (ultimoMuebleRestauradoRef.current !== muebleId) {
       ultimoMuebleRestauradoRef.current = muebleId;
@@ -387,14 +459,7 @@ export function CameraPersistenceController({ controlsRef }: { controlsRef: Reac
       // A) Buscar en mueble guardado (.3bf.json)
       const camaraItem = muebleActivoGuardado?.camara || camaraEscenaStore;
       if (camaraItem && Array.isArray(camaraItem.position) && Array.isArray(camaraItem.target)) {
-        camera.position.set(camaraItem.position[0], camaraItem.position[1], camaraItem.position[2]);
-        controlsRef.current.target.set(camaraItem.target[0], camaraItem.target[1], camaraItem.target[2]);
-        camera.lookAt(camaraItem.target[0], camaraItem.target[1], camaraItem.target[2]);
-        if (camaraItem.fov && "fov" in camera) {
-          (camera as THREE.PerspectiveCamera).fov = camaraItem.fov;
-          (camera as THREE.PerspectiveCamera).updateProjectionMatrix();
-        }
-        controlsRef.current.update();
+        aplicarPoseCamara(camaraItem);
         return;
       }
 
@@ -405,21 +470,19 @@ export function CameraPersistenceController({ controlsRef }: { controlsRef: Reac
           if (cached) {
             const parsed = JSON.parse(cached);
             if (Array.isArray(parsed?.position) && Array.isArray(parsed?.target)) {
-              camera.position.set(parsed.position[0], parsed.position[1], parsed.position[2]);
-              controlsRef.current.target.set(parsed.target[0], parsed.target[1], parsed.target[2]);
-              camera.lookAt(parsed.target[0], parsed.target[1], parsed.target[2]);
-              controlsRef.current.update();
+              aplicarPoseCamara(parsed);
               return;
             }
           }
         } catch (_) {}
       }
     }
-  }, [muebleId, muebleActivoGuardado?.camara, camaraEscenaStore, camera, controlsRef]);
+  }, [muebleId, muebleActivoGuardado?.camara, camaraEscenaStore, camera, aplicarPoseCamara]);
 
   // 2. Escuchar cuando el usuario termina de orbitar, panear o hacer zoom
   useEffect(() => {
     const controls = controlsRef.current;
+    const domElement = gl?.domElement;
     if (!controls) return;
 
     let debounceTimer: NodeJS.Timeout | null = null;
@@ -427,7 +490,7 @@ export function CameraPersistenceController({ controlsRef }: { controlsRef: Reac
     const alTerminarMovimiento = () => {
       if (debounceTimer) clearTimeout(debounceTimer);
       debounceTimer = setTimeout(() => {
-        if (!camera || !controls) return;
+        if (!camera || !controlsRef.current) return;
 
         // 🛡️ NUNCA sobreescribir la cámara si estamos en la pestaña manual y el paso tiene keyframes cinemáticos
         const estadoStore = use3BFStore.getState();
@@ -439,7 +502,7 @@ export function CameraPersistenceController({ controlsRef }: { controlsRef: Reac
         }
 
         const pos = camera.position;
-        const tgt = controls.target;
+        const tgt = controlsRef.current.target;
 
         const camPayload = {
           position: [
@@ -468,13 +531,26 @@ export function CameraPersistenceController({ controlsRef }: { controlsRef: Reac
       }, 100);
     };
 
+    if (typeof window !== "undefined") {
+      (window as any).__sincronizarCamara3BF = alTerminarMovimiento;
+    }
+
     controls.addEventListener("end", alTerminarMovimiento);
+    if (domElement) {
+      domElement.addEventListener("wheel", alTerminarMovimiento, { passive: true });
+    }
 
     return () => {
       controls.removeEventListener("end", alTerminarMovimiento);
+      if (domElement) {
+        domElement.removeEventListener("wheel", alTerminarMovimiento);
+      }
+      if (typeof window !== "undefined" && (window as any).__sincronizarCamara3BF === alTerminarMovimiento) {
+        delete (window as any).__sincronizarCamara3BF;
+      }
       if (debounceTimer) clearTimeout(debounceTimer);
     };
-  }, [controlsRef, camera, setCamaraEscena]);
+  }, [controlsRef, camera, gl, setCamaraEscena]);
 
   return null;
 }

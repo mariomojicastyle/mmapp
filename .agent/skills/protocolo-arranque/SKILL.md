@@ -44,4 +44,4 @@ Para garantizar un arranque instantáneo (`< 3 segundos`) y ahorrar más del **8
 3. **Emitir un informe ejecutivo conciso** indicando:
    - Rama Git activa y último hito en curso.
    - Confirmación de carga del Núcleo de Nivel 1 (y disponibilidad bajo demanda del Nivel 2).
-   - Si el usuario invocó explícitamente `/Arranque3BF`, verificar o lanzar los Daemons correspondientes.
+   - Si el usuario invocó explícitamente `/Arranque3BF`, verificar o lanzar los 5 Daemons correspondientes asegurándose de que **RhinoCompute 8 (`:5000`)** se inicie con `& "$env:USERPROFILE\AppData\Roaming\McNeel\Rhinoceros\packages\8.0\Hops\0.17.1\rhino.compute\rhino.compute.exe" --spawn-on-startup --idlespan 86400` para pre-calentar los procesos hijos `compute.geometry.exe` desde el arranque.

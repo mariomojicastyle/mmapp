@@ -42,7 +42,7 @@ def es_nombre_herraje(name_str: str, size: list = None) -> bool:
 
 def es_nombre_tablero(name_str: str, size: list = None) -> bool:
     nl = name_str.lower()
-    if "maquinado" in nl or "perforad" in nl or "mdp" in nl or "balance" in nl:
+    if "maquinado" in nl or "perforad" in nl or "mdp" in nl or "mdf" in nl or "balance" in nl:
         return False
     if re.search(r'[\s_]b$', nl):
         return False
@@ -50,7 +50,7 @@ def es_nombre_tablero(name_str: str, size: list = None) -> bool:
         return False
     if size and len(size) == 3:
         dims_mm = sorted([abs(size[0]) * 1000.0, abs(size[1]) * 1000.0, abs(size[2]) * 1000.0])
-        if dims_mm[2] >= 40.0 and dims_mm[1] >= 8.0:
+        if dims_mm[2] >= 40.0 and dims_mm[1] >= 2.0:
             return True
     return True
 
@@ -267,9 +267,10 @@ def calcular_bom_y_despiece(
         nom_limpio_pre, _ = _extraer_nombre_y_desc_pieza(m)
         key_fam = nom_limpio_pre.lower()
 
-        if "mdp" in name_lower:
+        if "mdp" in name_lower or "mdf" in name_lower:
+            min_calibre_sustrato = 2.0 if ("mdf" in name_lower or any(w in key_fam for w in ["fondo", "fundo", "traser", "espaldar", "costa"])) else 10.0
             for d in sorted(dims_xyz):
-                if 10.0 <= d <= 36.0:
+                if min_calibre_sustrato <= d <= 36.0:
                     mapa_espesor_mdp[key_fam] = d
                     break
             continue
@@ -307,7 +308,7 @@ def calcular_bom_y_despiece(
                     if cb["ax_norm"] == ax_n:
                         if abs(ca["pos"][ax_l] - cb["pos"][ax_l]) * 1000.0 < 25.0 and abs(ca["pos"][ax_a] - cb["pos"][ax_a]) * 1000.0 < 85.0:
                             dist_perp = round(abs(ca["pos"][ax_n] - cb["pos"][ax_n]) * 1000.0, 1)
-                            if 9.0 <= dist_perp <= 36.0:
+                            if 2.0 <= dist_perp <= 36.0:
                                 esp_calc = dist_perp
                                 break
                 if esp_calc is not None:
@@ -315,7 +316,12 @@ def calcular_bom_y_despiece(
         if esp_calc is None and key_fam in mapa_espesor_mdp:
             esp_calc = mapa_espesor_mdp[key_fam]
         if esp_calc is None:
-            esp_calc = 12.0 if any(w in key_fam for w in ["cajon", "cajón", "posterior", "gaveta"]) else 15.0
+            if any(w in key_fam for w in ["fondo", "fundo", "traser", "espaldar", "costa"]):
+                esp_calc = 3.0
+            elif any(w in key_fam for w in ["cajon", "cajón", "posterior", "gaveta"]):
+                esp_calc = 12.0
+            else:
+                esp_calc = 15.0
         espesor_por_familia[key_fam] = esp_calc
 
     tableros_consolidados = []
@@ -327,7 +333,7 @@ def calcular_bom_y_despiece(
 
         if not es_nombre_tablero(raw_name, size):
             continue
-        if "mdp" in name_lower:
+        if "mdp" in name_lower or "mdf" in name_lower:
             continue
         if re.search(r'[\s_]b$|balance', name_lower):
             continue

@@ -333,7 +333,7 @@ export default function DespieceView() {
     if (cod) {
       const found = dbTableros.find((t: TableroRecord) => t.codigo === cod);
       const esFondoInvalido = found && found.calibreMm < 5 && espRedondeado >= 12 && !nombre?.toLowerCase().includes("fondo");
-      const difiereCalibre = found && espRedondeado >= 9 && Math.abs(found.calibreMm - espRedondeado) > 1.5;
+      const difiereCalibre = found && ((espRedondeado >= 9 && Math.abs(found.calibreMm - espRedondeado) > 1.5) || (espRedondeado <= 5 && found.calibreMm >= 9));
       if (found && !esFondoInvalido && !difiereCalibre) return found;
     }
     // Detección automática por calibre exacto de la pieza

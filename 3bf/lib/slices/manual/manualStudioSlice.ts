@@ -14,8 +14,43 @@ export const createManualStudioSlice = (set: any, get: any): any => ({
   workerStatus: "checking",
   setWorkerStatus: (workerStatus: string) => set({ workerStatus }),
 
-  modoVisual: "semitransparente",
-  setModoVisual: (modoVisual: string) => set({ modoVisual }),
+  modoVisual:
+    typeof window !== "undefined" && window.localStorage
+      ? (localStorage.getItem("3bf_modo_visual") as any) || "semitransparente"
+      : "semitransparente",
+  setModoVisual: (modoVisual: string) => {
+    if (typeof window !== "undefined" && window.localStorage) {
+      try {
+        localStorage.setItem("3bf_modo_visual", modoVisual);
+        const mId = get().muebleActivoGuardado?.id;
+        if (mId) localStorage.setItem(`3bf_modo_visual_${mId}`, modoVisual);
+      } catch {}
+    }
+    set((s: any) => {
+      const activeId = s.objetoActivoId;
+      const nuevasInstancias =
+        activeId && s.instancias?.[activeId]
+          ? {
+              ...s.instancias,
+              [activeId]: {
+                ...s.instancias[activeId],
+                modoVisual: modoVisual as any,
+              },
+            }
+          : s.instancias;
+      const nuevoMueble = s.muebleActivoGuardado
+        ? {
+            ...s.muebleActivoGuardado,
+            modoVisual: modoVisual as any,
+          }
+        : null;
+      return {
+        modoVisual,
+        instancias: nuevasInstancias,
+        muebleActivoGuardado: nuevoMueble,
+      };
+    });
+  },
 
   escenarioLimpio: false,
   setEscenarioLimpio: (escenarioLimpio: boolean) => set({ escenarioLimpio }),

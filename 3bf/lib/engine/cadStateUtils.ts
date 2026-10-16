@@ -1748,7 +1748,17 @@ export function getCapaSugeridaId(parteKey: string, categoria: string = "Estruct
   if (kLow.includes("mdf")) return capasDisponibles.find((c) => c.nombre.toLowerCase() === "mdf" || c.id === "capa_mdf")?.id || "capa_mdf";
   if (kLow.includes("mdp")) return capasDisponibles.find((c) => c.nombre.toLowerCase() === "mdp" || c.id === "capa_mdp")?.id || "capa_mdp";
 
-  // 7. Fondos y espaldas delgadas (3mm)
+  // 7. Fondos y espaldas delgadas (3mm) vs Lados de balance / reverso (Cara B)
+  const isBalance = (
+    kLow.includes("balance") ||
+    kLow.includes("equilibrio") ||
+    kLow.includes("reverso") ||
+    kLow.endsWith(" b") ||
+    kLow.endsWith("_b") ||
+    kLow.endsWith("-b") ||
+    /pe[cç]a\s*\d+\s*b$/i.test(kLow) ||
+    /pk\s*\d+\s*b$/i.test(kLow)
+  );
   const isFondo = (
     kLow.includes("fondo") ||
     kLow.includes("fundo") ||
@@ -1765,21 +1775,16 @@ export function getCapaSugeridaId(parteKey: string, categoria: string = "Estruct
     kLow.includes("peca 18") ||
     kLow.includes("pk18")
   );
+
+  // En fondos delgados (3mm MDF 1 cara), su cara reversa (Cara B) es sustrato MDF crudo por defecto
+  if (isFondo && isBalance) {
+    return capasDisponibles.find((c) => c.nombre.toLowerCase() === "mdf" || c.id === "capa_mdf")?.id || "capa_mdf";
+  }
   if (isFondo) {
     return capasDisponibles.find((c) => c.id === "capa_tono_fondo" || c.nombre.toLowerCase().includes("fondo"))?.id || "capa_tono_fondo";
   }
 
-  // 8. Lados de balance / reverso
-  const isBalance = (
-    kLow.includes("balance") ||
-    kLow.includes("equilibrio") ||
-    kLow.includes("reverso") ||
-    kLow.endsWith(" b") ||
-    kLow.endsWith("_b") ||
-    kLow.endsWith("-b") ||
-    /pe[cç]a\s*\d+\s*b$/i.test(kLow) ||
-    /pk\s*\d+\s*b$/i.test(kLow)
-  );
+  // 8. Lados de balance / reverso de tableros estructurales
   if (isBalance) {
     return capasDisponibles.find((c) => c.id === "capa_back" || c.nombre.toLowerCase().includes("back") || c.nombre.toLowerCase().includes("balance"))?.id || "capa_back";
   }

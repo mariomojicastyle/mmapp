@@ -218,7 +218,15 @@ export default function PartBreakdownPanel() {
               {partesFiltradas.length > 0 ? (
                 partesFiltradas.map((parte) => {
                   const isSel = parte.parteKey === parteSeleccionadaKey;
-                  const capaEfectivaId = parte.capaId === "por_defecto" ? getCapaSugerida(parte.parteKey, parte.categoria) : parte.capaId;
+                  const pKeyLow = parte.parteKey.toLowerCase();
+                  const isFondoReverso = (
+                    pKeyLow.includes("fondo") || pKeyLow.includes("fundo") || pKeyLow.includes("costa") || pKeyLow.includes("espaldar")
+                  ) && (
+                    pKeyLow.includes("balance") || pKeyLow.endsWith(" b") || pKeyLow.endsWith("_b") || /pe[cç]a\s*\d+\s*b$/i.test(pKeyLow)
+                  );
+                  const capaEfectivaId = (parte.capaId === "por_defecto" || (isFondoReverso && parte.capaId === "capa_tono_fondo"))
+                    ? getCapaSugerida(parte.parteKey, parte.categoria)
+                    : parte.capaId;
                   const capaItem = capas.find((c) => c.id === capaEfectivaId) || capas[0];
 
                   return (

@@ -22,6 +22,8 @@ export interface ObjetoInstancia3BF {
   resultado: ComputoResultado | null; // Mallas 3D y despiece de esta instancia
   disenos?: DisenoEncapsulado3BF[]; // 🎨 Diseños encapsulados estilo Poser (geometría + medidas en RAM)
   disenoActivoId?: string | null;
+  gruposColapsados?: Record<string, boolean>; // 📂 Estado plegado/desplegado del Modificador de Componentes
+  modoVisual?: "solido" | "semitransparente" | "lineas" | "renderizado"; // 👁️ Modo de visualización activo
   cargando: boolean;
   posicion: [number, number, number]; // [X, Y, Z] en metros
   rotacion: [number, number, number];
@@ -165,6 +167,8 @@ export interface MuebleGuardadoItem {
   disenos?: DisenoEncapsulado3BF[]; // 🎨 Colección de diseños encapsulados pertenecientes a la línea de producto
   disenoActivoId?: string | null;
   camara?: CamaraEscena3D; // 🎥 Persistencia de coordenadas de cámara y target de órbita
+  gruposColapsados?: Record<string, boolean>; // 📂 Estado plegado/desplegado del Modificador de Componentes
+  modoVisual?: "solido" | "semitransparente" | "lineas" | "renderizado"; // 👁️ Modo de visualización guardado
 }
 
 export interface CamaraEscena3D {
