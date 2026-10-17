@@ -389,7 +389,16 @@ export function SingleFurnitureInstanceMesh({
       n.includes("divisao") ||
       n.includes("costado") ||
       n.includes("fondo") ||
-      n.includes("fundo")
+      n.includes("fundo") ||
+      n.includes("zocalo") ||
+      n.includes("zócalo") ||
+      n.includes("refuerzo") ||
+      n.includes("refuerzao") ||
+      n.includes("paral") ||
+      n.includes("reenguece") ||
+      n.includes("base") ||
+      n.includes("techo") ||
+      n.includes("piso")
     );
   });
 
@@ -533,7 +542,7 @@ export function SingleFurnitureInstanceMesh({
       )}
 
       {otherMeshes.length > 0 && (
-        <group name="Otros">
+        <group name="PiezasGenerales">
           {otherMeshes.map((m: any, idx: number) => (
             <BoardMesh
               key={`other-${idx}`}

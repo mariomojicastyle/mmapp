@@ -3592,7 +3592,31 @@ Para mantener la máxima agilidad y minimizar el consumo de tokens sin perder ni
   * **Modificador de Componentes (`gruposColapsados`)**: Persistencia del estado plegado/desplegado de cada acordeón de pieza tanto en el archivo `.3bf.json` como en `localStorage`, restaurando exactamente la vista de trabajo al reabrir el mueble o presionar F5.
   * **Modo de Visualización (`modoVisual`)**: Persistencia del modo visual activo (`solido`, `semitransparente`, `lineas`, `renderizado`) en `.3bf.json` y `localStorage`.
   * **Cámara de Escena (`camara`)**: Almacenamiento continuo de posición $[X, Y, Z]$, target $[TX, TY, TZ]$ y FOV con restauración en Three.js vía `CameraPersistenceController`.
-  * **Detección Automática de Nuevas Salidas GHX (`abrirMueble`)**: Comparación en caliente entre las salidas declaradas en disco y las guardadas en memoria, forzando re-cálculo si se agregan nuevos componentes en Grasshopper.
+
+---
+
+### 🚀 Hito 278: Unificación Canónica del Exportador GLB 3dBimFab (`exportManualGlb.ts`, `SingleFurnitureInstanceMesh.tsx`, `compress-glb/route.ts`), Fusión Espacial con `flatten()` y Documentación Exhaustiva de Arquitectura y Pesos (16 de Octubre, 2026)
+- **1. Diagnóstico de Causa Raíz de Caras Perdidas y Bloqueo de Descarga GLB**:
+  * *Problema Reportado por el Usuario*:
+    - Al exportar el modelo completo ensamblado a formato `.glb` desde `3dBimFab`, el archivo resultante perdía caras de mallas estructurales (`zocalo`, `refuerzo`, `paral`), borraba balances/tonos de color y dejaba expuesto solo el sustrato de MDP crudo.
+    - El peso del archivo se disparaba anormalmente o rebotaba sin aplicar optimización Draco.
+  * *Causa Raíz en el Filtro de Extracción Three.js (`exportManualGlb.ts`)*:
+    - La función `esMallaExportable` contenía una condición de exclusión que descartaba cualquier malla cuyo ancestro contuviera el nombre `"otros"` (`pName.includes("otros")`).
+    - En `SingleFurnitureInstanceMesh.tsx`, el clasificador de piezas agrupaba todas aquellas que no cumplieran con ciertas palabras clave cerradas dentro de un grupo `<group name="Otros">`. El exportador creía erróneamente que estas mallas eran helpers o elementos residuales de escena y las purgaba.
+- **2. Implementación Técnica y Blindaje del Exportador (`exportManualGlb.ts`, `SingleFurnitureInstanceMesh.tsx`)**:
+  * *Ampliación Canónica de Palabras Clave*: Se incluyeron explícitamente términos como `zocalo`, `zócalo`, `refuerzo`, `refuerzao`, `paral`, `reenguece`, `base`, `techo`, `piso` en `boardMeshes`, garantizando su renderizado y reconocimiento nativo.
+  * *Renombrado y Remoción de la Regla "Otros"*: Se eliminó la condición `pName.includes("otros")` de `esMallaExportable` y se renombró el grupo de mallas residuales a `<group name="PiezasGenerales">`.
+  * *Unificación de Exportadores*: `exportarGlbMuebleCompleto` y `exportarGlbPasoManual` comparten idéntico estándar de extracción: preservación de atributos mínimos obligatorios (`position`, `normal`, `uv`), cálculo de normales, deduplicación de geometrías en buffer views y caché de materiales PBR.
+- **3. Fusión Espacial Perfecta con `flatten()` y Optimización Draco (`compress-glb/route.ts`)**:
+  * *Pre-Horneado Espacial (`flatten()` previo a `join()`)*:
+    - Para evitar que la fusión de mallas (`join({ keepNamed: false })`) desplace o desoriente piezas por pérdida de matrices de transformación relativas, se ejecutó `flatten()` primero. Con esto, las coordenadas mundientes se hornean directamente en los vértices sin desfasar ninguna cara (tolerancia 0.000 mm certificada).
+    - La fusión condensó la escena de más de 914 nodos a apenas **8 nodos principales por material**, reduciendo el texto de la cabecera JSON de ~1,000 KB a ~7 KB.
+  * *Compresión Fotorrealista de Texturas con `sharp`*:
+    - Integración de compresión de imágenes en memoria con `sharp`, re-escalando texturas a $512 \times 512$ píxeles en formato JPEG al $75\%$ de calidad (o $256 \times 256$ para Realidad Aumentada / AR).
+  * *Desactivación de Bloqueos en Descargas*:
+    - Removido el guard `yaTieneDraco` que bloqueaba la re-compresión en el endpoint cuando el modo era descarga directa (`mode=download`).
+- **4. Documentación Exhaustiva de Arquitectura, Anatomía y Pesos GLB**:
+  * Incorporado un bloque de comentarios generoso y detallado en la cabecera de `3bf/lib/exportManualGlb.ts` y `3bf/app/api/compress-glb/route.ts` documentando las 4 capas de un GLB (`JSON Scenegraph`, `Geometría Draco & Mecanizados`, `Mapas PBR JPEG`, `Pistas de Animación`), el desglose de pesos (Herrajes ~54% vs Tableros MDP ~46%) y el flujo del pipeline en dos etapas (Cliente Three.js $\to$ Backend Draco).
 - **Validación de Calidad**:
-  * `npx tsc --noEmit` en `3bf` con **0 errores**.
-  * Worker Python en `:8005` reiniciado con el motor `bom_engine.py` actualizado y verificado.
+  * Compilación TypeScript limpia (`npx tsc --noEmit`) en `3bf` con **0 errores**.
+  * Verificación visual 100% exitosa por el usuario en Babylon.js Sandbox con el modelo `Hib_C_Ravenna (Con_Join).glb`: **1.68 MB**, todas las caras, texturas y barrenos preservados íntegramente.

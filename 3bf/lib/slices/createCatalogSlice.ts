@@ -893,8 +893,7 @@ export const createCatalogSlice = (set: any, get: any): any => ({
         if (data.muebles) {
           set({ mueblesGuardados: data.muebles });
           const state = get();
-          const tieneInstancias3D = Object.keys(state.instancias).length > 0;
-          if (!state.muebleActivoGuardado && tieneInstancias3D && typeof window !== "undefined" && window.localStorage) {
+          if (!state.muebleActivoGuardado && typeof window !== "undefined" && window.localStorage) {
             const ultimoId = localStorage.getItem("3bf_ultimo_mueble_id");
             if (ultimoId) {
               const targetMueble = (data.muebles as MuebleGuardadoItem[]).find(
@@ -1786,6 +1785,11 @@ export const createCatalogSlice = (set: any, get: any): any => ({
             if (hasNewOutputs || (diskOutputs.length > 0 && diskOutputs.length !== savedOutputs.length)) {
               console.log(`[3dBimFab] 🔄 Detectadas nuevas salidas GHX en disco para '${inst.id}' (${savedOutputs.length} -> ${diskOutputs.length}). Recalculando geometría 3D...`);
               await get().recargarDefinicionInstancia(inst.id, true);
+              try {
+                await get().guardarCambiosMueble();
+              } catch (eSave) {
+                console.warn("[3dBimFab] Aviso al auto-guardar mueble actualizado:", eSave);
+              }
             }
           }
         } catch {}

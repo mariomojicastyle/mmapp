@@ -69,8 +69,14 @@ export function GHXAutoWatcher() {
 
                 debounceTimeoutRef.current[r.id] = setTimeout(async () => {
                   try {
-                    console.log(`[3BF Hot-Reload] Auto-actualizando componente: ${r.model_id} (${r.id})`);
-                    await recargarDefinicionInstancia(r.id);
+                    console.log(`[3BF Hot-Reload] Auto-actualizando componente con recarga forzada: ${r.model_id} (${r.id})`);
+                    await recargarDefinicionInstancia(r.id, true);
+                    const freshState = use3BFStore.getState();
+                    if (freshState.muebleActivoGuardado) {
+                      try {
+                        await freshState.guardarCambiosMueble();
+                      } catch {}
+                    }
                   } catch (e) {
                     console.warn(`[3BF Hot-Reload] Error recargando ${r.id}:`, e);
                   }
