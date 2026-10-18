@@ -850,7 +850,16 @@ async def compute_model(request: Request):
                                             center_y = (bbox.Min.Y + bbox.Max.Y) / 2.0 / 1000.0
                                             center_z = (bbox.Min.Z + bbox.Max.Z) / 2.0 / 1000.0
                                             
-                                            effective_name = p_name
+                                            user_str_name = ""
+                                            if hasattr(decoded_geom, "GetUserString"):
+                                                try:
+                                                    user_str_name = decoded_geom.GetUserString("Name") or decoded_geom.GetUserString("PieceName") or ""
+                                                except Exception:
+                                                    pass
+                                            if not user_str_name and hasattr(decoded_geom, "Name") and decoded_geom.Name:
+                                                user_str_name = decoded_geom.Name
+
+                                            effective_name = user_str_name.strip() if user_str_name and user_str_name.strip() else p_name
 
                                             mesh_dict = {
                                                 "name": effective_name,
@@ -924,10 +933,14 @@ async def compute_model(request: Request):
                                                     mesh_dict["indices"] = indices
                                                     if uvs and len(uvs) == len(verts) * 2 // 3:
                                                         mesh_dict["uvs"] = uvs
-                                                    # 🏝️ DfMA Multi-Body Mesh Decomposition: Separar componentes disjuntos (ej: múltiples piezas unidas por Mesh Join)
-                                                    islas = split_mesh_dict_into_islands(mesh_dict)
-                                                    for isl in islas:
-                                                        real_meshes.append(isl)
+                                                    # 🏝️ DfMA Multi-Body Mesh Decomposition: Separar componentes disjuntos SOLO para piezas de madera unidas por Mesh Join (ej: Tapaluces).
+                                                    # Los herrajes (patas, tornillos, correderas, etc.) se preservan íntegros como una sola pieza física.
+                                                    if es_nombre_herraje(mesh_dict.get("name", ""), mesh_dict.get("size")):
+                                                        real_meshes.append(mesh_dict)
+                                                    else:
+                                                        islas = split_mesh_dict_into_islands(mesh_dict)
+                                                        for isl in islas:
+                                                            real_meshes.append(isl)
                                             elif isinstance(decoded_geom, rhino3dm.Brep) or "nurbs" in p_name.lower():
                                                 mesh_dict["is_nurbs_solid"] = True
                                                 pass

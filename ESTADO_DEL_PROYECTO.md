@@ -9,7 +9,14 @@ Este archivo es la "Memoria RAM" para Antigravity. Contiene el contexto de lo qu
 ---
 
 ## 🏗️ 1. Plataforma B2B & 3dBimFab (Foco Actual)
-**Estado:** Hito 278 completado con éxito total. **Unificación y Optimización Oficial del Exportador GLB 3dBimFab (`exportManualGlb.ts`, `SingleFurnitureInstanceMesh.tsx`, `compress-glb/route.ts`), Fusión Espacial con `flatten()` y Documentación Canónica de Arquitectura y Pesos**. Próximo foco: Continuar optimización de modelos híbridos DfMA (`Hib_C_Ravenna`), asignación de cantos/materiales y pruebas de ensamble/mecanizado. Rama: `GLB_Ok`.
+**Estado:** Hito 279 completado con éxito total. **Inyección y Lectura Nativa de Herrajes Híbridos DfMA en Grasshopper y 3dBimFab (`3bf_hardware_injector.py`, `3bf_worker.py`, `cadStateUtils.ts`, `createSceneInstanceSlice.ts`, `DespieceView.tsx`), Inmunidad a Fragmentación en Islas y Despiece de Tableros 100% Puro**. Próximo foco: Continuar afinamiento y modelado de herrajes/ensambles híbridos en `Hib_C_Ravenna` y optimización DfMA. Rama activa: `Herrajes_hibridos_ok`.
+
+- [x] **[17 de Octubre, 2026] Hito 279: Inyección y Lectura Nativa de Herrajes Híbridos DfMA en Grasshopper y 3dBimFab (`3bf_hardware_injector.py`, `3bf_worker.py`, `cadStateUtils.ts`, `createSceneInstanceSlice.ts`, `DespieceView.tsx`)**:
+  * **Inyector GhPython de Metadatos OpenNURBS**: Captura de nombres reales asignados a herrajes en Rhino (`rh_obj.Name`) a través de sus GUIDs e inyección en OpenNURBS como UserStrings (`SetUserString("Name", nombre)`).
+  * **Internalización Atómica en Grasshopper**: Protocolo canónico de 4 pasos (`Mesh revueltas` $\to$ `Guid` $\to$ `Python [M]` $\to$ `Mallas` $\to$ `RH_OUT:Herrajes` $\to$ `Internalise data`), permitiendo a RhinoCompute operar en modo headless con los nombres y metadatos horneados.
+  * **Inmunidad a la Descomposición en Islas (`3bf_worker.py`)**: Blindaje de `split_mesh_dict_into_islands` para preservar mallas de herraje como cuerpos sólidos cerrados, corrigiendo la multiplicación de piezas (6 patas y 18 tornillos exactos).
+  * **Exclusión de Herrajes de la Lista de Tableros**: Blindaje en `cadStateUtils.ts`, `createSceneInstanceSlice.ts` y `DespieceView.tsx` erradicando la infiltración de piezas de herraje en la tabla de corte de madera.
+  * **Validación de Calidad**: `npx tsc --noEmit` en `3bf` y plataforma B2B con **0 errores**. Cómputo validado en vivo por el usuario.
 
 - [x] **[16 de Octubre, 2026] Hito 278: Unificación y Optimización Oficial del Exportador GLB 3dBimFab (`exportManualGlb.ts`, `SingleFurnitureInstanceMesh.tsx`, `compress-glb/route.ts`)**:
   * **Causa Raíz de Caras Perdidas**: El filtro de exclusión de mallas `esMallaExportable` en `exportManualGlb.ts` descartaba erróneamente cualquier malla cuyo ancestro fuera `"otros"`. En `SingleFurnitureInstanceMesh.tsx`, las piezas cuyos nombres no contenían ciertas palabras clave (`zocalo`, `refuerzo`, etc.) se agrupaban en `<group name="Otros">`. El exportador las purgaba creyéndolas auxiliares.

@@ -3619,4 +3619,25 @@ Para mantener la máxima agilidad y minimizar el consumo de tokens sin perder ni
   * Incorporado un bloque de comentarios generoso y detallado en la cabecera de `3bf/lib/exportManualGlb.ts` y `3bf/app/api/compress-glb/route.ts` documentando las 4 capas de un GLB (`JSON Scenegraph`, `Geometría Draco & Mecanizados`, `Mapas PBR JPEG`, `Pistas de Animación`), el desglose de pesos (Herrajes ~54% vs Tableros MDP ~46%) y el flujo del pipeline en dos etapas (Cliente Three.js $\to$ Backend Draco).
 - **Validación de Calidad**:
   * Compilación TypeScript limpia (`npx tsc --noEmit`) en `3bf` con **0 errores**.
-  * Verificación visual 100% exitosa por el usuario en Babylon.js Sandbox con el modelo `Hib_C_Ravenna (Con_Join).glb`: **1.68 MB**, todas las caras, texturas y barrenos preservados íntegramente.
+
+---
+
+### 🚀 Hito 279: Inyección y Lectura Nativa de Herrajes Híbridos DfMA en Grasshopper y 3dBimFab (`3bf_hardware_injector.py`, `3bf_worker.py`, `cadStateUtils.ts`, `createSceneInstanceSlice.ts`, `DespieceView.tsx`) (17 de Octubre, 2026)
+- **1. Contexto y Desafío de Fabricación Digital Híbrida**:
+  * **Problema Operativo en Grasshopper**: Al referenciar herrajes de catálogo modelados en Rhinoceros (patas, tornillos, cantoneras, correderas) mediante componentes estándar de Mesh o Guid en Grasshopper y pasarlos a Grasshopper/RhinoCompute hacia `3dBimFab`, el nombre asignado en las propiedades del objeto de Rhino se perdía durante la serialización OpenNURBS, llegando al worker sin identificación o desintegrándose en cientos de islas triangulares disjuntas.
+  * **Problema en 3dBimFab**: Las patas y tornillos se infiltraban erróneamente en la "1. Lista de Piezas / Tableros" (madera) en lugar de concentrarse con precisión matemática en la "Lista de Herrajes".
+- **2. Inyector GhPython de Metadatos OpenNURBS (`3bf_hardware_injector.py`)**:
+  * **Arquitectura de Extracción en Documento Activo**: Mediante `Rhino.RhinoDoc.ActiveDoc.Objects.FindId(guid_val)` y unboxing limpio de tipos .NET (`System.Guid`), el componente Python captura el nombre real asignado al objeto en Rhino (`rh_obj.Name`).
+  * **Inyección de UserStrings**: Duplica la malla OpenNURBS (`geom.DuplicateMesh()`) y le estampa permanentemente el metadato `m_copy.SetUserString("Name", nombre)`.
+  * **Protocolo de Congelación e Internalización**: Al conectar la salida `Mallas` del script al componente de geometría `RH_OUT:Herrajes` y ejecutar clic derecho $\to$ *Internalise data*, el nodo corta el cable de entrada y retiene internamente las mallas con sus UserStrings horneados, permitiendo la resolución autónoma en RhinoCompute headless sin requerir el `.3dm` abierto en segundo plano.
+  * **Documentación en Lienzo**: Creado el instructivo en 4 pasos para el panel amarillo de Grasshopper (`Mesh revueltas` $\to$ `Guid` $\to$ `Python [M]` $\to$ `Mallas` $\to$ `RH_OUT:Herrajes` $\to$ `Internalise data`).
+- **3. Adaptación del Worker Python (`3bf/worker/3bf_worker.py`)**:
+  * **Extracción de UserString en Decodificación**: En el deserializador de OpenNURBS de RhinoCompute, se añadió la lectura reactiva de `m.GetUserString("Name")` o `m.GetUserString("PieceName")`.
+  * **Inmunidad a la Descomposición en Islas (`split_mesh_dict_into_islands`)**: Se blindó la función de división en islas para que toda malla clasificada como herraje (`es_nombre_herraje`) se preserve como un único cuerpo cerrado y atómico, erradicando la multiplicación espuria de conteos (de 660 patas y 810 tornillos a exactamente **6 Patas** y **18 Tornillos Pata**).
+- **4. Filtrado y Categorización Rigurosa en Frontend 3dBimFab**:
+  * **Blindaje en `cadStateUtils.ts`**: Incorporación de la raíz `"herraje"` y subvariantes a `isHardwareMeshName`.
+  * **Exclusión de Tableros en `createSceneInstanceSlice.ts`**: Filtro estricto en el mapeo de `resultado.despiece` y familias para que ninguna pieza identificada como herraje forme parte de los tableros de madera.
+  * **Saneamiento en `DespieceView.tsx`**: Filtrado en la vista global de despiece garantizando que la tabla de tableros contenga única y exclusivamente madera cortable, manteniendo las patas y tornillos en la "Lista de Herrajes" con su conteo 100% exacto.
+- **Validación de Calidad**:
+  * Compilación TypeScript verificada (`npx tsc --noEmit`) en `3bf` y `mario-mojica-plataforma` con **0 errores**.
+  * Cómputo en vivo validado con éxito total por el usuario en `3dBimFab`: conteos exactos de herrajes híbridos y despiece de tableros 100% puro.

@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { use3BFStore, TableroRecord, HerrajeRecord, CantoRecord, FichaCostosConfig } from "@/lib/store";
 import { extraerPiezaMadre, obtenerDescripcionCanonicaPieza } from "@/lib/piezaMadreUtils";
+import { isHardwareMeshName } from "@/lib/engine/cadStateUtils";
 import { 
   FileText, 
   Hammer, 
@@ -284,14 +285,19 @@ export default function DespieceView() {
   const piezasGlobales = useMemo(() => {
     const list = getDespieceGlobal();
     const rawList = list.length > 0 ? list : (resultado?.despiece || []);
-    const base = rawList.map((p: any) => {
-      const nombreNorm = extraerPiezaMadre(p.nombre) || p.nombre;
-      return {
-        ...p,
-        nombre: nombreNorm,
-        descripcion: p.descripcion && p.descripcion !== p.nombre ? p.descripcion : nombreNorm
-      };
-    });
+    const base = rawList
+      .filter((p: any) => {
+        const nom = (extraerPiezaMadre(p.nombre) || p.nombre || "").trim().toLowerCase();
+        return !isHardwareMeshName(nom) && !/maquinado|perforad|cavilha|tarugo|parafuso|tornillo|minifix|corredi|cantoneira|prego|sapata|pata|pés|pes|puxador|tampa|herraje/i.test(nom);
+      })
+      .map((p: any) => {
+        const nombreNorm = extraerPiezaMadre(p.nombre) || p.nombre;
+        return {
+          ...p,
+          nombre: nombreNorm,
+          descripcion: p.descripcion && p.descripcion !== p.nombre ? p.descripcion : nombreNorm
+        };
+      });
     return [...base].sort((a, b) =>
       (a.nombre || "").localeCompare(b.nombre || "", undefined, { numeric: true, sensitivity: "base" })
     );

@@ -266,7 +266,8 @@ export function isHardwareMeshName(name: string): boolean {
     n.includes("grampo") ||
     n.includes("grapa") ||
     n.includes("perfil") ||
-    n.includes("trilho")
+    n.includes("trilho") ||
+    n.includes("herraje")
   ) && !n.includes("cajon") && !n.includes("cajón") && !n.includes("tapaluz") && !n.includes("posterior") && !n.includes("traser") && !n.includes("gaveta");
 }
 

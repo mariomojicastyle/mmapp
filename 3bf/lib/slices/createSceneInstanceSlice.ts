@@ -10,6 +10,7 @@ import type {
   HerrajeItem,
 } from "../storeTypes";
 import { extraerPiezaMadre } from "../piezaMadreUtils";
+import { isHardwareMeshName } from "../engine/cadStateUtils";
 
 export interface SceneInstanceSlice {
   instancias: Record<string, ObjetoInstancia3BF>;
@@ -802,7 +803,7 @@ export const createSceneInstanceSlice = (set: any, get: any): any => ({
         realMeshes.forEach((m: any) => {
           if (!m || m.es_duplicado_ghx) return;
           const rawName = String(m.name || "").replace(/^RH_OUT:\s*/i, "").trim();
-          if (!rawName || /maquinado|perforad|cavilha|tarugo|parafuso|tornillo|minifix|corredi|cantoneira|prego|sapata|puxador|tampa/i.test(rawName)) {
+          if (!rawName || isHardwareMeshName(rawName) || /maquinado|perforad|cavilha|tarugo|parafuso|tornillo|minifix|corredi|cantoneira|prego|sapata|pata|pés|pes|puxador|tampa|herraje/i.test(rawName)) {
             return;
           }
           const isMdp = /^(mdp|mdf)\s+/i.test(rawName);
@@ -883,6 +884,10 @@ export const createSceneInstanceSlice = (set: any, get: any): any => ({
       if (despieceEfectivo) {
         despieceEfectivo.forEach((p: any) => {
           const nombreNormalizado = extraerPiezaMadre(p.nombre) || p.nombre;
+          const nomLower = String(nombreNormalizado || "").toLowerCase();
+          if (isHardwareMeshName(nomLower) || /maquinado|perforad|cavilha|tarugo|parafuso|tornillo|minifix|corredi|cantoneira|prego|sapata|pata|pés|pes|puxador|tampa|herraje/i.test(nomLower)) {
+            return;
+          }
           list.push({
             ...p,
             nombre: nombreNormalizado,

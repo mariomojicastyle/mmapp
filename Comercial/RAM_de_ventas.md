@@ -412,10 +412,9 @@ Para evitar respuestas genéricas, el RAM de ventas almacena y cruza 5 dimension
 - **Formación:** Escuela de Mecánica de Aviación Naval, México. Ubicación: Tijuana, Baja California, México.
 - **Tecnología Core de la Patente:** Codificación física directa de coordenadas 3D deterministas en el campo de luz antes de tocar el sensor. Con una sola captura 2D estándar proporciona posición 3D/6DoF exacta, eliminando la sobrecarga computacional de reconstrucción posterior, SLAM, triangulación y estimación de pose.
 - **Diagnóstico del Dolor y Oportunidad B2B:**
-  * *15 Octubre 2026 (20:31):* **INBOUND DIRECTO DE ALTO NIVEL TÉCNICO.** Ivan contactó a Mario en LinkedIn tras revisar su perfil con el mensaje: *"Hola, Mario. Gracias por conectar. Soy inventor y fundador de CE3D, una tecnología mexicana que integra codificación óptica posicional tridimensional, lectura óptico-angular y procesamiento geométrico para navegación espacial 6DoF. Me interesa tu experiencia en software y optimización de procesos de manufactura, especialmente por la siguiente etapa de desarrollo profesional de mi tecnología. Un gusto saludarte."*
-  * **Sinergia Técnica Profunda:** Ivan tiene resuelto el principio físico/óptico y la IP, pero para llevarlo al mercado manufacturero e industrial necesita transformar el modelo en software profesional de alto rendimiento (APIs, algoritmos de procesamiento geométrico, integración con control de movimiento CNC/robótica, CAD/CAM y gemelos digitales). Justo la especialidad de Mario (arquitectura de software, computación geométrica, Three.js/Rhino/Grasshopper y automatización industrial).
-- **Estado Actual:** 🔥 **MUY CALIENTE / INBOUND DE CODESARROLLO & ALIANZA DEEP TECH.**
-- **Próxima Jugada:** Responder validando el enorme valor de eliminar el cuello de botella computacional de pose estimation en 6DoF y proponer una videollamada técnica de 20-30 minutos para explorar cómo estructurar la capa de software para manufactura.
+  * *17 Octubre 2026 (00:04 - 17:28):* **¡BORRADORES DE NDA Y CONTRATO ENVIADOS AL CORREO!** Iván confirmó el envío formal de los borradores del **NDA (Acuerdo de Confidencialidad)** y **CONTRATO DE RELACIÓN OPERATIVA LABORAL** a la cuenta `direccion@mariomojica.com`. Indicó que están listos para revisión y ajustes mutuos, y que la videollamada se coordinará en cuanto resuelva un detalle técnico local.
+- **Estado Actual:** 🔥🔥 **MUY CALIENTE / REVISIÓN LEGAL Y CONTRACTUAL DE LA VINCULACIÓN CE3D & ARIA.**
+- **Próxima Jugada:** Auditar minuciosamente las cláusulas del NDA y el contrato operativo (propiedad intelectual, honorarios, exclusividad y alcances) en cuanto Mario descargue los documentos.
 
 ---
 
