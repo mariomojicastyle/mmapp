@@ -442,6 +442,7 @@ export function DetalleProyectoModal({ isOpen, onClose, proyecto, onUpdate }: De
   const glossaryFileRef = useRef<HTMLInputElement>(null)
   const [cameraOverlayActive, setCameraOverlayActive] = useState(false)
   const [lightingEditorActive, setLightingEditorActive] = useState(false)
+  const [debugConsoleActive, setDebugConsoleActive] = useState(false)
   const realtimeChannelRef = useRef<any>(null)
   const codigoManualRef = useRef(codigoManual)
   const proyectoRef = useRef(proyecto)
@@ -458,6 +459,7 @@ export function DetalleProyectoModal({ isOpen, onClose, proyecto, onUpdate }: De
     if (typeof window !== "undefined") {
       setCameraOverlayActive(localStorage.getItem('cameraOverlay') === 'on')
       setLightingEditorActive(localStorage.getItem('lightingEditor') === 'on')
+      setDebugConsoleActive(localStorage.getItem('debugConsole') === 'on')
     }
 
     const handleMessage = (event: MessageEvent) => {
@@ -3373,7 +3375,7 @@ export function DetalleProyectoModal({ isOpen, onClose, proyecto, onUpdate }: De
                         <span className="font-semibold text-on-surface-variant/90">Enlaces de Previsualización Activos:</span>
                         <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-6 mt-1">
                           <a
-                            href={`http://localhost:5173/${codigoManual}?cameraOverlay=${cameraOverlayActive ? 'on' : 'off'}&lightingEditor=${lightingEditorActive ? 'on' : 'off'}`}
+                            href={`http://localhost:5173/${codigoManual}?cameraOverlay=${cameraOverlayActive ? 'on' : 'off'}&lightingEditor=${lightingEditorActive ? 'on' : 'off'}&debug=${debugConsoleActive ? 'on' : 'off'}`}
                             target="_blank"
                             rel="opener"
                             className="text-primary hover:underline font-semibold flex items-center gap-1 transition-all group shrink-0"
@@ -3382,7 +3384,7 @@ export function DetalleProyectoModal({ isOpen, onClose, proyecto, onUpdate }: De
                             <ExternalLink className="h-3 w-3 opacity-60 group-hover:opacity-100 transition-opacity" />
                           </a>
                           <a
-                            href={`https://mariomojica.com/embed/armado/${codigoManual}?cameraOverlay=${cameraOverlayActive ? 'on' : 'off'}&lightingEditor=${lightingEditorActive ? 'on' : 'off'}`}
+                            href={`https://mariomojica.com/embed/armado/${codigoManual}?cameraOverlay=${cameraOverlayActive ? 'on' : 'off'}&lightingEditor=${lightingEditorActive ? 'on' : 'off'}&debug=${debugConsoleActive ? 'on' : 'off'}`}
                             target="_blank"
                             rel="opener"
                             className="text-teal-400 hover:underline font-semibold flex items-center gap-1 transition-all group shrink-0"
@@ -3502,6 +3504,29 @@ export function DetalleProyectoModal({ isOpen, onClose, proyecto, onUpdate }: De
                             >
                               ☀️ {lightingEditorActive ? '🟢 Editor de Iluminación Activo' : '⚪ Editor de Iluminación'}
                             </button>
+
+                              {/* Botón toggle de Consola Móvil DevTools (Eruda) */}
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  const newVal = debugConsoleActive ? 'off' : 'on'
+                                  localStorage.setItem('debugConsole', newVal)
+                                  setDebugConsoleActive(!debugConsoleActive)
+                                  window.dispatchEvent(new StorageEvent('storage', {
+                                    key: 'debugConsole', newValue: newVal
+                                  }))
+                                }}
+                                className={cn(
+                                  "flex items-center gap-1.5 text-[11px] font-bold px-3 py-1 rounded-full border transition-all duration-200",
+                                  debugConsoleActive
+                                    ? "bg-purple-500/15 border-purple-500/40 text-purple-300 hover:bg-purple-500/25 shadow-sm"
+                                    : "bg-surface-container border-outline-variant/20 text-on-surface-variant hover:text-on-surface"
+                                )}
+                                title="Activa o desactiva la consola móvil DevTools (Eruda) para diagnosticar eventos, red y WebGL en smartphones"
+                              >
+                                <span>🐞</span>
+                                {debugConsoleActive ? '🟢 Consola Móvil Activa' : '⚪ Consola Móvil'}
+                              </button>
                             </div>
                           </div>
 
