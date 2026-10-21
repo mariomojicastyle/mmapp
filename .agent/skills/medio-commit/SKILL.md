@@ -1,6 +1,6 @@
 ---
 name: medio-commit
-description: Automatiza el proceso de "medio commit": hace commit con descripción generada por IA, fusiona con main, sube a GitHub (sin deploy de Netlify), elimina ramas sobrantes y crea una nueva rama especificada por el usuario. Se activa con comandos como "/mediocommit - [nombre_nueva_rama]".
+description: 'Automatiza el proceso de medio commit: hace commit con descripcion generada por IA, fusiona con main, sube a GitHub (sin deploy de Netlify), elimina ramas sobrantes y crea una nueva rama especificada por el usuario. Se activa con comandos como /mediocommit - [nombre_nueva_rama].'
 ---
 
 # Medio Commit

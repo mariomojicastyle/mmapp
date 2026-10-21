@@ -10,7 +10,7 @@ import { decryptBuffer } from "../../../lib/cryptoAES.js";
 
 // Configurar el decodificador de Draco directamente desde el origen verificado de Netlify
 if (typeof window !== "undefined") {
-  useGLTF.setDecoderPath("https://mario-mojica-armado.netlify.app/draco/gltf/");
+  useGLTF.setDecoderPath("/draco/gltf/");
 }
 
 const glbCache = {}; // Cache local: Url original -> ObjectURL del Blob desencriptado
@@ -25,57 +25,40 @@ export async function getProtectedGLB(url, manualId, onProgress) {
   
   glbPromiseCache[url] = (async () => {
     let progressTimer = null;
-    let simulatedProgress = 10;
+    let simulatedProgress = 15;
     if (typeof onProgress === "function") {
       onProgress(simulatedProgress);
-      // Simular avance continuo durante descargas móviles con latencia
       progressTimer = setInterval(() => {
-        simulatedProgress = Math.min(88, simulatedProgress + 4);
+        simulatedProgress = Math.min(90, simulatedProgress + 10);
         onProgress(simulatedProgress);
-      }, 150);
+      }, 100);
     }
 
     try {
       const response = await fetch(url);
       if (!response.ok) throw new Error(`Error descargando modelo: ${response.status}`);
       
-      const contentLength = response.headers.get('content-length');
-      const totalBytes = contentLength ? parseInt(contentLength, 10) : 0;
-      let buffer;
-
-      if (response.body && totalBytes > 0 && typeof ReadableStream !== 'undefined') {
-        if (progressTimer) clearInterval(progressTimer);
-        const reader = response.body.getReader();
-        const chunks = [];
-        let receivedBytes = 0;
-
-        while (true) {
-          const { done, value } = await reader.read();
-          if (done) break;
-          chunks.push(value);
-          receivedBytes += value.length;
-          const pct = Math.min(92, Math.round((receivedBytes / totalBytes) * 100));
-          if (typeof onProgress === "function") onProgress(pct);
-        }
-
-        const allChunks = new Uint8Array(receivedBytes);
-        let position = 0;
-        for (const chunk of chunks) {
-          allChunks.set(chunk, position);
-          position += chunk.length;
-        }
-        buffer = allChunks.buffer;
-      } else {
-        buffer = await response.arrayBuffer();
-      }
+      // Descarga nativa optimizada en C++ sin fragmentación de memoria JS
+      const buffer = await response.arrayBuffer();
       
       if (progressTimer) clearInterval(progressTimer);
       if (typeof onProgress === "function") onProgress(95);
 
-      // Revertir cifrado AES-256 en memoria
-      const decrypted = await decryptBuffer(buffer, manualId);
-      
-      const blob = new Blob([decrypted], { type: "model/gltf-binary" });
+      let finalBuffer = buffer;
+      // Detección instantánea de encabezado estándar glTF (magic bytes: 0x67 0x6C 0x54 0x46)
+      const first4 = new Uint8Array(buffer, 0, 4);
+      const isStandardGLB = first4[0] === 0x67 && first4[1] === 0x6c && first4[2] === 0x54 && first4[3] === 0x46;
+
+      if (!isStandardGLB) {
+        try {
+          finalBuffer = await decryptBuffer(buffer, manualId);
+        } catch (decryptErr) {
+          console.warn("[3D GLB] No se requirió o falló descifrado, usando buffer directo:", decryptErr);
+          finalBuffer = buffer;
+        }
+      }
+
+      const blob = new Blob([finalBuffer], { type: "model/gltf-binary" });
       const objectUrl = URL.createObjectURL(blob);
       glbCache[url] = objectUrl;
       if (typeof onProgress === "function") onProgress(100);

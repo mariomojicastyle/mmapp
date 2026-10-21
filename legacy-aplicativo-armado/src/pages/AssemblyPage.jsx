@@ -318,9 +318,9 @@ const AssemblyPage = () => {
 
             // Configuración de iluminación persistida (panel secreto de calibración)
             lightingConfig: configData.lighting_config || null,
-            tipoAmbiente: configData.tipo_ambiente || "habitacion",
+            tipoAmbiente: "estudio",
             colorAmbiente: configData.color_ambiente || "#e8e8e8",
-            colorPiso: configData.color_piso || "#e8e8e8",
+            colorPiso: configData.color_piso || "#ffffff",
             colorMallaCentro: configData.color_malla_centro || "#b5b5c3",
             colorMallaLineas: configData.color_malla_lineas || "#d1d1db",
             ayudasTexto: configData.ayudas_texto || null,

@@ -4304,395 +4304,116 @@ export function DetalleProyectoModal({ isOpen, onClose, proyecto, onUpdate }: De
                       </div>
                     )}
 
-                    {/* Sección de Texturas PBR del Escenario */}
+                    {/* Configuración de Ambiente y Estudio 3D */}
                     <div className="border-t border-outline-variant/10 pt-4 space-y-4">
-                      <div className="text-xs font-bold text-on-surface-variant/80 uppercase tracking-wider flex items-center gap-1.5">
-                        <Box className="h-4 w-4 text-primary" />
-                        🧱 Texturas del Escenario (PBR)
-                      </div>
-                      
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 bg-surface-container-low/40 p-4 rounded-xl border border-outline-variant/5">
-                        {/* Texturas del Piso */}
-                        <div className="space-y-3">
-                          <div className="text-[11px] font-bold text-primary uppercase tracking-wider border-b border-outline-variant/5 pb-1">Texturas del Piso (PBR)</div>
-                          
-                          {/* Piso: Difusión */}
-                          <div className="flex flex-col gap-1">
-                            <span className="text-[10px] font-semibold text-on-surface-variant">Mapa de Difusión / Color</span>
-                            <div className="flex gap-2">
-                              <input
-                                type="text"
-                                value={pbrFloorDiff}
-                                readOnly
-                                placeholder="Piso por defecto"
-                                className="flex-1 rounded-lg border border-outline-variant bg-surface-container px-3 py-1.5 text-[11px] text-on-surface outline-none truncate"
-                              />
-                              <button
-                                type="button"
-                                onClick={() => triggerUpload("pbr_floor_diff")}
-                                className="rounded-lg bg-primary/10 border border-primary/20 px-2.5 py-1.5 text-[10px] font-semibold text-primary transition hover:bg-primary/20 shrink-0"
-                              >
-                                Cargar
-                              </button>
-                              {pbrFloorDiff && (
-                                <button
-                                  type="button"
-                                  onClick={() => handleRealDelete("pbr_floor_diff", null)}
-                                  className="text-on-surface-variant hover:text-red-400 p-1.5 shrink-0"
-                                >
-                                  <Trash2 className="h-3.5 w-3.5" />
-                                </button>
-                              )}
-                            </div>
-                          </div>
-
-                          {/* Piso: Normal */}
-                          <div className="flex flex-col gap-1">
-                            <span className="text-[10px] font-semibold text-on-surface-variant">Mapa de Normales (Normal Map)</span>
-                            <div className="flex gap-2">
-                              <input
-                                type="text"
-                                value={pbrFloorNormal}
-                                readOnly
-                                placeholder="Normal por defecto"
-                                className="flex-1 rounded-lg border border-outline-variant bg-surface-container px-3 py-1.5 text-[11px] text-on-surface outline-none truncate"
-                              />
-                              <button
-                                type="button"
-                                onClick={() => triggerUpload("pbr_floor_normal")}
-                                className="rounded-lg bg-primary/10 border border-primary/20 px-2.5 py-1.5 text-[10px] font-semibold text-primary transition hover:bg-primary/20 shrink-0"
-                              >
-                                Cargar
-                              </button>
-                              {pbrFloorNormal && (
-                                <button
-                                  type="button"
-                                  onClick={() => handleRealDelete("pbr_floor_normal", null)}
-                                  className="text-on-surface-variant hover:text-red-400 p-1.5 shrink-0"
-                                >
-                                  <Trash2 className="h-3.5 w-3.5" />
-                                </button>
-                              )}
-                            </div>
-                          </div>
-
-                          {/* Piso: Roughness */}
-                          <div className="flex flex-col gap-1">
-                            <span className="text-[10px] font-semibold text-on-surface-variant">Mapa de Rugosidad (Roughness Map)</span>
-                            <div className="flex gap-2">
-                              <input
-                                type="text"
-                                value={pbrFloorRoughness}
-                                readOnly
-                                placeholder="Rugosidad por defecto"
-                                className="flex-1 rounded-lg border border-outline-variant bg-surface-container px-3 py-1.5 text-[11px] text-on-surface outline-none truncate"
-                              />
-                              <button
-                                type="button"
-                                onClick={() => triggerUpload("pbr_floor_roughness")}
-                                className="rounded-lg bg-primary/10 border border-primary/20 px-2.5 py-1.5 text-[10px] font-semibold text-primary transition hover:bg-primary/20 shrink-0"
-                              >
-                                Cargar
-                              </button>
-                              {pbrFloorRoughness && (
-                                <button
-                                  type="button"
-                                  onClick={() => handleRealDelete("pbr_floor_roughness", null)}
-                                  className="text-on-surface-variant hover:text-red-400 p-1.5 shrink-0"
-                                >
-                                  <Trash2 className="h-3.5 w-3.5" />
-                                </button>
-                              )}
-                            </div>
-                          </div>
-
-                          {/* Piso: Height */}
-                          <div className="flex flex-col gap-1">
-                            <span className="text-[10px] font-semibold text-on-surface-variant">Mapa de Altura / Relieve (Height Map)</span>
-                            <div className="flex gap-2">
-                              <input
-                                type="text"
-                                value={pbrFloorHeight}
-                                readOnly
-                                placeholder="Altura por defecto"
-                                className="flex-1 rounded-lg border border-outline-variant bg-surface-container px-3 py-1.5 text-[11px] text-on-surface outline-none truncate"
-                              />
-                              <button
-                                type="button"
-                                onClick={() => triggerUpload("pbr_floor_height")}
-                                className="rounded-lg bg-primary/10 border border-primary/20 px-2.5 py-1.5 text-[10px] font-semibold text-primary transition hover:bg-primary/20 shrink-0"
-                              >
-                                Cargar
-                              </button>
-                              {pbrFloorHeight && (
-                                <button
-                                  type="button"
-                                  onClick={() => handleRealDelete("pbr_floor_height", null)}
-                                  className="text-on-surface-variant hover:text-red-400 p-1.5 shrink-0"
-                                >
-                                  <Trash2 className="h-3.5 w-3.5" />
-                                </button>
-                              )}
-                            </div>
-                          </div>
-                        </div>
-
-                        {/* Texturas de la Pared */}
-                        <div className="space-y-3">
-                          <div className="text-[11px] font-bold text-teal-400 uppercase tracking-wider border-b border-outline-variant/5 pb-1">Texturas de las Paredes (PBR)</div>
-                          
-                          {/* Pared: Difusión */}
-                          <div className="flex flex-col gap-1">
-                            <span className="text-[10px] font-semibold text-on-surface-variant">Mapa de Difusión / Color</span>
-                            <div className="flex gap-2">
-                              <input
-                                type="text"
-                                value={pbrWallDiff}
-                                readOnly
-                                placeholder="Paredes por defecto"
-                                className="flex-1 rounded-lg border border-outline-variant bg-surface-container px-3 py-1.5 text-[11px] text-on-surface outline-none truncate"
-                              />
-                              <button
-                                type="button"
-                                onClick={() => triggerUpload("pbr_wall_diff")}
-                                className="rounded-lg bg-primary/10 border border-primary/20 px-2.5 py-1.5 text-[10px] font-semibold text-primary transition hover:bg-primary/20 shrink-0"
-                              >
-                                Cargar
-                              </button>
-                              {pbrWallDiff && (
-                                <button
-                                  type="button"
-                                  onClick={() => handleRealDelete("pbr_wall_diff", null)}
-                                  className="text-on-surface-variant hover:text-red-400 p-1.5 shrink-0"
-                                >
-                                  <Trash2 className="h-3.5 w-3.5" />
-                                </button>
-                              )}
-                            </div>
-                          </div>
-
-                          {/* Pared: Normal */}
-                          <div className="flex flex-col gap-1">
-                            <span className="text-[10px] font-semibold text-on-surface-variant">Mapa de Normales (Normal Map)</span>
-                            <div className="flex gap-2">
-                              <input
-                                type="text"
-                                value={pbrWallNormal}
-                                readOnly
-                                placeholder="Normal por defecto"
-                                className="flex-1 rounded-lg border border-outline-variant bg-surface-container px-3 py-1.5 text-[11px] text-on-surface outline-none truncate"
-                              />
-                              <button
-                                type="button"
-                                onClick={() => triggerUpload("pbr_wall_normal")}
-                                className="rounded-lg bg-primary/10 border border-primary/20 px-2.5 py-1.5 text-[10px] font-semibold text-primary transition hover:bg-primary/20 shrink-0"
-                              >
-                                Cargar
-                              </button>
-                              {pbrWallNormal && (
-                                <button
-                                  type="button"
-                                  onClick={() => handleRealDelete("pbr_wall_normal", null)}
-                                  className="text-on-surface-variant hover:text-red-400 p-1.5 shrink-0"
-                                >
-                                  <Trash2 className="h-3.5 w-3.5" />
-                                </button>
-                              )}
-                            </div>
-                          </div>
-
-                          {/* Pared: Roughness */}
-                          <div className="flex flex-col gap-1">
-                            <span className="text-[10px] font-semibold text-on-surface-variant">Mapa de Rugosidad (Roughness Map)</span>
-                            <div className="flex gap-2">
-                              <input
-                                type="text"
-                                value={pbrWallRoughness}
-                                readOnly
-                                placeholder="Rugosidad por defecto"
-                                className="flex-1 rounded-lg border border-outline-variant bg-surface-container px-3 py-1.5 text-[11px] text-on-surface outline-none truncate"
-                              />
-                              <button
-                                type="button"
-                                onClick={() => triggerUpload("pbr_wall_roughness")}
-                                className="rounded-lg bg-primary/10 border border-primary/20 px-2.5 py-1.5 text-[10px] font-semibold text-primary transition hover:bg-primary/20 shrink-0"
-                              >
-                                Cargar
-                              </button>
-                              {pbrWallRoughness && (
-                                <button
-                                  type="button"
-                                  onClick={() => handleRealDelete("pbr_wall_roughness", null)}
-                                  className="text-on-surface-variant hover:text-red-400 p-1.5 shrink-0"
-                                >
-                                  <Trash2 className="h-3.5 w-3.5" />
-                                </button>
-                              )}
-                            </div>
-                          </div>
-
-                          {/* Pared: Height */}
-                          <div className="flex flex-col gap-1">
-                            <span className="text-[10px] font-semibold text-on-surface-variant">Mapa de Altura / Relieve (Height Map)</span>
-                            <div className="flex gap-2">
-                              <input
-                                type="text"
-                                value={pbrWallHeight}
-                                readOnly
-                                placeholder="Altura por defecto"
-                                className="flex-1 rounded-lg border border-outline-variant bg-surface-container px-3 py-1.5 text-[11px] text-on-surface outline-none truncate"
-                              />
-                              <button
-                                type="button"
-                                onClick={() => triggerUpload("pbr_wall_height")}
-                                className="rounded-lg bg-primary/10 border border-primary/20 px-2.5 py-1.5 text-[10px] font-semibold text-primary transition hover:bg-primary/20 shrink-0"
-                              >
-                                Cargar
-                              </button>
-                              {pbrWallHeight && (
-                                <button
-                                  type="button"
-                                  onClick={() => handleRealDelete("pbr_wall_height", null)}
-                                  className="text-on-surface-variant hover:text-red-400 p-1.5 shrink-0"
-                                >
-                                  <Trash2 className="h-3.5 w-3.5" />
-                                </button>
-                              )}
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Estilo de Ambiente */}
                       <div className="bg-surface-container-low/40 p-4 rounded-xl border border-outline-variant/5 space-y-4">
                         <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
                           <div className="space-y-1">
                             <div className="text-xs font-bold text-on-surface">Estilo de Ambiente 3D</div>
-                            <div className="text-[11px] text-on-surface-variant">Selecciona el tipo de entorno para la visualización del manual.</div>
+                            <div className="text-[11px] text-on-surface-variant">Entorno predeterminado y optimizado para la visualización fluida del manual.</div>
                           </div>
                           <div className="flex gap-2">
-                            <button
-                              type="button"
-                              onClick={() => setTipoAmbiente("habitacion")}
-                              className={`rounded-lg px-3 py-1.5 text-xs font-semibold transition ${
-                                tipoAmbiente === "habitacion"
-                                  ? "bg-primary text-primary-container"
-                                  : "bg-surface-container hover:bg-surface-container-high text-on-surface-variant"
-                              }`}
-                            >
-                              🏠 Habitación Clásica
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => setTipoAmbiente("estudio")}
-                              className={`rounded-lg px-3 py-1.5 text-xs font-semibold transition ${
-                                tipoAmbiente === "estudio"
-                                  ? "bg-primary text-primary-container"
-                                  : "bg-surface-container hover:bg-surface-container-high text-on-surface-variant"
-                              }`}
-                            >
+                            <span className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 border border-primary/20 px-3 py-1.5 text-xs font-semibold text-primary">
                               🎨 Estudio 3D (Spline)
-                            </button>
+                            </span>
                           </div>
                         </div>
 
-                        {tipoAmbiente === "estudio" && (
-                          <div className="border-t border-outline-variant/10 pt-4 space-y-4">
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                              {/* 1. Fondo */}
-                              <div className="flex items-center justify-between gap-4 bg-surface-container-low/50 p-2.5 rounded-lg border border-outline-variant/5">
-                                <div className="space-y-0.5">
-                                  <span className="text-[10px] font-bold text-on-surface-variant uppercase tracking-wider">Color del Fondo</span>
-                                  <p className="text-[9px] text-on-surface-variant/70">Fondo del estudio 3D.</p>
-                                </div>
-                                <div className="flex items-center gap-1.5">
-                                  <input
-                                    type="color"
-                                    value={getValidHexColor(colorAmbiente)}
-                                    onChange={(e) => setColorAmbiente(normalizeColorInput(e.target.value))}
-                                    className="h-7 w-7 cursor-pointer rounded border border-outline-variant bg-transparent p-0"
-                                  />
-                                  <input
-                                    type="text"
-                                    value={colorAmbiente}
-                                    onChange={(e) => setColorAmbiente(normalizeColorInput(e.target.value))}
-                                    placeholder="#000000"
-                                    className="w-18 rounded border border-outline-variant bg-surface-container px-1.5 py-1 text-[10px] text-on-surface outline-none focus:border-primary text-center font-mono"
-                                  />
-                                </div>
+                        <div className="border-t border-outline-variant/10 pt-4 space-y-4">
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            {/* 1. Fondo */}
+                            <div className="flex items-center justify-between gap-4 bg-surface-container-low/50 p-2.5 rounded-xl border border-outline-variant/5">
+                              <div className="space-y-0.5">
+                                <span className="text-[10px] font-bold text-on-surface-variant uppercase tracking-wider">Color del Fondo</span>
+                                <p className="text-[9px] text-on-surface-variant/70">Fondo del estudio 3D.</p>
                               </div>
-
-                              {/* 2. Piso */}
-                              <div className="flex items-center justify-between gap-4 bg-surface-container-low/50 p-2.5 rounded-lg border border-outline-variant/5">
-                                <div className="space-y-0.5">
-                                  <span className="text-[10px] font-bold text-on-surface-variant uppercase tracking-wider">Color del Piso</span>
-                                  <p className="text-[9px] text-on-surface-variant/70">Suelo que recibe sombras.</p>
-                                </div>
-                                <div className="flex items-center gap-1.5">
-                                  <input
-                                    type="color"
-                                    value={getValidHexColor(colorPiso)}
-                                    onChange={(e) => setColorPiso(normalizeColorInput(e.target.value))}
-                                    className="h-7 w-7 cursor-pointer rounded border border-outline-variant bg-transparent p-0"
-                                  />
-                                  <input
-                                    type="text"
-                                    value={colorPiso}
-                                    onChange={(e) => setColorPiso(normalizeColorInput(e.target.value))}
-                                    placeholder="#000000"
-                                    className="w-18 rounded border border-outline-variant bg-surface-container px-1.5 py-1 text-[10px] text-on-surface outline-none focus:border-primary text-center font-mono"
-                                  />
-                                </div>
+                              <div className="flex items-center gap-1.5">
+                                <input
+                                  type="color"
+                                  value={getValidHexColor(colorAmbiente)}
+                                  onChange={(e) => setColorAmbiente(normalizeColorInput(e.target.value))}
+                                  className="h-7 w-7 cursor-pointer rounded-full border border-outline-variant bg-transparent p-0 overflow-hidden"
+                                />
+                                <input
+                                  type="text"
+                                  value={colorAmbiente}
+                                  onChange={(e) => setColorAmbiente(normalizeColorInput(e.target.value))}
+                                  placeholder="#000000"
+                                  className="w-20 rounded-full border border-outline-variant bg-surface-container px-2.5 py-1 text-[10px] text-on-surface outline-none focus:border-primary text-center font-mono"
+                                />
                               </div>
+                            </div>
 
-                              {/* 3. Centro de Malla */}
-                              <div className="flex items-center justify-between gap-4 bg-surface-container-low/50 p-2.5 rounded-lg border border-outline-variant/5">
-                                <div className="space-y-0.5">
-                                  <span className="text-[10px] font-bold text-on-surface-variant uppercase tracking-wider">Malla (Centro)</span>
-                                  <p className="text-[9px] text-on-surface-variant/70">Eje central de la cuadrícula.</p>
-                                </div>
-                                <div className="flex items-center gap-1.5">
-                                  <input
-                                    type="color"
-                                    value={getValidHexColor(colorMallaCentro)}
-                                    onChange={(e) => setColorMallaCentro(normalizeColorInput(e.target.value))}
-                                    className="h-7 w-7 cursor-pointer rounded border border-outline-variant bg-transparent p-0"
-                                  />
-                                  <input
-                                    type="text"
-                                    value={colorMallaCentro}
-                                    onChange={(e) => setColorMallaCentro(normalizeColorInput(e.target.value))}
-                                    placeholder="#000000"
-                                    className="w-18 rounded border border-outline-variant bg-surface-container px-1.5 py-1 text-[10px] text-on-surface outline-none focus:border-primary text-center font-mono"
-                                  />
-                                </div>
+                            {/* 2. Piso */}
+                            <div className="flex items-center justify-between gap-4 bg-surface-container-low/50 p-2.5 rounded-xl border border-outline-variant/5">
+                              <div className="space-y-0.5">
+                                <span className="text-[10px] font-bold text-on-surface-variant uppercase tracking-wider">Color del Piso</span>
+                                <p className="text-[9px] text-on-surface-variant/70">Piso blanco o color sólido con sombra de contacto.</p>
                               </div>
+                              <div className="flex items-center gap-1.5">
+                                <input
+                                  type="color"
+                                  value={getValidHexColor(colorPiso || "#ffffff")}
+                                  onChange={(e) => setColorPiso(normalizeColorInput(e.target.value))}
+                                  className="h-7 w-7 cursor-pointer rounded-full border border-outline-variant bg-transparent p-0 overflow-hidden"
+                                />
+                                <input
+                                  type="text"
+                                  value={colorPiso || "#ffffff"}
+                                  onChange={(e) => setColorPiso(normalizeColorInput(e.target.value))}
+                                  placeholder="#ffffff"
+                                  className="w-20 rounded-full border border-outline-variant bg-surface-container px-2.5 py-1 text-[10px] text-on-surface outline-none focus:border-primary text-center font-mono"
+                                />
+                              </div>
+                            </div>
 
-                              {/* 4. Líneas de Malla */}
-                              <div className="flex items-center justify-between gap-4 bg-surface-container-low/50 p-2.5 rounded-lg border border-outline-variant/5">
-                                <div className="space-y-0.5">
-                                  <span className="text-[10px] font-bold text-on-surface-variant uppercase tracking-wider">Malla (Líneas)</span>
-                                  <p className="text-[9px] text-on-surface-variant/70">Líneas secundarias de cuadrícula.</p>
-                                </div>
-                                <div className="flex items-center gap-1.5">
-                                  <input
-                                    type="color"
-                                    value={getValidHexColor(colorMallaLineas)}
-                                    onChange={(e) => setColorMallaLineas(normalizeColorInput(e.target.value))}
-                                    className="h-7 w-7 cursor-pointer rounded border border-outline-variant bg-transparent p-0"
-                                  />
-                                  <input
-                                    type="text"
-                                    value={colorMallaLineas}
-                                    onChange={(e) => setColorMallaLineas(normalizeColorInput(e.target.value))}
-                                    placeholder="#000000"
-                                    className="w-18 rounded border border-outline-variant bg-surface-container px-1.5 py-1 text-[10px] text-on-surface outline-none focus:border-primary text-center font-mono"
-                                  />
-                                </div>
+                            {/* 3. Centro de Malla */}
+                            <div className="flex items-center justify-between gap-4 bg-surface-container-low/50 p-2.5 rounded-xl border border-outline-variant/5">
+                              <div className="space-y-0.5">
+                                <span className="text-[10px] font-bold text-on-surface-variant uppercase tracking-wider">Malla (Centro)</span>
+                                <p className="text-[9px] text-on-surface-variant/70">Eje central de la cuadrícula.</p>
+                              </div>
+                              <div className="flex items-center gap-1.5">
+                                <input
+                                  type="color"
+                                  value={getValidHexColor(colorMallaCentro)}
+                                  onChange={(e) => setColorMallaCentro(normalizeColorInput(e.target.value))}
+                                  className="h-7 w-7 cursor-pointer rounded-full border border-outline-variant bg-transparent p-0 overflow-hidden"
+                                />
+                                <input
+                                  type="text"
+                                  value={colorMallaCentro}
+                                  onChange={(e) => setColorMallaCentro(normalizeColorInput(e.target.value))}
+                                  placeholder="#000000"
+                                  className="w-20 rounded-full border border-outline-variant bg-surface-container px-2.5 py-1 text-[10px] text-on-surface outline-none focus:border-primary text-center font-mono"
+                                />
+                              </div>
+                            </div>
+
+                            {/* 4. Líneas de Malla */}
+                            <div className="flex items-center justify-between gap-4 bg-surface-container-low/50 p-2.5 rounded-xl border border-outline-variant/5">
+                              <div className="space-y-0.5">
+                                <span className="text-[10px] font-bold text-on-surface-variant uppercase tracking-wider">Malla (Líneas)</span>
+                                <p className="text-[9px] text-on-surface-variant/70">Líneas secundarias de cuadrícula.</p>
+                              </div>
+                              <div className="flex items-center gap-1.5">
+                                <input
+                                  type="color"
+                                  value={getValidHexColor(colorMallaLineas)}
+                                  onChange={(e) => setColorMallaLineas(normalizeColorInput(e.target.value))}
+                                  className="h-7 w-7 cursor-pointer rounded-full border border-outline-variant bg-transparent p-0 overflow-hidden"
+                                />
+                                <input
+                                  type="text"
+                                  value={colorMallaLineas}
+                                  onChange={(e) => setColorMallaLineas(normalizeColorInput(e.target.value))}
+                                  placeholder="#000000"
+                                  className="w-20 rounded-full border border-outline-variant bg-surface-container px-2.5 py-1 text-[10px] text-on-surface outline-none focus:border-primary text-center font-mono"
+                                />
                               </div>
                             </div>
                           </div>
-                        )}
+                        </div>
                       </div>
                     </div>
                   </div>

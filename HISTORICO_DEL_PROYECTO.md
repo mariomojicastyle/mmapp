@@ -3641,3 +3641,27 @@ Para mantener la máxima agilidad y minimizar el consumo de tokens sin perder ni
 - **Validación de Calidad**:
   * Compilación TypeScript verificada (`npx tsc --noEmit`) en `3bf` y `mario-mojica-plataforma` con **0 errores**.
   * Cómputo en vivo validado con éxito total por el usuario en `3dBimFab`: conteos exactos de herrajes híbridos y despiece de tableros 100% puro.
+
+---
+
+### 🚀 Hito 280: Optimización Extrema del Visor de Armado Móvil (Erradicación de PBR y Habitación Clásica, Estudio 3D Fijo, Decodificador Draco Local y ArrayBuffer Nativo en C++) (`Floor.jsx`, `Experience.jsx`, `Model.jsx`, `AssemblyPage.jsx`, `detalle-proyecto-modal.tsx`) (20 de Octubre, 2026)
+- **1. Diagnóstico de Causa Raíz de Bloqueos y Carga Lenta en Celulares**:
+  * **Destrucción de Caché por `Date.now()`**: Inyección de marca de tiempo variable en el atlas panorámico de la habitación clásica (`salon_01.webp`), forzando al navegador móvil a re-descargar ~2.5 MB de textura en cada visita sobre la red celular 4G.
+  * **Suspensión Forzada por Hooks Incondicionales en R3F (`useTexture`)**: `Floor.jsx` y `Experience.jsx` ejecutaban incondicionalmente las llamadas a `useTexture` en la fase de render inicial, descargando 4 mapas PBR pesados de piso (`floor-diff.webp`, normales, rugosidad, ao) y paredes, incluso cuando el usuario seleccionaba "Estudio 3D (Spline)".
+  * **Fragmentación de Memoria por Streaming de Chunks en JS**: `Model.jsx` leía fragmentos de red manualmente y re-alocaba arreglos `Uint8Array` de forma acumulativa en el heap de JavaScript, saturando la memoria RAM y disparando pausas del recolector de basura (GC pauses/jank) en Android Chrome.
+  * **Latencia Cross-Origin en Draco WASM**: El cargador de Three.js descargaba las librerías WebAssembly de Draco desde Netlify con latencia de ida y vuelta (RTT > 120 ms).
+- **2. Erradicación Integral de Texturas PBR y Habitación Clásica**:
+  * **Suelo Ultraligero (`Floor.jsx`)**: Eliminación completa de `useTexture` y mapas PBR. Implementación de plano limpio con color sólido configurable (`#ffffff` por defecto) y sombras de contacto suaves (`ContactShadows`), reduciendo más de 2.4 MB y 4 peticiones HTTP.
+  * **Estudio 3D (Spline) Permanente (`Experience.jsx`)**: Eliminación de `parseCubemapTextureAtlas`, `atlasUrl` y de la malla skybox. Activación incondicional y fluida de fondo neutro, niebla exponencial anti-Moiré, cuadrícula estilizada y preset neutro de iluminación.
+  * **Ruta Local de Draco (`/draco/gltf/`)**: Servido localmente de forma relativa y comprimida sin handshakes externos.
+- **3. Carga Nativa en C++ y Descifrado Inteligente (`Model.jsx`)**:
+  * **Stream Directo vía `response.arrayBuffer()`**: Reemplazo de la concatenación por chunks en JS por la descarga nativa en C++ del motor del navegador.
+  * **Detección Instantánea de Encabezado Estándar GLB**: Lectura de los 4 magic bytes iniciales (`glTF`, `0x67 0x6C 0x54 0x46`); si el archivo no está cifrado, se envía inmediatamente a GPU sin pasar por derivación de clave PBKDF2 ni AES-GCM. Si está cifrado, se descifra transparentemente.
+- **4. Actualización de la Plataforma Administrativa (`detalle-proyecto-modal.tsx`)**:
+  * **Eliminación del Bloque PBR**: Removidas las secciones de Texturas de Piso PBR y Texturas de Paredes PBR.
+  * **Unificación de Interfaz en Cápsulas `rounded-full`**: Removido el conmutador de "Habitación Clásica", dejando fijado el badge "🎨 Estudio 3D (Spline)" y controles de color de fondo y suelo blanco con estilo de cápsulas puras circulares.
+- **5. Simulación Local y Verificación en Vivo (390 x 844 px & 1280 x 800 px)**:
+  * Servidor de desarrollo levantado en `:5173`. Simulación de viewport móvil y de escritorio con Chromium/Edge headless ejecutada con éxito total: barra de progreso alcanzando el **100%**, botón **INICIAR** habilitado y cero peticiones a texturas pesadas.
+- **Validación de Calidad**:
+  * `npx tsc --noEmit` en plataforma B2B con **0 errores**.
+  * `npm run build` en visor de armado (`legacy-aplicativo-armado`) compilado con éxito en 4.79s.

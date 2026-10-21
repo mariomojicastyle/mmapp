@@ -9,7 +9,15 @@ Este archivo es la "Memoria RAM" para Antigravity. Contiene el contexto de lo qu
 ---
 
 ## 🏗️ 1. Plataforma B2B & 3dBimFab (Foco Actual)
-**Estado:** Hito 279 completado con éxito total. **Inyección y Lectura Nativa de Herrajes Híbridos DfMA en Grasshopper y 3dBimFab (`3bf_hardware_injector.py`, `3bf_worker.py`, `cadStateUtils.ts`, `createSceneInstanceSlice.ts`, `DespieceView.tsx`), Inmunidad a Fragmentación en Islas y Despiece de Tableros 100% Puro**. Próximo foco: Continuar afinamiento y modelado de herrajes/ensambles híbridos en `Hib_C_Ravenna` y optimización DfMA. Rama activa: `Herrajes_hibridos_ok`.
+**Estado:** Hito 280 completado con éxito total. **Optimización Extrema del Visor de Armado Móvil: erradicación total de texturas PBR de piso y paredes, eliminación del skybox de habitación clásica, Estudio 3D (Spline) fijo y permanente, decodificador Draco local y carga nativa en C++ por ArrayBuffer**. Próximo foco: Continuar pruebas y validaciones de rendimiento en producción. Rama activa: `OptiManual`.
+
+- [x] **[20 de Octubre, 2026] Hito 280: Optimización Extrema del Visor de Armado Móvil (Erradicación de PBR y Habitación Clásica, Estudio 3D Fijo, Decodificador Draco Local y ArrayBuffer Nativo en C++) (`Floor.jsx`, `Experience.jsx`, `Model.jsx`, `AssemblyPage.jsx`, `detalle-proyecto-modal.tsx`)**:
+  * **Erradicación de Texturas PBR Pesadas**: Removidas incondicionalmente las 4 texturas de piso (`floor-diff`, normales, rugosidad, ao) y las texturas de pared. Ahorro de ~2.4 MB y 4 conexiones HTTP en el arranque móvil.
+  * **Estudio 3D (Spline) Permanente**: Removida la función `parseCubemapTextureAtlas`, el destructor de caché `Date.now()` y la habitación clásica (`salon_01.webp`). Fondo neutro suave con niebla anti-Moiré y piso limpio configurable con sombras de contacto (`ContactShadows`).
+  * **Ruta Draco Local**: Resuelta de forma relativa en `/draco/gltf/` en lugar de la URL remota de Netlify, eliminando latencia RTT.
+  * **Carga Nativa en C++ por ArrayBuffer y Detección `glTF`**: Eliminada la fragmentación manual de buffers en JS. Lectura instantánea de cabecera `glTF` para omitir descifrado innecesario y PBKDF2 en archivos sin cifrar.
+  * **Plataforma B2B Estandarizada**: Removido el bloque de texturas PBR y selector de habitación clásica en `detalle-proyecto-modal.tsx`, estandarizando todos los controles en cápsulas `rounded-full`.
+  * **Validación de Calidad**: `npx tsc --noEmit` en plataforma con 0 errores y `npm run build` en visor compilado en 4.79s. Simulación móvil y desktop verificada con éxito (progreso 100% y botón INICIAR activo).
 
 - [x] **[17 de Octubre, 2026] Hito 279: Inyección y Lectura Nativa de Herrajes Híbridos DfMA en Grasshopper y 3dBimFab (`3bf_hardware_injector.py`, `3bf_worker.py`, `cadStateUtils.ts`, `createSceneInstanceSlice.ts`, `DespieceView.tsx`)**:
   * **Inyector GhPython de Metadatos OpenNURBS**: Captura de nombres reales asignados a herrajes en Rhino (`rh_obj.Name`) a través de sus GUIDs e inyección en OpenNURBS como UserStrings (`SetUserString("Name", nombre)`).

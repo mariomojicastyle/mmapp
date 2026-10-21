@@ -1,5 +1,5 @@
 import { useThree, useLoader, useFrame } from "@react-three/fiber";
-import { OrbitControls, Html, useProgress, useGLTF, useHelper, Environment, useTexture } from "@react-three/drei";
+import { OrbitControls, Html, useProgress, useGLTF, useHelper, Environment } from "@react-three/drei";
 import React, { useRef, useEffect, Suspense, useState, useMemo } from "react";
 import useEnviroment from "../hooks/useEnviroment.js";
 import * as THREE from 'three';
@@ -10,37 +10,12 @@ import { getAssetPath } from "../../../lib/assets.js";
 
 // Configurar el decodificador de Draco directamente desde el origen verificado de Netlify
 if (typeof window !== "undefined") {
-  useGLTF.setDecoderPath("https://mario-mojica-armado.netlify.app/draco/gltf/");
+  useGLTF.setDecoderPath("/draco/gltf/");
 }
 
 
 
-// Utility to partition a single panoramic atlas image into cubemap textures
-function parseCubemapTextureAtlas(atlasImgUrl, tilesNum) {
-  const textures = [];
-  for (let i = 0; i < tilesNum; i++) {
-    textures[i] = new THREE.Texture();
-  }
 
-  new THREE.ImageLoader().load(atlasImgUrl, (image) => {
-    console.log("Cargando atlas 3D:", atlasImgUrl, "dimensiones reales detectadas:", image.width, "x", image.height);
-    let canvas, context;
-    const tileWidth = image.height;
-
-    for (let i = 0; i < textures.length; i++) {
-      canvas = document.createElement("canvas");
-      context = canvas.getContext("2d");
-      canvas.height = tileWidth;
-      canvas.width = tileWidth;
-
-      context.drawImage(image, tileWidth * i, 0, tileWidth, tileWidth, 0, 0, tileWidth, tileWidth);
-      textures[i].image = canvas;
-      textures[i].needsUpdate = true;
-    }
-  });
-
-  return textures;
-}
 
 function ActualAssemblySceneViewer({ id, modelUrl, productData, decryptedUrl }) {
   const { scene, gl, camera } = useThree();
@@ -94,164 +69,7 @@ function ActualAssemblySceneViewer({ id, modelUrl, productData, decryptedUrl }) 
     }
   }, [PasoActual, alturas, modelCenter]);
 
-  // Cargar la imagen panorámica en formato stripe y dividirla en 6 partes
-  // Determinar si hay texturas PBR activas en las paredes (modo avanzado)
-  // Se activa solo si además de la imagen difusa, se proporcionan mapas PBR complementarios (normales o rugosidad).
-  // Si solo se proporciona pbrWallDiff, se asume que es la tira panorámica 360 (modo práctico de una sola imagen).
-  const hasWallTextures = useMemo(() => {
-    return !!(
-      productData?.pbrWallDiff && 
-      (productData?.pbrWallNormal || productData?.pbrWallRoughness || productData?.pbrWallHeight)
-    );
-  }, [productData?.pbrWallDiff, productData?.pbrWallNormal, productData?.pbrWallRoughness, productData?.pbrWallHeight]);
-
-  // URL del atlas panorámico para el Skybox
-  const atlasUrl = useMemo(() => {
-    return (!hasWallTextures && productData?.pbrWallDiff) 
-      ? productData.pbrWallDiff 
-      : "https://mario-mojica-armado.netlify.app/hdri2/salon_01.webp";
-  }, [hasWallTextures, productData?.pbrWallDiff]);
-
-  const [cacheBuster] = useState(() => Date.now());
   
-  // Load panoramic stripe and split it into cubemap tiles
-  const textures = useMemo(() => {
-    return parseCubemapTextureAtlas(`${atlasUrl}?v=${cacheBuster}`, 6);
-  }, [atlasUrl, cacheBuster]);
-
-  const wallTextureConfig = useMemo(() => {
-    const config = {
-      map: productData?.pbrWallDiff || getAssetPath("/textures/floor/floor-diff.webp"),
-      normalMap: productData?.pbrWallNormal || getAssetPath("/textures/floor/floor-normal.webp"),
-      roughnessMap: productData?.pbrWallRoughness || getAssetPath("/textures/floor/floor-roughness.webp"),
-    };
-    if (productData?.pbrWallHeight) {
-      config.bumpMap = productData.pbrWallHeight;
-    }
-    return config;
-  }, [productData?.pbrWallDiff, productData?.pbrWallNormal, productData?.pbrWallRoughness, productData?.pbrWallHeight]);
-
-  const wallTextureMaps = useTexture(wallTextureConfig);
-
-  // Crear una referencia estable para wallTextureMaps para evitar re-ejecuciones por objetos contenedores efímeros
-  const stableWallTextureMaps = useMemo(() => wallTextureMaps, [
-    wallTextureMaps?.map,
-    wallTextureMaps?.normalMap,
-    wallTextureMaps?.roughnessMap,
-    wallTextureMaps?.bumpMap
-  ]);
-
-  // Configurar las texturas de pared si están presentes
-  useEffect(() => {
-    if (hasWallTextures && stableWallTextureMaps) {
-      Object.values(stableWallTextureMaps).forEach((texture) => {
-        if (texture) {
-          texture.wrapS = THREE.RepeatWrapping;
-          texture.wrapT = THREE.RepeatWrapping;
-          texture.repeat.set(4, 2); // Repetición agradable en las paredes del escenario
-        }
-      });
-      if (stableWallTextureMaps.map) {
-        stableWallTextureMaps.map.colorSpace = THREE.SRGBColorSpace;
-      }
-    }
-  }, [hasWallTextures, stableWallTextureMaps]);
-
-  // Ref para persistir el skybox entre re-renders
-  const skyBoxRef = useRef(null);
-
-  // Align environmental background mesh to the computed floor y-axis
-  const alignSkyboxToGround = (skyBoxMesh) => {
-    if (!skyBoxMesh) return;
-    let planeValue = null;
-    
-    if (alturas && alturas.length > 0) {
-      const altData = alturas.find(a => a.paso === PasoActual);
-      if (altData && altData.plane !== undefined) {
-        planeValue = altData.plane;
-      }
-    }
-    
-    if (planeValue === null && computedModelMinY !== null) {
-      planeValue = computedModelMinY;
-    }
-    
-    if (planeValue !== null) {
-      const floorY = planeValue - 0.001;
-      const skyBoxY = floorY + 2.25 - 0.001;
-      skyBoxMesh.position.set(0, skyBoxY, 0);
-    } else {
-      skyBoxMesh.position.set(0, 1.626, 0);
-    }
-  };
-
-  // Crear el skybox / escenario PBR o básico
-  useEffect(() => {
-    if (productData?.tipoAmbiente === "estudio") {
-      // Si está en modo estudio, no creamos ni agregamos el skybox
-      return;
-    }
-    let materials;
-    if (hasWallTextures) {
-      // Crear material PBR para las paredes del escenario
-      const wallMaterial = new THREE.MeshStandardMaterial({
-        map: stableWallTextureMaps.map,
-        normalMap: stableWallTextureMaps.normalMap,
-        roughnessMap: stableWallTextureMaps.roughnessMap,
-        bumpMap: stableWallTextureMaps.bumpMap || null,
-        bumpScale: 0.02,
-        roughness: 0.8,
-        metalness: 0.1,
-      });
-
-      // Material gris claro neutro para el techo del escenario
-      const ceilingMaterial = new THREE.MeshStandardMaterial({
-        color: new THREE.Color("#d0d0d0"),
-        roughness: 0.9,
-      });
-
-      // Material oscuro para la base (escondida bajo el piso)
-      const hiddenFloorMaterial = new THREE.MeshBasicMaterial({
-        color: new THREE.Color("#111111"),
-      });
-
-      // 6 caras: 0=Derecha, 1=Izquierda, 2=Techo, 3=Piso, 4=Frente, 5=Atrás
-      materials = [
-        wallMaterial,        // Derecha
-        wallMaterial,        // Izquierda
-        ceilingMaterial,     // Techo
-        hiddenFloorMaterial, // Piso
-        wallMaterial,        // Frente
-        wallMaterial,        // Atrás
-      ];
-    } else {
-      materials = textures.map((texture) => {
-        texture.colorSpace = THREE.SRGBColorSpace;
-        return new THREE.MeshBasicMaterial({ map: texture });
-      });
-    }
-
-    const skyBox = new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1), materials);
-    skyBox.geometry.scale(12, 4.5, -12); // Escala original de producción de 12x4.5x-12
-    
-    // Posicionar inmediatamente en su creación
-    alignSkyboxToGround(skyBox);
-
-    skyBoxRef.current = skyBox;
-    scene.add(skyBox);
-
-    return () => {
-      scene.remove(skyBox);
-      skyBox.geometry.dispose();
-      materials.forEach(m => m.dispose());
-      skyBoxRef.current = null;
-    };
-  }, [hasWallTextures, stableWallTextureMaps, textures, scene, productData?.tipoAmbiente]);
-
-  // Actualizar posición del skybox al cambiar de paso o cuando se computa el minY del modelo
-  useEffect(() => {
-    alignSkyboxToGround(skyBoxRef.current);
-  }, [PasoActual, alturas, computedModelMinY, skyBoxRef.current]);
 
   // Sincronizar tone mapping y exposición en caliente con el renderer
   useEffect(() => {
@@ -390,22 +208,18 @@ function ActualAssemblySceneViewer({ id, modelUrl, productData, decryptedUrl }) 
 
   return (
     <>
-      {isEstudio && (
-        <>
-          <color attach="background" args={[customColors.background || colorAmbienteVal]} />
-          {/* Niebla exponencial suave que desvanece las líneas en la lejanía eliminando el titileo por Moiré y sub-muestreo */}
-          <fog attach="fog" args={[customColors.background || colorAmbienteVal, 6, 20]} />
-          <gridHelper 
-            args={[
-              24, 
-              24, 
-              customColors.gridCenter || '#b5b5c3', 
-              customColors.gridLines || '#d1d1db'
-            ]} 
-            position={[0, floorY + 0.003, 0]} 
-          />
-        </>
-      )}
+      <color attach="background" args={[customColors.background || colorAmbienteVal]} />
+      {/* Niebla suave que desvanece las líneas en la lejanía */}
+      <fog attach="fog" args={[customColors.background || colorAmbienteVal, 6, 20]} />
+      <gridHelper 
+        args={[
+          24, 
+          24, 
+          customColors.gridCenter || '#b5b5c3', 
+          customColors.gridLines || '#d1d1db'
+        ]} 
+        position={[0, floorY + 0.003, 0]} 
+      />
 
 
       <Environment preset="city" blur={0.8} environmentIntensity={lightingConfig.envIntensity} />
