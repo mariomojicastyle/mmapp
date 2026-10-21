@@ -27,12 +27,22 @@ def split_mesh_dict_into_islands(mesh_dict: dict) -> list:
     if n_faces <= 1 or not verts:
         return [mesh_dict]
 
+    # 🌐 Soldado espacial virtual (tolerancia de 1.5mm = 0.0015m)
+    # Permite que mallas con aristas duras (unwelded) donde cada cara duplica sus vértices
+    # se mantengan como 1 sola pieza continua, aislando ÚNICAMENTE cuerpos físicamente separados en el espacio.
+    def v_key(v_idx):
+        return (
+            round(verts[v_idx * 3] / 0.0015),
+            round(verts[v_idx * 3 + 1] / 0.0015),
+            round(verts[v_idx * 3 + 2] / 0.0015)
+        )
+
     v_to_faces = defaultdict(list)
     for f_idx in range(n_faces):
         a, b, c = indices[f_idx * 3], indices[f_idx * 3 + 1], indices[f_idx * 3 + 2]
-        v_to_faces[a].append(f_idx)
-        v_to_faces[b].append(f_idx)
-        v_to_faces[c].append(f_idx)
+        v_to_faces[v_key(a)].append(f_idx)
+        v_to_faces[v_key(b)].append(f_idx)
+        v_to_faces[v_key(c)].append(f_idx)
 
     visited_faces = set()
     components = []
@@ -47,7 +57,7 @@ def split_mesh_dict_into_islands(mesh_dict: dict) -> list:
             comp_faces.append(f)
             a, b, c = indices[f * 3], indices[f * 3 + 1], indices[f * 3 + 2]
             for v in (a, b, c):
-                for neighbor in v_to_faces[v]:
+                for neighbor in v_to_faces[v_key(v)]:
                     if neighbor not in visited_faces:
                         visited_faces.add(neighbor)
                         queue.append(neighbor)
@@ -413,6 +423,7 @@ def deduplicate_real_meshes(meshes: list) -> tuple[list, list, dict]:
         return meshes, meshes, {}
 
     unique_meshes = []
+    unique_by_name = defaultdict(list)
     all_annotated_meshes = []
     duplicates_count = 0
     discarded_summary = {}
@@ -425,24 +436,22 @@ def deduplicate_real_meshes(meshes: list) -> tuple[list, list, dict]:
         m_verts_count = len(m.get("vertices", []))
 
         is_dup = False
-        for u in unique_meshes:
-            u_raw = u.get("name", "").strip()
-            u_name = u_raw.lower().replace("rh_out:", "").strip()
-            if m_name == u_name:
-                u_pos = u.get("position", [0, 0, 0])
-                u_size = u.get("size", [0, 0, 0])
-                u_verts_count = len(u.get("vertices", []))
+        candidates = unique_by_name.get(m_name, [])
+        for u in candidates:
+            u_pos = u.get("position", [0, 0, 0])
+            u_size = u.get("size", [0, 0, 0])
+            u_verts_count = len(u.get("vertices", []))
 
-                dist_pos = math.sqrt(sum((float(a) - float(b)) ** 2 for a, b in zip(m_pos, u_pos)))
-                dist_size = math.sqrt(sum((float(a) - float(b)) ** 2 for a, b in zip(m_size, u_size)))
+            dist_pos = math.sqrt(sum((float(a) - float(b)) ** 2 for a, b in zip(m_pos, u_pos)))
+            dist_size = math.sqrt(sum((float(a) - float(b)) ** 2 for a, b in zip(m_size, u_size)))
 
-                if dist_pos < 0.0005 and dist_size < 0.0005:
-                    if m_verts_count == 0 or u_verts_count == 0 or m_verts_count == u_verts_count:
-                        is_dup = True
-                        duplicates_count += 1
-                        display_name = raw_n.replace("RH_OUT:", "").strip()
-                        discarded_summary[display_name] = discarded_summary.get(display_name, 0) + 1
-                        break
+            if dist_pos < 0.0005 and dist_size < 0.0005:
+                if m_verts_count == 0 or u_verts_count == 0 or m_verts_count == u_verts_count:
+                    is_dup = True
+                    duplicates_count += 1
+                    display_name = raw_n.replace("RH_OUT:", "").strip()
+                    discarded_summary[display_name] = discarded_summary.get(display_name, 0) + 1
+                    break
 
         if is_dup:
             m_dup = dict(m)
@@ -450,6 +459,7 @@ def deduplicate_real_meshes(meshes: list) -> tuple[list, list, dict]:
             all_annotated_meshes.append(m_dup)
         else:
             unique_meshes.append(m)
+            unique_by_name[m_name].append(m)
             all_annotated_meshes.append(m)
 
     if duplicates_count > 0:

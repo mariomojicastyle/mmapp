@@ -174,7 +174,7 @@ function limpiarEtiqueta(paramKey: string): string {
 
 function RenderParamControl({ paramKey }: { paramKey: string }) {
   const { parametros, setParametro, resultado, objetoActivoId, instancias, setParametroInstancia, coloresApariencia, guardarEstadoHistorial } = use3BFStore();
-  const activeId = objetoActivoId || Object.keys(instancias || {})[0] || null;
+  const activeId = objetoActivoId;
   const instanciaActiva = activeId ? instancias[activeId] : null;
   const currentParams = instanciaActiva ? instanciaActiva.parametros : parametros;
   const currentResult = instanciaActiva ? instanciaActiva.resultado : resultado;
@@ -318,7 +318,7 @@ function ParametrosPanel() {
     instancias,
     muebleActivoGuardado,
   } = use3BFStore();
-  const activeId = objetoActivoId || Object.keys(instancias || {})[0] || null;
+  const activeId = objetoActivoId;
   const instanciaActiva = activeId ? instancias[activeId] : null;
   const currentResult = instanciaActiva ? instanciaActiva.resultado : resultado;
 
@@ -655,13 +655,13 @@ export default function ControlPanel() {
     ejecutarComputo();
   }, [parametros, isSyncing]);
 
-  const { instancias, objetoActivoId, coloresApariencia, seleccionarInstancia, resultado } = use3BFStore();
-  const activeId = objetoActivoId || Object.keys(instancias || {})[0] || null;
+  const { instancias, objetoActivoId, objetoSeleccionado, coloresApariencia, seleccionarInstancia, resultado } = use3BFStore();
+  const activeId = objetoActivoId;
   const instanciaActiva = activeId ? instancias[activeId] : null;
   const listaInstancias = Object.values(instancias || {});
 
   // 🛡️ Soporte universal para modelo base / legacy cuando instancias está vacío pero resultado o parametros existen
-  const legacyInst: any = (!instanciaActiva && ((resultado?.real_meshes && resultado.real_meshes.length > 0) || parametros?.model_id)) ? {
+  const legacyInst: any = (objetoSeleccionado !== false && !instanciaActiva && ((resultado?.real_meshes && resultado.real_meshes.length > 0) || parametros?.model_id)) ? {
     id: "legacy_single",
     nombreVisible: parametros.model_id || (parametros as any).custom_filename?.replace(/\.ghx$/i, "") || "Cómoda Ravenna",
     definitionId: parametros.model_id || "base_model",
@@ -676,12 +676,6 @@ export default function ControlPanel() {
 
   const instanciaEfectiva = instanciaActiva || legacyInst;
 
-  // Auto-seleccionar la primera instancia si no hay objetoActivoId pero sí hay piezas en la escena
-  useEffect(() => {
-    if (!objetoActivoId && Object.keys(instancias || {}).length > 0) {
-      seleccionarInstancia(Object.keys(instancias)[0]);
-    }
-  }, [objetoActivoId, instancias, seleccionarInstancia]);
 
   const [isPortrait, setIsPortrait] = React.useState(false);
 

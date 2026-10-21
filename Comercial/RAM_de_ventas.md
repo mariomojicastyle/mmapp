@@ -172,7 +172,12 @@ Para evitar respuestas genéricas, el RAM de ventas almacena y cruza 5 dimension
   * *06 Octubre 2026 (14:25 COL / 16:25 BRT):* **Envío de Video Didáctico en Portugués y Link de Cómoda Ravenna (`https://mariomojica.com/Comoda_Ravenna`):**
     - Mario envió a Marcelo el nuevo video explicativo hablando en portugués donde reflexiona sobre el criterio de armado real (diferencia entre animaciones lineales tipo videojuego vs manual interactivo paso a paso guiado).
     - Compartió también el enlace del manual interactivo de la Cómoda Ravenna aclarando con humildad y transparencia que son sus primeros pasos en portugués y que el manual aún está en proceso de calibración cosmética con el área de Marketing de Henn.
-- **Objetivo Estratégico:** Mantener vivo el vínculo con Politorno mediante contenido de alto valor y autenticidad sin presionar la propuesta comercial de los 10 productos piloto.
+  * *21 Octubre 2026:* **¡HITO DE EVOLUCIÓN TÉCNICA Y COMERCIAL (PIPELINE DIRECTO RHINO 3D .3DM)!**
+    - Mario adaptó el nuevo pipeline de agilidad directamente para Politorno: lectura 100% nativa de sus archivos **Rhino 3D (.3dm)** y DWG de fábrica.
+    - Cero fricción de software: Marcelo y Ricardo no necesitan aprender ni cambiar herramientas; entregan su archivo nativo de Rhino y reciben el manual interactivo 3D en **1 día (pequeño), 2 días (mediano) y 3 días máx. (grande)**.
+    - La tarifa del **50% de ahorro (,4 USD mediano)** se convierte en **TARIFA PLANA PERMANENTE**, y el paquete de 10 muebles se entrega en **1 a 2 semanas**.
+    - Generada la presentación ejecutiva de 2 diapositivas en Google Drive (10_21_2026_Evolucion_Propuesta_Politorno_Mario_Mojica_USD): Evolucion_Propuesta_Politorno_Mario_Mojica_ES_USD.pdf y Evolucao_Proposta_Politorno_Mario_Mojica_PT_USD.pdf.
+- **Objetivo Estratégico:** Enviar la presentación ejecutiva de 2 diapositivas a Marcelo Novo para desbloquear la decisión de arranque con Politorno mediante lectura nativa directa de sus archivos de Rhino 3D.
 
 ---
 
@@ -239,7 +244,15 @@ Para evitar respuestas genéricas, el RAM de ventas almacena y cruza 5 dimension
       1. Marcos está revisando el flujo internamente y ya puso a su equipo técnico de manuales a testear la demo interactiva.
       2. Le pide a Mario revisar si hay detalles a ajustar o pulir.
       3. Confirmó que **esta misma semana se reunirá con el equipo de Marketing de Henn** y les presentará la propuesta e idea del manual 3D para alinear a todos y **agendar la reunión conjunta**.
-- **Objetivo Estratégico:** Demostración en vivo de la *Cômoda Ravenna D737* en `3dBimFab`, integración con TOTVS Datasul, y reunión con P&D + Marketing para cierre del paquete piloto de manuales interactivos 3D.
+  * *21 Octubre 2026:* **¡HITO DE EVOLUCIÓN TÉCNICA Y COMERCIAL (PRESENTACIÓN EJECUTIVA 2 SLIDES)!**
+    - Mario maduró el flujo productivo al entender que exigir a Henn un cambio de software o parametrizar cada producto en 3dBimFab generaba fricción innecesaria.
+    - Se implementó el **Pipeline Directo (DWG Nativo ➔ Manual 3D)**: toma el archivo DWG de fábrica y entrega manuales interactivos en **1 día (pequeño), 2 días (mediano) y 3 días máximo (grande)**, con resolución automática de herrajes faltantes.
+    - El **50% de ahorro (,4 USD mediano)** deja de ser una promoción transitoria de 10 muebles y se convierte en **TARIFA PLANA PERMANENTE**. El paquete de 10 muebles se entrega en solo **1 a 2 semanas**.
+    - Generada y compilada la presentación ejecutiva bilingüe de 2 diapositivas en Google Drive (10_21_2026_Evolucion_Propuesta_Moveis_Henn_Mario_Mojica_USD): Evolucion_Propuesta_Moveis_Henn_Mario_Mojica_ES_USD.pdf y Evolucao_Proposta_Moveis_Henn_Mario_Mojica_PT_USD.pdf.
+  * *21 Octubre 2026 (14:42 - 14:50 BRT):* **¡RESPUESTA DE MARCOS UNNASS Y RESPUESTA ENVIADA!**
+    - Marcos respondió confirmando alta demanda de lanzamientos de producto y que ya conversó preliminarmente con el responsable de Marketing de Henn: *"vou agendar ainda esse mês com eles pra ver se conseguimos extrair e ou usar essa parte boa de videos para os nossos manuais"*.
+    - Mario respondió a las 14:50 BRT validando el interés en videos y animaciones para redes, YouTube y montadores, ofreciendo participar 15 min en la reunión de este mes o enviar material de apoyo previo.
+- **Objetivo Estratégico:** Acompañar a Marcos en la reunión interna con el responsable de Marketing de Henn este mes de octubre, destacando la versatilidad de extraer videos y Realidad Aumentada desde el mismo pipeline 3D.
 
 ---
 

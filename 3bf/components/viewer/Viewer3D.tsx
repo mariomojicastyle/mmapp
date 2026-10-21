@@ -72,6 +72,7 @@ import SubbloquesTooltipsBillboard from "./SubbloquesTooltipsBillboard";
 import BoardMesh, { useMaterialPBRMaps } from "./BoardMesh";
 import SingleFurnitureInstanceMesh from "./SingleFurnitureInstanceMesh";
 import { SnapPointMarkers, GuidelineAxes, TransformSnappingController, getFurnitureGroupBoardBox } from "./SnapSystemOverlay";
+import SelectionSilhouetteOutline from "./SelectionSilhouetteOutline";
 import { BlenderNavigationController, CameraRefBridge, ThumbnailCapturer, CameraViewController, CameraPersistenceController } from "./CameraControllers";
 import { AutoFramingCameraController } from "./AutoFramingCameraController";
 import { ManualCameraDirector } from "./ManualCameraDirector";
@@ -474,61 +475,109 @@ function BoardSilhouetteOutline({ furnitureGroup }: { furnitureGroup: THREE.Grou
 }
 
 function SelectionController() {
-  const { gl } = useThree();
+  const { gl, camera } = useThree();
   const { setObjetoSeleccionado, seleccionarInstancia, modoTransformacion, snapPicking, cancelarGrab, confirmarGrab } = use3BFStore();
 
   React.useEffect(() => {
     const domElement = gl.domElement;
 
+    const detectarInstanciaBajoPuntero = (clientX: number, clientY: number): string | null => {
+      const hoveredInstId = typeof window !== "undefined" ? (window as any).__hoveredInstanceId : null;
+      if (hoveredInstId && use3BFStore.getState().instancias[hoveredInstId]) {
+        return hoveredInstId;
+      }
+
+      const rect = domElement.getBoundingClientRect();
+      if (rect.width === 0 || rect.height === 0) return null;
+
+      const pointerNDC = new THREE.Vector2(
+        ((clientX - rect.left) / rect.width) * 2 - 1,
+        -((clientY - rect.top) / rect.height) * 2 + 1
+      );
+      const raycaster = new THREE.Raycaster();
+      raycaster.setFromCamera(pointerNDC, camera);
+
+      const targets: THREE.Object3D[] = [];
+      const groupsMap: Map<string, THREE.Group> | undefined =
+        typeof window !== "undefined" ? (window as any).__3bfInstanceGroups : undefined;
+      if (groupsMap) {
+        groupsMap.forEach((grp) => {
+          if (grp) targets.push(grp);
+        });
+      }
+
+      if (targets.length === 0) return null;
+
+      const hits = raycaster.intersectObjects(targets, true);
+      const validHit = hits.find((h) => {
+        const obj = h.object;
+        const n = (obj.name || "").toLowerCase();
+        return (
+          obj.type === "Mesh" &&
+          obj.visible &&
+          obj.name.length > 0 &&
+          !n.includes("floor") &&
+          !n.includes("grid") &&
+          !n.includes("plane") &&
+          !n.includes("axis") &&
+          !n.includes("silhouette") &&
+          !n.includes("helper")
+        );
+      });
+
+      if (validHit) {
+        let foundInstId: string | null = (validHit.object as any).userData?.instanciaId || null;
+        let curr = validHit.object.parent;
+        while (curr && !foundInstId) {
+          if ((curr as any).userData?.instanciaId) {
+            foundInstId = (curr as any).userData.instanciaId;
+          }
+          curr = curr.parent;
+        }
+        return foundInstId;
+      }
+      return null;
+    };
+
     const handlePointerDown = (e: PointerEvent) => {
       const state = use3BFStore.getState();
-      // 🛡️ BLINDAJE ESTRICTO: En modo Manual 3D o con Picking activo, PROHIBIDO deseleccionar o alterar instancias
       if (state.pestanaActiva === "manual" || state.modoPickingManual.activo) {
         return;
       }
 
-      // 🎯 CLIC DERECHO INSTANTÁNEO (0ms de latencia en la primera pulsación)
       if (e.button === 2) {
         if (modoTransformacion === "grab") {
           cancelarGrab();
           return;
         }
 
-        const hoveredInstId = typeof window !== "undefined" ? (window as any).__hoveredInstanceId : null;
-        if (hoveredInstId && state.instancias[hoveredInstId]) {
-          seleccionarInstancia(hoveredInstId);
+        const targetInstId = detectarInstanciaBajoPuntero(e.clientX, e.clientY);
+        if (targetInstId && state.instancias[targetInstId]) {
+          seleccionarInstancia(targetInstId);
+          setObjetoSeleccionado(true);
         } else {
-          const currentHover = state.hoveredPiece;
-          if (currentHover !== null) {
-            setObjetoSeleccionado(true);
-          } else {
-            if (Object.keys(state.instancias || {}).length <= 1) {
-              // Mantener la instancia activa seleccionada
-            } else {
-              seleccionarInstancia(null);
-            }
+          setObjetoSeleccionado(false);
+          seleccionarInstancia(null);
+          state.setHoveredPiece(null);
+          if (typeof window !== "undefined") {
+            (window as any).__hoveredInstanceId = null;
           }
         }
       } else if (e.button === 0) {
-        // 🎯 CLIC IZQUIERDO
         if (modoTransformacion === "none") {
-          const hoveredInstId = typeof window !== "undefined" ? (window as any).__hoveredInstanceId : null;
-          if (hoveredInstId && state.instancias[hoveredInstId]) {
-            seleccionarInstancia(hoveredInstId);
+          const targetInstId = detectarInstanciaBajoPuntero(e.clientX, e.clientY);
+          if (targetInstId && state.instancias[targetInstId]) {
+            seleccionarInstancia(targetInstId);
+            setObjetoSeleccionado(true);
           } else {
-            const currentHover = state.hoveredPiece;
-            if (currentHover !== null) {
-              setObjetoSeleccionado(true);
-            } else {
-              if (Object.keys(state.instancias || {}).length <= 1) {
-                // Mantener la instancia activa seleccionada
-              } else {
-                seleccionarInstancia(null);
-              }
+            setObjetoSeleccionado(false);
+            seleccionarInstancia(null);
+            state.setHoveredPiece(null);
+            if (typeof window !== "undefined") {
+              (window as any).__hoveredInstanceId = null;
             }
           }
         } else if (modoTransformacion === "grab") {
-          // ⚠️ Si está eligiendo punto de snap (B), NO confirmar ni deseleccionar
           if (state.snapPicking) return;
           if (typeof window !== "undefined" && (window as any).__lastSnapSelectTime) {
             if (Date.now() - (window as any).__lastSnapSelectTime < 400) return;
@@ -539,7 +588,7 @@ function SelectionController() {
     };
 
     const handleContextMenu = (e: MouseEvent) => {
-      e.preventDefault(); // Prevenir menú nativo del navegador
+      e.preventDefault();
 
       const state = use3BFStore.getState();
       if (state.pestanaActiva === "manual" || state.modoPickingManual.activo) {
@@ -552,24 +601,20 @@ function SelectionController() {
         return;
       }
 
-      const hoveredInstId = typeof window !== "undefined" ? (window as any).__hoveredInstanceId : null;
-      if (hoveredInstId && state.instancias[hoveredInstId]) {
-        seleccionarInstancia(hoveredInstId);
+      const targetInstId = detectarInstanciaBajoPuntero(e.clientX, e.clientY);
+      if (targetInstId && state.instancias[targetInstId]) {
+        seleccionarInstancia(targetInstId);
+        setObjetoSeleccionado(true);
       } else {
-        const currentHover = state.hoveredPiece;
-        if (currentHover !== null) {
-          setObjetoSeleccionado(true);
-        } else {
-          if (Object.keys(state.instancias || {}).length <= 1) {
-            // Mantener la instancia activa seleccionada
-          } else {
-            seleccionarInstancia(null);
-          }
+        setObjetoSeleccionado(false);
+        seleccionarInstancia(null);
+        state.setHoveredPiece(null);
+        if (typeof window !== "undefined") {
+          (window as any).__hoveredInstanceId = null;
         }
       }
     };
 
-    // Usar capture: true para máxima sensibilidad inmediata
     domElement.addEventListener("pointerdown", handlePointerDown as any, { capture: true });
     domElement.addEventListener("contextmenu", handleContextMenu);
 
@@ -589,14 +634,21 @@ function ParametricFurnitureMesh({
   setFurnitureGroup: (g: THREE.Group | null) => void;
   mostrarDuplicadosRojos?: boolean;
 }) {
-  const { instancias, objetoActivoId, parametros, resultado } = use3BFStore();
+  const { instancias, objetoActivoId, objetoSeleccionado, parametros, resultado } = use3BFStore();
 
   const listaInstancias = Object.values(instancias);
 
+  const targetInstId = (objetoActivoId && instancias[objetoActivoId])
+    ? objetoActivoId
+    : (objetoSeleccionado ? listaInstancias[0]?.id : null);
+
+  React.useEffect(() => {
+    if (!targetInstId) {
+      setFurnitureGroup(null);
+    }
+  }, [targetInstId, setFurnitureGroup]);
+
   if (listaInstancias.length > 0) {
-    const targetInstId = (objetoActivoId && instancias[objetoActivoId])
-      ? objetoActivoId
-      : listaInstancias[0].id;
 
     return (
       <>
@@ -1671,7 +1723,10 @@ export default function Viewer3D() {
         shadows
         gl={{ preserveDrawingBuffer: true, antialias: true }}
         onPointerMissed={() => {
-          use3BFStore.getState().setHoveredPiece(null);
+          const state = use3BFStore.getState();
+          state.setHoveredPiece(null);
+          state.setObjetoSeleccionado(false);
+          state.seleccionarInstancia(null);
           if (typeof window !== "undefined") {
             (window as any).__hoveredInstanceId = null;
           }
@@ -1701,7 +1756,7 @@ export default function Viewer3D() {
                 <GuidelineAxes />
                 <TransformSnappingController />
                 <SelectionController />
-                <BoardSilhouetteOutline furnitureGroup={furnitureGroup} />
+                <SelectionSilhouetteOutline furnitureGroup={furnitureGroup} />
                 <AssemblyAnimationController furnitureGroup={furnitureGroup} />
                 <AssemblyPiecePositioner furnitureGroup={furnitureGroup} />
                 <SubbloquesTooltipsBillboard furnitureGroup={furnitureGroup} />

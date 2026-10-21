@@ -9,7 +9,15 @@ Este archivo es la "Memoria RAM" para Antigravity. Contiene el contexto de lo qu
 ---
 
 ## 🏗️ 1. Plataforma B2B & 3dBimFab (Foco Actual)
-**Estado:** Hito 282 completado con éxito total. **Estabilidad Definitiva de Realidad Aumentada (AR) en Móviles Android: erradicación de `extensionsRequired` en GLBs de Supabase Storage, ruptura de caché de Scene Viewer y gobernanza de Consola Móvil DevTools (Eruda) en CMS**. Rama activa: `Estabilidad_Moviles_Android`.
+**Estado:** Hito 283 completado con éxito total. **Silueta Perimetral de Selección Continua en Tiempo Real Estilo Blender (#e35716), Deselección Instantánea y Fidelidad Cromática Total sin Post-Procesamiento Intrusivo en 3dBimFab**. Rama activa: `Silueta_ok`.
+
+- [x] **[21 de Octubre, 2026] Hito 283: Silueta Perimetral de Selección Continua en Tiempo Real Estilo Blender, Deselección Instantánea y Fidelidad Cromática Total sin Post-Procesamiento Intrusivo (`SelectionSilhouetteOutline.tsx`, `Viewer3D.tsx`, `ControlPanel.tsx`, `storeDefaults.ts`)**:
+  * **Silueta Perimetral Continua Unificada para Geometrías Complejas**: Implementación de `SelectionSilhouetteOutline.tsx` en Three.js / R3F para contornear en tiempo real (60 FPS) el mueble completo (cubierta, patas curvas/orgánicas, faldones y travesaños) adaptándose a la cámara.
+  * **Color Canónico de Selección Blender (`RGBA: e35716ff` / `#e35716`)**: Calibración exacta asignada en `storeDefaults.ts` y en `OutlinePass.visibleEdgeColor`.
+  * **Contacto Físico Directo (Eliminación de la Brecha / Vacío)**: Configuración de resolución 1:1 nativa (`downSampleRatio: 1`), grosor compacto (`edgeThickness: 1.0`, `edgeStrength: 3.5`) y eliminación del recorte `maskColor.r` en el fragment shader de `overlayMaterial`. La silueta abraza la geometría en contacto directo rasante, exactamente como en Blender.
+  * **Arquitectura Direct-Overlay para Cero Alteración de Escena**: La escena 3D y su fondo claro `#F3F4F6` se renderizan de forma 100% nativa con `gl.render(scene, camera)`, erradicando el oscurecimiento o enrojecimiento de la madera causado por post-procesamiento (`EffectComposer` / `RenderPass` / `OutputPass`). La silueta se estampa como overlay superior con alpha premultiplicado sin tocar ningún píxel del escenario.
+  * **Deselección Total al Hacer Clic en el Vacío**: Erradicado el `useEffect` en `ControlPanel.tsx` que auto-seleccionaba la primera instancia al quedar vacía, eliminado el bloqueo monoinstancia en `Viewer3D.tsx` e implementado raycast determinista directo en clics (`detectarInstanciaBajoPuntero`).
+  * **Validación de Calidad**: `npx tsc --noEmit` en `3bf` con **0 errores**. Certificación visual completa por el usuario en caliente (`media_1792618909265_b917892f.jpg`).
 
 - [x] **[20 de Octubre, 2026] Hito 282: Estabilidad Definitiva de Realidad Aumentada (AR) en Móviles Android (Erradicación de `extensionsRequired` en GLBs, Ruptura de Caché Scene Viewer e Integración de Consola Móvil DevTools) (`RealidadAumentada.jsx`, `index.html`, `detalle-proyecto-modal.tsx`, Supabase Storage `insumos_manuales`)**:
   * **Causa Raíz en Estantería Multifuncional (`M00001` / `/demo`)**: Identificación de `extensionsRequired: ["KHR_texture_transform"]`, que provocaba el rechazo fulminante por el motor Filament de Google Scene Viewer.

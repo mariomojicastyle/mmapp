@@ -89,7 +89,7 @@ export const PRESET_COLORES_CLARO: ColoresApariencia = {
   iconoPlanoUniversalY: "#B91C1C",
   iconoPlanoUniversalZ: "#334155",
 
-  objetosSeleccionados: "#FF9500",
+  objetosSeleccionados: "#e35716",
   objetosBloqueados: "#94A3B8",
   materialPorDefecto: "#E2E8F0",
   mallasCristal: "#0284C7",
@@ -141,7 +141,7 @@ export const PRESET_COLORES_OSCURO: ColoresApariencia = {
   iconoPlanoUniversalY: "#F87171",
   iconoPlanoUniversalZ: "#94A3B8",
 
-  objetosSeleccionados: "#FF9500",
+  objetosSeleccionados: "#e35716",
   objetosBloqueados: "#475569",
   materialPorDefecto: "#1E293B",
   mallasCristal: "#38BDF8",

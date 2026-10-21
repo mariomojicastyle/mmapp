@@ -3712,3 +3712,25 @@ Para mantener la máxima agilidad y minimizar el consumo de tokens sin perder ni
 - **Validación de Calidad**:
   * `npx tsc --noEmit` en plataforma B2B con **0 errores**.
   * `npm run build` en visor de armado (`legacy-aplicativo-armado`) compilado con éxito en 4.28s.
+
+
+---
+
+### 🚀 Hito 283: Silueta Perimetral de Selección Continua en Tiempo Real Estilo Blender, Deselección Instantánea y Fidelidad Cromática Total sin Post-Procesamiento Intrusivo (`SelectionSilhouetteOutline.tsx`, `Viewer3D.tsx`, `ControlPanel.tsx`, `storeDefaults.ts`) (21 de Octubre, 2026)
+- **1. Silueta Perimetral Continua Unificada para Geometrías Complejas**:
+  * **Superación del Modelo de Bounding Box Rectangular**: Reemplazo de la silueta previa (`BoardSilhouetteOutline`) que delimitaba únicamente cubiertas cúbicas simples por `SelectionSilhouetteOutline.tsx`, capaz de trazar el contorno exterior unificado del mueble completo en 3D (cubierta, patas curvas/orgánicas, faldones y travesaños) en tiempo real con respecto al punto de vista de la cámara a 60 FPS.
+  * **Color Oficial de Selección de Blender (`RGBA: e35716ff` / `#e35716`)**: Calibración cromática exacta extraída directamente de la interfaz de Blender (`#e35716`), asignada tanto en `storeDefaults.ts` como en `OutlinePass.visibleEdgeColor`.
+  * **Eliminación Total de la Brecha / Hendidura de Vacío (Contacto Flush)**:
+    - *Resolución 1:1 Nativa (`downSampleRatio: 1`)*: Eliminado el submuestreo que provocaba un desplazamiento espacial hacia afuera del borde.
+    - *Shader de Composición sin Recorte Interior*: En el fragment shader de `overlayMaterial`, se removió la multiplicación por `maskColor.r` (la cual descartaba la mitad interna del trazo creando una separación artificial con la geometría). La silueta ahora abraza en contacto físico continuo y rasante el borde del mueble, idéntica a Blender.
+- **2. Arquitectura de Direct-Overlay para Fidelidad Cromática Total**:
+  * **Aislamiento del Fondo y de las Texturas de Madera**: Se eliminó la dependencia de `EffectComposer` / `RenderPass` / `OutputPass` para la escena base. La escena 3D se renderiza al 100% de forma nativa con `gl.render(scene, camera)`, preservando con total pureza el color de fondo claro (`#F3F4F6`), la rejilla, la iluminación y las texturas de madera (evitando el enrojecimiento, oscurecimiento o mapeos tonales indeseados).
+  * **Overlay Directo con Premultiplied Alpha**: `OutlinePass` procesa sus búferes de bordes fuera de pantalla y estampa la silueta directamente en el framebuffer nativo (`renderToScreen = false`, `renderTarget = null`, `OneFactor` + `OneMinusSrcAlphaFactor`), garantizando que solo los píxeles de silueta se dibujen sin alterar ningún otro píxel del lienzo.
+- **3. Reparación Integral de la Deselección al Hacer Clic en el Vacío**:
+  * **Erradicación del Auto-Selector en `ControlPanel.tsx`**: Eliminado un `useEffect` que detectaba `!objetoActivoId` y re-seleccionaba instantáneamente la primera instancia en cada microciclo.
+  * **Eliminación del Bloqueo Monoinstancia en `Viewer3D.tsx`**: Removida la cláusula que impedía deseleccionar si había una sola instancia en el escenario.
+  * **Raycast Directo Determinista en Clic (`detectarInstanciaBajoPuntero`)**: Evaluación geométrica instantánea en el momento del clic (izquierdo o derecho) tanto para seleccionar muebles como para deseleccionar completamente (`setObjetoSeleccionado(false)`, `seleccionarInstancia(null)`) al pulsar en el vacío, el suelo o la rejilla.
+  * **Limpieza de Estado en `ParametricFurnitureMesh`**: Vaciado automático de `setFurnitureGroup(null)` al deseleccionar.
+- **Validación de Calidad y Certificación Visual**:
+  * Compilación TypeScript verificada (`npx tsc --noEmit`) en `3bf` con **0 errores**.
+  * Certificación visual completa por el usuario en caliente (`media_1792618909265_b917892f.jpg`): silueta naranja `#e35716` en contacto directo perfecto con el mueble, textura de madera intacta, fondo `#F3F4F6` intacto y deselección instantánea.
