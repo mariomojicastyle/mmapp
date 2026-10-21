@@ -9,7 +9,15 @@ Este archivo es la "Memoria RAM" para Antigravity. Contiene el contexto de lo qu
 ---
 
 ## 🏗️ 1. Plataforma B2B & 3dBimFab (Foco Actual)
-**Estado:** Hito 281 completado con éxito total. **Reparación Definitiva de Realidad Aumentada (AR) en Móviles Android e iOS: desencriptación canónica en Supabase Storage, erradicación de fallo 405 en HEAD request de Scene Viewer y enlace directo a GLB estándar**. Próximo foco: Validación en vivo de la proyección AR en el teléfono móvil del usuario. Rama activa: `OptiManual`.
+**Estado:** Hito 282 completado con éxito total. **Estabilidad Definitiva de Realidad Aumentada (AR) en Móviles Android: erradicación de `extensionsRequired` en GLBs de Supabase Storage, ruptura de caché de Scene Viewer y gobernanza de Consola Móvil DevTools (Eruda) en CMS**. Rama activa: `Estabilidad_Moviles_Android`.
+
+- [x] **[20 de Octubre, 2026] Hito 282: Estabilidad Definitiva de Realidad Aumentada (AR) en Móviles Android (Erradicación de `extensionsRequired` en GLBs, Ruptura de Caché Scene Viewer e Integración de Consola Móvil DevTools) (`RealidadAumentada.jsx`, `index.html`, `detalle-proyecto-modal.tsx`, Supabase Storage `insumos_manuales`)**:
+  * **Causa Raíz en Estantería Multifuncional (`M00001` / `/demo`)**: Identificación de `extensionsRequired: ["KHR_texture_transform"]`, que provocaba el rechazo fulminante por el motor Filament de Google Scene Viewer.
+  * **Saneamiento de Modelos en Storage**: 10 pasos reensamblados y resubidos a Supabase Storage con cabeceras estándar glTF puras (`Required: undefined`), validados al 100% con Three.js en Node (354 mallas y animación intactas).
+  * **Bust de Caché en Android Scene Viewer**: Incorporación del parámetro de versión `?v=20261021_ar2` en `getArGlbUrl()` para forzar a Android a descargar el archivo limpio de 9.37 MB.
+  * **Certificación 100% de AR en la Suite**: Proyección nativa 1:1 verificada y confirmada en móvil en **Cómoda Ravenna**, **Mesa Tijuca** y **Estantería Multifuncional**.
+  * **Consola DevTools Eruda Gobernaba por CMS**: Botón cápsula `[🐞 Consola Móvil]` en el modal de proyectos (`&debug=on`) y carga condicional con triple-tap en móvil (0 KB de impacto para clientes finales).
+  * **Validación de Calidad**: `npx tsc --noEmit` con 0 errores y `npm run build` en 4.28s.
 
 - [x] **[20 de Octubre, 2026] Hito 281: Reparación Definitiva de Realidad Aumentada (AR) en Móviles Android e iOS (Desencriptación Canónica en Storage, Eliminación de 405 Method Not Allowed en Scene Viewer y Enlace Directo a GLB Estándar) (`RealidadAumentada.jsx`, Supabase Storage `insumos_manuales`)**:
   * **Causa Raíz de la Cortina Negra Deslizante**: Google Scene Viewer en Android ejecuta una solicitud previa HTTP `HEAD` antes de descargar el modelo. Al apuntar al Edge Function `decrypt-glb`, este retornaba `405 Method Not Allowed`. Asimismo, los GLBs en Storage estaban cifrados con AES-256 (incompatibles con motores nativos de SO).

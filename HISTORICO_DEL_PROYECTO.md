@@ -3689,3 +3689,26 @@ Para mantener la máxima agilidad y minimizar el consumo de tokens sin perder ni
 - **Validación de Calidad**:
   * `npx tsc --noEmit` en plataforma B2B con **0 errores**.
   * `npm run build` en visor de armado compilado con éxito en 4.20s.
+
+
+---
+
+### 🚀 Hito 282: Estabilidad Definitiva de Realidad Aumentada (AR) en Móviles Android (Erradicación de `extensionsRequired` en GLBs, Ruptura de Caché Scene Viewer e Integración de Consola Móvil DevTools) (`RealidadAumentada.jsx`, `index.html`, `detalle-proyecto-modal.tsx`, Supabase Storage `insumos_manuales`) (20 de Octubre, 2026)
+- **1. Diagnóstico de Causa Raíz en Estantería Multifuncional (`M00001` / `/demo`)**:
+  * **Problema**: Tras el éxito inicial en Cómoda Ravenna y Mesa Tijuca, la Estantería Multifuncional (`M00001`) presentaba el rebote de la cortina negra en Google Scene Viewer al pulsar el botón de AR.
+  * **Inspección Binaria glTF (`extensionsRequired`)**: El análisis exhaustivo de los encabezados JSON chunk0 reveló que los pasos `P00`, `P04`, `P05`, `P07` y `P09` contenían `"extensionsRequired": [ "KHR_texture_transform" ]` debido a un solo material (`P_Blanco_Mate.003`). Según la especificación glTF 2.0 y el motor Filament de Google, cualquier activo con extensiones en `extensionsRequired` no reconocidas por el parser móvil provoca un fallo crítico inmediato sin renderizar.
+  * **Contraste con Cómoda Ravenna**: Ravenna carecía de `extensionsRequired` (`undefined`), motivo por el cual operaba sin interrupciones.
+- **2. Saneamiento Binario de Modelos GLB en Supabase Storage**:
+  * **Reensamblado Atómico de GLBs**: Se procesaron los 10 modelos (`P00` a `P09`) de `M00001` y `Estanteria_Multifuncional`, removiendo `extensionsRequired` y preservando el 100% de la geometría, mallas y pistas de animación.
+  * **Certificación Three.js**: Verificada la integridad mediante `GLTFLoader` en Node.js certificando la carga impecable de 354 mallas y 1 animación sin fallos.
+  * **Sincronización en Storage Público**: Modelos resubidos a Supabase Storage con `Content-Type: model/gltf-binary` utilizando la `SUPABASE_SERVICE_ROLE_KEY`.
+- **3. Inyección de Parámetro de Versión y Ruptura de Caché en Scene Viewer**:
+  * **Actualización en `RealidadAumentada.jsx`**: Se configuró `getArGlbUrl()` para incorporar el parámetro de versión `?v=20261021_ar2`. Esto forzó a Google Scene Viewer y a la memoria intermedia local de Android a descartar los archivos corruptos cacheados previamente y descargar la versión fresca de 9.37 MB.
+- **4. Certificación 100% Exitosa de Realidad Aumentada en Móvil**:
+  * **Validación en Vivo por el Usuario**: Proyección 1:1 en el suelo verificada y confirmada con éxito total en los tres modelos de la plataforma: **Cómoda Ravenna**, **Mesa Tijuca** y **Estantería Multifuncional**.
+- **5. Integración de la Consola Móvil DevTools (Eruda) en CMS y Visor**:
+  * **Botón Cápsula en Plataforma B2B (`detalle-proyecto-modal.tsx`)**: Integrado en la barra de herramientas de la sección *1. Modelos GLB de los Pasos* el botón cápsula `rounded-full` `[🐞 Consola Móvil]` con iluminación morada sutil y sincronización en tiempo real vía `localStorage`, gobernando el parámetro `&debug=on` en los enlaces de previsualización local y producción.
+  * **Carga Condicional de Cero Overhead (`index.html`)**: Eruda no se descarga ni se ejecuta para los usuarios finales (0 KB de impacto). Solo se inicializa bajo demanda si la URL lleva `debug=on`, o mediante el gesto de triple-tap en la esquina superior izquierda de la pantalla.
+- **Validación de Calidad**:
+  * `npx tsc --noEmit` en plataforma B2B con **0 errores**.
+  * `npm run build` en visor de armado (`legacy-aplicativo-armado`) compilado con éxito en 4.28s.
