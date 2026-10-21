@@ -4,7 +4,7 @@ import QRCode from "react-qr-code";
 import { getAssetPath } from "../../../../../lib/assets.js";
 export function getArGlbUrl(manualId, step) {
   const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || "https://dezaisaunoumhqpssols.supabase.co";
-  return `${supabaseUrl}/storage/v1/object/public/insumos_manuales/${manualId}/models/P${step}.glb`;
+  return `${supabaseUrl}/storage/v1/object/public/insumos_manuales/${manualId}/models/P${step}.glb?v=nodraco&file=model.glb`;
 }
 import "./RealidadAumentada.css";
 
