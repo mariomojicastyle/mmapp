@@ -36,6 +36,8 @@ export async function generateARToken(manualId, step) {
 
 /**
  * Construye la URL completa del Edge Function decrypt-glb con token HMAC.
+ * Se añade &file=model.glb para que Google Scene Viewer y navegadores móviles
+ * reconozcan inmediatamente la extensión .glb y el MIME type adecuado.
  * @param {string} manualId - ID del manual
  * @param {string} step - Paso del modelo (ej: "P00")
  * @returns {Promise<string>} URL firmada del Edge Function
@@ -43,5 +45,5 @@ export async function generateARToken(manualId, step) {
 export async function getDecryptGlbUrl(manualId, step) {
   const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
   const { token, ts } = await generateARToken(manualId, step);
-  return `${supabaseUrl}/functions/v1/decrypt-glb?id=${manualId}&step=${step}&token=${token}&ts=${ts}`;
+  return `${supabaseUrl}/functions/v1/decrypt-glb?id=${manualId}&step=${step}&token=${token}&ts=${ts}&file=model.glb`;
 }

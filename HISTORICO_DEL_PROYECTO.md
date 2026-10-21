@@ -3665,3 +3665,7 @@ Para mantener la máxima agilidad y minimizar el consumo de tokens sin perder ni
 - **Validación de Calidad**:
   * `npx tsc --noEmit` en plataforma B2B con **0 errores**.
   * `npm run build` en visor de armado (`legacy-aplicativo-armado`) compilado con éxito en 4.79s.
+- **6. Corrección Crítica de Realidad Aumentada (AR) para Móviles Android e iOS (`RealidadAumentada.jsx`, `arToken.js`)**:
+  * **Causa Raíz 1 (Android Intent con Package Erróneo)**: El intent de Scene Viewer usaba `package=com.google.ar.core`. ARCore es un servicio en segundo plano de tracking y no contiene la Activity para renderizar modelos; el paquete canónico de Scene Viewer es `com.google.android.googlequicksearchbox`. Al invocar el intent con el paquete erróneo, Android reportaba que no existía app para abrir el enlace.
+  * **Causa Raíz 2 (Rechazo de URL en Google Scene Viewer por Ausencia de `.glb`)**: La URL del Edge Function terminaba en parámetros de consulta (`?id=...&step=...&token=...`) sin extensión explícita. El validador de Scene Viewer exige que la URL contenga `.glb` para determinar el MIME type. Se añadió el sufijo canónico `&file=model.glb` en `arToken.js`.
+  * **Causa Raíz 3 (Ocultamiento 1px en `<model-viewer>`)**: `model-viewer` tenía `width: 1px, height: 1px, opacity: 0`, haciendo que su `IntersectionObserver` interno pausara el motor WebGL y `canActivateAR` fuera siempre falso. Se ajustó a dimensiones reales fuera de pantalla (`left: -9999px`) y se enlazó el disparador con el botón interno `slot="ar-button"`.

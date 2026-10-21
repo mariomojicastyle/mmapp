@@ -199,31 +199,70 @@ export default function RealiadaAumentada({ id, data }) {
     // Pausar audio de fondo inmediatamente
     useEnviroment.getState().PausedAudio();
 
+    const isAndroid = /android/i.test(navigator.userAgent);
+    const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
+
+    let glbUrl = refAr.current?.src;
+    if (!glbUrl) {
+      try {
+        const stepStr = `P${pasoActual}`;
+        glbUrl = await getDecryptGlbUrl(id, stepStr);
+        if (refAr.current) refAr.current.src = glbUrl;
+      } catch (err) {
+        console.warn("[AR] Error obteniendo URL del modelo:", err);
+      }
+    }
+
+    // Asegurar que la URL incluya la extensión .glb para los parsers de AR nativos
+    const cleanGlbUrl = glbUrl ? (glbUrl.includes(".glb") ? glbUrl : `${glbUrl}&file=model.glb`) : "";
+
+    // 1. Intentar activar AR a través del botón nativo del slot de model-viewer
+    const nativeBtn = document.getElementById("native-ar-button");
+    if (nativeBtn) {
+      try {
+        nativeBtn.click();
+        return;
+      } catch (e) {
+        console.warn("[AR] Falló click en slot nativo:", e);
+      }
+    }
+
+    // 2. Intentar activateAR() si model-viewer reporta soporte
     if (refAr.current) {
       if (refAr.current.canActivateAR) {
         try {
           refAr.current.activateAR();
           return;
         } catch (e) {
-          console.warn("activateAR error:", e);
+          console.warn("[AR] activateAR error:", e);
         }
       }
+    }
 
-      // Fallback intent para Android si canActivateAR retorna falso por estar dentro de un iframe o tener display hidden
-      const isAndroid = /android/i.test(navigator.userAgent);
-      const glbUrl = refAr.current.src;
-      if (isAndroid && glbUrl) {
-        const intentUrl = `intent://arvr.google.com/scene-viewer/1.0?file=${encodeURIComponent(glbUrl)}&title=${encodeURIComponent("Modelo 3D")}&mode=ar_preferred#Intent;scheme=https;package=com.google.ar.core;action=android.intent.action.VIEW;end;`;
-        window.location.href = intentUrl;
-        return;
-      }
+    // 3. Fallback Android: Google Scene Viewer con el package correcto (com.google.android.googlequicksearchbox)
+    if (isAndroid && cleanGlbUrl) {
+      const fallbackUrl = `https://arvr.google.com/scene-viewer/1.0?file=${encodeURIComponent(cleanGlbUrl)}&mode=ar_preferred`;
+      const intentUrl = `intent://arvr.google.com/scene-viewer/1.0?file=${encodeURIComponent(cleanGlbUrl)}&title=${encodeURIComponent("Modelo 3D")}&mode=ar_preferred#Intent;scheme=https;package=com.google.android.googlequicksearchbox;action=android.intent.action.VIEW;S.browser_fallback_url=${encodeURIComponent(fallbackUrl)};end;`;
+      window.location.href = intentUrl;
+      return;
+    }
 
-      // Si no es android o falla el intent, intentar activateAR() forzado
+    // 4. Fallback directo Scene Viewer en navegador
+    if (cleanGlbUrl && !isIOS) {
+      window.location.href = `https://arvr.google.com/scene-viewer/1.0?file=${encodeURIComponent(cleanGlbUrl)}&mode=ar_preferred`;
+      return;
+    }
+
+    // 5. Fallback forzado activateAR() para iOS / WebXR
+    if (refAr.current) {
       try {
         refAr.current.activateAR();
+        return;
       } catch (e) {
         alert(t.notSupported);
       }
+    } else {
+      alert(t.notSupported);
     }
   };
 
@@ -259,10 +298,10 @@ export default function RealiadaAumentada({ id, data }) {
           alt="Modelo 3D" 
           autoplay 
           ref={refAr}
-          style={{ position: "fixed", width: "1px", height: "1px", opacity: 0, pointerEvents: "none", top: 0, left: 0 }}
+          style={{ position: "fixed", width: "100px", height: "100px", left: "-9999px", top: "-9999px", pointerEvents: "none", zIndex: -1 }}
         >
-          {/* Botón slot ar-button requerido por model-viewer pero no usado visualmente */}
-          <button slot="ar-button" style={{ display: "none" }}></button>
+          {/* Botón slot ar-button requerido por model-viewer pero conectado con id */}
+          <button id="native-ar-button" slot="ar-button" style={{ display: "none" }}></button>
         </model-viewer>
 
         {/* Botón opcional Home "Casita" Obsidian Teal */}
