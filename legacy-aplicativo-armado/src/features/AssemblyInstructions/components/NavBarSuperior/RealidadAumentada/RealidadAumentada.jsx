@@ -2,7 +2,10 @@ import { useEffect, useRef, useState } from "react";
 import useEnviroment from "../../../hooks/useEnviroment";
 import QRCode from "react-qr-code";
 import { getAssetPath } from "../../../../../lib/assets.js";
-import { getDecryptGlbUrl } from "../../../../../lib/arToken.js";
+export function getArGlbUrl(manualId, step) {
+  const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || "https://dezaisaunoumhqpssols.supabase.co";
+  return `${supabaseUrl}/storage/v1/object/public/insumos_manuales/${manualId}/models/P${step}.glb`;
+}
 import "./RealidadAumentada.css";
 
 export default function RealiadaAumentada({ id, data }) {
@@ -137,23 +140,13 @@ export default function RealiadaAumentada({ id, data }) {
     }
   }, [CambiarModelo]);
 
-  // Apenas inicia el aplicativo, se agrega la ruta del paso 00.
+  // Sincronizar la URL del modelo GLB estándar y limpio directamente con model-viewer
   useEffect(() => {
     if (refAr.current && id) {
-      getDecryptGlbUrl(id, "P00").then((url) => {
-        if (refAr.current) refAr.current.src = url;
-      });
+      const url = getArGlbUrl(id, pasoActual);
+      refAr.current.src = url;
     }
-  }, [id]);
-
-  useEffect(() => {
-    if (refAr.current && id) {
-      const stepStr = `P${pasoActual}`;
-      getDecryptGlbUrl(id, stepStr).then((url) => {
-        if (refAr.current) refAr.current.src = url;
-      });
-    }
-  }, [pasoActual, Cliente, id]);
+  }, [pasoActual, id]);
 
   // Manejar eventos de cambio de estado de AR en model-viewer
   useEffect(() => {
@@ -202,47 +195,37 @@ export default function RealiadaAumentada({ id, data }) {
     const isAndroid = /android/i.test(navigator.userAgent);
     const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
 
-    let glbUrl = refAr.current?.src;
-    if (!glbUrl) {
+    const cleanGlbUrl = getArGlbUrl(id, pasoActual);
+    if (refAr.current && refAr.current.src !== cleanGlbUrl) {
+      refAr.current.src = cleanGlbUrl;
+    }
+
+    // 1. Si model-viewer nativo puede activar AR (WebXR o Scene Viewer o Quick Look)
+    if (refAr.current && refAr.current.canActivateAR) {
       try {
-        const stepStr = `P${pasoActual}`;
-        glbUrl = await getDecryptGlbUrl(id, stepStr);
-        if (refAr.current) refAr.current.src = glbUrl;
-      } catch (err) {
-        console.warn("[AR] Error obteniendo URL del modelo:", err);
+        await refAr.current.activateAR();
+        return;
+      } catch (e) {
+        console.warn("[AR] activateAR error:", e);
       }
     }
 
-    // Asegurar que la URL incluya la extensión .glb para los parsers de AR nativos
-    const cleanGlbUrl = glbUrl ? (glbUrl.includes(".glb") ? glbUrl : `${glbUrl}&file=model.glb`) : "";
-
-    // 1. Intentar activar AR a través del botón nativo del slot de model-viewer
+    // 2. Intentar activar mediante el slot nativo de model-viewer
     const nativeBtn = document.getElementById("native-ar-button");
     if (nativeBtn) {
       try {
         nativeBtn.click();
-        return;
+        if (!isAndroid) return;
       } catch (e) {
         console.warn("[AR] Falló click en slot nativo:", e);
       }
     }
 
-    // 2. Intentar activateAR() si model-viewer reporta soporte
-    if (refAr.current) {
-      if (refAr.current.canActivateAR) {
-        try {
-          refAr.current.activateAR();
-          return;
-        } catch (e) {
-          console.warn("[AR] activateAR error:", e);
-        }
-      }
-    }
-
-    // 3. Fallback Android: Google Scene Viewer con el package correcto (com.google.android.googlequicksearchbox)
+    // 3. Fallback Android: Google Scene Viewer Intent con package oficial y URL directa al GLB estándar
     if (isAndroid && cleanGlbUrl) {
       const fallbackUrl = `https://arvr.google.com/scene-viewer/1.0?file=${encodeURIComponent(cleanGlbUrl)}&mode=ar_preferred`;
-      const intentUrl = `intent://arvr.google.com/scene-viewer/1.0?file=${encodeURIComponent(cleanGlbUrl)}&title=${encodeURIComponent("Modelo 3D")}&mode=ar_preferred#Intent;scheme=https;package=com.google.android.googlequicksearchbox;action=android.intent.action.VIEW;S.browser_fallback_url=${encodeURIComponent(fallbackUrl)};end;`;
+      const title = data?.name || "Modelo 3D";
+      const intentUrl = `intent://arvr.google.com/scene-viewer/1.0?file=${encodeURIComponent(cleanGlbUrl)}&title=${encodeURIComponent(title)}&mode=ar_preferred#Intent;scheme=https;package=com.google.android.googlequicksearchbox;action=android.intent.action.VIEW;S.browser_fallback_url=${encodeURIComponent(fallbackUrl)};end;`;
       window.location.href = intentUrl;
       return;
     }
@@ -256,7 +239,7 @@ export default function RealiadaAumentada({ id, data }) {
     // 5. Fallback forzado activateAR() para iOS / WebXR
     if (refAr.current) {
       try {
-        refAr.current.activateAR();
+        await refAr.current.activateAR();
         return;
       } catch (e) {
         alert(t.notSupported);

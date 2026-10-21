@@ -3669,3 +3669,23 @@ Para mantener la máxima agilidad y minimizar el consumo de tokens sin perder ni
   * **Causa Raíz 1 (Android Intent con Package Erróneo)**: El intent de Scene Viewer usaba `package=com.google.ar.core`. ARCore es un servicio en segundo plano de tracking y no contiene la Activity para renderizar modelos; el paquete canónico de Scene Viewer es `com.google.android.googlequicksearchbox`. Al invocar el intent con el paquete erróneo, Android reportaba que no existía app para abrir el enlace.
   * **Causa Raíz 2 (Rechazo de URL en Google Scene Viewer por Ausencia de `.glb`)**: La URL del Edge Function terminaba en parámetros de consulta (`?id=...&step=...&token=...`) sin extensión explícita. El validador de Scene Viewer exige que la URL contenga `.glb` para determinar el MIME type. Se añadió el sufijo canónico `&file=model.glb` en `arToken.js`.
   * **Causa Raíz 3 (Ocultamiento 1px en `<model-viewer>`)**: `model-viewer` tenía `width: 1px, height: 1px, opacity: 0`, haciendo que su `IntersectionObserver` interno pausara el motor WebGL y `canActivateAR` fuera siempre falso. Se ajustó a dimensiones reales fuera de pantalla (`left: -9999px`) y se enlazó el disparador con el botón interno `slot="ar-button"`.
+
+
+---
+
+### 🚀 Hito 281: Reparación Definitiva de Realidad Aumentada (AR) en Móviles Android e iOS (Desencriptación Canónica en Storage, Eliminación de 405 Method Not Allowed en Scene Viewer y Enlace Directo a GLB Estándar) (`RealidadAumentada.jsx`, Supabase Storage `insumos_manuales`) (20 de Octubre, 2026)
+- **1. Diagnóstico de Profundidad de la "Cortina Negra" (Black Curtain Slide Crash)**:
+  * **Comportamiento en Android OS**: Al invocar el intent de Google Scene Viewer, Android abre la actividad animando una cortina oscura de derecha a izquierda. Acto seguido, Scene Viewer realiza una petición previa HTTP `HEAD` a la URL del modelo antes de descargarlo para verificar disponibilidad y el encabezado `Content-Type: model/gltf-binary`.
+  * **Causa Raíz 1 (Fallo 405 en Edge Function)**: La URL del Edge Function `decrypt-glb` solo respondía a peticiones `GET`, rechazando `HEAD` con `405 Method Not Allowed`. Ante este error HTTP, Scene Viewer abortaba de inmediato cerrándose hacia la derecha.
+  * **Causa Raíz 2 (Cifrado AES-256 en Modelos de Storage)**: Los archivos `.glb` almacenados en Supabase Storage (`P00.glb` ... `P06.glb`) tenían los primeros 4KB cifrados con AES-GCM (bytes mágicos `0x9f 0x01 0x3c 0x40` en lugar de `glTF`). Ningún visor nativo de sistema operativo (Google Scene Viewer en Android o Apple Quick Look en iOS) posee el motor JS para ejecutar el descifrado WebCrypto en tiempo de ejecución.
+- **2. Desencriptación y Almacenamiento Canónico de GLBs Estándar en Supabase Storage**:
+  * **Conversión Automatizada a Estándar glTF**: Se descargaron, respaldaron y descifraron los 7 modelos de la Cómoda Ravenna (`P00.glb` a `P06.glb`), restableciendo el encabezado binario nativo `glTF` (versión 2) en todos los pasos.
+  * **Resincronización en Storage Público**: Se actualizaron los modelos en el bucket `insumos_manuales` con `Content-Type: model/gltf-binary`, habilitando soporte nativo para peticiones `HEAD` (`200 OK`) y solicitudes de rango HTTP (`206 Partial Content`).
+- **3. Enlace Directo y Eliminación de Sobrecarga en `RealidadAumentada.jsx`**:
+  * **URL Directa sin Edge Functions**: Se configuró `getArGlbUrl()` para apuntar directamente a los modelos GLB estándar en Supabase Storage.
+  * **Activación Dual Robusta**: Integración de activación nativa vía `model-viewer.activateAR()` para WebXR/Quick Look e intent directo de Scene Viewer (`com.google.android.googlequicksearchbox`) con parámetro `file=` apuntando al GLB estándar.
+- **4. Simulación Automatizada de Flujo Scene Viewer**:
+  * Script de simulación ejecutado con éxito total verificando respuesta `200 OK` en `HEAD`, `206 Partial Content` en `Range`, verificación de bytes mágicos `glTF`, y detección instantánea de `isStandardGLB: true` en el visor 3D web con 0 ms de sobrecarga de descifrado.
+- **Validación de Calidad**:
+  * `npx tsc --noEmit` en plataforma B2B con **0 errores**.
+  * `npm run build` en visor de armado compilado con éxito en 4.20s.

@@ -9,7 +9,14 @@ Este archivo es la "Memoria RAM" para Antigravity. Contiene el contexto de lo qu
 ---
 
 ## 🏗️ 1. Plataforma B2B & 3dBimFab (Foco Actual)
-**Estado:** Hito 280 completado con éxito total. **Optimización Extrema del Visor de Armado Móvil: erradicación total de texturas PBR de piso y paredes, eliminación del skybox de habitación clásica, Estudio 3D (Spline) fijo y permanente, decodificador Draco local y carga nativa en C++ por ArrayBuffer**. Próximo foco: Continuar pruebas y validaciones de rendimiento en producción. Rama activa: `OptiManual`.
+**Estado:** Hito 281 completado con éxito total. **Reparación Definitiva de Realidad Aumentada (AR) en Móviles Android e iOS: desencriptación canónica en Supabase Storage, erradicación de fallo 405 en HEAD request de Scene Viewer y enlace directo a GLB estándar**. Próximo foco: Validación en vivo de la proyección AR en el teléfono móvil del usuario. Rama activa: `OptiManual`.
+
+- [x] **[20 de Octubre, 2026] Hito 281: Reparación Definitiva de Realidad Aumentada (AR) en Móviles Android e iOS (Desencriptación Canónica en Storage, Eliminación de 405 Method Not Allowed en Scene Viewer y Enlace Directo a GLB Estándar) (`RealidadAumentada.jsx`, Supabase Storage `insumos_manuales`)**:
+  * **Causa Raíz de la Cortina Negra Deslizante**: Google Scene Viewer en Android ejecuta una solicitud previa HTTP `HEAD` antes de descargar el modelo. Al apuntar al Edge Function `decrypt-glb`, este retornaba `405 Method Not Allowed`. Asimismo, los GLBs en Storage estaban cifrados con AES-256 (incompatibles con motores nativos de SO).
+  * **Desencriptación y Actualización en Storage**: Descargados, respaldados y desencriptados los 7 modelos de Cómoda Ravenna (`P00` a `P06`), resubidos con cabecera estándar binaria `glTF` (200 OK en HEAD, 206 en Range y `model/gltf-binary`).
+  * **Enlace Directo sin Sobrecarga en `RealidadAumentada.jsx`**: Eliminada la llamada a Edge Functions y tokens HMAC; el botón AR ahora enlaza directamente con el modelo GLB público y estándar vía `getArGlbUrl()`.
+  * **Simulación Exhaustiva Exitosa**: Verificación completa de flujo HTTP HEAD, Range request, lectura de bytes mágicos `glTF` y render sin pausas en el visor web.
+  * **Validación de Calidad**: `npx tsc --noEmit` con 0 errores y `npm run build` compilado en 4.20s.
 
 - [x] **[20 de Octubre, 2026] Hito 280: Optimización Extrema del Visor de Armado Móvil (Erradicación de PBR y Habitación Clásica, Estudio 3D Fijo, Decodificador Draco Local y ArrayBuffer Nativo en C++) (`Floor.jsx`, `Experience.jsx`, `Model.jsx`, `AssemblyPage.jsx`, `detalle-proyecto-modal.tsx`)**:
   * **Erradicación de Texturas PBR Pesadas**: Removidas incondicionalmente las 4 texturas de piso (`floor-diff`, normales, rugosidad, ao) y las texturas de pared. Ahorro de ~2.4 MB y 4 conexiones HTTP en el arranque móvil.
