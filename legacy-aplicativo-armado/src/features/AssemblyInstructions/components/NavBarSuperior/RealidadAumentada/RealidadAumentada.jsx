@@ -196,6 +196,15 @@ export default function RealiadaAumentada({ id, data }) {
     const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
 
     const cleanGlbUrl = getArGlbUrl(id, pasoActual);
+    console.log("[AR] === DISPARANDO REALIDAD AUMENTADA ===");
+    console.log("[AR] Paso actual:", pasoActual);
+    console.log("[AR] URL del modelo GLB:", cleanGlbUrl);
+    console.log("[AR] model-viewer canActivateAR:", refAr.current?.canActivateAR);
+    fetch(cleanGlbUrl, { method: "HEAD" }).then(res => {
+      console.log("[AR] HEAD check status:", res.status, res.headers.get("content-type"), "Bytes:", res.headers.get("content-length"));
+    }).catch(err => {
+      console.error("[AR] Error en HEAD check:", err);
+    });
     if (refAr.current && refAr.current.src !== cleanGlbUrl) {
       refAr.current.src = cleanGlbUrl;
     }
@@ -225,7 +234,8 @@ export default function RealiadaAumentada({ id, data }) {
     if (isAndroid && cleanGlbUrl) {
       const fallbackUrl = `https://arvr.google.com/scene-viewer/1.0?file=${encodeURIComponent(cleanGlbUrl)}&mode=ar_preferred`;
       const title = data?.name || "Modelo 3D";
-      const intentUrl = `intent://arvr.google.com/scene-viewer/1.0?file=${encodeURIComponent(cleanGlbUrl)}&title=${encodeURIComponent(title)}&mode=ar_preferred#Intent;scheme=https;package=com.google.android.googlequicksearchbox;action=android.intent.action.VIEW;S.browser_fallback_url=${encodeURIComponent(fallbackUrl)};end;`;
+      const intentUrl = `intent://arvr.google.com/scene-viewer/1.0?file=${encodeURIComponent(cleanGlbUrl)}&title=${encodeURIComponent(title)}&mode=ar_preferred#Intent;scheme=https;action=android.intent.action.VIEW;S.browser_fallback_url=${encodeURIComponent(fallbackUrl)};end;`;
+      console.log("[AR] Lanzando intent nativo:", intentUrl);
       window.location.href = intentUrl;
       return;
     }
