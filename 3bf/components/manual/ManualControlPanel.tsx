@@ -2,36 +2,24 @@
 
 import React, { useState } from "react";
 import { use3BFStore } from "@/lib/store";
-import { Layers, Mic, Download, Save, Loader2, Check, FolderOpen } from "lucide-react";
+import { Layers, Mic, Download } from "lucide-react";
 import StepManagerPanel from "./StepManagerPanel";
+import LienzoPasoVirgen from "./LienzoPasoVirgen";
 import VoiceStudioPanel from "./VoiceStudioPanel";
 import ExportManualPanel from "./ExportManualPanel";
-import ManualsLibraryModal from "./ManualsLibraryModal";
 import ManualStepSelector from "./ManualStepSelector";
 
 type PestanaManualStudio = "pasos" | "voz" | "exportar";
 
 export default function ManualControlPanel() {
-  const {
-    coloresApariencia,
-    cargarManualesDesdeDrive,
-    guardarManualProyecto,
-    guardandoManual,
-  } = use3BFStore();
+  const { coloresApariencia, pasosManual } = use3BFStore();
   const [subPestana, setSubPestana] = useState<PestanaManualStudio>("pasos");
-  const [guardadoReciente, setGuardadoReciente] = useState(false);
-
-  React.useEffect(() => {
-    cargarManualesDesdeDrive();
-  }, [cargarManualesDesdeDrive]);
 
   const botonActivoColor = coloresApariencia?.botonActivo || "#0891b2";
+  const tienePasos = Boolean(pasosManual && pasosManual.length > 0);
 
   return (
     <div className="h-full flex flex-col overflow-hidden relative">
-      {/* Modal de Biblioteca de Manuales .3bm */}
-      <ManualsLibraryModal />
-
       {/* 🏷️ TÍTULO PRINCIPAL DEL PANEL (Idéntica Identidad Gráfica a Modificador de Componentes) */}
       <div 
         className="p-2 lg:p-4 pb-1 lg:pb-2 border-b flex items-center justify-between shrink-0" 
@@ -40,55 +28,6 @@ export default function ManualControlPanel() {
         <h3 className="font-bold text-[11px] lg:text-sm" style={{ color: coloresApariencia?.textoPrincipal }}>
           Configurador Manual
         </h3>
-
-        <div className="flex items-center gap-2">
-          {/* 📂 Botón Abrir Biblioteca de Manuales Guardados */}
-          <button
-            type="button"
-            onClick={() => use3BFStore.getState().setModalBibliotecaManualesAbierto(true)}
-            title="Abrir o restaurar un proyecto de manual guardado (.3bm.json)"
-            className="px-3 py-1 rounded-full text-slate-700 dark:text-slate-200 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 shadow-xs border border-slate-300 dark:border-slate-700 flex items-center gap-1.5 text-[11px] font-bold leading-none active:scale-95 transition-all cursor-pointer select-none shrink-0"
-          >
-            <FolderOpen className="w-3 h-3 text-amber-500 shrink-0" />
-            <span>Biblioteca</span>
-          </button>
-
-          {/* 💾 Botón Guardar Manual Directo en Cápsula Pura (rounded-full) */}
-          <button
-            type="button"
-            onClick={async () => {
-              const exito = await guardarManualProyecto();
-              if (exito !== false) {
-                setGuardadoReciente(true);
-                setTimeout(() => setGuardadoReciente(false), 2500);
-              }
-            }}
-            disabled={guardandoManual}
-            title="Guardar cambios del manual 3D (.3bm) en cualquier momento sin salir del panel"
-            style={{
-              backgroundColor: guardadoReciente ? "#10b981" : botonActivoColor,
-              borderColor: guardadoReciente ? "#059669" : coloresApariencia?.colorMarca || botonActivoColor,
-            }}
-            className="px-3 py-1 rounded-full text-white shadow-sm border flex items-center gap-1.5 text-[11px] font-bold leading-none hover:opacity-90 active:scale-95 transition-all cursor-pointer disabled:opacity-50 select-none shrink-0"
-          >
-          {guardandoManual ? (
-            <>
-              <Loader2 className="w-3 h-3 text-white animate-spin shrink-0" />
-              <span>Guardando...</span>
-            </>
-          ) : guardadoReciente ? (
-            <>
-              <Check className="w-3 h-3 text-white shrink-0" />
-              <span>¡Guardado!</span>
-            </>
-          ) : (
-            <>
-              <Save className="w-3 h-3 text-white shrink-0" />
-              <span>Guardar Manual</span>
-            </>
-          )}
-        </button>
-        </div>
       </div>
 
       {/* Botonera de Sub-pestañas en Cápsulas Puras (rounded-full) */}
@@ -99,14 +38,23 @@ export default function ManualControlPanel() {
             onClick={() => setSubPestana("pasos")}
             style={
               subPestana === "pasos"
-                ? { backgroundColor: botonActivoColor, color: "#ffffff", borderColor: botonActivoColor }
-                : {}
+                ? {
+                    backgroundColor: botonActivoColor,
+                    borderColor: botonActivoColor,
+                    color: "#FFFFFF",
+                  }
+                : {
+                    color: coloresApariencia?.textoSecundario || "#64748B",
+                  }
             }
-            className={`flex-1 py-1.5 px-1 sm:px-2 rounded-full text-[10.5px] font-bold transition flex items-center justify-center gap-1 cursor-pointer select-none ${
-              subPestana === "pasos" ? "shadow-sm border text-white" : "opacity-75 hover:opacity-100 border border-transparent"
+            className={`flex-1 flex items-center justify-center gap-1.5 py-1 px-3 rounded-full text-xs font-bold transition-all cursor-pointer select-none ${
+              subPestana === "pasos"
+                ? "shadow-sm text-white"
+                : "hover:text-slate-900 dark:hover:text-slate-100"
             }`}
           >
-            <Layers className="w-3.5 h-3.5 shrink-0" /> <span className="whitespace-nowrap">Pasos</span>
+            <Layers className="w-3.5 h-3.5 shrink-0" />
+            <span>Pasos</span>
           </button>
 
           <button
@@ -114,14 +62,23 @@ export default function ManualControlPanel() {
             onClick={() => setSubPestana("voz")}
             style={
               subPestana === "voz"
-                ? { backgroundColor: botonActivoColor, color: "#ffffff", borderColor: botonActivoColor }
-                : {}
+                ? {
+                    backgroundColor: botonActivoColor,
+                    borderColor: botonActivoColor,
+                    color: "#FFFFFF",
+                  }
+                : {
+                    color: coloresApariencia?.textoSecundario || "#64748B",
+                  }
             }
-            className={`flex-1 py-1.5 px-1 sm:px-2 rounded-full text-[10.5px] font-bold transition flex items-center justify-center gap-1 cursor-pointer select-none ${
-              subPestana === "voz" ? "shadow-sm border text-white" : "opacity-75 hover:opacity-100 border border-transparent"
+            className={`flex-1 flex items-center justify-center gap-1.5 py-1 px-3 rounded-full text-xs font-bold transition-all cursor-pointer select-none ${
+              subPestana === "voz"
+                ? "shadow-sm text-white"
+                : "hover:text-slate-900 dark:hover:text-slate-100"
             }`}
           >
-            <Mic className="w-3.5 h-3.5 shrink-0" /> <span className="whitespace-nowrap">Voz TTS</span>
+            <Mic className="w-3.5 h-3.5 shrink-0" />
+            <span>Voz TTS</span>
           </button>
 
           <button
@@ -129,24 +86,43 @@ export default function ManualControlPanel() {
             onClick={() => setSubPestana("exportar")}
             style={
               subPestana === "exportar"
-                ? { backgroundColor: botonActivoColor, color: "#ffffff", borderColor: botonActivoColor }
-                : {}
+                ? {
+                    backgroundColor: botonActivoColor,
+                    borderColor: botonActivoColor,
+                    color: "#FFFFFF",
+                  }
+                : {
+                    color: coloresApariencia?.textoSecundario || "#64748B",
+                  }
             }
-            className={`flex-1 py-1.5 px-1 sm:px-2 rounded-full text-[10.5px] font-bold transition flex items-center justify-center gap-1 cursor-pointer select-none ${
-              subPestana === "exportar" ? "shadow-sm border text-white" : "opacity-75 hover:opacity-100 border border-transparent"
+            className={`flex-1 flex items-center justify-center gap-1.5 py-1 px-3 rounded-full text-xs font-bold transition-all cursor-pointer select-none ${
+              subPestana === "exportar"
+                ? "shadow-sm text-white"
+                : "hover:text-slate-900 dark:hover:text-slate-100"
             }`}
           >
-            <Download className="w-3.5 h-3.5 shrink-0" /> <span className="whitespace-nowrap">Exportar</span>
+            <Download className="w-3.5 h-3.5 shrink-0" />
+            <span>Exportar</span>
           </button>
         </div>
       </div>
 
-      {/* 📌 LÍNEA DE PASOS FIJA (Inmóvil, siempre visible al hacer scroll) */}
-      <ManualStepSelector />
+      {/* 🚀 BARRA DE PASOS EN CÁPSULAS PURAS (Visible únicamente en la sub-pestaña Pasos) */}
+      {subPestana === "pasos" && (
+        <div className="shrink-0 border-b border-slate-200/80 dark:border-slate-800/80 bg-slate-50/50 dark:bg-slate-900/30">
+          <ManualStepSelector />
+        </div>
+      )}
 
-      {/* Contenido Desplazable del Panel */}
-      <div className="flex-1 p-3 overflow-y-auto custom-scrollbar">
-        {subPestana === "pasos" && <StepManagerPanel />}
+      {/* Contenido Dinámico de Sub-pestañas con Scroll Independiente */}
+      <div className="flex-1 overflow-y-auto p-2 lg:p-4 custom-scrollbar">
+        {subPestana === "pasos" && (
+          tienePasos ? (
+            <StepManagerPanel key="panel-configurador-activo" />
+          ) : (
+            <LienzoPasoVirgen key="panel-lienzo-virgen" />
+          )
+        )}
         {subPestana === "voz" && <VoiceStudioPanel />}
         {subPestana === "exportar" && <ExportManualPanel />}
       </div>

@@ -1,3 +1,4 @@
+import { compilarPasoVersionado } from "./engine/modos/dispatcher";
 /**
  * manualAnimationEngine.ts
  *
@@ -154,50 +155,24 @@ export function compilarAnimacionPaso(
   }
 
   // =========================================================================
-  // 1. PASO 00: SHOWCASE FUNCIONAL (Apertura y Cierre de Cajones / Puertas)
   // =========================================================================
-  if (paso.tipo === "showcase") {
-    compilarShowcaseP00(rootScene, sceneMeshes, sceneObjects, paso, duracionPaso, tracks);
-  } else if (paso.tipo === "insercion_cajones" || Boolean(paso.insercionCajones)) {
-    // =========================================================================
-    // 1.5. INCORPORACIÓN / INSERCIÓN DE CAJONES (P06+): ENSAMBLE FINAL EN EL MUEBLE
-    // =========================================================================
-    const todosPasos = toolMeshes?.todosLosPasos || use3BFStore.getState?.()?.pasosManual || [];
-    const pasoP00 = todosPasos.find((p: any) => p.id === "P00" || p.tipo === "showcase") || null;
-    compilarInsercionCajonesPaso(rootScene, sceneMeshes, sceneObjects, paso, duracionPaso, tracks, pasoP00);
-  }
+  // 🎛️ DESPACHADOR UNIVERSAL DE MODOS Y VERSIONES CINEMÁTICAS (v1.0+)
+  // 1. Presentación Funcional (Showcase)
+  // 2. Armado por Capas (Multifuncional / Múltiple Plus)
+  // 3. Bloque Estándar (Herrajes Especiales)
+  // 4. Incorporaciones (Bloques Funcionales)
+  // =========================================================================
+  compilarPasoVersionado({
+    rootScene,
+    sceneMeshes,
+    sceneObjects,
+    paso,
+    duracionPaso,
+    tracks,
+    todosLosPasos: toolMeshes?.todosLosPasos,
+  });
 
-  // =========================================================================
-  // 2. MODO 5: MÚLTIPLE PLUS (Capas Independientes, Inserción Axial y Destinos)
-  // 🛡️ REGLA SUPREMA: Si el paso tiene capas en multiplePlus, se compila SIEMPRE como multiple_plus
-  // =========================================================================
-  const esMultiplePlus = paso.tipo === "multiple_plus" || Boolean(paso.multiplePlus?.capas && paso.multiplePlus.capas.length > 0);
-  if (esMultiplePlus) {
-    compilarMultiplePlusPaso(
-      rootScene,
-      paso,
-      sceneMeshes,
-      sceneObjects,
-      tracks,
-      duracionPaso,
-      toolMeshes
-    );
-  } else if (paso.tipo === "ensamble") {
-    // =========================================================================
-    // 3. PASOS DE ENSAMBLE CLÁSICO (P01+): PIEZA MASTER, HERRAJES Y SUBBLOQUES
-    // =========================================================================
-    compilarEnsamblePaso(
-      rootScene,
-      paso,
-      sceneMeshes,
-      sceneObjects,
-      tracks,
-      duracionPaso,
-      toolMeshes
-    );
-  }
-
-  // 🛡️ CRÍTICO: Permitir que Three.js PropertyBinding resuelva pistas por UUID, name, o instanciaKey
+// 🛡️ CRÍTICO: Permitir que Three.js PropertyBinding resuelva pistas por UUID, name, o instanciaKey
   if (!(rootScene as any).__hasPatchedGetObjectByName) {
     (rootScene as any).__hasPatchedGetObjectByName = true;
     const origGetObjectByName = rootScene.getObjectByName.bind(rootScene);

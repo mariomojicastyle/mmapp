@@ -3734,3 +3734,30 @@ Para mantener la máxima agilidad y minimizar el consumo de tokens sin perder ni
 - **Validación de Calidad y Certificación Visual**:
   * Compilación TypeScript verificada (`npx tsc --noEmit`) en `3bf` con **0 errores**.
   * Certificación visual completa por el usuario en caliente (`media_1792618909265_b917892f.jpg`): silueta naranja `#e35716` en contacto directo perfecto con el mueble, textura de madera intacta, fondo `#F3F4F6` intacto y deselección instantánea.
+
+
+---
+
+### 🚀 Hito 284: Arquitectura de Control de Versiones de Scripts de Armado (Showcase v1.0), Gotero 3D Raycast Inmune a Aristas CAD, Clusterizado Físico AABB Robusto y Jerarquía de Subgrupos GHX Anidados en 3dBimFab (`ControlPanel.tsx`, `ghx_parser.py`, `piezaMadreUtils.ts`, `BoardMesh.tsx`, `Viewer3D.tsx`, `storeTypes.ts`, `Estructura.ghx`) (22 de Octubre, 2026)
+- **1. Arquitectura Modular de Versionado de Modos de Armado (`/engine/modos/v1_0/`, `ModalCrearPaso.tsx`, `manualStepsSlice.ts`)**:
+  * **Driver de Versión de Scripts**: Creación de la arquitectura de controladores desacoplados por versión (`v1.0`) para los 4 modos de paso de armado (`showcase`, `explosion`, `cinematica`, `guiado`). Garantiza compatibilidad retroactiva absoluta: manuales antiguos conservan intacto su comportamiento mientras los nuevos scripts evolucionan.
+  * **Modal de Creación con Selección de Modo Directa**: `ModalCrearPaso.tsx` estilizado en cápsulas `rounded-full` con conmutador integrado para definir el modo de armado en el momento exacto de nombrar el paso (resolviendo `p00` con `showcase`), suprimiendo botones redundantes en la cabecera.
+- **2. Inmunidad del Gotero 3D Raycast a Aristas CAD e Intersecciones Espurias (`BoardMesh.tsx`, `Viewer3D.tsx`)**:
+  * **Diagnóstico de Desincronización Hover vs Clic**: Three.js `Raycaster` fija por defecto `Line.threshold = 1.0` (1 metro). Al intentar seleccionar el frente de cajón (`Peça 19`), el rayo interceptaba las aristas CAD de la tapa superior (`Peça 13`) por estar más próximas a la cámara dentro de la tolerancia de 100 cm, disparando el clic sobre la tapa mientras el tooltip flotante (que solo evaluaba mallas sólidas) indicaba `Peça 19`.
+  * **Desactivación de Raycast en Aristas y Helpers**: Inyección de `raycast={() => null}` en todos los `<lineSegments>` y wireframe helpers en `BoardMesh.tsx`, haciéndolos 100% transparentes al cursor de picking.
+  * **Calibración Milimétrica en Canvas**: Configuración del raycaster en `<Canvas>` de `Viewer3D.tsx` con `threshold: 0.001` (1 mm) y tipado estricto.
+  * **Filtro de Exclusión en Handlers**: Los eventos `onClick` y `onPointerOver` de `BoardMesh.tsx` descartan activamente cualquier intersección proveniente de líneas o mallas auxiliares.
+- **3. Clusterizado Físico Robusto AABB de Piezas Madre (`piezaMadreUtils.ts`)**:
+  * **Erradicación de la Sobrefragmentación de Tableros**: Sustitución del filtro estricto de distancia entre centros de 35 mm (que fragmentaba piezas grandes como la tapa superior `Peça 13` en 8 clusters y frentes de cajón `Peça 19` en 36 clusters al evaluar cubrecantos y biseles distantes).
+  * **Algoritmo por Ordenamiento de Volumen Descendente**: Las submallas principales establecen primero la caja AABB maestra del tablero, agrupando cantos y biseles por contacto geométrico rasante (`bboxesSeTocan(mBBox, cl.bbox, 0.002)`).
+  * **Consolidación Matemática Verificada**: `Peça 13` se consolida en 1 cluster unificado exacto, y los frentes de cajón se agrupan en las 6 piezas físicas reales (`Peça 19 (1)` a `Peça 19 (6)`).
+- **4. Auditoría y Saneamiento de `Estructura.ghx` para RhinoCompute Headless (`Estructura.ghx`, `Estructura_ORIGINAL_BK.ghx`)**:
+  * **Causa Raíz de Bloqueo en Servidor**: Detección de 11 componentes `Stream Filter` activos en secciones en desarrollo que recibían índices superiores a su cantidad de entradas (`Filter index too high`), provocando fallo HTTP 500 en RhinoCompute headless.
+  * **Bloqueo Seguro (Disabled / `Locked: true`)**: Respaldo preventivo en `Estructura_ORIGINAL_BK.ghx` y desactivación de los filtros conflictivos en el GHX. Generación inmediata y limpia de las 11 mallas 3D para `Tablero Superior` (Cara A, Cara B y cuerpo MDP con perforaciones).
+- **5. Jerarquía de Subgrupos GHX Anidados en Modificador de Componentes (`ghx_parser.py`, `ControlPanel.tsx`, `storeTypes.ts`)**:
+  * **Detección Automática por Inclusión de Parámetros en Grasshopper**: Algoritmo en `ghx_parser.py` que identifica cuándo los parámetros de un grupo son subconjunto estricto de un grupo padre ($params(Hijo) \subset params(Padre)$), reconociendo grupos anidados visuales de GH como subgrupos hijos sin requerir cambios de nombres. Soporte concurrente para sintaxis con separador (`Padre > Hijo` o `Padre::Hijo`).
+  * **Estructura Jerárquica en State**: Tipado en `storeTypes.ts` de `subgroups` dentro de `parameter_groups`.
+  * **Sub-tarjetas Interiores en `ControlPanel.tsx`**: Renderizado de cada subgrupo como una tarjeta delimitada con cápsula de título (ej. `Lateral Izquierdo` conteniendo las sub-tarjetas `SUPERIOR` e `INFERIOR`), eliminando acordeones sueltos y ordenando visualmente los controles modulares.
+- **Validación de Calidad**:
+  * Compilación TypeScript verificada (`npx tsc --noEmit`) en `3bf` con **0 errores**.
+  * Todos los daemons activos y actualizados en caliente.

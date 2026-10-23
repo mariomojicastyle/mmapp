@@ -1,27 +1,34 @@
 "use client";
 
-import React from "react";
+import React, { useState } from "react";
 import { use3BFStore } from "@/lib/store";
-import { Plus, GripVertical, Boxes, X, PackageCheck } from "lucide-react";
+import { Plus, GripVertical, Boxes } from "lucide-react";
+import ModalCrearPaso from "./ModalCrearPaso";
 
 export default function ManualStepSelector() {
   const {
     pasosManual,
     pasoActivoManualId,
     seleccionarPasoManualActivo,
-    crearPasoManual,
-    eliminarPasoManual,
     reordenarPasosManual,
     coloresApariencia,
   } = use3BFStore();
 
-  const [draggedIndex, setDraggedIndex] = React.useState<number | null>(null);
-  const [dragOverIndex, setDragOverIndex] = React.useState<number | null>(null);
+  const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
+  const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
+  const [modalCrearAbierto, setModalCrearAbierto] = useState(false);
 
   const botonActivoColor = coloresApariencia?.botonActivo || "#0891b2";
 
   return (
-    <div className="flex flex-col gap-1.5 px-3 py-2 border-b border-slate-200 dark:border-slate-800 bg-white/95 dark:bg-slate-900/95 backdrop-blur-sm shrink-0 select-none">
+    <div className="flex flex-col gap-1.5 px-3 py-2 border-b border-slate-200 dark:border-slate-800 bg-white/95 dark:bg-slate-900/95 backdrop-blur-sm shrink-0 select-none relative">
+      {/* 🏷️ Modal Flotante Unificado con React Portal (z-[9999]) */}
+      <ModalCrearPaso
+        abierto={modalCrearAbierto}
+        onCerrar={() => setModalCrearAbierto(false)}
+        tipoInicialSugerido="armado_capas"
+      />
+
       <div className="flex items-center justify-between">
         <span className="font-bold tracking-wide uppercase opacity-70 text-[10px]">
           Línea de Pasos del Manual
@@ -29,126 +36,96 @@ export default function ManualStepSelector() {
         <div className="flex items-center gap-1.5">
           <button
             type="button"
-            onClick={() => crearPasoManual("multiple_plus")}
+            onClick={() => setModalCrearAbierto(true)}
             style={{ backgroundColor: botonActivoColor, borderColor: botonActivoColor }}
-            className="flex items-center gap-1 px-3 py-0.5 rounded-full border text-white hover:opacity-90 shadow-2xs transition font-bold text-[10px] cursor-pointer"
-            title="Crear un nuevo paso de armado por capas"
+            className="flex items-center gap-1.5 px-3 py-1 rounded-full border text-white hover:opacity-90 shadow-xs transition font-bold text-[11px] cursor-pointer active:scale-95 select-none"
+            title="Crear un nuevo paso en el manual"
           >
-            <Plus className="w-3 h-3" /> Nuevo Paso
-          </button>
-
-          <button
-            type="button"
-            onClick={() => crearPasoManual("insercion_cajones")}
-            className="flex items-center gap-1 px-3 py-0.5 rounded-full border border-cyan-400/80 dark:border-cyan-600/80 bg-cyan-50 dark:bg-cyan-950/40 text-cyan-800 dark:text-cyan-200 hover:bg-cyan-100 dark:hover:bg-cyan-900/50 shadow-2xs transition font-bold text-[10px] cursor-pointer"
-            title="Crear paso final de incorporación de cajones al interior del mueble"
-          >
-            <PackageCheck className="w-3 h-3" /> + Gavetas
+            <Plus className="w-3.5 h-3.5" />
+            <span>Nuevo Paso</span>
           </button>
         </div>
       </div>
 
       <div className="flex items-center gap-1.5 overflow-x-auto py-1 custom-scrollbar">
-        {pasosManual.map((paso, index) => {
-          const esActivo = paso.id === pasoActivoManualId;
-          const esP00 = paso.id === "P00" || paso.tipo === "showcase";
-          const esDragOver = dragOverIndex === index;
+        {(!pasosManual || pasosManual.length === 0) ? (
+          <span className="text-[11px] text-slate-400 italic py-0.5 px-1">
+            Sin pasos creados en este manual
+          </span>
+        ) : (
+          pasosManual.map((paso, index) => {
+            const esActivo = paso.id === pasoActivoManualId;
+            const esP00 = paso.id === "P00" || paso.tipo === "showcase";
+            const esDragOver = dragOverIndex === index;
 
-          return (
-            <button
-              key={`${paso.id}_${index}`}
-              type="button"
-              draggable={!esP00}
-              onDragStart={(e) => {
-                if (esP00) return;
-                setDraggedIndex(index);
-                e.dataTransfer.setData("text/plain", index.toString());
-                e.dataTransfer.effectAllowed = "move";
-              }}
-              onDragOver={(e) => {
-                if (esP00) return;
-                e.preventDefault();
-                e.dataTransfer.dropEffect = "move";
-                if (dragOverIndex !== index) {
-                  setDragOverIndex(index);
-                }
-              }}
-              onDragLeave={() => {
-                if (dragOverIndex === index) {
+            return (
+              <button
+                key={`${paso.id}_${index}`}
+                type="button"
+                draggable={!esP00}
+                onDragStart={(e) => {
+                  if (esP00) return;
+                  setDraggedIndex(index);
+                  e.dataTransfer.setData("text/plain", index.toString());
+                  e.dataTransfer.effectAllowed = "move";
+                }}
+                onDragOver={(e) => {
+                  if (esP00) return;
+                  e.preventDefault();
+                  e.dataTransfer.dropEffect = "move";
+                  if (dragOverIndex !== index) {
+                    setDragOverIndex(index);
+                  }
+                }}
+                onDragLeave={() => {
+                  if (dragOverIndex === index) {
+                    setDragOverIndex(null);
+                  }
+                }}
+                onDrop={(e) => {
+                  if (esP00) return;
+                  e.preventDefault();
                   setDragOverIndex(null);
+                  setDraggedIndex(null);
+                  const origenIdxStr = e.dataTransfer.getData("text/plain");
+                  const origenIdx = parseInt(origenIdxStr, 10);
+                  if (!isNaN(origenIdx) && origenIdx !== index && origenIdx > 0 && index > 0) {
+                    reordenarPasosManual(origenIdx, index);
+                  }
+                }}
+                onDragEnd={() => {
+                  setDraggedIndex(null);
+                  setDragOverIndex(null);
+                }}
+                onClick={() => seleccionarPasoManualActivo(paso.id)}
+                style={
+                  esActivo
+                    ? { backgroundColor: botonActivoColor, color: "#ffffff", borderColor: botonActivoColor }
+                    : {}
                 }
-              }}
-              onDrop={(e) => {
-                if (esP00) return;
-                e.preventDefault();
-                setDragOverIndex(null);
-                setDraggedIndex(null);
-                const origenIdxStr = e.dataTransfer.getData("text/plain");
-                const origenIdx = parseInt(origenIdxStr, 10);
-                if (!isNaN(origenIdx) && origenIdx !== index && origenIdx > 0 && index > 0) {
-                  reordenarPasosManual(origenIdx, index);
-                }
-              }}
-              onDragEnd={() => {
-                setDraggedIndex(null);
-                setDragOverIndex(null);
-              }}
-              onClick={() => seleccionarPasoManualActivo(paso.id)}
-              style={
-                esActivo
-                  ? { backgroundColor: botonActivoColor, color: "#ffffff", borderColor: botonActivoColor }
-                  : {}
-              }
-              title={esP00 ? "Paso 00 Showcase (Fijo)" : `Arrastra para reordenar paso ${paso.id}`}
-              className={`px-3 py-1 rounded-full border text-[11px] font-bold shrink-0 transition flex items-center gap-1.5 select-none cursor-pointer ${
-                esP00
-                  ? "cursor-default"
-                  : "cursor-grab active:cursor-grabbing hover:border-cyan-400"
-              } ${
-                esDragOver ? "ring-2 ring-cyan-500 scale-105" : ""
-              } ${
-                esActivo
-                  ? "shadow-sm"
-                  : "border-slate-300 dark:border-slate-700 hover:bg-black/5 dark:hover:bg-white/5"
-              }`}
-            >
-              {!esP00 && <GripVertical className="w-2.5 h-2.5 opacity-40 hover:opacity-100 shrink-0" />}
-              <span>{paso.id}</span>
-              {paso.tipo === "showcase" ? null : paso.tipo === "bloque_estandar" ? (
-                <Boxes className="w-3 h-3 text-cyan-400 shrink-0" />
-              ) : paso.tipo === "multiple_plus" ? (
-                <span className="flex items-center gap-0.5">
-                  <span className="text-[9px]">🌟</span>
-                  <span className="opacity-70 font-normal text-[10px]">
-                    ({(paso.multiplePlus?.capas || []).reduce((acc, c) => acc + (c.tableros?.length || 0) + (c.herrajes?.length || 0) + (c.congelados?.length || 0), 0)})
+                title={esP00 ? `${paso.titulo || "Paso 00 Showcase"} (Fijo)` : `Arrastra para reordenar paso ${paso.id}`}
+                className={`px-3 py-1 rounded-full border text-[11px] font-bold shrink-0 transition flex items-center gap-1.5 select-none cursor-pointer ${
+                  esP00
+                    ? "cursor-default"
+                    : "hover:bg-slate-100 dark:hover:bg-slate-800"
+                } ${
+                  esDragOver
+                    ? "border-cyan-500 scale-105 shadow-md bg-cyan-500/10"
+                    : "border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 shadow-2xs"
+                }`}
+              >
+                {!esP00 && <GripVertical className="w-2.5 h-2.5 opacity-40 hover:opacity-100 shrink-0" />}
+                <span className="truncate">{paso.id}</span>
+                {paso.piezasAsignadas && paso.piezasAsignadas.length > 0 && (
+                  <span className="flex items-center gap-0.5 text-[9px] opacity-80 font-normal">
+                    <Boxes className="w-2.5 h-2.5" />
+                    {paso.piezasAsignadas.length}
                   </span>
-                </span>
-              ) : (
-                <span className="opacity-70 font-normal text-[10px]">
-                  ({(paso.piezasAsignadas || []).length + (paso.herrajesAsignados || []).length})
-                </span>
-              )}
-              {!esP00 && pasosManual.length > 1 && (
-                <span
-                  role="button"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    if (
-                      typeof window !== "undefined" &&
-                      window.confirm(`¿Estás seguro de eliminar el paso ${paso.id}? Esta acción no se puede deshacer.`)
-                    ) {
-                      eliminarPasoManual(paso.id);
-                    }
-                  }}
-                  title={`Eliminar ${paso.id}`}
-                  className="ml-0.5 w-3.5 h-3.5 rounded-full flex items-center justify-center opacity-60 hover:opacity-100 hover:bg-rose-500 hover:text-white transition cursor-pointer"
-                >
-                  <X className="w-2 h-2" />
-                </span>
-              )}
-            </button>
-          );
-        })}
+                )}
+              </button>
+            );
+          })
+        )}
       </div>
     </div>
   );

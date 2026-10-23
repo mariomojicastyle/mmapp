@@ -247,18 +247,84 @@ def extract_parameter_groups(root, default_values: dict) -> list:
                                     if nick not in gh_groups[g_title]:
                                         gh_groups[g_title].append(nick)
 
+    # 2.5 Detección de Subgrupos Jerárquicos Anidados en Grasshopper
+    child_to_parent = {}
+
+    # Soporte A: Sintaxis explícita con separador en el nombre ("Padre > Hijo" o "Padre::Hijo")
+    for g_title in list(gh_groups.keys()):
+        if " > " in g_title or "::" in g_title:
+            sep = " > " if " > " in g_title else "::"
+            parts = g_title.split(sep, 1)
+            p_name = parts[0].strip()
+            c_name = parts[1].strip()
+            if p_name not in gh_groups:
+                gh_groups[p_name] = []
+            nicks = gh_groups.pop(g_title)
+            gh_groups[c_name] = nicks
+            child_to_parent[c_name] = p_name
+
+    # Soporte B: Detección automática por inclusión (si todos los parámetros de un grupo están contenidos en otro)
+    all_titles = list(gh_groups.keys())
+    for c_title in all_titles:
+        if c_title in child_to_parent:
+            continue
+        c_set = set(gh_groups[c_title])
+        if not c_set:
+            continue
+        potential_parents = []
+        for p_title in all_titles:
+            if c_title == p_title:
+                continue
+            p_set = set(gh_groups[p_title])
+            if c_set.issubset(p_set) and len(c_set) < len(p_set):
+                potential_parents.append((p_title, len(p_set)))
+        if potential_parents:
+            # Seleccionar el padre más específico (menor número de parámetros que aún contiene al subgrupo)
+            potential_parents.sort(key=lambda x: x[1])
+            child_to_parent[c_title] = potential_parents[0][0]
+
+    parent_subgroups = {}
+    for c_title, p_title in child_to_parent.items():
+        if p_title not in parent_subgroups:
+            parent_subgroups[p_title] = []
+        sorted_sub_nicks = sorted(gh_groups[c_title], key=parse_num_prefix)
+        min_rank = min((parse_num_prefix(n) for n in sorted_sub_nicks), default=(999, 999, ""))
+        parent_subgroups[p_title].append({
+            "title": c_title,
+            "parameters": sorted_sub_nicks,
+            "_rank": min_rank
+        })
+
+    for p_title in parent_subgroups:
+        parent_subgroups[p_title].sort(key=lambda s: s["_rank"])
+        for s in parent_subgroups[p_title]:
+            s.pop("_rank", None)
+
     grouped_results = []
     assigned_nicks = set()
 
     for g_title, nicks in gh_groups.items():
+        if g_title in child_to_parent:
+            continue
+
         if len(nicks) >= 1:
-            sorted_nicks = sorted(nicks, key=parse_num_prefix)
-            min_rank = min((parse_num_prefix(n) for n in sorted_nicks), default=(999, 999, ""))
-            grouped_results.append({
+            subs = parent_subgroups.get(g_title, [])
+            sub_params = set(p for s in subs for p in s["parameters"])
+            loose_nicks = [n for n in nicks if n not in sub_params]
+            sorted_loose_nicks = sorted(loose_nicks, key=parse_num_prefix)
+
+            all_nicks = list(nicks)
+            min_rank = min((parse_num_prefix(n) for n in all_nicks), default=(999, 999, ""))
+
+            entry = {
                 "title": g_title,
-                "parameters": sorted_nicks,
+                "parameters": sorted_loose_nicks,
                 "_rank": min_rank
-            })
+            }
+            if subs:
+                entry["subgroups"] = subs
+
+            grouped_results.append(entry)
             assigned_nicks.update(nicks)
 
     grouped_results.sort(key=lambda g: g["_rank"])

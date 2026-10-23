@@ -1,8 +1,9 @@
 "use client";
 
-import React, { useMemo } from "react";
-import { use3BFStore, sanitizarPasosManuales } from "@/lib/store";
-import { Plus, Trash2 } from "lucide-react";
+import React from "react";
+import ModoPasoSelector from "./ModoPasoSelector";
+import { use3BFStore } from "@/lib/store";
+import { Trash2 } from "lucide-react";
 import ShowcaseConfigSection from "./ShowcaseConfigSection";
 import InsercionCajonesConfigSection from "./InsercionCajonesConfigSection";
 import FunctionalBlocksVisibilityCard from "./FunctionalBlocksVisibilityCard";
@@ -22,33 +23,22 @@ export default function StepManagerPanel() {
     coloresApariencia,
   } = use3BFStore();
 
-  // 🛡️ Blindaje y Autocuración: Garantizar que P00 siempre esté presente y sincronizar versión de Drive si está vacío
-  const consultadoDriveRef = React.useRef(false);
-
-  React.useEffect(() => {
-    if (!pasosManual || pasosManual.length === 0 || !pasosManual.some((p) => p.id === "P00" || p.tipo === "showcase")) {
-      const curados = sanitizarPasosManuales(pasosManual || []);
-      use3BFStore.getState().setPasosManual(curados);
-      return;
-    }
-
-    // Si P00 no tiene grupos cinemáticos asignados, consultar Drive UNA SOLA VEZ para recuperar versión guardada
-    if (!consultadoDriveRef.current) {
-      const p00 = pasosManual.find((p) => p.id === "P00");
-      if (!p00?.showcase?.gruposCinematicos || p00.showcase.gruposCinematicos.length === 0) {
-        consultadoDriveRef.current = true;
-        use3BFStore.getState().cargarManualesDesdeDrive();
-      }
-    }
-  }, [pasosManual]);
-
-  const pasoActivo = pasosManual.find((p) => p.id === pasoActivoManualId) || pasosManual[0];
   const botonActivoColor = coloresApariencia?.botonActivo || "#0891b2";
+  const pasoActivo = (pasosManual || []).find((p) => p.id === pasoActivoManualId) || pasosManual?.[0];
 
-
+  if (!pasoActivo) {
+    return null;
+  }
 
   return (
     <div className="flex flex-col gap-4 text-xs">
+      {/* 🎛️ SELECTOR OFICIAL DE LOS 4 MODOS DEFINITIVOS DE ARMADO (Versioned Driver v1.0) */}
+      <ModoPasoSelector
+        pasoId={pasoActivo.id}
+        tipoActual={pasoActivo.tipo}
+        versionMotor={pasoActivo.versionMotor || "v1.0"}
+      />
+
       {/* 2. Tarjeta de Configuración del Paso Seleccionado */}
       <div className="p-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-black/[0.02] dark:bg-white/[0.02] flex flex-col gap-3">
         {/* Encabezado del Paso Activo (Para Showcase e Inserción de Cajones) */}
@@ -66,10 +56,11 @@ export default function StepManagerPanel() {
                 value={pasoActivo.titulo}
                 onChange={(e) => actualizarPasoManual(pasoActivo.id, { titulo: e.target.value })}
                 className="font-bold text-xs bg-transparent border-b border-transparent hover:border-slate-300 focus:border-cyan-500 outline-none truncate"
+                placeholder={`Paso ${pasoActivo.id}`}
               />
             </div>
 
-            {pasosManual.length > 1 && pasoActivo.id !== "P00" && (
+            {pasosManual.length > 1 && (
               <button
                 type="button"
                 onClick={() => eliminarPasoManual(pasoActivo.id)}

@@ -233,7 +233,7 @@ export interface ComputoResultado {
     options?: string[];
   }>;
   groups?: Record<string, string[]>;
-  parameter_groups?: Array<{ title: string; parameters: string[] }>;
+  parameter_groups?: Array<{ title: string; parameters: string[]; subgroups?: Array<{ title: string; parameters: string[] }> }>;
   execution_time_ms: number;
   worker_info?: {
     engine: string;
@@ -617,7 +617,8 @@ export interface InsercionCajonesConfig {
 export interface PasoManualStudio {
   id: string; // "P00", "P01", "P02"...
   numero: number;
-  tipo: "showcase" | "ensamble" | "bloque_estandar" | "ensamble_multiple" | "multiple_plus" | "insercion_cajones";
+  tipo: "showcase" | "presentacion" | "ensamble" | "bloque_estandar" | "ensamble_multiple" | "multiple_plus" | "armado_capas" | "insercion_cajones" | "incorporaciones";
+  versionMotor?: string; // 🏷️ Control de Versiones del Motor (ej. "v1.0")
   titulo: string;
   descripcion: string;
   duracionTotal: number; // segundos
@@ -926,7 +927,8 @@ export interface State3BF {
 
   setPasosManual: (pasos: PasoManualStudio[]) => void;
   seleccionarPasoManualActivo: (pasoId: string) => void;
-  crearPasoManual: (tipo?: "showcase" | "ensamble" | "bloque_estandar" | "multiple_plus" | "insercion_cajones") => void;
+  cambiarModoPasoManual: (pasoId: string, modo: any, version?: string) => void;
+  crearPasoManual: (tipo?: PasoManualStudio["tipo"], opciones?: { tituloPersonalizado?: string; idSugerido?: string; numero?: number }) => void;
   eliminarPasoManual: (pasoId: string) => void;
   actualizarPasoManual: (pasoId: string, data: Partial<PasoManualStudio>) => void;
   reordenarSecuenciaPaso: (pasoId: string, nuevaSecuencia: ElementoSecuenciaCinematica[]) => void;

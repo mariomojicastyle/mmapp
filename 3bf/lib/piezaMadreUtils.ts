@@ -458,34 +458,22 @@ export function anotarInstanciasFisicas<T extends { name: string; position?: [nu
     }
     const clusters: MeshCluster[] = [];
 
-    for (const { mesh } of items) {
-      const mBBox = calcularBBoxMalla(mesh as any);
-      const mCenter = [
-        (mBBox[0] + mBBox[1]) / 2,
-        (mBBox[2] + mBBox[3]) / 2,
-        (mBBox[4] + mBBox[5]) / 2,
-      ];
+    // Pre-calcular bounding box y diagonal de cada malla candidata, y ordenar de MAYOR a MENOR volumen/tamaño.
+    // De este modo, la cara principal o cuerpo sólido del tablero entra primero y define el cluster maestro,
+    // permitiendo que los cantos, biseles y cubrecantos se asocien con total precisión por contacto AABB
+    // sin fragmentar piezas amplias como tapas o frentes de cajón.
+    const itemsConBBox = items.map((it) => {
+      const bbox = calcularBBoxMalla(it.mesh as any);
+      const diag = Math.hypot(bbox[1] - bbox[0], bbox[3] - bbox[2], bbox[5] - bbox[4]);
+      return { mesh: it.mesh, bbox, diag };
+    });
+    itemsConBBox.sort((a, b) => b.diag - a.diag);
+
+    for (const { mesh, bbox: mBBox } of itemsConBBox) {
       const matchedIndices: number[] = [];
 
       clusters.forEach((cl, idx) => {
-        const clCenter = [
-          (cl.bbox[0] + cl.bbox[1]) / 2,
-          (cl.bbox[2] + cl.bbox[3]) / 2,
-          (cl.bbox[4] + cl.bbox[5]) / 2,
-        ];
-        const distCentros = Math.hypot(
-          mCenter[0] - clCenter[0],
-          mCenter[1] - clCenter[1],
-          mCenter[2] - clCenter[2]
-        );
-
-        // Dos submallas solo son parte de la MISMA pieza física si sus centros geométricos
-        // están muy próximos (distancia <= 35 mm, que cubre el espesor de Cara A vs Cara B/MDP).
-        // Si la distancia entre centros es mayor a 35 mm (como entre paneles adyacentes de fondo o repisas contiguas),
-        // son piezas físicas distintas y NO deben fusionarse en el mismo cluster.
-        const esMismaPiezaFisica = distCentros <= 0.035 && bboxesSeTocan(mBBox, cl.bbox, 0.005);
-
-        if (esMismaPiezaFisica) {
+        if (bboxesSeTocan(mBBox, cl.bbox, 0.002)) {
           matchedIndices.push(idx);
         }
       });

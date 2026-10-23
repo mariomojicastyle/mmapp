@@ -22,32 +22,10 @@ export const createManualShowcaseSlice = (set: any, get: any): any => ({
       ...partesAsignadas.map((p: string) => p.replace(/^RH_OUT:/i, "").trim()),
     ].filter(Boolean);
 
-    const todasPiezasMadre = agruparMallasEnPiezasMadre(rawNombres);
-    const tieneRavenna = todasPiezasMadre.some((p: string) => p === "Peça 6" || p === "Peça 7") || (state.parametros?.model_id || "").toLowerCase().includes("ravenna");
     const distGlobal = paso.showcase?.distanciaAperturaMm || 350;
-
     const existentes = paso.showcase?.gruposCinematicos || [];
-    const tieneGruposConfigurados = existentes.some((g: any) => g.piezas && g.piezas.length > 0);
-
-    let gruposDetectados: GrupoCinematicoShowcase[] = [];
-
-    if (tieneGruposConfigurados) {
-      gruposDetectados = existentes;
-    } else if (tieneRavenna) {
-      gruposDetectados = [
-        { id: "cajon_1", nombre: "Cajón 1 (Superior Izq)", tipo: "cajon", piezas: [], ejeApertura: paso.showcase?.ejeGlobal || "+Z", distanciaMm: distGlobal, oculto: false },
-        { id: "cajon_2", nombre: "Cajón 2 (Superior Der)", tipo: "cajon", piezas: [], ejeApertura: paso.showcase?.ejeGlobal || "+Z", distanciaMm: distGlobal, oculto: false },
-        { id: "cajon_3", nombre: "Cajón 3 (Medio Izq)", tipo: "cajon", piezas: [], ejeApertura: paso.showcase?.ejeGlobal || "+Z", distanciaMm: distGlobal, oculto: false },
-        { id: "cajon_4", nombre: "Cajón 4 (Medio Der)", tipo: "cajon", piezas: [], ejeApertura: paso.showcase?.ejeGlobal || "+Z", distanciaMm: distGlobal, oculto: false },
-        { id: "cajon_5", nombre: "Cajón 5 (Inferior Izq)", tipo: "cajon", piezas: [], ejeApertura: paso.showcase?.ejeGlobal || "+Z", distanciaMm: distGlobal, oculto: false },
-        { id: "cajon_6", nombre: "Cajón 6 (Inferior Der)", tipo: "cajon", piezas: [], ejeApertura: paso.showcase?.ejeGlobal || "+Z", distanciaMm: distGlobal, oculto: false },
-      ];
-    } else {
-      gruposDetectados = [
-        { id: "cajon_1", nombre: "Cajón 1 (Superior)", tipo: "cajon", piezas: [], ejeApertura: paso.showcase?.ejeGlobal || "+Z", distanciaMm: distGlobal, oculto: false },
-        { id: "cajon_2", nombre: "Cajón 2 (Inferior)", tipo: "cajon", piezas: [], ejeApertura: paso.showcase?.ejeGlobal || "+Z", distanciaMm: distGlobal, oculto: false },
-      ];
-    }
+    // 🛡️ REGLA SUPREMA: NUNCA inyectar cajones o nombres inventados/hardcodeados
+    const gruposDetectados: GrupoCinematicoShowcase[] = existentes;
 
     const actualizados = state.pasosManual.map((p: any) => {
       if (p.id !== pasoId) return p;

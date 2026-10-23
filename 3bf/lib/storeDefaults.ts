@@ -441,36 +441,8 @@ export const BLOQUES_ESTANDAR_DEFAULT: BloqueEstandarDef[] = [
 
 
 export function generarPasosManualesPorDefecto(): PasoManualStudio[] {
-  return [
-    {
-      id: "P00",
-      numero: 0,
-      tipo: "showcase",
-      titulo: "Paso 00: Showcase Funcional",
-      descripcion: "Demostración del mueble completo en operación interactiva.",
-      duracionTotal: 8.0,
-      showcase: {
-        abrirCajones: true,
-        distanciaAperturaMm: 300,
-        abrirPuertas: true,
-        anguloPuertasDeg: 90,
-        giroPresentacion360: true,
-        coreografia: "secuencial",
-        ejeGlobal: "+Z",
-        gruposCinematicos: [],
-      },
-      piezasAsignadas: [],
-      herrajesAsignados: [],
-      secuencia: [],
-      guionEs: "Antes de comenzar el ensamble, observa cómo luce tu mueble completamente armado y en funcionamiento.",
-      guionPt: "Antes de começar a montagem, veja como seu móvel fica totalmente montado e funcionando.",
-      guionEn: "Before starting assembly, take a look at your furniture fully assembled and functioning.",
-      vozEs: "es-MX-DaliaNeural",
-      vozPt: "pt-BR-FranciscaNeural",
-      vozEn: "en-US-JennyNeural",
-      duracionAudioSegundos: 8.0,
-    },
-  ];
+  // 🛡️ REGLA SUPREMA: El manual en estado virgen arranca estrictamente en 0 absoluto (sin pasos)
+  return [];
 }
 
 
@@ -1037,11 +1009,18 @@ export const STORAGE_KEY_LAST_MANUAL_ID = "3bf_last_manual_id";
  * Garantiza que nunca se generen IDs duplicados y llena los huecos dejados por pasos eliminados.
  * Ej: Si existen P00 y P02, devolverá P01. Si existen P00, P01, P02, devolverá P03.
  */
-export function encontrarSiguienteIdPasoDisponible(pasos: PasoManualStudio[]): { id: string; numero: number } {
-  const idsOcupados = new Set(pasos.map((p) => p.id));
+export function encontrarSiguienteIdPasoDisponible(pasos: PasoManualStudio[], tipo?: string): { id: string; numero: number } {
+  if (tipo === "showcase") {
+    const tieneP00 = (pasos || []).some((p) => p.id === "P00" || p.tipo === "showcase");
+    if (!tieneP00) {
+      return { id: "P00", numero: 0 };
+    }
+  }
+
+  const idsOcupados = new Set((pasos || []).map((p) => p.id));
   const numerosOcupados = new Set<number>();
 
-  for (const paso of pasos) {
+  for (const paso of pasos || []) {
     const match = paso.id.match(/^P(\d+)$/i);
     if (match) {
       numerosOcupados.add(parseInt(match[1], 10));
@@ -1067,33 +1046,27 @@ export function encontrarSiguienteIdPasoDisponible(pasos: PasoManualStudio[]): {
  * Cura duplicados existentes en caché local (ej: dos P02) reasignándolos al menor ID faltante.
  */
 export function sanitizarPasosManuales(pasos: PasoManualStudio[]): PasoManualStudio[] {
-  if (!pasos || pasos.length === 0) return generarPasosManualesPorDefecto();
-
-  // 🛡️ REGLA SUPREMA: P00 (Showcase Funcional) es estrictamente OBLIGATORIO e INVIOLABLE en el índice 0
-  const defaultP00 = generarPasosManualesPorDefecto()[0];
+  if (!pasos || pasos.length === 0) return [];
 
   // 1. Localizar si existe algún paso P00 o de tipo showcase
   const p00Index = pasos.findIndex((p) => p.id === "P00" || p.tipo === "showcase");
-  let paso00: PasoManualStudio;
+  const resultado: PasoManualStudio[] = [];
+  const idsVistos = new Set<string>();
 
   if (p00Index >= 0) {
-    paso00 = {
+    const paso00: PasoManualStudio = {
       ...pasos[p00Index],
       id: "P00",
       numero: 0,
       tipo: "showcase",
       titulo: pasos[p00Index].titulo || "Paso 00: Showcase Funcional",
     };
-  } else {
-    // Si no venía P00, inyectar el P00 oficial canónico
-    paso00 = { ...defaultP00 };
+    resultado.push(paso00);
+    idsVistos.add("P00");
   }
 
-  const resultado: PasoManualStudio[] = [paso00];
-  const idsVistos = new Set<string>(["P00"]);
-
-  // 2. Procesar el resto de pasos (excluyendo el que se tomó como P00)
-  const otrosPasos = pasos.filter((_, idx) => idx !== p00Index);
+  // 2. Procesar el resto de pasos (excluyendo el que se tomó como P00 si existía)
+  const otrosPasos = p00Index >= 0 ? pasos.filter((_, idx) => idx !== p00Index) : pasos;
 
   otrosPasos.forEach((pOriginal, idx) => {
     const p = { ...pOriginal };
@@ -1118,10 +1091,13 @@ export function sanitizarPasosManuales(pasos: PasoManualStudio[]): PasoManualStu
       }
     }
 
-    if (p.tipo === "multiple_plus" && (p.titulo.startsWith("Paso ") || /^P\d+:?/i.test(p.titulo) || p.titulo.includes("Ensamble"))) {
-      p.titulo = `Paso ${String(p.numero).padStart(2, "0")}: Armado por Capas`;
-    } else if (p.tipo === "insercion_cajones" && (!p.titulo || p.titulo.startsWith("Paso "))) {
-      p.titulo = `Paso ${String(p.numero).padStart(2, "0")}: Incorporación de Gavetas`;
+    // 🛡️ Preservar título bautizado por el usuario; solo asignar default si venía vacío
+    if (!p.titulo || p.titulo.trim() === "") {
+      if (p.tipo === "multiple_plus") {
+        p.titulo = `Paso ${String(p.numero).padStart(2, "0")}: Armado por Capas`;
+      } else if (p.tipo === "insercion_cajones") {
+        p.titulo = `Paso ${String(p.numero).padStart(2, "0")}: Incorporación de Gavetas`;
+      }
     }
 
     // 🧹 Limpieza automática de guiones genéricos por defecto para no obligar al usuario a borrarlos
@@ -1154,13 +1130,20 @@ export function getCachedManualData(): { manual: Manual3BMProyecto | null; pasos
     }
   }
   // 🛡️ REGLA SUPREMA: En recarga (F5) el sistema siempre arranca 100% limpio (como recién abrir un programa CAD)
-  return { manual: null, pasos: generarPasosManualesPorDefecto() };
+  // 🛡️ REGLA SUPREMA: En recarga o inicio, arranca 100% limpio en Estado Virgen (pasos: [])
+  return { manual: null, pasos: [] };
 }
 
 
 export function guardarPasosEnCacheLocal(nuevosPasos: PasoManualStudio[], manualActual?: Manual3BMProyecto | null) {
   if (typeof window === "undefined" || !window.localStorage) return;
   try {
+    if (!nuevosPasos || nuevosPasos.length === 0) {
+      localStorage.removeItem(STORAGE_KEY_PASOS_MANUAL);
+      localStorage.removeItem(STORAGE_KEY_MANUAL_ACTIVO);
+      localStorage.removeItem(STORAGE_KEY_LAST_MANUAL_ID);
+      return;
+    }
     localStorage.setItem(STORAGE_KEY_PASOS_MANUAL, JSON.stringify(nuevosPasos));
 
     let manualBase = manualActual;

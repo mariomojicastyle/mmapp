@@ -342,21 +342,7 @@ export const createCostosSlice = (set: any, get: any): any => ({
           }));
         } catch {}
       }
-      // Hidratar Manual 3D Studio (Pasos, Bloques Cinemáticos y Proyecto Activo)
-      const cachedManual = getCachedManualData();
-      if (cachedManual && cachedManual.pasos && cachedManual.pasos.length > 0) {
-        const p00Cached = cachedManual.pasos.find((p) => p.id === "P00");
-        const tieneGrupos = (p00Cached?.showcase?.gruposCinematicos?.length || 0) > 0;
-        const tienePiezas = cachedManual.pasos.some((p) => p.piezasAsignadas && p.piezasAsignadas.length > 0);
-        if (tieneGrupos || tienePiezas) {
-          set({
-            pasosManual: cachedManual.pasos,
-            manualActivoGuardado: cachedManual.manual,
-            pasoActivoManualId: cachedManual.pasos[0]?.id || "P00",
-          });
-        }
-      }
-    } catch (e) {
+      } catch (e) {
       console.error("Error hidratando base de datos desde localStorage:", e);
     }
   },

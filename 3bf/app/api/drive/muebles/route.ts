@@ -204,7 +204,38 @@ export async function GET(request: NextRequest) {
         return null;
       }
 
-      const foundData = await findFileById(storageDir);
+      let foundData = await findFileById(storageDir);
+
+      // Si no se encontró por coincidencia directa de nombre, buscar por ID interno o nombre
+      if (!foundData) {
+        async function scanByInternalId(dir: string): Promise<any | null> {
+          const entries = await fsp.readdir(dir, { withFileTypes: true });
+          for (const e of entries) {
+            const p = path.join(dir, e.name);
+            if (e.isDirectory()) {
+              const res = await scanByInternalId(p);
+              if (res) return res;
+            } else if (e.isFile() && e.name.endsWith(".3bf.json")) {
+              try {
+                const stat = await fsp.stat(p);
+                const cached = fullFurnitureCache.get(p);
+                if (cached && cached.mtime === stat.mtimeMs) {
+                  if (cached.data.id === targetId || cached.data.nombre === targetId) return cached.data;
+                } else {
+                  const content = await fsp.readFile(p, "utf-8");
+                  const parsed = JSON.parse(content);
+                  fullFurnitureCache.set(p, { data: parsed, mtime: stat.mtimeMs });
+                  if (parsed.id === targetId || parsed.nombre === targetId) {
+                    return parsed;
+                  }
+                }
+              } catch (_) {}
+            }
+          }
+          return null;
+        }
+        foundData = await scanByInternalId(storageDir);
+      }
       if (foundData) {
         return NextResponse.json(
           { success: true, furniture: foundData },
@@ -215,9 +246,10 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ success: false, error: "Mueble no encontrado" }, { status: 404 });
     }
 
-    // ⚡ Catálogo y Árbol de Carpetas con Caché en Memoria
+    // ⚡ Catálogo y Árbol de Carpetas con Caché en Memoria (con bypass forzado si se solicita)
+    const forceFresh = searchParams.get("force") === "true" || searchParams.has("_t");
     const now = Date.now();
-    if (memoryCache && (now - memoryCache.timestamp < CACHE_TTL_MS) && memoryCache.storageDir === storageDir) {
+    if (!forceFresh && memoryCache && (now - memoryCache.timestamp < CACHE_TTL_MS) && memoryCache.storageDir === storageDir) {
       return NextResponse.json({
         success: true,
         tree: memoryCache.tree,
@@ -226,7 +258,7 @@ export async function GET(request: NextRequest) {
         storagePath: storageDir,
         provider: storageDir.startsWith("G:") ? "google_drive_desktop_active" : "local_storage",
         fromCache: true,
-      });
+      }, { headers: { "Cache-Control": "no-store, no-cache, must-revalidate" } });
     }
 
     // Si no está en caché o expiró, escanear asíncronamente sin bloquear el event loop
@@ -359,43 +391,166 @@ export async function POST(request: Request) {
     }
 
     if (action === "rename_furniture" && body.id && body.nuevoNombre) {
+      const targetId = body.id;
+      const targetSafeId = toSafeFileName(targetId);
+      const newSafeName = toSafeFileName(body.nuevoNombre);
+      const newFileName = `${newSafeName}.3bf.json`;
+
+      let renameResult: { success: boolean; oldId: string; newId: string; newFileName: string } | null = null;
+
       const scanAndRename = async (currentDir: string): Promise<boolean> => {
         const entries = await fsp.readdir(currentDir, { withFileTypes: true });
         for (const entry of entries) {
           const fullPath = path.join(currentDir, entry.name);
           if (entry.isDirectory()) {
             if (await scanAndRename(fullPath)) return true;
-          } else if (entry.isFile() && entry.name === `${body.id}.3bf.json`) {
-            try {
-              const data = JSON.parse(await fsp.readFile(fullPath, "utf-8"));
-              data.nombre = body.nuevoNombre;
-              await fsp.writeFile(fullPath, JSON.stringify(data, null, 2), "utf-8");
-              return true;
-            } catch (e) {
-              console.error("Error renombrando mueble en disco:", e);
+          } else if (entry.isFile() && entry.name.endsWith(".3bf.json")) {
+            const baseName = entry.name.replace(/\.3bf\.json$/, "");
+            const isMatch =
+              entry.name === `${targetId}.3bf.json` ||
+              entry.name === `${targetSafeId}.3bf.json` ||
+              baseName.toLowerCase() === targetId.toLowerCase() ||
+              baseName.toLowerCase() === targetSafeId.toLowerCase();
+
+            let matched = isMatch;
+            let fileData: any = null;
+
+            if (!matched) {
+              try {
+                const content = await fsp.readFile(fullPath, "utf-8");
+                fileData = JSON.parse(content);
+                if (fileData.id === targetId || fileData.id === targetSafeId || fileData.nombre === targetId) {
+                  matched = true;
+                }
+              } catch (_) {}
+            }
+
+            if (matched) {
+              try {
+                if (!fileData) {
+                  const content = await fsp.readFile(fullPath, "utf-8");
+                  fileData = JSON.parse(content);
+                }
+
+                fileData.nombre = body.nuevoNombre;
+                fileData.id = newSafeName;
+
+                // Si tenía un manual vinculado con el id anterior, actualizar vinculación
+                const oldManualId = fileData.manualVinculadoId;
+                if (oldManualId && (oldManualId === targetId || oldManualId === targetSafeId || oldManualId === baseName)) {
+                  fileData.manualVinculadoId = newSafeName;
+                }
+
+                const newFullPath = path.join(currentDir, newFileName);
+
+                // Escribir archivo con el nuevo nombre y datos actualizados
+                await fsp.writeFile(newFullPath, JSON.stringify(fileData), "utf-8");
+
+                // Si la ruta o nombre cambió, eliminar el archivo con nombre anterior
+                if (path.resolve(fullPath) !== path.resolve(newFullPath)) {
+                  try {
+                    await fsp.unlink(fullPath);
+                  } catch (_) {}
+
+                  // Renombrar manual vinculado hermano (.3bm.json) si existe
+                  const oldManualPath = path.join(currentDir, `${baseName}.3bm.json`);
+                  const newManualPath = path.join(currentDir, `${newSafeName}.3bm.json`);
+                  if (fs.existsSync(oldManualPath)) {
+                    try {
+                      const mContent = await fsp.readFile(oldManualPath, "utf-8");
+                      const mData = JSON.parse(mContent);
+                      mData.id = newSafeName;
+                      mData.nombre = body.nuevoNombre;
+                      if (mData.muebleVinculadoId) {
+                        mData.muebleVinculadoId = newSafeName;
+                      }
+                      await fsp.writeFile(newManualPath, JSON.stringify(mData, null, 2), "utf-8");
+                      await fsp.unlink(oldManualPath);
+                    } catch (mErr) {
+                      console.error("[3dBimFab Drive] Error renombrando manual hermano:", mErr);
+                    }
+                  }
+
+                  // Renombrar backups (.backup_...)
+                  try {
+                    const siblingEntries = await fsp.readdir(currentDir);
+                    for (const sf of siblingEntries) {
+                      if (sf.startsWith(`${baseName}.3bf.json.backup_`)) {
+                        const suffix = sf.slice(`${baseName}.3bf.json`.length);
+                        const oldB = path.join(currentDir, sf);
+                        const newB = path.join(currentDir, `${newSafeName}.3bf.json${suffix}`);
+                        await fsp.rename(oldB, newB);
+                      }
+                    }
+                  } catch (_) {}
+                }
+
+                // Invalida y refresca cachés
+                invalidarCache();
+                fullFurnitureCache.set(newSafeName, { data: fileData, mtime: Date.now() });
+                fullFurnitureCache.set(newFullPath, { data: fileData, mtime: Date.now() });
+
+                renameResult = {
+                  success: true,
+                  oldId: targetId,
+                  newId: newSafeName,
+                  newFileName,
+                };
+                return true;
+              } catch (e) {
+                console.error("Error renombrando mueble en disco:", e);
+              }
             }
           }
         }
         return false;
       };
 
-      const ok = await scanAndRename(storageDir);
-      return NextResponse.json({ success: ok });
+      await scanAndRename(storageDir);
+      return NextResponse.json(renameResult || { success: false, error: "Mueble no encontrado" });
     }
 
     if (action === "delete_furniture" && body.id) {
+      const targetId = body.id;
+      const targetSafeId = toSafeFileName(targetId);
+
       const scanAndDelete = async (currentDir: string): Promise<boolean> => {
         const entries = await fsp.readdir(currentDir, { withFileTypes: true });
         for (const entry of entries) {
           const fullPath = path.join(currentDir, entry.name);
           if (entry.isDirectory()) {
             if (await scanAndDelete(fullPath)) return true;
-          } else if (entry.isFile() && entry.name === `${body.id}.3bf.json`) {
-            try {
-              await fsp.unlink(fullPath);
-              return true;
-            } catch (e) {
-              console.error("Error eliminando mueble en disco:", e);
+          } else if (entry.isFile() && entry.name.endsWith(".3bf.json")) {
+            const baseName = entry.name.replace(/\.3bf\.json$/, "");
+            const isMatch =
+              entry.name === `${targetId}.3bf.json` ||
+              entry.name === `${targetSafeId}.3bf.json` ||
+              baseName.toLowerCase() === targetId.toLowerCase() ||
+              baseName.toLowerCase() === targetSafeId.toLowerCase();
+
+            if (isMatch) {
+              try {
+                await fsp.unlink(fullPath);
+
+                // Eliminar también manual asociado si existe
+                const manualPath = path.join(currentDir, `${baseName}.3bm.json`);
+                if (fs.existsSync(manualPath)) {
+                  try { await fsp.unlink(manualPath); } catch (_) {}
+                }
+
+                // Eliminar backups asociados
+                const siblingEntries = await fsp.readdir(currentDir);
+                for (const sf of siblingEntries) {
+                  if (sf.startsWith(`${baseName}.3bf.json.backup_`)) {
+                    try { await fsp.unlink(path.join(currentDir, sf)); } catch (_) {}
+                  }
+                }
+
+                invalidarCache();
+                return true;
+              } catch (e) {
+                console.error("Error eliminando mueble en disco:", e);
+              }
             }
           }
         }
@@ -405,6 +560,7 @@ export async function POST(request: Request) {
       const ok = await scanAndDelete(storageDir);
       return NextResponse.json({ success: ok });
     }
+
 
     return NextResponse.json({ error: "Acción no reconocida" }, { status: 400 });
   } catch (error: any) {

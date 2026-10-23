@@ -385,23 +385,6 @@ export function BoardMesh({
     visibilidad.esInactivoCristal,
   ]);
 
-  // Si está oculta por reglas del paso, subbloque, cinemática o capa: retorno temprano limpio estricto
-  // 🛡️ REGLA CANÓNICA: Las piezas ocultas NUNCA deben forzarse en escena por hover sobre cápsulas
-  if (!visibilidad.isMeshVisible) {
-    return null;
-  }
-
-  // 🛡️ REGLA CANÓNICA: Las cubiertas exteriores (Cara A y B) y el núcleo de MDP se preservan siempre
-  // montados en la escena Three.js para garantizar visualización transparente coherente y exportación fiel al GLB.
-
-  // 🛡️ Solo omitir si la geometría carece de mallas poligonales reales y además tiene dimensiones nulas
-  if (!customGeometry && (!size || size[0] <= 0.0001 || size[1] <= 0.0001 || size[2] <= 0.0001)) {
-    return null;
-  }
-  // Si tiene customGeometry pero está vacía sin vértices
-  if (customGeometry && customGeometry.attributes.position.count < 3) {
-    return null;
-  }
 
   // 5. Configuración de Aristas Técnicas CAD
   const {
@@ -459,7 +442,7 @@ export function BoardMesh({
     (isMdpExpuesto && !forzarAristasCaja && !esExcepcionBisel) ||
     omitirAristas
   );
-  const mostrarAristasEnEsteMesh = (debeMostrarAristas && !debeOmitirAristasPorDuplicidadCapa) || (estaSeleccionadaEnPicking && !isBalance);
+  const mostrarAristasEnEsteMesh = visibilidad.isMeshVisible && ((debeMostrarAristas && !debeOmitirAristasPorDuplicidadCapa) || (estaSeleccionadaEnPicking && !isBalance));
   
   // 📐 Geometría base para aristas:
   // Si la pieza cuenta con geometría real (customGeometry) proveniente de Grasshopper, la usamos fielmente.
@@ -473,6 +456,7 @@ export function BoardMesh({
   // 📐 Creación y cacheo de aristas CAD geométricas estables (THREE.EdgesGeometry nativo con filtro coplanar DfMA):
   const edgesGeometryMemo = React.useMemo(() => {
     if (!mostrarAristasEnEsteMesh || !edgeGeometryToUse) return null;
+    if (customGeometry && customGeometry.attributes.position.count < 3) return null;
     try {
       const thresh = isHardwareTampa ? 15 : (esExcepcionBisel ? 20 : (calibracion.thresholdAristas || 25));
       // 🛡️ Filtro DfMA: En tableros de madera con geometría de Grasshopper, suprimir trazos y diagonales en caras planas
@@ -491,6 +475,25 @@ export function BoardMesh({
       edgesGeometryMemo?.dispose();
     };
   }, [edgesGeometryMemo]);
+
+  // Si está oculta por reglas del paso, subbloque, cinemática o capa: retorno limpio estricto tras invocar todos los hooks
+  // 🛡️ REGLA CANÓNICA: Las piezas ocultas NUNCA deben forzarse en escena por hover sobre cápsulas
+  if (!visibilidad.isMeshVisible) {
+    return null;
+  }
+
+  // 🛡️ REGLA CANÓNICA: Las cubiertas exteriores (Cara A y B) y el núcleo de MDP se preservan siempre
+  // montados en la escena Three.js para garantizar visualización transparente coherente y exportación fiel al GLB.
+
+  // 🛡️ Solo omitir si la geometría carece de mallas poligonales reales y además tiene dimensiones nulas
+  if (!customGeometry && (!size || size[0] <= 0.0001 || size[1] <= 0.0001 || size[2] <= 0.0001)) {
+    return null;
+  }
+  // Si tiene customGeometry pero está vacía sin vértices
+  if (customGeometry && customGeometry.attributes.position.count < 3) {
+    return null;
+  }
+
 
 
   // 💎 En modo cristal inactivo: NUNCA aplicar mapas de textura (veta de madera) para que sea cristal puro idéntico al modo global
@@ -517,6 +520,10 @@ export function BoardMesh({
         geometry={customGeometry}
         onClick={(e) => {
           if (modoPickingManual.activo) {
+            const targetObj = e.object as any;
+            if (targetObj?.isLine || targetObj?.isLineSegments || targetObj?.userData?.__esHelperVisual) {
+              return;
+            }
             e.stopPropagation();
             togglePiezaEnPickingManual(piezaMadre);
           }
@@ -605,6 +612,7 @@ export function BoardMesh({
           <mesh 
             geometry={customGeometry || undefined}
             userData={{ isWireframeHelper: true, __esHelperVisual: true }}
+            raycast={() => null}
             renderOrder={estaHoveredEnHerrajes ? 56 : (estaSeleccionadaEnPicking ? 36 : (isHardware ? 26 : 12))}
           >
             <meshBasicMaterial
@@ -619,6 +627,7 @@ export function BoardMesh({
         {mostrarAristasEnEsteMesh && edgesGeometryMemo && (!isHardware || isHardwareTampa || estaSeleccionadaEnPicking || estaHoveredEnHerrajes) && (
           <lineSegments
             geometry={edgesGeometryMemo}
+            raycast={() => null}
             renderOrder={estaHoveredEnHerrajes ? 60 : (estaSeleccionadaEnPicking ? 40 : (isHardwareTampa ? 30 : (esDuplicado ? 26 : (forzarAristasCaja ? 16 : 12))))}
           >
             <lineBasicMaterial
@@ -656,6 +665,10 @@ export function BoardMesh({
       name={cleanName}
       onClick={(e) => {
         if (modoPickingManual.activo) {
+          const targetObj = e.object as any;
+          if (targetObj?.isLine || targetObj?.isLineSegments || targetObj?.userData?.__esHelperVisual) {
+            return;
+          }
           e.stopPropagation();
           togglePiezaEnPickingManual(piezaMadre);
         }
@@ -744,6 +757,7 @@ export function BoardMesh({
       {modoVisual === "lineas" && (
         <mesh 
           userData={{ isWireframeHelper: true, __esHelperVisual: true }}
+          raycast={() => null}
           renderOrder={estaHoveredEnHerrajes ? 56 : (estaSeleccionadaEnPicking ? 36 : (isHardware ? 26 : 12))}
         >
           <boxGeometry args={size} />
@@ -759,6 +773,7 @@ export function BoardMesh({
       {mostrarAristasEnEsteMesh && edgesGeometryMemo && (!isHardware || isHardwareTampa || estaSeleccionadaEnPicking || estaHoveredEnHerrajes) && (
         <lineSegments
           geometry={edgesGeometryMemo}
+          raycast={() => null}
           renderOrder={estaHoveredEnHerrajes ? 60 : (estaSeleccionadaEnPicking ? 40 : (isHardwareTampa ? 30 : (esDuplicado ? 26 : (forzarAristasCaja ? 16 : 12))))}
         >
           <lineBasicMaterial

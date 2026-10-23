@@ -408,7 +408,7 @@ function ParametrosPanel() {
 
   return (
     <div className="flex flex-col gap-2 lg:gap-3.5">
-      {groups.map((grp: { title: string; parameters: string[] }, idx: number) => {
+      {groups.map((grp: { title: string; parameters: string[]; subgroups?: Array<{ title: string; parameters: string[] }> }, idx: number) => {
         const groupKey = grp.title || `group-${idx}`;
         const estaColapsado = !!gruposColapsados[groupKey];
 
@@ -462,11 +462,47 @@ function ParametrosPanel() {
 
             {!estaColapsado && (
               <>
-                <div className="flex flex-col gap-1 lg:gap-2">
-                  {grp.parameters.map((pKey: string) => (
-                    <RenderParamControl key={pKey} paramKey={pKey} />
-                  ))}
-                </div>
+                {/* 1. Parámetros sueltos del grupo (si existen) */}
+                {grp.parameters && grp.parameters.length > 0 && (
+                  <div className="flex flex-col gap-1 lg:gap-2">
+                    {grp.parameters.map((pKey: string) => (
+                      <RenderParamControl key={pKey} paramKey={pKey} />
+                    ))}
+                  </div>
+                )}
+
+                {/* 2. Subgrupos modulares anidados (ej. Superior, Inferior) */}
+                {grp.subgroups && grp.subgroups.length > 0 && (
+                  <div className="flex flex-col gap-2 lg:gap-2.5 mt-0.5">
+                    {grp.subgroups.map((sub: { title: string; parameters: string[] }, subIdx: number) => (
+                      <div
+                        key={`sub-${subIdx}-${sub.title}`}
+                        style={{
+                          borderColor: coloresApariencia?.insigniaFondo || coloresApariencia?.bordePaneles,
+                          backgroundColor: coloresApariencia?.fondoAplicacion ? `${coloresApariencia.fondoAplicacion}80` : undefined,
+                        }}
+                        className="flex flex-col gap-1.5 lg:gap-2 p-2 lg:p-2.5 rounded-lg border border-dashed transition-all"
+                      >
+                        <div className="flex items-center gap-1.5 pb-0.5">
+                          <span
+                            style={{
+                              backgroundColor: coloresApariencia?.insigniaFondo || "#E2E8F0",
+                              color: coloresApariencia?.textoPrincipal || "#0F172A",
+                            }}
+                            className="text-[9.5px] lg:text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider shadow-2xs"
+                          >
+                            {sub.title}
+                          </span>
+                        </div>
+                        <div className="flex flex-col gap-1 lg:gap-2">
+                          {sub.parameters.map((pKey: string) => (
+                            <RenderParamControl key={pKey} paramKey={pKey} />
+                          ))}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
 
                 {/* Ranuras de Memoria de Dimensiones con LEDs estilo Poser */}
                 {(idx === 0 || grp.title.toLowerCase().includes("dimen") || grp.title.toLowerCase().includes("principal")) && (
